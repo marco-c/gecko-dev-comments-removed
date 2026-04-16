@@ -328,12 +328,27 @@ void MediaCapabilities::CreateMediaCapabilitiesDecodingInfo(
   }
 
   
+  
+  
+  RefPtr<TaskQueue> taskQueue = TaskQueue::Create(
+      GetMediaThreadPool(MediaThreadType::PLATFORM_DECODER),
+      "MediaCapabilities::TaskQueue");
+  RefPtr<layers::KnowsCompositor> compositor = GetCompositor();
+  const bool shouldResistFingerprinting =
+      mParent->ShouldResistFingerprinting(RFPTarget::MediaCapabilities);
+  float frameRate =
+      aConfiguration.mVideo.WasPassed() && videoContainer.isSome()
+          ? static_cast<float>(
+                videoContainer->ExtendedType().GetFramerate().ref())
+          : 0.0f;
+
+  
   if (aConfiguration.mKeySystemConfiguration.WasPassed()) {
     MOZ_ASSERT(
         NS_IsMainThread(),
         "Key system configuration qurey can not run on the worker thread!");
 
-    auto* mainThread = GetMainThreadSerialEventTarget();
+    RefPtr<nsISerialEventTarget> mainThread = GetMainThreadSerialEventTarget();
     if (!mainThread) {
       aPromise->MaybeRejectWithInvalidStateError(
           "The main thread is shutted down");
@@ -354,47 +369,78 @@ void MediaCapabilities::CreateMediaCapabilitiesDecodingInfo(
           "config");
       return;
     }
+    UniquePtr<TrackInfo> videoInfo;
+    if (aConfiguration.mVideo.WasPassed() && videoContainer.isSome()) {
+      videoInfo = std::move(tracks[0]);
+    }
     CheckEncryptedDecodingSupport(aConfiguration)
-        ->Then(mainThread, __func__,
-               [promise = RefPtr<Promise>{aPromise},
-                self = RefPtr<MediaCapabilities>{this}, aConfiguration,
-                this](MediaKeySystemAccessManager::MediaKeySystemAccessPromise::
-                          ResolveOrRejectValue&& aValue) {
-                 if (aValue.IsReject()) {
-                   MediaCapabilitiesDecodingInfo info;
-                   info.mSupported = false;
-                   info.mSmooth = false;
-                   info.mPowerEfficient = false;
-                   LOG("%s -> %s",
-                       MediaDecodingConfigurationToStr(aConfiguration).get(),
-                       MediaCapabilitiesInfoToStr(info).get());
-                   promise->MaybeResolve(std::move(info));
-                   return;
-                 }
-                 MediaCapabilitiesDecodingInfo info;
-                 info.mSupported = true;
-                 info.mSmooth = true;
-                 info.mKeySystemAccess = aValue.ResolveValue();
-                 MOZ_ASSERT(info.mKeySystemAccess);
-                 MediaKeySystemConfiguration config;
-                 info.mKeySystemAccess->GetConfiguration(config);
-                 info.mPowerEfficient = IsHardwareDecryptionSupported(config);
-                 LOG("%s -> %s",
-                     MediaDecodingConfigurationToStr(aConfiguration).get(),
-                     MediaCapabilitiesInfoToStr(info).get());
-                 promise->MaybeResolve(std::move(info));
-               });
+        ->Then(
+            mainThread, __func__,
+            [promise = RefPtr<Promise>{aPromise},
+             self = RefPtr<MediaCapabilities>{this}, aConfiguration,
+             mainThread = RefPtr<nsISerialEventTarget>{mainThread}, taskQueue,
+             compositor, shouldResistFingerprinting, frameRate,
+             videoInfo = std::move(videoInfo),
+             this](MediaKeySystemAccessManager::MediaKeySystemAccessPromise::
+                       ResolveOrRejectValue&& aValue) mutable {
+              if (aValue.IsReject()) {
+                MediaCapabilitiesDecodingInfo info;
+                info.mSupported = false;
+                info.mSmooth = false;
+                info.mPowerEfficient = false;
+                LOG("DRM support check rejected: %s -> %s",
+                    MediaDecodingConfigurationToStr(aConfiguration).get(),
+                    MediaCapabilitiesInfoToStr(info).get());
+                promise->MaybeResolve(std::move(info));
+                return;
+              }
+
+              MediaCapabilitiesDecodingInfo drmInfo;
+              drmInfo.mSupported = true;
+              drmInfo.mSmooth = true;
+              drmInfo.mKeySystemAccess = aValue.ResolveValue();
+              MOZ_ASSERT(drmInfo.mKeySystemAccess);
+              MediaKeySystemConfiguration config;
+              drmInfo.mKeySystemAccess->GetConfiguration(config);
+              const bool hwDRM = IsHardwareDecryptionSupported(config);
+
+              if (hwDRM || !videoInfo) {
+                drmInfo.mPowerEfficient = hwDRM && !!videoInfo;
+                LOG("DRM hardware decrypt or no video track: %s -> %s",
+                    MediaDecodingConfigurationToStr(aConfiguration).get(),
+                    MediaCapabilitiesInfoToStr(drmInfo).get());
+                promise->MaybeResolve(std::move(drmInfo));
+                return;
+              }
+
+              
+              CheckVideoDecodingInfo(taskQueue, compositor, frameRate,
+                                     shouldResistFingerprinting,
+                                     std::move(videoInfo))
+                  ->Then(
+                      mainThread, __func__,
+                      [promise, drmInfo = std::move(drmInfo), aConfiguration,
+                       self, this](CapabilitiesPromise::ResolveOrRejectValue&&
+                                       aDecoderResult) mutable {
+                        if (aDecoderResult.IsResolve()) {
+                          drmInfo.mPowerEfficient =
+                              aDecoderResult.ResolveValue().mPowerEfficient;
+                        } else {
+                          drmInfo.mPowerEfficient = false;
+                        }
+                        LOG("Software DRM decoder check: %s -> %s",
+                            MediaDecodingConfigurationToStr(aConfiguration)
+                                .get(),
+                            MediaCapabilitiesInfoToStr(drmInfo).get());
+                        promise->MaybeResolve(std::move(drmInfo));
+                      });
+            });
     return;
   }
 
   
-  using CapabilitiesPromise = MozPromise<MediaCapabilitiesInfo, MediaResult,
-                                          true>;
   nsTArray<RefPtr<CapabilitiesPromise>> promises;
 
-  RefPtr<TaskQueue> taskQueue =
-      TaskQueue::Create(GetMediaThreadPool(MediaThreadType::PLATFORM_DECODER),
-                        "MediaCapabilities::TaskQueue");
   for (auto&& config : tracks) {
     TrackInfo::TrackType type =
         config->IsVideo() ? TrackInfo::kVideoTrack : TrackInfo::kAudioTrack;
@@ -425,116 +471,9 @@ void MediaCapabilities::CreateMediaCapabilitiesDecodingInfo(
       continue;
     }
 
-    
-    
-    
-
-    RefPtr<layers::KnowsCompositor> compositor = GetCompositor();
-    float frameRate =
-        static_cast<float>(videoContainer->ExtendedType().GetFramerate().ref());
-    const bool shouldResistFingerprinting =
-        mParent->ShouldResistFingerprinting(RFPTarget::MediaCapabilities);
-
-    
-    promises.AppendElement(InvokeAsync(
-        taskQueue, __func__,
-        [taskQueue, frameRate, shouldResistFingerprinting, compositor,
-         config = std::move(config)]() mutable -> RefPtr<CapabilitiesPromise> {
-          
-          
-          static Atomic<uint32_t> sTrackingIdCounter(0);
-          TrackingId trackingId(TrackingId::Source::MediaCapabilities,
-                                sTrackingIdCounter++,
-                                TrackingId::TrackAcrossProcesses::Yes);
-          CreateDecoderParams params{
-              *config, compositor,
-              CreateDecoderParams::VideoFrameRate(frameRate),
-              TrackInfo::kVideoTrack, Some(std::move(trackingId))};
-          
-          
-          
-          static RefPtr<AllocPolicy> sVideoAllocPolicy = [&taskQueue]() {
-            SchedulerGroup::Dispatch(
-                NS_NewRunnableFunction(
-                    "MediaCapabilities::AllocPolicy:Video", []() {
-                      ClearOnShutdown(&sVideoAllocPolicy,
-                                      ShutdownPhase::XPCOMShutdownThreads);
-                    }));
-            return new SingleAllocPolicy(TrackInfo::TrackType::kVideoTrack,
-                                         taskQueue);
-          }();
-          return AllocationWrapper::CreateDecoder(params, sVideoAllocPolicy)
-              ->Then(
-                  taskQueue, __func__,
-                  [taskQueue, shouldResistFingerprinting,
-                   config = std::move(config)](
-                      AllocationWrapper::AllocateDecoderPromise::
-                          ResolveOrRejectValue&& aValue) mutable {
-                    if (aValue.IsReject()) {
-                      return CapabilitiesPromise::CreateAndReject(
-                          std::move(aValue.RejectValue()), __func__);
-                    }
-                    RefPtr<MediaDataDecoder> decoder =
-                        std::move(aValue.ResolveValue());
-                    
-                    
-                    RefPtr<CapabilitiesPromise> p = decoder->Init()->Then(
-                        taskQueue, __func__,
-                        [taskQueue, decoder,
-                         shouldResistFingerprinting,
-                         config = std::move(config)](
-                            MediaDataDecoder::InitPromise::
-                                ResolveOrRejectValue&& aValue) mutable {
-                          RefPtr<CapabilitiesPromise> p;
-                          if (aValue.IsReject()) {
-                            p = CapabilitiesPromise::CreateAndReject(
-                                std::move(aValue.RejectValue()), __func__);
-                          } else if (shouldResistFingerprinting) {
-                            MediaCapabilitiesDecodingInfo info;
-                            info.mSupported = true;
-                            info.mSmooth = true;
-                            info.mPowerEfficient = false;
-                            p = CapabilitiesPromise::CreateAndResolve(std::move(info), __func__);
-                          } else {
-                            MOZ_ASSERT(config->IsVideo());
-                            if (config->GetAsVideoInfo()->mImage.height < 480) {
-                              
-                              
-                              
-                              
-                              
-                              
-                              MediaCapabilitiesDecodingInfo info;
-                              info.mSupported = true;
-                              info.mSmooth = true;
-                              info.mPowerEfficient = true;
-                              p = CapabilitiesPromise::CreateAndResolve(std::move(info), __func__);
-                            } else {
-                              nsAutoCString reason;
-                              bool smooth = true;
-                              bool powerEfficient =
-                                  decoder->IsHardwareAccelerated(reason);
-                              MediaCapabilitiesDecodingInfo info;
-                              info.mSupported = true;
-                              info.mSmooth = smooth;
-                              info.mPowerEfficient = powerEfficient;
-                              p = CapabilitiesPromise::CreateAndResolve(std::move(info), __func__);
-                            }
-                          }
-                          MOZ_ASSERT(p.get(), "the promise has been created");
-                          
-                          
-                          decoder->Shutdown()->Then(
-                              taskQueue, __func__,
-                              [taskQueue, decoder, config = std::move(config)](
-                                  const ShutdownPromise::ResolveOrRejectValue&
-                                      aValue) {});
-                          return p;
-                        });
-                    return p;
-                  });
-        }));
-    
+    promises.AppendElement(
+        CheckVideoDecodingInfo(taskQueue, compositor, frameRate,
+                               shouldResistFingerprinting, std::move(config)));
   }
 
   auto holder = MakeRefPtr<
@@ -597,6 +536,118 @@ void MediaCapabilities::CreateMediaCapabilitiesDecodingInfo(
                promise->MaybeResolve(std::move(info));
              })
       ->Track(*holder);
+}
+
+
+RefPtr<MediaCapabilities::CapabilitiesPromise>
+MediaCapabilities::CheckVideoDecodingInfo(
+    RefPtr<TaskQueue> aTaskQueue, RefPtr<layers::KnowsCompositor> aCompositor,
+    float aFrameRate, bool aShouldResistFingerprinting,
+    UniquePtr<TrackInfo> aConfig) {
+  MOZ_ASSERT(aConfig && aConfig->IsVideo());
+  MOZ_ASSERT(aTaskQueue);
+  RefPtr<nsISerialEventTarget> target = aTaskQueue;
+  return InvokeAsync(
+      target, __func__,
+      [taskQueue = std::move(aTaskQueue), compositor = std::move(aCompositor),
+       frameRate = aFrameRate,
+       shouldResistFingerprinting = aShouldResistFingerprinting,
+       config = std::move(aConfig)]() mutable -> RefPtr<CapabilitiesPromise> {
+        
+        
+        static Atomic<uint32_t> sTrackingIdCounter(0);
+        TrackingId trackingId(TrackingId::Source::MediaCapabilities,
+                              sTrackingIdCounter++,
+                              TrackingId::TrackAcrossProcesses::Yes);
+        CreateDecoderParams params{
+            *config,
+            compositor,
+            CreateDecoderParams::VideoFrameRate(frameRate),
+            TrackInfo::kVideoTrack,
+            Some(std::move(trackingId))};
+        
+        
+        
+        static RefPtr<AllocPolicy> sVideoAllocPolicy = [&taskQueue]() {
+          SchedulerGroup::Dispatch(NS_NewRunnableFunction(
+              "MediaCapabilities::AllocPolicy:Video", []() {
+                ClearOnShutdown(&sVideoAllocPolicy,
+                                ShutdownPhase::XPCOMShutdownThreads);
+              }));
+          return new SingleAllocPolicy(TrackInfo::TrackType::kVideoTrack,
+                                       taskQueue);
+        }();
+        return AllocationWrapper::CreateDecoder(params, sVideoAllocPolicy)
+            ->Then(
+                taskQueue, __func__,
+                [taskQueue, shouldResistFingerprinting,
+                 config = std::move(config)](
+                    AllocationWrapper::AllocateDecoderPromise::
+                        ResolveOrRejectValue&& aValue) mutable {
+                  if (aValue.IsReject()) {
+                    return CapabilitiesPromise::CreateAndReject(
+                        std::move(aValue.RejectValue()), __func__);
+                  }
+                  RefPtr<MediaDataDecoder> decoder =
+                      std::move(aValue.ResolveValue());
+                  RefPtr<CapabilitiesPromise> p = decoder->Init()->Then(
+                      taskQueue, __func__,
+                      [taskQueue, decoder, shouldResistFingerprinting,
+                       config = std::move(config)](
+                          MediaDataDecoder::InitPromise::ResolveOrRejectValue&&
+                              aValue) mutable {
+                        RefPtr<CapabilitiesPromise> p;
+                        if (aValue.IsReject()) {
+                          p = CapabilitiesPromise::CreateAndReject(
+                              std::move(aValue.RejectValue()), __func__);
+                        } else if (shouldResistFingerprinting) {
+                          MediaCapabilitiesDecodingInfo info;
+                          info.mSupported = true;
+                          info.mSmooth = true;
+                          info.mPowerEfficient = false;
+                          p = CapabilitiesPromise::CreateAndResolve(
+                              std::move(info), __func__);
+                        } else {
+                          MOZ_ASSERT(config->IsVideo());
+                          if (config->GetAsVideoInfo()->mImage.height < 480) {
+                            
+                            
+                            
+                            
+                            
+                            
+                            MediaCapabilitiesDecodingInfo info;
+                            info.mSupported = true;
+                            info.mSmooth = true;
+                            info.mPowerEfficient = true;
+                            p = CapabilitiesPromise::CreateAndResolve(
+                                std::move(info), __func__);
+                          } else {
+                            nsAutoCString reason;
+                            bool smooth = true;
+                            bool powerEfficient =
+                                decoder->IsHardwareAccelerated(reason);
+                            MediaCapabilitiesDecodingInfo info;
+                            info.mSupported = true;
+                            info.mSmooth = smooth;
+                            info.mPowerEfficient = powerEfficient;
+                            p = CapabilitiesPromise::CreateAndResolve(
+                                std::move(info), __func__);
+                          }
+                        }
+                        MOZ_ASSERT(p.get(), "the promise has been created");
+                        
+                        
+                        decoder->Shutdown()->Then(
+                            taskQueue, __func__,
+                            [taskQueue, decoder, config = std::move(config)](
+                                const ShutdownPromise::ResolveOrRejectValue&
+                                    aValue) {});
+                        return p;
+                      });
+                  return p;
+                });
+      });
 }
 
 
