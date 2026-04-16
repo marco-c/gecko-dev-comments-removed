@@ -14,6 +14,7 @@
 #include <cstring>
 #include <optional>
 
+#include "absl/algorithm/container.h"
 #include "api/array_view.h"
 #include "api/audio/audio_view.h"
 #include "api/audio/channel_layout.h"
@@ -102,7 +103,7 @@ void AudioFrame::CopyFrom(const AudioFrame& src) {
     
     
     
-    ClearSamples(data_);
+    absl::c_fill(data_, 0);
   }
 
   timestamp_ = src.timestamp_;
@@ -147,7 +148,7 @@ int16_t* AudioFrame::mutable_data() {
   
   
   if (muted_) {
-    ClearSamples(data_);
+    absl::c_fill(data_, 0);
     muted_ = false;
   }
   return &data_[0];
@@ -170,7 +171,7 @@ InterleavedView<int16_t> AudioFrame::mutable_data(size_t samples_per_channel,
   
   
   if (muted_) {
-    ClearSamples(data_, total_samples);
+    absl::c_fill_n(data_, total_samples, 0);
     muted_ = false;
   }
   samples_per_channel_ = samples_per_channel;
