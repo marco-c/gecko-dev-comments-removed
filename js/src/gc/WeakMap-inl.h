@@ -221,11 +221,13 @@ bool WeakMap<K, V, AP>::markEntry(GCMarker* marker, gc::CellColor mapColor,
   if (keyIsSymbol && keyColor < markColor) {
     
     
-    
     auto* sym = static_cast<JS::Symbol*>(keyCell);
     gc::GCRuntime* gc = &marker->runtime()->gc;
     if (gc->isSymbolReferencedByUncollectedZone(sym, marker->markColor())) {
       TraceEdge(trc, &key, "WeakMap symbol key");
+      MOZ_ASSERT(gc::detail::GetEffectiveColor(marker, key.get()) == markColor);
+      keyColor = markColor;
+      marked = true;
     }
   }
 
