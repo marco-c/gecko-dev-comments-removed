@@ -261,6 +261,19 @@ class MethodDispatcher {
   }
 };
 
+struct WebGLMethodInfo {
+  enum Flags : uint8_t {
+    
+    LOCK_IN_PROCESS = 1 << 0,
+  };
+
+  size_t id = 0;
+  uint8_t flags = 0;
+
+  template <typename MethodT, MethodT Method>
+  static WebGLMethodInfo Get();
+};
+
 }  
 
 #endif  
