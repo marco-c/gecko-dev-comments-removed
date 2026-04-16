@@ -26,8 +26,6 @@ add_setup(async function () {
     ],
   });
 
-  let oldDefaultEngine = await Services.search.getDefault();
-
   let root = gTestPath;
   let engineURL = new URL("../../browser/searchSuggestionEngine.xml", root)
     .href;
@@ -40,10 +38,6 @@ add_setup(async function () {
   registerCleanupFunction(async function () {
     Services.prefs.clearUserPref(
       "browser.urlbar.quickactions.timesShownOnboardingLabel"
-    );
-    await Services.search.setDefault(
-      oldDefaultEngine,
-      Ci.nsISearchService.CHANGE_REASON_UNKNOWN
     );
   });
 });
@@ -102,6 +96,7 @@ add_task(async function test_bounce_tab_close() {
         engagement_type: expected.engagement_type,
         provider: expected.provider,
         threshold: expected.threshold,
+        window_mode: "classic",
       },
     ]);
 
@@ -186,6 +181,7 @@ add_task(async function test_bounce_back_button() {
         engagement_type: expected.engagement_type,
         provider: expected.provider,
         threshold: expected.threshold,
+        window_mode: "classic",
       },
     ]);
 
@@ -228,8 +224,8 @@ add_task(async function test_other_engagement() {
       {
         view_time: "1.2",
         selected_result: expected.selected_result,
-        results: "search_engine,action",
-        n_results: "2",
+        results: expected.results,
+        n_results: expected.n_results,
         interaction: expected.interaction,
         search_mode: expected.search_mode,
         search_engine_default_id: expected.search_engine_default_id,
@@ -238,6 +234,7 @@ add_task(async function test_other_engagement() {
         engagement_type: expected.engagement_type,
         provider: expected.provider,
         threshold: expected.threshold,
+        window_mode: "classic",
       },
     ]);
 
