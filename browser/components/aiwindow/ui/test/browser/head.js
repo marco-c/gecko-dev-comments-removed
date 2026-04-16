@@ -365,15 +365,24 @@ async function getSmartbarContextChipLabels(browser, expectedUrl) {
 
 
 
-async function submitSmartbar(browser) {
-  await SpecialPowers.spawn(browser, [], async () => {
+
+
+async function submitSmartbar(browser, { useButton = false } = {}) {
+  await SpecialPowers.spawn(browser, [useButton], async clickButton => {
     const aiWindowElement = content.document.querySelector("ai-window");
     const smartbar = aiWindowElement.shadowRoot.querySelector(
       "#ai-window-smartbar"
     );
-    const inputField = smartbar.inputField;
-    inputField.focus();
-    EventUtils.synthesizeKey("KEY_Enter", {}, content);
+    if (clickButton) {
+      const inputCta = smartbar.querySelector("input-cta");
+      const mozButton = inputCta.shadowRoot.querySelector("moz-button");
+      const button = mozButton.shadowRoot.querySelector("button");
+      button.click();
+    } else {
+      const inputField = smartbar.inputField;
+      inputField.focus();
+      EventUtils.synthesizeKey("KEY_Enter", {}, content);
+    }
   });
 }
 
@@ -632,6 +641,35 @@ async function getSmartbarContextChips(browser) {
       ".smartbar-context-chips-header"
     );
     return chipContainer.websites.map(w => ({ url: w.url, label: w.label }));
+  });
+}
+
+
+
+
+
+
+
+async function getSidebarChatMessages(sidebarBrowser) {
+  const aiWindow = await TestUtils.waitForCondition(
+    () => sidebarBrowser.contentDocument?.querySelector("ai-window"),
+    "Wait for ai-window element"
+  );
+  const aichatBrowser = await TestUtils.waitForCondition(
+    () => aiWindow.shadowRoot?.querySelector("#aichat-browser"),
+    "Wait for #aichat-browser element"
+  );
+  return SpecialPowers.spawn(aichatBrowser, [], async () => {
+    const contentEl = await ContentTaskUtils.waitForCondition(
+      () => content.document.querySelector("ai-chat-content"),
+      "Wait for ai-chat-content element"
+    );
+    await contentEl.updateComplete;
+    const messageEls = contentEl.shadowRoot.querySelectorAll("ai-chat-message");
+    return Array.from(messageEls, el => ({
+      role: el.role,
+      message: el.message,
+    }));
   });
 }
 
