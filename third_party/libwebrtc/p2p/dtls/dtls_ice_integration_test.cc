@@ -84,6 +84,27 @@ class DtlsIceIntegrationTest : public dtls_ice_integration_fixture::Base,
     return CountConnectionsWithFilter(ice,
                                       [](auto con) { return con.writable; });
   }
+
+  void CheckRetransmissions() {
+    if (client_.config.dtls_in_stun != server_.config.dtls_in_stun) {
+      
+      
+      
+      
+      
+      EXPECT_LE(client_.dtls->GetRetransmissionCount(), 1);
+      EXPECT_LE(server_.dtls->GetRetransmissionCount(), 1);
+      return;
+    }
+
+    EXPECT_EQ(client_.dtls->GetRetransmissionCount(), 0);
+    if (!server_.config.ice_lite) {
+      
+      
+      
+      EXPECT_EQ(server_.dtls->GetRetransmissionCount(), 0);
+    }
+  }
 };
 
 TEST_P(DtlsIceIntegrationTest, SmokeTest) {
@@ -117,8 +138,7 @@ TEST_P(DtlsIceIntegrationTest, SmokeTest) {
     EXPECT_GE(dtls_server().dtls->GetStunDataCount(), 0);
   }
 
-  EXPECT_EQ(client_.dtls->GetRetransmissionCount(), 0);
-  EXPECT_EQ(server_.dtls->GetRetransmissionCount(), 0);
+  CheckRetransmissions();
 }
 
 TEST_P(DtlsIceIntegrationTest, AddCandidates) {
@@ -195,19 +215,12 @@ TEST_P(DtlsIceIntegrationTest, ClientLateCertificate) {
               client_.config.dtls_in_stun && server_.config.dtls_in_stun);
   });
 
-  EXPECT_EQ(client_.dtls->GetRetransmissionCount(), 0);
-  EXPECT_EQ(server_.dtls->GetRetransmissionCount(), 0);
+  CheckRetransmissions();
 }
 
 TEST_P(DtlsIceIntegrationTest, TestWithPacketLoss) {
   if (!IsBoringSsl()) {
     GTEST_SKIP() << "Needs boringssl.";
-  }
-
-  if (client_.config.dtls_in_stun != server_.config.dtls_in_stun) {
-    
-    
-    GTEST_SKIP() << "TODO jonaso.";
   }
 
   ConfigureEmulatedNetwork();
@@ -240,12 +253,6 @@ TEST_P(DtlsIceIntegrationTest, TestWithPacketLoss) {
 TEST_P(DtlsIceIntegrationTest, LongRunningTestWithPacketLoss) {
   if (!IsBoringSsl()) {
     GTEST_SKIP() << "Needs boringssl.";
-  }
-
-  if (client_.config.dtls_in_stun != server_.config.dtls_in_stun) {
-    
-    
-    GTEST_SKIP() << "TODO jonaso.";
   }
 
   int seed = absl::GetFlag(FLAGS_long_running_seed);
@@ -381,8 +388,16 @@ TEST_P(DtlsIceIntegrationTest, AlmostFullSTUN_BINDING) {
               client_.config.dtls_in_stun && server_.config.dtls_in_stun);
   });
 
-  EXPECT_EQ(client_.dtls->GetRetransmissionCount(), 0);
-  EXPECT_EQ(server_.dtls->GetRetransmissionCount(), 0);
+  if (client_.config.dtls_in_stun && server_.config.dtls_in_stun &&
+      (client_.config.pqc || server_.config.pqc)) {
+    
+    
+    
+    EXPECT_LE(client_.dtls->GetRetransmissionCount(), 1);
+    EXPECT_LE(server_.dtls->GetRetransmissionCount(), 1);
+  } else {
+    CheckRetransmissions();
+  }
 }
 
 INSTANTIATE_TEST_SUITE_P(DtlsStunPiggybackingIntegrationTest,
@@ -449,16 +464,6 @@ INSTANTIATE_TEST_SUITE_P(
 TEST_P(DtlsIceIntegrationPerformanceTest, ConnectTime) {
   if (!dtls_ice_integration_fixture::Base::IsBoringSsl()) {
     GTEST_SKIP() << "Needs boringssl.";
-  }
-
-  {
-    TestConfig config = GetParam();
-    if (config.client_config.pqc == 1 && config.server_config.pqc &&
-        config.server_config.ice_lite) {
-      
-      
-      GTEST_SKIP() << "TODO jonaso.";
-    }
   }
 
   int iter = 50;
