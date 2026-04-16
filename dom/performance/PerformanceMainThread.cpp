@@ -9,6 +9,7 @@
 #include "PerformanceInteractionMetrics.h"
 #include "PerformanceNavigation.h"
 #include "PerformancePaintTiming.h"
+#include "SharedLcpMarkerState.h"
 #include "js/GCAPI.h"
 #include "js/PropertyAndElement.h"  
 #include "jsapi.h"
@@ -123,26 +124,25 @@ PerformanceMainThread::PerformanceMainThread(nsPIDOMWindowInner* aWindow,
     
     
     
-    
-    
-    
-    uintptr_t self = reinterpret_cast<uintptr_t>(this);
+    RefPtr<SharedLcpMarkerState> sharedLcpMarkerState =
+        aDOMTiming->GetSharedLcpMarkerState();
+    mLCPCallbackKey = reinterpret_cast<uintptr_t>(sharedLcpMarkerState.get());
     profiler_add_state_change_callback(
         
         
         ProfilingState::Pausing,
-        [self, innerWindowID](ProfilingState aProfilingState) {
-          const PerformanceMainThread* selfPtr =
-              reinterpret_cast<const PerformanceMainThread*>(self);
-
-          selfPtr->GetDOMTiming()->MaybeAddLCPProfilerMarker(innerWindowID);
+        [sharedLcpMarkerState = std::move(sharedLcpMarkerState),
+         innerWindowID](ProfilingState aProfilingState) {
+          sharedLcpMarkerState->MaybeAddLCPProfilerMarker(innerWindowID);
         },
-        self);
+        mLCPCallbackKey);
   }
 }
 
 PerformanceMainThread::~PerformanceMainThread() {
-  profiler_remove_state_change_callback(reinterpret_cast<uintptr_t>(this));
+  if (mLCPCallbackKey) {
+    profiler_remove_state_change_callback(mLCPCallbackKey);
+  }
   mozilla::DropJSObjects(this);
 }
 

@@ -210,6 +210,7 @@ class PerformanceMainThread final : public Performance,
   
   
   TextFrameUnions mTextFrameUnions;
+  uintptr_t mLCPCallbackKey = 0;
 };
 
 inline void ImplCycleCollectionTraverse(
