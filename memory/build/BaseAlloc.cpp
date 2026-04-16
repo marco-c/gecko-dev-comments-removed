@@ -6,6 +6,8 @@
 
 #include <cstring>
 
+#include "mozilla/Saturate.h"
+
 #include "Globals.h"
 
 using namespace mozilla;
@@ -46,26 +48,56 @@ base_alloc_size_t BaseAlloc::size_round_up(base_alloc_size_t aSize) {
 }
 
 unsigned BaseAlloc::get_list_index_for_size(base_alloc_size_t aSize) {
-  
-  
-  
-  
-  
+  if constexpr (kBaseQuantum * 2 >= kCacheLineSize) {
+    return aSize / kBaseQuantum - 1;
+  } else {
+    
+    
+    
+    return []<typename T>(T aSize) -> unsigned {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
 
-  
-  
-  
-  
-  
-  unsigned index = aSize / kBaseQuantum;
+      
+      
+      
+      aSize = (SaturateUint32(aSize) - kBaseMinimumSize).value();
 
-  
-  
-  if (kBaseQuantum == sizeof(BaseAllocMetadata)) {
-    index--;
+      
+      
+      unsigned cache_line = aSize / kCacheLineSize;
+
+      
+      unsigned offset = (aSize % kCacheLineSize) / kBaseQuantum;
+
+      
+      
+      
+      
+      
+      
+      if (offset > 3) {
+        cache_line++;
+        offset = 0;
+      }
+
+      
+      return cache_line * 3 + offset;
+    }(aSize);
   }
-
-  return index;
 }
 
 void BaseAlloc::free(void* aPtr) MOZ_EXCLUDES(mMutex) {
