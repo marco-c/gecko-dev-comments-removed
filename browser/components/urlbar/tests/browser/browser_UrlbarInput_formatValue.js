@@ -70,9 +70,6 @@ add_task(async function () {
   await testVal("<https://mozilla.com:mozilla.com@>mozilla.com");
   await testVal("<mozilla.com:mozilla.com@>mozilla.com");
 
-  await testVal("<ftp.>mozilla.org");
-  await testVal("<ftp://ftp.>mozilla.org");
-
   await testVal("<https://sub.>mozilla.org");
   await testVal("<https://sub1.sub2.sub3.>mozilla.org");
   await testVal("<https://user:pass@sub1.sub2.sub3.>mozilla.org");
@@ -145,6 +142,7 @@ add_task(async function () {
   }
 
   await testVal("mailto:admin@mozilla.org");
+  await testVal("ftp://ftp.mozilla.org");
   await testVal("gopher://mozilla.org/");
   await testVal("about:config");
   await testVal("jar:http://mozilla.org/example.jar!/");
@@ -153,6 +151,10 @@ add_task(async function () {
   await testVal("foo+://mozilla.org/");
   await testVal("foo.://mozilla.org/");
   await testVal("foo-://mozilla.org/");
+
+  await testVal("<https://>ドメイン.テスト");
+  await testVal("<https://サブ.>ドメイン.テスト");
+  await testVal("<https://>дzz.ею");
 
   
   Services.prefs.setBoolPref(PREF_FORMATTING, false);
