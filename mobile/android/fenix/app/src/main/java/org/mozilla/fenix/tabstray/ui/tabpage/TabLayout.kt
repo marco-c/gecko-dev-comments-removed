@@ -79,7 +79,6 @@ import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.ThemedValue
 import org.mozilla.fenix.theme.ThemedValueProvider
 import kotlin.math.max
-import kotlin.math.roundToInt
 
 // Key for the span item at the bottom of the tray, used to make the item not reorderable.
 const val SPAN_ITEM_KEY = "span"
@@ -98,8 +97,9 @@ private const val NUM_COLUMNS_TAB_GRID_PORTRAIT_THRESHOLD_1 = 2
 private const val NUM_COLUMNS_TAB_GRID_PORTRAIT_THRESHOLD_2 = 3
 private const val NUM_COLUMNS_TAB_GRID_PORTRAIT_THRESHOLD_3 = 4
 
-private const val NUM_COLUMNS_TAB_GRID_LANDSCAPE_THRESHOLD_1 = 3
-private const val NUM_COLUMNS_TAB_GRID_LANDSCAPE_THRESHOLD_2 = 4
+private const val NUM_COLUMNS_TAB_GRID_LANDSCAPE_THRESHOLD_1 = 4
+private const val NUM_COLUMNS_TAB_GRID_LANDSCAPE_THRESHOLD_2 = 5
+
 private val TabListPadding = 16.dp
 private val TabListItemCornerRadius = 12.dp
 private val TabListLastItemShape = RoundedCornerShape(
@@ -111,6 +111,9 @@ private val TabListFirstItemShape = RoundedCornerShape(
     topStart = TabListItemCornerRadius,
     topEnd = TabListItemCornerRadius,
 )
+
+private val TabListSingleItemShape = RoundedCornerShape(TabListItemCornerRadius)
+private val TabListBorderMiddleItemShape = RoundedCornerShape(4.dp)
 
 /**
  * Top-level UI for displaying a list of tabs.
@@ -204,7 +207,7 @@ private fun TabGrid(
     header: (@Composable () -> Unit)? = null,
 ) {
     val gridState = rememberLazyGridState(initialFirstVisibleItemIndex = selectedTabIndex)
-    val tabListBottomPadding = dimensionResource(id = R.dimen.tab_tray_list_bottom_padding)
+    val tabGridBottomPadding = dimensionResource(id = R.dimen.tab_tray_grid_bottom_padding)
     val isInMultiSelectMode = selectionMode is TabsTrayState.Mode.Select
 
     val reorderState = createGridReorderState(
@@ -260,7 +263,6 @@ private fun TabGrid(
                     tabsTrayItem = tab,
                     index = index,
                     thumbnailSizePx = thumbnailSizePx,
-                    groupThumbnailSizePx = groupThumbnailSizePx,
                     hasHeader = header != null,
                     isSelected = tab.id == selectedTabId,
                     isInMultiSelectMode = isInMultiSelectMode,
@@ -273,7 +275,7 @@ private fun TabGrid(
             }
 
             item(key = SPAN_ITEM_KEY, span = { GridItemSpan(maxLineSpan) }) {
-                Spacer(modifier = Modifier.height(tabListBottomPadding))
+                Spacer(modifier = Modifier.height(tabGridBottomPadding))
             }
         }
     }
@@ -285,7 +287,6 @@ private fun LazyGridItemScope.TabGridItemContent(
     tabsTrayItem: TabsTrayItem,
     index: Int,
     thumbnailSizePx: Int,
-    groupThumbnailSizePx: Int,
     hasHeader: Boolean,
     isSelected: Boolean,
     isInMultiSelectMode: Boolean,
@@ -339,7 +340,6 @@ private fun LazyGridItemScope.TabGridItemContent(
                     group = tabsTrayItem,
                     selectionState = selectionState,
                     clickHandler = TabsTrayItemClickHandler(onClick = onItemClick),
-                    thumbnailSizePx = groupThumbnailSizePx,
                 )
             }
         }
@@ -361,13 +361,6 @@ private val BoxWithConstraintsScope.thumbnailSizePx: Int
         val thumbnailWidth = constraints.maxWidth - with(density) { totalSpacing.roundToPx() }
         val thumbnailHeight = (thumbnailWidth / gridItemAspectRatio).toInt()
         return max(thumbnailWidth, thumbnailHeight)
-    }
-
-private val BoxWithConstraintsScope.groupThumbnailSizePx: Int
-    @ReadOnlyComposable
-    @Composable
-    get() {
-        return (thumbnailSizePx / 4.0).roundToInt()
     }
 
 @Suppress("LongParameterList", "LongMethod", "CognitiveComplexMethod")
@@ -440,11 +433,15 @@ private fun TabList(
                 }
             }
 
+            // As groups are not shown, this impacts the visible index of the tab being shown,
+            // which is needed to know the correct shape
+            // todo This logic should be updated when TabList is supported for groups
+            val firstVisibleIndex = tabs.indexOfFirst { it is TabsTrayItem.Tab }
+            val lastVisibleIndex = tabs.indexOfLast { it is TabsTrayItem.Tab }
             itemsIndexed(
                 items = tabs,
                 key = { _, tab -> tab.id },
             ) { index, tab ->
-
                 when (tab) {
                     is TabsTrayItem.Tab -> {
                         DragItemContainer(
@@ -452,23 +449,19 @@ private fun TabList(
                             position = index + if (header != null) 1 else 0,
                             key = tab.id,
                         ) {
+                            val tabShapeInfo = getTabShapeInfo(
+                                firstVisibleIndex = firstVisibleIndex,
+                                lastVisibleIndex = lastVisibleIndex,
+                                itemIndex = index,
+                                size = tabs.size,
+                            )
                             TabListTabItem(
                                 tab = tab,
                                 modifier = Modifier
-                                    .thenConditional(
-                                        Modifier.clip(TabListLastItemShape),
-                                        { index == tabs.size - 1 },
-                                    )
-                                    .thenConditional(
-                                        Modifier.clip(TabListFirstItemShape),
-                                        { index == 0 },
-                                    )
-                                    .thenConditional(
-                                        modifier = Modifier.border(
-                                            border = tabItemBorderFocused(),
-                                            shape = tabListItemBorderShape(index, tabs.size),
-                                        ),
-                                        { tab.id == selectedTabId },
+                                    .tabListItemShapeStyling(
+                                        tabShapeInfo = tabShapeInfo,
+                                        tabId = tab.id,
+                                        selectedTabId = selectedTabId,
                                     ),
                                 selectionState = TabsTrayItemSelectionState(
                                     isFocused = tab.id == selectedTabId,
@@ -739,11 +732,27 @@ private fun generateFakeTabsList(
     }
 }
 
-private fun tabListItemBorderShape(index: Int, tabCount: Int): RoundedCornerShape {
-    return when (index) {
-        0 -> TabListFirstItemShape
-        tabCount - 1 -> TabListLastItemShape
-        else -> RoundedCornerShape(4.dp)
+/**
+ * Data class to store a TabList's item shape information.
+ * @property borderShape: The [RoundedCornerShape] representing the item's border
+ * @property clipTabToFit: Whether the TabItem will be clipped to fit the border shape
+ */
+private data class TabListShapeInfo(
+    val borderShape: RoundedCornerShape,
+    val clipTabToFit: Boolean,
+)
+
+private fun getTabShapeInfo(
+    firstVisibleIndex: Int,
+    lastVisibleIndex: Int,
+    itemIndex: Int,
+    size: Int,
+): TabListShapeInfo {
+    return when {
+        size == 1 -> TabListShapeInfo(TabListSingleItemShape, true)
+        firstVisibleIndex == itemIndex -> TabListShapeInfo(TabListFirstItemShape, true)
+        lastVisibleIndex == itemIndex -> TabListShapeInfo(TabListLastItemShape, true)
+        else -> TabListShapeInfo(TabListBorderMiddleItemShape, false)
     }
 }
 
@@ -762,3 +771,23 @@ private fun defaultTabLayoutContentPadding(): PaddingValues = PaddingValues(
     },
     vertical = 24.dp,
 )
+
+@Composable
+private fun Modifier.tabListItemShapeStyling(
+    tabShapeInfo: TabListShapeInfo,
+    tabId: String,
+    selectedTabId: String?,
+): Modifier {
+    return this
+        .thenConditional(
+            Modifier.clip(tabShapeInfo.borderShape),
+            { tabShapeInfo.clipTabToFit },
+        )
+        .thenConditional(
+            modifier = Modifier.border(
+                border = tabItemBorderFocused(),
+                shape = tabShapeInfo.borderShape,
+            ),
+            { tabId == selectedTabId },
+        )
+}
