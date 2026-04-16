@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-
+<!-- Copyright © 2016 Chromium authors and World Wide Web Consortium, (Massachusetts Institute of Technology, ERCIM, Keio University, Beihang). -->
 <html>
     <head>
         <title>SourceBuffer.appendBuffer() test cases</title>
@@ -375,6 +375,27 @@
                   test.done();
               });
           }, "Test appendBuffer with partial init segments.");
+
+          mediasource_test(function(test, mediaElement, mediaSource)
+          {
+              let sourceBuffer = mediaSource.addSourceBuffer('audio/mp4; codecs="opus,opus"');
+
+              MediaSourceUtil.loadBinaryData(
+                  test, 'mp4/test-two-audiotracks-opus.mp4', function(mediaData) {
+                  test.expectEvent(sourceBuffer, "updateend", "first append ended.");
+                  sourceBuffer.appendBuffer(mediaData);
+
+                  // We require two appends to test the audio-video track count comparison logic.
+                  test.waitForExpectedEvents(function() {
+                      test.expectEvent(sourceBuffer, "updateend", "second append ended.");
+                      sourceBuffer.appendBuffer(mediaData);
+                  });
+
+                  test.waitForExpectedEvents(function() {
+                      test.done();
+                  });
+              });
+          }, "Test appendBuffer more Audio tracks than Video tracks");
 
           mediasource_testafterdataloaded(function(test, mediaElement, mediaSource, segmentInfo, sourceBuffer, mediaData)
           {
