@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef GMPServiceChild_h_
 #define GMPServiceChild_h_
 
@@ -53,7 +52,7 @@ class GeckoMediaPluginServiceChild : public GeckoMediaPluginService {
   void BeginShutdown();
 
  protected:
-  void InitializePlugins(nsISerialEventTarget*) override {
+  void InitializePlugins(nsISerialEventTarget*) MOZ_REQUIRES(mMutex) override {
     
   }
 

@@ -73,8 +73,11 @@ class GeckoMediaPluginServiceParent final
 
   nsresult ForgetThisBaseDomainNative(const nsAString& aBaseDomain);
 
+  bool CreateGMPServiceParent(ipc::Endpoint<PGMPServiceParent>&& aGMPService);
+
   
-  void ServiceUserCreated(GMPServiceParent* aServiceParent);
+  void ServiceUserCreated(GMPServiceParent* aServiceParent)
+      MOZ_REQUIRES(mMutex);
   void ServiceUserDestroyed(GMPServiceParent* aServiceParent);
 
   
@@ -107,6 +110,7 @@ class GeckoMediaPluginServiceParent final
 
   virtual ~GeckoMediaPluginServiceParent();
 
+  void ClearTemporaryStorage();
   void ClearStorage();
 
   already_AddRefed<GMPParent> SelectPluginForAPI(
@@ -148,7 +152,8 @@ class GeckoMediaPluginServiceParent final
   friend class GMPParent;
   void ReAddOnGMPThread(const RefPtr<GMPParent>& aOld);
   void PluginTerminated(const RefPtr<GMPParent>& aOld);
-  void InitializePlugins(nsISerialEventTarget* GMPThread) override;
+  void InitializePlugins(nsISerialEventTarget* GMPThread)
+      MOZ_REQUIRES(mMutex) override;
   RefPtr<GenericPromise> LoadFromEnvironment();
   RefPtr<GenericPromise> AddOnGMPThread(nsString aDirectory);
 
@@ -233,8 +238,8 @@ class GeckoMediaPluginServiceParent final
 
   
   
-  Monitor mInitPromiseMonitor;
-  MozMonitoredPromiseHolder<GenericNonExclusivePromise> mInitPromise;
+  MozPromiseHolder<GenericNonExclusivePromise> mInitPromise
+      MOZ_GUARDED_BY(mMutex);
   bool mLoadPluginsFromDiskComplete;
 
   
@@ -280,8 +285,6 @@ class GMPServiceParent final : public PGMPServiceParent {
                                   const nsAString& aTopLevelOrigin,
                                   const nsAString& aGMPName,
                                   GetGMPNodeIdResolver&& aResolve) override;
-
-  static bool Create(Endpoint<PGMPServiceParent>&& aGMPService);
 
   ipc::IPCResult RecvLaunchGMP(const NodeIdVariant& aNodeIdVariant,
                                const nsACString& aAPI,

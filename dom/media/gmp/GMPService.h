@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef GMPService_h_
 #define GMPService_h_
 
@@ -95,7 +94,8 @@ class GeckoMediaPluginService : public mozIGeckoMediaPluginService,
 #endif
   }
 
-  virtual void InitializePlugins(nsISerialEventTarget* aGMPThread) = 0;
+  virtual void InitializePlugins(nsISerialEventTarget* aGMPThread)
+      MOZ_REQUIRES(mMutex) = 0;
 
   virtual RefPtr<GetGMPContentParentPromise> GetContentParent(
       GMPCrashHelper* aHelper, const NodeIdVariant& aNodeIdVariant,
