@@ -13,20 +13,21 @@
 
 
 
-#include <inttypes.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-
+#include <cinttypes>
+#include <cstddef>
+#include <cstdint>
+#include <cstdio>
+#include <limits>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
+#include "api/audio/audio_view.h"
 #include "api/function_view.h"
 #include "common_audio/channel_buffer.h"
-#include "common_audio/include/audio_util.h"
 #include "common_audio/wav_file.h"
 #include "modules/audio_processing/test/protobuf_utils.h"
 #include "rtc_base/checks.h"
@@ -506,9 +507,6 @@ int do_main(int argc, char* argv[]) {
       PRINT_CONFIG(aec_drift_compensation_enabled);
       PRINT_CONFIG(aec_extended_filter_enabled);
       PRINT_CONFIG(aec_suppression_level);
-      PRINT_CONFIG(aecm_enabled);
-      PRINT_CONFIG(aecm_comfort_noise_enabled);
-      PRINT_CONFIG(aecm_routing_mode);
       PRINT_CONFIG(agc_enabled);
       PRINT_CONFIG(agc_mode);
       PRINT_CONFIG(agc_limiter_enabled);
