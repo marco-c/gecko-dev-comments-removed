@@ -149,6 +149,20 @@ inline void ImplCycleCollectionTraverse(
                            aFlags);
 }
 
+static bool IsScopeOwner(const nsIContent* aContent);
+static nsIContent* FindScopeOwner(nsIContent* aContent);
+static nsGenericHTMLElement* GetAssociatedPopoverFromInvoker(
+    const nsIContent* aContent);
+
+static nsIContent* GetOpenPopoverInvoker(const nsIContent* aContent) {
+  if (const auto* popover = Element::FromNode(aContent)) {
+    if (popover->IsPopoverOpen()) {
+      return popover->GetPopoverData()->GetInvoker().get();
+    }
+  }
+  return nullptr;
+}
+
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(nsFocusManager)
   NS_INTERFACE_MAP_ENTRY(nsIFocusManager)
   NS_INTERFACE_MAP_ENTRY(nsIObserver)
@@ -3511,7 +3525,7 @@ nsresult nsFocusManager::DetermineElementToMoveFocus(
     }
     return GetNextTabbableContent(presShell, startContent, nullptr,
                                   startContent, true, 1, false, false,
-                                  aNavigateByKey, false, false, aNextContent);
+                                  aNavigateByKey, false, aNextContent);
   }
   if (aType == MOVEFOCUS_LAST) {
     if (!aStartContent) {
@@ -3519,7 +3533,7 @@ nsresult nsFocusManager::DetermineElementToMoveFocus(
     }
     return GetNextTabbableContent(presShell, startContent, nullptr,
                                   startContent, false, 0, false, false,
-                                  aNavigateByKey, false, false, aNextContent);
+                                  aNavigateByKey, false, aNextContent);
   }
 
   bool forward = (aType == MOVEFOCUS_FORWARD || aType == MOVEFOCUS_FORWARDDOC ||
@@ -3711,7 +3725,7 @@ nsresult nsFocusManager::DetermineElementToMoveFocus(
           MOZ_KnownLive(skipOriginalContentCheck ? nullptr
                                                  : originalStartContent.get()),
           startContent, forward, tabIndex, ignoreTabIndex,
-          forDocumentNavigation, aNavigateByKey, false, false,
+          forDocumentNavigation, aNavigateByKey, false,
           getter_AddRefs(nextFocus));
       NS_ENSURE_SUCCESS(rv, rv);
       if (rv == NS_SUCCESS_DOM_NO_OPERATION) {
@@ -3892,6 +3906,9 @@ class MOZ_STACK_CLASS ScopedContentTraversal {
   ScopedContentTraversal(nsIContent* aStartContent, nsIContent* aOwner)
       : mCurrent(aStartContent), mOwner(aOwner) {
     MOZ_ASSERT(aStartContent);
+    MOZ_ASSERT(IsScopeOwner(aOwner));
+    MOZ_ASSERT_IF(aOwner != aStartContent,
+                  aOwner == FindScopeOwner(aStartContent));
   }
 
   void Next();
@@ -3908,34 +3925,59 @@ class MOZ_STACK_CLASS ScopedContentTraversal {
   nsIContent* mOwner;
 };
 
+
+
+
+static nsIContent* GetNextNonPopover(StyleChildrenIterator& aIter) {
+  while (nsIContent* child = aIter.GetNextChild()) {
+    if (!GetOpenPopoverInvoker(child)) {
+      return child;
+    }
+  }
+  return nullptr;
+}
+
 void ScopedContentTraversal::Next() {
   MOZ_ASSERT(mCurrent);
 
   
-  if (!IsHostOrSlot(mCurrent) || mCurrent == mOwner) {
+  if (mCurrent == mOwner) {
+    if (IsHostOrSlot(mCurrent)) {
+      StyleChildrenIterator iter(mCurrent);
+      SetCurrent(GetNextNonPopover(iter));
+      return;
+    }
+
+    SetCurrent(GetAssociatedPopoverFromInvoker(mCurrent));
+    MOZ_ASSERT(mCurrent);
+    return;
+  }
+
+  
+  if (!IsScopeOwner(mCurrent)) {
     StyleChildrenIterator iter(mCurrent);
-    nsIContent* child = iter.GetNextChild();
-    if (child) {
+    if (nsIContent* child = GetNextNonPopover(iter)) {
       SetCurrent(child);
       return;
     }
   }
 
-  
-  if (mCurrent == mOwner) {
-    SetCurrent(nullptr);
-    return;
-  }
-
   nsIContent* current = mCurrent;
   while (true) {
+    
+    
+    if (GetOpenPopoverInvoker(current) == mOwner) {
+      SetCurrent(nullptr);
+      return;
+    }
+
     
     nsIContent* parent = current->GetFlattenedTreeParent();
     StyleChildrenIterator parentIter(parent);
     parentIter.Seek(current);
 
     
-    if (nsIContent* next = parentIter.GetNextChild()) {
+    if (nsIContent* next = GetNextNonPopover(parentIter)) {
       SetCurrent(next);
       return;
     }
@@ -3950,6 +3992,16 @@ void ScopedContentTraversal::Next() {
   }
 }
 
+
+static nsIContent* GetPreviousNonPopover(StyleChildrenIterator& aIter) {
+  while (nsIContent* child = aIter.GetPreviousChild()) {
+    if (!GetOpenPopoverInvoker(child)) {
+      return child;
+    }
+  }
+  return nullptr;
+}
+
 void ScopedContentTraversal::Prev() {
   MOZ_ASSERT(mCurrent);
 
@@ -3957,47 +4009,52 @@ void ScopedContentTraversal::Prev() {
   nsIContent* last;
   if (mCurrent == mOwner) {
     
-    StyleChildrenIterator ownerIter(mOwner, false );
-    last = ownerIter.GetPreviousChild();
+    if (IsHostOrSlot(mCurrent)) {
+      StyleChildrenIterator ownerIter(mCurrent, false );
+      last = GetPreviousNonPopover(ownerIter);
+    } else {
+      last = GetAssociatedPopoverFromInvoker(mCurrent);
+      MOZ_ASSERT(last);
+    }
 
     parent = last;
   } else {
-    
-    parent = mCurrent->GetFlattenedTreeParent();
-    StyleChildrenIterator parentIter(parent);
-    parentIter.Seek(mCurrent);
+    parent = GetOpenPopoverInvoker(mCurrent);
+    if (parent) {
+      MOZ_ASSERT(parent == mOwner);
+      
+      
+      last = nullptr;
+    } else {
+      
+      parent = mCurrent->GetFlattenedTreeParent();
+      StyleChildrenIterator parentIter(parent);
+      parentIter.Seek(mCurrent);
 
-    
-    last = parentIter.GetPreviousChild();
+      
+      last = GetPreviousNonPopover(parentIter);
+    }
   }
 
   while (last) {
     parent = last;
-    if (IsHostOrSlot(parent)) {
+    if (IsScopeOwner(parent)) {
       
       break;
     }
 
     
     StyleChildrenIterator iter(parent, false );
-    last = iter.GetPreviousChild();
+    last = GetPreviousNonPopover(iter);
   }
 
   
   SetCurrent(parent == mOwner ? nullptr : parent);
 }
 
-static bool IsOpenPopoverWithInvoker(const nsIContent* aContent) {
-  if (const auto* popover = Element::FromNode(aContent)) {
-    return popover && popover->IsPopoverOpen() &&
-           popover->GetPopoverData()->GetInvoker();
-  }
-  return false;
-}
-
 static nsGenericHTMLElement* GetAssociatedPopoverFromInvoker(
-    nsIContent* aContent) {
-  Element* invoker = Element::FromNode(aContent);
+    const nsIContent* aContent) {
+  const Element* invoker = Element::FromNode(aContent);
   if (!invoker) {
     return nullptr;
   }
@@ -4012,13 +4069,11 @@ static nsGenericHTMLElement* GetAssociatedPopoverFromInvoker(
 
 
 
+
 static bool IsScopeOwner(const nsIContent* aContent) {
   return aContent && (IsHostOrSlot(aContent) || aContent->IsDocument() ||
-                      IsOpenPopoverWithInvoker(aContent));
+                      !!GetAssociatedPopoverFromInvoker(aContent));
 }
-
-
-
 
 
 
@@ -4028,15 +4083,18 @@ static bool IsScopeOwner(const nsIContent* aContent) {
 static nsIContent* FindScopeOwner(nsIContent* aContent) {
   nsIContent* currentContent = aContent;
   while (currentContent) {
-    nsIContent* parent = currentContent->GetFlattenedTreeParent();
+    
+    
+    if (nsIContent* invoker = GetOpenPopoverInvoker(currentContent)) {
+      return invoker;
+    }
 
     
     
     
     
     
-    
-    
+    nsIContent* parent = currentContent->GetFlattenedTreeParent();
     if (IsScopeOwner(parent)) {
       return parent;
     }
@@ -4054,9 +4112,9 @@ static nsIContent* FindScopeOwner(nsIContent* aContent) {
 
 
 
-static int32_t HostOrSlotTabIndexValue(const nsIContent* aContent,
+static int32_t ScopeOwnerTabIndexValue(const nsIContent* aContent,
                                        bool* aIsFocusable = nullptr) {
-  MOZ_ASSERT(IsHostOrSlot(aContent));
+  MOZ_ASSERT(IsScopeOwner(aContent));
 
   if (aIsFocusable) {
     nsIFrame* frame = aContent->GetPrimaryFrame();
@@ -4082,9 +4140,8 @@ nsIContent* nsFocusManager::GetNextTabbableContentInScope(
     bool aIgnoreTabIndex, bool aForDocumentNavigation, bool aNavigateByKey,
     bool aSkipOwner, bool aReachedToEndForDocumentNavigation) {
   MOZ_ASSERT(aOwner, "aOwner must not be null");
-  MOZ_ASSERT(
-      IsHostOrSlot(aOwner) || IsOpenPopoverWithInvoker(aOwner),
-      "Scope owner should be host, slot or an open popover with invoker set.");
+  MOZ_ASSERT(IsScopeOwner(aOwner),
+             "Scope owner should be host, slot or popover invoker set");
 
   
   MOZ_ASSERT_IF(aCurrentTabIndex < 0, aIgnoreTabIndex);
@@ -4133,8 +4190,8 @@ nsIContent* nsFocusManager::GetNextTabbableContentInScope(
       }
 
       int32_t tabIndex = 0;
-      if (IsHostOrSlot(iterContent)) {
-        tabIndex = HostOrSlotTabIndexValue(iterContent);
+      if (IsScopeOwner(iterContent)) {
+        tabIndex = ScopeOwnerTabIndexValue(iterContent);
       } else {
         nsIFrame* frame = iterContent->GetPrimaryFrame();
         if (!frame) {
@@ -4146,7 +4203,7 @@ nsIContent* nsFocusManager::GetNextTabbableContentInScope(
         continue;
       }
 
-      if (!IsHostOrSlot(iterContent)) {
+      if (!IsScopeOwner(iterContent)) {
         nsCOMPtr<nsIContent> elementInFrame;
         bool checkSubDocument = true;
         if (aForDocumentNavigation &&
@@ -4239,8 +4296,8 @@ nsIContent* nsFocusManager::GetNextTabbableContentInAncestorScopes(
   nsCOMPtr<nsIContent> startContent = aStartContent;
   while (IsScopeOwner(owner)) {
     int32_t tabIndex = 0;
-    if (IsHostOrSlot(startContent)) {
-      tabIndex = HostOrSlotTabIndexValue(startContent);
+    if (IsScopeOwner(startContent)) {
+      tabIndex = ScopeOwnerTabIndexValue(startContent);
     } else if (nsIFrame* frame = startContent->GetPrimaryFrame()) {
       tabIndex = frame->IsFocusable().mTabIndex;
     } else {
@@ -4261,8 +4318,8 @@ nsIContent* nsFocusManager::GetNextTabbableContentInAncestorScopes(
   
   
   aStartContent = startContent;
-  if (IsHostOrSlot(startContent)) {
-    *aCurrentTabIndex = HostOrSlotTabIndexValue(startContent);
+  if (IsScopeOwner(startContent)) {
+    *aCurrentTabIndex = ScopeOwnerTabIndexValue(startContent);
   } else if (nsIFrame* frame = startContent->GetPrimaryFrame()) {
     *aCurrentTabIndex = frame->IsFocusable().mTabIndex;
   } else {
@@ -4278,20 +4335,10 @@ nsIContent* nsFocusManager::GetNextTabbableContentInAncestorScopes(
 
 static nsIContent* GetTopLevelScopeOwner(nsIContent* aContent) {
   nsIContent* topLevelScopeOwner = nullptr;
-  while (aContent) {
-    if (HTMLSlotElement* slot = aContent->GetAssignedSlot()) {
-      aContent = slot;
-      topLevelScopeOwner = aContent;
-    } else if (ShadowRoot* shadowRoot = aContent->GetContainingShadow()) {
-      aContent = shadowRoot->Host();
-      topLevelScopeOwner = aContent;
-    } else {
-      aContent = aContent->GetParent();
-      if (aContent && (HTMLSlotElement::FromNode(aContent) ||
-                       IsOpenPopoverWithInvoker(aContent))) {
-        topLevelScopeOwner = aContent;
-      }
-    }
+  nsIContent* currentOwner = FindScopeOwner(aContent);
+  while (currentOwner) {
+    topLevelScopeOwner = currentOwner;
+    currentOwner = FindScopeOwner(currentOwner);
   }
 
   return topLevelScopeOwner;
@@ -4301,8 +4348,8 @@ nsresult nsFocusManager::GetNextTabbableContent(
     PresShell* aPresShell, nsIContent* aRootContent,
     nsIContent* aOriginalStartContent, nsIContent* aStartContent, bool aForward,
     int32_t aCurrentTabIndex, bool aIgnoreTabIndex, bool aForDocumentNavigation,
-    bool aNavigateByKey, bool aSkipPopover,
-    bool aReachedToEndForDocumentNavigation, nsIContent** aResultContent) {
+    bool aNavigateByKey, bool aReachedToEndForDocumentNavigation,
+    nsIContent** aResultContent) {
   *aResultContent = nullptr;
 
   if (!aStartContent) {
@@ -4316,9 +4363,8 @@ nsresult nsFocusManager::GetNextTabbableContent(
   LOGCONTENTNAVIGATION("GetNextTabbable: %s", startContent);
   LOGFOCUSNAVIGATION(("  tabindex: %d", aCurrentTabIndex));
 
-  
-  
-  if (aForward && IsHostOrSlot(startContent)) {
+  if (aForward && IsScopeOwner(startContent)) {
+    
     nsIContent* contentToFocus = GetNextTabbableContentInScope(
         startContent, startContent, aOriginalStartContent, aForward, 1,
         aIgnoreTabIndex, aForDocumentNavigation, aNavigateByKey,
@@ -4330,20 +4376,6 @@ nsresult nsFocusManager::GetNextTabbableContent(
   }
 
   
-  if (!aSkipPopover && aForward) {
-    if (RefPtr popover = GetAssociatedPopoverFromInvoker(startContent)) {
-      nsIContent* contentToFocus = GetNextTabbableContentInScope(
-          popover, popover, aOriginalStartContent, aForward, 1, aIgnoreTabIndex,
-          aForDocumentNavigation, aNavigateByKey, true ,
-          aReachedToEndForDocumentNavigation);
-      if (contentToFocus) {
-        NS_ADDREF(*aResultContent = contentToFocus);
-        return NS_OK;
-      }
-    }
-  }
-
-  
   
   if (nsCOMPtr<nsIContent> owner = FindScopeOwner(startContent)) {
     nsIContent* contentToFocus = GetNextTabbableContentInAncestorScopes(
@@ -4351,19 +4383,6 @@ nsresult nsFocusManager::GetNextTabbableContent(
         &aCurrentTabIndex, &aIgnoreTabIndex, aForDocumentNavigation,
         aNavigateByKey, aReachedToEndForDocumentNavigation);
     if (contentToFocus) {
-      
-      
-      if (!aForward) {
-        if (RefPtr popover = GetAssociatedPopoverFromInvoker(contentToFocus)) {
-          nsIContent* popoverContent = GetNextTabbableContentInScope(
-              popover, popover, aOriginalStartContent, aForward, 0,
-              aIgnoreTabIndex, aForDocumentNavigation, aNavigateByKey,
-              true , aReachedToEndForDocumentNavigation);
-          if (popoverContent) {
-            contentToFocus = popoverContent;
-          }
-        }
-      }
       NS_ADDREF(*aResultContent = contentToFocus);
       return NS_OK;
     }
@@ -4400,8 +4419,8 @@ nsresult nsFocusManager::GetNextTabbableContent(
 
       frame = iterStartContent->GetPrimaryFrame();
       
-      if (!frame && iterStartContent->GetShadowRoot()) {
-        int32_t tabIndex = HostOrSlotTabIndexValue(iterStartContent);
+      if (!frame && IsScopeOwner(iterStartContent)) {
+        int32_t tabIndex = ScopeOwnerTabIndexValue(iterStartContent);
         if (tabIndex >= 0 &&
             (aIgnoreTabIndex || aCurrentTabIndex == tabIndex)) {
           nsIContent* contentToFocus = GetNextTabbableContentInScope(
@@ -4463,8 +4482,7 @@ nsresult nsFocusManager::GetNextTabbableContent(
 
       
       if (currentTopLevelScopeOwner &&
-          currentTopLevelScopeOwner == oldTopLevelScopeOwner &&
-          !IsOpenPopoverWithInvoker(currentTopLevelScopeOwner)) {
+          currentTopLevelScopeOwner == oldTopLevelScopeOwner) {
         
         do {
           if (aForward) {
@@ -4479,68 +4497,6 @@ nsresult nsFocusManager::GetNextTabbableContent(
         continue;
       }
 
-      
-      
-      
-      
-      
-      if (oldTopLevelScopeOwner &&
-          IsOpenPopoverWithInvoker(oldTopLevelScopeOwner) &&
-          currentTopLevelScopeOwner != oldTopLevelScopeOwner) {
-        auto* popover = oldTopLevelScopeOwner->AsElement();
-        RefPtr<Element> invoker = popover->GetPopoverData()->GetInvoker();
-        MOZ_ASSERT(invoker, "IsOpenPopoverWithInvoker guarantees this");
-        RefPtr<Element> rootElement = invoker;
-        if (auto* doc = invoker->GetComposedDoc()) {
-          rootElement = doc->GetRootElement();
-        }
-        if (aForward) {
-          if (nsIFrame* frame = invoker->GetPrimaryFrame()) {
-            int32_t tabIndex = frame->IsFocusable().mTabIndex;
-            if (tabIndex >= 0 &&
-                (aIgnoreTabIndex || aCurrentTabIndex == tabIndex)) {
-              nsresult rv = GetNextTabbableContent(
-                  aPresShell, rootElement, nullptr, invoker, true, tabIndex,
-                  false, false, aNavigateByKey, true,
-                  aReachedToEndForDocumentNavigation, aResultContent);
-              if (NS_SUCCEEDED(rv) && *aResultContent) {
-                return rv;
-              }
-            }
-          }
-        } else if (invoker) {
-          nsIFrame* frame = invoker->GetPrimaryFrame();
-          if (frame && frame->IsFocusable()) {
-            invoker.forget(aResultContent);
-            return NS_OK;
-          }
-          nsresult rv = GetNextTabbableContent(
-              aPresShell, rootElement, aOriginalStartContent, invoker, false, 0,
-              true, false, aNavigateByKey, true,
-              aReachedToEndForDocumentNavigation, aResultContent);
-          if (NS_SUCCEEDED(rv) && *aResultContent) {
-            return rv;
-          }
-        }
-      }
-
-      if (!aForward) {
-        if (RefPtr popover = GetAssociatedPopoverFromInvoker(currentContent)) {
-          int32_t tabIndex = frame->IsFocusable().mTabIndex;
-          if (tabIndex >= 0 &&
-              (aIgnoreTabIndex || aCurrentTabIndex == tabIndex)) {
-            nsIContent* contentToFocus = GetNextTabbableContentInScope(
-                popover, popover, aOriginalStartContent, aForward, 0,
-                aIgnoreTabIndex, aForDocumentNavigation, aNavigateByKey,
-                true , aReachedToEndForDocumentNavigation);
-
-            if (contentToFocus) {
-              NS_ADDREF(*aResultContent = contentToFocus);
-              return NS_OK;
-            }
-          }
-        }
-      }
       
       
       
@@ -4575,7 +4531,7 @@ nsresult nsFocusManager::GetNextTabbableContent(
             
             nsresult rv = GetNextTabbableContent(
                 aPresShell, currentContent, nullptr, currentContent, true, 1,
-                false, false, aNavigateByKey, false,
+                false, false, aNavigateByKey,
                 aReachedToEndForDocumentNavigation, aResultContent);
             if (NS_SUCCEEDED(rv) && *aResultContent) {
               return rv;
@@ -4591,10 +4547,9 @@ nsresult nsFocusManager::GetNextTabbableContent(
       
       
       
-      if (currentTopLevelScopeOwner &&
-          !IsOpenPopoverWithInvoker(currentTopLevelScopeOwner)) {
+      if (currentTopLevelScopeOwner) {
         bool focusableHostSlot;
-        int32_t tabIndex = HostOrSlotTabIndexValue(currentTopLevelScopeOwner,
+        int32_t tabIndex = ScopeOwnerTabIndexValue(currentTopLevelScopeOwner,
                                                    &focusableHostSlot);
         
         
@@ -4626,8 +4581,7 @@ nsresult nsFocusManager::GetNextTabbableContent(
       }
 
       MOZ_ASSERT(
-          !GetTopLevelScopeOwner(currentContent) ||
-              IsOpenPopoverWithInvoker(GetTopLevelScopeOwner(currentContent)),
+          !GetTopLevelScopeOwner(currentContent),
           "currentContent should be in top-level-scope at this point unless "
           "for popover case");
 
@@ -4826,8 +4780,7 @@ bool nsFocusManager::TryToMoveFocusToSubDocument(
         nsresult rv = GetNextTabbableContent(
             subPresShell, rootElement, aOriginalStartContent, rootElement,
             aForward, (aForward ? 1 : 0), false, aForDocumentNavigation,
-            aNavigateByKey, false, aReachedToEndForDocumentNavigation,
-            aResultContent);
+            aNavigateByKey, aReachedToEndForDocumentNavigation, aResultContent);
         NS_ENSURE_SUCCESS(rv, false);
         if (*aResultContent) {
           return true;
@@ -4985,7 +4938,7 @@ nsresult nsFocusManager::FocusFirst(Element* aRootElement,
       if (RefPtr<PresShell> presShell = doc->GetPresShell()) {
         return GetNextTabbableContent(
             presShell, aRootElement, nullptr, aRootElement, true, 1, false,
-            aReachedToEndForDocumentNavigation, true, false,
+            aReachedToEndForDocumentNavigation, true,
             aReachedToEndForDocumentNavigation, aNextContent);
       }
     }
