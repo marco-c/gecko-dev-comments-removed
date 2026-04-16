@@ -413,14 +413,12 @@ let interfaceNamesInGlobalScope = [
   {
     name: "DocumentPictureInPicture",
     insecureContext: false,
-    nightly: true,
     android: false,
   },
   
   {
     name: "DocumentPictureInPictureEvent",
     insecureContext: false,
-    nightly: true,
     android: false,
   },
   
