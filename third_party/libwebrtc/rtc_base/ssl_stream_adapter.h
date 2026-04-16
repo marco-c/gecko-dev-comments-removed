@@ -25,6 +25,7 @@
 #include "api/array_view.h"
 #include "api/field_trials_view.h"
 #include "rtc_base/buffer.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/ssl_certificate.h"
 #include "rtc_base/ssl_identity.h"
 #include "rtc_base/stream.h"
@@ -218,7 +219,18 @@ class SSLStreamAdapter : public StreamInterface {
   virtual bool GetSslVersionBytes(int* version) const = 0;
 
   
-  virtual bool ExportSrtpKeyingMaterial(
+  
+  
+  [[deprecated("Use AppendSrtpKeyingMaterial")]] virtual bool
+  ExportSrtpKeyingMaterial(ZeroOnFreeBuffer<uint8_t>& keying_material) {
+    RTC_DCHECK_NOTREACHED() << "Use AppendSrtpKeyingMaterial";
+    return false;
+  }
+
+  
+  
+  
+  virtual bool AppendSrtpKeyingMaterial(
       ZeroOnFreeBuffer<uint8_t>& keying_material) = 0;
 
   
