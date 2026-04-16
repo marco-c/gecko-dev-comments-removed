@@ -2652,8 +2652,7 @@ void VideoStreamEncoder::RunPostEncode(const EncodedImage& encoded_image,
 
   
   
-  const bool keyframe =
-      encoded_image._frameType == VideoFrameType::kVideoFrameKey;
+  const bool keyframe = encoded_image.IsKey();
 
   if (!frame_size.IsZero()) {
     frame_dropper_.Fill(frame_size.bytes(), !keyframe);

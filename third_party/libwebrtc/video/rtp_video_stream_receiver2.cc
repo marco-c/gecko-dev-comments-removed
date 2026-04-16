@@ -950,7 +950,7 @@ void RtpVideoStreamReceiver2::OnAssembledFrame(
   
   
   if (!has_received_frame_) {
-    if (frame->FrameType() != VideoFrameType::kVideoFrameKey) {
+    if (!frame->IsKey()) {
       
       
       

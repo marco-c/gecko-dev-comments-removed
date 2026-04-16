@@ -1128,9 +1128,9 @@ EncodeResult LibaomAv1Encoder::DoEncode(
         layer_frame->Keyframe();
       }
 
-      encoded_image._frameType = layer_frame->IsKeyframe()
-                                     ? VideoFrameType::kVideoFrameKey
-                                     : VideoFrameType::kVideoFrameDelta;
+      encoded_image.set_frame_type(layer_frame->IsKeyframe()
+                                       ? VideoFrameType::kVideoFrameKey
+                                       : VideoFrameType::kVideoFrameDelta);
 
       encoded_image.content_type_ = VideoContentType::UNSPECIFIED;
       

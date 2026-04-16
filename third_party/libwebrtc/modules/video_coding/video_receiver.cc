@@ -8,8 +8,7 @@
 
 
 
-#include <stddef.h>
-
+#include <cstddef>
 #include <cstdint>
 #include <vector>
 
@@ -165,7 +164,7 @@ int32_t VideoReceiver::Decode(uint16_t maxWaitTimeMs) {
     if (drop_frames_until_keyframe_) {
       
       
-      if (frame->FrameType() != VideoFrameType::kVideoFrameKey) {
+      if (!frame->IsKey()) {
         drop_frame = true;
         _scheduleKeyRequest = true;
       } else {

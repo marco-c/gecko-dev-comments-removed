@@ -384,8 +384,7 @@ bool QualityAnalyzingVideoEncoder::ShouldDiscard(
         
         
         
-        if (encoded_image._frameType == VideoFrameType::kVideoFrameKey ||
-            cur_temporal_index == 0)
+        if (encoded_image.IsKey() || cur_temporal_index == 0)
           return cur_stream_index > *emulated_sfu_config->target_layer_index;
         return cur_stream_index != *emulated_sfu_config->target_layer_index;
       case SimulcastMode::kNormal:

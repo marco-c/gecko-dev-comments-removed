@@ -9,8 +9,19 @@
 
 #include "rtc_tools/video_encoder/encoded_image_file_writer.h"
 
+#include <cstddef>
+#include <optional>
+#include <utility>
+
+#include "api/video/encoded_image.h"
+#include "api/video_codecs/scalability_mode.h"
+#include "api/video_codecs/video_codec.h"
 #include "modules/video_coding/svc/scalability_mode_util.h"
+#include "modules/video_coding/utility/ivf_file_writer.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/strings/string_builder.h"
+#include "rtc_base/system/file_wrapper.h"
 
 namespace webrtc {
 namespace test {
@@ -63,8 +74,7 @@ int EncodedImageFileWriter::Write(const EncodedImage& encoded_image) {
   RTC_CHECK_LT(temporal_index, temporal_layers_);
 
   if (spatial_index == 0) {
-    is_base_layer_key_frame =
-        (encoded_image._frameType == VideoFrameType::kVideoFrameKey);
+    is_base_layer_key_frame_ = encoded_image.IsKey();
   }
 
   switch (inter_layer_pred_mode_) {
@@ -105,7 +115,7 @@ int EncodedImageFileWriter::Write(const EncodedImage& encoded_image) {
         }
 
         
-        if (!is_base_layer_key_frame) {
+        if (!is_base_layer_key_frame_) {
           break;
         }
       }

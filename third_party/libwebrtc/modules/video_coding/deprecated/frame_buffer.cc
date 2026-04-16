@@ -10,9 +10,8 @@
 
 #include "modules/video_coding/deprecated/frame_buffer.h"
 
-#include <string.h>
-
 #include <cstdint>
+#include <cstring>
 #include <vector>
 
 #include "api/video/encoded_image.h"
@@ -35,7 +34,7 @@ VCMFrameBuffer::VCMFrameBuffer()
 
 VCMFrameBuffer::~VCMFrameBuffer() {}
 
-VideoFrameType VCMFrameBuffer::FrameType() const {
+VideoFrameType VCMFrameBuffer::frame_type() const {
   return _sessionInfo.FrameType();
 }
 
@@ -266,7 +265,7 @@ void VCMFrameBuffer::PrepareForDecode(bool continuous) {
   set_size(size() - bytes_removed);
   
   
-  _frameType = _sessionInfo.FrameType();
+  set_frame_type(_sessionInfo.FrameType());
   _missingFrame = !continuous;
 }
 
