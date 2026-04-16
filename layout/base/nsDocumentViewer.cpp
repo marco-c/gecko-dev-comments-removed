@@ -469,9 +469,8 @@ void nsDocumentViewer::PrepareToStartLoad() {
   mClosingWhilePrinting = false;
 
   
-  if (mPrintJob) {
-    mPrintJob->Destroy();
-    mPrintJob = nullptr;
+  if (RefPtr job = std::move(mPrintJob)) {
+    job->Destroy();
   }
 
 #endif  
@@ -528,13 +527,13 @@ NS_INTERFACE_MAP_END
 nsDocumentViewer::~nsDocumentViewer() {
   if (mDocument) {
     Close();
-    mDocument->Destroy();
+    nsCOMPtr doc = std::move(mDocument);
+    doc->Destroy();
   }
 
 #ifdef NS_PRINTING
-  if (mPrintJob) {
-    mPrintJob->Destroy();
-    mPrintJob = nullptr;
+  if (RefPtr job = std::move(mPrintJob)) {
+    job->Destroy();
   }
 #endif
 
@@ -812,9 +811,8 @@ nsresult nsDocumentViewer::InitInternal(nsIWidget* aParentWidget,
       Hide();
     } else {
       
-      if (mPreviousViewer) {
-        mPreviousViewer->Destroy();
-        mPreviousViewer = nullptr;
+      if (nsCOMPtr prev = std::move(mPreviousViewer)) {
+        prev->Destroy();
       }
     }
   }
@@ -1470,9 +1468,8 @@ nsDocumentViewer::Destroy() {
   if (mPresShell) {
     DestroyPresShell();
   }
-  if (mDocument) {
-    mDocument->Destroy();
-    mDocument = nullptr;
+  if (nsCOMPtr doc = std::move(mDocument)) {
+    doc->Destroy();
   }
 
   
@@ -1481,8 +1478,7 @@ nsDocumentViewer::Destroy() {
   
 
 #ifdef NS_PRINTING
-  if (mPrintJob) {
-    RefPtr<nsPrintJob> printJob = std::move(mPrintJob);
+  if (RefPtr printJob = std::move(mPrintJob)) {
     if (printJob->CreatedForPrintPreview()) {
       printJob->FinishPrintPreview();
     }
@@ -1763,12 +1759,8 @@ nsDocumentViewer::Show() {
 
   
   
-  if (mPreviousViewer) {
-    
-    
-    nsCOMPtr<nsIDocumentViewer> prevViewer(mPreviousViewer);
-    mPreviousViewer = nullptr;
-    prevViewer->Destroy();
+  if (nsCOMPtr prev = std::move(mPreviousViewer)) {
+    prev->Destroy();
   }
 
   
@@ -1834,9 +1826,8 @@ nsDocumentViewer::Hide() {
   NS_ASSERTION(mPresContext, "Can't have a presshell and no prescontext!");
 
   
-  if (mPreviousViewer) {
-    mPreviousViewer->Destroy();
-    mPreviousViewer = nullptr;
+  if (nsCOMPtr prev = std::move(mPreviousViewer)) {
+    prev->Destroy();
   }
 
   if (mIsSticky) {
@@ -2812,8 +2803,8 @@ nsDocumentViewer::ExitPrintPreview() {
     return NS_OK;
   }
 
-  mPrintJob->Destroy();
-  mPrintJob = nullptr;
+  RefPtr printJob = std::move(mPrintJob);
+  printJob->Destroy();
 
   
   
@@ -2921,17 +2912,19 @@ void nsDocumentViewer::DecrementDestroyBlockedCount() {
 
 void nsDocumentViewer::OnDonePrinting() {
 #ifdef NS_PRINTING
-  
-  
-  
-  
-  if (mPrintJob) {
-    RefPtr<nsPrintJob> printJob = std::move(mPrintJob);
-    if (GetIsPrintPreview()) {
-      printJob->DestroyPrintingData();
-    } else {
-      printJob->Destroy();
-    }
+  RefPtr printJob = std::move(mPrintJob);
+  if (!printJob) {
+    
+    
+    
+    
+    return;
+  }
+  if (GetIsPrintPreview()) {
+    printJob->DestroyPrintingData();
+  } else {
+    printJob->Destroy();
+  }
 
 
 
@@ -2943,25 +2936,23 @@ void nsDocumentViewer::OnDonePrinting() {
 
 
 #  ifdef ANDROID
-    
-    
-    bool closeWindowAfterPrint = !printJob->CreatedForPrintPreview();
+  
+  
+  bool closeWindowAfterPrint = !printJob->CreatedForPrintPreview();
 #  else
-    bool closeWindowAfterPrint = GetCloseWindowAfterPrint();
+  bool closeWindowAfterPrint = GetCloseWindowAfterPrint();
 #  endif
-    if (closeWindowAfterPrint) {
-      if (mContainer) {
-        if (nsCOMPtr<nsPIDOMWindowOuter> win = mContainer->GetWindow()) {
-          win->Close();
-        }
+  if (closeWindowAfterPrint) {
+    if (mContainer) {
+      if (nsCOMPtr<nsPIDOMWindowOuter> win = mContainer->GetWindow()) {
+        win->Close();
       }
-    } else if (mClosingWhilePrinting) {
-      if (mDocument) {
-        mDocument->Destroy();
-        mDocument = nullptr;
-      }
-      mClosingWhilePrinting = false;
     }
+  } else if (mClosingWhilePrinting) {
+    if (nsCOMPtr doc = std::move(mDocument)) {
+      doc->Destroy();
+    }
+    mClosingWhilePrinting = false;
   }
 #endif  
 }
@@ -3079,8 +3070,8 @@ void nsDocumentViewer::DestroyPresShell() {
     selection->RemoveSelectionListener(mSelectionListener);
   }
 
-  mPresShell->Destroy();
-  mPresShell = nullptr;
+  RefPtr ps = std::move(mPresShell);
+  ps->Destroy();
 }
 
 void nsDocumentViewer::InvalidatePotentialSubDocDisplayItem() {
