@@ -1121,7 +1121,7 @@ fn parse_attribute_value(
     #[cfg(feature = "gecko")]
     let local_name = LocalName::cast(name);
     #[cfg(feature = "servo")]
-    let local_name = LocalName::from(name.as_ref());
+    let local_name = &LocalName::from(name.as_ref());
     let namespace = match attribute_data.namespace {
         ParsedNamespace::Known(ref ns) => ns,
         ParsedNamespace::Unknown => return Err(()),
@@ -2392,6 +2392,7 @@ impl<'a> Substitution<'a> {
 }
 
 
+#[derive(Debug)]
 pub struct SubstitutionResult<'a> {
     
     pub css: Cow<'a, str>,
@@ -2581,10 +2582,20 @@ fn substitute_one_reference<'a>(
                     },
                     |attr| {
                         let attr = if let AttributeType::Type(_) = &reference.attribute_data.kind {
-                            substitution_functions
-                                .get_attr(&reference.name)
-                                .map(|v| v.to_variable_value())?
-                                .css
+                            
+                            
+                            
+                            
+                            
+                            
+                            if computed_context.in_container_query {
+                                attr
+                            } else {
+                                substitution_functions
+                                    .get_attr(&reference.name)
+                                    .map(|v| v.to_variable_value())?
+                                    .css
+                            }
                         } else {
                             attr
                         };

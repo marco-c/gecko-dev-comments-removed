@@ -15,22 +15,22 @@ use crate::str::HTML_SPACE_CHARACTERS;
 use crate::values::computed::LengthPercentage as ComputedLengthPercentage;
 use crate::values::computed::{Context, Percentage, ToComputedValue};
 use crate::values::generics::length::GenericAnchorSizeFunction;
-use crate::values::generics::position::Position as GenericPosition;
 use crate::values::generics::position::PositionComponent as GenericPositionComponent;
 use crate::values::generics::position::PositionOrAuto as GenericPositionOrAuto;
 use crate::values::generics::position::ZIndex as GenericZIndex;
 use crate::values::generics::position::{AspectRatio as GenericAspectRatio, GenericAnchorSide};
 use crate::values::generics::position::{GenericAnchorFunction, GenericInset, TreeScoped};
+use crate::values::generics::position::{IsTreeScoped, Position as GenericPosition};
 use crate::values::specified;
 use crate::values::specified::align::AlignFlags;
 use crate::values::specified::{AllowQuirks, Integer, LengthPercentage, NonNegativeNumber};
 use crate::values::{AtomIdent, DashedIdent};
 use crate::{Atom, Zero};
-use cssparser::{Parser, match_ignore_ascii_case};
+use cssparser::{match_ignore_ascii_case, Parser};
 use num_traits::FromPrimitive;
 use selectors::parser::SelectorParseErrorKind;
 use servo_arc::Arc;
-use smallvec::{SmallVec, smallvec};
+use smallvec::{smallvec, SmallVec};
 use std::collections::hash_map::Entry;
 use std::fmt::{self, Write};
 use style_traits::arc_slice::ArcSlice;
@@ -399,6 +399,12 @@ impl Parse for AnchorNameIdent {
     }
 }
 
+impl IsTreeScoped for AnchorNameIdent {
+    fn is_tree_scoped(&self) -> bool {
+        !self.0.is_empty()
+    }
+}
+
 
 pub type AnchorName = TreeScoped<AnchorNameIdent>;
 
@@ -446,7 +452,7 @@ impl ScopedNameList {
     pub fn all() -> Self {
         static ALL: std::sync::LazyLock<ScopedNameList> = std::sync::LazyLock::new(|| {
             ScopedNameList(crate::ArcSlice::from_iter_leaked(std::iter::once(
-                AtomIdent(atom!("all")),
+                AtomIdent::new(atom!("all")),
             )))
         });
         ALL.clone()
@@ -469,11 +475,17 @@ impl Parse for ScopedNameList {
         
         
         let mut idents = SmallVec::<[AtomIdent; 8]>::new();
-        idents.push(AtomIdent(DashedIdent::from_ident(location, first)?.0));
+        idents.push(AtomIdent::new(DashedIdent::from_ident(location, first)?.0));
         while input.try_parse(|input| input.expect_comma()).is_ok() {
-            idents.push(AtomIdent(DashedIdent::parse(context, input)?.0));
+            idents.push(AtomIdent::new(DashedIdent::parse(context, input)?.0));
         }
         Ok(Self(ArcSlice::from_iter(idents.drain(..))))
+    }
+}
+
+impl IsTreeScoped for ScopedNameList {
+    fn is_tree_scoped(&self) -> bool {
+        !self.is_none()
     }
 }
 
@@ -521,6 +533,15 @@ impl PositionAnchorKeyword {
     
     pub fn none() -> Self {
         Self::None
+    }
+}
+
+impl IsTreeScoped for PositionAnchorKeyword {
+    fn is_tree_scoped(&self) -> bool {
+        match *self {
+            Self::None | Self::Auto => false,
+            Self::Ident(_) => true,
+        }
     }
 }
 

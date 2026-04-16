@@ -120,6 +120,10 @@ impl ToCss for PseudoElement {
 
 impl ::selectors::parser::PseudoElement for PseudoElement {
     type Impl = SelectorImpl;
+
+    fn parses_as_element_backed(&self) -> bool {
+        matches!(self, Self::DetailsContent)
+    }
 }
 
 
@@ -327,6 +331,25 @@ impl PseudoElement {
     #[inline]
     pub fn is_lazy_painted_highlight_pseudo(&self) -> bool {
         self.is_selection() || self.is_highlight() || self.is_target_text()
+    }
+
+    
+    
+    #[inline]
+    pub fn is_element_backed(&self) -> bool {
+        use selectors::parser::PseudoElement;
+        self.parses_as_element_backed()
+            || matches!(
+                self,
+                Self::Placeholder
+                    | Self::ColorSwatch
+                    | Self::FileSelectorButton
+                    | Self::SliderFill
+                    | Self::SliderThumb
+                    | Self::SliderTrack
+                    | Self::ServoTextControlInnerContainer
+                    | Self::ServoTextControlInnerEditor,
+            )
     }
 }
 

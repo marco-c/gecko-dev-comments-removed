@@ -8,7 +8,7 @@ use crate::derives::*;
 use crate::parser::{Parse, ParserContext};
 use crate::properties::{NonCustomPropertyId, PropertyId, ShorthandId};
 use crate::values::generics::animation as generics;
-use crate::values::generics::position::TreeScoped;
+use crate::values::generics::position::{IsTreeScoped, TreeScoped};
 use crate::values::specified::{LengthPercentage, NonNegativeNumber, Time};
 use crate::values::{AtomIdent, CustomIdent, DashedIdent, KeyframesName};
 use crate::Atom;
@@ -607,6 +607,12 @@ impl TimelineIdent {
     }
 }
 
+impl IsTreeScoped for TimelineIdent {
+    fn is_tree_scoped(&self) -> bool {
+        !self.is_none()
+    }
+}
+
 impl Parse for TimelineIdent {
     fn parse<'i, 't>(
         context: &ParserContext,
@@ -720,7 +726,13 @@ pub struct ViewTransitionNameKeyword(AtomIdent);
 impl ViewTransitionNameKeyword {
     
     pub fn none() -> Self {
-        Self(AtomIdent(atom!("none")))
+        Self(AtomIdent::new(atom!("none")))
+    }
+}
+
+impl IsTreeScoped for ViewTransitionNameKeyword {
+    fn is_tree_scoped(&self) -> bool {
+        self.0 .0 != atom!("none")
     }
 }
 
@@ -736,12 +748,12 @@ impl Parse for ViewTransitionNameKeyword {
         }
 
         if ident.eq_ignore_ascii_case("match-element") {
-            return Ok(Self(AtomIdent(atom!("match-element"))));
+            return Ok(Self(AtomIdent::new(atom!("match-element"))));
         }
 
         
         
-        CustomIdent::from_ident(location, ident, &["auto"]).map(|i| Self(AtomIdent(i.0)))
+        CustomIdent::from_ident(location, ident, &["auto"]).map(|i| Self(AtomIdent::new(i.0)))
     }
 }
 
@@ -782,6 +794,12 @@ pub struct ViewTransitionClassList(
     #[ignore_malloc_size_of = "Arc"]
     crate::ArcSlice<CustomIdent>,
 );
+
+impl IsTreeScoped for ViewTransitionClassList {
+    fn is_tree_scoped(&self) -> bool {
+        !self.is_none()
+    }
+}
 
 impl ViewTransitionClassList {
     
