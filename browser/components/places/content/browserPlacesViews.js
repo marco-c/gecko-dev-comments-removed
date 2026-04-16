@@ -693,13 +693,13 @@ class PlacesViewBase {
     }
 
     let hasMultipleURIs = false;
-    let numURINodes = 0;
 
     
     
     
     if (aPopup._placesNode.childCount > 0) {
       let currentChild = aPopup.firstElementChild;
+      let numURINodes = 0;
       while (currentChild) {
         if (currentChild.localName == "menuitem" && currentChild._placesNode) {
           if (++numURINodes == 2) {
@@ -741,39 +741,6 @@ class PlacesViewBase {
         );
       });
       aPopup.appendChild(aPopup._endOptOpenAllInTabs);
-    }
-
-    
-    if (
-      numURINodes > 0 &&
-      ContentSharingUtils.isEnabled &&
-      !aPopup._endOptShareFolder
-    ) {
-      
-      aPopup._endOptShareFolder = document.createXULElement("menuitem");
-      aPopup._endOptShareFolder.className = "openintabs-menuitem";
-      aPopup._endOptShareFolder.setAttribute(
-        "data-l10n-id",
-        "places-share-folder"
-      );
-
-      aPopup._endOptShareFolder.addEventListener("command", event => {
-        ContentSharingUtils.createShareableLinkFromBookmarkFolders(
-          [
-            PlacesUtils.getConcreteItemGuid(
-              event.currentTarget.parentNode._placesNode
-            ),
-          ],
-          event.currentTarget.ownerGlobal
-        );
-      });
-      aPopup.appendChild(aPopup._endOptShareFolder);
-    } else if (
-      aPopup._endOptShareFolder &&
-      (!ContentSharingUtils.isEnabled || !numURINodes)
-    ) {
-      aPopup.removeChild(aPopup._endOptShareFolder);
-      aPopup._endOptShareFolder = null;
     }
   }
 

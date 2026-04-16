@@ -242,6 +242,9 @@ var allowlist = [
   { file: "resource://builtin-addons/ipp-activator/breakages/tab.json" },
 
   
+  { file: "resource://app/modules/contentsharing/ContentSharingUtils.sys.mjs" },
+
+  
   
   {
     file: "chrome://browser/locale/taskbar.properties",
