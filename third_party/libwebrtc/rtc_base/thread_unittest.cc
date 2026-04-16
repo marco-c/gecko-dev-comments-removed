@@ -15,6 +15,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -44,6 +45,7 @@
 #include "test/create_test_environment.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
+#include "test/run_loop.h"
 #include "test/testsupport/rtc_expect_death.h"
 #include "test/wait_until.h"
 
@@ -870,6 +872,155 @@ TEST(ThreadPostDelayedTaskTest, IsCurrentTaskQueue) {
   }
   EXPECT_EQ(TaskQueueBase::Current(), current_tq);
 }
+
+
+
+TEST(ThreadCooperativeTest, HighPriorityTaskTriggersYieldRequest) {
+  test::RunLoop loop;
+  auto thread = Thread::Create();
+  thread->Start();
+
+  bool yield_requested = false;
+  Event task_started;
+
+  
+  thread->PostTask(
+      [&yield_requested, &loop, &task_started, thread = thread.get()] {
+        task_started.Set();
+        while (!thread->IsYieldRequested()) {
+          
+        }
+        loop.PostTask([&yield_requested, &loop] {
+          yield_requested = true;
+          loop.Quit();
+        });
+      });
+
+  
+  
+  task_started.Wait(Event::kForever);
+
+  
+  thread->PostHighPriorityTask([] {});
+
+  loop.Run();
+  EXPECT_TRUE(yield_requested);
+}
+
+
+
+TEST(ThreadCooperativeTest, HighPriorityTaskRunsFirst) {
+  test::RunLoop loop;
+  auto thread = Thread::Create();
+  thread->Start();
+
+  std::vector<std::string> execution_order;
+  Event task1_started;
+  Event continue_execution;
+
+  
+  thread->PostTask([&] {
+    task1_started.Set();
+    continue_execution.Wait(Event::kForever);
+    loop.PostTask([&] { execution_order.push_back("Task1"); });
+  });
+
+  task1_started.Wait(Event::kForever);
+
+  
+  thread->PostTask(
+      [&] { loop.PostTask([&] { execution_order.push_back("Task2"); }); });
+
+  
+  thread->PostHighPriorityTask(
+      [&] { loop.PostTask([&] { execution_order.push_back("Task3"); }); });
+
+  
+  continue_execution.Set();
+
+  
+  thread->PostTask([&] { loop.PostTask([&] { loop.Quit(); }); });
+
+  loop.Run();
+
+  
+  
+  EXPECT_THAT(execution_order, ElementsAre("Task1", "Task3", "Task2"));
+}
+
+
+
+TEST(ThreadCooperativeTest, HighPriorityTasksExecuteInSequence) {
+  test::RunLoop loop;
+  auto thread = Thread::Create();
+  thread->Start();
+
+  std::vector<std::string> execution_order;
+  Event task1_started;
+  Event continue_execution;
+
+  
+  thread->PostTask([&] {
+    task1_started.Set();
+    continue_execution.Wait(Event::kForever);
+  });
+
+  task1_started.Wait(Event::kForever);
+
+  
+  
+  thread->PostTask(
+      [&] { loop.PostTask([&] { execution_order.push_back("Normal1"); }); });
+
+  
+  thread->PostHighPriorityTask(
+      [&] { loop.PostTask([&] { execution_order.push_back("HP1"); }); });
+  thread->PostHighPriorityTask(
+      [&] { loop.PostTask([&] { execution_order.push_back("HP2"); }); });
+  thread->PostHighPriorityTask(
+      [&] { loop.PostTask([&] { execution_order.push_back("HP3"); }); });
+
+  
+  continue_execution.Set();
+
+  
+  thread->PostTask([&] { loop.PostTask([&] { loop.Quit(); }); });
+
+  loop.Run();
+
+  EXPECT_THAT(execution_order, ElementsAre("HP1", "HP2", "HP3", "Normal1"));
+}
+
+TEST(ThreadCooperativeTest, YieldRequestedClearedAfterHighPriorityTask) {
+  std::unique_ptr<Thread> thread(Thread::Create());
+  thread->Start();
+
+  
+  thread->BlockingCall([&] { EXPECT_FALSE(thread->IsYieldRequested()); });
+
+  
+  thread->PostHighPriorityTask([&] {});
+
+  
+  thread->BlockingCall([&] { EXPECT_FALSE(thread->IsYieldRequested()); });
+}
+
+#if GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID) && RTC_DCHECK_IS_ON
+TEST(ThreadCooperativeDeathTest, YieldInSynchronousBlockingCallTriggersDeath) {
+  std::unique_ptr<Thread> background_thread = Thread::Create();
+  background_thread->Start();
+  background_thread->BlockingCall([&] {
+    
+    background_thread->IsYieldRequested();
+
+    
+    background_thread->BlockingCall([&] {
+      
+      EXPECT_DEATH(background_thread->IsYieldRequested(), "");
+    });
+  });
+}
+#endif
 
 class ThreadFactory : public TaskQueueFactory {
  public:
