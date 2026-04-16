@@ -2,7 +2,6 @@
 
 
 
-
 #include "WebrtcVideoCodecFactory.h"
 
 #include "GmpVideoCodec.h"
@@ -38,8 +37,11 @@ std::unique_ptr<webrtc::VideoDecoder> WebrtcVideoDecoderFactory::Create(
       
       auto gmpDecoder =
           WrapUnique(GmpVideoCodec::CreateDecoder(mPCHandle, mTrackingId));
-      mCreatedGmpPluginEvent.Forward(*gmpDecoder->InitPluginEvent());
-      mReleasedGmpPluginEvent.Forward(*gmpDecoder->ReleasePluginEvent());
+      {
+        MutexAutoLock lock(mGmpPluginMutex);
+        mCreatedGmpPluginEvent.Forward(*gmpDecoder->InitPluginEvent());
+        mReleasedGmpPluginEvent.Forward(*gmpDecoder->ReleasePluginEvent());
+      }
       decoder.reset(gmpDecoder.release());
       break;
     }
@@ -132,8 +134,11 @@ WebrtcVideoEncoderFactory::InternalFactory::Create(
         
         auto gmpEncoder =
             WrapUnique(GmpVideoCodec::CreateEncoder(aFormat, mPCHandle));
-        mCreatedGmpPluginEvent.Forward(*gmpEncoder->InitPluginEvent());
-        mReleasedGmpPluginEvent.Forward(*gmpEncoder->ReleasePluginEvent());
+        {
+          MutexAutoLock lock(mGmpPluginMutex);
+          mCreatedGmpPluginEvent.Forward(*gmpEncoder->InitPluginEvent());
+          mReleasedGmpPluginEvent.Forward(*gmpEncoder->ReleasePluginEvent());
+        }
         encoder.reset(gmpEncoder.release());
         break;
       }
