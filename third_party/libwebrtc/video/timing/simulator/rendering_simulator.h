@@ -302,6 +302,12 @@ class RenderingSimulator {
     }
 
     
+    
+    SamplesStatsCounter InterRenderTimeMs();
+    SamplesStatsCounter InterDecodedTimeMs();
+    SamplesStatsCounter InterRenderedTimeMs();
+
+    
     SamplesStatsCounter JitterBufferMinimumDelayMs() const {
       return BuildSamplesMs(&Frame::jitter_buffer_minimum_delay);
     }
