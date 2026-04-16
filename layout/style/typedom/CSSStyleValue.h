@@ -20,7 +20,8 @@ namespace mozilla {
 
 struct CSSPropertyId;
 class ErrorResult;
-struct StylePropertyTypedValue;
+struct StylePropertyTypedValueList;
+struct URLExtraData;
 
 namespace dom {
 
@@ -44,9 +45,10 @@ class CSSStyleValue : public nsISupports, public nsWrapperCache {
 
   CSSStyleValue(nsCOMPtr<nsISupports> aParent, StyleValueType aStyleValueType);
 
-  static RefPtr<CSSStyleValue> Create(nsCOMPtr<nsISupports> aParent,
-                                      const CSSPropertyId& aPropertyId,
-                                      StylePropertyTypedValue&& aTypedValue);
+  static void Create(nsCOMPtr<nsISupports> aParent,
+                     const CSSPropertyId& aPropertyId,
+                     StylePropertyTypedValueList&& aTypedValueList,
+                     nsTArray<RefPtr<CSSStyleValue>>& aRetVal);
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(CSSStyleValue)
@@ -57,11 +59,13 @@ class CSSStyleValue : public nsISupports, public nsWrapperCache {
 
   
 
+  
   [[nodiscard]] static RefPtr<CSSStyleValue> Parse(const GlobalObject& aGlobal,
                                                    const nsACString& aProperty,
                                                    const nsACString& aCssText,
                                                    ErrorResult& aRv);
 
+  
   static void ParseAll(const GlobalObject& aGlobal, const nsACString& aProperty,
                        const nsACString& aCssText,
                        nsTArray<RefPtr<CSSStyleValue>>& aRetVal,
@@ -70,6 +74,11 @@ class CSSStyleValue : public nsISupports, public nsWrapperCache {
   void Stringify(nsACString& aRetVal) const;
 
   
+
+  static RefPtr<CSSStyleValue> ParseStyleValue(
+      nsCOMPtr<nsISupports>, const nsACString& aProperty,
+      const nsACString& aCssText, URLExtraData* aURLExtraData,
+      nsTArray<RefPtr<CSSStyleValue>>* aStyleValues, ErrorResult& aRv);
 
   StyleValueType GetStyleValueType() const { return mStyleValueType; }
 
