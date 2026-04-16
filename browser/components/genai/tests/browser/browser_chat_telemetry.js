@@ -5,15 +5,11 @@ const { GenAI } = ChromeUtils.importESModule(
   "resource:///modules/GenAI.sys.mjs"
 );
 
-registerCleanupFunction(() => {
+
+SidebarTestUtils.restoreStateAtCleanup(window);
+
+registerCleanupFunction(async () => {
   Services.prefs.clearUserPref("sidebar.old-sidebar.has-used");
-  
-  if (!document.getElementById("sidebar-box").hidden) {
-    info(
-      `Sidebar ${SidebarController.currentID} was left open, closing it in cleanup function`
-    );
-    SidebarController.hide({ dismissPanel: true });
-  }
 });
 
 

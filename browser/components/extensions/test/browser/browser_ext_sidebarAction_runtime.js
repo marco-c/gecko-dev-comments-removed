@@ -1,12 +1,7 @@
 "use strict";
 
-registerCleanupFunction(() => {
-  
-  if (!document.getElementById("sidebar-box").hidden) {
-    info("Hiding sidebar that was still open at the end of the test");
-    SidebarController.hide({ dismissPanel: true });
-  }
-});
+
+SidebarTestUtils.restoreStateAtCleanup(window);
 
 function background() {
   browser.runtime.onConnect.addListener(port => {

@@ -43,17 +43,13 @@ function assertCommonPageData(pageData) {
   );
 }
 
+
+SidebarTestUtils.restoreStateAtCleanup(window);
+
 registerCleanupFunction(async () => {
-  
   try {
     await SpecialPowers.popPrefEnv(); 
   } catch {}
-  if (!document.getElementById("sidebar-box").hidden) {
-    info(
-      `Sidebar ${SidebarController.currentID} was left open, closing it in cleanup function`
-    );
-    SidebarController.hide({ dismissPanel: true });
-  }
 });
 
 
@@ -186,7 +182,7 @@ add_task(async function test_page_assist_sidebar_integration() {
 
     
     PageAssist.fetchAiResponse = originalFetchAi;
-    SidebarController.hide();
+    SidebarTestUtils.closePanel(window);
   });
 
   await SpecialPowers.popPrefEnv();
@@ -270,7 +266,7 @@ add_task(async function test_page_assist_component_fetch_data() {
       "Should handle missing page data"
     );
     sideBarEl._fetchPageData = originalFetch;
-    SidebarController.hide();
+    SidebarTestUtils.closePanel(window);
   });
 
   await SpecialPowers.popPrefEnv();
@@ -348,7 +344,7 @@ add_task(async function test_page_assist_url_change_detection() {
       "Sidebar should mirror isArticle = false"
     );
 
-    SidebarController.hide();
+    SidebarTestUtils.closePanel(window);
   });
 
   await SpecialPowers.popPrefEnv();

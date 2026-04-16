@@ -12,13 +12,12 @@ add_setup(async () => {
   });
 });
 
+
+SidebarTestUtils.restoreStateAtCleanup(window);
+
 registerCleanupFunction(async () => {
   await SpecialPowers.popPrefEnv();
   gBrowser.removeAllTabsBut(gBrowser.tabs[0]);
-  
-  if (!document.getElementById("sidebar-box").hidden) {
-    SidebarController.hide({ dismissPanel: true });
-  }
 });
 
 add_task(async function test_button_removed() {

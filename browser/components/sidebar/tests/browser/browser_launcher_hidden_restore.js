@@ -24,7 +24,7 @@ add_setup(async () => {
 add_task(async function test_launcher_hidden_restored_after_panel_close() {
   
   
-  await ensureSidebarLauncherIsHidden();
+  await SidebarTestUtils.ensureLauncherHidden(window);
 
   await SidebarController.show("viewHistorySidebar");
   await SidebarController.waitUntilStable();
@@ -46,7 +46,7 @@ add_task(
   async function test_launcher_visible_stays_visible_after_panel_close() {
     
     
-    await ensureSidebarLauncherIsVisible();
+    await SidebarTestUtils.ensureLauncherVisible(window);
 
     await SidebarController.show("viewHistorySidebar");
     await SidebarController.waitUntilStable();
@@ -64,7 +64,7 @@ add_task(
   async function test_launcher_hidden_restored_after_panel_switch_and_close() {
     
     
-    await ensureSidebarLauncherIsHidden();
+    await SidebarTestUtils.ensureLauncherHidden(window);
 
     await SidebarController.show("viewHistorySidebar");
     await SidebarController.waitUntilStable();
@@ -84,7 +84,7 @@ add_task(
 add_task(async function test_launcher_hidden_restored_via_toggle() {
   
   
-  await ensureSidebarLauncherIsHidden();
+  await SidebarTestUtils.ensureLauncherHidden(window);
 
   await SidebarController.show("viewHistorySidebar");
   await SidebarController.waitUntilStable();
@@ -100,7 +100,7 @@ add_task(async function test_launcher_hidden_restored_via_toggle() {
 add_task(async function test_visibility_mode_change_while_panel_open() {
   
   
-  await ensureSidebarLauncherIsHidden();
+  await SidebarTestUtils.ensureLauncherHidden(window);
 
   await SidebarController.show("viewHistorySidebar");
   await SidebarController.waitUntilStable();
