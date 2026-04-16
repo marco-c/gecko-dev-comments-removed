@@ -47,8 +47,6 @@ Matcher<const Frame&> EqualsFrame(const Frame& expected) {
             Eq(expected.decodable_timestamp)));
 }
 
-
-
 TEST(DecodabilitySimulatorTest, VideoRecvVp8) {
   std::unique_ptr<ParsedRtcEventLog> parsed_log =
       ParsedRtcEventLogFromResources("video_recv_vp8_pt96");
