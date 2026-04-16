@@ -24,8 +24,7 @@ already_AddRefed<ViewTimeline> ViewTimeline::MakeNamed(
   
   
   auto [element, pseudo] = FindNearestScroller(aSubject, aPseudoRequest);
-  auto scroller =
-      Scroller::Nearest(const_cast<Element*>(element), pseudo.mType);
+  auto scroller = Scroller::Nearest(const_cast<Element*>(element), pseudo);
 
   
   return MakeAndAddRef<ViewTimeline>(
@@ -40,8 +39,7 @@ already_AddRefed<ViewTimeline> ViewTimeline::MakeAnonymous(
   
   auto [element, pseudo] =
       FindNearestScroller(aTarget.mElement, aTarget.mPseudoRequest);
-  Scroller scroller =
-      Scroller::Nearest(const_cast<Element*>(element), pseudo.mType);
+  Scroller scroller = Scroller::Nearest(const_cast<Element*>(element), pseudo);
   return MakeAndAddRef<ViewTimeline>(aDocument, scroller, aAxis,
                                      aTarget.mElement,
                                      aTarget.mPseudoRequest.mType, aInset);
