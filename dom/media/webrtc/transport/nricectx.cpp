@@ -601,6 +601,8 @@ void NrIceCtx::InitializeGlobals(const GlobalConfig& aConfig) {
   
   if (!initialized) {
     NR_reg_init();
+    
+    (void)nr_stun_startup();
     nr_crypto_vtbl = &nr_ice_crypto_nss_vtbl;
     initialized = true;
 
