@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_WindowsLocationProvider_h_
 #define mozilla_dom_WindowsLocationProvider_h_
 
@@ -11,12 +9,9 @@
 #include "nsCOMPtr.h"
 #include "nsIGeolocationProvider.h"
 
-class MLSFallback;
-
 namespace mozilla::dom {
 
 class WindowsLocationParent;
-
 
 
 
@@ -31,9 +26,6 @@ class WindowsLocationProvider final : public nsIGeolocationProvider {
   friend WindowsLocationParent;
 
   ~WindowsLocationProvider();
-
-  nsresult CreateAndWatchMLSProvider(nsIGeolocationUpdate* aCallback);
-  void CancelMLSProvider();
 
   void MaybeCreateLocationActor();
   void ReleaseUtilityProcess();
@@ -57,8 +49,6 @@ class WindowsLocationProvider final : public nsIGeolocationProvider {
   
   template <typename Fn>
   bool WhenActorIsReady(Fn&& fn);
-
-  RefPtr<MLSFallback> mMLSProvider;
 
   nsCOMPtr<nsIGeolocationUpdate> mCallback;
 
