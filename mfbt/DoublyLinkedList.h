@@ -354,7 +354,22 @@ class DoublyLinkedList final {
 
 
 
+  Iterator find(const T* aNeedle) const {
+    return std::find_if(begin(), end(),
+                        [aNeedle](const T& elm) { return &elm == aNeedle; });
+  }
+
+  
+
+
+
   bool contains(const T& aElm) const { return find(aElm) != Iterator(); }
+
+  
+
+
+
+  bool contains(const T* aElm) const { return find(aElm) != Iterator(); }
 
   
 
@@ -398,6 +413,23 @@ class DoublyLinkedList final {
         return false;
       }
     }
+    return true;
+  }
+
+  
+
+
+  bool ListIsWellFormed() const {
+    
+    if ((mHead == nullptr) && (mTail == mHead)) {
+      return true;
+    } else if (mTail == nullptr) {
+      return false;
+    }
+
+    std::all_of(begin(), end(),
+                [this](const T& elem) { return ElementIsLinkedWell(&elem); });
+
     return true;
   }
 };
