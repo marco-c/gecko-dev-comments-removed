@@ -38,6 +38,7 @@ RTCEncodedAudioFrame::RTCEncodedAudioFrame(
   mMetadata.mSynchronizationSource.Construct(mFrame->GetSsrc());
   mMetadata.mPayloadType.Construct(mFrame->GetPayloadType());
   mMetadata.mMimeType.Construct(NS_ConvertASCIItoUTF16(mFrame->GetMimeType()));
+  mMetadata.mRtpTimestamp.Construct(mFrame->GetTimestamp());
   const auto& audioFrame(
       static_cast<webrtc::TransformableAudioFrameInterface&>(*mFrame));
   mMetadata.mContributingSources.Construct();
@@ -46,6 +47,17 @@ RTCEncodedAudioFrame::RTCEncodedAudioFrame(
   }
   if (const auto optionalSeqNum = audioFrame.SequenceNumber()) {
     mMetadata.mSequenceNumber.Construct(*optionalSeqNum);
+  }
+  if (const auto optionalAudioLevel = audioFrame.AudioLevel()) {
+    
+    
+    
+    if (optionalAudioLevel >= 127u) {
+      mMetadata.mAudioLevel.Construct(0.0);
+    } else {
+      mMetadata.mAudioLevel.Construct(
+          std::pow(10.0, -static_cast<double>(*optionalAudioLevel) / 20.0));
+    }
   }
 }
 
@@ -85,8 +97,10 @@ already_AddRefed<RTCEncodedAudioFrame> RTCEncodedAudioFrame::Constructor(
     set_if(dst.mSynchronizationSource, src.mSynchronizationSource);
     set_if(dst.mPayloadType, src.mPayloadType);
     set_if(dst.mMimeType, src.mMimeType);
+    set_if(dst.mRtpTimestamp, src.mRtpTimestamp);
     set_if(dst.mContributingSources, src.mContributingSources);
     set_if(dst.mSequenceNumber, src.mSequenceNumber);
+    set_if(dst.mAudioLevel, src.mAudioLevel);
   }
   return frame.forget();
 }
