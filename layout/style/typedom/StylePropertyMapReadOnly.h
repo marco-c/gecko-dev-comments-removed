@@ -24,7 +24,8 @@ namespace mozilla {
 
 struct CSSPropertyId;
 class ErrorResult;
-struct StylePropertyTypedValue;
+struct StylePropertyTypedValueList;
+struct URLExtraData;
 
 namespace dom {
 
@@ -87,8 +88,10 @@ class StylePropertyMapReadOnly : public nsISupports, public nsWrapperCache {
     explicit Declarations(CSSStyleRule* aRule)
         : mRule(aRule), mKind(Kind::Rule) {}
 
-    StylePropertyTypedValue Get(const CSSPropertyId& aPropertyId,
-                                ErrorResult& aRv) const;
+    StylePropertyTypedValueList GetAll(const CSSPropertyId& aPropertyId,
+                                       ErrorResult& aRv) const;
+
+    URLExtraData* GetURLExtraData() const;
 
     void Unlink();
 
