@@ -206,12 +206,21 @@ def add_backfill_suffix(regex, symbol, suffix):
     return symbol
 
 
+def is_speedometer_task(label):
+    return "shippable" in label and "speedometer3" in label
+
+
 def backfill_modifier(task, input):
     if task.label != input["label"]:
         return task
 
     logger.debug(f"Modifying test_manifests for {task.label}")
     times = input.get("times", 1)
+
+    if is_speedometer_task(task.label):
+        
+        
+        task.attributes["task_duplicates"] = 1
 
     
     if times > 1:
