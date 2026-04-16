@@ -121,7 +121,7 @@ def before_runs(env):
 
         
         name = [
-            "mitm8" if platform_name == "linux" else "mitm11",
+            "mitm8" if platform_name == "linux" else "mitm12",
             platform_name,
             "gve" if app_name == "geckoview_example" else app_name,
             test_site["name"],
