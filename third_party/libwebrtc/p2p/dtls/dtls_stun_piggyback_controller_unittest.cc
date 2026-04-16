@@ -255,12 +255,46 @@ TEST_F(DtlsStunPiggybackControllerTest,
 
   
   EXPECT_CALL(*this, ClientCompleteCallback);
-  client_.DecryptedPacketReceived(
+  client_.ApplicationPacketReceived(
       packet_.CopyAndSet(ReceivedIpPacket::kDtlsDecrypted));
   EXPECT_EQ(client_.state(), State::COMPLETE);
 
   EXPECT_CALL(*this, ServerCompleteCallback);
-  server_.DecryptedPacketReceived(
+  server_.ApplicationPacketReceived(
+      packet_.CopyAndSet(ReceivedIpPacket::kSrtpEncrypted));
+  EXPECT_EQ(server_.state(), State::COMPLETE);
+}
+
+TEST_F(DtlsStunPiggybackControllerTest,
+       BasicHandshakeEarlySrtpDoesNotComplete) {
+  
+  SendClientToServerEmbedded(dtls_flight1, STUN_BINDING_REQUEST);
+  EXPECT_EQ(server_.state(), State::CONFIRMED);
+  SendServerToClientEmbedded(dtls_flight2, STUN_BINDING_RESPONSE);
+  EXPECT_EQ(client_.state(), State::CONFIRMED);
+
+  
+  SendClientToServerEmbedded(dtls_flight3, STUN_BINDING_REQUEST);
+  EXPECT_EQ(server_.state(), State::CONFIRMED);
+
+  
+  server_.ApplicationPacketReceived(
+      packet_.CopyAndSet(ReceivedIpPacket::kSrtpEncrypted));
+  EXPECT_EQ(server_.state(), State::CONFIRMED);
+
+  
+  SendServerToClientEmbedded(dtls_flight4, STUN_BINDING_RESPONSE);
+  EXPECT_EQ(server_.state(), State::PENDING);
+  EXPECT_EQ(client_.state(), State::PENDING);
+
+  
+  EXPECT_CALL(*this, ClientCompleteCallback);
+  client_.ApplicationPacketReceived(
+      packet_.CopyAndSet(ReceivedIpPacket::kDtlsDecrypted));
+  EXPECT_EQ(client_.state(), State::COMPLETE);
+
+  EXPECT_CALL(*this, ServerCompleteCallback);
+  server_.ApplicationPacketReceived(
       packet_.CopyAndSet(ReceivedIpPacket::kSrtpEncrypted));
   EXPECT_EQ(server_.state(), State::COMPLETE);
 }

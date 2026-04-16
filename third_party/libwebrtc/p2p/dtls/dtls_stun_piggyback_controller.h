@@ -71,7 +71,7 @@ class DtlsStunPiggybackController {
   
   
   
-  void DecryptedPacketReceived(const ReceivedIpPacket& packet);
+  void ApplicationPacketReceived(const ReceivedIpPacket& packet);
 
   
   void SetDtlsFailed();

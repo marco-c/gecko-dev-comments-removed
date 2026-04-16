@@ -51,7 +51,7 @@ void DtlsStunPiggybackController::SetDtlsHandshakeComplete(bool is_dtls_client,
   state_ = State::PENDING;
 }
 
-void DtlsStunPiggybackController::DecryptedPacketReceived(
+void DtlsStunPiggybackController::ApplicationPacketReceived(
     const ReceivedIpPacket& packet) {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
 
@@ -62,8 +62,17 @@ void DtlsStunPiggybackController::DecryptedPacketReceived(
   RTC_DCHECK(packet.decryption_info() == ReceivedIpPacket::kDtlsDecrypted ||
              packet.decryption_info() == ReceivedIpPacket::kSrtpEncrypted);
 
-  
-  RTC_DCHECK(state_ == State::PENDING);
+  if (packet.decryption_info() == ReceivedIpPacket::kDtlsDecrypted) {
+    
+    RTC_DCHECK(state_ == State::PENDING);
+  } else if (packet.decryption_info() == ReceivedIpPacket::kSrtpEncrypted) {
+    
+    
+    
+    if (state_ != State::PENDING) {
+      return;
+    }
+  }
   state_ = State::COMPLETE;
   CallCompleteCallback();
 }
