@@ -112,8 +112,13 @@ class VideoQualityAnalyzerInterface
                               bool ) {}
   
   
-  virtual void OnFrameDropped(absl::string_view ,
-                              EncodedImageCallback::DropReason ) {}
+  virtual void OnFrameDropped(absl::string_view ) {}
+  
+  [[deprecated("Use callback without DropReason parameter")]]
+  virtual void OnFrameDropped(absl::string_view peer_name,
+                              EncodedImageCallback::DropReason ) {
+    OnFrameDropped(peer_name);
+  }
   
   
   virtual void OnFramePreDecode(absl::string_view ,
