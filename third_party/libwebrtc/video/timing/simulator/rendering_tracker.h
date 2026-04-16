@@ -62,7 +62,7 @@ class RenderingTracker : public AssembledFrameCallback,
   struct Config {
     uint32_t ssrc = 0;
     
-    TimeDelta render_delay = TimeDelta::MinusInfinity();
+    TimeDelta render_delay = TimeDelta::PlusInfinity();
   };
 
   RenderingTracker(const Environment& env,

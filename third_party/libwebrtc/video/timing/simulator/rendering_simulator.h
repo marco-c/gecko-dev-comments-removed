@@ -22,6 +22,7 @@
 #include "absl/algorithm/container.h"
 #include "api/array_view.h"
 #include "api/environment/environment.h"
+#include "api/numerics/samples_stats_counter.h"
 #include "api/units/data_size.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
@@ -62,13 +63,13 @@ class RenderingSimulator {
   struct Frame : public FrameBase<Frame> {
     
     
-    int num_packets = -1;
-    DataSize size = DataSize::Zero();
+    int num_packets = -1;              
+    DataSize size = DataSize::Zero();  
 
     
     int payload_type = -1;
     uint32_t rtp_timestamp = 0;
-    int64_t unwrapped_rtp_timestamp = -1;
+    int64_t unwrapped_rtp_timestamp = -1;  
 
     
     int64_t frame_id = -1;
@@ -81,23 +82,23 @@ class RenderingSimulator {
     Timestamp last_packet_arrival_timestamp = Timestamp::MinusInfinity();
 
     
-    Timestamp assembled_timestamp = Timestamp::PlusInfinity();
+    Timestamp assembled_timestamp = Timestamp::PlusInfinity();  
     Timestamp render_timestamp = Timestamp::PlusInfinity();
     Timestamp decoded_timestamp = Timestamp::PlusInfinity();
     Timestamp rendered_timestamp = Timestamp::PlusInfinity();
 
     
-    int frames_dropped = -1;
+    int frames_dropped = 0;
     
     
     
     
     
-    TimeDelta jitter_buffer_minimum_delay = TimeDelta::MinusInfinity();
+    TimeDelta jitter_buffer_minimum_delay = TimeDelta::PlusInfinity();
     
-    TimeDelta jitter_buffer_target_delay = TimeDelta::MinusInfinity();
+    TimeDelta jitter_buffer_target_delay = TimeDelta::PlusInfinity();
     
-    TimeDelta jitter_buffer_delay = TimeDelta::MinusInfinity();
+    TimeDelta jitter_buffer_delay = TimeDelta::PlusInfinity();
 
     
     
@@ -109,6 +110,8 @@ class RenderingSimulator {
     
     
     TimeDelta PacketBufferDuration() const {
+      RTC_DCHECK(assembled_timestamp.IsFinite());
+      RTC_DCHECK(first_packet_arrival_timestamp.IsFinite());
       return assembled_timestamp - first_packet_arrival_timestamp;
     }
 
@@ -118,11 +121,19 @@ class RenderingSimulator {
     
     
     TimeDelta FrameBufferDuration() const {
+      RTC_DCHECK(assembled_timestamp.IsFinite());
       return decoded_timestamp - assembled_timestamp;
     }
 
     
     TimeDelta RenderBufferDuration() const {
+      if (!decoded_timestamp.IsFinite()) {
+        RTC_DCHECK(!rendered_timestamp.IsFinite());
+        return TimeDelta::PlusInfinity();
+      }
+      if (!rendered_timestamp.IsFinite()) {
+        return TimeDelta::PlusInfinity();
+      }
       return rendered_timestamp - decoded_timestamp;
     }
 
@@ -150,14 +161,30 @@ class RenderingSimulator {
     
     
     TimeDelta AssembledMargin() const {
+      if (!render_timestamp.IsFinite()) {
+        return TimeDelta::PlusInfinity();
+      }
+      RTC_DCHECK(assembled_timestamp.IsFinite());
       
       
       return (render_timestamp - kRenderDelay) - assembled_timestamp;
     }
-    bool AssembledInTime() const {
-      return AssembledMargin() > kInTimeMarginThreshold;
+    std::optional<bool> AssembledInTime() const {
+      TimeDelta assembled_margin = AssembledMargin();
+      if (!assembled_margin.IsFinite()) {
+        return std::nullopt;
+      }
+      return assembled_margin > kInTimeMarginThreshold;
+    }
+    std::optional<bool> AssembledLate() const {
+      std::optional<bool> assembled_in_time = AssembledInTime();
+      if (!assembled_in_time.has_value()) {
+        return std::nullopt;
+      }
+      return !assembled_in_time.value();
     }
 
+    
     
     
     
@@ -165,43 +192,158 @@ class RenderingSimulator {
     
     
     std::optional<TimeDelta> AssembledMarginExcess() const {
-      return AssembledInTime() ? std::optional<TimeDelta>(AssembledMargin())
-                               : std::nullopt;
-    }
-    std::optional<TimeDelta> AssembledMarginDeficit() const {
-      return !AssembledInTime() ? std::optional<TimeDelta>(AssembledMargin())
+      std::optional<bool> assembled_in_time = AssembledInTime();
+      if (!assembled_in_time.has_value()) {
+        return std::nullopt;
+      }
+      return *assembled_in_time ? std::optional<TimeDelta>(AssembledMargin())
                                 : std::nullopt;
     }
+    std::optional<TimeDelta> AssembledMarginDeficit() const {
+      std::optional<bool> assembled_late = AssembledLate();
+      if (!assembled_late.has_value()) {
+        return std::nullopt;
+      }
+      return *assembled_late ? std::optional<TimeDelta>(AssembledMargin())
+                             : std::nullopt;
+    }
 
+    
+    
     
     
     
     
     
     TimeDelta RenderedMargin() const {
+      if (!render_timestamp.IsFinite()) {
+        RTC_DCHECK(!rendered_timestamp.IsFinite());
+        return TimeDelta::PlusInfinity();
+      }
+      if (!rendered_timestamp.IsFinite()) {
+        return TimeDelta::PlusInfinity();
+      }
       return (render_timestamp - kRenderDelay) - rendered_timestamp;
     }
-    bool RenderedInTime() const {
-      return RenderedMargin() > kInTimeMarginThreshold;
+    std::optional<bool> RenderedInTime() const {
+      TimeDelta rendered_margin = RenderedMargin();
+      if (!rendered_margin.IsFinite()) {
+        return std::nullopt;
+      }
+      return rendered_margin > kInTimeMarginThreshold;
+    }
+    std::optional<bool> RenderedLate() const {
+      std::optional<bool> rendered_in_time = RenderedInTime();
+      if (!rendered_in_time.has_value()) {
+        return std::nullopt;
+      }
+      return !rendered_in_time.value();
     }
 
     
     
+    
+    
     std::optional<TimeDelta> RenderedMarginExcess() const {
-      return RenderedInTime() ? std::optional<TimeDelta>(RenderedMargin())
-                              : std::nullopt;
+      std::optional<bool> rendered_in_time = RenderedInTime();
+      if (!rendered_in_time.has_value()) {
+        return std::nullopt;
+      }
+      return *rendered_in_time ? std::optional<TimeDelta>(RenderedMargin())
+                               : std::nullopt;
     }
     std::optional<TimeDelta> RenderedMarginDeficit() const {
-      return !RenderedInTime() ? std::optional<TimeDelta>(RenderedMargin())
-                               : std::nullopt;
+      std::optional<bool> rendered_late = RenderedLate();
+      if (!rendered_late.has_value()) {
+        return std::nullopt;
+      }
+      return *rendered_late ? std::optional<TimeDelta>(RenderedMargin())
+                            : std::nullopt;
     }
   };
 
   
-  struct Stream : public StreamBase<Stream> {
+  struct Stream : public StreamBase<Stream, Frame> {
     Timestamp creation_timestamp = Timestamp::PlusInfinity();
     uint32_t ssrc = 0;
     std::vector<Frame> frames;
+
+    
+
+    
+    int NumAssembledInTimeFrames() const {
+      return CountSetAndTrue(&Frame::AssembledInTime);
+    }
+    int NumAssembledLateFrames() const {
+      return CountSetAndTrue(&Frame::AssembledLate);
+    }
+
+    
+    int NumDecodedFrames() const {
+      return CountFiniteTimestamps(&Frame::decoded_timestamp);
+    }
+
+    
+    int NumRenderedFrames() const {
+      return CountFiniteTimestamps(&Frame::rendered_timestamp);
+    }
+
+    
+    int NumRenderedInTimeFrames() const {
+      return CountSetAndTrue(&Frame::RenderedInTime);
+    }
+    int NumRenderedLateFrames() const {
+      return CountSetAndTrue(&Frame::RenderedLate);
+    }
+
+    
+    int NumDecoderDroppedFrames() const {
+      return SumNonNegativeIntField(&Frame::frames_dropped);
+    }
+
+    
+    SamplesStatsCounter JitterBufferMinimumDelayMs() const {
+      return BuildSamplesMs(&Frame::jitter_buffer_minimum_delay);
+    }
+    SamplesStatsCounter JitterBufferDelayMs() const {
+      return BuildSamplesMs(&Frame::jitter_buffer_delay);
+    }
+
+    
+    SamplesStatsCounter PacketBufferDurationMs() const {
+      return BuildSamplesMs(&Frame::PacketBufferDuration);
+    }
+    SamplesStatsCounter FrameBufferDurationMs() const {
+      return BuildSamplesMs(&Frame::FrameBufferDuration);
+    }
+    SamplesStatsCounter RenderBufferDurationMs() const {
+      return BuildSamplesMs(&Frame::RenderBufferDuration);
+    }
+    SamplesStatsCounter TotalBufferDurationMs() const {
+      return BuildSamplesMs(&Frame::TotalBufferDuration);
+    }
+
+    
+    SamplesStatsCounter AssembledMarginMs() const {
+      return BuildSamplesMs(&Frame::AssembledMargin);
+    }
+    SamplesStatsCounter AssembledMarginExcessMs() const {
+      return BuildSamplesMs(&Frame::AssembledMarginExcess);
+    }
+    SamplesStatsCounter AssembledMarginDeficitMs() const {
+      return BuildSamplesMs(&Frame::AssembledMarginDeficit);
+    }
+
+    
+    SamplesStatsCounter RenderedMarginMs() const {
+      return BuildSamplesMs(&Frame::RenderedMargin);
+    }
+    SamplesStatsCounter RenderedMarginExcessMs() const {
+      return BuildSamplesMs(&Frame::RenderedMarginExcess);
+    }
+    SamplesStatsCounter RenderedMarginDeficitMs() const {
+      return BuildSamplesMs(&Frame::RenderedMarginDeficit);
+    }
   };
 
   

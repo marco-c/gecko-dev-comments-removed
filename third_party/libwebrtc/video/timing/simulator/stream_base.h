@@ -8,14 +8,21 @@
 
 
 
+#include <algorithm>
 #include <cstddef>
+#include <optional>
+#include <utility>
 #include <vector>
 
 #include "absl/algorithm/container.h"
+#include "absl/functional/any_invocable.h"
+#include "api/numerics/samples_stats_counter.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/moving_percentile_filter.h"
+#include "video/timing/simulator/frame_base.h"
 
 #ifndef VIDEO_TIMING_SIMULATOR_STREAM_BASE_H_
 #define VIDEO_TIMING_SIMULATOR_STREAM_BASE_H_
@@ -23,7 +30,7 @@
 namespace webrtc::video_timing_simulator {
 
 
-template <typename StreamT>
+template <typename StreamT, typename FrameT>
 struct StreamBase {
   
 
@@ -37,21 +44,14 @@ struct StreamBase {
   
   void PopulateFrameDelayVariations(float baseline_percentile = 0.0,
                                     size_t baseline_window_size = 300) {
-    auto& frames = self().frames;
-    if (frames.empty()) {
+    if (IsEmpty()) {
       return;
     }
 
     
-    
-    
-    MovingPercentileFilter<TimeDelta> baseline_filter(baseline_percentile,
-                                                      baseline_window_size);
-
-    
     Timestamp arrival_offset = Timestamp::PlusInfinity();
     Timestamp departure_offset = Timestamp::PlusInfinity();
-    for (const auto& frame : frames) {
+    for (const auto& frame : self().frames) {
       Timestamp arrival = frame.ArrivalTimestamp();
       Timestamp departure = frame.DepartureTimestamp();
       if (arrival.IsFinite() && departure.IsFinite()) {
@@ -67,13 +67,170 @@ struct StreamBase {
     }
 
     
-    for (auto& frame : frames) {
+    
+    
+    MovingPercentileFilter<TimeDelta> baseline_filter(baseline_percentile,
+                                                      baseline_window_size);
+
+    
+    for (auto& frame : self().frames) {
       TimeDelta one_way_delay =
           frame.OneWayDelay(arrival_offset, departure_offset);
       baseline_filter.Insert(one_way_delay);
       frame.frame_delay_variation =
           one_way_delay - baseline_filter.GetFilteredValue();
     }
+  }
+
+  
+
+  
+  int CountSetAndTrue(absl::AnyInvocable<std::optional<bool>(const FrameT&)
+                                             const> accessor) const {
+    return absl::c_count_if(
+        self().frames, [accessor = std::move(accessor)](const auto& frame) {
+          std::optional<bool> value = accessor(frame);
+          return value.has_value() && *value;
+        });
+  }
+
+  
+  int CountFiniteTimestamps(
+      absl::AnyInvocable<Timestamp(const FrameT&) const> accessor) const {
+    return absl::c_count_if(
+        self().frames, [accessor = std::move(accessor)](const auto& frame) {
+          return accessor(frame).IsFinite();
+        });
+  }
+
+  
+  int SumNonNegativeIntField(
+      absl::AnyInvocable<int(const FrameT&) const> accessor) const {
+    return absl::c_accumulate(
+        self().frames, 0,
+        [accessor = std::move(accessor)](int sum, const auto& frame) {
+          int value = accessor(frame);
+          RTC_DCHECK_GE(value, 0);
+          return sum + value;
+        });
+  }
+
+  
+  SamplesStatsCounter BuildSamplesPositiveInt(
+      absl::AnyInvocable<int(const FrameT&) const> accessor) const {
+    SamplesStatsCounter stats(self().frames.size());
+    for (const auto& frame : self().frames) {
+      int value = accessor(frame);
+      RTC_DCHECK_GT(value, 0);
+      stats.AddSample({.value = static_cast<double>(value),
+                       .time = Timestamp::PlusInfinity()});
+    }
+    return stats;
+  }
+
+  
+  
+  SamplesStatsCounter BuildSamplesMs(
+      absl::AnyInvocable<std::optional<TimeDelta>(const FrameT&) const>
+          accessor) const {
+    SamplesStatsCounter stats(self().frames.size());
+    for (const auto& frame : self().frames) {
+      std::optional<TimeDelta> value = accessor(frame);
+      if (!value.has_value() || !value->IsFinite()) {
+        continue;
+      }
+      stats.AddSample(
+          {.value = value->ms<double>(), .time = Timestamp::PlusInfinity()});
+    }
+    return stats;
+  }
+
+  
+  
+  SamplesStatsCounter BuildSamplesMs(
+      absl::AnyInvocable<TimeDelta(const FrameT&, const FrameT&) const>
+          calculator) const {
+    SamplesStatsCounter stats(self().frames.size());
+    for (size_t i = 1; i < self().frames.size(); ++i) {
+      const auto& cur = self().frames[i];
+      const auto& prev = self().frames[i - 1];
+      TimeDelta inter = calculator(cur, prev);
+      if (!inter.IsFinite()) {
+        continue;
+      }
+      stats.AddSample(
+          {.value = inter.ms<double>(), .time = Timestamp::PlusInfinity()});
+    }
+    return stats;
+  }
+
+  
+  
+  TimeDelta MinMaxDuration(
+      absl::AnyInvocable<Timestamp(const FrameT&) const> accessor) const {
+    if (IsEmpty()) {
+      return TimeDelta::PlusInfinity();
+    }
+    Timestamp min_value = Timestamp::PlusInfinity();
+    Timestamp max_value = Timestamp::MinusInfinity();
+    for (const auto& frame : self().frames) {
+      Timestamp time = accessor(frame);
+      if (!time.IsFinite()) {
+        continue;
+      }
+      min_value = std::min(min_value, time);
+      max_value = std::max(time, max_value);
+    }
+    if (!min_value.IsFinite() || !max_value.IsFinite()) {
+      return TimeDelta::PlusInfinity();
+    }
+    RTC_DCHECK_LE(min_value, max_value);
+    return max_value - min_value;
+  }
+
+  
+
+  
+  TimeDelta DepartureDuration() const {
+    return MinMaxDuration(
+        [](const auto& frame) { return frame.DepartureTimestamp(); });
+  }
+
+  
+  TimeDelta ArrivalDuration() const {
+    return MinMaxDuration(
+        [](const auto& frame) { return frame.ArrivalTimestamp(); });
+  }
+
+  
+  int NumAssembledFrames() const {
+    int num_finite_timestamps =
+        CountFiniteTimestamps(&FrameT::assembled_timestamp);
+    RTC_DCHECK_EQ(num_finite_timestamps, self().frames.size());
+    return num_finite_timestamps;
+  }
+
+  
+  SamplesStatsCounter NumPackets() const {
+    return BuildSamplesPositiveInt(&FrameT::num_packets);
+  }
+  SamplesStatsCounter SizeBytes() const {
+    return BuildSamplesPositiveInt(
+        [](const auto& frame) { return frame.size.bytes(); });
+  }
+
+  
+  SamplesStatsCounter FrameDelayVariationMs() const {
+    return BuildSamplesMs(&FrameT::frame_delay_variation);
+  }
+  SamplesStatsCounter InterDepartureTimeMs() const {
+    return BuildSamplesMs(&InterDepartureTime<FrameT>);
+  }
+  SamplesStatsCounter InterArrivalTimeMs() const {
+    return BuildSamplesMs(&InterArrivalTime<FrameT>);
+  }
+  SamplesStatsCounter InterFrameDelayVariationMs() const {
+    return BuildSamplesMs(&InterFrameDelayVariation<FrameT>);
   }
 };
 
