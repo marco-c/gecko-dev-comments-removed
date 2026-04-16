@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_ReferrerInfo_h
 #define mozilla_dom_ReferrerInfo_h
 
@@ -13,6 +11,11 @@
 #include "nsCOMPtr.h"
 #include "nsIReferrerInfo.h"
 #include "nsReadableUtils.h"
+
+namespace IPC {
+class MessageReader;
+class MessageWriter;
+}  
 
 #define REFERRERINFO_CONTRACTID "@mozilla.org/referrer-info;1"
 
@@ -73,6 +76,10 @@ class ReferrerInfo : public nsIReferrerInfo {
 
   
   already_AddRefed<ReferrerInfo> Clone() const;
+
+  void Serialize(IPC::MessageWriter* aWriter) const;
+  static bool Deserialize(IPC::MessageReader* aReader,
+                          RefPtr<nsIReferrerInfo>* aResult);
 
   
   already_AddRefed<ReferrerInfo> CloneWithNewPolicy(
