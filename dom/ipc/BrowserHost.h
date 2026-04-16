@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_BrowserHost_h
 #define mozilla_dom_BrowserHost_h
 
@@ -62,7 +60,6 @@ class BrowserHost : public RemoteBrowser,
   TabId GetTabId() const override;
   LayersId GetLayersId() const override;
   BrowsingContext* GetBrowsingContext() const override;
-  nsILoadContext* GetLoadContext() const override;
   bool CanRecv() const override;
 
   Element* GetOwnerElement() const { return mRoot->GetOwnerElement(); }

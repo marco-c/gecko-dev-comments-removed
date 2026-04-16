@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_BrowserBridgeChild_h
 #define mozilla_dom_BrowserBridgeChild_h
 
@@ -38,8 +36,6 @@ class BrowserBridgeChild : public PBrowserBridgeChild {
   nsFrameLoader* GetFrameLoader() const { return mFrameLoader; }
 
   BrowsingContext* GetBrowsingContext() { return mBrowsingContext; }
-
-  nsILoadContext* GetLoadContext();
 
   void NavigateByKey(bool aForward, bool aForDocumentNavigation);
 

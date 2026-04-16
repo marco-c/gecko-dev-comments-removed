@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/BrowserBridgeHost.h"
 
 #include "mozilla/dom/Element.h"
@@ -31,10 +29,6 @@ mozilla::layers::LayersId BrowserBridgeHost::GetLayersId() const {
 
 BrowsingContext* BrowserBridgeHost::GetBrowsingContext() const {
   return mBridge->GetBrowsingContext();
-}
-
-nsILoadContext* BrowserBridgeHost::GetLoadContext() const {
-  return mBridge->GetLoadContext();
 }
 
 bool BrowserBridgeHost::CanRecv() const {
