@@ -13,7 +13,6 @@ support-files = [
 prefs = [
   "browser.newtabpage.resource-mapping.log=true",
   "browser.newtabpage.activity-stream.debug=false",
-  "browser.newtabpage.activity-stream.discoverystream.enabled=true",
   "browser.newtabpage.activity-stream.discoverystream.endpoints=data:",
   "browser.newtabpage.activity-stream.feeds.system.topstories=true",
   "browser.newtabpage.activity-stream.feeds.section.topstories=true",
@@ -68,7 +67,6 @@ skip-if = [
 
 ["browser_newtab_last_LinkMenu.js"]
 skip-if = [
-  "os == 'win' && os_version == '11.26200' && asan", # Bug 2019745
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt && socketprocess_networking", # Bug 1945649
 ]
 

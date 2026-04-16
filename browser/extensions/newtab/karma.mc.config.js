@@ -146,16 +146,6 @@ module.exports = function (config) {
             
 
 
-
-            "lib/TopStoriesFeed.sys.mjs": {
-              statements: 0,
-              lines: 0,
-              functions: 0,
-              branches: 0,
-            },
-            
-
-
             "lib/Wallpapers/WallpaperFeed.sys.mjs": {
               statements: 0,
               lines: 0,
