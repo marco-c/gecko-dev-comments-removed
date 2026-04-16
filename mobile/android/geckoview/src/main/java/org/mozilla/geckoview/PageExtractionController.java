@@ -24,10 +24,6 @@ public class PageExtractionController {
     @NonNull public final String language;
 
     
-    public final boolean isReaderable;
-
-    
-
 
 
 
@@ -37,46 +33,18 @@ public class PageExtractionController {
     public PageMetadata(
         @NonNull final String[] structuredDataTypes,
         final int wordCount,
-        @NonNull final String language,
-        final boolean isReaderable) {
+        @NonNull final String language) {
       this.structuredDataTypes = structuredDataTypes;
       this.wordCount = wordCount;
       this.language = language;
-      this.isReaderable = isReaderable;
     }
 
      static PageMetadata fromBundle(@NonNull final GeckoBundle bundle) {
       final String[] structuredDataTypes = bundle.getStringArray("structuredDataTypes");
       final int wordCount = bundle.getInt("wordCount", -1);
       final String language = bundle.getString("language");
-      final boolean isReaderable = bundle.getBoolean("isReaderable", false);
 
-      return new PageMetadata(structuredDataTypes, wordCount, language, isReaderable);
-    }
-  }
-
-  
-  public static class ContentParams {
-
-    
-
-
-
-    public final boolean removeBoilerplate;
-
-    
-
-
-
-
-    public ContentParams(final boolean removeBoilerplate) {
-      this.removeBoilerplate = removeBoilerplate;
-    }
-
-     GeckoBundle toBundle() {
-      final GeckoBundle bundle = new GeckoBundle(1);
-      bundle.putBoolean("removeBoilerplate", removeBoilerplate);
-      return bundle;
+      return new PageMetadata(structuredDataTypes, wordCount, language);
     }
   }
 
@@ -113,22 +81,10 @@ public class PageExtractionController {
 
     @HandlerThread
     public @NonNull GeckoResult<String> getPageContent() {
-      return getPageContent(new ContentParams(false));
-    }
-
-    
-
-
-
-
-
-
-    @HandlerThread
-    public @NonNull GeckoResult<String> getPageContent(@NonNull final ContentParams options) {
       ThreadUtils.assertOnHandlerThread();
       return mSession
           .getEventDispatcher()
-          .queryBundle(GET_TEXT_CONTENT_EVENT, options.toBundle())
+          .queryBundle(GET_TEXT_CONTENT_EVENT)
           .then(
               result -> {
                 if (result == null)
