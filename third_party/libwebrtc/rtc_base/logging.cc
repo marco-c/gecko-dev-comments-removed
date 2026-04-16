@@ -394,7 +394,9 @@ void LogMessage::OutputToDebug(const LogLineRef& log_line) {
 #if defined(WEBRTC_WIN)
   
   
+#if RTC_DLOG_IS_ON
   OutputDebugStringA(msg_str.c_str());
+#endif
   if (log_to_stderr) {
     
     if (HANDLE error_handle = ::GetStdHandle(STD_ERROR_HANDLE)) {
