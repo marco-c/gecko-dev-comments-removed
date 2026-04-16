@@ -714,11 +714,9 @@ sec_pkcs7_encoder_sig_and_certs(SEC_PKCS7ContentInfo *cinfo,
                 if (digestalgtag == SECOID_GetAlgorithmTag(digestalgs[di]))
                     break;
             }
-            if (digestalgs[di] == NULL) {
-                
+            if (digestalgs[di] == NULL || digests[di] == NULL) {
                 return SECFailure;
             }
-            PORT_Assert(digests[di] != NULL);
 
             cert = signerinfo->cert;
             privkey = PK11_FindKeyByAnyCert(cert, pwfnarg);

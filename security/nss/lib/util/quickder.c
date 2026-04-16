@@ -522,11 +522,18 @@ DecodeGroup(void* dest,
             }
         } while ((SECSuccess == rv) && (counter.len));
 
+        
+        if (SECSuccess == rv && subTemplate->size &&
+            totalEntries > ((size_t)1 << 30) / subTemplate->size) {
+            PORT_SetError(SEC_ERROR_BAD_DER);
+            rv = SECFailure;
+        }
+
         if (SECSuccess == rv) {
             
             
             entries = (void**)PORT_ArenaZAlloc(arena, sizeof(void*) * (totalEntries + 1) + 
-                                                          subTemplate->size * totalEntries);
+                                                          (size_t)subTemplate->size * totalEntries);
 
             if (entries) {
                 entries[totalEntries] = NULL; 
@@ -540,7 +547,7 @@ DecodeGroup(void* dest,
                 PRUint32 entriesIndex = 0;
                 for (entriesIndex = 0; entriesIndex < totalEntries; entriesIndex++) {
                     entries[entriesIndex] =
-                        (char*)entriesData + (subTemplate->size * entriesIndex);
+                        (char*)entriesData + ((size_t)subTemplate->size * entriesIndex);
                 }
             }
         }

@@ -72,19 +72,18 @@ DSAU_ConvertSignedToFixedUnsigned(SECItem *dest, SECItem *src)
     unsigned char *pDst = dest->data;
     unsigned int cntSrc = src->len;
     unsigned int cntDst = dest->len;
-    int zCount = cntDst - cntSrc;
 
-    if (zCount > 0) {
+    if (cntSrc <= cntDst) {
+        unsigned int zCount = cntDst - cntSrc;
         PORT_Memset(pDst, 0, zCount);
         PORT_Memcpy(pDst + zCount, pSrc, cntSrc);
         return SECSuccess;
     }
-    if (zCount <= 0) {
-        
-        while (zCount++ < 0) {
-            if (*pSrc++ != 0)
-                goto loser;
-        }
+    
+    unsigned int extra = cntSrc - cntDst;
+    while (extra--) {
+        if (*pSrc++ != 0)
+            goto loser;
     }
     PORT_Memcpy(pDst, pSrc, cntDst);
     return SECSuccess;
@@ -188,6 +187,12 @@ common_DecodeDerSig(const SECItem *item, unsigned int len)
     sig.s.type = siUnsignedInteger;
     status = SEC_QuickDERDecodeItem(&arena.arena, &sig, DSA_SignatureTemplate, item);
     if (status != SECSuccess)
+        goto loser;
+
+    
+
+
+    if (sig.r.len > len + 1 || sig.s.len > len + 1)
         goto loser;
 
     

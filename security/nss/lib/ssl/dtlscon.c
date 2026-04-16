@@ -1125,7 +1125,7 @@ dtls_HandleHelloVerifyRequest(sslSocket *ss, PRUint8 *b, PRUint32 length)
 {
     int errCode = SSL_ERROR_RX_MALFORMED_HELLO_VERIFY_REQUEST;
     SECStatus rv;
-    SSL3ProtocolVersion temp;
+    SSL3ProtocolVersion version;
     SSL3AlertDescription desc = illegal_parameter;
 
     SSL_TRC(3, ("%d: SSL3[%d]: handle hello_verify_request handshake",
@@ -1154,7 +1154,7 @@ dtls_HandleHelloVerifyRequest(sslSocket *ss, PRUint8 *b, PRUint32 length)
 
 
 
-    rv = ssl_ClientReadVersion(ss, &b, &length, &temp);
+    rv = ssl_ClientReadVersion(ss, &b, &length, &version);
     if (rv != SECSuccess) {
         goto loser; 
     }
@@ -1162,13 +1162,30 @@ dtls_HandleHelloVerifyRequest(sslSocket *ss, PRUint8 *b, PRUint32 length)
     
 
 
-    rv = ssl3_ConsumeHandshakeVariable(ss, &ss->ssl3.hs.cookie, 1, &b, &length);
+
+    if (version > SSL_LIBRARY_VERSION_TLS_1_2) {
+        desc = illegal_parameter;
+        goto alert_loser;
+    }
+    if (ss->vrange.max > SSL_LIBRARY_VERSION_TLS_1_2) {
+        ss->vrange.max = SSL_LIBRARY_VERSION_TLS_1_2;
+    }
+
+    
+    SECItem cookie;
+    rv = ssl3_ConsumeHandshakeVariable(ss, &cookie, 1, &b, &length);
     if (rv != SECSuccess) {
         goto loser; 
     }
-    if (ss->ssl3.hs.cookie.len > DTLS_COOKIE_BYTES) {
+    if (cookie.len > DTLS_COOKIE_BYTES) {
         desc = decode_error;
         goto alert_loser; 
+    }
+    PORT_Assert(!ss->ssl3.hs.cookie.data && !ss->ssl3.hs.cookie.len);
+    SECITEM_FreeItem(&ss->ssl3.hs.cookie, PR_FALSE);
+    rv = SECITEM_CopyItem(NULL, &ss->ssl3.hs.cookie, &cookie);
+    if (rv != SECSuccess) {
+        goto loser;
     }
 
     ssl_GetXmitBufLock(ss); 
@@ -1177,6 +1194,8 @@ dtls_HandleHelloVerifyRequest(sslSocket *ss, PRUint8 *b, PRUint32 length)
     rv = ssl3_SendClientHello(ss, client_hello_retransmit);
 
     ssl_ReleaseXmitBufLock(ss); 
+
+    SECITEM_FreeItem(&ss->ssl3.hs.cookie, PR_FALSE);
 
     if (rv == SECSuccess)
         return rv;
