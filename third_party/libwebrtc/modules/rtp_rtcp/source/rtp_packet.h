@@ -14,6 +14,7 @@
 #include <cstdint>
 #include <cstring>
 #include <optional>
+#include <span>
 #include <string>
 #include <utility>
 #include <vector>
@@ -29,6 +30,12 @@ class RtpPacket {
  public:
   using ExtensionType = RTPExtensionType;
   using ExtensionManager = RtpHeaderExtensionMap;
+
+  
+  
+  
+  
+  static constexpr size_t kMaxCsrcs = 15;
 
   
   
@@ -118,7 +125,7 @@ class RtpPacket {
   
   
   
-  void SetCsrcs(ArrayView<const uint32_t> csrcs);
+  void SetCsrcs(std::span<const uint32_t> csrcs);
 
   
   template <typename Extension>
@@ -164,6 +171,9 @@ class RtpPacket {
 
   
   uint8_t* AllocatePayload(size_t size_bytes);
+
+  
+  void SetPayload(ArrayView<const uint8_t> payload);
 
   bool SetPadding(size_t padding_size);
 
