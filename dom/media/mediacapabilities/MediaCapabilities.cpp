@@ -330,9 +330,9 @@ void MediaCapabilities::CreateMediaCapabilitiesDecodingInfo(
   
   
   
-  RefPtr<TaskQueue> taskQueue = TaskQueue::Create(
-      GetMediaThreadPool(MediaThreadType::PLATFORM_DECODER),
-      "MediaCapabilities::TaskQueue");
+  RefPtr<TaskQueue> taskQueue =
+      TaskQueue::Create(GetMediaThreadPool(MediaThreadType::PLATFORM_DECODER),
+                        "MediaCapabilities::TaskQueue");
   RefPtr<layers::KnowsCompositor> compositor = GetCompositor();
   const bool shouldResistFingerprinting =
       mParent->ShouldResistFingerprinting(RFPTarget::MediaCapabilities);
@@ -575,11 +575,8 @@ MediaCapabilities::CheckVideoDecodingInfo(
                               sTrackingIdCounter++,
                               TrackingId::TrackAcrossProcesses::Yes);
         CreateDecoderParams params{
-            *config,
-            compositor,
-            CreateDecoderParams::VideoFrameRate(frameRate),
-            TrackInfo::kVideoTrack,
-            Some(std::move(trackingId))};
+            *config, compositor, CreateDecoderParams::VideoFrameRate(frameRate),
+            TrackInfo::kVideoTrack, Some(std::move(trackingId))};
         
         
         
