@@ -8,17 +8,13 @@
 
 namespace mozilla::gtest {
 
-static void SetCrashReporter(bool aEnabled) {
+void DisableCrashReporter() {
   nsCOMPtr<nsICrashReporter> crashreporter =
       do_GetService("@mozilla.org/toolkit/crash-reporter;1");
   if (crashreporter) {
-    crashreporter->SetEnabled(aEnabled);
+    crashreporter->SetEnabled(false);
   }
 }
-
-void EnableCrashReporter() { SetCrashReporter( true); }
-
-void DisableCrashReporter() { SetCrashReporter( false); }
 
 class ScopedTestResultReporterImpl
     : public ScopedTestResultReporter,
