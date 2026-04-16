@@ -99,21 +99,22 @@ void ViewTimeline::UpdateCachedCurrentTime() {
 
   mCachedCurrentTime.reset();
 
+  const auto state = GetState();
   
-  const auto* e = mScrollerInfo.Source().mElement;
-  if (!e || !e->GetPrimaryFrame()) {
+  if (const auto* e = state.mSource.mElement; !e || !e->GetPrimaryFrame()) {
     return;
   }
 
   
-  const ScrollContainerFrame* scrollContainerFrame = GetScrollContainerFrame();
+  const ScrollContainerFrame* scrollContainerFrame =
+      state.GetScrollContainerFrame();
   if (!scrollContainerFrame) {
     return;
   }
 
   
   
-  const auto orientation = Axis();
+  const auto orientation = state.Axis();
   if (!scrollContainerFrame->GetAvailableScrollingDirections().contains(
           orientation)) {
     return;
