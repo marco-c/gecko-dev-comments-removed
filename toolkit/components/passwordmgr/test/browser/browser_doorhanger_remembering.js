@@ -54,10 +54,7 @@ requestLongerTimeout(2);
 add_setup(async function () {
   
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.urlbar.trustPanel.featureGate", false],
-      ["dom.security.https_first", false],
-    ],
+    set: [["dom.security.https_first", false]],
   });
 
   
@@ -676,11 +673,10 @@ add_task(async function test_changeUPLoginOnUPForm_remove() {
       const forceClosePopup = false;
       
       info("waiting for verifyConfirmationHint");
-      await verifyConfirmationHint(
-        browser,
-        forceClosePopup,
-        "identity-icon-box"
-      );
+      await verifyConfirmationHint(browser, forceClosePopup, [
+        "identity-icon-box",
+        "trust-icon-container",
+      ]);
     }
   );
 
