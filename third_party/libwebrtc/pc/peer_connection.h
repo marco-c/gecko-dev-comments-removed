@@ -67,7 +67,6 @@
 #include "p2p/base/ice_transport_internal.h"
 #include "p2p/base/port.h"
 #include "p2p/base/port_allocator.h"
-#include "p2p/base/transport_description.h"
 #include "p2p/dtls/dtls_transport_factory.h"
 #include "pc/channel_interface.h"
 #include "pc/codec_vendor.h"
@@ -526,8 +525,6 @@ class PeerConnection : public PeerConnectionInternal,
   void OnSelectedCandidatePairChanged(const CandidatePairChangeEvent& event)
       RTC_RUN_ON(signaling_thread());
 
-  void OnNegotiationNeeded();
-
   const JsepTransportController* transport_controller_s() const
       RTC_RUN_ON(signaling_thread()) {
     return transport_controller_copy_;
@@ -561,12 +558,6 @@ class PeerConnection : public PeerConnectionInternal,
   
   
   void StopRtcEventLog_w();
-
-  
-  
-  static bool GetTransportDescription(const SessionDescription* description,
-                                      const std::string& content_name,
-                                      TransportDescription* info);
 
   
   
