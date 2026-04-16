@@ -4268,6 +4268,11 @@ static void AssertKnownClass(TempAllocator& alloc, MInstruction* ins,
 MDefinition* MBoxNonStrictThis::foldsTo(TempAllocator& alloc) {
   MDefinition* in = input();
 
+  
+  if (in->type() == MIRType::Object) {
+    return in;
+  }
+
   if (!in->isBox()) {
     return this;
   }

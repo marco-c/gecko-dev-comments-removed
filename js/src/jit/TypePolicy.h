@@ -478,6 +478,10 @@ class BoxExceptPolicy final : public TypePolicy {
 
 
 template <unsigned Op>
+using BoxExceptObjectPolicy = BoxExceptPolicy<Op, MIRType::Object>;
+
+
+template <unsigned Op>
 class CacheIdPolicy final : public TypePolicy {
  public:
   EMPTY_DATA_;
