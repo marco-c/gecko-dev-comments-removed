@@ -408,6 +408,8 @@ class TooltipsOverlay {
 
 
 
+
+
   async onInteractiveTooltipTargetHover(target) {
     if (target.classList.contains("ruleview-compatibility-warning")) {
       const nodeCompatibilityInfo =
@@ -454,18 +456,25 @@ class TooltipsOverlay {
 
     if (type === TOOLTIP_CSS_QUERY_CONTAINER) {
       
-      if (!target.closest(".container-query .container-query-declaration")) {
+      const conditionEl = target.closest(
+        ".container-query .container-condition"
+      );
+      if (!conditionEl) {
         return false;
       }
 
-      await this.cssQueryContainerTooltipHelper.setContent(
+      await this.cssQueryContainerTooltipHelper.setContentAndShowContainerHighlighter(
         nodeInfo.value,
         this.getTooltip("interactiveTooltip")
       );
 
       this.sendOpenScalarToTelemetry(type);
 
-      return true;
+      
+      
+      
+      
+      return conditionEl;
     }
 
     if (type === TOOLTIP_CSS_SELECTOR_WARNINGS) {

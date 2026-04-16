@@ -724,8 +724,18 @@ class StyleRuleActor extends Actor {
           type,
           
           
-          containerName: rawRule.containerName,
-          containerQuery: rawRule.containerQuery,
+          conditions: Array.from(rawRule.conditions).map((condition, i) => ({
+            containerName: condition.name,
+            containerQuery: condition.query,
+            
+            
+            
+            
+            matched: !!rawRule.queryContainerFor(
+              this.currentlySelectedElement,
+              i
+            ),
+          })),
         });
       } else if (ruleClassName === "CSSSupportsRule") {
         ancestorData.push({
@@ -738,7 +748,10 @@ class StyleRuleActor extends Actor {
           start: rawRule.start,
           end: rawRule.end,
         });
-      } else if (ruleClassName === "CSSStartingStyleRule") {
+      } else if (
+        ruleClassName === "CSSStartingStyleRule" ||
+        ruleClassName === "CSSAppearanceBaseRule"
+      ) {
         ancestorData.push({
           type,
         });
@@ -1421,7 +1434,8 @@ class StyleRuleActor extends Actor {
 
 
 
-  getQueryContainerForNode(ancestorRuleIndex, nodeActor) {
+
+  getQueryContainerForNode(ancestorRuleIndex, nodeActor, conditionIndex) {
     const ancestorRule = this.ancestorRules[ancestorRuleIndex];
     if (!ancestorRule) {
       console.error(
@@ -1431,7 +1445,8 @@ class StyleRuleActor extends Actor {
     }
 
     const containerEl = ancestorRule.rawRule.queryContainerFor(
-      nodeActor.rawNode
+      nodeActor.rawNode,
+      conditionIndex
     );
 
     
