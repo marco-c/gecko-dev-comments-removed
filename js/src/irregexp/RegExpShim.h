@@ -341,10 +341,34 @@ class LazyInstance {
   using type = LazyInstanceImpl<T>;
 };
 
-#define DEFINE_LAZY_LEAKY_OBJECT_GETTER(T, FunctionName) \
-  const T* FunctionName() {                              \
-    static base::LazyInstance<T>::type obj;              \
-    return obj.Pointer();                                \
+
+
+
+template <typename T>
+class LeakyObject {
+ public:
+  template <typename... Args>
+  explicit LeakyObject(Args&&... args) {
+    new (storage_) T(std::forward<Args>(args)...);
+  }
+
+  LeakyObject(const LeakyObject&) = delete;
+  LeakyObject& operator=(const LeakyObject&) = delete;
+
+  T* get() { return reinterpret_cast<T*>(storage_); }
+
+ private:
+  alignas(T) char storage_[sizeof(T)];
+};
+
+
+
+
+
+#define DEFINE_LAZY_LEAKY_OBJECT_GETTER(T, FunctionName, ...) \
+  T* FunctionName() {                                         \
+    static ::v8::base::LeakyObject<T> object{__VA_ARGS__};    \
+    return object.get();                                      \
   }
 
 
