@@ -64,6 +64,7 @@
 #include "rtc_base/operations_chain.h"
 #include "rtc_base/rtc_certificate_generator.h"
 #include "rtc_base/ssl_stream_adapter.h"
+#include "rtc_base/system/plan_b_only.h"
 #include "rtc_base/thread.h"
 #include "rtc_base/thread_annotations.h"
 #include "rtc_base/unique_id_generator.h"
@@ -170,8 +171,8 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
                                 const std::vector<Candidate>& candidates);
   bool ShouldFireNegotiationNeededEvent(uint32_t event_id);
 
-  bool AddStream(MediaStreamInterface* local_stream);
-  void RemoveStream(MediaStreamInterface* local_stream);
+  PLAN_B_ONLY bool AddStream(MediaStreamInterface* local_stream);
+  PLAN_B_ONLY void RemoveStream(MediaStreamInterface* local_stream);
 
   std::optional<bool> is_caller() const;
   bool HasNewIceCredentials();
@@ -191,8 +192,8 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
       std::vector<absl::AnyInvocable<void() &&>>& network_tasks,
       std::vector<absl::AnyInvocable<void() &&>>& worker_tasks);
 
-  scoped_refptr<StreamCollectionInterface> local_streams();
-  scoped_refptr<StreamCollectionInterface> remote_streams();
+  PLAN_B_ONLY scoped_refptr<StreamCollectionInterface> local_streams();
+  PLAN_B_ONLY scoped_refptr<StreamCollectionInterface> remote_streams();
 
   bool initial_offerer() {
     RTC_DCHECK_RUN_ON(signaling_thread());
@@ -278,7 +279,7 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   void ApplyRemoteDescriptionUpdateTransceiverState(SdpType sdp_type);
 
   
-  void PlanBUpdateSendersAndReceivers(
+  PLAN_B_ONLY void PlanBUpdateSendersAndReceivers(
       const ContentInfo* audio_content,
       const AudioContentDescription* audio_desc,
       const ContentInfo* video_content,
@@ -316,17 +317,17 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   bool IsUnifiedPlan() const;
 
   
-  void OnAudioTrackAdded(AudioTrackInterface* track,
-                         MediaStreamInterface* stream)
+  PLAN_B_ONLY void OnAudioTrackAdded(AudioTrackInterface* track,
+                                     MediaStreamInterface* stream)
       RTC_RUN_ON(signaling_thread());
-  void OnAudioTrackRemoved(AudioTrackInterface* track,
-                           MediaStreamInterface* stream)
+  PLAN_B_ONLY void OnAudioTrackRemoved(AudioTrackInterface* track,
+                                       MediaStreamInterface* stream)
       RTC_RUN_ON(signaling_thread());
-  void OnVideoTrackAdded(VideoTrackInterface* track,
-                         MediaStreamInterface* stream)
+  PLAN_B_ONLY void OnVideoTrackAdded(VideoTrackInterface* track,
+                                     MediaStreamInterface* stream)
       RTC_RUN_ON(signaling_thread());
-  void OnVideoTrackRemoved(VideoTrackInterface* track,
-                           MediaStreamInterface* stream)
+  PLAN_B_ONLY void OnVideoTrackRemoved(VideoTrackInterface* track,
+                                       MediaStreamInterface* stream)
       RTC_RUN_ON(signaling_thread());
 
   
@@ -414,7 +415,7 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   void GetOptionsForOffer(const PeerConnectionInterface::RTCOfferAnswerOptions&
                               offer_answer_options,
                           MediaSessionOptions* session_options);
-  void GetOptionsForPlanBOffer(
+  PLAN_B_ONLY void GetOptionsForPlanBOffer(
       const PeerConnectionInterface::RTCOfferAnswerOptions&
           offer_answer_options,
       MediaSessionOptions* session_options) RTC_RUN_ON(signaling_thread());
@@ -428,7 +429,7 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   void GetOptionsForAnswer(const PeerConnectionInterface::RTCOfferAnswerOptions&
                                offer_answer_options,
                            MediaSessionOptions* session_options);
-  void GetOptionsForPlanBAnswer(
+  PLAN_B_ONLY void GetOptionsForPlanBAnswer(
       const PeerConnectionInterface::RTCOfferAnswerOptions&
           offer_answer_options,
       MediaSessionOptions* session_options) RTC_RUN_ON(signaling_thread());
@@ -475,14 +476,15 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
 
   
   
-  void RemoveSenders(webrtc::MediaType media_type);
+  PLAN_B_ONLY void RemoveSenders(webrtc::MediaType media_type);
 
   
   
   
   
-  void UpdateLocalSendersPlanB(const std::vector<StreamParams>& streams,
-                               webrtc::MediaType media_type);
+  PLAN_B_ONLY void UpdateLocalSendersPlanB(
+      const std::vector<StreamParams>& streams,
+      webrtc::MediaType media_type);
 
   
   
@@ -490,10 +492,11 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   
   
   
-  void UpdateRemoteSendersListPlanB(const std::vector<StreamParams>& streams,
-                                    bool default_track_needed,
-                                    webrtc::MediaType media_type,
-                                    StreamCollection* new_streams);
+  PLAN_B_ONLY void UpdateRemoteSendersListPlanB(
+      const std::vector<StreamParams>& streams,
+      bool default_track_needed,
+      webrtc::MediaType media_type,
+      StreamCollection* new_streams);
 
   
   
@@ -543,7 +546,7 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   
   
   
-  RTCError CreateChannels(const SessionDescription& desc);
+  PLAN_B_ONLY RTCError CreateChannels(const SessionDescription& desc);
 
   
   

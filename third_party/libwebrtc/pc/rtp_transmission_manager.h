@@ -45,6 +45,7 @@
 #include "pc/rtp_transceiver.h"
 #include "pc/transceiver_list.h"
 #include "pc/usage_pattern.h"
+#include "rtc_base/system/plan_b_only.h"
 #include "rtc_base/thread.h"
 #include "rtc_base/thread_annotations.h"
 #include "rtc_base/unique_id_generator.h"
@@ -123,49 +124,49 @@ class RtpTransmissionManager : public RtpSenderBase::SetStreamsObserver {
   GetReceiversInternal() const;
 
   
-  scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
+  PLAN_B_ONLY scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
   GetAudioTransceiver() const;
   
-  scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
+  PLAN_B_ONLY scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
   GetVideoTransceiver() const;
 
   
-  void AddTrackPlanB(MediaStreamTrackInterface* track,
-                     MediaStreamInterface* stream);
+  PLAN_B_ONLY void AddTrackPlanB(MediaStreamTrackInterface* track,
+                                 MediaStreamInterface* stream);
   
-  void RemoveTrackPlanB(MediaStreamTrackInterface* track,
-                        MediaStreamInterface* stream);
+  PLAN_B_ONLY void RemoveTrackPlanB(MediaStreamTrackInterface* track,
+                                    MediaStreamInterface* stream);
 
   
   
   
   
-  void OnRemoteSenderAddedPlanB(const RtpSenderInfo& sender_info,
-                                MediaStreamInterface* stream,
-                                MediaType media_type);
+  PLAN_B_ONLY void OnRemoteSenderAddedPlanB(const RtpSenderInfo& sender_info,
+                                            MediaStreamInterface* stream,
+                                            MediaType media_type);
 
   
   
   
-  void OnRemoteSenderRemovedPlanB(const RtpSenderInfo& sender_info,
-                                  MediaStreamInterface* stream,
-                                  MediaType media_type);
-
-  
-  
-  
-  
-  
-  void OnLocalSenderAdded(const RtpSenderInfo& sender_info,
-                          MediaType media_type);
+  PLAN_B_ONLY void OnRemoteSenderRemovedPlanB(const RtpSenderInfo& sender_info,
+                                              MediaStreamInterface* stream,
+                                              MediaType media_type);
 
   
   
   
   
   
-  void OnLocalSenderRemoved(const RtpSenderInfo& sender_info,
-                            MediaType media_type);
+  PLAN_B_ONLY void OnLocalSenderAdded(const RtpSenderInfo& sender_info,
+                                      MediaType media_type);
+
+  
+  
+  
+  
+  
+  PLAN_B_ONLY void OnLocalSenderRemoved(const RtpSenderInfo& sender_info,
+                                        MediaType media_type);
 
   std::vector<RtpSenderInfo>* GetRemoteSenderInfos(MediaType media_type);
   std::vector<RtpSenderInfo>* GetLocalSenderInfos(MediaType media_type);
@@ -187,12 +188,14 @@ class RtpTransmissionManager : public RtpSenderBase::SetStreamsObserver {
 
   
   
-  VoiceMediaSendChannelInterface* voice_media_send_channel() const;
-  VideoMediaSendChannelInterface* video_media_send_channel() const;
-  VoiceMediaReceiveChannelInterface* voice_media_receive_channel() const;
-  VideoMediaReceiveChannelInterface* video_media_receive_channel() const;
+  PLAN_B_ONLY VoiceMediaSendChannelInterface* voice_media_send_channel() const;
+  PLAN_B_ONLY VideoMediaSendChannelInterface* video_media_send_channel() const;
+  PLAN_B_ONLY VoiceMediaReceiveChannelInterface* voice_media_receive_channel()
+      const;
+  PLAN_B_ONLY VideoMediaReceiveChannelInterface* video_media_receive_channel()
+      const;
 
-  RTCErrorOr<scoped_refptr<RtpSenderInterface>> AddTrackPlanB(
+  PLAN_B_ONLY RTCErrorOr<scoped_refptr<RtpSenderInterface>> AddTrackPlanB(
       scoped_refptr<MediaStreamTrackInterface> track,
       const std::vector<std::string>& stream_ids,
       const std::vector<RtpEncodingParameters>* init_send_encodings);
@@ -226,15 +229,15 @@ class RtpTransmissionManager : public RtpSenderBase::SetStreamsObserver {
       const std::vector<RtpEncodingParameters>* init_send_encodings);
 
   
-  void CreateAudioReceiverPlanB(MediaStreamInterface* stream,
-                                const RtpSenderInfo& remote_sender_info)
-      RTC_RUN_ON(signaling_thread());
+  PLAN_B_ONLY void CreateAudioReceiverPlanB(
+      MediaStreamInterface* stream,
+      const RtpSenderInfo& remote_sender_info) RTC_RUN_ON(signaling_thread());
 
   
-  void CreateVideoReceiverPlanB(MediaStreamInterface* stream,
-                                const RtpSenderInfo& remote_sender_info)
-      RTC_RUN_ON(signaling_thread());
-  scoped_refptr<RtpReceiverInterface> RemoveAndStopReceiver(
+  PLAN_B_ONLY void CreateVideoReceiverPlanB(
+      MediaStreamInterface* stream,
+      const RtpSenderInfo& remote_sender_info) RTC_RUN_ON(signaling_thread());
+  PLAN_B_ONLY scoped_refptr<RtpReceiverInterface> RemoveAndStopReceiver(
       const RtpSenderInfo& remote_sender_info) RTC_RUN_ON(signaling_thread());
 
   void RunWithObserver(
