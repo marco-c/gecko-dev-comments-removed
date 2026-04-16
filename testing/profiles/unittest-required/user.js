@@ -71,6 +71,7 @@ user_pref("dom.ipc.reportProcessHangs", true);
 
 user_pref("dom.ipc.tabs.shutdownTimeoutSecs", 0);
 user_pref("dom.min_background_timeout_value", 1000);
+user_pref("dom.permissions.testing.enabled", true);
 user_pref("dom.popup_maximum", -1);
 
 user_pref("dom.push.connection.enabled", false);
@@ -212,4 +213,3 @@ user_pref("security.data_uri.block_toplevel_data_uri_navigations", false);
 
 
 user_pref("app.update.disabledForTesting", true);
-
