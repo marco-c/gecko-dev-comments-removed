@@ -24,6 +24,8 @@ struct spa_fraction;
 
 namespace webrtc {
 
+class EglDrmDevice;
+
 struct PipeWireVersion {
   static PipeWireVersion Parse(const absl::string_view& version);
 
@@ -44,11 +46,35 @@ struct PipeWireVersion {
 
 
 
-spa_pod* BuildFormat(spa_pod_builder* builder,
-                     uint32_t format,
-                     const std::vector<uint64_t>& modifiers,
+
+
+void BuildBaseFormatParams(spa_pod_builder* builder,
+                           uint32_t format,
+                           const struct spa_rectangle* resolution,
+                           const struct spa_fraction* frame_rate);
+
+
+
+
+
+
+
+void BuildBaseFormat(spa_pod_builder* builder,
                      const struct spa_rectangle* resolution,
-                     const struct spa_fraction* frame_rate);
+                     const struct spa_fraction* frame_rate,
+                     std::vector<const spa_pod*>& params);
+
+
+
+
+
+
+
+void BuildFullFormat(spa_pod_builder* builder,
+                     EglDrmDevice* render_device,
+                     const struct spa_rectangle* resolution,
+                     const struct spa_fraction* frame_rate,
+                     std::vector<const spa_pod*>& params);
 
 }  
 
