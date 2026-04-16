@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "shell/ShellModuleObjectWrapper.h"
 
 #include "mozilla/Maybe.h"
@@ -376,10 +374,13 @@ bool ModuleTypeToString(JSContext* cx, JS::Handle<JSObject*> owner,
       to.setString(cx->names().json);
       break;
     case JS::ModuleType::CSS:
-      MOZ_ASSERT_UNREACHABLE("CSS modules are not supported in the shell");
+      to.setString(cx->names().css);
       break;
     case JS::ModuleType::Bytes:
       to.setString(cx->names().bytes);
+      break;
+    case JS::ModuleType::Text:
+      to.setString(cx->names().text);
       break;
   }
 
