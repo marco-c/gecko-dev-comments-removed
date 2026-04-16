@@ -275,6 +275,7 @@ void GetBoxQuads(nsINode* aNode, const dom::BoxQuadOptions& aOptions,
   Document* ownerDoc = aNode->OwnerDoc();
   nsIFrame* relativeToFrame = GetFirstNonAnonymousFrameForGeometryNode(
       aOptions.mRelativeTo, ownerDoc, aOptions);
+  AutoWeakFrame weakRelativeToFrame(relativeToFrame);
   
   
   
@@ -283,6 +284,12 @@ void GetBoxQuads(nsINode* aNode, const dom::BoxQuadOptions& aOptions,
     if (!frame) {
       
       return;
+    }
+    
+    
+    
+    if (!weakRelativeToFrame.IsAlive()) {
+      relativeToFrame = nullptr;
     }
   }
   if (!relativeToFrame) {
@@ -398,11 +405,17 @@ static void TransformPoints(nsINode* aTo, const GeometryNode& aFrom,
       GetFirstNonAnonymousFrameForGeometryNode(aFrom, aOptions);
   AutoWeakFrame weakFrame(fromFrame);
   nsIFrame* toFrame = GetFirstNonAnonymousFrameForNode(aTo, aOptions);
+  AutoWeakFrame weakToFrame(toFrame);
   
   
   
   if (fromFrame && !weakFrame.IsAlive()) {
     fromFrame = GetFirstNonAnonymousFrameForGeometryNode(aFrom, aOptions);
+    
+    
+    if (!weakToFrame.IsAlive()) {
+      toFrame = nullptr;
+    }
   }
   if (!fromFrame || !toFrame) {
     aRv.ThrowNotFoundError(
