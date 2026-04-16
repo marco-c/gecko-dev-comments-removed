@@ -315,15 +315,6 @@ pref("browser.startup.couldRestoreSession.count", 0);
 
 
 
-
-#if defined(XP_WIN) || defined(MOZ_WIDGET_GTK) && defined(NIGHTLY_BUILD)
-  pref("browser.startup.blankWindow", true);
-#else
-  pref("browser.startup.blankWindow", false);
-#endif
-
-
-
 #if defined(XP_WIN)
 pref("browser.startup.preXulSkeletonUI", true);
 
@@ -378,10 +369,15 @@ pref("browser.urlbar.autoFill", true);
 pref("browser.urlbar.autoFill.adaptiveHistory.enabled", false);
 
 
-pref("browser.urlbar.autoFill.adaptiveHistory.backspaceBlockDurationMs", 172800000);
+pref("browser.urlbar.autoFill.backspaceBlockDurationMs", 172800000);
 
 
-pref("browser.urlbar.autoFill.adaptiveHistory.dismissalBlockDurationMs", 604800000);
+
+
+pref("browser.urlbar.autoFill.backspaceThreshold", 3);
+
+
+pref("browser.urlbar.autoFill.dismissalBlockDurationMs", 604800000);
 
 
 
@@ -1663,7 +1659,6 @@ pref("services.sync.prefs.sync.browser.ctrlTab.sortByRecentlyUsed", true);
 pref("services.sync.prefs.sync.browser.download.useDownloadDir", true);
 pref("services.sync.prefs.sync.browser.firefox-view.feature-tour", true);
 pref("services.sync.prefs.sync.browser.formfill.enable", true);
-pref("services.sync.prefs.sync.browser.ipProtection.enabled", true);
 pref("services.sync.prefs.sync.browser.link.open_newwindow", true);
 pref("services.sync.prefs.sync.browser.menu.showViewImageInfo", true);
 pref("services.sync.prefs.sync.browser.newtabpage.activity-stream.asrouter.userprefs.cfr.addons", true);
