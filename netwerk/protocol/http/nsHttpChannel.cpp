@@ -3787,6 +3787,19 @@ nsresult nsHttpChannel::ContinueProcessNormal3() {
   
   if (mCacheEntry && !LoadCacheEntryIsReadOnly()) {
     if (mIsDictionaryCompressed || mDictSaving) {
+      if (MOZ_LOG_TEST(mozilla::net::gDictionaryLog,
+                       mozilla::LogLevel::Debug)) {
+        nsAutoCString ceDebug;
+        if (mResponseHead) {
+          (void)mResponseHead->GetHeader(nsHttp::Content_Encoding, ceDebug);
+        }
+        LOG_DICTIONARIES(
+            ("ContinueProcessNormal3 [this=%p] dictCompressed=%d "
+             "dictSaving=%p Content-Encoding='%s' ApplyConversion=%d "
+             "HasApplied=%d",
+             this, mIsDictionaryCompressed, mDictSaving.get(), ceDebug.get(),
+             LoadApplyConversion(), LoadHasAppliedConversion()));
+      }
       LOG(("Decompressing before saving into cache [channel=%p]", this));
       rv = DoInstallCacheListener(mIsDictionaryCompressed || mDictSaving, 0);
       if (NS_FAILED(rv)) {
@@ -3834,6 +3847,22 @@ nsresult nsHttpChannel::ContinueProcessNormal3() {
   if (!mIsDictionaryCompressed && !mDictSaving) {
     
     if (mCacheEntry && !LoadCacheEntryIsReadOnly()) {
+      if (MOZ_LOG_TEST(mozilla::net::gDictionaryLog,
+                       mozilla::LogLevel::Debug) &&
+          mResponseHead) {
+        nsAutoCString ceCheck;
+        (void)mResponseHead->GetHeader(nsHttp::Content_Encoding, ceCheck);
+        if (!ceCheck.IsEmpty()) {
+          nsAutoCString uadCheck;
+          (void)mResponseHead->GetHeader(nsHttp::Use_As_Dictionary, uadCheck);
+          LOG_DICTIONARIES(
+              ("WARNING: Saving cache entry with Content-Encoding='%s' "
+               "without decompression (mDictSaving=%p "
+               "Use-As-Dictionary='%s') for %s [this=%p]",
+               ceCheck.get(), mDictSaving.get(), uadCheck.get(), mSpec.get(),
+               this));
+        }
+      }
       rv = InstallCacheListener();
       if (NS_FAILED(rv)) return rv;
     }
@@ -6340,23 +6369,40 @@ nsresult nsHttpChannel::DoInstallCacheListener(bool aSaveDecompressed,
       StoreHasAppliedConversion(true);
 
     } else {
-      LOG_DICTIONARIES(("Didn't install decompressor before tee"));
-      
-      
-      if (aSaveDecompressed) {
-        nsAutoCString contentEncoding;
-        (void)mResponseHead->GetHeader(nsHttp::Content_Encoding,
-                                       contentEncoding);
-
-        LOG_DICTIONARIES(
-            ("FATAL: Failed to install decompressor before cache tee. "
-             "Content-Encoding='%s'",
-             contentEncoding.get()));
-
+      nsAutoCString contentEncoding;
+      (void)mResponseHead->GetHeader(nsHttp::Content_Encoding, contentEncoding);
+      if (contentEncoding.IsEmpty()) {
         
-        LOG_DICTIONARIES(("Forcing Content-Encoding to empty"));
-        (void)mResponseHead->SetHeaderOverride(nsHttp::Content_Encoding, ""_ns);
-        (void)mResponseHead->SetHeaderOverride(nsHttp::Content_Length, ""_ns);
+        
+        LOG_DICTIONARIES(
+            ("No decompressor needed before tee (no Content-Encoding)"));
+      } else if (mIsDictionaryCompressed) {
+        
+        
+        
+        LOG_DICTIONARIES(
+            ("FATAL: Cannot decompress dcb/dcz content. "
+             "Content-Encoding='%s' ApplyConversion=%d HasApplied=%d "
+             "[this=%p]",
+             contentEncoding.get(), LoadApplyConversion(),
+             LoadHasAppliedConversion(), this));
+        Cancel(NS_ERROR_INVALID_CONTENT_ENCODING);
+        return NS_ERROR_INVALID_CONTENT_ENCODING;
+      } else if (mDictSaving) {
+        
+        
+        
+        
+        LOG_DICTIONARIES(
+            ("Cannot save dictionary without decompressor. "
+             "Content-Encoding='%s' ApplyConversion=%d HasApplied=%d "
+             "[this=%p]. Canceling dictionary save.",
+             contentEncoding.get(), LoadApplyConversion(),
+             LoadHasAppliedConversion(), this));
+        MOZ_DIAGNOSTIC_ASSERT(false, "Can't save dictionary uncompressed");
+        mCacheEntry->SetDictionary(nullptr);
+        DictionaryCache::RemoveDictionary(nsCString(mDictSaving->GetURI()));
+        mDictSaving = nullptr;
       }
     }
     
@@ -10507,6 +10553,17 @@ nsHttpChannel::RetargetDeliveryTo(nsISerialEventTarget* aNewTarget) {
   if (aNewTarget->IsOnCurrentThread()) {
     NS_WARNING("Retargeting delivery to same thread");
     return NS_OK;
+  }
+  
+  
+  
+  if (mDictSaving || mIsDictionaryCompressed || mDictDecompress) {
+    LOG(
+        ("nsHttpChannel::RetargetDeliveryTo %p refused — dictionary "
+         "operations active (saving=%p, compressed=%d, decompress=%p)\n",
+         this, mDictSaving.get(), mIsDictionaryCompressed,
+         mDictDecompress.get()));
+    return NS_ERROR_NOT_AVAILABLE;
   }
   if (!mTransactionPump && !mCachePump) {
     LOG(("nsHttpChannel::RetargetDeliveryTo %p %p no pump available\n", this,
