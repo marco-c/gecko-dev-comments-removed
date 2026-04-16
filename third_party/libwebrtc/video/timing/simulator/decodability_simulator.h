@@ -123,6 +123,10 @@ inline void SortByDecodableOrder(
 
 inline TimeDelta InterDecodableTime(const DecodabilitySimulator::Frame& cur,
                                     const DecodabilitySimulator::Frame& prev) {
+  if (!cur.decodable_timestamp.IsFinite() &&
+      !prev.decodable_timestamp.IsFinite()) {
+    return TimeDelta::PlusInfinity();
+  }
   return cur.decodable_timestamp - prev.decodable_timestamp;
 }
 

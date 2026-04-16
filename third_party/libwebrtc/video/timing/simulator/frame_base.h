@@ -121,24 +121,36 @@ std::optional<int64_t> InterFrameSizeBytes(const FrameT& cur,
 
 template <typename FrameT>
 TimeDelta InterDepartureTime(const FrameT& cur, const FrameT& prev) {
+  RTC_DCHECK(cur.DepartureTimestamp().IsFinite());
+  RTC_DCHECK(prev.DepartureTimestamp().IsFinite());
   return cur.DepartureTimestamp() - prev.DepartureTimestamp();
 }
 
 
 template <typename FrameT>
 TimeDelta InterArrivalTime(const FrameT& cur, const FrameT& prev) {
-  return cur.ArrivalTimestamp() - prev.ArrivalTimestamp();
+  Timestamp cur_arrival = cur.ArrivalTimestamp();
+  Timestamp prev_arrival = prev.ArrivalTimestamp();
+  if (!cur_arrival.IsFinite() && !prev_arrival.IsFinite()) {
+    return TimeDelta::PlusInfinity();
+  }
+  return cur_arrival - prev_arrival;
 }
 
 
 template <typename FrameT>
 TimeDelta InterFrameDelayVariation(const FrameT& cur, const FrameT& prev) {
-  return InterArrivalTime(cur, prev) - InterDepartureTime(cur, prev);
+  TimeDelta iat = InterArrivalTime(cur, prev);
+  TimeDelta idt = InterDepartureTime(cur, prev);
+  RTC_DCHECK(idt.IsFinite());
+  return iat - idt;
 }
 
 
 template <typename FrameT>
 TimeDelta InterAssembledTime(const FrameT& cur, const FrameT& prev) {
+  RTC_DCHECK(cur.assembled_timestamp.IsFinite());
+  RTC_DCHECK(prev.assembled_timestamp.IsFinite());
   return cur.assembled_timestamp - prev.assembled_timestamp;
 }
 
