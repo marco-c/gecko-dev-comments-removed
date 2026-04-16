@@ -32,11 +32,11 @@ struct ModuleErrorInfo {
   JS::ColumnNumberOneOrigin columnNumber;
 
   
-  const char* imported;
+  const char* imported = nullptr;
 
   
-  const char* entry1;
-  const char* entry2;
+  const char* entry1 = nullptr;
+  const char* entry2 = nullptr;
 
   
   bool isCircular = false;
