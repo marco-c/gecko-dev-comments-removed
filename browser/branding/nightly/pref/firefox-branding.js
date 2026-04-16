@@ -4,7 +4,7 @@
 
 
 
-pref("startup.homepage_override_url", "https://www.firefox.com/%LOCALE%/whatsnew/%VERSION%/?oldversion=%OLD_VERSION%");
+pref("startup.homepage_override_url", "https://www.mozilla.org/projects/firefox/%VERSION%/whatsnew/?oldversion=%OLD_VERSION%");
 pref("startup.homepage_welcome_url", "https://www.mozilla.org/projects/firefox/%VERSION%/firstrun/");
 pref("startup.homepage_welcome_url.additional", "");
 
@@ -18,9 +18,9 @@ pref("app.update.url.manual", "https://www.mozilla.org/%LOCALE%/firefox/nightly/
 
 pref("app.update.url.details", "https://www.mozilla.org/%LOCALE%/firefox/nightly/notes/");
 
-pref("app.releaseNotesURL", "https://www.firefox.com/%LOCALE%/firefox/%VERSION%/releasenotes/?utm_source=firefox-browser&utm_medium=firefox-desktop&utm_campaign=whatsnew");
-pref("app.releaseNotesURL.aboutDialog", "https://www.firefox.com/%LOCALE%/firefox/%VERSION%/releasenotes/?utm_source=firefox-browser&utm_medium=firefox-desktop&utm_campaign=about-dialog");
-pref("app.releaseNotesURL.prompt", "https://www.firefox.com/%LOCALE%/firefox/%VERSION%/releasenotes/?utm_source=firefox-browser&utm_medium=firefox-desktop&utm_campaign=updateprompt");
+pref("app.releaseNotesURL", "https://www.mozilla.org/%LOCALE%/firefox/%VERSION%/releasenotes/?utm_source=firefox-browser&utm_medium=firefox-desktop&utm_campaign=whatsnew");
+pref("app.releaseNotesURL.aboutDialog", "https://www.mozilla.org/%LOCALE%/firefox/%VERSION%/releasenotes/?utm_source=firefox-browser&utm_medium=firefox-desktop&utm_campaign=about-dialog");
+pref("app.releaseNotesURL.prompt", "https://www.mozilla.org/%LOCALE%/firefox/%VERSION%/releasenotes/?utm_source=firefox-browser&utm_medium=firefox-desktop&utm_campaign=updateprompt");
 
 
 
