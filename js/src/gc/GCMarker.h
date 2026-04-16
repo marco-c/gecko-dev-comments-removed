@@ -448,8 +448,6 @@ class GCMarker {
   bool shouldCheckCompartments() { return strictCompartmentChecking; }
 
   bool markOneObjectForTest(JSObject* obj);
-
-  bool isRootMarking() const { return state == RootMarking; }
 #endif
 
   bool markCurrentColorInParallel(gc::ParallelMarkTask* task,
@@ -675,17 +673,6 @@ class GCMarker {
   
   MainThreadOrGCTaskData<mozilla::non_crypto::XorShift128PlusRNG> random;
 
-  
-
-
-
-
-
-
-
-
-  MainThreadOrGCTaskData<Zone*> tracingZone;
-
 #ifdef DEBUG
  private:
   
@@ -710,6 +697,7 @@ class GCMarker {
 
 
   MainThreadOrGCTaskData<Compartment*> tracingCompartment;
+  MainThreadOrGCTaskData<Zone*> tracingZone;
 #endif  
 };
 
