@@ -867,15 +867,6 @@ trait PrivateMatchMethods: TElement {
             }
         }
 
-        #[cfg(feature = "servo")]
-        {
-            
-            
-            if old_values.is_multicol() != new_values.is_multicol() {
-                return RestyleHint::RECASCADE_SELF;
-            }
-        }
-
         
         
         RestyleHint::RECASCADE_SELF_IF_INHERIT_RESET_STYLE
