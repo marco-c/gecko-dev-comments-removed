@@ -61,12 +61,6 @@
 
 
 
-
-
-
-
-
-
 #ifndef RB_H_
 #define RB_H_
 
@@ -133,13 +127,11 @@ class RedBlackTree {
 
   T* Prev(T* aNode) { return Prev(TreeNode(aNode)).Get(); }
 
-  T* Search(typename Trait::SearchKey aKey) { return SearchImpl(aKey).Get(); }
+  T* Search(T* aKey) { return Search(TreeNode(aKey)).Get(); }
 
   
   
-  T* SearchOrNext(typename Trait::SearchKey aKey) {
-    return SearchOrNextImpl(aKey).Get();
-  }
+  T* SearchOrNext(T* aKey) { return SearchOrNext(TreeNode(aKey)).Get(); }
 
   void Insert(T* aNode) { Insert(TreeNode(aNode)); }
 
@@ -269,11 +261,11 @@ class RedBlackTree {
     return ret;
   }
 
-  TreeNode SearchImpl(typename Trait::SearchKey aKey) {
+  TreeNode Search(TreeNode aKey) {
     TreeNode ret = mRoot;
     Order rbp_se_cmp;
-    while (ret &&
-           (rbp_se_cmp = Trait::Compare(aKey, ret.Get())) != Order::eEqual) {
+    while (ret && (rbp_se_cmp = Trait::Compare(aKey.Get(), ret.Get())) !=
+                      Order::eEqual) {
       if (rbp_se_cmp == Order::eLess) {
         ret = ret.Left();
       } else {
@@ -283,11 +275,11 @@ class RedBlackTree {
     return ret;
   }
 
-  TreeNode SearchOrNextImpl(typename Trait::SearchKey aKey) {
+  TreeNode SearchOrNext(TreeNode aKey) {
     TreeNode ret = nullptr;
     TreeNode rbp_ns_t = mRoot;
     while (rbp_ns_t) {
-      Order rbp_ns_cmp = Trait::Compare(aKey, rbp_ns_t.Get());
+      Order rbp_ns_cmp = Trait::Compare(aKey.Get(), rbp_ns_t.Get());
       if (rbp_ns_cmp == Order::eLess) {
         ret = rbp_ns_t;
         rbp_ns_t = rbp_ns_t.Left();

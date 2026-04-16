@@ -96,27 +96,15 @@ struct ArenaChunkMapLink {
 };
 
 struct ArenaAvailTreeTrait : public ArenaChunkMapLink {
-  
-  
-  
   static inline Order Compare(arena_chunk_map_t* aNode,
                               arena_chunk_map_t* aOther) {
     size_t size1 = aNode->bits & ~mozilla::gPageSizeMask;
     size_t size2 = aOther->bits & ~mozilla::gPageSizeMask;
     Order ret = CompareInt(size1, size2);
-    return (ret != Order::eEqual) ? ret : CompareAddr(aNode, aOther);
-  }
-
-  using SearchKey = size_t;
-
-  
-  
-  
-  
-  static inline Order Compare(SearchKey aSize, arena_chunk_map_t* aOther) {
-    size_t size2 = aOther->bits & ~mozilla::gPageSizeMask;
-    Order ret = CompareInt(aSize, size2);
-    return (ret != Order::eEqual) ? ret : Order::eLess;
+    return (ret != Order::eEqual)
+               ? ret
+               : CompareAddr((aNode->bits & CHUNK_MAP_KEY) ? nullptr : aNode,
+                             aOther);
   }
 };
 
@@ -262,7 +250,7 @@ static_assert(sizeof(arena_bin_t) == 32);
 
 enum PurgeCondition { PurgeIfThreshold, PurgeUnconditional };
 
-struct arena_t : public BaseAllocClass {
+struct arena_t {
 #if defined(MOZ_DIAGNOSTIC_ASSERT_ENABLED)
 #  define ARENA_MAGIC 0x947d3d24
   uint32_t mMagic = ARENA_MAGIC;
@@ -710,15 +698,11 @@ struct arena_t : public BaseAllocClass {
 
   bool IsMainThreadOnly() const { return !mLock.LockIsEnabled(); }
 
-  
+  void* operator new(size_t aCount) = delete;
+
   void* operator new(size_t aCount, const mozilla::fallible_t&) noexcept;
 
-  
-  void* operator new(size_t aCount) noexcept = delete;
-  void* operator new[](size_t aCount) noexcept = delete;
-  void* operator new[](size_t aCount,
-                       const mozilla::fallible_t&) noexcept = delete;
-  void operator delete[](void* aPtr) = delete;
+  void operator delete(void*);
 };
 
 #endif 

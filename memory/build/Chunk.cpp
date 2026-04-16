@@ -541,6 +541,8 @@ void chunk_assert_zero(void* aPtr, size_t aSize) {
 #endif
 
 static void chunk_record(void* aChunk, size_t aSize, ChunkType aType) {
+  extent_node_t key;
+
   if (aType != ZEROED_CHUNK) {
     if (pages_purge(aChunk, aSize, aType == HUGE_CHUNK)) {
       aType = ZEROED_CHUNK;
@@ -551,17 +553,17 @@ static void chunk_record(void* aChunk, size_t aSize, ChunkType aType) {
   
   
   
-  UniqueBaseNode xnode(new (fallible) extent_node_t());
+  UniqueBaseNode xnode(ExtentAlloc::alloc());
   
   UniqueBaseNode xprev;
 
   
   
   MutexAutoLock lock(chunks_mtx);
-  void* addr = (void*)((uintptr_t)aChunk + aSize);
-  extent_node_t* node = gChunksByAddress.SearchOrNext(addr);
+  key.mAddr = (void*)((uintptr_t)aChunk + aSize);
+  extent_node_t* node = gChunksByAddress.SearchOrNext(&key);
   
-  if (node && node->mAddr == addr) {
+  if (node && node->mAddr == key.mAddr) {
     
     
     
@@ -650,13 +652,17 @@ void chunk_dealloc(void* aChunk, size_t aSize, ChunkType aType) {
 }
 
 static void* chunk_recycle(size_t aSize, size_t aAlignment) {
+  extent_node_t key;
+
   size_t alloc_size = aSize + aAlignment - kChunkSize;
   
   if (alloc_size < aSize) {
     return nullptr;
   }
+  key.mAddr = nullptr;
+  key.mSize = alloc_size;
   chunks_mtx.Lock();
-  extent_node_t* node = gChunksBySize.SearchOrNext(alloc_size);
+  extent_node_t* node = gChunksBySize.SearchOrNext(&key);
   if (!node) {
     chunks_mtx.Unlock();
     return nullptr;
@@ -688,8 +694,9 @@ static void* chunk_recycle(size_t aSize, size_t aAlignment) {
       
       
       
+      
       chunks_mtx.Unlock();
-      node = new (fallible) extent_node_t();
+      node = ExtentAlloc::alloc();
       if (!node) {
         chunk_dealloc(ret, aSize, ZEROED_CHUNK);
         return nullptr;
@@ -709,7 +716,7 @@ static void* chunk_recycle(size_t aSize, size_t aAlignment) {
   chunks_mtx.Unlock();
 
   if (node) {
-    delete node;
+    ExtentAlloc::dealloc(node);
   }
   if (!pages_commit(ret, aSize)) {
     return nullptr;
@@ -750,6 +757,11 @@ void* chunk_alloc(size_t aSize, size_t aAlignment, bool aBase) {
   MOZ_ASSERT(GetChunkOffsetForPtr(ret) == 0);
   return ret;
 }
+
+
+
+template <>
+extent_node_t* ExtentAlloc::sFirstFree = nullptr;
 
 arena_chunk_t::arena_chunk_t(arena_t* aArena)
     : mArena(aArena), mDirtyRunHint(gChunkHeaderNumPages) {}

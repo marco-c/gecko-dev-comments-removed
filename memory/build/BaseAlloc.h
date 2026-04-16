@@ -5,17 +5,7 @@
 #ifndef BASEALLOC_H
 #define BASEALLOC_H
 
-#include <algorithm>
-
-#include "Constants.h"
 #include "Mutex.h"
-#include "RedBlackTree.h"
-#include "Utils.h"
-
-#include "mozilla/DoublyLinkedList.h"
-#include "mozilla/fallible.h"
-
-#include "BaseAllocInternals.h"
 
 
 
@@ -25,19 +15,9 @@ class BaseAlloc {
 
   void Init() MOZ_REQUIRES(gInitLock);
 
-  
-  
+  void* alloc(size_t aSize);
 
-  MFBT_API void* alloc(size_t aSize) MOZ_EXCLUDES(mMutex);
-
-  MFBT_API void* calloc(size_t aNumber, size_t aSize) MOZ_EXCLUDES(mMutex);
-
-  
-  MFBT_API size_t usable_size(void* aPtr);
-
-  MFBT_API void free(void* aPtr) MOZ_EXCLUDES(mMutex);
-
-  MFBT_API void* realloc(void* aPtr, size_t aNewSize) MOZ_EXCLUDES(mMutex);
+  void* calloc(size_t aNumber, size_t aSize);
 
   Mutex mMutex;
 
@@ -54,111 +34,58 @@ class BaseAlloc {
 
  private:
   
-  
-  
-  constexpr static base_alloc_size_t kBaseQuantum = mozilla::RoundUpPow2(
-      std::max({size_t(16), sizeof(BaseAllocCell), sizeof(BaseAllocMetadata)}));
-  constexpr static unsigned kBaseQuantumMask = kBaseQuantum - 1;
-  constexpr static unsigned kBaseQuantumLog2 =
-      mozilla::CeilingLog2(kBaseQuantum);
-
-  
-  constexpr static unsigned kBaseMinimumSize =
-      (kCacheLineSize > kBaseQuantum * 2) ? (kCacheLineSize - kBaseQuantum * 2)
-                                          : kBaseQuantum;
-
-  
-  
-  constexpr static base_alloc_size_t kMaxSizeForLists = 4096;
-  static_assert(std::has_single_bit(kMaxSizeForLists));
-
-  
-  
-  constexpr static unsigned kNumFreeLists =
-      kMaxSizeForLists / kCacheLineSize *
-      std::min(kCacheLineSize / kBaseQuantum, size_t(3));
-
-  static base_alloc_size_t size_round_up(base_alloc_size_t aSize);
-
-  static unsigned get_list_index_for_size(base_alloc_size_t aSize);
-
-  BaseAllocCell* alloc_cell(base_alloc_size_t aSize) MOZ_REQUIRES(mMutex);
-
-  
-  BaseAllocCell* alloc_from_list(base_alloc_size_t aSize) MOZ_REQUIRES(mMutex);
-
-  
-  BaseAllocCell* oversize_alloc(base_alloc_size_t aSize) MOZ_REQUIRES(mMutex);
-
-  
-  
-  BaseAllocCell* decommitted_alloc(base_alloc_size_t aSize)
-      MOZ_REQUIRES(mMutex);
-
-  
-  void Unlink(BaseAllocCell* cell) MOZ_REQUIRES(mMutex);
-
-  
-  void Link(BaseAllocCell* cell) MOZ_REQUIRES(mMutex);
-
-  mozilla::DoublyLinkedList<BaseAllocCell>
-      mFreeLists[kNumFreeLists] MOZ_GUARDED_BY(mMutex);
-  RedBlackTree<BaseAllocCell, BaseAllocCellRBTrait> mFreeListOversize
-      MOZ_GUARDED_BY(mMutex);
-
-  
-  RedBlackTree<BaseAllocCell, BaseAllocCellRBTrait> mFreeListDecommitted
-      MOZ_GUARDED_BY(mMutex);
-
-  
-  
-  
-  BaseAllocCell* chunk_alloc(base_alloc_size_t aSize) MOZ_REQUIRES(mMutex);
+  bool pages_alloc(size_t minsize) MOZ_REQUIRES(mMutex);
 
   
   
   
   
-  bool merge_decommitted_cells(base_alloc_size_t aSize) MOZ_REQUIRES(mMutex);
-
-  void MaybeTrim(BaseAllocCell* aCell, base_alloc_size_t aSizeRequest,
-                 bool aDecommit = false) MOZ_REQUIRES(mMutex);
+  
+  
+  
+  uintptr_t mNextAddr MOZ_GUARDED_BY(mMutex) = 0;
+  uintptr_t mNextDecommitted MOZ_GUARDED_BY(mMutex) = 0;
+  
+  uintptr_t mPastAddr MOZ_GUARDED_BY(mMutex) = 0;
 
   Stats mStats MOZ_GUARDED_BY(mMutex);
-
-  friend BaseAllocCell;
 };
 
-MFBT_API extern BaseAlloc sBaseAlloc;
+extern BaseAlloc sBaseAlloc;
 
 
+template <typename T>
+struct TypedBaseAlloc {
+  static T* sFirstFree;
 
-struct BaseAllocClass {
-  void* operator new(size_t aSize) noexcept {
-    void* ret = sBaseAlloc.alloc(aSize);
-    if (!ret) {
-      _malloc_message(_getprogname(), ": (malloc) Out of memory\n");
-      MOZ_CRASH();
+  static size_t size_of() { return sizeof(T); }
+
+  static T* alloc() {
+    {
+      MutexAutoLock lock(sBaseAlloc.mMutex);
+      T* ret = sFirstFree;
+      if (ret) {
+        sFirstFree = *(T**)ret;
+        return ret;
+      }
     }
-    return ret;
-  }
-  void* operator new[](size_t aSize) noexcept {
-    void* ret = sBaseAlloc.alloc(aSize);
-    if (!ret) {
-      _malloc_message(_getprogname(), ": (malloc) Out of memory\n");
-      MOZ_CRASH();
-    }
-    return ret;
-  }
-  void* operator new(size_t aCount, const mozilla::fallible_t&) noexcept {
-    return sBaseAlloc.alloc(aCount);
-  }
-  void* operator new[](size_t aCount, const mozilla::fallible_t&) noexcept {
-    return sBaseAlloc.alloc(aCount);
+
+    return (T*)sBaseAlloc.alloc(size_of());
   }
 
-  void operator delete(void* aPtr) { sBaseAlloc.free(aPtr); }
-  void operator delete[](void* aPtr) { sBaseAlloc.free(aPtr); }
+  static void dealloc(T* aNode) {
+    MutexAutoLock lock(sBaseAlloc.mMutex);
+    *(T**)aNode = sFirstFree;
+    sFirstFree = aNode;
+  }
+};
+
+template <typename T>
+T* TypedBaseAlloc<T>::sFirstFree = nullptr;
+
+template <typename T>
+struct BaseAllocFreePolicy {
+  void operator()(T* aPtr) { TypedBaseAlloc<T>::dealloc(aPtr); }
 };
 
 #endif 
