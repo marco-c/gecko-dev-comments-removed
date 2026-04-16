@@ -79,11 +79,6 @@ using JS::TimeClip;
 using JS::ToInteger;
 
 
-static Atomic<uint32_t, Relaxed> sResolutionUsec;
-
-
-static Atomic<bool, Relaxed> sJitter;
-
 
 static Atomic<JS::ReduceMicrosecondTimePrecisionCallback, Relaxed>
     sReduceMicrosecondTimePrecisionCallback;
@@ -616,11 +611,6 @@ JS_PUBLIC_API void JS::SetReduceMicrosecondTimePrecisionCallback(
 JS_PUBLIC_API JS::ReduceMicrosecondTimePrecisionCallback
 JS::GetReduceMicrosecondTimePrecisionCallback() {
   return sReduceMicrosecondTimePrecisionCallback;
-}
-
-JS_PUBLIC_API void JS::SetTimeResolutionUsec(uint32_t resolution, bool jitter) {
-  sResolutionUsec = resolution;
-  sJitter = jitter;
 }
 
 #if JS_HAS_INTL_API
@@ -2210,45 +2200,17 @@ static ClippedTime NowAsMillis(JSContext* cx) {
     return TimeClip(int64_t(0));
   }
 
-  double now = PRMJ_Now();
-  bool clampAndJitter = cx->realm()->behaviors().clampAndJitterTime();
-  if (clampAndJitter && sReduceMicrosecondTimePrecisionCallback) {
-    now = sReduceMicrosecondTimePrecisionCallback(
-        now, cx->realm()->behaviors().reduceTimerPrecisionCallerType().value(),
-        cx);
-  } else if (clampAndJitter && sResolutionUsec) {
-    double clamped = floor(now / sResolutionUsec) * sResolutionUsec;
-
-    if (sJitter) {
-      
-      
-      
-      
-      
-      
-      
-
-      uint64_t midpoint = mozilla::BitwiseCast<uint64_t>(clamped);
-      midpoint ^= 0x0F00DD1E2BAD2DED;  
-      
-      
-      midpoint ^= midpoint >> 33;
-      midpoint *= uint64_t{0xFF51AFD7ED558CCD};
-      midpoint ^= midpoint >> 33;
-      midpoint *= uint64_t{0xC4CEB9FE1A85EC53};
-      midpoint ^= midpoint >> 33;
-      midpoint %= sResolutionUsec;
-
-      if (now > clamped + midpoint) {  
-        now = clamped + sResolutionUsec;
-      } else {  
-        now = clamped;
-      }
-    } else {  
-      now = clamped;
+  int64_t now = PRMJ_Now();
+  if (cx->realm()->behaviors().clampAndJitterTime()) {
+    auto reducePrecisionCallback = *sReduceMicrosecondTimePrecisionCallback;
+    if (reducePrecisionCallback) {
+      double reducedPrecision = reducePrecisionCallback(
+          now,
+          cx->realm()->behaviors().reduceTimerPrecisionCallerType().value(),
+          cx);
+      return TimeClip(reducedPrecision / PRMJ_USEC_PER_MSEC);
     }
   }
-
   return TimeClip(now / PRMJ_USEC_PER_MSEC);
 }
 
