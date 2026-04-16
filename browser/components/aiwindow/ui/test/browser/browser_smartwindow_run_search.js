@@ -3,6 +3,10 @@
 
 "use strict";
 
+const { RunSearch } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/aiwindow/models/Tools.sys.mjs"
+);
+
 
 
 
@@ -41,9 +45,9 @@ add_task(async function test_run_search_fullpage_opens_sidebar() {
     
     
     const runSearchStub = sb
-      .stub(Chat.toolMap, "run_search")
-      .callsFake(async (_params, ctx) => {
-        const browser = ctx.browsingContext.embedderElement;
+      .stub(RunSearch, "runSearch")
+      .callsFake(async (_params, browsingContext) => {
+        const browser = browsingContext.embedderElement;
         BrowserTestUtils.startLoadingURIString(
           browser,
           "https://example.com/search_results"
@@ -102,9 +106,9 @@ add_task(
 
     try {
       const runSearchStub = sb
-        .stub(Chat.toolMap, "run_search")
-        .callsFake(async (_params, ctx) => {
-          const ctxBrowser = ctx.browsingContext.embedderElement;
+        .stub(RunSearch, "runSearch")
+        .callsFake(async (_params, browsingContext) => {
+          const ctxBrowser = browsingContext.embedderElement;
           Assert.notEqual(
             ctxBrowser.id,
             "ai-window-browser",
