@@ -111,7 +111,7 @@ static int nr_socket_turn_destroy(void **objp)
 
     
 
-    RFREE(sturn);
+    free(sturn);
 
     _status=0;
     return(_status);
