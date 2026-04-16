@@ -54,27 +54,6 @@ impl<E: TElement> PreTraverseToken<E> {
 
 
 
-
-#[cfg(feature = "servo")]
-pub static IS_SERVO_NONINCREMENTAL_LAYOUT: std::sync::atomic::AtomicBool =
-    std::sync::atomic::AtomicBool::new(false);
-
-#[cfg(feature = "servo")]
-#[inline]
-fn is_servo_nonincremental_layout() -> bool {
-    use std::sync::atomic::Ordering;
-
-    IS_SERVO_NONINCREMENTAL_LAYOUT.load(Ordering::Relaxed)
-}
-
-#[cfg(not(feature = "servo"))]
-#[inline]
-fn is_servo_nonincremental_layout() -> bool {
-    false
-}
-
-
-
 pub trait DomTraversal<E: TElement>: Sync {
     
     
@@ -218,11 +197,6 @@ pub trait DomTraversal<E: TElement>: Sync {
             "element_needs_traversal({:?}, {:?}, {:?})",
             el, traversal_flags, data
         );
-
-        
-        if is_servo_nonincremental_layout() {
-            return true;
-        }
 
         
         let data = match data {
@@ -489,8 +463,7 @@ pub fn recalc_style_at<E, D, F>(
     
     
     let mut traverse_children = has_dirty_descendants_for_this_restyle
-        || !propagated_hint.is_empty()
-        || is_servo_nonincremental_layout();
+        || !propagated_hint.is_empty();
 
     traverse_children = traverse_children && !data.styles.is_display_none();
 
@@ -731,9 +704,7 @@ fn note_children<E, D, F>(
         let child = match child_node.as_element() {
             Some(el) => el,
             None => {
-                if is_servo_nonincremental_layout()
-                    || D::text_node_needs_traversal(child_node, data)
-                {
+                if D::text_node_needs_traversal(child_node, data) {
                     note_child(child_node);
                 }
                 continue;
