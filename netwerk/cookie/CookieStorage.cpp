@@ -609,6 +609,7 @@ void CookieStorage::RemoveOlderCookiesByBytes(CookieEntry* aEntry,
                                               uint32_t removeBytes,
                                               nsCOMPtr<nsIArray>& aPurgedList) {
   MOZ_ASSERT(aEntry);
+  CookieKey key(aEntry->mBaseDomain, aEntry->mOriginAttributes);
 
   
   
@@ -618,10 +619,15 @@ void CookieStorage::RemoveOlderCookiesByBytes(CookieEntry* aEntry,
   
   if (bytesRemoved <= removeBytes) {
     
+    CookieEntry* entry = mHostTable.GetEntry(key);
+    if (!entry) {
+      return;
+    }
+    
     MOZ_LOG(gCookieLog, LogLevel::Debug,
             ("Still too many cookies for partition, purging secure\n"));
     uint32_t bytesStillToRemove = removeBytes - bytesRemoved;
-    RemoveOldestCookies(aEntry, true, bytesStillToRemove, aPurgedList);
+    RemoveOldestCookies(entry, true, bytesStillToRemove, aPurgedList);
   }
 }
 
@@ -893,7 +899,9 @@ void CookieStorage::AddCookie(CookieParser* aCookieParser,
         purgedList = PurgeCookies(aCurrentTimeInUsec, mMaxNumberOfCookies,
                                   mCookiePurgeAge);
         uint32_t purgedLength = 0;
-        purgedList->GetLength(&purgedLength);
+        if (purgedList) {
+          purgedList->GetLength(&purgedLength);
+        }
         mozilla::glean::networking::cookie_purge_max.AccumulateSingleSample(
             purgedLength);
       }
