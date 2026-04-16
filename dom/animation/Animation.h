@@ -609,6 +609,11 @@ class Animation : public DOMEventTargetHelper,
   RTPCallerType mRTPCallerType;
 
   
+  
+  
+  
+  
+  
   TimeStamp mPendingReadyTime;
 
  private:

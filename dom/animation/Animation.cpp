@@ -1032,9 +1032,12 @@ bool Animation::TryTriggerNow() {
   if (NS_WARN_IF(!mTimeline)) {
     return false;
   }
-  auto currentTime = mPendingReadyTime.IsNull()
-                         ? mTimeline->GetCurrentTimeAsDuration()
-                         : mTimeline->ToTimelineTime(mPendingReadyTime);
+  
+  
+  auto currentTime =
+      mPendingReadyTime.IsNull() || !mTimeline->IsMonotonicallyIncreasing()
+          ? mTimeline->GetCurrentTimeAsDuration()
+          : mTimeline->ToTimelineTime(mPendingReadyTime);
   mPendingReadyTime = {};
   if (NS_WARN_IF(currentTime.IsNull())) {
     return false;
