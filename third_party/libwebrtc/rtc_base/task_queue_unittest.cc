@@ -8,6 +8,15 @@
 
 
 
+#include <cstdint>
+
+#include "api/task_queue/task_queue_factory.h"
+#include "api/units/time_delta.h"
+#include "rtc_base/event.h"
+#include "rtc_base/task_queue_for_test.h"
+#include "rtc_base/time_utils.h"
+#include "test/gtest.h"
+
 #if defined(WEBRTC_WIN)
 
 #include <windows.h>  
@@ -15,21 +24,7 @@
 
 #endif
 
-#include <stdint.h>
-
-#include <memory>
-#include <utility>
-#include <vector>
-
-#include "absl/memory/memory.h"
-#include "api/units/time_delta.h"
-#include "rtc_base/event.h"
-#include "rtc_base/task_queue_for_test.h"
-#include "rtc_base/time_utils.h"
-#include "test/gtest.h"
-
 namespace webrtc {
-
 namespace {
 
 
@@ -60,7 +55,7 @@ TEST(TaskQueueTest, DISABLED_PostDelayedHighRes) {
 
   static const char kQueueName[] = "PostDelayedHighRes";
   Event event;
-  TaskQueueForTest queue(kQueueName, TaskQueueFactory::Priority::HIGH);
+  TaskQueueForTest queue(kQueueName, TaskQueueFactory::Priority::kHigh);
 
   uint32_t start = TimeMillis();
   queue.PostDelayedTask(

@@ -22,7 +22,21 @@ class TaskQueueFactory {
  public:
   
   
-  enum class Priority { NORMAL = 0, HIGH, LOW };
+  enum class Priority {
+    
+    kNormal = 0,
+    
+    kHigh,
+    
+    kLow,
+
+    
+    NORMAL = kNormal,
+    
+    HIGH = kHigh,
+    
+    LOW = kLow,
+  };
 
   virtual ~TaskQueueFactory() = default;
   virtual std::unique_ptr<TaskQueueBase, TaskQueueDeleter> CreateTaskQueue(

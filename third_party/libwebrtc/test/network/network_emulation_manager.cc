@@ -82,7 +82,7 @@ NetworkEmulationManagerImpl::NetworkEmulationManagerImpl(
       next_ip4_address_(kMinIPv4Address),
       task_queue_(env_.task_queue_factory().CreateTaskQueue(
           "NetworkEmulation",
-          TaskQueueFactory::Priority::NORMAL)) {}
+          TaskQueueFactory::Priority::kNormal)) {}
 
 
 

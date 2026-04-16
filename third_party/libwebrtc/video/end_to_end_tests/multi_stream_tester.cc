@@ -61,7 +61,7 @@ void MultiStreamTester::RunTest() {
   
   
   auto task_queue = env.task_queue_factory().CreateTaskQueue(
-      "TaskQueue", TaskQueueFactory::Priority::HIGH);
+      "TaskQueue", TaskQueueFactory::Priority::kHigh);
   CallConfig sender_config(env);
   CallConfig receiver_config(env);
   std::unique_ptr<Call> sender_call;

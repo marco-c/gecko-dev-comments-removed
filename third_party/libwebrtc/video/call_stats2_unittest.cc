@@ -60,7 +60,7 @@ class CallStats2Test : public ::testing::Test {
   std::unique_ptr<TaskQueueBase, TaskQueueDeleter> task_queue_ =
       CreateDefaultTaskQueueFactory()->CreateTaskQueue(
           "CallStats",
-          TaskQueueFactory::Priority::NORMAL);
+          TaskQueueFactory::Priority::kNormal);
 
   
   
@@ -295,8 +295,7 @@ TEST_F(CallStats2Test, ProducesHistogramMetrics) {
 
   AsyncSimulateRttUpdate(kRtt);
   loop_.Run();
-  fake_clock_.AdvanceTimeMilliseconds(metrics::kMinRunTimeInSeconds *
-                                      CallStats::kUpdateInterval.ms());
+  fake_clock_.AdvanceTime(metrics::kMinRunTime);
   AsyncSimulateRttUpdate(kRtt);
   loop_.Run();
 
