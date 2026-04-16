@@ -51,6 +51,8 @@ HTML_PARSER_ATOMS = [
     
     Atom("shadowrootdelegatesfocus", "shadowrootdelegatesfocus"),
     
+    Atom("shadowrootslotassignment", "shadowrootslotassignment"),
+    
     Atom("basefrequency", "basefrequency"),
     
     Atom("baseprofile", "baseprofile"),
