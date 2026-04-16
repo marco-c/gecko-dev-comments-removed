@@ -1,0 +1,9 @@
+
+
+
+"use strict";
+
+ChromeUtils.defineESModuleGetters(this, {
+  ContentSharingUtils:
+    "resource:///modules/contentsharing/ContentSharingUtils.sys.mjs",
+});
