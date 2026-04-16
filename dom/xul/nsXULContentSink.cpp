@@ -10,8 +10,6 @@
 
 
 
-
-
 #include "nsXULContentSink.h"
 
 #include "jsfriendapi.h"
@@ -318,7 +316,7 @@ XULContentSinkImpl::HandleStartElement(const char16_t* aName,
   
   
   MOZ_ASSERT(mState != eInEpilog, "tag in XUL doc epilog");
-  MOZ_ASSERT(aAttsCount % 2 == 0, "incorrect aAttsCount");
+  MOZ_RELEASE_ASSERT(aAttsCount % 2 == 0, "incorrect aAttsCount");
 
   
   aAttsCount /= 2;
