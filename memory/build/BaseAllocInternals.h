@@ -53,15 +53,34 @@ constexpr static base_alloc_size_t BASE_ALLOC_SIZE_MAX = UINT32_MAX >> 1;
 
 
 
+
+
+
+
+
+
+
+
+
 struct BaseAllocMetadata {
-  base_alloc_size_t mSize : 31;
+  
+  base_alloc_size_t mLeftSize;
+
+  
+  base_alloc_size_t mRightSize : 31;
 
   
   
-  bool mAllocated : 1;
+  bool mRightAllocated : 1;
 
-  explicit BaseAllocMetadata(base_alloc_size_t aSize)
-      : mSize(aSize), mAllocated(false) {}
+  
+  
+
+  void InitForRightCell(base_alloc_size_t aSize) {
+    mRightSize = aSize;
+    mRightAllocated = false;
+  }
+  void InitForLeftCell(base_alloc_size_t aSize) { mLeftSize = aSize; }
 };
 
 class BaseAllocCell {
@@ -78,7 +97,7 @@ class BaseAllocCell {
   friend struct mozilla::GetDoublyLinkedListElement<BaseAllocCell>;
   friend struct BaseAllocCellRBTrait;
 
-  BaseAllocMetadata* Metadata() {
+  BaseAllocMetadata* LeftMetadata() {
     
     
     static_assert(((alignof(BaseAllocCell) - sizeof(BaseAllocMetadata)) %
@@ -88,11 +107,14 @@ class BaseAllocCell {
         reinterpret_cast<uintptr_t>(this) - sizeof(BaseAllocMetadata));
   }
 
+  BaseAllocMetadata* RightMetadata();
+
  public:
   static uintptr_t Align(uintptr_t aPtr);
 
   explicit BaseAllocCell(base_alloc_size_t aSize) {
-    new (Metadata()) BaseAllocMetadata(aSize);
+    LeftMetadata()->InitForRightCell(aSize);
+    RightMetadata()->InitForLeftCell(aSize);
     ClearPayload();
   }
 
@@ -100,19 +122,19 @@ class BaseAllocCell {
     return reinterpret_cast<BaseAllocCell*>(aPtr);
   }
 
-  base_alloc_size_t Size() { return Metadata()->mSize; }
+  base_alloc_size_t Size() { return LeftMetadata()->mRightSize; }
 
-  bool Allocated() { return Metadata()->mAllocated; }
+  bool Allocated() { return LeftMetadata()->mRightAllocated; }
 
   void* Ptr() { return this; }
 
   void SetAllocated() {
     MOZ_ASSERT(!Allocated());
-    Metadata()->mAllocated = true;
+    LeftMetadata()->mRightAllocated = true;
   }
   void SetFreed() {
     MOZ_ASSERT(Allocated());
-    Metadata()->mAllocated = false;
+    LeftMetadata()->mRightAllocated = false;
   }
 
   
