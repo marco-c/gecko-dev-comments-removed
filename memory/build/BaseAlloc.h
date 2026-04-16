@@ -5,7 +5,16 @@
 #ifndef BASEALLOC_H
 #define BASEALLOC_H
 
+#include "Constants.h"
 #include "Mutex.h"
+
+#include "mozilla/DoublyLinkedList.h"
+
+
+typedef uint32_t base_alloc_size_t;
+constexpr static base_alloc_size_t BASE_ALLOC_SIZE_MAX = UINT32_MAX;
+
+class BaseAllocCell;
 
 
 
@@ -15,9 +24,11 @@ class BaseAlloc {
 
   void Init() MOZ_REQUIRES(gInitLock);
 
-  void* alloc(size_t aSize);
+  void* alloc(size_t aSize) MOZ_EXCLUDES(mMutex);
 
-  void* calloc(size_t aNumber, size_t aSize);
+  void* calloc(size_t aNumber, size_t aSize) MOZ_EXCLUDES(mMutex);
+
+  void free(void* aPtr) MOZ_EXCLUDES(mMutex);
 
   Mutex mMutex;
 
@@ -34,7 +45,33 @@ class BaseAlloc {
 
  private:
   
-  bool pages_alloc(size_t minsize) MOZ_REQUIRES(mMutex);
+  unsigned get_list_index_for_size_at_least(base_alloc_size_t aSize);
+  
+  unsigned get_list_index_for_size_at_most(base_alloc_size_t aSize);
+
+  
+  void* alloc_from_list(base_alloc_size_t aSize) MOZ_REQUIRES(mMutex);
+
+  
+  
+  
+  
+  constexpr static base_alloc_size_t NUM_LIST_SIZES = 2608 / kCacheLineSize + 1;
+  mozilla::DoublyLinkedList<BaseAllocCell>
+      mFreeLists[NUM_LIST_SIZES] MOZ_GUARDED_BY(mMutex);
+  mozilla::DoublyLinkedList<BaseAllocCell> mFreeListOversize
+      MOZ_GUARDED_BY(mMutex);
+
+  
+  BaseAllocCell* wilderness_alloc_inplace(base_alloc_size_t aSize)
+      MOZ_REQUIRES(mMutex);
+
+  
+  
+  BaseAllocCell* wilderness_alloc(base_alloc_size_t aSize) MOZ_REQUIRES(mMutex);
+
+  
+  bool pages_alloc(base_alloc_size_t aSize) MOZ_REQUIRES(mMutex);
 
   
   
