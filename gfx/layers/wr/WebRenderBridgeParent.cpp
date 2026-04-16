@@ -323,20 +323,7 @@ class MOZ_STACK_CLASS AutoWebRenderBridgeParentAsyncMessageSender final {
     if (mActorsToDestroy) {
       
       
-      
-      nsTHashSet<PTextureParent*> seenTextureParents;
-      for (const auto& op : *mActorsToDestroy) {
-        
-        
-        if (op.type() == OpDestroy::TPTexture) {
-          PTextureParent* textureParent = op.get_PTexture().AsParent();
-          if (!seenTextureParents.EnsureInserted(textureParent)) {
-            
-            continue;
-          }
-        }
-        mWebRenderBridgeParent->DestroyActor(op);
-      }
+      mWebRenderBridgeParent->DestroyActors(*mActorsToDestroy);
     }
   }
 
@@ -1386,9 +1373,7 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvSetDisplayList(
     const TimeStamp& aFwdTime, nsTArray<CompositionPayload>&& aPayloads,
     const bool& aRenderOffscreen) {
   if (!EnsureInitialized()) {
-    for (const auto& op : aToDestroy) {
-      DestroyActor(op);
-    }
+    DestroyActors(aToDestroy);
     wr::IpcResourceUpdateQueue::ReleaseShmems(this, aDisplayList.mSmallShmems);
     wr::IpcResourceUpdateQueue::ReleaseShmems(this, aDisplayList.mLargeShmems);
     return IPC_OK();
@@ -1523,9 +1508,7 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvEmptyTransaction(
     const TimeStamp& aTxnStartTime, const nsACString& aTxnURL,
     const TimeStamp& aFwdTime, nsTArray<CompositionPayload>&& aPayloads) {
   if (!EnsureInitialized()) {
-    for (const auto& op : aToDestroy) {
-      DestroyActor(op);
-    }
+    DestroyActors(aToDestroy);
     if (aTransactionData) {
       wr::IpcResourceUpdateQueue::ReleaseShmems(this,
                                                 aTransactionData->mSmallShmems);
