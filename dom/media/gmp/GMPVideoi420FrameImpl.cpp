@@ -159,6 +159,9 @@ bool GMPVideoi420FrameImpl::CheckFrameData(
   
   
   
+  if (aFrameData.mWidth() <= 0 || aFrameData.mHeight() <= 0) {
+    return false;
+  }
   int32_t half_width = (aFrameData.mWidth() + 1) / 2;
   int32_t half_height = (aFrameData.mHeight() + 1) / 2;
 
