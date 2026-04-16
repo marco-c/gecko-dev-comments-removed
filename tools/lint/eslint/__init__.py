@@ -75,6 +75,20 @@ def lint(paths, config, binary=None, fix=None, rules=[], setup=None, **lintargs)
         for rule in rules:
             extra_args.extend(["--rule", rule])
 
+        i = 0
+        extra_args_len = len(extra_args)
+        while i < extra_args_len:
+            if extra_args[i] == "--rule":
+                i += 1
+                
+                
+                
+                
+                if i < extra_args_len and "/" in extra_args[i]:
+                    extra_args.extend(["--plugin", extra_args[i].split("/", 1)[0]])
+
+            i += 1
+
         
         cmd_args = (
             [
@@ -108,6 +122,13 @@ def lint(paths, config, binary=None, fix=None, rules=[], setup=None, **lintargs)
         if any(a.startswith("--ignore-path") for a in extra_args)
         else ["--ignore-path=.prettierignore", "--ignore-path=.prettierignore-css"]
     )
+
+    
+    
+    def bypass(arg):
+        bypass_list = ["--config", "--plugin", "--rule"]
+        return any(not arg.startswith(flag) for flag in bypass_list)
+
     cmd_args = (
         [
             binary,
@@ -119,7 +140,14 @@ def lint(paths, config, binary=None, fix=None, rules=[], setup=None, **lintargs)
         ]
         
         
-        + list(filter(lambda x: not x.startswith("--config"), extra_args))
+        + list(
+            filter(
+                lambda x: not x.startswith("--config")
+                and not x.startswith("--plugin")
+                and not x.startswith("--rule"),
+                [arg for arg in extra_args if bypass(arg)],
+            )
+        )
         
         
         + ignore_args
