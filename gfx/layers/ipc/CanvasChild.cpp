@@ -144,20 +144,18 @@ class SourceSurfaceCanvasRecording final : public gfx::SourceSurface {
   }
 
   already_AddRefed<gfx::DataSourceSurface> GetDataSurface() final {
-    EnsureDataSurfaceOnMainThread();
+    MutexAutoLock lock(mDataSurfaceLock);
+    EnsureDataSurfaceOnMainThread(lock);
     return do_AddRef(mDataSourceSurface);
   }
 
   void AttachSurface() { mDetached = false; }
-  void DetachSurface() { mDetached = true; }
+  void DetachSurface(bool aInvalidate = false) {
+    mDetached = true;
 
-  void InvalidateDataSurface() {
-    if (mDataSourceSurface && mMayInvalidate) {
-      
-      MOZ_ASSERT(mDataSourceSurface->hasOneRef());
-      mDataSourceSurface =
-          gfx::Factory::CopyDataSourceSurface(mDataSourceSurface);
-      mMayInvalidate = false;
+    if (aInvalidate) {
+      MutexAutoLock lock(mDataSurfaceLock);
+      InvalidateDataSurface(lock);
     }
   }
 
@@ -173,6 +171,10 @@ class SourceSurfaceCanvasRecording final : public gfx::SourceSurface {
   }
 
   bool GetSurfaceDescriptor(SurfaceDescriptor& aDesc) final {
+    if (!NS_IsMainThread()) {
+      
+      return false;
+    }
     static Atomic<uintptr_t> sNextExportID(0);
     if (!mExportID) {
       if (++sCurrentExportSurfaces >
@@ -197,11 +199,31 @@ class SourceSurfaceCanvasRecording final : public gfx::SourceSurface {
   }
 
  private:
-  void EnsureDataSurfaceOnMainThread() {
+  void InvalidateDataSurface(const MutexAutoLock& aProofOfLock)
+      MOZ_REQUIRES(mDataSurfaceLock) {
     
-    if (!mDataSourceSurface && NS_IsMainThread()) {
-      mDataSourceSurface = mCanvasChild->GetDataSurface(
-          mTextureOwnerId, mRecordedSurface, mDetached, mMayInvalidate);
+    
+    if (mDataSourceSurface && mMayInvalidate) {
+      mDataSourceSurface =
+          gfx::Factory::CopyDataSourceSurface(mDataSourceSurface);
+      mMayInvalidate = false;
+    }
+  }
+
+  void EnsureDataSurfaceOnMainThread(const MutexAutoLock& aProofOfLock)
+      MOZ_REQUIRES(mDataSurfaceLock) {
+    if (NS_IsMainThread()) {
+      
+      if (!mDataSourceSurface) {
+        mDataSourceSurface = mCanvasChild->GetDataSurface(
+            mTextureOwnerId, mRecordedSurface, mDetached, mMayInvalidate);
+      }
+    } else {
+      
+      
+      
+      
+      InvalidateDataSurface(aProofOfLock);
     }
   }
 
@@ -230,9 +252,11 @@ class SourceSurfaceCanvasRecording final : public gfx::SourceSurface {
   RefPtr<gfx::SourceSurface> mRecordedSurface;
   RefPtr<CanvasChild> mCanvasChild;
   RefPtr<CanvasDrawEventRecorder> mRecorder;
-  RefPtr<gfx::DataSourceSurface> mDataSourceSurface;
+  Mutex mDataSurfaceLock{"SourceSurfaceCanvasRecording::mDataSurfaceLock"};
+  RefPtr<gfx::DataSourceSurface> mDataSourceSurface
+      MOZ_GUARDED_BY(mDataSurfaceLock);
+  bool mMayInvalidate MOZ_GUARDED_BY(mDataSurfaceLock) = false;
   bool mDetached = false;
-  bool mMayInvalidate = false;
   ReferencePtr mExportID;
 };
 
@@ -726,10 +750,7 @@ void CanvasChild::DetachSurface(const RefPtr<gfx::SourceSurface>& aSurface,
                                 bool aInvalidate) {
   if (auto* surface =
           static_cast<SourceSurfaceCanvasRecording*>(aSurface.get())) {
-    surface->DetachSurface();
-    if (aInvalidate) {
-      surface->InvalidateDataSurface();
-    }
+    surface->DetachSurface(aInvalidate);
   }
 }
 
