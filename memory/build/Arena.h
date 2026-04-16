@@ -409,6 +409,9 @@ struct arena_t : public BaseAllocClass {
   static constexpr size_t LABEL_MAX_CAPACITY = 128;
   char mLabel[LABEL_MAX_CAPACITY] = {};
 
+  
+  chunk_allocator_t* mChunkAllocator;
+
  private:
   
   

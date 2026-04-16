@@ -1180,8 +1180,8 @@ arena_run_t* arena_t::AllocRun(size_t aSize, bool aLarge, bool aZero) {
   } else {
     
     
-    arena_chunk_t* chunk =
-        (arena_chunk_t*)arena_chunk_alloc(kChunkSize, kChunkSize);
+    arena_chunk_t* chunk = (arena_chunk_t*)arena_chunk_alloc(
+        mChunkAllocator, kChunkSize, kChunkSize);
     if (!chunk) {
       return nullptr;
     }
@@ -1418,7 +1418,8 @@ ArenaPurgeResult arena_t::Purge(
       if (chunk_is_dying) {
         
         
-        arena_chunk_dealloc((void*)chunk, kChunkSize);
+        arena_chunk_dealloc(purge_info.mArena.mChunkAllocator, (void*)chunk,
+                            kChunkSize);
       }
       
       
@@ -1476,7 +1477,8 @@ ArenaPurgeResult arena_t::Purge(
     
     
     if (chunk_to_release) {
-      arena_chunk_dealloc((void*)chunk_to_release, kChunkSize);
+      arena_chunk_dealloc(purge_info.mArena.mChunkAllocator,
+                          (void*)chunk_to_release, kChunkSize);
     }
     if (arena_is_dying) {
       return Dying;
@@ -2738,7 +2740,8 @@ static inline void arena_dalloc(void* aPtr, size_t aOffset, arena_t* aArena) {
   }
 
   if (chunk_dealloc_delay) {
-    arena_chunk_dealloc((void*)chunk_dealloc_delay, kChunkSize);
+    arena_chunk_dealloc(arena->mChunkAllocator, (void*)chunk_dealloc_delay,
+                        kChunkSize);
   }
 
   arena->MayDoOrQueuePurge(purge_action, "arena_dalloc");
@@ -3012,6 +3015,10 @@ arena_t::arena_t(arena_params_t* aParams, bool aIsPrivate)
         }
       }
     }
+
+    MOZ_ASSERT_IF(aParams->mChunkAllocator, aIsPrivate);
+    mChunkAllocator = aParams->mChunkAllocator ? aParams->mChunkAllocator
+                                               : &gSystemChunkAllocator;
   }
 
   MOZ_RELEASE_ASSERT(mLock.Init(doLock));
@@ -3043,7 +3050,7 @@ arena_t::~arena_t() {
   MOZ_RELEASE_ASSERT(!mStats.allocated_small && !mStats.allocated_large,
                      "Arena is not empty");
   if (mSpare) {
-    arena_chunk_dealloc(mSpare, kChunkSize);
+    arena_chunk_dealloc(mChunkAllocator, mSpare, kChunkSize);
   }
   for (i = 0; i < NUM_SMALL_CLASSES; i++) {
     MOZ_RELEASE_ASSERT(mBins[i].mNonFullRuns.isEmpty(), "Bin is not empty");
@@ -3183,7 +3190,7 @@ void* arena_t::PallocHuge(size_t aSize, size_t aAlignment, bool aZero) {
   }
 
   
-  ret = arena_chunk_alloc(csize, aAlignment);
+  ret = arena_chunk_alloc(mChunkAllocator, csize, aAlignment);
   if (!ret) {
     delete node;
     return nullptr;
@@ -3333,7 +3340,7 @@ static void huge_dalloc(void* aPtr, arena_t* aArena) {
   }
 
   
-  arena_chunk_dealloc(node->mAddr, mapped);
+  arena_chunk_dealloc(node->mArena->mChunkAllocator, node->mAddr, mapped);
 
   delete node;
 }
