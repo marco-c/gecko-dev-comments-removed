@@ -2,8 +2,6 @@
 
 
 
-
-
 #if !defined(WavDumper_h_)
 #  define WavDumper_h_
 #  include <ByteWriter.h>
@@ -15,6 +13,8 @@
 #  include <nsTArray.h>
 #  include <stdint.h>
 #  include <stdio.h>
+#  include <sys/stat.h>
+
 
 
 
@@ -32,17 +32,33 @@ class WavDumper {
   }
 
   void Open(const char* aBaseName, uint32_t aChannels, uint32_t aRate) {
-    using namespace mozilla;
-
-    if (!getenv("MOZ_DUMP_AUDIO")) {
+    const char* dumpAudio = getenv("MOZ_DUMP_AUDIO");
+    if (!dumpAudio) {
       return;
+    }
+
+    bool isDir = false;
+    if (dumpAudio[0] != '\0') {
+#  ifdef XP_WIN
+      nsAutoString widePath = NS_ConvertUTF8toUTF16(dumpAudio);
+      struct _stat64 st = {};
+      isDir = (_wstat64(widePath.get(), &st) == 0) && (st.st_mode & _S_IFDIR);
+#  else
+      struct stat st = {};
+      isDir = (stat(dumpAudio, &st) == 0) && S_ISDIR(st.st_mode);
+#  endif
     }
 
     static mozilla::Atomic<int> sDumpedAudioCount(0);
 
-    char buf[100];
-    SprintfLiteral(buf, "%s-%d.wav", aBaseName, ++sDumpedAudioCount);
-    OpenExplicit(buf, aChannels, aRate);
+    nsAutoCString path;
+    if (isDir) {
+      path.AppendPrintf("%s/%s-%d.wav", dumpAudio, aBaseName,
+                        ++sDumpedAudioCount);
+    } else {
+      path.AppendPrintf("%s-%d.wav", aBaseName, ++sDumpedAudioCount);
+    }
+    OpenExplicit(path.get(), aChannels, aRate);
   }
 
   void OpenExplicit(const char* aPath, uint32_t aChannels, uint32_t aRate) {
