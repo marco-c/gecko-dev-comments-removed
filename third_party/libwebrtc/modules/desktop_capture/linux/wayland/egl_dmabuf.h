@@ -96,6 +96,10 @@ class EglDmaBuf {
   
   
   EglDrmDevice* GetRenderDevice();
+  
+  
+  EglDrmDevice* GetRenderDevice(dev_t id);
+  std::vector<dev_t> GetDevices() const;
 
   bool SetPreferredRenderDevice(dev_t device_id);
 
