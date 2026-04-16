@@ -63,7 +63,7 @@ static MOZ_ALWAYS_INLINE Compartment* GetCompartment(JSObject* obj) {
 
 
 
-inline const Value& GetReservedSlot(JSObject* obj, size_t slot) {
+inline const Value& GetReservedSlot(const JSObject* obj, size_t slot) {
   MOZ_ASSERT(slot < JSCLASS_RESERVED_SLOTS(GetClass(obj)));
   return reinterpret_cast<const shadow::Object*>(obj)->slotRef(slot);
 }
