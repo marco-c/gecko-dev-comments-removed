@@ -86,6 +86,7 @@
 #include "rtc_base/rtc_certificate_generator.h"
 #include "rtc_base/socket_address.h"
 #include "rtc_base/socket_server.h"
+#include "rtc_base/system/plan_b_only.h"
 #include "rtc_base/thread.h"
 #include "rtc_base/virtual_socket_server.h"
 #include "rtc_base/weak_ptr.h"
@@ -826,7 +827,9 @@ class PeerConnectionInterfaceBaseTest : public ::testing::Test {
     scoped_refptr<MediaStreamInterface> stream(
         pc_factory_->CreateLocalMediaStream(label));
     stream->AddTrack(CreateVideoTrack(label + "v0"));
+    RTC_ALLOW_PLAN_B_DEPRECATION_BEGIN();
     ASSERT_TRUE(pc_->AddStream(stream.get()));
+    RTC_ALLOW_PLAN_B_DEPRECATION_END();
   }
 
   scoped_refptr<AudioTrackInterface> CreateAudioTrack(
@@ -845,7 +848,9 @@ class PeerConnectionInterfaceBaseTest : public ::testing::Test {
     scoped_refptr<MediaStreamInterface> stream(
         pc_factory_->CreateLocalMediaStream(label));
     stream->AddTrack(CreateAudioTrack(label + "a0"));
+    RTC_ALLOW_PLAN_B_DEPRECATION_BEGIN();
     ASSERT_TRUE(pc_->AddStream(stream.get()));
+    RTC_ALLOW_PLAN_B_DEPRECATION_END();
   }
 
   void AddAudioVideoStream(const std::string& stream_id,
@@ -856,7 +861,9 @@ class PeerConnectionInterfaceBaseTest : public ::testing::Test {
         pc_factory_->CreateLocalMediaStream(stream_id));
     stream->AddTrack(CreateAudioTrack(audio_track_label));
     stream->AddTrack(CreateVideoTrack(video_track_label));
+    RTC_ALLOW_PLAN_B_DEPRECATION_BEGIN();
     ASSERT_TRUE(pc_->AddStream(stream.get()));
+    RTC_ALLOW_PLAN_B_DEPRECATION_END();
   }
 
   scoped_refptr<RtpReceiverInterface> GetFirstReceiverOfType(
@@ -929,8 +936,12 @@ class PeerConnectionInterfaceBaseTest : public ::testing::Test {
   
   bool DoGetStats(MediaStreamTrackInterface* track) {
     auto observer = make_ref_counted<MockStatsObserver>();
-    if (!pc_->GetStats(observer.get(), track,
-                       PeerConnectionInterface::kStatsOutputLevelStandard))
+    RTC_ALLOW_PLAN_B_DEPRECATION_BEGIN();
+    bool result =
+        pc_->GetStats(observer.get(), track,
+                      PeerConnectionInterface::kStatsOutputLevelStandard);
+    RTC_ALLOW_PLAN_B_DEPRECATION_END();
+    if (!result)
       return false;
     EXPECT_THAT(WaitUntil([&] { return observer->called(); }, IsTrue(),
                           {.timeout = TimeDelta::Millis(kTimeout)}),
@@ -1088,6 +1099,7 @@ class PeerConnectionInterfaceBaseTest : public ::testing::Test {
   
   
   
+  RTC_ALLOW_PLAN_B_DEPRECATION_BEGIN()
   void WaitAndVerifyOnAddStream(const std::string& stream_id,
                                 int expected_num_tracks) {
     
@@ -1101,6 +1113,7 @@ class PeerConnectionInterfaceBaseTest : public ::testing::Test {
             Eq(expected_num_tracks), {.timeout = TimeDelta::Millis(kTimeout)}),
         IsRtcOk());
   }
+  RTC_ALLOW_PLAN_B_DEPRECATION_END()
 
   
   
@@ -1297,12 +1310,17 @@ class PeerConnectionInterfaceTest
   PeerConnectionInterfaceTest() : PeerConnectionInterfaceBaseTest(GetParam()) {}
 };
 
-class PeerConnectionInterfaceTestPlanB
+RTC_ALLOW_PLAN_B_DEPRECATION_BEGIN()
+
+
+
+class PLAN_B_ONLY PeerConnectionInterfaceTestPlanB
     : public PeerConnectionInterfaceBaseTest {
  protected:
   PeerConnectionInterfaceTestPlanB()
       : PeerConnectionInterfaceBaseTest(SdpSemantics::kPlanB_DEPRECATED) {}
 };
+RTC_ALLOW_PLAN_B_DEPRECATION_END()
 
 
 
@@ -1473,6 +1491,7 @@ TEST_P(PeerConnectionInterfaceTest, SetConfigurationFailsAfterClose) {
       pc_->SetConfiguration(PeerConnectionInterface::RTCConfiguration()).ok());
 }
 
+RTC_ALLOW_PLAN_B_DEPRECATION_BEGIN()
 TEST_F(PeerConnectionInterfaceTestPlanB, AddStreams) {
   CreatePeerConnectionWithoutDtls();
   AddVideoStream(kStreamId1);
@@ -1648,6 +1667,7 @@ TEST_F(PeerConnectionInterfaceTestPlanB, AddTrackWithSendEncodings) {
   EXPECT_TRUE(pc_->RemoveTrackOrError(audio_sender).ok());
   EXPECT_TRUE(pc_->RemoveTrackOrError(video_sender).ok());
 }
+RTC_ALLOW_PLAN_B_DEPRECATION_END()
 
 
 
@@ -1711,6 +1731,7 @@ TEST_P(PeerConnectionInterfaceTest, AttachmentIdIsSetOnAddTrack) {
   EXPECT_NE(0, video_sender_proxy->internal()->AttachmentId());
 }
 
+RTC_ALLOW_PLAN_B_DEPRECATION_BEGIN()
 
 TEST_F(PeerConnectionInterfaceTestPlanB, AttachmentIdIsSetOnAddStream) {
   CreatePeerConnection();
@@ -1722,6 +1743,7 @@ TEST_F(PeerConnectionInterfaceTestPlanB, AttachmentIdIsSetOnAddStream) {
           senders[0].get());
   EXPECT_NE(0, sender_proxy->internal()->AttachmentId());
 }
+RTC_ALLOW_PLAN_B_DEPRECATION_END()
 
 TEST_P(PeerConnectionInterfaceTest, CreateOfferReceiveAnswer) {
   InitiateCall();
@@ -1760,6 +1782,7 @@ TEST_P(PeerConnectionInterfaceTest, ReceiveOfferCreatePrAnswerAndAnswer) {
   WaitAndVerifyOnAddStream(kStreamId1, 1);
 }
 
+RTC_ALLOW_PLAN_B_DEPRECATION_BEGIN()
 
 TEST_F(PeerConnectionInterfaceTestPlanB, Renegotiate) {
   InitiateCall();
@@ -1784,6 +1807,7 @@ TEST_F(PeerConnectionInterfaceTestPlanB, RenegotiateAudioOnly) {
   CreateOfferReceiveAnswer();
   EXPECT_EQ(0u, pc_->remote_streams()->count());
 }
+RTC_ALLOW_PLAN_B_DEPRECATION_END()
 
 
 TEST_P(PeerConnectionInterfaceTest, IceCandidates) {
@@ -1812,6 +1836,7 @@ TEST_P(PeerConnectionInterfaceTest, IceCandidates) {
   EXPECT_TRUE(pc_->AddIceCandidate(observer_.last_candidate()));
 }
 
+RTC_ALLOW_PLAN_B_DEPRECATION_BEGIN()
 
 
 TEST_F(PeerConnectionInterfaceTestPlanB, CreateOfferAnswerWithInvalidStream) {
@@ -1833,6 +1858,7 @@ TEST_F(PeerConnectionInterfaceTestPlanB, CreateOfferAnswerWithInvalidStream) {
   std::unique_ptr<SessionDescriptionInterface> answer;
   EXPECT_FALSE(DoCreateAnswer(&answer, nullptr));
 }
+RTC_ALLOW_PLAN_B_DEPRECATION_END()
 
 
 
@@ -1866,6 +1892,7 @@ TEST_P(PeerConnectionInterfaceTest, SsrcInOfferAnswer) {
   EXPECT_NE(audio_ssrc, video_ssrc);
 }
 
+RTC_ALLOW_PLAN_B_DEPRECATION_BEGIN()
 
 
 
@@ -1926,6 +1953,7 @@ TEST_F(PeerConnectionInterfaceTestPlanB, CreateSenderWithStream) {
   ASSERT_EQ(1u, video_desc->streams().size());
   EXPECT_EQ(kStreamId1, video_desc->streams()[0].first_stream_id());
 }
+RTC_ALLOW_PLAN_B_DEPRECATION_END()
 
 
 TEST_P(PeerConnectionInterfaceTest, GetStatsForSpecificTrack) {
@@ -2588,8 +2616,10 @@ TEST_P(PeerConnectionInterfaceTest, CloseAndTestStreamsAndStates) {
   
   
   if (sdp_semantics_ == SdpSemantics::kPlanB_DEPRECATED) {
+    RTC_ALLOW_PLAN_B_DEPRECATION_BEGIN();
     ASSERT_EQ(1u, pc_->local_streams()->count());
     ASSERT_EQ(1u, pc_->remote_streams()->count());
+    RTC_ALLOW_PLAN_B_DEPRECATION_END();
   } else {
     ASSERT_EQ(2u, pc_->GetTransceivers().size());
   }
@@ -2603,8 +2633,10 @@ TEST_P(PeerConnectionInterfaceTest, CloseAndTestStreamsAndStates) {
             pc_->ice_gathering_state());
 
   if (sdp_semantics_ == SdpSemantics::kPlanB_DEPRECATED) {
+    RTC_ALLOW_PLAN_B_DEPRECATION_BEGIN();
     EXPECT_EQ(1u, pc_->local_streams()->count());
     EXPECT_EQ(1u, pc_->remote_streams()->count());
+    RTC_ALLOW_PLAN_B_DEPRECATION_END();
   } else {
     
     EXPECT_EQ(2u, pc_->GetTransceivers().size());
@@ -2630,6 +2662,7 @@ TEST_P(PeerConnectionInterfaceTest, CloseAndTestStreamsAndStates) {
   }
 }
 
+RTC_ALLOW_PLAN_B_DEPRECATION_BEGIN()
 
 
 
@@ -2668,6 +2701,7 @@ TEST_F(PeerConnectionInterfaceTestPlanB, CloseAndTestMethods) {
       CreateSessionDescription(SdpType::kOffer, sdp));
   EXPECT_FALSE(DoSetLocalDescription(std::move(local_offer)));
 }
+RTC_ALLOW_PLAN_B_DEPRECATION_END()
 
 
 TEST_P(PeerConnectionInterfaceTest, CloseAndGetStats) {
@@ -2690,9 +2724,11 @@ TEST_P(PeerConnectionInterfaceTest, UpdateRemoteStreams) {
 
   scoped_refptr<StreamCollection> reference(
       CreateStreamCollection(1, 1, worker_thread_.get()));
+  RTC_ALLOW_PLAN_B_DEPRECATION_BEGIN()
   EXPECT_TRUE(
       CompareStreamCollections(observer_.remote_streams(), reference.get()));
   MediaStreamInterface* remote_stream = observer_.remote_streams()->at(0);
+  RTC_ALLOW_PLAN_B_DEPRECATION_END();
   EXPECT_TRUE(remote_stream->GetVideoTracks()[0]->GetSource() != nullptr);
 
   
@@ -2701,10 +2737,13 @@ TEST_P(PeerConnectionInterfaceTest, UpdateRemoteStreams) {
 
   scoped_refptr<StreamCollection> reference2(
       CreateStreamCollection(2, 1, worker_thread_.get()));
+  RTC_ALLOW_PLAN_B_DEPRECATION_BEGIN();
   EXPECT_TRUE(
       CompareStreamCollections(observer_.remote_streams(), reference2.get()));
+  RTC_ALLOW_PLAN_B_DEPRECATION_END();
 }
 
+RTC_ALLOW_PLAN_B_DEPRECATION_BEGIN()
 
 
 
@@ -2753,6 +2792,7 @@ TEST_F(PeerConnectionInterfaceTestPlanB,
                         {.timeout = TimeDelta::Millis(kTimeout)}),
               IsRtcOk());
 }
+RTC_ALLOW_PLAN_B_DEPRECATION_END()
 
 
 
@@ -2805,6 +2845,7 @@ TEST_P(PeerConnectionInterfaceTest, RejectMediaContent) {
               IsRtcOk());
 }
 
+RTC_ALLOW_PLAN_B_DEPRECATION_BEGIN()
 
 
 
@@ -2829,6 +2870,7 @@ TEST_F(PeerConnectionInterfaceTestPlanB, RemoveTrackThenRejectMediaContent) {
 
   
 }
+RTC_ALLOW_PLAN_B_DEPRECATION_END()
 
 
 
@@ -2841,9 +2883,12 @@ TEST_P(PeerConnectionInterfaceTest, RecvonlyDescriptionDoesntCreateStream) {
   absl::StrReplaceAll({{kSendrecv, kRecvonly}}, &recvonly_offer);
   CreateAndSetRemoteOffer(recvonly_offer);
 
+  RTC_ALLOW_PLAN_B_DEPRECATION_BEGIN();
   EXPECT_EQ(0u, observer_.remote_streams()->count());
+  RTC_ALLOW_PLAN_B_DEPRECATION_END();
 }
 
+RTC_ALLOW_PLAN_B_DEPRECATION_BEGIN()
 
 
 
@@ -3094,6 +3139,7 @@ TEST_F(PeerConnectionInterfaceTestPlanB,
   EXPECT_TRUE(ContainsSender(senders, kAudioTracks[1]));
   EXPECT_TRUE(ContainsSender(senders, kVideoTracks[1]));
 }
+RTC_ALLOW_PLAN_B_DEPRECATION_END()
 
 
 
@@ -3145,6 +3191,7 @@ TEST_P(PeerConnectionInterfaceTest,
   
 }
 
+RTC_ALLOW_PLAN_B_DEPRECATION_BEGIN()
 
 
 
@@ -3183,6 +3230,7 @@ TEST_F(PeerConnectionInterfaceTestPlanB,
   EXPECT_TRUE(ContainsSender(new_senders, kAudioTracks[0], kStreams[1]));
   EXPECT_TRUE(ContainsSender(new_senders, kVideoTracks[0], kStreams[1]));
 }
+RTC_ALLOW_PLAN_B_DEPRECATION_END()
 
 
 TEST_P(PeerConnectionInterfaceTest, OnAddTrackCallback) {
@@ -3499,6 +3547,7 @@ TEST_P(PeerConnectionInterfaceTest, CreateOfferWithOfferToReceiveConstraints) {
   EXPECT_FALSE(video->rejected);
 }
 
+RTC_ALLOW_PLAN_B_DEPRECATION_BEGIN()
 
 
 
@@ -3530,6 +3579,7 @@ TEST_F(PeerConnectionInterfaceTestPlanB,
   EXPECT_TRUE(audio->rejected);
   EXPECT_TRUE(video->rejected);
 }
+RTC_ALLOW_PLAN_B_DEPRECATION_END()
 
 
 
@@ -3782,6 +3832,7 @@ TEST_P(PeerConnectionInterfaceTest, CreateOfferWithRtpMux) {
   EXPECT_FALSE(offer->description()->HasGroup(GROUP_TYPE_BUNDLE));
 }
 
+RTC_ALLOW_PLAN_B_DEPRECATION_BEGIN()
 
 
 
@@ -3825,6 +3876,7 @@ TEST_F(PeerConnectionInterfaceTestPlanB,
               IsRtcOk());
   observer_.renegotiation_needed_ = false;
 }
+RTC_ALLOW_PLAN_B_DEPRECATION_END()
 
 
 
