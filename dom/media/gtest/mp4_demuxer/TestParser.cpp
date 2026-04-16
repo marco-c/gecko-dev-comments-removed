@@ -2,7 +2,6 @@
 
 
 
-
 #include "BufferStream.h"
 #include "MP4Metadata.h"
 #include "MediaData.h"
@@ -715,6 +714,7 @@ TEST(MoofParser, test_case_mp4_subsets) {
 
 
 
+
 TEST(MoofParser, overflow_tfdt)
 {
   static const char* kTestFilename = "test_case_2004835-overflow-tfdt.mp4";
@@ -725,11 +725,14 @@ TEST(MoofParser, overflow_tfdt)
       new TestStream(buffer.Elements(), buffer.Length());
 
   
+  
+  
   const uint32_t videoTrackId = 1;
   MoofParser parser(stream, AsVariant(videoTrackId), false);
   const MediaByteRangeSet byteRanges(
       MediaByteRange(0, int64_t(buffer.Length())));
-  EXPECT_FALSE(parser.RebuildFragmentedIndex(byteRanges));
+  EXPECT_TRUE(parser.RebuildFragmentedIndex(byteRanges));
+  EXPECT_FALSE(parser.Moofs().IsEmpty());
 }
 
 

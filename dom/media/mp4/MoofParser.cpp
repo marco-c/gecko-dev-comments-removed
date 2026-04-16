@@ -979,7 +979,8 @@ Result<Ok, nsresult> Moof::ParseTrun(const Box& aBox, const Mvhd& aMvhd,
   
   
   
-  CheckedInt64 decodeTime = *aDecodeTime;
+  
+  CheckedInt64 decodeTime = static_cast<int64_t>(*aDecodeTime);
 
   if (!mIndex.SetCapacity(mIndex.Length() + sampleCount, fallible)) {
     LOG_ERROR(Moof, "Out of Memory");
@@ -1041,6 +1042,9 @@ Result<Ok, nsresult> Moof::ParseTrun(const Box& aBox, const Mvhd& aMvhd,
     LOG_WARN(Moof, "Decode time overflow in ParseTrun");
     return Err(NS_ERROR_FAILURE);
   }
+  
+  
+  
   *aDecodeTime = decodeTime.value();
 
   LOG_DEBUG(Trun, "Done.");
