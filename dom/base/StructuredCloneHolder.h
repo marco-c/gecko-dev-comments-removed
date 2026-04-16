@@ -223,6 +223,8 @@ class StructuredCloneHolder : public StructuredCloneHolderBase {
   
   bool HasClonedDOMObjects();
 
+  bool SupportsTransferring() const { return mSupportsTransferring; }
+
   GeckoChildID GetOriginChildID() const { return mOriginChildID; }
 
   nsTArray<NotNull<RefPtr<BlobImpl>>>& BlobImpls() {
@@ -370,9 +372,7 @@ class StructuredCloneHolder : public StructuredCloneHolderBase {
   
   
   
-  auto CloneableAttachmentArrays() {
-    return std::tie(mBlobImplArray, mInputStreamArray);
-  }
+  auto CloneableAttachmentArrays() { return std::tie(mBlobImplArray); }
   auto InProcessCloneableAttachmentArrays() {
     return std::tie(mWasmModuleArray, mClonedSurfaces, mVideoFrames, mAudioData,
                     mEncodedVideoChunks, mEncodedAudioChunks
@@ -385,7 +385,9 @@ class StructuredCloneHolder : public StructuredCloneHolderBase {
   auto TransferableAttachmentArrays() {
     
     
-    return std::tie(mPortIdentifiers);
+    
+    
+    return std::tie(mPortIdentifiers, mInputStreamArray);
   }
   auto AttachmentArrays() {
     return std::tuple_cat(CloneableAttachmentArrays(),

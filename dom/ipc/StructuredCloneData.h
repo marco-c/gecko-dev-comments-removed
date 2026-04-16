@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_ipc_StructuredCloneData_h
 #define mozilla_dom_ipc_StructuredCloneData_h
 
@@ -45,8 +43,6 @@ class StructuredCloneData : public StructuredCloneHolder {
   
   bool CopyExternalData(const char* aData, size_t aDataLength,
                         uint32_t aVersion = JS_STRUCTURED_CLONE_VERSION);
-
-  bool SupportsTransferring() { return mSupportsTransferring; }
 
   
   void WriteIPCParams(IPC::MessageWriter* aWriter);
