@@ -2,10 +2,10 @@
 
 
 
-
 #ifndef GMPVideoHost_h_
 #define GMPVideoHost_h_
 
+#include "GMPSharedMemManager.h"
 #include "gmp-video-frame.h"
 #include "gmp-video-host.h"
 #include "gmp-video-plane.h"
@@ -13,44 +13,21 @@
 
 namespace mozilla::gmp {
 
-class GMPSharedMemManager;
 class GMPVideoEncodedFrameImpl;
 class GMPVideoi420FrameImpl;
 
-class GMPVideoHostImpl : public GMPVideoHost {
+class GMPVideoHostImpl : public GMPVideoHost, public GMPSharedMemManager {
  public:
-  explicit GMPVideoHostImpl(GMPSharedMemManager* aSharedMemMgr);
-  virtual ~GMPVideoHostImpl();
-
-  
-  GMPSharedMemManager* SharedMemMgr();
-  void DoneWithAPI();
-  void ActorDestroyed();
-  void EncodedFrameCreated(GMPVideoEncodedFrameImpl* aEncodedFrame);
-  void EncodedFrameDestroyed(GMPVideoEncodedFrameImpl* aFrame);
-  void DecodedFrameCreated(GMPVideoi420FrameImpl* aDecodedFrame);
-  void DecodedFrameDestroyed(GMPVideoi420FrameImpl* aFrame);
-
-  bool IsEncodedFramesEmpty() const { return mEncodedFrames.IsEmpty(); }
-
-  bool IsDecodedFramesEmpty() const { return mDecodedFrames.IsEmpty(); }
+  NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
 
   
   GMPErr CreateFrame(GMPVideoFrameFormat aFormat,
                      GMPVideoFrame** aFrame) override;
   GMPErr CreatePlane(GMPPlane** aPlane) override;
 
- private:
-  
-  
-  
-  GMPSharedMemManager* mSharedMemMgr;
-
-  
-  
-  
-  nsTArray<GMPVideoEncodedFrameImpl*> mEncodedFrames;
-  nsTArray<GMPVideoi420FrameImpl*> mDecodedFrames;
+ protected:
+  GMPVideoHostImpl();
+  virtual ~GMPVideoHostImpl();
 };
 
 }  

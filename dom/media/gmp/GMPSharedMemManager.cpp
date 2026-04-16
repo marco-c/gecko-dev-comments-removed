@@ -2,7 +2,6 @@
 
 
 
-
 #include "GMPSharedMemManager.h"
 
 #include "mozilla/ipc/SharedMemoryMapping.h"
@@ -64,7 +63,9 @@ void GMPSharedMemManager::MgrGiveShmem(GMPSharedMemClass aClass,
                                        ipc::Shmem&& aMem) {
   MOZ_ASSERT(MgrIsOnOwningThread());
 
-  if (!aMem.IsWritable()) {
+  if (!aMem.IsWritable() || !MgrCanSend()) {
+    
+    
     return;
   }
 

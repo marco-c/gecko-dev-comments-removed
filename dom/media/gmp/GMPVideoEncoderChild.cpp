@@ -2,7 +2,6 @@
 
 
 
-
 #include "GMPVideoEncoderChild.h"
 
 #include "GMPContentChild.h"
@@ -14,11 +13,19 @@
 namespace mozilla::gmp {
 
 GMPVideoEncoderChild::GMPVideoEncoderChild(GMPContentChild* aPlugin)
-    : mPlugin(aPlugin), mVideoEncoder(nullptr), mVideoHost(this) {
+    : mPlugin(aPlugin), mVideoEncoder(nullptr) {
   MOZ_ASSERT(mPlugin);
 }
 
-GMPVideoEncoderChild::~GMPVideoEncoderChild() = default;
+GMPVideoEncoderChild::~GMPVideoEncoderChild() {
+  
+  
+  
+  
+  if (mVideoEncoder) {
+    mVideoEncoder->EncodingComplete();
+  }
+}
 
 bool GMPVideoEncoderChild::MgrIsOnOwningThread() const {
   return !mPlugin || mPlugin->GMPMessageLoop() == MessageLoop::current();
@@ -29,8 +36,6 @@ void GMPVideoEncoderChild::Init(GMPVideoEncoder* aEncoder) {
              "Cannot initialize video encoder child without a video encoder!");
   mVideoEncoder = aEncoder;
 }
-
-GMPVideoHostImpl& GMPVideoEncoderChild::Host() { return mVideoHost; }
 
 void GMPVideoEncoderChild::Encoded(GMPVideoEncodedFrame* aEncodedFrame,
                                    const uint8_t* aCodecSpecificInfo,
@@ -44,11 +49,9 @@ void GMPVideoEncoderChild::Encoded(GMPVideoEncodedFrame* aEncodedFrame,
 
   auto ef = static_cast<GMPVideoEncodedFrameImpl*>(aEncodedFrame);
 
-  if (GMPSharedMemManager* memMgr = mVideoHost.SharedMemMgr()) {
-    ipc::Shmem inputShmem;
-    if (memMgr->MgrTakeShmem(GMPSharedMemClass::Decoded, &inputShmem)) {
-      (void)SendReturnShmem(std::move(inputShmem));
-    }
+  ipc::Shmem inputShmem;
+  if (MgrTakeShmem(GMPSharedMemClass::Decoded, &inputShmem)) {
+    (void)SendReturnShmem(std::move(inputShmem));
   }
 
   nsTArray<uint8_t> codecSpecific;
@@ -113,12 +116,7 @@ mozilla::ipc::IPCResult GMPVideoEncoderChild::RecvInitEncode(
 
 mozilla::ipc::IPCResult GMPVideoEncoderChild::RecvGiveShmem(
     ipc::Shmem&& aOutputShmem) {
-  if (GMPSharedMemManager* memMgr = mVideoHost.SharedMemMgr()) {
-    memMgr->MgrGiveShmem(GMPSharedMemClass::Encoded, std::move(aOutputShmem));
-  } else {
-    DeallocShmem(aOutputShmem);
-  }
-
+  MgrGiveShmem(GMPSharedMemClass::Encoded, std::move(aOutputShmem));
   return IPC_OK();
 }
 
@@ -133,8 +131,8 @@ mozilla::ipc::IPCResult GMPVideoEncoderChild::RecvEncode(
 
   
   
-  auto* f = new GMPVideoi420FrameImpl(aInputFrame, std::move(aInputShmem),
-                                      &mVideoHost, HostReportPolicy::Destroyed);
+  auto* f = new GMPVideoi420FrameImpl(aInputFrame, std::move(aInputShmem), this,
+                                      HostReportPolicy::Destroyed);
 
   
   
@@ -188,22 +186,7 @@ void GMPVideoEncoderChild::ActorDestroy(ActorDestroyReason why) {
   
   
   
-  
-  if (!SpinPendingGmpEventsUntil(
-          [&]() -> bool { return mVideoHost.IsDecodedFramesEmpty(); },
-          StaticPrefs::media_gmp_coder_shutdown_timeout_ms())) {
-    NS_WARNING("Timed out waiting for synchronous events!");
-  }
-
-  if (mVideoEncoder) {
-    
-    
-    mVideoEncoder->EncodingComplete();
-    mVideoEncoder = nullptr;
-  }
-
-  mVideoHost.DoneWithAPI();
-
+  MgrPurgeShmems();
   mPlugin = nullptr;
 }
 

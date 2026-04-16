@@ -2,7 +2,6 @@
 
 
 
-
 #include "GMPVideoDecoderChild.h"
 
 #include "GMPContentChild.h"
@@ -10,16 +9,26 @@
 #include "GMPVideoEncodedFrameImpl.h"
 #include "GMPVideoi420FrameImpl.h"
 #include "mozilla/StaticPrefs_media.h"
+#include "nsProxyRelease.h"
+#include "nsThreadUtils.h"
 #include "runnable_utils.h"
 
 namespace mozilla::gmp {
 
 GMPVideoDecoderChild::GMPVideoDecoderChild(GMPContentChild* aPlugin)
-    : mPlugin(aPlugin), mVideoDecoder(nullptr), mVideoHost(this) {
+    : mPlugin(aPlugin), mVideoDecoder(nullptr) {
   MOZ_ASSERT(mPlugin);
 }
 
-GMPVideoDecoderChild::~GMPVideoDecoderChild() = default;
+GMPVideoDecoderChild::~GMPVideoDecoderChild() {
+  
+  
+  
+  
+  if (mVideoDecoder) {
+    mVideoDecoder->DecodingComplete();
+  }
+}
 
 bool GMPVideoDecoderChild::MgrIsOnOwningThread() const {
   return !mPlugin || mPlugin->GMPMessageLoop() == MessageLoop::current();
@@ -30,8 +39,6 @@ void GMPVideoDecoderChild::Init(GMPVideoDecoder* aDecoder) {
              "Cannot initialize video decoder child without a video decoder!");
   mVideoDecoder = aDecoder;
 }
-
-GMPVideoHostImpl& GMPVideoDecoderChild::Host() { return mVideoHost; }
 
 void GMPVideoDecoderChild::Decoded(GMPVideoi420Frame* aDecodedFrame) {
   if (!aDecodedFrame) {
@@ -47,11 +54,9 @@ void GMPVideoDecoderChild::Decoded(GMPVideoi420Frame* aDecodedFrame) {
 
   auto df = static_cast<GMPVideoi420FrameImpl*>(aDecodedFrame);
 
-  if (GMPSharedMemManager* memMgr = mVideoHost.SharedMemMgr()) {
-    ipc::Shmem inputShmem;
-    if (memMgr->MgrTakeShmem(GMPSharedMemClass::Encoded, &inputShmem)) {
-      (void)SendReturnShmem(std::move(inputShmem));
-    }
+  ipc::Shmem inputShmem;
+  if (MgrTakeShmem(GMPSharedMemClass::Encoded, &inputShmem)) {
+    (void)SendReturnShmem(std::move(inputShmem));
   }
 
   GMPVideoi420FrameData frameData;
@@ -101,8 +106,17 @@ void GMPVideoDecoderChild::InputDataExhausted() {
 }
 
 void GMPVideoDecoderChild::DrainComplete() {
-  MOZ_ASSERT(mOutstandingDrain, "DrainComplete without Drain!");
-  mOutstandingDrain = false;
+  if (!mDrainSelfRef) {
+    MOZ_ASSERT_UNREACHABLE("DrainComplete without Drain!");
+    return;
+  }
+
+  
+  
+  
+  NS_ProxyRelease("GMPVideoDecoderChild::DrainComplete",
+                  GetMainThreadSerialEventTarget(), mDrainSelfRef.forget(),
+                   true);
 
   if (NS_WARN_IF(!mPlugin)) {
     return;
@@ -114,8 +128,17 @@ void GMPVideoDecoderChild::DrainComplete() {
 }
 
 void GMPVideoDecoderChild::ResetComplete() {
-  MOZ_ASSERT(mOutstandingReset, "ResetComplete without Reset!");
-  mOutstandingReset = false;
+  if (!mResetSelfRef) {
+    MOZ_ASSERT_UNREACHABLE("ResetComplete without Reset!");
+    return;
+  }
+
+  
+  
+  
+  NS_ProxyRelease("GMPVideoDecoderChild::ResetComplete",
+                  GetMainThreadSerialEventTarget(), mResetSelfRef.forget(),
+                   true);
 
   if (NS_WARN_IF(!mPlugin)) {
     return;
@@ -152,12 +175,7 @@ mozilla::ipc::IPCResult GMPVideoDecoderChild::RecvInitDecode(
 
 mozilla::ipc::IPCResult GMPVideoDecoderChild::RecvGiveShmem(
     ipc::Shmem&& aOutputShmem) {
-  if (GMPSharedMemManager* memMgr = mVideoHost.SharedMemMgr()) {
-    memMgr->MgrGiveShmem(GMPSharedMemClass::Decoded, std::move(aOutputShmem));
-  } else {
-    DeallocShmem(aOutputShmem);
-  }
-
+  MgrGiveShmem(GMPSharedMemClass::Decoded, std::move(aOutputShmem));
   return IPC_OK();
 }
 
@@ -170,8 +188,8 @@ mozilla::ipc::IPCResult GMPVideoDecoderChild::RecvDecode(
     return IPC_FAIL(this, "!mVideoDecoder");
   }
 
-  auto* f = new GMPVideoEncodedFrameImpl(aInputFrame, std::move(aInputShmem),
-                                         &mVideoHost);
+  auto* f =
+      new GMPVideoEncodedFrameImpl(aInputFrame, std::move(aInputShmem), this);
 
   
   
@@ -186,14 +204,14 @@ mozilla::ipc::IPCResult GMPVideoDecoderChild::RecvReset() {
     return IPC_FAIL(this, "!mVideoDecoder");
   }
 
-  if (mOutstandingReset) {
+  if (mResetSelfRef) {
     MOZ_ASSERT_UNREACHABLE("Already has outstanding reset!");
     return IPC_OK();
   }
 
   
   
-  mOutstandingReset = true;
+  mResetSelfRef = this;
   mVideoDecoder->Reset();
 
   return IPC_OK();
@@ -204,14 +222,14 @@ mozilla::ipc::IPCResult GMPVideoDecoderChild::RecvDrain() {
     return IPC_FAIL(this, "!mVideoDecoder");
   }
 
-  if (mOutstandingDrain) {
+  if (mDrainSelfRef) {
     MOZ_ASSERT_UNREACHABLE("Already has outstanding drain!");
     return IPC_OK();
   }
 
   
   
-  mOutstandingDrain = true;
+  mDrainSelfRef = this;
   mVideoDecoder->Drain();
 
   return IPC_OK();
@@ -221,25 +239,7 @@ void GMPVideoDecoderChild::ActorDestroy(ActorDestroyReason why) {
   
   
   
-  
-  if (!SpinPendingGmpEventsUntil(
-          [&]() -> bool {
-            return mOutstandingDrain || mOutstandingReset ||
-                   mVideoHost.IsEncodedFramesEmpty();
-          },
-          StaticPrefs::media_gmp_coder_shutdown_timeout_ms())) {
-    NS_WARNING("Timed out waiting for synchronous events!");
-  }
-
-  if (mVideoDecoder) {
-    
-    
-    mVideoDecoder->DecodingComplete();
-    mVideoDecoder = nullptr;
-  }
-
-  mVideoHost.DoneWithAPI();
-
+  MgrPurgeShmems();
   mPlugin = nullptr;
 }
 

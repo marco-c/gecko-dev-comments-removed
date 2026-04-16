@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef GMPVideoi420FrameImpl_h_
 #define GMPVideoi420FrameImpl_h_
 
@@ -36,10 +35,6 @@ class GMPVideoi420FrameImpl : public GMPVideoi420Frame {
       GMPVideoHostImpl* aHost,
       HostReportPolicy aReportPolicy = HostReportPolicy::None);
   virtual ~GMPVideoi420FrameImpl();
-
-  
-  
-  void DoneWithAPI();
 
   static bool CheckFrameData(const GMPVideoi420FrameData& aFrameData,
                              size_t aBufferSize);
@@ -106,13 +101,12 @@ class GMPVideoi420FrameImpl : public GMPVideoi420Frame {
   bool CheckDimensions(int32_t aWidth, int32_t aHeight, int32_t aStride_y,
                        int32_t aStride_u, int32_t aStride_v);
   GMPErr MaybeResize(int32_t aNewSize);
-  void DestroyBuffer();
 
  public:
   const HostReportPolicy mReportPolicy;
 
  protected:
-  GMPVideoHostImpl* mHost;
+  RefPtr<GMPVideoHostImpl> mHost;
   nsTArray<uint8_t> mArrayBuffer;
   ipc::Shmem mShmemBuffer;
   GMPFramePlane mYPlane;

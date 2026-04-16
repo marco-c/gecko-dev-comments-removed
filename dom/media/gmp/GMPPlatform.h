@@ -2,11 +2,8 @@
 
 
 
-
 #ifndef GMPPlatform_h_
 #define GMPPlatform_h_
-
-#include <functional>
 
 #include "gmp-platform.h"
 #include "mozilla/RefPtr.h"
@@ -26,31 +23,12 @@ namespace gmp {
 class GMPChild;
 
 void InitPlatformAPI(GMPPlatformAPI& aPlatformAPI, GMPChild* aChild);
-void ShutdownPlatformAPI();
 
 GMPErr RunOnMainThread(GMPTask* aTask);
 
 GMPTask* NewGMPTask(std::function<void()>&& aFunction);
 
 GMPErr SetTimerOnMainThread(GMPTask* aTask, int64_t aTimeoutMS);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-using SpinPendingPredicate = std::function<bool()>;
-bool SpinPendingGmpEventsUntil(const SpinPendingPredicate& aPred,
-                               uint32_t aTimeoutMs);
 
 void SendFOGData(ipc::ByteBuf&& buf);
 

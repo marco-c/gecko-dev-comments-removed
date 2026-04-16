@@ -27,7 +27,6 @@
 
 
 
-
 #ifndef GMPVideoEncodedFrameImpl_h_
 #define GMPVideoEncodedFrameImpl_h_
 
@@ -56,10 +55,6 @@ class GMPVideoEncodedFrameImpl : public GMPVideoEncodedFrame {
                            nsTArray<uint8_t>&& aArrayBuffer,
                            GMPVideoHostImpl* aHost);
   virtual ~GMPVideoEncodedFrameImpl();
-
-  
-  
-  void DoneWithAPI();
 
   static bool CheckFrameData(const GMPVideoEncodedFrameData& aFrameData,
                              size_t aBufferSize);
@@ -116,7 +111,7 @@ class GMPVideoEncodedFrameImpl : public GMPVideoEncodedFrame {
   uint32_t mSize;
   int32_t mTemporalLayerId = -1;
   bool mCompleteFrame;
-  GMPVideoHostImpl* mHost;
+  RefPtr<GMPVideoHostImpl> mHost;
   nsTArray<uint8_t> mArrayBuffer;
   ipc::Shmem mShmemBuffer;
   GMPBufferType mBufferType;
