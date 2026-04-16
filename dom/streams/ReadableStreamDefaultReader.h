@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_ReadableStreamDefaultReader_h
 #define mozilla_dom_ReadableStreamDefaultReader_h
 
@@ -100,22 +98,6 @@ class ReadableStreamDefaultReader final : public ReadableStreamGenericReader,
  private:
   LinkedList<RefPtr<ReadRequest>> mReadRequests = {};
 };
-
-namespace streams_abstract {
-
-void SetUpReadableStreamDefaultReader(ReadableStreamDefaultReader* aReader,
-                                      ReadableStream* aStream,
-                                      ErrorResult& aRv);
-
-void ReadableStreamDefaultReaderErrorReadRequests(
-    JSContext* aCx, ReadableStreamDefaultReader* aReader,
-    JS::Handle<JS::Value> aError, ErrorResult& aRv);
-
-void ReadableStreamDefaultReaderRelease(JSContext* aCx,
-                                        ReadableStreamDefaultReader* aReader,
-                                        ErrorResult& aRv);
-
-}  
 
 }  
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_ReadableStreamGenericReader_h
 #define mozilla_dom_ReadableStreamGenericReader_h
 
@@ -61,16 +59,6 @@ class ReadableStreamGenericReader : public nsISupports {
   RefPtr<Promise> mClosedPromise;
   RefPtr<ReadableStream> mStream;
 };
-
-namespace streams_abstract {
-
-bool ReadableStreamReaderGenericInitialize(ReadableStreamGenericReader* aReader,
-                                           ReadableStream* aStream);
-
-void ReadableStreamReaderGenericRelease(ReadableStreamGenericReader* aReader,
-                                        ErrorResult& aRv);
-
-}  
 
 }  
 

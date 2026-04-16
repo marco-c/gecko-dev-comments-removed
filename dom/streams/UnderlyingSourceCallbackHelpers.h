@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_UnderlyingSourceCallbackHelpers_h
 #define mozilla_dom_UnderlyingSourceCallbackHelpers_h
 
@@ -248,11 +246,7 @@ class InputToReadableStreamAlgorithms final
   nsIInputStream* MaybeGetInputStreamIfUnread() override;
 
  private:
-  ~InputToReadableStreamAlgorithms() {
-    if (mInput) {
-      mInput->Shutdown();
-    }
-  }
+  ~InputToReadableStreamAlgorithms();
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void CloseAndReleaseObjects(
       JSContext* aCx, ReadableStream* aStream);

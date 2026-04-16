@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_WritableStreamDefaultWriter_h
 #define mozilla_dom_WritableStreamDefaultWriter_h
 
@@ -77,34 +75,6 @@ class WritableStreamDefaultWriter final : public nsISupports,
   RefPtr<Promise> mReadyPromise;
   RefPtr<Promise> mClosedPromise;
 };
-
-namespace streams_abstract {
-
-void SetUpWritableStreamDefaultWriter(WritableStreamDefaultWriter* aWriter,
-                                      WritableStream* aStream,
-                                      ErrorResult& aRv);
-
-void WritableStreamDefaultWriterEnsureClosedPromiseRejected(
-    WritableStreamDefaultWriter* aWriter, JS::Handle<JS::Value> aError);
-
-void WritableStreamDefaultWriterEnsureReadyPromiseRejected(
-    WritableStreamDefaultWriter* aWriter, JS::Handle<JS::Value> aError);
-
-Nullable<double> WritableStreamDefaultWriterGetDesiredSize(
-    WritableStreamDefaultWriter* aWriter);
-
-void WritableStreamDefaultWriterRelease(JSContext* aCx,
-                                        WritableStreamDefaultWriter* aWriter);
-
-MOZ_CAN_RUN_SCRIPT already_AddRefed<Promise> WritableStreamDefaultWriterWrite(
-    JSContext* aCx, WritableStreamDefaultWriter* aWriter,
-    JS::Handle<JS::Value> aChunk, ErrorResult& aRv);
-
-MOZ_CAN_RUN_SCRIPT already_AddRefed<Promise>
-WritableStreamDefaultWriterCloseWithErrorPropagation(
-    JSContext* aCx, WritableStreamDefaultWriter* aWriter, ErrorResult& aRv);
-
-}  
 
 }  
 

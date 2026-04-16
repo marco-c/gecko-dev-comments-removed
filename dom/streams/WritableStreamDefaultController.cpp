@@ -2,8 +2,7 @@
 
 
 
-#include "mozilla/dom/WritableStreamDefaultController.h"
-
+#include "WritableStreamDefaultControllerAbstract.h"
 #include "js/Exception.h"
 #include "js/TypeDecls.h"
 #include "js/Value.h"

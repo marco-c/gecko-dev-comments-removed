@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_STREAMS_TRANSFORMSTREAMDEFAULTCONTROLLER_H_
 #define DOM_STREAMS_TRANSFORMSTREAMDEFAULTCONTROLLER_H_
 
@@ -55,17 +53,6 @@ class TransformStreamDefaultController final : public nsISupports,
   RefPtr<TransformStream> mStream;
   RefPtr<TransformerAlgorithmsBase> mTransformerAlgorithms;
 };
-
-namespace streams_abstract {
-void SetUpTransformStreamDefaultController(
-    JSContext* aCx, TransformStream& aStream,
-    TransformStreamDefaultController& aController,
-    TransformerAlgorithmsBase& aTransformerAlgorithms);
-
-void SetUpTransformStreamDefaultControllerFromTransformer(
-    JSContext* aCx, TransformStream& aStream,
-    JS::Handle<JSObject*> aTransformer, Transformer& aTransformerDict);
-}  
 
 }  
 
