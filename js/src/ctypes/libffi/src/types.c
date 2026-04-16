@@ -32,6 +32,28 @@
 #include <ffi_common.h>
 
 
+const char *ffi_get_version (void)
+{
+  return FFI_VERSION_STRING;
+}
+
+
+unsigned long ffi_get_version_number (void)
+{
+  return FFI_VERSION_NUMBER;
+}
+
+unsigned int ffi_get_default_abi (void)
+{
+  return FFI_DEFAULT_ABI;
+}
+
+size_t ffi_get_closure_size (void)
+{
+  return sizeof(ffi_closure);
+}
+
+
 
 #define FFI_TYPEDEF(name, type, id, maybe_const)\
 struct struct_align_##name {			\
@@ -95,14 +117,25 @@ FFI_TYPEDEF(double, double, FFI_TYPE_DOUBLE, const);
 #  error FFI_TYPE_LONGDOUBLE out of date
 # endif
 const ffi_type ffi_type_longdouble = { 16, 16, 4, NULL };
-#elif FFI_TYPE_LONGDOUBLE != FFI_TYPE_DOUBLE
+#else
 FFI_TYPEDEF(longdouble, long double, FFI_TYPE_LONGDOUBLE, FFI_LDBL_CONST);
 #endif
 
 #ifdef FFI_TARGET_HAS_COMPLEX_TYPE
 FFI_COMPLEX_TYPEDEF(float, float, const);
 FFI_COMPLEX_TYPEDEF(double, double, const);
-#if FFI_TYPE_LONGDOUBLE != FFI_TYPE_DOUBLE
 FFI_COMPLEX_TYPEDEF(longdouble, long double, FFI_LDBL_CONST);
 #endif
-#endif
+
+#ifdef FFI_TARGET_HAS_INT128
+# ifdef HAVE_INT128
+FFI_TYPEDEF(uint128, __uint128_t, FFI_TYPE_UINT128, const);
+FFI_TYPEDEF(sint128, __int128_t, FFI_TYPE_SINT128, const);
+# else
+
+
+
+const ffi_type ffi_type_uint128 = { 16, 16, FFI_TYPE_UINT128, NULL };
+const ffi_type ffi_type_sint128 = { 16, 16, FFI_TYPE_SINT128, NULL };
+# endif
+#endif 

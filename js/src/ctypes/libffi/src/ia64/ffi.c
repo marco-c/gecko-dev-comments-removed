@@ -38,7 +38,11 @@
 
 
 
+#ifdef __hpux
+typedef void *PTR64;
+#else 
 typedef void *PTR64 __attribute__((mode(DI)));
+#endif
 
 
 
@@ -76,14 +80,22 @@ endian_adjust (void *addr, size_t len)
 
 
 
+#ifdef __hpux
+#define stf_spill(addr, value)
+#else
 #define stf_spill(addr, value)	\
   asm ("stf.spill %0 = %1%P0" : "=m" (*addr) : "f"(value));
+#endif
 
 
 
 
+#ifdef __hpux
+#define ldf_fill(result, addr)
+#else
 #define ldf_fill(result, addr)	\
   asm ("ldf.fill %0 = %1%P1" : "=f"(result) : "m"(*addr));
+#endif
 
 
 

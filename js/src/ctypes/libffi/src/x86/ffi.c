@@ -34,6 +34,7 @@
 #include <ffi_common.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <tramp.h>
 #include "internal.h"
 
 
@@ -116,35 +117,37 @@ ffi_prep_cif_machdep(ffi_cif *cif)
       flags = X86_RET_INT64;
       break;
     case FFI_TYPE_STRUCT:
-#ifndef X86
-      
-      if (cif->rtype->size == 1)
-	flags = X86_RET_STRUCT_1B;
-      else if (cif->rtype->size == 2)
-	flags = X86_RET_STRUCT_2B;
-      else if (cif->rtype->size == 4)
-	flags = X86_RET_INT32;
-      else if (cif->rtype->size == 8)
-	flags = X86_RET_INT64;
-      else
+      {
+#if defined(X86_WIN32) || defined(X86_DARWIN)
+        size_t size = cif->rtype->size;
+        if (size == 1)
+          flags = X86_RET_STRUCT_1B;
+        else if (size == 2)
+          flags = X86_RET_STRUCT_2B;
+        else if (size == 4)
+          flags = X86_RET_INT32;
+        else if (size == 8)
+          flags = X86_RET_INT64;
+        else
 #endif
-	{
-	do_struct:
-	  switch (cabi)
-	    {
-	    case FFI_THISCALL:
-	    case FFI_FASTCALL:
-	    case FFI_STDCALL:
-	    case FFI_MS_CDECL:
-	      flags = X86_RET_STRUCTARG;
-	      break;
-	    default:
-	      flags = X86_RET_STRUCTPOP;
-	      break;
-	    }
-	  
-	  bytes += FFI_ALIGN (sizeof(void*), FFI_SIZEOF_ARG);
-	}
+          {
+          do_struct:
+            switch (cabi)
+              {
+              case FFI_THISCALL:
+              case FFI_FASTCALL:
+              case FFI_STDCALL:
+              case FFI_MS_CDECL:
+                flags = X86_RET_STRUCTARG;
+                break;
+              default:
+                flags = X86_RET_STRUCTPOP;
+                break;
+              }
+            
+            bytes += FFI_ALIGN (sizeof(void*), FFI_SIZEOF_ARG);
+          }
+      }
       break;
     case FFI_TYPE_COMPLEX:
       switch (cif->rtype->elements[0]->type)
@@ -181,7 +184,12 @@ ffi_prep_cif_machdep(ffi_cif *cif)
     {
       ffi_type *t = cif->arg_types[i];
 
-      bytes = FFI_ALIGN (bytes, t->alignment);
+#if defined(X86_WIN32)
+      if (cabi == FFI_STDCALL)
+        bytes = FFI_ALIGN (bytes, FFI_SIZEOF_ARG);
+      else
+#endif
+        bytes = FFI_ALIGN (bytes, t->alignment);
       bytes += FFI_ALIGN (t->size, FFI_SIZEOF_ARG);
     }
   cif->bytes = bytes;
@@ -255,16 +263,16 @@ static const struct abi_params abi_params[FFI_LAST_ABI] = {
 
 extern void FFI_DECLARE_FASTCALL ffi_call_i386(struct call_frame *, char *) FFI_HIDDEN;
 
-#ifndef __SANITIZE_ADDRESS__
-# ifdef __clang__
-#  if __has_feature(address_sanitizer)
-#   define __SANITIZE_ADDRESS__
-#  endif
-# endif
+
+
+
+
+#if defined(_MSC_VER)
+#pragma runtime_checks("s", off)
 #endif
-#ifdef __SANITIZE_ADDRESS__
-__attribute__((noinline,no_sanitize_address))
-#endif
+
+
+FFI_ASAN_NO_SANITIZE
 static void
 ffi_call_int (ffi_cif *cif, void (*fn)(void), void *rvalue,
 	      void **avalue, void *closure)
@@ -380,7 +388,7 @@ ffi_call_int (ffi_cif *cif, void (*fn)(void), void *rvalue,
 
 	  if (t == FFI_TYPE_STRUCT && ty->alignment >= 16)
 	    align = 16;
-	    
+
 	  if (dir < 0)
 	    {
 	      
@@ -400,6 +408,9 @@ ffi_call_int (ffi_cif *cif, void (*fn)(void), void *rvalue,
 
   ffi_call_i386 (frame, stack);
 }
+#if defined(_MSC_VER)
+#pragma runtime_checks("s", restore)
+#endif
 
 void
 ffi_call (ffi_cif *cif, void (*fn)(void), void *rvalue, void **avalue)
@@ -407,18 +418,25 @@ ffi_call (ffi_cif *cif, void (*fn)(void), void *rvalue, void **avalue)
   ffi_call_int (cif, fn, rvalue, avalue, NULL);
 }
 
+#ifdef FFI_GO_CLOSURES
 void
 ffi_call_go (ffi_cif *cif, void (*fn)(void), void *rvalue,
 	     void **avalue, void *closure)
 {
   ffi_call_int (cif, fn, rvalue, avalue, closure);
 }
+#endif
 
 
 
 void FFI_HIDDEN ffi_closure_i386(void);
 void FFI_HIDDEN ffi_closure_STDCALL(void);
 void FFI_HIDDEN ffi_closure_REGISTER(void);
+#if defined(FFI_EXEC_STATIC_TRAMP)
+void FFI_HIDDEN ffi_closure_i386_alt(void);
+void FFI_HIDDEN ffi_closure_STDCALL_alt(void);
+void FFI_HIDDEN ffi_closure_REGISTER_alt(void);
+#endif
 
 struct closure_frame
 {
@@ -530,10 +548,17 @@ ffi_closure_inner (struct closure_frame *frame, char *stack)
 
   frame->fun (cif, rvalue, avalue, frame->user_data);
 
-  if (cabi == FFI_STDCALL)
-    return flags + (cif->bytes << X86_RET_POP_SHIFT);
-  else
-    return flags;
+  switch (cabi)
+    {
+    case FFI_STDCALL:
+      return flags | (cif->bytes << X86_RET_POP_SHIFT);
+    case FFI_THISCALL:
+    case FFI_FASTCALL:
+      return flags | ((cif->bytes - (narg_reg * FFI_SIZEOF_ARG))
+          << X86_RET_POP_SHIFT);
+    default:
+      return flags;
+    }
 }
 
 ffi_status
@@ -550,12 +575,12 @@ ffi_prep_closure_loc (ffi_closure* closure,
   switch (cif->abi)
     {
     case FFI_SYSV:
-    case FFI_THISCALL:
-    case FFI_FASTCALL:
     case FFI_MS_CDECL:
       dest = ffi_closure_i386;
       break;
     case FFI_STDCALL:
+    case FFI_THISCALL:
+    case FFI_FASTCALL:
     case FFI_PASCAL:
       dest = ffi_closure_STDCALL;
       break;
@@ -567,20 +592,44 @@ ffi_prep_closure_loc (ffi_closure* closure,
       return FFI_BAD_ABI;
     }
 
-  
-  tramp[0] = op;
-  *(void **)(tramp + 1) = codeloc;
+#if defined(FFI_EXEC_STATIC_TRAMP)
+  if (ffi_tramp_is_present(closure))
+    {
+      
+      if (dest == ffi_closure_i386)
+        dest = ffi_closure_i386_alt;
+      else if (dest == ffi_closure_STDCALL)
+        dest = ffi_closure_STDCALL_alt;
+      else
+        dest = ffi_closure_REGISTER_alt;
+      ffi_tramp_set_parms (closure->ftramp, dest, closure);
+      goto out;
+    }
+#endif
 
   
-  tramp[5] = 0xe9;
-  *(unsigned *)(tramp + 6) = (unsigned)dest - ((unsigned)codeloc + 10);
+  
+  *(UINT32 *) tramp = 0xfb1e0ff3;
 
+  
+  tramp[4] = op;
+  *(void **)(tramp + 5) = codeloc;
+
+  
+  tramp[9] = 0xe9;
+  *(unsigned *)(tramp + 10) = (unsigned)dest - ((unsigned)codeloc + 14);
+
+#if defined(FFI_EXEC_STATIC_TRAMP)
+out:
+#endif
   closure->cif = cif;
   closure->fun = fun;
   closure->user_data = user_data;
 
   return FFI_OK;
 }
+
+#ifdef FFI_GO_CLOSURES
 
 void FFI_HIDDEN ffi_go_closure_EAX(void);
 void FFI_HIDDEN ffi_go_closure_ECX(void);
@@ -617,6 +666,8 @@ ffi_prep_go_closure (ffi_go_closure* closure, ffi_cif* cif,
 
   return FFI_OK;
 }
+
+#endif 
 
 
 
@@ -768,4 +819,17 @@ ffi_raw_call(ffi_cif *cif, void (*fn)(void), void *rvalue, ffi_raw *avalue)
   ffi_call_i386 (frame, stack);
 }
 #endif 
+
+#if defined(FFI_EXEC_STATIC_TRAMP)
+void *
+ffi_tramp_arch (size_t *tramp_size, size_t *map_size)
+{
+  extern void *trampoline_code_table;
+
+  *map_size = X86_TRAMP_MAP_SIZE;
+  *tramp_size = X86_TRAMP_SIZE;
+  return &trampoline_code_table;
+}
+#endif
+
 #endif 

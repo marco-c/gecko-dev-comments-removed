@@ -4,7 +4,6 @@
 
 
 #include "jsctypes-test.h"
-#include <math.h>
 #include <stdarg.h>
 #include "typedefs.h"
 
@@ -286,6 +285,22 @@ void test_add_char_short_int_va_cdecl(uint32_t* result, ...) {
   *result += va_arg(list, PromotedTraits<char>::type);
   *result += va_arg(list, PromotedTraits<short>::type);
   *result += va_arg(list, PromotedTraits<int>::type);
+  va_end(list);
+}
+
+void test_add_uint8_uint16_va_cdecl(uint32_t* result, ...) {
+  va_list list;
+  va_start(list, result);
+  *result += (unsigned int)va_arg(list, int);
+  *result += (unsigned int)va_arg(list, int);
+  va_end(list);
+}
+
+void test_add_float_double_va_cdecl(double* result, ...) {
+  va_list list;
+  va_start(list, result);
+  *result += va_arg(list, double);
+  *result += va_arg(list, double);
   va_end(list);
 }
 

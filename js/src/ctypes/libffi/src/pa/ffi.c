@@ -60,23 +60,8 @@ static inline int ffi_struct_type(ffi_type *t)
 
 
 
-
-  if (sz <= 1)
-    return FFI_TYPE_UINT8;
-  else if (sz == 2)
-    return FFI_TYPE_SMALL_STRUCT2;
-  else if (sz == 3)
-    return FFI_TYPE_SMALL_STRUCT3;
-  else if (sz == 4)
-    return FFI_TYPE_SMALL_STRUCT4;
-  else if (sz == 5)
-    return FFI_TYPE_SMALL_STRUCT5;
-  else if (sz == 6)
-    return FFI_TYPE_SMALL_STRUCT6;
-  else if (sz == 7)
-    return FFI_TYPE_SMALL_STRUCT7;
-  else if (sz <= 8)
-    return FFI_TYPE_SMALL_STRUCT8;
+  if (sz <= 8)
+    return -sz;
   else
     return FFI_TYPE_STRUCT; 
 }
@@ -376,9 +361,25 @@ extern void ffi_call_pa32(void (*)(UINT32 *, extended_cif *, unsigned),
 void ffi_call(ffi_cif *cif, void (*fn)(void), void *rvalue, void **avalue)
 {
   extended_cif ecif;
+  size_t i, nargs = cif->nargs;
+  ffi_type **arg_types = cif->arg_types;
 
   ecif.cif = cif;
   ecif.avalue = avalue;
+
+  
+
+  for (i = 0; i < nargs; i++)
+    {
+      ffi_type *at = arg_types[i];
+      int size = at->size;
+      if (at->type == FFI_TYPE_STRUCT && size > 8)
+	{
+	  char *argcopy = alloca (size);
+	  memcpy (argcopy, avalue[i], size);
+	  avalue[i] = argcopy;
+	}
+    }
 
   
 
@@ -421,7 +422,9 @@ ffi_status ffi_closure_inner_pa32(ffi_closure *closure, UINT32 *stack)
   ffi_cif *cif;
   void **avalue;
   void *rvalue;
-  UINT32 ret[2]; 
+  
+
+  union { double rd; UINT32 ret[2]; } u;
   ffi_type **p_arg;
   char *tmp;
   int i, avn;
@@ -434,7 +437,7 @@ ffi_status ffi_closure_inner_pa32(ffi_closure *closure, UINT32 *stack)
   if (cif->flags == FFI_TYPE_STRUCT)
     rvalue = (void *)r28;
   else
-    rvalue = &ret[0];
+    rvalue = &u;
 
   avalue = (void **)alloca(cif->nargs * FFI_SIZEOF_ARG);
   avn = cif->nargs;
@@ -531,33 +534,33 @@ ffi_status ffi_closure_inner_pa32(ffi_closure *closure, UINT32 *stack)
   
   (closure->fun) (cif, rvalue, avalue, closure->user_data);
 
-  debug(3, "after calling function, ret[0] = %08x, ret[1] = %08x\n", ret[0],
-	ret[1]);
+  debug(3, "after calling function, ret[0] = %08x, ret[1] = %08x\n", u.ret[0],
+	u.ret[1]);
 
   
   switch (cif->flags)
     {
     case FFI_TYPE_UINT8:
-      *(stack - FIRST_ARG_SLOT) = (UINT8)(ret[0] >> 24);
+      *(stack - FIRST_ARG_SLOT) = (UINT8)u.ret[0];
       break;
     case FFI_TYPE_SINT8:
-      *(stack - FIRST_ARG_SLOT) = (SINT8)(ret[0] >> 24);
+      *(stack - FIRST_ARG_SLOT) = (SINT8)u.ret[0];
       break;
     case FFI_TYPE_UINT16:
-      *(stack - FIRST_ARG_SLOT) = (UINT16)(ret[0] >> 16);
+      *(stack - FIRST_ARG_SLOT) = (UINT16)u.ret[0];
       break;
     case FFI_TYPE_SINT16:
-      *(stack - FIRST_ARG_SLOT) = (SINT16)(ret[0] >> 16);
+      *(stack - FIRST_ARG_SLOT) = (SINT16)u.ret[0];
       break;
     case FFI_TYPE_INT:
     case FFI_TYPE_SINT32:
     case FFI_TYPE_UINT32:
-      *(stack - FIRST_ARG_SLOT) = ret[0];
+      *(stack - FIRST_ARG_SLOT) = u.ret[0];
       break;
     case FFI_TYPE_SINT64:
     case FFI_TYPE_UINT64:
-      *(stack - FIRST_ARG_SLOT) = ret[0];
-      *(stack - FIRST_ARG_SLOT - 1) = ret[1];
+      *(stack - FIRST_ARG_SLOT) = u.ret[0];
+      *(stack - FIRST_ARG_SLOT - 1) = u.ret[1];
       break;
 
     case FFI_TYPE_DOUBLE:
@@ -572,12 +575,13 @@ ffi_status ffi_closure_inner_pa32(ffi_closure *closure, UINT32 *stack)
       
       break;
 
+    case FFI_TYPE_SMALL_STRUCT1:
     case FFI_TYPE_SMALL_STRUCT2:
     case FFI_TYPE_SMALL_STRUCT3:
     case FFI_TYPE_SMALL_STRUCT4:
       tmp = (void*)(stack -  FIRST_ARG_SLOT);
       tmp += 4 - cif->rtype->size;
-      memcpy((void*)tmp, &ret[0], cif->rtype->size);
+      memcpy((void*)tmp, &u, cif->rtype->size);
       break;
 
     case FFI_TYPE_SMALL_STRUCT5:
@@ -598,7 +602,7 @@ ffi_status ffi_closure_inner_pa32(ffi_closure *closure, UINT32 *stack)
 	  }
 
 	memset (ret2, 0, sizeof (ret2));
-	memcpy ((char *)ret2 + off, ret, 8 - off);
+	memcpy ((char *)ret2 + off, &u, 8 - off);
 
 	*(stack - FIRST_ARG_SLOT) = ret2[0];
 	*(stack - FIRST_ARG_SLOT - 1) = ret2[1];
@@ -630,85 +634,35 @@ ffi_prep_closure_loc (ffi_closure* closure,
 		      void *user_data,
 		      void *codeloc)
 {
-  UINT32 *tramp = (UINT32 *)(closure->tramp);
-#ifdef PA_HPUX
-  UINT32 *tmp;
-#endif
+  
+
+  struct pa32_fd
+  {
+    UINT32 code_pointer;
+    UINT32 gp;
+  };
+
+  struct ffi_pa32_trampoline_struct
+  {
+     UINT32 code_pointer;        
+     UINT32 fake_gp;             
+     UINT32 real_gp;             
+  };
+
+  struct ffi_pa32_trampoline_struct *tramp;
+  struct pa32_fd *fd;
 
   if (cif->abi != FFI_PA32)
     return FFI_BAD_ABI;
 
   
-
-
-#ifdef PA_LINUX
-  tramp[0] = 0xeaa00000; 
-  tramp[1] = 0xd6a01c1e; 
-  tramp[2] = 0x4aa10028; 
-  tramp[3] = 0x36b53ff1; 
-  tramp[4] = 0x0c201096; 
-  tramp[5] = 0xeac0c000; 
-  tramp[6] = 0x0c281093; 
-  tramp[7] = ((UINT32)(ffi_closure_pa32) & ~2);
+  fd = (struct pa32_fd *)((UINT32)ffi_closure_pa32 & ~3);
 
   
-
-  __asm__ volatile(
-		   "fdc 0(%0)\n\t"
-		   "fdc %1(%0)\n\t"
-		   "fic 0(%%sr4, %0)\n\t"
-		   "fic %1(%%sr4, %0)\n\t"
-		   "sync\n\t"
-		   "nop\n\t"
-		   "nop\n\t"
-		   "nop\n\t"
-		   "nop\n\t"
-		   "nop\n\t"
-		   "nop\n\t"
-		   "nop\n"
-		   :
-		   : "r"((unsigned long)tramp & ~31),
-		     "r"(32 )
-		   : "memory");
-#endif
-
-#ifdef PA_HPUX
-  tramp[0] = 0xeaa00000; 
-  tramp[1] = 0xd6a01c1e; 
-  tramp[2] = 0x4aa10038; 
-  tramp[3] = 0x36b53ff1; 
-  tramp[4] = 0x0c201096; 
-  tramp[5] = 0x02c010b4; 
-  tramp[6] = 0x00141820; 
-  tramp[7] = 0xe2c00000; 
-  tramp[8] = 0x0c281093; 
-  tramp[9] = ((UINT32)(ffi_closure_pa32) & ~2);
-
-  
-  __asm__ volatile(
-		   "copy %1,%0\n\t"
-		   "fdc,m %2(%0)\n\t"
-		   "fdc,m %2(%0)\n\t"
-		   "fdc,m %2(%0)\n\t"
-		   "ldsid (%1),%0\n\t"
-		   "mtsp %0,%%sr0\n\t"
-		   "copy %1,%0\n\t"
-		   "fic,m %2(%%sr0,%0)\n\t"
-		   "fic,m %2(%%sr0,%0)\n\t"
-		   "fic,m %2(%%sr0,%0)\n\t"
-		   "sync\n\t"
-		   "nop\n\t"
-		   "nop\n\t"
-		   "nop\n\t"
-		   "nop\n\t"
-		   "nop\n\t"
-		   "nop\n\t"
-		   "nop\n"
-		   : "=&r" ((unsigned long)tmp)
-		   : "r" ((unsigned long)tramp & ~31),
-		     "r" (32/* stride */)
-		   : "memory");
-#endif
+  tramp = (struct ffi_pa32_trampoline_struct *)closure->tramp;
+  tramp->code_pointer = fd->code_pointer;
+  tramp->fake_gp = (UINT32)codeloc & ~3;
+  tramp->real_gp = fd->gp;
 
   closure->cif  = cif;
   closure->user_data = user_data;

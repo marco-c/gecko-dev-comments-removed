@@ -6724,6 +6724,11 @@ static bool PrepareCIF(JSContext* cx, FunctionInfo* fninfo) {
     case FFI_BAD_TYPEDEF:
       JS_ReportErrorASCII(cx, "Invalid type specification");
       return false;
+#ifdef FFI_BAD_ARGTYPE  
+    case FFI_BAD_ARGTYPE:
+      JS_ReportErrorASCII(cx, "Variadic argument has an unsupported type");
+      return false;
+#endif
     default:
       JS_ReportErrorASCII(cx, "Unknown libffi error");
       return false;
@@ -7105,10 +7110,42 @@ bool FunctionType::Call(JSContext* cx, unsigned argc, Value* vp) {
       if (!ConvertArgument(cx, obj, i, arg, type, &values[i], &strings)) {
         return false;
       }
-      fninfo->mFFITypes[i] = CType::GetFFIType(cx, type);
-      if (!fninfo->mFFITypes[i]) {
+      ffi_type* ffiType = CType::GetFFIType(cx, type);
+      if (!ffiType) {
         return false;
       }
+      
+      
+      if (ffiType == &ffi_type_sint8) {
+        *static_cast<int32_t*>(values[i].mData) =
+            *static_cast<int8_t*>(values[i].mData);
+        ffiType = &ffi_type_sint32;
+      } else if (ffiType == &ffi_type_uint8) {
+        *static_cast<int32_t*>(values[i].mData) =
+            *static_cast<uint8_t*>(values[i].mData);
+        ffiType = &ffi_type_sint32;
+      } else if (ffiType == &ffi_type_sint16) {
+        *static_cast<int32_t*>(values[i].mData) =
+            *static_cast<int16_t*>(values[i].mData);
+        ffiType = &ffi_type_sint32;
+      } else if (ffiType == &ffi_type_uint16) {
+        *static_cast<int32_t*>(values[i].mData) =
+            *static_cast<uint16_t*>(values[i].mData);
+        ffiType = &ffi_type_sint32;
+      } else if (ffiType == &ffi_type_float) {
+        
+        
+        double promoted = *static_cast<float*>(values[i].mData);
+        js_free(values[i].mData);
+        values[i].mData = js_malloc(sizeof(double));
+        if (!values[i].mData) {
+          JS_ReportOutOfMemory(cx);
+          return false;
+        }
+        *static_cast<double*>(values[i].mData) = promoted;
+        ffiType = &ffi_type_double;
+      }
+      fninfo->mFFITypes[i] = ffiType;
     }
     if (!PrepareCIF(cx, fninfo)) {
       return false;
@@ -7139,8 +7176,19 @@ bool FunctionType::Call(JSContext* cx, unsigned argc, Value* vp) {
   int savedErrno = errno;
   errno = 0;
 
-  ffi_call(&fninfo->mCIF, FFI_FN(fn), returnValue.mData,
-           reinterpret_cast<void**>(values.begin()));
+  
+  
+  
+  Vector<void*, 16, SystemAllocPolicy> avalue;
+  if (!avalue.resize(values.length())) {
+    JS_ReportOutOfMemory(cx);
+    return false;
+  }
+  for (size_t i = 0; i < values.length(); ++i) {
+    avalue[i] = values[i].mData;
+  }
+
+  ffi_call(&fninfo->mCIF, FFI_FN(fn), returnValue.mData, avalue.begin());
 
   
   

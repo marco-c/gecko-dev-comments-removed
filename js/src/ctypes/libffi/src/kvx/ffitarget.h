@@ -1,0 +1,75 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef LIBFFI_TARGET_H
+#define LIBFFI_TARGET_H
+
+#ifndef LIBFFI_H
+#error "Please do not include ffitarget.h directly into your source. Use ffi.h instead."
+#endif
+
+
+
+#ifndef LIBFFI_ASM
+typedef unsigned long          ffi_arg;
+typedef signed long            ffi_sarg;
+
+typedef enum ffi_abi {
+  FFI_FIRST_ABI = 0,
+  FFI_SYSV,
+  FFI_LAST_ABI,
+  FFI_DEFAULT_ABI = FFI_SYSV
+} ffi_abi;
+
+
+
+
+typedef enum kvx_intext_method {
+  KVX_RET_NONE = 0,
+  KVX_RET_SXBD = 1,
+  KVX_RET_SXHD = 2,
+  KVX_RET_SXWD = 3,
+  KVX_RET_ZXBD = 4,
+  KVX_RET_ZXHD = 5,
+  KVX_RET_ZXWD = 6
+} kvx_intext_method;
+
+#endif
+
+
+
+
+
+
+#define FFI_CLOSURES 1
+#define FFI_TRAMPOLINE_SIZE 0
+
+#define FFI_NATIVE_RAW_API 0
+#define FFI_TARGET_SPECIFIC_VARIADIC 1
+#define FFI_TARGET_HAS_COMPLEX_TYPE
+
+#endif
+

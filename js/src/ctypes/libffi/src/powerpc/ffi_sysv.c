@@ -29,6 +29,8 @@
 
 
 #include "ffi.h"
+#include <tramp.h>
+#include <stdlib.h>
 
 #ifndef POWERPC64
 #include "ffi_common.h"
@@ -636,25 +638,34 @@ ffi_prep_closure_loc_sysv (ffi_closure *closure,
 			   void *user_data,
 			   void *codeloc)
 {
-  unsigned int *tramp;
-
   if (cif->abi < FFI_SYSV || cif->abi >= FFI_LAST_ABI)
     return FFI_BAD_ABI;
 
-  tramp = (unsigned int *) &closure->tramp[0];
-  tramp[0] = 0x7c0802a6;  
-  tramp[1] = 0x429f0005;  
-  tramp[2] = 0x7d6802a6;  
-  tramp[3] = 0x7c0803a6;  
-  tramp[4] = 0x800b0018;  
-  tramp[5] = 0x816b001c;  
-  tramp[6] = 0x7c0903a6;  
-  tramp[7] = 0x4e800420;  
-  *(void **) &tramp[8] = (void *) ffi_closure_SYSV; 
-  *(void **) &tramp[9] = codeloc;                   
+#ifdef FFI_EXEC_STATIC_TRAMP
+  if (ffi_tramp_is_present(closure))
+    {
+      
+      void (*dest)(void) = ffi_closure_SYSV;
+      ffi_tramp_set_parms (closure->ftramp, dest, closure);
+    }
+  else
+#endif
+    {
+      unsigned int *tramp = (unsigned int *) &closure->tramp[0];
+      tramp[0] = 0x7c0802a6;  
+      tramp[1] = 0x429f0005;  
+      tramp[2] = 0x7d6802a6;  
+      tramp[3] = 0x7c0803a6;  
+      tramp[4] = 0x800b0018;  
+      tramp[5] = 0x816b001c;  
+      tramp[6] = 0x7c0903a6;  
+      tramp[7] = 0x4e800420;  
+      *(void **) &tramp[8] = (void *) ffi_closure_SYSV; 
+      *(void **) &tramp[9] = codeloc;			
 
-  
-  flush_icache ((char *)tramp, (char *)codeloc, 8 * 4);
+      
+      flush_icache ((char *)tramp, (char *)codeloc, 8 * 4);
+    }
 
   closure->cif = cif;
   closure->fun = fun;
@@ -912,12 +923,62 @@ ffi_closure_helper_SYSV (ffi_cif *cif,
   
 
 
-
-
-
-  if (rtypenum == FFI_TYPE_STRUCT
-      && (cif->abi & FFI_SYSV_STRUCT_RET) != 0 && size <= 8)
-    return FFI_SYSV_TYPE_SMALL_STRUCT - 1 + size;
-  return rtypenum;
+  switch (rtypenum)
+    {
+    case FFI_TYPE_VOID:
+      return PPC_LD_NONE;
+    case FFI_TYPE_FLOAT:
+      return PPC_LD_F32;
+    case FFI_TYPE_DOUBLE:
+      return PPC_LD_F64;
+#if FFI_TYPE_DOUBLE != FFI_TYPE_LONGDOUBLE
+    case FFI_TYPE_LONGDOUBLE:
+      return PPC_LD_F128;
+#endif
+    case FFI_TYPE_UINT8:
+      return PPC_LD_U8;
+    case FFI_TYPE_SINT8:
+      return PPC_LD_S8;
+    case FFI_TYPE_UINT16:
+      return PPC_LD_U16;
+    case FFI_TYPE_SINT16:
+      return PPC_LD_S16;
+    case FFI_TYPE_UINT32:
+      return PPC_LD_U32;
+    case FFI_TYPE_INT:
+    case FFI_TYPE_SINT32:
+      return PPC_LD_S32;
+    case FFI_TYPE_POINTER:
+      return PPC_LD_PTR;
+    case FFI_TYPE_UINT64:
+    case FFI_TYPE_SINT64:
+      return PPC_LD_I64;
+    case FFI_TYPE_UINT128:
+      return PPC32_LD_R3R6;
+    case FFI_TYPE_STRUCT:
+      if (cif->abi & FFI_SYSV_STRUCT_RET)
+	switch (size)
+	  {
+	  case 1:
+	    return PPC_LD_U8;
+	  case 2:
+	    return PPC_LD_U16;
+	  case 3:
+	    return PPC32_SYSV_LD_STRUCT_3;
+	  case 4:
+	    return PPC_LD_U32;
+	  case 5:
+	    return PPC32_SYSV_LD_STRUCT_5;
+	  case 6:
+	    return PPC32_SYSV_LD_STRUCT_6;
+	  case 7:
+	    return PPC32_SYSV_LD_STRUCT_7;
+	  case 8:
+	    return PPC_LD_I64;
+	  }
+      return PPC_LD_NONE;
+    default:
+      abort();
+    }
 }
 #endif

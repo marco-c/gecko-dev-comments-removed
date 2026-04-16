@@ -150,33 +150,6 @@ typedef enum ffi_abi {
 # define FFI_GO_CLOSURES 1
 #endif
 
-
-#define FFI_PPC_TYPE_LAST FFI_TYPE_POINTER
-
-
-
-
-
-
-#if !(FFI_TYPE_LAST == FFI_PPC_TYPE_LAST		\
-      || (FFI_TYPE_LAST == FFI_TYPE_COMPLEX		\
-	  && !defined FFI_TARGET_HAS_COMPLEX_TYPE))
-# error "You likely have a broken powerpc libffi"
-#endif
-
-
-#define FFI_TYPE_UINT128 (FFI_PPC_TYPE_LAST + 1)
-
-
-#define FFI_SYSV_TYPE_SMALL_STRUCT (FFI_PPC_TYPE_LAST + 2)
-
-
-#define FFI_V2_TYPE_VECTOR		(FFI_PPC_TYPE_LAST + 1)
-#define FFI_V2_TYPE_VECTOR_HOMOG	(FFI_PPC_TYPE_LAST + 2)
-#define FFI_V2_TYPE_FLOAT_HOMOG		(FFI_PPC_TYPE_LAST + 3)
-#define FFI_V2_TYPE_DOUBLE_HOMOG	(FFI_PPC_TYPE_LAST + 4)
-#define FFI_V2_TYPE_SMALL_STRUCT	(FFI_PPC_TYPE_LAST + 5)
-
 #if _CALL_ELF == 2
 # define FFI_TRAMPOLINE_SIZE 32
 #else
@@ -189,16 +162,6 @@ typedef enum ffi_abi {
 # else 
 #  define FFI_TRAMPOLINE_SIZE 40
 # endif
-#endif
-
-#ifndef LIBFFI_ASM
-#if defined(POWERPC_DARWIN) || defined(POWERPC_AIX)
-struct ffi_aix_trampoline_struct {
-    void * code_pointer;	
-    void * toc;			
-    void * static_chain;	
-};
-#endif
 #endif
 
 #endif

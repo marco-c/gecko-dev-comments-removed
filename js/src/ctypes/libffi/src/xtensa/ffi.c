@@ -89,8 +89,13 @@ ffi_status ffi_prep_cif_machdep(ffi_cif *cif)
   
 
 
-  cif->bytes = FFI_ALIGN(cif->bytes, 16);
 
+  if (cif->bytes < FFI_REGISTER_NARGS * 4)
+    cif->bytes = FFI_REGISTER_ARGS_SPACE;
+  else
+    cif->bytes = FFI_REGISTER_ARGS_SPACE +
+	    FFI_ALIGN(cif->bytes - FFI_REGISTER_NARGS * 4,
+		      XTENSA_STACK_ALIGNMENT);
   return FFI_OK;
 }
 
@@ -232,6 +237,9 @@ ffi_prep_closure_loc (ffi_closure* closure,
                       void *user_data,
                       void *codeloc)
 {
+  if (cif->abi != FFI_SYSV)
+    return FFI_BAD_ABI;
+
   
   memcpy(closure->tramp, ffi_trampoline, FFI_TRAMPOLINE_SIZE);
   *(unsigned int*)(&closure->tramp[8]) = (unsigned int)ffi_closure_SYSV;
@@ -279,13 +287,13 @@ ffi_closure_SYSV_inner(ffi_closure *closure, void **values, void *rvalue)
 
     
     if (areg == FFI_REGISTER_NARGS)
-      areg += 4;
+      areg = (FFI_REGISTER_ARGS_SPACE + 32) / 4;
 
     if (arg_types[i]->type == FFI_TYPE_STRUCT)
     {
       int numregs = ((arg_types[i]->size + 3) & ~3) / 4;
       if (areg < FFI_REGISTER_NARGS && areg + numregs > FFI_REGISTER_NARGS)
-        areg = FFI_REGISTER_NARGS + 4;
+        areg = (FFI_REGISTER_ARGS_SPACE + 32) / 4;
     }
 
     avalue[i] = &values[areg];

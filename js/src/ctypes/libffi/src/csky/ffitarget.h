@@ -22,6 +22,11 @@
 
 
 
+
+
+
+
+
 #ifndef LIBFFI_TARGET_H
 #define LIBFFI_TARGET_H
 
@@ -37,16 +42,22 @@ typedef enum ffi_abi {
   FFI_FIRST_ABI = 0,
   FFI_SYSV,
   FFI_LAST_ABI,
-  FFI_DEFAULT_ABI = FFI_SYSV
+  FFI_DEFAULT_ABI = FFI_SYSV,
 } ffi_abi;
+#endif
+
+#ifdef __CSKYABIV2__
+#define FFI_ASM_ARGREG_SIZE 16
+#define TRAMPOLINE_SIZE 16
+#define FFI_TRAMPOLINE_SIZE 24
+#else
+#define FFI_ASM_ARGREG_SIZE 24
+#define TRAMPOLINE_SIZE 20
+#define FFI_TRAMPOLINE_SIZE 28
 #endif
 
 
 
-#define FFI_AGGREGATE_ALIGNMENT 4
-
 #define FFI_CLOSURES 1
-#define FFI_TRAMPOLINE_SIZE 28   /* 7 instructions */
 #define FFI_NATIVE_RAW_API 0
-
 #endif
