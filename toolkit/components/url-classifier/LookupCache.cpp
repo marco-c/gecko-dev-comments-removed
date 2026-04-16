@@ -504,7 +504,7 @@ void LookupCache::GetLookupEntitylistFragments(
     if (FindCharInReadable('.', iter, end)) {
       iter++;
       nsAutoCString thirdPartyURLToAdd;
-      thirdPartyURLToAdd.Assign(Substring(iter++, end));
+      thirdPartyURLToAdd.Assign(Substring(iter, end));
 
       
       if (FindCharInReadable('.', iter, end)) {
