@@ -117,6 +117,7 @@ constexpr size_t kCacheLineSize =
     64
 #endif
     ;
+constexpr size_t kCacheLineMask = kCacheLineSize - 1;
 
 
 
