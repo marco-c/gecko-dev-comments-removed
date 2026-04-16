@@ -8,13 +8,14 @@
 
 use super::shadow_parts::ShadowParts;
 use crate::color::{parsing::parse_color_keyword, AbsoluteColor};
+use crate::derives::*;
 use crate::properties::PropertyDeclarationBlock;
 use crate::shared_lock::Locked;
 use crate::str::str_join;
 use crate::str::{read_exponent, read_fraction, HTML_SPACE_CHARACTERS};
 use crate::str::{read_numbers, split_commas, split_html_space_chars};
 use crate::values::specified::color::Color;
-use crate::values::specified::Length;
+use crate::values::specified::LengthPercentage;
 use crate::values::AtomString;
 use crate::{Atom, LocalName, Namespace, Prefix};
 use app_units::Au;
@@ -44,7 +45,7 @@ pub enum AttrValue {
     Int(String, i32),
     Double(String, f64),
     Atom(Atom),
-    Length(String, Option<Length>),
+    LengthPercentage(String, Option<LengthPercentage>),
     Color(String, Option<AbsoluteColor>),
     Dimension(String, LengthOrPercentageOrAuto),
 
@@ -304,6 +305,18 @@ impl AttrValue {
     
     
     
+    pub fn as_length_percentage(&self) -> Option<&LengthPercentage> {
+        match *self {
+            AttrValue::LengthPercentage(_, ref length_percentage) => length_percentage.as_ref(),
+            _ => panic!("LengthPercentage not found"),
+        }
+    }
+
+    
+    
+    
+    
+    
     pub fn as_color(&self) -> Option<&AbsoluteColor> {
         match *self {
             AttrValue::Color(_, ref color) => color.as_ref(),
@@ -415,7 +428,7 @@ impl ::std::ops::Deref for AttrValue {
             | AttrValue::TokenList(ref value, _)
             | AttrValue::UInt(ref value, _)
             | AttrValue::Double(ref value, _)
-            | AttrValue::Length(ref value, _)
+            | AttrValue::LengthPercentage(ref value, _)
             | AttrValue::Color(ref value, _)
             | AttrValue::Int(ref value, _)
             | AttrValue::ResolvedUrl(ref value, _)
