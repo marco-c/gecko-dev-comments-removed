@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "api/units/time_delta.h"
+#include "api/units/timestamp.h"
 
 namespace webrtc {
 
@@ -40,6 +41,28 @@ class EncoderSpeedController {
     kNoneReference  
   };
   struct Config {
+    struct PsnrProbingSettings {
+      enum class Mode {
+        
+        
+        kRegularBaseLayerSampling,
+        
+        
+        kOnlyWhenProbing,
+      };
+      Mode mode;
+
+      
+      TimeDelta sampling_interval;
+      
+      
+      double average_base_layer_ratio = 1.0;
+    };
+    
+    
+    
+    std::optional<PsnrProbingSettings> psnr_probing_settings;
+
     
     
     struct SpeedLevel {
@@ -53,6 +76,19 @@ class EncoderSpeedController {
 
       
       std::optional<int> min_qp;
+      
+      
+      
+      struct PsnrComparison {
+        
+        
+        int baseline_speed;
+        
+        
+        
+        double psnr_threshold;
+      };
+      std::optional<PsnrComparison> min_psnr_gain;
     };
     
     
@@ -69,6 +105,10 @@ class EncoderSpeedController {
     
     
     bool is_repeat_frame;
+    
+    
+    
+    Timestamp timestamp = Timestamp::MinusInfinity();
   };
 
   
@@ -76,6 +116,13 @@ class EncoderSpeedController {
   struct EncodeSettings {
     
     int speed;
+    
+    
+    
+    std::optional<int> baseline_comparison_speed;
+    
+    
+    bool calculate_psnr;
   };
 
   
@@ -87,6 +134,8 @@ class EncoderSpeedController {
     TimeDelta encode_time;
     
     int qp;
+    
+    std::optional<double> psnr;
     
     
     FrameEncodingInfo frame_info;
@@ -110,7 +159,18 @@ class EncoderSpeedController {
   virtual EncodeSettings GetEncodeSettings(FrameEncodingInfo frame_info) = 0;
 
   
-  virtual void OnEncodedFrame(EncodeResults results) = 0;
+  [[deprecated(
+      "Use OnEncodedFrame(EncodeResults, std::optional<EncodeResults>)")]]
+  virtual void OnEncodedFrame(EncodeResults results) {
+    return OnEncodedFrame(results, std::nullopt);
+  }
+
+  
+  
+  
+  virtual void OnEncodedFrame(
+      EncodeResults results,
+      std::optional<EncodeResults> baseline_results) = 0;
 };
 
 }  

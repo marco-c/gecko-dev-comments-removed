@@ -12,8 +12,10 @@
 #define MODULES_VIDEO_CODING_UTILITY_ENCODER_SPEED_CONTROLLER_IMPL_H_
 
 #include <memory>
+#include <optional>
 
 #include "api/units/time_delta.h"
+#include "api/units/timestamp.h"
 #include "api/video_codecs/encoder_speed_controller.h"
 namespace webrtc {
 
@@ -41,7 +43,10 @@ class EncoderSpeedControllerImpl : public webrtc::EncoderSpeedController {
   EncodeSettings GetEncodeSettings(FrameEncodingInfo frame_info) override;
 
   
-  void OnEncodedFrame(EncodeResults results) override;
+  
+  
+  void OnEncodedFrame(EncodeResults results,
+                      std::optional<EncodeResults> baseline_results) override;
 
   const Config& config() const { return config_; }
 
@@ -50,7 +55,9 @@ class EncoderSpeedControllerImpl : public webrtc::EncoderSpeedController {
                              TimeDelta start_frame_interval);
 
   bool ShouldIncreaseSpeed() const;
-  bool ShouldDecreaseSpeed() const;
+  bool ShouldDecreaseSpeedDisregardingPsnr() const;
+  bool PsnrProbeRequiredForNextSlowerSpeed() const;
+  bool ShouldRecheckPsnrGain(Timestamp current_time) const;
 
   void ResetStats();
   void IncreaseSpeed();
@@ -66,6 +73,20 @@ class EncoderSpeedControllerImpl : public webrtc::EncoderSpeedController {
   double slow_filtered_encode_time_ms_;
   double fast_filtered_encode_time_ms_;
   double filtered_qp_;
+
+  
+  
+  Timestamp last_psnr_probe_;
+
+  
+  
+  
+  
+  struct PsnrGainCheck {
+    int speed_level;
+    Timestamp timestamp;
+  };
+  std::optional<PsnrGainCheck> last_psnr_gain_check_;
 };
 
 }  

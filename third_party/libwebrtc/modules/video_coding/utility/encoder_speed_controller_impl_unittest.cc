@@ -11,6 +11,7 @@
 #include <optional>
 
 #include "api/units/time_delta.h"
+#include "api/units/timestamp.h"
 #include "api/video_codecs/encoder_speed_controller.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
@@ -65,7 +66,7 @@ TEST(EncoderSpeedControllerTest, GetEncodeSettingsBaseLayers) {
   ASSERT_NE(controller, nullptr);
 
   EncoderSpeedController::FrameEncodingInfo frame_info = {
-      .reference_type = ReferenceClass::kMain};
+      .reference_type = ReferenceClass::kMain, .timestamp = Timestamp::Zero()};
 
   
   EXPECT_EQ(controller->GetEncodeSettings(frame_info).speed, 6);
@@ -74,7 +75,8 @@ TEST(EncoderSpeedControllerTest, GetEncodeSettingsBaseLayers) {
   for (int i = 0; i < 10; ++i) {
     controller->OnEncodedFrame({.encode_time = kFrameInterval * 0.90,
                                 .qp = 30,
-                                .frame_info = frame_info});
+                                .frame_info = frame_info},
+                               std::nullopt);
   }
   
   EXPECT_EQ(controller->GetEncodeSettings(frame_info).speed, 7);
@@ -83,7 +85,8 @@ TEST(EncoderSpeedControllerTest, GetEncodeSettingsBaseLayers) {
   for (int i = 0; i < 20; ++i) {
     controller->OnEncodedFrame({.encode_time = kFrameInterval * 0.10,
                                 .qp = 20,
-                                .frame_info = frame_info});
+                                .frame_info = frame_info},
+                               std::nullopt);
   }
   
   EXPECT_EQ(controller->GetEncodeSettings(frame_info).speed, 6);
@@ -94,10 +97,11 @@ TEST(EncoderSpeedControllerTest, GetEncodeSettingsKeyFrame) {
   auto controller = EncoderSpeedController::Create(config, kFrameInterval);
   ASSERT_NE(controller, nullptr);
 
-  EXPECT_EQ(
-      controller->GetEncodeSettings({.reference_type = ReferenceClass::kKey})
-          .speed,
-      6);
+  EXPECT_EQ(controller
+                ->GetEncodeSettings({.reference_type = ReferenceClass::kKey,
+                                     .timestamp = Timestamp::Zero()})
+                .speed,
+            6);
 }
 
 TEST(EncoderSpeedControllerTest, GetEncodeSettingsWithTemporalLayers) {
@@ -107,24 +111,28 @@ TEST(EncoderSpeedControllerTest, GetEncodeSettingsWithTemporalLayers) {
   auto controller = EncoderSpeedController::Create(config, kFrameInterval);
   ASSERT_NE(controller, nullptr);
 
-  EXPECT_EQ(
-      controller->GetEncodeSettings({.reference_type = ReferenceClass::kKey})
-          .speed,
-      5);
-  EXPECT_EQ(
-      controller->GetEncodeSettings({.reference_type = ReferenceClass::kMain})
-          .speed,
-      6);
+  EXPECT_EQ(controller
+                ->GetEncodeSettings({.reference_type = ReferenceClass::kKey,
+                                     .timestamp = Timestamp::Zero()})
+                .speed,
+            5);
+  EXPECT_EQ(controller
+                ->GetEncodeSettings({.reference_type = ReferenceClass::kMain,
+                                     .timestamp = Timestamp::Zero()})
+                .speed,
+            6);
   EXPECT_EQ(
       controller
-          ->GetEncodeSettings({.reference_type = ReferenceClass::kIntermediate})
+          ->GetEncodeSettings({.reference_type = ReferenceClass::kIntermediate,
+                               .timestamp = Timestamp::Zero()})
           .speed,
       7);
-  EXPECT_EQ(controller
-                ->GetEncodeSettings(
-                    {.reference_type = ReferenceClass::kNoneReference})
-                .speed,
-            8);
+  EXPECT_EQ(
+      controller
+          ->GetEncodeSettings({.reference_type = ReferenceClass::kNoneReference,
+                               .timestamp = Timestamp::Zero()})
+          .speed,
+      8);
 }
 
 TEST(EncoderSpeedControllerTest, StaysAtMaxSpeed) {
@@ -134,12 +142,13 @@ TEST(EncoderSpeedControllerTest, StaysAtMaxSpeed) {
   ASSERT_NE(controller, nullptr);
 
   EncoderSpeedController::FrameEncodingInfo frame_info = {
-      .reference_type = ReferenceClass::kMain};
+      .reference_type = ReferenceClass::kMain, .timestamp = Timestamp::Zero()};
 
   for (int i = 0; i < 20; ++i) {
     controller->OnEncodedFrame({.encode_time = kFrameInterval * 0.95,
                                 .qp = 30,
-                                .frame_info = frame_info});
+                                .frame_info = frame_info},
+                               std::nullopt);
   }
 
   EXPECT_EQ(controller->GetEncodeSettings(frame_info).speed,
@@ -153,10 +162,11 @@ TEST(EncoderSpeedControllerTest, StaysAtMinSpeed) {
   ASSERT_NE(controller, nullptr);
 
   EncoderSpeedController::FrameEncodingInfo frame_info = {
-      .reference_type = ReferenceClass::kMain};
+      .reference_type = ReferenceClass::kMain, .timestamp = Timestamp::Zero()};
 
   for (int i = 0; i < 20; ++i) {
-    controller->OnEncodedFrame({.speed = 5, .frame_info = frame_info});
+    controller->OnEncodedFrame({.speed = 5, .frame_info = frame_info},
+                               std::nullopt);
   }
 
   EXPECT_EQ(controller->GetEncodeSettings(frame_info).speed,
@@ -171,7 +181,7 @@ TEST(EncoderSpeedControllerTest, IncreasesSpeedOnLowQp) {
   ASSERT_NE(controller, nullptr);
 
   EncoderSpeedController::FrameEncodingInfo frame_info = {
-      .reference_type = ReferenceClass::kMain};
+      .reference_type = ReferenceClass::kMain, .timestamp = Timestamp::Zero()};
 
   EXPECT_EQ(controller->GetEncodeSettings(frame_info).speed, 6);
 
@@ -179,31 +189,314 @@ TEST(EncoderSpeedControllerTest, IncreasesSpeedOnLowQp) {
   for (int i = 0; i < 20; ++i) {
     controller->OnEncodedFrame({.encode_time = kFrameInterval * 0.60,
                                 .qp = 10,
-                                .frame_info = frame_info});
+                                .frame_info = frame_info},
+                               std::nullopt);
   }
   
   EXPECT_EQ(controller->GetEncodeSettings(frame_info).speed, 7);
 }
 
-TEST(EncoderSpeedControllerTest, DoesNotDecreaseSpeedIfQpIsTooLow) {
+TEST(EncoderSpeedControllerTest, TriggersRegularPsnrSampling) {
   EncoderSpeedController::Config config = GetDefaultConfig();
-  config.speed_levels[0].min_qp = 20;  
-  config.start_speed_index = 1;
+  config.psnr_probing_settings = {
+      .mode = EncoderSpeedController::Config::PsnrProbingSettings::Mode::
+          kRegularBaseLayerSampling,
+      .sampling_interval = TimeDelta::Seconds(5)};
   auto controller = EncoderSpeedController::Create(config, kFrameInterval);
   ASSERT_NE(controller, nullptr);
 
   EncoderSpeedController::FrameEncodingInfo frame_info = {
-      .reference_type = ReferenceClass::kMain};
-
-  EXPECT_EQ(controller->GetEncodeSettings(frame_info).speed, 6);
+      .reference_type = ReferenceClass::kMain, .timestamp = Timestamp::Zero()};
 
   
-  for (int i = 0; i < 20; ++i) {
-    controller->OnEncodedFrame({.encode_time = kFrameInterval * 0.10,
-                                .qp = 10,
-                                .frame_info = frame_info});
+  EXPECT_TRUE(controller->GetEncodeSettings(frame_info).calculate_psnr);
+
+  
+  controller->OnEncodedFrame(
+      {.encode_time = kFrameInterval * 0.5, .qp = 30, .frame_info = frame_info},
+      std::nullopt);
+
+  
+  frame_info.timestamp += kFrameInterval;
+  EXPECT_FALSE(controller->GetEncodeSettings(frame_info).calculate_psnr);
+
+  
+  frame_info.timestamp += config.psnr_probing_settings->sampling_interval;
+  EXPECT_TRUE(controller->GetEncodeSettings(frame_info).calculate_psnr);
+}
+
+TEST(EncoderSpeedControllerTest, TriggersPsnrProbeForSpeedChange) {
+  EncoderSpeedController::Config config = GetDefaultConfig();
+  
+  
+  config.speed_levels[0].min_psnr_gain = {
+      .baseline_speed = 6,  
+      .psnr_threshold = 1.0,
+  };
+  config.psnr_probing_settings = {
+      .mode = EncoderSpeedController::Config::PsnrProbingSettings::Mode::
+          kOnlyWhenProbing,
+      .sampling_interval = TimeDelta::Seconds(1)};
+  config.start_speed_index = 1;  
+
+  auto controller = EncoderSpeedController::Create(config, kFrameInterval);
+  ASSERT_NE(controller, nullptr);
+
+  
+  EXPECT_EQ(controller
+                ->GetEncodeSettings({.reference_type = ReferenceClass::kKey,
+                                     .timestamp = Timestamp::Zero()})
+                .speed,
+            6);
+
+  
+  
+  constexpr int kNumFrames = 10;
+  for (int i = 0; i < kNumFrames; ++i) {
+    controller->OnEncodedFrame(
+        {.encode_time = kFrameInterval * 0.1,
+         .qp = 20,
+         .frame_info = {.reference_type = ReferenceClass::kMain,
+                        .timestamp =
+                            Timestamp::Zero() + (i + 1) * kFrameInterval}},
+        std::nullopt);
   }
+
+  
+  
+  EncoderSpeedController::EncodeSettings settings =
+      controller->GetEncodeSettings(
+          {.reference_type = ReferenceClass::kMain,
+           .timestamp = Timestamp::Zero() + kNumFrames * kFrameInterval});
+  EXPECT_EQ(settings.speed, 5);
+  EXPECT_TRUE(settings.calculate_psnr);
+  EXPECT_EQ(settings.baseline_comparison_speed, 6);
+}
+
+TEST(EncoderSpeedControllerTest, DecreasesSpeedOnSufficientPsnrGain) {
+  EncoderSpeedController::Config config = GetDefaultConfig();
+  
+  
+  config.speed_levels[0].min_psnr_gain = {
+      .baseline_speed = 6,
+      .psnr_threshold = 1.0,
+  };
+  config.psnr_probing_settings = {
+      .mode = EncoderSpeedController::Config::PsnrProbingSettings::Mode::
+          kOnlyWhenProbing,
+      .sampling_interval = TimeDelta::Seconds(1)};
+  config.start_speed_index = 1;  
+
+  auto controller = EncoderSpeedController::Create(config, kFrameInterval);
+  ASSERT_NE(controller, nullptr);
+
+  
+  constexpr int kNumFrames = 10;
+  for (int i = 0; i < kNumFrames; ++i) {
+    controller->OnEncodedFrame(
+        {.encode_time = kFrameInterval * 0.1,
+         .qp = 20,
+         .frame_info = {.reference_type = ReferenceClass::kMain,
+                        .timestamp =
+                            Timestamp::Zero() + (i + 1) * kFrameInterval}},
+        std::nullopt);
+  }
+
+  EncoderSpeedController::FrameEncodingInfo frame_info = {
+      .reference_type = ReferenceClass::kMain,
+      .timestamp = Timestamp::Zero() + kNumFrames * kFrameInterval};
+
+  
+  EncoderSpeedController::EncodeSettings settings =
+      controller->GetEncodeSettings(frame_info);
+  ASSERT_TRUE(settings.baseline_comparison_speed.has_value());
+  EXPECT_EQ(settings.speed, 5);
+  EXPECT_EQ(settings.baseline_comparison_speed, 6);
+
+  
+  
+  
+  
+  EncoderSpeedController::EncodeResults results = {
+      .speed = settings.speed,  
+      .encode_time = kFrameInterval * 0.1,
+      .qp = 20,
+      .psnr = 37.0,
+      .frame_info = frame_info};
+  EncoderSpeedController::EncodeResults baseline_results = {
+      .speed = *settings.baseline_comparison_speed,  
+      .encode_time = kFrameInterval * 0.1,
+      .qp = 20,
+      .psnr = 35.0,
+      .frame_info = frame_info};
+
+  controller->OnEncodedFrame(results, baseline_results);
+
+  
+  frame_info.timestamp += kFrameInterval;
+  EXPECT_EQ(controller->GetEncodeSettings(frame_info).speed, 5);
+}
+
+TEST(EncoderSpeedControllerTest, MaintainsSpeedOnInsufficientPsnrGain) {
+  EncoderSpeedController::Config config = GetDefaultConfig();
+  
+  
+  config.speed_levels[0].min_psnr_gain = {
+      .baseline_speed = 6,
+      .psnr_threshold = 1.0,
+  };
+  config.psnr_probing_settings = {
+      .mode = EncoderSpeedController::Config::PsnrProbingSettings::Mode::
+          kOnlyWhenProbing,
+      .sampling_interval = TimeDelta::Seconds(1)};
+  config.start_speed_index = 1;  
+
+  auto controller = EncoderSpeedController::Create(config, kFrameInterval);
+  ASSERT_NE(controller, nullptr);
+
+  
+  constexpr int kNumFrames = 10;
+  for (int i = 0; i < kNumFrames; ++i) {
+    controller->OnEncodedFrame(
+        {.encode_time = kFrameInterval * 0.1,
+         .qp = 20,
+         .frame_info = {.reference_type = ReferenceClass::kMain,
+                        .timestamp =
+                            Timestamp::Zero() + (i + 1) * kFrameInterval}},
+        std::nullopt);
+  }
+
+  EncoderSpeedController::FrameEncodingInfo frame_info = {
+      .reference_type = ReferenceClass::kMain,
+      .timestamp = Timestamp::Zero() + kNumFrames * kFrameInterval};
+
+  
+  EncoderSpeedController::EncodeSettings settings =
+      controller->GetEncodeSettings(frame_info);
+  ASSERT_TRUE(settings.baseline_comparison_speed.has_value());
+  EXPECT_EQ(settings.speed, 5);
+  EXPECT_EQ(settings.baseline_comparison_speed, 6);
+
+  
+  
+  
+  
+  EncoderSpeedController::EncodeResults results = {
+      .speed = settings.speed,
+      .encode_time = kFrameInterval * 0.1,
+      .qp = 20,
+      .psnr = 35.5,
+      .frame_info = frame_info};
+  EncoderSpeedController::EncodeResults baseline_results = {
+      .speed = *settings.baseline_comparison_speed,
+      .encode_time = kFrameInterval * 0.1,
+      .qp = 20,
+      .psnr = 35.0,
+      .frame_info = frame_info};
+
+  controller->OnEncodedFrame(results, baseline_results);
+
+  
+  
+  frame_info.timestamp += kFrameInterval;
+  EXPECT_EQ(controller->GetEncodeSettings(frame_info).speed, 6);
+}
+TEST(EncoderSpeedControllerTest, CreateFailsWithInvalidPsnrSamplingInterval) {
+  EncoderSpeedController::Config config = GetDefaultConfig();
+  config.psnr_probing_settings = {
+      .mode = EncoderSpeedController::Config::PsnrProbingSettings::Mode::
+          kRegularBaseLayerSampling,
+      .sampling_interval = TimeDelta::Zero()};
+  EXPECT_EQ(EncoderSpeedController::Create(config, kFrameInterval), nullptr);
+
+  config.psnr_probing_settings->sampling_interval = TimeDelta::PlusInfinity();
+  EXPECT_EQ(EncoderSpeedController::Create(config, kFrameInterval), nullptr);
+}
+
+TEST(EncoderSpeedControllerTest, OnEncodedFrameIgnoresResultWithMissingPsnr) {
+  EncoderSpeedController::Config config = GetDefaultConfig();
+  config.speed_levels[0].min_psnr_gain = {
+      .baseline_speed = 6,
+      .psnr_threshold = 1.0,
+  };
+  config.psnr_probing_settings = {
+      .mode = EncoderSpeedController::Config::PsnrProbingSettings::Mode::
+          kOnlyWhenProbing,
+      .sampling_interval = TimeDelta::Seconds(1)};
+  config.start_speed_index = 1;
+
+  auto controller = EncoderSpeedController::Create(config, kFrameInterval);
+  ASSERT_NE(controller, nullptr);
+
+  EncoderSpeedController::FrameEncodingInfo frame_info = {
+      .reference_type = ReferenceClass::kMain, .timestamp = Timestamp::Zero()};
+
+  
+  constexpr int kNumFrames = 10;
+  for (int i = 0; i < kNumFrames; ++i) {
+    controller->OnEncodedFrame(
+        {.encode_time = kFrameInterval * 0.1,
+         .qp = 20,
+         .frame_info = {.reference_type = ReferenceClass::kMain,
+                        .timestamp =
+                            Timestamp::Zero() + (i + 1) * kFrameInterval}},
+        std::nullopt);
+  }
+
+  
+  EncoderSpeedController::EncodeSettings settings =
+      controller->GetEncodeSettings(
+          {.reference_type = ReferenceClass::kMain,
+           .timestamp = Timestamp::Zero() + kNumFrames * kFrameInterval});
+  ASSERT_TRUE(settings.baseline_comparison_speed.has_value());
+  EXPECT_EQ(settings.speed, 5);
+
+  
+  frame_info.timestamp = Timestamp::Zero() + kNumFrames * kFrameInterval;
+  EncoderSpeedController::EncodeResults results = {
+      .speed = settings.speed,
+      .encode_time = kFrameInterval * 0.1,
+      .qp = 20,
+      .psnr = std::nullopt,  
+      .frame_info = frame_info};
+  EncoderSpeedController::EncodeResults baseline_results = {
+      .speed = *settings.baseline_comparison_speed,
+      .encode_time = kFrameInterval * 0.1,
+      .qp = 20,
+      .psnr = 35.0,
+      .frame_info = frame_info};
+
+  controller->OnEncodedFrame(results, baseline_results);
+
+  
+  frame_info.timestamp += kFrameInterval;
+  EXPECT_EQ(controller->GetEncodeSettings(frame_info).speed, 6);
+}
+
+TEST(EncoderSpeedControllerTest, WorksWithDefaultInfiniteTimestamp) {
+  EncoderSpeedController::Config config = GetDefaultConfig();
+  auto controller = EncoderSpeedController::Create(config, kFrameInterval);
+  ASSERT_NE(controller, nullptr);
+
+  
+  EncoderSpeedController::FrameEncodingInfo frame_info = {
+      .reference_type = ReferenceClass::kMain};
+  EXPECT_TRUE(frame_info.timestamp.IsMinusInfinity());
+
+  
+  
+  EncoderSpeedController::EncodeSettings settings =
+      controller->GetEncodeSettings(frame_info);
+  EXPECT_EQ(settings.speed, 6);
+  EXPECT_FALSE(settings.calculate_psnr);
+
+  
+  controller->OnEncodedFrame(
+      {.encode_time = kFrameInterval * 0.5, .qp = 30, .frame_info = frame_info},
+      std::nullopt);
+
   
   EXPECT_EQ(controller->GetEncodeSettings(frame_info).speed, 6);
 }
+
 }  
