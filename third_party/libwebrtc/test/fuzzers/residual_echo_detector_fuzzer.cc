@@ -46,7 +46,7 @@ void FuzzOneInput(FuzzDataHelper fuzz_data) {
   echo_detector->AnalyzeCaptureAudio(input);
   for (size_t i = 0; i < 2 * kNrOfUpdates; ++i) {
     
-    fuzz_data.CopyTo(&input[0]);
+    fuzz_data.CopyTo(input[0]);
     if (!isfinite(input[0]) || fabs(input[0]) > maxFuzzedValue) {
       
       continue;
