@@ -274,7 +274,13 @@ impl PseudoElement {
     
     #[inline]
     pub fn property_restriction(&self) -> Option<PropertyFlags> {
-        None
+        Some(match self {
+            PseudoElement::Marker if static_prefs::pref!("layout.css.marker.restricted") => {
+                PropertyFlags::APPLIES_TO_MARKER
+            },
+            PseudoElement::Placeholder => PropertyFlags::APPLIES_TO_PLACEHOLDER,
+            _ => return None,
+        })
     }
 
     
@@ -664,12 +670,7 @@ impl<'a, 'i> ::selectors::Parser<'i> for SelectorParser<'a> {
             },
             "details-content" => DetailsContent,
             "color-swatch" => ColorSwatch,
-            "placeholder" => {
-                if !self.in_user_agent_stylesheet() {
-                    return Err(location.new_custom_error(SelectorParseErrorKind::UnexpectedIdent(name.clone())))
-                }
-                Placeholder
-            },
+            "placeholder" => Placeholder,
             "-servo-text-control-inner-container" => {
                 if !self.in_user_agent_stylesheet() {
                     return Err(location.new_custom_error(SelectorParseErrorKind::UnexpectedIdent(name.clone())))
