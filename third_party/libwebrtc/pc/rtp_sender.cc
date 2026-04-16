@@ -697,39 +697,41 @@ void RtpSenderBase::SetSsrc(uint32_t ssrc) {
     AddTrackToStats();
   }
 
-  if (ssrc_ == 0 || (init_parameters_.encodings.empty() &&
-                     !init_parameters_.degradation_preference.has_value())) {
-    return;
-  }
-
+  const bool update_parameters =
+      (ssrc_ != 0 && (!init_parameters_.encodings.empty() ||
+                      init_parameters_.degradation_preference.has_value()));
   RtpParameters current_parameters;
   bool params_modified = false;
   worker_thread_->BlockingCall([&, ssrc = ssrc_] {
     RTC_DCHECK_RUN_ON(worker_thread_);
-    RTC_DCHECK(media_channel_);
-    
-    
-    
-    
-    
-    current_parameters = media_channel_->GetRtpSendParameters(ssrc);
-    
-    
-    RTC_CHECK_GE(current_parameters.encodings.size(),
-                 init_parameters_.encodings.size());
-    for (size_t i = 0; i < init_parameters_.encodings.size(); ++i) {
-      init_parameters_.encodings[i].ssrc = current_parameters.encodings[i].ssrc;
-      init_parameters_.encodings[i].rid = current_parameters.encodings[i].rid;
-      current_parameters.encodings[i] = init_parameters_.encodings[i];
-    }
-    current_parameters.degradation_preference =
-        init_parameters_.degradation_preference;
-    params_modified =
-        media_channel_->SetRtpSendParameters(ssrc, current_parameters, nullptr)
-            .ok();
-    if (params_modified) {
+    if (update_parameters) {
+      RTC_DCHECK(media_channel_);
+      
+      
+      
+      
       
       current_parameters = media_channel_->GetRtpSendParameters(ssrc);
+      
+      
+      RTC_CHECK_GE(current_parameters.encodings.size(),
+                   init_parameters_.encodings.size());
+      for (size_t i = 0; i < init_parameters_.encodings.size(); ++i) {
+        init_parameters_.encodings[i].ssrc =
+            current_parameters.encodings[i].ssrc;
+        init_parameters_.encodings[i].rid = current_parameters.encodings[i].rid;
+        current_parameters.encodings[i] = init_parameters_.encodings[i];
+      }
+      current_parameters.degradation_preference =
+          init_parameters_.degradation_preference;
+      params_modified =
+          media_channel_
+              ->SetRtpSendParameters(ssrc, current_parameters, nullptr)
+              .ok();
+      if (params_modified) {
+        
+        current_parameters = media_channel_->GetRtpSendParameters(ssrc);
+      }
     }
 
     
