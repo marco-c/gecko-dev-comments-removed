@@ -12,17 +12,19 @@
 #include <optional>
 #include <vector>
 
+#include "api/units/time_delta.h"
+#include "api/units/timestamp.h"
 #include "net/dcsctp/common/internal_types.h"
 #include "net/dcsctp/common/math.h"
 #include "net/dcsctp/common/sequence_numbers.h"
 #include "net/dcsctp/packet/chunk/data_chunk.h"
 #include "net/dcsctp/packet/chunk/forward_tsn_chunk.h"
-#include "net/dcsctp/public/dcsctp_socket.h"
+#include "net/dcsctp/packet/chunk/sack_chunk.h"
 #include "net/dcsctp/public/types.h"
 #include "net/dcsctp/testing/data_generator.h"
 #include "net/dcsctp/testing/testing_macros.h"
-#include "rtc_base/gunit.h"
 #include "test/gmock.h"
+#include "test/gtest.h"
 
 namespace dcsctp {
 namespace {
@@ -133,8 +135,9 @@ TEST_F(OutstandingDataTest, AcksAndNacksWithGapAckBlocks) {
   EXPECT_EQ(ack.highest_tsn_acked.Wrap(), TSN(11));
   EXPECT_FALSE(ack.has_packet_loss);
 
-  EXPECT_EQ(buf_.unacked_payload_bytes(), 0u);
-  EXPECT_EQ(buf_.unacked_items(), 0u);
+  
+  EXPECT_EQ(buf_.unacked_payload_bytes(), 1u);
+  EXPECT_EQ(buf_.unacked_items(), 1u);
   EXPECT_FALSE(buf_.has_data_to_be_retransmitted());
   EXPECT_EQ(buf_.last_cumulative_tsn_ack().Wrap(), TSN(9));
   EXPECT_EQ(buf_.next_tsn().Wrap(), TSN(12));

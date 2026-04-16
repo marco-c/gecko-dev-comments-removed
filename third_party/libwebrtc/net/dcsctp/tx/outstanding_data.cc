@@ -10,14 +10,24 @@
 #include "net/dcsctp/tx/outstanding_data.h"
 
 #include <algorithm>
+#include <cstddef>
+#include <cstdint>
+#include <map>
+#include <optional>
 #include <set>
 #include <utility>
 #include <vector>
 
+#include "api/array_view.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
+#include "net/dcsctp/common/internal_types.h"
 #include "net/dcsctp/common/math.h"
 #include "net/dcsctp/common/sequence_numbers.h"
+#include "net/dcsctp/packet/chunk/forward_tsn_chunk.h"
+#include "net/dcsctp/packet/chunk/iforward_tsn_chunk.h"
+#include "net/dcsctp/packet/chunk/sack_chunk.h"
+#include "net/dcsctp/packet/data.h"
 #include "net/dcsctp/public/types.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
@@ -133,6 +143,9 @@ OutstandingData::AckInfo OutstandingData::HandleSack(
     UnwrappedTSN cumulative_tsn_ack,
     webrtc::ArrayView<const SackChunk::GapAckBlock> gap_ack_blocks,
     bool is_in_fast_recovery) {
+  bool cumulative_tsn_ack_advanced =
+      cumulative_tsn_ack > last_cumulative_tsn_ack_;
+
   OutstandingData::AckInfo ack_info(cumulative_tsn_ack);
   
   RemoveAcked(cumulative_tsn_ack, ack_info);
@@ -142,7 +155,7 @@ OutstandingData::AckInfo OutstandingData::HandleSack(
 
   
   NackBetweenAckBlocks(cumulative_tsn_ack, gap_ack_blocks, is_in_fast_recovery,
-                       ack_info);
+                       cumulative_tsn_ack_advanced, ack_info);
 
   RTC_DCHECK(IsConsistent());
   return ack_info;
@@ -215,6 +228,7 @@ void OutstandingData::NackBetweenAckBlocks(
     UnwrappedTSN cumulative_tsn_ack,
     webrtc::ArrayView<const SackChunk::GapAckBlock> gap_ack_blocks,
     bool is_in_fast_recovery,
+    bool cumulative_tsn_acked_advanced,
     OutstandingData::AckInfo& ack_info) {
   
   
@@ -227,7 +241,7 @@ void OutstandingData::NackBetweenAckBlocks(
   
   
   UnwrappedTSN max_tsn_to_nack = ack_info.highest_tsn_acked;
-  if (is_in_fast_recovery && cumulative_tsn_ack > last_cumulative_tsn_ack_) {
+  if (is_in_fast_recovery && cumulative_tsn_acked_advanced) {
     
     
     
@@ -242,7 +256,8 @@ void OutstandingData::NackBetweenAckBlocks(
     UnwrappedTSN cur_block_first_acked =
         UnwrappedTSN::AddTo(cumulative_tsn_ack, block.start);
     for (UnwrappedTSN tsn = prev_block_last_acked.next_value();
-         tsn < cur_block_first_acked && tsn <= max_tsn_to_nack;
+         tsn < cur_block_first_acked && tsn <= max_tsn_to_nack &&
+         tsn < next_tsn();
          tsn = tsn.next_value()) {
       ack_info.has_packet_loss |=
           NackItem(tsn, false,
@@ -261,13 +276,17 @@ bool OutstandingData::NackItem(UnwrappedTSN tsn,
                                bool retransmit_now,
                                bool do_fast_retransmit) {
   Item& item = GetItem(tsn);
-  if (item.is_outstanding()) {
+  bool was_outstanding = item.is_outstanding();
+
+  Item::NackAction action = item.Nack(retransmit_now);
+
+  if (was_outstanding && !item.is_outstanding()) {
     unacked_payload_bytes_ -= item.data().size();
     unacked_packet_bytes_ -= GetSerializedChunkSize(item.data());
     --unacked_items_;
   }
 
-  switch (item.Nack(retransmit_now)) {
+  switch (action) {
     case Item::NackAction::kNothing:
       return false;
     case Item::NackAction::kRetransmit:
@@ -325,7 +344,13 @@ void OutstandingData::AbandonAllFor(const Item& item) {
         to_be_fast_retransmitted_.erase(tsn);
         to_be_retransmitted_.erase(tsn);
       }
+      bool was_outstanding = other.is_outstanding();
       other.Abandon();
+      if (was_outstanding) {
+        unacked_payload_bytes_ -= other.data().size();
+        unacked_packet_bytes_ -= GetSerializedChunkSize(other.data());
+        --unacked_items_;
+      }
     }
   }
 }
@@ -507,10 +532,12 @@ OutstandingData::GetChunkStatesForTesting() const {
       state = State::kToBeRetransmitted;
     } else if (item.is_acked()) {
       state = State::kAcked;
+    } else if (item.is_nacked()) {
+      state = State::kNacked;
     } else if (item.is_outstanding()) {
       state = State::kInFlight;
     } else {
-      state = State::kNacked;
+      RTC_CHECK_NOTREACHED();
     }
 
     states.emplace_back(tsn.Wrap(), state);
