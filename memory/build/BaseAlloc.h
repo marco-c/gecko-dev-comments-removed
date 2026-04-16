@@ -100,22 +100,9 @@ class BaseAlloc {
       MOZ_GUARDED_BY(mMutex);
 
   
-  BaseAllocCell* wilderness_alloc(base_alloc_size_t aSize) MOZ_REQUIRES(mMutex);
-
-  
-  bool pages_alloc(base_alloc_size_t aSize) MOZ_REQUIRES(mMutex);
-
   
   
-  
-  
-  
-  
-  
-  uintptr_t mNextAddr MOZ_GUARDED_BY(mMutex) = 0;
-  uintptr_t mNextDecommitted MOZ_GUARDED_BY(mMutex) = 0;
-  
-  uintptr_t mPastAddr MOZ_GUARDED_BY(mMutex) = 0;
+  BaseAllocCell* chunk_alloc(base_alloc_size_t aSize) MOZ_REQUIRES(mMutex);
 
   void MaybeTrim(BaseAllocCell* aCell, base_alloc_size_t aSizeRequest)
       MOZ_REQUIRES(mMutex);
