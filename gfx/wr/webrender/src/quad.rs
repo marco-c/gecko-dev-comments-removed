@@ -1145,10 +1145,13 @@ fn prepare_tiles(
                 
                 let rect = LayoutRect::from_origin_and_size(clip_instance.clip_rect_origin, *size);
                 let clip_device_rect = transform.map_rect(&rect);
-                let r_tl = transform.map_size(&radius.top_left);
-                let r_tr = transform.map_size(&radius.top_right);
-                let r_br = transform.map_size(&radius.bottom_right);
-                let r_bl = transform.map_size(&radius.bottom_left);
+                
+                
+                
+                let r_tl = transform.map_size(&radius.top_left).abs();
+                let r_tr = transform.map_size(&radius.top_right).abs();
+                let r_br = transform.map_size(&radius.bottom_right).abs();
+                let r_bl = transform.map_size(&radius.bottom_left).abs();
 
                 
                 let c_tl = DeviceRect::from_origin_and_size(
