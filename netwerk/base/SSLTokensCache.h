@@ -10,14 +10,21 @@
 #include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/StaticPtr.h"
+#include "mozilla/OriginAttributes.h"
+#include "mozilla/TimeStamp.h"
 #include "nsClassHashtable.h"
+#include "nsIFile.h"
 #include "nsIMemoryReporter.h"
+#include "nsIAsyncShutdown.h"
+#include "nsIObserver.h"
+#include "nsISerialEventTarget.h"
 #include "nsITransportSecurityInfo.h"
 #include "nsTArray.h"
 #include "nsTHashMap.h"
 #include "nsXULAppAPI.h"
 
 class CommonSocketControl;
+struct SslTokensPersistedRecordFfi;
 
 namespace mozilla {
 namespace net {
@@ -35,10 +42,14 @@ struct SessionCacheInfo {
   Maybe<nsTArray<nsTArray<uint8_t>>> mHandshakeCertificatesBytes;
 };
 
-class SSLTokensCache : public nsIMemoryReporter {
+class SSLTokensCache : public nsIMemoryReporter,
+                       public nsIObserver,
+                       public nsIAsyncShutdownBlocker {
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIMEMORYREPORTER
+  NS_DECL_NSIOBSERVER
+  NS_DECL_NSIASYNCSHUTDOWNBLOCKER
 
   friend class ExpirationComparator;
 
@@ -55,18 +66,42 @@ class SSLTokensCache : public nsIMemoryReporter {
   static nsresult Remove(const nsACString& aKey, uint64_t aId);
   static nsresult RemoveAll(const nsACString& aKey);
   static void Clear();
+  static void RemoveByHostAndOAPattern(
+      const nsACString& aHost,
+      const mozilla::OriginAttributesPattern& aPattern);
+  static void RemoveBySiteAndOAPattern(
+      const nsACString& aSite,
+      const mozilla::OriginAttributesPattern& aPattern);
+
+#ifdef ENABLE_TESTS
+  
+  static void TriggerWriteForTest(const nsACString& aPath);
+  static void LoadForTest(const nsACString& aPath);
+  static uint32_t CountForTest();
+  static void PutForTest(const nsACString& aKey);
+#endif
 
  private:
   SSLTokensCache();
   virtual ~SSLTokensCache();
 
   nsresult RemoveLocked(const nsACString& aKey, uint64_t aId);
-  nsresult RemovAllLocked(const nsACString& aKey);
+  nsresult RemoveAllLocked(const nsACString& aKey);
+  
+  
   nsresult GetLocked(const nsACString& aKey, nsTArray<uint8_t>& aToken,
-                     SessionCacheInfo& aResult, uint64_t* aTokenId);
+                     SessionCacheInfo& aResult, uint64_t* aTokenId,
+                     nsTArray<uint64_t>& aRemovedIds);
 
-  void EvictIfNecessary();
+  
+  
+  
+  void EvictIfNecessary(nsTArray<uint64_t>& aEvictedIds);
   void LogStats();
+  
+  
+  static bool ShouldPersistKey(const nsACString& aKey,
+                               uint8_t aOverridableError);
 
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
 
@@ -75,6 +110,49 @@ class SSLTokensCache : public nsIMemoryReporter {
   static uint64_t sRecordId;
 
   uint32_t mCacheSize{0};  
+
+  
+  nsCOMPtr<nsIFile> mBackingFile;
+  nsCOMPtr<nsISerialEventTarget> mWriteTaskQueue;
+  bool mLoadComplete{false};
+  TimeStamp mLoadStartTime;
+  
+  uint32_t mLoadGeneration{0};
+  void DoWrite(bool aSynchronous);
+  void RemoveShutdownBlocker();
+  nsCOMPtr<nsIAsyncShutdownClient> mShutdownBarrier;
+  static void OnLoadCompleteNotify(uint32_t aCount);
+  
+  
+  
+  
+  static bool PutFromPersisted(const SslTokensPersistedRecordFfi* aFfi,
+                               uint32_t aExpectedGen);
+  static nsDependentCSubstring BasePartFromKey(const nsACString& aKey);
+  static nsDependentCSubstring HostFromBasePart(
+      const nsDependentCSubstring& aBasePart);
+  static OriginAttributes OAFromPeerId(const nsACString& aPeerId);
+  static void RemoveByMatchAndOAPattern(
+      const nsACString& aValue, const nsACString& aSeparatedValue,
+      const mozilla::OriginAttributesPattern& aPattern);
+
+  
+  
+  template <typename Pred>
+  nsTArray<uint64_t> RemoveMatchingLocked(Pred&& aPredicate);
+  
+  
+  nsTArray<uint64_t> CollectValidIdsLocked() const;
+  
+  
+  static void SyncRustShadow(nsTArray<uint64_t>&& aRemainingIds);
+  
+  
+  template <typename Pred>
+  static void RemoveMatchingAndSync(Pred&& aPredicate);
+  
+  static void PutFromPersistedCallback(void*,
+                                       const SslTokensPersistedRecordFfi* aFfi);
 
   class TokenCacheRecord {
    public:
@@ -104,7 +182,9 @@ class SSLTokensCache : public nsIMemoryReporter {
     const UniquePtr<TokenCacheRecord>& Get();
     UniquePtr<TokenCacheRecord> RemoveWithId(uint64_t aId);
     uint32_t RecordCount() const { return mRecords.Length(); }
-    const nsTArray<UniquePtr<TokenCacheRecord>>& Records() { return mRecords; }
+    const nsTArray<UniquePtr<TokenCacheRecord>>& Records() const {
+      return mRecords;
+    }
 
    private:
     
@@ -112,6 +192,12 @@ class SSLTokensCache : public nsIMemoryReporter {
   };
 
   void OnRecordDestroyed(TokenCacheRecord* aRec);
+  
+  
+  
+  
+  uint64_t InsertRecordLocked(UniquePtr<TokenCacheRecord> aRec,
+                              nsTArray<uint64_t>& aEvictedIds);
 
   nsClassHashtable<nsCStringHashKey, TokenCacheEntry> mTokenCacheRecords;
   nsTArray<TokenCacheRecord*> mExpirationArray;
