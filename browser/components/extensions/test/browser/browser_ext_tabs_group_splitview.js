@@ -393,20 +393,13 @@ add_task(async function test_tab_group_and_splitview_across_windows() {
       await browser.tabs.group({ groupId: gid2, tabIds: [tabIds[1]] });
       browser.test.assertDeepEq(
         [
-          
-          
-          
-          
-          
-          { index: 0, tabId: tabIds[0], groupId: gid2, splitViewId },
-          { index: 1, tabId: tabIds[1], groupId: gid2, splitViewId },
-          { index: 2, tabId: tabIds[2], groupId: gid2, splitViewId: -1 },
+          { index: 0, tabId: tabIds[2], groupId: gid2, splitViewId: -1 },
+          { index: 1, tabId: tabIds[0], groupId: gid2, splitViewId },
+          { index: 2, tabId: tabIds[1], groupId: gid2, splitViewId },
         ],
         await queryTabsByWindowId(win2.id),
         "group() of one tab of a split moves the whole split across windows"
       );
-      
-      await browser.tabs.move(tabIds[2], { index: 0, windowId: win2.id });
 
       
       groupId = await browser.tabs.group({
