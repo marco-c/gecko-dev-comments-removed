@@ -104,14 +104,14 @@ pub(crate) fn run_tests(
         match result {
             Ok(r) => {
                 if r == TestResult::Pass {
-                    println!("TEST-PASS: {}", test);
+                    info!("TEST-PASS: {}", test);
                 } else {
-                    println!("TEST-UNEXPECTED-FAIL: {}", test);
+                    info!("TEST-UNEXPECTED-FAIL: {}", test);
                 }
                 results.push(r);
             }
             Err(e) => {
-                println!("TEST-UNEXPECTED-FAIL: {}", test);
+                info!("TEST-UNEXPECTED-FAIL: {}", test);
                 results.push(TestResult::SetupErr(e.to_string()));
             }
         }
@@ -167,13 +167,21 @@ fn run_test(
         .arg(&test.from_installer)
         .arg(to_installer)
         .arg(&test.locale)
-        .arg(updater)
+        .arg(updater.clone())
         .arg(diff_file.to_str().unwrap())
         .arg(channel)
         
         .arg("")
         .arg("")
-        .arg("")
+        
+        
+        
+        
+        .arg(
+            updater
+                .parent()
+                .ok_or("Couldn't determine update-settings.ini dir!")?,
+        )
         .arg(appname)
         .current_dir(test_dir);
     return match runner.run(&mut cmd)? {
