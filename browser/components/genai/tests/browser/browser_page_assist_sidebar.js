@@ -1,8 +1,15 @@
 
 
 
-
-SidebarTestUtils.restoreStateAtCleanup(window);
+registerCleanupFunction(() => {
+  
+  if (!document.getElementById("sidebar-box").hidden) {
+    info(
+      `Sidebar ${SidebarController.currentID} was left open, closing it in cleanup function`
+    );
+    SidebarController.hide({ dismissPanel: true });
+  }
+});
 
 
 
@@ -16,5 +23,5 @@ add_task(async function test_sidebar_render() {
 
   Assert.ok(pageAssistWrapper, "Page Assist sidebar has rendered");
 
-  SidebarTestUtils.closePanel(window);
+  SidebarController.hide();
 });

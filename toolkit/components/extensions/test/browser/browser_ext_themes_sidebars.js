@@ -3,14 +3,11 @@
 
 const LIGHT_SALMON = "#ffa07a";
 
-
-const { SidebarTestUtils } = ChromeUtils.importESModule(
-  "resource://testing-common/SidebarTestUtils.sys.mjs"
-);
-SidebarTestUtils.init(this);
-SidebarTestUtils.restoreStateAtCleanup(window);
-
-registerCleanupFunction(() => {
+registerCleanupFunction(async function () {
+  
+  if (!document.getElementById("sidebar-box").hidden) {
+    SidebarController.hide({ dismissPanel: true });
+  }
   Services.prefs.clearUserPref(
     "browser.toolbarbuttons.introduced.sidebar-button"
   );

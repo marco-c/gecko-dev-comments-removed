@@ -15,7 +15,7 @@ add_task(async function test_tools_prefs() {
   );
 
   
-  await SidebarTestUtils.showPanel(win, "viewCustomizeSidebar");
+  await toggleSidebarPanel(win, "viewCustomizeSidebar");
 
   
   let customizeDocument = win.SidebarController.browser.contentDocument;
@@ -74,7 +74,7 @@ add_task(async function test_tools_prefs() {
   const newSidebar = newWin.document.querySelector("sidebar-main");
 
   
-  await SidebarTestUtils.ensureLauncherVisible(newWin);
+  await ensureSidebarLauncherIsVisible(newWin);
 
   info("Waiting for customize button to be present");
   await BrowserTestUtils.waitForMutationCondition(
@@ -85,7 +85,7 @@ add_task(async function test_tools_prefs() {
 
   
   
-  await SidebarTestUtils.showPanel(newWin, "viewCustomizeSidebar");
+  await toggleSidebarPanel(newWin, "viewCustomizeSidebar");
 
   let newCustomizeDocument = newWin.SidebarController.browser.contentDocument;
   let newCustomizeComponent =
@@ -130,7 +130,7 @@ add_task(async function test_tool_pref_change() {
   await sidebar.updateComplete;
 
   
-  await SidebarTestUtils.ensureLauncherVisible(window);
+  await ensureSidebarLauncherIsVisible();
 
   const origCount = sidebar.toolButtons.length;
   is(origCount, 1, "Expected number of initial tools");
@@ -156,8 +156,7 @@ add_task(async function test_tool_pref_change() {
 
 add_task(async function test_flip_revamp_pref() {
   const win = await BrowserTestUtils.openNewBrowserWindow();
-  await SidebarTestUtils.waitForTabstripOrientation(win, "horizontal");
-
+  await waitForTabstripOrientation("horizontal", win);
   const { sidebarMain, sidebarContainer } = win.SidebarController;
 
   let verticalTabs = win.document.querySelector("#vertical-tabs");
@@ -166,10 +165,10 @@ add_task(async function test_flip_revamp_pref() {
     "Vertical tabs slot is not visible initially"
   );
   
-  await SidebarTestUtils.showPanel(win, "viewHistorySidebar");
+  await toggleSidebarPanel(win, "viewHistorySidebar");
 
   await SpecialPowers.pushPrefEnv({ set: [[VERTICAL_TABS_PREF, true]] });
-  await SidebarTestUtils.waitForTabstripOrientation(win, "vertical");
+  await waitForTabstripOrientation("vertical", win);
   ok(BrowserTestUtils.isVisible(verticalTabs), "Vertical tabs slot is visible");
   ok(
     BrowserTestUtils.isVisible(sidebarMain),
@@ -186,7 +185,7 @@ add_task(async function test_flip_revamp_pref() {
   );
 
   await SpecialPowers.pushPrefEnv({ set: [["sidebar.revamp", false]] });
-  await SidebarTestUtils.waitForTabstripOrientation(win, "horizontal");
+  await waitForTabstripOrientation("horizontal", win);
 
   info("Waiting for sidebar container to be visible");
   await BrowserTestUtils.waitForMutationCondition(
@@ -232,7 +231,7 @@ add_task(async function test_flip_revamp_pref() {
 
 
 add_task(async function test_flip_revamp_pref_with_panel() {
-  await SidebarTestUtils.showPanel(window, "viewGenaiChatSidebar");
+  await toggleSidebarPanel(window, "viewGenaiChatSidebar");
   ok(SidebarController.isOpen, "panel open with revamp");
 
   await SpecialPowers.pushPrefEnv({

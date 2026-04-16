@@ -4,13 +4,6 @@
 const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
 );
-ChromeUtils.defineLazyGetter(this, "SidebarTestUtils", () => {
-  const { SidebarTestUtils: utils } = ChromeUtils.importESModule(
-    "resource://testing-common/SidebarTestUtils.sys.mjs"
-  );
-  utils.init(this);
-  return utils;
-});
 
 const imageBuffer = imageBufferFromDataURI(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQImWNgYGBgAAAABQABh6FO1AAAAABJRU5ErkJggg=="
@@ -116,9 +109,15 @@ const extData = {
 };
 
 
-SidebarTestUtils.restoreStateAtCleanup(window);
-
+const initialSidebarState = { ...SidebarController.getUIState(), command: "" };
+async function resetSidebarToInitialState() {
+  info(
+    `Restoring sidebar state from: ${JSON.stringify(SidebarController.getUIState())}, back to: ${JSON.stringify(initialSidebarState)}`
+  );
+  await SidebarController.updateUIState(initialSidebarState);
+}
 registerCleanupFunction(async () => {
+  await resetSidebarToInitialState();
   
   Services.fog.testResetFOG();
   clearModifiedPrefs();
@@ -157,6 +156,69 @@ function isActiveElement(el) {
   return el.getRootNode().activeElement == el;
 }
 
+async function toggleSidebarPanel(win, commandID) {
+  const promiseFocused = BrowserTestUtils.waitForEvent(win, "SidebarFocused");
+  win.SidebarController.toggle(commandID);
+  await promiseFocused;
+}
+
+async function _ensureSidebarLauncherShowing(win = window, visible = true) {
+  const {
+    promiseInitialized,
+    sidebarMain: sidebarLauncher,
+    sidebarContainer,
+  } = win.SidebarController;
+  await promiseInitialized;
+  const hidden = !visible;
+  
+  if (sidebarContainer.hidden !== hidden) {
+    
+    
+    
+    win.SidebarController.handleToolbarButtonClick();
+    await sidebarLauncher.updateComplete;
+    await waitForElementHidden(sidebarContainer, hidden);
+    await win.SidebarController.waitUntilStable();
+  }
+  if (visible) {
+    Assert.ok(
+      BrowserTestUtils.isVisible(sidebarLauncher),
+      "Sidebar launcher is visible"
+    );
+  } else {
+    Assert.ok(
+      BrowserTestUtils.isHidden(sidebarLauncher),
+      "Sidebar launcher is hidden"
+    );
+  }
+}
+function ensureSidebarLauncherIsHidden(win = window) {
+  return _ensureSidebarLauncherShowing(win, false);
+}
+function ensureSidebarLauncherIsVisible(win = window) {
+  return _ensureSidebarLauncherShowing(win, true);
+}
+
+async function waitForTabstripOrientation(
+  toOrientation = "vertical",
+  win = window
+) {
+  await win.SidebarController.promiseInitialized;
+  
+  
+  info(
+    `waitForTabstripOrientation: waiting for orient attribute to be "${toOrientation}"`
+  );
+  await BrowserTestUtils.waitForMutationCondition(
+    win.gBrowser.tabContainer,
+    { attributes: true, attributeFilter: ["orient"] },
+    () => win.gBrowser.tabContainer.getAttribute("orient") == toOrientation
+  );
+  
+  
+  await win.SidebarController.sidebarMain?.updateComplete;
+}
+
 
 
 
@@ -180,7 +242,7 @@ function cleanUpExtraTabs() {
 
 async function showHistorySidebar({ waitForPendingHistory = true } = {}) {
   if (SidebarController.currentID !== "viewHistorySidebar") {
-    await SidebarTestUtils.showPanel(window, "viewHistorySidebar");
+    await SidebarController.show("viewHistorySidebar");
   }
   const { contentDocument, contentWindow } = SidebarController.browser;
   const component = contentDocument.querySelector("sidebar-history");
