@@ -22,7 +22,6 @@
 
 namespace v8 {
 namespace internal {
-namespace regexp {
 
 using js::MatchPairs;
 using js::jit::AbsoluteAddress;
@@ -48,7 +47,7 @@ SMRegExpMacroAssembler::SMRegExpMacroAssembler(JSContext* cx,
                                                StackMacroAssembler& masm,
                                                Zone* zone, Mode mode,
                                                uint32_t num_capture_registers)
-    : NativeRegExpMacroAssembler(cx->isolate.ref(), zone, mode),
+    : NativeRegExpMacroAssembler(cx->isolate.ref(), zone),
       cx_(cx),
       masm_(masm),
       mode_(mode),
@@ -76,7 +75,7 @@ SMRegExpMacroAssembler::SMRegExpMacroAssembler(JSContext* cx,
 }
 
 int SMRegExpMacroAssembler::stack_limit_slack_slot_count() {
-  return Stack::kStackLimitSlackSlotCount;
+  return RegExpStack::kStackLimitSlackSlotCount;
 }
 
 void SMRegExpMacroAssembler::AdvanceCurrentPosition(int by) {
@@ -370,9 +369,10 @@ void SMRegExpMacroAssembler::CheckBitInTable(Handle<ByteArray> table,
   AddTable(std::move(rawTable));
 }
 
-void SMRegExpMacroAssembler::SkipUntilBitInTable(
-    int cp_offset, Handle<ByteArray> table, Handle<ByteArray> nibble_table,
-    int advance_by, Label* on_match, Label* on_no_match) {
+void SMRegExpMacroAssembler::SkipUntilBitInTable(int cp_offset,
+                                                 Handle<ByteArray> table,
+                                                 Handle<ByteArray> nibble_table,
+                                                 int advance_by) {
   
   
   
@@ -385,9 +385,10 @@ void SMRegExpMacroAssembler::SkipUntilBitInTable(
   Register tableReg = temp0_;
   masm_.movePtr(ImmPtr(rawTable->data()), tableReg);
 
+  Label cont;
   js::jit::Label scalarRepeat;
   masm_.bind(&scalarRepeat);
-  CheckPosition(cp_offset, on_no_match);
+  CheckPosition(cp_offset, &cont);
   LoadCurrentCharacterUnchecked(cp_offset, 1);
 
   Register index = current_character_;
@@ -397,10 +398,11 @@ void SMRegExpMacroAssembler::SkipUntilBitInTable(
   }
 
   masm_.load8ZeroExtend(BaseIndex(tableReg, index, js::jit::TimesOne), index);
-  masm_.branchTest32(Assembler::NonZero, index, index,
-                     LabelOrBacktrack(on_match));
+  masm_.branchTest32(Assembler::NonZero, index, index, cont.inner());
   AdvanceCurrentPosition(advance_by);
   masm_.jump(&scalarRepeat);
+
+  masm_.bind(cont.inner());
 
   
   AddTable(std::move(rawTable));
@@ -658,9 +660,10 @@ void SMRegExpMacroAssembler::CheckPosition(int cp_offset,
 }
 
 
-void SMRegExpMacroAssembler::CheckSpecialClassRanges(StandardCharacterSet type,
-                                                     Label* on_no_match) {
-  MOZ_ASSERT(CanOptimizeSpecialClassRanges(type));
+
+
+bool SMRegExpMacroAssembler::CheckSpecialCharacterClass(
+    StandardCharacterSet type, Label* on_no_match) {
   js::jit::Label* no_match = LabelOrBacktrack(on_no_match);
 
   
@@ -668,7 +671,9 @@ void SMRegExpMacroAssembler::CheckSpecialClassRanges(StandardCharacterSet type,
   switch (type) {
     case StandardCharacterSet::kWhitespace: {
       
-      MOZ_ASSERT(mode_ == LATIN1);
+      if (mode_ != LATIN1) {
+        return false;
+      }
       js::jit::Label success;
       
 
@@ -686,22 +691,22 @@ void SMRegExpMacroAssembler::CheckSpecialClassRanges(StandardCharacterSet type,
                      no_match);
 
       masm_.bind(&success);
-      break;
+      return true;
     }
     case StandardCharacterSet::kNotWhitespace:
       
-      MOZ_CRASH("unreachable");
+      return false;
     case StandardCharacterSet::kDigit:
       
       masm_.computeEffectiveAddress(Address(current_character_, -'0'), temp0_);
       masm_.branch32(Assembler::Above, temp0_, Imm32('9' - '0'), no_match);
-      break;
+      return true;
     case StandardCharacterSet::kNotDigit:
       
       masm_.computeEffectiveAddress(Address(current_character_, -'0'), temp0_);
       masm_.branch32(Assembler::BelowOrEqual, temp0_, Imm32('9' - '0'),
                      no_match);
-      break;
+      return true;
     case StandardCharacterSet::kNotLineTerminator:
       
       
@@ -723,7 +728,7 @@ void SMRegExpMacroAssembler::CheckSpecialClassRanges(StandardCharacterSet type,
         masm_.branch32(Assembler::BelowOrEqual, temp0_, Imm32(0x2029 - 0x2028),
                        no_match);
       }
-      break;
+      return true;
     case StandardCharacterSet::kWord:
       
       
@@ -734,33 +739,34 @@ void SMRegExpMacroAssembler::CheckSpecialClassRanges(StandardCharacterSet type,
         masm_.branch32(Assembler::Above, current_character_, Imm32('z'),
                        no_match);
       }
-      static_assert(arraysize(word_character_map_) > unibrow::Latin1::kMaxChar);
-      masm_.movePtr(ImmPtr(&word_character_map_), temp0_);
+      static_assert(arraysize(word_character_map) > unibrow::Latin1::kMaxChar);
+      masm_.movePtr(ImmPtr(word_character_map), temp0_);
       masm_.load8ZeroExtend(
           BaseIndex(temp0_, current_character_, js::jit::TimesOne), temp0_);
       masm_.branchTest32(Assembler::Zero, temp0_, temp0_, no_match);
-      break;
+      return true;
     case StandardCharacterSet::kNotWord: {
       
       js::jit::Label done;
       if (mode_ != LATIN1) {
         masm_.branch32(Assembler::Above, current_character_, Imm32('z'), &done);
       }
-      static_assert(arraysize(word_character_map_) > unibrow::Latin1::kMaxChar);
-      masm_.movePtr(ImmPtr(&word_character_map_), temp0_);
+      static_assert(arraysize(word_character_map) > unibrow::Latin1::kMaxChar);
+      masm_.movePtr(ImmPtr(word_character_map), temp0_);
       masm_.load8ZeroExtend(
           BaseIndex(temp0_, current_character_, js::jit::TimesOne), temp0_);
       masm_.branchTest32(Assembler::NonZero, temp0_, temp0_, no_match);
       if (mode_ != LATIN1) {
         masm_.bind(&done);
       }
-      break;
+      return true;
     }
       
       
       
     case StandardCharacterSet::kEverything:
-      break;
+      
+      return true;
     case StandardCharacterSet::kLineTerminator:
       
       masm_.xor32(Imm32(0x01), current_character_, temp0_);
@@ -781,8 +787,9 @@ void SMRegExpMacroAssembler::CheckSpecialClassRanges(StandardCharacterSet type,
                        no_match);
         masm_.bind(&done);
       }
-      break;
+      return true;
   }
+  return false;
 }
 
 void SMRegExpMacroAssembler::Fail() {
@@ -887,7 +894,7 @@ void SMRegExpMacroAssembler::PushRegister(int register_index,
                                           StackCheckFlag check_stack_limit) {
   masm_.loadPtr(register_location(register_index), temp0_);
   Push(temp0_);
-  if (check_stack_limit == StackCheckFlag::kCheckStackLimit) {
+  if (check_stack_limit) {
     CheckBacktrackStackLimit();
   }
 }
@@ -1006,8 +1013,8 @@ static Handle<HeapObject> DummyCode() {
 
 
 
-Handle<HeapObject> SMRegExpMacroAssembler::GetCode(Handle<RegExpData> data,
-                                                   Flags flags) {
+Handle<HeapObject> SMRegExpMacroAssembler::GetCode(Handle<String> source,
+                                                   RegExpFlags flags) {
   if (!cx_->zone()->ensureJitZoneExists(cx_)) {
     return DummyCode();
   }
@@ -1356,7 +1363,7 @@ void SMRegExpMacroAssembler::stackOverflowHandler() {
   volatileRegs.takeUnchecked(temp1_);
   masm_.PushRegsInMask(volatileRegs);
 
-  using Fn = bool (*)(Stack* regexp_stack);
+  using Fn = bool (*)(RegExpStack* regexp_stack);
   masm_.setupUnalignedABICall(temp0_);
   masm_.passABIArg(temp1_);
   masm_.callWithABI<Fn, ::js::irregexp::GrowBacktrackStack>();
@@ -1408,8 +1415,8 @@ uint32_t SMRegExpMacroAssembler::CaseInsensitiveCompareNonUnicode(
     if (c1 != c2) {
 #ifdef JS_HAS_INTL_API
       
-      c1 = CaseFolding::Canonicalize(c1);
-      c2 = CaseFolding::Canonicalize(c2);
+      c1 = RegExpCaseFolding::Canonicalize(c1);
+      c2 = RegExpCaseFolding::Canonicalize(c2);
 #else
       
       
@@ -1452,7 +1459,7 @@ uint32_t SMRegExpMacroAssembler::CaseInsensitiveCompareUnicode(
 }
 
 
-bool SMRegExpMacroAssembler::GrowBacktrackStack(Stack* regexp_stack) {
+bool SMRegExpMacroAssembler::GrowBacktrackStack(RegExpStack* regexp_stack) {
   js::AutoUnsafeCallWithABI unsafe;
   size_t size = regexp_stack->memory_size();
   return !!regexp_stack->EnsureCapacity(size * 2);
@@ -1468,6 +1475,5 @@ bool SMRegExpMacroAssembler::CanReadUnaligned() const {
 #endif
 }
 
-}  
 }  
 }  

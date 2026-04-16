@@ -9,39 +9,38 @@
 
 namespace v8 {
 namespace internal {
-namespace regexp {
 
-class Stack;
-
+class RegExpStack;
 
 
-class V8_NODISCARD StackScope final {
+
+class V8_NODISCARD RegExpStackScope final {
  public:
   
 
   
-  explicit StackScope(Isolate* isolate);
-  ~StackScope();  
-  StackScope(const StackScope&) = delete;
-  StackScope& operator=(const StackScope&) = delete;
+  explicit RegExpStackScope(Isolate* isolate);
+  ~RegExpStackScope();  
+  RegExpStackScope(const RegExpStackScope&) = delete;
+  RegExpStackScope& operator=(const RegExpStackScope&) = delete;
 
-  Stack* stack() const { return regexp_stack_; }
+  RegExpStack* stack() const { return regexp_stack_; }
 
  private:
-  Stack* const regexp_stack_;
+  RegExpStack* const regexp_stack_;
   const ptrdiff_t old_sp_top_delta_;
 };
 
 
 
 
-class Stack final {
+class RegExpStack final {
  public:
-  Stack(const Stack&) = delete;
-  Stack& operator=(const Stack&) = delete;
+  RegExpStack(const RegExpStack&) = delete;
+  RegExpStack& operator=(const RegExpStack&) = delete;
 
-  static Stack* New();
-  static void Delete(Stack* instance);
+  static RegExpStack* New();
+  static void Delete(RegExpStack* instance);
 
 #if defined(V8_TARGET_ARCH_PPC64) || defined(V8_TARGET_ARCH_S390X)
   static constexpr int kSlotSize = kSystemPointerSize;
@@ -93,8 +92,8 @@ class Stack final {
   
   static constexpr size_t kMaximumStackSize = 64 * MB;
 
-  Stack();
-  ~Stack();
+  RegExpStack();
+  ~RegExpStack();
 
  private:
   
@@ -123,7 +122,7 @@ class Stack final {
   
   
   struct ThreadLocal {
-    explicit ThreadLocal(Stack* regexp_stack) {
+    explicit ThreadLocal(RegExpStack* regexp_stack) {
       ResetToStaticStack(regexp_stack);
     }
 
@@ -141,8 +140,8 @@ class Stack final {
     Address limit_ = kNullAddress;
     bool owns_memory_ = false;  
 
-    void ResetToStaticStack(Stack* regexp_stack);
-    void ResetToStaticStackIfEmpty(Stack* regexp_stack) {
+    void ResetToStaticStack(RegExpStack* regexp_stack);
+    void ResetToStaticStackIfEmpty(RegExpStack* regexp_stack) {
       if (stack_pointer_ == memory_top_) ResetToStaticStack(regexp_stack);
     }
     void FreeAndInvalidate();
@@ -180,11 +179,10 @@ class Stack final {
 
   ThreadLocal thread_local_;
 
-  friend class internal::ExternalReference;
-  friend class StackScope;
+  friend class ExternalReference;
+  friend class RegExpStackScope;
 };
 
-}  
 }  
 }  
 

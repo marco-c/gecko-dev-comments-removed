@@ -7,49 +7,48 @@
 
 namespace v8 {
 namespace internal {
-namespace regexp {
 
-StackScope::StackScope(Isolate* isolate)
+RegExpStackScope::RegExpStackScope(Isolate* isolate)
     : regexp_stack_(isolate->regexp_stack()),
       old_sp_top_delta_(regexp_stack_->sp_top_delta()) {
   DCHECK(regexp_stack_->IsValid());
 }
 
-StackScope::~StackScope() {
+RegExpStackScope::~RegExpStackScope() {
   CHECK_EQ(old_sp_top_delta_, regexp_stack_->sp_top_delta());
   regexp_stack_->ResetIfEmpty();
 }
 
-Stack::Stack() : thread_local_(this) {}
+RegExpStack::RegExpStack() : thread_local_(this) {}
 
-Stack::~Stack() { thread_local_.FreeAndInvalidate(); }
+RegExpStack::~RegExpStack() { thread_local_.FreeAndInvalidate(); }
 
 #ifndef COMPILING_IRREGEXP_FOR_EXTERNAL_EMBEDDER
 
 
-Stack* Stack::New() {
+RegExpStack* RegExpStack::New() {
 #ifdef V8_ENABLE_SANDBOX_HARDWARE_SUPPORT
   
   
   
   VirtualAddressSpace* vas = GetPlatformVirtualAddressSpace();
-  CHECK_LT(sizeof(Stack), vas->allocation_granularity());
+  CHECK_LT(sizeof(RegExpStack), vas->allocation_granularity());
   Address regexp_stack_memory = vas->AllocatePages(
       VirtualAddressSpace::kNoHint, vas->allocation_granularity(),
       vas->allocation_granularity(), PagePermissions::kReadWrite);
   SandboxHardwareSupport::RegisterUnsafeSandboxExtensionMemory(
       regexp_stack_memory, vas->allocation_granularity());
-  return new (reinterpret_cast<void*>(regexp_stack_memory)) Stack();
+  return new (reinterpret_cast<void*>(regexp_stack_memory)) RegExpStack();
 #else
-  return new Stack();
+  return new RegExpStack();
 #endif  
 }
 
 
-void Stack::Delete(Stack* instance) {
+void RegExpStack::Delete(RegExpStack* instance) {
 #ifdef V8_ENABLE_SANDBOX_HARDWARE_SUPPORT
   
-  instance->~Stack();
+  instance->~RegExpStack();
   VirtualAddressSpace* vas = GetPlatformVirtualAddressSpace();
   Address page = reinterpret_cast<Address>(instance);
   DCHECK(IsAligned(page, vas->allocation_granularity()));
@@ -61,7 +60,7 @@ void Stack::Delete(Stack* instance) {
 
 #endif  
 
-char* Stack::ArchiveStack(char* to) {
+char* RegExpStack::ArchiveStack(char* to) {
   if (!thread_local_.owns_memory_) {
     
     
@@ -76,12 +75,13 @@ char* Stack::ArchiveStack(char* to) {
   return to + kThreadLocalSize;
 }
 
-char* Stack::RestoreStack(char* from) {
+
+char* RegExpStack::RestoreStack(char* from) {
   MemCopy(&thread_local_, reinterpret_cast<void*>(from), kThreadLocalSize);
   return from + kThreadLocalSize;
 }
 
-void Stack::ThreadLocal::ResetToStaticStack(Stack* regexp_stack) {
+void RegExpStack::ThreadLocal::ResetToStaticStack(RegExpStack* regexp_stack) {
   DeleteDynamicStack();
 
   memory_ = regexp_stack->static_stack_;
@@ -93,7 +93,7 @@ void Stack::ThreadLocal::ResetToStaticStack(Stack* regexp_stack) {
   owns_memory_ = false;
 }
 
-void Stack::ThreadLocal::FreeAndInvalidate() {
+void RegExpStack::ThreadLocal::FreeAndInvalidate() {
   DeleteDynamicStack();
 
   
@@ -106,7 +106,7 @@ void Stack::ThreadLocal::FreeAndInvalidate() {
 }
 
 
-uint8_t* Stack::ThreadLocal::NewDynamicStack(size_t size) {
+uint8_t* RegExpStack::ThreadLocal::NewDynamicStack(size_t size) {
 #ifdef V8_ENABLE_SANDBOX_HARDWARE_SUPPORT
   
   
@@ -128,7 +128,7 @@ uint8_t* Stack::ThreadLocal::NewDynamicStack(size_t size) {
   return new_memory;
 }
 
-void Stack::ThreadLocal::DeleteDynamicStack() {
+void RegExpStack::ThreadLocal::DeleteDynamicStack() {
   if (owns_memory_) {
 #ifdef V8_ENABLE_SANDBOX_HARDWARE_SUPPORT
     VirtualAddressSpace* vas = GetPlatformVirtualAddressSpace();
@@ -141,7 +141,7 @@ void Stack::ThreadLocal::DeleteDynamicStack() {
   }
 }
 
-Address Stack::EnsureCapacity(size_t size) {
+Address RegExpStack::EnsureCapacity(size_t size) {
   if (size > kMaximumStackSize) return kNullAddress;
   if (thread_local_.memory_size_ < size) {
     if (size < kMinimumDynamicStackSize) size = kMinimumDynamicStackSize;
@@ -164,6 +164,6 @@ Address Stack::EnsureCapacity(size_t size) {
   return reinterpret_cast<Address>(thread_local_.memory_top_);
 }
 
-}  
+
 }  
 }  

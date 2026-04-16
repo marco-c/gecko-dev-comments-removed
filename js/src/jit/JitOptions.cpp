@@ -384,15 +384,9 @@ DefaultJitOptions::DefaultJitOptions() {
   
   SET_DEFAULT(trace_regexp_assembler, false);
   
-  SET_DEFAULT(trace_regexp_compiler, false);
-  
-  SET_DEFAULT(trace_regexp_graph_building, false);
-  
   SET_DEFAULT(trace_regexp_bytecodes, false);
   
   SET_DEFAULT(trace_regexp_peephole_optimization, false);
-  
-  SET_DEFAULT(log_colour, false);
 
   
 
@@ -414,15 +408,6 @@ DefaultJitOptions::DefaultJitOptions() {
   
   
   SET_DEFAULT(regexp_optimization, true);
-  
-  
-  SET_DEFAULT(regexp_quick_check, true);
-  SET_DEFAULT(regexp_unroll, true);
-  
-  SET_DEFAULT(regexp_bytecode_analysis, false);
-  SET_DEFAULT(trace_regexp_bytecode_analysis, false);
-  
-  SET_DEFAULT(enable_slow_asserts, true);
   
   SET_DEFAULT(regexp_peephole_optimization,
               std::endian::native == std::endian::little);
