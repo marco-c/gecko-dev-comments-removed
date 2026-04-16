@@ -1510,7 +1510,10 @@ var SidebarController = {
     );
     this._panelResizeObserver.observe(this._box);
 
-    this._launcherDropHandler = () => (this._state.launcherDragActive = false);
+    this._launcherDropHandler = () => {
+      this._state.launcherDragActive = false;
+      this.updatePinnedTabsHeightOnResize();
+    };
     this._launcherSplitter.addEventListener(
       "command",
       this._launcherDropHandler
@@ -1534,15 +1537,19 @@ var SidebarController = {
       }
     });
 
-    this._itemsWrapperResizeObserver = new ResizeObserver(async () => {
+    this._itemsWrapperResizeObserver = new ResizeObserver(async ([entry]) => {
       await window.promiseDocumentFlushed(() => {
-        
         requestAnimationFrame(() => {
-          
           if (this._pinnedTabsContainer.hasAttribute("dragActive")) {
             return;
           }
-
+          
+          
+          const newWidth = entry.contentBoxSize[0].inlineSize;
+          if (newWidth === this._pinnedTabsItemsWrapperWidth) {
+            return;
+          }
+          this._pinnedTabsItemsWrapperWidth = newWidth;
           this.updatePinnedTabsHeightOnResize();
         });
       });
@@ -1597,17 +1604,32 @@ var SidebarController = {
   },
 
   updatePinnedTabsHeightOnResize() {
+    
+    
+    if (this.isLauncherDragging) {
+      return;
+    }
+
+    const preferredHeight = this._state.launcherExpanded
+      ? this._state.expandedPinnedTabsHeight
+      : this._state.collapsedPinnedTabsHeight;
+
+    if (!preferredHeight || !this._pinnedTabsContainer.childElementCount) {
+      return;
+    }
+
+    if (this.isLauncherDragging) {
+      
+      this._pinnedTabsContainer.style.height = "";
+    }
+
     let itemsWrapperHeight = window.windowUtils.getBoundsWithoutFlushing(
       this._pinnedTabsItemsWrapper
     ).height;
-    if (this._state.pinnedTabsHeight > itemsWrapperHeight) {
-      this._state.pinnedTabsHeight = itemsWrapperHeight;
-      if (this._state.launcherExpanded) {
-        this._state.expandedPinnedTabsHeight = this._state.pinnedTabsHeight;
-      } else {
-        this._state.collapsedPinnedTabsHeight = this._state.pinnedTabsHeight;
-      }
-    }
+
+    
+    const clampedHeight = Math.min(preferredHeight, itemsWrapperHeight);
+    this._pinnedTabsContainer.style.height = `${clampedHeight}px`;
   },
 
   
