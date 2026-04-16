@@ -261,7 +261,7 @@ struct PromiseReactionRecordBuilder {
 
 
 [[nodiscard]] PromiseObject* CreatePromiseObjectWithoutResolutionFunctions(
-    JSContext* cx);
+    JSContext* cx, int32_t extraFlags = 0);
 
 [[nodiscard]] bool ResolvePromiseInternal(JSContext* cx,
                                           JS::Handle<JSObject*> promise,
