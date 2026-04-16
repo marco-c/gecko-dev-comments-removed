@@ -205,7 +205,29 @@ async function assertFilesExist(parentPath, testFilesArray) {
     let copiedFileName = PathUtils.join(parentPath, ...[].concat(path));
     Assert.ok(
       await IOUtils.exists(copiedFileName),
-      `${copiedFileName} should exist in the staging folder`
+      `${copiedFileName} should exist`
+    );
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function assertFilesDoNotExist(parentPath, testFilesArray) {
+  for (let { path } of testFilesArray) {
+    let copiedFileName = PathUtils.join(parentPath, ...[].concat(path));
+    Assert.ok(
+      !(await IOUtils.exists(copiedFileName)),
+      `${copiedFileName} should not exist`
     );
   }
 }

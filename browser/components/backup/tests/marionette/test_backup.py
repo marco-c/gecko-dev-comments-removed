@@ -2,6 +2,7 @@
 
 
 
+import filecmp
 import os
 import shutil
 import tempfile
@@ -29,6 +30,7 @@ class BackupTest(MarionetteTestCase):
             
             
             "browser.sessionstore.resume_from_crash": True,
+            "browser.newtabpage.activity-stream.testing.shouldInitializeFeeds": True,
         })
 
         self.marionette.set_context("chrome")
@@ -54,6 +56,7 @@ class BackupTest(MarionetteTestCase):
         self.add_test_history()
         self.add_test_preferences()
         self.add_test_permissions()
+        self.add_test_newtab_wallpaper()
 
         
         
@@ -254,6 +257,7 @@ class BackupTest(MarionetteTestCase):
         self.verify_recovered_permissions()
         self.verify_recovered_payment_methods(osKeyStoreLabel)
         self.verify_recovered_sessionstore()
+        self.verify_recovered_newtab_wallpaper()
 
         
         self.marionette.execute_async_script(
@@ -836,6 +840,21 @@ class BackupTest(MarionetteTestCase):
         """
         )
 
+    def add_test_newtab_wallpaper(self):
+        wallpaperPath = os.path.join(os.path.dirname(__file__), "newtab-wallpaper.png")
+        self.marionette.execute_async_script(
+            """
+          let [wallpaperPath, outerResolve] = arguments;
+          (async () => {
+            let feed = AboutNewTab.activityStream.store.feeds.get("feeds.wallpaperfeed");
+            let wallpaperFile = await File.createFromNsIFile(await IOUtils.getFile(wallpaperPath));
+            await feed.wallpaperUpload(wallpaperFile);
+            Services.prefs.setStringPref("browser.newtabpage.activity-stream.newtabWallpapers.wallpaper", "custom");
+          })().then(outerResolve);
+        """,
+            script_args=[wallpaperPath],
+        )
+
     def verify_recovered_permissions(self):
         permissionExists = self.marionette.execute_script(
             """
@@ -952,3 +971,21 @@ class BackupTest(MarionetteTestCase):
 
         self.assertEqual(tabCount, 1)
         self.assertEqual(url, "about:mozilla")
+
+    def verify_recovered_newtab_wallpaper(self):
+        [isCustom, wallpaperPath] = self.marionette.execute_script(
+            """
+          const isCustom = Services.prefs.getStringPref("browser.newtabpage.activity-stream.newtabWallpapers.wallpaper", "") == "custom";
+          const wallpaperUUID = Services.prefs.getStringPref("browser.newtabpage.activity-stream.newtabWallpapers.customWallpaper.uuid", "");
+          const wallpaperPath = PathUtils.join(PathUtils.profileDir, "wallpaper", wallpaperUUID);
+          return [isCustom, wallpaperPath];
+        """
+        )
+
+        self.assertTrue(isCustom)
+        expectedWallpaperPath = os.path.join(
+            os.path.dirname(__file__), "newtab-wallpaper.png"
+        )
+        self.assertTrue(
+            filecmp.cmp(wallpaperPath, expectedWallpaperPath, shallow=False)
+        )
