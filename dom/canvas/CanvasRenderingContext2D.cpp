@@ -1016,6 +1016,8 @@ NS_IMPL_CYCLE_COLLECTING_RELEASE(CanvasRenderingContext2D)
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(CanvasRenderingContext2D)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(CanvasRenderingContext2D)
+  tmp->RemoveShutdownObserver();
+  tmp->OnShutdown();
   
   
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mCanvasElement)
