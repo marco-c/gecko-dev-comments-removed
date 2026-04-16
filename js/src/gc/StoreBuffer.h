@@ -138,7 +138,6 @@ class StoreBuffer {
   struct WholeCellBuffer {
     UniquePtr<LifoAlloc> storage_;
     size_t maxSize_ = 0;
-    ArenaCellSet* sweepHead_ = nullptr;
     const Cell* last_ = nullptr;
 
     WholeCellBuffer() = default;
@@ -653,7 +652,7 @@ class ArenaCellSet {
   }
 
   
-  bool trace(TenuringTracer& mover);
+  void trace(TenuringTracer& mover);
 
   
   
