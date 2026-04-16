@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "jit/x64/MacroAssembler-x64.h"
 
 #include "jit/BaselineFrame.h"
@@ -776,7 +774,7 @@ void MacroAssemblerX64::handleFailureWithHandlerTail(
 
   
   bind(&wasmCatch);
-  wasm::GenerateJumpToCatchHandler(asMasm(), rsp, rax, rbx);
+  wasm::GenerateJumpToCatchHandler(asMasm(), rsp, rax, rbx, rcx);
 }
 
 void MacroAssemblerX64::profilerEnterFrame(Register framePtr,
@@ -996,8 +994,8 @@ void MacroAssembler::callWithABIPost(uint32_t stackAdjust, ABIType result) {
 }
 
 static bool IsIntArgReg(Register reg) {
-  for (uint32_t i = 0; i < NumIntArgRegs; i++) {
-    if (IntArgRegs[i] == reg) {
+  for (auto IntArgReg : IntArgRegs) {
+    if (IntArgReg == reg) {
       return true;
     }
   }

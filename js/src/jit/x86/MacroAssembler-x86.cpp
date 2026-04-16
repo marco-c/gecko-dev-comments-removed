@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "jit/x86/MacroAssembler-x86.h"
 
 #include "mozilla/Casting.h"
@@ -728,7 +726,7 @@ void MacroAssemblerX86::handleFailureWithHandlerTail(
 
   
   bind(&wasmCatch);
-  wasm::GenerateJumpToCatchHandler(asMasm(), esp, eax, ebx);
+  wasm::GenerateJumpToCatchHandler(asMasm(), esp, eax, ebx, ecx);
 }
 
 void MacroAssemblerX86::profilerEnterFrame(Register framePtr,

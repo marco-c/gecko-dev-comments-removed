@@ -1217,7 +1217,7 @@ bool DebugAPI::slowPathOnLeaveFrame(JSContext* cx, AbstractFramePtr frame,
         
         
         
-        if (frameobj->isOnStack() && frameobj->onPopHandler()) {
+        if (frameobj->isOnStack(cx) && frameobj->onPopHandler()) {
           OnPopHandler* handler = frameobj->onPopHandler();
 
           bool result = dbg->enterDebuggerHook(cx, [&]() -> bool {
@@ -2760,7 +2760,7 @@ bool DebugAPI::onSingleStep(JSContext* cx) {
         MOZ_ASSERT(&frameObj.unwrappedGenerator() == &genObj);
 
         
-        if (frameObj.isOnStack()) {
+        if (frameObj.isOnStack(cx)) {
           continue;
         }
 
@@ -6745,7 +6745,7 @@ bool Debugger::CallData::adoptFrame() {
   }
 
   Rooted<DebuggerFrame*> adoptedFrame(cx);
-  if (frameObj->isOnStack()) {
+  if (frameObj->isOnStack(cx)) {
     FrameIter iter = frameObj->getFrameIter(cx);
     if (!dbg->observesFrame(iter)) {
       JS_ReportErrorASCII(cx, "Debugger.Frame's global is not a debuggee");

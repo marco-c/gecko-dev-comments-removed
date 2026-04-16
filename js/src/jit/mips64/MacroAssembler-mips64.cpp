@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "jit/mips64/MacroAssembler-mips64.h"
 
 #include "mozilla/DebugOnly.h"
@@ -2457,7 +2455,7 @@ void MacroAssemblerMIPS64Compat::handleFailureWithHandlerTail(
 
   
   bind(&wasmCatch);
-  wasm::GenerateJumpToCatchHandler(asMasm(), sp, a1, a2);
+  wasm::GenerateJumpToCatchHandler(asMasm(), sp, a1, a2, a3);
 }
 
 CodeOffset MacroAssemblerMIPS64Compat::toggledJump(Label* label) {

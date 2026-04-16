@@ -1041,6 +1041,12 @@ class Code : public ShareableBase<Code> {
   
   uint32_t updateCallRefMetricsStubOffset_;
 
+#ifdef ENABLE_WASM_JSPI
+  
+  
+  uint32_t contBaseFrameOffset_;
+#endif
+
   
   
   Tiers completeTiers() const;
@@ -1134,6 +1140,11 @@ class Code : public ShareableBase<Code> {
   void setUpdateCallRefMetricsStubOffset(uint32_t offs) {
     updateCallRefMetricsStubOffset_ = offs;
   }
+
+#ifdef ENABLE_WASM_JSPI
+  uint32_t contBaseFrameOffset() const { return contBaseFrameOffset_; }
+  void setContBaseFrameOffset(uint32_t offs) { contBaseFrameOffset_ = offs; }
+#endif
 
   const FuncImport& funcImport(uint32_t funcIndex) const {
     return funcImports_[funcIndex];
