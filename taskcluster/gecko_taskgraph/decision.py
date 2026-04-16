@@ -396,12 +396,6 @@ def get_decision_parameters(graph_config, options):
     if options.get("target_tasks_method"):
         parameters["target_tasks_method"] = options["target_tasks_method"]
 
-    
-    
-    
-    if "DONTBUILD" in commit_message and options["tasks_for"] == "hg-push":
-        parameters["target_tasks_method"] = "nothing"
-
     if options.get("include_push_tasks"):
         get_existing_tasks(options.get("rebuild_kinds", []), parameters, graph_config)
 
@@ -424,6 +418,13 @@ def get_decision_parameters(graph_config, options):
 
     if options.get("optimize_target_tasks") is not None:
         parameters["optimize_target_tasks"] = options["optimize_target_tasks"]
+
+    
+    
+    
+    parameters["dontbuild"] = (
+        "DONTBUILD" in commit_message and options["tasks_for"] == "hg-push"
+    )
 
     
     parameters["backstop"] = is_backstop(parameters)

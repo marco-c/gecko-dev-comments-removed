@@ -55,9 +55,7 @@ def is_backstop(
     if project not in integration_projects:
         return True
 
-    
-    
-    if params["target_tasks_method"] == "nothing":
+    if params.get("dontbuild"):
         return False
 
     
