@@ -481,6 +481,7 @@ class RuleEditor extends EventEmitter {
           
           
           hasContainer: true,
+          matched: true,
         },
       ];
     }
@@ -495,13 +496,13 @@ class RuleEditor extends EventEmitter {
       conditionIndex < containerQueryData.conditions.length;
       conditionIndex++
     ) {
-      const { containerName, containerQuery, hasContainer } =
+      const { containerName, containerQuery, hasContainer, matched } =
         containerQueryData.conditions[conditionIndex];
 
       const containerConditionEl = createChild(containerQueryEl, "span", {
         class:
           "container-condition has-tooltip" +
-          (!hasContainer ? " unmatched" : ""),
+          (!hasContainer || !matched ? " unmatched" : ""),
         "data-condition-index": conditionIndex,
       });
 
