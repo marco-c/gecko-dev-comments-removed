@@ -453,6 +453,10 @@ void StructuredCloneHolder::Read(JSContext* aCx,
 
   StructuredCloneHolderBase::Read(aCx, aValue, aCloneDataPolicy, aRv);
 
+  MaybeClearTransferredState();
+}
+
+void StructuredCloneHolder::MaybeClearTransferredState() {
   
   
   if (mSupportsTransferring) {

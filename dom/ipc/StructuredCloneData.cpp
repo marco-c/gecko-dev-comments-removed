@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "StructuredCloneData.h"
 
 #include "ipc/IPCMessageUtilsSpecializations.h"
@@ -49,6 +47,10 @@ void StructuredCloneData::WriteIPCParams(IPC::MessageWriter* aWriter) {
     std::apply([&](auto&... member) { WriteParams(aWriter, member...); },
                TransferableAttachmentArrays());
   }
+
+  
+  
+  MaybeClearTransferredState();
 }
 
 bool StructuredCloneData::ReadIPCParams(IPC::MessageReader* aReader) {

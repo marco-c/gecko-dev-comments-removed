@@ -358,6 +358,10 @@ class StructuredCloneHolder : public StructuredCloneHolderBase {
  protected:
   void SameProcessScopeRequired(bool* aSameProcessScopeRequired);
 
+  
+  
+  void MaybeClearTransferredState();
+
   already_AddRefed<MessagePort> ReceiveMessagePort(nsIGlobalObject* aGlobal,
                                                    uint64_t aIndex);
 
