@@ -65,6 +65,8 @@ UNCOMMON_TRY_TASK_LABELS = [
     r"nightly-simulation",
     
     r"notarization",
+    
+    "upload-symbols",
 ]
 
 
