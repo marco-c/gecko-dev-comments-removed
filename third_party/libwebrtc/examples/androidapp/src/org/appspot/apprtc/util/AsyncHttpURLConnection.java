@@ -108,6 +108,7 @@ public class AsyncHttpURLConnection {
   }
 
   
+  @SuppressWarnings("ScannerUseDelimiter")
   private static String drainStream(InputStream in) {
     Scanner s = new Scanner(in, "UTF-8").useDelimiter("\\A");
     return s.hasNext() ? s.next() : "";
