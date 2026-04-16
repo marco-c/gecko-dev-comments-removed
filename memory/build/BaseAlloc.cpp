@@ -308,9 +308,12 @@ BaseAllocCell* BaseAlloc::decommitted_alloc(base_alloc_size_t aSize) {
     return nullptr;
   }
 
-  mStats.mCommitted += result->mBytesCommitted;
-  if (result->mNewCell) {
-    Link(result->mNewCell);
+  mStats.mCommitted += result->mChange;
+  if (result->mNewCell1) {
+    Link(result->mNewCell1);
+  }
+  if (result->mNewCell2) {
+    Link(result->mNewCell2);
   }
 
   MaybeTrim(cell, aSize);
@@ -501,11 +504,36 @@ void BaseAlloc::MaybeTrim(BaseAllocCell* aCell, base_alloc_size_t aSizeRequest,
   BaseAllocCell* next = aCell->Split(new_addr);
   MOZ_ASSERT(next);
 
-  if (aDecommit) {
-    mStats.mCommitted -= next->Decommit();
+  if (aDecommit && (next->Size() >= kDecommitThreshold)) {
+    auto result = next->Decommit();
+    mStats.mCommitted -= result.mChange;
+    if (result.mNewCell1) {
+      Link(result.mNewCell1);
+    }
+    if (result.mNewCell2) {
+      Link(result.mNewCell2);
+    }
   }
 
   Link(next);
+}
+
+bool BaseAllocCell::CanSplitHere(uintptr_t aNextAddr) {
+  MOZ_ASSERT(Align(aNextAddr) == aNextAddr);
+
+  if (Align(reinterpret_cast<uintptr_t>(this) + BaseAlloc::kBaseQuantum +
+            sizeof(BaseAllocMetadata)) > aNextAddr) {
+    
+    return false;
+  }
+
+  if (aNextAddr + BaseAlloc::kBaseQuantum >
+      reinterpret_cast<uintptr_t>(this) + Size()) {
+    
+    return false;
+  }
+
+  return true;
 }
 
 BaseAllocCell* BaseAllocCell::Split(uintptr_t aNewAddr) {
@@ -534,79 +562,117 @@ BaseAllocCell* BaseAllocCell::Split(uintptr_t aNewAddr) {
   return right;
 }
 
-size_t BaseAllocCell::Decommit() {
+BaseAllocCell::DeCommitResult BaseAllocCell::Decommit() {
   
   uintptr_t start = REAL_PAGE_CEILING(reinterpret_cast<uintptr_t>(this) +
                                       sizeof(BaseAllocCell));
-
   uintptr_t end = REAL_PAGE_FLOOR(reinterpret_cast<uintptr_t>(RightMetadata()));
   if (start >= end) {
-    return 0;
+    return DeCommitResult(0);
   }
 
   uintptr_t nbytes = end - start;
-  pages_decommit(reinterpret_cast<void*>(start), nbytes);
-  mCommitted = false;
 
-  Log("Decommitting in cell %p: %p - %p, %zu bytes\n", this, start, end,
-      nbytes);
+  
+  uintptr_t boundary = Align(end + BaseAlloc::kBaseQuantum);
+  BaseAllocCell* end_cell = CanSplitHere(boundary) ? Split(boundary) : nullptr;
 
-  return nbytes;
+  boundary = Align(start - kCacheLineSize + BaseAlloc::kBaseQuantum);
+  BaseAllocCell* cell = CanSplitHere(boundary) ? Split(boundary) : nullptr;
+
+  if (cell) {
+    cell->DoDecommit(start, nbytes);
+  } else {
+    DoDecommit(start, nbytes);
+  }
+
+  return DeCommitResult(nbytes, cell, end_cell);
 }
 
-Maybe<BaseAllocCell::CommitResult> BaseAllocCell::Commit(
+void BaseAllocCell::DoDecommit(uintptr_t aFirstDecommit, uintptr_t aNBytes) {
+  MOZ_ASSERT(reinterpret_cast<uintptr_t>(this) + sizeof(BaseAllocCell) <=
+             aFirstDecommit);
+  MOZ_ASSERT(aFirstDecommit + aNBytes <=
+             reinterpret_cast<uintptr_t>(this) + Size());
+
+  pages_decommit(reinterpret_cast<void*>(aFirstDecommit), aNBytes);
+  mCommitted = false;
+
+  Log("Decommitting in cell %p: %p - %p, %zu bytes\n", this, aFirstDecommit,
+      aFirstDecommit + aNBytes, aNBytes);
+}
+
+Maybe<BaseAllocCell::DeCommitResult> BaseAllocCell::Commit(
     base_alloc_size_t aSizeReq) {
   MOZ_ASSERT(!mCommitted);
+  MOZ_ASSERT(Size() >= aSizeReq);
 
   
   uintptr_t last_decommitted =
       REAL_PAGE_FLOOR(reinterpret_cast<uintptr_t>(RightMetadata()));
 
   
-  uintptr_t addr_start = REAL_PAGE_CEILING(reinterpret_cast<uintptr_t>(this) +
-                                           sizeof(BaseAllocCell));
+  uintptr_t first_decommitted = REAL_PAGE_CEILING(
+      reinterpret_cast<uintptr_t>(this) + sizeof(BaseAllocCell));
 
-  uintptr_t split_addr = CanSplit(aSizeReq);
+  MOZ_ASSERT(first_decommitted < last_decommitted);
 
   
-  uintptr_t addr_end;
-  bool whole_cell = false;
-  if (split_addr == 0) {
-    
-    addr_end = last_decommitted;
-    whole_cell = true;
-  } else {
-    
-    addr_end = REAL_PAGE_CEILING(split_addr + sizeof(BaseAllocCell));
-    if (addr_end >= last_decommitted) {
-      
-      addr_end = last_decommitted;
-      whole_cell = true;
-    }
-  }
-  MOZ_ASSERT(addr_start <= addr_end);
-  MOZ_ASSERT(addr_end <= reinterpret_cast<uintptr_t>(RightMetadata()));
+  
+  
+  
+  
+  
+  uintptr_t new_first_decommitted =
+      REAL_PAGE_CEILING(Align(reinterpret_cast<uintptr_t>(this) + aSizeReq +
+                              BaseAlloc::kBaseQuantum) +
+                        sizeof(BaseAllocCell));
 
-  if (addr_start < addr_end) {
-    Log("Committing %s cell %p: %p - %p, %zu bytes\n",
-        split_addr == 0 ? "whole" : "part", this, addr_start, addr_end,
-        addr_end - addr_start);
+  
+  
+  
+  
+  MOZ_ASSERT(new_first_decommitted <=
+             REAL_PAGE_CEILING(RightCellRaw() + sizeof(BaseAllocCell)));
+  new_first_decommitted = std::min(new_first_decommitted, last_decommitted);
 
+  MOZ_ASSERT(first_decommitted <= new_first_decommitted);
+
+  if (first_decommitted == new_first_decommitted) {
     
-    if (!pages_commit(reinterpret_cast<void*>(addr_start),
-                      addr_end - addr_start)) {
+    
+    
+    uintptr_t split_addr = CanSplit(aSizeReq);
+    if (split_addr == 0) {
       return Nothing();
     }
+    MOZ_ASSERT(split_addr < first_decommitted);
+    BaseAllocCell* cell = Split(split_addr);
+    mCommitted = true;
+    cell->mCommitted = false;
+    return Some(DeCommitResult(0, cell));
   }
 
-  BaseAllocCell* new_cell = nullptr;
-  if (split_addr != 0) {
-    new_cell = Split(split_addr);
-    new_cell->mCommitted = whole_cell;
+  bool whole_cell = new_first_decommitted == last_decommitted;
+  Log("Committing %s cell %p: %p - %p, %zu bytes\n",
+      whole_cell ? "whole" : "part", this, first_decommitted,
+      new_first_decommitted, new_first_decommitted - first_decommitted);
+
+  
+  if (!pages_commit(reinterpret_cast<void*>(first_decommitted),
+                    new_first_decommitted - first_decommitted)) {
+    return Nothing();
   }
   mCommitted = true;
 
-  return Some(CommitResult(addr_end - addr_start, new_cell));
+  if (whole_cell) {
+    return Some(DeCommitResult(new_first_decommitted - first_decommitted));
+  }
+
+  BaseAllocCell* cell = Split(new_first_decommitted - BaseAlloc::kBaseQuantum);
+  cell->mCommitted = false;
+
+  return Some(DeCommitResult(new_first_decommitted - first_decommitted, cell));
 }
 
 #if BASE_ALLOC_LOGGING
