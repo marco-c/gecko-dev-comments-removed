@@ -92,6 +92,8 @@ void UpdateRtpAuthTag(ArrayView<uint8_t> rtp,
   uint8_t* auth_tag = rtp.data() + (rtp.size() - tag_length);
 
   
+  
+  RTC_DCHECK_LE(tag_length, sizeof(kFakeAuthTag));
   RTC_DCHECK_EQ(0, memcmp(auth_tag, kFakeAuthTag, tag_length));
 
   
