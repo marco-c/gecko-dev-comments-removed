@@ -372,7 +372,8 @@ void Navigation::InitializeHistoryEntries(
 
 
 void Navigation::UpdateEntriesForSameDocumentNavigation(
-    SessionHistoryInfo* aDestinationSHE, NavigationType aNavigationType) {
+    SessionHistoryInfo* aDestinationSHE, NavigationType aNavigationType,
+    bool aFiredNavigateEvent) {
   
   if (HasEntriesAndEventsDisabled()) {
     return;
@@ -432,7 +433,8 @@ void Navigation::UpdateEntriesForSameDocumentNavigation(
     entry->ResetIndexForDisposal();
   }
 
-  RefPtr ongoingNavigateEvent = mOngoingNavigateEvent;
+  RefPtr ongoingNavigateEvent =
+      aFiredNavigateEvent ? mOngoingNavigateEvent : nullptr;
   RefPtr ongoingAPIMethodTracker = mOngoingAPIMethodTracker;
 
   {
@@ -530,7 +532,7 @@ struct NavigationWaitForAllScope final : public nsISupports,
   RefPtr<NavigationDestination> mDestination;
 
  private:
-  ~NavigationWaitForAllScope() {}
+  ~NavigationWaitForAllScope() = default;
 
  public:
   
@@ -825,37 +827,8 @@ void Navigation::RunNavigateEventHandlerSteps(
             }
           };
 
-  if (tracker && !StaticPrefs::dom_navigation_api_internal_method_tracker()) {
-    
-    
-    
-    for (auto& promise : promiseList) {
-      (void)promise->SetAnyPromiseIsHandled();
-    }
-
-    LOG_FMTD("Waiting for committed");
-    tracker->CommittedPromise()->AddCallbacksWithCycleCollectedArgs(
-        [successSteps, cancelSteps](JSContext*, JS::Handle<JS::Value>,
-                                    ErrorResult&,
-                                    nsIGlobalObject* aGlobalObject,
-                                    const Span<RefPtr<Promise>>& aPromiseList,
-                                    NavigationWaitForAllScope* aScope)
-            MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
-              Promise::WaitForAll(aGlobalObject, aPromiseList, successSteps,
-                                  cancelSteps, aScope);
-            },
-        [](JSContext*, JS::Handle<JS::Value>, ErrorResult&, nsIGlobalObject*,
-           const Span<RefPtr<Promise>>&, NavigationWaitForAllScope*) {},
-        nsCOMPtr(globalObject),
-        nsTArray<RefPtr<Promise>>(std::move(promiseList)),
-        RefPtr<NavigationWaitForAllScope>(scope));
-  } else {
-    LOG_FMTD("No API method tracker, not waiting for committed");
-    
-    
-    Promise::WaitForAll(globalObject, promiseList, successSteps, cancelSteps,
-                        scope);
-  }
+  Promise::WaitForAll(globalObject, promiseList, successSteps, cancelSteps,
+                      scope);
 }
 
 
@@ -1665,19 +1638,6 @@ nsresult Navigation::FireErrorEvent(const nsAString& aName,
   return rv.StealNSResult();
 }
 
-already_AddRefed<NavigationAPIMethodTracker> CreateInternalTracker(
-    Navigation* aNavigation) {
-  RefPtr committedPromise =
-      Promise::CreateInfallible(aNavigation->GetOwnerGlobal());
-  (void)committedPromise->SetAnyPromiseIsHandled();
-  RefPtr finishedPromise = Promise::CreateResolvedWithUndefined(
-      aNavigation->GetOwnerGlobal(), IgnoreErrors());
-  return MakeAndAddRef<NavigationAPIMethodTracker>(
-      aNavigation, Nothing(), JS::UndefinedHandleValue,
-       nullptr,
-       nullptr, committedPromise, finishedPromise);
-}
-
 
 bool Navigation::InnerFireNavigateEvent(
     JSContext* aCx, NavigationType aNavigationType,
@@ -1725,8 +1685,6 @@ bool Navigation::InnerFireNavigateEvent(
   
   if (apiMethodTracker) {
     apiMethodTracker->MarkAsNotPending();
-  } else if (StaticPrefs::dom_navigation_api_internal_method_tracker()) {
-    apiMethodTracker = CreateInternalTracker(this);
   }
 
   
