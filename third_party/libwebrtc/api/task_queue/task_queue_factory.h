@@ -28,6 +28,10 @@ class TaskQueueFactory {
     
     kHigh,
     
+    kVideo,
+    
+    kAudio,
+    
     kLow,
 
     

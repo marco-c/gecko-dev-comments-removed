@@ -31,11 +31,16 @@
 namespace webrtc {
 namespace {
 
+
+
+
 int TaskQueuePriorityToGCD(TaskQueueFactory::Priority priority) {
   switch (priority) {
     case TaskQueueFactory::Priority::kNormal:
       return DISPATCH_QUEUE_PRIORITY_DEFAULT;
     case TaskQueueFactory::Priority::kHigh:
+    case TaskQueueFactory::Priority::kAudio:
+    case TaskQueueFactory::Priority::kVideo:
       return DISPATCH_QUEUE_PRIORITY_HIGH;
     case TaskQueueFactory::Priority::kLow:
       return DISPATCH_QUEUE_PRIORITY_LOW;
