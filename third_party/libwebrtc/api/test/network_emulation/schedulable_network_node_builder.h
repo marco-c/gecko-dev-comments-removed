@@ -15,6 +15,7 @@
 
 #include "absl/functional/any_invocable.h"
 #include "api/test/network_emulation/network_config_schedule.pb.h"
+#include "api/test/network_emulation/network_queue.h"
 #include "api/test/network_emulation_manager.h"
 #include "api/units/timestamp.h"
 
@@ -31,6 +32,7 @@ class SchedulableNetworkNodeBuilder {
   
   
   void set_start_condition(absl::AnyInvocable<bool(Timestamp)> start_condition);
+  void set_queue_factory(NetworkQueueFactory& queue_factory);
 
   
   
@@ -41,6 +43,7 @@ class SchedulableNetworkNodeBuilder {
   NetworkEmulationManager& net_;
   network_behaviour::NetworkConfigSchedule schedule_;
   absl::AnyInvocable<bool(Timestamp)> start_condition_;
+  NetworkQueueFactory* queue_factory_ = nullptr;
 };
 
 }  
