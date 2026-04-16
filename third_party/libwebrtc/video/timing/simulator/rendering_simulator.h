@@ -138,14 +138,14 @@ class RenderingSimulator {
     
     
     
-    std::optional<TimeDelta> RenderedExcessMargin() const {
+    std::optional<TimeDelta> RenderExcessMargin() const {
       TimeDelta margin = RenderMargin();
       if (margin < TimeDelta::Zero()) {
         return std::nullopt;
       }
       return margin;
     }
-    std::optional<TimeDelta> RenderedDeficitMargin() const {
+    std::optional<TimeDelta> RenderDeficitMargin() const {
       TimeDelta margin = RenderMargin();
       if (margin > TimeDelta::Zero()) {
         return std::nullopt;
