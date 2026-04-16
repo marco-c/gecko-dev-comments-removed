@@ -70,8 +70,8 @@ void ConnectionEntry::RemoveConnectionAttempt(ConnectionAttempt* sock,
   mConnectionAttemptPool->RemoveConnectionAttempt(sock, abandon);
 }
 
-void ConnectionEntry::CloseAllConnectionAttempts() {
-  mConnectionAttemptPool->CloseAllConnectionAttempts();
+void ConnectionEntry::CloseAllConnectionAttempts(bool aReenqueueTransaction) {
+  mConnectionAttemptPool->CloseAllConnectionAttempts(aReenqueueTransaction);
 }
 
 void ConnectionEntry::DisallowHttp2() {
@@ -590,9 +590,8 @@ void ConnectionEntry::MakeAllDontReuseExcept(HttpConnectionBase* conn) {
   
   
   
-  
   if (!mConnInfo->GetFallbackConnection()) {
-    CloseAllConnectionAttempts();
+    CloseAllConnectionAttempts(true);
   }
 }
 

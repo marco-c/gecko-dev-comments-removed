@@ -39,7 +39,11 @@ class ConnectionAttempt : public nsSupportsWeakReference {
                              bool speculative, bool urgentStart);
 
   virtual nsresult Init(ConnectionEntry* ent) = 0;
-  virtual void Abandon() = 0;
+  
+  
+  
+  
+  virtual void Abandon(bool aReenqueueTransaction = false) = 0;
   virtual double Duration(TimeStamp epoch) = 0;
   bool AcceptsTransaction(nsHttpTransaction* trans) const;
   virtual bool Claim(nsHttpTransaction* newTransaction = nullptr) = 0;

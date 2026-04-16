@@ -150,6 +150,10 @@ nsresult HappyEyeballsConnectionAttempt::ProcessConnectionResult(
 
   
   if (PossibleZeroRTTRetryError(aStatus)) {
+    if (mProxyTransaction) {
+      mProxyTransaction->Detach();
+      mProxyTransaction = nullptr;
+    }
     RefPtr<ConnectionEntry> entry(mEntry);
     RefPtr<HappyEyeballsConnectionAttempt> self(this);
     if (entry) {
@@ -275,6 +279,8 @@ nsresult HappyEyeballsConnectionAttempt::ProcessHappyEyeballsOutput() {
       case happy_eyeballs::Output::Tag::Failed: {
         LOG(("happy_eyeballs::Output::Tag::Failed reason=%d",
              static_cast<uint32_t>(event.failed.reason)));
+        MOZ_ASSERT(!mDone);
+        mDone = true;
         RefPtr<HappyEyeballsConnectionAttempt> self(this);
         RefPtr<ConnectionEntry> entry(mEntry);
 
@@ -725,8 +731,48 @@ void HappyEyeballsConnectionAttempt::CloseHttpTransaction(
   mTransaction->Close(reason);
 }
 
-void HappyEyeballsConnectionAttempt::Abandon() {
-  LOG(("HappyEyeballsConnectionAttempt::Abandon %p", this));
+void HappyEyeballsConnectionAttempt::Abandon(bool aReenqueueTransaction) {
+  LOG(("HappyEyeballsConnectionAttempt::Abandon %p aReenqueueTransaction=%d",
+       this, aReenqueueTransaction));
+
+  if (mProxyTransaction) {
+    if (aReenqueueTransaction && mEntry) {
+      
+      
+      
+      nsHttpTransaction* trans =
+          mTransaction ? mTransaction->QueryHttpTransaction() : nullptr;
+      if (trans && !trans->IsDone() && !trans->Connected()) {
+        LOG(("  requeuing claimed transaction %p, detaching proxy %p", trans,
+             mProxyTransaction.get()));
+        mProxyTransaction->Detach();
+        RefPtr<PendingTransactionInfo> pendingTransInfo =
+            new PendingTransactionInfo(trans);
+        mEntry->InsertTransaction(pendingTransInfo);
+      }
+    } else {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      mProxyTransaction->Detach();
+      mProxyTransaction = nullptr;
+      if (nsHttpTransaction* trans =
+              mTransaction ? mTransaction->QueryHttpTransaction() : nullptr) {
+        trans->Close(NS_ERROR_ABORT);
+      }
+    }
+  }
+
   mDone = true;
 
   
