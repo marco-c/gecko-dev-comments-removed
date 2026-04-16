@@ -56,7 +56,9 @@ typedef struct FFHWAccel {
 
 
 
-    int (*start_frame)(AVCodecContext *avctx, const uint8_t *buf, uint32_t buf_size);
+
+    int (*start_frame)(AVCodecContext *avctx, const AVBufferRef *buf_ref,
+                       const uint8_t *buf, uint32_t buf_size);
 
     
 

@@ -82,6 +82,7 @@
 #define AV_DICT_APPEND         32   
 
 #define AV_DICT_MULTIKEY       64   
+#define AV_DICT_DEDUP         128   
 
 
 

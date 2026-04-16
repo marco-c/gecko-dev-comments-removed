@@ -94,6 +94,20 @@ typedef struct AVD3D11VADeviceContext {
     void (*lock)(void *lock_ctx);
     void (*unlock)(void *lock_ctx);
     void *lock_ctx;
+    
+
+
+
+
+
+    UINT BindFlags;
+    
+
+
+
+
+
+    UINT MiscFlags;
 } AVD3D11VADeviceContext;
 
 

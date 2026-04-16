@@ -28,7 +28,8 @@
 #include "me_cmp.h"
 #include "qpeldsp.h"
 
-struct MpegEncContext;
+typedef struct MPVEncContext MPVEncContext;
+typedef struct MPVMainEncContext MPVMainEncContext;
 
 #if ARCH_IA64 
 #define MAX_MV 1024
@@ -47,14 +48,13 @@ struct MpegEncContext;
 
 typedef struct MotionEstContext {
     AVCodecContext *avctx;
+    int motion_est;                 
     int skip;                       
     int co_located_mv[4][2];        
     int direct_basis_mv[4][2];
     uint8_t *scratchpad;            
 
     uint8_t *temp;
-    uint32_t *map;                  
-    uint32_t *score_map;            
     unsigned map_generation;
     int pre_penalty_factor;
     int penalty_factor;             
@@ -69,6 +69,7 @@ typedef struct MotionEstContext {
     int mb_flags;
     int pre_pass;                   
     int dia_size;
+    int unrestricted_mv;            
     int xmin;
     int xmax;
     int ymin;
@@ -98,21 +99,14 @@ typedef struct MotionEstContext {
     qpel_mc_func(*qpel_avg)[16];
     const uint8_t (*mv_penalty)[MAX_DMV * 2 + 1]; 
     const uint8_t *current_mv_penalty;
-    int (*sub_motion_search)(struct MpegEncContext *s,
+    int (*sub_motion_search)(MPVEncContext *s,
                              int *mx_ptr, int *my_ptr, int dmin,
                              int src_index, int ref_index,
                              int size, int h);
-} MotionEstContext;
 
-static inline int ff_h263_round_chroma(int x)
-{
-    
-    static const uint8_t h263_chroma_roundtab[16] = {
-    
-        0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1,
-    };
-    return h263_chroma_roundtab[x & 0xf] + (x >> 3);
-}
+    uint32_t map[ME_MAP_SIZE];      
+    uint32_t score_map[ME_MAP_SIZE];
+} MotionEstContext;
 
 
 
@@ -120,27 +114,27 @@ static inline int ff_h263_round_chroma(int x)
 int ff_me_init(MotionEstContext *c, struct AVCodecContext *avctx,
                const struct MECmpContext *mecc, int mpvenc);
 
-void ff_me_init_pic(struct MpegEncContext *s);
+void ff_me_init_pic(MPVEncContext *s);
 
-void ff_estimate_p_frame_motion(struct MpegEncContext *s, int mb_x, int mb_y);
-void ff_estimate_b_frame_motion(struct MpegEncContext *s, int mb_x, int mb_y);
+void ff_estimate_p_frame_motion(MPVEncContext *s, int mb_x, int mb_y);
+void ff_estimate_b_frame_motion(MPVEncContext *s, int mb_x, int mb_y);
 
-int ff_pre_estimate_p_frame_motion(struct MpegEncContext *s,
+int ff_pre_estimate_p_frame_motion(MPVEncContext *s,
                                    int mb_x, int mb_y);
 
-int ff_epzs_motion_search(struct MpegEncContext *s, int *mx_ptr, int *my_ptr,
+int ff_epzs_motion_search(MPVEncContext *s, int *mx_ptr, int *my_ptr,
                           int P[10][2], int src_index, int ref_index,
                           const int16_t (*last_mv)[2], int ref_mv_scale,
                           int size, int h);
 
-int ff_get_mb_score(struct MpegEncContext *s, int mx, int my, int src_index,
+int ff_get_mb_score(MPVEncContext *s, int mx, int my, int src_index,
                     int ref_index, int size, int h, int add_rate);
 
-int ff_get_best_fcode(struct MpegEncContext *s,
+int ff_get_best_fcode(MPVMainEncContext *m,
                       const int16_t (*mv_table)[2], int type);
 
-void ff_fix_long_p_mvs(struct MpegEncContext *s, int type);
-void ff_fix_long_mvs(struct MpegEncContext *s, uint8_t *field_select_table,
+void ff_fix_long_p_mvs(MPVEncContext *s, int type);
+void ff_fix_long_mvs(MPVEncContext *s, uint8_t *field_select_table,
                      int field_select, int16_t (*mv_table)[2], int f_code,
                      int type, int truncate);
 

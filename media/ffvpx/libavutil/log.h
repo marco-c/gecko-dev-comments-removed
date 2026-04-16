@@ -37,6 +37,7 @@ typedef enum {
     AV_CLASS_CATEGORY_BITSTREAM_FILTER,
     AV_CLASS_CATEGORY_SWSCALER,
     AV_CLASS_CATEGORY_SWRESAMPLER,
+    AV_CLASS_CATEGORY_HWDEVICE,
     AV_CLASS_CATEGORY_DEVICE_VIDEO_OUTPUT = 40,
     AV_CLASS_CATEGORY_DEVICE_VIDEO_INPUT,
     AV_CLASS_CATEGORY_DEVICE_AUDIO_OUTPUT,
@@ -405,6 +406,16 @@ int av_log_format_line2(void *ptr, int level, const char *fmt, va_list vl,
 
 
 #define AV_LOG_PRINT_LEVEL 2
+
+
+
+
+#define AV_LOG_PRINT_TIME 4
+
+
+
+
+#define AV_LOG_PRINT_DATETIME 8
 
 void av_log_set_flags(int arg);
 int av_log_get_flags(void);

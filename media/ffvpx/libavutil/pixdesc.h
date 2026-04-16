@@ -294,6 +294,16 @@ enum AVChromaLocation av_chroma_location_pos_to_enum(int xpos, int ypos);
 
 
 
+const char *av_alpha_mode_name(enum AVAlphaMode mode);
+
+
+
+
+enum AVAlphaMode av_alpha_mode_from_name(const char *name);
+
+
+
+
 
 
 

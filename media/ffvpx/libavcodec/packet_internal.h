@@ -34,6 +34,8 @@ typedef struct PacketList {
     PacketListEntry *head, *tail;
 } PacketList;
 
+#define FF_PACKETLIST_FLAG_PREPEND (1 << 0) /**< Prepend created AVPacketList instead of appending */
+
 
 
 
@@ -67,8 +69,6 @@ int avpriv_packet_list_get(PacketList *list, AVPacket *pkt);
 
 
 void avpriv_packet_list_free(PacketList *list);
-
-int ff_side_data_set_encoder_stats(AVPacket *pkt, int quality, int64_t *error, int error_count, int pict_type);
 
 int ff_side_data_set_prft(AVPacket *pkt, int64_t timestamp);
 

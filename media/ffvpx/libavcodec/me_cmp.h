@@ -21,11 +21,8 @@
 
 #include <stdint.h>
 
-#include "libavutil/attributes_internal.h"
-
 #include "avcodec.h"
 
-extern const uint32_t attribute_visibility_hidden ff_square_tab[512];
 
 
 
@@ -39,15 +36,13 @@ extern const uint32_t attribute_visibility_hidden ff_square_tab[512];
 
 
 
-
-
-struct MpegEncContext;
+typedef struct MPVEncContext MPVEncContext;
 
 
 
 
 
-typedef int (*me_cmp_func)(struct MpegEncContext *c,
+typedef int (*me_cmp_func)(MPVEncContext *c,
                            const uint8_t *blk1 ,
                            const uint8_t *blk2 , ptrdiff_t stride,
                            int h);
@@ -76,7 +71,6 @@ typedef struct MECmpContext {
 
 void ff_me_cmp_init(MECmpContext *c, AVCodecContext *avctx);
 void ff_me_cmp_init_aarch64(MECmpContext *c, AVCodecContext *avctx);
-void ff_me_cmp_init_alpha(MECmpContext *c, AVCodecContext *avctx);
 void ff_me_cmp_init_arm(MECmpContext *c, AVCodecContext *avctx);
 void ff_me_cmp_init_ppc(MECmpContext *c, AVCodecContext *avctx);
 void ff_me_cmp_init_riscv(MECmpContext *c, AVCodecContext *avctx);

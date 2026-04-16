@@ -46,10 +46,6 @@
 
 
 
-
-
-
-
 #define BITS_FRW_ACC   3 //; 2 or 3 for accuracy
 #define SHIFT_FRW_COL  BITS_FRW_ACC
 #define SHIFT_FRW_ROW  (BITS_FRW_ACC + 17 - 3)

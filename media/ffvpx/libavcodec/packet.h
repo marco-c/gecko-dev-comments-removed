@@ -353,12 +353,31 @@ enum AVPacketSideDataType {
 
 
 
+
+    AV_PKT_DATA_3D_REFERENCE_DISPLAYS,
+
+    
+
+
+
+    AV_PKT_DATA_RTCP_SR,
+
+    
+
+
+
+     AV_PKT_DATA_EXIF,
+
+    
+
+
+
+
+
+
+
     AV_PKT_DATA_NB
 };
-
-#if FF_API_QUALITY_FACTOR
-#define AV_PKT_DATA_QUALITY_FACTOR AV_PKT_DATA_QUALITY_STATS //DEPRECATED
-#endif
 
 
 
@@ -469,6 +488,36 @@ void av_packet_side_data_remove(AVPacketSideData *sd, int *nb_sd,
 
 
 void av_packet_side_data_free(AVPacketSideData **sd, int *nb_sd);
+
+struct AVFrameSideData;
+
+
+
+
+
+
+
+
+
+
+
+
+int av_packet_side_data_from_frame(AVPacketSideData **sd, int *nb_sd,
+                                   const struct AVFrameSideData *src, unsigned int flags);
+
+
+
+
+
+
+
+
+
+
+
+
+int av_packet_side_data_to_frame(struct AVFrameSideData ***sd, int *nb_sd,
+                                 const AVPacketSideData *src, unsigned int flags);
 
 const char *av_packet_side_data_name(enum AVPacketSideDataType type);
 
