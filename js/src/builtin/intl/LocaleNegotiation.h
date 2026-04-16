@@ -189,6 +189,17 @@ bool ResolveLocale(JSContext* cx, AvailableLocaleKind availableLocales,
 
 
 
+JSLinearString* DefaultCalendar(JSContext* cx, const JSLinearString* locale);
+
+
+
+
+JSLinearString* DefaultNumberingSystem(JSContext* cx,
+                                       const JSLinearString* locale);
+
+
+
+
 
 ArrayObject* SupportedLocalesOf(JSContext* cx,
                                 AvailableLocaleKind availableLocales,

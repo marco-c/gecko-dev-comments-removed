@@ -525,6 +525,9 @@ static bool ResolveLocale(JSContext* cx, Handle<CollatorObject*> collator) {
   if (auto co = resolved.extension(UnicodeExtensionKey::Collation)) {
     collator->setCollation(co);
   } else {
+    
+    
+    
     collator->setCollation(cx->names().default_);
   }
 
@@ -580,12 +583,12 @@ static mozilla::intl::Collator* NewIntlCollator(
 
     
     
-    MOZ_ASSERT(StringEqualsLiteral(collator->getCollation(), "default"));
+    MOZ_ASSERT(collator->getCollation() == cx->names().default_);
   } else {
     auto* collation = collator->getCollation();
 
     
-    if (!StringEqualsLiteral(collation, "default")) {
+    if (collation != cx->names().default_) {
       if (!keywords.emplaceBack("co", collation)) {
         return nullptr;
       }

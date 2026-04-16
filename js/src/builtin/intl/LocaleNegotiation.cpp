@@ -69,8 +69,7 @@ static mozilla::Maybe<UnicodeExtensionKey> ToUnicodeExtensionKey(
   return mozilla::Nothing();
 }
 
-static bool AssertCanonicalLocale(JSContext* cx,
-                                  Handle<JSLinearString*> locale) {
+static void AssertCanonicalLocale(JSContext* cx, const JSLinearString* locale) {
 #ifdef DEBUG
   MOZ_ASSERT(StringIsAscii(locale), "language tags are ASCII-only");
 
@@ -82,7 +81,8 @@ static bool AssertCanonicalLocale(JSContext* cx,
   {
     StringAsciiChars chars(locale);
     if (!chars.init(cx)) {
-      return false;
+      cx->recoverFromOutOfMemory();
+      return;
     }
 
     parse_result = mozilla::intl::LocaleParser::TryParse(chars, tag);
@@ -91,31 +91,35 @@ static bool AssertCanonicalLocale(JSContext* cx,
   if (parse_result.isErr()) {
     MOZ_ASSERT(parse_result.unwrapErr() == ParserError::OutOfMemory,
                "locale is a structurally valid language tag");
-
-    ReportInternalError(cx);
-    return false;
+    return;
   }
 
-  if (auto result = tag.Canonicalize(); result.isErr()) {
-    MOZ_ASSERT(result.unwrapErr() !=
+  auto canonicalizeResult = [&] {
+    
+    JS::AutoSuppressGCAnalysis nogc;
+
+    return tag.Canonicalize();
+  }();
+  if (canonicalizeResult.isErr()) {
+    MOZ_ASSERT(canonicalizeResult.unwrapErr() !=
                mozilla::intl::Locale::CanonicalizationError::DuplicateVariant);
-    ReportInternalError(cx);
-    return false;
+    return;
   }
 
   FormatBuffer<char, INITIAL_CHAR_BUFFER_SIZE> buffer(cx);
   if (auto result = tag.ToString(buffer); result.isErr()) {
-    ReportInternalError(cx, result.unwrapErr());
-    return false;
+    cx->recoverFromOutOfMemory();
+    return;
   }
 
   MOZ_ASSERT(StringEqualsAscii(locale, buffer.data(), buffer.length()),
              "locale is a canonicalized language tag");
 #endif
-  return true;
 }
 
-static auto ToLanguageId(const JSLinearString* locale) {
+static auto ToLanguageId(JSContext* cx, const JSLinearString* locale) {
+  AssertCanonicalLocale(cx, locale);
+
   
   JS::AutoSuppressGCAnalysis nogc;
   if (locale->hasLatin1Chars()) {
@@ -189,11 +193,7 @@ static bool BestAvailableLocale(JSContext* cx,
                                 Handle<JSLinearString*> locale,
                                 mozilla::Maybe<LanguageId> defaultLocale,
                                 mozilla::Maybe<LanguageId>* result) {
-  if (!AssertCanonicalLocale(cx, locale)) {
-    return false;
-  }
-
-  auto parsedLangId = ToLanguageId(locale);
+  auto parsedLangId = ToLanguageId(cx, locale);
 
   
   if (!parsedLangId) {
@@ -842,8 +842,14 @@ static bool IsSupportedNumberingSystem(const JSLinearString* string) {
 
 
 
-static JSLinearString* DefaultCalendar(JSContext* cx, LanguageId locale) {
-  auto calendar = mozilla::intl::Calendar::TryCreate(locale.toString().c_str());
+JSLinearString* js::intl::DefaultCalendar(JSContext* cx,
+                                          const JSLinearString* locale) {
+  auto parsedLangId = ToLanguageId(cx, locale);
+  MOZ_RELEASE_ASSERT(parsedLangId, "locale expected to be a valid data locale");
+
+  auto localeStr = parsedLangId->first.toString();
+
+  auto calendar = mozilla::intl::Calendar::TryCreate(localeStr.c_str());
   if (calendar.isErr()) {
     ReportInternalError(cx, calendar.unwrapErr());
     return nullptr;
@@ -861,10 +867,15 @@ static JSLinearString* DefaultCalendar(JSContext* cx, LanguageId locale) {
 
 
 
-static JSLinearString* DefaultNumberingSystem(JSContext* cx,
-                                              LanguageId locale) {
+JSLinearString* js::intl::DefaultNumberingSystem(JSContext* cx,
+                                                 const JSLinearString* locale) {
+  auto parsedLangId = ToLanguageId(cx, locale);
+  MOZ_RELEASE_ASSERT(parsedLangId, "locale expected to be a valid data locale");
+
+  auto localeStr = parsedLangId->first.toString();
+
   auto numberingSystem =
-      mozilla::intl::NumberingSystem::TryCreate(locale.toString().c_str());
+      mozilla::intl::NumberingSystem::TryCreate(localeStr.c_str());
   if (numberingSystem.isErr()) {
     ReportInternalError(cx, numberingSystem.unwrapErr());
     return nullptr;
@@ -920,54 +931,6 @@ static bool IsSupported(JSContext* cx, LocaleData localeData, LanguageId locale,
 
 
 
-static bool DefaultValue(JSContext* cx, LocaleData localeData,
-                         LanguageId locale, UnicodeExtensionKey key,
-                         MutableHandle<JSLinearString*> result) {
-  switch (key) {
-    case UnicodeExtensionKey::Calendar: {
-      auto* ca = DefaultCalendar(cx, locale);
-      if (!ca) {
-        return false;
-      }
-      result.set(ca);
-      return true;
-    }
-    case UnicodeExtensionKey::Collation: {
-      
-      
-      result.set(nullptr);
-      return true;
-    }
-    case UnicodeExtensionKey::CollationCaseFirst: {
-      
-      result.set(nullptr);
-      return true;
-    }
-    case UnicodeExtensionKey::CollationNumeric: {
-      
-      result.set(nullptr);
-      return true;
-    }
-    case UnicodeExtensionKey::HourCycle: {
-      
-      result.set(nullptr);
-      return true;
-    }
-    case UnicodeExtensionKey::NumberingSystem: {
-      auto* nu = DefaultNumberingSystem(cx, locale);
-      if (!nu) {
-        return false;
-      }
-      result.set(nu);
-      return true;
-    }
-  }
-  MOZ_CRASH("invalid Unicode extension key");
-}
-
-
-
-
 
 bool js::intl::ResolveLocale(
     JSContext* cx, AvailableLocaleKind availableLocales,
@@ -1005,7 +968,6 @@ bool js::intl::ResolveLocale(
   Rooted<mozilla::Maybe<JSLinearString*>> extensionValue(cx);
   Rooted<JSLinearString*> keywordsValue(cx);
   Rooted<JSLinearString*> optionsValue(cx);
-  Rooted<JSLinearString*> defaultValue(cx);
   for (auto key : relevantExtensionKeys) {
     
     extensionValue = mozilla::Nothing();
@@ -1091,23 +1053,14 @@ bool js::intl::ResolveLocale(
     }
 
     
-    if (extensionValue.isNothing()) {
-      
-      if (!DefaultValue(cx, localeData, foundLocale, key, &defaultValue)) {
-        return false;
-      }
-      extensionValue = mozilla::Some(defaultValue.get());
-
-      
-    }
-
-    
     if (isSupportedKeyword) {
       supportedKeywords += key;
     }
 
     
-    result.setUnicodeExtension(key, *extensionValue);
+    if (extensionValue.isSome()) {
+      result.setUnicodeExtension(key, *extensionValue);
+    }
   }
 
   
