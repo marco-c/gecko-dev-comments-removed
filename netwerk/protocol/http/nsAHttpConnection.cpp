@@ -20,7 +20,7 @@ nsAHttpConnection::Release() {
   if (0 == count) {
     mRefCnt = 1; 
     
-    delete this;
+    DeleteSelfOnSocketThread();
     return 0;
   }
   return count;
