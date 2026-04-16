@@ -102,7 +102,7 @@ void ViewTimeline::UpdateCachedCurrentTime() {
   mCachedCurrentTime.reset();
 
   
-  if (!mSource || !mSource.mElement->GetPrimaryFrame()) {
+  if (!mSource || !mSource.Source().mElement->GetPrimaryFrame()) {
     return;
   }
 
