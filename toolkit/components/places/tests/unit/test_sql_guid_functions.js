@@ -20,75 +20,32 @@ function check_invariants(aGuid) {
 
 
 
-function test_guid_invariants() {
-  const kExpectedChars = 64;
+add_task(async function test_guid_invariants() {
   const kAllowedChars =
     "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_";
-  Assert.equal(kAllowedChars.length, kExpectedChars);
   const kGuidLength = 12;
 
-  let checkedChars = [];
-  for (let i = 0; i < kGuidLength; i++) {
-    checkedChars[i] = {};
-    for (let j = 0; j < kAllowedChars; j++) {
-      checkedChars[i][kAllowedChars[j]] = false;
-    }
-  }
+  let db = await PlacesUtils.promiseDBConnection();
+  
+  let rows = await db.execute(
+    `WITH RECURSIVE cnt(x) AS (SELECT 1 UNION ALL SELECT x+1 FROM cnt WHERE x < 1000)
+     SELECT GENERATE_GUID() AS guid FROM cnt`
+  );
+  Assert.equal(rows.length, 1000);
 
-  
-  
-  let seenChars = 0;
-  let stmt = DBConn().createStatement("SELECT GENERATE_GUID()");
-  while (seenChars != kExpectedChars * kGuidLength) {
-    Assert.ok(stmt.executeStep());
-    let guid = stmt.getString(0);
+  let checkedChars = Array.from({ length: kGuidLength }, () => ({}));
+  for (let row of rows) {
+    let guid = row.getResultByName("guid");
     check_invariants(guid);
-
     for (let i = 0; i < guid.length; i++) {
-      let character = guid[i];
-      if (!checkedChars[i][character]) {
-        checkedChars[i][character] = true;
-        seenChars++;
-      }
+      checkedChars[i][guid[i]] = true;
     }
-    stmt.reset();
   }
-  stmt.finalize();
 
   
   for (let i = 0; i < kGuidLength; i++) {
-    for (let j = 0; j < kAllowedChars; j++) {
-      Assert.ok(checkedChars[i][kAllowedChars[j]]);
+    for (let ch of kAllowedChars) {
+      Assert.ok(checkedChars[i][ch], `Character '${ch}' seen at position ${i}`);
     }
   }
-
-  run_next_test();
-}
-
-function test_guid_on_background() {
-  
-  let stmt = DBConn().createAsyncStatement("SELECT GENERATE_GUID()");
-  let checked = false;
-  stmt.executeAsync({
-    handleResult(aResult) {
-      try {
-        let row = aResult.getNextRow();
-        check_invariants(row.getResultByIndex(0));
-        Assert.equal(aResult.getNextRow(), null);
-        checked = true;
-      } catch (e) {
-        do_throw(e);
-      }
-    },
-    handleCompletion(aReason) {
-      Assert.equal(aReason, Ci.mozIStorageStatementCallback.REASON_FINISHED);
-      Assert.ok(checked);
-      run_next_test();
-    },
-  });
-  stmt.finalize();
-}
-
-
-
-[test_guid_invariants, test_guid_on_background].forEach(fn => add_test(fn));
+});

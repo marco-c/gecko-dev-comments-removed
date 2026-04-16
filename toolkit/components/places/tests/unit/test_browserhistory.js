@@ -88,7 +88,7 @@ add_task(async function test_removePagesByTimeframe() {
 
   
   for (let i = 0; i < 10; i++) {
-    Assert.equal(page_in_database(TEST_URI + i) == 0, i > 0 && i < 9);
+    Assert.equal((await page_in_database(TEST_URI + i)) == 0, i > 0 && i < 9);
   }
 
   

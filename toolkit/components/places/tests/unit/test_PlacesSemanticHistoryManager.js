@@ -398,7 +398,7 @@ add_task(async function test_chunksTelemetry() {
   Services.prefs.setBoolPref("places.semanticHistory.featureGate", true);
 
   let semanticManager = createPlacesSemanticHistoryManager({
-    deferredTaskInterval: 2000, 
+    deferredTaskInterval: 100, 
   });
   await semanticManager.getConnection();
   semanticManager.embedder.setEngine(new MockMLEngine());
@@ -446,7 +446,7 @@ add_task(async function test_duplicate_urlhash() {
   });
 
   let semanticManager = createPlacesSemanticHistoryManager({
-    deferredTaskInterval: 2000, 
+    deferredTaskInterval: 100, 
   });
   let conn = await semanticManager.getConnection();
   semanticManager.embedder.setEngine(new MockMLEngine());
@@ -486,7 +486,7 @@ add_task(async function test_rowid_relations() {
 
   let semanticManager = createPlacesSemanticHistoryManager({
     changeThresholdCount: 1,
-    deferredTaskInterval: 2000, 
+    deferredTaskInterval: 100, 
   });
   
   await semanticManager.semanticDB.removeDatabaseFiles();
@@ -555,7 +555,7 @@ add_task(async function test_rowid_conflict() {
 
   let semanticManager = createPlacesSemanticHistoryManager({
     changeThresholdCount: 1,
-    deferredTaskInterval: 2000, 
+    deferredTaskInterval: 100, 
   });
   
   await semanticManager.semanticDB.removeDatabaseFiles();

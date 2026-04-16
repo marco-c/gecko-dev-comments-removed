@@ -3,13 +3,6 @@
 
 
 
-try {
-  var mDBConn = PlacesUtils.history.DBConnection;
-} catch (ex) {
-  do_throw("Could not get database connection\n");
-}
-
-
 
 
 
@@ -59,14 +52,11 @@ add_task(async function () {
   validateResults(2);
   
   
-  var sql = "UPDATE moz_bookmarks SET fk = 1337 WHERE guid = ?1";
-  var stmt = mDBConn.createStatement(sql);
-  stmt.bindByIndex(0, badBookmark.guid);
-  try {
-    stmt.execute();
-  } finally {
-    stmt.finalize();
-  }
+  await PlacesUtils.withConnectionWrapper("test_448584", async db => {
+    await db.execute("UPDATE moz_bookmarks SET fk = 1337 WHERE guid = :guid", {
+      guid: badBookmark.guid,
+    });
+  });
 
   await BookmarkJSONUtils.exportToFile(jsonFile);
 

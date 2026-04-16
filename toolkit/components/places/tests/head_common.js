@@ -45,10 +45,6 @@ ChromeUtils.defineESModuleGetters(this, {
   TestUtils: "resource://testing-common/TestUtils.sys.mjs",
 });
 
-
-
-
-
 ChromeUtils.defineLazyGetter(this, "SMALLPNG_DATA_URI", function () {
   return NetUtil.newURI(
     "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAA" +
@@ -91,41 +87,6 @@ clearDB();
 
 function uri(aSpec) {
   return NetUtil.newURI(aSpec);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-var gDBConn;
-function DBConn(aForceNewConnection) {
-  if (!aForceNewConnection) {
-    let db = PlacesUtils.history.DBConnection;
-    if (db.connectionReady) {
-      return db;
-    }
-  }
-
-  
-  if (!gDBConn || aForceNewConnection) {
-    let file = Services.dirsvc.get("ProfD", Ci.nsIFile);
-    file.append("places.sqlite");
-    let dbConn = (gDBConn = Services.storage.openDatabase(file));
-
-    
-    promiseTopicObserved("profile-before-change").then(() =>
-      dbConn.asyncClose()
-    );
-  }
-
-  return gDBConn.connectionReady ? gDBConn : null;
 }
 
 
@@ -283,73 +244,18 @@ function clearDB() {
 
 
 
-function dump_table(aName, dbConn) {
-  if (!dbConn) {
-    dbConn = DBConn();
-  }
-  let stmt = dbConn.createStatement("SELECT * FROM " + aName);
 
-  print("\n*** Printing data from " + aName);
-  let count = 0;
-  while (stmt.executeStep()) {
-    let columns = stmt.numEntries;
-
-    if (count == 0) {
-      
-      for (let i = 0; i < columns; i++) {
-        dump(stmt.getColumnName(i) + "\t");
-      }
-      dump("\n");
-    }
-
-    
-    for (let i = 0; i < columns; i++) {
-      switch (stmt.getTypeOfIndex(i)) {
-        case Ci.mozIStorageValueArray.VALUE_TYPE_NULL:
-          dump("NULL\t");
-          break;
-        case Ci.mozIStorageValueArray.VALUE_TYPE_INTEGER:
-          dump(stmt.getInt64(i) + "\t");
-          break;
-        case Ci.mozIStorageValueArray.VALUE_TYPE_FLOAT:
-          dump(stmt.getDouble(i) + "\t");
-          break;
-        case Ci.mozIStorageValueArray.VALUE_TYPE_TEXT:
-          dump(stmt.getString(i) + "\t");
-          break;
-      }
-    }
-    dump("\n");
-
-    count++;
-  }
-  print("*** There were a total of " + count + " rows of data.\n");
-
-  stmt.finalize();
-}
-
-
-
-
-
-
-
-
-
-function page_in_database(aURI) {
+async function page_in_database(aURI) {
   let url = aURI instanceof Ci.nsIURI ? aURI.spec : aURI;
-  let stmt = DBConn().createStatement(
-    "SELECT id FROM moz_places WHERE url_hash = hash(:url) AND url = :url"
+  let db = await PlacesUtils.promiseDBConnection();
+  let rows = await db.execute(
+    "SELECT id FROM moz_places WHERE url_hash = hash(:url) AND url = :url",
+    { url }
   );
-  stmt.params.url = url;
-  try {
-    if (!stmt.executeStep()) {
-      return 0;
-    }
-    return stmt.getInt64(0);
-  } finally {
-    stmt.finalize();
+  if (!rows?.length) {
+    return 0;
   }
+  return rows[0].getResultByName("id");
 }
 
 
@@ -360,22 +266,19 @@ function page_in_database(aURI) {
 
 
 
-function visits_in_database(aURI) {
+async function visits_in_database(aURI) {
   let url = aURI instanceof Ci.nsIURI ? aURI.spec : aURI;
-  let stmt = DBConn().createStatement(
-    `SELECT count(*) FROM moz_historyvisits v
+  let db = await PlacesUtils.promiseDBConnection();
+  let rows = await db.execute(
+    `SELECT count(*) AS cnt FROM moz_historyvisits v
      JOIN moz_places h ON h.id = v.place_id
-     WHERE url_hash = hash(:url) AND url = :url`
+     WHERE url_hash = hash(:url) AND url = :url`,
+    { url }
   );
-  stmt.params.url = url;
-  try {
-    if (!stmt.executeStep()) {
-      return 0;
-    }
-    return stmt.getInt64(0);
-  } finally {
-    stmt.finalize();
+  if (!rows?.length) {
+    return 0;
   }
+  return rows[0].getResultByName("cnt");
 }
 
 
@@ -545,29 +448,6 @@ function check_JSON_backup(aIsAutomaticBackup) {
   }
   Assert.ok(profileBookmarksJSONFile.exists());
   return profileBookmarksJSONFile;
-}
-
-
-
-
-
-
-
-
-
-function isUrlHidden(aURI) {
-  let url = aURI instanceof Ci.nsIURI ? aURI.spec : aURI;
-  let stmt = DBConn().createStatement(
-    "SELECT hidden FROM moz_places WHERE url_hash = hash(?1) AND url = ?1"
-  );
-  stmt.bindByIndex(0, url);
-  if (!stmt.executeStep()) {
-    throw new Error("No result for hidden.");
-  }
-  let hidden = stmt.getInt32(0);
-  stmt.finalize();
-
-  return !!hidden;
 }
 
 

@@ -92,9 +92,6 @@ add_task(async function test_transitions() {
     });
   }
 
-  
-  
-
   var numSortFunc = function (a, b) {
     return a - b;
   };
