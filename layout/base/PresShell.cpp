@@ -9393,44 +9393,71 @@ void PresShell::EventHandler::MaybeHandleKeyboardEventBeforeDispatch(
                       : nullptr;
   Document* root = nsContentUtils::GetInProcessSubtreeRootDocument(doc);
   if (root && root->GetFullscreenElement()) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    aKeyboardEvent->PreventDefaultBeforeDispatch(CrossProcessForwarding::eStop);
-    aKeyboardEvent->mFlags.mOnlyChromeDispatch = true;
-
-    
-    
-    if (aKeyboardEvent->mMessage == eKeyUp) {
-      bool shouldExitFullscreen =
-          !mPresShell->mIsLastChromeOnlyEscapeKeyConsumed;
-      if (!shouldExitFullscreen) {
-        if (mPresShell->mLastConsumedEscapeKeyUpForFullscreen &&
-            (aKeyboardEvent->mTimeStamp -
-             mPresShell->mLastConsumedEscapeKeyUpForFullscreen) <=
-                TimeDuration::FromMilliseconds(
-                    StaticPrefs::
-                        dom_fullscreen_force_exit_on_multiple_escape_interval())) {
-          shouldExitFullscreen = true;
-          mPresShell->mLastConsumedEscapeKeyUpForFullscreen = TimeStamp();
-        } else {
-          mPresShell->mLastConsumedEscapeKeyUpForFullscreen =
+    Document* fullscreenLeaf = Document::GetFullscreenLeaf(root);
+    if (fullscreenLeaf->HasFullscreenKeyboardLockEnabled()) {
+      if (aKeyboardEvent->mMessage == eKeyDown) {
+        
+        
+        
+        if (!aKeyboardEvent->mIsRepeat) {
+          mPresShell->mFirstUnmatchedEscapeKeyDownForFullscreen =
               aKeyboardEvent->mTimeStamp;
+        } else if (mPresShell->mFirstUnmatchedEscapeKeyDownForFullscreen) {
+          bool escapeHasBeenHeldLongEnough =
+              (aKeyboardEvent->mTimeStamp -
+               mPresShell->mFirstUnmatchedEscapeKeyDownForFullscreen) >=
+              TimeDuration::FromMilliseconds(
+                  StaticPrefs::
+                      dom_fullscreen_keyboard_lock_long_press_interval());
+          if (escapeHasBeenHeldLongEnough) {
+            mPresShell->mFirstUnmatchedEscapeKeyDownForFullscreen = TimeStamp();
+            MOZ_LOG_FMT(gLog, LogLevel::Debug,
+                        "Exiting fullscreen from Escape key long-press");
+            Document::AsyncExitFullscreen(root);
+          }
         }
       }
+    } else {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      aKeyboardEvent->PreventDefaultBeforeDispatch(
+          CrossProcessForwarding::eStop);
+      aKeyboardEvent->mFlags.mOnlyChromeDispatch = true;
 
-      if (shouldExitFullscreen) {
-        
-        
-        
-        Document::AsyncExitFullscreen(root);
+      
+      
+      if (aKeyboardEvent->mMessage == eKeyUp) {
+        bool shouldExitFullscreen =
+            !mPresShell->mIsLastChromeOnlyEscapeKeyConsumed;
+        if (!shouldExitFullscreen) {
+          if (mPresShell->mLastConsumedEscapeKeyUpForFullscreen &&
+              (aKeyboardEvent->mTimeStamp -
+               mPresShell->mLastConsumedEscapeKeyUpForFullscreen) <=
+                  TimeDuration::FromMilliseconds(
+                      StaticPrefs::
+                          dom_fullscreen_force_exit_on_multiple_escape_interval())) {
+            shouldExitFullscreen = true;
+            mPresShell->mLastConsumedEscapeKeyUpForFullscreen = TimeStamp();
+          } else {
+            mPresShell->mLastConsumedEscapeKeyUpForFullscreen =
+                aKeyboardEvent->mTimeStamp;
+          }
+        }
+
+        if (shouldExitFullscreen) {
+          
+          
+          
+          Document::AsyncExitFullscreen(root);
+        }
       }
     }
   }

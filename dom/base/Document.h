@@ -2085,6 +2085,13 @@ class Document : public nsINode,
 
 
 
+  static Document* GetFullscreenLeaf(Document* aDoc);
+  static Document* GetFullscreenLeaf(Document& aDoc);
+
+  
+
+
+
 
   Document* GetFullscreenRoot() const { return mFullscreenRoot; }
 
