@@ -125,7 +125,7 @@ class AlignedBuffer {
   }
   
   
-  bool SetLength(size_t aLength) {
+  [[nodiscard]] bool SetLength(size_t aLength) {
     if (aLength > mLength && !EnsureCapacity(aLength)) {
       return false;
     }
