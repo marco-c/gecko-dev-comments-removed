@@ -19,6 +19,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/base/nullability.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/strings/string_view.h"
 #include "api/array_view.h"
@@ -318,7 +319,10 @@ class RtpTransceiver : public RtpTransceiverInterface {
 
   
   
-  void StopTransceiverProcedure();
+  
+  
+  [[nodiscard]] absl_nullable absl::AnyInvocable<void() &&>
+  GetStopTransceiverProcedure();
 
   
   MediaType media_type() const override;
@@ -401,7 +405,10 @@ class RtpTransceiver : public RtpTransceiverInterface {
   void OnPacketReceived(scoped_refptr<PendingTaskSafetyFlag> safety)
       RTC_RUN_ON(context()->network_thread());
   void OnFirstPacketSent();
-  void StopSendingAndReceiving();
+  
+  
+  [[nodiscard]] absl_nonnull absl::AnyInvocable<void() &&>
+  GetStopSendingAndReceiving();
   
   
   void PushNewMediaChannel();
