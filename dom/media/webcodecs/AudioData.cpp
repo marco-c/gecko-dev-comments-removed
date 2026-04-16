@@ -481,8 +481,9 @@ void CopySamples(Span<S> aSource, Span<D> aDest, uint32_t aSourceChannelCount,
     MOZ_ASSERT(aSource.Length() - aCopyToSpec.mFrameOffset >=
                aCopyToSpec.mFrameCount);
     
-    ConvertAudioSamples(aSource.data() + aCopyToSpec.mFrameOffset, aDest.data(),
-                        aCopyToSpec.mFrameCount * aSourceChannelCount);
+    ConvertAudioSamples(
+        aSource.data() + aCopyToSpec.mFrameOffset * aSourceChannelCount,
+        aDest.data(), aCopyToSpec.mFrameCount * aSourceChannelCount);
     return;
   }
   if (IsInterleaved(aSourceFormat) && !IsInterleaved(aCopyToSpec.mFormat)) {
