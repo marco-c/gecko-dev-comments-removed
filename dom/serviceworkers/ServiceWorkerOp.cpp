@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ServiceWorkerOp.h"
 
 #include <utility>
@@ -1689,8 +1687,8 @@ void FetchEventOp::ResolvedCallback(JSContext* aCx,
   
   
   
-  
-  
+  ir->SnapshotUnfilteredHeaders();
+
   mHandled->MaybeResolveWithUndefined();
   mRespondWithPromiseHolder.Resolve(
       FetchEventRespondWithResult(std::make_tuple(

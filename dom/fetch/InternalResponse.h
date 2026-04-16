@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_InternalResponse_h
 #define mozilla_dom_InternalResponse_h
 
@@ -166,6 +164,8 @@ class InternalResponse final : public AtomicSafeRefCounted<InternalResponse> {
 
     return Headers();
   }
+
+  void SnapshotUnfilteredHeaders();
 
   void GetUnfilteredBody(nsIInputStream** aStream,
                          int64_t* aBodySize = nullptr) {
