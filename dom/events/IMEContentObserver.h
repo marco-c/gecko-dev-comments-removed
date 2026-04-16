@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_IMEContentObserver_h
 #define mozilla_IMEContentObserver_h
 
@@ -105,8 +103,8 @@ class IMEContentObserver final : public nsStubMutationObserver,
 
 
 
-  MOZ_CAN_RUN_SCRIPT void Init(nsIWidget& aWidget, nsPresContext& aPresContext,
-                               dom::Element* aElement, EditorBase& aEditorBase);
+  void Init(nsIWidget& aWidget, nsPresContext& aPresContext,
+            dom::Element* aElement, EditorBase& aEditorBase);
 
   
 
@@ -139,10 +137,8 @@ class IMEContentObserver final : public nsStubMutationObserver,
 
 
 
-  MOZ_CAN_RUN_SCRIPT bool MaybeReinitialize(nsIWidget& aWidget,
-                                            nsPresContext& aPresContext,
-                                            dom::Element* aElement,
-                                            EditorBase& aEditorBase);
+  bool MaybeReinitialize(nsIWidget& aWidget, nsPresContext& aPresContext,
+                         dom::Element* aElement, EditorBase& aEditorBase);
 
   
 
@@ -245,9 +241,8 @@ class IMEContentObserver final : public nsStubMutationObserver,
     eState_Observing
   };
   State GetState() const;
-  MOZ_CAN_RUN_SCRIPT bool InitWithEditor(nsPresContext& aPresContext,
-                                         dom::Element* aElement,
-                                         EditorBase& aEditorBase);
+  bool InitWithEditor(nsPresContext& aPresContext, dom::Element* aElement,
+                      EditorBase& aEditorBase);
   void OnIMEReceivedFocus();
   void Clear();
 

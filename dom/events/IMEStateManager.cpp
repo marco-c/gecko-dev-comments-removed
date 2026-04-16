@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "IMEStateManager.h"
 
 #include "IMEContentObserver.h"
@@ -479,7 +477,7 @@ nsresult IMEStateManager::OnRemoveContent(nsPresContext& aPresContext,
         [presContext = OwningNonNull{aPresContext}]() {
           MOZ_ASSERT(sFocusedPresContext == presContext);
           MOZ_ASSERT(!sFocusedElement);
-          if (RefPtr<HTMLEditor> htmlEditor =
+          if (HTMLEditor* const htmlEditor =
                   nsContentUtils::GetHTMLEditor(presContext)) {
             CreateIMEContentObserver(*htmlEditor, nullptr);
           }
@@ -896,6 +894,9 @@ nsresult IMEStateManager::OnChangeFocusInternal(nsPresContext* aPresContext,
       
       
       if (sFocusedPresContext && oldWidget) {
+        
+        
+        
         NotifyIME(REQUEST_TO_COMMIT_COMPOSITION, oldWidget,
                   sFocusedIMEBrowserParent);
       }
@@ -907,6 +908,10 @@ nsresult IMEStateManager::OnChangeFocusInternal(nsPresContext* aPresContext,
                                       : InputContextAction::LOST_FOCUS;
     }
 
+    
+    
+    
+    
     if (remoteHasFocus && HasActiveChildSetInputContext() &&
         aAction.mFocusChange == InputContextAction::MENU_LOST_PSEUDO_FOCUS) {
       
@@ -923,6 +928,7 @@ nsresult IMEStateManager::OnChangeFocusInternal(nsPresContext* aPresContext,
   sFocusedPresContext = aPresContext;
   sFocusedElement = aElement;
 
+  
   
   
 
@@ -1562,11 +1568,9 @@ void IMEStateManager::UpdateIMEState(const IMEState& aNewIMEState,
     MOZ_LOG(sISMLog, LogLevel::Debug,
             ("  UpdateIMEState(), try to reinitialize the active "
              "IMEContentObserver"));
-    OwningNonNull<IMEContentObserver> contentObserver =
-        *sActiveIMEContentObserver;
-    OwningNonNull<nsPresContext> presContext = *sFocusedPresContext;
-    if (!contentObserver->MaybeReinitialize(
-            textInputHandlingWidget, presContext, aElement, aEditorBase)) {
+    if (!sActiveIMEContentObserver->MaybeReinitialize(
+            textInputHandlingWidget, *sFocusedPresContext, aElement,
+            aEditorBase)) [[unlikely]] {
       MOZ_LOG(sISMLog, LogLevel::Error,
               ("  UpdateIMEState(), failed to reinitialize the active "
                "IMEContentObserver"));
@@ -2622,26 +2626,17 @@ void IMEStateManager::CreateIMEContentObserver(EditorBase& aEditorBase,
     return;
   }
 
-  const OwningNonNull<nsIWidget> textInputHandlingWidget =
-      *sTextInputHandlingWidget;
   MOZ_ASSERT_IF(sFocusedPresContext->GetTextInputHandlingWidget(),
                 sFocusedPresContext->GetTextInputHandlingWidget() ==
-                    textInputHandlingWidget.get());
+                    sTextInputHandlingWidget);
 
   MOZ_LOG(sISMLog, LogLevel::Debug,
           ("  CreateIMEContentObserver() is creating an "
            "IMEContentObserver instance..."));
   sActiveIMEContentObserver = new IMEContentObserver();
-
-  
-  
-  
-  OwningNonNull<IMEContentObserver> activeIMEContentObserver =
-      *sActiveIMEContentObserver;
-  OwningNonNull<nsPresContext> focusedPresContext = *sFocusedPresContext;
-  RefPtr<Element> focusedElement = aFocusedElement;
-  activeIMEContentObserver->Init(textInputHandlingWidget, focusedPresContext,
-                                 focusedElement, aEditorBase);
+  sActiveIMEContentObserver->Init(*sTextInputHandlingWidget,
+                                  *sFocusedPresContext, aFocusedElement,
+                                  aEditorBase);
 }
 
 
