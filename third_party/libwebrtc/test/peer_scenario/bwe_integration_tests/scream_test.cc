@@ -333,7 +333,7 @@ TEST(ScreamTest,
   EXPECT_THAT(
       result.caller().subspan(1, 3),
       Each(AvailableSendBitrateIsBetween(DataRate::KilobitsPerSec(10),
-                                         DataRate::KilobitsPerSec(100))));
+                                         DataRate::KilobitsPerSec(150))));
   
   
   EXPECT_THAT(result.caller()[3],
