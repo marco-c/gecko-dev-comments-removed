@@ -73,14 +73,31 @@ class PermissionStatusSink {
 
   RefPtr<SystemPermissionStatePromise> ComputeSystemState();
 
+  
+  
+  PermissionStatus* GetPermissionStatus() {
+    MOZ_ASSERT(mSerialEventTarget->IsOnCurrentThread());
+    return mPermissionStatus;
+  }
+
+  void ClearPermissionStatus() {
+    MOZ_ASSERT(mSerialEventTarget->IsOnCurrentThread());
+    mPermissionStatus = nullptr;
+  }
+
+  bool GetBrowserIdOnMainThread(uint64_t* aBrowserId);
+
   nsCOMPtr<nsISerialEventTarget> mSerialEventTarget;
   nsCOMPtr<nsIPrincipal> mPrincipalForPermission;
 
   RefPtr<PermissionObserver> mObserver;
 
-  RefPtr<PermissionStatus> mPermissionStatus;
-
   Mutex mMutex;
+
+ private:
+  
+  
+  RefPtr<PermissionStatus> mPermissionStatus;
 
   
   
