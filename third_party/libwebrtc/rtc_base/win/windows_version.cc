@@ -12,7 +12,8 @@
 
 #include <windows.h>
 
-#include <memory>
+#include <cstddef>
+#include <string>
 
 #include "rtc_base/checks.h"
 #include "rtc_base/string_utils.h"
@@ -22,6 +23,8 @@
 #endif
 
 #if !defined(WINUWP)
+
+namespace webrtc {
 
 namespace {
 
@@ -163,6 +166,8 @@ class RegKey {
   HKEY key_;
   REGSAM wow64access_;
 };
+
+}  
 
 }  
 

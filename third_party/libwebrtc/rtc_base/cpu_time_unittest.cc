@@ -26,24 +26,23 @@
 #define MAYBE_TEST(test_name) test_name
 #endif
 
+namespace webrtc {
+
 namespace {
-const int kAllowedErrorMillisecs = 30;
-const int kProcessingTimeMillisecs = 500;
-const int kWorkingThreads = 2;
+constexpr int kAllowedErrorMillisecs = 30;
+constexpr int kProcessingTimeMillisecs = 500;
+constexpr int kWorkingThreads = 2;
 
 
 void WorkingFunction(int64_t* counter) {
   *counter = 0;
-  int64_t stop_cpu_time =
-      webrtc::GetThreadCpuTimeNanos() +
-      kProcessingTimeMillisecs * webrtc::kNumNanosecsPerMillisec;
-  while (webrtc::GetThreadCpuTimeNanos() < stop_cpu_time) {
+  int64_t stop_cpu_time = GetThreadCpuTimeNanos() +
+                          kProcessingTimeMillisecs * kNumNanosecsPerMillisec;
+  while (GetThreadCpuTimeNanos() < stop_cpu_time) {
     (*counter)++;
   }
 }
 }  
-
-namespace webrtc {
 
 
 

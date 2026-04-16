@@ -10,13 +10,15 @@
 
 #include "rtc_base/cpu_time.h"
 
+#include <time.h>
+
 #include <cstdint>
 
 #include "rtc_base/logging.h"
 #include "rtc_base/time_utils.h"
 
 #if defined(WEBRTC_LINUX)
-#include <time.h>
+#include <ctime>
 #elif defined(WEBRTC_MAC)
 #include <mach/mach_init.h>
 #include <mach/mach_port.h>
@@ -34,14 +36,14 @@
 #include <zircon/status.h>
 #endif
 
+namespace webrtc {
+
 #if defined(WEBRTC_WIN)
 namespace {
 
 const int64_t kNanosecsPerFiletime = 100;
 }  
 #endif
-
-namespace webrtc {
 
 int64_t GetProcessCpuTimeNanos() {
 #if defined(WEBRTC_FUCHSIA)

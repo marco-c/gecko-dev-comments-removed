@@ -45,9 +45,11 @@
 
 
 
+namespace webrtc {
+
 namespace {
 
-uint32_t DetectNumberOfCores() {
+uint32_t DetectNumberOfCoresHelper() {
   int number_of_cores = 0;
 
 #if defined(WEBRTC_WIN)
@@ -123,8 +125,6 @@ inline void __cpuid(int cpu_info[4], int info_type) {
 
 }  
 
-namespace webrtc {
-
 namespace cpu_info {
 
 uint32_t DetectNumberOfCores() {
@@ -132,7 +132,7 @@ uint32_t DetectNumberOfCores() {
   
   
   
-  static const uint32_t logical_cpus = ::DetectNumberOfCores();
+  static const uint32_t logical_cpus = DetectNumberOfCoresHelper();
   return logical_cpus;
 }
 

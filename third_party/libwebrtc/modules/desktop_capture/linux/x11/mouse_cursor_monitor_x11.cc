@@ -30,6 +30,8 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 
+namespace webrtc {
+
 namespace {
 
 
@@ -64,8 +66,6 @@ Window GetTopLevelWindow(Display* display, Window window) {
 }
 
 }  
-
-namespace webrtc {
 
 MouseCursorMonitorX11::MouseCursorMonitorX11(
     const DesktopCaptureOptions& options,

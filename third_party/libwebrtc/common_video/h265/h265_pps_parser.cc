@@ -52,13 +52,13 @@
     }                                                                    \
   } while (0)
 
+namespace webrtc {
+
 namespace {
 constexpr int kMaxNumTileColumnWidth = 19;
 constexpr int kMaxNumTileRowHeight = 21;
 constexpr int kMaxRefIdxActive = 15;
 }  
-
-namespace webrtc {
 
 
 

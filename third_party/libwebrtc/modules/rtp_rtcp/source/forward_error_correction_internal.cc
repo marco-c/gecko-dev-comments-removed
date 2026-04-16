@@ -20,6 +20,8 @@
 #include "modules/rtp_rtcp/source/fec_private_tables_random.h"
 #include "rtc_base/checks.h"
 
+namespace webrtc {
+
 namespace {
 
 enum ProtectionMode {
@@ -141,7 +143,6 @@ void ShiftFitSubMask(int num_mask_bytes,
 
 }  
 
-namespace webrtc {
 namespace internal {
 
 PacketMaskTable::PacketMaskTable(FecMaskType fec_mask_type,

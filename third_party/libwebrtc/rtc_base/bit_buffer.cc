@@ -21,6 +21,8 @@
 #include "api/array_view.h"
 #include "rtc_base/checks.h"
 
+namespace webrtc {
+
 namespace {
 
 
@@ -51,8 +53,6 @@ uint8_t WritePartialByte(uint8_t source,
 }
 
 }  
-
-namespace webrtc {
 
 BitBufferWriter::BitBufferWriter(ArrayView<uint8_t> bytes)
     : BitBufferWriter(bytes.data(), bytes.size()) {}

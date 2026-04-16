@@ -17,6 +17,8 @@
 
 #include "rtc_base/checks.h"
 
+namespace webrtc {
+
 namespace {
 
 
@@ -24,8 +26,6 @@ namespace {
 constexpr double ninetyfive_percent_confidence = 1.96;
 
 }  
-
-namespace webrtc {
 
 
 

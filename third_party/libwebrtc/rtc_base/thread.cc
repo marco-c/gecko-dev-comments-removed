@@ -77,6 +77,7 @@ void* objc_autoreleasePoolPush(void);
 void objc_autoreleasePoolPop(void* pool);
 }
 
+namespace webrtc {
 namespace {
 class ScopedAutoReleasePool {
  public:
@@ -86,6 +87,7 @@ class ScopedAutoReleasePool {
  private:
   void* const pool_;
 };
+}  
 }  
 #endif
 

@@ -11,9 +11,11 @@
 
 
 
+#include <stdlib.h>
 #include <cstdarg>
 #include <cstdio>
 #include <cstdlib>
+#include <string>
 
 #include "absl/strings/string_view.h"
 
@@ -28,14 +30,14 @@
 
 #if defined(WEBRTC_WIN)
 #define LAST_SYSTEM_ERROR (::GetLastError())
-#elif defined(__native_client__) && __native_client__
-#define LAST_SYSTEM_ERROR (0)
 #elif defined(WEBRTC_POSIX)
-#include <errno.h>
+#include <cerrno>
 #define LAST_SYSTEM_ERROR (errno)
 #endif  
 
 #include "rtc_base/checks.h"
+
+namespace webrtc {
 
 namespace {
 
@@ -59,7 +61,6 @@ void AppendFormat(std::string* s, const char* fmt, ...) {
 }
 }  
 
-namespace webrtc {
 namespace webrtc_checks_impl {
 
 #if !defined(WEBRTC_CHROMIUM_BUILD)

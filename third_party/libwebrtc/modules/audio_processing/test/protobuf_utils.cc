@@ -19,6 +19,8 @@
 #include "rtc_base/protobuf_utils.h"
 #include "rtc_base/system/arch.h"
 
+namespace webrtc {
+
 namespace {
 
 
@@ -40,8 +42,6 @@ size_t ReadMessageBytesFromString(std::stringstream* input,
   return size_read == size ? size : 0;
 }
 }  
-
-namespace webrtc {
 
 size_t ReadMessageBytesFromFile(FILE* file, std::unique_ptr<uint8_t[]>* bytes) {
 

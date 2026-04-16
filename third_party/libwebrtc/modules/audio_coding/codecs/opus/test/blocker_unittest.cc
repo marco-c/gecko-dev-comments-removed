@@ -18,10 +18,12 @@
 #include "common_audio/channel_buffer.h"
 #include "test/gtest.h"
 
+namespace webrtc {
+
 namespace {
 
 
-class PlusThreeBlockerCallback : public webrtc::BlockerCallback {
+class PlusThreeBlockerCallback : public BlockerCallback {
  public:
   void ProcessBlock(const float* const* input,
                     size_t num_frames,
@@ -37,7 +39,7 @@ class PlusThreeBlockerCallback : public webrtc::BlockerCallback {
 };
 
 
-class CopyBlockerCallback : public webrtc::BlockerCallback {
+class CopyBlockerCallback : public BlockerCallback {
  public:
   void ProcessBlock(const float* const* input,
                     size_t num_frames,
@@ -53,8 +55,6 @@ class CopyBlockerCallback : public webrtc::BlockerCallback {
 };
 
 }  
-
-namespace webrtc {
 
 
 
