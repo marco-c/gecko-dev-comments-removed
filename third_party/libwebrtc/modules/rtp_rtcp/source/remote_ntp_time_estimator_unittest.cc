@@ -18,10 +18,14 @@
 #include "modules/rtp_rtcp/source/ntp_time_util.h"
 #include "system_wrappers/include/clock.h"
 #include "system_wrappers/include/ntp_time.h"
+#include "test/gmock.h"
 #include "test/gtest.h"
+#include "test/near_matcher.h"
 
 namespace webrtc {
 namespace {
+
+using ::testing::Optional;
 
 constexpr TimeDelta kTestRtt = TimeDelta::Millis(10);
 constexpr Timestamp kLocalClockInitialTime = Timestamp::Millis(123);
@@ -60,6 +64,14 @@ class RemoteNtpTimeEstimatorTest : public ::testing::Test {
                 ntp_error_fractions);
     AdvanceTime(kTestRtt / 2 + networking_delay);
     EXPECT_TRUE(estimator_.UpdateRtcpTimestamp(kTestRtt, ntp, rtcp_timestamp));
+  }
+
+  void ReceiveRemoteSr(TimeDelta delivery_delay, TimeDelta rtt) {
+    const uint32_t rtp_sr = GetRemoteTimestamp();
+    const NtpTime ntp_sr = remote_clock_.CurrentNtpTime();
+
+    AdvanceTime(delivery_delay);
+    EXPECT_TRUE(estimator_.UpdateRtcpTimestamp(rtt, ntp_sr, rtp_sr));
   }
 
   SimulatedClock local_clock_{kLocalClockInitialTime};
@@ -132,6 +144,61 @@ TEST_F(RemoteNtpTimeEstimatorTest, AveragesErrorsOut) {
   EXPECT_EQ(capture_ntp_time_ms, estimator_.Estimate(rtp_timestamp));
   EXPECT_NEAR(kRemoteToLocalClockOffsetNtp,
               *estimator_.EstimateRemoteToLocalClockOffset(), kEpsilon);
+}
+
+TEST_F(RemoteNtpTimeEstimatorTest, EstimateUsingRrtrLogic) {
+  
+  
+  
+  
+
+  
+  const NtpTime t1 = local_clock_.CurrentNtpTime();
+
+  
+  
+  const TimeDelta kOneWayDelay = TimeDelta::Millis(10);
+  const TimeDelta kRemoteProcessingDelay = TimeDelta::Millis(5);
+
+  AdvanceTime(kOneWayDelay);            
+  AdvanceTime(kRemoteProcessingDelay);  
+
+  
+  AdvanceTime(kOneWayDelay);  
+  const NtpTime t4 = local_clock_.CurrentNtpTime();
+
+  
+  
+  const uint32_t last_rr = CompactNtp(t1);
+  const uint32_t delay_since_last_rr =
+      SaturatedToCompactNtp(kRemoteProcessingDelay);
+  const uint32_t now_ntp = CompactNtp(t4);
+  const uint32_t rtt_compact = now_ntp - delay_since_last_rr - last_rr;
+  const TimeDelta rtt = CompactNtpRttToTimeDelta(rtt_compact);
+
+  
+  EXPECT_THAT(rtt, Near(2 * kOneWayDelay, TimeDelta::Millis(1)));
+
+  AdvanceTime(TimeDelta::Millis(100));
+  
+  ReceiveRemoteSr(kOneWayDelay, rtt);
+  
+  EXPECT_EQ(estimator_.EstimateRemoteToLocalClockOffset(), std::nullopt);
+
+  
+  AdvanceTime(TimeDelta::Millis(800));
+  ReceiveRemoteSr(kOneWayDelay, rtt);
+
+  
+  AdvanceTime(TimeDelta::Millis(800));
+  ReceiveRemoteSr(kOneWayDelay, rtt);
+
+  
+  
+  
+  constexpr int64_t kDlrrEpsilon = 10000;
+  EXPECT_THAT(estimator_.EstimateRemoteToLocalClockOffset(),
+              Optional(Near(kRemoteToLocalClockOffsetNtp, kDlrrEpsilon)));
 }
 
 }  
