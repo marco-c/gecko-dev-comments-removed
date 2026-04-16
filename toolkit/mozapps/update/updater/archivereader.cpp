@@ -329,7 +329,8 @@ int ArchiveReader::ExtractItemToStream(const MarItem* item, FILE* fp) {
     
     
     if (xz_rv != XZ_STREAM_END) {
-      ret = UNEXPECTED_XZ_ERROR;
+      ret = (xz_rv == XZ_MEM_ERROR) ? ARCHIVE_READER_MEM_ERROR
+                                    : UNEXPECTED_XZ_ERROR;
       break;
     }
 
