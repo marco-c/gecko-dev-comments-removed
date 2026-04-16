@@ -715,18 +715,10 @@ impl<'b> Cascade<'b> {
             
             
             
-            match declaration.id {
-                LonghandId::Display => {
-                    context
-                        .builder
-                        .add_flags(ComputedValueFlags::DISPLAY_DEPENDS_ON_INHERITED_STYLE);
-                },
-                LonghandId::Content => {
-                    context
-                        .builder
-                        .add_flags(ComputedValueFlags::CONTENT_DEPENDS_ON_INHERITED_STYLE);
-                },
-                _ => {},
+            if matches!(declaration.id, LonghandId::Display | LonghandId::Content) {
+                context
+                    .builder
+                    .add_flags(ComputedValueFlags::DISPLAY_OR_CONTENT_DEPEND_ON_INHERITED_STYLE);
             }
         }
 
