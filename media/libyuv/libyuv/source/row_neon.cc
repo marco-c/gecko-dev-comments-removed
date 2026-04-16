@@ -9,6 +9,7 @@
 
 
 #include "libyuv/row.h"
+#include "libyuv/convert_from_argb.h"  
 
 #ifdef __cplusplus
 namespace libyuv {
@@ -1841,38 +1842,35 @@ void ARGBExtractAlphaRow_NEON(const uint8_t* src_argb,
 }
 
 
-struct RgbUVConstants {
-  int8_t kRGBToU[4];
-  int8_t kRGBToV[4];
-};
-
-
-static void ARGBToUV444MatrixRow_NEON(
-    const uint8_t* src_argb,
-    uint8_t* dst_u,
-    uint8_t* dst_v,
-    int width,
-    const struct RgbUVConstants* rgbuvconstants) {
+void ARGBToUV444MatrixRow_NEON(const uint8_t* src_argb,
+                               uint8_t* dst_u,
+                               uint8_t* dst_v,
+                               int width,
+                               const struct ArgbConstants* c) {
   asm volatile(
-      "vld1.8      {d0}, [%4]                    \n"  
-      "vdup.u8     d24, d0[0]                    \n"  
-      "vdup.u8     d25, d0[1]                    \n"  
-      "vdup.u8     d26, d0[2]                    \n"  
-      "vdup.u8     d27, d0[4]                    \n"  
-      "vdup.u8     d28, d0[5]                    \n"  
-      "vneg.s8     d24, d24                      \n"
-      "vmov.u16    q15, #0x8000                  \n"  
+      "vld1.8      {d16}, [%4]                   \n"  
+      "vld1.8      {d17}, [%5]                   \n"  
+      "vld1.16     {d18[0]}, [%6]                \n"  
+      "vabs.s8     d16, d16                      \n"  
+      "vabs.s8     d17, d17                      \n"  
+      "vdup.8      d20, d16[0]                   \n"  
+      "vdup.8      d21, d16[1]                   \n"  
+      "vdup.8      d22, d16[2]                   \n"  
+      "vdup.8      d23, d17[0]                   \n"  
+      "vdup.8      d24, d17[1]                   \n"  
+      "vdup.8      d25, d17[2]                   \n"  
+      "vdup.16     q15, d18[0]                   \n"  
 
       "1:          \n"
       "vld4.8      {d0, d1, d2, d3}, [%0]!       \n"  
       "subs        %3, %3, #8                    \n"  
-      "vmull.u8    q2, d0, d24                   \n"  
-      "vmlsl.u8    q2, d1, d25                   \n"  
-      "vmlsl.u8    q2, d2, d26                   \n"  
+      "vmull.u8    q2, d0, d20                   \n"  
+      "vmlsl.u8    q2, d1, d21                   \n"  
+      "vmlsl.u8    q2, d2, d22                   \n"  
 
-      "vmull.u8    q3, d2, d24                   \n"  
-      "vmlsl.u8    q3, d1, d28                   \n"  
-      "vmlsl.u8    q3, d0, d27                   \n"  
+      "vmull.u8    q3, d2, d25                   \n"  
+      "vmlsl.u8    q3, d1, d24                   \n"  
+      "vmlsl.u8    q3, d0, d23                   \n"  
 
       "vaddhn.u16  d0, q2, q15                   \n"  
       "vaddhn.u16  d1, q3, q15                   \n"
@@ -1880,52 +1878,31 @@ static void ARGBToUV444MatrixRow_NEON(
       "vst1.8      {d0}, [%1]!                   \n"  
       "vst1.8      {d1}, [%2]!                   \n"  
       "bgt         1b                            \n"
-      : "+r"(src_argb),      // %0
-        "+r"(dst_u),         // %1
-        "+r"(dst_v),         // %2
-        "+r"(width)          // %3
-      : "r"(rgbuvconstants)  // %4
-      : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q12", "q13", "q14",
-        "q15");
+      : "+r"(src_argb),     // %0
+        "+r"(dst_u),        // %1
+        "+r"(dst_v),        // %2
+        "+r"(width)         // %3
+      : "r"(&c->kRGBToU),   // %4
+        "r"(&c->kRGBToV),   // %5
+        "r"(&c->kAddUV)     // %6
+      : "cc", "memory", "q0", "q1", "q2", "q3", "q8", "q9", "q10", "q11",
+        "q12", "q13", "q14", "q15");
 }
-
-
-
-
-
-
-
-
-
-static const struct RgbUVConstants kARGBI601UVConstants = {{-112, 74, 38, 0},
-                                                           {18, 94, -112, 0}};
 
 void ARGBToUV444Row_NEON(const uint8_t* src_argb,
                          uint8_t* dst_u,
                          uint8_t* dst_v,
                          int width) {
-  ARGBToUV444MatrixRow_NEON(src_argb, dst_u, dst_v, width,
-                            &kARGBI601UVConstants);
+  ARGBToUV444MatrixRow_NEON(src_argb, dst_u, dst_v, width, &kArgbI601Constants);
 }
-
-
-
-
-
-
-
-
-
-static const struct RgbUVConstants kARGBJPEGUVConstants = {{-128, 85, 43, 0},
-                                                           {21, 107, -128, 0}};
 
 void ARGBToUVJ444Row_NEON(const uint8_t* src_argb,
                           uint8_t* dst_u,
                           uint8_t* dst_v,
                           int width) {
-  ARGBToUV444MatrixRow_NEON(src_argb, dst_u, dst_v, width,
-                            &kARGBJPEGUVConstants);
+  ARGBToUV444MatrixRow_NEON(src_argb, dst_u, dst_v, width, &kArgbJPEGConstants);
 }
+
 
 
 
@@ -2754,47 +2731,22 @@ void AB64ToARGBRow_NEON(const uint16_t* src_ab64,
       : "cc", "memory", "q0", "q1", "q2", "q3", "q4");
 }
 
-struct RgbConstants {
-  uint8_t kRGBToY[4];
-  uint16_t kAddY;
-};
 
-
-
-
-
-
-static const struct RgbConstants kRgb24JPEGConstants = {{29, 150, 77, 0},
-                                                        0x0080};
-
-static const struct RgbConstants kRawJPEGConstants = {{77, 150, 29, 0}, 0x0080};
-
-
-
-
-
-
-
-static const struct RgbConstants kRgb24I601Constants = {{25, 129, 66, 0},
-                                                        0x1080};
-
-static const struct RgbConstants kRawI601Constants = {{66, 129, 25, 0}, 0x1080};
-
-
-static void ARGBToYMatrixRow_NEON(const uint8_t* src_argb,
-                                  uint8_t* dst_y,
-                                  int width,
-                                  const struct RgbConstants* rgbconstants) {
+void ARGBToYMatrixRow_NEON(const uint8_t* src_argb,
+                            uint8_t* dst_y,
+                            int width,
+                            const struct ArgbConstants* c) {
   asm volatile(
-      "vld1.8      {d0}, [%3]                    \n"  
-      "vdup.u8     d20, d0[0]                    \n"
-      "vdup.u8     d21, d0[1]                    \n"
-      "vdup.u8     d22, d0[2]                    \n"
-      "vdup.u16    q12, d0[2]                    \n"
+      "vld1.8      {d16}, [%3]                   \n"  
+      "vld1.16     {d18[0]}, [%4]                \n"  
+      "vdup.8      d20, d16[0]                   \n"  
+      "vdup.8      d21, d16[1]                   \n"  
+      "vdup.8      d22, d16[2]                   \n"  
+      "vdup.16     q12, d18[0]                   \n"  
       "1:          \n"
       "vld4.8      {d0, d2, d4, d6}, [%0]!       \n"  
       "vld4.8      {d1, d3, d5, d7}, [%0]!       \n"
-      "subs        %2, %2, #16                   \n"  
+      "subs        %1, %1, #16                   \n"  
       "vmull.u8    q8, d0, d20                   \n"  
       "vmull.u8    q9, d1, d20                   \n"
       "vmlal.u8    q8, d2, d21                   \n"  
@@ -2803,30 +2755,31 @@ static void ARGBToYMatrixRow_NEON(const uint8_t* src_argb,
       "vmlal.u8    q9, d5, d22                   \n"
       "vaddhn.u16  d0, q8, q12                   \n"  
       "vaddhn.u16  d1, q9, q12                   \n"
-      "vst1.8      {d0, d1}, [%1]!               \n"  
+      "vst1.8      {d0, d1}, [%2]!               \n"  
       "bgt         1b                            \n"
       : "+r"(src_argb),    // %0
-        "+r"(dst_y),       // %1
-        "+r"(width)        // %2
-      : "r"(rgbconstants)  // %3
+        "+r"(width),       // %1
+        "+r"(dst_y)        // %2
+      : "r"(&c->kRGBToY),  // %3
+        "r"(&c->kAddY)     // %4
       : "cc", "memory", "q0", "q1", "q2", "q3", "q8", "q9", "d20", "d21", "d22",
         "q12");
 }
 
 void ARGBToYRow_NEON(const uint8_t* src_argb, uint8_t* dst_y, int width) {
-  ARGBToYMatrixRow_NEON(src_argb, dst_y, width, &kRgb24I601Constants);
+  ARGBToYMatrixRow_NEON(src_argb, dst_y, width, &kArgbI601Constants);
 }
 
 void ARGBToYJRow_NEON(const uint8_t* src_argb, uint8_t* dst_yj, int width) {
-  ARGBToYMatrixRow_NEON(src_argb, dst_yj, width, &kRgb24JPEGConstants);
+  ARGBToYMatrixRow_NEON(src_argb, dst_yj, width, &kArgbJPEGConstants);
 }
 
 void ABGRToYRow_NEON(const uint8_t* src_abgr, uint8_t* dst_y, int width) {
-  ARGBToYMatrixRow_NEON(src_abgr, dst_y, width, &kRawI601Constants);
+  ARGBToYMatrixRow_NEON(src_abgr, dst_y, width, &kAbgrI601Constants);
 }
 
 void ABGRToYJRow_NEON(const uint8_t* src_abgr, uint8_t* dst_yj, int width) {
-  ARGBToYMatrixRow_NEON(src_abgr, dst_yj, width, &kRawJPEGConstants);
+  ARGBToYMatrixRow_NEON(src_abgr, dst_yj, width, &kAbgrJPEGConstants);
 }
 
 
@@ -2834,13 +2787,14 @@ void ABGRToYJRow_NEON(const uint8_t* src_abgr, uint8_t* dst_yj, int width) {
 static void RGBAToYMatrixRow_NEON(const uint8_t* src_rgba,
                                   uint8_t* dst_y,
                                   int width,
-                                  const struct RgbConstants* rgbconstants) {
+                                  const struct ArgbConstants* c) {
   asm volatile(
-      "vld1.8      {d0}, [%3]                    \n"  
-      "vdup.u8     d20, d0[0]                    \n"
-      "vdup.u8     d21, d0[1]                    \n"
-      "vdup.u8     d22, d0[2]                    \n"
-      "vdup.u16    q12, d0[2]                    \n"
+      "vld1.8      {d16}, [%3]                   \n"  
+      "vld1.16     {d18[0]}, [%4]                \n"  
+      "vdup.8      d20, d16[0]                   \n"  
+      "vdup.8      d21, d16[1]                   \n"  
+      "vdup.8      d22, d16[2]                   \n"  
+      "vdup.16     q12, d18[0]                   \n"  
       "1:          \n"
       "vld4.8      {d0, d2, d4, d6}, [%0]!       \n"  
       "vld4.8      {d1, d3, d5, d7}, [%0]!       \n"
@@ -2858,33 +2812,35 @@ static void RGBAToYMatrixRow_NEON(const uint8_t* src_rgba,
       : "+r"(src_rgba),    // %0
         "+r"(dst_y),       // %1
         "+r"(width)        // %2
-      : "r"(rgbconstants)  // %3
+      : "r"(&c->kRGBToY),  // %3
+        "r"(&c->kAddY)     // %4
       : "cc", "memory", "q0", "q1", "q2", "q3", "q8", "q9", "d20", "d21", "d22",
         "q12");
 }
 
 void RGBAToYRow_NEON(const uint8_t* src_rgba, uint8_t* dst_y, int width) {
-  RGBAToYMatrixRow_NEON(src_rgba, dst_y, width, &kRgb24I601Constants);
+  RGBAToYMatrixRow_NEON(src_rgba, dst_y, width, &kArgbI601Constants);
 }
 
 void RGBAToYJRow_NEON(const uint8_t* src_rgba, uint8_t* dst_yj, int width) {
-  RGBAToYMatrixRow_NEON(src_rgba, dst_yj, width, &kRgb24JPEGConstants);
+  RGBAToYMatrixRow_NEON(src_rgba, dst_yj, width, &kArgbJPEGConstants);
 }
 
 void BGRAToYRow_NEON(const uint8_t* src_bgra, uint8_t* dst_y, int width) {
-  RGBAToYMatrixRow_NEON(src_bgra, dst_y, width, &kRawI601Constants);
+  RGBAToYMatrixRow_NEON(src_bgra, dst_y, width, &kAbgrI601Constants);
 }
 
 static void RGBToYMatrixRow_NEON(const uint8_t* src_rgb,
                                  uint8_t* dst_y,
                                  int width,
-                                 const struct RgbConstants* rgbconstants) {
+                                 const struct ArgbConstants* c) {
   asm volatile(
-      "vld1.8      {d0}, [%3]                    \n"  
-      "vdup.u8     d20, d0[0]                    \n"
-      "vdup.u8     d21, d0[1]                    \n"
-      "vdup.u8     d22, d0[2]                    \n"
-      "vdup.u16    q12, d0[2]                    \n"
+      "vld1.8      {d16}, [%3]                   \n"  
+      "vld1.16     {d18[0]}, [%4]                \n"  
+      "vdup.8      d20, d16[0]                   \n"  
+      "vdup.8      d21, d16[1]                   \n"  
+      "vdup.8      d22, d16[2]                   \n"  
+      "vdup.16     q12, d18[0]                   \n"  
       "1:          \n"
       "vld3.8      {d2, d4, d6}, [%0]!           \n"  
                                                       
@@ -2903,25 +2859,26 @@ static void RGBToYMatrixRow_NEON(const uint8_t* src_rgb,
       : "+r"(src_rgb),     // %0
         "+r"(dst_y),       // %1
         "+r"(width)        // %2
-      : "r"(rgbconstants)  // %3
+      : "r"(&c->kRGBToY),  // %3
+        "r"(&c->kAddY)     // %4
       : "cc", "memory", "q0", "q1", "q2", "q3", "q8", "q9", "d20", "d21", "d22",
         "q12");
 }
 
 void RGB24ToYJRow_NEON(const uint8_t* src_rgb24, uint8_t* dst_yj, int width) {
-  RGBToYMatrixRow_NEON(src_rgb24, dst_yj, width, &kRgb24JPEGConstants);
+  RGBToYMatrixRow_NEON(src_rgb24, dst_yj, width, &kArgbJPEGConstants);
 }
 
 void RAWToYJRow_NEON(const uint8_t* src_raw, uint8_t* dst_yj, int width) {
-  RGBToYMatrixRow_NEON(src_raw, dst_yj, width, &kRawJPEGConstants);
+  RGBToYMatrixRow_NEON(src_raw, dst_yj, width, &kAbgrJPEGConstants);
 }
 
 void RGB24ToYRow_NEON(const uint8_t* src_rgb24, uint8_t* dst_y, int width) {
-  RGBToYMatrixRow_NEON(src_rgb24, dst_y, width, &kRgb24I601Constants);
+  RGBToYMatrixRow_NEON(src_rgb24, dst_y, width, &kArgbI601Constants);
 }
 
 void RAWToYRow_NEON(const uint8_t* src_raw, uint8_t* dst_y, int width) {
-  RGBToYMatrixRow_NEON(src_raw, dst_y, width, &kRawI601Constants);
+  RGBToYMatrixRow_NEON(src_raw, dst_y, width, &kAbgrI601Constants);
 }
 
 
