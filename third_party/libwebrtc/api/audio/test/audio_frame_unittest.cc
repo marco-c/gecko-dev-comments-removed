@@ -10,8 +10,8 @@
 
 #include "api/audio/audio_frame.h"
 
-#include <stdint.h>
-#include <string.h>  
+#include <cstdint>
+#include <cstring>
 
 #include "api/audio/audio_view.h"
 #include "api/audio/channel_layout.h"
@@ -88,7 +88,7 @@ TEST(AudioFrameTest, UnmutedFrameIsInitiallyZeroed) {
 TEST(AudioFrameTest, MutedFrameBufferIsZeroed) {
   AudioFrame frame;
   int16_t* frame_data =
-      frame.mutable_data(kSamplesPerChannel, kNumChannelsMono).begin();
+      frame.mutable_data(kSamplesPerChannel, kNumChannelsMono).data().data();
   EXPECT_FALSE(frame.muted());
   
   for (size_t i = 0; i < frame.max_16bit_samples(); i++) {
