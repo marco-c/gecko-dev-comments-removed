@@ -16,9 +16,9 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <span>
 #include <vector>
 
-#include "api/array_view.h"
 #include "common_video/h264/h264_common.h"
 #include "rtc_base/buffer.h"
 
@@ -39,7 +39,7 @@ bool H264CMSampleBufferToAnnexBBuffer(CMSampleBufferRef avcc_sample_buffer,
 
 
 
-bool H264AnnexBBufferToCMSampleBuffer(ArrayView<const uint8_t> annexb_buffer,
+bool H264AnnexBBufferToCMSampleBuffer(std::span<const uint8_t> annexb_buffer,
                                       CMVideoFormatDescriptionRef video_format,
                                       CMSampleBufferRef* out_sample_buffer,
                                       CMMemoryPoolRef memory_pool);
@@ -48,19 +48,19 @@ bool H264AnnexBBufferToCMSampleBuffer(ArrayView<const uint8_t> annexb_buffer,
 
 
 CMVideoFormatDescriptionRef CreateVideoFormatDescription(
-    ArrayView<const uint8_t> annexb_buffer);
+    std::span<const uint8_t> annexb_buffer);
 
 
 class AnnexBBufferReader final {
  public:
-  explicit AnnexBBufferReader(ArrayView<const uint8_t> annexb_buffer);
+  explicit AnnexBBufferReader(std::span<const uint8_t> annexb_buffer);
   ~AnnexBBufferReader();
   AnnexBBufferReader(const AnnexBBufferReader& other) = delete;
   void operator=(const AnnexBBufferReader& other) = delete;
 
   
   
-  bool ReadNalu(ArrayView<const uint8_t>& out_nalu);
+  bool ReadNalu(std::span<const uint8_t>& out_nalu);
 
   
   
@@ -81,7 +81,7 @@ class AnnexBBufferReader final {
                             size_t length,
                             size_t offset) const;
 
-  const ArrayView<const uint8_t> buffer_;
+  const std::span<const uint8_t> buffer_;
   std::vector<NaluIndex> offsets_;
   std::vector<NaluIndex>::iterator offset_;
 };
@@ -89,20 +89,20 @@ class AnnexBBufferReader final {
 
 class AvccBufferWriter final {
  public:
-  explicit AvccBufferWriter(ArrayView<uint8_t> avcc_buffer);
+  explicit AvccBufferWriter(std::span<uint8_t> avcc_buffer);
   ~AvccBufferWriter() {}
   AvccBufferWriter(const AvccBufferWriter& other) = delete;
   void operator=(const AvccBufferWriter& other) = delete;
 
   
   
-  bool WriteNalu(ArrayView<const uint8_t> data);
+  bool WriteNalu(std::span<const uint8_t> data);
 
   
   size_t BytesRemaining() const;
 
  private:
-  ArrayView<uint8_t> buffer_;
+  std::span<uint8_t> buffer_;
 };
 
 }  
