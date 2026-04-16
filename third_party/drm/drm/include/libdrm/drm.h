@@ -592,31 +592,62 @@ struct drm_set_version {
 };
 
 
+
+
+
+
+
+
 struct drm_gem_close {
-	
 	__u32 handle;
 	__u32 pad;
 };
 
 
-struct drm_gem_flink {
-	
-	__u32 handle;
 
-	
+
+
+
+
+
+
+
+
+struct drm_gem_flink {
+	__u32 handle;
 	__u32 name;
 };
 
 
+
+
+
+
+
+
+
+
+
+
 struct drm_gem_open {
-	
 	__u32 name;
-
-	
 	__u32 handle;
-
-	
 	__u64 size;
+};
+
+
+
+
+
+
+
+
+
+
+
+struct drm_gem_change_handle {
+	__u32 handle;
+	__u32 new_handle;
 };
 
 
@@ -868,6 +899,21 @@ struct drm_get_cap {
 
 
 #define DRM_CLIENT_CAP_CURSOR_PLANE_HOTSPOT	6
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define DRM_CLIENT_CAP_PLANE_COLOR_PIPELINE	7
 
 
 struct drm_set_client_cap {
@@ -1302,6 +1348,14 @@ extern "C" {
 
 
 #define DRM_IOCTL_SET_CLIENT_NAME	DRM_IOWR(0xD1, struct drm_set_client_name)
+
+
+
+
+
+
+
+#define DRM_IOCTL_GEM_CHANGE_HANDLE    DRM_IOWR(0xD2, struct drm_gem_change_handle)
 
 
 

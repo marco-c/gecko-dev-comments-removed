@@ -4,7 +4,7 @@
 
 
 
- 
+
 
 
 
@@ -693,7 +693,7 @@ extern int           drmGetLock(int fd,
 			        drmLockFlags flags);
 extern int           drmUnlock(int fd, drm_context_t context);
 extern int           drmFinish(int fd, int context, drmLockFlags flags);
-extern int	     drmGetContextPrivateMapping(int fd, drm_context_t ctx_id, 
+extern int	     drmGetContextPrivateMapping(int fd, drm_context_t ctx_id,
 						 drm_handle_t * handle);
 
 
@@ -779,7 +779,7 @@ typedef struct _drmEventContext {
 	int version;
 
 	void (*vblank_handler)(int fd,
-			       unsigned int sequence, 
+			       unsigned int sequence,
 			       unsigned int tv_sec,
 			       unsigned int tv_usec,
 			       void *user_data);
@@ -890,9 +890,11 @@ typedef struct _drmHost1xDeviceInfo {
     char **compatible; 
 } drmHost1xDeviceInfo, *drmHost1xDeviceInfoPtr;
 
-typedef struct _drmFauxDeviceInfo {
-    char *name;
-} drmFauxDeviceInfo, *drmFauxDeviceInfoPtr;
+#define DRM_FAUX_DEVICE_NAME_LEN 512
+
+typedef struct _drmFauxBusInfo {
+    char name[DRM_FAUX_DEVICE_NAME_LEN];
+} drmFauxBusInfo, *drmFauxBusInfoPtr;
 
 typedef struct _drmDevice {
     char **nodes; 
@@ -903,13 +905,13 @@ typedef struct _drmDevice {
         drmUsbBusInfoPtr usb;
         drmPlatformBusInfoPtr platform;
         drmHost1xBusInfoPtr host1x;
+        drmFauxBusInfoPtr faux;
     } businfo;
     union {
         drmPciDeviceInfoPtr pci;
         drmUsbDeviceInfoPtr usb;
         drmPlatformDeviceInfoPtr platform;
         drmHost1xDeviceInfoPtr host1x;
-        drmFauxDeviceInfoPtr faux;
     } deviceinfo;
 } drmDevice, *drmDevicePtr;
 
