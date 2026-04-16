@@ -7,8 +7,9 @@ mod runner;
 mod test;
 mod updater;
 
+use std::collections::HashMap;
 use std::fs::{create_dir, exists};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::exit;
 use std::thread;
 use tempfile::TempDir;
@@ -71,21 +72,68 @@ fn main() -> Result<()> {
     
     
     
+    
+    let mut package_dest_paths: HashMap<String, PathBuf> = HashMap::new();
     for (i, entry) in args.from.iter().enumerate() {
         let mut installer_dest_path = download_dir.clone();
         let ext = get_extension(&entry.installer)
             .ok_or_else(|| anyhow!("Couldn't find from installer extension!"))?;
         installer_dest_path.push(format!("{i}.{ext}"));
-        downloader.fetch(&entry.installer, &installer_dest_path, &cache_dir)?;
+        package_dest_paths
+            .entry(entry.installer.clone())
+            .or_insert(installer_dest_path);
         let mut updater_dest_path = download_dir.clone();
         updater_dest_path.push(format!("{i}.updater.tar.xz"));
-        downloader.fetch(&entry.updater_package, &updater_dest_path, &cache_dir)?;
+        
+        
+        package_dest_paths
+            .entry(entry.updater_package.clone())
+            .or_insert(updater_dest_path);
+    }
+
+    
+    
+    let entries: Vec<_> = package_dest_paths.iter().collect();
+    let chunk_size = package_dest_paths.len().div_ceil(parallelism).max(1);
+    thread::scope(|s| -> Result<()> {
+        let handles: Vec<_> = entries
+            .chunks(chunk_size)
+            .map(|chunk| {
+                
+                let cache_dir_ref = &cache_dir;
+                let downloader_ref = &downloader;
+
+                return s.spawn(move || {
+                    return chunk
+                        .iter()
+                        .map(|(from_package, dest_path)| {
+                            return downloader_ref.fetch(from_package, dest_path, cache_dir_ref);
+                        })
+                        .collect::<Vec<_>>();
+                });
+            })
+            .collect();
+
+        
+        for h in handles {
+            h.join()
+                
+                .map_err(|_| anyhow::anyhow!("download thread panicked"))?;
+        }
+
+        return Ok(());
+    })?;
+
+    
+    
+    
+    for entry in args.from {
         tests.push(Test {
             id: entry.id.clone(),
             mar: args.complete_mar.to_path_buf(),
-            from_installer: installer_dest_path.clone(),
+            from_installer: package_dest_paths[&entry.installer].clone(),
             locale: args.locale.clone(),
-            updater_package: updater_dest_path.clone(),
+            updater_package: package_dest_paths[&entry.updater_package].clone(),
         });
         if let Some(partial_mar) = &entry.partial_mar {
             let mut partial_path = args.partial_mar_dir.to_path_buf();
@@ -93,9 +141,9 @@ fn main() -> Result<()> {
             tests.push(Test {
                 id: entry.id.clone(),
                 mar: partial_path,
-                from_installer: installer_dest_path.clone(),
+                from_installer: package_dest_paths[&entry.installer].clone(),
                 locale: args.locale.clone(),
-                updater_package: updater_dest_path.clone(),
+                updater_package: package_dest_paths[&entry.updater_package].clone(),
             });
         }
     }
