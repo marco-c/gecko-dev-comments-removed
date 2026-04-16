@@ -889,18 +889,6 @@ void nsPresContext::SetColorSchemeOverride(
   }
 }
 
-void nsPresContext::SetLinkParametersOverride(
-    const StyleLinkParameters& aLinkParameters) {
-  if (mLinkParameters == aLinkParameters) {
-    return;
-  }
-  mLinkParameters = aLinkParameters;
-
-  
-  
-  RebuildAllStyleData(nsChangeHint(0), RestyleHint::RecascadeSubtree());
-}
-
 void nsPresContext::UpdateAnimationsPlayBackRateMultiplier(double aMultiplier) {
   if (mAnimationsPlayBackRateMultiplier == aMultiplier) {
     return;
