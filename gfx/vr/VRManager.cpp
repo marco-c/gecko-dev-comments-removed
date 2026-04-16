@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "VRManager.h"
 
 #include "GeckoProfiler.h"
@@ -154,8 +152,8 @@ VRManager::VRManager()
 #if !defined(MOZ_WIDGET_ANDROID)
   
   
-  mVRProcessEnabled =
-      StaticPrefs::dom_vr_process_enabled_AtStartup() && XRE_IsGPUProcess();
+  mVRProcessEnabled = StaticPrefs::dom_vr_process_enabled_AtStartup() &&
+                      StaticPrefs::dom_vr_enabled() && XRE_IsGPUProcess();
   VRServiceHost::Init(mVRProcessEnabled);
   mServiceHost = VRServiceHost::Get();
   
