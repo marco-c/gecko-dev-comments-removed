@@ -202,6 +202,7 @@ const TEST_GLOBAL = {
       insert() {},
       markPageAsTyped() {},
       removeObserver() {},
+      pageFrecencyThreshold() {},
     },
     "@mozilla.org/io/string-input-stream;1": {
       createInstance() {
@@ -561,6 +562,9 @@ const TEST_GLOBAL = {
     return Promise.resolve({ value: "complete" });
   },
   AboutNewTab: {},
+  AWWaitForNimbus() {
+    return Promise.resolve("skipped");
+  },
   Glean: {
     newtab: {
       opened: {
