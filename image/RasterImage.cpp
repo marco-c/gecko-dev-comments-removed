@@ -77,6 +77,8 @@ RasterImage::RasterImage(nsIURI* aURI )
 
 
 RasterImage::~RasterImage() {
+  mIsBeingDestroyed = true;
+
   
   
   if (!mSourceBuffer->IsComplete()) {
@@ -480,8 +482,12 @@ RasterImage::WillDrawOpaqueNow() {
 void RasterImage::OnSurfaceDiscarded(const SurfaceKey& aSurfaceKey) {
   MOZ_ASSERT(mProgressTracker);
 
+  if (mIsBeingDestroyed) {
+    return;
+  }
+
   bool animatedFramesDiscarded =
-      mAnimationState && aSurfaceKey.Playback() == PlaybackType::eAnimated;
+      aSurfaceKey.Playback() == PlaybackType::eAnimated;
 
   nsCOMPtr<nsIEventTarget> eventTarget = do_GetMainThread();
 
