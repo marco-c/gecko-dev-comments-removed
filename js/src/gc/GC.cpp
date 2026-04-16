@@ -2346,7 +2346,10 @@ void GCRuntime::decommitEmptyChunks(const bool& cancel, AutoLockGC& lock) {
     }
 
     
-    if (!CanDecommitWholeChunk(chunk)) {
+    
+    
+    
+    if (!emptyChunks(lock).contains(chunk) || !CanDecommitWholeChunk(chunk)) {
       continue;
     }
 
