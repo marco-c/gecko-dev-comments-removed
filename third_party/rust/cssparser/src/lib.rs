@@ -84,7 +84,41 @@ pub use crate::serializer::{serialize_identifier, serialize_name, serialize_stri
 pub use crate::serializer::{CssStringWriter, ToCss, TokenSerializationType};
 pub use crate::tokenizer::{SourceLocation, SourcePosition, Token};
 pub use crate::unicode_range::UnicodeRange;
-pub use cssparser_macros::*;
+
+#[cfg(feature = "fast_match_byte")]
+pub use cssparser_macros::match_byte;
+
+#[cfg(not(feature = "fast_match_byte"))]
+#[macro_use]
+mod mac {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[macro_export]
+    macro_rules! match_byte {
+      ($value:expr, $($rest:tt)* ) => {
+          match $value {
+              $(
+                  $rest
+              )+
+          }
+      };
+  }
+}
+
+
+
+#[cfg(feature = "fast_match_color")]
 #[doc(hidden)]
 pub use phf as _cssparser_internal_phf;
 

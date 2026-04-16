@@ -2,10 +2,11 @@
 
 
 
-use crate::match_byte;
-use dtoa_short::Notation;
 use std::fmt::{self, Write};
 use std::str;
+
+#[cfg(feature = "fast_match_byte")]
+pub use crate::match_byte;
 
 use super::Token;
 
@@ -32,24 +33,21 @@ fn write_numeric<W>(value: f32, int_value: Option<i32>, has_sign: bool, dest: &m
 where
     W: fmt::Write,
 {
+    if value == 0.0 && value.is_sign_negative() {
+        
+        return dest.write_str("-0");
+    }
     
-    if has_sign && value.is_sign_positive() {
+    if has_sign && value >= 0.0 {
         dest.write_str("+")?;
     }
 
-    let notation = if value == 0.0 && value.is_sign_negative() {
-        
-        dest.write_str("-0")?;
-        Notation {
-            decimal_point: false,
-            scientific: false,
-        }
-    } else {
-        dtoa_short::write(dest, value)?
-    };
+    if let Some(v) = int_value {
+        return write!(dest, "{}", v);
+    }
 
-    if int_value.is_none() && value.fract() == 0. && !notation.decimal_point && !notation.scientific
-    {
+    let notation = dtoa_short::write(dest, value)?;
+    if value.fract() == 0. && !notation.decimal_point && !notation.scientific {
         dest.write_str(".0")?;
     }
     Ok(())
