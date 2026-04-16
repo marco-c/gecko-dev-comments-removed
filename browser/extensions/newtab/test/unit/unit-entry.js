@@ -451,26 +451,7 @@ const TEST_GLOBAL = {
         spec,
       }),
     },
-    
 
-
-
-    search: {
-      init() {
-        return Promise.resolve();
-      },
-      getVisibleEngines: () =>
-        Promise.resolve([{ identifier: "google" }, { identifier: "bing" }]),
-      defaultEngine: {
-        identifier: "google",
-        aliases: ["@google"],
-      },
-      defaultPrivateEngine: {
-        identifier: "bing",
-        aliases: ["@bing"],
-      },
-      getEngineByAlias: async () => null,
-    },
     scriptSecurityManager: {
       createNullPrincipal() {},
       getSystemPrincipal() {},

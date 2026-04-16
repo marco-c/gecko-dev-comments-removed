@@ -1,20 +1,8 @@
 "use strict";
 
-let SearchService;
-
-
-
-
-
-
-if (Services.search) {
-  SearchService = Services.search;
-} else {
-  SearchService = ChromeUtils.importESModule(
-    "moz-src:///toolkit/components/search/SearchService.sys.mjs"
-  ).SearchService;
-}
-
+const { SearchService } = ChromeUtils.importESModule(
+  "moz-src:///toolkit/components/search/SearchService.sys.mjs"
+);
 
 
 test_newtab({
