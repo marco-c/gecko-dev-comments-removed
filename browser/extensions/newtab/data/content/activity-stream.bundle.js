@@ -15774,7 +15774,8 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
         fluent_id = "newtab-wallpaper-category-title-photographs";
         break;
       case "solid-colors":
-        fluent_id = "newtab-wallpaper-category-title-colors";
+        
+        fluent_id = this.props.Prefs.values["nova.enabled"] ? "newtab-wallpaper-colors" : "newtab-wallpaper-category-title-colors";
         break;
       case "firefox":
         fluent_id = "newtab-wallpaper-category-title-firefox";
@@ -16032,13 +16033,15 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
             fluent_id = "newtab-wallpaper-category-title-celestial";
             break;
           case "custom-wallpaper":
-            fluent_id = "newtab-wallpaper-upload-image";
+            
+            fluent_id = novaEnabled ? "newtab-wallpaper-add-an-image" : "newtab-wallpaper-upload-image";
             break;
           case "photographs":
             fluent_id = "newtab-wallpaper-category-title-photographs";
             break;
           case "solid-colors":
-            fluent_id = "newtab-wallpaper-category-title-colors";
+            
+            fluent_id = novaEnabled ? "newtab-wallpaper-colors" : "newtab-wallpaper-category-title-colors";
             break;
           case "firefox":
             fluent_id = "newtab-wallpaper-category-title-firefox";
