@@ -390,7 +390,7 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
       const nsACString& aFamily, const gfxFontStyle* aStyle);
 
   mozilla::fontlist::FontList* SharedFontList() const {
-    return mSharedFontList.get();
+    return mSharedFontList;
   }
 
   
@@ -682,7 +682,7 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
   
   
   
-  uint32_t GetGeneration() const;
+  uint32_t GetGeneration() const { return mFontListGeneration; }
 
   
   static bool IsInitFontListThread() {
@@ -1108,7 +1108,9 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
   nsTArray<nsCString> mEnabledFontsList;
   nsTHashSet<nsCString> mIconFontsSet;
 
-  mozilla::UniquePtr<mozilla::fontlist::FontList> mSharedFontList;
+  
+  
+  std::atomic<mozilla::fontlist::FontList*> mSharedFontList = nullptr;
 
   nsClassHashtable<nsCStringHashKey, mozilla::fontlist::AliasData> mAliasTable;
   nsTHashMap<nsCStringHashKey, mozilla::fontlist::LocalFaceRec::InitData>
@@ -1123,6 +1125,9 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
 
   RefPtr<LoadCmapsRunnable> mLoadCmapsRunnable;
   uint32_t mStartedLoadingCmapsFrom MOZ_GUARDED_BY(mLock) = 0xffffffffu;
+
+  
+  std::atomic<uint32_t> mFontListGeneration = 0;
 
   bool mFontFamilyWhitelistActive = false;
 
