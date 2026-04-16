@@ -21,6 +21,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/functional/any_invocable.h"
 #include "api/dtls_transport_interface.h"
 #include "api/media_stream_interface.h"
 #include "api/rtp_receiver_interface.h"
@@ -48,11 +49,19 @@ class RtpReceiverInternal : public RtpReceiverInterface {
 
   
   
-  virtual void SetupMediaChannel(uint32_t ssrc) = 0;
+  
+  
+  
+  [[nodiscard]] virtual absl::AnyInvocable<void() &&> GetSetupForMediaChannel(
+      uint32_t ssrc) = 0;
 
   
   
-  virtual void SetupUnsignaledMediaChannel() = 0;
+  
+  
+  
+  [[nodiscard]] virtual absl::AnyInvocable<void() &&>
+  GetSetupForUnsignaledMediaChannel() = 0;
 
   virtual void set_transport(
       scoped_refptr<DtlsTransportInterface> dtls_transport) = 0;

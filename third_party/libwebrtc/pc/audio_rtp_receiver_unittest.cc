@@ -13,6 +13,7 @@
 #include <atomic>
 #include <cstdint>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "api/make_ref_counted.h"
@@ -73,7 +74,8 @@ TEST_F(AudioRtpReceiverTest, SetOutputVolumeIsCalled) {
   receiver_->track()->set_enabled(true);
   receiver_->SetMediaChannel(&receive_channel_);
   EXPECT_CALL(receive_channel_, SetDefaultRawAudioSink(_)).Times(0);
-  receiver_->SetupMediaChannel(kSsrc);
+  auto setup_task = receiver_->GetSetupForMediaChannel(kSsrc);
+  std::move(setup_task)();
 
   EXPECT_CALL(receive_channel_, SetOutputVolume(kSsrc, kVolume))
       .WillOnce(InvokeWithoutArgs([&] {
@@ -99,7 +101,8 @@ TEST_F(AudioRtpReceiverTest, VolumesSetBeforeStartingAreRespected) {
   
   EXPECT_CALL(receive_channel_, SetOutputVolume(kSsrc, kVolume));
 
-  receiver_->SetupMediaChannel(kSsrc);
+  auto setup_task = receiver_->GetSetupForMediaChannel(kSsrc);
+  std::move(setup_task)();
 }
 
 
@@ -114,8 +117,8 @@ TEST(AudioRtpReceiver, OnChangedNotificationsAfterConstruction) {
 
   EXPECT_CALL(receive_channel, SetDefaultRawAudioSink(_)).Times(1);
   EXPECT_CALL(receive_channel, SetDefaultOutputVolume(kDefaultVolume)).Times(1);
-  receiver->SetupUnsignaledMediaChannel();
-  loop.Flush();
+  auto setup_task = receiver->GetSetupForUnsignaledMediaChannel();
+  std::move(setup_task)();
 
   
   receiver->track()->set_enabled(false);
