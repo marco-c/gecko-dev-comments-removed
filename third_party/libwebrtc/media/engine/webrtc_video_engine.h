@@ -464,15 +464,8 @@ class WebRtcVideoSendChannel : public MediaChannelUtil,
       SequenceChecker::kDetached};
   RTC_NO_UNIQUE_ADDRESS SequenceChecker thread_checker_;
 
-  uint32_t rtcp_receiver_report_ssrc_ RTC_GUARDED_BY(thread_checker_);
   bool sending_ RTC_GUARDED_BY(thread_checker_);
-  bool receiving_ RTC_GUARDED_BY(&thread_checker_);
   Call* const call_;
-
-  VideoSinkInterface<VideoFrame>* default_sink_ RTC_GUARDED_BY(thread_checker_);
-
-  
-  int default_recv_base_minimum_delay_ms_ RTC_GUARDED_BY(thread_checker_) = 0;
 
   const MediaConfig::Video video_config_ RTC_GUARDED_BY(thread_checker_);
 
@@ -482,26 +475,9 @@ class WebRtcVideoSendChannel : public MediaChannelUtil,
   
   std::map<uint32_t, WebRtcVideoSendStream*> send_streams_
       RTC_GUARDED_BY(thread_checker_);
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  uint32_t demuxer_criteria_id_ RTC_GUARDED_BY(thread_checker_) = 0;
-  uint32_t demuxer_criteria_completed_id_ RTC_GUARDED_BY(thread_checker_) = 0;
   std::optional<int64_t> last_unsignalled_ssrc_creation_time_ms_
       RTC_GUARDED_BY(thread_checker_);
   std::set<uint32_t> send_ssrcs_ RTC_GUARDED_BY(thread_checker_);
-  std::set<uint32_t> receive_ssrcs_ RTC_GUARDED_BY(thread_checker_);
 
   std::optional<VideoCodecSettings> send_codec_ RTC_GUARDED_BY(thread_checker_);
   std::vector<VideoCodecSettings> negotiated_codecs_
@@ -516,37 +492,21 @@ class WebRtcVideoSendChannel : public MediaChannelUtil,
       RTC_GUARDED_BY(thread_checker_);
   
   
-  int recv_flexfec_payload_type_ RTC_GUARDED_BY(thread_checker_);
   BitrateConstraints bitrate_config_ RTC_GUARDED_BY(thread_checker_);
   
   
   VideoSenderParameters send_params_ RTC_GUARDED_BY(thread_checker_);
   VideoOptions default_send_options_ RTC_GUARDED_BY(thread_checker_);
-  VideoReceiverParameters recv_params_ RTC_GUARDED_BY(thread_checker_);
   int64_t last_send_stats_log_ms_ RTC_GUARDED_BY(thread_checker_);
-  int64_t last_receive_stats_log_ms_ RTC_GUARDED_BY(thread_checker_);
-  const bool discard_unknown_ssrc_packets_ RTC_GUARDED_BY(thread_checker_);
-  
-  
-  
-  
-  StreamParams unsignaled_stream_params_ RTC_GUARDED_BY(thread_checker_);
   
   
   const CryptoOptions crypto_options_ RTC_GUARDED_BY(thread_checker_);
-
-  
-  scoped_refptr<FrameTransformerInterface> unsignaled_frame_transformer_
-      RTC_GUARDED_BY(thread_checker_);
 
   
   
   
   VideoReceiveStreamInterface::Config::Rtp rtp_config_;
 
-  
-  
-  absl::AnyInvocable<void()> send_codec_changed_callback_;
   
   absl::AnyInvocable<void(const std::set<uint32_t>&)>
       ssrc_list_changed_callback_;
@@ -812,15 +772,7 @@ class WebRtcVideoReceiveChannel : public MediaChannelUtil,
   uint32_t demuxer_criteria_completed_id_ RTC_GUARDED_BY(thread_checker_) = 0;
   std::optional<int64_t> last_unsignalled_ssrc_creation_time_ms_
       RTC_GUARDED_BY(thread_checker_);
-  std::set<uint32_t> send_ssrcs_ RTC_GUARDED_BY(thread_checker_);
   std::set<uint32_t> receive_ssrcs_ RTC_GUARDED_BY(thread_checker_);
-
-  std::optional<VideoCodecSettings> send_codec_ RTC_GUARDED_BY(thread_checker_);
-  std::vector<VideoCodecSettings> negotiated_codecs_
-      RTC_GUARDED_BY(thread_checker_);
-
-  std::vector<RtpExtension> send_rtp_extensions_
-      RTC_GUARDED_BY(thread_checker_);
 
   VideoDecoderFactory* const decoder_factory_ RTC_GUARDED_BY(thread_checker_);
   std::vector<VideoCodecSettings> recv_codecs_ RTC_GUARDED_BY(thread_checker_);
@@ -830,11 +782,8 @@ class WebRtcVideoReceiveChannel : public MediaChannelUtil,
   
   
   int recv_flexfec_payload_type_ RTC_GUARDED_BY(thread_checker_);
-  BitrateConstraints bitrate_config_ RTC_GUARDED_BY(thread_checker_);
   
   
-  VideoSenderParameters send_params_ RTC_GUARDED_BY(thread_checker_);
-  VideoOptions default_send_options_ RTC_GUARDED_BY(thread_checker_);
   VideoReceiverParameters recv_params_ RTC_GUARDED_BY(thread_checker_);
   int64_t last_receive_stats_log_ms_ RTC_GUARDED_BY(thread_checker_);
   const bool discard_unknown_ssrc_packets_ RTC_GUARDED_BY(thread_checker_);
@@ -855,13 +804,6 @@ class WebRtcVideoReceiveChannel : public MediaChannelUtil,
   
   
   VideoReceiveStreamInterface::Config::Rtp rtp_config_;
-
-  
-  
-  absl::AnyInvocable<void()> send_codec_changed_callback_;
-  
-  absl::AnyInvocable<void(const std::set<uint32_t>&)>
-      ssrc_list_changed_callback_;
 
   const int receive_buffer_size_;
 };
