@@ -82,7 +82,7 @@ class NackTracker {
   
   
   
-  std::vector<uint16_t> GetNackList(int64_t round_trip_time_ms);
+  std::vector<uint16_t> GetNackList(std::optional<TimeDelta> round_trip_time);
 
   
   
