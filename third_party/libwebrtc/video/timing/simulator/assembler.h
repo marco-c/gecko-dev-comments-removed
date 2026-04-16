@@ -23,8 +23,10 @@
 #include "api/video/encoded_frame.h"
 #include "call/video_receive_stream.h"
 #include "modules/rtp_rtcp/include/receive_statistics.h"
+#include "modules/video_coding/nack_requester.h"
 #include "rtc_base/thread_annotations.h"
 #include "video/rtp_video_stream_receiver2.h"
+#include "video/timing/simulator/receiver.h"
 
 namespace webrtc::video_timing_simulator {
 
@@ -53,7 +55,8 @@ class DecodedFrameIdCallback {
 
 
 
-class Assembler : public DecodedFrameIdCallback,
+class Assembler : public ReceivedRtpPacketCallback,
+                  public DecodedFrameIdCallback,
                   public Transport,
                   public RtpVideoStreamReceiver2::OnCompleteFrameCallback {
  public:
@@ -69,7 +72,8 @@ class Assembler : public DecodedFrameIdCallback,
   
   
   
-  void InsertPacket(const RtpPacketReceived& rtp_packet);
+  
+  void OnReceivedRtpPacket(const RtpPacketReceived& rtp_packet) override;
 
   
   
@@ -95,9 +99,10 @@ class Assembler : public DecodedFrameIdCallback,
   const Environment env_;
 
   
-  const VideoReceiveStreamInterface::Config video_receive_stream_config_
-      RTC_GUARDED_BY(sequence_checker_);
+  const VideoReceiveStreamInterface::Config video_receive_stream_config_;
   std::unique_ptr<ReceiveStatistics> rtp_receive_statistics_
+      RTC_GUARDED_BY(sequence_checker_);
+  NackPeriodicProcessor nack_periodic_processor_
       RTC_GUARDED_BY(sequence_checker_);
   absl::flat_hash_set<uint8_t> registered_payload_types_
       RTC_GUARDED_BY(sequence_checker_);

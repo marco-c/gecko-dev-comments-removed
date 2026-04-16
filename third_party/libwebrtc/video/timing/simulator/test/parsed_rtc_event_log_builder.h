@@ -13,6 +13,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <optional>
 
 #include "api/environment/environment.h"
 #include "api/rtc_event_log/rtc_event.h"
@@ -40,8 +41,10 @@ class ParsedRtcEventLogBuilder {
 
   
   
-  void LogVideoRecvConfig(uint32_t ssrc);
-  void LogRtpPacketIncoming(uint32_t ssrc);
+  void LogVideoRecvConfig(uint32_t ssrc, uint32_t rtx_ssrc);
+  void LogRtpPacketIncoming(
+      uint32_t ssrc,
+      std::optional<uint16_t> rtx_original_sequence_number = std::nullopt);
 
   
   std::unique_ptr<ParsedRtcEventLog> Build();

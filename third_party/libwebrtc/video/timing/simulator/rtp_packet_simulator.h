@@ -18,8 +18,20 @@
 
 namespace webrtc::video_timing_simulator {
 
+
+
 class RtpPacketSimulator {
  public:
+  struct SimulatedPacket {
+    RtpPacketReceived rtp_packet;
+    
+    
+    
+    
+    
+    bool has_rtx_osn = false;
+  };
+
   explicit RtpPacketSimulator(const Environment& env);
   ~RtpPacketSimulator() = default;
 
@@ -30,7 +42,7 @@ class RtpPacketSimulator {
   
   
   
-  RtpPacketReceived SimulateRtpPacketReceived(
+  SimulatedPacket SimulateRtpPacketReceived(
       const LoggedRtpPacket& logged_packet) const;
 
  private:

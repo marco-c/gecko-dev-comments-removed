@@ -18,6 +18,7 @@
 #include "api/environment/environment.h"
 #include "api/rtp_parameters.h"
 #include "api/sequence_checker.h"
+#include "api/task_queue/task_queue_base.h"
 #include "api/video/encoded_frame.h"
 #include "api/video/video_codec_type.h"
 #include "call/video_receive_stream.h"
@@ -32,6 +33,9 @@ VideoReceiveStreamInterface::Config CreateVideoReceiveStreamConfig(
     uint32_t ssrc) {
   VideoReceiveStreamInterface::Config config(nullptr);
   config.rtp.remote_ssrc = ssrc;
+  
+  
+  config.rtp.nack.rtp_history_ms = 1000;
   
   
   config.rtp.local_ssrc = ssrc + 1;
@@ -51,7 +55,7 @@ Assembler::Assembler(const Environment& env,
       
       
       rtp_video_stream_receiver2_(env_,
-                                  nullptr,
+                                  TaskQueueBase::Current(),
                                   this,
                                   nullptr,
                                   nullptr,
@@ -59,7 +63,7 @@ Assembler::Assembler(const Environment& env,
                                   rtp_receive_statistics_.get(),
                                   nullptr,
                                   nullptr,
-                                  nullptr,
+                                  &nack_periodic_processor_,
                                   this,
                                   nullptr,
                                   nullptr),
@@ -74,7 +78,7 @@ Assembler::~Assembler() {
   rtp_video_stream_receiver2_.StopReceive();
 }
 
-void Assembler::InsertPacket(const RtpPacketReceived& rtp_packet) {
+void Assembler::OnReceivedRtpPacket(const RtpPacketReceived& rtp_packet) {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
   
   uint8_t payload_type = rtp_packet.PayloadType();

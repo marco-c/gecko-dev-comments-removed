@@ -63,9 +63,6 @@ void DecodabilityTracker::OnAssembledFrame(
     RTC_LOG(LS_ERROR) << "FrameBuffer insertion error for ssrc=" << config_.ssrc
                       << " (simulated_ts=" << env_.clock().CurrentTime() << ")";
   }
-  RTC_DCHECK_EQ(frame_buffer_.GetTotalNumberOfDroppedFrames(), 0)
-      << "The FrameBuffer should never drop frames when used by the "
-         "DecodabilityTracker";
   
   
   
