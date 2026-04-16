@@ -710,13 +710,7 @@ void TextInputSelectionController::SelectionWillLoseFocus() {
 TextInputListener::TextInputListener(TextControlElement* aTxtCtrlElement)
     : mTxtCtrlElement(aTxtCtrlElement),
       mTextControlState(aTxtCtrlElement ? aTxtCtrlElement->GetTextControlState()
-                                        : nullptr),
-      mSelectionWasCollapsed(true),
-      mHadUndoItems(false),
-      mHadRedoItems(false),
-      mSettingValue(false),
-      mSetValueChanged(true),
-      mListeningToSelectionChange(false) {}
+                                        : nullptr) {}
 
 NS_IMPL_CYCLE_COLLECTING_ADDREF(TextInputListener)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(TextInputListener)
@@ -817,6 +811,41 @@ static void DoCommandCallback(Command aCommand, void* aData) {
   }
   if (commandEnabled) {
     controller->DoCommand(commandStr);
+  }
+}
+
+void TextInputListener::StartToHandleShortcutKeys() {
+  if (mListeningToKeyboardEvents) {
+    return;
+  }
+  EventListenerManager* const manager =
+      mTxtCtrlElement->GetOrCreateListenerManager();
+  if (!manager) {
+    return;
+  }
+  mListeningToKeyboardEvents = true;
+  manager->AddEventListenerByType(this, u"keydown"_ns,
+                                  TrustedEventsAtSystemGroupBubble());
+  manager->AddEventListenerByType(this, u"keypress"_ns,
+                                  TrustedEventsAtSystemGroupBubble());
+  manager->AddEventListenerByType(this, u"keyup"_ns,
+                                  TrustedEventsAtSystemGroupBubble());
+}
+
+void TextInputListener::EndHandlingShortcutKeys() {
+  if (!mListeningToKeyboardEvents) {
+    return;
+  }
+  mListeningToKeyboardEvents = false;
+  EventListenerManager* const manager =
+      mTxtCtrlElement->GetExistingListenerManager();
+  if (manager) {
+    manager->RemoveEventListenerByType(this, u"keydown"_ns,
+                                       TrustedEventsAtSystemGroupBubble());
+    manager->RemoveEventListenerByType(this, u"keypress"_ns,
+                                       TrustedEventsAtSystemGroupBubble());
+    manager->RemoveEventListenerByType(this, u"keyup"_ns,
+                                       TrustedEventsAtSystemGroupBubble());
   }
 }
 
@@ -1017,12 +1046,9 @@ class MOZ_STACK_CLASS AutoTextControlHandlingState {
       : mParent(aTextControlState.mHandlingState),
         mTextControlState(aTextControlState),
         mTextCtrlElement(aTextControlState.mTextCtrlElement),
-        mTextInputListener(aTextControlState.mTextListener),
         mTextControlAction(aTextControlAction) {
     MOZ_ASSERT(aTextControlAction != TextControlAction::SetValue,
                "Use specific constructor");
-    MOZ_DIAGNOSTIC_ASSERT_IF(!aTextControlState.mTextListener,
-                             !aTextControlState.mEditorInitialized);
     mTextControlState.mHandlingState = this;
     if (Is(TextControlAction::CommitComposition)) {
       MOZ_ASSERT(mParent);
@@ -1046,7 +1072,6 @@ class MOZ_STACK_CLASS AutoTextControlHandlingState {
       : mParent(aTextControlState.mHandlingState),
         mTextControlState(aTextControlState),
         mTextCtrlElement(aTextControlState.mTextCtrlElement),
-        mTextInputListener(aTextControlState.mTextListener),
         mSettingValue(aSettingValue),
         mOldValue(aOldValue),
         mValueSetterOptions(aOptions),
@@ -1120,9 +1145,11 @@ class MOZ_STACK_CLASS AutoTextControlHandlingState {
     
     
     
-    mTextInputListener->SettingValue(true);
-    mTextInputListener->SetValueChanged(
-        mValueSetterOptions.contains(ValueSetterOption::SetValueChanged));
+    if (auto* const listener = GetTextInputListener()) [[likely]] {
+      listener->SettingValue(true);
+      listener->SetValueChanged(
+          mValueSetterOptions.contains(ValueSetterOption::SetValueChanged));
+    }
     mEditActionHandled = false;
     
     
@@ -1150,9 +1177,11 @@ class MOZ_STACK_CLASS AutoTextControlHandlingState {
       return NS_OK;
     }
     if (!mValueSetterOptions.contains(ValueSetterOption::BySetUserInputAPI)) {
-      mTextInputListener->SetValueChanged(true);
-      mTextInputListener->SettingValue(
-          mParent && mParent->IsHandling(TextControlAction::SetValue));
+      if (auto* const listener = GetTextInputListener()) {
+        listener->SetValueChanged(true);
+        listener->SettingValue(
+            mParent && mParent->IsHandling(TextControlAction::SetValue));
+      }
     }
     return NS_OK;
   }
@@ -1174,7 +1203,9 @@ class MOZ_STACK_CLASS AutoTextControlHandlingState {
     return mParent && mParent->IsHandling(aTextControlAction);
   }
   TextControlElement* GetTextControlElement() const { return mTextCtrlElement; }
-  TextInputListener* GetTextInputListener() const { return mTextInputListener; }
+  TextInputListener* GetTextInputListener() const {
+    return mTextControlState.mTextInputListener;
+  }
   const ValueSetterOptions& ValueSetterOptionsRef() const {
     MOZ_ASSERT(Is(TextControlAction::SetValue));
     return mValueSetterOptions;
@@ -1214,9 +1245,6 @@ class MOZ_STACK_CLASS AutoTextControlHandlingState {
   
   
   RefPtr<TextControlElement> const mTextCtrlElement;
-  
-  
-  RefPtr<TextInputListener> const mTextInputListener;
   nsAutoString mSettingValue;
   const nsAString* mOldValue = nullptr;
   ValueSetterOptions mValueSetterOptions;
@@ -1337,9 +1365,17 @@ void TextControlState::Clear() {
   if (mTextEditor) {
     mTextEditor->SetTextInputListener(nullptr);
   }
+  
+  
+  
+  
+  
+  if (mTextInputListener) {
+    mTextInputListener->EndHandlingShortcutKeys();
+  }
   DestroyEditor();
   mTextEditor = nullptr;
-  mTextListener = nullptr;
+  mTextInputListener = nullptr;
 }
 
 void TextControlState::Unlink() {
@@ -1417,9 +1453,7 @@ nsresult TextControlState::InitializeSelection(PresShell* aPresShell) {
 
   
   mSelCon = new TextInputSelectionController(aPresShell, *editorRoot);
-  MOZ_ASSERT(!mTextListener, "Should not overwrite the object");
-  mTextListener = new TextInputListener(mTextCtrlElement);
-  InitializeKeyboardEventListeners();
+  EnsureTextInputListener();
 
   
   mSelCon->SetDisplaySelection(nsISelectionController::SELECTION_HIDDEN);
@@ -1434,7 +1468,7 @@ nsresult TextControlState::InitializeSelection(PresShell* aPresShell) {
     if (caret) {
       selection->AddSelectionListener(caret);
     }
-    mTextListener->StartToListenToSelectionChange();
+    mTextInputListener->StartToListenToSelectionChange();
   }
 
   
@@ -1477,6 +1511,18 @@ void TextControlState::UpdateEditorOnTypeChange() {
     RefPtr editor = mTextEditor;
     editor->SetFlags(newFlags);
   }
+}
+
+void TextControlState::EnsureTextInputListener() {
+  if (!mTextInputListener) {
+    mTextInputListener = new TextInputListener(mTextCtrlElement);
+    
+    
+    if (mEditorInitialized) {
+      mTextEditor->SetTextInputListener(mTextInputListener);
+    }
+  }
+  mTextInputListener->StartToHandleShortcutKeys();
 }
 
 nsresult TextControlState::PrepareEditor() {
@@ -1694,15 +1740,14 @@ nsresult TextControlState::PrepareEditor() {
   NS_WARNING_ASSERTION(enabledUndoRedo,
                        "Failed to enable undo/redo transaction");
 
+  EnsureTextInputListener();
+
   if (!mEditorInitialized) {
     newTextEditor->PostCreate();
     mEverInited = true;
     mEditorInitialized = true;
   }
-
-  if (mTextListener) {
-    newTextEditor->SetTextInputListener(mTextListener);
-  }
+  newTextEditor->SetTextInputListener(mTextInputListener);
 
   
   if (mSelectionCached) {
@@ -2203,27 +2248,16 @@ void TextControlState::DeinitSelection() {
   }
 
   if (mSelCon) {
-    if (mTextListener) {
-      mTextListener->EndListeningToSelectionChange();
+    if (mTextInputListener) {
+      mTextInputListener->EndListeningToSelectionChange();
     }
 
     mSelCon->DisconnectFromPresShell();
     mSelCon = nullptr;
   }
 
-  if (mTextListener) {
-    EventListenerManager* manager =
-        mTextCtrlElement->GetExistingListenerManager();
-    if (manager) {
-      manager->RemoveEventListenerByType(mTextListener, u"keydown"_ns,
-                                         TrustedEventsAtSystemGroupBubble());
-      manager->RemoveEventListenerByType(mTextListener, u"keypress"_ns,
-                                         TrustedEventsAtSystemGroupBubble());
-      manager->RemoveEventListenerByType(mTextListener, u"keyup"_ns,
-                                         TrustedEventsAtSystemGroupBubble());
-    }
-
-    mTextListener = nullptr;
+  if (mTextInputListener) {
+    mTextInputListener->EndHandlingShortcutKeys();
   }
 }
 
@@ -2298,7 +2332,7 @@ bool TextControlState::SetValue(const nsAString& aValue,
   ErrorResult error;
   AutoTextControlHandlingState handlingSetValue(
       *this, TextControlAction::SetValue, aValue, aOldValue, aOptions, error);
-  if (error.Failed()) {
+  if (error.Failed()) [[unlikely]] {
     MOZ_ASSERT(error.ErrorCodeIs(NS_ERROR_OUT_OF_MEMORY));
     error.SuppressException();
     return false;
@@ -2436,6 +2470,8 @@ bool TextControlState::SetValueWithTextEditor(
     AutoTextControlHandlingState& aHandlingSetValue) {
   MOZ_ASSERT(aHandlingSetValue.Is(TextControlAction::SetValue));
   MOZ_ASSERT(mTextEditor);
+  MOZ_DIAGNOSTIC_ASSERT(mEditorInitialized);
+  MOZ_DIAGNOSTIC_ASSERT(mTextInputListener);
   NS_WARNING_ASSERTION(!EditorHasComposition(),
                        "Failed to commit composition before setting value.  "
                        "Investigate the cause!");
@@ -2715,22 +2751,6 @@ bool TextControlState::SetValueWithoutTextEditor(
   }
 
   return true;
-}
-
-void TextControlState::InitializeKeyboardEventListeners() {
-  
-  EventListenerManager* manager =
-      mTextCtrlElement->GetOrCreateListenerManager();
-  if (!manager) {
-    return;
-  }
-  MOZ_ASSERT(mTextListener);
-  manager->AddEventListenerByType(mTextListener, u"keydown"_ns,
-                                  TrustedEventsAtSystemGroupBubble());
-  manager->AddEventListenerByType(mTextListener, u"keypress"_ns,
-                                  TrustedEventsAtSystemGroupBubble());
-  manager->AddEventListenerByType(mTextListener, u"keyup"_ns,
-                                  TrustedEventsAtSystemGroupBubble());
 }
 
 bool TextControlState::EditorHasComposition() {

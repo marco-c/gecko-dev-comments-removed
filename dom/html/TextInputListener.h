@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_TextInputListener_h
 #define mozilla_TextInputListener_h
 
@@ -28,7 +26,7 @@ class Selection;
 class TextInputListener final : public nsIDOMEventListener,
                                 public nsSupportsWeakReference {
  public:
-  explicit TextInputListener(TextControlElement* aTextControlElement);
+  explicit TextInputListener(TextControlElement*);
 
   void SettingValue(bool aValue) { mSettingValue = aValue; }
   void SetValueChanged(bool aSetValueChanged) {
@@ -54,6 +52,9 @@ class TextInputListener final : public nsIDOMEventListener,
   void StartToListenToSelectionChange() { mListeningToSelectionChange = true; }
   void EndListeningToSelectionChange() { mListeningToSelectionChange = false; }
 
+  void StartToHandleShortcutKeys();
+  void EndHandlingShortcutKeys();
+
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(TextInputListener,
                                            nsIDOMEventListener)
@@ -68,32 +69,36 @@ class TextInputListener final : public nsIDOMEventListener,
   TextControlElement* const mTxtCtrlElement;
   WeakPtr<TextControlState> const mTextControlState;
 
-  bool mSelectionWasCollapsed;
+  bool mSelectionWasCollapsed : 1 = true;
 
   
 
 
 
-  bool mHadUndoItems;
+  bool mHadUndoItems : 1 = false;
   
 
 
 
-  bool mHadRedoItems;
+  bool mHadRedoItems : 1 = false;
   
 
 
 
-  bool mSettingValue;
+  bool mSettingValue : 1 = false;
   
 
 
 
-  bool mSetValueChanged;
+  bool mSetValueChanged : 1 = true;
   
 
 
-  bool mListeningToSelectionChange;
+  bool mListeningToSelectionChange : 1 = false;
+  
+
+
+  bool mListeningToKeyboardEvents : 1 = false;
 };
 
 }  

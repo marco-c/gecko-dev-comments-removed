@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_TextControlState_h
 #define mozilla_TextControlState_h
 
@@ -214,7 +212,6 @@ class TextControlState final : public SupportsWeakPtr {
   nsresult InitializeSelection(PresShell*);
   MOZ_CAN_RUN_SCRIPT void DeinitSelection();
   MOZ_CAN_RUN_SCRIPT nsresult PrepareEditor();
-  void InitializeKeyboardEventListeners();
   MOZ_CAN_RUN_SCRIPT void UpdateEditorOnTypeChange();
 
   
@@ -473,6 +470,7 @@ class TextControlState final : public SupportsWeakPtr {
 
   MOZ_CAN_RUN_SCRIPT void UnlinkInternal();
 
+  void EnsureTextInputListener();
   MOZ_CAN_RUN_SCRIPT void DestroyEditor();
   MOZ_CAN_RUN_SCRIPT void Clear();
 
@@ -515,9 +513,11 @@ class TextControlState final : public SupportsWeakPtr {
   
   
   TextControlElement* MOZ_NON_OWNING_REF mTextCtrlElement;
-  RefPtr<TextInputSelectionController> mSelCon;
+  RefPtr<TextInputSelectionController> mSelCon;  
+  
   RefPtr<TextEditor> mTextEditor;
-  RefPtr<TextInputListener> mTextListener;
+  
+  RefPtr<TextInputListener> mTextInputListener;
   UniquePtr<PasswordMaskData> mPasswordMaskData;
 
   nsString mValue{VoidString()};  
