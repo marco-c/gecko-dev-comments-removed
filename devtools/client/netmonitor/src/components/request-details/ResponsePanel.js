@@ -7,6 +7,12 @@ const {
   Component,
   createFactory,
 } = require("resource://devtools/client/shared/vendor/react.mjs");
+const {
+  connect,
+} = require("resource://devtools/client/shared/vendor/react-redux.js");
+const {
+  getDisplayedMessages,
+} = require("resource://devtools/client/netmonitor/src/selectors/index.js");
 const dom = require("resource://devtools/client/shared/vendor/react-dom-factories.js");
 const PropTypes = require("resource://devtools/client/shared/vendor/react-prop-types.mjs");
 const {
@@ -90,6 +96,7 @@ class ResponsePanel extends Component {
       showMessagesView: PropTypes.bool,
       defaultRawResponse: PropTypes.bool,
       setDefaultRawResponse: PropTypes.func,
+      messages: PropTypes.array,
     };
   }
 
@@ -146,10 +153,12 @@ class ResponsePanel extends Component {
 
 
 
+
   shouldComponentUpdate(nextProps, nextState) {
     return (
       this.state !== nextState ||
       this.props.request !== nextProps.request ||
+      this.props.messages !== nextProps.messages ||
       nextProps.targetSearchResult !== null
     );
   }
@@ -421,7 +430,7 @@ class ResponsePanel extends Component {
   }
 
   render() {
-    const { connector, showMessagesView, request } = this.props;
+    const { connector, showMessagesView, request, messages } = this.props;
     const { blockedReason, responseContent, url, isRedirect } = request;
     const { filterText, rawResponsePayloadDisplayed } = this.state;
 
@@ -430,7 +439,16 @@ class ResponsePanel extends Component {
       this.renderCORSBlockedReason(blockedReason);
 
     if (showMessagesView) {
-      return MessagesView({ connector });
+      
+      
+      
+      
+      
+      
+      
+      if (messages.length || !responseContent?.content.text) {
+        return MessagesView({ connector });
+      }
     }
 
     if (
@@ -509,4 +527,7 @@ class ResponsePanel extends Component {
   }
 }
 
-module.exports = ResponsePanel;
+module.exports = connect((state, props) => ({
+  
+  messages: props.showMessagesView ? getDisplayedMessages(state) : null,
+}))(ResponsePanel);
