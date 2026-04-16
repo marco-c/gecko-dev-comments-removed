@@ -128,10 +128,16 @@ void gfxFontEntry::InitializeFrom(fontlist::Face* aFace,
 }
 
 bool gfxFontEntry::TrySetShmemCharacterMap() {
-  MOZ_ASSERT(mShmemFace);
-  auto* list = gfxPlatformFontList::PlatformFontList()->SharedFontList();
-  const auto* shmemCmap =
-      mShmemFace->mCharacterMap.ToPtr<const SharedBitSet>(list);
+  auto* pfl = gfxPlatformFontList::PlatformFontList();
+  
+  
+  gfxPlatformFontList::AutoLock lock(pfl->mLock);
+  auto* face = mShmemFace;
+  if (!face) {
+    return false;
+  }
+  auto* list = pfl->SharedFontList();
+  const auto* shmemCmap = face->mCharacterMap.ToPtr<const SharedBitSet>(list);
   mShmemCharacterMap.exchange(shmemCmap);
   return shmemCmap != nullptr;
 }

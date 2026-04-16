@@ -15,6 +15,7 @@
 #include "nsCharSeparatedTokenizer.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/gfx/Logging.h"
+#include "mozilla/EndianUtils.h"
 #include "mozilla/LookAndFeel.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/ProfilerLabels.h"
@@ -1611,7 +1612,7 @@ void gfxDWriteFontList::InitSharedFontListForPlatform() {
   if (FAILED(hr)) {
     glean::fontlist::dwritefont_init_problem.AccumulateSingleSample(
         uint32_t(errGDIInterop));
-    mSharedFontList.reset(nullptr);
+    delete mSharedFontList.exchange(nullptr);
     return;
   }
 
@@ -1620,7 +1621,7 @@ void gfxDWriteFontList::InitSharedFontListForPlatform() {
   if (!mSystemFonts) {
     glean::fontlist::dwritefont_init_problem.AccumulateSingleSample(
         uint32_t(errSystemFontCollection));
-    mSharedFontList.reset(nullptr);
+    delete mSharedFontList.exchange(nullptr);
     return;
   }
 #ifdef MOZ_BUNDLED_FONTS
