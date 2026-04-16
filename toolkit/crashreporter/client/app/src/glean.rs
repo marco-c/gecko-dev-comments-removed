@@ -5,65 +5,13 @@
 
 
 use crate::config::{buildid, Config};
-use crate::prefs_parser::find_bool_pref;
-use crate::std::path::Path;
 
 const APP_DISPLAY_VERSION: &str = env!("CARGO_PKG_VERSION");
-const TELEMETRY_ENABLED_PREF_KEY: &str = "datareporting.healthreport.uploadEnabled";
 
 
 pub struct InitOptions {
     pub data_dir: ::std::path::PathBuf,
     pub locale: Option<String>,
-    pub upload_enabled: bool,
-}
-
-
-
-
-
-
-
-
-
-
-fn parse_telemetry_enabled_pref(prefs_content: &str) -> Option<bool> {
-    find_bool_pref(prefs_content, TELEMETRY_ENABLED_PREF_KEY)
-}
-
-
-pub fn determine_telemetry_enabled(profile_dir: Option<&Path>) -> bool {
-    
-    
-    
-    let Some(profile_dir) = profile_dir else {
-        return true;
-    };
-
-    let prefs = profile_dir.join("prefs.js");
-
-    
-    if !prefs.exists() {
-        return true;
-    }
-
-    match crate::std::fs::read_to_string(&prefs) {
-        Ok(prefs_contents) => {
-            parse_telemetry_enabled_pref(&prefs_contents)
-                
-                .unwrap_or(true)
-        }
-        Err(e) => {
-            
-            
-            
-            log::error!(
-                "failed to read prefs file at {} for disabling telemetry: {e}",
-                prefs.display()
-            );
-            true
-        }
-    }
 }
 
 impl InitOptions {
@@ -73,14 +21,7 @@ impl InitOptions {
         let data_dir = cfg.data_dir().to_owned();
         #[cfg(mock)]
         let data_dir = (&data_dir).into();
-
-        let upload_enabled = determine_telemetry_enabled(cfg.profile_dir.as_deref());
-
-        InitOptions {
-            data_dir,
-            locale,
-            upload_enabled,
-        }
+        InitOptions { data_dir, locale }
     }
 
     
@@ -122,7 +63,6 @@ impl InitOptions {
             },
         );
         init_glean.configuration.uploader = Some(Box::new(uploader::Uploader::new()));
-        init_glean.configuration.upload_enabled = self.upload_enabled;
 
         if cfg!(mock) {
             init_glean.configuration.server_endpoint =
@@ -218,27 +158,6 @@ mod test {
                 glean::ClientInfoMetrics::unknown(),
                 true,
             );
-        }
-    }
-
-    #[test]
-    fn test_telemetry_enable_pref() {
-        use crate::std::{
-            fs::{MockFS, MockFiles},
-            mock,
-            path::Path,
-        };
-
-        for pref_value in [false, true] {
-            let files = MockFiles::new();
-            files.add_dir("profile_dir").add_file(
-                "profile_dir/prefs.js",
-                format!(r#"user_pref("datareporting.healthreport.uploadEnabled", {pref_value});"#),
-            );
-            let result = mock::builder()
-                .set(MockFS, files)
-                .run(|| determine_telemetry_enabled(Some(Path::new("profile_dir"))));
-            assert_eq!(result, pref_value);
         }
     }
 }
