@@ -44,6 +44,9 @@ pub struct AdditionalMetrics {
     
     
     pub event_timestamp_clamped: CounterMetric,
+
+    
+    pub server_knobs_config: ObjectMetric,
 }
 
 impl CoreMetrics {
@@ -208,6 +211,15 @@ impl AdditionalMetrics {
                 category: "glean.error".into(),
                 send_in_pings: vec!["health".into()],
                 lifetime: Lifetime::Ping,
+                disabled: false,
+                dynamic_label: None,
+            }),
+
+            server_knobs_config: ObjectMetric::new(CommonMetricData {
+                name: "server_knobs_config".into(),
+                category: "glean.internal.metrics".into(),
+                send_in_pings: vec!["glean_internal_info".into()],
+                lifetime: Lifetime::Application,
                 disabled: false,
                 dynamic_label: None,
             }),

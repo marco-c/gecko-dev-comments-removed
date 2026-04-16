@@ -26,19 +26,19 @@ pub struct RemoteSettingsConfig {
     
     
     
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
     pub metrics_enabled: HashMap<String, bool>,
 
     
     
     
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
     pub pings_enabled: HashMap<String, bool>,
 
     
     
     
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub event_threshold: Option<u32>,
 }
 

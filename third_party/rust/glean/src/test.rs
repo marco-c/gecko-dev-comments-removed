@@ -1323,7 +1323,7 @@ fn test_labeled_counter_metric() {
     
     let value = metric.test_get_value(Some("store1".into())).unwrap();
     assert_eq!(value["key1"], 1);
-    assert_eq!(value["key2"], 2);
+    assert_eq!(value["__other__"], 2);
 
     
     let result = metric.test_get_num_recorded_errors(ErrorType::InvalidLabel);

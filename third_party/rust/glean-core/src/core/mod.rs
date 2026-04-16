@@ -1120,21 +1120,32 @@ impl Glean {
     
     
     pub fn apply_server_knobs_config(&self, cfg: RemoteSettingsConfig) {
-        
-        
-        let mut remote_settings_config = self.remote_settings_config.lock().unwrap();
+        let config_value = {
+            
+            
+            let mut remote_settings_config = self.remote_settings_config.lock().unwrap();
 
-        
-        remote_settings_config
-            .metrics_enabled
-            .extend(cfg.metrics_enabled);
+            
+            remote_settings_config
+                .metrics_enabled
+                .extend(cfg.metrics_enabled);
 
-        
-        remote_settings_config
-            .pings_enabled
-            .extend(cfg.pings_enabled);
+            
+            remote_settings_config
+                .pings_enabled
+                .extend(cfg.pings_enabled);
 
-        remote_settings_config.event_threshold = cfg.event_threshold;
+            remote_settings_config.event_threshold = cfg.event_threshold;
+
+            
+            
+            
+            serde_json::to_value(&*remote_settings_config).unwrap()
+        };
+
+        self.additional_metrics
+            .server_knobs_config
+            .set_sync(self, config_value);
 
         
         self.remote_settings_epoch.fetch_add(1, Ordering::SeqCst);

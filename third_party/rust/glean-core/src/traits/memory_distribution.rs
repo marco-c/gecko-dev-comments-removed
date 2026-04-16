@@ -35,5 +35,30 @@ pub trait MemoryDistribution: TestGetValue<Output = DistributionData> {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn accumulate_samples(&self, samples: Vec<i64>);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     fn test_get_num_recorded_errors(&self, error: ErrorType) -> i32;
 }
