@@ -17,6 +17,7 @@
 #include <unordered_set>
 #include <vector>
 
+#include "absl/base/nullability.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/strings/string_view.h"
 #include "api/location.h"
@@ -67,7 +68,7 @@ class SimulatedTimeControllerImpl : public TaskQueueFactory,
   
   std::unique_ptr<Thread> CreateThread(
       const std::string& name,
-      std::unique_ptr<SocketServer> socket_server)
+      std::unique_ptr<SocketServer> absl_nullable socket_server)
       RTC_LOCKS_EXCLUDED(time_lock_, lock_);
 
   
