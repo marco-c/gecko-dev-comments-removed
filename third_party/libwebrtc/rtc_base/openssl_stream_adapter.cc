@@ -648,7 +648,9 @@ void OpenSSLStreamAdapter::UpdateRetransmissionTimeout(int timeout_ms) {
   if (ssl_ctx_ != nullptr && ssl_mode_ == SSL_MODE_DTLS) {
     
     
-    DTLSv1_set_initial_timeout_duration(ssl_, dtls_handshake_timeout_ms_);
+    
+    
+
     
     timeout_task_.Stop();
     MaybeSetTimeout();
