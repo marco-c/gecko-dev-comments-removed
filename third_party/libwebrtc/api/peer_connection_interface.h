@@ -144,6 +144,7 @@
 #include "rtc_base/socket_factory.h"
 #include "rtc_base/ssl_certificate.h"
 #include "rtc_base/ssl_stream_adapter.h"
+#include "rtc_base/system/plan_b_only.h"
 #include "rtc_base/system/rtc_export.h"
 #include "rtc_base/thread.h"
 
@@ -763,26 +764,14 @@ class RTC_EXPORT PeerConnectionInterface : public RefCountInterface {
   
   
   
-  virtual scoped_refptr<StreamCollectionInterface> local_streams() = 0;
+  PLAN_B_ONLY virtual scoped_refptr<StreamCollectionInterface>
+  local_streams() = 0;
 
   
   
   
-  virtual scoped_refptr<StreamCollectionInterface> remote_streams() = 0;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  virtual bool AddStream(MediaStreamInterface* stream) = 0;
+  PLAN_B_ONLY virtual scoped_refptr<StreamCollectionInterface>
+  remote_streams() = 0;
 
   
   
@@ -790,7 +779,21 @@ class RTC_EXPORT PeerConnectionInterface : public RefCountInterface {
   
   
   
-  virtual void RemoveStream(MediaStreamInterface* stream) = 0;
+  
+  
+  
+  
+  
+  
+  PLAN_B_ONLY virtual bool AddStream(MediaStreamInterface* stream) = 0;
+
+  
+  
+  
+  
+  
+  
+  PLAN_B_ONLY virtual void RemoveStream(MediaStreamInterface* stream) = 0;
 
   
   
@@ -888,7 +891,7 @@ class RTC_EXPORT PeerConnectionInterface : public RefCountInterface {
   
   
   
-  virtual scoped_refptr<RtpSenderInterface> CreateSender(
+  PLAN_B_ONLY virtual scoped_refptr<RtpSenderInterface> CreateSender(
       const std::string& kind,
       const std::string& stream_id) = 0;
 
