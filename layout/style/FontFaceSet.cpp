@@ -387,18 +387,18 @@ void FontFaceSet::DispatchLoadingEventAndReplaceReadyPromise() {
     
     
     set->AppendTask(
-        PostTraversalTask::DispatchLoadingEventAndReplaceReadyPromise(this));
+        PostTraversalTask::DispatchLoadingEventAndReplaceReadyPromise(
+            do_AddRef(mImpl)));
     return;
   }
 
   (new AsyncEventDispatcher(this, u"loading"_ns, CanBubble::eNo))
       ->PostDOMEvent();
 
-  if (mReady && mReady->State() != Promise::PromiseState::Pending) {
-    if (GetParentObject()) {
-      ErrorResult rv;
-      mReady = Promise::Create(GetParentObject(), rv);
-    }
+  if (mReady && mReady->State() != Promise::PromiseState::Pending &&
+      GetParentObject()) {
+    IgnoredErrorResult rv;
+    mReady = Promise::Create(GetParentObject(), rv);
   }
 
   

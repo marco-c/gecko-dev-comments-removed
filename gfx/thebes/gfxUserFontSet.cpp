@@ -546,7 +546,7 @@ void gfxUserFontEntry::DoLoadNextSrc(bool aIsContinue) {
           
           
           SetLoadState(STATUS_LOAD_PENDING);
-          set->AppendTask(PostTraversalTask::LoadFontEntry(this));
+          set->AppendTask(PostTraversalTask::LoadFontEntry(do_AddRef(this)));
           return;
         }
 

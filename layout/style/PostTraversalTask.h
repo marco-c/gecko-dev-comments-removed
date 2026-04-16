@@ -5,8 +5,7 @@
 #ifndef mozilla_PostTraversalTask_h
 #define mozilla_PostTraversalTask_h
 
-#include "nsString.h"
-#include "nscore.h"
+#include "mozilla/AlreadyAddRefed.h"
 
 
 
@@ -35,25 +34,31 @@ namespace mozilla {
 class PostTraversalTask {
  public:
   static PostTraversalTask DispatchLoadingEventAndReplaceReadyPromise(
-      dom::FontFaceSet* aFontFaceSet) {
-    auto task =
-        PostTraversalTask(Type::DispatchLoadingEventAndReplaceReadyPromise);
-    task.mTarget = aFontFaceSet;
+      already_AddRefed<dom::FontFaceSetImpl> aFontFaceSetImpl) {
+    PostTraversalTask task(Type::DispatchLoadingEventAndReplaceReadyPromise);
+    task.mTarget = aFontFaceSetImpl.take();
     return task;
   }
 
-  static PostTraversalTask LoadFontEntry(gfxUserFontEntry* aFontEntry) {
-    auto task = PostTraversalTask(Type::LoadFontEntry);
-    task.mTarget = aFontEntry;
+  static PostTraversalTask LoadFontEntry(
+      already_AddRefed<gfxUserFontEntry> aFontEntry) {
+    PostTraversalTask task(Type::LoadFontEntry);
+    task.mTarget = aFontEntry.take();
     return task;
   }
 
   void Run();
 
+  PostTraversalTask(const PostTraversalTask&) = delete;
+  PostTraversalTask(PostTraversalTask&& aOther)
+      : PostTraversalTask(aOther.mType) {
+    mTarget = aOther.mTarget;
+    aOther.mTarget = nullptr;
+  };
+
+  ~PostTraversalTask();
+
  private:
-  
-  
-  
   enum class Type {
     
     DispatchLoadingEventAndReplaceReadyPromise,
@@ -65,6 +70,7 @@ class PostTraversalTask {
   explicit PostTraversalTask(Type aType) : mType(aType) {}
 
   const Type mType;
+  
   void* mTarget = nullptr;
 };
 
