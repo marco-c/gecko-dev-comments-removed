@@ -63,6 +63,7 @@ add_task(async function test_fail_closed_default() {
       el.setAttribute("role", "assistant");
       elJS.messageId = "test-fail-closed";
       el.setAttribute("data-message-id", "test-fail-closed");
+      elJS.trustedUrls = SpecialPowers.Cu.cloneInto([], content);
       elJS.message =
         "Check out [Example](https://example.com) and [Test](https://test.com).";
       el.setAttribute(
@@ -119,14 +120,14 @@ add_task(async function test_trusted_and_untrusted_links() {
   );
   const browser = tab.linkedBrowser;
 
-  const seenUrl = "https://trusted.example.com/page";
-  const unseenUrl = "https://untrusted.example.com/page";
+  const trustedUrl = "https://trusted.example.com/page";
+  const untrustedUrl = "https://untrusted.example.com/page";
 
   try {
     await SpecialPowers.spawn(
       browser,
-      [seenUrl, unseenUrl],
-      async (seen, unseen) => {
+      [trustedUrl, untrustedUrl],
+      async (trusted, untrusted) => {
         if (content.document.readyState !== "complete") {
           await ContentTaskUtils.waitForEvent(content, "load");
         }
@@ -145,15 +146,17 @@ add_task(async function test_trusted_and_untrusted_links() {
         const elJS = el.wrappedJSObject || el;
 
         
-        elJS.seenUrls = Cu.cloneInto(new Set([seen]), content);
+        
+        const trustedArray = SpecialPowers.Cu.cloneInto([trusted], content);
+        elJS.trustedUrls = trustedArray;
         elJS.role = "assistant";
         el.setAttribute("role", "assistant");
         elJS.messageId = "test-trusted-untrusted";
         el.setAttribute("data-message-id", "test-trusted-untrusted");
-        elJS.message = `Visit [Trusted](${seen}) or [Untrusted](${unseen}).`;
+        elJS.message = `Visit [Trusted](${trusted}) or [Untrusted](${untrusted}).`;
         el.setAttribute(
           "message",
-          `Visit [Trusted](${seen}) or [Untrusted](${unseen}).`
+          `Visit [Trusted](${trusted}) or [Untrusted](${untrusted}).`
         );
 
         await ContentTaskUtils.waitForCondition(() => {
@@ -163,29 +166,33 @@ add_task(async function test_trusted_and_untrusted_links() {
 
         const assistantDiv = getRoot(el).querySelector(".message-assistant");
 
-        const seenAnchor = assistantDiv.querySelector(`a[href="${seen}"]`);
-        Assert.ok(seenAnchor, "Seen URL anchor should exist");
+        const trustedAnchor = assistantDiv.querySelector(
+          `a[href="${trusted}"]`
+        );
+        Assert.ok(trustedAnchor, "Trusted anchor should exist");
         Assert.equal(
-          seenAnchor.textContent,
+          trustedAnchor.textContent,
           "Trusted",
           "Trusted anchor should have original text"
         );
 
-        const unseenLabel = assistantDiv.querySelector(".untrusted-link-label");
-        Assert.ok(unseenLabel, "Unseen link label should exist");
+        const untrustedLabel = assistantDiv.querySelector(
+          ".untrusted-link-label"
+        );
+        Assert.ok(untrustedLabel, "Untrusted link label should exist");
         Assert.equal(
-          unseenLabel.textContent,
+          untrustedLabel.textContent,
           "Untrusted",
           "Untrusted label should have original text"
         );
 
         const disclosureAnchor = assistantDiv.querySelector(
-          `a[href="${unseen}"]`
+          `a[href="${untrusted}"]`
         );
         Assert.ok(disclosureAnchor, "Disclosure anchor should exist");
         Assert.equal(
           disclosureAnchor.textContent,
-          unseen,
+          untrusted,
           "Disclosure anchor text should show the URL"
         );
 
@@ -240,6 +247,8 @@ add_task(async function test_trust_update_triggers_rerender() {
       const elJS = el.wrappedJSObject || el;
 
       
+      const emptyArray = SpecialPowers.Cu.cloneInto([], content);
+      elJS.trustedUrls = emptyArray;
       elJS.role = "assistant";
       el.setAttribute("role", "assistant");
       elJS.messageId = "test-trust-update";
@@ -254,17 +263,18 @@ add_task(async function test_trust_update_triggers_rerender() {
           return false;
         }
         return div.querySelector(".untrusted-link-label");
-      }, "Initial render should show unseen link label");
+      }, "Initial render should show untrusted link label");
 
       let assistantDiv = getRoot(el).querySelector(".message-assistant");
 
       Assert.ok(
         assistantDiv.querySelector(".untrusted-link-label"),
-        "Link should show unseen label initially (fail-closed)"
+        "Link should show untrusted label initially (fail-closed)"
       );
 
       
-      elJS.seenUrls = Cu.cloneInto(new Set([url]), content);
+      const updatedArray = SpecialPowers.Cu.cloneInto([url], content);
+      elJS.trustedUrls = updatedArray;
 
       await ContentTaskUtils.waitForCondition(() => {
         const div = getRoot(el).querySelector(".message-assistant");
@@ -279,17 +289,17 @@ add_task(async function test_trust_update_triggers_rerender() {
 
       Assert.ok(
         anchor.hasAttribute("href"),
-        "Link should be enabled after seenUrls update"
+        "Link should be enabled after trust update"
       );
       Assert.equal(
         anchor.getAttribute("href"),
         url,
-        "Link href should match seen URL"
+        "Link href should match trusted URL"
       );
       Assert.equal(
         anchor.textContent,
         "Article",
-        "Seen link should have original text"
+        "Trusted link should have original text"
       );
 
       el.remove();
@@ -307,9 +317,7 @@ add_task(async function test_trust_update_triggers_rerender() {
 
 
 
-
-
-add_task(async function test_aiwindow_component_trust_smoke() {
+add_task(async function test_fragment_urls_match_base() {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["browser.smartwindow.enabled", true],
@@ -317,17 +325,128 @@ add_task(async function test_aiwindow_component_trust_smoke() {
     ],
   });
 
+  const tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "about:aichatcontent"
+  );
+  const browser = tab.linkedBrowser;
+
+  const baseUrl = "https://example.com/article";
+  const fragmentUrl = "https://example.com/article#section-2";
+
+  try {
+    await SpecialPowers.spawn(
+      browser,
+      [baseUrl, fragmentUrl],
+      async (base, withFragment) => {
+        if (content.document.readyState !== "complete") {
+          await ContentTaskUtils.waitForEvent(content, "load");
+        }
+
+        const doc = content.document;
+
+        function getRoot(el) {
+          return el.shadowRoot ?? el;
+        }
+
+        await content.customElements.whenDefined("ai-chat-message");
+
+        const el = doc.createElement("ai-chat-message");
+        doc.body.appendChild(el);
+
+        const elJS = el.wrappedJSObject || el;
+
+        
+        
+        const baseArray = SpecialPowers.Cu.cloneInto([base], content);
+        elJS.trustedUrls = baseArray;
+        elJS.role = "assistant";
+        el.setAttribute("role", "assistant");
+        elJS.messageId = "test-fragment-match";
+        el.setAttribute("data-message-id", "test-fragment-match");
+        elJS.message = `Jump to [Section 2](${withFragment}) for details.`;
+        el.setAttribute(
+          "message",
+          `Jump to [Section 2](${withFragment}) for details.`
+        );
+
+        await ContentTaskUtils.waitForCondition(() => {
+          const div = getRoot(el).querySelector(".message-assistant");
+          if (!div) {
+            return false;
+          }
+          return div.querySelector("a");
+        }, "Anchor should be rendered");
+
+        const assistantDiv = getRoot(el).querySelector(".message-assistant");
+        const anchor = assistantDiv.querySelector("a");
+
+        Assert.ok(anchor, "Anchor should exist");
+        Assert.ok(
+          anchor.hasAttribute("href"),
+          "Anchor should have href (fragment matched base URL)"
+        );
+        Assert.equal(
+          anchor.getAttribute("href"),
+          base,
+          "Anchor href should have fragment stripped to prevent exfiltration"
+        );
+
+        el.remove();
+      }
+    );
+  } finally {
+    await BrowserTestUtils.removeTab(tab);
+    await SpecialPowers.popPrefEnv();
+  }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_task(async function test_aiwindow_component_trust_smoke() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.smartwindow.enabled", true],
+      ["browser.ml.security.enabled", true],
+      ["browser.smartwindow.checkSecurityFlags", true],
+    ],
+  });
+
   const restoreSignIn = skipSignIn();
 
-  const seenUrl = "https://trusted.example.com/page";
-  const unseenUrl = "https://untrusted.example.com/page";
-  const testConversationId = "test-integration-conv-" + Date.now();
+  const trustedUrl = "https://trusted.example.com/page";
+  const untrustedUrl = "https://untrusted.example.com/page";
+
+  const { getSecurityOrchestrator } = ChromeUtils.importESModule(
+    "chrome://global/content/ml/security/SecurityOrchestrator.sys.mjs"
+  );
 
   let win;
+  let testConversationId;
   try {
     win = await openAIWindow();
     const browser = win.gBrowser.selectedBrowser;
 
+    
+    testConversationId = "test-integration-conv-" + Date.now();
+    const orchestrator = await getSecurityOrchestrator();
+    const ledger = orchestrator.registerSession(testConversationId);
+
+    info(`Registered session ${testConversationId}`);
+
+    
     let innerBC = await SpecialPowers.spawn(browser, [], async () => {
       await content.customElements.whenDefined("ai-window");
 
@@ -347,6 +466,7 @@ add_task(async function test_aiwindow_component_trust_smoke() {
     });
 
     if (innerBC.currentURI.spec != "about:aichatcontent") {
+      
       await BrowserTestUtils.browserLoaded(innerBC, {
         wantLoad: "about:aichatcontent",
       });
@@ -385,28 +505,27 @@ add_task(async function test_aiwindow_component_trust_smoke() {
 
     
     const actor = innerBC.currentWindowGlobal.getActor("AIChatContent");
-    actor.dispatchSeenUrlsToChatContent({
-      conversationId: testConversationId,
-      seenUrls: new Set([seenUrl]),
-    });
+    actor.setConversation(testConversationId);
 
-    info(
-      `Dispatched seen URL ${seenUrl} for conversation ${testConversationId}`
-    );
+    
+    
+    ledger.seedConversation([trustedUrl]);
+
+    info(`Seeded URL ${trustedUrl} into conversation ${testConversationId}`);
 
     
     await SpecialPowers.spawn(
       innerBC,
-      [seenUrl, unseenUrl, testConversationId],
-      async (seen, unseen, convId) => {
+      [trustedUrl, untrustedUrl, testConversationId],
+      async (trusted, untrusted, convId) => {
         const innerDoc = content.document;
         const chatContent = innerDoc.querySelector("ai-chat-content");
         const chatContentJS = chatContent.wrappedJSObject || chatContent;
 
         
         await ContentTaskUtils.waitForCondition(() => {
-          return chatContentJS.seenUrls?.size > 0;
-        }, "seenUrls should be pushed via actor chain");
+          return chatContentJS.trustedUrls?.length > 0;
+        }, "trustedUrls should be pushed via actor chain");
 
         const testMessageId = "test-integration-msg";
         const eventDetail = Cu.cloneInto(
@@ -415,7 +534,7 @@ add_task(async function test_aiwindow_component_trust_smoke() {
             ordinal: 0,
             id: testMessageId,
             content: {
-              body: `Visit [Trusted](${seen}) or [Untrusted](${unseen}).`,
+              body: `Visit [Trusted](${trusted}) or [Untrusted](${untrusted}).`,
             },
             memoriesApplied: [],
             tokens: { search: [] },
@@ -450,7 +569,7 @@ add_task(async function test_aiwindow_component_trust_smoke() {
             assistantDiv?.querySelectorAll("a[href]").length === 2 &&
             assistantDiv?.querySelector(".untrusted-link-label")
           );
-        }, "Message with seen anchor, unseen label, and disclosure anchor should render");
+        }, "Message with trusted anchor, untrusted label, and disclosure anchor should render");
 
         const messageEl = chatContent.shadowRoot.querySelector(
           `ai-chat-message[data-message-id="${testMessageId}"]`
@@ -459,37 +578,49 @@ add_task(async function test_aiwindow_component_trust_smoke() {
           ".message-assistant"
         );
 
-        const seenAnchor = assistantDiv.querySelector(`a[href="${seen}"]`);
-        Assert.ok(seenAnchor, "Seen URL anchor should exist");
+        const trustedAnchor = assistantDiv.querySelector(
+          `a[href="${trusted}"]`
+        );
+        Assert.ok(trustedAnchor, "Trusted anchor should exist");
         Assert.equal(
-          seenAnchor.textContent,
+          trustedAnchor.textContent,
           "Trusted",
-          "Seen anchor should have original text"
+          "Trusted anchor should have original text"
         );
 
-        const unseenLabel = assistantDiv.querySelector(".untrusted-link-label");
-        Assert.ok(unseenLabel, "Unseen link label should exist");
+        const untrustedLabel = assistantDiv.querySelector(
+          ".untrusted-link-label"
+        );
+        Assert.ok(untrustedLabel, "Untrusted link label should exist");
         Assert.equal(
-          unseenLabel.textContent,
+          untrustedLabel.textContent,
           "Untrusted",
-          "Unseen label text should match"
+          "Untrusted label text should match"
         );
 
         const disclosureAnchor = assistantDiv.querySelector(
-          `a[href="${unseen}"]`
+          `a[href="${untrusted}"]`
         );
         Assert.ok(
           disclosureAnchor,
-          "Disclosure anchor should exist for unseen URL"
+          "Disclosure anchor should exist for untrusted URL"
         );
         Assert.equal(
           disclosureAnchor.textContent,
-          unseen,
+          untrusted,
           "Disclosure anchor should show the URL"
         );
       }
     );
   } finally {
+    if (testConversationId) {
+      try {
+        const orchestrator = await getSecurityOrchestrator();
+        orchestrator.cleanupSession(testConversationId);
+      } catch {
+        
+      }
+    }
     if (win) {
       await BrowserTestUtils.closeWindow(win);
     }

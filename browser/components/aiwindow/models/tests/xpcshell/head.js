@@ -3,38 +3,6 @@
 
 
 
-const { SecurityProperties } = ChromeUtils.importESModule(
-  "moz-src:///browser/components/aiwindow/models/SecurityProperties.sys.mjs"
-);
-
-
-
-
-
-
-
-
-
-function makeConversation({
-  privateData = false,
-  untrustedInput = false,
-} = {}) {
-  const securityProperties = new SecurityProperties();
-  if (privateData) {
-    securityProperties.setPrivateData();
-  }
-  if (untrustedInput) {
-    securityProperties.setUntrustedInput();
-  }
-  securityProperties.commit();
-  return {
-    securityProperties,
-    addSeenUrls() {},
-    getAllMentionURLs() {
-      return new Set();
-    },
-  };
-}
 const { PlacesUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/PlacesUtils.sys.mjs"
 );

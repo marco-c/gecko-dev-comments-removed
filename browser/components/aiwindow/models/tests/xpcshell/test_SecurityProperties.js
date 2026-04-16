@@ -2,6 +2,10 @@
 
 
 
+const { SecurityProperties } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/aiwindow/models/SecurityProperties.sys.mjs"
+);
+
 add_task(function test_securityProperties_flags_not_visible_before_commit() {
   const sp = new SecurityProperties();
   sp.setPrivateData();
