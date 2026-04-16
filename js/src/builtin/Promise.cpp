@@ -6547,6 +6547,15 @@ bool js::IsPromiseForAsyncFunctionOrGenerator(JSObject* promise) {
 
 [[nodiscard]] bool js::AsyncFunctionReturned(
     JSContext* cx, Handle<PromiseObject*> resultPromise, HandleValue value) {
+  if (resultPromise->state() != JS::PromiseState::Pending) {
+    if (!WarnNumberASCII(cx, JSMSG_UNHANDLABLE_PROMISE_RESOLUTION_WARNING)) {
+      if (cx->isExceptionPending()) {
+        cx->clearPendingException();
+      }
+    }
+    return true;
+  }
+
   
   
   
