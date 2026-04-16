@@ -1107,16 +1107,6 @@ void gfxUserFontSet::ForgetLocalFace(gfxUserFontFamily* aFontFamily) {
     
     if (ufe->GetPlatformFontEntry() &&
         ufe->GetPlatformFontEntry()->IsLocalUserFont()) {
-      
-      
-      
-      gfxFontEntry* pfe = ufe->GetPlatformFontEntry();
-      {
-        AutoWriteLock lock(pfe->mLock);
-        pfe->mShmemCharacterMap = nullptr;
-        pfe->mShmemFace = nullptr;
-        pfe->mShmemFamily = nullptr;
-      }
       ufe->mPlatformFontEntry = nullptr;
     }
     
