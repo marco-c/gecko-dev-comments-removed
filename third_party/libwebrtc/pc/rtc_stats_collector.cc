@@ -1299,7 +1299,7 @@ void RTCStatsCollector::GetStatsReportInternal(
     
     
     
-    PrepareTransceiverStatsInfosAndCallStats_s_w_n();
+    PrepareTransceiverStatsInfosAndCallStats_s_w();
 
     
     ProducePartialResultsOnSignalingThread(timestamp);
@@ -2188,7 +2188,7 @@ RTCStatsCollector::PrepareTransportCertificateStats_n(
   return transport_cert_stats;
 }
 
-void RTCStatsCollector::PrepareTransceiverStatsInfosAndCallStats_s_w_n() {
+void RTCStatsCollector::PrepareTransceiverStatsInfosAndCallStats_s_w() {
   RTC_DCHECK_RUN_ON(signaling_thread_);
 
   transceiver_stats_infos_.clear();
@@ -2253,39 +2253,6 @@ void RTCStatsCollector::PrepareTransceiverStatsInfosAndCallStats_s_w_n() {
 
   
   
-  
-  
-  
-  
-  
-  
-  
-  network_thread_->BlockingCall(
-      [&, &transceiver_stats_infos = transceiver_stats_infos_]()
-          RTC_NO_THREAD_SAFETY_ANALYSIS mutable {
-            Thread::ScopedDisallowBlockingCalls no_blocking_calls;
-            for (auto& stats : transceiver_stats_infos) {
-              if (stats.has_channel) {
-#if RTC_DCHECK_IS_ON
-                
-                
-                
-                
-                
-                std::string name(stats.transceiver->channel_transport_name());
-                if (name.empty()) {
-                  RTC_DCHECK(!stats.transport_name);
-                } else {
-                  RTC_DCHECK(stats.transport_name)
-                      << "No transport name set in transceiver";
-                  RTC_DCHECK_EQ(stats.transport_name.value(), name);
-                }
-#endif
-                stats.transport_name =
-                    std::string(stats.transceiver->channel_transport_name());
-              }
-            }
-          });
 
   
   

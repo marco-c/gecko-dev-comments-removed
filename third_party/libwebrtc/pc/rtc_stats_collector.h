@@ -241,7 +241,7 @@ class RTCStatsCollector {
   PrepareTransportCertificateStats_n(
       const std::map<std::string, TransportStats>& transport_stats_by_name);
   
-  void PrepareTransceiverStatsInfosAndCallStats_s_w_n();
+  void PrepareTransceiverStatsInfosAndCallStats_s_w();
 
   
   void ProducePartialResultsOnSignalingThread(Timestamp timestamp);
