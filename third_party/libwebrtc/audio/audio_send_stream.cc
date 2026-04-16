@@ -293,10 +293,13 @@ void AudioSendStream::ConfigureStream(
       channel_send_->ResetSenderCongestionControlObjects();
     }
 
+    absl::string_view uri = TransportSequenceNumber::Uri();
+    rtp_rtcp_module_->DeregisterSendRtpHeaderExtension(uri);
+
     if (!allocate_audio_without_feedback_ &&
         new_ids.transport_sequence_number != 0) {
       rtp_rtcp_module_->RegisterRtpHeaderExtension(
-          TransportSequenceNumber::Uri(), new_ids.transport_sequence_number);
+          uri, new_ids.transport_sequence_number);
       
       
       
