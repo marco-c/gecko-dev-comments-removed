@@ -1337,6 +1337,7 @@ bool nsLookAndFeel::PerThemeData::GetFont(FontID aID, nsString& aFontName,
       aFontStyle = mDefaultFontStyle;
       break;
   }
+  aFontStyle.systemFont = true;
 
   
   
