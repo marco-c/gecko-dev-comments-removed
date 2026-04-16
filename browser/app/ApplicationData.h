@@ -1,0 +1,14 @@
+
+
+
+
+#ifndef ApplicationData_h
+#define ApplicationData_h
+
+namespace mozilla {
+struct StaticXREAppData;
+}  
+
+extern const mozilla::StaticXREAppData* const kStaticAppData;
+
+#endif  

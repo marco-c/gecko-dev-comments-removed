@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+#include <cstddef>  
+#include "ApplicationData.h"
+#include "application.ini.h"
+
+const mozilla::StaticXREAppData* const kStaticAppData = &sAppData;
