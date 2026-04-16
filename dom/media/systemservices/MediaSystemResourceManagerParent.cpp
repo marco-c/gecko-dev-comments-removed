@@ -2,7 +2,6 @@
 
 
 
-
 #include "MediaSystemResourceManagerParent.h"
 
 #include "mozilla/layers/PImageBridgeParent.h"
@@ -48,15 +47,6 @@ mozilla::ipc::IPCResult MediaSystemResourceManagerParent::RecvRelease(
   mMediaSystemResourceService->ReleaseResource(this, aId,
                                                request->mResourceType);
   mResourceRequests.Remove(aId);
-  return IPC_OK();
-}
-
-mozilla::ipc::IPCResult
-MediaSystemResourceManagerParent::RecvRemoveResourceManager() {
-  IProtocol* mgr = Manager();
-  if (!PMediaSystemResourceManagerParent::Send__delete__(this)) {
-    return IPC_FAIL_NO_REASON(mgr);
-  }
   return IPC_OK();
 }
 

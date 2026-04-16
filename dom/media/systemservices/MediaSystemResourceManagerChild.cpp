@@ -2,7 +2,6 @@
 
 
 
-
 #include "MediaSystemResourceManagerChild.h"
 
 #include "MediaSystemResourceManager.h"
@@ -27,6 +26,7 @@ void MediaSystemResourceManagerChild::ActorDestroy(
   MOZ_ASSERT(!mDestroyed);
   if (mManager) {
     mManager->OnIpcClosed();
+    mManager = nullptr;
   }
   mDestroyed = true;
 }
@@ -35,7 +35,7 @@ void MediaSystemResourceManagerChild::Destroy() {
   if (mDestroyed) {
     return;
   }
-  SendRemoveResourceManager();
+  Send__delete__(this);
   
 }
 

@@ -2,7 +2,6 @@
 
 
 
-
 #if !defined(MediaSystemResourceManagerParent_h_)
 #  define MediaSystemResourceManagerParent_h_
 
@@ -30,8 +29,6 @@ class MediaSystemResourceManagerParent final
       const bool& aWillWait);
 
   mozilla::ipc::IPCResult RecvRelease(const uint32_t& aId);
-
-  mozilla::ipc::IPCResult RecvRemoveResourceManager();
 
  private:
   void ActorDestroy(ActorDestroyReason aActorDestroyReason) override;

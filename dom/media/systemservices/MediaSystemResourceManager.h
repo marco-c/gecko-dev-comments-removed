@@ -2,8 +2,6 @@
 
 
 
-
-
 #if !defined(MediaSystemResourceManager_h_)
 #  define MediaSystemResourceManager_h_
 
@@ -55,9 +53,7 @@ class MediaSystemResourceManager {
   MediaSystemResourceManager();
   virtual ~MediaSystemResourceManager();
 
-  void OpenIPC();
   void CloseIPC();
-  bool IsIpcClosed();
 
   void DoAcquire(uint32_t aId);
 
@@ -65,13 +61,13 @@ class MediaSystemResourceManager {
 
   void HandleAcquireResult(uint32_t aId, bool aSuccess);
 
-  ReentrantMonitor mReentrantMonitor MOZ_UNANNOTATED;
+  ReentrantMonitor mReentrantMonitor{
+      "MediaSystemResourceManager.mReentrantMonitor"};
 
-  bool mShutDown;
+  media::MediaSystemResourceManagerChild* mChild = nullptr;
 
-  media::MediaSystemResourceManagerChild* mChild;
-
-  nsTHashMap<nsUint32HashKey, MediaSystemResourceClient*> mResourceClients;
+  nsTHashMap<nsUint32HashKey, MediaSystemResourceClient*> mResourceClients
+      MOZ_GUARDED_BY(mReentrantMonitor);
 
   static StaticRefPtr<MediaSystemResourceManager> sSingleton;
 };

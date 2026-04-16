@@ -1,7 +1,6 @@
-
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 include protocol PImageBridge;
 include "mozilla/media/MediaSystemResourceMessageUtils.h";
@@ -11,9 +10,9 @@ using mozilla::MediaSystemResourceType from "mozilla/media/MediaSystemResourceTy
 namespace mozilla {
 namespace media {
 
-
-
-
+/*
+ * The PMediaSystemResourceManager is a sub-protocol in PImageBridge
+ */
 [ManualDealloc]
 sync protocol PMediaSystemResourceManager
 {
@@ -21,18 +20,13 @@ sync protocol PMediaSystemResourceManager
 
 child:
   async Response(uint32_t aId, bool aSuccess);
-  async __delete__();
 
 parent:
   async Acquire(uint32_t aId, MediaSystemResourceType aResourceType, bool aWillWait);
   async Release(uint32_t aId);
-
-  
-
-
-  async RemoveResourceManager();
+  async __delete__();
 };
 
-} 
-} 
+} // namespace media
+} // namespace mozilla
 
