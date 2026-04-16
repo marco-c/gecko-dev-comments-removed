@@ -5,10 +5,11 @@
 use super::language_info::LanguageInfo;
 use super::zip::{read_archive_file_as_string, read_zip, Archive};
 use crate::config::installation_resource_path;
+use crate::prefs_parser::find_string_pref;
 use crate::std::path::{Path, PathBuf};
 use anyhow::Context;
 
-const LOCALE_PREF_KEY: &str = r#""intl.locale.requested""#;
+const LOCALE_PREF_KEY: &str = "intl.locale.requested";
 
 
 pub fn read(
@@ -124,14 +125,8 @@ fn locales_from_prefs(profile_dir: &Path) -> anyhow::Result<Option<Vec<String>>>
 
 
 
-
-
-
 fn parse_requested_locales(prefs_content: &str) -> Option<Vec<&str>> {
-    let (_, s) = prefs_content.split_once(LOCALE_PREF_KEY)?;
-    let s = s.trim_start_matches(|c: char| c.is_whitespace() || c == ',');
-    let s = s.strip_prefix('"')?;
-    let (v, _) = s.split_once('"')?;
+    let v = find_string_pref(prefs_content, LOCALE_PREF_KEY)?;
     Some(
         v.split(",")
             .map(|s| s.trim())
@@ -187,7 +182,7 @@ mod test {
     #[test]
     fn parse_locales_empty() {
         assert_eq!(
-            parse_requested_locales(r#"user_pref("intl.locale.requested","")"#),
+            parse_requested_locales(r#"user_pref("intl.locale.requested","");"#),
             Some(vec![])
         );
     }
@@ -195,7 +190,7 @@ mod test {
     #[test]
     fn parse_locales() {
         assert_eq!(
-            parse_requested_locales(r#"user_pref("intl.locale.requested", "fr,en-US")"#),
+            parse_requested_locales(r#"user_pref("intl.locale.requested", "fr,en-US");"#),
             Some(vec!["fr", "en-US"])
         );
     }
