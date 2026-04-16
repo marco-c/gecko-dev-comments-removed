@@ -1288,6 +1288,10 @@ bool js::AsyncGeneratorThrow(JSContext* cx, unsigned argc, Value* vp) {
     if (generator->isAfterAwait()) {
       if (!AsyncGeneratorAwait(cx, generator, thisOrRval)) {
         
+        if (!cx->isExceptionPending()) {
+          return false;
+        }
+        
         
         
         
@@ -1308,6 +1312,10 @@ bool js::AsyncGeneratorThrow(JSContext* cx, unsigned argc, Value* vp) {
       bool resumeAgain = false;
       if (!AsyncGeneratorYield(cx, generator, thisOrRval, &resumeAgain,
                                &completionKind, &resumeArgument)) {
+        
+        if (!cx->isExceptionPending()) {
+          return false;
+        }
         
         
         
