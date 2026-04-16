@@ -624,6 +624,12 @@ sealed class ContentAction : BrowserAction() {
         ContentAction()
 
     /**
+     * Restores the icon of the [ContentState] with the given [sessionId] from cache.
+     */
+    data class RestoreIconAction(val sessionId: String, val pageUrl: String, val icon: Bitmap) :
+        ContentAction()
+
+    /**
      * Updates the thumbnail of the [ContentState] with the given [sessionId].
      */
     data class UpdateThumbnailAction(val sessionId: String, val thumbnail: Bitmap) : ContentAction()
@@ -1717,8 +1723,11 @@ sealed class DownloadAction : BrowserAction() {
 
     /**
      * Updates the [BrowserState] to remove the download with the provided [downloadId].
+     * @param downloadId The ID of the download to remove.
+     * @param removeFromDisk If true, forcibly deletes the file from storage. If false, only removes
+     * from history. If null, falls back to the global user preference.
      */
-    data class RemoveDownloadAction(val downloadId: String) : DownloadAction()
+    data class RemoveDownloadAction(val downloadId: String, val removeFromDisk: Boolean? = null) : DownloadAction()
 
     /**
      * Updates the [BrowserState] to remove all downloads.
@@ -1872,6 +1881,8 @@ sealed class SearchAction : BrowserAction() {
         val additionalAvailableSearchEngines: List<SearchEngine>,
         val userSelectedSearchEngineId: String?,
         val userSelectedSearchEngineName: String?,
+        val userSelectedPrivateSearchEngineId: String?,
+        val userSelectedPrivateSearchEngineName: String?,
         val regionDefaultSearchEngineId: String,
         val regionSearchEnginesOrder: List<String>,
         val searchEnginesConfigurationId: Int?,
@@ -1902,6 +1913,21 @@ sealed class SearchAction : BrowserAction() {
         val searchEngineId: String,
         val searchEngineName: String?,
     ) : SearchAction()
+
+    /**
+     * Updates [BrowserState.search] to update [SearchState.userSelectedPrivateSearchEngineId] and
+     * [SearchState.userSelectedPrivateSearchEngineName].
+     */
+    data class SelectPrivateSearchEngineAction(
+        val searchEngineId: String,
+        val searchEngineName: String?,
+    ) : SearchAction()
+
+    /**
+     * Clears the private browsing search engine override, causing it to fall back to the
+     * normal default search engine.
+     */
+    object ClearPrivateSearchEngineAction : SearchAction()
 
     /**
      * Shows a previously hidden, bundled search engine in [SearchState.regionSearchEngines] again
