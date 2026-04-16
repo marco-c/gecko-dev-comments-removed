@@ -8,6 +8,7 @@
 
 
 
+
 #ifndef nsExceptionHandler_h_
 #define nsExceptionHandler_h_
 
@@ -80,6 +81,8 @@ static inline bool IsDummy() {
 #endif
 }
 
+nsresult OOPInit(nsIFile* aXREDirectory);
+void OOPDeinit();
 nsresult SetExceptionHandler(nsIFile* aXREDirectory, bool force = false);
 nsresult UnsetExceptionHandler();
 

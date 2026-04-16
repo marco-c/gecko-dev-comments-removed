@@ -2,6 +2,8 @@
 
 
 
+
+
 #include "nsExceptionHandler.h"
 
 using mozilla::UniqueFileHandle;
@@ -15,6 +17,12 @@ void AnnotateTexturesSize(size_t size) {}
 void AnnotatePendingIPC(size_t aNumOfPendingIPC, uint32_t aTopPendingIPCCount,
                         const char* aTopPendingIPCName,
                         uint32_t aTopPendingIPCType) {}
+
+nsresult OOPInit(nsIFile* aXREDirectory) {
+  return nsresult::NS_ERROR_NOT_AVAILABLE;
+}
+
+void OOPDeinit() {}
 
 nsresult SetExceptionHandler(nsIFile* aXREDirectory, bool force ) {
   return NS_ERROR_NOT_IMPLEMENTED;
