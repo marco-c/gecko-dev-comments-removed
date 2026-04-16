@@ -109,6 +109,45 @@ void WindowedPaddedFft(const Aec3Fft& fft,
 }
 
 
+
+bool UseRefinedOutput(const SubtractorOutput& subtractor_output) {
+  
+  
+  
+  if (subtractor_output.e2_coarse < 0.9f * subtractor_output.e2_refined &&
+      subtractor_output.y2 > 30.f * 30.f * kBlockSize &&
+      (subtractor_output.s2_refined > 60.f * 60.f * kBlockSize ||
+       subtractor_output.s2_coarse > 60.f * 60.f * kBlockSize)) {
+    return false;
+  }
+
+  
+  
+  if (subtractor_output.e2_coarse < subtractor_output.e2_refined &&
+      subtractor_output.y2 < subtractor_output.e2_refined) {
+    return false;
+  }
+  return true;
+}
+
+
+
+void FormLinearFilterOutput(bool refined_filter_output_last_selected,
+                            bool use_refined_output,
+                            const SubtractorOutput& subtractor_output,
+                            ArrayView<float> output) {
+  RTC_DCHECK_EQ(subtractor_output.e_refined.size(), output.size());
+  RTC_DCHECK_EQ(subtractor_output.e_coarse.size(), output.size());
+
+  SignalTransition(refined_filter_output_last_selected
+                       ? subtractor_output.e_refined
+                       : subtractor_output.e_coarse,
+                   use_refined_output ? subtractor_output.e_refined
+                                      : subtractor_output.e_coarse,
+                   output);
+}
+
+
 class EchoRemoverImpl final : public EchoRemover {
  public:
   EchoRemoverImpl(const Environment& env,
@@ -144,12 +183,6 @@ class EchoRemoverImpl final : public EchoRemover {
   }
 
  private:
-  
-  
-  
-  void FormLinearFilterOutput(const SubtractorOutput& subtractor_output,
-                              ArrayView<float> output);
-
   static std::atomic<int> instance_count_;
   const EchoCanceller3Config config_;
   const Aec3Fft fft_;
@@ -385,14 +418,28 @@ void EchoRemoverImpl::ProcessCapture(
                       subtractor_output);
 
   
+  bool use_refined_output;
+  if (use_coarse_filter_output_) {
+    use_refined_output = false;
+    for (size_t ch = 0; ch < num_capture_channels_; ++ch) {
+      if (UseRefinedOutput(subtractor_output[ch])) {
+        use_refined_output = true;
+        break;
+      }
+    }
+  } else {
+    use_refined_output = true;
+  }
   for (size_t ch = 0; ch < num_capture_channels_; ++ch) {
-    FormLinearFilterOutput(subtractor_output[ch], e[ch]);
+    FormLinearFilterOutput(refined_filter_output_last_selected_,
+                           use_refined_output, subtractor_output[ch], e[ch]);
     WindowedPaddedFft(fft_, y->View(0, ch), y_old_[ch], &Y[ch]);
     WindowedPaddedFft(fft_, e[ch], e_old_[ch], &E[ch]);
     LinearEchoPower(E[ch], Y[ch], &S2_linear[ch]);
     Y[ch].Spectrum(optimization_, Y2[ch]);
     E[ch].Spectrum(optimization_, E2[ch]);
   }
+  refined_filter_output_last_selected_ = use_refined_output;
   const auto& nearend_spectrum = aec_state_.UsableLinearEstimate() ? E2 : Y2;
   
   
@@ -492,40 +539,6 @@ void EchoRemoverImpl::ProcessCapture(
                         aec_state_.MinDirectPathFilterDelay());
   data_dumper_->DumpRaw("aec3_capture_saturation",
                         aec_state_.SaturatedCapture() ? 1 : 0);
-}
-
-void EchoRemoverImpl::FormLinearFilterOutput(
-    const SubtractorOutput& subtractor_output,
-    ArrayView<float> output) {
-  RTC_DCHECK_EQ(subtractor_output.e_refined.size(), output.size());
-  RTC_DCHECK_EQ(subtractor_output.e_coarse.size(), output.size());
-  bool use_refined_output = true;
-  if (use_coarse_filter_output_) {
-    
-    
-    
-    if (subtractor_output.e2_coarse < 0.9f * subtractor_output.e2_refined &&
-        subtractor_output.y2 > 30.f * 30.f * kBlockSize &&
-        (subtractor_output.s2_refined > 60.f * 60.f * kBlockSize ||
-         subtractor_output.s2_coarse > 60.f * 60.f * kBlockSize)) {
-      use_refined_output = false;
-    } else {
-      
-      
-      if (subtractor_output.e2_coarse < subtractor_output.e2_refined &&
-          subtractor_output.y2 < subtractor_output.e2_refined) {
-        use_refined_output = false;
-      }
-    }
-  }
-
-  SignalTransition(refined_filter_output_last_selected_
-                       ? subtractor_output.e_refined
-                       : subtractor_output.e_coarse,
-                   use_refined_output ? subtractor_output.e_refined
-                                      : subtractor_output.e_coarse,
-                   output);
-  refined_filter_output_last_selected_ = use_refined_output;
 }
 
 }  
