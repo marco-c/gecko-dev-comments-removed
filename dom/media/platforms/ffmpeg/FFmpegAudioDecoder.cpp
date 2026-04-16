@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "FFmpegAudioDecoder.h"
 
 #include "AudioSampleFormat.h"
@@ -194,7 +192,8 @@ static AlignedAudioBuffer CopyAndPackAudio(AVFrame* aFrame,
   } else if (aFrame->format == AV_SAMPLE_FMT_FLTP) {
     
     AudioDataValue* tmp = audio.get();
-    AudioDataValue** data = reinterpret_cast<AudioDataValue**>(aFrame->data);
+    AudioDataValue** data =
+        reinterpret_cast<AudioDataValue**>(aFrame->extended_data);
     for (uint32_t frame = 0; frame < aNumAFrames; frame++) {
       for (uint32_t channel = 0; channel < aNumChannels; channel++) {
         *tmp++ = data[channel][frame];
@@ -213,7 +212,7 @@ static AlignedAudioBuffer CopyAndPackAudio(AVFrame* aFrame,
     
     
     AudioDataValue* tmp = audio.get();
-    int16_t** data = reinterpret_cast<int16_t**>(aFrame->data);
+    int16_t** data = reinterpret_cast<int16_t**>(aFrame->extended_data);
     for (uint32_t frame = 0; frame < aNumAFrames; frame++) {
       for (uint32_t channel = 0; channel < aNumChannels; channel++) {
         *tmp++ = ConvertAudioSample<float>(data[channel][frame]);
@@ -232,7 +231,7 @@ static AlignedAudioBuffer CopyAndPackAudio(AVFrame* aFrame,
     
     
     AudioDataValue* tmp = audio.get();
-    int32_t** data = reinterpret_cast<int32_t**>(aFrame->data);
+    int32_t** data = reinterpret_cast<int32_t**>(aFrame->extended_data);
     for (uint32_t frame = 0; frame < aNumAFrames; frame++) {
       for (uint32_t channel = 0; channel < aNumChannels; channel++) {
         *tmp++ = ConvertAudioSample<float>(data[channel][frame]);
@@ -251,7 +250,7 @@ static AlignedAudioBuffer CopyAndPackAudio(AVFrame* aFrame,
     
     
     AudioDataValue* tmp = audio.get();
-    uint8_t** data = reinterpret_cast<uint8_t**>(aFrame->data);
+    uint8_t** data = reinterpret_cast<uint8_t**>(aFrame->extended_data);
     for (uint32_t frame = 0; frame < aNumAFrames; frame++) {
       for (uint32_t channel = 0; channel < aNumChannels; channel++) {
         *tmp++ = ConvertAudioSample<float>(data[channel][frame]);
