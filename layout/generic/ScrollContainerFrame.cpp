@@ -2969,6 +2969,13 @@ void ScrollContainerFrame::ScrollToImpl(
   MOZ_ASSERT(aOrigin != ScrollOrigin::None);
 
   
+  
+  
+  
+  
+  const bool isForClamping = aOrigin == ScrollOrigin::Clamp;
+
+  
   if (aOrigin == ScrollOrigin::NotSpecified) {
     
     
@@ -2980,7 +2987,7 @@ void ScrollContainerFrame::ScrollToImpl(
   
   
   
-  if (aOrigin == ScrollOrigin::Relative &&
+  if ((aOrigin == ScrollOrigin::Relative || aOrigin == ScrollOrigin::Clamp) &&
       (mLastScrollOrigin != ScrollOrigin::None &&
        mLastScrollOrigin != ScrollOrigin::NotSpecified &&
        mLastScrollOrigin != ScrollOrigin::Relative &&
@@ -3035,7 +3042,7 @@ void ScrollContainerFrame::ScrollToImpl(
     
     
     
-    if (mApzSmoothScrollDestination && aOrigin != ScrollOrigin::Clamp) {
+    if (mApzSmoothScrollDestination && !isForClamping) {
       if (aOrigin == ScrollOrigin::Relative) {
         AppendScrollUpdate(
             ScrollPositionUpdate::NewRelativeScroll(mApzScrollPos, pt));
