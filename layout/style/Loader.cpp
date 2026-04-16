@@ -523,6 +523,7 @@ void Loader::DeregisterFromSheetCache() {
 }
 
 void Loader::DropDocumentReference() {
+  MOZ_ASSERT(NS_IsMainThread());
   
   if (mSheets) {
     DeregisterFromSheetCache();
@@ -734,17 +735,11 @@ nsresult SheetLoadData::VerifySheetReadyToParse(nsresult aStatus,
   
   
   
-
   const bool validType = contentType.EqualsLiteral("text/css") ||
                          contentType.EqualsLiteral(UNKNOWN_CONTENT_TYPE) ||
                          contentType.IsEmpty();
-
   if (!validType) {
-    
-    
-    
-    const bool sameOrigin =
-        mLoader->LoaderPrincipal()->Subsumes(mSheet->Principal());
+    const bool sameOrigin = mSheet->IsOriginClean();
     const auto flag = sameOrigin && mCompatMode == eCompatibility_NavQuirks
                           ? nsIScriptError::warningFlag
                           : nsIScriptError::errorFlag;
@@ -2351,6 +2346,7 @@ size_t Loader::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
 }
 
 nsIPrincipal* Loader::LoaderPrincipal() const {
+  MOZ_ASSERT(NS_IsMainThread());
   if (mDocument) {
     return mDocument->NodePrincipal();
   }
@@ -2359,10 +2355,12 @@ nsIPrincipal* Loader::LoaderPrincipal() const {
 }
 
 nsIPrincipal* Loader::PartitionedPrincipal() const {
+  MOZ_ASSERT(NS_IsMainThread());
   return mDocument ? mDocument->PartitionedPrincipal() : LoaderPrincipal();
 }
 
 bool Loader::ShouldBypassCache() const {
+  MOZ_ASSERT(NS_IsMainThread());
   return mDocument && nsContentUtils::ShouldBypassSubResourceCache(mDocument);
 }
 
