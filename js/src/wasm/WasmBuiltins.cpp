@@ -763,6 +763,10 @@ static void WasmHandleRequestTierUp(Instance* instance) {
   
   instance->submitCallRefHints(funcIndex);
 
+  if (!codeBlock->code->tryClaimTierUp(funcIndex)) {
+    return;
+  }
+
   if (JS::Prefs::wasm_lazy_tiering_synchronous()) {
     UniqueChars error;
     UniqueCharsVector warnings;
