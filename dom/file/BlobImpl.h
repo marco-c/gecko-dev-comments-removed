@@ -2,11 +2,10 @@
 
 
 
-
-
 #ifndef mozilla_dom_BlobImpl_h
 #define mozilla_dom_BlobImpl_h
 
+#include "mozilla/ThreadSafeWeakPtr.h"
 #include "nsISupports.h"
 #include "nsString.h"
 
@@ -26,10 +25,16 @@ class Optional;
 
 
 
-class BlobImpl : public nsISupports {
+
+
+class BlobImpl : public SupportsThreadSafeWeakPtr<BlobImpl>,
+                 public nsISupports {
  public:
   NS_INLINE_DECL_STATIC_IID(BLOBIMPL_IID)
-  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_INLINE_DECL_REFCOUNTING_INHERITED(BlobImpl,
+                                       SupportsThreadSafeWeakPtr<BlobImpl>);
+  NS_IMETHOD QueryInterface(REFNSIID aIID, void** aInstancePtr) override;
+  MOZ_DECLARE_REFCOUNTED_TYPENAME(BlobImpl);
 
   BlobImpl() = default;
 
@@ -99,6 +104,8 @@ class BlobImpl : public nsISupports {
   virtual bool IsDirectory() const { return false; }
 
  protected:
+  friend SupportsThreadSafeWeakPtr<BlobImpl>;
+
   virtual ~BlobImpl() = default;
 };
 
