@@ -109,10 +109,7 @@ impl fmt::Debug for EagerPseudoArray {
 
 
 
-#[cfg(feature = "gecko")]
 const EMPTY_PSEUDO_ARRAY: &'static EagerPseudoArrayInner = &[None, None, None, None];
-#[cfg(feature = "servo")]
-const EMPTY_PSEUDO_ARRAY: &'static EagerPseudoArrayInner = &[None, None, None];
 
 impl EagerPseudoStyles {
     
@@ -435,6 +432,20 @@ impl ElementData {
             style: ResolvedStyle(self.styles.primary().clone()),
             reused_via_rule_node,
         }
+    }
+
+    
+    
+    pub fn clone_style_with_flags(&self, flags: ComputedValueFlags) -> ResolvedStyle {
+        let primary_style = self.styles.primary();
+        
+        
+        let pseudo = primary_style.pseudo();
+        ResolvedStyle(
+            primary_style
+                .deref()
+                .clone_with_flags(flags, pseudo.as_ref()),
+        )
     }
 
     
