@@ -214,6 +214,16 @@ nsresult nsZipHandle::Init(nsIFile* file, nsZipHandle** ret, PRFileDesc** aFd) {
     return NS_ERROR_OUT_OF_MEMORY;
   }
 
+#if defined(XP_UNIX)
+  
+  
+  madvise(buf, (size_t)size, MADV_WILLNEED);
+#  if defined(XP_LINUX)
+  
+  madvise(buf, (size_t)size, MADV_DONTDUMP);
+#  endif
+#endif
+
 #if defined(XP_WIN)
   if (aFd) {
     *aFd = fd.release();
