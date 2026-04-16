@@ -9,10 +9,43 @@ const { createPropertyFormatter } = StyleDictionary.formatHelpers;
 const figmaConfig = require("./figma-tokens-config");
 const { OVERRIDE_IDENTIFIERS } = require("./override-identifiers");
 
+
+
+
+
+
+
+const BASE_TOKEN_PATH = {
+  dir: "src/tokens/base",
+};
+
+
+
+
+
+
+
+
+
+const COMPONENT_TOKEN_PATHS = [
+  {
+    dir: "src/tokens/components",
+    isGlobal: true,
+  },
+  {
+    dir: "../../../content/widgets",
+    nameTransform: name => name.replace("moz-", ""),
+  },
+  {
+    dir: "../../../../browser/themes/shared",
+  },
+];
+
 const PURPOSE = {
   SEMANTIC: "semantic",
   STORYBOOK: "storybook",
 };
+
 
 
 
@@ -133,42 +166,46 @@ const TOKEN_CATEGORIES = [
 
 
 
-
-const getComponentNames = (mozComponents = false) => {
-  let fileNames = [];
-
-  if (mozComponents) {
-    fileNames = fs.readdirSync(
-      path.join(__dirname, "../../../../content/widgets"),
-      { recursive: true }
-    );
-  } else {
-    fileNames = fs.readdirSync(
-      path.join(__dirname, "../src/tokens/components")
-    );
-  }
-
-  return fileNames
-    .filter(
-      fileName =>
-        fileName.endsWith(".tokens.json") &&
-        !OVERRIDE_IDENTIFIERS.some(({ name }) =>
-          fileName.endsWith(`.${name}.tokens.json`)
-        )
-    )
-    .map(fileName =>
-      path.basename(fileName).replace(".tokens.json", "").replace("moz-", "")
-    );
+const getComponentInfo = () => {
+  return COMPONENT_TOKEN_PATHS.filter(({ dir }) =>
+    fs.existsSync(path.join(__dirname, "..", dir))
+  ).flatMap(({ dir, isGlobal = false, nameTransform = n => n }) => {
+    const srcDir = path.join(__dirname, "..", dir);
+    return fs
+      .readdirSync(srcDir, { recursive: true })
+      .filter(f => typeof f === "string")
+      .filter(
+        f =>
+          f.endsWith(".tokens.json") &&
+          !OVERRIDE_IDENTIFIERS.some(({ name }) =>
+            f.endsWith(`.${name}.tokens.json`)
+          )
+      )
+      .map(relativePath => ({
+        name: nameTransform(
+          path.basename(relativePath).replace(".tokens.json", "")
+        ),
+        destination: isGlobal
+          ? null
+          : `${dir}/${relativePath.replace(".tokens.json", ".tokens.css")}`,
+      }));
+  });
 };
 
-const getTokenSections = () => {
-  const componentNames = getComponentNames();
-  const mozComponentNames = getComponentNames(true);
 
-  const componentSections = [...componentNames, ...mozComponentNames].reduce(
-    (components, componentName) => ({
+
+
+
+
+const getExternalComponentInfo = () =>
+  
+  (getComponentInfo().filter(({ destination }) => destination !== null));
+
+const getTokenSections = () => {
+  const componentSections = getComponentInfo().reduce(
+    (components, { name }) => ({
       ...components,
-      [componentName]: componentName,
+      [name]: name,
     }),
     {}
   );
@@ -203,25 +240,22 @@ const getTokenSections = () => {
 
 
 
-const getMozComponentFileConfig = () => {
-  const componentNames = getComponentNames(true);
 
-  return componentNames.map(componentName => ({
-    destination: `../../../content/widgets/moz-${componentName}/moz-${componentName}.tokens.css`,
-    format: `css/variables/${componentName}`,
+const getExternalComponentFileConfig = () =>
+  getExternalComponentInfo().map(({ name, destination }) => ({
+    destination,
+    format: `css/variables/${name}`,
   }));
-};
 
 
 
 
 
 
-const getMozComponentFormatConfig = () => {
-  const componentNames = getComponentNames(true);
 
-  return componentNames.reduce(
-    (config, componentName) => ({
+const getExternalComponentFormatConfig = () =>
+  getExternalComponentInfo().reduce(
+    (config, { name: componentName }) => ({
       ...config,
       [`css/variables/${componentName}`]: createDesktopFormat({
         componentName,
@@ -229,7 +263,6 @@ const getMozComponentFormatConfig = () => {
     }),
     {}
   );
-};
 
 const TSHIRT_ORDER = [
   "circle",
@@ -436,8 +469,8 @@ const shouldSkipToken = ({ overrideIdentifier, componentName, token }) => {
   
   if (
     !componentName &&
-    getComponentNames(true).some(
-      name => token.name.startsWith(`${name}-`) || token.name === name
+    getExternalComponentInfo().some(
+      ({ name }) => token.name.startsWith(`${name}-`) || token.name === name
     )
   ) {
     return true;
@@ -683,11 +716,12 @@ function formatVariables({
     let sectionParts = [];
 
     remainingTokens = remainingTokens.filter(token => {
+      const normalizedName = formatBaseTokenNames(token.name);
       if (
         sectionMatchers.some(m =>
           m.test
-            ? m.test(token.name)
-            : token.name.startsWith(`${m}-`) || token.name === m
+            ? m.test(normalizedName)
+            : normalizedName.startsWith(`${m}-`) || normalizedName === m
         )
       ) {
         sectionParts.push(token);
@@ -870,10 +904,9 @@ function getTokenCategory(filePath) {
 }
 
 module.exports = {
-  source: [
-    "src/tokens/**/*.tokens.json",
-    "../../../content/widgets/**/*.tokens.json",
-  ],
+  source: [BASE_TOKEN_PATH, ...COMPONENT_TOKEN_PATHS].map(
+    ({ dir }) => `${dir}/**/*.tokens.json`
+  ),
   format: {
     "css/variables/shared": createDesktopFormat(),
     "css/variables/brand": createDesktopFormat({ surface: "brand" }),
@@ -882,7 +915,7 @@ module.exports = {
     "javascript/tokens-table": args => tokensTableFormat(args, false),
     
     "javascript/semantic-categories": args => tokensTableFormat(args, true),
-    ...getMozComponentFormatConfig(),
+    ...getExternalComponentFormatConfig(),
     ...figmaConfig.formats,
   },
   parsers: [
@@ -921,7 +954,7 @@ module.exports = {
             typeof token.original.value == "object" &&
             token.original.value.platform,
         },
-        ...getMozComponentFileConfig(),
+        ...getExternalComponentFileConfig(),
       ],
     },
     tables: {
