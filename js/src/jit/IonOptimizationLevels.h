@@ -76,9 +76,6 @@ class OptimizationInfo {
   bool autoTruncate_;
 
   
-  bool sink_;
-
-  
   bool scalarReplacement_;
 
   
@@ -100,7 +97,6 @@ class OptimizationInfo {
         rangeAnalysis_(false),
         reordering_(false),
         autoTruncate_(false),
-        sink_(false),
         scalarReplacement_(false),
         registerAllocator_(RegisterAllocator_Backtracking) {}
 
@@ -120,7 +116,6 @@ class OptimizationInfo {
     rangeAnalysis_ = true;
     reordering_ = true;
     scalarReplacement_ = true;
-    sink_ = true;
 
     registerAllocator_ = RegisterAllocator_Backtracking;
   }
@@ -140,7 +135,6 @@ class OptimizationInfo {
     eliminateRedundantShapeGuards_ = false;
     eliminateRedundantGCBarriers_ = false;
     scalarReplacement_ = true;
-    sink_ = false;
   }
 
   OptimizationLevel level() const { return level_; }
@@ -172,8 +166,6 @@ class OptimizationInfo {
   bool autoTruncateEnabled() const {
     return autoTruncate_ && rangeAnalysisEnabled();
   }
-
-  bool sinkEnabled() const { return sink_ && !JitOptions.disableSink; }
 
   bool eaaEnabled() const { return eaa_ && !JitOptions.disableEaa; }
 
