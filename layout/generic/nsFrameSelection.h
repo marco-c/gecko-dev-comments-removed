@@ -449,13 +449,14 @@ class nsFrameSelection final {
 
 
 
+
   MOZ_CAN_RUN_SCRIPT void SetDragState(bool aState);
 
   
 
 
 
-
+  void RestoreDragState() { mDragState = true; }
   [[nodiscard]] bool GetDragState() const { return mDragState; }
 
   
