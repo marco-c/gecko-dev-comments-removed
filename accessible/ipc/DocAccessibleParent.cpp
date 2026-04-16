@@ -1039,6 +1039,9 @@ void DocAccessibleParent::Destroy() {
   
   
   if (mShutdown) {
+    
+    mParent = nullptr;
+    mIndexInParent = -1;
     return;
   }
 
