@@ -5782,21 +5782,6 @@ void Element::SetCustomElementData(UniquePtr<CustomElementData> aData) {
   slots->mCustomElementData = std::move(aData);
 }
 
-void Element::ClearCustomElementData() {
-  MOZ_ASSERT(HasCustomElementData());
-
-  ClearHasCustomElementData();
-
-  
-  
-  
-  SetDefined(!nsContentUtils::IsCustomElementName(NodeInfo()->NameAtom(),
-                                                  NodeInfo()->NamespaceID()));
-
-  nsExtendedDOMSlots* slots = ExtendedDOMSlots();
-  slots->mCustomElementData = nullptr;
-}
-
 nsTArray<RefPtr<nsAtom>>& Element::EnsureCustomStates() {
   MOZ_ASSERT(IsHTMLElement());
   nsExtendedDOMSlots* slots = ExtendedDOMSlots();
