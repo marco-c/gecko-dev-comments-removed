@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>CSS Gaps: rule-inset shorthands getComputedStyle()</title>
+  <title>CSS Gaps: rule-inset-start/end shorthands getComputedStyle()</title>
   <link rel="author" title="Javier Contreras" href="mailto:javiercon@microsoft.com">
   <link rel="help" href="https://drafts.csswg.org/css-gaps-1/#inset">
   <script src="/resources/testharness.js"></script>
@@ -18,16 +18,15 @@
     }
   </style>
   <script>
-    const properties = ["column-rule-edge-inset", "row-rule-edge-inset", "rule-edge-inset",
-                        "column-rule-interior-inset", "row-rule-interior-inset", "rule-interior-inset"];
+    const properties = ["column-rule-inset-start", "column-rule-inset-end",
+                         "row-rule-inset-start", "row-rule-inset-end",
+                         "rule-inset-start", "rule-inset-end"];
     for (const property of properties) {
       test_computed_value(property, "10px", "10px");
-      test_computed_value(property, "-20px 10px", "-20px 10px");
       test_computed_value(property, "calc(10px + 0.5em)", "30px");
       test_computed_value(property, "calc(10px - 0.5em)", "-10px");
       test_computed_value(property, "30%", "30%");
       test_computed_value(property, "calc(25% + 10px)", "calc(25% + 10px)");
-      test_computed_value(property, "10px 20px");
       test_computed_value(property, "overlap-join");
     }
   </script>
