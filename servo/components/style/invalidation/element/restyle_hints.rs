@@ -53,8 +53,11 @@ bitflags! {
         /// traversal which is prior to normal traversal.
         const RESTYLE_SMIL = 1 << 10;
 
-        /// Match self or a descendant if it is dependent on a style query.
+        /// Match self if this element is dependent on a style query.
         const RESTYLE_IF_AFFECTED_BY_STYLE_QUERIES = 1 << 11;
+
+        /// Match self or descendants if dependent on a named style query.
+        const RESTYLE_IF_AFFECTED_BY_NAMED_STYLE_CONTAINER = 1 << 12;
     }
 }
 
@@ -124,7 +127,7 @@ impl RestyleHint {
         if self.contains(RestyleHint::RECASCADE_DESCENDANTS) {
             result |= Self::recascade_subtree();
         }
-        if self.contains(RestyleHint::RESTYLE_IF_AFFECTED_BY_STYLE_QUERIES) {
+        if self.contains(RestyleHint::RESTYLE_IF_AFFECTED_BY_NAMED_STYLE_CONTAINER) {
             
             
             
@@ -132,8 +135,7 @@ impl RestyleHint {
             
             
             
-            
-            result |= RestyleHint::RESTYLE_IF_AFFECTED_BY_STYLE_QUERIES;
+            result |= RestyleHint::RESTYLE_IF_AFFECTED_BY_NAMED_STYLE_CONTAINER;
         }
 
         result

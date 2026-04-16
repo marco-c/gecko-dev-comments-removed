@@ -20,9 +20,9 @@ use crate::invalidation::element::restyle_hints::RestyleHint;
 use crate::properties::longhands::display::computed_value::T as Display;
 use crate::properties::ComputedValues;
 use crate::properties::PropertyDeclarationBlock;
-use crate::rule_tree::{CascadeLevel, CascadeOrigin, StrongRuleNode};
 #[cfg(feature = "servo")]
 use crate::rule_tree::RuleCascadeFlags;
+use crate::rule_tree::{CascadeLevel, CascadeOrigin, StrongRuleNode};
 use crate::selector_parser::{PseudoElement, RestyleDamage};
 use crate::shared_lock::Locked;
 use crate::style_resolver::StyleResolverForElement;
@@ -30,6 +30,7 @@ use crate::style_resolver::{PseudoElementResolution, ResolvedElementStyles};
 use crate::stylesheets::layer_rule::LayerOrder;
 use crate::stylist::RuleInclusion;
 use crate::traversal_flags::TraversalFlags;
+use crate::values::computed::ContainerName;
 use servo_arc::{Arc, ArcBorrow};
 
 
@@ -48,12 +49,48 @@ pub enum StyleChange {
     
     Unchanged,
     
-    Changed {
-        
+    Changed(StyleChangeKind),
+}
+
+
+#[derive(Clone, Copy, Debug)]
+pub enum StyleChangeKind {
+    
+    Default,
+    
+    ResetOnly,
+    
+    CustomPropertiesChanged,
+    
+    NamedContainer,
+}
+
+impl StyleChangeKind {
+    
+    pub fn new(
         reset_only: bool,
-        
         custom_properties_changed: bool,
-    },
+        old_container_name: ContainerName,
+        new_container_name: ContainerName,
+    ) -> Self {
+        if old_container_name != new_container_name {
+            return StyleChangeKind::NamedContainer;
+        }
+        if custom_properties_changed {
+            
+            
+            return if !new_container_name.is_none() {
+                StyleChangeKind::NamedContainer
+            } else {
+                StyleChangeKind::CustomPropertiesChanged
+            };
+        }
+        if reset_only {
+            StyleChangeKind::ResetOnly
+        } else {
+            StyleChangeKind::Default
+        }
+    }
 }
 
 
@@ -796,18 +833,22 @@ trait PrivateMatchMethods: TElement {
 
         match difference.change {
             StyleChange::Unchanged => return RestyleHint::empty(),
-            StyleChange::Changed {
-                reset_only,
-                custom_properties_changed,
-            } => {
-                if custom_properties_changed {
-                    return RestyleHint::RECASCADE_SELF
-                        | RestyleHint::RESTYLE_IF_AFFECTED_BY_STYLE_QUERIES;
-                }
-                
-                
-                if !reset_only {
-                    return RestyleHint::RECASCADE_SELF;
+            StyleChange::Changed(change_kind) => {
+                match change_kind {
+                    StyleChangeKind::NamedContainer => {
+                        return RestyleHint::RECASCADE_SELF
+                            | RestyleHint::RESTYLE_IF_AFFECTED_BY_NAMED_STYLE_CONTAINER;
+                    },
+                    StyleChangeKind::CustomPropertiesChanged => {
+                        return RestyleHint::RECASCADE_SELF
+                            | RestyleHint::RESTYLE_IF_AFFECTED_BY_STYLE_QUERIES;
+                    },
+                    StyleChangeKind::Default => {
+                        
+                        
+                        return RestyleHint::RECASCADE_SELF;
+                    },
+                    StyleChangeKind::ResetOnly => {},
                 }
             },
         }
