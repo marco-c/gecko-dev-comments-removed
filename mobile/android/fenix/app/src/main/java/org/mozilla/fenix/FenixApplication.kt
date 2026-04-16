@@ -42,6 +42,7 @@ import mozilla.components.ExperimentalAndroidComponentsApi
 import mozilla.components.browser.state.action.SearchAction.SearchConfigurationAvailabilityChanged
 import mozilla.components.browser.state.action.SystemAction
 import mozilla.components.browser.state.selector.selectedTab
+import mozilla.components.browser.state.state.selectedOrDefaultPrivateSearchEngine
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.browser.storage.sync.GlobalPlacesDependencyProvider
 import mozilla.components.concept.base.crash.Breadcrumb
@@ -96,6 +97,7 @@ import org.mozilla.fenix.GleanMetrics.Metrics
 import org.mozilla.fenix.GleanMetrics.PerfStartup
 import org.mozilla.fenix.GleanMetrics.Preferences
 import org.mozilla.fenix.GleanMetrics.SearchDefaultEngine
+import org.mozilla.fenix.GleanMetrics.SearchDefaultEngineForPrivate
 import org.mozilla.fenix.GleanMetrics.TabStrip
 import org.mozilla.fenix.GleanMetrics.TermsOfUse
 import org.mozilla.fenix.GleanMetrics.UserAiSummarize
@@ -936,6 +938,7 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
             adjustCreative.set(settings.adjustCreative)
             adjustNetwork.set(settings.adjustNetwork)
 
+            settings.migrateDeleteDownloadBehaviorIfNeeded()
             settings.migrateSearchWidgetInstalledPrefIfNeeded()
             searchWidgetInstalled.set(settings.searchWidgetInstalled)
 
@@ -1033,6 +1036,32 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
                         name.set("custom")
                     }
                 }
+
+                val privateSearchEngine =
+                    browserStore.state.search.selectedOrDefaultPrivateSearchEngine
+                privateSearchEngine?.let { privateEngine ->
+                    val isSameAsDefault = privateEngine.id == searchEngine.id
+                    val sendPrivateSearchUrl =
+                        !privateEngine.isCustomEngine() || privateEngine.isKnownSearchDomain()
+                    if (sendPrivateSearchUrl) {
+                        SearchDefaultEngineForPrivate.apply {
+                            code.set(
+                                if (privateEngine.telemetrySuffix.isNullOrEmpty()) {
+                                    privateEngine.id
+                                } else {
+                                    "${privateEngine.id}-${privateEngine.telemetrySuffix}"
+                                },
+                            )
+                            name.set(if (isSameAsDefault) "default" else privateEngine.name)
+                            searchUrl.set(privateEngine.buildSearchUrl(""))
+                        }
+                    } else {
+                        SearchDefaultEngineForPrivate.apply {
+                            code.set(privateEngine.id)
+                            name.set(if (isSameAsDefault) "default" else "custom")
+                        }
+                    }
+                }
             }
         }
     }
@@ -1087,7 +1116,6 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
             browsingHistorySuggestion.set(settings.shouldShowHistorySuggestions)
             bookmarksSuggestion.set(settings.shouldShowBookmarkSuggestions)
             clipboardSuggestionsEnabled.set(settings.shouldShowClipboardSuggestions)
-            searchShortcutsEnabled.set(settings.shouldShowSearchShortcuts)
             voiceSearchEnabled.set(settings.shouldShowVoiceSearch)
             openLinksInAppEnabled.set(settings.openLinksInExternalApp)
             signedInSync.set(settings.signedInFxaAccount)
