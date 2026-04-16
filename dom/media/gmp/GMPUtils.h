@@ -2,12 +2,12 @@
 
 
 
-
 #ifndef GMPUtils_h_
 #define GMPUtils_h_
 
 #include "MediaResult.h"
 #include "gmp-errors.h"
+#include "gmp-video-codec.h"
 #include "mozilla/AbstractThread.h"
 #include "mozilla/UniquePtr.h"
 #include "nsCOMPtr.h"
@@ -81,6 +81,9 @@ already_AddRefed<nsISerialEventTarget> GetGMPThread();
 
 
 size_t I420FrameBufferSizePadded(int32_t aWidth, int32_t aHeight);
+
+bool AdjustOpenH264NALUSequence(uint8_t* aBuffer, uint32_t aSize,
+                                GMPBufferType aType);
 
 bool AdjustOpenH264NALUSequence(GMPVideoEncodedFrame* aEncodedFrame);
 

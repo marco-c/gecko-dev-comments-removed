@@ -4,6 +4,8 @@
 
 #include "GMPUtils.h"
 
+#include <bit>
+
 #include "GMPLog.h"
 #include "GMPService.h"
 #include "VideoLimits.h"
@@ -254,97 +256,103 @@ static int SizeNumBytes(GMPBufferType aBufferType) {
   }
 }
 
-bool AdjustOpenH264NALUSequence(GMPVideoEncodedFrame* aEncodedFrame) {
-  MOZ_ASSERT(aEncodedFrame);
-  MOZ_ASSERT(IsOnGMPThread());
-
-  uint8_t* encodedBuffer = aEncodedFrame->Buffer();
-  uint32_t encodedSize = aEncodedFrame->Size();
-  GMPBufferType encodedType = aEncodedFrame->BufferType();
-
-  if (NS_WARN_IF(!encodedBuffer)) {
-    GMP_LOG_ERROR("GMP plugin returned null buffer");
+bool AdjustOpenH264NALUSequence(uint8_t* aBuffer, uint32_t aSize,
+                                GMPBufferType aType) {
+  
+  
+  
+  const uint32_t sizeNumBytes = static_cast<uint32_t>(SizeNumBytes(aType));
+  if (sizeNumBytes > aSize) {
     return false;
   }
-
-  
-  
-  
-
-  const int sizeNumBytes = SizeNumBytes(encodedType);
   uint32_t unitOffset = 0;
   uint32_t unitSize = 0;
   
-  while (unitOffset + sizeNumBytes < encodedSize) {
-    uint8_t* unitBuffer = encodedBuffer + unitOffset;
-    switch (encodedType) {
+  
+  
+  while (unitOffset < aSize - sizeNumBytes) {
+    uint8_t* unitBuffer = aBuffer + unitOffset;
+    switch (aType) {
       case GMP_BufferLength24: {
-#if MOZ_LITTLE_ENDIAN()
-        unitSize = (static_cast<uint32_t>(*unitBuffer)) |
-                   (static_cast<uint32_t>(*(unitBuffer + 1)) << 8) |
-                   (static_cast<uint32_t>(*(unitBuffer + 2)) << 16);
-#else
-        unitSize = (static_cast<uint32_t>(*unitBuffer) << 16) |
-                   (static_cast<uint32_t>(*(unitBuffer + 1)) << 8) |
-                   (static_cast<uint32_t>(*(unitBuffer + 2)));
-#endif
+        if constexpr (std::endian::native == std::endian::little) {
+          unitSize = (static_cast<uint32_t>(*unitBuffer)) |
+                     (static_cast<uint32_t>(*(unitBuffer + 1)) << 8) |
+                     (static_cast<uint32_t>(*(unitBuffer + 2)) << 16);
+        } else {
+          unitSize = (static_cast<uint32_t>(*unitBuffer) << 16) |
+                     (static_cast<uint32_t>(*(unitBuffer + 1)) << 8) |
+                     (static_cast<uint32_t>(*(unitBuffer + 2)));
+        }
         const uint8_t startSequence[] = {0, 0, 1};
         if (memcmp(unitBuffer, startSequence, 3) == 0) {
           
           
           
           
-          unitSize = encodedSize - 3;
+          unitSize = aSize - 3;
           break;
         }
         memcpy(unitBuffer, startSequence, 3);
         break;
       }
       case GMP_BufferLength32: {
-#if MOZ_LITTLE_ENDIAN()
-        unitSize = LittleEndian::readUint32(unitBuffer);
-#else
-        unitSize = BigEndian::readUint32(unitBuffer);
-#endif
+        if constexpr (std::endian::native == std::endian::little) {
+          unitSize = LittleEndian::readUint32(unitBuffer);
+        } else {
+          unitSize = BigEndian::readUint32(unitBuffer);
+        }
         const uint8_t startSequence[] = {0, 0, 0, 1};
         if (memcmp(unitBuffer, startSequence, 4) == 0) {
           
           
           
           
-          unitSize = encodedSize - 4;
+          unitSize = aSize - 4;
           break;
         }
         memcpy(unitBuffer, startSequence, 4);
         break;
       }
       default:
-        GMP_LOG_ERROR("GMP plugin returned type we cannot handle (%d)",
-                      encodedType);
+        GMP_LOG_ERROR("GMP plugin returned type we cannot handle (%d)", aType);
         return false;
     }
 
-    MOZ_ASSERT(unitSize != 0);
-    MOZ_ASSERT(unitOffset + sizeNumBytes + unitSize <= encodedSize);
-    if (unitSize == 0 || unitOffset + sizeNumBytes + unitSize > encodedSize) {
+    
+    
+    const uint32_t remaining = aSize - unitOffset - sizeNumBytes;
+    if (unitSize == 0 || unitSize > remaining) {
       
       GMP_LOG_ERROR(
           "GMP plugin returned badly formatted encoded data: "
-          "unitOffset=%u, sizeNumBytes=%d, unitSize=%u, size=%u",
-          unitOffset, sizeNumBytes, unitSize, encodedSize);
+          "unitOffset=%u, sizeNumBytes=%u, unitSize=%u, size=%u",
+          unitOffset, sizeNumBytes, unitSize, aSize);
       return false;
     }
 
     unitOffset += sizeNumBytes + unitSize;
   }
 
-  if (unitOffset != encodedSize) {
+  if (unitOffset != aSize) {
     
-    GMP_LOG_DEBUG("GMP plugin returned %u extra bytes",
-                  encodedSize - unitOffset);
+    GMP_LOG_DEBUG("GMP plugin returned %u extra bytes", aSize - unitOffset);
   }
 
   return true;
+}
+
+bool AdjustOpenH264NALUSequence(GMPVideoEncodedFrame* aEncodedFrame) {
+  MOZ_ASSERT(aEncodedFrame);
+  MOZ_ASSERT(IsOnGMPThread());
+
+  uint8_t* encodedBuffer = aEncodedFrame->Buffer();
+  if (NS_WARN_IF(!encodedBuffer)) {
+    GMP_LOG_ERROR("GMP plugin returned null buffer");
+    return false;
+  }
+
+  return AdjustOpenH264NALUSequence(encodedBuffer, aEncodedFrame->Size(),
+                                    aEncodedFrame->BufferType());
 }
 
 MediaResult ToMediaResult(GMPErr aErr, const nsACString& aMessage) {

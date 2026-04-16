@@ -87,7 +87,10 @@ bool GMPVideoEncodedFrameImpl::CheckFrameData(
     
     return false;
   }
-  return aFrameData.mSize() <= aBufferSize;
+  
+  static constexpr uint32_t kMaxFrameSize = 100u * 1024u * 1024u;
+  return aFrameData.mSize() <= aBufferSize &&
+         aFrameData.mSize() <= kMaxFrameSize;
 }
 
 void GMPVideoEncodedFrameImpl::RelinquishFrameData(
