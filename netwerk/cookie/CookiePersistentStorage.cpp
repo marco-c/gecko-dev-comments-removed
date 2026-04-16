@@ -1983,6 +1983,8 @@ CookiePersistentStorage::OpenDBResult CookiePersistentStorage::Read() {
     
     (void)attrs.PopulateFromSuffix(suffix);
 
+    UniquePtr<CookieStruct> cookieStruct = GetCookieFromRow(stmt);
+
     
     
     nsCOMPtr<nsIURI> validatedUri;
@@ -1997,14 +1999,31 @@ CookiePersistentStorage::OpenDBResult CookiePersistentStorage::Read() {
       CookieDomainTuple* cleanupTuple = mCleanupArray.AppendElement();
       cleanupTuple->key = CookieKey(baseDomain, attrs);
       cleanupTuple->originAttributes = attrs;
-      cleanupTuple->cookie = GetCookieFromRow(stmt);
+      cleanupTuple->cookie = Cookie::Create(*cookieStruct, attrs);
       continue;
     }
 
+    
+    
+    RefPtr<Cookie> cookie = Cookie::CreateValidated(*cookieStruct, attrs);
+
+    
+    
+    
+    if (CookieCommons::IsFirstPartyPartitionedCookieWithoutCHIPS(
+            cookie, baseDomain, attrs)) {
+      CookieDomainTuple* cleanupTuple = mCleanupArray.AppendElement();
+      cleanupTuple->key = CookieKey(baseDomain, attrs);
+      cleanupTuple->originAttributes = attrs;
+      cleanupTuple->cookie = Cookie::Create(*cookieStruct, attrs);
+      continue;
+    }
+
+    MOZ_ASSERT(!cookie->IsSession());
     CookieDomainTuple* tuple = mReadArray.AppendElement();
     tuple->key = CookieKey(baseDomain, attrs);
     tuple->originAttributes = attrs;
-    tuple->cookie = GetCookieFromRow(stmt);
+    tuple->cookie = std::move(cookie);
   }
 
   COOKIE_LOGSTRING(LogLevel::Debug,
@@ -2112,50 +2131,24 @@ void CookiePersistentStorage::InitDBConn() {
     return;
   }
 
+  
+  
+  
   nsTArray<RefPtr<Cookie>> cleanupCookies;
-
-  
-  
   for (auto& tuple : mCleanupArray) {
     COOKIE_LOGSTRING(LogLevel::Debug,
-                     ("InitDBConn(): Removing cookie from db with "
-                      "newly invalid hostname: '%s'",
-                      tuple.cookie->host().get()));
-    cleanupCookies.AppendElement(
-        Cookie::Create(*tuple.cookie, tuple.originAttributes));
+                     ("InitDBConn(): Removing invalid cookie from db: '%s'",
+                      tuple.cookie->Host().get()));
+    cleanupCookies.AppendElement(tuple.cookie);
   }
   mCleanupArray.Clear();
 
+  
   for (auto& tuple : mReadArray) {
-    MOZ_ASSERT(!tuple.cookie->isSession());
+    MOZ_ASSERT(!tuple.cookie->IsSession());
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    RefPtr<Cookie> cookie =
-        Cookie::CreateValidated(*tuple.cookie, tuple.originAttributes);
-
-    
-    
-    
-    if (CookieCommons::IsFirstPartyPartitionedCookieWithoutCHIPS(
-            cookie, tuple.key.mBaseDomain, tuple.key.mOriginAttributes)) {
-      
-      
-      
-      RefPtr<Cookie> invalidCookie =
-          Cookie::Create(*tuple.cookie, tuple.originAttributes);
-      cleanupCookies.AppendElement(invalidCookie);
-      continue;
-    }
-
-    AddCookieToList(tuple.key.mBaseDomain, tuple.key.mOriginAttributes, cookie);
+    AddCookieToList(tuple.key.mBaseDomain, tuple.key.mOriginAttributes,
+                    tuple.cookie);
   }
 
   if (NS_FAILED(InitDBConnInternal())) {

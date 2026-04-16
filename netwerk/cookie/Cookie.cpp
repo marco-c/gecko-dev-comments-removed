@@ -6,6 +6,7 @@
 #include "CookieCommons.h"
 #include "mozilla/HashFunctions.h"
 #include "CookieStorage.h"
+#include "mozilla/Atomics.h"
 #include "mozilla/Encoding.h"
 #include "mozilla/dom/ToJSValue.h"
 #include "mozilla/glean/NetwerkMetrics.h"
@@ -29,7 +30,7 @@ namespace net {
 
 
 
-static int64_t gLastCreationTimeInUSec;
+static Atomic<int64_t, SequentiallyConsistent> gLastCreationTimeInUSec;
 
 
 uint32_t Cookie::ComputeKeyHash(const nsACString& aName,
@@ -50,13 +51,17 @@ Cookie::Cookie(const CookieStruct& aCookieData,
 int64_t Cookie::GenerateUniqueCreationTimeInUSec(int64_t aCreationTimeInUSec) {
   
   
-  if (aCreationTimeInUSec > gLastCreationTimeInUSec) {
-    gLastCreationTimeInUSec = aCreationTimeInUSec;
-    return aCreationTimeInUSec;
-  }
-
   
-  return ++gLastCreationTimeInUSec;
+  
+  int64_t old = gLastCreationTimeInUSec;
+  while (true) {
+    int64_t desired =
+        (aCreationTimeInUSec > old) ? aCreationTimeInUSec : old + 1;
+    if (gLastCreationTimeInUSec.compareExchange(old, desired)) {
+      return desired;
+    }
+    old = gLastCreationTimeInUSec;
+  }
 }
 
 already_AddRefed<Cookie> Cookie::Create(
@@ -67,8 +72,11 @@ already_AddRefed<Cookie> Cookie::Create(
 
   
   
-  if (cookie->mData.creationTimeInUSec() > gLastCreationTimeInUSec) {
-    gLastCreationTimeInUSec = cookie->mData.creationTimeInUSec();
+  int64_t creation = cookie->mData.creationTimeInUSec();
+  int64_t old = gLastCreationTimeInUSec;
+  while (creation > old) {
+    if (gLastCreationTimeInUSec.compareExchange(old, creation)) break;
+    old = gLastCreationTimeInUSec;
   }
 
   return cookie.forget();
