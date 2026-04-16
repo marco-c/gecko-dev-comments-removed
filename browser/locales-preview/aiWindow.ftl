@@ -30,8 +30,8 @@ smartwindow-document-title = New Tab
 ## Smart Window Toggle Button
 
 toolbar-button-ai-window-toggle =
-    .label = Smart window
-    .tooltiptext = Switch between Smart and Classic Windows.
+    .label = Window Type
+    .tooltiptext = Switch between Smart and Classic windows.
 
 ai-window-toggleview-switch-classic =
     .label = Classic Window
@@ -68,6 +68,7 @@ smartbar-placeholder =
 
 ## Mentions
 
+smartbar-mention-typing-placeholder = Tag a tab or site
 smartbar-mentions-list-no-results-label = No results found
 smartbar-mentions-list-recent-tabs-label = Recent tabs
 
