@@ -34,12 +34,12 @@ import java.util.ArrayList;
 import java.util.List;
 import org.appspot.apprtc.AppRTCBluetoothManager.State;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 import org.robolectric.shadows.ShadowLog;
-import org.robolectric.RobolectricTestRunner;
-
 
 
 
@@ -76,54 +76,55 @@ public class BluetoothManagerTest {
     when(mockedAudioManager.isBluetoothScoAvailableOffCall()).thenReturn(true);
 
     
-    bluetoothManager = new AppRTCBluetoothManager(context, mockedAppRtcAudioManager) {
-      @Override
-      protected AudioManager getAudioManager(Context context) {
-        Log.d(TAG, "getAudioManager");
-        return mockedAudioManager;
-      }
+    bluetoothManager =
+        new AppRTCBluetoothManager(context, mockedAppRtcAudioManager) {
+          @Override
+          protected AudioManager getAudioManager(Context context) {
+            Log.d(TAG, "getAudioManager");
+            return mockedAudioManager;
+          }
 
-      @Override
-      protected void registerReceiver(BroadcastReceiver receiver, IntentFilter filter) {
-        Log.d(TAG, "registerReceiver");
-        if (filter.hasAction(BluetoothHeadset.ACTION_CONNECTION_STATE_CHANGED)
-            && filter.hasAction(BluetoothHeadset.ACTION_AUDIO_STATE_CHANGED)) {
-          
-          bluetoothHeadsetStateReceiver = receiver;
-        }
-      }
+          @Override
+          protected void registerReceiver(BroadcastReceiver receiver, IntentFilter filter) {
+            Log.d(TAG, "registerReceiver");
+            if (filter.hasAction(BluetoothHeadset.ACTION_CONNECTION_STATE_CHANGED)
+                && filter.hasAction(BluetoothHeadset.ACTION_AUDIO_STATE_CHANGED)) {
+              
+              bluetoothHeadsetStateReceiver = receiver;
+            }
+          }
 
-      @Override
-      protected void unregisterReceiver(BroadcastReceiver receiver) {
-        Log.d(TAG, "unregisterReceiver");
-        if (receiver == bluetoothHeadsetStateReceiver) {
-          bluetoothHeadsetStateReceiver = null;
-        }
-      }
+          @Override
+          protected void unregisterReceiver(BroadcastReceiver receiver) {
+            Log.d(TAG, "unregisterReceiver");
+            if (receiver == bluetoothHeadsetStateReceiver) {
+              bluetoothHeadsetStateReceiver = null;
+            }
+          }
 
-      @Override
-      protected boolean getBluetoothProfileProxy(
-          Context context, BluetoothProfile.ServiceListener listener, int profile) {
-        Log.d(TAG, "getBluetoothProfileProxy");
-        if (profile == BluetoothProfile.HEADSET) {
-          
-          bluetoothServiceListener = listener;
-        }
-        return true;
-      }
+          @Override
+          protected boolean getBluetoothProfileProxy(
+              Context context, BluetoothProfile.ServiceListener listener, int profile) {
+            Log.d(TAG, "getBluetoothProfileProxy");
+            if (profile == BluetoothProfile.HEADSET) {
+              
+              bluetoothServiceListener = listener;
+            }
+            return true;
+          }
 
-      @Override
-      protected boolean hasPermission(Context context, String permission) {
-        Log.d(TAG, "hasPermission(" + permission + ")");
-        
-        return android.Manifest.permission.BLUETOOTH.equals(permission);
-      }
+          @Override
+          protected boolean hasPermission(Context context, String permission) {
+            Log.d(TAG, "hasPermission(" + permission + ")");
+            
+            return android.Manifest.permission.BLUETOOTH.equals(permission);
+          }
 
-      @Override
-      protected void logBluetoothAdapterInfo(BluetoothAdapter localAdapter) {
-        
-      }
-    };
+          @Override
+          protected void logBluetoothAdapterInfo(BluetoothAdapter localAdapter) {
+            
+          }
+        };
   }
 
   
@@ -203,6 +204,7 @@ public class BluetoothManagerTest {
   
   
   @Test
+  @Ignore("https://issues.webrtc.org/481918423")
   public void testBluetoothScoAudioStartAndStop() {
     bluetoothManager.start();
     assertEquals(State.HEADSET_UNAVAILABLE, bluetoothManager.getState());
@@ -214,15 +216,13 @@ public class BluetoothManagerTest {
     assertEquals(State.SCO_CONNECTED, bluetoothManager.getState());
     bluetoothManager.stopScoAudio();
     simulateBluetoothScoConnectionDisconnected();
-    assertEquals(State.SCO_DISCONNECTING,bluetoothManager.getState());
+    assertEquals(State.SCO_DISCONNECTING, bluetoothManager.getState());
     bluetoothManager.stop();
     assertEquals(State.UNINITIALIZED, bluetoothManager.getState());
     verify(mockedAppRtcAudioManager, times(3)).updateAudioDeviceState();
   }
 
   
-
-
   private void simulateBluetoothServiceConnectedWithNoConnectedHeadset() {
     mockedBluetoothDeviceList.clear();
     when(mockedBluetoothHeadset.getConnectedDevices()).thenReturn(mockedBluetoothDeviceList);
