@@ -2,7 +2,6 @@
 
 
 
-
 #include "CanvasContext.h"
 
 #include "LayerUserData.h"
@@ -339,10 +338,10 @@ mozilla::UniquePtr<uint8_t[]> CanvasContext::GetImageBuffer(
 
   nsRFPService::PotentiallyDumpImage(PrincipalOrNull(), dataSurface);
   if (ShouldResistFingerprinting(RFPTarget::CanvasRandomization)) {
-    gfxUtils::GetImageBufferWithRandomNoise(dataSurface,
-                                             true,
-                                            GetCookieJarSettings(),
-                                            PrincipalOrNull(), &*out_format);
+    return gfxUtils::GetImageBufferWithRandomNoise(
+        dataSurface,
+         true, GetCookieJarSettings(),
+        PrincipalOrNull(), &*out_format);
   }
 
   return gfxUtils::GetImageBuffer(dataSurface,  true,
