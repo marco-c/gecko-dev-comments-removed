@@ -2,6 +2,7 @@
 
 
 
+
 #include "nsNativeAppSupportBase.h"
 #include "nsNativeAppSupportWin.h"
 

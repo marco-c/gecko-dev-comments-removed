@@ -2,6 +2,8 @@
 
 
 
+
+
 #ifndef _nsPlacesTriggers_h_
 #define _nsPlacesTriggers_h_
 #include "nsPlacesTables.h"

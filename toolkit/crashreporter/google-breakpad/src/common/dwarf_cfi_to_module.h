@@ -34,6 +34,8 @@
 
 
 
+
+
 #ifndef COMMON_LINUX_DWARF_CFI_TO_MODULE_H
 #define COMMON_LINUX_DWARF_CFI_TO_MODULE_H
 
@@ -112,6 +114,12 @@ class DwarfCFIToModule: public CallFrameInfo::Handler {
 
     
     static vector<string> MIPS();
+
+    
+    static vector<string> LOONGARCH();
+
+    
+    static vector<string> RISCV();
 
    private:
     

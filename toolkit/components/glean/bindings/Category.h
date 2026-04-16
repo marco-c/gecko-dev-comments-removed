@@ -2,6 +2,8 @@
 
 
 
+
+
 #ifndef mozilla_glean_Category_h
 #define mozilla_glean_Category_h
 

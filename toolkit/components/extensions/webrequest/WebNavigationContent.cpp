@@ -2,6 +2,7 @@
 
 
 
+
 #include "mozilla/extensions/WebNavigationContent.h"
 
 #include "mozilla/Assertions.h"

@@ -1,6 +1,7 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "Classifier.h"
 #include "LookupCacheV4.h"
@@ -28,10 +29,10 @@ static void TestReadNoiseEntries(RefPtr<Classifier> classifier,
       << "Number of noise entries is less than 0";
 
   for (uint32_t i = 0; i < noiseEntries.Length(); i++) {
-    // Test the noise entry should not equal the "real" hash request
+    
     EXPECT_NE(noiseEntries[i], result->hash.fixedLengthPrefix)
         << "Noise entry is the same as real hash request";
-    // Test the noise entry should exist in the cached prefix array
+    
     nsAutoCString partialHash;
     partialHash.Assign(reinterpret_cast<char*>(&noiseEntries[i]), PREFIX_SIZE);
     EXPECT_TRUE(aPrefixArray.Contains(partialHash))

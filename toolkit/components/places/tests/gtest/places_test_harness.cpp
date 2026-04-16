@@ -2,6 +2,8 @@
 
 
 
+
+
 #include "places_test_harness.h"
 
 NS_IMPL_ISUPPORTS(WaitForTopicSpinner, nsIObserver)

@@ -2,6 +2,8 @@
 
 
 
+
+
 var gVisits = [
   { url: "http://www.mozilla.com/", transition: TRANSITION_TYPED },
   { url: "http://www.google.com/", transition: TRANSITION_BOOKMARK },

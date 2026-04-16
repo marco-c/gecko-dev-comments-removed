@@ -1,3 +1,5 @@
+
+
 "use strict";
 
 const { MockRegistrar } = ChromeUtils.importESModule(

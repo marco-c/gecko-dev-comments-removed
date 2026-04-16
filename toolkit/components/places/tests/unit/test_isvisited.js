@@ -2,6 +2,8 @@
 
 
 
+
+
 add_task(async function test_execute() {
   var referrer = uri("about:blank");
 

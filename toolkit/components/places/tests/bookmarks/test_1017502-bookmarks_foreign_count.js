@@ -7,6 +7,8 @@
 
 
 
+
+
 const T_URI = Services.io.newURI(
   "https://www.mozilla.org/firefox/nightly/firstrun/"
 );

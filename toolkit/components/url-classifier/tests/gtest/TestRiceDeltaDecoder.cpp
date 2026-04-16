@@ -1,6 +1,7 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "RiceDeltaDecoder.h"
 
@@ -32,7 +33,7 @@ struct TestingData256 {
   uint32_t mRiceParameter;
 };
 
-}  // namespace
+}  
 
 static bool runOneTest(TestingData& aData) {
   RiceDeltaDecoder decoder(&aData.mEncoded[0], aData.mEncoded.size());
@@ -42,7 +43,7 @@ static bool runOneTest(TestingData& aData) {
   uint32_t firstValue = aData.mExpectedDecoded[0];
   bool rv = decoder.Decode(
       aData.mRiceParameter, firstValue,
-      decoded.size() - 1,  // # of entries (first value not included).
+      decoded.size() - 1,  
       &decoded[0]);
 
   return rv && decoded == aData.mExpectedDecoded;
@@ -57,7 +58,7 @@ static bool runOneTest64(TestingData64& aData) {
       reinterpret_cast<uint64_t*>(&aData.mExpectedDecoded[0])[0];
   bool rv = decoder.Decode64(
       aData.mRiceParameter, firstValue,
-      decoded.size() - 1,  // # of entries (first value not included).
+      decoded.size() - 1,  
       &decoded[0]);
 
   return rv && decoded == aData.mExpectedDecoded;
@@ -77,7 +78,7 @@ static bool runOneTest128(TestingData128& aData) {
   bool rv =
       decoder.Decode128(aData.mRiceParameter, firstValueHigh, firstValueLow,
                         (aData.mExpectedDecoded.Length() / 16) -
-                            1,  // # of entries (first value not included).
+                            1,  
                         decoded);
 
   return rv && decoded == aData.mExpectedDecoded;
@@ -101,7 +102,7 @@ static bool runOneTest256(TestingData256& aData) {
       decoder.Decode256(aData.mRiceParameter, firstValueOne, firstValueTwo,
                         firstValueThree, firstValueFour,
                         (aData.mExpectedDecoded.Length() / 32) -
-                            1,  // # of entries (first value not included).
+                            1,  
                         decoded);
 
   return rv && decoded == aData.mExpectedDecoded;
@@ -142,17 +143,17 @@ TEST(UrlClassifierRiceDeltaDecoder, SingleEncodedValue256)
   ASSERT_TRUE(runOneTest256(td));
 }
 
-// In this batch of tests, the encoded data would be like
-// what we originally receive from the network. See comment
-// in |runOneTest| for more detail.
+
+
+
 TEST(UrlClassifierRiceDeltaDecoder, Empty)
 {
-  // The following structure and testing data is copied from Chromium source
-  // code:
-  //
-  // https://chromium.googlesource.com/chromium/src.git/+/950f9975599768b6a08c7146cb4befa161be87aa/components/safe_browsing_db/v4_rice_unittest.cc#75
-  //
-  // and will be translated to our own testing format.
+  
+  
+  
+  
+  
+  
 
   struct RiceDecodingTestInfo {
     uint32_t mRiceParameter;
@@ -167,11 +168,11 @@ TEST(UrlClassifierRiceDeltaDecoder, Empty)
           mEncoded(aEncoded) {}
   };
 
-  // Copyright 2016 The Chromium Authors. All rights reserved.
-  // Use of this source code is governed by a BSD-style license that can be
-  // found in the media/webrtc/trunk/webrtc/LICENSE.
+  
+  
+  
 
-  // ----- Start of Chromium test code ----
+  
   const std::vector<RiceDecodingTestInfo> TESTING_DATA_CHROMIUM = {
       RiceDecodingTestInfo(2, {15, 9}, "\xf7\x2"),
       RiceDecodingTestInfo(
@@ -247,25 +248,25 @@ TEST(UrlClassifierRiceDeltaDecoder, Empty)
           "\x1b\x36\x34\x56\xea\xc4\x21\x00"),
   };
 
-  // ----- End of Chromium test code ----
+  
 
   for (auto tdc : TESTING_DATA_CHROMIUM) {
-    // Populate chromium testing data to our native testing data struct.
+    
     TestingData d;
 
-    d.mRiceParameter = tdc.mRiceParameter;  // Populate rice parameter.
+    d.mRiceParameter = tdc.mRiceParameter;  
 
-    // Populate encoded data from std::string to vector<uint8>.
+    
     d.mEncoded.resize(tdc.mEncoded.size());
     memcpy(&d.mEncoded[0], tdc.mEncoded.c_str(), tdc.mEncoded.size());
 
-    // Populate deltas to expected decoded data. The first value would be just
-    // set to an arbitrary value, say 7, to avoid any assumption to the
-    // first value in the implementation.
+    
+    
+    
     d.mExpectedDecoded.resize(tdc.mDeltas.size() + 1);
     for (size_t i = 0; i < d.mExpectedDecoded.size(); i++) {
       if (0 == i) {
-        d.mExpectedDecoded[i] = 7;  // "7" is an arbitrary starting value
+        d.mExpectedDecoded[i] = 7;  
       } else {
         d.mExpectedDecoded[i] = d.mExpectedDecoded[i - 1] + tdc.mDeltas[i - 1];
       }

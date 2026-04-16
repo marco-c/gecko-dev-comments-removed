@@ -2,6 +2,7 @@
 
 
 
+
 #ifndef nsNativeAppSupportBase_h_
 #define nsNativeAppSupportBase_h_
 

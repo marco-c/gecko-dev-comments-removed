@@ -2,6 +2,8 @@
 
 
 
+
+
 #ifndef mozilla_dom_SessionStoreUtils_h
 #define mozilla_dom_SessionStoreUtils_h
 

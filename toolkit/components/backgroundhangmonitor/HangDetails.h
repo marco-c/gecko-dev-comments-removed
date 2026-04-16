@@ -2,6 +2,8 @@
 
 
 
+
+
 #ifndef mozilla_HangDetails_h
 #define mozilla_HangDetails_h
 

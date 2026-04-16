@@ -1,6 +1,8 @@
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
+
+
 
 SPHINX_TREES["/toolkit"] = "docs"
 
@@ -23,14 +25,14 @@ DIRS += [
 ]
 
 if CONFIG["OS_ARCH"] == "WINNT":
-    # mingw is missing Windows toast notification definitions.
+    
     if CONFIG["CC_TYPE"] == "clang-cl":
         if CONFIG["MOZ_NOTIFICATION_SERVER"]:
             DIRS += ["mozapps/notificationserver"]
 
     if CONFIG["CC_TYPE"] == "clang-cl" or CONFIG["MOZ_ARTIFACT_BUILDS"]:
-        # Default Browser Agent relies on Windows toast notifications, so should
-        # also not be built with mingw.
+        
+        
         if CONFIG["MOZ_DEFAULT_BROWSER_AGENT"]:
             DIRS += ["mozapps/defaultagent"]
 

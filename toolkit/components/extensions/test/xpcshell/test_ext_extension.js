@@ -1,3 +1,5 @@
+
+
 "use strict";
 
 add_task(async function test_is_allowed_incognito_access() {

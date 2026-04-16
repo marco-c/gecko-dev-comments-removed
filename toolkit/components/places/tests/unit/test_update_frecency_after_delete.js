@@ -10,6 +10,8 @@
 
 
 
+
+
 add_task(async function removed_bookmark() {
   info(
     "After removing bookmark, frecency of bookmark's URI should be " +

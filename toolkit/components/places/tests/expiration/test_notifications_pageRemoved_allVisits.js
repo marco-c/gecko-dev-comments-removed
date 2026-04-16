@@ -9,6 +9,8 @@
 
 
 
+
+
 var tests = [
   {
     desc: "Add 1 bookmarked page.",

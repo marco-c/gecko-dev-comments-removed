@@ -2,6 +2,8 @@
 
 
 
+
+
 #ifndef mozilla_extensions_ExtensionSetting_h
 #define mozilla_extensions_ExtensionSetting_h
 

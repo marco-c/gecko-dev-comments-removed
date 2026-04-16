@@ -2,6 +2,7 @@
 
 
 
+
 #ifndef mozilla_extensions_WebExtensionContentScript_h
 #define mozilla_extensions_WebExtensionContentScript_h
 

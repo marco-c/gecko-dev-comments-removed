@@ -2,6 +2,8 @@
 
 
 
+
+
 #ifndef mozilla_dynamicfpinavigationheuristic_h
 #define mozilla_dynamicfpinavigationheuristic_h
 

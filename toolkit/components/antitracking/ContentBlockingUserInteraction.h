@@ -2,6 +2,8 @@
 
 
 
+
+
 #ifndef mozilla_contentblockinguserinteraction_h
 #define mozilla_contentblockinguserinteraction_h
 

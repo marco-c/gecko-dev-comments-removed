@@ -2,6 +2,8 @@
 
 
 
+
+
 #ifndef mozilla_StoragePrincipalHelper_h
 #define mozilla_StoragePrincipalHelper_h
 

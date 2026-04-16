@@ -2,17 +2,13 @@
 
 
 
+
+
 #include "nsDialogParamBlock.h"
 #include "nsString.h"
 #include "nsReadableUtils.h"
 
 NS_IMPL_ISUPPORTS(nsDialogParamBlock, nsIDialogParamBlock)
-
-nsDialogParamBlock::nsDialogParamBlock() : mNumStrings(0), mString(nullptr) {
-  for (int32_t i = 0; i < kNumInts; i++) {
-    mInt[i] = 0;
-  }
-}
 
 nsDialogParamBlock::~nsDialogParamBlock() { delete[] mString; }
 

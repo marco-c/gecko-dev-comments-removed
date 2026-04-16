@@ -2,6 +2,7 @@
 
 
 
+
 #ifndef mozilla_toolkit_system_nsWindowsPackageManager_h
 #define mozilla_toolkit_system_nsWindowsPackageManager_h
 

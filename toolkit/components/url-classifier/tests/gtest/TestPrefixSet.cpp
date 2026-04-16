@@ -1,6 +1,7 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "mozilla/Preferences.h"
 #include "nsString.h"
@@ -8,7 +9,7 @@
 
 #include "Common.h"
 
-// This function generate N 4 byte prefixes.
+
 static void RandomPrefixes(uint32_t N, nsTArray<uint32_t>& array) {
   array.Clear();
   array.SetCapacity(N);
@@ -67,18 +68,18 @@ void RunTest(uint32_t aTestSize) {
 
 TEST(URLClassifierPrefixSet, GetTargetPrefixWithLargeSet)
 {
-  // Make sure the delta algorithm will be used.
+  
   static const char prefKey[] = "browser.safebrowsing.prefixset_max_array_size";
   mozilla::Preferences::SetUint(prefKey, 10000);
 
-  // Ideally, we should test more than 512 * 1024 entries. But, it will make the
-  // test too long. So, we test 100k entries instead.
+  
+  
   RunTest(100000);
 }
 
 TEST(URLClassifierPrefixSet, GetTargetPrefixWithSmallSet)
 {
-  // Make sure the delta algorithm won't be used.
+  
   static const char prefKey[] = "browser.safebrowsing.prefixset_max_array_size";
   mozilla::Preferences::SetUint(prefKey, 10000);
 

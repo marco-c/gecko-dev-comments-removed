@@ -2,6 +2,8 @@
 
 
 
+
+
 "use strict";
 
 XPCOMUtils.defineLazyGlobalGetters(this, ["XMLHttpRequest", "ChannelWrapper"]);

@@ -2,6 +2,8 @@
 
 
 
+
+
 #ifndef mozilla_glue_LoaderObserver_h
 #define mozilla_glue_LoaderObserver_h
 

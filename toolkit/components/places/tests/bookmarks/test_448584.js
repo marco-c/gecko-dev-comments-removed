@@ -3,6 +3,8 @@
 
 
 
+
+
 try {
   var mDBConn = PlacesUtils.history.DBConnection;
 } catch (ex) {

@@ -2,6 +2,7 @@
 
 
 
+
 #ifndef mozilla_glean_Common_h
 #define mozilla_glean_Common_h
 

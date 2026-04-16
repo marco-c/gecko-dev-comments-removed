@@ -2,6 +2,8 @@
 
 
 
+
+
 #ifndef mozilla_interceptor_PatcherDetour_h
 #define mozilla_interceptor_PatcherDetour_h
 

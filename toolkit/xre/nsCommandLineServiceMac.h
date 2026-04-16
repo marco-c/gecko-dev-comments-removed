@@ -2,6 +2,7 @@
 
 
 
+
 #ifndef nsCommandLineServiceMac_h_
 #define nsCommandLineServiceMac_h_
 

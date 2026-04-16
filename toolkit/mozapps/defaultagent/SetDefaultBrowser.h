@@ -2,12 +2,12 @@
 
 
 
+
 #ifndef DEFAULT_BROWSER_SET_DEFAULT_BROWSER_H_
 #define DEFAULT_BROWSER_SET_DEFAULT_BROWSER_H_
 
 #include "nsStringFwd.h"
 #include "nsArray.h"
-#include <functional>
 
 namespace mozilla::default_agent {
 

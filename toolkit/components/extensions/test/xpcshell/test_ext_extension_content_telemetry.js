@@ -1,3 +1,5 @@
+
+
 "use strict";
 
 const GLEAN_METRIC_ID = "contentScriptInjection";

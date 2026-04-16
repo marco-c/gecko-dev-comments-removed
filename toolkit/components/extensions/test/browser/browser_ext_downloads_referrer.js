@@ -1,3 +1,6 @@
+
+
+
 "use strict";
 
 const URL_PATH = "browser/toolkit/components/extensions/test/browser/data";

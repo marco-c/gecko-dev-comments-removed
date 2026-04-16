@@ -2,6 +2,7 @@
 
 
 
+
 #ifndef mozilla_extensions_DocumentObserver_h
 #define mozilla_extensions_DocumentObserver_h
 

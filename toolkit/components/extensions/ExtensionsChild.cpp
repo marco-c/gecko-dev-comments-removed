@@ -2,6 +2,7 @@
 
 
 
+
 #include "mozilla/extensions/ExtensionsChild.h"
 #include "mozilla/extensions/ExtensionsParent.h"
 

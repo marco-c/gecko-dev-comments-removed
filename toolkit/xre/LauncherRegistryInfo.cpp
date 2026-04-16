@@ -2,6 +2,8 @@
 
 
 
+
+
 #include "LauncherRegistryInfo.h"
 
 #include "commonupdatedir.h"

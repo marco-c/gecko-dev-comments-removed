@@ -2,6 +2,8 @@
 
 
 
+
+
 #ifndef mozilla_dom_SessionStoreScrollData_h
 #define mozilla_dom_SessionStoreScrollData_h
 

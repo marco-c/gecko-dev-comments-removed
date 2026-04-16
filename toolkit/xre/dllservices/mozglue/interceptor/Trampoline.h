@@ -2,6 +2,8 @@
 
 
 
+
+
 #ifndef mozilla_interceptor_Trampoline_h
 #define mozilla_interceptor_Trampoline_h
 

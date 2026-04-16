@@ -2,6 +2,7 @@
 
 
 
+
 "use strict";
 
 let { UrlClassifierTestUtils } = ChromeUtils.importESModule(

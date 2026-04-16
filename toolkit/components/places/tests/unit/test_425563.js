@@ -2,6 +2,8 @@
 
 
 
+
+
 add_task(async function test_execute() {
   let count_visited_URIs = [
     "http://www.test-link.com/",

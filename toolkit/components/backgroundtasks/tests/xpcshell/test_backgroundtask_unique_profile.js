@@ -5,6 +5,8 @@
 
 
 
+
+
 add_task(async function test_backgroundtask_unique_profile() {
   let sentinel = Services.uuid.generateUUID().toString();
   sentinel = sentinel.substring(1, sentinel.length - 1);

@@ -2,6 +2,8 @@
 
 
 
+
+
 #include "AddonContentPolicy.h"
 
 #include "mozilla/dom/nsCSPContext.h"

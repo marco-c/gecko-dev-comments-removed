@@ -1,3 +1,5 @@
+
+
 "use strict";
 
 const ADDON_ID = "test@web.extension";

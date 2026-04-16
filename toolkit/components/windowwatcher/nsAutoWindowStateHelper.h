@@ -2,6 +2,8 @@
 
 
 
+
+
 #ifndef _nsAutoWindowStateHelper_h
 #define _nsAutoWindowStateHelper_h
 

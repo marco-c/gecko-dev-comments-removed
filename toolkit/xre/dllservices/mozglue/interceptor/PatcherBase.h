@@ -2,6 +2,8 @@
 
 
 
+
+
 #ifndef mozilla_interceptor_PatcherBase_h
 #define mozilla_interceptor_PatcherBase_h
 

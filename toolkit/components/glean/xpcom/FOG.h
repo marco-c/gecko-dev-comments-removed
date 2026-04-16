@@ -2,6 +2,7 @@
 
 
 
+
 #ifndef mozilla_FOG_h
 #define mozilla_FOG_h
 

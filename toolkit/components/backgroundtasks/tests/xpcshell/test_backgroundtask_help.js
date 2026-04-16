@@ -2,6 +2,8 @@
 
 
 
+
+
 "use strict";
 
 add_task(async function test_backgroundtask_help_includes_jsdebugger_options() {

@@ -930,13 +930,13 @@ MOZ_RUNINIT ScalarMapType gScalarNameIDMap(kScalarCount);
 
 
 
-MOZ_RUNINIT ProcessesScalarsMapType gScalarStorageMap;
+constinit ProcessesScalarsMapType gScalarStorageMap;
 
-MOZ_RUNINIT ProcessesKeyedScalarsMapType gKeyedScalarStorageMap;
+constinit ProcessesKeyedScalarsMapType gKeyedScalarStorageMap;
 
 
-MOZ_RUNINIT ProcessesScalarsMapType gDynamicBuiltinScalarStorageMap;
-MOZ_RUNINIT ProcessesKeyedScalarsMapType gDynamicBuiltinKeyedScalarStorageMap;
+constinit ProcessesScalarsMapType gDynamicBuiltinScalarStorageMap;
+constinit ProcessesKeyedScalarsMapType gDynamicBuiltinKeyedScalarStorageMap;
 }  
 
 
@@ -2421,7 +2421,7 @@ nsresult TelemetryScalar::RegisterScalars(const nsACString& aCategoryName,
       }
       
       if (stores.Length() == 1 && stores[0].EqualsLiteral("main")) {
-        stores.TruncateLength(0);
+        stores.ClearAndRetainStorage();
       }
     }
 

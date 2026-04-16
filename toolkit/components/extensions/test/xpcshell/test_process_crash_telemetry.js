@@ -1,3 +1,5 @@
+
+
 "use strict";
 
 const { ExtensionProcessCrashObserver } = ChromeUtils.importESModule(

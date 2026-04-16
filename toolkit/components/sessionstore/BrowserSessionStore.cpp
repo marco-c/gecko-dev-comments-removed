@@ -2,9 +2,10 @@
 
 
 
+
+
 #include "mozilla/dom/BrowserSessionStore.h"
 #include <cstdint>
-#include <functional>
 
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/ClearOnShutdown.h"

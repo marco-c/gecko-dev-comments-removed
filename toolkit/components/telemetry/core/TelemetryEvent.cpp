@@ -2,6 +2,8 @@
 
 
 
+
+
 #include "Telemetry.h"
 #include "TelemetryEvent.h"
 #include <limits>
@@ -322,7 +324,7 @@ bool gTelemetryEventCanRecordExtended;
 MOZ_RUNINIT nsTHashMap<nsCStringHashKey, EventKey> gEventNameIDMap(kEventCount);
 
 
-MOZ_RUNINIT nsTHashSet<nsCString> gCategoryNames;
+constinit nsTHashSet<nsCString> gCategoryNames;
 
 
 
@@ -331,7 +333,7 @@ typedef nsTArray<EventRecord> EventRecordArray;
 typedef nsClassHashtable<ProcessIDHashKey, EventRecordArray>
     EventRecordsMapType;
 
-MOZ_RUNINIT EventRecordsMapType gEventRecords;
+constinit EventRecordsMapType gEventRecords;
 
 
 

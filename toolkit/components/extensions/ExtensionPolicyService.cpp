@@ -2,6 +2,7 @@
 
 
 
+
 #include "mozilla/ExtensionPolicyService.h"
 #include "mozilla/extensions/DocumentObserver.h"
 #include "mozilla/extensions/WebExtensionContentScript.h"

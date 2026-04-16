@@ -2,6 +2,8 @@
 
 
 
+
+
 #include "mozilla/glean/bindings/Rate.h"
 
 #include "jsapi.h"

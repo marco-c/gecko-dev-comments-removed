@@ -1,6 +1,8 @@
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
+
+
 
 include("../components/telemetry/telemetry-constants.mozbuild")
 
@@ -148,9 +150,9 @@ UNIFIED_SOURCES += [
     "nsXREDirProvider.cpp",
 ]
 
-# nsAppRunner.cpp and ProfileReset.cpp cannot be built in unified mode because
-# they pull in OS X system headers.
-# nsEmbedFunctions.cpp cannot be built in unified mode because it pulls in X11 headers.
+
+
+
 SOURCES += [
     "../../other-licenses/nsis/Contrib/CityHash/cityhash/city.cpp",
     "nsAppRunner.cpp",

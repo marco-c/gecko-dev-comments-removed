@@ -2,6 +2,7 @@
 
 
 
+
 #include "updaterfileutils_osx.h"
 
 #include <Cocoa/Cocoa.h>

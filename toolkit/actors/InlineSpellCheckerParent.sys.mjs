@@ -1,6 +1,8 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 export class InlineSpellCheckerParent extends JSWindowActorParent {
   selectDictionaries({ localeCodes }) {
@@ -24,9 +26,9 @@ export class InlineSpellCheckerParent extends JSWindowActorParent {
   }
 
   uninit() {
-    // This method gets called by InlineSpellChecker when the context menu
-    // goes away and the InlineSpellChecker instance is still alive.
-    // Stop referencing it and tidy the child end of us.
+    
+    
+    
     this.sendAsyncMessage("InlineSpellChecker:uninit", {});
   }
 

@@ -1,3 +1,5 @@
+
+
 "use strict";
 
 const { PromiseTestUtils } = ChromeUtils.importESModule(

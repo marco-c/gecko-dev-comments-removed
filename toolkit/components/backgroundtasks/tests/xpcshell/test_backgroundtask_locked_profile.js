@@ -2,6 +2,8 @@
 
 
 
+
+
 setupProfileService();
 
 add_task(async function test_backgroundtask_locked_profile() {

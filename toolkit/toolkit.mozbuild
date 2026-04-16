@@ -1,6 +1,8 @@
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
+
+
 
 include("/js/app.mozbuild")
 
@@ -40,7 +42,7 @@ if CONFIG["MOZ_SANDBOX"]:
 if CONFIG["MOZ_USING_WASM_SANDBOXING"] and CONFIG["COMPILE_ENVIRONMENT"]:
     DIRS += ["/security/rlbox"]
 
-# the signing related bits of libmar depend on nss
+
 if CONFIG["MOZ_UPDATER"]:
     DIRS += ["/modules/libmar"]
 
@@ -66,7 +68,7 @@ if CONFIG["MOZ_UPDATER"] and CONFIG["OS_TARGET"] != "Android":
             "/third_party/zucchini",
         ]
 
-# Gecko/Core components.
+
 
 DIRS += [
     "/ipc",
@@ -118,7 +120,7 @@ if CONFIG["ACCESSIBILITY"]:
 else:
     DIRS += ["/accessible/ipc"]
 
-# toolkit
+
 
 DIRS += [
     "/tools/code-coverage",

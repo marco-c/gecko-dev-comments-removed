@@ -1,6 +1,8 @@
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
+
+
 
 
 @template
@@ -15,8 +17,8 @@ def Libxul_defines():
 @template
 def Libxul(name, output_category=None):
     if CONFIG["MOZ_WIDGET_TOOLKIT"] in ("cocoa", "uikit"):
-        # This is going to be a framework named "XUL", not an ordinary library named
-        # "libxul.dylib"
+        
+        
         GeckoFramework(name, output_category=output_category)
         SHARED_LIBRARY_NAME = "XUL"
     else:
@@ -79,7 +81,7 @@ def Libxul(name, output_category=None):
         ]
         RCINCLUDE = "/toolkit/library/xulrunner.rc"
 
-    # Show a breakdown of linker time. (Too verbose for local builds.)
+    
     if CONFIG["CC_TYPE"] == "clang-cl" and not CONFIG["DEVELOPER_OPTIONS"]:
         LDFLAGS += ["-time"]
 
@@ -99,21 +101,21 @@ def Libxul(name, output_category=None):
     if name == "xul-real":
         SYMBOLS_FILE = "../libxul.symbols"
 
-    # Disable full lto for xul-gtest, it takes a lot of time with no clear
-    # benefit.
+    
+    
     if name == "xul-gtest" and CONFIG["MOZ_LTO_FAT"]:
         LDFLAGS += ["-fno-lto"]
 
 
-# The real libxul definition is in ./build/moz.build, but we define a
-# xul library here such that # FINAL_LIBRARY = 'xul' refers to here, which
-# is then linked to both build/libxul and gtest/libxul.
+
+
+
 Library("xul")
 
 STATIC_LIBRARY_NAME = "xul_s"
 
-# Use a FINAL_LIBRARY for Libxul_defines to propagate from there. They wouldn't
-# propagate from here.
+
+
 FINAL_LIBRARY = "xul-real"
 
 if CONFIG["OS_ARCH"] == "WINNT":
@@ -123,7 +125,7 @@ if CONFIG["OS_ARCH"] == "WINNT":
 
 LOCAL_INCLUDES += [
     "/config",
-    # need widget/windows for resource.h (included from widget.rc)
+    
     "/widget/windows",
 ]
 
@@ -139,8 +141,8 @@ DIRS += [
 
 TEST_DIRS += ["gtest"]
 
-# js needs to come after xul for now, because it is an archive and its content
-# is discarded when it comes first.
+
+
 USE_LIBS += [
     "js",
 ]
@@ -160,18 +162,18 @@ if not CONFIG["USE_LIBZ_RS"]:
     ]
 
 if CONFIG["MOZ_WIDGET_TOOLKIT"] == "gtk":
-    # The mozgtk library is a workaround that makes Gtk+ use libwayland-client
-    # instead of mozwayland. The reason it works is that by being a dependency
-    # of libxul, mozgtk appears in dependentlibs.list, preceding mozwayland
-    # (which is important and guaranteed by the USE_LIBS order in this file).
-    # That, in turn, makes firefox dlopen() mozgtk before mozwayland, which
-    # will trigger the loading of the Gtk+ libraries (mozgtk depending on them).
-    # Those libraries, if they depend on libwayland-client, will use the symbols
-    # from libwayland-client because mozwayland is not loaded yet.
-    # When eventually libxul is loaded after both mozgtk and mozwayland, it will
-    # get symbols from libwayland-client too.
-    # In the case where Gtk+ doesn't have wayland support, libwayland-client is
-    # not loaded, and libxul ends up using the mozwayland symbols.
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     USE_LIBS += [
         "mozgtk",
     ]
@@ -358,15 +360,15 @@ if CONFIG["OS_ARCH"] == "WINNT":
         "sapi",
         "dxguid",
         "dhcpcsvc",
-        # gfx-rs supports D3D11 and D3D12, but we are not linking to them implicitly
-        # "d3d11", # should be explicitly linked by gfx-backend-d3d11
-        #'d3d12', # should be explicitly linked by d3d12-rs
+        
+        
+        
         "d3dcompiler",
         "runtimeobject",
     ]
 
-    # `std` uses `raw-dylib` to link this dll, but that doesn't work properly on x86 MinGW, so we explicitly
-    # have to link it.
+    
+    
     if CONFIG["CC_TYPE"] != "clang-cl":
         OS_LIBS += ["bcryptprimitives"]
 
@@ -376,7 +378,7 @@ if CONFIG["OS_ARCH"] == "WINNT":
             "uiautomationcore",
         ]
 
-    # Prevent winapi-rs from statically linking
+    
     LIBRARY_DEFINES["WINAPI_NO_BUNDLED_LIBRARIES"] = True
 
 if CONFIG["MOZ_WIDGET_TOOLKIT"] == "windows":
@@ -385,13 +387,13 @@ if CONFIG["MOZ_WIDGET_TOOLKIT"] == "windows":
         "oleaut32",
     ]
 
-# The buildid is refreshed on every (incremental) build. But we want to avoid
-# rebuilding libxul every time, so instead of having a source file that
-# #include's buildid.h, which would have a dependency on it, and that would
-# thus trigger make to rebuild everything, we generate a source with the
-# buildid hard coded in it. Then we make that source file depend on all the
-# objects files that constitute libxul, so that if any of the files linked into
-# libxul is rebuilt, we refresh the buildid and link it into libxul.
+
+
+
+
+
+
+
 
 if CONFIG["COMPILE_ENVIRONMENT"]:
     SOURCES += ["!buildid.cpp"]

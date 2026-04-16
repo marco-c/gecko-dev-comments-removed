@@ -2,6 +2,7 @@
 
 
 
+
 const { UpdateUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/UpdateUtils.sys.mjs"
 );

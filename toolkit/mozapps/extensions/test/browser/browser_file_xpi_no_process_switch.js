@@ -1,3 +1,6 @@
+
+
+
 const ADDON_INSTALL_ID = "addon-webext-permissions";
 
 let fileurl1 = get_addon_file_url("browser_dragdrop1.xpi");
