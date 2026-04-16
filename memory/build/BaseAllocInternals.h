@@ -16,6 +16,10 @@ constexpr static base_alloc_size_t BASE_ALLOC_SIZE_MAX = UINT32_MAX >> 1;
 
 
 
+constexpr base_alloc_size_t kDecommitThreshold = 4096 * 4;
+
+
+
 
 
 
@@ -166,25 +170,38 @@ class BaseAllocCell {
   uintptr_t CanSplit(base_alloc_size_t aSizeRequest);
 
   
+  bool CanSplitHere(uintptr_t aNextAddr);
+
+  
   
   BaseAllocCell* Split(uintptr_t aNewSize);
 
   
   
-  struct CommitResult {
-    size_t mBytesCommitted = 0;
-    BaseAllocCell* mNewCell = nullptr;
+  
+  struct DeCommitResult {
+    size_t mChange = 0;
+    BaseAllocCell* mNewCell1 = nullptr;
+    BaseAllocCell* mNewCell2 = nullptr;
 
-    CommitResult(size_t aBytesCommitted, BaseAllocCell* aNewCell)
-        : mBytesCommitted(aBytesCommitted), mNewCell(aNewCell) {}
+    DeCommitResult(size_t aChange, BaseAllocCell* aNewCell1 = nullptr,
+                   BaseAllocCell* aNewCell2 = nullptr)
+        : mChange(aChange), mNewCell1(aNewCell1), mNewCell2(aNewCell2) {}
   };
 
-  mozilla::Maybe<CommitResult> Commit(base_alloc_size_t aSizeRequest);
+  mozilla::Maybe<DeCommitResult> Commit(base_alloc_size_t aSizeRequest);
 
   
   
   
-  size_t Decommit();
+  
+  
+  
+  DeCommitResult Decommit();
+
+ private:
+  
+  void DoDecommit(uintptr_t aFirstDecommit, uintptr_t aNBytes);
 
   
   BaseAllocCell(const BaseAllocCell&) = delete;
@@ -192,11 +209,13 @@ class BaseAllocCell {
   BaseAllocCell(BaseAllocCell&&) = delete;
   void operator=(BaseAllocCell&&) = delete;
   void* operator new(size_t) = delete;
+  void* operator new[](size_t) = delete;
+
+ public:
   void* operator new(size_t aSize, void* aPtr) {
     MOZ_ASSERT(aSize == sizeof(BaseAllocCell));
     return aPtr;
   }
-  void* operator new[](size_t) = delete;
 };
 
 template <>
