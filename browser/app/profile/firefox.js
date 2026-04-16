@@ -2084,6 +2084,20 @@ pref("browser.aboutwelcome.enabled", true);
 pref("browser.aboutwelcome.screens", "");
 
 
+
+
+#if defined(XP_MACOSX)
+  pref("browser.aboutwelcome.experimentsGate.enabled", true);
+#endif
+
+
+
+pref("browser.aboutwelcome.experimentsGate.skipSplashIfLoaded", true);
+
+pref("browser.aboutwelcome.experimentsGate.minDisplayMs", 3000);
+pref("browser.aboutwelcome.experimentsGate.maxDisplayMs", 8000);
+
+
 pref("browser.design-tokens.nova", false);
 
 
