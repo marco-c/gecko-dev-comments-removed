@@ -85,6 +85,8 @@
 namespace mozilla {
 
 using std::shared_ptr;
+using ParsedIceServer = IceServerParser::ParsedIceServer;
+using IceTransport = IceServerParser::IceTransport;
 
 TimeStamp nr_socket_short_term_violation_time() {
   return NrSocketBase::short_term_violation_time();
@@ -183,74 +185,82 @@ abort:
 static nr_ice_crypto_vtbl nr_ice_crypto_nss_vtbl = {
     nr_crypto_nss_random_bytes, nr_crypto_nss_hmac, nr_crypto_nss_md5};
 
-nsresult NrIceStunServer::ToNicerStunStruct(nr_ice_stun_server* server) const {
-  int r;
-
-  memset(server, 0, sizeof(nr_ice_stun_server));
-  uint8_t protocol;
-  if (transport_ == kNrIceTransportUdp) {
-    protocol = IPPROTO_UDP;
-  } else if (transport_ == kNrIceTransportTcp) {
+static bool ToNicerStunStruct(const char* aAddrForFqdn,
+                              const ParsedIceServer& aEntry,
+                              nr_ice_stun_server* aResult) {
+  memset(aResult, 0, sizeof(nr_ice_stun_server));
+  bool isTls = aEntry.mUri.IsTls();
+  uint8_t protocol = IPPROTO_UDP;
+  
+  if (isTls || (aEntry.mUri.mTransport == IceTransport::Tcp)) {
     protocol = IPPROTO_TCP;
-  } else if (transport_ == kNrIceTransportTls) {
-    protocol = IPPROTO_TCP;
-  } else {
-    MOZ_MTLOG(ML_ERROR, "Unsupported STUN server transport: " << transport_);
-    return NS_ERROR_FAILURE;
   }
 
-  if (has_addr_) {
-    if (transport_ == kNrIceTransportTls) {
-      
-      return NS_ERROR_INVALID_ARG;
-    }
-    r = nr_praddr_to_transport_addr(&addr_, &server->addr, protocol, 0);
-    if (r) {
-      return NS_ERROR_FAILURE;
-    }
-  } else {
-    MOZ_ASSERT(sizeof(server->addr.fqdn) > host_.size());
+  if (isTls && !aAddrForFqdn) {
     
-    if (use_ipv6_if_fqdn_) {
-      nr_str_port_to_transport_addr("::", port_, protocol, &server->addr);
-    } else {
-      nr_str_port_to_transport_addr("0.0.0.0", port_, protocol, &server->addr);
-    }
-    PL_strncpyz(server->addr.fqdn, host_.c_str(), sizeof(server->addr.fqdn));
-    if (transport_ == kNrIceTransportTls) {
-      server->addr.tls = 1;
-    }
+    
+    
+    MOZ_MTLOG(ML_ERROR, "TLS requires FQDN, not IP address");
+    return false;
   }
 
-  nr_transport_addr_fmt_addr_string(&server->addr);
+  if (aEntry.mUri.mHost.Length() >= sizeof(aResult->addr.fqdn)) {
+    MOZ_MTLOG(ML_ERROR, "FQDN too long: " << aEntry.mUri.mHost.get());
+    return false;
+  }
 
-  return NS_OK;
+  const char* host = aAddrForFqdn ? aAddrForFqdn : aEntry.mUri.mHost.get();
+
+  if (nr_str_port_to_transport_addr(host, aEntry.mUri.mPort, protocol,
+                                    &(aResult->addr))) {
+    MOZ_MTLOG(ML_ERROR, "Failed to init STUN server");
+    return false;
+  }
+
+  if (aAddrForFqdn) {
+    std::strncpy(aResult->addr.fqdn, aEntry.mUri.mHost.get(),
+                 sizeof(aResult->addr.fqdn) - 1);  
+  }
+
+  if (isTls) {
+    aResult->addr.tls = 1;
+  }
+
+  nr_transport_addr_fmt_addr_string(&(aResult->addr));
+  return true;
 }
 
-nsresult NrIceTurnServer::ToNicerTurnStruct(nr_ice_turn_server* server) const {
-  memset(server, 0, sizeof(nr_ice_turn_server));
-
-  nsresult rv = ToNicerStunStruct(&server->turn_server);
-  if (NS_FAILED(rv)) return rv;
-
-  if (!(server->username = strdup(username_.c_str())))
-    return NS_ERROR_OUT_OF_MEMORY;
-
-  
-  
-  
-
-  
-  
-  
-  const UCHAR* data = password_.empty() ? nullptr : &password_[0];
-  int r = r_data_create(&server->password, data, password_.size());
-  if (r) {
-    free(server->username);
-    return NS_ERROR_OUT_OF_MEMORY;
+static bool ToNicerTurnStruct(const char* aAddrForFqdn,
+                              const ParsedIceServer& aEntry,
+                              nr_ice_turn_server* aResult) {
+  memset(aResult, 0, sizeof(nr_ice_turn_server));
+  if (!ToNicerStunStruct(aAddrForFqdn, aEntry, &(aResult->turn_server))) {
+    MOZ_MTLOG(ML_ERROR, "Failed to init STUN server");
+    return false;
+  }
+  aResult->username = strdup(aEntry.mUsername.get());
+  if (!aResult->username) {
+    MOZ_MTLOG(ML_ERROR, "Couldn't allocate TURN username");
+    return false;
   }
 
-  return NS_OK;
+  if (aEntry.mPassword.IsEmpty()) {
+    
+    
+    
+    MOZ_MTLOG(ML_ERROR, "TURN password is empty");
+    return false;
+  }
+
+  int r = r_data_create(&aResult->password,
+                        reinterpret_cast<const UCHAR*>(aEntry.mPassword.get()),
+                        aEntry.mPassword.Length());
+  if (r) {
+    free(aResult->username);
+    MOZ_MTLOG(ML_ERROR, "Couldn't allocate TURN password");
+    return false;
+  }
+  return true;
 }
 
 NrIceCtx::NrIceCtx(const std::string& name)
@@ -864,59 +874,84 @@ NrIceCtx::Controlling NrIceCtx::GetControlling() {
   return (peer_->controlling) ? ICE_CONTROLLING : ICE_CONTROLLED;
 }
 
-nsresult NrIceCtx::SetStunServers(
-    const std::vector<NrIceStunServer>& stun_servers) {
+nsresult NrIceCtx::SetIceServers(const nsTArray<ParsedIceServer>& aServers,
+                                 bool aTurnDisabled) {
   MOZ_MTLOG(ML_NOTICE, "NrIceCtx(" << name_ << "): " << __func__);
-  
-  std::vector<nr_ice_stun_server> servers;
 
-  for (size_t i = 0; i < stun_servers.size(); ++i) {
-    nr_ice_stun_server server;
-    nsresult rv = stun_servers[i].ToNicerStunStruct(&server);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      MOZ_MTLOG(ML_ERROR, "Couldn't convert STUN server for '" << name_ << "'");
-    } else {
-      servers.push_back(server);
+  std::vector<nr_ice_stun_server> stunServers;
+  std::vector<nr_ice_turn_server> turnServers;
+
+  for (const auto& entry : aServers) {
+    bool isTurn = entry.mUri.IsTurn();
+
+    if (isTurn && aTurnDisabled) {
+      continue;
     }
-  }
 
-  int r = nr_ice_ctx_set_stun_servers(ctx_, servers.data(),
-                                      static_cast<int>(servers.size()));
-  if (r) {
-    MOZ_MTLOG(ML_ERROR, "Couldn't set STUN servers for '" << name_ << "'");
-    return NS_ERROR_FAILURE;
-  }
-
-  return NS_OK;
-}
-
-
-
-nsresult NrIceCtx::SetTurnServers(
-    const std::vector<NrIceTurnServer>& turn_servers) {
-  MOZ_MTLOG(ML_NOTICE, "NrIceCtx(" << name_ << "): " << __func__);
-  
-  std::vector<nr_ice_turn_server> servers;
-
-  for (size_t i = 0; i < turn_servers.size(); ++i) {
-    nr_ice_turn_server server;
-    nsresult rv = turn_servers[i].ToNicerTurnStruct(&server);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      MOZ_MTLOG(ML_ERROR, "Couldn't convert TURN server for '" << name_ << "'");
-    } else {
-      servers.push_back(server);
-    }
-  }
-
-  int r = nr_ice_ctx_set_turn_servers(ctx_, servers.data(),
-                                      static_cast<int>(servers.size()));
-  if (r) {
-    MOZ_MTLOG(ML_ERROR, "Couldn't set TURN servers for '" << name_ << "'");
     
-    return NS_ERROR_FAILURE;
+    
+    
+    nr_transport_addr unused;
+    bool isFqdn = !!nr_str_port_to_transport_addr(
+        entry.mUri.mHost.get(), entry.mUri.mPort, IPPROTO_UDP, &unused);
+
+    if (isFqdn) {
+      
+      
+      if (isTurn) {
+        nr_ice_turn_server turnServer;
+        if (ToNicerTurnStruct("0.0.0.0", entry, &turnServer)) {
+          turnServers.push_back(turnServer);
+        }
+        if (ToNicerTurnStruct("::", entry, &turnServer)) {
+          turnServers.push_back(turnServer);
+        }
+      } else {
+        nr_ice_stun_server stunServer;
+        if (ToNicerStunStruct("0.0.0.0", entry, &stunServer)) {
+          stunServers.push_back(stunServer);
+        }
+        if (ToNicerStunStruct("::", entry, &stunServer)) {
+          stunServers.push_back(stunServer);
+        }
+      }
+    } else {
+      
+      if (isTurn) {
+        nr_ice_turn_server turnServer;
+        if (ToNicerTurnStruct(nullptr, entry, &turnServer)) {
+          turnServers.push_back(turnServer);
+        }
+      } else {
+        nr_ice_stun_server stunServer;
+        if (ToNicerStunStruct(nullptr, entry, &stunServer)) {
+          stunServers.push_back(stunServer);
+        }
+      }
+    }
   }
 
-  return NS_OK;
+  int r = nr_ice_ctx_set_stun_servers(ctx_, stunServers.data(),
+                                      static_cast<int>(stunServers.size()));
+  if (!r) {
+    r = nr_ice_ctx_set_turn_servers(ctx_, turnServers.data(),
+                                    static_cast<int>(turnServers.size()));
+    if (!r) {
+      
+      turnServers.clear();
+    } else {
+      MOZ_MTLOG(ML_ERROR, "Couldn't set TURN servers for '" << name_ << "'");
+    }
+  } else {
+    MOZ_MTLOG(ML_ERROR, "Couldn't set STUN servers for '" << name_ << "'");
+  }
+
+  for (auto& turn : turnServers) {
+    free(turn.username);
+    r_data_destroy(&turn.password);
+  }
+
+  return r ? NS_ERROR_FAILURE : NS_OK;
 }
 
 nsresult NrIceCtx::SetResolver(nr_resolver* resolver) {

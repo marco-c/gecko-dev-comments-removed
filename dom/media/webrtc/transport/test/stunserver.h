@@ -4,20 +4,20 @@
 
 
 
-
-
 #ifndef stunserver_h_
 #define stunserver_h_
 
 #include <map>
 #include <string>
 
+#include "mozilla/IceServerParser.h"
 #include "mozilla/UniquePtr.h"
 #include "nsError.h"
 
 typedef struct nr_stun_server_ctx_ nr_stun_server_ctx;
 typedef struct nr_socket_ nr_socket;
 typedef struct nr_local_addr_ nr_local_addr;
+typedef struct nr_transport_addr_ nr_transport_addr;
 
 namespace mozilla {
 
@@ -120,5 +120,34 @@ class TestStunTcpServer : public TestStunServer {
 
   std::map<NR_SOCKET, nr_socket*> connections_;
 };
+
+using ParsedIceServer = IceServerParser::ParsedIceServer;
+using IceTransport = IceServerParser::IceTransport;
+using StunTurnScheme = IceServerParser::StunTurnScheme;
+
+inline ParsedIceServer MakeStunEntry(
+    const std::string& aHost, uint16_t aPort,
+    IceTransport aTransport = IceTransport::Udp) {
+  ParsedIceServer entry;
+  entry.mUri.mScheme = StunTurnScheme::Stun;
+  entry.mUri.mHost = nsCString(aHost.c_str());
+  entry.mUri.mPort = aPort;
+  entry.mUri.mTransport = aTransport;
+  return entry;
+}
+
+inline ParsedIceServer MakeTurnEntry(
+    const std::string& aHost, uint16_t aPort, const std::string& aUsername,
+    const std::string& aPassword, IceTransport aTransport = IceTransport::Udp) {
+  ParsedIceServer entry;
+  entry.mUri.mScheme = StunTurnScheme::Turn;
+  entry.mUri.mHost = nsCString(aHost.c_str());
+  entry.mUri.mPort = aPort;
+  entry.mUri.mTransport = aTransport;
+  entry.mUsername = nsCString(aUsername.c_str());
+  entry.mPassword = nsCString(aPassword.c_str());
+  return entry;
+}
+
 }  
 #endif
