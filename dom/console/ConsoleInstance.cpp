@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/ConsoleInstance.h"
 
 #include "Console.h"
@@ -184,8 +182,8 @@ METHOD(GroupCollapsed, u"groupCollapsed")
 #undef METHOD
 
 void ConsoleInstance::GroupEnd(JSContext* aCx) {
-  const Sequence<JS::Value> data;
   RefPtr<Console> console(mConsole);
+  const Sequence<JS::Value> data;
   console->MethodInternal(aCx, Console::MethodGroupEnd, u"groupEnd"_ns, data);
 }
 
@@ -258,8 +256,8 @@ void ConsoleInstance::CountReset(JSContext* aCx, const nsAString& aLabel) {
 }
 
 void ConsoleInstance::Clear(JSContext* aCx) {
-  const Sequence<JS::Value> data;
   RefPtr<Console> console(mConsole);
+  const Sequence<JS::Value> data;
   console->MethodInternal(aCx, Console::MethodClear, u"clear"_ns, data);
 }
 
