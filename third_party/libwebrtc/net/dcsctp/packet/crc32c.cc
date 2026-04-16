@@ -11,19 +11,16 @@
 
 #include <cstdint>
 
-#include "third_party/crc32c/src/include/crc32c/crc32c.h"
+#include "absl/crc/crc32c.h"
+#include "absl/numeric/bits.h"
+#include "absl/strings/string_view.h"
+#include "api/array_view.h"
 
 namespace dcsctp {
 
 uint32_t GenerateCrc32C(webrtc::ArrayView<const uint8_t> data) {
-  uint32_t crc32c = crc32c_value(data.data(), data.size());
-
-  
-  uint8_t byte0 = crc32c;
-  uint8_t byte1 = crc32c >> 8;
-  uint8_t byte2 = crc32c >> 16;
-  uint8_t byte3 = crc32c >> 24;
-  crc32c = ((byte0 << 24) | (byte1 << 16) | (byte2 << 8) | byte3);
-  return crc32c;
+  absl::crc32c_t crc32 = absl::ComputeCrc32c(absl::string_view(
+      reinterpret_cast<const char*>(data.data()), data.size()));
+  return absl::byteswap(static_cast<uint32_t>(crc32));
 }
 }  
