@@ -14,9 +14,9 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <span>
 #include <string>
 
-#include "api/array_view.h"
 #include "api/rtp_headers.h"
 #include "api/task_queue/task_queue_base.h"
 #include "api/units/time_delta.h"
@@ -81,7 +81,7 @@ class RtpStreamRtcpHandler {
   virtual RtpStats SentStats() = 0;
 
   virtual void OnNack(uint32_t ,
-                      ArrayView<const uint16_t> ) {}
+                      std::span<const uint16_t> ) {}
   virtual void OnFir(uint32_t ) {}
   virtual void OnPli(uint32_t ) {}
 
@@ -117,7 +117,7 @@ struct RtcpTransceiverConfig {
   Clock* clock = nullptr;
 
   
-  std::function<void(ArrayView<const uint8_t>)> rtcp_transport;
+  std::function<void(std::span<const uint8_t>)> rtcp_transport;
 
   
   TaskQueueBase* task_queue = nullptr;

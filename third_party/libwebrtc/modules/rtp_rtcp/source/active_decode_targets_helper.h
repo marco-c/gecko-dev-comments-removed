@@ -15,8 +15,7 @@
 
 #include <bitset>
 #include <optional>
-
-#include "api/array_view.h"
+#include <span>
 
 namespace webrtc {
 
@@ -34,11 +33,11 @@ class ActiveDecodeTargetsHelper {
 
   
   
-  void OnFrame(ArrayView<const int> decode_target_protected_by_chain,
+  void OnFrame(std::span<const int> decode_target_protected_by_chain,
                std::bitset<32> active_decode_targets,
                bool is_keyframe,
                int64_t frame_id,
-               ArrayView<const int> chain_diffs);
+               std::span<const int> chain_diffs);
 
   
   std::optional<uint32_t> ActiveDecodeTargetsBitmask() const {

@@ -18,11 +18,11 @@
 #include <cstdint>
 #include <memory>
 #include <optional>
+#include <span>
 #include <vector>
 
 #include "absl/algorithm/container.h"
 #include "absl/strings/string_view.h"
-#include "api/array_view.h"
 #include "api/transport/network_types.h"
 #include "api/units/data_rate.h"
 #include "api/units/time_delta.h"
@@ -183,7 +183,7 @@ class NetworkLinkRtcpObserver {
   
   
   virtual void OnReport(Timestamp ,
-                        ArrayView<const ReportBlockData> ) {}
+                        std::span<const ReportBlockData> ) {}
   virtual void OnRttUpdate(Timestamp , TimeDelta ) {}
 };
 

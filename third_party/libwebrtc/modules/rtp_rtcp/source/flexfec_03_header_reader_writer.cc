@@ -10,11 +10,10 @@
 
 #include "modules/rtp_rtcp/source/flexfec_03_header_reader_writer.h"
 
-#include <string.h>
-
 #include <cstdint>
+#include <cstring>
+#include <span>
 
-#include "api/array_view.h"
 #include "api/scoped_refptr.h"
 #include "modules/rtp_rtcp/source/byte_io.h"
 #include "modules/rtp_rtcp/source/forward_error_correction.h"
@@ -250,7 +249,7 @@ size_t Flexfec03HeaderWriter::FecHeaderSize(size_t packet_mask_size) const {
 
 
 void Flexfec03HeaderWriter::FinalizeFecHeader(
-    ArrayView<const ProtectedStream> protected_streams,
+    std::span<const ProtectedStream> protected_streams,
     ForwardErrorCorrection::Packet& fec_packet) const {
   RTC_CHECK_EQ(protected_streams.size(), 1);
   uint32_t media_ssrc = protected_streams[0].ssrc;

@@ -10,12 +10,11 @@
 
 #include "modules/rtp_rtcp/source/flexfec_header_reader_writer.h"
 
-#include <string.h>
-
 #include <cstdint>
+#include <cstring>
+#include <span>
 #include <vector>
 
-#include "api/array_view.h"
 #include "api/make_ref_counted.h"
 #include "modules/rtp_rtcp/source/byte_io.h"
 #include "modules/rtp_rtcp/source/forward_error_correction.h"
@@ -55,13 +54,13 @@ constexpr uint8_t kPayloadBits = 0x00;
 
 struct FecPacketStreamReadProperties {
   ProtectedStream stream;
-  ArrayView<const uint8_t> mask;
+  std::span<const uint8_t> mask;
 };
 
 struct FecPacketStreamWriteProperties {
   size_t byte_index;
   uint16_t seq_num_base;
-  ArrayView<const uint8_t> mask;
+  std::span<const uint8_t> mask;
 };
 
 Packet WritePacket(
@@ -94,9 +93,9 @@ void VerifyReadHeaders(size_t expected_fec_header_size,
     EXPECT_EQ(protected_stream.packet_mask_size,
               expected[i].stream.packet_mask_size);
     
-    EXPECT_THAT(MakeArrayView(read_packet.pkt->data.cdata() +
-                                  protected_stream.packet_mask_offset,
-                              protected_stream.packet_mask_size),
+    EXPECT_THAT(std::span(read_packet.pkt->data.cdata() +
+                              protected_stream.packet_mask_offset,
+                          protected_stream.packet_mask_size),
                 ElementsAreArray(expected[i].mask));
   }
   EXPECT_EQ(read_packet.pkt->data.size() - expected_fec_header_size,
@@ -116,9 +115,9 @@ void VerifyFinalizedHeaders(
         ByteReader<uint16_t>::ReadBigEndian(packet + expected[i].byte_index),
         expected[i].seq_num_base);
     
-    EXPECT_THAT(MakeArrayView(packet + expected[i].byte_index + 2,
-                              expected[i].mask.size()),
-                ElementsAreArray(expected[i].mask));
+    EXPECT_THAT(
+        std::span(packet + expected[i].byte_index + 2, expected[i].mask.size()),
+        ElementsAreArray(expected[i].mask));
   }
 }
 
@@ -163,19 +162,19 @@ void VerifyWrittenAndReadHeaders(
         read_packet.pkt->data.cdata() +
         read_packet.protected_streams[i].packet_mask_offset;
     
-    EXPECT_THAT(MakeArrayView(read_mask_ptr, mask_write_size),
+    EXPECT_THAT(std::span(read_mask_ptr, mask_write_size),
                 ElementsAreArray(write_protected_streams[i].packet_mask));
     
     
-    EXPECT_THAT(MakeArrayView(read_mask_ptr + mask_write_size,
-                              expected_mask_read_size - mask_write_size),
+    EXPECT_THAT(std::span(read_mask_ptr + mask_write_size,
+                          expected_mask_read_size - mask_write_size),
                 Each(0));
   }
 
   
   EXPECT_THAT(
-      MakeArrayView(read_packet.pkt->data.cdata() + read_packet.fec_header_size,
-                    read_packet.pkt->data.size() - read_packet.fec_header_size),
+      std::span(read_packet.pkt->data.cdata() + read_packet.fec_header_size,
+                read_packet.pkt->data.size() - read_packet.fec_header_size),
       ElementsAreArray(written_packet.data.cdata() + expected_header_size,
                        written_packet.data.size() - expected_header_size));
 }

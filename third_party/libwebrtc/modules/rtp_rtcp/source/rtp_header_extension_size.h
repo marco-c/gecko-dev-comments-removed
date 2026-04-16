@@ -10,7 +10,8 @@
 #ifndef MODULES_RTP_RTCP_SOURCE_RTP_HEADER_EXTENSION_SIZE_H_
 #define MODULES_RTP_RTCP_SOURCE_RTP_HEADER_EXTENSION_SIZE_H_
 
-#include "api/array_view.h"
+#include <span>
+
 #include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 
@@ -24,7 +25,7 @@ struct RtpExtensionSize {
 
 
 
-int RtpHeaderExtensionSize(ArrayView<const RtpExtensionSize> extensions,
+int RtpHeaderExtensionSize(std::span<const RtpExtensionSize> extensions,
                            const RtpHeaderExtensionMap& registered_extensions);
 
 }  
