@@ -151,6 +151,13 @@ class BaseAllocCell {
     LeftMetadata()->mRightAllocated = false;
   }
 
+  bool ProbablyNotInList() {
+    
+    MOZ_ASSERT(!Allocated());
+
+    return !(mListElem.mNext || mListElem.mPrev);
+  }
+
   
   
   void ClearPayload();
