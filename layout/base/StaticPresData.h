@@ -5,7 +5,6 @@
 #ifndef mozilla_StaticPresData_h
 #define mozilla_StaticPresData_h
 
-#include "mozilla/RWLock.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/UniquePtr.h"
 #include "nsAtom.h"
@@ -18,8 +17,8 @@ namespace mozilla {
 
 struct LangGroupFontPrefs {
   
-  explicit LangGroupFontPrefs(nsStaticAtom* aLangGroupAtom)
-      : mLangGroup(aLangGroupAtom),
+  LangGroupFontPrefs()
+      : mLangGroup(nullptr),
         mMinimumFontSize({0}),
         mDefaultVariableFont(StyleGenericFontFamily::Serif, {0}),
         mDefaultSerifFont(StyleGenericFontFamily::Serif, {0}),
@@ -27,13 +26,22 @@ struct LangGroupFontPrefs {
         mDefaultMonospaceFont(StyleGenericFontFamily::Monospace, {0}),
         mDefaultCursiveFont(StyleGenericFontFamily::Cursive, {0}),
         mDefaultFantasyFont(StyleGenericFontFamily::Fantasy, {0}),
-        mDefaultSystemUiFont(StyleGenericFontFamily::SystemUi, {0}) {
-    Initialize();
-  }
+        mDefaultSystemUiFont(StyleGenericFontFamily::SystemUi, {0}) {}
 
   StyleGenericFontFamily GetDefaultGeneric() const {
     return mDefaultVariableFont.family.families.list.AsSpan()[0].AsGeneric();
   }
+
+  void Reset() {
+    
+    mNext = nullptr;
+
+    
+    mLangGroup = nullptr;
+  }
+
+  
+  void Initialize(nsStaticAtom* aLangGroupAtom);
 
   
 
@@ -87,9 +95,6 @@ struct LangGroupFontPrefs {
   nsFont mDefaultFantasyFont;
   nsFont mDefaultSystemUiFont;
   UniquePtr<LangGroupFontPrefs> mNext;
-
- private:
-  void Initialize();
 };
 
 
@@ -144,11 +149,10 @@ class StaticPresData {
 
   const LangGroupFontPrefs* GetFontPrefsForLang(nsAtom* aLanguage,
                                                 bool* aNeedsToCache = nullptr);
+  const nsFont* GetDefaultFont(uint8_t aFontID, nsAtom* aLanguage,
+                               const LangGroupFontPrefs* aPrefs) const;
 
-  void InvalidateFontPrefs() {
-    AutoWriteLock lock(mLock);
-    mLangGroupFontPrefs.reset(nullptr);
-  }
+  void InvalidateFontPrefs() { mLangGroupFontPrefs.Reset(); }
 
  private:
   
@@ -159,9 +163,7 @@ class StaticPresData {
   friend class StaticAutoPtr<StaticPresData>;
 
   nsLanguageAtomService* mLangService;
-  UniquePtr<LangGroupFontPrefs> mLangGroupFontPrefs MOZ_GUARDED_BY(mLock);
-
-  RWLock mLock{"StaticPresData::mLock"};
+  LangGroupFontPrefs mLangGroupFontPrefs;
 };
 
 }  
