@@ -890,7 +890,10 @@ void TestBaseAlloc(size_t size) {
 
 TEST(Jemalloc, BaseAlloc)
 {
-  for (size_t size = 16; size < 1024; size += 16) {
+  
+  
+  
+  for (size_t size = 8; size < 1024; size += 8) {
     TestBaseAlloc(size);
   }
   for (size_t size = 1024; size < 8192; size += 128) {

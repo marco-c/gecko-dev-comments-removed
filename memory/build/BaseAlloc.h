@@ -5,6 +5,8 @@
 #ifndef BASEALLOC_H
 #define BASEALLOC_H
 
+#include <algorithm>
+
 #include "Constants.h"
 #include "Mutex.h"
 #include "RedBlackTree.h"
@@ -50,20 +52,30 @@ class BaseAlloc {
 
  private:
   
-  unsigned get_list_index_for_size_at_least(base_alloc_size_t aSize);
   
-  unsigned get_list_index_for_size_at_most(base_alloc_size_t aSize);
+  
+  constexpr static base_alloc_size_t kBaseQuantum = mozilla::RoundUpPow2(
+      std::max({size_t(16), sizeof(BaseAllocCell), sizeof(BaseAllocMetadata)}));
+  constexpr static unsigned kBaseQuantumMask = kBaseQuantum - 1;
+  constexpr static unsigned kBaseQuantumLog2 =
+      mozilla::CeilingLog2(kBaseQuantum);
+
+  
+  
+  constexpr static base_alloc_size_t kMaxSizeForLists = 4096;
+  static_assert(std::has_single_bit(kMaxSizeForLists));
+
+  constexpr static unsigned kNumFreeLists = kMaxSizeForLists / kBaseQuantum;
+
+  static base_alloc_size_t size_round_up(base_alloc_size_t aSize);
+
+  static unsigned get_list_index_for_size(base_alloc_size_t aSize);
 
   
   void* alloc_from_list(base_alloc_size_t aSize) MOZ_REQUIRES(mMutex);
 
-  
-  
-  
-  
-  constexpr static base_alloc_size_t NUM_LIST_SIZES = 2608 / kCacheLineSize + 1;
   mozilla::DoublyLinkedList<BaseAllocCell>
-      mFreeLists[NUM_LIST_SIZES] MOZ_GUARDED_BY(mMutex);
+      mFreeLists[kNumFreeLists] MOZ_GUARDED_BY(mMutex);
   RedBlackTree<BaseAllocCell, BaseAllocCellRBTrait> mFreeListOversize
       MOZ_GUARDED_BY(mMutex);
 
@@ -91,6 +103,8 @@ class BaseAlloc {
   uintptr_t mPastAddr MOZ_GUARDED_BY(mMutex) = 0;
 
   Stats mStats MOZ_GUARDED_BY(mMutex);
+
+  friend BaseAllocCell;
 };
 
 MFBT_API extern BaseAlloc sBaseAlloc;
