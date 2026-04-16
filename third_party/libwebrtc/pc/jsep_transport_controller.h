@@ -107,7 +107,6 @@ class JsepTransportController final {
     PeerConnectionInterface::RtcpMuxPolicy rtcp_mux_policy =
         PeerConnectionInterface::kRtcpMuxPolicyRequire;
     bool disable_encryption = false;
-    bool enable_external_auth = false;
     
     IceTransportFactory* ice_transport_factory = nullptr;
     DtlsTransportFactory* dtls_transport_factory = nullptr;

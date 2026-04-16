@@ -249,14 +249,6 @@ bool RtpExtension::IsSupportedForVideo(absl::string_view uri) {
 
 bool RtpExtension::IsEncryptionSupported(absl::string_view uri) {
   return
-#if defined(ENABLE_EXTERNAL_AUTH)
-      
-      
-      
-      
-      
-      uri != RtpExtension::kAbsSendTimeUri &&
-#endif
       uri != RtpExtension::kEncryptHeaderExtensionsUri;
 }
 

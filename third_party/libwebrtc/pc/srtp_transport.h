@@ -78,23 +78,7 @@ class SrtpTransport : public RtpTransport {
   void ResetParams();
 
   
-  
-  
-  
-  
-  void EnableExternalAuth();
-  bool IsExternalAuthEnabled() const;
-
-  
-  
-  
-  bool IsExternalAuthActive() const;
-
-  
   bool GetSrtpOverhead(int* srtp_overhead) const;
-
-  
-  bool GetRtpAuthParams(uint8_t** key, int* key_len, int* tag_len);
 
   
   
@@ -145,8 +129,6 @@ class SrtpTransport : public RtpTransport {
   ZeroOnFreeBuffer<uint8_t> recv_key_;
 
   bool writable_ = false;
-
-  bool external_auth_enabled_ = false;
 
   int rtp_abs_sendtime_extn_id_ = -1;
 

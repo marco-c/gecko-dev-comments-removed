@@ -78,20 +78,6 @@ class SrtpSession {
   
   
   
-  void EnableExternalAuth();
-  bool IsExternalAuthEnabled() const;
-  
-  bool GetRtpAuthParams(uint8_t** key, int* key_len, int* tag_len);
-  
-  
-  
-  bool IsExternalAuthActive() const;
-
-  
-  
-  
-  
-  
   
   bool RemoveSsrcFromSession(uint32_t ssrc);
 
@@ -130,8 +116,6 @@ class SrtpSession {
 
   bool inited_ = false;
   int last_send_seq_num_ = -1;
-  bool external_auth_active_ = false;
-  bool external_auth_enabled_ = false;
   int decryption_failure_count_ = 0;
   bool dump_plain_rtp_ = false;
 };
