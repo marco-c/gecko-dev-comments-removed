@@ -733,6 +733,7 @@ class WorkerPrivate final
   void CopyJSSettings(workerinternals::JSSettings& aSettings) {
     mozilla::MutexAutoLock lock(mMutex);
     aSettings = mJSSettings;
+    aSettings.CopyOverrideStrings();
   }
 
   void CopyJSRealmOptions(JS::RealmOptions& aOptions) {
@@ -998,6 +999,11 @@ class WorkerPrivate final
   bool UsingStorageAccess() const {
     AssertIsOnWorkerThread();
     return mLoadInfo.mUsingStorageAccess;
+  }
+
+  bool SerialAllowed() const {
+    AssertIsOnWorkerThread();
+    return mLoadInfo.mSerialAllowed;
   }
 
   nsICookieJarSettings* CookieJarSettings() const {

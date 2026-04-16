@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "FeaturePolicyUtils.h"
 
 #include "ipc/IPCMessageUtilsSpecializations.h"
@@ -44,6 +42,7 @@ static FeatureMap sSupportedFeatures[] = {
      FeaturePolicyUtils::FeaturePolicyValue::eSelf},
     {"publickey-credentials-get",
      FeaturePolicyUtils::FeaturePolicyValue::eSelf},
+    {"serial", FeaturePolicyUtils::FeaturePolicyValue::eSelf},
     {"speaker-selection", FeaturePolicyUtils::FeaturePolicyValue::eSelf},
     {"storage-access", FeaturePolicyUtils::FeaturePolicyValue::eAll},
     {"screen-wake-lock", FeaturePolicyUtils::FeaturePolicyValue::eSelf},
