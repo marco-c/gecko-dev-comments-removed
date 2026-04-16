@@ -24,6 +24,7 @@
 #include <utility>
 
 #include "mozilla/HashFunctions.h"
+#include "mozilla/ThreadSafeWeakPtr.h"
 
 namespace mozilla {
 
@@ -38,6 +39,7 @@ inline uint32_t HashString(const nsACString& aStr) {
 }
 
 }  
+
 
 
 
@@ -394,6 +396,46 @@ class nsRefPtrHashKey : public PLDHashEntryHdr {
  private:
   RefPtr<T> mKey;
 };
+
+namespace mozilla {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <class T>
+class ThreadSafeWeakPtrHashKey : public PLDHashEntryHdr {
+ public:
+  typedef RefPtr<T> KeyType;
+  typedef const T* KeyTypePointer;
+
+  explicit ThreadSafeWeakPtrHashKey(KeyTypePointer aKey)
+      : mKey(do_AddRef(const_cast<T*>(aKey))) {}
+
+  KeyType GetKey() const { return do_AddRef(mKey); }
+  bool KeyEquals(KeyTypePointer aKey) const { return mKey == aKey; }
+
+  static KeyTypePointer KeyToPointer(const KeyType& aKey) { return aKey.get(); }
+  static PLDHashNumber HashKey(KeyTypePointer aKey) {
+    return HashGeneric(aKey);
+  }
+  enum { ALLOW_MEMMOVE = true };
+
+ private:
+  ThreadSafeWeakPtr<T> mKey;
+};
+
+}  
 
 template <class T>
 inline void ImplCycleCollectionTraverse(
