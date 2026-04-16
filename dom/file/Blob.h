@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_Blob_h
 #define mozilla_dom_Blob_h
 
@@ -55,6 +53,9 @@ class Blob : public nsSupportsWeakReference, public nsWrapperCache {
                                                  void* aMemoryBuffer,
                                                  uint64_t aLength,
                                                  const nsAString& aContentType);
+
+  
+  already_AddRefed<Blob> Clone() const;
 
   BlobImpl* Impl() const { return mImpl; }
 
