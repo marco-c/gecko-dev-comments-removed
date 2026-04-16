@@ -938,6 +938,20 @@ Preferences.addSetting({
   get: prefVal => !prefVal,
 });
 Preferences.addSetting({
+  id: "ipProtectionSubscribedToVpn",
+  pref: "browser.ipProtection.entitlementCache",
+  get: cacheObj => {
+    try {
+      
+      
+      return JSON.parse(cacheObj)?.subscribed === true;
+    } catch {
+      
+      return false;
+    }
+  },
+});
+Preferences.addSetting({
   id: "ipProtectionNotOptedInSection",
   deps: ["ipProtectionVisible", "ipProtectionNotOptedIn"],
   visible: ({ ipProtectionVisible, ipProtectionNotOptedIn }) =>
@@ -1146,9 +1160,19 @@ Preferences.addSetting({
 });
 Preferences.addSetting({
   id: "ipProtectionLinks",
-  deps: ["ipProtectionVisible", "ipProtectionNotOptedIn"],
-  visible: ({ ipProtectionVisible, ipProtectionNotOptedIn }) =>
-    ipProtectionVisible.value && !ipProtectionNotOptedIn.value,
+  deps: [
+    "ipProtectionVisible",
+    "ipProtectionNotOptedIn",
+    "ipProtectionSubscribedToVpn",
+  ],
+  visible: ({
+    ipProtectionVisible,
+    ipProtectionNotOptedIn,
+    ipProtectionSubscribedToVpn,
+  }) =>
+    ipProtectionVisible.value &&
+    !ipProtectionNotOptedIn.value &&
+    !ipProtectionSubscribedToVpn.value,
 });
 
 
