@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/XULPopupElement.h"
 
 #include "XULMenuParentElement.h"
@@ -18,7 +16,6 @@
 #include "mozilla/dom/XULPopupElementBinding.h"
 #include "nsCOMPtr.h"
 #include "nsDOMCSSDeclaration.h"
-#include "nsGkAtoms.h"
 #include "nsIContent.h"
 #include "nsMenuPopupFrame.h"
 #include "nsNameSpaceManager.h"

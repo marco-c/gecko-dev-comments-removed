@@ -9,7 +9,6 @@
 
 
 
-
 #include "nsXULContentUtils.h"
 
 #include "mozilla/dom/Document.h"
@@ -18,7 +17,6 @@
 #include "mozilla/intl/LocaleService.h"
 #include "nsCOMPtr.h"
 #include "nsComponentManagerUtils.h"
-#include "nsGkAtoms.h"
 #include "nsIContent.h"
 #include "nsString.h"
 

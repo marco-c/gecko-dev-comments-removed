@@ -93,7 +93,6 @@
 #  include "WinUtils.h"
 #endif
 
-#include "nsGkAtoms.h"
 #include "gfxPlatformFontList.h"
 #include "gfxContext.h"
 #include "gfxImageSurface.h"
@@ -3782,10 +3781,10 @@ void gfxPlatform::GetDisplayInfo(mozilla::widget::InfoObject& aObj) {
   size_t i = 0;
   for (auto& screen : screens) {
     const LayoutDeviceIntRect rect = screen->GetRect();
-    nsPrintfCString value("%dx%d@%dHz scales:%f|%f", rect.width, rect.height,
-                          screen->GetRefreshRate(),
-                          screen->GetContentsScaleFactor(),
-                          screen->GetDefaultCSSScaleFactor());
+    nsPrintfCString value(
+        "%dx%d@%dHz scales:%f|%f %s", rect.width, rect.height,
+        screen->GetRefreshRate(), screen->GetContentsScaleFactor(),
+        screen->GetDefaultCSSScaleFactor(), screen->GetIsHDR() ? "HDR" : "SDR");
 
     aObj.DefineProperty(nsPrintfCString("Display%zu", i++).get(),
                         NS_ConvertUTF8toUTF16(value));

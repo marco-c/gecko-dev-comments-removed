@@ -2,18 +2,13 @@
 
 
 
-
-
 #include "SpeechSynthesisUtterance.h"
-
-#include <stdlib.h>
 
 #include "SpeechSynthesisVoice.h"
 #include "mozilla/dom/SpeechSynthesisEvent.h"
 #include "mozilla/dom/SpeechSynthesisUtteranceBinding.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
-#include "nsGkAtoms.h"
 
 namespace mozilla::dom {
 

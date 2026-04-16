@@ -2,10 +2,8 @@
 
 
 
-
 #include "txXSLTProcessor.h"
 
-#include "nsGkAtoms.h"
 #include "txExecutionState.h"
 #include "txExprResult.h"
 #include "txInstructions.h"
