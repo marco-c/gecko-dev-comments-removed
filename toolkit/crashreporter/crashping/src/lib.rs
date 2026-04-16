@@ -125,6 +125,11 @@ pub fn send(annotations: &serde_json::Value, reason: Option<&str>) -> anyhow::Re
 }
 
 
+pub fn set_collection_enabled(enabled: bool) {
+    glean::set_collection_enabled(enabled);
+}
+
+
 
 
 pub fn test_before_next_send<F: FnOnce(Option<&str>) + Send + 'static>(cb: F) {
