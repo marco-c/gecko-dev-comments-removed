@@ -4673,6 +4673,18 @@ nsCSSFrameConstructor::FindSVGData(const Element& aElement,
 
   nsAtom* tag = aElement.NodeInfo()->NameAtom();
 
+  if (aElement.OwnerDoc()->IsSVGGlyphsDocument()) {
+    
+    
+    
+    if (tag == nsGkAtoms::text || tag == nsGkAtoms::tspan ||
+        tag == nsGkAtoms::textPath || tag == nsGkAtoms::a ||
+        tag == nsGkAtoms::foreignObject || tag == nsGkAtoms::svgSwitch ||
+        tag == nsGkAtoms::view) {
+      return &sSuppressData;
+    }
+  }
+
   
   
   
