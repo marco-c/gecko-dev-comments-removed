@@ -28,18 +28,22 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.annotation.FlexibleWindowPreview
 import mozilla.components.compose.base.button.TextButton
+import mozilla.components.concept.ai.controls.AIControllableFeature
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.LinkText
 import org.mozilla.fenix.compose.LinkTextState
@@ -52,7 +56,15 @@ import org.mozilla.fenix.theme.Theme
 import mozilla.components.ui.icons.R as iconsR
 
 @Composable
-internal fun AiControlsScreen(
+internal fun AIControlsScreen(
+    registeredFeatures: List<AIControllableFeature> = emptyList(),
+    showDialog: Boolean,
+    isBlocked: Boolean,
+    onDialogDismiss: () -> Unit,
+    onDialogConfirm: () -> Unit,
+    onToggle: (Boolean) -> Unit,
+    onFeatureToggle: (AIControllableFeature, Boolean) -> Unit = { _, _ -> },
+    onFeatureNavLinkClick: (AIFeatureMetadataDestination) -> Unit,
     onBannerLearnMoreClick: () -> Unit,
 ) {
     Surface {
@@ -61,34 +73,55 @@ internal fun AiControlsScreen(
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState()),
         ) {
+            if (showDialog) {
+                BlockAiDialog(
+                    onDismiss = { onDialogDismiss() },
+                    onConfirm = { onDialogConfirm() },
+                )
+            }
+
             AiChoiceBanner(onLearnMoreClick = onBannerLearnMoreClick)
 
             SwitchListItem(
                 label = stringResource(R.string.ai_controls_block_ai_title),
-                checked = false,
+                checked = isBlocked,
                 description = stringResource(
                     R.string.ai_controls_block_ai_description,
                     stringResource(R.string.app_name),
                 ),
                 maxDescriptionLines = Int.MAX_VALUE,
                 showSwitchAfter = true,
-                onClick = {},
+                onClick = { onToggle(isBlocked) },
             )
 
-            SettingsLink(
+            NavLink(
                 text = stringResource(R.string.ai_controls_see_whats_included),
                 onClick = onBannerLearnMoreClick,
             )
 
+            if (isBlocked) {
+                BlockedInfoBanner(
+                    modifier = Modifier.padding(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 16.dp),
+                )
+            }
+
             HorizontalDivider()
 
-            AiFeaturesSection()
+            AiFeaturesSection(
+                registeredFeatures = registeredFeatures,
+                onFeatureToggle = onFeatureToggle,
+                onFeatureNavLinkClick = onFeatureNavLinkClick,
+            )
         }
     }
 }
 
 @Composable
-private fun AiFeaturesSection() {
+private fun AiFeaturesSection(
+    registeredFeatures: List<AIControllableFeature>,
+    onFeatureToggle: (AIControllableFeature, Boolean) -> Unit,
+    onFeatureNavLinkClick: (AIFeatureMetadataDestination) -> Unit,
+) {
     SettingsSectionHeader(
         text = stringResource(R.string.ai_controls_ai_powered_features),
         modifier = Modifier.padding(
@@ -97,44 +130,25 @@ private fun AiFeaturesSection() {
         ),
     )
 
-    SwitchListItem(
-        label = stringResource(R.string.ai_controls_translations_title),
-        checked = true,
-        enabled = true,
-        description = stringResource(R.string.ai_controls_translations_description),
-        maxDescriptionLines = Int.MAX_VALUE,
-        showSwitchAfter = true,
-        onClick = {},
-    )
+    for (feature in registeredFeatures) {
+        val isEnabled by feature.isEnabled.collectAsState(initial = true)
 
-    SettingsLink(
-        text = stringResource(R.string.ai_controls_more_translations_settings),
-        onClick = {},
-    )
+        SwitchListItem(
+            label = stringResource(feature.description.titleRes),
+            checked = isEnabled,
+            enabled = true,
+            description = stringResource(feature.description.descriptionRes),
+            showSwitchAfter = true,
+            onClick = { onFeatureToggle(feature, !isEnabled) },
+        )
 
-    SwitchListItem(
-        label = stringResource(R.string.ai_controls_page_summaries_title),
-        checked = false,
-        enabled = true,
-        description = stringResource(R.string.ai_controls_page_summaries_description),
-        showSwitchAfter = true,
-        onClick = {},
-    )
-
-    SettingsLink(
-        text = stringResource(R.string.ai_controls_more_page_summary_settings),
-        onClick = {},
-    )
-
-    SwitchListItem(
-        label = stringResource(R.string.ai_controls_voice_search_title),
-        checked = true,
-        enabled = true,
-        description = stringResource(R.string.ai_controls_voice_search_description),
-        maxDescriptionLines = 2,
-        showSwitchAfter = true,
-        onClick = {},
-    )
+        feature.destination?.let {
+            NavLink(
+                text = stringResource(it.label),
+                onClick = { onFeatureNavLinkClick(it) },
+            )
+        }
+    }
 }
 
 @Composable
@@ -231,14 +245,14 @@ private fun BlockedInfoBanner(
 }
 
 @Composable
-private fun BlockAiDialog() {
+private fun BlockAiDialog(onDismiss: () -> Unit, onConfirm: () -> Unit) {
     AlertDialog(
-        onDismissRequest = { },
+        onDismissRequest = onDismiss,
         title = {
             Text(
                 text = stringResource(R.string.ai_controls_block_dialog_title),
                 style = FirefoxTheme.typography.headline5,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth(),
             )
         },
@@ -283,13 +297,13 @@ private fun BlockAiDialog() {
         dismissButton = {
             TextButton(
                 text = stringResource(R.string.ai_controls_block_dialog_cancel),
-                onClick = { },
+                onClick = onDismiss,
             )
         },
         confirmButton = {
             TextButton(
                 text = stringResource(R.string.ai_controls_block_dialog_block),
-                onClick = { },
+                onClick = onConfirm,
                 colors = ButtonDefaults.textButtonColors(
                     contentColor = MaterialTheme.colorScheme.error,
                 ),
@@ -299,7 +313,7 @@ private fun BlockAiDialog() {
 }
 
 @Composable
-private fun SettingsLink(
+private fun NavLink(
     text: String,
     onClick: () -> Unit,
 ) {
@@ -330,11 +344,17 @@ private fun SettingsLink(
 
 @FlexibleWindowPreview
 @Composable
-private fun AiControlsScreenPreview(
+private fun AIControlsScreenPreview(
     @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
     FirefoxTheme(theme) {
-        AiControlsScreen(
+        AIControlsScreen(
+            showDialog = false,
+            isBlocked = false,
+            onDialogDismiss = {},
+            onDialogConfirm = {},
+            onToggle = {},
+            onFeatureNavLinkClick = {},
             onBannerLearnMoreClick = {},
         )
     }
@@ -342,11 +362,14 @@ private fun AiControlsScreenPreview(
 
 @Preview
 @Composable
-private fun BlockAiDialogPreview(
+private fun BlockAIDialogPreview(
     @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
     FirefoxTheme(theme) {
-        BlockAiDialog()
+        BlockAiDialog(
+            onDismiss = {},
+            onConfirm = {},
+        )
     }
 }
 
