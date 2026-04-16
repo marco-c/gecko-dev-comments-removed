@@ -99,10 +99,19 @@ def lint_mfbt_headers(results, path, raw_content, config, fix):
 
 
 def lint_std_headers(results, path, raw_content, config, fix):
-    if re.search(r"using\s+namespace\s+std", raw_content):
-        return
-
-    symbol_pattern = r"\bstd::{}\b"
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if re.search(r"\bnamespace\s+std\b", raw_content):
+        symbol_pattern = r"\b{}\b"
+    else:
+        symbol_pattern = r"\bstd::{}\b"
 
     for header, symbols in std_api.items():
         headerline = rf"#\s*include <{header}>"
