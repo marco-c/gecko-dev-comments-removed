@@ -121,8 +121,7 @@ void DefineGlobals();
 #define CHUNK_CEILING(s) (((s) + kChunkSizeMask) & ~kChunkSizeMask)
 
 
-#define CACHELINE_CEILING(s) \
-  (((s) + (kCacheLineSize - 1)) & ~(kCacheLineSize - 1))
+#define CACHELINE_CEILING(s) (((s) + kCacheLineMask) & ~kCacheLineMask)
 
 
 #define QUANTUM_CEILING(a) (((a) + (kQuantumMask)) & ~(kQuantumMask))
