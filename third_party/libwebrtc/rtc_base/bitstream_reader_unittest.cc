@@ -10,10 +10,9 @@
 
 #include "rtc_base/bitstream_reader.h"
 
-#include <stddef.h>
-#include <stdint.h>
-
 #include <array>
+#include <cstddef>
+#include <cstdint>
 #include <limits>
 #include <optional>
 #include <utility>
@@ -198,14 +197,14 @@ TEST(BitstreamReaderTest, ReadBits) {
 }
 
 TEST(BitstreamReaderTest, ReadZeroBits) {
-  BitstreamReader reader(ArrayView<const uint8_t>(nullptr, 0));
+  BitstreamReader reader(ArrayView<const uint8_t>{});
 
   EXPECT_EQ(reader.ReadBits(0), 0u);
   EXPECT_TRUE(reader.Ok());
 }
 
 TEST(BitstreamReaderTest, ReadBitFromEmptyArray) {
-  BitstreamReader reader(ArrayView<const uint8_t>(nullptr, 0));
+  BitstreamReader reader(ArrayView<const uint8_t>{});
 
   
   
@@ -214,7 +213,7 @@ TEST(BitstreamReaderTest, ReadBitFromEmptyArray) {
 }
 
 TEST(BitstreamReaderTest, ReadBitsFromEmptyArray) {
-  BitstreamReader reader(ArrayView<const uint8_t>(nullptr, 0));
+  BitstreamReader reader(ArrayView<const uint8_t>{});
 
   
   
