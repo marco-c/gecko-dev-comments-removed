@@ -74,8 +74,6 @@ TEST(NearMatcherTest, CanMatchTypesWrappedIntoOptional) {
               Near(Timestamp::Seconds(1), TimeDelta::Millis(10)));
 }
 
-
-
 TEST(NearMatcherTest, CanMatchTimestampNearZero) {
   EXPECT_THAT(Timestamp::Zero(), Near(Timestamp::Zero()));
 
