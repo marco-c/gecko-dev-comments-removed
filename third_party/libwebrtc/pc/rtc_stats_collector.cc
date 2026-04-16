@@ -1372,6 +1372,13 @@ void RTCStatsCollector::GetStatsReportInternal(
         transport_names.insert(*info.transport_name);
     }
 
+    
+    
+    for (RtpTransceiverStatsInfo& stats : results.transceiver_stats_infos) {
+      stats.transceiver = nullptr;
+      stats.receivers.clear();
+    }
+
     network_thread_->PostTask(SafeTask(
         network_safety_, [this, transport_names = std::move(transport_names),
                           timestamp, signaling_flag = signaling_safety_,
