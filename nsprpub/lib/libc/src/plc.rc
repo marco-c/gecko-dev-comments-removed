@@ -1,7 +1,6 @@
-
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "prinit.h"
 #include <winver.h>
@@ -34,18 +33,18 @@
 #  define MY_INTERNAL_NAME MY_LIBNAME PR_VMAJOR_STR
 #endif
 
-
-
-
-
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version-information resource
+//
 
 VS_VERSION_INFO VERSIONINFO FILEVERSION PR_VMAJOR, PR_VMINOR, PR_VPATCH,
     0 PRODUCTVERSION PR_VMAJOR, PR_VMINOR, PR_VPATCH,
     0 FILEFLAGSMASK VS_FFI_FILEFLAGSMASK FILEFLAGS MY_FILEFLAGS_2 FILEOS
-        MY_FILEOS FILETYPE VFT_DLL FILESUBTYPE 0x0L  
+        MY_FILEOS FILETYPE VFT_DLL FILESUBTYPE 0x0L  // not used
 
     BEGIN BLOCK "StringFileInfo" BEGIN BLOCK
-                "040904B0"  
+                "040904B0"  // Lang=US English, CharSet=Unicode
     BEGIN VALUE "CompanyName",
     "Mozilla Foundation\0" VALUE "FileDescription",
     MY_FILEDESCRIPTION MY_DEBUG_STR "\0" VALUE "FileVersion",

@@ -2,7 +2,6 @@
 
 
 
-
 #include "prtypes.h"
 
 PRIntn my_global = 0;

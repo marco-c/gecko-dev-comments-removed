@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nspr_solaris_defs_h___
 #define nspr_solaris_defs_h___
 

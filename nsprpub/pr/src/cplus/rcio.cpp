@@ -6,7 +6,6 @@
 
 
 
-
 #include "rcio.h"
 
 RCIO::~RCIO() { }

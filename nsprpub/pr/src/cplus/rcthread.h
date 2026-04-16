@@ -4,7 +4,6 @@
 
 
 
-
 #if defined(_RCTHREAD_H)
 #else
 #define _RCTHREAD_H

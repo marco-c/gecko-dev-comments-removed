@@ -12,7 +12,6 @@
 
 
 
-
 #if !defined(XP_UNIX)
 
 int main(void) {

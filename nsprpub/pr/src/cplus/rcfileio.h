@@ -6,7 +6,6 @@
 
 
 
-
 #if defined(_RCFILEIO_H)
 #else
 #define _RCFILEIO_H
@@ -128,4 +127,4 @@ inline PRInt64 RCFileInfo::Size() const {
     return info.size;
 }
 
-#endif 
+#endif

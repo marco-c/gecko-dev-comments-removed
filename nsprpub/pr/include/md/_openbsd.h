@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nspr_openbsd_defs_h___
 #define nspr_openbsd_defs_h___
 

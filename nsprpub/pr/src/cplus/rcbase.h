@@ -6,7 +6,6 @@
 
 
 
-
 #if defined(_RCRUNTIME_H)
 #else
 #define _RCRUNTIME_H

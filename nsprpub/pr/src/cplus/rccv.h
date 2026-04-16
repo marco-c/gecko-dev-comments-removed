@@ -18,7 +18,6 @@
 
 
 
-
 #if defined(_RCCOND_H)
 #else
 #define _RCCOND_H
@@ -59,6 +58,6 @@ inline RCCondition::RCCondition(): RCBase() { }
 inline RCCondition::RCCondition(const RCCondition&): RCBase() { }
 inline void RCCondition::operator=(const RCCondition&) { }
 
-#endif 
+#endif
 
 

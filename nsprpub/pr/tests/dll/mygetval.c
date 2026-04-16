@@ -2,7 +2,6 @@
 
 
 
-
 #include "prtypes.h"
 
 extern PRIntn my_global;

@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nspr_netbsd_defs_h___
 #define nspr_netbsd_defs_h___
 

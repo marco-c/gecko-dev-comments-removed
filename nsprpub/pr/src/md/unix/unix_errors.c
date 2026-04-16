@@ -2,7 +2,6 @@
 
 
 
-
 #include "primpl.h"
 #if defined(_PR_POLL_AVAILABLE)
 #  include <poll.h>

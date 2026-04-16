@@ -6,7 +6,6 @@
 
 
 
-
 #include "rcbase.h"
 
 RCBase::~RCBase() { }

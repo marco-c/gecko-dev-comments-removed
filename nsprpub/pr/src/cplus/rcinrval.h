@@ -10,7 +10,6 @@
 
 
 
-
 #if defined(_RCINTERVAL_H)
 #else
 #define _RCINTERVAL_H

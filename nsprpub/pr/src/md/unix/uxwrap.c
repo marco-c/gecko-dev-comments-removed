@@ -11,7 +11,6 @@
 
 
 
-
 #include "primpl.h"
 
 #if defined(_PR_PTHREADS) || defined(_PR_GLOBAL_THREADS_ONLY) || defined(QNX)

@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef prtrace_h___
 #define prtrace_h___
 
@@ -642,5 +641,5 @@ PR_GetTraceEntries(
 
 PR_END_EXTERN_C
 
-#endif
+#endif 
 

@@ -11,7 +11,6 @@
 
 
 
-
 #include "rcinrval.h"
 
 RCInterval::~RCInterval() { }

@@ -12,7 +12,6 @@
 
 
 
-
 #ifndef prtime_h___
 #define prtime_h___
 
@@ -24,12 +23,11 @@ PR_BEGIN_EXTERN_C
 
 
 
-#define PR_MSEC_PER_SEC     1000L
-#define PR_USEC_PER_SEC     1000000L
-#define PR_NSEC_PER_SEC     1000000000L
-#define PR_USEC_PER_MSEC    1000L
-#define PR_NSEC_PER_MSEC    1000000L
-
+#define PR_MSEC_PER_SEC 1000L
+#define PR_USEC_PER_SEC 1000000L
+#define PR_NSEC_PER_SEC 1000000000L
+#define PR_USEC_PER_MSEC 1000L
+#define PR_NSEC_PER_MSEC 1000000L
 
 
 
@@ -53,8 +51,8 @@ typedef PRInt64 PRTime;
 
 
 typedef struct PRTimeParameters {
-    PRInt32 tp_gmt_offset;     
-    PRInt32 tp_dst_offset;     
+  PRInt32 tp_gmt_offset; 
+  PRInt32 tp_dst_offset; 
 } PRTimeParameters;
 
 
@@ -78,26 +76,24 @@ typedef struct PRTimeParameters {
 
 
 
-
-
 typedef struct PRExplodedTime {
-    PRInt32 tm_usec;            
-    PRInt32 tm_sec;             
+  PRInt32 tm_usec;  
+  PRInt32 tm_sec;   
 
-    PRInt32 tm_min;             
-    PRInt32 tm_hour;            
-    PRInt32 tm_mday;            
+  PRInt32 tm_min;   
+  PRInt32 tm_hour;  
+  PRInt32 tm_mday;  
 
-    PRInt32 tm_month;           
-    PRInt16 tm_year;            
-
-
-    PRInt8 tm_wday;             
-
-    PRInt16 tm_yday;            
+  PRInt32 tm_month; 
+  PRInt16 tm_year;  
 
 
-    PRTimeParameters tm_params;  
+  PRInt8 tm_wday;  
+
+  PRInt16 tm_yday; 
+
+
+  PRTimeParameters tm_params; 
 } PRExplodedTime;
 
 
@@ -123,7 +119,7 @@ typedef struct PRExplodedTime {
 
 
 
-typedef PRTimeParameters (PR_CALLBACK *PRTimeParamFn)(const PRExplodedTime *gmt);
+typedef PRTimeParameters(PR_CALLBACK* PRTimeParamFn)(const PRExplodedTime* gmt);
 
 
 
@@ -155,12 +151,12 @@ PR_Now(void);
 
 
 
-NSPR_API(void) PR_ExplodeTime(
-    PRTime usecs, PRTimeParamFn params, PRExplodedTime *exploded);
+NSPR_API(void)
+PR_ExplodeTime(PRTime usecs, PRTimeParamFn params, PRExplodedTime* exploded);
 
 
 NSPR_API(PRTime)
-PR_ImplodeTime(const PRExplodedTime *exploded);
+PR_ImplodeTime(const PRExplodedTime* exploded);
 
 
 
@@ -174,24 +170,24 @@ PR_ImplodeTime(const PRExplodedTime *exploded);
 
 
 
-NSPR_API(void) PR_NormalizeTime(
-    PRExplodedTime *exploded, PRTimeParamFn params);
+NSPR_API(void) PR_NormalizeTime(PRExplodedTime* exploded, PRTimeParamFn params);
 
 
 
 
 
 
-NSPR_API(PRTimeParameters) PR_LocalTimeParameters(const PRExplodedTime *gmt);
+NSPR_API(PRTimeParameters) PR_LocalTimeParameters(const PRExplodedTime* gmt);
 
 
-NSPR_API(PRTimeParameters) PR_GMTParameters(const PRExplodedTime *gmt);
+NSPR_API(PRTimeParameters) PR_GMTParameters(const PRExplodedTime* gmt);
 
 
 
 
 
-NSPR_API(PRTimeParameters) PR_USPacificTimeParameters(const PRExplodedTime *gmt);
+NSPR_API(PRTimeParameters)
+PR_USPacificTimeParameters(const PRExplodedTime* gmt);
 
 
 
@@ -228,10 +224,9 @@ NSPR_API(PRTimeParameters) PR_USPacificTimeParameters(const PRExplodedTime *gmt)
 
 
 
-NSPR_API(PRStatus) PR_ParseTimeStringToExplodedTime (
-    const char *string,
-    PRBool default_to_gmt,
-    PRExplodedTime *result);
+NSPR_API(PRStatus)
+PR_ParseTimeStringToExplodedTime(const char* string, PRBool default_to_gmt,
+                                 PRExplodedTime* result);
 
 
 
@@ -241,21 +236,20 @@ NSPR_API(PRStatus) PR_ParseTimeStringToExplodedTime (
 
 
 
-NSPR_API(PRStatus) PR_ParseTimeString (
-    const char *string,
-    PRBool default_to_gmt,
-    PRTime *result);
+NSPR_API(PRStatus)
+PR_ParseTimeString(const char* string, PRBool default_to_gmt, PRTime* result);
 
 
-NSPR_API(PRUint32) PR_FormatTime(char *buf, int buflen, const char *fmt,
-                                 const PRExplodedTime *time);
+NSPR_API(PRUint32)
+PR_FormatTime(char* buf, int buflen, const char* fmt,
+              const PRExplodedTime* time);
 
 
 
 
 NSPR_API(PRUint32)
-PR_FormatTimeUSEnglish(char *buf, PRUint32 bufSize,
-                       const char *format, const PRExplodedTime *time);
+PR_FormatTimeUSEnglish(char* buf, PRUint32 bufSize, const char* format,
+                       const PRExplodedTime* time);
 
 PR_END_EXTERN_C
 

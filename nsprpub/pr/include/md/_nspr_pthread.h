@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nspr_pthread_defs_h___
 #define nspr_pthread_defs_h___
 

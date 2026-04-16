@@ -7,7 +7,6 @@
 
 
 
-
 #include "primpl.h"
 
 void _PR_MD_NEW_SEM(_MDSemaphore* md, PRUintn value) {

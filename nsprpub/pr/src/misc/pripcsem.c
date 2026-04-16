@@ -11,7 +11,6 @@
 
 
 
-
 #include "primpl.h"
 
 #ifdef _PR_PTHREADS

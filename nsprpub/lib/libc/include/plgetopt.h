@@ -7,7 +7,6 @@
 
 
 
-
 #if defined(PLGETOPT_H_)
 #else
 #define PLGETOPT_H_

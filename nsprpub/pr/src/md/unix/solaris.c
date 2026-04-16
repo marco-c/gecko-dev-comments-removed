@@ -2,7 +2,6 @@
 
 
 
-
 #include "primpl.h"
 
 extern PRBool suspendAllOn;

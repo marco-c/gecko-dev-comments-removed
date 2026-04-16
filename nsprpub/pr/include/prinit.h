@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef prinit_h___
 #define prinit_h___
 
@@ -30,11 +29,11 @@ PR_BEGIN_EXTERN_C
 
 
 
-#define PR_VERSION  "4.38.2"
+#define PR_VERSION  "4.39 Beta"
 #define PR_VMAJOR   4
-#define PR_VMINOR   38
-#define PR_VPATCH   2
-#define PR_BETA     PR_FALSE
+#define PR_VMINOR   39
+#define PR_VPATCH   0
+#define PR_BETA     PR_TRUE
 
 
 
