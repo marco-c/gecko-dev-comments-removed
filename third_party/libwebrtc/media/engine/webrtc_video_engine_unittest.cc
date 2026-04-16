@@ -3417,7 +3417,9 @@ TEST_F(WebRtcVideoChannelTest, OnPacketReceivedIdentifiesExtensions) {
   reference_packet.SetExtension<VideoOrientation>(
       VideoRotation::kVideoRotation_270);
   
-  RtpPacketReceived received_packet;
+  
+  
+  RtpPacketReceived received_packet(&extension_map);
   ASSERT_TRUE(received_packet.Parse(reference_packet.Buffer()));
 
   receive_channel_->OnPacketReceived(received_packet);

@@ -10,13 +10,17 @@
 
 #include "pc/rtp_transport.h"
 
+#include <algorithm>
 #include <cstdint>
 #include <memory>
 #include <optional>
 #include <string>
 #include <utility>
+#include <vector>
 
+#include "absl/strings/string_view.h"
 #include "api/array_view.h"
+#include "api/sequence_checker.h"
 #include "api/task_queue/pending_task_safety_flag.h"
 #include "api/task_queue/task_queue_base.h"
 #include "api/transport/ecn_marking.h"
@@ -24,6 +28,7 @@
 #include "call/rtp_demuxer.h"
 #include "media/base/rtp_utils.h"
 #include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
+#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "p2p/base/packet_transport_internal.h"
 #include "pc/session_description.h"
@@ -39,6 +44,19 @@
 #include "rtc_base/trace_event.h"
 
 namespace webrtc {
+namespace {
+
+void RemoveExtensionMapForMid(
+    absl::string_view mid,
+    std::vector<std::pair<std::string, RtpHeaderExtensions>>& extensions) {
+  auto it = std::find_if(extensions.begin(), extensions.end(),
+                         [mid](const auto& kv) { return kv.first == mid; });
+  if (it != extensions.end()) {
+    extensions.erase(it);
+  }
+}
+
+}  
 
 void RtpTransport::SetRtcpMuxEnabled(bool enable) {
   rtcp_mux_enabled_ = enable;
@@ -185,9 +203,58 @@ bool RtpTransport::SendPacket(bool rtcp,
   return true;
 }
 
-void RtpTransport::UpdateRtpHeaderExtensionMap(
+void RtpTransport::RegisterRtpHeaderExtensionMap(
+    absl::string_view mid,
     const RtpHeaderExtensions& header_extensions) {
-  header_extension_map_ = RtpHeaderExtensionMap(header_extensions);
+  RTC_DCHECK_RUN_ON(&network_thread_checker_);
+  RemoveExtensionMapForMid(mid, header_extensions_by_mid_);
+  header_extensions_by_mid_.emplace_back(std::string(mid), header_extensions);
+
+  RebuildMergedMap();
+}
+
+void RtpTransport::UnregisterRtpHeaderExtensionMap(absl::string_view mid) {
+  RTC_DCHECK_RUN_ON(&network_thread_checker_);
+  RemoveExtensionMapForMid(mid, header_extensions_by_mid_);
+
+  RebuildMergedMap();
+}
+
+void RtpTransport::RebuildMergedMap() {
+  RTC_DCHECK_RUN_ON(&network_thread_checker_);
+  RtpHeaderExtensionMap merged_map;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  for (auto rit = header_extensions_by_mid_.rbegin();
+       rit != header_extensions_by_mid_.rend(); ++rit) {
+    for (const auto& extension : rit->second) {
+      if (extension.id == RtpHeaderExtensionMap::kInvalidId) {
+        continue;
+      }
+      
+      RTPExtensionType type = merged_map.GetType(extension.id);
+      if (type == kRtpExtensionNone) {
+        merged_map.RegisterByUri(extension.id, extension.uri);
+      }
+    }
+  }
+  header_extension_map_ = std::move(merged_map);
 }
 
 bool RtpTransport::RegisterRtpDemuxerSink(const RtpDemuxerCriteria& criteria,

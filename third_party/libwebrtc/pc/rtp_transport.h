@@ -17,8 +17,12 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <utility>
+#include <vector>
 
+#include "absl/strings/string_view.h"
 #include "api/field_trials_view.h"
+#include "api/sequence_checker.h"
 #include "api/task_queue/pending_task_safety_flag.h"
 #include "api/transport/ecn_marking.h"
 #include "api/units/timestamp.h"
@@ -35,6 +39,8 @@
 #include "rtc_base/network/sent_packet.h"
 #include "rtc_base/network_route.h"
 #include "rtc_base/socket.h"
+#include "rtc_base/system/no_unique_address.h"
+#include "rtc_base/thread_annotations.h"
 
 namespace webrtc {
 
@@ -86,8 +92,16 @@ class RtpTransport : public RtpTransportInternal {
 
   bool IsSrtpActive() const override { return false; }
 
-  void UpdateRtpHeaderExtensionMap(
+  void RegisterRtpHeaderExtensionMap(
+      absl::string_view mid,
       const RtpHeaderExtensions& header_extensions) override;
+
+  
+  
+  
+  
+  
+  void UnregisterRtpHeaderExtensionMap(absl::string_view mid) override;
 
   bool RegisterRtpDemuxerSink(const RtpDemuxerCriteria& criteria,
                               RtpPacketSinkInterface* sink) override;
@@ -131,6 +145,8 @@ class RtpTransport : public RtpTransportInternal {
 
   bool IsTransportWritable();
 
+  void RebuildMergedMap() RTC_RUN_ON(network_thread_checker_);
+
   bool rtcp_mux_enabled_;
 
   PacketTransportInternal* rtp_packet_transport_ = nullptr;
@@ -146,9 +162,22 @@ class RtpTransport : public RtpTransportInternal {
   RtpDemuxer rtp_demuxer_;
 
   
-  RtpHeaderExtensionMap header_extension_map_;
+  RtpHeaderExtensionMap header_extension_map_
+      RTC_GUARDED_BY(network_thread_checker_);
+  
+  
+  
+  
+  
+  
+  
+  
+  std::vector<std::pair<std::string, RtpHeaderExtensions>>
+      header_extensions_by_mid_ RTC_GUARDED_BY(network_thread_checker_);
+
   
   bool processing_ready_to_send_ = false;
+  RTC_NO_UNIQUE_ADDRESS SequenceChecker network_thread_checker_;
   ScopedTaskSafety safety_;
 };
 
