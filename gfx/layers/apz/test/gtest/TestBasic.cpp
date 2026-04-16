@@ -404,7 +404,7 @@ TEST_F(APZCBasicTester, MultipleSmoothScrollsSmooth) {
   }
 }
 
-TEST_F(APZCBasicTester, NotifyLayersUpdate_WithScrollUpdate) {
+TEST_F(APZCBasicTester, NotifyMainThreadTransaction_WithScrollUpdate) {
   
   
   ScrollMetadata metadata;
@@ -445,7 +445,7 @@ TEST_F(APZCBasicTester, NotifyLayersUpdate_WithScrollUpdate) {
   ASSERT_EQ(apzc->GetFrameMetrics().GetVisualScrollOffset(), CSSPoint(15, 15));
 }
 
-TEST_F(APZCBasicTester, NotifyLayersUpdate_WithMultipleScrollUpdates) {
+TEST_F(APZCBasicTester, NotifyMainThreadTransaction_WithMultipleScrollUpdates) {
   
   
   ScrollMetadata metadata;
