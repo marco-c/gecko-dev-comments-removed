@@ -1503,53 +1503,64 @@ void Animation::NotifyEffectTargetUpdated() {
 void Animation::PlayNoUpdate(ErrorResult& aRv, LimitBehavior aLimitBehavior) {
   AutoMutationBatchForAnimation mb(*this);
 
-  const bool isAutoRewind = aLimitBehavior == LimitBehavior::AutoRewind;
+  
+  
+  
+  
+  
+  
+  
+  
   const bool abortedPause = mPendingState == PendingState::PausePending;
-  double effectivePlaybackRate = CurrentOrPendingPlaybackRate();
+  bool hasPendingReadyPromise = false;
+  const bool hasFiniteTimeline = HasFiniteTimeline();
+  const Nullable<TimeDuration> prevCurrentTime = GetCurrentTimeAsDuration();
+  const bool enableSeek =
+      (aLimitBehavior == LimitBehavior::AutoRewind) && !hasFiniteTimeline;
 
-  Nullable<TimeDuration> currentTime = GetCurrentTimeAsDuration();
   
   
-  if (mResetCurrentTimeOnResume) {
-    currentTime.SetNull();
-    mResetCurrentTimeOnResume = false;
-  }
-
-  Nullable<TimeDuration> seekTime;
-  if (isAutoRewind) {
-    if (effectivePlaybackRate >= 0.0 &&
-        (currentTime.IsNull() || currentTime.Value() < TimeDuration() ||
-         currentTime.Value() >= EffectEnd())) {
-      seekTime.SetValue(TimeDuration());
-    } else if (effectivePlaybackRate < 0.0 &&
-               (currentTime.IsNull() || currentTime.Value() <= TimeDuration() ||
-                currentTime.Value() > EffectEnd())) {
-      if (EffectEnd() == TimeDuration::Forever()) {
-        return aRv.ThrowInvalidStateError(
-            "Can't rewind animation with infinite effect end");
-      }
-      seekTime.SetValue(TimeDuration(EffectEnd()));
+  const double effectivePlaybackRate = CurrentOrPendingPlaybackRate();
+  const StickyTimeDuration associatedEffectEnd = EffectEnd();
+  if (effectivePlaybackRate > 0.0 && enableSeek &&
+      (prevCurrentTime.IsNull() || prevCurrentTime.Value() < TimeDuration() ||
+       prevCurrentTime.Value() >= associatedEffectEnd)) {
+    
+    
+    
+    
+    
+    
+    mHoldTime = TimeDuration();
+  } else if (effectivePlaybackRate < 0.0 && enableSeek &&
+             (prevCurrentTime.IsNull() ||
+              prevCurrentTime.Value() <= TimeDuration() ||
+              prevCurrentTime.Value() > associatedEffectEnd)) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (associatedEffectEnd == TimeDuration::Forever()) {
+      return aRv.ThrowInvalidStateError(
+          "Can't rewind animation with infinite effect end");
     }
+    mHoldTime.SetValue(TimeDuration(associatedEffectEnd));
+  } else if (effectivePlaybackRate == 0.0 && prevCurrentTime.IsNull()) {
+    
+    
+    
+    mHoldTime = TimeDuration();
   }
 
-  if (seekTime.IsNull() && mStartTime.IsNull() && currentTime.IsNull()) {
-    seekTime.SetValue(TimeDuration());
-  }
-
-  if (!seekTime.IsNull()) {
-    if (HasFiniteTimeline()) {
-      mStartTime = seekTime;
-      mHoldTime.SetNull();
-      ApplyPendingPlaybackRate();
-    } else {
-      mHoldTime = seekTime;
-    }
-  }
-
-  bool reuseReadyPromise = false;
-  if (mPendingState != PendingState::NotPending) {
-    CancelPendingTasks();
-    reuseReadyPromise = true;
+  
+  if (hasFiniteTimeline && prevCurrentTime.IsNull()) {
+    
+    mAutoAlignStartTime = true;
   }
 
   
@@ -1559,16 +1570,10 @@ void Animation::PlayNoUpdate(ErrorResult& aRv, LimitBehavior aLimitBehavior) {
   
   
   
-  
-  
-  
-  
-  if (mHoldTime.IsNull() && seekTime.IsNull() && !abortedPause &&
-      !mPendingPlaybackRate) {
-    return;
+  if (!hasFiniteTimeline && prevCurrentTime.IsNull() && mHoldTime.IsNull()) {
+    mHoldTime = TimeDuration();
   }
 
-  
   
   
   
@@ -1583,11 +1588,50 @@ void Animation::PlayNoUpdate(ErrorResult& aRv, LimitBehavior aLimitBehavior) {
     mStartTime.SetNull();
   }
 
-  if (!reuseReadyPromise) {
+  
+  if (mPendingState != PendingState::NotPending) {
+    
+    CancelPendingTasks();
+    
+    hasPendingReadyPromise = true;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  auto pendingAutoAlignedStartTime = mAutoAlignStartTime && mStartTime.IsNull();
+  if (mHoldTime.IsNull() && !abortedPause && !mPendingPlaybackRate &&
+      !pendingAutoAlignedStartTime) {
+    return;
+  }
+
+  
+  
+  if (!hasPendingReadyPromise) {
     
     mReady = nullptr;
   }
 
+  
+  
   mPendingState = PendingState::PlayPending;
   mPendingReadyTime = {};
   if (Document* doc = GetRenderedDocument()) {
@@ -1595,14 +1639,14 @@ void Animation::PlayNoUpdate(ErrorResult& aRv, LimitBehavior aLimitBehavior) {
       
       
       
-      
-      
       doc->GetOrCreateScrollTimelineAnimationTracker()->AddPending(*this);
     }
-    
     mPendingReadyTime = EnsurePaintIsScheduled(*doc);
   }
 
+  
+  
+  
   UpdateTiming(SeekFlag::NoSeek, SyncNotifyFlag::Async);
   if (IsRelevant()) {
     MutationObservers::NotifyAnimationChanged(this);

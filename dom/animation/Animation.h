@@ -602,8 +602,6 @@ class Animation : public DOMEventTargetHelper,
 
   nsString mId;
 
-  bool mResetCurrentTimeOnResume = false;
-
   
   RTPCallerType mRTPCallerType;
 
