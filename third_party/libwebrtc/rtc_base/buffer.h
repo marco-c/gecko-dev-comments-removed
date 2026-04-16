@@ -344,7 +344,7 @@ class BufferT {
   size_t AppendData(size_t max_elements, F&& setter) {
     RTC_DCHECK(IsConsistent());
     const size_t old_size = size_;
-    SetSize(old_size + max_elements);
+    SetSizeInternal(old_size + max_elements);
     size_t written_elements =
         setter(ArrayView<U>(data<U>(), size()).subspan(old_size));
 
@@ -358,9 +358,15 @@ class BufferT {
   
   
   
-  void SetSize(size_t size) {
-    const size_t old_size = size_;
-    EnsureCapacityWithHeadroom(size, true);
+  
+  
+  
+  void SetSize(size_t size) { SetSizeInternal(size); }
+
+  
+  void Truncate(size_t size) {
+    RTC_DCHECK_LE(size, size_);
+    size_t old_size = size_;
     size_ = size;
     if (ZeroOnFree && size_ < old_size) {
       ZeroTrailingData(old_size - size_);
@@ -404,6 +410,14 @@ class BufferT {
     RTC_DCHECK(IsConsistent());
   }
 
+  void SetSizeInternal(size_t size) {
+    const size_t old_size = size_;
+    EnsureCapacityWithHeadroom(size, true);
+    size_ = size;
+    if (ZeroOnFree && size_ < old_size) {
+      ZeroTrailingData(old_size - size_);
+    }
+  }
   void EnsureCapacityWithHeadroom(size_t capacity, bool extra_headroom) {
     RTC_DCHECK(IsConsistent());
     if (capacity <= capacity_)
