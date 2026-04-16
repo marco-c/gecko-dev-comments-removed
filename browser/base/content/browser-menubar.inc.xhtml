@@ -1,7 +1,7 @@
 # -*- Mode: Java; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+# file, You can obtain one at http:
 
        <menubar id="main-menubar">
           <script src="chrome://browser/content/browser-menubar.js" />
@@ -64,7 +64,9 @@
                 <menuseparator/>
                 <menuitem id="goOfflineMenuitem"
                           type="checkbox"
-                          command="cmd_toggleOfflineStatus" data-l10n-id="menu-file-go-offline"/>
+                          command="cmd_toggleOfflineStatus"
+                          observes="cmd_toggleOfflineStatus"
+                          data-l10n-id="menu-file-go-offline"/>
                 <menuitem id="menu_FileQuitItem"
 #ifdef XP_MACOSX
                           data-l10n-id="menu-quit-mac"
