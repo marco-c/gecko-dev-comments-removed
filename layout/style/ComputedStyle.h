@@ -70,9 +70,9 @@ class ComputedStyle {
   }
 
   
-  bool GetPropertyTypedValue(const CSSPropertyId& aId,
-                             StylePropertyTypedValue& aOut) const {
-    return Servo_ComputedValues_GetPropertyTypedValue(this, &aId, &aOut);
+  bool GetPropertyTypedValueList(const CSSPropertyId& aId,
+                                 StylePropertyTypedValueList& aOut) const {
+    return Servo_ComputedValues_GetPropertyTypedValueList(this, &aId, &aOut);
   }
 
   
@@ -214,6 +214,10 @@ class ComputedStyle {
 
   bool IsInOpacityZeroSubtree() const {
     return bool(Flags() & Flag::IS_IN_OPACITY_ZERO_SUBTREE);
+  }
+
+  bool HasAuthorSpecifiedGridAutoFlow() const {
+    return bool(Flags() & Flag::HAS_AUTHOR_SPECIFIED_GRID_AUTO_FLOW);
   }
 
   bool HasAnchorPosReference() const;
