@@ -1163,6 +1163,7 @@ HTMLInputElement::HTMLInputElement(already_AddRefed<dom::NodeInfo>&& aNodeInfo,
       mHasBeenTypePassword(false),
       mHasPatternAttribute(false),
       mUserChangedSinceFocus(false),
+      mIsUserInteracting(false),
       mRadioGroupContainer(nullptr) {
   
   
@@ -1873,7 +1874,7 @@ void HTMLInputElement::SetValue(const nsAString& aValue, CallerType aCallerType,
         return;
       }
 
-      if (!State().HasState(ElementState::FOCUS)) {
+      if (!State().HasState(ElementState::FOCUS) && !mIsUserInteracting) {
         GetValue(mFocusedValue, aCallerType);
       }
     } else {
@@ -2811,6 +2812,7 @@ void HTMLInputElement::FireChangeEventIfNeeded() {
   }
   const bool changedByUser = mUserChangedSinceFocus;
   mUserChangedSinceFocus = false;
+  mIsUserInteracting = false;
   if (mFocusedValue.Equals(value)) {
     return;
   }
@@ -3573,6 +3575,7 @@ void HTMLInputElement::StartRangeThumbDrag(WidgetGUIEvent* aEvent) {
   }
 
   mIsDraggingRange = true;
+  mIsUserInteracting = true;
   mRangeThumbDragStartValue = GetValueAsDecimal();
   
   
@@ -3608,6 +3611,7 @@ void HTMLInputElement::CancelRangeThumbDrag(bool aIsForUserEvent) {
   MOZ_ASSERT(mIsDraggingRange);
 
   mIsDraggingRange = false;
+  mIsUserInteracting = false;
   if (PresShell::GetCapturingContent() == this) {
     PresShell::ReleaseCapturingContent();
   }
@@ -3716,6 +3720,8 @@ void HTMLInputElement::StepNumberControlForUserEvent(int32_t aDirection) {
   if (!newValue.isFinite()) {
     return;  
   }
+
+  mIsUserInteracting = true;
 
   nsAutoString newVal;
   mInputType->ConvertNumberToString(newValue, InputType::Localized::No, newVal);

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_HTMLInputElement_h
 #define mozilla_dom_HTMLInputElement_h
 
@@ -1552,6 +1550,12 @@ class HTMLInputElement final : public TextControlElement,
   bool mHasBeenTypePassword : 1;
   bool mHasPatternAttribute : 1;
   bool mUserChangedSinceFocus : 1;
+  
+  
+  
+  
+  
+  bool mIsUserInteracting : 1;
 
  private:
   Maybe<int32_t> GetNumberInputCols() const;
