@@ -171,6 +171,7 @@ class ArrayView final : public array_view_internal::ArrayViewBase<T, Size> {
   
   
   ArrayView() : ArrayView(nullptr, 0) {}
+  ABSL_DEPRECATE_AND_INLINE()
   ArrayView(std::nullptr_t)  
       : ArrayView() {}
   ArrayView(std::nullptr_t, size_t size)

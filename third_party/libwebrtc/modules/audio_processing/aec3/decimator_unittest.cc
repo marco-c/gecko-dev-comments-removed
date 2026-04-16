@@ -10,8 +10,6 @@
 
 #include "modules/audio_processing/aec3/decimator.h"
 
-#include <math.h>
-
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -116,7 +114,7 @@ TEST(DecimatorDeathTest, WrongInputSize) {
 TEST(DecimatorDeathTest, NullOutput) {
   Decimator decimator(4);
   std::vector<float> x(kBlockSize, 0.f);
-  EXPECT_DEATH(decimator.Decimate(x, nullptr), "");
+  EXPECT_DEATH(decimator.Decimate(x, {}), "");
 }
 
 
