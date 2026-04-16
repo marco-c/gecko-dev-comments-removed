@@ -7,8 +7,6 @@
 
 
 
-
-
 #include <glib.h>
 #include <linux/input.h>
 #include <stdint.h>
@@ -94,7 +92,7 @@ class LinuxGamepadService {
   void AddMonitor();
   void RemoveMonitor();
   bool IsDeviceGamepad(struct udev_device* dev);
-  bool IsXpadDevice(struct udev_device* aDev);
+  bool IsXboxDevice(struct udev_device* aDev);
   void ReadUdevChange();
 
   
@@ -113,7 +111,8 @@ class LinuxGamepadService {
 };
 
 
-LinuxGamepadService* gService = nullptr;
+LinuxGamepadService* gService MOZ_GUARDED_BY(mozilla::sMainThreadCapability) =
+    nullptr;
 
 void LinuxGamepadService::AddDevice(struct udev_device* dev) {
   RefPtr<GamepadPlatformService> service =
@@ -210,7 +209,8 @@ void LinuxGamepadService::AddDevice(struct udev_device* dev) {
       gamepad->key_map[kStandardButtons[button]] = button;
     }
 
-    if (IsXpadDevice(dev)) {
+    if (IsXboxDevice(dev)) {
+      
       
       
       
@@ -412,13 +412,25 @@ bool LinuxGamepadService::IsDeviceGamepad(struct udev_device* aDev) {
   return strncmp(devpath, kEvdevPath, strlen(kEvdevPath)) == 0;
 }
 
-bool LinuxGamepadService::IsXpadDevice(struct udev_device* aDev) {
-  const char* driver =
-      mUdev.udev_device_get_property_value(aDev, "ID_USB_DRIVER");
+bool LinuxGamepadService::IsXboxDevice(struct udev_device* aDev) {
+  const char* driver = NULL;
+  struct udev_device* p = mUdev.udev_device_get_parent(aDev);
+  while (p && !driver) {
+    driver = mUdev.udev_device_get_driver(p);
+    p = mUdev.udev_device_get_parent(p);
+  }
   if (!driver) {
     return false;
   }
-  return strcmp(driver, "xpad") == 0;
+  if (strcmp(driver, "xpad") == 0) {
+    
+    return true;
+  }
+  if (strcmp(driver, "microsoft") == 0) {
+    
+    return true;
+  }
+  return false;
 }
 
 void LinuxGamepadService::ReadUdevChange() {
@@ -511,7 +523,9 @@ gboolean LinuxGamepadService::OnGamepadData(GIOChannel* source,
 gboolean LinuxGamepadService::OnUdevMonitor(GIOChannel* source,
                                             GIOCondition condition,
                                             gpointer data) {
-  if (condition & (G_IO_ERR | G_IO_HUP)) {
+  mozilla::AssertIsOnMainThread();
+
+  if (!gService || condition & (G_IO_ERR | G_IO_HUP)) {
     return FALSE;
   }
 
@@ -524,20 +538,28 @@ gboolean LinuxGamepadService::OnUdevMonitor(GIOChannel* source,
 namespace mozilla::dom {
 
 void StartGamepadMonitoring() {
-  if (gService) {
-    return;
-  }
-  gService = new LinuxGamepadService();
-  gService->Startup();
+  MOZ_ASSERT(!NS_IsMainThread());
+
+  NS_DispatchToMainThread(NS_NewRunnableFunction("StartGamepadMonitoring", [] {
+    AssertIsOnMainThread();
+    if (!gService) {
+      gService = new LinuxGamepadService();
+      gService->Startup();
+    }
+  }));
 }
 
 void StopGamepadMonitoring() {
-  if (!gService) {
-    return;
-  }
-  gService->Shutdown();
-  delete gService;
-  gService = nullptr;
+  MOZ_ASSERT(!NS_IsMainThread());
+
+  NS_DispatchToMainThread(NS_NewRunnableFunction("StopGamepadMonitoring", [] {
+    AssertIsOnMainThread();
+    if (gService) {
+      gService->Shutdown();
+      delete gService;
+      gService = nullptr;
+    }
+  }));
 }
 
 void SetGamepadLightIndicatorColor(const Tainted<GamepadHandle>& aGamepadHandle,
