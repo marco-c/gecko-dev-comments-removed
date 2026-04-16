@@ -18949,7 +18949,18 @@ class BaseContent extends (external_React_default()).PureComponent {
         className: "content"
       }, logoShouldBeCentered && external_React_default().createElement(ErrorBoundary, null, external_React_default().createElement(Logo, null)), prefs.showSearch && external_React_default().createElement(ErrorBoundary, null, external_React_default().createElement(Search_Search, Base_extends({
         showLogo: false
-      }, props.Search))), topSitesEnabled && external_React_default().createElement(ErrorBoundary, null, external_React_default().createElement(TopSites_TopSites, null)), isDiscoveryStream && external_React_default().createElement(ErrorBoundary, {
+      }, props.Search))), this.shouldShowOMCHighlight("ASRouterNewTabMessage") && external_React_default().createElement(ErrorBoundary, null, external_React_default().createElement(MessageWrapper, {
+        dispatch: this.props.dispatch
+      }, external_React_default().createElement(ExternalComponentWrapper, {
+        type: "ASROUTER_NEWTAB_MESSAGE",
+        messageData: this.props.Messages.messageData,
+        className: "asrouter-newtab-message-wrapper"
+      }))), this.shouldShowOMCHighlight("ActivationWindowMessage") && external_React_default().createElement(ErrorBoundary, null, external_React_default().createElement(MessageWrapper, {
+        dispatch: this.props.dispatch
+      }, external_React_default().createElement(ActivationWindowMessage, {
+        dispatch: this.props.dispatch,
+        messageData: this.props.Messages.messageData
+      }))), topSitesEnabled && external_React_default().createElement(ErrorBoundary, null, external_React_default().createElement(TopSites_TopSites, null)), isDiscoveryStream && external_React_default().createElement(ErrorBoundary, {
         className: "borderless-error"
       }, external_React_default().createElement(DiscoveryStreamBase, {
         locale: props.App.locale,
