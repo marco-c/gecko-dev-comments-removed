@@ -6,7 +6,6 @@
 
 #include <algorithm>
 
-#include "HTMLSelectEventListener.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/EventStateManager.h"
 #include "mozilla/LookAndFeel.h"
@@ -16,12 +15,9 @@
 #include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/StaticPrefs_ui.h"
 #include "mozilla/TextEvents.h"
-#include "mozilla/dom/Event.h"
 #include "mozilla/dom/HTMLOptGroupElement.h"
 #include "mozilla/dom/HTMLOptionsCollection.h"
 #include "mozilla/dom/HTMLSelectElement.h"
-#include "mozilla/dom/MouseEvent.h"
-#include "mozilla/dom/MouseEventBinding.h"
 #include "nsCOMPtr.h"
 #include "nsCSSRendering.h"
 #include "nsComboboxControlFrame.h"
@@ -62,20 +58,12 @@ Maybe<nscoord> nsListControlFrame::GetNaturalBaselineBOffset(
   
   return Nothing{};
 }
-
 void nsListControlFrame::Destroy(DestroyContext& aContext) {
-  
-  NS_ENSURE_TRUE_VOID(mContent);
-
-  
-  
-
-  mEventListener->Detach();
   ScrollContainerFrame::Destroy(aContext);
 }
 
 HTMLOptionElement* nsListControlFrame::GetCurrentOption() const {
-  return mEventListener->GetCurrentOption();
+  return Select().GetCurrentOption();
 }
 
 bool nsListControlFrame::IsFocused() const {
@@ -294,10 +282,6 @@ void nsListControlFrame::Reflow(nsPresContext* aPresContext,
       !hadPendingInterrupt && aPresContext->HasPendingInterrupt();
 }
 
-bool nsListControlFrame::ShouldPropagateComputedBSizeToScrolledContent() const {
-  return true;
-}
-
 
 bool nsListControlFrame::ExtendedSelection(int32_t aStartIndex,
                                            int32_t aEndIndex, bool aClearAll) {
@@ -308,7 +292,7 @@ bool nsListControlFrame::ExtendedSelection(int32_t aStartIndex,
 bool nsListControlFrame::SingleSelection(int32_t aClickedIndex,
                                          bool aDoToggle) {
 #ifdef ACCESSIBILITY
-  nsCOMPtr<nsIContent> prevOption = mEventListener->GetCurrentOption();
+  nsCOMPtr<nsIContent> prevOption = Select().GetCurrentOption();
 #endif
   bool wasChanged = false;
   
@@ -469,16 +453,15 @@ bool nsListControlFrame::PerformSelection(int32_t aClickedIndex, bool aIsShift,
 }
 
 
-bool nsListControlFrame::HandleListSelection(dom::Event* aEvent,
-                                             int32_t aClickedIndex) {
-  MouseEvent* mouseEvent = aEvent->AsMouseEvent();
+bool nsListControlFrame::HandleListSelection(
+    const WidgetMouseEvent& aMouseEvent, int32_t aClickedIndex) {
   bool isControl;
 #ifdef XP_MACOSX
-  isControl = mouseEvent->MetaKey();
+  isControl = aMouseEvent.IsMeta();
 #else
-  isControl = mouseEvent->CtrlKey();
+  isControl = aMouseEvent.IsControl();
 #endif
-  bool isShift = mouseEvent->ShiftKey();
+  bool isShift = aMouseEvent.IsShift();
   return PerformSelection(aClickedIndex, isShift,
                           isControl);  
 }
@@ -556,14 +539,6 @@ HTMLSelectElement& nsListControlFrame::Select() const {
 void nsListControlFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
                               nsIFrame* aPrevInFlow) {
   ScrollContainerFrame::Init(aContent, aParent, aPrevInFlow);
-
-  
-  
-  
-  
-  mEventListener = new HTMLSelectEventListener(
-      Select(), HTMLSelectEventListener::SelectType::Listbox);
-
   mStartSelectionIndex = kNothingSelected;
   mEndSelectionIndex = kNothingSelected;
 }
@@ -731,8 +706,8 @@ bool nsListControlFrame::UpdateSelection() {
     
     
     AutoWeakFrame weakFrame(this);
-    RefPtr listener = mEventListener;
-    listener->FireOnInputAndOnChange();
+    RefPtr select = &Select();
+    select->UserFinishedInteracting( true);
     return weakFrame.IsAlive();
   }
   return true;
@@ -859,12 +834,12 @@ void nsListControlFrame::FireMenuItemActiveEvent(nsIContent* aPreviousOption) {
 }
 #endif
 
-nsresult nsListControlFrame::GetIndexFromDOMEvent(dom::Event* aMouseEvent,
-                                                  int32_t& aCurIndex) {
+nsresult nsListControlFrame::GetIndexFromEvent(const WidgetMouseEvent& aEvent,
+                                               int32_t& aCurIndex) {
   if (PresShell::GetCapturingContent() != mContent) {
     
     nsPoint pt =
-        nsLayoutUtils::GetDOMEventCoordinatesRelativeTo(aMouseEvent, this);
+        nsLayoutUtils::GetEventCoordinatesRelativeTo(&aEvent, RelativeTo{this});
     nsRect borderInnerEdge = GetScrollPortRect();
     if (!borderInnerEdge.Contains(pt)) {
       return NS_ERROR_FAILURE;
@@ -888,14 +863,14 @@ nsresult nsListControlFrame::GetIndexFromDOMEvent(dom::Event* aMouseEvent,
 }
 
 nsresult nsListControlFrame::HandleLeftButtonMouseDown(
-    dom::Event* aMouseEvent) {
+    const WidgetMouseEvent& aMouseEvent) {
   int32_t selectedIndex;
-  if (NS_SUCCEEDED(GetIndexFromDOMEvent(aMouseEvent, selectedIndex))) {
+  if (NS_SUCCEEDED(GetIndexFromEvent(aMouseEvent, selectedIndex))) {
     
     CaptureMouseEvents(true);
     AutoWeakFrame weakFrame(this);
-    bool change =
-        HandleListSelection(aMouseEvent, selectedIndex);  
+    bool change = HandleListSelection(aMouseEvent,
+                                      selectedIndex);  
     if (!weakFrame.IsAlive()) {
       return NS_OK;
     }
@@ -904,7 +879,7 @@ nsresult nsListControlFrame::HandleLeftButtonMouseDown(
   return NS_OK;
 }
 
-nsresult nsListControlFrame::HandleLeftButtonMouseUp(dom::Event* aMouseEvent) {
+nsresult nsListControlFrame::HandleLeftButtonMouseUp() {
   if (!StyleVisibility()->IsVisible()) {
     return NS_OK;
   }
@@ -913,29 +888,25 @@ nsresult nsListControlFrame::HandleLeftButtonMouseUp(dom::Event* aMouseEvent) {
     
     
     mChangesSinceDragStart = false;
-    RefPtr listener = mEventListener;
-    listener->FireOnInputAndOnChange();
+    RefPtr select = &Select();
+    select->UserFinishedInteracting( true);
     
   }
   return NS_OK;
 }
 
-nsresult nsListControlFrame::DragMove(dom::Event* aMouseEvent) {
-  NS_ASSERTION(aMouseEvent, "aMouseEvent is null.");
-
+nsresult nsListControlFrame::DragMove(const WidgetMouseEvent& aMouseEvent) {
   int32_t selectedIndex;
-  if (NS_SUCCEEDED(GetIndexFromDOMEvent(aMouseEvent, selectedIndex))) {
+  if (NS_SUCCEEDED(GetIndexFromEvent(aMouseEvent, selectedIndex))) {
     
     if (selectedIndex == mEndSelectionIndex) {
       return NS_OK;
     }
-    MouseEvent* mouseEvent = aMouseEvent->AsMouseEvent();
-    NS_ASSERTION(mouseEvent, "aMouseEvent is not a MouseEvent!");
     bool isControl;
 #ifdef XP_MACOSX
-    isControl = mouseEvent->MetaKey();
+    isControl = aMouseEvent.IsMeta();
 #else
-    isControl = mouseEvent->CtrlKey();
+    isControl = aMouseEvent.IsControl();
 #endif
     AutoWeakFrame weakFrame(this);
     

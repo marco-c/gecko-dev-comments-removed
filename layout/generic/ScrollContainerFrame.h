@@ -1104,15 +1104,6 @@ class ScrollContainerFrame : public nsContainerFrame,
   void LayoutScrollbarPartAtRect(const ScrollReflowInput&,
                                  ReflowInput& aKidReflowInput, const nsRect&);
 
-  
-
-
-
-
-  virtual bool ShouldPropagateComputedBSizeToScrolledContent() const {
-    return true;
-  }
-
   PhysicalAxes GetOverflowAxes() const;
 
   MOZ_CAN_RUN_SCRIPT nsresult FireScrollPortEvent();
