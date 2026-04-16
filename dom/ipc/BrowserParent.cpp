@@ -2297,6 +2297,12 @@ bool BrowserParent::SendHandleTap(
         }
       }
     }
+    
+    
+    
+    if (mIsDestroyed) {
+      return false;
+    }
   }
   return Manager()->IsInputPriorityEventEnabled()
              ? PBrowserParent::SendHandleTap(

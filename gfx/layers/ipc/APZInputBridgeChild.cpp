@@ -203,7 +203,9 @@ void APZInputBridgeChild::HandleTapOnMainThread(
                           aDoubleTapToZoomMetrics);
     return;
   }
-  dom::BrowserParent* tab =
+  
+  
+  RefPtr<dom::BrowserParent> tab =
       dom::BrowserParent::GetBrowserParentFromLayersId(aGuid.mLayersId);
   if (tab) {
 #ifdef MOZ_WIDGET_ANDROID

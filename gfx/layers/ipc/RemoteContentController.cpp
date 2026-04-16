@@ -68,7 +68,9 @@ void RemoteContentController::HandleTapOnParentProcessMainThread(
           ("HandleTapOnMainThread(%d)", (int)aTapType));
   MOZ_ASSERT(NS_IsMainThread());
 
-  dom::BrowserParent* tab =
+  
+  
+  RefPtr<dom::BrowserParent> tab =
       dom::BrowserParent::GetBrowserParentFromLayersId(aGuid.mLayersId);
   if (tab) {
     tab->SendHandleTap(aTapType, aPoint, aModifiers, aGuid, aInputBlockId,
