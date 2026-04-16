@@ -290,8 +290,9 @@ RtpTransmissionManager::CreateAndAddTransceiver(
   if (env_.field_trials().IsEnabled("WebRTC-HeaderExtensionNegotiateMemory")) {
     
     
+    
     for (const auto& transceiver : transceivers()->List()) {
-      if (transceiver->media_type() == media_type) {
+      if (transceiver->media_type() == media_type && !transceiver->stopping()) {
         header_extensions = transceiver->GetHeaderExtensionsToNegotiate();
         break;
       }
