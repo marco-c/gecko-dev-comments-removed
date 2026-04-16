@@ -60,6 +60,10 @@ void AnimationTimelinesController::UpdateHiddenByContentVisibility() {
 void AnimationTimelinesController::TrySampleScrollTimelines() {
   for (ScrollTimeline* timeline : mScrollTimelines) {
     timeline->UpdateCachedCurrentTime();
+
+    
+    
+    timeline->AutoAlignStartTime();
   }
 }
 

@@ -16,6 +16,13 @@ void ScrollTimelineAnimationTracker::TriggerPendingAnimations() {
   
   
   
+  
+  
+  
+  
+  
+  
+  
   mDocument->TimelinesController().TrySampleScrollTimelines();
 
   for (RefPtr<dom::Animation>& animation :

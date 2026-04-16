@@ -992,6 +992,10 @@ void Animation::SetCurrentTimeAsDouble(const Nullable<double>& aCurrentTime,
 
 
 void Animation::Tick(AnimationTimeline::TickState& aTickState) {
+  
+  
+  AutoAlignStartTime();
+
   if (Pending()) {
     if (!mPendingReadyTime.IsNull()) {
       TryTriggerNow();
@@ -2055,6 +2059,59 @@ void Animation::UpdateHiddenByContentVisibility() {
     SetHiddenByContentVisibility(
         hasOwningElement && frame->IsHiddenByContentVisibilityOnAnyAncestor());
   }
+}
+
+
+
+
+
+
+void Animation::AutoAlignStartTime() {
+  
+  if (!mAutoAlignStartTime) {
+    return;
+  }
+
+  
+  if (!mTimeline || mTimeline->GetCurrentTimeAsDuration().IsNull()) {
+    return;
+  }
+
+  MOZ_ASSERT(!mTimeline->IsMonotonicallyIncreasing(),
+             "We shouldn't come here for monotonically increasing timeline");
+
+  
+  const AnimationPlayState playState = PlayState();
+  if (playState == AnimationPlayState::Idle) {
+    return;
+  }
+
+  
+  if (playState == AnimationPlayState::Paused && !mHoldTime.IsNull()) {
+    return;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  MOZ_ASSERT(mTimeline->IsScrollTimeline(),
+             "Only the finite timeline sets this flag.");
+  const auto [startOffset, endOffset] =
+      mTimeline->AsScrollTimeline()->IntervalForAttachmentRange(mTimelineRange);
+
+  
+  
+  const double effectivePlaybackRate = CurrentOrPendingPlaybackRate();
+  mStartTime.SetValue(TimeDuration::FromMilliseconds(
+      (effectivePlaybackRate >= 0.0 ? startOffset : endOffset) *
+      PROGRESS_TIMELINE_DURATION_MILLISEC));
+
+  
+  mHoldTime.SetNull();
 }
 
 StickyTimeDuration Animation::IntervalStartTime(

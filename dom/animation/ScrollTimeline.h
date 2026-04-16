@@ -157,8 +157,15 @@ class ScrollTimeline : public AnimationTimeline,
     
     
     const auto interval = IntervalForAttachmentRange(aRange);
-    return TimeDuration::FromMilliseconds((interval.second - interval.first) *
-                                          PROGRESS_TIMELINE_DURATION_MILLISEC);
+    
+    
+    
+    
+    
+    return TimeDuration::FromMilliseconds(
+        (interval.second > interval.first ? interval.second - interval.first
+                                          : 0.0) *
+        PROGRESS_TIMELINE_DURATION_MILLISEC);
   }
 
   void WillRefresh();
@@ -207,6 +214,8 @@ class ScrollTimeline : public AnimationTimeline,
 
   virtual std::pair<double, double> IntervalForAttachmentRange(
       const AnimationRange& aStyleRange) const;
+
+  void AutoAlignStartTime();
 
  protected:
   virtual ~ScrollTimeline();

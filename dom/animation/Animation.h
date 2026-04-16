@@ -444,6 +444,8 @@ class Animation : public DOMEventTargetHelper,
 
   void PostUpdate();
 
+  void AutoAlignStartTime();
+
  protected:
   void SilentlySetCurrentTime(const TimeDuration& aNewCurrentTime);
   void CancelNoUpdate();
@@ -624,6 +626,11 @@ class Animation : public DOMEventTargetHelper,
   
   uint64_t mIdOnCompositor = 0;
   bool mIsPartialPrerendered = false;
+
+  
+  
+  
+  bool mAutoAlignStartTime = false;
 };
 
 }  
