@@ -3558,6 +3558,9 @@ pref("browser.ipProtection.egressLocationEnabled", false);
 pref("browser.ipProtection.bandwidthThreshold", 0);
 
 
+pref("browser.ipProtection.bandwidthWarningDismissedThreshold", 0);
+
+
 pref("about.glean.redesign.enabled", false);
 
 
