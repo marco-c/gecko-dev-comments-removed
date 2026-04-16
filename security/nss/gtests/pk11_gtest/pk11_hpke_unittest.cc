@@ -5,6 +5,7 @@
 
 
 #include <memory>
+#include "blapi.h"
 #include "gtest/gtest.h"
 #include "json_reader.h"
 #include "nss.h"

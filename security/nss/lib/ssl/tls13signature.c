@@ -158,7 +158,7 @@ tls_CreateSignOrVerifyContext(SECKEYPrivateKey *privKey,
     return newCtx;
 
 loser:
-    tls_DestroySignOrVerifyContext(&newCtx);
+    tls_DestroySignOrVerifyContext(newCtx);
     if (arena) {
         PORT_FreeArena(arena, PR_FALSE);
     }
@@ -190,28 +190,21 @@ tls_SignOrVerifyEnd(tlsSignOrVerifyContext ctx, SECItem *sig)
     }
     
     if (rv == SECSuccess) {
-        tls_DestroySignOrVerifyContext(&ctx);
+        tls_DestroySignOrVerifyContext(ctx);
     }
     return rv;
 }
 
-
-
-
 void
-tls_DestroySignOrVerifyContext(tlsSignOrVerifyContext *ctx)
+tls_DestroySignOrVerifyContext(tlsSignOrVerifyContext ctx)
 {
-    if (!ctx) {
-        return;
-    }
-    if (ctx->type == sig_sign) {
-        if (ctx->u.sig) {
-            SGN_DestroyContext(ctx->u.sig, PR_TRUE);
+    if (ctx.type == sig_sign) {
+        if (ctx.u.sig) {
+            SGN_DestroyContext(ctx.u.sig, PR_TRUE);
         }
     } else {
-        if (ctx->u.vfy) {
-            VFY_DestroyContext(ctx->u.vfy, PR_TRUE);
+        if (ctx.u.vfy) {
+            VFY_DestroyContext(ctx.u.vfy, PR_TRUE);
         }
     }
-    ctx->u.ptr = NULL;
 }

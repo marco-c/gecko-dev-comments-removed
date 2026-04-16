@@ -181,6 +181,10 @@ CERT_AddExtensionByOID(void *exthandle, SECItem *oid, SECItem *value,
     }
 
     
+    node->next = handle->head;
+    handle->head = node;
+
+    
     node->ext = ext;
 
     
@@ -205,10 +209,6 @@ CERT_AddExtensionByOID(void *exthandle, SECItem *oid, SECItem *value,
         ext->value = *value;
     }
 
-    
-
-    node->next = handle->head;
-    handle->head = node;
     handle->count++;
 
     return (SECSuccess);

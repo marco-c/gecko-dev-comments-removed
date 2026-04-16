@@ -2973,7 +2973,7 @@ TEST_F(TlsConnectStreamTls13Ech, EchPublicNameNotLdh) {
       "name-",
       "test-.name",
       "!",
-      "\xe2\x81\xb7",  
+      u8"\u2077",
   };
   ValidatePublicNames(kNotLdh, SECFailure);
 }
