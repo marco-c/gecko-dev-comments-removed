@@ -226,15 +226,6 @@ already_AddRefed<Promise> RTCRtpReceiver::GetStats(ErrorResult& aError) {
     return nullptr;
   }
 
-  if (NS_WARN_IF(!mTransceiver)) {
-    
-    
-    
-    
-    promise->MaybeResolve(new RTCStatsReport(mWindow));
-    return promise.forget();
-  }
-
   mTransceiver->ChainToDomPromiseWithCodecStats(GetStatsInternal(), promise);
   return promise.forget();
 }
