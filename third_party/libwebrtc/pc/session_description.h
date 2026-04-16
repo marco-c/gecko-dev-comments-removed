@@ -116,8 +116,23 @@ class MediaContentDescription {
   
   
   
+  
+  
   bool rtcp_fb_ack_ccfb() const { return rtcp_fb_ack_ccfb_; }
   void set_rtcp_fb_ack_ccfb(bool enable) { rtcp_fb_ack_ccfb_ = enable; }
+
+  
+  
+  
+  
+  bool rtcp_fb_ack_transport_cc() const {
+    for (const auto& codec : codecs_) {
+      if (codec.feedback_params.Has(FeedbackParam(kRtcpFbParamTransportCc))) {
+        return true;
+      }
+    }
+    return false;
+  }
 
   
   
@@ -125,10 +140,8 @@ class MediaContentDescription {
     if (rtcp_fb_ack_ccfb_) {
       return RtcpFeedbackType::CCFB;
     }
-    for (const auto& codec : codecs_) {
-      if (codec.feedback_params.Has(FeedbackParam(kRtcpFbParamTransportCc))) {
-        return RtcpFeedbackType::TRANSPORT_CC;
-      }
+    if (rtcp_fb_ack_transport_cc()) {
+      return RtcpFeedbackType::TRANSPORT_CC;
     }
     return std::nullopt;
   }
