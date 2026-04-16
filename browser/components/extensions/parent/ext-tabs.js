@@ -653,6 +653,10 @@ this.tabs = class extends ExtensionAPIPersistent {
       });
     }
 
+    function getNativeTabsOrSplitViews(nativeTabs) {
+      return Array.from(new Set(nativeTabs.map(t => t.splitview ?? t)));
+    }
+
     function updateNativeTabAfterAdopt(nativeTabs, oldTab, newTab) {
       for (let i = 0; i < nativeTabs.length; ++i) {
         if (nativeTabs[i] === oldTab) {
@@ -1836,7 +1840,10 @@ this.tabs = class extends ExtensionAPIPersistent {
             const tabInWin = nativeTabs.find(t => t.ownerGlobal === window);
             let insertBefore = tabInWin;
             if (tabInWin?.group) {
-              if (tabInWin.group.tabs[0] === tabInWin) {
+              
+              
+              const maybeFirstTab = tabInWin.splitview?.tabs[0] || tabInWin;
+              if (tabInWin.group.tabs[0] === maybeFirstTab) {
                 
                 
                 insertBefore = tabInWin.group;
@@ -1845,7 +1852,10 @@ this.tabs = class extends ExtensionAPIPersistent {
               }
             }
             unpinTabsBeforeGrouping();
-            group = window.gBrowser.addTabGroup(nativeTabs, { insertBefore });
+            group = window.gBrowser.addTabGroup(
+              getNativeTabsOrSplitViews(nativeTabs),
+              { insertBefore: insertBefore?.splitview ?? insertBefore }
+            );
             
             
             
@@ -1873,10 +1883,13 @@ this.tabs = class extends ExtensionAPIPersistent {
               }
             }
             if (tabsBefore.length) {
-              window.gBrowser.moveTabsBefore(tabsBefore, firstTabInGroup);
+              window.gBrowser.moveTabsBefore(
+                getNativeTabsOrSplitViews(tabsBefore),
+                firstTabInGroup.splitview ?? firstTabInGroup
+              );
             }
             if (tabsAfter.length) {
-              group.addTabs(tabsAfter);
+              group.addTabs(getNativeTabsOrSplitViews(tabsAfter));
             }
           }
           return getExtTabGroupIdForInternalTabGroupId(group.id);
@@ -1893,15 +1906,20 @@ this.tabs = class extends ExtensionAPIPersistent {
               ungroupOrder.get(nativeTab.group).push(nativeTab);
             }
           }
-          for (const [group, tabs] of ungroupOrder) {
+          for (let [group, tabs] of ungroupOrder) {
             
             tabs.sort((a, b) => a._tPos - b._tPos);
-            if (tabs[0] === tabs[0].group.tabs[0]) {
+            tabs = getNativeTabsOrSplitViews(tabs);
+            let firstTab = tabs[0];
+            if (group.ownerGlobal.gBrowser.isSplitViewWrapper(firstTab)) {
+              firstTab = firstTab.tabs[0];
+            }
+            if (firstTab === group.tabs[0]) {
               
               
-              tabs[0].ownerGlobal.gBrowser.moveTabsBefore(tabs, group);
+              group.ownerGlobal.gBrowser.moveTabsBefore(tabs, group);
             } else {
-              tabs[0].ownerGlobal.gBrowser.moveTabsAfter(tabs, group);
+              group.ownerGlobal.gBrowser.moveTabsAfter(tabs, group);
             }
           }
         },
