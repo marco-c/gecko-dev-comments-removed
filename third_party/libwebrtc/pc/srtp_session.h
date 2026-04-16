@@ -71,9 +71,6 @@ class SrtpSession {
   bool UnprotectRtp(CopyOnWriteBuffer& buffer);
   bool UnprotectRtcp(CopyOnWriteBuffer& buffer);
 
-  
-  bool GetRtpAuthParams(uint8_t** key, int* key_len, int* tag_len);
-
   int GetSrtpOverhead() const;
 
   
@@ -83,7 +80,8 @@ class SrtpSession {
   
   void EnableExternalAuth();
   bool IsExternalAuthEnabled() const;
-
+  
+  bool GetRtpAuthParams(uint8_t** key, int* key_len, int* tag_len);
   
   
   
