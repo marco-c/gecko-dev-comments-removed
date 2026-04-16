@@ -26,14 +26,17 @@ class BaseAlloc {
 
   void Init() MOZ_REQUIRES(gInitLock);
 
-  void* alloc(size_t aSize) MOZ_EXCLUDES(mMutex);
+  
+  
 
-  void* calloc(size_t aNumber, size_t aSize) MOZ_EXCLUDES(mMutex);
+  MFBT_API void* alloc(size_t aSize) MOZ_EXCLUDES(mMutex);
+
+  MFBT_API void* calloc(size_t aNumber, size_t aSize) MOZ_EXCLUDES(mMutex);
 
   
-  size_t usable_size(void* aPtr);
+  MFBT_API size_t usable_size(void* aPtr);
 
-  void free(void* aPtr) MOZ_EXCLUDES(mMutex);
+  MFBT_API void free(void* aPtr) MOZ_EXCLUDES(mMutex);
 
   Mutex mMutex;
 
@@ -93,7 +96,7 @@ class BaseAlloc {
   Stats mStats MOZ_GUARDED_BY(mMutex);
 };
 
-extern BaseAlloc sBaseAlloc;
+MFBT_API extern BaseAlloc sBaseAlloc;
 
 
 
