@@ -85,6 +85,17 @@ struct ParamTraits<enum RawEnum>
 {
 };
 
+
+template <> struct ParamTraits<BadEnum>;
+
+struct SomeClass {
+  enum FooBar {};
+  enum class FooBarClass {};
+
+  friend struct ParamTraits<FooBar>;
+  friend struct ParamTraits<FooBarClass>;
+};
+
 template<>
 struct ParamTraits<BadEnum> 
 {
