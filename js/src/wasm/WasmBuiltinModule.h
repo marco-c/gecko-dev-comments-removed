@@ -24,6 +24,7 @@
 #include "wasm/WasmBuiltins.h"
 #include "wasm/WasmCompileArgs.h"
 #include "wasm/WasmConstants.h"
+#include "wasm/WasmModuleTypes.h"
 #include "wasm/WasmSerialize.h"
 #include "wasm/WasmTypeDecls.h"
 #include "wasm/WasmTypeDef.h"
@@ -126,10 +127,17 @@ class BuiltinModuleFuncs {
 mozilla::Maybe<BuiltinModuleId> ImportMatchesBuiltinModule(
     mozilla::Span<const char> importName,
     const BuiltinModuleIds& enabledBuiltins);
-bool ImportMatchesBuiltinModuleFunc(mozilla::Span<const char> importName,
-                                    BuiltinModuleId module,
-                                    const BuiltinModuleFunc** matchedFunc,
-                                    BuiltinModuleFuncId* matchedFuncId);
+mozilla::Maybe<BuiltinModuleId> ImportMatchesBuiltinModule(
+    const Import& import, const BuiltinModuleIds& enabledBuiltins);
+
+
+
+
+
+bool ImportFieldMatchesBuiltinModuleDefinition(
+    mozilla::Span<const char> importName, BuiltinModuleId module,
+    DefinitionKind kind, const BuiltinModuleFunc** matchedFunc = nullptr,
+    BuiltinModuleFuncId* matchedFuncId = nullptr);
 
 
 

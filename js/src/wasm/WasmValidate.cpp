@@ -3370,6 +3370,8 @@ static bool CheckImportsAgainstBuiltinModules(Decoder& d,
         const FuncDesc& func = codeMeta->funcs[importFuncIndex];
         uint32_t funcIndex = importFuncIndex;
         importFuncIndex += 1;
+        MOZ_ASSERT(codeMeta->knownFuncImports[funcIndex] ==
+                   BuiltinModuleFuncId::None);
 
         
         
@@ -3380,10 +3382,12 @@ static bool CheckImportsAgainstBuiltinModules(Decoder& d,
         
         const BuiltinModuleFunc* builtinFunc = nullptr;
         BuiltinModuleFuncId builtinFuncId;
-        if (!ImportMatchesBuiltinModuleFunc(import.field.utf8Bytes(),
-                                            *builtinModule, &builtinFunc,
-                                            &builtinFuncId)) {
-          return d.fail("unrecognized builtin module field");
+        if (!ImportFieldMatchesBuiltinModuleDefinition(
+                import.field.utf8Bytes(), *builtinModule,
+                DefinitionKind::Function, &builtinFunc, &builtinFuncId)) {
+          
+          
+          continue;
         }
 
         const TypeDef& importTypeDef = (*codeMeta->types)[func.typeIndex];
