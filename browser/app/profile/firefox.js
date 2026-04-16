@@ -3602,6 +3602,3 @@ pref("widget.support-xdg-config", true, locked);
 
 
 pref("browser.contentsharing.enabled", false);
-
-
-pref("browser.contentsharing.newBadge.enabled", true);
