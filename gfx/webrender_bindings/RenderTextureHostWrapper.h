@@ -59,9 +59,17 @@ class RenderTextureHostWrapper final : public RenderTextureHostSWGL {
   gfx::SurfaceFormat GetFormat() const override;
   gfx::ColorDepth GetColorDepth() const override;
   gfx::YUVRangedColorSpace GetYUVColorSpace() const override;
+  gfx::TransferFunction GetTransferFunction() const override;
   bool MapPlane(RenderCompositor* aCompositor, uint8_t aChannelIndex,
                 PlaneInfo& aPlaneInfo) override;
   void UnmapPlanes() override;
+
+  wr::WrExternalImage LockSWGL(uint8_t aChannelIndex, void* aContext,
+                               RenderCompositor* aCompositor) override;
+
+  void UnlockSWGL() override;
+  bool LockSWGLCompositeSurface(void* aContext,
+                                wr::SWGLCompositeSurfaceInfo* aInfo) override;
 
   
   

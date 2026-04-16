@@ -28,6 +28,10 @@ class RenderTextureHostSWGL : public RenderTextureHost {
     return gfx::ColorDepth::COLOR_8;
   }
 
+  virtual gfx::TransferFunction GetTransferFunction() const {
+    return gfx::TransferFunction::BT709;
+  }
+
   struct PlaneInfo {
     explicit PlaneInfo(GLuint aTexture) : mTexture(aTexture) {}
 
@@ -46,8 +50,8 @@ class RenderTextureHostSWGL : public RenderTextureHost {
   
   
   
-  bool LockSWGLCompositeSurface(void* aContext,
-                                wr::SWGLCompositeSurfaceInfo* aInfo);
+  virtual bool LockSWGLCompositeSurface(void* aContext,
+                                        wr::SWGLCompositeSurfaceInfo* aInfo);
 
   size_t BytesFromPlanes() {
     NS_ASSERTION(mPlanes.size(), "Can't compute bytes without any planes");
