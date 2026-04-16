@@ -37,10 +37,9 @@ export default class IPProtectionStatusCard extends MozLitElement {
   };
 
   handleButtonClick() {
-    const type =
-      this.isActivating || this.protectionEnabled
-        ? this.TOGGLE_OFF_EVENT
-        : this.TOGGLE_ON_EVENT;
+    const type = this.protectionEnabled
+      ? this.TOGGLE_OFF_EVENT
+      : this.TOGGLE_ON_EVENT;
     this.dispatchEvent(
       new CustomEvent(type, {
         bubbles: true,
@@ -88,7 +87,7 @@ export default class IPProtectionStatusCard extends MozLitElement {
       <ipprotection-status-box .headerL10nId=${headerL10nId} .type=${type}>
         ${iconSrc
           ? html`<img
-              slot="icon"
+              slot="image"
               role="presentation"
               class="icon"
               src=${iconSrc}
@@ -114,9 +113,10 @@ export default class IPProtectionStatusCard extends MozLitElement {
           type: "connecting",
           headerL10nId: "ipprotection-connection-status-connecting",
           buttonL10nId: "ipprotection-button-connecting",
-          iconSrc: "chrome://global/skin/icons/loading.svg",
+          iconSrc:
+            "chrome://browser/content/ipprotection/assets/states/ipprotection-loading.svg",
           buttonType: "primary",
-          buttonDisabled: false,
+          buttonDisabled: true,
         })}
       `;
     }
