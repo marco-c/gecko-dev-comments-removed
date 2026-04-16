@@ -1,5 +1,3 @@
-
-
 function S() {
   var t = new Float32Array(1);
   var k = 0;

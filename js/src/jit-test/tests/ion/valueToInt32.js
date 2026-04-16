@@ -1,5 +1,3 @@
-
-
 function f(x, y) {
     
     var u;

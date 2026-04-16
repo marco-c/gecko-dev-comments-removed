@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "builtin/temporal/Calendar.h"
 
 #include "mozilla/Assertions.h"
@@ -1082,97 +1080,13 @@ static UniqueICU4XDate CreateDateFrom(JSContext* cx, CalendarId calendarId,
       return date;
     }
 
+    case CalendarId::Chinese:
     case CalendarId::Dangi:
-    case CalendarId::Chinese: {
+    case CalendarId::Hebrew: {
       static_assert(CalendarHasLeapMonths(CalendarId::Chinese));
       static_assert(CalendarMonthsPerYear(CalendarId::Chinese) == 13);
       static_assert(CalendarHasLeapMonths(CalendarId::Dangi));
       static_assert(CalendarMonthsPerYear(CalendarId::Dangi) == 13);
-
-      MOZ_ASSERT(1 <= month && month <= 13);
-
-      
-      auto monthCode = MonthCode{std::min(month, 12)};
-      auto date = CreateDateFromCodes(cx, calendarId, calendar, eraYear,
-                                      monthCode, day, overflow);
-      if (!date) {
-        return nullptr;
-      }
-
-      
-      
-      int32_t ordinal = OrdinalMonth(date.get());
-      if (ordinal == month) {
-        return date;
-      }
-
-      
-      
-      
-      
-      
-      if (ordinal > month) {
-        MOZ_ASSERT(1 < month && month <= 12);
-
-        
-        MOZ_ASSERT(MonthsInYear(date.get()) == 13);
-
-        
-        
-        
-        
-        
-        
-
-        
-        MOZ_ASSERT((ordinal - month) == 1);
-
-        
-        
-        
-        if (month > 2) {
-          auto previousMonthCode = MonthCode{month - 1};
-          date = CreateDateFromCodes(cx, calendarId, calendar, eraYear,
-                                     previousMonthCode, day, overflow);
-          if (!date) {
-            return nullptr;
-          }
-
-          int32_t ordinal = OrdinalMonth(date.get());
-          if (ordinal == month) {
-            return date;
-          }
-        }
-
-        
-      } else {
-        MOZ_ASSERT(month == 13);
-        MOZ_ASSERT(ordinal == 12);
-
-        
-        if (MonthsInYear(date.get()) != 13) {
-          if (overflow == TemporalOverflow::Reject) {
-            ReportCalendarFieldOverflow(cx, "month", month);
-            return nullptr;
-          }
-          return date;
-        }
-
-        
-      }
-
-      
-      auto leapMonthCode = MonthCode{month - 1,  true};
-      date = CreateDateFromCodes(cx, calendarId, calendar, eraYear,
-                                 leapMonthCode, day, overflow);
-      if (!date) {
-        return nullptr;
-      }
-      MOZ_ASSERT(OrdinalMonth(date.get()) == month, "unexpected ordinal month");
-      return date;
-    }
-
-    case CalendarId::Hebrew: {
       static_assert(CalendarHasLeapMonths(CalendarId::Hebrew));
       static_assert(CalendarMonthsPerYear(CalendarId::Hebrew) == 13);
 
@@ -1187,24 +1101,18 @@ static UniqueICU4XDate CreateDateFrom(JSContext* cx, CalendarId calendarId,
       
       int32_t constrainedDay = day;
       if (overflow == TemporalOverflow::Reject) {
-        constexpr auto daysInMonth = CalendarDaysInMonth(CalendarId::Hebrew);
+        auto daysInMonth = CalendarDaysInMonth(calendarId);
         if (day > daysInMonth.first && day <= daysInMonth.second) {
           constrainedDay = daysInMonth.first;
         }
       }
 
       
-      auto monthCode = MonthCode{std::min(month, 12)};
-      auto date = CreateDateFromCodes(cx, calendarId, calendar, eraYear,
-                                      monthCode, constrainedDay, overflow);
-      if (!date) {
-        return nullptr;
-      }
+      
+      auto returnForOrdinalMonthMatch = [&](auto date,
+                                            auto monthCode) -> UniqueICU4XDate {
+        MOZ_ASSERT(OrdinalMonth(date.get()) == month);
 
-      
-      
-      int32_t ordinal = OrdinalMonth(date.get());
-      if (ordinal == month) {
         
         
         if (constrainedDay < day) {
@@ -1218,41 +1126,126 @@ static UniqueICU4XDate CreateDateFrom(JSContext* cx, CalendarId calendarId,
                                      monthCode, day, overflow);
         }
         return date;
+      };
+
+      
+      auto monthCode = MonthCode{std::min(month, 12)};
+      auto date = CreateDateFromCodes(cx, calendarId, calendar, eraYear,
+                                      monthCode, constrainedDay, overflow);
+      if (!date) {
+        return nullptr;
       }
 
       
       
+      int32_t ordinal = OrdinalMonth(date.get());
+      if (ordinal == month) {
+        return returnForOrdinalMonthMatch(std::move(date), monthCode);
+      }
+
       
-      
-      if (ordinal > month) {
-        MOZ_ASSERT(1 < month && month <= 12);
+      MonthCode adjustedMonthCode{};
+      if (calendarId == CalendarId::Hebrew) {
+        
+        
+        
+        
+        if (ordinal > month) {
+          MOZ_ASSERT(1 < month && month <= 12);
 
-        
-        MOZ_ASSERT(MonthsInYear(date.get()) == 13);
+          
+          MOZ_ASSERT(MonthsInYear(date.get()) == 13);
 
-        
-        
-        
-        
+          
+          
+          
+          
 
-        
-        MOZ_ASSERT((ordinal - month) == 1);
-      } else {
-        MOZ_ASSERT(month == 13);
-        MOZ_ASSERT(ordinal == 12);
+          
+          MOZ_ASSERT((ordinal - month) == 1);
+        } else {
+          MOZ_ASSERT(month == 13);
+          MOZ_ASSERT(ordinal == 12);
+          MOZ_ASSERT(MonthsInYear(date.get()) != 13);
+          MOZ_ASSERT(day == constrainedDay ||
+                     overflow == TemporalOverflow::Reject);
 
-        if (overflow == TemporalOverflow::Reject) {
-          ReportCalendarFieldOverflow(cx, "month", month);
-          return nullptr;
+          if (overflow == TemporalOverflow::Reject) {
+            ReportCalendarFieldOverflow(cx, "month", month);
+            return nullptr;
+          }
+          return date;
         }
-        return date;
+
+        
+        bool isLeapMonth = month == 6;
+        adjustedMonthCode = MonthCode{month - 1, isLeapMonth};
+      } else {
+        
+        
+        
+        
+        
+        if (ordinal > month) {
+          MOZ_ASSERT(1 < month && month <= 12);
+
+          
+          MOZ_ASSERT(MonthsInYear(date.get()) == 13);
+
+          
+          
+          
+          
+          
+          
+
+          
+          MOZ_ASSERT((ordinal - month) == 1);
+
+          
+          
+          
+          if (month > 2) {
+            auto previousMonthCode = MonthCode{month - 1};
+            date = CreateDateFromCodes(cx, calendarId, calendar, eraYear,
+                                       previousMonthCode, constrainedDay,
+                                       overflow);
+            if (!date) {
+              return nullptr;
+            }
+
+            int32_t ordinal = OrdinalMonth(date.get());
+            if (ordinal == month) {
+              return returnForOrdinalMonthMatch(std::move(date),
+                                                previousMonthCode);
+            }
+          }
+
+          
+        } else {
+          MOZ_ASSERT(month == 13);
+          MOZ_ASSERT(ordinal == 12);
+          MOZ_ASSERT(day == constrainedDay ||
+                     overflow == TemporalOverflow::Reject);
+
+          
+          if (MonthsInYear(date.get()) != 13) {
+            if (overflow == TemporalOverflow::Reject) {
+              ReportCalendarFieldOverflow(cx, "month", month);
+              return nullptr;
+            }
+            return date;
+          }
+
+          
+        }
+
+        
+        adjustedMonthCode = MonthCode{month - 1,  true};
       }
 
-      
-      bool isLeapMonth = month == 6;
-      auto previousMonthCode = MonthCode{month - 1, isLeapMonth};
       date = CreateDateFromCodes(cx, calendarId, calendar, eraYear,
-                                 previousMonthCode, day, overflow);
+                                 adjustedMonthCode, day, overflow);
       if (!date) {
         return nullptr;
       }

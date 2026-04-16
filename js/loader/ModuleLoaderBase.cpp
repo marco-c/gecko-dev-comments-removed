@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "GeckoProfiler.h"
 #include "LoadedScript.h"
 #include "ModuleLoadRequest.h"
@@ -343,10 +341,14 @@ bool ModuleLoaderBase::FinishLoadingImportedModule(
 bool ModuleLoaderBase::ImportMetaResolve(JSContext* cx, unsigned argc,
                                          Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
-  RootedValue modulePrivate(
+  RootedValue moduleValue(
       cx, js::GetFunctionNativeReserved(
               &args.callee(),
-              static_cast<size_t>(ImportMetaSlots::ModulePrivateSlot)));
+              static_cast<size_t>(ImportMetaSlots::ModuleRecordSlot)));
+  MOZ_ASSERT(!moduleValue.isUndefined());
+  RootedObject moduleRecord(cx, &moduleValue.toObject());
+  RootedValue modulePrivate(cx, GetModulePrivate(moduleRecord));
+  MOZ_ASSERT(!modulePrivate.isUndefined());
 
   
   
@@ -464,10 +466,14 @@ bool ModuleLoaderBase::HostPopulateImportMeta(JSContext* aCx,
 
   
   
+  
+  
+  
   RootedObject resolveFuncObj(aCx, JS_GetFunctionObject(resolveFunc));
+  RootedObject moduleRecord(aCx, script->ModuleRecord());
   js::SetFunctionNativeReserved(
-      resolveFuncObj, static_cast<size_t>(ImportMetaSlots::ModulePrivateSlot),
-      aReferencingPrivate);
+      resolveFuncObj, static_cast<size_t>(ImportMetaSlots::ModuleRecordSlot),
+      JS::ObjectValue(*moduleRecord));
 
   return true;
 }

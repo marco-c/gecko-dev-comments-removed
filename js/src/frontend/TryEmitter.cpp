@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "frontend/TryEmitter.h"
 
 #include "mozilla/Assertions.h"  

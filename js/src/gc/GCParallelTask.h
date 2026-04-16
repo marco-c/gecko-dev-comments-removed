@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef gc_GCParallelTask_h
 #define gc_GCParallelTask_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/Printf.h"
 #include "js/Utility.h"
@@ -230,6 +228,10 @@ static bool openJitDump() {
   }
 
   
+  
+  
+  
+#  ifndef ANDROID
   constexpr size_t kJitDumpBufferSize = 2 * 1024 * 1024;
   jitDumpBuffer = js_pod_malloc<char>(kJitDumpBufferSize);
   if (!jitDumpBuffer) {
@@ -238,6 +240,7 @@ static bool openJitDump() {
     return false;
   }
   setvbuf(JitDumpFilePtr, jitDumpBuffer, _IOFBF, kJitDumpBufferSize);
+#  endif
 
 #  ifdef XP_LINUX
   

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef jit_MacroAssembler_h
 #define jit_MacroAssembler_h
 
@@ -44,6 +42,7 @@
 #include "vm/Opcodes.h"
 #include "vm/RealmFuses.h"
 #include "vm/RuntimeFuses.h"
+#include "vm/StringFlags.h"
 #include "wasm/WasmAnyRef.h"
 
 
@@ -261,8 +260,6 @@ enum class CheckUnsafeCallWithABI {
 
 template <typename Sig>
 static inline DynFn DynamicFunction(Sig fun);
-
-enum class CharEncoding { Latin1, TwoByte };
 
 constexpr uint32_t WasmCallerInstanceOffsetBeforeCall =
     wasm::FrameWithInstances::callerInstanceOffsetWithoutFrame();

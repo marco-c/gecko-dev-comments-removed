@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef js_Stack_h
 #define js_Stack_h
 

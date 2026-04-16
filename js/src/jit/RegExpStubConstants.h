@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef jit_RegExpStubConstants_h
 #define jit_RegExpStubConstants_h
 

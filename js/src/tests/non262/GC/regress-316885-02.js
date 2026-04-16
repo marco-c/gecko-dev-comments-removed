@@ -3,7 +3,6 @@
 
 
 
-
 var BUGNUMBER = 316885;
 var summary = 'Unrooted access in jsinterp.c';
 var actual = '';

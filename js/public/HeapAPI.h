@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef js_HeapAPI_h
 #define js_HeapAPI_h
 

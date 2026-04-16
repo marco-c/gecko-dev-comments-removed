@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef jit_MachineState_h
 #define jit_MachineState_h
 

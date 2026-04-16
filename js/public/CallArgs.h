@@ -58,8 +58,6 @@
 
 
 
-
-
 #ifndef js_CallArgs_h
 #define js_CallArgs_h
 

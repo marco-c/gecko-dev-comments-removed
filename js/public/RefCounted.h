@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef js_RefCounted_h
 #define js_RefCounted_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "jit/CacheIRSpewer.h"
 
 #include "mozilla/Sprintf.h"

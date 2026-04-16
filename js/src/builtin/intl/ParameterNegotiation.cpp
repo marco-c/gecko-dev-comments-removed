@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "builtin/intl/ParameterNegotiation.h"
 
 #include "mozilla/Assertions.h"

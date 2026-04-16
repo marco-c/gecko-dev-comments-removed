@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "frontend/BytecodeCompiler.h"
 
 #include "mozilla/Attributes.h"

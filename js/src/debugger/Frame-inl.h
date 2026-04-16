@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef debugger_Frame_inl_h
 #define debugger_Frame_inl_h
 

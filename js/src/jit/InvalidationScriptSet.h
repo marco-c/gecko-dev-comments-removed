@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef jit_InvalidationScriptSet_h
 #define jit_InvalidationScriptSet_h
 

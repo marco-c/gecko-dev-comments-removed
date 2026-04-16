@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef js_loader_ScriptFecthOptions_h
 #define js_loader_ScriptFecthOptions_h
 
@@ -85,8 +83,7 @@ class ScriptFetchOptions {
     }
 
     
-    return mCORSMode == other->mCORSMode &&
-           mFetchPriority == other->mFetchPriority;
+    return mCORSMode == other->mCORSMode;
   }
 
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {

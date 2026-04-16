@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifdef MOZ_VALGRIND
 #  include <valgrind/memcheck.h>
 #endif

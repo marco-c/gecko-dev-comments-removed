@@ -2,8 +2,6 @@
 
 
 
-
-
 import gdb
 import gdb.printing
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsIXPConnect_h
 #define nsIXPConnect_h
 

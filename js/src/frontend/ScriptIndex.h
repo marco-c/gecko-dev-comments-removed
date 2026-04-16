@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef frontend_ScriptIndex_h
 #define frontend_ScriptIndex_h
 

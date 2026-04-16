@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "jit/LIR.h"
 
 #include "mozilla/ScopeExit.h"

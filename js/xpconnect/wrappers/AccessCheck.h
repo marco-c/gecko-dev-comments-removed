@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef AccessCheck_h_
 #define AccessCheck_h_
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "gc/GCParallelTask.h"
 
 #include "mozilla/Maybe.h"

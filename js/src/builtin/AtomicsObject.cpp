@@ -9,8 +9,6 @@
 
 
 
-
-
 #include "builtin/AtomicsObject.h"
 
 #include "mozilla/Atomics.h"
@@ -998,9 +996,10 @@ FutexWaiterListHead::~FutexWaiterListHead() {
     
     
 
+    FutexWaiterListNode* next = iter->next();
     AsyncFutexWaiter* removedWaiter =
         RemoveAsyncWaiter(iter->toWaiter()->asAsync(), lock);
-    iter = iter->next();
+    iter = next;
 
     if (removedWaiter->hasTimeout() &&
         !removedWaiter->timeoutTask()->cleared(lock)) {

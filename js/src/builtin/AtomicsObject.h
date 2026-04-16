@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef builtin_AtomicsObject_h
 #define builtin_AtomicsObject_h
 

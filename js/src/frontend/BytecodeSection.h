@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef frontend_BytecodeSection_h
 #define frontend_BytecodeSection_h
 

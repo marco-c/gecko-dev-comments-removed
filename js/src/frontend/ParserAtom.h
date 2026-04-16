@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef frontend_ParserAtom_h
 #define frontend_ParserAtom_h
 

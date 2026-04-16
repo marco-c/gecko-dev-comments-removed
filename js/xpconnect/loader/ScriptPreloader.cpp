@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ScriptPreloader-inl.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Monitor.h"

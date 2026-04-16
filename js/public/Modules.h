@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef js_Modules_h
 #define js_Modules_h
 
@@ -44,6 +42,7 @@ enum class ModuleType : uint32_t {
   JSON,
   CSS,
   Bytes,
+  Text,
 
   
   
@@ -53,7 +52,7 @@ enum class ModuleType : uint32_t {
   
   JavaScriptOrWasm = JavaScript,
 
-  Limit = Bytes,
+  Limit = Text,
 };
 
 

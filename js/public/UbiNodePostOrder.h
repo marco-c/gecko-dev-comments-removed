@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef js_UbiNodePostOrder_h
 #define js_UbiNodePostOrder_h
 

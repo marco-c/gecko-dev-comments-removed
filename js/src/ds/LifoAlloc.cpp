@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ds/LifoAlloc.h"
 
 #include "mozilla/Likely.h"
@@ -315,11 +313,10 @@ void LifoAlloc::release(Mark mark) {
       released = std::move(list);
     } else {
       released = list.splitAfter(m.markedChunk());
-    }
-
-    
-    if (!list.empty()) {
-      list.last()->release(m);
+      
+      if (!list.empty()) {
+        list.last()->release(m);
+      }
     }
   };
 

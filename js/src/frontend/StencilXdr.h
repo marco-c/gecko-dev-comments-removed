@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef frontend_StencilXdr_h
 #define frontend_StencilXdr_h
 

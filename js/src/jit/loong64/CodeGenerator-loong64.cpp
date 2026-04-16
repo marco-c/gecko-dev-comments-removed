@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "jit/loong64/CodeGenerator-loong64.h"
 
 #include "mozilla/MathAlgorithms.h"

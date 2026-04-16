@@ -3,7 +3,6 @@
 
 
 
-
 var infiles = [...scriptArgs];
 var outfile = infiles.pop();
 

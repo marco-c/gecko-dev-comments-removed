@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "gc/Memory.h"
 
 #include "mozilla/MathAlgorithms.h"

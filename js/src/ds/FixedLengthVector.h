@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef ds_FixedLengthVector_h
 #define ds_FixedLengthVector_h
 

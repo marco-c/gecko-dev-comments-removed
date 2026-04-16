@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef frontend_PrivateOpEmitter_h
 #define frontend_PrivateOpEmitter_h
 

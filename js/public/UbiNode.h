@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef js_UbiNode_h
 #define js_UbiNode_h
 
@@ -1102,8 +1100,8 @@ class JS_PUBLIC_API Concrete<JS::BigInt> : TracerConcrete<JS::BigInt> {
 };
 
 template <>
-class JS_PUBLIC_API Concrete<js::BaseScript>
-    : TracerConcreteWithRealm<js::BaseScript> {
+class JS_PUBLIC_API
+    Concrete<js::BaseScript> : TracerConcreteWithRealm<js::BaseScript> {
  protected:
   explicit Concrete(js::BaseScript* ptr)
       : TracerConcreteWithRealm<js::BaseScript>(ptr) {}

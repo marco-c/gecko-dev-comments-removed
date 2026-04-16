@@ -3,8 +3,6 @@
 
 
 
-
-
 #include "gc/Pretenuring.h"
 
 #include "mozilla/Sprintf.h"

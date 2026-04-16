@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef js_ScalarType_h
 #define js_ScalarType_h
 

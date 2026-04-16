@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "jit/VMFunctions.h"
 
 #include "mozilla/FloatingPoint.h"

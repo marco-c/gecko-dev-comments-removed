@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef xpcObjectHelper_h
 #define xpcObjectHelper_h
 

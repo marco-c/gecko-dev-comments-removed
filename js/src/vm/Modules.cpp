@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "vm/Modules.h"
 
 #include "mozilla/Assertions.h"  
@@ -2474,7 +2472,8 @@ void js::AsyncModuleExecutionFulfilled(JSContext* cx,
       
       
       if (!ExecuteAsyncModule(cx, m)) {
-        MOZ_ASSERT(cx->isThrowingOutOfMemory() || cx->isThrowingOverRecursed());
+        MOZ_ASSERT(!cx->isExceptionPending() || cx->isThrowingOutOfMemory() ||
+                   cx->isThrowingOverRecursed());
         cx->clearPendingException();
       }
     } else {

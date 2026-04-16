@@ -29,125 +29,125 @@ var gjw = gw.makeDebuggeeValue(g.j);
 
 
 
-assertThrowsTypeError({url:scriptname, start:3, end: {line: 8}});
-assertThrowsTypeError({url:scriptname, start:"hi", end: {line: 8}});
-assertThrowsTypeError({url:scriptname, start: {line: .34}, end: {line: 8}});
-assertThrowsTypeError({url:scriptname, start: {line: -1}, end: {line: 8}});
-assertThrowsTypeError({url:scriptname, start: {line: {}}, end: {line: 8}});
+assertThrowsTypeError({url:scriptname, start:3, end: {line: 7}});
+assertThrowsTypeError({url:scriptname, start:"hi", end: {line: 7}});
+assertThrowsTypeError({url:scriptname, start: {line: .34}, end: {line: 7}});
+assertThrowsTypeError({url:scriptname, start: {line: -1}, end: {line: 7}});
+assertThrowsTypeError({url:scriptname, start: {line: {}}, end: {line: 7}});
 
-assertThrowsTypeError({url:scriptname, start: {line: 8}, end:3});
-assertThrowsTypeError({url:scriptname, start: {line: 8}, end:"hi"});
-assertThrowsTypeError({url:scriptname, start: {line: 8}, end: {line: .34}});
-assertThrowsTypeError({url:scriptname, start: {line: 8}, end: {line: -1}});
-assertThrowsTypeError({url:scriptname, start: {line: 8}, end: {line: {}}});
+assertThrowsTypeError({url:scriptname, start: {line: 7}, end:3});
+assertThrowsTypeError({url:scriptname, start: {line: 7}, end:"hi"});
+assertThrowsTypeError({url:scriptname, start: {line: 7}, end: {line: .34}});
+assertThrowsTypeError({url:scriptname, start: {line: 7}, end: {line: -1}});
+assertThrowsTypeError({url:scriptname, start: {line: 7}, end: {line: {}}});
 
-assertThrowsInstanceOf(() => dbg.findScripts({url:scriptname, start: {line: 8}}), Error);
-assertThrowsInstanceOf(() => dbg.findScripts({url:scriptname, line: 3, start: {line: 8}}), Error);
+assertThrowsInstanceOf(() => dbg.findScripts({url:scriptname, start: {line: 7}}), Error);
+assertThrowsInstanceOf(() => dbg.findScripts({url:scriptname, line: 3, start: {line: 7}}), Error);
 
-assertThrowsInstanceOf(() => dbg.findScripts({url:scriptname, end: {line: 8}}), Error);
-assertThrowsInstanceOf(() => dbg.findScripts({url:scriptname, line: 4, end: {line: 8}}), Error);
+assertThrowsInstanceOf(() => dbg.findScripts({url:scriptname, end: {line: 7}}), Error);
+assertThrowsInstanceOf(() => dbg.findScripts({url:scriptname, line: 3, end: {line: 7}}), Error);
 
-assertNotFound({url:scriptname, line: 8, start: {line: 3}, end: {line: 3}}, gfw.script);
-assertFound({url:scriptname, line: 3, start: {line: 8}, end: {line: 8}}, gfw.script);
-
-
-assertThrowsTypeError({start: {line: 8}, end: {line: 8}});
-assertFound({source:gfw.script.source, start: {line: 8}, end: {line: 8}}, gfw.script);
-
-assertNotFound({displayURL:"f.js", start: {line: 8}, end: {line: 8}}, gfw.script);
+assertNotFound({url:scriptname, line: 7, start: {line: 3}, end: {line: 3}}, gfw.script);
+assertFound({url:scriptname, line: 3, start: {line: 7}, end: {line: 7}}, gfw.script);
 
 
+assertThrowsTypeError({start: {line: 7}, end: {line: 7}});
+assertFound({source:gfw.script.source, start: {line: 7}, end: {line: 7}}, gfw.script);
 
-assertNotFound({url:scriptname, start: {line: 14}, end: {line: 16}}, gfw.script);
-
-assertFound({url:scriptname, start: {line: 8}, end: {line: 16}}, gfw.script);
-
-assertFound({url:scriptname, start: {line: 8}, end: {line: 11}}, gfw.script);
-
-assertFound({url:scriptname, start: {line: 6}, end: {line: 13}}, gfw.script);
-
-assertFound({url:scriptname, start: {line: 6}, end: {line: 10}}, gfw.script);
-
-assertNotFound({url:scriptname, start: {line: 4}, end: {line: 6}}, gfw.script);
-
-assertFound({url:scriptname, start: {line: 6}, end: {line: 7}}, gfw.script);
-assertFound({url:scriptname, start: {line: 12}, end: {line: 12}}, gfw.script);
-assertFound({url:scriptname, start: {line: 20}, end: {line: 20}}, gjw.script);
-
-assertThrowsInstanceOf(() => dbg.findScripts({url:scriptname, start: {line: 20}, end: {line: 7}}), Error);
-
-
-assertFound({url:scriptname, innermost: true, start: {line: 20}, end: {line: 20}}, gjw.script);
-assertFound({url:scriptname, innermost: true, start: {line: 6}, end: {line: 9}}, ggw.script);
-assertFound({url:scriptname, innermost: true, start: {line: 6}, end: {line: 13}}, ggw.script);
-assertFound({url:scriptname, innermost: true, start: {line: 11}, end: {line: 13}}, ggw.script);
-
-
-assertNotFound({url:scriptname, start: {line: 4}, end: {line: 6}}, gfw.script);
-assertNotFound({url:scriptname, start: {line: 4}, end: {line: 6}}, ggw.script);
-assertNotFound({url:scriptname, start: {line: 4}, end: {line: 6}}, ghw.script);
-
-
-assertFound({url:scriptname, start: {line: 10}, end: {line: 11}}, gfw.script);
-assertFound({url:scriptname, start: {line: 10}, end: {line: 11}}, ggw.script);
-assertNotFound({url:scriptname, start: {line: 10}, end: {line: 11}}, ghw.script);
-
-
-assertNotFound({url:scriptname, start: {line: 7}, end: {line: 8}}, ggw.script);
+assertNotFound({displayURL:"f.js", start: {line: 7}, end: {line: 7}}, gfw.script);
 
 
 
+assertNotFound({url:scriptname, start: {line: 13}, end: {line: 15}}, gfw.script);
 
-assertThrowsTypeError({url:scriptname, start: {line: 6, column: "hi"}, end: {line: 10}});
-assertThrowsTypeError({url:scriptname, start: {line: 6, column: {}}, end: {line: 10}});
+assertFound({url:scriptname, start: {line: 7}, end: {line: 15}}, gfw.script);
 
-assertThrowsInstanceOf(() => dbg.findScripts({url:scriptname, start: {line: 6, column: .34}, end: {line: 10}}), RangeError);
-assertThrowsInstanceOf(() => dbg.findScripts({url:scriptname, start: {line: 6, column: -11}, end: {line: 10}}), RangeError);
-assertThrowsInstanceOf(() => dbg.findScripts({url:scriptname, start: {line: 6, column: 0}, end: {line: 10}}), RangeError);
+assertFound({url:scriptname, start: {line: 7}, end: {line: 10}}, gfw.script);
+
+assertFound({url:scriptname, start: {line: 5}, end: {line: 12}}, gfw.script);
+
+assertFound({url:scriptname, start: {line: 5}, end: {line: 9}}, gfw.script);
+
+assertNotFound({url:scriptname, start: {line: 3}, end: {line: 5}}, gfw.script);
+
+assertFound({url:scriptname, start: {line: 5}, end: {line: 6}}, gfw.script);
+assertFound({url:scriptname, start: {line: 11}, end: {line: 11}}, gfw.script);
+assertFound({url:scriptname, start: {line: 19}, end: {line: 19}}, gjw.script);
+
+assertThrowsInstanceOf(() => dbg.findScripts({url:scriptname, start: {line: 19}, end: {line: 6}}), Error);
+
+
+assertFound({url:scriptname, innermost: true, start: {line: 19}, end: {line: 19}}, gjw.script);
+assertFound({url:scriptname, innermost: true, start: {line: 5}, end: {line: 8}}, ggw.script);
+assertFound({url:scriptname, innermost: true, start: {line: 5}, end: {line: 12}}, ggw.script);
+assertFound({url:scriptname, innermost: true, start: {line: 10}, end: {line: 12}}, ggw.script);
+
+
+assertNotFound({url:scriptname, start: {line: 3}, end: {line: 5}}, gfw.script);
+assertNotFound({url:scriptname, start: {line: 3}, end: {line: 5}}, ggw.script);
+assertNotFound({url:scriptname, start: {line: 3}, end: {line: 5}}, ghw.script);
+
+
+assertFound({url:scriptname, start: {line: 9}, end: {line: 10}}, gfw.script);
+assertFound({url:scriptname, start: {line: 9}, end: {line: 10}}, ggw.script);
+assertNotFound({url:scriptname, start: {line: 9}, end: {line: 10}}, ghw.script);
+
+
+assertNotFound({url:scriptname, start: {line: 6}, end: {line: 7}}, ggw.script);
+
+
+
+
+assertThrowsTypeError({url:scriptname, start: {line: 5, column: "hi"}, end: {line: 9}});
+assertThrowsTypeError({url:scriptname, start: {line: 5, column: {}}, end: {line: 9}});
+
+assertThrowsInstanceOf(() => dbg.findScripts({url:scriptname, start: {line: 5, column: .34}, end: {line: 9}}), RangeError);
+assertThrowsInstanceOf(() => dbg.findScripts({url:scriptname, start: {line: 5, column: -11}, end: {line: 9}}), RangeError);
+assertThrowsInstanceOf(() => dbg.findScripts({url:scriptname, start: {line: 5, column: 0}, end: {line: 9}}), RangeError);
  
 const COLUMN_LIMIT = Math.pow(2,31) / 2 - 1;
-assertThrowsInstanceOf(() => dbg.findScripts({url:scriptname, start: {line: 6, column: COLUMN_LIMIT + 1}, end: {line: 10}}), RangeError);
-assertFound({url:scriptname, start: {line: 6, column: COLUMN_LIMIT}, end: {line: 10}}, gfw.script);
+assertThrowsInstanceOf(() => dbg.findScripts({url:scriptname, start: {line: 5, column: COLUMN_LIMIT + 1}, end: {line: 9}}), RangeError);
+assertFound({url:scriptname, start: {line: 5, column: COLUMN_LIMIT}, end: {line: 9}}, gfw.script);
 
-assertThrowsTypeError({url:scriptname, start: {line: 6}, end: {line: 10, column: "hi"}});
-assertThrowsTypeError({url:scriptname, start: {line: 6}, end: {line: 10, column: {}}});
+assertThrowsTypeError({url:scriptname, start: {line: 5}, end: {line: 9, column: "hi"}});
+assertThrowsTypeError({url:scriptname, start: {line: 5}, end: {line: 9, column: {}}});
 
-assertThrowsInstanceOf(() => dbg.findScripts({url:scriptname, start: {line: 6}, end: {line: 10, column: .34}}), RangeError);
-assertThrowsInstanceOf(() => dbg.findScripts({url:scriptname, start: {line: 6}, end: {line: 10, column: -11}}), RangeError);
-assertThrowsInstanceOf(() => dbg.findScripts({url:scriptname, start: {line: 6}, end: {line: 10, column: 0}}), RangeError);
-assertThrowsInstanceOf(() => dbg.findScripts({url:scriptname, start: {line: 6}, end: {line: 10, column: COLUMN_LIMIT + 1}}), RangeError);
-assertFound({url:scriptname, start: {line: 6}, end: {line: 10, column: COLUMN_LIMIT}}, gfw.script);
+assertThrowsInstanceOf(() => dbg.findScripts({url:scriptname, start: {line: 5}, end: {line: 9, column: .34}}), RangeError);
+assertThrowsInstanceOf(() => dbg.findScripts({url:scriptname, start: {line: 5}, end: {line: 9, column: -11}}), RangeError);
+assertThrowsInstanceOf(() => dbg.findScripts({url:scriptname, start: {line: 5}, end: {line: 9, column: 0}}), RangeError);
+assertThrowsInstanceOf(() => dbg.findScripts({url:scriptname, start: {line: 5}, end: {line: 9, column: COLUMN_LIMIT + 1}}), RangeError);
+assertFound({url:scriptname, start: {line: 5}, end: {line: 9, column: COLUMN_LIMIT}}, gfw.script);
 
+
+assertFound({url:scriptname, start: {line: 18, column: 10}, end: {line: 19}}, gjw.script);
+assertFound({url:scriptname, start: {line: 18, column: 11}, end: {line: 19}}, gjw.script);
+assertFound({url:scriptname, start: {line: 18, column: 24}, end: {line: 19}}, gjw.script);
+assertFound({url:scriptname, start: {line: 18, column: 33}, end: {line: 19}}, gjw.script);
+
+assertFound({url:scriptname, start: {line: 19, column: 10}, end: {line: 19}}, gjw.script);
+assertFound({url:scriptname, start: {line: 19, column: 11}, end: {line: 19}}, gjw.script);
+assertFound({url:scriptname, start: {line: 19, column: 24}, end: {line: 19}}, gjw.script);
+
+assertNotFound({url:scriptname, start: {line: 19, column: 33}, end: {line: 19}}, gjw.script);
+assertFound({url:scriptname, start: {line: 19, column: 32}, end: {line: 19}}, gjw.script);
+assertNotFound({url:scriptname, start: {line: 10, column: 5}, end: {line: 12}}, ggw.script);
+assertFound({url:scriptname, start: {line: 10, column: 4}, end: {line: 12}}, ggw.script);
 
 assertFound({url:scriptname, start: {line: 19, column: 10}, end: {line: 20}}, gjw.script);
 assertFound({url:scriptname, start: {line: 19, column: 11}, end: {line: 20}}, gjw.script);
 assertFound({url:scriptname, start: {line: 19, column: 24}, end: {line: 20}}, gjw.script);
-assertFound({url:scriptname, start: {line: 19, column: 33}, end: {line: 20}}, gjw.script);
-
-assertFound({url:scriptname, start: {line: 20, column: 10}, end: {line: 20}}, gjw.script);
-assertFound({url:scriptname, start: {line: 20, column: 11}, end: {line: 20}}, gjw.script);
-assertFound({url:scriptname, start: {line: 20, column: 24}, end: {line: 20}}, gjw.script);
-
-assertNotFound({url:scriptname, start: {line: 20, column: 33}, end: {line: 20}}, gjw.script);
-assertFound({url:scriptname, start: {line: 20, column: 32}, end: {line: 20}}, gjw.script);
-assertNotFound({url:scriptname, start: {line: 11, column: 5}, end: {line: 13}}, ggw.script);
-assertFound({url:scriptname, start: {line: 11, column: 4}, end: {line: 13}}, ggw.script);
-
-assertFound({url:scriptname, start: {line: 20, column: 10}, end: {line: 21}}, gjw.script);
-assertFound({url:scriptname, start: {line: 20, column: 11}, end: {line: 21}}, gjw.script);
-assertFound({url:scriptname, start: {line: 20, column: 24}, end: {line: 21}}, gjw.script);
 
 
-assertFound({url:scriptname, start: {line: 6}, end: {line: 10, column: 5}}, gfw.script);
-assertFound({url:scriptname, start: {line: 7}, end: {line: 10, column: 5}}, gfw.script);
-assertFound({url:scriptname, start: {line: 6}, end: {line: 7, column: 11}}, gfw.script);
-assertNotFound({url:scriptname, start: {line: 6}, end: {line: 7, column: 5}}, gfw.script);
-assertNotFound({url:scriptname, start: {line: 19}, end: {line: 20, column: 10}}, gjw.script);
-assertFound({url:scriptname, start: {line: 19}, end: {line: 20, column: 11}}, gjw.script);
+assertFound({url:scriptname, start: {line: 5}, end: {line: 9, column: 5}}, gfw.script);
+assertFound({url:scriptname, start: {line: 6}, end: {line: 9, column: 5}}, gfw.script);
+assertFound({url:scriptname, start: {line: 5}, end: {line: 6, column: 11}}, gfw.script);
+assertNotFound({url:scriptname, start: {line: 5}, end: {line: 6, column: 5}}, gfw.script);
+assertNotFound({url:scriptname, start: {line: 18}, end: {line: 19, column: 10}}, gjw.script);
+assertFound({url:scriptname, start: {line: 18}, end: {line: 19, column: 11}}, gjw.script);
 
 
-assertFound({url:scriptname, start: {line: 20, column: 11}, end: {line: 20, column: 23}}, gjw.script);
-assertNotFound({url:scriptname, start: {line: 20, column: 1}, end: {line: 20, column: 10}}, gjw.script);
-assertNotFound({url:scriptname, start: {line: 20, column: 33}, end: {line: 20, column: 35}}, gjw.script);
+assertFound({url:scriptname, start: {line: 19, column: 11}, end: {line: 19, column: 23}}, gjw.script);
+assertNotFound({url:scriptname, start: {line: 19, column: 1}, end: {line: 19, column: 10}}, gjw.script);
+assertNotFound({url:scriptname, start: {line: 19, column: 33}, end: {line: 19, column: 35}}, gjw.script);
 
-assertNotFound({url:scriptname, start: {line: 20, column: 7}, end: {line: 20, column: 5}}, gfw.script);
+assertNotFound({url:scriptname, start: {line: 19, column: 7}, end: {line: 19, column: 5}}, gfw.script);

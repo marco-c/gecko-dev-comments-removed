@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef js_TraceableFifo_h
 #define js_TraceableFifo_h
 

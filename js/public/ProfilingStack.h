@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef js_ProfilingStack_h
 #define js_ProfilingStack_h
 

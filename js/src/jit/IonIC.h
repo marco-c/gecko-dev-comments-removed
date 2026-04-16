@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef jit_IonIC_h
 #define jit_IonIC_h
 

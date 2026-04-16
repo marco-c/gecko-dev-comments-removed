@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef js_shadow_Symbol_h
 #define js_shadow_Symbol_h
 

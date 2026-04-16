@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_RegExpStatics_h
 #define vm_RegExpStatics_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef jit_FoldLinearArithConstants_h
 #define jit_FoldLinearArithConstants_h
 

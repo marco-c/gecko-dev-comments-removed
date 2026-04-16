@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "jit/InlinableNatives.h"
 
 #ifdef JS_HAS_INTL_API

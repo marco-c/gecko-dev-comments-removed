@@ -26,8 +26,6 @@
 
 
 
-
-
 #ifndef js_friend_WindowProxy_h
 #define js_friend_WindowProxy_h
 

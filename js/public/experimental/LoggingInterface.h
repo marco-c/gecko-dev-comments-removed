@@ -5,8 +5,6 @@
 
 
 
-
-
 #ifndef _js_experimental_LoggingInterface_h_
 #define _js_experimental_LoggingInterface_h_
 

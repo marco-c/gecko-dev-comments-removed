@@ -7,8 +7,6 @@
 
 
 
-
-
 #ifndef jit_MIR_h
 #define jit_MIR_h
 
@@ -9001,7 +8999,9 @@ class MIsCallable : public MUnaryInstruction,
   }
 
   MDefinition* foldsTo(TempAllocator& alloc) override;
-  AliasSet getAliasSet() const override { return AliasSet::None(); }
+  AliasSet getAliasSet() const override {
+    return AliasSet::Load(AliasSet::ObjectFields);
+  }
 };
 
 class MHasClass : public MUnaryInstruction, public SingleObjectPolicy::Data {
@@ -9022,7 +9022,9 @@ class MHasClass : public MUnaryInstruction, public SingleObjectPolicy::Data {
   const JSClass* getClass() const { return class_; }
 
   MDefinition* foldsTo(TempAllocator& alloc) override;
-  AliasSet getAliasSet() const override { return AliasSet::None(); }
+  AliasSet getAliasSet() const override {
+    return AliasSet::Load(AliasSet::ObjectFields);
+  }
   bool congruentTo(const MDefinition* ins) const override {
     if (!ins->isHasClass()) {
       return false;
@@ -9062,7 +9064,9 @@ class MGuardToClass : public MUnaryInstruction,
   }
 
   MDefinition* foldsTo(TempAllocator& alloc) override;
-  AliasSet getAliasSet() const override { return AliasSet::None(); }
+  AliasSet getAliasSet() const override {
+    return AliasSet::Load(AliasSet::ObjectFields);
+  }
   bool congruentTo(const MDefinition* ins) const override {
     if (!ins->isGuardToClass()) {
       return false;

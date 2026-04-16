@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef jit_WarpCacheIRTranspiler_h
 #define jit_WarpCacheIRTranspiler_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef frontend_IteratorKind_h
 #define frontend_IteratorKind_h
 

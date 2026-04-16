@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef jit_CacheIRWriter_h
 #define jit_CacheIRWriter_h
 

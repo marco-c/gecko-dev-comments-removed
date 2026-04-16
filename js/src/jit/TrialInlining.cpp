@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "jit/TrialInlining.h"
 
 #include "mozilla/DebugOnly.h"

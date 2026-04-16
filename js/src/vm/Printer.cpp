@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "js/Printer.h"
 
 #include "mozilla/PodOperations.h"

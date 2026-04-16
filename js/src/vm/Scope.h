@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_Scope_h
 #define vm_Scope_h
 

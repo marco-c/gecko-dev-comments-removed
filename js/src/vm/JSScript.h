@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef vm_JSScript_h
 #define vm_JSScript_h
 

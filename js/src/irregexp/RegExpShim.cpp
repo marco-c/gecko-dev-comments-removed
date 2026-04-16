@@ -6,8 +6,6 @@
 
 
 
-
-
 #include "irregexp/RegExpShim.h"
 
 #include "mozilla/MemoryReporting.h"

@@ -4,7 +4,6 @@
 
 
 
-
 #ifndef js_MemoryFunctions_h
 #define js_MemoryFunctions_h
 

@@ -14,8 +14,6 @@
 
 
 
-
-
 #ifndef wasm_table_h
 #define wasm_table_h
 

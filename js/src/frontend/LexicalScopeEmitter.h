@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef frontend_LexicalScopeEmitter_h
 #define frontend_LexicalScopeEmitter_h
 

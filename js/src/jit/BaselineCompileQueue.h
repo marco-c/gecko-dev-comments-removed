@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef jit_BaselineCompileQueue_h
 #define jit_BaselineCompileQueue_h
 

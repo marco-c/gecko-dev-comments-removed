@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef js_UbiNodeDominatorTree_h
 #define js_UbiNodeDominatorTree_h
 

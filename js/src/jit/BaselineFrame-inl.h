@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef jit_BaselineFrame_inl_h
 #define jit_BaselineFrame_inl_h
 

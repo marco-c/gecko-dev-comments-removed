@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef builtin_temporal_TemporalRoundingMode_h
 #define builtin_temporal_TemporalRoundingMode_h
 

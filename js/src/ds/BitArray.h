@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef ds_BitArray_h
 #define ds_BitArray_h
 

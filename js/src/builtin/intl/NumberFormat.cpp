@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "builtin/intl/NumberFormat.h"
 
 #include "mozilla/Assertions.h"

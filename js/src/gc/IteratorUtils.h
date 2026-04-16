@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef gc_IteratorUtils_h
 #define gc_IteratorUtils_h
 

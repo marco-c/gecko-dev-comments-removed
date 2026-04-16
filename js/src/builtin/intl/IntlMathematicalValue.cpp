@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "builtin/intl/IntlMathematicalValue.h"
 
 #include "mozilla/Assertions.h"

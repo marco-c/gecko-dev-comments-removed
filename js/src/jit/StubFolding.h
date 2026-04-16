@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef jit_StubFolding_h
 #define jit_StubFolding_h
 

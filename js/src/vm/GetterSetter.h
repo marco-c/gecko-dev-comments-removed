@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_GetterSetter_h
 #define vm_GetterSetter_h
 

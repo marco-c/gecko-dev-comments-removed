@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef gc_Memory_h
 #define gc_Memory_h
 

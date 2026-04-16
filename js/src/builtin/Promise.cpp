@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "builtin/Promise.h"
 
 #include "mozilla/Atomics.h"
@@ -5548,7 +5546,7 @@ static bool PromiseAllSettledKeyedResolveElementFunction(JSContext* cx,
         
         
         
-        JS::Rooted<JSObject*> obj(cx, NewPlainObjectWithProto(cx, nullptr));
+        JS::Rooted<JSObject*> obj(cx, NewPlainObject(cx));
         if (!obj) {
           return false;
         }
@@ -5595,7 +5593,7 @@ static bool PromiseAllSettledKeyedRejectElementFunction(JSContext* cx,
       [](JSContext* cx, JS::Handle<JS::Value> xVal, uint32_t index,
          JS::MutableHandle<JS::Value> outVal) {
         
-        JS::Rooted<JSObject*> obj(cx, NewPlainObjectWithProto(cx, nullptr));
+        JS::Rooted<JSObject*> obj(cx, NewPlainObject(cx));
         if (!obj) {
           return false;
         }

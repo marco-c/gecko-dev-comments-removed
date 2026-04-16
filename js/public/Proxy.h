@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef js_Proxy_h
 #define js_Proxy_h
 
@@ -707,9 +705,10 @@ class JS_PUBLIC_API AutoWaivePolicy : public AutoEnterPolicy {
   }
 };
 #else
-class JS_PUBLIC_API AutoWaivePolicy{
-  public : AutoWaivePolicy(JSContext * cx, JS::HandleObject proxy,
-                           JS::HandleId id, BaseProxyHandler::Action act){}
+class JS_PUBLIC_API AutoWaivePolicy {
+ public:
+  AutoWaivePolicy(JSContext* cx, JS::HandleObject proxy, JS::HandleId id,
+                  BaseProxyHandler::Action act) {}
 };
 #endif
 

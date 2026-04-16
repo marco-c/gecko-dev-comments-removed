@@ -2,13 +2,10 @@
 
 
 
-
-
 #ifndef gc_Cell_h
 #define gc_Cell_h
 
-#include "mozilla/EndianUtils.h"
-
+#include <bit>
 #include <type_traits>
 
 #include "gc/GCContext.h"
@@ -714,28 +711,28 @@ class alignas(gc::CellAlignBytes) CellWithLengthAndFlags : public Cell {
 
   
   
+  static constexpr size_t offsetOfHeaderFlags() {
 #if JS_BITS_PER_WORD == 32
-  static constexpr size_t offsetOfHeaderFlags() {
     return offsetof(CellWithLengthAndFlags, header_);
-  }
-  static constexpr size_t offsetOfHeaderLength() {
-    return offsetof(CellWithLengthAndFlags, length_);
-  }
-#elif MOZ_LITTLE_ENDIAN()
-  static constexpr size_t offsetOfHeaderFlags() {
-    return offsetof(CellWithLengthAndFlags, header_);
-  }
-  static constexpr size_t offsetOfHeaderLength() {
-    return offsetof(CellWithLengthAndFlags, header_) + sizeof(uint32_t);
-  }
 #else
-  static constexpr size_t offsetOfHeaderFlags() {
-    return offsetof(CellWithLengthAndFlags, header_) + sizeof(uint32_t);
+    if constexpr (std::endian::native == std::endian::little) {
+      return offsetof(CellWithLengthAndFlags, header_);
+    } else {
+      return offsetof(CellWithLengthAndFlags, header_) + sizeof(uint32_t);
+    }
+#endif
   }
   static constexpr size_t offsetOfHeaderLength() {
-    return offsetof(CellWithLengthAndFlags, header_);
-  }
+#if JS_BITS_PER_WORD == 32
+    return offsetof(CellWithLengthAndFlags, length_);
+#else
+    if constexpr (std::endian::native == std::endian::little) {
+      return offsetof(CellWithLengthAndFlags, header_) + sizeof(uint32_t);
+    } else {
+      return offsetof(CellWithLengthAndFlags, header_);
+    }
 #endif
+  }
 };
 
 

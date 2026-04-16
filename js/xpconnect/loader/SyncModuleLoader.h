@@ -92,7 +92,7 @@ class SyncLoadContext : public JS::loader::LoadContextBase {
   
   JS::PersistentRooted<JS::Value> mExceptionValue;
 
-  JS::PersistentRooted<JSScript*> mScript;
+  JS::PersistentRooted<JSObject*> mModule;
 };
 
 }  

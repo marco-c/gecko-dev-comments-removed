@@ -6,8 +6,6 @@
 
 
 
-
-
 #include "irregexp/RegExpAPI.h"
 
 #include "mozilla/ArrayUtils.h"

@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef js_RegExpFlags_h
 #define js_RegExpFlags_h
 

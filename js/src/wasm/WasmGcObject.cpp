@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "wasm/WasmGcObject-inl.h"
 
 #include "mozilla/DebugOnly.h"

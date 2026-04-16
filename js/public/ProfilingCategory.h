@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef js_ProfilingCategory_h
 #define js_ProfilingCategory_h
 

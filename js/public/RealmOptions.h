@@ -8,8 +8,6 @@
 
 
 
-
-
 #ifndef js_RealmOptions_h
 #define js_RealmOptions_h
 
@@ -313,6 +311,8 @@ class JS_PUBLIC_API RealmBehaviors {
   
   RefPtr<TimeZoneString> timeZoneOverride() const { return timeZoneOverride_; }
   RealmBehaviors& setTimeZoneOverride(const char* timeZone);
+
+  void copyOverrideStrings();
 
  private:
   RefPtr<LocaleString> localeOverride_;

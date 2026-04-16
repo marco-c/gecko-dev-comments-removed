@@ -14,8 +14,6 @@
 
 
 
-
-
 #include "wasm/WasmInstance-inl.h"
 
 #include "mozilla/CheckedInt.h"

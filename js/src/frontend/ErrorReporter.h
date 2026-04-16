@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef frontend_ErrorReporter_h
 #define frontend_ErrorReporter_h
 

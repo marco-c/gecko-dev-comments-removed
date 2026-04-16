@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef js_WrapperCallbacks_h
 #define js_WrapperCallbacks_h
 

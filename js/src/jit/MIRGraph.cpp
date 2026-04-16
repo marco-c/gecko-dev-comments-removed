@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "jit/MIRGraph.h"
 
 #include "mozilla/HashFunctions.h"
@@ -1946,9 +1944,7 @@ void jit::AssertExtendedGraphCoherency(MIRGraph& graph, bool underValueNumberer,
     }
 
     
-    for (MInstructionIterator iter(block->begin()), end(block->end());
-         iter != end; ++iter) {
-      MInstruction* ins = *iter;
+    for (MInstruction* ins : **block) {
       for (size_t i = 0, e = ins->numOperands(); i < e; ++i) {
         MDefinition* op = ins->getOperand(i);
         MOZ_ASSERT(op->dominates(ins),
@@ -2120,10 +2116,9 @@ void jit::DumpMIRBlock(GenericPrinter& out, MBasicBlock* block,
     jit::DumpMIRDefinition(out, *iter, showDetails);
     out.printf("\n");
   }
-  for (MInstructionIterator iter(block->begin()), end(block->end());
-       iter != end; iter++) {
+  for (MInstruction* ins : *block) {
     out.printf("    ");
-    DumpMIRDefinition(out, *iter, showDetails);
+    DumpMIRDefinition(out, ins, showDetails);
     out.printf("\n");
   }
 #endif

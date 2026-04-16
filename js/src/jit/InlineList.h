@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef jit_InlineList_h
 #define jit_InlineList_h
 

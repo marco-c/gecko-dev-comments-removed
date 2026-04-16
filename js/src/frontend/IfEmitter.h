@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef frontend_IfEmitter_h
 #define frontend_IfEmitter_h
 

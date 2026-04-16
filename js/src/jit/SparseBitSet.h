@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef jit_SparseBitSet_h
 #define jit_SparseBitSet_h
 

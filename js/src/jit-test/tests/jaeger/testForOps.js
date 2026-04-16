@@ -1,6 +1,5 @@
 
 
-
 function assertObjectsEqual(obj1, obj2) {
     assertEq(obj1.a, obj2.a);
     assertEq(obj1.b, obj2.b);

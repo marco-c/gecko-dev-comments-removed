@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef js_loader_ModuleLoaderBase_h
 #define js_loader_ModuleLoaderBase_h
 
@@ -595,7 +593,7 @@ class ModuleLoaderBase : public nsISupports {
   void Cancel(ModuleLoadRequest* aRequest);
 
   
-  enum class ImportMetaSlots : uint32_t { ModulePrivateSlot = 0, SlotCount };
+  enum class ImportMetaSlots : uint32_t { ModuleRecordSlot = 0, SlotCount };
 
   
   static const uint32_t ImportMetaResolveNumArgs = 1;

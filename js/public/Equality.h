@@ -4,7 +4,6 @@
 
 
 
-
 #ifndef js_Equality_h
 #define js_Equality_h
 

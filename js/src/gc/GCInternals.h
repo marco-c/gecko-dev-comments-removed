@@ -6,8 +6,6 @@
 
 
 
-
-
 #ifndef gc_GCInternals_h
 #define gc_GCInternals_h
 

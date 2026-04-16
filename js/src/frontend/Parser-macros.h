@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef frontend_Parser_macros_h
 #define frontend_Parser_macros_h
 

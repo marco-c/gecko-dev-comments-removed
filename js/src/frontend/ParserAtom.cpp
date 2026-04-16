@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "frontend/ParserAtom.h"
 
 #include "mozilla/TextUtils.h"  
@@ -1214,7 +1212,7 @@ bool InstantiateMarkedAtomsAsPermanent(JSContext* cx, FrontendContext* fc,
 }
 
 
-MOZ_RUNINIT WellKnownParserAtoms WellKnownParserAtoms::singleton_;
+constinit WellKnownParserAtoms WellKnownParserAtoms::singleton_;
 
 template <typename CharT>
 TaggedParserAtomIndex WellKnownParserAtoms::lookupChar16Seq(

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "vm/GlobalObject.h"
 
 #include "jsapi.h"

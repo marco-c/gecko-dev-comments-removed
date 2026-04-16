@@ -28,6 +28,7 @@
 #include "js/String.h"         
 #include "js/UniquePtr.h"
 #include "util/Text.h"
+#include "vm/StringFlags.h"  
 
 class JSDependentString;
 class JSExtensibleString;
@@ -201,6 +202,7 @@ bool CheckStringIsIndex(const CharT* s, size_t length, uint32_t* indexp);
 class JSString : public js::gc::CellWithLengthAndFlags {
  protected:
   using Base = js::gc::CellWithLengthAndFlags;
+  using StringFlags = js::StringFlags;
 
   static const size_t NUM_INLINE_CHARS_LATIN1 =
       2 * sizeof(void*) / sizeof(JS::Latin1Char);
@@ -292,6 +294,12 @@ class JSString : public js::gc::CellWithLengthAndFlags {
 
  protected:
   
+
+
+
+
+
+  
   struct Data {
     
     
@@ -324,193 +332,6 @@ class JSString : public js::gc::CellWithLengthAndFlags {
   } d;
 
  public:
-  
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
-  static_assert(js::gc::CellFlagBitsReservedForGC <= 3,
-                "JSString::flags must reserve enough bits for Cell");
-
-  static const uint32_t ATOM_BIT = js::Bit(3);
-  static const uint32_t LINEAR_BIT = js::Bit(4);
-  static const uint32_t DEPENDENT_BIT = js::Bit(5);
-  static const uint32_t INLINE_CHARS_BIT = js::Bit(6);
-  
-  static const uint32_t ATOM_REF_BIT = js::Bit(9);
-
-  static const uint32_t LINEAR_IS_EXTENSIBLE_BIT = js::Bit(7);
-  static const uint32_t INLINE_IS_FAT_BIT = js::Bit(7);
-
-  static const uint32_t LINEAR_IS_EXTERNAL_BIT = js::Bit(8);
-  static const uint32_t ATOM_IS_PERMANENT_BIT = js::Bit(8);
-
-  static const uint32_t EXTENSIBLE_FLAGS =
-      LINEAR_BIT | LINEAR_IS_EXTENSIBLE_BIT;
-  static const uint32_t EXTERNAL_FLAGS = LINEAR_BIT | LINEAR_IS_EXTERNAL_BIT;
-
-  static const uint32_t FAT_INLINE_MASK = INLINE_CHARS_BIT | INLINE_IS_FAT_BIT;
-
-  
-  static const uint32_t INIT_THIN_INLINE_FLAGS = LINEAR_BIT | INLINE_CHARS_BIT;
-  static const uint32_t INIT_FAT_INLINE_FLAGS = LINEAR_BIT | FAT_INLINE_MASK;
-  static const uint32_t INIT_ROPE_FLAGS = 0;
-  static const uint32_t INIT_LINEAR_FLAGS = LINEAR_BIT;
-  static const uint32_t INIT_DEPENDENT_FLAGS = LINEAR_BIT | DEPENDENT_BIT;
-  static const uint32_t INIT_ATOM_REF_FLAGS =
-      INIT_DEPENDENT_FLAGS | ATOM_REF_BIT;
-
-  static const uint32_t TYPE_FLAGS_MASK = js::BitMask(10) - js::BitMask(3);
-  static_assert((TYPE_FLAGS_MASK & js::gc::HeaderWord::RESERVED_MASK) == 0,
-                "GC reserved bits must not be used for Strings");
-
-  
-  
-  
-  
-  static const uint32_t ATOM_IS_INDEX_BIT = js::Bit(9);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  static const uint32_t LATIN1_CHARS_BIT = js::Bit(10);
-
-  
-  static const uint32_t INDEX_VALUE_BIT = js::Bit(11);
-  static const uint32_t INDEX_VALUE_SHIFT = 16;
-
-  
-  
-  
-  
-  
-  
-  
-  static const uint32_t HAS_STRING_BUFFER_BIT = js::Bit(12);
-
-  
-  
-  
-  static const uint32_t NON_DEDUP_BIT = js::Bit(15);
-
-  
-  
-  
-  static const uint32_t IN_STRING_TO_ATOM_CACHE = js::Bit(13);
-
-  
-  
-  static const uint32_t FLATTEN_VISIT_RIGHT = js::Bit(14);
-  static const uint32_t FLATTEN_FINISH_NODE = js::Bit(15);
-  static const uint32_t FLATTEN_MASK =
-      FLATTEN_VISIT_RIGHT | FLATTEN_FINISH_NODE;
-
-  
-  
-  
-  static const uint32_t DEPENDED_ON_BIT = FLATTEN_VISIT_RIGHT;
-
-  static const uint32_t PINNED_ATOM_BIT = js::Bit(15);
-  static const uint32_t PERMANENT_ATOM_MASK =
-      ATOM_BIT | PINNED_ATOM_BIT | ATOM_IS_PERMANENT_BIT;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  static const uint32_t PRESERVE_LINEAR_NONATOM_BITS_ON_REPLACE =
-      DEPENDED_ON_BIT | IN_STRING_TO_ATOM_CACHE | INDEX_VALUE_BIT |
-      ~uint32_t(0) << INDEX_VALUE_SHIFT;
-  static const uint32_t PRESERVE_ROPE_BITS_ON_REPLACE = IN_STRING_TO_ATOM_CACHE;
-
   static const uint32_t MAX_LENGTH = JS::MaxStringLength;
 
   static const JS::Latin1Char MAX_LATIN1_CHAR = 0xff;
@@ -582,22 +403,6 @@ class JSString : public js::gc::CellWithLengthAndFlags {
     static_assert(offsetof(JSString, d.inlineStorageTwoByte) ==
                       offsetof(String, inlineStorageTwoByte),
                   "shadow::String inlineStorage offset must match JSString");
-    static_assert(ATOM_BIT == String::ATOM_BIT,
-                  "shadow::String::ATOM_BIT must match JSString::ATOM_BIT");
-    static_assert(LINEAR_BIT == String::LINEAR_BIT,
-                  "shadow::String::LINEAR_BIT must match JSString::LINEAR_BIT");
-    static_assert(INLINE_CHARS_BIT == String::INLINE_CHARS_BIT,
-                  "shadow::String::INLINE_CHARS_BIT must match "
-                  "JSString::INLINE_CHARS_BIT");
-    static_assert(LATIN1_CHARS_BIT == String::LATIN1_CHARS_BIT,
-                  "shadow::String::LATIN1_CHARS_BIT must match "
-                  "JSString::LATIN1_CHARS_BIT");
-    static_assert(
-        TYPE_FLAGS_MASK == String::TYPE_FLAGS_MASK,
-        "shadow::String::TYPE_FLAGS_MASK must match JSString::TYPE_FLAGS_MASK");
-    static_assert(
-        EXTERNAL_FLAGS == String::EXTERNAL_FLAGS,
-        "shadow::String::EXTERNAL_FLAGS must match JSString::EXTERNAL_FLAGS");
   }
 
   
@@ -635,15 +440,15 @@ class JSString : public js::gc::CellWithLengthAndFlags {
   inline bool getCodePoint(JSContext* cx, size_t index, char32_t* codePoint);
 
   
-  bool hasLatin1Chars() const { return flags() & LATIN1_CHARS_BIT; }
-  bool hasTwoByteChars() const { return !(flags() & LATIN1_CHARS_BIT); }
+  bool hasLatin1Chars() const { return StringFlags::hasLatin1Chars(flags()); }
+  bool hasTwoByteChars() const { return StringFlags::hasTwoByteChars(flags()); }
 
   
-  bool hasIndexValue() const { return flags() & INDEX_VALUE_BIT; }
+  bool hasIndexValue() const { return StringFlags::hasIndexValue(flags()); }
   uint32_t getIndexValue() const {
     MOZ_ASSERT(hasIndexValue());
     MOZ_ASSERT(isLinear());
-    return flags() >> INDEX_VALUE_SHIFT;
+    return StringFlags::indexValue(flags());
   }
 
   
@@ -657,7 +462,7 @@ class JSString : public js::gc::CellWithLengthAndFlags {
 
 
   bool isDependedOn() const {
-    bool result = flags() & DEPENDED_ON_BIT;
+    bool result = StringFlags::isDependedOn(flags());
     MOZ_ASSERT_IF(result, !isRope() && !isAtom());
     return result;
   }
@@ -672,7 +477,7 @@ class JSString : public js::gc::CellWithLengthAndFlags {
     if (isAtom()) {
       return;
     }
-    setFlagBit(DEPENDED_ON_BIT);
+    setFlagBit(StringFlags::DEPENDED_ON_BIT);
   }
 
   inline size_t allocSize() const;
@@ -684,9 +489,9 @@ class JSString : public js::gc::CellWithLengthAndFlags {
   
 
   MOZ_ALWAYS_INLINE
-  bool isRope() const { return !(flags() & LINEAR_BIT); }
+  bool isRope() const { return StringFlags::isRope(flags()); }
   MOZ_ALWAYS_INLINE
-  bool isRopeAtomic() const { return !(getFlagsAtomic() & LINEAR_BIT); }
+  bool isRopeAtomic() const { return StringFlags::isRope(getFlagsAtomic()); }
 
   MOZ_ALWAYS_INLINE
   JSRope& asRope() const {
@@ -695,7 +500,7 @@ class JSString : public js::gc::CellWithLengthAndFlags {
   }
 
   MOZ_ALWAYS_INLINE
-  bool isLinear() const { return flags() & LINEAR_BIT; }
+  bool isLinear() const { return StringFlags::isLinear(flags()); }
 
   MOZ_ALWAYS_INLINE
   JSLinearString& asLinear() const {
@@ -704,12 +509,10 @@ class JSString : public js::gc::CellWithLengthAndFlags {
   }
 
   MOZ_ALWAYS_INLINE
-  bool isDependent() const { return flags() & DEPENDENT_BIT; }
+  bool isDependent() const { return StringFlags::isDependent(flags()); }
 
   MOZ_ALWAYS_INLINE
-  bool isAtomRef() const {
-    return (flags() & ATOM_REF_BIT) && !(flags() & ATOM_BIT);
-  }
+  bool isAtomRef() const { return StringFlags::isAtomRef(flags()); }
 
   MOZ_ALWAYS_INLINE
   JSDependentString& asDependent() const {
@@ -718,9 +521,7 @@ class JSString : public js::gc::CellWithLengthAndFlags {
   }
 
   MOZ_ALWAYS_INLINE
-  bool isExtensible() const {
-    return (flags() & TYPE_FLAGS_MASK) == EXTENSIBLE_FLAGS;
-  }
+  bool isExtensible() const { return StringFlags::isExtensible(flags()); }
 
   MOZ_ALWAYS_INLINE
   JSExtensibleString& asExtensible() const {
@@ -729,7 +530,7 @@ class JSString : public js::gc::CellWithLengthAndFlags {
   }
 
   MOZ_ALWAYS_INLINE
-  bool isInline() const { return flags() & INLINE_CHARS_BIT; }
+  bool isInline() const { return StringFlags::isInline(flags()); }
 
   MOZ_ALWAYS_INLINE
   JSInlineString& asInline() const {
@@ -738,14 +539,10 @@ class JSString : public js::gc::CellWithLengthAndFlags {
   }
 
   MOZ_ALWAYS_INLINE
-  bool isFatInline() const {
-    return (flags() & FAT_INLINE_MASK) == FAT_INLINE_MASK;
-  }
+  bool isFatInline() const { return StringFlags::isFatInline(flags()); }
 
   
-  bool isExternal() const {
-    return (flags() & TYPE_FLAGS_MASK) == EXTERNAL_FLAGS;
-  }
+  bool isExternal() const { return StringFlags::isExternal(flags()); }
 
   MOZ_ALWAYS_INLINE
   JSExternalString& asExternal() const {
@@ -754,12 +551,10 @@ class JSString : public js::gc::CellWithLengthAndFlags {
   }
 
   MOZ_ALWAYS_INLINE
-  bool isAtom() const { return flags() & ATOM_BIT; }
+  bool isAtom() const { return StringFlags::isAtom(flags()); }
 
   MOZ_ALWAYS_INLINE
-  bool isPermanentAtom() const {
-    return (flags() & PERMANENT_ATOM_MASK) == PERMANENT_ATOM_MASK;
-  }
+  bool isPermanentAtom() const { return StringFlags::isPermanentAtom(flags()); }
 
   MOZ_ALWAYS_INLINE
   JSAtom& asAtom() const {
@@ -769,7 +564,7 @@ class JSString : public js::gc::CellWithLengthAndFlags {
 
   MOZ_ALWAYS_INLINE
   js::JSOffThreadAtom& asOffThreadAtom() const {
-    MOZ_ASSERT(headerFlagsFieldAtomic() & ATOM_BIT);
+    MOZ_ASSERT(headerFlagsFieldAtomic() & StringFlags::ATOM_BIT);
     return *(js::JSOffThreadAtom*)this;
   }
 
@@ -777,7 +572,7 @@ class JSString : public js::gc::CellWithLengthAndFlags {
   void setNonDeduplicatable() {
     MOZ_ASSERT(isLinear());
     MOZ_ASSERT(!isAtom());
-    setFlagBit(NON_DEDUP_BIT);
+    setFlagBit(StringFlags::NON_DEDUP_BIT);
   }
 
   
@@ -785,7 +580,8 @@ class JSString : public js::gc::CellWithLengthAndFlags {
   MOZ_ALWAYS_INLINE
   void clearBitsOnTenure() {
     MOZ_ASSERT(!isAtom());
-    clearFlagBit(NON_DEDUP_BIT | IN_STRING_TO_ATOM_CACHE);
+    clearFlagBit(StringFlags::NON_DEDUP_BIT |
+                 StringFlags::IN_STRING_TO_ATOM_CACHE);
   }
 
   
@@ -793,14 +589,16 @@ class JSString : public js::gc::CellWithLengthAndFlags {
   bool isDeduplicatable() const {
     MOZ_ASSERT(isLinear());
     MOZ_ASSERT(!isAtom());
-    return !(flags() & NON_DEDUP_BIT);
+    return !(flags() & StringFlags::NON_DEDUP_BIT);
   }
 
   void setInStringToAtomCache() {
     MOZ_ASSERT(!isAtom());
-    setFlagBit(IN_STRING_TO_ATOM_CACHE);
+    setFlagBit(StringFlags::IN_STRING_TO_ATOM_CACHE);
   }
-  bool inStringToAtomCache() const { return flags() & IN_STRING_TO_ATOM_CACHE; }
+  bool inStringToAtomCache() const {
+    return StringFlags::inStringToAtomCache(flags());
+  }
 
   
   
@@ -841,9 +639,9 @@ class JSString : public js::gc::CellWithLengthAndFlags {
   inline bool ownsMallocedChars() const;
 
   bool hasStringBuffer() const {
-    MOZ_ASSERT_IF(flags() & HAS_STRING_BUFFER_BIT,
+    MOZ_ASSERT_IF(StringFlags::hasStringBuffer(flags()),
                   isLinear() && !isInline() && !isDependent() && !isExternal());
-    return flags() & HAS_STRING_BUFFER_BIT;
+    return StringFlags::hasStringBuffer(flags());
   }
 
   
@@ -1078,7 +876,9 @@ class JSRope : public JSString {
 
   
   
-  bool isBeingFlattened() const { return flags() & FLATTEN_MASK; }
+  bool isBeingFlattened() const {
+    return StringFlags::isBeingFlattened(flags());
+  }
 
   JSString* leftChild() const {
     MOZ_ASSERT(isRope());
@@ -1274,7 +1074,8 @@ class JSLinearString : public JSString {
     MOZ_ASSERT(isIndexSlow(&containedIndex));
     MOZ_ASSERT(index == containedIndex);
 
-    setFlagBit((index << INDEX_VALUE_SHIFT) | INDEX_VALUE_BIT);
+    setFlagBit((index << StringFlags::INDEX_VALUE_SHIFT) |
+               StringFlags::INDEX_VALUE_BIT);
     MOZ_ASSERT(getIndexValue() == index);
   }
 
@@ -1643,14 +1444,14 @@ class JSAtom : public JSLinearString {
   MOZ_ALWAYS_INLINE
   void makePermanent() {
     MOZ_ASSERT(JSString::isAtom());
-    setFlagBit(PERMANENT_ATOM_MASK);
+    setFlagBit(StringFlags::PERMANENT_ATOM_MASK);
   }
 
   MOZ_ALWAYS_INLINE bool isIndex() const {
     MOZ_ASSERT(JSString::isAtom());
     mozilla::DebugOnly<uint32_t> index;
-    MOZ_ASSERT(!!(flags() & ATOM_IS_INDEX_BIT) == isIndexSlow(&index));
-    return flags() & ATOM_IS_INDEX_BIT;
+    MOZ_ASSERT(StringFlags::isIndex(flags()) == isIndexSlow(&index));
+    return StringFlags::isIndex(flags());
   }
   MOZ_ALWAYS_INLINE bool isIndex(uint32_t* index) const {
     MOZ_ASSERT(JSString::isAtom());
@@ -1665,15 +1466,17 @@ class JSAtom : public JSLinearString {
 
   void setIsIndex(uint32_t index) {
     MOZ_ASSERT(JSString::isAtom());
-    setFlagBit(ATOM_IS_INDEX_BIT);
+    setFlagBit(StringFlags::ATOM_IS_INDEX_BIT);
     maybeInitializeIndexValue(index,  true);
   }
 
-  MOZ_ALWAYS_INLINE bool isPinned() const { return flags() & PINNED_ATOM_BIT; }
+  MOZ_ALWAYS_INLINE bool isPinned() const {
+    return StringFlags::isPinned(flags());
+  }
 
   void setPinned() {
     MOZ_ASSERT(!isPinned());
-    setFlagBit(PINNED_ATOM_BIT);
+    setFlagBit(StringFlags::PINNED_ATOM_BIT);
   }
 
   inline js::HashNumber hash() const;
@@ -1868,24 +1671,22 @@ class StringSegmentRange {
 class JSOffThreadAtom : private JSAtom {
  public:
   size_t length() const { return headerLengthFieldAtomic(); }
-  size_t flags() const { return headerFlagsFieldAtomic(); }
+  uint32_t flags() const { return headerFlagsFieldAtomic(); }
 
   bool empty() const { return length() == 0; }
 
-  bool hasLatin1Chars() const { return flags() & LATIN1_CHARS_BIT; }
-  bool hasTwoByteChars() const { return !(flags() & LATIN1_CHARS_BIT); }
+  bool hasLatin1Chars() const { return StringFlags::hasLatin1Chars(flags()); }
+  bool hasTwoByteChars() const { return StringFlags::hasTwoByteChars(flags()); }
 
-  bool isAtom() const { return flags() & ATOM_BIT; }
-  bool isInline() const { return flags() & INLINE_CHARS_BIT; }
-  bool hasIndexValue() const { return flags() & INDEX_VALUE_BIT; }
-  bool isIndex() const { return flags() & ATOM_IS_INDEX_BIT; }
-  bool isFatInline() const {
-    return (flags() & FAT_INLINE_MASK) == FAT_INLINE_MASK;
-  }
+  bool isAtom() const { return StringFlags::isAtom(flags()); }
+  bool isInline() const { return StringFlags::isInline(flags()); }
+  bool hasIndexValue() const { return StringFlags::hasIndexValue(flags()); }
+  bool isIndex() const { return StringFlags::isIndex(flags()); }
+  bool isFatInline() const { return StringFlags::isFatInline(flags()); }
 
   uint32_t getIndexValue() const {
     MOZ_ASSERT(hasIndexValue());
-    return flags() >> INDEX_VALUE_SHIFT;
+    return StringFlags::indexValue(flags());
   }
   bool isIndex(uint32_t* index) const {
     if (!isIndex()) {

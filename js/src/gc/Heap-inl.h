@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef gc_Heap_inl_h
 #define gc_Heap_inl_h
 

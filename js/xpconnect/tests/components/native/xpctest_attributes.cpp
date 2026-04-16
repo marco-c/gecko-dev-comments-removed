@@ -3,7 +3,6 @@
 
 
 
-
 #include "xpctest_private.h"
 
 NS_IMPL_ISUPPORTS(xpcTestObjectReadOnly, nsIXPCTestObjectReadOnly)

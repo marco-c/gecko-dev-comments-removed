@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "jit/BaselineCodeGen.h"
 
 #include "mozilla/Casting.h"
@@ -7252,8 +7250,7 @@ bool BaselineInterpreterGenerator::emitInterpreterLoop() {
 
   tableOffset_ = masm.currentOffset();
 
-  for (size_t i = 0; i < JSOP_LIMIT; i++) {
-    const Label& opLabel = opLabels[i];
+  for (auto opLabel : opLabels) {
     MOZ_ASSERT(opLabel.bound());
     CodeLabel cl;
     masm.writeCodePointer(&cl);

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef jit_shared_IonAssemblerBufferWithConstantPools_h
 #define jit_shared_IonAssemblerBufferWithConstantPools_h
 

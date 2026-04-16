@@ -10,8 +10,6 @@
 
 
 
-
-
 #ifndef RegexpMacroAssemblerArch_h
 #define RegexpMacroAssemblerArch_h
 

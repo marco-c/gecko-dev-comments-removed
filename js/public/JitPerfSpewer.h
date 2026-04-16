@@ -4,7 +4,6 @@
 
 
 
-
 #ifndef js_JitPerfSpewer_h
 #define js_JitPerfSpewer_h
 

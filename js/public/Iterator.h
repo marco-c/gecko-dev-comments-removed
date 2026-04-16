@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef js_Iterator_h
 #define js_Iterator_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "builtin/BigInt.h"
 
 #if JS_HAS_INTL_API

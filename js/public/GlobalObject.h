@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef js_GlobalObject_h
 #define js_GlobalObject_h
 

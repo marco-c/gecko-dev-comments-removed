@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "gc/Scheduling.h"
 
 #include "mozilla/CheckedInt.h"

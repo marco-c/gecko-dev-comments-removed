@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef jit_AtomicOperations_h
 #define jit_AtomicOperations_h
 

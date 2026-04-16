@@ -63,8 +63,6 @@
 
 
 
-
-
 #ifndef xpcprivate_h_
 #define xpcprivate_h_
 
@@ -88,7 +86,6 @@
 
 #include "mozilla/dom/ScriptSettings.h"
 
-#include <math.h>
 #include <stdint.h>
 #include <stdlib.h>
 

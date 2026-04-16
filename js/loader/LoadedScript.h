@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef js_loader_LoadedScript_h
 #define js_loader_LoadedScript_h
 

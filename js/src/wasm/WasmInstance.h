@@ -20,8 +20,6 @@
 #include "mozilla/Atomics.h"
 #include "mozilla/Maybe.h"
 
-#include <functional>
-
 #include "gc/Barrier.h"
 #include "js/shadow/Zone.h"  
 #include "js/Stack.h"        

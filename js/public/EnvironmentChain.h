@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef js_EnvironmentChain_h
 #define js_EnvironmentChain_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef jit_TypePolicy_h
 #define jit_TypePolicy_h
 

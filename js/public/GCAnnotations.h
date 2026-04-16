@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef js_GCAnnotations_h
 #define js_GCAnnotations_h
 

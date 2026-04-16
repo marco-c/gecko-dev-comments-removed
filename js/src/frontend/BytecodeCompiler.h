@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef frontend_BytecodeCompiler_h
 #define frontend_BytecodeCompiler_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef js_Exception_h
 #define js_Exception_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef gc_GCMarker_h
 #define gc_GCMarker_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "xpcprivate.h"
 
 #include "mozilla/Try.h"

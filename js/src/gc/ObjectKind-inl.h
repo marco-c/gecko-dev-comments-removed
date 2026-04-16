@@ -7,8 +7,6 @@
 
 
 
-
-
 #ifndef gc_ObjectKind_inl_h
 #define gc_ObjectKind_inl_h
 

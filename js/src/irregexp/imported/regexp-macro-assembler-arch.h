@@ -2,6 +2,4 @@
 
 
 
-
-
 #include "irregexp/RegExpNativeMacroAssembler.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "gc/BufferAllocator-inl.h"
 
 #include "mozilla/Likely.h"
@@ -3278,10 +3276,13 @@ LargeBuffer* BufferAllocator::lookupLargeBuffer(void* alloc, MaybeLock& lock) {
   return buffer;
 }
 
-void* BufferAllocator::allocLarge(size_t bytes, bool nurseryOwned, bool inGC) {
-  bytes = RoundUp(bytes, ChunkSize);
+void* BufferAllocator::allocLarge(size_t requestedBytes, bool nurseryOwned,
+                                  bool inGC) {
+  size_t bytes = RoundUp(requestedBytes, ChunkSize);
+  if (MOZ_UNLIKELY(bytes < requestedBytes)) {
+    return nullptr;
+  }
   MOZ_ASSERT(bytes > MaxMediumAllocSize);
-  MOZ_ASSERT(bytes >= bytes);
 
   
   static_assert(sizeof(LargeBuffer) <= MaxSmallAllocSize);

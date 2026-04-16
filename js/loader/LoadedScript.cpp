@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "LoadedScript.h"
 
 #include "mozilla/AlreadyAddRefed.h"  

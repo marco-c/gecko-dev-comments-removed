@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "fuzz-tests/tests.h"
 
 #include <stdio.h>

@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/AutoRestore.h"
 #include "mozilla/AppShutdown.h"
@@ -953,6 +951,8 @@ void XPCJSRuntime::WeakPointerZonesCallback(JSTracer* trc, void* data) {
 
   self->mWrappedJSMap->UpdateWeakPointersAfterGC(trc);
   self->mUAWidgetScopeMap.traceWeak(trc);
+
+  BrowsingContext::SweepWindowProxies(trc);
 }
 
 

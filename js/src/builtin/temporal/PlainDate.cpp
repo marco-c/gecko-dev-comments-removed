@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "builtin/temporal/PlainDate.h"
 
 #include "mozilla/Assertions.h"

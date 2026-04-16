@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef builtin_Boolean_inl_h
 #define builtin_Boolean_inl_h
 

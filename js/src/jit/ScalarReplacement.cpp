@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "jit/ScalarReplacement.h"
 
 #include "jit/IonAnalysis.h"
@@ -285,22 +283,16 @@ static bool IsObjectEscaped(MDefinition* ins, MInstruction* newObject,
         break;
 
       case MDefinition::Opcode::Slots: {
-#ifdef DEBUG
         
-        
-        MSlots* ins = def->toSlots();
-        MOZ_ASSERT(ins->object() != 0);
-        for (MUseIterator i(ins->usesBegin()); i != ins->usesEnd(); i++) {
-          
-          
+        MSlots* slots = def->toSlots();
+        for (MUseIterator i(slots->usesBegin()); i != slots->usesEnd(); i++) {
           MDefinition* def = (*i)->consumer()->toDefinition();
-          MOZ_ASSERT(
-              def->op() == MDefinition::Opcode::StoreDynamicSlot ||
-              def->op() == MDefinition::Opcode::LoadDynamicSlot ||
-              def->op() == MDefinition::Opcode::StoreDynamicSlotFromOffset ||
-              def->op() == MDefinition::Opcode::LoadDynamicSlotFromOffset);
+          if (!def->isLoadDynamicSlot() && !def->isStoreDynamicSlot()) {
+            JitSpewDef(JitSpew_Escape, "is escaped by\n", def);
+            return true;
+          }
+          MOZ_ASSERT(def->indexOf(*i) == 0);
         }
-#endif
         break;
       }
 

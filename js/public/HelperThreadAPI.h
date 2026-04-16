@@ -7,8 +7,6 @@
 
 
 
-
-
 #ifndef js_HelperThreadAPI_h
 #define js_HelperThreadAPI_h
 

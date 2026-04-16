@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "jit/Safepoints.h"
 
 #include "mozilla/MathAlgorithms.h"

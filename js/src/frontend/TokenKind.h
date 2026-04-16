@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef frontend_TokenKind_h
 #define frontend_TokenKind_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/ScriptLoadContext.h"
 #include "mozilla/loader/SyncModuleLoader.h"
 #include "mozilla/dom/WorkerLoadContext.h"

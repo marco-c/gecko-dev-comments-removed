@@ -1,4 +1,3 @@
-
 function f(L) {
     do {
      L: for (var i = 0; i < L; i++) {

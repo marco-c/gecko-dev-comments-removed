@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "builtin/TestingUtility.h"
 
 #ifdef JS_HAS_INTL_API
@@ -219,7 +217,7 @@ bool js::SetSourceOptions(JSContext* cx, FrontendContext* fc,
 
 JSObject* js::CreateScriptPrivate(JSContext* cx,
                                   JS::Handle<JSString*> path ) {
-  JS::Rooted<JSObject*> info(cx, JS_NewPlainObject(cx));
+  JS::Rooted<JSObject*> info(cx, NewPlainObjectWithProto(cx, nullptr));
   if (!info) {
     return nullptr;
   }

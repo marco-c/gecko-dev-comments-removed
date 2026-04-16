@@ -9,8 +9,6 @@
 
 
 
-
-
 #ifndef js_AllocPolicy_h
 #define js_AllocPolicy_h
 

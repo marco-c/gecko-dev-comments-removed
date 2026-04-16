@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "WaiveXrayWrapper.h"
 #include "FilteringWrapper.h"
 #include "XrayWrapper.h"

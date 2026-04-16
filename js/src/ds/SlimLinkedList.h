@@ -16,8 +16,6 @@
 
 
 
-
-
 #ifndef ds_SlimLinkedList_h
 #define ds_SlimLinkedList_h
 

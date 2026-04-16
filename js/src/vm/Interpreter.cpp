@@ -6,8 +6,6 @@
 
 
 
-
-
 #include "vm/Interpreter-inl.h"
 
 #include "mozilla/DebugOnly.h"
