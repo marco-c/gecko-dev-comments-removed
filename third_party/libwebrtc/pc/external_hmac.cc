@@ -13,8 +13,8 @@
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
+#include <memory>
 
-#include "api/array_view.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/zero_memory.h"
 #include "third_party/libsrtp/crypto/include/auth.h"
@@ -77,19 +77,20 @@ srtp_err_status_t external_hmac_alloc(srtp_auth_t** a,
     return srtp_err_status_bad_param;
 
   
-  size_t needed_size = sizeof(ExternalHmacContext) + sizeof(srtp_auth_t);
-  uint8_t* raw_pointer = new uint8_t[needed_size];
-  if (raw_pointer == nullptr)
+  auto raw_pointer = std::make_unique_for_overwrite<uint8_t[]>(
+      sizeof(srtp_auth_t) + sizeof(ExternalHmacContext));
+  if (raw_pointer == nullptr) {
     return srtp_err_status_alloc_fail;
-  ArrayView<uint8_t> pointer(raw_pointer, needed_size);
+  }
+  uint8_t* state_memory = &raw_pointer[sizeof(srtp_auth_t)];
 
   
-  *a = reinterpret_cast<srtp_auth_t*>(pointer.data());
+  *a = reinterpret_cast<srtp_auth_t*>(raw_pointer.release());
   
   
   
   (*a)->type = const_cast<srtp_auth_type_t*>(&external_hmac);
-  (*a)->state = &pointer[sizeof(srtp_auth_t)];
+  (*a)->state = state_memory;
   (*a)->out_len = out_len;
   (*a)->key_len = key_len;
   (*a)->prefix_len = 0;
