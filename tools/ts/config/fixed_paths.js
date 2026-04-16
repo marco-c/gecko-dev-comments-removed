@@ -96,5 +96,5 @@ exports.fixed = {
   "lit/*": ["node_modules/lit/*"],
   "lit-html": ["node_modules/lit-html/lit-html"],
   
-  "moz-src:///*": ["./*"],
+  "moz-src:///*": ["*"],
 };

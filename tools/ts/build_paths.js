@@ -56,8 +56,10 @@ function scan(root, dir, files) {
 
 
 function emitPaths(files, uris, modules, relativeBasePath) {
+  
   let paths = {};
   for (let uri of [...uris].sort()) {
+    
     if (uri in fixed) {
       continue;
     }
@@ -68,7 +70,7 @@ function emitPaths(files, uris, modules, relativeBasePath) {
     
     let sub = parts.at(-1).replace(/\.(m)?js$/, ".d.$1ts");
     if (fs.existsSync(`${__dirname}/../@types/subs/${sub}`)) {
-      paths[uri] = [`tools/@types/subs/${sub}`];
+      paths[uri] = [`${relativeBasePath}/tools/@types/subs/${sub}`];
       continue;
     }
 
@@ -81,7 +83,7 @@ function emitPaths(files, uris, modules, relativeBasePath) {
 
     
     if (matches.length === 1) {
-      paths[uri] = [matches[0]];
+      paths[uri] = [`${relativeBasePath}/${matches[0]}`];
     } else {
       
       console.warn("[WARN]", uri);
@@ -89,9 +91,11 @@ function emitPaths(files, uris, modules, relativeBasePath) {
     }
   }
 
-  Object.assign(paths, fixed);
-  let tspaths = { compilerOptions: { baseUrl: relativeBasePath, paths } };
-  return JSON.stringify(tspaths, null, 2) + "\n";
+  for (let [uri, fixedPaths] of Object.entries(fixed)) {
+    
+    paths[uri] = fixedPaths?.map(p => `${relativeBasePath}/${p}`);
+  }
+  return JSON.stringify({ compilerOptions: { paths } }, null, 2) + "\n";
 }
 
 
