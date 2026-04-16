@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef GMPServiceParent_h_
 #define GMPServiceParent_h_
 
@@ -61,7 +60,7 @@ class GeckoMediaPluginServiceParent final
   NS_DECL_MOZIGECKOMEDIAPLUGINCHROMESERVICE
   NS_DECL_NSIOBSERVER
 
-  RefPtr<GenericPromise> EnsureInitialized();
+  RefPtr<GenericNonExclusivePromise> EnsureInitialized();
   RefPtr<GenericPromise> AsyncAddPluginDirectory(const nsAString& aDirectory);
 
   
@@ -235,7 +234,7 @@ class GeckoMediaPluginServiceParent final
   
   
   Monitor mInitPromiseMonitor;
-  MozMonitoredPromiseHolder<GenericPromise> mInitPromise;
+  MozMonitoredPromiseHolder<GenericNonExclusivePromise> mInitPromise;
   bool mLoadPluginsFromDiskComplete;
 
   
