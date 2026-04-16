@@ -680,12 +680,13 @@ void XRE_ShutdownChildProcess() {
 }
 
 namespace {
+
 UniqueContentParentKeepAlive& TestShellContentParent() {
   static NeverDestroyed<UniqueContentParentKeepAlive> sContentParent;
   return *sContentParent;
 }
 
-TestShellParent* GetOrCreateTestShellParent() {
+already_AddRefed<TestShellParent> GetOrCreateTestShellParent() {
   if (!TestShellContentParent()) {
     
     
@@ -696,11 +697,13 @@ TestShellParent* GetOrCreateTestShellParent() {
   } else if (TestShellContentParent()->IsShuttingDown()) {
     return nullptr;
   }
-  TestShellParent* tsp = TestShellContentParent()->GetTestShellSingleton();
+
+  RefPtr<TestShellParent> tsp =
+      TestShellContentParent()->GetTestShellSingleton();
   if (!tsp) {
     tsp = TestShellContentParent()->CreateTestShell();
   }
-  return tsp;
+  return tsp.forget();
 }
 
 }  
@@ -708,7 +711,7 @@ TestShellParent* GetOrCreateTestShellParent() {
 bool XRE_SendTestShellCommand(JSContext* aCx, JSString* aCommand,
                               JS::Value* aCallback) {
   JS::Rooted<JSString*> cmd(aCx, aCommand);
-  TestShellParent* tsp = GetOrCreateTestShellParent();
+  RefPtr<TestShellParent> tsp = GetOrCreateTestShellParent();
   NS_ENSURE_TRUE(tsp, false);
 
   nsAutoJSString command;
@@ -733,8 +736,9 @@ bool XRE_ShutdownTestShell() {
   }
   bool ret = true;
   if (TestShellContentParent()->IsAlive()) {
-    ret = TestShellContentParent()->DestroyTestShell(
-        TestShellContentParent()->GetTestShellSingleton());
+    RefPtr<TestShellParent> tsp =
+        TestShellContentParent()->GetTestShellSingleton();
+    ret = TestShellContentParent()->DestroyTestShell(tsp);
   }
   TestShellContentParent().reset();
   return ret;
