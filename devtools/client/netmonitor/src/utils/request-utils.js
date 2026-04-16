@@ -93,8 +93,8 @@ async function getFormDataSections(
 
 
 async function fetchHeaders(headers, getLongString) {
-  for (const { value } of headers.headers) {
-    headers.headers.value = await getLongString(value);
+  for (const header of headers.headers) {
+    header.value = await getLongString(header.value);
   }
   return headers;
 }
