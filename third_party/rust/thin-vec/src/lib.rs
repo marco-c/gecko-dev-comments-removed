@@ -141,6 +141,14 @@
 
 
 
+
+
+
+
+
+
+
+
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(feature = "unstable", feature(trusted_len))]
 #![allow(clippy::comparison_chain, clippy::missing_safety_doc)]
@@ -160,7 +168,7 @@ use core::ops::Bound;
 use core::ops::{Deref, DerefMut, RangeBounds};
 use core::ptr::NonNull;
 use core::slice::Iter;
-use core::{fmt, mem, ptr, slice};
+use core::{fmt, mem, ops, ptr, slice};
 
 use impl_details::*;
 
@@ -341,7 +349,10 @@ impl Header {
 
     fn set_cap_and_auto(&mut self, cap: usize, is_auto: bool) {
         
-        debug_assert_eq!(unpack_capacity(pack_capacity_and_auto(cap as SizeType, is_auto)), cap);
+        debug_assert_eq!(
+            unpack_capacity(pack_capacity_and_auto(cap as SizeType, is_auto)),
+            cap
+        );
         self._cap = pack_capacity_and_auto(assert_size(cap), is_auto);
     }
 
@@ -513,8 +524,22 @@ impl<T> ThinVec<T> {
     
     
     
+    #[cfg(not(feature = "const_new"))]
     pub fn new() -> ThinVec<T> {
         ThinVec::with_capacity(0)
+    }
+
+    
+    
+    
+    #[cfg(feature = "const_new")]
+    pub const fn new() -> ThinVec<T> {
+        unsafe {
+            ThinVec {
+                ptr: NonNull::new_unchecked(&EMPTY_HEADER as *const Header as *mut Header),
+                boo: PhantomData,
+            }
+        }
     }
 
     
@@ -822,7 +847,26 @@ impl<T> ThinVec<T> {
             self.reserve(1);
         }
         unsafe {
+            
+            self.push_unchecked(val);
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    unsafe fn push_unchecked(&mut self, val: T) {
+        let old_len = self.len();
+        debug_assert!(old_len < self.capacity());
+        unsafe {
             ptr::write(self.data_raw().add(old_len), val);
+
+            
             self.set_len_non_singleton(old_len + 1);
         }
     }
@@ -1037,8 +1081,18 @@ impl<T> ThinVec<T> {
     
     pub fn clear(&mut self) {
         unsafe {
-            ptr::drop_in_place(&mut self[..]);
-            self.set_len(0); 
+            
+            struct DropGuard<'a, T>(&'a mut ThinVec<T>);
+            impl<T> Drop for DropGuard<'_, T> {
+                fn drop(&mut self) {
+                    unsafe {
+                        
+                        self.0.set_len(0);
+                    }
+                }
+            }
+            let guard = DropGuard(self);
+            ptr::drop_in_place(&mut guard.0[..]);
         }
     }
 
@@ -1209,7 +1263,10 @@ impl<T> ThinVec<T> {
                 if stack_buf == self.ptr.as_ptr() {
                     return;
                 }
-                stack_buf.add(1).cast::<T>().copy_from_nonoverlapping(self.data_raw(), new_cap);
+                stack_buf
+                    .add(1)
+                    .cast::<T>()
+                    .copy_from_nonoverlapping(self.data_raw(), new_cap);
                 dealloc(self.ptr() as *mut u8, layout::<T>(old_cap));
                 self.ptr = NonNull::new_unchecked(stack_buf);
                 self.ptr.as_mut().set_len(new_cap);
@@ -1549,6 +1606,140 @@ impl<T> ThinVec<T> {
 
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn extract_if<F, R: RangeBounds<usize>>(
+        &mut self,
+        range: R,
+        filter: F,
+    ) -> ExtractIf<'_, T, F>
+    where
+        F: FnMut(&mut T) -> bool,
+    {
+        
+        fn slice_index_fail(start: usize, end: usize, len: usize) -> ! {
+            if start > len {
+                panic!(
+                    "range start index {} out of range for slice of length {}",
+                    start, len
+                )
+            }
+
+            if end > len {
+                panic!(
+                    "range end index {} out of range for slice of length {}",
+                    end, len
+                )
+            }
+
+            if start > end {
+                panic!("slice index starts at {} but ends at {}", start, end)
+            }
+
+            
+            
+            panic!(
+                "range end index {} out of range for slice of length {}",
+                end, len
+            )
+        }
+
+        
+        pub fn slice_range<R>(range: R, bounds: ops::RangeTo<usize>) -> ops::Range<usize>
+        where
+            R: ops::RangeBounds<usize>,
+        {
+            let len = bounds.end;
+
+            let end = match range.end_bound() {
+                ops::Bound::Included(&end) if end >= len => slice_index_fail(0, end, len),
+                
+                ops::Bound::Included(&end) => end + 1,
+
+                ops::Bound::Excluded(&end) if end > len => slice_index_fail(0, end, len),
+                ops::Bound::Excluded(&end) => end,
+                ops::Bound::Unbounded => len,
+            };
+
+            let start = match range.start_bound() {
+                ops::Bound::Excluded(&start) if start >= end => slice_index_fail(start, end, len),
+                
+                ops::Bound::Excluded(&start) => start + 1,
+
+                ops::Bound::Included(&start) if start > end => slice_index_fail(start, end, len),
+                ops::Bound::Included(&start) => start,
+
+                ops::Bound::Unbounded => 0,
+            };
+
+            ops::Range { start, end }
+        }
+
+        let old_len = self.len();
+        let ops::Range { start, end } = slice_range(range, ..old_len);
+
+        
+        unsafe {
+            self.set_len(0);
+        }
+        ExtractIf {
+            vec: self,
+            idx: start,
+            del: 0,
+            end,
+            old_len,
+            pred: filter,
+        }
+    }
+
+    
+    
     unsafe fn reallocate(&mut self, new_cap: usize) {
         debug_assert!(new_cap > 0);
         if self.has_allocation() {
@@ -1565,7 +1756,7 @@ impl<T> ThinVec<T> {
             (*ptr).set_cap_and_auto(new_cap, (*ptr).is_auto());
             self.ptr = NonNull::new_unchecked(ptr);
         } else {
-            let new_header = header_with_capacity::<T>(new_cap, self.is_auto_array());
+            let mut new_header = header_with_capacity::<T>(new_cap, self.is_auto_array());
 
             
             
@@ -1586,6 +1777,7 @@ impl<T> ThinVec<T> {
                     .cast::<T>()
                     .copy_from_nonoverlapping(self.data_raw(), len);
                 self.set_len_non_singleton(0);
+                new_header.as_mut().set_len(len);
             }
 
             self.ptr = new_header;
@@ -1604,9 +1796,7 @@ impl<T> ThinVec<T> {
         if !self.is_auto_array() {
             return ptr::null_mut();
         }
-        unsafe {
-            (self as *mut Self).byte_add(AUTO_ARRAY_HEADER_OFFSET) as *mut Header
-        }
+        unsafe { (self as *mut Self).byte_add(AUTO_ARRAY_HEADER_OFFSET) as *mut Header }
     }
 
     #[cfg(feature = "gecko-ffi")]
@@ -1615,9 +1805,7 @@ impl<T> ThinVec<T> {
         if !self.is_auto_array() {
             return ptr::null_mut();
         }
-        unsafe {
-            (self as *const Self).byte_add(AUTO_ARRAY_HEADER_OFFSET) as *const Header
-        }
+        unsafe { (self as *const Self).byte_add(AUTO_ARRAY_HEADER_OFFSET) as *const Header }
     }
 
     #[inline]
@@ -1791,11 +1979,21 @@ impl<T> Extend<T> for ThinVec<T> {
     where
         I: IntoIterator<Item = T>,
     {
-        let iter = iter.into_iter();
+        let mut iter = iter.into_iter();
         let hint = iter.size_hint().0;
         if hint > 0 {
             self.reserve(hint);
+            for x in iter.by_ref().take(hint) {
+                
+                
+                unsafe {
+                    self.push_unchecked(x);
+                }
+            }
         }
+
+        
+        
         for x in iter {
             self.push(x);
         }
@@ -2355,10 +2553,18 @@ impl<T> Drop for IntoIter<T> {
         #[cold]
         #[inline(never)]
         fn drop_non_singleton<T>(this: &mut IntoIter<T>) {
+            
+            struct DropGuard<'a, T>(&'a mut IntoIter<T>);
+            impl<T> Drop for DropGuard<'_, T> {
+                fn drop(&mut self) {
+                    unsafe {
+                        self.0.vec.set_len_non_singleton(0);
+                    }
+                }
+            }
             unsafe {
-                let mut vec = mem::replace(&mut this.vec, ThinVec::new());
-                ptr::drop_in_place(&mut vec[this.start..]);
-                vec.set_len_non_singleton(0)
+                let guard = DropGuard(this);
+                ptr::drop_in_place(&mut guard.0.vec[guard.0.start..]);
             }
         }
 
@@ -2784,6 +2990,79 @@ impl<T> Drain<'_, T> {
 }
 
 
+#[must_use = "iterators are lazy and do nothing unless consumed"]
+pub struct ExtractIf<'a, T, F> {
+    vec: &'a mut ThinVec<T>,
+    
+    idx: usize,
+    
+    end: usize,
+    
+    del: usize,
+    
+    old_len: usize,
+    
+    pred: F,
+}
+
+impl<T, F> Iterator for ExtractIf<'_, T, F>
+where
+    F: FnMut(&mut T) -> bool,
+{
+    type Item = T;
+
+    fn next(&mut self) -> Option<T> {
+        unsafe {
+            let v = self.vec.data_raw();
+            while self.idx < self.end {
+                let i = self.idx;
+                let drained = (self.pred)(&mut *v.add(i));
+                
+                
+                
+                self.idx += 1;
+                if drained {
+                    self.del += 1;
+                    return Some(ptr::read(v.add(i)));
+                } else if self.del > 0 {
+                    let del = self.del;
+                    let src: *const T = v.add(i);
+                    let dst: *mut T = v.add(i - del);
+                    ptr::copy_nonoverlapping(src, dst, 1);
+                }
+            }
+            None
+        }
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (0, Some(self.end - self.idx))
+    }
+}
+
+impl<A, F> Drop for ExtractIf<'_, A, F> {
+    fn drop(&mut self) {
+        unsafe {
+            if self.idx < self.old_len && self.del > 0 {
+                
+                
+                
+                
+                
+                
+                let ptr = self.vec.data_raw();
+                let src = ptr.add(self.idx);
+                let dst = src.sub(self.del);
+                let tail_len = self.old_len - self.idx;
+                src.copy_to(dst, tail_len);
+            }
+
+            self.vec.set_len(self.old_len - self.del);
+        }
+    }
+}
+
+
 
 
 #[cfg(feature = "std")]
@@ -2842,6 +3121,7 @@ mod tests {
     #[cfg_attr(feature = "gecko-ffi", should_panic)]
     fn test_overaligned_type_is_rejected_for_gecko_ffi_mode() {
         #[repr(align(16))]
+        #[allow(unused)]
         struct Align16(u8);
 
         let v = ThinVec::<Align16>::new();
@@ -3196,7 +3476,6 @@ mod std_tests {
         string::{String, ToString},
     };
     use core::mem::size_of;
-    use core::usize;
 
     struct DropCounter<'a> {
         count: &'a mut u32,
@@ -3569,6 +3848,7 @@ mod std_tests {
     #[test]
     fn test_vec_truncate_drop() {
         static mut DROPS: u32 = 0;
+        #[allow(unused)]
         struct Elem(i32);
         impl Drop for Elem {
             fn drop(&mut self) {
@@ -3773,19 +4053,19 @@ mod std_tests {
     #[test]
     #[cfg(not(feature = "gecko-ffi"))]
     fn test_drain_max_vec_size() {
-        let mut v = ThinVec::<()>::with_capacity(usize::max_value());
+        let mut v = ThinVec::<()>::with_capacity(usize::MAX);
         unsafe {
-            v.set_len(usize::max_value());
+            v.set_len(usize::MAX);
         }
-        for _ in v.drain(usize::max_value() - 1..) {}
-        assert_eq!(v.len(), usize::max_value() - 1);
+        for _ in v.drain(usize::MAX - 1..) {}
+        assert_eq!(v.len(), usize::MAX - 1);
 
-        let mut v = ThinVec::<()>::with_capacity(usize::max_value());
+        let mut v = ThinVec::<()>::with_capacity(usize::MAX);
         unsafe {
-            v.set_len(usize::max_value());
+            v.set_len(usize::MAX);
         }
-        for _ in v.drain(usize::max_value() - 1..=usize::max_value() - 1) {}
-        assert_eq!(v.len(), usize::max_value() - 1);
+        for _ in v.drain(usize::MAX - 1..=usize::MAX - 1) {}
+        assert_eq!(v.len(), usize::MAX - 1);
     }
 
     #[test]
@@ -4363,7 +4643,7 @@ mod std_tests {
 
 
 
-    #[cfg(all(feature = "gecko-ffi"))]
+    #[cfg(feature = "gecko-ffi")]
     #[test]
     fn auto_t_array_basic() {
         crate::auto_thin_vec!(let t: [u8; 10]);
@@ -4371,6 +4651,7 @@ mod std_tests {
         assert!(t.is_auto_array());
         assert!(t.uses_stack_allocated_buffer());
         assert!(!t.has_allocation());
+        assert_eq!(t.len(), 0);
         {
             let inner = unsafe { &mut *t.as_mut().as_mut_ptr() };
             for i in 0..30 {
@@ -4512,5 +4793,37 @@ mod std_tests {
     fn test_capacity_overflow_cap_really_isnt_isize() {
         let vec: ThinVec<u8> = ThinVec::with_capacity(isize::MAX as usize);
         assert!(vec.capacity() > 0);
+    }
+
+    struct PanicBomb(&'static str);
+
+    impl Drop for PanicBomb {
+        fn drop(&mut self) {
+            if self.0 == "panic" {
+                panic!("panic!");
+            }
+        }
+    }
+
+    #[test]
+    #[should_panic(expected = "panic!")]
+    fn test_panic_into_iter() {
+        let mut v = ThinVec::new();
+        v.push(PanicBomb("normal1"));
+        v.push(PanicBomb("panic"));
+        v.push(PanicBomb("normal2"));
+
+        let mut iter = v.into_iter();
+        iter.next();
+    }
+
+    #[test]
+    #[should_panic(expected = "panic!")]
+    fn test_panic_clear() {
+        let mut v = ThinVec::new();
+        v.push(PanicBomb("normal1"));
+        v.push(PanicBomb("panic"));
+        v.push(PanicBomb("normal2"));
+        v.clear();
     }
 }
