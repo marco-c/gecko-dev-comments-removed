@@ -145,7 +145,13 @@ class nsUrlClassifierDBService final : public nsIUrlClassifierDBService,
   bool mInUpdate;
 
   
-  nsTArray<nsCString> mDisallowCompletionsTables;
+  
+  
+  mozilla::Mutex mDisallowCompletionsTablesLock;
+
+  
+  nsTArray<nsCString> mDisallowCompletionsTables
+      MOZ_GUARDED_BY(mDisallowCompletionsTablesLock);
 
   
   static nsIThread* gDbBackgroundThread;
