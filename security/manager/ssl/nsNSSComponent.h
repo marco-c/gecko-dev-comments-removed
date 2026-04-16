@@ -7,9 +7,6 @@
 #define _nsNSSComponent_h_
 
 #include "nsINSSComponent.h"
-#ifdef ENABLE_TESTS
-#  include "nsISSLTokensCacheTest.h"
-#endif
 
 #include "EnterpriseRoots.h"
 #include "ScopedNSSTypes.h"
@@ -74,13 +71,7 @@ class AutoSearchingForClientAuthCertificates {
 };
 
 
-class nsNSSComponent final : public nsINSSComponent,
-                             public nsIObserver
-#ifdef ENABLE_TESTS
-    ,
-                             public nsISSLTokensCacheTest
-#endif
-{
+class nsNSSComponent final : public nsINSSComponent, public nsIObserver {
  public:
   
   
@@ -94,9 +85,6 @@ class nsNSSComponent final : public nsINSSComponent,
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSINSSCOMPONENT
   NS_DECL_NSIOBSERVER
-#ifdef ENABLE_TESTS
-  NS_DECL_NSISSLTOKENSCACHETEST
-#endif
 
   nsresult Init();
 
