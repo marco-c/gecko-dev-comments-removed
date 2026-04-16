@@ -14,11 +14,10 @@
 #include "transport/transportlayersrtp.h"
 
 
+#include "mozilla/IceServerParser.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/dom/RTCConfigurationBinding.h"
-
-#include "mozilla/IceServerParser.h"
 
 
 #include "common/browser_logging/CSFLog.h"
