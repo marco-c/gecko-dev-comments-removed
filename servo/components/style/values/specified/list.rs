@@ -4,7 +4,6 @@
 
 
 
-#[cfg(feature = "gecko")]
 use crate::counter_style::{CounterStyle, CounterStyleParsingFlags};
 use crate::derives::*;
 use crate::parser::{Parse, ParserContext};
@@ -12,7 +11,6 @@ use cssparser::{Parser, Token};
 use style_traits::{ParseError, StyleParseErrorKind};
 
 
-#[cfg(feature = "gecko")]
 #[derive(
     Clone,
     Debug,
@@ -29,7 +27,6 @@ use style_traits::{ParseError, StyleParseErrorKind};
 #[repr(transparent)]
 pub struct ListStyleType(pub CounterStyle);
 
-#[cfg(feature = "gecko")]
 impl ListStyleType {
     
     #[inline]
@@ -47,6 +44,7 @@ impl ListStyleType {
     
     
     
+    #[cfg(feature = "gecko")]
     pub fn from_gecko_keyword(value: u32) -> Self {
         use crate::gecko_bindings::structs;
         use crate::values::CustomIdent;
@@ -75,7 +73,6 @@ impl ListStyleType {
     }
 }
 
-#[cfg(feature = "gecko")]
 impl Parse for ListStyleType {
     fn parse<'i, 't>(
         context: &ParserContext,
@@ -83,142 +80,6 @@ impl Parse for ListStyleType {
     ) -> Result<Self, ParseError<'i>> {
         let flags = CounterStyleParsingFlags::ALLOW_NONE | CounterStyleParsingFlags::ALLOW_STRING;
         Ok(Self(CounterStyle::parse(context, input, flags)?))
-    }
-}
-
-
-#[cfg(feature = "servo")]
-#[derive(
-    Clone,
-    Debug,
-    Eq,
-    MallocSizeOf,
-    Parse,
-    PartialEq,
-    SpecifiedValueInfo,
-    ToCss,
-    ToComputedValue,
-    ToResolvedValue,
-    ToShmem,
-    ToTyped,
-)]
-pub enum ListStyleType {
-    
-    
-    Disc,
-    
-    
-    None,
-    
-    
-    Circle,
-    
-    
-    Square,
-    
-    
-    DisclosureOpen,
-    
-    
-    DisclosureClosed,
-    
-    
-    Decimal,
-    
-    
-    LowerAlpha,
-    
-    
-    UpperAlpha,
-    
-    
-    ArabicIndic,
-    
-    
-    Bengali,
-    
-    
-    Cambodian,
-    
-    
-    CjkDecimal,
-    
-    
-    Devanagari,
-    
-    
-    Gujarati,
-    
-    
-    Gurmukhi,
-    
-    
-    Kannada,
-    
-    
-    Khmer,
-    
-    
-    Lao,
-    
-    
-    Malayalam,
-    
-    
-    Mongolian,
-    
-    
-    Myanmar,
-    
-    
-    Oriya,
-    
-    
-    Persian,
-    
-    
-    Telugu,
-    
-    
-    Thai,
-    
-    
-    Tibetan,
-    
-    
-    CjkEarthlyBranch,
-    
-    
-    CjkHeavenlyStem,
-    
-    
-    LowerGreek,
-    
-    
-    Hiragana,
-    
-    
-    HiraganaIroha,
-    
-    
-    Katakana,
-    
-    
-    KatakanaIroha,
-}
-
-#[cfg(feature = "servo")]
-impl ListStyleType {
-    
-    #[inline]
-    pub fn disc() -> Self {
-        Self::Disc
-    }
-
-    
-    #[inline]
-    pub fn none() -> Self {
-        Self::None
     }
 }
 
