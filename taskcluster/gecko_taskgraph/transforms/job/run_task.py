@@ -14,55 +14,13 @@ from typing import Optional as TOptional
 from mozpack import path
 from taskgraph.transforms.run.common import support_caches
 from taskgraph.util.schema import (
-    LegacySchema,
     Schema,
-    taskref_or_string,
     taskref_or_string_msgspec,
 )
 from taskgraph.util.yaml import load_yaml
-from voluptuous import Any, Optional, Required
 
 from gecko_taskgraph.transforms.job import run_job_using
 from gecko_taskgraph.transforms.job.common import add_tooltool, support_vcs_checkout
-
-run_task_schema = LegacySchema({
-    Required("using"): "run-task",
-    
-    Optional("use-caches"): Any(bool, [str]),
-    
-    Required("checkout"): bool,
-    Optional(
-        "cwd",
-        description="Path to run command in. If a checkout is present, the path "
-        "to the checkout will be interpolated with the key `checkout`",
-    ): str,
-    
-    
-    Required("sparse-profile"): Any(str, None),
-    
-    Optional("sparse-profile-prefix"): str,
-    
-    Optional("shallow-clone"): bool,
-    
-    
-    Required("comm-checkout"): bool,
-    
-    
-    
-    Required("command"): Any([taskref_or_string], taskref_or_string),
-    
-    Optional("workdir"): str,
-    
-    
-    
-    Required("tooltool-downloads"): Any(
-        False,
-        "public",
-        "internal",
-    ),
-    
-    Optional("run-as-root"): bool,
-})
 
 
 class RunTaskSchema(Schema, kw_only=True):
@@ -169,7 +127,7 @@ def script_url(config, script):
 
 
 @run_job_using(
-    "docker-worker", "run-task", schema=run_task_schema, defaults=worker_defaults
+    "docker-worker", "run-task", schema=RunTaskSchema, defaults=worker_defaults
 )
 def docker_worker_run_task(config, job, taskdesc):
     run = job["run"]
@@ -201,7 +159,7 @@ def docker_worker_run_task(config, job, taskdesc):
 
 
 @run_job_using(
-    "generic-worker", "run-task", schema=run_task_schema, defaults=worker_defaults
+    "generic-worker", "run-task", schema=RunTaskSchema, defaults=worker_defaults
 )
 def generic_worker_run_task(config, job, taskdesc):
     run = job["run"]
