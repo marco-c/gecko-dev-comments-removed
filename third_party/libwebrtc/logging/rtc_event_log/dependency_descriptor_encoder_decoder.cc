@@ -21,7 +21,7 @@
 #include "logging/rtc_event_log/encoder/delta_encoding.h"
 #include "logging/rtc_event_log/encoder/optional_blob_encoding.h"
 #include "logging/rtc_event_log/events/rtc_event_log_parse_status.h"
-#include "logging/rtc_event_log/rtc_event_log2_proto_include.h"
+#include "logging/rtc_event_log/rtc_event_log2_proto_include.h"  
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 
@@ -45,7 +45,7 @@ RtcEventLogDependencyDescriptorEncoderDecoder::Encode(
   rtclog2::DependencyDescriptorsWireInfo res;
   const ArrayView<const uint8_t>& base_dd = raw_dd_data[0];
   auto delta_dds =
-      MakeArrayView(raw_dd_data.data(), raw_dd_data.size()).subview(1);
+      MakeArrayView(raw_dd_data.data(), raw_dd_data.size()).subspan(1);
 
   
   {
@@ -117,7 +117,7 @@ RtcEventLogDependencyDescriptorEncoderDecoder::Encode(
     std::vector<std::optional<std::string>> values(raw_dd_data.size());
     for (size_t i = 0; i < raw_dd_data.size(); ++i) {
       if (raw_dd_data[i].size() > 3) {
-        auto extended_info = raw_dd_data[i].subview(3);
+        auto extended_info = raw_dd_data[i].subspan(3);
         values[i] = {reinterpret_cast<const char*>(extended_info.data()),
                      extended_info.size()};
       }
