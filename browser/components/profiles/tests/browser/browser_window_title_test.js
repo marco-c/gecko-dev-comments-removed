@@ -17,24 +17,16 @@ function waitForDbUpdatePropagation() {
 }
 
 function triggerDbUpdate() {
-  let dbUpdate = waitForDbUpdatePropagation();
   Services.obs.notifyObservers(null, "pds-datastore-changed");
-  return dbUpdate;
+  return waitForDbUpdatePropagation();
 }
 
 add_task(async function test_windowTitle() {
   
   
   
-  let dbUpdate = waitForDbUpdatePropagation();
+  
   await initGroupDatabase();
-  await dbUpdate;
-
-  
-  
-  
-  
-  await waitForDbUpdatePropagation();
   await SelectableProfileService.uninit();
   await SelectableProfileService.init();
 
@@ -46,7 +38,7 @@ add_task(async function test_windowTitle() {
     "The profile name is not in the window title"
   );
 
-  dbUpdate = waitForDbUpdatePropagation();
+  let dbUpdate = waitForDbUpdatePropagation();
   let newProfile = await SelectableProfileService.createNewProfile(false);
   await dbUpdate;
 
