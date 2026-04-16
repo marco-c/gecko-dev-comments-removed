@@ -304,6 +304,10 @@ bool OffscreenCanvasDisplayHelper::CommitFrameToCompositor(
     }
   }
 
+  if (!mCanvasElement || !mImageContainer) {
+    return false;
+  }
+
   
   
   
