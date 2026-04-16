@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef jsshell_js_h
 #define jsshell_js_h
 
@@ -196,6 +194,10 @@ struct ShellContext {
   ~ShellContext();
 
   JSContext* cx_;
+
+  
+  
+  bool disableDebuggerForNewGlobal = false;
 
   const IsWorkerEnum isWorker;
   bool lastWarningEnabled;
