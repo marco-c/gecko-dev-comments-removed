@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "gtest/gtest.h"
 #include "js/Array.h"  
 #include "js/ArrayBuffer.h"
@@ -428,4 +426,66 @@ TEST(DOM_IndexedDB_Key, ToLocaleAwareKey_Bug_1641598)
   EXPECT_TRUE(res.isOk());
 
   EXPECT_EQ(input, res.inspect());
+}
+
+template <typename T, size_t N>
+constexpr const T* ArrayEnd(const T (&a)[N]) {
+  return a + N;
+}
+
+using EncodedDataType = unsigned char;
+
+
+
+
+
+TEST(DOM_IndexedDB_LengthOfEncodedBinary, TerminatedThenMore)
+{
+  constexpr EncodedDataType bytes[] = {
+      
+      
+      Key::eBinary, 0x01, 0x80, 0x00, Key::eTerminator, Key::eString, 'a', 'b'};
+
+  ASSERT_EQ(3u, Key::LengthOfEncodedBinary(bytes, ArrayEnd(bytes)));
+}
+
+TEST(DOM_IndexedDB_LengthOfEncodedBinary, TwoBytesWithoutTerminator)
+{
+  constexpr EncodedDataType bytes[] = {
+      
+      
+      Key::eBinary, 0x80, 0x00};
+
+  ASSERT_EQ(2u, Key::LengthOfEncodedBinary(bytes, ArrayEnd(bytes)));
+}
+
+TEST(DOM_IndexedDB_LengthOfEncodedBinary, OneByteWithTerminator)
+{
+  constexpr EncodedDataType bytes[] = {
+      
+      
+      Key::eBinary, 0x03, 0x00};
+
+  ASSERT_EQ(1u, Key::LengthOfEncodedBinary(bytes, ArrayEnd(bytes)));
+}
+
+TEST(DOM_IndexedDB_LengthOfEncodedBinary, OneByteWithoutTerminator)
+{
+  constexpr EncodedDataType bytes[] = {Key::eBinary, 0x03};
+
+  ASSERT_EQ(1u, Key::LengthOfEncodedBinary(bytes, ArrayEnd(bytes)));
+}
+
+TEST(DOM_IndexedDB_LengthOfEncodedBinary, OneTerminator)
+{
+  constexpr EncodedDataType bytes[] = {Key::eBinary, 0x00};
+
+  ASSERT_EQ(0u, Key::LengthOfEncodedBinary(bytes, ArrayEnd(bytes)));
+}
+
+TEST(DOM_IndexedDB_LengthOfEncodedBinary, EmptyArray)
+{
+  constexpr EncodedDataType bytes[] = {Key::eBinary};
+
+  ASSERT_EQ(0u, Key::LengthOfEncodedBinary(bytes, ArrayEnd(bytes)));
 }
