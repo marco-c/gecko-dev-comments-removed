@@ -10,9 +10,8 @@
 
 #include "modules/rtp_rtcp/source/rtp_format_vp8.h"
 
-#include <stdint.h>
-#include <string.h>  
-
+#include <cstdint>
+#include <cstring>
 #include <vector>
 
 #include "api/array_view.h"
@@ -90,7 +89,7 @@ bool RtpPacketizerVp8::NextPacket(RtpPacketToSend* packet) {
   memcpy(buffer, hdr_.data(), hdr_.size());
   memcpy(buffer + hdr_.size(), remaining_payload_.data(), packet_payload_len);
 
-  remaining_payload_ = remaining_payload_.subview(packet_payload_len);
+  remaining_payload_ = remaining_payload_.subspan(packet_payload_len);
   hdr_[0] &= (~kSBit);  
   packet->SetMarker(current_packet_ == payload_sizes_.end());
   return true;

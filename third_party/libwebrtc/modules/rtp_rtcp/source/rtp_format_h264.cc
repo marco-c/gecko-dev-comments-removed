@@ -10,10 +10,9 @@
 
 #include "modules/rtp_rtcp/source/rtp_format_h264.h"
 
-#include <string.h>
-
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 #include <vector>
 
 #include "absl/algorithm/container.h"
@@ -44,7 +43,7 @@ RtpPacketizerH264::RtpPacketizerH264(ArrayView<const uint8_t> payload,
 
   for (const auto& nalu : H264::FindNaluIndices(payload)) {
     input_fragments_.push_back(
-        payload.subview(nalu.payload_start_offset, nalu.payload_size));
+        payload.subspan(nalu.payload_start_offset, nalu.payload_size));
   }
   bool has_empty_fragments = absl::c_any_of(
       input_fragments_,
@@ -135,7 +134,7 @@ bool RtpPacketizerH264::PacketizeFuA(size_t fragment_index) {
   for (size_t i = 0; i < payload_sizes.size(); ++i) {
     int packet_length = payload_sizes[i];
     RTC_CHECK_GT(packet_length, 0);
-    packets_.push(PacketUnit(fragment.subview(offset, packet_length),
+    packets_.push(PacketUnit(fragment.subspan(offset, packet_length),
                              i == 0,
                              i == payload_sizes.size() - 1,
                              false, fragment[0]));
@@ -231,9 +230,7 @@ bool RtpPacketizerH264::NextPacket(RtpPacketToSend* rtp_packet) {
   PacketUnit packet = packets_.front();
   if (packet.first_fragment && packet.last_fragment) {
     
-    size_t bytes_to_send = packet.source_fragment.size();
-    uint8_t* buffer = rtp_packet->AllocatePayload(bytes_to_send);
-    memcpy(buffer, packet.source_fragment.data(), bytes_to_send);
+    rtp_packet->SetPayload(packet.source_fragment);
     packets_.pop();
     input_fragments_.pop_front();
   } else if (packet.aggregated) {

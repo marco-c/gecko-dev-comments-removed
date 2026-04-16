@@ -17,12 +17,12 @@
 #include <vector>
 
 #include "api/array_view.h"
+#include "api/transport/ecn_marking.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
 #include "modules/rtp_rtcp/source/byte_io.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/common_header.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/network/ecn_marking.h"
 
 namespace webrtc {
 namespace rtcp {
@@ -221,8 +221,8 @@ bool CongestionControlFeedback::Create(uint8_t* buffer,
       }
       ++number_of_packets_for_ssrc;
     }
-    write_report_for_ssrc(remaining.subview(0, number_of_packets_for_ssrc));
-    remaining = remaining.subview(number_of_packets_for_ssrc);
+    write_report_for_ssrc(remaining.subspan(0, number_of_packets_for_ssrc));
+    remaining = remaining.subspan(number_of_packets_for_ssrc);
   }
 
   
