@@ -1074,7 +1074,6 @@ gfxFont::RoundingFlags gfxFont::GetRoundOffsetsToPixels(
 gfxHarfBuzzShaper* gfxFont::GetHarfBuzzShaper() {
   if (!mHarfBuzzShaper) {
     auto* shaper = new gfxHarfBuzzShaper(this);
-    shaper->Initialize();
     if (!mHarfBuzzShaper.compareExchange(nullptr, shaper)) {
       delete shaper;
     }
@@ -2679,7 +2678,7 @@ bool gfxFont::RenderColorGlyph(DrawTarget* aDrawTarget, gfxContext* aContext,
     
     
     hbShaper = GetHarfBuzzShaper();
-    if (!hbShaper && !hbShaper->IsInitialized()) {
+    if (!hbShaper) {
       return false;
     }
     if (aTextDrawer) {
