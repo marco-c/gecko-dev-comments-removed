@@ -297,6 +297,13 @@ uint64_t UniversalStatesFor(dom::Element* aElement);
 
 
 
+void MapToStateIfInRoleMapEntry(const nsRoleMapEntry* aRoleMapEntry,
+                                EStateRule aRule, dom::Element* aElement,
+                                uint64_t* aState);
+
+
+
+
 
 
 

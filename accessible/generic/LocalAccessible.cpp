@@ -1706,11 +1706,14 @@ void LocalAccessible::ApplyARIAState(uint64_t* aState) const {
     }
   }
 
-  
-  
-  
-  if (IsButton() || IsMenuButton()) {
-    aria::MapToState(aria::eARIAPressed, element, aState);
+  if (!roleMapEntry) {
+    if (nsStaticAtom* ariaRole = ComputedARIARole()) {
+      const nsRoleMapEntry* computedRoleMapEntry = aria::GetRoleMap(ariaRole);
+      aria::MapToStateIfInRoleMapEntry(computedRoleMapEntry,
+                                       aria::eARIAExpanded, element, aState);
+      aria::MapToStateIfInRoleMapEntry(computedRoleMapEntry, aria::eARIAPressed,
+                                       element, aState);
+    }
   }
 
   if (!IsTextField() && IsEditableRoot()) {
