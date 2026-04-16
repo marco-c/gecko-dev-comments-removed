@@ -31,8 +31,11 @@
 #endif
 
 WebRTCPulseSymbolTable* GetPulseSymbolTable() {
-  static WebRTCPulseSymbolTable* pulse_symbol_table =
-      new WebRTCPulseSymbolTable();
+  static WebRTCPulseSymbolTable* pulse_symbol_table = []() {
+    auto* table = new WebRTCPulseSymbolTable();
+    table->Load();
+    return table;
+  }();
   return pulse_symbol_table;
 }
 
@@ -1555,7 +1558,7 @@ int32_t AudioDeviceLinuxPulse::InitPulseAudio() {
   int retVal = 0;
 
   
-  if (!GetPulseSymbolTable()->Load()) {
+  if (!GetPulseSymbolTable()->IsLoaded()) {
     
     
     RTC_LOG(LS_ERROR) << "failed to load symbol table";
