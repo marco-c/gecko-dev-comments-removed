@@ -325,6 +325,12 @@ static inline void* MapMemoryAt(void* desired, size_t length) {
 
 static inline uint64_t GetNumberInRange(uint64_t minNum, uint64_t maxNum) {
   const uint64_t MaxRand = UINT64_C(0xffffffffffffffff);
+
+  MOZ_ASSERT(minNum <= maxNum);
+  if (minNum == maxNum) {
+    return minNum;
+  }
+
   maxNum -= minNum;
   uint64_t binSize = 1 + (MaxRand - maxNum) / (maxNum + 1);
 
@@ -565,12 +571,12 @@ void* MapAlignedPages(size_t length, size_t alignment,
   
   if (UsingScattershotAllocator()) {
     void* region = MapAlignedPagesRandom(length, alignment);
-
-    MOZ_RELEASE_ASSERT(!IsInvalidRegion(region, length));
-    MOZ_ASSERT(OffsetFromAligned(region, alignment) == 0);
-
-    RecordMemoryAlloc(length);
-    return region;
+    if (region) {
+      MOZ_RELEASE_ASSERT(!IsInvalidRegion(region, length));
+      MOZ_ASSERT(OffsetFromAligned(region, alignment) == 0);
+      RecordMemoryAlloc(length);
+      return region;
+    }
   }
 #  endif
 
@@ -652,6 +658,11 @@ void* MapAlignedPages(size_t length, size_t alignment,
 
 
 static void* MapAlignedPagesRandom(size_t length, size_t alignment) {
+  MOZ_ASSERT(length != 0);
+  if (length - 1 > maxValidAddress) {
+    return nullptr;
+  }
+
   uint64_t minNum, maxNum;
   if (length < HugeAllocationSize) {
     
@@ -661,6 +672,10 @@ static void* MapAlignedPagesRandom(size_t length, size_t alignment) {
     
     minNum = (hugeSplit + 1 + alignment - 1) / alignment;
     maxNum = (maxValidAddress - (length - 1)) / alignment;
+  }
+
+  if (minNum > maxNum) {
+    return nullptr;
   }
 
   
@@ -796,7 +811,7 @@ static void* MapAlignedPagesLastDitch(size_t length, size_t alignment,
       break;  
     }
   }
-  if (OffsetFromAligned(region, alignment)) {
+  if (region && OffsetFromAligned(region, alignment) != 0) {
     UnmapInternal(region, length);
     region = nullptr;
   }
