@@ -91,6 +91,14 @@ enum CheckedState {
                        priority:(uint16_t)priority;
 
 
+
+
+
+
+
+- (NSString*)composeAnnouncementMessageFromSubtree;
+
+
 - (id)childAt:(uint32_t)i;
 
 

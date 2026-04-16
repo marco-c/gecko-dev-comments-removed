@@ -18,6 +18,7 @@
 
 #include "LocalAccessible-inl.h"
 #include "nsAccUtils.h"
+#include "nsTextEquivUtils.h"
 #include "DocAccessibleParent.h"
 #include "Relation.h"
 #include "mozilla/a11y/Role.h"
@@ -1172,10 +1173,31 @@ static bool ProvidesTitle(const Accessible* aAccessible, nsString& aName) {
       }
       break;
     }
-    case nsIAccessibleEvent::EVENT_LIVE_REGION_CHANGED:
+    case nsIAccessibleEvent::EVENT_LIVE_REGION_CHANGED: {
       MOZ_ASSERT(mIsLiveRegion);
       [self moxPostNotification:@"AXLiveRegionChanged"];
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (mGeckoAccessible->IsLocal()) {
+        if (NSString* announcementText =
+                [self composeAnnouncementMessageFromSubtree]) {
+          nsAutoString live;
+          nsAccUtils::GetLiveRegionSetting(mGeckoAccessible->AsLocal(), live);
+          uint16_t priority = live.EqualsLiteral("assertive")
+                                  ? nsIAccessibleAnnouncementEvent::ASSERTIVE
+                                  : nsIAccessibleAnnouncementEvent::POLITE;
+          [self handleAnnouncementEvent:announcementText priority:priority];
+        }
+      }
       break;
+    }
     case nsIAccessibleEvent::EVENT_ERRORMESSAGE_CHANGED: {
       
       
@@ -1204,6 +1226,16 @@ static bool ProvidesTitle(const Accessible* aAccessible, nsString& aName) {
       }
     }
   }
+}
+
+- (NSString*)composeAnnouncementMessageFromSubtree {
+  nsAutoString text;
+  nsTextEquivUtils::GetTextEquivFromSubtree(mGeckoAccessible, text);
+  if (!text.IsEmpty()) {
+    return nsCocoaUtils::ToNSString(text);
+  }
+  NSString* label = [self moxLabel];
+  return [label length] ? label : nil;
 }
 
 - (void)handleAnnouncementEvent:(NSString*)announcement

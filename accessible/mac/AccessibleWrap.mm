@@ -153,6 +153,20 @@ nsresult AccessibleWrap::HandleAccEvent(AccEvent* aEvent) {
   if (eventType == nsIAccessibleEvent::EVENT_SHOW) {
     DocAccessibleWrap* doc = static_cast<DocAccessibleWrap*>(Document());
     doc->ProcessNewLiveRegions();
+
+    
+    
+    
+    
+    
+    
+    for (LocalAccessible* container = aEvent->GetAccessible()->LocalParent();
+         container; container = container->LocalParent()) {
+      if (container->HasOwnContent() && IsLiveRegion(container->GetContent())) {
+        Document()->FireDelayedEvent(
+            nsIAccessibleEvent::EVENT_LIVE_REGION_CHANGED, container);
+      }
+    }
   }
 
   if (((eventType == nsIAccessibleEvent::EVENT_TEXT_INSERTED ||
