@@ -5426,12 +5426,37 @@ bool HttpBaseChannel::ShouldTaintReplacementChannelOrigin(
 
   
   
+  
+  
   if (IsNewChannelSameOrigin(aNewChannel)) {
     return false;
   }
 
-  nsresult rv;
+  
+  
+  
+  
+  
+  
+  
+  
+  if (StaticPrefs::network_http_origin_useTriggeringPrincipal()) {
+    nsIPrincipal* triggeringPrincipal = mLoadInfo->TriggeringPrincipal();
+    if (!triggeringPrincipal) {
+      return true;
+    }
+    bool sameOrigin = false;
+    nsresult rv = triggeringPrincipal->IsSameOrigin(mURI, &sameOrigin);
+    if (NS_FAILED(rv)) {
+      return true;
+    }
+    return !sameOrigin;
+  }
 
+  
+  
+  
+  nsresult rv;
   if (mLoadInfo->GetLoadingPrincipal()) {
     bool sameOrigin = false;
     rv = mLoadInfo->GetLoadingPrincipal()->IsSameOrigin(mURI, &sameOrigin);
