@@ -688,12 +688,15 @@ class Module::PartialTier2CompileTaskImpl : public PartialTier2CompileTask {
   }
 };
 
-
 bool Code::requestTierUp(uint32_t funcIndex) const {
   
   
+  MOZ_ASSERT(mode_ == CompileMode::LazyTiering);
   FuncState& state = funcStates_[funcIndex - codeMeta_->numFuncImports];
-  MOZ_ASSERT(state.tierUpState == TierUpState::Requested);
+  if (!state.tierUpState.compareExchange(TierUpState::NotRequested,
+                                         TierUpState::Requested)) {
+    return true;
+  }
 
   auto task =
       js::MakeUnique<Module::PartialTier2CompileTaskImpl>(*this, funcIndex);
