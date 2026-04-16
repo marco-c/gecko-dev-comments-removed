@@ -198,46 +198,79 @@ void ViewTimeline::UpdateCachedCurrentTime() {
 
 std::pair<nscoord, nscoord> ViewTimeline::IntervalForTimelineRangeName(
     const StyleTimelineRangeName aName,
-    const ScrollTimeline::ComputedTimelineData& aData) {
-  nscoord rangeStart = 0;
+    const ScrollTimeline::ComputedTimelineData& aData) const {
+  MOZ_ASSERT(mCachedCurrentTime, "We should have a cached current time");
+
+  
+  
+
+  
+  
+  const nscoord alignedSubjectStartViewEnd = aData.mStart;
+  
+  
+  const nscoord alignedSubjectEndViewStart = aData.mEnd;
+  
+  
+  const nscoord alignedSubjectStartViewStart =
+      alignedSubjectEndViewStart - mCachedCurrentTime->mSubjectSize;
+  
+  
+  const nscoord alignedSubjectEndViewEnd =
+      alignedSubjectStartViewEnd + mCachedCurrentTime->mSubjectSize;
+
+  
+  
   switch (aName) {
     case StyleTimelineRangeName::None:
     case StyleTimelineRangeName::Normal:
+      
     case StyleTimelineRangeName::Cover:
-      rangeStart = aData.mStart;
-      break;
+      
+      
+      
+      
+      
+      
+      
+      return {alignedSubjectStartViewEnd, alignedSubjectEndViewStart};
+
     case StyleTimelineRangeName::Contain:
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      return {std::min(alignedSubjectStartViewStart, alignedSubjectEndViewEnd),
+              std::max(alignedSubjectStartViewStart, alignedSubjectEndViewEnd)};
+
     case StyleTimelineRangeName::Entry:
     case StyleTimelineRangeName::Exit:
     case StyleTimelineRangeName::EntryCrossing:
     case StyleTimelineRangeName::ExitCrossing:
     case StyleTimelineRangeName::Scroll:
       
-      
-      break;
+      return {0, 0};
   }
 
-  nscoord rangeEnd = 0;
-  switch (aName) {
-    case StyleTimelineRangeName::None:
-    case StyleTimelineRangeName::Normal:
-    case StyleTimelineRangeName::Cover:
-      rangeEnd = aData.mEnd;
-      break;
-    case StyleTimelineRangeName::Contain:
-    case StyleTimelineRangeName::Entry:
-    case StyleTimelineRangeName::Exit:
-    case StyleTimelineRangeName::EntryCrossing:
-    case StyleTimelineRangeName::ExitCrossing:
-    case StyleTimelineRangeName::Scroll:
-      
-      
-      break;
-  }
-
+  MOZ_ASSERT_UNREACHABLE("All cases should be hanlded.");
   
-  
-  return {rangeStart, rangeEnd};
+  return {alignedSubjectStartViewEnd, alignedSubjectEndViewStart};
 }
 
 

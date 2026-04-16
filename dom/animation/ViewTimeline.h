@@ -74,9 +74,9 @@ class ViewTimeline final : public ScrollTimeline {
 
   Maybe<ComputedTimelineData> ComputeTimelineData() const override;
 
-  static std::pair<nscoord, nscoord> IntervalForTimelineRangeName(
+  std::pair<nscoord, nscoord> IntervalForTimelineRangeName(
       const StyleTimelineRangeName aName,
-      const ScrollTimeline::ComputedTimelineData& aData);
+      const ScrollTimeline::ComputedTimelineData& aData) const;
 
   
   
