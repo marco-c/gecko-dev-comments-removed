@@ -2964,8 +2964,17 @@ inline void SweepingTracer::onEdge(T** thingp, const char* name) {
   
   
   
+  MOZ_ASSERT_IF(cell->getTraceKind() == JS::TraceKind::Symbol &&
+                    !allowSweepingSymbolsEarly,
+                !zone->isGCMarking());
+
   
-  if ((zone->isGCSweeping() || zone->isAtomsZone()) && !cell->isMarkedAny()) {
+  
+  
+  
+  
+  if ((zone->isGCSweeping() || (zone->isAtomsZone() && zone->isGCMarking())) &&
+      !cell->isMarkedAny()) {
     *thingp = nullptr;
   }
 }

@@ -1546,6 +1546,12 @@ void GCRuntime::sweepDebuggerOnMainThread(JS::GCContext* gcx) {
 
 void GCRuntime::sweepJitDataOnMainThread(JS::GCContext* gcx) {
   SweepingTracer trc(rt);
+
+  
+  
+  
+  trc.setAllowSweepingSymbolsEarly(true);
+
   {
     gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::SWEEP_JIT_DATA);
 
