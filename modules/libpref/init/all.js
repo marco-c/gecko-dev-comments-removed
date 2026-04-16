@@ -337,7 +337,6 @@ pref("media.videocontrols.keyboard-tab-to-all-controls", true);
   
   pref("media.getusermedia.audio.processing.aec.enabled", true);
   pref("media.getusermedia.audio.processing.aec", 1); 
-  pref("media.getusermedia.audio.processing.aec.mobile", false);
   pref("media.getusermedia.audio.processing.noise.enabled", true);
   pref("media.getusermedia.audio.processing.noise", 2); 
   pref("media.getusermedia.audio.processing.agc.enabled", true);
