@@ -34,7 +34,7 @@ FixedLengthEncodingParametersV3::CalculateParameters(
     bool values_optional) {
   
   
-  if (std::all_of(values.cbegin(), values.cend(),
+  if (std::all_of(values.begin(), values.end(),
                   [base](uint64_t val) { return val == base; })) {
     
     return FixedLengthEncodingParametersV3(64,

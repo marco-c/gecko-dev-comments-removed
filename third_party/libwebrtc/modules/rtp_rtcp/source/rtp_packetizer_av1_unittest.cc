@@ -10,9 +10,8 @@
 
 #include "modules/rtp_rtcp/source/rtp_packetizer_av1.h"
 
-#include <stddef.h>
-#include <stdint.h>
-
+#include <cstddef>
+#include <cstdint>
 #include <initializer_list>
 #include <utility>
 #include <vector>
@@ -42,7 +41,7 @@ constexpr uint8_t kNewCodedVideoSequenceBit = 0b00'00'1000;
 
 struct RtpPayload {
   using value_type = ArrayView<const uint8_t>::value_type;
-  using const_iterator = ArrayView<const uint8_t>::const_iterator;
+  using const_iterator = ArrayView<const uint8_t>::iterator;
 
   RtpPayload() : rtp_packet(nullptr) {}
   RtpPayload& operator=(RtpPayload&&) = default;
