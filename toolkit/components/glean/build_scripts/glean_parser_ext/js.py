@@ -56,6 +56,15 @@ TYPE_BITS = 5
 PING_INDEX_BITS = 16
 
 
+
+
+
+
+
+
+PHF_SIZE = 2048
+
+
 def ping_entry(ping_id, ping_string_index):
     """
     The 2 pieces of information of a ping encoded into a single 32-bit integer.
@@ -224,7 +233,7 @@ def write_metrics(
     
     category_string_table = category_string_table.writeToString("gCategoryStringTable")
     category_map = [(bytearray(category, "ascii"), id) for (category, id) in categories]
-    name_phf = PerfectHash(category_map)
+    name_phf = PerfectHash(category_map, PHF_SIZE)
     category_by_name_lookup = name_phf.cxx_codegen(
         name="CategoryByNameLookup",
         entry_type="category_entry_t",
@@ -242,7 +251,7 @@ def write_metrics(
         (bytearray(metric_name, "ascii"), metric_id)
         for (metric_name, metric_id) in metric_id_mapping.items()
     ]
-    metric_phf = PerfectHash(metric_map)
+    metric_phf = PerfectHash(metric_map, PHF_SIZE)
     metric_by_name_lookup = metric_phf.cxx_codegen(
         name="MetricByNameLookup",
         entry_type="metric_entry_t",
@@ -314,7 +323,7 @@ def write_pings(objs, output_fd, template_filename, output_fd_h, template_filena
         for (ping_name, ping_entry) in pings.items()
     ]
     ping_string_table = ping_string_table.writeToString("gPingStringTable")
-    ping_phf = PerfectHash(ping_map)
+    ping_phf = PerfectHash(ping_map, PHF_SIZE)
     ping_by_name_lookup = ping_phf.cxx_codegen(
         name="PingByNameLookup",
         entry_type="ping_entry_t",
