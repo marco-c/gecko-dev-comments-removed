@@ -5083,6 +5083,9 @@ UniquePtr<RangePaintInfo> PresShell::CreateRangePaintInfo(
     
     for (; frame;
          frame = nsLayoutUtils::GetNextContinuationOrIBSplitSibling(frame)) {
+      if (frame->HasAnyStateBits(NS_FRAME_IS_NONDISPLAY)) {
+        continue;
+      }
       info->mBuilder.SetVisibleRect(frame->InkOverflowRect());
       info->mBuilder.SetDirtyRect(frame->InkOverflowRect());
       frame->BuildDisplayListForStackingContext(&info->mBuilder, &info->mList);
@@ -11247,10 +11250,10 @@ void ReflowCountMgr::DoGrandHTMLTotals() {
     }
   });
 
-  static const char* title[] = {"Class", "Reflows"};
+  static const char* titles[] = {"Class", "Reflows"};
   fprintf(mFD, "<tr>");
-  for (uint32_t i = 0; i < std::size(title); i++) {
-    fprintf(mFD, "<td><center><b>%s<b></center></td>", title[i]);
+  for (const char* title : titles) {
+    fprintf(mFD, "<td><center><b>%s<b></center></td>", title);
   }
   fprintf(mFD, "</tr>\n");
 

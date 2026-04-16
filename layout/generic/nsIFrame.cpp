@@ -3153,7 +3153,8 @@ void nsIFrame::BuildDisplayListForStackingContext(
     return;
   }
 
-  if (HasAnyStateBits(NS_FRAME_TOO_DEEP_IN_FRAME_TREE)) {
+  if (HasAnyStateBits(NS_FRAME_TOO_DEEP_IN_FRAME_TREE |
+                      NS_FRAME_IS_NONDISPLAY)) {
     return;
   }
 
@@ -3597,7 +3598,7 @@ void nsIFrame::BuildDisplayListForStackingContext(
     nsDisplaySolidColor* color = MakeDisplayItem<nsDisplaySolidColor>(
         aBuilder, this,
         dirtyRect + aBuilder->GetCurrentFrameOffsetToReferenceFrame(),
-        NS_RGBA(255, 0, 0, 64), false);
+        NS_RGBA(255, 0, 0, 64));
     if (color) {
       color->SetOverrideZIndex(INT32_MAX);
       set.PositionedDescendants()->AppendToTop(color);
