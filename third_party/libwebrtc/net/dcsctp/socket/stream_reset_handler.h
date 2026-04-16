@@ -163,6 +163,9 @@ class StreamResetHandler {
       req_seq_nbr_ = new_req_seq_nbr;
     }
 
+    void set_deferred(bool is_deferred) { is_deferred_ = is_deferred; }
+    bool is_deferred() const { return is_deferred_; }
+
    private:
     
     
@@ -174,6 +177,9 @@ class StreamResetHandler {
     TSN sender_last_assigned_tsn_;
     
     const std::vector<StreamID> streams_;
+    
+    
+    bool is_deferred_ = false;
   };
 
   

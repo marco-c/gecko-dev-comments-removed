@@ -291,7 +291,7 @@ void StreamResetHandler::HandleResponse(const ParameterDescriptor& descriptor) {
                                [](webrtc::StringBuilder& sb,
                                   StreamID stream_id) { sb << *stream_id; });
         
-        current_request_->PrepareRetransmission();
+        current_request_->set_deferred(true);
         reconfig_timer_->set_duration(ctx_->current_rto());
         reconfig_timer_->Start();
         break;
@@ -363,11 +363,17 @@ void StreamResetHandler::ResetStreams(
 
 TimeDelta StreamResetHandler::OnReconfigTimerExpiry() {
   if (current_request_->has_been_sent()) {
-    
-    
-    if (!ctx_->IncrementTxErrorCounter("RECONFIG timeout")) {
+    if (current_request_->is_deferred()) {
       
-      return TimeDelta::Zero();
+      
+      current_request_->set_deferred(false);
+    } else {
+      
+      
+      if (!ctx_->IncrementTxErrorCounter("RECONFIG timeout")) {
+        
+        return TimeDelta::Zero();
+      }
     }
   } else {
     
