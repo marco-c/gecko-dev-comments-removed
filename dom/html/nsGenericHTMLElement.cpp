@@ -1847,6 +1847,10 @@ const nsAttrValue* nsGenericHTMLElement::GetURIAttr(nsAtom* aAttr,
 }
 
 bool nsGenericHTMLElement::IsContentEditable() const {
+  if (IsInComposedDoc()) {
+    return IsEditable();
+  }
+  
   for (const auto* element : InclusiveAncestorsOfType<nsGenericHTMLElement>()) {
     const ContentEditableState state = element->GetContentEditableState();
     if (state != ContentEditableState::Inherit) {
