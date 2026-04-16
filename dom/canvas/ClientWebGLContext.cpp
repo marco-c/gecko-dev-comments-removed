@@ -66,16 +66,6 @@ webgl::NotLostData::~NotLostData() {
 
 
 
-
-
-
-
-class LockInProcess {
-  LockedOutstandingContexts locked;
-};
-
-
-
 bool webgl::ObjectJS::ValidateForContext(
     const ClientWebGLContext& targetContext, const char* const argName) const {
   if (!IsForContext(targetContext)) {
@@ -444,7 +434,7 @@ void ClientWebGLContext::ThrowEvent_WebGLContextCreationError(
 template <typename MethodT, typename... Args>
 void ClientWebGLContext::Run_WithDestArgTypes(
     std::optional<JS::AutoCheckCannotGC>&& noGc, const MethodT method,
-    const WebGLMethodInfo methodInfo, const Args&... args) const {
+    const size_t id, const Args&... args) const {
   
   
   const auto cleanup = MakeScopeExit([&]() { noGc.reset(); });
@@ -456,21 +446,15 @@ void ClientWebGLContext::Run_WithDestArgTypes(
 
   const auto& inProcess = notLost->inProcess;
   if (inProcess) {
-    if (methodInfo.flags & WebGLMethodInfo::LOCK_IN_PROCESS) {
-      LockInProcess locked;
-      (inProcess.get()->*method)(args...);
-      return;
-    }
-
     (inProcess.get()->*method)(args...);
     return;
   }
 
   const auto& child = notLost->outOfProcess;
 
-  const auto cmdInfo = webgl::SerializationInfo(methodInfo.id, args...);
-  const auto maybeDest = child->AllocPendingCmdBytes(cmdInfo.requiredByteCount,
-                                                     cmdInfo.alignmentOverhead);
+  const auto info = webgl::SerializationInfo(id, args...);
+  const auto maybeDest = child->AllocPendingCmdBytes(info.requiredByteCount,
+                                                     info.alignmentOverhead);
   if (!maybeDest) {
     noGc.reset();  
                    
@@ -479,7 +463,7 @@ void ClientWebGLContext::Run_WithDestArgTypes(
     return;
   }
   const auto& destBytes = *maybeDest;
-  webgl::Serialize(destBytes, methodInfo.id, args...);
+  webgl::Serialize(destBytes, id, args...);
 }
 
 
@@ -1482,7 +1466,6 @@ ClientWebGLContext::CreateOpaqueFramebuffer(
 
   const auto& inProcess = notLost->inProcess;
   if (inProcess) {
-    LockInProcess locked;
     if (!inProcess->CreateOpaqueFramebuffer(ret->mId, options)) {
       ret = nullptr;
     }
