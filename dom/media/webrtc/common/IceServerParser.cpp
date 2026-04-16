@@ -299,6 +299,7 @@ IceServerParser::Parse(const nsTArray<dom::RTCIceServer>& aIceServers) {
       
       
       
+      
       if (uri.IsTurn()) {
         if (!server.mUsername.WasPassed()) {
           ErrorResult rv;
@@ -310,23 +311,18 @@ IceServerParser::Parse(const nsTArray<dom::RTCIceServer>& aIceServers) {
           rv.ThrowInvalidAccessError("TURN server requires a credential");
           return Err(std::move(rv));
         }
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
         NS_ConvertUTF16toUTF8 utf8Username(server.mUsername.Value());
         if (utf8Username.Length() > 509) {
           ErrorResult rv;
           rv.ThrowInvalidAccessError(
               "TURN server username exceeds 509 byte limit (RFC 8489 14.3)");
+          return Err(std::move(rv));
+        }
+        NS_ConvertUTF16toUTF8 utf8Credential(server.mCredential.Value());
+        if (utf8Credential.Length() == 0) {
+          ErrorResult rv;
+          rv.ThrowInvalidAccessError(
+              "TURN server credential is empty (RFC 8265 4.1)");
           return Err(std::move(rv));
         }
       }
