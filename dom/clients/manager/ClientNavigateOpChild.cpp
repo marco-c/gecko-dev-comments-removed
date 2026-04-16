@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ClientNavigateOpChild.h"
 
 #include "ClientSource.h"
@@ -152,7 +150,8 @@ NS_IMPL_ISUPPORTS(NavigateLoadListener, nsIWebProgressListener,
 }  
 
 RefPtr<ClientOpPromise> ClientNavigateOpChild::DoNavigate(
-    const ClientNavigateOpConstructorArgs& aArgs) {
+    const ClientNavigateOpConstructorArgs& aArgs,
+    mozilla::ipc::ActorLifecycleProxy* aProxy) {
   nsCOMPtr<nsPIDOMWindowInner> window;
 
   
@@ -278,6 +277,12 @@ RefPtr<ClientOpPromise> ClientNavigateOpChild::DoNavigate(
     return ClientOpPromise::CreateAndReject(result, __func__);
   }
 
+  if (!aProxy->Get() || !CanSend()) {
+    CopyableErrorResult result;
+    result.ThrowInvalidStateError("Unknown Client");
+    return ClientOpPromise::CreateAndReject(result, __func__);
+  }
+
   RefPtr<ClientOpPromise::Private> promise =
       new ClientOpPromise::Private(__func__);
 
@@ -305,8 +310,12 @@ void ClientNavigateOpChild::ActorDestroy(ActorDestroyReason aReason) {
   mPromiseRequestHolder.DisconnectIfExists();
 }
 
-void ClientNavigateOpChild::Init(const ClientNavigateOpConstructorArgs& aArgs) {
-  RefPtr<ClientOpPromise> promise = DoNavigate(aArgs);
+void ClientNavigateOpChild::Init(const ClientNavigateOpConstructorArgs& aArgs,
+                                 mozilla::ipc::ActorLifecycleProxy* aProxy) {
+  RefPtr<ClientOpPromise> promise = DoNavigate(aArgs, aProxy);
+  if (!aProxy->Get() || !CanSend()) {
+    return;
+  }
 
   
   
