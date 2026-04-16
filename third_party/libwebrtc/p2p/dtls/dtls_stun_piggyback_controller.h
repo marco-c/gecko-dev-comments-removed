@@ -36,7 +36,9 @@ class DtlsStunPiggybackController {
   
   
   DtlsStunPiggybackController(
-      absl::AnyInvocable<void(ArrayView<const uint8_t>)> dtls_data_callback);
+      absl::AnyInvocable<void(ArrayView<const uint8_t>)> dtls_data_callback,
+      absl::AnyInvocable<void()> complete_callback);
+
   ~DtlsStunPiggybackController();
 
   enum class State {
@@ -61,7 +63,9 @@ class DtlsStunPiggybackController {
   }
 
   
+  
   void SetDtlsHandshakeComplete(bool is_dtls_client, bool is_dtls13);
+
   
   void SetDtlsFailed();
 
@@ -98,13 +102,15 @@ class DtlsStunPiggybackController {
   bool writing_packets_ RTC_GUARDED_BY(sequence_checker_) = false;
   PacketStash pending_packets_ RTC_GUARDED_BY(sequence_checker_);
   absl::AnyInvocable<void(ArrayView<const uint8_t>)> dtls_data_callback_;
-  absl::AnyInvocable<void()> disable_piggybacking_callback_;
+  absl::AnyInvocable<void()> complete_callback_;
 
   std::vector<uint32_t> handshake_messages_received_
       RTC_GUARDED_BY(sequence_checker_);
 
   
   int data_recv_count_ = 0;
+
+  void CallCompleteCallback();
 
   
   RTC_NO_UNIQUE_ADDRESS SequenceChecker sequence_checker_;
