@@ -19,6 +19,28 @@
 
 namespace mozilla::dom {
 
+namespace {
+
+template <typename Source>
+struct DeclarationTraits;
+
+
+struct MutableInlineStyleDeclarations {};
+
+template <>
+struct DeclarationTraits<MutableInlineStyleDeclarations> {
+  static void Set(nsStyledElement* aStyledElement, const nsACString& aProperty,
+                  const nsACString& aValue, ErrorResult& aRv) {
+    MOZ_ASSERT(aStyledElement);
+
+    nsCOMPtr<nsDOMCSSDeclaration> declaration = aStyledElement->Style();
+
+    declaration->SetProperty(aProperty, aValue, ""_ns, aRv);
+  }
+};
+
+}  
+
 StylePropertyMap::StylePropertyMap(nsStyledElement* aStyledElement)
     : StylePropertyMapReadOnly(aStyledElement) {}
 
@@ -87,16 +109,10 @@ void StylePropertyMap::Set(
   }
 
   
+  Declarations& declarations = mDeclarations;
 
-  RefPtr<nsStyledElement> styledElement = do_QueryObject(mParent);
-  if (!styledElement) {
-    aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
-    return;
-  }
-
-  nsCOMPtr<nsDOMCSSDeclaration> declaration = styledElement->Style();
-
-  declaration->SetProperty(aProperty, cssText, ""_ns, aRv);
+  
+  declarations.Set(aProperty, cssText, aRv);
 }
 
 void StylePropertyMap::Append(
@@ -117,6 +133,25 @@ void StylePropertyMap::Clear() {}
 size_t StylePropertyMap::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
   return StylePropertyMapReadOnly::SizeOfExcludingThis(aMallocSizeOf) +
          aMallocSizeOf(this);
+}
+
+void StylePropertyMapReadOnly::Declarations::Set(const nsACString& aProperty,
+                                                 const nsACString& aValue,
+                                                 ErrorResult& aRv) {
+  switch (mKind) {
+    case Kind::Inline:
+      DeclarationTraits<MutableInlineStyleDeclarations>::Set(
+          mStyledElement, aProperty, aValue, aRv);
+      return;
+
+    case Kind::Computed:
+      aRv.Throw(NS_ERROR_UNEXPECTED);
+      return;
+
+    case Kind::Rule:
+      aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
+      return;
+  }
 }
 
 }  
