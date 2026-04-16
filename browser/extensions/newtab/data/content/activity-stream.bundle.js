@@ -15310,8 +15310,7 @@ function SectionsMgmtPanel({
   pocketEnabled,
   onSubpanelToggle,
   togglePanel,
-  showPanel,
-  novaEnabled
+  showPanel
 }) {
   const arrowButtonRef = (0,external_React_namespaceObject.useRef)(null);
   const panelRef = (0,external_React_namespaceObject.useRef)(null);
@@ -15515,28 +15514,6 @@ function SectionsMgmtPanel({
       "data-l10n-id": "newtab-section-unblock-button"
     }))));
   });
-
-  
-  let arrowIconSrc;
-  if (novaEnabled) {
-    const isRTL = document.dir === "rtl";
-    arrowIconSrc = `chrome://global/skin/icons/shaft-arrow-${isRTL ? "right" : "left"}.svg`;
-  }
-  const panelBody = external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("h3", {
-    "data-l10n-id": "newtab-section-mangage-topics-followed-topics"
-  }), followedSectionsData.length ? external_React_default().createElement("ul", {
-    className: "topic-list"
-  }, followedSectionsList) : external_React_default().createElement("span", {
-    className: "topic-list-empty-state",
-    "data-l10n-id": "newtab-section-mangage-topics-followed-topics-empty-state"
-  }), external_React_default().createElement("h3", {
-    "data-l10n-id": "newtab-section-mangage-topics-blocked-topics"
-  }), blockedSectionsData.length ? external_React_default().createElement("ul", {
-    className: "topic-list"
-  }, blockedSectionsList) : external_React_default().createElement("span", {
-    className: "topic-list-empty-state",
-    "data-l10n-id": "newtab-section-mangage-topics-blocked-topics-empty-state"
-  }));
   return external_React_default().createElement("div", null, external_React_default().createElement("moz-box-button", SectionsMgmtPanel_extends({
     onClick: togglePanel,
     "data-l10n-id": "newtab-section-manage-topics-button-v2"
@@ -15552,27 +15529,27 @@ function SectionsMgmtPanel({
   }, external_React_default().createElement("div", {
     ref: panelRef,
     className: "sections-mgmt-panel"
-  },
-  
-  novaEnabled ? external_React_default().createElement("div", {
-    className: "panel-content"
-  }, external_React_default().createElement("div", {
-    className: "arrow-wrapper"
-  }, external_React_default().createElement("moz-button", {
-    ref: arrowButtonRef,
-    type: "ghost",
-    className: "arrow-button",
-    iconSrc: arrowIconSrc,
-    onClick: togglePanel
-  }), external_React_default().createElement("h2", {
-    "data-l10n-id": "newtab-section-mangage-topics-title"
-  })), panelBody) : external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("button", {
+  }, external_React_default().createElement("button", {
     ref: arrowButtonRef,
     className: "arrow-button",
     onClick: togglePanel
   }, external_React_default().createElement("h1", {
     "data-l10n-id": "newtab-section-mangage-topics-title"
-  })), panelBody))));
+  })), external_React_default().createElement("h3", {
+    "data-l10n-id": "newtab-section-mangage-topics-followed-topics"
+  }), followedSectionsData.length ? external_React_default().createElement("ul", {
+    className: "topic-list"
+  }, followedSectionsList) : external_React_default().createElement("span", {
+    className: "topic-list-empty-state",
+    "data-l10n-id": "newtab-section-mangage-topics-followed-topics-empty-state"
+  }), external_React_default().createElement("h3", {
+    "data-l10n-id": "newtab-section-mangage-topics-blocked-topics"
+  }), blockedSectionsData.length ? external_React_default().createElement("ul", {
+    className: "topic-list"
+  }, blockedSectionsList) : external_React_default().createElement("span", {
+    className: "topic-list-empty-state",
+    "data-l10n-id": "newtab-section-mangage-topics-blocked-topics-empty-state"
+  }))));
 }
 
 ;
@@ -15976,12 +15953,6 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
       activeCategoryFluentID
     } = this.state;
     
-    let arrowIconSrc;
-    if (novaEnabled) {
-      const isRTL = document.dir === "rtl";
-      arrowIconSrc = `chrome://global/skin/icons/shaft-arrow-${isRTL ? "right" : "left"}.svg`;
-    }
-    
     let showColorPicker = prefs["newtabWallpapers.customColor.enabled"];
     let filteredWallpapers = wallpaperList.filter(wallpaper => wallpaper.category === activeCategory);
     const wallpaperUploadMaxFileSize = this.props.Prefs.values[PREF_WALLPAPER_UPLOAD_MAX_FILE_SIZE];
@@ -16170,16 +16141,7 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
       }, external_React_default().createElement("section", {
         ref: this.wallpaperListRef,
         className: "category wallpaper-list ignore-color-mode"
-      },
-      
-      novaEnabled ? external_React_default().createElement("moz-button", {
-        ref: this.arrowButtonRef,
-        type: "ghost",
-        className: "arrow-button",
-        iconSrc: arrowIconSrc,
-        "data-l10n-id": activeCategoryFluentID,
-        onClick: this.handleBack
-      }) : external_React_default().createElement("button", {
+      }, external_React_default().createElement("button", {
         ref: this.arrowButtonRef,
         className: "arrow-button",
         "data-l10n-id": activeCategoryFluentID,
@@ -16347,8 +16309,6 @@ function WidgetsManagementPanel({
     timerEnabled,
     listsEnabled
   } = enabledWidgets;
-  const isRTL = document.dir === "rtl";
-  const arrowIconSrc = `chrome://global/skin/icons/shaft-arrow-${isRTL ? "right" : "left"}.svg`;
   return external_React_default().createElement("div", {
     id: "widgets-management-panel",
     className: "widgets-mgmt-panel-container"
@@ -16365,17 +16325,11 @@ function WidgetsManagementPanel({
   }, external_React_default().createElement("div", {
     ref: panelRef,
     className: "widgets-mgmt-panel"
-  }, external_React_default().createElement("div", {
-    className: "panel-content"
-  }, external_React_default().createElement("div", {
-    className: "arrow-wrapper"
-  }, external_React_default().createElement("moz-button", {
+  }, external_React_default().createElement("button", {
     ref: arrowButtonRef,
-    type: "ghost",
     className: "arrow-button",
-    iconSrc: arrowIconSrc,
     onClick: togglePanel
-  }), external_React_default().createElement("h2", {
+  }, external_React_default().createElement("h1", {
     "data-l10n-id": "newtab-widget-manage-title"
   })), external_React_default().createElement("div", {
     className: "settings-widgets"
@@ -16412,7 +16366,7 @@ function WidgetsManagementPanel({
     "data-preference": "widgets.lists.enabled",
     "data-event-source": "WIDGET_LISTS",
     "data-l10n-id": "newtab-custom-widget-lists-toggle"
-  })))))));
+  }))))));
 }
 
 ;
@@ -16602,7 +16556,7 @@ class ContentSection extends (external_React_default()).PureComponent {
     }
 
     
-    return external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("div", {
+    return external_React_default().createElement("div", {
       className: "home-section"
     }, (wallpapersEnabled || novaEnabled) && external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("div", {
       className: "wallpapers-section"
@@ -16670,7 +16624,7 @@ class ContentSection extends (external_React_default()).PureComponent {
       pressed: weatherEnabled || null,
       ontoggle: this.onPreferenceSelect,
       onToggle: this.onPreferenceSelect,
-      "data-preference": "showWeather",
+      "data-preference": novaEnabled ? "widgets.weather.enabled" : "showWeather",
       "data-event-source": "WEATHER",
       "data-l10n-id": "newtab-custom-weather-toggle"
     })), external_React_default().createElement("span", {
@@ -16800,25 +16754,13 @@ class ContentSection extends (external_React_default()).PureComponent {
       pocketEnabled: pocketEnabled,
       onSubpanelToggle: onSubpanelToggle,
       togglePanel: toggleSectionsMgmtPanel,
-      showPanel: showSectionsMgmtPanel,
-      novaEnabled: novaEnabled
+      showPanel: showSectionsMgmtPanel
     }))))))),
     
     !novaEnabled && external_React_default().createElement("span", {
       className: "divider",
       role: "separator"
-    }),
-    
-    !novaEnabled && external_React_default().createElement("div", null, external_React_default().createElement("button", {
-      id: "settings-link",
-      className: "external-link",
-      onClick: openPreferences,
-      "data-l10n-id": "newtab-custom-settings"
-    }))),
-    
-    novaEnabled && external_React_default().createElement("div", {
-      className: "manage-settings-footer"
-    }, external_React_default().createElement("button", {
+    }), external_React_default().createElement("div", null, external_React_default().createElement("button", {
       id: "settings-link",
       className: "external-link",
       onClick: openPreferences,
