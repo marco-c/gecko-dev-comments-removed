@@ -331,28 +331,26 @@ static bool ExtensionCanClaimRpId(const nsCOMPtr<nsIPrincipal>& aPrincipal,
   auto* basePrin = BasePrincipal::Cast(aPrincipal);
   MOZ_ASSERT(basePrin->AddonPolicy());
 
-  RefPtr<mozilla::extensions::MatchPatternSet> matchPatternSet =
-      basePrin->AddonPolicy()->AllowedOrigins();
+  nsAutoCString httpsUriSpec("https://"_ns);
+  httpsUriSpec.Append(aRpId);
+  httpsUriSpec.AppendLiteral("/");
+  nsCOMPtr<nsIURI> uri;
+  rv = NS_NewURI(getter_AddRefs(uri), httpsUriSpec);
+  if (NS_FAILED(rv)) {
+    return false;
+  }
 
-  nsTArray<RefPtr<mozilla::extensions::MatchPattern>> matchPatterns;
-  matchPatternSet->GetPatterns(matchPatterns);
+  if (basePrin->AddonPolicy()->CanAccessURI(uri.get())) {
+    return true;
+  }
 
-  for (const auto& matchPattern : matchPatterns) {
-    bool matchesHttps = matchPattern->Core()->ContainsScheme(nsGkAtoms::https);
-    bool matchesHttp = matchPattern->Core()->ContainsScheme(nsGkAtoms::http);
-
-    if (matchPattern->MatchesDomain(aRpId)) {
-      return matchesHttps ||
-             (matchesHttp && mozilla::net::IsLoopbackHostname(aRpId));
-    }
-
-    if (matchesHttps) {
-      
-      
-      
-      nsCString patternDomain;
-      matchPattern->Core()->GetDomain(patternDomain);
-      return IsRegistrableDomainSuffixOfOrEqualTo(patternDomain, aRpId);
+  if (mozilla::net::IsLoopbackHostname(aRpId)) {
+    nsCOMPtr<nsIURI> httpUri;
+    rv = NS_MutateURI(uri).SetScheme("http"_ns).Finalize(
+        getter_AddRefs(httpUri));
+    if (NS_SUCCEEDED(rv) &&
+        basePrin->AddonPolicy()->CanAccessURI(httpUri.get())) {
+      return true;
     }
   }
 

@@ -52,16 +52,6 @@ const RpIdTestCase kOriginRpIdTestCases[] = {
     },
     {
         "https://a.b.c.example.com/",
-        "c.example.com",
-        true,
-    },
-    {
-        "https://a.b.c.example.com/",
-        "b.c.example.com",
-        true,
-    },
-    {
-        "https://a.b.c.example.com/",
         "a.b.c.example.com",
         true,
     },
@@ -161,8 +151,20 @@ static const RpIdTestCase kWebOriginOnlyRpIdTestCases[] = {
         "maybetld.",
         true,
     },
+    
+    
+    
+    {
+        "https://a.b.c.example.com/",
+        "c.example.com",
+        true,
+    },
+    {
+        "https://a.b.c.example.com/",
+        "b.c.example.com",
+        true,
+    },
 };
-
 
 
 
@@ -218,6 +220,11 @@ static const RpIdTestCase kMatchPatternRpIdTestCases[] = {
         false,
     },
     {
+        "<all_urls>",
+        "addons.mozilla.org",
+        false,  
+    },
+    {
         "https://*.com/",
         "example.com",
         true,
@@ -230,12 +237,27 @@ static const RpIdTestCase kMatchPatternRpIdTestCases[] = {
     {
         "https://*.subdomain.example.com/",
         "example.com",
-        true,
+        false,  
+    },
+    {
+        "https://a.b.c.example.com/",
+        "c.example.com",
+        false,  
+    },
+    {
+        "https://a.b.c.example.com/",
+        "b.c.example.com",
+        false,
     },
     {
         "http://*.localhost/",
         "localhost",
         true,
+    },
+    {
+        "http://foo.localhost/",
+        "foo.localhost",
+        true,  
     },
     {
         "http://*.allowlisted-secure-context.com/",
