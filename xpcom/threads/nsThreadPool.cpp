@@ -454,6 +454,10 @@ nsThreadPool::Run() {
   MOZ_ASSERT(gCurrentThreadPool.get() == this);
   gCurrentThreadPool.set(nullptr);
 
+  
+  
+  static_cast<nsThread*>(current.get())->SetPoolThreadFreePtr(nullptr);
+
   if (shutdownThreadOnExit) {
     ShutdownThread(current);
   }
