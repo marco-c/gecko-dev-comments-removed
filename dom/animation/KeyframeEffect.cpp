@@ -1981,15 +1981,15 @@ KeyframeEffect::MatchForCompositor KeyframeEffect::IsMatchForCompositor(
   if (mAnimation->UsingScrollTimeline()) {
     const ScrollTimeline* scrollTimeline =
         mAnimation->GetTimeline()->AsScrollTimeline();
-    const auto state = scrollTimeline->GetState();
     
     
     
     
     
-    if (!state.APZIsActiveForSource() || !state.IsActive() ||
-        !state.ScrollingDirectionIsAvailable() ||
-        state.SourceScrollStyle() == StyleOverflow::Hidden) {
+    if (!scrollTimeline->APZIsActiveForSource() ||
+        !scrollTimeline->IsActive() ||
+        !scrollTimeline->ScrollingDirectionIsAvailable() ||
+        scrollTimeline->SourceScrollStyle() == StyleOverflow::Hidden) {
       return KeyframeEffect::MatchForCompositor::No;
     }
 

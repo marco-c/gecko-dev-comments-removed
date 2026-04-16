@@ -68,8 +68,10 @@ class ScrollTimeline : public AnimationTimeline,
   template <typename T, typename... Args>
   friend already_AddRefed<T> mozilla::MakeAndAddRef(Args&&... aArgs);
 
- protected:
-  struct ScrollerInfo {
+ public:
+  struct Scroller {
+    
+    
     enum class Type : uint8_t {
       Root,
       Nearest,
@@ -79,85 +81,38 @@ class ScrollTimeline : public AnimationTimeline,
     Type mType = Type::Root;
 
    private:
-    
-    
     OwningAnimationTarget mTarget;
-    ScrollerInfo(Type aType, Element* aElement,
-                 const PseudoStyleRequest& aPseudoRequest)
+    Scroller(Type aType, Element* aElement,
+             const PseudoStyleRequest& aPseudoRequest)
         : mType{aType}, mTarget{aElement, aPseudoRequest} {}
 
    public:
-    ScrollerInfo() = default;
+    Scroller() = default;
 
-    bool IsAnonymous() const { return mType != Type::Name; }
-
-    static ScrollerInfo Anonymous(StyleScroller aType,
-                                  const NonOwningAnimationTarget& aTarget) {
-      const auto type = [aType]() {
-        switch (aType) {
-          case StyleScroller::Root:
-            break;
-          case StyleScroller::Nearest:
-            return Type::Nearest;
-          case StyleScroller::SelfElement:
-            return Type::Self;
-          default:
-            MOZ_ASSERT_UNREACHABLE("Unhandled scroller type");
-            break;
-        }
-
-        return Type::Root;
-      }();
-      
-      
-      return {type, aTarget.mElement, aTarget.mPseudoRequest};
+    static Scroller Root(Element* aDocumentElement) {
+      return {Type::Root, aDocumentElement, PseudoStyleRequest{}};
     }
 
-    static ScrollerInfo Named(Element* aElement,
-                              const PseudoStyleRequest& aPseudoRequest) {
-      
+    static Scroller Nearest(Element* aElement,
+                            const PseudoStyleRequest& aPseudoRequest) {
+      return {Type::Nearest, aElement, aPseudoRequest};
+    }
+
+    static Scroller Named(Element* aElement,
+                          const PseudoStyleRequest& aPseudoRequest) {
       return {Type::Name, aElement, aPseudoRequest};
     }
 
-    NonOwningAnimationTarget Source() const;
-    RefPtr<Element>& ElementForCycleCollection() { return mTarget.mElement; }
-  };
-
- public:
-  
-  class State {
-    friend class ScrollTimeline;
-    friend class ViewTimeline;
-
-   public:
-    
-    layers::ScrollDirection Axis() const;
-    StyleOverflow SourceScrollStyle() const;
-    bool APZIsActiveForSource() const;
-    Element* SourceElement() const {
-      auto* element = mSource.mElement;
-      MOZ_ASSERT(element);
-      return element;
+    static Scroller Self(Element* aElement,
+                         const PseudoStyleRequest& aPseudoRequest) {
+      return {Type::Self, aElement, aPseudoRequest};
     }
-    bool ScrollingDirectionIsAvailable() const;
-    
-    
-    
-    
-    
-    
-    
-    
-    bool IsActive() const { return GetScrollContainerFrame(); }
-    const ScrollContainerFrame* GetScrollContainerFrame() const;
 
-   private:
-    State(const NonOwningAnimationTarget& aResolvedSource,
-          StyleScrollAxis aAxis, bool aIsRoot)
-        : mSource{aResolvedSource}, mAxis{aAxis}, mIsRoot{aIsRoot} {}
-    NonOwningAnimationTarget mSource;
-    StyleScrollAxis mAxis;
-    bool mIsRoot;
+    explicit operator bool() const { return mTarget.mElement; }
+    NonOwningAnimationTarget Source() const {
+      return NonOwningAnimationTarget{mTarget};
+    }
+    RefPtr<Element>& ElementForCycleCollection() { return mTarget.mElement; }
   };
 
   static already_AddRefed<ScrollTimeline> MakeAnonymous(
@@ -179,11 +134,6 @@ class ScrollTimeline : public AnimationTimeline,
     
     return nullptr;
   }
-
-  State GetState() const {
-    return State{mScrollerInfo.Source(), mAxis,
-                 mScrollerInfo.mType == ScrollerInfo::Type::Root};
-  };
 
   
   Nullable<TimeDuration> GetCurrentTimeAsDuration() const override;
@@ -223,19 +173,36 @@ class ScrollTimeline : public AnimationTimeline,
 
   void WillRefresh();
 
+  
+  
+  
+  
+  
+  
+  
+  bool IsActive() const { return GetScrollContainerFrame(); }
+
   Element* SourceElement() const {
-    auto* element = mScrollerInfo.Source().mElement;
-    MOZ_ASSERT(element);
-    return element;
+    MOZ_ASSERT(mSource);
+    return mSource.Source().mElement;
   }
 
   virtual NonOwningAnimationTarget TimelineTarget() const {
-    MOZ_ASSERT(!mScrollerInfo.IsAnonymous());
-    return mScrollerInfo.Source();
+    MOZ_ASSERT(mSource);
+    return mSource.Source();
   }
 
   bool SourceMatches(const Element* aElement,
                      const PseudoStyleRequest& aPseudoRequest) const;
+
+  
+  layers::ScrollDirection Axis() const;
+
+  StyleOverflow SourceScrollStyle() const;
+
+  bool APZIsActiveForSource() const;
+
+  bool ScrollingDirectionIsAvailable() const;
 
   void ReplacePropertiesWith(const Element* aReferenceElement,
                              const PseudoStyleRequest& aPseudoRequest,
@@ -256,7 +223,7 @@ class ScrollTimeline : public AnimationTimeline,
  protected:
   virtual ~ScrollTimeline();
   ScrollTimeline() = delete;
-  ScrollTimeline(Document* aDocument, const ScrollerInfo& aScrollerInfo,
+  ScrollTimeline(Document* aDocument, const Scroller& aScroller,
                  StyleScrollAxis aAxis);
 
   void TimelineDataDidChange();
@@ -278,6 +245,8 @@ class ScrollTimeline : public AnimationTimeline,
     }
   }
 
+  const ScrollContainerFrame* GetScrollContainerFrame() const;
+
   static std::pair<const Element*, PseudoStyleRequest> FindNearestScroller(
       Element* aSubject, const PseudoStyleRequest& aPseudoRequest);
 
@@ -286,7 +255,7 @@ class ScrollTimeline : public AnimationTimeline,
   
   
   
-  ScrollerInfo mScrollerInfo;
+  Scroller mSource;
   StyleScrollAxis mAxis;
 
   struct CurrentTimeData {

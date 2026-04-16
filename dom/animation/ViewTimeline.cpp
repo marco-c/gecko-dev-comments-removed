@@ -22,9 +22,9 @@ already_AddRefed<ViewTimeline> ViewTimeline::MakeNamed(
   MOZ_ASSERT(NS_IsMainThread());
 
   
-  auto scroller = ScrollerInfo::Anonymous(
-      StyleScroller::Nearest,
-      NonOwningAnimationTarget{aSubject, aPseudoRequest});
+  
+  auto [element, pseudo] = FindNearestScroller(aSubject, aPseudoRequest);
+  auto scroller = Scroller::Nearest(const_cast<Element*>(element), pseudo);
 
   
   return MakeAndAddRef<ViewTimeline>(
@@ -37,7 +37,9 @@ already_AddRefed<ViewTimeline> ViewTimeline::MakeAnonymous(
     Document* aDocument, const NonOwningAnimationTarget& aTarget,
     StyleScrollAxis aAxis, const StyleViewTimelineInset& aInset) {
   
-  auto scroller = ScrollerInfo::Anonymous(StyleScroller::Nearest, aTarget);
+  auto [element, pseudo] =
+      FindNearestScroller(aTarget.mElement, aTarget.mPseudoRequest);
+  Scroller scroller = Scroller::Nearest(const_cast<Element*>(element), pseudo);
   return MakeAndAddRef<ViewTimeline>(aDocument, scroller, aAxis,
                                      aTarget.mElement,
                                      aTarget.mPseudoRequest.mType, aInset);
@@ -99,22 +101,20 @@ void ViewTimeline::UpdateCachedCurrentTime() {
 
   mCachedCurrentTime.reset();
 
-  const auto state = GetState();
   
-  if (const auto* e = state.mSource.mElement; !e || !e->GetPrimaryFrame()) {
+  if (!mSource || !mSource.Source().mElement->GetPrimaryFrame()) {
     return;
   }
 
   
-  const ScrollContainerFrame* scrollContainerFrame =
-      state.GetScrollContainerFrame();
+  const ScrollContainerFrame* scrollContainerFrame = GetScrollContainerFrame();
   if (!scrollContainerFrame) {
     return;
   }
 
   
   
-  const auto orientation = state.Axis();
+  const auto orientation = Axis();
   if (!scrollContainerFrame->GetAvailableScrollingDirections().contains(
           orientation)) {
     return;
