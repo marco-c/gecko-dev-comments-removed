@@ -455,13 +455,9 @@ INSTANTIATE_INTERNAL_TRACE_FUNCTIONS(TaggedProto)
 
 
 
+
+
 class MOZ_RAII AutoSetTracingSource {
-#ifndef DEBUG
- public:
-  template <typename T>
-  AutoSetTracingSource(JSTracer* trc, T* thing) {}
-  ~AutoSetTracingSource() {}
-#else
   GCMarker* marker = nullptr;
 
  public:
@@ -471,33 +467,32 @@ class MOZ_RAII AutoSetTracingSource {
       marker = GCMarker::fromTracer(trc);
       MOZ_ASSERT(!marker->tracingZone);
       marker->tracingZone = thing->asTenured().zone();
+#ifdef DEBUG
       MOZ_ASSERT(!marker->tracingCompartment);
       marker->tracingCompartment = thing->maybeCompartment();
+#endif
     }
   }
 
   ~AutoSetTracingSource() {
     if (marker) {
       marker->tracingZone = nullptr;
+#ifdef DEBUG
       marker->tracingCompartment = nullptr;
+#endif
     }
   }
-#endif
 };
 
 
 
 
 class MOZ_RAII AutoClearTracingSource {
-#ifndef DEBUG
- public:
-  explicit AutoClearTracingSource(GCMarker* marker) {}
-  explicit AutoClearTracingSource(JSTracer* trc) {}
-  ~AutoClearTracingSource() {}
-#else
   GCMarker* marker = nullptr;
   JS::Zone* prevZone = nullptr;
+#ifdef DEBUG
   Compartment* prevCompartment = nullptr;
+#endif
 
  public:
   explicit AutoClearTracingSource(JSTracer* trc) {
@@ -505,17 +500,20 @@ class MOZ_RAII AutoClearTracingSource {
       marker = GCMarker::fromTracer(trc);
       prevZone = marker->tracingZone;
       marker->tracingZone = nullptr;
+#ifdef DEBUG
       prevCompartment = marker->tracingCompartment;
       marker->tracingCompartment = nullptr;
+#endif
     }
   }
   ~AutoClearTracingSource() {
     if (marker) {
       marker->tracingZone = prevZone;
+#ifdef DEBUG
       marker->tracingCompartment = prevCompartment;
+#endif
     }
   }
-#endif
 };
 
 template <typename T>
@@ -844,6 +842,17 @@ MOZ_ALWAYS_INLINE GCMarker* MarkingTracerT<opts>::getMarker() {
   return GCMarker::fromTracer(this);
 }
 
+
+
+
+static inline void MaybeUnmarkGraySymbol(JSRuntime* runtime,
+                                         JS::Zone* sourceZone,
+                                         JS::Symbol* target) {
+  AtomMarkingRuntime& atomMarking = runtime->gc.atomMarking;
+  MOZ_ASSERT(atomMarking.atomIsMarked(sourceZone, target));
+  atomMarking.maybeUnmarkGrayAtomically(sourceZone, target);
+}
+
 template <uint32_t opts>
 template <typename T>
 void MarkingTracerT<opts>::onEdge(T** thingp, const char* name) {
@@ -859,6 +868,12 @@ void MarkingTracerT<opts>::onEdge(T** thingp, const char* name) {
 
   MOZ_ASSERT_IF(IsOwnedByOtherRuntime(this->runtime(), thing),
                 thing->isMarkedBlack());
+
+  if constexpr (std::is_same_v<T, JS::Symbol>) {
+    if (marker->markColor() == MarkColor::Black && marker->tracingZone) {
+      MaybeUnmarkGraySymbol(this->runtime(), marker->tracingZone, thing);
+    }
+  }
 
 #ifdef DEBUG
   CheckMarkedThing(marker, thing);
@@ -1161,11 +1176,8 @@ inline void GCMarker::checkTraversedEdge(S source, T* target) {
 template <uint32_t opts, typename S, typename T>
 void js::GCMarker::markAndTraverseEdge(S* source, T* target) {
   if constexpr (std::is_same_v<T, JS::Symbol>) {
-    
     if (markColor() == MarkColor::Black) {
-      GCRuntime* gc = &runtime()->gc;
-      MOZ_ASSERT(gc->atomMarking.atomIsMarked(source->zone(), target));
-      gc->atomMarking.maybeUnmarkGrayAtomically(source->zone(), target);
+      MaybeUnmarkGraySymbol(runtime(), source->zone(), target);
     }
   }
 
@@ -2690,6 +2702,9 @@ void GCRuntime::markDelayedChildren(Arena* arena, MarkColor color) {
   for (ArenaCellIterUnderGC cell(arena); !cell.done(); cell.next()) {
     if (cell->isMarked(colorToCheck)) {
       ApplyGCThingTyped(cell, kind, [trc, this](auto t) {
+        
+        
+        AutoSetTracingSource asts(trc, t);
         t->traceChildren(trc);
         marker().markImplicitEdges(t);
       });
