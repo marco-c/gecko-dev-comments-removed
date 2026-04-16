@@ -25,16 +25,6 @@ add_setup(async function () {
 
 
 add_task(async function test_bounce_tab_close() {
-  if (
-    !Services.prefs.getBoolPref(
-      "privacy.bounceTrackingProtection.requireStatefulBounces"
-    )
-  ) {
-    
-    ok(true, "Skipping test because requireStatefulBounces is disabled.");
-    return;
-  }
-
   info(
     "Test bounce where extended navigation ends early because of tab close."
   );
