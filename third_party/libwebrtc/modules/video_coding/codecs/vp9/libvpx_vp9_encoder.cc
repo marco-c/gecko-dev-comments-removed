@@ -1786,13 +1786,28 @@ vpx_svc_ref_frame_config_t LibvpxVp9Encoder::SetReferences(
 void LibvpxVp9Encoder::GetEncodedLayerFrame(const vpx_codec_cx_pkt* pkt) {
   RTC_DCHECK_EQ(pkt->kind, VPX_CODEC_CX_FRAME_PKT);
 
-  if (pkt->data.frame.sz == 0) {
-    
-    return;
-  }
-
   vpx_svc_layer_id_t layer_id = {.spatial_layer_id = 0};
   libvpx_->codec_control(encoder_, VP9E_GET_SVC_LAYER_ID, &layer_id);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  const bool end_of_picture =
+      layer_id.spatial_layer_id + 1 == num_active_spatial_layers_;
+
+  if (pkt->data.frame.sz == 0) {
+    encoded_complete_callback_->OnFrameDropped(input_image_->rtp_timestamp(),
+                                               layer_id.spatial_layer_id,
+                                               end_of_picture);
+    return;
+  }
 
   encoded_image_.SetEncodedData(EncodedImageBuffer::Create(
       static_cast<const uint8_t*>(pkt->data.frame.buf), pkt->data.frame.sz));
@@ -1854,8 +1869,7 @@ void LibvpxVp9Encoder::GetEncodedLayerFrame(const vpx_codec_cx_pkt* pkt) {
     }
   }
 
-  const bool end_of_picture = encoded_image_.SpatialIndex().value_or(0) + 1 ==
-                              num_active_spatial_layers_;
+  encoded_image_.set_end_of_temporal_unit(end_of_picture);
   DeliverBufferedFrame(end_of_picture);
 }
 
