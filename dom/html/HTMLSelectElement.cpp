@@ -51,13 +51,6 @@ static bool IsOptionInteractivelySelectable(
   if (!aSelect.IsCombobox()) {
     return aOption.GetPrimaryFrame();
   }
-  
-  
-  
-  
-  
-  
-  
   for (mozilla::dom::Element* el = &aOption; el && el != &aSelect;
        el = el->GetParentElement()) {
     RefPtr style = nsComputedDOMStyle::GetComputedStyleNoFlush(el);
@@ -65,8 +58,7 @@ static bool IsOptionInteractivelySelectable(
       return false;
     }
     auto display = style->StyleDisplay()->mDisplay;
-    if (display == mozilla::StyleDisplay::None ||
-        display == mozilla::StyleDisplay::Contents) {
+    if (display == mozilla::StyleDisplay::None) {
       return false;
     }
   }
@@ -179,7 +171,6 @@ void HTMLSelectElement::SetupShadowTree() {
   if (NS_WARN_IF(!sr)) {
     return;
   }
-  sr->AppendBuiltInStyleSheet(BuiltInStyleSheet::Select);
   
   
   Document* doc = OwnerDoc();
@@ -198,8 +189,14 @@ void HTMLSelectElement::SetupShadowTree() {
     icon->AppendChildTo(text, false, IgnoreErrors());
   }
   sr->AppendChildTo(icon, false, IgnoreErrors());
+
+  RefPtr picker = doc->CreateHTMLElement(nsGkAtoms::div);
+  picker->SetPseudoElementType(PseudoStyleType::Picker);
+  picker->SetAttr(nsGkAtoms::name, u"select"_ns, IgnoreErrors());
+
   RefPtr slot = doc->CreateHTMLElement(nsGkAtoms::slot);
-  sr->AppendChildTo(slot, false, IgnoreErrors());
+  picker->AppendChildTo(slot, false, IgnoreErrors());
+  sr->AppendChildTo(picker, false, IgnoreErrors());
 }
 
 Text* HTMLSelectElement::GetSelectedContentText() const {
