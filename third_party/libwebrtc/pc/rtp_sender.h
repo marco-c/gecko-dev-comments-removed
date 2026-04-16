@@ -239,6 +239,14 @@ class RtpSenderBase : public RtpSenderInternal, public ObserverInterface {
   void SetObserver(RtpSenderObserverInterface* observer) override;
 
  protected:
+  void InvalidateCache() {
+    RTC_DCHECK_RUN_ON(signaling_thread_);
+    cached_parameters_.reset();
+  }
+
+  
+  
+  void OnParametersChanged();
   
   
   

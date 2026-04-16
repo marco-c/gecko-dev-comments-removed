@@ -238,6 +238,10 @@ class MediaSendChannelInterface {
   
   virtual void SetSsrcListChangedCallback(
       absl::AnyInvocable<void(const std::set<uint32_t>&)> callback) = 0;
+  
+  
+  virtual void SetParametersChangedCallback(
+      absl::AnyInvocable<void()> callback) {}
 };
 
 class MediaReceiveChannelInterface {
