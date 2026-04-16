@@ -1074,6 +1074,7 @@ widget::LookAndFeelFont nsXPLookAndFeel::StyleToLookAndFeelFont(
     
     gfxFontStyle candidate = aStyle;
     gfxFontStyle defaults{};
+    defaults.systemFont = true;
     candidate.size = defaults.size;
     candidate.weight = defaults.weight;
     candidate.style = defaults.style;
