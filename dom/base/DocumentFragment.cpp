@@ -16,6 +16,7 @@
 #include "nsContentUtils.h"  
 #include "nsDOMString.h"
 #include "nsError.h"
+#include "nsGkAtoms.h"
 #include "nsNodeInfoManager.h"
 #include "nsPIDOMWindow.h"
 
