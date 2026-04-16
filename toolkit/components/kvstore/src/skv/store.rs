@@ -21,16 +21,13 @@ use std::{
 use chrono::{DateTime, Utc};
 use rusqlite::OpenFlags;
 
-use crate::{
-    fs::WidePathBuf,
-    skv::{
-        checker::{Checker, CheckerAction, IntoChecker},
-        connection::{
-            Connection, ConnectionIncident, ConnectionIncidents, ConnectionMaintenanceTask,
-            ConnectionPath, ConnectionType, ToConnectionIncident,
-        },
-        schema::{Schema, SchemaError},
+use crate::skv::{
+    checker::{Checker, CheckerAction, IntoChecker},
+    connection::{
+        Connection, ConnectionIncident, ConnectionIncidents, ConnectionMaintenanceTask,
+        ConnectionPath, ConnectionType, ToConnectionIncident,
     },
+    schema::{Schema, SchemaError},
 };
 
 
@@ -258,8 +255,8 @@ impl StorePath {
     
     
     
-    pub fn canonicalizing(path: WidePathBuf) -> Result<Self, StoreError> {
-        Ok(if path == StorePath::IN_MEMORY_DATABASE_NAME {
+    pub fn canonicalizing(path: PathBuf) -> Result<Self, StoreError> {
+        Ok(if path.as_os_str() == StorePath::IN_MEMORY_DATABASE_NAME {
             StorePath::for_in_memory()
         } else {
             
