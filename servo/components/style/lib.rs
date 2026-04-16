@@ -23,6 +23,8 @@
 
 
 
+
+
 #![deny(missing_docs)]
 
 pub(crate) use cssparser;
@@ -118,6 +120,16 @@ pub mod use_counters;
 #[macro_use]
 #[allow(non_camel_case_types)]
 pub mod values;
+
+#[cfg(all(doc, feature = "servo"))]
+
+pub mod docs {
+    
+    
+    pub mod supported_properties {
+        #![doc = include_str!(concat!(env!("OUT_DIR"), "/css-properties.html"))]
+    }
+}
 
 #[cfg(feature = "gecko")]
 pub use crate::gecko_string_cache as string_cache;
