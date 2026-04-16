@@ -143,7 +143,6 @@ def subs(ctx):
     maybe_setup(ctx)
     processed = [
         
-        "dist/bin/browser/modules/policies/schema.sys.mjs",
         "dist/bin/modules/Readerable.sys.mjs",
         "toolkit/components/nimbus/FeatureManifest.sys.mjs",
         "toolkit/components/promiseworker/worker/PromiseWorker.js",
