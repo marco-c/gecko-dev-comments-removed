@@ -3539,6 +3539,10 @@ class PresShell final : public nsStubDocumentObserver,
 
   
   
+  TimeStamp mFirstUnmatchedEscapeKeyDownForFullscreen;
+
+  
+  
   
   
   friend dom::SelectionNodeCache;
