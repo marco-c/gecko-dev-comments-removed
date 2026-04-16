@@ -12,8 +12,12 @@
 #define NET_DCSCTP_PACKET_BOUNDED_BYTE_WRITER_H_
 
 #include <algorithm>
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
 
 #include "api/array_view.h"
+#include "rtc_base/checks.h"
 
 namespace dcsctp {
 
@@ -84,7 +88,7 @@ class BoundedByteWriter {
     RTC_CHECK(FixedSize + variable_offset + SubSize <= data_.size());
 
     return BoundedByteWriter<SubSize>(
-        data_.subview(FixedSize + variable_offset, SubSize));
+        data_.subspan(FixedSize + variable_offset, SubSize));
   }
 
   void CopyToVariableData(webrtc::ArrayView<const uint8_t> source) {

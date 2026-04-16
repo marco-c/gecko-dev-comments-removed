@@ -10,14 +10,10 @@
 #ifndef NET_DCSCTP_PACKET_TLV_TRAIT_H_
 #define NET_DCSCTP_PACKET_TLV_TRAIT_H_
 
-#include <stdint.h>
-#include <string.h>
-
-#include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 #include <optional>
-#include <string>
 #include <vector>
 
 #include "api/array_view.h"
@@ -123,7 +119,7 @@ class TLVTrait {
         return std::nullopt;
       }
     }
-    return BoundedByteReader<Config::kHeaderSize>(data.subview(0, length));
+    return BoundedByteReader<Config::kHeaderSize>(data.subspan(0, length));
   }
 
   
