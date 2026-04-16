@@ -365,15 +365,24 @@ async function getSmartbarContextChipLabels(browser, expectedUrl) {
 
 
 
-async function submitSmartbar(browser) {
-  await SpecialPowers.spawn(browser, [], async () => {
+
+
+async function submitSmartbar(browser, { useButton = false } = {}) {
+  await SpecialPowers.spawn(browser, [useButton], async clickButton => {
     const aiWindowElement = content.document.querySelector("ai-window");
     const smartbar = aiWindowElement.shadowRoot.querySelector(
       "#ai-window-smartbar"
     );
-    const inputField = smartbar.inputField;
-    inputField.focus();
-    EventUtils.synthesizeKey("KEY_Enter", {}, content);
+    if (clickButton) {
+      const inputCta = smartbar.querySelector("input-cta");
+      const mozButton = inputCta.shadowRoot.querySelector("moz-button");
+      const button = mozButton.shadowRoot.querySelector("button");
+      button.click();
+    } else {
+      const inputField = smartbar.inputField;
+      inputField.focus();
+      EventUtils.synthesizeKey("KEY_Enter", {}, content);
+    }
   });
 }
 
