@@ -298,6 +298,9 @@ class CamerasParent : public PCamerasParent {
   
   bool mDestroyed;
 
+  
+  bool mDestroyedCaptureThread;
+
   std::map<nsCString, nsTArray<webrtc::VideoCaptureCapability>>
       mAllCandidateCapabilities;
 
