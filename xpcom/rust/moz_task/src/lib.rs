@@ -185,6 +185,24 @@ impl DispatchOptions {
     }
 
     
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn fallible(self, fallible: bool) -> DispatchOptions {
+        const FLAG: u32 = nsIEventTarget::DISPATCH_FALLIBLE;
+        if fallible {
+            DispatchOptions(self.flags() | FLAG)
+        } else {
+            DispatchOptions(self.flags() & !FLAG)
+        }
+    }
+
+    
     #[inline]
     fn flags(self) -> u32 {
         self.0

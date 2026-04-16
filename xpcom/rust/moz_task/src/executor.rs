@@ -2,7 +2,7 @@
 
 
 
-use crate::{get_current_thread, DispatchOptions, RunnableBuilder};
+use crate::{get_current_thread, is_on_current_thread, DispatchOptions, RunnableBuilder};
 use std::{
     cell::Cell,
     fmt::Debug,
@@ -104,7 +104,19 @@ fn schedule(config: Arc<TaskSpawnConfig>, runnable: async_task::Runnable) {
 
     
     
-    let options = unsafe { config.options.at_end(currently_polling) };
+    let mut options = unsafe { config.options.at_end(currently_polling) };
+
+    
+    
+    
+    
+    
+    
+    if let SpawnTarget::EventTarget(target) = &config.target {
+        if is_on_current_thread(target) {
+            options = options.fallible(true);
+        }
+    }
 
     
     let config2 = config.clone();
@@ -183,7 +195,7 @@ where
         let config = Arc::new(TaskSpawnConfig {
             name: self.name,
             priority: self.priority,
-            options: self.options,
+            options: self.options.fallible(true),
             target: SpawnTarget::BackgroundTask,
         });
         let (runnable, task) = async_task::spawn(self.future, move |runnable| {
@@ -198,7 +210,7 @@ where
         let config = Arc::new(TaskSpawnConfig {
             name: self.name,
             priority: self.priority,
-            options: self.options,
+            options: self.options.fallible(true),
             target: SpawnTarget::EventTarget(RefPtr::new(target)),
         });
         let (runnable, task) = async_task::spawn(self.future, move |runnable| {
