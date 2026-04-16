@@ -8284,7 +8284,7 @@ nsIFrame::ContentOffsets nsTextFrame::GetCharacterOffsetAtFramePointInternal(
         gfxFontUtils::IsRegionalIndicator(
             characterDataBuffer.ScalarValueAt(offs))) {
       allowSplitLigature = false;
-      if (extraCluster.GetSkippedOffset() > 1 &&
+      if (extraCluster.GetSkippedOffset() >= skippedRange.start + 2 &&
           !mTextRun->IsLigatureGroupStart(extraCluster.GetSkippedOffset())) {
         
         
