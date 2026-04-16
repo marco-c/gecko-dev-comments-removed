@@ -234,6 +234,16 @@ enum class OpKind {
   TryTable,
   CallBuiltinModuleFunc,
   StackSwitch,
+#  ifdef ENABLE_WASM_JSPI
+  ContNew,
+  ContBind,
+  Suspend,
+  Resume,
+  ResumeThrow,
+  ResumeThrowRef,
+  Switch,
+  GuardSuspending,
+#  endif
 };
 
 
@@ -612,7 +622,9 @@ class MOZ_STACK_CLASS OpIter : private Policy {
     }
 
     
-    if (lastBranchHintIndex_ >= branchHintVector_->length()) {
+    if (lastBranchHintIndex_ >= branchHintVector_->length() ||
+        (*branchHintVector_)[lastBranchHintIndex_].branchOffset !=
+            branchOffset) {
       return BranchHint::Invalid;
     }
 
@@ -1694,7 +1706,7 @@ inline bool OpIter<Policy>::readTryTable(BlockType* type,
     
     if (tryTableCatch.tagIndex != CatchAllIndex) {
       const TagType& tagType = *codeMeta_.tags[tryTableCatch.tagIndex].type;
-      ResultType tagResult = tagType.resultType();
+      ResultType tagResult = tagType.argResultType();
       if (!tagResult.cloneToVector(&tryTableCatch.labelType)) {
         return false;
       }
@@ -1756,7 +1768,7 @@ inline bool OpIter<Policy>::readCatch(LabelKind* kind, uint32_t* tagIndex,
   
   unsetLocals_.resetToBlock(controlStack_.length() - 1);
 
-  return push(codeMeta_.tags[*tagIndex].type->resultType());
+  return push(codeMeta_.tags[*tagIndex].type->argResultType());
 }
 
 template <typename Policy>
@@ -1832,7 +1844,8 @@ inline bool OpIter<Policy>::readThrow(uint32_t* tagIndex,
     return fail("tag index out of range");
   }
 
-  if (!popWithType(codeMeta_.tags[*tagIndex].type->resultType(), argValues)) {
+  if (!popWithType(codeMeta_.tags[*tagIndex].type->argResultType(),
+                   argValues)) {
     return false;
   }
 
@@ -1993,9 +2006,7 @@ inline bool OpIter<Policy>::readBinaryI128(Value* lhsLo, Value* lhsHi,
   }
 
   infalliblePush(ValType::I64);
-  infalliblePush(ValType::I64);
-
-  return true;
+  return push(ValType::I64);
 }
 
 template <typename Policy>
@@ -2011,9 +2022,7 @@ inline bool OpIter<Policy>::readBinaryI64Wide(Value* lhs, Value* rhs) {
   }
 
   infalliblePush(ValType::I64);
-  infalliblePush(ValType::I64);
-
-  return true;
+  return push(ValType::I64);
 }
 
 template <typename Policy>
