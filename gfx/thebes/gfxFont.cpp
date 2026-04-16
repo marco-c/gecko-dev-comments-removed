@@ -3324,15 +3324,6 @@ bool gfxFont::ProcessShapedWordInternal(
     if (!mWordCache) {
       mWordCache = MakeUnique<HashMap<WordCacheKey, UniquePtr<gfxShapedWord>,
                                       WordCacheKey::HashPolicy>>();
-    } else {
-      
-      uint32_t wordCacheMaxEntries =
-          gfxPlatform::GetPlatform()->WordCacheMaxEntries();
-      if (mWordCache->count() > wordCacheMaxEntries) {
-        
-        NS_WARNING("flushing shaped-word cache");
-        ClearCachedWordsLocked();
-      }
     }
 
     
