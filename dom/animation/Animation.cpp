@@ -1654,48 +1654,67 @@ void Animation::PlayNoUpdate(ErrorResult& aRv, LimitBehavior aLimitBehavior) {
 }
 
 
+
+
+
 void Animation::Pause(ErrorResult& aRv) {
+  
+  
   if (IsPausedOrPausing()) {
     return;
   }
 
   AutoMutationBatchForAnimation mb(*this);
 
-  Nullable<TimeDuration> seekTime;
   
+  
+  const bool hasFiniteTimeline = HasFiniteTimeline();
+
   if (GetCurrentTimeAsDuration().IsNull()) {
-    if (PlaybackRateInternal() >= 0.0) {
-      seekTime.SetValue(TimeDuration(0));
-    } else {
-      if (EffectEnd() == TimeDuration::Forever()) {
-        return aRv.ThrowInvalidStateError("Can't seek to infinite effect end");
+    if (!hasFiniteTimeline) {
+      
+      
+      
+      if (PlaybackRateInternal() >= 0.0) {
+        
+        mHoldTime.SetValue(TimeDuration(0));
+      } else {
+        if (EffectEnd() == TimeDuration::Forever()) {
+          
+          
+          return aRv.ThrowInvalidStateError(
+              "Can't seek to infinite effect end");
+        }
+        
+        mHoldTime.SetValue(TimeDuration(EffectEnd()));
       }
-      seekTime.SetValue(TimeDuration(EffectEnd()));
-    }
-  }
-
-  if (!seekTime.IsNull()) {
-    if (HasFiniteTimeline()) {
-      mStartTime = seekTime;
     } else {
-      mHoldTime = seekTime;
+      
+      
+      mAutoAlignStartTime = true;
     }
   }
 
-  bool reuseReadyPromise = false;
+  
+  bool hasPendingReadyPromise = false;
+
+  
+  
   if (mPendingState == PendingState::PlayPending) {
     CancelPendingTasks();
-    reuseReadyPromise = true;
+    hasPendingReadyPromise = true;
   }
 
-  if (!reuseReadyPromise) {
+  
+  
+  if (!hasPendingReadyPromise) {
     
     mReady = nullptr;
   }
 
+  
   mPendingState = PendingState::PausePending;
   mPendingReadyTime = {};
-  
   if (Document* doc = GetRenderedDocument()) {
     if (HasFiniteTimeline()) {
       doc->GetOrCreateScrollTimelineAnimationTracker()->AddPending(*this);
@@ -1703,6 +1722,9 @@ void Animation::Pause(ErrorResult& aRv) {
     mPendingReadyTime = EnsurePaintIsScheduled(*doc);
   }
 
+  
+  
+  
   UpdateTiming(SeekFlag::NoSeek, SyncNotifyFlag::Async);
   if (IsRelevant()) {
     MutationObservers::NotifyAnimationChanged(this);
