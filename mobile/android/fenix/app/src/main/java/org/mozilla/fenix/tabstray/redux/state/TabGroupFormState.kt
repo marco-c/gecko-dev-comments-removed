@@ -4,6 +4,9 @@
 
 package org.mozilla.fenix.tabstray.redux.state
 
+import org.mozilla.fenix.tabgroups.EditTabGroup
+import org.mozilla.fenix.tabstray.data.TabGroupTheme
+
 /**
  * Value type that represents the form state when creating or editing a Tab Group.
  *
@@ -12,12 +15,15 @@ package org.mozilla.fenix.tabstray.redux.state
  * @property nextTabGroupNumber Number used to derive a default tab group name.
  * Example: if a user has zero tab groups, the default name will have "1" appended to it.
  * If a user has 5 tab groups, the default tab group name will have "6" appended to it.
+ * @property theme The tab group's theme.  If creating a new tab group, a default color
+ * will be selected based on the last theme used.
  * @property edited Whether the user has modified the form fields.
  */
 data class TabGroupFormState(
     val tabGroupId: String?,
     val name: String,
     val nextTabGroupNumber: Int = 1,
+    val theme: TabGroupTheme = TabGroupTheme.default,
     val edited: Boolean = false,
 ) {
     /**
@@ -34,3 +40,15 @@ data class TabGroupFormState(
     fun getInitialName(defaultName: String?): String =
         if (edited || name.isNotBlank()) name else (defaultName ?: "")
 }
+
+/**
+ * Returns an initial [TabGroupFormState] derived from [TabsTrayState].
+ *
+ * Note: Because we need a localized string for the initial name, this is constructed at render time in [EditTabGroup].
+ */
+fun TabsTrayState.initializeTabGroupForm() = TabGroupFormState(
+    tabGroupId = null,
+    name = "",
+    nextTabGroupNumber = tabGroups.size + 1,
+    edited = false,
+)
