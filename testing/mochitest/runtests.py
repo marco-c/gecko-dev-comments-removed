@@ -2475,7 +2475,6 @@ toolbar#nav-bar {
             profile=options.profilePath,
             addons=extensions,
             locations=self.locations,
-            proxy=self.proxy(options),
             allowlistpaths=sandbox_allowlist_paths,
         )
 
@@ -3571,6 +3570,7 @@ toolbar#nav-bar {
             "socketprocess_networking": self.extraPrefs.get(
                 "network.http.network_access_on_socket_process.enabled", False
             ),
+            "standalone": options.restartBetweenTests,
             "swgl": self.extraPrefs.get("gfx.webrender.software", False),
             "verify": options.verify,
             "verify_fission": options.verify_fission,
@@ -3862,6 +3862,9 @@ toolbar#nav-bar {
         try:
             if self.startServers(options, debuggerInfo) is False:
                 return 1
+
+            
+            self.profile.set_proxy(self.proxy(options))
 
             if self.mozHttp2Server is not None:
                 for key, value in self.mozHttp2Server.ports().items():
