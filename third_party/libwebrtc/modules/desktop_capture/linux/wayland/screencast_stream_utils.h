@@ -15,8 +15,6 @@
 
 #include <vector>
 
-#include "absl/strings/string_view.h"
-
 struct spa_pod;
 struct spa_pod_builder;
 struct spa_rectangle;
@@ -25,22 +23,6 @@ struct spa_fraction;
 namespace webrtc {
 
 class EglDrmDevice;
-
-struct PipeWireVersion {
-  static PipeWireVersion Parse(const absl::string_view& version);
-
-  
-  bool operator>=(const PipeWireVersion& other);
-  
-  bool operator<=(const PipeWireVersion& other);
-
-  absl::string_view ToStringView() const;
-
-  int major = 0;
-  int minor = 0;
-  int micro = 0;
-  std::string full_version;
-};
 
 
 
