@@ -20,30 +20,20 @@
 #  include <stdlib.h> 
 #endif
 
-#ifdef XP_UNIX
-
-#  ifdef _SVID_GETTOD 
-extern int gettimeofday(struct timeval* tv);
-#  endif
-
-#  include <sys/time.h>
-
-#endif 
-
 #if defined(XP_UNIX)
-int64_t PRMJ_Now() {
-  struct timeval tv;
+int64_t js::PRMJ_Now() {
+  
+  
+  
 
-#  ifdef _SVID_GETTOD 
-  gettimeofday(&tv);
-#  else
-  gettimeofday(&tv, 0);
-#  endif 
+  timespec ts;
+  MOZ_ALWAYS_TRUE(clock_gettime(CLOCK_REALTIME, &ts) == 0);
 
-  return int64_t(tv.tv_sec) * PRMJ_USEC_PER_SEC + int64_t(tv.tv_usec);
+  return int64_t(ts.tv_sec) * PRMJ_USEC_PER_SEC +
+         int64_t(ts.tv_nsec / PRMJ_NSEC_PER_USEC);
 }
 
-#else
+#elif defined(XP_WIN)
 
 
 static int64_t FileTimeToUnixMicroseconds(const FILETIME& ft) {
@@ -59,7 +49,7 @@ static int64_t FileTimeToUnixMicroseconds(const FILETIME& ft) {
   return t / 10;
 }
 
-int64_t PRMJ_Now() {
+int64_t js::PRMJ_Now() {
   FILETIME ft;
   GetSystemTimePreciseAsFileTime(&ft);
   return FileTimeToUnixMicroseconds(ft);
@@ -77,9 +67,9 @@ static void PRMJ_InvalidParameterHandler(const wchar_t* expression,
 #  endif
 
 
-size_t PRMJ_FormatTime(char* buf, size_t buflen, const char* fmt,
-                       const PRMJTime* prtm, int timeZoneYear,
-                       int offsetInSeconds) {
+size_t js::PRMJ_FormatTime(char* buf, size_t buflen, const char* fmt,
+                           const PRMJTime* prtm, int timeZoneYear,
+                           int offsetInSeconds) {
   size_t result = 0;
 #  if defined(XP_UNIX) || defined(XP_WIN)
   struct tm a;
