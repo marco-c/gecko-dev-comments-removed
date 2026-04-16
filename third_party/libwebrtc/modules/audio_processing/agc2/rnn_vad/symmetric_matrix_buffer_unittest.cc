@@ -14,6 +14,7 @@
 #include <array>
 #include <utility>
 
+#include "api/array_view.h"
 #include "modules/audio_processing/agc2/rnn_vad/ring_buffer.h"
 #include "test/gtest.h"
 
@@ -61,7 +62,7 @@ TEST(RnnVadTest, SymmetricMatrixBufferUseCase) {
   for (int t = 1; t <= 100; ++t) {  
     SCOPED_TRACE(t);
     const int t_removed = ring_buf.GetArrayView(kRingBufSize - 1)[0];
-    ring_buf.Push({&t, 1});
+    ring_buf.Push(ArrayView<int, 1>(&t, 1));
     
     ASSERT_EQ(t, ring_buf.GetArrayView(0)[0]);
     
@@ -77,7 +78,7 @@ TEST(RnnVadTest, SymmetricMatrixBufferUseCase) {
       new_comparions[i].second = t;
     }
     
-    sym_matrix_buf.Push({new_comparions.data(), new_comparions.size()});
+    sym_matrix_buf.Push(new_comparions);
     
     CheckSymmetry(&sym_matrix_buf);
     

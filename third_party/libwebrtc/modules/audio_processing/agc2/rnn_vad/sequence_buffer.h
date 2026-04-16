@@ -50,13 +50,15 @@ class SequenceBuffer {
   
   void Reset() { std::fill(buffer_.begin(), buffer_.end(), 0); }
   
-  ArrayView<const T, S> GetBufferView() const { return {buffer_.data(), S}; }
+  ArrayView<const T, S> GetBufferView() const {
+    return ArrayView<const T, S>(buffer_.data(), S);
+  }
   
   ArrayView<const T, M> GetMostRecentValuesView() const {
     static_assert(M <= S,
                   "The number of most recent values cannot be larger than the "
                   "sequence buffer size.");
-    return {buffer_.data() + S - M, M};
+    return ArrayView<const T, M>(buffer_.data() + S - M, M);
   }
   
   void Push(ArrayView<const T, N> new_values) {
