@@ -2,7 +2,6 @@
 
 
 
-
 #include "gfxFT2FontBase.h"
 #include "gfxFT2Utils.h"
 #include "harfbuzz/hb.h"
@@ -772,7 +771,7 @@ bool gfxFT2FontBase::GetFTGlyphExtents(uint16_t aGID, int32_t* aAdvance,
 
 
 
-const gfxFT2FontBase::GlyphMetrics& gfxFT2FontBase::GetCachedGlyphMetrics(
+gfxFT2FontBase::GlyphMetrics gfxFT2FontBase::GetCachedGlyphMetrics(
     uint16_t aGID, IntRect* aBounds) {
   {
     
@@ -807,7 +806,7 @@ const gfxFT2FontBase::GlyphMetrics& gfxFT2FontBase::GetCachedGlyphMetrics(
 bool gfxFT2FontBase::GetGlyphBounds(uint16_t aGID, gfxRect* aBounds,
                                     bool aTight) {
   IntRect bounds;
-  const GlyphMetrics& metrics = GetCachedGlyphMetrics(aGID, &bounds);
+  const GlyphMetrics metrics = GetCachedGlyphMetrics(aGID, &bounds);
   if (!metrics.HasValidBounds()) {
     return false;
   }
