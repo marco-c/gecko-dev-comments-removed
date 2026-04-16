@@ -118,7 +118,6 @@
 #include <algorithm>
 #include <errno.h>
 #include <fstream>
-#include <ostream>
 #include <set>
 #include <sstream>
 #include <string_view>
@@ -4375,11 +4374,11 @@ RunningTimes GetRunningTimesWithTightTimestamp(
     TimeDuration durations[loops];
     RunningTimes runningTimes;
     TimeStamp before = TimeStamp::Now();
-    for (int i = 0; i < loops; ++i) {
+    for (auto& duration : durations) {
       AUTO_PROFILER_STATS(GetRunningTimes_MaxRunningTimesReadDuration);
       aGetCPURunningTimesFunction(runningTimes);
       const TimeStamp after = TimeStamp::Now();
-      durations[i] = after - before;
+      duration = after - before;
       before = after;
     }
     

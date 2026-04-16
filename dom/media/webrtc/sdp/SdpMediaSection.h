@@ -2,12 +2,10 @@
 
 
 
-
-
 #ifndef SDPMEDIASECTION_H_
 #define SDPMEDIASECTION_H_
 
-#include <sstream>
+#include <ostream>
 #include <string>
 #include <vector>
 
