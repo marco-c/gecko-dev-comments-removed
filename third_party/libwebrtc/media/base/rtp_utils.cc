@@ -145,7 +145,8 @@ bool GetRtcpSsrc(const void* data, size_t len, uint32_t* value) {
   
   if (pl_type == kRtcpTypeSDES)
     return false;
-  *value = GetBE32(static_cast<const uint8_t*>(data) + 4);
+  *value = GetBE32(
+      ArrayView<const uint8_t>(static_cast<const uint8_t*>(data) + 4, 4));
   return true;
 }
 
@@ -215,7 +216,7 @@ bool ValidateRtpHeader(ArrayView<const uint8_t> rtp, size_t* header_length) {
   
   
   uint16_t extension_length_in_32bits =
-      GetBE16(&rtp[header_length_without_extension + 2]);
+      GetBE16(rtp.subspan(header_length_without_extension + 2, 2));
   size_t extension_length = extension_length_in_32bits * 4;
 
   size_t rtp_header_length = extension_length +
@@ -262,10 +263,13 @@ bool UpdateRtpAbsSendTimeExtension(ArrayView<uint8_t> packet,
   uint8_t* rtp = packet.data();
   rtp += header_length_without_extension;
 
+  ArrayView<const uint8_t> extension_header =
+      packet.subspan(header_length_without_extension, kRtpExtensionHeaderLen);
+
   
-  uint16_t profile_id = GetBE16(rtp);
+  uint16_t profile_id = GetBE16(extension_header);
   
-  uint16_t extension_length_in_32bits = GetBE16(rtp + 2);
+  uint16_t extension_length_in_32bits = GetBE16(extension_header.subspan(2, 2));
   size_t extension_length = extension_length_in_32bits * 4;
 
   rtp += kRtpExtensionHeaderLen;  
@@ -374,7 +378,7 @@ bool ApplyPacketOptions(ArrayView<uint8_t> data,
   }
 
   
-  auto packet = data.subview(rtp_start_pos, rtp_length);
+  auto packet = data.subspan(rtp_start_pos, rtp_length);
   if (!IsRtpPacket(packet) || !ValidateRtpHeader(packet, nullptr)) {
     RTC_DCHECK_NOTREACHED();
     return false;

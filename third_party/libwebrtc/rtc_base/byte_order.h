@@ -11,15 +11,18 @@
 #ifndef RTC_BASE_BYTE_ORDER_H_
 #define RTC_BASE_BYTE_ORDER_H_
 
-#include <stdint.h>
-
+#include <cstdint>
+#include <cstdlib>
 #include <cstring>
 
-#if defined(WEBRTC_POSIX) && !defined(__native_client__)
-#include <arpa/inet.h>
+#include "api/array_view.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/system/arch.h"  
+
+#if defined(WEBRTC_POSIX)
+#include <arpa/inet.h>  
 #endif
 
-#include "rtc_base/system/arch.h"
 
 #if defined(WEBRTC_MAC)
 #include <libkern/OSByteOrder.h>
@@ -38,10 +41,9 @@
 #define le32toh(v) OSSwapLittleToHostInt32(v)
 #define le64toh(v) OSSwapLittleToHostInt64(v)
 
-#elif defined(WEBRTC_WIN) || defined(__native_client__)
+#elif defined(WEBRTC_WIN)
 
 #if defined(WEBRTC_WIN)
-#include <stdlib.h>
 #include <winsock2.h>
 #else
 #include <netinet/in.h>  
@@ -62,10 +64,6 @@
 #define htobe64(v) _byteswap_uint64(v)
 #define be64toh(v) _byteswap_uint64(v)
 #endif  
-#if defined(__native_client__)
-#define htobe64(v) __builtin_bswap64(v)
-#define be64toh(v) __builtin_bswap64(v)
-#endif  
 
 #elif defined(WEBRTC_ARCH_BIG_ENDIAN)
 #define htobe16(v) (v)
@@ -79,10 +77,6 @@
 #define le32toh(v) __builtin_bswap32(v)
 #define le64toh(v) __builtin_bswap64(v)
 #if defined(WEBRTC_WIN)
-#define htobe64(v) (v)
-#define be64toh(v) (v)
-#endif  
-#if defined(__native_client__)
 #define htobe64(v) (v)
 #define be64toh(v) (v)
 #endif  
@@ -102,34 +96,83 @@ namespace webrtc {
 
 
 
+inline void Set8(ArrayView<uint8_t> data, size_t offset, uint8_t v) {
+  data[offset] = v;
+}
+
+[[deprecated("Use version with ArrayView")]]
 inline void Set8(void* memory, size_t offset, uint8_t v) {
   static_cast<uint8_t*>(memory)[offset] = v;
 }
 
+inline uint8_t Get8(ArrayView<const uint8_t> data, size_t offset) {
+  return data[offset];
+}
+
+[[deprecated("Use version with ArrayView")]]
 inline uint8_t Get8(const void* memory, size_t offset) {
   return static_cast<const uint8_t*>(memory)[offset];
 }
 
-inline void SetBE16(void* memory, uint16_t v) {
+inline void SetBE16(ArrayView<uint8_t> data, uint16_t v) {
+  RTC_DCHECK_GE(data.size(), sizeof(v));
+  uint16_t val = htobe16(v);
+  memcpy(data.data(), &val, sizeof(val));
+}
+
+[[deprecated("Use version with ArrayView")]] inline void SetBE16(void* memory,
+                                                                 uint16_t v) {
   uint16_t val = htobe16(v);
   memcpy(memory, &val, sizeof(val));
 }
+
+inline void SetBE32(ArrayView<uint8_t> data, uint32_t v) {
+  RTC_DCHECK_GE(data.size(), sizeof(v));
+  uint32_t val = htobe32(v);
+  memcpy(data.data(), &val, sizeof(val));
+}
+
+
 
 inline void SetBE32(void* memory, uint32_t v) {
   uint32_t val = htobe32(v);
   memcpy(memory, &val, sizeof(val));
 }
 
-inline void SetBE64(void* memory, uint64_t v) {
+inline void SetBE64(ArrayView<uint8_t> data, uint64_t v) {
+  RTC_DCHECK_GE(data.size(), sizeof(v));
+  uint64_t val = htobe64(v);
+  memcpy(data.data(), &val, sizeof(val));
+}
+
+[[deprecated("Use version with ArrayView")]] inline void SetBE64(void* memory,
+                                                                 uint64_t v) {
   uint64_t val = htobe64(v);
   memcpy(memory, &val, sizeof(val));
 }
 
-inline uint16_t GetBE16(const void* memory) {
+inline uint16_t GetBE16(ArrayView<const uint8_t> data) {
+  uint16_t val;
+  RTC_DCHECK_GE(data.size(), sizeof(val));
+  memcpy(&val, data.data(), sizeof(val));
+  return be16toh(val);
+}
+
+[[deprecated("Use version with ArrayView")]] inline uint16_t GetBE16(
+    const void* memory) {
   uint16_t val;
   memcpy(&val, memory, sizeof(val));
   return be16toh(val);
 }
+
+inline uint32_t GetBE32(ArrayView<const uint8_t> data) {
+  uint32_t val;
+  RTC_DCHECK_GE(data.size(), sizeof(val));
+  memcpy(&val, data.data(), sizeof(val));
+  return be32toh(val);
+}
+
+
 
 inline uint32_t GetBE32(const void* memory) {
   uint32_t val;
@@ -137,40 +180,93 @@ inline uint32_t GetBE32(const void* memory) {
   return be32toh(val);
 }
 
-inline uint64_t GetBE64(const void* memory) {
+inline uint64_t GetBE64(ArrayView<const uint8_t> data) {
+  uint64_t val;
+  RTC_DCHECK_GE(data.size(), sizeof(val));
+  memcpy(&val, data.data(), sizeof(val));
+  return be64toh(val);
+}
+
+[[deprecated("Use version with ArrayView")]] inline uint64_t GetBE64(
+    const void* memory) {
   uint64_t val;
   memcpy(&val, memory, sizeof(val));
   return be64toh(val);
 }
 
-inline void SetLE16(void* memory, uint16_t v) {
+inline void SetLE16(ArrayView<uint8_t> data, uint16_t v) {
+  RTC_DCHECK_GE(data.size(), sizeof(v));
+  uint16_t val = htole16(v);
+  memcpy(data.data(), &val, sizeof(val));
+}
+
+[[deprecated("Use version with ArrayView")]] inline void SetLE16(void* memory,
+                                                                 uint16_t v) {
   uint16_t val = htole16(v);
   memcpy(memory, &val, sizeof(val));
 }
 
-inline void SetLE32(void* memory, uint32_t v) {
+inline void SetLE32(ArrayView<uint8_t> data, uint32_t v) {
+  RTC_DCHECK_GE(data.size(), sizeof(v));
+  uint32_t val = htole32(v);
+  memcpy(data.data(), &val, sizeof(val));
+}
+
+[[deprecated("Use version with ArrayView")]] inline void SetLE32(void* memory,
+                                                                 uint32_t v) {
   uint32_t val = htole32(v);
   memcpy(memory, &val, sizeof(val));
 }
 
-inline void SetLE64(void* memory, uint64_t v) {
+inline void SetLE64(ArrayView<uint8_t> data, uint64_t v) {
+  RTC_DCHECK_GE(data.size(), sizeof(v));
+  uint64_t val = htole64(v);
+  memcpy(data.data(), &val, sizeof(val));
+}
+
+[[deprecated("Use version with ArrayView")]] inline void SetLE64(void* memory,
+                                                                 uint64_t v) {
   uint64_t val = htole64(v);
   memcpy(memory, &val, sizeof(val));
 }
 
-inline uint16_t GetLE16(const void* memory) {
+inline uint16_t GetLE16(ArrayView<const uint8_t> data) {
+  uint16_t val;
+  RTC_DCHECK_GE(data.size(), sizeof(val));
+  memcpy(&val, data.data(), sizeof(val));
+  return le16toh(val);
+}
+
+[[deprecated("Use version with ArrayView")]] inline uint16_t GetLE16(
+    const void* memory) {
   uint16_t val;
   memcpy(&val, memory, sizeof(val));
   return le16toh(val);
 }
 
-inline uint32_t GetLE32(const void* memory) {
+inline uint32_t GetLE32(ArrayView<const uint8_t> data) {
+  uint32_t val;
+  RTC_DCHECK_GE(data.size(), sizeof(val));
+  memcpy(&val, data.data(), sizeof(val));
+  return le32toh(val);
+}
+
+[[deprecated("Use version with ArrayView")]] inline uint32_t GetLE32(
+    const void* memory) {
   uint32_t val;
   memcpy(&val, memory, sizeof(val));
   return le32toh(val);
 }
 
-inline uint64_t GetLE64(const void* memory) {
+inline uint64_t GetLE64(ArrayView<const uint8_t> data) {
+  uint64_t val;
+  RTC_DCHECK_GE(data.size(), sizeof(val));
+  memcpy(&val, data.data(), sizeof(val));
+  return le64toh(val);
+}
+
+[[deprecated("Use version with ArrayView")]] inline uint64_t GetLE64(
+    const void* memory) {
   uint64_t val;
   memcpy(&val, memory, sizeof(val));
   return le64toh(val);
@@ -211,32 +307,5 @@ inline uint64_t NetworkToHost64(uint64_t n) {
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace rtc {
-using ::webrtc::Get8;
-using ::webrtc::GetBE16;
-using ::webrtc::GetBE32;
-using ::webrtc::GetBE64;
-using ::webrtc::GetLE16;
-using ::webrtc::GetLE32;
-using ::webrtc::GetLE64;
-using ::webrtc::HostToNetwork16;
-using ::webrtc::HostToNetwork32;
-using ::webrtc::HostToNetwork64;
-using ::webrtc::IsHostBigEndian;
-using ::webrtc::NetworkToHost16;
-using ::webrtc::NetworkToHost32;
-using ::webrtc::NetworkToHost64;
-using ::webrtc::Set8;
-using ::webrtc::SetBE16;
-using ::webrtc::SetBE32;
-using ::webrtc::SetBE64;
-using ::webrtc::SetLE16;
-using ::webrtc::SetLE32;
-using ::webrtc::SetLE64;
-}  
-#endif  
 
 #endif  

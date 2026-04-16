@@ -10,14 +10,13 @@
 
 #include "api/transport/stun.h"
 
-#include <string.h>
-
 #include <algorithm>  
 #include <cstdint>
 #include <cstring>
 #include <functional>
 #include <iterator>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -380,8 +379,11 @@ bool StunMessage::ValidateMessageIntegrityOfType(int mi_attr_type,
     return false;
   }
 
+  ArrayView<const uint8_t> data_view(reinterpret_cast<const uint8_t*>(data),
+                                     size);
+
   
-  uint16_t msg_length = GetBE16(&data[2]);
+  uint16_t msg_length = GetBE16(data_view.subspan(2, 2));
   if (size != (msg_length + kStunHeaderSize)) {
     return false;
   }
@@ -392,8 +394,9 @@ bool StunMessage::ValidateMessageIntegrityOfType(int mi_attr_type,
   while (current_pos + 4 <= size) {
     uint16_t attr_type, attr_length;
     
-    attr_type = GetBE16(&data[current_pos]);
-    attr_length = GetBE16(&data[current_pos + sizeof(attr_type)]);
+    attr_type = GetBE16(data_view.subspan(current_pos, 2));
+    attr_length =
+        GetBE16(data_view.subspan(current_pos + sizeof(attr_type), 2));
 
     
     if (attr_type == mi_attr_type) {
@@ -434,7 +437,9 @@ bool StunMessage::ValidateMessageIntegrityOfType(int mi_attr_type,
     
     
     
-    SetBE16(temp_data.get() + 2, static_cast<uint16_t>(new_adjusted_len));
+    SetBE16(
+        ArrayView<uint8_t>(reinterpret_cast<uint8_t*>(temp_data.get() + 2), 2),
+        static_cast<uint16_t>(new_adjusted_len));
   }
 
   char hmac[kStunMessageIntegritySize];
@@ -505,22 +510,26 @@ bool StunMessage::ValidateFingerprint(const char* data, size_t size) {
   if (size % 4 != 0 || size < kStunHeaderSize + fingerprint_attr_size)
     return false;
 
+  ArrayView<const uint8_t> data_view(reinterpret_cast<const uint8_t*>(data),
+                                     size);
+
   
-  const char* magic_cookie =
-      data + kStunTransactionIdOffset - kStunMagicCookieLength;
-  if (GetBE32(magic_cookie) != kStunMagicCookie)
+  size_t magic_cookie_offset =
+      kStunTransactionIdOffset - kStunMagicCookieLength;
+  if (GetBE32(data_view.subspan(magic_cookie_offset, 4)) != kStunMagicCookie)
     return false;
 
   
-  const char* fingerprint_attr_data = data + size - fingerprint_attr_size;
-  if (GetBE16(fingerprint_attr_data) != STUN_ATTR_FINGERPRINT ||
-      GetBE16(fingerprint_attr_data + sizeof(uint16_t)) !=
-          StunUInt32Attribute::SIZE)
+  size_t fingerprint_attr_offset = size - fingerprint_attr_size;
+  if (GetBE16(data_view.subspan(fingerprint_attr_offset, 2)) !=
+          STUN_ATTR_FINGERPRINT ||
+      GetBE16(data_view.subspan(fingerprint_attr_offset + sizeof(uint16_t),
+                                2)) != StunUInt32Attribute::SIZE)
     return false;
 
   
-  uint32_t fingerprint =
-      GetBE32(fingerprint_attr_data + kStunAttributeHeaderSize);
+  uint32_t fingerprint = GetBE32(
+      data_view.subspan(fingerprint_attr_offset + kStunAttributeHeaderSize, 4));
   return ((fingerprint ^ STUN_FINGERPRINT_XOR_VALUE) ==
           ComputeCrc32(data, size - fingerprint_attr_size));
 }
@@ -537,13 +546,16 @@ bool StunMessage::IsStunMethod(ArrayView<int> methods,
   if (size % 4 != 0 || size < kStunHeaderSize)
     return false;
 
+  ArrayView<const uint8_t> data_view(reinterpret_cast<const uint8_t*>(data),
+                                     size);
+
   
-  const char* magic_cookie =
-      data + kStunTransactionIdOffset - kStunMagicCookieLength;
-  if (GetBE32(magic_cookie) != kStunMagicCookie)
+  size_t magic_cookie_offset =
+      kStunTransactionIdOffset - kStunMagicCookieLength;
+  if (GetBE32(data_view.subspan(magic_cookie_offset, 4)) != kStunMagicCookie)
     return false;
 
-  int method = GetBE16(data);
+  int method = GetBE16(data_view);
   for (int m : methods) {
     if (m == method) {
       return true;
@@ -1111,6 +1123,17 @@ StunByteStringAttribute::StunByteStringAttribute(uint16_t type,
   CopyBytes(bytes, length);
 }
 
+StunByteStringAttribute::StunByteStringAttribute(
+    uint16_t type,
+    const std::vector<uint32_t>& values)
+    : StunAttribute(type, 0), bytes_(nullptr) {
+  ByteBufferWriter writer;
+  for (const auto& value : values) {
+    writer.WriteUInt32(value);
+  }
+  CopyBytes(writer.Data(), writer.Length());
+}
+
 StunByteStringAttribute::StunByteStringAttribute(uint16_t type, uint16_t length)
     : StunAttribute(type, length), bytes_(nullptr) {}
 
@@ -1120,6 +1143,20 @@ StunByteStringAttribute::~StunByteStringAttribute() {
 
 StunAttributeValueType StunByteStringAttribute::value_type() const {
   return STUN_VALUE_BYTE_STRING;
+}
+
+std::optional<std::vector<uint32_t>> StunByteStringAttribute::GetUInt32Vector()
+    const {
+  if (length() % 4 != 0) {
+    return std::nullopt;
+  }
+  std::vector<uint32_t> values;
+  ByteBufferReader reader(array_view());
+  uint32_t value;
+  while (reader.ReadUInt32(&value)) {
+    values.push_back(value);
+  }
+  return values;
 }
 
 void StunByteStringAttribute::CopyBytes(absl::string_view bytes) {
