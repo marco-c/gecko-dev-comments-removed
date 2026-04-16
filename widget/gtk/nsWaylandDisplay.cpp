@@ -1012,6 +1012,15 @@ MOZ_NEVER_INLINE static void WlLogHandler_MarshallingError(const char* error) {
                           WaylandProxy::GetState());
 }
 
+
+
+MOZ_NEVER_INLINE static void WlLogHandler_XdgSurfaceBufferMismatch(
+    const char* error) {
+  MOZ_CRASH_UNSAFE_PRINTF("(%s) %s Proxy: %s",
+                          GetDesktopEnvironmentIdentifier().get(), error,
+                          WaylandProxy::GetState());
+}
+
 static void WlLogHandler(const char* format, va_list args) {
   char error[1000];
   VsprintfLiteral(error, format, args);
@@ -1083,6 +1092,12 @@ static void WlLogHandler(const char* format, va_list args) {
   
   if (strstr(error, "error marshalling arguments")) {
     WlLogHandler_MarshallingError(error);
+  }
+
+  
+  if (strstr(error, "xdg_surface") && strstr(error, "buffer") &&
+      strstr(error, "fullscreen state")) {
+    WlLogHandler_XdgSurfaceBufferMismatch(error);
   }
 
   
