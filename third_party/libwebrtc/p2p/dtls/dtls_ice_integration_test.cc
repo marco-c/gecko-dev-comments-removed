@@ -461,8 +461,6 @@ TEST_P(DtlsIceIntegrationPerformanceTest, ConnectTime) {
     }
   }
 
-  RTC_LOG(LS_INFO) << "START: " << GetParam();
-
   int iter = 50;
   
   Random rand( 77);
