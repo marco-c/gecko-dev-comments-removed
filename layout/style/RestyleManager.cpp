@@ -2952,16 +2952,6 @@ bool RestyleManager::ProcessPostTraversal(Element* aElement,
       f->SetComputedStyle(upToDateStyle);
     }
 
-    if (!aElement->GetParent()) {
-      
-      ViewportFrame* viewport =
-          do_QueryFrame(mPresContext->PresShell()->GetRootFrame());
-      if (viewport) {
-        
-        viewport->UpdateStyle(aRestyleState);
-      }
-    }
-
     
     
     

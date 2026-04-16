@@ -557,14 +557,6 @@ ServoStyleSet::ResolveNonInheritingAnonymousBoxStyle(PseudoStyleType aType) {
   }
 
   UpdateStylistIfNeeded();
-
-  
-  
-  
-  
-  MOZ_ASSERT(!PseudoStyle::IsNonInheritingAnonBox(PseudoStyleType::MozViewport),
-             "viewport needs fixup to handle blockifying it");
-
   RefPtr<ComputedStyle> computedValues =
       Servo_ComputedValues_GetForAnonymousBox(nullptr, aType, mRawData.get())
           .Consume();
