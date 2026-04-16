@@ -180,10 +180,6 @@ class nsTextControlFrame : public nsContainerFrame, public nsIStatefulFrame {
   
   
   nscoord mFirstBaseline = NS_INTRINSIC_ISIZE_UNKNOWN;
-
-  
-  
-  bool mIsProcessing = false;
 };
 
 #endif
