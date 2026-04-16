@@ -214,6 +214,17 @@ BaseAllocCell* BaseAlloc::alloc_cell(base_alloc_size_t aSize) {
     return cell;
   }
 
+  
+  
+  if (merge_decommitted_cells(aSize)) {
+    cell = oversize_alloc(aSize);
+    if (cell) {
+      Log("alloc(%u) = %p (from oversize after merging decommitted cells)\n",
+          aSize, cell);
+      return cell;
+    }
+  }
+
   cell = decommitted_alloc(aSize);
   if (cell) {
     Log("alloc(%u) = %p (from decommitted)\n", aSize, cell);
@@ -320,6 +331,103 @@ void BaseAlloc::Link(BaseAllocCell* cell) {
 #endif
     mFreeListDecommitted.Insert(cell);
   }
+}
+
+bool BaseAlloc::merge_decommitted_cells(base_alloc_size_t aSize) {
+  
+  
+  
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool restart;
+  do {
+    restart = false;
+    
+    
+    for (BaseAllocCell* cell : mFreeListDecommitted.iter()) {
+      if (cell->Size() >= aSize) {
+        
+        
+        
+        return true;
+      }
+
+      BaseAllocCell* left = cell->LeftCell();
+      if (left && !left->Allocated()) {
+        
+        
+        Unlink(cell);
+        size_t change = cell->CommitAll();
+        if (change == 0) {
+          Link(cell);
+          return false;
+        }
+        mStats.mCommitted += change;
+
+        Unlink(left);
+        if (!left->Committed()) {
+          change = left->CommitAll();
+          if (change == 0) {
+            Link(left);
+            return false;
+          }
+          mStats.mCommitted += change;
+        }
+        left->Merge(cell);
+        Link(left);
+        if (left->Size() >= aSize) {
+          return true;
+        }
+        
+        restart = true;
+        break;
+      }
+
+      BaseAllocCell* right = cell->RightCell();
+      if (right && !right->Allocated()) {
+        Unlink(cell);
+        size_t change = cell->CommitAll();
+        if (change == 0) {
+          Link(cell);
+          return false;
+        }
+        mStats.mCommitted += change;
+
+        Unlink(right);
+        if (!right->Committed()) {
+          change = right->CommitAll();
+          if (change == 0) {
+            Link(right);
+            return false;
+          }
+          mStats.mCommitted += change;
+        }
+        cell->Merge(right);
+        Link(cell);
+        if (cell->Size() >= aSize) {
+          return true;
+        }
+        restart = true;
+        break;
+      }
+    }
+  } while (restart);
+
+  return false;
 }
 
 BaseAllocCell* BaseAlloc::chunk_alloc(base_alloc_size_t aSize)
@@ -728,6 +836,16 @@ Maybe<BaseAllocCell::DeCommitResult> BaseAllocCell::Commit(
   cell->mCommitted = false;
 
   return Some(DeCommitResult(new_first_decommitted - first_decommitted, cell));
+}
+
+size_t BaseAllocCell::CommitAll() {
+  Maybe<BaseAllocCell::DeCommitResult> commit_res = Commit(Size());
+  if (!commit_res) {
+    return 0;
+  }
+  MOZ_ASSERT(!commit_res->mNewCell1);
+  MOZ_ASSERT(!commit_res->mNewCell2);
+  return commit_res->mChange;
 }
 
 #if BASE_ALLOC_LOGGING

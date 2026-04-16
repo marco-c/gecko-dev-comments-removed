@@ -196,7 +196,14 @@ class BaseAllocCell {
         : mChange(aChange), mNewCell1(aNewCell1), mNewCell2(aNewCell2) {}
   };
 
+  
+  
+  
   mozilla::Maybe<DeCommitResult> Commit(base_alloc_size_t aSizeRequest);
+
+  
+  
+  size_t CommitAll();
 
   
   
