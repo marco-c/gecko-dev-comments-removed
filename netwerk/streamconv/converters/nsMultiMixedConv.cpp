@@ -1021,6 +1021,12 @@ nsresult nsMultiMixedConv::ProcessHeader() {
                  !p.ReadInteger(&mByteRangeEnd)) {
         return NS_ERROR_CORRUPTED_CONTENT;
       }
+      
+      
+      
+      if (mByteRangeStart > mByteRangeEnd) {
+        return NS_ERROR_CORRUPTED_CONTENT;
+      }
       mIsByteRangeRequest = true;
       if (mContentLength == UINT64_MAX) {
         mContentLength = uint64_t(mByteRangeEnd - mByteRangeStart + 1);
