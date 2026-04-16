@@ -541,8 +541,6 @@ void chunk_assert_zero(void* aPtr, size_t aSize) {
 #endif
 
 static void chunk_record(void* aChunk, size_t aSize, ChunkType aType) {
-  extent_node_t key;
-
   if (aType != ZEROED_CHUNK) {
     if (pages_purge(aChunk, aSize, aType == HUGE_CHUNK)) {
       aType = ZEROED_CHUNK;
@@ -560,10 +558,10 @@ static void chunk_record(void* aChunk, size_t aSize, ChunkType aType) {
   
   
   MutexAutoLock lock(chunks_mtx);
-  key.mAddr = (void*)((uintptr_t)aChunk + aSize);
-  extent_node_t* node = gChunksByAddress.SearchOrNext(&key);
+  void* addr = (void*)((uintptr_t)aChunk + aSize);
+  extent_node_t* node = gChunksByAddress.SearchOrNext(addr);
   
-  if (node && node->mAddr == key.mAddr) {
+  if (node && node->mAddr == addr) {
     
     
     
@@ -652,17 +650,13 @@ void chunk_dealloc(void* aChunk, size_t aSize, ChunkType aType) {
 }
 
 static void* chunk_recycle(size_t aSize, size_t aAlignment) {
-  extent_node_t key;
-
   size_t alloc_size = aSize + aAlignment - kChunkSize;
   
   if (alloc_size < aSize) {
     return nullptr;
   }
-  key.mAddr = nullptr;
-  key.mSize = alloc_size;
   chunks_mtx.Lock();
-  extent_node_t* node = gChunksBySize.SearchOrNext(&key);
+  extent_node_t* node = gChunksBySize.SearchOrNext(alloc_size);
   if (!node) {
     chunks_mtx.Unlock();
     return nullptr;

@@ -233,6 +233,13 @@ struct ArenaTreeTrait {
     MOZ_ASSERT(aOther);
     return CompareInt(aNode->mId, aOther->mId);
   }
+
+  using SearchKey = arena_id_t;
+
+  static inline Order Compare(SearchKey aKey, arena_t* aOther) {
+    MOZ_ASSERT(aOther);
+    return CompareInt(aKey, aOther->mId);
+  }
 };
 
 
@@ -277,7 +284,7 @@ class ArenaCollection {
 #endif
                                      mPrivateArenas;
 
-      MOZ_RELEASE_ASSERT(tree.Search(aArena), "Arena not in tree");
+      MOZ_RELEASE_ASSERT(tree.Search(aArena->mId), "Arena not in tree");
       tree.Remove(aArena);
       mNumOperationsDisposedArenas += aArena->Operations();
     }
@@ -513,9 +520,6 @@ class ArenaCollection {
   const static arena_id_t MAIN_THREAD_ARENA_BIT = 0x1;
 
 #ifndef NON_RANDOM_ARENA_IDS
-  
-  inline arena_t* GetByIdInternal(Tree& aTree, arena_id_t aArenaId);
-
   arena_id_t MakeRandArenaId(bool aIsMainThreadOnly) const MOZ_REQUIRES(mLock);
 #endif
   static bool ArenaIdIsMainThreadOnly(arena_id_t aArenaId) {
@@ -1148,14 +1152,14 @@ arena_chunk_t* arena_t::DemoteChunkToSpare(arena_chunk_t* aChunk) {
 arena_run_t* arena_t::AllocRun(size_t aSize, bool aLarge, bool aZero) {
   arena_run_t* run;
   arena_chunk_map_t* mapelm;
-  arena_chunk_map_t key;
 
   MOZ_ASSERT(aSize <= gMaxLargeClass);
   MOZ_ASSERT((aSize & gPageSizeMask) == 0);
 
   
-  key.bits = aSize | CHUNK_MAP_KEY;
-  mapelm = mRunsAvail.SearchOrNext(&key);
+  
+  
+  mapelm = mRunsAvail.SearchOrNext(aSize);
   if (mapelm) {
     arena_chunk_t* chunk = GetChunkForPtr(mapelm);
     size_t pageind = (uintptr_t(mapelm) - uintptr_t(chunk->mPageMap)) /
@@ -2429,12 +2433,9 @@ class AllocInfo {
       return GetInChunk(aPtr, chunk, pageind);
     }
 
-    extent_node_t key;
-
     
-    key.mAddr = chunk;
     MutexAutoLock lock(huge_mtx);
-    extent_node_t* node = huge.Search(&key);
+    extent_node_t* node = huge.Search(chunk);
     if (Validate && !node) {
       return AllocInfo();
     }
@@ -2530,14 +2531,12 @@ inline void MozJemalloc::jemalloc_ptr_info(const void* aPtr,
   
   
   extent_node_t* node;
-  extent_node_t key;
   {
     MutexAutoLock lock(huge_mtx);
-    key.mAddr = const_cast<void*>(aPtr);
     node =
         reinterpret_cast<RedBlackTree<extent_node_t, ExtentTreeBoundsTrait>*>(
             &huge)
-            ->Search(&key);
+            ->Search(const_cast<void*>(aPtr));
     if (node) {
       *aInfo = {TagLiveAlloc, node->mAddr, node->mSize, node->mArena->mId};
       return;
@@ -3112,7 +3111,7 @@ arena_t* ArenaCollection::CreateArena(bool aIsPrivate,
     arena_id = MakeRandArenaId(ret->IsMainThreadOnly());
     
     
-  } while (GetByIdInternal(tree, arena_id));
+  } while (tree.Search(arena_id));
 
   ret->mId = arena_id;
   tree.Insert(ret);
@@ -3252,14 +3251,11 @@ void* arena_t::RallocHuge(void* aPtr, size_t aSize, size_t aOldSize) {
       MaybePoison((void*)((uintptr_t)aPtr + aSize), aOldSize - aSize);
     }
     if (psize < aOldSize) {
-      extent_node_t key;
-
       pages_decommit((void*)((uintptr_t)aPtr + psize), aOldSize - psize);
 
       
       MutexAutoLock lock(huge_mtx);
-      key.mAddr = const_cast<void*>(aPtr);
-      extent_node_t* node = huge.Search(&key);
+      extent_node_t* node = huge.Search(aPtr);
       MOZ_ASSERT(node);
       MOZ_ASSERT(node->mSize == aOldSize);
       MOZ_RELEASE_ASSERT(node->mArena == this);
@@ -3276,10 +3272,8 @@ void* arena_t::RallocHuge(void* aPtr, size_t aSize, size_t aOldSize) {
       
       
       
-      extent_node_t key;
       MutexAutoLock lock(huge_mtx);
-      key.mAddr = const_cast<void*>(aPtr);
-      extent_node_t* node = huge.Search(&key);
+      extent_node_t* node = huge.Search(aPtr);
       MOZ_ASSERT(node);
       MOZ_ASSERT(node->mSize == aOldSize);
       MOZ_RELEASE_ASSERT(node->mArena == this);
@@ -3321,12 +3315,10 @@ static void huge_dalloc(void* aPtr, arena_t* aArena) {
   extent_node_t* node;
   size_t mapped = 0;
   {
-    extent_node_t key;
     MutexAutoLock lock(huge_mtx);
 
     
-    key.mAddr = aPtr;
-    node = huge.Search(&key);
+    node = huge.Search(aPtr);
     MOZ_RELEASE_ASSERT(node, "Double-free?");
     MOZ_ASSERT(node->mAddr == aPtr);
     MOZ_RELEASE_ASSERT(!aArena || node->mArena == aArena);
@@ -3986,17 +3978,6 @@ inline void MozJemalloc::jemalloc_free_excess_dirty_pages(void) {
   }
 }
 
-#ifndef NON_RANDOM_ARENA_IDS
-inline arena_t* ArenaCollection::GetByIdInternal(Tree& aTree,
-                                                 arena_id_t aArenaId) {
-  
-  
-  mozilla::AlignedStorage2<arena_t> key;
-  key.addr()->mId = aArenaId;
-  return aTree.Search(key.addr());
-}
-#endif
-
 inline arena_t* ArenaCollection::GetById(arena_id_t aArenaId, bool aIsPrivate) {
   if (!malloc_initialized) {
     return nullptr;
@@ -4027,7 +4008,7 @@ inline arena_t* ArenaCollection::GetById(arena_id_t aArenaId, bool aIsPrivate) {
       
       MOZ_ASSERT(IsOnMainThread());
       MOZ_PUSH_IGNORE_THREAD_SAFETY
-      arena_t* result = GetByIdInternal(mMainThreadArenas, aArenaId);
+      arena_t* result = mMainThreadArenas.Search(aArenaId);
       MOZ_POP_THREAD_SAFETY
       MOZ_RELEASE_ASSERT(result);
       return result;
@@ -4038,7 +4019,7 @@ inline arena_t* ArenaCollection::GetById(arena_id_t aArenaId, bool aIsPrivate) {
   }
 
   MutexAutoLock lock(mLock);
-  arena_t* result = GetByIdInternal(*tree, aArenaId);
+  arena_t* result = tree->Search(aArenaId);
 #endif
   MOZ_RELEASE_ASSERT(result);
   MOZ_RELEASE_ASSERT(result->mId == aArenaId);

@@ -96,15 +96,27 @@ struct ArenaChunkMapLink {
 };
 
 struct ArenaAvailTreeTrait : public ArenaChunkMapLink {
+  
+  
+  
   static inline Order Compare(arena_chunk_map_t* aNode,
                               arena_chunk_map_t* aOther) {
     size_t size1 = aNode->bits & ~mozilla::gPageSizeMask;
     size_t size2 = aOther->bits & ~mozilla::gPageSizeMask;
     Order ret = CompareInt(size1, size2);
-    return (ret != Order::eEqual)
-               ? ret
-               : CompareAddr((aNode->bits & CHUNK_MAP_KEY) ? nullptr : aNode,
-                             aOther);
+    return (ret != Order::eEqual) ? ret : CompareAddr(aNode, aOther);
+  }
+
+  using SearchKey = size_t;
+
+  
+  
+  
+  
+  static inline Order Compare(SearchKey aSize, arena_chunk_map_t* aOther) {
+    size_t size2 = aOther->bits & ~mozilla::gPageSizeMask;
+    Order ret = CompareInt(aSize, size2);
+    return (ret != Order::eEqual) ? ret : Order::eLess;
   }
 };
 
