@@ -54,39 +54,45 @@ struct NalUnitHeader {
 
 Buffer GenerateNalUnit(NalUnitHeader header, size_t size) {
   RTC_CHECK_GT(size, 0);
-  Buffer buffer = Buffer::CreateUninitializedWithSize(size);
-  buffer[0] = (header.nal_unit_type << 1) | (header.nuh_layer_id >> 5);
-  buffer[1] = (header.nuh_layer_id << 3) | header.nuh_temporal_id_plus1;
-  for (size_t i = 2; i < size; ++i) {
-    buffer[i] = static_cast<uint8_t>(i);
-  }
-  
-  
-  buffer[size - 1] |= 0x10;
+  Buffer buffer = Buffer::CreateWithCapacity(size);
+  buffer.AppendData(size, [&](ArrayView<uint8_t> buffer_view) {
+    buffer_view[0] = (header.nal_unit_type << 1) | (header.nuh_layer_id >> 5);
+    buffer_view[1] = (header.nuh_layer_id << 3) | header.nuh_temporal_id_plus1;
+    for (size_t i = 2; i < size; ++i) {
+      buffer_view[i] = static_cast<uint8_t>(i);
+    }
+    
+    
+    buffer_view[size - 1] |= 0x10;
+    return size;
+  });
   return buffer;
 }
 
 
 Buffer CreateFrame(std::initializer_list<size_t> nalu_sizes) {
   static constexpr int kStartCodeSize = 3;
-  Buffer frame = Buffer::CreateUninitializedWithSize(
-      absl::c_accumulate(nalu_sizes, size_t{0}) +
-      kStartCodeSize * nalu_sizes.size());
-  size_t offset = 0;
-  for (size_t nalu_size : nalu_sizes) {
-    EXPECT_GE(nalu_size, 1u);
-    
-    frame[offset] = 0;
-    frame[offset + 1] = 0;
-    frame[offset + 2] = 1;
-    
-    frame[offset + 3] = 2;
-    
-    if (nalu_size > 1) {
-      memset(frame.data() + offset + 4, 0x3f, nalu_size - 1);
+  size_t size = absl::c_accumulate(nalu_sizes, size_t{0}) +
+                kStartCodeSize * nalu_sizes.size();
+  Buffer frame = Buffer::CreateWithCapacity(size);
+  frame.AppendData(size, [&](ArrayView<uint8_t> frame_view) {
+    size_t offset = 0;
+    for (size_t nalu_size : nalu_sizes) {
+      EXPECT_GE(nalu_size, 1u);
+      
+      frame_view[offset] = 0;
+      frame_view[offset + 1] = 0;
+      frame_view[offset + 2] = 1;
+      
+      frame_view[offset + 3] = 2;
+      
+      if (nalu_size > 1) {
+        memset(frame_view.data() + offset + 4, 0x3f, nalu_size - 1);
+      }
+      offset += (kStartCodeSize + nalu_size);
     }
-    offset += (kStartCodeSize + nalu_size);
-  }
+    return offset;
+  });
   return frame;
 }
 
@@ -97,17 +103,20 @@ Buffer CreateFrame(ArrayView<const Buffer> nalus) {
   for (const Buffer& nalu : nalus) {
     frame_size += (kStartCodeSize + nalu.size());
   }
-  Buffer frame = Buffer::CreateUninitializedWithSize(frame_size);
-  size_t offset = 0;
-  for (const Buffer& nalu : nalus) {
-    
-    frame[offset] = 0;
-    frame[offset + 1] = 0;
-    frame[offset + 2] = 1;
-    
-    memcpy(frame.data() + offset + 3, nalu.data(), nalu.size());
-    offset += (kStartCodeSize + nalu.size());
-  }
+  Buffer frame = Buffer::CreateWithCapacity(frame_size);
+  frame.AppendData(frame_size, [&](ArrayView<uint8_t> frame_view) {
+    size_t offset = 0;
+    for (const Buffer& nalu : nalus) {
+      
+      frame_view[offset] = 0;
+      frame_view[offset + 1] = 0;
+      frame_view[offset + 2] = 1;
+      
+      memcpy(frame_view.data() + offset + 3, nalu.data(), nalu.size());
+      offset += (kStartCodeSize + nalu.size());
+    }
+    return offset;
+  });
   return frame;
 }
 
