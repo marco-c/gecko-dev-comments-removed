@@ -42,6 +42,8 @@ class RenderingSimulator {
       return std::make_unique<VCMTiming>(&env.clock(), env.field_trials());
     };
 
+    
+    
     bool reuse_streams = true;
   };
 

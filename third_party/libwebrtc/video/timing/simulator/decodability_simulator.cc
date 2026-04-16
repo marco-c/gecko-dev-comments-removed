@@ -163,6 +163,10 @@ class DecodabilitySimulatorStream : public RtcEventLogDriver::StreamInterface {
 
 }  
 
+DecodabilitySimulator::DecodabilitySimulator(Config config) : config_(config) {}
+
+DecodabilitySimulator::~DecodabilitySimulator() = default;
+
 DecodabilitySimulator::Results DecodabilitySimulator::Simulate(
     const ParsedRtcEventLog& parsed_log) const {
   
@@ -174,9 +178,8 @@ DecodabilitySimulator::Results DecodabilitySimulator::Simulate(
   };
   
   
-  
   RtcEventLogDriver rtc_event_log_simulator(
-      {.reuse_streams = false}, &parsed_log,
+      {.reuse_streams = config_.reuse_streams}, &parsed_log,
       "", std::move(stream_factory));
   rtc_event_log_simulator.Simulate();
 

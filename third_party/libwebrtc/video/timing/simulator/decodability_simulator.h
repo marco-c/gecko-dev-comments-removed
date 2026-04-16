@@ -26,6 +26,13 @@ namespace webrtc::video_timing_simulator {
 
 class DecodabilitySimulator {
  public:
+  struct Config {
+    
+    
+    
+    bool reuse_streams = false;
+  };
+
   
   struct Frame {
     
@@ -94,13 +101,16 @@ class DecodabilitySimulator {
     std::vector<Stream> streams;
   };
 
-  DecodabilitySimulator() = default;
-  ~DecodabilitySimulator() = default;
+  explicit DecodabilitySimulator(Config config);
+  ~DecodabilitySimulator();
 
   DecodabilitySimulator(const DecodabilitySimulator&) = delete;
   DecodabilitySimulator& operator=(const DecodabilitySimulator&) = delete;
 
   Results Simulate(const ParsedRtcEventLog& parsed_log) const;
+
+ private:
+  const Config config_;
 };
 
 }  
