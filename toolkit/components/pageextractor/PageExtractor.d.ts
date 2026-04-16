@@ -53,6 +53,8 @@ export type PageMetadata = {
   wordCount: number;
   
   language: string;
+  
+  isReaderable: boolean;
 };
 
 
