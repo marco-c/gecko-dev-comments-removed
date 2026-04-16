@@ -19,6 +19,7 @@
 #include <algorithm>
 #include <bit>
 #include <cctype>
+#include <iostream>
 #include <optional>
 
 #ifdef JS_JITSPEW
@@ -490,11 +491,9 @@ std::ostream& operator<<(std::ostream& os, const AsUC32& c);
 
 
 
-class StdoutStream {
+class StdoutStream : public std::ostream {
  public:
-  operator std::ostream&() const;
-  template <typename T>
-  std::ostream& operator<<(T t);
+  StdoutStream() : std::ostream(std::cerr.rdbuf()) {}
 };
 
 
