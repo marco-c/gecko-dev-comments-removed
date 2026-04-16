@@ -127,9 +127,16 @@ enum CanonicalAxisIndex {
   AXIS_INDEX_COUNT
 };
 
+const float BUTTON_THRESHOLD_VALUE = 0.1f;
+
 static inline bool AxisNegativeAsButton(double input) { return input < -0.5; }
 
 static inline bool AxisPositiveAsButton(double input) { return input > 0.5; }
+
+static inline double AxisToButtonValue(double aValue) {
+  
+  return (aValue + 1.0f) * 0.5f;
+}
 
 class GamepadRemapper {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(GamepadRemapper)
