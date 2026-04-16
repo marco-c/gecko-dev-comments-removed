@@ -17,6 +17,7 @@ tags
 *.gcov
 *.tsbuildinfo
 compile_commands.json
+ccache.conf
 
 # emacs backup files in any directory.
 # lint-ignore-next-line: syntax-difference
@@ -408,6 +409,7 @@ CLAUDE.local.md
 
 # Ignore Claude Code worktrees
 .claude/worktrees/
+.worktreeinclude
 
 # Ignore .json.gz (typically profiles) in the root directory
 # lint-ignore-next-line: git-only
