@@ -7,15 +7,19 @@
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/ErrorResult.h"
-#include "mozilla/RefPtr.h"
+#include "mozilla/dom/CSSUnparsedValue.h"
 #include "mozilla/dom/CSSVariableReferenceValueBinding.h"
+#include "nsCSSProps.h"
 #include "nsCycleCollectionParticipant.h"
 
 namespace mozilla::dom {
 
 CSSVariableReferenceValue::CSSVariableReferenceValue(
-    nsCOMPtr<nsISupports> aParent)
-    : mParent(std::move(aParent)) {
+    nsCOMPtr<nsISupports> aParent, const nsACString& aVariable,
+    RefPtr<CSSUnparsedValue> aFallback)
+    : mParent(std::move(aParent)),
+      mVariable(aVariable),
+      mFallback(std::move(aFallback)) {
   MOZ_ASSERT(mParent);
 }
 
@@ -25,7 +29,8 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(CSSVariableReferenceValue)
   NS_WRAPPERCACHE_INTERFACE_MAP_ENTRY
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
-NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(CSSVariableReferenceValue, mParent)
+NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(CSSVariableReferenceValue, mParent,
+                                      mFallback)
 
 nsISupports* CSSVariableReferenceValue::GetParentObject() const {
   return mParent;
@@ -39,23 +44,47 @@ JSObject* CSSVariableReferenceValue::WrapObject(
 
 
 
+
+
 already_AddRefed<CSSVariableReferenceValue>
 CSSVariableReferenceValue::Constructor(const GlobalObject& aGlobal,
                                        const nsACString& aVariable,
                                        CSSUnparsedValue* aFallback,
                                        ErrorResult& aRv) {
-  return MakeAndAddRef<CSSVariableReferenceValue>(aGlobal.GetAsSupports());
+  
+  NonCustomCSSPropertyId id = nsCSSProps::LookupProperty(aVariable);
+  if (id != eCSSPropertyExtra_variable) {
+    aRv.ThrowTypeError("Invalid custom property name");
+    return nullptr;
+  }
+
+  
+  return MakeAndAddRef<CSSVariableReferenceValue>(aGlobal.GetAsSupports(),
+                                                  aVariable, aFallback);
 }
 
-void CSSVariableReferenceValue::GetVariable(nsCString& aRetVal) const {}
+
+void CSSVariableReferenceValue::GetVariable(nsCString& aRetVal) const {
+  aRetVal = mVariable;
+}
+
 
 void CSSVariableReferenceValue::SetVariable(const nsACString& aArg,
                                             ErrorResult& aRv) {
-  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
+  
+  NonCustomCSSPropertyId id = nsCSSProps::LookupProperty(aArg);
+  if (id != eCSSPropertyExtra_variable) {
+    aRv.ThrowTypeError("Invalid custom property name");
+    return;
+  }
+
+  
+  mVariable = aArg;
 }
 
+
 CSSUnparsedValue* CSSVariableReferenceValue::GetFallback() const {
-  return nullptr;
+  return mFallback;
 }
 
 
