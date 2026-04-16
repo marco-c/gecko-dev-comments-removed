@@ -243,23 +243,6 @@ enum AVFrameSideDataType {
 
 
     AV_FRAME_DATA_VIEW_ID,
-
-    
-
-
-
-
-
-
-
-
-    AV_FRAME_DATA_3D_REFERENCE_DISPLAYS,
-
-    
-
-
-
-     AV_FRAME_DATA_EXIF,
 };
 
 enum AVActiveFormatDescription {
@@ -314,13 +297,6 @@ enum AVSideDataProps {
 
 
     AV_SIDE_DATA_PROP_COLOR_DEPENDENT = (1 << 3),
-
-    
-
-
-
-
-    AV_SIDE_DATA_PROP_CHANNEL_DEPENDENT = (1 << 4),
 };
 
 
@@ -513,6 +489,16 @@ typedef struct AVFrame {
 
     int format;
 
+#if FF_API_FRAME_KEY
+    
+
+
+
+
+    attribute_deprecated
+    int key_frame;
+#endif
+
     
 
 
@@ -583,6 +569,32 @@ typedef struct AVFrame {
 
 
     int repeat_pict;
+
+#if FF_API_INTERLACED_FRAME
+    
+
+
+
+
+    attribute_deprecated
+    int interlaced_frame;
+
+    
+
+
+
+
+    attribute_deprecated
+    int top_field_first;
+#endif
+
+#if FF_API_PALETTE_HAS_CHANGED
+    
+
+
+    attribute_deprecated
+    int palette_has_changed;
+#endif
 
     
 
@@ -656,10 +668,6 @@ typedef struct AVFrame {
 
 
 
-
-
-
-
 #define AV_FRAME_FLAG_LOSSLESS        (1 << 5)
 
 
@@ -697,6 +705,18 @@ typedef struct AVFrame {
 
     int64_t best_effort_timestamp;
 
+#if FF_API_FRAME_PKT
+    
+
+
+
+
+
+
+    attribute_deprecated
+    int64_t pkt_pos;
+#endif
+
     
 
 
@@ -716,6 +736,20 @@ typedef struct AVFrame {
 #define FF_DECODE_ERROR_MISSING_REFERENCE   2
 #define FF_DECODE_ERROR_CONCEALMENT_ACTIVE  4
 #define FF_DECODE_ERROR_DECODE_SLICES       8
+
+#if FF_API_FRAME_PKT
+    
+
+
+
+
+
+
+
+
+    attribute_deprecated
+    int pkt_size;
+#endif
 
     
 
@@ -762,7 +796,11 @@ typedef struct AVFrame {
 
 
 
-    void *private_ref;
+
+
+
+
+    AVBufferRef *private_ref;
 
     
 
@@ -773,13 +811,6 @@ typedef struct AVFrame {
 
 
     int64_t duration;
-
-    
-
-
-
-
-    enum AVAlphaMode alpha_mode;
 } AVFrame;
 
 
@@ -1051,11 +1082,6 @@ void av_frame_side_data_free(AVFrameSideData ***sd, int *nb_sd);
 
 
 #define AV_FRAME_SIDE_DATA_FLAG_REPLACE (1 << 1)
-
-
-
-
-#define AV_FRAME_SIDE_DATA_FLAG_NEW_REF (1 << 2)
 
 
 

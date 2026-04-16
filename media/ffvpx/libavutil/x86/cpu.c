@@ -121,8 +121,6 @@ int ff_get_cpu_flags_x86(void)
             rval |= AV_CPU_FLAG_SSE2;
         if (ecx & 1)
             rval |= AV_CPU_FLAG_SSE3;
-        if (ecx & 0x2)
-            rval |= AV_CPU_FLAG_CLMUL;
         if (ecx & 0x00000200 )
             rval |= AV_CPU_FLAG_SSSE3;
         if (ecx & 0x00080000 )
@@ -247,8 +245,7 @@ int ff_get_cpu_flags_x86(void)
             rval |= AV_CPU_FLAG_SSSE3SLOW;
 
         
-
-        if ((rval & AV_CPU_FLAG_AVX2) && family == 6 && model < 143)
+        if ((rval & AV_CPU_FLAG_AVX2) && family == 6 && model < 70)
             rval |= AV_CPU_FLAG_SLOW_GATHER;
     }
 

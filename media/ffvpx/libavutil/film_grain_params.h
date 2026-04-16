@@ -136,6 +136,43 @@ typedef struct AVFilmGrainH274Params {
 
     int model_id;
 
+#if FF_API_H274_FILM_GRAIN_VCS
+  
+
+
+
+
+  
+
+
+
+
+    attribute_deprecated
+    int bit_depth_luma;
+
+    
+
+
+
+
+    attribute_deprecated
+    int bit_depth_chroma;
+
+    
+
+
+
+
+    attribute_deprecated
+    enum AVColorRange                  color_range;
+    attribute_deprecated
+    enum AVColorPrimaries              color_primaries;
+    attribute_deprecated
+    enum AVColorTransferCharacteristic color_trc;
+    attribute_deprecated
+    enum AVColorSpace                  color_space;
+#endif
+
     
 
 
@@ -217,6 +254,18 @@ typedef struct AVFilmGrainParams {
 
 
 
+
+
+    union {
+        AVFilmGrainAOMParams aom;
+        AVFilmGrainH274Params h274;
+    } codec;
+
+    
+
+
+
+
     int width, height;
 
     
@@ -238,15 +287,6 @@ typedef struct AVFilmGrainParams {
     int bit_depth_luma;
     int bit_depth_chroma;
 
-    
-
-
-
-
-    union {
-        AVFilmGrainAOMParams aom;
-        AVFilmGrainH274Params h274;
-    } codec;
 } AVFilmGrainParams;
 
 

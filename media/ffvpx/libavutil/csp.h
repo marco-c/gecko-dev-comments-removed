@@ -145,22 +145,6 @@ double av_csp_approximate_trc_gamma(enum AVColorTransferCharacteristic trc);
 
 
 
-
-
-double av_csp_approximate_eotf_gamma(enum AVColorTransferCharacteristic trc);
-
-
-
-
-
-
-
-
-
-
-
-
-
 av_csp_trc_function av_csp_trc_func_from_id(enum AVColorTransferCharacteristic trc);
 
 

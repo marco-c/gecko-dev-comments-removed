@@ -22,6 +22,7 @@
 #include <stdint.h>
 
 #include "libavutil/attributes.h"
+#include "avcodec.h"
 #include "codec.h"
 #include "config.h"
 
@@ -101,7 +102,6 @@ typedef struct FFCodecDefault {
 struct AVCodecContext;
 struct AVSubtitle;
 struct AVPacket;
-enum AVCodecConfig;
 
 enum FFCodecType {
     
@@ -133,24 +133,13 @@ typedef struct FFCodec {
     
 
 
-    unsigned caps_internal:24;
-
-    
-
-
-    unsigned is_decoder:1;
+    unsigned caps_internal:27;
 
     
 
 
 
     unsigned color_ranges:2;
-
-    
-
-
-
-    unsigned alpha_modes:2;
 
     
 
@@ -279,7 +268,7 @@ typedef struct FFCodec {
 
 
 
-    int (*get_supported_config)(const struct AVCodecContext *avctx,
+    int (*get_supported_config)(const AVCodecContext *avctx,
                                 const AVCodec *codec,
                                 enum AVCodecConfig config,
                                 unsigned flags,
@@ -287,30 +276,6 @@ typedef struct FFCodec {
                                 int *out_num_configs);
 } FFCodec;
 
-static av_always_inline const FFCodec *ffcodec(const AVCodec *codec)
-{
-    return (const FFCodec*)codec;
-}
-
-
-
-
-
-static inline int ff_codec_is_encoder(const AVCodec *avcodec)
-{
-    const FFCodec *const codec = ffcodec(avcodec);
-    return !codec->is_decoder;
-}
-
-
-
-
-
-static inline int ff_codec_is_decoder(const AVCodec *avcodec)
-{
-    const FFCodec *const codec = ffcodec(avcodec);
-    return codec->is_decoder;
-}
 
 
 
@@ -318,8 +283,7 @@ static inline int ff_codec_is_decoder(const AVCodec *avcodec)
 
 
 
-
-int ff_default_get_supported_config(const struct AVCodecContext *avctx,
+int ff_default_get_supported_config(const AVCodecContext *avctx,
                                     const AVCodec *codec,
                                     enum AVCodecConfig config,
                                     unsigned flags,
@@ -345,56 +309,27 @@ int ff_default_get_supported_config(const struct AVCodecContext *avctx,
 #endif
 
 #define FF_CODEC_DECODE_CB(func)                          \
-    .is_decoder        = 1,                               \
     .cb_type           = FF_CODEC_CB_TYPE_DECODE,         \
     .cb.decode         = (func)
 #define FF_CODEC_DECODE_SUB_CB(func)                      \
-    .is_decoder        = 1,                               \
     .cb_type           = FF_CODEC_CB_TYPE_DECODE_SUB,     \
     .cb.decode_sub     = (func)
 #define FF_CODEC_RECEIVE_FRAME_CB(func)                   \
-    .is_decoder        = 1,                               \
     .cb_type           = FF_CODEC_CB_TYPE_RECEIVE_FRAME,  \
     .cb.receive_frame  = (func)
 #define FF_CODEC_ENCODE_CB(func)                          \
-    .is_decoder        = 0,                               \
     .cb_type           = FF_CODEC_CB_TYPE_ENCODE,         \
     .cb.encode         = (func)
 #define FF_CODEC_ENCODE_SUB_CB(func)                      \
-    .is_decoder        = 0,                               \
     .cb_type           = FF_CODEC_CB_TYPE_ENCODE_SUB,     \
     .cb.encode_sub     = (func)
 #define FF_CODEC_RECEIVE_PACKET_CB(func)                  \
-    .is_decoder        = 0,                               \
     .cb_type           = FF_CODEC_CB_TYPE_RECEIVE_PACKET, \
     .cb.receive_packet = (func)
 
-#ifdef __clang__
-#define DISABLE_DEPRECATION_WARNINGS FF_DISABLE_DEPRECATION_WARNINGS
-#define ENABLE_DEPRECATION_WARNINGS  FF_ENABLE_DEPRECATION_WARNINGS
-#else
-#define DISABLE_DEPRECATION_WARNINGS
-#define ENABLE_DEPRECATION_WARNINGS
-#endif
-
-#define CODEC_CH_LAYOUTS(...) CODEC_CH_LAYOUTS_ARRAY(((const AVChannelLayout[]) { __VA_ARGS__, { 0 } }))
-#define CODEC_CH_LAYOUTS_ARRAY(array) CODEC_ARRAY(ch_layouts, (array))
-
-#define CODEC_SAMPLERATES(...) CODEC_SAMPLERATES_ARRAY(((const int[]) { __VA_ARGS__, 0 }))
-#define CODEC_SAMPLERATES_ARRAY(array) CODEC_ARRAY(supported_samplerates, (array))
-
-#define CODEC_SAMPLEFMTS(...) CODEC_SAMPLEFMTS_ARRAY(((const enum AVSampleFormat[]) { __VA_ARGS__, AV_SAMPLE_FMT_NONE }))
-#define CODEC_SAMPLEFMTS_ARRAY(array) CODEC_ARRAY(sample_fmts, (array))
-
-#define CODEC_FRAMERATES(...) CODEC_FRAMERATES_ARRAY(((const AVRational[]) { __VA_ARGS__, { 0, 0 } }))
-#define CODEC_FRAMERATES_ARRAY(array) CODEC_ARRAY(supported_framerates, (array))
-
-#define CODEC_PIXFMTS(...) CODEC_PIXFMTS_ARRAY(((const enum AVPixelFormat[]) { __VA_ARGS__, AV_PIX_FMT_NONE }))
-#define CODEC_PIXFMTS_ARRAY(array) CODEC_ARRAY(pix_fmts, (array))
-
-#define CODEC_ARRAY(field, array) \
-    DISABLE_DEPRECATION_WARNINGS  \
-    .p.field = (array)            \
-    ENABLE_DEPRECATION_WARNINGS
+static av_always_inline const FFCodec *ffcodec(const AVCodec *codec)
+{
+    return (const FFCodec*)codec;
+}
 
 #endif 

@@ -187,6 +187,17 @@ struct AVCodecParameters;
 
 
 
+#if FF_API_BUFFER_MIN_SIZE
+
+
+
+
+
+
+
+#define AV_INPUT_BUFFER_MIN_SIZE 16384
+#endif
+
 
 
 
@@ -223,6 +234,15 @@ typedef struct RcOverride{
 
 
 #define AV_CODEC_FLAG_QPEL            (1 <<  4)
+#if FF_API_DROPCHANGED
+
+
+
+
+
+
+#define AV_CODEC_FLAG_DROPCHANGED     (1 <<  5)
+#endif
 
 
 
@@ -421,14 +441,6 @@ typedef struct RcOverride{
 
 
 
-#define AV_CODEC_RECEIVE_FRAME_FLAG_SYNCHRONOUS (1 << 0)
-
-
-
-
-
-
-
 
 
 
@@ -519,6 +531,9 @@ typedef struct AVCodecContext {
 
 
 
+
+
+
     uint8_t *extradata;
     int extradata_size;
 
@@ -557,6 +572,23 @@ typedef struct AVCodecContext {
 
 
     AVRational framerate;
+
+#if FF_API_TICKS_PER_FRAME
+    
+
+
+
+
+
+
+
+
+
+
+
+    attribute_deprecated
+    int ticks_per_frame;
+#endif
 
     
 
@@ -971,16 +1003,12 @@ typedef struct AVCodecContext {
 
     uint16_t *chroma_intra_matrix;
 
-#if FF_API_INTRA_DC_PRECISION
     
 
 
 
 
-
-    attribute_deprecated
     int intra_dc_precision;
-#endif
 
     
 
@@ -1628,6 +1656,140 @@ typedef struct AVCodecContext {
 
 
      int profile;
+#if FF_API_FF_PROFILE_LEVEL
+    
+
+#define FF_PROFILE_UNKNOWN -99
+#define FF_PROFILE_RESERVED -100
+
+#define FF_PROFILE_AAC_MAIN 0
+#define FF_PROFILE_AAC_LOW  1
+#define FF_PROFILE_AAC_SSR  2
+#define FF_PROFILE_AAC_LTP  3
+#define FF_PROFILE_AAC_HE   4
+#define FF_PROFILE_AAC_HE_V2 28
+#define FF_PROFILE_AAC_LD   22
+#define FF_PROFILE_AAC_ELD  38
+#define FF_PROFILE_MPEG2_AAC_LOW 128
+#define FF_PROFILE_MPEG2_AAC_HE  131
+
+#define FF_PROFILE_DNXHD         0
+#define FF_PROFILE_DNXHR_LB      1
+#define FF_PROFILE_DNXHR_SQ      2
+#define FF_PROFILE_DNXHR_HQ      3
+#define FF_PROFILE_DNXHR_HQX     4
+#define FF_PROFILE_DNXHR_444     5
+
+#define FF_PROFILE_DTS                20
+#define FF_PROFILE_DTS_ES             30
+#define FF_PROFILE_DTS_96_24          40
+#define FF_PROFILE_DTS_HD_HRA         50
+#define FF_PROFILE_DTS_HD_MA          60
+#define FF_PROFILE_DTS_EXPRESS        70
+#define FF_PROFILE_DTS_HD_MA_X        61
+#define FF_PROFILE_DTS_HD_MA_X_IMAX   62
+
+
+#define FF_PROFILE_EAC3_DDP_ATMOS         30
+
+#define FF_PROFILE_TRUEHD_ATMOS           30
+
+#define FF_PROFILE_MPEG2_422    0
+#define FF_PROFILE_MPEG2_HIGH   1
+#define FF_PROFILE_MPEG2_SS     2
+#define FF_PROFILE_MPEG2_SNR_SCALABLE  3
+#define FF_PROFILE_MPEG2_MAIN   4
+#define FF_PROFILE_MPEG2_SIMPLE 5
+
+#define FF_PROFILE_H264_CONSTRAINED  (1<<9)  // 8+1; constraint_set1_flag
+#define FF_PROFILE_H264_INTRA        (1<<11) // 8+3; constraint_set3_flag
+
+#define FF_PROFILE_H264_BASELINE             66
+#define FF_PROFILE_H264_CONSTRAINED_BASELINE (66|FF_PROFILE_H264_CONSTRAINED)
+#define FF_PROFILE_H264_MAIN                 77
+#define FF_PROFILE_H264_EXTENDED             88
+#define FF_PROFILE_H264_HIGH                 100
+#define FF_PROFILE_H264_HIGH_10              110
+#define FF_PROFILE_H264_HIGH_10_INTRA        (110|FF_PROFILE_H264_INTRA)
+#define FF_PROFILE_H264_MULTIVIEW_HIGH       118
+#define FF_PROFILE_H264_HIGH_422             122
+#define FF_PROFILE_H264_HIGH_422_INTRA       (122|FF_PROFILE_H264_INTRA)
+#define FF_PROFILE_H264_STEREO_HIGH          128
+#define FF_PROFILE_H264_HIGH_444             144
+#define FF_PROFILE_H264_HIGH_444_PREDICTIVE  244
+#define FF_PROFILE_H264_HIGH_444_INTRA       (244|FF_PROFILE_H264_INTRA)
+#define FF_PROFILE_H264_CAVLC_444            44
+
+#define FF_PROFILE_VC1_SIMPLE   0
+#define FF_PROFILE_VC1_MAIN     1
+#define FF_PROFILE_VC1_COMPLEX  2
+#define FF_PROFILE_VC1_ADVANCED 3
+
+#define FF_PROFILE_MPEG4_SIMPLE                     0
+#define FF_PROFILE_MPEG4_SIMPLE_SCALABLE            1
+#define FF_PROFILE_MPEG4_CORE                       2
+#define FF_PROFILE_MPEG4_MAIN                       3
+#define FF_PROFILE_MPEG4_N_BIT                      4
+#define FF_PROFILE_MPEG4_SCALABLE_TEXTURE           5
+#define FF_PROFILE_MPEG4_SIMPLE_FACE_ANIMATION      6
+#define FF_PROFILE_MPEG4_BASIC_ANIMATED_TEXTURE     7
+#define FF_PROFILE_MPEG4_HYBRID                     8
+#define FF_PROFILE_MPEG4_ADVANCED_REAL_TIME         9
+#define FF_PROFILE_MPEG4_CORE_SCALABLE             10
+#define FF_PROFILE_MPEG4_ADVANCED_CODING           11
+#define FF_PROFILE_MPEG4_ADVANCED_CORE             12
+#define FF_PROFILE_MPEG4_ADVANCED_SCALABLE_TEXTURE 13
+#define FF_PROFILE_MPEG4_SIMPLE_STUDIO             14
+#define FF_PROFILE_MPEG4_ADVANCED_SIMPLE           15
+
+#define FF_PROFILE_JPEG2000_CSTREAM_RESTRICTION_0   1
+#define FF_PROFILE_JPEG2000_CSTREAM_RESTRICTION_1   2
+#define FF_PROFILE_JPEG2000_CSTREAM_NO_RESTRICTION  32768
+#define FF_PROFILE_JPEG2000_DCINEMA_2K              3
+#define FF_PROFILE_JPEG2000_DCINEMA_4K              4
+
+#define FF_PROFILE_VP9_0                            0
+#define FF_PROFILE_VP9_1                            1
+#define FF_PROFILE_VP9_2                            2
+#define FF_PROFILE_VP9_3                            3
+
+#define FF_PROFILE_HEVC_MAIN                        1
+#define FF_PROFILE_HEVC_MAIN_10                     2
+#define FF_PROFILE_HEVC_MAIN_STILL_PICTURE          3
+#define FF_PROFILE_HEVC_REXT                        4
+#define FF_PROFILE_HEVC_SCC                         9
+
+#define FF_PROFILE_VVC_MAIN_10                      1
+#define FF_PROFILE_VVC_MAIN_10_444                 33
+
+#define FF_PROFILE_AV1_MAIN                         0
+#define FF_PROFILE_AV1_HIGH                         1
+#define FF_PROFILE_AV1_PROFESSIONAL                 2
+
+#define FF_PROFILE_MJPEG_HUFFMAN_BASELINE_DCT            0xc0
+#define FF_PROFILE_MJPEG_HUFFMAN_EXTENDED_SEQUENTIAL_DCT 0xc1
+#define FF_PROFILE_MJPEG_HUFFMAN_PROGRESSIVE_DCT         0xc2
+#define FF_PROFILE_MJPEG_HUFFMAN_LOSSLESS                0xc3
+#define FF_PROFILE_MJPEG_JPEG_LS                         0xf7
+
+#define FF_PROFILE_SBC_MSBC                         1
+
+#define FF_PROFILE_PRORES_PROXY     0
+#define FF_PROFILE_PRORES_LT        1
+#define FF_PROFILE_PRORES_STANDARD  2
+#define FF_PROFILE_PRORES_HQ        3
+#define FF_PROFILE_PRORES_4444      4
+#define FF_PROFILE_PRORES_XQ        5
+
+#define FF_PROFILE_ARIB_PROFILE_A 0
+#define FF_PROFILE_ARIB_PROFILE_C 1
+
+#define FF_PROFILE_KLVA_SYNC 0
+#define FF_PROFILE_KLVA_ASYNC 1
+
+#define FF_PROFILE_EVC_BASELINE             0
+#define FF_PROFILE_EVC_MAIN                 1
+#endif
 
     
 
@@ -1638,6 +1800,11 @@ typedef struct AVCodecContext {
 
 
      int level;
+#if FF_API_FF_PROFILE_LEVEL
+    
+
+#define FF_LEVEL_UNKNOWN -99
+#endif
 
 #if FF_API_CODEC_PROPS
     
@@ -1735,6 +1902,9 @@ typedef struct AVCodecContext {
 #define FF_SUB_CHARENC_MODE_IGNORE       2  ///< neither convert the subtitles, nor check them for valid UTF-8
 
     
+
+
+
 
 
 
@@ -1935,13 +2105,6 @@ typedef struct AVCodecContext {
 
     AVFrameSideData  **decoded_side_data;
     int             nb_decoded_side_data;
-
-    
-
-
-
-
-    enum AVAlphaMode alpha_mode;
 
     int moz_extradata_offset;
 
@@ -2240,6 +2403,24 @@ int avcodec_parameters_to_context(AVCodecContext *codec,
 
 int avcodec_open2(AVCodecContext *avctx, const AVCodec *codec, AVDictionary **options);
 
+#if FF_API_AVCODEC_CLOSE
+
+
+
+
+
+
+
+
+
+
+
+
+
+attribute_deprecated
+int avcodec_close(AVCodecContext *avctx);
+#endif
+
 
 
 
@@ -2382,12 +2563,6 @@ int avcodec_send_packet(AVCodecContext *avctx, const AVPacket *avpkt);
 
 
 
-
-
-
-
-
-int avcodec_receive_frame_flags(AVCodecContext *avctx, AVFrame *frame, unsigned flags);
 
 
 
@@ -2557,7 +2732,6 @@ enum AVCodecConfig {
     AV_CODEC_CONFIG_CHANNEL_LAYOUT, 
     AV_CODEC_CONFIG_COLOR_RANGE,    
     AV_CODEC_CONFIG_COLOR_SPACE,    
-    AV_CODEC_CONFIG_ALPHA_MODE,     
 };
 
 
@@ -2754,35 +2928,17 @@ typedef struct AVCodecParserContext {
 } AVCodecParserContext;
 
 typedef struct AVCodecParser {
-#if FF_API_PARSER_CODECID
     int codec_ids[7]; 
-#else
-    enum AVCodecID codec_ids[7]; 
-#endif
-#if FF_API_PARSER_PRIVATE
-    
-
-
-
-
-
-
-    attribute_deprecated
     int priv_data_size;
-    attribute_deprecated
     int (*parser_init)(AVCodecParserContext *s);
     
 
-    attribute_deprecated
     int (*parser_parse)(AVCodecParserContext *s,
                         AVCodecContext *avctx,
                         const uint8_t **poutbuf, int *poutbuf_size,
                         const uint8_t *buf, int buf_size);
-    attribute_deprecated
     void (*parser_close)(AVCodecParserContext *s);
-    attribute_deprecated
     int (*split)(AVCodecContext *avctx, const uint8_t *buf, int buf_size);
-#endif
 } AVCodecParser;
 
 
@@ -2796,11 +2952,7 @@ typedef struct AVCodecParser {
 
 const AVCodecParser *av_parser_iterate(void **opaque);
 
-#if FF_API_PARSER_CODECID
 AVCodecParserContext *av_parser_init(int codec_id);
-#else
-AVCodecParserContext *av_parser_init(enum AVCodecID codec_id);
-#endif
 
 
 

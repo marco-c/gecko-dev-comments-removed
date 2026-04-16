@@ -419,7 +419,7 @@ int av_match_list(const char *name, const char *list, char separator);
 
 
 
-int av_sscanf(const char *string, const char *format, ...) av_scanf_format(2, 3);
+int av_sscanf(const char *string, const char *format, ...);
 
 
 

@@ -651,12 +651,7 @@ enum AVColorPrimaries {
     AVCOL_PRI_SMPTE432    = 12, 
     AVCOL_PRI_EBU3213     = 22, 
     AVCOL_PRI_JEDEC_P22   = AVCOL_PRI_EBU3213,
-    AVCOL_PRI_NB,               
-
-    
-    AVCOL_PRI_EXT_BASE     = 256,
-    AVCOL_PRI_V_GAMUT      = AVCOL_PRI_EXT_BASE,
-    AVCOL_PRI_EXT_NB            
+    AVCOL_PRI_NB                
 };
 
 
@@ -685,12 +680,7 @@ enum AVColorTransferCharacteristic {
     AVCOL_TRC_SMPTE428     = 17, 
     AVCOL_TRC_SMPTEST428_1 = AVCOL_TRC_SMPTE428,
     AVCOL_TRC_ARIB_STD_B67 = 18, 
-    AVCOL_TRC_NB,                
-
-    
-    AVCOL_TRC_EXT_BASE     = 256,
-    AVCOL_TRC_V_LOG        = AVCOL_TRC_EXT_BASE,
-    AVCOL_TRC_EXT_NB             
+    AVCOL_TRC_NB                 
 };
 
 
@@ -802,16 +792,6 @@ enum AVChromaLocation {
     AVCHROMA_LOC_BOTTOMLEFT  = 5,
     AVCHROMA_LOC_BOTTOM      = 6,
     AVCHROMA_LOC_NB               
-};
-
-
-
-
-enum AVAlphaMode {
-    AVALPHA_MODE_UNSPECIFIED   = 0, 
-    AVALPHA_MODE_PREMULTIPLIED = 1, 
-    AVALPHA_MODE_STRAIGHT      = 2, 
-    AVALPHA_MODE_NB                 
 };
 
 #endif 

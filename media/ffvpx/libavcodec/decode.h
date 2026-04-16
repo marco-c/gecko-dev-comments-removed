@@ -48,10 +48,6 @@ typedef struct FrameDecodeData {
     
 
 
-
-
-
-    int (*hwaccel_priv_post_process)(void *logctx, AVFrame *frame);
     void *hwaccel_priv;
     void (*hwaccel_priv_free)(void *priv);
 } FrameDecodeData;
@@ -86,7 +82,7 @@ int ff_decode_frame_props(AVCodecContext *avctx, AVFrame *frame);
 int ff_decode_get_hw_frames_ctx(AVCodecContext *avctx,
                                 enum AVHWDeviceType dev_type);
 
-int ff_attach_decode_data(AVCodecContext *avctx, AVFrame *frame);
+int ff_attach_decode_data(AVFrame *frame);
 
 
 
@@ -108,8 +104,6 @@ int ff_set_dimensions(AVCodecContext *s, int width, int height);
 
 
 int ff_set_sar(AVCodecContext *avctx, AVRational sar);
-
-
 
 
 
@@ -226,36 +220,4 @@ int ff_decode_content_light_new(const AVCodecContext *avctx, AVFrame *frame,
 int ff_decode_content_light_new_ext(const AVCodecContext *avctx,
                                     AVFrameSideData ***sd, int *nb_sd,
                                     struct AVContentLightMetadata **clm);
-
-#if CONFIG_EXIF
-enum AVExifHeaderMode;
-
-
-
-
-
-
-
-
-
-
-
-int ff_decode_exif_attach_buffer(AVCodecContext *avctx, AVFrame *frame, AVBufferRef **buf,
-                                 enum AVExifHeaderMode header_mode);
-
-struct AVExifMetadata;
-
-
-
-
-
-
-
-
-
-
-int ff_decode_exif_attach_ifd(AVCodecContext *avctx, AVFrame *frame,
-                              const struct AVExifMetadata *ifd);
-#endif
-
 #endif 

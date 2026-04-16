@@ -421,14 +421,6 @@ typedef struct RcOverride{
 
 
 
-#define AV_CODEC_RECEIVE_FRAME_FLAG_SYNCHRONOUS (1 << 0)
-
-
-
-
-
-
-
 
 
 
@@ -971,16 +963,12 @@ typedef struct AVCodecContext {
 
     uint16_t *chroma_intra_matrix;
 
-#if FF_API_INTRA_DC_PRECISION
     
 
 
 
 
-
-    attribute_deprecated
     int intra_dc_precision;
-#endif
 
     
 
@@ -1935,13 +1923,6 @@ typedef struct AVCodecContext {
 
     AVFrameSideData  **decoded_side_data;
     int             nb_decoded_side_data;
-
-    
-
-
-
-
-    enum AVAlphaMode alpha_mode;
 } AVCodecContext;
 
 
@@ -2382,12 +2363,6 @@ int avcodec_send_packet(AVCodecContext *avctx, const AVPacket *avpkt);
 
 
 
-
-int avcodec_receive_frame_flags(AVCodecContext *avctx, AVFrame *frame, unsigned flags);
-
-
-
-
 int avcodec_receive_frame(AVCodecContext *avctx, AVFrame *frame);
 
 
@@ -2553,7 +2528,6 @@ enum AVCodecConfig {
     AV_CODEC_CONFIG_CHANNEL_LAYOUT, 
     AV_CODEC_CONFIG_COLOR_RANGE,    
     AV_CODEC_CONFIG_COLOR_SPACE,    
-    AV_CODEC_CONFIG_ALPHA_MODE,     
 };
 
 
@@ -2750,35 +2724,17 @@ typedef struct AVCodecParserContext {
 } AVCodecParserContext;
 
 typedef struct AVCodecParser {
-#if FF_API_PARSER_CODECID
     int codec_ids[7]; 
-#else
-    enum AVCodecID codec_ids[7]; 
-#endif
-#if FF_API_PARSER_PRIVATE
-    
-
-
-
-
-
-
-    attribute_deprecated
     int priv_data_size;
-    attribute_deprecated
     int (*parser_init)(AVCodecParserContext *s);
     
 
-    attribute_deprecated
     int (*parser_parse)(AVCodecParserContext *s,
                         AVCodecContext *avctx,
                         const uint8_t **poutbuf, int *poutbuf_size,
                         const uint8_t *buf, int buf_size);
-    attribute_deprecated
     void (*parser_close)(AVCodecParserContext *s);
-    attribute_deprecated
     int (*split)(AVCodecContext *avctx, const uint8_t *buf, int buf_size);
-#endif
 } AVCodecParser;
 
 
@@ -2792,11 +2748,7 @@ typedef struct AVCodecParser {
 
 const AVCodecParser *av_parser_iterate(void **opaque);
 
-#if FF_API_PARSER_CODECID
 AVCodecParserContext *av_parser_init(int codec_id);
-#else
-AVCodecParserContext *av_parser_init(enum AVCodecID codec_id);
-#endif
 
 
 

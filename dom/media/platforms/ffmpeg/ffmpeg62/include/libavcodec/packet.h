@@ -366,12 +366,6 @@ enum AVPacketSideDataType {
 
 
 
-     AV_PKT_DATA_EXIF,
-
-    
-
-
-
 
 
 
@@ -488,36 +482,6 @@ void av_packet_side_data_remove(AVPacketSideData *sd, int *nb_sd,
 
 
 void av_packet_side_data_free(AVPacketSideData **sd, int *nb_sd);
-
-struct AVFrameSideData;
-
-
-
-
-
-
-
-
-
-
-
-
-int av_packet_side_data_from_frame(AVPacketSideData **sd, int *nb_sd,
-                                   const struct AVFrameSideData *src, unsigned int flags);
-
-
-
-
-
-
-
-
-
-
-
-
-int av_packet_side_data_to_frame(struct AVFrameSideData ***sd, int *nb_sd,
-                                 const AVPacketSideData *src, unsigned int flags);
 
 const char *av_packet_side_data_name(enum AVPacketSideDataType type);
 
