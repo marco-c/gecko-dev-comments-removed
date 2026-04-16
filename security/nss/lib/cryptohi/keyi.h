@@ -54,6 +54,22 @@ SECStatus sec_DecodeRSAPSSParamsToMechanism(PLArenaPool *arena,
                                             CK_RSA_PKCS_PSS_PARAMS *mech,
                                             SECOidTag *hashAlg);
 
+
+
+SECOidTag seckey_GetParameterSet(const SECKEYPrivateKey *key);
+
+
+KyberParams seckey_GetKyberParamsByOidTag(SECOidTag tag);
+
+
+SECOidTag seckey_GetMLKEMOidTagByPkcs11ParamSet(CK_ML_KEM_PARAMETER_SET_TYPE paramSet);
+
+
+CK_ML_KEM_PARAMETER_SET_TYPE seckey_GetMLKEMPkcs11ParamsByKyberParams(KyberParams kyberParams);
+
+
+KyberParams seckey_GetKyberParamsByPkcs11ParamSet(CK_ML_KEM_PARAMETER_SET_TYPE paramSet);
+
 SEC_END_PROTOS
 
 #endif 

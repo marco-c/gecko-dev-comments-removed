@@ -10,6 +10,7 @@
 #include "secitem.h"
 #include "secasn1t.h"
 #include "secoidt.h"
+#include "kyber.h"
 
 
 
@@ -67,7 +68,25 @@ typedef enum {
     NSSLOWKEYDHKey = 4,
     NSSLOWKEYECKey = 5,
     NSSLOWKEYMLDSAKey = 6,
+    NSSLOWKEYMLKEMKey = 7,
 } NSSLOWKEYType;
+
+
+
+
+typedef struct MLKEMPrivateKeyStr MLKEMPrivateKey;
+typedef struct MLKEMPublicKeyStr MLKEMPublicKey;
+
+struct MLKEMPrivateKeyStr {
+    KyberParams mlkemParams;
+    SECItem key;
+    SECItem seed;
+};
+
+struct MLKEMPublicKeyStr {
+    KyberParams mlkemParams;
+    SECItem key;
+};
 
 
 
@@ -81,6 +100,7 @@ struct NSSLOWKEYPublicKeyStr {
         DHPublicKey dh;
         ECPublicKey ec;
         MLDSAPublicKey mldsa;
+        MLKEMPublicKey mlkem;
     } u;
 };
 typedef struct NSSLOWKEYPublicKeyStr NSSLOWKEYPublicKey;
@@ -106,6 +126,7 @@ struct NSSLOWKEYPrivateKeyStr {
         ECPrivateKey ec;
         GenPostQuantumPrivateKey genpq; 
         MLDSAPrivateKey mldsa;
+        MLKEMPrivateKey mlkem;
     } u;
 };
 typedef struct NSSLOWKEYPrivateKeyStr NSSLOWKEYPrivateKey;

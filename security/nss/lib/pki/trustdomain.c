@@ -62,14 +62,15 @@ static void
 token_destructor(void *t)
 {
     NSSToken *tok = (NSSToken *)t;
-    
-    (void)nssToken_Destroy(tok);
 
     
 
 
 
     PK11Slot_SetNSSToken(tok->pk11slot, NULL);
+
+    
+    (void)nssToken_Destroy(tok);
 }
 
 NSS_IMPLEMENT PRStatus

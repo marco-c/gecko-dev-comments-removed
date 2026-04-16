@@ -5,6 +5,10 @@
 #ifndef KYBER_UTIL_H
 #define KYBER_UTIL_H
 
+#define MLKEM512_PUBLIC_KEY_BYTES 800U
+#define MLKEM512_PRIVATE_KEY_BYTES 1632U
+#define MLKEM512_CIPHERTEXT_BYTES 768U
+
 #define KYBER768_PUBLIC_KEY_BYTES 1184U
 #define KYBER768_PRIVATE_KEY_BYTES 2400U
 #define KYBER768_CIPHERTEXT_BYTES 1088U
@@ -59,6 +63,10 @@ typedef enum {
 
 
     params_ml_kem1024_test_mode,
+
+    
+
+    params_ml_kem512,
 
 } KyberParams;
 

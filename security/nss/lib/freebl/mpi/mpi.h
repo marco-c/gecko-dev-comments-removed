@@ -46,6 +46,10 @@ SEC_BEGIN_PROTOS
 #define MP_LAST_CODE MP_UNDEF
 
 
+#define MP_PRIME 0
+#define MP_COMPOSITE 1
+#define MP_NOT_POWER 2
+
 #define MP_LT -1
 #define MP_EQ 0
 #define MP_GT 1

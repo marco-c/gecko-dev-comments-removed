@@ -521,10 +521,17 @@ sec_DerSignData(PLArenaPool *arena, SECItem *result,
             case ecKey:
                 algID = SEC_OID_ANSIX962_ECDSA_SHA256_SIGNATURE;
                 break;
+            case mldsaKey:
+                algID = seckey_GetParameterSet(pk);
+                break;
             default:
-                PORT_SetError(SEC_ERROR_INVALID_KEY);
-                return SECFailure;
+                algID = SEC_OID_UNKNOWN;
+                break;
         }
+    }
+    if (algID == SEC_OID_UNKNOWN) {
+        PORT_SetError(SEC_ERROR_INVALID_KEY);
+        return SECFailure;
     }
 
     
@@ -598,6 +605,14 @@ SGN_Digest(SECKEYPrivateKey *privKey,
     if ((NSS_GetAlgorithmPolicy(algtag, &policyFlags) == SECFailure) ||
         !(policyFlags & NSS_USE_ALG_IN_ANY_SIGNATURE)) {
         PORT_SetError(SEC_ERROR_SIGNATURE_ALGORITHM_DISABLED);
+        return SECFailure;
+    }
+
+    if (privKey->keyType == mldsaKey) {
+        
+
+
+        PORT_SetError(SEC_ERROR_UNSUPPORTED_KEYALG);
         return SECFailure;
     }
     
@@ -722,6 +737,19 @@ SEC_GetSignatureAlgorithmOidTag(KeyType keyType, SECOidTag hashAlgTag)
                     break;
             }
             break;
+        case mldsaKey:
+            switch (hashAlgTag) {
+                case SEC_OID_ML_DSA_44:
+                case SEC_OID_ML_DSA_65:
+                case SEC_OID_ML_DSA_87:
+                    
+
+                    sigTag = hashAlgTag;
+                    break;
+                default:
+                    break;
+            }
+            break;
         case ecKey:
             switch (hashAlgTag) {
                 case SEC_OID_SHA1:
@@ -760,18 +788,23 @@ SEC_GetSignatureAlgorithmOidTagByKey(const SECKEYPrivateKey *privKey, const SECK
     }
     
     if (privKey) {
-        if (pubKey) {
-            PORT_SetError(SEC_ERROR_INVALID_ARGS);
-            return SEC_OID_UNKNOWN;
-        }
         keyType = privKey->keyType;
+        
+
+        if (keyType == mldsaKey) {
+            hashAlgTag = seckey_GetParameterSet(privKey);
+        }
     } else {
         
         PORT_Assert(pubKey != NULL);
         PORT_Assert(privKey == NULL);
         keyType = pubKey->keyType;
+        
+
+        if (keyType == mldsaKey) {
+            hashAlgTag = pubKey->u.mldsa.paramSet;
+        }
     }
-    
     return SEC_GetSignatureAlgorithmOidTag(keyType, hashAlgTag);
 }
 
@@ -910,6 +943,11 @@ sec_CreateRSAPSSParameters(PLArenaPool *arena,
     }
 
     hashLength = HASH_ResultLenByOidTag(hashAlgTag);
+
+    if (modBytes < hashLength + 2) {
+        PORT_SetError(SEC_ERROR_INVALID_ARGS);
+        return NULL;
+    }
 
     if (pssParams.saltLength.data) {
         rv = SEC_ASN1DecodeInteger((SECItem *)&pssParams.saltLength,
