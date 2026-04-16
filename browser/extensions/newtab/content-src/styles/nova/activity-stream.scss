@@ -9,7 +9,6 @@
 @import '../theme';
 @import '../icons';
 @import '../mixins';
-@import 'tokens-temp';
 
 :root {
   font-size: var(--font-size-root);
@@ -183,6 +182,10 @@ input {
 @import '../../components/DiscoveryStreamComponents/TopSites/TopSites';
 @import '../../components/DiscoveryStreamComponents/DSLinkMenu/DSLinkMenu';
 @import '../../components/DiscoveryStreamComponents/DSCard/DSCard';
+
+// Nova Components
+// @nova-cleanup(merge-styles): Move nova component styles to their component directories after Nova ships
+@import '../../components/DiscoveryStreamComponents/DSCard/nova/DSCard';
 @import '../../components/DiscoveryStreamComponents/DSContextFooter/DSContextFooter';
 @import '../../components/DiscoveryStreamComponents/DSImage/DSImage';
 @import '../../components/DiscoveryStreamImpressionStats/ImpressionStats';
