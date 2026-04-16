@@ -59,6 +59,8 @@ class CSSVariableReferenceValue final : public nsISupports,
 
   
 
+  const nsACString& GetVariable() const { return mVariable; };
+
  private:
   virtual ~CSSVariableReferenceValue() = default;
 

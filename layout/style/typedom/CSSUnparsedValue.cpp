@@ -7,13 +7,19 @@
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/RefPtr.h"
-#include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/CSSUnparsedValueBinding.h"
+#include "mozilla/dom/CSSVariableReferenceValue.h"
+#include "nsFmtString.h"
 
 namespace mozilla::dom {
 
-CSSUnparsedValue::CSSUnparsedValue(nsCOMPtr<nsISupports> aParent)
-    : CSSStyleValue(std::move(aParent)) {}
+CSSUnparsedValue::CSSUnparsedValue(nsCOMPtr<nsISupports> aParent,
+                                   Sequence<OwningCSSUnparsedSegment> aTokens)
+    : CSSStyleValue(std::move(aParent), StyleValueType::UnparsedValue),
+      mTokens(std::move(aTokens)) {}
+
+NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED_0(CSSUnparsedValue, CSSStyleValue)
+NS_IMPL_CYCLE_COLLECTION_INHERITED(CSSUnparsedValue, CSSStyleValue, mTokens)
 
 JSObject* CSSUnparsedValue::WrapObject(JSContext* aCx,
                                        JS::Handle<JSObject*> aGivenProto) {
@@ -23,23 +29,129 @@ JSObject* CSSUnparsedValue::WrapObject(JSContext* aCx,
 
 
 
+
+
 already_AddRefed<CSSUnparsedValue> CSSUnparsedValue::Constructor(
     const GlobalObject& aGlobal,
     const Sequence<OwningCSSUnparsedSegment>& aMembers) {
-  return MakeAndAddRef<CSSUnparsedValue>(aGlobal.GetAsSupports());
+  return MakeAndAddRef<CSSUnparsedValue>(aGlobal.GetAsSupports(), aMembers);
 }
 
-uint32_t CSSUnparsedValue::Length() const { return 0; }
+
+uint32_t CSSUnparsedValue::Length() const { return mTokens.Length(); }
+
 
 void CSSUnparsedValue::IndexedGetter(uint32_t aIndex, bool& aFound,
-                                     OwningCSSUnparsedSegment& aRetVal) {}
+                                     OwningCSSUnparsedSegment& aRetVal) {
+  
+  const auto& tokens = mTokens;
+
+  
+  if (aIndex < tokens.Length()) {
+    aFound = true;
+    aRetVal = tokens[aIndex];
+    return;
+  }
+
+  aFound = false;
+}
+
 
 void CSSUnparsedValue::IndexedSetter(uint32_t aIndex,
                                      const CSSUnparsedSegment& aVal,
                                      ErrorResult& aRv) {
-  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
+  
+  auto& tokens = mTokens;
+
+  
+  if (aIndex > tokens.Length()) {
+    auto message = nsFmtCString(
+        "Index {} exceeds index range for unparsed segments.", aIndex);
+    aRv.ThrowRangeError(message);
+    return;
+  }
+
+  OwningUTF8StringOrCSSVariableReferenceValue val;
+  if (aVal.IsUTF8String()) {
+    val.SetAsUTF8String() = aVal.GetAsUTF8String();
+  } else {
+    val.SetAsCSSVariableReferenceValue() =
+        aVal.GetAsCSSVariableReferenceValue();
+  }
+
+  
+  if (aIndex < tokens.Length()) {
+    tokens[aIndex] = std::move(val);
+    return;
+  }
+
+  
+  if (!tokens.AppendElement(std::move(val), fallible)) {
+    aRv.Throw(NS_ERROR_OUT_OF_MEMORY);
+    return;
+  }
 }
 
 
+
+void CSSUnparsedValue::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
+                                             nsACString& aDest) const {
+  nsTHashSet<const CSSUnparsedValue*> values;
+  nsAutoCString dest;
+  if (!ToCssTextWithPropertyInternal(aPropertyId, dest, values)) {
+    
+    
+    return;
+  }
+  aDest.Append(dest);
+}
+
+bool CSSUnparsedValue::ToCssTextWithPropertyInternal(
+    const CSSPropertyId& aPropertyId, nsACString& aDest,
+    nsTHashSet<const CSSUnparsedValue*>& aValues) const {
+  if (!aValues.EnsureInserted(this)) {
+    return false;
+  }
+
+  for (const auto& token : mTokens) {
+    if (token.IsUTF8String()) {
+      aDest.Append(token.GetAsUTF8String());
+      continue;
+    }
+
+    const auto& variableReferenceValue = token.GetAsCSSVariableReferenceValue();
+
+    aDest.Append("var("_ns);
+
+    aDest.Append(variableReferenceValue->GetVariable());
+
+    if (auto* fallback = variableReferenceValue->GetFallback()) {
+      aDest.Append(",");
+
+      if (!fallback->ToCssTextWithPropertyInternal(aPropertyId, aDest,
+                                                   aValues)) {
+        return false;
+      }
+    }
+
+    aDest.Append(")"_ns);
+  }
+
+  aValues.Remove(this);
+
+  return true;
+}
+
+const CSSUnparsedValue& CSSStyleValue::GetAsCSSUnparsedValue() const {
+  MOZ_DIAGNOSTIC_ASSERT(mStyleValueType == StyleValueType::UnparsedValue);
+
+  return *static_cast<const CSSUnparsedValue*>(this);
+}
+
+CSSUnparsedValue& CSSStyleValue::GetAsCSSUnparsedValue() {
+  MOZ_DIAGNOSTIC_ASSERT(mStyleValueType == StyleValueType::UnparsedValue);
+
+  return *static_cast<CSSUnparsedValue*>(this);
+}
 
 }  

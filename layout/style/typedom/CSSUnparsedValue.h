@@ -8,8 +8,13 @@
 #include <stdint.h>
 
 #include "js/TypeDecls.h"
+#include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/CSSStyleValue.h"
 #include "mozilla/dom/CSSUnparsedValueBindingFwd.h"
+#include "nsCycleCollectionParticipant.h"
+#include "nsISupportsImpl.h"
+#include "nsStringFwd.h"
+#include "nsTHashSet.h"
 
 template <class T>
 struct already_AddRefed;
@@ -19,39 +24,56 @@ class nsISupports;
 
 namespace mozilla {
 
+struct CSSPropertyId;
 class ErrorResult;
 
 namespace dom {
 
 class GlobalObject;
-template <typename T>
-class Sequence;
 
 class CSSUnparsedValue final : public CSSStyleValue {
  public:
-  explicit CSSUnparsedValue(nsCOMPtr<nsISupports> aParent);
+  CSSUnparsedValue(nsCOMPtr<nsISupports> aParent,
+                   Sequence<OwningCSSUnparsedSegment> aTokens);
+
+  NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(CSSUnparsedValue, CSSStyleValue)
 
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
 
   
 
+  
   static already_AddRefed<CSSUnparsedValue> Constructor(
       const GlobalObject& aGlobal,
       const Sequence<OwningCSSUnparsedSegment>& aMembers);
 
+  
   uint32_t Length() const;
 
+  
   void IndexedGetter(uint32_t aIndex, bool& aFound,
                      OwningCSSUnparsedSegment& aRetVal);
 
+  
   void IndexedSetter(uint32_t aIndex, const CSSUnparsedSegment& aVal,
                      ErrorResult& aRv);
 
   
 
+  void ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
+                             nsACString& aDest) const;
+
  private:
   virtual ~CSSUnparsedValue() = default;
+
+  bool ToCssTextWithPropertyInternal(
+      const CSSPropertyId& aPropertyId, nsACString& aDest,
+      nsTHashSet<const CSSUnparsedValue*>& aValues) const;
+
+  
+  Sequence<OwningCSSUnparsedSegment> mTokens;
 };
 
 }  
