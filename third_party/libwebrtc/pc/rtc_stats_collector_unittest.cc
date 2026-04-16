@@ -79,6 +79,7 @@
 #include "pc/test/rtc_stats_obtainer.h"
 #include "pc/transport_stats.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/event.h"
 #include "rtc_base/fake_clock.h"
 #include "rtc_base/fake_ssl_identity.h"
 #include "rtc_base/network_constants.h"
@@ -3941,6 +3942,8 @@ class FakeRTCStatsCollector final : public RTCStatsCollector {
  protected:
   void ProducePartialResultsOnSignalingThreadImpl(
       Timestamp timestamp,
+      const std::vector<RtpTransceiverStatsInfo>& transceiver_stats_infos,
+      const std::optional<AudioDeviceModule::Stats>& audio_device_stats,
       RTCStatsReport* partial_report) override {
     EXPECT_TRUE(signaling_thread_->IsCurrent());
     {
@@ -4008,23 +4011,51 @@ TEST(RTCStatsCollectorSafetyTest, WaitPendingRequestGetsCallback) {
 
 
 
-TEST(RTCStatsCollectorSafetyTest, CancelPendingRequestPreventsCallback) {
+TEST(RTCStatsCollectorSafetyTest, CancelPendingRequestReturnsImmediately) {
   RunLoop loop;
-  auto pc = make_ref_counted<FakePeerConnectionForStats>();
+  std::unique_ptr<Thread> worker_and_network = Thread::Create();
+  worker_and_network->Start();
+
+  auto pc = make_ref_counted<FakePeerConnectionForStats>(
+      worker_and_network.get(), worker_and_network.get());
   RTCStatsCollectorWrapper wrapper(pc, CreateEnvironment());
   auto callback = make_ref_counted<MockStatsCollectorCallback>();
+
+  
   EXPECT_CALL(*callback, OnStatsDelivered(_)).Times(0);
+
+  
+  Event blocker;
+  worker_and_network->PostTask([&]() { blocker.Wait(Event::kForever); });
+
+  
   
   
   wrapper.stats_collector().GetStatsReport(callback);
+  std::vector<absl::AnyInvocable<void() &&>> network_tasks;
+  std::vector<absl::AnyInvocable<void() &&>> worker_tasks;
+
   
   
   
-  auto network_task =
-      wrapper.stats_collector().CancelPendingRequestAndGetShutdownTask();
-  loop.Flush();
+  wrapper.stats_collector().CancelPendingRequestAndGetShutdownTasks(
+      network_tasks, worker_tasks);
+
   
-  std::move(network_task)();
+  EXPECT_EQ(network_tasks.size(), 1u);
+  EXPECT_EQ(worker_tasks.size(), 1u);
+
+  
+  blocker.Set();
+
+  
+  auto quit = loop.QuitClosure();
+  worker_and_network->PostTask([&]() {
+    std::move(network_tasks[0])();
+    std::move(worker_tasks[0])();
+    loop.task_queue()->PostTask([&]() { quit(); });
+  });
+  loop.Run();
 }
 
 
@@ -4040,11 +4071,16 @@ TEST(RTCStatsCollectorSafetyTest, NetworkThreadSafetyPreventsCallback) {
   EXPECT_CALL(*callback, OnStatsDelivered(_)).Times(0);
   
   
-  auto network_task =
-      wrapper.stats_collector().CancelPendingRequestAndGetShutdownTask();
+  std::vector<absl::AnyInvocable<void() &&>> network_tasks;
+  std::vector<absl::AnyInvocable<void() &&>> worker_tasks;
+  wrapper.stats_collector().CancelPendingRequestAndGetShutdownTasks(
+      network_tasks, worker_tasks);
   
   
-  std::move(network_task)();
+  ASSERT_EQ(network_tasks.size(), 1u);
+  ASSERT_EQ(worker_tasks.size(), 1u);
+  std::move(network_tasks[0])();
+  std::move(worker_tasks[0])();
   
   
   wrapper.stats_collector().GetStatsReport(callback);
