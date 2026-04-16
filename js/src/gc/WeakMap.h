@@ -37,6 +37,10 @@ extern void DumpWeakMapLog(JSRuntime* rt);
 
 namespace gc {
 
+
+
+void MarkSymbolForWeakMapReadBarrier(JS::Zone* zone, JS::Symbol* sym);
+
 #if defined(JS_GC_ZEAL) || defined(DEBUG)
 
 bool CheckWeakMapEntryMarking(const WeakMapBase* map, Cell* key, Cell* value);
@@ -520,8 +524,11 @@ class WeakMap : public WeakMapBase {
     return map().lookup(l);
   }
 
-  static void valueReadBarrier(const JS::Value& v) {
+  void valueReadBarrier(const JS::Value& v) const {
     JS::ExposeValueToActiveJS(v);
+    if (MOZ_UNLIKELY(v.isSymbol())) {
+      gc::MarkSymbolForWeakMapReadBarrier(zone(), v.toSymbol());
+    }
   }
   static void valueReadBarrier(JSObject* obj) {
     JS::ExposeObjectToActiveJS(obj);
