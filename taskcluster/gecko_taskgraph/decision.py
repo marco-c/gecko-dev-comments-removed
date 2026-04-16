@@ -387,6 +387,11 @@ def get_decision_parameters(graph_config, options):
         )
         parameters.update(PER_PROJECT_PARAMETERS["default"])
 
+    if parameters.get("tasks_for", "").startswith("github-pull-request"):
+        parameters["optimize_strategies"] = (
+            "gecko_taskgraph.optimize:project.pull_request"
+        )
+
     
     if options.get("target_tasks_method"):
         parameters["target_tasks_method"] = options["target_tasks_method"]
