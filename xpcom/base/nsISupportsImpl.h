@@ -18,6 +18,7 @@
 #include "nsXPCOM.h"
 #include <atomic>
 #include <type_traits>
+#include <utility>
 #include "mozilla/Attributes.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/MacroArgs.h"
@@ -411,6 +412,31 @@ class ThreadSafeAutoRefCnt {
     mValue.store(aValue, std::memory_order_release);
     return aValue;
   }
+  
+  
+  template <nsrefcnt Limit>
+  MOZ_ALWAYS_INLINE std::pair<bool, nsrefcnt> DecrementWithLimit() {
+    
+    
+    
+    static_assert(Limit > 0,
+                  "DecrementWithLimit cannot release the final reference");
+    nsrefcnt count = mValue.load(std::memory_order_relaxed);
+    while (count > Limit) {
+      
+      
+      
+      
+      
+      
+      if (mValue.compare_exchange_weak(count, count - 1,
+                                       std::memory_order_release,
+                                       std::memory_order_relaxed)) {
+        return {true, count - 1};
+      }
+    }
+    return {false, count};
+  }
   MOZ_ALWAYS_INLINE operator nsrefcnt() const { return get(); }
   MOZ_ALWAYS_INLINE nsrefcnt get() const {
     
@@ -752,17 +778,12 @@ class InterfaceNeedsThreadSafeRefCnt : public std::false_type {};
 
 #if !defined(XPCOM_GLUE_AVOID_NSPR)
 class nsISerialEventTarget;
-namespace mozilla {
-
-
-nsISerialEventTarget* GetMainThreadSerialEventTarget();
-
-namespace detail {
+namespace mozilla::detail {
 using DeleteVoidFunction = void(void*);
-void ProxyDeleteVoid(const char* aRunnableName,
-                     nsISerialEventTarget* aEventTarget, void* aSelf,
-                     DeleteVoidFunction* aDeleteFunc);
-}  
+void ProxyDeleteVoid(const char* aName, nsISerialEventTarget* aTarget,
+                     void* aPtr, DeleteVoidFunction* aDeleteFunc);
+void ProxyDeleteMainVoid(const char* aName, void* aPtr,
+                         DeleteVoidFunction* aDeleteFunc);
 }  
 
 
@@ -772,6 +793,15 @@ void ProxyDeleteVoid(const char* aRunnableName,
 #  define NS_PROXY_DELETE_TO_EVENT_TARGET(_class, _target) \
     ::mozilla::detail::ProxyDeleteVoid(                    \
         "ProxyDelete " #_class, _target, this,             \
+        [](void* self) { delete static_cast<_class*>(self); })
+
+
+
+
+
+#  define NS_PROXY_DELETE_TO_MAIN_THREAD(_class) \
+    ::mozilla::detail::ProxyDeleteMainVoid(      \
+        "ProxyDelete " #_class, this,            \
         [](void* self) { delete static_cast<_class*>(self); })
 
 
@@ -802,8 +832,8 @@ void ProxyDeleteVoid(const char* aRunnableName,
 
 #  define NS_INLINE_DECL_THREADSAFE_REFCOUNTING_WITH_DELETE_ON_MAIN_THREAD( \
       _class, ...)                                                          \
-    NS_INLINE_DECL_THREADSAFE_REFCOUNTING_WITH_DELETE_ON_EVENT_TARGET(      \
-        _class, ::mozilla::GetMainThreadSerialEventTarget(), __VA_ARGS__)
+    NS_INLINE_DECL_THREADSAFE_REFCOUNTING_WITH_DESTROY(                     \
+        _class, NS_PROXY_DELETE_TO_MAIN_THREAD(_class), __VA_ARGS__)
 #endif
 
 
