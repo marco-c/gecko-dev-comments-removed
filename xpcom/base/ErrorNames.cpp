@@ -65,6 +65,12 @@ void GetErrorName(nsresult rv, nsACString& name) {
 
 }  
 
+nsCString format_as(nsresult aErr) {
+  nsAutoCString name;
+  mozilla::GetErrorName(aErr, name);
+  return name;
+}
+
 extern "C" {
 
 

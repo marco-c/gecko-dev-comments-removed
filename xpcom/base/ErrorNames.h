@@ -24,4 +24,7 @@ const char* GetStaticErrorName(nsresult rv);
 
 }  
 
+
+nsCString format_as(nsresult rv);
+
 #endif  
