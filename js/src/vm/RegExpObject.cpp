@@ -744,15 +744,6 @@ RegExpRunStatus RegExpShared::execute(JSContext* cx,
     return RegExpShared::executeAtom(re, input, start, matches);
   }
 
-  
-
-
-
-  if (!matches->allocOrExpandArray(re->pairCount())) {
-    ReportOutOfMemory(cx);
-    return RegExpRunStatus::Error;
-  }
-
   uint32_t interruptRetries = 0;
   const uint32_t maxInterruptRetries = 4;
   do {
