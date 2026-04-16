@@ -211,7 +211,7 @@ class SSLStreamAdapterTestBase;
 class StreamWrapper : public StreamInterface {
  public:
   explicit StreamWrapper(std::unique_ptr<StreamInterface> stream)
-      : stream_(std::move(stream)) {
+      : stream_(std::move(stream)), flush_count_(0) {
     stream_->SetEventCallback([this](int events, int err) {
       RTC_DCHECK_RUN_ON(&callback_sequence_);
       callbacks_.Send(events, err);
@@ -231,6 +231,11 @@ class StreamWrapper : public StreamInterface {
   StreamState GetState() const override { return stream_->GetState(); }
 
   void Close() override { stream_->Close(); }
+  bool Flush() override {
+    flush_count_++;
+    return stream_->Flush();
+  }
+  size_t GetFlushCountForTesting() { return flush_count_; }
 
   StreamResult Read(ArrayView<uint8_t> buffer,
                     size_t& read,
@@ -247,6 +252,7 @@ class StreamWrapper : public StreamInterface {
  private:
   const std::unique_ptr<StreamInterface> stream_;
   CallbackList<int, int> callbacks_;
+  size_t flush_count_;
 };
 
 class SSLDummyStream final : public StreamInterface {
@@ -326,6 +332,7 @@ class SSLDummyStream final : public StreamInterface {
     RTC_LOG(LS_INFO) << "Closing outbound stream";
     out_->Close();
   }
+  bool Flush() override { return in_->Flush(); }
 
  private:
   void PostEvent(int events, int err) {
@@ -384,6 +391,7 @@ class BufferQueueStream : public StreamInterface {
 
   
   void Close() override {}
+  bool Flush() { return false; }
 
  protected:
   void NotifyReadableForTest() { PostEvent(SE_READ, 0); }
@@ -1183,6 +1191,8 @@ TEST_F(SSLStreamAdapterTestDTLS,
        MAYBE_TestDTLSConnectWithLostFirstPacketNoDelay) {
   SetLoseFirstPacket(true);
   TestHandshake();
+  
+  EXPECT_EQ(client_buffer_.GetFlushCountForTesting(), 3u);
 }
 
 #ifdef OPENSSL_IS_BORINGSSL
@@ -1211,6 +1221,8 @@ TEST_F(SSLStreamAdapterTestDTLS,
 TEST_F(SSLStreamAdapterTestDTLS, MAYBE_TestDTLSConnectTimeout) {
   SetLoss(100);
   TestHandshakeTimeout();
+  
+  EXPECT_EQ(client_buffer_.GetFlushCountForTesting(), 14u);
 }
 
 
