@@ -12,7 +12,11 @@ import urllib.request
 from pathlib import Path
 from typing import Optional
 
-import tomllib
+try:
+    import tomllib
+
+except ImportError:
+    import tomli as tomllib
 from mach.decorators import Command, CommandArgument, SubCommand
 from mozbuild.base import MachCommandBase
 
