@@ -10,10 +10,10 @@
 #ifndef RTC_TOOLS_DATA_CHANNEL_BENCHMARK_GRPC_SIGNALING_H_
 #define RTC_TOOLS_DATA_CHANNEL_BENCHMARK_GRPC_SIGNALING_H_
 
+#include <functional>
 #include <memory>
 #include <string>
 
-#include "api/jsep.h"
 #include "rtc_tools/data_channel_benchmark/signaling_interface.h"
 
 namespace webrtc {
@@ -51,6 +51,8 @@ class GrpcSignalingClientInterface {
  public:
   virtual ~GrpcSignalingClientInterface() = default;
 
+  
+  virtual bool Connect() = 0;
   
   virtual bool Start() = 0;
   virtual SignalingInterface* signaling_client() = 0;
