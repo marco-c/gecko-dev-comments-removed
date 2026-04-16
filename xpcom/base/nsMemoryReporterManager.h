@@ -229,9 +229,6 @@ class nsMemoryReporterManager final : public nsIMemoryReporterManager,
                         nsISupports* aHandleReportData, bool aAnonymize);
 
   static void TimeoutCallback(nsITimer* aTimer, void* aData);
-  
-  
-  static const uint32_t kTimeoutLengthMS = 180000;
 
   mozilla::Mutex mMutex;
   bool mIsRegistrationBlocked MOZ_GUARDED_BY(mMutex);
