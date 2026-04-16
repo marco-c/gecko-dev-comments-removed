@@ -1387,8 +1387,10 @@ void Call::DeliverRtpPacket(
 
   NotifyBweOfReceivedPacket(packet, media_type);
 
-  env_.event_log().Log(std::make_unique<RtcEventRtpPacketIncoming>(packet));
+  
+  
   if (media_type != MediaType::AUDIO && media_type != MediaType::VIDEO) {
+    env_.event_log().Log(std::make_unique<RtcEventRtpPacketIncoming>(packet));
     return;
   }
 
@@ -1407,9 +1409,11 @@ void Call::DeliverRtpPacket(
     
     
     if (!undemuxable_packet_handler(packet)) {
+      env_.event_log().Log(std::make_unique<RtcEventRtpPacketIncoming>(packet));
       return;
     }
     if (!receiver_controller.OnRtpPacket(packet)) {
+      env_.event_log().Log(std::make_unique<RtcEventRtpPacketIncoming>(packet));
       RTC_LOG(LS_INFO) << "Failed to demux packet " << packet.Ssrc();
       return;
     }
