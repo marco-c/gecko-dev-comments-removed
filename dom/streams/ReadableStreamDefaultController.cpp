@@ -2,8 +2,8 @@
 
 
 
-#include "mozilla/dom/ReadableStreamDefaultController.h"
-
+#include "ReadableStreamAbstract.h"
+#include "ReadableStreamDefaultControllerAbstract.h"
 #include "js/Exception.h"
 #include "js/TypeDecls.h"
 #include "js/Value.h"
@@ -12,7 +12,6 @@
 #include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/dom/Promise-inl.h"
 #include "mozilla/dom/Promise.h"
-#include "mozilla/dom/ReadableStream.h"
 #include "mozilla/dom/ReadableStreamControllerBase.h"
 #include "mozilla/dom/ReadableStreamDefaultControllerBinding.h"
 #include "mozilla/dom/ReadableStreamDefaultReaderBinding.h"

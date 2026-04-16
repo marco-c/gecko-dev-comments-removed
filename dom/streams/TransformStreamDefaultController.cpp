@@ -2,14 +2,13 @@
 
 
 
-#include "mozilla/dom/TransformStreamDefaultController.h"
-
+#include "ReadableStreamDefaultControllerAbstract.h"
+#include "TransformStreamAbstract.h"
+#include "TransformStreamDefaultControllerAbstract.h"
 #include "TransformerCallbackHelpers.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/ReadableStream.h"
-#include "mozilla/dom/ReadableStreamDefaultController.h"
-#include "mozilla/dom/TransformStream.h"
 #include "mozilla/dom/TransformStreamDefaultControllerBinding.h"
 #include "nsWrapperCache.h"
 

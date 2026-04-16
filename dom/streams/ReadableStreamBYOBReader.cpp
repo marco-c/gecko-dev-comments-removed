@@ -2,21 +2,19 @@
 
 
 
-#include "mozilla/dom/ReadableStreamBYOBReader.h"
-
 #include "ReadIntoRequest.h"
+#include "ReadableByteStreamControllerAbstract.h"
+#include "ReadableStreamAbstract.h"
+#include "ReadableStreamBYOBReaderAbstract.h"
+#include "ReadableStreamGenericReaderAbstract.h"
 #include "js/ArrayBuffer.h"
 #include "js/experimental/TypedData.h"
-#include "mozilla/dom/ReadableStream.h"
-#include "mozilla/dom/ReadableStreamBYOBReader.h"
 #include "mozilla/dom/ReadableStreamBYOBReaderBinding.h"
-#include "mozilla/dom/ReadableStreamGenericReader.h"
 #include "mozilla/dom/RootedDictionary.h"
 #include "nsCOMPtr.h"
 #include "nsISupportsImpl.h"
 
 
-#include "mozilla/dom/ReadableByteStreamController.h"
 #include "mozilla/dom/ReadableStreamBYOBRequest.h"
 
 namespace mozilla::dom {

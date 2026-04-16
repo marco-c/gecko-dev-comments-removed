@@ -2,8 +2,9 @@
 
 
 
-#include "mozilla/dom/WritableStreamDefaultWriter.h"
-
+#include "WritableStreamAbstract.h"
+#include "WritableStreamDefaultControllerAbstract.h"
+#include "WritableStreamDefaultWriterAbstract.h"
 #include "js/Array.h"
 #include "js/TypeDecls.h"
 #include "js/Value.h"
@@ -13,7 +14,6 @@
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/dom/Promise-inl.h"
-#include "mozilla/dom/WritableStream.h"
 #include "mozilla/dom/WritableStreamDefaultWriterBinding.h"
 #include "nsCOMPtr.h"
 #include "nsIGlobalObject.h"

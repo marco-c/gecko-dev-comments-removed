@@ -2,11 +2,11 @@
 
 
 
-#include "mozilla/dom/ReadableByteStreamController.h"
-
 #include <algorithm>  
 
 #include "ReadIntoRequest.h"
+#include "ReadableByteStreamControllerAbstract.h"
+#include "ReadableStreamAbstract.h"
 #include "js/ArrayBuffer.h"
 #include "js/ErrorReport.h"
 #include "js/Exception.h"
@@ -23,7 +23,6 @@
 #include "mozilla/dom/Promise-inl.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/ReadableByteStreamControllerBinding.h"
-#include "mozilla/dom/ReadableStream.h"
 #include "mozilla/dom/ReadableStreamBYOBReader.h"
 #include "mozilla/dom/ReadableStreamBYOBRequest.h"
 #include "mozilla/dom/ReadableStreamControllerBase.h"
