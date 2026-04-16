@@ -54,11 +54,6 @@ INSTANCE_RESERVED_SLOTS = 1
 
 
 
-
-GLOBAL_NAMES_PHF_SIZE = 256
-
-
-
 JS_OBJECT_PROTOTYPE_PROPERTIES = [
     "constructor",
     "toString",
@@ -18895,7 +18890,7 @@ class CGGlobalNames(CGGeneric):
             return
 
         
-        phf = PerfectHash(entries, GLOBAL_NAMES_PHF_SIZE)
+        phf = PerfectHash(entries)
 
         
         phfCodegen = phf.codegen(

@@ -13,9 +13,6 @@ import buildconfig
 from perfecthash import PerfectHash
 
 
-PHFSIZE = 512
-
-
 def indented(s):
     return s.replace("\n", "\n  ")
 
@@ -185,12 +182,12 @@ utility_types = [
 
 def link_to_cpp(interfaces, fd, header_fd):
     
-    iid_phf = PerfectHash(interfaces, PHFSIZE, key=lambda i: iid_bytes(i["uuid"]))
+    iid_phf = PerfectHash(interfaces, key=lambda i: iid_bytes(i["uuid"]))
     for idx, iface in enumerate(iid_phf.entries):
         iface["idx"] = idx  
 
     
-    name_phf = PerfectHash(interfaces, PHFSIZE, key=lambda i: i["name"].encode("ascii"))
+    name_phf = PerfectHash(interfaces, key=lambda i: i["name"].encode("ascii"))
 
     def interface_idx(name):
         entry = name and name_phf.get_entry(name.encode("ascii"))
