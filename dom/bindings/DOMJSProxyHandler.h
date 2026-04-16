@@ -126,7 +126,17 @@ class DOMProxyHandler : public BaseDOMProxyHandler {
 
 
 
-  static JSObject* GetAndClearExpandoObject(JSObject* obj);
+
+
+
+  static JSObject* GetAndClearExpandoObject(
+      JSObject* obj, JS::MutableHandle<JS::Value> rollbackToken);
+
+  
+
+
+
+  static void RestoreExpando(JSObject* obj, const JS::Value& rollbackToken);
 
   
 

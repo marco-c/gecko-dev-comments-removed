@@ -2445,9 +2445,19 @@ void UpdateReflectorGlobal(JSContext* aCx, JS::Handle<JSObject*> aObjArg,
 
   bool isProxy = js::IsProxy(aObj);
   JS::Rooted<JSObject*> expandoObject(aCx);
+  JS::Rooted<JS::Value> expandoRollbackToken(aCx);
   if (isProxy) {
-    expandoObject = DOMProxyHandler::GetAndClearExpandoObject(aObj);
+    expandoObject =
+        DOMProxyHandler::GetAndClearExpandoObject(aObj, &expandoRollbackToken);
   }
+  auto resetExpando = MakeScopeExit([&]() {
+    
+    
+    
+    if (expandoObject) {
+      DOMProxyHandler::RestoreExpando(aObj, expandoRollbackToken);
+    }
+  });
 
   JSAutoRealm newAr(aCx, newGlobal);
 
@@ -2487,6 +2497,10 @@ void UpdateReflectorGlobal(JSContext* aCx, JS::Handle<JSObject*> aObjArg,
   } else {
     propertyHolder = nullptr;
   }
+
+  
+  
+  resetExpando.release();
 
   
   
