@@ -4,6 +4,7 @@
 
 import bisect
 import errno
+import functools
 import inspect
 import json
 import os
@@ -22,9 +23,8 @@ from tempfile import mkstemp
 
 import mozpack.path as mozpath
 from mozbuild import makeutil
-from mozbuild.nodeutil import package_setup
 from mozbuild.preprocessor import Preprocessor
-from mozbuild.util import FileAvoidWrite, ensure_unicode, memoize
+from mozbuild.util import FileAvoidWrite, ensure_unicode
 from mozpack.chrome.manifest import ManifestEntry, ManifestInterfaces
 from mozpack.errors import ErrorMessage, errors
 from mozpack.executables import elfhack, is_executable, may_elfhack, may_strip, strip
@@ -369,7 +369,9 @@ class AbsoluteSymlinkFile(File):
         
         if st and stat.S_ISLNK(st.st_mode):
             link = os.readlink(dest)
-            if link == self.path:
+            if mozpath.strip_extended_length_prefix(
+                link
+            ) == mozpath.strip_extended_length_prefix(self.path):
                 return False
 
             os.remove(dest)
@@ -825,6 +827,8 @@ class MinifiedJavaScript(BaseFile):
 
             if not terser_path.exists():
                 
+                from mozbuild.nodeutil import package_setup
+
                 package_setup(str(terser_dir), "terser")
 
                 
@@ -1305,7 +1309,7 @@ class FileListFinder(BaseFinder):
     def __init__(self, files):
         self._files = sorted(files)
 
-    @memoize
+    @functools.cache
     def _match(self, pattern):
         """Return a sorted list of all files matching the given pattern."""
         
