@@ -1698,6 +1698,14 @@
     <item quantity="two">%1$d לשוניות</item>
     <item quantity="other">%1$d לשוניות</item>
   </plurals>
+  <!-- Title for the Delete tab group confirmation dialog. -->
+  <string name="delete_tab_group_confirmation_dialog_title">למחוק את קבוצת הלשוניות?</string>
+  <!-- Text shown in the body of the Delete tab group confirmation dialog. -->
+  <string name="delete_tab_group_confirmation_dialog_body">פעולה זו תמחק את הקבוצה לצמיתות.</string>
+  <!-- Text shown on the confirm button in the Delete tab group confirmation dialog. -->
+  <string name="delete_tab_group_confirmation_dialog_confirm">מחיקת הקבוצה</string>
+  <!-- Text shown on the cancel button in the Delete tab group confirmation dialog. -->
+  <string name="delete_tab_group_confirmation_dialog_cancel">ביטול</string>
   <!--
     History
 
@@ -2093,7 +2101,11 @@
   <string name="bookmark_delete_single_item" tools:ignore="UnusedResources" moz:removedIn="150">נמחק %s</string>
   <!-- Bookmark snackbar message for deleting multiple items. %s is the number of items being deleted -->
   <string name="bookmark_delete_multiple_items" tools:ignore="UnusedResources" moz:removedIn="150">הפריטים נמחקו: %s</string>
-  <!-- Content description for the bookmark navigation bar back button -->
+  <!--
+    Bookmark undo button for deletion snackbar action
+
+    Content description for the bookmark navigation bar back button
+  -->
   <string name="bookmark_navigate_back_button_content_description">ניווט אחורה</string>
   <!-- Content description for the bookmark list new folder navigation bar button -->
   <string name="bookmark_add_new_folder_button_content_description">הוספת תיקייה חדשה</string>
@@ -2302,6 +2314,8 @@
   <string name="menu_print">הדפסה</string>
   <!-- Sub-header in the dialog to share a link to another sync device -->
   <string name="share_device_subheader">שליחה למכשיר</string>
+  <!-- Content description for the drag handle that dismisses the Send to Device bottom sheet -->
+  <string name="send_to_devices_bottom_sheet_close_content_description">סגירת החלונית לשליחה למכשיר</string>
   <!-- Sub-header in the dialog to share a link to an app from the full list -->
   <string name="share_link_all_apps_subheader">כל הפעולות</string>
   <!-- Sub-header in the dialog to share a link to an app from the most-recent sorted list -->
