@@ -55,6 +55,13 @@ class Collator final {
   }
 
   
+
+
+  CollatorOptions ResolvedOptions() {
+    return mozilla_collator_glue_collator_resolved_options(this);
+  }
+
+  
   
   
   int32_t CompareUTF16(Span<const char16_t> aLeft,
