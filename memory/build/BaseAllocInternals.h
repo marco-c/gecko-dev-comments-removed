@@ -5,8 +5,6 @@
 #ifndef BASEALLOCINTERNALS_H
 #define BASEALLOCINTERNALS_H
 
-#include <algorithm>
-
 #include "mozilla/DoublyLinkedList.h"
 
 #include "BaseAlloc.h"
@@ -14,6 +12,10 @@
 
 typedef uint32_t base_alloc_size_t;
 constexpr static base_alloc_size_t BASE_ALLOC_SIZE_MAX = UINT32_MAX >> 1;
+
+
+
+
 
 
 
@@ -87,10 +89,7 @@ class BaseAllocCell {
   }
 
  public:
-  static constexpr uintptr_t RoundUp(uintptr_t aValue) {
-    const size_t align = std::max(alignof(BaseAllocCell), size_t(16));
-    return ALIGNMENT_CEILING(aValue, align);
-  }
+  static uintptr_t Align(uintptr_t aPtr);
 
   explicit BaseAllocCell(base_alloc_size_t aSize) {
     new (Metadata()) BaseAllocMetadata(aSize);
