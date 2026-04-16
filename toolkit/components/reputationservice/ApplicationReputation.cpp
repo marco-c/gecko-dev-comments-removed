@@ -210,7 +210,7 @@ const char* const ApplicationReputationService::kBinaryFileExtensions[] = {
     ".class",  
     
     
-    ".command",        
+    
     ".configprofile",  
     ".cpgz",           
     ".cpi",            

@@ -1962,21 +1962,22 @@ nsLocalFile::IsExecutable(bool* aResult) {
     
     static const char* const executableExts[] = {
 #ifdef MOZ_WIDGET_COCOA
-        "afploc",  
+        ".afploc",  
 #endif
-        "air",  
+        ".air",  
 #ifdef MOZ_WIDGET_COCOA
-        "atloc",     
-        "fileloc",   
-                     
-        "ftploc",    
-        "inetloc",   
-                     
-        "terminal",  
+        ".atloc",     
+        ".command",   
+        ".fileloc",   
+                      
+        ".ftploc",    
+        ".inetloc",   
+                      
+        ".terminal",  
 #endif
-        "jar"  
+        ".jar"  
     };
-    nsDependentSubstring ext = Substring(path, dotIdx + 1);
+    nsDependentSubstring ext = Substring(path, dotIdx);
     for (auto executableExt : executableExts) {
       if (ext.EqualsASCII(executableExt)) {
         
