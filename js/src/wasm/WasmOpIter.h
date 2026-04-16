@@ -18,6 +18,7 @@
 #define wasm_op_iter_h
 
 #include "mozilla/CompactPair.h"
+#include "mozilla/Span.h"
 
 #include <type_traits>
 
@@ -462,12 +463,19 @@ class MOZ_STACK_CLASS OpIter : private Policy {
   [[nodiscard]] bool readLinearMemoryAddressAligned(
       uint32_t byteSize, LinearMemoryAddress<Value>* addr);
   [[nodiscard]] bool readBlockType(BlockType* type);
-  [[nodiscard]] bool readGcTypeIndex(uint32_t* typeIndex);
   [[nodiscard]] bool readStructTypeIndex(uint32_t* typeIndex);
   [[nodiscard]] bool readArrayTypeIndex(uint32_t* typeIndex);
   [[nodiscard]] bool readFuncTypeIndex(uint32_t* typeIndex);
+#ifdef ENABLE_WASM_JSPI
+  [[nodiscard]] bool readContTypeIndex(uint32_t* typeIndex);
+#endif
   [[nodiscard]] bool readFieldIndex(uint32_t* fieldIndex,
                                     const StructType& structType);
+  [[nodiscard]] bool readTagIndex(uint32_t* tagIndex);
+#ifdef ENABLE_WASM_JSPI
+  [[nodiscard]] bool readHandlers(HandlerExprVector* handlers,
+                                  const ContType& resumedContType);
+#endif
 
   [[nodiscard]] bool popCallArgs(const ValTypeVector& expectedTypes,
                                  ValueVector* values);
@@ -534,17 +542,22 @@ class MOZ_STACK_CLASS OpIter : private Policy {
     controlStack_.back().setPolymorphicBase();
   }
 
-  inline bool checkIsSubtypeOf(StorageType actual, StorageType expected);
+  inline bool checkIsSubtypeOf(StorageType subType, StorageType superType);
 
-  inline bool checkIsSubtypeOf(RefType actual, RefType expected) {
-    return checkIsSubtypeOf(ValType(actual).storageType(),
-                            ValType(expected).storageType());
+  inline bool checkIsSubtypeOf(RefType subType, RefType superType) {
+    return checkIsSubtypeOf(ValType(subType).storageType(),
+                            ValType(superType).storageType());
   }
-  inline bool checkIsSubtypeOf(ValType actual, ValType expected) {
-    return checkIsSubtypeOf(actual.storageType(), expected.storageType());
+  inline bool checkIsSubtypeOf(ValType subType, ValType superType) {
+    return checkIsSubtypeOf(subType.storageType(), superType.storageType());
   }
 
-  inline bool checkIsSubtypeOf(ResultType params, ResultType results);
+  inline bool checkIsSubtypeOf(ResultType subType, ResultType superType);
+  inline bool checkIsSubtypeOf(const ValTypeVector& subType,
+                               const ValTypeVector& superType) {
+    return checkIsSubtypeOf(ResultType::Vector(subType),
+                            ResultType::Vector(superType));
+  }
 
   inline bool checkIsSubtypeOf(uint32_t actualTypeIndex,
                                uint32_t expectedTypeIndex);
@@ -856,9 +869,27 @@ class MOZ_STACK_CLASS OpIter : private Policy {
       const BuiltinModuleFunc** builtinModuleFunc, ValueVector* params);
 
 #ifdef ENABLE_WASM_JSPI
+  [[nodiscard]] bool readContNew(uint32_t* contTypeIndex, Value* func);
+  [[nodiscard]] bool readContBind(uint32_t* inputContTypeIndex,
+                                  uint32_t* outputContTypeIndex,
+                                  ValueVector* boundArgs, Value* cont);
+  [[nodiscard]] bool readResume(uint32_t* contTypeIndex,
+                                HandlerExprVector* handler, ValueVector* args,
+                                Value* cont);
+  [[nodiscard]] bool readResumeThrow(uint32_t* contTypeIndex,
+                                     uint32_t* tagIndex,
+                                     HandlerExprVector* handlers,
+                                     ValueVector* args, Value* cont);
+  [[nodiscard]] bool readResumeThrowRef(uint32_t* contTypeIndex,
+                                        HandlerExprVector* handlers,
+                                        Value* exnRef, Value* cont);
+  [[nodiscard]] bool readSuspend(uint32_t* tagIndex, ValueVector* args);
+  [[nodiscard]] bool readSwitch(uint32_t* contTypeIndex, uint32_t* tagIndex,
+                                ValueVector* args, Value* cont);
+  [[nodiscard]] bool readGuardSuspending(uint32_t* tagIndex);
   [[nodiscard]] bool readStackSwitch(StackSwitchKind* kind, Value* suspender,
                                      Value* fn, Value* data);
-#endif
+#endif  
 
   
   
@@ -945,9 +976,10 @@ inline bool OpIter<Policy>::checkIsSubtypeOf(StorageType subType,
 }
 
 template <typename Policy>
-inline bool OpIter<Policy>::checkIsSubtypeOf(ResultType params,
-                                             ResultType results) {
-  return CheckIsSubtypeOf(d_, codeMeta_, lastOpcodeOffset(), params, results);
+inline bool OpIter<Policy>::checkIsSubtypeOf(ResultType subType,
+                                             ResultType superType) {
+  return CheckIsSubtypeOf(d_, codeMeta_, lastOpcodeOffset(), subType,
+                          superType);
 }
 
 template <typename Policy>
@@ -1683,6 +1715,11 @@ inline bool OpIter<Policy>::readTryTable(BlockType* type,
       if (tryTableCatch.tagIndex >= codeMeta_.tags.length()) {
         return fail("tag index out of range");
       }
+      const TagDesc& tagDesc = codeMeta_.tags[tryTableCatch.tagIndex];
+      const TagType& tagType = *tagDesc.type;
+      if (!tagType.resultTypes().empty()) {
+        return fail("catch tag must not have results");
+      }
     }
 
     
@@ -1747,6 +1784,11 @@ inline bool OpIter<Policy>::readCatch(LabelKind* kind, uint32_t* tagIndex,
   }
   if (*tagIndex >= codeMeta_.tags.length()) {
     return fail("tag index out of range");
+  }
+  const TagDesc& tagDesc = codeMeta_.tags[*tagIndex];
+  const TagType& tagType = *tagDesc.type;
+  if (!tagType.resultTypes().empty()) {
+    return fail("catch tag must not have results");
   }
 
   Control& block = controlStack_.back();
@@ -1842,6 +1884,11 @@ inline bool OpIter<Policy>::readThrow(uint32_t* tagIndex,
   }
   if (*tagIndex >= codeMeta_.tags.length()) {
     return fail("tag index out of range");
+  }
+  const TagDesc& tagDesc = codeMeta_.tags[*tagIndex];
+  const TagType& tagType = *tagDesc.type;
+  if (!tagType.resultTypes().empty()) {
+    return fail("throw tag must not have results");
   }
 
   if (!popWithType(codeMeta_.tags[*tagIndex].type->argResultType(),
@@ -3278,24 +3325,6 @@ inline bool OpIter<Policy>::readTableSize(uint32_t* tableIndex) {
 }
 
 template <typename Policy>
-inline bool OpIter<Policy>::readGcTypeIndex(uint32_t* typeIndex) {
-  if (!d_.readTypeIndex(typeIndex)) {
-    return false;
-  }
-
-  if (*typeIndex >= codeMeta_.types->length()) {
-    return fail("type index out of range");
-  }
-
-  if (!codeMeta_.types->type(*typeIndex).isStructType() &&
-      !codeMeta_.types->type(*typeIndex).isArrayType()) {
-    return fail("not a gc type");
-  }
-
-  return true;
-}
-
-template <typename Policy>
 inline bool OpIter<Policy>::readStructTypeIndex(uint32_t* typeIndex) {
   if (!readVarU32(typeIndex)) {
     return fail("unable to read type index");
@@ -3340,11 +3369,30 @@ inline bool OpIter<Policy>::readFuncTypeIndex(uint32_t* typeIndex) {
   }
 
   if (!codeMeta_.types->type(*typeIndex).isFuncType()) {
-    return fail("not an func type");
+    return fail("not a func type");
   }
 
   return true;
 }
+
+#ifdef ENABLE_WASM_JSPI
+template <typename Policy>
+inline bool OpIter<Policy>::readContTypeIndex(uint32_t* typeIndex) {
+  if (!readVarU32(typeIndex)) {
+    return fail("unable to read type index");
+  }
+
+  if (*typeIndex >= codeMeta_.types->length()) {
+    return fail("type index out of range");
+  }
+
+  if (!codeMeta_.types->type(*typeIndex).isContType()) {
+    return fail("not a cont type");
+  }
+
+  return true;
+}
+#endif  
 
 template <typename Policy>
 inline bool OpIter<Policy>::readFieldIndex(uint32_t* fieldIndex,
@@ -3359,6 +3407,164 @@ inline bool OpIter<Policy>::readFieldIndex(uint32_t* fieldIndex,
 
   return true;
 }
+
+template <typename Policy>
+inline bool OpIter<Policy>::readTagIndex(uint32_t* tagIndex) {
+  if (!readVarU32(tagIndex)) {
+    return fail("unable to read tag index");
+  }
+
+  if (*tagIndex >= codeMeta_.numTags()) {
+    return fail("tag index out of range");
+  }
+
+  return true;
+}
+
+#ifdef ENABLE_WASM_JSPI
+template <typename Policy>
+inline bool OpIter<Policy>::readHandlers(HandlerExprVector* handlers,
+                                         const ContType& resumedContType) {
+  uint32_t handlerCount = 0;
+  if (!readVarU32(&handlerCount)) {
+    return fail("expected handler count");
+  }
+
+  if (handlerCount > MaxHandlers) {
+    return fail("too many handlers");
+  }
+
+  MOZ_ASSERT(handlers->empty());
+  if (!handlers->reserve(handlerCount)) {
+    return false;
+  }
+
+  for (uint32_t i = 0; i < handlerCount; i++) {
+    uint8_t rawKind;
+    if (!readFixedU8(&rawKind)) {
+      return fail("expected handler kind");
+    }
+
+    if (rawKind > static_cast<uint8_t>(HandlerKind::Limit)) {
+      return fail("invalid handler kind");
+    }
+    HandlerKind kind = static_cast<HandlerKind>(rawKind);
+
+    
+    uint32_t tagIndex;
+    if (!readTagIndex(&tagIndex)) {
+      return false;
+    }
+    const TagType& tagType = codeMeta_.getTagType(tagIndex);
+    const ValTypeVector& tagArgTypes = tagType.argTypes();
+    const ValTypeVector& tagResultTypes = tagType.resultTypes();
+
+    switch (kind) {
+      case HandlerKind::Suspend: {
+        uint32_t labelDepth;
+        if (!readVarU32(&labelDepth)) {
+          return fail("expected label depth");
+        }
+
+        Control* block = nullptr;
+        if (!getControl(labelDepth, &block)) {
+          return false;
+        }
+
+        ResultType branchTargetType = block->branchTargetType();
+
+        
+        
+        if (branchTargetType.empty() ||
+            branchTargetType.length() - 1 != tagType.argTypes().length()) {
+          return fail("handler: invalid label type for tag");
+        }
+
+        
+        for (uint32_t i = 0; i < tagArgTypes.length(); i++) {
+          ValType tagArgType = tagArgTypes[i];
+          ValType branchType = branchTargetType[i];
+          if (!checkIsSubtypeOf(tagArgType, branchType)) {
+            return false;
+          }
+        }
+
+        
+        
+        ValType suspendedContValType = branchTargetType[tagArgTypes.length()];
+        if (!suspendedContValType.isTypeRef() ||
+            !suspendedContValType.typeDef()->isContType()) {
+          return fail("branch label must take a cont");
+        }
+
+        
+        
+        const TypeDef& suspendedContTypeDef = *suspendedContValType.typeDef();
+        const ContType& suspendedContType = suspendedContTypeDef.contType();
+        const ValTypeVector& suspendedContParams = suspendedContType.args();
+        const ValTypeVector& suspendedContResults = suspendedContType.results();
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if (!checkIsSubtypeOf(suspendedContParams, tagResultTypes)) {
+          return false;
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if (!checkIsSubtypeOf(resumedContType.funcType().results(),
+                              suspendedContResults)) {
+          return false;
+        }
+
+        handlers->infallibleAppend(HandlerExpr(tagIndex, labelDepth));
+        break;
+      }
+      case HandlerKind::Switch: {
+        
+        if (!tagArgTypes.empty()) {
+          return fail("handler: switch tag cannot have params");
+        }
+
+        
+        
+        if (tagResultTypes.length() !=
+            resumedContType.funcType().results().length()) {
+          return fail(
+              "handler: switch tag results must match resumed cont results");
+        }
+        for (uint32_t i = 0; i < tagResultTypes.length(); i++) {
+          if (tagResultTypes[i] != resumedContType.funcType().result(i)) {
+            return fail(
+                "handler: switch tag result must exactly match resumed cont "
+                "result");
+          }
+        }
+
+        handlers->infallibleAppend(HandlerExpr(tagIndex));
+        break;
+      }
+      default:
+        MOZ_CRASH();
+    }
+  }
+  return true;
+}
+#endif  
 
 template <typename Policy>
 inline bool OpIter<Policy>::readStructNew(uint32_t* typeIndex,
@@ -3882,6 +4088,10 @@ inline bool OpIter<Policy>::readRefTest(bool nullable, RefType* sourceType,
     return false;
   }
 
+  if (!destType->isCastable()) {
+    return fail("ref type is not castable");
+  }
+
   StackType inputType;
   if (!popWithType(destType->topType(), ref, &inputType)) {
     return false;
@@ -3898,6 +4108,10 @@ inline bool OpIter<Policy>::readRefCast(bool nullable, RefType* sourceType,
 
   if (!readHeapType(nullable, destType)) {
     return false;
+  }
+
+  if (!destType->isCastable()) {
+    return fail("ref type is not castable");
   }
 
   StackType inputType;
@@ -3980,6 +4194,10 @@ inline bool OpIter<Policy>::readBrOnCast(bool onSuccess,
 
   if (!readHeapType(destNullable, destType)) {
     return fail("unable to read br_on_cast dest type");
+  }
+
+  if (!destType->isCastable()) {
+    return fail("ref type is not castable");
   }
 
   
@@ -4250,6 +4468,254 @@ inline bool OpIter<Policy>::readStoreLane(uint32_t byteSize,
 #endif  
 
 #ifdef ENABLE_WASM_JSPI
+
+template <typename Policy>
+inline bool OpIter<Policy>::readContNew(uint32_t* typeIndex, Value* func) {
+  MOZ_ASSERT(Classify(op_) == OpKind::ContNew);
+  MOZ_ASSERT(codeMeta_.stackSwitchingEnabled());
+  if (!readContTypeIndex(typeIndex)) {
+    return false;
+  }
+  const TypeDef& contTypeDef = codeMeta_.types->type(*typeIndex);
+  const ContType& contType = contTypeDef.contType();
+
+  if (!popWithType(ValType(RefType::fromTypeDef(&contType.funcTypeDef(), true)),
+                   func)) {
+    return false;
+  }
+  infalliblePush(RefType::fromTypeDef(&contTypeDef, false));
+  return true;
+}
+
+template <typename Policy>
+inline bool OpIter<Policy>::readContBind(uint32_t* inputContTypeIndex,
+                                         uint32_t* outputContTypeIndex,
+                                         ValueVector* boundArgs, Value* cont) {
+  MOZ_ASSERT(Classify(op_) == OpKind::ContBind);
+  MOZ_ASSERT(codeMeta_.stackSwitchingEnabled());
+
+  
+  
+  if (!readContTypeIndex(inputContTypeIndex) ||
+      !readContTypeIndex(outputContTypeIndex)) {
+    return false;
+  }
+
+  const TypeDef& inputContTypeDef = codeMeta_.types->type(*inputContTypeIndex);
+  const ContType& inputContType = inputContTypeDef.contType();
+  const ValTypeVector& inputArgs = inputContType.args();
+  const ValTypeVector& inputResults = inputContType.results();
+  uint32_t inputArgCount = inputArgs.length();
+  uint32_t inputResultCount = inputResults.length();
+
+  const TypeDef& outputContTypeDef =
+      codeMeta_.types->type(*outputContTypeIndex);
+  const ContType& outputContType = outputContTypeDef.contType();
+  const ValTypeVector& outputArgs = outputContType.args();
+  const ValTypeVector& outputResults = outputContType.results();
+  uint32_t outputArgCount = outputArgs.length();
+  uint32_t outputResultCount = outputResults.length();
+
+  
+  
+  if (outputArgCount > inputArgCount) {
+    return fail("cont.bind: output cont has too many params");
+  }
+
+  
+  
+  uint32_t unboundParamCount = outputArgCount;
+  for (uint32_t i = 0; i < unboundParamCount; i++) {
+    
+    uint32_t unboundOutputParamIndex = outputArgCount - i - 1;
+    uint32_t unboundInputParamIndex = inputArgCount - i - 1;
+
+    ValType unboundOutputParam = outputArgs[unboundOutputParamIndex];
+    ValType unboundInputParam = inputArgs[unboundInputParamIndex];
+
+    
+    if (!checkIsSubtypeOf(unboundOutputParam, unboundInputParam)) {
+      return false;
+    }
+  }
+
+  
+  if (inputResultCount != outputResultCount) {
+    return fail("cont.bind: conts have mismatched results");
+  }
+
+  
+  for (uint32_t i = 0; i < outputResultCount; i++) {
+    ValType unboundOutputResult = outputResults[i];
+    ValType unboundInputResult = inputResults[i];
+
+    
+    if (!checkIsSubtypeOf(unboundInputResult, unboundOutputResult)) {
+      return false;
+    }
+  }
+
+  
+  if (!popWithType(ValType(RefType::fromTypeDef(&inputContTypeDef, true)),
+                   cont)) {
+    return false;
+  }
+
+  
+  uint32_t boundParams = inputArgCount - outputArgCount;
+  auto boundArgTypes = mozilla::Span(inputArgs.begin(), boundParams);
+  if (!popWithTypes(boundArgTypes, boundArgs)) {
+    return false;
+  }
+
+  
+  infalliblePush(ValType(RefType::fromTypeDef(&outputContTypeDef, false)));
+  return true;
+}
+
+template <typename Policy>
+inline bool OpIter<Policy>::readResume(uint32_t* contTypeIndex,
+                                       HandlerExprVector* handlers,
+                                       ValueVector* args, Value* cont) {
+  MOZ_ASSERT(Classify(op_) == OpKind::Resume);
+  MOZ_ASSERT(codeMeta_.stackSwitchingEnabled());
+  if (!readContTypeIndex(contTypeIndex)) {
+    return false;
+  }
+  const TypeDef& resumedContTypeDef = codeMeta_.types->type(*contTypeIndex);
+  const ContType& resumedContType = resumedContTypeDef.contType();
+
+  return readHandlers(handlers, resumedContType) &&
+         popWithType(RefType::fromTypeDef(&resumedContTypeDef, true), cont) &&
+         popWithType(ResultType::Vector(resumedContType.funcType().args()),
+                     args) &&
+         push(ResultType::Vector(resumedContType.funcType().results()));
+}
+
+template <typename Policy>
+inline bool OpIter<Policy>::readResumeThrow(uint32_t* contTypeIndex,
+                                            uint32_t* tagIndex,
+                                            HandlerExprVector* handlers,
+                                            ValueVector* args, Value* cont) {
+  MOZ_ASSERT(Classify(op_) == OpKind::ResumeThrow);
+  MOZ_ASSERT(codeMeta_.stackSwitchingEnabled());
+
+  if (!readContTypeIndex(contTypeIndex)) {
+    return false;
+  }
+  const TypeDef& resumedContTypeDef = codeMeta_.types->type(*contTypeIndex);
+  const ContType& resumedContType = resumedContTypeDef.contType();
+
+  if (!readTagIndex(tagIndex)) {
+    return false;
+  }
+  const TagType& tagType = codeMeta_.getTagType(*tagIndex);
+  if (!tagType.resultTypes().empty()) {
+    return fail("resume_throw tag must not have results");
+  }
+
+  return readHandlers(handlers, resumedContType) &&
+         popWithType(RefType::fromTypeDef(&resumedContTypeDef, true), cont) &&
+         popWithType(tagType.argResultType(), args) &&
+         push(ResultType::Vector(resumedContType.funcType().results()));
+}
+
+template <typename Policy>
+inline bool OpIter<Policy>::readResumeThrowRef(uint32_t* contTypeIndex,
+                                               HandlerExprVector* handlers,
+                                               Value* exnRef, Value* cont) {
+  MOZ_ASSERT(Classify(op_) == OpKind::ResumeThrowRef);
+  MOZ_ASSERT(codeMeta_.stackSwitchingEnabled());
+
+  if (!readContTypeIndex(contTypeIndex)) {
+    return false;
+  }
+  const TypeDef& resumedContTypeDef = codeMeta_.types->type(*contTypeIndex);
+  const ContType& resumedContType = resumedContTypeDef.contType();
+
+  return readHandlers(handlers, resumedContType) &&
+         popWithType(RefType::fromTypeDef(&resumedContTypeDef, true), cont) &&
+         popWithType(ValType(RefType::exn()), exnRef) &&
+         push(ResultType::Vector(resumedContType.funcType().results()));
+}
+
+template <typename Policy>
+inline bool OpIter<Policy>::readSuspend(uint32_t* tagIndex, ValueVector* args) {
+  MOZ_ASSERT(Classify(op_) == OpKind::Suspend);
+  MOZ_ASSERT(codeMeta_.stackSwitchingEnabled());
+
+  if (!readTagIndex(tagIndex)) {
+    return false;
+  }
+  const TagType& tagType = codeMeta_.getTagType(*tagIndex);
+
+  return popWithType(ResultType::Vector(tagType.argTypes()), args) &&
+         push(ResultType::Vector(tagType.resultTypes()));
+}
+
+template <typename Policy>
+inline bool OpIter<Policy>::readSwitch(uint32_t* contTypeIndex,
+                                       uint32_t* tagIndex, ValueVector* args,
+                                       Value* cont) {
+  MOZ_ASSERT(Classify(op_) == OpKind::Switch);
+  MOZ_ASSERT(codeMeta_.stackSwitchingEnabled());
+
+  if (!readContTypeIndex(contTypeIndex)) {
+    return false;
+  }
+  const TypeDef& targetContTypeDef = codeMeta_.types->type(*contTypeIndex);
+  const ContType& targetContType = targetContTypeDef.contType();
+  const ValTypeVector& targetContParams = targetContType.args();
+  const ValTypeVector& targetContResults = targetContType.results();
+
+  if (!readTagIndex(tagIndex)) {
+    return false;
+  }
+  const TagType& tagType = codeMeta_.getTagType(*tagIndex);
+
+  if (!tagType.argTypes().empty()) {
+    return fail("switch: suspend tag arguments must be empty");
+  }
+
+  if (targetContParams.empty()) {
+    return fail("switch: not enough target cont params");
+  }
+  uint32_t targetValueParams = targetContParams.length() - 1;
+  ValType returnContValType = targetContParams.back();
+  if (!returnContValType.isTypeRef() ||
+      !returnContValType.typeDef()->isContType()) {
+    return fail("switch: target cont last param must be a cont");
+  }
+  const TypeDef& returnContTypeDef = *returnContValType.typeDef();
+  const ContType& returnContType = returnContTypeDef.contType();
+  const ValTypeVector& returnContParams = returnContType.funcType().args();
+  const ValTypeVector& returnContResults = returnContType.funcType().results();
+
+  
+  if (!checkIsSubtypeOf(targetContResults, tagType.resultTypes())) {
+    return false;
+  }
+
+  
+  if (!checkIsSubtypeOf(tagType.resultTypes(), returnContResults)) {
+    return false;
+  }
+
+  return popWithType(ValType(RefType::fromTypeDef(&targetContTypeDef, true)),
+                     cont) &&
+         popWithTypes(
+             mozilla::Span(targetContParams.begin(), targetValueParams),
+             args) &&
+         push(ResultType::Vector(returnContParams));
+}
+
+template <typename Policy>
+inline bool OpIter<Policy>::readGuardSuspending(uint32_t* tagIndex) {
+  MOZ_ASSERT(Classify(op_) == OpKind::GuardSuspending);
+  MOZ_ASSERT(codeMeta_.isBuiltinModule());
+  return readTagIndex(tagIndex);
+}
+
 template <typename Policy>
 inline bool OpIter<Policy>::readStackSwitch(StackSwitchKind* kind,
                                             Value* suspender, Value* fn,
@@ -4269,7 +4735,6 @@ inline bool OpIter<Policy>::readStackSwitch(StackSwitchKind* kind,
     return false;
   }
 #  if DEBUG
-  
   MOZ_ASSERT((*kind == StackSwitchKind::ContinueOnSuspendable) ==
              stackType.isNullableAsOperand());
   if (!stackType.isNullableAsOperand()) {
@@ -4287,13 +4752,13 @@ inline bool OpIter<Policy>::readStackSwitch(StackSwitchKind* kind,
   if (!popWithType(ValType(RefType::extern_()), suspender)) {
     return false;
   }
-  
   if (*kind == StackSwitchKind::SwitchToMain) {
     return push(RefType::extern_());
   }
   return true;
 }
-#endif
+
+#endif  
 
 template <typename Policy>
 inline bool OpIter<Policy>::readCallBuiltinModuleFunc(
