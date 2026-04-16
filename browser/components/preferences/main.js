@@ -7847,7 +7847,7 @@ const ApplicationsHandler = (function () {
         params.filename = null;
         params.handlerApp = null;
 
-        let onAppSelected = () => {
+        let onAppPickerClose = () => {
           if (this.isValidHandlerApp(params.handlerApp)) {
             handlerApp = params.handlerApp;
 
@@ -7856,11 +7856,15 @@ const ApplicationsHandler = (function () {
           }
 
           chooseAppCallback(handlerApp);
+          
+          
+          
+          handlerItem.buildActionsMenu();
         };
 
         gSubDialog.open(
           "chrome://global/content/appPicker.xhtml",
-          { closingCallback: onAppSelected },
+          { closingCallback: onAppPickerClose },
           params
         );
       } else {
@@ -7887,6 +7891,9 @@ const ApplicationsHandler = (function () {
             handler.addPossibleApplicationHandler(handlerApp);
 
             chooseAppCallback(handlerApp);
+          } else {
+            
+            handlerItem.buildActionsMenu();
           }
         };
 
