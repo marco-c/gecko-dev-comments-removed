@@ -1544,4 +1544,13 @@ ReadableStream::GetReader(ErrorResult& aRv) {
   return AcquireReadableStreamDefaultReader(this, aRv);
 }
 
+
+
+
+
+already_AddRefed<Promise> ReadableStream::CancelNative(
+    JSContext* aCx, JS::Handle<JS::Value> aReason, ErrorResult& aRv) {
+  return ReadableStreamCancel(aCx, this, aReason, aRv);
+}
+
 }  
