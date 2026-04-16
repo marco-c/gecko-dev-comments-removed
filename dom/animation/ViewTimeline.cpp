@@ -221,6 +221,13 @@ std::pair<nscoord, nscoord> ViewTimeline::IntervalForTimelineRangeName(
 
   
   
+  const nscoord containStart =
+      std::min(alignedSubjectStartViewStart, alignedSubjectEndViewEnd);
+  const nscoord containEnd =
+      std::max(alignedSubjectStartViewStart, alignedSubjectEndViewEnd);
+
+  
+  
   switch (aName) {
     case StyleTimelineRangeName::None:
     case StyleTimelineRangeName::Normal:
@@ -256,11 +263,22 @@ std::pair<nscoord, nscoord> ViewTimeline::IntervalForTimelineRangeName(
       
       
       
-      return {std::min(alignedSubjectStartViewStart, alignedSubjectEndViewEnd),
-              std::max(alignedSubjectStartViewStart, alignedSubjectEndViewEnd)};
+      return {containStart, containEnd};
 
     case StyleTimelineRangeName::Entry:
+      
+      
+      
+      
+      return {alignedSubjectStartViewEnd, containStart};
+
     case StyleTimelineRangeName::Exit:
+      
+      
+      
+      
+      return {containEnd, alignedSubjectEndViewStart};
+
     case StyleTimelineRangeName::EntryCrossing:
     case StyleTimelineRangeName::ExitCrossing:
     case StyleTimelineRangeName::Scroll:
