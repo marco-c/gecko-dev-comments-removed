@@ -627,50 +627,6 @@ RefPtr<WebGLContext> WebGLContext::Create(HostWebGLContext* host,
 
   
 
-  const auto UploadableSdTypes = [&]() {
-    webgl::EnumMask<layers::SurfaceDescriptor::Type> types;
-    types[layers::SurfaceDescriptor::TSurfaceDescriptorBuffer] = true;
-    
-    
-    
-    
-    
-    types[layers::SurfaceDescriptor::TSurfaceDescriptorCanvasSurface] =
-        gfx::gfxVars::UseAcceleratedCanvas2D();
-    
-    
-    
-    
-    
-    
-    const bool offCompositorThread = gfx::gfxVars::UseCanvasRenderThread() ||
-                                     !gfx::gfxVars::SupportsThreadsafeGL();
-    types[layers::SurfaceDescriptor::TSurfaceDescriptorGPUVideo] =
-        offCompositorThread;
-    
-    
-    
-    
-    types[layers::SurfaceDescriptor::TSurfaceDescriptorExternalImage] =
-        offCompositorThread;
-    if (webgl->gl->IsANGLE()) {
-      types[layers::SurfaceDescriptor::TSurfaceDescriptorD3D10] = true;
-      types[layers::SurfaceDescriptor::TSurfaceDescriptorDXGIYCbCr] = true;
-    }
-    if (kIsMacOS) {
-      types[layers::SurfaceDescriptor::TSurfaceDescriptorMacIOSurface] = true;
-    }
-    if (kIsAndroid) {
-      types[layers::SurfaceDescriptor::TSurfaceTextureDescriptor] = true;
-    }
-    if (kIsLinux) {
-      types[layers::SurfaceDescriptor::TSurfaceDescriptorDMABuf] = true;
-    }
-    return types;
-  };
-
-  
-
   constexpr GLenum SHADER_TYPES[] = {
       LOCAL_GL_VERTEX_SHADER,
       LOCAL_GL_FRAGMENT_SHADER,
@@ -706,7 +662,7 @@ RefPtr<WebGLContext> WebGLContext::Create(HostWebGLContext* host,
 
   out->options = webgl->mOptions;
   out->limits = *webgl->mLimits;
-  out->uploadableSdTypes = UploadableSdTypes();
+  out->uploadableSdTypes = webgl->mUploadableSdTypes;
   out->vendor = webgl->gl->Vendor();
   out->optionalRenderableFormatBits = webgl->mOptionalRenderableFormatBits;
 
@@ -808,6 +764,58 @@ void WebGLContext::FinishInit() {
 
   gl->ResetSyncCallCount("WebGLContext Initialization");
   LoseLruContextIfLimitExceeded();
+
+  InitUploadableSdTypes();
+}
+
+void WebGLContext::InitUploadableSdTypes() {
+  webgl::EnumMask<layers::SurfaceDescriptor::Type> types;
+  types[layers::SurfaceDescriptor::TSurfaceDescriptorBuffer] = true;
+  
+  
+  
+  
+  
+  types[layers::SurfaceDescriptor::TSurfaceDescriptorCanvasSurface] =
+      gfx::gfxVars::UseAcceleratedCanvas2D();
+  
+  
+  
+  
+  
+  
+  const bool offCompositorThread = gfx::gfxVars::UseCanvasRenderThread() ||
+                                   !gfx::gfxVars::SupportsThreadsafeGL();
+  types[layers::SurfaceDescriptor::TSurfaceDescriptorGPUVideo] =
+      offCompositorThread;
+  
+  
+  
+  
+  types[layers::SurfaceDescriptor::TSurfaceDescriptorExternalImage] =
+      offCompositorThread;
+  if (gl->IsANGLE()) {
+    types[layers::SurfaceDescriptor::TSurfaceDescriptorD3D10] = true;
+    types[layers::SurfaceDescriptor::TSurfaceDescriptorDXGIYCbCr] = true;
+  }
+  if (kIsMacOS) {
+    types[layers::SurfaceDescriptor::TSurfaceDescriptorMacIOSurface] = true;
+  }
+  if (kIsAndroid) {
+    types[layers::SurfaceDescriptor::TSurfaceTextureDescriptor] = true;
+  }
+  if (kIsLinux) {
+    types[layers::SurfaceDescriptor::TSurfaceDescriptorDMABuf] = true;
+  }
+
+  mUploadableSdTypes = types;
+}
+
+bool WebGLContext::IsUploadableSdType(
+    const layers::SurfaceDescriptor& sd) const {
+  
+  
+  return !bool(mHost) || mUploadableSdTypes[sd.type()];
 }
 
 void WebGLContext::SetCompositableHost(
@@ -1062,11 +1070,13 @@ bool WebGLContext::PresentInto(gl::SwapChain& swapChain) {
 
   const auto error = [&]() -> std::optional<std::string> {
     const auto canvasCspace = ToColorSpace2ForOutput(mDrawingBufferColorSpace);
-    auto presenter = swapChain.Acquire(size, canvasCspace);
+    const auto canvasTF = gfx::TransferFunction::SRGB;
+    auto presenter = swapChain.Acquire(size, canvasCspace, canvasTF);
     if (!presenter) {
       return "Swap chain surface creation failed.";
     }
     const auto outputCspace = presenter->BackBuffer()->mDesc.colorSpace;
+    const auto outputTF = presenter->BackBuffer()->mDesc.transferFunction;
     const auto destFb = presenter->Fb();
 
     
@@ -1083,8 +1093,10 @@ bool WebGLContext::PresentInto(gl::SwapChain& swapChain) {
     auto colorLut = std::shared_ptr<gl::Texture>{};
     if (colorManage) {
       MOZ_ASSERT(canvasCspace != gfx::ColorSpace2::Display);
-      colorLut = gl->BlitHelper()->GetColorLutTex(gl::GLBlitHelper::ColorLutKey{
-          .src = canvasCspace, .dst = outputCspace});
+      const gl::GLBlitHelper::CSTF src{.cs = canvasCspace, .tf = canvasTF};
+      const gl::GLBlitHelper::CSTF dst{.cs = outputCspace, .tf = outputTF};
+      colorLut = gl->BlitHelper()->GetColorLutTex(
+          gl::GLBlitHelper::ColorLutKey{.src = src, .dst = dst});
       if (!colorLut) {
         NS_WARNING("GetColorLutTex() -> nullptr => colorManage = false.");
         colorManage = false;
@@ -1162,7 +1174,8 @@ bool WebGLContext::PresentIntoXR(gl::SwapChain& swapChain,
   OnEndOfFrame();
 
   const auto colorSpace = ToColorSpace2ForOutput(mDrawingBufferColorSpace);
-  auto presenter = swapChain.Acquire(fb.mSize, colorSpace);
+  const auto transferFunction = gfx::TransferFunction::SRGB;
+  auto presenter = swapChain.Acquire(fb.mSize, colorSpace, transferFunction);
   if (!presenter) {
     GenerateWarning("Swap chain surface creation failed.");
     LoseContext();
@@ -1293,7 +1306,9 @@ bool WebGLContext::CopyToSwapChain(
   {
     
     const auto colorSpace = ToColorSpace2ForOutput(mDrawingBufferColorSpace);
-    auto presenter = srcFb->mSwapChain.Acquire(size, colorSpace);
+    const auto transferFunction = gfx::TransferFunction::SRGB;
+    auto presenter =
+        srcFb->mSwapChain.Acquire(size, colorSpace, transferFunction);
     if (!presenter) {
       GenerateWarning("Swap chain surface creation failed.");
       LoseContext();
@@ -1372,6 +1387,7 @@ bool WebGLContext::PushRemoteTexture(
 
   const auto surfaceFormat = mOptions.alpha ? gfx::SurfaceFormat::B8G8R8A8
                                             : gfx::SurfaceFormat::B8G8R8X8;
+
   Maybe<layers::SurfaceDescriptor> desc;
   if (surf) {
     desc = surf->ToSurfaceDescriptor();
@@ -1696,9 +1712,12 @@ WebGLContext::GetBackBufferSnapshotSharedSurface(layers::TextureType texType,
 
   {
     
+    
+    
     const auto colorSpace = ToColorSpace2ForOutput(mDrawingBufferColorSpace);
+    const auto transferFunction = gfx::TransferFunction::SRGB;
     auto presenter = mSnapshotSwapChain.Acquire(
-        gfx::IntSize(surfSize.x, surfSize.y), colorSpace);
+        gfx::IntSize(surfSize.x, surfSize.y), colorSpace, transferFunction);
     if (!presenter) {
       GenerateWarning("Swap chain surface creation failed.");
       return nullptr;
@@ -2825,6 +2844,23 @@ webgl::ExplicitPixelPackingState::ForUseWith(
     const uvec3& subrectSize, const webgl::PackingInfo& pi,
     const Maybe<size_t> bytesPerRowStrideOverride) {
   auto state = stateOrZero;
+
+  
+  
+  
+  switch (state.alignmentInTypeElems) {
+    case 1:
+    case 2:
+    case 4:
+    case 8:
+      break;
+    default: {
+      const auto text = nsPrintfCString(
+          "PACK/UNPACK_ALIGNMENT must be one of [1,2,4,8], was %u.",
+          state.alignmentInTypeElems);
+      return Err(mozilla::ToString(text));
+    }
+  }
 
   if (!IsTexTarget3D(target)) {
     state.skipImages = 0;
