@@ -117,7 +117,6 @@ class EchoDetector;
 
 
 
-
 class RTC_EXPORT AudioProcessing : public RefCountInterface {
  public:
   
@@ -199,9 +198,7 @@ class RTC_EXPORT AudioProcessing : public RefCountInterface {
 
     struct EchoCanceller {
       bool enabled = false;
-      bool mobile_mode = false;
       bool export_linear_aec_output = false;
-      
       
       bool enforce_high_pass_filtering = true;
     } echo_canceller;
