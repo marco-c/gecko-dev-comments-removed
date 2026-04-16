@@ -67,11 +67,6 @@ interface FeatureSettingsHelper {
     var isLocationPermissionEnabled: SitePermissionsRules.Action
 
     /**
-     * Enable or disable the composable toolbar.
-     */
-    var isComposableToolbarEnabled: Boolean
-
-    /**
      * Enable or disable the new main menu CFR.
      */
     var isMenuRedesignCFREnabled: Boolean
@@ -105,6 +100,11 @@ interface FeatureSettingsHelper {
      * Accept or not the terms of service.
      */
     var isTermsOfServiceAccepted: Boolean
+
+    /**
+     * Enable or disable the private mode and stories entry point.
+     */
+    var isPrivateModeAndStoriesEntryPointEnabled: Boolean
 
     /**
      * The Open links in External apps settings, between the following options:
