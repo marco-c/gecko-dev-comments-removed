@@ -10,9 +10,8 @@
 
 #include "modules/video_capture/device_info_impl.h"
 
-#include <stdlib.h>
-
 #include <cstdint>
+#include <cstdlib>
 
 #include "absl/strings/match.h"
 #include "absl/strings/string_view.h"
@@ -170,6 +169,9 @@ int32_t DeviceInfoImpl::GetBestMatchedCapability(
                      capability.videoType == VideoType::kYUY2 ||
                      capability.videoType == VideoType::kYV12 ||
                      capability.videoType == VideoType::kNV12)) {
+                  bestWidth = capability.width;
+                  bestHeight = capability.height;
+                  bestFrameRate = capability.maxFPS;
                   bestVideoType = capability.videoType;
                   bestformatIndex = tmp;
                 }
@@ -177,7 +179,11 @@ int32_t DeviceInfoImpl::GetBestMatchedCapability(
                 
                 if (capability.height == requested.height &&
                     capability.width == requested.width &&
-                    capability.maxFPS >= requested.maxFPS) {
+                    capability.maxFPS >= requested.maxFPS &&
+                    capability.maxFPS != bestFrameRate) {
+                  bestWidth = capability.width;
+                  bestHeight = capability.height;
+                  bestFrameRate = capability.maxFPS;
                   bestVideoType = capability.videoType;
                   bestformatIndex = tmp;
                 }
