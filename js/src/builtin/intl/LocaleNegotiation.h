@@ -8,7 +8,6 @@
 #include "mozilla/EnumeratedArray.h"
 #include "mozilla/EnumSet.h"
 #include "mozilla/EnumTypeTraits.h"
-#include "mozilla/Maybe.h"
 
 #include <stdint.h>
 
@@ -61,17 +60,6 @@ bool CanonicalizeLocaleList(JSContext* cx, JS::Handle<JS::Value> locales,
 
 ArrayObject* CanonicalizeLocaleList(JSContext* cx,
                                     JS::Handle<JS::Value> locales);
-
-
-
-
-
-
-
-
-
-bool BestAvailableLocale(JSContext* cx, AvailableLocaleKind availableLocales,
-                         LanguageId locale, mozilla::Maybe<LanguageId>* result);
 
 
 
