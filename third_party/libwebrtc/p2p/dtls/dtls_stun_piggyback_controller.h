@@ -21,6 +21,7 @@
 #include "api/sequence_checker.h"
 #include "api/transport/stun.h"
 #include "p2p/dtls/dtls_utils.h"
+#include "rtc_base/network/received_packet.h"
 #include "rtc_base/system/no_unique_address.h"
 #include "rtc_base/thread_annotations.h"
 
@@ -64,7 +65,13 @@ class DtlsStunPiggybackController {
 
   
   
+  
   void SetDtlsHandshakeComplete(bool is_dtls_client, bool is_dtls13);
+
+  
+  
+  
+  void DecryptedPacketReceived(const ReceivedIpPacket& packet);
 
   
   void SetDtlsFailed();
@@ -101,8 +108,10 @@ class DtlsStunPiggybackController {
   State state_ RTC_GUARDED_BY(sequence_checker_) = State::TENTATIVE;
   bool writing_packets_ RTC_GUARDED_BY(sequence_checker_) = false;
   PacketStash pending_packets_ RTC_GUARDED_BY(sequence_checker_);
-  absl::AnyInvocable<void(ArrayView<const uint8_t>)> dtls_data_callback_;
-  absl::AnyInvocable<void()> complete_callback_;
+  absl::AnyInvocable<void(ArrayView<const uint8_t>)> dtls_data_callback_
+      RTC_GUARDED_BY(sequence_checker_);
+  absl::AnyInvocable<void() &&> complete_callback_
+      RTC_GUARDED_BY(sequence_checker_);
 
   std::vector<uint32_t> handshake_messages_received_
       RTC_GUARDED_BY(sequence_checker_);

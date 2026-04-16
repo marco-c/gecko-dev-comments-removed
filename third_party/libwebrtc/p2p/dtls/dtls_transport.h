@@ -357,6 +357,9 @@ class DtlsTransportInternalImpl : public DtlsTransportInternal {
   
   
   bool dtls_in_stun_ = false;
+  
+  
+  bool dtls_in_stun_complete_ = false;
 
   
   DtlsStunPiggybackController dtls_stun_piggyback_controller_;

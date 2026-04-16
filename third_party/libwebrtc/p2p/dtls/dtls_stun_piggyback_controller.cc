@@ -25,6 +25,7 @@
 #include "p2p/dtls/dtls_utils.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/network/received_packet.h"
 #include "rtc_base/strings/str_join.h"
 
 namespace webrtc {
@@ -36,9 +37,6 @@ DtlsStunPiggybackController::DtlsStunPiggybackController(
       complete_callback_(std::move(complete_callback)) {}
 
 DtlsStunPiggybackController::~DtlsStunPiggybackController() {
-  complete_callback_ = [&]() {
-    RTC_DCHECK(false) << "Calling CompleteCallback after destructor!";
-  };
 }
 
 void DtlsStunPiggybackController::SetDtlsHandshakeComplete(bool is_dtls_client,
@@ -47,20 +45,27 @@ void DtlsStunPiggybackController::SetDtlsHandshakeComplete(bool is_dtls_client,
 
   
   
-  
-  
-  
-  
-  if ((is_dtls_client && !is_dtls13) || (!is_dtls_client && is_dtls13)) {
-    pending_packets_.clear();
-  }
-
-  
-  
   if (state_ == State::OFF) {
     return;
   }
   state_ = State::PENDING;
+}
+
+void DtlsStunPiggybackController::DecryptedPacketReceived(
+    const ReceivedIpPacket& packet) {
+  RTC_DCHECK_RUN_ON(&sequence_checker_);
+
+  if (state_ == State::OFF) {
+    return;
+  }
+
+  RTC_DCHECK(packet.decryption_info() == ReceivedIpPacket::kDtlsDecrypted ||
+             packet.decryption_info() == ReceivedIpPacket::kSrtpEncrypted);
+
+  
+  RTC_DCHECK(state_ == State::PENDING);
+  state_ = State::COMPLETE;
+  CallCompleteCallback();
 }
 
 void DtlsStunPiggybackController::SetDtlsFailed() {
@@ -111,9 +116,6 @@ DtlsStunPiggybackController::GetDataToPiggyback(
   RTC_DCHECK(stun_message_type == STUN_BINDING_REQUEST ||
              stun_message_type == STUN_BINDING_RESPONSE);
 
-  
-  RTC_DCHECK(!writing_packets_);
-
   if (state_ == State::COMPLETE) {
     return std::nullopt;
   }
@@ -121,6 +123,9 @@ DtlsStunPiggybackController::GetDataToPiggyback(
   if (state_ == State::OFF) {
     return std::nullopt;
   }
+
+  
+  RTC_DCHECK(!writing_packets_);
 
   if (pending_packets_.empty()) {
     return std::nullopt;
@@ -176,8 +181,6 @@ void DtlsStunPiggybackController::ReportDataPiggybacked(
   if (state_ == State::PENDING && !data.has_value() && !acks.has_value()) {
     RTC_LOG(LS_INFO) << "DTLS-STUN piggybacking complete.";
     state_ = State::COMPLETE;
-    pending_packets_.clear();
-    handshake_messages_received_.clear();
     CallCompleteCallback();
     return;
   }
@@ -215,8 +218,6 @@ void DtlsStunPiggybackController::ReportDataPiggybacked(
   if (!data.has_value() && acks.has_value() && state_ == State::PENDING) {
     RTC_LOG(LS_INFO) << "DTLS-STUN piggybacking complete.";
     state_ = State::COMPLETE;
-    pending_packets_.clear();
-    handshake_messages_received_.clear();
     CallCompleteCallback();
     return;
   }
@@ -263,10 +264,14 @@ void DtlsStunPiggybackController::ReportDtlsPacket(
 }
 
 void DtlsStunPiggybackController::CallCompleteCallback() {
-  complete_callback_();
-  complete_callback_ = [&]() {
-    RTC_DCHECK(false) << "CompleteCallback called twice!";
-  };
+  RTC_DCHECK_RUN_ON(&sequence_checker_);
+  pending_packets_.clear();
+  handshake_messages_received_.clear();
+  if (!complete_callback_) {
+    RTC_DCHECK_NOTREACHED() << "CompleteCallback called twice!";
+    return;
+  }
+  std::move(complete_callback_)();
 }
 
 }  

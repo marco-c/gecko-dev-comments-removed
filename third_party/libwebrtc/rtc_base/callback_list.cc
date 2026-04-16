@@ -62,6 +62,12 @@ void CallbackListReceivers::RemoveReceivers(const void* removal_tag) {
       ++first_todo;
       RTC_DCHECK_EQ(receivers_[first_remove - 1].removal_tag, removal_tag);
       --first_remove;
+    } else {
+      
+      
+      RTC_DCHECK(send_in_progress_);
+      RTC_DCHECK_EQ(receivers_[first_todo].removal_tag, removal_tag);
+      receivers_[first_todo++].removal_tag = pending_removal_tag();
     }
   }
 
