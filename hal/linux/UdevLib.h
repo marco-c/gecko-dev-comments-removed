@@ -7,8 +7,8 @@
 
 
 
-#ifndef HAL_LINUX_UDEV_H_
-#define HAL_LINUX_UDEV_H_
+#ifndef HAL_LINUX_UDEVLIB_H_
+#define HAL_LINUX_UDEVLIB_H_
 
 #include <dlfcn.h>
 
