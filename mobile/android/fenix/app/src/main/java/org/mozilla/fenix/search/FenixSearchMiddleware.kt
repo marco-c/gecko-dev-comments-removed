@@ -118,7 +118,7 @@ class FenixSearchMiddleware(
                 store.dispatch(
                     SearchFragmentAction.UpdateSearchState(
                         browserStore.state.search,
-                        true,
+                        isPrivate = browsingModeManager.mode.isPrivate,
                     ),
                 )
             }
