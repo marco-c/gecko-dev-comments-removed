@@ -69,6 +69,11 @@ void HTMLSlotElement::UnbindFromTree(UnbindContext& aContext) {
 
   nsGenericHTMLElement::UnbindFromTree(aContext);
 
+  if (!HasValidDir() && oldContainingShadow) {
+    
+    ResetDirectionSetBySlotHost(this, aContext, oldContainingShadow);
+  }
+
   if (oldContainingShadow && !GetContainingShadow()) {
     oldContainingShadow->RemoveSlot(this);
   }
@@ -249,24 +254,26 @@ void HTMLSlotElement::Assign(const Sequence<OwningElementOrText>& aNodes) {
     
     
     if (content->GetManualSlotAssignment() != this) {
-      if (HTMLSlotElement* oldSlot = content->GetAssignedSlot()) {
-        if (changedSlots.EnsureInserted(oldSlot) && root) {
-          MOZ_ASSERT(oldSlot->GetContainingShadow() == root);
-          ShadowRoot::InvalidateStyleAndLayoutOnSubtree(oldSlot);
+      
+      
+      if (HTMLSlotElement* prevSlot = content->GetManualSlotAssignment()) {
+        ShadowRoot* prevSlotRoot = prevSlot->GetContainingShadow();
+        const bool wasAssigned = content->GetAssignedSlot() == prevSlot;
+        if (wasAssigned && prevSlotRoot &&
+            changedSlots.EnsureInserted(prevSlot)) {
+          ShadowRoot::InvalidateStyleAndLayoutOnSubtree(prevSlot);
         }
+        prevSlot->RemoveManuallyAssignedNode(*content);
       }
+
+      
+      content->SetManualSlotAssignment(this);
+      
+      mManuallyAssignedNodes.AppendElement(content);
 
       if (changedSlots.EnsureInserted(this) && root) {
         ShadowRoot::InvalidateStyleAndLayoutOnSubtree(this);
       }
-      
-      
-      
-      if (HTMLSlotElement* oldSlot = content->GetManualSlotAssignment()) {
-        oldSlot->RemoveManuallyAssignedNode(*content);
-      }
-      content->SetManualSlotAssignment(this);
-      mManuallyAssignedNodes.AppendElement(content);
 
       if (root && host && content->GetParent() == host) {
         
@@ -288,7 +295,11 @@ void HTMLSlotElement::Assign(const Sequence<OwningElementOrText>& aNodes) {
         }
       }
     }
-    MOZ_ASSERT(changedSlots.IsEmpty());
+  }
+  
+  
+  for (const auto& slot : changedSlots) {
+    slot->EnqueueSlotChangeEvent();
   }
 }
 
