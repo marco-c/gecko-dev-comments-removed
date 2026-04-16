@@ -89,7 +89,7 @@ let ab2 = mem.toFixedLengthBuffer();
 assertEq(ab2.growable, false);
 assertEq(mem.buffer, ab2);
 assertEq(ab2 !== ab, true);
-assertEq(ab2.maxByteLength, 50 << 16);
+assertEq(ab2.maxByteLength, 20 << 16);
 
 assertEq(ins.exports.check(0, 10, 3), 1);
 ins.exports.fill(0, 10, 2);
@@ -116,7 +116,7 @@ ins.exports.fill(0, 10, 5);
 check(0, 10, 5);
 
 
-rab.grow(65536 * 30);
+assertEq(rab.grow(65536 * 30), undefined);
 assertEq(rab.byteLength, 30 * 65536);
 ins.exports.fill(30 * 65536 - 10*4, 10, 6);
 check(30 * 65536 - 10 * 4, 10, 6);
