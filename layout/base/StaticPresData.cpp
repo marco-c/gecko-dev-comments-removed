@@ -61,9 +61,7 @@ enum class DefaultFont {
   COUNT
 };
 
-void LangGroupFontPrefs::Initialize(nsStaticAtom* aLangGroupAtom) {
-  mLangGroup = aLangGroupAtom;
-
+void LangGroupFontPrefs::Initialize() {
   
 
 
@@ -90,7 +88,7 @@ void LangGroupFontPrefs::Initialize(nsStaticAtom* aLangGroupAtom) {
 
 
   nsAutoCString langGroup;
-  aLangGroupAtom->ToUTF8String(langGroup);
+  mLangGroup->ToUTF8String(langGroup);
 
   mDefaultVariableFont.size = Length::FromPixels(16.0f);
   mDefaultMonospaceFont.size = Length::FromPixels(13.0f);
@@ -205,35 +203,18 @@ nsStaticAtom* StaticPresData::GetLangGroup(nsAtom* aLanguage) const {
 
 const LangGroupFontPrefs* StaticPresData::GetFontPrefsForLang(
     nsAtom* aLanguage, bool* aNeedsToCache) {
-  
   MOZ_ASSERT(aLanguage);
   MOZ_ASSERT(mLangService);
 
   nsStaticAtom* langGroupAtom = GetLangGroup(aLanguage);
 
-  if (!aNeedsToCache) {
-    AssertIsMainThreadOrServoFontMetricsLocked();
-  }
-
-  LangGroupFontPrefs* prefs = &mLangGroupFontPrefs;
-  if (prefs->mLangGroup) {  
-    DebugOnly<uint32_t> count = 0;
-    for (;;) {
-      if (prefs->mLangGroup == langGroupAtom) {
-        return prefs;
+  {
+    AutoReadLock lock(mLock);
+    for (const auto* p = mLangGroupFontPrefs.get(); p; p = p->mNext.get()) {
+      if (p->mLangGroup == langGroupAtom) {
+        return p;
       }
-      if (!prefs->mNext) {
-        break;
-      }
-      prefs = prefs->mNext.get();
     }
-    if (aNeedsToCache) {
-      *aNeedsToCache = true;
-      return nullptr;
-    }
-    
-    prefs->mNext = MakeUnique<LangGroupFontPrefs>();
-    prefs = prefs->mNext.get();
   }
 
   if (aNeedsToCache) {
@@ -241,10 +222,21 @@ const LangGroupFontPrefs* StaticPresData::GetFontPrefsForLang(
     return nullptr;
   }
 
-  AssertIsMainThreadOrServoFontMetricsLocked();
-  prefs->Initialize(langGroupAtom);
-
-  return prefs;
+  AutoWriteLock lock(mLock);
+  LangGroupFontPrefs* tail = nullptr;
+  for (auto* p = mLangGroupFontPrefs.get(); p; p = p->mNext.get()) {
+    if (p->mLangGroup == langGroupAtom) {
+      return p;
+    }
+    tail = p;
+  }
+  auto newPrefs = MakeUnique<LangGroupFontPrefs>(langGroupAtom);
+  if (tail) {
+    tail->mNext = std::move(newPrefs);
+    return tail->mNext.get();
+  }
+  mLangGroupFontPrefs = std::move(newPrefs);
+  return mLangGroupFontPrefs.get();
 }
 
 }  
