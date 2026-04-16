@@ -1008,6 +1008,12 @@ void nsMenuPopupFrame::InitializePopupAsNativeAnchoredMenu(
   mIsNativeMenu = true;
   mScreenRect = ToAppUnits(aRect, AppUnitsPerCSSPixel());
 
+  if (nsIFrame* anchorFrame = GetAnchorFrame()) {
+    if (nsPresContext* rootPresContext = PresContext()->GetRootPresContext()) {
+      mScreenRect = ComputeAnchorRect(rootPresContext, anchorFrame);
+    }
+  }
+
   
   
   
