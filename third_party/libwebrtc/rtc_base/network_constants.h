@@ -33,6 +33,24 @@ constexpr uint16_t kNetworkCostMin = 0;
 constexpr uint16_t kNetworkCostVpn = 1;
 
 
+
+
+
+
+
+constexpr uint16_t kNetworkCostSlice = -2;
+
+
+constexpr uint16_t kNetworkCostCellular5GSlice =  
+    kNetworkCostCellular5G + kNetworkCostSlice;
+constexpr uint16_t kNetworkCostCellular5GVpnSlice =  
+    kNetworkCostCellular5G + kNetworkCostVpn + kNetworkCostSlice;
+constexpr uint16_t kNetworkCostCellularSlice =  
+    kNetworkCostCellular + kNetworkCostSlice;
+constexpr uint16_t kNetworkCostCellularVpnSlice =  
+    kNetworkCostCellular + kNetworkCostVpn + kNetworkCostSlice;
+
+
 constexpr uint16_t kNetworkCostHigh = kNetworkCostCellular;
 
 enum AdapterType {
@@ -69,36 +87,5 @@ constexpr AdapterType kAllAdapterTypes[] = {
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace rtc {
-using ::webrtc::ADAPTER_TYPE_ANY;
-using ::webrtc::ADAPTER_TYPE_CELLULAR;
-using ::webrtc::ADAPTER_TYPE_CELLULAR_2G;
-using ::webrtc::ADAPTER_TYPE_CELLULAR_3G;
-using ::webrtc::ADAPTER_TYPE_CELLULAR_4G;
-using ::webrtc::ADAPTER_TYPE_CELLULAR_5G;
-using ::webrtc::ADAPTER_TYPE_ETHERNET;
-using ::webrtc::ADAPTER_TYPE_LOOPBACK;
-using ::webrtc::ADAPTER_TYPE_UNKNOWN;
-using ::webrtc::ADAPTER_TYPE_VPN;
-using ::webrtc::ADAPTER_TYPE_WIFI;
-using ::webrtc::AdapterType;
-using ::webrtc::AdapterTypeToString;
-using ::webrtc::kAllAdapterTypes;
-using ::webrtc::kNetworkCostCellular;
-using ::webrtc::kNetworkCostCellular2G;
-using ::webrtc::kNetworkCostCellular3G;
-using ::webrtc::kNetworkCostCellular4G;
-using ::webrtc::kNetworkCostCellular5G;
-using ::webrtc::kNetworkCostHigh;
-using ::webrtc::kNetworkCostLow;
-using ::webrtc::kNetworkCostMax;
-using ::webrtc::kNetworkCostMin;
-using ::webrtc::kNetworkCostUnknown;
-using ::webrtc::kNetworkCostVpn;
-}  
-#endif  
 
 #endif  
