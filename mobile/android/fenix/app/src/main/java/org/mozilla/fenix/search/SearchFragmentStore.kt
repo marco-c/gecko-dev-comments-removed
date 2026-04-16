@@ -152,6 +152,8 @@ sealed class SearchEngineSource {
  * in the AwesomeBar.
  * @property showSportsSuggestions Whether or not to show the optimized search suggestion sports cards
  * in the AwesomeBar.
+ * @property showFlightsSuggestions Whether or not to show the optimized search suggestion flight cards
+ * in the AwesomeBar.
  * @property showTrendingSearches Whether the setting for showing trending searches is enabled or disabled.
  * @property showRecentSearches Whether the setting for showing recent searches is enabled or disabled.
  * @property showQrButton Whether or not to show the QR button.
@@ -190,6 +192,7 @@ data class SearchFragmentState(
     val showNonSponsoredSuggestions: Boolean,
     val showStocksSuggestions: Boolean,
     val showSportsSuggestions: Boolean,
+    val showFlightsSuggestions: Boolean,
     val showTrendingSearches: Boolean,
     val showRecentSearches: Boolean,
     val showQrButton: Boolean,
@@ -235,6 +238,7 @@ data class SearchFragmentState(
             showNonSponsoredSuggestions = false,
             showStocksSuggestions = false,
             showSportsSuggestions = false,
+            showFlightsSuggestions = false,
             showTrendingSearches = false,
             showRecentSearches = false,
             showQrButton = false,
@@ -306,11 +310,15 @@ fun createInitialSearchFragmentState(
                 settings.shouldShowSearchOptimizationStockCard,
         showSportsSuggestions = shouldShowCardSuggestions(settings) &&
                 settings.shouldShowSearchOptimizationSportCard,
+        showFlightsSuggestions = shouldShowCardSuggestions(settings) &&
+                settings.shouldShowSearchOptimizationFlightCard,
         showTrendingSearches = shouldShowTrendingSearchSuggestions(
             browsingMode = browsingMode,
             settings = settings,
             isTrendingSuggestionSupported =
-            components.core.store.state.search.selectedOrDefaultSearchEngine?.trendingUrl != null,
+            components.core.store.state.search.selectedOrDefaultSearchEngine(
+                private = browsingMode.isPrivate,
+            )?.trendingUrl != null,
         ),
         showRecentSearches = settings.shouldShowRecentSearchSuggestions,
         showQrButton = !isAndroidAutomotiveAvailable,
@@ -425,7 +433,11 @@ sealed class SearchFragmentAction : Action {
      * Updates the local `SearchFragmentState` from the global `SearchState` in `BrowserStore`.
      * If the unified search is enabled, then search shortcuts should not be shown.
      */
-    data class UpdateSearchState(val search: SearchState, val isUnifiedSearchEnabled: Boolean) : SearchFragmentAction()
+    data class UpdateSearchState(
+        val search: SearchState,
+        val isUnifiedSearchEnabled: Boolean,
+        val isPrivate: Boolean = false,
+    ) : SearchFragmentAction()
 
     /**
      * Action indicating a suggestion was clicked.
@@ -497,6 +509,8 @@ private fun searchStateReducer(state: SearchFragmentState, action: SearchFragmen
                         action.settings.shouldShowSearchOptimizationStockCard,
                 showSportsSuggestions = shouldShowCardSuggestions(action.settings) &&
                         action.settings.shouldShowSearchOptimizationSportCard,
+                showFlightsSuggestions = shouldShowCardSuggestions(action.settings) &&
+                        action.settings.shouldShowSearchOptimizationFlightCard,
                 showAllSessionSuggestions = true,
                 showTrendingSearches = shouldShowTrendingSearchSuggestions(
                     browsingMode = action.browsingMode,
@@ -545,6 +559,7 @@ private fun searchStateReducer(state: SearchFragmentState, action: SearchFragmen
                 showNonSponsoredSuggestions = false,
                 showStocksSuggestions = false,
                 showSportsSuggestions = false,
+                showFlightsSuggestions = false,
                 showTrendingSearches = shouldShowTrendingSearchSuggestions(
                     browsingMode = action.browsingMode,
                     settings = action.settings,
@@ -571,6 +586,7 @@ private fun searchStateReducer(state: SearchFragmentState, action: SearchFragmen
                 showNonSponsoredSuggestions = false,
                 showStocksSuggestions = false,
                 showSportsSuggestions = false,
+                showFlightsSuggestions = false,
                 showTrendingSearches = false,
                 showRecentSearches = false,
             )
@@ -593,6 +609,7 @@ private fun searchStateReducer(state: SearchFragmentState, action: SearchFragmen
                 showNonSponsoredSuggestions = false,
                 showStocksSuggestions = false,
                 showSportsSuggestions = false,
+                showFlightsSuggestions = false,
                 showTrendingSearches = false,
                 showRecentSearches = false,
             )
@@ -615,6 +632,7 @@ private fun searchStateReducer(state: SearchFragmentState, action: SearchFragmen
                 showNonSponsoredSuggestions = false,
                 showStocksSuggestions = false,
                 showSportsSuggestions = false,
+                showFlightsSuggestions = false,
                 showTrendingSearches = false,
                 showRecentSearches = false,
             )
@@ -625,8 +643,11 @@ private fun searchStateReducer(state: SearchFragmentState, action: SearchFragmen
         is SearchFragmentAction.SetShowSearchSuggestions ->
             state.copy(showSearchSuggestionsFromCurrentEngine = action.show)
         is SearchFragmentAction.UpdateSearchState -> {
+            val resolvedEngine = action.search.selectedOrDefaultSearchEngine(
+                private = action.isPrivate,
+            )
             state.copy(
-                defaultEngine = action.search.selectedOrDefaultSearchEngine,
+                defaultEngine = resolvedEngine,
                 areShortcutsAvailable = action.search.searchEngines.size > 1,
                 showSearchShortcuts = !action.isUnifiedSearchEnabled &&
                     state.url.isEmpty() &&
@@ -634,7 +655,7 @@ private fun searchStateReducer(state: SearchFragmentState, action: SearchFragmen
                     action.search.searchEngines.size > 1,
                 searchEngineSource = when (state.searchEngineSource) {
                     is SearchEngineSource.Default, is SearchEngineSource.None -> {
-                        action.search.selectedOrDefaultSearchEngine?.let { SearchEngineSource.Default(it) }
+                        resolvedEngine?.let { SearchEngineSource.Default(it) }
                             ?: SearchEngineSource.None
                     }
                     else -> {
