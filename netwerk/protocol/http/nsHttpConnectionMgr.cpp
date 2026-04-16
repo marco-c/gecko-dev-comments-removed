@@ -2378,9 +2378,19 @@ void nsHttpConnectionMgr::OnMsgCancelTransaction(int32_t reason,
   
   
   
+  
+  
+  
+  RefPtr<nsAHttpTransaction> proxyTrans;
+  if (nsAHttpTransaction* proxy = trans->HappyEyeballsProxy()) {
+    proxy->Cancel(closeCode);
+    proxyTrans = proxy;
+  }
+
+  nsAHttpTransaction* transToClose = proxyTrans ? proxyTrans.get() : trans;
   RefPtr<nsAHttpConnection> conn(trans->Connection());
   if (conn && !trans->IsDone()) {
-    conn->CloseTransaction(trans, closeCode);
+    conn->CloseTransaction(transToClose, closeCode);
   } else {
     ConnectionEntry* ent = nullptr;
     if (trans->ConnectionInfo()) {
@@ -2393,7 +2403,7 @@ void nsHttpConnectionMgr::OnMsgCancelTransaction(int32_t reason,
            trans));
     }
 
-    trans->Close(closeCode);
+    transToClose->Close(closeCode);
 
     
     
@@ -2571,7 +2581,11 @@ void nsHttpConnectionMgr::OnMsgDoShiftReloadConnectionCleanup(int32_t,
 
   nsHttpConnectionInfo* ci = static_cast<nsHttpConnectionInfo*>(param);
 
+  bool preserveTRR = StaticPrefs::network_trr_preserve_on_background();
   for (const auto& entry : mCT.Values()) {
+    if (preserveTRR && entry->mConnInfo->GetIsTrrServiceChannel()) {
+      continue;
+    }
     entry->ClosePersistentConnections();
   }
 
