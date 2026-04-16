@@ -938,9 +938,10 @@ class RTC_EXPORT PeerConnectionInterface : public RefCountInterface {
   
   
   
-  virtual bool GetStats(StatsObserver* observer,
-                        MediaStreamTrackInterface* track,  
-                        StatsOutputLevel level) = 0;
+  [[deprecated]] virtual bool GetStats(
+      StatsObserver* observer,
+      MediaStreamTrackInterface* track,  
+      StatsOutputLevel level) = 0;
   
   
   

@@ -178,9 +178,9 @@ class PeerConnection : public PeerConnectionInternal,
       const std::string& label,
       const DataChannelInit* config) override;
   
-  bool GetStats(StatsObserver* observer,
-                MediaStreamTrackInterface* track,
-                StatsOutputLevel level) override;
+  [[deprecated]] bool GetStats(StatsObserver* observer,
+                               MediaStreamTrackInterface* track,
+                               StatsOutputLevel level) override;
   
   void GetStats(RTCStatsCollectorCallback* callback) override;
   void GetStats(scoped_refptr<RtpSenderInterface> selector,
