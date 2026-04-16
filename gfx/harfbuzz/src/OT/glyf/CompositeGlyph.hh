@@ -33,7 +33,7 @@ struct CompositeGlyphRecord
   };
 
   public:
-  unsigned int get_size () const
+  size_t get_size () const
   {
     unsigned int size = min_size;
     
