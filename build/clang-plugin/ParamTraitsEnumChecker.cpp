@@ -8,7 +8,7 @@
 void ParamTraitsEnumChecker::registerMatchers(MatchFinder *AstMatcher) {
   AstMatcher->addMatcher(
       classTemplateSpecializationDecl(
-          hasName("ParamTraits"), isDefinition(),
+          hasName("ParamTraits"),
           unless(anyOf(
               
               
