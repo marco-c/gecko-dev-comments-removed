@@ -492,9 +492,6 @@ uint32_t nsPNGDecoder::ReadColorProfile(png_structp png_ptr, png_infop info_ptr,
         mInProfile = qcms_profile_create_cicp(
             primaries, ChooseTransferCharacteristics(tc));
         if (mInProfile) {
-          if (!(color_type & PNG_COLOR_MASK_COLOR)) {
-            png_set_gray_to_rgb(png_ptr);
-          }
           return qcms_profile_get_rendering_intent(mInProfile);
         }
       }
@@ -521,9 +518,7 @@ uint32_t nsPNGDecoder::ReadColorProfile(png_structp png_ptr, png_infop info_ptr,
           mismatch = true;
         }
       } else {
-        if (profileSpace == icSigRgbData) {
-          png_set_gray_to_rgb(png_ptr);
-        } else if (profileSpace != icSigGrayData) {
+        if (profileSpace != icSigRgbData && profileSpace != icSigGrayData) {
           mismatch = true;
         }
       }
@@ -542,7 +537,6 @@ uint32_t nsPNGDecoder::ReadColorProfile(png_structp png_ptr, png_infop info_ptr,
     *sRGBTag = true;
 
     int fileIntent;
-    png_set_gray_to_rgb(png_ptr);
     png_get_sRGB(png_ptr, info_ptr, &fileIntent);
     uint32_t map[] = {QCMS_INTENT_PERCEPTUAL, QCMS_INTENT_RELATIVE_COLORIMETRIC,
                       QCMS_INTENT_SATURATION,
@@ -567,10 +561,6 @@ uint32_t nsPNGDecoder::ReadColorProfile(png_structp png_ptr, png_infop info_ptr,
 
     mInProfile = qcms_profile_create_rgb_with_gamma(whitePoint, primaries,
                                                     1.0 / gammaOfFile);
-
-    if (mInProfile) {
-      png_set_gray_to_rgb(png_ptr);
-    }
   }
 
   return QCMS_INTENT_PERCEPTUAL;  
@@ -656,9 +646,9 @@ void nsPNGDecoder::info_callback(png_structp png_ptr, png_infop info_ptr) {
   
   
   
-  uint32_t intent = -1;
-  bool sRGBTag = false;
   if (!decoder->IsMetadataDecode()) {
+    uint32_t intent = -1;
+    bool sRGBTag = false;
     if (decoder->mCMSMode != CMSMode::Off) {
       intent = gfxPlatform::GetRenderingIntent();
       uint32_t pIntent =
@@ -667,15 +657,74 @@ void nsPNGDecoder::info_callback(png_structp png_ptr, png_infop info_ptr) {
       if (intent == uint32_t(-1)) {
         intent = pIntent;
       }
-    }
-    const bool hasColorInfo = decoder->mInProfile || sRGBTag;
-    if (!hasColorInfo || !decoder->GetCMSOutputProfile()) {
-      png_set_gray_to_rgb(png_ptr);
 
       
-      if (decoder->mCMSMode != CMSMode::Off) {
-        PNGDoGammaCorrection(png_ptr, info_ptr);
+      
+      
+      
+      const bool willHaveAlpha =
+          (color_type & PNG_COLOR_MASK_ALPHA) || num_trans != 0;
+
+      
+      
+      
+      
+      
+      
+      if (decoder->mInProfile && decoder->GetCMSOutputProfile()) {
+        uint32_t profileSpace =
+            qcms_profile_get_color_space(decoder->mInProfile);
+        decoder->mUsePipeTransform = profileSpace != icSigGrayData;
+
+        qcms_data_type inType, outType;
+        if (decoder->mUsePipeTransform) {
+          
+          
+          
+          
+          
+          
+          
+          
+          if (willHaveAlpha) {
+            inType = QCMS_DATA_RGBA_8;
+            outType = QCMS_DATA_RGBA_8;
+          } else {
+            inType = gfxPlatform::GetCMSOSRGBAType();
+            outType = inType;
+          }
+        } else {
+          
+          inType = willHaveAlpha ? QCMS_DATA_GRAYA_8 : QCMS_DATA_GRAY_8;
+          outType = gfxPlatform::GetCMSOSRGBAType();
+        }
+        decoder->mTransform = qcms_transform_create(
+            decoder->mInProfile, inType, decoder->GetCMSOutputProfile(),
+            outType, (qcms_intent)intent);
+      } else if ((sRGBTag && decoder->mCMSMode == CMSMode::TaggedOnly) ||
+                 decoder->mCMSMode == CMSMode::All) {
+        
+        decoder->mUsePipeTransform = true;
+        if (willHaveAlpha) {
+          decoder->mTransform =
+              decoder->GetCMSsRGBTransform(SurfaceFormat::R8G8B8A8);
+        } else {
+          decoder->mTransform =
+              decoder->GetCMSsRGBTransform(SurfaceFormat::OS_RGBA);
+        }
       }
+    }
+
+    
+    
+    if (!decoder->mTransform || decoder->mUsePipeTransform) {
+      png_set_gray_to_rgb(png_ptr);
+    }
+
+    
+    
+    if (!decoder->mTransform && decoder->mCMSMode != CMSMode::Off) {
+      PNGDoGammaCorrection(png_ptr, info_ptr);
     }
   }
 
@@ -715,7 +764,6 @@ void nsPNGDecoder::info_callback(png_structp png_ptr, png_infop info_ptr) {
   }
 #endif
 
-  auto transparency = decoder->GetTransparencyType(frameRect);
   if (decoder->IsMetadataDecode()) {
     
     
@@ -724,59 +772,12 @@ void nsPNGDecoder::info_callback(png_structp png_ptr, png_infop info_ptr) {
     
     
     
-    decoder->PostHasTransparencyIfNeeded(transparency);
+    decoder->PostHasTransparencyIfNeeded(
+        decoder->GetTransparencyType(frameRect));
 
     
     
     return decoder->DoTerminate(png_ptr, TerminalState::SUCCESS);
-  }
-
-  if (decoder->mInProfile && decoder->GetCMSOutputProfile()) {
-    qcms_data_type inType;
-    qcms_data_type outType;
-
-    uint32_t profileSpace = qcms_profile_get_color_space(decoder->mInProfile);
-    decoder->mUsePipeTransform = profileSpace != icSigGrayData;
-    if (decoder->mUsePipeTransform) {
-      
-      
-      
-      
-      
-      
-      
-      if (transparency == TransparencyType::eAlpha) {
-        inType = QCMS_DATA_RGBA_8;
-        outType = QCMS_DATA_RGBA_8;
-      } else {
-        inType = gfxPlatform::GetCMSOSRGBAType();
-        outType = inType;
-      }
-    } else {
-      
-      if (color_type & PNG_COLOR_MASK_ALPHA) {
-        inType = QCMS_DATA_GRAYA_8;
-        outType = gfxPlatform::GetCMSOSRGBAType();
-      } else {
-        inType = QCMS_DATA_GRAY_8;
-        outType = gfxPlatform::GetCMSOSRGBAType();
-      }
-    }
-
-    decoder->mTransform = qcms_transform_create(decoder->mInProfile, inType,
-                                                decoder->GetCMSOutputProfile(),
-                                                outType, (qcms_intent)intent);
-  } else if ((sRGBTag && decoder->mCMSMode == CMSMode::TaggedOnly) ||
-             decoder->mCMSMode == CMSMode::All) {
-    
-    decoder->mUsePipeTransform = true;
-    if (transparency == TransparencyType::eAlpha) {
-      decoder->mTransform =
-          decoder->GetCMSsRGBTransform(SurfaceFormat::R8G8B8A8);
-    } else {
-      decoder->mTransform =
-          decoder->GetCMSsRGBTransform(SurfaceFormat::OS_RGBA);
-    }
   }
 
 #ifdef PNG_APNG_SUPPORTED
