@@ -54,8 +54,11 @@ class RTCPSender final {
     
     bool audio = false;
     
-    
     uint32_t local_media_ssrc = 0;
+    
+    
+    absl::AnyInvocable<uint32_t() const> recv_ssrc_callback;
+    
 
     
     
@@ -175,6 +178,8 @@ class RTCPSender final {
   class RtcpContext;
   class PacketSender;
 
+  uint32_t ComputeSsrc() const RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_rtcp_sender_);
+
   std::optional<int32_t> ComputeCompoundRTCPPacket(
       const FeedbackState& feedback_state,
       RTCPPacketType packet_type,
@@ -224,12 +229,19 @@ class RTCPSender final {
       RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_rtcp_sender_);
 
   const Environment env_;
+  const bool is_rtp_sender_;
   const bool audio_;
   
   
   
   
-  uint32_t ssrc_ RTC_GUARDED_BY(mutex_rtcp_sender_);
+  
+  
+  uint32_t send_ssrc_ RTC_GUARDED_BY(mutex_rtcp_sender_);
+  
+  
+  
+  absl::AnyInvocable<uint32_t() const> recv_ssrc_callback_;
   Random random_ RTC_GUARDED_BY(mutex_rtcp_sender_);
   RtcpMode method_ RTC_GUARDED_BY(mutex_rtcp_sender_);
 

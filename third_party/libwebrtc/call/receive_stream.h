@@ -34,11 +34,10 @@ class ReceiveStreamInterface {
     
     
     uint32_t remote_ssrc = 0;
-
     
     
     
-    uint32_t local_ssrc = 0;
+    [[deprecated("No longer used")]] uint32_t local_ssrc = 0;
   };
 
  protected:

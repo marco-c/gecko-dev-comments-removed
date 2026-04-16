@@ -36,9 +36,6 @@ VideoReceiveStreamInterface::Config CreateVideoReceiveStreamConfig(
   
   
   config.rtp.nack.rtp_history_ms = 1000;
-  
-  
-  config.rtp.local_ssrc = ssrc + 1;
   return config;
 }
 

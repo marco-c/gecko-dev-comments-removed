@@ -356,8 +356,6 @@ class WebRtcVoiceReceiveChannel final
   void ResetUnsignaledRecvStream() override;
   std::optional<uint32_t> GetUnsignaledSsrc() const override;
 
-  void ChooseReceiverReportSsrc(const std::set<uint32_t>& choices) override;
-
   void OnDemuxerCriteriaUpdatePending() override;
   void OnDemuxerCriteriaUpdateComplete() override;
 
@@ -457,11 +455,6 @@ class WebRtcVoiceReceiveChannel final
   
   std::unique_ptr<AudioSinkInterface> default_sink_
       RTC_GUARDED_BY(worker_thread_);
-  
-  
-  
-  uint32_t receiver_reports_ssrc_ RTC_GUARDED_BY(worker_thread_) = 0xFA17FA17u;
-
   std::string mid_ RTC_GUARDED_BY(worker_thread_);
 
   class WebRtcAudioReceiveStream;

@@ -90,6 +90,10 @@ class PacketRouter : public PacingController::PacketSender {
   void SendCombinedRtcpPacket(
       std::vector<std::unique_ptr<rtcp::RtcpPacket>> packets);
 
+  
+  
+  std::optional<uint32_t> SsrcOfFirstSender();
+
  private:
   void AddRembModuleCandidate(RtcpFeedbackSenderInterface* candidate_module,
                               bool media_sender);

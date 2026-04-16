@@ -551,10 +551,6 @@ class WebRtcVideoReceiveChannel : public MediaChannelUtil,
 
   
   
-  void ChooseReceiverReportSsrc(const std::set<uint32_t>& choices) override;
-
-  
-  
   
   
   void SetFrameDecryptor(
@@ -612,10 +608,6 @@ class WebRtcVideoReceiveChannel : public MediaChannelUtil,
 
   
   
-  void SetReceiverReportSsrc(uint32_t ssrc) RTC_RUN_ON(&thread_checker_);
-
-  
-  
   class WebRtcVideoReceiveStream : public VideoSinkInterface<VideoFrame> {
    public:
     WebRtcVideoReceiveStream(
@@ -669,7 +661,6 @@ class WebRtcVideoReceiveChannel : public MediaChannelUtil,
     void SetDepacketizerToDecoderFrameTransformer(
         scoped_refptr<FrameTransformerInterface> frame_transformer);
 
-    void SetLocalSsrc(uint32_t local_ssrc);
     void UpdateRtxSsrc(uint32_t ssrc);
     void StartReceiveStream();
     void StopReceiveStream();
@@ -734,7 +725,6 @@ class WebRtcVideoReceiveChannel : public MediaChannelUtil,
       SequenceChecker::kDetached};
   RTC_NO_UNIQUE_ADDRESS SequenceChecker thread_checker_;
 
-  uint32_t rtcp_receiver_report_ssrc_ RTC_GUARDED_BY(thread_checker_);
   bool receiving_ RTC_GUARDED_BY(&thread_checker_);
   Call* const call_;
 

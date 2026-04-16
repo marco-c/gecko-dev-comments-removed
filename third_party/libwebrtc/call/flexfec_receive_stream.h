@@ -49,9 +49,6 @@ class FlexfecReceiveStream : public RtpPacketSinkInterface,
     uint32_t remote_ssrc = 0;
 
     
-    uint32_t local_ssrc = 0;
-
-    
     
     
     

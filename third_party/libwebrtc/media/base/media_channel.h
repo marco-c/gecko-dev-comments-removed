@@ -266,8 +266,6 @@ class MediaReceiveChannelInterface {
   
   virtual std::optional<uint32_t> GetUnsignaledSsrc() const = 0;
   
-  virtual void ChooseReceiverReportSsrc(const std::set<uint32_t>& choices) = 0;
-  
   
   
   
