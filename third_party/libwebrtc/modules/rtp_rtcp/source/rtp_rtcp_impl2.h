@@ -57,6 +57,22 @@ namespace webrtc {
 struct PacedPacketInfo;
 struct RTPVideoHeader;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class ModuleRtpRtcpImpl2 final : public RtpRtcpInterface,
                                  public RTCPReceiver::ModuleRtpRtcp {
  public:
@@ -343,7 +359,7 @@ class ModuleRtpRtcpImpl2 final : public RtpRtcpInterface,
   
   absl::AnyInvocable<uint32_t() const> recv_ssrc_callback_;
 
-  std::unique_ptr<RtpSenderContext> rtp_sender_;
+  const std::unique_ptr<RtpSenderContext> rtp_sender_;
   RTCPSender rtcp_sender_;
   RTCPReceiver rtcp_receiver_;
 
