@@ -1075,6 +1075,10 @@ bool Instance::iterElemsFunctions(const ModuleElemSegment& seg,
         if (!codeMeta().funcImportsAreJS && fun->isWasm()) {
           
           
+          MOZ_ASSERT(!import.isFunctionCallBind);
+
+          
+          
           
           
           
@@ -2437,6 +2441,9 @@ JSObject* MaybeOptimizeFunctionCallBind(const wasm::FuncType& funcType,
     return nullptr;
   }
 
+  
+  
+  
   if (boundThis.toObject().is<JSFunction>() &&
       boundThis.toObject().as<JSFunction>().isWasm()) {
     return nullptr;
@@ -3875,6 +3882,9 @@ bool Instance::getExportedFunction(JSContext* cx, uint32_t funcIndex,
     if (import.callable->is<JSFunction>()) {
       JSFunction* fun = &import.callable->as<JSFunction>();
       if (!codeMeta().funcImportsAreJS && fun->isWasm()) {
+        
+        
+        MOZ_ASSERT(!import.isFunctionCallBind);
         instanceData.func = fun;
         result.set(fun);
         return true;
