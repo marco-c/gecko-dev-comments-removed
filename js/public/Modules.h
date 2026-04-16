@@ -135,7 +135,8 @@ extern JS_PUBLIC_API bool LoadRequestedModules(
 
 
 
-using ModuleMetadataHook = bool (*)(JSContext* cx, Handle<Value> privateValue,
+using ModuleMetadataHook = bool (*)(JSContext* cx,
+                                    Handle<JSObject*> moduleRecord,
                                     Handle<JSObject*> metaObject);
 
 

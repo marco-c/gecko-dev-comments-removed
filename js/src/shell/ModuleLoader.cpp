@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "shell/ModuleLoader.h"
 
 #include "mozilla/TextUtils.h"
@@ -81,10 +79,10 @@ bool ModuleLoader::LoadImportedModule(JSContext* cx,
 
 
 bool ModuleLoader::GetImportMetaProperties(JSContext* cx,
-                                           JS::HandleValue privateValue,
+                                           JS::HandleObject moduleRecord,
                                            JS::HandleObject metaObject) {
   ShellContext* scx = GetShellContext(cx);
-  return scx->moduleLoader->populateImportMeta(cx, privateValue, metaObject);
+  return scx->moduleLoader->populateImportMeta(cx, moduleRecord, metaObject);
 }
 
 bool ModuleLoader::ImportMetaResolve(JSContext* cx, unsigned argc, Value* vp) {
@@ -286,11 +284,12 @@ bool ModuleLoader::loadImportedModule(JSContext* cx,
 }
 
 bool ModuleLoader::populateImportMeta(JSContext* cx,
-                                      JS::HandleValue privateValue,
+                                      JS::HandleObject moduleRecord,
                                       JS::HandleObject metaObject) {
   Rooted<JSLinearString*> path(cx);
-  if (!privateValue.isUndefined()) {
-    if (!getScriptPath(cx, privateValue, &path)) {
+  Rooted<JS::Value> modulePrivate(cx, JS::GetModulePrivate(moduleRecord));
+  if (!modulePrivate.isUndefined()) {
+    if (!getScriptPath(cx, modulePrivate, &path)) {
       return false;
     }
   }
@@ -316,7 +315,7 @@ bool ModuleLoader::populateImportMeta(JSContext* cx,
 
   RootedObject resolveFuncObj(cx, JS_GetFunctionObject(resolveFunc));
   js::SetFunctionNativeReserved(resolveFuncObj, ModulePrivateSlot,
-                                privateValue);
+                                modulePrivate);
 
   return true;
 }

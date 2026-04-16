@@ -432,12 +432,12 @@ JSString* ModuleLoaderBase::ImportMetaResolveImpl(
 
 
 bool ModuleLoaderBase::HostPopulateImportMeta(JSContext* aCx,
-                                              Handle<Value> aReferencingPrivate,
+                                              Handle<JSObject*> aModuleRecord,
                                               Handle<JSObject*> aMetaObject) {
-  RefPtr<ModuleScript> script =
-      static_cast<ModuleScript*>(aReferencingPrivate.toPrivate());
+  RefPtr<ModuleScript> script = static_cast<ModuleScript*>(
+      JS::GetModulePrivate(aModuleRecord).toPrivate());
+  MOZ_ASSERT(script->ModuleRecord() == aModuleRecord);
   MOZ_ASSERT(script->IsModuleScript());
-  MOZ_ASSERT(GetModulePrivate(script->ModuleRecord()) == aReferencingPrivate);
 
   nsAutoCString url;
   MOZ_DIAGNOSTIC_ASSERT(script->BaseURL());
@@ -470,10 +470,9 @@ bool ModuleLoaderBase::HostPopulateImportMeta(JSContext* aCx,
   
   
   RootedObject resolveFuncObj(aCx, JS_GetFunctionObject(resolveFunc));
-  RootedObject moduleRecord(aCx, script->ModuleRecord());
   js::SetFunctionNativeReserved(
       resolveFuncObj, static_cast<size_t>(ImportMetaSlots::ModuleRecordSlot),
-      JS::ObjectValue(*moduleRecord));
+      JS::ObjectValue(*aModuleRecord));
 
   return true;
 }
