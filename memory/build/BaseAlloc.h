@@ -7,8 +7,10 @@
 
 #include "Constants.h"
 #include "Mutex.h"
+#include "Utils.h"
 
 #include "mozilla/DoublyLinkedList.h"
+#include "mozilla/fallible.h"
 
 
 typedef uint32_t base_alloc_size_t;
@@ -91,38 +93,33 @@ class BaseAlloc {
 extern BaseAlloc sBaseAlloc;
 
 
-template <typename T>
-struct TypedBaseAlloc {
-  static T* sFirstFree;
 
-  static size_t size_of() { return sizeof(T); }
-
-  static T* alloc() {
-    {
-      MutexAutoLock lock(sBaseAlloc.mMutex);
-      T* ret = sFirstFree;
-      if (ret) {
-        sFirstFree = *(T**)ret;
-        return ret;
-      }
+struct BaseAllocClass {
+  void* operator new(size_t aSize) noexcept {
+    void* ret = sBaseAlloc.alloc(aSize);
+    if (!ret) {
+      _malloc_message(_getprogname(), ": (malloc) Out of memory\n");
+      MOZ_CRASH();
     }
-
-    return (T*)sBaseAlloc.alloc(size_of());
+    return ret;
+  }
+  void* operator new[](size_t aSize) noexcept {
+    void* ret = sBaseAlloc.alloc(aSize);
+    if (!ret) {
+      _malloc_message(_getprogname(), ": (malloc) Out of memory\n");
+      MOZ_CRASH();
+    }
+    return ret;
+  }
+  void* operator new(size_t aCount, const mozilla::fallible_t&) noexcept {
+    return sBaseAlloc.alloc(aCount);
+  }
+  void* operator new[](size_t aCount, const mozilla::fallible_t&) noexcept {
+    return sBaseAlloc.alloc(aCount);
   }
 
-  static void dealloc(T* aNode) {
-    MutexAutoLock lock(sBaseAlloc.mMutex);
-    *(T**)aNode = sFirstFree;
-    sFirstFree = aNode;
-  }
-};
-
-template <typename T>
-T* TypedBaseAlloc<T>::sFirstFree = nullptr;
-
-template <typename T>
-struct BaseAllocFreePolicy {
-  void operator()(T* aPtr) { TypedBaseAlloc<T>::dealloc(aPtr); }
+  void operator delete(void* aPtr) { sBaseAlloc.free(aPtr); }
+  void operator delete[](void* aPtr) { sBaseAlloc.free(aPtr); }
 };
 
 #endif 
