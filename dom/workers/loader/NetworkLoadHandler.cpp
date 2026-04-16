@@ -413,7 +413,7 @@ nsresult NetworkLoadHandler::PrepareForRequest(nsIRequest* aRequest) {
   mozilla::dom::RequestOrUTF8String request;
 
   MOZ_ASSERT(!loadContext->mFullURL.IsEmpty());
-  request.SetAsUTF8String().ShareOrDependUpon(loadContext->mFullURL);
+  request.SetAsUTF8String() = loadContext->mFullURL;
 
   
   

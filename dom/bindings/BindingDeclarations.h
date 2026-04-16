@@ -300,15 +300,6 @@ class Optional<OwningNonNull<T>> : public Optional_base<T, OwningNonNull<T>> {
 };
 
 
-
-
-
-
-namespace binding_detail {
-template <typename CharT>
-struct FakeString;
-}  
-
 template <typename CharT>
 class Optional<nsTSubstring<CharT>> {
   using AString = nsTSubstring<CharT>;
@@ -321,13 +312,6 @@ class Optional<nsTSubstring<CharT>> {
   void operator=(const AString* str) {
     MOZ_ASSERT(str);
     mStr = str;
-  }
-
-  
-  
-  void operator=(const binding_detail::FakeString<CharT>* str) {
-    MOZ_ASSERT(str);
-    mStr = reinterpret_cast<const nsTString<CharT>*>(str);
   }
 
   const AString& Value() const {

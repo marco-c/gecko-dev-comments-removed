@@ -562,7 +562,7 @@ class CompareManager final : public PromiseNativeHandler {
         new Response(aCache->GetGlobalObject(), std::move(ir), nullptr);
 
     RequestOrUTF8String request;
-    request.SetAsUTF8String().ShareOrDependUpon(aCN->URL());
+    request.SetAsUTF8String() = aCN->URL();
 
     
     
@@ -1136,7 +1136,7 @@ nsresult CompareCache::Initialize(Cache* const aCache, const nsACString& aURL) {
   jsapi.Init();
 
   RequestOrUTF8String request;
-  request.SetAsUTF8String().ShareOrDependUpon(aURL);
+  request.SetAsUTF8String() = aURL;
   ErrorResult error;
   CacheQueryOptions params;
   RefPtr<Promise> promise = aCache->Match(jsapi.cx(), request, params, error);
