@@ -2,7 +2,7 @@
 
 
 
-use api::{BuiltDisplayList, DisplayListWithCache, ColorF, DynamicProperties, Epoch, FontRenderMode};
+use api::{BuiltDisplayList, ColorF, DynamicProperties, Epoch, FontRenderMode};
 use api::{PipelineId, PropertyBinding, PropertyBindingId, PropertyValue, MixBlendMode, StackingContext};
 use api::units::*;
 use api::channel::Sender;
@@ -174,7 +174,7 @@ impl SceneProperties {
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 #[derive(Clone)]
 pub struct ScenePipeline {
-    pub display_list: DisplayListWithCache,
+    pub display_list: BuiltDisplayList,
 }
 
 
@@ -206,16 +206,6 @@ impl Scene {
         epoch: Epoch,
         display_list: BuiltDisplayList,
     ) {
-        
-        
-        let display_list = match self.pipelines.remove(&pipeline_id) {
-            Some(mut pipeline) => {
-                pipeline.display_list.update(display_list);
-                pipeline.display_list
-            }
-            None => DisplayListWithCache::new_from_list(display_list)
-        };
-
         let new_pipeline = ScenePipeline {
             display_list,
         };
@@ -334,7 +324,7 @@ impl BuiltScene {
                 max_shared_surface_size: 2048,
                 enable_dithering: false,
                 precise_linear_gradients: false,
-                use_quad_box_shadow: false,
+                use_quad_box_shadow: true,
             },
         }
     }
