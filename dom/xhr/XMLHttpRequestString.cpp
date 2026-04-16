@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "XMLHttpRequestString.h"
 
 #include "js/String.h"
@@ -45,7 +43,7 @@ class XMLHttpRequestStringBuffer final {
 
   [[nodiscard]] bool GetAsString(nsAString& aString) {
     MutexAutoLock lock(mMutex);
-    return aString.Assign(mData, mozilla::fallible);
+    return aString.Assign(mData, fallible);
   }
 
   size_t SizeOfThis(MallocSizeOf aMallocSizeOf) {
@@ -57,21 +55,23 @@ class XMLHttpRequestStringBuffer final {
     MutexAutoLock lock(mMutex);
     MOZ_ASSERT(aLength <= mData.Length());
 
-    
-    
     if (StringBuffer* buf = mData.GetStringBuffer()) {
       
       
       
-      aString.SetStringBuffer(buf, aLength);
+      
+      
+      
+      
+      
+      aString.Assign(buf, aLength);
       return true;
     }
 
     
     
     MOZ_ASSERT(mData.IsEmpty());
-    return aString.AsAString().Assign(mData.BeginReading(), aLength,
-                                      mozilla::fallible);
+    return aString.Assign(mData, fallible);
   }
 
   void CreateSnapshot(XMLHttpRequestStringSnapshot& aSnapshot) {

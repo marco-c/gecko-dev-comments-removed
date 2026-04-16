@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_HTMLSelectElement_h
 #define mozilla_dom_HTMLSelectElement_h
 
@@ -12,8 +10,6 @@
 #include "mozilla/dom/ConstraintValidation.h"
 #include "mozilla/dom/HTMLFormElement.h"
 #include "mozilla/dom/HTMLOptionsCollection.h"
-#include "nsCOMPtr.h"
-#include "nsCheapSets.h"
 #include "nsContentUtils.h"
 #include "nsError.h"
 #include "nsGenericHTMLElement.h"
@@ -190,7 +186,7 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
 
   int32_t SelectedIndex() const { return mSelectedIndex; }
   void SetSelectedIndex(int32_t aIdx) { SetSelectedIndexInternal(aIdx, true); }
-  void GetValue(DOMString& aValue) const;
+  void GetValue(nsAString& aValue) const;
   void SetValue(const nsAString& aValue);
 
   
@@ -206,6 +202,10 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
 
   
   void GetEventTargetParent(EventChainPreVisitor& aVisitor) override;
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
+  nsresult PostHandleEvent(EventChainPostVisitor& aVisitor) override;
+
+  HTMLOptionElement* GetCurrentOption() const;
 
   bool IsHTMLFocusable(IsFocusableFlags, bool* aIsFocusable,
                        int32_t* aTabIndex) override;
@@ -354,10 +354,10 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
   
   
   Text* GetSelectedContentText() const;
-  void SelectedContentTextMightHaveChanged();
+  void SelectedContentTextMightHaveChanged(bool aNotify = true);
 
  protected:
-  virtual ~HTMLSelectElement() = default;
+  virtual ~HTMLSelectElement();
 
   friend class SafeOptionListMutation;
 
@@ -395,9 +395,8 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
 
 
 
-
-  void OnOptionSelected(nsListControlFrame* aSelectFrame, int32_t aIndex,
-                        bool aSelected, bool aChangeOptionState, bool aNotify);
+  void OnOptionSelected(int32_t aIndex, bool aSelected, bool aChangeOptionState,
+                        bool aNotify);
   
 
 
@@ -488,6 +487,29 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
 
   void SetUserInteracted(bool) final;
 
+  MOZ_CAN_RUN_SCRIPT nsresult HandleKeyDown(EventChainPostVisitor&);
+  MOZ_CAN_RUN_SCRIPT nsresult HandleKeyPress(EventChainPostVisitor&);
+  MOZ_CAN_RUN_SCRIPT nsresult HandleMouseDown(EventChainPostVisitor&);
+  MOZ_CAN_RUN_SCRIPT nsresult HandleMouseUp(EventChainPostVisitor&);
+  MOZ_CAN_RUN_SCRIPT nsresult HandleMouseMove(EventChainPostVisitor&);
+
+  void AdjustIndexForDisabledOpt(int32_t aStartIndex, int32_t& aNewIndex,
+                                 int32_t aNumOptions, int32_t aDoAdjustInc,
+                                 int32_t aDoAdjustIncNext);
+  bool IsOptionInteractivelySelectable(uint32_t aIndex) const;
+  int32_t GetEndSelectionIndex() const;
+  int32_t ItemsPerPage() const;
+
+  MOZ_CAN_RUN_SCRIPT
+  void PostHandleKeyEvent(int32_t aNewIndex, uint32_t aCharCode, bool aIsShift,
+                          bool aIsControlOrMeta);
+
+  HTMLOptionElement* GetNonDisabledOptionFrom(
+      int32_t aFromIndex, int32_t* aFoundIndex = nullptr) const;
+
+  MOZ_CAN_RUN_SCRIPT void FireDropDownEvent(bool aShow,
+                                            bool aIsSourceTouchEvent);
+
   
   RefPtr<HTMLOptionsCollection> mOptions;
   nsContentUtils::AutocompleteAttrState mAutocompleteAttrState;
@@ -495,21 +517,23 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
   
   bool mIsDoneAddingChildren : 1;
   
-  bool mDisabledChanged : 1;
+  bool mDisabledChanged : 1 = false;
   
 
 
-  bool mMutating : 1;
+  bool mMutating : 1 = false;
   
 
 
   bool mInhibitStateRestoration : 1;
   
-  bool mUserInteracted : 1;
+  bool mUserInteracted : 1 = false;
   
-  bool mDefaultSelectionSet : 1;
+  bool mDefaultSelectionSet : 1 = false;
   
-  bool mIsOpenInParentProcess : 1;
+  bool mIsOpenInParentProcess : 1 = false;
+  bool mButtonDown : 1 = false;
+  bool mControlSelectMode : 1 = false;
 
   
   uint32_t mNonOptionChildren;

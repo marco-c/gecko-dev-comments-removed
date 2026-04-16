@@ -39,7 +39,9 @@ struct MOZ_GSL_OWNER FakeString {
         mInlineCapacity(kInlineCapacity - 1) {}
 
   ~FakeString() {
-    if (mDataFlags & DataFlags::REFCOUNTED) {
+    MOZ_ASSERT_IF(mDataFlags & DataFlags::OWNED,
+                  mDataFlags & DataFlags::STRINGBUFFER);
+    if (mDataFlags & DataFlags::OWNED) {
       MOZ_ASSERT(mDataInitialized);
       StringBuffer::FromData(mData)->Release();
     }
@@ -56,7 +58,7 @@ struct MOZ_GSL_OWNER FakeString {
         mDataFlags &= ~DataFlags::TERMINATED;
       }
     } else {
-      AssignFromStringBuffer(sharedBuffer.forget(), aString.Length());
+      Assign(sharedBuffer.forget(), aString.Length());
     }
   }
 
@@ -106,7 +108,7 @@ struct MOZ_GSL_OWNER FakeString {
         return false;
       }
 
-      AssignFromStringBuffer(buf.forget(), aLength);
+      Assign(buf.forget(), aLength);
     }
 
     MOZ_ASSERT(mDataInitialized);
@@ -123,7 +125,9 @@ struct MOZ_GSL_OWNER FakeString {
     }
 
     RefPtr<StringBuffer> buffer;
-    if (mDataFlags & DataFlags::REFCOUNTED) {
+    MOZ_ASSERT_IF(mDataFlags & DataFlags::OWNED,
+                  mDataFlags & DataFlags::STRINGBUFFER);
+    if (mDataFlags & DataFlags::OWNED) {
       
       buffer = dont_AddRef(StringBuffer::FromData(mData));
       
@@ -149,10 +153,13 @@ struct MOZ_GSL_OWNER FakeString {
     return true;
   }
 
-  void AssignFromStringBuffer(already_AddRefed<StringBuffer> aBuffer,
-                              size_t aLength) {
+  void Assign(StringBuffer* aBuffer, size_t aLength) {
+    Assign(do_AddRef(aBuffer), aLength);
+  }
+
+  void Assign(already_AddRefed<StringBuffer> aBuffer, size_t aLength) {
     InitData(static_cast<char_type*>(aBuffer.take()->Data()), aLength);
-    mDataFlags |= DataFlags::REFCOUNTED;
+    mDataFlags |= DataFlags::STRINGBUFFER | DataFlags::OWNED;
   }
 
   
@@ -210,8 +217,10 @@ struct MOZ_GSL_OWNER FakeString {
   }
 
   bool IsMutable() {
+    MOZ_ASSERT_IF(mDataFlags & DataFlags::OWNED,
+                  mDataFlags & DataFlags::STRINGBUFFER);
     return (mDataFlags & DataFlags::INLINE) ||
-           ((mDataFlags & DataFlags::REFCOUNTED) &&
+           ((mDataFlags & DataFlags::OWNED) &&
             !StringBuffer::FromData(mData)->IsReadonly());
   }
 
@@ -253,17 +262,6 @@ struct MOZ_GSL_OWNER FakeString {
     }
   };
 };
-}  
-
-namespace mozilla {
-
-template <typename CharT>
-inline void AssignFromStringBuffer(
-    StringBuffer* aBuffer, size_t aLength,
-    dom::binding_detail::FakeString<CharT>& aDest) {
-  aDest.AssignFromStringBuffer(do_AddRef(aBuffer), aLength);
-}
-
 }  
 
 #endif 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "FileSystemMocks.h"
 #include "fs/FileSystemChildFactory.h"
 #include "gtest/gtest.h"
@@ -66,9 +64,7 @@ TEST_F(TestFileSystemHandle, areFileNamesAsExpected) {
   auto GetEntryName = [](const RefPtr<FileSystemHandle>& aHandle) {
     DOMString domName;
     aHandle->GetName(domName);
-    nsString result;
-    domName.ToString(result);
-    return result;
+    return domName;
   };
 
   const nsString& dirName = GetEntryName(dirHandle);

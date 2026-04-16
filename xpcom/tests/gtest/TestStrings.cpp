@@ -531,8 +531,8 @@ TEST_F(Strings, DependentStrings) {
     auto data = tmp.Data();
     nsDependentCString foo(tmp);
     
-    EXPECT_FALSE(tmp.GetDataFlags() & DataFlags::REFCOUNTED);
-    EXPECT_FALSE(foo.GetDataFlags() & DataFlags::REFCOUNTED);
+    EXPECT_FALSE(tmp.GetDataFlags() & DataFlags::STRINGBUFFER);
+    EXPECT_FALSE(foo.GetDataFlags() & DataFlags::STRINGBUFFER);
     
     EXPECT_EQ(data, tmp.Data());
     EXPECT_EQ(data, foo.Data());
@@ -543,8 +543,8 @@ TEST_F(Strings, DependentStrings) {
     auto data = tmp.Data();
     nsDependentCString foo(std::move(tmp));
     
-    EXPECT_FALSE(tmp.GetDataFlags() & DataFlags::REFCOUNTED);
-    EXPECT_FALSE(foo.GetDataFlags() & DataFlags::REFCOUNTED);
+    EXPECT_FALSE(tmp.GetDataFlags() & DataFlags::STRINGBUFFER);
+    EXPECT_FALSE(foo.GetDataFlags() & DataFlags::STRINGBUFFER);
     
     
     EXPECT_NE(data, tmp.Data());
@@ -557,8 +557,8 @@ TEST_F(Strings, DependentStrings) {
     auto data = tmp.Data();
     nsCString foo(tmp);
     
-    EXPECT_FALSE(tmp.GetDataFlags() & DataFlags::REFCOUNTED);
-    EXPECT_TRUE(foo.GetDataFlags() & DataFlags::REFCOUNTED);
+    EXPECT_FALSE(tmp.GetDataFlags() & DataFlags::STRINGBUFFER);
+    EXPECT_TRUE(foo.GetDataFlags() & DataFlags::STRINGBUFFER);
     
     
     EXPECT_EQ(data, tmp.Data());
@@ -1303,6 +1303,109 @@ TEST_F(Strings, string_to_unsigned_integer) {
   nsresult rv;
   for (const ToUnsignedIntegerTest* t = kToUnsignedIntegerTests; t->str; ++t) {
     uint32_t result = nsAutoCString(t->str).ToUnsignedInteger(&rv, t->radix);
+    EXPECT_EQ(rv, t->rv);
+    EXPECT_EQ(result, t->result);
+  }
+}
+
+struct ToInteger64Test {
+  const char* str;
+  uint32_t radix;
+  int64_t result;
+  nsresult rv;
+};
+
+static const ToInteger64Test kToInteger64Tests[] = {
+    {"123", 10, 123, NS_OK},
+    {"7b", 16, 123, NS_OK},
+
+    
+    {"9223372036854775807", 10, INT64_C(9223372036854775807), NS_OK},
+    
+    
+    {"-9223372036854775808", 10, 0, NS_ERROR_ILLEGAL_VALUE},
+    {"-9223372036854775807", 10, INT64_MIN + 1, NS_OK},
+
+    {"7fffffffffffffff", 16, INT64_C(0x7fffffffffffffff), NS_OK},
+    
+    
+    {"-8000000000000000", 16, 0, NS_ERROR_ILLEGAL_VALUE},
+    {"-7fffffffffffffff", 16, -INT64_C(0x7fffffffffffffff), NS_OK},
+
+    
+    {"9223372036854775808", 10, 0, NS_ERROR_ILLEGAL_VALUE},
+    {"-9223372036854775809", 10, 0, NS_ERROR_ILLEGAL_VALUE},
+
+    {"8000000000000000", 16, 0, NS_ERROR_ILLEGAL_VALUE},
+    {"-8000000000000001", 16, 0, NS_ERROR_ILLEGAL_VALUE},
+
+    
+    {"90194313659", 10, INT64_C(90194313659), NS_OK},
+    {"8abc1234", 16, INT64_C(0x8abc1234), NS_OK},
+
+    
+    
+    {"x500", 10, 500, NS_OK},
+    {"X500", 10, 500, NS_OK},
+    {"0x500", 10, 500, NS_OK},
+    {"0X500", 10, 500, NS_OK},
+    {"000000x500", 10, 500, NS_OK},
+    {"000000X500", 10, 500, NS_OK},
+
+    {"xbeef", 16, 0xbeef, NS_OK},
+    {"Xbeef", 16, 0xbeef, NS_OK},
+    {"0xbeef", 16, 0xbeef, NS_OK},
+    {"0Xbeef", 16, 0xbeef, NS_OK},
+    {"000000xbeef", 16, 0xbeef, NS_OK},
+    {"000000Xbeef", 16, 0xbeef, NS_OK},
+
+    
+    {"xxxbeef", 16, 0xbeef, NS_OK},
+
+    {nullptr, 0, 0, NS_OK}};
+
+TEST_F(Strings, string_tointeger64) {
+  nsresult rv;
+  for (const ToInteger64Test* t = kToInteger64Tests; t->str; ++t) {
+    int64_t result = nsAutoCString(t->str).ToInteger64(&rv, t->radix);
+    EXPECT_EQ(rv, t->rv);
+    EXPECT_EQ(result, t->result);
+  }
+}
+
+struct ToUnsignedInteger64Test {
+  const char* str;
+  uint32_t radix;
+  uint64_t result;
+  nsresult rv;
+};
+
+static const ToUnsignedInteger64Test kToUnsignedInteger64Tests[] = {
+    {"123", 10, 123, NS_OK},
+    {"7b", 16, 123, NS_OK},
+
+    
+    {"18446744073709551615", 10, UINT64_MAX, NS_OK},
+    {"ffffffffffffffff", 16, UINT64_MAX, NS_OK},
+
+    
+    {"18446744073709551616", 10, 0, NS_ERROR_ILLEGAL_VALUE},
+    {"10000000000000000", 16, 0, NS_ERROR_ILLEGAL_VALUE},
+
+    
+    {"90194313659", 10, UINT64_C(90194313659), NS_OK},
+    {"8abc1234", 16, UINT64_C(0x8abc1234), NS_OK},
+
+    
+    {"-194313659", 10, 0, NS_ERROR_ILLEGAL_VALUE},
+
+    {nullptr, 0, 0, NS_OK}};
+
+TEST_F(Strings, string_to_unsigned_integer64) {
+  nsresult rv;
+  for (const ToUnsignedInteger64Test* t = kToUnsignedInteger64Tests; t->str;
+       ++t) {
+    uint64_t result = nsAutoCString(t->str).ToUnsignedInteger64(&rv, t->radix);
     EXPECT_EQ(rv, t->rv);
     EXPECT_EQ(result, t->result);
   }

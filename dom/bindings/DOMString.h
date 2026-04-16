@@ -5,10 +5,6 @@
 #ifndef mozilla_dom_DOMString_h
 #define mozilla_dom_DOMString_h
 
-#include "mozilla/Assertions.h"
-#include "mozilla/Attributes.h"
-#include "mozilla/Maybe.h"
-#include "mozilla/StringBuffer.h"
 #include "nsAtom.h"
 #include "nsDOMString.h"
 #include "nsString.h"
@@ -22,268 +18,64 @@ namespace mozilla::dom {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class MOZ_STACK_CLASS DOMString {
+class DOMString final : public nsAutoString {
  public:
-  DOMString() : mStringBuffer(nullptr), mLength(0), mState(State::Empty) {}
-  ~DOMString() {
-    MOZ_ASSERT(!mString || !mStringBuffer, "Shouldn't have both present!");
-    if (mState == State::OwnedStringBuffer) {
-      MOZ_ASSERT(mStringBuffer);
-      mStringBuffer->Release();
-    }
-  }
-
-  operator nsString&() { return AsAString(); }
-
-  
-  
-  operator const nsString&() = delete;
-  operator const nsAString&() = delete;
-
-  nsString& AsAString() {
-    MOZ_ASSERT(mState == State::Empty || mState == State::String,
-               "Moving from nonempty state to another nonempty state?");
-    MOZ_ASSERT(!mStringBuffer, "We already have a stringbuffer?");
-    if (!mString) {
-      mString.emplace();
-      mState = State::String;
-    }
-    return *mString;
-  }
-
-  bool HasStringBuffer() const {
-    MOZ_ASSERT(!mString || !mStringBuffer, "Shouldn't have both present!");
-    MOZ_ASSERT(mState > State::Null,
-               "Caller should have checked IsNull() and IsEmpty() first");
-    return mState >= State::OwnedStringBuffer;
-  }
-
-  
-  
-  
-  
-  mozilla::StringBuffer* StringBuffer() const {
-    MOZ_ASSERT(HasStringBuffer(),
-               "Don't ask for the stringbuffer if we don't have it");
-    MOZ_ASSERT(mStringBuffer, "We better have a stringbuffer if we claim to");
-    return mStringBuffer;
-  }
-
-  
-  
-  uint32_t StringBufferLength() const {
-    MOZ_ASSERT(HasStringBuffer(),
-               "Don't call this if there is no stringbuffer");
-    return mLength;
-  }
-
-  bool HasLiteral() const {
-    MOZ_ASSERT(!mString || !mStringBuffer, "Shouldn't have both present!");
-    MOZ_ASSERT(mState > State::Null,
-               "Caller should have checked IsNull() and IsEmpty() first");
-    return mState == State::Literal;
-  }
-
-  
-  
-  const char16_t* Literal() const {
-    MOZ_ASSERT(HasLiteral(), "Don't ask for the literal if we don't have it");
-    MOZ_ASSERT(mLiteral, "We better have a literal if we claim to");
-    return mLiteral;
-  }
-
-  
-  uint32_t LiteralLength() const {
-    MOZ_ASSERT(HasLiteral(), "Don't call this if there is no literal");
-    return mLength;
-  }
-
-  
-  
-  
-  void SetKnownLiveStringBuffer(mozilla::StringBuffer* aStringBuffer,
-                                uint32_t aLength) {
-    MOZ_ASSERT(mState == State::Empty, "We're already set to a value");
-    if (aLength != 0) {
-      SetStringBufferInternal(aStringBuffer, aLength);
-      mState = State::UnownedStringBuffer;
-    }
-    
-  }
-
-  
-  
-  void SetStringBuffer(mozilla::StringBuffer* aStringBuffer, uint32_t aLength) {
-    MOZ_ASSERT(mState == State::Empty, "We're already set to a value");
-    if (aLength != 0) {
-      SetStringBufferInternal(aStringBuffer, aLength);
-      aStringBuffer->AddRef();
-      mState = State::OwnedStringBuffer;
-    }
-    
-  }
-
-  void SetKnownLiveString(const nsAString& aString) {
-    MOZ_ASSERT(mString.isNothing(), "We already have a string?");
-    MOZ_ASSERT(mState == State::Empty, "We're already set to a value");
-    MOZ_ASSERT(!mStringBuffer, "Setting stringbuffer twice?");
-    if (MOZ_UNLIKELY(aString.IsVoid())) {
-      SetNull();
-    } else if (!aString.IsEmpty()) {
-      if (mozilla::StringBuffer* buf = aString.GetStringBuffer()) {
-        SetKnownLiveStringBuffer(buf, aString.Length());
-      } else if (aString.IsLiteral()) {
-        SetLiteralInternal(aString.BeginReading(), aString.Length());
-      } else {
-        AsAString() = aString;
-      }
-    }
-  }
-
   enum NullHandling { eTreatNullAsNull, eTreatNullAsEmpty, eNullNotExpected };
 
   void SetKnownLiveAtom(nsAtom* aAtom, NullHandling aNullHandling) {
-    MOZ_ASSERT(mString.isNothing(), "We already have a string?");
-    MOZ_ASSERT(mState == State::Empty, "We're already set to a value");
+    AssertSetKnownLivePrecondition();
     MOZ_ASSERT(aAtom || aNullHandling != eNullNotExpected);
     if (aNullHandling == eNullNotExpected || aAtom) {
+      
+      DataFlags flags = DataFlags::TERMINATED;
+      const char_type* data;
       if (aAtom->IsStatic()) {
-        
-        
-        SetLiteralInternal(aAtom->AsStatic()->GetUTF16String(),
-                           aAtom->GetLength());
+        data = aAtom->AsStatic()->String();
+        flags |= DataFlags::LITERAL;
       } else {
-        SetKnownLiveStringBuffer(aAtom->AsDynamic()->StringBuffer(),
-                                 aAtom->GetLength());
+        MOZ_ASSERT(aAtom->AsDynamic()->StringBuffer());
+        data = aAtom->AsDynamic()->String();
+        flags |= DataFlags::STRINGBUFFER;
       }
+      SetData(const_cast<char_type*>(data), aAtom->GetLength(), flags);
+      AssertValid();
     } else if (aNullHandling == eTreatNullAsNull) {
       SetNull();
     }
   }
 
-  void SetNull() {
-    MOZ_ASSERT(!mStringBuffer, "Should have no stringbuffer if null");
-    MOZ_ASSERT(mString.isNothing(), "Should have no string if null");
-    MOZ_ASSERT(mState == State::Empty, "Already set to a value?");
-    mState = State::Null;
-  }
-
-  bool IsNull() const {
-    MOZ_ASSERT(!mStringBuffer || mString.isNothing(),
-               "How could we have a stringbuffer and a nonempty string?");
-    return mState == State::Null || (mString && mString->IsVoid());
-  }
-
-  bool IsEmpty() const {
-    MOZ_ASSERT(!mStringBuffer || mString.isNothing(),
-               "How could we have a stringbuffer and a nonempty string?");
+  void SetKnownLiveString(const nsAString& aString) {
+    AssertSetKnownLivePrecondition();
+    MOZ_ASSERT(aString.IsTerminated(),
+               "If we are not terminated, then we need copying or so");
     
     
     
-    return mState == State::Empty;
+    const char_type* data = aString.Data();
+    SetData(
+        const_cast<char_type*>(data), aString.Length(),
+        aString.GetDataFlags() & (DataFlags::TERMINATED | DataFlags::LITERAL |
+                                  DataFlags::STRINGBUFFER | DataFlags::VOIDED));
+    AssertValid();
   }
 
-  void ToString(nsAString& aString) {
-    if (IsNull()) {
-      SetDOMStringToNull(aString);
-    } else if (IsEmpty()) {
-      aString.Truncate();
-    } else if (HasStringBuffer()) {
-      
-      
-      mozilla::StringBuffer* buf = StringBuffer();
-      uint32_t len = StringBufferLength();
-      auto chars = static_cast<char16_t*>(buf->Data());
-      if (chars[len] == '\0') {
-        
-        aString.Assign(buf, len);
-      } else {
-        
-        aString.Assign(chars, len);
-      }
-    } else if (HasLiteral()) {
-      aString.AssignLiteral(Literal(), LiteralLength());
-    } else {
-      aString = AsAString();
-    }
+  void SetKnownLiveStringBuffer(StringBuffer* aBuffer, LengthStorage aLen) {
+    AssertSetKnownLivePrecondition();
+    MOZ_ASSERT(aBuffer);
+    
+    SetData(static_cast<char_type*>(aBuffer->Data()), aLen,
+            DataFlags::STRINGBUFFER | DataFlags::TERMINATED);
+    AssertValid();
   }
+
+  void SetNull() { SetIsVoid(true); }
+  bool IsNull() const { return IsVoid(); }
 
  private:
-  void SetStringBufferInternal(mozilla::StringBuffer* aStringBuffer,
-                               uint32_t aLength) {
-    MOZ_ASSERT(mString.isNothing(), "We already have a string?");
-    MOZ_ASSERT(mState == State::Empty, "We're already set to a value");
-    MOZ_ASSERT(!mStringBuffer, "Setting stringbuffer twice?");
-    MOZ_ASSERT(aStringBuffer, "Why are we getting null?");
-    MOZ_ASSERT(aLength != 0, "Should not have empty string here");
-    mStringBuffer = aStringBuffer;
-    mLength = aLength;
+  void AssertSetKnownLivePrecondition() {
+    MOZ_ASSERT(IsEmpty(), "We rely on this being called only on empty strings");
+    MOZ_ASSERT(!(mDataFlags & DataFlags::OWNED), "Would leak");
   }
-
-  void SetLiteralInternal(const char16_t* aLiteral, uint32_t aLength) {
-    MOZ_ASSERT(!mLiteral, "What's going on here?");
-    mLiteral = aLiteral;
-    mLength = aLength;
-    mState = State::Literal;
-  }
-
-  enum class State : uint8_t {
-    Empty,  
-    Null,   
-
-    
-    
-
-    String,               
-    Literal,              
-    OwnedStringBuffer,    
-    UnownedStringBuffer,  
-    
-    
-  };
-
-  
-  Maybe<nsAutoString> mString;
-
-  union {
-    
-    
-    mozilla::StringBuffer* MOZ_UNSAFE_REF(
-        "The ways in which this can be safe are "
-        "documented above and enforced through "
-        "assertions") mStringBuffer;
-    
-    const char16_t* mLiteral;
-  };
-
-  
-  uint32_t mLength;
-
-  State mState;
 };
 
 }  

@@ -16,6 +16,7 @@
 #include "mozilla/Span.h"
 #include "mozilla/Try.h"
 
+#include "nsISupports.h"
 #include "nsTStringRepr.h"
 
 #ifndef MOZILLA_INTERNAL_API
@@ -394,6 +395,15 @@ class nsTSubstring : public mozilla::detail::nsTStringRepr<T> {
 
 
 
+
+
+  uint64_t ToUnsignedInteger64(nsresult* aErrorCode,
+                               uint32_t aRadix = 10) const;
+
+  
+
+
+
   void NS_FASTCALL Assign(char_type aChar);
   [[nodiscard]] bool NS_FASTCALL Assign(char_type aChar, const fallible_t&);
 
@@ -424,7 +434,8 @@ class nsTSubstring : public mozilla::detail::nsTStringRepr<T> {
     auto* data = reinterpret_cast<char_type*>(buffer->Data());
     MOZ_ASSERT(data[aLength] == char_type(0), "data should be null terminated");
     Finalize();
-    SetData(data, aLength, DataFlags::REFCOUNTED | DataFlags::TERMINATED);
+    SetData(data, aLength,
+            DataFlags::STRINGBUFFER | DataFlags::OWNED | DataFlags::TERMINATED);
   }
 
 #if defined(MOZ_USE_CHAR16_WRAPPER)
@@ -1169,10 +1180,19 @@ class nsTSubstring : public mozilla::detail::nsTStringRepr<T> {
 
 
   mozilla::StringBuffer* GetStringBuffer() const {
-    if (this->mDataFlags & DataFlags::REFCOUNTED) {
+    if (this->mDataFlags & DataFlags::STRINGBUFFER) {
       return mozilla::StringBuffer::FromData(this->mData);
     }
     return nullptr;
+  }
+
+  
+
+
+
+
+  mozilla::StringBuffer* GetOwnedStringBuffer() const {
+    return this->mDataFlags & DataFlags::OWNED ? GetStringBuffer() : nullptr;
   }
 
  protected:
@@ -1227,7 +1247,7 @@ class nsTSubstring : public mozilla::detail::nsTStringRepr<T> {
 
  protected:
   
-  nsTSubstring()
+  constexpr nsTSubstring()
       : base_string_type(char_traits::sEmptyBuffer, 0, DataFlags::TERMINATED,
                          ClassFlags(0)) {
     AssertValid();
@@ -1256,15 +1276,15 @@ class nsTSubstring : public mozilla::detail::nsTStringRepr<T> {
 
   nsTSubstring(char_type* aData, size_type aLength, DataFlags aDataFlags,
                ClassFlags aClassFlags)
-#if defined(NS_BUILD_REFCNT_LOGGING)
-#  define XPCOM_STRING_CONSTRUCTOR_OUT_OF_LINE
-      ;
-#else
-#  undef XPCOM_STRING_CONSTRUCTOR_OUT_OF_LINE
       : base_string_type(aData, aLength, aDataFlags, aClassFlags) {
+#ifdef NS_BUILD_REFCNT_LOGGING
+    if ((aDataFlags & DataFlags::OWNED) &&
+        !(aDataFlags & DataFlags::STRINGBUFFER)) {
+      MOZ_LOG_CTOR(aData, "StringAdopt", 1);
+    }
+#endif
     AssertValid();
   }
-#endif 
 
   void SetToEmptyBuffer() {
     base_string_type::mData = char_traits::sEmptyBuffer;
@@ -1280,12 +1300,26 @@ class nsTSubstring : public mozilla::detail::nsTStringRepr<T> {
     AssertValid();
   }
 
+  static void ReleaseData(void* aData, DataFlags aFlags) {
+    if (aFlags & DataFlags::OWNED) {
+      if (aFlags & DataFlags::STRINGBUFFER) {
+        mozilla::StringBuffer::FromData(aData)->Release();
+      } else {
+        
+        
+        MOZ_LOG_DTOR(aData, "StringAdopt", 1);
+        free(aData);
+      }
+    }
+    
+  }
+
   
 
 
 
 
-  void NS_FASTCALL Finalize();
+  void Finalize() { ReleaseData(this->mData, this->mDataFlags); }
 
  public:
   

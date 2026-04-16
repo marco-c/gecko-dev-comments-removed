@@ -2,6 +2,8 @@
 
 
 
+
+
 #include "js/Array.h"  
 #include "js/JSON.h"
 #include "js/Object.h"
@@ -617,7 +619,7 @@ static uint32_t CollectTextAreaElement(Document* aDocument,
     }
     DOMString autocomplete;
     textArea->GetAutocomplete(autocomplete);
-    if (autocomplete.AsAString().EqualsLiteral("off")) {
+    if (autocomplete.EqualsLiteral("off")) {
       continue;
     }
     nsAutoString id;
@@ -760,7 +762,7 @@ static uint32_t CollectSelectElement(Document* aDocument,
       select->GetValue(selectVal);
       size += AppendEntry(select, id,
                           SingleSelect{static_cast<uint32_t>(selectedIndex),
-                                       selectVal.AsAString()},
+                                       std::move(selectVal)},
                           aFormData);
     } else {
       HTMLOptionsCollection* options = select->GetOptions();
@@ -874,7 +876,7 @@ void SessionStoreUtils::CollectFromTextAreaElement(Document& aDocument,
     }
     DOMString autocomplete;
     textArea->GetAutocomplete(autocomplete);
-    if (autocomplete.AsAString().EqualsLiteral("off")) {
+    if (autocomplete.EqualsLiteral("off")) {
       continue;
     }
     nsAutoString id;
@@ -890,8 +892,7 @@ void SessionStoreUtils::CollectFromTextAreaElement(Document& aDocument,
                               eCaseMatters)) {
       continue;
     }
-    AppendValueToCollectedData(textArea, id, value, aGeneratedCount,
-                               std::forward<ArgsT>(args)...);
+    AppendValueToCollectedData(textArea, id, value, aGeneratedCount, args...);
   }
 }
 
@@ -939,8 +940,7 @@ void SessionStoreUtils::CollectFromInputElement(Document& aDocument,
       if (checked == input->DefaultChecked()) {
         continue;
       }
-      AppendValueToCollectedData(input, id, checked, aGeneratedCount,
-                                 std::forward<ArgsT>(args)...);
+      AppendValueToCollectedData(input, id, checked, aGeneratedCount, args...);
     } else if (input->ControlType() == FormControlType::InputFile) {
       IgnoredErrorResult rv;
       nsTArray<nsString> result;
@@ -949,7 +949,7 @@ void SessionStoreUtils::CollectFromInputElement(Document& aDocument,
         continue;
       }
       AppendValueToCollectedData(input, id, u"file"_ns, result, aGeneratedCount,
-                                 std::forward<ArgsT>(args)...);
+                                 args...);
     } else {
       nsString value;
       input->GetValue(value, CallerType::System);
@@ -963,7 +963,7 @@ void SessionStoreUtils::CollectFromInputElement(Document& aDocument,
         continue;
       }
       AppendValueToCollectedData(aDocument, input, id, value, aGeneratedCount,
-                                 std::forward<ArgsT>(args)...);
+                                 args...);
     }
   }
 }
@@ -997,13 +997,10 @@ void SessionStoreUtils::CollectFromSelectElement(Document& aDocument,
     if (!select->Multiple()) {
       
       
-      DOMString selectVal;
-      select->GetValue(selectVal);
       CollectedNonMultipleSelectValue val;
       val.mSelectedIndex = select->SelectedIndex();
-      val.mValue = selectVal.AsAString();
-      AppendValueToCollectedData(select, id, val, aGeneratedCount,
-                                 std::forward<ArgsT>(args)...);
+      select->GetValue(val.mValue);
+      AppendValueToCollectedData(select, id, val, aGeneratedCount, args...);
     } else {
       
       
@@ -1060,7 +1057,7 @@ void SessionStoreUtils::CollectFromFormAssociatedCustomElement(
     }
 
     AppendValueToCollectedData(element, id, value, state, aGeneratedCount,
-                               std::forward<ArgsT>(args)...);
+                               args...);
   }
 }
 

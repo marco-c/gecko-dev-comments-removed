@@ -25,10 +25,8 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/TextUtils.h"
-#include "mozilla/dom/DOMString.h"
 #include "mozilla/StringBuffer.h"
 #include "mozilla/fallible.h"
-#include "nsAtom.h"
 #include "nsCOMPtr.h"
 #include "nsISupports.h"
 #include "nsIURI.h"
@@ -233,15 +231,6 @@ extern bool xpc_DumpJSStack(bool showArgs, bool showLocals, bool showThisProps);
 extern JS::UniqueChars xpc_PrintJSStack(JSContext* cx, bool showArgs,
                                         bool showLocals, bool showThisProps);
 
-inline void AssignFromStringBuffer(mozilla::StringBuffer* buffer, size_t len,
-                                   nsAString& dest) {
-  dest.Assign(buffer, len);
-}
-inline void AssignFromStringBuffer(mozilla::StringBuffer* buffer, size_t len,
-                                   nsACString& dest) {
-  dest.Assign(buffer, len);
-}
-
 
 class XPCStringConvert {
  public:
@@ -379,7 +368,7 @@ class XPCStringConvert {
         
         
         if (chars[len] == '\0') {
-          AssignFromStringBuffer(buf, len, dest);
+          dest.Assign(buf, len);
           return true;
         }
         return false;
@@ -454,13 +443,69 @@ bool Base64Decode(JSContext* cx, JS::Handle<JS::Value> val,
                   JS::MutableHandle<JS::Value> out);
 
 
+[[nodiscard]] inline bool NonVoidStringToJsval(JSContext* cx,
+                                               const nsAString& readable,
+                                               JS::MutableHandleValue vp) {
+  uint32_t length = readable.Length();
+  if (auto* buf = readable.GetStringBuffer()) {
+    return XPCStringConvert::UCStringBufferToJSVal(cx, buf, length, vp);
+  }
+  if (readable.IsLiteral()) {
+    return XPCStringConvert::StringLiteralToJSVal(cx, readable.BeginReading(),
+                                                  length, vp);
+  }
+  
+  JSString* str = JS_NewUCStringCopyN(cx, readable.BeginReading(), length);
+  if (!str) {
+    return false;
+  }
+  vp.setString(str);
+  return true;
+}
 
 
-[[nodiscard]] bool NonVoidStringToJsval(JSContext* cx, const nsAString& str,
-                                        JS::MutableHandle<JS::Value> rval);
+[[nodiscard]] inline bool NonVoidLatin1StringToJsval(
+    JSContext* cx, const nsACString& latin1, JS::MutableHandleValue vp) {
+  uint32_t length = latin1.Length();
+  if (auto* buf = latin1.GetStringBuffer()) {
+    return XPCStringConvert::Latin1StringBufferToJSVal(cx, buf, length, vp);
+  }
+  if (latin1.IsLiteral()) {
+    return XPCStringConvert::StringLiteralToJSVal(
+        cx, reinterpret_cast<const JS::Latin1Char*>(latin1.BeginReading()),
+        length, vp);
+  }
+  JSString* str = JS_NewStringCopyN(cx, latin1.BeginReading(), length);
+  if (!str) {
+    return false;
+  }
+  vp.setString(str);
+  return true;
+}
 
-inline bool StringToJsval(JSContext* cx, const nsAString& str,
-                          JS::MutableHandle<JS::Value> rval) {
+
+[[nodiscard]] inline bool NonVoidUTF8StringToJsval(JSContext* cx,
+                                                   const nsACString& utf8,
+                                                   JS::MutableHandleValue vp) {
+  uint32_t length = utf8.Length();
+  if (auto* buf = utf8.GetStringBuffer()) {
+    return XPCStringConvert::UTF8StringBufferToJSVal(cx, buf, length, vp);
+  }
+  if (utf8.IsLiteral()) {
+    return XPCStringConvert::UTF8StringLiteralToJSVal(
+        cx, JS::UTF8Chars(utf8.BeginReading(), length), vp);
+  }
+  JSString* str =
+      JS_NewStringCopyUTF8N(cx, JS::UTF8Chars(utf8.BeginReading(), length));
+  if (!str) {
+    return false;
+  }
+  vp.setString(str);
+  return true;
+}
+
+[[nodiscard]] MOZ_ALWAYS_INLINE bool StringToJsval(
+    JSContext* cx, const nsAString& str, JS::MutableHandle<JS::Value> rval) {
   
   if (str.IsVoid()) {
     rval.setNull();
@@ -469,49 +514,8 @@ inline bool StringToJsval(JSContext* cx, const nsAString& str,
   return NonVoidStringToJsval(cx, str, rval);
 }
 
-
-
-
-inline bool NonVoidStringToJsval(JSContext* cx, mozilla::dom::DOMString& str,
-                                 JS::MutableHandle<JS::Value> rval) {
-  if (str.IsEmpty()) {
-    rval.set(JS_GetEmptyStringValue(cx));
-    return true;
-  }
-
-  if (str.HasStringBuffer()) {
-    uint32_t length = str.StringBufferLength();
-    mozilla::StringBuffer* buf = str.StringBuffer();
-    return XPCStringConvert::UCStringBufferToJSVal(cx, buf, length, rval);
-  }
-
-  if (str.HasLiteral()) {
-    return XPCStringConvert::StringLiteralToJSVal(cx, str.Literal(),
-                                                  str.LiteralLength(), rval);
-  }
-
-  
-  return NonVoidStringToJsval(cx, str.AsAString(), rval);
-}
-
-MOZ_ALWAYS_INLINE
-bool StringToJsval(JSContext* cx, mozilla::dom::DOMString& str,
-                   JS::MutableHandle<JS::Value> rval) {
-  if (str.IsNull()) {
-    rval.setNull();
-    return true;
-  }
-  return NonVoidStringToJsval(cx, str, rval);
-}
-
-
-
-
-[[nodiscard]] bool NonVoidLatin1StringToJsval(
-    JSContext* cx, const nsACString& str, JS::MutableHandle<JS::Value> rval);
-
-inline bool Latin1StringToJsval(JSContext* cx, const nsACString& str,
-                                JS::MutableHandle<JS::Value> rval) {
+[[nodiscard]] MOZ_ALWAYS_INLINE bool Latin1StringToJsval(
+    JSContext* cx, const nsACString& str, JS::MutableHandle<JS::Value> rval) {
   if (str.IsVoid()) {
     rval.setNull();
     return true;
@@ -519,14 +523,8 @@ inline bool Latin1StringToJsval(JSContext* cx, const nsACString& str,
   return NonVoidLatin1StringToJsval(cx, str, rval);
 }
 
-
-
-
-bool NonVoidUTF8StringToJsval(JSContext* cx, const nsACString& str,
-                              JS::MutableHandle<JS::Value> rval);
-
-inline bool UTF8StringToJsval(JSContext* cx, const nsACString& str,
-                              JS::MutableHandle<JS::Value> rval) {
+[[nodiscard]] MOZ_ALWAYS_INLINE bool UTF8StringToJsval(
+    JSContext* cx, const nsACString& str, JS::MutableHandle<JS::Value> rval) {
   if (str.IsVoid()) {
     rval.setNull();
     return true;
