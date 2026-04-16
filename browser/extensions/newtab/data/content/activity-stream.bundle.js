@@ -18943,11 +18943,12 @@ class BaseContent extends (external_React_default()).PureComponent {
       
       
       
-      const logoShouldBeCentered = false;
+      const hasContentWidgets = mayHaveListsWidget && enabledWidgets.listsEnabled || mayHaveTimerWidget && enabledWidgets.timerEnabled || mayHaveWeatherWidget && enabledWidgets.weatherEnabled && !showWeatherWidgetInSidebar;
+      const logoShouldBeCentered = !pocketEnabled && !hasContentWidgets;
       return external_React_default().createElement("div", {
         className: "nova-outer-wrapper"
       }, external_React_default().createElement("div", {
-        className: "container nova-enabled"
+        className: `container nova-enabled${logoShouldBeCentered ? " logo-in-content" : ""}`
       }, external_React_default().createElement("div", {
         className: "sidebar-inline-start"
       }, !logoShouldBeCentered && external_React_default().createElement(ErrorBoundary, null, external_React_default().createElement(Logo, null))), external_React_default().createElement("div", {
