@@ -362,7 +362,7 @@ ScopedSaveMultiTex::ScopedSaveMultiTex(GLContext* const gl,
       mTexUnits(texUnits),
       mTexTarget(texTarget),
       mOldTexUnit(mGL.GetIntAs<GLenum>(LOCAL_GL_ACTIVE_TEXTURE)) {
-  MOZ_RELEASE_ASSERT(texUnits >= 1);
+  MOZ_RELEASE_ASSERT(texUnits >= 1 && texUnits <= std::size(mOldTex));
 
   GLenum texBinding;
   switch (mTexTarget) {
@@ -1634,6 +1634,12 @@ bool GLBlitHelper::Blit(DMABufSurface* surface, const gfx::IntRect& destRect,
 
   const DrawBlitProg::YUVArgs* pYuvArgs = nullptr;
   const auto planes = surface->GetTextureCount();
+
+  
+  if (planes < 1 || planes > 3) {
+    gfxCriticalError() << "Unexpected DMABuf planes count: " << planes;
+    return false;
+  }
 
   
   
