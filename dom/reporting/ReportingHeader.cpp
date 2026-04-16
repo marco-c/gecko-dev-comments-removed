@@ -7,6 +7,7 @@
 #include <limits>
 
 #include "js/Array.h"  
+#include "js/GCAPI.h"
 #include "js/JSON.h"
 #include "js/PropertyAndElement.h"  
 #include "mozilla/OriginAttributes.h"
@@ -391,7 +392,7 @@ ReportingHeader::ParseReportToHeader(nsIHttpChannel* aChannel, nsIURI* aURI,
     return nullptr;
   }
 
-  dom::ReportingHeaderValue data;
+  RootedDictionary<dom::ReportingHeaderValue> data(cx);
   if (!data.Init(cx, jsonValue)) {
     
     JS_ClearPendingException(cx);
