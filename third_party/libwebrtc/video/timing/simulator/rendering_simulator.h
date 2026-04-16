@@ -18,12 +18,16 @@
 #include <string>
 #include <vector>
 
+#include "absl/algorithm/container.h"
+#include "api/array_view.h"
 #include "api/environment/environment.h"
 #include "api/units/data_size.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
 #include "logging/rtc_event_log/rtc_event_log_parser.h"
 #include "modules/video_coding/timing/timing.h"
+#include "video/timing/simulator/frame_base.h"
+#include "video/timing/simulator/stream_base.h"
 
 namespace webrtc::video_timing_simulator {
 
@@ -48,7 +52,8 @@ class RenderingSimulator {
   };
 
   
-  struct Frame {
+  struct Frame : public FrameBase<Frame> {
+    
     
     int num_packets = -1;
     DataSize size = DataSize::Zero();
@@ -77,59 +82,83 @@ class RenderingSimulator {
     
     int frames_dropped = -1;
     
+    
+    
+    
+    
     TimeDelta jitter_buffer_minimum_delay = TimeDelta::MinusInfinity();
+    
     TimeDelta jitter_buffer_target_delay = TimeDelta::MinusInfinity();
+    
     TimeDelta jitter_buffer_delay = TimeDelta::MinusInfinity();
 
-    bool operator<(const Frame& other) const {
-      return rendered_timestamp < other.rendered_timestamp;
-    }
+    
+    
+    TimeDelta frame_delay_variation = TimeDelta::PlusInfinity();
 
-    std::optional<int64_t> InterFrameSizeBytes(const Frame& prev) const {
-      if (size.IsZero() || prev.size.IsZero()) {
-        return std::nullopt;
-      }
-      return size.bytes() - prev.size.bytes();
+    
+    Timestamp ArrivalTimestampInternal() const { return rendered_timestamp; }
+
+    
+    
+    TimeDelta PacketBufferDuration() const {
+      return assembled_timestamp - first_packet_arrival_timestamp;
     }
-    TimeDelta InterDepartureTime(const Frame& prev) const {
-      if (unwrapped_rtp_timestamp < 0 || prev.unwrapped_rtp_timestamp < 0) {
-        return TimeDelta::PlusInfinity();
-      }
-      constexpr int64_t kRtpTicksPerMs = 90;
-      int64_t inter_departure_time_ms =
-          (unwrapped_rtp_timestamp - prev.unwrapped_rtp_timestamp) /
-          kRtpTicksPerMs;
-      return TimeDelta::Millis(inter_departure_time_ms);
-    }
-    TimeDelta InterArrivalTime(const Frame& prev) const {
-      return rendered_timestamp - prev.rendered_timestamp;
-    }
-    TimeDelta AssemblyDuration() const {
-      return last_packet_arrival_timestamp - first_packet_arrival_timestamp;
-    }
-    TimeDelta PreDecodeBufferDuration() const {
+    
+    
+    
+    
+    
+    TimeDelta FrameBufferDuration() const {
       return decoded_timestamp - assembled_timestamp;
     }
-    TimeDelta PostDecodeMargin() const {
-      return render_timestamp - rendered_timestamp -
-             RenderingSimulator::kRenderDelay;
+    
+    TimeDelta RenderBufferDuration() const {
+      return rendered_timestamp - decoded_timestamp;
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    TimeDelta RenderMargin() const {
+      return render_timestamp - assembled_timestamp;
+    }
+    
+    
+    
+    
+    
+    
+    std::optional<TimeDelta> RenderedExcessMargin() const {
+      TimeDelta margin = RenderMargin();
+      if (margin < TimeDelta::Zero()) {
+        return std::nullopt;
+      }
+      return margin;
+    }
+    std::optional<TimeDelta> RenderedDeficitMargin() const {
+      TimeDelta margin = RenderMargin();
+      if (margin > TimeDelta::Zero()) {
+        return std::nullopt;
+      }
+      return margin;
     }
   };
 
   
-  struct Stream {
+  struct Stream : public StreamBase<Stream> {
     Timestamp creation_timestamp = Timestamp::PlusInfinity();
     uint32_t ssrc = 0;
     std::vector<Frame> frames;
-
-    bool IsEmpty() const { return frames.empty(); }
-
-    bool operator<(const Stream& other) const {
-      if (creation_timestamp != other.creation_timestamp) {
-        return creation_timestamp < other.creation_timestamp;
-      }
-      return ssrc < other.ssrc;
-    }
   };
 
   
@@ -152,6 +181,50 @@ class RenderingSimulator {
  private:
   const Config config_;
 };
+
+
+inline bool RenderOrder(const RenderingSimulator::Frame& a,
+                        const RenderingSimulator::Frame& b) {
+  return a.render_timestamp < b.render_timestamp;
+}
+inline void SortByRenderOrder(ArrayView<RenderingSimulator::Frame> frames) {
+  absl::c_stable_sort(frames, RenderOrder);
+}
+
+inline bool DecodedOrder(const RenderingSimulator::Frame& a,
+                         const RenderingSimulator::Frame& b) {
+  return a.decoded_timestamp < b.decoded_timestamp;
+}
+inline void SortByDecodedOrder(ArrayView<RenderingSimulator::Frame> frames) {
+  absl::c_stable_sort(frames, DecodedOrder);
+}
+
+inline bool RenderedOrder(const RenderingSimulator::Frame& a,
+                          const RenderingSimulator::Frame& b) {
+  return a.rendered_timestamp < b.rendered_timestamp;
+}
+inline void SortByRenderedOrder(ArrayView<RenderingSimulator::Frame> frames) {
+  absl::c_stable_sort(frames, RenderedOrder);
+}
+
+
+
+inline TimeDelta InterRenderTime(const RenderingSimulator::Frame& cur,
+                                 const RenderingSimulator::Frame& prev) {
+  return cur.render_timestamp - prev.render_timestamp;
+}
+
+
+inline TimeDelta InterDecodedTime(const RenderingSimulator::Frame& cur,
+                                  const RenderingSimulator::Frame& prev) {
+  return cur.decoded_timestamp - prev.decoded_timestamp;
+}
+
+
+inline TimeDelta InterRenderedTime(const RenderingSimulator::Frame& cur,
+                                   const RenderingSimulator::Frame& prev) {
+  return cur.rendered_timestamp - prev.rendered_timestamp;
+}
 
 }  
 
