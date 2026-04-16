@@ -254,6 +254,23 @@ void Animation::SetEffectNoUpdate(AnimationEffect* aEffect) {
   UpdateTiming(SeekFlag::NoSeek, SyncNotifyFlag::Async);
 }
 
+static TimeStamp EnsurePaintIsScheduled(Document& aDoc) {
+  PresShell* presShell = aDoc.GetPresShell();
+  if (!presShell) {
+    return {};
+  }
+  nsIFrame* rootFrame = presShell->GetRootFrame();
+  if (!rootFrame) {
+    return {};
+  }
+  rootFrame->SchedulePaintWithoutInvalidatingObservers();
+  auto* rd = rootFrame->PresContext()->RefreshDriver();
+  if (!rd->IsInRefresh()) {
+    return {};
+  }
+  return rd->MostRecentRefresh();
+}
+
 void Animation::SetTimeline(AnimationTimeline* aTimeline) {
   SetTimelineNoUpdate(aTimeline);
   PostUpdate();
@@ -261,75 +278,107 @@ void Animation::SetTimeline(AnimationTimeline* aTimeline) {
 
 
 void Animation::SetTimelineNoUpdate(AnimationTimeline* aTimeline) {
+  
+  
+  
   if (mTimeline == aTimeline) {
     return;
   }
 
+  
+  const AnimationPlayState previousPlayState = PlayState();
+  
+  const Nullable<TimeDuration> previousCurrentTime = GetCurrentTimeAsDuration();
+
+  
+  
+  
+  
+  
+  
+  
+  Nullable<double> previousProgress;
+  if (!previousCurrentTime.IsNull()) {
+    const TimeDuration endTime = TimeDuration(EffectEnd());
+    previousProgress.SetValue(endTime.IsZero()
+                                  ? 0.0
+                                  : previousCurrentTime.Value().ToSeconds() /
+                                        endTime.ToSeconds());
+  }
+
+  
+  
   StickyTimeDuration activeTime =
       mEffect ? mEffect->GetComputedTiming().mActiveTime : StickyTimeDuration();
 
-  const AnimationPlayState previousPlayState = PlayState();
-  const Nullable<TimeDuration> previousCurrentTime = GetCurrentTimeAsDuration();
   
   
+  const bool fromFiniteTimeline =
+      mTimeline && !mTimeline->IsMonotonicallyIncreasing();
   
-  const TimeDuration endTime = TimeDuration(EffectEnd());
-  double previousProgress = 0.0;
-  if (!previousCurrentTime.IsNull() && !endTime.IsZero()) {
-    previousProgress =
-        previousCurrentTime.Value().ToSeconds() / endTime.ToSeconds();
-  }
+  
+  const bool toFiniteTimeline =
+      aTimeline && !aTimeline->IsMonotonicallyIncreasing();
 
+  
   RefPtr<AnimationTimeline> oldTimeline = mTimeline;
   if (oldTimeline) {
     oldTimeline->RemoveAnimation(this);
   }
-
   mTimeline = aTimeline;
-
-  mResetCurrentTimeOnResume = false;
-
+  
   if (mEffect) {
     mEffect->UpdateNormalizedTiming();
   }
 
-  if (mTimeline && !mTimeline->IsMonotonicallyIncreasing()) {
+  
+  
+  if (toFiniteTimeline) {
     
-
+    
     ApplyPendingPlaybackRate();
-    Nullable<TimeDuration> seekTime;
-    if (PlaybackRateInternal() >= 0.0) {
-      seekTime.SetValue(TimeDuration());
-    } else {
-      seekTime.SetValue(TimeDuration(EffectEnd()));
-    }
+    
+    mAutoAlignStartTime = true;
+    
+    mStartTime.SetNull();
+    
+    mHoldTime.SetNull();
 
     switch (previousPlayState) {
       case AnimationPlayState::Running:
       case AnimationPlayState::Finished:
-        mStartTime = seekTime;
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        PlayNoUpdate(IgnoredErrorResult(), LimitBehavior::AutoRewind);
         break;
       case AnimationPlayState::Paused:
+        
         if (!previousCurrentTime.IsNull()) {
-          mResetCurrentTimeOnResume = true;
-          mStartTime.SetNull();
+          
           mHoldTime.SetValue(
-              TimeDuration(EffectEnd().MultDouble(previousProgress)));
-        } else {
-          mStartTime = seekTime;
+              TimeDuration(EffectEnd().MultDouble(previousProgress.Value())));
         }
         break;
       case AnimationPlayState::Idle:
-      default:
         break;
     }
-  } else if (oldTimeline && !oldTimeline->IsMonotonicallyIncreasing() &&
-             !previousCurrentTime.IsNull()) {
+  } else if (fromFiniteTimeline && !previousProgress.IsNull()) {
+    
     
     SetCurrentTimeNoUpdate(
-        TimeDuration(EffectEnd().MultDouble(previousProgress)));
+        TimeDuration(EffectEnd().MultDouble(previousProgress.Value())));
   }
 
+  
+  
   if (!mStartTime.IsNull()) {
     mHoldTime.SetNull();
   }
@@ -338,8 +387,9 @@ void Animation::SetTimelineNoUpdate(AnimationTimeline* aTimeline) {
     MaybeQueueCancelEvent(activeTime);
   }
 
-  UpdateScrollTimelineAnimationTracker(oldTimeline, aTimeline);
-
+  
+  
+  
   UpdateTiming(SeekFlag::NoSeek, SyncNotifyFlag::Async);
 
   
@@ -397,7 +447,7 @@ void Animation::SetStartTime(const Nullable<TimeDuration>& aNewStartTime) {
   ApplyPendingPlaybackRate();
   mStartTime = aNewStartTime;
 
-  mResetCurrentTimeOnResume = false;
+  mAutoAlignStartTime = false;
 
   if (!aNewStartTime.IsNull()) {
     if (PlaybackRateInternal() != 0.0) {
@@ -1124,7 +1174,7 @@ void Animation::SilentlySetCurrentTime(const TimeDuration& aSeekTime) {
   }
 
   mPreviousCurrentTime.SetNull();
-  mResetCurrentTimeOnResume = false;
+  mAutoAlignStartTime = false;
 }
 
 bool Animation::ShouldBeSynchronizedWithMainThread(
@@ -1449,23 +1499,6 @@ void Animation::NotifyEffectTargetUpdated() {
   MaybeScheduleReplacementCheck();
 }
 
-static TimeStamp EnsurePaintIsScheduled(Document& aDoc) {
-  PresShell* presShell = aDoc.GetPresShell();
-  if (!presShell) {
-    return {};
-  }
-  nsIFrame* rootFrame = presShell->GetRootFrame();
-  if (!rootFrame) {
-    return {};
-  }
-  rootFrame->SchedulePaintWithoutInvalidatingObservers();
-  auto* rd = rootFrame->PresContext()->RefreshDriver();
-  if (!rd->IsInRefresh()) {
-    return {};
-  }
-  return rd->MostRecentRefresh();
-}
-
 
 void Animation::PlayNoUpdate(ErrorResult& aRv, LimitBehavior aLimitBehavior) {
   AutoMutationBatchForAnimation mb(*this);
@@ -1475,6 +1508,8 @@ void Animation::PlayNoUpdate(ErrorResult& aRv, LimitBehavior aLimitBehavior) {
   double effectivePlaybackRate = CurrentOrPendingPlaybackRate();
 
   Nullable<TimeDuration> currentTime = GetCurrentTimeAsDuration();
+  
+  
   if (mResetCurrentTimeOnResume) {
     currentTime.SetNull();
     mResetCurrentTimeOnResume = false;
@@ -1883,6 +1918,11 @@ StickyTimeDuration Animation::EffectEnd() const {
     return StickyTimeDuration(0);
   }
 
+  
+  
+  
+  
+  
   return mEffect->NormalizedTiming().EndTime();
 }
 
@@ -1896,34 +1936,6 @@ Document* Animation::GetRenderedDocument() const {
 
 Document* Animation::GetTimelineDocument() const {
   return mTimeline ? mTimeline->GetDocument() : nullptr;
-}
-
-void Animation::UpdateScrollTimelineAnimationTracker(
-    AnimationTimeline* aOldTimeline, AnimationTimeline* aNewTimeline) {
-  
-  
-  Document* doc = GetRenderedDocument();
-  if (!doc || !Pending()) {
-    return;
-  }
-
-  const bool fromFiniteTimeline =
-      aOldTimeline && !aOldTimeline->IsMonotonicallyIncreasing();
-  const bool toFiniteTimeline =
-      aNewTimeline && !aNewTimeline->IsMonotonicallyIncreasing();
-  if (fromFiniteTimeline == toFiniteTimeline) {
-    return;
-  }
-
-  if (toFiniteTimeline) {
-    doc->GetOrCreateScrollTimelineAnimationTracker()->AddPending(*this);
-  } else {
-    
-    if (auto* tracker = doc->GetScrollTimelineAnimationTracker()) {
-      tracker->RemovePending(*this);
-    }
-    EnsurePaintIsScheduled(*doc);
-  }
 }
 
 class AsyncFinishNotification : public MicroTaskRunnable {
