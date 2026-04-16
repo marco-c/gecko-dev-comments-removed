@@ -411,7 +411,14 @@ class H265 final {
   static Result<bool, nsresult> IsKeyFrame(
       const mozilla::MediaRawData* aSample);
 
- private:
+  #ifdef MOZ_WMF
+    
+    
+    static already_AddRefed<mozilla::MediaByteBuffer> FilterPrefixSEIForWindows(
+        const H265NALU& aNALU);
+  #endif
+
+private:
   
   static already_AddRefed<mozilla::MediaByteBuffer> DecodeNALUnit(
       const Span<const uint8_t>& aNALU);
