@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "jit/Bailouts.h"
 #include "jit/BaselineFrame.h"
 #include "jit/CalleeToken.h"
@@ -198,7 +196,7 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
 
     masm.push(reg_code);
 
-    using Fn = bool (*)(BaselineFrame* frame, InterpreterFrame* interpFrame,
+    using Fn = void (*)(BaselineFrame* frame, InterpreterFrame* interpFrame,
                         uint32_t numStackValues);
     masm.setupUnalignedABICall(scratch);
     masm.passABIArg(framePtrScratch);  
@@ -211,9 +209,7 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
 
     MOZ_ASSERT(reg_code != ReturnReg);
 
-    Label error;
     masm.addPtr(Imm32(ExitFrameLayout::SizeWithFooter()), rsp);
-    masm.branchIfFalseBool(ReturnReg, &error);
 
     
     
@@ -228,14 +224,6 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
     }
 
     masm.jump(reg_code);
-
-    
-    masm.bind(&error);
-    masm.mov(rbp, rsp);
-    masm.pop(rbp);
-    masm.addPtr(Imm32(sizeof(uintptr_t)), rsp);  
-    masm.moveValue(MagicValue(JS_ION_ERROR), JSReturnOperand);
-    masm.jump(&oomReturnLabel);
 
     masm.bind(&notOsr);
     masm.movq(scopeChain, R1.scratchReg());

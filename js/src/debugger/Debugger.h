@@ -1152,10 +1152,12 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
 
   inline Breakpoint* firstBreakpoint() const;
 
-  [[nodiscard]] static bool replaceFrameGuts(JSContext* cx,
-                                             AbstractFramePtr from,
-                                             AbstractFramePtr to,
-                                             ScriptFrameIter& iter);
+  
+
+
+
+  static void replaceFrameGuts(JSContext* cx, AbstractFramePtr from,
+                               AbstractFramePtr to, ScriptFrameIter& iter);
 
  public:
   Debugger(JSContext* cx, NativeObject* dbg);

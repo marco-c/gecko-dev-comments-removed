@@ -7070,33 +7070,19 @@ bool Debugger::observesWasm(wasm::Instance* instance) const {
 }
 
 
-bool Debugger::replaceFrameGuts(JSContext* cx, AbstractFramePtr from,
+void Debugger::replaceFrameGuts(JSContext* cx, AbstractFramePtr from,
                                 AbstractFramePtr to, ScriptFrameIter& iter) {
   MOZ_ASSERT(from != to);
+  AutoEnterOOMUnsafeRegion unsafe;
 
   
   
   DebugEnvironments::forwardLiveFrame(cx, from, to);
 
   
-  
-  auto terminateDebuggerFramesOnExit = MakeScopeExit([&] {
-    terminateDebuggerFrames(cx, from);
-    terminateDebuggerFrames(cx, to);
-
-    MOZ_ASSERT(!DebugAPI::inFrameMaps(from));
-    MOZ_ASSERT(!DebugAPI::inFrameMaps(to));
-  });
-
-  
   Rooted<DebuggerFrameVector> frames(cx);
   if (!getDebuggerFrames(from, &frames)) {
-    
-    
-    
-    
-    ReportOutOfMemory(cx);
-    return false;
+    unsafe.crash("replaceFrameGuts");
   }
 
   for (size_t i = 0; i < frames.length(); i++) {
@@ -7105,13 +7091,12 @@ bool Debugger::replaceFrameGuts(JSContext* cx, AbstractFramePtr from,
 
     
     if (!frameobj->replaceFrameIterData(cx, iter)) {
-      return false;
+      unsafe.crash("replaceFrameGuts");
     }
 
     
     if (!dbg->frames.putNew(to, frameobj)) {
-      ReportOutOfMemory(cx);
-      return false;
+      unsafe.crash("replaceFrameGuts");
     }
 
     
@@ -7119,12 +7104,8 @@ bool Debugger::replaceFrameGuts(JSContext* cx, AbstractFramePtr from,
     dbg->frames.remove(from);
   }
 
-  
-  terminateDebuggerFramesOnExit.release();
-
   MOZ_ASSERT(!DebugAPI::inFrameMaps(from));
   MOZ_ASSERT_IF(!frames.empty(), DebugAPI::inFrameMaps(to));
-  return true;
 }
 
 
@@ -7228,15 +7209,15 @@ const JSClass DebuggerDebuggeeLink::class_ = {
 };
 
 
-bool DebugAPI::handleBaselineOsr(JSContext* cx, InterpreterFrame* from,
+void DebugAPI::handleBaselineOsr(JSContext* cx, InterpreterFrame* from,
                                  jit::BaselineFrame* to) {
   ScriptFrameIter iter(cx);
   MOZ_ASSERT(iter.abstractFramePtr() == to);
-  return Debugger::replaceFrameGuts(cx, from, to, iter);
+  Debugger::replaceFrameGuts(cx, from, to, iter);
 }
 
 
-bool DebugAPI::handleIonBailout(JSContext* cx, jit::RematerializedFrame* from,
+void DebugAPI::handleIonBailout(JSContext* cx, jit::RematerializedFrame* from,
                                 jit::BaselineFrame* to) {
   
   
@@ -7250,7 +7231,7 @@ bool DebugAPI::handleIonBailout(JSContext* cx, jit::RematerializedFrame* from,
   while (iter.abstractFramePtr() != to) {
     ++iter;
   }
-  return Debugger::replaceFrameGuts(cx, from, to, iter);
+  Debugger::replaceFrameGuts(cx, from, to, iter);
 }
 
 

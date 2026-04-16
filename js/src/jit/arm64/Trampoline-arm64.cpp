@@ -224,7 +224,7 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
     masm.push(reg_code);
 
     
-    using Fn = bool (*)(BaselineFrame* frame, InterpreterFrame* interpFrame,
+    using Fn = void (*)(BaselineFrame* frame, InterpreterFrame* interpFrame,
                         uint32_t numStackValues);
     masm.setupUnalignedABICall(r19);
     masm.passABIArg(framePtrScratch);  
@@ -237,9 +237,6 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
     MOZ_ASSERT(scratch != ReturnReg);
 
     masm.addToStackPtr(Imm32(ExitFrameLayout::SizeWithFooter()));
-
-    Label error;
-    masm.branchIfFalseBool(ReturnReg, &error);
 
     
     
@@ -254,15 +251,6 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
     }
 
     masm.jump(scratch);
-
-    
-    masm.bind(&error);
-    masm.moveToStackPtr(FramePointer);
-    masm.pop(FramePointer);
-    masm.addToStackPtr(Imm32(sizeof(uintptr_t)));  
-    masm.syncStackPtr();
-    masm.moveValue(MagicValue(JS_ION_ERROR), JSReturnOperand);
-    masm.B(&osrReturnPoint);
 
     masm.bind(&notOsr);
     masm.movePtr(reg_scope, R1_);

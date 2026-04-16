@@ -147,15 +147,13 @@ class DebugAPI {
 
   
   
-  [[nodiscard]] static bool handleBaselineOsr(JSContext* cx,
-                                              InterpreterFrame* from,
-                                              jit::BaselineFrame* to);
+  static void handleBaselineOsr(JSContext* cx, InterpreterFrame* from,
+                                jit::BaselineFrame* to);
 
   
   
-  [[nodiscard]] static bool handleIonBailout(JSContext* cx,
-                                             jit::RematerializedFrame* from,
-                                             jit::BaselineFrame* to);
+  static void handleIonBailout(JSContext* cx, jit::RematerializedFrame* from,
+                               jit::BaselineFrame* to);
 
   
   
