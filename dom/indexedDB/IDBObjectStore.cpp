@@ -487,27 +487,11 @@ JSObject* CopyingStructuredCloneReadCallback(
     StructuredCloneFileChild& file = cloneInfo->mFiles[aData];
 
     switch (static_cast<StructuredCloneTags>(aTag)) {
-      case SCTAG_DOM_BLOB: {
+      case SCTAG_DOM_BLOB:
         MOZ_ASSERT(file.Type() == StructuredCloneFileBase::eBlob);
         MOZ_ASSERT(!file.Blob().IsFile());
 
-        JS::Rooted<JSObject*> result(aCx);
-
-        {
-          
-          
-          
-          
-          
-          const RefPtr<Blob> newBlob = file.Blob().Clone();
-          MOZ_ASSERT(newBlob);
-
-          if (!WrapAsJSObject(aCx, newBlob, &result)) {
-            return nullptr;
-          }
-        }
-        return result;
-      }
+        return WrapAsJSObject(aCx, file.MutableBlob());
 
       case SCTAG_DOM_FILE: {
         MOZ_ASSERT(file.Type() == StructuredCloneFileBase::eBlob);
@@ -517,14 +501,9 @@ JSObject* CopyingStructuredCloneReadCallback(
         {
           
           
-          
-          
-          
           const RefPtr<Blob> blob = file.BlobPtr();
           MOZ_ASSERT(blob->IsFile());
 
-          
-          
           const RefPtr<File> file = blob->ToFile();
           MOZ_ASSERT(file);
 
