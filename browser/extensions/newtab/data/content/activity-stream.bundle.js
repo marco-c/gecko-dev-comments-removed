@@ -9800,10 +9800,7 @@ class Section extends (external_React_default()).PureComponent {
       dispatch: this.props.dispatch,
       isWebExtension: this.props.isWebExtension
     }, !shouldShowEmptyState && external_React_default().createElement("ul", {
-      className: "section-list",
-      style: {
-        padding: 0
-      }
+      className: "section-list"
     }, cards), shouldShowEmptyState && external_React_default().createElement("div", {
       className: "section-empty-state"
     }, external_React_default().createElement("div", {
@@ -9878,21 +9875,33 @@ function Highlights_extends() { return Highlights_extends = Object.assign ? Obje
 
 
 
+
+
+
+const Highlights_PREF_NOVA_ENABLED = "nova.enabled";
 class _Highlights extends (external_React_default()).PureComponent {
   render() {
     const section = this.props.Sections.find(s => s.id === "highlights");
     if (!section || !section.enabled) {
       return null;
     }
+
+    
+    const novaEnabled = this.props.Prefs.values[Highlights_PREF_NOVA_ENABLED];
     return external_React_default().createElement("div", {
       className: "ds-highlights sections-list"
-    }, external_React_default().createElement(SectionIntl, Highlights_extends({}, section, {
+    }, novaEnabled && external_React_default().createElement("h2", {
+      className: "ds-highlights-title"
+    }, external_React_default().createElement(FluentOrText, {
+      message: section.title
+    })), external_React_default().createElement(SectionIntl, Highlights_extends({}, section, {
       isFixed: true
     })));
   }
 }
 const Highlights = (0,external_ReactRedux_namespaceObject.connect)(state => ({
-  Sections: state.Sections
+  Sections: state.Sections,
+  Prefs: state.Prefs
 }))(_Highlights);
 ;
 
