@@ -7,6 +7,7 @@ support-files = [
   "test_process_flags_chrome.html",
   "helper_origin_attrs_testing.js",
   "file_about_srcdoc.html",
+  "file_reader_mode_article.html",
 ]
 prefs = [
   "browser.sessionstore.closedTabsFromAllWindows=true",
@@ -607,6 +608,9 @@ tags = "vertical-tabs"
 ["browser_tab_label_picture_in_picture.js"]
 tags = "vertical-tabs"
 
+["browser_tab_label_reader_mode.js"]
+tags = "vertical-tabs"
+
 ["browser_tab_manager_close.js"]
 tags = "vertical-tabs"
 
@@ -617,6 +621,8 @@ tags = "vertical-tabs"
 tags = "vertical-tabs"
 skip-if = [
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1994900
+  "opt && standalone", # Bug 2028649
+  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && asan", # Bug 2028660
 ]
 
 ["browser_tab_manager_keyboard_access.js"]
@@ -659,6 +665,7 @@ skip-if = [
 ["browser_tab_splitview_contextmenu.js"]
 skip-if = [
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64'", # Bug 1994508
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 2023967
 ]
 
 ["browser_tab_splitview_footer.js"]
