@@ -18,7 +18,7 @@ use rustc_hash::FxHashMap as HashMap;
 use super::CongestionController;
 use crate::{
     Pmtud,
-    cc::CongestionEvent,
+    cc::CongestionTrigger::{self, Ecn, Loss},
     packet, qlog,
     recovery::sent,
     rtt::RttEstimate,
@@ -98,7 +98,7 @@ pub trait WindowAdjustment: Display + Debug {
         curr_cwnd: usize,
         acked_bytes: usize,
         max_datagram_size: usize,
-        congestion_event: CongestionEvent,
+        congestion_trigger: CongestionTrigger,
         cc_stats: &mut CongestionControlStats,
     ) -> (usize, usize);
     
@@ -451,21 +451,21 @@ where
                 
                 
                 self.bytes_in_flight = self.bytes_in_flight.saturating_sub(pkt.len());
-            }
-            if !pkt.is_pmtud_probe() {
-                let present = self.maybe_lost_packets.insert(
-                    (pkt.pn(), pkt.packet_type()),
-                    MaybeLostPacket {
-                        time_sent: pkt.time_sent(),
-                    },
-                );
-                qdebug!(
-                    "Spurious detection: added MaybeLostPacket: pn {}, type {:?}, time_sent {:?}",
-                    pkt.pn(),
-                    pkt.packet_type(),
-                    pkt.time_sent()
-                );
-                debug_assert!(present.is_none());
+                if !pkt.is_pmtud_probe() {
+                    let present = self.maybe_lost_packets.insert(
+                        (pkt.pn(), pkt.packet_type()),
+                        MaybeLostPacket {
+                            time_sent: pkt.time_sent(),
+                        },
+                    );
+                    qdebug!(
+                        "Spurious detection: added MaybeLostPacket: pn {}, type {:?}, time_sent {:?}",
+                        pkt.pn(),
+                        pkt.packet_type(),
+                        pkt.time_sent()
+                    );
+                    debug_assert!(present.is_none());
+                }
             }
         }
 
@@ -475,24 +475,24 @@ where
             now,
         );
 
-        let mut lost_packets = lost_packets
-            .iter()
-            .filter(|pkt| !pkt.is_pmtud_probe())
-            .rev()
-            .peekable();
+        
+        
+        let lost_packets_no_pmtud = || lost_packets.iter().filter(|pkt| !pkt.is_pmtud_probe());
 
         
-        let Some(last_lost_packet) = lost_packets.peek() else {
+        
+        let Some(last_lost_packet) = lost_packets_no_pmtud().rfind(|pkt| pkt.cc_in_flight()) else {
             return false;
         };
 
-        let congestion =
-            self.on_congestion_event(last_lost_packet, CongestionEvent::Loss, now, cc_stats);
+        let congestion = self.on_congestion_event(last_lost_packet, Loss, now, cc_stats);
+        
+        
         let persistent_congestion = self.detect_persistent_congestion(
             first_rtt_sample_time,
             prev_largest_acked_sent,
             pto,
-            lost_packets.rev(),
+            lost_packets_no_pmtud(),
             now,
             cc_stats,
         );
@@ -515,7 +515,7 @@ where
         now: Instant,
         cc_stats: &mut CongestionControlStats,
     ) -> bool {
-        self.on_congestion_event(largest_acked_pkt, CongestionEvent::Ecn, now, cc_stats)
+        self.on_congestion_event(largest_acked_pkt, Ecn, now, cc_stats)
     }
 
     fn discard(&mut self, pkt: &sent::Packet, now: Instant) {
@@ -542,11 +542,6 @@ where
 
     fn on_packet_sent(&mut self, pkt: &sent::Packet, now: Instant) {
         
-        if self.current.phase.in_slow_start() {
-            self.slow_start.on_packet_sent(pkt.pn());
-        }
-
-        
         if self.current.phase.transient() {
             self.current.recovery_start = Some(pkt.pn());
             qdebug!("set recovery_start to pn={}", pkt.pn());
@@ -556,6 +551,12 @@ where
         if !pkt.cc_in_flight() {
             return;
         }
+
+        
+        if self.current.phase.in_slow_start() {
+            self.slow_start.on_packet_sent(pkt.pn());
+        }
+
         if !self.app_limited() {
             
             
@@ -730,7 +731,7 @@ where
                 stored.congestion_window,
                 self.current.congestion_window
             );
-            cc_stats.congestion_events[CongestionEvent::Spurious] += 1;
+            cc_stats.congestion_events.spurious += 1;
             return;
         }
         self.congestion_control.restore_undo_state(cc_stats);
@@ -747,7 +748,7 @@ where
             cc_stats.slow_start_exit_reason = None;
         }
         qinfo!("[{self}] Spurious cong event -> RESTORED;");
-        cc_stats.congestion_events[CongestionEvent::Spurious] += 1;
+        cc_stats.congestion_events.spurious += 1;
     }
 
     fn detect_persistent_congestion<'a>(
@@ -843,7 +844,7 @@ where
     fn on_congestion_event(
         &mut self,
         last_packet: &sent::Packet,
-        congestion_event: CongestionEvent,
+        congestion_trigger: CongestionTrigger,
         now: Instant,
         cc_stats: &mut CongestionControlStats,
     ) -> bool {
@@ -858,7 +859,7 @@ where
             return false;
         }
 
-        if congestion_event != CongestionEvent::Ecn {
+        if congestion_trigger != Ecn {
             self.stored = Some(self.current.clone());
             self.congestion_control.save_undo_state();
         }
@@ -867,7 +868,7 @@ where
             self.current.congestion_window,
             self.current.acked_bytes,
             self.max_datagram_size(),
-            congestion_event,
+            congestion_trigger,
             cc_stats,
         );
         self.current.congestion_window = max(cwnd, self.cwnd_min());
@@ -879,7 +880,10 @@ where
             self.current.ssthresh
         );
 
-        cc_stats.congestion_events[congestion_event] += 1;
+        match congestion_trigger {
+            Loss => cc_stats.congestion_events.loss += 1,
+            Ecn => cc_stats.congestion_events.ecn += 1,
+        }
         cc_stats.cwnd = Some(self.current.congestion_window);
         
         
@@ -896,8 +900,7 @@ where
             ],
             now,
         );
-        let trigger =
-            (congestion_event == CongestionEvent::Ecn).then_some(qlog::CongestionStateTrigger::Ecn);
+        let trigger = (congestion_trigger == Ecn).then_some(qlog::CongestionStateTrigger::Ecn);
         self.set_phase(Phase::RecoveryStart, trigger, now);
         true
     }
@@ -929,8 +932,10 @@ mod tests {
 
     use super::{ClassicCongestionController, PERSISTENT_CONG_THRESH, SlowStart, WindowAdjustment};
     use crate::{
+        MIN_INITIAL_PACKET_SIZE,
         cc::{
-            CWND_INITIAL_PKTS, ClassicSlowStart, CongestionController, CongestionEvent,
+            CWND_INITIAL_PKTS, ClassicSlowStart, CongestionController,
+            CongestionTrigger::{self, Ecn, Loss},
             classic_cc::Phase,
             cubic::Cubic,
             new_reno::NewReno,
@@ -1590,14 +1595,14 @@ mod tests {
         assert_eq!(cc.cwnd(), cc.cwnd_initial());
         assert_eq!(cc.ssthresh(), usize::MAX);
         assert_eq!(cc.current.phase, Phase::SlowStart);
-        assert_eq!(cc_stats.congestion_events[CongestionEvent::Ecn], 0);
+        assert_eq!(cc_stats.congestion_events.ecn, 0);
 
         
         cc.on_ecn_ce_received(&p_ce, now, &mut cc_stats);
         assert_eq!(cc.cwnd(), cc.cwnd_initial() * 85 / 100);
         assert_eq!(cc.ssthresh(), cc.cwnd_initial() * 85 / 100);
         assert_eq!(cc.current.phase, Phase::RecoveryStart);
-        assert_eq!(cc_stats.congestion_events[CongestionEvent::Ecn], 1);
+        assert_eq!(cc_stats.congestion_events.ecn, 1);
     }
 
     
@@ -1622,8 +1627,8 @@ mod tests {
         cc.on_packet_sent(&pkt1, now);
         cc.on_packet_sent(&pkt2, now);
         assert_eq!(cc.current.phase, Phase::SlowStart);
-        assert_eq!(cc_stats.congestion_events[CongestionEvent::Loss], 0);
-        assert_eq!(cc_stats.congestion_events[CongestionEvent::Spurious], 0);
+        assert_eq!(cc_stats.congestion_events.loss, 0);
+        assert_eq!(cc_stats.congestion_events.spurious, 0);
 
         
         let cwnd_before_loss = cc.cwnd();
@@ -1646,7 +1651,7 @@ mod tests {
             cc_stats.slow_start_exit_reason,
             Some(SlowStartExitReason::CongestionEvent)
         );
-        assert_eq!(cc_stats.congestion_events[CongestionEvent::Loss], 1);
+        assert_eq!(cc_stats.congestion_events.loss, 1);
         #[expect(
             clippy::cast_sign_loss,
             clippy::cast_possible_truncation,
@@ -1663,7 +1668,7 @@ mod tests {
         let pkt3 = sent::make_packet(3, now, 1000);
         cc.on_packet_sent(&pkt3, now);
         assert_eq!(cc.current.phase, Phase::Recovery);
-        assert_eq!(cc_stats.congestion_events[CongestionEvent::Loss], 1);
+        assert_eq!(cc_stats.congestion_events.loss, 1);
 
         
         cc.on_packets_acked(
@@ -1673,7 +1678,7 @@ mod tests {
             &mut cc_stats,
         );
         assert_eq!(cc.current.phase, Phase::CongestionAvoidance);
-        assert_eq!(cc_stats.congestion_events[CongestionEvent::Loss], 1);
+        assert_eq!(cc_stats.congestion_events.loss, 1);
 
         
         
@@ -1684,8 +1689,8 @@ mod tests {
             &mut cc_stats,
         );
         assert_eq!(cc.current.phase, Phase::CongestionAvoidance);
-        assert_eq!(cc_stats.congestion_events[CongestionEvent::Loss], 1);
-        assert_eq!(cc_stats.congestion_events[CongestionEvent::Spurious], 0);
+        assert_eq!(cc_stats.congestion_events.loss, 1);
+        assert_eq!(cc_stats.congestion_events.spurious, 0);
 
         
         
@@ -1698,8 +1703,8 @@ mod tests {
         assert_eq!(cc.current.phase, Phase::SlowStart);
         assert_eq!(cc_stats.slow_start_exit_cwnd, None);
         assert_eq!(cc_stats.slow_start_exit_reason, None);
-        assert_eq!(cc_stats.congestion_events[CongestionEvent::Loss], 1);
-        assert_eq!(cc_stats.congestion_events[CongestionEvent::Spurious], 1);
+        assert_eq!(cc_stats.congestion_events.loss, 1);
+        assert_eq!(cc_stats.congestion_events.spurious, 1);
         assert_eq!(cc.cwnd(), cc.cwnd_initial());
         assert_eq!(cc_stats.w_max, None);
     }
@@ -1757,7 +1762,7 @@ mod tests {
         
         
         assert_eq!(cc.cwnd(), cwnd_recovered, "cwnd should not be restored");
-        assert_eq!(cc_stats.congestion_events[CongestionEvent::Spurious], 1);
+        assert_eq!(cc_stats.congestion_events.spurious, 1);
     }
 
     
@@ -1789,8 +1794,8 @@ mod tests {
         cc.on_packet_sent(&pkt2, now);
 
         assert_eq!(cc.current.phase, Phase::SlowStart);
-        assert_eq!(cc_stats.congestion_events[CongestionEvent::Loss], 0);
-        assert_eq!(cc_stats.congestion_events[CongestionEvent::Spurious], 0);
+        assert_eq!(cc_stats.congestion_events.loss, 0);
+        assert_eq!(cc_stats.congestion_events.spurious, 0);
 
         let mut lost_pkt1 = pkt1.clone();
         lost_pkt1.declare_lost(now, sent::LossTrigger::TimeThreshold);
@@ -1806,8 +1811,8 @@ mod tests {
         );
 
         assert_eq!(cc.current.phase, Phase::RecoveryStart);
-        assert_eq!(cc_stats.congestion_events[CongestionEvent::Loss], 1);
-        assert_eq!(cc_stats.congestion_events[CongestionEvent::Spurious], 0);
+        assert_eq!(cc_stats.congestion_events.loss, 1);
+        assert_eq!(cc_stats.congestion_events.spurious, 0);
 
         
         let pkt3 = sent::make_packet(3, now, 1000);
@@ -1817,8 +1822,8 @@ mod tests {
         
         cc.on_packets_acked(&[pkt1], &rtt_estimate, now, &mut cc_stats);
 
-        assert_eq!(cc_stats.congestion_events[CongestionEvent::Loss], 1);
-        assert_eq!(cc_stats.congestion_events[CongestionEvent::Spurious], 1);
+        assert_eq!(cc_stats.congestion_events.loss, 1);
+        assert_eq!(cc_stats.congestion_events.spurious, 1);
 
         let mut lost_pkt2 = pkt2.clone();
         lost_pkt2.declare_lost(now, sent::LossTrigger::TimeThreshold);
@@ -1835,16 +1840,16 @@ mod tests {
         );
 
         
-        assert_eq!(cc_stats.congestion_events[CongestionEvent::Loss], 2);
-        assert_eq!(cc_stats.congestion_events[CongestionEvent::Spurious], 1);
+        assert_eq!(cc_stats.congestion_events.loss, 2);
+        assert_eq!(cc_stats.congestion_events.spurious, 1);
 
         
         
         cc.on_packets_acked(&[pkt2], &rtt_estimate, now, &mut cc_stats);
 
         
-        assert_eq!(cc_stats.congestion_events[CongestionEvent::Loss], 2);
-        assert_eq!(cc_stats.congestion_events[CongestionEvent::Spurious], 2,);
+        assert_eq!(cc_stats.congestion_events.loss, 2);
+        assert_eq!(cc_stats.congestion_events.spurious, 2,);
     }
 
     #[test]
@@ -1893,7 +1898,7 @@ mod tests {
         assert!(cc.maybe_lost_packets.is_empty());
     }
 
-    fn slow_start_exit_stats(congestion_event: CongestionEvent) {
+    fn slow_start_exit_stats(congestion_trigger: CongestionTrigger) {
         let mut cc = make_cc_newreno();
         let now = now();
         let mut cc_stats = CongestionControlStats::default();
@@ -1906,11 +1911,11 @@ mod tests {
         let pkt1 = sent::make_packet(1, now, 1000);
         cc.on_packet_sent(&pkt1, now);
 
-        match congestion_event {
-            CongestionEvent::Ecn => {
+        match congestion_trigger {
+            Ecn => {
                 cc.on_ecn_ce_received(&pkt1, now, &mut cc_stats);
             }
-            CongestionEvent::Loss => {
+            Loss => {
                 cc.on_packets_lost(
                     Some(now),
                     None,
@@ -1920,7 +1925,6 @@ mod tests {
                     &mut cc_stats,
                 );
             }
-            CongestionEvent::Spurious => panic!("unsupported congestion event"),
         }
 
         
@@ -1932,7 +1936,7 @@ mod tests {
         );
 
         
-        if congestion_event == CongestionEvent::Loss {
+        if congestion_trigger == Loss {
             
             let pkt2 = sent::make_packet(2, now, 1000);
             cc.on_packet_sent(&pkt2, now);
@@ -1949,12 +1953,12 @@ mod tests {
 
     #[test]
     fn slow_start_exit_stats_loss() {
-        slow_start_exit_stats(CongestionEvent::Loss);
+        slow_start_exit_stats(Loss);
     }
 
     #[test]
     fn slow_start_exit_stats_ecn_ce() {
-        slow_start_exit_stats(CongestionEvent::Ecn);
+        slow_start_exit_stats(Ecn);
     }
 
     #[test]
@@ -2110,5 +2114,34 @@ mod tests {
                 "persistent congestion should have been detected"
             );
         });
+    }
+    
+    
+    
+    
+    
+    #[test]
+    fn no_congestion_event_if_lost_packet_not_in_flight() {
+        let mut cc = make_cc_cubic();
+        let cc_stats = &mut CongestionControlStats::default();
+
+        
+        let lost_pkt = sent::Packet::new(
+            packet::Type::Short,
+            0,
+            now(),
+            false,
+            recovery::Tokens::new(),
+            MIN_INITIAL_PACKET_SIZE,
+        );
+
+        let initial_cwnd = cc.cwnd();
+
+        
+        cc.on_packets_lost(Some(now()), None, PTO, &[lost_pkt], now(), cc_stats);
+
+        
+        assert_eq!(cc.cwnd(), initial_cwnd);
+        assert_eq!(cc_stats.slow_start_exit_cwnd, None);
     }
 }

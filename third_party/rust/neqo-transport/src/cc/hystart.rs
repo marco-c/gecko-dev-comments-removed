@@ -14,6 +14,25 @@ use neqo_common::{qdebug, qtrace};
 
 use crate::{cc::classic_cc::SlowStart, packet, rtt::RttEstimate, stats::CongestionControlStats};
 
+
+
+
+
+#[derive(Debug, Copy, Clone, Default, PartialEq, Eq)]
+pub enum HyStartCssBaseline {
+    
+    
+    
+    
+    #[default]
+    CurrentRoundMinRtt,
+    
+    
+    
+    
+    EntryThreshold,
+}
+
 #[derive(Debug)]
 pub struct HyStart {
     
@@ -27,6 +46,7 @@ pub struct HyStart {
     
     
     limit: usize,
+    css_baseline_mode: HyStartCssBaseline,
     last_round_min_rtt: Option<Duration>,
     current_round_min_rtt: Option<Duration>,
     rtt_sample_count: usize,
@@ -56,7 +76,7 @@ impl HyStart {
 
     pub const NON_PACED_L: usize = 8;
 
-    pub const fn new(pacing: bool) -> Self {
+    pub const fn new(pacing: bool, css_baseline_mode: HyStartCssBaseline) -> Self {
         let limit = if pacing {
             usize::MAX
         } else {
@@ -64,6 +84,7 @@ impl HyStart {
         };
         Self {
             limit,
+            css_baseline_mode,
             last_round_min_rtt: None,
             current_round_min_rtt: None,
             rtt_sample_count: 0,
@@ -240,7 +261,10 @@ impl SlowStart for HyStart {
             );
             if current >= last + rtt_thresh {
                 self.rtt_sample_count = 0;
-                self.css_baseline_min_rtt = Some(current);
+                self.css_baseline_min_rtt = Some(match self.css_baseline_mode {
+                    HyStartCssBaseline::CurrentRoundMinRtt => current,
+                    HyStartCssBaseline::EntryThreshold => last + rtt_thresh,
+                });
                 cc_stats.hystart_css_entries += 1;
                 qdebug!(
                     "HyStart: on_packets_acked -> entered CSS because cur_min={current:?} >= last_min={last:?} + thresh={rtt_thresh:?}"

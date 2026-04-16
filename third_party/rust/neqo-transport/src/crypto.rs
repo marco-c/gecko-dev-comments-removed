@@ -222,10 +222,9 @@ impl Crypto {
         let info = self.tls.preinfo()?;
         
         
-        let cipher = info.early_data_cipher();
-        if cipher.is_none() {
+        let Some(cipher) = info.early_data_cipher() else {
             return Ok(false);
-        }
+        };
         let (dir, secret) = match role {
             Role::Client => (
                 CryptoDxDirection::Write,
@@ -237,8 +236,7 @@ impl Crypto {
             ),
         };
         let secret = secret.ok_or(Error::Internal)?;
-        self.states
-            .set_0rtt_keys(version, dir, &secret, cipher.ok_or(Error::Internal)?)?;
+        self.states.set_0rtt_keys(version, dir, &secret, cipher)?;
         Ok(true)
     }
 
@@ -546,7 +544,7 @@ impl CryptoDxState {
         #[cfg(test)]
         OVERWRITE_INVOCATIONS.with(|v| {
             if let Some(i) = v.borrow_mut().take() {
-                log::warn!("Setting {:?} invocations to {}", self.direction, i);
+                log::warn!("Setting {:?} invocations to {i}", self.direction);
                 self.invocations = i;
             }
         });

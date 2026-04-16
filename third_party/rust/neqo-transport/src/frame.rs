@@ -514,10 +514,7 @@ impl<'a> Frame<'a> {
             FrameType::ResetStream => Ok(Self::ResetStream {
                 stream_id: StreamId::from(dv(dec)?),
                 application_error_code: dv(dec)?,
-                final_size: match dec.decode_varint() {
-                    Some(v) => v,
-                    None => return Err(Error::NoMoreData),
-                },
+                final_size: dv(dec)?,
             }),
             FrameType::Ack => decode_ack(dec, false),
             FrameType::AckEcn => decode_ack(dec, true),
@@ -641,7 +638,7 @@ impl<'a> Frame<'a> {
                     (CloseError::Application(dv(dec)?), 0)
                 };
                 
-                let reason_phrase = String::from_utf8_lossy(d(dec.decode_vvec())?).to_string();
+                let reason_phrase = String::from_utf8_lossy(d(dec.decode_vvec())?).into_owned();
                 Ok(Self::ConnectionClose {
                     error_code,
                     frame_type,
@@ -723,12 +720,13 @@ impl<B: Buffer> FrameEncoder for Encoder<B> {
 #[cfg(test)]
 #[cfg_attr(coverage_nightly, coverage(off))]
 mod tests {
-    use neqo_common::{Decoder, Encoder};
+    use neqo_common::{Decoder, Encoder, MAX_VARINT};
 
     use crate::{
         CloseError, ConnectionId, Error, StreamId, StreamType, Token as Srt,
         ecn::Count,
         frame::{AckRange, Frame, FrameType},
+        packet,
     };
 
     fn just_dec(f: &Frame, s: &str) {
@@ -1283,5 +1281,147 @@ mod tests {
             .dump(),
             "AckFrequency { seqno: 1, tolerance: 2, delay: 3, ignore_order: false }"
         );
+    }
+
+    #[test]
+    fn stream_frame_type_constants() {
+        assert_eq!(FrameType::StreamWithFin as u8, 0x08 + 0b001);
+        assert_eq!(FrameType::StreamWithLen as u8, 0x08 + 0b010);
+        assert_eq!(FrameType::StreamWithOff as u8, 0x08 + 0b100);
+        assert_eq!(FrameType::StreamWithOffFin as u8, 0x08 + 0b101);
+        assert_eq!(FrameType::StreamWithOffLen as u8, 0x08 + 0b110);
+        assert_eq!(FrameType::StreamWithOffLenFin as u8, 0x08 + 0b111);
+    }
+
+    fn stream_frame(offset: u64) -> Frame<'static> {
+        Frame::Stream {
+            fin: false,
+            stream_id: StreamId::from(1),
+            offset,
+            data: &[1],
+            fill: false,
+        }
+    }
+
+    #[test]
+    fn stream_get_type_offset_flag() {
+        assert_eq!(stream_frame(0).get_type(), FrameType::StreamWithLen);
+        assert_eq!(stream_frame(1).get_type(), FrameType::StreamWithOffLen);
+    }
+
+    
+    #[test]
+    fn is_allowed_new_token_and_app_close() {
+        let new_token = Frame::NewToken { token: &[1, 2] };
+        assert!(new_token.is_allowed(packet::Type::Short));
+        assert!(!new_token.is_allowed(packet::Type::ZeroRtt));
+        assert!(!new_token.is_allowed(packet::Type::Handshake));
+
+        let app_close = Frame::ConnectionClose {
+            error_code: CloseError::Application(1),
+            frame_type: 0,
+            reason_phrase: String::new(),
+        };
+        assert!(app_close.is_allowed(packet::Type::Short));
+        assert!(!app_close.is_allowed(packet::Type::ZeroRtt));
+    }
+
+    
+    #[test]
+    fn decode_ack_frame_boundaries() {
+        
+        assert!(Frame::decode_ack_frame(3, 4, &[]).is_err());
+
+        
+        assert!(Frame::decode_ack_frame(4, 4, &[AckRange { gap: 0, range: 0 }]).is_err());
+
+        
+        assert!(Frame::decode_ack_frame(5, 4, &[AckRange { gap: 0, range: 0 }]).is_err());
+
+        
+        assert!(Frame::decode_ack_frame(5, 3, &[AckRange { gap: 0, range: 0 }]).is_ok());
+    }
+
+    
+    #[test]
+    fn decode_ack_frame_gap_arithmetic() {
+        
+        let result = Frame::decode_ack_frame(10, 4, &[AckRange { gap: 1, range: 0 }]);
+        assert_eq!(result.unwrap(), vec![6..=10, 3..=3]);
+
+        
+        assert!(Frame::decode_ack_frame(10, 2, &[AckRange { gap: 0, range: 8 }]).is_err());
+
+        
+        let result = Frame::decode_ack_frame(
+            10,
+            2,
+            &[AckRange { gap: 0, range: 1 }, AckRange { gap: 1, range: 1 }],
+        );
+        assert!(result.is_ok());
+    }
+
+    fn encode_ack_header(range_count: u64) -> Encoder {
+        let mut enc = Encoder::default();
+        enc.encode_byte(0x02); 
+        enc.encode_varint(100u64); 
+        enc.encode_varint(0u64); 
+        enc.encode_varint(range_count);
+        enc
+    }
+
+    
+    #[test]
+    fn decode_ack_too_many_ranges() {
+        let enc = encode_ack_header(32768);
+        let result = Frame::decode(&mut enc.as_decoder());
+        assert_eq!(result.unwrap_err(), Error::TooMuchData);
+
+        let enc = encode_ack_header(32767);
+        let result = Frame::decode(&mut enc.as_decoder());
+        assert_ne!(result.unwrap_err(), Error::TooMuchData);
+    }
+
+    
+    #[test]
+    fn decode_offset_overflow() {
+        
+        let mut enc = Encoder::default();
+        enc.encode_byte(0x0e);
+        enc.encode_varint(1u64); 
+        enc.encode_varint(MAX_VARINT);
+        enc.encode_vvec(&[0x01]);
+        assert_eq!(
+            Frame::decode(&mut enc.as_decoder()).unwrap_err(),
+            Error::FrameEncoding
+        );
+
+        
+        let mut enc = Encoder::default();
+        enc.encode_byte(0x06);
+        enc.encode_varint(MAX_VARINT);
+        enc.encode_vvec(&[0x01]);
+        assert_eq!(
+            Frame::decode(&mut enc.as_decoder()).unwrap_err(),
+            Error::FrameEncoding
+        );
+    }
+
+    
+    #[test]
+    fn decode_max_streams_exceeds_limit() {
+        let mut enc = Encoder::default();
+        enc.encode_byte(0x12); 
+        enc.encode_varint((1u64 << 60) + 1);
+        assert_eq!(
+            Frame::decode(&mut enc.as_decoder()).unwrap_err(),
+            Error::StreamLimit
+        );
+    }
+
+    
+    #[test]
+    fn stream_type_try_from_invalid() {
+        assert!(StreamType::try_from(FrameType::Ping).is_err());
     }
 }

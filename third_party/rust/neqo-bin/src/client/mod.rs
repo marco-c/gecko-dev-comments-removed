@@ -20,6 +20,16 @@ use std::{
 };
 
 use clap::Parser;
+
+#[derive(Clone, Debug)]
+struct EchConfig(Vec<u8>);
+
+impl std::str::FromStr for EchConfig {
+    type Err = hex::FromHexError;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        hex::decode(s).map(EchConfig)
+    }
+}
 use futures::{
     FutureExt as _, TryFutureExt as _,
     future::{Either, select},
@@ -38,7 +48,7 @@ use rustc_hash::FxHashMap as HashMap;
 use thiserror::Error;
 use tokio::time::Sleep;
 
-use crate::SharedArgs;
+use crate::{SharedArgs, now};
 
 mod http09;
 mod http3;
@@ -117,14 +127,22 @@ pub struct Args {
     
     resume: bool,
 
+    #[arg(long)]
+    
+    save_token: Option<PathBuf>,
+
+    #[arg(long)]
+    
+    load_token: Option<PathBuf>,
+
     #[arg(name = "key-update", long, hide = true)]
     
     key_update: bool,
 
-    #[arg(name = "ech", long, value_parser = |s: &str| hex::decode(s))]
+    #[arg(name = "ech", long)]
     
     
-    ech: Option<Vec<u8>>,
+    ech: Option<EchConfig>,
 
     #[arg(name = "ipv4-only", short = '4', long)]
     
@@ -185,6 +203,8 @@ impl Args {
             output_read_data: false,
             output_dir: Some("/dev/null".into()),
             resume: false,
+            save_token: None,
+            load_token: None,
             key_update: false,
             ech: None,
             ipv4_only: false,
@@ -425,7 +445,7 @@ impl<'a, H: Handler> Runner<'a, H> {
                 (true, CloseState::Closing) | (false, _) => {}
                 
                 (true, CloseState::NotClosing) => {
-                    self.client.close(Instant::now(), 0, "kthxbye!");
+                    self.client.close(now(), 0, "kthxbye!");
                     continue;
                 }
                 
@@ -456,10 +476,7 @@ impl<'a, H: Handler> Runner<'a, H> {
                 .inspect_err(|_| qerror!("Socket return GSO size of 0"))
                 .map_err(|_| io::Error::from(ErrorKind::Unsupported))?;
 
-            match self
-                .client
-                .process_multiple_output(Instant::now(), max_datagrams)
-            {
+            match self.client.process_multiple_output(now(), max_datagrams) {
                 OutputBatch::DatagramBatch(dgram) => loop {
                     
                     
@@ -499,7 +516,7 @@ impl<'a, H: Handler> Runner<'a, H> {
 
     async fn process_multiple_input(&mut self) -> Res<()> {
         while let Some(dgrams) = self.socket.recv(self.local_addr, &mut self.recv_buf)? {
-            self.client.process_multiple_input(dgrams, Instant::now());
+            self.client.process_multiple_input(dgrams, now());
             self.process_output().await?;
         }
 
@@ -526,7 +543,7 @@ fn qlog_new(args: &Args, hostname: &str, cid: &ConnectionId) -> Res<Qlog> {
         Some("Neqo client qlog".to_string()),
         Some("Neqo client qlog".to_string()),
         format!("client-{hostname}-{cid}"),
-        Instant::now(),
+        now(),
     )
     .map_err(Error::Qlog)
 }
@@ -599,7 +616,18 @@ pub async fn client(mut args: Args) -> Res<()> {
             args.shared.alpn
         );
 
-        let mut token: Option<ResumptionToken> = None;
+        let mut token: Option<ResumptionToken> = args
+            .load_token
+            .as_ref()
+            .map(|path| -> Res<_> {
+                Ok(ResumptionToken::new(
+                    std::fs::read(path)?,
+                    
+                    
+                    now() + std::time::Duration::from_secs(86400),
+                ))
+            })
+            .transpose()?;
         let mut first = true;
         while !urls.is_empty() {
             let to_request = if (args.resume && first) || args.download_in_series {
@@ -629,6 +657,14 @@ pub async fn client(mut args: Args) -> Res<()> {
                     .run()
                     .await?
             };
+        }
+
+        if let (Some(path), Some(tok)) = (&args.save_token, &token) {
+            if let Err(e) = std::fs::write(path, tok.as_ref()) {
+                qerror!("Failed to save token to {}: {e}", path.display());
+            } else {
+                qinfo!("Resumption token saved to {}", path.display());
+            }
         }
     }
 

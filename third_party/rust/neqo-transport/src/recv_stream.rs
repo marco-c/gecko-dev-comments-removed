@@ -974,15 +974,10 @@ impl RecvStream {
 #[cfg(test)]
 #[cfg_attr(coverage_nightly, coverage(off))]
 mod tests {
-    use std::{
-        cell::RefCell,
-        fmt::Debug,
-        ops::Range,
-        rc::Rc,
-        time::{Duration, Instant},
-    };
+    use std::{cell::RefCell, fmt::Debug, ops::Range, rc::Rc, time::Duration};
 
     use neqo_common::{Encoder, qtrace};
+    use test_fixture::now;
 
     use super::RecvStream;
     use crate::{
@@ -1016,6 +1011,46 @@ mod tests {
                 break;
             }
         }
+    }
+
+    
+    #[test]
+    fn inbound_frame_no_extend_at_4096() {
+        let mut s = RxStreamOrderer::default();
+        
+        s.inbound_frame(0, &[0u8; 4096]);
+        assert_eq!(s.data_ranges[&0].len(), 4096);
+        
+        s.inbound_frame(4096, &[1u8]);
+        assert_eq!(
+            s.data_ranges.len(),
+            2,
+            "a 4096-byte buffer must not be extended further"
+        );
+    }
+
+    
+    #[test]
+    fn inbound_frame_extends_below_4096() {
+        let mut s = RxStreamOrderer::default();
+        s.inbound_frame(0, &[0u8; 4095]);
+        s.inbound_frame(4095, &[1u8]);
+        assert_eq!(s.data_ranges.len(), 1);
+        assert_eq!(s.data_ranges[&0].len(), 4096);
+    }
+
+    
+    #[test]
+    fn read_exact_available_removes_range() {
+        let mut s = RxStreamOrderer::default();
+        s.inbound_frame(0, &[1u8; 5]);
+        s.inbound_frame(5, &[2u8; 5]);
+
+        let mut buf = [0u8; 5];
+        assert_eq!(s.read(&mut buf), 5);
+        assert_eq!(buf, [1u8; 5]);
+        assert_eq!(s.read(&mut buf), 5);
+        assert_eq!(buf, [2u8; 5]);
     }
 
     #[test]
@@ -1464,7 +1499,7 @@ mod tests {
             &mut builder,
             &mut token,
             &mut FrameStats::default(),
-            Instant::now(),
+            now(),
             Duration::from_millis(100),
         );
 
@@ -1585,7 +1620,7 @@ mod tests {
             &mut builder,
             &mut token,
             &mut FrameStats::default(),
-            Instant::now(),
+            now(),
             Duration::from_millis(100),
         );
 
@@ -1611,7 +1646,7 @@ mod tests {
             &mut builder,
             &mut token,
             &mut FrameStats::default(),
-            Instant::now(),
+            now(),
             Duration::from_millis(100),
         );
 
@@ -1921,7 +1956,7 @@ mod tests {
             &mut builder,
             &mut token,
             &mut stats,
-            Instant::now(),
+            now(),
             Duration::from_millis(100),
         );
         assert_eq!(stats.max_data, 0);
@@ -1929,7 +1964,7 @@ mod tests {
             &mut builder,
             &mut token,
             &mut stats,
-            Instant::now(),
+            now(),
             Duration::from_millis(100),
         );
         assert_eq!(stats.max_stream_data, 1);
@@ -1954,7 +1989,7 @@ mod tests {
             &mut builder,
             &mut token,
             &mut stats,
-            Instant::now(),
+            now(),
             Duration::from_millis(100),
         );
         assert_eq!(stats.max_data, 1);
@@ -1962,7 +1997,7 @@ mod tests {
             &mut builder,
             &mut token,
             &mut stats,
-            Instant::now(),
+            now(),
             Duration::from_millis(100),
         );
         assert_eq!(stats.max_stream_data, 1);

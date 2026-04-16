@@ -753,7 +753,10 @@ mod test {
     use neqo_common::{Encoder, Role, qdebug};
     use neqo_crypto::random;
 
-    use super::{LocalStreamLimits, ReceiverFlowControl, RemoteStreamLimits, SenderFlowControl};
+    use super::{
+        AutoTuneSubject, LocalStreamLimits, ReceiverFlowControl, RemoteStreamLimits,
+        SenderFlowControl,
+    };
     use crate::{
         ConnectionParameters, Error, INITIAL_LOCAL_MAX_DATA, INITIAL_LOCAL_MAX_STREAM_DATA, Res,
         connection::params::{MAX_LOCAL_MAX_DATA, MAX_LOCAL_MAX_STREAM_DATA},
@@ -1472,6 +1475,56 @@ mod test {
         );
 
         Ok(())
+    }
+
+    #[test]
+    fn auto_tune_subject_display() {
+        assert_eq!(AutoTuneSubject::Connection.to_string(), "connection");
+        assert_eq!(
+            AutoTuneSubject::Stream(StreamId::new(4)).to_string(),
+            "stream 4"
+        );
+    }
+
+    #[test]
+    fn update_same_limit_returns_none() {
+        
+        let mut fc = SenderFlowControl::new((), 10);
+        assert!(fc.update(10).is_none()); 
+        assert!(fc.update(11).is_some()); 
+    }
+
+    #[test]
+    fn set_max_active_equal_does_not_set_frame_pending() {
+        
+        let mut fc = ReceiverFlowControl::new(StreamId::new(0), 100);
+        fc.set_max_active(100); 
+        assert!(!fc.frame_needed());
+        fc.set_max_active(101); 
+        assert!(fc.frame_needed());
+    }
+
+    #[test]
+    fn retire_no_op_when_not_increasing() {
+        
+        
+        let mut fc = ReceiverFlowControl::new(StreamId::new(0), 100);
+        fc.set_consumed(80).unwrap();
+        fc.retire(80); 
+        assert!(fc.frame_needed());
+        fc.frame_sent(fc.next_limit()); 
+        fc.retire(80); 
+        assert!(!fc.frame_needed());
+    }
+
+    #[test]
+    fn add_retired_zero_does_not_trigger_update() {
+        
+        let mut fc = ReceiverFlowControl::new(StreamType::UniDi, 100);
+        fc.add_retired(0); 
+        assert!(!fc.frame_needed());
+        fc.add_retired(1); 
+        assert!(fc.frame_needed());
     }
 
     #[test]

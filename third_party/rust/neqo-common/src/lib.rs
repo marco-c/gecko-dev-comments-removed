@@ -128,10 +128,22 @@ mod tests {
 
     #[test]
     fn hex_snip_middle_boundary() {
+        
         let short: Vec<u8> = (0..16).collect();
-        assert!(hex_snip_middle(&short).ends_with("0e0f"));
+        let s = hex_snip_middle(&short);
+        assert!(!s.contains(".."), "16 bytes should not be truncated");
+        assert!(s.ends_with("0e0f"));
+
+        
+        let just_over: Vec<u8> = (0..17).collect();
+        assert!(hex_snip_middle(&just_over).contains(".."));
+
+        
         let long: Vec<u8> = (0..20).collect();
         let s = hex_snip_middle(&long);
-        assert!(s.starts_with("[20]: 00") && s.contains("..") && s.ends_with("1213"));
+        assert!(s.starts_with("[20]: 0001020304050607"));
+        assert!(s.contains(".."));
+        
+        assert!(s.ends_with("0c0d0e0f10111213"));
     }
 }

@@ -264,6 +264,26 @@ mod tests {
         assert_eq!(Pacer::rate(10_000, Duration::ZERO), None);
     }
 
+    
+    
+    #[test]
+    fn not_immediately_at_exact_granularity() {
+        
+        
+        
+        const SHORT_RTT: Duration = Duration::from_millis(10);
+        const CWND_AT_GRANULARITY: usize = 5000; 
+        let n = now();
+        let mut p = Pacer::new(true, n, PACKET, PACKET);
+        p.spend(n, SHORT_RTT, CWND_AT_GRANULARITY, PACKET);
+        
+        assert_ne!(
+            p.next(SHORT_RTT, CWND_AT_GRANULARITY),
+            n,
+            "at exactly GRANULARITY should not send immediately"
+        );
+    }
+
     #[test]
     fn pacer_display_and_debug() {
         let mut p = Pacer::new(true, now(), PACKET, PACKET);
