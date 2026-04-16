@@ -179,8 +179,9 @@ already_AddRefed<TextureHost> CreateDummyBufferTextureHost(
   aFlags &= ~TextureFlags::DEALLOCATE_CLIENT;
   aFlags |= TextureFlags::DUMMY_TEXTURE;
   UniquePtr<TextureData> textureData(BufferTextureData::Create(
-      gfx::IntSize(1, 1), gfx::SurfaceFormat::B8G8R8A8, gfx::BackendType::SKIA,
-      aBackend, aFlags, TextureAllocationFlags::ALLOC_DEFAULT, nullptr));
+      gfx::IntSize(1, 1), gfx::SurfaceFormat::B8G8R8A8, gfx::ColorSpace2::SRGB,
+      gfx::TransferFunction::SRGB, gfx::BackendType::SKIA, aBackend, aFlags,
+      TextureAllocationFlags::ALLOC_DEFAULT, nullptr));
   SurfaceDescriptor surfDesc;
   textureData->Serialize(surfDesc);
   const SurfaceDescriptorBuffer& bufferDesc =
@@ -519,6 +520,10 @@ void BufferTextureHost::CreateRenderTexture(
   } else {
     texture =
         new wr::RenderBufferTextureHost(GetBuffer(), GetBufferDescriptor());
+
+    if (auto* shmemTextureHost = AsShmemTextureHost()) {
+      shmemTextureHost->OnRenderTextureCreated(texture);
+    }
   }
 
   wr::RenderThread::Get()->RegisterExternalImage(aExternalImageId,
@@ -551,7 +556,10 @@ void BufferTextureHost::PushResourceUpdates(
                                     : wr::ExternalImageType::Buffer();
 
   if (!IsYCbCr()) {
-    MOZ_ASSERT(aImageKeys.length() == 1);
+    if (aImageKeys.length() != 1) {
+      MOZ_ASSERT_UNREACHABLE("unexpected keys lenght");
+      return;
+    }
 
     auto stride =
         ImageDataSerializer::ComputeRGBStride(GetFormat(), GetSize().width);
@@ -563,7 +571,10 @@ void BufferTextureHost::PushResourceUpdates(
     (aResources.*method)(aImageKeys[0], descriptor, aExtID, imageType, 0,
                           false);
   } else {
-    MOZ_ASSERT(aImageKeys.length() == 3);
+    if (aImageKeys.length() != 3) {
+      MOZ_ASSERT_UNREACHABLE("unexpected keys lenght");
+      return;
+    }
 
     const layers::YCbCrDescriptor& desc = mDescriptor.get_YCbCrDescriptor();
     gfx::IntSize ySize = desc.display().Size();
@@ -594,13 +605,19 @@ void BufferTextureHost::PushDisplayItems(wr::DisplayListBuilder& aBuilder,
   bool useExternalSurface =
       aFlags.contains(PushDisplayItemFlag::SUPPORTS_EXTERNAL_BUFFER_TEXTURES);
   if (!IsYCbCr()) {
-    MOZ_ASSERT(aImageKeys.length() == 1);
+    if (aImageKeys.length() != 1) {
+      MOZ_ASSERT_UNREACHABLE("unexpected key length");
+      return;
+    }
     aBuilder.PushImage(aBounds, aClip, true, false, aFilter, aImageKeys[0],
                        !(mFlags & TextureFlags::NON_PREMULTIPLIED),
                        wr::ColorF{1.0f, 1.0f, 1.0f, 1.0f},
                        preferCompositorSurface, useExternalSurface);
   } else {
-    MOZ_ASSERT(aImageKeys.length() == 3);
+    if (aImageKeys.length() != 3) {
+      MOZ_ASSERT_UNREACHABLE("unexpected key length");
+      return;
+    }
     const YCbCrDescriptor& desc = mDescriptor.get_YCbCrDescriptor();
     aBuilder.PushYCbCrPlanarImage(
         aBounds, aClip, true, aImageKeys[0], aImageKeys[1], aImageKeys[2],
@@ -657,6 +674,14 @@ gfx::YUVColorSpace BufferTextureHost::GetYUVColorSpace() const {
     return desc.yUVColorSpace();
   }
   return gfx::YUVColorSpace::Identity;
+}
+
+gfx::TransferFunction BufferTextureHost::GetTransferFunction() const {
+  if (IsYCbCr()) {
+    const YCbCrDescriptor& desc = mDescriptor.get_YCbCrDescriptor();
+    return desc.transferFunction();
+  }
+  return gfx::TransferFunction::BT709;
 }
 
 gfx::ColorDepth BufferTextureHost::GetColorDepth() const {
@@ -842,16 +867,67 @@ void ShmemTextureHost::ForgetSharedData() {
 
 void ShmemTextureHost::OnShutdown() { mShmem = nullptr; }
 
+ShmemTextureHost::ShmemDeallocRunnable::ShmemDeallocRunnable(
+    ISurfaceAllocator* aDeallocator, UniquePtr<mozilla::ipc::Shmem>&& aShmem)
+    : Runnable("ShmemDeallocRunnable"),
+      mDeallocator(aDeallocator),
+      mShmem(std::move(aShmem)) {}
+
+nsresult ShmemTextureHost::ShmemDeallocRunnable::Run() {
+  mDeallocator->AsShmemAllocator()->DeallocShmem(*mShmem);
+  mShmem = nullptr;
+  return NS_OK;
+}
+
+void ShmemTextureHost::OnRenderTextureCreated(
+    wr::RenderTextureHost* aRenderTexture) {
+  MOZ_ASSERT(aRenderTexture);
+
+  if (!mShmem || (GetFlags() & TextureFlags::DEALLOCATE_CLIENT)) {
+    return;
+  }
+
+  RefPtr<nsISerialEventTarget> eventTarget = GetCurrentSerialEventTarget();
+  RefPtr<ShmemDeallocRunnable> runnable =
+      new ShmemDeallocRunnable(mDeallocator, std::move(mShmem));
+  mShmemDeallocRunnable = runnable;
+
+  auto destroyedCallback = [eventTarget = std::move(eventTarget),
+                            runnable = std::move(runnable)]() mutable {
+    eventTarget->Dispatch(runnable.forget());
+  };
+
+  aRenderTexture->SetDestroyedCallback(destroyedCallback);
+}
+
 uint8_t* ShmemTextureHost::GetBuffer() const {
-  return mShmem ? mShmem->get<uint8_t>() : nullptr;
+  if (mShmem) {
+    return mShmem->get<uint8_t>();
+  }
+  if (mShmemDeallocRunnable && mShmemDeallocRunnable->GetShmem()) {
+    return mShmemDeallocRunnable->GetShmem()->get<uint8_t>();
+  }
+  return nullptr;
 }
 
 uint16_t* ShmemTextureHost::GetBuffer16() const {
-  return mShmem ? mShmem->get<uint16_t>() : nullptr;
+  if (mShmem) {
+    return mShmem->get<uint16_t>();
+  }
+  if (mShmemDeallocRunnable && mShmemDeallocRunnable->GetShmem()) {
+    return mShmemDeallocRunnable->GetShmem()->get<uint16_t>();
+  }
+  return nullptr;
 }
 
 size_t ShmemTextureHost::GetBufferSize() const {
-  return mShmem ? mShmem->Size<uint8_t>() : 0;
+  if (mShmem) {
+    return mShmem->Size<uint8_t>();
+  }
+  if (mShmemDeallocRunnable && mShmemDeallocRunnable->GetShmem()) {
+    return mShmemDeallocRunnable->GetShmem()->Size<uint8_t>();
+  }
+  return 0;
 }
 
 MemoryTextureHost::MemoryTextureHost(uint8_t* aBuffer,
