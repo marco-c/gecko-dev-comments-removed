@@ -490,13 +490,6 @@ inline T CheckedDivExact(T a, T b) {
 }  
 
 
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace rtc {
-using ::webrtc::CheckedDivExact;
-}  
-#endif  
-
 #else  
 
 
@@ -532,5 +525,17 @@ using ::webrtc::CheckedDivExact;
 #define RTC_DCHECK_GT(a, b) RTC_DCHECK((a) > (b))
 
 #endif  
+
+
+
+
+
+
+
+#ifdef RTC_HARDENING
+#define RTC_HARDENING_ASSERT(x) RTC_CHECK(x)
+#else
+#define RTC_HARDENING_ASSERT(x) RTC_DCHECK(x)
+#endif
 
 #endif

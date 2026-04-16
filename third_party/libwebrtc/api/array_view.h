@@ -266,8 +266,11 @@ class ArrayView final : public array_view_internal::ArrayViewBase<T, Size> {
   
   
   T& operator[](size_t idx) const {
-    RTC_DCHECK_LT(idx, this->size());
-    RTC_DCHECK(this->data());
+    
+    
+    
+    RTC_HARDENING_ASSERT(idx < this->size());
+    RTC_HARDENING_ASSERT(this->data());
     return this->data()[idx];
   }
   T* begin() const { return this->data(); }
