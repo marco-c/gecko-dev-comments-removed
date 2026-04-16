@@ -147,10 +147,10 @@ class RTC_EXPORT AudioProcessing : public RefCountInterface {
       
       int maximum_internal_processing_rate = 32000;
       
-      bool multi_channel_render = false;
+      bool multi_channel_render = true;
       
       
-      bool multi_channel_capture = false;
+      bool multi_channel_capture = true;
       
       
       DownmixMethod capture_downmix_method = DownmixMethod::kAverageChannels;
