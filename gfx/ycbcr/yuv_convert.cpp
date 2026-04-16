@@ -177,6 +177,7 @@ ConvertYCbCrToRGB32(const uint8_t* y_buf,
     }
     case YV16: {
       src_y = y_buf + y_pitch * pic_y + pic_x;
+      
       src_u = u_buf + uv_pitch * pic_y + pic_x / 2;
       src_v = v_buf + uv_pitch * pic_y + pic_x / 2;
 
@@ -185,8 +186,10 @@ ConvertYCbCrToRGB32(const uint8_t* y_buf,
     }
     case YV12: {
       src_y = y_buf + y_pitch * pic_y + pic_x;
-      src_u = u_buf + (uv_pitch * pic_y + pic_x) / 2;
-      src_v = v_buf + (uv_pitch * pic_y + pic_x) / 2;
+      
+      
+      src_u = u_buf + uv_pitch * (pic_y / 2) + pic_x / 2;
+      src_v = v_buf + uv_pitch * (pic_y / 2) + pic_x / 2;
 
       fConvertYUVToARGB = libyuv::I420ToARGBMatrix;
       break;
@@ -210,6 +213,81 @@ ConvertYCbCrToRGB32(const uint8_t* y_buf,
 
   const uint8_t* u_channel = swap_uv? src_v : src_u;
   const uint8_t* v_channel = swap_uv? src_u : src_v;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
+  int dx = (yuv_type == YV12 || yuv_type == YV16) ? (pic_x & 1) : 0;
+  int dy = (yuv_type == YV12) ? (pic_y & 1) : 0;
+  if (dx | dy) {
+    
+    auto convert = [&](int sx, int sy, int w, int h, uint8_t* dst) -> nsresult {
+      if (w <= 0 || h <= 0) {
+        return NS_OK;
+      }
+      const uint8_t* py = y_buf + sy * y_pitch + sx;
+      const uint8_t* pu;
+      const uint8_t* pv;
+      if (yuv_type == YV12) {
+        pu = u_buf + (sy / 2) * uv_pitch + sx / 2;
+        pv = v_buf + (sy / 2) * uv_pitch + sx / 2;
+      } else {  
+        pu = u_buf + sy * uv_pitch + sx / 2;
+        pv = v_buf + sy * uv_pitch + sx / 2;
+      }
+      const uint8_t* uc = swap_uv ? pv : pu;
+      const uint8_t* vc = swap_uv ? pu : pv;
+      return ToNSResult(fConvertYUVToARGB(py, y_pitch, uc, uv_pitch, vc, uv_pitch,
+                                          dst, rgb_pitch, yuv_constant, w, h));
+    };
+    if (dy) {
+      
+      if (dx) {
+        
+        nsresult rv = convert(pic_x, pic_y, 1, 1, rgb_buf);
+        if (NS_FAILED(rv)) {
+          return rv;
+        }
+      }
+      
+      nsresult rv = convert(pic_x + dx, pic_y, pic_width - dx, 1, rgb_buf + dx * 4);
+      if (NS_FAILED(rv)) {
+        return rv;
+      }
+    }
+    int sy = pic_y + dy;  
+    int h = pic_height - dy;
+    if (dx) {
+      
+      nsresult rv = convert(pic_x, sy, 1, h, rgb_buf + dy * rgb_pitch);
+      if (NS_FAILED(rv)) {
+        return rv;
+      }
+    }
+    
+    return convert(pic_x + dx, sy, pic_width - dx, h,
+                   rgb_buf + dy * rgb_pitch + dx * 4);
+  }
+
   return ToNSResult(fConvertYUVToARGB(src_y, y_pitch, u_channel, uv_pitch,
                                       v_channel, uv_pitch, rgb_buf, rgb_pitch,
                                       yuv_constant, pic_width, pic_height));
