@@ -132,14 +132,16 @@ static const uint8_t NS_AUTOCAPITALIZE_NONE = 1;
 static const uint8_t NS_AUTOCAPITALIZE_SENTENCES = 2;
 static const uint8_t NS_AUTOCAPITALIZE_WORDS = 3;
 static const uint8_t NS_AUTOCAPITALIZE_CHARACTERS = 4;
+static const uint8_t NS_AUTOCAPITALIZE_OFF = 5;
+static const uint8_t NS_AUTOCAPITALIZE_ON = 6;
 
 static constexpr nsAttrValue::EnumTableEntry kAutocapitalizeTable[] = {
     {"none", NS_AUTOCAPITALIZE_NONE},
     {"sentences", NS_AUTOCAPITALIZE_SENTENCES},
     {"words", NS_AUTOCAPITALIZE_WORDS},
     {"characters", NS_AUTOCAPITALIZE_CHARACTERS},
-    {"off", NS_AUTOCAPITALIZE_NONE},
-    {"on", NS_AUTOCAPITALIZE_SENTENCES},
+    {"off", NS_AUTOCAPITALIZE_OFF},
+    {"on", NS_AUTOCAPITALIZE_ON},
     {"", 0},
 };
 
@@ -3969,6 +3971,26 @@ bool nsGenericHTMLElement::IsFormAssociatedCustomElement() const {
 }
 
 void nsGenericHTMLElement::GetAutocapitalize(nsAString& aValue) const {
+  
+  
+  const auto* attr = GetParsedAttr(nsGkAtoms::autocapitalize);
+  if (attr && attr->Type() == nsAttrValue::eEnum) {
+    auto enumValue = attr->GetEnumValue();
+    if (enumValue == NS_AUTOCAPITALIZE_OFF ||
+        enumValue == NS_AUTOCAPITALIZE_NONE) {
+      
+      aValue.AssignLiteral("none");
+      return;
+    }
+    if (enumValue == NS_AUTOCAPITALIZE_ON ||
+        enumValue == NS_AUTOCAPITALIZE_SENTENCES) {
+      
+      aValue.AssignLiteral("sentences");
+      return;
+    }
+  }
+  
+  
   GetEnumAttr(nsGkAtoms::autocapitalize, nullptr, kDefaultAutocapitalize->tag,
               aValue);
 }
