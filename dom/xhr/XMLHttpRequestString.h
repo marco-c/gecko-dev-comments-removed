@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_XMLHttpRequestString_h
 #define mozilla_dom_XMLHttpRequestString_h
 
@@ -106,7 +104,7 @@ class XMLHttpRequestStringSnapshot final {
 
   bool IsVoid() const { return mVoid; }
 
-  bool IsEmpty() const { return !mLength; }
+  bool IsEmpty() const { return !mBuffer; }
 
   [[nodiscard]] bool GetAsString(DOMString& aString) const;
 
@@ -117,12 +115,11 @@ class XMLHttpRequestStringSnapshot final {
   XMLHttpRequestStringSnapshot& operator=(
       const XMLHttpRequestStringSnapshot&&) = delete;
 
-  void Set(XMLHttpRequestStringBuffer* aBuffer, uint32_t aLength);
+  void Set(XMLHttpRequestStringBuffer* aBuffer);
 
   void ResetInternal(bool aIsVoid);
 
   RefPtr<XMLHttpRequestStringBuffer> mBuffer;
-  uint32_t mLength;
   bool mVoid;
 };
 
