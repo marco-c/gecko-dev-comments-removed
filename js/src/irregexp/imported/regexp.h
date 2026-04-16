@@ -12,24 +12,27 @@ namespace v8 {
 namespace internal {
 
 class JSRegExp;
-class RegExpCapture;
 class RegExpData;
 class IrRegExpData;
 class AtomRegExpData;
 class RegExpMatchInfo;
-class RegExpNode;
-class RegExpTree;
 
-enum class RegExpCompilationTarget : int { kBytecode, kNative };
+namespace regexp {
+
+class Capture;
+class Node;
+class Tree;
+
+enum class CompilationTarget : int { kBytecode, kNative };
 
 
 
-struct RegExpCompileData {
+struct CompileData {
   
-  RegExpTree* tree = nullptr;
+  Tree* tree = nullptr;
 
   
-  RegExpNode* node = nullptr;
+  Node* node = nullptr;
 
   
   
@@ -45,11 +48,11 @@ struct RegExpCompileData {
 
   
   
-  ZoneVector<RegExpCapture*>* named_captures = nullptr;
+  ZoneVector<Capture*>* named_captures = nullptr;
 
   
   
-  RegExpError error = RegExpError::kNone;
+  Error error = Error::kNone;
 
   
   
@@ -62,8 +65,10 @@ struct RegExpCompileData {
   int register_count = 0;
 
   
-  RegExpCompilationTarget compilation_target;
+  CompilationTarget compilation_target;
 };
+
+}  
 
 class RegExp final : public AllStatic {
  public:
@@ -71,14 +76,14 @@ class RegExp final : public AllStatic {
   static bool CanGenerateBytecode();
 
   
-  V8_EXPORT_PRIVATE static bool VerifyFlags(RegExpFlags flags);
+  V8_EXPORT_PRIVATE static bool VerifyFlags(regexp::Flags flags);
 
   
   
   template <class CharT>
   static bool VerifySyntax(Zone* zone, uintptr_t stack_limit,
                            const CharT* input, int input_length,
-                           RegExpFlags flags, RegExpError* regexp_error_out,
+                           regexp::Flags flags, regexp::Error* regexp_error_out,
                            const DisallowGarbageCollection& no_gc);
 
   
@@ -86,8 +91,9 @@ class RegExp final : public AllStatic {
   
   
   V8_WARN_UNUSED_RESULT static MaybeDirectHandle<Object> Compile(
-      Isolate* isolate, DirectHandle<JSRegExp> re, DirectHandle<String> pattern,
-      RegExpFlags flags, uint32_t backtrack_limit);
+      Isolate* isolate, DirectHandle<JSRegExp> re,
+      DirectHandle<String> original_source, regexp::Flags flags,
+      uint32_t backtrack_limit);
 
   
   
@@ -149,37 +155,40 @@ class RegExp final : public AllStatic {
       DirectHandle<String> subject, int capture_count, int32_t* match);
 
   V8_EXPORT_PRIVATE static bool CompileForTesting(
-      Isolate* isolate, Zone* zone, RegExpCompileData* input, RegExpFlags flags,
-      DirectHandle<String> pattern, DirectHandle<String> sample_subject,
+      Isolate* isolate, Zone* zone, regexp::CompileData* input,
+      regexp::Flags flags, DirectHandle<String> pattern,
+      DirectHandle<String> sample_subject, DirectHandle<IrRegExpData> re_data,
       bool is_one_byte);
 
   V8_EXPORT_PRIVATE static void DotPrintForTesting(const char* label,
-                                                   RegExpNode* node);
+                                                   regexp::Node* node);
 
   static const int kRegExpTooLargeToOptimize = 20 * KB;
 
   V8_WARN_UNUSED_RESULT
   static MaybeDirectHandle<Object> ThrowRegExpException(
-      Isolate* isolate, RegExpFlags flags, DirectHandle<String> pattern,
-      RegExpError error);
+      Isolate* isolate, regexp::Flags flags,
+      DirectHandle<String> original_source, regexp::Error error);
   static void ThrowRegExpException(Isolate* isolate,
                                    DirectHandle<RegExpData> re_data,
-                                   RegExpError error_text);
+                                   regexp::Error error_text);
 
   static bool IsUnmodifiedRegExp(Isolate* isolate,
                                  DirectHandle<JSRegExp> regexp);
 
   static DirectHandle<FixedArray> CreateCaptureNameMap(
-      Isolate* isolate, ZoneVector<RegExpCapture*>* named_captures);
+      Isolate* isolate, ZoneVector<regexp::Capture*>* named_captures);
 };
 
+namespace regexp {
 
 
 
-class RegExpGlobalExecRunner final {
+
+class GlobalExecRunner final {
  public:
-  RegExpGlobalExecRunner(DirectHandle<RegExpData> regexp_data,
-                         DirectHandle<String> subject, Isolate* isolate);
+  GlobalExecRunner(DirectHandle<RegExpData> regexp_data,
+                   DirectHandle<String> subject, Isolate* isolate);
 
   
   
@@ -199,7 +208,7 @@ class RegExpGlobalExecRunner final {
     return register_array_size_ / registers_per_match_;
   }
 
-  RegExpResultVectorScope result_vector_scope_;
+  ResultVectorScope result_vector_scope_;
   int num_matches_ = 0;
   int current_match_index_ = 0;
   int registers_per_match_ = 0;
@@ -214,7 +223,7 @@ class RegExpGlobalExecRunner final {
 
 
 
-class RegExpResultsCache final : public AllStatic {
+class ResultsCache final : public AllStatic {
  public:
   enum ResultsCacheType { REGEXP_MULTIPLE_INDICES, STRING_SPLIT_SUBSTRINGS };
 
@@ -259,7 +268,7 @@ class RegExpResultsCache final : public AllStatic {
 
 
 
-class RegExpResultsCache_MatchGlobalAtom final : public AllStatic {
+class ResultsCache_MatchGlobalAtom final : public AllStatic {
  public:
   static void TryInsert(Isolate* isolate, Tagged<String> subject,
                         Tagged<String> pattern, int number_of_matches,
@@ -280,6 +289,7 @@ class RegExpResultsCache_MatchGlobalAtom final : public AllStatic {
   static constexpr int kSize = kEntrySize;  
 };
 
+}  
 }  
 }  
 

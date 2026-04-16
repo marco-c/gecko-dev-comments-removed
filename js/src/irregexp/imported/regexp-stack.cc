@@ -7,48 +7,47 @@
 
 namespace v8 {
 namespace internal {
+namespace regexp {
 
-RegExpStackScope::RegExpStackScope(Isolate* isolate)
+StackScope::StackScope(Isolate* isolate)
     : regexp_stack_(isolate->regexp_stack()),
       old_sp_top_delta_(regexp_stack_->sp_top_delta()) {
   DCHECK(regexp_stack_->IsValid());
 }
 
-RegExpStackScope::~RegExpStackScope() {
+StackScope::~StackScope() {
   CHECK_EQ(old_sp_top_delta_, regexp_stack_->sp_top_delta());
   regexp_stack_->ResetIfEmpty();
 }
 
-RegExpStack::RegExpStack() : thread_local_(this) {}
+Stack::Stack() : thread_local_(this) {}
 
-RegExpStack::~RegExpStack() { thread_local_.FreeAndInvalidate(); }
-
-#ifndef COMPILING_IRREGEXP_FOR_EXTERNAL_EMBEDDER
+Stack::~Stack() { thread_local_.FreeAndInvalidate(); }
 
 
-RegExpStack* RegExpStack::New() {
+Stack* Stack::New() {
 #ifdef V8_ENABLE_SANDBOX_HARDWARE_SUPPORT
   
   
   
   VirtualAddressSpace* vas = GetPlatformVirtualAddressSpace();
-  CHECK_LT(sizeof(RegExpStack), vas->allocation_granularity());
+  CHECK_LT(sizeof(Stack), vas->allocation_granularity());
   Address regexp_stack_memory = vas->AllocatePages(
       VirtualAddressSpace::kNoHint, vas->allocation_granularity(),
       vas->allocation_granularity(), PagePermissions::kReadWrite);
   SandboxHardwareSupport::RegisterUnsafeSandboxExtensionMemory(
       regexp_stack_memory, vas->allocation_granularity());
-  return new (reinterpret_cast<void*>(regexp_stack_memory)) RegExpStack();
+  return new (reinterpret_cast<void*>(regexp_stack_memory)) Stack();
 #else
-  return new RegExpStack();
+  return new Stack();
 #endif  
 }
 
 
-void RegExpStack::Delete(RegExpStack* instance) {
+void Stack::Delete(Stack* instance) {
 #ifdef V8_ENABLE_SANDBOX_HARDWARE_SUPPORT
   
-  instance->~RegExpStack();
+  instance->~Stack();
   VirtualAddressSpace* vas = GetPlatformVirtualAddressSpace();
   Address page = reinterpret_cast<Address>(instance);
   DCHECK(IsAligned(page, vas->allocation_granularity()));
@@ -58,9 +57,7 @@ void RegExpStack::Delete(RegExpStack* instance) {
 #endif
 }
 
-#endif  
-
-char* RegExpStack::ArchiveStack(char* to) {
+char* Stack::ArchiveStack(char* to) {
   if (!thread_local_.owns_memory_) {
     
     
@@ -75,13 +72,12 @@ char* RegExpStack::ArchiveStack(char* to) {
   return to + kThreadLocalSize;
 }
 
-
-char* RegExpStack::RestoreStack(char* from) {
+char* Stack::RestoreStack(char* from) {
   MemCopy(&thread_local_, reinterpret_cast<void*>(from), kThreadLocalSize);
   return from + kThreadLocalSize;
 }
 
-void RegExpStack::ThreadLocal::ResetToStaticStack(RegExpStack* regexp_stack) {
+void Stack::ThreadLocal::ResetToStaticStack(Stack* regexp_stack) {
   DeleteDynamicStack();
 
   memory_ = regexp_stack->static_stack_;
@@ -93,7 +89,7 @@ void RegExpStack::ThreadLocal::ResetToStaticStack(RegExpStack* regexp_stack) {
   owns_memory_ = false;
 }
 
-void RegExpStack::ThreadLocal::FreeAndInvalidate() {
+void Stack::ThreadLocal::FreeAndInvalidate() {
   DeleteDynamicStack();
 
   
@@ -106,7 +102,7 @@ void RegExpStack::ThreadLocal::FreeAndInvalidate() {
 }
 
 
-uint8_t* RegExpStack::ThreadLocal::NewDynamicStack(size_t size) {
+uint8_t* Stack::ThreadLocal::NewDynamicStack(size_t size) {
 #ifdef V8_ENABLE_SANDBOX_HARDWARE_SUPPORT
   
   
@@ -128,7 +124,7 @@ uint8_t* RegExpStack::ThreadLocal::NewDynamicStack(size_t size) {
   return new_memory;
 }
 
-void RegExpStack::ThreadLocal::DeleteDynamicStack() {
+void Stack::ThreadLocal::DeleteDynamicStack() {
   if (owns_memory_) {
 #ifdef V8_ENABLE_SANDBOX_HARDWARE_SUPPORT
     VirtualAddressSpace* vas = GetPlatformVirtualAddressSpace();
@@ -141,7 +137,7 @@ void RegExpStack::ThreadLocal::DeleteDynamicStack() {
   }
 }
 
-Address RegExpStack::EnsureCapacity(size_t size) {
+Address Stack::EnsureCapacity(size_t size) {
   if (size > kMaximumStackSize) return kNullAddress;
   if (thread_local_.memory_size_ < size) {
     if (size < kMinimumDynamicStackSize) size = kMinimumDynamicStackSize;
@@ -164,6 +160,6 @@ Address RegExpStack::EnsureCapacity(size_t size) {
   return reinterpret_cast<Address>(thread_local_.memory_top_);
 }
 
-
+}  
 }  
 }  

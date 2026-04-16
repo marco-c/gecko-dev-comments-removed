@@ -2,10 +2,10 @@
 
 
 
-
-
 #ifndef V8_REGEXP_REGEXP_INTERPRETER_H_
 #define V8_REGEXP_REGEXP_INTERPRETER_H_
+
+
 
 #include "irregexp/imported/regexp.h"
 
@@ -13,6 +13,8 @@ namespace v8 {
 namespace internal {
 
 class TrustedByteArray;
+
+namespace regexp {
 
 class V8_EXPORT_PRIVATE IrregexpInterpreter : public AllStatic {
  public:
@@ -68,6 +70,7 @@ class V8_EXPORT_PRIVATE IrregexpInterpreter : public AllStatic {
                    RegExp::CallOrigin call_origin);
 };
 
+}  
 }  
 }  
 

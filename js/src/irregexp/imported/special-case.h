@@ -14,6 +14,7 @@
 
 namespace v8 {
 namespace internal {
+namespace regexp {
 
 
 
@@ -71,7 +72,7 @@ namespace internal {
 
 
 
-class RegExpCaseFolding final : public AllStatic {
+class CaseFolding final : public AllStatic {
  public:
   static const icu::UnicodeSet& IgnoreSet();
   static const icu::UnicodeSet& SpecialAddSet();
@@ -109,6 +110,7 @@ class RegExpCaseFolding final : public AllStatic {
   }
 };
 
+}  
 }  
 }  
 
