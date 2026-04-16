@@ -45,11 +45,11 @@ add_task(async function () {
   });
 
   
-  setToolboxButtonsVisibility(checkButtons, false);
+  await setToolboxButtonsVisibility(toolbox, checkButtons, false);
   
   const initialTabCount = toolbox.doc.querySelectorAll(".devtools-tab").length;
   
-  setToolboxButtonsVisibility(checkButtons, true);
+  await setToolboxButtonsVisibility(toolbox, checkButtons, true);
   Assert.less(
     toolbox.doc.querySelectorAll(".devtools-tab").length,
     initialTabCount,
@@ -59,7 +59,7 @@ add_task(async function () {
   info(
     "Test the count of shown devtools tab after making all buttons to be invisible"
   );
-  setToolboxButtonsVisibility(checkButtons, false);
+  await setToolboxButtonsVisibility(toolbox, checkButtons, false);
   is(
     toolbox.doc.querySelectorAll(".devtools-tab").length,
     initialTabCount,
@@ -67,12 +67,21 @@ add_task(async function () {
   );
 });
 
-function setToolboxButtonsVisibility(checkButtons, doVisible) {
+async function setToolboxButtonsVisibility(toolbox, checkButtons, doVisible) {
   for (const checkButton of checkButtons) {
     if (checkButton.checked === doVisible) {
       continue;
     }
 
+    const onTracerPrefApplied = toolbox.once("new-configuration-applied");
+
     checkButton.click();
+
+    
+    
+    
+    if (checkButton.id == "command-button-jstracer") {
+      await onTracerPrefApplied;
+    }
   }
 }
