@@ -16,6 +16,7 @@
 #include "js/Class.h"               
 #include "js/friend/StackLimits.h"  
 #include "js/Object.h"              
+#include "js/Prefs.h"               
 #include "js/Printer.h"             
 #include "js/Symbol.h"              
 #include "js/TypeDecls.h"  
@@ -157,18 +158,24 @@ JSString* js::ValueToSource(JSContext* cx, HandleValue v) {
     }
 
     case JS::ValueType::Object: {
-      RootedValue fval(cx);
+      
+      
+      
       RootedObject obj(cx, &v.toObject());
-      if (!GetProperty(cx, obj, obj, cx->names().toSource, &fval)) {
-        return nullptr;
-      }
-      if (IsCallable(fval)) {
-        RootedValue v(cx);
-        if (!js::Call(cx, fval, obj, &v)) {
+      if (JS::Prefs::legacy_tosource_lookup() ||
+          cx->realm()->creationOptions().getToSourceEnabled()) {
+        RootedValue fval(cx);
+        if (!GetProperty(cx, obj, obj, cx->names().toSource, &fval)) {
           return nullptr;
         }
+        if (IsCallable(fval)) {
+          RootedValue v(cx);
+          if (!js::Call(cx, fval, obj, &v)) {
+            return nullptr;
+          }
 
-        return ToString<CanGC>(cx, v);
+          return ToString<CanGC>(cx, v);
+        }
       }
 
       ESClass cls;
