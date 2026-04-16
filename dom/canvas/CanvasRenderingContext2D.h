@@ -624,8 +624,10 @@ class CanvasRenderingContext2D : public nsICanvasRenderingContextInternal,
 
 
 
-  void ParseSpacing(const nsACString& aSpacing, float* aValue,
-                    nsACString& aNormalized);
+
+
+  mozilla::Maybe<float> ParseSpacing(const nsACString& aSpacing,
+                                     nsACString& aNormalized);
 
   already_AddRefed<const ComputedStyle> ResolveStyleForProperty(
       NonCustomCSSPropertyId aProperty, const nsACString& aValue);

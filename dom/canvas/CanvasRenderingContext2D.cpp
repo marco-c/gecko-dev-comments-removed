@@ -3027,8 +3027,12 @@ void CanvasRenderingContext2D::GetLetterSpacing(nsACString& aLetterSpacing) {
 
 void CanvasRenderingContext2D::SetLetterSpacing(
     const nsACString& aLetterSpacing) {
-  ParseSpacing(aLetterSpacing, &CurrentState().letterSpacing,
-               CurrentState().letterSpacingStr);
+  nsAutoCString normalized;
+  Maybe<float> value = ParseSpacing(aLetterSpacing, normalized);
+  if (value) {
+    CurrentState().letterSpacing = *value;
+    CurrentState().letterSpacingStr = normalized;
+  }
 }
 
 void CanvasRenderingContext2D::GetWordSpacing(nsACString& aWordSpacing) {
@@ -3040,8 +3044,12 @@ void CanvasRenderingContext2D::GetWordSpacing(nsACString& aWordSpacing) {
 }
 
 void CanvasRenderingContext2D::SetWordSpacing(const nsACString& aWordSpacing) {
-  ParseSpacing(aWordSpacing, &CurrentState().wordSpacing,
-               CurrentState().wordSpacingStr);
+  nsAutoCString normalized;
+  Maybe<float> value = ParseSpacing(aWordSpacing, normalized);
+  if (value) {
+    CurrentState().wordSpacing = *value;
+    CurrentState().wordSpacingStr = normalized;
+  }
 }
 
 static GeckoFontMetrics GetFontMetricsFromCanvas(void* aContext) {
@@ -3072,9 +3080,8 @@ static GeckoFontMetrics GetFontMetricsFromCanvas(void* aContext) {
           0.0f};
 }
 
-void CanvasRenderingContext2D::ParseSpacing(const nsACString& aSpacing,
-                                            float* aValue,
-                                            nsACString& aNormalized) {
+Maybe<float> CanvasRenderingContext2D::ParseSpacing(const nsACString& aSpacing,
+                                                    nsACString& aNormalized) {
   
   
   
@@ -3082,28 +3089,28 @@ void CanvasRenderingContext2D::ParseSpacing(const nsACString& aSpacing,
   normalized.CompressWhitespace(true, true);
   ToLowerCase(normalized);
   if (normalized.EqualsLiteral("normal")) {
-    return;
+    return Nothing();
   }
   float value;
   if (!Servo_ParseLengthWithoutStyleContext(&normalized, &value,
                                             GetFontMetricsFromCanvas, this)) {
     if (!GetPresShell()) {
-      return;
+      return Nothing();
     }
     
     RefPtr<const ComputedStyle> style =
         ResolveStyleForProperty(eCSSProperty_letter_spacing, aSpacing);
     if (!style) {
-      return;
+      return Nothing();
     }
     
     if (!style->StyleText()->mLetterSpacing.IsLength()) {
-      return;
+      return Nothing();
     }
     value = style->StyleText()->mLetterSpacing.AsLength().ToCSSPixels();
   }
   aNormalized = normalized;
-  *aValue = value;
+  return Some(value);
 }
 
 class CanvasUserSpaceMetrics final : public UserSpaceMetricsWithSize {
