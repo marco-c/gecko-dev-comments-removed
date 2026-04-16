@@ -10453,12 +10453,13 @@ function SectionContextMenu({
     setShowContextMenu(!showContextMenu);
   };
   return external_React_default().createElement("div", {
-    className: "section-context-menu"
+    className: `section-context-menu${showContextMenu ? " context-menu-open" : ""}`
   }, external_React_default().createElement("moz-button", {
     type: buttonType,
     size: "default",
     iconsrc: "chrome://global/skin/icons/more.svg",
     title: title || source,
+    "aria-expanded": showContextMenu,
     onClick: onClick
   }), showContextMenu && external_React_default().createElement(LinkMenu, {
     onUpdate: onUpdate,
