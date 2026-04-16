@@ -32,10 +32,12 @@ namespace webrtc {
 
 LogScreamSimulation::LogScreamSimulation(const Config& config,
                                          const Environment& env)
-
     : env_(env), send_rate_tracker_(config.rate_window) {
   
   scream_.emplace(env_);
+  scream_->SetTargetBitrateConstraints(
+      DataRate::Zero(), DataRate::PlusInfinity(),
+      DataRate::KilobitsPerSec(300));
 }
 
 void LogScreamSimulation::ProcessUntil(Timestamp to_time) {
@@ -120,7 +122,9 @@ void LogScreamSimulation::OnIceConfig(
       
       
       scream_.emplace(env_);
-      scream_->SetFirstTargetRate(DataRate::KilobitsPerSec(300));
+      scream_->SetTargetBitrateConstraints(
+          DataRate::Zero() , DataRate::PlusInfinity(),
+          DataRate::KilobitsPerSec(300));
       local_candidate_type_ = candidate.local_candidate_type;
       remote_candidate_type_ = candidate.remote_candidate_type;
     }
