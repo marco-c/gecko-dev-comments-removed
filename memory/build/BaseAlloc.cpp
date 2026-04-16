@@ -12,19 +12,60 @@ using namespace mozilla;
 
 constinit BaseAlloc sBaseAlloc;
 
+uintptr_t BaseAllocCell::Align(uintptr_t aPtr) {
+  
+  
+  
+  
+  
+  static_assert(BaseAlloc::kBaseQuantum <= kCacheLineSize);
+  MOZ_ASSERT(kCacheLineSize <= gPageSize);
+
+  uintptr_t address =
+      ALIGNMENT_CEILING(aPtr, uintptr_t(BaseAlloc::kBaseQuantum));
+
+  uintptr_t cache_line = address & ~uintptr_t(kCacheLineMask);
+
+  if (cache_line + BaseAlloc::kBaseQuantum < address) {
+    
+    
+    address = cache_line + kCacheLineSize;
+  }
+
+  MOZ_ASSERT(aPtr <= address);
+  MOZ_ASSERT((address % alignof(BaseAllocCell)) == 0);
+
+  return address;
+}
+
 
 void BaseAlloc::Init() MOZ_REQUIRES(gInitLock) { mMutex.Init(); }
 
-
-
-
-
-unsigned BaseAlloc::get_list_index_for_size_at_least(base_alloc_size_t aSize) {
-  return CACHELINE_CEILING(aSize) / kCacheLineSize;
+base_alloc_size_t BaseAlloc::size_round_up(base_alloc_size_t aSize) {
+  return ALIGNMENT_CEILING(aSize, kBaseQuantum);
 }
 
-unsigned BaseAlloc::get_list_index_for_size_at_most(base_alloc_size_t aSize) {
-  return aSize / kCacheLineSize;
+unsigned BaseAlloc::get_list_index_for_size(base_alloc_size_t aSize) {
+  
+  
+  
+  
+  
+
+  
+  
+  
+  
+  
+  unsigned index = aSize / kBaseQuantum;
+
+  
+  
+  if (kBaseQuantum == sizeof(BaseAllocMetadata)) {
+    index--;
+  }
+
+  return index;
 }
 
 void BaseAlloc::free(void* aPtr) MOZ_EXCLUDES(mMutex) {
@@ -44,8 +85,8 @@ void BaseAlloc::free(void* aPtr) MOZ_EXCLUDES(mMutex) {
 
   
 
-  unsigned index = get_list_index_for_size_at_most(cell->Size());
-  if (index < NUM_LIST_SIZES) {
+  unsigned index = get_list_index_for_size(cell->Size());
+  if (index < kNumFreeLists) {
     mFreeLists[index].pushFront(cell);
   } else {
     mFreeListOversize.Insert(cell);
@@ -53,7 +94,7 @@ void BaseAlloc::free(void* aPtr) MOZ_EXCLUDES(mMutex) {
 }
 
 void* BaseAlloc::alloc(size_t aSize) {
-  aSize = BaseAllocCell::RoundUp(std::max(aSize, sizeof(BaseAllocCell)));
+  aSize = size_round_up(aSize);
 
   
   
@@ -74,8 +115,8 @@ void* BaseAlloc::alloc(size_t aSize) {
 }
 
 void* BaseAlloc::alloc_from_list(base_alloc_size_t aSize) {
-  unsigned start_index = get_list_index_for_size_at_least(aSize);
-  for (unsigned i = start_index; i < NUM_LIST_SIZES; i++) {
+  unsigned start_index = get_list_index_for_size(aSize);
+  for (unsigned i = start_index; i < kNumFreeLists; i++) {
     if (!mFreeLists[i].isEmpty()) {
       BaseAllocCell* cell = mFreeLists[i].popFront();
       cell->SetAllocated();
@@ -101,11 +142,10 @@ void* BaseAlloc::alloc_from_list(base_alloc_size_t aSize) {
 bool BaseAlloc::pages_alloc(base_alloc_size_t aSize) MOZ_REQUIRES(mMutex) {
   
   MOZ_ASSERT(aSize != 0);
-  MOZ_ASSERT(aSize == BaseAllocCell::RoundUp(aSize));
+  MOZ_ASSERT(aSize == size_round_up(aSize));
 
   
-  base_alloc_size_t gross_size =
-      BaseAllocCell::RoundUp(sizeof(BaseAllocMetadata)) + aSize;
+  base_alloc_size_t gross_size = kBaseQuantum + aSize;
 
   size_t csize = CHUNK_CEILING(gross_size);
   uintptr_t base_pages =
@@ -116,8 +156,10 @@ bool BaseAlloc::pages_alloc(base_alloc_size_t aSize) MOZ_REQUIRES(mMutex) {
   mPastAddr = base_pages + csize;
 
   
-  mNextAddr = BaseAllocCell::RoundUp(base_pages + sizeof(BaseAllocMetadata));
+  mNextAddr = base_pages + kBaseQuantum;
   MOZ_ASSERT(mNextAddr <= mPastAddr);
+  
+  MOZ_ASSERT(mNextAddr == BaseAllocCell::Align(mNextAddr));
 
   
   
@@ -138,19 +180,14 @@ BaseAllocCell* BaseAlloc::wilderness_alloc_inplace(base_alloc_size_t aSize) {
   }
 
   
-  uintptr_t end_of_cell = mNextAddr + aSize - 1;
-
   uintptr_t next_cell =
-      BaseAllocCell::RoundUp(mNextAddr + aSize + sizeof(BaseAllocMetadata));
+      BaseAllocCell::Align(mNextAddr + aSize + sizeof(BaseAllocMetadata));
+  
+  uintptr_t end_of_cell = next_cell - kBaseQuantum - 1;
 
   
-  
-  if ((end_of_cell & ~kCacheLineMask) == (next_cell & ~kCacheLineMask)) {
-    next_cell = CACHELINE_CEILING(next_cell);
-  }
-  MOZ_ASSERT((next_cell % alignof(BaseAllocCell)) == 0);
-  
-  aSize = next_cell - sizeof(BaseAllocMetadata) - mNextAddr;
+  aSize = next_cell - kBaseQuantum - mNextAddr;
+  MOZ_ASSERT(aSize == size_round_up(aSize));
 
   
   if (end_of_cell + 1 > mPastAddr) {
