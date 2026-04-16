@@ -11,6 +11,7 @@
 #ifndef API_VIDEO_CORRUPTION_DETECTION_FRAME_INSTRUMENTATION_GENERATOR_H_
 #define API_VIDEO_CORRUPTION_DETECTION_FRAME_INSTRUMENTATION_GENERATOR_H_
 
+#include <cstdint>
 #include <memory>
 #include <optional>
 
@@ -38,6 +39,8 @@ class FrameInstrumentationGenerator {
   virtual void OnCapturedFrame(VideoFrame frame) = 0;
   virtual std::optional<FrameInstrumentationData> OnEncodedImage(
       const EncodedImage& encoded_image) = 0;
+  
+  virtual void OnFrameReleased(uint32_t rtp_timestamp) = 0;
 
   
   
