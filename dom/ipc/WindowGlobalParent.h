@@ -324,9 +324,6 @@ class WindowGlobalParent final : public WindowContext,
   
   mozilla::ipc::IPCResult RecvUpdateActivePeerConnectionStatus(bool aIsAdded);
 
-  mozilla::ipc::IPCResult RecvUpdateFullscreenKeyboardLockStatus(
-      bool aIsEnabled);
-
  public:
   mozilla::ipc::IPCResult RecvSetSingleChannelId(
       const Maybe<uint64_t>& aSingleChannelId);

@@ -47,7 +47,6 @@
 #include "mozilla/dom/AnimationTimelinesController.h"
 #include "mozilla/dom/DocumentOrShadowRoot.h"
 #include "mozilla/dom/Element.h"
-#include "mozilla/dom/ElementBinding.h"
 #include "mozilla/dom/EventTarget.h"
 #include "mozilla/dom/LargestContentfulPaint.h"
 #include "mozilla/dom/Nullable.h"
@@ -2054,8 +2053,7 @@ class Document : public nsINode,
 
 
 
-  void RemoteFrameFullscreenChanged(Element* aFrameElement,
-                                    bool aFullscreenKeyboardLockEnabled);
+  void RemoteFrameFullscreenChanged(Element* aFrameElement);
 
   
 
@@ -2080,13 +2078,6 @@ class Document : public nsINode,
 
 
   bool IsFullscreenLeaf();
-
-  
-
-
-
-  static Document* GetFullscreenLeaf(Document* aDoc);
-  static Document* GetFullscreenLeaf(Document& aDoc);
 
   
 
@@ -2139,9 +2130,6 @@ class Document : public nsINode,
 
 
   static void ClearPendingFullscreenRequests(Document* aDocument);
-
-  void SetFullscreenKeyboardLockStatus(FullscreenKeyboardLock aStatus);
-  bool HasFullscreenKeyboardLockEnabled();
 
   
 
@@ -5619,10 +5607,6 @@ class Document : public nsINode,
   
   
   WeakPtr<Document> mFullscreenRoot;
-
-  
-  FullscreenKeyboardLock mFullscreenKeyboardLockStatus =
-      FullscreenKeyboardLock::None;
 
   RefPtr<DOMImplementation> mDOMImplementation;
 
