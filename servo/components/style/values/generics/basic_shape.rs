@@ -5,22 +5,17 @@
 
 
 
+use crate::derives::*;
 use crate::values::animated::{lists, Animate, Procedure, ToAnimatedZero};
 use crate::values::computed::Percentage;
 use crate::values::distance::{ComputeSquaredDistance, SquaredDistance};
 use crate::values::generics::{
-    border::GenericBorderRadius,
-    position::{GenericPosition, GenericPositionOrAuto},
-    rect::Rect,
-    NonNegative, Optional,
+    border::GenericBorderRadius, position::GenericPositionOrAuto, rect::Rect, NonNegative, Optional,
 };
 use crate::values::specified::svg_path::{PathCommand, SVGPathData};
 use crate::Zero;
 use std::fmt::{self, Write};
 use style_traits::{CssWriter, ToCss};
-
-
-pub type ShapePosition<LengthPercentage> = GenericPosition<LengthPercentage, LengthPercentage>;
 
 
 #[allow(missing_docs)]
@@ -207,14 +202,14 @@ pub enum GenericBasicShape<Angle, Position, LengthPercentage, BasicShapeRect> {
         #[animation(field_bound)]
         #[css(field_bound)]
         #[shmem(field_bound)]
-        Circle<LengthPercentage>,
+        Circle<Position, LengthPercentage>,
     ),
     
     Ellipse(
         #[animation(field_bound)]
         #[css(field_bound)]
         #[shmem(field_bound)]
-        Ellipse<LengthPercentage>,
+        Ellipse<Position, LengthPercentage>,
     ),
     
     Polygon(GenericPolygon<LengthPercentage>),
@@ -277,8 +272,8 @@ pub use self::GenericInsetRect as InsetRect;
 )]
 #[css(function)]
 #[repr(C)]
-pub struct Circle<LengthPercentage> {
-    pub position: GenericPositionOrAuto<ShapePosition<LengthPercentage>>,
+pub struct Circle<Position, LengthPercentage> {
+    pub position: GenericPositionOrAuto<Position>,
     #[animation(field_bound)]
     pub radius: GenericShapeRadius<LengthPercentage>,
 }
@@ -303,8 +298,8 @@ pub struct Circle<LengthPercentage> {
 )]
 #[css(function)]
 #[repr(C)]
-pub struct Ellipse<LengthPercentage> {
-    pub position: GenericPositionOrAuto<ShapePosition<LengthPercentage>>,
+pub struct Ellipse<Position, LengthPercentage> {
+    pub position: GenericPositionOrAuto<Position>,
     #[animation(field_bound)]
     pub semiaxis_x: GenericShapeRadius<LengthPercentage>,
     #[animation(field_bound)]
@@ -522,10 +517,10 @@ where
     }
 }
 
-impl<LengthPercentage> ToCss for Circle<LengthPercentage>
+impl<Position, LengthPercentage> ToCss for Circle<Position, LengthPercentage>
 where
     LengthPercentage: ToCss + PartialEq,
-    ShapePosition<LengthPercentage>: ToCss,
+    Position: ToCss,
 {
     fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
     where
@@ -551,10 +546,10 @@ where
     }
 }
 
-impl<LengthPercentage> ToCss for Ellipse<LengthPercentage>
+impl<Position, LengthPercentage> ToCss for Ellipse<Position, LengthPercentage>
 where
     LengthPercentage: ToCss + PartialEq,
-    ShapePosition<LengthPercentage>: ToCss,
+    Position: ToCss,
 {
     fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
     where
