@@ -224,8 +224,7 @@ void ScreamV2::UpdateRefWindow(const TransportPacketsFeedback& msg) {
     
     
     
-    DataSize increase =
-        DataUnitsAckedAndNotMarked(msg) * ref_window_mss_ratio();
+    double increase_scale_factor = ref_window_mss_ratio();
 
     
     if (delay_based_congestion_control_.rtt() + feedback_hold_time_ <
@@ -233,29 +232,32 @@ void ScreamV2::UpdateRefWindow(const TransportPacketsFeedback& msg) {
       double rtt_ratio =
           (delay_based_congestion_control_.rtt() + feedback_hold_time_) /
           params_.virtual_rtt.Get();
-      increase = increase * (rtt_ratio * rtt_ratio);
+      increase_scale_factor = increase_scale_factor * (rtt_ratio * rtt_ratio);
     }
 
     
-    increase = increase *
-               std::max(0.25, ref_window_scale_factor_close_to_ref_window_i());
+    increase_scale_factor =
+        increase_scale_factor *
+        std::max(0.25, ref_window_scale_factor_close_to_ref_window_i());
 
     
-    increase = increase * std::max(0.5, 1.0 - ref_window_mss_ratio());
+    increase_scale_factor =
+        increase_scale_factor * std::max(0.5, 1.0 - ref_window_mss_ratio());
 
     
     if (l4s_alpha_ < 0.0001) {
-      increase =
-          increase * delay_based_congestion_control_
-                         .ref_window_scale_factor_due_to_increased_delay();
+      increase_scale_factor =
+          increase_scale_factor *
+          delay_based_congestion_control_
+              .ref_window_scale_factor_due_to_increased_delay();
     }
 
     
     
     
     
-    increase =
-        increase *
+    increase_scale_factor =
+        increase_scale_factor *
         std::max(0.1, delay_based_congestion_control_
                           .ref_window_scale_factor_due_to_delay_variation(
                               ref_window_mss_ratio()));
@@ -274,22 +276,14 @@ void ScreamV2::UpdateRefWindow(const TransportPacketsFeedback& msg) {
                   post_congestion_scale *
                   ref_window_scale_factor_close_to_ref_window_i();
     RTC_DCHECK_GE(multiplicative_scale, 1.0);
-    increase = increase * multiplicative_scale;
+    increase_scale_factor = increase_scale_factor * multiplicative_scale;
 
-    
-    
-    
-    DataSize max_allowed_ref_window =
-        std::max(params_.max_segment_size.Get() +
-                     std::max(max_data_in_flight_this_rtt_,
-                              max_data_in_flight_prev_rtt_) *
-                         params_.bytes_in_flight_head_room.Get(),
-                 params_.min_ref_window.Get());
-
-    if (ref_window_ < max_allowed_ref_window) {
-      ref_window_ =
-          std::clamp(ref_window_ + increase, params_.min_ref_window.Get(),
-                     max_allowed_ref_window);
+    DataSize increase = DataUnitsAckedAndNotMarked(msg) * increase_scale_factor;
+    last_ref_window_increase_scale_factor_ = increase_scale_factor;
+    DataSize max_ref_window = max_allowed_ref_window();
+    if (ref_window_ < max_ref_window) {
+      ref_window_ = std::clamp(ref_window_ + increase,
+                               params_.min_ref_window.Get(), max_ref_window);
     }
   }
 
@@ -329,6 +323,18 @@ DataSize ScreamV2::max_data_in_flight() const {
                   ref_window_mss_ratio());
 
   return ref_window_ * ref_window_overhead;
+}
+
+DataSize ScreamV2::max_allowed_ref_window() const {
+  
+  
+  
+  
+  return std::max(
+      params_.max_segment_size.Get() +
+          std::max(max_data_in_flight_this_rtt_, max_data_in_flight_prev_rtt_) *
+              params_.bytes_in_flight_head_room.Get(),
+      params_.min_ref_window.Get());
 }
 
 void ScreamV2::UpdateFeedbackHoldTime(const TransportPacketsFeedback& msg) {
