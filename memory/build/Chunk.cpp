@@ -608,13 +608,15 @@ static void chunk_record(void* aChunk, size_t aSize, ChunkType aType) {
   gRecycledSize += aSize;
 }
 
-void chunk_dealloc(void* aChunk, size_t aSize, ChunkType aType) {
+
+
+
+void base_chunk_dealloc(void* aChunk, size_t aSize, ChunkType aType) {
   MOZ_ASSERT(aChunk);
   MOZ_ASSERT(GetChunkOffsetForPtr(aChunk) == 0);
   MOZ_ASSERT(aSize != 0);
   MOZ_ASSERT((aSize & kChunkSizeMask) == 0);
-
-  gChunkRTree.Unset(aChunk);
+  MOZ_ASSERT(!gChunkRTree.Get(aChunk));
 
   if (CAN_RECYCLE(aSize)) {
     size_t recycled_so_far = gRecycledSize;
@@ -643,6 +645,18 @@ void chunk_dealloc(void* aChunk, size_t aSize, ChunkType aType) {
   }
 
   pages_unmap(aChunk, aSize);
+}
+
+
+void arena_chunk_dealloc(void* aChunk, size_t aSize, ChunkType aType) {
+  MOZ_ASSERT(aChunk);
+  MOZ_ASSERT(GetChunkOffsetForPtr(aChunk) == 0);
+  MOZ_ASSERT(aSize != 0);
+  MOZ_ASSERT((aSize & kChunkSizeMask) == 0);
+
+  gChunkRTree.Unset(aChunk);
+
+  base_chunk_dealloc(aChunk, aSize, aType);
 }
 
 static void* chunk_recycle(size_t aSize, size_t aAlignment) {
@@ -687,7 +701,7 @@ static void* chunk_recycle(size_t aSize, size_t aAlignment) {
       chunks_mtx.Unlock();
       node = new (fallible) extent_node_t();
       if (!node) {
-        chunk_dealloc(ret, aSize, ZEROED_CHUNK);
+        base_chunk_dealloc(ret, aSize, ZEROED_CHUNK);
         return nullptr;
       }
       chunks_mtx.Lock();
@@ -716,13 +730,7 @@ static void* chunk_recycle(size_t aSize, size_t aAlignment) {
 
 
 
-
-
-
-
-void* chunk_alloc(size_t aSize, size_t aAlignment, bool aBase) {
-  void* ret = nullptr;
-
+void* base_chunk_alloc(size_t aSize, size_t aAlignment) {
   MOZ_ASSERT(aSize != 0);
   MOZ_ASSERT((aSize & kChunkSizeMask) == 0);
   MOZ_ASSERT(aAlignment != 0);
@@ -730,15 +738,31 @@ void* chunk_alloc(size_t aSize, size_t aAlignment, bool aBase) {
 
   
   
-  if (CAN_RECYCLE(aSize) && !aBase) {
+  void* ret = pages_mmap_aligned(aSize, aAlignment, ReserveAndCommit);
+  MOZ_ASSERT(GetChunkOffsetForPtr(ret) == 0);
+
+  return ret;
+}
+
+
+
+void* arena_chunk_alloc(size_t aSize, size_t aAlignment) {
+  void* ret = nullptr;
+
+  MOZ_ASSERT(aSize != 0);
+  MOZ_ASSERT((aSize & kChunkSizeMask) == 0);
+  MOZ_ASSERT(aAlignment != 0);
+  MOZ_ASSERT((aAlignment & kChunkSizeMask) == 0);
+
+  if (CAN_RECYCLE(aSize)) {
     ret = chunk_recycle(aSize, aAlignment);
   }
   if (!ret) {
     ret = pages_mmap_aligned(aSize, aAlignment, ReserveAndCommit);
   }
-  if (ret && !aBase) {
+  if (ret) {
     if (!gChunkRTree.Set(ret, ret)) {
-      chunk_dealloc(ret, aSize, UNKNOWN_CHUNK);
+      base_chunk_dealloc(ret, aSize, UNKNOWN_CHUNK);
       return nullptr;
     }
   }
