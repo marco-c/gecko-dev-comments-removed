@@ -1,0 +1,18 @@
+
+
+
+
+
+
+#ifndef mozilla_dom_SerialLogging_h
+#define mozilla_dom_SerialLogging_h
+
+#include "mozilla/Logging.h"
+
+namespace mozilla::dom {
+
+extern LazyLogModule gWebSerialLog;
+
+}  
+
+#endif  
