@@ -113,7 +113,7 @@ def transform_platform(
         
         
         
-        if config_processor == "arm" and mitmproxy_version == "11.0.0":
+        if config_processor == "arm" and mitmproxy_version == "12.2.1":
             platform_id = "osx-arm64"
         else:
             platform_id = "osx"
