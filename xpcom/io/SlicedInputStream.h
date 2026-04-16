@@ -48,6 +48,10 @@ class SlicedInputStream final : public nsIAsyncInputStream,
   
   
   
+  
+  
+  
+  
 
   SlicedInputStream(already_AddRefed<nsIInputStream> aInputStream,
                     uint64_t aStart, uint64_t aLength);

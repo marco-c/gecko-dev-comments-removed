@@ -41,6 +41,15 @@ NS_INTERFACE_MAP_BEGIN(SlicedInputStream)
   NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsIInputStream)
 NS_INTERFACE_MAP_END
 
+
+
+
+
+
+
+
+static constexpr uint64_t kMaxStreamPos = INT64_MAX;
+
 SlicedInputStream::SlicedInputStream(
     already_AddRefed<nsIInputStream> aInputStream, uint64_t aStart,
     uint64_t aLength)
@@ -51,8 +60,8 @@ SlicedInputStream::SlicedInputStream(
       mWeakAsyncInputStream(nullptr),
       mWeakInputStreamLength(nullptr),
       mWeakAsyncInputStreamLength(nullptr),
-      mStart(aStart),
-      mLength(aLength),
+      mStart(std::clamp<uint64_t>(aStart, 0, kMaxStreamPos)),
+      mLength(std::clamp<uint64_t>(aLength, 0, kMaxStreamPos - mStart)),
       mCurPos(0),
       mClosed(false),
       mAsyncWaitFlags(0),
@@ -489,11 +498,11 @@ bool SlicedInputStream::Deserialize(
 
   const SlicedInputStreamParams& params = aParams.get_SlicedInputStreamParams();
 
-  auto end = CheckedUint64(params.start()) + params.length();
-  if (!end.isValid()) {
+  if (params.start() > kMaxStreamPos ||
+      params.length() > kMaxStreamPos - params.start()) {
     return false;
   }
-  if (params.curPos() > end.value()) {
+  if (params.curPos() > params.start() + params.length()) {
     return false;
   }
 
