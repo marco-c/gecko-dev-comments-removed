@@ -28,7 +28,7 @@ add_task(async function testInvalidURI() {
   await testMenuItemDisabled({
     url: "https://www.example.com/?stripParam=1234",
     prefEnabled: true,
-    selection: true,
+    selection: "some",
   });
 });
 
@@ -37,20 +37,16 @@ add_task(async function testPrefDisabled() {
   await testMenuItemDisabled({
     url: "https://www.example.com/?stripParam=1234",
     prefEnabled: false,
-    selection: false,
+    selection: "dontChange",
   });
 });
 
 
-add_task(async function testQueryParamIsStripped() {
-  let originalUrl = "https://www.example.com/?stripParam=1234";
-  let shortenedUrl = "https://www.example.com/";
-  await testMenuItemEnabled({
-    selectWholeUrl: false,
-    validUrl: originalUrl,
-    strippedUrl: shortenedUrl,
-    useTestList: false,
-    expectedDisabled: false,
+add_task(async function testNoSelection() {
+  await testMenuItemDisabled({
+    url: "https://www.example.com/?stripParam=1234",
+    prefEnabled: true,
+    selection: "none",
   });
 });
 
@@ -59,7 +55,6 @@ add_task(async function testQueryParamIsStrippedSelectURL() {
   let originalUrl = "https://www.example.com/?stripParam=1234";
   let shortenedUrl = "https://www.example.com/";
   await testMenuItemEnabled({
-    selectWholeUrl: true,
     validUrl: originalUrl,
     strippedUrl: shortenedUrl,
     useTestList: false,
@@ -72,7 +67,6 @@ add_task(async function testQueryParamIsStrippedWithOtherParam() {
   let originalUrl = "https://www.example.com/?keepParameter=1&stripParam=1234";
   let shortenedUrl = "https://www.example.com/?keepParameter=1";
   await testMenuItemEnabled({
-    selectWholeUrl: true,
     validUrl: originalUrl,
     strippedUrl: shortenedUrl,
     useTestList: false,
@@ -86,13 +80,12 @@ add_task(async function testQueryParamIsStrippedAfterInvalid() {
   await testMenuItemDisabled({
     url: "https://www.example.com/?stripParam=1234",
     prefEnabled: true,
-    selection: true,
+    selection: "some",
   });
   
   let originalUrl = "https://www.example.com/?stripParam=1234";
   let shortenedUrl = "https://www.example.com/";
   await testMenuItemEnabled({
-    selectWholeUrl: true,
     validUrl: originalUrl,
     strippedUrl: shortenedUrl,
     useTestList: false,
@@ -105,7 +98,6 @@ add_task(async function testURLIsCopiedWithNoParams() {
   let originalUrl = "https://www.example.com/";
   let shortenedUrl = "https://www.example.com/";
   await testMenuItemEnabled({
-    selectWholeUrl: true,
     validUrl: originalUrl,
     strippedUrl: shortenedUrl,
     useTestList: false,
@@ -118,7 +110,6 @@ add_task(async function testQueryParamIsStrippedForSiteSpecific() {
   let originalUrl = "https://www.example.com/?test_2=1234";
   let shortenedUrl = "https://www.example.com/";
   await testMenuItemEnabled({
-    selectWholeUrl: true,
     validUrl: originalUrl,
     strippedUrl: shortenedUrl,
     useTestList: true,
@@ -131,7 +122,6 @@ add_task(async function testQueryParamIsNotStrippedForWrongSiteSpecific() {
   let originalUrl = "https://www.example.com/?test_3=1234";
   let shortenedUrl = "https://www.example.com/?test_3=1234";
   await testMenuItemEnabled({
-    selectWholeUrl: true,
     validUrl: originalUrl,
     strippedUrl: shortenedUrl,
     useTestList: true,
@@ -145,7 +135,6 @@ add_task(async function testQueryParamIsStrippedWhenParamIsCapitalized() {
   let originalUrl = "https://www.example.com/?TEST_1=1234";
   let shortenedUrl = "https://www.example.com/";
   await testMenuItemEnabled({
-    selectWholeUrl: true,
     validUrl: originalUrl,
     strippedUrl: shortenedUrl,
     useTestList: true,
@@ -159,7 +148,6 @@ add_task(async function testQueryParamIsStrippedWhenParamIsLowercase() {
   let originalUrl = "https://www.example.com/?test_5=1234";
   let shortenedUrl = "https://www.example.com/";
   await testMenuItemEnabled({
-    selectWholeUrl: true,
     validUrl: originalUrl,
     strippedUrl: shortenedUrl,
     useTestList: true,
@@ -182,10 +170,25 @@ async function testMenuItemDisabled({ url, prefEnabled, selection }) {
 
   await BrowserTestUtils.withNewTab(url, async function () {
     gURLBar.focus();
-    if (selection) {
+    if (selection == "some") {
       
       gURLBar.selectionStart = url.indexOf("example");
       gURLBar.selectionEnd = url.indexOf("4");
+    } else if (selection == "none") {
+      gURLBar.selectionStart = gURLBar.selectionEnd = 0;
+      
+      
+      
+      
+      
+      EventUtils.synthesizeMouseAtCenter(
+        window.gURLBar.inputField,
+        {
+          type: "mousedown",
+          button: 2,
+        },
+        window
+      );
     }
 
     await UrlbarTestUtils.withContextMenu(window, async popup => {
@@ -209,9 +212,7 @@ async function testMenuItemDisabled({ url, prefEnabled, selection }) {
 
 
 
-
 async function testMenuItemEnabled({
-  selectWholeUrl,
   validUrl,
   strippedUrl,
   useTestList,
@@ -245,9 +246,6 @@ async function testMenuItemEnabled({
 
   await BrowserTestUtils.withNewTab(validUrl, async function () {
     gURLBar.focus();
-    if (selectWholeUrl) {
-      gURLBar.select();
-    }
 
     
     await SimpleTest.promiseClipboardChange(strippedUrl, async () => {
