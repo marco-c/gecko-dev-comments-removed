@@ -20,6 +20,8 @@ pub fn main() {
     let _glean_handle = glean::InitOptions {
         data_dir: data_path.into(),
         locale: None,
+        
+        upload_enabled: true,
     }
     .init()
     .expect("failed to acquire Glean store");
