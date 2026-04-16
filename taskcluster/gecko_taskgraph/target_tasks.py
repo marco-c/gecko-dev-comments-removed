@@ -54,6 +54,7 @@ UNCOMMON_TRY_TASK_LABELS = [
     r"windows10-aarch64-qr",
     
     r"web-platform-tests.*backlog",  
+    r"-artifact[/-]",  
     r"-ccov",
     r"-profiling-",  
     r"-32-.*-webgpu",  
