@@ -30,6 +30,9 @@ class BaseAlloc {
 
   void* calloc(size_t aNumber, size_t aSize) MOZ_EXCLUDES(mMutex);
 
+  
+  size_t usable_size(void* aPtr);
+
   void free(void* aPtr) MOZ_EXCLUDES(mMutex);
 
   Mutex mMutex;
