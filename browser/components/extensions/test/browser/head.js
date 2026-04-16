@@ -60,6 +60,14 @@ ChromeUtils.defineESModuleGetters(this, {
   Management: "resource://gre/modules/Extension.sys.mjs",
 });
 
+ChromeUtils.defineLazyGetter(this, "SidebarTestUtils", () => {
+  const { SidebarTestUtils: utils } = ChromeUtils.importESModule(
+    "resource://testing-common/SidebarTestUtils.sys.mjs"
+  );
+  utils.init(this);
+  return utils;
+});
+
 var { makeWidgetId, promisePopupShown, getPanelForNode, awaitBrowserLoaded } =
   AppUiTestInternals;
 
@@ -523,7 +531,7 @@ registerCleanupFunction(async function () {
     !ObjectUtils.deepEqual(SidebarController.getUIState(), initialSidebarState)
   ) {
     info("Restoring to initial sidebar state");
-    await SidebarController.initializeUIState(initialSidebarState);
+    await SidebarController.updateUIState(initialSidebarState);
   }
 });
 
