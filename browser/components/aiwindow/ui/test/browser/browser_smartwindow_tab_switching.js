@@ -73,6 +73,7 @@ add_setup(async function setup() {
       ["browser.search.suggest.enabled", false],
       ["browser.urlbar.suggest.searches", false],
       ["browser.smartwindow.endpoint", "http://localhost:0/v1"],
+      ["browser.smartwindow.sidebar.openByDefault", true],
     ],
   });
 });
@@ -1021,7 +1022,7 @@ add_task(async function test_tab_with_no_state_should_keep_sidebar() {
 
     Assert.ok(
       AIWindowUI.isSidebarOpen(win),
-      "Sidebar should remain open when switching to tab with no state (shouldOpenSidebar defaults to true)"
+      "Sidebar should remain open when switching to tab with no state (sidebarOpenByDefault pref is true)"
     );
   } finally {
     if (newTab) {
