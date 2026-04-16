@@ -29,6 +29,7 @@
 #include <stdio.h>
 
 #include "absl/strings/string_view.h"
+#include "api/environment/environment.h"
 #include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
@@ -75,7 +76,14 @@ class EventTracer {
 namespace tracing {
 
 
+RTC_EXPORT void SetupInternalTracer(const Environment& env,
+                                    bool enable_all_categories = true);
+
+
+
+
 RTC_EXPORT void SetupInternalTracer(bool enable_all_categories = true);
+
 RTC_EXPORT bool StartInternalCapture(absl::string_view filename);
 RTC_EXPORT void StartInternalCaptureToFile(FILE* file);
 RTC_EXPORT void StopInternalCapture();
@@ -84,19 +92,5 @@ RTC_EXPORT void ShutdownInternalTracer();
 }  
 
 }  
-
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace rtc {
-namespace tracing {
-using ::webrtc::tracing::SetupInternalTracer;
-using ::webrtc::tracing::ShutdownInternalTracer;
-using ::webrtc::tracing::StartInternalCapture;
-using ::webrtc::tracing::StartInternalCaptureToFile;
-using ::webrtc::tracing::StopInternalCapture;
-}  
-}  
-#endif  
 
 #endif  

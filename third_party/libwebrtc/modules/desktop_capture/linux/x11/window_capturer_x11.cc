@@ -16,12 +16,16 @@
 #include <X11/extensions/Xcomposite.h>
 #include <X11/extensions/composite.h>
 
+
+#undef CurrentTime
+
 #include <cstring>
 #include <memory>
 #include <string>
 #include <utility>
 
 #include "api/scoped_refptr.h"
+#include "media/base/video_common.h"
 #include "modules/desktop_capture/desktop_capture_options.h"
 #include "modules/desktop_capture/desktop_capture_types.h"
 #include "modules/desktop_capture/desktop_capturer.h"
