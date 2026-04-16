@@ -140,7 +140,13 @@ class CookieService final : public nsICookieService,
   
   RefPtr<CookieStorage> mPersistentStorage;
   RefPtr<CookieStorage> mPrivateStorage;
-  RefPtr<CookieStorage> mDummyStorage;
+
+  
+  
+  
+  RefPtr<CookieStorage> mRetiredStorage;
+
+  void RetirePersistentStorageForShutdown();
 
  private:
   nsresult AddInternal(nsIURI* aCookieURI, const nsACString& aHost,
@@ -151,8 +157,6 @@ class CookieService final : public nsICookieService,
                        nsICookie::schemeType aSchemeMap, bool aIsPartitioned,
                        bool aFromHttp, const nsID* aOperationID,
                        nsICookieValidation** aValidation);
-
-  CookieStorage* MaybeCreateDummyStorage();
 };
 
 }  
