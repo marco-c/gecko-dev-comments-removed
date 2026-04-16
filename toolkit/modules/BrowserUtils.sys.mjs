@@ -221,6 +221,51 @@ export var BrowserUtils = {
 
 
 
+  copyImageToClipboard(arrayBuffer) {
+    const imageTools = Cc["@mozilla.org/image/tools;1"].getService(
+      Ci.imgITools
+    );
+
+    const imgDecoded = imageTools.decodeImageFromArrayBuffer(
+      arrayBuffer,
+      "image/png"
+    );
+
+    const transferable = Cc[
+      "@mozilla.org/widget/transferable;1"
+    ].createInstance(Ci.nsITransferable);
+    transferable.init(null);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    transferable.addDataFlavor("application/x-moz-nativeimage");
+    transferable.setTransferData("application/x-moz-nativeimage", imgDecoded);
+
+    Services.clipboard.setData(
+      transferable,
+      null,
+      Services.clipboard.kGlobalClipboard
+    );
+  },
+
+  
+
+
+
+
+
   mimeTypeIsTextBased(mimeType) {
     return (
       mimeType.startsWith("text/") ||
