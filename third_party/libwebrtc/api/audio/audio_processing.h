@@ -140,7 +140,8 @@ class RTC_EXPORT AudioProcessing : public RefCountInterface {
       
       enum class DownmixMethod {
         kAverageChannels,  
-        kUseFirstChannel   
+        kUseFirstChannel,  
+        kAdaptive          
       };
 
       
@@ -154,6 +155,8 @@ class RTC_EXPORT AudioProcessing : public RefCountInterface {
       
       
       DownmixMethod capture_downmix_method = DownmixMethod::kAverageChannels;
+      DownmixMethod capture_downmix_method_stereo_aec =
+          DownmixMethod::kAverageChannels;
     } pipeline;
 
     
