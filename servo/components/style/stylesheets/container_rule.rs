@@ -266,7 +266,7 @@ impl ContainerCondition {
     }
 
     
-    pub(crate) fn matches<E>(
+    pub fn matches<E>(
         &self,
         stylist: &Stylist,
         element: E,

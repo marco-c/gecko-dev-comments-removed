@@ -21,5 +21,7 @@ interface CSSContainerRule : CSSConditionRule {
   [Frozen, Cached, Pure] readonly attribute sequence<CSSContainerCondition> conditions;
 
   // Performs a container query look-up for an element.
-  [ChromeOnly] Element? queryContainerFor(Element element);
+  [ChromeOnly] Element? queryContainerFor(Element element, unsigned long conditionIndex);
+
+  [ChromeOnly] boolean queryConditionMatchesElement(Element element, unsigned long conditionIndex);
 };
