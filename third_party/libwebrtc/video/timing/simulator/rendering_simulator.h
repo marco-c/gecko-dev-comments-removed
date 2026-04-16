@@ -15,6 +15,7 @@
 #include <functional>
 #include <memory>
 #include <optional>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -51,6 +52,10 @@ class RenderingSimulator {
     
     
     bool reuse_streams = false;
+
+    
+    
+    std::set<uint32_t> ssrc_filter = {};
   };
 
   

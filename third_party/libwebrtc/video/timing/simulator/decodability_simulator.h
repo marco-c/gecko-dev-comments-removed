@@ -12,6 +12,7 @@
 #define VIDEO_TIMING_SIMULATOR_DECODABILITY_SIMULATOR_H_
 
 #include <cstdint>
+#include <set>
 #include <vector>
 
 #include "absl/algorithm/container.h"
@@ -35,6 +36,10 @@ class DecodabilitySimulator {
     
     
     bool reuse_streams = false;
+
+    
+    
+    std::set<uint32_t> ssrc_filter = {};
   };
 
   

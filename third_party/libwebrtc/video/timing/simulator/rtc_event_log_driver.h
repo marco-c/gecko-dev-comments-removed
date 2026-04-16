@@ -14,9 +14,11 @@
 #include <cstdint>
 #include <memory>
 #include <optional>
+#include <set>
 
 #include "absl/base/nullability.h"
 #include "absl/container/flat_hash_map.h"
+#include "absl/container/flat_hash_set.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/strings/string_view.h"
 #include "api/environment/environment.h"
@@ -57,6 +59,10 @@ class RtcEventLogDriver {
     
     
     bool reuse_streams = false;
+
+    
+    
+    std::set<uint32_t> ssrc_filter = {};
   };
 
   
@@ -130,6 +136,9 @@ class RtcEventLogDriver {
       RTC_GUARDED_BY(simulator_queue_);
   
   absl::flat_hash_map<uint32_t, StreamInterface*> receiving_streams_
+      RTC_GUARDED_BY(simulator_queue_);
+  
+  absl::flat_hash_set<uint32_t> all_known_ssrcs_
       RTC_GUARDED_BY(simulator_queue_);
 };
 
