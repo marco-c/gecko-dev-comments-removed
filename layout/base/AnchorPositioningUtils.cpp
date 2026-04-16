@@ -30,13 +30,8 @@ namespace mozilla {
 namespace {
 
 bool IsScrolled(const nsIFrame* aFrame) {
-  switch (aFrame->Style()->GetPseudoType()) {
-    case PseudoStyleType::MozScrolledContent:
-    case PseudoStyleType::MozScrolledCanvas:
-      return true;
-    default:
-      return false;
-  }
+  return aFrame->Style()->GetPseudoType() ==
+         PseudoStyleType::MozScrolledContent;
 }
 
 dom::ShadowRoot* GetTreeForCascadeLevel(const nsIContent& aContent,
@@ -925,8 +920,9 @@ Maybe<ScopedNameRef> AnchorPositioningUtils::GetUsedAnchorName(
   }
 
   if (const nsIContent* content = aPositioned->GetContent()) {
-    if (const auto* element = content->AsElement()) {
-      if (element->GetPopoverData()) {
+    if (const auto* element = nsGenericHTMLElement::FromNode(content)) {
+      if (element->GetPopoverAttributeState() !=
+          dom::PopoverAttributeState::None) {
         return Some(ScopedNameRef(nsGkAtoms::AnchorPosImplicitAnchor,
                                   StyleCascadeLevel::Default()));
       }

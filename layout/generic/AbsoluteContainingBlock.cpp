@@ -447,22 +447,15 @@ static AnchorPosResolutionCache PopulateAnchorResolutionCache(
 static nsRect ComputeScrollableContainingBlock(
     const nsContainerFrame* aDelegatingFrame, const nsRect& aContainingBlock,
     const OverflowAreas* aOverflowAreas) {
-  switch (aDelegatingFrame->Style()->GetPseudoType()) {
-    case PseudoStyleType::MozScrolledContent:
-    case PseudoStyleType::MozScrolledCanvas: {
-      if (!aOverflowAreas) {
-        break;
-      }
-      
-      
-      
-      ScrollContainerFrame* sf = do_QueryFrame(aDelegatingFrame->GetParent());
-      
-      return sf->GetUnsnappedScrolledRectInternal(
-          aOverflowAreas->ScrollableOverflow(), aContainingBlock.Size());
-    }
-    default:
-      break;
+  if (aOverflowAreas && aDelegatingFrame->Style()->GetPseudoType() ==
+                            PseudoStyleType::MozScrolledContent) {
+    
+    
+    
+    ScrollContainerFrame* sf = do_QueryFrame(aDelegatingFrame->GetParent());
+    
+    return sf->GetUnsnappedScrolledRectInternal(
+        aOverflowAreas->ScrollableOverflow(), aContainingBlock.Size());
   }
   return aContainingBlock;
 }
