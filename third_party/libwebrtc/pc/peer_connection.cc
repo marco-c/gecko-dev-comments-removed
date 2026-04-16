@@ -1375,10 +1375,7 @@ void PeerConnection::GetStats(
   TRACE_EVENT0("webrtc", "PeerConnection::GetStats");
   RTC_DCHECK_RUN_ON(signaling_thread());
   RTC_DCHECK(callback);
-  
-  
-  
-  
+  RTC_DCHECK_DISALLOW_THREAD_BLOCKING_CALLS();
   scoped_refptr<RtpSenderInternal> internal_sender;
   if (selector) {
     for (const auto& proxy_transceiver :
@@ -1410,10 +1407,7 @@ void PeerConnection::GetStats(
   TRACE_EVENT0("webrtc", "PeerConnection::GetStats");
   RTC_DCHECK_RUN_ON(signaling_thread());
   RTC_DCHECK(callback);
-  
-  
-  
-  
+  RTC_DCHECK_DISALLOW_THREAD_BLOCKING_CALLS();
   scoped_refptr<RtpReceiverInternal> internal_receiver;
   if (selector) {
     for (const auto& proxy_transceiver :
