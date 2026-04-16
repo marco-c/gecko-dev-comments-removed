@@ -52,7 +52,7 @@ struct RTC_EXPORT StreamsConfig {
   
   
   
-  std::optional<bool> enable_repeated_initial_probing;
+  bool enable_repeated_initial_probing = false;
   std::optional<double> pacing_factor;
 
   
