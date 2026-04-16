@@ -1109,8 +1109,7 @@ void ProfileBuffer::MaybeStreamExecutionTraceToJSON(
 
   for (const JS::ExecutionTrace::TracedJSContext& context : trace.contexts) {
     Maybe<StreamingParametersForThread> streamingParameters =
-        std::forward<GetStreamingParametersForThreadCallback>(
-            aGetStreamingParametersForThreadCallback)(context.id);
+        aGetStreamingParametersForThreadCallback(context.id);
 
     
     if (!streamingParameters) {
@@ -1338,8 +1337,7 @@ ProfilerThreadId ProfileBuffer::DoStreamSamplesAndMarkersToJSON(
       e.Next();
 
       Maybe<StreamingParametersForThread> streamingParameters =
-          std::forward<GetStreamingParametersForThreadCallback>(
-              aGetStreamingParametersForThreadCallback)(threadId);
+          aGetStreamingParametersForThreadCallback(threadId);
 
       
       if (!streamingParameters) {
