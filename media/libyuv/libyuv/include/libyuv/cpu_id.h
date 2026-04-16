@@ -30,7 +30,6 @@ static const int kCpuHasSVE = 0x800;
 static const int kCpuHasSVE2 = 0x1000;
 static const int kCpuHasSME = 0x2000;
 static const int kCpuHasSME2 = 0x4000;
-static const int kCpuHasSVEF32MM = 0x8000;
 
 
 static const int kCpuHasRISCV = 0x4;
@@ -62,6 +61,10 @@ static const int kCpuHasAVXVNNIINT8 = 0x8000000;
 static const int kCpuHasAMXINT8 = 0x10000000;
 
 
+static const int kCpuHasMIPS = 0x10;
+static const int kCpuHasMSA = 0x100;
+
+
 static const int kCpuHasLOONGARCH = 0x20;
 static const int kCpuHasLSX = 0x100;
 static const int kCpuHasLASX = 0x200;
@@ -87,6 +90,8 @@ static __inline int TestCpuFlag(int test_flag) {
 
 LIBYUV_API
 int ArmCpuCaps(const char* cpuinfo_name);
+LIBYUV_API
+int MipsCpuCaps(const char* cpuinfo_name);
 LIBYUV_API
 int RiscvCpuCaps(const char* cpuinfo_name);
 
