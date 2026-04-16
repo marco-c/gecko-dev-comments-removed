@@ -1364,7 +1364,7 @@ impl Stylist {
         self.cascade_style_and_visited(
             element,
             Some(pseudo),
-            inputs,
+            &inputs,
             guards,
             parent_style,
             parent_style,
@@ -1445,7 +1445,7 @@ impl Stylist {
                 Some(self.cascade_style_and_visited(
                     Some(element),
                     pseudo.as_ref(),
-                    inputs,
+                    &inputs,
                     guards,
                     parent_style,
                     layout_parent_style,
@@ -1474,7 +1474,7 @@ impl Stylist {
         &self,
         element: Option<E>,
         pseudo: Option<&PseudoElement>,
-        inputs: CascadeInputs,
+        inputs: &CascadeInputs,
         guards: &StylesheetGuards,
         parent_style: Option<&ComputedValues>,
         layout_parent_style: Option<&ComputedValues>,
@@ -2075,9 +2075,8 @@ impl Stylist {
         use RegisterCustomPropertyResult::*;
 
         
-        let name = match parse_name(name) {
-            Ok(n) => Atom::from(n),
-            Err(()) => return InvalidName,
+        let Ok(name) = parse_name(name).map(Atom::from) else {
+            return InvalidName;
         };
 
         
@@ -2092,8 +2091,8 @@ impl Stylist {
         };
 
         let initial_value = match initial_value {
-            Some(v) => {
-                let mut input = ParserInput::new(v);
+            Some(value) => {
+                let mut input = ParserInput::new(value);
                 let parsed = Parser::new(&mut input)
                     .parse_entirely(|input| {
                         input.skip_whitespace();
