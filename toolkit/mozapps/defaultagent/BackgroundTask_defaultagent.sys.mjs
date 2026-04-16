@@ -1,3 +1,4 @@
+/* -*- js-indent-level: 2; indent-tabs-mode: nil -*- */
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -296,10 +297,10 @@ async function showNotification(name) {
       "browser/backgroundtasks/defaultagent.ftl",
     ]);
     let [title, body, yesButtonText, noButtonText] = await l10n.formatValues([
-      { id: "default-browser-notification-header-text" },
-      { id: "default-browser-notification-body-text" },
+      { id: "default-browser-notification-privacy-header-text" },
+      { id: "default-browser-notification-privacy-body-text" },
       { id: "default-browser-notification-yes-button-text" },
-      { id: "default-browser-notification-no-button-text" },
+      { id: "default-browser-notification-privacy-no-button-text" },
     ]);
 
     let yesAction = "yes-action";
@@ -350,7 +351,7 @@ async function makeAlert(options) {
   let image = null;
   try {
     const uri = Services.io.newURI(
-      "chrome://global/content/defaultagent/fox-doodle-peek.png"
+      "chrome://global/content/defaultagent/default-browser-notification-privacy-image.svg"
     );
     const channel = Services.io.newChannelFromURI(
       uri,
@@ -382,6 +383,7 @@ async function makeAlert(options) {
     true /* aRequireInteraction */
   );
   alert.image = image;
+  alert.imagePlacement = alert.eInline;
 
   alert.actions = options.actions;
 
