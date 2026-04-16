@@ -236,9 +236,11 @@ class MediaSendChannelInterface {
   
   
   
-  virtual void SetOnRtpSendParametersChanged(
+  virtual void SubscribeRtpSendParametersChanged(
+      const void* tag,
       absl::AnyInvocable<void(std::optional<uint32_t>, const RtpParameters&)>
           callback) = 0;
+  virtual void UnsubscribeRtpSendParametersChanged(const void* tag) = 0;
 
   virtual void SetEncoderToPacketizerFrameTransformer(
       uint32_t ssrc,
@@ -611,7 +613,7 @@ struct VideoSenderInfo : public MediaSenderInfo {
   std::optional<uint64_t> qp_sum;
   VideoContentType content_type = VideoContentType::UNSPECIFIED;
   
-  webrtc::EncodedImage::Psnr psnr_sum;
+  EncodedImage::Psnr psnr_sum;
   uint32_t psnr_measurements = 0;
   uint32_t frames_sent = 0;
   
