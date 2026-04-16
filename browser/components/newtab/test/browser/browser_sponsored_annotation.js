@@ -140,15 +140,30 @@ async function openAndTest({
   expected,
 }) {
   const destinationURL = redirectTo || linkURL;
+  const expectedIsSponsoredLink =
+    linkSelector === ".top-site-button"
+      ? expected.source === VISIT_SOURCE_SPONSORED
+      : null;
 
   
   await SpecialPowers.spawn(
     gBrowser.selectedBrowser,
-    [linkSelector, linkURL],
-    async (selector, link) => {
-      await ContentTaskUtils.waitForCondition(
-        () => content.document.querySelector(selector).href === link
-      );
+    [linkSelector, linkURL, expectedIsSponsoredLink],
+    async (selector, link, isSponsoredLink) => {
+      await ContentTaskUtils.waitForCondition(() => {
+        let target = content.document.querySelector(selector);
+        if (!target || target.href !== link) {
+          return false;
+        }
+        
+        
+        if (isSponsoredLink === null) {
+          return true;
+        }
+        let isRenderedAsSponsored =
+          target.getAttribute("data-is-sponsored-link") === "true";
+        return isSponsoredLink ? isRenderedAsSponsored : !isRenderedAsSponsored;
+      }, "Waiting for the expected link to be rendered");
     }
   );
 
@@ -299,6 +314,7 @@ async function pin(link) {
   await BrowserTestUtils.waitForCondition(() => {
     const sites = AboutNewTab.getTopSites();
     return (
+      sites?.[0]?.isPinned &&
       sites?.[0]?.url === link.url &&
       sites[0].sponsored_tile_id === link.sponsored_tile_id
     );
