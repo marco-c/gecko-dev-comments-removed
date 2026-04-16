@@ -267,6 +267,14 @@ static sk_sp<SkImage> GetSkImageForSurface(SourceSurface* aSurface,
     return nullptr;
   }
 
+  
+  
+  
+  
+  if (dataSurface->GetType() == SurfaceType::SKIA) {
+    return static_cast<SourceSurfaceSkia*>(dataSurface.get())->GetImage(aLock);
+  }
+
   DataSourceSurface::MappedSurface map;
   void (*releaseProc)(const void*, void*);
   if (dataSurface->GetType() == SurfaceType::DATA_SHARED_WRAPPER) {
