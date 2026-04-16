@@ -23,6 +23,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <array>
 #include <memory>
 #include <optional>
 
@@ -215,9 +216,9 @@ class FakeAudioCaptureModule : public webrtc::AudioDeviceModule {
   std::unique_ptr<webrtc::Thread> process_thread_;
 
   
-  char rec_buffer_[kNumberSamples * kNumberBytesPerSample];
+  std::array<Sample, kNumberSamples> rec_buffer_;
   
-  char send_buffer_[kNumberSamples * kNumberBytesPerSample];
+  std::array<Sample, kNumberSamples> send_buffer_;
 
   
   
