@@ -135,8 +135,14 @@ static wasm::RefType WasmRefTestOrCastDestType(MDefinition* refTestOrCast) {
 }
 
 static void TryOptimizeWasmCast(MDefinition* cast, MIRGraph& graph) {
-  
   MDefinition* ref = WasmRefCastOrTestSourceRef(cast);
+
+  if (ref->wasmRefType().isSome() &&
+      !ref->wasmRefType().value().isInhabitable()) {
+    return;
+  }
+
+  
   for (MUseIterator refUse(ref->usesBegin()); refUse != ref->usesEnd();
        refUse++) {
     
@@ -154,6 +160,13 @@ static void TryOptimizeWasmCast(MDefinition* cast, MIRGraph& graph) {
             
             wasm::RefType refTestDestType = WasmRefTestOrCastDestType(refTest);
             wasm::RefType refCastDestType = WasmRefTestOrCastDestType(cast);
+
+            
+            if (!refTestDestType.isInhabitable() ||
+                !refCastDestType.isInhabitable()) {
+              continue;
+            }
+
             if (wasm::RefType::isSubTypeOf(refTestDestType, refCastDestType)) {
               
               
@@ -184,6 +197,13 @@ static void TryOptimizeWasmCast(MDefinition* cast, MIRGraph& graph) {
         
         wasm::RefType dominatingDestType = WasmRefTestOrCastDestType(otherCast);
         wasm::RefType currentDestType = WasmRefTestOrCastDestType(cast);
+
+        
+        if (!dominatingDestType.isInhabitable() ||
+            !currentDestType.isInhabitable()) {
+          continue;
+        }
+
         if (wasm::RefType::isSubTypeOf(dominatingDestType, currentDestType)) {
           
           
@@ -197,8 +217,9 @@ static void TryOptimizeWasmCast(MDefinition* cast, MIRGraph& graph) {
 }
 
 static void TryOptimizeWasmTest(MDefinition* refTest, MIRGraph& graph) {
-  
   MDefinition* ref = WasmRefCastOrTestSourceRef(refTest);
+
+  
   for (MUseIterator refUse(ref->usesBegin()); refUse != ref->usesEnd();
        refUse++) {
     
@@ -213,6 +234,12 @@ static void TryOptimizeWasmTest(MDefinition* refTest, MIRGraph& graph) {
 
           wasm::RefType otherDestType = WasmRefTestOrCastDestType(otherRefTest);
           wasm::RefType currentDestType = WasmRefTestOrCastDestType(refTest);
+
+          
+          if (!otherDestType.isInhabitable() ||
+              !currentDestType.isInhabitable()) {
+            continue;
+          }
 
           MInstruction* replacement = nullptr;
 
@@ -264,6 +291,13 @@ static void TryOptimizeWasmTest(MDefinition* refTest, MIRGraph& graph) {
         
         wasm::RefType dominatingDestType = WasmRefTestOrCastDestType(refCast);
         wasm::RefType currentDestType = WasmRefTestOrCastDestType(refTest);
+
+        
+        if (!dominatingDestType.isInhabitable() ||
+            !currentDestType.isInhabitable()) {
+          continue;
+        }
+
         if (wasm::RefType::isSubTypeOf(dominatingDestType, currentDestType)) {
           
           
