@@ -104,7 +104,7 @@ class VideoSendStreamImpl : public webrtc::VideoSendStream,
                           video_stream_encoder_for_test = nullptr);
   ~VideoSendStreamImpl() override;
 
-  void DeliverRtcp(const uint8_t* packet, size_t length);
+  void DeliverRtcp(ArrayView<const uint8_t> packet);
 
   
   void Start() override;
@@ -186,6 +186,9 @@ class VideoSendStreamImpl : public webrtc::VideoSendStream,
 
   
   void OnDroppedFrame(EncodedImageCallback::DropReason reason) override;
+  void OnFrameDropped(uint32_t rtp_timestamp,
+                      int spatial_id,
+                      bool is_end_of_temporal_unit) override;
 
   
   void StartupVideoSendStream();

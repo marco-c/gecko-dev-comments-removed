@@ -1612,7 +1612,19 @@ class VideoStreamEncoderTest : public ::testing::Test {
       last_frame_instrumentation_data_.reset();
     }
 
+    int number_of_dropped_frames() const {
+      MutexLock lock(&mutex_);
+      return number_of_dropped_frames_;
+    }
+
    private:
+    void OnFrameDropped(uint32_t ,
+                        int ,
+                        bool ) override {
+      MutexLock lock(&mutex_);
+      ++number_of_dropped_frames_;
+    }
+
     Result OnEncodedImage(
         const EncodedImage& encoded_image,
         const CodecSpecificInfo* codec_specific_info) override {
@@ -1700,9 +1712,10 @@ class VideoStreamEncoderTest : public ::testing::Test {
     VideoBitrateAllocation last_bitrate_allocation_ RTC_GUARDED_BY(&mutex_);
     int number_of_bitrate_allocations_ RTC_GUARDED_BY(&mutex_) = 0;
     VideoLayersAllocation last_layers_allocation_ RTC_GUARDED_BY(&mutex_);
-    int number_of_layers_allocations_ RTC_GUARDED_BY(&mutex_) = 0;
+    int number_of_layers_allocations_ RTC_GUARDED_BY(mutex_) = 0;
+    int number_of_dropped_frames_ RTC_GUARDED_BY(mutex_) = 0;
     std::optional<FrameInstrumentationData> last_frame_instrumentation_data_
-        RTC_GUARDED_BY(&mutex_);
+        RTC_GUARDED_BY(mutex_);
   };
 
   class VideoBitrateAllocatorProxyFactory
@@ -8086,15 +8099,48 @@ TEST_F(VideoStreamEncoderTest, AccumulatesUpdateRectOnDroppedFrames) {
   EXPECT_EQ(rect.width, 10);
   EXPECT_EQ(rect.height, 1);
 
-  source.IncomingCapturedFrame(CreateFrameWithUpdatedPixel(4, nullptr, 0));
-  WaitForEncodedFrame(4);
-  
-  rect = fake_encoder_.GetLastUpdateRect();
-  EXPECT_EQ(rect.offset_x, 0);
-  EXPECT_EQ(rect.offset_y, 0);
-  EXPECT_EQ(rect.width, 1);
-  EXPECT_EQ(rect.height, 1);
+  video_stream_encoder_->Stop();
+}
 
+TEST_F(VideoStreamEncoderTest, ForwardsOnFrameDroppedToSink) {
+  NiceMock<MockVideoEncoder> video_encoder;
+  test::VideoEncoderProxyFactory encoder_factory(&video_encoder);
+  video_send_config_.encoder_settings.encoder_factory = &encoder_factory;
+
+  EncodedImageCallback* callback = nullptr;
+  ON_CALL(video_encoder, RegisterEncodeCompleteCallback)
+      .WillByDefault([&](EncodedImageCallback* cb) {
+        callback = cb;
+        return WEBRTC_VIDEO_CODEC_OK;
+      });
+
+  ON_CALL(video_encoder, Encode)
+      .WillByDefault(
+          [&](const VideoFrame&, const std::vector<VideoFrameType>*) {
+            EXPECT_TRUE(callback != nullptr);
+            if (callback) {
+              callback->OnFrameDropped(0, 0,
+                                       true);
+            }
+            return WEBRTC_VIDEO_CODEC_OK;
+          });
+
+  
+  ConfigureEncoder(video_encoder_config_.Copy());
+
+  video_stream_encoder_->OnBitrateUpdatedAndWaitForManagedResources(
+      kTargetBitrate, kTargetBitrate, 0, 0, 0);
+
+  
+  video_source_.IncomingCapturedFrame(CreateFrame(1, 1280, 720));
+
+  
+  AdvanceTime(TimeDelta::Millis(1));
+
+  EXPECT_EQ(sink_.number_of_dropped_frames(), 1);
+
+  video_stream_encoder_->SetSource(
+      nullptr, webrtc::DegradationPreference::MAINTAIN_FRAMERATE);
   video_stream_encoder_->Stop();
 }
 
