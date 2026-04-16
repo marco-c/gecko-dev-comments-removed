@@ -76,6 +76,8 @@ pub struct Args {
     
     #[arg(long)]
     pub cert_dir: Option<PathBuf>,
+    #[arg(short = 'j', long)]
+    pub parallelism: Option<usize>,
 }
 
 impl Args {
