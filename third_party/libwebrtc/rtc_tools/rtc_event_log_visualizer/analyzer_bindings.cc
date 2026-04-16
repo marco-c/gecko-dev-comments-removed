@@ -22,7 +22,6 @@
 #include "api/units/time_delta.h"
 #include "logging/rtc_event_log/rtc_event_log_parser.h"
 #include "rtc_base/numerics/safe_conversions.h"
-#include "rtc_base/protobuf_utils.h"
 #include "rtc_tools/rtc_event_log_visualizer/analyzer.h"
 #include "rtc_tools/rtc_event_log_visualizer/analyzer_common.h"
 #include "rtc_tools/rtc_event_log_visualizer/plot_base.h"
@@ -65,16 +64,10 @@ void analyze_rtc_event_log(const char* log_contents,
     return;
   }
 
-  webrtc::AnalyzerConfig config;
+  webrtc::AnalyzerConfig config(webrtc::CreateEnvironment(), parsed_log,
+                                true);
   config.window_duration_ = webrtc::TimeDelta::Millis(250);
   config.step_ = webrtc::TimeDelta::Millis(10);
-  if (!parsed_log.start_log_events().empty()) {
-    config.rtc_to_utc_offset_ = parsed_log.start_log_events()[0].utc_time() -
-                                parsed_log.start_log_events()[0].log_time();
-  }
-  config.normalize_time_ = true;
-  config.begin_time_ = parsed_log.first_timestamp();
-  config.end_time_ = parsed_log.last_timestamp();
   if (config.end_time_ < config.begin_time_) {
     std::cerr << "Log end time " << config.end_time_.ms()
               << " not after begin time " << config.begin_time_.ms()
@@ -83,8 +76,7 @@ void analyze_rtc_event_log(const char* log_contents,
     return;
   }
 
-  webrtc::EventLogAnalyzer analyzer(webrtc::CreateEnvironment(), parsed_log,
-                                    config);
+  webrtc::EventLogAnalyzer analyzer(parsed_log, config);
   analyzer.InitializeMapOfNamedGraphs(false,
                                       false,
                                       false);
