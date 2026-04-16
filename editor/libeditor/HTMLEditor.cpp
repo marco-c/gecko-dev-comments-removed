@@ -7128,18 +7128,18 @@ Element* HTMLEditor::ComputeEditingHostInternal(
     if (aLimitInBodyElement != LimitInBodyElement::Yes) {
       return const_cast<Element*>(aCandidateEditingHost);
     }
+    auto* body = document->GetBodyElement();
     
     
     
     
-    if (document->GetBodyElement() &&
-        nsContentUtils::ContentIsFlattenedTreeDescendantOf(
-            aCandidateEditingHost, document->GetBodyElement())) {
+    if (body && nsContentUtils::ContentIsFlattenedTreeDescendantOf(
+                    aCandidateEditingHost, body)) {
       return const_cast<Element*>(aCandidateEditingHost);
     }
     
     
-    return document->GetBodyElement();
+    return body && body->IsEditable() ? body : nullptr;
   };
 
   
@@ -7197,16 +7197,19 @@ Element* HTMLEditor::ComputeEditingHostInternal(
     
     
     if (document->IsInDesignMode()) {
-      return document->GetBodyElement();
+      auto* body = document->GetBodyElement();
+      
+      return body && body->IsEditable() ? body : nullptr;
     }
     
     return nullptr;
   }();
-  if ((content && content->IsInDesignMode()) ||
-      (!content && document->IsInDesignMode())) {
+  if (!content && document->IsInDesignMode()) {
     
     
-    return document->GetBodyElement();
+    auto* body = document->GetBodyElement();
+    
+    return body && body->IsEditable() ? body : nullptr;
   }
 
   if (NS_WARN_IF(!content)) {

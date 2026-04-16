@@ -144,22 +144,6 @@ inline bool nsINode::NodeOrAncestorHasDirAuto() const {
   return AncestorHasDirAuto() || (IsElement() && AsElement()->HasDirAuto());
 }
 
-inline bool nsINode::IsEditable() const {
-  if (HasFlag(NODE_IS_EDITABLE)) {
-    
-    return true;
-  }
-
-  
-  
-  if (IsInNativeAnonymousSubtree()) {
-    return false;
-  }
-
-  
-  return IsInDesignMode();
-}
-
 inline bool nsINode::IsEditingHost() const {
   if (!IsEditable() || !IsInComposedDoc() || IsInDesignMode() ||
       IsInNativeAnonymousSubtree()) {

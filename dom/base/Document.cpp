@@ -2173,20 +2173,10 @@ void Document::RecordPageLoadEventTelemetry() {
   
   if (ContentChild* cc = ContentChild::GetSingleton()) {
     if (GetNavigationTiming()) {
-      uint64_t androidAppLinkLoadIdentifier = 0;
-#ifdef ANDROID
-      if (BrowsingContext* bc = GetBrowsingContext()) {
-        Maybe<uint64_t> contextAppLinkLoadIdentifier =
-            bc->GetAndroidAppLinkLoadIdentifier();
-        if (contextAppLinkLoadIdentifier.isSome()) {
-          androidAppLinkLoadIdentifier = contextAppLinkLoadIdentifier.value();
-        }
-      }
-#endif
       cc->SendRecordPageLoadEvent(
           mPageloadEventData,
           GetNavigationTiming()->GetNavigationStartTimeStamp(),
-          androidAppLinkLoadIdentifier);
+          GetBrowsingContext());
     }
   }
 }
@@ -4851,9 +4841,7 @@ static void NotifyEditableStateChange(Document& aDoc) {
 #endif
   for (nsIContent* node = aDoc.GetNextNode(&aDoc); node;
        node = node->GetNextNode(&aDoc)) {
-    if (auto* element = Element::FromNode(node)) {
-      element->UpdateEditableState(true);
-    }
+    node->UpdateEditableState(true);
   }
   MOZ_DIAGNOSTIC_ASSERT(!g.Mutated(0));
 }
@@ -10439,9 +10427,9 @@ Document* Document::Open(const Optional<nsAString>& ,
       return nullptr;
     }
     nsCOMPtr<nsIStructuredCloneContainer> stateContainer(mStateObjectContainer);
-    rv = shell->UpdateURLAndHistory(this, newURI, stateContainer,
-                                    NavigationHistoryBehavior::Replace,
-                                    currentURI, equalURIs);
+    rv = shell->UpdateURLAndHistory(
+        this, newURI, stateContainer, NavigationHistoryBehavior::Replace,
+        currentURI, equalURIs,  false);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       aError.Throw(rv);
       return nullptr;
@@ -10833,23 +10821,25 @@ void nsDOMAttributeMap::BlastSubtreeToPieces(nsINode* aNode) {
 
         mozilla::DebugOnly<nsresult> rv =
             element->UnsetAttr(attr->NodeInfo()->NamespaceID(),
-                               attr->NodeInfo()->NameAtom(), false);
+                               attr->NodeInfo()->NameAtom(), true);
 
         
         NS_ASSERTION(NS_SUCCEEDED(rv), "Uh-oh, UnsetAttr shouldn't fail!");
       }
     }
 
-    if (mozilla::dom::ShadowRoot* shadow = element->GetShadowRoot()) {
+    
+    if (RefPtr<mozilla::dom::ShadowRoot> shadow = element->GetShadowRoot()) {
       BlastSubtreeToPieces(shadow);
       element->UnattachShadow();
     }
   }
 
   while (aNode->HasChildren()) {
-    nsIContent* node = aNode->GetFirstChild();
+    
+    nsCOMPtr<nsIContent> node = aNode->GetFirstChild();
     BlastSubtreeToPieces(node);
-    aNode->RemoveChildNode(node, false);
+    aNode->RemoveChildNode(node, true);
   }
 }
 
