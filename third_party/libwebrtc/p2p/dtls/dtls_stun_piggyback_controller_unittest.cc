@@ -587,6 +587,26 @@ TEST_F(DtlsStunPiggybackControllerTest, LimitAckSize) {
               }));
 }
 
+TEST_F(DtlsStunPiggybackControllerTest, EmptyDataDoesNotClearAck) {
+  std::vector<uint8_t> dtls_flight5 = FakeDtlsPacket(0x5487);
+
+  server_.ReportDataPiggybacked(
+      WrapInStun(STUN_ATTR_META_DTLS_IN_STUN, dtls_flight1)->array_view(),
+      std::nullopt);
+  EXPECT_EQ(server_.GetAckToPiggyback(STUN_BINDING_REQUEST)->size(), 1u);
+
+  
+  
+  
+  
+  
+  server_.ReportDataPiggybacked(
+      std::nullopt,
+      std::vector<uint32_t>({ComputeDtlsPacketHash(dtls_flight1)}));
+
+  EXPECT_EQ(server_.GetAckToPiggyback(STUN_BINDING_REQUEST)->size(), 1u);
+}
+
 TEST_F(DtlsStunPiggybackControllerTest, MultiPacketRoundRobin) {
   
   server_.CapturePacket(dtls_flight1);

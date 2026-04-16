@@ -176,29 +176,20 @@ void DtlsStunPiggybackController::ReportDataPiggybacked(
     return;
   }
 
-  
-  
-  
-  if (state_ == State::TENTATIVE && !data.has_value() && !acks.has_value()) {
-    RTC_LOG(LS_INFO) << "DTLS-STUN piggybacking not supported by peer.";
-    state_ = State::OFF;
-    
-    
-    
-    return;
-  }
-
-  
-  
-  if (state_ == State::PENDING && !data.has_value() && !acks.has_value()) {
-    RTC_LOG(LS_INFO) << "DTLS-STUN piggybacking complete.";
-    state_ = State::COMPLETE;
-    CallCompleteCallback(true);
-    return;
-  }
-
-  
   if (state_ == State::TENTATIVE) {
+    if (!data.has_value() && !acks.has_value()) {
+      
+      
+      
+      RTC_LOG(LS_INFO) << "DTLS-STUN piggybacking not supported by peer.";
+      state_ = State::OFF;
+      
+      
+      
+      return;
+    }
+    
+    
     state_ = State::CONFIRMED;
   }
 
@@ -217,38 +208,29 @@ void DtlsStunPiggybackController::ReportDataPiggybacked(
     }
   }
 
-  if (!data.has_value()) {
+  if (data.has_value() && !data->empty()) {
+    
+    if (!IsDtlsPacket(*data)) {
+      RTC_LOG(LS_WARNING) << "Dropping non-DTLS data.";
+      return;
+    }
+    ++data_recv_count_;
+    ReportDtlsPacket(*data);
+
     
     
-    handshake_messages_received_.clear();
+    dtls_data_callback_(*data);
   }
 
-  
-  
-  
-  
-  if (!data.has_value() && acks.has_value() && state_ == State::PENDING) {
+  if (state_ == State::PENDING && pending_packets_.empty()) {
+    
+    
+    
     RTC_LOG(LS_INFO) << "DTLS-STUN piggybacking complete.";
     state_ = State::COMPLETE;
     CallCompleteCallback(true);
     return;
   }
-
-  if (!data.has_value() || data->empty()) {
-    return;
-  }
-  
-  if (!IsDtlsPacket(*data)) {
-    RTC_LOG(LS_WARNING) << "Dropping non-DTLS data.";
-    return;
-  }
-  data_recv_count_++;
-
-  ReportDtlsPacket(*data);
-
-  
-  
-  dtls_data_callback_(*data);
 }
 
 void DtlsStunPiggybackController::ReportDtlsPacket(
