@@ -49,6 +49,31 @@ public class PageExtractionController {
   }
 
   
+  public static class ContentParams {
+
+    
+
+
+
+    public final boolean removeBoilerplate;
+
+    
+
+
+
+
+    public ContentParams(final boolean removeBoilerplate) {
+      this.removeBoilerplate = removeBoilerplate;
+    }
+
+     GeckoBundle toBundle() {
+      final GeckoBundle bundle = new GeckoBundle(1);
+      bundle.putBoolean("removeBoilerplate", removeBoilerplate);
+      return bundle;
+    }
+  }
+
+  
 
 
 
@@ -81,10 +106,22 @@ public class PageExtractionController {
 
     @HandlerThread
     public @NonNull GeckoResult<String> getPageContent() {
+      return getPageContent(new ContentParams(false));
+    }
+
+    
+
+
+
+
+
+
+    @HandlerThread
+    public @NonNull GeckoResult<String> getPageContent(@NonNull final ContentParams options) {
       ThreadUtils.assertOnHandlerThread();
       return mSession
           .getEventDispatcher()
-          .queryBundle(GET_TEXT_CONTENT_EVENT)
+          .queryBundle(GET_TEXT_CONTENT_EVENT, options.toBundle())
           .then(
               result -> {
                 if (result == null)
