@@ -223,7 +223,7 @@ class InputStreamHolder final : public nsIInputStreamCallback,
 
 
 
-class InputToReadableStreamAlgorithms final
+class InputToReadableStreamAlgorithms
     : public UnderlyingSourceAlgorithmsWrapper,
       public nsIInputStreamCallback,
       public SupportsWeakPtr {
@@ -245,7 +245,7 @@ class InputToReadableStreamAlgorithms final
 
   nsIInputStream* MaybeGetInputStreamIfUnread() override;
 
- private:
+ protected:
   ~InputToReadableStreamAlgorithms() {
     if (mInput) {
       mInput->Shutdown();

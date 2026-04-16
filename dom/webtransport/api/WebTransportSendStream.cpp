@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/WebTransportSendStream.h"
 
 #include "mozilla/dom/UnderlyingSinkCallbackHelpers.h"
@@ -51,7 +49,7 @@ already_AddRefed<WebTransportSendStream> WebTransportSendStream::Create(
   auto stream = MakeRefPtr<WebTransportSendStream>(aGlobal, aWebTransport);
 
   nsCOMPtr<nsIAsyncOutputStream> outputStream = aSender;
-  auto algorithms = MakeRefPtr<WritableStreamToOutput>(
+  auto algorithms = MakeRefPtr<WritableStreamToOutputAlgorithms>(
       stream->GetParentObject(), outputStream);
 
   stream->mStreamId = aStreamId;
