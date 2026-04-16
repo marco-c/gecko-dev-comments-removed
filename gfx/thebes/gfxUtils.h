@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef GFX_UTILS_H
 #define GFX_UTILS_H
 
@@ -412,6 +411,7 @@ class gfxUtils {
                                  bool aIsAlphaPremultiplied,
                                  const char* aMimeType,
                                  const nsAString& aEncoderOptions,
+                                 const nsACString& aRandomizationKey,
                                  nsIInputStream** outStream);
 
   static nsresult GetInputStreamWithRandomNoise(
