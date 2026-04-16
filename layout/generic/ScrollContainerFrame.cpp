@@ -4158,7 +4158,7 @@ void ScrollContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
         nsDisplaySolidColor* color = MakeDisplayItem<nsDisplaySolidColor>(
             aBuilder, this,
             dirtyRect + aBuilder->GetCurrentFrameOffsetToReferenceFrame(),
-            NS_RGBA(0, 0, 255, 64), false);
+            NS_RGBA(0, 0, 255, 64));
         if (color) {
           color->SetOverrideZIndex(INT32_MAX);
           set.PositionedDescendants()->AppendToTop(color);
@@ -5726,6 +5726,34 @@ void ScrollContainerFrame::AppendAnonymousContentTo(
   }
 }
 
+enum class WebkitScrollbarSize { Auto, Zero, NonZero };
+
+static std::pair<WebkitScrollbarSize, WebkitScrollbarSize>
+GetWebkitScrollbarWidthAndHeight(
+    const RefPtr<ComputedStyle>& aWebKitScrollbarStyle) {
+  MOZ_ASSERT(aWebKitScrollbarStyle);
+  const auto webkitScrollbarWidth =
+      aWebKitScrollbarStyle->StylePosition()->GetWidth(
+          
+          AnchorPosResolutionParams{nullptr, StylePositionProperty::Static});
+  const auto webkitScrollbarHeight =
+      aWebKitScrollbarStyle->StylePosition()->GetHeight(
+          
+          AnchorPosResolutionParams{nullptr, StylePositionProperty::Static});
+  auto toSize = [](const AnchorResolvedSize& size) {
+    if (!size->IsLengthPercentage()) {
+      return WebkitScrollbarSize::Auto;
+    }
+    
+    if (size->AsLengthPercentage().IsLength() &&
+        !size->AsLengthPercentage().AsLength().IsZero()) {
+      return WebkitScrollbarSize::NonZero;
+    }
+    return WebkitScrollbarSize::Zero;
+  };
+  return {toSize(webkitScrollbarWidth), toSize(webkitScrollbarHeight)};
+}
+
 void ScrollContainerFrame::DidSetComputedStyle(
     ComputedStyle* aOldComputedStyle) {
   nsContainerFrame::DidSetComputedStyle(aOldComputedStyle);
@@ -5747,22 +5775,9 @@ void ScrollContainerFrame::DidSetComputedStyle(
         if (style->StyleDisplay()->mDisplay == StyleDisplay::None) {
           return false;
         }
-        const auto webkitScrollbarWidth = style->StylePosition()->GetWidth(
-            
-            AnchorPosResolutionParams{nullptr, StylePositionProperty::Static});
-        const auto webkitScrollbarHeight = style->StylePosition()->GetHeight(
-            
-            AnchorPosResolutionParams{nullptr, StylePositionProperty::Static});
-
-        auto isNonZeroLength = [](const AnchorResolvedSize& size) {
-          
-          return size->IsLengthPercentage() &&
-                 size->AsLengthPercentage().IsLength() &&
-                 !size->AsLengthPercentage().AsLength().IsZero();
-        };
-
-        return isNonZeroLength(webkitScrollbarWidth) ||
-               isNonZeroLength(webkitScrollbarHeight);
+        auto [width, height] = GetWebkitScrollbarWidthAndHeight(style);
+        return width == WebkitScrollbarSize::NonZero ||
+               height == WebkitScrollbarSize::NonZero;
       }(mWebKitScrollbarStyle);
 
   if (mForceDisableOverlayScrollbars != disableOverlayScrollbars) {
@@ -7809,7 +7824,12 @@ StyleScrollbarWidth ScrollContainerFrame::ScrollbarWidth(
       aStyle ? aStyle : nsLayoutUtils::StyleForScrollbar(this);
   auto scrollbarWidth = style->StyleUIReset()->ComputedScrollbarWidth();
   if (!mWebKitScrollbarStyle ||
-      mWebKitScrollbarStyle->StyleDisplay()->mDisplay != StyleDisplay::None ||
+      (mWebKitScrollbarStyle->StyleDisplay()->mDisplay != StyleDisplay::None &&
+       [&] {
+         auto [w, h] = GetWebkitScrollbarWidthAndHeight(mWebKitScrollbarStyle);
+         return w != WebkitScrollbarSize::Zero ||
+                h != WebkitScrollbarSize::Zero;
+       }()) ||
       
       
       
