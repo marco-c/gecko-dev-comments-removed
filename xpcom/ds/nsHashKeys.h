@@ -65,6 +65,11 @@ inline uint32_t HashString(const nsACString& aStr) {
 
 
 
+
+
+
+
+
 class nsStringHashKey : public PLDHashEntryHdr {
  public:
   typedef const nsAString& KeyType;
