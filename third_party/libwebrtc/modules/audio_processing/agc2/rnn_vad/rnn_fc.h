@@ -54,6 +54,11 @@ class FullyConnectedLayer {
   int size() const { return output_size_; }
 
   
+  ArrayView<const float> output() const {
+    return MakeArrayView(output_.data(), output_size_);
+  }
+
+  
   void ComputeOutput(ArrayView<const float> input);
 
  private:
