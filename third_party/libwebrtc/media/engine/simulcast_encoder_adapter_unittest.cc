@@ -16,6 +16,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -28,6 +29,7 @@
 #include "api/rtp_parameters.h"
 #include "api/scoped_refptr.h"
 #include "api/test/create_simulcast_test_fixture.h"
+#include "api/test/mock_video_bitrate_allocator.h"
 #include "api/test/mock_video_decoder.h"
 #include "api/test/simulcast_test_fixture.h"
 #include "api/test/video/function_video_decoder_factory.h"
@@ -59,6 +61,7 @@
 #include "test/create_test_field_trials.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
+#include "test/run_loop.h"
 
 using ::testing::_;
 using ::testing::Return;
@@ -298,11 +301,18 @@ class MockVideoEncoder : public VideoEncoder {
 
   EncodedImageCallback* callback() const { return callback_; }
 
-  void SendEncodedImage(int width, int height) {
+  void SendEncodedImage(int width,
+                        int height,
+                        uint32_t rtp_timestamp = 0,
+                        std::optional<int> simulcast_index = std::nullopt) {
     
     EncodedImage image;
     image._encodedWidth = width;
     image._encodedHeight = height;
+    image.SetRtpTimestamp(rtp_timestamp);
+    if (simulcast_index.has_value()) {
+      image.SetSimulcastIndex(*simulcast_index);
+    }
     CodecSpecificInfo codec_specific_info;
     codec_specific_info.codecType = kVideoCodecVP8;
     callback_->OnEncodedImage(image, &codec_specific_info);
@@ -517,6 +527,17 @@ class TestSimulcastEncoderAdapterFake : public ::testing::Test,
     return Result(Result::OK, encoded_image.RtpTimestamp());
   }
 
+  void OnFrameDropped(uint32_t rtp_timestamp,
+                      int spatial_id,
+                      bool is_end_of_temporal_unit) override {
+    dropped_frames_.emplace_back(rtp_timestamp, spatial_id,
+                                 is_end_of_temporal_unit);
+  }
+
+  const std::vector<std::tuple<uint32_t, int, bool>>& GetDroppedFrames() const {
+    return dropped_frames_;
+  }
+
   bool GetLastEncodedImageInfo(std::optional<int>* out_width,
                                std::optional<int>* out_height,
                                std::optional<int>* out_simulcast_index) {
@@ -680,9 +701,11 @@ class TestSimulcastEncoderAdapterFake : public ::testing::Test,
   std::optional<int> last_encoded_image_width_;
   std::optional<int> last_encoded_image_height_;
   std::optional<int> last_encoded_image_simulcast_index_;
-  std::unique_ptr<SimulcastRateAllocator> rate_allocator_;
+  std::unique_ptr<VideoBitrateAllocator> rate_allocator_;
   bool use_fallback_factory_;
   CodecParameterMap sdp_video_parameters_;
+  test::RunLoop run_loop_;
+  std::vector<std::tuple<uint32_t, int, bool>> dropped_frames_;
 };
 
 TEST_F(TestSimulcastEncoderAdapterFake, InitEncode) {
@@ -718,7 +741,7 @@ TEST_F(TestSimulcastEncoderAdapterFake, EncodedCallbackForDifferentEncoders) {
 
   
   adapter_->SetRates(VideoEncoder::RateControlParameters(
-      rate_allocator_->Allocate(VideoBitrateAllocationParameters(1200, 30)),
+      rate_allocator_->Allocate(VideoBitrateAllocationParameters(5000000, 30)),
       30.0));
 
   
@@ -728,6 +751,17 @@ TEST_F(TestSimulcastEncoderAdapterFake, EncodedCallbackForDifferentEncoders) {
   
   std::vector<MockVideoEncoder*> encoders = helper_->factory()->encoders();
   ASSERT_EQ(3u, encoders.size());
+
+  scoped_refptr<VideoFrameBuffer> buffer(I420Buffer::Create(1280, 720));
+  VideoFrame input_frame = VideoFrame::Builder()
+                               .set_video_frame_buffer(buffer)
+                               .set_rtp_timestamp(0)
+                               .set_timestamp_ms(0)
+                               .set_rotation(kVideoRotation_0)
+                               .build();
+  std::vector<VideoFrameType> frame_types(3, VideoFrameType::kVideoFrameKey);
+  EXPECT_EQ(0, adapter_->Encode(input_frame, &frame_types));
+
   encoders[0]->SendEncodedImage(1152, 704);
   std::optional<int> width;
   std::optional<int> height;
@@ -738,7 +772,8 @@ TEST_F(TestSimulcastEncoderAdapterFake, EncodedCallbackForDifferentEncoders) {
   ASSERT_TRUE(height.has_value());
   EXPECT_EQ(704, height.value());
   
-  EXPECT_FALSE(simulcast_index.has_value());
+  EXPECT_TRUE(simulcast_index.has_value());
+  EXPECT_EQ(0, simulcast_index.value());
 
   encoders[1]->SendEncodedImage(300, 620);
   EXPECT_TRUE(GetLastEncodedImageInfo(&width, &height, &simulcast_index));
@@ -757,6 +792,98 @@ TEST_F(TestSimulcastEncoderAdapterFake, EncodedCallbackForDifferentEncoders) {
   EXPECT_EQ(240, height.value());
   ASSERT_TRUE(simulcast_index.has_value());
   EXPECT_EQ(2, simulcast_index.value());
+}
+
+TEST_F(TestSimulcastEncoderAdapterFake,
+       EncodedCallbackForDifferentEncodersOverwritesIndex) {
+  SimulcastTestFixtureImpl::DefaultSettings(
+      &codec_, static_cast<const int*>(kTestTemporalLayerProfile),
+      kVideoCodecVP8);
+  std::vector<const char*> names;
+  names.push_back("codec1");
+  names.push_back("codec2");
+  names.push_back("codec3");
+  helper_->factory()->SetEncoderNames(names);
+  adapter_->RegisterEncodeCompleteCallback(this);
+  EXPECT_EQ(0, adapter_->InitEncode(&codec_, kSettings));
+
+  
+  rate_allocator_ = std::make_unique<SimulcastRateAllocator>(env_, codec_);
+
+  
+  adapter_->SetRates(VideoEncoder::RateControlParameters(
+      rate_allocator_->Allocate(VideoBitrateAllocationParameters(5000000, 30)),
+      30.0));
+
+  std::vector<MockVideoEncoder*> encoders = helper_->factory()->encoders();
+  ASSERT_EQ(3u, encoders.size());
+
+  
+  scoped_refptr<VideoFrameBuffer> buffer(I420Buffer::Create(1280, 720));
+  VideoFrame input_frame = VideoFrame::Builder()
+                               .set_video_frame_buffer(buffer)
+                               .set_rtp_timestamp(100)
+                               .set_timestamp_ms(1000)
+                               .set_rotation(kVideoRotation_0)
+                               .build();
+  std::vector<VideoFrameType> frame_types(3, VideoFrameType::kVideoFrameKey);
+  EXPECT_EQ(0, adapter_->Encode(input_frame, &frame_types));
+
+  
+  
+  
+  encoders[1]->SendEncodedImage(640, 360, 100, 0);
+
+  std::optional<int> last_simulcast_index;
+  std::optional<int> width;
+  std::optional<int> height;
+  ASSERT_TRUE(GetLastEncodedImageInfo(&width, &height, &last_simulcast_index));
+  EXPECT_EQ(1, last_simulcast_index);
+}
+
+TEST_F(TestSimulcastEncoderAdapterFake,
+       EncodedCallbackInBypassModeDoesNotOverwriteIndex) {
+  SimulcastTestFixtureImpl::DefaultSettings(
+      &codec_, static_cast<const int*>(kTestTemporalLayerProfile),
+      kVideoCodecVP8);
+  std::vector<const char*> names;
+  names.push_back("codec1");
+  
+  helper_->factory()->set_supports_simulcast(true);
+  helper_->factory()->SetEncoderNames(names);
+  adapter_->RegisterEncodeCompleteCallback(this);
+  EXPECT_EQ(0, adapter_->InitEncode(&codec_, kSettings));
+
+  
+  scoped_refptr<VideoFrameBuffer> buffer(I420Buffer::Create(1280, 720));
+  VideoFrame input_frame = VideoFrame::Builder()
+                               .set_video_frame_buffer(buffer)
+                               .set_rtp_timestamp(100)
+                               .set_timestamp_ms(1000)
+                               .set_rotation(kVideoRotation_0)
+                               .build();
+  std::vector<VideoFrameType> frame_types(3, VideoFrameType::kVideoFrameKey);
+  EXPECT_EQ(0, adapter_->Encode(input_frame, &frame_types));
+
+  
+  std::vector<MockVideoEncoder*> encoders = helper_->factory()->encoders();
+  ASSERT_EQ(1u, encoders.size());
+
+  
+  
+  encoders[0]->SendEncodedImage(1280, 720, 100,
+                                std::nullopt);
+  std::optional<int> last_simulcast_index;
+  std::optional<int> width;
+  std::optional<int> height;
+  ASSERT_TRUE(GetLastEncodedImageInfo(&width, &height, &last_simulcast_index));
+  EXPECT_FALSE(last_simulcast_index.has_value());
+
+  
+  
+  encoders[0]->SendEncodedImage(1280, 720, 100, 0);
+  ASSERT_TRUE(GetLastEncodedImageInfo(&width, &height, &last_simulcast_index));
+  EXPECT_EQ(0, last_simulcast_index);
 }
 
 
@@ -939,6 +1066,275 @@ TEST_F(TestSimulcastEncoderAdapterFake, ReinitDoesNotReorderEncoderSettings) {
   }
 }
 
+TEST_F(TestSimulcastEncoderAdapterFake, FrameDroppingAllLayers) {
+  SetupCodec();
+  VideoBitrateAllocation allocation;
+  allocation.SetBitrate(0, 0, 100000);
+  allocation.SetBitrate(1, 0, 500000);
+  allocation.SetBitrate(2, 0, 1500000);
+  auto mock_allocator = std::make_unique<MockVideoBitrateAllocator>();
+  EXPECT_CALL(*mock_allocator, Allocate(_)).WillRepeatedly(Return(allocation));
+  rate_allocator_ = std::move(mock_allocator);
+  adapter_->SetRates(VideoEncoder::RateControlParameters(allocation, 30.0));
+
+  std::vector<MockVideoEncoder*> encoders = helper_->factory()->encoders();
+  ASSERT_EQ(3u, encoders.size());
+
+  scoped_refptr<VideoFrameBuffer> buffer(I420Buffer::Create(1280, 720));
+  VideoFrame input_frame = VideoFrame::Builder()
+                               .set_video_frame_buffer(buffer)
+                               .set_rtp_timestamp(100)
+                               .set_timestamp_ms(1000)
+                               .set_rotation(kVideoRotation_0)
+                               .build();
+  std::vector<VideoFrameType> frame_types(3, VideoFrameType::kVideoFrameKey);
+  EXPECT_CALL(*encoders[0], Encode(_, _))
+      .WillRepeatedly(Return(WEBRTC_VIDEO_CODEC_OK));
+  EXPECT_CALL(*encoders[1], Encode(_, _))
+      .WillRepeatedly(Return(WEBRTC_VIDEO_CODEC_OK));
+  EXPECT_CALL(*encoders[2], Encode(_, _))
+      .WillRepeatedly(Return(WEBRTC_VIDEO_CODEC_OK));
+  EXPECT_EQ(0, adapter_->Encode(input_frame, &frame_types));
+
+  
+  encoders[0]->callback()->OnFrameDropped(100, 0, true);
+  encoders[1]->callback()->OnFrameDropped(100, 0, true);
+  encoders[2]->callback()->OnFrameDropped(100, 0, true);
+
+  
+  
+  
+  
+  
+  auto dropped = GetDroppedFrames();
+  ASSERT_EQ(3u, dropped.size());
+  EXPECT_EQ(dropped[0], std::make_tuple(100u, 0, false));
+  EXPECT_EQ(dropped[1], std::make_tuple(100u, 1, false));
+  EXPECT_EQ(dropped[2], std::make_tuple(100u, 2, true));
+}
+
+TEST_F(TestSimulcastEncoderAdapterFake, FrameDroppingMixed) {
+  SetupCodec();
+  adapter_->SetRates(VideoEncoder::RateControlParameters(
+      rate_allocator_->Allocate(VideoBitrateAllocationParameters(5000000, 30)),
+      30.0));
+
+  std::vector<MockVideoEncoder*> encoders = helper_->factory()->encoders();
+  ASSERT_EQ(3u, encoders.size());
+
+  scoped_refptr<VideoFrameBuffer> buffer(I420Buffer::Create(1280, 720));
+  VideoFrame input_frame = VideoFrame::Builder()
+                               .set_video_frame_buffer(buffer)
+                               .set_rtp_timestamp(100)
+                               .set_timestamp_ms(1000)
+                               .set_rotation(kVideoRotation_0)
+                               .build();
+  std::vector<VideoFrameType> frame_types(3, VideoFrameType::kVideoFrameKey);
+  EXPECT_CALL(*encoders[0], Encode(_, _))
+      .WillRepeatedly(Return(WEBRTC_VIDEO_CODEC_OK));
+  EXPECT_CALL(*encoders[1], Encode(_, _))
+      .WillRepeatedly(Return(WEBRTC_VIDEO_CODEC_OK));
+  EXPECT_CALL(*encoders[2], Encode(_, _))
+      .WillRepeatedly(Return(WEBRTC_VIDEO_CODEC_OK));
+  EXPECT_EQ(0, adapter_->Encode(input_frame, &frame_types));
+
+  
+  encoders[0]->SendEncodedImage(1152, 704, 100);
+  
+  encoders[1]->callback()->OnFrameDropped(100, 0, true);
+  
+  encoders[2]->SendEncodedImage(120, 240, 100);
+
+  
+  std::optional<int> width;
+  std::optional<int> height;
+  std::optional<int> simulcast_index;
+  EXPECT_TRUE(GetLastEncodedImageInfo(&width, &height, &simulcast_index));
+  
+  ASSERT_TRUE(width.has_value());
+  EXPECT_EQ(120, width.value());
+
+  
+  auto dropped = GetDroppedFrames();
+  ASSERT_EQ(1u, dropped.size());
+  
+  EXPECT_EQ(dropped[0], std::make_tuple(100u, 1, false));
+}
+
+TEST_F(TestSimulcastEncoderAdapterFake, FrameDroppingOutOfOrder) {
+  SetupCodec();
+  adapter_->SetRates(VideoEncoder::RateControlParameters(
+      rate_allocator_->Allocate(VideoBitrateAllocationParameters(5000000, 30)),
+      30.0));
+
+  std::vector<MockVideoEncoder*> encoders = helper_->factory()->encoders();
+  ASSERT_EQ(3u, encoders.size());
+
+  scoped_refptr<VideoFrameBuffer> buffer(I420Buffer::Create(1280, 720));
+  VideoFrame input_frame = VideoFrame::Builder()
+                               .set_video_frame_buffer(buffer)
+                               .set_rtp_timestamp(100)
+                               .set_timestamp_ms(1000)
+                               .set_rotation(kVideoRotation_0)
+                               .build();
+  std::vector<VideoFrameType> frame_types(3, VideoFrameType::kVideoFrameKey);
+  EXPECT_CALL(*encoders[0], Encode(_, _))
+      .WillRepeatedly(Return(WEBRTC_VIDEO_CODEC_OK));
+  EXPECT_CALL(*encoders[1], Encode(_, _))
+      .WillRepeatedly(Return(WEBRTC_VIDEO_CODEC_OK));
+  EXPECT_CALL(*encoders[2], Encode(_, _))
+      .WillRepeatedly(Return(WEBRTC_VIDEO_CODEC_OK));
+  EXPECT_EQ(0, adapter_->Encode(input_frame, &frame_types));
+
+  
+  
+  encoders[2]->callback()->OnFrameDropped(100, 0, true);
+  auto dropped = GetDroppedFrames();
+  ASSERT_EQ(1u, dropped.size());
+  EXPECT_EQ(dropped[0], std::make_tuple(100u, 2, false));
+
+  
+  encoders[0]->SendEncodedImage(1152, 704, 100);
+  
+  EXPECT_EQ(1u, GetDroppedFrames().size());
+
+  
+  encoders[1]->callback()->OnFrameDropped(100, 0, true);
+  dropped = GetDroppedFrames();
+  ASSERT_EQ(2u, dropped.size());
+  
+  EXPECT_EQ(dropped[1], std::make_tuple(100u, 1, true));
+}
+
+TEST_F(TestSimulcastEncoderAdapterFake, InterleavedFrames) {
+  SetupCodec();
+  adapter_->SetRates(VideoEncoder::RateControlParameters(
+      rate_allocator_->Allocate(VideoBitrateAllocationParameters(5000000, 30)),
+      30.0));
+
+  std::vector<MockVideoEncoder*> encoders = helper_->factory()->encoders();
+  ASSERT_EQ(3u, encoders.size());
+
+  
+  scoped_refptr<VideoFrameBuffer> buffer(I420Buffer::Create(1280, 720));
+  VideoFrame input_frame1 = VideoFrame::Builder()
+                                .set_video_frame_buffer(buffer)
+                                .set_rtp_timestamp(100)
+                                .set_timestamp_ms(1000)
+                                .set_rotation(kVideoRotation_0)
+                                .build();
+  
+  VideoFrame input_frame2 = VideoFrame::Builder()
+                                .set_video_frame_buffer(buffer)
+                                .set_rtp_timestamp(200)
+                                .set_timestamp_ms(2000)
+                                .set_rotation(kVideoRotation_0)
+                                .build();
+
+  std::vector<VideoFrameType> frame_types(3, VideoFrameType::kVideoFrameKey);
+
+  
+  EXPECT_CALL(*encoders[0], Encode(_, _))
+      .WillRepeatedly(Return(WEBRTC_VIDEO_CODEC_OK));
+  EXPECT_CALL(*encoders[1], Encode(_, _))
+      .WillRepeatedly(Return(WEBRTC_VIDEO_CODEC_OK));
+  EXPECT_CALL(*encoders[2], Encode(_, _))
+      .WillRepeatedly(Return(WEBRTC_VIDEO_CODEC_OK));
+
+  EXPECT_EQ(0, adapter_->Encode(input_frame1, &frame_types));
+  EXPECT_EQ(0, adapter_->Encode(input_frame2, &frame_types));
+
+  
+  
+  encoders[0]->callback()->OnFrameDropped(100, 0, true);
+  auto dropped = GetDroppedFrames();
+  ASSERT_EQ(1u, dropped.size());
+  EXPECT_EQ(dropped[0], std::make_tuple(100u, 0, false));
+
+  
+  encoders[0]->callback()->OnFrameDropped(200, 0, true);
+  dropped = GetDroppedFrames();
+  ASSERT_EQ(2u, dropped.size());
+  EXPECT_EQ(dropped[1], std::make_tuple(200u, 0, false));
+
+  
+  encoders[1]->callback()->OnFrameDropped(200, 0, true);
+  dropped = GetDroppedFrames();
+  ASSERT_EQ(4u, dropped.size());
+  EXPECT_EQ(dropped[2], std::make_tuple(100u, 1, false));
+  EXPECT_EQ(dropped[3], std::make_tuple(200u, 1, false));
+
+  
+  
+  encoders[2]->callback()->OnFrameDropped(100, 0, true);
+  dropped = GetDroppedFrames();
+  ASSERT_EQ(5u, dropped.size());
+  EXPECT_EQ(dropped[4],
+            std::make_tuple(100u, 2, true));  
+
+  
+  encoders[2]->callback()->OnFrameDropped(200, 0, true);
+  dropped = GetDroppedFrames();
+  ASSERT_EQ(6u, dropped.size());
+  EXPECT_EQ(dropped[5],
+            std::make_tuple(200u, 2, true));  
+}
+
+TEST_F(TestSimulcastEncoderAdapterFake, OldFramesAreCulled) {
+  SetupCodec();
+  adapter_->SetRates(VideoEncoder::RateControlParameters(
+      rate_allocator_->Allocate(VideoBitrateAllocationParameters(5000000, 30)),
+      30.0));
+
+  std::vector<MockVideoEncoder*> encoders = helper_->factory()->encoders();
+  ASSERT_EQ(3u, encoders.size());
+
+  scoped_refptr<VideoFrameBuffer> buffer(I420Buffer::Create(1280, 720));
+  VideoFrame input_frame1 = VideoFrame::Builder()
+                                .set_video_frame_buffer(buffer)
+                                .set_rtp_timestamp(100)
+                                .set_timestamp_ms(1000)
+                                .set_rotation(kVideoRotation_0)
+                                .build();
+  VideoFrame input_frame2 = VideoFrame::Builder()
+                                .set_video_frame_buffer(buffer)
+                                .set_rtp_timestamp(200)
+                                .set_timestamp_ms(2000)
+                                .set_rotation(kVideoRotation_0)
+                                .build();
+
+  std::vector<VideoFrameType> frame_types(3, VideoFrameType::kVideoFrameKey);
+
+  EXPECT_CALL(*encoders[0], Encode(_, _))
+      .WillRepeatedly(Return(WEBRTC_VIDEO_CODEC_OK));
+  EXPECT_CALL(*encoders[1], Encode(_, _))
+      .WillRepeatedly(Return(WEBRTC_VIDEO_CODEC_OK));
+  EXPECT_CALL(*encoders[2], Encode(_, _))
+      .WillRepeatedly(Return(WEBRTC_VIDEO_CODEC_OK));
+
+  EXPECT_EQ(0, adapter_->Encode(input_frame1, &frame_types));
+  EXPECT_EQ(0, adapter_->Encode(input_frame2, &frame_types));
+
+  encoders[0]->callback()->OnFrameDropped(200, 0, true);
+
+  auto dropped = GetDroppedFrames();
+  ASSERT_GE(dropped.size(), 2u);
+  EXPECT_EQ(dropped[0], std::make_tuple(100u, 0, false));
+  EXPECT_EQ(dropped[1], std::make_tuple(200u, 0, false));
+
+  
+  
+  encoders[1]->callback()->OnFrameDropped(200, 0, true);
+  dropped = GetDroppedFrames();
+  ASSERT_GE(dropped.size(), 4u);
+  EXPECT_EQ(
+      dropped[2],
+      std::make_tuple(100u, 1, false));  
+  EXPECT_EQ(
+      dropped[3],
+      std::make_tuple(200u, 1, false));  
+}
+
 
 
 
@@ -948,20 +1344,32 @@ TEST_F(TestSimulcastEncoderAdapterFake, ReinitDoesNotReorderEncoderSettings) {
 TEST_F(TestSimulcastEncoderAdapterFake, ReinitDoesNotReorderFrameSimulcastIdx) {
   SetupCodec();
   adapter_->SetRates(VideoEncoder::RateControlParameters(
-      rate_allocator_->Allocate(VideoBitrateAllocationParameters(1200, 30)),
+      rate_allocator_->Allocate(VideoBitrateAllocationParameters(5000000, 30)),
       30.0));
   VerifyCodecSettings();
 
   
   std::vector<MockVideoEncoder*> encoders = helper_->factory()->encoders();
   ASSERT_EQ(3u, encoders.size());
+
+  scoped_refptr<VideoFrameBuffer> buffer(I420Buffer::Create(1280, 720));
+  VideoFrame input_frame = VideoFrame::Builder()
+                               .set_video_frame_buffer(buffer)
+                               .set_rtp_timestamp(0)
+                               .set_timestamp_ms(0)
+                               .set_rotation(kVideoRotation_0)
+                               .build();
+  std::vector<VideoFrameType> frame_types(3, VideoFrameType::kVideoFrameKey);
+  EXPECT_EQ(0, adapter_->Encode(input_frame, &frame_types));
+
   encoders[0]->SendEncodedImage(1152, 704);
   std::optional<int> width;
   std::optional<int> height;
   std::optional<int> simulcast_index;
   EXPECT_TRUE(GetLastEncodedImageInfo(&width, &height, &simulcast_index));
   
-  EXPECT_FALSE(simulcast_index.has_value());
+  ASSERT_TRUE(simulcast_index.has_value());
+  EXPECT_EQ(0, simulcast_index.value());
 
   encoders[1]->SendEncodedImage(300, 620);
   EXPECT_TRUE(GetLastEncodedImageInfo(&width, &height, &simulcast_index));
@@ -977,13 +1385,16 @@ TEST_F(TestSimulcastEncoderAdapterFake, ReinitDoesNotReorderFrameSimulcastIdx) {
   EXPECT_EQ(0, adapter_->Release());
   EXPECT_EQ(0, adapter_->InitEncode(&codec_, kSettings));
   adapter_->SetRates(VideoEncoder::RateControlParameters(
-      rate_allocator_->Allocate(VideoBitrateAllocationParameters(1200, 30)),
+      rate_allocator_->Allocate(VideoBitrateAllocationParameters(5000000, 30)),
       30.0));
 
   
+  
+  EXPECT_EQ(0, adapter_->Encode(input_frame, &frame_types));
   encoders[0]->SendEncodedImage(1152, 704);
   EXPECT_TRUE(GetLastEncodedImageInfo(&width, &height, &simulcast_index));
-  EXPECT_FALSE(simulcast_index.has_value());
+  ASSERT_TRUE(simulcast_index.has_value());
+  EXPECT_EQ(0, simulcast_index.value());
 
   encoders[1]->SendEncodedImage(300, 620);
   EXPECT_TRUE(GetLastEncodedImageInfo(&width, &height, &simulcast_index));
@@ -1365,6 +1776,68 @@ TEST_F(TestSimulcastEncoderAdapterFake, TestFailureReturnCodesFromEncodeCalls) {
   std::vector<VideoFrameType> frame_types(3, VideoFrameType::kVideoFrameKey);
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_FALLBACK_SOFTWARE,
             adapter_->Encode(input_frame, &frame_types));
+}
+
+TEST_F(TestSimulcastEncoderAdapterFake, TestPendingFramesQueueLimit) {
+  SimulcastTestFixtureImpl::DefaultSettings(
+      &codec_, static_cast<const int*>(kTestTemporalLayerProfile),
+      kVideoCodecVP8);
+  std::vector<const char*> names;
+  names.push_back("codec1");
+  names.push_back("codec2");
+  names.push_back("codec3");
+  helper_->factory()->SetEncoderNames(names);
+  adapter_->RegisterEncodeCompleteCallback(this);
+  EXPECT_EQ(0, adapter_->InitEncode(&codec_, kSettings));
+  rate_allocator_ = std::make_unique<SimulcastRateAllocator>(env_, codec_);
+  adapter_->SetRates(VideoEncoder::RateControlParameters(
+      rate_allocator_->Allocate(VideoBitrateAllocationParameters(5000000, 30)),
+      30.0));
+
+  std::vector<MockVideoEncoder*> encoders = helper_->factory()->encoders();
+  ASSERT_EQ(3u, encoders.size());
+
+  
+  
+  EXPECT_CALL(*encoders[0], Encode(_, _))
+      .WillRepeatedly(Return(WEBRTC_VIDEO_CODEC_OK));
+  EXPECT_CALL(*encoders[1], Encode(_, _))
+      .WillRepeatedly(Return(WEBRTC_VIDEO_CODEC_OK));
+  EXPECT_CALL(*encoders[2], Encode(_, _))
+      .WillRepeatedly(Return(WEBRTC_VIDEO_CODEC_OK));
+
+  
+  for (int i = 0; i < 15; ++i) {
+    scoped_refptr<VideoFrameBuffer> buffer(I420Buffer::Create(1280, 720));
+    VideoFrame input_frame = VideoFrame::Builder()
+                                 .set_video_frame_buffer(buffer)
+                                 .set_rtp_timestamp(100 + i * 10)
+                                 .set_timestamp_ms(1000 + i * 100)
+                                 .set_rotation(kVideoRotation_0)
+                                 .build();
+    std::vector<VideoFrameType> frame_types(3, VideoFrameType::kVideoFrameKey);
+    EXPECT_EQ(0, adapter_->Encode(input_frame, &frame_types));
+  }
+
+  
+  
+  
+  scoped_refptr<VideoFrameBuffer> buffer(I420Buffer::Create(1280, 720));
+  VideoFrame input_frame = VideoFrame::Builder()
+                               .set_video_frame_buffer(buffer)
+                               .set_rtp_timestamp(9000)
+                               .set_timestamp_ms(9000)
+                               .set_rotation(kVideoRotation_0)
+                               .build();
+  std::vector<VideoFrameType> frame_types(3, VideoFrameType::kVideoFrameKey);
+  EXPECT_EQ(0, adapter_->Encode(input_frame, &frame_types));
+
+  const std::vector<std::tuple<uint32_t, int, bool>>& dropped_frames =
+      GetDroppedFrames();
+  ASSERT_EQ(3u, dropped_frames.size());
+  EXPECT_EQ(std::make_tuple(100u, 0, false), dropped_frames[0]);
+  EXPECT_EQ(std::make_tuple(100u, 1, false), dropped_frames[1]);
+  EXPECT_EQ(std::make_tuple(100u, 2, true), dropped_frames[2]);
 }
 
 TEST_F(TestSimulcastEncoderAdapterFake, TestInitFailureCleansUpEncoders) {
