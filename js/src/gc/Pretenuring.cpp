@@ -129,7 +129,6 @@ size_t PretenuringNursery::doPretenuring(GCRuntime* gc, JS::GCReason reason,
       }
     } else if (site->isMissing()) {
       sitesActive++;
-      updateTotalAllocCounts(site);
       site->processMissingSite(reportFilter);
     }
 
@@ -220,6 +219,9 @@ void AllocSite::processMissingSite(const AllocSiteFilter& reportFilter) {
   MOZ_ASSERT(isMissing());
   MOZ_ASSERT(nurseryAllocCount >= nurseryPromotedCount);
 
+  
+  
+  
   
   AllocSite* unknownSite = zone()->unknownAllocSite(traceKind());
   unknownSite->nurseryAllocCount += nurseryAllocCount;
@@ -451,6 +453,8 @@ static const char* AllocSiteKindName(AllocSite::Kind kind) {
       return "optimized";
     case AllocSite::Kind::Missing:
       return "missing";
+    case AllocSite::Kind::Tenuring:
+      return "tenuring";
     default:
       MOZ_CRASH("Bad AllocSite kind");
   }
