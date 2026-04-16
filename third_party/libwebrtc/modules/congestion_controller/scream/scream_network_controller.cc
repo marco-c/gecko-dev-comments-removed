@@ -210,10 +210,11 @@ std::optional<PacerConfig> ScreamNetworkController::MaybeCreatePacerConfig() {
   
   
   TimeDelta pacing_window =
-      (scream_->delay_based_congestion_control().IsQueueDelayDetected() ||
-       scream_->l4s_alpha() > 0.001)
-          ? TimeDelta::Millis(10)
-          : default_pacing_window_;
+      (env_.clock().CurrentTime() -
+           scream_->last_reaction_to_congestion_time() >
+       params_.allow_large_pacing_bursts_after_congestion_time.Get())
+          ? default_pacing_window_
+          : TimeDelta::Millis(10);
   DataRate target_rate = scream_->target_rate();
   Timestamp now = env_.clock().CurrentTime();
   DataRate padding_rate = DataRate::Zero();
