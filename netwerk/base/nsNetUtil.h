@@ -856,12 +856,6 @@ inline nsresult NS_GetInnermostURIHost(nsIURI* aURI, nsACString& aHost) {
 
 nsresult NS_GetFinalChannelURI(nsIChannel* channel, nsIURI** uri);
 
-
-
-
-
-uint32_t NS_SecurityHashURI(nsIURI* aURI);
-
 bool NS_SecurityCompareURIs(nsIURI* aSourceURI, nsIURI* aTargetURI,
                             bool aStrictFileOriginPolicy);
 
