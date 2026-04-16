@@ -5,7 +5,7 @@
 
 
 with Files('**'):
-    BUG_COMPONENT = ('Core', 'Machine Learning')
+    BUG_COMPONENT = ("Core", "Machine Learning: General")
 
 AllowCompilerWarnings()
 
