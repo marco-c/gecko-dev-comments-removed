@@ -86,6 +86,9 @@ class BaseAlloc {
   
   void Unlink(BaseAllocCell* cell) MOZ_REQUIRES(mMutex);
 
+  
+  void Link(BaseAllocCell* cell) MOZ_REQUIRES(mMutex);
+
   mozilla::DoublyLinkedList<BaseAllocCell>
       mFreeLists[kNumFreeLists] MOZ_GUARDED_BY(mMutex);
   RedBlackTree<BaseAllocCell, BaseAllocCellRBTrait> mFreeListOversize
@@ -113,6 +116,9 @@ class BaseAlloc {
   uintptr_t mNextDecommitted MOZ_GUARDED_BY(mMutex) = 0;
   
   uintptr_t mPastAddr MOZ_GUARDED_BY(mMutex) = 0;
+
+  void MaybeTrim(BaseAllocCell* aCell, base_alloc_size_t aSizeRequest)
+      MOZ_REQUIRES(mMutex);
 
   Stats mStats MOZ_GUARDED_BY(mMutex);
 
