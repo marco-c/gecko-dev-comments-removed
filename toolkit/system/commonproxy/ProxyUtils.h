@@ -2,6 +2,7 @@
 
 
 
+
 #ifndef mozilla_toolkit_system_commonproxy_ProxyUtils_h
 #define mozilla_toolkit_system_commonproxy_ProxyUtils_h
 
@@ -15,6 +16,10 @@ nsresult GetProxyFromEnvironment(const nsACString& aScheme,
                                  const nsACString& aHost, int32_t aPort,
                                  nsACString& aResult);
 bool IsHostProxyEntry(const nsACString& aHost, const nsACString& aOverride);
+
+
+
+bool HasProxyEnvVars();
 }  
 }  
 }  

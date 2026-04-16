@@ -2,6 +2,7 @@
 
 
 
+
 #include "nsISystemProxySettings.h"
 #include "mozilla/Components.h"
 #include "mozilla/Maybe.h"
@@ -25,6 +26,7 @@ class SystemProxyConfig final {
 
   nsresult GetProxyForURI(const nsACString& aHost, nsACString& aResult);
   nsresult GetPACURI(nsACString& aResult);
+  bool IsDirect() const { return mHost.IsEmpty() && mPacUrl.IsEmpty(); }
 
  private:
   nsCString mHost;
@@ -117,6 +119,13 @@ NS_IMETHODIMP nsAndroidSystemProxySettings::SetSystemProxyInfo(
     const nsTArray<nsCString>& aExclusionList) {
   mSystemProxyConfig = mozilla::Some(
       SystemProxyConfig(aHost, aPort, aPacFileUrl, aExclusionList));
+  return NS_OK;
+}
+
+NS_IMETHODIMP nsAndroidSystemProxySettings::GetSystemProxyDirect(
+    bool* aResult) {
+  *aResult = !mozilla::toolkit::system::HasProxyEnvVars() &&
+             (!mSystemProxyConfig || mSystemProxyConfig->IsDirect());
   return NS_OK;
 }
 

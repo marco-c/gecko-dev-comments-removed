@@ -2,6 +2,7 @@
 
 
 
+
 #include "nsISystemProxySettings.h"
 #include "mozilla/Components.h"
 #include "nsIURI.h"
@@ -278,6 +279,24 @@ nsresult nsUnixSystemProxySettings::GetProxyForURI(const nsACString& aSpec,
 NS_IMETHODIMP
 nsUnixSystemProxySettings::GetSystemWPADSetting(bool* aSystemWPADSetting) {
   *aSystemWPADSetting = false;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsUnixSystemProxySettings::GetSystemProxyDirect(bool* aResult) {
+  if (mozilla::toolkit::system::HasProxyEnvVars()) {
+    *aResult = false;
+    return NS_OK;
+  }
+
+  if (!mProxySettings) {
+    *aResult = true;
+    return NS_OK;
+  }
+
+  nsAutoCString proxyMode;
+  mProxySettings.GetString("mode"_ns, proxyMode);
+  *aResult = proxyMode.EqualsLiteral("none") || proxyMode.IsEmpty();
   return NS_OK;
 }
 

@@ -2,8 +2,10 @@
 
 
 
+
 #include "ProxyUtils.h"
 
+#include "mozilla/Atomics.h"
 #include "mozilla/IntegerRange.h"
 #include "nsReadableUtils.h"
 #include "nsTArray.h"
@@ -300,6 +302,27 @@ nsresult GetProxyFromEnvironment(const nsACString& aScheme,
 
 bool IsHostProxyEntry(const nsACString& aHost, const nsACString& aOverride) {
   return IsMatchMask(aHost, aOverride) || IsMatchWildcard(aHost, aOverride);
+}
+
+bool HasProxyEnvVars() {
+  
+  
+  
+  
+  static mozilla::Atomic<int32_t> sCached{-1};
+  if (sCached >= 0) {
+    return !!sCached;
+  }
+  bool result = false;
+  for (const auto& var : {"http_proxy"_ns, "https_proxy"_ns, "all_proxy"_ns}) {
+    const char* val = GetEnvRetryUppercase(var);
+    if (val && val[0]) {
+      result = true;
+      break;
+    }
+  }
+  sCached = result ? 1 : 0;
+  return result;
 }
 
 }  
