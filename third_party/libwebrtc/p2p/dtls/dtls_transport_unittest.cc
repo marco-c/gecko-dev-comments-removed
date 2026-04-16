@@ -1821,19 +1821,23 @@ class DtlsTransportInternalImplDtlsInStunTest
   DtlsTransportInternalImplDtlsInStunTest() {}
 
   void CheckRetransmissions() {
+    EXPECT_EQ(client1_.dtls_transport()->GetRetransmissionCount(), 0);
     if (std::get<0>(GetParam()).dtls_in_stun ==
         std::get<1>(GetParam()).dtls_in_stun) {
-      EXPECT_EQ(client1_.dtls_transport()->GetRetransmissionCount(), 0);
       EXPECT_EQ(client2_.dtls_transport()->GetRetransmissionCount(), 0);
-    } else {
-      
-      
-      
-      
-      
-      EXPECT_LE(client1_.dtls_transport()->GetRetransmissionCount(), 1);
-      EXPECT_LE(client2_.dtls_transport()->GetRetransmissionCount(), 1);
+      return;
     }
+    if (std::get<0>(GetParam()).ssl_role == SSL_CLIENT) {
+      EXPECT_EQ(client2_.dtls_transport()->GetRetransmissionCount(), 0);
+      return;
+    }
+
+    
+    
+    
+    
+    
+    EXPECT_LE(client2_.dtls_transport()->GetRetransmissionCount(), 1);
   }
 };
 

@@ -1235,8 +1235,19 @@ void DtlsTransportInternalImpl::ConfigureHandshakeTimeout() {
 void DtlsTransportInternalImpl::UpdateHandshakeTimeout() {
   RTC_DCHECK(dtls_);
   const auto rtt_ms = ice_transport()->GetRttEstimate();
-  const int delay_ms = ComputeRetransmissionTimeout(
+  int delay_ms = ComputeRetransmissionTimeout(
       rtt_ms.value_or(kDefaultHandshakeEstimateRttMs));
+  if (dtls_stun_piggyback_controller_.state() ==
+          DtlsStunPiggybackController::State::OFF &&
+      dtls_role_ == SSL_CLIENT) {
+    
+    
+    
+    
+    
+    delay_ms = (delay_ms * 133) / 100;
+  }
+
   RTC_LOG(LS_INFO) << ToString() << ": Update DTLS handshake timeout to "
                    << delay_ms << "ms based on ICE RTT "
                    << (rtt_ms ? std::to_string(*rtt_ms) : "<unset>");
@@ -1294,6 +1305,13 @@ void DtlsTransportInternalImpl::
                                   packet.size(), packet_options,
                                    0);
     }
+  }
+
+  if (dtls_stun_piggyback_controller_.state() ==
+      DtlsStunPiggybackController::State::OFF) {
+    
+    
+    return;
   }
 
   const auto rtt_ms = ice_transport()->GetRttEstimate().value_or(

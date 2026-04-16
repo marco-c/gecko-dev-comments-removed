@@ -31,6 +31,7 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/random.h"
 #include "rtc_base/socket_address.h"
+#include "rtc_base/ssl_stream_adapter.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 #include "test/wait_until.h"
@@ -86,24 +87,29 @@ class DtlsIceIntegrationTest : public dtls_ice_integration_fixture::Base,
   }
 
   void CheckRetransmissions() {
-    if (client_.config.dtls_in_stun != server_.config.dtls_in_stun) {
-      
-      
-      
-      
-      
-      EXPECT_LE(client_.dtls->GetRetransmissionCount(), 1);
-      EXPECT_LE(server_.dtls->GetRetransmissionCount(), 1);
+    if (!server_.config.ice_lite) {
+      EXPECT_EQ(client_.dtls->GetRetransmissionCount(), 0);
+      EXPECT_EQ(server_.dtls->GetRetransmissionCount(), 0);
+      return;
+    }
+    if (client_.config.ssl_role == SSL_CLIENT) {
+      EXPECT_EQ(client_.dtls->GetRetransmissionCount(), 0);
+      EXPECT_EQ(server_.dtls->GetRetransmissionCount(), 0);
       return;
     }
 
-    EXPECT_EQ(client_.dtls->GetRetransmissionCount(), 0);
-    if (!server_.config.ice_lite) {
-      
-      
-      
-      EXPECT_EQ(server_.dtls->GetRetransmissionCount(), 0);
+    
+    
+    
+    if (client_.config.dtls_in_stun == server_.config.dtls_in_stun) {
+      const bool pqc = client_.config.pqc && server_.config.pqc;
+      EXPECT_EQ(client_.dtls->GetRetransmissionCount(), 0);
+      EXPECT_LE(server_.dtls->GetRetransmissionCount(), !pqc ? 0 : 1);
+      return;
     }
+
+    EXPECT_LE(client_.dtls->GetRetransmissionCount(), 1);
+    EXPECT_LE(server_.dtls->GetRetransmissionCount(), 1);
   }
 };
 
