@@ -193,11 +193,6 @@ var allowlist = [
 
   
   
-  { file: "chrome://global/content/vendor/react-dev.js" },
-  { file: "chrome://global/content/vendor/react-dom-dev.js" },
-
-  
-  
   {
     file: "chrome://browser/content/preferences/more-from-mozilla-qr-code-simple.svg",
   },
@@ -245,6 +240,9 @@ var allowlist = [
 
   
   { file: "resource://builtin-addons/ipp-activator/breakages/tab.json" },
+
+  
+  { file: "resource://app/modules/contentsharing/ContentSharingUtils.sys.mjs" },
 
   
   
@@ -348,6 +346,15 @@ if (AppConstants.NIGHTLY_BUILD) {
     
     
     { file: "chrome://browser/content/backup/debug.html" }
+  );
+}
+
+if (!AppConstants.RELEASE_OR_BETA) {
+  allowlist.push(
+    
+    
+    { file: "chrome://global/content/vendor/react-dev.js" },
+    { file: "chrome://global/content/vendor/react-dom-dev.js" }
   );
 }
 
