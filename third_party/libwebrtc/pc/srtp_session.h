@@ -62,33 +62,13 @@ class SrtpSession {
 
   
   
-  [[deprecated("Pass CopyOnWriteBuffer")]] bool ProtectRtp(void* data,
-                                                           int in_len,
-                                                           int max_len,
-                                                           int* out_len);
-  bool ProtectRtp(CopyOnWriteBuffer& buffer);
-  
-  [[deprecated("Pass CopyOnWriteBuffer")]] bool ProtectRtp(void* data,
-                                                           int in_len,
-                                                           int max_len,
-                                                           int* out_len,
-                                                           int64_t* index);
   bool ProtectRtp(CopyOnWriteBuffer& buffer, int64_t* index);
+  bool ProtectRtp(CopyOnWriteBuffer& buffer);
 
-  [[deprecated("Pass CopyOnWriteBuffer")]] bool ProtectRtcp(void* data,
-                                                            int in_len,
-                                                            int max_len,
-                                                            int* out_len);
   bool ProtectRtcp(CopyOnWriteBuffer& buffer);
   
   
-  [[deprecated("Pass CopyOnWriteBuffer")]] bool UnprotectRtp(void* data,
-                                                             int in_len,
-                                                             int* out_len);
   bool UnprotectRtp(CopyOnWriteBuffer& buffer);
-  [[deprecated("Pass CopyOnWriteBuffer")]] bool UnprotectRtcp(void* data,
-                                                              int in_len,
-                                                              int* out_len);
   bool UnprotectRtcp(CopyOnWriteBuffer& buffer);
 
   
@@ -136,9 +116,6 @@ class SrtpSession {
   
   
   void DumpPacket(const CopyOnWriteBuffer& buffer, bool outbound);
-  [[deprecated("Pass CopyOnWriteBuffer")]] void DumpPacket(const void* buf,
-                                                           int len,
-                                                           bool outbound);
 
   void HandleEvent(const srtp_event_data_t* ev);
   static void HandleEventThunk(srtp_event_data_t* ev);
@@ -163,13 +140,5 @@ class SrtpSession {
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace cricket {
-using ::webrtc::ProhibitLibsrtpInitialization;
-using ::webrtc::SrtpSession;
-}  
-#endif  
 
 #endif  
