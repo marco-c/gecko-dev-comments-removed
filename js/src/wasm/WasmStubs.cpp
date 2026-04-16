@@ -29,6 +29,7 @@
 #include "wasm/WasmGenerator.h"
 #include "wasm/WasmInstance.h"
 #include "wasm/WasmPI.h"
+#include "wasm/WasmStacks.h"
 
 #include "jit/MacroAssembler-inl.h"
 #include "wasm/WasmInstance-inl.h"
@@ -2006,12 +2007,9 @@ static bool GenerateImportInterpExit(MacroAssembler& masm, const FuncImport& fi,
   
   unsigned abiArgCount = ArgTypeVector(funcType).lengthWithStackResults();
   unsigned argBytes = std::max<size_t>(1, abiArgCount) * sizeof(Value);
-  unsigned frameAlignment =
-      ComputeByteAlignment(sizeof(Frame), ABIStackAlignment);
   unsigned framePushed = AlignBytes(argOffset + argBytes, ABIStackAlignment);
   GenerateExitPrologue(masm, ExitReason::Fixed::ImportInterp,
-                        true,
-                        frameAlignment,
+                        true, ExitFrameAlignment::Static,
                         framePushed, offsets);
 
   
@@ -2132,7 +2130,8 @@ static bool GenerateImportInterpExit(MacroAssembler& masm, const FuncImport& fi,
 #endif
 
   GenerateExitEpilogue(masm, ExitReason::Fixed::ImportInterp,
-                        true, offsets);
+                        true, ExitFrameAlignment::Static,
+                       offsets);
 
   return FinishOffsets(masm, offsets);
 }
@@ -2530,12 +2529,10 @@ bool wasm::GenerateBuiltinThunk(MacroAssembler& masm, ABIFunctionType abiType,
   masm.setFramePushed(0);
 
   ABIFunctionArgs args(abiType);
-  unsigned frameAlignment =
-      ComputeByteAlignment(sizeof(Frame), ABIStackAlignment);
   unsigned framePushed =
       AlignBytes(StackArgBytesForNativeABI(args), ABIStackAlignment);
   GenerateExitPrologue(masm, exitReason, switchToMainStack,
-                        frameAlignment,
+                       ExitFrameAlignment::Static,
                         framePushed, offsets);
 
   
@@ -2615,7 +2612,8 @@ bool wasm::GenerateBuiltinThunk(MacroAssembler& masm, ABIFunctionType abiType,
   }
 #endif
 
-  GenerateExitEpilogue(masm, exitReason, switchToMainStack, offsets);
+  GenerateExitEpilogue(masm, exitReason, switchToMainStack,
+                       ExitFrameAlignment::Static, offsets);
   return FinishOffsets(masm, offsets);
 }
 
@@ -2743,11 +2741,16 @@ static bool GenerateTrapExit(MacroAssembler& masm, Label* throwLabel,
   
   
   Register originalStackPointer = ABINonArgReg3;
+#ifdef ENABLE_WASM_JSPI
+  masm.reserveStack(sizeof(void*) * 2);
+  uint32_t framePushedForSavedStack = masm.framePushed();
+#endif
   masm.moveStackPtrTo(originalStackPointer);
 
 #ifdef ENABLE_WASM_JSPI
-  GenerateExitPrologueMainStackSwitch(masm, InstanceReg, ABINonArgReg0,
-                                      ABINonArgReg1, ABINonArgReg2);
+  GenerateExitPrologueMainStackSwitch(masm, framePushedForSavedStack,
+                                      InstanceReg, ABINonArgReg0, ABINonArgReg1,
+                                      ABINonArgReg2);
 #endif
 
   
@@ -2778,20 +2781,22 @@ static bool GenerateTrapExit(MacroAssembler& masm, Label* throwLabel,
     masm.addToStackPtr(Imm32(ShadowStackSpace));
   }
 
-#ifdef ENABLE_WASM_JSPI
-  
-  
-  MOZ_ASSERT(NonVolatileRegs.has(InstanceReg));
-  LoadActivation(masm, InstanceReg, ABINonArgReturnReg0);
-  GenerateExitEpilogueMainStackReturn(masm, InstanceReg, ABINonArgReturnReg0,
-                                      ABINonArgReturnReg1);
-#endif
-
   
   
   
   masm.loadPtr(Address(masm.getStackPointer(), 0), ABINonArgReturnReg0);
   masm.moveToStackPtr(ABINonArgReturnReg0);
+
+#ifdef ENABLE_WASM_JSPI
+  
+  
+  MOZ_ASSERT(NonVolatileRegs.has(InstanceReg));
+  GenerateExitEpilogueMainStackReturn(masm, framePushedForSavedStack,
+                                      InstanceReg, ABINonArgReturnReg0,
+                                      ABINonArgReturnReg1);
+
+  masm.freeStack(sizeof(void*) * 2);
+#endif
 
   
   
@@ -2809,7 +2814,7 @@ static bool GenerateTrapExit(MacroAssembler& masm, Label* throwLabel,
   return FinishOffsets(masm, offsets);
 }
 
-static void ClobberWasmRegsForLongJmp(MacroAssembler& masm, Register jumpReg) {
+void wasm::ClobberWasmRegsForLongJmp(MacroAssembler& masm, Register jumpReg) {
   
   AllocatableGeneralRegisterSet gprs(GeneralRegisterSet::All());
   RegisterAllocator::takeWasmRegisters(gprs);
@@ -2845,21 +2850,107 @@ static void ClobberWasmRegsForLongJmp(MacroAssembler& masm, Register jumpReg) {
   }
 }
 
+#ifdef ENABLE_WASM_JSPI
+bool wasm::GenerateContBaseFrameStub(jit::MacroAssembler& masm,
+                                     Offsets* offsets) {
+  AssertExpectedSP(masm);
+  masm.haltingAlign(CodeAlignment);
+  masm.setFramePushed(0);
+
+  offsets->begin = masm.currentOffset();
+
+  Register scratch1 = ABINonArgReg0;
+  Register scratch2 = ABINonArgReg1;
+  Register scratch3 = ABINonArgReg2;
+  Register scratch4 = ABINonArgReg3;
+
+  int32_t offsetFromFPToStack = -ContStack::offsetOfBaseFrameFP();
+
+  
+  masm.computeEffectiveAddress(
+      Address(FramePointer,
+              offsetFromFPToStack + ContStack::offsetOfInitialResumeTarget()),
+      scratch1);
+  EmitClearSwitchTarget(masm, scratch1);
+
+  
+  
+  MOZ_ASSERT(scratch4 == WasmCallRefReg);
+  masm.loadPtr(
+      Address(FramePointer,
+              offsetFromFPToStack + ContStack::offsetOfInitialResumeCallee()),
+      scratch4);
+  masm.storePtr(
+      ImmWord(0),
+      Address(FramePointer,
+              offsetFromFPToStack + ContStack::offsetOfInitialResumeCallee()));
+
+  
+  
+  masm.reserveStack(
+      ComputeByteAlignment(sizeof(Frame), WasmStackAlignment) +
+      AlignBytes(wasm::FrameWithInstances::sizeOfInstanceFieldsAndShadowStack(),
+                 WasmStackAlignment));
+  masm.assertStackAlignment(WasmStackAlignment);
+  wasm::CallSiteDesc callSite(CallSiteKind::FuncRef);
+  wasm::CalleeDesc callee = wasm::CalleeDesc::wasmFuncRef();
+  CodeOffset fastCallOffset;
+  CodeOffset slowCallOffset;
+  masm.wasmCallRef(callSite, callee, &fastCallOffset, &slowCallOffset);
+  
+  masm.freeStack(
+      wasm::FrameWithInstances::sizeOfInstanceFieldsAndShadowStack());
+
+  
+  
+  masm.loadPtr(Address(FramePointer, -ContStack::offsetOfBaseFrameFP() +
+                                         ContStack::offsetOfHandlers()),
+               scratch1);
+  masm.computeEffectiveAddress(
+      Address(scratch1, offsetof(wasm::Handlers, returnTarget)), scratch1);
+  wasm::EmitSwitchStack(masm, scratch1, scratch2, scratch3, scratch4);
+
+  
+  masm.breakpoint();
+
+  return FinishOffsets(masm, offsets);
+}
+#endif
+
 
 
 
 void wasm::GenerateJumpToCatchHandler(MacroAssembler& masm, Register rfe,
-                                      Register scratch1, Register scratch2) {
+                                      Register scratch1, Register scratch2,
+                                      Register scratch3) {
   masm.loadPtr(Address(rfe, ResumeFromException::offsetOfInstance()),
                InstanceReg);
   masm.loadWasmPinnedRegsFromInstance(mozilla::Nothing());
   masm.switchToWasmInstanceRealm(scratch1, scratch2);
+
+#ifdef ENABLE_WASM_JSPI
+  
+  
+  
+  
+  
+  masm.loadPtr(Address(InstanceReg, wasm::Instance::offsetOfCx()), scratch1);
+  masm.loadPtr(Address(rfe, ResumeFromException::offsetOfBaseHandlers()),
+               scratch2);
+  masm.storePtr(scratch2,
+                Address(scratch1, JSContext::offsetOfWasm() +
+                                      wasm::Context::offsetOfBaseHandlers()));
+  masm.loadPtr(Address(rfe, ResumeFromException::offsetOfStackTarget()),
+               scratch2);
+  EmitEnterStackTarget(masm, scratch1, scratch2, scratch3);
+#endif
+
   masm.loadPtr(Address(rfe, ResumeFromException::offsetOfTarget()), scratch1);
   masm.loadPtr(Address(rfe, ResumeFromException::offsetOfFramePointer()),
                FramePointer);
   masm.loadStackPtr(Address(rfe, ResumeFromException::offsetOfStackPointer()));
   MoveSPForJitABI(masm);
-  ClobberWasmRegsForLongJmp(masm, scratch1);
+  wasm::ClobberWasmRegsForLongJmp(masm, scratch1);
   masm.jump(scratch1);
 }
 
@@ -2938,22 +3029,10 @@ static bool GenerateDebugStub(MacroAssembler& masm, Label* throwLabel,
   masm.setFramePushed(0);
 
   GenerateExitPrologue(masm, ExitReason::Fixed::DebugStub,
-                        true, 0, 0, offsets);
+                        true, ExitFrameAlignment::Dynamic,
+                       0, offsets);
 
   uint32_t framePushed = masm.framePushed();
-
-  
-  
-#ifdef JS_CODEGEN_ARM64
-  
-  static_assert(ABIStackAlignment == 16, "ARM64 SP alignment");
-#else
-  Register scratch = ABINonArgReturnReg0;
-  masm.moveStackPtrTo(scratch);
-  masm.subFromStackPtr(Imm32(sizeof(intptr_t)));
-  masm.andToStackPtr(Imm32(~(ABIStackAlignment - 1)));
-  masm.storePtr(scratch, Address(masm.getStackPointer(), 0));
-#endif
 
   if (ShadowStackSpace) {
     masm.subFromStackPtr(Imm32(ShadowStackSpace));
@@ -2966,15 +3045,12 @@ static bool GenerateDebugStub(MacroAssembler& masm, Label* throwLabel,
   if (ShadowStackSpace) {
     masm.addToStackPtr(Imm32(ShadowStackSpace));
   }
-#ifndef JS_CODEGEN_ARM64
-  masm.pop(scratch);
-  masm.moveToStackPtr(scratch);
-#endif
 
   masm.setFramePushed(framePushed);
 
   GenerateExitEpilogue(masm, ExitReason::Fixed::DebugStub,
-                        true, offsets);
+                        true, ExitFrameAlignment::Dynamic,
+                       offsets);
 
   return FinishOffsets(masm, offsets);
 }
@@ -2994,22 +3070,10 @@ static bool GenerateRequestTierUpStub(MacroAssembler& masm,
   masm.setFramePushed(0);
 
   GenerateExitPrologue(masm, ExitReason::Fixed::RequestTierUp,
-                        false, 0, 0, offsets);
+                        false, ExitFrameAlignment::Dynamic,
+                       0, offsets);
 
   uint32_t framePushed = masm.framePushed();
-
-  
-  
-#ifdef JS_CODEGEN_ARM64
-  
-  static_assert(ABIStackAlignment == 16, "ARM64 SP alignment");
-#else
-  Register scratch = ABINonArgReturnReg0;
-  masm.moveStackPtrTo(scratch);
-  masm.subFromStackPtr(Imm32(sizeof(intptr_t)));
-  masm.andToStackPtr(Imm32(~(ABIStackAlignment - 1)));
-  masm.storePtr(scratch, Address(masm.getStackPointer(), 0));
-#endif
 
   if (ShadowStackSpace > 0) {
     masm.subFromStackPtr(Imm32(ShadowStackSpace));
@@ -3048,15 +3112,12 @@ static bool GenerateRequestTierUpStub(MacroAssembler& masm,
   if (ShadowStackSpace > 0) {
     masm.addToStackPtr(Imm32(ShadowStackSpace));
   }
-#ifndef JS_CODEGEN_ARM64
-  masm.pop(scratch);
-  masm.moveToStackPtr(scratch);
-#endif
 
   masm.setFramePushed(framePushed);
 
   GenerateExitEpilogue(masm, ExitReason::Fixed::RequestTierUp,
-                        false, offsets);
+                        false, ExitFrameAlignment::Dynamic,
+                       offsets);
 
   return FinishOffsets(masm, offsets);
 }
@@ -3481,6 +3542,15 @@ bool wasm::GenerateStubs(const CodeMetadata& codeMeta,
   if (!code->codeRanges.emplaceBack(CodeRange::TrapExit, offsets)) {
     return false;
   }
+
+#ifdef ENABLE_WASM_JSPI
+  if (codeMeta.stackSwitchingEnabled()) {
+    if (!GenerateContBaseFrameStub(masm, &offsets) ||
+        !code->codeRanges.emplaceBack(CodeRange::ContBaseFrame, offsets)) {
+      return false;
+    }
+  }
+#endif
 
   CallableOffsets callableOffsets;
   if (!GenerateDebugStub(masm, &throwLabel, &callableOffsets)) {

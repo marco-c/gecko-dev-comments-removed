@@ -21,6 +21,7 @@
 #include "js/TracingAPI.h"
 #include "vm/JSContext.h"
 #include "wasm/WasmPI.h"
+#include "wasm/WasmStacks.h"
 
 #ifdef XP_WIN
 
@@ -36,107 +37,73 @@ using namespace js::wasm;
 Context::Context()
     : triedToInstallSignalHandlers(false),
       haveSignalHandlers(false),
-      stackLimit(JS::NativeStackLimitMin),
-      mainStackLimit(JS::NativeStackLimitMin)
+      stackLimit(JS::NativeStackLimitMin)
 #ifdef ENABLE_WASM_JSPI
       ,
-      activeSuspender_(nullptr)
+      mainStackTarget_(),
+      currentStack_(nullptr),
+      baseHandlers_(nullptr)
 #endif
 {
+#ifdef ENABLE_WASM_JSPI
+  MOZ_ASSERT(mainStackTarget_.isMainStack());
+#endif
 }
 
 Context::~Context() {
 #ifdef ENABLE_WASM_JSPI
-  MOZ_ASSERT(activeSuspender_ == nullptr);
-  MOZ_ASSERT(suspenders_.empty());
-#endif
+  MOZ_ASSERT(currentStack_ == nullptr);
+  MOZ_ASSERT(baseHandlers_ == nullptr);
+  MOZ_ASSERT(stacks_.empty());
+#endif  
 }
 
 void Context::initStackLimit(JSContext* cx) {
   
   
   stackLimit = cx->jitStackLimitNoInterrupt;
-  mainStackLimit = stackLimit;
+
+#ifdef ENABLE_WASM_JSPI
+  
+  mainStackTarget_.stack = nullptr;
+  mainStackTarget_.jitLimit = stackLimit;
+  MOZ_ASSERT(!mainStackTarget_.stack);
 
   
-#ifdef ENABLE_WASM_JSPI
 #  if defined(_WIN32)
   tib_ = reinterpret_cast<_NT_TIB*>(::NtCurrentTeb());
-  tibStackBase_ = tib_->StackBase;
-  tibStackLimit_ = tib_->StackLimit;
-#  endif
-#endif
+  updateWin32TibFields();
+#  endif  
+#endif    
 }
 
 #ifdef ENABLE_WASM_JSPI
-SuspenderObject* Context::findSuspenderForStackAddress(
-    const void* stackAddress) {
+#  ifdef _WIN32
+void Context::updateWin32TibFields() {
   
-  
-  for (auto iter = suspenders_.iter(); !iter.done(); iter.next()) {
-    SuspenderObject* object = iter.get();
-    if (object->isActive() && object->hasStackAddress(stackAddress)) {
-      return object;
+  MOZ_RELEASE_ASSERT(!onContStack());
+  mainStackTarget_.tibStackBase = tib_->StackBase;
+  mainStackTarget_.tibStackLimit = tib_->StackLimit;
+}
+#  endif  
+#endif    
+
+#ifdef ENABLE_WASM_JSPI
+ContStack* Context::findStackForAddress(JSContext* cx, uintptr_t stackAddress) {
+  if (cx->stackContainsAddress(stackAddress,
+                               JS::StackKind::StackForSystemCode)) {
+    return nullptr;
+  }
+
+  for (ContStack* stack : stacks_) {
+    if (stack->hasStackAddress(stackAddress)) {
+      return stack;
     }
   }
+
+  
+  
+  
   return nullptr;
-}
-
-void Context::trace(JSTracer* trc) {
-  if (activeSuspender_) {
-    TraceEdge(trc, &activeSuspender_, "suspender");
-  }
-}
-
-void Context::traceRoots(JSTracer* trc) {
-  
-  
-  
-  
-  if (!trc->isTenuringTracer()) {
-    return;
-  }
-  gc::AssertRootMarkingPhase(trc);
-  for (auto iter = suspenders_.iter(); !iter.done(); iter.next()) {
-    SuspenderObject* object = iter.get();
-    if (object->state() == SuspenderState::Suspended) {
-      TraceSuspendableStack(trc, object);
-    }
-  }
-}
-
-void Context::enterSuspendableStack(JSContext* cx, SuspenderObject* suspender) {
-  MOZ_ASSERT(!activeSuspender_);
-  activeSuspender_ = suspender;
-  stackLimit = suspender->stackMemoryLimitForJit();
-
-  
-#  if defined(_WIN32)
-  tibStackBase_ = tib_->StackBase;
-  tibStackLimit_ = tib_->StackLimit;
-  tib_->StackBase = reinterpret_cast<void*>(suspender->stackMemoryBase());
-  tib_->StackLimit =
-      reinterpret_cast<void*>(suspender->stackMemoryLimitForSystem());
-#  endif
-
-#  ifdef DEBUG
-  cx->runtime()->jitRuntime()->disallowArbitraryCode();
-#  endif
-}
-
-void Context::leaveSuspendableStack(JSContext* cx) {
-  MOZ_ASSERT(activeSuspender_);
-  activeSuspender_ = nullptr;
-  stackLimit = mainStackLimit;
-
-  
-#  if defined(_WIN32)
-  tib_->StackBase = static_cast<void*>(tibStackBase_);
-  tib_->StackLimit = static_cast<void*>(tibStackLimit_);
-#  endif
-
-#  ifdef DEBUG
-  cx->runtime()->jitRuntime()->clearDisallowArbitraryCode();
-#  endif
 }
 #endif
