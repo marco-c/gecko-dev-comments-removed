@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_ImageDecoder_h
 #define mozilla_dom_ImageDecoder_h
 
@@ -82,6 +80,8 @@ class ImageDecoder final : public nsISupports,
   void QueueSelectTrackMessage(uint32_t aSelectedIndex);
   void ProcessControlMessageQueue();
 
+  void ResetWithoutRef(const MediaResult& aResult);
+
  private:
   ~ImageDecoder();
 
@@ -106,9 +106,8 @@ class ImageDecoder final : public nsISupports,
 
   void Initialize(const GlobalObject& aGLobal, const ImageDecoderInit& aInit,
                   ErrorResult& aRv);
-  void Destroy();
-  void Reset(const MediaResult& aResult);
   void Close(const MediaResult& aResult);
+  void CloseWithoutRef(const MediaResult& aResult);
 
   void QueueConfigureMessage(const Maybe<gfx::IntSize>& aOutputSize,
                              ColorSpaceConversion aColorSpaceConversion);

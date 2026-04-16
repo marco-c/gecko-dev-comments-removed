@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/ImageTrackList.h"
 
 #include "MediaResult.h"
@@ -203,14 +201,16 @@ void ImageTrackList::SetSelectedIndex(int32_t aIndex, bool aSelected) {
   }
 
   
-  mDecoder->Reset();
+  RefPtr<ImageDecoder> decoder = mDecoder;
+  decoder->ResetWithoutRef(
+      MediaResult(NS_ERROR_DOM_ABORT_ERR, "Reset decoder (select index)"_ns));
 
   
   
-  mDecoder->QueueSelectTrackMessage(mSelectedIndex);
+  decoder->QueueSelectTrackMessage(mSelectedIndex);
 
   
-  mDecoder->ProcessControlMessageQueue();
+  decoder->ProcessControlMessageQueue();
 }
 
 }  
