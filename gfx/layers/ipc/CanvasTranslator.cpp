@@ -49,7 +49,8 @@ UniquePtr<TextureData> CanvasTranslator::CreateTextureData(
   switch (mTextureType) {
     case TextureType::Unknown:
       textureData = BufferTextureData::Create(
-          aSize, aFormat, gfx::BackendType::SKIA, LayersBackend::LAYERS_WR,
+          aSize, aFormat, gfx::ColorSpace2::SRGB, gfx::TransferFunction::SRGB,
+          gfx::BackendType::SKIA, LayersBackend::LAYERS_WR,
           TextureFlags::DEALLOCATE_CLIENT | TextureFlags::REMOTE_TEXTURE,
           allocFlags, nullptr);
       break;
@@ -1570,17 +1571,32 @@ CanvasTranslator::MaybeRecycleDataSurfaceForSurfaceDescriptor(
 
     auto* bufferTextureHost = aTextureHost->AsBufferTextureHost();
     if (bufferTextureHost) {
-      if (bufferTextureHost->GetBuffer() &&
-          bufferTextureHost->GetBuffer() == usedSurf->GetData() &&
-          aTextureHost->GetSize() == usedSurf->GetSize() &&
-          aTextureHost->GetFormat() == usedSurf->GetFormat()) {
+      if (usedSurf->GetType() == gfx::SurfaceType::DATA_ALIGNED) {
         
+        MOZ_ASSERT(aTextureHost->GetSize() == usedSurf->GetSize());
+        if (aTextureHost->GetSize() == usedSurf->GetSize()) {
+          
+          
+          return do_AddRef(usedWrapper);
+        } else {
+          mUsedDataSurfaceForSurfaceDescriptor = nullptr;
+          mUsedWrapperForSurfaceDescriptor = nullptr;
+          mUsedSurfaceDescriptorForSurfaceDescriptor = Nothing();
+        }
+      } else {
         
-        return do_AddRef(usedWrapper);
+        if (bufferTextureHost->GetBuffer() &&
+            bufferTextureHost->GetBuffer() == usedSurf->GetData() &&
+            aTextureHost->GetSize() == usedSurf->GetSize() &&
+            aTextureHost->GetFormat() == usedSurf->GetFormat()) {
+          
+          
+          return do_AddRef(usedWrapper);
+        }
+        mUsedDataSurfaceForSurfaceDescriptor = nullptr;
+        mUsedWrapperForSurfaceDescriptor = nullptr;
+        mUsedSurfaceDescriptorForSurfaceDescriptor = Nothing();
       }
-      mUsedDataSurfaceForSurfaceDescriptor = nullptr;
-      mUsedWrapperForSurfaceDescriptor = nullptr;
-      mUsedSurfaceDescriptorForSurfaceDescriptor = Nothing();
     }
   }
 
