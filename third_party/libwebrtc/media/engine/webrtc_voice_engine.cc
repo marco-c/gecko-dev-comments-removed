@@ -2685,9 +2685,14 @@ bool WebRtcVoiceReceiveChannel::MaybeCreateDefaultReceiveStream(
   
   
   if (default_sink_) {
-    for (uint32_t drop_ssrc : unsignaled_recv_ssrcs_) {
-      auto it = recv_streams_.find(drop_ssrc);
-      it->second->SetRawAudioSink(nullptr);
+    
+    
+    
+    if (unsignaled_recv_ssrcs_.size() >= 2) {
+      
+      uint32_t prev_ssrc =
+          unsignaled_recv_ssrcs_[unsignaled_recv_ssrcs_.size() - 2];
+      SetRawAudioSink(prev_ssrc, nullptr);
     }
     std::unique_ptr<AudioSinkInterface> proxy_sink(
         new ProxySink(default_sink_.get()));
@@ -2894,7 +2899,22 @@ bool WebRtcVoiceReceiveChannel::MaybeDeregisterUnsignaledRecvStream(
   RTC_DCHECK_RUN_ON(worker_thread_);
   auto it = absl::c_find(unsignaled_recv_ssrcs_, ssrc);
   if (it != unsignaled_recv_ssrcs_.end()) {
+    bool is_latest_unsignaled = (it == unsignaled_recv_ssrcs_.end() - 1);
     unsignaled_recv_ssrcs_.erase(it);
+    if (default_sink_) {
+      
+      
+      
+      SetRawAudioSink(ssrc, nullptr);
+      if (is_latest_unsignaled && !unsignaled_recv_ssrcs_.empty()) {
+        
+        
+        
+        std::unique_ptr<AudioSinkInterface> proxy_sink(
+            new ProxySink(default_sink_.get()));
+        SetRawAudioSink(unsignaled_recv_ssrcs_.back(), std::move(proxy_sink));
+      }
+    }
     return true;
   }
   return false;
