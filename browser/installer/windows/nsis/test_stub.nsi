@@ -1,3 +1,6 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 Unicode true
 
 ; Tests use the silent install feature to bypass message box prompts.
@@ -113,8 +116,18 @@ Var MockParameters
 !macroend
 !define /redef GetParameters "!insertmacro MockGetParameters"
 
+Var MockLocalAppDataFolder
+!macro MockGetLocalAppDataFolder dir
+  StrCpy ${dir} $MockLocalAppDataFolder
+!macroend
+!define GetLocalAppDataFolder "!insertmacro MockGetLocalAppDataFolder"
+
+!define GenerateUUID "Push 'THIS_IS_A_UNIQUE_ID_FOR_TESTING'"
+
 !include stub.nsh
 !include get_installation_type.nsh
+
+!include test_telemetry.nsh
 
 ; .onInit is responsible for running the tests
 Function .onInit
@@ -153,12 +166,17 @@ Function .onInit
     ${UnitTest} TestGetHadOldInstallFailure
     ${UnitTest} TestGetHadOldInstallSuccess
 
+    ${UnitTest} TestGetHadExistingProfileFailure
+    ${UnitTest} TestGetHadExistingProfileSuccess
+
     ${UnitTest} TestIsInstallerLaunchedByDesktopLauncherNoParameter
     ${UnitTest} TestIsInstallerLaunchedByDesktopLauncherUnknownParameter
     ${UnitTest} TestIsInstallerLaunchedByDesktopLauncherSuccess
     ${UnitTest} TestSetDlsourceFieldInPostSigningData
     ${UnitTest} TestUpdateInstalledPostSigningDataFileFailure
     ${UnitTest} TestUpdateInstalledPostSigningDataFileSuccess
+
+    Call TelemetryTests
 
     ${If} $TestFailureCount = 0
         ; On success, write the success metric and jump to the end
@@ -584,6 +602,32 @@ Function TestGetHadOldInstallSuccess
   Call GetHadOldInstall
   Pop $0
   ${AssertEqual} 0 "1"
+FunctionEnd
+
+Function TestGetHadExistingProfileFailure
+  GetTempFileName $0
+  Delete $0
+  CreateDirectory $0
+  StrCpy $MockLocalAppDataFolder $0
+
+  Call GetHadExistingProfile
+  Pop $0
+  ${AssertEqual} 0 "0"
+
+  RMDir $MockLocalAppDataFolder
+FunctionEnd
+
+Function TestGetHadExistingProfileSuccess
+  GetTempFileName $0
+  Delete $0
+  CreateDirectory "$0\Mozilla\Firefox"
+  StrCpy $MockLocalAppDataFolder $0
+
+  Call GetHadExistingProfile
+  Pop $0
+  ${AssertEqual} 0 "1"
+
+  RMDir /r $MockLocalAppDataFolder
 FunctionEnd
 
 Function TestIsInstallerLaunchedByDesktopLauncherNoParameter
