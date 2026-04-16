@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/DebugOnly.h"
 
 #include "jit/Bailouts.h"
@@ -230,7 +228,7 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
                   Address(StackPointer, sizeof(uintptr_t)));  
     masm.storePtr(reg_code, Address(StackPointer, 0));        
 
-    using Fn = bool (*)(BaselineFrame* frame, InterpreterFrame* interpFrame,
+    using Fn = void (*)(BaselineFrame* frame, InterpreterFrame* interpFrame,
                         uint32_t numStackValues);
     masm.setupUnalignedABICall(scratch);
     masm.passABIArg(framePtrScratch);  
@@ -245,9 +243,7 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
     masm.loadPtr(Address(StackPointer, sizeof(uintptr_t)), framePtr);
     masm.freeStack(2 * sizeof(uintptr_t));
 
-    Label error;
     masm.freeStack(ExitFrameLayout::SizeWithFooter());
-    masm.branchIfFalseBool(ReturnReg, &error);
 
     
     
@@ -262,14 +258,6 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
     }
 
     masm.jump(jitcode);
-
-    
-    
-    masm.bind(&error);
-    masm.movePtr(framePtr, StackPointer);
-    masm.addPtr(Imm32(2 * sizeof(uintptr_t)), StackPointer);
-    masm.moveValue(MagicValue(JS_ION_ERROR), JSReturnOperand);
-    masm.jump(&oomReturnLabel);
 
     masm.bind(&notOsr);
     
