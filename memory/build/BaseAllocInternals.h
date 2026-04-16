@@ -69,8 +69,6 @@ struct BaseAllocMetadata {
   
   base_alloc_size_t mRightSize : 31;
 
-  
-  
   bool mRightAllocated : 1;
 
   
@@ -81,6 +79,12 @@ struct BaseAllocMetadata {
     mRightAllocated = false;
   }
   void InitForLeftCell(base_alloc_size_t aSize) { mLeftSize = aSize; }
+
+  void Clear() {
+    mLeftSize = 0;
+    mRightSize = 0;
+    mRightAllocated = false;
+  }
 };
 
 class BaseAllocCell {
@@ -124,6 +128,8 @@ class BaseAllocCell {
 
   base_alloc_size_t Size() { return LeftMetadata()->mRightSize; }
 
+  void SetSize(base_alloc_size_t aNewSize);
+
   bool Allocated() { return LeftMetadata()->mRightAllocated; }
 
   void* Ptr() { return this; }
@@ -140,6 +146,11 @@ class BaseAllocCell {
   
   
   void ClearPayload();
+
+  BaseAllocCell* LeftCell();
+  BaseAllocCell* RightCell();
+
+  void Merge(BaseAllocCell* cell);
 
   
   BaseAllocCell(const BaseAllocCell&) = delete;

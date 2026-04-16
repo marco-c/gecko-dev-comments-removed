@@ -83,6 +83,9 @@ class BaseAlloc {
   
   void* alloc_from_list(base_alloc_size_t aSize) MOZ_REQUIRES(mMutex);
 
+  
+  void Unlink(BaseAllocCell* cell) MOZ_REQUIRES(mMutex);
+
   mozilla::DoublyLinkedList<BaseAllocCell>
       mFreeLists[kNumFreeLists] MOZ_GUARDED_BY(mMutex);
   RedBlackTree<BaseAllocCell, BaseAllocCellRBTrait> mFreeListOversize
