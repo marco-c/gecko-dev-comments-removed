@@ -96,6 +96,7 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/event.h"
 #include "rtc_base/experiments/encoder_info_settings.h"
+#include "rtc_base/experiments/quality_scaling_experiment.h"
 #include "rtc_base/experiments/rate_control_settings.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/ref_counted_object.h"
@@ -2041,9 +2042,27 @@ TEST_F(VideoStreamEncoderTest, DropsFramesOnBitrateOvershoot) {
 
 TEST_F(VideoStreamEncoderTest, QualityScalerTriggersOnFrameDropping) {
   
+  FieldTrials trials = SetFieldTrial("WebRTC-Video-QualityScalerSettings",
+                                     "sampling_period_ms:250");
+
+  
+  
+  std::optional<QualityScalingExperiment::Config> config =
+      QualityScalingExperiment::GetConfig(trials);
+  if (!config.has_value() || !config->use_all_drop_reasons) {
+    video_stream_encoder_->Stop();
+    GTEST_SKIP() << "QualityScalerExperiment does not take encoder drop "
+                    "reasons into account, skipping "
+                    "QualityScalerTriggersOnFrameDropping.";
+  }
+
+  
   codec_width_ = 1280;
   codec_height_ = 720;
-  ConfigureEncoder(video_encoder_config_.Copy());
+  ConfigureEncoder(
+      video_encoder_config_.Copy(),
+      VideoStreamEncoder::BitrateAllocationCallbackType::kVideoLayersAllocation,
+       1, &trials);
   video_stream_encoder_->OnBitrateUpdatedAndWaitForManagedResources(
       kTargetBitrate, kTargetBitrate, 0, 0, 0);
 
