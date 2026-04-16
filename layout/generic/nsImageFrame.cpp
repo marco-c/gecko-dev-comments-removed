@@ -1615,14 +1615,9 @@ void nsImageFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
     currentRequest->GetImageStatus(&loadStatus);
   }
 
-  const bool haveSize = loadStatus & imgIRequest::STATUS_SIZE_AVAILABLE;
-
-  
-  
-  
-  
-  if (aPresContext->IsPaginated() && !wm.IsVertical() &&
-      (haveSize || HasAnyStateBits(IMAGE_SIZECONSTRAINED)) &&
+  if (aPresContext->IsPaginated() &&
+      ((loadStatus & imgIRequest::STATUS_SIZE_AVAILABLE) ||
+       HasAnyStateBits(IMAGE_SIZECONSTRAINED)) &&
       NS_UNCONSTRAINEDSIZE != aReflowInput.AvailableHeight() &&
       aMetrics.Height() > aReflowInput.AvailableHeight()) {
     
@@ -1635,6 +1630,9 @@ void nsImageFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
   aMetrics.SetOverflowAreasToDesiredBounds();
   const bool imageOK = mKind != Kind::ImageLoadingContent ||
                        ImageOk(mContent->AsElement()->State());
+
+  
+  const bool haveSize = loadStatus & imgIRequest::STATUS_SIZE_AVAILABLE;
   if (!imageOK || !haveSize) {
     nsRect altFeedbackSize(
         0, 0,
