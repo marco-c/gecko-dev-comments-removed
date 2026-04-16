@@ -214,15 +214,18 @@ add_task(async function test_toggle_vertical_tabs() {
     true
   );
   let hidden2 = BrowserTestUtils.waitForEvent(contextMenu, "popuphidden");
-  const tabToPin = gBrowser.selectedTab;
-  await openAndWaitForContextMenu(contextMenu, tabToPin, async () => {
-    info("Tab context menu opened");
-    let pinTabOption = document.getElementById("context_pinTab");
-    if (!pinTabOption) {
-      info("Pin tab context menu option not found");
+  await openAndWaitForContextMenu(
+    contextMenu,
+    gBrowser.selectedTab,
+    async () => {
+      info("Tab context menu opened");
+      let pinTabOption = document.getElementById("context_pinTab");
+      if (!pinTabOption) {
+        info("Pin tab context menu option not found");
+      }
+      pinTabOption?.click();
     }
-    pinTabOption?.click();
-  });
+  );
 
   await promiseTabPinned;
   
@@ -230,7 +233,7 @@ add_task(async function test_toggle_vertical_tabs() {
   await BrowserTestUtils.waitForMutationCondition(
     pinnedTabsContainer,
     { childList: true },
-    () => pinnedTabsContainer.contains(tabToPin)
+    () => pinnedTabsContainer.childElementCount === 1
   );
   info("Tab pinned via the context menu");
   contextMenu.hidePopup();
