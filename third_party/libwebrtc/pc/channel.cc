@@ -428,8 +428,8 @@ void BaseChannel::OnNetworkRouteChanged(
   media_send_channel()->OnNetworkRouteChanged(transport_name(), new_route);
 }
 
-void BaseChannel::SetFirstPacketReceivedCallback(
-    absl::AnyInvocable<void() &&> callback) {
+void BaseChannel::SetFirstPacketReceivedCallback_n(
+    absl::AnyInvocable<void(const RtpPacketReceived&) &&> callback) {
   RTC_DCHECK_RUN_ON(network_thread());
   RTC_DCHECK(!on_first_packet_received_ || !callback);
 
@@ -442,7 +442,7 @@ void BaseChannel::SetFirstPacketReceivedCallback(
   on_first_packet_received_ = std::move(callback);
 }
 
-void BaseChannel::SetFirstPacketSentCallback(
+void BaseChannel::SetFirstPacketSentCallback_n(
     absl::AnyInvocable<void() &&> callback) {
   RTC_DCHECK_RUN_ON(network_thread());
   RTC_DCHECK(!on_first_packet_sent_ || !callback);
@@ -451,7 +451,7 @@ void BaseChannel::SetFirstPacketSentCallback(
 }
 
 void BaseChannel::SetPacketReceivedCallback_n(
-    absl::AnyInvocable<void()> callback) {
+    absl::AnyInvocable<void(const RtpPacketReceived&)> callback) {
   RTC_DCHECK_RUN_ON(network_thread());
   RTC_DCHECK(!on_packet_received_n_ || !callback);
 
@@ -520,7 +520,7 @@ void BaseChannel::OnRtpPacket(const RtpPacketReceived& parsed_packet) {
   RTC_DCHECK(network_initialized());
 
   if (on_first_packet_received_) {
-    std::move(on_first_packet_received_)();
+    std::move(on_first_packet_received_)(parsed_packet);
     on_first_packet_received_ = nullptr;
   }
 
@@ -542,7 +542,7 @@ void BaseChannel::OnRtpPacket(const RtpPacketReceived& parsed_packet) {
     return;
   }
   if (on_packet_received_n_) {
-    on_packet_received_n_();
+    on_packet_received_n_(parsed_packet);
   }
   media_receive_channel()->OnPacketReceived(parsed_packet);
 }

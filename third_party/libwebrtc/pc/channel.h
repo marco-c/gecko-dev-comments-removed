@@ -148,12 +148,13 @@ class BaseChannel : public ChannelInterface,
   }
 
   
-  void SetFirstPacketReceivedCallback(
-      absl::AnyInvocable<void() &&> callback) override;
-  void SetFirstPacketSentCallback(
+  void SetFirstPacketReceivedCallback_n(
+      absl::AnyInvocable<void(const RtpPacketReceived&) &&> callback) override;
+  void SetFirstPacketSentCallback_n(
       absl::AnyInvocable<void() &&> callback) override;
 
-  void SetPacketReceivedCallback_n(absl::AnyInvocable<void()> callback) override
+  void SetPacketReceivedCallback_n(
+      absl::AnyInvocable<void(const RtpPacketReceived&)> callback) override
       RTC_RUN_ON(network_thread());
 
   
@@ -322,13 +323,13 @@ class BaseChannel : public ChannelInterface,
   scoped_refptr<PendingTaskSafetyFlag> alive_;
 
   
-  absl::AnyInvocable<void() &&> on_first_packet_received_
-      RTC_GUARDED_BY(network_thread());
+  absl::AnyInvocable<void(const RtpPacketReceived&) &&>
+      on_first_packet_received_ RTC_GUARDED_BY(network_thread());
   absl::AnyInvocable<void() &&> on_first_packet_sent_
       RTC_GUARDED_BY(network_thread());
 
   
-  absl::AnyInvocable<void()> on_packet_received_n_
+  absl::AnyInvocable<void(const RtpPacketReceived&)> on_packet_received_n_
       RTC_GUARDED_BY(network_thread());
 
   RtpTransportInternal* rtp_transport_ RTC_GUARDED_BY(network_thread()) =
