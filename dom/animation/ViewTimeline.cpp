@@ -196,6 +196,7 @@ void ViewTimeline::UpdateCachedCurrentTime() {
 }
 
 
+
 std::pair<nscoord, nscoord> ViewTimeline::IntervalForTimelineRangeName(
     const StyleTimelineRangeName aName,
     const ScrollTimeline::ComputedTimelineData& aData) const {
@@ -280,7 +281,27 @@ std::pair<nscoord, nscoord> ViewTimeline::IntervalForTimelineRangeName(
       return {containEnd, alignedSubjectEndViewStart};
 
     case StyleTimelineRangeName::EntryCrossing:
+      
+      
+      
+      
+      
+      
+      
+      
+      return {alignedSubjectStartViewEnd, alignedSubjectEndViewEnd};
+
     case StyleTimelineRangeName::ExitCrossing:
+      
+      
+      
+      
+      
+      
+      
+      
+      return {alignedSubjectStartViewStart, alignedSubjectEndViewStart};
+
     case StyleTimelineRangeName::Scroll:
       
       return {0, 0};
