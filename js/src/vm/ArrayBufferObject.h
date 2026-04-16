@@ -792,6 +792,7 @@ class ResizableArrayBufferObject : public ArrayBufferObject {
 
   
   void resize(size_t newByteLength);
+  void notifyViewsAfterResize();
 
   static ResizableArrayBufferObject* copy(
       JSContext* cx, size_t newByteLength,

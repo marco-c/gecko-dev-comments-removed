@@ -1338,6 +1338,22 @@ void ArrayBufferObject::detach(JSContext* cx,
   }
 }
 
+void ResizableArrayBufferObject::notifyViewsAfterResize() {
+  
+  
+  auto& innerViews = ObjectRealm::get(this).innerViews.get();
+  if (InnerViewTable::ViewVector* views =
+          innerViews.maybeViewsUnbarriered(this)) {
+    AutoTouchingGrayThings tgt;
+    for (auto& view : *views) {
+      view->notifyBufferResized();
+    }
+  }
+  if (auto* view = firstView()) {
+    view->as<ArrayBufferViewObject>().notifyBufferResized();
+  }
+}
+
 void ResizableArrayBufferObject::resize(size_t newByteLength) {
   MOZ_ASSERT(!isPreparedForAsmJS());
   MOZ_ASSERT(!isWasm());
@@ -1358,21 +1374,7 @@ void ResizableArrayBufferObject::resize(size_t newByteLength) {
   }
 
   setByteLength(newByteLength);
-
-  
-  
-
-  auto& innerViews = ObjectRealm::get(this).innerViews.get();
-  if (InnerViewTable::ViewVector* views =
-          innerViews.maybeViewsUnbarriered(this)) {
-    AutoTouchingGrayThings tgt;
-    for (auto& view : *views) {
-      view->notifyBufferResized();
-    }
-  }
-  if (auto* view = firstView()) {
-    view->as<ArrayBufferViewObject>().notifyBufferResized();
-  }
+  notifyViewsAfterResize();
 }
 
 
@@ -2138,6 +2140,7 @@ ArrayBufferObject* ArrayBufferObject::wasmGrowToPagesInPlace(
       return nullptr;
     }
     oldBuf->setByteLength(newPages.byteLength());
+    oldBuf->as<ResizableArrayBufferObject>().notifyViewsAfterResize();
     AddCellMemory(oldBuf, newPages.byteLength(),
                   MemoryUse::ArrayBufferContents);
     return oldBuf;
