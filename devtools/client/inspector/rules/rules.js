@@ -1079,6 +1079,7 @@ class CssRuleView extends EventEmitter {
 
     this.#abortController.abort();
     this.#abortController = null;
+    this.#containers.clear();
 
     this.shortcuts.destroy();
 
@@ -1556,21 +1557,18 @@ class CssRuleView extends EventEmitter {
     const { signal } = this.#abortController;
     toggleButton.addEventListener(
       "click",
-      () => {
-        this.#toggleContainerVisibility(
-          toggleButton,
-          container,
-          isPseudo,
-          !this.showPseudoElements
-        );
-      },
+      this.#toggleContainerVisibility.bind(
+        this,
+        containerId,
+        isPseudo,
+        !this.showPseudoElements
+      ),
       { signal }
     );
 
     if (isPseudo) {
       this.#toggleContainerVisibility(
-        toggleButton,
-        container,
+        containerId,
         isPseudo,
         this.showPseudoElements
       );
@@ -1625,9 +1623,9 @@ class CssRuleView extends EventEmitter {
 
 
 
-
-
-  #toggleContainerVisibility(toggleButton, container, isPseudo, showPseudo) {
+  #toggleContainerVisibility(containerId, isPseudo, showPseudo) {
+    const { header, container } = this.#containers.get(containerId);
+    const toggleButton = header.querySelector("button");
     let isOpen = toggleButton.getAttribute("aria-expanded") === "true";
 
     if (isPseudo) {
@@ -2415,19 +2413,6 @@ class CssRuleView extends EventEmitter {
   
 
 
-  #togglePseudoElementRuleContainer() {
-    const container = this.styleDocument.getElementById(
-      PSEUDO_ELEMENTS_CONTAINER_ID
-    );
-    const toggle = this.styleDocument.querySelector(
-      `[aria-controls="${PSEUDO_ELEMENTS_CONTAINER_ID}"]`
-    );
-    this.#toggleContainerVisibility(toggle, container, true, true);
-  }
-
-  
-
-
 
 
 
@@ -2578,7 +2563,7 @@ class CssRuleView extends EventEmitter {
       
       
       scrollBehavior = "instant";
-      this.#togglePseudoElementRuleContainer();
+      this.#toggleContainerVisibility(PSEUDO_ELEMENTS_CONTAINER_ID, true, true);
     }
 
     const textProp = matchingTextPropComputed.textProp;
@@ -2626,23 +2611,20 @@ class CssRuleView extends EventEmitter {
     }
 
     
-    const propertyContainer = this.styleDocument.getElementById(
-      REGISTERED_PROPERTIES_CONTAINER_ID
-    );
-    if (!propertyContainer) {
+    const entry = this.#containers.get(REGISTERED_PROPERTIES_CONTAINER_ID);
+    if (!entry) {
       return false;
     }
+    const { header, container } = entry;
 
-    const propertyEl = propertyContainer.querySelector(`[data-name="${name}"]`);
+    const propertyEl = container.querySelector(`[data-name="${name}"]`);
     if (!propertyEl) {
       return false;
     }
 
-    const toggle = this.styleDocument.querySelector(
-      `[aria-controls="${REGISTERED_PROPERTIES_CONTAINER_ID}"]`
-    );
-    if (toggle.ariaExpanded === "false") {
-      this.#toggleContainerVisibility(toggle, propertyContainer);
+    const toggleButton = header.querySelector("button");
+    if (toggleButton.ariaExpanded === "false") {
+      this.#toggleContainerVisibility(REGISTERED_PROPERTIES_CONTAINER_ID);
     }
 
     this.#highlightElementInRule({
