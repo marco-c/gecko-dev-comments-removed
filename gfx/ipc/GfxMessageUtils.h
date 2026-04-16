@@ -5,6 +5,7 @@
 #ifndef GFXMESSAGEUTILS_H_
 #define GFXMESSAGEUTILS_H_
 
+#include "DriverCrashGuard.h"
 #include "FilterSupport.h"
 #include "ImageTypes.h"
 #include "RegionBuilder.h"
@@ -203,9 +204,25 @@ struct ParamTraits<gfxRect> {
 };
 
 template <>
+struct ParamTraits<mozilla::gfx::CrashGuardType>
+    : public ContiguousEnumSerializer<mozilla::gfx::CrashGuardType,
+                                      mozilla::gfx::CrashGuardType::D3D11Layers,
+                                      mozilla::gfx::CrashGuardType::NUM_TYPES> {
+};
+
+struct gfxContentTypeValidator {
+  using IntegralType = std::underlying_type_t<gfxContentType>;
+
+  static bool IsLegalValue(const IntegralType e) {
+    return e == IntegralType(gfxContentType::COLOR) ||
+           e == IntegralType(gfxContentType::ALPHA) ||
+           e == IntegralType(gfxContentType::COLOR_ALPHA);
+  }
+};
+
+template <>
 struct ParamTraits<gfxContentType>
-    : public ContiguousEnumSerializer<gfxContentType, gfxContentType::COLOR,
-                                      gfxContentType::SENTINEL> {};
+    : EnumSerializer<gfxContentType, gfxContentTypeValidator> {};
 
 template <>
 struct ParamTraits<gfxSurfaceType>
@@ -289,18 +306,9 @@ struct ParamTraits<mozilla::gfx::SVGFECompositeOperator>
 
 template <>
 struct ParamTraits<mozilla::gfx::CompositionOp>
-    : public ContiguousEnumSerializerInclusive<
-          mozilla::gfx::CompositionOp, mozilla::gfx::CompositionOp::OP_OVER,
-          mozilla::gfx::CompositionOp::OP_COUNT> {};
-
-
-
-
-
-
-
-
-
+    : public ContiguousEnumSerializer<mozilla::gfx::CompositionOp,
+                                      mozilla::gfx::CompositionOp::OP_CLEAR,
+                                      mozilla::gfx::CompositionOp::OP_COUNT> {};
 
 template <>
 struct ParamTraits<mozilla::gfx::sRGBColor> {
@@ -732,10 +740,26 @@ template <>
 struct ParamTraits<nsRegion>
     : RegionParamTraits<nsRegion, nsRect, nsRegion::RectIterator> {};
 
+struct GeckoProcessTypeValidator {
+  using IntegralType = std::underlying_type_t<GeckoProcessType>;
+
+  static bool IsLegalValue(const IntegralType e) {
+#define GECKO_PROCESS_TYPE(enum_value, enum_name, string_name, proc_typename, \
+                           process_bin_type, procinfo_typename,               \
+                           webidl_typename, allcaps_name)                     \
+  if (e == IntegralType(GeckoProcessType::GeckoProcessType_##enum_name)) {    \
+    return true;                                                              \
+  }
+#include "mozilla/GeckoProcessTypes.h"
+#undef GECKO_PROCESS_TYPE
+
+    return false;
+  }
+};
+
 template <>
 struct ParamTraits<GeckoProcessType>
-    : public ContiguousEnumSerializer<
-          GeckoProcessType, GeckoProcessType_Default, GeckoProcessType_End> {};
+    : EnumSerializer<GeckoProcessType, GeckoProcessTypeValidator> {};
 
 template <>
 struct ParamTraits<mozilla::gfx::SurfaceFormat>
