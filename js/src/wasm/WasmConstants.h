@@ -211,6 +211,14 @@ enum class Trap {
   
   CheckInterrupt,
 
+#ifdef ENABLE_WASM_JSPI
+  
+  ThrowSuspendError,
+#endif
+
+  
+  Unimplemented,
+
   
   ThrowReported,
 
@@ -1034,19 +1042,6 @@ enum class BuiltinModuleId {
   JSStringConstants,
 };
 
-enum class StackSwitchKind {
-  SwitchToSuspendable,
-  SwitchToMain,
-  ContinueOnSuspendable,
-};
-
-enum class UpdateSuspenderStateAction {
-  Enter,
-  Suspend,
-  Resume,
-  Leave,
-};
-
 enum class MozOp {
   
   
@@ -1091,10 +1086,16 @@ enum class MozOp {
   OldCallIndirect,
 
   
+  LastAsmJSOp = OldCallIndirect,
+
+#ifdef ENABLE_WASM_JSPI
+  
+  GuardSuspending,
+#endif
+
+  
   
   CallBuiltinModuleFunc,
-
-  StackSwitch,
 
   Limit
 };
@@ -1252,19 +1253,12 @@ static const unsigned MaxHandlers = 16;
 static const unsigned MaxFrameSize = 512 * 1024;
 
 
-static const size_t SuspendableStacksMaxCount = 100;
-
-
-static const size_t SuspendableStackSize = 0x100000;
+static const size_t ContJitStackSize = 0x100000;
 
 
 
 
-static const size_t SuspendableRedZoneSize = 0x6000;
-
-
-static constexpr size_t SuspendableStackPlusRedZoneSize =
-    SuspendableStackSize + SuspendableRedZoneSize;
+static const size_t ContRedZoneSize = 0x8000;
 
 
 
