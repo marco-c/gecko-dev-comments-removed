@@ -2,11 +2,11 @@
 
 
 
-
 #ifndef mozilla_gfx_thebes_DeviceManagerDx_h
 #define mozilla_gfx_thebes_DeviceManagerDx_h
 
 #include <set>
+#include <unordered_map>
 
 #include "gfxPlatform.h"
 #include "gfxTelemetry.h"
@@ -101,6 +101,8 @@ class DeviceManagerDx final {
   bool SystemHDREnabled();
   bool WindowHDREnabled(HWND aWindow);
   bool MonitorHDREnabled(HMONITOR aMonitor);
+  Maybe<DXGI_HDR_METADATA_HDR10> WindowHDRMetadata(HWND aWindow);
+  Maybe<DXGI_HDR_METADATA_HDR10> MonitorHDRMetadata(HMONITOR aMonitor);
 
   
   void CheckHardwareStretchingSupport(HwStretchingSupport& aRv);
@@ -185,6 +187,10 @@ class DeviceManagerDx final {
   bool GetAnyDeviceRemovedReason(DeviceResetReason* aOutReason)
       MOZ_REQUIRES(mDeviceLock);
 
+  void EnsureMonitorInfo();
+  static DXGI_HDR_METADATA_HDR10 OutputDESC1ToDXGI(
+      const DXGI_OUTPUT_DESC1& aDesc);
+
  private:
   static StaticAutoPtr<DeviceManagerDx> sInstance;
 
@@ -216,6 +222,8 @@ class DeviceManagerDx final {
   RefPtr<Runnable> mUpdateMonitorInfoRunnable MOZ_GUARDED_BY(mDeviceLock);
   Maybe<bool> mSystemHdrEnabled MOZ_GUARDED_BY(mDeviceLock);
   std::set<HMONITOR> mHdrMonitors MOZ_GUARDED_BY(mDeviceLock);
+  std::unordered_map<HMONITOR, DXGI_HDR_METADATA_HDR10> mHdrMetadatas
+      MOZ_GUARDED_BY(mDeviceLock);
 };
 
 }  
