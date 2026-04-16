@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "jsfriendapi.h"
 
 #include "mozilla/Maybe.h"
@@ -489,6 +487,10 @@ void JS::detail::SetReservedSlotWithBarrier(JSObject* obj, size_t slot,
     
     obj->as<NativeObject>().setSlot(slot, value);
   }
+}
+
+bool JS::NativeObjectHasOwnProperties(const JSObject* obj) {
+  return !obj->as<NativeObject>().empty();
 }
 
 void js::SetPreserveWrapperCallbacks(

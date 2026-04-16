@@ -127,6 +127,12 @@ inline void SetObjectISupports(JSObject* obj, void* nsISupportsValue) {
   SetReservedSlot(obj, 0, PrivateValue(nsISupportsValue));
 }
 
+
+
+
+
+extern JS_PUBLIC_API bool NativeObjectHasOwnProperties(const JSObject* obj);
+
 }  
 
 

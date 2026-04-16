@@ -55,6 +55,12 @@ class Blob : public nsSupportsWeakReference, public nsWrapperCache {
                                                  uint64_t aLength,
                                                  const nsAString& aContentType);
 
+  
+  already_AddRefed<Blob> Clone() const;
+
+  
+  bool HasExpandos() const;
+
   BlobImpl* Impl() const { return mImpl; }
 
   bool IsFile() const;

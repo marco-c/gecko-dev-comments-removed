@@ -452,9 +452,15 @@ JSObject* CopyingStructuredCloneReadCallback(
         RefPtr<Blob> blob = fileChild.BlobPtr();
         MOZ_ASSERT(blob->IsFile());
 
-        RefPtr<File> file = blob->ToFile();
+        RefPtr<File> file;
+        if (blob->HasExpandos()) {
+          const RefPtr<Blob> clonedBlob = blob->Clone();
+          file = clonedBlob->ToFile();
+        } else {
+          file = blob->ToFile();
+        }
         if (!file) {
-          MOZ_ASSERT(false, "Could not convert blob to file!");
+          MOZ_ASSERT(false, "Could not create file!");
 
           return nullptr;
         }
@@ -487,11 +493,29 @@ JSObject* CopyingStructuredCloneReadCallback(
     StructuredCloneFileChild& file = cloneInfo->mFiles[aData];
 
     switch (static_cast<StructuredCloneTags>(aTag)) {
-      case SCTAG_DOM_BLOB:
+      case SCTAG_DOM_BLOB: {
         MOZ_ASSERT(file.Type() == StructuredCloneFileBase::eBlob);
         MOZ_ASSERT(!file.Blob().IsFile());
 
-        return WrapAsJSObject(aCx, file.MutableBlob());
+        JS::Rooted<JSObject*> result(aCx);
+        if (file.Blob().HasExpandos()) {
+          const RefPtr<Blob> newBlob = file.Blob().Clone();
+          MOZ_ASSERT(newBlob);
+
+          if (!WrapAsJSObject(aCx, newBlob, &result)) {
+            return nullptr;
+          }
+        } else {
+          
+          
+          
+          
+          if (!WrapAsJSObject(aCx, file.MutableBlob(), &result)) {
+            return nullptr;
+          }
+        }
+        return result;
+      }
 
       case SCTAG_DOM_FILE: {
         MOZ_ASSERT(file.Type() == StructuredCloneFileBase::eBlob);
@@ -501,14 +525,29 @@ JSObject* CopyingStructuredCloneReadCallback(
         {
           
           
+          
+          
+          
           const RefPtr<Blob> blob = file.BlobPtr();
           MOZ_ASSERT(blob->IsFile());
 
-          const RefPtr<File> file = blob->ToFile();
-          MOZ_ASSERT(file);
+          
+          if (blob->HasExpandos()) {
+            const RefPtr<Blob> clonedBlob = blob->Clone();
+            MOZ_ASSERT(clonedBlob);
+            const RefPtr<File> file = clonedBlob->ToFile();
+            MOZ_ASSERT(file);
 
-          if (!WrapAsJSObject(aCx, file, &result)) {
-            return nullptr;
+            if (!WrapAsJSObject(aCx, file, &result)) {
+              return nullptr;
+            }
+          } else {
+            const RefPtr<File> file = blob->ToFile();
+            MOZ_ASSERT(file);
+
+            if (!WrapAsJSObject(aCx, file, &result)) {
+              return nullptr;
+            }
           }
         }
 
