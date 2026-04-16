@@ -85,10 +85,12 @@ class RtpSenderInternal : public RtpSenderInterface {
 
   
   
-  virtual RtpParameters GetParametersInternal() const = 0;
-  virtual void SetParametersInternal(const RtpParameters& parameters,
-                                     SetParametersCallback,
-                                     bool blocking) = 0;
+  virtual RtpParameters GetParametersInternal(bool may_use_cache,
+                                              bool with_all_layers) const = 0;
+  virtual RTCError SetParametersInternal(const RtpParameters& parameters,
+                                         SetParametersCallback,
+                                         bool blocking) = 0;
+  virtual void SetCachedParameters(RtpParameters parameters) = 0;
 
   
   
@@ -147,14 +149,19 @@ class RtpSenderBase : public RtpSenderInternal, public ObserverInterface {
 
   
   
-  RtpParameters GetParametersInternal() const override;
-  void SetParametersInternal(const RtpParameters& parameters,
-                             SetParametersCallback callback = nullptr,
-                             bool blocking = true) override;
+  RtpParameters GetParametersInternal(
+      bool may_use_cache = true,
+      bool with_all_layers = false) const override;
+  RTCError SetParametersInternal(const RtpParameters& parameters,
+                                 SetParametersCallback callback = nullptr,
+                                 bool blocking = true) override;
+  void SetCachedParameters(RtpParameters parameters) override;
   RTCError CheckSetParameters(const RtpParameters& parameters);
   RtpParameters GetParametersInternalWithAllLayers() const override;
   RTCError SetParametersInternalWithAllLayers(
       const RtpParameters& parameters) override;
+  std::optional<RTCError> ValidateAndMaybeUpdateInitParameters(
+      const RtpParameters& parameters) RTC_RUN_ON(signaling_thread_);
 
   
   
@@ -256,8 +263,6 @@ class RtpSenderBase : public RtpSenderInternal, public ObserverInterface {
   
   virtual void ClearSend() = 0;
   virtual void ClearSend_w(uint32_t ssrc) RTC_RUN_ON(worker_thread_) = 0;
-  RTCError CheckCodecParameters(const RtpParameters& parameters)
-      RTC_RUN_ON(worker_thread_);
 
   
   
@@ -265,6 +270,11 @@ class RtpSenderBase : public RtpSenderInternal, public ObserverInterface {
   virtual void DetachTrack() RTC_RUN_ON(signaling_thread_) {}
   virtual void AddTrackToStats() RTC_RUN_ON(signaling_thread_) {}
   virtual void RemoveTrackFromStats() RTC_RUN_ON(signaling_thread_) {}
+
+  
+  
+  
+  RTCError SetParametersInternalWorkaround(const RtpParameters& parameters);
 
   const Environment env_;
   TaskQueueBase* const signaling_thread_;
@@ -279,6 +289,8 @@ class RtpSenderBase : public RtpSenderInternal, public ObserverInterface {
 
   std::vector<std::string> stream_ids_;
   RtpParameters init_parameters_;
+  mutable std::optional<RtpParameters> cached_parameters_
+      RTC_GUARDED_BY(signaling_thread_);
   std::vector<Codec> send_codecs_;
 
   

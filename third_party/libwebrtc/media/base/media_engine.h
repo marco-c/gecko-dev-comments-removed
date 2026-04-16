@@ -43,13 +43,13 @@ class Call;
 
 
 RTCError CheckScalabilityModeValues(const RtpParameters& new_parameters,
-                                    ArrayView<Codec> send_codecs,
+                                    ArrayView<const Codec> send_codecs,
                                     std::optional<Codec> send_codec);
 
 
 
 RTCError CheckRtpParametersValues(const RtpParameters& new_parameters,
-                                  ArrayView<Codec> send_codecs,
+                                  ArrayView<const Codec> send_codecs,
                                   std::optional<Codec> send_codec,
                                   const FieldTrialsView& field_trials);
 
@@ -58,7 +58,7 @@ RTCError CheckRtpParametersValues(const RtpParameters& new_parameters,
 RTCError CheckRtpParametersInvalidModificationAndValues(
     const RtpParameters& old_parameters,
     const RtpParameters& new_parameters,
-    ArrayView<Codec> send_codecs,
+    ArrayView<const Codec> send_codecs,
     std::optional<Codec> send_codec,
     const FieldTrialsView& field_trials);
 

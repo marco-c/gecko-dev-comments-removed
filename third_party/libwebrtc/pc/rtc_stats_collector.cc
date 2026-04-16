@@ -1125,7 +1125,10 @@ scoped_refptr<RTCStatsReport> RTCStatsCollector::CreateReportFilteredBySelector(
     
     if (sender_selector) {
       
-      auto encodings = sender_selector->GetParametersInternal().encodings;
+      RtpParameters parameters =
+          sender_selector->GetParametersInternal(true,
+                                                 false);
+      std::vector<RtpEncodingParameters>& encodings = parameters.encodings;
       for (const auto* outbound_rtp :
            report->GetStatsOfType<RTCOutboundRtpStreamStats>()) {
         RTC_DCHECK(outbound_rtp->ssrc.has_value());

@@ -418,6 +418,8 @@ class RtpTransceiver : public RtpTransceiverInterface {
   GetOfferedAndImplementedHeaderExtensions(
       const MediaContentDescription* content) const;
 
+  bool SetChannelContent(absl::AnyInvocable<bool() &&> set_content);
+
   const Environment env_;
   
   
