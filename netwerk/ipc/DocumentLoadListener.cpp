@@ -2897,6 +2897,10 @@ nsresult DocumentLoadListener::DoOnStartRequest(nsIRequest* aRequest) {
     
     
     if (!httpChannel) {
+      
+      
+      
+      mChannel->Resume();
       DisconnectListeners(status, status);
       return NS_OK;
     }
