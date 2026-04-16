@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_net_WebrtcTCPSocketChild_h
 #define mozilla_net_WebrtcTCPSocketChild_h
 
@@ -17,7 +15,7 @@ class WebrtcTCPSocketCallback;
 
 class WebrtcTCPSocketChild : public PWebrtcTCPSocketChild {
  public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(WebrtcTCPSocketChild)
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(WebrtcTCPSocketChild, override)
 
   mozilla::ipc::IPCResult RecvOnClose(const nsresult& aReason) override;
 
@@ -32,9 +30,6 @@ class WebrtcTCPSocketChild : public PWebrtcTCPSocketChild {
                  const nsACString& aLocalAddress, const int& aLocalPort,
                  bool aUseTls,
                  const std::shared_ptr<NrSocketProxyConfig>& aProxyConfig);
-
-  void AddIPDLReference() { AddRef(); }
-  void ReleaseIPDLReference() { Release(); }
 
  protected:
   virtual ~WebrtcTCPSocketChild();
