@@ -64,9 +64,17 @@ struct BaseAllocMetadata {
 
 class BaseAllocCell {
  private:
-  mozilla::DoublyLinkedListElement<BaseAllocCell> mListElem;
+  
+  
+  
+  
+  union {
+    mozilla::DoublyLinkedListElement<BaseAllocCell> mListElem;
+    RedBlackTreeNode<BaseAllocCell> mTreeElem;
+  };
 
   friend struct mozilla::GetDoublyLinkedListElement<BaseAllocCell>;
+  friend struct BaseAllocCellRBTrait;
 
   BaseAllocMetadata* Metadata() {
     
@@ -86,6 +94,7 @@ class BaseAllocCell {
 
   explicit BaseAllocCell(base_alloc_size_t aSize) {
     new (Metadata()) BaseAllocMetadata(aSize);
+    ClearPayload();
   }
 
   static BaseAllocCell* GetCell(void* aPtr) {
@@ -132,6 +141,29 @@ struct mozilla::GetDoublyLinkedListElement<BaseAllocCell> {
   static const DoublyLinkedListElement<BaseAllocCell>& Get(
       const BaseAllocCell* aCell) {
     return aCell->mListElem;
+  }
+};
+
+struct BaseAllocCellRBTrait {
+  static RedBlackTreeNode<BaseAllocCell>& GetTreeNode(BaseAllocCell* aCell) {
+    return aCell->mTreeElem;
+  }
+
+  static Order Compare(BaseAllocCell* aCellA, BaseAllocCell* aCellB) {
+    Order ret = CompareInt(aCellA->Size(), aCellB->Size());
+    return (ret != Order::eEqual) ? ret : CompareAddr(aCellA, aCellB);
+  }
+
+  using SearchKey = base_alloc_size_t;
+
+  static Order Compare(SearchKey aSizeA, BaseAllocCell* aCellB) {
+    
+    
+    
+    Order ret = CompareInt(aSizeA, aCellB->Size());
+    return (ret != Order::eEqual)
+               ? ret
+               : CompareAddr((BaseAllocCell*)nullptr, aCellB);
   }
 };
 
