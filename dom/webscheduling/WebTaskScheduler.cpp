@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "WebTaskScheduler.h"
 
 #include "WebTaskSchedulerMainThread.h"
@@ -17,7 +15,7 @@ namespace mozilla::dom {
 
 
 
-MOZ_RUNINIT static LinkedList<WebTaskScheduler> gWebTaskSchedulersMainThread;
+constinit static LinkedList<WebTaskScheduler> gWebTaskSchedulersMainThread;
 
 static Atomic<uint64_t> gWebTaskEnqueueOrder(0);
 
@@ -228,7 +226,8 @@ inline void ImplCycleCollectionTraverse(
   }
 }
 
-NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(WebTaskScheduler, mParent, mWebTaskQueues)
+NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE_WEAK_PTR(WebTaskScheduler, mParent,
+                                               mWebTaskQueues)
 
 
 already_AddRefed<WebTaskSchedulerMainThread>
