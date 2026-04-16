@@ -9041,15 +9041,23 @@ class _TopSiteList extends (external_React_default()).PureComponent {
       } else if (i >= maxNarrowVisibleIndex) {
         slotProps.className = "hide-for-narrow";
       }
+      const {
+        key: slotKey,
+        ...restSlotProps
+      } = slotProps;
       let topSiteLink = null;
       
       
       if (!link || props.App.isForStartupCache.TopSites && isSponsored(link)) {
         if (link) {
-          topSiteLink = external_React_default().createElement(TopSitePlaceholder, TopSite_extends({}, slotProps, commonProps));
+          topSiteLink = external_React_default().createElement(TopSitePlaceholder, TopSite_extends({
+            key: slotKey
+          }, restSlotProps, commonProps));
         }
       } else if (topSites[i]?.isAddButton) {
-        topSiteLink = external_React_default().createElement(TopSiteAddButton, TopSite_extends({}, slotProps, commonProps, {
+        topSiteLink = external_React_default().createElement(TopSiteAddButton, TopSite_extends({
+          key: slotKey
+        }, restSlotProps, commonProps, {
           setRef: i === this.state.focusedIndex ? el => {
             this.focusedRef = el;
           } : () => {},
@@ -9062,10 +9070,11 @@ class _TopSiteList extends (external_React_default()).PureComponent {
         }));
       } else {
         topSiteLink = external_React_default().createElement(TopSite, TopSite_extends({
+          key: slotKey,
           link: link,
           activeIndex: this.state.activeIndex,
           onActivate: this.onActivate
-        }, slotProps, commonProps, {
+        }, restSlotProps, commonProps, {
           colors: props.colors,
           setRef: i === this.state.focusedIndex ? el => {
             this.focusedRef = el;
@@ -13371,6 +13380,7 @@ function EditableTimerFields({
 }) {
   return external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("span", {
     contentEditable: "true",
+    suppressContentEditableWarning: true,
     ref: minutesRef,
     className: "timer-set-minutes",
     onKeyDown: props.onKeyDown,
@@ -13380,6 +13390,7 @@ function EditableTimerFields({
     tabIndex: tabIndex
   }, formatTime(props.timeLeft).split(":")[0]), ":", external_React_default().createElement("span", {
     contentEditable: "true",
+    suppressContentEditableWarning: true,
     ref: secondsRef,
     className: "timer-set-seconds",
     onKeyDown: props.onKeyDown,
