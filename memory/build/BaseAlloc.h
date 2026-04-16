@@ -80,8 +80,13 @@ class BaseAlloc {
 
   static unsigned get_list_index_for_size(base_alloc_size_t aSize);
 
+  BaseAllocCell* alloc_cell(base_alloc_size_t aSize) MOZ_REQUIRES(mMutex);
+
   
-  void* alloc_from_list(base_alloc_size_t aSize) MOZ_REQUIRES(mMutex);
+  BaseAllocCell* alloc_from_list(base_alloc_size_t aSize) MOZ_REQUIRES(mMutex);
+
+  
+  BaseAllocCell* oversize_alloc(base_alloc_size_t aSize) MOZ_REQUIRES(mMutex);
 
   
   void Unlink(BaseAllocCell* cell) MOZ_REQUIRES(mMutex);
@@ -94,11 +99,6 @@ class BaseAlloc {
   RedBlackTree<BaseAllocCell, BaseAllocCellRBTrait> mFreeListOversize
       MOZ_GUARDED_BY(mMutex);
 
-  
-  BaseAllocCell* wilderness_alloc_inplace(base_alloc_size_t aSize)
-      MOZ_REQUIRES(mMutex);
-
-  
   
   BaseAllocCell* wilderness_alloc(base_alloc_size_t aSize) MOZ_REQUIRES(mMutex);
 
