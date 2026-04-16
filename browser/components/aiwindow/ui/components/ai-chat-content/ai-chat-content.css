@@ -19,10 +19,21 @@
   display: flex;
   flex: 1;
   flex-direction: column;
+  margin-block-start: var(--space-xsmall);
   min-height: 0;
   overflow-y: auto;
   padding-block: var(--space-large);
   width: 100%;
+
+  &[overflowing] {
+    mask-image: linear-gradient(
+      to bottom,
+      transparent,
+      var(--color-black) var(--size-item-xlarge),
+      var(--color-black) calc(100% - var(--size-item-xlarge)),
+      transparent
+    );
+  }
 
   @media (prefers-reduced-motion: no-preference) {
     scroll-behavior: smooth;
@@ -63,6 +74,7 @@
   box-shadow:
     var(--smartwindow-shadow, var(--box-shadow-level-2)),
     inset 0 0 5px var(--chat-bubble-inset-color, var(--box-shadow-color-lighter-layer-1));
+  gap: var(--space-medium);
   max-width: 75%;
   overflow-wrap: anywhere;
   padding-inline: var(--space-large);
