@@ -3017,6 +3017,10 @@ bool JSStructuredCloneReader::readSharedWasmMemory(uint32_t nbytes,
     return false;
   }
 
+  
+  
+  
+  
   uint32_t placeholderIndex = allObjs.length();
   if (!allObjs.append(UndefinedValue())) {
     return false;
