@@ -18,16 +18,27 @@ package org.webrtc;
 
 
 
+
 public class TimestampAligner {
   
 
 
 
+  @Deprecated
   public static long getRtcTimeNanos() {
-    return nativeRtcTimeNanos();
+    return Environment.builder().build().getCurrentTimeNanos();
   }
 
-  private volatile long nativeTimestampAligner = nativeCreateTimestampAligner();
+  private volatile long nativeTimestampAligner;
+
+  @Deprecated
+  public TimestampAligner() {
+    this(Environment.builder().build());
+  }
+
+  public TimestampAligner(Environment webrtcEnv) {
+    nativeTimestampAligner = nativeCreateTimestampAligner(webrtcEnv.ref());
+  }
 
   
 
@@ -52,8 +63,7 @@ public class TimestampAligner {
     }
   }
 
-  private static native long nativeRtcTimeNanos();
-  private static native long nativeCreateTimestampAligner();
+  private static native long nativeCreateTimestampAligner(long webrtcEnvRef);
   private static native void nativeReleaseTimestampAligner(long timestampAligner);
   private static native long nativeTranslateTimestamp(long timestampAligner, long cameraTimeNs);
 }
