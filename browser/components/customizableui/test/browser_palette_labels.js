@@ -40,7 +40,9 @@ add_task(async function test_all_buttons_have_labels() {
         wrapper.firstElementChild.id + " has a label."
       );
     }
-    let icons = Array.from(wrapper.querySelectorAll(".toolbarbutton-icon"));
+    let icons = Array.from(
+      wrapper.querySelectorAll(".toolbarbutton-icon, img")
+    );
     
     
     if (icons.length) {
