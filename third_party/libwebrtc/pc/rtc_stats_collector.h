@@ -141,9 +141,12 @@ class RTCStatsCollector {
       const std::map<std::string, TransportStats>& transport_stats_by_name,
       const std::map<std::string, CertificateStatsPair>& transport_cert_stats,
       const std::vector<RtpTransceiverStatsInfo>& transceiver_stats_infos,
+      const Call::Stats& call_stats,
+      const std::optional<AudioDeviceModule::Stats>& audio_device_stats,
       RTCStatsReport* partial_report);
 
  private:
+  struct CollectionContext;
   class RequestInfo {
    public:
     enum class FilterMode { kAll, kSenderSelector, kReceiverSelector };
@@ -221,12 +224,18 @@ class RTCStatsCollector {
   void ProduceRTPStreamStats_n(
       Timestamp timestamp,
       const std::vector<RtpTransceiverStatsInfo>& transceiver_stats_infos,
+      const Call::Stats& call_stats,
+      const std::optional<AudioDeviceModule::Stats>& audio_device_stats,
       RTCStatsReport* report) const;
-  void ProduceAudioRTPStreamStats_n(Timestamp timestamp,
-                                    const RtpTransceiverStatsInfo& stats,
-                                    RTCStatsReport* report) const;
+  void ProduceAudioRTPStreamStats_n(
+      Timestamp timestamp,
+      const RtpTransceiverStatsInfo& stats,
+      const Call::Stats& call_stats,
+      const std::optional<AudioDeviceModule::Stats>& audio_device_stats,
+      RTCStatsReport* report) const;
   void ProduceVideoRTPStreamStats_n(Timestamp timestamp,
                                     const RtpTransceiverStatsInfo& stats,
+                                    const Call::Stats& call_stats,
                                     RTCStatsReport* report) const;
   
   void ProduceTransportStats_n(
@@ -249,7 +258,7 @@ class RTCStatsCollector {
       scoped_refptr<PendingTaskSafetyFlag> signaling_safety,
       Timestamp timestamp,
       std::set<std::string> transport_names,
-      std::vector<RtpTransceiverStatsInfo>& transceiver_stats_infos);
+      CollectionContext* context);
   
   
   void MergeNetworkReport_s();
@@ -268,18 +277,7 @@ class RTCStatsCollector {
   Thread* const worker_thread_;
   Thread* const network_thread_;
 
-  int num_pending_partial_reports_;
-  int64_t partial_report_timestamp_us_;
-  
-  
-  
-  scoped_refptr<RTCStatsReport> partial_report_;
   std::vector<RequestInfo> requests_ RTC_GUARDED_BY(signaling_thread_);
-  
-  
-  
-  
-  scoped_refptr<RTCStatsReport> network_report_;
   
   
   
@@ -289,23 +287,8 @@ class RTCStatsCollector {
   
   
   
-  
-  
-  
-  
-  
-  
-  std::vector<RtpTransceiverStatsInfo> transceiver_stats_infos_
-      RTC_GUARDED_BY(signaling_thread_);
-  
-  
-  
   std::map<std::string, CertificateStatsPair> cached_certificates_by_transport_
       RTC_GUARDED_BY(network_thread_);
-
-  Call::Stats call_stats_;
-
-  std::optional<AudioDeviceModule::Stats> audio_device_stats_;
 
   
   
@@ -335,6 +318,9 @@ class RTCStatsCollector {
   InternalRecord internal_record_;
   const scoped_refptr<PendingTaskSafetyFlag> signaling_safety_;
   const scoped_refptr<PendingTaskSafetyFlag> network_safety_;
+
+  std::unique_ptr<CollectionContext> collection_context_
+      RTC_GUARDED_BY(signaling_thread_);
 };
 
 }  

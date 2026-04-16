@@ -1205,6 +1205,36 @@ RTCStatsCollector::RequestInfo::RequestInfo(
   RTC_DCHECK(!sender_selector_ || !receiver_selector_);
 }
 
+struct RTCStatsCollector::CollectionContext {
+  CollectionContext(scoped_refptr<RTCStatsReport> partial_report,
+                    int64_t partial_report_timestamp_us)
+      : partial_report_timestamp_us(partial_report_timestamp_us),
+        partial_report(std::move(partial_report)) {}
+
+  int64_t partial_report_timestamp_us = 0;
+
+  
+  
+  
+  scoped_refptr<RTCStatsReport> partial_report;
+
+  
+  
+  
+  
+  scoped_refptr<RTCStatsReport> network_report;
+
+  
+  
+  
+  
+  std::vector<RtpTransceiverStatsInfo> transceiver_stats_infos;
+
+  Call::Stats call_stats;
+
+  std::optional<AudioDeviceModule::Stats> audio_device_stats;
+};
+
 RTCStatsCollector::RTCStatsCollector(PeerConnectionInternal* pc,
                                      const Environment& env,
                                      int64_t cache_lifetime_us)
@@ -1216,8 +1246,6 @@ RTCStatsCollector::RTCStatsCollector(PeerConnectionInternal* pc,
       signaling_thread_(pc->signaling_thread()),
       worker_thread_(pc->worker_thread()),
       network_thread_(pc->network_thread()),
-      num_pending_partial_reports_(0),
-      partial_report_timestamp_us_(0),
       network_report_event_(true ,
                             true ),
       cache_timestamp_us_(0),
@@ -1271,16 +1299,11 @@ void RTCStatsCollector::GetStatsReportInternal(
                             requests = std::move(requests_)]() mutable {
           DeliverCachedReport(std::move(report), std::move(requests));
         }));
-  } else if (!num_pending_partial_reports_) {
+  } else if (!collection_context_) {
     
     
     
 
-    
-    
-    
-    
-    
     
     Timestamp timestamp =
         stats_timestamp_with_environment_clock_
@@ -1292,8 +1315,10 @@ void RTCStatsCollector::GetStatsReportInternal(
             
             
             Timestamp::Micros(TimeUTCMicros());
-    num_pending_partial_reports_ = 2;
-    partial_report_timestamp_us_ = cache_now_us;
+
+    collection_context_ = std::make_unique<CollectionContext>(
+        RTCStatsReport::Create(timestamp), cache_now_us);
+
     network_report_event_.Reset();
 
     
@@ -1310,20 +1335,20 @@ void RTCStatsCollector::GetStatsReportInternal(
       transport_names.emplace(std::move(*sctp_transport_name));
     }
 
-    for (const auto& info : transceiver_stats_infos_) {
+    for (const auto& info : collection_context_->transceiver_stats_infos) {
       if (info.transport_name)
         transport_names.insert(*info.transport_name);
     }
 
-    std::vector<RtpTransceiverStatsInfo>* cheating = &transceiver_stats_infos_;
-    network_thread_->PostTask(SafeTask(
-        network_safety_,
-        [this, transport_names = std::move(transport_names), timestamp,
-         signaling_flag = signaling_safety_, cheating = cheating]() mutable {
-          ProducePartialResultsOnNetworkThread(
-              std::move(signaling_flag), timestamp, std::move(transport_names),
-              *cheating);
-        }));
+    CollectionContext* context = collection_context_.get();
+    network_thread_->PostTask(
+        SafeTask(network_safety_,
+                 [this, transport_names = std::move(transport_names), timestamp,
+                  signaling_flag = signaling_safety_, context]() mutable {
+                   ProducePartialResultsOnNetworkThread(
+                       std::move(signaling_flag), timestamp,
+                       std::move(transport_names), context);
+                 }));
   }
 }
 
@@ -1343,7 +1368,9 @@ void RTCStatsCollector::WaitForPendingRequest() {
   RTC_DCHECK_RUN_ON(signaling_thread_);
   
   
-  MergeNetworkReport_s();
+  if (collection_context_) {
+    MergeNetworkReport_s();
+  }
 }
 
 absl::AnyInvocable<void() &&>
@@ -1358,16 +1385,13 @@ void RTCStatsCollector::ProducePartialResultsOnSignalingThread(
   RTC_DCHECK_RUN_ON(signaling_thread_);
   Thread::ScopedDisallowBlockingCalls no_blocking_calls;
 
-  partial_report_ = RTCStatsReport::Create(timestamp);
+  ProducePartialResultsOnSignalingThreadImpl(
+      timestamp, collection_context_->partial_report.get());
 
-  ProducePartialResultsOnSignalingThreadImpl(timestamp, partial_report_.get());
-
   
   
   
   
-  RTC_DCHECK_GT(num_pending_partial_reports_, 1);
-  --num_pending_partial_reports_;
 }
 
 void RTCStatsCollector::ProducePartialResultsOnSignalingThreadImpl(
@@ -1383,7 +1407,7 @@ void RTCStatsCollector::ProducePartialResultsOnNetworkThread(
     scoped_refptr<PendingTaskSafetyFlag> signaling_safety,
     Timestamp timestamp,
     std::set<std::string> transport_names,
-    std::vector<RtpTransceiverStatsInfo>& transceiver_stats_infos) {
+    CollectionContext* context) {
   TRACE_EVENT0("webrtc",
                "RTCStatsCollector::ProducePartialResultsOnNetworkThread");
   RTC_DCHECK_RUN_ON(network_thread_);
@@ -1391,9 +1415,9 @@ void RTCStatsCollector::ProducePartialResultsOnNetworkThread(
 
   
   
-  network_report_ = RTCStatsReport::Create(timestamp);
+  context->network_report = RTCStatsReport::Create(timestamp);
 
-  ProduceDataChannelStats_n(timestamp, network_report_.get());
+  ProduceDataChannelStats_n(timestamp, context->network_report.get());
 
   std::map<std::string, TransportStats> transport_stats_by_name =
       pc_->GetTransportStatsByNames(transport_names);
@@ -1402,7 +1426,8 @@ void RTCStatsCollector::ProducePartialResultsOnNetworkThread(
 
   ProducePartialResultsOnNetworkThreadImpl(
       timestamp, transport_stats_by_name, transport_cert_stats,
-      transceiver_stats_infos, network_report_.get());
+      context->transceiver_stats_infos, context->call_stats,
+      context->audio_device_stats, context->network_report.get());
 
   
   
@@ -1416,27 +1441,38 @@ void RTCStatsCollector::ProducePartialResultsOnNetworkThreadImpl(
     const std::map<std::string, TransportStats>& transport_stats_by_name,
     const std::map<std::string, CertificateStatsPair>& transport_cert_stats,
     const std::vector<RtpTransceiverStatsInfo>& transceiver_stats_infos,
+    const Call::Stats& call_stats,
+    const std::optional<AudioDeviceModule::Stats>& audio_device_stats,
     RTCStatsReport* partial_report) {
   RTC_DCHECK_RUN_ON(network_thread_);
   Thread::ScopedDisallowBlockingCalls no_blocking_calls;
 
   ProduceCertificateStats_n(timestamp, transport_cert_stats, partial_report);
   ProduceIceCandidateAndPairStats_n(timestamp, transport_stats_by_name,
-                                    call_stats_, partial_report);
+                                    call_stats, partial_report);
   ProduceTransportStats_n(timestamp, transport_stats_by_name,
-                          transport_cert_stats, call_stats_, partial_report);
-  ProduceRTPStreamStats_n(timestamp, transceiver_stats_infos, partial_report);
+                          transport_cert_stats, call_stats, partial_report);
+  ProduceRTPStreamStats_n(timestamp, transceiver_stats_infos, call_stats,
+                          audio_device_stats, partial_report);
 }
 
 void RTCStatsCollector::MergeNetworkReport_s() {
   RTC_DCHECK_RUN_ON(signaling_thread_);
+  if (!collection_context_) {
+    
+    
+    
+    
+    
+    return;
+  }
 
   
   
   
   
   network_report_event_.Wait(Event::kForever);
-  if (!network_report_) {
+  if (!collection_context_->network_report) {
     
     
     
@@ -1445,19 +1481,15 @@ void RTCStatsCollector::MergeNetworkReport_s() {
     
     return;
   }
-  RTC_DCHECK_GT(num_pending_partial_reports_, 0);
-  RTC_DCHECK(partial_report_);
-  partial_report_->TakeMembersFrom(network_report_);
-  network_report_ = nullptr;
-  --num_pending_partial_reports_;
-  
-  
-  
-  RTC_DCHECK_EQ(num_pending_partial_reports_, 0);
-  cache_timestamp_us_ = partial_report_timestamp_us_;
-  cached_report_ = partial_report_;
-  partial_report_ = nullptr;
-  transceiver_stats_infos_.clear();
+
+  RTC_DCHECK(collection_context_->partial_report);
+  collection_context_->partial_report->TakeMembersFrom(
+      collection_context_->network_report);
+  collection_context_->network_report = nullptr;
+
+  cache_timestamp_us_ = collection_context_->partial_report_timestamp_us;
+  cached_report_ = collection_context_->partial_report;
+
   
   
   
@@ -1467,6 +1499,10 @@ void RTCStatsCollector::MergeNetworkReport_s() {
   
   std::vector<RequestInfo> requests;
   requests.swap(requests_);
+
+  
+  collection_context_ = nullptr;
+
   DeliverCachedReport(cached_report_, std::move(requests));
 }
 
@@ -1657,7 +1693,7 @@ void RTCStatsCollector::ProduceMediaSourceStats_s(
   Thread::ScopedDisallowBlockingCalls no_blocking_calls;
 
   for (const RtpTransceiverStatsInfo& transceiver_stats_info :
-       transceiver_stats_infos_) {
+       collection_context_->transceiver_stats_infos) {
     
     if (transceiver_stats_info.current_direction ==
         RtpTransceiverDirection::kStopped) {
@@ -1774,14 +1810,17 @@ void RTCStatsCollector::ProduceAudioPlayoutStats_s(
   RTC_DCHECK_RUN_ON(signaling_thread_);
   Thread::ScopedDisallowBlockingCalls no_blocking_calls;
 
-  if (audio_device_stats_) {
-    report->AddStats(CreateAudioPlayoutStats(*audio_device_stats_, timestamp));
+  if (collection_context_->audio_device_stats) {
+    report->AddStats(CreateAudioPlayoutStats(
+        *collection_context_->audio_device_stats, timestamp));
   }
 }
 
 void RTCStatsCollector::ProduceRTPStreamStats_n(
     Timestamp timestamp,
     const std::vector<RtpTransceiverStatsInfo>& transceiver_stats_infos,
+    const Call::Stats& call_stats,
+    const std::optional<AudioDeviceModule::Stats>& audio_device_stats,
     RTCStatsReport* report) const {
   RTC_DCHECK_RUN_ON(network_thread_);
   Thread::ScopedDisallowBlockingCalls no_blocking_calls;
@@ -1792,10 +1831,11 @@ void RTCStatsCollector::ProduceRTPStreamStats_n(
     }
 
     if (stats.media_type == MediaType::AUDIO) {
-      ProduceAudioRTPStreamStats_n(timestamp, stats, report);
+      ProduceAudioRTPStreamStats_n(timestamp, stats, call_stats,
+                                   audio_device_stats, report);
     } else {
       RTC_DCHECK_EQ(stats.media_type, MediaType::VIDEO);
-      ProduceVideoRTPStreamStats_n(timestamp, stats, report);
+      ProduceVideoRTPStreamStats_n(timestamp, stats, call_stats, report);
     }
   }
 }
@@ -1803,6 +1843,8 @@ void RTCStatsCollector::ProduceRTPStreamStats_n(
 void RTCStatsCollector::ProduceAudioRTPStreamStats_n(
     Timestamp timestamp,
     const RtpTransceiverStatsInfo& stats,
+    const Call::Stats& call_stats,
+    const std::optional<AudioDeviceModule::Stats>& audio_device_stats,
     RTCStatsReport* report) const {
   RTC_DCHECK_RUN_ON(network_thread_);
   RTC_DCHECK(stats.mid);
@@ -1836,14 +1878,14 @@ void RTCStatsCollector::ProduceAudioRTPStreamStats_n(
         CreateInboundAudioStreamStats(
             *stats.track_media_info_map->voice_media_info(),
             voice_receiver_info, transport_id, mid, timestamp, report);
-    AppendCallStats(call_stats_, *inbound_audio);
+    AppendCallStats(call_stats, *inbound_audio);
     
     auto track_id = stats.track_media_info_map->GetReceiverTrackIdBySsrc(
         voice_receiver_info.ssrc(), MediaType::AUDIO);
     if (track_id.has_value()) {
       inbound_audio->track_identifier = *track_id;
     }
-    if (audio_device_stats_ && stats.media_type == MediaType::AUDIO &&
+    if (audio_device_stats && stats.media_type == MediaType::AUDIO &&
         stats.current_direction &&
         (*stats.current_direction == RtpTransceiverDirection::kSendRecv ||
          *stats.current_direction == RtpTransceiverDirection::kRecvOnly)) {
@@ -1915,7 +1957,7 @@ void RTCStatsCollector::ProduceAudioRTPStreamStats_n(
     for (const auto& report_block_data : voice_sender_info.report_block_datas) {
       report->AddStats(ProduceRemoteInboundRtpStreamStats(
           transport_id, report_block_data, MediaType::AUDIO,
-          audio_outbound_rtps, *report, call_stats_,
+          audio_outbound_rtps, *report, call_stats,
           stats_timestamp_with_environment_clock_));
     }
   }
@@ -1924,6 +1966,7 @@ void RTCStatsCollector::ProduceAudioRTPStreamStats_n(
 void RTCStatsCollector::ProduceVideoRTPStreamStats_n(
     Timestamp timestamp,
     const RtpTransceiverStatsInfo& stats,
+    const Call::Stats& call_stats,
     RTCStatsReport* report) const {
   RTC_DCHECK_RUN_ON(network_thread_);
   RTC_DCHECK(stats.mid);
@@ -1954,7 +1997,7 @@ void RTCStatsCollector::ProduceVideoRTPStreamStats_n(
         CreateInboundRTPStreamStatsFromVideoReceiverInfo(
             transport_id, mid, *stats.track_media_info_map->video_media_info(),
             video_receiver_info, timestamp, report);
-    AppendCallStats(call_stats_, *inbound_video);
+    AppendCallStats(call_stats, *inbound_video);
     auto track_id = stats.track_media_info_map->GetReceiverTrackIdBySsrc(
         video_receiver_info.ssrc(), MediaType::VIDEO);
     if (track_id.has_value()) {
@@ -2026,7 +2069,7 @@ void RTCStatsCollector::ProduceVideoRTPStreamStats_n(
     for (const auto& report_block_data : video_sender_info.report_block_datas) {
       report->AddStats(ProduceRemoteInboundRtpStreamStats(
           transport_id, report_block_data, MediaType::VIDEO,
-          video_outbound_rtps, *report, call_stats_,
+          video_outbound_rtps, *report, call_stats,
           stats_timestamp_with_environment_clock_));
     }
   }
@@ -2140,7 +2183,7 @@ void RTCStatsCollector::ProduceTransportStats_n(
             SrtpCryptoSuiteToName(channel_stats.srtp_crypto_suite);
       }
       channel_transport_stats->ccfb_messages_received =
-          call_stats_.ccfb_messages_received;
+          call_stats.ccfb_messages_received;
       report->AddStats(std::move(channel_transport_stats));
     }
   }
@@ -2191,7 +2234,7 @@ RTCStatsCollector::PrepareTransportCertificateStats_n(
 void RTCStatsCollector::PrepareTransceiverStatsInfosAndCallStats_s_w() {
   RTC_DCHECK_RUN_ON(signaling_thread_);
 
-  transceiver_stats_infos_.clear();
+  collection_context_->transceiver_stats_infos.clear();
   
   
   std::map<VoiceMediaSendChannelInterface*, VoiceMediaSendInfo>
@@ -2248,7 +2291,7 @@ void RTCStatsCollector::PrepareTransceiverStatsInfosAndCallStats_s_w() {
       }
     }
 
-    transceiver_stats_infos_.push_back(std::move(stats));
+    collection_context_->transceiver_stats_infos.push_back(std::move(stats));
   }
 
   
@@ -2288,7 +2331,7 @@ void RTCStatsCollector::PrepareTransceiverStatsInfosAndCallStats_s_w() {
     
     
     bool has_audio_receiver = false;
-    for (auto& stats : transceiver_stats_infos_) {
+    for (auto& stats : collection_context_->transceiver_stats_infos) {
       
       
       if (stats.current_direction == RtpTransceiverDirection::kStopped) {
@@ -2330,8 +2373,8 @@ void RTCStatsCollector::PrepareTransceiverStatsInfosAndCallStats_s_w() {
       }
     }
 
-    call_stats_ = pc_->GetCallStats();
-    audio_device_stats_ =
+    collection_context_->call_stats = pc_->GetCallStats();
+    collection_context_->audio_device_stats =
         has_audio_receiver ? pc_->GetAudioDeviceStats() : std::nullopt;
   });
 }
