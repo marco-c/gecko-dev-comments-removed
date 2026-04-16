@@ -729,6 +729,10 @@ void JSRuntime::commitPendingWrapperPreservations(JS::Zone* zone) {
     bool success = preserveWrapperCallback(mainContextFromOwnThread(), rooted);
     MOZ_RELEASE_ASSERT(success);
   }
+
+  
+  
+  MOZ_ASSERT(!zone->hasPendingWrapperPreservations());
 }
 
 void JSRuntime::incrementNumDebuggeeRealms() {
