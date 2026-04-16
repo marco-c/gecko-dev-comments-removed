@@ -13977,16 +13977,14 @@ gCSSProperties["math-style"] = {
   invalid_values: [],
 };
 
-if (IsCSSPropertyPrefEnabled("mathml.math_shift.enabled")) {
-  gCSSProperties["math-shift"] = {
-    domProp: "mathShift",
-    inherited: true,
-    type: CSS_TYPE_LONGHAND,
-    initial_values: ["normal"],
-    other_values: ["compact"],
-    invalid_values: [],
-  };
-}
+gCSSProperties["math-shift"] = {
+  domProp: "mathShift",
+  inherited: true,
+  type: CSS_TYPE_LONGHAND,
+  initial_values: ["normal"],
+  other_values: ["compact"],
+  invalid_values: [],
+};
 
 gCSSProperties["forced-color-adjust"] = {
   domProp: "forcedColorAdjust",
@@ -14716,6 +14714,35 @@ if (IsCSSPropertyPrefEnabled("layout.css.text-decoration-inset.enabled")) {
         "calc(10% + 1cm)",
         "0 calc(100% - 10px)",
       ],
+    },
+  });
+}
+
+if (IsCSSPropertyPrefEnabled("layout.css.link-parameters.enabled")) {
+  Object.assign(gCSSProperties, {
+    "link-parameters": {
+      domProp: "linkParameters",
+      inherited: false,
+      type: CSS_TYPE_LONGHAND,
+      applies_to_first_letter: false,
+      applies_to_first_line: false,
+      applies_to_placeholder: false,
+      initial_values: ["none"],
+      other_values: []
+        .concat(validNonUrlImageValues)
+        .concat(basicShapeSVGBoxValues)
+        .concat(basicShapeOtherValues)
+        .concat(basicShapeOtherValuesWithFillRule)
+        .concat(basicShapeXywhRectValues)
+        .concat(basicShapeShapeValues)
+        .concat(basicShapeShapeValuesWithFillRule)
+        .map(i => `param(--a, ${i})`)
+        .concat("param(--foo)")
+        .concat("param(--foo) param(--bar)"),
+      invalid_values: ["param(invalidident)"]
+        .concat(invalidNonUrlImageValues)
+        .concat(basicShapeInvalidValues)
+        .map(i => `param(--a, ${i})`),
     },
   });
 }

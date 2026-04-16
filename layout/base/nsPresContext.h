@@ -598,6 +598,13 @@ class nsPresContext : public nsISupports,
 
 
 
+  void SetLinkParametersOverride(
+      const mozilla::StyleLinkParameters& aLinkParameters);
+
+  
+
+
+
 
 
 
@@ -1440,6 +1447,7 @@ class nsPresContext : public nsISupports,
   FontVisibility mFontVisibility = FontVisibility::Unknown;
   mozilla::dom::PrefersColorSchemeOverride mOverriddenOrEmbedderColorScheme;
   mozilla::StyleForcedColors mForcedColors;
+  mozilla::StyleLinkParameters mLinkParameters;
 
  protected:
   virtual ~nsPresContext();
