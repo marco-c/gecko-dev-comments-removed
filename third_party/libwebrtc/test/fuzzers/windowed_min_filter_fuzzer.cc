@@ -8,15 +8,17 @@
 
 
 
+#include <cstddef>
 #include <deque>
+
 #include "absl/algorithm/container.h"
-#include "rtc_base/numerics/windowed_min_filter.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/numerics/windowed_min_filter.h"
 #include "test/fuzzers/fuzz_data_helper.h"
 
 namespace webrtc {
 
-void FuzzOneInput(const uint8_t* data, size_t size) {
+void FuzzOneInput(FuzzDataHelper fuzz_data) {
   class ReferenceFilter {
    public:
     explicit ReferenceFilter(int window_length) : max_size_(window_length) {}
@@ -35,7 +37,6 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
 
   ReferenceFilter reference_filter(10);
   WindowedMinFilter<int> filter(10);
-  test::FuzzDataHelper fuzz_data(MakeArrayView(data, size));
 
   while (fuzz_data.CanReadBytes(sizeof(int))) {
     int value = fuzz_data.Read<int>();

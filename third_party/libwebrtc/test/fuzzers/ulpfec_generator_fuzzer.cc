@@ -24,6 +24,7 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/copy_on_write_buffer.h"
 #include "system_wrappers/include/clock.h"
+#include "test/fuzzers/fuzz_data_helper.h"
 
 namespace webrtc {
 
@@ -32,36 +33,36 @@ constexpr uint8_t kFecPayloadType = 96;
 constexpr uint8_t kRedPayloadType = 97;
 }  
 
-void FuzzOneInput(const uint8_t* data, size_t size) {
+void FuzzOneInput(FuzzDataHelper fuzz_data) {
   
   
   static const Environment* const env =
       new Environment(CreateEnvironment(std::make_unique<SimulatedClock>(1)));
 
   UlpfecGenerator generator(*env, kRedPayloadType, kFecPayloadType);
-  size_t i = 0;
-  if (size < 4)
+  if (fuzz_data.size() < 4)
     return;
   FecProtectionParams params = {
-      data[i++] % 128, static_cast<int>(data[i++] % 10), kFecMaskBursty};
+      .fec_rate = fuzz_data.Read<uint8_t>() % 128,
+      .max_fec_frames = static_cast<int>(fuzz_data.Read<uint8_t>() % 10),
+      .fec_mask_type = kFecMaskBursty};
   generator.SetProtectionParameters(params, params);
-  uint16_t seq_num = data[i++];
+  uint16_t seq_num = fuzz_data.Read<uint8_t>();
   uint16_t prev_seq_num = 0;
-  while (i + 3 < size) {
-    size_t rtp_header_length = data[i++] % 10 + 12;
-    size_t payload_size = data[i++] % 10;
-    if (i + payload_size + rtp_header_length + 2 > size)
+  while (fuzz_data.BytesLeft() > 3) {
+    size_t rtp_header_length = fuzz_data.Read<uint8_t>() % 10 + 12;
+    size_t payload_size = fuzz_data.Read<uint8_t>() % 10;
+    if (fuzz_data.BytesLeft() < payload_size + rtp_header_length + 2)
       break;
-    webrtc::CopyOnWriteBuffer packet(&data[i],
-                                     payload_size + rtp_header_length);
-    packet.EnsureCapacity(IP_PACKET_SIZE);
+    CopyOnWriteBuffer packet(
+        fuzz_data.ReadByteArray(payload_size + rtp_header_length),
+        IP_PACKET_SIZE);
     
     
     ByteWriter<uint8_t>::WriteBigEndian(packet.MutableData(), 2 << 6);
     
     ByteWriter<uint16_t>::WriteBigEndian(packet.MutableData() + 2, seq_num++);
-    i += payload_size + rtp_header_length;
-    const bool protect = data[i++] % 2 == 1;
+    const bool protect = fuzz_data.Read<uint8_t>() % 2 == 1;
 
     
     

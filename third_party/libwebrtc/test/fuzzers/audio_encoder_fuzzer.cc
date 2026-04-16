@@ -25,13 +25,12 @@ namespace webrtc {
 
 
 
-void FuzzAudioEncoder(ArrayView<const uint8_t> data_view,
+void FuzzAudioEncoder(FuzzDataHelper data,
                       std::unique_ptr<AudioEncoder> encoder) {
-  test::FuzzDataHelper data(data_view);
   const size_t block_size_samples =
       encoder->SampleRateHz() / 100 * encoder->NumChannels();
   const size_t block_size_bytes = block_size_samples * sizeof(int16_t);
-  if (data_view.size() / block_size_bytes > 1000) {
+  if (data.BytesLeft() / block_size_bytes > 1000) {
     
     
     return;

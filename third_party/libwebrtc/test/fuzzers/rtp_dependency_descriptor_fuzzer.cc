@@ -22,13 +22,12 @@
 
 namespace webrtc {
 
-void FuzzOneInput(const uint8_t* data, size_t size) {
+void FuzzOneInput(FuzzDataHelper fuzz_data) {
   FrameDependencyStructure structure1;
   
   const FrameDependencyStructure* structure1_ptr = nullptr;
   std::unique_ptr<const FrameDependencyStructure> structure2;
 
-  test::FuzzDataHelper fuzz_data(webrtc::MakeArrayView(data, size));
   while (fuzz_data.CanReadBytes(1)) {
     
     

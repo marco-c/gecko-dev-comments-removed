@@ -47,8 +47,6 @@
 namespace webrtc {
 namespace {
 
-using test::FuzzDataHelper;
-
 constexpr int kBitrateEnabledBps = 100'000;
 
 class FrameValidator : public EncodedImageCallback {
@@ -542,18 +540,16 @@ static_assert(DropBelow(0b1101, 3, 4) == false, "");
 
 }  
 
-void FuzzOneInput(const uint8_t* data, size_t size) {
-  FuzzDataHelper helper(webrtc::MakeArrayView(data, size));
-
+void FuzzOneInput(FuzzDataHelper fuzz_data) {
   FrameValidator validator;
-  FieldTrials field_trials(helper);
+  FieldTrials field_trials(fuzz_data);
   
   LibvpxState state;
 
   
   LibvpxVp9Encoder encoder(CreateEnvironment(&field_trials), {},
                            std::make_unique<StubLibvpx>(&state));
-  VideoCodec codec = CodecSettings(helper);
+  VideoCodec codec = CodecSettings(fuzz_data);
   if (encoder.InitEncode(&codec, EncoderSettings()) != WEBRTC_VIDEO_CODEC_OK) {
     return;
   }
@@ -579,8 +575,8 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
                               .build();
 
   
-  while (helper.CanReadBytes(1)) {
-    uint8_t action = helper.Read<uint8_t>();
+  while (fuzz_data.CanReadBytes(1)) {
+    uint8_t action = fuzz_data.Read<uint8_t>();
     switch (action & 0b11) {
       case kEncode: {
         

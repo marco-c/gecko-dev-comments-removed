@@ -16,19 +16,20 @@
 #include "api/video/video_layers_allocation.h"
 #include "modules/rtp_rtcp/source/rtp_video_layers_allocation_extension.h"
 #include "rtc_base/checks.h"
+#include "test/fuzzers/fuzz_data_helper.h"
 
 namespace webrtc {
 
-void FuzzOneInput(const uint8_t* data, size_t size) {
+void FuzzOneInput(FuzzDataHelper fuzz_data) {
   
   
   
   
   constexpr int kMaxSize = std::numeric_limits<uint8_t>::max();
-  if (size > kMaxSize) {
+  if (fuzz_data.size() > kMaxSize) {
     return;
   }
-  auto raw = webrtc::MakeArrayView(data, size);
+  ArrayView<const uint8_t> raw = fuzz_data.ReadRemaining();
 
   VideoLayersAllocation allocation1;
   if (!RtpVideoLayersAllocationExtension::Parse(raw, &allocation1)) {

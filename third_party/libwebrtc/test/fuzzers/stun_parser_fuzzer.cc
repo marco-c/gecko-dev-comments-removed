@@ -13,18 +13,18 @@
 
 #include <memory>
 
-#include "api/array_view.h"
 #include "api/transport/stun.h"
 #include "rtc_base/byte_buffer.h"
+#include "test/fuzzers/fuzz_data_helper.h"
 
 namespace webrtc {
-void FuzzOneInput(const uint8_t* data, size_t size) {
+void FuzzOneInput(FuzzDataHelper fuzz_data) {
   
   
   
   
   std::unique_ptr<webrtc::IceMessage> stun_msg(new webrtc::IceMessage());
-  webrtc::ByteBufferReader buf(webrtc::MakeArrayView(data, size));
+  webrtc::ByteBufferReader buf(fuzz_data.ReadRemaining());
   stun_msg->Read(&buf);
   stun_msg->ValidateMessageIntegrity("");
 }
