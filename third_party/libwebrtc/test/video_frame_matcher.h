@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+#ifndef TEST_VIDEO_FRAME_MATCHER_H_
+#define TEST_VIDEO_FRAME_MATCHER_H_
+
+#include "api/video/video_frame.h"
+#include "test/gtest.h"
+
+namespace webrtc {
+
+
+
+
+testing::Matcher<const VideoFrame&> PixelValuesEqual(
+    const VideoFrame& expected_frame);
+
+}  
+
+#endif  
