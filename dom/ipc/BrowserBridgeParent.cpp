@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifdef ACCESSIBILITY
 #  include "mozilla/a11y/DocAccessibleParent.h"
 #  include "nsAccessibilityService.h"
@@ -286,6 +284,9 @@ IPCResult BrowserBridgeParent::RecvSetEmbedderAccessible(
   if (mEmbedderAccessibleDoc && aDoc && mEmbedderAccessibleDoc != aDoc) {
     return IPC_FAIL(this,
                     "Embedder doc shouldn't change from one doc to another");
+  }
+  if (aDoc && aDoc->Manager() != Manager()) {
+    return IPC_FAIL(this, "Embedder doc not managed by our PBrowser");
   }
   if (!aDoc && mEmbedderAccessibleDoc &&
       !mEmbedderAccessibleDoc->IsShutdown()) {
