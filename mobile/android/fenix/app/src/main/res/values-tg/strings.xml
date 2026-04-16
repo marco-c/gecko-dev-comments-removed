@@ -1696,6 +1696,14 @@
     <item quantity="one">%1$d варақа</item>
     <item quantity="other">%1$d варақа</item>
   </plurals>
+  <!-- Title for the Delete tab group confirmation dialog. -->
+  <string name="delete_tab_group_confirmation_dialog_title">Гурӯҳи варақаҳоро нест мекунед?</string>
+  <!-- Text shown in the body of the Delete tab group confirmation dialog. -->
+  <string name="delete_tab_group_confirmation_dialog_body">Ин амал гурӯҳро бебозгашт нест мекунад.</string>
+  <!-- Text shown on the confirm button in the Delete tab group confirmation dialog. -->
+  <string name="delete_tab_group_confirmation_dialog_confirm">Нест кардани гурӯҳ</string>
+  <!-- Text shown on the cancel button in the Delete tab group confirmation dialog. -->
+  <string name="delete_tab_group_confirmation_dialog_cancel">Бекор кардан</string>
   <!--
     History
 
@@ -2091,7 +2099,11 @@
   <string name="bookmark_delete_single_item" tools:ignore="UnusedResources" moz:removedIn="150">«%s» нест карда шуд</string>
   <!-- Bookmark snackbar message for deleting multiple items. %s is the number of items being deleted -->
   <string name="bookmark_delete_multiple_items" tools:ignore="UnusedResources" moz:removedIn="150">Унсурҳои нестшуда: %s</string>
-  <!-- Content description for the bookmark navigation bar back button -->
+  <!--
+    Bookmark undo button for deletion snackbar action
+
+    Content description for the bookmark navigation bar back button
+  -->
   <string name="bookmark_navigate_back_button_content_description">Ба қафо гузаштан</string>
   <!-- Content description for the bookmark list new folder navigation bar button -->
   <string name="bookmark_add_new_folder_button_content_description">Илова кардани ҷузвдони нав</string>
@@ -2300,6 +2312,8 @@
   <string name="menu_print">Чоп кардан</string>
   <!-- Sub-header in the dialog to share a link to another sync device -->
   <string name="share_device_subheader">Фиристодан ба дастгоҳ</string>
+  <!-- Content description for the drag handle that dismisses the Send to Device bottom sheet -->
+  <string name="send_to_devices_bottom_sheet_close_content_description">Пӯшидани «Фиристодан ба дастгоҳ»</string>
   <!-- Sub-header in the dialog to share a link to an app from the full list -->
   <string name="share_link_all_apps_subheader">Ҳамаи амалҳо</string>
   <!-- Sub-header in the dialog to share a link to an app from the most-recent sorted list -->
