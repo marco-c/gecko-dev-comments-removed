@@ -5,15 +5,12 @@
 
 
 
+import functools
 import json
 from collections import OrderedDict
 
 import buildconfig
-from mozbuild.util import memoize
 from perfecthash import PerfectHash
-
-
-PHFSIZE = 512
 
 
 def indented(s):
@@ -136,7 +133,7 @@ def split_iid(iid):
     return tuple(split_at_idxs(iid, (8, 4, 4, 2, 2, 2, 2, 2, 2, 2, 2)))
 
 
-@memoize
+@functools.cache
 def iid_bytes(iid):  
     bs = bytearray()
     for num in split_iid(iid):
@@ -185,12 +182,12 @@ utility_types = [
 
 def link_to_cpp(interfaces, fd, header_fd):
     
-    iid_phf = PerfectHash(interfaces, PHFSIZE, key=lambda i: iid_bytes(i["uuid"]))
+    iid_phf = PerfectHash(interfaces, key=lambda i: iid_bytes(i["uuid"]))
     for idx, iface in enumerate(iid_phf.entries):
         iface["idx"] = idx  
 
     
-    name_phf = PerfectHash(interfaces, PHFSIZE, key=lambda i: i["name"].encode("ascii"))
+    name_phf = PerfectHash(interfaces, key=lambda i: i["name"].encode("ascii"))
 
     def interface_idx(name):
         entry = name and name_phf.get_entry(name.encode("ascii"))
