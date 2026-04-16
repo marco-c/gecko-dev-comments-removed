@@ -7,17 +7,10 @@
 #include "builtin/intl/Collator.h"
 
 #include "mozilla/Assertions.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/intl/Collator.h"
 #include "mozilla/intl/Locale.h"
-#include "mozilla/Latin1.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Span.h"
-#include "mozilla/TextUtils.h"
-
-#include <array>
-#include <memory>
-#include <type_traits>
 
 #include "builtin/Array.h"
 #include "builtin/intl/CommonFunctions.h"
@@ -695,125 +688,6 @@ static bool ResolvedOptions(JSContext* cx, Handle<CollatorObject*> collator,
   *result = options;
   return true;
 }
-
-template <typename CharT>
-class MOZ_STACK_CLASS Latin1ToUtfCodeUnits final {
-  static constexpr size_t MaxUtfCodeUnits(size_t n) {
-    if constexpr (std::is_same_v<CharT, char>) {
-      
-      return 2 * n;
-    } else {
-      
-      return 1 * n;
-    }
-  }
-
-  
-  static constexpr size_t InlineLength =
-      MaxUtfCodeUnits(JSFatInlineString::MAX_LENGTH_LATIN1);
-
-  CharT inlineCodeUnits_[InlineLength];
-  std::unique_ptr<CharT[], JS::FreePolicy> ownedCodeUnits_{};
-
-  CharT* maybeAlloc(JSContext* cx, size_t n) {
-    if (n <= std::size(inlineCodeUnits_)) {
-      return inlineCodeUnits_;
-    }
-
-    ownedCodeUnits_ = cx->make_pod_array<CharT>(n);
-    return ownedCodeUnits_.get();
-  }
-
- public:
-  [[nodiscard]] bool encode(JSContext* cx,
-                            mozilla::Span<const JS::Latin1Char> latin1Chars,
-                            mozilla::Span<const CharT>* result) {
-    auto source = mozilla::AsChars(latin1Chars);
-
-    if constexpr (std::is_same_v<CharT, char>) {
-      
-      if (mozilla::IsAscii(source)) {
-        *result = source;
-        return true;
-      }
-    }
-
-    
-    size_t n = MaxUtfCodeUnits(source.size());
-    auto* buffer = maybeAlloc(cx, n);
-    if (!buffer) {
-      return false;
-    }
-
-    
-    auto dest = mozilla::Span{buffer, n};
-    size_t length;
-    if constexpr (std::is_same_v<CharT, char>) {
-      length = mozilla::ConvertLatin1toUtf8(source, dest);
-    } else {
-      mozilla::ConvertLatin1toUtf16(source, dest);
-      length = n;
-    }
-    *result = {buffer, length};
-    return true;
-  }
-};
-
-class MOZ_STACK_CLASS Utf8CharsFromLatin1String final {
-  
-  JS::AutoCheckCannotGC nogc_;
-
-  
-  Latin1ToUtfCodeUnits<char> codeUnits_;
-
-  
-  mozilla::Span<const char> utf8Chars_{};
-
- public:
-  [[nodiscard]] bool init(JSContext* cx, JSString* str) {
-    MOZ_ASSERT(str->hasLatin1Chars(), "unexpected two-byte string");
-
-    auto* linear = str->ensureLinear(cx);
-    if (!linear) {
-      return false;
-    }
-
-    
-    return codeUnits_.encode(cx, linear->latin1Range(nogc_), &utf8Chars_);
-  }
-
-  operator mozilla::Span<const char>() const { return utf8Chars_; }
-};
-
-class MOZ_STACK_CLASS TwoByteCharsFromString final {
-  
-  JS::AutoCheckCannotGC nogc_;
-
-  
-  Latin1ToUtfCodeUnits<char16_t> codeUnits_;
-
-  
-  mozilla::Span<const char16_t> twoByteChars_{};
-
- public:
-  [[nodiscard]] bool init(JSContext* cx, JSString* str) {
-    auto* linear = str->ensureLinear(cx);
-    if (!linear) {
-      return false;
-    }
-
-    
-    if (linear->hasTwoByteChars()) {
-      twoByteChars_ = linear->twoByteRange(nogc_);
-      return true;
-    }
-
-    
-    return codeUnits_.encode(cx, linear->latin1Range(nogc_), &twoByteChars_);
-  }
-
-  operator mozilla::Span<const char16_t>() const { return twoByteChars_; }
-};
 
 bool js::intl::CompareStrings(JSContext* cx, Handle<CollatorObject*> collator,
                               Handle<JSString*> str1, Handle<JSString*> str2,
