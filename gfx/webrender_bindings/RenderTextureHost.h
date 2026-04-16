@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef MOZILLA_GFX_RENDERTEXTUREHOST_H
 #define MOZILLA_GFX_RENDERTEXTUREHOST_H
 
@@ -96,6 +94,11 @@ class RenderTextureHost {
                                        RenderCompositor* aCompositor);
 
   virtual void UnlockSWGL() {}
+
+  virtual bool LockSWGLCompositeSurface(void* aContext,
+                                        wr::SWGLCompositeSurfaceInfo* aInfo) {
+    return false;
+  }
 
   virtual RefPtr<layers::TextureSource> CreateTextureSource(
       layers::TextureSourceProvider* aProvider);

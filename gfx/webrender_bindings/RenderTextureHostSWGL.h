@@ -51,7 +51,7 @@ class RenderTextureHostSWGL : public RenderTextureHost {
   
   
   bool LockSWGLCompositeSurface(void* aContext,
-                                wr::SWGLCompositeSurfaceInfo* aInfo);
+                                wr::SWGLCompositeSurfaceInfo* aInfo) override;
 
   size_t BytesFromPlanes() {
     NS_ASSERTION(mPlanes.size(), "Can't compute bytes without any planes");
