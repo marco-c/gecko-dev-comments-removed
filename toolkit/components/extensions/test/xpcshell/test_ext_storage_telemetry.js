@@ -8,47 +8,90 @@ const { ExtensionStorageIDB } = ChromeUtils.importESModule(
 const { getTrimmedString } = ChromeUtils.importESModule(
   "resource://gre/modules/ExtensionTelemetry.sys.mjs"
 );
-const { TelemetryController } = ChromeUtils.importESModule(
-  "resource://gre/modules/TelemetryController.sys.mjs"
-);
-
-const HISTOGRAM_IDS = [
-  "WEBEXT_STORAGE_LOCAL_IDB_SET_MS",
-  "WEBEXT_STORAGE_LOCAL_IDB_GET_MS",
-];
-const KEYED_HISTOGRAM_IDS = [
-  "WEBEXT_STORAGE_LOCAL_IDB_SET_MS_BY_ADDONID",
-  "WEBEXT_STORAGE_LOCAL_IDB_GET_MS_BY_ADDONID",
-];
 
 const EXTENSION_ID1 = "@test-extension1";
 const EXTENSION_ID2 = "@test-extension2";
 
+const GLEAN_STORAGE_LOCAL_METRICS = [
+  "storageLocalGetIdb",
+  "storageLocalSetIdb",
+];
+const GLEAN_STORAGE_LOCAL_METRICS_LABELED = [
+  "storageLocalGetIdbByAddonid",
+  "storageLocalSetIdbByAddonid",
+];
+
+const assertNoStorageLocalGleanData = () => {
+  for (let metricId of GLEAN_STORAGE_LOCAL_METRICS) {
+    const { GleanTimingDistribution } = globalThis;
+    assertGleanMetricsNoSamples({
+      metricId,
+      gleanMetric: Glean.extensionsTiming[metricId],
+      gleanMetricConstructor: GleanTimingDistribution,
+    });
+  }
+  for (let metricId of GLEAN_STORAGE_LOCAL_METRICS_LABELED) {
+    assertGleanLabeledMetricEmpty({
+      metricId,
+      gleanMetric: Glean.extensionsTiming[metricId],
+      gleanMetricLabels: [],
+    });
+  }
+};
+
+const assertStorageLocalGleanData = ({
+  allAddonsMetrics: { expectedSamplesCount },
+  perAddonMetrics: { expectedLabelsValue },
+}) => {
+  if (ExtensionStorageIDB.isBackendEnabled) {
+    for (let metricId of GLEAN_STORAGE_LOCAL_METRICS) {
+      const { GleanTimingDistribution } = globalThis;
+      assertGleanMetricsSamplesCount({
+        metricId,
+        gleanMetric: Glean.extensionsTiming[metricId],
+        gleanMetricConstructor: GleanTimingDistribution,
+        expectedSamplesCount,
+      });
+    }
+    for (let metricId of GLEAN_STORAGE_LOCAL_METRICS_LABELED) {
+      
+      
+      
+      for (const [k, v] of Object.entries(expectedLabelsValue)) {
+        Assert.equal(
+          Glean.extensionsTiming[metricId][k].testGetValue()?.count,
+          v.count,
+          `Got expected count on metric "${metricId}" and addon id "${k}"`
+        );
+      }
+
+      
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    }
+  } else {
+    
+    
+    
+    assertNoStorageLocalGleanData();
+  }
+};
+
 async function test_telemetry_background() {
-  const { GleanTimingDistribution } = globalThis;
-
-  
-  
-  
-  const expectedEmptyGleanMetrics = ExtensionStorageIDB.isBackendEnabled
-    ? []
-    : ["storageLocalGetIdb", "storageLocalSetIdb"];
-  const expectedNonEmptyGleanMetrics = ExtensionStorageIDB.isBackendEnabled
-    ? ["storageLocalGetIdb", "storageLocalSetIdb"]
-    : [];
-  const expectedEmptyHistograms = ExtensionStorageIDB.isBackendEnabled
-    ? []
-    : HISTOGRAM_IDS;
-  const expectedEmptyKeyedHistograms = ExtensionStorageIDB.isBackendEnabled
-    ? []
-    : KEYED_HISTOGRAM_IDS;
-  const expectedNonEmptyHistograms = ExtensionStorageIDB.isBackendEnabled
-    ? HISTOGRAM_IDS
-    : [];
-  const expectedNonEmptyKeyedHistograms = ExtensionStorageIDB.isBackendEnabled
-    ? KEYED_HISTOGRAM_IDS
-    : [];
-
   const server = createHttpServer();
   server.registerDirectory("/data/", do_get_file("data"));
 
@@ -103,248 +146,70 @@ async function test_telemetry_background() {
   
   
   await Services.fog.testFlushAllChildren();
-  resetTelemetryData();
-
-  
-
-  
-  for (let metricId of expectedNonEmptyGleanMetrics) {
-    assertGleanMetricsNoSamples({
-      metricId,
-      gleanMetric: Glean.extensionsTiming[metricId],
-      gleanMetricConstructor: GleanTimingDistribution,
-    });
-  }
-
-  
-  let process = IS_OOP ? "extension" : "parent";
-  let snapshots = getSnapshots(process);
-  let keyedSnapshots = getKeyedSnapshots(process);
-
-  for (let id of HISTOGRAM_IDS) {
-    ok(!(id in snapshots), `No data recorded for histogram: ${id}.`);
-  }
-
-  for (let id of KEYED_HISTOGRAM_IDS) {
-    Assert.deepEqual(
-      Object.keys(keyedSnapshots[id] || {}),
-      [],
-      `No data recorded for histogram: ${id}.`
-    );
-  }
+  Services.fog.testResetFOG();
+  assertNoStorageLocalGleanData();
 
   await extension1.startup();
   await extension1.awaitMessage("backgroundDone");
 
   
+  info("Assert storage.local metrics collected for background page API calls");
+
   await Services.fog.testFlushAllChildren();
-  for (let metricId of expectedNonEmptyGleanMetrics) {
-    assertGleanMetricsSamplesCount({
-      metricId,
-      gleanMetric: Glean.extensionsTiming[metricId],
-      gleanMetricConstructor: GleanTimingDistribution,
-      expectedSamplesCount: 1,
-    });
-  }
-
-  
-  if (AppConstants.platform != "android") {
-    for (let id of expectedNonEmptyHistograms) {
-      await promiseTelemetryRecorded(id, process, 1);
-    }
-    for (let id of expectedNonEmptyKeyedHistograms) {
-      await promiseKeyedTelemetryRecorded(id, process, EXTENSION_ID1, 1);
-    }
-
-    
-    snapshots = getSnapshots(process);
-    keyedSnapshots = getKeyedSnapshots(process);
-
-    for (let id of expectedNonEmptyHistograms) {
-      equal(
-        valueSum(snapshots[id].values),
-        1,
-        `Data recorded for histogram: ${id}.`
-      );
-    }
-
-    for (let id of expectedNonEmptyKeyedHistograms) {
-      Assert.deepEqual(
-        Object.keys(keyedSnapshots[id]),
-        [EXTENSION_ID1],
-        `Data recorded for histogram: ${id}.`
-      );
-      equal(
-        valueSum(keyedSnapshots[id][EXTENSION_ID1].values),
-        1,
-        `Data recorded for histogram: ${id}.`
-      );
-    }
-  }
+  assertStorageLocalGleanData({
+    allAddonsMetrics: { expectedSamplesCount: 1 },
+    perAddonMetrics: {
+      expectedLabelsValue: {
+        [EXTENSION_ID1]: { count: 1 },
+      },
+    },
+  });
 
   await extension2.startup();
   await extension2.awaitMessage("backgroundDone");
 
   
   await Services.fog.testFlushAllChildren();
-  for (let metricId of expectedNonEmptyGleanMetrics) {
-    assertGleanMetricsSamplesCount({
-      metricId,
-      gleanMetric: Glean.extensionsTiming[metricId],
-      gleanMetricConstructor: GleanTimingDistribution,
-      expectedSamplesCount: 2,
-    });
-  }
-
-  
-  if (AppConstants.platform != "android") {
-    for (let id of expectedNonEmptyHistograms) {
-      await promiseTelemetryRecorded(id, process, 2);
-    }
-    for (let id of expectedNonEmptyKeyedHistograms) {
-      await promiseKeyedTelemetryRecorded(id, process, EXTENSION_ID2, 1);
-    }
-
-    
-    snapshots = getSnapshots(process);
-    keyedSnapshots = getKeyedSnapshots(process);
-
-    for (let id of expectedNonEmptyHistograms) {
-      equal(
-        valueSum(snapshots[id].values),
-        2,
-        `Additional data recorded for histogram: ${id}.`
-      );
-    }
-
-    for (let id of expectedNonEmptyKeyedHistograms) {
-      Assert.deepEqual(
-        Object.keys(keyedSnapshots[id]).sort(),
-        [EXTENSION_ID1, EXTENSION_ID2],
-        `Additional data recorded for histogram: ${id}.`
-      );
-      equal(
-        valueSum(keyedSnapshots[id][EXTENSION_ID2].values),
-        1,
-        `Additional data recorded for histogram: ${id}.`
-      );
-    }
-  }
+  assertStorageLocalGleanData({
+    allAddonsMetrics: { expectedSamplesCount: 2 },
+    perAddonMetrics: {
+      expectedLabelsValue: {
+        [EXTENSION_ID1]: { count: 1 },
+        [EXTENSION_ID2]: { count: 1 },
+      },
+    },
+  });
 
   await extension2.unload();
 
   await Services.fog.testFlushAllChildren();
-  resetTelemetryData();
+  Services.fog.testResetFOG();
 
   
-  process = "content";
-  
-  
-  let expectedCount = 1;
-  let expectedKeyedCount = 1;
-
   let contentPage = await ExtensionTestUtils.loadContentPage(
     `${BASE_URL}/file_sample.html`
   );
   await extension1.awaitMessage("contentDone");
 
-  
+  info("Assert storage.local metrics collected for content scripts API calls");
   await Services.fog.testFlushAllChildren();
-  for (let metricId of expectedNonEmptyGleanMetrics) {
-    assertGleanMetricsSamplesCount({
-      metricId,
-      gleanMetric: Glean.extensionsTiming[metricId],
-      gleanMetricConstructor: GleanTimingDistribution,
-      expectedSamplesCount: expectedCount,
-    });
-  }
-
   
-  if (AppConstants.platform != "android") {
-    for (let id of expectedNonEmptyHistograms) {
-      await promiseTelemetryRecorded(id, process, expectedCount);
-    }
-    for (let id of expectedNonEmptyKeyedHistograms) {
-      await promiseKeyedTelemetryRecorded(
-        id,
-        process,
-        EXTENSION_ID1,
-        expectedKeyedCount
-      );
-    }
+  
+  assertStorageLocalGleanData({
+    allAddonsMetrics: { expectedSamplesCount: 1 },
+    perAddonMetrics: {
+      expectedLabelsValue: {
+        [EXTENSION_ID1]: { count: 1 },
+      },
+    },
+  });
 
-    
-    snapshots = getSnapshots(process);
-    keyedSnapshots = getKeyedSnapshots(process);
-
-    for (let id of expectedNonEmptyHistograms) {
-      equal(
-        valueSum(snapshots[id].values),
-        expectedCount,
-        `Data recorded in content script for histogram: ${id}.`
-      );
-    }
-
-    for (let id of expectedNonEmptyKeyedHistograms) {
-      Assert.deepEqual(
-        Object.keys(keyedSnapshots[id]).sort(),
-        [EXTENSION_ID1],
-        `Additional data recorded for histogram: ${id}.`
-      );
-      equal(
-        valueSum(keyedSnapshots[id][EXTENSION_ID1].values),
-        expectedKeyedCount,
-        `Additional data recorded for histogram: ${id}.`
-      );
-    }
-  }
+  await Services.fog.testFlushAllChildren();
+  Services.fog.testResetFOG();
 
   await extension1.unload();
-
-  
-
-  
-  await Services.fog.testFlushAllChildren();
-  for (let metricId of expectedEmptyGleanMetrics) {
-    assertGleanMetricsNoSamples({
-      metricId,
-      gleanMetric: Glean.extensionsTiming[metricId],
-      gleanMetricConstructor: GleanTimingDistribution,
-    });
-  }
-
-  
-  if (AppConstants.platform != "android") {
-    for (let id of expectedEmptyHistograms) {
-      ok(!(id in snapshots), `No data recorded for histogram: ${id}.`);
-    }
-
-    for (let id of expectedEmptyKeyedHistograms) {
-      Assert.deepEqual(
-        Object.keys(keyedSnapshots[id] || {}),
-        [],
-        `No data recorded for histogram: ${id}.`
-      );
-    }
-  }
-
   await contentPage.close();
 }
-
-add_task(async function setup() {
-  
-  
-  await TelemetryController.testSetup();
-
-  
-  
-  
-  const oldCanRecordBase = Services.telemetry.canRecordBase;
-  Services.telemetry.canRecordBase = true;
-  registerCleanupFunction(() => {
-    Services.telemetry.canRecordBase = oldCanRecordBase;
-  });
-});
 
 add_task(function test_telemetry_background_file_backend() {
   return runWithPrefs(
@@ -379,8 +244,7 @@ add_task(function test_telemetry_background_idb_backend() {
 
 
 add_task(async function test_telemetry_storage_local_unexpected_error() {
-  
-  Services.telemetry.clearEvents();
+  Services.fog.testResetFOG();
 
   const methods = ["clear", "get", "remove", "set"];
   const veryLongErrorName = `VeryLongErrorName${Array(200).fill(0).join("")}`;
