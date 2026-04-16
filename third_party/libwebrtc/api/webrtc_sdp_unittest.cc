@@ -1927,7 +1927,8 @@ class WebRtcSdpTest : public ::testing::Test {
 
   void TestDeserializeRtcpFb(
       std::unique_ptr<SessionDescriptionInterface>& jdesc_output,
-      bool use_wildcard) {
+      bool use_wildcard,
+      bool use_ccfb) {
     std::string sdp_session_and_audio =
         "v=0\r\n"
         "o=- 18446744069414584320 18446462598732840960 IN IP4 127.0.0.1\r\n"
@@ -1949,8 +1950,14 @@ class WebRtcSdpTest : public ::testing::Test {
     std::ostringstream os;
     os << sdp_session_and_audio;
     os << "a=rtcp-fb:" << (use_wildcard ? "*" : "111") << " nack\r\n";
+    if (use_ccfb) {
+      os << "a=rtcp-fb:" << (use_wildcard ? "*" : "111") << " ack ccfb\r\n";
+    }
     os << sdp_video;
     os << "a=rtcp-fb:" << (use_wildcard ? "*" : "101") << " ccm fir\r\n";
+    if (use_ccfb) {
+      os << "a=rtcp-fb:" << (use_wildcard ? "*" : "101") << " ack ccfb\r\n";
+    }
     std::string sdp = os.str();
     
     SdpParseError error;
@@ -1982,6 +1989,21 @@ class WebRtcSdpTest : public ::testing::Test {
         FeedbackParam(kRtcpFbParamRemb, kParamValueEmpty)));
     EXPECT_TRUE(vp8.HasFeedbackParam(
         FeedbackParam(kRtcpFbParamCcm, kRtcpFbCcmParamFir)));
+    MediaContentDescription* video_media =
+        GetFirstMediaContent(jdesc_output->description(), MediaType::VIDEO)
+            ->media_description();
+    MediaContentDescription* audio_media =
+        GetFirstMediaContent(jdesc_output->description(), MediaType::AUDIO)
+            ->media_description();
+    if (use_ccfb) {
+      EXPECT_TRUE(video_media->rtcp_fb_ack_ccfb())
+          << "Wildcard: " << use_wildcard;
+      EXPECT_TRUE(audio_media->rtcp_fb_ack_ccfb())
+          << "Wildcard: " << use_wildcard;
+    } else {
+      EXPECT_FALSE(video_media->rtcp_fb_ack_ccfb());
+      EXPECT_FALSE(audio_media->rtcp_fb_ack_ccfb());
+    }
   }
 
   
@@ -3225,14 +3247,24 @@ TEST_F(WebRtcSdpTest, DeserializeSerializeCodecParams) {
 TEST_F(WebRtcSdpTest, DeserializeSerializeRtcpFb) {
   const bool kUseWildcard = false;
   std::unique_ptr<SessionDescriptionInterface> jdesc_output;
-  TestDeserializeRtcpFb(jdesc_output, kUseWildcard);
+  TestDeserializeRtcpFb(jdesc_output, kUseWildcard,  false);
   TestSerialize(jdesc_output);
 }
 
 TEST_F(WebRtcSdpTest, DeserializeSerializeRtcpFbWildcard) {
   const bool kUseWildcard = true;
   std::unique_ptr<SessionDescriptionInterface> jdesc_output;
-  TestDeserializeRtcpFb(jdesc_output, kUseWildcard);
+  TestDeserializeRtcpFb(jdesc_output, kUseWildcard,  false);
+  TestSerialize(jdesc_output);
+}
+
+TEST_F(WebRtcSdpTest, DeserializeSerializeRtcpWithCcfb) {
+  std::unique_ptr<SessionDescriptionInterface> jdesc_output;
+  TestDeserializeRtcpFb(jdesc_output,  false,
+                         true);
+  TestSerialize(jdesc_output);
+  TestDeserializeRtcpFb(jdesc_output,  true,
+                         true);
   TestSerialize(jdesc_output);
 }
 
