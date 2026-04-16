@@ -14,6 +14,7 @@
 #include "gfxScriptItemizer.h"
 #include "gfxUserFontSet.h"
 #include "mozilla/ClearOnShutdown.h"
+#include "mozilla/dom/WorkerCommon.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/Logging.h"  
 #include "mozilla/gfx/PathHelpers.h"
@@ -1876,6 +1877,12 @@ gfxFontGroup::~gfxFontGroup() {
 }
 
 static StyleGenericFontFamily GetDefaultGeneric(nsAtom* aLanguage) {
+  
+  
+  
+  if (dom::GetCurrentThreadWorkerPrivate()) {
+    return StyleGenericFontFamily::SansSerif;
+  }
   return StaticPresData::Get()
       ->GetFontPrefsForLang(aLanguage)
       ->GetDefaultGeneric();
