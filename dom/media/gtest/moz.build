@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 include("/dom/media/webrtc/third_party_build/webrtc.mozbuild")
 
@@ -51,6 +49,7 @@ UNIFIED_SOURCES += [
     "TestGroupId.cpp",
     "TestImageConversion.cpp",
     "TestIntervalSet.cpp",
+    "TestMediaCapabilities.cpp",
     "TestMediaCodecsSupport.cpp",
     "TestMediaDataDecoder.cpp",
     "TestMediaDataEncoder.cpp",
@@ -148,6 +147,7 @@ LOCAL_INCLUDES += [
     "/dom/media",
     "/dom/media/encoder",
     "/dom/media/gmp",
+    "/dom/media/mediacapabilities",
     "/dom/media/mp4",
     "/dom/media/platforms",
     "/dom/media/platforms/agnostic",
