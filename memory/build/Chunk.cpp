@@ -397,11 +397,8 @@ void pages_decommit(void* aAddr, size_t aSize) {
 
 
 
-
-
-static bool pages_purge(void* addr, size_t length, bool force_zero) {
+static void pages_purge(void* addr, size_t length) {
   pages_decommit(addr, length);
-  return true;
 }
 
 
@@ -542,9 +539,8 @@ void chunk_assert_zero(void* aPtr, size_t aSize) {
 
 static void chunk_record(void* aChunk, size_t aSize, ChunkType aType) {
   if (aType != ZEROED_CHUNK) {
-    if (pages_purge(aChunk, aSize, aType == HUGE_CHUNK)) {
-      aType = ZEROED_CHUNK;
-    }
+    pages_purge(aChunk, aSize);
+    aType = ZEROED_CHUNK;
   }
 
   
