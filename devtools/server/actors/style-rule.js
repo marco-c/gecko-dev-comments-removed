@@ -727,11 +727,7 @@ class StyleRuleActor extends Actor {
           conditions: Array.from(rawRule.conditions).map((condition, i) => ({
             containerName: condition.name,
             containerQuery: condition.query,
-            
-            
-            
-            
-            matched: !!rawRule.queryContainerFor(
+            hasContainer: !!rawRule.queryContainerFor(
               this.currentlySelectedElement,
               i
             ),
@@ -1435,6 +1431,8 @@ class StyleRuleActor extends Actor {
 
 
 
+
+
   getQueryContainerForNode(ancestorRuleIndex, nodeActor, conditionIndex) {
     const ancestorRule = this.ancestorRules[ancestorRuleIndex];
     if (!ancestorRule) {
@@ -1451,15 +1449,21 @@ class StyleRuleActor extends Actor {
 
     
     
-    
     if (!containerEl) {
-      return { node: null };
+      return {
+        node: null,
+        containerName: ancestorRule.rawRule.conditions[conditionIndex]?.name,
+      };
     }
 
     const computedStyle = CssLogic.getComputedStyle(containerEl);
     return {
       node: this.pageStyle.walker.getNode(containerEl),
       containerType: computedStyle.containerType,
+      containerName:
+        computedStyle.containerName !== "none"
+          ? computedStyle.containerName
+          : null,
       inlineSize: computedStyle.inlineSize,
       blockSize: computedStyle.blockSize,
     };
