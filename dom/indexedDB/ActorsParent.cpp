@@ -11,7 +11,6 @@
 
 #include <algorithm>
 #include <cstdint>
-#include <functional>
 #include <iterator>
 #include <new>
 #include <numeric>
@@ -7610,6 +7609,15 @@ void DatabaseConnection::UpdateRefcountFunction::ReleaseSavepoint() {
   mConnection->AssertIsOnConnectionThread();
   MOZ_ASSERT(mInSavepoint);
 
+  
+  
+  
+  
+  
+  for (const auto& entry : mSavepointEntriesIndex.Values()) {
+    entry->ResetSavepointDelta();
+  }
+
   mSavepointEntriesIndex.Clear();
   mInSavepoint = false;
 }
@@ -10402,6 +10410,13 @@ bool TransactionBase::VerifyRequestParams(
     switch (fileAddInfo.type()) {
       case StructuredCloneFileBase::eBlob:
         if (NS_AUUF_OR_WARN_IF(!file)) {
+          return false;
+        }
+
+        
+        if (NS_AUUF_OR_WARN_IF(file->Manager() !=
+                               static_cast<const PBackgroundIDBDatabaseParent*>(
+                                   &GetDatabase()))) {
           return false;
         }
         break;
@@ -17183,6 +17198,8 @@ void GetDatabasesOp::SendResults() {
   if (HasFailed()) {
     mResolver(ClampResultCode(ResultCode()));
   } else {
+    std::sort(mDatabaseMetadataArray.begin(), mDatabaseMetadataArray.end(),
+              [](const auto& a, const auto& b) { return a.name() < b.name(); });
     mResolver(mDatabaseMetadataArray);
   }
 
