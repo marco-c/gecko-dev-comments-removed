@@ -406,11 +406,8 @@ bool URLQueryStringStripper::ShouldStripParam(const nsACString& aHost,
   ToLowerCase(aName, lowerCaseName);
 
   
-  MOZ_ASSERT(mStripOnShareGlobal.isSome());
-  const dom::StripRule& globalRule = mStripOnShareGlobal.ref();
-
-  
   if (mStripOnShareGlobal.isSome()) {
+    const dom::StripRule& globalRule = mStripOnShareGlobal.ref();
     for (const auto& param : globalRule.mQueryParams) {
       if (param == lowerCaseName) {
         return true;
