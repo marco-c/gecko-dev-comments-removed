@@ -1,19 +1,14 @@
 
 
 
-
-
 #if !defined(BlankDecoderModule_h_)
 #  define BlankDecoderModule_h_
 
 #  include "DummyMediaDataDecoder.h"
+#  include "ImageContainer.h"
 #  include "PlatformDecoderModule.h"
 
 namespace mozilla {
-
-namespace layers {
-class ImageContainer;
-}
 
 class MediaData;
 class MediaRawData;
