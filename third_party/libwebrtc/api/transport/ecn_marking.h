@@ -11,6 +11,10 @@
 #ifndef API_TRANSPORT_ECN_MARKING_H_
 #define API_TRANSPORT_ECN_MARKING_H_
 
+#include <cstdint>
+
+#include "absl/strings/string_view.h"
+
 namespace webrtc {
 
 
@@ -30,12 +34,32 @@ namespace webrtc {
 
 
 
-enum class EcnMarking {
-  kNotEct = 0,  
-  kEct1 = 1,    
-  kEct0 = 2,    
-  kCe = 3,      
+enum class EcnMarking : uint8_t {
+  kNotEct = 0b00,  
+  kEct1 = 0b01,    
+  kEct0 = 0b10,    
+  kCe = 0b11,      
 };
+
+inline absl::string_view AsString(EcnMarking marking) {
+  switch (marking) {
+    case EcnMarking::kNotEct:
+      return "none";
+    case EcnMarking::kEct1:
+      return "ect1";
+    case EcnMarking::kEct0:
+      return "ect0";
+    case EcnMarking::kCe:
+      return "ce";
+    default:
+      return "unknown";
+  }
+}
+
+template <typename Sink>
+void AbslStringify(Sink& sink, EcnMarking self) {
+  sink.Append(AsString(self));
+}
 
 }  
 
