@@ -358,7 +358,8 @@ static IsolationBehavior IsolationBehaviorForURI(nsIURI* aURI, bool aIsSubframe,
 
   
   if (scheme == "imap"_ns || scheme == "mailbox"_ns || scheme == "news"_ns ||
-      scheme == "nntp"_ns || scheme == "snews"_ns || scheme == "x-moz-ews"_ns) {
+      scheme == "nntp"_ns || scheme == "snews"_ns || scheme == "x-moz-ews"_ns ||
+      scheme == "x-moz-graph"_ns) {
     return IsolationBehavior::Parent;
   }
 
