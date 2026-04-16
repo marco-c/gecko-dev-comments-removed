@@ -93,6 +93,84 @@
     return totalMemoryUsage;
   }
 
+  
+  
+  
+  
+  
+  async function handleDroppedLink(
+    tabbrowser,
+    browser,
+    event,
+    urlOrLinks,
+    nameOrTriggeringPrincipal,
+    triggeringPrincipal
+  ) {
+    
+    
+    if (event) {
+      
+      
+      event.preventDefault();
+    }
+    let links;
+    if (Array.isArray(urlOrLinks)) {
+      links = urlOrLinks;
+      triggeringPrincipal = nameOrTriggeringPrincipal;
+    } else {
+      links = [{ url: urlOrLinks, nameOrTriggeringPrincipal, type: "" }];
+    }
+
+    let lastLocationChange = browser.lastLocationChange;
+
+    let userContextId = browser.getAttribute("usercontextid");
+
+    
+    
+    let inBackground = false;
+    if (event) {
+      inBackground = Services.prefs.getBoolPref(
+        "browser.tabs.loadInBackground"
+      );
+      if (event.shiftKey) {
+        inBackground = !inBackground;
+      }
+    }
+
+    if (
+      links.length >=
+      Services.prefs.getIntPref("browser.tabs.maxOpenBeforeWarn")
+    ) {
+      
+      let answer = await tabbrowser.OpenInTabsUtils.promiseConfirmOpenInTabs(
+        links.length,
+        window
+      );
+      if (!answer) {
+        return;
+      }
+    }
+
+    let urls = [];
+    let postDatas = [];
+    for (let link of links) {
+      let data = await UrlbarUtils.getShortcutOrURIAndPostData(link.url);
+      urls.push(data.url);
+      postDatas.push(data.postData);
+    }
+    if (lastLocationChange == browser.lastLocationChange) {
+      tabbrowser.loadTabs(urls, {
+        inBackground,
+        replace: true,
+        allowThirdPartyFixup: false,
+        postDatas,
+        userContextId,
+        targetTab: tabbrowser.getTabForBrowser(browser),
+        triggeringPrincipal,
+      });
+    }
+  }
+
   window.Tabbrowser = class {
     init() {
       this.tabContainer = document.getElementById("tabbrowser-tabs");
@@ -109,6 +187,8 @@
         ASRouter: "resource:///modules/asrouter/ASRouter.sys.mjs",
         AsyncTabSwitcher:
           "moz-src:///browser/components/tabbrowser/AsyncTabSwitcher.sys.mjs",
+        OpenInTabsUtils:
+          "moz-src:///browser/components/tabbrowser/OpenInTabsUtils.sys.mjs",
         PictureInPicture: "resource://gre/modules/PictureInPicture.sys.mjs",
         SmartTabGroupingManager:
           "moz-src:///browser/components/tabbrowser/SmartTabGrouping.sys.mjs",
@@ -121,6 +201,7 @@
         TaskbarTabsUtils:
           "resource:///modules/taskbartabs/TaskbarTabsUtils.sys.mjs",
         TaskbarTabs: "resource:///modules/taskbartabs/TaskbarTabs.sys.mjs",
+        UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
         UrlbarProviderOpenTabs:
           "moz-src:///browser/components/urlbar/UrlbarProviderOpenTabs.sys.mjs",
         FaviconUtils: "moz-src:///toolkit/modules/FaviconUtils.sys.mjs",
@@ -223,6 +304,14 @@
         .addEventListener("change", this);
 
       this.tabContainer.init();
+
+      this._defaultDropLinkHandler = function (...args) {
+        
+        
+        let browser = this;
+        let tabbrowser = browser.getTabBrowser();
+        handleDroppedLink(tabbrowser, browser, ...args);
+      };
       this._setupInitialBrowserAndTab();
 
       if (
@@ -632,7 +721,7 @@
       if (gBrowserAllowScriptsToCloseInitialTabs) {
         browser.setAttribute("allowscriptstoclose", "true");
       }
-      browser.droppedLinkHandler = handleDroppedLink;
+      browser.droppedLinkHandler = this._defaultDropLinkHandler;
       browser.loadURI = URILoadingWrapper.loadURI.bind(
         URILoadingWrapper,
         browser
@@ -2195,7 +2284,7 @@
     }
 
     _setTabLabel(aTab, aLabel, { beforeTabOpen, isContentTitle, isURL } = {}) {
-      if (!aLabel || aLabel.includes("about:reader?")) {
+      if (!aLabel || (isURL && /^about:reader\?url=/.test(aLabel))) {
         return false;
       }
 
@@ -2459,7 +2548,6 @@
       
       listener?.destroy();
 
-      let oldDroppedLinkHandler = aBrowser.droppedLinkHandler;
       let oldUserTypedValue = aBrowser.userTypedValue;
       let hadStartedLoad = aBrowser.didStartLoadSinceLastUserTyping();
 
@@ -2490,8 +2578,6 @@
       if (hadStartedLoad) {
         aBrowser.urlbarChangeTracker.startedLoad();
       }
-
-      aBrowser.droppedLinkHandler = oldDroppedLinkHandler;
 
       
       
@@ -2875,7 +2961,7 @@
       this._tabListeners.set(aTab, tabListener);
       this._tabFilters.set(aTab, filter);
 
-      browser.droppedLinkHandler = handleDroppedLink;
+      browser.droppedLinkHandler = this._defaultDropLinkHandler;
       browser.loadURI = URILoadingWrapper.loadURI.bind(
         URILoadingWrapper,
         browser
@@ -6351,7 +6437,7 @@
         ourBrowser.isDistinctProductPageVisit = true;
       }
 
-      SitePermissions.copyTemporaryPermissions(otherBrowser, ourBrowser);
+      let srcBrowserId = otherBrowser.browserId;
 
       
       
@@ -6388,6 +6474,12 @@
 
         this._swapBrowserDocShells(aOurTab, otherBrowser, stateFlags);
       }
+
+      SitePermissions.copyTemporaryPermissions(
+        srcBrowserId,
+        otherBrowser,
+        ourBrowser
+      );
 
       
       if (otherBrowser.registeredOpenURI) {
@@ -8842,7 +8934,6 @@
         
         oldListener.destroy();
 
-        let oldDroppedLinkHandler = browser.droppedLinkHandler;
         let oldUserTypedValue = browser.userTypedValue;
         let hadStartedLoad = browser.didStartLoadSinceLastUserTyping();
 
@@ -8851,8 +8942,6 @@
           if (hadStartedLoad) {
             browser.urlbarChangeTracker.startedLoad();
           }
-
-          browser.droppedLinkHandler = oldDroppedLinkHandler;
 
           
           
