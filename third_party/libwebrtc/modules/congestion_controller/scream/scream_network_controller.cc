@@ -17,6 +17,7 @@
 #include "api/transport/network_control.h"
 #include "api/transport/network_types.h"
 #include "api/units/data_rate.h"
+#include "api/units/data_size.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
 #include "modules/congestion_controller/scream/scream_v2.h"
@@ -120,9 +121,8 @@ NetworkControlUpdate ScreamNetworkController::OnRoundTripTimeUpdate(
 
 NetworkControlUpdate ScreamNetworkController::OnSentPacket(SentPacket msg) {
   scream_->OnPacketSent(msg.data_in_flight);
-  if (msg.data_in_flight > scream_->max_data_in_flight()) {
-    RTC_LOG(LS_VERBOSE) << " Send window full:" << msg.data_in_flight << " > "
-                        << scream_->max_data_in_flight();
+  if (msg.data_in_flight > scream_->max_data_in_flight() ||
+      scream_->delay_based_congestion_control().IsQueueDelayDetected()) {
     return CreateUpdate(msg.send_time);
   }
   return NetworkControlUpdate();
@@ -190,18 +190,17 @@ NetworkControlUpdate ScreamNetworkController::CreateUpdate(Timestamp now) {
 }
 
 std::optional<PacerConfig> ScreamNetworkController::MaybeCreatePacerConfig() {
-  
-  
-  constexpr TimeDelta kReducedPacingWindow = TimeDelta::Millis(20);
-  
-  
-  constexpr double kL4sAlphaThreshold = 0.01;
-
   DataRate max_needed_rate =
       streams_config_.max_total_allocated_bitrate.value_or(DataRate::Zero());
-
   DataRate padding_rate = DataRate::Zero();
-  TimeDelta pacing_window = current_pacing_window_;
+
+  
+  
+  TimeDelta pacing_window =
+      (scream_->delay_based_congestion_control().IsQueueDelayDetected() ||
+       scream_->l4s_alpha() > 0.001)
+          ? TimeDelta::Millis(10)
+          : default_pacing_window_;
   DataRate target_rate = scream_->target_rate();
 
   Timestamp now = env_.clock().CurrentTime();
@@ -221,21 +220,16 @@ std::optional<PacerConfig> ScreamNetworkController::MaybeCreatePacerConfig() {
     }
   }
 
-  if (current_pacing_window_ == default_pacing_window_ &&
-      scream_->target_rate() < max_needed_rate &&
-      scream_->l4s_alpha() > kL4sAlphaThreshold) {
-    
-    
-    
-    pacing_window = std::min(default_pacing_window_, kReducedPacingWindow);
-  }
   DataRate pacing_rate = scream_->pacing_rate();
   if (padding_rate != reported_padding_rate_ ||
       pacing_rate != reported_pacing_rate_ ||
       current_pacing_window_ != pacing_window) {
+    RTC_LOG_IF(LS_VERBOSE, current_pacing_window_ != pacing_window)
+        << "Pacing window changed: " << pacing_window;
     reported_padding_rate_ = padding_rate;
     reported_pacing_rate_ = pacing_rate;
     current_pacing_window_ = pacing_window;
+
     return PacerConfig::Create(now, pacing_rate, padding_rate,
                                current_pacing_window_);
   }

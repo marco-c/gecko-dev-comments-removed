@@ -40,13 +40,7 @@ class DelayBasedCongestionControl {
   }
 
   
-  
-  
   bool IsQueueDelayDetected() const;
-
-  
-  
-  bool ShouldReduceReferenceWindow() const;
 
   DataSize UpdateReferenceWindow(DataSize rew_window,
                                  double ref_window_mss_ratio) const;
@@ -65,9 +59,9 @@ class DelayBasedCongestionControl {
   void ResetQueueDelay();
 
   double scale_increase() const {
-    return std::clamp(1 - queue_delay_avg_ / (params_.queue_delay_target.Get() *
-                                              params_.queue_delay_threshold),
-                      0.1, 1.0);
+    return std::clamp(
+        1 - queue_delay_avg_ / params_.queue_delay_first_reaction.Get(), 0.1,
+        1.0);
   }
 
   TimeDelta queue_delay() const { return queue_delay_avg_; }

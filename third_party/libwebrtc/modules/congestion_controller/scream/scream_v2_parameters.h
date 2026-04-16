@@ -85,15 +85,12 @@ struct ScreamV2Parameters {
   
   
   
-  FieldTrialParameter<TimeDelta> queue_delay_target;
-
+  FieldTrialParameter<TimeDelta> queue_delay_first_reaction;
   
   
-  FieldTrialParameter<double> queue_delay_increased_threshold;
-
   
   
-  FieldTrialParameter<double> queue_delay_threshold;
+  FieldTrialParameter<TimeDelta> queue_delay_max_reaction;
 
   
   

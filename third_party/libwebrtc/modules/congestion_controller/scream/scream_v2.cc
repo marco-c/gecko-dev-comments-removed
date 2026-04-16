@@ -132,8 +132,7 @@ void ScreamV2::UpdateRefWindow(const TransportPacketsFeedback& msg) {
   bool is_ce = msg.HasPacketWithEcnCe();
   bool is_loss = HasLostPackets(msg);
   bool is_virtual_ce = false;
-  if (delay_based_congestion_control_.ShouldReduceReferenceWindow()) {
-    
+  if (delay_based_congestion_control_.IsQueueDelayDetected()) {
     is_virtual_ce = true;
   }
 
