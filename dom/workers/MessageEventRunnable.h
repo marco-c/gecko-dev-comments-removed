@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_workers_MessageEventRunnable_h
 #define mozilla_dom_workers_MessageEventRunnable_h
 
@@ -23,7 +21,8 @@ class MessageEventRunnable final : public WorkerDebuggeeRunnable,
   explicit MessageEventRunnable(WorkerPrivate* aWorkerPrivate);
 
   bool DispatchDOMEvent(JSContext* aCx, WorkerPrivate* aWorkerPrivate,
-                        DOMEventTargetHelper* aTarget, bool aIsMainThread);
+                        RefPtr<DOMEventTargetHelper> aTarget,
+                        bool aIsMainThread);
 
  private:
   bool WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override;
@@ -37,7 +36,8 @@ class MessageEventToParentRunnable final : public WorkerParentDebuggeeRunnable,
   explicit MessageEventToParentRunnable(WorkerPrivate* aWorkerPrivate);
 
   bool DispatchDOMEvent(JSContext* aCx, WorkerPrivate* aWorkerPrivate,
-                        DOMEventTargetHelper* aTarget, bool aIsMainThread);
+                        RefPtr<DOMEventTargetHelper> aTarget,
+                        bool aIsMainThread);
 
  private:
   bool WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override;
