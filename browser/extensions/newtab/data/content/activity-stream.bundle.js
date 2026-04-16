@@ -10146,15 +10146,7 @@ const selectLayoutRender = ({ state = {}, prefs = {} }) => {
   function getMaxTiles(responsiveLayouts) {
     return responsiveLayouts
       .flatMap(responsiveLayout => responsiveLayout)
-      .reduce((acc, t) => {
-        acc[t.columnCount] = t.tiles.length;
-
-        
-        if (!acc.maxTile || t.tiles.length > acc.maxTile) {
-          acc.maxTile = t.tiles.length;
-        }
-        return acc;
-      }, {});
+      .reduce((max, t) => Math.max(max, t.tiles.length), 0);
   }
 
   const placeholderComponent = component => {
@@ -10366,7 +10358,7 @@ const selectLayoutRender = ({ state = {}, prefs = {} }) => {
       let currentPosition = 0;
       data.sections.forEach(section => {
         
-        const { maxTile } = getMaxTiles(section?.layout?.responsiveLayouts);
+        const maxTile = getMaxTiles(section?.layout?.responsiveLayouts);
         for (let i = 0; i < maxTile; i++) {
           if (section.data[i]) {
             section.data[i] = {
@@ -11036,6 +11028,9 @@ const CardSections_PREF_NOVA_ENABLED = "nova.enabled";
 
 
 const CURATED_RECOMMENDATIONS_FEED_URL = "https://merino.services.mozilla.com/api/v1/curated-recommendations";
+
+
+const DEFAULT_MAX_TILES = 12;
 function getLayoutData(responsiveLayouts, index) {
   let layoutData = {
     classNames: [],
@@ -11073,15 +11068,7 @@ function getLayoutData(responsiveLayouts, index) {
 
 
 function getMaxTiles(responsiveLayouts) {
-  return responsiveLayouts.flatMap(responsiveLayout => responsiveLayout).reduce((acc, t) => {
-    acc[t.columnCount] = t.tiles.length;
-
-    
-    if (!acc.maxTile || t.tiles.length > acc.maxTile) {
-      acc.maxTile = t.tiles.length;
-    }
-    return acc;
-  }, {});
+  return responsiveLayouts.flatMap(responsiveLayout => responsiveLayout).reduce((max, t) => Math.max(max, t.tiles.length), 0) || DEFAULT_MAX_TILES;
 }
 
 
@@ -11109,7 +11096,7 @@ function CardSection({
   ctaButtonVariant,
   ctaButtonSponsors,
   anySectionsFollowed,
-  placeholder,
+  spocsLoading,
   activeColumnLayout,
   syncLayoutOnFocus,
   gridRef
@@ -11269,13 +11256,9 @@ function CardSection({
       }
     }, "ActivityStream:Content"));
   }, [dispatch, sectionPersonalization, sectionKey, sectionPosition, title]);
-  let {
-    maxTile
-  } = getMaxTiles(responsiveLayouts);
-  if (placeholder) {
-    
-    
-    maxTile = 12;
+  let maxTile = DEFAULT_MAX_TILES;
+  if (!spocsLoading) {
+    maxTile = getMaxTiles(responsiveLayouts);
   }
   const shouldShowBriefingCard = sectionKey === dailyBriefSectionId && dailyBriefEnabled;
   const getBriefingData = () => {
@@ -11344,7 +11327,7 @@ function CardSection({
       
       
       
-      const isPlaceholder = !rec || rec.placeholder || placeholder || rec.flight_id && !spocsStartupCacheEnabled && isForStartupCache.DiscoveryStream;
+      const isPlaceholder = !rec || rec.placeholder || spocsLoading || rec.flight_id && !spocsStartupCacheEnabled && isForStartupCache.DiscoveryStream;
       if (isPlaceholder) {
         cards.push(external_React_default().createElement(PlaceholderDSCard, {
           key: `dscard-${currentIndex}`
@@ -11512,7 +11495,7 @@ function CardSections({
   type,
   ctaButtonVariant,
   ctaButtonSponsors,
-  placeholder
+  spocsLoading
 }) {
   const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
   const {
@@ -11560,7 +11543,7 @@ function CardSections({
   
   const anySectionsFollowed = sectionPersonalization && Object.values(sectionPersonalization).some(section => section?.isFollowed);
   let sectionsData = data.sections;
-  if (placeholder) {
+  if (spocsLoading) {
     
     sectionsData = [{
       ...sectionsData[0],
@@ -11593,7 +11576,7 @@ function CardSections({
     ctaButtonVariant: ctaButtonVariant,
     ctaButtonSponsors: ctaButtonSponsors,
     anySectionsFollowed: anySectionsFollowed,
-    placeholder: placeholder,
+    spocsLoading: spocsLoading,
     activeColumnLayout: activeColumnLayout,
     syncLayoutOnFocus: syncLayoutOnFocus,
     gridRef: sectionPosition === 0 ? gridRef : undefined
@@ -14902,7 +14885,7 @@ class _DiscoveryStreamBase extends (external_React_default()).PureComponent {
               type: component.type,
               ctaButtonSponsors: component.properties.ctaButtonSponsors,
               ctaButtonVariant: component.properties.ctaButtonVariant,
-              placeholder: this.props.placeholder
+              spocsLoading: this.props.spocsLoading
             });
           }
           return external_React_default().createElement(CardGrid, {
@@ -14921,7 +14904,7 @@ class _DiscoveryStreamBase extends (external_React_default()).PureComponent {
             ctaButtonVariant: component.properties.ctaButtonVariant,
             hideDescriptions: this.props.DiscoveryStream.hideDescriptions,
             spocPositions: component.spocs?.positions,
-            placeholder: this.props.placeholder
+            placeholder: this.props.spocsLoading
           });
         }
       case "HorizontalRule":
@@ -18975,7 +18958,7 @@ class BaseContent extends (external_React_default()).PureComponent {
         className: "borderless-error"
       }, external_React_default().createElement(DiscoveryStreamBase, {
         locale: props.App.locale,
-        placeholder: this.isSpocsOnDemandExpired
+        spocsLoading: this.isSpocsOnDemandExpired
       }))), external_React_default().createElement("div", {
         className: "sidebar-inline-end"
       }, showWeatherWidgetInSidebar && external_React_default().createElement(ErrorBoundary, null, external_React_default().createElement(Weather_Weather, {
@@ -19056,7 +19039,7 @@ class BaseContent extends (external_React_default()).PureComponent {
       className: "borderless-error"
     }, external_React_default().createElement(DiscoveryStreamBase, {
       locale: props.App.locale,
-      placeholder: this.isSpocsOnDemandExpired
+      spocsLoading: this.isSpocsOnDemandExpired
     })) : external_React_default().createElement(Sections_Sections, null)), external_React_default().createElement(ConfirmDialog, null), wallpapersEnabled && this.renderWallpaperAttribution()), external_React_default().createElement("aside", null, this.props.Notifications?.showNotifications && external_React_default().createElement(ErrorBoundary, null, external_React_default().createElement(Notifications_Notifications, {
       dispatch: this.props.dispatch
     }))), mayShowTopicSelection && pocketEnabled && external_React_default().createElement(TopicSelection, {
