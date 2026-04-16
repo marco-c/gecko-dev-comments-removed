@@ -592,85 +592,106 @@ static std::pair<Maybe<nscoord>, Maybe<nscoord>> GetCandidateInLastTargets(
   
   
   
+
+  
+  
+  
+  
+  
+  AutoTArray<const ScrollSnapInfo::SnapTarget*, 2> inlineSet, blockSet;
   const ScrollSnapInfo::SnapTarget* focusedTarget = nullptr;
-  Maybe<nscoord> x, y;
+
   aSnapInfo.ForEachValidTargetFor(
       aCurrentPosition, [&](const SnapTarget& aTarget) -> bool {
-        if (aTarget.mSnapPoint.mX && aSnapInfo.mScrollSnapStrictnessX !=
-                                         StyleScrollSnapStrictness::None) {
-          if (aLastSnapTargetIds->mIdsOnX.Contains(aTarget.mTargetId)) {
-            if (targetIdForFocusedContent == aTarget.mTargetId) {
-              
-              
-              
-              if ((y && !aTarget.mSnapArea.Intersects(
-                            nsRect(nsPoint(*aTarget.mSnapPoint.mX, *y),
-                                   aSnapInfo.mSnapportSize)))) {
-                y.reset();
-              }
-
-              focusedTarget = &aTarget;
-              
-              x = aTarget.mSnapPoint.mX;
-            }
-
-            if (!x) {
-              
-              
-              
-              
-              
-              
-              if (!y || (y && aTarget.mSnapArea.Intersects(
-                                  nsRect(nsPoint(*aTarget.mSnapPoint.mX, *y),
-                                         aSnapInfo.mSnapportSize)))) {
-                x = aTarget.mSnapPoint.mX;
-              }
-            }
-          }
+        if (aTarget.mSnapPoint.mX &&
+            aSnapInfo.mScrollSnapStrictnessX !=
+                StyleScrollSnapStrictness::None &&
+            aLastSnapTargetIds->mIdsOnX.Contains(aTarget.mTargetId)) {
+          inlineSet.AppendElement(&aTarget);
         }
-        if (aTarget.mSnapPoint.mY && aSnapInfo.mScrollSnapStrictnessY !=
-                                         StyleScrollSnapStrictness::None) {
-          if (aLastSnapTargetIds->mIdsOnY.Contains(aTarget.mTargetId)) {
-            if (targetIdForFocusedContent == aTarget.mTargetId) {
-              NS_ASSERTION(
-                  !focusedTarget || focusedTarget == &aTarget,
-                  "If the focused target has been found on X axis, the "
-                  "target should be same");
-              
-              
-              
-              if (!focusedTarget &&
-                  (x && !aTarget.mSnapArea.Intersects(
-                            nsRect(nsPoint(*x, *aTarget.mSnapPoint.mY),
-                                   aSnapInfo.mSnapportSize)))) {
-                x.reset();
-              }
-
-              focusedTarget = &aTarget;
-              y = aTarget.mSnapPoint.mY;
-            }
-
-            if (!y) {
-              if (!x || (x && aTarget.mSnapArea.Intersects(
-                                  nsRect(nsPoint(*x, *aTarget.mSnapPoint.mY),
-                                         aSnapInfo.mSnapportSize)))) {
-                y = aTarget.mSnapPoint.mY;
-              }
-            }
-          }
+        if (aTarget.mSnapPoint.mY &&
+            aSnapInfo.mScrollSnapStrictnessY !=
+                StyleScrollSnapStrictness::None &&
+            aLastSnapTargetIds->mIdsOnY.Contains(aTarget.mTargetId)) {
+          blockSet.AppendElement(&aTarget);
         }
-
-        
-        if (x && y &&
-            
-            
-            (targetIdForFocusedContent == ScrollSnapTargetId::None ||
-             focusedTarget)) {
-          return false;
+        if (aLastSnapTargetIds->Contains(aTarget.mTargetId) &&
+            aTarget.mTargetId == targetIdForFocusedContent) {
+          focusedTarget = &aTarget;
         }
         return true;
       });
+
+  
+  if (focusedTarget) {
+    if (focusedTarget->mSnapPoint.mX &&
+        aSnapInfo.mScrollSnapStrictnessX != StyleScrollSnapStrictness::None) {
+      inlineSet = {focusedTarget};
+    }
+    if (focusedTarget->mSnapPoint.mY &&
+        aSnapInfo.mScrollSnapStrictnessY != StyleScrollSnapStrictness::None) {
+      blockSet = {focusedTarget};
+    }
+  }
+
+  
+  
+  
+  AutoTArray<const ScrollSnapInfo::SnapTarget*, 2> intersection;
+  for (const auto* inlineTarget : inlineSet) {
+    for (const auto* blockTarget : blockSet) {
+      if (inlineTarget->mTargetId == blockTarget->mTargetId) {
+        intersection.AppendElement(inlineTarget);
+        break;
+      }
+    }
+  }
+  const auto& effective = !intersection.IsEmpty() ? intersection
+                          : !blockSet.IsEmpty()   ? blockSet
+                                                  : inlineSet;
+
+  
+  
+  
+  Maybe<nscoord> x, y;
+
+  auto pickFromInline = [&]() {
+    for (const auto* target : effective) {
+      
+      if (!target->mSnapPoint.mX) {
+        continue;
+      }
+      if (!y ||
+          target->mSnapArea.Intersects(nsRect(
+              nsPoint(*target->mSnapPoint.mX, *y), aSnapInfo.mSnapportSize))) {
+        x = target->mSnapPoint.mX;
+        return;
+      }
+    }
+  };
+
+  auto pickFromBlock = [&]() {
+    for (const auto* target : effective) {
+      
+      if (!target->mSnapPoint.mY) {
+        continue;
+      }
+      if (!x ||
+          target->mSnapArea.Intersects(nsRect(
+              nsPoint(*x, *target->mSnapPoint.mY), aSnapInfo.mSnapportSize))) {
+        y = target->mSnapPoint.mY;
+        return;
+      }
+    }
+  };
+
+  
+  if (aSnapInfo.mScrollSnapStrictnessX != StyleScrollSnapStrictness::None) {
+    pickFromInline();
+  }
+  if (aSnapInfo.mScrollSnapStrictnessY != StyleScrollSnapStrictness::None) {
+    pickFromBlock();
+  }
 
   return {x, y};
 }
