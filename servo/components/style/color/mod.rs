@@ -218,10 +218,25 @@ pub struct AbsoluteColor {
 
 impl PartialEq for AbsoluteColor {
     
-    
-    
-    
     fn eq(&self, other: &Self) -> bool {
+        let none_flags = ColorFlags::C0_IS_NONE
+            | ColorFlags::C1_IS_NONE
+            | ColorFlags::C2_IS_NONE
+            | ColorFlags::ALPHA_IS_NONE;
+        
+        
+        if self.color_space == other.color_space {
+            return self.components == other.components
+                && self.alpha == other.alpha
+                && (self.flags & none_flags) == (other.flags & none_flags);
+        }
+        
+        if self.flags.union(other.flags).intersects(none_flags) {
+            return false;
+        }
+        
+        
+        
         const EPSILON: f32 = 0.0001;
         let a = self.to_color_space(ColorSpace::Oklab);
         let b = other.to_color_space(ColorSpace::Oklab);
