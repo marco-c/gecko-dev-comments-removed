@@ -34,16 +34,17 @@ let $1 = instantiate(`(module
 )`);
 
 
-assert_invalid(
-  () => instantiate(`(module (tag (result i32)))`),
-  `non-empty tag result type`,
-);
 
 
-assert_invalid(
-  () => instantiate(`(module (import "" "" (tag (result i32))))`),
-  `non-empty tag result type`,
-);
+
+
+
+
+
+
+
+
+
 
 
 let $2 = instantiate(`(module

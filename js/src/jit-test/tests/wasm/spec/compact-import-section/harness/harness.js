@@ -243,6 +243,12 @@ function assert_trap(thunk, message) {
   }
 }
 
+function assert_suspension(thunk, message) {
+  
+  
+  assert_trap(thunk, message);
+}
+
 let StackOverflow;
 try {
   (function f() {
