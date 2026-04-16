@@ -1810,6 +1810,17 @@ static bool SuppressDeletedProperty(JSContext* cx, NativeIterator* ni,
 
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     if (obj->hasStaticPrototype()) {
       JSObject* proto = obj->staticPrototype();
       if (proto) {
