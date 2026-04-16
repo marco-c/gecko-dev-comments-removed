@@ -823,12 +823,10 @@ pub enum PrimitiveInstanceKind {
     RadialGradient {
         
         data_handle: RadialGradientDataHandle,
-        visible_tiles_range: GradientTileRange,
     },
     ConicGradient {
         
         data_handle: ConicGradientDataHandle,
-        visible_tiles_range: GradientTileRange,
     },
     
     BackdropCapture {
