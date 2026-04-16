@@ -61,6 +61,7 @@ class SendStatisticsProxy : public VideoStreamEncoderObserver,
   
   
   static const int kMinRequiredMetricsSamples = 200;
+  static const int kMinRequiredPsnrSamples = 5;
 
   SendStatisticsProxy(Clock* clock,
                       const VideoSendStream::Config& config,
@@ -168,6 +169,17 @@ class SendStatisticsProxy : public VideoStreamEncoderObserver,
     int64_t sum;
     int64_t num_samples;
   };
+  class FloatSampleCounter {
+   public:
+    FloatSampleCounter() : sum_(0), num_samples_(0) {}
+    ~FloatSampleCounter() {}
+    void Add(float sample);
+    std::optional<float> Avg(int64_t min_required_samples) const;
+
+   private:
+    double sum_;
+    int64_t num_samples_;
+  };
   struct TargetRateUpdates {
     TargetRateUpdates()
         : pause_resume_events(0), last_paused_or_resumed(false), last_ms(-1) {}
@@ -205,6 +217,11 @@ class SendStatisticsProxy : public VideoStreamEncoderObserver,
   struct AdaptChanges {
     int down = 0;
     int up = 0;
+  };
+  struct PsnrCounters {
+    FloatSampleCounter psnr_y;
+    FloatSampleCounter psnr_u;
+    FloatSampleCounter psnr_v;
   };
 
   
@@ -360,6 +377,9 @@ class SendStatisticsProxy : public VideoStreamEncoderObserver,
                             int simulcast_idx);
     void RemoveOld(int64_t now_ms);
 
+    void LogPsnrValues(const PsnrCounters& psnr_counters,
+                       std::optional<int> spatial_id);
+
     const std::string uma_prefix_;
     Clock* const clock_;
     SampleCounter input_width_counter_;
@@ -402,6 +422,8 @@ class SendStatisticsProxy : public VideoStreamEncoderObserver,
 
     std::map<int, QpCounters>
         qp_counters_;  
+    std::map<int, PsnrCounters>
+        psnr_counters_;  
   };
 
   std::unique_ptr<UmaSamplesContainer> uma_container_ RTC_GUARDED_BY(mutex_);
