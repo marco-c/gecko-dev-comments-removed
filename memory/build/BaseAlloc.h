@@ -91,6 +91,11 @@ class BaseAlloc {
   BaseAllocCell* oversize_alloc(base_alloc_size_t aSize) MOZ_REQUIRES(mMutex);
 
   
+  
+  BaseAllocCell* decommitted_alloc(base_alloc_size_t aSize)
+      MOZ_REQUIRES(mMutex);
+
+  
   void Unlink(BaseAllocCell* cell) MOZ_REQUIRES(mMutex);
 
   
@@ -102,12 +107,16 @@ class BaseAlloc {
       MOZ_GUARDED_BY(mMutex);
 
   
+  RedBlackTree<BaseAllocCell, BaseAllocCellRBTrait> mFreeListDecommitted
+      MOZ_GUARDED_BY(mMutex);
+
+  
   
   
   BaseAllocCell* chunk_alloc(base_alloc_size_t aSize) MOZ_REQUIRES(mMutex);
 
-  void MaybeTrim(BaseAllocCell* aCell, base_alloc_size_t aSizeRequest)
-      MOZ_REQUIRES(mMutex);
+  void MaybeTrim(BaseAllocCell* aCell, base_alloc_size_t aSizeRequest,
+                 bool aDecommit = false) MOZ_REQUIRES(mMutex);
 
   Stats mStats MOZ_GUARDED_BY(mMutex);
 

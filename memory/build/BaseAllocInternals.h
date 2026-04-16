@@ -6,6 +6,7 @@
 #define BASEALLOCINTERNALS_H
 
 #include "mozilla/DoublyLinkedList.h"
+#include "mozilla/Maybe.h"
 
 #include "BaseAlloc.h"
 
@@ -97,6 +98,7 @@ class BaseAllocCell {
     mozilla::DoublyLinkedListElement<BaseAllocCell> mListElem;
     RedBlackTreeNode<BaseAllocCell> mTreeElem;
   };
+  bool mCommitted = true;
 
   friend struct mozilla::GetDoublyLinkedListElement<BaseAllocCell>;
   friend struct BaseAllocCellRBTrait;
@@ -131,11 +133,13 @@ class BaseAllocCell {
   void SetSize(base_alloc_size_t aNewSize);
 
   bool Allocated() { return LeftMetadata()->mRightAllocated; }
+  bool Committed() { return mCommitted; }
 
   void* Ptr() { return this; }
 
   void SetAllocated() {
     MOZ_ASSERT(!Allocated());
+    MOZ_ASSERT(Committed());
     LeftMetadata()->mRightAllocated = true;
   }
   void SetFreed() {
@@ -164,6 +168,23 @@ class BaseAllocCell {
   
   
   BaseAllocCell* Split(uintptr_t aNewSize);
+
+  
+  
+  struct CommitResult {
+    size_t mBytesCommitted = 0;
+    BaseAllocCell* mNewCell = nullptr;
+
+    CommitResult(size_t aBytesCommitted, BaseAllocCell* aNewCell)
+        : mBytesCommitted(aBytesCommitted), mNewCell(aNewCell) {}
+  };
+
+  mozilla::Maybe<CommitResult> Commit(base_alloc_size_t aSizeRequest);
+
+  
+  
+  
+  size_t Decommit();
 
   
   BaseAllocCell(const BaseAllocCell&) = delete;
