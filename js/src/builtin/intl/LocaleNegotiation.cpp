@@ -861,34 +861,6 @@ static JSLinearString* DefaultCalendar(JSContext* cx, LanguageId locale) {
 
 
 
-static JSLinearString* DefaultCollationCaseFirst(JSContext* cx,
-                                                 LanguageId locale) {
-  
-  
-  
-  mozilla::Maybe<LanguageId> actualLocale{};
-  if (!BestAvailableLocale(cx, AvailableLocaleKind::Collator, locale,
-                           &actualLocale)) {
-    return nullptr;
-  }
-  MOZ_ASSERT(actualLocale);
-
-  auto& sharedIntlData = cx->runtime()->sharedIntlData.ref();
-
-  bool isUpperFirst;
-  if (!sharedIntlData.isUpperCaseFirst(cx, *actualLocale, &isUpperFirst)) {
-    return nullptr;
-  }
-
-  if (isUpperFirst) {
-    return cx->names().upper;
-  }
-  return cx->names().false_;
-}
-
-
-
-
 static JSLinearString* DefaultNumberingSystem(JSContext* cx,
                                               LanguageId locale) {
   auto numberingSystem =
@@ -968,21 +940,12 @@ static bool DefaultValue(JSContext* cx, LocaleData localeData,
     }
     case UnicodeExtensionKey::CollationCaseFirst: {
       
-      if (localeData == LocaleData::CollatorSearch) {
-        result.set(cx->names().false_);
-        return true;
-      }
-
-      auto* kf = DefaultCollationCaseFirst(cx, locale);
-      if (!kf) {
-        return false;
-      }
-      result.set(kf);
+      result.set(nullptr);
       return true;
     }
     case UnicodeExtensionKey::CollationNumeric: {
       
-      result.set(cx->names().false_);
+      result.set(nullptr);
       return true;
     }
     case UnicodeExtensionKey::HourCycle: {
