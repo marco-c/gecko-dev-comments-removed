@@ -56,6 +56,10 @@ class VideoCodecUnitTest : public ::testing::Test {
         const EncodedImage& frame,
         const CodecSpecificInfo* codec_specific_info) override;
 
+    void OnFrameDropped(uint32_t ,
+                        int ,
+                        bool ) override {}
+
    private:
     VideoCodecUnitTest* const test_;
   };

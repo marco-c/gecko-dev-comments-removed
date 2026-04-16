@@ -1000,6 +1000,10 @@ TEST_P(TestVp8ImplWithMaxFrameDropTrial, EnforcesMaxFrameDropInterval) {
       return Result(Result::Error::OK);
     }
 
+    void OnFrameDropped(uint32_t ,
+                        int ,
+                        bool ) override {}
+
    private:
     std::vector<TimeDelta> callback_deltas_;
     Timestamp last_callback_;

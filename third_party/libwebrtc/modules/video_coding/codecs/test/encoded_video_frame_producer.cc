@@ -42,6 +42,10 @@ class EncoderCallback : public EncodedImageCallback {
     return Result(Result::Error::OK);
   }
 
+  void OnFrameDropped(uint32_t ,
+                      int ,
+                      bool ) override {}
+
   std::vector<EncodedVideoFrameProducer::EncodedFrame>& output_frames_;
 };
 

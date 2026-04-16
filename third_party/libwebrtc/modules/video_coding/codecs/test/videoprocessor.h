@@ -120,6 +120,10 @@ class VideoProcessor {
       return Result(Result::OK, 0);
     }
 
+    void OnFrameDropped(uint32_t ,
+                        int ,
+                        bool ) override {}
+
    private:
     VideoProcessor* const video_processor_;
     TaskQueueBase* const task_queue_;

@@ -95,6 +95,10 @@ class IvfFileWriterEncodedCallback : public EncodedImageCallback {
     return Result(Result::Error::OK);
   }
 
+  void OnFrameDropped(uint32_t ,
+                      int ,
+                      bool ) override {}
+
   bool WaitForExpectedFramesReceived(TimeDelta timeout) {
     return expected_frames_count_received_.Wait(timeout);
   }

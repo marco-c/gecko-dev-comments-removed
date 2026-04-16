@@ -124,6 +124,11 @@ class SimulcastTestFixtureImpl::TestEncodedImageCallback
     }
     return Result(Result::OK, encoded_image.RtpTimestamp());
   }
+
+  void OnFrameDropped(uint32_t ,
+                      int ,
+                      bool ) override {}
+
   
   void GetLastEncodedFrameInfo(int* temporal_layer,
                                bool* layer_sync,
