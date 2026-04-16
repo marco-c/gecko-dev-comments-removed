@@ -242,9 +242,12 @@ newtab-custom-row-selector2 =
             [one] { $num } row
            *[other] { $num } rows
         }
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be having a description under "Recommended stories" anymore
 newtab-custom-stories-toggle =
   .label = Recommended stories
   .description = Exceptional content curated by the { -brand-product-name } family
+newtab-recommended-stories-toggle =
+  .label = Recommended stories
 newtab-custom-stories-personalized-toggle =
   .label = Stories
 newtab-custom-stories-personalized-checkbox-label = Personalized stories based on your activity
@@ -565,6 +568,10 @@ newtab-toast-widgets-hidden =
 
 newtab-widget-section-title = Widgets
 newtab-widget-menu-hide = Hide widget
+newtab-widget-menu-change-size = Change size
+newtab-widget-size-small = Small
+newtab-widget-size-medium = Medium
+newtab-widget-size-large = Large
 # Tooltip for hide all widgets button
 newtab-widget-section-hide-all-button =
     .title = Hide widgets
