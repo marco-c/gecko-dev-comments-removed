@@ -267,22 +267,8 @@ fn create_device_info(devid: AudioDeviceID, devtype: DeviceType) -> Option<devic
 }
 
 fn create_stream_description(stream_params: &StreamParams) -> Result<AudioStreamBasicDescription> {
-    debug_assert!(stream_params.rate() > 0);
-    debug_assert!(stream_params.channels() > 0);
-    if stream_params.rate() == 0 {
-        cubeb_log!(
-            "create_stream_description: invalid rate 0 (channels={})",
-            stream_params.channels()
-        );
-        return Err(Error::Error);
-    }
-    if stream_params.channels() == 0 {
-        cubeb_log!(
-            "create_stream_description: invalid channel count 0 (rate={})",
-            stream_params.rate()
-        );
-        return Err(Error::Error);
-    }
+    assert!(stream_params.rate() > 0);
+    assert!(stream_params.channels() > 0);
 
     let mut desc = AudioStreamBasicDescription::default();
 
@@ -700,19 +686,6 @@ extern "C" fn audiounit_input_callback(
         });
     }
 
-    
-    
-    
-    #[cfg(feature = "tsan-annotations")]
-    {
-        extern "C" {
-            fn __tsan_release(addr: *mut c_void);
-        }
-        unsafe {
-            __tsan_release(stm.core_stream_data.input_unit as *mut c_void);
-        }
-    }
-
     match handle {
         ErrorHandle::Reinit => {
             stm.reinit_async();
@@ -1013,17 +986,6 @@ extern "C" fn audiounit_output_callback(
             output_frames * stm.core_stream_data.output_dev_desc.mChannelsPerFrame,
         );
     }
-
-    #[cfg(feature = "tsan-annotations")]
-    {
-        extern "C" {
-            fn __tsan_release(addr: *mut c_void);
-        }
-        unsafe {
-            __tsan_release(stm.core_stream_data.output_unit as *mut c_void);
-        }
-    }
-
     NO_ERR
 }
 
@@ -1267,18 +1229,6 @@ fn start_audiounit(unit: AudioUnit) -> Result<()> {
 
 fn stop_audiounit(unit: AudioUnit) -> Result<()> {
     let status = audio_output_unit_stop(unit);
-    
-    
-    
-    #[cfg(feature = "tsan-annotations")]
-    {
-        extern "C" {
-            fn __tsan_acquire(addr: *mut c_void);
-        }
-        unsafe {
-            __tsan_acquire(unit as *mut c_void);
-        }
-    }
     if status == NO_ERR {
         Ok(())
     } else {
@@ -3863,16 +3813,6 @@ impl<'ctx> CoreStreamData<'ctx> {
                 input_hw_desc
             );
             
-            if input_hw_desc.mSampleRate <= 0.0 || input_hw_desc.mChannelsPerFrame == 0 {
-                cubeb_log!(
-                    "({:p}) Invalid input hardware description: rate={}, channels={}",
-                    self.stm_ptr,
-                    input_hw_desc.mSampleRate,
-                    input_hw_desc.mChannelsPerFrame
-                );
-                return Err(Error::Error);
-            }
-            
             
             
             
@@ -4081,12 +4021,10 @@ impl<'ctx> CoreStreamData<'ctx> {
             );
 
             
-            if output_hw_desc.mSampleRate <= 0.0 || output_hw_desc.mChannelsPerFrame == 0 {
+            if output_hw_desc.mChannelsPerFrame == 0 {
                 cubeb_log!(
-                    "({:p}) Invalid output hardware description: rate={}, channels={}",
-                    self.stm_ptr,
-                    output_hw_desc.mSampleRate,
-                    output_hw_desc.mChannelsPerFrame
+                    "({:p}) Output hardware description channel count is zero",
+                    self.stm_ptr
                 );
                 return Err(Error::Error);
             }
