@@ -51,12 +51,17 @@ class FeatureExtractor {
   
   virtual void PrepareModelInput(ArrayView<float> model_input,
                                  ModelInputEnum input_type) = 0;
+
+  
+  virtual void Reset() = 0;
 };
 
 class TimeDomainFeatureExtractor : public FeatureExtractor {
  public:
   explicit TimeDomainFeatureExtractor(int step_size);
   ~TimeDomainFeatureExtractor() override;
+
+  void Reset() override;
 
   bool ReadyForInference() const override;
 
@@ -76,6 +81,8 @@ class FrequencyDomainFeatureExtractor : public FeatureExtractor {
  public:
   explicit FrequencyDomainFeatureExtractor(int step_size);
   ~FrequencyDomainFeatureExtractor() override;
+
+  void Reset() override;
 
   bool ReadyForInference() const override;
 

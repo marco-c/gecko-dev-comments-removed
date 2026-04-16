@@ -56,6 +56,9 @@ class NeuralResidualEchoEstimator {
 
   
   virtual EchoCanceller3Config GetConfiguration(bool multi_channel) const = 0;
+
+  
+  virtual void Reset() = 0;
 };
 }  
 
