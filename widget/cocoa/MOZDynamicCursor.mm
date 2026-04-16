@@ -8,11 +8,10 @@
 #include "nsObjCExceptions.h"
 #include "nsDirectoryServiceDefs.h"
 #include "nsIFile.h"
-#include <math.h>
 
 static MOZDynamicCursor* gInstance;
 static CGFloat sCurrentCursorScaleFactor = 0.0f;
-MOZ_RUNINIT static nsIWidget::Cursor sCurrentCursor;
+constinit static nsIWidget::Cursor sCurrentCursor;
 static constexpr nsCursor kCustomCursor = eCursorCount;
 
 @interface MOZDynamicCursor (PrivateMethods)

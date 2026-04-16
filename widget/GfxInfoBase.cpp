@@ -643,7 +643,7 @@ inline bool MatchingAllowStatus(int32_t aStatus) {
 inline bool MatchingOperatingSystems(OperatingSystem aBlockedOS,
                                      OperatingSystem aSystemOS) {
   MOZ_ASSERT(aSystemOS != OperatingSystem::Windows &&
-             aSystemOS != OperatingSystem::OSX);
+             aSystemOS != OperatingSystem::MacOS);
 
   
   if (aBlockedOS == OperatingSystem::Unknown) {
@@ -664,7 +664,7 @@ inline bool MatchingOperatingSystems(OperatingSystem aBlockedOS,
 #endif
 
 #if defined(XP_MACOSX)
-  if (aBlockedOS == OperatingSystem::OSX) {
+  if (aBlockedOS == OperatingSystem::MacOS) {
     
     return true;
   }
