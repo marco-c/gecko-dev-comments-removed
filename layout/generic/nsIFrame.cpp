@@ -1365,12 +1365,7 @@ void nsIFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle) {
   }
 
   if (handleStickyChange && !HasAnyStateBits(NS_FRAME_IS_NONDISPLAY) &&
-      !GetPrevInFlow()) {
-    
-    
-    
-    
-    
+      nsLayoutUtils::IsFirstContinuationOrIBSplitSibling(this)) {
     if (auto* ssc = StickyScrollContainer::GetOrCreateForFrame(this)) {
       if (disp->mPosition == StylePositionProperty::Sticky) {
         ssc->AddFrame(this);
