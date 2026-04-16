@@ -274,7 +274,7 @@
 
 
 
-#define PNG_LIBPNG_VER_STRING "1.6.56"
+#define PNG_LIBPNG_VER_STRING "1.6.57"
 #define PNG_HEADER_VERSION_STRING " libpng version " PNG_LIBPNG_VER_STRING "\n"
 
 
@@ -285,7 +285,7 @@
 
 #define PNG_LIBPNG_VER_MAJOR   1
 #define PNG_LIBPNG_VER_MINOR   6
-#define PNG_LIBPNG_VER_RELEASE 56
+#define PNG_LIBPNG_VER_RELEASE 57
 
 
 
@@ -316,7 +316,7 @@
 
 
 
-#define PNG_LIBPNG_VER 10656 /* 1.6.56 */
+#define PNG_LIBPNG_VER 10657 /* 1.6.57 */
 
 
 
@@ -441,7 +441,7 @@ extern "C" {
 
 
 
-typedef char *png_libpng_version_1_6_56;
+typedef char *png_libpng_version_1_6_57;
 
 
 
