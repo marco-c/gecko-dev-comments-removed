@@ -11,17 +11,12 @@ using namespace mozilla::ipc;
 
 namespace mozilla::net {
 
-
-RefPtr<StunAddrsRequestChild> StunAddrsRequestChild::Create(
-    StunAddrsListener* listener) {
-  
-  RefPtr<StunAddrsRequestChild> result(new StunAddrsRequestChild(listener));
-  gNeckoChild->SendPStunAddrsRequestConstructor(result);
-  return result;
-}
-
 StunAddrsRequestChild::StunAddrsRequestChild(StunAddrsListener* listener)
-    : mListener(listener) {}
+    : mListener(listener) {
+  gNeckoChild->SendPStunAddrsRequestConstructor(this);
+  
+  AddIPDLReference();
+}
 
 mozilla::ipc::IPCResult StunAddrsRequestChild::RecvOnMDNSQueryComplete(
     const nsACString& hostname, const Maybe<nsCString>& address) {
@@ -40,6 +35,9 @@ mozilla::ipc::IPCResult StunAddrsRequestChild::RecvOnStunAddrsAvailable(
 }
 
 void StunAddrsRequestChild::Cancel() { mListener = nullptr; }
+
+NS_IMPL_ADDREF(StunAddrsRequestChild)
+NS_IMPL_RELEASE(StunAddrsRequestChild)
 
 NS_IMPL_ADDREF(StunAddrsListener)
 NS_IMPL_RELEASE(StunAddrsListener)
