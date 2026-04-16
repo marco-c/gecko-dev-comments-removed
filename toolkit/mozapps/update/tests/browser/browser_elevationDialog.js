@@ -10,6 +10,12 @@ add_task(async function elevation_dialog() {
 
   
   
+  
+  
+  await initUpdateService();
+
+  
+  
   let { startup } = Services;
   let appStartup = {
     QueryInterface: ChromeUtils.generateQI(["nsIAppStartup"]),
