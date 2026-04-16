@@ -673,6 +673,9 @@ interface nsIXPCComponents_Results {
   NS_ERROR_HARMFULADDON_URI: 0x805d002e;
 
   
+  NS_ERROR_SAVE_LINK_AS_TIMEOUT: 0x805d0020;
+
+  
 
   
   NS_ERROR_DATABASE_CHANGED: 0x805800ca;
@@ -701,6 +704,11 @@ interface nsIXPCComponents_Results {
 
   
   NS_ERROR_DOM_QM_CLIENT_INIT_ORIGIN_UNINITIALIZED: 0x80730001;
+
+  
+
+  
+  NS_ERROR_DOM_INDEXEDDB_NOT_ALLOWED_ERR: 0x80660006;
 }
 
 type nsIXPCComponents_Values = nsIXPCComponents_Results[keyof nsIXPCComponents_Results];
