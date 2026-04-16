@@ -757,8 +757,7 @@ bool mozilla::PrintfTarget::vprint(const char* fmt, va_list ap) {
     
     
     
-    
-    while ((c == '-') || (c == '+') || (c == ' ') || (c == '0')) {
+    while ((c == '-') || (c == '+') || (c == ' ') || (c == '0') || (c == '#')) {
       if (c == '-') {
         flags |= FLAG_LEFT;
       }
