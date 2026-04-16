@@ -109,6 +109,7 @@
 #endif
 
 #include "mozjemalloc.h"
+#include "BaseAlloc.h"
 #include "Chunk.h"
 #include "FdPrintf.h"
 #include "Mutex.h"
@@ -138,41 +139,6 @@ extern "C" MOZ_EXPORT int pthread_atfork(void (*)(void), void (*)(void),
     T(const T&);                      \
     void operator=(const T&)
 #endif
-
-
-
-
-class InfallibleAllocPolicy {
- public:
-  static void AbortOnFailure(const void* aP) {
-    if (!aP) {
-      MOZ_CRASH("PHC failed to allocate");
-    }
-  }
-
-  template <class T>
-  static T* new_() {
-    void* p = MozJemalloc::malloc(sizeof(T));
-    AbortOnFailure(p);
-    return new (p) T;
-  }
-
-  template <class T>
-  static T* new_(size_t n) {
-    void* p = MozJemalloc::malloc(sizeof(T) * n);
-    AbortOnFailure(p);
-    return new (p) T[n];
-  }
-
-  
-  
-  template <class T>
-  static T* realloc(T* aOldArray, size_t n) {
-    void* p = MozJemalloc::realloc(aOldArray, sizeof(T) * n);
-    AbortOnFailure(p);
-    return reinterpret_cast<T*>(p);
-  }
-};
 
 
 
@@ -283,7 +249,7 @@ class PHCArray {
     for (size_t i = 0; i < mCapacity; i++) {
       mArray[i].~T();
     }
-    MozJemalloc::free(mArray);
+    sBaseAlloc.free(mArray);
   }
 
   const T& operator[](size_t aIndex) const {
@@ -303,7 +269,16 @@ class PHCArray {
     MOZ_ASSERT(mCapacity == 0);
     MOZ_ASSERT(mArray == nullptr);
 
-    mArray = InfallibleAllocPolicy::new_<T>(aCapacity);
+    auto size_bytes = CheckedInt<size_t>(sizeof(T)) * aCapacity;
+    MOZ_ASSERT(size_bytes.isValid());
+    if (!size_bytes.isValid()) {
+      return;
+    }
+
+    mArray = reinterpret_cast<T*>(sBaseAlloc.alloc(size_bytes.value()));
+    for (size_t i = 0; i < aCapacity; i++) {
+      new (&mArray[i]) T();
+    }
     mCapacity = aCapacity;
   }
 
@@ -315,16 +290,20 @@ class PHCArray {
       Init(aNewCapacity);
       return;
     }
-    mArray = InfallibleAllocPolicy::realloc<T>(mArray, aNewCapacity);
+    auto size_bytes = CheckedInt<size_t>(sizeof(T)) * aNewCapacity;
+    MOZ_ASSERT(size_bytes.isValid());
+    if (!size_bytes.isValid()) {
+      return;
+    }
+    mArray =
+        reinterpret_cast<T*>(sBaseAlloc.realloc(mArray, size_bytes.value()));
     for (size_t i = mCapacity; i < aNewCapacity; i++) {
       new (&mArray[i]) T();
     }
     mCapacity = aNewCapacity;
   }
 
-  size_t SizeOfExcludingThis() {
-    return MozJemalloc::malloc_usable_size(mArray);
-  }
+  size_t SizeOfExcludingThis() { return sBaseAlloc.usable_size(mArray); }
 };
 
 
@@ -665,7 +644,7 @@ class PtrKind;
 
 
 
-class PHC {
+class PHC : public BaseAllocClass {
  public:
   
   
@@ -1492,7 +1471,7 @@ void phc_init() {
   }
 
   
-  PHC::sPHC = InfallibleAllocPolicy::new_<PHC>();
+  PHC::sPHC = new PHC();
 
 #ifndef XP_WIN
   
@@ -2028,10 +2007,6 @@ inline void MozJemallocPHC::jemalloc_stats_internal(
   
 
   
-  
-  
-  
-  aStats->allocated -= mem_info.mMetadataBytes;
   aStats->bookkeeping += mem_info.mMetadataBytes;
 }
 
