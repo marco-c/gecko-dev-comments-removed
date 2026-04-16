@@ -10,10 +10,9 @@
 
 #include "api/array_view.h"
 
-#include <stdint.h>
-
 #include <array>
 #include <cstddef>
+#include <cstdint>
 #include <string>
 #include <utility>
 #include <vector>
@@ -591,6 +590,27 @@ TEST(ArrayViewTest, TestSubViewVariable) {
   EXPECT_THAT(av.subview(1, 1), ElementsAre(2));
   EXPECT_THAT(av.subview(1, 2), ElementsAre(2, 3));
   EXPECT_THAT(av.subview(1, 3), ElementsAre(2, 3));
+}
+
+TEST(ArrayViewTest, TestSubSpanVariable) {
+  int a[] = {1, 2, 3};
+  ArrayView<int> av(a);
+
+  EXPECT_THAT(av.subspan(0), ElementsAre(1, 2, 3));
+  EXPECT_THAT(av.subspan(1), ElementsAre(2, 3));
+  EXPECT_THAT(av.subspan(2), ElementsAre(3));
+  EXPECT_THAT(av.subspan(3), IsEmpty());
+
+  EXPECT_THAT(av.subspan(1, 0), IsEmpty());
+  EXPECT_THAT(av.subspan(1, 1), ElementsAre(2));
+  EXPECT_THAT(av.subspan(1, 2), ElementsAre(2, 3));
+}
+
+TEST(ArrayViewTest, TestSubSpanWithInvalidInput) {
+  int a[] = {1, 2, 3};
+  ArrayView<int> av(a);
+  EXPECT_DEATH_IF_SUPPORTED(av.subspan(4), "");
+  EXPECT_DEATH_IF_SUPPORTED(av.subspan(1, 3), "");
 }
 
 TEST(ArrayViewTest, TestSubViewFixed) {
