@@ -4,28 +4,85 @@
 
 #include "irregexp/imported/regexp-bytecode-peephole.h"
 
+#include <limits>
+#include <memory>
+#include <optional>
+#include <unordered_map>
+#include <vector>
+
+#include "irregexp/imported/regexp-bytecode-generator-inl.h"
+#include "irregexp/imported/regexp-bytecode-generator.h"
+#include "irregexp/imported/regexp-bytecodes-inl.h"
 #include "irregexp/imported/regexp-bytecodes.h"
 
 namespace v8 {
 namespace internal {
+namespace regexp {
 
 namespace {
 
-struct BytecodeArgument {
-  int offset;
-  int length;
+class BytecodeArgument {
+ public:
+  BytecodeArgument(int offset, int length) : offset_(offset), length_(length) {}
 
-  BytecodeArgument(int offset, int length) : offset(offset), length(length) {}
+  int offset() const { return offset_; }
+  int length() const { return length_; }
+
+ private:
+  
+  
+  
+  
+  int offset_;
+  int length_;
 };
 
-struct BytecodeArgumentMapping : BytecodeArgument {
-  int new_length;
 
-  BytecodeArgumentMapping(int offset, int length, int new_length)
-      : BytecodeArgument(offset, length), new_length(new_length) {}
+struct OpInfo {
+  uint16_t offset;
+  BytecodeOperandType type;
+  constexpr int size() const { return Bytecodes::Size(type); }
+
+  
+  
+  
+  template <class kBytecodeOperands, auto kOperand>
+  static OpInfo Get() {
+    static constexpr int kOffset = kBytecodeOperands::Offset(kOperand);
+    static constexpr BytecodeOperandType kType =
+        kBytecodeOperands::Type(kOperand);
+    DCHECK_LE(static_cast<uint32_t>(kOffset),
+              std::numeric_limits<decltype(offset)>::max());
+    return {kOffset, kType};
+  }
+};
+static_assert(sizeof(OpInfo) <= kSystemPointerSize);  
+
+class BytecodeArgumentMapping : public BytecodeArgument {
+ public:
+  enum class Type : uint8_t { kDefault, kOffsetAfterSequence };
+
+  BytecodeArgumentMapping(int offset, int length, OpInfo op_info)
+      : BytecodeArgument(offset, length),
+        type_(Type::kDefault),
+        op_info_(op_info) {}
+
+  BytecodeArgumentMapping(Type type, OpInfo op_info)
+      : BytecodeArgument(-1, -1), type_(type), op_info_(op_info) {
+    DCHECK_NE(type, Type::kDefault);
+  }
+
+  Type type() const { return type_; }
+  int new_offset() const { return op_info_.offset; }
+  BytecodeOperandType new_operand_type() const { return op_info_.type; }
+  int new_length() const { return op_info_.size(); }
+
+ private:
+  Type type_;
+  OpInfo op_info_;
 };
 
-struct BytecodeArgumentCheck : BytecodeArgument {
+struct BytecodeArgumentCheck : public BytecodeArgument {
   enum CheckType { kCheckAddress = 0, kCheckValue };
   CheckType type;
   int check_offset;
@@ -46,21 +103,35 @@ struct BytecodeArgumentCheck : BytecodeArgument {
 
 class BytecodeSequenceNode {
  public:
+  explicit BytecodeSequenceNode(std::optional<Bytecode> bytecode);
+  
+  BytecodeSequenceNode& FollowedBy(Bytecode bytecode);
   
   
-  static constexpr int kDummyBytecode = -1;
+  BytecodeSequenceNode& ReplaceWith(Bytecode bytecode);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  BytecodeSequenceNode& MapArgument(OpInfo to_op_info,
+                                    int from_bytecode_sequence_index,
+                                    OpInfo from_op_info);
 
-  BytecodeSequenceNode(int bytecode, Zone* zone);
-  
-  BytecodeSequenceNode& FollowedBy(int bytecode);
-  
-  
-  BytecodeSequenceNode& ReplaceWith(int bytecode);
   
   
   
   
   
+  
+  BytecodeSequenceNode& EmitOffsetAfterSequence(OpInfo op_info);
+  
+  bool BytecodeArgumentMappingCreatedInOrder(OpInfo op_info);
   
   
   
@@ -69,34 +140,18 @@ class BytecodeSequenceNode {
   
   
   
-  BytecodeSequenceNode& MapArgument(int bytecode_index_in_sequence,
-                                    int argument_offset,
-                                    int argument_byte_length,
-                                    int new_argument_byte_length = 0);
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  BytecodeSequenceNode& IfArgumentEqualsOffset(int argument_offset,
-                                               int argument_byte_length,
+  BytecodeSequenceNode& IfArgumentEqualsOffset(OpInfo op_info,
                                                int check_byte_offset);
+
   
   
   
   
   
   BytecodeSequenceNode& IfArgumentEqualsValueAtOffset(
-      int argument_offset, int argument_byte_length,
-      int other_bytecode_index_in_sequence, int other_argument_offset,
-      int other_argument_byte_length);
-  
-  
+      OpInfo this_op_info, int other_bytecode_index_in_sequence,
+      OpInfo other_op_info);
+
   
   
   
@@ -104,23 +159,21 @@ class BytecodeSequenceNode {
   
   
   BytecodeSequenceNode& IgnoreArgument(int bytecode_index_in_sequence,
-                                       int argument_offset,
-                                       int argument_byte_length);
+                                       OpInfo op_info);
   
   
   
-  bool CheckArguments(const uint8_t* bytecode, int pc);
+  bool CheckArguments(const uint8_t* bytecode, int pc) const;
   
   
   bool IsSequence() const;
   
   int SequenceLength() const;
   
+  Bytecode OptimizedBytecode() const;
   
-  int OptimizedBytecode() const;
   
-  
-  BytecodeSequenceNode* Find(int bytecode) const;
+  BytecodeSequenceNode* Find(Bytecode bytecode) const;
   
   
   
@@ -132,55 +185,58 @@ class BytecodeSequenceNode {
   
   
   
-  ZoneLinkedList<BytecodeArgument>::iterator ArgumentIgnoredBegin() const;
+  std::vector<BytecodeArgument>::const_iterator ArgumentIgnoredBegin() const;
   
   
   
-  ZoneLinkedList<BytecodeArgument>::iterator ArgumentIgnoredEnd() const;
+  std::vector<BytecodeArgument>::const_iterator ArgumentIgnoredEnd() const;
   
   bool HasIgnoredArguments() const;
 
  private:
   
   BytecodeSequenceNode& GetNodeByIndexInSequence(int index_in_sequence);
-  Zone* zone() const;
 
-  int bytecode_;
-  int bytecode_replacement_;
+  std::optional<Bytecode> bytecode_;
+  std::optional<Bytecode> bytecode_replacement_;
   int index_in_sequence_;
   int start_offset_;
   BytecodeSequenceNode* parent_;
-  ZoneUnorderedMap<int, BytecodeSequenceNode*> children_;
-  ZoneVector<BytecodeArgumentMapping>* argument_mapping_;
-  ZoneLinkedList<BytecodeArgumentCheck>* argument_check_;
-  ZoneLinkedList<BytecodeArgument>* argument_ignored_;
-
-  Zone* zone_;
+  std::unordered_map<Bytecode, std::unique_ptr<BytecodeSequenceNode>> children_;
+  std::vector<BytecodeArgumentMapping> argument_mapping_;
+  std::vector<BytecodeArgumentCheck> argument_check_;
+  std::vector<BytecodeArgument> argument_ignored_;
+  
+  
+  
+  
+  bool sealed_ = false;
 };
 
-
-
-constexpr int BytecodeSequenceNode::kDummyBytecode;
-
-class RegExpBytecodePeephole {
+class BytecodePeepholeSequences {
  public:
-  RegExpBytecodePeephole(Zone* zone, size_t buffer_size,
-                         const ZoneUnorderedMap<int, int>& jump_edges);
-
-  
-  
-  
-  bool OptimizeBytecode(const uint8_t* bytecode, int length);
-  
-  
-  void CopyOptimizedBytecode(uint8_t* to_address) const;
-  int Length() const;
+  BytecodePeepholeSequences();
+  const BytecodeSequenceNode* sequences() const { return &sequences_; }
 
  private:
-  
   void DefineStandardSequences();
+  BytecodeSequenceNode& CreateSequence(Bytecode bytecode);
+
+  BytecodeSequenceNode sequences_;
+};
+
+class BytecodePeephole {
+ public:
   
-  BytecodeSequenceNode& CreateSequence(int bytecode);
+  
+  
+  static bool OptimizeBytecode(Zone* zone, const BytecodeWriter* src_writer,
+                               BytecodeWriter* dst_writer);
+
+ private:
+  BytecodePeephole(Zone* zone, const BytecodeWriter* src_writer,
+                   BytecodeWriter* dst_writer);
+
   
   
   int TryOptimizeSequence(const uint8_t* bytecode, int bytecode_length,
@@ -193,41 +249,22 @@ class RegExpBytecodePeephole {
   
   
   
-  void AddJumpSourceFixup(int fixup, int pos);
-  
-  
-  
   void AddJumpDestinationFixup(int fixup, int pos);
   
   void SetJumpDestinationFixup(int fixup, int pos);
   
-  void PrepareJumpStructures(const ZoneUnorderedMap<int, int>& jump_edges);
-  
   void FixJumps();
-  
-  void FixJump(int jump_source, int jump_destination);
-  void AddSentinelFixups(int pos);
-  template <typename T>
-  void EmitValue(T value);
-  template <typename T>
-  void OverwriteValue(int offset, T value);
-  void CopyRangeToOutput(const uint8_t* orig_bytecode, int start, int length);
-  void SetRange(uint8_t value, int count);
   void EmitArgument(int start_pc, const uint8_t* bytecode,
                     BytecodeArgumentMapping arg);
   int pc() const;
   Zone* zone() const;
 
-  ZoneVector<uint8_t> optimized_bytecode_buffer_;
-  BytecodeSequenceNode* sequences_;
+  BytecodeWriter* const dst_writer_;
+  const BytecodeWriter* const src_writer_;
+
   
   
   
-  ZoneMap<int, int> jump_edges_;
-  
-  
-  
-  ZoneMap<int, int> jump_edges_mapped_;
   
   
   
@@ -235,17 +272,17 @@ class RegExpBytecodePeephole {
   
   
   
-  ZoneMap<int, int> jump_source_fixups_;
-  
-  
-  
   
   
   ZoneMap<int, int> jump_destination_fixups_;
 
-  Zone* zone_;
+  Zone* const zone_;
 
-  DISALLOW_IMPLICIT_CONSTRUCTORS(RegExpBytecodePeephole);
+  
+  
+  int next_src_pc_to_emit_;
+
+  DISALLOW_IMPLICIT_CONSTRUCTORS(BytecodePeephole);
 };
 
 template <typename T>
@@ -267,125 +304,158 @@ int32_t GetArgumentValue(const uint8_t* bytecode, int offset, int length) {
   }
 }
 
-BytecodeSequenceNode::BytecodeSequenceNode(int bytecode, Zone* zone)
+BytecodeSequenceNode::BytecodeSequenceNode(std::optional<Bytecode> bytecode)
     : bytecode_(bytecode),
-      bytecode_replacement_(kDummyBytecode),
+      bytecode_replacement_(std::nullopt),
       index_in_sequence_(0),
       start_offset_(0),
-      parent_(nullptr),
-      children_(ZoneUnorderedMap<int, BytecodeSequenceNode*>(zone)),
-      argument_mapping_(zone->New<ZoneVector<BytecodeArgumentMapping>>(zone)),
-      argument_check_(zone->New<ZoneLinkedList<BytecodeArgumentCheck>>(zone)),
-      argument_ignored_(zone->New<ZoneLinkedList<BytecodeArgument>>(zone)),
-      zone_(zone) {}
+      parent_(nullptr) {}
 
-BytecodeSequenceNode& BytecodeSequenceNode::FollowedBy(int bytecode) {
-  DCHECK(0 <= bytecode && bytecode < kRegExpBytecodeCount);
-
+BytecodeSequenceNode& BytecodeSequenceNode::FollowedBy(Bytecode bytecode) {
+  sealed_ = true;
   if (children_.find(bytecode) == children_.end()) {
-    BytecodeSequenceNode* new_node =
-        zone()->New<BytecodeSequenceNode>(bytecode, zone());
+    auto new_node = std::make_unique<BytecodeSequenceNode>(bytecode);
     
-    if (bytecode_ != kDummyBytecode) {
-      new_node->start_offset_ = start_offset_ + RegExpBytecodeLength(bytecode_);
+    if (bytecode_.has_value()) {
+      new_node->start_offset_ =
+          start_offset_ + Bytecodes::Size(bytecode_.value());
       new_node->index_in_sequence_ = index_in_sequence_ + 1;
       new_node->parent_ = this;
     }
-    children_[bytecode] = new_node;
+    children_[bytecode] = std::move(new_node);
   }
 
-  return *children_[bytecode];
+  BytecodeSequenceNode* node = children_[bytecode].get();
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  DCHECK(node->argument_check_.empty());
+  return *node;
 }
 
-BytecodeSequenceNode& BytecodeSequenceNode::ReplaceWith(int bytecode) {
-  DCHECK(0 <= bytecode && bytecode < kRegExpBytecodeCount);
-
+BytecodeSequenceNode& BytecodeSequenceNode::ReplaceWith(Bytecode bytecode) {
+  DCHECK(!bytecode_replacement_.has_value());
   bytecode_replacement_ = bytecode;
-
   return *this;
 }
 
 BytecodeSequenceNode& BytecodeSequenceNode::MapArgument(
-    int bytecode_index_in_sequence, int argument_offset,
-    int argument_byte_length, int new_argument_byte_length) {
-  DCHECK(IsSequence());
-  DCHECK_LE(bytecode_index_in_sequence, index_in_sequence_);
+    OpInfo to_op_info, int from_bytecode_sequence_index, OpInfo from_op_info) {
+  int src_offset = from_op_info.offset;
+  int src_size = from_op_info.size();
+
+  DCHECK_LE(from_bytecode_sequence_index, index_in_sequence_);
+  DCHECK(BytecodeArgumentMappingCreatedInOrder(to_op_info));
 
   BytecodeSequenceNode& ref_node =
-      GetNodeByIndexInSequence(bytecode_index_in_sequence);
-  DCHECK_LT(argument_offset, RegExpBytecodeLength(ref_node.bytecode_));
+      GetNodeByIndexInSequence(from_bytecode_sequence_index);
+  DCHECK_LT(src_offset, Bytecodes::Size(ref_node.bytecode_.value()));
 
-  int absolute_offset = ref_node.start_offset_ + argument_offset;
-  if (new_argument_byte_length == 0) {
-    new_argument_byte_length = argument_byte_length;
-  }
-
-  argument_mapping_->push_back(BytecodeArgumentMapping{
-      absolute_offset, argument_byte_length, new_argument_byte_length});
-
+  int offset_from_start_of_sequence = ref_node.start_offset_ + src_offset;
+  argument_mapping_.push_back(BytecodeArgumentMapping{
+      offset_from_start_of_sequence, src_size, to_op_info});
   return *this;
 }
 
+BytecodeSequenceNode& BytecodeSequenceNode::EmitOffsetAfterSequence(
+    OpInfo op_info) {
+  DCHECK(BytecodeArgumentMappingCreatedInOrder(op_info));
+  argument_mapping_.push_back(BytecodeArgumentMapping{
+      BytecodeArgumentMapping::Type::kOffsetAfterSequence, op_info});
+  return *this;
+}
+
+bool BytecodeSequenceNode::BytecodeArgumentMappingCreatedInOrder(
+    OpInfo op_info) {
+  DCHECK(IsSequence());
+  if (argument_mapping_.empty()) return true;
+
+  const BytecodeArgumentMapping& m = argument_mapping_.back();
+  int offset_after_last = m.new_offset() + m.new_length();
+  
+  
+  
+  int dst_size = op_info.size();
+  int alignment = std::min(dst_size, kBytecodeAlignment);
+  return RoundUp(offset_after_last, alignment) == op_info.offset;
+}
+
 BytecodeSequenceNode& BytecodeSequenceNode::IfArgumentEqualsOffset(
-    int argument_offset, int argument_byte_length, int check_byte_offset) {
-  DCHECK_LT(argument_offset, RegExpBytecodeLength(bytecode_));
-  DCHECK(argument_byte_length == 1 || argument_byte_length == 2 ||
-         argument_byte_length == 4);
+    OpInfo op_info, int check_byte_offset) {
+  DCHECK(!sealed_);
+  int size = op_info.size();
+  int offset = op_info.offset;
 
-  int absolute_offset = start_offset_ + argument_offset;
+  DCHECK_LT(offset, Bytecodes::Size(bytecode_.value()));
+  DCHECK(size == 1 || size == 2 || size == 4);
 
-  argument_check_->push_back(BytecodeArgumentCheck{
-      absolute_offset, argument_byte_length, check_byte_offset});
+  int offset_from_start_of_sequence = start_offset_ + offset;
+
+  argument_check_.push_back(BytecodeArgumentCheck{offset_from_start_of_sequence,
+                                                  size, check_byte_offset});
 
   return *this;
 }
 
 BytecodeSequenceNode& BytecodeSequenceNode::IfArgumentEqualsValueAtOffset(
-    int argument_offset, int argument_byte_length,
-    int other_bytecode_index_in_sequence, int other_argument_offset,
-    int other_argument_byte_length) {
-  DCHECK_LT(argument_offset, RegExpBytecodeLength(bytecode_));
+    OpInfo this_op_info, int other_bytecode_index_in_sequence,
+    OpInfo other_op_info) {
+  DCHECK(!sealed_);
+  int size_1 = this_op_info.size();
+  int size_2 = other_op_info.size();
+
+  DCHECK_LT(this_op_info.offset, Bytecodes::Size(bytecode_.value()));
   DCHECK_LE(other_bytecode_index_in_sequence, index_in_sequence_);
-  DCHECK_EQ(argument_byte_length, other_argument_byte_length);
+  DCHECK_EQ(size_1, size_2);
 
   BytecodeSequenceNode& ref_node =
       GetNodeByIndexInSequence(other_bytecode_index_in_sequence);
-  DCHECK_LT(other_argument_offset, RegExpBytecodeLength(ref_node.bytecode_));
+  DCHECK_LT(other_op_info.offset, Bytecodes::Size(ref_node.bytecode_.value()));
 
-  int absolute_offset = start_offset_ + argument_offset;
-  int other_absolute_offset = ref_node.start_offset_ + other_argument_offset;
+  int offset_from_start_of_sequence = start_offset_ + this_op_info.offset;
+  int other_offset_from_start_of_sequence =
+      ref_node.start_offset_ + other_op_info.offset;
 
-  argument_check_->push_back(
-      BytecodeArgumentCheck{absolute_offset, argument_byte_length,
-                            other_absolute_offset, other_argument_byte_length});
+  argument_check_.push_back(
+      BytecodeArgumentCheck{offset_from_start_of_sequence, size_1,
+                            other_offset_from_start_of_sequence, size_2});
 
   return *this;
 }
 
 BytecodeSequenceNode& BytecodeSequenceNode::IgnoreArgument(
-    int bytecode_index_in_sequence, int argument_offset,
-    int argument_byte_length) {
+    int bytecode_index_in_sequence, OpInfo op_info) {
+  int size = op_info.size();
+  int offset = op_info.offset;
+
   DCHECK(IsSequence());
   DCHECK_LE(bytecode_index_in_sequence, index_in_sequence_);
 
   BytecodeSequenceNode& ref_node =
       GetNodeByIndexInSequence(bytecode_index_in_sequence);
-  DCHECK_LT(argument_offset, RegExpBytecodeLength(ref_node.bytecode_));
+  DCHECK_LT(offset, Bytecodes::Size(ref_node.bytecode_.value()));
 
-  int absolute_offset = ref_node.start_offset_ + argument_offset;
+  int offset_from_start_of_sequence = ref_node.start_offset_ + offset;
 
-  argument_ignored_->push_back(
-      BytecodeArgument{absolute_offset, argument_byte_length});
+  argument_ignored_.push_back(
+      BytecodeArgument{offset_from_start_of_sequence, size});
 
   return *this;
 }
 
-bool BytecodeSequenceNode::CheckArguments(const uint8_t* bytecode, int pc) {
+bool BytecodeSequenceNode::CheckArguments(const uint8_t* bytecode,
+                                          int pc) const {
   bool is_valid = true;
-  for (auto check_iter = argument_check_->begin();
-       check_iter != argument_check_->end() && is_valid; check_iter++) {
-    auto value =
-        GetArgumentValue(bytecode, pc + check_iter->offset, check_iter->length);
+  for (auto check_iter = argument_check_.begin();
+       check_iter != argument_check_.end() && is_valid; check_iter++) {
+    auto value = GetArgumentValue(bytecode, pc + check_iter->offset(),
+                                  check_iter->length());
     if (check_iter->type == BytecodeArgumentCheck::kCheckAddress) {
       is_valid &= value == pc + check_iter->check_offset;
     } else if (check_iter->type == BytecodeArgumentCheck::kCheckValue) {
@@ -400,53 +470,50 @@ bool BytecodeSequenceNode::CheckArguments(const uint8_t* bytecode, int pc) {
 }
 
 bool BytecodeSequenceNode::IsSequence() const {
-  return bytecode_replacement_ != kDummyBytecode;
+  return bytecode_replacement_.has_value();
 }
 
 int BytecodeSequenceNode::SequenceLength() const {
-  return start_offset_ + RegExpBytecodeLength(bytecode_);
+  return start_offset_ + Bytecodes::Size(bytecode_.value());
 }
 
-int BytecodeSequenceNode::OptimizedBytecode() const {
-  return bytecode_replacement_;
+Bytecode BytecodeSequenceNode::OptimizedBytecode() const {
+  return bytecode_replacement_.value();
 }
 
-BytecodeSequenceNode* BytecodeSequenceNode::Find(int bytecode) const {
+BytecodeSequenceNode* BytecodeSequenceNode::Find(Bytecode bytecode) const {
   auto found = children_.find(bytecode);
   if (found == children_.end()) return nullptr;
-  return found->second;
+  return found->second.get();
 }
 
 size_t BytecodeSequenceNode::ArgumentSize() const {
   DCHECK(IsSequence());
-  return argument_mapping_->size();
+  return argument_mapping_.size();
 }
 
 BytecodeArgumentMapping BytecodeSequenceNode::ArgumentMapping(
     size_t index) const {
   DCHECK(IsSequence());
-  DCHECK(argument_mapping_ != nullptr);
-  DCHECK_LT(index, argument_mapping_->size());
+  DCHECK_LT(index, argument_mapping_.size());
 
-  return argument_mapping_->at(index);
+  return argument_mapping_.at(index);
 }
 
-ZoneLinkedList<BytecodeArgument>::iterator
+std::vector<BytecodeArgument>::const_iterator
 BytecodeSequenceNode::ArgumentIgnoredBegin() const {
   DCHECK(IsSequence());
-  DCHECK(argument_ignored_ != nullptr);
-  return argument_ignored_->begin();
+  return argument_ignored_.begin();
 }
 
-ZoneLinkedList<BytecodeArgument>::iterator
+std::vector<BytecodeArgument>::const_iterator
 BytecodeSequenceNode::ArgumentIgnoredEnd() const {
   DCHECK(IsSequence());
-  DCHECK(argument_ignored_ != nullptr);
-  return argument_ignored_->end();
+  return argument_ignored_.end();
 }
 
 bool BytecodeSequenceNode::HasIgnoredArguments() const {
-  return argument_ignored_ != nullptr;
+  return !argument_ignored_.empty();
 }
 
 BytecodeSequenceNode& BytecodeSequenceNode::GetNodeByIndexInSequence(
@@ -461,210 +528,356 @@ BytecodeSequenceNode& BytecodeSequenceNode::GetNodeByIndexInSequence(
   }
 }
 
-Zone* BytecodeSequenceNode::zone() const { return zone_; }
-
-RegExpBytecodePeephole::RegExpBytecodePeephole(
-    Zone* zone, size_t buffer_size,
-    const ZoneUnorderedMap<int, int>& jump_edges)
-    : optimized_bytecode_buffer_(zone),
-      sequences_(zone->New<BytecodeSequenceNode>(
-          BytecodeSequenceNode::kDummyBytecode, zone)),
-      jump_edges_(zone),
-      jump_edges_mapped_(zone),
-      jump_usage_counts_(zone),
-      jump_source_fixups_(zone),
-      jump_destination_fixups_(zone),
-      zone_(zone) {
-  optimized_bytecode_buffer_.reserve(buffer_size);
-  PrepareJumpStructures(jump_edges);
+BytecodePeepholeSequences::BytecodePeepholeSequences()
+    : sequences_(std::nullopt) {
   DefineStandardSequences();
-  
-  
-  
-  
-  
-  
-  AddSentinelFixups(-1);
-  
-  
-  DCHECK_LE(buffer_size, std::numeric_limits<int>::max());
-  AddSentinelFixups(static_cast<int>(buffer_size));
 }
 
-void RegExpBytecodePeephole::DefineStandardSequences() {
-  
-  
-  CreateSequence(BC_LOAD_CURRENT_CHAR)
-      .FollowedBy(BC_CHECK_BIT_IN_TABLE)
-      .FollowedBy(BC_ADVANCE_CP_AND_GOTO)
-      
-      
-      .IfArgumentEqualsOffset(4, 4, 0)
-      .ReplaceWith(BC_SKIP_UNTIL_BIT_IN_TABLE)
-      .MapArgument(0, 1, 3)      
-      .MapArgument(2, 1, 3, 4)   
-      .MapArgument(1, 8, 16)     
-      .MapArgument(1, 4, 4)      
-      .MapArgument(0, 4, 4)      
-      .IgnoreArgument(2, 4, 4);  
-
-  CreateSequence(BC_CHECK_CURRENT_POSITION)
-      .FollowedBy(BC_LOAD_CURRENT_CHAR_UNCHECKED)
-      .FollowedBy(BC_CHECK_CHAR)
-      .FollowedBy(BC_ADVANCE_CP_AND_GOTO)
-      
-      
-      .IfArgumentEqualsOffset(4, 4, 0)
-      .ReplaceWith(BC_SKIP_UNTIL_CHAR_POS_CHECKED)
-      .MapArgument(1, 1, 3)      
-      .MapArgument(3, 1, 3, 2)   
-      .MapArgument(2, 1, 3, 2)   
-      .MapArgument(0, 1, 3, 4)   
-      .MapArgument(2, 4, 4)      
-      .MapArgument(0, 4, 4)      
-      .IgnoreArgument(3, 4, 4);  
-
-  CreateSequence(BC_CHECK_CURRENT_POSITION)
-      .FollowedBy(BC_LOAD_CURRENT_CHAR_UNCHECKED)
-      .FollowedBy(BC_AND_CHECK_CHAR)
-      .FollowedBy(BC_ADVANCE_CP_AND_GOTO)
-      
-      
-      .IfArgumentEqualsOffset(4, 4, 0)
-      .ReplaceWith(BC_SKIP_UNTIL_CHAR_AND)
-      .MapArgument(1, 1, 3)      
-      .MapArgument(3, 1, 3, 2)   
-      .MapArgument(2, 1, 3, 2)   
-      .MapArgument(2, 4, 4)      
-      .MapArgument(0, 1, 3, 4)   
-      .MapArgument(2, 8, 4)      
-      .MapArgument(0, 4, 4)      
-      .IgnoreArgument(3, 4, 4);  
-
-  
-  
-  
-  
-  
-  CreateSequence(BC_LOAD_CURRENT_CHAR)
-      .FollowedBy(BC_CHECK_CHAR)
-      .FollowedBy(BC_ADVANCE_CP_AND_GOTO)
-      
-      
-      .IfArgumentEqualsOffset(4, 4, 0)
-      .ReplaceWith(BC_SKIP_UNTIL_CHAR)
-      .MapArgument(0, 1, 3)      
-      .MapArgument(2, 1, 3, 2)   
-      .MapArgument(1, 1, 3, 2)   
-      .MapArgument(1, 4, 4)      
-      .MapArgument(0, 4, 4)      
-      .IgnoreArgument(2, 4, 4);  
-
-  CreateSequence(BC_LOAD_CURRENT_CHAR)
-      .FollowedBy(BC_CHECK_CHAR)
-      .FollowedBy(BC_CHECK_CHAR)
-      
-      
-      .IfArgumentEqualsValueAtOffset(4, 4, 1, 4, 4)
-      .FollowedBy(BC_ADVANCE_CP_AND_GOTO)
-      
-      
-      .IfArgumentEqualsOffset(4, 4, 0)
-      .ReplaceWith(BC_SKIP_UNTIL_CHAR_OR_CHAR)
-      .MapArgument(0, 1, 3)      
-      .MapArgument(3, 1, 3, 4)   
-      .MapArgument(1, 1, 3, 2)   
-      .MapArgument(2, 1, 3, 2)   
-      .MapArgument(1, 4, 4)      
-      .MapArgument(0, 4, 4)      
-      .IgnoreArgument(2, 4, 4)   
-      .IgnoreArgument(3, 4, 4);  
-
-  CreateSequence(BC_LOAD_CURRENT_CHAR)
-      .FollowedBy(BC_CHECK_GT)
-      
-      
-      .IfArgumentEqualsOffset(4, 4, 56)
-      .FollowedBy(BC_CHECK_BIT_IN_TABLE)
-      
-      
-      .IfArgumentEqualsOffset(4, 4, 48)
-      .FollowedBy(BC_GOTO)
-      
-      
-      
-      .IfArgumentEqualsValueAtOffset(4, 4, 1, 4, 4)
-      .FollowedBy(BC_ADVANCE_CP_AND_GOTO)
-      
-      
-      .IfArgumentEqualsOffset(4, 4, 0)
-      .ReplaceWith(BC_SKIP_UNTIL_GT_OR_NOT_BIT_IN_TABLE)
-      .MapArgument(0, 1, 3)      
-      .MapArgument(4, 1, 3, 2)   
-      .MapArgument(1, 1, 3, 2)   
-      .MapArgument(2, 8, 16)     
-      .MapArgument(1, 4, 4)      
-      .MapArgument(0, 4, 4)      
-      .IgnoreArgument(2, 4, 4)   
-      .IgnoreArgument(3, 4, 4)   
-      .IgnoreArgument(4, 4, 4);  
+BytecodeSequenceNode& BytecodePeepholeSequences::CreateSequence(
+    Bytecode bytecode) {
+  return sequences_.FollowedBy(bytecode);
 }
 
-bool RegExpBytecodePeephole::OptimizeBytecode(const uint8_t* bytecode,
-                                              int length) {
+BytecodePeephole::BytecodePeephole(Zone* zone, const BytecodeWriter* src_writer,
+                                   BytecodeWriter* dst_writer)
+    : dst_writer_(dst_writer),
+      src_writer_(src_writer),
+      jump_usage_counts_(zone),
+      jump_destination_fixups_(zone),
+      zone_(zone),
+      next_src_pc_to_emit_(0) {
+  dst_writer_->buffer().reserve(src_writer_->length());
+  
+  for (auto jump_edge : src_writer_->jump_edges()) {
+    int jump_destination = jump_edge.second;
+    jump_usage_counts_[jump_destination]++;
+  }
+  
+  
+  
+  
+  
+  
+  jump_destination_fixups_.emplace(-1, 0);
+  
+  
+  DCHECK_LE(src_writer_->length(), std::numeric_limits<int>::max());
+  jump_destination_fixups_.emplace(static_cast<int>(src_writer_->length()), 0);
+}
+
+void BytecodePeepholeSequences::DefineStandardSequences() {
+  using B = Bytecode;
+#define I(BYTECODE, OPERAND)              \
+  OpInfo::Get<BytecodeOperands<BYTECODE>, \
+              BytecodeOperands<BYTECODE>::Operand::OPERAND>()
+#define T(OPERAND) I(Target, OPERAND)
+
+  
+  
+
+  {
+    static constexpr auto Target = B::kAdvanceCpAndGoto;
+    CreateSequence(B::kAdvanceCurrentPosition)
+        .FollowedBy(B::kGoTo)
+        .ReplaceWith(Target)
+        .MapArgument(T(by), 0, I(B::kAdvanceCurrentPosition, by))
+        .MapArgument(T(on_goto), 1, I(B::kGoTo, label));
+  }
+
+  {
+    static constexpr auto Target = B::kSkipUntilBitInTable;
+    CreateSequence(B::kLoadCurrentCharacter)
+        .FollowedBy(B::kCheckBitInTable)
+        .FollowedBy(B::kAdvanceCpAndGoto)
+        .IfArgumentEqualsOffset(I(B::kAdvanceCpAndGoto, on_goto), 0)
+        .ReplaceWith(Target)
+        .MapArgument(T(cp_offset), 0, I(B::kLoadCurrentCharacter, cp_offset))
+        .MapArgument(T(advance_by), 2, I(B::kAdvanceCpAndGoto, by))
+        .MapArgument(T(table), 1, I(B::kCheckBitInTable, table))
+        .MapArgument(T(on_match), 1, I(B::kCheckBitInTable, on_bit_set))
+        .MapArgument(T(on_no_match), 0, I(B::kLoadCurrentCharacter, on_failure))
+        .IgnoreArgument(2, I(B::kAdvanceCpAndGoto, on_goto));
+  }
+
+  {
+    static constexpr auto Target = B::kSkipUntilCharPosChecked;
+    CreateSequence(B::kCheckPosition)
+        .FollowedBy(B::kLoadCurrentCharacterUnchecked)
+        .FollowedBy(B::kCheckCharacter)
+        .FollowedBy(B::kAdvanceCpAndGoto)
+        .IfArgumentEqualsOffset(I(B::kAdvanceCpAndGoto, on_goto), 0)
+        .ReplaceWith(Target)
+        .MapArgument(T(cp_offset), 1,
+                     I(B::kLoadCurrentCharacterUnchecked, cp_offset))
+        .MapArgument(T(advance_by), 3, I(B::kAdvanceCpAndGoto, by))
+        .MapArgument(T(character), 2, I(B::kCheckCharacter, character))
+        .MapArgument(T(eats_at_least), 0, I(B::kCheckPosition, cp_offset))
+        .MapArgument(T(on_match), 2, I(B::kCheckCharacter, on_equal))
+        .MapArgument(T(on_no_match), 0, I(B::kCheckPosition, on_failure))
+        .IgnoreArgument(3, I(B::kAdvanceCpAndGoto, on_goto));
+  }
+
+  {
+    static constexpr auto Target = B::kSkipUntilCharAnd;
+    CreateSequence(B::kCheckPosition)
+        .FollowedBy(B::kLoadCurrentCharacterUnchecked)
+        .FollowedBy(B::kCheckCharacterAfterAnd)
+        .FollowedBy(B::kAdvanceCpAndGoto)
+        .IfArgumentEqualsOffset(I(B::kAdvanceCpAndGoto, on_goto), 0)
+        .ReplaceWith(Target)
+        .MapArgument(T(cp_offset), 1,
+                     I(B::kLoadCurrentCharacterUnchecked, cp_offset))
+        .MapArgument(T(advance_by), 3, I(B::kAdvanceCpAndGoto, by))
+        .MapArgument(T(character), 2, I(B::kCheckCharacterAfterAnd, character))
+        .MapArgument(T(mask), 2, I(B::kCheckCharacterAfterAnd, mask))
+        .MapArgument(T(eats_at_least), 0, I(B::kCheckPosition, cp_offset))
+        .MapArgument(T(on_match), 2, I(B::kCheckCharacterAfterAnd, on_equal))
+        .MapArgument(T(on_no_match), 0, I(B::kCheckPosition, on_failure))
+        .IgnoreArgument(3, I(B::kAdvanceCpAndGoto, on_goto));
+  }
+
+  
+  
+  
+  
+  
+  {
+    static constexpr auto Target = B::kSkipUntilChar;
+    CreateSequence(B::kLoadCurrentCharacter)
+        .FollowedBy(B::kCheckCharacter)
+        .FollowedBy(B::kAdvanceCpAndGoto)
+        .IfArgumentEqualsOffset(I(B::kAdvanceCpAndGoto, on_goto), 0)
+        .ReplaceWith(Target)
+        .MapArgument(T(cp_offset), 0, I(B::kLoadCurrentCharacter, cp_offset))
+        .MapArgument(T(advance_by), 2, I(B::kAdvanceCpAndGoto, by))
+        .MapArgument(T(character), 1, I(B::kCheckCharacter, character))
+        .MapArgument(T(on_match), 1, I(B::kCheckCharacter, on_equal))
+        .MapArgument(T(on_no_match), 0, I(B::kLoadCurrentCharacter, on_failure))
+        .IgnoreArgument(2, I(B::kAdvanceCpAndGoto, on_goto));
+  }
+
+  {
+    static constexpr auto Target = B::kSkipUntilCharOrChar;
+    CreateSequence(B::kLoadCurrentCharacter)
+        .FollowedBy(B::kCheckCharacter)
+        .FollowedBy(B::kCheckCharacter)
+        .IfArgumentEqualsValueAtOffset(I(B::kCheckCharacter, on_equal), 1,
+                                       I(B::kCheckCharacter, on_equal))
+        .FollowedBy(B::kAdvanceCpAndGoto)
+        .IfArgumentEqualsOffset(I(B::kAdvanceCpAndGoto, on_goto), 0)
+        .ReplaceWith(Target)
+        .MapArgument(T(cp_offset), 0, I(B::kLoadCurrentCharacter, cp_offset))
+        .MapArgument(T(advance_by), 3, I(B::kAdvanceCpAndGoto, by))
+        .MapArgument(T(char1), 1, I(B::kCheckCharacter, character))
+        .MapArgument(T(char2), 2, I(B::kCheckCharacter, character))
+        .MapArgument(T(on_match), 1, I(B::kCheckCharacter, on_equal))
+        .MapArgument(T(on_no_match), 0, I(B::kLoadCurrentCharacter, on_failure))
+        .IgnoreArgument(2, I(B::kCheckCharacter, on_equal))
+        .IgnoreArgument(3, I(B::kAdvanceCpAndGoto, on_goto));
+  }
+
+  {
+    static constexpr auto Target = B::kSkipUntilGtOrNotBitInTable;
+    CreateSequence(B::kLoadCurrentCharacter)
+        .FollowedBy(B::kCheckCharacterGT)
+        
+        
+        .IfArgumentEqualsOffset(I(B::kCheckCharacterGT, on_greater), 56)
+        .FollowedBy(B::kCheckBitInTable)
+        
+        
+        .IfArgumentEqualsOffset(I(B::kCheckBitInTable, on_bit_set), 48)
+        .FollowedBy(B::kGoTo)
+        
+        
+        
+        .IfArgumentEqualsValueAtOffset(I(B::kGoTo, label), 1,
+                                       I(B::kCheckCharacterGT, on_greater))
+        .FollowedBy(B::kAdvanceCpAndGoto)
+        .IfArgumentEqualsOffset(I(B::kAdvanceCpAndGoto, on_goto), 0)
+        .ReplaceWith(Target)
+        .MapArgument(T(cp_offset), 0, I(B::kLoadCurrentCharacter, cp_offset))
+        .MapArgument(T(advance_by), 4, I(B::kAdvanceCpAndGoto, by))
+        .MapArgument(T(character), 1, I(B::kCheckCharacterGT, limit))
+        .MapArgument(T(table), 2, I(B::kCheckBitInTable, table))
+        .MapArgument(T(on_match), 1, I(B::kCheckCharacterGT, on_greater))
+        .MapArgument(T(on_no_match), 0, I(B::kLoadCurrentCharacter, on_failure))
+        .IgnoreArgument(2, I(B::kCheckBitInTable, on_bit_set))
+        .IgnoreArgument(3, I(B::kGoTo, label))
+        .IgnoreArgument(4, I(B::kAdvanceCpAndGoto, on_goto));
+  }
+  {
+    static constexpr auto Target = B::kSkipUntilOneOfMasked;
+    CreateSequence(B::kCheckPosition)
+        .FollowedBy(B::kLoad4CurrentCharsUnchecked)
+        .FollowedBy(B::kAndCheck4Chars)
+        
+        
+        .IfArgumentEqualsOffset(I(B::kAndCheck4Chars, on_equal), 0x24)
+        .FollowedBy(B::kAdvanceCpAndGoto)
+        .IfArgumentEqualsOffset(I(B::kAdvanceCpAndGoto, on_goto), 0)
+        .FollowedBy(B::kAndCheck4Chars)
+        .FollowedBy(B::kAndCheckNot4Chars)
+        
+        .IfArgumentEqualsOffset(I(B::kAndCheckNot4Chars, on_not_equal), 0x1c)
+        .ReplaceWith(Target)
+        .MapArgument(T(cp_offset), 1,
+                     I(B::kLoad4CurrentCharsUnchecked, cp_offset))
+        .MapArgument(T(advance_by), 3, I(B::kAdvanceCpAndGoto, by))
+        .MapArgument(T(both_chars), 2, I(B::kAndCheck4Chars, characters))
+        .MapArgument(T(both_mask), 2, I(B::kAndCheck4Chars, mask))
+        .MapArgument(T(max_offset), 0, I(B::kCheckPosition, cp_offset))
+        .MapArgument(T(chars1), 4, I(B::kAndCheck4Chars, characters))
+        .MapArgument(T(mask1), 4, I(B::kAndCheck4Chars, mask))
+        .MapArgument(T(chars2), 5, I(B::kAndCheckNot4Chars, characters))
+        .MapArgument(T(mask2), 5, I(B::kAndCheckNot4Chars, mask))
+        .MapArgument(T(on_match1), 4, I(B::kAndCheck4Chars, on_equal))
+        .EmitOffsetAfterSequence(T(on_match2))
+        .MapArgument(T(on_failure), 0, I(B::kCheckPosition, on_failure))
+        .IgnoreArgument(3, I(B::kAdvanceCpAndGoto, on_goto))
+        .IgnoreArgument(2, I(B::kAndCheck4Chars, on_equal));
+  }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  {
+    static constexpr int kOffsetOfBc0SkipUntilBitInTable = 0x0;
+    static constexpr int kOffsetOfBc1CheckCurrentPosition = 0x20;
+    static constexpr int kOffsetOfBc4AdvanceBcAndGoto = 0x3c;
+    static constexpr auto Target = B::kSkipUntilOneOfMasked3;
+    BytecodeSequenceNode& s0 =
+        CreateSequence(B::kSkipUntilBitInTable)
+            .IfArgumentEqualsOffset(I(B::kSkipUntilBitInTable, on_no_match),
+                                    kOffsetOfBc1CheckCurrentPosition)
+            .IfArgumentEqualsOffset(I(B::kSkipUntilBitInTable, on_no_match),
+                                    kOffsetOfBc1CheckCurrentPosition);
+
+    DCHECK_EQ(s0.SequenceLength(), 0x20);
+    DCHECK_EQ(s0.SequenceLength(), kOffsetOfBc1CheckCurrentPosition);
+    static constexpr int kOffsetOfBc5Load4CurrentChars = 0x44;
+    BytecodeSequenceNode& s1 =
+        s0.FollowedBy(B::kCheckPosition)
+            .FollowedBy(B::kLoad4CurrentCharsUnchecked)
+            .FollowedBy(B::kAndCheck4Chars)
+            .IfArgumentEqualsOffset(I(B::kAndCheck4Chars, on_equal),
+                                    kOffsetOfBc5Load4CurrentChars);
+
+    DCHECK_EQ(s1.SequenceLength(), 0x3c);
+    DCHECK_EQ(s1.SequenceLength(), kOffsetOfBc4AdvanceBcAndGoto);
+    BytecodeSequenceNode& s2 =
+        s1.FollowedBy(B::kAdvanceCpAndGoto)
+            .IfArgumentEqualsOffset(I(B::kAdvanceCpAndGoto, on_goto),
+                                    kOffsetOfBc0SkipUntilBitInTable);
+
+    DCHECK_EQ(s2.SequenceLength(), 0x44);
+    DCHECK_EQ(s2.SequenceLength(), kOffsetOfBc5Load4CurrentChars);
+    BytecodeSequenceNode& s3 =
+        s2.FollowedBy(B::kLoad4CurrentChars)
+            .IfArgumentEqualsOffset(I(B::kLoad4CurrentChars, on_failure),
+                                    kOffsetOfBc4AdvanceBcAndGoto)
+            .FollowedBy(B::kAndCheck4Chars)
+            .FollowedBy(B::kAndCheck4Chars)
+            .FollowedBy(B::kAndCheckNot4Chars)
+            .IfArgumentEqualsOffset(I(B::kAndCheckNot4Chars, on_not_equal),
+                                    kOffsetOfBc4AdvanceBcAndGoto);
+
+    s3.ReplaceWith(Target)
+        .MapArgument(T(bc0_cp_offset), 0, I(B::kSkipUntilBitInTable, cp_offset))
+        .MapArgument(T(bc0_advance_by), 0,
+                     I(B::kSkipUntilBitInTable, advance_by))
+        .MapArgument(T(bc0_table), 0, I(B::kSkipUntilBitInTable, table))
+        .IgnoreArgument(0, I(B::kSkipUntilBitInTable, on_match))
+        .IgnoreArgument(0, I(B::kSkipUntilBitInTable, on_no_match))
+        .MapArgument(T(bc1_cp_offset), 1, I(B::kCheckPosition, cp_offset))
+        .MapArgument(T(bc1_on_failure), 1, I(B::kCheckPosition, on_failure))
+        .MapArgument(T(bc2_cp_offset), 2,
+                     I(B::kLoad4CurrentCharsUnchecked, cp_offset))
+        .MapArgument(T(bc3_characters), 3, I(B::kAndCheck4Chars, characters))
+        .MapArgument(T(bc3_mask), 3, I(B::kAndCheck4Chars, mask))
+        .IgnoreArgument(3, I(B::kAndCheck4Chars, on_equal))
+        .MapArgument(T(bc4_by), 4, I(B::kAdvanceCpAndGoto, by))
+        .IgnoreArgument(4, I(B::kAdvanceCpAndGoto, on_goto))
+        .MapArgument(T(bc5_cp_offset), 5, I(B::kLoad4CurrentChars, cp_offset))
+        .IgnoreArgument(5, I(B::kLoad4CurrentChars, on_failure))
+        .MapArgument(T(bc6_characters), 6, I(B::kAndCheck4Chars, characters))
+        .MapArgument(T(bc6_mask), 6, I(B::kAndCheck4Chars, mask))
+        .MapArgument(T(bc6_on_equal), 6, I(B::kAndCheck4Chars, on_equal))
+        .MapArgument(T(bc7_characters), 7, I(B::kAndCheck4Chars, characters))
+        .MapArgument(T(bc7_mask), 7, I(B::kAndCheck4Chars, mask))
+        .MapArgument(T(bc7_on_equal), 7, I(B::kAndCheck4Chars, on_equal))
+        .MapArgument(T(bc8_characters), 8, I(B::kAndCheckNot4Chars, characters))
+        .MapArgument(T(bc8_mask), 8, I(B::kAndCheckNot4Chars, mask))
+        .IgnoreArgument(8, I(B::kAndCheckNot4Chars, on_not_equal))
+        .EmitOffsetAfterSequence(T(fallthrough_jump_target));
+  }
+
+#undef I
+#undef T
+}
+bool BytecodePeephole::OptimizeBytecode(Zone* zone,
+                                        const BytecodeWriter* src_writer,
+                                        BytecodeWriter* dst_writer) {
+  BytecodePeephole p(zone, src_writer, dst_writer);
+
+  const uint8_t* bytecode = src_writer->buffer().data();
+  
+  int length = static_cast<int>(src_writer->length());
+
   int old_pc = 0;
   bool did_optimize = false;
 
   while (old_pc < length) {
-    int replaced_len = TryOptimizeSequence(bytecode, length, old_pc);
+    int replaced_len = p.TryOptimizeSequence(bytecode, length, old_pc);
     if (replaced_len > 0) {
       old_pc += replaced_len;
       did_optimize = true;
     } else {
-      int bc = bytecode[old_pc];
-      int bc_len = RegExpBytecodeLength(bc);
-      CopyRangeToOutput(bytecode, old_pc, bc_len);
+      int bc_len = Bytecodes::Size(bytecode[old_pc]);
       old_pc += bc_len;
     }
   }
 
   if (did_optimize) {
-    FixJumps();
+    
+    
+    
+    if (old_pc > p.next_src_pc_to_emit_) {
+      dst_writer->EmitRawBytecodeStream(src_writer, p.next_src_pc_to_emit_,
+                                        old_pc - p.next_src_pc_to_emit_);
+    }
+    p.FixJumps();
   }
 
   return did_optimize;
 }
 
-void RegExpBytecodePeephole::CopyOptimizedBytecode(uint8_t* to_address) const {
-  MemCopy(to_address, &(*optimized_bytecode_buffer_.begin()), Length());
-}
+DEFINE_LAZY_LEAKY_OBJECT_GETTER(BytecodePeepholeSequences, GetStandardSequences)
 
-int RegExpBytecodePeephole::Length() const { return pc(); }
-
-BytecodeSequenceNode& RegExpBytecodePeephole::CreateSequence(int bytecode) {
-  DCHECK(sequences_ != nullptr);
-  DCHECK(0 <= bytecode && bytecode < kRegExpBytecodeCount);
-
-  return sequences_->FollowedBy(bytecode);
-}
-
-int RegExpBytecodePeephole::TryOptimizeSequence(const uint8_t* bytecode,
-                                                int bytecode_length,
-                                                int start_pc) {
-  BytecodeSequenceNode* seq_node = sequences_;
-  BytecodeSequenceNode* valid_seq_end = nullptr;
+int BytecodePeephole::TryOptimizeSequence(const uint8_t* bytecode,
+                                          int bytecode_length, int start_pc) {
+  const BytecodeSequenceNode* seq_node = GetStandardSequences()->sequences();
+  const BytecodeSequenceNode* valid_seq_end = nullptr;
 
   int current_pc = start_pc;
 
   
   
   while (current_pc < bytecode_length) {
-    seq_node = seq_node->Find(bytecode[current_pc]);
+    seq_node = seq_node->Find(Bytecodes::FromByte(bytecode[current_pc]));
     if (seq_node == nullptr) break;
     if (!seq_node->CheckArguments(bytecode, start_pc)) break;
 
     if (seq_node->IsSequence()) valid_seq_end = seq_node;
-    current_pc += RegExpBytecodeLength(bytecode[current_pc]);
+    current_pc += Bytecodes::Size(bytecode[current_pc]);
   }
 
   if (valid_seq_end) {
@@ -675,67 +888,61 @@ int RegExpBytecodePeephole::TryOptimizeSequence(const uint8_t* bytecode,
   return 0;
 }
 
-void RegExpBytecodePeephole::EmitOptimization(
-    int start_pc, const uint8_t* bytecode,
-    const BytecodeSequenceNode& last_node) {
-#ifdef DEBUG
+void BytecodePeephole::EmitOptimization(int start_pc, const uint8_t* bytecode,
+                                        const BytecodeSequenceNode& last_node) {
+  
+  if (start_pc > next_src_pc_to_emit_) {
+    dst_writer_->EmitRawBytecodeStream(src_writer_, next_src_pc_to_emit_,
+                                       start_pc - next_src_pc_to_emit_);
+  }
+  const int sequence_length = last_node.SequenceLength();
+  next_src_pc_to_emit_ = start_pc + sequence_length;
+
+  
+  
+  
+  auto edge_it = src_writer_->jump_edges().lower_bound(start_pc);
+  while (edge_it != src_writer_->jump_edges().end() &&
+         edge_it->first < start_pc + sequence_length) {
+    int target = edge_it->second;
+    auto count_it = jump_usage_counts_.find(target);
+    DCHECK_NE(count_it, jump_usage_counts_.end());
+    count_it->second--;
+    edge_it++;
+  }
+
   int optimized_start_pc = pc();
-#endif
   
   
-  
-  
-  ZoneLinkedList<int> delete_jumps = ZoneLinkedList<int>(zone());
+  ZoneLinkedList<uint32_t> after_sequence_offsets(zone());
 
-  uint32_t bc = last_node.OptimizedBytecode();
-  EmitValue(bc);
+  const Bytecode bc = last_node.OptimizedBytecode();
+  dst_writer_->EmitBytecode(bc);
 
-  for (size_t arg = 0; arg < last_node.ArgumentSize(); arg++) {
-    BytecodeArgumentMapping arg_map = last_node.ArgumentMapping(arg);
-    int arg_pos = start_pc + arg_map.offset;
-    
-    
-    auto jump_edge_iter = jump_edges_.find(arg_pos);
-    if (jump_edge_iter != jump_edges_.end()) {
-      int jump_source = jump_edge_iter->first;
-      int jump_destination = jump_edge_iter->second;
-      
-      jump_edges_mapped_.emplace(Length(), jump_destination);
-      
-      delete_jumps.push_back(jump_source);
-      
-      auto jump_count_iter = jump_usage_counts_.find(jump_destination);
-      DCHECK(jump_count_iter != jump_usage_counts_.end());
-      int& usage_count = jump_count_iter->second;
-      --usage_count;
-    }
-    
-    
-    EmitArgument(start_pc, bytecode, arg_map);
-  }
-  DCHECK_EQ(pc(), optimized_start_pc +
-                      RegExpBytecodeLength(last_node.OptimizedBytecode()));
-
-  
-  if (last_node.HasIgnoredArguments()) {
-    for (auto ignored_arg = last_node.ArgumentIgnoredBegin();
-         ignored_arg != last_node.ArgumentIgnoredEnd(); ignored_arg++) {
-      auto jump_edge_iter = jump_edges_.find(start_pc + ignored_arg->offset);
-      if (jump_edge_iter != jump_edges_.end()) {
-        int jump_source = jump_edge_iter->first;
-        int jump_destination = jump_edge_iter->second;
-        
-        delete_jumps.push_back(jump_source);
-        
-        auto jump_count_iter = jump_usage_counts_.find(jump_destination);
-        DCHECK(jump_count_iter != jump_usage_counts_.end());
-        int& usage_count = jump_count_iter->second;
-        --usage_count;
+  for (size_t arg_idx = 0; arg_idx < last_node.ArgumentSize(); arg_idx++) {
+    BytecodeArgumentMapping arg_map = last_node.ArgumentMapping(arg_idx);
+    if (arg_map.type() == BytecodeArgumentMapping::Type::kDefault) {
+      if (arg_map.new_operand_type() == BytecodeOperandType::kJumpTarget) {
+        int target = GetArgumentValue(bytecode, start_pc + arg_map.offset(),
+                                      arg_map.length());
+        jump_usage_counts_[target]++;
       }
+      EmitArgument(start_pc, bytecode, arg_map);
+    } else {
+      DCHECK_EQ(arg_map.type(),
+                BytecodeArgumentMapping::Type::kOffsetAfterSequence);
+      after_sequence_offsets.push_back(optimized_start_pc +
+                                       arg_map.new_offset());
+      
+      dst_writer_->Emit<uint32_t>(0, arg_map.new_offset());
     }
   }
 
-  int fixup_length = RegExpBytecodeLength(bc) - last_node.SequenceLength();
+  
+  dst_writer_->Finalize(bc);
+  DCHECK_EQ(pc(), optimized_start_pc + Bytecodes::Size(bc));
+
+  int fixup_length = Bytecodes::Size(bc) - sequence_length;
 
   
   
@@ -750,18 +957,17 @@ void RegExpBytecodePeephole::EmitOptimization(
     jump_candidate_count = jump_destination_candidate->second;
   }
 
-  int preserve_from = start_pc + last_node.SequenceLength();
+  int preserve_from = start_pc + sequence_length;
   if (jump_destination_candidate != jump_usage_counts_.end() &&
-      jump_candidate_destination < start_pc + last_node.SequenceLength()) {
+      jump_candidate_destination < start_pc + sequence_length) {
     preserve_from = jump_candidate_destination;
     
     
     
     
-    for (auto jump_iter = jump_edges_.lower_bound(preserve_from);
-         jump_iter != jump_edges_.end() &&
-         jump_iter->first  <
-             start_pc + last_node.SequenceLength();
+    for (auto jump_iter = src_writer_->jump_edges().lower_bound(preserve_from);
+         jump_iter != src_writer_->jump_edges().end() &&
+         jump_iter->first  < start_pc + sequence_length;
          ++jump_iter) {
       int jump_destination = jump_iter->second;
       if (jump_destination > start_pc && jump_destination < preserve_from) {
@@ -772,11 +978,8 @@ void RegExpBytecodePeephole::EmitOptimization(
     
     
     
-    int preserve_length = start_pc + last_node.SequenceLength() - preserve_from;
+    int preserve_length = start_pc + sequence_length - preserve_from;
     fixup_length += preserve_length;
-    
-    AddJumpSourceFixup(fixup_length,
-                       start_pc + last_node.SequenceLength() - preserve_length);
     
     
     
@@ -784,31 +987,19 @@ void RegExpBytecodePeephole::EmitOptimization(
     
     
     SetJumpDestinationFixup(pc() - preserve_from, preserve_from);
-    CopyRangeToOutput(bytecode, preserve_from, preserve_length);
+    dst_writer_->EmitRawBytecodeStream(src_writer_, preserve_from,
+                                       preserve_length);
   } else {
     AddJumpDestinationFixup(fixup_length, start_pc + 1);
-    
-    AddJumpSourceFixup(fixup_length, start_pc + last_node.SequenceLength());
   }
 
-  
-  for (int del : delete_jumps) {
-    if (del < preserve_from) {
-      jump_edges_.erase(del);
-    }
+  for (uint32_t offset : after_sequence_offsets) {
+    DCHECK_EQ(dst_writer_->buffer()[offset], 0);
+    dst_writer_->OverwriteValue<uint32_t>(pc(), offset);
   }
 }
 
-void RegExpBytecodePeephole::AddJumpSourceFixup(int fixup, int pos) {
-  auto previous_fixup = jump_source_fixups_.lower_bound(pos);
-  DCHECK(previous_fixup != jump_source_fixups_.end());
-  DCHECK(previous_fixup != jump_source_fixups_.begin());
-
-  int previous_fixup_value = (--previous_fixup)->second;
-  jump_source_fixups_[pos] = previous_fixup_value + fixup;
-}
-
-void RegExpBytecodePeephole::AddJumpDestinationFixup(int fixup, int pos) {
+void BytecodePeephole::AddJumpDestinationFixup(int fixup, int pos) {
   auto previous_fixup = jump_destination_fixups_.lower_bound(pos);
   DCHECK(previous_fixup != jump_destination_fixups_.end());
   DCHECK(previous_fixup != jump_destination_fixups_.begin());
@@ -817,7 +1008,7 @@ void RegExpBytecodePeephole::AddJumpDestinationFixup(int fixup, int pos) {
   jump_destination_fixups_[pos] = previous_fixup_value + fixup;
 }
 
-void RegExpBytecodePeephole::SetJumpDestinationFixup(int fixup, int pos) {
+void BytecodePeephole::SetJumpDestinationFixup(int fixup, int pos) {
   auto previous_fixup = jump_destination_fixups_.lower_bound(pos);
   DCHECK(previous_fixup != jump_destination_fixups_.end());
   DCHECK(previous_fixup != jump_destination_fixups_.begin());
@@ -827,205 +1018,112 @@ void RegExpBytecodePeephole::SetJumpDestinationFixup(int fixup, int pos) {
   jump_destination_fixups_.emplace(pos + 1, previous_fixup_value);
 }
 
-void RegExpBytecodePeephole::PrepareJumpStructures(
-    const ZoneUnorderedMap<int, int>& jump_edges) {
-  for (auto jump_edge : jump_edges) {
+void BytecodePeephole::FixJumps() {
+  for (auto jump_edge : dst_writer_->jump_edges()) {
     int jump_source = jump_edge.first;
     int jump_destination = jump_edge.second;
+    int fixed_jump_destination =
+        jump_destination +
+        (--jump_destination_fixups_.upper_bound(jump_destination))->second;
+    DCHECK_LT(fixed_jump_destination, pc());
+    
+    
+    DCHECK(Bytecodes::IsValidJumpTarget(
+        dst_writer_->buffer()[fixed_jump_destination]));
 
-    jump_edges_.emplace(jump_source, jump_destination);
-    jump_usage_counts_[jump_destination]++;
-  }
-}
-
-void RegExpBytecodePeephole::FixJumps() {
-  int position_fixup = 0;
-  
-  auto next_source_fixup = jump_source_fixups_.lower_bound(0);
-  int next_source_fixup_offset = next_source_fixup->first;
-  int next_source_fixup_value = next_source_fixup->second;
-
-  for (auto jump_edge : jump_edges_) {
-    int jump_source = jump_edge.first;
-    int jump_destination = jump_edge.second;
-    while (jump_source >= next_source_fixup_offset) {
-      position_fixup = next_source_fixup_value;
-      ++next_source_fixup;
-      next_source_fixup_offset = next_source_fixup->first;
-      next_source_fixup_value = next_source_fixup->second;
+    if (jump_destination != fixed_jump_destination) {
+      dst_writer_->PatchJump(fixed_jump_destination, jump_source);
     }
-    jump_source += position_fixup;
-
-    FixJump(jump_source, jump_destination);
-  }
-
-  
-  
-  for (auto jump_edge : jump_edges_mapped_) {
-    int jump_source = jump_edge.first;
-    int jump_destination = jump_edge.second;
-
-    FixJump(jump_source, jump_destination);
   }
 }
 
-void RegExpBytecodePeephole::FixJump(int jump_source, int jump_destination) {
-  int fixed_jump_destination =
-      jump_destination +
-      (--jump_destination_fixups_.upper_bound(jump_destination))->second;
-  DCHECK_LT(fixed_jump_destination, Length());
-#ifdef DEBUG
-  
-  
-  uint8_t jump_bc = optimized_bytecode_buffer_[fixed_jump_destination];
-  DCHECK_GT(jump_bc, 0);
-  DCHECK_LT(jump_bc, kRegExpBytecodeCount);
-#endif
+void BytecodePeephole::EmitArgument(int start_pc, const uint8_t* bytecode,
+                                    BytecodeArgumentMapping arg) {
+  const BytecodeOperandType type = arg.new_operand_type();
 
-  if (jump_destination != fixed_jump_destination) {
-    OverwriteValue<uint32_t>(jump_source, fixed_jump_destination);
-  }
-}
-
-void RegExpBytecodePeephole::AddSentinelFixups(int pos) {
-  jump_source_fixups_.emplace(pos, 0);
-  jump_destination_fixups_.emplace(pos, 0);
-}
-
-template <typename T>
-void RegExpBytecodePeephole::EmitValue(T value) {
-  DCHECK(optimized_bytecode_buffer_.begin() + pc() ==
-         optimized_bytecode_buffer_.end());
-  uint8_t* value_byte_iter = reinterpret_cast<uint8_t*>(&value);
-  optimized_bytecode_buffer_.insert(optimized_bytecode_buffer_.end(),
-                                    value_byte_iter,
-                                    value_byte_iter + sizeof(T));
-}
-
-template <typename T>
-void RegExpBytecodePeephole::OverwriteValue(int offset, T value) {
-  uint8_t* value_byte_iter = reinterpret_cast<uint8_t*>(&value);
-  uint8_t* value_byte_iter_end = value_byte_iter + sizeof(T);
-  while (value_byte_iter < value_byte_iter_end) {
-    optimized_bytecode_buffer_[offset++] = *value_byte_iter++;
-  }
-}
-
-void RegExpBytecodePeephole::CopyRangeToOutput(const uint8_t* orig_bytecode,
-                                               int start, int length) {
-  DCHECK(optimized_bytecode_buffer_.begin() + pc() ==
-         optimized_bytecode_buffer_.end());
-  optimized_bytecode_buffer_.insert(optimized_bytecode_buffer_.end(),
-                                    orig_bytecode + start,
-                                    orig_bytecode + start + length);
-}
-
-void RegExpBytecodePeephole::SetRange(uint8_t value, int count) {
-  DCHECK(optimized_bytecode_buffer_.begin() + pc() ==
-         optimized_bytecode_buffer_.end());
-  optimized_bytecode_buffer_.insert(optimized_bytecode_buffer_.end(), count,
-                                    value);
-}
-
-void RegExpBytecodePeephole::EmitArgument(int start_pc, const uint8_t* bytecode,
-                                          BytecodeArgumentMapping arg) {
-  int arg_pos = start_pc + arg.offset;
-  switch (arg.length) {
-    case 1:
-      DCHECK_EQ(arg.new_length, arg.length);
-      EmitValue(GetValue<uint8_t>(bytecode, arg_pos));
-      break;
-    case 2:
-      DCHECK_EQ(arg.new_length, arg.length);
-      EmitValue(GetValue<uint16_t>(bytecode, arg_pos));
-      break;
-    case 3: {
-      
-      
-      
-      
-#ifdef V8_TARGET_BIG_ENDIAN
-      UNIMPLEMENTED();
-      int32_t val = 0;
-#else
-      int32_t val = GetValue<int32_t>(bytecode, arg_pos - 1) >> kBitsPerByte;
-#endif  
-
-      switch (arg.new_length) {
-        case 2:
-          EmitValue<uint16_t>(val);
-          break;
-        case 3: {
-          
-          auto prev_val =
-              GetValue<int32_t>(&(*optimized_bytecode_buffer_.begin()),
-                                Length() - sizeof(uint32_t));
-#ifdef V8_TARGET_BIG_ENDIAN
-      UNIMPLEMENTED();
-      USE(prev_val);
-#else
-          DCHECK_EQ(prev_val & 0xFFFFFF00, 0);
-          OverwriteValue<uint32_t>(
-              pc() - sizeof(uint32_t),
-              (static_cast<uint32_t>(val) << 8) | (prev_val & 0xFF));
-#endif  
-          break;
-        }
-        case 4:
-          EmitValue<uint32_t>(val);
-          break;
-      }
-      break;
-    }
-    case 4:
-      DCHECK_EQ(arg.new_length, arg.length);
-      EmitValue(GetValue<uint32_t>(bytecode, arg_pos));
-      break;
-    case 8:
-      DCHECK_EQ(arg.new_length, arg.length);
-      EmitValue(GetValue<uint64_t>(bytecode, arg_pos));
-      break;
+  switch (type) {
+#define CASE(Name, ...)                                                       \
+  case BytecodeOperandType::k##Name: {                                        \
+    DCHECK_LE(arg.length(), kInt32Size);                                      \
+    using CType = OperandTypeTraits<BytecodeOperandType::k##Name>::kCType;    \
+    CType value = static_cast<CType>(                                         \
+        GetArgumentValue(bytecode, start_pc + arg.offset(), arg.length()));   \
+    dst_writer_->EmitOperand<BytecodeOperandType::k##Name>(value,             \
+                                                           arg.new_offset()); \
+  } break;
+    BASIC_BYTECODE_OPERAND_TYPE_LIST(CASE)
+    BASIC_BYTECODE_OPERAND_TYPE_LIMITS_LIST(CASE)
+#undef CASE
+    case BytecodeOperandType::kBitTable: {
+      DCHECK_EQ(arg.length(), 16);
+      dst_writer_->EmitOperand<BytecodeOperandType::kBitTable>(
+          bytecode + start_pc + arg.offset(), arg.new_offset());
+    } break;
     default:
-      CopyRangeToOutput(bytecode, arg_pos,
-                        std::min(arg.length, arg.new_length));
-      if (arg.length < arg.new_length) {
-        SetRange(0x00, arg.new_length - arg.length);
-      }
-      break;
+      UNREACHABLE();
   }
 }
 
-int RegExpBytecodePeephole::pc() const {
-  DCHECK_LE(optimized_bytecode_buffer_.size(), std::numeric_limits<int>::max());
-  return static_cast<int>(optimized_bytecode_buffer_.size());
-}
+int BytecodePeephole::pc() const { return dst_writer_->pc(); }
 
-Zone* RegExpBytecodePeephole::zone() const { return zone_; }
+Zone* BytecodePeephole::zone() const { return zone_; }
 
 }  
 
 
-DirectHandle<TrustedByteArray>
-RegExpBytecodePeepholeOptimization::OptimizeBytecode(
-    Isolate* isolate, Zone* zone, DirectHandle<String> source,
-    const uint8_t* bytecode, int length,
-    const ZoneUnorderedMap<int, int>& jump_edges) {
-  RegExpBytecodePeephole peephole(zone, length, jump_edges);
-  bool did_optimize = peephole.OptimizeBytecode(bytecode, length);
-  DirectHandle<TrustedByteArray> array =
-      isolate->factory()->NewTrustedByteArray(peephole.Length());
-  peephole.CopyOptimizedBytecode(array->begin());
+DirectHandle<TrustedByteArray> BytecodePeepholeOptimization::OptimizeBytecode(
+    Isolate* isolate, Zone* zone, DirectHandle<RegExpData> re_data,
+    BytecodeWriter* src_writer) {
+  BytecodeWriter second_writer(zone);
+  BytecodeWriter* dst_writer = &second_writer;
 
-  if (did_optimize && v8_flags.trace_regexp_peephole_optimization) {
+  
+  std::optional<ZoneVector<uint8_t>> original_bytecode;
+  if (v8_flags.trace_regexp_peephole_optimization) {
+    const ZoneVector<uint8_t>& src_buffer = src_writer->buffer();
+    const auto begin = src_buffer.begin();
+    original_bytecode.emplace(begin, begin + src_writer->length(), zone);
+  }
+
+  
+  
+  bool any_pass_optimized = false;
+  for (;;) {
+    dst_writer->Reset();
+    
+    
+    
+    bool this_pass_optimized =
+        BytecodePeephole::OptimizeBytecode(zone, src_writer, dst_writer);
+    if (!this_pass_optimized) break;
+    any_pass_optimized = true;
+    std::swap(dst_writer, src_writer);
+  }
+
+  
+  
+  const uint8_t* optimized_bytecode = src_writer->buffer().data();
+  uint32_t optimized_length = src_writer->length();
+
+  DirectHandle<TrustedByteArray> array =
+      isolate->factory()->NewTrustedByteArray(optimized_length);
+  MemCopy(array->begin(), optimized_bytecode, optimized_length);
+
+  if (any_pass_optimized && v8_flags.trace_regexp_peephole_optimization) {
+    std::unique_ptr<char[]> pattern_cstring =
+        re_data->escaped_source()->ToCString();
     PrintF("Original Bytecode:\n");
-    RegExpBytecodeDisassemble(bytecode, length, source->ToCString().get());
+    RegExpBytecodeDisassemble(original_bytecode->data(),
+                              static_cast<uint32_t>(original_bytecode->size()),
+                              pattern_cstring.get());
     PrintF("Optimized Bytecode:\n");
-    RegExpBytecodeDisassemble(array->begin(), peephole.Length(),
-                              source->ToCString().get());
+    RegExpBytecodeDisassemble(array->begin(), optimized_length,
+                              pattern_cstring.get());
   }
 
   return array;
 }
 
+}  
 }  
 }  

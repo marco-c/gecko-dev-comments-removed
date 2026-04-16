@@ -10,21 +10,26 @@
 namespace v8 {
 namespace internal {
 
+class RegExpData;
 class TrustedByteArray;
 
+namespace regexp {
+
+class BytecodeWriter;
 
 
 
-class RegExpBytecodePeepholeOptimization : public AllStatic {
+
+class BytecodePeepholeOptimization : public AllStatic {
  public:
   
   
   static DirectHandle<TrustedByteArray> OptimizeBytecode(
-      Isolate* isolate, Zone* zone, DirectHandle<String> source,
-      const uint8_t* bytecode, int length,
-      const ZoneUnorderedMap<int, int>& jump_edges);
+      Isolate* isolate, Zone* zone, DirectHandle<RegExpData> re_data,
+      BytecodeWriter* src_writer);
 };
 
+}  
 }  
 }  
 

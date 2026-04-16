@@ -5,6 +5,8 @@
 #ifndef V8_REGEXP_REGEXP_MACRO_ASSEMBLER_H_
 #define V8_REGEXP_REGEXP_MACRO_ASSEMBLER_H_
 
+#include <string_view>
+
 #include "irregexp/imported/regexp-ast.h"
 #include "irregexp/imported/regexp.h"
 #include "irregexp/RegExpShim.h"
@@ -16,6 +18,8 @@ class ByteArray;
 class JSRegExp;
 class Label;
 class String;
+
+namespace regexp {
 
 static const base::uc32 kLeadSurrogateStart = 0xd800;
 static const base::uc32 kLeadSurrogateEnd = 0xdbff;
@@ -41,12 +45,18 @@ class RegExpMacroAssembler {
 
   static constexpr int kUseCharactersValue = -1;
 
-  RegExpMacroAssembler(Isolate* isolate, Zone* zone);
+  
+  enum Mode { LATIN1 = 1, UC16 = 2 };
+
+  RegExpMacroAssembler(Isolate* isolate, Zone* zone, Mode mode);
   RegExpMacroAssembler(const RegExpMacroAssembler& other) V8_NOEXCEPT = default;
   virtual ~RegExpMacroAssembler() = default;
 
-  virtual DirectHandle<HeapObject> GetCode(DirectHandle<String> source,
-                                           RegExpFlags flags) = 0;
+  virtual DirectHandle<HeapObject> GetCode(DirectHandle<RegExpData> re_data,
+                                           Flags flags) = 0;
+
+  void LogCode(Isolate* isolate, DirectHandle<Code> code,
+               DirectHandle<RegExpData> re_data, Flags flags);
 
   
   
@@ -54,8 +64,8 @@ class RegExpMacroAssembler {
   
   
   
-  virtual int stack_limit_slack_slot_count() = 0;
-  virtual bool CanReadUnaligned() const = 0;
+  int stack_limit_slack_slot_count() const;
+  bool CanReadUnaligned() const;
 
   virtual void AdvanceCurrentPosition(int by) = 0;  
   virtual void AdvanceRegister(int reg, int by) = 0;  
@@ -112,20 +122,71 @@ class RegExpMacroAssembler {
 
   virtual void SkipUntilBitInTable(int cp_offset, Handle<ByteArray> table,
                                    Handle<ByteArray> nibble_table,
-                                   int advance_by) = 0;
+                                   int advance_by, Label* on_match,
+                                   Label* on_no_match) = 0;
   virtual bool SkipUntilBitInTableUseSimd(int advance_by) { return false; }
+
+  virtual void SkipUntilCharAnd(int cp_offset, int advance_by,
+                                unsigned character, unsigned mask,
+                                int eats_at_least, Label* on_match,
+                                Label* on_no_match);
+  virtual void SkipUntilChar(int cp_offset, int advance_by, unsigned character,
+                             Label* on_match, Label* on_no_match);
+  virtual void SkipUntilCharPosChecked(int cp_offset, int advance_by,
+                                       unsigned character, int eats_at_least,
+                                       Label* on_match, Label* on_no_match);
+  virtual void SkipUntilCharOrChar(int cp_offset, int advance_by,
+                                   unsigned char1, unsigned char2,
+                                   Label* on_match, Label* on_no_match);
+  virtual void SkipUntilGtOrNotBitInTable(int cp_offset, int advance_by,
+                                          unsigned character,
+                                          Handle<ByteArray> table,
+                                          Label* on_match, Label* on_no_match);
+  virtual void SkipUntilOneOfMasked(int cp_offset, int advance_by,
+                                    unsigned both_chars, unsigned both_mask,
+                                    int max_offset, unsigned chars1,
+                                    unsigned mask1, unsigned chars2,
+                                    unsigned mask2, Label* on_match1,
+                                    Label* on_match2, Label* on_failure);
+  struct SkipUntilOneOfMasked3Args {
+    int bc0_cp_offset;
+    int bc0_advance_by;
+    Handle<ByteArray> bc0_table;
+    Handle<ByteArray> bc0_nibble_table;
+    int bc1_cp_offset;
+    Label* bc1_on_failure;
+    int bc2_cp_offset;
+    unsigned bc3_characters;
+    unsigned bc3_mask;
+    int bc4_by;
+    int bc5_cp_offset;
+    unsigned bc6_characters;
+    unsigned bc6_mask;
+    Label* bc6_on_equal;
+    unsigned bc7_characters;
+    unsigned bc7_mask;
+    Label* bc7_on_equal;
+    unsigned bc8_characters;
+    unsigned bc8_mask;
+    Label* fallthrough_jump_target;
+  };
+  virtual bool SkipUntilOneOfMasked3UseSimd(
+      const SkipUntilOneOfMasked3Args& args) {
+    return false;
+  }
+  virtual void SkipUntilOneOfMasked3(const SkipUntilOneOfMasked3Args& args);
 
   
   
-  virtual void CheckPosition(int cp_offset, Label* on_outside_input);
+  virtual void CheckPosition(int cp_offset, Label* on_outside_input) = 0;
+  
+  
+  bool CanOptimizeSpecialClassRanges(StandardCharacterSet) const;
   
   
   
-  
-  virtual bool CheckSpecialClassRanges(StandardCharacterSet type,
-                                       Label* on_no_match) {
-    return false;
-  }
+  virtual void CheckSpecialClassRanges(StandardCharacterSet type,
+                                       Label* on_no_match) = 0;
 
   
   
@@ -154,7 +215,10 @@ class RegExpMacroAssembler {
   
   virtual void PushBacktrack(Label* label) = 0;
   virtual void PushCurrentPosition() = 0;
-  enum StackCheckFlag { kNoStackLimitCheck = false, kCheckStackLimit = true };
+  enum class StackCheckFlag : uint8_t {
+    kNoStackLimitCheck = false,
+    kCheckStackLimit = true
+  };
   virtual void PushRegister(int register_index,
                             StackCheckFlag check_stack_limit) = 0;
   virtual void ReadCurrentPositionFromRegister(int reg) = 0;
@@ -166,6 +230,8 @@ class RegExpMacroAssembler {
   virtual void WriteCurrentPositionToRegister(int reg, int cp_offset) = 0;
   virtual void ClearRegisters(int reg_from, int reg_to) = 0;
   virtual void WriteStackPointerToRegister(int reg) = 0;
+  virtual void RecordComment(std::string_view comment) = 0;
+  virtual MacroAssembler* masm() = 0;
 
   
   void CheckNotInSurrogatePair(int cp_offset, Label* on_failure);
@@ -226,21 +292,21 @@ class RegExpMacroAssembler {
                                           Address raw_byte_array);
 
   
-  void set_slow_safe(bool ssc) { slow_safe_compiler_ = ssc; }
+  virtual void set_slow_safe(bool ssc) { slow_safe_compiler_ = ssc; }
   bool slow_safe() const { return slow_safe_compiler_; }
 
   
   
   
   
-  void set_backtrack_limit(uint32_t backtrack_limit) {
+  virtual void set_backtrack_limit(uint32_t backtrack_limit) {
     backtrack_limit_ = backtrack_limit;
   }
 
   
   
   
-  void set_can_fallback(bool val) { can_fallback_ = val; }
+  virtual void set_can_fallback(bool val) { can_fallback_ = val; }
 
   enum GlobalMode {
     NOT_GLOBAL,
@@ -250,21 +316,45 @@ class RegExpMacroAssembler {
   };
   
   
-  inline void set_global_mode(GlobalMode mode) { global_mode_ = mode; }
+  inline virtual void set_global_mode(GlobalMode mode) { global_mode_ = mode; }
   inline bool global() const { return global_mode_ != NOT_GLOBAL; }
   inline bool global_with_zero_length_check() const {
     return global_mode_ == GLOBAL || global_mode_ == GLOBAL_UNICODE;
   }
   inline bool global_unicode() const { return global_mode_ == GLOBAL_UNICODE; }
 
+  static Address word_character_map_address() {
+    return reinterpret_cast<Address>(&word_character_map_[0]);
+  }
+
+  static const base::Vector<const uint8_t> word_character_map() {
+    return base::ArrayVector(word_character_map_);
+  }
+
   Isolate* isolate() const { return isolate_; }
   Zone* zone() const { return zone_; }
 
  protected:
+  
+  inline int char_size() const {
+    static_assert(static_cast<int>(Mode::LATIN1) == sizeof(uint8_t));
+    static_assert(static_cast<int>(Mode::UC16) == sizeof(uint16_t));
+    return static_cast<int>(mode());
+  }
+
   bool has_backtrack_limit() const;
   uint32_t backtrack_limit() const { return backtrack_limit_; }
 
   bool can_fallback() const { return can_fallback_; }
+
+  
+  Mode mode() const { return mode_; }
+
+  static constexpr size_t kWordCharacterMapSize = 256;
+  
+  
+  
+  static const uint8_t word_character_map_[kWordCharacterMapSize];
 
  private:
   bool slow_safe_compiler_;
@@ -273,13 +363,11 @@ class RegExpMacroAssembler {
   GlobalMode global_mode_;
   Isolate* const isolate_;
   Zone* const zone_;
+  const Mode mode_;
 };
 
-class NativeRegExpMacroAssembler: public RegExpMacroAssembler {
+class NativeRegExpMacroAssembler : public RegExpMacroAssembler {
  public:
-  
-  enum Mode { LATIN1 = 1, UC16 = 2 };
-
   
   
   
@@ -300,8 +388,8 @@ class NativeRegExpMacroAssembler: public RegExpMacroAssembler {
     SMALLEST_REGEXP_RESULT = RegExp::kInternalRegExpSmallestResult,
   };
 
-  NativeRegExpMacroAssembler(Isolate* isolate, Zone* zone)
-      : RegExpMacroAssembler(isolate, zone), range_array_cache_(zone) {}
+  NativeRegExpMacroAssembler(Isolate* isolate, Zone* zone, Mode mode)
+      : RegExpMacroAssembler(isolate, zone, mode), range_array_cache_(zone) {}
   ~NativeRegExpMacroAssembler() override = default;
 
   
@@ -314,8 +402,6 @@ class NativeRegExpMacroAssembler: public RegExpMacroAssembler {
       Tagged<String> input, int start_offset, const uint8_t* input_start,
       const uint8_t* input_end, int* output, int output_size, Isolate* isolate,
       Tagged<JSRegExp> regexp);
-
-  bool CanReadUnaligned() const override;
 
   void LoadCurrentCharacterImpl(int cp_offset, Label* on_end_of_input,
                                 bool check_bounds, int characters,
@@ -341,16 +427,7 @@ class NativeRegExpMacroAssembler: public RegExpMacroAssembler {
                                   Address* subject, const uint8_t** input_start,
                                   const uint8_t** input_end, uintptr_t gap);
 
-  static Address word_character_map_address() {
-    return reinterpret_cast<Address>(&word_character_map[0]);
-  }
-
  protected:
-  
-  
-  
-  static const uint8_t word_character_map[256];
-
   Handle<ByteArray> GetOrAddRangeArray(const ZoneList<CharacterRange>* ranges);
 
  private:
@@ -364,6 +441,7 @@ class NativeRegExpMacroAssembler: public RegExpMacroAssembler {
       range_array_cache_;
 };
 
+}  
 }  
 }  
 
