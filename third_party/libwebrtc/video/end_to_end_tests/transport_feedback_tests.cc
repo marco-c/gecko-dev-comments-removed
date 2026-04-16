@@ -17,6 +17,7 @@
 
 #include "api/array_view.h"
 #include "api/call/transport.h"
+#include "api/environment/environment.h"
 #include "api/rtp_parameters.h"
 #include "api/task_queue/task_queue_base.h"
 #include "api/test/simulated_network.h"
@@ -40,7 +41,6 @@
 #include "test/call_test.h"
 #include "test/direct_transport.h"
 #include "test/fake_videorenderer.h"
-#include "test/field_trial.h"
 #include "test/frame_generator_capturer.h"
 #include "test/gtest.h"
 #include "test/network/simulated_network.h"
@@ -67,15 +67,17 @@ TEST(TransportFeedbackMultiStreamTest, AssignsTransportSequenceNumbers) {
   class RtpExtensionHeaderObserver : public test::DirectTransport {
    public:
     RtpExtensionHeaderObserver(
+        const Environment& env,
         TaskQueueBase* task_queue,
         Call* sender_call,
         const std::map<uint32_t, uint32_t>& ssrc_map,
         const std::map<uint8_t, MediaType>& payload_type_map,
         ArrayView<const RtpExtension> audio_extensions,
         ArrayView<const RtpExtension> video_extensions)
-        : DirectTransport(task_queue,
+        : DirectTransport(env,
+                          task_queue,
                           std::make_unique<FakeNetworkPipe>(
-                              Clock::GetRealTimeClock(),
+                              &env.clock(),
                               std::make_unique<SimulatedNetwork>(
                                   BuiltInNetworkBehaviorConfig())),
                           sender_call,
@@ -235,6 +237,7 @@ TEST(TransportFeedbackMultiStreamTest, AssignsTransportSequenceNumbers) {
     }
 
     std::unique_ptr<test::DirectTransport> CreateSendTransport(
+        const Environment& env,
         TaskQueueBase* task_queue,
         Call* sender_call) override {
       std::map<uint8_t, MediaType> payload_type_map =
@@ -246,7 +249,7 @@ TEST(TransportFeedbackMultiStreamTest, AssignsTransportSequenceNumbers) {
           RtpExtension(RtpExtension::kTransportSequenceNumberUri,
                        kTransportSequenceNumberExtensionId)};
       auto observer = std::make_unique<RtpExtensionHeaderObserver>(
-          task_queue, sender_call, rtx_to_media_ssrcs_, payload_type_map,
+          env, task_queue, sender_call, rtx_to_media_ssrcs_, payload_type_map,
           extensions, extensions);
       observer_ = observer.get();
       return observer;
@@ -342,8 +345,7 @@ TEST_F(TransportFeedbackEndToEndTest, AudioVideoReceivesTransportFeedback) {
 
 TEST_F(TransportFeedbackEndToEndTest,
        StopsAndResumesMediaWhenCongestionWindowFull) {
-  test::ScopedFieldTrials override_field_trials(
-      "WebRTC-CongestionWindow/QueueSize:250/");
+  field_trials().Set("WebRTC-CongestionWindow", "QueueSize:250");
 
   class TransportFeedbackTester : public test::EndToEndTest {
    public:
