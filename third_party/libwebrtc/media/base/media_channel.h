@@ -262,7 +262,7 @@ class MediaReceiveChannelInterface {
   
   virtual void SetInterface(MediaChannelNetworkInterface* iface) = 0;
   
-  virtual void OnPacketReceived(const RtpPacketReceived& packet) = 0;
+  virtual void OnPacketReceived(RtpPacketReceived packet) = 0;
   
   virtual std::optional<uint32_t> GetUnsignaledSsrc() const = 0;
   

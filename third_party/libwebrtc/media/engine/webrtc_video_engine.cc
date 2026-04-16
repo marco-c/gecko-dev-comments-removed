@@ -2797,6 +2797,9 @@ WebRtcVideoReceiveChannel::WebRtcVideoReceiveChannel(
     : MediaChannelUtil(call->network_thread(), config.enable_dscp),
       env_(env),
       worker_thread_(call->worker_thread()),
+      network_thread_safety_(PendingTaskSafetyFlag::CreateAttachedToTaskQueue(
+          true,
+          call->network_thread())),
       receiving_(false),
       call_(call),
       default_sink_(nullptr),
@@ -2944,7 +2947,13 @@ bool WebRtcVideoReceiveChannel::SetReceiverParameters(
   }
   if (changed_params.rtp_header_extensions) {
     recv_rtp_extensions_ = *changed_params.rtp_header_extensions;
-    recv_rtp_extension_map_ = RtpHeaderExtensionMap(recv_rtp_extensions_);
+    call_->network_thread()->PostTask(SafeTask(
+        network_thread_safety_,
+        [this, recv_rtp_extension_map =
+                   RtpHeaderExtensionMap(recv_rtp_extensions_)]() mutable {
+          RTC_DCHECK_RUN_ON(&network_thread_checker_);
+          recv_rtp_extension_map_ = std::move(recv_rtp_extension_map);
+        }));
   }
   if (changed_params.codec_settings) {
     RTC_DLOG(LS_INFO) << "Changing recv codecs from "
@@ -3210,8 +3219,7 @@ void WebRtcVideoReceiveChannel::FillReceiveCodecStats(
   }
 }
 
-void WebRtcVideoReceiveChannel::OnPacketReceived(
-    const RtpPacketReceived& packet) {
+void WebRtcVideoReceiveChannel::OnPacketReceived(RtpPacketReceived packet) {
   
   
   
@@ -3219,16 +3227,24 @@ void WebRtcVideoReceiveChannel::OnPacketReceived(
 
   
   
-  if (TaskQueueBase::Current() != worker_thread_) {
-    worker_thread_->PostTask(
-        SafeTask(task_safety_.flag(), [this, packet = packet]() mutable {
-          RTC_DCHECK_RUN_ON(&thread_checker_);
-          ProcessReceivedPacket(std::move(packet));
-        }));
-  } else {
-    RTC_DCHECK_RUN_ON(&thread_checker_);
-    ProcessReceivedPacket(packet);
+  
+  
+  
+  
+  
+  
+  
+  
+  packet.IdentifyExtensions(recv_rtp_extension_map_);
+  packet.set_payload_type_frequency(kVideoPayloadTypeFrequency);
+  if (!packet.arrival_time().IsFinite()) {
+    packet.set_arrival_time(env_.clock().CurrentTime());
   }
+
+  call_->Receiver()->DeliverRtpPacket(
+      MediaType::VIDEO, std::move(packet),
+      absl::bind_front(
+          &WebRtcVideoReceiveChannel::MaybeCreateDefaultReceiveStream, this));
 }
 
 bool WebRtcVideoReceiveChannel::MaybeCreateDefaultReceiveStream(
@@ -3338,6 +3354,8 @@ void WebRtcVideoReceiveChannel::ReCreateDefaultReceiveStream(
 void WebRtcVideoReceiveChannel::SetInterface(
     MediaChannelNetworkInterface* iface) {
   RTC_DCHECK_RUN_ON(&network_thread_checker_);
+  iface ? network_thread_safety_->SetAlive()
+        : network_thread_safety_->SetNotAlive();
   MediaChannelUtil::SetInterface(iface);
   
   MediaChannelUtil::SetOption(MediaChannelNetworkInterface::ST_RTP,
@@ -3973,32 +3991,6 @@ WebRtcVideoReceiveChannel::FindReceiveStream(uint32_t ssrc) {
     return it->second;
   }
   return nullptr;
-}
-
-
-void WebRtcVideoReceiveChannel::ProcessReceivedPacket(
-    RtpPacketReceived packet) {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  packet.IdentifyExtensions(recv_rtp_extension_map_);
-  packet.set_payload_type_frequency(kVideoPayloadTypeFrequency);
-  if (!packet.arrival_time().IsFinite()) {
-    packet.set_arrival_time(env_.clock().CurrentTime());
-  }
-
-  call_->Receiver()->DeliverRtpPacket(
-      MediaType::VIDEO, std::move(packet),
-      absl::bind_front(
-          &WebRtcVideoReceiveChannel::MaybeCreateDefaultReceiveStream, this));
 }
 
 void WebRtcVideoReceiveChannel::SetRecordableEncodedFrameCallback(

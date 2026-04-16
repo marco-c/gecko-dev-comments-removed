@@ -2147,6 +2147,9 @@ WebRtcVoiceReceiveChannel::WebRtcVoiceReceiveChannel(
     : MediaChannelUtil(call->network_thread(), config.enable_dscp),
       env_(env),
       worker_thread_(call->worker_thread()),
+      network_thread_safety_(PendingTaskSafetyFlag::CreateAttachedToTaskQueue(
+          true,
+          call->network_thread())),
       engine_(engine),
       call_(call),
       audio_config_(config.audio),
@@ -2190,7 +2193,13 @@ bool WebRtcVoiceReceiveChannel::SetReceiverParameters(
                           false, env_.field_trials());
   if (recv_rtp_extensions_ != filtered_extensions) {
     recv_rtp_extensions_.swap(filtered_extensions);
-    recv_rtp_extension_map_ = RtpHeaderExtensionMap(recv_rtp_extensions_);
+    call_->network_thread()->PostTask(SafeTask(
+        network_thread_safety_,
+        [this, recv_rtp_extension_map =
+                   RtpHeaderExtensionMap(recv_rtp_extensions_)]() mutable {
+          RTC_DCHECK_RUN_ON(&network_thread_checker_);
+          recv_rtp_extension_map_ = std::move(recv_rtp_extension_map);
+        }));
   }
   
   
@@ -2591,8 +2600,7 @@ void WebRtcVoiceReceiveChannel::SetFrameDecryptor(
   }
 }
 
-void WebRtcVoiceReceiveChannel::OnPacketReceived(
-    const RtpPacketReceived& packet) {
+void WebRtcVoiceReceiveChannel::OnPacketReceived(RtpPacketReceived packet) {
   RTC_DCHECK_RUN_ON(&network_thread_checker_);
 
   
@@ -2601,27 +2609,26 @@ void WebRtcVoiceReceiveChannel::OnPacketReceived(
   
   
   
-  worker_thread_->PostTask(
-      SafeTask(task_safety_.flag(), [this, packet = packet]() mutable {
-        RTC_DCHECK_RUN_ON(worker_thread_);
 
-        
-        
-        
-        
-        
-        
-        packet.IdentifyExtensions(recv_rtp_extension_map_);
-        if (!packet.arrival_time().IsFinite()) {
-          packet.set_arrival_time(env_.clock().CurrentTime());
-        }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  packet.IdentifyExtensions(recv_rtp_extension_map_);
+  if (!packet.arrival_time().IsFinite()) {
+    packet.set_arrival_time(env_.clock().CurrentTime());
+  }
 
-        call_->Receiver()->DeliverRtpPacket(
-            MediaType::AUDIO, std::move(packet),
-            absl::bind_front(
-                &WebRtcVoiceReceiveChannel::MaybeCreateDefaultReceiveStream,
-                this));
-      }));
+  call_->Receiver()->DeliverRtpPacket(
+      MediaType::AUDIO, std::move(packet),
+      absl::bind_front(
+          &WebRtcVoiceReceiveChannel::MaybeCreateDefaultReceiveStream, this));
 }
 
 bool WebRtcVoiceReceiveChannel::MaybeCreateDefaultReceiveStream(
