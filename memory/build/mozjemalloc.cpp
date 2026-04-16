@@ -1418,7 +1418,7 @@ ArenaPurgeResult arena_t::Purge(
       if (chunk_is_dying) {
         
         
-        arena_chunk_dealloc((void*)chunk, kChunkSize, ARENA_CHUNK);
+        arena_chunk_dealloc((void*)chunk, kChunkSize);
       }
       
       
@@ -1476,7 +1476,7 @@ ArenaPurgeResult arena_t::Purge(
     
     
     if (chunk_to_release) {
-      arena_chunk_dealloc((void*)chunk_to_release, kChunkSize, ARENA_CHUNK);
+      arena_chunk_dealloc((void*)chunk_to_release, kChunkSize);
     }
     if (arena_is_dying) {
       return Dying;
@@ -2738,7 +2738,7 @@ static inline void arena_dalloc(void* aPtr, size_t aOffset, arena_t* aArena) {
   }
 
   if (chunk_dealloc_delay) {
-    arena_chunk_dealloc((void*)chunk_dealloc_delay, kChunkSize, ARENA_CHUNK);
+    arena_chunk_dealloc((void*)chunk_dealloc_delay, kChunkSize);
   }
 
   arena->MayDoOrQueuePurge(purge_action, "arena_dalloc");
@@ -3043,7 +3043,7 @@ arena_t::~arena_t() {
   MOZ_RELEASE_ASSERT(!mStats.allocated_small && !mStats.allocated_large,
                      "Arena is not empty");
   if (mSpare) {
-    arena_chunk_dealloc(mSpare, kChunkSize, ARENA_CHUNK);
+    arena_chunk_dealloc(mSpare, kChunkSize);
   }
   for (i = 0; i < NUM_SMALL_CLASSES; i++) {
     MOZ_RELEASE_ASSERT(mBins[i].mNonFullRuns.isEmpty(), "Bin is not empty");
@@ -3333,7 +3333,7 @@ static void huge_dalloc(void* aPtr, arena_t* aArena) {
   }
 
   
-  arena_chunk_dealloc(node->mAddr, mapped, HUGE_CHUNK);
+  arena_chunk_dealloc(node->mAddr, mapped);
 
   delete node;
 }
