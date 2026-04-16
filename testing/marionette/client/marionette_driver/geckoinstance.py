@@ -89,6 +89,8 @@ class GeckoInstance:
         
         "dom.navigation.navigationRateLimit.count": 0,
         
+        "dom.permissions.testing.enabled": True,
+        
         "dom.push.connection.enabled": False,
         
         "dom.screenorientation.allow-lock": True,
