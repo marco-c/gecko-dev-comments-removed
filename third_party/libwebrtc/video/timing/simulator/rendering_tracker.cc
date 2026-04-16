@@ -158,7 +158,10 @@ void RenderingTracker::OnEncodedFrame(
 
 void RenderingTracker::OnDecodableFrameTimeout(TimeDelta wait_time) {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
-  RTC_LOG(LS_WARNING) << "VideoStreamBufferController timed out after wait_ms="
+  
+  
+  
+  RTC_LOG(LS_VERBOSE) << "VideoStreamBufferController timed out after wait_ms="
                       << wait_time << " on ssrc=" << config_.ssrc
                       << " (simulated_ts=" << env_.clock().CurrentTime() << ")";
   
