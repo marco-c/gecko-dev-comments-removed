@@ -686,6 +686,14 @@ bool TCompiler::checkAndSimplifyAST(TIntermBlock *root,
     
     mValidateASTOptions.validatePrecision = !IsDesktopGLSpec(mShaderSpec);
 
+    
+    
+    
+    if (compileOptions.limitExpressionComplexity && !limitExpressionComplexity(root))
+    {
+        return false;
+    }
+
     if (!validateAST(root))
     {
         return false;
@@ -707,12 +715,6 @@ bool TCompiler::checkAndSimplifyAST(TIntermBlock *root,
             mDiagnostics.globalError("internal compiler error translating pixel local storage");
             return false;
         }
-    }
-
-    
-    if (compileOptions.limitExpressionComplexity && !limitExpressionComplexity(root))
-    {
-        return false;
     }
 
     if (shouldRunLoopAndIndexingValidation(compileOptions) &&
