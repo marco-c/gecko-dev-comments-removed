@@ -231,6 +231,9 @@ class RTC_EXPORT VideoEncoder {
     bool is_hardware_accelerated;
 
     
+    bool enable_cpu_overuse_detection;
+
+    
     
     
     
