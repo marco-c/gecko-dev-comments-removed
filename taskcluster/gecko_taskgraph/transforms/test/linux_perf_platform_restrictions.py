@@ -3,6 +3,11 @@
 
 
 
+
+
+
+
+
 TALOS_LINUX_1804_TESTS = {
     "talos-damp-inspector",
     "talos-damp-webconsole",
@@ -34,6 +39,36 @@ PERFTEST_LINUX_1804_TESTS = {
     "tr8ns-perf-basememory",
     "tr8ns-perf-tiny",
 }
+
+
+def restrict_tests_to_2404(config, tasks):
+    """
+    Bug 2021939 - Restrict most perf tests to Ubuntu 24.04 by dropping linux1804
+    tasks that are not in the explicit exception lists. Allowed tasks are kept
+    so the downstream restrict_failing_tests_to_1804 transform can remove their
+    linux2404 counterparts.
+    """
+    for task in tasks:
+        if "linux1804" not in task.get("test-platform", ""):
+            yield task
+            continue
+
+        test_name = task.get("test-name", "")
+
+        if task.get("suite") == "talos":
+            if test_name in TALOS_LINUX_1804_TESTS:
+                yield task
+            continue
+
+        if task.get("suite") == "raptor":
+            app = task.get("app", "firefox")
+            if any(
+                p in test_name and app == a for p, a in BROWSERTIME_LINUX_1804_PATTERNS
+            ):
+                yield task
+            continue
+
+        yield task
 
 
 def restrict_failing_tests_to_1804(config, tasks):
@@ -68,6 +103,23 @@ def restrict_failing_tests_to_1804(config, tasks):
             continue
 
         yield task
+
+
+def restrict_perftest_to_2404(config, jobs):
+    """
+    Bug 2021939 - Restrict most perftest jobs to Ubuntu 24.04 by removing
+    linux1804 from non-allowed jobs' platform list.
+    """
+    for job in jobs:
+        job_name = job.get("name", "")
+        platforms = job.get("platform")
+
+        if job_name not in PERFTEST_LINUX_1804_TESTS and isinstance(platforms, list):
+            filtered = [p for p in platforms if "linux1804" not in p]
+            if len(filtered) < len(platforms):
+                job["platform"] = filtered
+
+        yield job
 
 
 def restrict_perftest_to_1804(config, jobs):

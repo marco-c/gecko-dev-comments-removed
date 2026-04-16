@@ -431,6 +431,27 @@ def set_perftest_attributes(config, jobs):
 
 
 
+transforms.add(linux_perf_platform_restrictions.restrict_perftest_to_2404)
+
+
+@transforms.add
+def setup_autoland_retriggers(config, jobs):
+
+    def _allow_task_duplicates(label):
+        if "hw-a55-aarch64-shippable-startup-fenix" in label:
+            return True
+        return False
+
+    for job in jobs:
+        attrs = job.setdefault("attributes", {})
+        if config.params["project"] == "autoland" and _allow_task_duplicates(
+            job["name"]
+        ):
+            attrs["task_duplicates"] = 4
+        yield job
+
+
+
 transforms.add(linux_perf_platform_restrictions.restrict_perftest_to_1804)
 
 
