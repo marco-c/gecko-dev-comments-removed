@@ -1005,7 +1005,7 @@ static Handle<HeapObject> DummyCode() {
 
 
 
-Handle<HeapObject> SMRegExpMacroAssembler::GetCode(Handle<String> source,
+Handle<HeapObject> SMRegExpMacroAssembler::GetCode(Handle<RegExpData> data,
                                                    RegExpFlags flags) {
   if (!cx_->zone()->ensureJitZoneExists(cx_)) {
     return DummyCode();
