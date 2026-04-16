@@ -48,7 +48,6 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/BaseProfilerMarkersPrerequisites.h"
 #include "mozilla/BasicEvents.h"
-#include "mozilla/BounceTrackingStorageObserver.h"
 #include "mozilla/CallState.h"
 #include "mozilla/Components.h"
 #include "mozilla/CycleCollectedJSContext.h"
@@ -277,6 +276,7 @@
 #include "nsISimpleEnumerator.h"
 #include "nsISizeOfEventTarget.h"
 #include "nsISlowScriptDebug.h"
+#include "nsISupportsPrimitives.h"
 #include "nsISupportsUtils.h"
 #include "nsIThread.h"
 #include "nsITimedChannel.h"
@@ -959,6 +959,7 @@ nsGlobalWindowInner::nsGlobalWindowInner(nsGlobalWindowOuter* aOuterWindow,
     os->AddObserver(mObserver, NS_IOSERVICE_OFFLINE_STATUS_TOPIC, false);
     os->AddObserver(mObserver, MEMORY_PRESSURE_OBSERVER_TOPIC, false);
     os->AddObserver(mObserver, PERMISSION_CHANGED_TOPIC, false);
+    os->AddObserver(mObserver, "browser-perm-changed", false);
     os->AddObserver(mObserver, "screen-information-changed", false);
     os->AddObserver(mObserver, "audio-playback", false);
   }
@@ -1284,6 +1285,7 @@ void nsGlobalWindowInner::FreeInnerObjects() {
       os->RemoveObserver(mObserver, NS_IOSERVICE_OFFLINE_STATUS_TOPIC);
       os->RemoveObserver(mObserver, MEMORY_PRESSURE_OBSERVER_TOPIC);
       os->RemoveObserver(mObserver, PERMISSION_CHANGED_TOPIC);
+      os->RemoveObserver(mObserver, "browser-perm-changed");
       os->RemoveObserver(mObserver, "screen-information-changed");
       os->RemoveObserver(mObserver, "audio-playback");
     }
@@ -2655,7 +2657,7 @@ VisualViewport* nsGlobalWindowInner::VisualViewport() {
 
 nsScreen* nsGlobalWindowInner::Screen() {
   if (!mScreen) {
-    mScreen = new nsScreen(this);
+    mScreen = nsScreen::Create(this);
   }
   return mScreen;
 }
@@ -2729,6 +2731,10 @@ Maybe<ClientState> nsPIDOMWindowInner::GetClientState() const {
 
 Maybe<ServiceWorkerDescriptor> nsPIDOMWindowInner::GetController() const {
   return nsGlobalWindowInner::Cast(this)->GetController();
+}
+
+ClientSource* nsPIDOMWindowInner::GetClientSource() const {
+  return nsGlobalWindowInner::Cast(this)->GetClientSource();
 }
 
 void nsPIDOMWindowInner::SetPolicyContainer(
@@ -3421,10 +3427,10 @@ bool nsGlobalWindowInner::ResolveComponentsShim(
 
   
   
-  for (uint32_t i = 0; i < std::size(kInterfaceShimMap); ++i) {
+  for (auto entry : kInterfaceShimMap) {
     
-    const char* geckoName = kInterfaceShimMap[i].geckoName;
-    const char* domName = kInterfaceShimMap[i].domName;
+    const char* geckoName = entry.geckoName;
+    const char* domName = entry.domName;
 
     
     JS::Rooted<JS::Value> v(aCx, JS::UndefinedValue());
@@ -4814,19 +4820,6 @@ nsGlobalWindowInner::GetComputedStyleHelper(Element& aElt,
                             aError, nullptr);
 }
 
-void nsGlobalWindowInner::MaybeNotifyStorageKeyUsed() {
-  
-  if (hasNotifiedStorageKeyUsed) {
-    return;
-  }
-  nsresult rv =
-      BounceTrackingStorageObserver::OnInitialStorageAccess(GetWindowContext());
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return;
-  }
-  hasNotifiedStorageKeyUsed = true;
-}
-
 Storage* nsGlobalWindowInner::GetSessionStorage(ErrorResult& aError) {
   nsIPrincipal* principal = GetPrincipal();
   nsIPrincipal* storagePrincipal;
@@ -4948,8 +4941,6 @@ Storage* nsGlobalWindowInner::GetSessionStorage(ErrorResult& aError) {
       return nullptr;
     }
   }
-
-  MaybeNotifyStorageKeyUsed();
 
   MOZ_LOG(gDOMLeakPRLogInner, LogLevel::Debug,
           ("nsGlobalWindowInner %p returns %p sessionStorage", this,
@@ -5119,8 +5110,6 @@ Storage* nsGlobalWindowInner::GetLocalStorage(ErrorResult& aError) {
         new PartitionedLocalStorage(this, principal, storagePrincipal, cache);
   }
 
-  MaybeNotifyStorageKeyUsed();
-
   MOZ_ASSERT(mLocalStorage);
   MOZ_ASSERT(
       mLocalStorage->Type() ==
@@ -5139,8 +5128,6 @@ IDBFactory* nsGlobalWindowInner::GetIndexedDB(JSContext* aCx,
       mIndexedDB = res.unwrap();
     }
   }
-
-  MaybeNotifyStorageKeyUsed();
 
   return mIndexedDB;
 }
@@ -5484,14 +5471,49 @@ nsresult nsGlobalWindowInner::Observe(nsISupports* aSubject, const char* aTopic,
     return NS_OK;
   }
 
-  if (!nsCRT::strcmp(aTopic, PERMISSION_CHANGED_TOPIC)) {
+  if (!nsCRT::strcmp(aTopic, PERMISSION_CHANGED_TOPIC) ||
+      !nsCRT::strcmp(aTopic, "browser-perm-changed")) {
+    bool isBrowserPerm = !nsCRT::strcmp(aTopic, "browser-perm-changed");
+
     nsCOMPtr<nsIPermission> perm(do_QueryInterface(aSubject));
     if (!perm) {
       
       
-      MOZ_ASSERT(!nsCRT::strcmp(aData, u"cleared"));
+      
+      if (isBrowserPerm) {
+        nsCOMPtr<nsISupportsPRUint64> wrapper = do_QueryInterface(aSubject);
+        if (wrapper) {
+          uint64_t clearedBrowserId = 0;
+          wrapper->GetData(&clearedBrowserId);
+          if (clearedBrowserId) {
+            RefPtr<BrowsingContext> bc = GetBrowsingContext();
+            if (!bc || bc->Top()->BrowserId() != clearedBrowserId) {
+              return NS_OK;
+            }
+          }
+        }
+      }
       UpdatePermissions();
+      if (mDoc) {
+        RefPtr<PermissionDelegateHandler> permDelegateHandler =
+            mDoc->GetPermissionDelegateHandler();
+        if (permDelegateHandler) {
+          permDelegateHandler->PopulateAllDelegatedPermissions();
+        }
+      }
       return NS_OK;
+    }
+
+    if (isBrowserPerm) {
+      uint64_t permBrowserId = 0;
+      perm->GetBrowserId(&permBrowserId);
+      if (!permBrowserId) {
+        return NS_OK;
+      }
+      RefPtr<BrowsingContext> bc = GetBrowsingContext();
+      if (!bc || bc->Top()->BrowserId() != permBrowserId) {
+        return NS_OK;
+      }
     }
 
     nsAutoCString type;

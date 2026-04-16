@@ -747,8 +747,6 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   void Btoa(const nsAString& aBinaryData, nsAString& aAsciiBase64String,
             mozilla::ErrorResult& aError);
 
-  void MaybeNotifyStorageKeyUsed();
-
   mozilla::dom::Storage* GetSessionStorage(mozilla::ErrorResult& aError);
   mozilla::dom::Storage* GetLocalStorage(mozilla::ErrorResult& aError);
   mozilla::dom::Selection* GetSelection(mozilla::ErrorResult& aError);
@@ -1436,11 +1434,6 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   
   mozilla::Maybe<mozilla::StorageAccess> mStorageAllowedCache;
   uint32_t mStorageAllowedReasonCache;
-
-  
-  
-  
-  bool hasNotifiedStorageKeyUsed{false};
 
   RefPtr<mozilla::dom::DebuggerNotificationManager>
       mDebuggerNotificationManager;
