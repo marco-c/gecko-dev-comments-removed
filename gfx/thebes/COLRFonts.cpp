@@ -2,7 +2,6 @@
 
 
 
-
 #include "COLRFonts.h"
 #include "gfxFontUtils.h"
 #include "gfxUtils.h"
@@ -2336,7 +2335,7 @@ bool ItemVariationData::Validate(const COLRv1Header* aHeader,
   uint32_t deltaSetSize =
       (uint16_t(regionIndexCount) + uint16_t(wordDeltaCount)) << longWords;
   if (reinterpret_cast<const char*>(deltaSets()) +
-          uint16_t(itemCount) * deltaSetSize >
+          uint64_t(uint16_t(itemCount)) * deltaSetSize >
       reinterpret_cast<const char*>(aHeader) + aLength) {
     return false;
   }
