@@ -664,9 +664,13 @@ void JSLinearString::maybeCloneCharsOnPromotionTyped(JSLinearString* str) {
   
   
   
+  
+  
+  
+  
   bool baseKnownLiveYet = IsForwarded(root);
   bool cloneToSaveSpace =
-      !baseKnownLiveYet &&
+      !baseKnownLiveYet && !str->isDependedOn() &&
       JSDependentString::smallComparedToBase(str->length(), root->length());
 
   if (!cloneToSaveSpace) {
