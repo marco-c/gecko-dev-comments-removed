@@ -30,7 +30,6 @@ use crate::style_resolver::{PseudoElementResolution, ResolvedElementStyles};
 use crate::stylesheets::layer_rule::LayerOrder;
 use crate::stylist::RuleInclusion;
 use crate::traversal_flags::TraversalFlags;
-use crate::values::computed::ContainerName;
 use servo_arc::{Arc, ArcBorrow};
 
 
@@ -38,7 +37,6 @@ use servo_arc::{Arc, ArcBorrow};
 pub struct StyleDifference {
     
     pub damage: RestyleDamage,
-
     
     pub change: StyleChange,
 }
@@ -49,48 +47,12 @@ pub enum StyleChange {
     
     Unchanged,
     
-    Changed(StyleChangeKind),
-}
-
-
-#[derive(Clone, Copy, Debug)]
-pub enum StyleChangeKind {
-    
-    Default,
-    
-    ResetOnly,
-    
-    CustomPropertiesChanged,
-    
-    NamedContainer,
-}
-
-impl StyleChangeKind {
-    
-    pub fn new(
+    Changed {
+        
         reset_only: bool,
+        
         custom_properties_changed: bool,
-        old_container_name: ContainerName,
-        new_container_name: ContainerName,
-    ) -> Self {
-        if old_container_name != new_container_name {
-            return StyleChangeKind::NamedContainer;
-        }
-        if custom_properties_changed {
-            
-            
-            return if !new_container_name.is_none() {
-                StyleChangeKind::NamedContainer
-            } else {
-                StyleChangeKind::CustomPropertiesChanged
-            };
-        }
-        if reset_only {
-            StyleChangeKind::ResetOnly
-        } else {
-            StyleChangeKind::Default
-        }
-    }
+    },
 }
 
 
@@ -812,108 +774,124 @@ trait PrivateMatchMethods: TElement {
 
         debug!(" > style difference: {:?}", difference);
 
-        
-        
+        let mut children_hint = RestyleHint::empty();
         if old_values.flags.maybe_inherited() != new_values.flags.maybe_inherited() {
+            
+            
             debug!(
                 " > flags changed: {:?} != {:?}",
                 old_values.flags, new_values.flags
             );
-            return RestyleHint::RECASCADE_SELF;
-        }
-
-        if old_values.effective_zoom != new_values.effective_zoom {
+            children_hint |= RestyleHint::RECASCADE_SELF;
+        } else if old_values.effective_zoom != new_values.effective_zoom {
             
             debug!(
                 " > zoom changed: {:?} != {:?}",
                 old_values.effective_zoom, new_values.effective_zoom
             );
-            return RestyleHint::RECASCADE_SELF;
+            children_hint |= RestyleHint::RECASCADE_SELF;
         }
 
-        match difference.change {
-            StyleChange::Unchanged => return RestyleHint::empty(),
-            StyleChange::Changed(change_kind) => {
-                match change_kind {
-                    StyleChangeKind::NamedContainer => {
-                        return RestyleHint::RECASCADE_SELF
-                            | RestyleHint::RESTYLE_IF_AFFECTED_BY_NAMED_STYLE_CONTAINER;
-                    },
-                    StyleChangeKind::CustomPropertiesChanged => {
-                        return RestyleHint::RECASCADE_SELF
-                            | RestyleHint::RESTYLE_IF_AFFECTED_BY_STYLE_QUERIES;
-                    },
-                    StyleChangeKind::Default => {
-                        
-                        
-                        return RestyleHint::RECASCADE_SELF;
-                    },
-                    StyleChangeKind::ResetOnly => {},
-                }
-            },
+        let StyleChange::Changed {
+            reset_only,
+            custom_properties_changed,
+        } = difference.change
+        else {
+            return children_hint;
+        };
+
+        let new_container_name = new_values.clone_container_name();
+        if new_container_name != old_values.clone_container_name() {
+            
+            
+            children_hint |= RestyleHint::RESTYLE_IF_AFFECTED_BY_NAMED_STYLE_CONTAINER;
+        } else if custom_properties_changed {
+            
+            
+            children_hint |= if !new_container_name.is_none() {
+                RestyleHint::RESTYLE_IF_AFFECTED_BY_NAMED_STYLE_CONTAINER
+            } else {
+                RestyleHint::RESTYLE_IF_AFFECTED_BY_STYLE_QUERIES
+            };
         }
 
-        let old_display = old_values.clone_display();
-        let new_display = new_values.clone_display();
-
-        if old_display != new_display {
-            
-            
-            if old_display == Display::None {
-                return RestyleHint::RECASCADE_SELF;
-            }
+        if reset_only {
             
             
             
-            if old_display.is_item_container() != new_display.is_item_container() {
-                return RestyleHint::RECASCADE_SELF;
-            }
+            children_hint |=
+                if need_to_unconditionally_recascade_for_reset_change(old_values, new_values) {
+                    RestyleHint::RECASCADE_SELF
+                } else {
+                    RestyleHint::RECASCADE_SELF_IF_INHERIT_RESET_STYLE
+                };
+        } else {
             
-            
-            
-            if old_display.is_contents() || new_display.is_contents() {
-                return RestyleHint::RECASCADE_SELF;
-            }
-            
-            
-            #[cfg(feature = "gecko")]
-            {
-                if old_display.is_ruby_type() != new_display.is_ruby_type() {
-                    return RestyleHint::RECASCADE_SELF;
-                }
-            }
+            children_hint |= RestyleHint::RECASCADE_SELF;
         }
 
+        children_hint
+    }
+}
+
+
+fn need_to_unconditionally_recascade_for_reset_change(
+    old_values: &ComputedValues,
+    new_values: &ComputedValues,
+) -> bool {
+    let old_display = old_values.clone_display();
+    let new_display = new_values.clone_display();
+
+    if old_display != new_display {
         
         
+        if old_display == Display::None {
+            return true;
+        }
         
+        
+        if old_display.is_item_container() != new_display.is_item_container() {
+            return true;
+        }
+        
+        
+        if old_display.is_contents() || new_display.is_contents() {
+            return true;
+        }
         
         
         #[cfg(feature = "gecko")]
-        {
-            use crate::values::specified::align::AlignFlags;
+        if old_display.is_ruby_type() != new_display.is_ruby_type() {
+            return true;
+        }
+    }
 
-            let old_justify_items = old_values.get_position().clone_justify_items();
-            let new_justify_items = new_values.get_position().clone_justify_items();
+    
+    
+    
+    
+    
+    #[cfg(feature = "gecko")]
+    {
+        use crate::values::specified::align::AlignFlags;
 
-            let was_legacy_justify_items = old_justify_items.computed.contains(AlignFlags::LEGACY);
+        let old_justify_items = old_values.get_position().clone_justify_items();
+        let new_justify_items = new_values.get_position().clone_justify_items();
 
-            let is_legacy_justify_items = new_justify_items.computed.contains(AlignFlags::LEGACY);
+        let was_legacy_justify_items = old_justify_items.computed.contains(AlignFlags::LEGACY);
 
-            if is_legacy_justify_items != was_legacy_justify_items {
-                return RestyleHint::RECASCADE_SELF;
-            }
+        let is_legacy_justify_items = new_justify_items.computed.contains(AlignFlags::LEGACY);
 
-            if was_legacy_justify_items && old_justify_items.computed != new_justify_items.computed
-            {
-                return RestyleHint::RECASCADE_SELF;
-            }
+        if is_legacy_justify_items != was_legacy_justify_items {
+            return true;
         }
 
-        
-        
-        RestyleHint::RECASCADE_SELF_IF_INHERIT_RESET_STYLE
+        if was_legacy_justify_items && old_justify_items.computed != new_justify_items.computed {
+            return true;
+        }
     }
+
+    false
 }
 
 impl<E: TElement> PrivateMatchMethods for E {}

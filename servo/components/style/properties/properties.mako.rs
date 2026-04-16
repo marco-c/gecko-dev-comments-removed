@@ -1679,11 +1679,6 @@ impl ComputedValues {
         &self.custom_properties
     }
 
-    
-    pub fn custom_properties_equal(&self, other: &Self) -> bool {
-      self.custom_properties() == other.custom_properties()
-    }
-
 % for prop in data.longhands:
 % if not prop.logical:
     
