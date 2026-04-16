@@ -351,26 +351,32 @@ void GCRuntime::traceWeakFinalizationObserverEdges(JSTracer* trc, Zone* zone) {
   MOZ_ASSERT(CurrentThreadCanAccessRuntime(trc->runtime()));
   FinalizationObservers* observers = zone->finalizationObservers();
   if (observers) {
-    observers->traceWeakEdges(trc);
+    observers->traceWeakEdges(trc, zone);
   }
 }
 
-void FinalizationObservers::traceWeakEdges(JSTracer* trc) {
+void FinalizationObservers::traceWeakEdges(JSTracer* trc, JS::Zone* zone) {
   
   
   AutoTouchingGrayThings atgt;
 
   traceWeakWeakRefEdges(trc);
-  traceWeakFinalizationRegistryEdges(trc);
+  traceWeakFinalizationRegistryEdges(trc, zone);
 }
 
-void FinalizationObservers::traceWeakFinalizationRegistryEdges(JSTracer* trc) {
+void FinalizationObservers::traceWeakFinalizationRegistryEdges(JSTracer* trc,
+                                                               JS::Zone* zone) {
   
   
+
+  
+  zone->clearGCFinalizationRegistriesMayHaveSymbolRegistrations();
 
   GCRuntime* gc = &trc->runtime()->gc;
 
   for (auto iter = registries.modIter(); !iter.done(); iter.next()) {
+    MOZ_ASSERT(MaybeForwarded(iter.get().get())->zone() == zone);
+
     auto result =
         TraceWeakEdge(trc, &iter.getMutable(), "FinalizationRegistry");
     if (result.isDead()) {
@@ -384,7 +390,11 @@ void FinalizationObservers::traceWeakFinalizationRegistryEdges(JSTracer* trc) {
       iter.remove();
     } else {
       FinalizationRegistryObject* registry = result.finalTarget();
-      registry->traceWeak(trc);
+      bool hasSymbolRegistrations = false;
+      registry->traceWeak(trc, &hasSymbolRegistrations);
+      if (hasSymbolRegistrations) {
+        zone->setGCFinalizationRegistriesMayHaveSymbolRegistrations();
+      }
 
       
       

@@ -80,7 +80,6 @@
 
 #include "gc/Barrier.h"
 #include "gc/FinalizationObservers.h"
-#include "gc/WeakMap.h"
 #include "js/GCVector.h"
 #include "vm/NativeObject.h"
 
@@ -168,7 +167,7 @@ class FinalizationRegistryObject : public NativeObject {
   RegistrationsMap* registrations() const;
   FinalizationRecordVector* recordsWithoutToken() const;
 
-  void traceWeak(JSTracer* trc);
+  void traceWeak(JSTracer* trc, bool* hasSymbolRegistrations);
 
   static bool unregisterRecord(FinalizationRecordObject* record);
 
