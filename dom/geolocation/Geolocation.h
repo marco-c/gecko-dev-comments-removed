@@ -12,6 +12,7 @@
 #include "GeolocationPosition.h"
 #include "GeolocationSystem.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/WeakPtr.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/CallbackObject.h"
 #include "mozilla/dom/GeolocationBinding.h"
@@ -101,7 +102,7 @@ class nsGeolocationService final : public nsIGeolocationUpdate,
   
   
   
-  nsTArray<mozilla::dom::Geolocation*> mGeolocators;
+  nsTArray<mozilla::WeakPtr<mozilla::dom::Geolocation>> mGeolocators;
 
   
   CachedPositionAndAccuracy mLastPosition;
@@ -120,7 +121,9 @@ namespace mozilla::dom {
 
 
 
-class Geolocation final : public nsIGeolocationUpdate, public nsWrapperCache {
+class Geolocation final : public nsIGeolocationUpdate,
+                          public nsWrapperCache,
+                          public SupportsWeakPtr {
   friend class ::nsGeolocationService;
 
  public:
@@ -240,8 +243,8 @@ class Geolocation final : public nsIGeolocationUpdate, public nsWrapperCache {
   
   
 
-  nsTArray<RefPtr<nsGeolocationRequest> > mPendingCallbacks;
-  nsTArray<RefPtr<nsGeolocationRequest> > mWatchingCallbacks;
+  nsTArray<RefPtr<nsGeolocationRequest>> mPendingCallbacks;
+  nsTArray<RefPtr<nsGeolocationRequest>> mWatchingCallbacks;
 
   
   nsWeakPtr mOwner;
@@ -265,7 +268,7 @@ class Geolocation final : public nsIGeolocationUpdate, public nsWrapperCache {
   uint32_t mLastWatchId;
 
   
-  nsTArray<RefPtr<nsGeolocationRequest> > mPendingRequests;
+  nsTArray<RefPtr<nsGeolocationRequest>> mPendingRequests;
 
   
   nsTArray<int32_t> mClearedWatchIDs;
