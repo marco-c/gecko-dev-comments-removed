@@ -56,6 +56,32 @@ typedef MALLOC_USABLE_SIZE_CONST_PTR void* usable_ptr_t;
 
 typedef size_t arena_id_t;
 
+
+
+
+
+
+
+
+typedef struct chunk_allocator_s {
+  
+  
+  
+  void* (*map)(size_t aSize, size_t aAlignment);
+
+  
+  
+  void (*unmap)(void* aAddr, size_t aSize);
+
+  
+  
+  bool (*commit)(void* aAddr, size_t aSize);
+
+  
+  
+  void (*decommit)(void* aAddr, size_t aSize);
+} chunk_allocator_t;
+
 #define ARENA_FLAG_RANDOMIZE_SMALL_MASK 0x3
 #define ARENA_FLAG_RANDOMIZE_SMALL_DEFAULT 0
 #define ARENA_FLAG_RANDOMIZE_SMALL_ENABLED 1
@@ -84,13 +110,18 @@ typedef struct arena_params_s {
   
   const char* mLabel;
 
+  
+  
+  chunk_allocator_t* mChunkAllocator;
+
 #ifdef __cplusplus
   arena_params_s()
       : mMaxDirty(0),
         mMaxDirtyIncreaseOverride(0),
         mMaxDirtyDecreaseOverride(0),
         mFlags(0),
-        mLabel(nullptr) {}
+        mLabel(nullptr),
+        mChunkAllocator(nullptr) {}
 #endif
 } arena_params_t;
 
