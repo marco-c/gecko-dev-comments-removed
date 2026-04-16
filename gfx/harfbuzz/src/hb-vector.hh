@@ -186,6 +186,14 @@ struct hb_vector_t
     return *this;
   }
 
+  HB_ALWAYS_INLINE_VECTOR_ALLOCS
+  hb_vector_t &reset_if_error ()
+  {
+    if (unlikely (in_error ()))
+      reset ();
+    return *this;
+  }
+
   
 
   Type *
@@ -577,7 +585,7 @@ struct hb_vector_t
   HB_ALWAYS_INLINE_VECTOR_ALLOCS
   void clear ()
   {
-    resize (0);
+    shrink_vector (0);
   }
 
   template <typename allocator_t>
@@ -705,8 +713,11 @@ struct hb_vector_t
 
 
   
-  void qsort (int (*cmp)(const void*, const void*) = Type::cmp)
-  { as_array ().qsort (cmp); }
+  template <typename Compar>
+  void qsort (Compar compar)
+  { as_array ().qsort (compar); }
+  void qsort ()
+  { as_array ().qsort (); }
 
   
   template <typename T>
