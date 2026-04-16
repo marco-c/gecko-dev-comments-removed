@@ -830,6 +830,9 @@ class CodeRange {
     DebugStub,                 
     RequestTierUpStub,         
     UpdateCallRefMetricsStub,  
+#ifdef ENABLE_WASM_JSPI
+    ContBaseFrame,  
+#endif
     FarJumpIsland,  
     Throw           
   };
@@ -921,6 +924,9 @@ class CodeRange {
   bool isJitEntry() const { return kind() == JitEntry; }
   bool isInterpEntry() const { return kind() == InterpEntry; }
   bool isEntry() const { return isInterpEntry() || isJitEntry(); }
+#ifdef ENABLE_WASM_JSPI
+  bool isContBaseFrame() const { return kind() == ContBaseFrame; }
+#endif
   bool hasFuncIndex() const {
     return isFunction() || isImportExit() || isEntry();
   }

@@ -27,14 +27,19 @@
 #include "vm/Compartment.h"
 #include "vm/Iteration.h"
 #include "vm/JSContext.h"
+#include "vm/JSFunction.h"
 #include "vm/JSObject.h"
 #include "vm/NativeObject.h"
 #include "vm/PromiseObject.h"
+#include "wasm/WasmAnyRef.h"
 #include "wasm/WasmConstants.h"
 #include "wasm/WasmContext.h"
 #include "wasm/WasmFeatures.h"
+#include "wasm/WasmGcObject.h"
 #include "wasm/WasmGenerator.h"
 #include "wasm/WasmIonCompile.h"  
+#include "wasm/WasmJS.h"
+#include "wasm/WasmStacks.h"
 #include "wasm/WasmValidate.h"
 
 #include "vm/Compartment-inl.h"
@@ -48,303 +53,13 @@ using namespace js::jit;
 #ifdef ENABLE_WASM_JSPI
 namespace js::wasm {
 
-void SuspenderObject::releaseStackMemory() {
-  void* memory = stackMemory();
-  MOZ_ASSERT(isMoribund() == !memory);
-  if (memory) {
-    js_free(memory);
-    setStackMemory(nullptr);
-    setState(SuspenderState::Moribund);
-  }
-}
+
+const size_t WRAPPED_FN_SLOT = 0;
 
 
-const size_t SUSPENDER_SLOT = 0;
-const size_t WRAPPED_FN_SLOT = 1;
-const size_t CONTINUE_ON_SUSPENDABLE_SLOT = 1;
-const size_t PROMISE_SLOT = 2;
-
-static JitActivation* FindSuspendableStackActivation(
-    JSTracer* trc, SuspenderObject* suspender) {
-  
-  
-  JitActivation* activation =
-      trc->runtime()->mainContextFromAnyThread()->jitActivation.refNoCheck();
-  while (activation) {
-    
-    
-    if (activation->hasWasmExitFP()) {
-      
-      
-      WasmFrameIter iter(activation);
-      if (!iter.done() && suspender->hasStackAddress(iter.frame())) {
-        return activation;
-      }
-    }
-    activation = activation->prevJitActivation();
-  }
-  MOZ_CRASH("Suspendable stack activation not found");
-}
-
-void TraceSuspendableStack(JSTracer* trc, SuspenderObject* suspender) {
-  MOZ_ASSERT(suspender->isTraceable());
-  void* exitFP = suspender->suspendableExitFP();
-
-  
-  
-  
-  
-  
-  
-  WasmFrameIter iter =
-      suspender->isSuspended()
-          ? WasmFrameIter(
-                static_cast<FrameWithInstances*>(suspender->suspendableFP()),
-                suspender->suspendedReturnAddress())
-          : WasmFrameIter(FindSuspendableStackActivation(trc, suspender));
-  MOZ_ASSERT_IF(suspender->isSuspended(), iter.currentFrameStackSwitched());
-  uintptr_t highestByteVisitedInPrevWasmFrame = 0;
-  while (true) {
-    MOZ_ASSERT(!iter.done());
-    uint8_t* nextPC = iter.resumePCinCurrentFrame();
-    Instance* instance = iter.instance();
-    TraceInstanceEdge(trc, instance, "WasmFrameIter instance");
-    highestByteVisitedInPrevWasmFrame = instance->traceFrame(
-        trc, iter, nextPC, highestByteVisitedInPrevWasmFrame);
-    if (iter.frame() == exitFP) {
-      break;
-    }
-    ++iter;
-    if (iter.currentFrameStackSwitched()) {
-      highestByteVisitedInPrevWasmFrame = 0;
-    }
-  }
-}
-
-static_assert(JS_STACK_GROWTH_DIRECTION < 0,
-              "JS-PI implemented only for native stacks that grows towards 0");
-
-SuspenderObject* SuspenderObject::create(JSContext* cx) {
-  Rooted<SuspenderObject*> suspender(
-      cx, NewBuiltinClassInstance<SuspenderObject>(cx));
-  if (!suspender) {
-    return nullptr;
-  }
-
-  
-  suspender->initFixedSlot(StateSlot, Int32Value(SuspenderState::Moribund));
-  suspender->initFixedSlot(PromisingPromiseSlot, NullValue());
-  suspender->initFixedSlot(SuspendingReturnTypeSlot,
-                           Int32Value(int32_t(ReturnType::Unknown)));
-  suspender->initFixedSlot(StackMemorySlot, PrivateValue(nullptr));
-  suspender->initFixedSlot(MainFPSlot, PrivateValue(nullptr));
-  suspender->initFixedSlot(MainSPSlot, PrivateValue(nullptr));
-  suspender->initFixedSlot(SuspendableFPSlot, PrivateValue(nullptr));
-  suspender->initFixedSlot(SuspendableSPSlot, PrivateValue(nullptr));
-  suspender->initFixedSlot(SuspendableExitFPSlot, PrivateValue(nullptr));
-  suspender->initFixedSlot(SuspendedRASlot, PrivateValue(nullptr));
-  suspender->initFixedSlot(MainExitFPSlot, PrivateValue(nullptr));
-
-  void* stackMemory = js_malloc(SuspendableStackPlusRedZoneSize);
-  if (!stackMemory) {
-    ReportOutOfMemory(cx);
-    return nullptr;
-  }
-
-  if (!cx->wasm().suspenders_.putNew(suspender)) {
-    js_free(stackMemory);
-    ReportOutOfMemory(cx);
-    return nullptr;
-  }
-
-  
-  suspender->setStackMemory(stackMemory);
-  suspender->setFixedSlot(SuspendableSPSlot,
-                          PrivateValue(static_cast<uint8_t*>(stackMemory) +
-                                       SuspendableStackPlusRedZoneSize));
-  suspender->setState(SuspenderState::Initial);
-
-  return suspender;
-}
-
-const JSClass SuspenderObject::class_ = {
-    "SuspenderObject",
-    JSCLASS_HAS_RESERVED_SLOTS(SlotCount) | JSCLASS_FOREGROUND_FINALIZE,
-    &SuspenderObject::classOps_,
-    nullptr,
-    &SuspenderObject::classExt_,
-};
-
-const JSClassOps SuspenderObject::classOps_ = {
-    nullptr,   
-    nullptr,   
-    nullptr,   
-    nullptr,   
-    nullptr,   
-    nullptr,   
-    finalize,  
-    nullptr,   
-    nullptr,   
-    trace,     
-};
-
-const ClassExtension SuspenderObject::classExt_ = {
-    .objectMovedOp = SuspenderObject::moved,
-};
-
-
-void SuspenderObject::finalize(JS::GCContext* gcx, JSObject* obj) {
-  SuspenderObject& suspender = obj->as<SuspenderObject>();
-  if (!suspender.isMoribund()) {
-    gcx->runtime()->mainContextFromOwnThread()->wasm().suspenders_.remove(
-        &suspender);
-  }
-  suspender.releaseStackMemory();
-  MOZ_ASSERT(suspender.isMoribund());
-}
-
-
-void SuspenderObject::trace(JSTracer* trc, JSObject* obj) {
-  SuspenderObject& suspender = obj->as<SuspenderObject>();
-  
-  
-  
-  if (!suspender.isTraceable() || trc->isTenuringTracer()) {
-    return;
-  }
-  TraceSuspendableStack(trc, &suspender);
-}
-
-
-size_t SuspenderObject::moved(JSObject* obj, JSObject* old) {
-  wasm::Context& context =
-      obj->runtimeFromMainThread()->mainContextFromOwnThread()->wasm();
-  context.suspenders_.rekeyIfMoved(&old->as<SuspenderObject>(),
-                                   &obj->as<SuspenderObject>());
-  return 0;
-}
-
-void SuspenderObject::setMoribund(JSContext* cx) {
-  MOZ_ASSERT(state() == SuspenderState::Active);
-  cx->wasm().leaveSuspendableStack(cx);
-  if (!this->isMoribund()) {
-    cx->wasm().suspenders_.remove(this);
-  }
-  this->releaseStackMemory();
-  MOZ_ASSERT(this->isMoribund());
-}
-
-void SuspenderObject::setActive(JSContext* cx) {
-  this->setState(SuspenderState::Active);
-  cx->wasm().enterSuspendableStack(cx, this);
-}
-
-void SuspenderObject::setSuspended(JSContext* cx) {
-  this->setState(SuspenderState::Suspended);
-  cx->wasm().leaveSuspendableStack(cx);
-}
-
-void SuspenderObject::enter(JSContext* cx) {
-  
-  
-  MOZ_ASSERT(state() == SuspenderState::Initial ||
-             state() == SuspenderState::CalledOnMain ||
-             state() == SuspenderState::Suspended);
-  setActive(cx);
-}
-
-void SuspenderObject::suspend(JSContext* cx) {
-  MOZ_ASSERT(state() == SuspenderState::Active);
-  setSuspended(cx);
-
-  if (cx->realm()->isDebuggee()) {
-    WasmFrameIter iter(cx->activation()->asJit());
-    while (true) {
-      MOZ_ASSERT(!iter.done());
-      if (iter.debugEnabled()) {
-        DebugAPI::onSuspendWasmFrame(cx, iter.debugFrame());
-      }
-      ++iter;
-      if (iter.currentFrameStackSwitched()) {
-        break;
-      }
-    }
-  }
-}
-
-void SuspenderObject::resume(JSContext* cx) {
-  MOZ_ASSERT(state() == SuspenderState::Suspended);
-  setActive(cx);
-  
-  
-  gc::PreWriteBarrier(this);
-
-  if (cx->realm()->isDebuggee()) {
-    for (FrameIter iter(cx);; ++iter) {
-      MOZ_RELEASE_ASSERT(!iter.done(), "expecting stackSwitched()");
-      if (iter.isWasm()) {
-        WasmFrameIter& wasmIter = iter.wasmFrame();
-        if (wasmIter.currentFrameStackSwitched()) {
-          break;
-        }
-        if (wasmIter.debugEnabled()) {
-          DebugAPI::onResumeWasmFrame(cx, iter);
-        }
-      }
-    }
-  }
-}
-
-void SuspenderObject::leave(JSContext* cx) {
-  
-  
-  switch (state()) {
-    case SuspenderState::Active: {
-      setMoribund(cx);
-      break;
-    }
-    case SuspenderState::Suspended: {
-      MOZ_ASSERT(!cx->wasm().onSuspendableStack());
-      break;
-    }
-    case SuspenderState::Initial:
-    case SuspenderState::Moribund:
-    case SuspenderState::CalledOnMain:
-      MOZ_CRASH();
-  }
-}
-
-void SuspenderObject::unwind(JSContext* cx) {
-  switch (state()) {
-    case SuspenderState::Suspended:
-    case SuspenderState::CalledOnMain: {
-      cx->wasm().suspenders_.remove(this);
-      this->releaseStackMemory();
-      MOZ_ASSERT(this->isMoribund());
-      break;
-    }
-    case SuspenderState::Active:
-    case SuspenderState::Initial:
-    case SuspenderState::Moribund:
-      MOZ_CRASH();
-  }
-}
-
-void SuspenderObject::forwardToSuspendable() {
-  
-  uint8_t* mainExitFP = (uint8_t*)this->mainExitFP();
-  *reinterpret_cast<void**>(mainExitFP + Frame::callerFPOffset()) =
-      this->suspendableFP();
-  *reinterpret_cast<void**>(mainExitFP + Frame::returnAddressOffset()) =
-      this->suspendedReturnAddress();
-}
-
-
-
-
-
-
-
+const size_t CONT_SLOT = 0;
+const size_t REACTION_SLOT = 1;
+const size_t PROMISING_PROMISE_SLOT = 2;
 
 
 
@@ -360,18 +75,33 @@ void SuspenderObject::forwardToSuspendable() {
 class SuspendingFunctionModuleFactory {
  public:
   enum TypeIdx {
-    ParamsTypeIndex,
     ResultsTypeIndex,
+    TagFuncTypeIndex,
+  };
+
+  enum TagIdx {
+    OnSuspendTagIndex,
   };
 
   enum FnIdx {
     WrappedFnIndex,
     ExportedFnIndex,
-    TrampolineFnIndex,
-    ContinueOnSuspendableFnIndex
   };
 
  private:
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
   
   
@@ -393,67 +123,72 @@ class SuspendingFunctionModuleFactory {
                               uint32_t resultSize, uint32_t paramsOffset,
                               RefType resultType, Bytes& bytecode) {
     Encoder encoder(bytecode, *codeMeta.types);
+
+    const uint32_t promiseIndex = paramsSize;
+    const uint32_t resultsIndex = paramsSize + 1;
+
     ValTypeVector locals;
-    if (!locals.emplaceBack(RefType::extern_())) {
-      return false;
-    }
-    if (!locals.emplaceBack(resultType)) {
+    if (!locals.emplaceBack(RefType::extern_()) ||
+        !locals.emplaceBack(resultType)) {
       return false;
     }
     if (!EncodeLocalEntries(encoder, locals)) {
       return false;
     }
 
-    const int suspenderIndex = paramsSize;
-    if (!encoder.writeOp(Op::I32Const) || !encoder.writeVarU32(0)) {
-      return false;
-    }
-    if (!encoder.writeOp(MozOp::CallBuiltinModuleFunc) ||
-        !encoder.writeVarU32((uint32_t)BuiltinModuleFuncId::CurrentSuspender)) {
-      return false;
-    }
-    if (!encoder.writeOp(Op::LocalTee) ||
-        !encoder.writeVarU32(suspenderIndex)) {
+    if (!encoder.writeOp(Opcode(MozOp::GuardSuspending)) ||
+        !encoder.writeVarU32(OnSuspendTagIndex)) {
       return false;
     }
 
     
-    const int resultsIndex = paramsSize + 1;
-
-    if (!encoder.writeOp(Op::RefFunc) ||
-        !encoder.writeVarU32(TrampolineFnIndex)) {
-      return false;
-    }
     for (uint32_t i = 0; i < paramsSize; i++) {
       if (!encoder.writeOp(Op::LocalGet) ||
           !encoder.writeVarU32(i + paramsOffset)) {
         return false;
       }
     }
-    if (!encoder.writeOp(GcOp::StructNew) ||
-        !encoder.writeVarU32(ParamsTypeIndex)) {
+    if (!encoder.writeOp(Op::Call) || !encoder.writeVarU32(WrappedFnIndex)) {
       return false;
     }
 
-    if (!encoder.writeOp(MozOp::StackSwitch) ||
-        !encoder.writeVarU32(uint32_t(StackSwitchKind::SwitchToMain))) {
+    
+    if (!encoder.writeOp(MozOp::CallBuiltinModuleFunc) ||
+        !encoder.writeVarU32((uint32_t)BuiltinModuleFuncId::PromiseResolve)) {
       return false;
     }
 
-    if (!encoder.writeOp(Op::LocalGet) ||
-        !encoder.writeVarU32(suspenderIndex)) {
+    
+    if (!encoder.writeOp(Op::LocalTee) || !encoder.writeVarU32(promiseIndex)) {
+      return false;
+    }
+
+    
+    if (!encoder.writeOp(Op::Suspend) ||
+        !encoder.writeVarU32(OnSuspendTagIndex)) {
+      return false;
+    }
+
+    
+    
+    if (!encoder.writeOp(Op::LocalGet) || !encoder.writeVarU32(promiseIndex)) {
       return false;
     }
     if (!encoder.writeOp(MozOp::CallBuiltinModuleFunc) ||
         !encoder.writeVarU32(
-            (uint32_t)BuiltinModuleFuncId::GetSuspendingPromiseResult)) {
+            (uint32_t)BuiltinModuleFuncId::GetPromiseResults)) {
       return false;
     }
+
+    
+    
     if (!encoder.writeOp(GcOp::RefCast) ||
         !encoder.writeVarU32(ResultsTypeIndex) ||
         !encoder.writeOp(Op::LocalSet) || !encoder.writeVarU32(resultsIndex)) {
       return false;
     }
+
+    
     for (uint32_t i = 0; i < resultSize; i++) {
       if (!encoder.writeOp(Op::LocalGet) ||
           !encoder.writeVarU32(resultsIndex) ||
@@ -461,139 +196,6 @@ class SuspendingFunctionModuleFactory {
           !encoder.writeVarU32(ResultsTypeIndex) || !encoder.writeVarU32(i)) {
         return false;
       }
-    }
-    return encoder.writeOp(Op::End);
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  bool encodeTrampolineFunction(CodeMetadata& codeMeta, uint32_t paramsSize,
-                                Bytes& bytecode) {
-    Encoder encoder(bytecode, *codeMeta.types);
-    if (!EncodeLocalEntries(encoder, ValTypeVector())) {
-      return false;
-    }
-    const uint32_t SuspenderIndex = 0;
-    const uint32_t ParamsIndex = 1;
-
-    if (!encoder.writeOp(Op::LocalGet) ||
-        !encoder.writeVarU32(SuspenderIndex)) {
-      return false;
-    }
-
-    if (!encoder.writeOp(Op::Block) ||
-        !encoder.writeFixedU8(uint8_t(TypeCode::ExnRef))) {
-      return false;
-    }
-
-    if (!encoder.writeOp(Op::TryTable) ||
-        !encoder.writeFixedU8(uint8_t(TypeCode::BlockVoid)) ||
-        !encoder.writeVarU32(1) ||
-        !encoder.writeFixedU8( 0x03) ||
-        !encoder.writeVarU32(0)) {
-      return false;
-    }
-
-    
-    if (!encoder.writeOp(Op::LocalGet) ||
-        !encoder.writeVarU32(SuspenderIndex)) {
-      return false;
-    }
-
-    for (uint32_t i = 0; i < paramsSize; i++) {
-      if (!encoder.writeOp(Op::LocalGet) || !encoder.writeVarU32(ParamsIndex)) {
-        return false;
-      }
-      if (!encoder.writeOp(GcOp::StructGet) ||
-          !encoder.writeVarU32(ParamsTypeIndex) || !encoder.writeVarU32(i)) {
-        return false;
-      }
-    }
-    if (!encoder.writeOp(Op::Call) || !encoder.writeVarU32(WrappedFnIndex)) {
-      return false;
-    }
-    if (!encoder.writeOp(Op::RefFunc) ||
-        !encoder.writeVarU32(ContinueOnSuspendableFnIndex)) {
-      return false;
-    }
-
-    if (!encoder.writeOp(MozOp::CallBuiltinModuleFunc) ||
-        !encoder.writeVarU32(
-            (uint32_t)BuiltinModuleFuncId::AddPromiseReactions)) {
-      return false;
-    }
-
-    if (!encoder.writeOp(Op::Return) || !encoder.writeOp(Op::End) ||
-        !encoder.writeOp(Op::Unreachable) || !encoder.writeOp(Op::End)) {
-      return false;
-    }
-
-    if (!encoder.writeOp(MozOp::CallBuiltinModuleFunc) ||
-        !encoder.writeVarU32(
-            (uint32_t)BuiltinModuleFuncId::ForwardExceptionToSuspended)) {
-      return false;
-    }
-
-    return encoder.writeOp(Op::End);
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  bool encodeContinueOnSuspendableFunction(CodeMetadata& codeMeta,
-                                           uint32_t resultsSize,
-                                           Bytes& bytecode) {
-    Encoder encoder(bytecode, *codeMeta.types);
-    if (!EncodeLocalEntries(encoder, ValTypeVector())) {
-      return false;
-    }
-
-    const uint32_t SuspenderIndex = 0;
-    const uint32_t ResultsIndex = 1;
-
-    if (!encoder.writeOp(Op::LocalGet) ||
-        !encoder.writeVarU32(SuspenderIndex)) {
-      return false;
-    }
-    if (!encoder.writeOp(Op::RefNull) ||
-        !encoder.writeValType(ValType(RefType::func()))) {
-      return false;
-    }
-    if (!encoder.writeOp(Op::LocalGet) || !encoder.writeVarU32(ResultsIndex) ||
-        !encoder.writeOp(GcOp::AnyConvertExtern)) {
-      return false;
-    }
-
-    if (!encoder.writeOp(MozOp::StackSwitch) ||
-        !encoder.writeVarU32(
-            uint32_t(StackSwitchKind::ContinueOnSuspendable))) {
-      return false;
     }
 
     return encoder.writeOp(Op::End);
@@ -618,41 +220,22 @@ class SuspendingFunctionModuleFactory {
     }
     MutableCodeMetadata codeMeta = moduleMeta->codeMeta;
 
+    
+    
+    
+    
+    codeMeta->funcImportsAreJS = true;
+
     MOZ_ASSERT(IonPlatformSupport());
     CompilerEnvironment compilerEnv(CompileMode::Once, Tier::Optimized,
                                     DebugEnabled::False);
     compilerEnv.computeParameters();
 
-    RefType suspenderType = RefType::extern_();
-    RefType promiseType = RefType::extern_();
-
-    ValTypeVector paramsWithoutSuspender;
-
     const size_t resultsSize = results.length();
     const size_t paramsSize = params.length();
     const size_t paramsOffset = 0;
-    if (!paramsWithoutSuspender.append(params.begin(), params.end())) {
-      ReportOutOfMemory(cx);
-      return nullptr;
-    }
 
-    ValTypeVector resultsRef;
-    if (!resultsRef.emplaceBack(promiseType)) {
-      ReportOutOfMemory(cx);
-      return nullptr;
-    }
-
-    StructType boxedParamsStruct;
-    if (!StructType::createImmutable(paramsWithoutSuspender,
-                                     &boxedParamsStruct)) {
-      ReportOutOfMemory(cx);
-      return nullptr;
-    }
-    MOZ_ASSERT(codeMeta->types->length() == ParamsTypeIndex);
-    if (!codeMeta->types->addType(std::move(boxedParamsStruct))) {
-      return nullptr;
-    }
-
+    
     StructType boxedResultType;
     if (!StructType::createImmutable(results, &boxedResultType)) {
       ReportOutOfMemory(cx);
@@ -663,49 +246,48 @@ class SuspendingFunctionModuleFactory {
       return nullptr;
     }
 
-    MOZ_ASSERT(codeMeta->funcs.length() == WrappedFnIndex);
-    if (!moduleMeta->addDefinedFunc(std::move(paramsWithoutSuspender),
-                                    std::move(resultsRef))) {
+    
+    ValTypeVector tagParams, tagResults;
+    if (!tagParams.emplaceBack(RefType::extern_())) {
+      ReportOutOfMemory(cx);
+      return nullptr;
+    }
+    MOZ_ASSERT(codeMeta->types->length() == TagFuncTypeIndex);
+    if (!codeMeta->types->addType(
+            FuncType(std::move(tagParams), std::move(tagResults)))) {
       return nullptr;
     }
 
     
-    codeMeta->numFuncImports = codeMeta->funcs.length();
+    MutableTagType tagType = js_new<TagType>();
+    if (!tagType ||
+        !tagType->initialize(&(*codeMeta->types)[TagFuncTypeIndex])) {
+      return nullptr;
+    }
+    if (!codeMeta->tags.emplaceBack(TagKind::Exception, tagType)) {
+      return nullptr;
+    }
 
     
+    ValTypeVector wrappedParams, wrappedResults;
+    if (!wrappedParams.append(params.begin(), params.end()) ||
+        !wrappedResults.emplaceBack(RefType::extern_())) {
+      ReportOutOfMemory(cx);
+      return nullptr;
+    }
+    MOZ_ASSERT(codeMeta->funcs.length() == WrappedFnIndex);
+    if (!moduleMeta->addDefinedFunc(std::move(wrappedParams),
+                                    std::move(wrappedResults))) {
+      return nullptr;
+    }
+
+    codeMeta->numFuncImports = codeMeta->funcs.length();
+
     
     MOZ_ASSERT(codeMeta->funcs.length() == ExportedFnIndex);
     if (!moduleMeta->addDefinedFunc(std::move(params), std::move(results),
                                      true,
                                     mozilla::Some(CacheableName()))) {
-      return nullptr;
-    }
-
-    ValTypeVector paramsTrampoline, resultsTrampoline;
-    if (!paramsTrampoline.emplaceBack(suspenderType) ||
-        !paramsTrampoline.emplaceBack(RefType::fromTypeDef(
-            &(*codeMeta->types)[ParamsTypeIndex], false)) ||
-        !resultsTrampoline.emplaceBack(RefType::any())) {
-      ReportOutOfMemory(cx);
-      return nullptr;
-    }
-    MOZ_ASSERT(codeMeta->funcs.length() == TrampolineFnIndex);
-    if (!moduleMeta->addDefinedFunc(std::move(paramsTrampoline),
-                                    std::move(resultsTrampoline),
-                                     true)) {
-      return nullptr;
-    }
-
-    ValTypeVector paramsContinueOnSuspendable, resultsContinueOnSuspendable;
-    if (!paramsContinueOnSuspendable.emplaceBack(suspenderType) ||
-        !paramsContinueOnSuspendable.emplaceBack(RefType::extern_())) {
-      ReportOutOfMemory(cx);
-      return nullptr;
-    }
-    MOZ_ASSERT(codeMeta->funcs.length() == ContinueOnSuspendableFnIndex);
-    if (!moduleMeta->addDefinedFunc(std::move(paramsContinueOnSuspendable),
-                                    std::move(resultsContinueOnSuspendable),
-                                     true)) {
       return nullptr;
     }
 
@@ -718,7 +300,7 @@ class SuspendingFunctionModuleFactory {
     if (!mg.initializeCompleteTier()) {
       return nullptr;
     }
-    
+
     uint32_t funcBytecodeOffset = CallSite::FIRST_VALID_BYTECODE_OFFSET;
     Bytes bytecode;
     if (!encodeExportedFunction(
@@ -733,32 +315,6 @@ class SuspendingFunctionModuleFactory {
                            bytecode.begin() + bytecode.length())) {
       return nullptr;
     }
-    funcBytecodeOffset += bytecode.length();
-
-    Bytes bytecode2;
-    if (!encodeTrampolineFunction(*codeMeta, paramsSize, bytecode2)) {
-      ReportOutOfMemory(cx);
-      return nullptr;
-    }
-    if (!mg.compileFuncDef(TrampolineFnIndex, funcBytecodeOffset,
-                           bytecode2.begin(),
-                           bytecode2.begin() + bytecode2.length())) {
-      return nullptr;
-    }
-    funcBytecodeOffset += bytecode2.length();
-
-    Bytes bytecode3;
-    if (!encodeContinueOnSuspendableFunction(*codeMeta, paramsSize,
-                                             bytecode3)) {
-      ReportOutOfMemory(cx);
-      return nullptr;
-    }
-    if (!mg.compileFuncDef(ContinueOnSuspendableFnIndex, funcBytecodeOffset,
-                           bytecode3.begin(),
-                           bytecode3.begin() + bytecode3.length())) {
-      return nullptr;
-    }
-    funcBytecodeOffset += bytecode3.length();
 
     if (!mg.finishFuncDefs()) {
       return nullptr;
@@ -769,68 +325,9 @@ class SuspendingFunctionModuleFactory {
   }
 };
 
-
-static bool WasmPISuspendTaskContinue(JSContext* cx, unsigned argc, Value* vp) {
-  CallArgs args = CallArgsFromVp(argc, vp);
-  
-  Rooted<JSFunction*> callee(cx, &args.callee().as<JSFunction>());
-  RootedValue suspender(cx, callee->getExtendedSlot(SUSPENDER_SLOT));
-  RootedValue suspendingPromise(cx, callee->getExtendedSlot(PROMISE_SLOT));
-
-  
-  
-  RootedFunction continueOnSuspendable(
-      cx, &callee->getExtendedSlot(CONTINUE_ON_SUSPENDABLE_SLOT)
-               .toObject()
-               .as<JSFunction>());
-  JS::RootedValueArray<2> argv(cx);
-  argv[0].set(suspender);
-  argv[1].set(suspendingPromise);
-
-  JS::Rooted<JS::Value> rval(cx);
-  if (Call(cx, UndefinedHandleValue, continueOnSuspendable, argv, &rval)) {
-    return true;
-  }
-
-  
-  MOZ_RELEASE_ASSERT(!cx->wasm().activeSuspender());
-  MOZ_RELEASE_ASSERT(
-      suspender.toObject().as<wasm::SuspenderObject>().isMoribund());
-
-  if (cx->isThrowingOutOfMemory()) {
-    return false;
-  }
-  Rooted<PromiseObject*> promise(
-      cx, suspender.toObject().as<SuspenderObject>().promisingPromise());
-  return RejectPromiseWithPendingError(cx, promise);
-}
-
-
-
-
-static bool WasmPIWrapSuspendingImport(JSContext* cx, unsigned argc,
-                                       Value* vp) {
-  CallArgs args = CallArgsFromVp(argc, vp);
-  Rooted<JSFunction*> callee(cx, &args.callee().as<JSFunction>());
-  RootedValue originalImportFunc(cx, callee->getExtendedSlot(WRAPPED_FN_SLOT));
-
-  
-  RootedValue rval(cx);
-  if (Call(cx, UndefinedHandleValue, originalImportFunc, args, &rval)) {
-    
-    args.rval().set(rval);
-    return true;
-  }
-
-  
-  
-  return false;
-}
-
 static bool ValidateTypes(JSContext* cx, const ValTypeVector& src) {
   for (ValType t : src) {
     if (t.typeDef()) {
-      
       JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                                 JSMSG_JSPI_ARG_TYPE);
       return false;
@@ -870,14 +367,19 @@ JSFunction* WasmSuspendingFunctionCreate(JSContext* cx, HandleObject func,
   Rooted<ImportValues> imports(cx);
 
   
-  RootedFunction funcWrapper(
-      cx, NewNativeFunction(cx, WasmPIWrapSuspendingImport, 0, nullptr,
-                            gc::AllocKind::FUNCTION_EXTENDED, GenericObject));
-  if (!funcWrapper) {
+  if (!imports.get().funcs.append(func)) {
+    ReportOutOfMemory(cx);
     return nullptr;
   }
-  funcWrapper->initExtendedSlot(WRAPPED_FN_SLOT, ObjectValue(*func));
-  if (!imports.get().funcs.append(funcWrapper)) {
+
+  
+  Rooted<WasmNamespaceObject*> wasmNamespace(
+      cx, WasmNamespaceObject::getOrCreate(cx));
+  if (!wasmNamespace) {
+    ReportOutOfMemory(cx);
+    return nullptr;
+  }
+  if (!imports.get().tagObjs.append(wasmNamespace->jsPromiseTag())) {
     ReportOutOfMemory(cx);
     return nullptr;
   }
@@ -914,17 +416,42 @@ JSFunction* WasmSuspendingFunctionCreate(JSContext* cx, HandleObject func,
 
 
 
+
+
+
+
+
+
 class PromisingFunctionModuleFactory {
  public:
+  
   enum TypeIdx {
-    ParamsTypeIndex,
-    ResultsTypeIndex,
+    ParamsTypeIndex = 0,
+    ResultsTypeIndex = 1,
+    
+    
+    TrampolineFuncTypeIndex = 4,
+    
+    ContTypeIndex = 6,
+    TagFuncTypeIndex = 7,
+    SuspendBlockTypeIndex = 8,
+    
+  };
+
+  enum TagIdx {
+    OnSuspendTagIndex,
+  };
+
+  enum GlobalIdx {
+    PromisingPromiseGlobalIndex,
+    ParamsGlobalIndex,
   };
 
   enum FnIdx {
     WrappedFnIndex,
     ExportedFnIndex,
     TrampolineFnIndex,
+    ReactionFnIndex,
   };
 
  private:
@@ -941,9 +468,30 @@ class PromisingFunctionModuleFactory {
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   bool encodeExportedFunction(CodeMetadata& codeMeta, uint32_t paramsSize,
                               Bytes& bytecode) {
     Encoder encoder(bytecode, *codeMeta.types);
+
+    const uint32_t promisingPromiseIndex = paramsSize;
+
     ValTypeVector locals;
     if (!locals.emplaceBack(RefType::extern_())) {
       return false;
@@ -952,33 +500,41 @@ class PromisingFunctionModuleFactory {
       return false;
     }
 
-    const uint32_t SuspenderIndex = paramsSize;
-    if (!encoder.writeOp(Op::I32Const) || !encoder.writeVarU32(0)) {
+#  ifdef DEBUG
+    
+    
+    if (!encoder.writeOp(Op::GlobalGet) ||
+        !encoder.writeVarU32(PromisingPromiseGlobalIndex)) {
       return false;
     }
+    if (!encoder.writeOp(Op::RefIsNull) || !encoder.writeOp(Op::I32Eqz)) {
+      return false;
+    }
+    if (!encoder.writeOp(Op::If) ||
+        !encoder.writeFixedU8((uint8_t)TypeCode::BlockVoid) ||
+        !encoder.writeOp(Op::Unreachable) || !encoder.writeOp(Op::End)) {
+      return false;
+    }
+#  endif
+
+    
+    
     if (!encoder.writeOp(MozOp::CallBuiltinModuleFunc) ||
-        !encoder.writeVarU32((uint32_t)BuiltinModuleFuncId::CreateSuspender)) {
+        !encoder.writeVarU32((uint32_t)BuiltinModuleFuncId::CreatePromise)) {
+      return false;
+    }
+    if (!encoder.writeOp(Op::LocalSet) ||
+        !encoder.writeVarU32(promisingPromiseIndex)) {
       return false;
     }
 
-    if (!encoder.writeOp(Op::LocalTee) ||
-        !encoder.writeVarU32(SuspenderIndex)) {
-      return false;
-    }
-    if (!encoder.writeOp(MozOp::CallBuiltinModuleFunc) ||
-        !encoder.writeVarU32(
-            (uint32_t)BuiltinModuleFuncId::CreatePromisingPromise)) {
+    
+    if (!encoder.writeOp(Op::Block) ||
+        !encoder.writeVarS32(SuspendBlockTypeIndex)) {
       return false;
     }
 
-    if (!encoder.writeOp(Op::LocalGet) ||
-        !encoder.writeVarU32(SuspenderIndex)) {
-      return false;
-    }
-    if (!encoder.writeOp(Op::RefFunc) ||
-        !encoder.writeVarU32(TrampolineFnIndex)) {
-      return false;
-    }
+    
     for (uint32_t i = 0; i < paramsSize; i++) {
       if (!encoder.writeOp(Op::LocalGet) || !encoder.writeVarU32(i)) {
         return false;
@@ -988,14 +544,95 @@ class PromisingFunctionModuleFactory {
         !encoder.writeVarU32(ParamsTypeIndex)) {
       return false;
     }
-    if (!encoder.writeOp(MozOp::StackSwitch) ||
-        !encoder.writeVarU32(uint32_t(StackSwitchKind::SwitchToSuspendable))) {
+    if (!encoder.writeOp(Op::GlobalSet) ||
+        !encoder.writeVarU32(ParamsGlobalIndex)) {
+      return false;
+    }
+
+    
+    if (!encoder.writeOp(Op::LocalGet) ||
+        !encoder.writeVarU32(promisingPromiseIndex)) {
+      return false;
+    }
+    if (!encoder.writeOp(Op::GlobalSet) ||
+        !encoder.writeVarU32(PromisingPromiseGlobalIndex)) {
+      return false;
+    }
+
+    
+    if (!encoder.writeOp(Op::RefFunc) ||
+        !encoder.writeVarU32(TrampolineFnIndex)) {
+      return false;
+    }
+    if (!encoder.writeOp(Op::ContNew) || !encoder.writeVarU32(ContTypeIndex)) {
+      return false;
+    }
+
+    
+    
+    if (!encoder.writeOp(Op::Resume) || !encoder.writeVarU32(ContTypeIndex) ||
+        !encoder.writeVarU32(1) ||
+        !encoder.writeFixedU8(uint8_t(HandlerKind::Suspend)) ||
+        !encoder.writeVarU32(OnSuspendTagIndex) || !encoder.writeVarU32(0)) {
+      return false;
+    }
+
+    
+    if (!encoder.writeOp(Op::LocalGet) ||
+        !encoder.writeVarU32(promisingPromiseIndex)) {
+      return false;
+    }
+    if (!encoder.writeOp(Op::Return)) {
+      return false;
+    }
+
+    
+    if (!encoder.writeOp(Op::End)) {
+      return false;
+    }
+
+    
+    
+    if (!encoder.writeOp(Op::RefFunc) ||
+        !encoder.writeVarU32(ReactionFnIndex)) {
+      return false;
+    }
+
+    
+    if (!encoder.writeOp(Op::LocalGet) ||
+        !encoder.writeVarU32(promisingPromiseIndex)) {
+      return false;
+    }
+
+    
+    if (!encoder.writeOp(MozOp::CallBuiltinModuleFunc) ||
+        !encoder.writeVarU32(
+            (uint32_t)BuiltinModuleFuncId::AddPromiseReactions)) {
+      return false;
+    }
+
+    
+    if (!encoder.writeOp(Op::LocalGet) ||
+        !encoder.writeVarU32(promisingPromiseIndex)) {
       return false;
     }
 
     return encoder.writeOp(Op::End);
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
   
   
@@ -1011,20 +648,64 @@ class PromisingFunctionModuleFactory {
   bool encodeTrampolineFunction(CodeMetadata& codeMeta, uint32_t paramsSize,
                                 Bytes& bytecode) {
     Encoder encoder(bytecode, *codeMeta.types);
-    if (!EncodeLocalEntries(encoder, ValTypeVector())) {
+
+    const uint32_t paramsLocalIndex = 0;
+    const uint32_t promisingPromiseLocalIndex = 1;
+
+    ValTypeVector locals;
+    if (!locals.emplaceBack(RefType::fromTypeDef(
+            &codeMeta.types->type(ParamsTypeIndex), true)) ||
+        !locals.emplaceBack(RefType::extern_())) {
       return false;
     }
-    const uint32_t SuspenderIndex = 0;
-    const uint32_t ParamsIndex = 1;
+    if (!EncodeLocalEntries(encoder, locals)) {
+      return false;
+    }
 
     
-    if (!encoder.writeOp(Op::LocalGet) ||
-        !encoder.writeVarU32(SuspenderIndex)) {
+    if (!encoder.writeOp(Op::GlobalGet) ||
+        !encoder.writeVarU32(ParamsGlobalIndex)) {
+      return false;
+    }
+    if (!encoder.writeOp(Op::LocalSet) ||
+        !encoder.writeVarU32(paramsLocalIndex)) {
       return false;
     }
 
+    
+    if (!encoder.writeOp(Op::RefNull) ||
+        !encoder.writeVarS32(ParamsTypeIndex)) {
+      return false;
+    }
+    if (!encoder.writeOp(Op::GlobalSet) ||
+        !encoder.writeVarU32(ParamsGlobalIndex)) {
+      return false;
+    }
+
+    
+    if (!encoder.writeOp(Op::GlobalGet) ||
+        !encoder.writeVarU32(PromisingPromiseGlobalIndex)) {
+      return false;
+    }
+    if (!encoder.writeOp(Op::LocalSet) ||
+        !encoder.writeVarU32(promisingPromiseLocalIndex)) {
+      return false;
+    }
+
+    
+    if (!encoder.writeOp(Op::RefNull) ||
+        !encoder.writeFixedU8(uint8_t(TypeCode::ExternRef))) {
+      return false;
+    }
+    if (!encoder.writeOp(Op::GlobalSet) ||
+        !encoder.writeVarU32(PromisingPromiseGlobalIndex)) {
+      return false;
+    }
+
+    
     for (uint32_t i = 0; i < paramsSize; i++) {
-      if (!encoder.writeOp(Op::LocalGet) || !encoder.writeVarU32(ParamsIndex)) {
+      if (!encoder.writeOp(Op::LocalGet) ||
+          !encoder.writeVarU32(paramsLocalIndex)) {
         return false;
       }
       if (!encoder.writeOp(GcOp::StructGet) ||
@@ -1032,17 +713,117 @@ class PromisingFunctionModuleFactory {
         return false;
       }
     }
+
+    
+    if (!encoder.writeOp(Op::RefNull) ||
+        !encoder.writeVarS32(ParamsTypeIndex)) {
+      return false;
+    }
+    if (!encoder.writeOp(Op::LocalSet) ||
+        !encoder.writeVarU32(paramsLocalIndex)) {
+      return false;
+    }
+
+    
     if (!encoder.writeOp(Op::Call) || !encoder.writeVarU32(WrappedFnIndex)) {
       return false;
     }
 
+    
     if (!encoder.writeOp(GcOp::StructNew) ||
         !encoder.writeVarU32(ResultsTypeIndex)) {
       return false;
     }
+
+    
+    if (!encoder.writeOp(Op::LocalGet) ||
+        !encoder.writeVarU32(promisingPromiseLocalIndex)) {
+      return false;
+    }
+
+    
     if (!encoder.writeOp(MozOp::CallBuiltinModuleFunc) ||
         !encoder.writeVarU32(
-            (uint32_t)BuiltinModuleFuncId::SetPromisingPromiseResults)) {
+            (uint32_t)BuiltinModuleFuncId::ResolvePromiseWithResults)) {
+      return false;
+    }
+
+    return encoder.writeOp(Op::End);
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool encodeReactionFunction(CodeMetadata& codeMeta, Bytes& bytecode) {
+    Encoder encoder(bytecode, *codeMeta.types);
+
+    const uint32_t contIndex = 0;
+    const uint32_t promisingPromiseIndex = 1;
+
+    if (!EncodeLocalEntries(encoder, ValTypeVector())) {
+      return false;
+    }
+
+    
+    if (!encoder.writeOp(Op::Block) ||
+        !encoder.writeVarS32(SuspendBlockTypeIndex)) {
+      return false;
+    }
+
+    
+    if (!encoder.writeOp(Op::LocalGet) || !encoder.writeVarU32(contIndex)) {
+      return false;
+    }
+
+    
+    if (!encoder.writeOp(Op::Resume) || !encoder.writeVarU32(ContTypeIndex) ||
+        !encoder.writeVarU32(1) ||
+        !encoder.writeFixedU8(uint8_t(HandlerKind::Suspend)) ||
+        !encoder.writeVarU32(OnSuspendTagIndex) || !encoder.writeVarU32(0)) {
+      return false;
+    }
+
+    
+    if (!encoder.writeOp(Op::Return)) {
+      return false;
+    }
+
+    
+    if (!encoder.writeOp(Op::End)) {
+      return false;
+    }
+
+    
+    
+    if (!encoder.writeOp(Op::RefFunc) ||
+        !encoder.writeVarU32(ReactionFnIndex)) {
+      return false;
+    }
+
+    
+    if (!encoder.writeOp(Op::LocalGet) ||
+        !encoder.writeVarU32(promisingPromiseIndex)) {
+      return false;
+    }
+
+    
+    if (!encoder.writeOp(MozOp::CallBuiltinModuleFunc) ||
+        !encoder.writeVarU32(
+            (uint32_t)BuiltinModuleFuncId::AddPromiseReactions)) {
       return false;
     }
 
@@ -1054,8 +835,6 @@ class PromisingFunctionModuleFactory {
                      ValTypeVector&& results) {
     const FuncType& fnType = fn->wasmTypeDef()->funcType();
     size_t paramsSize = params.length();
-
-    RefType suspenderType = RefType::extern_();
 
     FeatureOptions options;
     options.isBuiltinModule = true;
@@ -1078,6 +857,7 @@ class PromisingFunctionModuleFactory {
                                     DebugEnabled::False);
     compilerEnv.computeParameters();
 
+    
     StructType boxedParamsStruct;
     if (!StructType::createImmutable(params, &boxedParamsStruct)) {
       ReportOutOfMemory(cx);
@@ -1110,13 +890,14 @@ class PromisingFunctionModuleFactory {
       return nullptr;
     }
 
+    
+    
     MOZ_ASSERT(codeMeta->funcs.length() == WrappedFnIndex);
     if (!moduleMeta->addDefinedFunc(std::move(paramsForWrapper),
                                     std::move(resultsForWrapper))) {
       return nullptr;
     }
 
-    
     codeMeta->numFuncImports = codeMeta->funcs.length();
 
     
@@ -1128,17 +909,94 @@ class PromisingFunctionModuleFactory {
       return nullptr;
     }
 
-    ValTypeVector paramsTrampoline, resultsTrampoline;
-    if (!paramsTrampoline.emplaceBack(suspenderType) ||
-        !paramsTrampoline.emplaceBack(RefType::fromTypeDef(
-            &(*codeMeta->types)[ParamsTypeIndex], false))) {
+    
+    
+    MOZ_ASSERT(codeMeta->types->length() == TrampolineFuncTypeIndex);
+    if (!codeMeta->types->addType(FuncType(ValTypeVector(), ValTypeVector()))) {
+      return nullptr;
+    }
+
+    
+    
+    ValTypeVector trampolineParams, trampolineResults;
+    MOZ_ASSERT(codeMeta->funcs.length() == TrampolineFnIndex);
+    if (!moduleMeta->addDefinedFunc(std::move(trampolineParams),
+                                    std::move(trampolineResults),
+                                     true)) {
+      return nullptr;
+    }
+
+    
+    MOZ_ASSERT(codeMeta->types->length() == ContTypeIndex);
+    if (!codeMeta->types->addType(
+            ContType(&codeMeta->types->type(TrampolineFuncTypeIndex)))) {
+      return nullptr;
+    }
+
+    
+    ValTypeVector tagParams, tagResults;
+    if (!tagParams.emplaceBack(RefType::extern_())) {
       ReportOutOfMemory(cx);
       return nullptr;
     }
-    MOZ_ASSERT(codeMeta->funcs.length() == TrampolineFnIndex);
-    if (!moduleMeta->addDefinedFunc(std::move(paramsTrampoline),
-                                    std::move(resultsTrampoline),
+    MOZ_ASSERT(codeMeta->types->length() == TagFuncTypeIndex);
+    if (!codeMeta->types->addType(
+            FuncType(std::move(tagParams), std::move(tagResults)))) {
+      return nullptr;
+    }
+
+    
+    ValTypeVector suspendBlockParams, suspendBlockResults;
+    if (!suspendBlockResults.emplaceBack(RefType::extern_()) ||
+        !suspendBlockResults.emplaceBack(RefType::fromTypeDef(
+            &codeMeta->types->type(ContTypeIndex), false))) {
+      ReportOutOfMemory(cx);
+      return nullptr;
+    }
+    MOZ_ASSERT(codeMeta->types->length() == SuspendBlockTypeIndex);
+    if (!codeMeta->types->addType(FuncType(std::move(suspendBlockParams),
+                                           std::move(suspendBlockResults)))) {
+      return nullptr;
+    }
+
+    
+    
+    ValTypeVector reactionParams, reactionResults;
+    if (!reactionParams.emplaceBack(RefType::fromTypeDef(
+            &codeMeta->types->type(ContTypeIndex), true)) ||
+        !reactionParams.emplaceBack(RefType::extern_())) {
+      ReportOutOfMemory(cx);
+      return nullptr;
+    }
+    MOZ_ASSERT(codeMeta->funcs.length() == ReactionFnIndex);
+    if (!moduleMeta->addDefinedFunc(std::move(reactionParams),
+                                    std::move(reactionResults),
                                      true)) {
+      return nullptr;
+    }
+
+    
+    MutableTagType tagType = js_new<TagType>();
+    if (!tagType ||
+        !tagType->initialize(&(*codeMeta->types)[TagFuncTypeIndex])) {
+      return nullptr;
+    }
+    if (!codeMeta->tags.emplaceBack(TagKind::Exception, tagType)) {
+      return nullptr;
+    }
+
+    
+    if (!codeMeta->globals.append(
+            GlobalDesc(InitExpr(LitVal(ValType(RefType::extern_()))),
+                        true))) {
+      return nullptr;
+    }
+
+    
+    if (!codeMeta->globals.append(
+            GlobalDesc(InitExpr(LitVal(ValType(RefType::fromTypeDef(
+                           &codeMeta->types->type(ParamsTypeIndex), true)))),
+                        true))) {
       return nullptr;
     }
 
@@ -1151,9 +1009,10 @@ class PromisingFunctionModuleFactory {
     if (!mg.initializeCompleteTier()) {
       return nullptr;
     }
-    
-    Bytes bytecode;
+
     uint32_t funcBytecodeOffset = CallSite::FIRST_VALID_BYTECODE_OFFSET;
+
+    Bytes bytecode;
     if (!encodeExportedFunction(*codeMeta, paramsSize, bytecode)) {
       ReportOutOfMemory(cx);
       return nullptr;
@@ -1177,45 +1036,53 @@ class PromisingFunctionModuleFactory {
     }
     funcBytecodeOffset += bytecode2.length();
 
+    Bytes bytecode3;
+    if (!encodeReactionFunction(*codeMeta, bytecode3)) {
+      ReportOutOfMemory(cx);
+      return nullptr;
+    }
+    if (!mg.compileFuncDef(ReactionFnIndex, funcBytecodeOffset,
+                           bytecode3.begin(),
+                           bytecode3.begin() + bytecode3.length())) {
+      return nullptr;
+    }
+
     if (!mg.finishFuncDefs()) {
       return nullptr;
     }
 
-    return mg.finishModule(BytecodeBufferOrSource(), *moduleMeta,
-                           nullptr);
+    SharedModule m = mg.finishModule(BytecodeBufferOrSource(), *moduleMeta,
+                                     nullptr);
+    return m;
   }
 };
 
 
 
-static bool WasmPIPromisingFunction(JSContext* cx, unsigned argc, Value* vp) {
+static bool WasmPromisingFunction(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   Rooted<JSFunction*> callee(cx, &args.callee().as<JSFunction>());
   RootedFunction fn(
       cx,
       &callee->getExtendedSlot(WRAPPED_FN_SLOT).toObject().as<JSFunction>());
 
-  
   if (Call(cx, UndefinedHandleValue, fn, args, args.rval())) {
     return true;
   }
 
   
   
-  MOZ_RELEASE_ASSERT(!cx->wasm().activeSuspender());
+  MOZ_RELEASE_ASSERT(!cx->wasm().currentStack());
 
-  if (cx->isThrowingOutOfMemory()) {
+  
+  
+  JSObject* newPromise = NewPromiseObject(cx, nullptr);
+  if (!newPromise) {
     return false;
   }
-
-  RootedObject promiseObject(cx, NewPromiseObject(cx, nullptr));
-  if (!promiseObject) {
-    return false;
-  }
+  Rooted<PromiseObject*> promiseObject(cx, &newPromise->as<PromiseObject>());
   args.rval().setObject(*promiseObject);
-
-  Rooted<PromiseObject*> promise(cx, &promiseObject->as<PromiseObject>());
-  return RejectPromiseWithPendingError(cx, promise);
+  return RejectPromiseWithPendingError(cx, promiseObject);
 }
 
 JSFunction* WasmPromisingFunctionCreate(JSContext* cx, HandleObject func) {
@@ -1245,12 +1112,23 @@ JSFunction* WasmPromisingFunctionCreate(JSContext* cx, HandleObject func) {
   if (!module) {
     return nullptr;
   }
-
   
   Rooted<ImportValues> imports(cx);
 
   
   if (!imports.get().funcs.append(func)) {
+    ReportOutOfMemory(cx);
+    return nullptr;
+  }
+
+  
+  Rooted<WasmNamespaceObject*> wasmNamespace(
+      cx, WasmNamespaceObject::getOrCreate(cx));
+  if (!wasmNamespace) {
+    ReportOutOfMemory(cx);
+    return nullptr;
+  }
+  if (!imports.get().tagObjs.append(wasmNamespace->jsPromiseTag())) {
     ReportOutOfMemory(cx);
     return nullptr;
   }
@@ -1270,7 +1148,7 @@ JSFunction* WasmPromisingFunctionCreate(JSContext* cx, HandleObject func) {
   }
 
   RootedFunction wasmFuncWrapper(
-      cx, NewNativeFunction(cx, WasmPIPromisingFunction, 0, nullptr,
+      cx, NewNativeFunction(cx, WasmPromisingFunction, 0, nullptr,
                             gc::AllocKind::FUNCTION_EXTENDED, GenericObject));
   if (!wasmFuncWrapper) {
     return nullptr;
@@ -1280,110 +1158,85 @@ JSFunction* WasmPromisingFunctionCreate(JSContext* cx, HandleObject func) {
 }
 
 
+static bool WasmPromiseReaction(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  Rooted<JSFunction*> callee(cx, &args.callee().as<JSFunction>());
+  RootedFunction reactionFunc(
+      cx, &callee->getExtendedSlot(REACTION_SLOT).toObject().as<JSFunction>());
+  Rooted<PromiseObject*> promisingPromiseObject(
+      cx, &callee->getExtendedSlot(PROMISING_PROMISE_SLOT)
+               .toObject()
+               .as<PromiseObject>());
+  JS::RootedValueArray<2> argv(cx);
+  JS::Rooted<JS::Value> rval(cx);
+  argv[0].set(callee->getExtendedSlot(CONT_SLOT));
+  argv[1].set(ObjectValue(*promisingPromiseObject));
 
-
-
-SuspenderObject* CurrentSuspender(Instance* instance, int32_t reserved) {
-  MOZ_ASSERT(SASigCurrentSuspender.failureMode == FailureMode::FailOnNullPtr);
-  JSContext* cx = instance->cx();
-  SuspenderObject* suspender = cx->wasm().activeSuspender();
-  if (!suspender) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_JSPI_INVALID_STATE);
-    return nullptr;
-  }
-  return suspender;
-}
-
-
-
-SuspenderObject* CreateSuspender(Instance* instance, int32_t reserved) {
-  MOZ_ASSERT(SASigCreateSuspender.failureMode == FailureMode::FailOnNullPtr);
-  JSContext* cx = instance->cx();
-  return SuspenderObject::create(cx);
-}
-
-
-
-PromiseObject* CreatePromisingPromise(Instance* instance,
-                                      SuspenderObject* suspender) {
-  MOZ_ASSERT(SASigCreatePromisingPromise.failureMode ==
-             FailureMode::FailOnNullPtr);
-  JSContext* cx = instance->cx();
-
-  Rooted<SuspenderObject*> suspenderObject(cx, suspender);
-  RootedObject promiseObject(cx, NewPromiseObject(cx, nullptr));
-  if (!promiseObject) {
-    return nullptr;
-  }
-
-  Rooted<PromiseObject*> promise(cx, &promiseObject->as<PromiseObject>());
-  suspenderObject->setPromisingPromise(promise);
-  return promise.get();
-}
-
-
-
-
-JSObject* GetSuspendingPromiseResult(Instance* instance, void* result,
-                                     SuspenderObject* suspender) {
-  MOZ_ASSERT(SASigGetSuspendingPromiseResult.failureMode ==
-             FailureMode::FailOnNullPtr);
-  JSContext* cx = instance->cx();
-  Rooted<SuspenderObject*> suspenderObject(cx, suspender);
-  RootedAnyRef resultRef(cx, AnyRef::fromCompiledCode(result));
-
-  SuspenderObject::ReturnType returnType =
-      suspenderObject->suspendingReturnType();
-  MOZ_ASSERT(returnType != SuspenderObject::ReturnType::Unknown);
-  bool hasPromise = false;
-  bool promiseRejected = false;
-  RootedValue promiseReasonOrValue(cx);
-
-  if (returnType == SuspenderObject::ReturnType::Promise) {
-    JSObject* promiseObj = &resultRef.toJSObject();
-    if (IsWrapper(promiseObj)) {
-      promiseObj = UncheckedUnwrap(promiseObj);
-      if (JS_IsDeadWrapper(promiseObj)) {
-        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                  JSMSG_DEAD_OBJECT);
-        return nullptr;
-      }
-    }
-    PromiseObject* promise = &promiseObj->as<PromiseObject>();
-    hasPromise = true;
-    promiseRejected = promise->state() == JS::PromiseState::Rejected;
-    promiseReasonOrValue = promise->valueOrReason();
-    if (!cx->compartment()->wrap(cx, &promiseReasonOrValue)) {
-      return nullptr;
-    }
-  }
-
-#  ifdef DEBUG
-  auto resetReturnType = mozilla::MakeScopeExit([&suspenderObject]() {
-    suspenderObject->setSuspendingReturnType(
-        SuspenderObject::ReturnType::Unknown);
-  });
-#  endif
-
-  if (hasPromise ? promiseRejected
-                 : returnType == SuspenderObject::ReturnType::Exception) {
-    
-    
-    RootedValue reason(
-        cx, hasPromise ? promiseReasonOrValue : resultRef.get().toJSValue());
-    cx->setPendingException(reason, ShouldCaptureStack::Maybe);
-    return nullptr;
+  if (Call(cx, UndefinedHandleValue, reactionFunc, argv, &rval)) {
+    return true;
   }
 
   
-  MOZ_ASSERT(hasPromise && !promiseRejected);
+  MOZ_RELEASE_ASSERT(!cx->wasm().currentStack());
+
+  
+  
+  return RejectPromiseWithPendingError(cx, promisingPromiseObject);
+}
+
+
+
+
+void* CreatePromise(Instance* instance) {
+  MOZ_ASSERT(SASigCreatePromise.failureMode == FailureMode::FailOnNullPtr);
+  JSContext* cx = instance->cx();
+  JSObject* promise = NewPromiseObject(cx, nullptr);
+  if (!promise) {
+    MOZ_ASSERT(cx->isExceptionPending());
+    return nullptr;
+  }
+  return AnyRef::fromJSObject(*promise).forCompiledCode();
+}
+
+
+
+
+
+void* GetPromiseResults(Instance* instance, void* promiseRef) {
+  MOZ_ASSERT(SASigGetPromiseResults.failureMode == FailureMode::FailOnNullPtr);
+  JSContext* cx = instance->cx();
+
+  JSObject* promiseObj = &AnyRef::fromCompiledCode(promiseRef).toJSObject();
+  if (IsWrapper(promiseObj)) {
+    promiseObj = UncheckedUnwrap(promiseObj);
+    if (JS_IsDeadWrapper(promiseObj)) {
+      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                JSMSG_DEAD_OBJECT);
+      return nullptr;
+    }
+  }
+  Rooted<PromiseObject*> promise(cx, &promiseObj->as<PromiseObject>());
+  bool promiseRejected = promise->state() == JS::PromiseState::Rejected;
+  RootedValue promiseReasonOrValue(cx, promise->valueOrReason());
+  if (!cx->compartment()->wrap(cx, &promiseReasonOrValue)) {
+    return nullptr;
+  }
+
+  if (promiseRejected) {
+    cx->setPendingException(promiseReasonOrValue, ShouldCaptureStack::Maybe);
+    return nullptr;
+  }
+
+  MOZ_ASSERT(promise->state() == JS::PromiseState::Fulfilled);
   RootedValue jsValue(cx, promiseReasonOrValue);
 
   
   Rooted<WasmStructObject*> results(
       cx, instance->constantStructNewDefault(
               cx, SuspendingFunctionModuleFactory::ResultsTypeIndex));
+  if (!results) {
+    return nullptr;
+  }
   const FieldTypeVector& fields = results->typeDef().structType().fields_;
 
   if (fields.length() > 0) {
@@ -1430,78 +1283,88 @@ JSObject* GetSuspendingPromiseResult(Instance* instance, void* result,
       }
     }
   }
-  return results;
+
+  return AnyRef::fromCompiledCode(results).forCompiledCode();
 }
 
 
 
 
-void* AddPromiseReactions(Instance* instance, SuspenderObject* suspender,
-                          void* result, JSFunction* continueOnSuspendable) {
-  MOZ_ASSERT(SASigAddPromiseReactions.failureMode ==
-             FailureMode::FailOnInvalidRef);
+
+int32_t AddPromiseReactions(Instance* instance, void* promiseRef, void* contRef,
+                            void* reactionRef, void* promisingPromiseRef) {
+  MOZ_ASSERT(SASigAddPromiseReactions.failureMode == FailureMode::FailOnNegI32);
   JSContext* cx = instance->cx();
-
-  RootedAnyRef resultRef(cx, AnyRef::fromCompiledCode(result));
-  RootedValue resultValue(cx, resultRef.get().toJSValue());
-  Rooted<SuspenderObject*> suspenderObject(cx, suspender);
-  RootedFunction fn(cx, continueOnSuspendable);
-
-  RootedObject promiseConstructor(cx, GetPromiseConstructor(cx));
-  RootedObject promiseObject(
-      cx, PromiseResolve(cx, promiseConstructor, resultValue));
-  if (!promiseObject) {
-    return AnyRef::invalid().forCompiledCode();
-  }
-
-  suspenderObject->setSuspendingReturnType(
-      SuspenderObject::ReturnType::Promise);
+  Rooted<PromiseObject*> promiseObject(
+      cx,
+      &AnyRef::fromCompiledCode(promiseRef).toJSObject().as<PromiseObject>());
+  Rooted<ContObject*> contObject(
+      cx, &AnyRef::fromCompiledCode(contRef).toJSObject().as<ContObject>());
+  RootedFunction reactionFunc(
+      cx, &AnyRef::fromCompiledCode(reactionRef).toJSObject().as<JSFunction>());
+  Rooted<PromiseObject*> promisingPromise(
+      cx, &AnyRef::fromCompiledCode(promisingPromiseRef)
+               .toJSObject()
+               .as<PromiseObject>());
 
   
   RootedFunction then_(
-      cx, NewNativeFunction(cx, WasmPISuspendTaskContinue, 1, nullptr,
+      cx, NewNativeFunction(cx, WasmPromiseReaction, 1, nullptr,
                             gc::AllocKind::FUNCTION_EXTENDED, GenericObject));
-  then_->initExtendedSlot(SUSPENDER_SLOT, ObjectValue(*suspenderObject));
-  then_->initExtendedSlot(CONTINUE_ON_SUSPENDABLE_SLOT, ObjectValue(*fn));
-  then_->initExtendedSlot(PROMISE_SLOT, ObjectValue(*promiseObject));
-  if (!JS::AddPromiseReactions(cx, promiseObject, then_, then_)) {
-    return AnyRef::invalid().forCompiledCode();
+  if (!then_) {
+    return -1;
   }
-  return AnyRef::fromJSObject(*promiseObject).forCompiledCode();
+  then_->initExtendedSlot(CONT_SLOT, ObjectValue(*contObject));
+  then_->initExtendedSlot(REACTION_SLOT, ObjectValue(*reactionFunc));
+  then_->initExtendedSlot(PROMISING_PROMISE_SLOT,
+                          ObjectValue(*promisingPromise));
+
+  
+  if (!JS::AddPromiseReactions(cx, promiseObject, then_, then_)) {
+    MOZ_ASSERT(cx->isExceptionPending());
+    return -1;
+  }
+  return 0;
 }
 
 
 
-void* ForwardExceptionToSuspended(Instance* instance,
-                                  SuspenderObject* suspender, void* exception) {
-  MOZ_ASSERT(SASigForwardExceptionToSuspended.failureMode ==
-             FailureMode::Infallible);
 
-  suspender->forwardToSuspendable();
-  suspender->setSuspendingReturnType(SuspenderObject::ReturnType::Exception);
-  return exception;
+void* PromiseResolve(Instance* instance, void* valueRef) {
+  MOZ_ASSERT(SASigPromiseResolve.failureMode == FailureMode::FailOnNullPtr);
+  JSContext* cx = instance->cx();
+  RootedObject promiseConstructor(cx, GetPromiseConstructor(cx));
+  RootedValue value(cx, AnyRef::fromCompiledCode(valueRef).toJSValue());
+  RootedObject promise(cx, PromiseResolve(cx, promiseConstructor, value));
+  if (!promise) {
+    MOZ_ASSERT(cx->isExceptionPending());
+    return nullptr;
+  }
+  return AnyRef::fromJSObject(*promise).forCompiledCode();
 }
 
 
 
-int32_t SetPromisingPromiseResults(Instance* instance,
-                                   SuspenderObject* suspender,
-                                   WasmStructObject* results) {
-  MOZ_ASSERT(SASigSetPromisingPromiseResults.failureMode ==
+
+int32_t ResolvePromiseWithResults(Instance* instance, void* resultsRef,
+                                  void* promiseRef) {
+  MOZ_ASSERT(SASigResolvePromiseWithResults.failureMode ==
              FailureMode::FailOnNegI32);
   JSContext* cx = instance->cx();
-  Rooted<WasmStructObject*> res(cx, results);
-  Rooted<SuspenderObject*> suspenderObject(cx, suspender);
-  RootedObject promise(cx, suspenderObject->promisingPromise());
+  RootedObject promise(cx, &AnyRef::fromCompiledCode(promiseRef).toJSObject());
+  Rooted<WasmStructObject*> results(cx, &AnyRef::fromCompiledCode(resultsRef)
+                                             .toJSObject()
+                                             .as<WasmStructObject>());
 
-  const StructType& resultType = res->typeDef().structType();
+  const StructType& resultType = results->typeDef().structType();
+
   RootedValue val(cx);
   
   switch (resultType.fields_.length()) {
     case 0:
       break;
     case 1: {
-      if (!res->getField(cx, 0, &val)) {
+      if (!results->getField(cx, 0, &val)) {
         return -1;
       }
     } break;
@@ -1512,7 +1375,7 @@ int32_t SetPromisingPromiseResults(Instance* instance,
       }
       for (size_t i = 0; i < resultType.fields_.length(); i++) {
         RootedValue item(cx);
-        if (!res->getField(cx, i, &item)) {
+        if (!results->getField(cx, i, &item)) {
           return -1;
         }
         if (!NewbornArrayPush(cx, array, item)) {
@@ -1522,31 +1385,12 @@ int32_t SetPromisingPromiseResults(Instance* instance,
       val.setObject(*array);
     } break;
   }
-  ResolvePromise(cx, promise, val);
-  return 0;
-}
 
-void UpdateSuspenderState(Instance* instance, SuspenderObject* suspender,
-                          UpdateSuspenderStateAction action) {
-  MOZ_ASSERT(SASigUpdateSuspenderState.failureMode == FailureMode::Infallible);
-
-  JSContext* cx = instance->cx();
-  switch (action) {
-    case UpdateSuspenderStateAction::Enter:
-      suspender->enter(cx);
-      break;
-    case UpdateSuspenderStateAction::Suspend:
-      suspender->suspend(cx);
-      break;
-    case UpdateSuspenderStateAction::Resume:
-      suspender->resume(cx);
-      break;
-    case UpdateSuspenderStateAction::Leave:
-      suspender->leave(cx);
-      break;
-    default:
-      MOZ_CRASH();
+  if (!ResolvePromise(cx, promise, val)) {
+    MOZ_ASSERT(cx->isExceptionPending());
+    return -1;
   }
+  return 0;
 }
 
 }  

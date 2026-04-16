@@ -41,6 +41,7 @@
 #include "wasm/WasmGenerator.h"
 #include "wasm/WasmOpIter.h"
 #include "wasm/WasmSignalHandlers.h"
+#include "wasm/WasmStacks.h"
 #include "wasm/WasmStubs.h"
 #include "wasm/WasmValidate.h"
 
@@ -557,6 +558,10 @@ class FunctionCompiler {
 
   MBasicBlock* getCurBlock() const { return curBlock_; }
   BytecodeOffset bytecodeOffset() const { return iter_.bytecodeOffset(); }
+  CallSiteDesc callSiteDesc(CallSiteKind kind) {
+    return CallSiteDesc(bytecodeOffset().offset(),
+                        rootCompiler_.inlinedCallerOffsetsIndex(), kind);
+  }
   TrapSiteDesc trapSiteDesc() {
     return TrapSiteDesc(wasm::BytecodeOffset(bytecodeOffset()),
                         rootCompiler_.inlinedCallerOffsetsIndex());
@@ -3301,35 +3306,6 @@ class FunctionCompiler {
     return emitInstanceCallN(lineOrBytecode, callee, args, 6, result);
   }
 
-  [[nodiscard]] MDefinition* stackSwitch(MDefinition* suspender,
-                                         MDefinition* fn, MDefinition* data,
-                                         StackSwitchKind kind) {
-    MOZ_ASSERT(!inDeadCode());
-
-    MInstruction* ins;
-    switch (kind) {
-      case StackSwitchKind::SwitchToMain:
-        ins = MWasmStackSwitchToMain::New(alloc(), instancePointer_, suspender,
-                                          fn, data);
-        break;
-      case StackSwitchKind::SwitchToSuspendable:
-        ins = MWasmStackSwitchToSuspendable::New(alloc(), instancePointer_,
-                                                 suspender, fn, data);
-        break;
-      case StackSwitchKind::ContinueOnSuspendable:
-        ins = MWasmStackContinueOnSuspendable::New(alloc(), instancePointer_,
-                                                   suspender, data);
-        break;
-    }
-    if (!ins) {
-      return nullptr;
-    }
-
-    curBlock_->add(ins);
-
-    return ins;
-  }
-
   [[nodiscard]]
   bool callRef(const FuncType& funcType, MDefinition* ref,
                uint32_t lineOrBytecode, const DefVector& args,
@@ -3556,6 +3532,17 @@ class FunctionCompiler {
 
     auto* ins =
         MWasmTrap::New(alloc(), wasm::Trap::Unreachable, trapSiteDesc());
+    curBlock_->end(ins);
+    curBlock_ = nullptr;
+  }
+
+  void unimplementedTrap() {
+    if (inDeadCode()) {
+      return;
+    }
+
+    auto* ins =
+        MWasmTrap::New(alloc(), wasm::Trap::Unimplemented, trapSiteDesc());
     curBlock_->end(ins);
     curBlock_ = nullptr;
   }
@@ -5948,10 +5935,23 @@ class FunctionCompiler {
                       const DefVector& args, DefVector* results);
   bool emitCall(bool asmJSFuncDef);
   bool emitCallIndirect(bool oldStyle);
-  bool emitStackSwitch();
   bool emitReturnCall();
   bool emitReturnCallIndirect();
   bool emitReturnCallRef();
+#ifdef ENABLE_WASM_JSPI
+  bool emitContNew();
+  bool emitContBind();
+  bool emitStoreSuspendParams(MDefinition* paramsArea,
+                              const ValTypeVector& suspendTagParams,
+                              const DefVector& suspendParams,
+                              MDefinition* suspendedCont);
+  bool emitSuspend();
+  bool emitResume();
+  bool emitResumeThrow();
+  bool emitResumeThrowRef();
+  bool emitSwitch();
+  bool emitGuardSuspending();
+#endif
   bool emitGetLocal();
   bool emitSetLocal();
   bool emitTeeLocal();
@@ -6673,27 +6673,6 @@ bool FunctionCompiler::emitCallIndirect(bool oldStyle) {
   iter().setResults(results.length(), results);
   return true;
 }
-
-#ifdef ENABLE_WASM_JSPI
-bool FunctionCompiler::emitStackSwitch() {
-  StackSwitchKind kind;
-  MDefinition* suspender;
-  MDefinition* fn;
-  MDefinition* data;
-  if (!iter().readStackSwitch(&kind, &suspender, &fn, &data)) {
-    return false;
-  }
-  MDefinition* result = stackSwitch(suspender, fn, data, kind);
-  if (!result) {
-    return false;
-  }
-
-  if (kind == StackSwitchKind::SwitchToMain) {
-    iter().setResult(result);
-  }
-  return true;
-}
-#endif
 
 bool FunctionCompiler::emitReturnCall() {
   uint32_t lineOrBytecode = readCallSiteLineOrBytecode();
@@ -8310,6 +8289,17 @@ bool FunctionCompiler::emitRefIsNull() {
 
   
   
+  if (!sourceType.isCastable()) {
+    MDefinition* isNull = compareIsNull(input, JSOp::Eq);
+    if (!isNull) {
+      return false;
+    }
+    iter().setResult(isNull);
+    return true;
+  }
+
+  
+  
   
   
   MDefinition* test = refTest(input, sourceType.bottomType());
@@ -9596,6 +9586,437 @@ bool FunctionCompiler::emitCallBuiltinModuleFunc() {
   return callBuiltinModuleFunc(*builtinModuleFunc, params);
 }
 
+#ifdef ENABLE_WASM_JSPI
+bool FunctionCompiler::emitContNew() {
+  uint32_t typeIndex;
+  MDefinition* func;
+  if (!iter().readContNew(&typeIndex, &func)) {
+    return false;
+  }
+
+  const TypeDef& typeDef = codeMeta().types->type(typeIndex);
+  const ContType& contType = typeDef.contType();
+
+  
+  if (!contType.funcType().args().empty() ||
+      !contType.funcType().results().empty()) {
+    unimplementedTrap();
+    return true;
+  }
+
+  if (inDeadCode()) {
+    return true;
+  }
+
+  MDefinition* result = nullptr;
+  if (!emitInstanceCall1(readBytecodeOffset(), SASigContNew, func, &result)) {
+    return false;
+  }
+  iter().setResult(result);
+
+  return true;
+}
+
+bool FunctionCompiler::emitContBind() {
+  uint32_t inputContTypeIndex;
+  uint32_t outputContTypeIndex;
+  DefVector boundArgs;
+  MDefinition* cont;
+  if (!iter().readContBind(&inputContTypeIndex, &outputContTypeIndex,
+                           &boundArgs, &cont)) {
+    return false;
+  }
+
+  if (inDeadCode()) {
+    return true;
+  }
+
+  
+  unimplementedTrap();
+  return true;
+}
+
+bool FunctionCompiler::emitStoreSuspendParams(
+    MDefinition* paramsArea, const ValTypeVector& suspendTagParams,
+    const DefVector& suspendParams, MDefinition* suspendedCont) {
+  
+  size_t paramsAreaOffset = 0;
+  MWasmStackResultArea::StackResult loc(paramsAreaOffset,
+                                        js::jit::MIRType::WasmAnyRef);
+  MWasmStoreStackResult* storeCont = MWasmStoreStackResult::New(
+      alloc(), paramsArea, paramsAreaOffset, suspendedCont);
+  if (!storeCont) {
+    return false;
+  }
+  curBlock_->add(storeCont);
+  paramsAreaOffset = loc.endOffset();
+
+  
+  for (uint32_t i = 0; i < suspendTagParams.length(); i++) {
+    size_t reverseIndex = suspendTagParams.length() - i - 1;
+
+    ValType handlerParam = suspendTagParams[reverseIndex];
+    MWasmStackResultArea::StackResult loc(paramsAreaOffset,
+                                          handlerParam.toMIRType());
+
+    MDefinition* param = suspendParams[reverseIndex];
+    MWasmStoreStackResult* store = MWasmStoreStackResult::New(
+        alloc(), paramsArea, paramsAreaOffset, param);
+    if (!store) {
+      return false;
+    }
+    curBlock_->add(store);
+
+    paramsAreaOffset = loc.endOffset();
+  }
+  return true;
+}
+
+bool FunctionCompiler::emitSuspend() {
+  uint32_t tagIndex;
+  DefVector suspendParams;
+  if (!iter().readSuspend(&tagIndex, &suspendParams)) {
+    return false;
+  }
+
+  if (inDeadCode()) {
+    return true;
+  }
+
+  const TagDesc& tagDesc = codeMeta().tags[tagIndex];
+  const TagType& tagType = *tagDesc.type;
+
+  
+  if (!tagType.resultTypes().empty()) {
+    unimplementedTrap();
+    return true;
+  }
+
+  
+  
+  if (inTryCode()) {
+    unimplementedTrap();
+    return true;
+  }
+
+  
+  MDefinition* tag = loadTag(tagIndex);
+  if (!tag) {
+    return false;
+  }
+
+  
+  
+  
+  
+  MWasmFindHandler* handler =
+      MWasmFindHandler::New(alloc(), instancePointer_, tag,
+                            Trap::NullPointerDereference, trapSiteDesc());
+  if (!handler) {
+    return false;
+  }
+  curBlock_->add(handler);
+
+  
+  MWasmLoadInstance* paramsArea =
+      MWasmLoadInstance::New(alloc(), handler,
+                             offsetof(wasm::Handler, target) +
+                                 offsetof(wasm::SwitchTarget, paramsArea),
+                             MIRType::Pointer, AliasSet::None());
+  if (!paramsArea) {
+    return false;
+  }
+  curBlock_->add(paramsArea);
+
+  
+  MDefinition* suspendedCont = nullptr;
+  if (!emitInstanceCall0(readBytecodeOffset(), SASigContNewEmpty,
+                         &suspendedCont)) {
+    return false;
+  }
+
+  
+  if (!emitStoreSuspendParams(paramsArea, tagType.argTypes(), suspendParams,
+                              suspendedCont)) {
+    return false;
+  }
+
+  
+  MWasmSuspend* suspend =
+      MWasmSuspend::New(alloc(), instancePointer_, suspendedCont, handler,
+                        callSiteDesc(CallSiteKind::StackSwitch));
+  if (!suspend) {
+    return false;
+  }
+  curBlock_->add(suspend);
+
+  return true;
+}
+
+bool FunctionCompiler::emitResume() {
+  uint32_t typeIndex;
+  MDefinition* cont;
+  DefVector args;
+  HandlerExprVector handlers;
+  if (!iter().readResume(&typeIndex, &handlers, &args, &cont)) {
+    return false;
+  }
+
+  if (inDeadCode()) {
+    return true;
+  }
+
+  
+  const TypeDef& typeDef = codeMeta().types->type(typeIndex);
+  const ContType& contType = typeDef.contType();
+  if (!contType.funcType().args().empty() ||
+      !contType.funcType().results().empty()) {
+    unimplementedTrap();
+    return true;
+  }
+
+  
+  
+  for (const HandlerExpr& handler : handlers) {
+    const TagDesc& tagDesc = codeMeta().tags[handler.tagIndex()];
+    const TagType& tagType = *tagDesc.type;
+
+    if (handler.isSwitch() || !tagType.resultTypes().empty()) {
+      unimplementedTrap();
+      return true;
+    }
+  }
+
+  
+  
+  MWasmResumeBarrier* barrier =
+      MWasmResumeBarrier::New(alloc(), instancePointer_, cont);
+  if (!barrier) {
+    return false;
+  }
+  curBlock_->add(barrier);
+
+  MBasicBlock* fallthroughBlock = nullptr;
+  MBasicBlock* prePadBlock = nullptr;
+
+  ControlInstructionVector* tryLandingPadPatches = nullptr;
+  mozilla::Maybe<uint32_t> tryNote;
+  if (inTryBlock(&tryLandingPadPatches)) {
+    tryNote.emplace(0);
+    if (!rootCompiler_.addTryNote(tryNote.ptr())) {
+      return false;
+    }
+    if (!newBlock(curBlock_, &prePadBlock)) {
+      return false;
+    }
+  }
+
+  if (!newBlock(curBlock_, &fallthroughBlock)) {
+    return false;
+  }
+
+  size_t numResultsAreaItems = 0;
+  for (size_t i = 0; i < handlers.length(); i++) {
+    const HandlerExpr& handler = handlers[i];
+    MOZ_ASSERT(!handler.isSwitch());
+    numResultsAreaItems +=
+        1 + codeMeta().getTagType(handler.tagIndex()).argTypes().length();
+  }
+
+  MWasmStackResultArea* handlersResultArea = nullptr;
+  if (numResultsAreaItems) {
+    handlersResultArea = MWasmStackResultArea::New(alloc());
+    if (!handlersResultArea ||
+        !handlersResultArea->init(alloc(), numResultsAreaItems)) {
+      return false;
+    }
+    curBlock_->add(handlersResultArea);
+  }
+
+  MWasmResume* resume =
+      MWasmResume::New(alloc(), callSiteDesc(CallSiteKind::StackSwitch),
+                       tryNote, instancePointer_, cont, handlersResultArea);
+  if (!resume ||
+      !resume->init(fallthroughBlock, prePadBlock, handlers.length())) {
+    return false;
+  }
+  curBlock_->end(resume);
+  MBasicBlock* resumeBlock = curBlock_;
+  curBlock_ = nullptr;
+
+  
+  size_t currentResultsAreaIndex = 0;
+  size_t currentResultsAreaOffset = 0;
+  for (size_t i = 0; i < handlers.length(); i++) {
+    MOZ_ASSERT(!curBlock_);
+
+    const HandlerExpr& handler = handlers[i];
+    MOZ_ASSERT(!handler.isSwitch());
+
+    uint32_t baseResultsAreaByteOffset = currentResultsAreaOffset;
+    const TagDesc& tagDesc = codeMeta().tags[handler.tagIndex()];
+    const TagType& tagType = *tagDesc.type;
+    ResultType suspendTagParams = tagType.argResultType();
+
+    
+    MWasmStackResultArea::StackResult loc(currentResultsAreaOffset,
+                                          js::jit::MIRType::WasmAnyRef);
+    handlersResultArea->initResult(currentResultsAreaIndex, loc);
+    currentResultsAreaIndex++;
+    currentResultsAreaOffset = loc.endOffset();
+
+    
+    for (uint32_t i = 0; i < suspendTagParams.length(); i++) {
+      size_t reverseIndex = suspendTagParams.length() - i - 1;
+      ValType handlerParam = suspendTagParams[reverseIndex];
+
+      MWasmStackResultArea::StackResult loc(currentResultsAreaOffset,
+                                            handlerParam.toMIRType());
+      handlersResultArea->initResult(currentResultsAreaIndex, loc);
+      currentResultsAreaIndex++;
+      currentResultsAreaOffset = loc.endOffset();
+    }
+
+    MBasicBlock* target;
+    if (!newBlock(resumeBlock, &target)) {
+      return false;
+    }
+    curBlock_ = target;
+
+    if (!resume->initHandler(
+            i, codeMeta().offsetOfTagInstanceData(handler.tagIndex()),
+            baseResultsAreaByteOffset, target)) {
+      return false;
+    }
+
+    DefVector resultDefs;
+    size_t suspendLabelParams = suspendTagParams.length() + 1;
+    for (uint32_t i = 0; i < suspendLabelParams; i++) {
+      size_t stackResultIndex = currentResultsAreaIndex - i - 1;
+
+      MWasmStackResult* stackResult =
+          MWasmStackResult::New(alloc(), handlersResultArea, stackResultIndex);
+      if (!stackResult || !resultDefs.append(stackResult)) {
+        return false;
+      }
+      curBlock_->add(stackResult);
+    }
+
+    if (!br(handler.labelDepth(), resultDefs)) {
+      return false;
+    }
+
+    curBlock_ = nullptr;
+  }
+
+  MOZ_ASSERT(!curBlock_);
+  if (tryNote.isSome()) {
+    
+    curBlock_ = prePadBlock;
+
+    
+    curBlock_->add(MWasmCallLandingPrePad::New(alloc(), resumeBlock, *tryNote));
+
+    
+    if (!endWithPadPatch(tryLandingPadPatches)) {
+      return false;
+    }
+  }
+
+  
+  curBlock_ = fallthroughBlock;
+  return true;
+}
+
+bool FunctionCompiler::emitResumeThrow() {
+  uint32_t typeIndex;
+  uint32_t tagIndex;
+  MDefinition* cont;
+  DefVector args;
+  HandlerExprVector handlers;
+  if (!iter().readResumeThrow(&typeIndex, &tagIndex, &handlers, &args, &cont)) {
+    return false;
+  }
+
+  if (inDeadCode()) {
+    return true;
+  }
+
+  
+  unimplementedTrap();
+  return true;
+}
+
+bool FunctionCompiler::emitResumeThrowRef() {
+  uint32_t contTypeIndex;
+  MDefinition* cont;
+  MDefinition* exception;
+  HandlerExprVector handlers;
+  if (!iter().readResumeThrowRef(&contTypeIndex, &handlers, &exception,
+                                 &cont)) {
+    return false;
+  }
+
+  if (inDeadCode()) {
+    return true;
+  }
+
+  
+  unimplementedTrap();
+  return true;
+}
+
+bool FunctionCompiler::emitSwitch() {
+  uint32_t contTypeIndex;
+  uint32_t tagIndex;
+  MDefinition* cont;
+  DefVector args;
+  HandlerExprVector handlers;
+  if (!iter().readSwitch(&contTypeIndex, &tagIndex, &args, &cont)) {
+    return false;
+  }
+
+  if (inDeadCode()) {
+    return true;
+  }
+
+  
+  unimplementedTrap();
+  return true;
+}
+
+bool FunctionCompiler::emitGuardSuspending() {
+  uint32_t tagIndex;
+  if (!iter().readGuardSuspending(&tagIndex)) {
+    return false;
+  }
+
+  if (inDeadCode()) {
+    return true;
+  }
+
+  MDefinition* tag = loadTag(tagIndex);
+  if (!tag) {
+    return false;
+  }
+
+  
+  
+  
+  MOZ_ASSERT(!inTryCode());
+
+  MWasmFindHandler* handler = MWasmFindHandler::New(
+      alloc(), instancePointer_, tag, Trap::ThrowSuspendError, trapSiteDesc());
+  if (!handler) {
+    return false;
+  }
+  curBlock_->add(handler);
+
+  return true;
+}
+
+#endif  
+
 bool FunctionCompiler::emitBodyExprs() {
   if (!iter().startFunction(funcIndex())) {
     return false;
@@ -10062,6 +10483,51 @@ bool FunctionCompiler::emitBodyExprs() {
       case uint16_t(Op::ReturnCallRef): {
         CHECK(emitReturnCallRef());
       }
+
+#ifdef ENABLE_WASM_JSPI
+      case uint16_t(Op::ContNew): {
+        if (!codeMeta().stackSwitchingEnabled()) {
+          return iter().unrecognizedOpcode(&op);
+        }
+        CHECK(emitContNew());
+      }
+      case uint16_t(Op::ContBind): {
+        if (!codeMeta().stackSwitchingEnabled()) {
+          return iter().unrecognizedOpcode(&op);
+        }
+        CHECK(emitContBind());
+      }
+      case uint16_t(Op::Suspend): {
+        if (!codeMeta().stackSwitchingEnabled()) {
+          return iter().unrecognizedOpcode(&op);
+        }
+        CHECK(emitSuspend());
+      }
+      case uint16_t(Op::Resume): {
+        if (!codeMeta().stackSwitchingEnabled()) {
+          return iter().unrecognizedOpcode(&op);
+        }
+        CHECK(emitResume());
+      }
+      case uint16_t(Op::ResumeThrow): {
+        if (!codeMeta().stackSwitchingEnabled()) {
+          return iter().unrecognizedOpcode(&op);
+        }
+        CHECK(emitResumeThrow());
+      }
+      case uint16_t(Op::ResumeThrowRef): {
+        if (!codeMeta().stackSwitchingEnabled()) {
+          return iter().unrecognizedOpcode(&op);
+        }
+        CHECK(emitResumeThrowRef());
+      }
+      case uint16_t(Op::Switch): {
+        if (!codeMeta().stackSwitchingEnabled()) {
+          return iter().unrecognizedOpcode(&op);
+        }
+        CHECK(emitSwitch());
+      }
+#endif  
 
       
       case uint16_t(Op::GcPrefix): {
@@ -10714,25 +11180,18 @@ bool FunctionCompiler::emitBodyExprs() {
 
       
       case uint16_t(Op::MozPrefix): {
-        if (op.b1 == uint32_t(MozOp::CallBuiltinModuleFunc)) {
+        
+        
+        if (op.b1 <= uint32_t(MozOp::LastAsmJSOp)) {
+          if (!codeMeta().isAsmJS()) {
+            return iter().unrecognizedOpcode(&op);
+          }
+        } else {
           if (!codeMeta().isBuiltinModule()) {
             return iter().unrecognizedOpcode(&op);
           }
-          CHECK(emitCallBuiltinModuleFunc());
         }
-#ifdef ENABLE_WASM_JSPI
-        if (op.b1 == uint32_t(MozOp::StackSwitch)) {
-          if (!codeMeta().isBuiltinModule() ||
-              !codeMeta().jsPromiseIntegrationEnabled()) {
-            return iter().unrecognizedOpcode(&op);
-          }
-          CHECK(emitStackSwitch());
-        }
-#endif
 
-        if (!codeMeta().isAsmJS()) {
-          return iter().unrecognizedOpcode(&op);
-        }
         switch (op.b1) {
           case uint32_t(MozOp::TeeGlobal):
             CHECK(emitTeeGlobal());
@@ -10801,6 +11260,12 @@ bool FunctionCompiler::emitBodyExprs() {
             CHECK(emitCall( true));
           case uint32_t(MozOp::OldCallIndirect):
             CHECK(emitCallIndirect( true));
+          case uint32_t(MozOp::CallBuiltinModuleFunc):
+            CHECK(emitCallBuiltinModuleFunc());
+#ifdef ENABLE_WASM_JSPI
+          case uint32_t(MozOp::GuardSuspending):
+            CHECK(emitGuardSuspending());
+#endif  
 
           default:
             return iter().unrecognizedOpcode(&op);

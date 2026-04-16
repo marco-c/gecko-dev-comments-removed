@@ -78,6 +78,7 @@
 #include "vm/TypedArrayObject.h"
 #include "wasm/WasmCodegenConstants.h"
 #include "wasm/WasmPI.h"
+#include "wasm/WasmStacks.h"
 #include "wasm/WasmValType.h"
 #ifdef MOZ_VTUNE
 #  include "vtune/VTuneWrapper.h"
@@ -10535,511 +10536,119 @@ void CodeGenerator::visitWasmCall(LWasmCall* lir) {
 }
 
 #ifdef ENABLE_WASM_JSPI
-void CodeGenerator::callWasmUpdateSuspenderState(
-    wasm::UpdateSuspenderStateAction kind, Register suspender, Register temp) {
-  masm.Push(InstanceReg);
-  int32_t framePushedAfterInstance = masm.framePushed();
+void CodeGenerator::visitWasmFindHandler(LWasmFindHandler* lir) {
+  MWasmFindHandler* mir = lir->mir();
+  Register instance = ToRegister(lir->instance());
+  Register tag = ToRegister(lir->tag());
+  Register output = ToRegister(lir->output());
+  Register scratch1 = ToRegister(lir->temp0());
+  Register scratch2 = ToRegister(lir->temp1());
+  Register scratch3 = ToRegister(lir->temp2());
+  Register scratch4 = ToRegister(lir->temp3());
+  const wasm::Trap& trap = mir->trap();
+  const wasm::TrapSiteDesc& trapSiteDesc = mir->trapSiteDesc();
 
-  masm.move32(Imm32(uint32_t(kind)), temp);
-
-  masm.setupWasmABICall(wasm::SymbolicAddress::UpdateSuspenderState);
-  masm.passABIArg(InstanceReg);
-  masm.passABIArg(suspender);
-  masm.passABIArg(temp);
-  int32_t instanceOffset = masm.framePushed() - framePushedAfterInstance;
-  masm.callWithABI(wasm::BytecodeOffset(0),
-                   wasm::SymbolicAddress::UpdateSuspenderState,
-                   mozilla::Some(instanceOffset));
-
-  masm.Pop(InstanceReg);
+  auto* ool = new (alloc())
+      LambdaOutOfLineCode([this, trap, trapSiteDesc](OutOfLineCode& ool) {
+        masm.wasmTrap(trap, trapSiteDesc);
+      });
+  addOutOfLineCode(ool, (const BytecodeSite*)nullptr);
+  wasm::EmitFindHandler(masm, instance, tag, output, scratch1, scratch2,
+                        scratch3, scratch4, ool->entry());
 }
 
-void CodeGenerator::prepareWasmStackSwitchTrampolineCall(Register suspender,
-                                                         Register data) {
-  
-  unsigned argDecrement;
-  {
-    ABIArgGenerator abi(ABIKind::Wasm);
-    ABIArg arg;
-    arg = abi.next(MIRType::Pointer);
-    arg = abi.next(MIRType::Pointer);
-    argDecrement = StackDecrementForCall(WasmStackAlignment, 0,
-                                         abi.stackBytesConsumedSoFar());
-  }
-  masm.reserveStack(argDecrement);
+void CodeGenerator::visitWasmSuspend(LWasmSuspend* lir) {
+  Register instance = ToRegister(lir->instance());
+  Register suspendedCont = ToRegister(lir->suspendedCont());
+  Register handler = ToRegister(lir->handler());
+  Register scratch1 = ToRegister(lir->temp0());
+  Register scratch2 = ToRegister(lir->temp1());
+  Register scratch3 = ToRegister(lir->temp2());
 
-  
-  ABIArgGenerator abi(ABIKind::Wasm);
-  ABIArg arg;
-  arg = abi.next(MIRType::Pointer);
-  if (arg.kind() == ABIArg::GPR) {
-    masm.movePtr(suspender, arg.gpr());
-  } else {
-    MOZ_ASSERT(arg.kind() == ABIArg::Stack);
-    masm.storePtr(suspender,
-                  Address(masm.getStackPointer(), arg.offsetFromArgBase()));
-  }
-  arg = abi.next(MIRType::Pointer);
-  if (arg.kind() == ABIArg::GPR) {
-    masm.movePtr(data, arg.gpr());
-  } else {
-    MOZ_ASSERT(arg.kind() == ABIArg::Stack);
-    masm.storePtr(data,
-                  Address(masm.getStackPointer(), arg.offsetFromArgBase()));
-  }
+  CodeOffset suspendedCodeOffset;
+  uint32_t suspendedFramePushed;
+  wasm::EmitSuspend(masm, instance, suspendedCont, handler, scratch1, scratch2,
+                    scratch3, lir->mir()->callSiteDesc(), &suspendedCodeOffset,
+                    &suspendedFramePushed);
 
-  masm.storePtr(InstanceReg, Address(masm.getStackPointer(),
-                                     WasmCallerInstanceOffsetBeforeCall));
-}
-#endif  
-
-void CodeGenerator::visitWasmStackSwitchToSuspendable(
-    LWasmStackSwitchToSuspendable* lir) {
-#ifdef ENABLE_WASM_JSPI
-  const Register SuspenderReg = lir->suspender()->toGeneralReg()->reg();
-  const Register FnReg = lir->fn()->toGeneralReg()->reg();
-  const Register DataReg = lir->data()->toGeneralReg()->reg();
-
-#  ifdef JS_CODEGEN_ARM64
-  vixl::UseScratchRegisterScope temps(&masm);
-  const Register ScratchReg1 = temps.AcquireX().asUnsized();
-#  elif defined(JS_CODEGEN_X86)
-  const Register ScratchReg1 = ABINonArgReg3;
-#  elif defined(JS_CODEGEN_X64)
-  const Register ScratchReg1 = ScratchReg;
-#  elif defined(JS_CODEGEN_ARM)
-  const Register ScratchReg1 = ABINonArgReturnVolatileReg;
-#  elif defined(JS_CODEGEN_LOONG64) || defined(JS_CODEGEN_RISCV64) || \
-      defined(JS_CODEGEN_MIPS64)
-  UseScratchRegisterScope temps(masm);
-  const Register ScratchReg1 = temps.Acquire();
-#  else
-#    error "NYI: scratch register"
-#  endif
-
-  masm.Push(SuspenderReg);
-  masm.Push(FnReg);
-  masm.Push(DataReg);
-
-  callWasmUpdateSuspenderState(wasm::UpdateSuspenderStateAction::Enter,
-                               SuspenderReg, ScratchReg1);
-  masm.Pop(DataReg);
-  masm.Pop(FnReg);
-  masm.Pop(SuspenderReg);
-
-  masm.Push(SuspenderReg);
-  int32_t framePushedAtSuspender = masm.framePushed();
-  masm.Push(InstanceReg);
-
-  wasm::CallSiteDesc desc(wasm::CallSiteKind::StackSwitch);
-  CodeLabel returnCallsite;
-
-  
-  uint32_t reserve = ComputeByteAlignment(
-      masm.framePushed() - sizeof(wasm::Frame), WasmStackAlignment);
-  masm.reserveStack(reserve);
-
-  
-  
-  masm.storeStackPtrToPrivateValue(
-      Address(SuspenderReg, wasm::SuspenderObject::offsetOfMainSP()));
-  masm.storePrivateValue(
-      FramePointer,
-      Address(SuspenderReg, wasm::SuspenderObject::offsetOfMainFP()));
-
-  masm.loadStackPtrFromPrivateValue(
-      Address(SuspenderReg, wasm::SuspenderObject::offsetOfSuspendableSP()));
-
-  masm.assertStackAlignment(WasmStackAlignment);
-
-  
-  uint32_t framePushed = masm.framePushed();
-
-  
-  masm.setFramePushed(0);
-
-  prepareWasmStackSwitchTrampolineCall(SuspenderReg, DataReg);
-
-  
-  size_t instanceSlotOffset = FunctionExtended::offsetOfExtendedSlot(
-      FunctionExtended::WASM_INSTANCE_SLOT);
-  masm.loadPtr(Address(FnReg, instanceSlotOffset), InstanceReg);
-
-  masm.storePtr(InstanceReg, Address(masm.getStackPointer(),
-                                     WasmCalleeInstanceOffsetBeforeCall));
-  masm.loadWasmPinnedRegsFromInstance(mozilla::Nothing());
-
-  masm.assertStackAlignment(WasmStackAlignment);
-
-  const Register ReturnAddressReg = ScratchReg1;
-
-  
-  const Register ScratchReg2 = DataReg;
-
-  
-  masm.computeEffectiveAddress(
-      Address(masm.getStackPointer(), -int32_t(sizeof(wasm::Frame))),
-      ScratchReg2);
-  masm.storePrivateValue(
-      ScratchReg2, Address(SuspenderReg,
-                           wasm::SuspenderObject::offsetOfSuspendableExitFP()));
-
-  masm.mov(&returnCallsite, ReturnAddressReg);
-
-  
-#  ifdef JS_USE_LINK_REGISTER
-#    if defined(JS_CODEGEN_LOONG64) || defined(JS_CODEGEN_RISCV64) || \
-        defined(JS_CODEGEN_MIPS64)
-  masm.mov(ReturnAddressReg, ra);
-#    else
-  masm.mov(ReturnAddressReg, lr);
-#    endif
-#  else
-  masm.Push(ReturnAddressReg);
-#  endif
-  
-  
-  size_t uncheckedEntrySlotOffset = FunctionExtended::offsetOfExtendedSlot(
-      FunctionExtended::WASM_FUNC_UNCHECKED_ENTRY_SLOT);
-  masm.loadPtr(Address(FnReg, uncheckedEntrySlotOffset), ScratchReg2);
-  masm.jump(ScratchReg2);
-
-  
-  masm.setFramePushed(framePushed);
-
-  
-  masm.wasmTrapInstruction();
-
-  
-  masm.bind(&returnCallsite);
-  masm.append(desc, *returnCallsite.target());
-  masm.addCodeLabel(returnCallsite);
-
-  masm.assertStackAlignment(WasmStackAlignment);
-
-  markSafepointAt(returnCallsite.target()->offset(), lir);
-  lir->safepoint()->setFramePushedAtStackMapBase(framePushed);
+  markSafepointAt(suspendedCodeOffset.offset(), lir);
+  lir->safepoint()->setFramePushedAtStackMapBase(suspendedFramePushed);
   lir->safepoint()->setWasmSafepointKind(WasmSafepointKind::StackSwitch);
-  
-  masm.propagateOOM(
-      lir->safepoint()->addWasmAnyRefSlot(true, framePushedAtSuspender));
-
-  masm.freeStackTo(framePushed);
-
-  masm.freeStack(reserve);
-  masm.Pop(InstanceReg);
-  masm.Pop(SuspenderReg);
-
-  masm.switchToWasmInstanceRealm(ScratchReg1, ScratchReg2);
-
-  callWasmUpdateSuspenderState(wasm::UpdateSuspenderStateAction::Leave,
-                               SuspenderReg, ScratchReg1);
-#else
-  MOZ_CRASH("NYI");
-#endif  
 }
 
-void CodeGenerator::visitWasmStackSwitchToMain(LWasmStackSwitchToMain* lir) {
-#ifdef ENABLE_WASM_JSPI
-  const Register SuspenderReg = lir->suspender()->toGeneralReg()->reg();
-  const Register FnReg = lir->fn()->toGeneralReg()->reg();
-  const Register DataReg = lir->data()->toGeneralReg()->reg();
-
-#  ifdef JS_CODEGEN_ARM64
-  vixl::UseScratchRegisterScope temps(&masm);
-  const Register ScratchReg1 = temps.AcquireX().asUnsized();
-#  elif defined(JS_CODEGEN_X86)
-  const Register ScratchReg1 = ABINonArgReg3;
-#  elif defined(JS_CODEGEN_X64)
-  const Register ScratchReg1 = ScratchReg;
-#  elif defined(JS_CODEGEN_ARM)
-  const Register ScratchReg1 = ABINonArgReturnVolatileReg;
-#  elif defined(JS_CODEGEN_LOONG64) || defined(JS_CODEGEN_RISCV64) || \
-      defined(JS_CODEGEN_MIPS64)
-  UseScratchRegisterScope temps(masm);
-  const Register ScratchReg1 = temps.Acquire();
-#  else
-#    error "NYI: scratch register"
-#  endif
-
-  masm.Push(SuspenderReg);
-  masm.Push(FnReg);
-  masm.Push(DataReg);
-
-  callWasmUpdateSuspenderState(wasm::UpdateSuspenderStateAction::Suspend,
-                               SuspenderReg, ScratchReg1);
-
-  masm.Pop(DataReg);
-  masm.Pop(FnReg);
-  masm.Pop(SuspenderReg);
-
-  masm.Push(SuspenderReg);
-  int32_t framePushedAtSuspender = masm.framePushed();
-  masm.Push(InstanceReg);
-
-  wasm::CallSiteDesc desc(wasm::CallSiteKind::StackSwitch);
-  CodeLabel returnCallsite;
-
+void CodeGenerator::visitWasmResume(LWasmResume* lir) {
   
-  uint32_t reserve = ComputeByteAlignment(
-      masm.framePushed() - sizeof(wasm::Frame), WasmStackAlignment);
-  masm.reserveStack(reserve);
-
-  masm.movePtr(SuspenderReg, SuspenderReg);
-
   
-  masm.storeStackPtrToPrivateValue(
-      Address(SuspenderReg, wasm::SuspenderObject::offsetOfSuspendableSP()));
-  masm.storePrivateValue(
-      FramePointer,
-      Address(SuspenderReg, wasm::SuspenderObject::offsetOfSuspendableFP()));
+  MWasmResume* mir = lir->mir();
+  wasm::TrapSiteDesc trapSiteDesc = mir->callSiteDesc().toTrapSiteDesc();
+  Register instance = ToRegister(lir->instance());
+  Register cont = ToRegister(lir->cont());
+  Register handlersParamsArea = lir->handlersParamsArea()->isBogus()
+                                    ? Register::Invalid()
+                                    : ToRegister(lir->handlersParamsArea());
+  Register scratch1 = ToRegister(lir->temp0());
+  Register scratch2 = ToRegister(lir->temp1());
+  Register scratch3 = ToRegister(lir->temp2());
 
-  masm.loadStackPtrFromPrivateValue(
-      Address(SuspenderReg, wasm::SuspenderObject::offsetOfMainSP()));
-  masm.loadPrivate(
-      Address(SuspenderReg, wasm::SuspenderObject::offsetOfMainFP()),
-      FramePointer);
-
-  
-  masm.mov(&returnCallsite, ScratchReg1);
-  masm.storePrivateValue(
-      ScratchReg1,
-      Address(SuspenderReg,
-              wasm::SuspenderObject::offsetOfSuspendedReturnAddress()));
-
-  masm.assertStackAlignment(WasmStackAlignment);
+  auto* ool = new (alloc())
+      LambdaOutOfLineCode([this, trapSiteDesc](OutOfLineCode& ool) {
+        masm.wasmTrap(wasm::Trap::NullPointerDereference, trapSiteDesc);
+      });
+  addOutOfLineCode(ool, (const BytecodeSite*)nullptr);
 
   
   
-  uint32_t framePushed = masm.framePushed();
+  bool inTry = mir->hasTryNote();
+  if (inTry) {
+    size_t tryNoteIndex = mir->tryNoteIndex().value();
+    wasm::TryNoteVector& tryNotes = masm.tryNotes();
+    wasm::TryNote& tryNote = tryNotes[tryNoteIndex];
+    tryNote.setTryBodyBegin(masm.currentOffset());
+  }
 
-  
-  masm.setFramePushed(0);
+  mozilla::Vector<jit::Label*, 2, JitAllocPolicy> handlerLabels(alloc());
+  if (!handlerLabels.reserve(mir->numHandlers())) {
+    masm.setOOM();
+    return;
+  }
+  for (size_t i = 0; i < mir->numHandlers(); i++) {
+    handlerLabels.infallibleAppend(getJumpLabelForBranch(mir->handlerBlock(i)));
+  }
 
-  prepareWasmStackSwitchTrampolineCall(SuspenderReg, DataReg);
+  CodeOffset resumeCodeOffset;
+  uint32_t resumeFramePushed;
+  wasm::EmitResume(masm, instance, cont, handlersParamsArea, scratch1, scratch2,
+                   scratch3, ool->entry(), mir->handlers(), handlerLabels,
+                   mir->callSiteDesc(), &resumeCodeOffset, &resumeFramePushed);
 
-  
-  size_t instanceSlotOffset = FunctionExtended::offsetOfExtendedSlot(
-      FunctionExtended::WASM_INSTANCE_SLOT);
-  masm.loadPtr(Address(FnReg, instanceSlotOffset), InstanceReg);
-
-  masm.storePtr(InstanceReg, Address(masm.getStackPointer(),
-                                     WasmCalleeInstanceOffsetBeforeCall));
-  masm.loadWasmPinnedRegsFromInstance(mozilla::Nothing());
-
-  masm.assertStackAlignment(WasmStackAlignment);
-
-  const Register ReturnAddressReg = ScratchReg1;
-  
-  const Register ScratchReg2 = DataReg;
-
-  
-  masm.computeEffectiveAddress(
-      Address(masm.getStackPointer(), -int32_t(sizeof(wasm::Frame))),
-      ScratchReg2);
-  masm.storePrivateValue(
-      ScratchReg2,
-      Address(SuspenderReg, wasm::SuspenderObject::offsetOfMainExitFP()));
-
-  
-  masm.loadPrivate(
-      Address(SuspenderReg, wasm::SuspenderObject::offsetOfSuspendableExitFP()),
-      ScratchReg2);
-  masm.loadPtr(
-      Address(ScratchReg2, wasm::FrameWithInstances::callerInstanceOffset()),
-      ScratchReg2);
-  masm.storePtr(ScratchReg2, Address(masm.getStackPointer(),
-                                     WasmCallerInstanceOffsetBeforeCall));
-
-  
-  masm.loadPrivate(
-      Address(SuspenderReg, wasm::SuspenderObject::offsetOfSuspendableExitFP()),
-      ScratchReg1);
-  masm.loadPtr(Address(ScratchReg1, wasm::Frame::returnAddressOffset()),
-               ReturnAddressReg);
-
-  
-#  ifdef JS_USE_LINK_REGISTER
-#    if defined(JS_CODEGEN_LOONG64) || defined(JS_CODEGEN_RISCV64) || \
-        defined(JS_CODEGEN_MIPS64)
-  masm.mov(ReturnAddressReg, ra);
-#    else
-  masm.mov(ReturnAddressReg, lr);
-#    endif
-#  else
-  masm.Push(ReturnAddressReg);
-#  endif
-  
-  
-  size_t uncheckedEntrySlotOffset = FunctionExtended::offsetOfExtendedSlot(
-      FunctionExtended::WASM_FUNC_UNCHECKED_ENTRY_SLOT);
-  masm.loadPtr(Address(FnReg, uncheckedEntrySlotOffset), ScratchReg2);
-  masm.jump(ScratchReg2);
-
-  
-  masm.setFramePushed(framePushed);
-
-  
-  masm.wasmTrapInstruction();
-
-  
-  masm.bind(&returnCallsite);
-  masm.append(desc, *returnCallsite.target());
-  masm.addCodeLabel(returnCallsite);
-
-  masm.assertStackAlignment(WasmStackAlignment);
-
-  markSafepointAt(returnCallsite.target()->offset(), lir);
-  lir->safepoint()->setFramePushedAtStackMapBase(framePushed);
+  markSafepointAt(resumeCodeOffset.offset(), lir);
+  lir->safepoint()->setFramePushedAtStackMapBase(resumeFramePushed);
   lir->safepoint()->setWasmSafepointKind(WasmSafepointKind::StackSwitch);
+
+  if (inTry) {
+    
+    size_t tryNoteIndex = mir->tryNoteIndex().value();
+    wasm::TryNoteVector& tryNotes = masm.tryNotes();
+    wasm::TryNote& tryNote = tryNotes[tryNoteIndex];
+
+    
+    
+    
+    
+    if (!masm.oom()) {
+      tryNote.setTryBodyEnd(masm.currentOffset());
+    }
+
+    
+    
+    LBlock* block = lir->block();
+    MOZ_RELEASE_ASSERT(*block->rbegin() == lir);
+  }
+
   
-  masm.propagateOOM(
-      lir->safepoint()->addWasmAnyRefSlot(true, framePushedAtSuspender));
-
-  masm.freeStackTo(framePushed);
-
-  
-  
-  
-  masm.mov(ReturnReg, ScratchReg1);
-
-  masm.freeStack(reserve);
-  masm.Pop(InstanceReg);
-  masm.Pop(SuspenderReg);
-
-  masm.Push(ScratchReg1);
-
-  masm.switchToWasmInstanceRealm(ScratchReg1, ScratchReg2);
-
-  callWasmUpdateSuspenderState(wasm::UpdateSuspenderStateAction::Resume,
-                               SuspenderReg, ScratchReg1);
-
-  masm.Pop(ToRegister(lir->output()));
-
-#else
-  MOZ_CRASH("NYI");
-#endif  
+  jumpToBlock(mir->fallthroughBlock());
 }
-
-void CodeGenerator::visitWasmStackContinueOnSuspendable(
-    LWasmStackContinueOnSuspendable* lir) {
-#ifdef ENABLE_WASM_JSPI
-  MOZ_ASSERT(ToRegister(lir->instance()) == InstanceReg);
-  Register suspender = ToRegister(lir->suspender());
-  Register result = ToRegister(lir->result());
-  Register temp1 = ToRegister(lir->temp0());
-  Register temp2 = ToRegister(lir->temp1());
-
-  masm.Push(suspender);
-  int32_t framePushedAtSuspender = masm.framePushed();
-  masm.Push(InstanceReg);
-
-  wasm::CallSiteDesc desc(wasm::CallSiteKind::StackSwitch);
-  CodeLabel returnCallsite;
-
-  
-  uint32_t reserve = ComputeByteAlignment(
-      masm.framePushed() - sizeof(wasm::Frame), WasmStackAlignment);
-  masm.reserveStack(reserve);
-
-  masm.storeStackPtrToPrivateValue(
-      Address(suspender, wasm::SuspenderObject::offsetOfMainSP()));
-  masm.storePrivateValue(
-      FramePointer,
-      Address(suspender, wasm::SuspenderObject::offsetOfMainFP()));
-
-  
-  masm.loadPrivate(
-      Address(suspender, wasm::SuspenderObject::offsetOfSuspendableExitFP()),
-      temp1);
-  masm.storePtr(FramePointer, Address(temp1, wasm::Frame::callerFPOffset()));
-
-  
-  masm.mov(&returnCallsite, temp2);
-
-  masm.storePtr(temp2, Address(temp1, wasm::Frame::returnAddressOffset()));
-  
-  masm.storePtr(
-      InstanceReg,
-      Address(temp1, wasm::FrameWithInstances::callerInstanceOffset()));
-
-  
-  masm.loadStackPtrFromPrivateValue(
-      Address(suspender, wasm::SuspenderObject::offsetOfSuspendableSP()));
-  masm.loadPrivate(
-      Address(suspender, wasm::SuspenderObject::offsetOfSuspendableFP()),
-      FramePointer);
-
-  masm.assertStackAlignment(WasmStackAlignment);
-
-  
-  
-  uint32_t framePushed = masm.framePushed();
-
-  
-  masm.setFramePushed(0);
-
-  
-  ABIArgGenerator abi(ABIKind::Wasm);
-  unsigned reserveBeforeCall = abi.stackBytesConsumedSoFar();
-  MOZ_ASSERT(masm.framePushed() == 0);
-  unsigned argDecrement =
-      StackDecrementForCall(WasmStackAlignment, 0, reserveBeforeCall);
-  masm.reserveStack(argDecrement);
-
-  masm.storePtr(InstanceReg, Address(masm.getStackPointer(),
-                                     WasmCallerInstanceOffsetBeforeCall));
-  masm.storePtr(InstanceReg, Address(masm.getStackPointer(),
-                                     WasmCalleeInstanceOffsetBeforeCall));
-
-  masm.assertStackAlignment(WasmStackAlignment);
-
-  
-  
-  MOZ_ASSERT(temp2 == ReturnReg);
-  masm.mov(result, temp2);
-
-  
-  masm.loadPrivate(
-      Address(suspender,
-              wasm::SuspenderObject::offsetOfSuspendedReturnAddress()),
-      temp1);
-  masm.jump(temp1);
-
-  
-  masm.setFramePushed(framePushed);
-
-  
-  masm.wasmTrapInstruction();
-
-  
-  masm.bind(&returnCallsite);
-  masm.append(desc, *returnCallsite.target());
-  masm.addCodeLabel(returnCallsite);
-
-  masm.assertStackAlignment(WasmStackAlignment);
-
-  markSafepointAt(returnCallsite.target()->offset(), lir);
-  lir->safepoint()->setFramePushedAtStackMapBase(framePushed);
-  lir->safepoint()->setWasmSafepointKind(WasmSafepointKind::StackSwitch);
-  
-  masm.propagateOOM(
-      lir->safepoint()->addWasmAnyRefSlot(true, framePushedAtSuspender));
-
-  masm.freeStackTo(framePushed);
-
-  masm.freeStack(reserve);
-  masm.Pop(InstanceReg);
-  masm.Pop(suspender);
-
-  masm.switchToWasmInstanceRealm(temp1, temp2);
-
-  callWasmUpdateSuspenderState(wasm::UpdateSuspenderStateAction::Leave,
-                               suspender, temp1);
-#else
-  MOZ_CRASH("NYI");
 #endif  
-}
 
 void CodeGenerator::visitWasmCallLandingPrePad(LWasmCallLandingPrePad* lir) {
   LBlock* block = lir->block();
@@ -11468,6 +11077,26 @@ void CodeGenerator::visitWasmPostWriteBarrierEdgeAtIndex(
   masm.jump(ool->entry());
   masm.bind(ool->rejoin());
 }
+
+#ifdef ENABLE_WASM_JSPI
+void CodeGenerator::visitWasmResumeBarrier(LWasmResumeBarrier* lir) {
+  Register instance = ToRegister(lir->instance());
+  Register cont = ToRegister(lir->cont());
+  Register scratch1 = ToRegister(lir->temp0());
+
+  auto* ool = new (alloc())
+      LambdaOutOfLineCode([this, lir, instance, cont](OutOfLineCode& ool) {
+        saveLive(lir);
+        wasm::EmitWasmResumeBarrier(masm, instance, cont);
+        restoreLive(lir);
+        masm.jump(ool.rejoin());
+      });
+  addOutOfLineCode(ool, (const BytecodeSite*)nullptr);
+
+  wasm::EmitWasmResumeBarrierGuard(masm, instance, scratch1, ool->entry());
+  masm.bind(ool->rejoin());
+}
+#endif  
 
 void CodeGenerator::visitWasmLoadSlotI64(LWasmLoadSlotI64* ins) {
   Register container = ToRegister(ins->containerRef());
