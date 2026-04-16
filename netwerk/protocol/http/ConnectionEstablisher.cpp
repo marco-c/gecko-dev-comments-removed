@@ -317,12 +317,24 @@ void ConnectionEstablisher::FinishInternal(nsresult aResult) {
     
     mHandle = nullptr;
 
-    if (NS_SUCCEEDED(aResult) && mResultConn && mResultConn->CanReuse()) {
+    
+    
+    
+    
+    
+    bool connUsable =
+        mResultConn && (!mResultConn->UsingHttp3() || mResultConn->CanReuse());
+    if (NS_SUCCEEDED(aResult) && connUsable) {
       if (!mConnectStart.IsNull()) {
         mResultConn->SetConnectBootstrapTimings(mConnectStart, mTcpConnectEnd);
       }
       cb(std::move(mResultConn));
     } else {
+      LOG(
+          ("ConnectionEstablisher::FinishInternal %p conn rejected "
+           "aResult=%x connUsable=%d UsingHttp3=%d",
+           this, static_cast<uint32_t>(aResult), connUsable,
+           mResultConn ? mResultConn->UsingHttp3() : 0));
       cb(Err(NS_FAILED(aResult) ? aResult : NS_ERROR_ABORT));
     }
   }
