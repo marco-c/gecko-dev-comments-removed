@@ -19,11 +19,11 @@ const { AppConstants } = ChromeUtils.importESModule(
  * @typedef {object} AutofillPlaceholder
  * @property {string} value
  *   The autofill value.
- * @property {"origin" | "url" | "adaptive"} type
+ * @property {"origin" | "url" | "adaptive_url" | "adaptive_origin"} type
  *   The autofill type.
  * @property {string} adaptiveHistoryInput
- *   If the type is "adaptive", this is the matching input value from adaptive
- *   history.
+ *   If the type is "adaptive_url" or "adaptive_origin", this is the matching
+ *   input value from adaptive history.
  * @property {number} selectionStart
  *   The selectionStart at the time of autofill.
  * @property {number} selectionEnd
@@ -128,8 +128,11 @@ export class UrlbarInput extends HTMLElement {
                      native="false">
             <menucaption class="searchmode-switcher-popup-description"
                          role="heading" />
-            <menuseparator/>
-            <menuseparator class="searchmode-switcher-popup-footer-separator"/>
+${
+  lazy.UrlbarPrefs.get("nova.featureGate")
+    ? '<menuseparator class="searchmode-switcher-popup-installed-engine-separator" /><menuseparator class="searchmode-switcher-popup-footer-separator"/>'
+    : '<menuseparator/><menuseparator class="searchmode-switcher-popup-installed-engine-separator searchmode-switcher-popup-footer-separator"/>'
+}
             <menuitem class="searchmode-switcher-popup-search-settings-button menuitem-iconic"
                       data-action="openpreferences"
                       image="chrome://global/skin/icons/settings.svg"
@@ -143,7 +146,6 @@ export class UrlbarInput extends HTMLElement {
           <html:input id="urlbar-scheme"
                       required="required"/>
           <html:input class="urlbar-input textbox-input"
-                      aria-controls="urlbar-results"
                       role="combobox"
                       aria-autocomplete="both"
                       inputmode="mozAwesomebar"
@@ -162,8 +164,7 @@ export class UrlbarInput extends HTMLElement {
             tooltip="aHTMLTooltip">
         <html:div class="urlbarView-body-outer">
           <html:div class="urlbarView-body-inner">
-            <html:div id="urlbar-results"
-                      class="urlbarView-results"
+            <html:div class="urlbarView-results"
                       role="listbox"/>
           </html:div>
         </html:div>
@@ -244,6 +245,7 @@ export class UrlbarInput extends HTMLElement {
 
   /** @type {AutofillPlaceholder|null} */
   _autofillPlaceholder = null;
+  _autofillBackspaceState = null;
 
   _resultForCurrentValue = null;
   _untrimmedValue = "";
@@ -329,9 +331,15 @@ export class UrlbarInput extends HTMLElement {
     }
 
     this.panel = this.querySelector(".urlbarView");
+    this._inputContainer = this.querySelector(".urlbar-input-container");
     this.inputField = /** @type {HTMLInputElement} */ (
       this.querySelector(".urlbar-input")
     );
+
+    let resultListboxId = this.#sapName + "-results";
+    this.querySelector(".urlbarView-results").id = resultListboxId;
+    this.inputField.setAttribute("aria-controls", resultListboxId);
+
     if (this.#isAddressbar) {
       this.inputField.id = "urlbar-input";
     }
@@ -339,7 +347,6 @@ export class UrlbarInput extends HTMLElement {
       // This adds a native clear button.
       this.inputField.setAttribute("type", "search");
     }
-    this._inputContainer = this.querySelector(".urlbar-input-container");
 
     this.controller = new lazy.UrlbarController({ input: this });
     this.view = new lazy.UrlbarView(this);
@@ -348,11 +355,12 @@ export class UrlbarInput extends HTMLElement {
     let searchModeSwitcherDescription = this.querySelector(
       ".searchmode-switcher-popup-description"
     );
+
     searchModeSwitcherDescription.setAttribute(
       "data-l10n-id",
-      this.#isAddressbar
-        ? "urlbar-searchmode-popup-description-menucaption"
-        : "urlbar-searchmode-popup-sticky-description-menucaption"
+      this.#isAddressbar && !lazy.UrlbarPrefs.get("nova.featureGate")
+        ? "urlbar-searchmode-popup-one-off-description-menucaption"
+        : "urlbar-searchmode-popup-header-menucaption"
     );
 
     // The event bufferer can be used to defer events that may affect users
@@ -1829,14 +1837,58 @@ export class UrlbarInput extends HTMLElement {
       let input;
       if (!result.heuristic) {
         input = this._lastSearchString;
-      } else if (result.autofill?.type == "adaptive") {
+      } else if (
+        result.autofill?.type == "adaptive_url" ||
+        result.autofill?.type == "adaptive_origin"
+      ) {
         input = result.autofill.adaptiveHistoryInput;
+      } else if (
+        lazy.UrlbarPrefs.get("autoFillAdaptiveHistoryEnabled") &&
+        result.autofill?.type == "origin" &&
+        // Bug: 2026227: Investigate if we want to use a higher threshold
+        this._lastSearchString?.length > 0
+      ) {
+        // The origin root URL (e.g. http://example.com/) may not be in
+        // moz_places yet. It's derived from a deep-link visit. Defer the
+        // write until the navigation records the visit.
+        lazy.UrlbarUtils.addToInputHistoryWhenReady(
+          url,
+          this._lastSearchString
+        ).catch(console.error);
       }
+
       // `input` may be an empty string, so do a strict comparison here.
       if (input !== undefined) {
         // We don't await for this, because a rejection should not interrupt
         // the load. Just reportError it.
         lazy.UrlbarUtils.addToInputHistory(url, input).catch(console.error);
+      }
+
+      // Re-integration: If the user picks a non-autofill result for a URL
+      // that has a blocked origin, clear the block.
+      if (
+        lazy.UrlbarPrefs.get("autoFillAdaptiveHistoryEnabled") &&
+        !result.autofill &&
+        result.type == lazy.UrlbarUtils.RESULT_TYPE.URL
+      ) {
+        let isOrigin = lazy.UrlbarUtils.isOriginUrl(url);
+        if (isOrigin) {
+          lazy.UrlbarUtils.clearOriginAutofillBlock(url)
+            .then(wasBlocked => {
+              if (wasBlocked) {
+                Glean.urlbarAutofill.reintegration.origin.add(1);
+              }
+            })
+            .catch(console.error);
+        } else {
+          lazy.UrlbarUtils.clearOriginPageAutofillBlock(url)
+            .then(wasBlocked => {
+              if (wasBlocked) {
+                Glean.urlbarAutofill.reintegration.url.add(1);
+              }
+            })
+            .catch(console.error);
+        }
       }
     }
 
@@ -3297,6 +3349,7 @@ export class UrlbarInput extends HTMLElement {
   _resetSearchState() {
     this._lastSearchString = this.value;
     this._autofillPlaceholder = null;
+    this._autofillBackspaceState = null;
   }
 
   /**
@@ -3330,7 +3383,10 @@ export class UrlbarInput extends HTMLElement {
     // if the caret isn't at the end of the input.
     let canAutofillPlaceholder = false;
     if (this._autofillPlaceholder) {
-      if (this._autofillPlaceholder.type == "adaptive") {
+      if (
+        this._autofillPlaceholder.type == "adaptive_url" ||
+        this._autofillPlaceholder.type == "adaptive_origin"
+      ) {
         canAutofillPlaceholder =
           value.length >=
             this._autofillPlaceholder.adaptiveHistoryInput.length &&
@@ -4958,6 +5014,8 @@ export class UrlbarInput extends HTMLElement {
     this._isKeyDownWithMeta = false;
     this._isKeyDownWithMetaAndLeft = false;
 
+    this._autofillBackspaceState = null;
+
     Services.obs.notifyObservers(null, "urlbar-blur");
   }
 
@@ -5163,6 +5221,41 @@ export class UrlbarInput extends HTMLElement {
     ) {
       // Take a telemetry if user deleted whole autofilled value.
       Glean.urlbar.autofillDeletion.add(1);
+    }
+
+    if (
+      lazy.UrlbarPrefs.get("autoFillAdaptiveHistoryEnabled") &&
+      event.inputType === "deleteContentBackward"
+    ) {
+      if (!this._autofillBackspaceState && this._autofillPlaceholder) {
+        this._autofillBackspaceState = {
+          url: this._resultForCurrentValue?.payload?.url,
+          count: 0,
+        };
+      }
+      if (this._autofillBackspaceState) {
+        this._autofillBackspaceState.count++;
+        if (
+          this._autofillBackspaceState.count >=
+          lazy.UrlbarPrefs.get("autoFill.backspaceThreshold")
+        ) {
+          if (!this.isPrivate) {
+            let { url } = this._autofillBackspaceState;
+            if (url) {
+              let blockUntil =
+                Date.now() +
+                lazy.UrlbarPrefs.get("autoFill.backspaceBlockDurationMs");
+              lazy.UrlbarUtils.blockAutofill(url, blockUntil).catch(
+                console.error
+              );
+            }
+          }
+          this._autofillBackspaceState = null;
+        }
+      }
+    } else if (this._autofillBackspaceState) {
+      // Any non-backspace input resets the state.
+      this._autofillBackspaceState = null;
     }
 
     let value = this.value;
