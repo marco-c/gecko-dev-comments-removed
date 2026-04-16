@@ -2,7 +2,6 @@
 
 
 
-
 #include "mozilla/Logging.h"
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/intl/Locale.h"
@@ -2172,7 +2171,8 @@ already_AddRefed<gfxCharacterMap> gfxPlatformFontList::FindCharMap(
   aCmap->CalcHash();
   aCmap->mShared = true;  
                           
-  RefPtr cmap = mSharedCmaps.PutEntry(aCmap)->GetKey();
+  CharMapLookup lookup{aCmap, aCmap->mHash,  false};
+  RefPtr cmap = mSharedCmaps.PutEntry(lookup)->GetCharMap();
 
   
   
@@ -2189,7 +2189,15 @@ already_AddRefed<gfxCharacterMap> gfxPlatformFontList::FindCharMap(
 
 
 
-void gfxPlatformFontList::MaybeRemoveCmap(gfxCharacterMap* aCharMap) {
+
+
+
+
+
+
+
+void gfxPlatformFontList::MaybeRemoveCmap(gfxCharacterMap* aCharMap,
+                                          uint32_t aHash) {
   
   
   AutoLock lock(mLock);
@@ -2203,10 +2211,14 @@ void gfxPlatformFontList::MaybeRemoveCmap(gfxCharacterMap* aCharMap) {
   
   
   
+  CharMapLookup lookup{aCharMap, aHash,  true};
+  CharMapHashKey* found = mSharedCmaps.GetEntry(lookup);
+
   
-  CharMapHashKey* found =
-      mSharedCmaps.GetEntry(const_cast<gfxCharacterMap*>(aCharMap));
-  if (found && found->GetKey() == aCharMap && aCharMap->RefCount() == 1) {
+  
+  
+  
+  if (found && aCharMap->RefCount() == 1) {
     
     
     found->mCharMap.forget().leak();
@@ -3035,7 +3047,8 @@ void gfxPlatformFontList::AddSizeOfExcludingThis(MallocSizeOf aMallocSizeOf,
   aSizes->mFontListSize +=
       mSharedCmaps.ShallowSizeOfExcludingThis(aMallocSizeOf);
   for (const auto& entry : mSharedCmaps) {
-    aSizes->mCharMapsSize += entry.GetKey()->SizeOfIncludingThis(aMallocSizeOf);
+    aSizes->mCharMapsSize +=
+        entry.GetCharMap()->SizeOfIncludingThis(aMallocSizeOf);
   }
 
   aSizes->mFontListSize +=

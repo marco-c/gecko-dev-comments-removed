@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef GFXPLATFORMFONTLIST_H_
 #define GFXPLATFORMFONTLIST_H_
 
@@ -36,13 +35,29 @@ struct AliasData;
 }  
 class FontVisibilityProvider;
 
+
+
+
+struct CharMapLookup {
+  
+  
+  gfxCharacterMap* mCharMap;
+  
+  uint32_t mHash;
+  
+  
+  bool mCompareByPointer;
+};
+
 class CharMapHashKey : public PLDHashEntryHdr {
  public:
-  typedef gfxCharacterMap* KeyType;
-  typedef const gfxCharacterMap* KeyTypePointer;
+  typedef CharMapLookup KeyType;
+  typedef const CharMapLookup* KeyTypePointer;
 
-  explicit CharMapHashKey(const gfxCharacterMap* aCharMap)
-      : mCharMap(const_cast<gfxCharacterMap*>(aCharMap)) {
+  explicit CharMapHashKey(const CharMapLookup* aLookup)
+      : mCharMap(aLookup->mCharMap) {
+    
+    MOZ_ASSERT(!aLookup->mCompareByPointer);
     MOZ_COUNT_CTOR(CharMapHashKey);
   }
   CharMapHashKey(const CharMapHashKey& toCopy) : mCharMap(toCopy.mCharMap) {
@@ -50,23 +65,29 @@ class CharMapHashKey : public PLDHashEntryHdr {
   }
   MOZ_COUNTED_DTOR(CharMapHashKey)
 
-  gfxCharacterMap* GetKey() const { return mCharMap.get(); }
+  gfxCharacterMap* GetCharMap() const { return mCharMap.get(); }
 
-  bool KeyEquals(const gfxCharacterMap* aCharMap) const {
-    MOZ_ASSERT(!aCharMap->mBuildOnTheFly && !mCharMap->mBuildOnTheFly,
-               "custom cmap used in shared cmap hashtable");
+  bool KeyEquals(const CharMapLookup* aLookup) const {
+    if (aLookup->mCompareByPointer) {
+      
+      
+      return mCharMap.get() == aLookup->mCharMap;
+    }
     
-    if (aCharMap->mHash != mCharMap->mHash) {
+    MOZ_ASSERT(!aLookup->mCharMap->mBuildOnTheFly && !mCharMap->mBuildOnTheFly,
+               "custom cmap used in shared cmap hashtable");
+    if (aLookup->mHash != mCharMap->mHash) {
       return false;
     }
-    return mCharMap->Equals(aCharMap);
+    return mCharMap->Equals(aLookup->mCharMap);
   }
 
-  static const gfxCharacterMap* KeyToPointer(gfxCharacterMap* aCharMap) {
-    return aCharMap;
+  static const CharMapLookup* KeyToPointer(const CharMapLookup& aLookup) {
+    return &aLookup;
   }
-  static PLDHashNumber HashKey(const gfxCharacterMap* aCharMap) {
-    return aCharMap->mHash;
+  static PLDHashNumber HashKey(const CharMapLookup* aLookup) {
+    
+    return aLookup->mHash;
   }
 
   enum { ALLOW_MEMMOVE = true };
@@ -530,7 +551,8 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
 
   
   
-  void MaybeRemoveCmap(gfxCharacterMap* aCharMap);
+  
+  void MaybeRemoveCmap(gfxCharacterMap* aCharMap, uint32_t aHash);
 
   
   void AddUserFontSet(gfxUserFontSet* aUserFontSet) {

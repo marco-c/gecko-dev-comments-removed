@@ -96,6 +96,7 @@ class gfxCharacterMap : public gfxSparseBitSet {
     
     
     bool isShared = mShared;
+    uint32_t hash = mHash;
 
     
     
@@ -108,7 +109,13 @@ class gfxCharacterMap : public gfxSparseBitSet {
     if (isShared) {
       MOZ_ASSERT(count > 0);
       if (count == 1) {
-        NotifyMaybeReleased(this);
+        
+        
+        
+        
+        
+        
+        NotifyMaybeReleased(this, hash);
       }
       return;
     }
@@ -155,7 +162,7 @@ class gfxCharacterMap : public gfxSparseBitSet {
 
   void CalcHash() { mHash = GetChecksum(); }
 
-  static void NotifyMaybeReleased(gfxCharacterMap* aCmap);
+  static void NotifyMaybeReleased(gfxCharacterMap* aCmap, uint32_t aHash);
 
   
   void ClearSharedFlag() {

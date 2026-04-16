@@ -36,10 +36,12 @@ using namespace mozilla;
 using namespace mozilla::gfx;
 using namespace mozilla::unicode;
 
-void gfxCharacterMap::NotifyMaybeReleased(gfxCharacterMap* aCmap) {
+void gfxCharacterMap::NotifyMaybeReleased(gfxCharacterMap* aCmap,
+                                          uint32_t aHash) {
   
   
-  gfxPlatformFontList::PlatformFontList()->MaybeRemoveCmap(aCmap);
+  
+  gfxPlatformFontList::PlatformFontList()->MaybeRemoveCmap(aCmap, aHash);
 }
 
 gfxFontEntry::gfxFontEntry(const nsACString& aName, bool aIsStandardFace)
