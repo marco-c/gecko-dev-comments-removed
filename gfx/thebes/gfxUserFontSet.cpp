@@ -94,6 +94,10 @@ gfxUserFontEntry::~gfxUserFontEntry() {
   
   
   MOZ_ASSERT(!gfxFontUtils::IsInServoTraversal());
+  
+  
+  NS_ReleaseOnMainThread("gfxUserFontEntry::mPlatformFontEntry",
+                         mPlatformFontEntry.forget());
 }
 
 bool gfxUserFontEntry::Matches(const nsTArray<gfxFontFaceSrc>& aFontFaceSrcList,
@@ -1218,6 +1222,7 @@ bool gfxUserFontSet::UserFontCache::Entry::KeyEquals(
 }
 
 void gfxUserFontSet::UserFontCache::CacheFont(gfxFontEntry* aFontEntry) {
+  MOZ_ASSERT(NS_IsMainThread());
   
   if (StaticPrefs::gfx_downloadable_fonts_disable_cache()) {
     return;
@@ -1269,6 +1274,10 @@ void gfxUserFontSet::UserFontCache::CacheFont(gfxFontEntry* aFontEntry) {
 }
 
 void gfxUserFontSet::UserFontCache::ForgetFont(gfxFontEntry* aFontEntry) {
+  
+  
+  
+  MOZ_ASSERT(NS_IsMainThread());
   if (!sUserFonts) {
     
     
@@ -1292,6 +1301,7 @@ void gfxUserFontSet::UserFontCache::ForgetFont(gfxFontEntry* aFontEntry) {
 
 gfxFontEntry* gfxUserFontSet::UserFontCache::GetFont(
     const gfxFontFaceSrc& aSrc, const gfxUserFontEntry& aUserFontEntry) {
+  MOZ_ASSERT(NS_IsMainThread() || gfxFontUtils::CurrentServoStyleSet());
   if (!sUserFonts || StaticPrefs::gfx_downloadable_fonts_disable_cache()) {
     return nullptr;
   }
