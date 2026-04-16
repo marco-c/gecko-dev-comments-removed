@@ -899,6 +899,11 @@ bool ParseDictData(ots::Buffer& table, ots::Buffer& dict,
         if (type != DICT_DATA_TOPLEVEL) {
           return OTS_FAILURE();
         }
+        
+        
+        if (!out_cff->fd_select.empty()) {
+          return OTS_FAILURE();
+        }
         if (operands.size() != 1) {
           return OTS_FAILURE();
         }
