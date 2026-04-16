@@ -10,10 +10,9 @@
 
 #include "rtc_base/buffer_queue.h"
 
-#include <stdint.h>
-#include <string.h>
-
 #include <algorithm>
+#include <cstdint>
+#include <cstring>
 
 #include "api/sequence_checker.h"
 #include "rtc_base/buffer.h"
@@ -74,7 +73,7 @@ bool BufferQueue::WriteBack(const void* buffer,
     packet = free_list_.back();
     free_list_.pop_back();
   } else {
-    packet = new Buffer(bytes, default_size_);
+    packet = new Buffer(Buffer::CreateWithCapacity(default_size_));
   }
 
   packet->SetData(static_cast<const uint8_t*>(buffer), bytes);

@@ -228,8 +228,8 @@ Buffer SpsVuiRewriter::ParseOutgoingBitstreamAndRewrite(
   std::vector<H264::NaluIndex> nalus = H264::FindNaluIndices(buffer);
 
   
-  Buffer output_buffer(0, buffer.size() +
-                                       nalus.size() * kMaxVuiSpsIncrease);
+  Buffer output_buffer = Buffer::CreateWithCapacity(
+      buffer.size() + nalus.size() * kMaxVuiSpsIncrease);
 
   for (const H264::NaluIndex& nalu_index : nalus) {
     

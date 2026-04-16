@@ -51,9 +51,7 @@ TEST(BufferTest, TestConstructEmpty) {
   TestBuf(Buffer(Buffer()), 0, 0);
   TestBuf(Buffer::CreateUninitializedWithSize(0), 0, 0);
 
-  
-  
-  TestBuf(Buffer(0 + 0, 10), 0, 10);
+  TestBuf(Buffer::CreateWithCapacity(10), 0, 10);
 
   TestBuf(Buffer(kTestData.data(), 0), 0, 0);
   TestBuf(Buffer(kTestData.data(), 0, 20), 0, 20);
