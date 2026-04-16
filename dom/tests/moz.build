@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 with Files("browser/**"):
     BUG_COMPONENT = ("Core", "DOM: Core & HTML")
@@ -31,11 +29,11 @@ with Files("mochitest/ajax/**"):
 with Files("mochitest/beacon/**"):
     BUG_COMPONENT = ("Core", "DOM: Networking")
 
-
+# big mix of components here
 with Files("mochitest/bugs/**"):
     BUG_COMPONENT = ("Core", "DOM: Core & HTML")
 
-
+# TODO: big mix of components here
 with Files("mochitest/chrome/**"):
     BUG_COMPONENT = ("Core", "DOM: Core & HTML")
 
@@ -63,7 +61,7 @@ with Files("mochitest/fetch/*sw_*"):
 with Files("mochitest/gamepad/**"):
     BUG_COMPONENT = ("Core", "DOM: Device Interfaces")
 
-
+# TODO: big mix of components here
 with Files("mochitest/general/**"):
     BUG_COMPONENT = ("Core", "DOM: Core & HTML")
 
@@ -139,8 +137,15 @@ MOCHITEST_MANIFESTS += [
     "mochitest/bugs/mochitest.toml",
     "mochitest/crypto/mochitest.toml",
     "mochitest/dom-level0/mochitest.toml",
+    "mochitest/dom-level1-core/mochitest-attr.toml",
+    "mochitest/dom-level1-core/mochitest-characterdata.toml",
+    "mochitest/dom-level1-core/mochitest-node.toml",
     "mochitest/dom-level1-core/mochitest.toml",
     "mochitest/dom-level2-core/mochitest.toml",
+    "mochitest/dom-level2-html/mochitest-document.toml",
+    "mochitest/dom-level2-html/mochitest-element.toml",
+    "mochitest/dom-level2-html/mochitest-form.toml",
+    "mochitest/dom-level2-html/mochitest-table.toml",
     "mochitest/dom-level2-html/mochitest.toml",
     "mochitest/fetch/mochitest.toml",
     "mochitest/gamepad/mochitest.toml",
