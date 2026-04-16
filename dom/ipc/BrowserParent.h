@@ -587,10 +587,7 @@ class BrowserParent final : public PBrowserParent,
 
   bool SendSelectionEvent(mozilla::WidgetSelectionEvent& aEvent);
 
-  
-  
-  
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY bool SendHandleTap(
+  MOZ_CAN_RUN_SCRIPT bool SendHandleTap(
       TapType aType, const LayoutDevicePoint& aPoint, Modifiers aModifiers,
       const ScrollableLayerGuid& aGuid, uint64_t aInputBlockId,
       const Maybe<DoubleTapToZoomMetrics>& aDoubleTapToZoomMetrics);
