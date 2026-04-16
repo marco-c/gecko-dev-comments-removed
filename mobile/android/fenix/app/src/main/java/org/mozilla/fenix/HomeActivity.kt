@@ -102,10 +102,14 @@ import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.appstate.AppAction.ShareAction
 import org.mozilla.fenix.components.appstate.OrientationMode
 import org.mozilla.fenix.components.menu.MenuAccessPoint
+import org.mozilla.fenix.components.menu.share.QRCodeDialogFragment
 import org.mozilla.fenix.components.metrics.BreadcrumbsRecorder
 import org.mozilla.fenix.components.metrics.GrowthDataWorker
 import org.mozilla.fenix.components.metrics.MarketingAttributionService
 import org.mozilla.fenix.components.metrics.fonts.FontEnumerationWorker
+import org.mozilla.fenix.components.share.QR_CODE_URI_KEY
+import org.mozilla.fenix.components.share.SEND_TO_DEVICES_ACTION
+import org.mozilla.fenix.components.share.SendToDevicesDialogFragment
 import org.mozilla.fenix.crashes.CrashActionDispatcher
 import org.mozilla.fenix.crashes.CrashReporterBinding
 import org.mozilla.fenix.crashes.UnsubmittedCrashDialog
@@ -168,6 +172,8 @@ import org.mozilla.fenix.tabhistory.TabHistoryDialogFragment
 import org.mozilla.fenix.theme.DefaultThemeManager
 import org.mozilla.fenix.theme.StatusBarColorManager
 import org.mozilla.fenix.theme.ThemeManager
+import org.mozilla.fenix.translations.TranslationsAIControllableFeatureRegistrar
+import org.mozilla.fenix.translations.TranslationsEnabledSettings
 import org.mozilla.fenix.utils.AccessibilityUtils.announcePrivateModeForAccessibility
 import org.mozilla.fenix.utils.Settings
 import org.mozilla.fenix.utils.changeAppLauncherIcon
@@ -224,6 +230,17 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
                 }
             },
         )
+    }
+
+    private val translationsAIControllableFeatureRegistrar by lazy {
+        with(components) {
+            TranslationsAIControllableFeatureRegistrar(
+                aiRegistry = aiFeatureRegistry,
+                browserStore = core.store,
+                translationsEnabledSettings = TranslationsEnabledSettings.dataStore(this@HomeActivity),
+                scope = lifecycleScope,
+            )
+        }
     }
 
     private val defaultTopSitesBinding by lazy {
@@ -568,6 +585,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
             externalAppLinkStatusBinding,
             summarizeToolbarHighlightBinding,
             components.core.summarizationSettings,
+            translationsAIControllableFeatureRegistrar,
         )
 
         if (!isCustomTabIntent(intent)) {
@@ -928,26 +946,50 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
             return
         }
 
-        // Diagnostic breadcrumb for "Display already aquired" crash:
-        // https://github.com/mozilla-mobile/android-components/issues/7960
-        breadcrumb(
-            message = "onNewIntent()",
-            data = mapOf(
-                "intent" to intent.action.toString(),
-            ),
-        )
-
-        val tab = components.core.store.state.findActiveMediaTab()
-        if (tab != null) {
-            components.useCases.sessionUseCases.exitFullscreen(tab.id)
+        if (intent.action == SEND_TO_DEVICES_ACTION) {
+            val url = intent.getStringExtra(SendToDevicesDialogFragment.EXTRA_URL) ?: return
+            val title = intent.getStringExtra(SendToDevicesDialogFragment.EXTRA_TITLE)
+            val isPrivate = intent.getStringExtra(SendToDevicesDialogFragment.EXTRA_PRIVACY) ==
+                SendToDevicesDialogFragment.PRIVACY_PRIVATE
+            if (supportFragmentManager.findFragmentByTag(SendToDevicesDialogFragment.TAG) == null) {
+                SendToDevicesDialogFragment.newInstance(url, title, isPrivate).showNow(
+                    supportFragmentManager,
+                    SendToDevicesDialogFragment.TAG,
+                )
+            }
+            return
         }
 
-        val intentProcessors =
-            listOf(
-                CrashReporterIntentProcessor(components.appStore),
-            ) + externalSourceIntentProcessors
-        intentProcessors.forEach { it.process(intent, navHost.navController, this.intent, settings()) }
-        browsingModeManager.updateMode(intent)
+        val qrCodeUri = intent.getStringExtra(QR_CODE_URI_KEY)
+        if (qrCodeUri != null) {
+            if (supportFragmentManager.findFragmentByTag(QRCodeDialogFragment.TAG) == null) {
+                QRCodeDialogFragment.newInstance(qrCodeUri).showNow(
+                    supportFragmentManager,
+                    QRCodeDialogFragment.TAG,
+                )
+            }
+        } else {
+            // Diagnostic breadcrumb for "Display already aquired" crash:
+            // https://github.com/mozilla-mobile/android-components/issues/7960
+            breadcrumb(
+                message = "onNewIntent()",
+                data = mapOf(
+                    "intent" to intent.action.toString(),
+                ),
+            )
+
+            val tab = components.core.store.state.findActiveMediaTab()
+            if (tab != null) {
+                components.useCases.sessionUseCases.exitFullscreen(tab.id)
+            }
+
+            val intentProcessors =
+                listOf(
+                    CrashReporterIntentProcessor(components.appStore),
+                ) + externalSourceIntentProcessors
+            intentProcessors.forEach { it.process(intent, navHost.navController, this.intent, settings()) }
+            browsingModeManager.updateMode(intent)
+        }
     }
 
     /**
