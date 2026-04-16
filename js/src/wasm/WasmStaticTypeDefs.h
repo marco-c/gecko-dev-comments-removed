@@ -30,10 +30,7 @@ class TypeDef;
 
 struct StaticTypeDefs {
   static const TypeDef* arrayMutI16;
-  static const TypeDef* jsExceptionTag;
-#ifdef ENABLE_WASM_JSPI
-  static const TypeDef* jsPromiseTag;
-#endif
+  static const TypeDef* jsTag;
 
   [[nodiscard]] static bool init();
   static void destroy();

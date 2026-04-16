@@ -66,9 +66,6 @@ enum class TypeCode {
   I16 = 0x77,  
 
   
-  NullContRef = 0x75,  
-
-  
   FuncRef = 0x70,  
 
   
@@ -108,9 +105,6 @@ enum class TypeCode {
   ExnRef = 0x69,  
 
   
-  ContRef = 0x68,  
-
-  
   NullAnyRef = 0x71,  
 
   
@@ -121,9 +115,6 @@ enum class TypeCode {
 
   
   Array = 0x5e,  
-
-  
-  Cont = 0x5d,  
 
   
   TableHasInitExpr = 0x40,
@@ -210,14 +201,6 @@ enum class Trap {
   
   
   CheckInterrupt,
-
-#ifdef ENABLE_WASM_JSPI
-  
-  ThrowSuspendError,
-#endif
-
-  
-  Unimplemented,
 
   
   ThrowReported,
@@ -518,17 +501,6 @@ enum class Op {
 
   
   BrOnNonNull = 0xd6,
-
-#ifdef ENABLE_WASM_JSPI
-  
-  ContNew = 0xe0,
-  ContBind = 0xe1,
-  Suspend = 0xe2,
-  Resume = 0xe3,
-  ResumeThrow = 0xe4,
-  ResumeThrowRef = 0xe5,
-  Switch = 0xe6,
-#endif
 
   FirstPrefix = 0xfa,
   GcPrefix = 0xfb,
@@ -1042,6 +1014,19 @@ enum class BuiltinModuleId {
   JSStringConstants,
 };
 
+enum class StackSwitchKind {
+  SwitchToSuspendable,
+  SwitchToMain,
+  ContinueOnSuspendable,
+};
+
+enum class UpdateSuspenderStateAction {
+  Enter,
+  Suspend,
+  Resume,
+  Leave,
+};
+
 enum class MozOp {
   
   
@@ -1086,16 +1071,10 @@ enum class MozOp {
   OldCallIndirect,
 
   
-  LastAsmJSOp = OldCallIndirect,
-
-#ifdef ENABLE_WASM_JSPI
-  
-  GuardSuspending,
-#endif
-
-  
   
   CallBuiltinModuleFunc,
+
+  StackSwitch,
 
   Limit
 };
@@ -1174,13 +1153,6 @@ enum class FieldFlags { Mutable = 0x01, AllowedMask = 0x01 };
 
 enum class FieldWideningOp { None, Signed, Unsigned };
 
-enum class HandlerKind : uint8_t {
-  Suspend = 0x0,
-  Switch = 0x1,
-
-  Limit = Switch,
-};
-
 
 
 enum class PageSize {
@@ -1239,7 +1211,6 @@ static const unsigned MaxTryTableCatches = 10000;
 static const unsigned MaxBrTableElems = 65520;
 static const unsigned MaxCodeSectionBytes = MaxModuleBytes;
 static const unsigned MaxBranchHintValue = 2;
-static const unsigned MaxHandlers = 16;
 
 
 
@@ -1253,12 +1224,19 @@ static const unsigned MaxHandlers = 16;
 static const unsigned MaxFrameSize = 512 * 1024;
 
 
-static const size_t ContJitStackSize = 0x100000;
+static const size_t SuspendableStacksMaxCount = 100;
+
+
+static const size_t SuspendableStackSize = 0x100000;
 
 
 
 
-static const size_t ContRedZoneSize = 0x8000;
+static const size_t SuspendableRedZoneSize = 0x6000;
+
+
+static constexpr size_t SuspendableStackPlusRedZoneSize =
+    SuspendableStackSize + SuspendableRedZoneSize;
 
 
 

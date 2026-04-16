@@ -17,8 +17,6 @@
 #ifndef wasm_context_h
 #define wasm_context_h
 
-#include "mozilla/Vector.h"
-
 #ifdef ENABLE_WASM_JSPI
 #  include "gc/Barrier.h"
 #endif  
@@ -31,37 +29,11 @@ struct _NT_TIB;
 
 namespace js::wasm {
 
-struct Handlers;
-class ContObject;
-class ContStack;
-using ContStackVector = mozilla::Vector<ContStack*, 0, SystemAllocPolicy>;
-
 #ifdef ENABLE_WASM_JSPI
-
-
-
-
-
-
-struct StackTarget {
-  
-  
-  ContStack* stack = nullptr;
-
-  
-  
-  JS::NativeStackLimit jitLimit = JS::NativeStackLimitMin;
-
-  
-  
-#  if defined(_WIN32)
-  void* tibStackBase = nullptr;
-  void* tibStackLimit = nullptr;
-#  endif
-
-  bool isMainStack() const { return !stack; }
-};
-
+class SuspenderObject;
+using SuspenderObjectSet =
+    HashSet<SuspenderObject*, PointerHasher<SuspenderObject*>,
+            SystemAllocPolicy>;
 #endif  
 
 
@@ -75,35 +47,37 @@ class Context {
   static constexpr size_t offsetOfStackLimit() {
     return offsetof(Context, stackLimit);
   }
+  static constexpr size_t offsetOfMainStackLimit() {
+    return offsetof(Context, mainStackLimit);
+  }
+
   void initStackLimit(JSContext* cx);
 
 #ifdef ENABLE_WASM_JSPI
-  static constexpr size_t offsetOfCurrentStack() {
-    return offsetof(Context, currentStack_);
-  }
-  static constexpr size_t offsetOfBaseHandlers() {
-    return offsetof(Context, baseHandlers_);
-  }
-  static constexpr size_t offsetOfMainStackTarget() {
-    return offsetof(Context, mainStackTarget_);
+  static constexpr size_t offsetOfActiveSuspender() {
+    return offsetof(Context, activeSuspender_);
   }
 #  ifdef _WIN32
   static constexpr size_t offsetOfTib() { return offsetof(Context, tib_); }
-
-  
-  void updateWin32TibFields();
+  static constexpr size_t offsetOfTibStackBase() {
+    return offsetof(Context, tibStackBase_);
+  }
+  static constexpr size_t offsetOfTibStackLimit() {
+    return offsetof(Context, tibStackLimit_);
+  }
 #  endif
 
-  ContStack* currentStack() { return currentStack_; }
-  bool onContStack() const { return currentStack_ != nullptr; }
-  const ContStackVector& stacks() const { return stacks_; }
+  SuspenderObject* activeSuspender() { return activeSuspender_; }
+  bool onSuspendableStack() const { return activeSuspender_ != nullptr; }
 
-  const StackTarget& mainStackTarget() const { return mainStackTarget_; }
+  void enterSuspendableStack(JSContext* cx, SuspenderObject* suspender);
+  void leaveSuspendableStack(JSContext* cx);
 
-  
-  
-  ContStack* findStackForAddress(JSContext* cx, uintptr_t stackAddress);
-#endif  
+  SuspenderObject* findSuspenderForStackAddress(const void* stackAddress);
+
+  void trace(JSTracer* trc);
+  void traceRoots(JSTracer* trc);
+#endif
 
   
   
@@ -114,44 +88,27 @@ class Context {
   
   
   JS::NativeStackLimit stackLimit;
-
- private:
-#ifdef ENABLE_WASM_JSPI
   
-  StackTarget mainStackTarget_;
+  
+  JS::NativeStackLimit mainStackLimit;
 
+#ifdef ENABLE_WASM_JSPI
 #  if defined(_WIN32)
   
   
   
+  
   _NT_TIB* tib_ = nullptr;
+  void* tibStackBase_ = nullptr;
+  void* tibStackLimit_ = nullptr;
 #  endif
 
   
   
-  
-  ContStack* currentStack_;
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  Handlers* baseHandlers_;
+  HeapPtr<SuspenderObject*> activeSuspender_;
 
   
-  
-  ContStackVector stacks_;
-
-  
-  friend ContStack;
+  SuspenderObjectSet suspenders_;
 #endif
 };
 

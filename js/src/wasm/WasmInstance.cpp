@@ -59,7 +59,6 @@
 #include "wasm/WasmModule.h"
 #include "wasm/WasmModuleTypes.h"
 #include "wasm/WasmPI.h"
-#include "wasm/WasmStacks.h"
 #include "wasm/WasmStubs.h"
 #include "wasm/WasmTypeDef.h"
 #include "wasm/WasmValType.h"
@@ -249,7 +248,7 @@ bool Instance::callImport(JSContext* cx, uint32_t funcImportIndex,
 
 #ifdef ENABLE_WASM_JSPI
   
-  MOZ_ASSERT(!cx->wasm().onContStack());
+  MOZ_ASSERT(!cx->wasm().onSuspendableStack());
 #endif
 
   FuncImportInstanceData& instanceFuncImport =
@@ -1893,39 +1892,6 @@ static bool ArrayCopyFromElem(JSContext* cx, Handle<WasmArrayObject*> arrayObj,
   return 0;
 }
 
-#ifdef ENABLE_WASM_JSPI
-
- void* Instance::contNew(Instance* instance, void* funcRef) {
-  MOZ_ASSERT(SASigContNew.failureMode == FailureMode::FailOnNullPtr);
-  JSContext* cx = instance->cx();
-  Rooted<JSFunction*> target(cx, static_cast<JSFunction*>(funcRef));
-  if (!target) {
-    ReportTrapError(cx, JSMSG_WASM_DEREF_NULL);
-    return nullptr;
-  }
-  MOZ_ASSERT(target->isWasm());
-
-  void* stub = instance->code().sharedStubs().codeBase +
-               instance->code().contBaseFrameOffset();
-  ContObject* cont = ContObject::create(cx, target, stub);
-  return AnyRef::fromJSObjectOrNull(cont).forCompiledCode();
-}
-
- void* Instance::contNewEmpty(Instance* instance) {
-  MOZ_ASSERT(SASigContNewEmpty.failureMode == FailureMode::FailOnNullPtr);
-  JSContext* cx = instance->cx();
-  ContObject* cont = ContObject::createEmpty(cx);
-  return AnyRef::fromJSObjectOrNull(cont).forCompiledCode();
-}
-
- void Instance::contUnwind(Instance* instance,
-                                       wasm::Handlers* handlers) {
-  MOZ_ASSERT(SASigContUnwind.failureMode == FailureMode::Infallible);
-  ContStack::unwind(instance->cx(), handlers);
-}
-
-#endif  
-
  void* Instance::exceptionNew(Instance* instance, void* tagArg) {
   MOZ_ASSERT(SASigExceptionNew.failureMode == FailureMode::FailOnNullPtr);
   JSContext* cx = instance->cx();
@@ -2644,13 +2610,7 @@ bool Instance::init(JSContext* cx, const JSObjectVector& funcImports,
       }
     } else if (typeDef.kind() == TypeDefKind::Func) {
       
-    }
-#ifdef ENABLE_WASM_JSPI
-    else if (typeDef.kind() == TypeDefKind::Cont) {
-      
-    }
-#endif
-    else {
+    } else {
       MOZ_ASSERT(typeDef.kind() == TypeDefKind::None);
       MOZ_CRASH();
     }
