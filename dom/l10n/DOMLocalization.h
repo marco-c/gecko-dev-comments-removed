@@ -41,6 +41,7 @@ class DOMLocalization : public intl::Localization {
   JSObject* WrapObject(JSContext*, JS::Handle<JSObject*> aGivenProto) override;
 
   bool HasPendingMutations() const;
+  bool IsDocumentL10n() const { return mIsDocumentL10n; }
 
   
 
@@ -130,6 +131,7 @@ class DOMLocalization : public intl::Localization {
 
   RefPtr<L10nMutations> mMutations;
   nsTHashSet<RefPtr<nsINode>> mRoots;
+  bool mIsDocumentL10n = false;
 };
 
 }  

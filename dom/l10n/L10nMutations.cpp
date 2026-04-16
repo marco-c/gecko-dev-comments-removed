@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "L10nMutations.h"
 
 #include "DOMLocalization.h"
@@ -150,7 +148,7 @@ void L10nMutations::L10nElementChanged(Element* aElement) {
     StartRefreshObserver();
   }
 
-  if (!mBlockingLoad) {
+  if (!mBlockingLoad && mDOMLocalization->IsDocumentL10n()) {
     Document* doc = GetDocument();
     if (doc && doc->GetReadyStateEnum() != Document::READYSTATE_COMPLETE) {
       doc->BlockOnload();
