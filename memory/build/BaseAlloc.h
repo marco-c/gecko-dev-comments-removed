@@ -14,7 +14,7 @@
 
 
 typedef uint32_t base_alloc_size_t;
-constexpr static base_alloc_size_t BASE_ALLOC_SIZE_MAX = UINT32_MAX;
+constexpr static base_alloc_size_t BASE_ALLOC_SIZE_MAX = UINT32_MAX >> 1;
 
 class BaseAllocCell;
 
