@@ -10,10 +10,11 @@
 
 #include "rtc_tools/video_file_reader.h"
 
-#include <stdint.h>
-
+#include <cstdio>
 #include <string>
 
+#include "api/scoped_refptr.h"
+#include "api/video/video_frame_buffer.h"
 #include "test/gtest.h"
 #include "test/testsupport/file_utils.h"
 
@@ -123,5 +124,23 @@ TEST_F(YuvFileReaderTest, TestPixelContent) {
   }
 }
 
+TEST(VideoFileReaderTest, OpenY4mFileAbortsOnLargeHeader) {
+  const std::string file_name =
+      TempFilename(test::OutputPath(), "temp_large_header.y4m");
+
+  FILE* file = fopen(file_name.c_str(), "wb");
+  ASSERT_TRUE(file != nullptr);
+
+  fprintf(file, "YUV4MPEG2 ");
+
+  
+  for (int i = 0; i < 2000; ++i) {
+    fputc('A', file);
+  }
+  fclose(file);
+  EXPECT_EQ(nullptr, OpenY4mFile(file_name));
+
+  remove(file_name.c_str());
+}
 }  
 }  
