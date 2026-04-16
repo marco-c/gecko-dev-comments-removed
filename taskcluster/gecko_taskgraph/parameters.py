@@ -51,6 +51,21 @@ gecko_parameters_schema = {
         Optional("gecko-profile-features"): str,
         Optional("gecko-profile-threads"): str,
         Optional(
+            "github",
+            description="Github pull request triggering a code-review analysis",
+        ): {
+            Required("branch", description="Pull request branch name"): str,
+            Required(
+                "pull_head_sha", description="Pull request head commit identifier"
+            ): str,
+            Required(
+                "pull_number", description="Pull request public numerical ID"
+            ): int,
+            Required(
+                "repo_url", description="Targeted Mozilla repository on Github"
+            ): str,
+        },
+        Optional(
             "new-test-config",
             description="adjust parameters, chunks, etc. to speed up the process "
             "of greening up a new test config.",
@@ -89,6 +104,7 @@ gecko_parameters_schema = {
     },
     Required("version"): str,
     Optional("head_git_rev"): str,
+    Optional("pull_request_number"): int,
 }
 
 
@@ -124,6 +140,7 @@ def get_defaults(repo_root=None):
         "optimize_strategies": None,
         "phabricator_diff": None,
         "project": "mozilla-central",
+        "pull_request_number": None,
         "release_enable_emefree": False,
         "release_enable_partner_repack": False,
         "release_enable_partner_attribution": False,
@@ -148,3 +165,8 @@ def get_defaults(repo_root=None):
 
 def register_parameters():
     extend_parameters_schema(gecko_parameters_schema, defaults_fn=get_defaults)
+
+
+def get_decision_parameters(graph_config, parameters):
+    if pr_number := os.environ.get("GECKO_PULL_REQUEST_NUMBER", None):
+        parameters["pull_request_number"] = int(pr_number)
