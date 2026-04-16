@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "CookieStoreNotifier.h"
 
 #include "CookieChangeEvent.h"
@@ -197,10 +195,17 @@ void CookieStoreNotifier::DispatchEvent(const CookieListItem& aItem,
 void CookieStoreNotifier::FireDelayedDOMEvents() {
   MOZ_ASSERT(NS_IsMainThread());
 
+  RefPtr<CookieStoreNotifier> kungFuDeathGrip(this);
+
   nsTArray<RefPtr<Event>> delayedDOMEvents;
   delayedDOMEvents.SwapElements(mDelayedDOMEvents);
 
   for (Event* event : delayedDOMEvents) {
+    
+    if (!mCookieStore) {
+      break;
+    }
+
     mCookieStore->DispatchEvent(*event);
   }
 }
