@@ -45,6 +45,7 @@ struct PageUseCounters;
 class WindowSessionStoreState;
 struct WindowSessionStoreUpdate;
 class SSCacheQueryResult;
+enum class FullscreenKeyboardLock : uint8_t;
 
 
 
@@ -324,9 +325,6 @@ class WindowGlobalParent final : public WindowContext,
   
   mozilla::ipc::IPCResult RecvUpdateActivePeerConnectionStatus(bool aIsAdded);
 
-  mozilla::ipc::IPCResult RecvUpdateFullscreenKeyboardLockStatus(
-      bool aIsEnabled);
-
  public:
   mozilla::ipc::IPCResult RecvSetSingleChannelId(
       const Maybe<uint64_t>& aSingleChannelId);
@@ -363,6 +361,8 @@ class WindowGlobalParent final : public WindowContext,
 
   already_AddRefed<dom::PDigitalCredentialParent>
   AllocPDigitalCredentialParent();
+
+  void UpdateFullscreenKeyboardLockStatus(FullscreenKeyboardLock aStatus);
 
  private:
   WindowGlobalParent(CanonicalBrowsingContext* aBrowsingContext,
@@ -475,6 +475,8 @@ class WindowGlobalParent final : public WindowContext,
 
   bool mShouldReportHasBlockedOpaqueResponse = false;
 };
+
+nsCString BFCacheStatusToString(uint32_t aFlags);
 
 }  
 }  
