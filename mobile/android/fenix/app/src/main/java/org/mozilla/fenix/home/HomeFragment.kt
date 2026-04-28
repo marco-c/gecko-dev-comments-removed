@@ -138,6 +138,7 @@ import org.mozilla.fenix.home.sessioncontrol.DefaultSessionControlController
 import org.mozilla.fenix.home.sessioncontrol.SessionControlController
 import org.mozilla.fenix.home.sessioncontrol.SessionControlControllerCallback
 import org.mozilla.fenix.home.sessioncontrol.SessionControlInteractor
+import org.mozilla.fenix.home.sports.DefaultSportsController
 import org.mozilla.fenix.home.store.HomeToolbarStoreBuilder
 import org.mozilla.fenix.home.store.HomepageState
 import org.mozilla.fenix.home.termsofuse.DefaultPrivacyNoticeBannerController
@@ -583,7 +584,9 @@ class HomeFragment : Fragment(), SystemInsetsPaddedFragment {
             messageController = DefaultMessageController(
                 appStore = components.appStore,
                 messagingController = components.nimbus.messaging,
-                homeActivityRef = WeakReference(activity),
+                processIntent = { intent ->
+                    intent?.let { startActivity(it) }
+                },
             ),
             store = store,
             tabCollectionStorage = components.core.tabCollectionStorage,
@@ -696,6 +699,9 @@ class HomeFragment : Fragment(), SystemInsetsPaddedFragment {
             logoController = LogoController(
                 longFoxFeature = components.core.longFoxFeature,
                 container = activity.getRootView() as? ViewGroup,
+            ),
+            sportsController = DefaultSportsController(
+                appStore = components.appStore,
             ),
         )
 
@@ -1457,6 +1463,7 @@ class HomeFragment : Fragment(), SystemInsetsPaddedFragment {
             navController = findNavController(),
             tabId = args.sessionToStartSearchFor,
             searchAccessPoint = args.searchAccessPoint,
+            isEdgeToEdgeBackgroundEnabled = isEdgeToEdgeBackgroundEnabled(),
         ).also {
             awesomeBarComposable = it
         }
