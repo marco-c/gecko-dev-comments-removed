@@ -34,12 +34,8 @@
 
 
 
-
-
 #ifndef gtest_utils_h_
 #define gtest_utils_h_
-
-#include <iostream>
 
 #include "nspr.h"
 #include "prinrval.h"

@@ -3,6 +3,16 @@
 
 
 api = {
+    "iostream": [
+        "cerr",
+        "cin",
+        "clog",
+        "cout",
+        "wcerr",
+        "wcin",
+        "wclog",
+        "wcout",
+    ],
     "algorithm": [
         "all_of",
         "any_of",

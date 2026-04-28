@@ -2,10 +2,6 @@
 
 
 
-
-
-#include <iostream>
-
 #include "AudioGenerator.h"
 #include "AudioSegment.h"
 #include "gtest/gtest.h"
