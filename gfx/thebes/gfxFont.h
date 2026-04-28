@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef GFX_FONT_H
 #define GFX_FONT_H
 
@@ -683,8 +681,8 @@ class gfxFontShaper {
   
   
   
-  virtual bool ShapeText(DrawTarget* aDrawTarget, const char16_t* aText,
-                         uint32_t aOffset, uint32_t aLength, Script aScript,
+  virtual bool ShapeText(const char16_t* aText, uint32_t aOffset,
+                         uint32_t aLength, Script aScript,
                          nsAtom* aLanguage,  
                                              
                                              
@@ -1878,7 +1876,7 @@ class gfxFont {
   
   
   bool ProcessSingleSpaceShapedWord(
-      DrawTarget* aDrawTarget, bool aVertical, int32_t aAppUnitsPerDevUnit,
+      bool aVertical, int32_t aAppUnitsPerDevUnit,
       mozilla::gfx::ShapedTextFlags aFlags, RoundingFlags aRounding,
       const std::function<void(gfxShapedWord*)>& aCallback);
 
@@ -2091,7 +2089,7 @@ class gfxFont {
   tainted_boolean_hint SpaceMayParticipateInShaping(Script aRunScript) const;
 
   
-  bool ShapeText(DrawTarget* aContext, const uint8_t* aText,
+  bool ShapeText(const uint8_t* aText,
                  uint32_t aOffset,  
                  uint32_t aLength, Script aScript, nsAtom* aLanguage,
                  bool aVertical, RoundingFlags aRounding,
@@ -2099,15 +2097,15 @@ class gfxFont {
 
   
   
-  virtual bool ShapeText(DrawTarget* aContext, const char16_t* aText,
-                         uint32_t aOffset, uint32_t aLength, Script aScript,
-                         nsAtom* aLanguage, bool aVertical,
-                         RoundingFlags aRounding, gfxShapedText* aShapedText);
+  virtual bool ShapeText(const char16_t* aText, uint32_t aOffset,
+                         uint32_t aLength, Script aScript, nsAtom* aLanguage,
+                         bool aVertical, RoundingFlags aRounding,
+                         gfxShapedText* aShapedText);
 
   
   
   
-  void PostShapingFixup(DrawTarget* aContext, const char16_t* aText,
+  void PostShapingFixup(const char16_t* aText,
                         uint32_t aOffset,  
                         uint32_t aLength, bool aVertical,
                         gfxShapedText* aShapedText);
@@ -2120,11 +2118,10 @@ class gfxFont {
   
   
   template <typename T>
-  bool ShapeTextWithoutWordCache(DrawTarget* aDrawTarget, const T* aText,
-                                 uint32_t aOffset, uint32_t aLength,
-                                 Script aScript, nsAtom* aLanguage,
-                                 bool aVertical, RoundingFlags aRounding,
-                                 gfxTextRun* aTextRun);
+  bool ShapeTextWithoutWordCache(const T* aText, uint32_t aOffset,
+                                 uint32_t aLength, Script aScript,
+                                 nsAtom* aLanguage, bool aVertical,
+                                 RoundingFlags aRounding, gfxTextRun* aTextRun);
 
   
   
@@ -2132,10 +2129,10 @@ class gfxFont {
   
   
   template <typename T>
-  bool ShapeFragmentWithoutWordCache(DrawTarget* aDrawTarget, const T* aText,
-                                     uint32_t aOffset, uint32_t aLength,
-                                     Script aScript, nsAtom* aLanguage,
-                                     bool aVertical, RoundingFlags aRounding,
+  bool ShapeFragmentWithoutWordCache(const T* aText, uint32_t aOffset,
+                                     uint32_t aLength, Script aScript,
+                                     nsAtom* aLanguage, bool aVertical,
+                                     RoundingFlags aRounding,
                                      gfxTextRun* aTextRun);
 
   void CheckForFeaturesInvolvingSpace() const;
@@ -2143,10 +2140,10 @@ class gfxFont {
   
   
   template <typename T, typename Func>
-  bool ProcessShapedWordInternal(DrawTarget* aDrawTarget, const T* aText,
-                                 uint32_t aLength, uint32_t aHash,
-                                 Script aRunScript, nsAtom* aLanguage,
-                                 bool aVertical, int32_t aAppUnitsPerDevUnit,
+  bool ProcessShapedWordInternal(const T* aText, uint32_t aLength,
+                                 uint32_t aHash, Script aRunScript,
+                                 nsAtom* aLanguage, bool aVertical,
+                                 int32_t aAppUnitsPerDevUnit,
                                  mozilla::gfx::ShapedTextFlags aFlags,
                                  RoundingFlags aRounding,
                                  gfxTextPerfMetrics* aTextPerf, Func aCallback);

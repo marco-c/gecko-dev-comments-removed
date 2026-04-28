@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef GFX_MACFONT_H
 #define GFX_MACFONT_H
 
@@ -60,10 +59,9 @@ class gfxMacFont final : public gfxFont {
   const Metrics& GetHorizontalMetrics() const override { return mMetrics; }
 
   
-  bool ShapeText(DrawTarget* aDrawTarget, const char16_t* aText,
-                 uint32_t aOffset, uint32_t aLength, Script aScript,
-                 nsAtom* aLanguage, bool aVertical, RoundingFlags aRounding,
-                 gfxShapedText* aShapedText) override;
+  bool ShapeText(const char16_t* aText, uint32_t aOffset, uint32_t aLength,
+                 Script aScript, nsAtom* aLanguage, bool aVertical,
+                 RoundingFlags aRounding, gfxShapedText* aShapedText) override;
 
   void InitMetrics();
   void InitMetricsFromPlatform();
