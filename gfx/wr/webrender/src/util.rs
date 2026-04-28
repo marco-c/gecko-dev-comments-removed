@@ -264,79 +264,34 @@ impl ScaleOffset {
 
 
     pub fn map_rect<F, T>(&self, rect: &Box2D<f32, F>) -> Box2D<f32, T> {
+        let x0 = rect.min.x * self.scale.x + self.offset.x;
+        let y0 = rect.min.y * self.scale.y + self.offset.y;
         
         
         
         
-        
-        
-        
+        let x1 = rect.min.x.max(rect.max.x) * self.scale.x + self.offset.x;
+        let y1 = rect.min.y.max(rect.max.y) * self.scale.y + self.offset.y;
 
-        let w = rect.width().max(0.0);
-        let h = rect.height().max(0.0);
-
-        let mut x0 = rect.min.x * self.scale.x + self.offset.x;
-        let mut y0 = rect.min.y * self.scale.y + self.offset.y;
-
-        let mut sx = w * self.scale.x;
-        let mut sy = h * self.scale.y;
-        
-        
-        
-        
-        
-
-        if self.scale.x < 0.0 {
-            x0 += sx;
-            sx = -sx;
-        }
-        if self.scale.y < 0.0 {
-            y0 += sy;
-            sy = -sy;
-        }
-
-        Box2D::from_origin_and_size(
-            Point2D::new(x0, y0),
-            Size2D::new(sx, sy),
+        Box2D::new(
+            Point2D::new(x0.min(x1), y0.min(y1)),
+            Point2D::new(x0.max(x1), y0.max(y1)),
         )
     }
 
     pub fn unmap_rect<F, T>(&self, rect: &Box2D<f32, F>) -> Box2D<f32, T> {
+        let x0 = (rect.min.x - self.offset.x) / self.scale.x;
+        let y0 = (rect.min.y - self.offset.y) / self.scale.y;
         
         
         
         
-        
-        
-        
+        let x1 = (rect.min.x.max(rect.max.x) - self.offset.x) / self.scale.x;
+        let y1 = (rect.min.y.max(rect.max.y) - self.offset.y) / self.scale.y;
 
-        let w = rect.width().max(0.0);
-        let h = rect.height().max(0.0);
-
-        let mut x0 = (rect.min.x - self.offset.x) / self.scale.x;
-        let mut y0 = (rect.min.y - self.offset.y) / self.scale.y;
-
-        let mut sx = w / self.scale.x;
-        let mut sy = h / self.scale.y;
-
-        
-        
-        
-        
-        
-
-        if self.scale.x < 0.0 {
-            x0 += sx;
-            sx = -sx;
-        }
-        if self.scale.y < 0.0 {
-            y0 += sy;
-            sy = -sy;
-        }
-
-        Box2D::from_origin_and_size(
-            Point2D::new(x0, y0),
-            Size2D::new(sx, sy),
+        Box2D::new(
+            Point2D::new(x0.min(x1), y0.min(y1)),
+            Point2D::new(x0.max(x1), y0.max(y1)),
         )
     }
 
@@ -397,6 +352,18 @@ impl ScaleOffset {
             0.0,
             1.0,
         )
+    }
+
+    pub fn is_identity(&self) -> bool {
+        self.scale.x == 1.0 &&
+        self.scale.y == 1.0 &&
+        self.offset.x == 0.0 &&
+        self.offset.y == 0.0
+    }
+
+    pub fn is_reflection(&self) -> bool {
+        self.scale.x < 0.0 ||
+        self.scale.y < 0.0
     }
 }
 
@@ -706,7 +673,7 @@ use euclid::vec3;
 #[cfg(test)]
 pub mod test {
     use super::*;
-    use euclid::default::{Point2D, Size2D, Transform3D};
+    use euclid::default::{Box2D, Point2D, Size2D, Transform3D};
     use euclid::{Angle, approxeq::ApproxEq};
     use std::f32::consts::PI;
     use crate::clip::{is_left_of_line, polygon_contains_point};
@@ -779,7 +746,7 @@ pub mod test {
         let xref = LayoutTransform::scale(1.0, -1.0, 1.0)
                         .pre_translate(LayoutVector3D::new(124.0, 38.0, 0.0));
         let so = ScaleOffset::from_transform(&xref).unwrap();
-        let local_rect = Box2D {
+        let local_rect = LayoutRect {
             min: LayoutPoint::new(50.0, -100.0),
             max: LayoutPoint::new(250.0, 300.0),
         };
@@ -954,6 +921,40 @@ pub mod test {
             assert_eq!(polygon_contains_point(&p_inside_twice, &rect, &poly_evenodd), false);
             assert_eq!(polygon_contains_point(&p_outside, &rect, &poly_evenodd), false);
         }
+    }
+
+    
+    
+    #[test]
+    fn map_unmap_negative_size() {
+        let scale_offset = ScaleOffset::new(2.0, 2.0, 1.0, 1.0);
+        let rect = Box2D::new(Point2D::new(5.0, 5.0), Point2D::new(0.0, 0.0));
+        let mapped_rect: Box2D<f32> = scale_offset.map_rect(&rect);
+        assert_eq!(mapped_rect, Box2D::new(Point2D::new(11.0, 11.0), Point2D::new(11.0, 11.0)));
+
+        let unmapped_rect: Box2D<f32> = scale_offset.unmap_rect(&rect);
+        assert_eq!(unmapped_rect, Box2D::new(Point2D::new(2.0, 2.0), Point2D::new(2.0, 2.0)));
+    }
+
+    
+    
+    #[test]
+    fn map_unmap_adjoining_rects() {
+        let so = ScaleOffset::new(0.3, 0.3, 0.0, 0.0);
+        let p1 = Point2D::new(15.0, 15.0);
+        let p2 = Point2D::new(45.0, 45.0);
+        let p3 = Point2D::new(75.0, 75.0);
+
+        let rect_1 = Box2D::new(p1, p2);
+        let rect_2 = Box2D::new(p2, p3);
+
+        let mapped_rect_1: Box2D<f32> = so.map_rect(&rect_1);
+        let mapped_rect_2: Box2D<f32> = so.map_rect(&rect_2);
+        assert_eq!(mapped_rect_1.max, mapped_rect_2.min);
+
+        let unmapped_rect_1: Box2D<f32> = so.unmap_rect(&rect_1);
+        let unmapped_rect_2: Box2D<f32> = so.unmap_rect(&rect_2);
+        assert_eq!(unmapped_rect_1.max, unmapped_rect_2.min);
     }
 }
 
