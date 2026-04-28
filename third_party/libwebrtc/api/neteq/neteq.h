@@ -31,28 +31,29 @@ namespace webrtc {
 class AudioFrame;
 
 struct NetEqNetworkStatistics {
-  uint16_t current_buffer_size_ms;    
-  uint16_t preferred_buffer_size_ms;  
-  uint16_t jitter_peaks_found;        
-                                      
-  uint16_t expand_rate;         
-                                
-  uint16_t speech_expand_rate;  
-                                
-  uint16_t preemptive_rate;     
-                                
-  uint16_t accelerate_rate;     
-                                
-  uint16_t secondary_decoded_rate;    
-                                      
-  uint16_t secondary_discarded_rate;  
-                                      
+  uint16_t current_buffer_size_ms = 0;    
+  uint16_t preferred_buffer_size_ms = 0;  
+  uint16_t jitter_peaks_found =
+      0;  
+  uint16_t expand_rate = 0;  
+                             
+  uint16_t speech_expand_rate =
+      0;  
+          
+  uint16_t preemptive_rate =
+      0;  
+  uint16_t accelerate_rate =
+      0;  
+  uint16_t secondary_decoded_rate =
+      0;  
+  uint16_t secondary_discarded_rate =
+      0;  
   
   
-  int mean_waiting_time_ms;
-  int median_waiting_time_ms;
-  int min_waiting_time_ms;
-  int max_waiting_time_ms;
+  int mean_waiting_time_ms = 0;
+  int median_waiting_time_ms = 0;
+  int min_waiting_time_ms = 0;
+  int max_waiting_time_ms = 0;
 };
 
 
