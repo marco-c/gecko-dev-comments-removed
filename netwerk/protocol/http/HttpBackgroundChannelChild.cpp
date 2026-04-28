@@ -453,7 +453,8 @@ IPCResult HttpBackgroundChannelChild::RecvDetachStreamFilters() {
 }
 
 void HttpBackgroundChannelChild::ActorDestroy(ActorDestroyReason aWhy) {
-  LOG(("HttpBackgroundChannelChild::ActorDestroy[this=%p]\n", this));
+  LOG(("HttpBackgroundChannelChild::ActorDestroy[this=%p reason=%d]\n", this,
+       static_cast<int>(aWhy)));
   
   
   
@@ -464,23 +465,8 @@ void HttpBackgroundChannelChild::ActorDestroy(ActorDestroyReason aWhy) {
   
   
   
-  
-  
-  if (aWhy == Deletion && !mQueuedRunnables.IsEmpty()) {
-    LOG(("  > pending until queued messages are flushed\n"));
-    RefPtr<HttpBackgroundChannelChild> self = this;
-    mQueuedRunnables.AppendElement(NS_NewRunnableFunction(
-        "HttpBackgroundChannelChild::ActorDestroy", [self]() {
-          MOZ_ASSERT(OnSocketThread());
-          RefPtr<HttpChannelChild> channelChild =
-              std::move(self->mChannelChild);
-
-          if (channelChild) {
-            channelChild->OnBackgroundChildDestroyed(self);
-          }
-        }));
-    return;
-  }
+  mQueuedRunnables.Clear();
+  mConsoleReportTask = nullptr;
 
   if (mChannelChild) {
     RefPtr<HttpChannelChild> channelChild = std::move(mChannelChild);
