@@ -27,7 +27,6 @@
 #include "mozilla/StaticPrefs_image.h"
 #include "mozilla/StaticPrefs_svg.h"
 #include "mozilla/dom/BindContext.h"
-#include "mozilla/dom/ContentList.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/FetchPriority.h"
@@ -43,6 +42,7 @@
 #include "mozilla/intl/LocaleService.h"
 #include "mozilla/net/UrlClassifierFeatureFactory.h"
 #include "mozilla/widget/TextRecognition.h"
+#include "nsContentList.h"
 #include "nsContentPolicyUtils.h"
 #include "nsContentUtils.h"
 #include "nsError.h"
@@ -1936,7 +1936,7 @@ Element* nsImageLoadingContent::FindImageMap() {
     return nullptr;  
   }
 
-  RefPtr<ContentList> imageMapList;
+  RefPtr<nsContentList> imageMapList;
   if (aElement->IsInUncomposedDoc()) {
     
     imageMapList = aElement->OwnerDoc()->ImageMapList();
@@ -1945,9 +1945,9 @@ Element* nsImageLoadingContent::FindImageMap() {
     
     
     imageMapList =
-        new ContentList(aElement->SubtreeRoot(), kNameSpaceID_XHTML,
-                        nsGkAtoms::map, nsGkAtoms::map, true, 
-                        false );
+        new nsContentList(aElement->SubtreeRoot(), kNameSpaceID_XHTML,
+                          nsGkAtoms::map, nsGkAtoms::map, true, 
+                          false );
   }
 
   nsAutoString mapName(Substring(start, end));

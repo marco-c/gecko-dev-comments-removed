@@ -230,7 +230,6 @@
 #ifdef MOZ_MAY_HAVE_HTMLACCEL
 #  include "mozilla/htmlaccel/htmlaccelNotInline.h"
 #endif
-#include "mozilla/dom/ContentList.h"
 #include "mozilla/intl/LocaleService.h"
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/net/UrlClassifierCommon.h"
@@ -255,6 +254,7 @@
 #include "nsContainerFrame.h"
 #include "nsContentCreatorFunctions.h"
 #include "nsContentDLF.h"
+#include "nsContentList.h"
 #include "nsContentListDeclarations.h"
 #include "nsContentPolicyUtils.h"
 #include "nsCoord.h"
@@ -3832,7 +3832,7 @@ Element* nsContentUtils::GetTargetElement(Document* aDocument,
   
   
   if (aDocument->IsHTMLDocument()) {
-    RefPtr<NodeList> list = aDocument->GetElementsByName(aAnchorName);
+    nsCOMPtr<nsINodeList> list = aDocument->GetElementsByName(aAnchorName);
     
     uint32_t length = list->Length();
     for (uint32_t i = 0; i < length; i++) {
@@ -3844,7 +3844,7 @@ Element* nsContentUtils::GetTargetElement(Document* aDocument,
   } else {
     constexpr auto nameSpace = u"http://www.w3.org/1999/xhtml"_ns;
     
-    RefPtr<NodeList> list =
+    nsCOMPtr<nsINodeList> list =
         aDocument->GetElementsByTagNameNS(nameSpace, u"a"_ns);
     
     for (uint32_t i = 0; true; i++) {
@@ -4199,8 +4199,8 @@ void nsContentUtils::GenerateStateKey(nsIContent* aContent, Document* aDocument,
           control->GetParserInsertedControlNumberForStateKey();
       bool parserInserted = controlNumber != -1;
 
-      RefPtr<ContentList> htmlForms;
-      RefPtr<ContentList> htmlFormControls;
+      RefPtr<nsContentList> htmlForms;
+      RefPtr<nsContentList> htmlFormControls;
       if (!parserInserted) {
         
         
@@ -8025,11 +8025,11 @@ bool nsContentUtils::PlatformToDOMLineBreaks(nsAString& aString,
   return true;
 }
 
-already_AddRefed<ContentList> nsContentUtils::GetElementsByClassName(
+already_AddRefed<nsContentList> nsContentUtils::GetElementsByClassName(
     nsINode* aRootNode, const nsAString& aClasses) {
   MOZ_ASSERT(aRootNode, "Must have root node");
 
-  return GetFuncStringContentList<CacheableFuncStringHTMLCollection>(
+  return GetFuncStringContentList<nsCacheableFuncStringHTMLCollection>(
       aRootNode, MatchClassNames, DestroyClassNameArray, AllocClassMatchingInfo,
       aClasses);
 }

@@ -8,7 +8,6 @@
 #include "mozilla/AttributeStyles.h"
 #include "mozilla/DeclarationBlock.h"
 #include "mozilla/MappedDeclarationsBuilder.h"
-#include "mozilla/dom/ContentList.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/HTMLCollectionBinding.h"
 #include "mozilla/dom/HTMLTableElementBinding.h"
@@ -26,12 +25,13 @@ namespace mozilla::dom {
 
 
 
-class TableRowsCollection final : public HTMLCollection,
-                                  public nsStubMutationObserver {
+class TableRowsCollection final : public nsIHTMLCollection,
+                                  public nsStubMutationObserver,
+                                  public nsWrapperCache {
  public:
   explicit TableRowsCollection(HTMLTableElement* aParent);
 
-  NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
 
   NS_DECL_NSIMUTATIONOBSERVER_CONTENTAPPENDED
   NS_DECL_NSIMUTATIONOBSERVER_CONTENTINSERTED
@@ -39,7 +39,7 @@ class TableRowsCollection final : public HTMLCollection,
   NS_DECL_NSIMUTATIONOBSERVER_NODEWILLBEDESTROYED
 
   uint32_t Length() override;
-  Element* Item(uint32_t aIndex) override;
+  Element* GetElementAt(uint32_t aIndex) override;
   nsINode* GetParentObject() override { return mParent; }
 
   Element* GetFirstNamedElement(const nsAString& aName, bool& aFound) override;
@@ -47,20 +47,31 @@ class TableRowsCollection final : public HTMLCollection,
 
   NS_IMETHOD ParentDestroyed();
 
-  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(TableRowsCollection, HTMLCollection)
+  NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS_AMBIGUOUS(TableRowsCollection,
+                                                        nsIHTMLCollection)
 
+  
+  using nsWrapperCache::GetWrapperPreserveColor;
+  using nsWrapperCache::PreserveWrapper;
   JSObject* WrapObject(JSContext*, JS::Handle<JSObject*> aGivenProto) override;
 
  protected:
   
   void CleanUp();
-  void LastRelease() override { CleanUp(); }
+  void LastRelease() { CleanUp(); }
   virtual ~TableRowsCollection() {
     
     
     
     
     CleanUp();
+  }
+
+  JSObject* GetWrapperPreserveColorInternal() override {
+    return nsWrapperCache::GetWrapperPreserveColor();
+  }
+  void PreserveWrapperInternal(nsISupports* aScriptObjectHolder) override {
+    nsWrapperCache::PreserveWrapper(aScriptObjectHolder);
   }
 
   
@@ -181,21 +192,24 @@ JSObject* TableRowsCollection::WrapObject(JSContext* aCx,
   return HTMLCollection_Binding::Wrap(aCx, this, aGivenProto);
 }
 
-NS_IMPL_CYCLE_COLLECTION_INHERITED(TableRowsCollection, HTMLCollection, mRows)
+NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(TableRowsCollection, mRows)
+NS_IMPL_CYCLE_COLLECTING_ADDREF(TableRowsCollection)
+NS_IMPL_CYCLE_COLLECTING_RELEASE_WITH_LAST_RELEASE(TableRowsCollection,
+                                                   LastRelease())
 
-NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(TableRowsCollection)
-  NS_INTERFACE_MAP_ENTRY(nsIMutationObserver)
-NS_INTERFACE_MAP_END_INHERITING(HTMLCollection)
-
-NS_IMPL_ADDREF_INHERITED(TableRowsCollection, HTMLCollection)
-NS_IMPL_RELEASE_INHERITED(TableRowsCollection, HTMLCollection)
+NS_INTERFACE_TABLE_HEAD(TableRowsCollection)
+  NS_WRAPPERCACHE_INTERFACE_TABLE_ENTRY
+  NS_INTERFACE_TABLE(TableRowsCollection, nsIHTMLCollection,
+                     nsIMutationObserver)
+  NS_INTERFACE_TABLE_TO_MAP_SEGUE_CYCLE_COLLECTION(TableRowsCollection)
+NS_INTERFACE_MAP_END
 
 uint32_t TableRowsCollection::Length() {
   EnsureInitialized();
   return mRows.Length();
 }
 
-Element* TableRowsCollection::Item(uint32_t aIndex) {
+Element* TableRowsCollection::GetElementAt(uint32_t aIndex) {
   EnsureInitialized();
   if (aIndex < mRows.Length()) {
     return mRows[aIndex]->AsElement();
@@ -527,7 +541,7 @@ NS_IMPL_ELEMENT_CLONE(HTMLTableElement)
 
 
 
-HTMLCollection* HTMLTableElement::Rows() {
+nsIHTMLCollection* HTMLTableElement::Rows() {
   if (!mRows) {
     mRows = new TableRowsCollection(this);
   }
@@ -535,11 +549,11 @@ HTMLCollection* HTMLTableElement::Rows() {
   return mRows;
 }
 
-HTMLCollection* HTMLTableElement::TBodies() {
+nsIHTMLCollection* HTMLTableElement::TBodies() {
   if (!mTBodies) {
     
-    mTBodies = new ContentList(this, kNameSpaceID_XHTML, nsGkAtoms::tbody,
-                               nsGkAtoms::tbody, false);
+    mTBodies = new nsContentList(this, kNameSpaceID_XHTML, nsGkAtoms::tbody,
+                                 nsGkAtoms::tbody, false);
   }
 
   return mTBodies;
@@ -672,7 +686,7 @@ already_AddRefed<nsGenericHTMLElement> HTMLTableElement::InsertRow(
     return nullptr;
   }
 
-  HTMLCollection* rows = Rows();
+  nsIHTMLCollection* rows = Rows();
   uint32_t rowCount = rows->Length();
   if ((uint32_t)aIndex > rowCount && aIndex != -1) {
     aError.Throw(NS_ERROR_DOM_INDEX_SIZE_ERR);
@@ -750,7 +764,7 @@ already_AddRefed<nsGenericHTMLElement> HTMLTableElement::InsertRow(
       if (newRow) {
         HTMLTableSectionElement* section =
             static_cast<HTMLTableSectionElement*>(rowGroup.get());
-        HTMLCollection* rows = section->Rows();
+        nsIHTMLCollection* rows = section->Rows();
         nsCOMPtr<nsINode> refNode = rows->Item(0);
         rowGroup->InsertBefore(*newRow, refNode, aError);
       }
@@ -766,7 +780,7 @@ void HTMLTableElement::DeleteRow(int32_t aIndex, ErrorResult& aError) {
     return;
   }
 
-  HTMLCollection* rows = Rows();
+  nsIHTMLCollection* rows = Rows();
   uint32_t refIndex;
   if (aIndex == -1) {
     refIndex = rows->Length();

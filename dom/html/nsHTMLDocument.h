@@ -8,6 +8,8 @@
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/HTMLSharedElement.h"
+#include "nsContentList.h"
+#include "nsIHTMLCollection.h"
 #include "nsIScriptElement.h"
 #include "nsTArray.h"
 #include "nsThreadUtils.h"
@@ -57,7 +59,7 @@ class nsHTMLDocument : public mozilla::dom::Document {
  public:
   mozilla::dom::Element* GetUnfocusedKeyEventTarget() override;
 
-  mozilla::dom::ContentList* GetExistingForms() const { return mForms; }
+  nsContentList* GetExistingForms() const { return mForms; }
 
   bool IsPlainText() const { return mIsPlainText; }
 
@@ -118,8 +120,8 @@ class nsHTMLDocument : public mozilla::dom::Document {
                                 int32_t aNamespaceID, nsAtom* aAtom,
                                 void* aData);
 
-  void GetFormsAndFormControls(mozilla::dom::ContentList** aFormList,
-                               mozilla::dom::ContentList** aFormControlList);
+  void GetFormsAndFormControls(nsContentList** aFormList,
+                               nsContentList** aFormControlList);
 
  protected:
   ~nsHTMLDocument();
@@ -133,8 +135,26 @@ class nsHTMLDocument : public mozilla::dom::Document {
   
   
   
-  
-  class ContentListHolder;
+  class ContentListHolder : public mozilla::Runnable {
+   public:
+    ContentListHolder(nsHTMLDocument* aDocument, nsContentList* aFormList,
+                      nsContentList* aFormControlList)
+        : mozilla::Runnable("ContentListHolder"),
+          mDocument(aDocument),
+          mFormList(aFormList),
+          mFormControlList(aFormControlList) {}
+
+    ~ContentListHolder() {
+      MOZ_ASSERT(!mDocument->mContentListHolder ||
+                 mDocument->mContentListHolder == this);
+      mDocument->mContentListHolder = nullptr;
+    }
+
+    RefPtr<nsHTMLDocument> mDocument;
+    RefPtr<nsContentList> mFormList;
+    RefPtr<nsContentList> mFormControlList;
+  };
+
   friend class ContentListHolder;
   ContentListHolder* mContentListHolder;
 

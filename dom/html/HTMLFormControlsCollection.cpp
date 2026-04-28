@@ -103,26 +103,29 @@ void HTMLFormControlsCollection::Clear() {
 
 NS_IMPL_CYCLE_COLLECTION_CLASS(HTMLFormControlsCollection)
 
-NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(HTMLFormControlsCollection,
-                                                HTMLCollection)
+NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(HTMLFormControlsCollection)
   
   
   
   tmp->Clear();
+  NS_IMPL_CYCLE_COLLECTION_UNLINK_PRESERVED_WRAPPER
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
-NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(HTMLFormControlsCollection,
-                                                  HTMLCollection)
+NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(HTMLFormControlsCollection)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mNameLookupTable)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
-NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN_INHERITED(HTMLFormControlsCollection,
-                                               HTMLCollection)
+NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN(HTMLFormControlsCollection)
+  NS_IMPL_CYCLE_COLLECTION_TRACE_PRESERVED_WRAPPER
 NS_IMPL_CYCLE_COLLECTION_TRACE_END
 
-NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(HTMLFormControlsCollection)
-NS_INTERFACE_MAP_END_INHERITING(BaseContentList)
 
-NS_IMPL_ADDREF_INHERITED(HTMLFormControlsCollection, HTMLCollection)
-NS_IMPL_RELEASE_INHERITED(HTMLFormControlsCollection, HTMLCollection)
+NS_INTERFACE_TABLE_HEAD(HTMLFormControlsCollection)
+  NS_WRAPPERCACHE_INTERFACE_TABLE_ENTRY
+  NS_INTERFACE_TABLE(HTMLFormControlsCollection, nsIHTMLCollection)
+  NS_INTERFACE_TABLE_TO_MAP_SEGUE_CYCLE_COLLECTION(HTMLFormControlsCollection)
+NS_INTERFACE_MAP_END
+
+NS_IMPL_CYCLE_COLLECTING_ADDREF(HTMLFormControlsCollection)
+NS_IMPL_CYCLE_COLLECTING_RELEASE(HTMLFormControlsCollection)
 
 
 
@@ -227,7 +230,7 @@ nsresult HTMLFormControlsCollection::GetSortedControls(
   return NS_OK;
 }
 
-Element* HTMLFormControlsCollection::Item(uint32_t aIndex) {
+Element* HTMLFormControlsCollection::GetElementAt(uint32_t aIndex) {
   return mElements.SafeElementAt(aIndex, nullptr);
 }
 

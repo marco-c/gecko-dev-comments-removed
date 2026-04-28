@@ -131,7 +131,9 @@ class JSTracer;
 class PolicyContainer;
 class gfxUserFontSet;
 class mozIDOMWindowProxy;
+class nsCachableElementsByNameNodeList;
 class nsCommandManager;
+class nsContentList;
 class nsCycleCollectionTraversalCallback;
 class nsDOMCaretPosition;
 class nsDOMNavigationTiming;
@@ -157,6 +159,7 @@ class nsIDocumentObserver;
 class nsIEventTarget;
 class nsIFrame;
 class nsIGlobalObject;
+class nsIHTMLCollection;
 class nsIInputStream;
 class nsILayoutHistoryState;
 class nsIObjectLoadingContent;
@@ -173,6 +176,7 @@ class nsNodeInfoManager;
 class nsPIWindowRoot;
 class nsPresContext;
 class nsRange;
+class nsSimpleContentList;
 class nsTextNode;
 class nsViewManager;
 class nsViewportInfo;
@@ -247,7 +251,6 @@ class FrameRequestCallback;
 class HighlightRegistry;
 class HTMLAllCollection;
 class HTMLBodyElement;
-class HTMLCollection;
 class HTMLInputElement;
 class HTMLMetaElement;
 class HTMLDialogElement;
@@ -273,7 +276,6 @@ class ScriptLoader;
 class Selection;
 class ServiceWorkerDescriptor;
 class ShadowRoot;
-class SimpleContentList;
 class SVGDocument;
 class SVGElement;
 class SVGSVGElement;
@@ -1471,7 +1473,7 @@ class Document : public nsINode,
   
   
   
-  already_AddRefed<SimpleContentList> BlockedNodesByClassifier() const;
+  already_AddRefed<nsSimpleContentList> BlockedNodesByClassifier() const;
 
   
   
@@ -3380,7 +3382,7 @@ class Document : public nsINode,
     mPageloadEventData.SetDocumentFeature(aFeature);
   }
 
-  ContentList* ImageMapList();
+  nsContentList* ImageMapList();
 
   
   void RegisterPendingLinkUpdate(Link* aLink);
@@ -3541,14 +3543,14 @@ class Document : public nsINode,
   void SetTitle(const nsAString& aTitle, ErrorResult& rv);
   void GetDir(nsAString& aDirection) const;
   void SetDir(const nsAString& aDirection);
-  HTMLCollection* Images();
-  HTMLCollection* Embeds();
-  HTMLCollection* Plugins() { return Embeds(); }
-  HTMLCollection* Links();
-  HTMLCollection* Forms();
-  HTMLCollection* Scripts();
-  already_AddRefed<ContentList> GetElementsByName(const nsAString& aName) {
-    return GetFuncStringContentList<CachableElementsByNameNodeList>(
+  nsIHTMLCollection* Images();
+  nsIHTMLCollection* Embeds();
+  nsIHTMLCollection* Plugins() { return Embeds(); }
+  nsIHTMLCollection* Links();
+  nsIHTMLCollection* Forms();
+  nsIHTMLCollection* Scripts();
+  already_AddRefed<nsContentList> GetElementsByName(const nsAString& aName) {
+    return GetFuncStringContentList<nsCachableElementsByNameNodeList>(
         this, MatchNameAttribute, nullptr, UseExistingNameString, aName);
   }
   MOZ_CAN_RUN_SCRIPT
@@ -3606,8 +3608,8 @@ class Document : public nsINode,
   MOZ_CAN_RUN_SCRIPT void QueryCommandValue(const nsAString& aHTMLCommandName,
                                             nsAString& aValue,
                                             mozilla::ErrorResult& aRv);
-  HTMLCollection* Applets();
-  HTMLCollection* Anchors();
+  nsIHTMLCollection* Applets();
+  nsIHTMLCollection* Anchors();
   TimeStamp LastFocusTime() const;
   void SetLastFocusTime(const TimeStamp& aFocusTime);
   
@@ -3825,7 +3827,7 @@ class Document : public nsINode,
   void UnlockAllWakeLocks(WakeLockType aType);
 
   
-  HTMLCollection* Children();
+  nsIHTMLCollection* Children();
   uint32_t ChildElementCount();
 
   
@@ -4936,16 +4938,16 @@ class Document : public nsINode,
   nsPropertyTable mPropertyTable;
 
   
-  RefPtr<HTMLCollection> mChildrenCollection;
+  nsCOMPtr<nsIHTMLCollection> mChildrenCollection;
 
   
-  RefPtr<ContentList> mImages;
-  RefPtr<ContentList> mEmbeds;
-  RefPtr<ContentList> mLinks;
-  RefPtr<ContentList> mForms;
-  RefPtr<ContentList> mScripts;
-  RefPtr<HTMLCollection> mApplets;
-  RefPtr<ContentList> mAnchors;
+  RefPtr<nsContentList> mImages;
+  RefPtr<nsContentList> mEmbeds;
+  RefPtr<nsContentList> mLinks;
+  RefPtr<nsContentList> mForms;
+  RefPtr<nsContentList> mScripts;
+  nsCOMPtr<nsIHTMLCollection> mApplets;
+  RefPtr<nsContentList> mAnchors;
 
   
   RefPtr<FontFaceSet> mFontFaceSet;
@@ -5622,7 +5624,7 @@ class Document : public nsINode,
 
   RefPtr<DOMImplementation> mDOMImplementation;
 
-  RefPtr<ContentList> mImageMaps;
+  RefPtr<nsContentList> mImageMaps;
 
   
   nsTHashSet<HTMLImageElement*> mResponsiveContent;
