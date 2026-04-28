@@ -2,7 +2,7 @@
 
 
 let MockFilePicker = SpecialPowers.MockFilePicker;
-MockFilePicker.init(window.browsingContext);
+MockFilePicker.init();
 
 function openTestPage() {
   return BrowserTestUtils.openNewForegroundTab(

@@ -34,8 +34,7 @@ add_setup(async () => {
   );
   gTempDir = do_get_tempdir();
   await IOUtils.writeJSON(PathUtils.join(gTempDir.path, "Local State"), []);
-
-  MockFilePicker.init( { window: globalThis });
+  MockFilePicker.init();
   registerCleanupFunction(() => {
     MockFilePicker.cleanup();
   });
