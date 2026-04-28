@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "gtest/gtest.h"
 #include "mozilla/dom/IntegrityPolicyWAICT.h"
 #include "mozilla/gtest/MozAssertions.h"

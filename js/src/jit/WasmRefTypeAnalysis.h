@@ -3,7 +3,6 @@
 
 
 
-
 #ifndef jit_WasmRefTypeAnalysis_h
 #define jit_WasmRefTypeAnalysis_h
 

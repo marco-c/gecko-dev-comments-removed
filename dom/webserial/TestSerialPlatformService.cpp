@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "TestSerialPlatformService.h"
 
 #include "SerialLogging.h"

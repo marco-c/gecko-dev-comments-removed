@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef ApplicationReputationTelemetryUtils_h_
 #define ApplicationReputationTelemetryUtils_h_
 

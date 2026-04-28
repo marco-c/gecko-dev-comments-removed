@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_intl_AppCollator_h
 #define mozilla_intl_AppCollator_h
 

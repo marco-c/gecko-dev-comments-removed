@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsDocShellTelemetryUtils_h_
 #define nsDocShellTelemetryUtils_h_
 

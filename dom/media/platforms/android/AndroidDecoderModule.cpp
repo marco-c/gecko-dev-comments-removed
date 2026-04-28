@@ -2,7 +2,6 @@
 
 
 
-
 #include <jni.h>
 
 #include "AOMDecoder.h"

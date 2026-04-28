@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_SerialPortIPCTypes_h
 #define mozilla_dom_SerialPortIPCTypes_h
 

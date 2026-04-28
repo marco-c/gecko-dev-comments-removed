@@ -3,7 +3,6 @@
 
 
 
-
 #ifndef gc_LightLock_h
 #define gc_LightLock_h
 

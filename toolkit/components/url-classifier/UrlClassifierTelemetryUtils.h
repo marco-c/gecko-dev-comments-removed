@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef UrlClassifierTelemetryUtils_h_
 #define UrlClassifierTelemetryUtils_h_
 

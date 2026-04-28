@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "SerialPortStreamAlgorithms.h"
 
 #include "SerialLogging.h"

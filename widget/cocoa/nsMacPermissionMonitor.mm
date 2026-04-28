@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsMacPermissionMonitor.h"
 
 #include <CoreLocation/CLError.h>

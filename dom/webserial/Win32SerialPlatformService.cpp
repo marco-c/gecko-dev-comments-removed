@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "Win32SerialPlatformService.h"
 
 #include <cfgmgr32.h>

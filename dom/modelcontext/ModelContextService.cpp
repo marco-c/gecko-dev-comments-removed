@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/ModelContextService.h"
 
 #include "js/JSON.h"

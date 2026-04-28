@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/ModelContextClient.h"
 
 #include "mozilla/StaticPrefs_dom.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 
 const kContentFileUrl = kBaseUrlForContent + "simple_page_ext.html";

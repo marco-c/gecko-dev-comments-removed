@@ -1,4 +1,4 @@
-"use strict"; 
+"use strict";
 
 Services.scriptloader.loadSubScript(
   "chrome://mochikit/content/tests/SimpleTest/WindowSnapshot.js",

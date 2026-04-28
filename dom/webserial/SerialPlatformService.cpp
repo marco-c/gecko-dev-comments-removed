@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/SerialPlatformService.h"
 
 #include "SerialLogging.h"

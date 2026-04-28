@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_MEDIA_EME_EMEORIGINID_H_
 #define DOM_MEDIA_EME_EMEORIGINID_H_
 

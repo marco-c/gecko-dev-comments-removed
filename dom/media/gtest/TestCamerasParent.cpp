@@ -2,8 +2,6 @@
 
 
 
-
-
 #include <memory>
 
 #include "CamerasParent.h"

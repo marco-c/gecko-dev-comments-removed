@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/SerialManagerParent.h"
 
 #include "SerialLogging.h"

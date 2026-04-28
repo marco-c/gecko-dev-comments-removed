@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "RemoteCDMProxy.h"
 
 #include "mozilla/EMEOriginID.h"

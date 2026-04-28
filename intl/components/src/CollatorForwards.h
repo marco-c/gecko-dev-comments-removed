@@ -3,7 +3,6 @@
 
 
 
-
 #ifndef intl_components_CollatorForwards_h
 #define intl_components_CollatorForwards_h
 

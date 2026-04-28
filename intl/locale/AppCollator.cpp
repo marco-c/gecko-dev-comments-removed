@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/intl/AppCollator.h"
 #include "mozilla/intl/LocaleService.h"
 #include "nsString.h"

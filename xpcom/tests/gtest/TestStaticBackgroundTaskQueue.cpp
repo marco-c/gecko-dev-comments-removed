@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "gtest/gtest.h"
 #include "mozilla/StaticBackgroundTaskQueue.h"
 #include "mozilla/SyncRunnable.h"

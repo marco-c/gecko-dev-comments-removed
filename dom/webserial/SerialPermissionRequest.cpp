@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "SerialPermissionRequest.h"
 
 #include "SerialLogging.h"

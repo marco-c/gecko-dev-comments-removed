@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "TestWebAuthnRpIdCommon.h"
 #include "gtest/gtest.h"
 #include "mozilla/Preferences.h"

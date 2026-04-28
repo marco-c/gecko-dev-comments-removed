@@ -8,7 +8,6 @@
 
 
 
-
 #include "nsCachedFaviconProtocolHandler.h"
 #include "nsFaviconService.h"
 #include "nsICancelable.h"

@@ -2,7 +2,6 @@
 
 
 
-
 #include "SimpleMap.h"
 #include "gtest/gtest.h"
 #include "nsString.h"

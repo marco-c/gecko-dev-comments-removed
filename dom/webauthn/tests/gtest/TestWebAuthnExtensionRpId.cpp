@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "TestWebAuthnRpIdCommon.h"
 #include "gtest/gtest.h"
 #include "js/RootingAPI.h"

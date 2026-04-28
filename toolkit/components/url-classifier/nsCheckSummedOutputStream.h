@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsCheckSummedOutputStream_h_
 #define nsCheckSummedOutputStream_h_
 

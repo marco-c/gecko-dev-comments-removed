@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "BufferMediaResource.h"
 #include "gtest/gtest.h"
 #include "mozilla/RefPtr.h"

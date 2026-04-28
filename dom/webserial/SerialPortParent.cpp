@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/SerialPortParent.h"
 
 #include "SerialLogging.h"

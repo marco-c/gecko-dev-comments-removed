@@ -15,7 +15,6 @@
 
 
 
-
 #ifndef wasm_stacks_h
 #define wasm_stacks_h
 

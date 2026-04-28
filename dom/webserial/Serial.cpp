@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/Serial.h"
 
 #include "Navigator.h"

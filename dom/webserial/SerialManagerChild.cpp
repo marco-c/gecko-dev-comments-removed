@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/SerialManagerChild.h"
 
 #include "mozilla/dom/PSerialPort.h"

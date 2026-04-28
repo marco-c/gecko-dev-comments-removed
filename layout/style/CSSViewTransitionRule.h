@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef CSSViewTransitionRule_h_
 #define CSSViewTransitionRule_h_
 

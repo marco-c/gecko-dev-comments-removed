@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsUrlClassifierStreamUpdater_h_
 #define nsUrlClassifierStreamUpdater_h_
 

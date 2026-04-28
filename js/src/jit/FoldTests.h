@@ -3,7 +3,6 @@
 
 
 
-
 #ifndef jit_FoldTests_h
 #define jit_FoldTests_h
 

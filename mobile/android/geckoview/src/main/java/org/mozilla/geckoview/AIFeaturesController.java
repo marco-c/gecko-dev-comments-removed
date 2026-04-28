@@ -3,7 +3,6 @@
 
 
 
-
 package org.mozilla.geckoview;
 
 import android.util.Log;

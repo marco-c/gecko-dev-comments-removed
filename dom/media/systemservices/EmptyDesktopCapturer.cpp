@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/media/DesktopCaptureInterface.h"
 
 #ifndef DOM_MEDIA_SYSTEMSERVICES_EMPTYDESKTOPCAPTURER_H_

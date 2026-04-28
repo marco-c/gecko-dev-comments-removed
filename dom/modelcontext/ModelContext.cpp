@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/ModelContext.h"
 
 #include "js/JSON.h"

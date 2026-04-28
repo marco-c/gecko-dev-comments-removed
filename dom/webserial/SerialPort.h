@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_SerialPort_h
 #define mozilla_dom_SerialPort_h
 
@@ -113,7 +111,9 @@ class SerialPort final : public DOMEventTargetHelper {
 
   MOZ_CAN_RUN_SCRIPT ReadableStream* CreateReadableStream();
   MOZ_CAN_RUN_SCRIPT WritableStream* CreateWritableStream();
-  MOZ_CAN_RUN_SCRIPT void CloseStreams();
+  void CloseAfterStreamsClosed();
+  void SettleClosePromise(nsresult aResult);
+  MOZ_CAN_RUN_SCRIPT already_AddRefed<Promise> CloseStreams();
   void NotifySharingStateChanged(bool aConnected);
   void UpdateWorkerRef();
 

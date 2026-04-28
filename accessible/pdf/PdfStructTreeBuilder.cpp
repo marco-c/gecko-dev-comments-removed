@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/a11y/DocAccessible.h"
 #include "mozilla/a11y/DocAccessibleParent.h"
 #include "mozilla/a11y/PdfStructTreeBuilder.h"

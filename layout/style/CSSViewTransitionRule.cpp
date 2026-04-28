@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/CSSViewTransitionRule.h"
 
 #include "mozilla/ServoBindings.h"

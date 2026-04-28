@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsCachedFaviconProtocolHandler_h_
 #define nsCachedFaviconProtocolHandler_h_
 

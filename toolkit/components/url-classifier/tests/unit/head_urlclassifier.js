@@ -1,4 +1,3 @@
-
 function dumpn(s) {
   dump(s + "\n");
 }

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef CSSAppearanceBaseRule_h_
 #define CSSAppearanceBaseRule_h_
 

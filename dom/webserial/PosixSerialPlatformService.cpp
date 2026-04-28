@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "PosixSerialPlatformService.h"
 
 #include <dirent.h>

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_StaticBackgroundTaskQueue_h
 #define mozilla_StaticBackgroundTaskQueue_h
 

@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef include_dom_media_ipc_RemoteMediaDataEncoder_h
 #define include_dom_media_ipc_RemoteMediaDataEncoder_h
 

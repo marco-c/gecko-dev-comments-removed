@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/StaticBackgroundTaskQueue.h"
 
 #include "nsThreadUtils.h"

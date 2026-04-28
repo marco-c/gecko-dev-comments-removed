@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef PdfStructTreeBuilder_h_
 #define PdfStructTreeBuilder_h_
 

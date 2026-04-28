@@ -1,5 +1,5 @@
 
-"use strict"; 
+"use strict";
 const contentBase =
   "https://example.com/browser/toolkit/components/windowcreator/test/";
 const chromeBase =

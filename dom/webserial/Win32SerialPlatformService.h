@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_Win32SerialPlatformService_h
 #define mozilla_dom_Win32SerialPlatformService_h
 

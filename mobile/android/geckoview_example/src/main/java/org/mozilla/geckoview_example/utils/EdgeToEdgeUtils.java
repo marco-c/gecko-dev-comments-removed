@@ -2,8 +2,6 @@
 
 
 
-
-
 package org.mozilla.geckoview_example.utils;
 
 import android.os.Build;
