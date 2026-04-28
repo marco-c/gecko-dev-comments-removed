@@ -834,6 +834,7 @@ class BrowserLanguagesSetting extends Preferences.AsyncSetting {
   
   #pendingLocales = null;
   #installing = false;
+  #installError = false;
 
   get currentLocale() {
     return Services.locale.appLocaleAsBCP47;
@@ -849,6 +850,10 @@ class BrowserLanguagesSetting extends Preferences.AsyncSetting {
 
   get installing() {
     return this.#installing;
+  }
+
+  get installError() {
+    return this.#installError;
   }
 
   
@@ -933,6 +938,7 @@ class BrowserLanguagesSetting extends Preferences.AsyncSetting {
 
 
   async setPreferred(code, remoteLocales = []) {
+    this.#installError = false;
     if (code == this.currentLocale) {
       this.#pendingLocales = null;
       this.emitChange();
@@ -940,6 +946,7 @@ class BrowserLanguagesSetting extends Preferences.AsyncSetting {
     }
     let locale = await this.#ensureLocaleInstalled(code, remoteLocales);
     if (!locale) {
+      this.#installError = true;
       this.emitChange();
       return;
     }
@@ -1062,6 +1069,7 @@ class BrowserLanguagePreferredSetting extends Preferences.AsyncSetting {
 
 
   async set(code) {
+    
     let remote =  (this.#remoteLocales.value) || [];
     return this.#languages.setPreferred(code, remote);
   }
@@ -1076,6 +1084,7 @@ class BrowserLanguagePreferredSetting extends Preferences.AsyncSetting {
 
   async getControlConfig() {
     let installed = await this.#languages.installedLocales;
+    
     let remote =  (this.#remoteLocales.value) || [];
     remote = remote.filter(r => !installed.some(i => i.code == r.code));
     return {
@@ -1150,7 +1159,7 @@ class BrowserLanguageFallbackSetting extends Preferences.AsyncSetting {
 Preferences.addSetting(BrowserLanguageFallbackSetting);
 
 Preferences.addSetting({
-  id: "browserLanguageRestart",
+  id: "browserLanguageMessage",
   deps: ["browserLanguages"],
   visible(deps) {
     let handler =  (
@@ -1159,7 +1168,7 @@ Preferences.addSetting({
     let setting =  (
        (handler.asyncSetting)
     );
-    return Boolean(setting.restartRequired);
+    return setting.restartRequired || setting.installError;
   },
 });
 
@@ -3271,7 +3280,7 @@ SettingGroupManager.registerGroups({
         control: "moz-select",
       },
       {
-        id: "browserLanguageRestart",
+        id: "browserLanguageMessage",
         control: "browser-language-restart-message",
       },
     ],
