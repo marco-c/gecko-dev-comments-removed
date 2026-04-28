@@ -13,11 +13,24 @@ class nsIURI;
 
 namespace mozilla::dom {
 
+#define MOZ_BLOBURLCHANNEL_IID \
+  {0xe6d2a388, 0x0007, 0x42e4, {0xbf, 0x0b, 0xa1, 0x2b, 0xc8, 0x1a, 0x8c, 0x1f}}
+
 class BlobImpl;
 
 class BlobURLChannel final : public nsBaseChannel {
  public:
+  NS_INLINE_DECL_STATIC_IID(MOZ_BLOBURLCHANNEL_IID)
+
+  NS_DECL_ISUPPORTS_INHERITED
+
   BlobURLChannel(nsIURI* aURI, nsILoadInfo* aLoadInfo);
+
+  
+  
+  
+  nsresult GetBackingBlob(BlobImpl** aBlobImpl);
+  nsresult SetBackingBlob(BlobImpl* aBlobImpl);
 
   NS_IMETHOD SetContentType(const nsACString& aContentType) override;
 
@@ -28,6 +41,7 @@ class BlobURLChannel final : public nsBaseChannel {
                              nsIChannel** aChannel) override;
 
   bool mContentStreamOpened;
+  RefPtr<BlobImpl> mBlobImpl;
 };
 
 }  
