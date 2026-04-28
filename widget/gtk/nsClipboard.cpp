@@ -35,15 +35,15 @@
 #include "WidgetUtilsGtk.h"
 
 #include "imgIContainer.h"
+#include "mozilla/widget/nsGtkHtmlUtils.h"
 
 #include <gtk/gtk.h>
 #if defined(MOZ_X11)
 #  include <gtk/gtkx.h>
 #endif
 
-#include "mozilla/Encoding.h"
-
 using namespace mozilla;
+using namespace mozilla::widget;
 
 
 
@@ -53,11 +53,6 @@ const int kClipboardTimeout = 1000000;
 
 
 const int kClipboardFastIterationNum = 3;
-
-
-
-static const char kHTMLMarkupPrefix[] =
-    R"(<meta http-equiv="content-type" content="text/html; charset=utf-8">)";
 
 static const char kURIListMime[] = "text/uri-list";
 
@@ -80,8 +75,6 @@ static void clipboard_clear_cb(GtkClipboard* aGtkClipboard, gpointer user_data);
 static void clipboard_owner_change_cb(GtkClipboard* aGtkClipboard,
                                       GdkEventOwnerChange* aEvent,
                                       gpointer aUserData);
-
-static bool GetHTMLCharset(Span<const char> aData, nsCString& str);
 
 ClipboardTargets ClipboardTargets::Clone() {
   ClipboardTargets ret;
@@ -449,59 +442,14 @@ static already_AddRefed<nsIFile> GetFileData(const nsACString& aURIList) {
 }
 
 static already_AddRefed<nsISupports> GetHTMLData(Span<const char> aData) {
-  nsLiteralCString mimeType(kHTMLMime);
-
-  
-  nsAutoCString charset;
-  if (!GetHTMLCharset(aData, charset)) {
-    
-    MOZ_CLIPBOARD_LOG(
-        "Failed to get html/text encoding, fall back to utf-8.\n");
-    charset.AssignLiteral("utf-8");
-  }
-
-  MOZ_CLIPBOARD_LOG("GetHTMLData: HTML detected charset %s", charset.get());
-  
-  
-  auto encoding = Encoding::ForLabelNoReplacement(charset);
-  if (!encoding) {
-    MOZ_CLIPBOARD_LOG("GetHTMLData: get unicode decoder error (charset: %s)",
-                      charset.get());
-    return nullptr;
-  }
-
-  
-  
-  if (encoding == UTF_16LE_ENCODING || encoding == UTF_16BE_ENCODING) {
-    encoding = UTF_8_ENCODING;
-  }
-
-  
-  
-  const size_t prefixLen = std::size(kHTMLMarkupPrefix) - 1;
-  if (aData.Length() >= prefixLen && nsDependentCSubstring(aData.To(prefixLen))
-                                         .EqualsLiteral(kHTMLMarkupPrefix)) {
-    aData = aData.From(prefixLen);
-  }
-
   nsAutoString unicodeData;
-  auto [rv, enc] = encoding->Decode(AsBytes(aData), unicodeData);
-#if MOZ_LOGGING
-  if (enc != UTF_8_ENCODING && MOZ_CLIPBOARD_LOG_ENABLED()) {
-    nsCString decoderName;
-    enc->Name(decoderName);
-    MOZ_CLIPBOARD_LOG("GetHTMLData: expected UTF-8 decoder but got %s",
-                      decoderName.get());
-  }
-#endif
-  if (NS_FAILED(rv)) {
+  if (!DecodeHTMLData(aData, unicodeData)) {
     MOZ_CLIPBOARD_LOG("GetHTMLData: failed to decode HTML");
     return nullptr;
   }
-
   nsCOMPtr<nsISupports> wrapper;
   nsPrimitiveHelpers::CreatePrimitiveForData(
-      mimeType, (const char*)unicodeData.BeginReading(),
+      nsLiteralCString(kHTMLMime), (const char*)unicodeData.BeginReading(),
       unicodeData.Length() * sizeof(char16_t), getter_AddRefs(wrapper));
   return wrapper.forget();
 }
@@ -1176,18 +1124,18 @@ void nsClipboard::SelectionGetEvent(GtkClipboard* aClipboard,
                                                  kJPGImageMime, kGIFImageMime};
     nsCOMPtr<nsISupports> imageItem;
     nsCOMPtr<imgIContainer> image;
-    for (uint32_t i = 0; i < std::size(imageMimeTypes); i++) {
-      rv = trans->GetTransferData(imageMimeTypes[i], getter_AddRefs(imageItem));
+    for (auto imageMimeType : imageMimeTypes) {
+      rv = trans->GetTransferData(imageMimeType, getter_AddRefs(imageItem));
       if (NS_FAILED(rv)) {
         MOZ_CLIPBOARD_LOG("    %s is missing at GetTransferData()\n",
-                          imageMimeTypes[i]);
+                          imageMimeType);
         continue;
       }
 
       image = do_QueryInterface(imageItem);
       if (image) {
         MOZ_CLIPBOARD_LOG("    %s is available at GetTransferData()\n",
-                          imageMimeTypes[i]);
+                          imageMimeType);
         break;
       }
     }
@@ -1393,49 +1341,4 @@ void clipboard_owner_change_cb(GtkClipboard* aGtkClipboard,
   MOZ_CLIPBOARD_LOG("clipboard_owner_change_cb() callback\n");
   nsClipboard* clipboard = static_cast<nsClipboard*>(aUserData);
   clipboard->OwnerChangedEvent(aGtkClipboard, aEvent);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-bool GetHTMLCharset(Span<const char> aData, nsCString& aFoundCharset) {
-  
-  const nsDependentCSubstring htmlStr(aData);
-  nsACString::const_iterator start, end;
-  htmlStr.BeginReading(start);
-  htmlStr.EndReading(end);
-  nsACString::const_iterator valueStart(start), valueEnd(start);
-
-  if (CaseInsensitiveFindInReadable("CONTENT=\"text/html;"_ns, start, end)) {
-    start = end;
-    htmlStr.EndReading(end);
-
-    if (CaseInsensitiveFindInReadable("charset="_ns, start, end)) {
-      valueStart = end;
-      start = end;
-      htmlStr.EndReading(end);
-
-      if (FindCharInReadable('"', start, end)) valueEnd = start;
-    }
-  }
-  
-  if (valueStart != valueEnd) {
-    aFoundCharset = Substring(valueStart, valueEnd);
-    ToUpperCase(aFoundCharset);
-    return true;
-  }
-  return false;
 }
