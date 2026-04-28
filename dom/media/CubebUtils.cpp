@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "CubebUtils.h"
 
 #include "audio_thread_priority.h"
@@ -26,6 +24,7 @@
 
 #include <algorithm>
 
+#include "nsAppRunner.h"
 #include "nsContentUtils.h"
 #include "nsDebug.h"
 #include "nsIStringBundle.h"
@@ -565,7 +564,7 @@ void InitBrandName() {
     if (NS_SUCCEEDED(rv)) {
       rv = brandBundle->GetStringFromName("brandShortName", brandName);
       NS_WARNING_ASSERTION(
-          NS_SUCCEEDED(rv),
+          NS_SUCCEEDED(rv) || mozilla::RunningGTest(),
           "Could not get the program name for a cubeb stream.");
     }
   }
