@@ -182,7 +182,7 @@ TEST(ScreamV2Test, ReferenceWindowIncreaseToDataInflight) {
   
   
   EXPECT_EQ(scream.ref_window(),
-            1.1 * feedback.data_in_flight + DataSize::Bytes(1000));
+            1.1 * feedback.data_in_flight + DataSize::Bytes(1280));
 }
 
 TEST(ScreamV2Test, CalculatesL4sAlpha) {

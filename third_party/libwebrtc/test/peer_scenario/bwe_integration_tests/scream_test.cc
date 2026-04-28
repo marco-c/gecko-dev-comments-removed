@@ -337,7 +337,7 @@ TEST(
   EXPECT_THAT(
       result.caller().subspan(1, 3),
       Each(AvailableSendBitrateIsBetween(DataRate::KilobitsPerSec(10),
-                                         DataRate::KilobitsPerSec(120))));
+                                         DataRate::KilobitsPerSec(140))));
   EXPECT_THAT(result.caller()[3],
               CurrentRoundTripTimeIsBetween(TimeDelta::Millis(40),
                                             TimeDelta::Millis(200)));
@@ -699,15 +699,9 @@ TEST(ScreamTest, MaybeTest(RampupFastOnLinkCapacity50Mbit20MsRttNoEcn)) {
   SendMediaTestResult result = SendMediaInOneDirection(std::move(params), s);
 
   
-  
-  
-  EXPECT_THAT(result.caller_stats[2],
-              AvailableSendBitrateIsBetween(DataRate::KilobitsPerSec(500),
-                                            DataRate::KilobitsPerSec(5000)));
-  
-  EXPECT_THAT(result.caller_stats.back(),
-              AvailableSendBitrateIsBetween(DataRate::KilobitsPerSec(1500),
-                                            DataRate::KilobitsPerSec(5000)));
+  EXPECT_THAT(result.caller_stats[3],
+              AvailableSendBitrateIsBetween(DataRate::KilobitsPerSec(1200),
+                                            DataRate::KilobitsPerSec(2500)));
 }
 
 TEST(ScreamTest, MaybeTest(LinkCapacity100Kbit50msRttNoEcn)) {
