@@ -3195,6 +3195,7 @@ pref("dom.webnotifications.requireinteraction.count", 3);
 pref("full-screen-api.transition.timeout", 1000);
 
 pref("full-screen-api.warning.timeout", 3000);
+pref("full-screen-api.keyboardlock-warning.timeout", 4000);
 
 pref("full-screen-api.warning.delay", 500);
 
