@@ -43,11 +43,19 @@ async function openFolder(details) {
 }
 
 async function waitForNestedListRows(nestedList) {
+  info("waiting for nested list rows to render");
   await BrowserTestUtils.waitForMutationCondition(
     nestedList.shadowRoot,
     { childList: true, subtree: true },
     () => !!nestedList.rowEls.length || !!nestedList.folderEls.length
   );
+  info("rowEls or folderEls found");
+  if (nestedList.rowEls.length) {
+    for (const rowEl of nestedList.rowEls) {
+      await rowEl.updateComplete;
+    }
+  }
+  info("rowEls updateComplete");
 }
 
 add_task(async function test_arrow_down_into_expanded_folder() {
@@ -198,6 +206,7 @@ add_task(async function test_arrow_down_from_last_row_to_next_folder() {
   await openFolder(toolbarDetails);
 
   const nestedList = toolbarDetails.querySelector("sidebar-bookmark-list");
+  nestedList.scrollIntoView();
   await BrowserTestUtils.waitForMutationCondition(
     nestedList.shadowRoot,
     { childList: true, subtree: true },
@@ -218,15 +227,35 @@ add_task(async function test_arrow_down_from_last_row_to_next_folder() {
   const folder1NestedList = folder1Details.querySelector(
     "sidebar-bookmark-list"
   );
+  folder1Details.scrollIntoView();
   await waitForNestedListRows(folder1NestedList);
 
   const lastRow = folder1NestedList.rowEls[folder1NestedList.rowEls.length - 1];
   lastRow.focus();
 
-  const folder2Summary = folder2Details.querySelector("summary");
   info("ArrowDown from last row should navigate to next folder summary.");
-  await focusWithKeyboard(folder2Summary, "KEY_ArrowDown", contentWindow);
-  ok(isActiveElement(folder2Summary), "Folder Two summary is focused.");
+  await SimpleTest.promiseFocus(contentWindow);
+  EventUtils.synthesizeKey("KEY_ArrowDown", {}, contentWindow);
+  await BrowserTestUtils.waitForMutationCondition(
+    nestedList.shadowRoot,
+    { childList: true, subtree: true },
+    () => {
+      const folderTwo = [...nestedList.folderEls].find(
+        d => d.querySelector("summary")?.textContent.trim() === "Folder Two"
+      );
+      return folderTwo && isActiveElement(folderTwo.querySelector("summary"));
+    }
+  );
+  ok(
+    isActiveElement(
+      [...nestedList.folderEls]
+        .find(
+          d => d.querySelector("summary")?.textContent.trim() === "Folder Two"
+        )
+        ?.querySelector("summary")
+    ),
+    "Folder Two summary is focused."
+  );
 
   SidebarTestUtils.closePanel(window);
 });
@@ -410,6 +439,7 @@ add_task(async function test_arrow_up_enters_previous_expanded_folder() {
   await openFolder(toolbarDetails);
 
   const nestedList = toolbarDetails.querySelector("sidebar-bookmark-list");
+  nestedList.scrollIntoView();
   await BrowserTestUtils.waitForMutationCondition(
     nestedList.shadowRoot,
     { childList: true, subtree: true },
@@ -427,18 +457,34 @@ add_task(async function test_arrow_up_enters_previous_expanded_folder() {
   const folder1NestedList = folder1Details.querySelector(
     "sidebar-bookmark-list"
   );
+  
+  
+  folder1Details.scrollIntoView();
   await waitForNestedListRows(folder1NestedList);
 
   const folder2Summary = folder2Details.querySelector("summary");
   folder2Summary.focus();
 
-  const lastRow = folder1NestedList.rowEls[folder1NestedList.rowEls.length - 1];
   info(
     "ArrowUp from folder header should focus last item of previous expanded folder."
   );
-  await focusWithKeyboard(lastRow, "KEY_ArrowUp", contentWindow);
+  await SimpleTest.promiseFocus(contentWindow);
+
+  EventUtils.synthesizeKey("KEY_ArrowUp", {}, contentWindow);
+
+  await BrowserTestUtils.waitForMutationCondition(
+    folder1NestedList.shadowRoot,
+    { childList: true, subtree: true },
+    () => {
+      const rows = folder1NestedList.rowEls;
+      return !!rows.length && isActiveElement(rows[rows.length - 1]);
+    }
+  );
+  info("Last row in expanded previous folder is focused.");
   ok(
-    isActiveElement(lastRow),
+    isActiveElement(
+      folder1NestedList.rowEls[folder1NestedList.rowEls.length - 1]
+    ),
     "Last row in expanded previous folder is focused."
   );
 
