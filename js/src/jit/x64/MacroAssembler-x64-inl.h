@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef jit_x64_MacroAssembler_x64_inl_h
 #define jit_x64_MacroAssembler_x64_inl_h
 
@@ -945,6 +943,13 @@ void MacroAssembler::branchTestMagic(Condition cond, const Address& valaddr,
                                      JSWhyMagic why, Label* label) {
   uint64_t magic = MagicValue(why).asRawBits();
   cmpPtr(valaddr, ImmWord(magic));
+  j(cond, label);
+}
+
+void MacroAssembler::branchTestMagic(Condition cond, const BaseIndex& valaddr,
+                                     JSWhyMagic why, Label* label) {
+  uint64_t magic = MagicValue(why).asRawBits();
+  cmpPtr(Operand(valaddr), ImmWord(magic));
   j(cond, label);
 }
 

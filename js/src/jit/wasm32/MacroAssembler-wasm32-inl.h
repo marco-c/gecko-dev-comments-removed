@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef jit_wasm32_MacroAssembler_wasm32_inl_h
 #define jit_wasm32_MacroAssembler_wasm32_inl_h
 
@@ -633,6 +631,11 @@ void MacroAssembler::branchTestMagic(Condition cond, const BaseIndex& address,
 }
 
 void MacroAssembler::branchTestMagic(Condition cond, const Address& valaddr,
+                                     JSWhyMagic why, Label* label) {
+  MOZ_CRASH();
+}
+
+void MacroAssembler::branchTestMagic(Condition cond, const BaseIndex& valaddr,
                                      JSWhyMagic why, Label* label) {
   MOZ_CRASH();
 }
