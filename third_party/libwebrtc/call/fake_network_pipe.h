@@ -17,8 +17,8 @@
 #include <map>
 #include <memory>
 #include <optional>
+#include <span>
 
-#include "api/array_view.h"
 #include "api/call/transport.h"
 #include "api/test/simulated_network.h"
 #include "call/simulated_packet_receiver.h"
@@ -133,10 +133,10 @@ class FakeNetworkPipe : public SimulatedPacketReceiverInterface {
   
   
   
-  bool SendRtp(ArrayView<const uint8_t> packet,
+  bool SendRtp(std::span<const uint8_t> packet,
                const PacketOptions& options,
                Transport* transport);
-  bool SendRtcp(ArrayView<const uint8_t> packet, Transport* transport);
+  bool SendRtcp(std::span<const uint8_t> packet, Transport* transport);
 
   
   
