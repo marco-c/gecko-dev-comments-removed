@@ -10,11 +10,10 @@
 
 #include "modules/video_coding/loss_notification_controller.h"
 
-#include <stdint.h>
-
 #include <cstddef>
+#include <cstdint>
+#include <span>
 
-#include "api/array_view.h"
 #include "api/sequence_checker.h"
 #include "modules/include/module_common_types.h"
 #include "rtc_base/checks.h"
@@ -114,7 +113,7 @@ void LossNotificationController::OnAssembledFrame(
     uint16_t first_seq_num,
     int64_t frame_id,
     bool discardable,
-    ArrayView<const int64_t> frame_dependencies) {
+    std::span<const int64_t> frame_dependencies) {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
 
   DiscardOldInformation();  
@@ -140,7 +139,7 @@ void LossNotificationController::DiscardOldInformation() {
 }
 
 bool LossNotificationController::AllDependenciesDecodable(
-    ArrayView<const int64_t> frame_dependencies) const {
+    std::span<const int64_t> frame_dependencies) const {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
 
   

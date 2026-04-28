@@ -14,10 +14,10 @@
 #include <limits>
 #include <memory>
 #include <ostream>
+#include <span>
 #include <utility>
 #include <vector>
 
-#include "api/array_view.h"
 #include "api/video/video_codec_type.h"
 #include "api/video/video_frame_type.h"
 #include "common_video/h264/h264_common.h"
@@ -48,7 +48,7 @@ void IgnoreResult(PacketBuffer::InsertResult ) {}
 
 
 std::vector<uint16_t> StartSeqNums(
-    ArrayView<const std::unique_ptr<PacketBuffer::Packet>> packets) {
+    std::span<const std::unique_ptr<PacketBuffer::Packet>> packets) {
   std::vector<uint16_t> result;
   bool frame_boundary = true;
   for (const auto& packet : packets) {
@@ -117,7 +117,7 @@ class PacketBufferTest : public ::testing::Test {
                                   IsKeyFrame keyframe,  
                                   IsFirst first,  
                                   IsLast last,    
-                                  ArrayView<const uint8_t> data = {},
+                                  std::span<const uint8_t> data = {},
                                   uint32_t timestamp = 123u) {  
     auto packet = std::make_unique<PacketBuffer::Packet>();
     packet->video_header.codec = kVideoCodecGeneric;
@@ -421,7 +421,7 @@ class PacketBufferH264Test : public PacketBufferTest {
       IsFirst first,        
       IsLast last,          
       uint32_t timestamp,   
-      ArrayView<const uint8_t> data = {},
+      std::span<const uint8_t> data = {},
       uint32_t width = 0,      
       uint32_t height = 0,     
       bool generic = false) {  
@@ -459,7 +459,7 @@ class PacketBufferH264Test : public PacketBufferTest {
       IsFirst first,        
       IsLast last,          
       uint32_t timestamp,   
-      ArrayView<const uint8_t> data = {},
+      std::span<const uint8_t> data = {},
       uint32_t width = 0,     
       uint32_t height = 0) {  
     auto packet = std::make_unique<PacketBuffer::Packet>();

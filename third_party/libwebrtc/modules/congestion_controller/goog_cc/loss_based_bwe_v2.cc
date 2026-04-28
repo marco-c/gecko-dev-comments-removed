@@ -16,10 +16,10 @@
 #include <cstdlib>
 #include <limits>
 #include <optional>
+#include <span>
 #include <vector>
 
 #include "absl/algorithm/container.h"
-#include "api/array_view.h"
 #include "api/field_trials_view.h"
 #include "api/transport/network_types.h"
 #include "api/units/data_rate.h"
@@ -187,7 +187,7 @@ void LossBasedBweV2::SetMinMaxBitrate(DataRate min_bitrate,
 }
 
 void LossBasedBweV2::UpdateBandwidthEstimate(
-    ArrayView<const PacketResult> packet_results,
+    std::span<const PacketResult> packet_results,
     DataRate delay_based_estimate,
     bool in_alr) {
   delay_based_estimate_ = delay_based_estimate;
@@ -224,7 +224,12 @@ void LossBasedBweV2::UpdateBandwidthEstimate(
     NewtonsMethodUpdate(candidate);
 
     const double candidate_objective = GetObjective(candidate);
-    if (candidate_objective > objective_max) {
+    if (candidate_objective > objective_max ||
+        (candidate_objective == objective_max &&
+         candidate.loss_limited_bandwidth >
+             best_candidate.loss_limited_bandwidth)) {
+      
+      
       objective_max = candidate_objective;
       best_candidate = candidate;
     }
@@ -1142,7 +1147,7 @@ void LossBasedBweV2::NewtonsMethodUpdate(
 }
 
 bool LossBasedBweV2::PushBackObservation(
-    ArrayView<const PacketResult> packet_results) {
+    std::span<const PacketResult> packet_results) {
   if (packet_results.empty()) {
     return false;
   }

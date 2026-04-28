@@ -12,9 +12,9 @@
 
 #include <stdint.h>
 
+#include <span>
 #include <vector>
 
-#include "api/array_view.h"
 #include "api/video/video_bitrate_allocation.h"
 #include "common_video/generic_frame_descriptor/generic_frame_info.h"
 #include "modules/video_coding/chain_diff_calculator.h"
@@ -43,7 +43,7 @@ class ScalabilityStructureWrapper {
   
   
   
-  bool FrameReferencesAreValid(ArrayView<const GenericFrameInfo> frames) const;
+  bool FrameReferencesAreValid(std::span<const GenericFrameInfo> frames) const;
 
  private:
   ScalableVideoController& structure_controller_;

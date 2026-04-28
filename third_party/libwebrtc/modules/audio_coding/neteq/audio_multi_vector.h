@@ -15,9 +15,9 @@
 #include <string.h>
 
 #include <memory>
+#include <span>
 #include <vector>
 
-#include "api/array_view.h"
 #include "api/audio/audio_view.h"
 #include "modules/audio_coding/neteq/audio_vector.h"
 
@@ -55,7 +55,7 @@ class AudioMultiVector {
   
   
   
-  void PushBackInterleaved(ArrayView<const int16_t> append_this);
+  void PushBackInterleaved(std::span<const int16_t> append_this);
 
   
   

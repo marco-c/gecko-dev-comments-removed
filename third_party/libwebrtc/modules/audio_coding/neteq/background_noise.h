@@ -15,8 +15,7 @@
 
 #include <cstdint>
 #include <memory>
-
-#include "api/array_view.h"
+#include <span>
 
 namespace webrtc {
 
@@ -46,7 +45,7 @@ class BackgroundNoise {
 
   
   
-  void GenerateBackgroundNoise(ArrayView<const int16_t> random_vector,
+  void GenerateBackgroundNoise(std::span<const int16_t> random_vector,
                                size_t channel,
                                int mute_slope,
                                bool too_many_expands,
@@ -70,7 +69,7 @@ class BackgroundNoise {
 
   
   
-  void SetFilterState(size_t channel, ArrayView<const int16_t> input);
+  void SetFilterState(size_t channel, std::span<const int16_t> input);
 
   
   int16_t Scale(size_t channel) const;

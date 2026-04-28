@@ -13,16 +13,16 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <span>
 #include <vector>
 
-#include "api/array_view.h"
 #include "api/audio/audio_frame.h"
 
 namespace webrtc {
 
 
 
-void DownMixFrame(const AudioFrame& input, ArrayView<int16_t> output);
+void DownMixFrame(const AudioFrame& input, std::span<int16_t> output);
 
 
 

@@ -10,13 +10,12 @@
 
 #include "modules/audio_coding/neteq/normal.h"
 
-#include <string.h>  
-
 #include <algorithm>  
 #include <cstdint>
+#include <cstring>  
 #include <memory>
+#include <span>
 
-#include "api/array_view.h"
 #include "api/neteq/neteq.h"
 #include "common_audio/signal_processing/dot_product_with_scale.h"
 #include "common_audio/signal_processing/include/signal_processing_library.h"
@@ -47,7 +46,7 @@ int Normal::Process(const int16_t* input,
     output->Clear();
     return 0;
   }
-  output->PushBackInterleaved(ArrayView<const int16_t>(input, length));
+  output->PushBackInterleaved(std::span<const int16_t>(input, length));
 
   const int fs_mult = fs_hz_ / 8000;
   RTC_DCHECK_GT(fs_mult, 0);

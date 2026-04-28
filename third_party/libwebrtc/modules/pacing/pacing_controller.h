@@ -17,10 +17,10 @@
 #include <array>
 #include <memory>
 #include <optional>
+#include <span>
 #include <vector>
 
 #include "absl/base/attributes.h"
-#include "api/array_view.h"
 #include "api/field_trials_view.h"
 #include "api/rtp_packet_sender.h"
 #include "api/transport/network_types.h"
@@ -59,7 +59,7 @@ class PacingController {
     
     virtual void OnAbortedRetransmissions(
         uint32_t ,
-        ArrayView<const uint16_t> ) {}
+        std::span<const uint16_t> ) {}
     virtual std::optional<uint32_t> GetRtxSsrcForMedia(
         uint32_t ) const {
       return std::nullopt;
@@ -133,7 +133,7 @@ class PacingController {
   void EnqueuePacket(std::unique_ptr<RtpPacketToSend> packet);
 
   void CreateProbeClusters(
-      ArrayView<const ProbeClusterConfig> probe_cluster_configs);
+      std::span<const ProbeClusterConfig> probe_cluster_configs);
 
   void Pause();   
   void Resume();  

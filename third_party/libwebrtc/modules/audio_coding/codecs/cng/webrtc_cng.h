@@ -14,8 +14,8 @@
 #include <stdint.h>
 
 #include <cstddef>
+#include <span>
 
-#include "api/array_view.h"
 #include "rtc_base/buffer.h"
 
 #define WEBRTC_CNG_MAX_LPC_ORDER 12
@@ -34,7 +34,7 @@ class ComfortNoiseDecoder {
 
   
   
-  void UpdateSid(ArrayView<const uint8_t> sid);
+  void UpdateSid(std::span<const uint8_t> sid);
 
   
   
@@ -43,7 +43,7 @@ class ComfortNoiseDecoder {
   
   
   
-  bool Generate(ArrayView<int16_t> out_data, bool new_period);
+  bool Generate(std::span<int16_t> out_data, bool new_period);
 
  private:
   uint32_t dec_seed_;
@@ -79,7 +79,7 @@ class ComfortNoiseEncoder {
   
   
   
-  size_t Encode(ArrayView<const int16_t> speech,
+  size_t Encode(std::span<const int16_t> speech,
                 bool force_sid,
                 Buffer* output);
 

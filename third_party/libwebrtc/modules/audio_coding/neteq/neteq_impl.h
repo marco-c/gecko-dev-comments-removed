@@ -16,9 +16,9 @@
 #include <map>
 #include <memory>
 #include <optional>
+#include <span>
 #include <vector>
 
-#include "api/array_view.h"
 #include "api/audio/audio_frame.h"
 #include "api/audio_codecs/audio_decoder.h"
 #include "api/audio_codecs/audio_decoder_factory.h"
@@ -130,7 +130,7 @@ class NetEqImpl : public NetEq {
   NetEqImpl& operator=(const NetEqImpl&) = delete;
 
   int InsertPacket(const RTPHeader& rtp_header,
-                   ArrayView<const uint8_t> payload) override {
+                   std::span<const uint8_t> payload) override {
     return InsertPacket(
         rtp_header, payload,
         RtpPacketInfo(rtp_header, Timestamp::MinusInfinity()));
@@ -138,7 +138,7 @@ class NetEqImpl : public NetEq {
 
   
   int InsertPacket(const RTPHeader& rtp_header,
-                   ArrayView<const uint8_t> payload,
+                   std::span<const uint8_t> payload,
                    const RtpPacketInfo& packet_info) override;
 
   int GetAudio(

@@ -14,9 +14,9 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <span>
 
 #include "absl/strings/string_view.h"
-#include "api/array_view.h"
 
 namespace webrtc {
 namespace test {
@@ -44,7 +44,7 @@ class AudioLoop {
 
   
   
-  ArrayView<const int16_t> GetNextBlock();
+  std::span<const int16_t> GetNextBlock();
 
  private:
   size_t next_index_;

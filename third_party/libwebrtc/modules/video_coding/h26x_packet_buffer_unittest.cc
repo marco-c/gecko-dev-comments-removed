@@ -12,11 +12,11 @@
 #include <cstdint>
 #include <cstring>
 #include <memory>
+#include <span>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "api/array_view.h"
 #include "api/video/render_resolution.h"
 #include "api/video/video_codec_type.h"
 #include "api/video/video_frame_type.h"
@@ -50,7 +50,7 @@ using H264::NaluType::kStapA;
 
 constexpr int kBufferSize = 2048;
 
-const char kExampleSpropString[] = "Z0IACpZTBYmI,aMljiA==";
+constexpr char kExampleSpropString[] = "Z0IACpZTBYmI,aMljiA==";
 const std::vector<uint8_t> kExampleSpropRawSps{0x67, 0x42, 0x00, 0x0A, 0x96,
                                                0x53, 0x05, 0x89, 0x88};
 const std::vector<uint8_t> kExampleSpropRawPps{0x68, 0xC9, 0x63, 0x88};
@@ -378,7 +378,7 @@ H265Packet& H265Packet::SeqNum(int64_t rtp_seq_num) {
 }
 #endif
 
-ArrayView<const uint8_t> PacketPayload(
+std::span<const uint8_t> PacketPayload(
     const std::unique_ptr<H26xPacketBuffer::Packet>& packet) {
   return packet->video_payload;
 }

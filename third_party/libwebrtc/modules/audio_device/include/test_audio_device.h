@@ -10,17 +10,15 @@
 #ifndef MODULES_AUDIO_DEVICE_INCLUDE_TEST_AUDIO_DEVICE_H_
 #define MODULES_AUDIO_DEVICE_INCLUDE_TEST_AUDIO_DEVICE_H_
 
-#include <stddef.h>
-#include <stdint.h>
-
+#include <cstddef>
+#include <cstdint>
 #include <memory>
+#include <span>
 
 #include "absl/strings/string_view.h"
-#include "api/array_view.h"
 #include "api/audio/audio_device.h"
 #include "api/environment/environment.h"
 #include "api/scoped_refptr.h"
-#include "api/task_queue/task_queue_factory.h"
 #include "rtc_base/buffer.h"
 
 namespace webrtc {
@@ -61,7 +59,7 @@ class TestAudioDeviceModule {
     virtual int NumChannels() const = 0;
     
     
-    virtual bool Render(ArrayView<const int16_t> data) = 0;
+    virtual bool Render(std::span<const int16_t> data) = 0;
   };
 
   
@@ -82,13 +80,6 @@ class TestAudioDeviceModule {
   
   static scoped_refptr<AudioDeviceModule> Create(
       const Environment& env,
-      std::unique_ptr<Capturer> capturer,
-      std::unique_ptr<Renderer> renderer,
-      float speed = 1);
-
-  [[deprecated("bugs.webrtc.org/413413572")]]
-  static scoped_refptr<AudioDeviceModule> Create(
-      TaskQueueFactory* task_queue_factory,
       std::unique_ptr<Capturer> capturer,
       std::unique_ptr<Renderer> renderer,
       float speed = 1);

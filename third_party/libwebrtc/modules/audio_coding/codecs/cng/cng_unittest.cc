@@ -10,9 +10,9 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
+#include <span>
 #include <string>
 
-#include "api/array_view.h"
 #include "modules/audio_coding/codecs/cng/webrtc_cng.h"
 #include "rtc_base/buffer.h"
 #include "rtc_base/checks.h"
@@ -66,11 +66,11 @@ void CngTest::TestCngEncode(int sample_rate_hz, int quality) {
   ComfortNoiseEncoder cng_encoder(sample_rate_hz, kSidNormalIntervalUpdate,
                                   quality);
   EXPECT_EQ(0U, cng_encoder.Encode(
-                    ArrayView<const int16_t>(speech_data_, num_samples_10ms),
+                    std::span<const int16_t>(speech_data_, num_samples_10ms),
                     kNoSid, &sid_data));
   EXPECT_EQ(static_cast<size_t>(quality + 1),
             cng_encoder.Encode(
-                ArrayView<const int16_t>(speech_data_, num_samples_10ms),
+                std::span<const int16_t>(speech_data_, num_samples_10ms),
                 kForceSid, &sid_data));
 }
 
@@ -100,7 +100,7 @@ TEST_F(CngDeathTest, CngEncodeTooLong) {
   ComfortNoiseEncoder cng_encoder(8000, kSidNormalIntervalUpdate,
                                   kCNGNumParamsNormal);
   
-  EXPECT_DEATH(cng_encoder.Encode(ArrayView<const int16_t>(speech_data_, 641),
+  EXPECT_DEATH(cng_encoder.Encode(std::span<const int16_t>(speech_data_, 641),
                                   kNoSid, &sid_data),
                "");
 }
@@ -137,7 +137,7 @@ TEST_F(CngTest, CngUpdateSid) {
 
   
   EXPECT_EQ(kCNGNumParamsNormal + 1,
-            cng_encoder.Encode(ArrayView<const int16_t>(speech_data_, 160),
+            cng_encoder.Encode(std::span<const int16_t>(speech_data_, 160),
                                kForceSid, &sid_data));
   cng_decoder.UpdateSid(sid_data);
 
@@ -146,14 +146,14 @@ TEST_F(CngTest, CngUpdateSid) {
   cng_decoder.Reset();
 
   
-  EXPECT_EQ(0U, cng_encoder.Encode(ArrayView<const int16_t>(speech_data_, 160),
+  EXPECT_EQ(0U, cng_encoder.Encode(std::span<const int16_t>(speech_data_, 160),
                                    kForceSid, &sid_data));
   EXPECT_EQ(
       kCNGNumParamsHigh + 1,
-      cng_encoder.Encode(ArrayView<const int16_t>(speech_data_ + 160, 160),
+      cng_encoder.Encode(std::span<const int16_t>(speech_data_ + 160, 160),
                          kForceSid, &sid_data));
   cng_decoder.UpdateSid(
-      ArrayView<const uint8_t>(sid_data.data(), kCNGNumParamsNormal + 1));
+      std::span<const uint8_t>(sid_data.data(), kCNGNumParamsNormal + 1));
 }
 
 
@@ -165,7 +165,7 @@ TEST_F(CngTest, CngUpdateSidErroneous) {
                                   kCNGNumParamsNormal);
   ComfortNoiseDecoder cng_decoder;
   EXPECT_EQ(kCNGNumParamsNormal + 1,
-            cng_encoder.Encode(ArrayView<const int16_t>(speech_data_, 160),
+            cng_encoder.Encode(std::span<const int16_t>(speech_data_, 160),
                                kForceSid, &sid_data));
 
   
@@ -193,18 +193,18 @@ TEST_F(CngTest, CngGenerate) {
 
   
   EXPECT_EQ(kCNGNumParamsNormal + 1,
-            cng_encoder.Encode(ArrayView<const int16_t>(speech_data_, 160),
+            cng_encoder.Encode(std::span<const int16_t>(speech_data_, 160),
                                kForceSid, &sid_data));
 
   
   cng_decoder.UpdateSid(sid_data);
 
   
-  EXPECT_TRUE(cng_decoder.Generate(ArrayView<int16_t>(out_data, 640), 1));
-  EXPECT_TRUE(cng_decoder.Generate(ArrayView<int16_t>(out_data, 640), 0));
+  EXPECT_TRUE(cng_decoder.Generate(std::span<int16_t>(out_data, 640), 1));
+  EXPECT_TRUE(cng_decoder.Generate(std::span<int16_t>(out_data, 640), 0));
 
   
-  EXPECT_FALSE(cng_decoder.Generate(ArrayView<int16_t>(out_data, 641), 0));
+  EXPECT_FALSE(cng_decoder.Generate(std::span<int16_t>(out_data, 641), 0));
 }
 
 
@@ -219,13 +219,13 @@ TEST_F(CngTest, CngAutoSid) {
   
   for (int i = 0; i < 10; i++) {
     EXPECT_EQ(0U,
-              cng_encoder.Encode(ArrayView<const int16_t>(speech_data_, 160),
+              cng_encoder.Encode(std::span<const int16_t>(speech_data_, 160),
                                  kNoSid, &sid_data));
   }
 
   
   EXPECT_EQ(kCNGNumParamsNormal + 1,
-            cng_encoder.Encode(ArrayView<const int16_t>(speech_data_, 160),
+            cng_encoder.Encode(std::span<const int16_t>(speech_data_, 160),
                                kNoSid, &sid_data));
 }
 
@@ -239,13 +239,13 @@ TEST_F(CngTest, CngAutoSidShort) {
   ComfortNoiseDecoder cng_decoder;
 
   
-  EXPECT_EQ(0U, cng_encoder.Encode(ArrayView<const int16_t>(speech_data_, 160),
+  EXPECT_EQ(0U, cng_encoder.Encode(std::span<const int16_t>(speech_data_, 160),
                                    kNoSid, &sid_data));
 
   
   for (int i = 0; i < 10; i++) {
     EXPECT_EQ(kCNGNumParamsNormal + 1,
-              cng_encoder.Encode(ArrayView<const int16_t>(speech_data_, 160),
+              cng_encoder.Encode(std::span<const int16_t>(speech_data_, 160),
                                  kNoSid, &sid_data));
   }
 }

@@ -9,14 +9,13 @@
 
 #include "modules/video_coding/svc/scalability_structure_test_helpers.h"
 
-#include <stdint.h>
-
 #include <bitset>
 #include <cstddef>
+#include <cstdint>
+#include <span>
 #include <utility>
 #include <vector>
 
-#include "api/array_view.h"
 #include "api/video/video_bitrate_allocation.h"
 #include "common_video/generic_frame_descriptor/generic_frame_info.h"
 #include "modules/video_coding/chain_diff_calculator.h"
@@ -67,7 +66,7 @@ void ScalabilityStructureWrapper::GenerateFrames(
 }
 
 bool ScalabilityStructureWrapper::FrameReferencesAreValid(
-    ArrayView<const GenericFrameInfo> frames) const {
+    std::span<const GenericFrameInfo> frames) const {
   bool valid = true;
   
   std::bitset<8> buffer_contains_frame;
