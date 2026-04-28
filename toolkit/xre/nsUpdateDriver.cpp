@@ -2,10 +2,7 @@
 
 
 
-
-
 #include <stdlib.h>
-#include <stdio.h>
 #include "nsUpdateDriver.h"
 
 #include "nsDebug.h"

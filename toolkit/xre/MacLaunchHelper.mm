@@ -2,7 +2,6 @@
 
 
 
-
 #include "MacLaunchHelper.h"
 
 #include "MacAutoreleasePool.h"
@@ -12,7 +11,6 @@
 #include <ServiceManagement/ServiceManagement.h>
 #include <Security/Authorization.h>
 #include <spawn.h>
-#include <stdio.h>
 
 using namespace mozilla;
 using namespace mozilla::MacLaunchHelper;
