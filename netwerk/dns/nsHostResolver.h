@@ -32,13 +32,17 @@ namespace net {
 class TRR;
 class TRRQuery;
 
+
 static inline uint32_t MaxResolverThreadsAnyPriority() {
-  return StaticPrefs::network_dns_max_any_priority_threads();
+  return std::max(StaticPrefs::network_dns_max_any_priority_threads(), 1u);
 }
 
 static inline uint32_t MaxResolverThreadsHighPriority() {
   return StaticPrefs::network_dns_max_high_priority_threads();
 }
+
+
+
 
 static inline uint32_t MaxResolverThreads() {
   return MaxResolverThreadsAnyPriority() + MaxResolverThreadsHighPriority();
@@ -196,22 +200,36 @@ class nsHostResolver : public nsISupports, public AHostResolver {
   explicit nsHostResolver();
   virtual ~nsHostResolver();
 
+  using CallbackArray = nsTArray<RefPtr<nsResolveHostCallback>>;
+
+  
+  
+  void FireCallbacks(const CallbackArray& aCallbacks, nsHostRecord* aRec,
+                     nsresult aStatus);
+
+  
+  static void DrainCallbacks(
+      mozilla::LinkedList<RefPtr<nsResolveHostCallback>>& aSrc,
+      CallbackArray& aDst);
+
   bool DoRetryTRR(AddrHostRecord* aAddrRec) MOZ_REQUIRES(mQueue.mLock);
   bool MaybeRetryTRRLookup(
       AddrHostRecord* aAddrRec, nsresult aFirstAttemptStatus,
       mozilla::net::TRRSkippedReason aFirstAttemptSkipReason,
       nsresult aChannelStatus) MOZ_REQUIRES(mQueue.mLock);
 
-  LookupStatus CompleteLookupLocked(nsHostRecord*, nsresult,
+  LookupStatus CompleteLookupLocked(nsHostRecord*, nsresult&,
                                     mozilla::net::AddrInfo*, bool pb,
                                     const nsACString& aOriginsuffix,
                                     mozilla::net::TRRSkippedReason aReason,
-                                    mozilla::net::TRR* aTRRRequest)
+                                    mozilla::net::TRR* aTRRRequest,
+                                    CallbackArray& aCallbacks)
       MOZ_REQUIRES(mDBLock) MOZ_REQUIRES(mQueue.mLock);
   LookupStatus CompleteLookupByTypeLocked(
-      nsHostRecord*, nsresult, mozilla::net::TypeRecordResultType& aResult,
-      mozilla::net::TRRSkippedReason aReason, uint32_t aTtl, bool pb)
-      MOZ_REQUIRES(mDBLock) MOZ_REQUIRES(mQueue.mLock);
+      nsHostRecord*, nsresult&, mozilla::net::TypeRecordResultType& aResult,
+      mozilla::net::TRRSkippedReason aReason, uint32_t aTtl, bool pb,
+      CallbackArray& aCallbacks) MOZ_REQUIRES(mDBLock)
+      MOZ_REQUIRES(mQueue.mLock);
   nsresult Init();
   static void ComputeEffectiveTRRMode(nsHostRecord* aRec);
   nsresult NativeLookup(nsHostRecord* aRec) MOZ_REQUIRES(mQueue.mLock);
@@ -220,13 +238,14 @@ class nsHostResolver : public nsISupports, public AHostResolver {
 
   
   nsresult NameLookup(nsHostRecord* aRec) MOZ_REQUIRES(mQueue.mLock);
-  bool GetHostToLookup(nsHostRecord** result);
+  
+  already_AddRefed<nsHostRecord> DequeueNextRecord() MOZ_REQUIRES(mQueue.mLock);
+  
+  void MaybeDispatchResolveHostTask() MOZ_REQUIRES(mQueue.mLock);
 
   
   
   void ClearPendingQueue(mozilla::LinkedList<RefPtr<nsHostRecord>>& aPendingQ);
-  nsresult ConditionallyCreateThread(nsHostRecord* rec)
-      MOZ_REQUIRES(mQueue.mLock);
 
   
 
@@ -245,7 +264,7 @@ class nsHostResolver : public nsISupports, public AHostResolver {
   void AddToEvictionQ(nsHostRecord* rec) MOZ_REQUIRES(mDBLock)
       MOZ_REQUIRES(mQueue.mLock);
 
-  void ThreadFunc();
+  void ResolveHostTask();
 
   
   already_AddRefed<nsHostRecord> FromCache(nsHostRecord* aRec,
@@ -279,20 +298,18 @@ class nsHostResolver : public nsISupports, public AHostResolver {
   
   mutable mozilla::RWLock mDBLock{"nsHostResolver.mDBLock"};
   mozilla::net::HostRecordQueue mQueue;
-  CondVar mIdleTaskCV{mQueue.mLock, "nsHostResolver.mIdleTaskCV"};
   nsRefPtrHashtable<nsGenericHashKey<nsHostKey>, nsHostRecord> mRecordDB
       MOZ_GUARDED_BY(mDBLock);
   PRTime mCreationTime;
-  mozilla::TimeDuration mLongIdleTimeout;
-  mozilla::TimeDuration mShortIdleTimeout;
 
   RefPtr<nsIThreadPool> mResolverThreads;
   RefPtr<mozilla::net::NetworkConnectivityService>
       mNCS;  
+  
+  
+  
   mozilla::Atomic<bool> mShutdown{true};
-  mozilla::Atomic<uint32_t> mNumIdleTasks{0};
-  mozilla::Atomic<uint32_t> mActiveTaskCount{0};
-  mozilla::Atomic<uint32_t> mActiveAnyThreadCount{0};
+  uint32_t mActiveAnyThreadCount MOZ_GUARDED_BY(mQueue.mLock) = 0;
 
   
   void PrepareRecordExpirationAddrRecord(AddrHostRecord* rec) const
