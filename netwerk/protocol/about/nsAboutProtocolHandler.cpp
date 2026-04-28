@@ -27,28 +27,6 @@ namespace net {
 
 static NS_DEFINE_CID(kNestedAboutURICID, NS_NESTEDABOUTURI_CID);
 
-static bool IsSafeToLinkForUntrustedContent(nsIURI* aURI) {
-  nsAutoCString path;
-  aURI->GetPathQueryRef(path);
-
-  int32_t f = path.FindChar('#');
-  if (f >= 0) {
-    path.SetLength(f);
-  }
-
-  f = path.FindChar('?');
-  if (f >= 0) {
-    path.SetLength(f);
-  }
-
-  ToLowerCase(path);
-
-  
-  
-  return path.EqualsLiteral("blank") || path.EqualsLiteral("logo") ||
-         path.EqualsLiteral("srcdoc");
-}
-
 
 
 NS_IMPL_ISUPPORTS(nsAboutProtocolHandler, nsIProtocolHandler,
@@ -102,36 +80,34 @@ nsresult nsAboutProtocolHandler::CreateNewURI(const nsACString& aSpec,
                                               nsIURI* aBaseURI,
                                               nsIURI** aResult) {
   *aResult = nullptr;
-  nsresult rv;
 
   
   nsCOMPtr<nsIURI> url;
-  rv = NS_MutateURI(new nsSimpleURI::Mutator()).SetSpec(aSpec).Finalize(url);
+  MOZ_TRY(
+      NS_MutateURI(new nsSimpleURI::Mutator()).SetSpec(aSpec).Finalize(url));
 
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
+  nsAutoCString name;
+  MOZ_TRY(NS_GetAboutModuleName(url, name));
 
-  if (IsSafeToLinkForUntrustedContent(url)) {
+  
+  
+  if (name.EqualsLiteral("blank") || name.EqualsLiteral("srcdoc")) {
     
     
     
     
     nsAutoCString spec;
-    rv = url->GetPathQueryRef(spec);
-    NS_ENSURE_SUCCESS(rv, rv);
+    MOZ_TRY(url->GetPathQueryRef(spec));
 
     spec.InsertLiteral("moz-safe-about:", 0);
 
     nsCOMPtr<nsIURI> inner;
-    rv = NS_NewURI(getter_AddRefs(inner), spec);
-    NS_ENSURE_SUCCESS(rv, rv);
+    MOZ_TRY(NS_NewURI(getter_AddRefs(inner), spec));
 
-    rv = NS_MutateURI(new nsNestedAboutURI::Mutator())
-             .Apply(&nsINestedAboutURIMutator::InitWithBase, inner, aBaseURI)
-             .SetSpec(aSpec)
-             .Finalize(url);
-    NS_ENSURE_SUCCESS(rv, rv);
+    MOZ_TRY(NS_MutateURI(new nsNestedAboutURI::Mutator())
+                .Apply(&nsINestedAboutURIMutator::InitWithBase, inner, aBaseURI)
+                .SetSpec(aSpec)
+                .Finalize(url));
   }
 
   url.swap(*aResult);
