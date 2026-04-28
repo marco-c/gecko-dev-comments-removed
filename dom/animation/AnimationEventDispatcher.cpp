@@ -129,6 +129,13 @@ void AnimationEventDispatcher::ScheduleDispatch() {
 }
 
 void AnimationEventInfo::MaybeAddMarker() const {
+  
+  
+  
+  
+  if (mScheduledEventTimeStamp.IsNull()) {
+    return;
+  }
   if (mData.is<CssAnimationData>()) {
     const auto& data = mData.as<CssAnimationData>();
     const EventMessage message = data.mMessage;
