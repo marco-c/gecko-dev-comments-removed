@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-import { render, fireEvent } from "@testing-library/react";
+import { render, fireEvent, act } from "@testing-library/react";
 import { Provider } from "react-redux";
 import { combineReducers, createStore } from "redux";
 import { INITIAL_STATE, reducers } from "common/Reducers.sys.mjs";
@@ -166,6 +166,37 @@ describe("<Weather> (Widgets/Weather)", () => {
         container.querySelector(".weather-widget")
       ).not.toBeInTheDocument();
     });
+
+    it("renders correctly when transitioning from uninitialized to initialized", () => {
+      const store = createStore(combineReducers(reducers), {
+        ...mockState,
+        Weather: { ...mockState.Weather, initialized: false },
+      });
+
+      const { container } = render(
+        <Provider store={store}>
+          <Weather dispatch={jest.fn()} size="small" />
+        </Provider>
+      );
+
+      expect(
+        container.querySelector(".weather-widget")
+      ).not.toBeInTheDocument();
+
+      act(() => {
+        store.dispatch({
+          type: at.WEATHER_UPDATE,
+          data: {
+            suggestions: mockState.Weather.suggestions,
+            hourlyForecasts: mockState.Weather.hourlyForecasts,
+            lastUpdated: Date.now(),
+            locationData: mockState.Weather.locationData,
+          },
+        });
+      });
+
+      expect(container.querySelector(".weather-widget")).toBeInTheDocument();
+    });
   });
 
   describe("size-driven views", () => {
@@ -323,7 +354,7 @@ describe("<Weather> (Widgets/Weather)", () => {
       const { container } = renderWeather();
       expect(
         container.querySelector(
-          "panel-item[data-l10n-id='newtab-widget-menu-change-size']"
+          "span[data-l10n-id='newtab-widget-menu-change-size']"
         )
       ).toBeInTheDocument();
       expect(
@@ -458,7 +489,7 @@ describe("<Weather> (Widgets/Weather)", () => {
     it("dispatches SET_PREF(widgets.weather.size) and WIDGETS_USER_EVENT on size submenu click", () => {
       const { container, dispatch } = renderWeather();
       const submenuNode = container.querySelector(
-        "panel-list[id='weather-widget-size-submenu']"
+        "panel-list[id='weather-size-submenu']"
       );
       const mockItem = document.createElement("div");
       mockItem.dataset.size = "small";
@@ -486,7 +517,7 @@ describe("<Weather> (Widgets/Weather)", () => {
     it("dispatches SET_PREF(widgets.weather.size, large) on large size click", () => {
       const { container, dispatch } = renderWeather();
       const submenuNode = container.querySelector(
-        "panel-list[id='weather-widget-size-submenu']"
+        "panel-list[id='weather-size-submenu']"
       );
       const mockItem = document.createElement("div");
       mockItem.dataset.size = "large";
@@ -786,7 +817,7 @@ describe("<Weather> (Widgets/Weather)", () => {
       const { container } = renderWeather("medium", optInMockState);
       expect(
         container.querySelector(
-          "panel-item[data-l10n-id='newtab-widget-menu-change-size']"
+          "span[data-l10n-id='newtab-widget-menu-change-size']"
         )
       ).toBeInTheDocument();
       expect(
@@ -943,6 +974,64 @@ describe("<Weather> (Widgets/Weather)", () => {
       ).toBeInTheDocument();
       expect(container.querySelector(".forecast-footer")).toBeInTheDocument();
       expect(container.querySelector(".full-forecast")).not.toBeInTheDocument();
+    });
+  });
+
+  describe("search UI", () => {
+    it("adds weather-search-active class when searchActive is true", () => {
+      const state = {
+        ...mockState,
+        Weather: { ...mockState.Weather, searchActive: true },
+      };
+      const { container } = renderWeather("medium", state);
+      expect(
+        container.querySelector(".weather-widget.weather-search-active")
+      ).toBeInTheDocument();
+    });
+
+    it("does not add weather-search-active class when searchActive is false", () => {
+      const { container } = renderWeather();
+      expect(
+        container.querySelector(".weather-widget.weather-search-active")
+      ).not.toBeInTheDocument();
+    });
+
+    it("renders LocationSearch when searchActive is true", () => {
+      const state = {
+        ...mockState,
+        Weather: { ...mockState.Weather, searchActive: true },
+      };
+      const { container } = renderWeather("medium", state);
+      expect(container.querySelector(".location-search")).toBeInTheDocument();
+    });
+
+    it("does not render LocationSearch when searchActive is false", () => {
+      const { container } = renderWeather();
+      expect(
+        container.querySelector(".location-search")
+      ).not.toBeInTheDocument();
+    });
+
+    it("suppresses weather-opt-in class when searchActive is true during opt-in", () => {
+      const state = {
+        ...optInMockState,
+        Weather: { ...optInMockState.Weather, searchActive: true },
+      };
+      const { container } = renderWeather("medium", state);
+      expect(
+        container.querySelector(".weather-widget.weather-opt-in")
+      ).not.toBeInTheDocument();
+    });
+
+    it("does not render context menu when searchActive is true", () => {
+      const state = {
+        ...mockState,
+        Weather: { ...mockState.Weather, searchActive: true },
+      };
+      const { container } = renderWeather("medium", state);
+      expect(
+        container.querySelector(".weather-context-menu-wrapper")
+      ).not.toBeInTheDocument();
     });
   });
 });
