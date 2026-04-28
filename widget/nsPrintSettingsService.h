@@ -22,6 +22,10 @@ class nsPrintSettingsService : public nsIPrintSettingsService {
   nsPrintSettingsService() = default;
 
   
+  nsPrintSettingsService(const nsPrintSettingsService& x) = delete;
+  nsPrintSettingsService& operator=(const nsPrintSettingsService& x) = delete;
+
+  
 
 
 
@@ -30,10 +34,6 @@ class nsPrintSettingsService : public nsIPrintSettingsService {
   virtual nsresult Init();
 
  private:
-  
-  nsPrintSettingsService(const nsPrintSettingsService& x) = delete;
-  nsPrintSettingsService& operator=(const nsPrintSettingsService& x) = delete;
-
  protected:
   virtual ~nsPrintSettingsService() = default;
 

@@ -23,11 +23,12 @@ class MOZ_STACK_CLASS InfoObject {
   void DefineProperty(const char* name, const nsAString& value);
   void DefineProperty(const char* name, const char* value);
 
+  InfoObject(InfoObject&) = delete;
+
  private:
   
   
   explicit InfoObject(JSContext* aCx);
-  InfoObject(InfoObject&);
 
   JSContext* mCx;
   JS::Rooted<JSObject*> mObj;
