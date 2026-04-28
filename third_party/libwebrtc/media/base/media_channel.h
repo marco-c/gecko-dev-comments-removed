@@ -979,10 +979,6 @@ class VideoMediaSendChannelInterface : public MediaSendChannelInterface {
   
   
   virtual void FillBitrateInfo(BandwidthEstimationInfo* bwe_info) = 0;
-  
-  virtual RtcpMode SendCodecRtcpMode() const = 0;
-  virtual bool SendCodecHasLntf() const = 0;
-  virtual std::optional<int> SendCodecRtxTime() const = 0;
 };
 
 class VideoMediaReceiveChannelInterface : public MediaReceiveChannelInterface {
