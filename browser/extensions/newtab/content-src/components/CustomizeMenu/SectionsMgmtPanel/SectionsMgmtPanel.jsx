@@ -14,6 +14,7 @@ function SectionsMgmtPanel({
   onSubpanelToggle,
   togglePanel,
   showPanel,
+  novaEnabled,
 }) {
   const arrowButtonRef = useRef(null);
   const panelRef = useRef(null);
@@ -205,12 +206,7 @@ function SectionsMgmtPanel({
 
       return (
         <li key={sectionKey}>
-          <label
-            id={`follow-topic-label-${sectionKey}`}
-            htmlFor={`follow-topic-${sectionKey}`}
-          >
-            {title}
-          </label>
+          <span>{title}</span>
           <div
             className={
               following ? "section-follow following" : "section-follow"
@@ -226,8 +222,13 @@ function SectionsMgmtPanel({
               index={receivedRank}
               section={sectionKey}
               id={`follow-topic-${sectionKey}`}
-              // Compose accessible label from the localized "Following" span and the topic title label.
-              aria-labelledby={`follow-state-${sectionKey} follow-topic-label-${sectionKey}`}
+              data-l10n-id={
+                following
+                  ? "newtab-section-unfollow-topic"
+                  : "newtab-section-follow-topic"
+              }
+              data-l10n-args={JSON.stringify({ topic: title })}
+              data-l10n-attrs="aria-label"
             >
               <span
                 className="section-button-follow-text"
@@ -255,12 +256,7 @@ function SectionsMgmtPanel({
 
       return (
         <li key={sectionKey}>
-          <label
-            id={`blocked-topic-label-${sectionKey}`}
-            htmlFor={`blocked-topic-${sectionKey}`}
-          >
-            {title}
-          </label>
+          <span>{title}</span>
           <div className={blocked ? "section-block blocked" : "section-block"}>
             <moz-button
               onClick={() =>
@@ -272,8 +268,13 @@ function SectionsMgmtPanel({
               index={receivedRank}
               section={sectionKey}
               id={`blocked-topic-${sectionKey}`}
-              // Compose accessible label from the localized "Blocked" span and the topic title label.
-              aria-labelledby={`blocked-state-${sectionKey} blocked-topic-label-${sectionKey}`}
+              data-l10n-id={
+                blocked
+                  ? "newtab-section-unblock-topic"
+                  : "newtab-section-block-topic"
+              }
+              data-l10n-args={JSON.stringify({ topic: title })}
+              data-l10n-attrs="aria-label"
             >
               <span
                 className="section-button-block-text"
@@ -295,6 +296,36 @@ function SectionsMgmtPanel({
     }
   );
 
+  // @nova-cleanup(remove-conditional): Remove novaEnabled check, keep arrowIconSrc computation
+  let arrowIconSrc;
+  if (novaEnabled) {
+    const isRTL = typeof document !== "undefined" && document.dir === "rtl";
+    arrowIconSrc = `chrome://global/skin/icons/shaft-arrow-${isRTL ? "right" : "left"}.svg`;
+  }
+
+  const panelBody = (
+    <>
+      <h3 data-l10n-id="newtab-section-mangage-topics-followed-topics"></h3>
+      {followedSectionsData.length ? (
+        <ul className="topic-list">{followedSectionsList}</ul>
+      ) : (
+        <span
+          className="topic-list-empty-state"
+          data-l10n-id="newtab-section-mangage-topics-followed-topics-empty-state"
+        ></span>
+      )}
+      <h3 data-l10n-id="newtab-section-mangage-topics-blocked-topics"></h3>
+      {blockedSectionsData.length ? (
+        <ul className="topic-list">{blockedSectionsList}</ul>
+      ) : (
+        <span
+          className="topic-list-empty-state"
+          data-l10n-id="newtab-section-mangage-topics-blocked-topics-empty-state"
+        ></span>
+      )}
+    </>
+  );
+
   return (
     <div>
       <moz-box-button
@@ -311,31 +342,35 @@ function SectionsMgmtPanel({
         onEntered={handlePanelEntered}
       >
         <div ref={panelRef} className="sections-mgmt-panel">
-          <button
-            ref={arrowButtonRef}
-            className="arrow-button"
-            onClick={togglePanel}
-          >
-            <h1 data-l10n-id="newtab-section-mangage-topics-title"></h1>
-          </button>
-          <h3 data-l10n-id="newtab-section-mangage-topics-followed-topics"></h3>
-          {followedSectionsData.length ? (
-            <ul className="topic-list">{followedSectionsList}</ul>
-          ) : (
-            <span
-              className="topic-list-empty-state"
-              data-l10n-id="newtab-section-mangage-topics-followed-topics-empty-state"
-            ></span>
-          )}
-          <h3 data-l10n-id="newtab-section-mangage-topics-blocked-topics"></h3>
-          {blockedSectionsData.length ? (
-            <ul className="topic-list">{blockedSectionsList}</ul>
-          ) : (
-            <span
-              className="topic-list-empty-state"
-              data-l10n-id="newtab-section-mangage-topics-blocked-topics-empty-state"
-            ></span>
-          )}
+          {
+            // @nova-cleanup(remove-conditional): Remove novaEnabled check and the else branch, keep the nova branch
+            novaEnabled ? (
+              <div className="panel-content">
+                <div className="arrow-wrapper">
+                  <moz-button
+                    ref={arrowButtonRef}
+                    type="ghost"
+                    className="arrow-button"
+                    iconSrc={arrowIconSrc}
+                    onClick={togglePanel}
+                  ></moz-button>
+                  <h2 data-l10n-id="newtab-section-mangage-topics-title"></h2>
+                </div>
+                {panelBody}
+              </div>
+            ) : (
+              <>
+                <button
+                  ref={arrowButtonRef}
+                  className="arrow-button"
+                  onClick={togglePanel}
+                >
+                  <h1 data-l10n-id="newtab-section-mangage-topics-title"></h1>
+                </button>
+                {panelBody}
+              </>
+            )
+          }
         </div>
       </CSSTransition>
     </div>
