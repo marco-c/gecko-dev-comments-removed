@@ -1364,6 +1364,10 @@ Maybe<SkipTransitionReason> ViewTransition::CaptureOldState() {
       
       return true;
     }
+    if (aFrame->IsHiddenByContentVisibilityOnAnyAncestor()) {
+      
+      return true;
+    }
     if (aFrame->GetPrevContinuation() || aFrame->GetNextContinuation()) {
       
       return true;
@@ -1438,6 +1442,10 @@ Maybe<SkipTransitionReason> ViewTransition::CaptureNewState() {
     
     RefPtr<nsAtom> name = DocumentScopedTransitionNameFor(aFrame);
     if (!name) {
+      return true;
+    }
+    if (aFrame->IsHiddenByContentVisibilityOnAnyAncestor()) {
+      
       return true;
     }
     if (aFrame->GetPrevContinuation() || aFrame->GetNextContinuation()) {
