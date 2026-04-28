@@ -272,7 +272,16 @@ static void nr_ice_candidate_pair_stun_cb(NR_SOCKET s, int how, void *cb_arg)
           pair->stun_client->rtt_ms = 0;
         }
 
-        if(strlen(pair->stun_client->results.ice_binding_response.mapped_addr.as_string)==0){
+        if (pair->local->type == RELAYED) {
+          
+
+
+
+
+
+          nr_ice_candidate_pair_set_state(pair->pctx,pair,NR_ICE_PAIR_STATE_SUCCEEDED);
+        }
+        else if(strlen(pair->stun_client->results.ice_binding_response.mapped_addr.as_string)==0){
           
 
 
