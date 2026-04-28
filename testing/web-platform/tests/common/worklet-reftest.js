@@ -26,8 +26,12 @@ async function animationFrames(frames) {
 }
 
 
+
+
 async function workletPainted() {
-    await animationFrames(2);
+  const animation =
+    document.body.animate({ opacity: [0, 1] }, { duration: 1 });
+  return animation.finished;
 }
 
 
