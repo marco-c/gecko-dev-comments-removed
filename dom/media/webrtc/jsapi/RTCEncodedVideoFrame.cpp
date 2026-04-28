@@ -22,8 +22,6 @@
 #include "mozilla/fallible.h"
 #include "nsContentUtils.h"
 #include "nsIGlobalObject.h"
-#include "nsISupports.h"
-#include "nsWrapperCache.h"
 
 namespace mozilla::dom {
 
@@ -74,6 +72,7 @@ void RTCEncodedVideoFrame::InitMetadata() {
   mMetadata.mSynchronizationSource.Construct(videoFrame.GetSsrc());
   mMetadata.mPayloadType.Construct(videoFrame.GetPayloadType());
   mMetadata.mMimeType.Construct(NS_ConvertASCIItoUTF16(mFrame->GetMimeType()));
+  mMetadata.mRtpTimestamp.Construct(videoFrame.GetTimestamp());
   mMetadata.mContributingSources.Construct();
   for (const auto csrc : metadata.GetCsrcs()) {
     (void)mMetadata.mContributingSources.Value().AppendElement(csrc, fallible);
@@ -119,6 +118,7 @@ already_AddRefed<RTCEncodedVideoFrame> RTCEncodedVideoFrame::Constructor(
     set_if(dst.mSynchronizationSource, src.mSynchronizationSource);
     set_if(dst.mPayloadType, src.mPayloadType);
     set_if(dst.mMimeType, src.mMimeType);
+    set_if(dst.mRtpTimestamp, src.mRtpTimestamp);
     set_if(dst.mContributingSources, src.mContributingSources);
     set_if(dst.mTimestamp, src.mTimestamp);
   }
