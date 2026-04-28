@@ -11,9 +11,12 @@
 #ifndef PC_SCOPED_OPERATIONS_BATCHER_H_
 #define PC_SCOPED_OPERATIONS_BATCHER_H_
 
+#include <variant>
 #include <vector>
 
 #include "absl/functional/any_invocable.h"
+#include "api/sequence_checker.h"
+#include "rtc_base/system/no_unique_address.h"
 #include "rtc_base/thread.h"
 
 namespace webrtc {
@@ -27,9 +30,14 @@ namespace webrtc {
 
 
 
+
+
+
+
+
 class ScopedOperationsBatcher {
  public:
-  explicit ScopedOperationsBatcher(Thread* worker_thread);
+  explicit ScopedOperationsBatcher(Thread* target_thread);
   ~ScopedOperationsBatcher();
 
   void Run();
@@ -40,12 +48,12 @@ class ScopedOperationsBatcher {
   void push_back(absl::AnyInvocable<absl::AnyInvocable<void() &&>() &&> task);
 
  private:
-  struct BatchedTask {
-    absl::AnyInvocable<void() &&> void_task;
-    absl::AnyInvocable<absl::AnyInvocable<void() &&>() &&> returning_task;
-  };
+  using BatchedTask =
+      std::variant<absl::AnyInvocable<void() &&>,
+                   absl::AnyInvocable<absl::AnyInvocable<void() &&>() &&>>;
 
-  Thread* const worker_thread_;
+  RTC_NO_UNIQUE_ADDRESS SequenceChecker sequence_checker_;
+  Thread* const target_thread_;
   std::vector<BatchedTask> tasks_;
 };
 
