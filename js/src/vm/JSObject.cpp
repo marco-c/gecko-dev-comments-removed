@@ -1240,6 +1240,14 @@ void JSObject::swap(JSContext* cx, HandleObject a, HandleObject b,
   bool bIsUsedAsPrototype = b->isUsedAsPrototype();
 
   
+  if (aIsUsedAsPrototype && b->hasStaticPrototype()) {
+    MOZ_RELEASE_ASSERT(b->staticPrototype() != a);
+  }
+  if (bIsUsedAsPrototype && a->hasStaticPrototype()) {
+    MOZ_RELEASE_ASSERT(a->staticPrototype() != b);
+  }
+
+  
   Zone* zone = a->zone();
 
   
