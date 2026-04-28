@@ -566,13 +566,10 @@ gfxFontEntry::GetGrSandboxAdvanceCallbackHandle() {
 }
 
 tainted_opaque_gr<gr_face*> gfxFontEntry::GetGrFace() {
-  if (!mGrFaceInitialized) {
-    
-    
-    
-    
-    MOZ_ASSERT(NS_IsMainThread());
+  
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
+  if (!mGrFaceInitialized) {
     mSandboxData = new GrSandboxData();
 
     auto p_faceOps = mSandboxData->sandbox.malloc_in_sandbox<gr_face_ops>();
@@ -641,6 +638,8 @@ bool gfxFontEntry::HasFontTable(uint32_t aTableTag) {
 }
 
 tainted_boolean_hint gfxFontEntry::HasGraphiteSpaceContextuals() {
+  
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
   LazyFlag flag = mHasGraphiteSpaceContextuals;
   if (flag == LazyFlag::Uninitialized) {
     auto face = GetGrFace();

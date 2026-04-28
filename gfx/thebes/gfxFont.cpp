@@ -1522,10 +1522,11 @@ tainted_boolean_hint gfxFont::SpaceMayParticipateInShaping(
     }
   }
 
-  if (FontCanSupportGraphite()) {
-    if (gfxPlatform::GetPlatform()->UseGraphiteShaping()) {
-      return mFontEntry->HasGraphiteSpaceContextuals();
-    }
+  
+  
+  if (gfxPlatform::GetPlatform()->UseGraphiteShaping() &&
+      FontCanSupportGraphite()) {
+    return mFontEntry->HasGraphiteSpaceContextuals();
   }
 
   
@@ -1560,6 +1561,9 @@ tainted_boolean_hint gfxFont::SpaceMayParticipateInShaping(
 }
 
 bool gfxFont::SupportsFeature(Script aScript, uint32_t aFeatureTag) {
+  
+  
+  
   if (mGraphiteShaper && gfxPlatform::GetPlatform()->UseGraphiteShaping()) {
     return GetFontEntry()->SupportsGraphiteFeature(aFeatureTag);
   }
@@ -3432,22 +3436,22 @@ bool gfxFont::ShapeText(DrawTarget* aDrawTarget, const char16_t* aText,
   
   
   
-  if (FontCanSupportGraphite() && !aVertical && NS_IsMainThread()) {
-    if (gfxPlatform::GetPlatform()->UseGraphiteShaping()) {
-      gfxGraphiteShaper* shaper = mGraphiteShaper;
-      if (!shaper) {
-        shaper = new gfxGraphiteShaper(this);
-        if (!mGraphiteShaper.compareExchange(nullptr, shaper)) {
-          delete shaper;
-          shaper = mGraphiteShaper;
-        }
+  
+  if (gfxPlatform::GetPlatform()->UseGraphiteShaping() &&
+      FontCanSupportGraphite() && !aVertical) {
+    gfxGraphiteShaper* shaper = mGraphiteShaper;
+    if (!shaper) {
+      shaper = new gfxGraphiteShaper(this);
+      if (!mGraphiteShaper.compareExchange(nullptr, shaper)) {
+        delete shaper;
+        shaper = mGraphiteShaper;
       }
-      if (shaper->ShapeText(aDrawTarget, aText, aOffset, aLength, aScript,
-                            aLanguage, aVertical, aRounding, aShapedText)) {
-        PostShapingFixup(aDrawTarget, aText, aOffset, aLength, aVertical,
-                         aShapedText);
-        return true;
-      }
+    }
+    if (shaper->ShapeText(aDrawTarget, aText, aOffset, aLength, aScript,
+                          aLanguage, aVertical, aRounding, aShapedText)) {
+      PostShapingFixup(aDrawTarget, aText, aOffset, aLength, aVertical,
+                       aShapedText);
+      return true;
     }
   }
 

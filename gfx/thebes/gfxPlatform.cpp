@@ -1848,7 +1848,9 @@ uint32_t gfxPlatform::WordCacheMaxEntries() {
 }
 
 bool gfxPlatform::UseGraphiteShaping() {
-  return StaticPrefs::gfx_font_rendering_graphite_enabled();
+  
+  return StaticPrefs::gfx_font_rendering_graphite_enabled() &&
+         NS_IsMainThread();
 }
 
 bool gfxPlatform::IsFontFormatSupported(
