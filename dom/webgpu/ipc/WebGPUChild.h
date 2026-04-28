@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef WEBGPU_CHILD_H_
 #define WEBGPU_CHILD_H_
 
@@ -172,7 +171,8 @@ class WebGPUChild final : public PWebGPUChild {
   ipc::IPCResult RecvUncapturedError(RawId aDeviceId,
                                      const dom::GPUErrorFilter aType,
                                      const nsACString& aMessage);
-  ipc::IPCResult RecvDeviceLost(RawId aDeviceId, uint8_t aReason,
+  ipc::IPCResult RecvDeviceLost(RawId aDeviceId,
+                                const dom::GPUDeviceLostReason aReason,
                                 const nsACString& aMessage);
 
   size_t QueueDataBuffer(ipc::ByteBuf&& bb);
