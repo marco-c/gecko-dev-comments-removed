@@ -371,7 +371,8 @@ void PeerConnectionE2EQualityTest::Run(RunParams run_params) {
   StatsPoller stats_poller(observers,
                            std::map<std::string, StatsProvider*>{
                                {*alice_->params().name, alice_.get()},
-                               {*bob_->params().name, bob_.get()}});
+                               {*bob_->params().name, bob_.get()}},
+                           stats_polling_delay_);
   executor_->ScheduleActivity(TimeDelta::Zero(), kStatsUpdateInterval,
                               [&stats_poller](TimeDelta) {
                                 stats_poller.PollStatsAndNotifyObservers();
@@ -415,6 +416,11 @@ void PeerConnectionE2EQualityTest::Run(RunParams run_params) {
     
     stats_poller.PollStatsAndNotifyObservers();
   });
+
+  
+  ASSERT_TRUE(time_controller_.Wait(
+      [&stats_poller]() { return !stats_poller.IsPolling(); },
+      kDefaultTimeout));
   
   
   alice_->DetachAecDump();
