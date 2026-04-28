@@ -347,38 +347,38 @@ this.PartitionedStorageHelper = {
       }
 
       info("Creating data in the first tab");
-      await createDataInThirdParty(browser1, "A");
+      await createDataInThirdParty(browser1, "part=A");
 
       info("Creating data in the second tab");
-      await createDataInThirdParty(browser2, "B");
+      await createDataInThirdParty(browser2, "part=B");
 
       
       info("First tab should still have just 'A'");
-      await getDataFromThirdParty(browser1, "A");
+      await getDataFromThirdParty(browser1, "part=A");
       info("Forth tab should still have just 'A'");
-      await getDataFromThirdParty(browser4, "A");
+      await getDataFromThirdParty(browser4, "part=A");
 
       
       
       
       info("Creating data in the forth tab");
-      await createDataInThirdParty(browser4, "D");
+      await createDataInThirdParty(browser4, "part=D");
 
       info("Creating data in the third tab");
-      await createDataInFirstParty(browser3, "C");
+      await createDataInFirstParty(browser3, "part=C");
 
       
       info("First tab should be changed to 'D'");
-      await getDataFromThirdParty(browser1, "D");
+      await getDataFromThirdParty(browser1, "part=D");
 
       info("Second tab should still have just 'B'");
-      await getDataFromThirdParty(browser2, "B");
+      await getDataFromThirdParty(browser2, "part=B");
 
       info("Third tab should still have just 'C'");
-      await getDataFromFirstParty(browser3, "C");
+      await getDataFromFirstParty(browser3, "part=C");
 
       info("Forth tab should still have just 'D'");
-      await getDataFromThirdParty(browser4, "D");
+      await getDataFromThirdParty(browser4, "part=D");
 
       async function setStorageAccessForThirdParty(browser) {
         info(`Setting permission for ${browser.currentURI.spec}`);
@@ -423,16 +423,16 @@ this.PartitionedStorageHelper = {
 
         
         info("First tab should still have just 'D'");
-        await getDataFromThirdParty(browser1, "D");
+        await getDataFromThirdParty(browser1, "part=D");
 
         info("Second tab should still have just 'B'");
-        await getDataFromThirdParty(browser2, "B");
+        await getDataFromThirdParty(browser2, "part=B");
 
         info("Third tab should still have just 'C'");
-        await getDataFromFirstParty(browser3, "C");
+        await getDataFromFirstParty(browser3, "part=C");
 
         info("Forth tab should still have just 'D'");
-        await getDataFromThirdParty(browser4, "D");
+        await getDataFromThirdParty(browser4, "part=D");
       }
 
       info("Done checking departitioned state");

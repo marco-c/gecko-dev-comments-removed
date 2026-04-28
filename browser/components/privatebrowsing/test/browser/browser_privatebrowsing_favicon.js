@@ -208,8 +208,8 @@ add_task(async function test_favicon_privateBrowsing() {
   
   
   let cookies = [];
-  cookies.push(Math.random().toString());
-  cookies.push(Math.random().toString());
+  cookies.push(`A=${Math.random().toString()}`);
+  cookies.push(`B=${Math.random().toString()}`);
 
   
   await assignCookies(privateWindow.gBrowser, TEST_SITE, cookies[0]);
