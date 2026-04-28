@@ -321,7 +321,8 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public TaskQueueBase {
   
   
   
-  bool IsYieldRequested() const;
+  
+  bool HasPendingTasks() const;
 
   
   
@@ -344,12 +345,6 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public TaskQueueBase {
     BlockingCall([&] { result = std::forward<Functor>(functor)(); }, location);
     return result;
   }
-
-  
-  
-  
-  
-  void PostHighPriorityTask(absl::AnyInvocable<void() &&> task);
 
   
   
@@ -476,8 +471,6 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public TaskQueueBase {
  private:
   static const int kSlowDispatchLoggingThreshold = 50;  
 
-  void PostTaskInternal(absl::AnyInvocable<void() &&> task, bool high_priority);
-
   
   
   
@@ -513,8 +506,6 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public TaskQueueBase {
   void ClearCurrentTaskQueue();
 
   std::deque<absl::AnyInvocable<void() &&>> messages_ RTC_GUARDED_BY(mutex_);
-  std::deque<absl::AnyInvocable<void() &&>> high_priority_messages_
-      RTC_GUARDED_BY(mutex_);
   std::priority_queue<DelayedMessage> delayed_messages_ RTC_GUARDED_BY(mutex_);
   uint32_t delayed_next_num_ RTC_GUARDED_BY(mutex_);
 #if RTC_DCHECK_IS_ON

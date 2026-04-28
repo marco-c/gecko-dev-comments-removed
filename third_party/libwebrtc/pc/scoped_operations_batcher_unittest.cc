@@ -75,7 +75,7 @@ TEST(ScopedOperationsBatcherTest, ExecutesReturnedTasksOnCallingThread) {
   EXPECT_EQ(return_task_thread, signaling_thread);
 }
 
-TEST(ScopedOperationsBatcherTest, YieldsToHighPriorityTasks) {
+TEST(ScopedOperationsBatcherTest, YieldsToOtherTasks) {
   auto target_thread = Thread::Create();
   target_thread->Start();
 
@@ -87,13 +87,14 @@ TEST(ScopedOperationsBatcherTest, YieldsToHighPriorityTasks) {
     batcher.push_back([&] {
       execution_order.push_back(2);
       
-      target_thread->PostHighPriorityTask(
-          [&] { execution_order.push_back(3); });
+      
+      target_thread->PostTask([&] { execution_order.push_back(3); });
     });
     batcher.push_back([&] { execution_order.push_back(4); });
     batcher.push_back([&] { execution_order.push_back(5); });
   }
 
+  
   
   
   EXPECT_EQ(execution_order, std::vector<int>({1, 2, 3, 4, 5}));

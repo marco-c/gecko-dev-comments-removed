@@ -391,7 +391,6 @@ void Thread::DoDestroy() {
   ThreadManager::Remove(this);
   
   CurrentTaskQueueSetter set_current(this);
-  high_priority_messages_.clear();
   messages_.clear();
   delayed_messages_ = {};
 }
@@ -443,13 +442,6 @@ absl::AnyInvocable<void() &&> Thread::Get(int cmsWait) {
         delayed_messages_.pop();
       }
       
-      if (!high_priority_messages_.empty()) {
-        absl::AnyInvocable<void() &&> task =
-            std::move(high_priority_messages_.front());
-        high_priority_messages_.pop_front();
-        return task;
-      }
-      
       if (!messages_.empty()) {
         absl::AnyInvocable<void() &&> task = std::move(messages_.front());
         messages_.pop_front();
@@ -494,15 +486,6 @@ absl::AnyInvocable<void() &&> Thread::Get(int cmsWait) {
 void Thread::PostTaskImpl(absl::AnyInvocable<void() &&> task,
                           const PostTaskTraits& ,
                           const Location& ) {
-  PostTaskInternal(std::move(task), false);
-}
-
-void Thread::PostHighPriorityTask(absl::AnyInvocable<void() &&> task) {
-  PostTaskInternal(std::move(task), true);
-}
-
-void Thread::PostTaskInternal(absl::AnyInvocable<void() &&> task,
-                              bool high_priority) {
   if (IsQuitting()) {
     return;
   }
@@ -513,11 +496,7 @@ void Thread::PostTaskInternal(absl::AnyInvocable<void() &&> task,
 
   {
     MutexLock lock(&mutex_);
-    if (high_priority) {
-      high_priority_messages_.push_back(std::move(task));
-    } else {
-      messages_.push_back(std::move(task));
-    }
+    messages_.push_back(std::move(task));
     WakeUpSocketServer();
   }
 }
@@ -554,7 +533,7 @@ void Thread::PostDelayedTaskImpl(absl::AnyInvocable<void() &&> task,
 int Thread::GetDelay() {
   MutexLock lock(&mutex_);
 
-  if (!high_priority_messages_.empty() || !messages_.empty())
+  if (!messages_.empty())
     return 0;
 
   if (!delayed_messages_.empty()) {
@@ -990,7 +969,7 @@ AutoSocketServerThread::~AutoSocketServerThread() {
   }
 }
 
-bool Thread::IsYieldRequested() const {
+bool Thread::HasPendingTasks() const {
   RTC_DCHECK_RUN_ON(this);
 #if RTC_DCHECK_IS_ON
   
@@ -998,7 +977,7 @@ bool Thread::IsYieldRequested() const {
   RTC_DCHECK_EQ(running_synchronous_blocking_call_count_, 0);
 #endif
   MutexLock lock(&mutex_);
-  return !high_priority_messages_.empty();
+  return !messages_.empty();
 }
 
 }  
