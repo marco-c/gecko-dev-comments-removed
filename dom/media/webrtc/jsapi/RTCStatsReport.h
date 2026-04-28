@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef RTCStatsReport_h_
 #define RTCStatsReport_h_
 
@@ -15,7 +13,6 @@
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/AutoEntryScript.h"
-#include "mozilla/dom/PerformanceService.h"
 #include "mozilla/dom/RTCStatsReportBinding.h"  
 #include "mozilla/dom/ToJSValue.h"
 #include "nsCOMPtr.h"
@@ -35,8 +32,11 @@ namespace dom {
 
 
 struct RTCStatsTimestampState {
-  RTCStatsTimestampState();
-  explicit RTCStatsTimestampState(Performance& aPerformance);
+  RTCStatsTimestampState(uint64_t aRandomTimelineSeed,
+                         const TimeStamp& aStartDomRealtime,
+                         webrtc::Timestamp aStartRealtime,
+                         RTPCallerType aRTPCallerType,
+                         DOMHighResTimeStamp aStartWallClockRaw);
 
   RTCStatsTimestampState(const RTCStatsTimestampState&) = default;
 
@@ -54,11 +54,8 @@ struct RTCStatsTimestampState {
   const RTPCallerType mRTPCallerType;
   
   const DOMHighResTimeStamp mStartWallClockRaw;
-
- protected:
-  RTCStatsTimestampState(TimeStamp aStartDomRealtime,
-                         webrtc::Timestamp aStartRealtime);
 };
+
 
 
 
@@ -112,7 +109,9 @@ class RTCStatsTimestamp {
 
 class RTCStatsTimestampMaker {
  public:
-  static RTCStatsTimestampMaker Create(nsPIDOMWindowInner* aWindow = nullptr);
+  static RTCStatsTimestampMaker Create();
+  static RTCStatsTimestampMaker Create(Performance* aPerformance);
+  static RTCStatsTimestampMaker Create(nsPIDOMWindowInner* aWindow);
 
   RTCStatsTimestamp GetNow() const;
 
