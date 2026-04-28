@@ -9,26 +9,25 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert
+import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.Mockito
 import org.mozilla.fenix.wifi.WifiConnectionMonitor
 
 @RunWith(AndroidJUnit4::class)
 class DownloadLanguagesFeatureTest {
     private lateinit var downloadLanguagesFeature: DownloadLanguagesFeature
     private lateinit var wifiConnectionMonitor: WifiConnectionMonitor
-    private lateinit var dataSaverAndWifiChanged: ((Boolean) -> Unit)
+    private val dataSaverAndWifiChangedCalls = mutableListOf<Boolean>()
+    private val dataSaverAndWifiChanged: (Boolean) -> Unit = { dataSaverAndWifiChangedCalls.add(it) }
     private lateinit var connectivityManager: ConnectivityManager
 
     @Before
     fun setUp() {
         wifiConnectionMonitor = mockk(relaxed = true)
-        dataSaverAndWifiChanged = mock()
         connectivityManager = mockk()
         downloadLanguagesFeature =
             DownloadLanguagesFeature(
@@ -79,7 +78,7 @@ class DownloadLanguagesFeatureTest {
 
         downloadLanguagesFeature.wifiConnectedListener(false)
 
-        Mockito.verify(dataSaverAndWifiChanged).invoke(true)
+        assertEquals(listOf(true), dataSaverAndWifiChangedCalls)
     }
 
     @Test
@@ -91,7 +90,7 @@ class DownloadLanguagesFeatureTest {
 
         downloadLanguagesFeature.wifiConnectedListener(false)
 
-        Mockito.verify(dataSaverAndWifiChanged).invoke(true)
+        assertEquals(listOf(true), dataSaverAndWifiChangedCalls)
     }
 
     @Test
@@ -103,7 +102,7 @@ class DownloadLanguagesFeatureTest {
 
         downloadLanguagesFeature.wifiConnectedListener(true)
 
-        Mockito.verify(dataSaverAndWifiChanged).invoke(false)
+        assertEquals(listOf(false), dataSaverAndWifiChangedCalls)
     }
 
     @Test
@@ -115,6 +114,6 @@ class DownloadLanguagesFeatureTest {
 
         downloadLanguagesFeature.wifiConnectedListener(true)
 
-        Mockito.verify(dataSaverAndWifiChanged).invoke(false)
+        assertEquals(listOf(false), dataSaverAndWifiChangedCalls)
     }
 }
