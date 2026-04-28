@@ -281,6 +281,15 @@ struct GLContextSymbols final {
   void(GLAPIENTRY* fCopyBufferSubData)(GLenum, GLenum, GLintptr, GLintptr,
                                        GLsizeiptr);
 
+  
+  void(GLAPIENTRY* fCopyImageSubData)(GLuint srcName, GLenum srcTarget,
+                                      GLint srcLevel, GLint srcX, GLint srcY,
+                                      GLint srcZ, GLuint dstName,
+                                      GLenum dstTarget, GLint dstLevel,
+                                      GLint dstX, GLint dstY, GLint dstZ,
+                                      GLsizei srcWidth, GLsizei srcHeight,
+                                      GLsizei srcDepth);
+
   GLenum(GLAPIENTRY* fGetGraphicsResetStatus)();
 
   
