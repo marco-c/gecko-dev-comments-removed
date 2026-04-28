@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef include_dom_media_ipc_RemoteDecoderChild_h
 #define include_dom_media_ipc_RemoteDecoderChild_h
 
@@ -61,6 +59,8 @@ class RemoteDecoderChild : public ShmemRecycleAllocator<RemoteDecoderChild>,
  protected:
   virtual ~RemoteDecoderChild();
   void AssertOnManagerThread() const;
+
+  nsresult GetCrashedErrorCode() const;
 
   virtual MediaResult ProcessOutput(DecodedOutputIPDL&& aDecodedData) = 0;
   virtual void RecordShutdownTelemetry(bool aForAbnormalShutdown) {}
