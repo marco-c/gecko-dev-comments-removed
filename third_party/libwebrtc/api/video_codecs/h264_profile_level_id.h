@@ -91,6 +91,11 @@ RTC_EXPORT bool H264IsSameProfile(const CodecParameterMap& params1,
 RTC_EXPORT bool H264IsSameProfileAndLevel(const CodecParameterMap& params1,
                                           const CodecParameterMap& params2);
 
+
+
+RTC_EXPORT bool H264IsProfileSubsetOf(const CodecParameterMap& subset,
+                                      const CodecParameterMap& superset);
+
 }  
 
 #endif  

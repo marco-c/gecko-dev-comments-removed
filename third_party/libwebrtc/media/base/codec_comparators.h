@@ -44,6 +44,11 @@ bool IsSameRtpCodec(const Codec& codec, const RtpCodec& rtp_codec);
 
 
 bool IsSameRtpCodecIgnoringLevel(const Codec& codec, const RtpCodec& rtp_codec);
+
+
+bool IsSameH264PacketizationMode(const CodecParameterMap& left,
+                                 const CodecParameterMap& right);
+
 }  
 
 #endif  

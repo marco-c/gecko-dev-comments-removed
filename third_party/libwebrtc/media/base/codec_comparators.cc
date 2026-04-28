@@ -59,12 +59,6 @@ std::string H264GetPacketizationModeOrDefault(const CodecParameterMap& params) {
   return GetFmtpParameterOrDefault(params, kH264FmtpPacketizationMode, "0");
 }
 
-bool H264IsSamePacketizationMode(const CodecParameterMap& left,
-                                 const CodecParameterMap& right) {
-  return H264GetPacketizationModeOrDefault(left) ==
-         H264GetPacketizationModeOrDefault(right);
-}
-
 std::string AV1GetTierOrDefault(const CodecParameterMap& params) {
   
   
@@ -104,7 +98,7 @@ bool IsSameCodecSpecific(const std::string& name1,
   };
   if (either_name_matches(kH264CodecName))
     return H264IsSameProfile(params1, params2) &&
-           H264IsSamePacketizationMode(params1, params2);
+           IsSameH264PacketizationMode(params1, params2);
   if (either_name_matches(kVp9CodecName))
     return VP9IsSameProfile(params1, params2);
   
@@ -415,6 +409,12 @@ bool IsSameRtpCodecIgnoringLevel(const Codec& codec,
   }
 
   return params1 == params2;
+}
+
+bool IsSameH264PacketizationMode(const CodecParameterMap& left,
+                                 const CodecParameterMap& right) {
+  return H264GetPacketizationModeOrDefault(left) ==
+         H264GetPacketizationModeOrDefault(right);
 }
 
 }  
