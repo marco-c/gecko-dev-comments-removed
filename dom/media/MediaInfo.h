@@ -369,6 +369,7 @@ class VideoInfo : public TrackInfo {
     mColorSpace = aOther.mColorSpace;
     mColorPrimaries = aOther.mColorPrimaries;
     mTransferFunction = aOther.mTransferFunction;
+    mHDRMetadata = aOther.mHDRMetadata;
     mColorRange = aOther.mColorRange;
     mImageRect = aOther.mImageRect;
     mAlphaPresent = aOther.mAlphaPresent;
@@ -475,6 +476,8 @@ class VideoInfo : public TrackInfo {
   
   
   Maybe<gfx::TransferFunction> mTransferFunction;
+
+  Maybe<gfx::HDRMetadata> mHDRMetadata;
 
   
   
