@@ -223,17 +223,30 @@ DecodeStencil(JS::FrontendContext* fc, const ReadOnlyDecodeOptions& options,
 
 
 
+enum class CollectDelazificationsResult {
+  
+  
+  NewlyStarted,
+
+  
+  
+  AlreadyStarted,
+
+  
+  NotSupported,
+};
+
 
 
 
 
 extern JS_PUBLIC_API bool StartCollectingDelazifications(
     JSContext* cx, JS::Handle<JSScript*> script, Stencil* stencil,
-    bool& alreadyStarted);
+    CollectDelazificationsResult& result);
 
 extern JS_PUBLIC_API bool StartCollectingDelazifications(
     JSContext* cx, JS::Handle<JSObject*> module, Stencil* stencil,
-    bool& alreadyStarted);
+    CollectDelazificationsResult& result);
 
 
 
