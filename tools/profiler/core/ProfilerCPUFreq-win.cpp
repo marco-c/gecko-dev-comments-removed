@@ -16,6 +16,10 @@
 
 using namespace mozilla;
 
+
+
+
+
 ProfilerCPUFreq::ProfilerCPUFreq() {
   
   DWORD dwBufferSize = 0;
