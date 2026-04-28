@@ -12,7 +12,6 @@
 
 
 
-
 #ifdef XP_UNIX
   #ifndef XP_MACOSX
     #define UNIX_BUT_NOT_MAC
@@ -818,9 +817,6 @@ pref("browser.urlbar.suggest.sports", true);
 
 
 pref("browser.urlbar.lastUrlbarSearchSeconds", 0);
-
-
-pref("browser.urlbar.nova.featureGate", false);
 
 
 
@@ -2071,6 +2067,9 @@ pref("browser.newtabpage.activity-stream.hideTopSitesWithSearchParam", "mfadid=a
 pref("browser.newtabpage.activity-stream.selfLoading.enabled", true);
 
 
+pref("browser.newtabpage.activity-stream.nova.enabled", true);
+
+
 pref("browser.newtabpage.resource-mapping.log", false);
 
 
@@ -2510,10 +2509,7 @@ pref("browser.contentblocking.reject-and-isolate-cookies.preferences.ui.enabled"
 
 
 
-
-
-
-pref("browser.contentblocking.features.strict", "tp,tpPrivate,cookieBehavior5,cookieBehaviorPBM5,cryptoTP,fp,stp,emailTP,emailTPPrivate,-consentmanagerSkip,-consentmanagerSkipPrivate,lvl2,rp,rpTop,ocsp,qps,qpsPBM,fpp,fppPrivate,btp,lna");
+pref("browser.contentblocking.features.strict", "tp,tpPrivate,cookieBehavior5,cookieBehaviorPBM5,cryptoTP,fp,stp,emailTP,emailTPPrivate,-consentmanagerSkip,-consentmanagerSkipPrivate,lvl2,rp,rpTop,qps,qpsPBM,fpp,fppPrivate,btp,lna");
 
 
 pref("browser.contentblocking.report.lockwise.enabled", true);
@@ -3408,9 +3404,6 @@ pref("browser.firefox-view.virtual-list.enabled", true);
 pref("browser.pdfjs.feature-tour", "{\"screen\":\"\",\"complete\":false}");
 
 
-pref("cookiebanners.ui.desktop.enabled", false);
-
-
 pref("cookiebanners.ui.desktop.showCallout", false);
 
 
@@ -3441,10 +3434,6 @@ pref("cookiebanners.ui.desktop.showCallout", false);
   pref("telemetry.fog.artifact_build", true);
 #endif
 
-#ifdef NIGHTLY_BUILD
-  pref("dom.security.credentialmanagement.identity.enabled", true);
-#endif
-
 pref("ui.new-webcompat-reporter.enabled", true);
 
 #if defined(EARLY_BETA_OR_EARLIER)
@@ -3459,11 +3448,8 @@ pref("ui.new-webcompat-reporter.reason-dropdown", 2);
 pref("ui.new-webcompat-reporter.reason-dropdown.randomized", true);
 
 
-#if defined(NIGHTLY_BUILD)
-  pref("browser.privatebrowsing.resetPBM.enabled", true);
-#else
-  pref("browser.privatebrowsing.resetPBM.enabled", false);
-#endif
+pref("browser.privatebrowsing.resetPBM.enabled", true);
+
 
 
 pref("browser.privatebrowsing.resetPBM.showConfirmationDialog", true);
@@ -3577,7 +3563,7 @@ pref("browser.ipProtection.egressLocationEnabled", false);
 pref("browser.ipProtection.bandwidthThreshold", 0);
 
 
-pref("browser.ipProtection.bandwidthWarningDismissedThreshold", 0);
+pref("browser.ipProtection.bandwidthWarningDismissedThreshold", "");
 
 
 pref("about.glean.redesign.enabled", false);
@@ -3603,3 +3589,6 @@ pref("widget.support-xdg-config", true, locked);
 
 
 pref("browser.contentsharing.enabled", false);
+
+
+pref("browser.contentsharing.newBadge.enabled", true);
