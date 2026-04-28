@@ -378,7 +378,11 @@ class JSTerm extends Component {
             }
 
             if (!isSomethingSelected) {
-              this.insertStringAtCursor("\t");
+              this.editor.insertStringAtCursor(
+                "\t",
+                0,
+                JSTERM_CODEMIRROR_ORIGIN
+              );
               return false;
             }
           }
@@ -1023,8 +1027,13 @@ class JSTerm extends Component {
     if (this.editor.isTextSelected()) {
       
       
-      const [{ head }] = cm.listSelections();
-      cm.setCursor(head, { scroll: false });
+      if (Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
+        const range = cm.state.selection.ranges[0];
+        this.editor.setCursorAtPosition(range.head, false);
+      } else {
+        const [{ head }] = cm.listSelections();
+        cm.setCursor(head, { scroll: false });
+      }
     }
   }
 
@@ -1372,17 +1381,15 @@ class JSTerm extends Component {
     }
 
     if (completionText) {
-      this.insertStringAtCursor(
+      this.editor.insertStringAtCursor(
         completionText,
-        numberOfCharsToReplaceCharsBeforeCursor
+        numberOfCharsToReplaceCharsBeforeCursor,
+        JSTERM_CODEMIRROR_ORIGIN
       );
 
       if (numberOfCharsToMoveTheCursorForward) {
         const { line, ch } = this.editor.getCursorPos();
-        this.editor.setCursor({
-          line,
-          ch: ch + numberOfCharsToMoveTheCursorForward,
-        });
+        this.editor.setCursorAt(line, ch + numberOfCharsToMoveTheCursorForward);
       }
     }
   }
@@ -1489,29 +1496,6 @@ class JSTerm extends Component {
 
 
 
-
-  insertStringAtCursor(str, numberOfCharsToReplaceCharsBeforeCursor = 0) {
-    if (!this.editor) {
-      return;
-    }
-
-    const cursor = this.editor.getCursorPos();
-    const from = {
-      line: cursor.line,
-      ch: cursor.ch - numberOfCharsToReplaceCharsBeforeCursor,
-    };
-
-    this.editor
-      .getDoc()
-      .replaceRange(str, from, cursor, JSTERM_CODEMIRROR_ORIGIN);
-  }
-
-  
-
-
-
-
-
   setAutoCompletionText(suffix) {
     if (!this.editor) {
       return;
@@ -1559,9 +1543,7 @@ class JSTerm extends Component {
       return false;
     }
 
-    const { ch, line } = this.editor.getCursorPos();
-    const lineContent = this.editor.getLine(line);
-    const textAfterCursor = lineContent.substring(ch);
+    const textAfterCursor = this.editor.getTextAfterCursor();
     return textAfterCursor === "";
   }
 
