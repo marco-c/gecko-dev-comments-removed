@@ -1703,6 +1703,10 @@ void MacroAssembler::branchTest32(Condition cond, Register lhs, Register rhs,
     Cbz(ARMRegister(lhs, 32), label);
   } else if (lhs == rhs && cond == NonZero) {
     Cbnz(ARMRegister(lhs, 32), label);
+  } else if (lhs == rhs && cond == Signed) {
+    Tbnz(ARMRegister(lhs, 32), 31, label);
+  } else if (lhs == rhs && cond == NotSigned) {
+    Tbz(ARMRegister(lhs, 32), 31, label);
   } else {
     test32(lhs, rhs);
     B(label, cond);
@@ -1743,6 +1747,10 @@ void MacroAssembler::branchTestPtr(Condition cond, Register lhs, Register rhs,
     Cbz(ARMRegister(lhs, 64), label);
   } else if (lhs == rhs && cond == NonZero) {
     Cbnz(ARMRegister(lhs, 64), label);
+  } else if (lhs == rhs && cond == Signed) {
+    Tbnz(ARMRegister(lhs, 64), 63, label);
+  } else if (lhs == rhs && cond == NotSigned) {
+    Tbz(ARMRegister(lhs, 64), 63, label);
   } else {
     Tst(ARMRegister(lhs, 64), Operand(ARMRegister(rhs, 64)));
     B(label, cond);
