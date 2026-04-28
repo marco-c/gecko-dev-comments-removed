@@ -60,7 +60,7 @@ namespace testing {
 namespace internal {
 
 
-class GTEST_API_ String {
+class GTEST_API_ [[nodiscard]] String {
  public:
   
 
@@ -166,7 +166,7 @@ class GTEST_API_ String {
 
  private:
   String();  
-};           
+};  
 
 
 

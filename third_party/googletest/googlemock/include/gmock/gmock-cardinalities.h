@@ -63,7 +63,7 @@ namespace testing {
 
 
 
-class CardinalityInterface {
+class [[nodiscard]] CardinalityInterface {
  public:
   virtual ~CardinalityInterface() = default;
 
@@ -88,7 +88,7 @@ class CardinalityInterface {
 
 
 
-class GTEST_API_ Cardinality {
+class GTEST_API_ [[nodiscard]] Cardinality {
  public:
   
   

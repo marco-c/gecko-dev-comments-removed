@@ -192,7 +192,7 @@ GTEST_API_ bool InDeathTestChild();
 
 
 
-class GTEST_API_ ExitedWithCode {
+class GTEST_API_ [[nodiscard]] ExitedWithCode {
  public:
   explicit ExitedWithCode(int exit_code);
   ExitedWithCode(const ExitedWithCode&) = default;
@@ -206,7 +206,7 @@ class GTEST_API_ ExitedWithCode {
 #if !defined(GTEST_OS_WINDOWS) && !defined(GTEST_OS_FUCHSIA)
 
 
-class GTEST_API_ KilledBySignal {
+class GTEST_API_ [[nodiscard]] KilledBySignal {
  public:
   explicit KilledBySignal(int signum);
   bool operator()(int exit_status) const;
@@ -317,7 +317,7 @@ class GTEST_API_ KilledBySignal {
     GTEST_LOG_(WARNING) << "Death tests are not supported on this platform.\n" \
                         << "Statement '" #statement "' cannot be verified.";   \
   } else if (::testing::internal::AlwaysFalse()) {                             \
-    ::testing::internal::MakeDeathTestMatcher(regex_or_matcher);               \
+    (void)::testing::internal::MakeDeathTestMatcher(regex_or_matcher);         \
     GTEST_SUPPRESS_UNREACHABLE_CODE_WARNING_BELOW_(statement);                 \
     terminator;                                                                \
   } else                                                                       \

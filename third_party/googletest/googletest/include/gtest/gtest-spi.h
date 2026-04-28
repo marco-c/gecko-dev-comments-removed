@@ -51,7 +51,7 @@ namespace testing {
 
 
 
-class GTEST_API_ ScopedFakeTestPartResultReporter
+class GTEST_API_ [[nodiscard]] ScopedFakeTestPartResultReporter
     : public TestPartResultReporterInterface {
  public:
   
@@ -100,7 +100,7 @@ namespace internal {
 
 
 
-class GTEST_API_ SingleFailureChecker {
+class GTEST_API_ [[nodiscard]] SingleFailureChecker {
  public:
   
   SingleFailureChecker(const TestPartResultArray* results,

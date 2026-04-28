@@ -90,14 +90,14 @@ GTEST_API_ void ReportInvalidTestSuiteType(const char* test_suite_name,
                                            const CodeLocation& code_location);
 
 template <typename>
-class ParamGeneratorInterface;
+class [[nodiscard]] ParamGeneratorInterface;
 template <typename>
-class ParamGenerator;
+class [[nodiscard]] ParamGenerator;
 
 
 
 template <typename T>
-class ParamIteratorInterface {
+class [[nodiscard]] ParamIteratorInterface {
  public:
   virtual ~ParamIteratorInterface() = default;
   
@@ -127,7 +127,7 @@ class ParamIteratorInterface {
 
 
 template <typename T>
-class ParamIterator {
+class [[nodiscard]] ParamIterator {
  public:
   typedef T value_type;
   typedef const T& reference;
@@ -169,7 +169,7 @@ class ParamIterator {
 
 
 template <typename T>
-class ParamGeneratorInterface {
+class [[nodiscard]] ParamGeneratorInterface {
  public:
   typedef T ParamType;
 
@@ -186,7 +186,7 @@ class ParamGeneratorInterface {
 
 
 template <typename T>
-class ParamGenerator {
+class [[nodiscard]] ParamGenerator {
  public:
   typedef ParamIterator<T> iterator;
 
@@ -210,7 +210,7 @@ class ParamGenerator {
 
 
 template <typename T, typename IncrementT>
-class RangeGenerator : public ParamGeneratorInterface<T> {
+class [[nodiscard]] RangeGenerator : public ParamGeneratorInterface<T> {
  public:
   RangeGenerator(T begin, T end, IncrementT step)
       : begin_(begin),
@@ -296,7 +296,8 @@ class RangeGenerator : public ParamGeneratorInterface<T> {
 
 
 template <typename T>
-class ValuesInIteratorRangeGenerator : public ParamGeneratorInterface<T> {
+class [[nodiscard]] ValuesInIteratorRangeGenerator
+    : public ParamGeneratorInterface<T> {
  public:
   template <typename ForwardIterator>
   ValuesInIteratorRangeGenerator(ForwardIterator begin, ForwardIterator end)
@@ -396,7 +397,7 @@ void TestNotEmpty(const T&) {}
 
 
 template <class TestClass>
-class ParameterizedTestFactory : public TestFactoryBase {
+class [[nodiscard]] ParameterizedTestFactory : public TestFactoryBase {
  public:
   typedef typename TestClass::ParamType ParamType;
   explicit ParameterizedTestFactory(ParamType parameter)
@@ -418,7 +419,7 @@ class ParameterizedTestFactory : public TestFactoryBase {
 
 
 template <class ParamType>
-class TestMetaFactoryBase {
+class [[nodiscard]] TestMetaFactoryBase {
  public:
   virtual ~TestMetaFactoryBase() = default;
 
@@ -434,7 +435,7 @@ class TestMetaFactoryBase {
 
 
 template <class TestSuite>
-class TestMetaFactory
+class [[nodiscard]] TestMetaFactory
     : public TestMetaFactoryBase<typename TestSuite::ParamType> {
  public:
   using ParamType = typename TestSuite::ParamType;
@@ -460,7 +461,7 @@ class TestMetaFactory
 
 
 
-class ParameterizedTestSuiteInfoBase {
+class [[nodiscard]] ParameterizedTestSuiteInfoBase {
  public:
   virtual ~ParameterizedTestSuiteInfoBase() = default;
 
@@ -503,7 +504,8 @@ GTEST_API_ void InsertSyntheticTestCase(const std::string& name,
 
 
 template <class TestSuite>
-class ParameterizedTestSuiteInfo : public ParameterizedTestSuiteInfoBase {
+class [[nodiscard]] ParameterizedTestSuiteInfo
+    : public ParameterizedTestSuiteInfoBase {
  public:
   
   
@@ -688,7 +690,7 @@ using ParameterizedTestCaseInfo = ParameterizedTestSuiteInfo<TestCase>;
 
 
 
-class ParameterizedTestSuiteRegistry {
+class [[nodiscard]] ParameterizedTestSuiteRegistry {
  public:
   ParameterizedTestSuiteRegistry() = default;
   ~ParameterizedTestSuiteRegistry() {
@@ -762,7 +764,7 @@ class ParameterizedTestSuiteRegistry {
 
 
 
-class TypeParameterizedTestSuiteRegistry {
+class [[nodiscard]] TypeParameterizedTestSuiteRegistry {
  public:
   
   void RegisterTestSuite(const char* test_suite_name,
@@ -801,7 +803,7 @@ namespace internal {
 GTEST_DISABLE_MSC_WARNINGS_PUSH_(4100)
 
 template <typename... Ts>
-class ValueArray {
+class [[nodiscard]] ValueArray {
  public:
   explicit ValueArray(Ts... v) : v_(FlatTupleConstructTag{}, std::move(v)...) {}
 
@@ -822,7 +824,7 @@ class ValueArray {
 GTEST_DISABLE_MSC_WARNINGS_POP_()  
 
 template <typename... T>
-class CartesianProductGenerator
+class [[nodiscard]] CartesianProductGenerator
     : public ParamGeneratorInterface<::std::tuple<T...>> {
  public:
   typedef ::std::tuple<T...> ParamType;
@@ -939,7 +941,7 @@ class CartesianProductGenerator
 };
 
 template <class... Gen>
-class CartesianProductHolder {
+class [[nodiscard]] CartesianProductHolder {
  public:
   CartesianProductHolder(const Gen&... g) : generators_(g...) {}
   template <typename... T>
@@ -953,7 +955,8 @@ class CartesianProductHolder {
 };
 
 template <typename From, typename To, typename Func>
-class ParamGeneratorConverter : public ParamGeneratorInterface<To> {
+class [[nodiscard]] ParamGeneratorConverter
+    : public ParamGeneratorInterface<To> {
  public:
   ParamGeneratorConverter(ParamGenerator<From> gen, Func converter)  
       : generator_(std::move(gen)), converter_(std::move(converter)) {}
@@ -1023,7 +1026,7 @@ class ParamGeneratorConverter : public ParamGeneratorInterface<To> {
 template <class GeneratedT,
           typename StdFunction =
               std::function<const GeneratedT&(const GeneratedT&)>>
-class ParamConverterGenerator {
+class [[nodiscard]] ParamConverterGenerator {
  public:
   ParamConverterGenerator(ParamGenerator<GeneratedT> g)  
       : generator_(std::move(g)), converter_(Identity) {}

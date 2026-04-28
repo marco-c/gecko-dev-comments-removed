@@ -665,9 +665,19 @@ typedef struct _RTL_CRITICAL_SECTION GTEST_CRITICAL_SECTION;
      defined(GTEST_OS_DRAGONFLY) || defined(GTEST_OS_GNU_KFREEBSD) || \
      defined(GTEST_OS_HAIKU) || defined(GTEST_OS_GNU_HURD))
 
+
 #if GTEST_HAS_FILE_SYSTEM
 #define GTEST_HAS_DEATH_TEST 1
 #endif  
+#endif
+
+
+
+
+
+#if GTEST_HAS_DEATH_TEST || \
+    (defined(GTEST_OS_EMSCRIPTEN) && GTEST_HAS_FILE_SYSTEM)
+#define GTEST_INTERNAL_HAS_PREMATURE_EXIT_FILE 1
 #endif
 
 
@@ -822,11 +832,13 @@ typedef struct _RTL_CRITICAL_SECTION GTEST_CRITICAL_SECTION;
 #ifndef GTEST_API_
 
 #ifdef _MSC_VER
-#if defined(GTEST_LINKED_AS_SHARED_LIBRARY) && GTEST_LINKED_AS_SHARED_LIBRARY
-#define GTEST_API_ __declspec(dllimport)
-#elif defined(GTEST_CREATE_SHARED_LIBRARY) && GTEST_CREATE_SHARED_LIBRARY
+#if defined(GTEST_CREATE_SHARED_LIBRARY) && GTEST_CREATE_SHARED_LIBRARY
 #define GTEST_API_ __declspec(dllexport)
+#elif defined(GTEST_LINKED_AS_SHARED_LIBRARY) && GTEST_LINKED_AS_SHARED_LIBRARY
+#define GTEST_API_ __declspec(dllimport)
 #endif
+#elif GTEST_INTERNAL_HAVE_CPP_ATTRIBUTE(gnu::visibility)
+#define GTEST_API_ [[gnu::visibility("default")]]
 #elif GTEST_HAVE_ATTRIBUTE_(visibility)
 #define GTEST_API_ __attribute__((visibility("default")))
 #endif  
@@ -917,7 +929,7 @@ namespace internal {
 
 
 
-class Secret {
+class [[nodiscard]] Secret {
   Secret(const Secret&) = delete;
 };
 
@@ -932,7 +944,7 @@ GTEST_API_ bool IsTrue(bool condition);
 
 
 
-class GTEST_API_ RE {
+class GTEST_API_ [[nodiscard]] RE {
  public:
   RE(absl::string_view regex) : regex_(regex) {}                  
   RE(const char* regex) : RE(absl::string_view(regex)) {}         
@@ -958,7 +970,7 @@ GTEST_DISABLE_MSC_WARNINGS_PUSH_(4251 \
 
 
 
-class GTEST_API_ RE {
+class GTEST_API_ [[nodiscard]] RE {
  public:
   
   
@@ -1027,7 +1039,7 @@ enum GTestLogSeverity { GTEST_INFO, GTEST_WARNING, GTEST_ERROR, GTEST_FATAL };
 
 
 
-class GTEST_API_ GTestLog {
+class GTEST_API_ [[nodiscard]] GTestLog {
  public:
   GTestLog(GTestLogSeverity severity, const char* file, int line);
 
@@ -1190,7 +1202,7 @@ void ClearInjectableArgvs();
 #ifdef GTEST_OS_WINDOWS
 
 
-class GTEST_API_ AutoHandle {
+class GTEST_API_ [[nodiscard]] AutoHandle {
  public:
   
   
@@ -1224,17 +1236,47 @@ class GTEST_API_ AutoHandle {
 
 
 #else
+
+
+
+
+
+
+
+#ifdef GTEST_OS_WINDOWS_MINGW
+
+
+
+
+class GTEST_API_ [[nodiscard]] Notification {
+ public:
+  Notification();
+  Notification(const Notification&) = delete;
+  Notification& operator=(const Notification&) = delete;
+  ~Notification();
+
+  
+  
+  void Notify();
+
+  
+  
+  void WaitForNotification();
+
+ private:
+  
+  
+  
+  
+  
+  typedef void* Handle;
+  Handle event_;
+};
+#else
 GTEST_DISABLE_MSC_WARNINGS_PUSH_(4251 \
 )
 
-
-
-
-
-
-
-
-class GTEST_API_ Notification {
+class GTEST_API_ [[nodiscard]] Notification {
  public:
   Notification() : notified_(false) {}
   Notification(const Notification&) = delete;
@@ -1262,6 +1304,7 @@ class GTEST_API_ Notification {
 };
 GTEST_DISABLE_MSC_WARNINGS_POP_()  
 #endif  
+#endif  
 
 
 
@@ -1273,7 +1316,7 @@ GTEST_DISABLE_MSC_WARNINGS_POP_()
 
 
 
-class ThreadWithParamBase {
+class [[nodiscard]] ThreadWithParamBase {
  public:
   virtual ~ThreadWithParamBase() = default;
   virtual void Run() = 0;
@@ -1303,7 +1346,7 @@ extern "C" inline void* ThreadFuncWithCLinkage(void* thread) {
 
 
 template <typename T>
-class ThreadWithParam : public ThreadWithParamBase {
+class [[nodiscard]] ThreadWithParam : public ThreadWithParamBase {
  public:
   typedef void UserThreadFunc(T);
 
@@ -1369,7 +1412,7 @@ class ThreadWithParam : public ThreadWithParamBase {
 
 
 
-class GTEST_API_ Mutex {
+class GTEST_API_ [[nodiscard]] Mutex {
  public:
   enum MutexType { kStatic = 0, kDynamic = 1 };
   
@@ -1422,14 +1465,13 @@ class GTEST_API_ Mutex {
 
 
 
-class GTestMutexLock {
+class [[nodiscard]] GTestMutexLock {
  public:
-  explicit GTestMutexLock(Mutex* mutex) : mutex_(mutex) { mutex_->lock(); }
-
-  ~GTestMutexLock() { mutex_->unlock(); }
+  explicit GTestMutexLock(Mutex& mutex) : mutex_(mutex) { mutex_.lock(); }
+  ~GTestMutexLock() { mutex_.unlock(); }
 
  private:
-  Mutex* const mutex_;
+  Mutex& mutex_;
 
   GTestMutexLock(const GTestMutexLock&) = delete;
   GTestMutexLock& operator=(const GTestMutexLock&) = delete;
@@ -1439,14 +1481,14 @@ typedef GTestMutexLock MutexLock;
 
 
 
-class ThreadLocalValueHolderBase {
+class [[nodiscard]] ThreadLocalValueHolderBase {
  public:
-  virtual ~ThreadLocalValueHolderBase() {}
+  virtual ~ThreadLocalValueHolderBase() = default;
 };
 
 
 
-class ThreadLocalBase {
+class [[nodiscard]] ThreadLocalBase {
  public:
   
   
@@ -1455,8 +1497,8 @@ class ThreadLocalBase {
   virtual ThreadLocalValueHolderBase* NewValueForCurrentThread() const = 0;
 
  protected:
-  ThreadLocalBase() {}
-  virtual ~ThreadLocalBase() {}
+  ThreadLocalBase() = default;
+  virtual ~ThreadLocalBase() = default;
 
  private:
   ThreadLocalBase(const ThreadLocalBase&) = delete;
@@ -1466,7 +1508,7 @@ class ThreadLocalBase {
 
 
 
-class GTEST_API_ ThreadLocalRegistry {
+class GTEST_API_ [[nodiscard]] ThreadLocalRegistry {
  public:
   
   
@@ -1478,14 +1520,14 @@ class GTEST_API_ ThreadLocalRegistry {
       const ThreadLocalBase* thread_local_instance);
 };
 
-class GTEST_API_ ThreadWithParamBase {
+class GTEST_API_ [[nodiscard]] ThreadWithParamBase {
  public:
   void Join();
 
  protected:
   class Runnable {
    public:
-    virtual ~Runnable() {}
+    virtual ~Runnable() = default;
     virtual void Run() = 0;
   };
 
@@ -1498,20 +1540,20 @@ class GTEST_API_ ThreadWithParamBase {
 
 
 template <typename T>
-class ThreadWithParam : public ThreadWithParamBase {
+class [[nodiscard]] ThreadWithParam : public ThreadWithParamBase {
  public:
   typedef void UserThreadFunc(T);
 
   ThreadWithParam(UserThreadFunc* func, T param, Notification* thread_can_start)
       : ThreadWithParamBase(new RunnableImpl(func, param), thread_can_start) {}
-  virtual ~ThreadWithParam() {}
+  ~ThreadWithParam() override = default;
 
  private:
   class RunnableImpl : public Runnable {
    public:
     RunnableImpl(UserThreadFunc* func, T param) : func_(func), param_(param) {}
-    virtual ~RunnableImpl() {}
-    virtual void Run() { func_(param_); }
+    ~RunnableImpl() override = default;
+    void Run() override { func_(param_); }
 
    private:
     UserThreadFunc* const func_;
@@ -1553,7 +1595,7 @@ class ThreadWithParam : public ThreadWithParamBase {
 
 
 template <typename T>
-class ThreadLocal : public ThreadLocalBase {
+class [[nodiscard]] ThreadLocal : public ThreadLocalBase {
  public:
   ThreadLocal() : default_factory_(new DefaultValueHolderFactory()) {}
   explicit ThreadLocal(const T& value)
@@ -1594,8 +1636,8 @@ class ThreadLocal : public ThreadLocalBase {
 
   class ValueHolderFactory {
    public:
-    ValueHolderFactory() {}
-    virtual ~ValueHolderFactory() {}
+    ValueHolderFactory() = default;
+    virtual ~ValueHolderFactory() = default;
     virtual ValueHolder* MakeNewHolder() const = 0;
 
    private:
@@ -1605,7 +1647,7 @@ class ThreadLocal : public ThreadLocalBase {
 
   class DefaultValueHolderFactory : public ValueHolderFactory {
    public:
-    DefaultValueHolderFactory() {}
+    DefaultValueHolderFactory() = default;
     ValueHolder* MakeNewHolder() const override { return new ValueHolder(); }
 
    private:
@@ -1638,7 +1680,7 @@ class ThreadLocal : public ThreadLocalBase {
 #elif GTEST_HAS_PTHREAD
 
 
-class MutexBase {
+class [[nodiscard]] MutexBase {
  public:
   
   void lock() {
@@ -1696,7 +1738,7 @@ class MutexBase {
 
 
 
-class Mutex : public MutexBase {
+class [[nodiscard]] Mutex : public MutexBase {
  public:
   Mutex() {
     GTEST_CHECK_POSIX_SUCCESS_(pthread_mutex_init(&mutex_, nullptr));
@@ -1714,14 +1756,13 @@ class Mutex : public MutexBase {
 
 
 
-class GTestMutexLock {
+class [[nodiscard]] GTestMutexLock {
  public:
-  explicit GTestMutexLock(MutexBase* mutex) : mutex_(mutex) { mutex_->lock(); }
-
-  ~GTestMutexLock() { mutex_->unlock(); }
+  explicit GTestMutexLock(MutexBase& mutex) : mutex_(mutex) { mutex_.lock(); }
+  ~GTestMutexLock() { mutex_.unlock(); }
 
  private:
-  MutexBase* const mutex_;
+  MutexBase& mutex_;
 
   GTestMutexLock(const GTestMutexLock&) = delete;
   GTestMutexLock& operator=(const GTestMutexLock&) = delete;
@@ -1735,7 +1776,7 @@ typedef GTestMutexLock MutexLock;
 
 
 
-class GTEST_API_ ThreadLocalValueHolderBase {
+class GTEST_API_ [[nodiscard]] ThreadLocalValueHolderBase {
  public:
   virtual ~ThreadLocalValueHolderBase() = default;
 };
@@ -1748,7 +1789,7 @@ extern "C" inline void DeleteThreadLocalValue(void* value_holder) {
 
 
 template <typename T>
-class GTEST_API_ ThreadLocal {
+class GTEST_API_ [[nodiscard]] ThreadLocal {
  public:
   ThreadLocal()
       : key_(CreateKey()), default_factory_(new DefaultValueHolderFactory()) {}
@@ -1861,7 +1902,7 @@ class GTEST_API_ ThreadLocal {
 
 
 
-class Mutex {
+class [[nodiscard]] Mutex {
  public:
   Mutex() {}
   void lock() {}
@@ -1879,15 +1920,15 @@ class Mutex {
 
 
 
-class GTestMutexLock {
+class [[nodiscard]] GTestMutexLock {
  public:
-  explicit GTestMutexLock(Mutex*) {}  
+  explicit GTestMutexLock(Mutex&) {}  
 };
 
 typedef GTestMutexLock MutexLock;
 
 template <typename T>
-class GTEST_API_ ThreadLocal {
+class GTEST_API_ [[nodiscard]] ThreadLocal {
  public:
   ThreadLocal() : value_() {}
   explicit ThreadLocal(const T& value) : value_(value) {}
@@ -2195,7 +2236,7 @@ constexpr BiggestInt kMaxBiggestInt = (std::numeric_limits<BiggestInt>::max)();
 
 
 template <size_t size>
-class TypeWithSize {
+class [[nodiscard]] TypeWithSize {
  public:
   
   
@@ -2204,7 +2245,7 @@ class TypeWithSize {
 
 
 template <>
-class TypeWithSize<4> {
+class [[nodiscard]] TypeWithSize<4> {
  public:
   using Int = std::int32_t;
   using UInt = std::uint32_t;
@@ -2212,7 +2253,7 @@ class TypeWithSize<4> {
 
 
 template <>
-class TypeWithSize<8> {
+class [[nodiscard]] TypeWithSize<8> {
  public:
   using Int = std::int64_t;
   using UInt = std::uint64_t;
@@ -2242,11 +2283,11 @@ using TimeInMillis = int64_t;
 
 
 #define GTEST_DECLARE_bool_(name) \
-  ABSL_DECLARE_FLAG(bool, GTEST_FLAG_NAME_(name))
+  GTEST_API_ ABSL_DECLARE_FLAG(bool, GTEST_FLAG_NAME_(name))
 #define GTEST_DECLARE_int32_(name) \
-  ABSL_DECLARE_FLAG(int32_t, GTEST_FLAG_NAME_(name))
+  GTEST_API_ ABSL_DECLARE_FLAG(int32_t, GTEST_FLAG_NAME_(name))
 #define GTEST_DECLARE_string_(name) \
-  ABSL_DECLARE_FLAG(std::string, GTEST_FLAG_NAME_(name))
+  GTEST_API_ ABSL_DECLARE_FLAG(std::string, GTEST_FLAG_NAME_(name))
 
 #define GTEST_FLAG_SAVER_ ::absl::FlagSaver
 
@@ -2321,6 +2362,13 @@ const char* StringFromGTestEnv(const char* flag, const char* default_val);
 
 }  
 }  
+
+#if GTEST_INTERNAL_HAVE_CPP_ATTRIBUTE(clang::annotate)
+#define GTEST_INTERNAL_DEPRECATE_AND_INLINE(msg) \
+  [[deprecated(msg), clang::annotate("inline-me")]]
+#else
+#define GTEST_INTERNAL_DEPRECATE_AND_INLINE(msg) [[deprecated(msg)]]
+#endif
 
 #if defined(__cpp_lib_span) || (GTEST_INTERNAL_HAS_INCLUDE(<span>) && \
                                 GTEST_INTERNAL_CPLUSPLUS_LANG >= 202002L)

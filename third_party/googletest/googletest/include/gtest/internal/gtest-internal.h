@@ -95,7 +95,7 @@
 #define GTEST_STRINGIFY_(...) GTEST_STRINGIFY_HELPER_(__VA_ARGS__, )
 
 namespace proto2 {
-class MessageLite;
+class [[nodiscard]] MessageLite;
 }
 
 namespace testing {
@@ -115,15 +115,15 @@ template <typename T>
 namespace internal {
 
 struct TraceInfo;    
-class TestInfoImpl;  
-class UnitTestImpl;  
+class [[nodiscard]] TestInfoImpl;  
+class [[nodiscard]] UnitTestImpl;  
 
 
 
 GTEST_API_ extern const char kStackTraceMarker[];
 
 
-class IgnoredValue {
+class [[nodiscard]] IgnoredValue {
   struct Sink {};
 
  public:
@@ -155,7 +155,8 @@ GTEST_DISABLE_MSC_WARNINGS_PUSH_(
 
 
 
-class GTEST_API_ GoogleTestFailureException : public ::std::runtime_error {
+class GTEST_API_ [[nodiscard]] GoogleTestFailureException
+    : public ::std::runtime_error {
  public:
   explicit GoogleTestFailureException(const TestPartResult& failure);
 };
@@ -242,7 +243,7 @@ GTEST_API_ std::string GetBoolAssertionFailureMessage(
 
 
 template <typename RawType>
-class FloatingPoint {
+class [[nodiscard]] FloatingPoint {
  public:
   
   
@@ -392,7 +393,7 @@ typedef FloatingPoint<double> Double;
 typedef const void* TypeId;
 
 template <typename T>
-class TypeIdHelper {
+class [[nodiscard]] TypeIdHelper {
  public:
   
   
@@ -424,7 +425,7 @@ GTEST_API_ TypeId GetTestTypeId();
 
 
 
-class TestFactoryBase {
+class [[nodiscard]] TestFactoryBase {
  public:
   virtual ~TestFactoryBase() = default;
 
@@ -443,7 +444,7 @@ class TestFactoryBase {
 
 
 template <class TestClass>
-class TestFactoryImpl : public TestFactoryBase {
+class [[nodiscard]] TestFactoryImpl : public TestFactoryBase {
  public:
   Test* CreateTest() override { return new TestClass; }
 };
@@ -570,7 +571,7 @@ GTEST_DISABLE_MSC_WARNINGS_PUSH_(4251 \
 )
 
 
-class GTEST_API_ TypedTestSuitePState {
+class GTEST_API_ [[nodiscard]] TypedTestSuitePState {
  public:
   TypedTestSuitePState() : registered_(false) {}
 
@@ -685,7 +686,7 @@ std::vector<std::string> GenerateNames() {
 
 
 template <GTEST_TEMPLATE_ Fixture, class TestSel, typename Types>
-class TypeParameterizedTest {
+class [[nodiscard]] TypeParameterizedTest {
  public:
   
   
@@ -723,7 +724,7 @@ class TypeParameterizedTest {
 
 
 template <GTEST_TEMPLATE_ Fixture, class TestSel>
-class TypeParameterizedTest<Fixture, TestSel, internal::None> {
+class [[nodiscard]] TypeParameterizedTest<Fixture, TestSel, internal::None> {
  public:
   static bool Register(const char* , CodeLocation,
                        const char* , const char* ,
@@ -744,7 +745,7 @@ GTEST_API_ void RegisterTypeParameterizedTestSuiteInstantiation(
 
 
 template <GTEST_TEMPLATE_ Fixture, typename Tests, typename Types>
-class TypeParameterizedTestSuite {
+class [[nodiscard]] TypeParameterizedTestSuite {
  public:
   static bool Register(const char* prefix, CodeLocation code_location,
                        const TypedTestSuitePState* state, const char* case_name,
@@ -782,7 +783,7 @@ class TypeParameterizedTestSuite {
 
 
 template <GTEST_TEMPLATE_ Fixture, typename Types>
-class TypeParameterizedTestSuite<Fixture, internal::None, Types> {
+class [[nodiscard]] TypeParameterizedTestSuite<Fixture, internal::None, Types> {
  public:
   static bool Register(const char* , const CodeLocation&,
                        const TypedTestSuitePState* ,
@@ -838,7 +839,7 @@ struct TrueWithString {
 
 
 
-class GTEST_API_ Random {
+class GTEST_API_ [[nodiscard]] Random {
  public:
   static const uint32_t kMaxRange = 1u << 31;
 
@@ -864,7 +865,7 @@ class GTEST_API_ Random {
 
 
 template <typename T>
-class HasDebugStringAndShortDebugString {
+class [[nodiscard]] HasDebugStringAndShortDebugString {
  private:
   template <typename C>
   static auto CheckDebugString(C*) -> typename std::is_same<
@@ -1064,7 +1065,7 @@ struct RelationToSourceCopy {};
 
 
 template <typename Element>
-class NativeArray {
+class [[nodiscard]] NativeArray {
  public:
   
   typedef Element value_type;
@@ -1150,7 +1151,7 @@ struct ElemFromList {
 struct FlatTupleConstructTag {};
 
 template <typename... T>
-class FlatTuple;
+class [[nodiscard]] FlatTuple;
 
 template <typename Derived, size_t I>
 struct FlatTupleElemBase;
@@ -1209,7 +1210,7 @@ struct FlatTupleBase<FlatTuple<T...>, std::index_sequence<Idx...>>
 
 
 template <typename... T>
-class FlatTuple
+class [[nodiscard]] FlatTuple
     : private FlatTupleBase<FlatTuple<T...>,
                             std::make_index_sequence<sizeof...(T)>> {
   using Indices =
@@ -1317,7 +1318,7 @@ struct tuple_size<testing::internal::FlatTuple<Ts...>>
 namespace testing {
 namespace internal {
 
-class NeverThrown {
+class [[nodiscard]] NeverThrown {
  public:
   const char* what() const noexcept {
     return "this exception should never be thrown";
@@ -1451,8 +1452,7 @@ class NeverThrown {
     ;                                                                 \
   else                                                                \
     fail(::testing::internal::GetBoolAssertionFailureMessage(         \
-             gtest_ar_, text, #actual, #expected)                     \
-             .c_str())
+        gtest_ar_, text, #actual, #expected))
 
 #define GTEST_TEST_NO_FATAL_FAILURE_(statement, fail)               \
   GTEST_AMBIGUOUS_ELSE_BLOCKER_                                     \

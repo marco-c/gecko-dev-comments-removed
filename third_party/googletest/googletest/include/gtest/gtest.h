@@ -57,6 +57,7 @@
 #include <set>
 #include <sstream>
 #include <string>
+#include <string_view>
 #include <type_traits>
 #include <vector>
 
@@ -72,8 +73,6 @@
 #include "gtest/gtest_prod.h"  
 #include "gtest/internal/gtest-internal.h"
 #include "gtest/internal/gtest-string.h"
-
-#include "mozilla/Attributes.h"
 
 GTEST_DISABLE_MSC_WARNINGS_PUSH_(4251 \
 )
@@ -139,6 +138,10 @@ GTEST_DECLARE_int32_(repeat);
 GTEST_DECLARE_bool_(recreate_environments_when_repeating);
 
 
+GTEST_DECLARE_int32_(shard_index);
+GTEST_DECLARE_int32_(total_shards);
+
+
 
 GTEST_DECLARE_bool_(show_internal_stack_frames);
 
@@ -195,7 +198,7 @@ std::set<std::string>* GetIgnoredParameterizedTestSuites();
 
 
 
-class GTestNonCopyable {
+class [[nodiscard]] GTestNonCopyable {
  public:
   GTestNonCopyable() = default;
   GTestNonCopyable(const GTestNonCopyable&) = delete;
@@ -208,15 +211,15 @@ class GTestNonCopyable {
 
 
 
-class Test;
-class TestSuite;
+class [[nodiscard]] Test;
+class [[nodiscard]] TestSuite;
 
 
 #ifndef GTEST_REMOVE_LEGACY_TEST_CASEAPI_
 using TestCase = TestSuite;
 #endif
-class TestInfo;
-class UnitTest;
+class [[nodiscard]] TestInfo;
+class [[nodiscard]] UnitTest;
 
 
 
@@ -241,7 +244,7 @@ class UnitTest;
 
 
 
-class GTEST_API_ Test {
+class GTEST_API_ [[nodiscard]] Test {
  public:
   friend class TestInfo;
 
@@ -327,7 +330,7 @@ class GTEST_API_ Test {
   
   
   
-  MOZ_CAN_RUN_SCRIPT virtual void TestBody() = 0;
+  virtual void TestBody() = 0;
 
   
   void Run();
@@ -368,7 +371,7 @@ typedef internal::TimeInMillis TimeInMillis;
 
 
 
-class TestProperty {
+class [[nodiscard]] TestProperty {
  public:
   
   
@@ -398,7 +401,7 @@ class TestProperty {
 
 
 
-class GTEST_API_ TestResult {
+class GTEST_API_ [[nodiscard]] TestResult {
  public:
   
   TestResult();
@@ -532,7 +535,7 @@ class GTEST_API_ TestResult {
 
 
 
-class GTEST_API_ TestInfo {
+class GTEST_API_ [[nodiscard]] TestInfo {
  public:
   
   
@@ -671,7 +674,7 @@ class GTEST_API_ TestInfo {
 
 
 
-class GTEST_API_ TestSuite {
+class GTEST_API_ [[nodiscard]] TestSuite {
  public:
   
   
@@ -892,7 +895,7 @@ class GTEST_API_ TestSuite {
 
 
 
-class Environment {
+class [[nodiscard]] Environment {
  public:
   
   virtual ~Environment() = default;
@@ -913,7 +916,7 @@ class Environment {
 #if GTEST_HAS_EXCEPTIONS
 
 
-class GTEST_API_ AssertionException
+class GTEST_API_ [[nodiscard]] AssertionException
     : public internal::GoogleTestFailureException {
  public:
   explicit AssertionException(const TestPartResult& result)
@@ -924,7 +927,7 @@ class GTEST_API_ AssertionException
 
 
 
-class TestEventListener {
+class [[nodiscard]] TestEventListener {
  public:
   virtual ~TestEventListener() = default;
 
@@ -991,7 +994,7 @@ class TestEventListener {
 
 
 
-class EmptyTestEventListener : public TestEventListener {
+class [[nodiscard]] EmptyTestEventListener : public TestEventListener {
  public:
   void OnTestProgramStart(const UnitTest& ) override {}
   void OnTestIterationStart(const UnitTest& ,
@@ -1021,7 +1024,7 @@ class EmptyTestEventListener : public TestEventListener {
 };
 
 
-class GTEST_API_ TestEventListeners {
+class GTEST_API_ [[nodiscard]] TestEventListeners {
  public:
   TestEventListeners();
   ~TestEventListeners();
@@ -1112,7 +1115,7 @@ class GTEST_API_ TestEventListeners {
 
 
 
-class GTEST_API_ UnitTest {
+class GTEST_API_ [[nodiscard]] UnitTest {
  public:
   
   
@@ -1248,7 +1251,7 @@ class GTEST_API_ UnitTest {
   
   
   void AddTestPartResult(TestPartResult::Type result_type,
-                         const char* file_name, int line_number,
+                         std::string_view file_name, int line_number,
                          const std::string& message,
                          const std::string& os_stack_trace)
       GTEST_LOCK_EXCLUDED_(mutex_);
@@ -1400,7 +1403,7 @@ AssertionResult CmpHelperEQ(const char* lhs_expression,
   return CmpHelperEQFailure(lhs_expression, rhs_expression, lhs, rhs);
 }
 
-class EqHelper {
+class [[nodiscard]] EqHelper {
  public:
   
   template <
@@ -1616,11 +1619,13 @@ using GoogleTest_NotSupported_OnFunctionReturningNonVoid = void;
 
 
 
-class GTEST_API_ AssertHelper {
+class GTEST_API_ [[nodiscard]] AssertHelper {
  public:
   
   AssertHelper(TestPartResult::Type type, const char* file, int line,
                const char* message);
+  AssertHelper(TestPartResult::Type type, std::string_view file, int line,
+               std::string_view message);
   ~AssertHelper();
 
   
@@ -1634,12 +1639,12 @@ class GTEST_API_ AssertHelper {
   
   
   struct AssertHelperData {
-    AssertHelperData(TestPartResult::Type t, const char* srcfile, int line_num,
-                     const char* msg)
+    AssertHelperData(TestPartResult::Type t, std::string_view srcfile,
+                     int line_num, std::string_view msg)
         : type(t), file(srcfile), line(line_num), message(msg) {}
 
     TestPartResult::Type const type;
-    const char* const file;
+    const std::string_view file;
     int const line;
     std::string const message;
 
@@ -1691,7 +1696,7 @@ class GTEST_API_ AssertHelper {
 
 
 template <typename T>
-class WithParamInterface {
+class [[nodiscard]] WithParamInterface {
  public:
   typedef T ParamType;
   virtual ~WithParamInterface() = default;
@@ -1725,7 +1730,8 @@ const T* WithParamInterface<T>::parameter_ = nullptr;
 
 
 template <typename T>
-class TestWithParam : public Test, public WithParamInterface<T> {};
+class [[nodiscard]] TestWithParam : public Test,
+                                    public WithParamInterface<T> {};
 
 
 
@@ -2073,7 +2079,7 @@ GTEST_API_ AssertionResult DoubleLE(const char* expr1, const char* expr2,
 
 
 
-class GTEST_API_ ScopedTrace {
+class GTEST_API_ [[nodiscard]] ScopedTrace {
  public:
   
   

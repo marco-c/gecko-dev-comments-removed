@@ -156,7 +156,7 @@ GTEST_API_ void Log(LogSeverity severity, const std::string& message,
   if (!LogIsVisible(severity)) return;
 
   
-  MutexLock l(&g_log_mutex);
+  MutexLock l(g_log_mutex);
 
   if (severity == kWarning) {
     
@@ -188,7 +188,7 @@ GTEST_API_ void Log(LogSeverity severity, const std::string& message,
   std::cout << ::std::flush;
 }
 
-GTEST_API_ WithoutMatchers GetWithoutMatchers() { return WithoutMatchers(); }
+GTEST_API_ WithoutMatchers WithoutMatchers::Get() { return WithoutMatchers(); }
 
 GTEST_API_ void IllegalDoDefault(const char* file, int line) {
   internal::Assert(

@@ -196,7 +196,7 @@ struct BuiltInDefaultValueGetter<T, false> {
 
 
 template <typename T>
-class BuiltInDefaultValue {
+class [[nodiscard]] BuiltInDefaultValue {
  public:
   
   
@@ -211,7 +211,7 @@ class BuiltInDefaultValue {
 
 
 template <typename T>
-class BuiltInDefaultValue<const T> {
+class [[nodiscard]] BuiltInDefaultValue<const T> {
  public:
   static bool Exists() { return BuiltInDefaultValue<T>::Exists(); }
   static T Get() { return BuiltInDefaultValue<T>::Get(); }
@@ -220,7 +220,7 @@ class BuiltInDefaultValue<const T> {
 
 
 template <typename T>
-class BuiltInDefaultValue<T*> {
+class [[nodiscard]] BuiltInDefaultValue<T*> {
  public:
   static bool Exists() { return true; }
   static T* Get() { return nullptr; }
@@ -383,7 +383,7 @@ typename std::add_const<T>::type& as_const(T& t) {
 
 
 template <typename F>
-class OnceAction;
+class [[nodiscard]] OnceAction;
 
 
 
@@ -421,7 +421,7 @@ class OnceAction;
 
 
 template <typename Result, typename... Args>
-class OnceAction<Result(Args...)> final {
+class [[nodiscard]] OnceAction<Result(Args...)> final {
  private:
   
   
@@ -574,7 +574,7 @@ class OnceAction<Result(Args...)> final {
 
 
 template <typename T>
-class DefaultValue {
+class [[nodiscard]] DefaultValue {
  public:
   
   
@@ -651,7 +651,7 @@ class DefaultValue {
 
 
 template <typename T>
-class DefaultValue<T&> {
+class [[nodiscard]] DefaultValue<T&> {
  public:
   
   static void Set(T& x) {  
@@ -685,7 +685,7 @@ class DefaultValue<T&> {
 
 
 template <>
-class DefaultValue<void> {
+class [[nodiscard]] DefaultValue<void> {
  public:
   static bool Exists() { return true; }
   static void Get() {}
@@ -701,7 +701,7 @@ T* DefaultValue<T&>::address_ = nullptr;
 
 
 template <typename F>
-class ActionInterface {
+class [[nodiscard]] ActionInterface {
  public:
   typedef typename internal::Function<F>::Result Result;
   typedef typename internal::Function<F>::ArgumentTuple ArgumentTuple;
@@ -721,7 +721,7 @@ class ActionInterface {
 };
 
 template <typename F>
-class Action;
+class [[nodiscard]] Action;
 
 
 
@@ -730,7 +730,7 @@ class Action;
 
 
 template <typename R, typename... Args>
-class Action<R(Args...)> {
+class [[nodiscard]] Action<R(Args...)> {
  private:
   using F = R(Args...);
 
@@ -869,7 +869,7 @@ class Action<R(Args...)> {
 
 
 template <typename Impl>
-class PolymorphicAction {
+class [[nodiscard]] PolymorphicAction {
  public:
   explicit PolymorphicAction(const Impl& impl) : impl_(impl) {}
 
@@ -929,7 +929,7 @@ struct ByMoveWrapper {
 
 
 template <typename R>
-class ReturnAction final {
+class [[nodiscard]] ReturnAction final {
  public:
   explicit ReturnAction(R value) : value_(std::move(value)) {}
 
@@ -1095,7 +1095,7 @@ class ReturnAction final {
 
 
 template <typename T>
-class ReturnAction<ByMoveWrapper<T>> final {
+class [[nodiscard]] ReturnAction<ByMoveWrapper<T>> final {
  public:
   explicit ReturnAction(ByMoveWrapper<T> wrapper)
       : state_(new State(std::move(wrapper.payload))) {}
@@ -1122,7 +1122,7 @@ class ReturnAction<ByMoveWrapper<T>> final {
 };
 
 
-class ReturnNullAction {
+class [[nodiscard]] ReturnNullAction {
  public:
   
   
@@ -1134,7 +1134,7 @@ class ReturnNullAction {
 };
 
 
-class ReturnVoidAction {
+class [[nodiscard]] ReturnVoidAction {
  public:
   
   template <typename Result, typename ArgumentTuple>
@@ -1147,7 +1147,7 @@ class ReturnVoidAction {
 
 
 template <typename T>
-class ReturnRefAction {
+class [[nodiscard]] ReturnRefAction {
  public:
   
   explicit ReturnRefAction(T& ref) : ref_(ref) {}  
@@ -1188,7 +1188,7 @@ class ReturnRefAction {
 
 
 template <typename T>
-class ReturnRefOfCopyAction {
+class [[nodiscard]] ReturnRefOfCopyAction {
  public:
   
   
@@ -1229,7 +1229,7 @@ class ReturnRefOfCopyAction {
 
 
 template <typename T>
-class ReturnRoundRobinAction {
+class [[nodiscard]] ReturnRoundRobinAction {
  public:
   explicit ReturnRoundRobinAction(std::vector<T> values) {
     GTEST_CHECK_(!values.empty())
@@ -1257,7 +1257,7 @@ class ReturnRoundRobinAction {
 };
 
 
-class DoDefaultAction {
+class [[nodiscard]] DoDefaultAction {
  public:
   
   
@@ -1270,7 +1270,7 @@ class DoDefaultAction {
 
 
 template <typename T1, typename T2>
-class AssignAction {
+class [[nodiscard]] AssignAction {
  public:
   AssignAction(T1* ptr, T2 value) : ptr_(ptr), value_(value) {}
 
@@ -1289,7 +1289,7 @@ class AssignAction {
 
 
 template <typename T>
-class SetErrnoAndReturnAction {
+class [[nodiscard]] SetErrnoAndReturnAction {
  public:
   SetErrnoAndReturnAction(int errno_value, T result)
       : errno_(errno_value), result_(result) {}
@@ -1397,7 +1397,7 @@ class IgnoreResultAction {
 
     void Perform(const ArgumentTuple& args) override {
       
-      action_.Perform(args);
+      (void)action_.Perform(args);
     }
 
    private:
@@ -1503,11 +1503,11 @@ struct WithArgsAction {
 };
 
 template <typename... Actions>
-class DoAllAction;
+class [[nodiscard]] DoAllAction;
 
 
 template <typename FinalAction>
-class DoAllAction<FinalAction> {
+class [[nodiscard]] DoAllAction<FinalAction> {
  public:
   struct UserConstructorTag {};
 
@@ -1561,7 +1561,7 @@ class DoAllAction<FinalAction> {
 
 
 template <typename InitialAction, typename... OtherActions>
-class DoAllAction<InitialAction, OtherActions...>
+class [[nodiscard]] DoAllAction<InitialAction, OtherActions...>
     : private DoAllAction<OtherActions...> {
  private:
   using Base = DoAllAction<OtherActions...>;
@@ -1796,11 +1796,24 @@ struct SetArrayArgumentAction {
 };
 
 template <size_t k>
-struct DeleteArgAction {
+class [[nodiscard]] DeleteArgAction {
+ public:
   template <typename... Args>
   void operator()(const Args&... args) const {
-    delete std::get<k>(std::tie(args...));
+    DoDelete(std::get<k>(std::tie(args...)));
   }
+
+ private:
+  template <typename T>
+  static void DoDelete(T* ptr) {
+    delete ptr;
+  }
+
+  template <typename T>
+  [[deprecated(
+      "DeleteArg<N> used for a non-pointer argument, it was likely migrated "
+      "to a smart pointer type. This action should be removed.")]]
+  static void DoDelete(T&) {}
 };
 
 template <typename Ptr>
@@ -1868,7 +1881,7 @@ typedef internal::IgnoredValue Unused;
 
 
 template <typename Action>
-GMOCK_DEPRECATE_AND_INLINE()
+GTEST_INTERNAL_DEPRECATE_AND_INLINE("Avoid using DoAll() for single actions")
 typename std::decay<Action>::type DoAll(Action&& action) {
   return std::forward<Action>(action);
 }
@@ -2039,10 +2052,10 @@ PolymorphicAction<internal::SetErrnoAndReturnAction<T>> SetErrnoAndReturn(
 
 
 
-
-
 template <typename FunctionImpl>
-GMOCK_DEPRECATE_AND_INLINE()
+GTEST_INTERNAL_DEPRECATE_AND_INLINE(
+    "Actions can now be implicitly constructed from callables. No need to "
+    "create wrapper objects using Invoke().")
 typename std::decay<FunctionImpl>::type Invoke(FunctionImpl&& function_impl) {
   return std::forward<FunctionImpl>(function_impl);
 }

@@ -96,7 +96,7 @@ GTEST_DISABLE_MSC_WARNINGS_PUSH_(4251 \
 
 
 
-class GTEST_API_ DeathTest {
+class GTEST_API_ [[nodiscard]] DeathTest {
  public:
   
   
@@ -172,7 +172,7 @@ class GTEST_API_ DeathTest {
 GTEST_DISABLE_MSC_WARNINGS_POP_()  
 
 
-class DeathTestFactory {
+class [[nodiscard]] DeathTestFactory {
  public:
   virtual ~DeathTestFactory() = default;
   virtual bool Create(const char* statement,
@@ -181,7 +181,7 @@ class DeathTestFactory {
 };
 
 
-class DefaultDeathTestFactory : public DeathTestFactory {
+class [[nodiscard]] DefaultDeathTestFactory : public DeathTestFactory {
  public:
   bool Create(const char* statement, Matcher<const std::string&> matcher,
               const char* file, int line, DeathTest** test) override;
@@ -256,19 +256,19 @@ GTEST_API_ bool ExitedUnsuccessfully(int exit_status);
 
 
 
-#define GTEST_EXECUTE_STATEMENT_(statement, regex_or_matcher)    \
-  GTEST_AMBIGUOUS_ELSE_BLOCKER_                                  \
-  if (::testing::internal::AlwaysTrue()) {                       \
-    GTEST_SUPPRESS_UNREACHABLE_CODE_WARNING_BELOW_(statement);   \
-  } else if (!::testing::internal::AlwaysTrue()) {               \
-    ::testing::internal::MakeDeathTestMatcher(regex_or_matcher); \
-  } else                                                         \
+#define GTEST_EXECUTE_STATEMENT_(statement, regex_or_matcher)          \
+  GTEST_AMBIGUOUS_ELSE_BLOCKER_                                        \
+  if (::testing::internal::AlwaysTrue()) {                             \
+    GTEST_SUPPRESS_UNREACHABLE_CODE_WARNING_BELOW_(statement);         \
+  } else if (!::testing::internal::AlwaysTrue()) {                     \
+    (void)::testing::internal::MakeDeathTestMatcher(regex_or_matcher); \
+  } else                                                               \
     ::testing::Message()
 
 
 
 
-class InternalRunDeathTestFlag {
+class [[nodiscard]] InternalRunDeathTestFlag {
  public:
   InternalRunDeathTestFlag(const std::string& a_file, int a_line, int an_index,
                            int a_write_fd)

@@ -137,7 +137,7 @@ namespace testing {
 class [[nodiscard]] AssertionResult;
 #endif  
 
-class GTEST_API_ AssertionResult {
+class GTEST_API_ [[nodiscard]] AssertionResult {
  public:
   
   

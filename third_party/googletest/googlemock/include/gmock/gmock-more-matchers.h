@@ -61,7 +61,7 @@ namespace internal {
 
 
 
-class IsEmptyMatcher {
+class [[nodiscard]] IsEmptyMatcher {
  public:
   
   template <typename MatcheeContainerType>

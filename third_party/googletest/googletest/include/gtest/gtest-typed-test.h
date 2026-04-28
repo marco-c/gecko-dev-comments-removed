@@ -45,7 +45,7 @@
 
 
 template <typename T>
-class FooTest : public testing::Test {
+class [[nodiscard]] FooTest : public testing::Test {
  public:
   ...
   using List = ::std::list<T>;
@@ -123,7 +123,7 @@ TYPED_TEST(FooTest, HasPropertyA) { ... }
 
 
 template <typename T>
-class FooTest : public testing::Test {
+class [[nodiscard]] FooTest : public testing::Test {
   ...
 };
 

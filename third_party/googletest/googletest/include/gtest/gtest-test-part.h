@@ -37,6 +37,7 @@
 #include <iosfwd>
 #include <ostream>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "gtest/internal/gtest-internal.h"
@@ -51,7 +52,7 @@ namespace testing {
 
 
 
-class GTEST_API_ TestPartResult {
+class GTEST_API_ [[nodiscard]] TestPartResult {
  public:
   
   
@@ -65,10 +66,10 @@ class GTEST_API_ TestPartResult {
   
   
   
-  TestPartResult(Type a_type, const char* a_file_name, int a_line_number,
-                 const char* a_message)
+  TestPartResult(Type a_type, std::string_view a_file_name, int a_line_number,
+                 std::string_view a_message)
       : type_(a_type),
-        file_name_(a_file_name == nullptr ? "" : a_file_name),
+        file_name_(a_file_name),
         line_number_(a_line_number),
         summary_(ExtractSummary(a_message)),
         message_(a_message) {}
@@ -112,7 +113,7 @@ class GTEST_API_ TestPartResult {
 
   
   
-  static std::string ExtractSummary(const char* message);
+  static std::string ExtractSummary(std::string_view message);
 
   
   
@@ -131,7 +132,7 @@ std::ostream& operator<<(std::ostream& os, const TestPartResult& result);
 
 
 
-class GTEST_API_ TestPartResultArray {
+class GTEST_API_ [[nodiscard]] TestPartResultArray {
  public:
   TestPartResultArray() = default;
 
@@ -152,7 +153,7 @@ class GTEST_API_ TestPartResultArray {
 };
 
 
-class GTEST_API_ TestPartResultReporterInterface {
+class GTEST_API_ [[nodiscard]] TestPartResultReporterInterface {
  public:
   virtual ~TestPartResultReporterInterface() = default;
 
@@ -167,7 +168,7 @@ namespace internal {
 
 
 
-class GTEST_API_ HasNewFatalFailureHelper
+class GTEST_API_ [[nodiscard]] HasNewFatalFailureHelper
     : public TestPartResultReporterInterface {
  public:
   HasNewFatalFailureHelper();

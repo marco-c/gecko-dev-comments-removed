@@ -41,6 +41,7 @@
 
 #include <stdio.h>
 
+#include <iterator>
 #include <ostream>  
 #include <string>
 #include <type_traits>
@@ -220,7 +221,7 @@ using LosslessArithmeticConvertible =
 
 
 
-class FailureReporterInterface {
+class [[nodiscard]] FailureReporterInterface {
  public:
   
   enum FailureType { kNonfatal, kFatal };
@@ -296,14 +297,13 @@ GTEST_API_ void Log(LogSeverity severity, const std::string& message,
 
 
 
-class WithoutMatchers {
+class [[nodiscard]] WithoutMatchers {
  private:
   WithoutMatchers() = default;
-  friend GTEST_API_ WithoutMatchers GetWithoutMatchers();
+
+ public:
+  GTEST_API_ static WithoutMatchers Get();
 };
-
-
-GTEST_API_ WithoutMatchers GetWithoutMatchers();
 
 
 
@@ -323,6 +323,24 @@ inline T Invalid() {
 #endif
 }
 
+void GetValueType(const void*);
+
+template <class T>
+typename std::iterator_traits<
+    decltype(std::begin(std::declval<T&>()))>::value_type
+GetValueType(T*);
+
+template <class T, class = void>
+struct RangeTraits {
+  typedef decltype(internal::GetValueType(
+      static_cast<std::remove_reference_t<T>*>(nullptr))) value_type;
+};
+
+template <class T>
+struct RangeTraits<T, std::conditional_t<true, void, typename T::value_type>> {
+  typedef typename T::value_type value_type;
+};
+
 
 
 
@@ -340,7 +358,7 @@ inline T Invalid() {
 
 
 template <class RawContainer>
-class StlContainerView {
+class [[nodiscard]] StlContainerView {
  public:
   typedef RawContainer type;
   typedef const type& const_reference;
@@ -355,7 +373,7 @@ class StlContainerView {
 
 
 template <typename Element, size_t N>
-class StlContainerView<Element[N]> {
+class [[nodiscard]] StlContainerView<Element[N]> {
  public:
   typedef typename std::remove_const<Element>::type RawElement;
   typedef internal::NativeArray<RawElement> type;
@@ -379,7 +397,7 @@ class StlContainerView<Element[N]> {
 
 
 template <typename ElementPointer, typename Size>
-class StlContainerView< ::std::tuple<ElementPointer, Size> > {
+class [[nodiscard]] StlContainerView< ::std::tuple<ElementPointer, Size> > {
  public:
   typedef typename std::remove_const<
       typename std::pointer_traits<ElementPointer>::element_type>::type
