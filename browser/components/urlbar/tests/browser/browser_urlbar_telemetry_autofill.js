@@ -369,6 +369,13 @@ add_task(async function other() {
 
 
 add_task(async function deletion() {
+  
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.autoFill.backspaceThreshold", 100]],
+  });
+
   await PlacesTestUtils.addVisits([
     {
       url: "http://example.com/",
@@ -481,6 +488,7 @@ add_task(async function deletion() {
   });
 
   await PlacesUtils.history.clear();
+  await SpecialPowers.popPrefEnv();
 });
 
 async function doDeletionTest({
