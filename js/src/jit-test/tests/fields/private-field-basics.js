@@ -1,3 +1,6 @@
+
+load(libdir + "asserts.js");
+
 class A {
   #x = 10
 
@@ -93,34 +96,23 @@ for (var i = 0; i < 1000; i++) {
   }
 }
 
-function assertThrows(fun, errorType) {
-  try {
-    fun();
-    throw 'Expected error, but none was thrown';
-  } catch (e) {
-    if (!(e instanceof errorType)) {
-      throw 'Wrong error type thrown';
-    }
-  }
-}
-
 function testTypeErrors(v) {
-  assertThrows(() => A.readx(v), TypeError);  
-  assertThrows(() => A.six(v), TypeError);    
-  assertThrows(() => A.dix(v), TypeError);    
+  assertThrowsInstanceOf(() => A.readx(v), TypeError);  
+  assertThrowsInstanceOf(() => A.six(v), TypeError);    
+  assertThrowsInstanceOf(() => A.dix(v), TypeError);    
 }
 
 testTypeErrors(undefined);  
 testTypeErrors({});         
 testTypeErrors(1);          
 
-assertThrows(
+assertThrowsInstanceOf(
   () => eval('class B extends class { #x; } { g() { return super.#x; } }'),
   SyntaxError);  
-assertThrows(
+assertThrowsInstanceOf(
   () => eval('class C { #x = 10; static #x = 14; }'),
   SyntaxError);  
-assertThrows(
+assertThrowsInstanceOf(
   () => eval('delete this.#x'),
   SyntaxError);  
 
@@ -176,9 +168,9 @@ for (var i = 1; i < 1000; i++) {
 }
 
 
-assertThrows(() => initIC(alreadyConstructedB), TypeError);
+assertThrowsInstanceOf(() => initIC(alreadyConstructedB), TypeError);
 
-assertThrows(() => initIC(alreadyConstructedB), TypeError);
+assertThrowsInstanceOf(() => initIC(alreadyConstructedB), TypeError);
 
 
 
@@ -237,7 +229,7 @@ for (var index in elements) {
   if (index < elements.length - 2) {
     assertEq(B.gx(elements[index]), 13);
   } else {
-    assertThrows(() => {
+    assertThrowsInstanceOf(() => {
       B.gx(elements[index]);
     }, TypeError);
   }
@@ -247,8 +239,8 @@ for (var index in elements) {
 for (var i = 0; i < 100; i++) {
   var inputs = [{ a: 1 }, { b: 2 }, { c: 3 }, { d: 4 }, { e: 5 }, new Proxy({}, {})];
   for (var o of inputs) {
-    assertThrows(() => B.gx(o), TypeError);
-    assertThrows(() => B.sx(o), TypeError);
+    assertThrowsInstanceOf(() => B.gx(o), TypeError);
+    assertThrowsInstanceOf(() => B.sx(o), TypeError);
     new B(o);
     assertEq(B.gx(o), 12);
     B.sx(o);
