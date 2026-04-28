@@ -686,9 +686,10 @@ customElements.define("panel-list", PanelList);
 export class PanelItem extends HTMLElement {
   #initialized = false;
   #defaultSlot;
+  #badge;
 
   static get observedAttributes() {
-    return ["accesskey", "type", "disabled"];
+    return ["accesskey", "type", "disabled", "badge-type"];
   }
 
   constructor() {
@@ -710,6 +711,7 @@ export class PanelItem extends HTMLElement {
     this.label.setAttribute("part", "label");
 
     this.button.appendChild(this.label);
+    this.#updateBadge();
 
     let supportLinkSlot = document.createElement("slot");
     supportLinkSlot.name = "support-link";
@@ -723,14 +725,6 @@ export class PanelItem extends HTMLElement {
       supportLinkSlot,
       this.#defaultSlot
     );
-
-    // These listeners are used to make sure a click is fired on
-    // every mouseup, not just if mousedown also happened here.
-    // They must be the first registered listeners to make sure
-    // stopImmediatePropagation works as expected, so they are
-    // added in the constructor and never removed.
-    this.button.addEventListener("click", this);
-    this.button.addEventListener("mouseup", this);
   }
 
   connectedCallback() {
@@ -765,9 +759,7 @@ export class PanelItem extends HTMLElement {
         this.panel.setAttribute("has-submenu", "");
         this.icon = document.createElement("div");
         this.icon.setAttribute("class", "submenu-icon");
-        this.label.setAttribute("class", "submenu-label");
 
-        this.button.setAttribute("class", "submenu-container");
         this.button.appendChild(this.icon);
 
         this.submenuSlot = document.createElement("slot");
@@ -778,6 +770,8 @@ export class PanelItem extends HTMLElement {
         this.setSubmenuContents();
       }
     }
+
+    this.button.addEventListener("mouseup", this);
 
     if (this.panel) {
       this.panel.addEventListener("hidden", this);
@@ -796,6 +790,8 @@ export class PanelItem extends HTMLElement {
       document.l10n.disconnectRoot(this.shadowRoot);
       this._l10nRootConnected = false;
     }
+
+    this.button.removeEventListener("mouseup", this);
 
     if (this.panel) {
       this.panel.removeEventListener("hidden", this);
@@ -841,6 +837,8 @@ export class PanelItem extends HTMLElement {
       }
     } else if (name === "type" || name === "disabled") {
       this.#setButtonAttributes();
+    } else if (name === "badge-type") {
+      this.#updateBadge();
     }
   }
 
@@ -853,6 +851,19 @@ export class PanelItem extends HTMLElement {
       this.button.removeAttribute("aria-checked");
     }
     this.button.toggleAttribute("disabled", this.disabled);
+  }
+
+  #updateBadge() {
+    if (this.hasAttribute("badge-type")) {
+      if (!this.#badge) {
+        this.#badge = document.createElement("moz-badge");
+        this.label.after(this.#badge);
+      }
+      this.#badge.setAttribute("type", this.getAttribute("badge-type"));
+    } else if (this.#badge) {
+      this.#badge.remove();
+      this.#badge = null;
+    }
   }
 
   #setLabelContents() {
@@ -948,66 +959,45 @@ export class PanelItem extends HTMLElement {
         }
         break;
       }
-      case "click": {
-        let event = /** @type {PointerEvent} */ (e);
-        if (
-          // inputSource is undefined outside of chrome contexts.
-          event.inputSource != undefined &&
-          this.#clickOnMouseupEnabled &&
-          // Our synthesized clicks have inputSource MOZ_SOURCE_UNKNOWN.
-          event.inputSource == MouseEvent.MOZ_SOURCE_MOUSE
-        ) {
-          event.stopImmediatePropagation();
-          event.preventDefault();
-        }
-        break;
-      }
       case "mouseup": {
         let event = /** @type {MouseEvent} */ (e);
         if (
-          // inputSource is undefined outside of chrome contexts.
-          event.inputSource == undefined ||
-          !this.#clickOnMouseupEnabled ||
+          // preventClickEvent is undefined outside of chrome contexts.
+          !event.preventClickEvent ||
+          this.panel?.lastAnchorNode?.role != "combobox" ||
           e.button != 0
         ) {
           break;
         }
-        let clickEvent = new PointerEvent("click", {
-          bubbles: true,
-          composed: true,
-          view: event.view,
-          shiftKey: event.shiftKey,
-          ctrlKey: event.ctrlKey,
-          altKey: event.altKey,
-          metaKey: event.metaKey,
-          screenX: event.screenX,
-          screenY: event.screenY,
-          clientX: event.clientX,
-          clientY: event.clientY,
-          button: event.button,
-          // The inputSource of the click event will always be MOZ_SOURCE_UNKNOWN.
-        });
-        // Dispatch click events on all mouseups so users
-        // can open and select something in one click.
-        this.button.dispatchEvent(clickEvent);
+
+        // A click event would be fired on the nearest common ancestor of
+        // the mousedown and mouseup elements. We want to retarget the
+        // click to the panel-item where mouseup happened so we prevent
+        // the native click and synthesize one on the panel-list.
+        // This enables opening a panel-list and choosing an item with a
+        // single click.
+
+        event.preventClickEvent();
+        this.button.dispatchEvent(
+          new PointerEvent("click", {
+            bubbles: true,
+            composed: true,
+            view: event.view,
+            shiftKey: event.shiftKey,
+            ctrlKey: event.ctrlKey,
+            altKey: event.altKey,
+            metaKey: event.metaKey,
+            screenX: event.screenX,
+            screenY: event.screenY,
+            clientX: event.clientX,
+            clientY: event.clientY,
+            button: event.button,
+            // The inputSource of the click event will always be MOZ_SOURCE_UNKNOWN.
+          })
+        );
         break;
       }
     }
-  }
-
-  /**
-   * When true, prevent all mouse click events and synthesize
-   * click event on mouseup, effectively firing click events
-   * even for clicks that didn't start on this item.
-   *
-   * This enables opening a panel-list and choosing an item with
-   * a single click. It currently only works inside chrome
-   * contexts because it relies on inputSource.
-   *
-   * @type {boolean}
-   */
-  get #clickOnMouseupEnabled() {
-    return this.panel?.lastAnchorNode?.role == "combobox";
   }
 }
 customElements.define("panel-item", PanelItem);
