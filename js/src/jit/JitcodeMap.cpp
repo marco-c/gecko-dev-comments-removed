@@ -27,6 +27,18 @@ using mozilla::Maybe;
 namespace js {
 namespace jit {
 
+JitcodeGlobalEntry::JitcodeGlobalEntry(Kind kind, JitCode* code,
+                                       void* nativeStartAddr,
+                                       void* nativeEndAddr)
+    : JitCodeRange(nativeStartAddr, nativeEndAddr),
+      jitcode_(code),
+      zone_(code->zone()),
+      kind_(kind) {
+  MOZ_ASSERT(code);
+  MOZ_ASSERT(nativeStartAddr);
+  MOZ_ASSERT(nativeEndAddr);
+}
+
 static void GetLineInfoFromJitCodeRecord(uint64_t addr, uint32_t* line,
                                          uint32_t* column) {
   JS::JitCodeRecord* record = JS::LookupJitCodeRecord(addr);
@@ -238,7 +250,6 @@ const JitcodeGlobalEntry* JitcodeGlobalTable::lookupForSampler(
   
   
   
-  
 
   return entry;
 }
@@ -261,12 +272,20 @@ bool JitcodeGlobalTable::addEntry(UniqueJitcodeGlobalEntry entry) {
              entry->isRealmIndependentShared());
 
   
-  
-  
-  MOZ_ASSERT(!tree_.maybeLookup(entry.get()));
+  AutoSuppressProfilerSampling suppressSampling(TlsContext.get());
 
   
-  AutoSuppressProfilerSampling suppressSampling(TlsContext.get());
+  
+  
+  
+  
+  
+  while (JitCodeRange** existing = tree_.maybeLookup(entry.get())) {
+    auto* oldEntry = static_cast<JitcodeGlobalEntry*>(*existing);
+    MOZ_ASSERT(!oldEntry->hasJitcode());
+    tree_.remove(oldEntry);
+    oldEntry->setInTree(false);
+  }
 
   if (!entries_.append(std::move(entry))) {
     return false;
@@ -275,6 +294,7 @@ bool JitcodeGlobalTable::addEntry(UniqueJitcodeGlobalEntry entry) {
     entries_.popBack();
     return false;
   }
+  entries_.back()->setInTree(true);
 
   return true;
 }
@@ -287,72 +307,34 @@ void JitcodeGlobalTable::setAllEntriesAsExpired() {
   }
 }
 
-bool JitcodeGlobalTable::markIteratively(GCMarker* marker) {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  MOZ_ASSERT(!JS::RuntimeHeapIsMinorCollecting());
-
-  AutoSuppressProfilerSampling suppressSampling(TlsContext.get());
-
-  
-  
-  Maybe<uint64_t> rangeStart =
-      marker->runtime()->profilerSampleBufferRangeStart();
-
-  bool markedAny = false;
-  for (EntryVector::Range r(entries_.all()); !r.empty(); r.popFront()) {
-    auto& entry = r.front();
-
-    
-    
-    
-    
-    
-    
-    
-    if (!rangeStart || !entry->isSampled(*rangeStart)) {
-      entry->setAsExpired();
-      if (!entry->isJitcodeMarkedFromAnyThread(marker->runtime())) {
-        continue;
-      }
-    }
-
-    
-    
-    if (!entry->zone()->isCollecting() || entry->zone()->isGCFinished()) {
-      continue;
-    }
-
-    markedAny |= entry->trace(marker->tracer());
-  }
-
-  return markedAny;
-}
-
 void JitcodeGlobalTable::traceWeak(JSRuntime* rt, JSTracer* trc) {
   AutoSuppressProfilerSampling suppressSampling(rt->mainContextFromOwnThread());
 
+  
+  
+  Maybe<uint64_t> rangeStart = rt->profilerSampleBufferRangeStart();
+
   entries_.eraseIf([&](auto& entry) {
+    
+    if (!entry->isReferencedByProfiler(rangeStart)) {
+      entry->setAsExpired();
+    }
+
+    
+    
+    
+    
+    
+    if (!entry->hasJitcode()) {
+      if (entry->isReferencedByProfiler(rangeStart)) {
+        return false;
+      }
+      if (entry->isInTree()) {
+        tree_.remove(entry.get());
+      }
+      return true;
+    }
+
     if (!entry->zone()->isCollecting() || entry->zone()->isGCFinished()) {
       return false;
     }
@@ -364,28 +346,21 @@ void JitcodeGlobalTable::traceWeak(JSRuntime* rt, JSTracer* trc) {
     }
 
     
-#ifdef DEBUG
-    Maybe<uint64_t> rangeStart = rt->profilerSampleBufferRangeStart();
-    MOZ_ASSERT_IF(rangeStart, !entry->isSampled(*rangeStart));
-#endif
+    
+    
+    
+    
+    
+    if (entry->isReferencedByProfiler(rangeStart)) {
+      *entry->jitcodePtr() = nullptr;
+      return false;
+    }
+
     tree_.remove(entry.get());
     return true;
   });
 
-  MOZ_ASSERT(tree_.empty() == entries_.empty());
-}
-
-bool JitcodeGlobalEntry::traceJitcode(JSTracer* trc) {
-  if (!IsMarkedUnbarriered(trc->runtime(), jitcode_)) {
-    TraceManuallyBarrieredEdge(trc, &jitcode_,
-                               "jitcodglobaltable-baseentry-jitcode");
-    return true;
-  }
-  return false;
-}
-
-bool JitcodeGlobalEntry::isJitcodeMarkedFromAnyThread(JSRuntime* rt) {
-  return IsMarkedUnbarriered(rt, jitcode_);
+  MOZ_ASSERT_IF(entries_.empty(), tree_.empty());
 }
 
 uint32_t JitcodeGlobalEntry::callStackAtAddr(JSRuntime* rt, void* ptr,
@@ -426,8 +401,6 @@ uint64_t JitcodeGlobalEntry::realmID(JSRuntime* rt) const {
   }
   MOZ_CRASH("Invalid kind");
 }
-
-bool JitcodeGlobalEntry::trace(JSTracer* trc) { return traceJitcode(trc); }
 
 void* JitcodeGlobalEntry::canonicalNativeAddrFor(JSRuntime* rt,
                                                  void* ptr) const {
