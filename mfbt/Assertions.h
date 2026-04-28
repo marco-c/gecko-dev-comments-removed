@@ -112,9 +112,34 @@ MOZ_BEGIN_EXTERN_C
 
 
 
+static inline const char* MOZ_StripRelativeComponents(const char* aPath) {
+  if (*aPath == '/' || *aPath == '\\') {
+    
+    return aPath;
+  }
+  const char* result = aPath;
+  for (const char* cur = aPath; *cur == '.' || *cur == '/' || *cur == '\\';
+       ++cur) {
+    if (*cur != '.') {
+      result = cur + 1;
+    }
+  }
+  return result;
+}
+
+
+
+
+
+
+
+
+
+
 [[maybe_unused]] static MOZ_COLD MOZ_NEVER_INLINE void
 MOZ_ReportAssertionFailure(const char* aStr, const char* aFilename,
                            int aLine) MOZ_PRETEND_NORETURN_FOR_STATIC_ANALYSIS {
+  aFilename = MOZ_StripRelativeComponents(aFilename);
   MOZ_FUZZING_HANDLE_CRASH_EVENT4("MOZ_ASSERT", aFilename, aLine, aStr);
 #ifdef ANDROID
   __android_log_print(ANDROID_LOG_FATAL, "MOZ_Assert",
@@ -144,6 +169,7 @@ MOZ_ReportAssertionFailure(const char* aStr, const char* aFilename,
 [[maybe_unused]] static MOZ_COLD MOZ_NEVER_INLINE void MOZ_ReportCrash(
     const char* aStr, const char* aFilename,
     int aLine) MOZ_PRETEND_NORETURN_FOR_STATIC_ANALYSIS {
+  aFilename = MOZ_StripRelativeComponents(aFilename);
 #ifdef ANDROID
   __android_log_print(ANDROID_LOG_FATAL, "MOZ_CRASH",
                       "[%d] Hit MOZ_CRASH(%s) at %s:%d\n", MOZ_GET_PID(), aStr,
@@ -317,19 +343,21 @@ static inline void MOZ_CrashSequence(void* aAddress, intptr_t aLine) {
 
 
 #if !(defined(DEBUG) || defined(MOZ_ASAN) || defined(FUZZING))
-#  define MOZ_CRASH(...)                                                      \
-    do {                                                                      \
-      MOZ_FUZZING_HANDLE_CRASH_EVENT4("MOZ_CRASH", __FILE__, __LINE__, NULL); \
-      MOZ_CRASH_ANNOTATE("MOZ_CRASH(" __VA_ARGS__ ")");                       \
-      MOZ_REALLY_CRASH(__LINE__);                                             \
+#  define MOZ_CRASH(...)                                                       \
+    do {                                                                       \
+      MOZ_FUZZING_HANDLE_CRASH_EVENT4(                                         \
+          "MOZ_CRASH", MOZ_StripRelativeComponents(__FILE__), __LINE__, NULL); \
+      MOZ_CRASH_ANNOTATE("MOZ_CRASH(" __VA_ARGS__ ")");                        \
+      MOZ_REALLY_CRASH(__LINE__);                                              \
     } while (false)
 #else
-#  define MOZ_CRASH(...)                                                      \
-    do {                                                                      \
-      MOZ_FUZZING_HANDLE_CRASH_EVENT4("MOZ_CRASH", __FILE__, __LINE__, NULL); \
-      MOZ_ReportCrash("" __VA_ARGS__, __FILE__, __LINE__);                    \
-      MOZ_CRASH_ANNOTATE("MOZ_CRASH(" __VA_ARGS__ ")");                       \
-      MOZ_REALLY_CRASH(__LINE__);                                             \
+#  define MOZ_CRASH(...)                                                       \
+    do {                                                                       \
+      MOZ_FUZZING_HANDLE_CRASH_EVENT4(                                         \
+          "MOZ_CRASH", MOZ_StripRelativeComponents(__FILE__), __LINE__, NULL); \
+      MOZ_ReportCrash("" __VA_ARGS__, __FILE__, __LINE__);                     \
+      MOZ_CRASH_ANNOTATE("MOZ_CRASH(" __VA_ARGS__ ")");                        \
+      MOZ_REALLY_CRASH(__LINE__);                                              \
     } while (false)
 #endif
 
@@ -365,6 +393,7 @@ _Noreturn
 #endif
 static MOZ_ALWAYS_INLINE_EVEN_DEBUG MOZ_COLD void MOZ_Crash(
     const char* aFilename, int aLine, const char* aReason) {
+  aFilename = MOZ_StripRelativeComponents(aFilename);
   MOZ_FUZZING_HANDLE_CRASH_EVENT4("MOZ_CRASH", aFilename, aLine, aReason);
 #if defined(DEBUG) || defined(MOZ_ASAN) || defined(FUZZING)
   MOZ_ReportCrash(aReason, aFilename, aLine);
@@ -500,27 +529,29 @@ struct AssertionConditionType {
 #endif
 
 
-#define MOZ_ASSERT_HELPER1(kind, expr)                         \
-  do {                                                         \
-    MOZ_VALIDATE_ASSERT_CONDITION_TYPE(expr);                  \
-    if (MOZ_UNLIKELY(!MOZ_CHECK_ASSERT_ASSIGNMENT(expr))) {    \
-      MOZ_FUZZING_HANDLE_CRASH_EVENT2(kind, #expr);            \
-      MOZ_REPORT_ASSERTION_FAILURE(#expr, __FILE__, __LINE__); \
-      MOZ_CRASH_ANNOTATE(kind "(" #expr ")");                  \
-      MOZ_REALLY_CRASH(__LINE__);                              \
-    }                                                          \
+#define MOZ_ASSERT_HELPER1(kind, expr)                                   \
+  do {                                                                   \
+    MOZ_VALIDATE_ASSERT_CONDITION_TYPE(expr);                            \
+    if (MOZ_UNLIKELY(!MOZ_CHECK_ASSERT_ASSIGNMENT(expr))) {              \
+      MOZ_FUZZING_HANDLE_CRASH_EVENT4(                                   \
+          kind, MOZ_StripRelativeComponents(__FILE__), __LINE__, #expr); \
+      MOZ_REPORT_ASSERTION_FAILURE(#expr, __FILE__, __LINE__);           \
+      MOZ_CRASH_ANNOTATE(kind "(" #expr ")");                            \
+      MOZ_REALLY_CRASH(__LINE__);                                        \
+    }                                                                    \
   } while (false)
 
-#define MOZ_ASSERT_HELPER2(kind, expr, explain)                      \
-  do {                                                               \
-    MOZ_VALIDATE_ASSERT_CONDITION_TYPE(expr);                        \
-    if (MOZ_UNLIKELY(!MOZ_CHECK_ASSERT_ASSIGNMENT(expr))) {          \
-      MOZ_FUZZING_HANDLE_CRASH_EVENT2(kind, #expr);                  \
-      MOZ_REPORT_ASSERTION_FAILURE(#expr " (" explain ")", __FILE__, \
-                                   __LINE__);                        \
-      MOZ_CRASH_ANNOTATE(kind "(" #expr ") (" explain ")");          \
-      MOZ_REALLY_CRASH(__LINE__);                                    \
-    }                                                                \
+#define MOZ_ASSERT_HELPER2(kind, expr, explain)                          \
+  do {                                                                   \
+    MOZ_VALIDATE_ASSERT_CONDITION_TYPE(expr);                            \
+    if (MOZ_UNLIKELY(!MOZ_CHECK_ASSERT_ASSIGNMENT(expr))) {              \
+      MOZ_FUZZING_HANDLE_CRASH_EVENT4(                                   \
+          kind, MOZ_StripRelativeComponents(__FILE__), __LINE__, #expr); \
+      MOZ_REPORT_ASSERTION_FAILURE(#expr " (" explain ")", __FILE__,     \
+                                   __LINE__);                            \
+      MOZ_CRASH_ANNOTATE(kind "(" #expr ") (" explain ")");              \
+      MOZ_REALLY_CRASH(__LINE__);                                        \
+    }                                                                    \
   } while (false)
 
 #define MOZ_ASSERT_GLUE(a, b) a b
