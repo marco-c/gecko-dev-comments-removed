@@ -877,6 +877,8 @@ void EmitSwitchStack(MacroAssembler& masm, Register switchTarget,
   
   masm.loadPtr(Address(switchTarget, offsetof(wasm::SwitchTarget, instance)),
                InstanceReg);
+  masm.loadWasmPinnedRegsFromInstance(mozilla::Nothing());
+  MOZ_ASSERT(HeapReg != scratch1 && HeapReg != scratch2 && HeapReg != scratch3);
   masm.switchToWasmInstanceRealm(scratch1, scratch2);
   
 
