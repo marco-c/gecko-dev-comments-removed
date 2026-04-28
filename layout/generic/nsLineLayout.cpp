@@ -89,6 +89,18 @@ nsLineLayout::nsLineLayout(nsPresContext* aPresContext,
   }
 }
 
+static bool ShouldApplyTextIndent(nsIFrame* aLineContainer) {
+  if (aLineContainer->IsRubyTextContainerFrame()) {
+    return false;
+  }
+  if (nsBlockFrame* block = do_QueryFrame(aLineContainer);
+      block && block->IsTextInput()) {
+    
+    return false;
+  }
+  return true;
+}
+
 void nsLineLayout::BeginLineReflow(nscoord aICoord, nscoord aBCoord,
                                    nscoord aISize, nscoord aBSize,
                                    bool aImpactedByFloats, bool aIsTopOfPage,
@@ -160,7 +172,8 @@ void nsLineLayout::BeginLineReflow(nscoord aICoord, nscoord aBCoord,
   
   
   nsIFrame* containerFrame = LineContainerFrame();
-  if (!containerFrame->IsRubyTextContainerFrame()) {
+  if (!mStyleText->mTextIndent.length.IsDefinitelyZero() &&
+      ShouldApplyTextIndent(containerFrame)) {
     bool isFirstLineOrAfterHardBreak = [&] {
       if (mLineNumber > 0) {
         return mStyleText->mTextIndent.each_line && GetLine() &&
