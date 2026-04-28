@@ -12,8 +12,8 @@ ChromeUtils.defineESModuleGetters(this, {
   WallpaperFeed: "resource://newtab/lib/Wallpapers/WallpaperFeed.sys.mjs",
 });
 
-const PREF_WALLPAPERS_ENABLED =
-  "browser.newtabpage.activity-stream.newtabWallpapers.enabled";
+const PREF_SYSTEM_WALLPAPERS_ENABLED =
+  "browser.newtabpage.activity-stream.newtabWallpapers.system.enabled";
 
 const PREF_WALLPAPERS_CUSTOM_WALLPAPER_UUID =
   "browser.newtabpage.activity-stream.newtabWallpapers.customWallpaper.uuid";
@@ -45,7 +45,7 @@ add_task(async function test_construction() {
 add_task(async function test_onAction_INIT() {
   let sandbox = sinon.createSandbox();
   let feed = new WallpaperFeed();
-  Services.prefs.setBoolPref(PREF_WALLPAPERS_ENABLED, true);
+  Services.prefs.setBoolPref(PREF_SYSTEM_WALLPAPERS_ENABLED, true);
   const attachment = {
     attachment: {
       location: "attachment",
@@ -95,27 +95,27 @@ add_task(async function test_onAction_INIT() {
     })
   );
 
-  Services.prefs.clearUserPref(PREF_WALLPAPERS_ENABLED);
+  Services.prefs.clearUserPref(PREF_SYSTEM_WALLPAPERS_ENABLED);
   sandbox.restore();
 });
 
 add_task(async function test_onAction_PREF_CHANGED() {
   let sandbox = sinon.createSandbox();
   let feed = new WallpaperFeed();
-  Services.prefs.setBoolPref(PREF_WALLPAPERS_ENABLED, true);
+  Services.prefs.setBoolPref(PREF_SYSTEM_WALLPAPERS_ENABLED, true);
   sandbox.stub(feed, "wallpaperSetup").returns();
 
   info("WallpaperFeed.onAction PREF_CHANGED should call wallpaperSetup");
 
   feed.onAction({
     type: actionTypes.PREF_CHANGED,
-    data: { name: "newtabWallpapers.enabled" },
+    data: { name: "newtabWallpapers.system.enabled" },
   });
 
   Assert.ok(feed.wallpaperSetup.calledOnce);
   Assert.ok(feed.wallpaperSetup.calledWith(false));
 
-  Services.prefs.clearUserPref(PREF_WALLPAPERS_ENABLED);
+  Services.prefs.clearUserPref(PREF_SYSTEM_WALLPAPERS_ENABLED);
   sandbox.restore();
 });
 
@@ -124,7 +124,7 @@ add_task(async function test_onAction_WALLPAPER_UPLOAD() {
   let feed = new WallpaperFeed();
   const fileData = {};
 
-  Services.prefs.setBoolPref(PREF_WALLPAPERS_ENABLED, true);
+  Services.prefs.setBoolPref(PREF_SYSTEM_WALLPAPERS_ENABLED, true);
   sandbox.stub(feed, "wallpaperUpload").returns();
 
   info("WallpaperFeed.onAction WALLPAPER_UPLOAD should call wallpaperUpload");
@@ -137,7 +137,7 @@ add_task(async function test_onAction_WALLPAPER_UPLOAD() {
   Assert.ok(feed.wallpaperUpload.calledOnce);
   Assert.ok(feed.wallpaperUpload.calledWith(fileData));
 
-  Services.prefs.clearUserPref(PREF_WALLPAPERS_ENABLED);
+  Services.prefs.clearUserPref(PREF_SYSTEM_WALLPAPERS_ENABLED);
 
   sandbox.restore();
 });
@@ -202,10 +202,64 @@ add_task(async function test_Wallpaper_Upload() {
   sandbox.restore();
 });
 
+add_task(async function test_updateWallpapers_category_order() {
+  let sandbox = sinon.createSandbox();
+  let feed = new WallpaperFeed();
+  Services.prefs.setBoolPref(PREF_SYSTEM_WALLPAPERS_ENABLED, true);
+  Services.prefs.setBoolPref(
+    "browser.newtabpage.activity-stream.newtabWallpapers.customWallpaper.enabled",
+    true
+  );
+
+  const records = [
+    { category: "solid-colors", attachment: { location: "a" } },
+    { category: "photographs", attachment: { location: "b" } },
+    { category: "celestial", attachment: { location: "c" } },
+    { category: "abstracts", attachment: { location: "d" } },
+    { category: "firefox", attachment: { location: "e" } },
+  ];
+
+  sandbox.stub(feed, "RemoteSettings").returns({
+    get: () => records,
+    on: () => {},
+  });
+  sandbox
+    .stub(Utils, "baseAttachmentsURL")
+    .returns("http://localhost:8888/base_url/");
+
+  feed.store = { dispatch: sinon.spy() };
+
+  info(
+    "WallpaperFeed.updateWallpapers should dispatch categories in the correct display order"
+  );
+
+  await feed.wallpaperSetup(false);
+
+  const categoryCall = feed.store.dispatch
+    .getCalls()
+    .find(call => call.args[0].type === actionTypes.WALLPAPERS_CATEGORY_SET);
+
+  Assert.ok(categoryCall, "Expected a WALLPAPERS_CATEGORY_SET dispatch call");
+  Assert.deepEqual(categoryCall.args[0].data, [
+    "custom-wallpaper",
+    "firefox",
+    "abstracts",
+    "celestial",
+    "photographs",
+    "solid-colors",
+  ]);
+
+  Services.prefs.clearUserPref(PREF_SYSTEM_WALLPAPERS_ENABLED);
+  Services.prefs.clearUserPref(
+    "browser.newtabpage.activity-stream.newtabWallpapers.customWallpaper.enabled"
+  );
+  sandbox.restore();
+});
+
 add_task(async function test_onAction_PREF_CHANGED_customColor() {
   let sandbox = sinon.createSandbox();
   let feed = new WallpaperFeed();
-  Services.prefs.setBoolPref(PREF_WALLPAPERS_ENABLED, true);
+  Services.prefs.setBoolPref(PREF_SYSTEM_WALLPAPERS_ENABLED, true);
   sandbox.stub(feed, "wallpaperTeardown").returns();
   sandbox.stub(feed, "wallpaperSetup").returns();
 
@@ -232,7 +286,7 @@ add_task(async function test_onAction_PREF_CHANGED_customColor() {
     "wallpaperSetup should be called with isStartup=false"
   );
 
-  Services.prefs.clearUserPref(PREF_WALLPAPERS_ENABLED);
+  Services.prefs.clearUserPref(PREF_SYSTEM_WALLPAPERS_ENABLED);
   sandbox.restore();
 });
 

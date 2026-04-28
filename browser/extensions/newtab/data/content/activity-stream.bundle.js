@@ -160,6 +160,7 @@ for (const type of [
   "FOLLOW_SECTION",
   "HIDE_PERSONALIZE",
   "HIDE_TOAST_MESSAGE",
+  "INFERRED_PERSONALIZATION_CLEAR_INTEREST_VECTOR",
   "INFERRED_PERSONALIZATION_DEBUG_FEATURES_REQUEST",
   "INFERRED_PERSONALIZATION_DEBUG_FEATURES_UPDATE",
   "INFERRED_PERSONALIZATION_DEBUG_OVERRIDES_SET",
@@ -4088,7 +4089,7 @@ class _DSCard extends (external_React_default()).PureComponent {
     const ctaButtonClassName = ctaButtonEnabled ? `ds-card-cta-button` : ``;
     const compactImagesClassName = compactImages ? `ds-card-compact-image` : ``;
     const imageGradientClassName = imageGradient ? `ds-card-image-gradient` : ``;
-    const sectionsCardsClassName = [mayHaveSectionsCards ? `sections-card-ui` : ``, novaEnabled ? `nova-card-ui` : ``, this.props.sectionsClassNames].filter(Boolean).join(" ");
+    const sectionsCardsClassName = [mayHaveSectionsCards ? `sections-card-ui` : ``, this.props.sectionsClassNames].filter(Boolean).join(" ");
     const titleLinesName = `ds-card-title-lines-${titleLines}`;
     const descLinesClassName = `ds-card-desc-lines-${descLines}`;
     const isMediumRectangle = format === "rectangle";
@@ -4470,7 +4471,9 @@ function AdBannerContextMenu({
   position,
   type,
   showAdReporting,
-  toggleActive = () => {}
+  toggleActive = () => {},
+  
+  novaEnabled
 }) {
   const ADBANNER_CONTEXT_MENU_OPTIONS = ["BlockAdUrl", ...(showAdReporting ? ["ReportAd"] : []), "ManageSponsoredContent", "OurSponsorsAndYourPrivacy"];
   const [showContextMenu, setShowContextMenu] = (0,external_React_namespaceObject.useState)(false);
@@ -4527,13 +4530,14 @@ function AdBannerContextMenu({
   }, external_React_default().createElement("div", {
     className: contextMenuClassNames
   }, external_React_default().createElement("moz-button", {
-    type: "icon",
-    size: "default",
+    type: novaEnabled ? "icon ghost" : "icon",
+    size: novaEnabled ? "small" : "default",
     "data-l10n-id": "newtab-menu-content-tooltip",
     "data-l10n-args": JSON.stringify({
       title: spoc.title || spoc.sponsor || spoc.alt_text
     }),
     iconsrc: "chrome://global/skin/icons/more.svg",
+    "aria-expanded": showContextMenu ? "true" : "false",
     onClick: onClick,
     onKeyDown: onKeyDown
   }), showContextMenu && external_React_default().createElement(LinkMenu, {
@@ -4577,6 +4581,7 @@ function AdBannerContextMenu({
 
 
 const PREF_PROMO_CARD_DISMISSED = "discoverystream.promoCard.visible";
+const PROMO_CARD_IMAGE_SRC = "chrome://newtab/content/data/content/assets/firefox-mascot-prop-paintbucket-rgb.svg";
 
 
 
@@ -4588,6 +4593,12 @@ const PromoCard = () => {
   const onCtaClick = (0,external_React_namespaceObject.useCallback)(() => {
     dispatch(actionCreators.AlsoToMain({
       type: actionTypes.PROMO_CARD_CLICK
+    }));
+    dispatch({
+      type: actionTypes.SHOW_PERSONALIZE
+    });
+    dispatch(actionCreators.UserEvent({
+      event: "SHOW_PERSONALIZE"
     }));
   }, [dispatch]);
   const onDismissClick = (0,external_React_namespaceObject.useCallback)(() => {
@@ -4621,23 +4632,28 @@ const PromoCard = () => {
   }, external_React_default().createElement("div", {
     className: "img-wrapper"
   }, external_React_default().createElement("img", {
-    src: "chrome://newtab/content/data/content/assets/puzzle-fox.svg",
+    src: PROMO_CARD_IMAGE_SRC,
     alt: ""
-  })), external_React_default().createElement("span", {
+  })), external_React_default().createElement("div", {
+    className: "promo-card-content"
+  }, external_React_default().createElement("div", {
+    className: "promo-card-copy"
+  }, external_React_default().createElement("div", {
+    className: "promo-card-title-wrapper"
+  }, external_React_default().createElement("span", {
     className: "promo-card-title",
-    "data-l10n-id": "newtab-promo-card-title"
-  }), external_React_default().createElement("span", {
+    "data-l10n-id": "newtab-promo-card-title-addons"
+  })), external_React_default().createElement("p", {
     className: "promo-card-body",
-    "data-l10n-id": "newtab-promo-card-body"
-  }), external_React_default().createElement("span", {
+    "data-l10n-id": "newtab-promo-card-body-addons"
+  })), external_React_default().createElement("div", {
     className: "promo-card-cta-wrapper"
-  }, external_React_default().createElement("a", {
-    href: "https://support.mozilla.org/kb/sponsor-privacy",
-    "data-l10n-id": "newtab-promo-card-cta",
-    target: "_blank",
-    rel: "noreferrer",
+  }, external_React_default().createElement("moz-button", {
+    className: "promo-card-cta",
+    type: "default",
+    "data-l10n-id": "newtab-promo-card-cta-addons",
     onClick: onCtaClick
-  }))));
+  })))));
 };
 
 ;
@@ -4656,6 +4672,8 @@ const AdBanner_PREF_OHTTP_UNIFIED_ADS = "unifiedAds.ohttp.enabled";
 const PREF_REPORT_ADS_ENABLED = "discoverystream.reportAds.enabled";
 const PREF_PROMOCARD_ENABLED = "discoverystream.promoCard.enabled";
 const PREF_PROMOCARD_VISIBLE = "discoverystream.promoCard.visible";
+
+const PREF_NOVA_ENABLED = "nova.enabled";
 
 
 
@@ -4695,6 +4713,9 @@ const AdBanner = ({
     };
   };
   const promoCardEnabled = spoc.format === "billboard" && prefs[PREF_PROMOCARD_ENABLED] && prefs[PREF_PROMOCARD_VISIBLE];
+
+  
+  const novaEnabled = prefs[PREF_NOVA_ENABLED];
   const sectionsEnabled = prefs[AdBanner_PREF_SECTIONS_ENABLED];
   const ohttpEnabled = prefs[AdBanner_PREF_OHTTP_UNIFIED_ADS];
   const showAdReporting = prefs[PREF_REPORT_ADS_ENABLED];
@@ -4744,8 +4765,11 @@ const AdBanner = ({
     rawImageSrc = `moz-cached-ohttp://newtab-image/?url=${encodeURIComponent(spoc.raw_image_src)}`;
   }
   return external_React_default().createElement("aside", {
-    className: adBannerWrapperClassName,
-    style: {
+    className: adBannerWrapperClassName
+    
+    
+    ,
+    style: novaEnabled && sectionsEnabled ? undefined : {
       gridRow: clampedRow
     }
   }, external_React_default().createElement("div", {
@@ -4792,7 +4816,8 @@ const AdBanner = ({
     position: row,
     type: type,
     showAdReporting: showAdReporting,
-    toggleActive: toggleActive
+    toggleActive: toggleActive,
+    novaEnabled: novaEnabled
   }))), promoCardEnabled && external_React_default().createElement(PromoCard, null));
 };
 ;
@@ -4807,7 +4832,7 @@ const AdBanner = ({
 
 
 
-const PREF_NOVA_ENABLED = "nova.enabled";
+const CardGrid_PREF_NOVA_ENABLED = "nova.enabled";
 const PREF_SECTIONS_CARDS_ENABLED = "discoverystream.sections.cards.enabled";
 const CardGrid_PREF_SECTIONS_ENABLED = "discoverystream.sections.enabled";
 const PREF_TOPICS_ENABLED = "discoverystream.topicLabels.enabled";
@@ -5093,7 +5118,7 @@ class _CardGrid extends (external_React_default()).PureComponent {
     
     const isEmpty = data.recommendations.length === 0;
     const prefs = this.props.Prefs.values;
-    const novaEnabled = prefs[PREF_NOVA_ENABLED];
+    const novaEnabled = prefs[CardGrid_PREF_NOVA_ENABLED];
     const sectionsEnabled = prefs[CardGrid_PREF_SECTIONS_ENABLED];
     const showNovaHeader = novaEnabled && !sectionsEnabled;
     return external_React_default().createElement("div", {
@@ -12432,9 +12457,10 @@ function Lists({
   
   
   novaEnabled && external_React_default().createElement("panel-item", {
-    submenu: "lists-size-submenu",
+    submenu: "lists-size-submenu"
+  }, external_React_default().createElement("span", {
     "data-l10n-id": "newtab-widget-menu-change-size"
-  }, external_React_default().createElement("panel-list", {
+  }), external_React_default().createElement("panel-list", {
     ref: sizeSubmenuRef,
     slot: "submenu",
     id: "lists-size-submenu"
@@ -13332,9 +13358,10 @@ const FocusTimer = ({
   
   
   novaEnabled && external_React_default().createElement("panel-item", {
-    submenu: "focus-timer-size-submenu",
+    submenu: "focus-timer-size-submenu"
+  }, external_React_default().createElement("span", {
     "data-l10n-id": "newtab-widget-menu-change-size"
-  }, external_React_default().createElement("panel-list", {
+  }), external_React_default().createElement("panel-list", {
     ref: sizeSubmenuRef,
     slot: "submenu",
     id: "focus-timer-size-submenu"
@@ -14093,6 +14120,11 @@ function Weather_Weather({
     }
     return undefined;
   }, [handleErrorIntersection, hasError]);
+
+  
+  const handleOptInLocationSelected = (0,external_React_namespaceObject.useCallback)(() => {
+    dispatch(actionCreators.SetPref("weather.optInAccepted", true));
+  }, [dispatch]);
   if (!weatherData?.initialized || !isWeatherEnabled) {
     return null;
   }
@@ -14209,9 +14241,6 @@ function Weather_Weather({
       }
     }));
   }
-  const handleOptInLocationSelected = (0,external_React_namespaceObject.useCallback)(() => {
-    dispatch(actionCreators.SetPref("weather.optInAccepted", true));
-  }, [dispatch]);
   function handleOptInChooseLocation() {
     (0,external_ReactRedux_namespaceObject.batch)(() => {
       dispatch(actionCreators.AlsoToMain({
@@ -14280,12 +14309,13 @@ function Weather_Weather({
       "data-l10n-id": "newtab-weather-menu-detect-my-location",
       onClick: handleDetectLocation
     }), prefs["widgets.system.enabled"] && prefs["widgets.enabled"] && external_React_default().createElement("panel-item", {
-      submenu: "weather-widget-size-submenu",
+      submenu: "weather-size-submenu"
+    }, external_React_default().createElement("span", {
       "data-l10n-id": "newtab-widget-menu-change-size"
-    }, external_React_default().createElement("panel-list", {
+    }), external_React_default().createElement("panel-list", {
       ref: sizeSubmenuRef,
       slot: "submenu",
-      id: "weather-widget-size-submenu"
+      id: "weather-size-submenu"
     }, ["small", "medium", "large"].map(s => external_React_default().createElement("panel-item", {
       key: s,
       type: "checkbox",
@@ -14496,7 +14526,7 @@ const PREF_WIDGETS_HIDE_ALL_TOAST_ENABLED = "widgets.hideAllToast.enabled";
 const Widgets_PREF_LISTS_SIZE = "widgets.lists.size";
 const Widgets_PREF_FOCUS_TIMER_SIZE = "widgets.focusTimer.size";
 const Widgets_PREF_WEATHER_SIZE = "widgets.weather.size";
-const WIDGETS_FEEDBACK_URL = "https://connect.mozilla.org/t5/discussions/feedback-welcome-for-new-tab-widgets-now-available-via-firefox/td-p/108354";
+const WIDGETS_FEEDBACK_URL = "https://support.mozilla.org/kb/firefox-new-tab-widgets";
 
 
 
@@ -14558,10 +14588,10 @@ function Widgets() {
   } = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Messages);
   const timerType = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.TimerWidget.timerType);
   const timerData = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.TimerWidget);
-  const isMaximized = prefs[PREF_WIDGETS_MAXIMIZED];
   const widgetsMayBeMaximized = prefs[PREF_WIDGETS_SYSTEM_MAXIMIZED];
   const dispatch = (0,external_ReactRedux_namespaceObject.useDispatch)();
   const novaEnabled = prefs[Widgets_PREF_NOVA_ENABLED];
+  const isMaximized = prefs[PREF_WIDGETS_MAXIMIZED];
   const nimbusListsEnabled = prefs.widgetsConfig?.listsEnabled;
   const nimbusTimerEnabled = prefs.widgetsConfig?.timerEnabled;
   const nimbusListsTrainhopEnabled = prefs.trainhopConfig?.widgets?.listsEnabled;
@@ -14572,6 +14602,7 @@ function Widgets() {
   const feedbackEnabled = prefs.trainhopConfig?.widgets?.feedbackEnabled || prefs[PREF_WIDGETS_FEEDBACK_ENABLED];
   const hideAllToastEnabled = prefs.trainhopConfig?.widgets?.hideAllToastEnabled || prefs[PREF_WIDGETS_HIDE_ALL_TOAST_ENABLED];
   const feedbackUrl = prefs.trainhopConfig?.widgets?.feedbackUrl ?? WIDGETS_FEEDBACK_URL;
+  const showWidgetsSizeToggle = nimbusMaximizedTrainhopEnabled || prefs[PREF_WIDGETS_SYSTEM_MAXIMIZED];
   const widgetsEnabled = prefs[PREF_WIDGETS_ENABLED];
   const listsEnabled = widgetsEnabled && (nimbusListsTrainhopEnabled || nimbusListsEnabled || prefs[PREF_WIDGETS_SYSTEM_LISTS_ENABLED]) && prefs[PREF_WIDGETS_LISTS_ENABLED];
   const timerEnabled = widgetsEnabled && (nimbusTimerTrainhopEnabled || nimbusTimerEnabled || prefs[PREF_WIDGETS_SYSTEM_TIMER_ENABLED]) && prefs[PREF_WIDGETS_TIMER_ENABLED];
@@ -14709,11 +14740,11 @@ function Widgets() {
       
       
       
+      
       if (novaEnabled) {
+        const listsTargetSize = newMaximizedState ? "large" : "small";
         const targetSize = newMaximizedState ? "large" : "medium";
-        if (prefs[Widgets_PREF_LISTS_SIZE] !== "small") {
-          dispatch(actionCreators.SetPref(Widgets_PREF_LISTS_SIZE, targetSize));
-        }
+        dispatch(actionCreators.SetPref(Widgets_PREF_LISTS_SIZE, listsTargetSize));
         if (prefs[Widgets_PREF_FOCUS_TIMER_SIZE] !== "small") {
           dispatch(actionCreators.SetPref(Widgets_PREF_FOCUS_TIMER_SIZE, targetSize));
         }
@@ -14748,7 +14779,10 @@ function Widgets() {
       dispatch(actionCreators.OnlyToMain({
         type: actionTypes.OPEN_LINK,
         data: {
-          url: feedbackUrl
+          url: feedbackUrl,
+          ...(novaEnabled ? {
+            where: "tab"
+          } : {})
         }
       }));
       dispatch(actionCreators.OnlyToMain({
@@ -14768,6 +14802,64 @@ function Widgets() {
       dispatch(actionCreators.SetPref(prefName, true));
     }
   }
+  function renderWidgetsTitle() {
+    if (!novaEnabled) {
+      return external_React_default().createElement("h1", {
+        "data-l10n-id": "newtab-widget-section-title"
+      });
+    }
+    return external_React_default().createElement("div", {
+      className: "widgets-title-heading"
+    }, external_React_default().createElement("h1", {
+      "data-l10n-id": "newtab-widget-section-title"
+    }), showWidgetsSizeToggle ? external_React_default().createElement("button", {
+      id: "toggle-widgets-size-button",
+      type: "button",
+      className: `widgets-expand-button${isMaximized ? " is-maximized" : ""}`,
+      "data-l10n-id": isMaximized ? "newtab-widget-section-minimize" : "newtab-widget-section-maximize",
+      onClick: handleToggleMaximizeClick,
+      onKeyDown: handleToggleMaximizeKeyDown
+    }) : null);
+  }
+  function renderWidgetsActions() {
+    if (novaEnabled) {
+      return external_React_default().createElement("div", {
+        className: "widgets-header-context-menu"
+      }, external_React_default().createElement("moz-button", {
+        className: "widgets-header-context-menu-button",
+        "data-l10n-id": "newtab-widget-section-menu-button",
+        iconSrc: "chrome://global/skin/icons/more.svg",
+        menuId: "widgets-header-context-panel",
+        type: "ghost",
+        size: "small"
+      }), external_React_default().createElement("panel-list", {
+        id: "widgets-header-context-panel"
+      }, external_React_default().createElement("panel-item", {
+        "data-l10n-id": "newtab-widget-section-menu-hide-all",
+        onClick: handleHideAllWidgetsClick
+      }), external_React_default().createElement("panel-item", {
+        "data-l10n-id": "newtab-widget-section-menu-learn-more",
+        onClick: handleFeedbackClick
+      })));
+    }
+    return external_React_default().createElement((external_React_default()).Fragment, null, showWidgetsSizeToggle ? external_React_default().createElement("moz-button", {
+      id: "toggle-widgets-size-button",
+      type: "icon ghost",
+      size: "small",
+      "data-l10n-id": isMaximized ? "newtab-widget-section-minimize" : "newtab-widget-section-maximize",
+      iconsrc: `chrome://browser/skin/${isMaximized ? "fullscreen-exit" : "fullscreen"}.svg`,
+      onClick: handleToggleMaximizeClick,
+      onKeyDown: handleToggleMaximizeKeyDown
+    }) : null, external_React_default().createElement("moz-button", {
+      id: "hide-all-widgets-button",
+      type: "icon ghost",
+      size: "small",
+      "data-l10n-id": "newtab-widget-section-hide-all-button",
+      iconsrc: "chrome://global/skin/icons/close.svg",
+      onClick: handleHideAllWidgetsClick,
+      onKeyDown: handleHideAllWidgetsKeyDown
+    }));
+  }
   if (!anyWidgetInRow) {
     return null;
   }
@@ -14779,31 +14871,13 @@ function Widgets() {
     className: "widgets-title-container"
   }, external_React_default().createElement("div", {
     className: "widgets-title-container-text"
-  }, external_React_default().createElement("h1", {
-    "data-l10n-id": "newtab-widget-section-title"
-  }), messageData?.content?.messageType === "WidgetMessage" && external_React_default().createElement(MessageWrapper, {
+  }, renderWidgetsTitle(), messageData?.content?.messageType === "WidgetMessage" && external_React_default().createElement(MessageWrapper, {
     dispatch: dispatch
   }, external_React_default().createElement(WidgetsFeatureHighlight, {
     dispatch: dispatch
-  }))), (nimbusMaximizedTrainhopEnabled || prefs[PREF_WIDGETS_SYSTEM_MAXIMIZED]) && external_React_default().createElement("moz-button", {
-    id: "toggle-widgets-size-button",
-    type: "icon ghost",
-    size: "small"
-    
-    ,
-    "data-l10n-id": isMaximized ? "newtab-widget-section-minimize" : "newtab-widget-section-maximize",
-    iconsrc: `chrome://browser/skin/${isMaximized ? "fullscreen-exit" : "fullscreen"}.svg`,
-    onClick: handleToggleMaximizeClick,
-    onKeyDown: handleToggleMaximizeKeyDown
-  }), external_React_default().createElement("moz-button", {
-    id: "hide-all-widgets-button",
-    type: "icon ghost",
-    size: "small",
-    "data-l10n-id": "newtab-widget-section-hide-all-button",
-    iconsrc: "chrome://global/skin/icons/close.svg",
-    onClick: handleHideAllWidgetsClick,
-    onKeyDown: handleHideAllWidgetsKeyDown
-  })), external_React_default().createElement("div", {
+  }))), external_React_default().createElement("div", {
+    className: "widgets-title-actions"
+  }, renderWidgetsActions())), external_React_default().createElement("div", {
     className: `widgets-container${isMaximized ? " is-maximized" : ""}`
   }, listsEnabled && external_React_default().createElement(Lists, {
     dispatch: dispatch,
@@ -14824,7 +14898,7 @@ function Widgets() {
     handleUserInteraction,
     isMaximized,
     widgetsMayBeMaximized
-  })), feedbackEnabled && external_React_default().createElement("a", {
+  })), feedbackEnabled && !novaEnabled && external_React_default().createElement("a", {
     className: "widgets-feedback-link",
     href: feedbackUrl,
     "data-l10n-id": "newtab-widget-section-feedback",
@@ -15310,7 +15384,8 @@ function SectionsMgmtPanel({
   pocketEnabled,
   onSubpanelToggle,
   togglePanel,
-  showPanel
+  showPanel,
+  novaEnabled
 }) {
   const arrowButtonRef = (0,external_React_namespaceObject.useRef)(null);
   const panelRef = (0,external_React_namespaceObject.useRef)(null);
@@ -15514,6 +15589,28 @@ function SectionsMgmtPanel({
       "data-l10n-id": "newtab-section-unblock-button"
     }))));
   });
+
+  
+  let arrowIconSrc;
+  if (novaEnabled) {
+    const isRTL = typeof document !== "undefined" && document.dir === "rtl";
+    arrowIconSrc = `chrome://global/skin/icons/shaft-arrow-${isRTL ? "right" : "left"}.svg`;
+  }
+  const panelBody = external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("h3", {
+    "data-l10n-id": "newtab-section-mangage-topics-followed-topics"
+  }), followedSectionsData.length ? external_React_default().createElement("ul", {
+    className: "topic-list"
+  }, followedSectionsList) : external_React_default().createElement("span", {
+    className: "topic-list-empty-state",
+    "data-l10n-id": "newtab-section-mangage-topics-followed-topics-empty-state"
+  }), external_React_default().createElement("h3", {
+    "data-l10n-id": "newtab-section-mangage-topics-blocked-topics"
+  }), blockedSectionsData.length ? external_React_default().createElement("ul", {
+    className: "topic-list"
+  }, blockedSectionsList) : external_React_default().createElement("span", {
+    className: "topic-list-empty-state",
+    "data-l10n-id": "newtab-section-mangage-topics-blocked-topics-empty-state"
+  }));
   return external_React_default().createElement("div", null, external_React_default().createElement("moz-box-button", SectionsMgmtPanel_extends({
     onClick: togglePanel,
     "data-l10n-id": "newtab-section-manage-topics-button-v2"
@@ -15529,27 +15626,27 @@ function SectionsMgmtPanel({
   }, external_React_default().createElement("div", {
     ref: panelRef,
     className: "sections-mgmt-panel"
-  }, external_React_default().createElement("button", {
+  },
+  
+  novaEnabled ? external_React_default().createElement("div", {
+    className: "panel-content"
+  }, external_React_default().createElement("div", {
+    className: "arrow-wrapper"
+  }, external_React_default().createElement("moz-button", {
+    ref: arrowButtonRef,
+    type: "ghost",
+    className: "arrow-button",
+    iconSrc: arrowIconSrc,
+    onClick: togglePanel
+  }), external_React_default().createElement("h2", {
+    "data-l10n-id": "newtab-section-mangage-topics-title"
+  })), panelBody) : external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("button", {
     ref: arrowButtonRef,
     className: "arrow-button",
     onClick: togglePanel
   }, external_React_default().createElement("h1", {
     "data-l10n-id": "newtab-section-mangage-topics-title"
-  })), external_React_default().createElement("h3", {
-    "data-l10n-id": "newtab-section-mangage-topics-followed-topics"
-  }), followedSectionsData.length ? external_React_default().createElement("ul", {
-    className: "topic-list"
-  }, followedSectionsList) : external_React_default().createElement("span", {
-    className: "topic-list-empty-state",
-    "data-l10n-id": "newtab-section-mangage-topics-followed-topics-empty-state"
-  }), external_React_default().createElement("h3", {
-    "data-l10n-id": "newtab-section-mangage-topics-blocked-topics"
-  }), blockedSectionsData.length ? external_React_default().createElement("ul", {
-    className: "topic-list"
-  }, blockedSectionsList) : external_React_default().createElement("span", {
-    className: "topic-list-empty-state",
-    "data-l10n-id": "newtab-section-mangage-topics-blocked-topics-empty-state"
-  }))));
+  })), panelBody))));
 }
 
 ;
@@ -15652,6 +15749,7 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
     
     this.props.setPref("newtabWallpapers.wallpaper", id);
     this.props.setPref("newtabWallpapers.initialWallpaper", "");
+    this.props.setPref("newtabWallpapers.enabled", true);
   }
 
   
@@ -15668,6 +15766,7 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
     }
     this.props.setPref("newtabWallpapers.wallpaper", id);
     this.props.setPref("newtabWallpapers.initialWallpaper", "");
+    this.props.setPref("newtabWallpapers.enabled", true);
     const uploadedPreviously = this.props.Prefs.values[PREF_WALLPAPER_UPLOADED_PREVIOUSLY];
     this.handleUserEvent(actionTypes.WALLPAPER_CLICK, {
       selected_wallpaper: id,
@@ -15863,6 +15962,7 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
         
         this.props.setPref("newtabWallpapers.wallpaper", "custom");
         this.props.setPref("newtabWallpapers.initialWallpaper", "");
+        this.props.setPref("newtabWallpapers.enabled", true);
 
         
         
@@ -15953,6 +16053,12 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
       activeCategoryFluentID
     } = this.state;
     
+    let arrowIconSrc;
+    if (novaEnabled) {
+      const isRTL = typeof document !== "undefined" && document.dir === "rtl";
+      arrowIconSrc = `chrome://global/skin/icons/shaft-arrow-${isRTL ? "right" : "left"}.svg`;
+    }
+    
     let showColorPicker = prefs["newtabWallpapers.customColor.enabled"];
     let filteredWallpapers = wallpaperList.filter(wallpaper => wallpaper.category === activeCategory);
     const wallpaperUploadMaxFileSize = this.props.Prefs.values[PREF_WALLPAPER_UPLOAD_MAX_FILE_SIZE];
@@ -16027,7 +16133,9 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
       
       !novaEnabled && external_React_default().createElement("h2", {
         "data-l10n-id": "newtab-wallpaper-title"
-      }), external_React_default().createElement("button", {
+      }),
+      
+      !novaEnabled && external_React_default().createElement("button", {
         className: "wallpapers-reset",
         onClick: this.handleReset,
         "data-l10n-id": "newtab-wallpaper-reset"
@@ -16141,7 +16249,16 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
       }, external_React_default().createElement("section", {
         ref: this.wallpaperListRef,
         className: "category wallpaper-list ignore-color-mode"
-      }, external_React_default().createElement("button", {
+      },
+      
+      novaEnabled ? external_React_default().createElement("moz-button", {
+        ref: this.arrowButtonRef,
+        type: "ghost",
+        className: "arrow-button",
+        iconSrc: arrowIconSrc,
+        "data-l10n-id": activeCategoryFluentID,
+        onClick: this.handleBack
+      }) : external_React_default().createElement("button", {
         ref: this.arrowButtonRef,
         className: "arrow-button",
         "data-l10n-id": activeCategoryFluentID,
@@ -16309,6 +16426,8 @@ function WidgetsManagementPanel({
     timerEnabled,
     listsEnabled
   } = enabledWidgets;
+  const isRTL = typeof document !== "undefined" && document.dir === "rtl";
+  const arrowIconSrc = `chrome://global/skin/icons/shaft-arrow-${isRTL ? "right" : "left"}.svg`;
   return external_React_default().createElement("div", {
     id: "widgets-management-panel",
     className: "widgets-mgmt-panel-container"
@@ -16325,11 +16444,17 @@ function WidgetsManagementPanel({
   }, external_React_default().createElement("div", {
     ref: panelRef,
     className: "widgets-mgmt-panel"
-  }, external_React_default().createElement("button", {
+  }, external_React_default().createElement("div", {
+    className: "panel-content"
+  }, external_React_default().createElement("div", {
+    className: "arrow-wrapper"
+  }, external_React_default().createElement("moz-button", {
     ref: arrowButtonRef,
+    type: "ghost",
     className: "arrow-button",
+    iconSrc: arrowIconSrc,
     onClick: togglePanel
-  }, external_React_default().createElement("h1", {
+  }), external_React_default().createElement("h2", {
     "data-l10n-id": "newtab-widget-manage-title"
   })), external_React_default().createElement("div", {
     className: "settings-widgets"
@@ -16366,7 +16491,7 @@ function WidgetsManagementPanel({
     "data-preference": "widgets.lists.enabled",
     "data-event-source": "WIDGET_LISTS",
     "data-l10n-id": "newtab-custom-widget-lists-toggle"
-  }))))));
+  })))))));
 }
 
 ;
@@ -16529,6 +16654,7 @@ class ContentSection extends (external_React_default()).PureComponent {
       showSectionsMgmtPanel,
       
       novaEnabled,
+      wallpapersSystemEnabled,
       toggleWidgetsManagementPanel,
       showWidgetsManagementPanel,
       widgetsEnabled
@@ -16556,9 +16682,9 @@ class ContentSection extends (external_React_default()).PureComponent {
     }
 
     
-    return external_React_default().createElement("div", {
+    return external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("div", {
       className: "home-section"
-    }, (wallpapersEnabled || novaEnabled) && external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("div", {
+    }, wallpapersSystemEnabled && external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("div", {
       className: "wallpapers-section"
     }, novaEnabled && external_React_default().createElement("moz-toggle", {
       id: "wallpapers-toggle",
@@ -16568,7 +16694,7 @@ class ContentSection extends (external_React_default()).PureComponent {
       "data-preference": "newtabWallpapers.enabled",
       "data-event-source": "WALLPAPERS",
       "data-l10n-id": "newtab-wallpaper-toggle-title"
-    }), wallpapersEnabled && external_React_default().createElement(WallpaperCategories, {
+    }), external_React_default().createElement(WallpaperCategories, {
       setPref: setPref,
       activeWallpaper: activeWallpaper,
       exitEventFired: exitEventFired,
@@ -16624,7 +16750,7 @@ class ContentSection extends (external_React_default()).PureComponent {
       pressed: weatherEnabled || null,
       ontoggle: this.onPreferenceSelect,
       onToggle: this.onPreferenceSelect,
-      "data-preference": novaEnabled ? "widgets.weather.enabled" : "showWeather",
+      "data-preference": "showWeather",
       "data-event-source": "WEATHER",
       "data-l10n-id": "newtab-custom-weather-toggle"
     })), external_React_default().createElement("span", {
@@ -16754,13 +16880,25 @@ class ContentSection extends (external_React_default()).PureComponent {
       pocketEnabled: pocketEnabled,
       onSubpanelToggle: onSubpanelToggle,
       togglePanel: toggleSectionsMgmtPanel,
-      showPanel: showSectionsMgmtPanel
+      showPanel: showSectionsMgmtPanel,
+      novaEnabled: novaEnabled
     }))))))),
     
     !novaEnabled && external_React_default().createElement("span", {
       className: "divider",
       role: "separator"
-    }), external_React_default().createElement("div", null, external_React_default().createElement("button", {
+    }),
+    
+    !novaEnabled && external_React_default().createElement("div", null, external_React_default().createElement("button", {
+      id: "settings-link",
+      className: "external-link",
+      onClick: openPreferences,
+      "data-l10n-id": "newtab-custom-settings"
+    }))),
+    
+    novaEnabled && external_React_default().createElement("div", {
+      className: "manage-settings-footer"
+    }, external_React_default().createElement("button", {
       id: "settings-link",
       className: "external-link",
       onClick: openPreferences,
@@ -16889,6 +17027,7 @@ class _CustomizeMenu extends (external_React_default()).PureComponent {
       setPref: this.props.setPref,
       enabledSections: this.props.enabledSections,
       enabledWidgets: this.props.enabledWidgets,
+      wallpapersSystemEnabled: this.props.wallpapersSystemEnabled,
       wallpapersEnabled: this.props.wallpapersEnabled,
       activeWallpaper: this.props.activeWallpaper,
       pocketRegion: this.props.pocketRegion,
@@ -17512,9 +17651,10 @@ class _Weather extends (external_React_default()).PureComponent {
     
     
     novaEnabled && external_React_default().createElement("panel-item", {
-      submenu: "weather-size-submenu",
+      submenu: "weather-size-submenu"
+    }, external_React_default().createElement("span", {
       "data-l10n-id": "newtab-widget-menu-change-size"
-    }, external_React_default().createElement("panel-list", {
+    }), external_React_default().createElement("panel-list", {
       ref: this.setSizeSubmenuRef,
       slot: "submenu",
       id: "weather-size-submenu"
@@ -18520,6 +18660,8 @@ class BaseContent extends (external_React_default()).PureComponent {
     this.applyBodyClasses();
     __webpack_require__.g.addEventListener("scroll", this.onWindowScroll);
     const prefs = this.props.Prefs.values;
+    const novaEnabled = prefs[Base_PREF_NOVA_ENABLED];
+    const wallpapersSystemEnabled = prefs["newtabWallpapers.system.enabled"];
     const wallpapersEnabled = prefs["newtabWallpapers.enabled"];
     if (this.props.document.visibilityState === Base_VISIBLE) {
       this.onVisible();
@@ -18537,7 +18679,8 @@ class BaseContent extends (external_React_default()).PureComponent {
     this.prefersDarkQuery = globalThis.matchMedia("(prefers-color-scheme: dark)");
     this.prefersDarkQuery.addEventListener("change", this.handleColorModeChange);
     this.handleColorModeChange();
-    if (wallpapersEnabled) {
+    const isWallpaperVisible = novaEnabled ? wallpapersSystemEnabled && wallpapersEnabled : wallpapersSystemEnabled;
+    if (isWallpaperVisible) {
       this.updateWallpaper();
     }
     this._onHashChange = () => {
@@ -18574,8 +18717,19 @@ class BaseContent extends (external_React_default()).PureComponent {
       
       this.props.dispatch(actionCreators.SetPref("weather.optInDisplayed", true));
     }
+    const novaEnabled = prefs[Base_PREF_NOVA_ENABLED];
+    const wallpapersSystemEnabled = prefs["newtabWallpapers.system.enabled"];
     const wallpapersEnabled = prefs["newtabWallpapers.enabled"];
-    if (wallpapersEnabled) {
+    
+    
+    const prevNovaEnabled = prevProps.Prefs.values[Base_PREF_NOVA_ENABLED];
+    const prevWallpapersSystemEnabled = prevProps.Prefs.values["newtabWallpapers.system.enabled"];
+    const prevWallpapersEnabled = prevProps.Prefs.values["newtabWallpapers.enabled"];
+    const isWallpaperActive = novaEnabled ? wallpapersSystemEnabled && wallpapersEnabled : wallpapersSystemEnabled;
+    
+    
+    const wasWallpaperActive = prevNovaEnabled ? prevWallpapersSystemEnabled && prevWallpapersEnabled : prevWallpapersSystemEnabled;
+    if (isWallpaperActive) {
       
       
       const {
@@ -18601,7 +18755,9 @@ class BaseContent extends (external_React_default()).PureComponent {
       const prevUploadedWallpaperTheme = prevPrefs["newtabWallpapers.customWallpaper.theme"];
 
       
-      if (selectedWallpaper !== prevSelectedWallpaper ||
+      if (!wasWallpaperActive ||
+      
+      selectedWallpaper !== prevSelectedWallpaper ||
       
       initialWallpaper !== prevInitialWallpaper ||
       
@@ -18614,6 +18770,9 @@ class BaseContent extends (external_React_default()).PureComponent {
       uploadedWallpaperTheme !== prevUploadedWallpaperTheme) {
         this.updateWallpaper();
       }
+    } else if (wasWallpaperActive) {
+      
+      this.updateWallpaper();
     }
     this.spocsOnDemandUpdated();
     this.trackSpocPlaceholderDuration(prevProps);
@@ -18799,7 +18958,11 @@ class BaseContent extends (external_React_default()).PureComponent {
   }
   async updateWallpaper() {
     const prefs = this.props.Prefs.values;
-    const selectedWallpaper = prefs["newtabWallpapers.wallpaper"] || prefs["newtabWallpapers.initialWallpaper"];
+    const novaEnabled = prefs[Base_PREF_NOVA_ENABLED];
+    const wallpapersSystemEnabled = prefs["newtabWallpapers.system.enabled"];
+    const wallpapersEnabled = prefs["newtabWallpapers.enabled"];
+    const isWallpaperVisible = novaEnabled ? wallpapersSystemEnabled && wallpapersEnabled : wallpapersSystemEnabled;
+    const selectedWallpaper = isWallpaperVisible ? prefs["newtabWallpapers.wallpaper"] || prefs["newtabWallpapers.initialWallpaper"] : null;
     const {
       wallpaperList,
       uploadedWallpaper: uploadedWallpaperUrl
@@ -18945,6 +19108,7 @@ class BaseContent extends (external_React_default()).PureComponent {
     
     const novaEnabled = prefs[Base_PREF_NOVA_ENABLED];
     const activeWallpaper = prefs[`newtabWallpapers.wallpaper`] || prefs[`newtabWallpapers.initialWallpaper`];
+    const wallpapersSystemEnabled = prefs["newtabWallpapers.system.enabled"];
     const wallpapersEnabled = prefs["newtabWallpapers.enabled"];
     const weatherEnabled = prefs.showWeather;
     const {
@@ -19034,9 +19198,14 @@ class BaseContent extends (external_React_default()).PureComponent {
         className: "nova-outer-wrapper"
       }, external_React_default().createElement("div", {
         className: `container nova-enabled${logoShouldBeCentered ? " logo-in-content" : ""}`
-      }, external_React_default().createElement("div", {
+      }, external_React_default().createElement("aside", {
         className: "sidebar-inline-start"
-      }, !logoShouldBeCentered && external_React_default().createElement(ErrorBoundary, null, external_React_default().createElement(Logo, null))), external_React_default().createElement("div", {
+      }, !logoShouldBeCentered && external_React_default().createElement(ErrorBoundary, null, external_React_default().createElement(Logo, null))), external_React_default().createElement("aside", {
+        className: "sidebar-inline-end"
+      }, showWeatherWidgetInSidebar && external_React_default().createElement(ErrorBoundary, null, external_React_default().createElement(Weather_Weather, {
+        dispatch: props.dispatch,
+        size: "small"
+      }))), external_React_default().createElement("main", {
         className: "content"
       }, logoShouldBeCentered && external_React_default().createElement(ErrorBoundary, null, external_React_default().createElement(Logo, null)), prefs.showSearch && external_React_default().createElement(ErrorBoundary, null, external_React_default().createElement(Search_Search, Base_extends({
         showLogo: false
@@ -19068,11 +19237,6 @@ class BaseContent extends (external_React_default()).PureComponent {
       }, external_React_default().createElement(DiscoveryStreamBase, {
         locale: props.App.locale,
         spocsLoading: this.isSpocsOnDemandExpired
-      }))), external_React_default().createElement("div", {
-        className: "sidebar-inline-end"
-      }, showWeatherWidgetInSidebar && external_React_default().createElement(ErrorBoundary, null, external_React_default().createElement(Weather_Weather, {
-        dispatch: props.dispatch,
-        size: "small"
       })))), external_React_default().createElement(ConfirmDialog, null), external_React_default().createElement("menu", {
         className: "personalizeButtonWrapper"
       }, external_React_default().createElement(CustomizeMenu, {
@@ -19082,6 +19246,7 @@ class BaseContent extends (external_React_default()).PureComponent {
         setPref: this.setPref,
         enabledSections: enabledSections,
         enabledWidgets: enabledWidgets,
+        wallpapersSystemEnabled: wallpapersSystemEnabled,
         wallpapersEnabled: wallpapersEnabled,
         activeWallpaper: activeWallpaper,
         pocketRegion: pocketRegion,
@@ -19149,7 +19314,7 @@ class BaseContent extends (external_React_default()).PureComponent {
     }, external_React_default().createElement(DiscoveryStreamBase, {
       locale: props.App.locale,
       spocsLoading: this.isSpocsOnDemandExpired
-    })) : external_React_default().createElement(Sections_Sections, null)), external_React_default().createElement(ConfirmDialog, null), wallpapersEnabled && this.renderWallpaperAttribution()), external_React_default().createElement("aside", null, this.props.Notifications?.showNotifications && external_React_default().createElement(ErrorBoundary, null, external_React_default().createElement(Notifications_Notifications, {
+    })) : external_React_default().createElement(Sections_Sections, null)), external_React_default().createElement(ConfirmDialog, null), wallpapersSystemEnabled && this.renderWallpaperAttribution()), external_React_default().createElement("aside", null, this.props.Notifications?.showNotifications && external_React_default().createElement(ErrorBoundary, null, external_React_default().createElement(Notifications_Notifications, {
       dispatch: this.props.dispatch
     }))), mayShowTopicSelection && pocketEnabled && external_React_default().createElement(TopicSelection, {
       supportUrl: supportUrl
@@ -19162,6 +19327,7 @@ class BaseContent extends (external_React_default()).PureComponent {
       setPref: this.setPref,
       enabledSections: enabledSections,
       enabledWidgets: enabledWidgets,
+      wallpapersSystemEnabled: wallpapersSystemEnabled,
       wallpapersEnabled: wallpapersEnabled,
       activeWallpaper: activeWallpaper,
       pocketRegion: pocketRegion,

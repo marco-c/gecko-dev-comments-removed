@@ -119,6 +119,7 @@ export class _WallpaperCategories extends React.PureComponent {
     // Setting this now so when we remove v1 we don't have to migrate v1 values.
     this.props.setPref("newtabWallpapers.wallpaper", id);
     this.props.setPref("newtabWallpapers.initialWallpaper", "");
+    this.props.setPref("newtabWallpapers.enabled", true);
   }
 
   // Note: There's a separate event (debouncedHandleChange) that fires the handleChange
@@ -134,6 +135,7 @@ export class _WallpaperCategories extends React.PureComponent {
 
     this.props.setPref("newtabWallpapers.wallpaper", id);
     this.props.setPref("newtabWallpapers.initialWallpaper", "");
+    this.props.setPref("newtabWallpapers.enabled", true);
 
     const uploadedPreviously =
       this.props.Prefs.values[PREF_WALLPAPER_UPLOADED_PREVIOUSLY];
@@ -360,6 +362,7 @@ export class _WallpaperCategories extends React.PureComponent {
         // Set active wallpaper ID to "custom"
         this.props.setPref("newtabWallpapers.wallpaper", "custom");
         this.props.setPref("newtabWallpapers.initialWallpaper", "");
+        this.props.setPref("newtabWallpapers.enabled", true);
 
         // Update the uploadedPreviously pref to TRUE
         // Note: this pref used for telemetry. Do not reset to false.
@@ -444,6 +447,12 @@ export class _WallpaperCategories extends React.PureComponent {
     const { activeWallpaper } = this.props;
     const { activeCategory } = this.state;
     const { activeCategoryFluentID } = this.state;
+    // @nova-cleanup(remove-conditional): Remove novaEnabled check, keep arrowIconSrc computation
+    let arrowIconSrc;
+    if (novaEnabled) {
+      const isRTL = typeof document !== "undefined" && document.dir === "rtl";
+      arrowIconSrc = `chrome://global/skin/icons/shaft-arrow-${isRTL ? "right" : "left"}.svg`;
+    }
     // Enable custom color select if pref'ed on
     let showColorPicker = prefs["newtabWallpapers.customColor.enabled"];
     let filteredWallpapers = wallpaperList.filter(
@@ -538,11 +547,16 @@ export class _WallpaperCategories extends React.PureComponent {
             // @nova-cleanup(remove-conditional): Remove h2 once Nova ships — title moves to the wallpaper toggle
             !novaEnabled && <h2 data-l10n-id="newtab-wallpaper-title"></h2>
           }
-          <button
-            className="wallpapers-reset"
-            onClick={this.handleReset}
-            data-l10n-id="newtab-wallpaper-reset"
-          />
+          {
+            // @nova-cleanup(remove-conditional): Remove reset button once Nova ships — toggle handles reset
+            !novaEnabled && (
+              <button
+                className="wallpapers-reset"
+                onClick={this.handleReset}
+                data-l10n-id="newtab-wallpaper-reset"
+              />
+            )
+          }
         </div>
         <div
           role="grid"
@@ -678,12 +692,26 @@ export class _WallpaperCategories extends React.PureComponent {
             ref={this.wallpaperListRef}
             className="category wallpaper-list ignore-color-mode"
           >
-            <button
-              ref={this.arrowButtonRef}
-              className="arrow-button"
-              data-l10n-id={activeCategoryFluentID}
-              onClick={this.handleBack}
-            />
+            {
+              // @nova-cleanup(remove-conditional): Remove novaEnabled check and the else branch, keep the nova branch
+              novaEnabled ? (
+                <moz-button
+                  ref={this.arrowButtonRef}
+                  type="ghost"
+                  className="arrow-button"
+                  iconSrc={arrowIconSrc}
+                  data-l10n-id={activeCategoryFluentID}
+                  onClick={this.handleBack}
+                />
+              ) : (
+                <button
+                  ref={this.arrowButtonRef}
+                  className="arrow-button"
+                  data-l10n-id={activeCategoryFluentID}
+                  onClick={this.handleBack}
+                />
+              )
+            }
             <div
               role="grid"
               aria-label="Wallpaper selection. Use arrow keys to navigate."

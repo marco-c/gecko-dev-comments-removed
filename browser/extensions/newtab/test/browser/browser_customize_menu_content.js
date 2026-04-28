@@ -8,6 +8,17 @@ const { WeatherFeed } = ChromeUtils.importESModule(
   "resource://newtab/lib/WeatherFeed.sys.mjs"
 );
 
+const { WallpaperFeed } = ChromeUtils.importESModule(
+  "resource://newtab/lib/Wallpapers/WallpaperFeed.sys.mjs"
+);
+
+const { DiscoveryStreamFeed } = ChromeUtils.importESModule(
+  "resource://newtab/lib/DiscoveryStreamFeed.sys.mjs"
+);
+const { PREFS_CONFIG } = ChromeUtils.importESModule(
+  "resource://newtab/lib/ActivityStream.sys.mjs"
+);
+
 ChromeUtils.defineESModuleGetters(this, {
   GeolocationTestUtils:
     "resource://testing-common/GeolocationTestUtils.sys.mjs",
@@ -17,6 +28,44 @@ ChromeUtils.defineESModuleGetters(this, {
 const { WEATHER_SUGGESTION } = MerinoTestUtils;
 
 add_setup(async function () {
+  let sandbox = sinon.createSandbox();
+
+  sandbox
+    .stub(DiscoveryStreamFeed.prototype, "generateFeedUrl")
+    .returns(
+      "https://example.com/browser/browser/extensions/newtab/test/browser/topstories.json"
+    );
+
+  const fakeWallpaperClient = {
+    on: () => {},
+    off: () => {},
+    get: async () => [],
+  };
+  sandbox
+    .stub(WallpaperFeed.prototype, "RemoteSettings")
+    .returns(fakeWallpaperClient);
+
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [
+        "browser.newtabpage.activity-stream.discoverystream.config",
+        PREFS_CONFIG.get("discoverystream.config").getValue({
+          geo: "US",
+          locale: "en-US",
+        }),
+      ],
+      [
+        "browser.newtabpage.activity-stream.discoverystream.endpoints",
+        "https://example.com",
+      ],
+    ],
+  });
+
+  registerCleanupFunction(async () => {
+    sandbox.restore();
+    await SpecialPowers.popPrefEnv();
+  });
+
   GeolocationTestUtils.init(this);
   GeolocationTestUtils.stubGeolocation(GeolocationTestUtils.SAN_FRANCISCO);
 });
@@ -114,29 +163,55 @@ test_newtab({
 
 test_newtab({
   async before({ pushPrefs }) {
-    sinon.stub(WeatherFeed.prototype, "MerinoClient").returns({
-      fetch: () => [WEATHER_SUGGESTION],
-    });
-    await pushPrefs(
-      ["browser.newtabpage.activity-stream.system.showWeather", true],
-      ["browser.newtabpage.activity-stream.showWeather", false]
+    
+    const novaEnabled = Services.prefs.getBoolPref(
+      "browser.newtabpage.activity-stream.nova.enabled",
+      false
     );
+
+    
+    
+    sinon.stub(WeatherFeed.prototype, "MerinoClient").returns({
+      fetchWeatherReport: () => Promise.resolve(WEATHER_SUGGESTION),
+      fetchHourlyForecasts: () => Promise.resolve([]),
+    });
+
+    const prefs = [
+      ["browser.newtabpage.activity-stream.system.showWeather", true],
+      ["browser.newtabpage.activity-stream.widgets.system.enabled", true],
+      [
+        "browser.newtabpage.activity-stream.widgets.system.weather.enabled",
+        true,
+      ],
+      ["browser.newtabpage.activity-stream.widgets.weather.enabled", false],
+      ["browser.newtabpage.activity-stream.widgets.weather.size", "small"],
+    ];
+
+    
+    if (!novaEnabled) {
+      prefs.push(["browser.newtabpage.activity-stream.showWeather", false]);
+    }
+
+    await pushPrefs(...prefs);
   },
   test: async function test_render_customizeMenuWeather() {
     
+    const novaEnabled = Services.prefs.getBoolPref(
+      "browser.newtabpage.activity-stream.nova.enabled",
+      false
+    );
+
+    
+    const WEATHER_PREF = novaEnabled
+      ? "browser.newtabpage.activity-stream.widgets.weather.enabled"
+      : "browser.newtabpage.activity-stream.showWeather";
+
+    
     function getWeatherWidget() {
-      return content.document.querySelector(`.weather`);
+      return novaEnabled
+        ? content.document.querySelector(".weather-widget")
+        : content.document.querySelector(".weather");
     }
-
-    function promiseWeatherShown() {
-      return ContentTaskUtils.waitForMutationCondition(
-        content.document.querySelector(".weatherWrapper"),
-        { childList: true, subtree: true },
-        () => getWeatherWidget()
-      );
-    }
-
-    const WEATHER_PREF = "browser.newtabpage.activity-stream.showWeather";
 
     await ContentTaskUtils.waitForCondition(
       () => content.document.querySelector(".personalize-button"),
@@ -156,8 +231,28 @@ test_newtab({
     );
 
     
+    if (novaEnabled) {
+      await ContentTaskUtils.waitForCondition(
+        () =>
+          content.document.querySelector(
+            "#widgets-management-panel moz-box-button"
+          ),
+        "Widgets management button should be present"
+      );
+      Cu.waiveXrays(
+        content.document.querySelector(
+          "#widgets-management-panel moz-box-button"
+        )
+      ).click();
+    }
+
     
     
+    await ContentTaskUtils.waitForCondition(
+      () => content.document.querySelector("#weather-section moz-toggle"),
+      "Weather section toggle should be present"
+    );
+
     
     
     let weatherSwitch = Cu.waiveXrays(
@@ -169,7 +264,10 @@ test_newtab({
     );
     Assert.ok(!getWeatherWidget(), "Weather widget is not rendered");
 
-    let sectionShownPromise = promiseWeatherShown();
+    let sectionShownPromise = ContentTaskUtils.waitForCondition(
+      () => getWeatherWidget(),
+      "Weather widget should be rendered"
+    );
     weatherSwitch.click();
     await sectionShownPromise;
 
@@ -177,11 +275,91 @@ test_newtab({
   },
   async after() {
     sinon.restore();
+    
     Services.prefs.clearUserPref(
       "browser.newtabpage.activity-stream.showWeather"
     );
     Services.prefs.clearUserPref(
       "browser.newtabpage.activity-stream.system.showWeather"
+    );
+    Services.prefs.clearUserPref(
+      "browser.newtabpage.activity-stream.widgets.weather.enabled"
+    );
+  },
+});
+
+test_newtab({
+  async before({ pushPrefs }) {
+    await pushPrefs(
+      ["browser.newtabpage.activity-stream.nova.enabled", true],
+      [
+        "browser.newtabpage.activity-stream.newtabWallpapers.system.enabled",
+        true,
+      ],
+      ["browser.newtabpage.activity-stream.newtabWallpapers.enabled", false],
+      
+      [
+        "browser.newtabpage.activity-stream.newtabWallpapers.wallpaper",
+        "solid-color-picker-#aabbcc",
+      ]
+    );
+  },
+  test: async function test_render_customizeMenuWallpaper() {
+    const WALLPAPERS_ENABLED_PREF =
+      "browser.newtabpage.activity-stream.newtabWallpapers.enabled";
+
+    function isWallpaperApplied() {
+      return (
+        content.document.body.classList.contains("lightWallpaper") ||
+        content.document.body.classList.contains("darkWallpaper")
+      );
+    }
+
+    await ContentTaskUtils.waitForCondition(
+      () => content.document.querySelector(".personalize-button"),
+      "Wait for prefs button to load on the newtab page"
+    );
+
+    Assert.ok(
+      !Services.prefs.getBoolPref(WALLPAPERS_ENABLED_PREF),
+      "Wallpapers pref defaults to off"
+    );
+    Assert.ok(
+      !isWallpaperApplied(),
+      "Wallpaper is not applied when pref is off"
+    );
+
+    let customizeButton = content.document.querySelector(".personalize-button");
+    customizeButton.click();
+
+    await ContentTaskUtils.waitForCondition(
+      () => content.document.querySelector("#wallpapers-toggle"),
+      "Wallpapers toggle should be present"
+    );
+
+    let wallpapersSwitch = Cu.waiveXrays(
+      content.document.querySelector("#wallpapers-toggle")
+    );
+    Assert.ok(
+      !Services.prefs.getBoolPref(WALLPAPERS_ENABLED_PREF),
+      "Wallpapers pref is still off before clicking toggle"
+    );
+    Assert.ok(!isWallpaperApplied(), "Wallpaper is still not applied");
+
+    let wallpaperAppliedPromise = ContentTaskUtils.waitForCondition(
+      () => isWallpaperApplied(),
+      "Wallpaper should be applied after toggle"
+    );
+    wallpapersSwitch.click();
+    await wallpaperAppliedPromise;
+
+    Assert.ok(
+      isWallpaperApplied(),
+      "Wallpaper is applied after enabling toggle"
+    );
+    Assert.ok(
+      Services.prefs.getBoolPref(WALLPAPERS_ENABLED_PREF),
+      "Wallpapers pref is on after enabling toggle"
     );
   },
 });
