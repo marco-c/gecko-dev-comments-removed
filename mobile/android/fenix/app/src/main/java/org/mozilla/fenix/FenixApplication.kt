@@ -84,7 +84,6 @@ import mozilla.components.support.utils.RunWhenReadyQueue
 import mozilla.components.support.utils.logElapsedTime
 import mozilla.components.support.webextensions.WebExtensionSupport
 import mozilla.telemetry.glean.Glean
-import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.GleanMetrics.Addons
 import org.mozilla.fenix.GleanMetrics.Addresses
 import org.mozilla.fenix.GleanMetrics.AndroidAutofill
@@ -436,7 +435,6 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
         queueStorageMaintenance(queue)
         queueIntegrityClientWarmUp(queue)
         queueNimbusFetchInForeground(queue)
-        queueSetAutofillMetrics(queue)
         queueDownloadWallpapers(queue)
 
         if (settings().enableFxSuggest) {
@@ -566,13 +564,21 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
 
     @OptIn(DelicateCoroutinesApi::class) // GlobalScope usage
     private fun queueIntegrityClientWarmUp(queue: RunWhenReadyQueue) {
-        if (Config.channel != ReleaseChannel.Nightly) {
+        // We want to avoid shipping this warmup into UI test builds to reduce quota impact, especially given
+        // that the Integrity verdicts will always fail anyway.
+        if (!BuildConfig.MOZILLA_OFFICIAL) {
             return
         }
         runOnVisualCompleteness(queue) {
             GlobalScope.launch(IO) {
-                components.integrityClient.warmUp()
-                Integrity.warmedUp.record(NoExtras())
+                val start = System.currentTimeMillis()
+                val result = components.integrityClient.warmUp()
+                Integrity.warmedUp.record(
+                    Integrity.WarmedUpExtra(
+                        durationMs = (System.currentTimeMillis() - start).toInt(),
+                        success = result,
+                        ),
+                    )
             }
         }
     }
@@ -609,31 +615,6 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
                 }
             }
         }
-
-    /**
-     * Sets autofill telemetry about Addresses, CreditCards, and Logins.
-     *
-     * @param queue The queue the function should use.
-     */
-    @OptIn(DelicateCoroutinesApi::class)
-    private fun queueSetAutofillMetrics(queue: RunWhenReadyQueue) = runOnVisualCompleteness(queue) {
-        GlobalScope.launch(IO) {
-            try {
-                val autoFillStorage = applicationContext.components.core.autofillStorage
-                Addresses.savedAll.set(autoFillStorage.countAllAddresses())
-                CreditCards.savedAll.set(autoFillStorage.countAllCreditCards())
-            } catch (e: AutofillApiException) {
-                logger.error("Failed to fetch autofill data", e)
-            }
-
-            try {
-                val passwordsStorage = applicationContext.components.core.passwordsStorage
-                Logins.savedAll.set(passwordsStorage.count())
-            } catch (e: LoginsApiException) {
-                logger.error("Failed to fetch list of logins", e)
-            }
-        }
-    }
 
     /**
      * Sets up LeakCanary based on different build variant implementations.
@@ -1071,6 +1052,8 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
                 }
             }
         }
+
+        setAutofillMetrics()
     }
 
     private fun setTermsOfUseStartUpMetrics(settings: Settings) {
@@ -1194,6 +1177,26 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
             globalPrivacyControlEnabled.set(settings.shouldEnableGlobalPrivacyControl)
         }
         reportHomeScreenMetrics(settings)
+    }
+
+    private fun setAutofillMetrics() {
+        @OptIn(DelicateCoroutinesApi::class)
+        GlobalScope.launch(IO) {
+            try {
+                val autoFillStorage = applicationContext.components.core.autofillStorage
+                Addresses.savedAll.set(autoFillStorage.countAllAddresses())
+                CreditCards.savedAll.set(autoFillStorage.countAllCreditCards())
+            } catch (e: AutofillApiException) {
+                logger.error("Failed to fetch autofill data", e)
+            }
+
+            try {
+                val passwordsStorage = applicationContext.components.core.passwordsStorage
+                Logins.savedAll.set(passwordsStorage.count())
+            } catch (e: LoginsApiException) {
+                logger.error("Failed to fetch list of logins", e)
+            }
+        }
     }
 
     @VisibleForTesting
