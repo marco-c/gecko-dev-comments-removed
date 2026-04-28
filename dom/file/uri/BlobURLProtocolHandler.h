@@ -117,8 +117,4 @@ bool IsBlobURI(nsIURI* aUri);
 }  
 }  
 
-extern nsresult NS_SetChannelContentRangeForBlobURI(nsIChannel* aChannel,
-                                                    nsIURI* aURI,
-                                                    nsACString& aRangeHeader);
-
 #endif 
