@@ -107,6 +107,7 @@ class GeckoMediaPluginServiceParent final
 
   virtual ~GeckoMediaPluginServiceParent();
 
+  void ClearTemporaryStorage();
   void ClearStorage();
 
   already_AddRefed<GMPParent> SelectPluginForAPI(
@@ -289,13 +290,23 @@ class GMPServiceParent final : public PGMPServiceParent {
                                nsTArray<ProcessId>&& aAlreadyBridgedTo,
                                LaunchGMPResolver&& aResolve) override;
 
+  
+  
+  
+  
+  
+  void BeginShutdown();
+
  private:
   ~GMPServiceParent();
 
   const RefPtr<GeckoMediaPluginServiceParent> mService;
 
   
-  const UniquePtr<media::ShutdownBlockingTicket> mShutdownBlocker;
+  
+  
+  
+  UniquePtr<media::ShutdownBlockingTicket> mShutdownBlocker;
 };
 
 }  

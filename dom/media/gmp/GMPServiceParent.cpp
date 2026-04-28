@@ -315,8 +315,9 @@ GeckoMediaPluginServiceParent::Observe(nsISupports* aSubject,
     
     
     
-    mTempNodeIds.Clear();
-    mTempGMPStorage.Clear();
+    return GMPDispatch(NewRunnableMethod(
+        "gmp::GeckoMediaPluginServiceParent::ClearTemporaryStorage", this,
+        &GeckoMediaPluginServiceParent::ClearTemporaryStorage));
   } else if (!strcmp("browser:purge-session-history", aTopic)) {
     GMP_LOG_DEBUG(
         "Received 'browser:purge-session-history', clearing everything");
@@ -489,6 +490,7 @@ void GeckoMediaPluginServiceParent::UnloadPlugins() {
     std::swap(plugins, mPlugins);
 
     for (GMPServiceParent* parent : mServiceParents) {
+      parent->BeginShutdown();
       (void)parent->SendBeginShutdown();
     }
 
@@ -1862,6 +1864,14 @@ void GeckoMediaPluginServiceParent::ServiceUserDestroyed(
   mServiceParents.RemoveElement(aServiceParent);
 }
 
+void GeckoMediaPluginServiceParent::ClearTemporaryStorage() {
+  AssertOnGMPThread();
+  GMP_LOG_DEBUG("%s::%s", __CLASS__, __FUNCTION__);
+
+  mTempNodeIds.Clear();
+  mTempGMPStorage.Clear();
+}
+
 void GeckoMediaPluginServiceParent::ClearStorage() {
   AssertOnGMPThread();
   GMP_LOG_DEBUG("%s::%s", __CLASS__, __FUNCTION__);
@@ -1915,6 +1925,11 @@ GMPServiceParent::GMPServiceParent(GeckoMediaPluginServiceParent* aService)
 GMPServiceParent::~GMPServiceParent() {
   MOZ_ASSERT(NS_IsMainThread(), "Should be destroyted on the main thread");
   mService->ServiceUserDestroyed(this);
+}
+
+void GMPServiceParent::BeginShutdown() {
+  mService->mMutex.AssertCurrentThreadOwns();
+  mShutdownBlocker = nullptr;
 }
 
 mozilla::ipc::IPCResult GMPServiceParent::RecvLaunchGMP(
