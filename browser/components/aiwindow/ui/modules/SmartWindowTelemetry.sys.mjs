@@ -9,6 +9,10 @@ import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const ONE_HOUR_MS = 60 * 60 * 1000;
 const PREF_MODEL_CHOICE = "browser.smartwindow.firstrun.modelChoice";
+const PREF_MEMORIES_FROM_CONVERSATION =
+  "browser.smartwindow.memories.generateFromConversation";
+const PREF_MEMORIES_FROM_HISTORY =
+  "browser.smartwindow.memories.generateFromHistory";
 const lazy = {};
 
 XPCOMUtils.defineLazyPreferenceGetter(
@@ -19,8 +23,24 @@ XPCOMUtils.defineLazyPreferenceGetter(
   () => SmartWindowTelemetry.updateModelMetric()
 );
 
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "memoriesFromConversation",
+  PREF_MEMORIES_FROM_CONVERSATION,
+  false,
+  () => SmartWindowTelemetry.updateMemoriesFromConversationMetric()
+);
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "memoriesFromHistory",
+  PREF_MEMORIES_FROM_HISTORY,
+  false,
+  () => SmartWindowTelemetry.updateMemoriesFromHistoryMetric()
+);
+
 ChromeUtils.defineESModuleGetters(lazy, {
-  MODELS:
+  getModelForChoice:
     "moz-src:///browser/components/aiwindow/ui/modules/AIWindowConstants.sys.mjs",
 });
 
@@ -34,16 +54,31 @@ export const SmartWindowTelemetry = {
     }
     this._initialized = true;
 
-    this.updateModelMetric();
+    this.updateModelMetric().catch(console.error);
+    this.updateMemoriesFromConversationMetric();
+    this.updateMemoriesFromHistoryMetric();
   },
 
-  updateModelMetric() {
-    const choice = lazy.modelChoice;
-    const model = choice ? lazy.MODELS[choice]?.modelName : null;
-    Glean.smartWindow.model.set(model ?? "unset");
+  updateMemoriesFromConversationMetric() {
+    const memoriesFromConversation = lazy.memoriesFromConversation;
+    Glean.smartWindow.memoriesOptin.generate_from_conversation.set(
+      memoriesFromConversation
+    );
   },
 
-  recordUriLoad() {
+  updateMemoriesFromHistoryMetric() {
+    const memoriesFromHistory = lazy.memoriesFromHistory;
+    Glean.smartWindow.memoriesOptin.generate_from_history.set(
+      memoriesFromHistory
+    );
+  },
+
+  async updateModelMetric() {
+    const modelInfo = await lazy.getModelForChoice(lazy.modelChoice);
+    Glean.smartWindow.model.set(modelInfo?.model ?? "unset");
+  },
+
+  async recordUriLoad() {
     const now = Date.now();
 
     // Throttle to once per hour to capture activity at event time rather than
@@ -54,8 +89,9 @@ export const SmartWindowTelemetry = {
 
     this.lastUriLoadTimestamp = now;
 
+    const modelInfo = await lazy.getModelForChoice(lazy.modelChoice);
     Glean.smartWindow.uriLoad.record({
-      model: lazy.modelChoice === null ? "custom-model" : lazy.modelChoice,
+      model: modelInfo?.model ?? "unset",
     });
 
     return true;
