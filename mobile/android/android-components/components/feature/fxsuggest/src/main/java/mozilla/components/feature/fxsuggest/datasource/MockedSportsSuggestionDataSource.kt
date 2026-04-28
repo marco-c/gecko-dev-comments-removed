@@ -64,15 +64,16 @@ class MockedSportsSuggestionDataSource : AwesomeBar.SportsSuggestionDataSource {
             name = "Clippers",
             colors = listOf("C8102E", "1D428A", "BEC0C2", "000000"),
             score = 103,
-            iconUrl = null,
+            icon = null,
         ),
         awayTeam = AwesomeBar.SportItem.Team(
             key = "LAL",
             name = "Lakers",
             colors = listOf("552583", "FDB927", "000000", "FFFFFF"),
             score = 107,
-            iconUrl = null,
+            icon = null,
         ),
+        touched = date,
     )
 
     private fun nflSportItem(date: String) = AwesomeBar.SportItem(
@@ -87,15 +88,16 @@ class MockedSportsSuggestionDataSource : AwesomeBar.SportsSuggestionDataSource {
             name = "Minnesota Vikings",
             colors = listOf("4F2683", "FFC62F", "FFFFFF", "000000"),
             score = 12,
-            iconUrl = null,
+            icon = null,
         ),
         awayTeam = AwesomeBar.SportItem.Team(
             key = "CBJ",
             name = "Columbus Blue Jackets",
             colors = listOf("002654", "CE1126", "A4A9AD", "FFFFFF"),
             score = 14,
-            iconUrl = null,
+            icon = null,
         ),
+        touched = date,
     )
 
     private fun mlbSportItem(date: String) = AwesomeBar.SportItem(
@@ -110,15 +112,16 @@ class MockedSportsSuggestionDataSource : AwesomeBar.SportsSuggestionDataSource {
             name = "Diamondbacks",
             colors = listOf("A71930", "30CED8", "000000", "E3D4AD"),
             score = null,
-            iconUrl = null,
+            icon = null,
         ),
         awayTeam = AwesomeBar.SportItem.Team(
             key = "NYY",
             name = "Yankees",
             colors = listOf("0C2340", "003087", "E4002C", "C4CED3"),
             score = null,
-            iconUrl = null,
+            icon = null,
         ),
+        touched = date,
     )
 
     private fun nhlSportItem(date: String) = AwesomeBar.SportItem(
@@ -133,14 +136,15 @@ class MockedSportsSuggestionDataSource : AwesomeBar.SportsSuggestionDataSource {
             name = "Canucks",
             colors = listOf("00205B", "00843D", "041C2C", "99999A"),
             score = 0,
-            iconUrl = null,
+            icon = null,
         ),
         awayTeam = AwesomeBar.SportItem.Team(
             key = "TBL",
             name = "Lightning",
             colors = listOf("002868", "FFFFFF"),
             score = 1,
-            iconUrl = null,
+            icon = null,
         ),
+        touched = date,
     )
 }
