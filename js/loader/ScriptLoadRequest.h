@@ -272,6 +272,17 @@ class ScriptLoadRequest : public nsISupports,
   const LoadedScript* getLoadedScript() const { return mLoadedScript.get(); }
   LoadedScript* getLoadedScript() { return mLoadedScript.get(); }
 
+  bool HasStencil() const { return !!mStencil; }
+  JS::Stencil* GetStencil() const { return mStencil; }
+  void SetStencil(JS::Stencil* aStencil) {
+    mStencil = aStencil;
+    getLoadedScript()->SetStencil(aStencil);
+  }
+  void ClearStencil() {
+    mStencil = nullptr;
+    getLoadedScript()->ClearStencil();
+  }
+
   bool HasSourceMapURL() const { return mHasSourceMapURL_; }
   const nsString& GetSourceMapURL() const {
     MOZ_ASSERT(mHasSourceMapURL_);
@@ -358,6 +369,12 @@ class ScriptLoadRequest : public nsISupports,
 
   
   RefPtr<LoadedScript> mLoadedScript;
+
+  
+  
+  
+  
+  RefPtr<JS::Stencil> mStencil;
 
   RefPtr<ScriptFetchInfo> mFetchInfo;
 
