@@ -1360,6 +1360,13 @@ AbortReasonOr<bool> WarpScriptOracle::maybeInlineCall(
   MOZ_ASSERT_IF(!isTrialInlined, fallbackStub->trialInliningState() ==
                                      TrialInliningState::MonomorphicInlined);
 
+  if (isTrialInlined && inlineData->icScript->warmUpCount() ==
+                            JitOptions.trialInliningInitialWarmUpCount) {
+    
+    
+    isTrialInlined = false;
+  }
+
   ICScript* icScript = nullptr;
   if (isTrialInlined) {
     icScript = inlineData->icScript;
