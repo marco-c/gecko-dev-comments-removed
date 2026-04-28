@@ -109,7 +109,8 @@ struct ScreamV2Parameters {
 
   
   
-  FieldTrialParameter<TimeDelta> periodic_padding_interval;
+  
+  FieldTrialParameter<TimeDelta> time_between_periodic_padding;
   
   
   FieldTrialParameter<TimeDelta> periodic_padding_duration;
@@ -117,6 +118,9 @@ struct ScreamV2Parameters {
   
   
   FieldTrialParameter<TimeDelta> allow_padding_after_last_congestion_time;
+  
+  
+  FieldTrialParameter<TimeDelta> initial_probing_duration;
 
   
   FieldTrialParameter<double> pacing_factor;
