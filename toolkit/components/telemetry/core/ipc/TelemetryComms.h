@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef Telemetry_Comms_h_
 #define Telemetry_Comms_h_
 
@@ -112,7 +111,8 @@ static_assert(
     "Update ParamTraits<HistogramID> implementation");
 
 template <>
-struct ParamTraits<mozilla::Telemetry::ScalarActionType>
+struct MOZ_ENUM_SERIALIZER_ALLOW_SENTINEL_UPPER_BOUND
+    ParamTraits<mozilla::Telemetry::ScalarActionType>
     : public ContiguousEnumSerializerInclusive<
           mozilla::Telemetry::ScalarActionType,
           mozilla::Telemetry::ScalarActionType::eSet,
