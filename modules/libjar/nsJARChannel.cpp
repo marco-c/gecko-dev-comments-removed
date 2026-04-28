@@ -291,6 +291,10 @@ nsresult nsJARChannel::LookupFile() {
   
   NS_UnescapeURL(mJarEntry);
 
+  if (mJarEntry.FindChar('\0') != -1) {
+    return NS_ERROR_MALFORMED_URI;
+  }
+
   if (mJarFileOverride) {
     mJarFile = mJarFileOverride;
     LOG(("nsJARChannel::LookupFile [this=%p] Overriding mJarFile\n", this));
