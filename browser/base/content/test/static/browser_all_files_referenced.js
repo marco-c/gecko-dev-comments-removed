@@ -55,6 +55,7 @@ var gExceptionPaths = [
   
   
   "resource://pdf.js/web/wasm/openjpeg_nowasm_fallback.js",
+  "resource://pdf.js/web/wasm/jbig2_nowasm_fallback.js",
 
   
   
@@ -242,9 +243,6 @@ var allowlist = [
   { file: "resource://builtin-addons/ipp-activator/breakages/tab.json" },
 
   
-  { file: "resource://app/modules/contentsharing/ContentSharingUtils.sys.mjs" },
-
-  
   
   {
     file: "chrome://browser/locale/taskbar.properties",
@@ -339,6 +337,11 @@ var allowlist = [
   {
     file: "chrome://global/content/autocomplete-row-item/autocomplete-row-item.mjs",
   },
+
+  
+  
+  { file: "chrome://global/skin/icons/shaft-arrow-left.svg" },
+  { file: "chrome://global/skin/icons/shaft-arrow-right.svg" },
 ];
 
 if (AppConstants.NIGHTLY_BUILD) {
