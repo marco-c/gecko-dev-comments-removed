@@ -339,7 +339,19 @@ pub enum AllowImportRules {
 }
 
 impl SanitizationKind {
-    fn allows(self, rule: &CssRule) -> bool {
+    fn allows(self, rule: &CssRule, guard: &SharedRwLockReadGuard) -> bool {
+        if !self.allows_self(rule) {
+            return false;
+        }
+        for child in rule.children(guard) {
+            if !self.allows(child, guard) {
+                return false;
+            }
+        }
+        true
+    }
+
+    fn allows_self(self, rule: &CssRule) -> bool {
         debug_assert_ne!(self, SanitizationKind::None);
         
         
@@ -432,6 +444,7 @@ impl Stylesheet {
              Default::default(),
             error_reporter,
             use_counters,
+             Default::default(),
         );
 
         let mut rule_parser = TopLevelRuleParser {
@@ -457,7 +470,7 @@ impl Stylesheet {
                         
                         if let Some(ref mut data) = sanitization_data {
                             if let Some(ref rule) = iter.parser.rules.last() {
-                                if !data.kind.allows(rule) {
+                                if !data.kind.allows(rule, &shared_lock.read()) {
                                     iter.parser.rules.pop();
                                     continue;
                                 }

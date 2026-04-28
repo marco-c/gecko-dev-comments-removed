@@ -4,6 +4,7 @@
 
 
 
+use crate::derives::*;
 use crate::error_reporting::ContextualParseError;
 use crate::parser::ParserContext;
 use crate::properties::{
@@ -69,7 +70,7 @@ impl KeyframesRule {
     
     pub fn find_rule(&self, guard: &SharedRwLockReadGuard, selector: &str) -> Option<usize> {
         let mut input = ParserInput::new(selector);
-        if let Ok(selector) = Parser::new(&mut input).parse_entirely(KeyframeSelector::parse) {
+        if let Ok(selector) = Parser::new(&mut input).parse_entirely(KeyframeSelectors::parse) {
             for (i, keyframe) in self.keyframes.iter().enumerate().rev() {
                 if keyframe.read_with(guard).selector == selector {
                     return Some(i);
@@ -149,9 +150,9 @@ impl KeyframePercentage {
 
 #[derive(Clone, Debug, Eq, PartialEq, ToCss, ToShmem)]
 #[css(comma)]
-pub struct KeyframeSelector(#[css(iterable)] Vec<KeyframePercentage>);
+pub struct KeyframeSelectors(#[css(iterable)] Vec<KeyframePercentage>);
 
-impl KeyframeSelector {
+impl KeyframeSelectors {
     
     #[inline]
     pub fn percentages(&self) -> &[KeyframePercentage] {
@@ -159,15 +160,15 @@ impl KeyframeSelector {
     }
 
     
-    pub fn new_for_unit_testing(percentages: Vec<KeyframePercentage>) -> KeyframeSelector {
-        KeyframeSelector(percentages)
+    pub fn new_for_unit_testing(percentages: Vec<KeyframePercentage>) -> KeyframeSelectors {
+        KeyframeSelectors(percentages)
     }
 
     
     pub fn parse<'i, 't>(input: &mut Parser<'i, 't>) -> Result<Self, ParseError<'i>> {
         input
             .parse_comma_separated(KeyframePercentage::parse)
-            .map(KeyframeSelector)
+            .map(KeyframeSelectors)
     }
 }
 
@@ -175,7 +176,7 @@ impl KeyframeSelector {
 #[derive(Debug, ToShmem)]
 pub struct Keyframe {
     
-    pub selector: KeyframeSelector,
+    pub selector: KeyframeSelectors,
 
     
     
@@ -215,6 +216,7 @@ impl Keyframe {
             Cow::Borrowed(&*namespaces),
             None,
             None,
+             Default::default(),
         );
         let mut input = ParserInput::new(css);
         let mut input = Parser::new(&mut input);
@@ -543,7 +545,7 @@ impl<'a, 'b, 'i> DeclarationParser<'i> for KeyframeListParser<'a, 'b> {
 }
 
 impl<'a, 'b, 'i> QualifiedRuleParser<'i> for KeyframeListParser<'a, 'b> {
-    type Prelude = KeyframeSelector;
+    type Prelude = KeyframeSelectors;
     type QualifiedRule = Arc<Locked<Keyframe>>;
     type Error = StyleParseErrorKind<'i>;
 
@@ -552,7 +554,7 @@ impl<'a, 'b, 'i> QualifiedRuleParser<'i> for KeyframeListParser<'a, 'b> {
         input: &mut Parser<'i, 't>,
     ) -> Result<Self::Prelude, ParseError<'i>> {
         let start_position = input.position();
-        KeyframeSelector::parse(input).map_err(|e| {
+        KeyframeSelectors::parse(input).map_err(|e| {
             let location = e.location;
             let error = ContextualParseError::InvalidKeyframeRule(
                 input.slice_from(start_position),

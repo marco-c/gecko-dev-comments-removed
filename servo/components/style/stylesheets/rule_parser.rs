@@ -353,7 +353,7 @@ impl<'a, 'i> AtRuleParser<'i> for TopLevelRuleParser<'a, 'i> {
                 }
 
                 let url_string = input.expect_url_or_string()?.as_ref().to_owned();
-                let url = CssUrl::parse_from_string(url_string, &self.context, CorsMode::None);
+                let url = CssUrl::new_from_untainted_string(url_string, &self.context, CorsMode::None);
 
                 let (layer, supports) = ImportRule::parse_layer_and_supports(input, &mut self.context);
 
@@ -720,8 +720,12 @@ impl<'a, 'i> AtRuleParser<'i> for NestedRuleParser<'a, 'i> {
                 AtRulePrelude::FontFace
             },
             "container" if cfg!(feature = "gecko") => {
-                let condition = ContainerCondition::parse(&self.context, input)?;
-                let conditions = ArcSlice::from_iter(core::iter::once(condition));
+                let conditions = input.parse_comma_separated(|input| {
+                    ContainerCondition::parse(&self.context, input)
+                })?;
+                // Container rules must have at least one condition.
+                debug_assert!(!conditions.is_empty());
+                let conditions = ArcSlice::from_iter(conditions.into_iter());
                 AtRulePrelude::Container(conditions)
             },
             "layer" => {

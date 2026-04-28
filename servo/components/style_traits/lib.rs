@@ -77,7 +77,8 @@ pub mod owned_str;
 pub use crate::specified_value_info::{CssType, KeywordsCollectFn, SpecifiedValueInfo};
 pub use crate::values::{
     Comma, CommaWithSpace, CssString, CssStringWriter, CssWriter, KeywordValue, MathSum,
-    NumericValue, OneOrMoreSeparated, Separator, Space, ToCss, ToTyped, TypedValue, UnitValue,
+    NumericValue, OneOrMoreSeparated, Separator, Space, ToCss, ToTyped, TypedValue, TypedValueList,
+    UnitValue, UnparsedSegment, UnparsedValue, VariableReferenceValue,
 };
 
 
@@ -259,12 +260,6 @@ bitflags! {
         /// independent.
         /// <https://drafts.css-houdini.org/css-properties-values-api-1/#ref-for-computationally-independent%E2%91%A0>
         const DISALLOW_COMPUTATIONALLY_DEPENDENT = 1 << 2;
-        /// In CSS Values and Units, values produced by `attr()` are considered attr()-tainted, as are
-        /// functions that contain an attr()-tainted value. Using an attr()-tainted value as or in a <url>
-        /// makes a declaration invalid at computed-value time.
-        /// https://drafts.csswg.org/css-values-5/#attr-security
-        /// TODO(bug1997583): Remove this mode in favor of a more robust range-based attr tracking.
-        const DISALLOW_URLS = 1 << 3;
     }
 }
 
@@ -285,11 +280,6 @@ impl ParsingMode {
     #[inline]
     pub fn allows_computational_dependence(&self) -> bool {
         !self.intersects(ParsingMode::DISALLOW_COMPUTATIONALLY_DEPENDENT)
-    }
-
-    
-    pub fn disallows_urls(&self) -> bool {
-        self.intersects(ParsingMode::DISALLOW_URLS)
     }
 }
 

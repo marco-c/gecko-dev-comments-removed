@@ -46,7 +46,7 @@ use std::iter::Zip;
 use std::slice::Iter;
 use style_traits::{
     CssString, CssStringWriter, CssWriter, ParseError, ParsingMode, StyleParseErrorKind, ToCss,
-    TypedValue,
+    TypedValueList,
 };
 use thin_vec::ThinVec;
 
@@ -596,10 +596,10 @@ impl PropertyDeclarationBlock {
     
     
     
-    pub fn property_value_to_typed_value(
+    pub fn property_value_to_typed_value_list(
         &self,
         property: &PropertyId,
-    ) -> Result<Option<TypedValue>, ()> {
+    ) -> Result<Option<TypedValueList>, ()> {
         match property.as_shorthand() {
             Ok(shorthand) => {
                 if shorthand
@@ -612,7 +612,7 @@ impl PropertyDeclarationBlock {
                 }
             },
             Err(longhand_or_custom) => match self.get(longhand_or_custom) {
-                Some((value, _importance)) => Ok(value.to_typed_value()),
+                Some((value, _importance)) => Ok(value.to_typed_value_list()),
                 None => Err(()),
             },
         }
@@ -1390,6 +1390,7 @@ pub fn parse_style_attribute(
          Default::default(),
         error_reporter,
         None,
+         Default::default(),
     );
 
     let mut input = ParserInput::new(input);
@@ -1421,6 +1422,7 @@ pub fn parse_one_declaration_into(
          Default::default(),
         error_reporter,
         None,
+         Default::default(),
     );
 
     let property_id_for_error_reporting = if context.error_reporting_enabled() {

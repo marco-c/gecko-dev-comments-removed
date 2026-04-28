@@ -190,6 +190,7 @@ pub enum CustomDeclarationValue {
 
 
 #[derive(Clone, PartialEq, ToCss, ToShmem, MallocSizeOf, ToTyped)]
+#[typed(todo_derive_fields)]
 pub struct CustomDeclaration {
     
     #[css(skip)]
@@ -734,6 +735,15 @@ impl ShorthandId {
     }
 }
 
+
+pub fn enabled_arbitrary_substitution_functions() -> &'static [&'static str] {
+    if static_prefs::pref!("layout.css.attr.enabled") {
+        &["var", "env", "attr"]
+    } else {
+        &["var", "env"]
+    }
+}
+
 fn parse_non_custom_property_declaration_value_into<'i>(
     declarations: &mut SourcePropertyDeclaration,
     context: &ParserContext,
@@ -765,13 +775,7 @@ fn parse_non_custom_property_declaration_value_into<'i>(
     };
 
     input.reset(&start);
-    input.look_for_arbitrary_substitution_functions(
-        if static_prefs::pref!("layout.css.attr.enabled") {
-            &["var", "env", "attr"]
-        } else {
-            &["var", "env"]
-        },
-    );
+    input.look_for_arbitrary_substitution_functions(enabled_arbitrary_substitution_functions());
 
     let err = match parse_entirely_into(declarations, input) {
         Ok(()) => {
@@ -1439,6 +1443,16 @@ impl ToCss for UnparsedValue {
     }
 }
 
+impl ToTyped for UnparsedValue {
+    fn to_typed(&self, dest: &mut ThinVec<TypedValue>) -> Result<(), ()> {
+        if self.from_shorthand.is_none() {
+            self.variable_value.to_typed(dest)?;
+            return Ok(());
+        }
+        Err(())
+    }
+}
+
 
 
 
@@ -1486,10 +1500,7 @@ impl UnparsedValue {
             }
         }
 
-        let SubstitutionResult {
-            css,
-            attribute_tainted,
-        } = match custom_properties::substitute(
+        let SubstitutionResult { css, attr_taint } = match custom_properties::substitute(
             &self.variable_value,
             substitution_functions,
             stylist,
@@ -1510,19 +1521,16 @@ impl UnparsedValue {
         
         
         
-        let mut parsing_mode = ParsingMode::DEFAULT;
-        if attribute_tainted {
-            parsing_mode.insert(ParsingMode::DISALLOW_URLS);
-        }
         let context = ParserContext::new(
             Origin::Author,
             &self.variable_value.url_data,
             None,
-            parsing_mode,
+            ParsingMode::DEFAULT,
             computed_context.quirks_mode,
              Default::default(),
             None,
             None,
+            attr_taint,
         );
 
         let mut input = ParserInput::new(&css);
