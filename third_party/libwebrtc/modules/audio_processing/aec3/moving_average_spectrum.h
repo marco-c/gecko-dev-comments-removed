@@ -29,12 +29,16 @@ class MovingAverageSpectrum {
   
   void Average(std::span<const float> input, std::span<float> output);
 
+  
+  
+  void UpdateMemoryLength(size_t mem_len);
+
  private:
   const size_t num_elem_;
-  const size_t mem_len_;
-  const float scaling_;
+  size_t mem_len_;
   std::vector<float> memory_;
   size_t mem_index_;
+  int number_updates_;
 };
 
 }  

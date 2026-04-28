@@ -206,6 +206,8 @@ void ResidualEchoEstimator::Estimate(
 
   const size_t num_capture_channels = R2.size();
 
+  is_ml_ree_active_ = neural_residual_echo_estimator_ != nullptr &&
+                      aec_state.UsableLinearEstimate();
   
   UpdateRenderNoisePower(render_buffer);
 
@@ -236,8 +238,8 @@ void ResidualEchoEstimator::Estimate(
   }
 
   
-  if (aec_state.UsableLinearEstimate()) {
-    if (neural_residual_echo_estimator_ == nullptr) {
+  if (!is_ml_ree_active_) {
+    if (aec_state.UsableLinearEstimate()) {
       
       
       if (aec_state.SaturatedEcho()) {
@@ -256,48 +258,48 @@ void ResidualEchoEstimator::Estimate(
                    dominant_nearend);
       AddReverb(R2);
       AddReverb(R2_unbounded);
-    }
-  } else {
-    const float echo_path_gain =
-        GetEchoPathGain(aec_state, true);
-
-    
-    
-    if (aec_state.SaturatedEcho()) {
-      for (size_t ch = 0; ch < num_capture_channels; ++ch) {
-        std::copy(Y2[ch].begin(), Y2[ch].end(), R2[ch].begin());
-        std::copy(Y2[ch].begin(), Y2[ch].end(), R2_unbounded[ch].begin());
-      }
     } else {
+      const float echo_path_gain =
+          GetEchoPathGain(aec_state, true);
+
       
-      std::array<float, kFftLengthBy2Plus1> X2;
-      EchoGeneratingPower(num_render_channels_,
-                          render_buffer.GetSpectrumBuffer(), config_.echo_model,
-                          aec_state.MinDirectPathFilterDelay(), X2);
-      if (!aec_state.UseStationarityProperties()) {
-        ApplyNoiseGate(config_.echo_model, X2);
+      
+      if (aec_state.SaturatedEcho()) {
+        for (size_t ch = 0; ch < num_capture_channels; ++ch) {
+          std::copy(Y2[ch].begin(), Y2[ch].end(), R2[ch].begin());
+          std::copy(Y2[ch].begin(), Y2[ch].end(), R2_unbounded[ch].begin());
+        }
+      } else {
+        
+        std::array<float, kFftLengthBy2Plus1> X2;
+        EchoGeneratingPower(
+            num_render_channels_, render_buffer.GetSpectrumBuffer(),
+            config_.echo_model, aec_state.MinDirectPathFilterDelay(), X2);
+        if (!aec_state.UseStationarityProperties()) {
+          ApplyNoiseGate(config_.echo_model, X2);
+        }
+
+        
+        
+        for (size_t k = 0; k < kFftLengthBy2Plus1; ++k) {
+          X2[k] -=
+              config_.echo_model.stationary_gate_slope * X2_noise_floor_[k];
+          X2[k] = std::max(0.f, X2[k]);
+        }
+
+        NonLinearEstimate(echo_path_gain, X2, R2);
+        NonLinearEstimate(echo_path_gain, X2, R2_unbounded);
       }
 
-      
-      
-      for (size_t k = 0; k < kFftLengthBy2Plus1; ++k) {
-        X2[k] -= config_.echo_model.stationary_gate_slope * X2_noise_floor_[k];
-        X2[k] = std::max(0.f, X2[k]);
+      if (config_.echo_model.model_reverb_in_nonlinear_mode &&
+          !aec_state.TransparentModeActive()) {
+        UpdateReverb(ReverbType::kNonLinear, aec_state, render_buffer,
+                     dominant_nearend);
+        AddReverb(R2);
+        AddReverb(R2_unbounded);
       }
-
-      NonLinearEstimate(echo_path_gain, X2, R2);
-      NonLinearEstimate(echo_path_gain, X2, R2_unbounded);
-    }
-
-    if (config_.echo_model.model_reverb_in_nonlinear_mode &&
-        !aec_state.TransparentModeActive()) {
-      UpdateReverb(ReverbType::kNonLinear, aec_state, render_buffer,
-                   dominant_nearend);
-      AddReverb(R2);
-      AddReverb(R2_unbounded);
     }
   }
-
   if (aec_state.UseStationarityProperties()) {
     
     std::array<float, kFftLengthBy2Plus1> residual_scaling;
