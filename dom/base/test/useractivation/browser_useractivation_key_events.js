@@ -71,6 +71,7 @@ add_task(async function TestNonPrintableKey() {
     ["KEY_Control", false],
     ["KEY_Shift", false],
     ["KEY_Escape", false],
+    ["KEY_F5", false],
     
     ["KEY_Tab", true],
     ["KEY_Enter", true],
@@ -98,6 +99,8 @@ add_task(async function TestModifier() {
     ["v", { accelKey: true }, true],
     ["x", { altKey: true }, true],
     ["x", { accelKey: true }, true],
+    
+    ["KEY_F5", { accelKey: true }, true],
   ];
 
   for (let [key, event, expectedResult] of tests) {

@@ -321,9 +321,12 @@ class WidgetKeyboardEvent final : public WidgetInputEvent {
              
              
              
+             
+             
              ((mKeyCode == dom::KeyboardEvent_Binding::DOM_VK_C ||
                mKeyCode == dom::KeyboardEvent_Binding::DOM_VK_V ||
-               mKeyCode == dom::KeyboardEvent_Binding::DOM_VK_X) &&
+               mKeyCode == dom::KeyboardEvent_Binding::DOM_VK_X ||
+               mKeyCode == dom::KeyboardEvent_Binding::DOM_VK_F5) &&
               IsAccel());
     }
 
