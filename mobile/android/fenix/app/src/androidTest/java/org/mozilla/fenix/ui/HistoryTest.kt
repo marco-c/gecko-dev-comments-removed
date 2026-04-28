@@ -8,7 +8,6 @@ import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.test.espresso.Espresso.openActionBarOverflowOrOptionsMenu
 import androidx.test.espresso.Espresso.pressBack
 import androidx.test.filters.SdkSuppress
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.R
@@ -288,7 +287,6 @@ class HistoryTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/1715627
-    @Ignore("Disabled after enabling the composable toolbar and main menu: https://bugzilla.mozilla.org/show_bug.cgi?id=2006295")
     @Test
     fun verifySearchHistoryViewTest() {
         val defaultWebPage = mockWebServer.getGenericAsset(1)
@@ -302,8 +300,8 @@ class HistoryTest {
             verifySearchSelectorButton()
             verifySearchEngineIcon("History")
             verifySearchBarPlaceholder("Search history")
-            verifySearchBarPosition(true)
-            tapOutsideToDismissSearchBar()
+            verifySearchBarPosition()
+            tapOutsideToDismissSearchBar(defaultWebPage.url.toString())
             verifySearchToolbar(false)
             exitMenu()
         }
@@ -321,7 +319,7 @@ class HistoryTest {
         }.clickHistoryButton {
         }.clickSearchButton {
             verifySearchToolbar(true)
-            verifySearchBarPosition(false)
+            verifySearchBarPosition()
             pressBack()
         }
         historyMenu(composeTestRule) {
