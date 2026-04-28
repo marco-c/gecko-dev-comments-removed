@@ -49,6 +49,18 @@ using namespace js::wasm;
 
 using mozilla::Atomic;
 
+ScriptedCaller ScriptedCaller::selfHosted(JSContext* cx) {
+  AutoEnterOOMUnsafeRegion oomUnsafe;
+  
+  
+  UniqueChars selfHosted =
+      StringToNewUTF8CharsZ(cx, *cx->names().self_hosted_.get());
+  if (!selfHosted) {
+    oomUnsafe.crash("ScriptedCaller::selfHosted");
+  }
+  return ScriptedCaller(std::move(selfHosted), false, 0);
+}
+
 uint32_t wasm::ObservedCPUFeatures() {
   enum Arch : uint32_t {
     X86 = 0x1,

@@ -193,6 +193,15 @@ struct ScriptedCaller {
   uint32_t line;
 
   ScriptedCaller() : filenameIsURL(false), line(0) {}
+  ScriptedCaller(UniqueChars&& filename, bool filenameIsURL, uint32_t line)
+      : filename(std::move(filename)),
+        filenameIsURL(filenameIsURL),
+        line(line) {}
+
+  
+  
+  
+  static ScriptedCaller selfHosted(JSContext* cx);
 };
 
 

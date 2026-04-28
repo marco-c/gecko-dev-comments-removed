@@ -4224,9 +4224,8 @@ static JSFunction* WasmFunctionCreate(JSContext* cx, HandleObject func,
   
   
   FeatureOptions options;
-  ScriptedCaller scriptedCaller;
   SharedCompileArgs compileArgs =
-      CompileArgs::buildAndReport(cx, std::move(scriptedCaller), options);
+      CompileArgs::buildAndReport(cx, ScriptedCaller::selfHosted(cx), options);
   if (!compileArgs) {
     return nullptr;
   }
