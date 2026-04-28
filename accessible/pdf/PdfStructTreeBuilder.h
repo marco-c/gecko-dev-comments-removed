@@ -8,6 +8,7 @@
 #include "mozilla/HashTable.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/PairHash.h"
+#include "nsTHashSet.h"
 
 class nsIFrame;
 namespace SkPDF {
@@ -88,6 +89,9 @@ class PdfStructTreeBuilder {
   uint64_t mRootBrowsingContextId;
   
   size_t mPendingOopIframes = 0;
+  
+  
+  nsTHashSet<uint64_t> mRequestedBrowserParentIds;
   RefPtr<ReadyPromise::Private> mReadyPromise;
   int mLastPdfId = 0;
   

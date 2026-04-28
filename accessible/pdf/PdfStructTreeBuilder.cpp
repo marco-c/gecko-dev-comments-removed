@@ -146,8 +146,14 @@ void PdfStructTreeBuilder::InitInternal(
   if (dom::BrowserParent* bp = cbc->GetBrowserParent()) {
     
     
+    
+    
+    
+    
+    
     bp->VisitAllDescendants([this](dom::BrowserParent* descBp) {
-      if (!descBp->GetTopLevelDocAccessible()) {
+      if (mRequestedBrowserParentIds.EnsureInserted(descBp->GetTabId())) {
+        MOZ_ASSERT(!descBp->GetTopLevelDocAccessible());
         (void)descBp->SendRequestDocAccessibleForPrint();
         ++mPendingOopIframes;
       }

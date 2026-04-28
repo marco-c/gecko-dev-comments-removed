@@ -180,6 +180,10 @@ void DocManager::NotifyOfPrintDocument(dom::Document* aDoc) {
   if (!StaticPrefs::accessibility_tagged_pdf_output_enabled()) {
     return;
   }
+  if (GetExistingDocAccessible(aDoc)) {
+    MOZ_ASSERT_UNREACHABLE("Print DocAccessible shouldn't already exist!");
+    return;
+  }
   
   
   DocAccessible* topDocAcc =
