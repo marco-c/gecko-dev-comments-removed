@@ -45,6 +45,8 @@ module.exports = {
     
     `${projectRoot}/browser/components/multilineeditor/**/*.stories.@(mjs|md)`,
     
+    `${projectRoot}/browser/components/controlcenter/content/components/**/*.stories.mjs`,
+    
     "../stories/**/*.stories.@(js|jsx|mjs|ts|tsx|md)",
     
     `${projectRoot}/toolkit/themes/shared/design-system/**/*.stories.@(js|jsx|mjs|ts|tsx|md)`,
