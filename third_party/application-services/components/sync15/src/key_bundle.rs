@@ -2,10 +2,10 @@
 
 
 
-use crate::error::{warn, Error, Result};
+use crate::error::{Error, Result, warn};
 use base64::{
-    engine::general_purpose::{STANDARD, URL_SAFE_NO_PAD},
     Engine,
+    engine::general_purpose::{STANDARD, URL_SAFE_NO_PAD},
 };
 use rc_crypto::{
     aead::{self, OpeningKey, SealingKey},

@@ -373,7 +373,6 @@ impl SuggestIngestionConstraints {
                 SuggestionProvider::Yelp,
                 SuggestionProvider::Mdn,
                 SuggestionProvider::Weather,
-                SuggestionProvider::Fakespot,
                 SuggestionProvider::Dynamic,
             ]),
             ..Self::default()
@@ -451,16 +450,12 @@ impl<S> SuggestStoreInner<S> {
                     SuggestionProvider::Yelp => dao.fetch_yelp_suggestions(&query),
                     SuggestionProvider::Mdn => dao.fetch_mdn_suggestions(&query),
                     SuggestionProvider::Weather => dao.fetch_weather_suggestions(&query),
-                    SuggestionProvider::Fakespot => dao.fetch_fakespot_suggestions(&query),
                     SuggestionProvider::Dynamic => dao.fetch_dynamic_suggestions(&query),
                 })
             })?;
             suggestions.extend(new_suggestions);
         }
 
-        
-        
-        
         
         suggestions.sort();
         if let Some(limit) = query.limit.and_then(|limit| usize::try_from(limit).ok()) {
@@ -774,11 +769,6 @@ where
             SuggestRecord::Weather => self.process_weather_record(dao, record, context)?,
             SuggestRecord::GlobalConfig(config) => {
                 dao.put_global_config(&SuggestGlobalConfig::from(config))?
-            }
-            SuggestRecord::Fakespot => {
-                self.download_attachment(dao, record, context, |dao, record_id, suggestions| {
-                    dao.insert_fakespot_suggestions(record_id, suggestions)
-                })?;
             }
             SuggestRecord::Dynamic(r) => {
                 if constraints.matches_dynamic_record(r) {
@@ -2660,257 +2650,6 @@ pub(crate) mod tests {
         }
         assert!(!store.inner.any_dismissed_suggestions()?);
 
-        Ok(())
-    }
-
-    #[test]
-    fn query_fakespot() -> anyhow::Result<()> {
-        before_each();
-
-        let store = TestStore::new(
-            MockRemoteSettingsClient::default()
-                .with_record(SuggestionProvider::Fakespot.record(
-                    "fakespot-1",
-                    json!([snowglobe_fakespot(), simpsons_fakespot()]),
-                ))
-                .with_record(SuggestionProvider::Fakespot.icon(fakespot_amazon_icon())),
-        );
-        store.ingest(SuggestIngestionConstraints::all_providers());
-        assert_eq!(
-            store.fetch_suggestions(SuggestionQuery::fakespot("globe")),
-            vec![snowglobe_suggestion(Some(FtsMatchInfo {
-                prefix: false,
-                stemming: false,
-            }),)
-            .with_fakespot_product_type_bonus(0.5)],
-        );
-        assert_eq!(
-            store.fetch_suggestions(SuggestionQuery::fakespot("simpsons")),
-            vec![simpsons_suggestion(Some(FtsMatchInfo {
-                prefix: false,
-                stemming: false,
-            }),)],
-        );
-        
-        
-        assert_eq!(
-            store.fetch_suggestions(SuggestionQuery::fakespot("snow")),
-            vec![
-                snowglobe_suggestion(Some(FtsMatchInfo {
-                    prefix: false,
-                    stemming: false,
-                }),)
-                .with_fakespot_product_type_bonus(0.5),
-                simpsons_suggestion(None),
-            ],
-        );
-        
-        assert_eq!(
-            store.fetch_suggestions(SuggestionQuery::fakespot("simpsons snow")),
-            vec![simpsons_suggestion(Some(FtsMatchInfo {
-                prefix: false,
-                stemming: false,
-            }),)],
-        );
-        
-        assert_eq!(
-            store.fetch_suggestions(SuggestionQuery::fakespot("simpsons + snow")),
-            vec![simpsons_suggestion(Some(FtsMatchInfo {
-                prefix: false,
-                // This is incorrectly counted as stemming, since nothing matches the `+`
-                // character.  TODO: fix this be improving the tokenizer in `FtsQuery`.
-                stemming: true,
-            }),)],
-        );
-
-        Ok(())
-    }
-
-    #[test]
-    fn fakespot_keywords() -> anyhow::Result<()> {
-        before_each();
-
-        let store = TestStore::new(
-            MockRemoteSettingsClient::default()
-                .with_record(SuggestionProvider::Fakespot.record(
-                    "fakespot-1",
-                    json!([
-                        // Snow normally returns the snowglobe first.  Test using the keyword field
-                        // to force the simpsons result first.
-                        snowglobe_fakespot(),
-                        simpsons_fakespot().merge(json!({"keywords": "snow"})),
-                    ]),
-                ))
-                .with_record(SuggestionProvider::Fakespot.icon(fakespot_amazon_icon())),
-        );
-        store.ingest(SuggestIngestionConstraints::all_providers());
-        assert_eq!(
-            store.fetch_suggestions(SuggestionQuery::fakespot("snow")),
-            vec![
-                simpsons_suggestion(Some(FtsMatchInfo {
-                    prefix: false,
-                    stemming: false,
-                }),)
-                .with_fakespot_keyword_bonus(),
-                snowglobe_suggestion(None).with_fakespot_product_type_bonus(0.5),
-            ],
-        );
-        Ok(())
-    }
-
-    #[test]
-    fn fakespot_prefix_matching() -> anyhow::Result<()> {
-        before_each();
-
-        let store = TestStore::new(
-            MockRemoteSettingsClient::default()
-                .with_record(SuggestionProvider::Fakespot.record(
-                    "fakespot-1",
-                    json!([snowglobe_fakespot(), simpsons_fakespot()]),
-                ))
-                .with_record(SuggestionProvider::Fakespot.icon(fakespot_amazon_icon())),
-        );
-        store.ingest(SuggestIngestionConstraints::all_providers());
-        assert_eq!(
-            store.fetch_suggestions(SuggestionQuery::fakespot("simp")),
-            vec![simpsons_suggestion(Some(FtsMatchInfo {
-                prefix: true,
-                stemming: false,
-            }),)],
-        );
-        assert_eq!(
-            store.fetch_suggestions(SuggestionQuery::fakespot("simps")),
-            vec![simpsons_suggestion(Some(FtsMatchInfo {
-                prefix: true,
-                stemming: false,
-            }),)],
-        );
-        assert_eq!(
-            store.fetch_suggestions(SuggestionQuery::fakespot("simpson")),
-            vec![simpsons_suggestion(Some(FtsMatchInfo {
-                prefix: false,
-                stemming: false,
-            }),)],
-        );
-
-        Ok(())
-    }
-
-    #[test]
-    fn fakespot_updates_and_deletes() -> anyhow::Result<()> {
-        before_each();
-
-        let mut store = TestStore::new(
-            MockRemoteSettingsClient::default()
-                .with_record(SuggestionProvider::Fakespot.record(
-                    "fakespot-1",
-                    json!([snowglobe_fakespot(), simpsons_fakespot()]),
-                ))
-                .with_record(SuggestionProvider::Fakespot.icon(fakespot_amazon_icon())),
-        );
-        store.ingest(SuggestIngestionConstraints::all_providers());
-
-        
-        
-        
-        store
-            .client_mut()
-            .update_record(SuggestionProvider::Fakespot.record(
-                "fakespot-1",
-                json!([
-                snowglobe_fakespot().merge(json!({"title": "Make Your Own Sea Glass Snow Globes"}))
-            ]),
-            ));
-        store.ingest(SuggestIngestionConstraints::all_providers());
-
-        assert_eq!(
-            store.fetch_suggestions(SuggestionQuery::fakespot("glitter")),
-            vec![],
-        );
-        assert!(matches!(
-            store.fetch_suggestions(SuggestionQuery::fakespot("sea glass")).as_slice(),
-            [
-                Suggestion::Fakespot { title, .. }
-            ]
-            if title == "Make Your Own Sea Glass Snow Globes"
-        ));
-
-        assert_eq!(
-            store.fetch_suggestions(SuggestionQuery::fakespot("simpsons")),
-            vec![],
-        );
-
-        Ok(())
-    }
-
-    
-    
-    #[test]
-    fn same_record_id_different_collections() -> anyhow::Result<()> {
-        before_each();
-
-        let mut store = TestStore::new(
-            MockRemoteSettingsClient::default()
-                
-                .with_record(
-                    SuggestionProvider::Fakespot
-                        .record("fakespot-1", json!([snowglobe_fakespot()])),
-                )
-                
-                
-                .with_record(SuggestionProvider::Amp.record("fakespot-1", json![los_pollos_amp()]))
-                .with_record(SuggestionProvider::Amp.icon(los_pollos_icon()))
-                .with_record(SuggestionProvider::Fakespot.icon(fakespot_amazon_icon())),
-        );
-        store.ingest(SuggestIngestionConstraints::all_providers());
-        assert_eq!(
-            store.fetch_suggestions(SuggestionQuery::fakespot("globe")),
-            vec![snowglobe_suggestion(Some(FtsMatchInfo {
-                prefix: false,
-                stemming: false,
-            }),)
-            .with_fakespot_product_type_bonus(0.5)],
-        );
-        assert_eq!(
-            store.fetch_suggestions(SuggestionQuery::amp("lo")),
-            vec![los_pollos_suggestion("los pollos", None)],
-        );
-        
-        store
-            .client_mut()
-            .delete_record(SuggestionProvider::Amp.empty_record("fakespot-1"))
-            .delete_record(SuggestionProvider::Amp.icon(los_pollos_icon()));
-        store.ingest(SuggestIngestionConstraints::all_providers());
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-
-        
-
-        let record_keys = store
-            .read(|dao| dao.get_ingested_records())
-            .unwrap()
-            .into_iter()
-            .map(|r| format!("{}:{}", r.collection, r.id.as_str()))
-            .collect::<Vec<_>>();
-        assert_eq!(
-            record_keys
-                .iter()
-                .map(String::as_str)
-                .collect::<HashSet<_>>(),
-            HashSet::from([
-                "fakespot-suggest-products:fakespot-1",
-                "fakespot-suggest-products:icon-fakespot-amazon",
-            ]),
-        );
         Ok(())
     }
 

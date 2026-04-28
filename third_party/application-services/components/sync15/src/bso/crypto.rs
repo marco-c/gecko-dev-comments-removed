@@ -6,10 +6,10 @@
 
 
 use super::{IncomingBso, IncomingEnvelope, OutgoingBso, OutgoingEnvelope};
+use crate::EncryptedPayload;
 use crate::error;
 use crate::key_bundle::KeyBundle;
-use crate::EncryptedPayload;
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
 
 

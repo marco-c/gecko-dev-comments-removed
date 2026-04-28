@@ -4,14 +4,14 @@
 
 use std::{
     collections::HashMap,
-    time::{Duration, Instant},
+    time::{Duration, Instant, SystemTime},
 };
 
 use parking_lot::Mutex;
 
 static GLOBALS: Mutex<Globals> = Mutex::new(Globals::new());
 
-pub fn report_error_to_app(type_name: String, message: String) {
+pub fn report_error_to_app(type_name: String, details: String) {
     
     let breadcrumbs = {
         let mut globals = GLOBALS.lock();
@@ -30,7 +30,8 @@ pub fn report_error_to_app(type_name: String, message: String) {
     
     
     let breadcrumbs = breadcrumbs.join("\n");
-    tracing_support::error!(target: "app-services-error-reporter::error", message, type_name, breadcrumbs);
+    let details = truncate_details(details);
+    tracing_support::error!(target: "app-services-error-reporter::error", details, type_name, breadcrumbs);
 }
 
 pub fn report_breadcrumb(message: String, module: String, line: u32, column: u32) {
@@ -38,8 +39,19 @@ pub fn report_breadcrumb(message: String, module: String, line: u32, column: u32
     
     
     
-    GLOBALS.lock().breadcrumbs.push(message.clone());
+    GLOBALS
+        .lock()
+        .breadcrumbs
+        .push(format_breadcrumb_and_timestamp(&message, SystemTime::now()));
     tracing_support::info!(target: "app-services-error-reporter::breadcrumb", message, module, line, column);
+}
+
+fn format_breadcrumb_and_timestamp(message: &str, time: SystemTime) -> String {
+    let timestamp = match time.duration_since(SystemTime::UNIX_EPOCH) {
+        Ok(n) => n.as_secs(),
+        Err(_) => 0,
+    };
+    format!("{message} ({timestamp})")
 }
 
 
@@ -91,17 +103,27 @@ impl BreadcrumbRingBuffer {
     }
 }
 
+fn truncate_details(details: String) -> String {
+    
+    
+    truncate_string(details, 255)
+}
+
 fn truncate_breadcrumb(breadcrumb: String) -> String {
     
     
-    if breadcrumb.len() <= 100 {
-        return breadcrumb;
+    truncate_string(breadcrumb, 100)
+}
+
+fn truncate_string(value: String, max_len: usize) -> String {
+    if value.len() <= max_len {
+        return value;
     }
-    let split_point = (0..=100)
+    let split_point = (0..=max_len)
         .rev()
-        .find(|i| breadcrumb.is_char_boundary(*i))
+        .find(|i| value.is_char_boundary(*i))
         .unwrap_or(0);
-    breadcrumb[0..split_point].to_string()
+    value[0..split_point].to_string()
 }
 
 
@@ -276,15 +298,15 @@ mod test {
     }
 
     #[test]
-    fn test_truncate_breadcrumb() {
+    fn test_truncate_string() {
         
-        assert_eq!(truncate_breadcrumb("0".repeat(99)).len(), 99);
-        assert_eq!(truncate_breadcrumb("0".repeat(100)).len(), 100);
+        assert_eq!(truncate_string("0".repeat(99), 100).len(), 99);
+        assert_eq!(truncate_string("0".repeat(100), 100).len(), 100);
         
-        assert_eq!(truncate_breadcrumb("0".repeat(101)).len(), 100);
+        assert_eq!(truncate_string("0".repeat(101), 100).len(), 100);
         
         
-        assert_eq!(truncate_breadcrumb("0".repeat(99) + "🔥").len(), 99);
+        assert_eq!(truncate_string("0".repeat(99) + "🔥", 100).len(), 99);
     }
 
     #[test]
@@ -322,5 +344,16 @@ mod test {
         
         assert!(rate_limiter.should_send_report("componentb-database-error", start));
         assert!(rate_limiter.should_send_report("componentaa-network-error", start));
+    }
+
+    #[test]
+    fn test_add_breadcrumb_timestamp() {
+        assert_eq!(
+            format_breadcrumb_and_timestamp(
+                "MESSAGE",
+                SystemTime::UNIX_EPOCH + Duration::from_secs(10000000)
+            ),
+            "MESSAGE (10000000)"
+        );
     }
 }

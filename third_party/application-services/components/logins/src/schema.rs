@@ -82,12 +82,6 @@
 
 
 
-
-
-
-
-
-
 use crate::error::*;
 use lazy_static::lazy_static;
 use rusqlite::Connection;
@@ -215,7 +209,6 @@ const CREATE_LOCAL_BREACHES_TABLE_SQL: &str = "
 ";
 
 pub(crate) static LAST_SYNC_META_KEY: &str = "last_sync_time";
-pub(crate) static GLOBAL_STATE_META_KEY: &str = "global_state_v2";
 pub(crate) static GLOBAL_SYNCID_META_KEY: &str = "global_sync_id";
 pub(crate) static COLLECTION_SYNCID_META_KEY: &str = "passwords_sync_id";
 pub(crate) static CHECKPOINT_KEY: &str = "checkpoint";

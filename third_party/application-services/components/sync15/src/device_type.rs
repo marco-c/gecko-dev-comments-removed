@@ -32,7 +32,9 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 
 
-#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Hash)]
+
+
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Hash, uniffi::Enum)]
 pub enum DeviceType {
     Desktop,
     Mobile,
