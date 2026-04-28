@@ -10,12 +10,10 @@
 
 #include "media/base/rtp_utils.h"
 
-#include <string.h>
-
 #include <cstdint>
+#include <cstring>
 #include <vector>
 
-#include "api/array_view.h"
 #include "media/base/fake_rtp.h"
 #include "rtc_base/async_packet_socket.h"
 #include "test/gtest.h"
@@ -73,13 +71,6 @@ static const int kAstIndexInOneByteRtpMsg = 21;
 
 static const int kAstIndexInTwoByteRtpMsg = 21;
 
-static const ArrayView<const uint8_t> kPcmuFrameArrayView =
-    MakeArrayView(kPcmuFrame, sizeof(kPcmuFrame));
-static const ArrayView<const uint8_t> kRtcpReportArrayView =
-    MakeArrayView(kRtcpReport, sizeof(kRtcpReport));
-static const ArrayView<const uint8_t> kInvalidPacketArrayView =
-    MakeArrayView(kInvalidPacket, sizeof(kInvalidPacket));
-
 TEST(RtpUtilsTest, GetRtcp) {
   int pt;
   EXPECT_TRUE(GetRtcpType(kRtcpReport, sizeof(kRtcpReport), &pt));
@@ -107,8 +98,7 @@ TEST(RtpUtilsTest, InvalidRtpHeader) {
       0xDD, 0xCC, 0xBB, 0xAA,  
       
   };
-  EXPECT_FALSE(ValidateRtpHeader(kRtpMsgWithInvalidLength,
-                                 sizeof(kRtpMsgWithInvalidLength), nullptr));
+  EXPECT_FALSE(ValidateRtpHeader(kRtpMsgWithInvalidLength, nullptr));
 
   
   const uint8_t kRtpMsgWithInvalidExtnLength[] = {
@@ -116,27 +106,23 @@ TEST(RtpUtilsTest, InvalidRtpHeader) {
       0x00, 0x00, 0x00, 0x00, 0xBE, 0xDE, 0x0A, 0x00,  
   };
   EXPECT_FALSE(ValidateRtpHeader(kRtpMsgWithInvalidExtnLength,
-                                 sizeof(kRtpMsgWithInvalidExtnLength),
                                  nullptr));
 }
 
 
 TEST(RtpUtilsTest, Valid2ByteExtnHdrRtpMessage) {
-  EXPECT_TRUE(ValidateRtpHeader(kRtpMsgWith2ByteExtnHeader,
-                                sizeof(kRtpMsgWith2ByteExtnHeader), nullptr));
+  EXPECT_TRUE(ValidateRtpHeader(kRtpMsgWith2ByteExtnHeader, nullptr));
 }
 
 
 TEST(RtpUtilsTest, ValidRtpPacketWithOneByteAbsSendTimeExtension) {
   EXPECT_TRUE(ValidateRtpHeader(kRtpMsgWithOneByteAbsSendTimeExtension,
-                                sizeof(kRtpMsgWithOneByteAbsSendTimeExtension),
                                 nullptr));
 }
 
 
 TEST(RtpUtilsTest, ValidRtpPacketWithTwoByteAbsSendTimeExtension) {
   EXPECT_TRUE(ValidateRtpHeader(kRtpMsgWithTwoByteAbsSendTimeExtension,
-                                sizeof(kRtpMsgWithTwoByteAbsSendTimeExtension),
                                 nullptr));
 }
 
@@ -160,8 +146,7 @@ TEST(RtpUtilsTest, UpdateAbsSendTimeExtensionInTurnSendIndication) {
       0x00, 0x00, 0x00, 0x00,
       
   };
-  EXPECT_TRUE(UpdateRtpAbsSendTimeExtension(
-      message_without_extension, sizeof(message_without_extension), 3, 0));
+  EXPECT_TRUE(UpdateRtpAbsSendTimeExtension(message_without_extension, 3, 0));
 
   
   
@@ -181,7 +166,7 @@ TEST(RtpUtilsTest, UpdateAbsSendTimeExtensionInTurnSendIndication) {
       0x00, 0x02, 0x22, 0xaa, 0xbb, 0xcc, 0x32, 0xaa, 0xbb, 0xcc,
       
   };
-  EXPECT_TRUE(UpdateRtpAbsSendTimeExtension(message, sizeof(message), 3, 0));
+  EXPECT_TRUE(UpdateRtpAbsSendTimeExtension(message, 3, 0));
 }
 
 
@@ -193,8 +178,7 @@ TEST(RtpUtilsTest, ApplyPacketOptionsWithDefaultValues) {
       kRtpMsgWithOneByteAbsSendTimeExtension +
           sizeof(kRtpMsgWithOneByteAbsSendTimeExtension));
   rtp_packet.insert(rtp_packet.end(), kFakeTag, kFakeTag + sizeof(kFakeTag));
-  EXPECT_TRUE(ApplyPacketOptions(&rtp_packet[0], rtp_packet.size(),
-                                 packet_time_params, 0));
+  EXPECT_TRUE(ApplyPacketOptions(rtp_packet, packet_time_params, 0));
 
   
   EXPECT_EQ(0,
@@ -218,8 +202,7 @@ TEST(RtpUtilsTest, ApplyPacketOptionsWithAuthParams) {
       kRtpMsgWithOneByteAbsSendTimeExtension +
           sizeof(kRtpMsgWithOneByteAbsSendTimeExtension));
   rtp_packet.insert(rtp_packet.end(), kFakeTag, kFakeTag + sizeof(kFakeTag));
-  EXPECT_TRUE(ApplyPacketOptions(&rtp_packet[0], rtp_packet.size(),
-                                 packet_time_params, 0));
+  EXPECT_TRUE(ApplyPacketOptions(rtp_packet, packet_time_params, 0));
 
   uint8_t kExpectedTag[] = {0xc1, 0x7a, 0x8c, 0xa0};
   EXPECT_EQ(0,
@@ -238,8 +221,7 @@ TEST(RtpUtilsTest, UpdateOneByteAbsSendTimeExtensionInRtpPacket) {
       kRtpMsgWithOneByteAbsSendTimeExtension +
           sizeof(kRtpMsgWithOneByteAbsSendTimeExtension));
 
-  EXPECT_TRUE(UpdateRtpAbsSendTimeExtension(&rtp_packet[0], rtp_packet.size(),
-                                            3, 51183266));
+  EXPECT_TRUE(UpdateRtpAbsSendTimeExtension(rtp_packet, 3, 51183266));
 
   
   const uint8_t kExpectedTimestamp[3] = {0xcc, 0xbb, 0xaa};
@@ -254,8 +236,7 @@ TEST(RtpUtilsTest, UpdateTwoByteAbsSendTimeExtensionInRtpPacket) {
       kRtpMsgWithTwoByteAbsSendTimeExtension +
           sizeof(kRtpMsgWithTwoByteAbsSendTimeExtension));
 
-  EXPECT_TRUE(UpdateRtpAbsSendTimeExtension(&rtp_packet[0], rtp_packet.size(),
-                                            3, 51183266));
+  EXPECT_TRUE(UpdateRtpAbsSendTimeExtension(rtp_packet, 3, 51183266));
 
   
   const uint8_t kExpectedTimestamp[3] = {0xcc, 0xbb, 0xaa};
@@ -277,8 +258,7 @@ TEST(RtpUtilsTest, ApplyPacketOptionsWithAuthParamsAndAbsSendTime) {
       kRtpMsgWithOneByteAbsSendTimeExtension +
           sizeof(kRtpMsgWithOneByteAbsSendTimeExtension));
   rtp_packet.insert(rtp_packet.end(), kFakeTag, kFakeTag + sizeof(kFakeTag));
-  EXPECT_TRUE(ApplyPacketOptions(&rtp_packet[0], rtp_packet.size(),
-                                 packet_time_params, 51183266));
+  EXPECT_TRUE(ApplyPacketOptions(rtp_packet, packet_time_params, 51183266));
 
   const uint8_t kExpectedTag[] = {0x81, 0xd1, 0x2c, 0x0e};
   EXPECT_EQ(0,
@@ -292,10 +272,9 @@ TEST(RtpUtilsTest, ApplyPacketOptionsWithAuthParamsAndAbsSendTime) {
 }
 
 TEST(RtpUtilsTest, InferRtpPacketType) {
-  EXPECT_EQ(RtpPacketType::kRtp, InferRtpPacketType(kPcmuFrameArrayView));
-  EXPECT_EQ(RtpPacketType::kRtcp, InferRtpPacketType(kRtcpReportArrayView));
-  EXPECT_EQ(RtpPacketType::kUnknown,
-            InferRtpPacketType(kInvalidPacketArrayView));
+  EXPECT_EQ(RtpPacketType::kRtp, InferRtpPacketType(kPcmuFrame));
+  EXPECT_EQ(RtpPacketType::kRtcp, InferRtpPacketType(kRtcpReport));
+  EXPECT_EQ(RtpPacketType::kUnknown, InferRtpPacketType(kInvalidPacket));
 }
 
 }  

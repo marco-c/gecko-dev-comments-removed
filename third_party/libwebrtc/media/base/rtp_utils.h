@@ -13,9 +13,9 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <span>
 
 #include "absl/strings/string_view.h"
-#include "api/array_view.h"
 #include "rtc_base/async_packet_socket.h"
 #include "rtc_base/system/rtc_export.h"
 
@@ -45,7 +45,7 @@ bool GetRtcpType(const void* data, size_t len, int* value);
 bool GetRtcpSsrc(const void* data, size_t len, uint32_t* value);
 
 
-RtpPacketType InferRtpPacketType(ArrayView<const uint8_t> packet);
+RtpPacketType InferRtpPacketType(std::span<const uint8_t> packet);
 
 bool IsValidRtpPayloadType(int payload_type);
 
@@ -56,52 +56,22 @@ bool IsValidRtpPacketSize(RtpPacketType packet_type, size_t size);
 absl::string_view RtpPacketTypeToString(RtpPacketType packet_type);
 
 
-bool RTC_EXPORT ValidateRtpHeader(const uint8_t* rtp,
-                                  size_t length,
+bool RTC_EXPORT ValidateRtpHeader(std::span<const uint8_t> rtp,
                                   size_t* header_length);
 
 
-bool UpdateRtpAbsSendTimeExtension(uint8_t* rtp,
-                                   size_t length,
+bool UpdateRtpAbsSendTimeExtension(std::span<uint8_t> rtp,
                                    int extension_id,
                                    uint64_t time_us);
 
 
 
 bool RTC_EXPORT
-ApplyPacketOptions(uint8_t* data,
-                   size_t length,
+ApplyPacketOptions(std::span<uint8_t> data,
                    const PacketTimeUpdateParams& packet_time_params,
                    uint64_t time_us);
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace cricket {
-using ::webrtc::ApplyPacketOptions;
-using ::webrtc::GetRtcpSsrc;
-using ::webrtc::GetRtcpType;
-using ::webrtc::InferRtpPacketType;
-using ::webrtc::IsValidRtpPacketSize;
-using ::webrtc::IsValidRtpPayloadType;
-using ::webrtc::kMaxRtpPacketLen;
-using ::webrtc::kMinRtcpPacketLen;
-using ::webrtc::kMinRtpPacketLen;
-using ::webrtc::kRtcpTypeApp;
-using ::webrtc::kRtcpTypeBye;
-using ::webrtc::kRtcpTypePSFB;
-using ::webrtc::kRtcpTypeRR;
-using ::webrtc::kRtcpTypeRTPFB;
-using ::webrtc::kRtcpTypeSDES;
-using ::webrtc::kRtcpTypeSR;
-using ::webrtc::RtcpTypes;
-using ::webrtc::RtpPacketType;
-using ::webrtc::RtpPacketTypeToString;
-using ::webrtc::UpdateRtpAbsSendTimeExtension;
-using ::webrtc::ValidateRtpHeader;
-}  
-#endif  
 
 #endif  
