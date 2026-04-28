@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/MIDIInput.h"
 
 #include "MIDILog.h"
@@ -24,8 +22,7 @@ RefPtr<MIDIInput> MIDIInput::Create(nsPIDOMWindowInner* aWindow,
                                     MIDIAccess* aMIDIAccessParent,
                                     const MIDIPortInfo& aPortInfo,
                                     const bool aSysexEnabled) {
-  MOZ_ASSERT(static_cast<MIDIPortType>(aPortInfo.type()) ==
-             MIDIPortType::Input);
+  MOZ_ASSERT(aPortInfo.type() == MIDIPortType::Input);
   RefPtr<MIDIInput> port = new MIDIInput(aWindow);
   if (!port->Initialize(aPortInfo, aSysexEnabled, aMIDIAccessParent)) {
     return nullptr;

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/MIDIPortChild.h"
 
 #include "mozilla/dom/MIDIPort.h"
@@ -34,14 +32,15 @@ mozilla::ipc::IPCResult MIDIPortChild::RecvReceive(
 }
 
 mozilla::ipc::IPCResult MIDIPortChild::RecvUpdateStatus(
-    const uint32_t& aDeviceState, const uint32_t& aConnectionState) {
+    const MIDIPortDeviceState& aDeviceState,
+    const MIDIPortConnectionState& aConnectionState) {
   
   
   MOZ_ASSERT(mDeviceState == MIDIPortDeviceState::Connected ||
              (mConnectionState == MIDIPortConnectionState::Closed ||
               mConnectionState == MIDIPortConnectionState::Pending));
-  mDeviceState = static_cast<MIDIPortDeviceState>(aDeviceState);
-  mConnectionState = static_cast<MIDIPortConnectionState>(aConnectionState);
+  mDeviceState = aDeviceState;
+  mConnectionState = aConnectionState;
   if (mDOMPort) {
     RefPtr<MIDIPort> self(mDOMPort);
     self->FireStateChangeEvent();

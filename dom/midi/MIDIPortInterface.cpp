@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/MIDIPortInterface.h"
 
 #include "mozilla/dom/MIDIPlatformService.h"
@@ -16,7 +14,7 @@ mozilla::dom::MIDIPortInterface::MIDIPortInterface(
       mManufacturer(aPortInfo.manufacturer()),
       mVersion(aPortInfo.version()),
       mSysexEnabled(aSysexEnabled),
-      mType((MIDIPortType)aPortInfo.type()),
+      mType(aPortInfo.type()),
       
       mDeviceState(MIDIPortDeviceState::Connected),
       mConnectionState(MIDIPortConnectionState::Closed),
