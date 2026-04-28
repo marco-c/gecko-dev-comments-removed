@@ -122,8 +122,11 @@ nsresult HappyEyeballsTransaction::WriteSegments(nsAHttpSegmentWriter* writer,
 }
 
 void HappyEyeballsTransaction::Close(nsresult reason) {
-  LOG(("HappyEyeballsTransaction::Close %p reason=%x trans=%p cancelled=%d",
-       this, static_cast<uint32_t>(reason), mTransaction.get(), mCancelled));
+  LOG(
+      ("HappyEyeballsTransaction::Close %p reason=%x trans=%p cancelled=%d "
+       "mConnectedCallbackInvoked=%d mConnectedCallback=%d",
+       this, static_cast<uint32_t>(reason), mTransaction.get(), mCancelled,
+       mConnectedCallbackInvoked, !!mConnectedCallback));
 
   RefPtr<nsHttpTransaction> trans = mTransaction;
   mTransaction = nullptr;
@@ -132,30 +135,30 @@ void HappyEyeballsTransaction::Close(nsresult reason) {
     return;
   }
 
+  nsresult closeReason = mCancelled ? mCancelReason : reason;
+
   trans->SetHappyEyeballsProxy(nullptr);
 
   if (NS_SUCCEEDED(reason) || mConnectedCallbackInvoked ||
       reason == NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED || mCancelled) {
-    trans->Close(mCancelled ? mCancelReason : reason);
-    return;
+    trans->Close(closeReason);
+  } else {
+    
+    
+    
+    
+    trans->CancelPacing(closeReason);
+
+    
+    
+    trans->SetConnection(nullptr);
   }
 
   
   
   
-  trans->CancelPacing(mCancelled ? mCancelReason : reason);
-
   
-  
-  
-  
-  trans->SetConnection(nullptr);
-
-  
-  
-  
-  
-  MaybeInvokeConnectedCallback(mCancelled ? mCancelReason : reason);
+  MaybeInvokeConnectedCallback(closeReason);
 }
 
 void HappyEyeballsTransaction::SetConnectedCallback(
