@@ -24,8 +24,6 @@ class WeakRefObject;
 
 namespace gc {
 
-JS::Zone* GetWeakTargetZone(const Value& value);
-
 
 
 
@@ -224,6 +222,11 @@ class FinalizationObservers {
   
   void maybeClearWeakRefTargets(JS::ShouldClearWeakRefTargetCallback callback,
                                 void* data);
+
+  
+  bool isTarget(const Value& target);
+  ObserverList removeWeakRefTargets(const Value& target);
+  bool addWeakRefTargets(const Value& target, ObserverList&& list);
 
   
   void clearWeakRefTargets(JS::Compartment* source, const Value& target);

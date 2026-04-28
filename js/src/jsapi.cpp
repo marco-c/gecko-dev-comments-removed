@@ -6,8 +6,6 @@
 
 
 
-
-
 #include "jsapi.h"
 
 #include "mozilla/FloatingPoint.h"
@@ -35,6 +33,7 @@
 #include "frontend/FrontendContext.h"  
 #include "gc/GC.h"
 #include "gc/GCContext.h"
+#include "gc/GCRuntime.h"
 #include "gc/Marking.h"
 #include "gc/PublicIterators.h"
 #include "jit/JitSpewer.h"
@@ -584,6 +583,8 @@ static void ReleaseAssertObjectHasNoWrappers(JSContext* cx,
       MOZ_CRASH("wrapper found for target object");
     }
   }
+  MOZ_RELEASE_ASSERT(
+      !gc::GCRuntime::isFinalizationObserverTarget(ObjectValue(*target)));
 }
 
 
@@ -712,6 +713,13 @@ JS_PUBLIC_API JSObject* JS_TransplantObject(JSContext* cx, HandleObject origobj,
 
   
   if (origobj->compartment() != destination) {
+    
+    
+    if (!gc::GCRuntime::relocateWeakRefTarget(ObjectValue(*origobj),
+                                              ObjectValue(*newIdentity))) {
+      oomUnsafe.crash("JS_TransplantObject weak ref relocation");
+    }
+
     RootedObject newIdentityWrapper(cx, newIdentity);
     AutoRealm ar(cx, origobj);
     if (!JS_WrapObject(cx, &newIdentityWrapper)) {

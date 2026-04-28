@@ -1,0 +1,18 @@
+
+var g2 = newGlobal({sameCompartmentAs: this});
+
+
+let {object, transplant} = transplantableObject();
+
+
+let wr = new WeakRef(object);
+
+
+let g3 = newGlobal({newCompartment: true});
+transplant(g3);
+
+
+
+
+
+nukeAllCCWs();
