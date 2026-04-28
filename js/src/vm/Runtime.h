@@ -15,7 +15,6 @@
 #include "mozilla/TimeStamp.h"
 #include "mozilla/XorShift128PlusRNG.h"
 
-#include <algorithm>
 #include <utility>
 
 #ifdef JS_HAS_INTL_API
@@ -217,45 +216,35 @@ class Metrics {
   explicit Metrics(JSRuntime* rt) : rt_(rt) {}
 
   
-  
-  
-  struct TimeDuration_S {
+  struct TimeDuration {
     using SourceType = mozilla::TimeDuration;
-    static uint32_t convert(SourceType td) { return uint32_t(td.ToSeconds()); }
-  };
-  struct TimeDuration_MS {
-    using SourceType = mozilla::TimeDuration;
-    static uint32_t convert(SourceType td) {
-      return uint32_t(td.ToMilliseconds());
-    }
-  };
-  struct TimeDuration_US {
-    using SourceType = mozilla::TimeDuration;
-    static uint32_t convert(SourceType td) {
-      return uint32_t(td.ToMicroseconds());
+    static JSTelemetryData convert(SourceType td) {
+      return JSTelemetryData(td);
     }
   };
 
-  
   
   struct MemoryDistribution {
     using SourceType = size_t;
-    static uint32_t convert(SourceType sz) {
-      return static_cast<uint32_t>(std::min(sz, size_t(UINT32_MAX)));
+    static JSTelemetryData convert(SourceType sz) {
+      return JSTelemetryData(sz);
     }
   };
 
   
-  
-  
-  using QuantityDistribution = MemoryDistribution;
+  struct QuantityDistribution {
+    using SourceType = size_t;
+    static JSTelemetryData convert(SourceType count) {
+      return JSTelemetryData(count);
+    }
+  };
 
   
   
   struct Boolean {
     using SourceType = bool;
-    static uint32_t convert(SourceType sample) {
-      return static_cast<uint32_t>(sample);
+    static JSTelemetryData convert(SourceType sample) {
+      return JSTelemetryData(sample);
     }
   };
 
@@ -264,9 +253,9 @@ class Metrics {
   
   struct Enumeration {
     using SourceType = unsigned int;
-    static uint32_t convert(SourceType sample) {
+    static JSTelemetryData convert(SourceType sample) {
       MOZ_ASSERT(sample <= 100);
-      return static_cast<uint32_t>(sample);
+      return JSTelemetryData(size_t(sample));
     }
   };
 
@@ -275,19 +264,21 @@ class Metrics {
   
   struct Percentage {
     using SourceType = double;
-    static uint32_t convert(SourceType sample) {
+    static JSTelemetryData convert(SourceType sample) {
       MOZ_ASSERT(sample >= 0.0 && sample <= 100.0);
-      return static_cast<uint32_t>(sample);
+      return JSTelemetryData(size_t(sample));
     }
   };
 
   
   struct Integer {
     using SourceType = uint32_t;
-    static uint32_t convert(SourceType sample) { return sample; }
+    static JSTelemetryData convert(SourceType sample) {
+      return JSTelemetryData(size_t(sample));
+    }
   };
 
-  inline void addTelemetry(JSMetric id, uint32_t sample);
+  inline void addTelemetry(JSMetric id, const JSTelemetryData& sample);
 
 #define DECLARE_METRIC_HELPER(NAME, TY)                \
   void NAME(TY::SourceType sample) {                   \
@@ -409,7 +400,7 @@ struct JSRuntime {
 
  public:
   
-  void addTelemetry(JSMetric id, uint32_t sample);
+  void addTelemetry(JSMetric id, const JSTelemetryData& sample);
 
   void setTelemetryCallback(JSRuntime* rt,
                             JSAccumulateTelemetryDataCallback callback);
@@ -1130,7 +1121,7 @@ struct JSRuntime {
 
 namespace js {
 
-void Metrics::addTelemetry(JSMetric id, uint32_t sample) {
+void Metrics::addTelemetry(JSMetric id, const JSTelemetryData& sample) {
   rt_->addTelemetry(id, sample);
 }
 
