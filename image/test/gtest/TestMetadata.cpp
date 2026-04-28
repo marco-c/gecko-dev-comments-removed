@@ -264,9 +264,7 @@ TEST_F(ImageDecoderMetadata, AnimatedAVIF) {
 
 #ifdef MOZ_JXL
 TEST_F(ImageDecoderMetadata, AnimatedJXL) {
-  
-  CheckMetadata(GreenFirstFrameAnimatedJXLTestCase(), BMPWithinICO::NO,
-                 false,  true);
+  CheckMetadata(GreenFirstFrameAnimatedJXLTestCase());
 }
 #endif
 
