@@ -11,6 +11,29 @@ LOG = RaptorLogger(component="raptor-speedometer3-support")
 
 
 class Speedometer3Support(BasePythonSupport):
+    def setup_test(self, test, args):
+        super().setup_test(test, args)
+
+        if args.simpleperf:
+            
+            
+            speedometer3_test_count = 20
+
+            
+            
+            speedometer3_iteration_count = 50
+
+            test["simpleperf"] = True
+            test["test_script"] = "speedometer3_simpleperf.js"
+            test["browser_cycles"] = speedometer3_test_count
+            test["browsertime_args"] = (
+                f"{test.get('browsertime_args', '')} --browsertime.iteration_count={speedometer3_iteration_count}".strip()
+            )
+
+            
+            
+            test["apps"] = "fenix, geckoview"
+
     def handle_result(self, bt_result, raw_result, **kwargs):
         """Parse a result for the required results.
 
