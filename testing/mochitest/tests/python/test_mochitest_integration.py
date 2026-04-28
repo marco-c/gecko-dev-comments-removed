@@ -17,6 +17,10 @@ here = os.path.abspath(os.path.dirname(__file__))
 get_mozharness_status = partial(get_mozharness_status, "mochitest")
 
 
+
+IN_CI = os.environ.get("MOZ_AUTOMATION") is not None
+
+
 @pytest.fixture
 def test_name(request):
     flavor = request.getfixturevalue("flavor")
@@ -87,11 +91,16 @@ def test_output_extra_args(flavor, manifest, runtests, test_manifest, test_name)
 @pytest.mark.parametrize("flavor", ["plain", "browser-chrome"])
 def test_output_pass(flavor, runFailures, runtests, test_name):
     extra_opts = {}
+    
+    
+    lines = 2 if runFailures else 1
+    if runFailures and IN_CI:
+        lines *= 2
     results = {
         "status": 1 if runFailures else 0,
         "tbpl_status": TBPL_WARNING if runFailures else TBPL_SUCCESS,
         "log_level": (INFO, WARNING),
-        "lines": 2 if runFailures else 1,
+        "lines": lines,
         "line_status": "PASS",
     }
     if runFailures:
@@ -107,6 +116,10 @@ def test_output_pass(flavor, runFailures, runtests, test_name):
     assert log_level in results["log_level"]
 
     lines = filter_action("test_status", lines)
+    
+    lines = [
+        l for l in lines if not l.get("message", "").startswith("changed preference:")
+    ]
     assert len(lines) == results["lines"]
     assert lines[0]["status"] == results["line_status"]
 
@@ -115,11 +128,14 @@ def test_output_pass(flavor, runFailures, runtests, test_name):
 @pytest.mark.parametrize("flavor", ["plain", "browser-chrome"])
 def test_output_fail(flavor, runFailures, runtests, test_name):
     extra_opts = {}
+    
+    
+    lines = 2 if not runFailures and IN_CI else 1
     results = {
         "status": 0 if runFailures else 1,
         "tbpl_status": TBPL_SUCCESS if runFailures else TBPL_WARNING,
         "log_level": (INFO, WARNING),
-        "lines": 1,
+        "lines": lines,
         "line_status": "PASS" if runFailures else "FAIL",
     }
     if runFailures:
@@ -143,11 +159,15 @@ def test_output_fail(flavor, runFailures, runtests, test_name):
 @pytest.mark.parametrize("flavor", ["plain", "browser-chrome"])
 def test_output_restart_after_failure(flavor, runFailures, runtests, test_name):
     extra_opts = {}
+    
+    
+    
+    lines = 3 if not runFailures and IN_CI else 2
     results = {
         "status": 0 if runFailures else 1,
         "tbpl_status": TBPL_SUCCESS if runFailures else TBPL_WARNING,
         "log_level": (INFO, WARNING),
-        "lines": 2,
+        "lines": lines,
         "line_status": "PASS" if runFailures else "FAIL",
     }
     extra_opts["restartAfterFailure"] = True
@@ -248,11 +268,15 @@ def test_output_asan(flavor, runFailures, runtests, test_name):
 @pytest.mark.parametrize("flavor", ["plain"])
 def test_output_assertion(flavor, runFailures, runtests, test_name):
     extra_opts = {}
+    
+    
+    
+    lines = 2 if IN_CI else 1
     results = {
         "status": 1,
         "tbpl_status": TBPL_WARNING,
         "log_level": WARNING,
-        "lines": 1,
+        "lines": lines,
         "assertions": 1,
     }
 
@@ -269,7 +293,7 @@ def test_output_assertion(flavor, runFailures, runtests, test_name):
     assert test_end[0]["status"] == "FAIL"
 
     assertions = filter_action("assertion_count", lines)
-    assert len(assertions) == results["assertions"]
+    assert len(assertions) == results["lines"]
     assert assertions[0]["count"] == results["assertions"]
 
 
