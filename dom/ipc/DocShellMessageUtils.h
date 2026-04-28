@@ -2,13 +2,12 @@
 
 
 
-
-
 #ifndef mozilla_dom_docshell_message_utils_h_
 #define mozilla_dom_docshell_message_utils_h_
 
 #include "ipc/EnumSerializer.h"
 #include "mozilla/ScrollbarPreferences.h"
+#include "mozilla/dom/BindingIPCUtils.h"
 #include "nsCOMPtr.h"
 #include "nsDocShellLoadState.h"
 #include "nsIDocumentViewer.h"
@@ -44,10 +43,8 @@ struct ParamTraits<mozilla::dom::XPCOMPermitUnloadAction>
 
 template <>
 struct ParamTraits<mozilla::dom::ForceMediaDocument>
-    : public ContiguousEnumSerializerInclusive<
-          mozilla::dom::ForceMediaDocument,
-          mozilla::dom::ForceMediaDocument::None,
-          mozilla::dom::ForceMediaDocument::Video> {};
+    : public mozilla::dom::WebIDLEnumSerializer<
+          mozilla::dom::ForceMediaDocument> {};
 
 }  
 
