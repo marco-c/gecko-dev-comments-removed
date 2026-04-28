@@ -968,7 +968,7 @@ class BrowserParent final : public PBrowserParent,
 
   
   
-  bool mMarkedDestroying : 1;
+  bool mHoldingGroupKeepAlive : 1;
   
   
   bool mIsDestroyed : 1;

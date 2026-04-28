@@ -312,7 +312,7 @@ BrowserParent::BrowserParent(ContentParent* aManager, const TabId& aTabId,
       mUpdatedDimensions(false),
       mSizeMode(nsSizeMode_Normal),
       mCreatingWindow(false),
-      mMarkedDestroying(false),
+      mHoldingGroupKeepAlive(false),
       mIsDestroyed(false),
       mRemoteTargetSetsCursor(false),
       mIsPreservingLayers(false),
@@ -764,11 +764,10 @@ void BrowserParent::Destroy() {
   
   
   
-  if (CanRecv()) {
+  if (CanSend()) {
     mBrowsingContext->Group()->AddKeepAlive();
+    mHoldingGroupKeepAlive = true;
   }
-
-  mMarkedDestroying = true;
 }
 
 mozilla::ipc::IPCResult BrowserParent::RecvDidUnsuppressPainting() {
@@ -847,8 +846,7 @@ void BrowserParent::ActorDestroy(ActorDestroyReason why) {
 
   
   
-  
-  if (mMarkedDestroying) {
+  if (mHoldingGroupKeepAlive) {
     mBrowsingContext->Group()->RemoveKeepAlive();
   }
 

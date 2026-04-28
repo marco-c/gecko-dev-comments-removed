@@ -1927,7 +1927,7 @@ nsresult nsFrameLoaderDestroyRunnable::Run() {
       
       
       if (!mFrameLoader->GetRemoteBrowser() ||
-          !mFrameLoader->GetRemoteBrowser()->CanRecv()) {
+          !mFrameLoader->GetRemoteBrowser()->CanSend()) {
         
         
         

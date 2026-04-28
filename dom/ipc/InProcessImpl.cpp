@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/Services.h"
 #include "mozilla/dom/InProcessChild.h"
 #include "mozilla/dom/InProcessParent.h"
@@ -266,13 +264,13 @@ static IProtocol* GetOtherInProcessActor(IProtocol* aActor) {
 
   
   IProtocol* current = aActor;
-  while (current && current->CanRecv()) {
+  while (current && current->CanSend()) {
     if (current->GetProtocolId() == PInProcessMsgStart) {
       break;  
     }
     current = current->Manager();
   }
-  if (!current || !current->CanRecv()) {
+  if (!current || !current->CanSend()) {
     return nullptr;  
   }
 

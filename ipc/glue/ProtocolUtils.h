@@ -140,9 +140,6 @@ enum class LinkStatus : uint8_t {
   
   
   
-  
-  
-  
   Doomed,
 
   
@@ -218,13 +215,6 @@ class IProtocol : public HasResultCodes {
 
   Side GetSide() const { return mSide; }
   bool CanSend() const { return mLinkStatus == LinkStatus::Connected; }
-
-  
-  
-  bool CanRecv() const {
-    return mLinkStatus == LinkStatus::Connected ||
-           mLinkStatus == LinkStatus::Doomed;
-  }
 
   
   virtual void DeallocManagee(ProtocolId, IProtocol*) = 0;
