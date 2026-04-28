@@ -6,6 +6,7 @@
 #define ENTERPRISE_POLICIES_H_
 
 #include <filesystem>
+#include <string_view>
 
 namespace EnterprisePolicies {
 
@@ -16,6 +17,14 @@ namespace EnterprisePolicies {
 
 
 bool InDistribution(const std::filesystem::path& aDir);
+
+
+
+
+
+
+
+bool InRegistry(std::wstring_view aBrand);
 
 }  
 
