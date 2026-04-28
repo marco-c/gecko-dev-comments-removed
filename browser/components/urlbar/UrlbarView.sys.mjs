@@ -952,6 +952,11 @@ export class UrlbarView {
         queryContext.deferUserSelectionProviders.delete(r.providerName);
       });
     }
+
+    if (lazy.UrlbarPrefs.get("unifiedSearchButton.always")) {
+      // Update the search mode switcher icon to reflect what pressing Enter will do after new results show.
+      this.input.searchModeSwitcher?.updateSearchIcon();
+    }
   }
 
   /**
@@ -2181,7 +2186,7 @@ export class UrlbarView {
         this.#createRowContentForBottomUrl(item, result);
       } else if (
         result.isRichSuggestion ||
-        lazy.UrlbarPrefs.get("nova.featureGate")
+        Services.prefs.getBoolPref("browser.nova.enabled", false)
       ) {
         this.#createRowContentForRichSuggestion(item, result);
       } else {
@@ -2474,7 +2479,10 @@ export class UrlbarView {
       };
     }
 
-    if (result.isRichSuggestion || lazy.UrlbarPrefs.get("nova.featureGate")) {
+    if (
+      result.isRichSuggestion ||
+      Services.prefs.getBoolPref("browser.nova.enabled", false)
+    ) {
       this.#updateRowForRichSuggestion(item, result);
     }
 
@@ -2688,7 +2696,7 @@ export class UrlbarView {
     // The "rich-suggestion" attribute isn't used in Nova.
     item.toggleAttribute(
       "rich-suggestion",
-      !lazy.UrlbarPrefs.get("nova.featureGate")
+      !Services.prefs.getBoolPref("browser.nova.enabled", false)
     );
 
     this.#setRowSelectable(
@@ -2754,7 +2762,7 @@ export class UrlbarView {
     // The "rich-suggestion" attribute isn't used in Nova.
     item.toggleAttribute(
       "rich-suggestion",
-      !lazy.UrlbarPrefs.get("nova.featureGate")
+      !Services.prefs.getBoolPref("browser.nova.enabled", false)
     );
 
     item.setAttribute(
