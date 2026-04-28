@@ -549,7 +549,7 @@ class ModuleObject : public NativeObject {
 };
 
 using VisitedModuleSet =
-    GCHashSet<HeapPtr<ModuleObject*>, DefaultHasher<HeapPtr<ModuleObject*>>,
+    GCHashSet<HeapPtr<JSObject*>, StableCellHasher<HeapPtr<JSObject*>>,
               SystemAllocPolicy>;
 
 

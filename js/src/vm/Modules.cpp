@@ -1161,14 +1161,10 @@ static ModuleNamespaceObject* ModuleNamespaceCreate(
   }
 
   
-  
-  
-  
   Rooted<JSAtom*> name(cx);
   Rooted<Value> resolution(cx);
   Rooted<ResolvedBindingObject*> binding(cx);
   Rooted<ModuleObject*> importedModule(cx);
-  Rooted<ModuleNamespaceObject*> importedNamespace(cx);
   Rooted<JSAtom*> bindingName(cx);
   for (JSAtom* atom : ns->exports()) {
     name = atom;
@@ -1181,21 +1177,6 @@ static ModuleNamespaceObject* ModuleNamespaceCreate(
     binding = &resolution.toObject().as<ResolvedBindingObject>();
     importedModule = binding->module();
     bindingName = binding->bindingName();
-
-    if (bindingName == cx->names().star_namespace_star_) {
-      importedNamespace = GetOrCreateModuleNamespace(cx, importedModule);
-      if (!importedNamespace) {
-        return nullptr;
-      }
-
-      
-      
-      
-      InitNamespaceOrSourceBinding(cx, &importedModule->initialEnvironment(),
-                                   bindingName,
-                                   ObjectValue(*importedNamespace));
-    }
-
     if (!ns->addBinding(cx, name, importedModule, bindingName)) {
       return nullptr;
     }
@@ -1309,6 +1290,10 @@ static bool ModuleInitializeEnvironment(JSContext* cx,
   
   Rooted<JSAtom*> exportName(cx);
   Rooted<Value> resolution(cx);
+  Rooted<ResolvedBindingObject*> binding(cx);
+  Rooted<JSAtom*> bindingName(cx);
+  Rooted<ModuleObject*> bindingModule(cx);
+  Rooted<ModuleNamespaceObject*> bindingNs(cx);
   for (const ExportEntry& e : module->indirectExportEntries()) {
     
     MOZ_ASSERT(e.exportName());
@@ -1326,6 +1311,27 @@ static bool ModuleInitializeEnvironment(JSContext* cx,
       ThrowResolutionError(cx, module, resolution, exportName, &errorInfo);
       return false;
     }
+
+    binding = &resolution.toObject().as<ResolvedBindingObject>();
+    bindingName = binding->bindingName();
+
+    
+    
+    if (bindingName == cx->names().star_namespace_star_) {
+      bindingModule = binding->module();
+      bindingNs = GetOrCreateModuleNamespace(cx, bindingModule);
+      if (!bindingNs) {
+        return false;
+      }
+
+      
+      
+      
+      Rooted<ModuleEnvironmentObject*> env(
+          cx, &bindingModule->initialEnvironment());
+      InitNamespaceOrSourceBinding(cx, env, bindingName,
+                                   ObjectValue(*bindingNs));
+    }
   }
 
   
@@ -1339,7 +1345,6 @@ static bool ModuleInitializeEnvironment(JSContext* cx,
   Rooted<JSAtom*> importName(cx);
   Rooted<JSAtom*> localName(cx);
   Rooted<ModuleObject*> sourceModule(cx);
-  Rooted<JSAtom*> bindingName(cx);
   for (const ImportEntry& in : module->importEntries()) {
     
     
@@ -1597,7 +1602,7 @@ static bool InnerModuleLoading(JSContext* cx,
 
     
     for (auto iter = state->visited().iter(); !iter.done(); iter.next()) {
-      auto& loaded = iter.get();
+      ModuleObject* loaded = &iter.get()->as<ModuleObject>();
       
       
       if (loaded->status() == ModuleStatus::New) {
