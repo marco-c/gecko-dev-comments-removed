@@ -2,7 +2,6 @@
 
 
 
-
 {
   
   
@@ -1215,13 +1214,44 @@
             "name",
             `tab-notification-box-${this._nextNotificationBoxId++}`
           );
-          this.getTabNotificationDeck().append(element);
-          if (browser == this.selectedBrowser) {
-            this._updateVisibleNotificationBox(browser);
-          }
+          this.#insertNotificationBox(browser, element);
         }, this._notificationEnableDelay);
       }
       return browser._notificationBox;
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    #insertNotificationBox(browser, box) {
+      if (this.#isBrowserInActiveSplitView(browser)) {
+        let browserContainer = this.getBrowserContainer(browser);
+        if (box.parentNode === browserContainer) {
+          
+          return;
+        }
+        let browserStack = browserContainer.querySelector(".browserStack");
+        browserContainer.insertBefore(box, browserStack);
+        return;
+      }
+      this.getTabNotificationDeck().append(box);
+      if (browser == this.selectedBrowser) {
+        this._updateVisibleNotificationBox(browser);
+      }
+    }
+
+    #isBrowserInActiveSplitView(browser) {
+      let tab = this.getTabForBrowser(browser);
+      return this.#activeSplitView && tab?.splitview === this.#activeSplitView;
     }
 
     readNotificationBox(aBrowser) {
@@ -1235,6 +1265,13 @@
         return;
       }
       let notificationBox = this.readNotificationBox(aBrowser);
+      if (
+        notificationBox &&
+        notificationBox._stack.parentNode !== this.getTabNotificationDeck()
+      ) {
+        
+        return;
+      }
       this.getTabNotificationDeck().selectedViewName = notificationBox
         ? notificationBox.stack.getAttribute("name")
         : "";
@@ -8267,11 +8304,31 @@
 
     on_TabSplitViewActivate(aEvent) {
       this.#activeSplitView = aEvent.detail.splitview;
+      this.#moveSplitViewNotificationBoxes(aEvent.detail.tabs);
     }
 
     on_TabSplitViewDeactivate(aEvent) {
       if (this.#activeSplitView === aEvent.detail.splitview) {
         this.#activeSplitView = null;
+      }
+      this.#moveSplitViewNotificationBoxes(aEvent.detail.tabs);
+    }
+
+    
+
+
+
+
+
+    #moveSplitViewNotificationBoxes(tabs) {
+      for (const tab of tabs) {
+        let notificationBox = this.readNotificationBox(tab.linkedBrowser);
+        if (notificationBox?._stack) {
+          this.#insertNotificationBox(
+            tab.linkedBrowser,
+            notificationBox._stack
+          );
+        }
       }
     }
 
@@ -10641,6 +10698,27 @@ var TabContextMenu = {
       "context_bookmarkSelectedTabs"
     );
     bookmarkMultiSelectedTabs.hidden = !this.multiselected;
+
+    let contentSharingShareTabs = document.getElementById(
+      "context_shareSelectedTabs"
+    );
+
+    const hideContentSharing =
+      !this.multiselected || !ContentSharingUtils.isEnabled;
+    contentSharingShareTabs.hidden = hideContentSharing;
+    document.getElementById("context_shareSelectedTabsSeparator").hidden =
+      hideContentSharing;
+    if (!contentSharingShareTabs.hidden) {
+      this.removeNewBadge(contentSharingShareTabs);
+      if (
+        Services.prefs.getBoolPref(
+          "browser.contentsharing.newBadge.enabled",
+          true
+        )
+      ) {
+        this.addNewBadge(contentSharingShareTabs);
+      }
+    }
 
     let toggleMute = document.getElementById("context_toggleMuteTab");
     let toggleMultiSelectMute = document.getElementById(
