@@ -115,6 +115,8 @@
 #include "expat.h"
 #include "siphash.h"
 
+
+#if 0
 #if defined(HAVE_ARC4RANDOM)
 #  include "random_arc4random.h"
 #endif 
@@ -138,6 +140,8 @@
 #if defined(_WIN32)
 #  include "random_rand_s.h"
 #endif 
+#endif
+
 
 #if ! defined(HAVE_GETRANDOM) && ! defined(HAVE_SYSCALL_GETRANDOM)             \
     && ! defined(HAVE_ARC4RANDOM_BUF) && ! defined(HAVE_ARC4RANDOM)            \
