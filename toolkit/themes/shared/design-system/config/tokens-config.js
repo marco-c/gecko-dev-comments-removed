@@ -222,7 +222,8 @@ const getTokenSections = () => {
 
   return Object.fromEntries(
     Object.keys(allSections)
-      .sort()
+      
+      .sort((a, b) => (a > b || a === "box" ? 1 : -1))
       .map(key => [key, allSections[key]])
   );
 };
@@ -563,6 +564,16 @@ const shouldSkipToken = ({ overrideIdentifier, componentName, token }) => {
   
   if (overrideIdentifier && !token.name.includes(`-${overrideIdentifier}-`)) {
     return true;
+  }
+
+  
+  if (componentName === "box" && token.name.startsWith("box-shadow")) {
+    return true;
+  }
+
+  
+  if (!componentName && token.name.startsWith("box-shadow")) {
+    return false;
   }
 
   
