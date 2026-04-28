@@ -48,7 +48,6 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <functional>
 
 class ProfilerCodeAddressService;
 
@@ -175,7 +174,10 @@ void profiler_write_active_configuration(mozilla::JSONWriter& aWriter);
 
 
 
-mozilla::Vector<nsCString> profiler_move_exit_profiles();
+
+
+mozilla::Vector<mozilla::ProfileAndAdditionalInformation>
+profiler_move_exit_profiles();
 
 
 

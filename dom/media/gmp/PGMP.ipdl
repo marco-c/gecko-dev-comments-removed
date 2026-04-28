@@ -1,10 +1,10 @@
-
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 include CrashReporterInitArgs;
 include PrefsTypes;
+include ProfilerTypes;
 include protocol PGMPContent;
 include protocol PGMPTimer;
 include protocol PGMPStorage;
@@ -38,15 +38,15 @@ parent:
 
   async PGMPContentChildDestroyed();
 
-  
-  
-  
+  // Sent from time-to-time to limit the amount of telemetry vulnerable to loss
+  // Buffer contains bincoded Rust structs.
+  // https://firefox-source-docs.mozilla.org/toolkit/components/glean/dev/ipc.html
   async FOGData(ByteBuf buf);
 
 #if defined(XP_WIN)
   async GetModulesTrust(ModulePaths aModPaths, bool aRunAtNormalPriority)
       returns (ModulesMapResult? modMapResult);
-#endif  
+#endif  // defined(XP_WIN)
 
 child:
   async CrashPluginNow();
@@ -58,9 +58,9 @@ child:
   async InitProfiler(Endpoint<PProfilerChild> endpoint);
   async PreferenceUpdate(Pref pref);
 
-  
-  
-  
+  // Tells the GMP process to flush any pending telemetry.
+  // Used in tests and ping assembly. Buffer contains bincoded Rust structs.
+  // https://firefox-source-docs.mozilla.org/toolkit/components/glean/dev/ipc.html
   async FlushFOGData() returns (ByteBuf buf);
 
 #if defined(XP_WIN)
@@ -69,22 +69,23 @@ child:
 
   async GetUntrustedModulesData() returns (UntrustedModulesData? data);
 
-  
-
-
-
-
+  /**
+  * This method is used to notify a child process to start
+  * processing module loading events in UntrustedModulesProcessor.
+  * This should be called when the parent process has gone idle.
+  */
   async UnblockUntrustedModulesThread();
-#endif  
+#endif  // defined(XP_WIN)
 
-  
-  
-  
+  // Test-only method.
+  // Asks the GMP process to trigger test-only instrumentation.
+  // The unused returned value is to have a promise we can await.
   async TestTriggerMetrics() returns (bool unused);
 
-  
-  async Shutdown() returns (nsCString profile);
+  // Attempt a graceful shutdown and collect a profile if available.
+  async Shutdown()
+      returns (ProfileAndAdditionalInformation profileAndAdditionalInformation);
 };
 
-} 
-} 
+} // namespace gmp
+} // namespace mozilla

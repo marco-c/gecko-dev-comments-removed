@@ -288,7 +288,10 @@ void profiler_set_process_name(const nsACString& aProcessName,
                                const nsACString* aETLDplus1 = nullptr);
 
 
-void profiler_received_exit_profile(const nsACString& aExitProfile);
+
+
+void profiler_received_exit_profile(
+    mozilla::ProfileAndAdditionalInformation&& aExitProfileAndAdditionalInfo);
 
 
 
