@@ -91,7 +91,6 @@ class ChannelInterface {
                                    SdpType type) = 0;
   virtual RTCError SetRemoteContent(const MediaContentDescription* content,
                                     SdpType type) = 0;
-  virtual bool SetPayloadTypeDemuxingEnabled(bool enabled) = 0;
 
   
   virtual const std::vector<StreamParams>& local_streams() const = 0;

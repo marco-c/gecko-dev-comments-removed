@@ -338,42 +338,6 @@ RTCError BaseChannel::SetRemoteContent(const MediaContentDescription* content,
   return SetRemoteContent_w(content, type);
 }
 
-bool BaseChannel::SetPayloadTypeDemuxingEnabled(bool enabled) {
-  
-  
-  
-  
-  
-  
-  RTC_DCHECK_RUN_ON(network_thread());
-  TRACE_EVENT0("webrtc", "BaseChannel::SetPayloadTypeDemuxingEnabled");
-
-  if (enabled == payload_type_demuxing_enabled_) {
-    return true;
-  }
-
-  payload_type_demuxing_enabled_ = enabled;
-
-  if (!enabled) {
-    worker_thread_->PostTask(SafeTask(alive_, [this] {
-      
-      
-      
-      
-      
-      media_receive_channel()->ResetUnsignaledRecvStream();
-    }));
-  }
-
-  if (!payload_types_.empty()) {
-    if (!rtp_transport_) {
-      return false;
-    }
-    return rtp_transport_->RegisterRtpDemuxerSink(demuxer_criteria(), this);
-  }
-
-  return true;
-}
 
 bool BaseChannel::IsReadyToSendMedia_w() const {
   
@@ -661,9 +625,7 @@ bool BaseChannel::RegisterRtpDemuxerSink_w(
 RtpDemuxerCriteria BaseChannel::demuxer_criteria() const {
   RTC_DCHECK_RUN_ON(network_thread());
   RtpDemuxerCriteria criteria(mid_);
-  if (payload_type_demuxing_enabled_) {
-    criteria.payload_types() = payload_types_;
-  }
+  criteria.payload_types() = payload_types_;
   criteria.ssrcs() = ssrcs_;
   return criteria;
 }

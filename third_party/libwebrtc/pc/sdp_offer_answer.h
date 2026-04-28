@@ -574,7 +574,7 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
 
   
   
-  bool UpdatePayloadTypeDemuxingState(
+  void UpdatePayloadTypeDemuxingState(
       ContentSource source,
       const flat_map<std::string, const ContentGroup*>& bundle_groups_by_mid);
 

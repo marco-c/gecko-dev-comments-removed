@@ -86,6 +86,7 @@
 #include "pc/rtp_sender_proxy.h"
 #include "pc/rtp_transceiver.h"
 #include "pc/rtp_transmission_manager.h"
+#include "pc/rtp_transport_internal.h"
 #include "pc/scoped_operations_batcher.h"
 #include "pc/sdp_munging_detector.h"
 #include "pc/session_description.h"
@@ -5167,13 +5168,7 @@ RTCError SdpOfferAnswerHandler::PushdownMediaDescription(
   if (ConfiguredForMedia()) {
     
     
-    if (!UpdatePayloadTypeDemuxingState(source, bundle_groups_by_mid)) {
-      
-      
-      
-      return LOG_ERROR(RTCError(RTCErrorType::INTERNAL_ERROR)
-                       << "Failed to update payload type demuxing state.");
-    }
+    UpdatePayloadTypeDemuxingState(source, bundle_groups_by_mid);
 
     
     auto rtp_transceivers = transceivers()->ListInternal();
@@ -5778,7 +5773,7 @@ SdpOfferAnswerHandler::GetMediaDescriptionOptionsForRejectedData(
   return options;
 }
 
-bool SdpOfferAnswerHandler::UpdatePayloadTypeDemuxingState(
+void SdpOfferAnswerHandler::UpdatePayloadTypeDemuxingState(
     ContentSource source,
     const flat_map<std::string, const ContentGroup*>& bundle_groups_by_mid) {
   TRACE_EVENT0("webrtc",
@@ -5881,11 +5876,11 @@ bool SdpOfferAnswerHandler::UpdatePayloadTypeDemuxingState(
 
   
   
-  std::vector<std::pair<bool, RtpTransceiver*>> channels_to_update;
-  for (const auto& transceiver : transceivers()->ListInternal()) {
+  flat_map<std::string, bool> transports_to_update;
+  for (RtpTransceiver* transceiver : transceivers()->ListInternal()) {
     const ContentInfo* content =
         FindMediaSectionForTransceiver(transceiver, sdesc);
-    if (!transceiver->HasChannel() || !content) {
+    if (!content) {
       continue;
     }
 
@@ -5923,26 +5918,53 @@ bool SdpOfferAnswerHandler::UpdatePayloadTypeDemuxingState(
       }
     }
 
-    channels_to_update.emplace_back(pt_demux_enabled, transceiver);
+    
+    
+    
+    transports_to_update[content->mid()] |= pt_demux_enabled;
   }
 
-  if (channels_to_update.empty()) {
-    return true;
+  if (transports_to_update.empty()) {
+    return;
   }
 
-  
-  
-  
-  return context_->network_thread()->BlockingCall([&channels_to_update]() {
-    for (const auto& it : channels_to_update) {
-      if (!it.second->SetChannelPayloadTypeDemuxingEnabled(it.first)) {
-        
-        
-        return false;
+  context_->network_thread()->BlockingCall([&]() {
+    JsepTransportController* transport_controller =
+        pc_->transport_controller_n();
+    for (const auto& [mid, pt_demux_enabled] : transports_to_update) {
+      RtpTransportInternal* rtp_transport =
+          transport_controller->GetRtpTransport(mid);
+      if (rtp_transport != nullptr) {
+        rtp_transport->SetActivePayloadTypeDemuxing(pt_demux_enabled);
       }
     }
-    return true;
   });
+
+  
+  
+  
+  
+  
+  
+  
+  
+  for (RtpTransceiver* transceiver : transceivers()->ListInternal()) {
+    const ContentInfo* content =
+        FindMediaSectionForTransceiver(transceiver, sdesc);
+    if (!content) {
+      continue;
+    }
+    auto it = transports_to_update.find(content->mid());
+    if (it != transports_to_update.end() && !it->second) {
+      
+      
+      
+      
+      
+      
+      transceiver->ResetUnsignaledRecvStream();
+    }
+  }
 }
 
 bool SdpOfferAnswerHandler::ConfiguredForMedia() const {

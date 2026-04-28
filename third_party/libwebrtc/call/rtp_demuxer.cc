@@ -405,8 +405,13 @@ RtpPacketSinkInterface* RtpDemuxer::ResolveSink(
     return ssrc_sink_it->second;
   }
 
-  
-  return ResolveSinkByPayloadType(packet.PayloadType(), ssrc);
+  if (use_payload_type_demuxing_) {
+    
+    
+    return ResolveSinkByPayloadType(packet.PayloadType(), ssrc);
+  }
+
+  return nullptr;
 }
 
 RtpPacketSinkInterface* RtpDemuxer::ResolveSinkByMid(absl::string_view mid,

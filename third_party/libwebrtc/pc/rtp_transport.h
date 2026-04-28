@@ -112,6 +112,8 @@ class RtpTransport : public RtpTransportInternal {
 
   bool UnregisterRtpDemuxerSink(RtpPacketSinkInterface* sink) override;
 
+  void SetActivePayloadTypeDemuxing(bool enabled) override;
+
  protected:
   
   void DemuxPacket(CopyOnWriteBuffer packet,

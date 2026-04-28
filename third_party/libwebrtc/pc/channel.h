@@ -127,16 +127,6 @@ class BaseChannel : public ChannelInterface,
                            SdpType type) override;
   RTCError SetRemoteContent(const MediaContentDescription* content,
                             SdpType type) override;
-  
-  
-  
-  
-  
-  
-  
-  
-  bool SetPayloadTypeDemuxingEnabled(bool enabled) override
-      RTC_RUN_ON(network_thread());
 
   void Enable(bool enable) override;
 
@@ -344,7 +334,6 @@ class BaseChannel : public ChannelInterface,
   
   bool enabled_ RTC_GUARDED_BY(worker_thread()) = false;
   bool enabled_s_ RTC_GUARDED_BY(signaling_thread()) = false;
-  bool payload_type_demuxing_enabled_ RTC_GUARDED_BY(network_thread()) = true;
   std::vector<StreamParams> local_streams_ RTC_GUARDED_BY(worker_thread());
   std::vector<StreamParams> remote_streams_ RTC_GUARDED_BY(worker_thread());
   RtpTransceiverDirection local_content_direction_

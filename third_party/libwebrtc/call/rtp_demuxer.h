@@ -136,6 +136,10 @@ class RtpDemuxer {
   RtpDemuxer(const RtpDemuxer&) = delete;
   void operator=(const RtpDemuxer&) = delete;
 
+  void set_use_payload_type_demuxing(bool enable) {
+    use_payload_type_demuxing_ = enable;
+  }
+
   
   
   
@@ -230,6 +234,7 @@ class RtpDemuxer {
   void AddSsrcSinkBinding(uint32_t ssrc, RtpPacketSinkInterface* sink);
 
   const bool use_mid_;
+  bool use_payload_type_demuxing_ = true;
 };
 
 }  
