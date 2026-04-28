@@ -329,12 +329,18 @@ struct AllocSpace {
     return reinterpret_cast<void*>(startAddress() + offset);
   }
 
+  size_t endBitIndex(size_t startIndex, size_t bytes) {
+    MOZ_ASSERT(startIndex < MaxAllocCount);
+    MOZ_ASSERT(bytes != 0);
+    MOZ_ASSERT(bytes % GranularityBytes == 0);
+    size_t endIndex = startIndex + bytes / GranularityBytes - 1;
+    MOZ_ASSERT(endIndex < MaxAllocCount);
+    return endIndex;
+  }
+
   size_t findEndBit(size_t startIndex) const {
     MOZ_ASSERT(startIndex < MaxAllocCount);
-    if (startIndex + 1 == MaxAllocCount) {
-      return MaxAllocCount;
-    }
-    size_t endIndex = allocEndBitmap.ref().FindNext(startIndex + 1);
+    size_t endIndex = allocEndBitmap.ref().FindNext(startIndex);
     if (endIndex == SIZE_MAX) {
       return MaxAllocCount;
     }
