@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ScriptLoadRequest.h"
 #include "GeckoProfiler.h"
@@ -10,7 +10,7 @@
 #include "mozilla/dom/WorkerLoadContext.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/StaticPrefs_dom.h"
-#include "mozilla/Utf8.h"  
+#include "mozilla/Utf8.h"  // mozilla::Utf8Unit
 
 #include "js/SourceText.h"
 
@@ -23,9 +23,9 @@ using JS::SourceText;
 
 namespace JS::loader {
 
-
-
-
+//////////////////////////////////////////////////////////////
+// ScriptFetchOptions
+//////////////////////////////////////////////////////////////
 
 ScriptFetchOptions::ScriptFetchOptions(
     mozilla::CORSMode aCORSMode, const nsAString& aNonce,
@@ -43,19 +43,19 @@ void ScriptFetchOptions::SetTriggeringPrincipal(
   mTriggeringPrincipal = aTriggeringPrincipal;
 }
 
-
+// static
 already_AddRefed<ScriptFetchOptions> ScriptFetchOptions::CreateDefault() {
   RefPtr<ScriptFetchOptions> options = new ScriptFetchOptions(
-      mozilla::CORS_NONE,  u""_ns,
+      mozilla::CORS_NONE, /* aNonce = */ u""_ns,
       mozilla::dom::RequestPriority::Auto, ParserMetadata::NotParserInserted);
   return options.forget();
 }
 
 ScriptFetchOptions::~ScriptFetchOptions() = default;
 
-
-
-
+//////////////////////////////////////////////////////////////
+// ScriptLoadRequest
+//////////////////////////////////////////////////////////////
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(ScriptLoadRequest)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
@@ -64,18 +64,18 @@ NS_INTERFACE_MAP_END
 NS_IMPL_CYCLE_COLLECTING_ADDREF(ScriptLoadRequest)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(ScriptLoadRequest)
 
-
-
-
-
-
-
-
-
-
-
-
-
+// ScriptLoadRequest can be accessed from multiple threads.
+//
+// For instance, worker script loader passes the ScriptLoadRequest to
+// the main thread to perform the actual load.
+// Even while it's handled by the main thread, the ScriptLoadRequest is
+// the target of the worker thread's cycle collector.
+//
+// Fields that can be modified by the main thread shouldn't be touched by
+// the cycle collection.
+//
+// NOTE: nsIURI and nsIPrincipal doesn't have to be touched here because
+//       they cannot be a part of cycle.
 NS_IMPL_CYCLE_COLLECTION(ScriptLoadRequest, mLoadedScript, mLoadContext)
 
 NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN(ScriptLoadRequest)
@@ -172,15 +172,16 @@ void ScriptLoadRequest::CacheEntryRevived(LoadedScript* aLoadedScript) {
 
   SetCacheEntry(aLoadedScript, FetchOptions());
 
-  
-  
+  // NOTE: The caller should keep using the "fetching" path, with the
+  //       cached stencil, and skip the compilation.
   mState = State::Fetching;
 }
 
 void ScriptLoadRequest::SetCacheEntry(LoadedScript* aLoadedScript,
                                       ScriptFetchOptions* aFetchOptions) {
-  mFetchInfo = new ScriptFetchInfo(mKind, aLoadedScript->ReferrerPolicy(),
-                                   aFetchOptions, aLoadedScript->BaseURL());
+  mFetchInfo =
+      new ScriptFetchInfo(mKind, aLoadedScript->ReferrerPolicy(), aFetchOptions,
+                          aLoadedScript->CachedBaseURL());
 
   switch (mKind) {
     case ScriptKind::eClassic:
@@ -188,7 +189,7 @@ void ScriptLoadRequest::SetCacheEntry(LoadedScript* aLoadedScript,
 
       mLoadedScript = aLoadedScript;
 
-      
+      // Classic scripts can be set ready once the script itself is ready.
       mState = State::Ready;
       break;
     case ScriptKind::eImportMap:
@@ -199,14 +200,14 @@ void ScriptLoadRequest::SetCacheEntry(LoadedScript* aLoadedScript,
       mState = State::Ready;
       break;
     case ScriptKind::eModule:
-      
-      
+      // NOTE: The cache entry has "module" kind, but it's not ModuleScript
+      //       instance, given ModuleScript has GC pointers.
       MOZ_ASSERT(aLoadedScript->IsModuleScript());
 
       mLoadedScript = ModuleScript::FromCache(*aLoadedScript, mFetchInfo);
 
-      
-      
+      // Modules need to wait for fetching dependencies before setting to
+      // Ready.
       mState = State::Fetching;
       break;
     case ScriptKind::eEvent:
@@ -222,11 +223,11 @@ void ScriptLoadRequest::NoCacheEntryFound(
 
   mFetchInfo = new ScriptFetchInfo(mKind, aReferrerPolicy, aFetchOptions, aURI);
 
-  
-  
-  
-  
-  
+  // At the time where we check in the cache, the BaseURL() is not set, as this
+  // is resolved by the network. Thus we use the aURI passed by the consumer,
+  // which is the original URI used for the request, for checking the cache
+  // and later replace the BaseURL() using what the Channel->GetURI will
+  // provide.
   switch (mKind) {
     case ScriptKind::eClassic:
       mLoadedScript = new ClassicScript(aReferrerPolicy, aURI);
@@ -244,4 +245,4 @@ void ScriptLoadRequest::NoCacheEntryFound(
   mState = State::Fetching;
 }
 
-}  
+}  // namespace JS::loader

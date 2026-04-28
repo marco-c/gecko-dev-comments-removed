@@ -180,8 +180,8 @@ class LoadedScript : public nsIMemoryReporter {
   }
 
   nsIURI* GetURI() const { return mURI; }
-  void SetBaseURL(nsIURI* aBaseURL) { mBaseURL = aBaseURL; }
-  nsIURI* BaseURL() const { return mBaseURL; }
+
+  nsIURI* CachedBaseURL() const { return mCachedBaseURL; }
 
  public:
   
@@ -259,10 +259,11 @@ class LoadedScript : public nsIMemoryReporter {
     mDataType = DataType::eSerializedStencil;
   }
 
-  void ConvertToCachedStencil() {
+  void ConvertToCachedStencil(nsIURI* aBaseURL) {
     MOZ_ASSERT(HasStencil());
     SetUnknownDataType();
     mDataType = DataType::eCachedStencil;
+    mCachedBaseURL = aBaseURL;
   }
 
   void SetWasmBytes() {
@@ -424,13 +425,6 @@ class LoadedScript : public nsIMemoryReporter {
   void SetIsEverHitFromMemoryCache() { mIsEverHitFromMemoryCache = true; }
   bool IsEverHitFromMemoryCache() const { return mIsEverHitFromMemoryCache; }
 
-  
-
-
-
-  void SetBaseURLFromChannelAndOriginalURI(nsIChannel* aChannel,
-                                           nsIURI* aOriginalURI);
-
   bool IsDirty() const { return mIsDirty; }
   void SetDirty() {
     MOZ_ASSERT(HasCacheEntryId());
@@ -534,7 +528,11 @@ class LoadedScript : public nsIMemoryReporter {
   nsCOMPtr<nsIURI> mURI;
 
   
-  nsCOMPtr<nsIURI> mBaseURL;
+  
+  
+  
+  
+  nsCOMPtr<nsIURI> mCachedBaseURL;
 
   
   
