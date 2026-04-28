@@ -10,27 +10,32 @@ const { UrlClassifierTestUtils } = ChromeUtils.importESModule(
 const TRACKING_PAGE =
   
   "http://tracking.example.org/browser/browser/base/content/test/protectionsUI/trackingPage.html";
+const TRACKING_PAGE_WITH_META_REFRESH =
+  
+  "http://tracking.example.org/browser/browser/base/content/test/protectionsUI/trackingPageWithMetaRefresh.html";
 const BENIGN_PAGE =
   
   "http://tracking.example.org/browser/browser/base/content/test/protectionsUI/benignPage.html";
 const NOTIFICATION_VALUE = "reduced-protection-reload";
 
+let pbWindow;
+
 function getNotification(browser) {
-  let notificationBox = gBrowser.getNotificationBox(browser);
-  return notificationBox.getNotificationWithValue(NOTIFICATION_VALUE);
+  let notificationBox = browser.getTabBrowser()?.getNotificationBox(browser);
+  return notificationBox?.getNotificationWithValue(NOTIFICATION_VALUE);
 }
 
-function waitForContentBlockingEvent() {
+function waitForContentBlockingEvent(aBrowser) {
   return new Promise(resolve => {
     let listener = {
       onContentBlockingEvent(webProgress, request, event) {
         if (event & Ci.nsIWebProgressListener.STATE_BLOCKED_TRACKING_CONTENT) {
-          gBrowser.removeProgressListener(listener);
+          aBrowser.removeProgressListener(listener);
           resolve();
         }
       },
     };
-    gBrowser.addProgressListener(listener);
+    aBrowser.addProgressListener(listener);
   });
 }
 
@@ -39,21 +44,25 @@ add_setup(async function () {
     set: [
       ["privacy.trackingprotection.enabled", true],
       ["privacy.reducePageProtection.infobar.enabled.pbmode", true],
+      ["dom.security.https_first_pbm", false],
     ],
   });
 
   await UrlClassifierTestUtils.addTestTrackers();
 
-  registerCleanupFunction(() => {
+  pbWindow = await BrowserTestUtils.openNewBrowserWindow({ private: true });
+
+  registerCleanupFunction(async () => {
+    await BrowserTestUtils.closeWindow(pbWindow);
     UrlClassifierTestUtils.cleanupTestTrackers();
   });
 });
 
 
 add_task(async function test_no_infobar_on_first_load() {
-  let blockingPromise = waitForContentBlockingEvent();
+  let blockingPromise = waitForContentBlockingEvent(pbWindow.gBrowser);
   let tab = await BrowserTestUtils.openNewForegroundTab(
-    gBrowser,
+    pbWindow.gBrowser,
     TRACKING_PAGE
   );
   await blockingPromise;
@@ -69,16 +78,16 @@ add_task(async function test_no_infobar_on_first_load() {
 
 
 add_task(async function test_infobar_on_reload() {
-  let blockingPromise = waitForContentBlockingEvent();
+  let blockingPromise = waitForContentBlockingEvent(pbWindow.gBrowser);
   let tab = await BrowserTestUtils.openNewForegroundTab(
-    gBrowser,
+    pbWindow.gBrowser,
     TRACKING_PAGE
   );
   await blockingPromise;
 
   info("Reloading to trigger the infobar");
   let loadedPromise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
-  gBrowser.reloadWithFlags(Ci.nsIWebNavigation.LOAD_FLAGS_NONE);
+  pbWindow.gBrowser.reloadWithFlags(Ci.nsIWebNavigation.LOAD_FLAGS_NONE);
   await loadedPromise;
 
   let notification = await TestUtils.waitForCondition(
@@ -95,9 +104,9 @@ add_task(async function test_infobar_on_reload() {
 
 
 add_task(async function test_no_infobar_on_navigation() {
-  let blockingPromise = waitForContentBlockingEvent();
+  let blockingPromise = waitForContentBlockingEvent(pbWindow.gBrowser);
   let tab = await BrowserTestUtils.openNewForegroundTab(
-    gBrowser,
+    pbWindow.gBrowser,
     TRACKING_PAGE
   );
   await blockingPromise;
@@ -118,16 +127,16 @@ add_task(async function test_no_infobar_on_navigation() {
 
 
 add_task(async function test_button_disables_tp_and_reloads() {
-  let blockingPromise = waitForContentBlockingEvent();
+  let blockingPromise = waitForContentBlockingEvent(pbWindow.gBrowser);
   let tab = await BrowserTestUtils.openNewForegroundTab(
-    gBrowser,
+    pbWindow.gBrowser,
     TRACKING_PAGE
   );
   await blockingPromise;
 
   info("Reloading to trigger the infobar");
   let loadedPromise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
-  gBrowser.reloadWithFlags(Ci.nsIWebNavigation.LOAD_FLAGS_NONE);
+  pbWindow.gBrowser.reloadWithFlags(Ci.nsIWebNavigation.LOAD_FLAGS_NONE);
   await loadedPromise;
 
   let notification = await TestUtils.waitForCondition(
@@ -144,8 +153,7 @@ add_task(async function test_button_disables_tp_and_reloads() {
 
   
   
-  let isActive =
-    gBrowser.ownerGlobal.gProtectionsHandler.iconBox.hasAttribute("active");
+  let isActive = pbWindow.gProtectionsHandler.iconBox.hasAttribute("active");
   ok(!isActive, "Shield is not active: TP disabled via ScopedPrefs");
 
   BrowserTestUtils.removeTab(tab);
@@ -154,16 +162,16 @@ add_task(async function test_button_disables_tp_and_reloads() {
 
 
 add_task(async function test_no_reappear_after_dismiss() {
-  let blockingPromise = waitForContentBlockingEvent();
+  let blockingPromise = waitForContentBlockingEvent(pbWindow.gBrowser);
   let tab = await BrowserTestUtils.openNewForegroundTab(
-    gBrowser,
+    pbWindow.gBrowser,
     TRACKING_PAGE
   );
   await blockingPromise;
 
   info("Reloading to trigger the infobar for the first time");
   let loadedPromise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
-  gBrowser.reloadWithFlags(Ci.nsIWebNavigation.LOAD_FLAGS_NONE);
+  pbWindow.gBrowser.reloadWithFlags(Ci.nsIWebNavigation.LOAD_FLAGS_NONE);
   await loadedPromise;
 
   await TestUtils.waitForCondition(
@@ -172,63 +180,19 @@ add_task(async function test_no_reappear_after_dismiss() {
   );
 
   info("Reloading again - infobar should not reappear for this host");
-  blockingPromise = waitForContentBlockingEvent();
+  blockingPromise = waitForContentBlockingEvent(pbWindow.gBrowser);
   loadedPromise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
-  gBrowser.reloadWithFlags(Ci.nsIWebNavigation.LOAD_FLAGS_NONE);
+  pbWindow.gBrowser.reloadWithFlags(Ci.nsIWebNavigation.LOAD_FLAGS_NONE);
   await loadedPromise;
   await blockingPromise;
 
   
   await TestUtils.waitForTick();
 
-  let notification = getNotification(tab.linkedBrowser);
-  ok(!notification, "Infobar does not reappear for the same host");
-
-  BrowserTestUtils.removeTab(tab);
-});
-
-
-
-add_task(async function test_dismissal_resets_on_navigation() {
-  let blockingPromise = waitForContentBlockingEvent();
-  let tab = await BrowserTestUtils.openNewForegroundTab(
-    gBrowser,
-    TRACKING_PAGE
+  ok(
+    !getNotification(tab.linkedBrowser),
+    "Infobar does not reappear for the same host"
   );
-  await blockingPromise;
-
-  info("Reload to trigger and dismiss the infobar");
-  let loadedPromise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
-  gBrowser.reloadWithFlags(Ci.nsIWebNavigation.LOAD_FLAGS_NONE);
-  await loadedPromise;
-
-  await TestUtils.waitForCondition(
-    () => getNotification(tab.linkedBrowser),
-    "Waiting for notification to appear"
-  );
-
-  info("Navigate away via address bar");
-  loadedPromise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
-  BrowserTestUtils.startLoadingURIString(tab.linkedBrowser, BENIGN_PAGE);
-  await loadedPromise;
-
-  info("Navigate back to the tracking page");
-  blockingPromise = waitForContentBlockingEvent();
-  loadedPromise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
-  BrowserTestUtils.startLoadingURIString(tab.linkedBrowser, TRACKING_PAGE);
-  await loadedPromise;
-  await blockingPromise;
-
-  info("Reload again - infobar should appear because dismissal was reset");
-  loadedPromise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
-  gBrowser.reloadWithFlags(Ci.nsIWebNavigation.LOAD_FLAGS_NONE);
-  await loadedPromise;
-
-  let notification = await TestUtils.waitForCondition(
-    () => getNotification(tab.linkedBrowser),
-    "Waiting for notification after dismissal reset"
-  );
-  ok(notification, "Infobar reappears after address-bar navigation reset");
 
   BrowserTestUtils.removeTab(tab);
 });
@@ -263,15 +227,15 @@ add_task(async function test_button_disables_all_tracker_prefs() {
     set: TRACKER_PREFS.map(([pref]) => [pref, true]),
   });
 
-  let blockingPromise = waitForContentBlockingEvent();
+  let blockingPromise = waitForContentBlockingEvent(pbWindow.gBrowser);
   let tab = await BrowserTestUtils.openNewForegroundTab(
-    gBrowser,
+    pbWindow.gBrowser,
     TRACKING_PAGE
   );
   await blockingPromise;
 
   let loadedPromise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
-  gBrowser.reloadWithFlags(Ci.nsIWebNavigation.LOAD_FLAGS_NONE);
+  pbWindow.gBrowser.reloadWithFlags(Ci.nsIWebNavigation.LOAD_FLAGS_NONE);
   await loadedPromise;
 
   let notification = await TestUtils.waitForCondition(
@@ -298,12 +262,8 @@ add_task(async function test_button_disables_all_tracker_prefs() {
 });
 
 
-add_task(async function test_pref_gating() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["privacy.reducePageProtection.infobar.enabled.pbmode", false]],
-  });
-
-  let blockingPromise = waitForContentBlockingEvent();
+add_task(async function test_no_infobar_in_normal_browsing() {
+  let blockingPromise = waitForContentBlockingEvent(gBrowser);
   let tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
     TRACKING_PAGE
@@ -317,8 +277,117 @@ add_task(async function test_pref_gating() {
   await TestUtils.waitForTick();
 
   let notification = getNotification(tab.linkedBrowser);
+  ok(!notification, "No infobar in a normal browsing window");
+
+  BrowserTestUtils.removeTab(tab);
+});
+
+
+add_task(async function test_pref_gating() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["privacy.reducePageProtection.infobar.enabled.pbmode", false]],
+  });
+
+  let blockingPromise = waitForContentBlockingEvent(pbWindow.gBrowser);
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    pbWindow.gBrowser,
+    TRACKING_PAGE
+  );
+  await blockingPromise;
+
+  let loadedPromise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
+  pbWindow.gBrowser.reloadWithFlags(Ci.nsIWebNavigation.LOAD_FLAGS_NONE);
+  await loadedPromise;
+
+  await TestUtils.waitForTick();
+
+  let notification = getNotification(tab.linkedBrowser);
   ok(!notification, "No infobar when the feature pref is disabled");
 
   BrowserTestUtils.removeTab(tab);
   await SpecialPowers.popPrefEnv();
+});
+
+
+
+add_task(async function test_no_infobar_on_js_reload() {
+  let blockingPromise = waitForContentBlockingEvent(pbWindow.gBrowser);
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    pbWindow.gBrowser,
+    TRACKING_PAGE
+  );
+  await blockingPromise;
+
+  info("Triggering JS navigation to the same URL");
+  let loadedPromise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
+  await SpecialPowers.spawn(tab.linkedBrowser, [], () => {
+    content.location.reload();
+  });
+  await loadedPromise;
+
+  await TestUtils.waitForTick();
+
+  let notification = getNotification(tab.linkedBrowser);
+  ok(!notification, "No infobar after a JS navigation to the same URL");
+
+  BrowserTestUtils.removeTab(tab);
+});
+
+
+add_task(async function test_link_navigation_dismisses_infobar() {
+  let blockingPromise = waitForContentBlockingEvent(pbWindow.gBrowser);
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    pbWindow.gBrowser,
+    TRACKING_PAGE
+  );
+  await blockingPromise;
+
+  let loadedPromise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
+  pbWindow.gBrowser.reloadWithFlags(Ci.nsIWebNavigation.LOAD_FLAGS_NONE);
+  await loadedPromise;
+
+  await TestUtils.waitForCondition(
+    () => getNotification(tab.linkedBrowser),
+    "Waiting for notification to appear"
+  );
+
+  info("Clicking the in-page link to navigate away");
+  loadedPromise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
+  await BrowserTestUtils.synthesizeMouseAtCenter(
+    "#navigate-away",
+    {},
+    tab.linkedBrowser
+  );
+
+  await TestUtils.waitForCondition(
+    () => !getNotification(tab.linkedBrowser),
+    "Waiting for infobar to be dismissed on link click"
+  );
+
+  await loadedPromise;
+  ok(!getNotification(tab.linkedBrowser), "Infobar dismissed after link click");
+
+  BrowserTestUtils.removeTab(tab);
+});
+
+
+
+add_task(async function test_no_infobar_on_meta_refresh() {
+  let blockingPromise = waitForContentBlockingEvent(pbWindow.gBrowser);
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    pbWindow.gBrowser,
+    TRACKING_PAGE_WITH_META_REFRESH
+  );
+  await blockingPromise;
+
+  info("Waiting for meta refresh to reload the page");
+  let loadedPromise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
+  await loadedPromise;
+
+  await TestUtils.waitForTick();
+
+  let notification = getNotification(tab.linkedBrowser);
+  ok(!notification, "No infobar after a meta refresh");
+
+  BrowserTestUtils.removeTab(tab);
 });
