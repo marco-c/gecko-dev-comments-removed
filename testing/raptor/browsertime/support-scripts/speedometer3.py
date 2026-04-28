@@ -108,6 +108,10 @@ class Speedometer3Support(BasePythonSupport):
                 continue
             if self.is_additional_metric(measurement_name):
                 continue
+            
+            
+            if measurement_name.count("/") > 1:
+                continue
             suite["subtests"].append(
                 self._build_subtest(measurement_name, replicates, test)
             )
