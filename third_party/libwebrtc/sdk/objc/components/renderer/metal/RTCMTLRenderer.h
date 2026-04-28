@@ -21,14 +21,16 @@ NS_ASSUME_NONNULL_BEGIN
 
 
 
-@protocol RTCMTLRenderer <NSObject>
+@protocol RTC_OBJC_TYPE
+(RTCMTLRenderer)<NSObject>
 
 
 
 
 
 
-- (void)drawFrame:(RTC_OBJC_TYPE(RTCVideoFrame) *)frame;
+
+- (void)drawFrame : (RTC_OBJC_TYPE(RTCVideoFrame) *)frame;
 
 
 
@@ -49,7 +51,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 
 NS_AVAILABLE(10_11, 9_0)
-@interface RTCMTLRenderer : NSObject <RTCMTLRenderer>
+@interface RTC_OBJC_TYPE (RTCMTLRenderer) : NSObject <RTC_OBJC_TYPE(RTCMTLRenderer)>
 
 
 

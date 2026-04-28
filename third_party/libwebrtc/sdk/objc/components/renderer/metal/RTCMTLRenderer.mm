@@ -136,7 +136,7 @@ static inline void getCubeVertexData(int cropX,
 
 static const NSInteger kMaxInflightBuffers = 1;
 
-@implementation RTCMTLRenderer {
+@implementation RTC_OBJC_TYPE (RTCMTLRenderer) {
   __kindof MTKView *_view;
 
   
