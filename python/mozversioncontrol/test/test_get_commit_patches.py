@@ -51,10 +51,10 @@ def test_get_commit_patches(repo):
 
     
     repo.execute_next_step()
-    nodes.append(vcs.head_ref)
+    nodes.append(vcs.head_rev)
 
     repo.execute_next_step()
-    nodes.append(vcs.head_ref)
+    nodes.append(vcs.head_rev)
 
     patches = vcs.get_commit_patches(nodes)
 

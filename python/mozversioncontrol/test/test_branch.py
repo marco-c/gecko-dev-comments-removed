@@ -2,6 +2,8 @@
 
 
 
+import re
+
 import mozunit
 
 from mozversioncontrol import get_repository_object
@@ -45,11 +47,16 @@ def test_branch(repo):
     repo.execute_next_step()
     assert vcs.branch == "test"
 
-    vcs.update(vcs.head_ref)
+    vcs.update(vcs.head_rev)
     assert vcs.branch is None
 
     vcs.update("test")
     assert vcs.branch == "test"
+
+
+def test_head_rev(repo):
+    vcs = get_repository_object(repo.dir)
+    assert re.fullmatch(r"[0-9a-f]{40}", vcs.head_rev)
 
 
 if __name__ == "__main__":
