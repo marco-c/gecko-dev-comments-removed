@@ -3598,7 +3598,10 @@ void ScriptLoader::TryCacheRequest(ScriptLoadRequest* aRequest) {
   MOZ_ASSERT(mCache);
 
   if (mCache->IsLowMemory()) {
+    
+    
     TRACE_FOR_TEST(aRequest, "memorycache:memorypressure");
+    aRequest->ClearStencil();
     return;
   }
 
