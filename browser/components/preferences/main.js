@@ -1477,6 +1477,9 @@ Preferences.addSetting({
 
 const UpdatesHelpers = {
   get showUpdatesSettings() {
+    
+    
+    
     return AppConstants.MOZ_UPDATER && !gIsPackagedApp;
   },
 
@@ -1589,6 +1592,45 @@ Preferences.addSetting({
   id: "updateApp",
   visible: () => UpdatesHelpers.showUpdatesSettings,
 });
+
+if (AppConstants.MOZ_UPDATER && typeof appUpdater === "undefined") {
+  Services.scriptloader.loadSubScript(
+    "chrome://browser/content/aboutDialog-appUpdater.js",
+    this
+  );
+}
+
+Preferences.addSetting(
+   ({
+    id: "updateState",
+    _panel: "",
+    _options: {},
+    setup(emitChange) {
+      if (gAppUpdater) {
+        gAppUpdater.destroy();
+      }
+      gAppUpdater = new appUpdater({
+        selectPanel:  (panel, options = {}) => {
+          this._panel = panel;
+          this._options = options;
+          emitChange();
+        },
+      });
+      return () => gAppUpdater.destroy();
+    },
+    get() {
+      return this._panel;
+    },
+    getControlConfig(config) {
+      config.controlAttrs = {
+        ".linkURL": this._options.linkURL ?? "",
+        ".updateVersion": this._options.updateVersion ?? "",
+        ".transfer": this._options.transfer ?? "",
+      };
+      return config;
+    },
+  })
+);
 
 Preferences.addSetting({
   id: "updateAppInfo",
@@ -2846,6 +2888,10 @@ SettingGroupManager.registerGroups({
         control: "moz-box-group",
         items: [
           {
+            id: "updateState",
+            control: "update-state",
+          },
+          {
             id: "updateAppInfo",
             control: "update-information",
           },
@@ -3353,27 +3399,6 @@ var gMainPane = {
     setEventListener("manageBrowserLanguagesButton", "command", function () {
       gMainPane.showBrowserLanguagesSubDialog({ search: false });
     });
-    if (AppConstants.MOZ_UPDATER) {
-      
-      setEventListener("checkForUpdatesButton", "command", function () {
-        gAppUpdater.checkForUpdates();
-      });
-      setEventListener("downloadAndInstallButton", "command", function () {
-        gAppUpdater.startDownload();
-      });
-      setEventListener("updateButton", "command", function () {
-        gAppUpdater.buttonRestartAfterDownload();
-      });
-      setEventListener("checkForUpdatesButton2", "command", function () {
-        gAppUpdater.checkForUpdates();
-      });
-      setEventListener("checkForUpdatesButton3", "command", function () {
-        gAppUpdater.checkForUpdates();
-      });
-      setEventListener("checkForUpdatesButton4", "command", function () {
-        gAppUpdater.checkForUpdates();
-      });
-    }
 
     setEventListener("chooseLanguage", "command", gMainPane.showLanguages);
     
@@ -3395,26 +3420,6 @@ var gMainPane = {
     if (!Services.prefs.getBoolPref(fxtranslationsDisabledPrefName, true)) {
       let fxtranslationRow = document.getElementById("fxtranslationsBox");
       fxtranslationRow.hidden = false;
-    }
-
-    
-
-    if (AppConstants.MOZ_UPDATER) {
-      gAppUpdater = new appUpdater();
-
-      if (gIsPackagedApp) {
-        
-        
-        
-        
-        
-        document
-          .getElementById("updatesCategory")
-          .setAttribute("style", "display: none !important");
-        document
-          .getElementById("updateApp")
-          .setAttribute("style", "display: none !important");
-      }
     }
 
     
