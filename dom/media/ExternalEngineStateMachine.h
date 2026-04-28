@@ -353,6 +353,11 @@ class ExternalEngineStateMachine final
   nsTArray<RefPtr<nsIRunnable>> mPendingTasks;
 
   bool mHasFatalError = false;
+
+  
+  
+  
+  bool mIsEngineReady = false;
 };
 
 class ExternalPlaybackEngine {
