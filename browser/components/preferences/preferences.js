@@ -20,7 +20,6 @@
 
 
 
-
 "use strict";
 
 var { AppConstants } = ChromeUtils.importESModule(
@@ -250,6 +249,12 @@ const CONFIG_PANES = Object.freeze({
     l10nId: "pane-general-title",
     groupIds: [],
   },
+  experimental: {
+    l10nId: "settings-pane-labs-header",
+    iconSrc: "chrome://browser/skin/labs-16.svg",
+    groupIds: ["firefoxLabsFeatures"],
+    module: "chrome://browser/content/preferences/config/firefoxLabs.mjs",
+  },
   history: {
     parent: "privacy",
     l10nId: "history-header2",
@@ -413,17 +418,16 @@ function init_all() {
   register_module("panePrivacy", gPrivacyPane);
   register_module("paneContainers", gContainersPane);
 
+  
+  
+  
+  
   if (ExperimentAPI.labsEnabled) {
-    
-    
     document.getElementById("category-experimental").hidden =
       Services.prefs.getBoolPref(
         "browser.preferences.experimental.hidden",
         false
       );
-    register_module("paneExperimental", gExperimentalPane);
-  } else {
-    document.getElementById("category-experimental").hidden = true;
   }
 
   NimbusFeatures.moreFromMozilla.recordExposureEvent({ once: true });
