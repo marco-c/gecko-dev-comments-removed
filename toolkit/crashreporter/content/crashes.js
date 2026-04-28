@@ -60,7 +60,13 @@ function populateReportLists() {
     dateStyle: "short",
   });
   reports.forEach(report =>
-    addReportRow(report.pending, report.id, report.date, dateFormatter)
+    addReportRow(
+      report.pending,
+      report.ignored,
+      report.id,
+      report.date,
+      dateFormatter
+    )
   );
   showAppropriateSections();
 }
@@ -75,7 +81,8 @@ function populateReportLists() {
 
 
 
-function addReportRow(isPending, id, date, dateFormatter) {
+
+function addReportRow(isPending, isIgnored, id, date, dateFormatter) {
   const rowTemplate = document.getElementById("crashReportRow");
   const row = document
     .importNode(rowTemplate.content, true)
@@ -87,6 +94,9 @@ function addReportRow(isPending, id, date, dateFormatter) {
   cells[1].appendChild(document.createTextNode(dateFormatter.format(date)));
 
   if (isPending) {
+    if (isIgnored) {
+      row.classList.add("ignored");
+    }
     const buttonTemplate = document.getElementById("crashSubmitButton");
     const button = document
       .importNode(buttonTemplate.content, true)
@@ -155,7 +165,13 @@ function submitPendingReport(reportId, row, button, buttonText, dateFormatter) {
         const report = CrashReports.getReports().filter(
           report => report.id === remoteCrashID
         );
-        addReportRow(false, remoteCrashID, report.date, dateFormatter);
+        addReportRow(
+          false,
+          report.ignored,
+          remoteCrashID,
+          report.date,
+          dateFormatter
+        );
         showAppropriateSections();
         dispatchCustomEvent("CrashSubmitSucceeded");
       },
