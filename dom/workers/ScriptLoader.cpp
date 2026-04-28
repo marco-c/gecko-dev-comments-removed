@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ScriptLoader.h"
 
 #include <algorithm>
@@ -1264,7 +1262,7 @@ bool WorkerScriptLoader::EvaluateScript(JSContext* aCx,
       requestBaseURI = aRequest->BaseURL();
     }
     MOZ_ASSERT(aRequest->mLoadedScript->IsClassicScript());
-    aRequest->mLoadedScript->SetBaseURL(requestBaseURI);
+    aRequest->SetBaseURL(requestBaseURI);
     classicScript = aRequest->mLoadedScript->AsClassicScript();
   }
 

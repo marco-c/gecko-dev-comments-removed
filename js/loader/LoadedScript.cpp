@@ -39,6 +39,22 @@ size_t ScriptFetchInfo::SizeOfIncludingThis(
          mFetchOptions->SizeOfIncludingThis(aMallocSizeOf);
 }
 
+static bool IsInternalURIScheme(nsIURI* uri) {
+  return uri->SchemeIs("moz-extension") || uri->SchemeIs("resource") ||
+         uri->SchemeIs("moz-src") || uri->SchemeIs("chrome");
+}
+
+void ScriptFetchInfo::SetBaseURLFromChannelAndOriginalURI(
+    nsIChannel* aChannel, nsIURI* aOriginalURI) {
+  
+  
+  if (aOriginalURI && IsInternalURIScheme(aOriginalURI)) {
+    mBaseURL = aOriginalURI;
+  } else {
+    aChannel->GetURI(getter_AddRefs(mBaseURL));
+  }
+}
+
 
 
 
@@ -284,11 +300,6 @@ nsresult LoadedScript::GetScriptSource(JSContext* aCx,
   return NS_OK;
 }
 
-static bool IsInternalURIScheme(nsIURI* uri) {
-  return uri->SchemeIs("moz-extension") || uri->SchemeIs("resource") ||
-         uri->SchemeIs("moz-src") || uri->SchemeIs("chrome");
-}
-
 void LoadedScript::SetBaseURLFromChannelAndOriginalURI(nsIChannel* aChannel,
                                                        nsIURI* aOriginalURI) {
   
@@ -362,6 +373,9 @@ EventScript::EventScript(mozilla::dom::ReferrerPolicy aReferrerPolicy,
   
   
   SetBaseURL(aURI);
+  
+  
+  
 }
 
 
