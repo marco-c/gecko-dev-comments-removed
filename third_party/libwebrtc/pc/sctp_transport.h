@@ -67,7 +67,7 @@ class SctpTransport : public SctpTransportInterface,
   void Clear();
   
   
-  void Start(const SctpOptions& options);
+  bool Start(const SctpOptions& options);
 
   
   
