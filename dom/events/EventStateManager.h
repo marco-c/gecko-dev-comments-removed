@@ -507,9 +507,10 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
 
 
 
+
   MOZ_CAN_RUN_SCRIPT
   nsresult HandleMiddleClickPaste(PresShell* aPresShell,
-                                  WidgetMouseEvent* aMouseEvent,
+                                  WidgetMouseEvent* aMouseOrPointerEvent,
                                   nsEventStatus* aStatus,
                                   EditorBase* aEditorBase);
 
