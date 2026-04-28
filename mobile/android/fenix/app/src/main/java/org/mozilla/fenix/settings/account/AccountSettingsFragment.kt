@@ -171,7 +171,7 @@ class AccountSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFr
     override fun onDisplayPreferenceDialog(preference: Preference) {
         val handled = showCustomEditTextPreferenceDialog(
             preference = preference,
-            errorMessage = { R.string.empty_device_name_error },
+            errorMessage = { value -> R.string.empty_device_name_error.takeIf { value.isBlank() } },
         )
 
         if (!handled) {
@@ -322,9 +322,8 @@ class AccountSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFr
      * preference and false indicates not synced.
      */
     private fun updateSyncEngineState(engine: SyncEngine, newValue: Boolean) {
-        SyncEnginesStorage(requireContext()).setStatus(engine, newValue)
         viewLifecycleOwner.lifecycleScope.launch {
-            requireContext().components.backgroundServices.accountManager.syncNow(SyncReason.EngineChange)
+            requireContext().components.backgroundServices.accountManager.setEngineEnabled(engine, newValue)
         }
     }
 
