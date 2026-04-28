@@ -354,13 +354,6 @@ class BaseChannel : public ChannelInterface,
 
   
   flat_set<uint8_t> payload_types_ RTC_GUARDED_BY(network_thread());
-  
-  RtpHeaderExtensions rtp_header_extensions_ RTC_GUARDED_BY(worker_thread());
-
-  
-  
-  RtpHeaderExtensions historical_rtp_header_extensions_
-      RTC_GUARDED_BY(worker_thread());
 
   const std::string mid_;
   flat_set<uint32_t> ssrcs_ RTC_GUARDED_BY(network_thread());

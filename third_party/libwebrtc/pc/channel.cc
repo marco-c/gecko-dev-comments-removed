@@ -11,7 +11,6 @@
 #include "pc/channel.h"
 
 #include <algorithm>
-#include <bitset>
 #include <cstdint>
 #include <memory>
 #include <optional>
@@ -20,6 +19,7 @@
 #include <vector>
 
 #include "absl/algorithm/container.h"
+#include "absl/cleanup/cleanup.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/strings/string_view.h"
 #include "api/crypto/crypto_options.h"
@@ -267,23 +267,6 @@ bool BaseChannel::SetRtpTransport(RtpTransportInternal* rtp_transport) {
 
   if (rtp_transport_) {
     DisconnectFromRtpTransport_n();
-    
-    
-    
-    
-    
-    
-    
-    
-    if (worker_thread_ == network_thread_) {
-      RTC_DCHECK_RUN_ON(worker_thread());
-      rtp_header_extensions_.clear();
-    } else {
-      worker_thread_->PostTask(SafeTask(alive_, [this] {
-        RTC_DCHECK_RUN_ON(worker_thread());
-        rtp_header_extensions_.clear();
-      }));
-    }
   }
 
   RTC_DCHECK(!rtp_transport_);
@@ -578,50 +561,27 @@ RTCError BaseChannel::MaybeUpdateDemuxerAndRtpExtensions_w(
     std::optional<flat_set<uint8_t>> payload_types,
     const RtpHeaderExtensions& extensions,
     std::optional<flat_set<uint32_t>> ssrcs) {
-  bool update_extensions = true;
-  if (rtp_header_extensions_ == extensions) {
-    update_extensions = false;  
-  } else {
-    RTCError error = CheckRtpExtensionValidity(extensions);
-    if (!error.ok()) {
-      return error;
-    }
-    rtp_header_extensions_ = extensions;
-
-    for (const auto& extension : extensions) {
-      if (extension.id == 0)
-        continue;
-      if (absl::c_find_if(historical_rtp_header_extensions_,
-                          [&](const RtpExtension& ext) {
-                            return ext.id == extension.id;
-                          }) == historical_rtp_header_extensions_.end()) {
-        historical_rtp_header_extensions_.push_back(extension);
-      }
-    }
-  }
-
-  if (!update_demuxer && !update_extensions && !payload_types.has_value() &&
-      !ssrcs.has_value()) {
-    return RTCError::OK();  
-  }
-
-  
-
-  if (update_demuxer || payload_types.has_value() || ssrcs.has_value()) {
+  const bool pending_update =
+      update_demuxer || payload_types.has_value() || ssrcs.has_value();
+  if (pending_update) {
     media_receive_channel()->OnDemuxerCriteriaUpdatePending();
   }
+  absl::Cleanup cleanup = [this, pending_update] {
+    if (pending_update) {
+      media_receive_channel()->OnDemuxerCriteriaUpdateComplete();
+    }
+  };
 
+  
   RTCError error = network_thread()->BlockingCall([&]() -> RTCError {
     RTC_DCHECK_RUN_ON(network_thread());
-    if (!rtp_transport_) {
-      
-      
-      return LOG_ERROR(RTCError::InvalidState()
-                       << "No transport assigned for mid=" << mid());
-    }
-
-    if (update_extensions) {
-      rtp_transport_->RegisterRtpHeaderExtensionMap(mid(), extensions);
+    RTCError error =
+        rtp_transport_
+            ? rtp_transport_->RegisterRtpHeaderExtensionMap(mid(), extensions)
+            : (RTCError::InvalidState() << "No transport assigned.");
+    if (!error.ok()) {
+      error.string_builder() << " (mid=" << mid() << ")";
+      return LOG_ERROR(error);
     }
 
     if (payload_types) {
@@ -650,9 +610,6 @@ RTCError BaseChannel::MaybeUpdateDemuxerAndRtpExtensions_w(
     return RTCError::OK();
   });
 
-  if (update_demuxer || payload_types.has_value() || ssrcs.has_value())
-    media_receive_channel()->OnDemuxerCriteriaUpdateComplete();
-
   return error;
 }
 
@@ -660,6 +617,9 @@ bool BaseChannel::RegisterRtpDemuxerSink_w(
     bool clear_payload_types,
     std::optional<flat_set<uint32_t>> ssrcs) {
   media_receive_channel()->OnDemuxerCriteriaUpdatePending();
+  absl::Cleanup cleanup = [this] {
+    media_receive_channel()->OnDemuxerCriteriaUpdateComplete();
+  };
   bool ret = network_thread_->BlockingCall([&] {
     RTC_DCHECK_RUN_ON(network_thread());
     if (!rtp_transport_) {
@@ -693,8 +653,6 @@ bool BaseChannel::RegisterRtpDemuxerSink_w(
     RtpDemuxerCriteria criteria = demuxer_criteria();
     return rtp_transport_->RegisterRtpDemuxerSink(criteria, this);
   });
-
-  media_receive_channel()->OnDemuxerCriteriaUpdateComplete();
 
   return ret;
 }
@@ -928,41 +886,24 @@ RtpHeaderExtensions BaseChannel::GetDeduplicatedRtpHeaderExtensions(
                                                    extensions_filter_);
 }
 
+
+
+
+
+
+
 RTCError BaseChannel::CheckRtpExtensionValidity(
     const RtpHeaderExtensions& extensions) const {
-  std::bitset<1 + RtpExtension::kMaxId> id_used;
-  for (const auto& extension : extensions) {
-    if (extension.id == 0)
-      continue;
-    if (extension.id < RtpExtension::kMinId ||
-        extension.id > RtpExtension::kMaxId) {
-      return RTCError::InvalidParameter()
-             << "Bad RTP extension ID: " << extension.ToString();
+  return network_thread()->BlockingCall([&]() -> RTCError {
+    RTC_DCHECK_RUN_ON(network_thread());
+    RTCError error =
+        rtp_transport_ ? rtp_transport_->VerifyRtpHeaderExtensionMap(extensions)
+                       : (RTCError::InvalidState() << "No transport assigned.");
+    if (!error.ok()) {
+      error.string_builder() << " (mid=" << mid() << ")";
     }
-    if (id_used[extension.id]) {
-      return RTCError::InvalidParameter()
-             << "Duplicate RTP extension ID: " << extension.ToString();
-    }
-    id_used[extension.id] = true;
-  }
-
-  for (const auto& new_extension : extensions) {
-    if (new_extension.id == 0)
-      continue;
-    auto it = absl::c_find_if(
-        historical_rtp_header_extensions_,
-        [&](const RtpExtension& ext) { return ext.id == new_extension.id; });
-    if (it != historical_rtp_header_extensions_.end() &&
-        it->uri != new_extension.uri) {
-      return RTCError::InvalidParameter()
-             << "Failed to update RTP header extensions for m-section with "
-             << "mid='" << mid() << "'. RTP extension ID reassignment from "
-             << it->uri << " to " << new_extension.uri << " for ID "
-             << new_extension.id << ".";
-    }
-  }
-
-  return RTCError::OK();
+    return error;
+  });
 }
 
 void BaseChannel::SignalSentPacket_n(const SentPacketInfo& sent_packet) {
@@ -1186,8 +1127,6 @@ RTCError VideoChannel::SetLocalContent_w(const MediaContentDescription* content,
                                          SdpType type) {
   TRACE_EVENT0("webrtc", "VideoChannel::SetLocalContent_w");
 
-  RTC_LOG_THREAD_BLOCK_COUNT();
-
   RtpHeaderExtensions header_extensions =
       GetDeduplicatedRtpHeaderExtensions(content->rtp_header_extensions());
 
@@ -1195,6 +1134,8 @@ RTCError VideoChannel::SetLocalContent_w(const MediaContentDescription* content,
   if (!error.ok()) {
     return error;
   }
+
+  RTC_LOG_THREAD_BLOCK_COUNT();
 
   
   media_send_channel()->SetExtmapAllowMixed(content->extmap_allow_mixed());
@@ -1256,9 +1197,13 @@ RTCError VideoChannel::SetLocalContent_w(const MediaContentDescription* content,
 
   RTC_DCHECK_BLOCK_COUNT_NO_MORE_THAN(0);
 
-  return MaybeUpdateDemuxerAndRtpExtensions_w(
+  error = MaybeUpdateDemuxerAndRtpExtensions_w(
       false, std::move(payload_types),
       recv_params.extensions, std::nullopt);
+
+  RTC_DCHECK_BLOCK_COUNT_NO_MORE_THAN(1);
+
+  return error;
 }
 
 RTCError VideoChannel::SetRemoteContent_w(
