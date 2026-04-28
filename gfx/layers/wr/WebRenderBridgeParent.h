@@ -64,6 +64,9 @@ class WebRenderBridgeParent final : public PWebRenderBridgeParent,
                                     public CompositableParentManager,
                                     public FrameRecorder {
  public:
+  NS_INLINE_DECL_REFCOUNTING_INHERITED(WebRenderBridgeParent,
+                                       ISurfaceAllocator);
+
   
   WebRenderBridgeParent(CompositorBridgeParent* aCompositorBridge,
                         const wr::PipelineId& aPipelineId,
@@ -321,7 +324,6 @@ class WebRenderBridgeParent final : public PWebRenderBridgeParent,
 
   RefPtr<wr::WebRenderAPI::EndRecordingPromise> EndRecording();
 
-  void DisableNativeCompositor();
   void AddPendingScrollPayload(CompositionPayload& aPayload,
                                const VsyncId& aCompositeStartId);
 
@@ -347,7 +349,7 @@ class WebRenderBridgeParent final : public PWebRenderBridgeParent,
                               const VsyncId& aVsyncId);
 
   bool SetDisplayList(const LayoutDeviceRect& aRect, ipc::ByteBuf&& aDLItems,
-                      ipc::ByteBuf&& aDLCache, ipc::ByteBuf&& aSpatialTreeDL,
+                      ipc::ByteBuf&& aSpatialTreeDL,
                       const wr::BuiltDisplayListDescriptor& aDLDesc,
                       const nsTArray<OpUpdateResource>& aResourceUpdates,
                       const nsTArray<RefCountedShmem>& aSmallShmems,
@@ -537,7 +539,6 @@ class WebRenderBridgeParent final : public PWebRenderBridgeParent,
   bool mLastNotifiedHasLayers = false;
   bool mReceivedDisplayList = false;
   bool mSkippedComposite = false;
-  bool mDisablingNativeCompositor = false;
   
   DataMutex<nsClassHashtable<nsUint64HashKey, nsTArray<CompositionPayload>>>
       mPendingScrollPayloads{"WebRenderBridgeParent::mPendingScrollPayloads"};

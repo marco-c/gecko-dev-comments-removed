@@ -841,6 +841,10 @@ void CompositorBridgeParent::EndWheelTransaction(
     PWebRenderBridgeParent::EndWheelTransactionResolver&& aResolve) {
   if (mApzcTreeManager) {
     mApzcTreeManager->EndWheelTransaction(std::move(aResolve));
+  } else {
+    
+    
+    aResolve(true);
   }
 }
 
@@ -1115,8 +1119,7 @@ PWebRenderBridgeParent* CompositorBridgeParent::AllocPWebRenderBridgeParent(
       });
 
   mWrBridge = new WebRenderBridgeParent(this, aPipelineId, mWidget, mVsyncRate);
-  mWrBridge.get()->AddRef();  
-  {                           
+  {  
     StaticMonitorAutoLock lock(sIndirectLayerTreesLock);
     MOZ_ASSERT(sIndirectLayerTrees[mRootLayerTreeID].mWrBridge == nullptr);
     sIndirectLayerTrees[mRootLayerTreeID].mWrBridge = mWrBridge;
@@ -1135,7 +1138,6 @@ bool CompositorBridgeParent::DeallocPWebRenderBridgeParent(
       it->second.mWebRenderAPI = nullptr;
     }
   }
-  parent->Release();  
   return true;
 }
 
@@ -1776,13 +1778,6 @@ bool CompositorBridgeParent::DeallocPTextureParent(PTextureParent* actor) {
 
 bool CompositorBridgeParent::IsSameProcess() const {
   return OtherPid() == base::GetCurrentProcId();
-}
-
-void CompositorBridgeParent::NotifyWebRenderDisableNativeCompositor() {
-  MOZ_ASSERT(CompositorThread()->IsOnCurrentThread());
-  if (mWrBridge) {
-    mWrBridge->DisableNativeCompositor();
-  }
 }
 
 int32_t RecordContentFrameTime(

@@ -177,7 +177,6 @@ ContentCompositorBridgeParent::AllocPWebRenderBridgeParent(
     nsCString error("NO_PARENT");
     WebRenderBridgeParent* parent =
         WebRenderBridgeParent::CreateDestroyed(aPipelineId, std::move(error));
-    parent->AddRef();  
     return parent;
   }
 
@@ -186,7 +185,6 @@ ContentCompositorBridgeParent::AllocPWebRenderBridgeParent(
   WebRenderBridgeParent* parent = new WebRenderBridgeParent(
       this, aPipelineId, root->CompositorScheduler(), std::move(api),
       std::move(holder), cbp->GetVsyncInterval());
-  parent->AddRef();  
 
   {  
     StaticMonitorAutoLock lock(CompositorBridgeParent::sIndirectLayerTreesLock);
@@ -202,7 +200,6 @@ bool ContentCompositorBridgeParent::DeallocPWebRenderBridgeParent(
     PWebRenderBridgeParent* aActor) {
   WebRenderBridgeParent* parent = static_cast<WebRenderBridgeParent*>(aActor);
   EraseLayerState(wr::AsLayersId(parent->PipelineId()));
-  parent->Release();  
   return true;
 }
 
@@ -414,6 +411,9 @@ void ContentCompositorBridgeParent::EndWheelTransaction(
   const CompositorBridgeParent::LayerTreeState* state =
       CompositorBridgeParent::GetLayerTreeState(aLayersId);
   if (!state || !state->mParent) {
+    
+    
+    aResolve(true);
     return;
   }
 
