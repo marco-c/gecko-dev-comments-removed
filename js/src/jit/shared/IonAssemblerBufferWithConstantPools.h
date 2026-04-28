@@ -802,12 +802,15 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
  public:
   
   
-  BufferOffset nextInstrOffset(int numInsts = 1) {
-    if (!hasSpaceForInsts(numInsts,  0)) {
+  BufferOffset nextInstrOffset(unsigned numInsts, unsigned numNewDeadlines) {
+    if (!hasSpaceForInsts(numInsts,  0, numNewDeadlines)) {
       JitSpew(JitSpew_Pools,
               "nextInstrOffset @ %d caused a constant pool spill",
               this->nextOffset().getOffset());
       finishPool(ShortRangeBranchHysteresis);
+      MOZ_ASSERT_IF(
+          !this->oom(),
+          hasSpaceForInsts(numInsts,  0, numNewDeadlines));
     }
     return this->nextOffset();
   }
