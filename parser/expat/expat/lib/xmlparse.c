@@ -625,6 +625,8 @@ static XML_Char *poolStoreString(STRING_POOL *pool, const ENCODING *enc,
 static XML_Bool FASTCALL poolGrow(STRING_POOL *pool);
 static const XML_Char *FASTCALL poolCopyString(STRING_POOL *pool,
                                                const XML_Char *s);
+static const XML_Char *FASTCALL poolCopyStringNoFinish(STRING_POOL *pool,
+                                                       const XML_Char *s);
 static const XML_Char *poolCopyStringN(STRING_POOL *pool, const XML_Char *s,
                                        int n);
 static const XML_Char *FASTCALL poolAppendString(STRING_POOL *pool,
@@ -5467,6 +5469,15 @@ entityValueProcessor(XML_Parser parser, const char *s, const char *end,
       
       return storeEntityValue(parser, enc, s, end, XML_ACCOUNT_DIRECT, NULL);
     }
+    
+
+
+
+    else if (tok == XML_TOK_INSTANCE_START) {
+      *nextPtr = next;
+      return XML_ERROR_SYNTAX;
+    }
+
     start = next;
   }
 }
@@ -7093,7 +7104,14 @@ storeEntityValue(XML_Parser parser, const ENCODING *enc,
       return XML_ERROR_NO_MEMORY;
   }
 
-  const char *next;
+  const char *next = entityTextPtr;
+
+  
+  if (entityTextPtr >= entityTextEnd) {
+    result = XML_ERROR_NONE;
+    goto endEntityValue;
+  }
+
   for (;;) {
     next
         = entityTextPtr; 
@@ -7743,16 +7761,24 @@ setContext(XML_Parser parser, const XML_Char *context) {
       else {
         if (! poolAppendChar(&parser->m_tempPool, XML_T('\0')))
           return XML_FALSE;
-        prefix
-            = (PREFIX *)lookup(parser, &dtd->prefixes,
-                               poolStart(&parser->m_tempPool), sizeof(PREFIX));
+        const XML_Char *const prefixName = poolCopyStringNoFinish(
+            &dtd->pool, poolStart(&parser->m_tempPool));
+        if (! prefixName) {
+          return XML_FALSE;
+        }
+
+        prefix = (PREFIX *)lookup(parser, &dtd->prefixes, prefixName,
+                                  sizeof(PREFIX));
+
+        const bool prefixNameUsed = prefix && prefix->name == prefixName;
+        if (prefixNameUsed)
+          poolFinish(&dtd->pool);
+        else
+          poolDiscard(&dtd->pool);
+
         if (! prefix)
           return XML_FALSE;
-        if (prefix->name == poolStart(&parser->m_tempPool)) {
-          prefix->name = poolCopyString(&dtd->pool, prefix->name);
-          if (! prefix->name)
-            return XML_FALSE;
-        }
+
         poolDiscard(&parser->m_tempPool);
       }
       for (context = s + 1; *context != CONTEXT_SEP && *context != XML_T('\0');
@@ -8346,6 +8372,23 @@ poolCopyString(STRING_POOL *pool, const XML_Char *s) {
   s = pool->start;
   poolFinish(pool);
   return s;
+}
+
+
+
+static const XML_Char *FASTCALL
+poolCopyStringNoFinish(STRING_POOL *pool, const XML_Char *s) {
+  const XML_Char *const original = s;
+  do {
+    if (! poolAppendChar(pool, *s)) {
+      
+      const ptrdiff_t advancedBy = s - original;
+      if (advancedBy > 0)
+        pool->ptr -= advancedBy;
+      return NULL;
+    }
+  } while (*s++);
+  return pool->start;
 }
 
 static const XML_Char *
