@@ -7,6 +7,7 @@
 
 #include "CertVerifier.h"  
 #include "mozilla/Maybe.h"
+#include "mozilla/Span.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/StaticPtr.h"
@@ -24,7 +25,13 @@
 #include "nsXULAppAPI.h"
 
 class CommonSocketControl;
-struct SslTokensPersistedRecordFfi;
+struct SslTokensPersistedRecord;
+
+namespace mozilla {
+namespace ipc {
+class ByteBuf;
+}
+}  
 
 namespace mozilla {
 namespace net {
@@ -73,6 +80,14 @@ class SSLTokensCache : public nsIMemoryReporter,
       const nsACString& aSite,
       const mozilla::OriginAttributesPattern& aPattern);
 
+  
+  static nsTArray<uint8_t> SerializeForIPC();
+
+  
+  static void DeserializeFromIPC(mozilla::Span<const uint8_t> aData);
+  
+  static void DeserializeFromIPCAsync(mozilla::ipc::ByteBuf&& aBuf);
+
 #ifdef ENABLE_TESTS
   
   static void TriggerWriteForTest(const nsACString& aPath);
@@ -100,34 +115,44 @@ class SSLTokensCache : public nsIMemoryReporter,
   void LogStats();
   
   
+  void ClearCacheLocked();
+  
+  
   static bool ShouldPersistKey(const nsACString& aKey,
                                uint8_t aOverridableError);
 
-  size_t SizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
+  size_t SizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const
+      MOZ_REQUIRES(sLock);
 
   static mozilla::StaticRefPtr<SSLTokensCache> gInstance;
   static StaticMutex sLock MOZ_UNANNOTATED;
-  static uint64_t sRecordId;
+  static uint64_t sRecordId MOZ_GUARDED_BY(sLock);
 
-  uint32_t mCacheSize{0};  
+  uint32_t mCacheSize MOZ_GUARDED_BY(sLock){0};
 
   
-  nsCOMPtr<nsIFile> mBackingFile;
-  nsCOMPtr<nsISerialEventTarget> mWriteTaskQueue;
-  bool mLoadComplete{false};
-  TimeStamp mLoadStartTime;
+  nsCOMPtr<nsIFile> mBackingFile MOZ_GUARDED_BY(sLock);
+  nsCOMPtr<nsISerialEventTarget> mWriteTaskQueue MOZ_GUARDED_BY(sLock);
+  bool mLoadComplete MOZ_GUARDED_BY(sLock){false};
+  TimeStamp mLoadStartTime MOZ_GUARDED_BY(sLock);
   
-  uint32_t mLoadGeneration{0};
+  uint32_t mLoadGeneration MOZ_GUARDED_BY(sLock){0};
   void DoWrite(bool aSynchronous);
   void RemoveShutdownBlocker();
-  nsCOMPtr<nsIAsyncShutdownClient> mShutdownBarrier;
+  nsCOMPtr<nsIAsyncShutdownClient> mShutdownBarrier MOZ_GUARDED_BY(sLock);
   static void OnLoadCompleteNotify(uint32_t aCount);
   
   
   
   
-  static bool PutFromPersisted(const SslTokensPersistedRecordFfi* aFfi,
+  static bool PutFromPersisted(const SslTokensPersistedRecord* aRec,
                                uint32_t aExpectedGen);
+
+  struct LoadCtx {
+    uint32_t loadGen;
+    uint32_t count = 0;
+  };
+  static void LoadCallback(void* aCtx, const SslTokensPersistedRecord* aRec);
   static nsDependentCSubstring BasePartFromKey(const nsACString& aKey);
   static nsDependentCSubstring HostFromBasePart(
       const nsDependentCSubstring& aBasePart);
@@ -152,7 +177,7 @@ class SSLTokensCache : public nsIMemoryReporter,
   static void RemoveMatchingAndSync(Pred&& aPredicate);
   
   static void PutFromPersistedCallback(void*,
-                                       const SslTokensPersistedRecordFfi* aFfi);
+                                       const SslTokensPersistedRecord* aRec);
 
   class TokenCacheRecord {
    public:
@@ -199,8 +224,9 @@ class SSLTokensCache : public nsIMemoryReporter,
   uint64_t InsertRecordLocked(UniquePtr<TokenCacheRecord> aRec,
                               nsTArray<uint64_t>& aEvictedIds);
 
-  nsClassHashtable<nsCStringHashKey, TokenCacheEntry> mTokenCacheRecords;
-  nsTArray<TokenCacheRecord*> mExpirationArray;
+  nsClassHashtable<nsCStringHashKey, TokenCacheEntry> mTokenCacheRecords
+      MOZ_GUARDED_BY(sLock);
+  nsTArray<TokenCacheRecord*> mExpirationArray MOZ_GUARDED_BY(sLock);
 };
 
 }  
