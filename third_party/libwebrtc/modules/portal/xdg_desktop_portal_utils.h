@@ -64,6 +64,11 @@ RTC_EXPORT std::string PrepareSignalHandle(absl::string_view token,
 
 
 
+RTC_EXPORT bool UnsubscribeSignalHandler(GDBusConnection* connection,
+                                         guint& signal_id);
+
+
+
 RTC_EXPORT uint32_t
 SetupRequestResponseSignal(absl::string_view object_path,
                            const GDBusSignalCallback callback,
