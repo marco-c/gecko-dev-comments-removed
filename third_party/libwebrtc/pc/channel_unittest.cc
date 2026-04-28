@@ -63,6 +63,7 @@
 #include "test/create_test_field_trials.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
+#include "test/run_loop.h"
 
 namespace {
 
@@ -1616,9 +1617,7 @@ class ChannelTest : public ::testing::Test {
       thread->ProcessMessages(0);
     }
   }
-  static void FlushCurrentThread() {
-    webrtc::Thread::Current()->ProcessMessages(0);
-  }
+  void FlushCurrentThread() { main_thread_.Flush(); }
   void WaitForThreads(std::span<webrtc::Thread*> threads) {
     
     for (webrtc::Thread* thread : threads) {
@@ -1679,7 +1678,7 @@ class ChannelTest : public ::testing::Test {
         channel2_->media_receive_channel());
   }
 
-  webrtc::AutoThread main_thread_;
+  webrtc::test::RunLoop main_thread_;
   
   
   const bool verify_playout_;
