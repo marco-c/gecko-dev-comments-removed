@@ -55,11 +55,18 @@ ai-window-toggleview-status-label-inactive = Classic Window
 aiwindow-input-cta-submit-label-chat = Ask
 aiwindow-input-cta-submit-label-navigate = Go
 aiwindow-input-cta-submit-label-search = Search
+aiwindow-input-cta-submit-label-stop = Stop
+
+# Text announced to screen readers when response generation starts.
+aiwindow-generation-started-announcement = Response generation started
 
 aiwindow-input-cta-menu-label-chat = Ask
 aiwindow-input-cta-menu-label-navigate = Go to site
 # $searchEngineName (string) - The name of the default search engine
 aiwindow-input-cta-menu-label-search = Search with { $searchEngineName }
+aiwindow-input-cta-menu-label-search-with = Search with…
+
+aiwindow-input-cta-search-submenu-header = Search
 
 ## Smartbar
 
@@ -92,9 +99,9 @@ aiwindow-firstrun-model-title = What’s important to you?
 aiwindow-firstrun-model-subtitle = Pick a model to power Smart Window. Switch anytime.
 aiwindow-firstrun-model-fast-label = Fast
 aiwindow-firstrun-model-fast-body = Answers quickly
-# $modelName (string) - The name of the AI model
+# $model (string) - The name of the AI model
 # $ownerName (string) - The name of the model owner/provider
-aiwindow-firstrun-model-chip-subtitle = Model { $modelName } by { $ownerName }
+aiwindow-firstrun-model-chip-subtitle = Model { $model } by { $ownerName }
 aiwindow-firstrun-model-allpurpose-label = Flexible
 aiwindow-firstrun-model-allpurpose-body = Solid fit for most needs
 aiwindow-firstrun-model-personal-label = Personal
@@ -120,6 +127,12 @@ aiwindow-memories-off =
 aiwindow-new-chat =
     .tooltiptext = New chat
     .aria-label = New chat
+
+## Close Sidebar Button
+
+aiwindow-close-sidebar =
+    .tooltiptext = Close
+    .aria-label = Close
 
 ## Sign out dialog
 
