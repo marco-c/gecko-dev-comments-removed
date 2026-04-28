@@ -400,7 +400,7 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
   
   
   
-  mozilla::Atomic<bool, mozilla::Relaxed> hasMinorSweepDataToMerge;
+  mozilla::Atomic<bool, mozilla::Relaxed> hasSweepDataToMerge;
 
   
   MainThreadOrGCTaskData<State> minorState;
