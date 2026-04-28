@@ -135,8 +135,10 @@ this.sessions = class extends ExtensionAPIPersistent {
       sessions: {
         async getRecentlyClosed(filter) {
           await SessionStore.promiseInitialized;
-          
-          let maxResults = filter.maxResults ?? Infinity;
+          let maxResults =
+            filter.maxResults == undefined
+              ? this.MAX_SESSION_RESULTS
+              : filter.maxResults;
           return getRecentlyClosed(maxResults, extension);
         },
 
