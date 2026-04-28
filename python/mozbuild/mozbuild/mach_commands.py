@@ -123,43 +123,30 @@ The sub-command {subcommand} is not currently configured to be used with ./mach 
 To do so, add the corresponding file in <mozilla-root-dir>/build/cargo, following other examples in this directory"""
 
 
+import msgspec
+
+
+class CargoConfigSchema(msgspec.Struct, kw_only=True, forbid_unknown_fields=True):
+    
+    command: str
+    
+    continue_on_error: bool
+    
+    requires_export: bool
+    
+    
+    
+    cargo_build_flags: list[str]
+    
+    cargo_extra_flags: list[str]
+
+    def __post_init__(self):
+        if not self.command.startswith("cargo-"):
+            raise ValueError(f"command must start with 'cargo-', got {self.command!r}")
+
+
 def _cargo_config_yaml_schema():
-    from voluptuous import All, Boolean, Required, Schema
-
-    def starts_with_cargo(s):
-        if s.startswith("cargo-"):
-            return s
-        else:
-            raise ValueError
-
-    return Schema({
-        
-        
-        Required("command"): All(str, starts_with_cargo),
-        
-        
-        "continue_on_error": Boolean,
-        
-        
-        "requires_export": Boolean,
-        
-        
-        
-        
-        "cargo_build_flags": [str],
-        
-        
-        
-        "cargo_extra_flags": [str],
-        
-        
-        
-        
-        
-        
-        
-        
-    })
+    return CargoConfigSchema
 
 
 @Command(
@@ -232,7 +219,7 @@ def cargo(
         with open(cargo_command_fullname) as fh:
             yaml_config = yaml.load(fh, Loader=yaml.FullLoader)
             schema = _cargo_config_yaml_schema()
-            schema(yaml_config)
+            msgspec.convert(yaml_config, schema)
         if not yaml_config:
             yaml_config = {}
     else:
