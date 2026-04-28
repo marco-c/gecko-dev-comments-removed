@@ -2192,6 +2192,25 @@ class Editor extends EventEmitter {
   
 
 
+
+
+  getTextAfterCursor() {
+    const cm = editors.get(this);
+    if (this.config.cm6) {
+      const pos = cm.state.selection.main.head;
+      const line = cm.state.doc.lineAt(pos);
+      return cm.state.sliceDoc(pos, line.to);
+    }
+    const { ch, line } = cm.getCursor();
+    const lineContent = cm.getLine(line);
+    return lineContent.substring(ch);
+  }
+
+  
+
+
+
+
   getTextBeforeCursor() {
     const cm = editors.get(this);
     if (this.config.cm6) {
@@ -2214,6 +2233,39 @@ class Editor extends EventEmitter {
       return { line: line.number, ch: pos - line.from };
     }
     return cm.getCursor();
+  }
+
+  
+
+
+
+
+
+
+
+  insertStringAtCursor(
+    str,
+    numberOfCharsToReplaceCharsBeforeCursor = 0,
+    origin
+  ) {
+    const cm = editors.get(this);
+    if (this.config.cm6) {
+      const pos = cm.state.selection.main.head;
+      cm.dispatch({
+        changes: {
+          from: pos - numberOfCharsToReplaceCharsBeforeCursor, 
+          to: pos, 
+          insert: str, 
+        },
+      });
+    } else {
+      const cursor = cm.getCursor();
+      const from = {
+        line: cursor.line,
+        ch: cursor.ch - numberOfCharsToReplaceCharsBeforeCursor,
+      };
+      cm.getDoc().replaceRange(str, from, cursor, origin);
+    }
   }
 
   getDoc() {
@@ -3591,8 +3643,8 @@ class Editor extends EventEmitter {
   }
 
   setAutoCompletionText(text) {
-    const cursor = this.getCursor();
     const cm = editors.get(this);
+    const cursor = cm.getCursor();
     const className = AUTOCOMPLETE_MARK_CLASSNAME;
 
     cm.operation(() => {
@@ -3826,24 +3878,44 @@ class Editor extends EventEmitter {
 
 
 
-  async setCursorAt(line, column) {
-    await this.scrollTo(line, column);
+  async setCursorAt(line, column, scroll = true) {
+    if (scroll) {
+      await this.scrollTo(line, column);
+    }
     const cm = editors.get(this);
-    const { lines } = cm.state.doc;
-    if (line > lines) {
-      console.error(
-        `Trying to set the cursor on a non-existing line ${line} > ${lines}`
-      );
-      return null;
+    if (this.config.cm6) {
+      const { lines } = cm.state.doc;
+      if (line > lines) {
+        console.error(
+          `Trying to set the cursor on a non-existing line ${line} > ${lines}`
+        );
+        return null;
+      }
+      const lineInfo = cm.state.doc.line(line);
+      if (column > lineInfo.length) {
+        console.error(
+          `Trying to set the cursor on a non-existing column ${column} > ${lineInfo.length}`
+        );
+        return null;
+      }
+      const position = lineInfo.from + column;
+      return cm.dispatch({ selection: { anchor: position, head: position } });
     }
-    const lineInfo = cm.state.doc.line(line);
-    if (column >= lineInfo.length) {
-      console.error(
-        `Trying to set the cursor on a non-existing column ${column} >= ${lineInfo.length}`
-      );
-      return null;
+    return this.setCursor({ line, ch: column });
+  }
+
+  
+
+
+
+
+
+
+  setCursorAtPosition(position, scroll = true) {
+    const cm = editors.get(this);
+    if (scroll) {
+      cm.scrollToPosition(position);
     }
-    const position = lineInfo.from + column;
     return cm.dispatch({ selection: { anchor: position, head: position } });
   }
 
