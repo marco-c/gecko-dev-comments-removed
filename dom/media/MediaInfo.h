@@ -328,6 +328,7 @@ enum class VideoRotation {
   kDegree_90 = 90,
   kDegree_180 = 180,
   kDegree_270 = 270,
+  
 };
 
 
