@@ -7,7 +7,30 @@
 
 namespace JS::loader {
 
-enum class ScriptKind : uint8_t { eClassic, eModule, eEvent, eImportMap };
+
+
+enum class ScriptKind : uint8_t {
+  
+  eClassic,
+
+  
+  
+  
+  
+  
+  
+  eModule,
+
+  
+  
+  
+  
+  
+  eEvent,
+
+  
+  eImportMap,
+};
 
 }  
 
