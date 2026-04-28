@@ -729,6 +729,9 @@ void StorageDBParent::Init() {
   if (::mozilla::ipc::BackgroundParent::IsOtherProcessActor(actor)) {
     mObserverSink = new ObserverSink(this);
     mObserverSink->Start();
+    
+    
+    mProfilePath.Truncate();
   }
 
   StorageDBThread* storageThread = StorageDBThread::Get(mPrivateBrowsingId);
