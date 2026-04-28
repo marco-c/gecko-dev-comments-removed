@@ -216,6 +216,11 @@ class LoadedScript : public nsIMemoryReporter {
     
     
     
+    eInvalidatedCachedStencil,
+
+    
+    
+    
     
     eWasmBytes,
   };
@@ -237,6 +242,9 @@ class LoadedScript : public nsIMemoryReporter {
     return mDataType == DataType::eSerializedStencil;
   }
   bool IsCachedStencil() const { return mDataType == DataType::eCachedStencil; }
+  bool IsInvalidatedCachedStencil() const {
+    return mDataType == DataType::eInvalidatedCachedStencil;
+  }
   bool IsWasmBytes() const { return mDataType == DataType::eWasmBytes; }
 
   
@@ -266,6 +274,12 @@ class LoadedScript : public nsIMemoryReporter {
     mCachedStencil = aStencil;
     mCachedReferrerPolicy = aReferrerPolicy;
     mCachedBaseURL = aBaseURL;
+  }
+
+  void InvalidateCachedStencil() {
+    MOZ_ASSERT(IsCachedStencil());
+    mDataType = DataType::eInvalidatedCachedStencil;
+    mCachedStencil = nullptr;
   }
 
   void SetWasmBytes() {
