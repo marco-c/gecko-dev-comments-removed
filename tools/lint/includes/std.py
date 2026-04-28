@@ -3,9 +3,6 @@
 
 
 api = {
-    "deque": [
-        "deque",
-    ],
     "chrono": [
         "April",
         "August",
