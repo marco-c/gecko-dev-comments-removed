@@ -390,7 +390,14 @@ struct Pool {
   
   
   
+  
+  
+  
+  
+  
+  
   const size_t maxOffset_;
+
   
   
   const unsigned bias_;
@@ -587,12 +594,6 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
 
   
   
-  
-  
-  const size_t poolMaxOffset_;
-
-  
-  
   static constexpr unsigned PcBias = settings.pcBias;
 
   
@@ -666,7 +667,6 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
  public:
   AssemblerBufferWithConstantPools(size_t poolMaxOffset, unsigned nopFill)
       : poolEntryCount(0),
-        poolMaxOffset_(poolMaxOffset),
         pool_(poolMaxOffset, PcBias, this->lifoAlloc_),
         poolInfo_(this->lifoAlloc_),
         branchDeadlines_(this->lifoAlloc_),
