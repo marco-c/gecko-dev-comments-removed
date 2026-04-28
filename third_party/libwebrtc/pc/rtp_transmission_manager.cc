@@ -284,7 +284,8 @@ RtpTransmissionManager::CreateAndAddTransceiver(
   RTC_DCHECK(!FindSenderById(sender_id));
   std::vector<RtpHeaderExtensionCapability> header_extensions =
       std::move(header_extensions_to_negotiate);
-  if (env_.field_trials().IsEnabled("WebRTC-HeaderExtensionNegotiateMemory")) {
+  if (!env_.field_trials().IsDisabled(
+          "WebRTC-HeaderExtensionNegotiateMemory")) {
     
     
     
