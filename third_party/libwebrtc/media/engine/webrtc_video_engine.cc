@@ -3076,10 +3076,6 @@ void WebRtcVideoReceiveChannel::ConfigureReceiverRtp(
 
   config->rtp.remote_ssrc = ssrc;
 
-  
-  
-  config->rtp.rtcp_mode = rtp_config_.rtcp_mode;
-
   sp.GetFidSsrc(ssrc, &config->rtp.rtx_ssrc);
 
   

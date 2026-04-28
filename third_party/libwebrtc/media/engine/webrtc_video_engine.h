@@ -432,17 +432,12 @@ class WebRtcVideoSendChannel : public MediaChannelUtil,
     const bool disable_automatic_resize_;
   };
 
-  void Construct(Call* call, WebRtcVideoEngine* engine);
-
   
   std::vector<VideoCodecSettings> SelectSendVideoCodecs(
       const std::vector<VideoCodecSettings>& remote_mapped_codecs) const
       RTC_EXCLUSIVE_LOCKS_REQUIRED(thread_checker_);
 
   void FillSenderStats(VideoMediaSendInfo* info, bool log_stats)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(thread_checker_);
-  void FillBandwidthEstimationStats(const Call::Stats& stats,
-                                    VideoMediaInfo* info)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(thread_checker_);
   void FillSendCodecStats(VideoMediaSendInfo* video_media_info)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(thread_checker_);
@@ -471,8 +466,6 @@ class WebRtcVideoSendChannel : public MediaChannelUtil,
   
   std::map<uint32_t, WebRtcVideoSendStream*> send_streams_
       RTC_GUARDED_BY(thread_checker_);
-  std::optional<int64_t> last_unsignalled_ssrc_creation_time_ms_
-      RTC_GUARDED_BY(thread_checker_);
   std::set<uint32_t> send_ssrcs_ RTC_GUARDED_BY(thread_checker_);
 
   std::optional<VideoCodecSettings> send_codec_ RTC_GUARDED_BY(thread_checker_);
@@ -489,19 +482,12 @@ class WebRtcVideoSendChannel : public MediaChannelUtil,
   
   
   BitrateConstraints bitrate_config_ RTC_GUARDED_BY(thread_checker_);
-  
-  
   VideoSenderParameters send_params_ RTC_GUARDED_BY(thread_checker_);
   VideoOptions default_send_options_ RTC_GUARDED_BY(thread_checker_);
   int64_t last_send_stats_log_ms_ RTC_GUARDED_BY(thread_checker_);
   
   
   const CryptoOptions crypto_options_ RTC_GUARDED_BY(thread_checker_);
-
-  
-  
-  
-  VideoReceiveStreamInterface::Config::Rtp rtp_config_;
 
   
   absl::AnyInvocable<void(const std::set<uint32_t>&)>
@@ -784,11 +770,6 @@ class WebRtcVideoReceiveChannel : public MediaChannelUtil,
   
   scoped_refptr<FrameTransformerInterface> unsignaled_frame_transformer_
       RTC_GUARDED_BY(thread_checker_);
-
-  
-  
-  
-  VideoReceiveStreamInterface::Config::Rtp rtp_config_;
 
   const int receive_buffer_size_;
 };
