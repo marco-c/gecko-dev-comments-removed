@@ -3,6 +3,19 @@
 
 
 api = {
+    "iomanip": [
+        "get_money",
+        "get_time",
+        "put_money",
+        "put_time",
+        "quoted",
+        "resetiosflags",
+        "setbase",
+        "setfill",
+        "setiosflags",
+        "setprecision",
+        "setw",
+    ],
     "atomic": [
         "atomic",
         "atomic_bool",
