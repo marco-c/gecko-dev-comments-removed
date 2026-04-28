@@ -26,12 +26,6 @@ class PlainObject : public NativeObject {
  public:
   static const JSClass class_;
 
- private:
-#ifdef DEBUG
-  void assertHasNoNonWritableOrAccessorPropExclProto() const;
-#endif
-
- public:
   static inline js::PlainObject* createWithShape(JSContext* cx,
                                                  JS::Handle<SharedShape*> shape,
                                                  gc::AllocKind kind,
@@ -49,16 +43,6 @@ class PlainObject : public NativeObject {
 
   
   inline gc::AllocKind allocKindForTenure() const;
-
-  bool hasNonWritableOrAccessorPropExclProto() const {
-    if (hasFlag(ObjectFlag::HasNonWritableOrAccessorPropExclProto)) {
-      return true;
-    }
-#ifdef DEBUG
-    assertHasNoNonWritableOrAccessorPropExclProto();
-#endif
-    return false;
-  }
 };
 
 

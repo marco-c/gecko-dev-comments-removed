@@ -2903,6 +2903,32 @@ bool js::NativeDeleteProperty(JSContext* cx, Handle<NativeObject*> obj,
   return SuppressDeletedProperty(cx, obj, id);
 }
 
+#ifdef DEBUG
+void NativeObject::assertHasNoNonWritableOrAccessorPropExclProto() const {
+  
+  
+  static constexpr size_t MaxCount = 8;
+
+  size_t count = 0;
+  PropertyName* protoName = runtimeFromMainThread()->commonNames->proto_;
+
+  for (ShapePropertyIter<NoGC> iter(shape()); !iter.done(); iter++) {
+    
+    if (iter->key().isAtom(protoName)) {
+      continue;
+    }
+
+    MOZ_ASSERT(iter->isDataProperty());
+    MOZ_ASSERT(iter->writable());
+
+    count++;
+    if (count > MaxCount) {
+      return;
+    }
+  }
+}
+#endif
+
 bool js::CopyDataPropertiesNative(JSContext* cx, Handle<PlainObject*> target,
                                   Handle<NativeObject*> from,
                                   Handle<PlainObject*> excludedItems,
@@ -2970,7 +2996,7 @@ bool js::CopyDataPropertiesNative(JSContext* cx, Handle<PlainObject*> target,
       MOZ_ASSERT(!target->containsPure(key),
                  "didn't expect to find an existing property");
 
-      if (!AddDataPropertyToPlainObject(cx, target, key, value)) {
+      if (!AddDataPropertyToNativeObjectNoHooks(cx, target, key, value)) {
         return false;
       }
     } else {

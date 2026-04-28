@@ -5325,8 +5325,12 @@ static SharedShape* GetArrayShapeWithProto(JSContext* cx, HandleObject proto) {
   
   
   Rooted<SharedShape*> shape(
-      cx, SharedShape::getInitialShape(cx, &ArrayObject::class_, cx->realm(),
-                                       TaggedProto(proto),  0));
+      cx, SharedShape::getInitialShape(
+              cx, &ArrayObject::class_, cx->realm(), TaggedProto(proto),
+               0,
+              ObjectFlags({
+                  ObjectFlag::HasNonWritableOrAccessorPropExclProto,
+              })));
   if (!shape) {
     return nullptr;
   }

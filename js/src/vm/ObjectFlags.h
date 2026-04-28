@@ -49,9 +49,6 @@ enum class ObjectFlag : uint32_t {
   
   
   
-  
-  
-  
   HasNonWritableOrAccessorPropExclProto = 1 << 9,
 
   
