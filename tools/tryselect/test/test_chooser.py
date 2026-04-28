@@ -3,6 +3,7 @@
 
 
 import multiprocessing
+import re
 
 import mozunit
 import pytest
@@ -56,7 +57,7 @@ def app(tg, queue):
     ctx.pop()
 
 
-def test_try_chooser(app, queue: multiprocessing.Queue):
+def test_try_chooser_renders_filters(app):
     client = app.test_client()
 
     response = client.get("/")
@@ -75,15 +76,30 @@ def test_try_chooser(app, queue: multiprocessing.Queue):
     
     assert b"console.log" not in response.data
 
-    
+
+def test_try_chooser_artifact_default_unchecked(app):
+    client = app.test_client()
+    response = client.get("/")
+    assert response.status_code == 200
     assert b'name="artifact" checked' not in response.data
     assert b'name="artifact"' in response.data
 
+
+def test_try_chooser_exclude_filter_controls(app):
+    client = app.test_client()
+    response = client.get("/")
+    assert response.status_code == 200
+
     
     
-    assert b'id="exclude-filter"' in response.data
+    
+    
+    
+    assert re.search(
+        rb'<input[^>]*\bid="exclude-filter"[^>]*\boninput="scheduleApplyFilters\(\);"',
+        response.data,
+    )
     assert b'placeholder="Exclude jobs containing' in response.data
-    assert b'oninput="scheduleApplyFilters();"' in response.data
     assert b'aria-label="Exclude jobs containing"' in response.data
     
     assert b'autocomplete="off"' in response.data
@@ -92,10 +108,22 @@ def test_try_chooser(app, queue: multiprocessing.Queue):
         b'<form id="submit-tasks"'
     )
 
+
+def test_try_chooser_selection_list_markup(app):
+    client = app.test_client()
+    response = client.get("/")
+    assert response.status_code == 200
+
     
     assert b'<ul id="selection">' in response.data
     assert b'id="selected-tasks"' in response.data
     assert b'name="selected-tasks"' in response.data
+
+
+def test_try_chooser_large_push_warning_defaults(app):
+    client = app.test_client()
+    response = client.get("/")
+    assert response.status_code == 200
 
     
     
@@ -110,16 +138,25 @@ def test_try_chooser(app, queue: multiprocessing.Queue):
     assert b"const largePushMultiplier = 1;" in response.data
     assert b"const largePushSuppressed = false;" in response.data
 
+
+def test_try_chooser_cancel(app, queue: multiprocessing.Queue):
+    client = app.test_client()
     response = client.post("/", data={"action": "Cancel"})
     assert response.status_code == 200
     assert b"You may now close this page" in response.data
     assert queue.get() == {"tasks": [], "use_artifact": False}
 
+
+def test_try_chooser_push_empty(app, queue: multiprocessing.Queue):
+    client = app.test_client()
     response = client.post("/", data={"action": "Push", "selected-tasks": ""})
     assert response.status_code == 200
     assert b"You may now close this page" in response.data
     assert queue.get() == {"tasks": [], "use_artifact": False}
 
+
+def test_try_chooser_push_selected_tasks(app, queue: multiprocessing.Queue):
+    client = app.test_client()
     response = client.post(
         "/",
         data={
