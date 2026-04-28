@@ -10,8 +10,6 @@
 #define mozilla_ipc_ByteBuf_h
 
 #include "mozilla/Assertions.h"
-#include "mozilla/Span.h"
-#include <string.h>
 
 namespace IPC {
 template <typename T>
@@ -64,16 +62,6 @@ class ByteBuf final {
   size_t mLen;
   size_t mCapacity;
 };
-
-
-
-inline ByteBuf ByteBufFrom(mozilla::Span<const uint8_t> aData) {
-  ByteBuf buf;
-  if (!aData.IsEmpty() && buf.Allocate(aData.Length())) {
-    memcpy(buf.mData, aData.data(), aData.Length());
-  }
-  return buf;
-}
 
 }  
 }  
