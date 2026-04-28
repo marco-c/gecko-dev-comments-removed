@@ -52,6 +52,7 @@
 #include "rtc_base/socket.h"
 #include "rtc_base/strings/string_format.h"
 #include "rtc_base/thread.h"
+#include "rtc_base/thread_annotations.h"
 #include "rtc_base/trace_event.h"
 #include "rtc_base/unique_id_generator.h"
 
@@ -363,9 +364,42 @@ bool BaseChannel::SetPayloadTypeDemuxingEnabled(bool enabled) {
   
   
   
-  RTC_DCHECK_RUN_ON(worker_thread());
+  RTC_DCHECK_RUN_ON(network_thread());
   TRACE_EVENT0("webrtc", "BaseChannel::SetPayloadTypeDemuxingEnabled");
-  return SetPayloadTypeDemuxingEnabled_w(enabled);
+
+  if (enabled == payload_type_demuxing_enabled_) {
+    return true;
+  }
+
+  payload_type_demuxing_enabled_ = enabled;
+
+  if (!enabled) {
+    worker_thread_->PostTask(SafeTask(alive_, [this] {
+      
+      
+      
+      
+      
+      media_receive_channel()->ResetUnsignaledRecvStream();
+    }));
+  }
+
+  
+  
+  
+  
+  auto has_payload_types = [this]() RTC_NO_THREAD_SAFETY_ANALYSIS {
+    return !payload_types_.empty();
+  };
+
+  if (has_payload_types()) {
+    if (!rtp_transport_) {
+      return false;
+    }
+    return rtp_transport_->RegisterRtpDemuxerSink(demuxer_criteria(), this);
+  }
+
+  return true;
 }
 
 bool BaseChannel::IsReadyToSendMedia_w() const {
@@ -705,33 +739,6 @@ void BaseChannel::ChannelNotWritable_n() {
   RTC_LOG(LS_INFO) << "Channel not writable (" << ToString() << ")";
 }
 
-bool BaseChannel::SetPayloadTypeDemuxingEnabled_w(bool enabled) {
-  RTC_LOG_THREAD_BLOCK_COUNT();
-
-  if (enabled == payload_type_demuxing_enabled_) {
-    return true;
-  }
-
-  payload_type_demuxing_enabled_ = enabled;
-
-  if (!enabled) {
-    
-    
-    
-    
-    
-    media_receive_channel()->ResetUnsignaledRecvStream();
-    if (!payload_types_.empty()) {
-      return RegisterRtpDemuxerSink_w();
-    }
-  } else if (!payload_types_.empty()) {
-    return RegisterRtpDemuxerSink_w();
-  }
-
-  RTC_DCHECK_BLOCK_COUNT_NO_MORE_THAN(0);
-
-  return true;
-}
 
 bool BaseChannel::UpdateLocalStreams_w(const std::vector<StreamParams>& streams,
                                        SdpType type,
@@ -820,8 +827,9 @@ bool BaseChannel::UpdateRemoteStreams_w(const MediaContentDescription* content,
     RTC_DLOG(LS_VERBOSE) << "UpdateRemoteStreams_w: remote side will not send "
                             "- disable payload type demuxing for "
                          << ToString();
-    if (ClearHandledPayloadTypes()) {
-      needs_re_registration = payload_type_demuxing_enabled_;
+    if (!payload_types_.empty()) {
+      payload_types_.clear();
+      needs_re_registration = true;
     }
   }
 
@@ -913,15 +921,7 @@ RtpHeaderExtensions BaseChannel::GetDeduplicatedRtpHeaderExtensions(
 bool BaseChannel::MaybeAddHandledPayloadType(int payload_type) {
   
   
-  bool inserted =
-      payload_types_.insert(static_cast<uint8_t>(payload_type)).second;
-  return inserted && payload_type_demuxing_enabled_;
-}
-
-bool BaseChannel::ClearHandledPayloadTypes() {
-  const bool was_empty = payload_types_.empty();
-  payload_types_.clear();
-  return !was_empty && payload_type_demuxing_enabled_;
+  return payload_types_.insert(static_cast<uint8_t>(payload_type)).second;
 }
 
 bool BaseChannel::CheckRtpExtensionValidity(

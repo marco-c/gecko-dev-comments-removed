@@ -136,7 +136,8 @@ class BaseChannel : public ChannelInterface,
   
   
   
-  bool SetPayloadTypeDemuxingEnabled(bool enabled) override;
+  bool SetPayloadTypeDemuxingEnabled(bool enabled) override
+      RTC_RUN_ON(network_thread());
 
   void Enable(bool enable) override;
 
@@ -249,9 +250,6 @@ class BaseChannel : public ChannelInterface,
   void ChannelWritable_n() RTC_RUN_ON(network_thread());
   void ChannelNotWritable_n() RTC_RUN_ON(network_thread());
 
-  bool SetPayloadTypeDemuxingEnabled_w(bool enabled)
-      RTC_RUN_ON(worker_thread());
-
   
   
   
@@ -285,10 +283,6 @@ class BaseChannel : public ChannelInterface,
   
   
   bool MaybeAddHandledPayloadType(int payload_type) RTC_RUN_ON(worker_thread());
-
-  
-  
-  bool ClearHandledPayloadTypes() RTC_RUN_ON(worker_thread());
 
   
   
@@ -364,7 +358,7 @@ class BaseChannel : public ChannelInterface,
   
   bool enabled_ RTC_GUARDED_BY(worker_thread()) = false;
   bool enabled_s_ RTC_GUARDED_BY(signaling_thread()) = false;
-  bool payload_type_demuxing_enabled_ RTC_GUARDED_BY(worker_thread()) = true;
+  bool payload_type_demuxing_enabled_ RTC_GUARDED_BY(network_thread()) = true;
   std::vector<StreamParams> local_streams_ RTC_GUARDED_BY(worker_thread());
   std::vector<StreamParams> remote_streams_ RTC_GUARDED_BY(worker_thread());
   RtpTransceiverDirection local_content_direction_

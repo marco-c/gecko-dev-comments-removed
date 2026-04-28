@@ -5965,9 +5965,7 @@ bool SdpOfferAnswerHandler::UpdatePayloadTypeDemuxingState(
   
   
   
-  
-  
-  return context_->worker_thread()->BlockingCall([&channels_to_update]() {
+  return context_->network_thread()->BlockingCall([&channels_to_update]() {
     for (const auto& it : channels_to_update) {
       if (!it.second->SetChannelPayloadTypeDemuxingEnabled(it.first)) {
         
