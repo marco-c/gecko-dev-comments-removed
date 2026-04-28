@@ -1096,6 +1096,13 @@ add_task(async function test_dismiss_panel_warning_removes_from_all_windows() {
 
   
   
+  
+  
+  
+  
+  await closePanel(window, false);
+
+  
   const newWin = await BrowserTestUtils.openNewBrowserWindow();
   const contentNewWin = await openPanel(
     { unauthenticated: false, error: "" },
