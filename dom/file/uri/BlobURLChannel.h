@@ -5,8 +5,10 @@
 #ifndef mozilla_dom_BlobURLChannel_h
 #define mozilla_dom_BlobURLChannel_h
 
+#include "mozilla/net/ContentRange.h"
 #include "nsBaseChannel.h"
 #include "nsCOMPtr.h"
+#include "nsContentUtils.h"
 #include "nsIInputStream.h"
 
 class nsIURI;
@@ -29,6 +31,22 @@ class BlobURLChannel final : public nsBaseChannel {
   
   
   
+  nsresult SetRequestContentRangeHeader(const nsACString& aContentRangeHeader);
+  const Maybe<nsContentUtils::ParsedRange>& GetRequestContentRange() {
+    return mRequestContentRange;
+  }
+
+  
+  
+  
+  
+  
+  net::ContentRange* GetResponseContentRange() { return mResponseContentRange; }
+  nsresult SetResponseContentRange(net::ContentRange* aContentRange);
+
+  
+  
+  
   nsresult GetBackingBlob(BlobImpl** aBlobImpl);
   nsresult SetBackingBlob(BlobImpl* aBlobImpl);
 
@@ -41,7 +59,11 @@ class BlobURLChannel final : public nsBaseChannel {
                              nsIChannel** aChannel) override;
 
   bool mContentStreamOpened;
+
+  Maybe<nsContentUtils::ParsedRange> mRequestContentRange;
+
   RefPtr<BlobImpl> mBlobImpl;
+  RefPtr<net::ContentRange> mResponseContentRange;
 };
 
 }  

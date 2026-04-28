@@ -108,21 +108,6 @@ static mozilla::dom::DataInfo* GetDataInfo(const nsACString& aUri,
   return res;
 }
 
-static mozilla::dom::DataInfo* GetDataInfoFromURI(nsIURI* aURI,
-                                                  bool aAlsoIfRevoked = false) {
-  if (!aURI) {
-    return nullptr;
-  }
-
-  nsCString spec;
-  nsresult rv = aURI->GetSpec(spec);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return nullptr;
-  }
-
-  return GetDataInfo(spec, aAlsoIfRevoked);
-}
-
 
 void BroadcastBlobURLRegistration(const nsACString& aURI,
                                   mozilla::dom::BlobImpl* aBlobImpl,
@@ -915,32 +900,6 @@ bool BlobURLProtocolHandler::IsBlobURLBroadcastPrincipal(
 
 }  
 }  
-
-
-
-
-nsresult NS_SetChannelContentRangeForBlobURI(nsIChannel* aChannel, nsIURI* aURI,
-                                             nsACString& aRangeHeader) {
-  MOZ_ASSERT(NS_IsMainThread(),
-             "without locking gDataTable is main-thread only");
-  MOZ_ASSERT(aChannel);
-  MOZ_ASSERT(aURI);
-  mozilla::dom::DataInfo* info =
-      mozilla::dom::GetDataInfoFromURI(aURI, false );
-  if (!info) {
-    return NS_BINDING_FAILED;
-  }
-  mozilla::IgnoredErrorResult result;
-  int64_t size = static_cast<int64_t>(info->mBlobImpl->GetSize(result));
-  if (result.Failed()) {
-    return NS_ERROR_NO_CONTENT;
-  }
-  nsCOMPtr<nsIBaseChannel> baseChan = do_QueryInterface(aChannel);
-  if (!baseChan || !baseChan->SetContentRangeFromHeader(aRangeHeader, size)) {
-    return NS_ERROR_NET_PARTIAL_TRANSFER;
-  }
-  return NS_OK;
-}
 
 namespace mozilla::dom {
 

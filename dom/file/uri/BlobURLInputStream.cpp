@@ -491,20 +491,35 @@ nsresult BlobURLInputStream::StoreBlobImplStream(
   nsAutoString blobContentType;
   nsAutoCString channelContentType;
 
-  
-  
   blobImpl->GetType(blobContentType);
-  const RefPtr<mozilla::net::ContentRange>& contentRange =
-      mChannel->ContentRange();
-  if (contentRange) {
+
+  
+  
+  if (mChannel->GetRequestContentRange()) {
+    
+    
     IgnoredErrorResult result;
+    uint64_t size = blobImpl->GetSize(result);
+    if (NS_WARN_IF(result.Failed())) {
+      return NS_ERROR_NO_CONTENT;
+    }
+    auto contentRange = MakeRefPtr<mozilla::net::ContentRange>(
+        *mChannel->GetRequestContentRange(), size);
+    if (NS_WARN_IF(!contentRange->IsValid())) {
+      return NS_ERROR_NET_PARTIAL_TRANSFER;
+    }
+    MOZ_ALWAYS_SUCCEEDS(mChannel->SetResponseContentRange(contentRange));
+
+    
     uint64_t start = contentRange->Start();
     uint64_t end = contentRange->End();
     RefPtr<BlobImpl> slice =
         blobImpl->CreateSlice(start, end - start + 1, blobContentType, result);
     if (!result.Failed()) {
-      blobImpl = slice;
+      return NS_ERROR_NET_PARTIAL_TRANSFER;
     }
+
+    blobImpl = slice;
   }
 
   mChannel->GetContentType(channelContentType);

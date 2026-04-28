@@ -892,23 +892,24 @@ bool XMLHttpRequestMainThread::BadContentRangeRequested() {
     return false;
   }
   
-  nsCOMPtr<nsIBaseChannel> baseChan = do_QueryInterface(mChannel);
-  if (!baseChan) {
+  RefPtr<BlobURLChannel> blobChan = do_QueryObject(mChannel);
+  if (!blobChan) {
     return false;
   }
   
   
-  return !baseChan->ContentRange() && mAuthorRequestHeaders.Has("range");
+  return !blobChan->GetResponseContentRange() &&
+         mAuthorRequestHeaders.Has("range");
 }
 
 RefPtr<mozilla::net::ContentRange>
 XMLHttpRequestMainThread::GetRequestedContentRange() const {
   MOZ_ASSERT(mChannel);
-  nsCOMPtr<nsIBaseChannel> baseChan = do_QueryInterface(mChannel);
-  if (!baseChan) {
+  RefPtr<BlobURLChannel> blobChan = do_QueryObject(mChannel);
+  if (!blobChan) {
     return nullptr;
   }
-  return baseChan->ContentRange();
+  return blobChan->GetResponseContentRange();
 }
 
 void XMLHttpRequestMainThread::GetContentRangeHeader(nsACString& out) const {
@@ -2765,11 +2766,12 @@ nsresult XMLHttpRequestMainThread::InitiateFetch(
 
   
   
-  if (IsBlobURI(mRequestURL)) {
+  RefPtr<BlobURLChannel> blobChan = do_QueryObject(mChannel);
+  if (blobChan) {
     nsAutoCString range;
     mAuthorRequestHeaders.Get("range", range);
     if (!range.IsVoid()) {
-      rv = NS_SetChannelContentRangeForBlobURI(mChannel, mRequestURL, range);
+      rv = blobChan->SetRequestContentRangeHeader(range);
       if (mFlagSynchronous && NS_FAILED(rv)) {
         
         mState = XMLHttpRequest_Binding::DONE;

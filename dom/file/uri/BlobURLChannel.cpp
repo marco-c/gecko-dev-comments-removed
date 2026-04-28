@@ -32,6 +32,31 @@ BlobURLChannel::BlobURLChannel(nsIURI* aURI, nsILoadInfo* aLoadInfo)
 
 BlobURLChannel::~BlobURLChannel() = default;
 
+nsresult BlobURLChannel::SetRequestContentRangeHeader(
+    const nsACString& aContentRangeHeader) {
+  NS_ENSURE_FALSE(mContentStreamOpened, NS_ERROR_ALREADY_INITIALIZED);
+  NS_ENSURE_FALSE(mRequestContentRange, NS_ERROR_ALREADY_INITIALIZED);
+
+  
+  
+  mRequestContentRange =
+      nsContentUtils::ParseSingleRangeRequest(aContentRangeHeader, true);
+  if (!mRequestContentRange) {
+    
+    
+    return NS_ERROR_NET_PARTIAL_TRANSFER;
+  }
+  return NS_OK;
+}
+
+nsresult BlobURLChannel::SetResponseContentRange(
+    net::ContentRange* aContentRange) {
+  NS_ENSURE_ARG(aContentRange);
+  NS_ENSURE_FALSE(mResponseContentRange, NS_ERROR_ALREADY_INITIALIZED);
+  mResponseContentRange = aContentRange;
+  return NS_OK;
+}
+
 nsresult BlobURLChannel::GetBackingBlob(BlobImpl** aBlobImpl) {
   NS_ENSURE_ARG(aBlobImpl);
   NS_ENSURE_TRUE(mBlobImpl, NS_ERROR_NOT_AVAILABLE);
