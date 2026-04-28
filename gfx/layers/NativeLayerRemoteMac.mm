@@ -76,19 +76,9 @@ void NativeLayerRemoteMac::AttachExternalImage(
   bool changedIsDRM = mIsDRM != isDRM;
   mIsDRM = isDRM;
 
-  bool isHDR = false;
   MacIOSurface* macIOSurface = texture->GetSurface();
-  if (macIOSurface->GetYUVColorSpace() == gfx::YUVColorSpace::BT2020 &&
-      StaticPrefs::gfx_color_management_hdr_video_assume_rec2020_uses_pq()) {
-    
-    isHDR = true;
-  }
-
-  if (macIOSurface->GetColorDepth() == gfx::ColorDepth::COLOR_10) {
-    
-    isHDR = true;
-  }
-  mIsHDR = isHDR && StaticPrefs::gfx_color_management_hdr_video();
+  mIsHDR =
+      macIOSurface->IsHDRSurface() && StaticPrefs::gfx_color_management_hdr();
 
   mDirtyLayerInfo |= changedDisplayRect;
   mSnapshotLayer.mMutatedFrontSurface = true;

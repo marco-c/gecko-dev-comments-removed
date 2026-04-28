@@ -277,6 +277,20 @@ bool Gecko_MediaFeatures_PrefersReducedMotion(const Document* aDocument) {
           RFPTarget::CSSPrefersReducedMotion)) {
     return false;
   }
+
+  
+  if (dom::BrowsingContext* bc = aDocument->GetBrowsingContext()) {
+    auto* top = bc->Top();
+    switch (top->GetPrefersReducedMotionOverride()) {
+      case dom::PrefersReducedMotionOverride::Reduce:
+        return true;
+      case dom::PrefersReducedMotionOverride::No_preference:
+        return false;
+      case dom::PrefersReducedMotionOverride::None:
+        break;
+    }
+  }
+
   return LookAndFeel::GetInt(LookAndFeel::IntID::PrefersReducedMotion, 0) == 1;
 }
 
@@ -354,20 +368,16 @@ StyleDynamicRange Gecko_MediaFeatures_DynamicRange(const Document* aDocument) {
 
 StyleDynamicRange Gecko_MediaFeatures_VideoDynamicRange(
     const Document* aDocument) {
-  if (aDocument->ShouldResistFingerprinting(RFPTarget::CSSVideoDynamicRange) ||
-      !StaticPrefs::layout_css_video_dynamic_range_allows_high()) {
+  if (aDocument->ShouldResistFingerprinting(RFPTarget::CSSVideoDynamicRange)) {
     return StyleDynamicRange::Standard;
   }
-#ifdef MOZ_WAYLAND
   
-  
-  if (StaticPrefs::gfx_wayland_hdr_force_enabled_AtStartup()) {
+  if (StaticPrefs::gfx_color_management_hdr_force_enabled()) {
     return StyleDynamicRange::High;
   }
-  if (!StaticPrefs::gfx_wayland_hdr_AtStartup()) {
+  if (!StaticPrefs::gfx_color_management_hdr()) {
     return StyleDynamicRange::Standard;
   }
-#endif
   
   
   

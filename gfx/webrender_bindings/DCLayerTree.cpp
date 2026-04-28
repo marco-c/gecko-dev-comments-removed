@@ -2304,8 +2304,10 @@ bool DCSurfaceVideo::CalculateSwapChainSize(gfx::Matrix& aTransform) {
                       !contentIsHDR && monitorIsHDR && driverSupportsAutoHDR &&
                       powerIsCharging && !mVpAutoHDRFailed;
 
-  bool useHDR =
-      gfx::gfxVars::WebRenderOverlayHDR() && contentIsHDR && monitorIsHDR;
+  bool useHDR = gfx::gfxVars::WebRenderOverlayHDR() && contentIsHDR;
+  
+  
+  
   
   
   
@@ -2625,7 +2627,7 @@ static Maybe<DXGI_COLOR_SPACE_TYPE> GetSourceDXGIColorSpace(
       return Nothing();
     case gfx::YUVColorSpace::BT2020:
       
-      if (!StaticPrefs::gfx_color_management_hdr_video()) {
+      if (!StaticPrefs::gfx_color_management_hdr()) {
         
         
         switch (aColorRange) {
