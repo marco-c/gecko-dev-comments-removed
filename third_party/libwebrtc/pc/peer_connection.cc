@@ -3181,16 +3181,14 @@ PeerConnection::InitializeRtcpCallback() {
 absl::AnyInvocable<void(const RtpPacketReceived& parsed_packet) const>
 PeerConnection::InitializeUnDemuxablePacketHandler() {
   return [this](const RtpPacketReceived& parsed_packet) {
-    worker_thread()->PostTask(
-        SafeTask(worker_thread_safety_, [this, parsed_packet]() {
-          
-          
-          
-          call_ptr_->Receiver()->DeliverRtpPacket(
-              MediaType::ANY, parsed_packet,
-              
-              [](const RtpPacketReceived& packet) { return false; });
-        }));
+    RTC_DCHECK_RUN_ON(network_thread());
+    
+    
+    
+    call_ptr_->Receiver()->DeliverRtpPacket(
+        MediaType::ANY, parsed_packet,
+        
+        [](const RtpPacketReceived& packet) { return false; });
   };
 }
 
