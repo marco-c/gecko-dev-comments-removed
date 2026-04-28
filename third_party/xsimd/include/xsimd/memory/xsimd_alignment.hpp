@@ -37,6 +37,17 @@ namespace xsimd
 
 
 
+
+
+
+    struct stream_mode
+    {
+    };
+
+    
+
+
+
     template <class A>
     struct allocator_alignment
     {

@@ -12,6 +12,12 @@
 #ifndef XSIMD_HPP
 #define XSIMD_HPP
 
+#if defined(__FAST_MATH__)
+#define XSIMD_NO_DENORMALS
+#define XSIMD_NO_INFINITIES
+#define XSIMD_NO_NANS
+#endif
+
 #if defined(__has_cpp_attribute)
 
 #if __has_cpp_attribute(nodiscard) >= 201603L
@@ -58,6 +64,15 @@
 
 #if defined(XSIMD_NO_SUPPORTED_ARCHITECTURE)
 
+namespace xsimd
+{
+    template <class T, class A = void>
+    class batch
+    {
+        static constexpr bool supported_architecture = sizeof(A*) == 0; 
+        static_assert(supported_architecture, "No SIMD architecture detected, cannot instantiate a batch");
+    };
+}
 #else
 #include "types/xsimd_batch.hpp"
 #include "types/xsimd_batch_constant.hpp"

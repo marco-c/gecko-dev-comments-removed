@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+#ifndef XSIMD_AVX512VNNI_AVX512VBMI2_HPP
+#define XSIMD_AVX512VNNI_AVX512VBMI2_HPP
+
+#include "../types/xsimd_avx512vnni_avx512vbmi2_register.hpp"
+
+#endif
