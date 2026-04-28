@@ -215,58 +215,75 @@ class JSTerm extends Component {
     if (this.node) {
       const onArrowUp = () => {
         let inputUpdated;
-        if (this.autocompletePopup.isOpen) {
-          this.autocompletePopup.selectPreviousItem();
-          return true;
+        
+        if (!Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
+          if (this.autocompletePopup.isOpen) {
+            this.autocompletePopup.selectPreviousItem();
+            return null;
+          }
         }
 
         if (this.props.editorMode === false && this.canCaretGoPrevious()) {
           inputUpdated = this.historyPeruse(HISTORY_BACK);
         }
 
-        return inputUpdated ? true : passToNextHandler();
+        return inputUpdated ? null : passToNextHandler();
       };
 
       const onArrowDown = () => {
         let inputUpdated;
-        if (this.autocompletePopup.isOpen) {
-          this.autocompletePopup.selectNextItem();
-          return true;
+        
+        if (!Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
+          if (this.autocompletePopup.isOpen) {
+            this.autocompletePopup.selectNextItem();
+            return null;
+          }
         }
 
         if (this.props.editorMode === false && this.canCaretGoNext()) {
           inputUpdated = this.historyPeruse(HISTORY_FORWARD);
         }
 
-        return inputUpdated ? true : passToNextHandler();
+        return inputUpdated ? null : passToNextHandler();
       };
 
       const onArrowLeft = () => {
-        if (this.autocompletePopup.isOpen || this.getAutoCompletionText()) {
-          this.clearCompletion();
+        
+        if (!Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
+          if (this.autocompletePopup.isOpen || this.getAutoCompletionText()) {
+            this.clearCompletion();
+          }
+          return passToNextHandler();
         }
-        return passToNextHandler();
+        return null;
       };
 
       const onArrowRight = () => {
         
-        
-        if (this.getAutoCompletionText()) {
-          this.acceptProposedCompletion();
-          return true;
-        }
+        if (!Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
+          
+          
+          if (this.getAutoCompletionText()) {
+            this.acceptProposedCompletion();
+            return null;
+          }
 
-        this.clearCompletion();
-        return passToNextHandler();
+          this.clearCompletion();
+          return passToNextHandler();
+        }
+        return null;
       };
 
       const onCtrlCmdEnter = () => {
-        if (this.hasAutocompletionSuggestion()) {
-          return this.acceptProposedCompletion();
+        
+        if (!Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
+          if (this.hasAutocompletionSuggestion()) {
+            return this.acceptProposedCompletion();
+          }
         }
 
         this._execute();
-        return true;
+        return null;
       };
 
       
@@ -283,20 +300,27 @@ class JSTerm extends Component {
         Enter: () => {
           
 
-          const hasSuggestion = this.hasAutocompletionSuggestion();
-          if (!hasSuggestion && !Debugger.isCompilableUnit(this._getValue())) {
-            
-            return passToNextHandler();
-          }
+          
+          if (!Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
+            const hasSuggestion = this.hasAutocompletionSuggestion();
+            if (
+              !hasSuggestion &&
+              !Debugger.isCompilableUnit(this._getValue())
+            ) {
+              
+              return passToNextHandler();
+            }
 
-          if (hasSuggestion) {
-            this.acceptProposedCompletion();
-            return true;
+            if (hasSuggestion) {
+              return this.acceptProposedCompletion();
+            }
           }
 
           if (!this.props.editorMode) {
             this._execute();
-            return true;
+            return Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)
+              ? true
+              : null;
           }
           return passToNextHandler();
         },
@@ -307,7 +331,7 @@ class JSTerm extends Component {
         [Editor.accel("S")]: () => {
           const value = this._getValue();
           if (!value) {
-            return true;
+            return null;
           }
 
           const date = new Date();
@@ -332,28 +356,31 @@ class JSTerm extends Component {
             return false;
           }
 
-          if (
-            this.props.autocompleteData &&
-            this.props.autocompleteData.getterPath
-          ) {
-            this.props.autocompleteUpdate(
-              true,
+          
+          if (!Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
+            if (
+              this.props.autocompleteData &&
               this.props.autocompleteData.getterPath
-            );
-            return false;
-          }
+            ) {
+              this.props.autocompleteUpdate(
+                true,
+                this.props.autocompleteData.getterPath
+              );
+              return false;
+            }
 
-          const isSomethingSelected = this.editor.isTextSelected();
-          const hasSuggestion = this.hasAutocompletionSuggestion();
+            const isSomethingSelected = this.editor.isTextSelected();
+            const hasSuggestion = this.hasAutocompletionSuggestion();
 
-          if (hasSuggestion && !isSomethingSelected) {
-            this.acceptProposedCompletion();
-            return false;
-          }
+            if (hasSuggestion && !isSomethingSelected) {
+              this.acceptProposedCompletion();
+              return false;
+            }
 
-          if (!isSomethingSelected) {
-            this.editor.insertStringAtCursor("\t", 0, JSTERM_CODEMIRROR_ORIGIN);
-            return false;
+            if (!isSomethingSelected) {
+              this.insertStringAtCursor("\t");
+              return false;
+            }
           }
 
           
@@ -366,9 +393,13 @@ class JSTerm extends Component {
             return false;
           }
 
-          const hasSuggestion = this.hasAutocompletionSuggestion();
-          if (hasSuggestion) {
-            return false;
+          
+          if (!Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
+            const hasSuggestion = this.hasAutocompletionSuggestion();
+
+            if (hasSuggestion) {
+              return false;
+            }
           }
 
           return passToNextHandler();
@@ -394,107 +425,135 @@ class JSTerm extends Component {
 
         "Ctrl-N": () => {
           
-          
-          
-          if (
-            Services.appinfo.OS === "Darwin" &&
-            this.props.editorMode === false &&
-            this.canCaretGoNext() &&
-            this.historyPeruse(HISTORY_FORWARD)
-          ) {
-            return true;
+          if (!Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
+            
+            
+            
+            if (
+              Services.appinfo.OS === "Darwin" &&
+              this.props.editorMode === false &&
+              this.canCaretGoNext() &&
+              this.historyPeruse(HISTORY_FORWARD)
+            ) {
+              return null;
+            }
+
+            this.clearCompletion();
           }
-          this.clearCompletion();
           return passToNextHandler();
         },
 
         "Ctrl-P": () => {
           
-          
-          
-          if (
-            Services.appinfo.OS === "Darwin" &&
-            this.props.editorMode === false &&
-            this.canCaretGoPrevious() &&
-            this.historyPeruse(HISTORY_BACK)
-          ) {
-            return true;
+          if (!Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
+            
+            
+            
+            if (
+              Services.appinfo.OS === "Darwin" &&
+              this.props.editorMode === false &&
+              this.canCaretGoPrevious() &&
+              this.historyPeruse(HISTORY_BACK)
+            ) {
+              return null;
+            }
+
+            this.clearCompletion();
           }
-          this.clearCompletion();
           return passToNextHandler();
         },
 
         PageUp: () => {
-          if (this.autocompletePopup.isOpen) {
-            this.autocompletePopup.selectPreviousPageItem();
-          } else {
-            const { outputScroller } = this.webConsoleUI;
-            const { scrollTop, clientHeight } = outputScroller;
-            outputScroller.scrollTop = Math.max(0, scrollTop - clientHeight);
+          
+          if (!Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
+            if (this.autocompletePopup.isOpen) {
+              this.autocompletePopup.selectPreviousPageItem();
+            } else {
+              const { outputScroller } = this.webConsoleUI;
+              const { scrollTop, clientHeight } = outputScroller;
+              outputScroller.scrollTop = Math.max(0, scrollTop - clientHeight);
+            }
+            return null;
           }
+
           return true;
         },
 
         PageDown: () => {
-          if (this.autocompletePopup.isOpen) {
-            this.autocompletePopup.selectNextPageItem();
-          } else {
-            const { outputScroller } = this.webConsoleUI;
-            const { scrollTop, scrollHeight, clientHeight } = outputScroller;
-            outputScroller.scrollTop = Math.min(
-              scrollHeight,
-              scrollTop + clientHeight
-            );
+          
+          if (!Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
+            if (this.autocompletePopup.isOpen) {
+              this.autocompletePopup.selectNextPageItem();
+            } else {
+              const { outputScroller } = this.webConsoleUI;
+              const { scrollTop, scrollHeight, clientHeight } = outputScroller;
+              outputScroller.scrollTop = Math.min(
+                scrollHeight,
+                scrollTop + clientHeight
+              );
+            }
+            return null;
           }
           return true;
         },
 
         Home: () => {
-          if (this.autocompletePopup.isOpen) {
-            this.autocompletePopup.selectItemAtIndex(0);
-            return true;
+          
+          if (!Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
+            if (this.autocompletePopup.isOpen) {
+              this.autocompletePopup.selectItemAtIndex(0);
+              return null;
+            }
+
+            if (!this._getValue()) {
+              this.webConsoleUI.outputScroller.scrollTop = 0;
+              return null;
+            }
+
+            if (this.getAutoCompletionText()) {
+              this.clearCompletion();
+            }
           }
 
-          if (!this._getValue()) {
-            this.webConsoleUI.outputScroller.scrollTop = 0;
-            return true;
-          }
-
-          if (this.getAutoCompletionText()) {
-            this.clearCompletion();
-          }
           return passToNextHandler();
         },
 
         End: () => {
-          if (this.autocompletePopup.isOpen) {
-            this.autocompletePopup.selectItemAtIndex(
-              this.autocompletePopup.itemCount - 1
-            );
-            return true;
-          }
+          
+          if (!Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
+            if (this.autocompletePopup.isOpen) {
+              this.autocompletePopup.selectItemAtIndex(
+                this.autocompletePopup.itemCount - 1
+              );
+              return null;
+            }
 
-          if (!this._getValue()) {
-            const { outputScroller } = this.webConsoleUI;
-            outputScroller.scrollTop = outputScroller.scrollHeight;
-            return true;
-          }
+            if (!this._getValue()) {
+              const { outputScroller } = this.webConsoleUI;
+              outputScroller.scrollTop = outputScroller.scrollHeight;
+              return null;
+            }
 
-          if (this.getAutoCompletionText()) {
-            this.clearCompletion();
+            if (this.getAutoCompletionText()) {
+              this.clearCompletion();
+            }
           }
 
           return Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)
-            ? true
+            ? null
             : passToNextHandler();
         },
 
         "Ctrl-Space": async () => {
-          if (!this.autocompletePopup.isOpen) {
-            const variables = await this.editor.getExpressionVariables();
-            this.props.autocompleteUpdate(true, null, variables);
-            return true;
+          
+          if (!Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
+            if (!this.autocompletePopup.isOpen) {
+              const variables = await this.editor.getExpressionVariables();
+              this.props.autocompleteUpdate(true, null, variables);
+              return null;
+            }
           }
+
           return passToNextHandler();
         },
 
@@ -635,11 +694,14 @@ class JSTerm extends Component {
       return;
     }
 
-    if (
-      nextProps.autocompleteData !== this.props.autocompleteData &&
-      nextProps.autocompleteData.pendingRequestId === null
-    ) {
-      this.updateAutocompletionPopup(nextProps.autocompleteData);
+    
+    if (!Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
+      if (
+        nextProps.autocompleteData !== this.props.autocompleteData &&
+        nextProps.autocompleteData.pendingRequestId === null
+      ) {
+        this.updateAutocompletionPopup(nextProps.autocompleteData);
+      }
     }
 
     if (nextProps.editorMode !== this.props.editorMode) {
@@ -660,17 +722,23 @@ class JSTerm extends Component {
         this.setEditorWidth(null);
       }
 
-      if (this.autocompletePopup.isOpen) {
-        this.autocompletePopup.hidePopup();
+      
+      if (!Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
+        if (this.autocompletePopup.isOpen) {
+          this.autocompletePopup.hidePopup();
+        }
       }
     }
 
-    if (
-      nextProps.autocompletePopupPosition !==
-        this.props.autocompletePopupPosition &&
-      this.autocompletePopup
-    ) {
-      this.autocompletePopup.position = nextProps.autocompletePopupPosition;
+    
+    if (!Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
+      if (
+        nextProps.autocompletePopupPosition !==
+          this.props.autocompletePopupPosition &&
+        this.autocompletePopup
+      ) {
+        this.autocompletePopup.position = nextProps.autocompletePopupPosition;
+      }
     }
 
     if (
@@ -790,7 +858,6 @@ class JSTerm extends Component {
       if (Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
         this.editor.setText(newValue);
         this.editor.setCursorAt(lines.length, ch);
-        this.editor.setAutoCompletionText();
       } else {
         
         
@@ -815,7 +882,7 @@ class JSTerm extends Component {
 
 
   _getValue() {
-    return this.editor ? this.editor.getText() : "";
+    return this.editor ? this.editor.getText() || "" : "";
   }
 
   
@@ -877,7 +944,7 @@ class JSTerm extends Component {
       ? "column"
       : "ch";
     const isAddedText =
-      from.line === to.line && from[col] <= to[col] && origin === "+input";
+      from.line === to.line && from[col] === to[col] && origin === "+input";
 
     
     
@@ -893,29 +960,31 @@ class JSTerm extends Component {
     
     const addedText = Array.isArray(text) ? text.join("") : text;
 
-    const completionText = this.getAutoCompletionText();
-    const addedCharacterMatchCompletion =
-      isAddedText && completionText.startsWith(addedText);
-
-    const addedCharacterMatchPopupItem =
-      isAddedText &&
-      this.autocompletePopup.items.some(({ preLabel, label }) =>
-        label.startsWith(preLabel + addedText)
-      );
-    const nextSelectedAutocompleteItemIndex =
-      addedCharacterMatchPopupItem &&
-      this.autocompletePopup.items.findIndex(({ preLabel, label }) =>
-        label.startsWith(preLabel + addedText)
-      );
-
-    if (addedCharacterMatchPopupItem) {
-      this.autocompletePopup.selectItemAtIndex(
-        nextSelectedAutocompleteItemIndex,
-        { preventSelectCallback: true }
-      );
-    }
-
+    
     if (!Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
+      const completionText = this.getAutoCompletionText();
+
+      const addedCharacterMatchCompletion =
+        isAddedText && completionText.startsWith(addedText);
+
+      const addedCharacterMatchPopupItem =
+        isAddedText &&
+        this.autocompletePopup.items.some(({ preLabel, label }) =>
+          label.startsWith(preLabel + addedText)
+        );
+      const nextSelectedAutocompleteItemIndex =
+        addedCharacterMatchPopupItem &&
+        this.autocompletePopup.items.findIndex(({ preLabel, label }) =>
+          label.startsWith(preLabel + addedText)
+        );
+
+      if (addedCharacterMatchPopupItem) {
+        this.autocompletePopup.selectItemAtIndex(
+          nextSelectedAutocompleteItemIndex,
+          { preventSelectCallback: true }
+        );
+      }
+
       if (
         !completionText ||
         change.canceled ||
@@ -923,27 +992,27 @@ class JSTerm extends Component {
       ) {
         this.setAutoCompletionText("");
       }
-    }
 
-    if (!addedCharacterMatchCompletion && !addedCharacterMatchPopupItem) {
-      this.autocompletePopup.hidePopup();
-    } else if (
-      !change.canceled &&
-      (completionText ||
-        addedCharacterMatchCompletion ||
-        addedCharacterMatchPopupItem)
-    ) {
-      
-      
-      
-      this.pendingCompletionText = completionText.substring(text.length);
-      
-      
-      this.autocompletePopup.items.forEach(item => {
-        if (item.label.startsWith(item.preLabel + addedText)) {
-          item.preLabel += addedText;
-        }
-      });
+      if (!addedCharacterMatchCompletion && !addedCharacterMatchPopupItem) {
+        this.autocompletePopup.hidePopup();
+      } else if (
+        !change.canceled &&
+        (completionText ||
+          addedCharacterMatchCompletion ||
+          addedCharacterMatchPopupItem)
+      ) {
+        
+        
+        
+        this.pendingCompletionText = completionText.substring(text.length);
+        
+        
+        this.autocompletePopup.items.forEach(item => {
+          if (item.label.startsWith(item.preLabel + addedText)) {
+            item.preLabel += addedText;
+          }
+        });
+      }
     }
   }
 
@@ -954,13 +1023,8 @@ class JSTerm extends Component {
     if (this.editor.isTextSelected()) {
       
       
-      if (Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
-        const range = cm.state.selection.ranges[0];
-        this.editor.setCursorAtPosition(range.head, false);
-      } else {
-        const [{ head }] = cm.listSelections();
-        cm.setCursor(head, { scroll: false });
-      }
+      const [{ head }] = cm.listSelections();
+      cm.setCursor(head, { scroll: false });
     }
   }
 
@@ -994,26 +1058,28 @@ class JSTerm extends Component {
 
     if (this.lastInputValue !== value) {
       
-      
-      const isJsTermChangeOnly = Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)
-        ? false
-        : changes.every(({ origin }) => origin === JSTERM_CODEMIRROR_ORIGIN);
-
-      if (
-        !isJsTermChangeOnly &&
-        (this.props.autocomplete || this.hasAutocompletionSuggestion())
-      ) {
-        const variables = await this.editor.getExpressionVariables();
-
+      if (!Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
         
         
-        if (this.#destroyed) {
-          return;
+        const isJsTermChangeOnly = changes.every(
+          ({ origin }) => origin === JSTERM_CODEMIRROR_ORIGIN
+        );
+
+        if (
+          !isJsTermChangeOnly &&
+          (this.props.autocomplete || this.hasAutocompletionSuggestion())
+        ) {
+          const variables = await this.editor.getExpressionVariables();
+
+          
+          
+          if (this.#destroyed) {
+            return;
+          }
+
+          this.autocompleteUpdate(false, null, variables);
         }
-
-        this.autocompleteUpdate(false, null, variables);
       }
-
       this.lastInputValue = value;
       this.terminalInputChanged(value);
     }
@@ -1306,15 +1372,17 @@ class JSTerm extends Component {
     }
 
     if (completionText) {
-      this.editor.insertStringAtCursor(
+      this.insertStringAtCursor(
         completionText,
-        numberOfCharsToReplaceCharsBeforeCursor,
-        JSTERM_CODEMIRROR_ORIGIN
+        numberOfCharsToReplaceCharsBeforeCursor
       );
 
       if (numberOfCharsToMoveTheCursorForward) {
         const { line, ch } = this.editor.getCursorPos();
-        this.editor.setCursorAt(line, ch + numberOfCharsToMoveTheCursorForward);
+        this.editor.setCursor({
+          line,
+          ch: ch + numberOfCharsToMoveTheCursorForward,
+        });
       }
     }
   }
@@ -1421,6 +1489,29 @@ class JSTerm extends Component {
 
 
 
+
+  insertStringAtCursor(str, numberOfCharsToReplaceCharsBeforeCursor = 0) {
+    if (!this.editor) {
+      return;
+    }
+
+    const cursor = this.editor.getCursorPos();
+    const from = {
+      line: cursor.line,
+      ch: cursor.ch - numberOfCharsToReplaceCharsBeforeCursor,
+    };
+
+    this.editor
+      .getDoc()
+      .replaceRange(str, from, cursor, JSTERM_CODEMIRROR_ORIGIN);
+  }
+
+  
+
+
+
+
+
   setAutoCompletionText(suffix) {
     if (!this.editor) {
       return;
@@ -1468,7 +1559,9 @@ class JSTerm extends Component {
       return false;
     }
 
-    const textAfterCursor = this.editor.getTextAfterCursor();
+    const { ch, line } = this.editor.getCursorPos();
+    const lineContent = this.editor.getLine(line);
+    const textAfterCursor = lineContent.substring(ch);
     return textAfterCursor === "";
   }
 

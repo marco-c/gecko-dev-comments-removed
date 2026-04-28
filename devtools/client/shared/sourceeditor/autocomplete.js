@@ -17,7 +17,7 @@ loader.lazyRequireGetter(
   "CSSCompleter",
   "resource://devtools/client/shared/sourceeditor/css-autocompleter.js"
 );
-const PREF_CMNEXT_ENABLED = "devtools.webconsole.codemirrorNext";
+
 const autocompleteMap = new WeakMap();
 
 
@@ -168,11 +168,8 @@ function autoComplete({ ed, cm }) {
       
       
 
-      const cursorElement = cm.display.cursorDiv.querySelector(
-        Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)
-          ? ".cm-cursor"
-          : ".CodeMirror-cursor"
-      );
+      const cursorElement =
+        cm.display.cursorDiv.querySelector(".CodeMirror-cursor");
       const left = suggestions[0].preLabel.length * cm.defaultCharWidth();
       popup.hidePopup();
       popup.setItems(suggestions);

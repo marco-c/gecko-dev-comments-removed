@@ -217,7 +217,6 @@ class Editor extends EventEmitter {
     EXCEPTION_POSITION_MARKER: "exception-position-marker",
     ACTIVE_SELECTION_MARKER: "active-selection-marker",
     PAUSED_LOCATION_MARKER: "paused-location-marker",
-    AUTOCOMPLETE_CONTENT_MARKER: "autocomplete-content-marker",
     
     EMPTY_LINE_MARKER: "empty-line-marker",
     BLACKBOX_LINE_GUTTER_MARKER: "blackbox-line-gutter-marker",
@@ -892,9 +891,6 @@ class Editor extends EventEmitter {
                 to: lezerUtils.positionToLocation(tr.newDoc, toB),
                 origin: !inserted.length ? "+delete" : "+input",
                 text: inserted.toString(),
-                
-                
-                canceled: false,
               });
             });
             this.#beforeUpdateListener(a);
@@ -1386,12 +1382,6 @@ class Editor extends EventEmitter {
       newMarkerDecorations
     ) {
       const viewport = marker._view.viewport;
-      
-      
-      
-      if (viewport.to > transaction.state.doc.length) {
-        return;
-      }
       const vStartLine = transaction.state.doc.lineAt(viewport.from);
       const vEndLine = transaction.state.doc.lineAt(viewport.to);
 
@@ -1634,9 +1624,6 @@ class Editor extends EventEmitter {
 
   removePositionContentMarker(markerId) {
     const cm = editors.get(this);
-    if (!this.#posContentMarkers.has(markerId)) {
-      return;
-    }
     this.#posContentMarkers.delete(markerId);
     cm.dispatch({
       effects:
@@ -2205,25 +2192,6 @@ class Editor extends EventEmitter {
   
 
 
-
-
-  getTextAfterCursor() {
-    const cm = editors.get(this);
-    if (this.config.cm6) {
-      const pos = cm.state.selection.main.head;
-      const line = cm.state.doc.lineAt(pos);
-      return cm.state.sliceDoc(pos, line.to);
-    }
-    const { ch, line } = cm.getCursor();
-    const lineContent = cm.getLine(line);
-    return lineContent.substring(ch);
-  }
-
-  
-
-
-
-
   getTextBeforeCursor() {
     const cm = editors.get(this);
     if (this.config.cm6) {
@@ -2246,42 +2214,6 @@ class Editor extends EventEmitter {
       return { line: line.number, ch: pos - line.from };
     }
     return cm.getCursor();
-  }
-
-  
-
-
-
-
-
-
-
-  insertStringAtCursor(
-    str,
-    numberOfCharsToReplaceCharsBeforeCursor = 0,
-    origin
-  ) {
-    const cm = editors.get(this);
-    if (this.config.cm6) {
-      const pos = cm.state.selection.main.head;
-      
-      
-      const offset = pos - numberOfCharsToReplaceCharsBeforeCursor;
-      cm.dispatch({
-        changes: {
-          from: offset >= 0 ? offset : 0, 
-          to: pos, 
-          insert: str, 
-        },
-      });
-    } else {
-      const cursor = cm.getCursor();
-      const from = {
-        line: cursor.line,
-        ch: cursor.ch - numberOfCharsToReplaceCharsBeforeCursor,
-      };
-      cm.getDoc().replaceRange(str, from, cursor, origin);
-    }
   }
 
   getDoc() {
@@ -2743,13 +2675,16 @@ class Editor extends EventEmitter {
       const { codemirrorLanguage } = this.#CodeMirror6;
       const cursorLocation = this.getSelectionCursor();
       const line = cm.state.doc.line(cursorLocation.from.line);
+      const tokPos = line.from + cursorLocation.from.ch;
 
       await lezerUtils.walkTree(cm, codemirrorLanguage, {
         filterSet: lezerUtils.nodeTypeSets.variables,
         enterVisitor: node => {
-          variables.push(cm.state.doc.sliceString(node.from, node.to));
+          if (node.from <= tokPos && node.to >= tokPos) {
+            variables.push(cm.state.doc.sliceString(node.from, node.to));
+          }
         },
-        walkFrom: 0,
+        walkFrom: line.from,
         walkTo: line.to,
       });
     } else {
@@ -3220,29 +3155,6 @@ class Editor extends EventEmitter {
   
 
 
-
-
-  getDecorationsForMarker(markerType) {
-    const cm = editors.get(this);
-    const {
-      codemirrorView: { EditorView },
-    } = this.#CodeMirror6;
-    const decorations = [];
-    const decoSets = cm.state.facet(EditorView.decorations);
-    decoSets.forEach(deco => {
-      const decoSet = typeof deco === "function" ? deco(cm) : deco;
-      decoSet.between(0, cm.state.doc.length, (from, to, decoration) => {
-        if (decoration?.markerType === markerType) {
-          decorations.push(decoration);
-        }
-      });
-    });
-    return decorations;
-  }
-
-  
-
-
   removeAllMarkers(gutterName) {
     const cm = editors.get(this);
     cm.clearGutter(gutterName);
@@ -3666,82 +3578,39 @@ class Editor extends EventEmitter {
     }
   }
 
-  
-
-
-
-
   getAutoCompletionText() {
     const cm = editors.get(this);
-    if (this.config.cm6) {
-      const decorations = this.getDecorationsForMarker(
-        this.markerTypes.AUTOCOMPLETE_CONTENT_MARKER
-      );
-      if (!decorations.length) {
-        return "";
-      }
-      
-      
-      const mark = decorations[0].widget.toDOM();
-      return mark.attributes["data-completion"].value || "";
-    }
     const mark = cm
       .getAllMarks()
       .find(m => m.className === AUTOCOMPLETE_MARK_CLASSNAME);
-
     if (!mark) {
       return "";
     }
+
     return mark.attributes["data-completion"] || "";
   }
 
-  
-
-
-
-
-
   setAutoCompletionText(text) {
+    const cursor = this.getCursor();
     const cm = editors.get(this);
     const className = AUTOCOMPLETE_MARK_CLASSNAME;
 
-    if (this.config.cm6) {
-      const pos = cm.state.selection.main.head;
-      const line = cm.state.doc.lineAt(pos);
-      this.removePositionContentMarker(
-        this.markerTypes.AUTOCOMPLETE_CONTENT_MARKER
-      );
+    cm.operation(() => {
+      cm.getAllMarks().forEach(mark => {
+        if (mark.className === className) {
+          mark.clear();
+        }
+      });
+
       if (text) {
-        this.setPositionContentMarker({
-          id: this.markerTypes.AUTOCOMPLETE_CONTENT_MARKER,
-          positions: [{ line: line.number, column: pos - line.from }],
-          createPositionElementNode: () => {
-            const autocompleteMarker = this.#win.document.createElement("span");
-            autocompleteMarker.className = AUTOCOMPLETE_MARK_CLASSNAME;
-            autocompleteMarker.setAttribute("data-completion", text);
-            return autocompleteMarker;
+        cm.markText({ ...cursor, ch: cursor.ch - 1 }, cursor, {
+          className,
+          attributes: {
+            "data-completion": text,
           },
         });
       }
-    } else {
-      const cursor = cm.getCursor();
-      cm.operation(() => {
-        cm.getAllMarks().forEach(mark => {
-          if (mark.className === className) {
-            mark.clear();
-          }
-        });
-
-        if (text) {
-          cm.markText({ ...cursor, ch: cursor.ch - 1 }, cursor, {
-            className,
-            attributes: {
-              "data-completion": text,
-            },
-          });
-        }
-      });
-    }
+    });
   }
 
   
@@ -3957,44 +3826,24 @@ class Editor extends EventEmitter {
 
 
 
-  async setCursorAt(line, column, scroll = true) {
-    if (scroll) {
-      await this.scrollTo(line, column);
-    }
+  async setCursorAt(line, column) {
+    await this.scrollTo(line, column);
     const cm = editors.get(this);
-    if (this.config.cm6) {
-      const { lines } = cm.state.doc;
-      if (line > lines) {
-        console.error(
-          `Trying to set the cursor on a non-existing line ${line} > ${lines}`
-        );
-        return null;
-      }
-      const lineInfo = cm.state.doc.line(line);
-      if (column > lineInfo.length) {
-        console.error(
-          `Trying to set the cursor on a non-existing column ${column} > ${lineInfo.length}`
-        );
-        return null;
-      }
-      const position = lineInfo.from + column;
-      return cm.dispatch({ selection: { anchor: position, head: position } });
+    const { lines } = cm.state.doc;
+    if (line > lines) {
+      console.error(
+        `Trying to set the cursor on a non-existing line ${line} > ${lines}`
+      );
+      return null;
     }
-    return this.setCursor({ line, ch: column });
-  }
-
-  
-
-
-
-
-
-
-  setCursorAtPosition(position, scroll = true) {
-    const cm = editors.get(this);
-    if (scroll) {
-      cm.scrollToPosition(position);
+    const lineInfo = cm.state.doc.line(line);
+    if (column >= lineInfo.length) {
+      console.error(
+        `Trying to set the cursor on a non-existing column ${column} >= ${lineInfo.length}`
+      );
+      return null;
     }
+    const position = lineInfo.from + column;
     return cm.dispatch({ selection: { anchor: position, head: position } });
   }
 

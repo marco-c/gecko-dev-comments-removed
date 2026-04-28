@@ -55,7 +55,7 @@ module.exports = async function () {
       ? null
       : jsterm.autocompletePopup.once("popup-opened");
     const onAutocompleteUpdated = jsterm.once("autocomplete-updated");
-    jsterm.editor.insertStringAtCursor(char, 0, "jsterm");
+    jsterm.insertStringAtCursor(char);
     
     jsterm.props.autocompleteUpdate();
     await onAutocompleteUpdated;
