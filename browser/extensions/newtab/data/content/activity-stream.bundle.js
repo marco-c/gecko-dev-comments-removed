@@ -10579,7 +10579,8 @@ const CLOSE_ICON = "chrome://global/skin/icons/close.svg";
 function SectionFollowButton({
   following,
   onFollowClick,
-  onUnfollowClick
+  onUnfollowClick,
+  title
 }) {
   const [isHovered, setIsHovered] = (0,external_React_namespaceObject.useState)(false);
   const [justFollowed, setJustFollowed] = (0,external_React_namespaceObject.useState)(false);
@@ -10604,6 +10605,12 @@ function SectionFollowButton({
   } else if (following) {
     icon = CHECK_ICON;
   }
+
+  
+  const labelL10nId = following ? "newtab-section-unfollow-button-label" : "newtab-section-follow-button-label";
+  const labelL10nArgs = JSON.stringify({
+    topic: title
+  });
   const handleFollowClick = () => {
     setJustFollowed(true);
     onFollowClick();
@@ -10629,7 +10636,8 @@ function SectionFollowButton({
     type: buttonType,
     iconsrc: icon,
     onClick: following ? onUnfollowClick : handleFollowClick,
-    "data-l10n-id": isHovered ? followButtonL10nId : null
+    "data-l10n-id": isHovered ? followButtonL10nId : labelL10nId,
+    "data-l10n-args": isHovered ? null : labelL10nArgs
   }));
 }
 ;
@@ -11699,7 +11707,8 @@ function CardSection({
   }, title), mayHaveSectionsPersonalization && novaEnabled && followable !== false && external_React_default().createElement(SectionFollowButton, {
     following: following,
     onFollowClick: onFollowClick,
-    onUnfollowClick: onUnfollowClick
+    onUnfollowClick: onUnfollowClick,
+    title: title
   }), subtitle && external_React_default().createElement("p", {
     className: "section-subtitle"
   }, subtitle)), mayHaveSectionsPersonalization && (novaEnabled ? external_React_default().createElement(SectionContextMenu, {
