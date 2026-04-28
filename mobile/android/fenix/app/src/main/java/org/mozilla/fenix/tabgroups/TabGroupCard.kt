@@ -348,6 +348,7 @@ private data class TabGroupCardPreviewState(
                 private = false,
                 icon = null,
                 lastAccess = 0L,
+                isFocused = false,
             )
         }.toMutableList(),
     ),
@@ -428,6 +429,19 @@ private class TabGroupCardPreviewProvider : PreviewParameterProvider<TabGroupCar
                     ),
                 groupSize = 4,
                 interactionState = TabItemInteractionState(isDragged = true),
+            ),
+        ),
+        Pair(
+            "Hovered by item",
+            TabGroupCardPreviewState(
+                selectionState =
+                    TabsTrayItemSelectionState(
+                        isFocused = false,
+                        isSelected = false,
+                        multiSelectEnabled = false,
+                    ),
+                groupSize = 4,
+                interactionState = TabItemInteractionState(isHoveredByItem = true),
             ),
         ),
     )

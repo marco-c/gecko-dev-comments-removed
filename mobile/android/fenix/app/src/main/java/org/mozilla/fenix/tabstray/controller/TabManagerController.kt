@@ -69,7 +69,11 @@ internal const val INACTIVE_TABS_FEATURE_NAME = "Inactive tabs"
 /**
  * Controller for handling any actions in the tab manager.
  */
-interface TabManagerController : SyncedTabsController, InactiveTabsController, TabsTrayFabController {
+interface TabManagerController :
+    SyncedTabsController,
+    InactiveTabsController,
+    TabsTrayFabController,
+    TabInteractionHandler {
 
     /**
      * Set the current visible tab page to the provided [page].
@@ -127,15 +131,6 @@ interface TabManagerController : SyncedTabsController, InactiveTabsController, T
     fun handleShareSelectedTabsClicked()
 
     /**
-     * Moves [tabId] next to before/after [targetId]
-     *
-     * @param tabId The tab to be moved.
-     * @param targetId The id of the tab that the moved tab will be placed next to.
-     * @param placeAfter [Boolean] indicating whether to place the tab before or after the target.
-     */
-    fun handleTabsMove(tabId: String, targetId: String?, placeAfter: Boolean)
-
-    /**
      * Navigate from the Tab Manager to Recently Closed section in the History fragment.
      */
     fun handleNavigateToRecentlyClosed()
@@ -160,11 +155,11 @@ interface TabManagerController : SyncedTabsController, InactiveTabsController, T
     /**
      * Adds the provided tab to the current selection of tabs.
      *
-     * @param item [TabsTrayItem] to be selected.
+     * @param tab [TabsTrayItem.Tab] to be selected.
      * @param source App feature from which the tab was selected.
      */
     fun handleTabSelected(
-        item: TabsTrayItem,
+        tab: TabsTrayItem.Tab,
         source: String?,
     )
 
@@ -403,14 +398,14 @@ class DefaultTabManagerController(
         showUndoSnackbarForTab(isPrivate)
     }
 
-    override fun handleTabsMove(
-        tabId: String,
-        targetId: String?,
-        placeAfter: Boolean,
-    ) {
-        if (targetId != null && tabId != targetId) {
-            tabsUseCases.moveTabs(listOf(tabId), targetId, placeAfter)
+    override fun onMove(sourceKey: String, targetKey: String?, placeAfter: Boolean) {
+        if (targetKey != null && sourceKey != targetKey) {
+            tabsUseCases.moveTabs(listOf(sourceKey), targetKey, placeAfter)
         }
+    }
+
+    override fun onDrop(sourceKey: String, targetKey: String) {
+        // todo bugs 2019823, 2019824, 2019825: Implement on drop
     }
 
     override fun handleNavigateToRecentlyClosed() {
@@ -569,36 +564,36 @@ class DefaultTabManagerController(
             !tab.private && tabsTrayStore.state.mode.selectedTabs.isEmpty()
         ) {
             Collections.longPress.record(NoExtras())
-            tabsTrayStore.dispatch(TabsTrayAction.AddSelectTabItem(tab))
+            tabsTrayStore.dispatch(TabsTrayAction.AddSelectTab(tab))
             true
         } else {
             false
         }
     }
 
-    override fun handleTabSelected(item: TabsTrayItem, source: String?) {
+    override fun handleTabSelected(tab: TabsTrayItem.Tab, source: String?) {
         val selected = tabsTrayStore.state.mode.selectedTabs
         when {
-            item is TabsTrayItem.Tab && selected.isEmpty() && tabsTrayStore.state.mode.isSelect().not() -> {
+            selected.isEmpty() && tabsTrayStore.state.mode.isSelect().not() -> {
                 TabsTray.openedExistingTab.record(TabsTray.OpenedExistingTabExtra(source ?: "unknown"))
-                tabsUseCases.selectTab(item.id)
-                val mode = BrowsingMode.fromBoolean(item.private)
+                tabsUseCases.selectTab(tab.id)
+                val mode = BrowsingMode.fromBoolean(tab.private)
                 browsingModeManager.mode = mode
 
                 handleNavigationRequested()
             }
 
-            item in selected -> {
-                tabsTrayStore.dispatch(TabsTrayAction.RemoveSelectTabItem(item))
+            tab in selected -> {
+                tabsTrayStore.dispatch(TabsTrayAction.RemoveSelectTab(tab))
             }
 
             source != INACTIVE_TABS_FEATURE_NAME -> {
-                tabsTrayStore.dispatch(TabsTrayAction.AddSelectTabItem(item))
+                tabsTrayStore.dispatch(TabsTrayAction.AddSelectTab(tab))
             }
         }
     }
 
-     private fun selectedTabisHome(): Boolean {
+    private fun selectedTabisHome(): Boolean {
         return browserStore.state.selectedTab?.content?.url == ABOUT_HOME_URL
     }
 

@@ -99,7 +99,7 @@ interface TabManagerInteractor :
     /**
      * A new tab has been selected.
      */
-    fun onTabSelected(tab: TabsTrayItem, source: String? = null)
+    fun onTabSelected(tab: TabsTrayItem.Tab, source: String? = null)
 
     /**
      * A tab has been closed.
@@ -133,7 +133,7 @@ class DefaultTabManagerInteractor(
         targetId: String?,
         placeAfter: Boolean,
     ) {
-        controller.handleTabsMove(tabId, targetId, placeAfter)
+        controller.onMove(tabId, targetId, placeAfter)
     }
 
     override fun onForceSelectedTabsAsInactiveClicked() {
@@ -166,7 +166,7 @@ class DefaultTabManagerInteractor(
         controller.handleTabDeletion(tab.id, source)
     }
 
-    override fun onTabSelected(tab: TabsTrayItem, source: String?) {
+    override fun onTabSelected(tab: TabsTrayItem.Tab, source: String?) {
         controller.handleTabSelected(tab, source)
     }
 

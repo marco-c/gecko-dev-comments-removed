@@ -27,12 +27,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
+import org.mozilla.fenix.R
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
+import org.mozilla.fenix.tabstray.controller.NoOpTabInteractionHandler
 import org.mozilla.fenix.tabstray.data.TabGroupTheme
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.tabstray.data.createTab
@@ -44,14 +51,9 @@ import org.mozilla.fenix.tabstray.ui.tabpage.TabLayout
 import org.mozilla.fenix.theme.FirefoxTheme
 import mozilla.components.ui.icons.R as iconsR
 
-// todo-bug 2022914: replace these placeholders when strings are ready
-private const val PLACEHOLDER_SHARE_TAB_GROUP_CONTENT_DESCRIPTION = "Share tab group"
-
 /**
  * Renders an expanded view of a user's tab group.
- * @param group: [TabsTrayItem.TabGroup] item rendered by the card
- * @param focusedTabId: String id of the tab in focus.  This id may correspond to a tab
- * that is not inside the group.
+ * @param group: [TabsTrayItem.TabGroup] item rendered by the card.
  * @param onItemClick Invoked when the user clicks on a [TabsTrayItem] in the group.
  * @param onTabClose Invoked when the user clicks to close a [TabsTrayItem.Tab] in the group.
  * @param onDeleteTabGroup Invoked when the user clicks on delete tab group.
@@ -61,7 +63,6 @@ private const val PLACEHOLDER_SHARE_TAB_GROUP_CONTENT_DESCRIPTION = "Share tab g
 @Composable
 fun ExpandedTabGroup(
     group: TabsTrayItem.TabGroup,
-    focusedTabId: String?,
     onItemClick: (TabsTrayItem) -> Unit,
     onTabClose: (TabsTrayItem.Tab) -> Unit,
     onDeleteTabGroup: () -> Unit,
@@ -80,6 +81,7 @@ fun ExpandedTabGroup(
         ViewTabGroupHeader(
             title = group.title,
             groupTheme = group.theme,
+            groupTabsSize = group.tabs.size,
             onDeleteTabGroup = onDeleteTabGroup,
             editTabGroupClick = editTabGroupClick,
         )
@@ -87,13 +89,14 @@ fun ExpandedTabGroup(
         TabLayout(
             tabs = group.tabs.toList(),
             displayTabsInGrid = true,
-            selectedTabId = focusedTabId,
+            dragAndDropEnabled = false,
+            selectedItemIndex = 0, // updating this in Bug 2030474
             selectionMode = TabsTrayState.Mode.Normal,
+            tabInteractionHandler = NoOpTabInteractionHandler, // todo Bug 2032255: Inject interaction handling
             modifier = Modifier,
             onTabClose = onTabClose,
             onItemClick = onItemClick,
             onItemLongClick = { item -> }, // Ignore long click
-            onMove = { _, _, _ -> }, // Ignore moves
             onTabDragStart = { }, // Ignore drags
             onDeleteTabGroup = { }, // Ignore tab group deletes
             editTabGroupClick = { editTabGroupClick() },
@@ -105,6 +108,7 @@ fun ExpandedTabGroup(
 @Composable
 private fun ViewTabGroupHeader(
     title: String,
+    groupTabsSize: Int,
     groupTheme: TabGroupTheme,
     onDeleteTabGroup: () -> Unit,
     editTabGroupClick: () -> Unit,
@@ -119,19 +123,38 @@ private fun ViewTabGroupHeader(
             .wrapContentHeight(),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        TabGroupThemeDot(groupTheme)
-
-        Spacer(modifier = Modifier.width(FirefoxTheme.layout.space.static100))
-
-        Text(
-            text = title,
-            modifier = Modifier
-                .weight(1f),
-            color = MaterialTheme.colorScheme.onSurface,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            style = FirefoxTheme.typography.headline7,
+        val headerContentDescription = pluralStringResource(
+            id = R.plurals.expanded_tab_group_header_description,
+            count = groupTabsSize,
+            title,
+            groupTabsSize,
+            groupTheme.contentLabel,
         )
+
+        Row(
+            modifier = Modifier
+                .weight(1f)
+                .semantics(mergeDescendants = true) {
+                    heading()
+                    contentDescription = headerContentDescription
+                },
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            TabGroupThemeDot(groupTheme)
+
+            Spacer(modifier = Modifier.width(FirefoxTheme.layout.space.static100))
+
+            Text(
+                text = title,
+                modifier = Modifier
+                    .weight(1f)
+                    .clearAndSetSemantics { },
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                style = FirefoxTheme.typography.headline7,
+            )
+        }
 
         Spacer(
             modifier = Modifier.width(
@@ -148,7 +171,12 @@ private fun ViewTabGroupHeader(
         ) {
             Icon(
                 painter = painterResource(id = iconsR.drawable.mozac_ic_share_android_24),
-                contentDescription = PLACEHOLDER_SHARE_TAB_GROUP_CONTENT_DESCRIPTION,
+                contentDescription = pluralStringResource(
+                    id = R.plurals.share_tab_group_button_content_description,
+                    count = groupTabsSize,
+                    title,
+                    groupTabsSize,
+                ),
                 tint = MaterialTheme.colorScheme.onSurface,
             )
         }
@@ -186,7 +214,6 @@ private fun ExpandedTabGroupPreview(
             ) {
                 ExpandedTabGroup(
                     group = previewState.group,
-                    focusedTabId = previewState.selectedTabId,
                     onTabClose = {},
                     onItemClick = {},
                     onDeleteTabGroup = {},
