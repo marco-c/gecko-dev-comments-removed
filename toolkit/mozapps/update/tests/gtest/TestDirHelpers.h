@@ -1,0 +1,13 @@
+
+
+
+
+#ifndef TEST_DIR_HELPERS_H_
+#define TEST_DIR_HELPERS_H_
+
+#include <filesystem>
+
+std::filesystem::path CreateTempDir() noexcept;
+void RemoveDir(const std::filesystem::path& aDir) noexcept;
+
+#endif
