@@ -153,6 +153,8 @@ class CompositorBridgeParentBase : public PCompositorBridgeParent,
   
   virtual void EnsureWebRenderBridgeParentInitialized() = 0;
 
+  bool OwnsExternalImageId(const wr::ExternalImageId& aId) const;
+
  protected:
   virtual ~CompositorBridgeParentBase();
 
@@ -346,8 +348,6 @@ class CompositorBridgeParent final : public CompositorBridgeParentBase,
   bool DeallocPTextureParent(PTextureParent* actor) override;
 
   bool IsSameProcess() const override;
-
-  void NotifyWebRenderDisableNativeCompositor();
 
   void NotifyDidRender(const VsyncId& aCompositeStartId,
                        TimeStamp& aCompositeStart, TimeStamp& aRenderStart,
