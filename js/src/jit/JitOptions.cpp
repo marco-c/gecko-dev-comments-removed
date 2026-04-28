@@ -123,9 +123,6 @@ DefaultJitOptions::DefaultJitOptions() {
   SET_DEFAULT(disableStubFoldingLoadsAndStores, false);
 
   
-  SET_DEFAULT(disableSink, true);
-
-  
   SET_DEFAULT(disableRedundantShapeGuards, false);
 
   
@@ -403,7 +400,6 @@ DefaultJitOptions::DefaultJitOptions() {
   
   
   SET_DEFAULT(correctness_fuzzer_suppressions, false);
-  
   
   SET_DEFAULT(enable_regexp_unaligned_accesses, false);
   
