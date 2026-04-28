@@ -391,6 +391,9 @@ Maybe<nscoord> nsTableRowFrame::GetRowBaseline(WritingMode aWM) {
   }
 
   
+  if (aWM.IsCentralBaseline()) {
+    return Nothing{};
+  }
   nscoord ascent = 0;
   for (nsIFrame* childFrame : mFrames) {
     MOZ_ASSERT(childFrame->IsTableCellFrame());
