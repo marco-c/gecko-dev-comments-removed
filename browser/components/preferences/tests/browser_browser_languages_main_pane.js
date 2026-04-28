@@ -276,3 +276,268 @@ add_task(async function testLanguageChangeLiveReload() {
     BrowserTestUtils.removeTab(gBrowser.selectedTab);
   }
 });
+
+
+
+const { LangPackMatcher } = ChromeUtils.importESModule(
+  "resource://gre/modules/LangPackMatcher.sys.mjs"
+);
+const { sinon } = ChromeUtils.importESModule(
+  "resource://testing-common/Sinon.sys.mjs"
+);
+
+function createRemoteLangpack(locale) {
+  return {
+    target_locale: locale,
+    hash: locale,
+    url: `http://mochi.test:8888/${locale}.xpi`,
+  };
+}
+
+async function waitForRemoteSeparator(win) {
+  let sc = getSettingControl("browserLanguagePreferred", win);
+  if (Array.from(sc.controlEl.children).some(el => el.localName === "hr")) {
+    return;
+  }
+  
+  await waitForSettingControlChange(sc);
+}
+
+
+
+add_task(async function testInstalledLocalesWhileRemotePending() {
+  let sandbox = sinon.createSandbox();
+  let resolveRemote;
+  let remotePromise = new Promise(resolve => {
+    resolveRemote = resolve;
+  });
+  sandbox
+    .stub(LangPackMatcher.mockable, "getAvailableLangpacks")
+    .callsFake(() => remotePromise);
+
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.settings-redesign.enabled", true],
+      ["intl.multilingual.enabled", true],
+      ["intl.multilingual.downloadEnabled", true],
+    ],
+  });
+
+  let doc = await openMainPane();
+  let win = doc.defaultView;
+  await waitForLanguageUI(doc, true);
+
+  let sc = getSettingControl("browserLanguagePreferred", win);
+  let children = Array.from(sc.controlEl.children);
+  ok(
+    children.some(el => el.value === "en-US"),
+    "Installed en-US is shown while remote is pending"
+  );
+  ok(
+    !children.some(el => el.localName === "hr"),
+    "No separator present while remote is pending"
+  );
+
+  
+  resolveRemote(["de"].map(createRemoteLangpack));
+  await waitForRemoteSeparator(win);
+
+  children = Array.from(sc.controlEl.children);
+  let hrIndex = children.findIndex(el => el.localName === "hr");
+  let remoteValues = children.slice(hrIndex + 1).map(el => el.value);
+  Assert.deepEqual(remoteValues, ["de"], "Remote locales appear after resolve");
+
+  sandbox.restore();
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+});
+
+
+
+add_task(async function testRemoteLocalesAppearAfterSeparator() {
+  let sandbox = sinon.createSandbox();
+  sandbox
+    .stub(LangPackMatcher.mockable, "getAvailableLangpacks")
+    .resolves(["de", "fr"].map(createRemoteLangpack));
+
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.settings-redesign.enabled", true],
+      ["intl.multilingual.enabled", true],
+      ["intl.multilingual.downloadEnabled", true],
+    ],
+  });
+
+  let doc = await openMainPane();
+  let win = doc.defaultView;
+  await waitForRemoteSeparator(win);
+
+  let sc = getSettingControl("browserLanguagePreferred", win);
+  let children = Array.from(sc.controlEl.children);
+  let hrIndex = children.findIndex(el => el.localName === "hr");
+
+  Assert.greater(hrIndex, 0, "Separator appears after installed locales");
+
+  let installedValues = children.slice(0, hrIndex).map(el => el.value);
+  let remoteValues = children.slice(hrIndex + 1).map(el => el.value);
+
+  ok(installedValues.includes("en-US"), "en-US is in the installed section");
+  Assert.deepEqual(
+    remoteValues,
+    ["de", "fr"],
+    "Remote locales appear after separator"
+  );
+
+  is(
+    LangPackMatcher.mockable.getAvailableLangpacks.callCount,
+    1,
+    "getAvailableLangpacks was called once to fetch remote locales"
+  );
+
+  
+  
+  Services.prefs.setBoolPref("intl.multilingual.downloadEnabled", false);
+  Services.prefs.setBoolPref("intl.multilingual.downloadEnabled", true);
+
+  
+  await waitForSettingControlChange(sc);
+
+  is(
+    LangPackMatcher.mockable.getAvailableLangpacks.callCount,
+    1,
+    "getAvailableLangpacks was not called again after refresh (cached)"
+  );
+
+  sandbox.restore();
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+});
+
+
+add_task(async function testInstalledLocalesNotDuplicatedInRemoteSection() {
+  let sandbox = sinon.createSandbox();
+  sandbox
+    .stub(LangPackMatcher.mockable, "getAvailableLangpacks")
+    .resolves(["de", "fr"].map(createRemoteLangpack));
+
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.settings-redesign.enabled", true],
+      ["intl.multilingual.enabled", true],
+      ["intl.multilingual.downloadEnabled", true],
+      ["extensions.langpacks.signatures.required", false],
+    ],
+  });
+
+  let addon = await installLangpack("fr");
+  let doc = await openMainPane();
+  let win = doc.defaultView;
+  await waitForRemoteSeparator(win);
+
+  let sc = getSettingControl("browserLanguagePreferred", win);
+  let children = Array.from(sc.controlEl.children);
+  let hrIndex = children.findIndex(el => el.localName === "hr");
+
+  let installedValues = children.slice(0, hrIndex).map(el => el.value);
+  let remoteValues = children.slice(hrIndex + 1).map(el => el.value);
+
+  ok(
+    installedValues.includes("fr"),
+    "Installed fr appears in the installed section"
+  );
+  ok(
+    !remoteValues.includes("fr"),
+    "Installed fr is not duplicated in the remote section"
+  );
+  Assert.deepEqual(
+    remoteValues,
+    ["de"],
+    "Only non-installed de appears in the remote section"
+  );
+
+  await addon.uninstall();
+  sandbox.restore();
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+});
+
+
+
+add_task(
+  async function testSelectingRemoteLocaleInstallsLangpackAndShowsRestart() {
+    let sandbox = sinon.createSandbox();
+    sandbox
+      .stub(LangPackMatcher.mockable, "getAvailableLangpacks")
+      .resolves(["fr"].map(createRemoteLangpack));
+    sandbox.stub(LangPackMatcher.mockable, "installLangPack").resolves(true);
+
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        ["browser.settings-redesign.enabled", true],
+        ["intl.multilingual.enabled", true],
+        ["intl.multilingual.downloadEnabled", true],
+        ["intl.multilingual.liveReload", false],
+        ["intl.multilingual.liveReloadBidirectional", false],
+        ["intl.locale.requested", "en-US"],
+      ],
+    });
+
+    let doc = await openMainPane();
+    let win = doc.defaultView;
+    await waitForRemoteSeparator(win);
+    assertRestartMessageHidden(doc, true);
+
+    let sc = getSettingControl("browserLanguagePreferred", win);
+    await changeMozSelectValue(sc.controlEl, "fr");
+
+    ok(
+      LangPackMatcher.mockable.installLangPack.calledOnce,
+      "installLangPack was called for the remote locale"
+    );
+    is(
+      LangPackMatcher.mockable.installLangPack.firstCall.args[0].target_locale,
+      "fr",
+      "installLangPack was called with the fr langpack"
+    );
+
+    await waitForRestartMessage(doc, true);
+
+    sandbox.restore();
+    BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  }
+);
+
+
+
+add_task(async function testFailedRemoteLocaleInstallResetsDropdown() {
+  let sandbox = sinon.createSandbox();
+  sandbox
+    .stub(LangPackMatcher.mockable, "getAvailableLangpacks")
+    .resolves(["fr"].map(createRemoteLangpack));
+  sandbox
+    .stub(LangPackMatcher.mockable, "installLangPack")
+    .rejects(new Error("Simulated install failure"));
+
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.settings-redesign.enabled", true],
+      ["intl.multilingual.enabled", true],
+      ["intl.multilingual.downloadEnabled", true],
+      ["intl.locale.requested", "en-US"],
+    ],
+  });
+
+  let doc = await openMainPane();
+  let win = doc.defaultView;
+  await waitForRemoteSeparator(win);
+
+  let sc = getSettingControl("browserLanguagePreferred", win);
+  await changeMozSelectValue(sc.controlEl, "fr");
+
+  is(
+    sc.controlEl.value,
+    "en-US",
+    "Dropdown resets to current locale after failed install"
+  );
+  assertRestartMessageHidden(doc, true);
+
+  sandbox.restore();
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+});

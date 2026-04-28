@@ -164,6 +164,7 @@ Preferences.addAll([
 
   
   { id: "intl.multilingual.enabled", type: "bool" },
+  { id: "intl.multilingual.downloadEnabled", type: "bool" },
   { id: "intl.regional_prefs.use_os_locales", type: "bool" },
 
   { id: "intl.accept_languages", type: "string" },
@@ -640,6 +641,12 @@ Preferences.addSetting({
 
 
 
+
+
+
+
+
+
 const Multilingual = {
   TransitionType: Object.freeze({
     LocalesMatch: "LocalesMatch",
@@ -670,14 +677,18 @@ const Multilingual = {
 
 
 
+
   localizeArray(list, getCode, transform) {
-    const localeNames = Services.intl.getLocaleDisplayNames(
-      undefined,
-      list.map(getCode),
-      { preferNative: true }
-    );
+    const localeNames = this.getLocaleDisplayNames(list.map(getCode));
     return list
-      .map((data, i) => [localeNames[i], transform(data, localeNames[i])])
+      .map(
+        (data, i) =>
+          
+
+
+
+ ([localeNames[i], transform(data, localeNames[i])])
+      )
       .sort((a, b) => a[0].localeCompare(b[0]))
       .map(d => d[1]);
   },
@@ -723,10 +734,28 @@ const Multilingual = {
     return Multilingual.TransitionType.RestartRequired;
   },
 
+  
+
+
+
   recordTelemetry(method, value = null) {
-    Glean.intlUiBrowserLanguage[method + "Main"].record(
-      value ? { value } : undefined
-    );
+    if (method == "apply") {
+      Glean.intlUiBrowserLanguage.applyMain.record();
+    } else if (method == "reorder") {
+      Glean.intlUiBrowserLanguage.reorderMain.record();
+    } else if (method == "add") {
+      
+      Glean.intlUiBrowserLanguage.addDialog.record({
+        installId: String(value),
+        
+        
+        value: TAB_SESSION_ID,
+      });
+    } else if (method == "search") {
+      Glean.intlUiBrowserLanguage.searchMain.record({ value });
+    } else if (method == "manage") {
+      Glean.intlUiBrowserLanguage.manageMain.record({ value });
+    }
   },
 
   
@@ -753,11 +782,32 @@ const Multilingual = {
       );
     }
   },
+
+  
+
+
+  async ensureLangPackInstalled(langpack) {
+    try {
+      await LangPackMatcher.ensureLangPackInstalled(
+        langpack,
+        "about:preferences",
+        
+        installId => this.recordTelemetry("add", installId)
+      );
+    } catch (e) {
+      return false;
+    }
+    return true;
+  },
 };
 
 Preferences.addSetting({
   id: "multilingualEnabled",
   pref: "intl.multilingual.enabled",
+});
+Preferences.addSetting({
+  id: "multilingualDownloadEnabled",
+  pref: "intl.multilingual.downloadEnabled",
 });
 
 
@@ -822,13 +872,40 @@ class BrowserLanguagesSetting extends Preferences.AsyncSetting {
     this.emitChange();
   }
 
+  
+
+
+
+
+  async #ensureLocaleInstalled(code, remoteLocales) {
+    const installed = (await this.installedLocales).find(
+      locale => locale.code == code
+    );
+    if (installed) {
+      return installed;
+    }
+    const remote = remoteLocales.find(locale => locale.code == code);
+    if (remote) {
+      this.#installing = true;
+      this.emitChange();
+      try {
+        if (await Multilingual.ensureLangPackInstalled(remote.langpack)) {
+          return remote;
+        }
+      } finally {
+        this.#installing = false;
+        this.emitChange();
+      }
+    }
+    return null;
+  }
+
   setup() {
     Services.obs.addObserver(this.emitChange, "intl:app-locales-changed");
-    const deps = [this.multilingualEnabled];
-    deps.forEach(dep => dep.on("change", this.emitChange));
+    this.multilingualEnabled.on("change", this.emitChange);
     return () => {
       Services.obs.removeObserver(this.emitChange, "intl:app-locales-changed");
-      deps.forEach(dep => dep.off("change", this.emitChange));
+      this.multilingualEnabled.off("change", this.emitChange);
     };
   }
 
@@ -854,18 +931,23 @@ class BrowserLanguagesSetting extends Preferences.AsyncSetting {
   
 
 
-  async setPreferred(code) {
+
+  async setPreferred(code, remoteLocales = []) {
     if (code == this.currentLocale) {
       this.#pendingLocales = null;
       this.emitChange();
       return;
     }
-    let locale = (await this.installedLocales).find(l => l.code == code);
+    let locale = await this.#ensureLocaleInstalled(code, remoteLocales);
     if (!locale) {
       this.emitChange();
       return;
     }
-    Multilingual.recordTelemetry("reorder");
+    if (!locale.langpack) {
+      
+      
+      Multilingual.recordTelemetry("reorder");
+    }
     let newLocales = Array.from(
       new Set([code, ...Services.locale.appLocalesAsBCP47]).values()
     );
@@ -880,10 +962,61 @@ class BrowserLanguagesSetting extends Preferences.AsyncSetting {
 }
 Preferences.addSetting(BrowserLanguagesSetting);
 
+class BrowserLanguageRemoteLocalesSetting extends Preferences.AsyncSetting {
+  static id = "browserLanguageRemoteLocales";
+
+  #multilingualDownloadEnabled = Preferences.getSetting(
+    "multilingualDownloadEnabled"
+  );
+
+  
+  #cache = null;
+
+  setup() {
+    this.#multilingualDownloadEnabled.on("change", this.emitChange);
+    return () =>
+      this.#multilingualDownloadEnabled.off("change", this.emitChange);
+  }
+
+  
+  
+  defaultValue = [];
+
+  
+  
+  async get() {
+    if (!this.#multilingualDownloadEnabled.value) {
+      return [];
+    }
+    if (!this.#cache) {
+      this.#cache = this.#fetch();
+    }
+    return this.#cache;
+  }
+
+  async #fetch() {
+    try {
+      let langpacks =  (
+        await LangPackMatcher.mockable.getAvailableLangpacks()
+      );
+      return Multilingual.localizeArray(
+        langpacks,
+        langpack => langpack.target_locale,
+        (langpack, name) => ({ code: langpack.target_locale, name, langpack })
+      );
+    } catch (e) {
+      console.error("Failed to fetch remote language packs:", e);
+      return [];
+    }
+  }
+}
+Preferences.addSetting(BrowserLanguageRemoteLocalesSetting);
+
 class BrowserLanguagePreferredSetting extends Preferences.AsyncSetting {
   static id = "browserLanguagePreferred";
 
   #browserLanguages = Preferences.getSetting("browserLanguages");
+  #remoteLocales = Preferences.getSetting("browserLanguageRemoteLocales");
 
   
   get #languages() {
@@ -897,7 +1030,11 @@ class BrowserLanguagePreferredSetting extends Preferences.AsyncSetting {
 
   setup() {
     this.#browserLanguages.on("change", this.emitChange);
-    return () => this.#browserLanguages.off("change", this.emitChange);
+    this.#remoteLocales.on("change", this.emitChange);
+    return () => {
+      this.#browserLanguages.off("change", this.emitChange);
+      this.#remoteLocales.off("change", this.emitChange);
+    };
   }
 
   async get() {
@@ -908,7 +1045,8 @@ class BrowserLanguagePreferredSetting extends Preferences.AsyncSetting {
 
 
   async set(code) {
-    return this.#languages.setPreferred(code);
+    let remote =  (this.#remoteLocales.value) || [];
+    return this.#languages.setPreferred(code, remote);
   }
 
   async disabled() {
@@ -921,8 +1059,14 @@ class BrowserLanguagePreferredSetting extends Preferences.AsyncSetting {
 
   async getControlConfig() {
     let installed = await this.#languages.installedLocales;
+    let remote =  (this.#remoteLocales.value) || [];
+    remote = remote.filter(r => !installed.some(i => i.code == r.code));
     return {
-      options: installed.map(makeBrowserLanguageOption),
+      options: [
+        ...installed.map(makeBrowserLanguageOption),
+        ...(remote.length ? [{ control: "hr" }] : []),
+        ...remote.map(makeBrowserLanguageOption),
+      ],
     };
   }
 }
