@@ -1564,6 +1564,10 @@ void CustomElementRegistry::Upgrade(Element* aElement,
   }
 
   
+  data->mState = CustomElementData::State::eCustom;
+  aElement->SetDefined(true);
+
+  
   if (data->IsFormAssociated()) {
     
     
@@ -1574,10 +1578,6 @@ void CustomElementRegistry::Upgrade(Element* aElement,
 
     internals->UpdateFormOwner();
   }
-
-  
-  data->mState = CustomElementData::State::eCustom;
-  aElement->SetDefined(true);
 }
 
 already_AddRefed<nsISupports> CustomElementRegistry::CallGetCustomInterface(

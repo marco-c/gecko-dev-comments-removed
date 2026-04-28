@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/HTMLElement.h"
 
 #include "mozilla/EventDispatcher.h"
@@ -13,6 +11,7 @@
 #include "mozilla/dom/FormData.h"
 #include "mozilla/dom/FromParser.h"
 #include "mozilla/dom/HTMLElementBinding.h"
+#include "mozilla/dom/LifecycleCallbackArgs.h"
 #include "nsContentUtils.h"
 #include "nsGenericHTMLElement.h"
 #include "nsILayoutHistoryState.h"
@@ -162,7 +161,7 @@ void HTMLElement::RestoreFormAssociatedCustomElementState() {
   }
 
   auto& ce = content.get_CustomElementTuple();
-  nsCOMPtr<nsIGlobalObject> global = GetOwnerDocument()->GetOwnerGlobal();
+  nsCOMPtr<nsIGlobalObject> global = GetOwnerGlobal();
   internals->RestoreFormValue(
       nsContentUtils::ExtractFormAssociatedCustomElementValue(global,
                                                               ce.value()),
@@ -292,6 +291,8 @@ void HTMLElement::AfterClearForm(bool aUnbindOrDelete) {
 
 void HTMLElement::UpdateFormOwner() {
   MOZ_ASSERT(IsFormAssociatedElement());
+  DebugOnly<CustomElementData*> data = GetCustomElementData();
+  MOZ_ASSERT(data && data->mState == CustomElementData::State::eCustom);
 
   
   
@@ -393,6 +394,13 @@ void HTMLElement::UpdateDisabledState(bool aNotify) {
 }
 
 void HTMLElement::UpdateFormOwner(bool aBindToTree, Element* aFormIdElement) {
+  MOZ_ASSERT(IsFormAssociatedElement());
+
+  CustomElementData* data = GetCustomElementData();
+  if (data->mState != CustomElementData::State::eCustom) {
+    return;
+  }
+
   HTMLFormElement* oldForm = GetFormInternal();
   nsGenericHTMLFormElement::UpdateFormOwner(aBindToTree, aFormIdElement);
   HTMLFormElement* newForm = GetFormInternal();
