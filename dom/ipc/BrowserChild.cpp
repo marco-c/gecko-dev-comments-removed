@@ -2396,7 +2396,8 @@ void BrowserChild::RequestEditCommands(NativeKeyBindingsType aType,
   
   
   WidgetKeyboardEvent localEvent(aEvent);
-  SendRequestNativeKeyBindings(aType, localEvent, &aCommands);
+  SendRequestNativeKeyBindings(static_cast<uint32_t>(aType), localEvent,
+                               &aCommands);
 }
 
 mozilla::ipc::IPCResult BrowserChild::RecvSynthesizedEventResponse(
