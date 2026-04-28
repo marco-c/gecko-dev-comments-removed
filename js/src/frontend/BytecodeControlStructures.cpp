@@ -333,6 +333,20 @@ bool NonLocalExitControl::emitNonLocalJump(NestableControl* target,
   }
 
   if (!jumpingToFinally) {
+    
+    
+    
+    
+    
+    
+    EmitterScope* targetEmitterScope =
+        target ? target->emitterScope() : bce_->varEmitterScope;
+    for (; es != targetEmitterScope; es = es->enclosingInFrame()) {
+      if (!leaveScope(es)) {
+        return false;
+      }
+    }
+
     if (target && emitIteratorCloseAtTarget && target->is<ForOfLoopControl>()) {
       BytecodeOffset tryNoteStart;
       ForOfLoopControl& loopinfo = target->as<ForOfLoopControl>();
@@ -347,13 +361,6 @@ bool NonLocalExitControl::emitNonLocalJump(NestableControl* target,
       }
     }
 
-    EmitterScope* targetEmitterScope =
-        target ? target->emitterScope() : bce_->varEmitterScope;
-    for (; es != targetEmitterScope; es = es->enclosingInFrame()) {
-      if (!leaveScope(es)) {
-        return false;
-      }
-    }
     switch (kind_) {
       case NonLocalExitKind::Continue: {
         LoopControl* loop = &target->as<LoopControl>();
