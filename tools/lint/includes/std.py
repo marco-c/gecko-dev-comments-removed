@@ -3,6 +3,15 @@
 
 
 api = {
+    "thread": [
+        "get_id",
+        "jthread",
+        "sleep_for",
+        "sleep_until",
+        "this_thread",
+        "thread",
+        "yield",
+    ],
     "queue": [
         "priority_queue",
         "queue",
