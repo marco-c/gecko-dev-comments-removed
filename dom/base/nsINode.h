@@ -1286,9 +1286,9 @@ class nsINode : public mozilla::dom::EventTarget {
   nsPIDOMWindowOuter* GetOwnerGlobalForBindingsInternal() override;
   
   
-  nsIGlobalObject* GetDocumentGlobal() const;
+  nsIGlobalObject* GetOwnerDocGlobal() const;
   mozilla::dom::Nullable<mozilla::dom::WindowProxyHolder>
-  GetDocumentGlobalForBindings();
+  GetOwnerDocGlobalForBindings();
 
   using mozilla::dom::EventTarget::DispatchEvent;
   
