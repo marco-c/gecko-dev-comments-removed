@@ -95,7 +95,7 @@ class BaseChannel : public ChannelInterface,
 
   TaskQueueBase* worker_thread() const { return worker_thread_; }
   Thread* network_thread() const { return network_thread_; }
-  const std::string& mid() const override { return demuxer_criteria_.mid(); }
+  const std::string& mid() const override { return mid_; }
   
   absl::string_view transport_name() const override {
     RTC_DCHECK_RUN_ON(network_thread());
@@ -306,6 +306,9 @@ class BaseChannel : public ChannelInterface,
       const RtpHeaderExtensions& extensions,
       std::string& error_desc) RTC_RUN_ON(worker_thread());
 
+  
+  
+  
   bool RegisterRtpDemuxerSink_w() RTC_RUN_ON(worker_thread());
 
   
@@ -319,6 +322,11 @@ class BaseChannel : public ChannelInterface,
       RTC_RUN_ON(network_thread());
   void DisconnectFromRtpTransport_n() RTC_RUN_ON(network_thread());
   void SignalSentPacket_n(const SentPacketInfo& sent_packet);
+  
+  
+  
+  
+  RtpDemuxerCriteria demuxer_criteria() const RTC_NO_THREAD_SAFETY_ANALYSIS;
 
   TaskQueueBase* const worker_thread_;
   Thread* const network_thread_;
@@ -374,9 +382,8 @@ class BaseChannel : public ChannelInterface,
   RtpHeaderExtensions historical_rtp_header_extensions_
       RTC_GUARDED_BY(worker_thread());
 
-  
-  
-  RtpDemuxerCriteria demuxer_criteria_;
+  const std::string mid_;
+  flat_set<uint32_t> ssrcs_ RTC_GUARDED_BY(worker_thread());
   
   
   
