@@ -46,6 +46,8 @@
   color-scheme: light dark;
   min-width: 1px;
   -moz-window-input-region-margin: var(--panel-shadow-margin);
+  /* Panel design tokens will be added in Bug 2017979 */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   margin: calc(-1 * var(--panel-shadow-margin));
 
   /* Panel design token theming */
@@ -70,13 +72,22 @@
     display: flex;
     box-sizing: border-box;
 
+    /* Panel design tokens will be added in Bug 2017979 */
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     padding: var(--panel-padding);
     color: var(--panel-color);
     background: var(--panel-background);
+    /* The values chosen for the border radius should match OS values, not necessarily
+     * design system values. */
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     border-radius: var(--panel-border-radius);
     border: 1px solid var(--panel-border-color);
+    /* Panel design tokens will be added in Bug 2017979 */
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     width: var(--panel-width);
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     box-shadow: var(--panel-shadow);
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     margin: var(--panel-shadow-margin);
 
     min-width: 0;
@@ -84,7 +95,10 @@
 
     /* Makes popup constraints work. Round up to avoid subpixel rounding
      * causing overflow, see bug 1846050 */
+    /* Our stylelint rules don't account for the round() function, see bug 2018789 */
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     max-height: round(up, 100% - 2 * var(--panel-shadow-margin), 1px);
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     max-width: round(up, 100% - 2 * var(--panel-shadow-margin), 1px);
 
     overflow: clip; /* Don't let panel content overflow the border */
