@@ -497,3 +497,43 @@ add_task(async function test_aiwindow_component_trust_smoke() {
     await SpecialPowers.popPrefEnv();
   }
 });
+
+
+
+
+
+add_task(async function test_malformed_url_does_not_throw() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.smartwindow.enabled", true],
+      ["browser.ml.security.enabled", true],
+    ],
+  });
+  const { restore } = await stubEngineNetworkBoundaries({
+    serverOptions: { streamChunks: ["Oops: [click](http://[unclosed)"] },
+  });
+  const restoreSignIn = skipSignIn();
+
+  let win;
+  try {
+    win = await openAIWindow();
+    const browser = win.gBrowser.selectedBrowser;
+
+    await typeInSmartbar(browser, "hello");
+    await submitSmartbar(browser);
+
+    
+    
+    await TestUtils.waitForCondition(async () => {
+      const messages = await getSidebarChatMessages(browser);
+      return messages.some(m => m.role === "assistant" && m.hasRendered);
+    }, "Assistant message should render without throwing for a malformed URL");
+  } finally {
+    if (win) {
+      await BrowserTestUtils.closeWindow(win);
+    }
+    restoreSignIn();
+    await restore();
+    await SpecialPowers.popPrefEnv();
+  }
+});

@@ -270,6 +270,22 @@ function skipSignIn() {
 
 
 
+async function clickNewChatButton(win) {
+  const sidebarBrowser = win.document.getElementById("ai-window-browser");
+  await TestUtils.waitForCondition(
+    () => sidebarBrowser.contentDocument?.querySelector("ai-window:defined"),
+    "Wait for ai-window to be defined in sidebar"
+  );
+  const aiWindow = sidebarBrowser.contentDocument.querySelector("ai-window");
+  const newChatBtn = aiWindow.shadowRoot.querySelector(".new-chat-icon-button");
+  newChatBtn.click();
+}
+
+
+
+
+
+
 
 
 
@@ -379,6 +395,11 @@ async function submitSmartbar(browser, { useButton = false } = {}) {
       const button = mozButton.shadowRoot.querySelector("button");
       button.click();
     } else {
+      const inputCta = smartbar.querySelector("input-cta");
+      await ContentTaskUtils.waitForCondition(
+        () => inputCta.getAttribute("action") !== "stop",
+        "Wait for generation to complete before submitting via Enter"
+      );
       const inputField = smartbar.inputField;
       inputField.focus();
       EventUtils.synthesizeKey("KEY_Enter", {}, content);
@@ -666,10 +687,16 @@ async function getSidebarChatMessages(sidebarBrowser) {
     );
     await contentEl.updateComplete;
     const messageEls = contentEl.shadowRoot.querySelectorAll("ai-chat-message");
-    return Array.from(messageEls, el => ({
-      role: el.role,
-      message: el.message,
-    }));
+    return Array.from(messageEls, el => {
+      const elJS = el.wrappedJSObject || el;
+      return {
+        role: elJS.role,
+        message: elJS.message,
+        hasRendered: !!el.shadowRoot?.querySelector(
+          ".message-assistant, .message-user"
+        ),
+      };
+    });
   });
 }
 
