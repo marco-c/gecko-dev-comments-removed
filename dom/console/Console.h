@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_Console_h
 #define mozilla_dom_Console_h
 
@@ -451,6 +449,9 @@ class Console final : public nsIObserver, public nsSupportsWeakReference {
   
   
   mozilla::TimeStamp mCreationTimeStamp;
+
+  
+  bool mIsRetrievingConsoleEvent = false;
 
   friend class ConsoleCallData;
   friend class ConsoleCallDataWorkletRunnable;
