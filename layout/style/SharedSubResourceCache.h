@@ -311,12 +311,10 @@ class SharedSubResourceCache {
     return NS_OK;
   }
 
- private:
-  void ClearInProcessForMemoryPressure() {
+  virtual void ClearInProcessForMemoryPressure() {
     ClearInProcess(Nothing(), Nothing(), Nothing(), Nothing(), Nothing());
   }
 
- protected:
   void CancelPendingLoadsForLoader(Loader&);
 
   void WillStartPendingLoad(LoadingValue&);
@@ -336,7 +334,6 @@ class SharedSubResourceCache {
   
   nsTHashMap<PrincipalHashKey, uint32_t> mLoaderPrincipalRefCnt;
 
- protected:
   
   
   inline static MOZ_GLOBINIT StaticRefPtr<Derived> sSingleton;
