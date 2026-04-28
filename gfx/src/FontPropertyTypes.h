@@ -4,16 +4,12 @@
 
 
 
-
 #ifndef GFX_FONT_PROPERTY_TYPES_H
 #define GFX_FONT_PROPERTY_TYPES_H
 
 #include <algorithm>
 #include <cstdint>
-#include <cmath>
 #include <utility>
-
-#include <ctype.h>
 
 #include "mozilla/Assertions.h"
 #include "mozilla/ServoStyleConsts.h"

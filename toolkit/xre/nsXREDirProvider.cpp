@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsAppRunner.h"
 #include "nsXREDirProvider.h"
 #ifndef ANDROID
@@ -81,9 +80,6 @@
 
 #  include <sys/stat.h>
 #  include <unistd.h>
-#endif
-#ifdef XP_UNIX
-#  include <ctype.h>
 #endif
 #ifdef XP_IOS
 #  include "UIKitDirProvider.h"
