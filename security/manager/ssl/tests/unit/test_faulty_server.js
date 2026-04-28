@@ -87,15 +87,14 @@ add_task(
 
     let chan = makeChan(`https://${retryDomain}:8443`);
     let [req] = await channelOpenPromise(chan, CL_EXPECT_FAILURE);
+    equal(req.status, Cr.NS_ERROR_NET_INTERRUPT);
     
-    equal(req.status, Cr.NS_ERROR_NET_RESET);
     
-    Assert.greater(
+    equal(
       handlerCount("/callback/4588"),
-      countOfMlkem,
+      countOfMlkem + 1,
       "negotiated mlkem768x25519"
     );
-    
     equal(
       handlerCount("/callback/29"),
       countOfX25519,
