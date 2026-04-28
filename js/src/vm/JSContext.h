@@ -304,6 +304,7 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
     return nativeStackLimit[kind];
   }
   JS::NativeStackLimit stackLimitForJitCode(JS::StackKind kind);
+  bool stackContainsAddress(uintptr_t address, JS::StackKind kind);
   size_t gcSystemPageSize() { return js::gc::SystemPageSize(); }
 
   
@@ -972,6 +973,11 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
   
   
   js::ContextData<bool> canSkipEnqueuingJobs;
+
+  
+  
+  
+  js::ContextData<uint32_t> asyncResumeDepth;
 
   js::ContextData<JS::PromiseRejectionTrackerCallback>
       promiseRejectionTrackerCallback;
