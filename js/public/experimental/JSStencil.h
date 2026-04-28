@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef js_experimental_JSStencil_h
 #define js_experimental_JSStencil_h
 
@@ -249,10 +247,8 @@ extern JS_PUBLIC_API bool FinishCollectingDelazifications(
 extern JS_PUBLIC_API bool FinishCollectingDelazifications(
     JSContext* cx, Handle<JSObject*> module, JS::Stencil** stencilOut);
 
-extern JS_PUBLIC_API void AbortCollectingDelazifications(
-    Handle<JSScript*> script);
-extern JS_PUBLIC_API void AbortCollectingDelazifications(
-    Handle<JSObject*> module);
+extern JS_PUBLIC_API void AbortCollectingDelazifications(JSScript* script);
+extern JS_PUBLIC_API void AbortCollectingDelazifications(JSObject* module);
 
 
 
