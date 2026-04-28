@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_FileSystemUtils_h
 #define mozilla_dom_FileSystemUtils_h
 
@@ -25,12 +23,6 @@ namespace mozilla::dom {
 
 class FileSystemUtils {
  public:
-  
-
-
-  static bool IsDescendantPath(const nsAString& aPath,
-                               const nsAString& aDescendantPath);
-
   
 
 
