@@ -26,6 +26,7 @@
 #include "jit/WarpBuilderShared.h"
 #include "jit/WarpSnapshot.h"
 #include "js/Conversions.h"
+#include "js/Date.h"
 #include "js/experimental/JitInfo.h"  
 #include "js/ScalarType.h"            
 #include "util/PortableMath.h"
@@ -7706,6 +7707,17 @@ MDefinition* MToIntegerIndex::foldsTo(TempAllocator& alloc) {
   }
 
   return this;
+}
+
+MDefinition* MTimeClip::foldsTo(TempAllocator& alloc) {
+  auto* time = this->time();
+  if (!time->isConstant()) {
+    return this;
+  }
+
+  
+  auto clipped = JS::TimeClip(time->toConstant()->toDouble());
+  return MConstant::NewDouble(alloc, JS::CanonicalizeNaN(clipped.toDouble()));
 }
 
 
