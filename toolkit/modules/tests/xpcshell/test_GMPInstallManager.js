@@ -909,7 +909,7 @@ add_task(async function test_checkForAddons_get_verifier_url() {
   );
 
   
-  const stageUrl = "https://stage.balrog.nonprod.cloudops.mozgcp.net/etc.";
+  const stageUrl = "https://stage.balrog.nonprod.webservices.mozgcp.net/etc.";
   Preferences.set(GMPPrefs.KEY_URL_OVERRIDE, stageUrl);
   Assert.equal(
     await rootForUrl(),
