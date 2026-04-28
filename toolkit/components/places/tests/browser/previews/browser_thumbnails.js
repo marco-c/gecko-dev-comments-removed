@@ -94,7 +94,7 @@ add_task(async function async_test_deleteOrphans() {
   
   let fakePath = PathUtils.join(
     PlacesPreviews.getPath(),
-    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa." + PlacesPreviews.fileExtension
+    "a".repeat(64) + PlacesPreviews.fileExtension
   );
   
   await IOUtils.writeJSON(fakePath, { test: true });
@@ -114,6 +114,45 @@ add_task(async function async_test_deleteOrphans() {
   );
 
   Assert.ok(await IOUtils.exists(path), "Ensure valid preview is still there");
+});
+
+add_task(async function test_deleteOrphans_sql_injection() {
+  
+  
+  
+  
+  let maliciousNames = [
+    
+    "'UNION SELECT url FROM moz_places'.webp",
+    
+    "a".repeat(32) + ".webp",
+    
+    "z".repeat(64) + ".webp",
+  ];
+  let maliciousPaths = maliciousNames.map(name =>
+    PathUtils.join(PlacesPreviews.getPath(), name)
+  );
+  registerCleanupFunction(async () => {
+    for (let p of maliciousPaths) {
+      await IOUtils.remove(p, { ignoreAbsent: true });
+    }
+  });
+
+  for (let p of maliciousPaths) {
+    await IOUtils.writeJSON(p, { test: true });
+  }
+
+  await PlacesPreviews.deleteOrphans();
+
+  Assert.equal(
+    await countTombstones(),
+    0,
+    "Malicious filenames were filtered out and no tombstone was inserted"
+  );
+
+  for (let p of maliciousPaths) {
+    await IOUtils.remove(p, { ignoreAbsent: true });
+  }
 });
 
 async function testImageFile(path) {
