@@ -423,6 +423,7 @@ nsresult nsImageLoadingContent::GetSyncDecodingHint(bool* aHint) {
 
 already_AddRefed<Promise> nsImageLoadingContent::QueueDecodeAsync(
     ErrorResult& aRv) {
+  
   Document* doc = GetOurOwnerDoc();
   RefPtr<Promise> promise = Promise::Create(doc->GetScopeObject(), aRv);
   if (aRv.Failed()) {
@@ -437,11 +438,12 @@ already_AddRefed<Promise> nsImageLoadingContent::QueueDecodeAsync(
           mPromise(aPromise),
           mRequestGeneration(aRequestGeneration) {}
 
-    virtual void Run(AutoSlowOperation& aAso) override {
+    void Run(AutoSlowOperation& aAso) override {
       mOwner->DecodeAsync(std::move(mPromise), mRequestGeneration);
     }
 
-    virtual bool Suppressed() override {
+    bool Suppressed() override {
+      
       nsIGlobalObject* global = mOwner->GetOurOwnerDoc()->GetScopeObject();
       return global && global->IsInSyncOperation();
     }
@@ -1280,6 +1282,7 @@ already_AddRefed<Promise> nsImageLoadingContent::RecognizeCurrentImageText(
     return nullptr;
   }
 
+  
   RefPtr<Promise> domPromise =
       Promise::Create(GetOurOwnerDoc()->GetScopeObject(), aRv);
   if (aRv.Failed()) {
@@ -1359,7 +1362,9 @@ already_AddRefed<Promise> nsImageLoadingContent::RecognizeCurrentImageText(
 
             nsTArray<ImageText> imageTexts(
                 textRecognitionResult.quads().Length());
-            nsIGlobalObject* global = el->OwnerDoc()->GetOwnerGlobal();
+            
+            
+            nsIGlobalObject* global = el->GetDocumentGlobal();
 
             for (const auto& quad : textRecognitionResult.quads()) {
               NotNull<ImageText*> imageText = imageTexts.AppendElement();

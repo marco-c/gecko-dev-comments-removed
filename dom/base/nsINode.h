@@ -1272,19 +1272,23 @@ class nsINode : public mozilla::dom::EventTarget {
 
   nsINode* GetRootNode(const mozilla::dom::GetRootNodeOptions& aOptions);
 
-  virtual mozilla::EventListenerManager* GetExistingListenerManager()
-      const override;
-  virtual mozilla::EventListenerManager* GetOrCreateListenerManager() override;
+  mozilla::EventListenerManager* GetExistingListenerManager() const override;
+  mozilla::EventListenerManager* GetOrCreateListenerManager() override;
 
   mozilla::Maybe<mozilla::dom::EventCallbackDebuggerNotificationType>
   GetDebuggerNotificationType() const override;
 
   bool ComputeDefaultWantsUntrusted(mozilla::ErrorResult& aRv) final;
 
-  virtual bool IsApzAware() const override;
+  bool IsApzAware() const override;
 
-  virtual nsPIDOMWindowOuter* GetOwnerGlobalForBindingsInternal() override;
-  virtual nsIGlobalObject* GetOwnerGlobal() const override;
+  nsIGlobalObject* GetOwnerGlobal() const override;
+  nsPIDOMWindowOuter* GetOwnerGlobalForBindingsInternal() override;
+  
+  
+  nsIGlobalObject* GetDocumentGlobal() const;
+  mozilla::dom::Nullable<mozilla::dom::WindowProxyHolder>
+  GetDocumentGlobalForBindings();
 
   using mozilla::dom::EventTarget::DispatchEvent;
   
@@ -1414,13 +1418,9 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
-
-
-
   static already_AddRefed<nsINode> CloneAndAdopt(
       nsINode* aNode, bool aClone, bool aDeep,
-      nsNodeInfoManager* aNewNodeInfoManager,
-      JS::Handle<JSObject*> aReparentScope, nsINode* aParent,
+      nsNodeInfoManager* aNewNodeInfoManager, nsINode* aParent,
       mozilla::ErrorResult& aError);
 
  public:
@@ -1434,12 +1434,7 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
-
-
-
-
   void Adopt(nsNodeInfoManager* aNewNodeInfoManager,
-             JS::Handle<JSObject*> aReparentScope,
              mozilla::ErrorResult& aError);
 
   

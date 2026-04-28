@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/WindowGlobalChild.h"
 
 #include "GeckoProfiler.h"
@@ -416,7 +414,7 @@ mozilla::ipc::IPCResult WindowGlobalChild::RecvMakeFrameLocal(
     return IPC_OK();
   }
 
-  if (NS_WARN_IF(embedderElt->GetOwnerGlobal() != GetWindowGlobal())) {
+  if (NS_WARN_IF(embedderElt->GetDocumentGlobal() != GetWindowGlobal())) {
     return IPC_OK();
   }
 
@@ -482,7 +480,7 @@ mozilla::ipc::IPCResult WindowGlobalChild::RecvMakeFrameRemote(
     return IPC_OK();
   }
 
-  if (NS_WARN_IF(embedderElt->GetOwnerGlobal() != GetWindowGlobal())) {
+  if (NS_WARN_IF(embedderElt->GetDocumentGlobal() != GetWindowGlobal())) {
     return IPC_OK();
   }
 

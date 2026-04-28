@@ -1549,16 +1549,28 @@ EventListenerManager* nsINode::GetExistingListenerManager() const {
   return nsContentUtils::GetExistingListenerManagerForNode(this);
 }
 
+Nullable<WindowProxyHolder> nsINode::GetDocumentGlobalForBindings() {
+  return OwnerDoc()->GetOwnerGlobalForBindings();
+}
+
 nsPIDOMWindowOuter* nsINode::GetOwnerGlobalForBindingsInternal() {
-  bool dummy;
   
   
-  auto* window = static_cast<nsGlobalWindowInner*>(
-      OwnerDoc()->GetScriptHandlingObject(dummy));
+  auto* window = static_cast<nsGlobalWindowInner*>(GetOwnerGlobal());
   return window ? nsPIDOMWindowOuter::GetFromCurrentInner(window) : nullptr;
 }
 
+nsIGlobalObject* nsINode::GetDocumentGlobal() const {
+  return OwnerDoc()->GetOwnerGlobal();
+}
+
 nsIGlobalObject* nsINode::GetOwnerGlobal() const {
+  if (auto* wrapper = GetWrapperPreserveColor()) {
+    if (auto* global = xpc::NativeGlobal(wrapper);
+        global && global->IsInnerWindow()) {
+      return global;
+    }
+  }
   bool dummy;
   return OwnerDoc()->GetScriptHandlingObject(dummy);
 }
@@ -3558,10 +3570,6 @@ Element* nsINode::GetNearestInclusiveTargetPopoverForInvoker() const {
 }
 
 nsGenericHTMLElement* nsINode::GetEffectiveCommandForElement() const {
-  if (!StaticPrefs::dom_element_commandfor_enabled()) {
-    return nullptr;
-  }
-
   const auto* formControl =
       nsGenericHTMLFormControlElementWithState::FromNode(this);
   if (!formControl || formControl->IsDisabled() ||
@@ -3679,11 +3687,8 @@ void nsINode::AddAnimationObserverUnlessExists(
 
 already_AddRefed<nsINode> nsINode::CloneAndAdopt(
     nsINode* aNode, bool aClone, bool aDeep,
-    nsNodeInfoManager* aNewNodeInfoManager,
-    JS::Handle<JSObject*> aReparentScope, nsINode* aParent,
+    nsNodeInfoManager* aNewNodeInfoManager, nsINode* aParent,
     ErrorResult& aError) {
-  MOZ_ASSERT((!aClone && aNewNodeInfoManager) || !aReparentScope,
-             "If cloning or not getting a new nodeinfo we shouldn't rewrap");
   MOZ_ASSERT(!aParent || aNode->IsContent(),
              "Can't insert document or attribute nodes into a parent");
 
@@ -3862,33 +3867,8 @@ already_AddRefed<nsINode> nsINode::CloneAndAdopt(
       elem->RecompileScriptEventListeners();
     }
 
-    if (aReparentScope) {
-      AutoJSContext cx;
-      JS::Rooted<JSObject*> wrapper(cx);
-      if ((wrapper = aNode->GetWrapper())) {
-        MOZ_ASSERT(IsDOMObject(wrapper));
-        JSAutoRealm ar(cx, wrapper);
-        UpdateReflectorGlobal(cx, wrapper, aError);
-        if (aError.Failed()) {
-          bool needsRollBack = false;
-          if (wasRegistered) {
-            needsRollBack =
-                newDoc->UnregisterActivityObserver(aNode->AsElement());
-          }
-          if (hadProperties) {
-            
-            
-            (void)newDoc->PropertyTable().TransferOrRemoveAllPropertiesFor(
-                aNode, oldDoc->PropertyTable());
-          }
-          aNode->mNodeInfo.swap(newNodeInfo);
-          aNode->NodeInfoChanged(newDoc);
-          if (needsRollBack) {
-            oldDoc->RegisterActivityObserver(aNode->AsElement());
-          }
-          return nullptr;
-        }
-      }
+    if (aNode->GetWrapper()) {
+      dom::PreserveWrapper(aNode);
     }
 
     
@@ -3911,9 +3891,8 @@ already_AddRefed<nsINode> nsINode::CloneAndAdopt(
     
     for (nsIContent* cloneChild = aNode->GetFirstChild(); cloneChild;
          cloneChild = cloneChild->GetNextSibling()) {
-      nsCOMPtr<nsINode> child =
-          CloneAndAdopt(cloneChild, aClone, true, nodeInfoManager,
-                        aReparentScope, clone, aError);
+      nsCOMPtr<nsINode> child = CloneAndAdopt(cloneChild, aClone, true,
+                                              nodeInfoManager, clone, aError);
       if (NS_WARN_IF(aError.Failed())) {
         return nullptr;
       }
@@ -3945,7 +3924,7 @@ already_AddRefed<nsINode> nsINode::CloneAndAdopt(
                origChild; origChild = origChild->GetNextSibling()) {
             nsCOMPtr<nsINode> child =
                 CloneAndAdopt(origChild, aClone, aDeep, nodeInfoManager,
-                              aReparentScope, newShadowRoot, aError);
+                              newShadowRoot, aError);
             if (NS_WARN_IF(aError.Failed())) {
               return nullptr;
             }
@@ -3954,9 +3933,8 @@ already_AddRefed<nsINode> nsINode::CloneAndAdopt(
       }
     } else {
       if (ShadowRoot* shadowRoot = aNode->AsElement()->GetShadowRoot()) {
-        nsCOMPtr<nsINode> child =
-            CloneAndAdopt(shadowRoot, aClone, aDeep, nodeInfoManager,
-                          aReparentScope, clone, aError);
+        nsCOMPtr<nsINode> child = CloneAndAdopt(shadowRoot, aClone, aDeep,
+                                                nodeInfoManager, clone, aError);
         if (NS_WARN_IF(aError.Failed())) {
           return nullptr;
         }
@@ -3986,9 +3964,8 @@ already_AddRefed<nsINode> nsINode::CloneAndAdopt(
 
       for (nsIContent* origChild = originalShadowRoot->GetFirstChild();
            origChild; origChild = origChild->GetNextSibling()) {
-        nsCOMPtr<nsINode> child =
-            CloneAndAdopt(origChild, aClone, true, nodeInfoManager,
-                          aReparentScope, newShadowRoot, aError);
+        nsCOMPtr<nsINode> child = CloneAndAdopt(
+            origChild, aClone, true, nodeInfoManager, newShadowRoot, aError);
         if (NS_WARN_IF(aError.Failed())) {
           return nullptr;
         }
@@ -4012,7 +3989,7 @@ already_AddRefed<nsINode> nsINode::CloneAndAdopt(
          cloneChild = cloneChild->GetNextSibling()) {
       nsCOMPtr<nsINode> child =
           CloneAndAdopt(cloneChild, aClone, aDeep, ownerNodeInfoManager,
-                        aReparentScope, cloneContent, aError);
+                        cloneContent, aError);
       if (NS_WARN_IF(aError.Failed())) {
         return nullptr;
       }
@@ -4023,7 +4000,6 @@ already_AddRefed<nsINode> nsINode::CloneAndAdopt(
 }
 
 void nsINode::Adopt(nsNodeInfoManager* aNewNodeInfoManager,
-                    JS::Handle<JSObject*> aReparentScope,
                     mozilla::ErrorResult& aError) {
   if (aNewNodeInfoManager) {
     Document* beforeAdoptDoc = OwnerDoc();
@@ -4048,8 +4024,8 @@ void nsINode::Adopt(nsNodeInfoManager* aNewNodeInfoManager,
 
   
   
-  nsCOMPtr<nsINode> node = CloneAndAdopt(this, false, true, aNewNodeInfoManager,
-                                         aReparentScope, nullptr, aError);
+  nsCOMPtr<nsINode> node =
+      CloneAndAdopt(this, false, true, aNewNodeInfoManager, nullptr, aError);
 
   nsMutationGuard::DidMutate();
 }
@@ -4057,8 +4033,7 @@ void nsINode::Adopt(nsNodeInfoManager* aNewNodeInfoManager,
 already_AddRefed<nsINode> nsINode::Clone(bool aDeep,
                                          nsNodeInfoManager* aNewNodeInfoManager,
                                          ErrorResult& aError) {
-  return CloneAndAdopt(this, true, aDeep, aNewNodeInfoManager, nullptr, nullptr,
-                       aError);
+  return CloneAndAdopt(this, true, aDeep, aNewNodeInfoManager, nullptr, aError);
 }
 
 void nsINode::GenerateXPath(nsAString& aResult) {
