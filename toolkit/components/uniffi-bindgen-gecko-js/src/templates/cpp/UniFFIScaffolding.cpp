@@ -1,8 +1,5 @@
 
 
-
-
-
 #include "nsString.h"
 #include "nsPrintfCString.h"
 #include "mozilla/Logging.h"
@@ -26,6 +23,7 @@ using dom::NullableRootedUnion;
 using dom::Promise;
 using dom::PromiseNativeHandler;
 using dom::Sequence;
+using dom::SequenceRooter;
 using dom::UniFFICallbackHandler;
 using dom::UniFFIPointer;
 using dom::UniFFIScaffoldingCallCode;
