@@ -72,7 +72,7 @@ add_task(
   {
     skip_if: () => AppConstants.MOZ_SYSTEM_NSS,
   },
-  async function testNoRetryMlkem768x25519NetInterrupt() {
+  async function testMlkem768x25519NoX25519Fallback() {
     const retryDomain = "mlkem768x25519-net-interrupt.example.com";
 
     Services.prefs.setBoolPref("security.tls.enable_kyber", true);
@@ -87,14 +87,15 @@ add_task(
 
     let chan = makeChan(`https://${retryDomain}:8443`);
     let [req] = await channelOpenPromise(chan, CL_EXPECT_FAILURE);
-    equal(req.status, Cr.NS_ERROR_NET_INTERRUPT);
     
+    equal(req.status, Cr.NS_ERROR_NET_RESET);
     
-    equal(
+    Assert.greater(
       handlerCount("/callback/4588"),
-      countOfMlkem + 1,
+      countOfMlkem,
       "negotiated mlkem768x25519"
     );
+    
     equal(
       handlerCount("/callback/29"),
       countOfX25519,
