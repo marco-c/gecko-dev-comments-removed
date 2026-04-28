@@ -390,7 +390,7 @@ CookieStoreParent::SetReturnType CookieStoreParent::SetRequestOnMainThread(
   
   aWaitForNotification = false;
 
-  NS_ConvertUTF16toUTF8 domain(aDomain);
+  nsAutoCString domain = NS_ConvertUTF16toUTF8(aDomain);
   nsAutoCString domainWithDot;
 
   if (CookiePrefixes::Has(CookiePrefixes::eHttp, aName) ||
@@ -407,15 +407,27 @@ CookieStoreParent::SetReturnType CookieStoreParent::SetRequestOnMainThread(
   
   
   
-  if (!domain.IsEmpty()) {
-    MOZ_ASSERT(!domain.IsEmpty());
-    domainWithDot.Insert('.', 0);
-  } else {
-    domain.Truncate();
+  
+  nsCOMPtr<nsIEffectiveTLDService> etld =
+      mozilla::components::EffectiveTLD::Service();
+  nsAutoCString baseDomain;
+  bool requireHostMatch = false;
+  rv = CookieCommons::GetBaseDomain(etld, aCookieURI, baseDomain,
+                                    requireHostMatch);
+  if (NS_FAILED(rv)) {
+    return eSilentFailure;
+  }
+
+  
+  
+  
+  if (domain.IsEmpty()) {
     rv = nsContentUtils::GetHostOrIPv6WithBrackets(aCookieURI, domain);
     if (NS_FAILED(rv)) {
       return eSilentFailure;
     }
+  } else if (!requireHostMatch) {
+    domainWithDot.Insert('.', 0);
   }
   domainWithDot.Append(domain);
 
