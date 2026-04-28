@@ -2203,6 +2203,10 @@ void DCSurfaceVideo::AttachExternalImage(wr::ExternalImageId aExternalImage) {
   }
 
   
+  
+  
+  
+  
   mContentIsHDR = false;
   if (texture) {
     const auto format = texture->GetFormat();
@@ -2213,9 +2217,13 @@ void DCSurfaceVideo::AttachExternalImage(wr::ExternalImageId aExternalImage) {
       case gfx::SurfaceFormat::R10G10B10X2_UINT32:
       case gfx::SurfaceFormat::R16G16B16A16F:
       case gfx::SurfaceFormat::P010:
-      case gfx::SurfaceFormat::P016:
-        mContentIsHDR = true;
+      case gfx::SurfaceFormat::P016: {
+        const auto* dxgiTexture = texture->AsRenderDXGITextureHost();
+        mContentIsHDR =
+            dxgiTexture &&
+            gfx::IsHDRTransferFunction(dxgiTexture->GetTransferFunction());
         break;
+      }
       default:
         break;
     }
