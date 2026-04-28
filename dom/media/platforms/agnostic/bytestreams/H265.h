@@ -12,6 +12,7 @@
 #include "mozilla/Result.h"
 #include "mozilla/Span.h"
 #include "mozilla/gfx/Point.h"
+#include "mozilla/gfx/Types.h"
 #include "nsStringFwd.h"
 #include "nsTArray.h"
 
@@ -410,6 +411,11 @@ class H265 final {
   
   static Result<bool, nsresult> IsKeyFrame(
       const mozilla::MediaRawData* aSample);
+
+  
+  
+  static mozilla::Maybe<mozilla::gfx::HDRMetadata> ParseSEIHDRMetadata(
+      const H265NALU& aNALU);
 
 #ifdef MOZ_WMF
   
