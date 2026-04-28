@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef MOZILLA_GFX_DCLAYER_TREE_H
 #define MOZILLA_GFX_DCLAYER_TREE_H
 
@@ -63,7 +61,6 @@ namespace wr {
 #define VIRTUAL_SURFACE_SIZE (1024 * 1024)
 
 class DCLayerSurface;
-class DCTile;
 class DCLayerDCompositionTexture;
 class DCSurface;
 class DCSwapChain;
@@ -142,7 +139,6 @@ class DCLayerTree {
   void WaitForCommitCompletion();
 
   bool UseCompositor() const;
-  bool UseNativeCompositor() const;
   bool UseLayerCompositor() const;
   void DisableNativeCompositor();
   bool EnableAsyncScreenshot();
@@ -229,7 +225,6 @@ class DCLayerTree {
   layers::OverlayInfo GetOverlayInfo();
 
   enum class WebRenderOsCompositorKind {
-    NativeCompositor,
     LayerCompositor,
   };
 
@@ -259,8 +254,6 @@ class DCLayerTree {
 
   bool mDebugCounter;
   bool mDebugVisualRedrawRegions;
-
-  Maybe<RefPtr<IDCompositionSurface>> mCurrentSurface;
 
   
   
@@ -321,44 +314,16 @@ class DCLayerTree {
 
 
 
-
-
-
-
 class DCSurface {
  public:
-  const bool mIsVirtualSurface;
-
-  explicit DCSurface(wr::DeviceIntSize aTileSize,
-                     wr::DeviceIntPoint aVirtualOffset, bool aIsVirtualSurface,
-                     bool aIsOpaque, DCLayerTree* aDCLayerTree);
+  explicit DCSurface(bool aIsOpaque, DCLayerTree* aDCLayerTree);
   virtual ~DCSurface();
 
   virtual bool Initialize();
-  void CreateTile(int32_t aX, int32_t aY);
-  void DestroyTile(int32_t aX, int32_t aY);
   void SetClip(wr::DeviceIntRect aClipRect, wr::ClipRadius aClipRadius);
 
   IDCompositionVisual2* GetContentVisual() const { return mContentVisual; }
   IDCompositionVisual2* GetRootVisual() const { return mRootVisual; }
-  DCTile* GetTile(int32_t aX, int32_t aY) const;
-
-  struct TileKey {
-    TileKey(int32_t aX, int32_t aY) : mX(aX), mY(aY) {}
-
-    int32_t mX;
-    int32_t mY;
-  };
-
-  wr::DeviceIntSize GetTileSize() const { return mTileSize; }
-  wr::DeviceIntPoint GetVirtualOffset() const { return mVirtualOffset; }
-
-  IDCompositionVirtualSurface* GetCompositionSurface() const {
-    return mVirtualSurface;
-  }
-
-  void UpdateAllocatedRect();
-  void DirtyAllocatedRect();
 
   
   virtual void AttachExternalImage(wr::ExternalImageId aExternalImage) {
@@ -389,12 +354,6 @@ class DCSurface {
  protected:
   DCLayerTree* mDCLayerTree;
 
-  struct TileKeyHashFn {
-    std::size_t operator()(const TileKey& aId) const {
-      return HashGeneric(aId.mX, aId.mY);
-    }
-  };
-
   struct DCSurfaceData {
     DCSurfaceData(const wr::CompositorSurfaceTransform& aTransform,
                   const wr::DeviceIntRect& aClipRect,
@@ -421,30 +380,19 @@ class DCSurface {
   
   
   
-  
-  
-  
-  
-  
-  
+
   RefPtr<IDCompositionVisual2> mRootVisual;
   RefPtr<IDCompositionVisual2> mContentVisual;
   RefPtr<IDCompositionRectangleClip> mClip;
 
-  wr::DeviceIntSize mTileSize;
   bool mIsOpaque;
-  bool mAllocatedRectDirty;
-  std::unordered_map<TileKey, UniquePtr<DCTile>, TileKeyHashFn> mDCTiles;
-  wr::DeviceIntPoint mVirtualOffset;
-  RefPtr<IDCompositionVirtualSurface> mVirtualSurface;
   Maybe<DCSurfaceData> mDCSurfaceData;
 };
 
 class DCLayerSurface : public DCSurface {
  public:
   DCLayerSurface(bool aIsOpaque, DCLayerTree* aDCLayerTree)
-      : DCSurface(wr::DeviceIntSize{}, wr::DeviceIntPoint{}, false, aIsOpaque,
-                  aDCLayerTree) {}
+      : DCSurface(aIsOpaque, aDCLayerTree) {}
   virtual ~DCLayerSurface() = default;
 
   virtual void Bind(const wr::DeviceIntRect* aDirtyRects,
@@ -552,10 +500,7 @@ class DCLayerCompositionSurface : public DCLayerSurface {
 class DCExternalSurfaceWrapper : public DCSurface {
  public:
   DCExternalSurfaceWrapper(bool aIsOpaque, DCLayerTree* aDCLayerTree)
-      : DCSurface(wr::DeviceIntSize{}, wr::DeviceIntPoint{},
-                  false , false ,
-                  aDCLayerTree),
-        mIsOpaque(aIsOpaque) {}
+      : DCSurface(false , aDCLayerTree), mIsOpaque(aIsOpaque) {}
   virtual ~DCExternalSurfaceWrapper() = default;
 
   void AttachExternalImage(wr::ExternalImageId aExternalImage) override;
@@ -634,6 +579,10 @@ class DCSurfaceVideo : public DCSurface {
   DXGI_FORMAT mSwapChainFormat = DXGI_FORMAT_B8G8R8A8_UNORM;
   bool mIsDRM = false;
   bool mFailedYuvSwapChain = false;
+  
+  bool mFailedVideoProcessorBltYUVHLGToRGBPQ = false;
+  
+  bool mFailedVideoProcessorBltYUVPQtoRGBPQ = false;
   RefPtr<RenderTextureHost> mRenderTextureHost;
   RefPtr<RenderTextureHost> mPrevTexture;
   RefPtr<RenderTextureHostUsageInfo> mRenderTextureHostUsageInfo;
@@ -667,47 +616,6 @@ class DCSurfaceHandle : public DCSurface {
 
   RefPtr<RenderDcompSurfaceTextureHost> mDcompTextureHost;
 };
-
-class DCTile {
- public:
-  gfx::IntRect mValidRect;
-
-  DCLayerTree* mDCLayerTree;
-  
-  
-  bool mNeedsFullDraw;
-
-  explicit DCTile(DCLayerTree* aDCLayerTree);
-  ~DCTile();
-  bool Initialize(int aX, int aY, wr::DeviceIntSize aSize,
-                  bool aIsVirtualSurface, bool aIsOpaque,
-                  RefPtr<IDCompositionVisual2> mSurfaceVisual);
-  RefPtr<IDCompositionSurface> Bind(wr::DeviceIntRect aValidRect);
-  IDCompositionVisual2* GetVisual() { return mVisual; }
-
- protected:
-  
-  wr::DeviceIntSize mSize;
-  
-  
-  bool mIsOpaque;
-  
-  bool mIsVirtualSurface;
-  
-  
-  RefPtr<IDCompositionVisual2> mVisual;
-  
-  
-  RefPtr<IDCompositionSurface> mCompositionSurface;
-
-  RefPtr<IDCompositionSurface> CreateCompositionSurface(wr::DeviceIntSize aSize,
-                                                        bool aIsOpaque);
-};
-
-static inline bool operator==(const DCSurface::TileKey& a0,
-                              const DCSurface::TileKey& a1) {
-  return a0.mX == a1.mX && a0.mY == a1.mY;
-}
 
 }  
 }  
