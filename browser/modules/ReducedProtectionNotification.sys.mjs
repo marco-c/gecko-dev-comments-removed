@@ -6,6 +6,7 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   EveryWindow: "resource:///modules/EveryWindow.sys.mjs",
+  PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
 });
 
 const NOTIFICATION_VALUE = "reduced-protection-reload";
@@ -49,10 +50,14 @@ export const ReducedProtectionNotification = {
     lazy.EveryWindow.registerCallback(
       "reduced-protection-notification",
       win => {
-        win.gBrowser?.addTabsProgressListener(this);
+        if (lazy.PrivateBrowsingUtils.isWindowPrivate(win)) {
+          win.gBrowser?.addTabsProgressListener(this);
+        }
       },
       win => {
-        win.gBrowser?.removeTabsProgressListener(this);
+        if (lazy.PrivateBrowsingUtils.isWindowPrivate(win)) {
+          win.gBrowser?.removeTabsProgressListener(this);
+        }
       }
     );
     this._initialized = true;
@@ -155,6 +160,7 @@ export const ReducedProtectionNotification = {
     const notification = await notificationBox.appendNotification(
       NOTIFICATION_VALUE,
       {
+        label: { "l10n-id": "reduced-protection-infobar-message" },
         priority: notificationBox.PRIORITY_INFO_LOW,
       },
       [
@@ -184,11 +190,6 @@ export const ReducedProtectionNotification = {
       ]
     );
     notification.persistence = -1;
-
-    const msgSpan = doc.createElementNS("http://www.w3.org/1999/xhtml", "span");
-    msgSpan.setAttribute("slot", "message");
-    doc.l10n.setAttributes(msgSpan, "reduced-protection-infobar-message");
-    notification.appendChild(msgSpan);
 
     if (!this._shownHosts.has(aBrowser)) {
       this._shownHosts.set(aBrowser, new Set());
