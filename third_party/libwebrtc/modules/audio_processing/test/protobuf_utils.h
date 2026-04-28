@@ -15,7 +15,6 @@
 #include <cstdint>
 #include <cstdio>
 #include <memory>
-#include <sstream>  
 
 #include "rtc_base/protobuf_utils.h"
 
@@ -30,11 +29,6 @@ size_t ReadMessageBytesFromFile(FILE* file, std::unique_ptr<uint8_t[]>* bytes);
 
 
 bool ReadMessageFromFile(FILE* file, MessageLite* msg);
-
-
-bool ReadMessageFromString(
-    std::stringstream* input,  
-    MessageLite* msg);
 
 }  
 

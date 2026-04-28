@@ -103,25 +103,6 @@ class ChannelBufferWavWriter final {
 
 
 
-
-class ChannelBufferVectorWriter final {
- public:
-  explicit ChannelBufferVectorWriter(std::vector<float>* output);
-  ChannelBufferVectorWriter(const ChannelBufferVectorWriter&) = delete;
-  ChannelBufferVectorWriter& operator=(const ChannelBufferVectorWriter&) =
-      delete;
-  ~ChannelBufferVectorWriter();
-
-  
-  
-  void Write(const ChannelBuffer<float>& buffer);
-
- private:
-  std::vector<float> interleaved_buffer_;
-  std::vector<float>* output_;
-};
-
-
 FILE* OpenFile(absl::string_view filename, absl::string_view mode);
 
 template <typename T>
