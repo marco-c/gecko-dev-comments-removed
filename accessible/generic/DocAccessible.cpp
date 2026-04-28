@@ -67,8 +67,6 @@ static nsStaticAtom* const kRelationAttrs[] = {
     nsGkAtoms::commandfor,        nsGkAtoms::aria_activedescendant,
     nsGkAtoms::aria_actions};
 
-static const uint32_t kRelationAttrsLen = std::size(kRelationAttrs);
-
 static nsStaticAtom* const kSingleElementRelationIdlAttrs[] = {
     nsGkAtoms::popovertarget, nsGkAtoms::commandfor};
 
@@ -1157,6 +1155,13 @@ void DocAccessible::ElementStateChanged(dom::Document* aDocument,
     FireDelayedEvent(event);
   }
 
+  if (aStateMask.HasState(dom::ElementState::MODAL)) {
+    const bool isModal = aElement->State().HasState(dom::ElementState::MODAL);
+    RefPtr<AccEvent> event =
+        new AccStateChangeEvent(accessible, states::MODAL, isModal);
+    FireDelayedEvent(event);
+  }
+
   if (aStateMask.HasState(dom::ElementState::VISITED)) {
     RefPtr<AccEvent> event =
         new AccStateChangeEvent(accessible, states::TRAVERSED, true);
@@ -1941,8 +1946,7 @@ void DocAccessible::AddDependentIDsFor(LocalAccessible* aRelProvider,
   dom::Element* relProviderEl = aRelProvider->Elm();
   if (!relProviderEl) return;
 
-  for (uint32_t idx = 0; idx < kRelationAttrsLen; idx++) {
-    nsStaticAtom* relAttr = kRelationAttrs[idx];
+  for (auto relAttr : kRelationAttrs) {
     if (aRelAttr && aRelAttr != relAttr) continue;
 
     if (relAttr == nsGkAtoms::_for) {
@@ -2012,9 +2016,9 @@ void DocAccessible::RemoveDependentIDsFor(LocalAccessible* aRelProvider,
   dom::Element* relProviderElm = aRelProvider->Elm();
   if (!relProviderElm) return;
 
-  for (uint32_t idx = 0; idx < kRelationAttrsLen; idx++) {
-    nsStaticAtom* relAttr = kRelationAttrs[idx];
-    if (aRelAttr && aRelAttr != kRelationAttrs[idx]) continue;
+  for (auto relationAttr : kRelationAttrs) {
+    const nsStaticAtom* relAttr = relationAttr;
+    if (aRelAttr && aRelAttr != relationAttr) continue;
 
     if (const nsAttrValue* parsedAttrValue =
             relProviderElm->GetParsedAttr(relAttr)) {
