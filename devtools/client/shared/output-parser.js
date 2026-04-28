@@ -97,6 +97,8 @@ const URL_REGEX =
 const TRUNCATE_LENGTH_THRESHOLD = 5000;
 const TRUNCATE_NODE_CLASSNAME = "propertyvalue-long-text";
 
+const CLOSED_STACK_ENTRY = Symbol("CLOSED_STACK_ENTRY");
+
 
 
 
@@ -150,11 +152,7 @@ class OutputParser {
   parseCssProperty(name, value, options = {}) {
     options = this.#mergeOptions(options);
 
-    options.expectCubicBezier = this.#cssProperties.supportsType(
-      name,
-      "timing-function"
-    );
-    options.expectLinearEasing = this.#cssProperties.supportsType(
+    options.expectTimingFunction = this.#cssProperties.supportsType(
       name,
       "timing-function"
     );
@@ -469,14 +467,15 @@ class OutputParser {
         break;
       }
       const lowerCaseTokenText = token.text?.toLowerCase();
+      const tokenType = token.tokenType;
 
-      if (token.tokenType === "Comment") {
+      if (tokenType === "Comment") {
         
         
         continue;
       }
 
-      switch (token.tokenType) {
+      switch (tokenType) {
         case "Function": {
           const functionName = token.value;
           const lowerCaseFunctionName = functionName.toLowerCase();
@@ -485,27 +484,26 @@ class OutputParser {
             lowerCaseFunctionName
           );
 
-          this.#stack.push({
+          this.#createStackEntry({
             lowerCaseFunctionName,
             functionName,
             isColorTakingFunction,
-            
-            separatorIndexes: [],
-            
-            
-            parts: [],
           });
 
           if (
             isColorTakingFunction ||
-            ANGLE_TAKING_FUNCTIONS.has(lowerCaseFunctionName)
+            ANGLE_TAKING_FUNCTIONS.has(lowerCaseFunctionName) ||
+            lowerCaseFunctionName === "cubic-bezier" ||
+            lowerCaseFunctionName === "linear" ||
+            lowerCaseFunctionName === "attr"
           ) {
             
             
             
             
             this.#appendTextNode(
-              text.substring(token.startOffset, token.endOffset)
+              text.substring(token.startOffset, token.endOffset),
+              token
             );
           } else if (
             lowerCaseFunctionName === "var" &&
@@ -625,25 +623,6 @@ class OutputParser {
                   this.#appendTextNode(functionText);
                 }
               } else if (
-                options.expectCubicBezier &&
-                lowerCaseFunctionName === "cubic-bezier"
-              ) {
-                this.#appendCubicBezier(functionText, options);
-              } else if (
-                options.expectLinearEasing &&
-                lowerCaseFunctionName === "linear"
-              ) {
-                this.#appendLinear(functionText, options);
-              } else if (
-                lowerCaseFunctionName === "attr" &&
-                typeof options.getAttributeValue === "function"
-              ) {
-                this.#appendAttr({
-                  functionText,
-                  functionContentTokens,
-                  options,
-                });
-              } else if (
                 colorOK() &&
                 InspectorUtils.isValidCSSColor(functionText)
               ) {
@@ -660,7 +639,7 @@ class OutputParser {
               ) {
                 this.#appendShape(functionText, options);
               } else {
-                this.#appendTextNode(functionText);
+                this.#appendTextNode(functionText, token);
               }
             }
           }
@@ -669,15 +648,16 @@ class OutputParser {
 
         case "Ident":
           if (
-            options.expectCubicBezier &&
+            options.expectTimingFunction &&
             BEZIER_KEYWORDS.has(lowerCaseTokenText)
           ) {
-            this.#appendCubicBezier(token.text, options);
-          } else if (
-            options.expectLinearEasing &&
-            lowerCaseTokenText == "linear"
-          ) {
-            this.#appendLinear(token.text, options);
+            this.#append(
+              this.#createCubicBezierContainer({
+                children: [token.text],
+                parseOptions: options,
+              }) || token.text,
+              token
+            );
           } else if (this.#isDisplayFlex(text, token, options)) {
             this.#appendDisplayWithHighlighterToggle(
               token.text,
@@ -692,12 +672,16 @@ class OutputParser {
             const colorFunctionEntry = this.#stack.findLast(
               entry => entry.isColorTakingFunction
             );
-            this.#appendColor(token.text, {
-              ...options,
-              colorFunction: colorFunctionEntry?.functionName,
-            });
+            this.#appendColor(
+              token.text,
+              {
+                ...options,
+                colorFunction: colorFunctionEntry?.functionName,
+              },
+              token
+            );
           } else if (angleOK(token.text)) {
-            this.#appendAngle(token.text, options);
+            this.#appendAngle(token.text, options, token);
           } else if (options.expectFont && !previousWasBang) {
             
             
@@ -705,7 +689,8 @@ class OutputParser {
             fontFamilyNameParts.push(token.text);
           } else {
             this.#appendTextNode(
-              text.substring(token.startOffset, token.endOffset)
+              text.substring(token.startOffset, token.endOffset),
+              token
             );
           }
           break;
@@ -717,26 +702,30 @@ class OutputParser {
             if (spaceNeeded) {
               
               
-              this.#appendTextNode(" ");
+              this.#appendTextNode(" ", token);
             }
             const colorFunctionEntry = this.#stack.findLast(
               entry => entry.isColorTakingFunction
             );
-            this.#appendColor(original, {
-              ...options,
-              colorFunction: colorFunctionEntry?.functionName,
-            });
+            this.#appendColor(
+              original,
+              {
+                ...options,
+                colorFunction: colorFunctionEntry?.functionName,
+              },
+              token
+            );
           } else {
-            this.#appendTextNode(original);
+            this.#appendTextNode(original, token);
           }
           break;
         }
         case "Dimension": {
           const value = text.substring(token.startOffset, token.endOffset);
           if (angleOK(value)) {
-            this.#appendAngle(value, options);
+            this.#appendAngle(value, options, token);
           } else {
-            this.#appendTextNode(value);
+            this.#appendTextNode(value, token);
           }
           break;
         }
@@ -756,7 +745,8 @@ class OutputParser {
             );
           } else {
             this.#appendTextNode(
-              text.substring(token.startOffset, token.endOffset)
+              text.substring(token.startOffset, token.endOffset),
+              token
             );
           }
           break;
@@ -766,36 +756,37 @@ class OutputParser {
             fontFamilyNameParts.push(" ");
           } else {
             this.#appendTextNode(
-              text.substring(token.startOffset, token.endOffset)
+              text.substring(token.startOffset, token.endOffset),
+              token
             );
           }
           break;
 
         case "ParenthesisBlock":
-          this.#stack.push({
-            isParenthesis: true,
-            separatorIndexes: [],
-            
-            
-            parts: [],
-          });
+          this.#createStackEntry({ isParenthesis: true });
           this.#appendTextNode(
-            text.substring(token.startOffset, token.endOffset)
+            text.substring(token.startOffset, token.endOffset),
+            token
           );
           break;
 
-        case "CloseParenthesis":
+        case "CloseParenthesis": {
+          
+          
+          
+          const isClosingTopStack = this.#stack.length <= 1;
+
+          if (!stopAtCloseParen || !isClosingTopStack) {
+            this.#appendTextNode(")", token);
+          }
           this.#onCloseParenthesis(options);
 
-          if (stopAtCloseParen && this.#stack.length === 0) {
+          if (stopAtCloseParen && isClosingTopStack) {
             done = true;
-            break;
           }
 
-          this.#appendTextNode(
-            text.substring(token.startOffset, token.endOffset)
-          );
           break;
+        }
 
         case "Comma":
         case "Delim":
@@ -810,16 +801,15 @@ class OutputParser {
 
           
           if (this.#stack.length) {
-            this.#appendTextNode(token.text);
-            const entry = this.#stack.at(-1);
-            entry.separatorIndexes.push(entry.parts.length - 1);
+            this.#appendTextNode(token.text, token);
             break;
           }
 
         
         default:
           this.#appendTextNode(
-            text.substring(token.startOffset, token.endOffset)
+            text.substring(token.startOffset, token.endOffset),
+            token
           );
           break;
       }
@@ -860,109 +850,68 @@ class OutputParser {
     return result;
   }
 
+  
+
+
+
+
+  #createStackEntry(entryData) {
+    const stackEntry = {
+      
+      
+      parts: [],
+      
+      
+      
+      
+      
+      
+      tokensByPart: new WeakMap(),
+      
+      functionName: null,
+      
+      
+      lowerCaseFunctionName: null,
+      
+      
+      isColorTakingFunction: null,
+      
+      isParenthesis: null,
+      ...entryData,
+    };
+    this.#stack.push(stackEntry);
+  }
+
   #onCloseParenthesis(options) {
     if (!this.#stack.length) {
       return;
     }
 
-    const stackEntry = this.#stack.at(-1);
-    if (
-      stackEntry.lowerCaseFunctionName === "light-dark" &&
-      typeof options.isDarkColorScheme === "boolean" &&
-      
-      
-      
-      
-      
-      stackEntry.separatorIndexes.length === 1
-    ) {
-      const stackEntryParts = this.#getCurrentStackParts();
-      const separatorIndex = stackEntry.separatorIndexes[0];
-      let startIndex;
-      let endIndex;
-      if (options.isDarkColorScheme) {
-        
-        
-
-        
-        
-        for (startIndex = 1; startIndex < separatorIndex; startIndex++) {
-          const part = stackEntryParts[startIndex];
-          if (typeof part !== "string" || part.trim() !== "") {
-            break;
-          }
-        }
-
-        
-        
-        for (
-          endIndex = separatorIndex - 1;
-          endIndex >= startIndex;
-          endIndex--
-        ) {
-          const part = stackEntryParts[endIndex];
-          if (typeof part !== "string" || part.trim() !== "") {
-            
-            endIndex++;
-            break;
-          }
-        }
-      } else {
-        
-        
-
-        
-        
-        for (
-          startIndex = separatorIndex + 1;
-          startIndex < stackEntryParts.length;
-          startIndex++
-        ) {
-          const part = stackEntryParts[startIndex];
-          if (typeof part !== "string" || part.trim() !== "") {
-            break;
-          }
-        }
-
-        
-        
-        
-        for (
-          endIndex = stackEntryParts.length - 1;
-          endIndex > separatorIndex;
-          endIndex--
-        ) {
-          const part = stackEntryParts[endIndex];
-          if (typeof part !== "string" || part.trim() !== "") {
-            
-            endIndex++;
-            break;
-          }
-        }
-      }
-
-      const parts = stackEntryParts.slice(startIndex, endIndex);
-
-      
-      
-      if (parts.length === 1 && Element.isInstance(parts[0])) {
-        parts[0].classList.add(options.unmatchedClass);
-      } else {
-        
-        
-        const node = this.#createNode("span", {
-          class: options.unmatchedClass,
-        });
-        node.append(...parts);
-        stackEntryParts.splice(startIndex, parts.length, node);
-      }
+    const stackEntry = this.#stack.pop();
+    let parts = stackEntry.parts;
+    if (stackEntry.lowerCaseFunctionName === "light-dark") {
+      parts = this.#onCloseParenthesisForLightDark(stackEntry, options);
+    } else if (stackEntry.lowerCaseFunctionName === "cubic-bezier") {
+      parts = this.#onCloseParenthesisForCubicBezier(stackEntry, options);
+    } else if (stackEntry.lowerCaseFunctionName === "linear") {
+      parts = this.#onCloseParenthesisForLinear(stackEntry, options);
+    } else if (stackEntry.lowerCaseFunctionName === "attr") {
+      parts = this.#onCloseParenthesisForAttr(stackEntry, options);
     }
 
     
-    const { parts } = this.#stack.pop();
-    
     
     this.#getCurrentStackParts().push(...parts);
+
+    if (this.#stack.length) {
+      const lastStackEntry = this.#stack.at(-1);
+
+      for (const part of parts) {
+        
+        
+        lastStackEntry.tokensByPart.set(part, CLOSED_STACK_ENTRY);
+      }
+    }
   }
 
   
@@ -975,7 +924,310 @@ class OutputParser {
 
 
 
+  #onCloseParenthesisForLightDark(stackEntry, options) {
+    const stackEntryParts = stackEntry.parts;
+    if (typeof options.isDarkColorScheme !== "boolean") {
+      return stackEntryParts;
+    }
 
+    let separatorIndex = null;
+    for (let i = 0; i < stackEntryParts.length; i++) {
+      const token = stackEntry.tokensByPart.get(stackEntryParts[i]);
+      if (token?.tokenType === "Comma") {
+        if (separatorIndex === null) {
+          separatorIndex = i;
+        } else {
+          
+          
+          
+          
+          
+          return stackEntryParts;
+        }
+      }
+    }
+
+    if (separatorIndex === null) {
+      return stackEntryParts;
+    }
+
+    let startIndex;
+    let endIndex;
+    if (options.isDarkColorScheme) {
+      
+      
+
+      
+      
+      for (let i = 1; i < separatorIndex; i++) {
+        const token = stackEntry.tokensByPart.get(stackEntryParts[i]);
+        if (token?.tokenType !== "WhiteSpace") {
+          startIndex = i;
+          break;
+        }
+      }
+
+      
+      
+      endIndex = separatorIndex - 1;
+      for (let i = endIndex; i >= startIndex; i--) {
+        const token = stackEntry.tokensByPart.get(stackEntryParts[i]);
+        if (token?.tokenType !== "WhiteSpace") {
+          
+          endIndex = i + 1;
+          break;
+        }
+      }
+    } else {
+      
+      
+
+      
+      
+      for (let i = separatorIndex + 1; i < stackEntryParts.length; i++) {
+        const token = stackEntry.tokensByPart.get(stackEntryParts[i]);
+        if (token?.tokenType !== "WhiteSpace") {
+          startIndex = i;
+          break;
+        }
+      }
+
+      
+      
+      
+      for (
+        
+        
+        
+        let i = stackEntryParts.length - 2;
+        i > separatorIndex;
+        i--
+      ) {
+        const token = stackEntry.tokensByPart.get(stackEntryParts[i]);
+        if (token?.tokenType !== "WhiteSpace") {
+          
+          endIndex = i + 1;
+          break;
+        }
+      }
+    }
+
+    const parts = stackEntryParts.slice(startIndex, endIndex);
+
+    
+    
+    if (parts.length === 1 && Element.isInstance(parts[0])) {
+      parts[0].classList.add(options.unmatchedClass);
+    } else {
+      
+      
+      const node = this.#createNode("span", {
+        class: options.unmatchedClass,
+      });
+      node.append(...parts);
+      stackEntryParts.splice(startIndex, parts.length, node);
+    }
+
+    return stackEntryParts;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  #onCloseParenthesisForCubicBezier(stackEntry, options) {
+    if (!options.expectTimingFunction) {
+      return stackEntry.parts;
+    }
+
+    const container = this.#createCubicBezierContainer({
+      children: stackEntry.parts,
+      parseOptions: options,
+    });
+
+    return container ? [container] : stackEntry.parts;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  #onCloseParenthesisForLinear(stackEntry, options) {
+    if (!options.expectTimingFunction) {
+      return stackEntry.parts;
+    }
+
+    const linear = stackEntry.parts.map(p => p.textContent ?? p).join("");
+
+    if (linear.includes("var(")) {
+      
+      return stackEntry.parts;
+    }
+
+    const container = this.#createNode("span", {
+      "data-linear": linear,
+    });
+
+    if (options.linearEasingSwatchClass) {
+      const swatch = this.#createNode("span", {
+        class: options.linearEasingSwatchClass,
+        tabindex: "0",
+        role: "button",
+        "data-linear": linear,
+      });
+      container.appendChild(swatch);
+    }
+
+    const valueEl = this.#createNode("span", {
+      class: options.linearEasingClass,
+    });
+    valueEl.append(...stackEntry.parts);
+    container.appendChild(valueEl);
+    return [container];
+  }
+
+  /**
+   * Called when we got the closing bracket for `attr()`
+   *
+   * @param {object} stackEntry
+   *        The last item in this.#stack
+   * @param {object} options
+   *        options passed to the parse function. @see #mergeOptions for valid options
+   *        and default values
+   */
+  #onCloseParenthesisForAttr(stackEntry, options) {
+    if (typeof options.getAttributeValue !== "function") {
+      return stackEntry.parts;
+    }
+
+    
+    let attrNameIndex = null;
+    for (let i = 0; i < stackEntry.parts.length; i++) {
+      const part = stackEntry.parts[i];
+      if (!stackEntry.tokensByPart.has(part)) {
+        continue;
+      }
+      const token = stackEntry.tokensByPart.get(part);
+      if (token !== CLOSED_STACK_ENTRY && token.tokenType === "Ident") {
+        attrNameIndex = i;
+        break;
+      }
+    }
+
+    
+    if (attrNameIndex === null) {
+      return stackEntry.parts;
+    }
+
+    
+    const attrNamePart = stackEntry.parts[attrNameIndex];
+    const attrName = attrNamePart.textContent;
+    
+    const attrValue = options.getAttributeValue(attrName);
+    
+    
+    const attrFirstParamNode = this.#createNode("span", {
+      class: `inspector-attribute${attrValue === null ? " " + options.unmatchedClass : ""}`,
+      "data-attribute":
+        attrValue === null
+          ? STYLE_INSPECTOR_L10N.getFormatStr("rule.attributeUnset", attrName)
+          : `"${attrValue}"`,
+    });
+    attrFirstParamNode.append(attrNamePart);
+    stackEntry.parts.splice(attrNameIndex, 1, attrFirstParamNode);
+
+    // Handle potential fallback value
+    // Note that this might change once the attribute type can be declared in attr()
+    // (see Bug 435426)
+
+    let commaIndex = null;
+    for (let i = attrNameIndex + 1; i < stackEntry.parts.length; i++) {
+      const part = stackEntry.parts[i];
+      if (!stackEntry.tokensByPart.has(part)) {
+        continue;
+      }
+      const token = stackEntry.tokensByPart.get(part);
+      if (token !== CLOSED_STACK_ENTRY && token.tokenType === "Comma") {
+        commaIndex = i;
+        break;
+      }
+    }
+
+    // We don't have to do anything when there's no fallback value, i.e. if we didn't
+    // found a separator
+    if (commaIndex === null) {
+      return stackEntry.parts;
+    }
+
+    let fallbackStartIndex = null;
+    for (let i = commaIndex + 1; i < stackEntry.parts.length; i++) {
+      const part = stackEntry.parts[i];
+      if (!stackEntry.tokensByPart.has(part)) {
+        continue;
+      }
+      const token = stackEntry.tokensByPart.get(part);
+      if (token !== CLOSED_STACK_ENTRY && token.tokenType !== "WhiteSpace") {
+        fallbackStartIndex = i;
+        break;
+      }
+    }
+
+    // This shouldn't happen, but let's be safe an bail if we didn't find the fallback part
+    if (fallbackStartIndex === null) {
+      return stackEntry.parts;
+    }
+
+    // The last part is the closing bracket, so let's put the index before it.
+    let fallbackEndTokenIndex = stackEntry.parts.length - 2;
+    for (let i = fallbackEndTokenIndex; i >= fallbackStartIndex; i--) {
+      const part = stackEntry.parts[i];
+      if (!stackEntry.tokensByPart.has(part)) {
+        continue;
+      }
+      const token = stackEntry.tokensByPart.get(part);
+      if (token !== CLOSED_STACK_ENTRY && token.tokenType !== "WhiteSpace") {
+        fallbackEndTokenIndex = i;
+        break;
+      }
+    }
+
+    // So, at this point, we have the fallback parts that we want to put in their own elements
+    const partsToWrap = stackEntry.parts.splice(
+      fallbackStartIndex,
+      fallbackEndTokenIndex - fallbackStartIndex + 1
+    );
+
+    const fallbackEl = this.#createNode("span", {
+      class: `inspector-attr-fallback${attrValue !== null ? " " + options.unmatchedClass : ""}`,
+    });
+    fallbackEl.append(...partsToWrap);
+    stackEntry.parts.splice(fallbackStartIndex, 0, fallbackEl);
+    return stackEntry.parts;
+  }
+
+  /**
+   * Parse a string.
+   *
+   * @param  {string} text
+   *         Text to parse.
+   * @param  {object} [options]
+   *         Options object. For valid options and default values see
+   *         #mergeOptions().
+   * @return {DocumentFragment}
+   *         A document fragment.
+   */
   #parse(text, options = {}) {
     text = text.trim();
     this.#parsed.length = 0;
@@ -985,16 +1237,16 @@ class OutputParser {
     return this.#doParse(text, options, tokenStream, false);
   }
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Returns true if it's a "display: [inline-]flex" token.
+   *
+   * @param  {string} text
+   *         The parsed text.
+   * @param  {object} token
+   *         The parsed token.
+   * @param  {object} options
+   *         The options given to #parse.
+   */
   #isDisplayFlex(text, token, options) {
     return (
       options.expectDisplay &&
@@ -1002,16 +1254,16 @@ class OutputParser {
     );
   }
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Returns true if it's a "display: [inline-]grid" token.
+   *
+   * @param  {string} text
+   *         The parsed text.
+   * @param  {object} token
+   *         The parsed token.
+   * @param  {object} options
+   *         The options given to #parse.
+   */
   #isDisplayGrid(text, token, options) {
     return (
       options.expectDisplay &&
@@ -1019,144 +1271,49 @@ class OutputParser {
     );
   }
 
-  
+  /**
+   * Create an element for a cubic-bezier timing function.
+   * Returns null if the element couldn't be created
+   *
+   * @param {object} options
+   * @param {Array<string|Node>} options.children
+   *        Children (strings or node) of the container that will be created.
+   * @param {object} options.parseOptions
+   *        Options object. For valid options and default values see
+   *        #mergeOptions()
+   * @return {Node|null}
+   */
+  #createCubicBezierContainer({ children, parseOptions }) {
+    let bezier = "";
+    for (const child of children) {
+      bezier += child.textContent ?? child;
+    }
 
+    if (bezier.includes("var(")) {
+      // For now, we don't support cubic-bezier with CSS variables (see Bug 2031695)
+      return null;
+    }
 
-
-
-
-
-
-
-  #appendCubicBezier(bezier, options) {
     const container = this.#createNode("span", {
       "data-bezier": bezier,
     });
 
-    if (options.bezierSwatchClass) {
+    if (parseOptions.bezierSwatchClass) {
       const swatch = this.#createNode("span", {
-        class: options.bezierSwatchClass,
+        class: parseOptions.bezierSwatchClass,
         tabindex: "0",
         role: "button",
       });
       container.appendChild(swatch);
     }
 
-    const value = this.#createNode(
-      "span",
-      {
-        class: options.bezierClass,
-      },
-      bezier
-    );
-
-    container.appendChild(value);
-    this.#append(container);
-  }
-
-  #appendLinear(text, options) {
-    const container = this.#createNode("span", {
-      "data-linear": text,
+    const valueEl = this.#createNode("span", {
+      class: parseOptions.bezierClass,
     });
+    valueEl.append(...children);
 
-    if (options.linearEasingSwatchClass) {
-      const swatch = this.#createNode("span", {
-        class: options.linearEasingSwatchClass,
-        tabindex: "0",
-        role: "button",
-        "data-linear": text,
-      });
-      container.appendChild(swatch);
-    }
-
-    const value = this.#createNode(
-      "span",
-      {
-        class: options.linearEasingClass,
-      },
-      text
-    );
-
-    container.appendChild(value);
-    this.#append(container);
-  }
-
-  /**
-   * Append an `attr()` function to the output
-   *
-   * @param {object} dict
-   * @param {string} dict.functionText
-   *        The whole function call (e.g. `attr(foo, "bar")`)
-   * @param {object[]} dict.functionContentTokens
-   *        The parsed tokens for the function content (i.e. what's inside the parens)
-   * @param {object} dict.options
-   *        Options object. For valid options and default values see
-   *        #mergeOptions()
-   */
-  #appendAttr({ functionText, functionContentTokens, options }) {
-    // Look for the attribute name, which should be the first Ident tokens
-    const attrNameIndex = functionContentTokens.findIndex(
-      t => t.tokenType === "Ident"
-    );
-    const attrName =
-      attrNameIndex !== -1 ? functionContentTokens[attrNameIndex].value : null;
-    // We should always have an attribute name at this point, but let's be safe
-    if (!attrName) {
-      this.#appendTextNode(functionText);
-      return;
-    }
-
-    // Append text before the attribute name
-    this.#appendTextNode("attr(");
-    for (let i = 0; i < attrNameIndex; i++) {
-      this.#appendTextNode(functionContentTokens[i].text);
-    }
-
-    // Then append the attribute name, with specific style if the attribute isn't found
-    const attrValue = options.getAttributeValue(attrName);
-    this.#appendNode(
-      "span",
-      {
-        class: `inspector-attribute${attrValue === null ? " " + options.unmatchedClass : ""}`,
-        "data-attribute":
-          attrValue === null
-            ? STYLE_INSPECTOR_L10N.getFormatStr("rule.attributeUnset", attrName)
-            : `"${attrValue}"`,
-      },
-      attrName
-    );
-
-    // Handle potential fallback value
-    // Note that this might change once the attribute value can be declared in attr()
-    // (see Bug 435426)
-    let foundSeparator = false;
-    let foundFallback = false;
-    for (let i = attrNameIndex + 1; i < functionContentTokens.length; i++) {
-      const t = functionContentTokens[i];
-      // We first need to find the comma that comes after the attribute name
-      if (t.tokenType === "Comma") {
-        foundSeparator = true;
-        this.#appendTextNode(t.text + " ");
-        continue;
-      }
-
-      // Then, once we found the comma, the next non whitespace token is the fallback
-      if (foundSeparator && !foundFallback && t.tokenType !== "WhiteSpace") {
-        foundFallback = true;
-        this.#appendNode(
-          "span",
-          {
-            class: `inspector-attr-fallback${attrValue !== null ? " " + options.unmatchedClass : ""}`,
-          },
-          t.text
-        );
-      } else {
-        this.#appendTextNode(t.text);
-      }
-    }
-
-    // Finally append the closing paren
-    this.#appendTextNode(")");
+    container.appendChild(valueEl);
+    return container;
   }
 
   /**
@@ -1879,8 +2036,9 @@ class OutputParser {
    * @param {object} options
    *        Options object. For valid options and default values see
    *        #mergeOptions()
+   * @param {object} token
    */
-  #appendAngle(angle, options) {
+  #appendAngle(angle, options, token) {
     const angleObj = new angleUtils.CssAngle(angle);
     const container = this.#createNode("span", {
       "data-angle": angle,
@@ -1916,7 +2074,7 @@ class OutputParser {
     );
 
     container.appendChild(value);
-    this.#append(container);
+    this.#append(container, token);
   }
 
   /**
@@ -1968,8 +2126,9 @@ class OutputParser {
    *        a CSS variable
    * @param {string} options.colorFunction: The color function that is used to produce this color
    * @param {*} For all the other valid options and default values see #mergeOptions().
+   * @param {object} token
    */
-  #appendColor(color, options = {}) {
+  #appendColor(color, options, token) {
     const colorObj = options.colorObj || new colorUtils.CssColor(color);
 
     if (this.#isValidColor(colorObj)) {
@@ -2035,9 +2194,9 @@ class OutputParser {
         container.appendChild(value);
       }
 
-      this.#append(container);
+      this.#append(container, token);
     } else {
-      this.#appendTextNode(color);
+      this.#appendTextNode(color, token);
     }
   }
 
@@ -2276,23 +2435,30 @@ class OutputParser {
    * @param  {string} [value]
    *         If a value is included it will be appended as a text node inside
    *         the tag. This is useful e.g. for span tags.
+   * @param  {object} token
    */
-  #appendNode(tagName, attributes, value = "") {
+  #appendNode(tagName, attributes, value, token) {
     const node = this.#createNode(tagName, attributes, value);
     if (value.length > TRUNCATE_LENGTH_THRESHOLD) {
       node.classList.add(TRUNCATE_NODE_CLASSNAME);
     }
 
-    this.#append(node);
+    this.#append(node, token);
   }
 
   /**
    * Append an element or a text node to the output.
    *
-   * @param {DOMNode | string} item
+   * @param {Element|Text} item
+   * @param {object} token
    */
-  #append(item) {
+  #append(item, token = null) {
     this.#getCurrentStackParts().push(item);
+
+    if (token !== null && this.#stack.length) {
+      const stackEntry = this.#stack.at(-1);
+      stackEntry.tokensByPart.set(item, token);
+    }
   }
 
   /**
@@ -2301,14 +2467,15 @@ class OutputParser {
    *
    * @param  {string} text
    *         Text to append
+   * @param  {object} token
    */
-  #appendTextNode(text) {
+  #appendTextNode(text, token) {
     if (text.length > TRUNCATE_LENGTH_THRESHOLD) {
       // If the text is too long, force creating a node, which will add the
       // necessary classname to truncate the property correctly.
-      this.#appendNode("span", {}, text);
+      this.#appendNode("span", {}, text, token);
     } else {
-      this.#append(text);
+      this.#append(this.#doc.createTextNode(text), token);
     }
   }
 
