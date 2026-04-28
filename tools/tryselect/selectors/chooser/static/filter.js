@@ -75,56 +75,67 @@ var updateLabels = () => {
 
 var apply = () => {
   manualExcluded.clear();
-  let filters = {};
-  let kinds = [];
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  let filterSets = [];
+  let buildTypeFilter = null;
 
   $(".filter:checked").each(function () {
-    for (let kind of this.name.split(",")) {
-      if (!kinds.includes(kind)) {
-        kinds.push(kind);
-      }
-    }
-
     
     let attrs = JSON.parse(this.value);
-    for (let attr in attrs) {
-      if (!(attr in filters)) {
-        filters[attr] = [];
-      }
-
-      let values = attrs[attr];
-      filters[attr] = filters[attr].concat(values);
+    
+    
+    if (this.type === "radio") {
+      buildTypeFilter = attrs.build_type ?? null;
+      return;
     }
+    filterSets.push({
+      kinds: new Set(this.name.split(",")),
+      filters: attrs,
+    });
   });
   updateLabels();
 
-  if (
-    !Object.keys(filters).length ||
-    (Object.keys(filters).length == 1 && "build_type" in filters)
-  ) {
-    selected = [];
-  } else {
-    var taskMatches = label => {
-      let task = tasks[label];
+  var taskMatches = label => {
+    let task = tasks[label];
 
-      
-      
-      if (!kinds.includes(task.kind)) {
-        return false;
+    if (
+      buildTypeFilter !== null &&
+      "build_type" in task &&
+      task.build_type !== buildTypeFilter
+    ) {
+      return false;
+    }
+
+    for (let { kinds, filters } of filterSets) {
+      if (!kinds.has(task.kind)) {
+        continue;
       }
-
+      let ok = true;
       for (let attr in filters) {
-        let values = filters[attr];
-        if (!(attr in task) || values.includes(task[attr])) {
-          continue;
+        if (attr in task && !filters[attr].includes(task[attr])) {
+          ok = false;
+          break;
         }
-        return false;
       }
-      return true;
-    };
+      if (ok) {
+        return true;
+      }
+    }
+    return false;
+  };
 
-    selected = Object.keys(tasks).filter(taskMatches);
-  }
+  selected = filterSets.length ? Object.keys(tasks).filter(taskMatches) : [];
   applyFilters();
 };
 
