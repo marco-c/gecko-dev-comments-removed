@@ -13663,10 +13663,6 @@ function LocationSearch({
   const [selectedLocation, setSelectedLocation] = (0,external_React_namespaceObject.useState)("");
   const suggestedLocations = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Weather.suggestedLocations);
   const locationSearchString = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Weather.locationSearchString);
-  const novaEnabled = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values["nova.enabled"]);
-  const weatherOptIn = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values["system.showWeatherOptIn"]);
-  const optInAccepted = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values["weather.optInAccepted"]);
-  const showCurrentLocation = !weatherOptIn || optInAccepted;
   const [userInput, setUserInput] = (0,external_React_namespaceObject.useState)(locationSearchString || "");
   const inputRef = (0,external_React_namespaceObject.useRef)(null);
   const dispatch = (0,external_ReactRedux_namespaceObject.useDispatch)();
@@ -13733,17 +13729,6 @@ function LocationSearch({
       handleCloseSearch();
     }
   }
-  function handleUseCurrentLocation() {
-    (0,external_ReactRedux_namespaceObject.batch)(() => {
-      dispatch(actionCreators.AlsoToMain({
-        type: actionTypes.WEATHER_USER_OPT_IN_LOCATION
-      }));
-      dispatch(actionCreators.BroadcastToContent({
-        type: actionTypes.WEATHER_SEARCH_ACTIVE,
-        data: false
-      }));
-    });
-  }
   return external_React_default().createElement("div", {
     className: `${outerClassName} location-search`
   }, external_React_default().createElement("div", {
@@ -13757,10 +13742,9 @@ function LocationSearch({
     "data-l10n-id": "newtab-weather-change-location-search-input-placeholder",
     onChange: handleChange,
     value: userInput,
-    onKeyDown: handleKeyDown,
-    className: "location-input"
+    onKeyDown: handleKeyDown
   }), external_React_default().createElement("moz-button", {
-    className: "close-icon",
+    class: "close-icon",
     type: "icon ghost",
     size: "small",
     iconSrc: "chrome://global/skin/icons/close.svg",
@@ -13770,12 +13754,7 @@ function LocationSearch({
   }, (suggestedLocations || []).map(merinoLocation => external_React_default().createElement("option", {
     value: merinoLocation.key,
     key: merinoLocation.key
-  }, merinoLocation.localized_name, ",", " ", merinoLocation.administrative_area.localized_name)))), showCurrentLocation && novaEnabled && external_React_default().createElement("moz-button", {
-    "data-l10n-id": "newtab-weather-change-location-search-use-current",
-    type: "icon ghost",
-    iconSrc: "chrome://browser/skin/notification-icons/geo.svg",
-    onClick: handleUseCurrentLocation
-  }));
+  }, merinoLocation.localized_name, ",", " ", merinoLocation.administrative_area.localized_name)))));
 }
 
 ;
@@ -14519,16 +14498,8 @@ function Weather_Weather({
       onClick: handleLearnMore
     })));
   }
-  function getArticleClassNames() {
-    return ["weather-widget", "col-4", `${size}-widget`, hasError && "weather-error-state",
-    
-    
-    showOptInState && !searchActive && "weather-opt-in",
-    
-    searchActive && "weather-search-active"].filter(Boolean).join(" ");
-  }
   return external_React_default().createElement("article", {
-    className: getArticleClassNames(),
+    className: `weather-widget col-4 ${size}-widget${hasError ? " weather-error-state" : ""}${showOptInState ? " weather-opt-in" : ""}`,
     ref: el => {
       weatherRef.current = [el];
     }
@@ -14541,18 +14512,16 @@ function Weather_Weather({
     className: "widget-title-bar"
   }, external_React_default().createElement("div", {
     className: "widget-title"
-  }, !showOptInState && !searchActive && external_React_default().createElement("h3", null, weatherData.locationData.city)), !searchActive && renderContextMenu()), hasError && external_React_default().createElement("div", {
-    className: "weather-error",
+  }, searchActive && external_React_default().createElement(LocationSearch, {
+    outerClassName: "",
+    onLocationSelected: showOptInState ? handleOptInLocationSelected : undefined
+  }), !searchActive && !showOptInState && external_React_default().createElement("h3", null, weatherData.locationData.city)), renderContextMenu()), hasError && external_React_default().createElement("div", {
+    className: "forecast-error",
     ref: errorRef
   }, external_React_default().createElement("span", {
     className: "icon icon-info-warning"
   }), " ", external_React_default().createElement("p", {
     "data-l10n-id": "newtab-weather-error-not-available"
-  })), searchActive && external_React_default().createElement("div", {
-    className: "weather-search-container"
-  }, external_React_default().createElement(LocationSearch, {
-    outerClassName: "",
-    onLocationSelected: showOptInState ? handleOptInLocationSelected : undefined
   })), showOptInState ? !searchActive && external_React_default().createElement("div", {
     className: "weather-opt-in-container"
   }, external_React_default().createElement("div", {
