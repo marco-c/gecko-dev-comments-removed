@@ -712,7 +712,8 @@ public class WebExtensionController {
   @StringDef({
     INSTALLATION_METHOD_MANAGER,
     INSTALLATION_METHOD_FROM_FILE,
-    INSTALLATION_METHOD_ONBOARDING
+    INSTALLATION_METHOD_ONBOARDING,
+    INSTALLATION_METHOD_RTAMO
   })
   public @interface InstallationMethod {};
 
@@ -724,6 +725,13 @@ public class WebExtensionController {
 
   
   public static final String INSTALLATION_METHOD_ONBOARDING = "onboarding";
+
+  
+
+
+
+
+  public static final String INSTALLATION_METHOD_RTAMO = "rtamo";
 
   
 
