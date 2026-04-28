@@ -56,7 +56,10 @@ int likeCompare(nsAString::const_iterator aPatternItr,
 
 
 
-      while (*aPatternItr == MATCH_ALL || *aPatternItr == MATCH_ONE) {
+      
+      
+      while (aPatternItr != aPatternEnd &&
+             (*aPatternItr == MATCH_ALL || *aPatternItr == MATCH_ONE)) {
         if (*aPatternItr == MATCH_ONE) {
           
           if (aStringItr == aStringEnd) return 0;
@@ -93,7 +96,8 @@ int likeCompare(nsAString::const_iterator aPatternItr,
       lastWasEscape = true;
     } else {
       
-      if (::ToUpperCase(*aStringItr) != ::ToUpperCase(*aPatternItr)) {
+      if (aStringItr == aStringEnd ||
+          ::ToUpperCase(*aStringItr) != ::ToUpperCase(*aPatternItr)) {
         
         return 0;
       }
