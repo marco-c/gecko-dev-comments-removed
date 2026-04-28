@@ -80,7 +80,6 @@ pid_t gettid_pthread() {
 #  include "util/WindowsWrapper.h"
 #  include <codecvt>
 #  include <evntprov.h>
-#  include <locale>
 #  include <string>
 
 const GUID PROVIDER_JSCRIPT9 = {
@@ -433,17 +432,24 @@ JS::JitCodeRecord* JS::LookupJitCodeRecord(uint64_t addr) {
     return nullptr;
   }
 
-  AutoLockPerfSpewer lock;
-
   
+  
+  
+  if (!PerfMutex.tryLock()) {
+    return nullptr;
+  }
+
+  JS::JitCodeRecord* result = nullptr;
   for (auto& record : profilerData) {
     if (addr >= record.code_addr &&
         addr < record.code_addr + record.instructionSize) {
-      return &record;
+      result = &record;
+      break;
     }
   }
 
-  return nullptr;
+  PerfMutex.unlock();
+  return result;
 }
 
 static bool PerfSrcEnabled() {
