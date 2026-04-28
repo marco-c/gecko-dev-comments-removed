@@ -22,6 +22,7 @@
 
 
 
+
 #include "cairoint.h"
 #include "cairo-spans-private.h"
 #include "cairo-error-private.h"
@@ -561,7 +562,7 @@ _cairo_mono_scan_converter_create (int			xmin,
     cairo_mono_scan_converter_t *self;
     cairo_status_t status;
 
-    self = _cairo_malloc (sizeof(struct _cairo_mono_scan_converter));
+    self = _cairo_calloc (sizeof(struct _cairo_mono_scan_converter));
     if (unlikely (self == NULL)) {
 	status = _cairo_error (CAIRO_STATUS_NO_MEMORY);
 	goto bail_nomem;

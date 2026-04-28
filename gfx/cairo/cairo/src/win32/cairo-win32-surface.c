@@ -36,6 +36,7 @@
 
 
 
+
 #include "cairoint.h"
 
 #include "cairo-backend-private.h"
@@ -52,9 +53,6 @@
 #include <wchar.h>
 #include <windows.h>
 
-#if defined(__MINGW32__) && !defined(ETO_PDY)
-# define ETO_PDY 0x2000
-#endif
 
 
 
@@ -80,41 +78,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-cairo_status_t
-_cairo_win32_print_gdi_error (const char *context)
-{
-    void *lpMsgBuf;
-    DWORD last_error = GetLastError ();
-
-    if (!FormatMessageW (FORMAT_MESSAGE_ALLOCATE_BUFFER |
-			 FORMAT_MESSAGE_FROM_SYSTEM,
-			 NULL,
-			 last_error,
-			 MAKELANGID (LANG_NEUTRAL, SUBLANG_DEFAULT),
-			 (LPWSTR) &lpMsgBuf,
-			 0, NULL)) {
-	fprintf (stderr, "%s: Unknown GDI error", context);
-    } else {
-	fprintf (stderr, "%s: %S", context, (wchar_t *)lpMsgBuf);
-
-	LocalFree (lpMsgBuf);
-    }
-
-    fflush (stderr);
-
-    return _cairo_error (CAIRO_STATUS_WIN32_GDI_ERROR);
-}
 
 cairo_bool_t
 _cairo_win32_surface_get_extents (void		          *abstract_surface,
@@ -368,7 +331,7 @@ _cairo_win32_surface_emit_glyphs (cairo_win32_surface_t *dst,
                              num_glyphs,
                              dxy_buf);
     if (!win_result) {
-        _cairo_win32_print_gdi_error("_cairo_win32_surface_show_glyphs(ExtTextOutW failed)");
+        fprintf (stderr, "%s:%s\n", __FUNCTION__, "ExtTextOut");
     }
 
     RestoreDC(dst->dc, -1);

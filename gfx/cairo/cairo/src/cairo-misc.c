@@ -37,6 +37,7 @@
 
 
 
+
 #include "cairoint.h"
 #include "cairo-error-private.h"
 
@@ -46,6 +47,9 @@
 #include <locale.h>
 #ifdef HAVE_XLOCALE_H
 #include <xlocale.h>
+#endif
+#if HAVE_FCNTL_H
+#include <fcntl.h>
 #endif
 
 COMPILE_TIME_ASSERT ((int)CAIRO_STATUS_LAST_STATUS < (int)CAIRO_INT_STATUS_UNSUPPORTED);
@@ -802,12 +806,12 @@ get_C_locale (void)
     locale_t C;
 
 retry:
-    C = (locale_t) _cairo_atomic_ptr_get ((void **) &C_locale);
+    C = (locale_t) _cairo_atomic_ptr_get ((cairo_atomic_intptr_t *) &C_locale);
 
     if (unlikely (!C)) {
         C = newlocale (LC_ALL_MASK, "C", NULL);
 
-        if (!_cairo_atomic_ptr_cmpxchg ((void **) &C_locale, NULL, C)) {
+        if (!_cairo_atomic_ptr_cmpxchg ((cairo_atomic_intptr_t *) &C_locale, NULL, C)) {
             freelocale (C_locale);
             goto retry;
         }
@@ -955,14 +959,40 @@ _cairo_fopen (const char *filename, const char *mode, FILE **file_out)
 	return status;
     }
 
-    result = _wfopen(filename_w, mode_w);
+    result = _wfopen (filename_w, mode_w);
 
     free (filename_w);
     free (mode_w);
 
 #else 
+
+#if __GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 7)
+    
+
+
+    char new_mode[20];
+    snprintf (new_mode, sizeof (new_mode), "%s%s", mode, "e");
+    result = fopen (filename, new_mode);
+
+#else 
+
     result = fopen (filename, mode);
-#endif
+
+#if defined(HAVE_FCNTL_H) && defined(FD_CLOEXEC)
+    
+    if (result != NULL) {
+	int fd = fileno (result);
+	if (fd != -1) {
+	    int flags = fcntl (fd, F_GETFD);
+	    if (flags >= 0)
+		flags = fcntl (fd, F_SETFD, flags | FD_CLOEXEC);
+	}
+    }
+#endif 
+
+#endif 
+
+#endif 
 
     *file_out = result;
 
@@ -970,18 +1000,15 @@ _cairo_fopen (const char *filename, const char *mode, FILE **file_out)
 }
 
 #ifdef _WIN32
-
 #include <windows.h>
 #include <io.h>
 
-#if !_WIN32_WCE
 
 
 
 
 
-
-FILE *
+static FILE *
 _cairo_win32_tmpfile (void)
 {
     DWORD path_len;
@@ -995,7 +1022,7 @@ _cairo_win32_tmpfile (void)
     if (path_len <= 0 || path_len >= MAX_PATH)
 	return NULL;
 
-    if (GetTempFileNameW (path_name, L"ps_", 0, file_name) == 0)
+    if (GetTempFileNameW (path_name, L"cairo_", 0, file_name) == 0)
 	return NULL;
 
     handle = CreateFileW (file_name,
@@ -1026,7 +1053,57 @@ _cairo_win32_tmpfile (void)
 }
 #endif 
 
+
+
+
+
+
+
+
+
+
+FILE *
+_cairo_tmpfile (void)
+{
+#ifdef _WIN32
+    return _cairo_win32_tmpfile ();
+#else 
+    int fd;
+    FILE *file;
+    int flags;
+
+#ifdef O_TMPFILE
+    fd = open(P_tmpdir,
+	      O_TMPFILE | O_EXCL | O_RDWR | O_NOATIME | O_CLOEXEC,
+	      0600);
+    if (fd == -1 && errno == ENOENT) {
+	fd = open("/tmp",
+		  O_TMPFILE | O_EXCL | O_RDWR | O_NOATIME | O_CLOEXEC,
+		  0600);
+    }
+    if (fd != -1)
+	return fdopen (fd, "wb+");
+
+    
 #endif 
+
+    file = tmpfile();
+
+#if defined(HAVE_FCNTL_H) && defined(FD_CLOEXEC)
+    
+    if (file != NULL) {
+	fd = fileno(file);
+	if (fd != -1) {
+	    flags = fcntl(fd, F_GETFD);
+	    if (flags >= 0 && !(flags & FD_CLOEXEC))
+		fcntl(fd, F_SETFD, flags | FD_CLOEXEC);
+	}
+    }
+#endif 
+
+    return file;
+#endif 
+}
 
 typedef struct _cairo_intern_string {
     cairo_hash_entry_t hash_entry;

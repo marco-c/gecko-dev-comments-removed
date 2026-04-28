@@ -34,6 +34,7 @@
 
 
 
+
 #ifndef CAIRO_FT_PRIVATE_H
 #define CAIRO_FT_PRIVATE_H
 
@@ -41,6 +42,10 @@
 #include "cairo-ft.h"
 
 #if CAIRO_HAS_FT_FONT
+
+#ifdef FT_COLOR_H
+#include FT_COLOR_H
+#endif
 
 CAIRO_BEGIN_DECLS
 

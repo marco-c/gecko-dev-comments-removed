@@ -46,34 +46,127 @@
 
 #include "cairoint.h"
 
-#if CAIRO_MUTEX_IMPL_WIN32
-#if !CAIRO_WIN32_STATIC_BUILD
-
 #include <windows.h>
 
 
-BOOL WINAPI
-DllMain (HINSTANCE hinstDLL,
-         DWORD     fdwReason,
-         LPVOID    lpvReserved);
 
-BOOL WINAPI
-DllMain (HINSTANCE hinstDLL,
-         DWORD     fdwReason,
-         LPVOID    lpvReserved)
+
+
+
+
+
+
+
+
+cairo_status_t
+_cairo_win32_print_api_error (const char *context, const char *api)
 {
-    switch (fdwReason) {
+    const DWORD lang_id = MAKELANGID (LANG_NEUTRAL, SUBLANG_DEFAULT);
+    const DWORD flags = FORMAT_MESSAGE_ALLOCATE_BUFFER |
+                        FORMAT_MESSAGE_IGNORE_INSERTS |
+                        FORMAT_MESSAGE_FROM_SYSTEM;
+    const DWORD last_error = GetLastError ();
+    void *lpMsgBuf = NULL;
+
+    if (!FormatMessageW (flags, NULL, last_error, lang_id, (LPWSTR) &lpMsgBuf, 0, NULL)) {
+       fprintf (stderr, "%s: %s failed with error code %lu\n", context, api, last_error);
+    }
+    else {
+       fprintf (stderr, "%s: %s failed - %S\n", context, api, (wchar_t *)lpMsgBuf);
+       LocalFree (lpMsgBuf);
+    }
+
+    return _cairo_error (CAIRO_STATUS_WIN32_GDI_ERROR);
+}
+
+
+
+
+
+
+
+
+
+
+HMODULE
+_cairo_win32_load_library_from_system32 (const wchar_t *name)
+{
+    HMODULE module_handle;
+
+    module_handle = LoadLibraryExW (name, NULL, LOAD_LIBRARY_SEARCH_SYSTEM32);
+    if (module_handle == NULL) {
+        DWORD code = GetLastError();
+        if (code == ERROR_INVALID_PARAMETER) {
+            
+
+
+            return LoadLibraryW (name);
+        }
+    }
+
+    return module_handle;
+}
+
+#if CAIRO_MUTEX_IMPL_WIN32
+
+static void NTAPI
+cairo_win32_tls_callback (PVOID hinstance, DWORD dwReason, PVOID lpvReserved)
+{
+    switch (dwReason) {
         case DLL_PROCESS_ATTACH:
             CAIRO_MUTEX_INITIALIZE ();
             break;
 
         case DLL_PROCESS_DETACH:
-            CAIRO_MUTEX_FINALIZE ();
+            if (lpvReserved == NULL) {
+                CAIRO_MUTEX_FINALIZE ();
+            }
             break;
     }
-
-    return TRUE;
 }
 
+#ifdef _MSC_VER
+
+#ifdef _M_IX86
+# define SYMBOL_PREFIX "_"
+#else
+# define SYMBOL_PREFIX ""
 #endif
+
+#ifdef __cplusplus
+# define EXTERN_C_BEGIN extern "C" {
+# define EXTERN_C_END }
+# define EXTERN_CONST extern const
+#else
+# define EXTERN_C_BEGIN
+# define EXTERN_C_END
+# define EXTERN_CONST const
 #endif
+
+#define DEFINE_TLS_CALLBACK(func) \
+__pragma (section (".CRT$XLD", long, read))                          \
+                                                                     \
+static void NTAPI func (PVOID, DWORD, PVOID);                        \
+                                                                     \
+EXTERN_C_BEGIN                                                       \
+__declspec (allocate (".CRT$XLD"))                                   \
+EXTERN_CONST PIMAGE_TLS_CALLBACK _ptr_##func = func;                 \
+EXTERN_C_END                                                         \
+                                                                     \
+__pragma (comment (linker, "/INCLUDE:" SYMBOL_PREFIX "_tls_used"))   \
+__pragma (comment (linker, "/INCLUDE:" SYMBOL_PREFIX "_ptr_" #func))
+
+#else 
+
+#define DEFINE_TLS_CALLBACK(func) \
+static void NTAPI func (PVOID, DWORD, PVOID);        \
+                                                     \
+__attribute__ ((used, section (".CRT$XLD")))         \
+static const PIMAGE_TLS_CALLBACK _ptr_##func = func;
+
+
+#endif 
+
+DEFINE_TLS_CALLBACK (cairo_win32_tls_callback);
+
+#endif 

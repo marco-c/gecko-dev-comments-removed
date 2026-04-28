@@ -23,6 +23,7 @@
 
 
 
+
 #ifndef CAIRO_SPANS_PRIVATE_H
 #define CAIRO_SPANS_PRIVATE_H
 #include "cairo-types-private.h"

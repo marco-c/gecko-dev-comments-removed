@@ -37,6 +37,7 @@
 
 
 
+
 #include "cairoint.h"
 
 #include "cairo-private.h"
@@ -1507,7 +1508,7 @@ _cairo_default_context_create (void *target)
 
     cr = _freed_pool_get (&context_pool);
     if (unlikely (cr == NULL)) {
-	cr = _cairo_malloc (sizeof (cairo_default_context_t));
+	cr = _cairo_calloc (sizeof (cairo_default_context_t));
 	if (unlikely (cr == NULL))
 	    return _cairo_create_in_error (_cairo_error (CAIRO_STATUS_NO_MEMORY));
     }

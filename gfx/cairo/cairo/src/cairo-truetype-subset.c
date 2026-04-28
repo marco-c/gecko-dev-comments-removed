@@ -40,6 +40,7 @@
 
 
 
+
 #define _DEFAULT_SOURCE
 #include "cairoint.h"
 
@@ -193,7 +194,7 @@ _cairo_truetype_font_create (cairo_scaled_font_subset_t  *scaled_font_subset,
     if (unlikely (status))
 	return status;
 
-    font = _cairo_malloc (sizeof (cairo_truetype_font_t));
+    font = _cairo_calloc (sizeof (cairo_truetype_font_t));
     if (unlikely (font == NULL))
 	return _cairo_error (CAIRO_STATUS_NO_MEMORY);
 
@@ -211,14 +212,14 @@ _cairo_truetype_font_create (cairo_scaled_font_subset_t  *scaled_font_subset,
     
 
 
-    font->glyphs = calloc (font->base.num_glyphs_in_face + 2, sizeof (subset_glyph_t));
+    font->glyphs = _cairo_calloc_ab (font->base.num_glyphs_in_face + 2, sizeof (subset_glyph_t));
     if (unlikely (font->glyphs == NULL)) {
 	status = _cairo_error (CAIRO_STATUS_NO_MEMORY);
 	goto fail1;
     }
 
     
-    font->parent_to_subset = calloc (font->base.num_glyphs_in_face + 1, sizeof (int));
+    font->parent_to_subset = _cairo_calloc_ab (font->base.num_glyphs_in_face + 1, sizeof (int));
     if (unlikely (font->parent_to_subset == NULL)) {
 	status = _cairo_error (CAIRO_STATUS_NO_MEMORY);
 	goto fail2;
@@ -258,7 +259,7 @@ _cairo_truetype_font_create (cairo_scaled_font_subset_t  *scaled_font_subset,
     }
 
     
-    font->widths = calloc (font->base.num_glyphs_in_face + 1, sizeof (int));
+    font->widths = _cairo_calloc_ab (font->base.num_glyphs_in_face + 1, sizeof (int));
     if (unlikely (font->widths == NULL)) {
 	status = _cairo_error (CAIRO_STATUS_NO_MEMORY);
 	goto fail4;
@@ -1180,8 +1181,8 @@ cairo_truetype_subset_init_internal (cairo_truetype_subset_t     *truetype_subse
     
 
 
-    truetype_subset->widths = calloc (sizeof (double),
-                                      font->scaled_font_subset->num_glyphs);
+    truetype_subset->widths = _cairo_calloc_ab (font->scaled_font_subset->num_glyphs,
+						sizeof (double));
     if (unlikely (truetype_subset->widths == NULL)) {
 	status = _cairo_error (CAIRO_STATUS_NO_MEMORY);
 	goto fail3;

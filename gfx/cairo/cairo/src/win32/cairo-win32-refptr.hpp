@@ -32,6 +32,7 @@
 
 
 
+
 #ifndef CAIRO_WIN32_REFPTR_H
 #define CAIRO_WIN32_REFPTR_H
 

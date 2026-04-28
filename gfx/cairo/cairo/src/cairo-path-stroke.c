@@ -35,6 +35,7 @@
 
 
 
+
 #define _DEFAULT_SOURCE
 #include "cairoint.h"
 
@@ -160,6 +161,10 @@ _cairo_stroker_init (cairo_stroker_t		*stroker,
     stroker->has_current_face = FALSE;
     stroker->has_first_face = FALSE;
     stroker->has_initial_sub_path = FALSE;
+
+    
+    memset (&stroker->current_face, 0, sizeof (cairo_stroke_face_t));
+    memset (&stroker->first_face, 0, sizeof (cairo_stroke_face_t));
 
     _cairo_stroker_dash_init (&stroker->dash, stroke_style);
 

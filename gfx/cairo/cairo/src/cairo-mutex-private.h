@@ -53,7 +53,13 @@ cairo_private void _cairo_mutex_finalize (void);
 #endif
 
 #if _CAIRO_MUTEX_IMPL_USE_STATIC_INITIALIZER || _CAIRO_MUTEX_IMPL_USE_STATIC_FINALIZER
+
+#if HAS_ATOMIC_OPS
+  cairo_private extern cairo_atomic_int_t _cairo_mutex_initialized;
+#else
   cairo_private extern int _cairo_mutex_initialized;
+#endif
+
 #endif
 
 

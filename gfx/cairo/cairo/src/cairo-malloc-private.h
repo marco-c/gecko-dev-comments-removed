@@ -33,6 +33,7 @@
 
 
 
+
 #ifndef CAIRO_MALLOC_PRIVATE_H
 #define CAIRO_MALLOC_PRIVATE_H
 
@@ -74,6 +75,22 @@
 
 
 
+#define _cairo_calloc(size) \
+    ((size) != 0 ? calloc(1,size) : NULL)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -86,6 +103,31 @@ _cairo_malloc_ab(size_t a, size_t size)
 	return NULL;
 
     return _cairo_malloc(c);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static cairo_always_inline void *
+_cairo_calloc_ab(size_t a, size_t size)
+{
+    size_t c;
+    if (_cairo_mul_size_t_overflow (a, size, &c))
+	return NULL;
+
+    return _cairo_calloc(c);
 }
 
 
