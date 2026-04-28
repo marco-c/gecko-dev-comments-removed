@@ -1476,6 +1476,8 @@ let interfaceNamesInGlobalScope = [
   
   { name: "ScrollAreaEvent", insecureContext: true },
   
+  { name: "ScrollTimeline", insecureContext: true, nightly: true },
+  
   { name: "SecurityPolicyViolationEvent", insecureContext: true },
   
   { name: "Selection", insecureContext: true },
