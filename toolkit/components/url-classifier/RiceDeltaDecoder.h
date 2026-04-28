@@ -29,7 +29,7 @@ class RiceDeltaDecoder {
   
   
   bool Decode(uint32_t aRiceParameter, uint32_t aFirstValue,
-              uint32_t aNumEntries, uint32_t* aDecodedData);
+              uint32_t aNumEntries, uint32_t* aDecodedData, bool aIsV5 = false);
 
   
   
