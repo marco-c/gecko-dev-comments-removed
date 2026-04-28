@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsgnomeshellservice_h_
 #define nsgnomeshellservice_h_
 
@@ -27,7 +26,7 @@ class nsGNOMEShellService final : public nsIGNOMEShellService,
   nsresult Init();
 
  private:
-  ~nsGNOMEShellService() {}
+  ~nsGNOMEShellService() = default;
 
   bool KeyMatchesAppName(const char* aKeyValue) const;
   bool CheckHandlerMatchesAppName(const nsACString& handler) const;
