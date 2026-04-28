@@ -455,7 +455,13 @@ class JujutsuRepository(Repository):
         ]
         return [
             self._git._run(
-                "format-patch", node, "-1", "--always", "--stdout", encoding=None
+                "format-patch",
+                node,
+                "-1",
+                "--always",
+                "--stdout",
+                "--no-base",  
+                encoding=None,
             )
             for node in nodes
         ]
