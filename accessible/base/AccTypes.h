@@ -5,18 +5,21 @@
 #ifndef mozilla_a11y_AccTypes_h
 #define mozilla_a11y_AccTypes_h
 
+#include "mozilla/DefineEnum.h"
+
 namespace mozilla {
 namespace a11y {
 
 
 
 
-enum AccType {
+
+MOZ_DEFINE_ENUM(AccType,
   
 
 
 
-  eNoType,
+  (eNoType,
   eHTMLAbbrevType,
   eHTMLBRType,
   eHTMLButtonType,
@@ -59,10 +62,9 @@ enum AccType {
   eXULListItemType,
   eXULTabpanelsType,
   eXULTooltipType,
-  eXULTreeType,
+  eXULTreeType)
+);
 
-  eLastAccType = eXULTreeType
-};
 
 
 
