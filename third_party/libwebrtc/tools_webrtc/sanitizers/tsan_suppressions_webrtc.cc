@@ -45,12 +45,6 @@ char kTSanDefaultSuppressions[] =
     "race:InitCpuFlags\n"
 
     
-    
-    
-    "race:*RTCStatsIntegrationTest_GetsStatsWhileDestroyingPeerConnections_"
-    "Test::TestBody\n"
-
-    
     "race:libpulsecommon*.so\n"
 
     
