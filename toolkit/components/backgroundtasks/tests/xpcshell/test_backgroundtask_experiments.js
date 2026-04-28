@@ -453,6 +453,25 @@ add_task(async function test_backgroundtask_Messaging_targeting() {
 
 
 
+
+add_task(async function test_backgroundtask_system_color_scheme_and_motion() {
+  let { infoMap } = await doMessage({});
+
+  Assert.equal(
+    typeof infoMap.chromeColorSchemeIsDark,
+    "boolean",
+    "Background task emits boolean chromeColorSchemeIsDark"
+  );
+  Assert.equal(
+    typeof infoMap.prefersReducedMotion,
+    "boolean",
+    "Background task emits boolean prefersReducedMotion"
+  );
+});
+
+
+
+
 add_task(
   async function test_backgroundtask_RemoteSettingsClient_invokes_sync() {
     let { infoArray, infoMap } = await doMessage({});
