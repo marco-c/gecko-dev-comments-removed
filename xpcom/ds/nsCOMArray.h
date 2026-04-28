@@ -21,6 +21,10 @@
 class nsCOMArray_base {
   friend class nsArrayBase;
 
+ public:
+  
+  nsCOMArray_base& operator=(const nsCOMArray_base& aOther) = delete;
+
  protected:
   nsCOMArray_base() = default;
   explicit nsCOMArray_base(int32_t aCount) : mArray(aCount) {}
@@ -153,10 +157,6 @@ class nsCOMArray_base {
  protected:
   
   nsTArray<nsISupports*> mArray;
-
- private:
-  
-  nsCOMArray_base& operator=(const nsCOMArray_base& aOther) = delete;
 };
 
 inline void ImplCycleCollectionUnlink(nsCOMArray_base& aField) {
@@ -207,6 +207,7 @@ class nsCOMArray : public nsCOMArray_base {
 
   
   nsCOMArray<T>& operator=(nsCOMArray<T>&& aOther) = default;
+  nsCOMArray<T>& operator=(const nsCOMArray<T>& aOther) = delete;
 
   
   T* ObjectAt(int32_t aIndex) const {
@@ -359,10 +360,6 @@ class nsCOMArray : public nsCOMArray_base {
     return const_reverse_iterator(begin());
   }
   const_reverse_iterator crend() const { return rend(); }
-
- private:
-  
-  nsCOMArray<T>& operator=(const nsCOMArray<T>& aOther) = delete;
 };
 
 template <typename T>

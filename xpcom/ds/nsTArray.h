@@ -1342,7 +1342,7 @@ class nsTArray_Impl
   
   
   
-  void ClearAndRetainStorage() {
+  MOZ_REINITIALIZES void ClearAndRetainStorage() {
     if (this->HasEmptyHeader()) {
       return;
     }
@@ -2091,7 +2091,8 @@ class nsTArray_Impl
   
  protected:
   template <typename ActualAlloc = Alloc>
-  typename ActualAlloc::ResultType SetCapacity(size_type aCapacity) {
+  MOZ_REINITIALIZES typename ActualAlloc::ResultType SetCapacity(
+      size_type aCapacity) {
     return ActualAlloc::Result(this->template EnsureCapacity<ActualAlloc>(
         aCapacity, sizeof(value_type)));
   }
@@ -2631,7 +2632,7 @@ class MOZ_GSL_OWNER nsTArray
   using typename base_type::size_type;
   using typename base_type::value_type;
 
-  constexpr nsTArray() {}
+  constexpr nsTArray() = default;
   explicit nsTArray(size_type aCapacity) : base_type(aCapacity) {}
   MOZ_IMPLICIT nsTArray(std::initializer_list<E> aIL) {
     AppendElements(aIL.begin(), aIL.size());

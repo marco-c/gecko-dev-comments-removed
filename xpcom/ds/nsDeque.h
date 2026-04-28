@@ -48,6 +48,9 @@ namespace detail {
 
 class nsDequeBase {
  public:
+  nsDequeBase& operator=(const nsDequeBase& aOther) = delete;
+  nsDequeBase(const nsDequeBase& aOther) = delete;
+
   
 
 
@@ -138,9 +141,6 @@ class nsDequeBase {
   size_t mOrigin;
   void* mBuffer[8];
   void** mData;
-
-  nsDequeBase& operator=(const nsDequeBase& aOther) = delete;
-  nsDequeBase(const nsDequeBase& aOther) = delete;
 };
 
 
@@ -276,6 +276,9 @@ class nsDeque : public mozilla::detail::nsDequeBase {
     Erase();
     SetDeallocator(nullptr);
   }
+
+  nsDeque(const nsDeque& aOther) = delete;
+  nsDeque& operator=(const nsDeque& aOther) = delete;
 
   
 
@@ -417,21 +420,6 @@ class nsDeque : public mozilla::detail::nsDequeBase {
   nsDequeFunctor<T>* mDeallocator;
 
  private:
-  
-
-
-
-
-  nsDeque(const nsDeque& aOther) = delete;
-
-  
-
-
-
-
-
-  nsDeque& operator=(const nsDeque& aOther) = delete;
-
   void SetDeallocator(nsDequeFunctor<T>* aDeallocator) {
     delete mDeallocator;
     mDeallocator = aDeallocator;

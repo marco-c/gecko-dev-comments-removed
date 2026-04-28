@@ -144,6 +144,8 @@ class nsTStringRepr {
   typedef StringClassFlags ClassFlags;
   typedef nsTStringLengthStorage<T> LengthStorage;
 
+  nsTStringRepr() = delete;  
+
   
   
   
@@ -467,8 +469,6 @@ class nsTStringRepr {
   float ToFloatAllowTrailingChars(nsresult* aErrorCode) const;
 
  protected:
-  nsTStringRepr() = delete;  
-
   constexpr nsTStringRepr(char_type* aData, size_type aLength,
                           DataFlags aDataFlags, ClassFlags aClassFlags)
       : mData(aData),

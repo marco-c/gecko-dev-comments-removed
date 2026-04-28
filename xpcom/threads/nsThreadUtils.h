@@ -351,13 +351,12 @@ class IdlePeriod : public nsIIdlePeriod {
 
   IdlePeriod() = default;
 
- protected:
-  virtual ~IdlePeriod() = default;
-
- private:
   IdlePeriod(const IdlePeriod&) = delete;
   IdlePeriod& operator=(const IdlePeriod&) = delete;
   IdlePeriod& operator=(const IdlePeriod&&) = delete;
+
+ protected:
+  virtual ~IdlePeriod() = default;
 };
 
 
@@ -386,6 +385,9 @@ class Runnable : public nsIRunnable
 #  endif
 
   Runnable() = delete;
+  Runnable(const Runnable&) = delete;
+  Runnable& operator=(const Runnable&) = delete;
+  Runnable& operator=(const Runnable&&) = delete;
 
 #  ifdef MOZ_COLLECTING_RUNNABLE_TELEMETRY
   explicit Runnable(const char* aName) : mName(aName) {}
@@ -399,11 +401,6 @@ class Runnable : public nsIRunnable
 #  ifdef MOZ_COLLECTING_RUNNABLE_TELEMETRY
   const char* mName = nullptr;
 #  endif
-
- private:
-  Runnable(const Runnable&) = delete;
-  Runnable& operator=(const Runnable&) = delete;
-  Runnable& operator=(const Runnable&&) = delete;
 };
 
 
@@ -418,16 +415,14 @@ class DiscardableRunnable : public Runnable, public nsIDiscardableRunnable {
   
   void OnDiscard() override {}
 
-  DiscardableRunnable() = delete;
   explicit DiscardableRunnable(const char* aName) : Runnable(aName) {}
-
- protected:
-  virtual ~DiscardableRunnable() = default;
-
- private:
+  DiscardableRunnable() = delete;
   DiscardableRunnable(const DiscardableRunnable&) = delete;
   DiscardableRunnable& operator=(const DiscardableRunnable&) = delete;
   DiscardableRunnable& operator=(const DiscardableRunnable&&) = delete;
+
+ protected:
+  virtual ~DiscardableRunnable() = default;
 };
 
 
@@ -442,16 +437,14 @@ class CancelableRunnable : public DiscardableRunnable,
   
   virtual nsresult Cancel() override = 0;
 
-  CancelableRunnable() = delete;
   explicit CancelableRunnable(const char* aName) : DiscardableRunnable(aName) {}
-
- protected:
-  virtual ~CancelableRunnable() = default;
-
- private:
+  CancelableRunnable() = delete;
   CancelableRunnable(const CancelableRunnable&) = delete;
   CancelableRunnable& operator=(const CancelableRunnable&) = delete;
   CancelableRunnable& operator=(const CancelableRunnable&&) = delete;
+
+ protected:
+  virtual ~CancelableRunnable() = default;
 };
 
 
@@ -460,14 +453,12 @@ class IdleRunnable : public DiscardableRunnable, public nsIIdleRunnable {
   NS_DECL_ISUPPORTS_INHERITED
 
   explicit IdleRunnable(const char* aName) : DiscardableRunnable(aName) {}
-
- protected:
-  virtual ~IdleRunnable() = default;
-
- private:
   IdleRunnable(const IdleRunnable&) = delete;
   IdleRunnable& operator=(const IdleRunnable&) = delete;
   IdleRunnable& operator=(const IdleRunnable&&) = delete;
+
+ protected:
+  virtual ~IdleRunnable() = default;
 };
 
 
@@ -479,14 +470,12 @@ class CancelableIdleRunnable : public CancelableRunnable,
   CancelableIdleRunnable() : CancelableRunnable("CancelableIdleRunnable") {}
   explicit CancelableIdleRunnable(const char* aName)
       : CancelableRunnable(aName) {}
-
- protected:
-  virtual ~CancelableIdleRunnable() = default;
-
- private:
   CancelableIdleRunnable(const CancelableIdleRunnable&) = delete;
   CancelableIdleRunnable& operator=(const CancelableIdleRunnable&) = delete;
   CancelableIdleRunnable& operator=(const CancelableIdleRunnable&&) = delete;
+
+ protected:
+  virtual ~CancelableIdleRunnable() = default;
 };
 
 
@@ -1557,11 +1546,10 @@ class nsRevocableEventPtr {
   bool IsPending() { return mEvent != nullptr; }
   T* get() { return mEvent; }
 
- private:
-  
-  nsRevocableEventPtr(const nsRevocableEventPtr&);
-  nsRevocableEventPtr& operator=(const nsRevocableEventPtr&);
+  nsRevocableEventPtr(const nsRevocableEventPtr&) = delete;
+  nsRevocableEventPtr& operator=(const nsRevocableEventPtr&) = delete;
 
+ private:
   RefPtr<T> mEvent;
 };
 
@@ -1587,12 +1575,11 @@ class nsThreadPoolNaming {
   nsCString GetNextThreadName(const char (&aPoolName)[LEN]) {
     return GetNextThreadName(nsDependentCString(aPoolName, LEN - 1));
   }
+  nsThreadPoolNaming(const nsThreadPoolNaming&) = delete;
+  void operator=(const nsThreadPoolNaming&) = delete;
 
  private:
   mozilla::Atomic<uint32_t> mCounter{0};
-
-  nsThreadPoolNaming(const nsThreadPoolNaming&) = delete;
-  void operator=(const nsThreadPoolNaming&) = delete;
 };
 
 
