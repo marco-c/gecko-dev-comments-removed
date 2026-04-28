@@ -402,7 +402,7 @@ export const NET_ERRORS = [
     category: "net",
     bodyTitleL10nId: "problem-with-this-site-title",
     introContent: {
-      dataL10nId: "fp-neterror-offline-intro",
+      dataL10nId: "fp-neterror-invalid-header-value-intro",
       dataL10nArgs: { hostname: null },
     },
     descriptionParts: [{ tag: "li", dataL10nId: "neterror-http-error-page" }],
@@ -412,7 +412,10 @@ export const NET_ERRORS = [
     },
     customNetError: {
       titleL10nId: "problem-with-this-site-title",
-      whatCanYouDoL10nId: "neterror-load-error-try-again",
+      whatCanYouDoItems: [
+        "neterror-load-error-try-again",
+        "neterror-http-error-page",
+      ],
     },
     hasNoUserFix: false,
     image: NET_ERROR_ILLUSTRATIONS.noConnection,
@@ -483,8 +486,7 @@ export const NET_ERRORS = [
     category: "net",
     bodyTitleL10nId: "contentEncodingError-title",
     introContent: {
-      dataL10nId: "fp-neterror-offline-intro",
-      dataL10nArgs: { hostname: null },
+      dataL10nId: "fp-neterror-content-encoding-intro",
     },
     descriptionParts: [
       { tag: "li", dataL10nId: "neterror-content-encoding-error" },
@@ -592,8 +594,8 @@ export const NET_ERRORS = [
     hasNoUserFix: true,
   },
   {
-    id: "mitm",
-    errorCode: "mitm",
+    id: "MOZILLA_PKIX_ERROR_MITM_DETECTED",
+    errorCode: "MOZILLA_PKIX_ERROR_MITM_DETECTED",
     category: "cert",
     bodyTitleL10nId: "certerror-mitm-title",
     introContent: {
@@ -707,6 +709,11 @@ export const NET_ERRORS = [
     descriptionParts: [
       { tag: "li", dataL10nId: "neterror-nss-failure-not-verified" },
       { tag: "li", dataL10nId: "neterror-nss-failure-contact-website" },
+      {
+        tag: "li",
+        dataL10nId: "neterror-nss-failure-error-code",
+        dataL10nArgs: { errorCodeString: null },
+      },
     ],
     buttons: {
       showTryAgain: false,

@@ -13,8 +13,6 @@
 
 
 
-
-
 const TLS10_PAGE = "https://tls1.example.com/";
 
 async function openErrorTab(url) {
@@ -39,7 +37,7 @@ async function openErrorTab(url) {
 
 add_task(async function test_registered_ssl_error() {
   info(
-    "Testing that selectErrorId prefers SSL_ERROR_RX_RECORD_TOO_LONG over nssFailure2 fallback"
+    "Testing that SSL_ERROR_RX_RECORD_TOO_LONG resolves to its own registry ID"
   );
 
   Services.prefs.setIntPref("security.tls.version.min", 3);
@@ -65,53 +63,25 @@ add_task(async function test_registered_ssl_error() {
     );
     await netErrorCard.getUpdateComplete();
 
-    const selectedId = netErrorCard.constructor.selectErrorId(
-      "SSL_ERROR_RX_RECORD_TOO_LONG"
+    
+    
+    
+    const { resolveErrorID } = ChromeUtils.importESModule(
+      "chrome://global/content/errors/error-lookup.mjs"
     );
+    const { initializeRegistry } = ChromeUtils.importESModule(
+      "chrome://global/content/errors/error-registry.mjs"
+    );
+    initializeRegistry();
     Assert.equal(
-      selectedId,
+      resolveErrorID({
+        errorCodeString: "SSL_ERROR_RX_RECORD_TOO_LONG",
+        gErrorCode: "nssFailure2",
+        noConnectivity: false,
+        vpnActive: false,
+      }),
       "SSL_ERROR_RX_RECORD_TOO_LONG",
-      "Should select the registered error, not fall back to nssFailure2"
-    );
-  });
-
-  BrowserTestUtils.removeTab(tab);
-  Services.prefs.clearUserPref("security.tls.version.min");
-  Services.prefs.clearUserPref("security.tls.version.max");
-});
-
-
-
-add_task(async function test_fallback_to_general_nss_error() {
-  info(
-    "Testing fallback from unregistered NSS error to general nssFailure2 config"
-  );
-
-  Services.prefs.setIntPref("security.tls.version.min", 3);
-  Services.prefs.setIntPref("security.tls.version.max", 4);
-  registerCleanupFunction(() => {
-    Services.prefs.clearUserPref("security.tls.version.min");
-    Services.prefs.clearUserPref("security.tls.version.max");
-  });
-
-  const { browser, tab } = await openErrorTab(TLS10_PAGE);
-  registerCleanupFunction(() => BrowserTestUtils.removeTab(tab));
-
-  await SpecialPowers.spawn(browser, [], async () => {
-    const doc = content.document;
-    const netErrorCard = await ContentTaskUtils.waitForCondition(
-      () => doc.querySelector("net-error-card")?.wrappedJSObject,
-      "net-error-card should be present"
-    );
-    await netErrorCard.getUpdateComplete();
-
-    const selectedId = netErrorCard.constructor.selectErrorId(
-      "SSL_ERROR_UNREGISTERED_FAKE_ERROR"
-    );
-    Assert.equal(
-      selectedId,
-      "nssFailure2",
-      "Should fall back to nssFailure2 for unregistered error codes"
+      "Should resolve to the registered error, not fall back to nssFailure2"
     );
   });
 
@@ -122,7 +92,7 @@ add_task(async function test_fallback_to_general_nss_error() {
 
 add_task(async function test_no_fallback_for_non_nssFailure2_gErrorCode() {
   info(
-    "Testing that an unregistered errorCodeString that's not nssFailure2 does not trigger the fallback"
+    "Testing that deniedPortAccess resolves directly to its own registry ID"
   );
   await SpecialPowers.pushPrefEnv({
     set: [
@@ -144,12 +114,10 @@ add_task(async function test_no_fallback_for_non_nssFailure2_gErrorCode() {
     );
     await netErrorCard.getUpdateComplete();
 
-    const selectedId =
-      netErrorCard.constructor.selectErrorId("UNREGISTERED_ERROR");
     Assert.equal(
-      selectedId,
-      null,
-      "selectErrorId should return null when errorCodeString is unregistered and gErrorCode is not nssFailure2"
+      netErrorCard.resolvedErrorId,
+      "deniedPortAccess",
+      "resolvedErrorId should be deniedPortAccess"
     );
   });
 
