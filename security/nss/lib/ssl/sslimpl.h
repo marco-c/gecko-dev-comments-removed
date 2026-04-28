@@ -777,6 +777,8 @@ typedef struct SSL3HandshakeStateStr {
 
     PRBool helloRetry;                    
 
+    PRBool dtlsReceivedHVR;               
+
     PRBool receivedCcs;                   
 
     PRBool rejectCcs;                     

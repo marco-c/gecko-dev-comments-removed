@@ -1160,18 +1160,6 @@ dtls_HandleHelloVerifyRequest(sslSocket *ss, PRUint8 *b, PRUint32 length)
     }
 
     
-
-
-
-    if (version > SSL_LIBRARY_VERSION_TLS_1_2) {
-        desc = illegal_parameter;
-        goto alert_loser;
-    }
-    if (ss->vrange.max > SSL_LIBRARY_VERSION_TLS_1_2) {
-        ss->vrange.max = SSL_LIBRARY_VERSION_TLS_1_2;
-    }
-
-    
     SECItem cookie;
     rv = ssl3_ConsumeHandshakeVariable(ss, &cookie, 1, &b, &length);
     if (rv != SECSuccess) {
@@ -1187,6 +1175,8 @@ dtls_HandleHelloVerifyRequest(sslSocket *ss, PRUint8 *b, PRUint32 length)
     if (rv != SECSuccess) {
         goto loser;
     }
+
+    ss->ssl3.hs.dtlsReceivedHVR = PR_TRUE;
 
     ssl_GetXmitBufLock(ss); 
 

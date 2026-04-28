@@ -58,11 +58,15 @@ struct PK11SlotInfoStr {
     
 
     PRInt32 refCount; 
+
+    
+    
     PRLock *freeListLock;
     PK11SymKey *freeSymKeysWithSessionHead;
     PK11SymKey *freeSymKeysHead;
     int keyCount;
     int maxKeyCount;
+
     
 
     int askpw;           

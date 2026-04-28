@@ -2863,8 +2863,12 @@ ssl3_SendApplicationData(sslSocket *ss, const unsigned char *in,
     while (len > totalSent) {
         PRInt32 sent, toSend;
 
-        if (totalSent > 0) {
+        if (totalSent > 0 && ssl_SocketIsBlocking(ss)) {
             
+
+
+
+
 
 
 
@@ -7362,6 +7366,15 @@ ssl3_HandleServerHello(sslSocket *ss, PRUint8 *b, PRUint32 length)
 
     
 
+    if (ss->ssl3.hs.dtlsReceivedHVR &&
+        ss->version >= SSL_LIBRARY_VERSION_TLS_1_3) {
+        desc = illegal_parameter;
+        errCode = SSL_ERROR_RX_MALFORMED_SERVER_HELLO;
+        goto alert_loser;
+    }
+
+    
+
 
 
 
@@ -8312,10 +8325,21 @@ ssl3_ClientCertCallbackComplete(sslSocket *ss, SECStatus outcome, SECKEYPrivateK
     ssl3_ClientAuthCallbackOutcome(ss, outcome);
 
     
-    PORT_Assert(ss->ssl3.hs.restartTarget);
     if (!ss->ssl3.hs.restartTarget) {
-        FATAL_ERROR(ss, PR_INVALID_STATE_ERROR, internal_error);
-        return SECFailure;
+        
+
+
+
+
+
+
+
+
+        SSL_TRC(3, ("%d: SSL3[%p]: client certificate selection won the race"
+                    " with server Finished; will resume on next I/O",
+                    SSL_GETPID(), ss->fd));
+        PORT_Assert(ss->ssl3.hs.ws != idle_handshake);
+        return SECSuccess;
     }
     sslRestartTarget target = ss->ssl3.hs.restartTarget;
     ss->ssl3.hs.restartTarget = NULL;
@@ -14078,6 +14102,8 @@ ssl3_InitState(sslSocket *ss)
                 sizeof(ss->ssl3.hs.newSessionTicket));
 
     ss->ssl3.hs.zeroRttState = ssl_0rtt_none;
+
+    ss->ssl3.hs.dtlsReceivedHVR = PR_FALSE;
     return SECSuccess;
 }
 
