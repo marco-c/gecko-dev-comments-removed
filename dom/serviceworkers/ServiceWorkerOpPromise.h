@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_serviceworkeroppromise_h_
 #define mozilla_dom_serviceworkeroppromise_h_
 
@@ -15,9 +13,8 @@ namespace mozilla::dom {
 
 class InternalResponse;
 
-using SynthesizeResponseArgs =
-    std::tuple<SafeRefPtr<InternalResponse>, FetchEventRespondWithClosure,
-               FetchEventTimeStamps>;
+using SynthesizeResponseArgs = std::pair<SafeRefPtr<InternalResponse>,
+                                         ChildToParentSynthesizeResponseArgs>;
 
 using FetchEventRespondWithResult =
     Variant<SynthesizeResponseArgs, ResetInterceptionArgs,
