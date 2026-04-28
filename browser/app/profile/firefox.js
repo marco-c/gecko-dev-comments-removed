@@ -455,9 +455,6 @@ pref("browser.urlbar.weather.featureGate", false);
 pref("browser.urlbar.clipboard.featureGate", false);
 
 
-pref("browser.urlbar.contextMenu.featureGate", false);
-
-
 
 
 pref("browser.urlbar.weather.minKeywordLength", 0);
