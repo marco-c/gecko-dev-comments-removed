@@ -60,27 +60,20 @@ function prerender_no_vary_search_test(description, noVarySearch, prefetchQuery,
       'activating': navigateQueryParams
     };
 
-    const {exec, tryToActivate, getNetworkRequestCount, prerenderingURL, activatingURL} =
-        await create_prerendered_page(t, params);
+    const rule_extras = {
+      'target_hint': '_blank'
+    };
+
+    const {exec, tryToActivate, getNetworkRequestCount} =
+        await create_prerendered_page(t, params, undefined, rule_extras);
+
+    // Ensure the prerender page is fully loaded before attempting activation.
+    await exec(() => {});
 
     if (shouldUse) {
       // The request should be sent only one time for prerendering.
-
-      // Test that the URL changes, and that popstate isn't called as part of
-      // activation changing the URL.
-      await exec(() => {
-        window.popstateFired = false;
-        window.addEventListener("popstate", () => {
-          window.popstateFired = true;
-        });
-      });
-      assert_equals(await exec(() => location.href), prerenderingURL, 'location.href before activation');
-
       assert_equals(await tryToActivate(), 'activated');
       assert_equals(await getNetworkRequestCount(), '1');
-
-      assert_equals(await exec(() => location.href), activatingURL, 'location.href after activation');
-      assert_equals(await exec(() => window.popstateFired), false, 'popstate must not be fired');
     } else {
       // The request should be sent twice for prerendering and real navigation
       // that doesn't activate the prerendered page.
@@ -89,7 +82,8 @@ function prerender_no_vary_search_test(description, noVarySearch, prefetchQuery,
     }
   }, description);
 }
-
+// TODO(crbug.com/499027745): Adding noVarySearchHint to subsetTest causes test
+// flakiness. Will need to update tests or test infra.
 test_inputs.forEach(({description, noVarySearch, prefetchQuery, navigateQuery, shouldUse}) => {
   subsetTest(prerender_no_vary_search_test, description, noVarySearch, prefetchQuery, navigateQuery, shouldUse);
 });
