@@ -21,8 +21,6 @@
 
 namespace webrtc {
 
-namespace aec3 {
-
 
 
 void ErlComputer_AVX2(
@@ -40,5 +38,4 @@ void ErlComputer_AVX2(
   }
 }
 
-}  
 }  

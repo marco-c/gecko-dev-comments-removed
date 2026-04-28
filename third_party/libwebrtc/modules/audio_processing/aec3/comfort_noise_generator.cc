@@ -94,7 +94,7 @@ void GenerateComfortNoise(
   
   std::array<float, kFftLengthBy2Plus1> N;
   std::copy(N2.begin(), N2.end(), N.begin());
-  aec3::VectorMath(optimization).Sqrt(N);
+  VectorMath(optimization).Sqrt(N);
 
   
   constexpr float kOneByNumBands = 1.f / (kFftLengthBy2Plus1 / 2 + 1);

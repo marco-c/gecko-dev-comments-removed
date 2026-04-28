@@ -25,7 +25,6 @@
 #endif
 
 namespace webrtc {
-namespace aec3 {
 
 #if defined(WEBRTC_HAS_NEON)
 
@@ -105,5 +104,4 @@ TEST(AdaptiveFirFilter, UpdateErlAvx2Optimization) {
 
 #endif
 
-}  
 }  

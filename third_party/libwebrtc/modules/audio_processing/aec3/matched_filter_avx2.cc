@@ -18,7 +18,6 @@
 #include "rtc_base/checks.h"
 
 namespace webrtc {
-namespace aec3 {
 
 
 
@@ -259,5 +258,4 @@ void MatchedFilterCore_AVX2(size_t x_start_index,
   }
 }
 
-}  
 }  

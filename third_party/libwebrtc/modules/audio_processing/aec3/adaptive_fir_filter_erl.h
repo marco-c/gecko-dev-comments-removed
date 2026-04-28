@@ -21,7 +21,6 @@
 #include "rtc_base/system/arch.h"
 
 namespace webrtc {
-namespace aec3 {
 
 
 
@@ -41,8 +40,6 @@ void ErlComputer_AVX2(
     const std::vector<std::array<float, kFftLengthBy2Plus1>>& H2,
     std::span<float> erl);
 #endif
-
-}  
 
 
 void ComputeErl(const Aec3Optimization& optimization,

@@ -25,9 +25,8 @@
 #include "rtc_base/system/arch.h"
 
 namespace webrtc {
-namespace aec3 {
 
-void ComputeFrequencyResponse(
+void ComputeFrequencyResponse_C(
     size_t num_partitions,
     const std::vector<std::vector<FftData>>& H,
     std::vector<std::array<float, kFftLengthBy2Plus1>>* H2);
@@ -94,8 +93,6 @@ void ApplyFilter_Avx2(const RenderBuffer& render_buffer,
                       const std::vector<std::vector<FftData>>& H,
                       FftData* S);
 #endif
-
-}  
 
 
 class AdaptiveFirFilter {

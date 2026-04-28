@@ -25,8 +25,6 @@ namespace webrtc {
 class ApmDataDumper;
 struct DownsampledRenderBuffer;
 
-namespace aec3 {
-
 #if defined(WEBRTC_HAS_NEON)
 
 
@@ -88,8 +86,6 @@ void MatchedFilterCore(size_t x_start_index,
 
 
 size_t MaxSquarePeakIndex(std::span<const float> h);
-
-}  
 
 
 

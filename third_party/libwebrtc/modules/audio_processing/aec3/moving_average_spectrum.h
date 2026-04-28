@@ -8,8 +8,8 @@
 
 
 
-#ifndef MODULES_AUDIO_PROCESSING_AEC3_MOVING_AVERAGE_H_
-#define MODULES_AUDIO_PROCESSING_AEC3_MOVING_AVERAGE_H_
+#ifndef MODULES_AUDIO_PROCESSING_AEC3_MOVING_AVERAGE_SPECTRUM_H_
+#define MODULES_AUDIO_PROCESSING_AEC3_MOVING_AVERAGE_SPECTRUM_H_
 
 #include <stddef.h>
 
@@ -17,14 +17,13 @@
 #include <vector>
 
 namespace webrtc {
-namespace aec3 {
 
-class MovingAverage {
+class MovingAverageSpectrum {
  public:
   
   
-  MovingAverage(size_t num_elem, size_t mem_len);
-  ~MovingAverage();
+  MovingAverageSpectrum(size_t num_elem, size_t mem_len);
+  ~MovingAverageSpectrum();
 
   
   
@@ -38,7 +37,6 @@ class MovingAverage {
   size_t mem_index_;
 };
 
-}  
 }  
 
 #endif  

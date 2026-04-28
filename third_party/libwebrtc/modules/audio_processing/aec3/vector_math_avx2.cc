@@ -17,7 +17,6 @@
 #include "rtc_base/checks.h"
 
 namespace webrtc {
-namespace aec3 {
 
 
 void VectorMath::SqrtAVX2(std::span<float> x) {
@@ -77,5 +76,4 @@ void VectorMath::AccumulateAVX2(std::span<const float> x, std::span<float> z) {
   }
 }
 
-}  
 }  
