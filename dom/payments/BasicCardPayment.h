@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_BasicCardPayment_h
 #define mozilla_dom_BasicCardPayment_h
 
@@ -22,8 +20,9 @@ class BasicCardService final {
   bool IsBasicCardPayment(const nsAString& aSupportedMethods);
   bool IsValidBasicCardRequest(JSContext* aCx, JSObject* aData,
                                nsAString& aErrorMsg);
-  void CheckForValidBasicCardErrors(JSContext* aCx, JSObject* aData,
-                                    ErrorResult& aRv);
+  MOZ_CAN_RUN_SCRIPT void CheckForValidBasicCardErrors(JSContext* aCx,
+                                                       JSObject* aData,
+                                                       ErrorResult& aRv);
   bool IsValidExpiryMonth(const nsAString& aExpiryMonth);
   bool IsValidExpiryYear(const nsAString& aExpiryYear);
 
