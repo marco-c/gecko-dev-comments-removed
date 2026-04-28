@@ -256,10 +256,7 @@ TEST_F(ImageDecoderMetadata, AnimatedWebP) {
 }
 
 TEST_F(ImageDecoderMetadata, AnimatedAVIF) {
-  
-  
-  CheckMetadata(GreenFirstFrameAnimatedAVIFTestCase(), BMPWithinICO::NO,
-                 true,  false);
+  CheckMetadata(GreenFirstFrameAnimatedAVIFTestCase());
 }
 
 #ifdef MOZ_JXL
