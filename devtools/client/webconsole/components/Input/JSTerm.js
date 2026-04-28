@@ -790,6 +790,7 @@ class JSTerm extends Component {
       if (Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
         this.editor.setText(newValue);
         this.editor.setCursorAt(lines.length, ch);
+        this.editor.setAutoCompletionText();
       } else {
         
         
@@ -914,8 +915,14 @@ class JSTerm extends Component {
       );
     }
 
-    if (!completionText || change.canceled || !addedCharacterMatchCompletion) {
-      this.setAutoCompletionText("");
+    if (!Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
+      if (
+        !completionText ||
+        change.canceled ||
+        !addedCharacterMatchCompletion
+      ) {
+        this.setAutoCompletionText("");
+      }
     }
 
     if (!addedCharacterMatchCompletion && !addedCharacterMatchPopupItem) {
