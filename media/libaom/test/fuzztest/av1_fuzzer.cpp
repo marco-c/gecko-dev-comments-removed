@@ -15,6 +15,8 @@
 
 
 
+
+
 #define DECODE_MODE 1
 #include "FuzzingInterface.h"
 
