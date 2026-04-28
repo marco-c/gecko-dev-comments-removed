@@ -113,6 +113,22 @@ nsHostResolver::nsHostResolver() { mCreationTime = PR_Now(); }
 
 nsHostResolver::~nsHostResolver() = default;
 
+void nsHostResolver::FireCallbacks(const CallbackArray& aCallbacks,
+                                   nsHostRecord* aRec, nsresult aStatus) {
+  for (const auto& cb : aCallbacks) {
+    cb->OnResolveHostComplete(this, aRec, aStatus);
+  }
+}
+
+ void nsHostResolver::DrainCallbacks(
+    mozilla::LinkedList<RefPtr<nsResolveHostCallback>>& aSrc,
+    CallbackArray& aDst) {
+  for (nsResolveHostCallback* c = aSrc.getFirst(); c;
+       c = c->removeAndGetNext()) {
+    aDst.AppendElement(c);
+  }
+}
+
 nsresult nsHostResolver::Init() MOZ_NO_THREAD_SAFETY_ANALYSIS {
   MOZ_ASSERT(NS_IsMainThread());
   if (NS_FAILED(GetAddrInfoInit())) {
@@ -240,8 +256,13 @@ void nsHostResolver::FlushCache(bool aTrrToo, bool aFlushEvictionQueue) {
 void nsHostResolver::Shutdown() {
   LOG(("Shutting down host resolver.\n"));
 
-  LinkedList<RefPtr<nsHostRecord>> pendingQHigh, pendingQMed, pendingQLow,
-      evictionQ;
+  
+  struct PendingAbort {
+    RefPtr<nsHostRecord> rec;
+    CallbackArray cbs;
+    nsresult status;
+  };
+  nsTArray<PendingAbort> shutdownCallbacks;
 
   {
     mozilla::AutoWriteLock dbLock(mDBLock);
@@ -252,14 +273,20 @@ void nsHostResolver::Shutdown() {
     mQueue.ClearAll([&](nsHostRecord* aRec) MOZ_REQUIRES(mDBLock) MOZ_REQUIRES(
                         mQueue.mLock) {
       mQueue.mLock.AssertCurrentThreadOwns();
+      CallbackArray cbs;
+      nsresult status = NS_ERROR_ABORT;
       if (aRec->IsAddrRecord()) {
-        CompleteLookupLocked(aRec, NS_ERROR_ABORT, nullptr, aRec->pb,
+        CompleteLookupLocked(aRec, status, nullptr, aRec->pb,
                              aRec->originSuffix, aRec->mTRRSkippedReason,
-                             nullptr);
+                             nullptr, cbs);
       } else {
         mozilla::net::TypeRecordResultType empty(Nothing{});
-        CompleteLookupByTypeLocked(aRec, NS_ERROR_ABORT, empty,
-                                   aRec->mTRRSkippedReason, 0, aRec->pb);
+        CompleteLookupByTypeLocked(aRec, status, empty, aRec->mTRRSkippedReason,
+                                   0, aRec->pb, cbs);
+      }
+      if (!cbs.IsEmpty()) {
+        shutdownCallbacks.AppendElement(
+            PendingAbort{aRec, std::move(cbs), status});
       }
     });
 
@@ -268,9 +295,14 @@ void nsHostResolver::Shutdown() {
     }
     
     mRecordDB.Clear();
-
-    mNCS = nullptr;
   }
+
+  
+  for (auto& pending : shutdownCallbacks) {
+    FireCallbacks(pending.cbs, pending.rec, pending.status);
+  }
+
+  mNCS = nullptr;
 
   
   
@@ -495,140 +527,137 @@ nsresult nsHostResolver::ResolveHost(const nsACString& aHost,
                   (aOriginAttributes.IsPrivateBrowsing()), originSuffix);
 
     
+    
     if (IS_ADDR_TYPE(type) && IsLoopbackHostname(host)) {
-      nsresult rv;
-      RefPtr<nsHostRecord> result = InitLoopbackRecord(key, &rv);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
+      nsresult initRv;
+      result = InitLoopbackRecord(key, &initRv);
+      if (NS_WARN_IF(NS_FAILED(initRv))) {
+        return initRv;
       }
       MOZ_ASSERT(result);
-      aCallback->OnResolveHostComplete(this, result, NS_OK);
-      return NS_OK;
-    }
-
-    if (flags & nsIDNSService::RESOLVE_CREATE_MOCK_HTTPS_RR) {
-      RefPtr<nsHostRecord> result = InitMockHTTPSRecord(key);
-      aCallback->OnResolveHostComplete(this, result,
-                                       result ? NS_OK : NS_ERROR_UNKNOWN_HOST);
-      return NS_OK;
-    }
-
-    RefPtr<nsHostRecord> rec =
-        mRecordDB.LookupOrInsertWith(key, [&] { return InitRecord(key); });
-
-    RefPtr<AddrHostRecord> addrRec = do_QueryObject(rec);
-    MOZ_ASSERT(rec, "Record should not be null");
-    MOZ_ASSERT((IS_ADDR_TYPE(type) && rec->IsAddrRecord() && addrRec) ||
-               (IS_OTHER_TYPE(type) && !rec->IsAddrRecord()));
-
-    if (IS_OTHER_TYPE(type) && originHost) {
-      RefPtr<TypeHostRecord> typeRec = do_QueryObject(rec);
-      MutexAutoLock lock(typeRec->mResultsLock);
-      typeRec->mOriginHost = std::move(originHost);
-    }
-
-    if (excludedFromTRR) {
-      rec->RecordReason(TRRSkippedReason::TRR_EXCLUDED);
-    }
-
-    if (!(flags & nsIDNSService::RESOLVE_BYPASS_CACHE) &&
-        rec->HasUsableResult(TimeStamp::NowLoRes(), flags)) {
-      result = FromCache(rec, host, type, status);
-    } else if (addrRec && addrRec->addr) {
-      
-      
-      LOG(("  Using cached address for IP Literal [%s].\n", host.get()));
-      result = FromCachedIPLiteral(rec);
-    } else if (addrRec && NS_SUCCEEDED(tempAddr.InitFromString(host))) {
-      
-      
-      
-      LOG(("  Host is IP Literal [%s].\n", host.get()));
-      result = FromIPLiteral(addrRec, tempAddr);
-    } else if (mQueue.PendingCount() >= MAX_NON_PRIORITY_REQUESTS &&
-               !IsHighPriority(flags) && !rec->mResolving) {
-      LOG(
-          ("  Lookup queue full: dropping %s priority request for "
-           "host [%s].\n",
-           IsMediumPriority(flags) ? "medium" : "low", host.get()));
-      if (IS_ADDR_TYPE(type)) {
-        glean::dns::lookup_method.AccumulateSingleSample(METHOD_OVERFLOW);
-      }
-      
-      rv = NS_ERROR_DNS_LOOKUP_QUEUE_FULL;
-
-      
-    } else if (flags & nsIDNSService::RESOLVE_OFFLINE) {
-      LOG(("  Offline request for host [%s]; ignoring.\n", host.get()));
-      rv = NS_ERROR_OFFLINE;
-
-      
-      
-      
-    } else if (!rec->mResolving) {
-      result =
-          FromUnspecEntry(rec, host, aTrrServer, originSuffix, type, flags, af,
-                          aOriginAttributes.IsPrivateBrowsing(), status);
-      
-      
-      
-      if (!result) {
-        LOG(("  No usable record in cache for host [%s] type %d.", host.get(),
-             type));
-
-        if (flags & nsIDNSService::RESOLVE_REFRESH_CACHE) {
-          rec->Invalidate();
-        }
-
-        
-        rec->mCallbacks.insertBack(callback);
-        rec->flags = flags;
-        rv = NameLookup(rec);
-        if (IS_ADDR_TYPE(type)) {
-          glean::dns::lookup_method.AccumulateSingleSample(
-              METHOD_NETWORK_FIRST);
-        }
-        if (NS_FAILED(rv) && callback->isInList()) {
-          callback->remove();
-        } else {
-          LOG(
-              ("  DNS lookup for host [%s] blocking "
-               "pending 'getaddrinfo' or trr query: "
-               "callback [%p]",
-               host.get(), callback.get()));
-        }
-      }
+    } else if (flags & nsIDNSService::RESOLVE_CREATE_MOCK_HTTPS_RR) {
+      result = InitMockHTTPSRecord(key);
+      status = result ? NS_OK : NS_ERROR_UNKNOWN_HOST;
     } else {
-      LOG(
-          ("  Host [%s] is being resolved. Appending callback "
-           "[%p].",
-           host.get(), callback.get()));
+      RefPtr<nsHostRecord> rec =
+          mRecordDB.LookupOrInsertWith(key, [&] { return InitRecord(key); });
 
-      rec->mCallbacks.insertBack(callback);
+      RefPtr<AddrHostRecord> addrRec = do_QueryObject(rec);
+      MOZ_ASSERT(rec, "Record should not be null");
+      MOZ_ASSERT((IS_ADDR_TYPE(type) && rec->IsAddrRecord() && addrRec) ||
+                 (IS_OTHER_TYPE(type) && !rec->IsAddrRecord()));
 
-      if (rec && rec->onQueue()) {
-        glean::dns::lookup_method.AccumulateSingleSample(METHOD_NETWORK_SHARED);
+      if (IS_OTHER_TYPE(type) && originHost) {
+        RefPtr<TypeHostRecord> typeRec = do_QueryObject(rec);
+        MutexAutoLock lock(typeRec->mResultsLock);
+        typeRec->mOriginHost = std::move(originHost);
+      }
+
+      if (excludedFromTRR) {
+        rec->RecordReason(TRRSkippedReason::TRR_EXCLUDED);
+      }
+
+      if (!(flags & nsIDNSService::RESOLVE_BYPASS_CACHE) &&
+          rec->HasUsableResult(TimeStamp::NowLoRes(), flags)) {
+        result = FromCache(rec, host, type, status);
+      } else if (addrRec && addrRec->addr) {
+        
+        
+        LOG(("  Using cached address for IP Literal [%s].\n", host.get()));
+        result = FromCachedIPLiteral(rec);
+      } else if (addrRec && NS_SUCCEEDED(tempAddr.InitFromString(host))) {
+        
+        
+        
+        LOG(("  Host is IP Literal [%s].\n", host.get()));
+        result = FromIPLiteral(addrRec, tempAddr);
+      } else if (mQueue.PendingCount() >= MAX_NON_PRIORITY_REQUESTS &&
+                 !IsHighPriority(flags) && !rec->mResolving) {
+        LOG(
+            ("  Lookup queue full: dropping %s priority request for "
+             "host [%s].\n",
+             IsMediumPriority(flags) ? "medium" : "low", host.get()));
+        if (IS_ADDR_TYPE(type)) {
+          glean::dns::lookup_method.AccumulateSingleSample(METHOD_OVERFLOW);
+        }
+        
+        rv = NS_ERROR_DNS_LOOKUP_QUEUE_FULL;
+
+        
+      } else if (flags & nsIDNSService::RESOLVE_OFFLINE) {
+        LOG(("  Offline request for host [%s]; ignoring.\n", host.get()));
+        rv = NS_ERROR_OFFLINE;
 
         
         
         
+      } else if (!rec->mResolving) {
+        result =
+            FromUnspecEntry(rec, host, aTrrServer, originSuffix, type, flags,
+                            af, aOriginAttributes.IsPrivateBrowsing(), status);
+        
+        
+        
+        if (!result) {
+          LOG(("  No usable record in cache for host [%s] type %d.", host.get(),
+               type));
 
-        if (IsHighPriority(flags) && !IsHighPriority(rec->flags)) {
+          if (flags & nsIDNSService::RESOLVE_REFRESH_CACHE) {
+            rec->Invalidate();
+          }
+
           
-          mQueue.MoveToAnotherPendingQ(rec, flags);
+          rec->mCallbacks.insertBack(callback);
           rec->flags = flags;
-          MaybeDispatchResolveHostTask();
-        } else if (IsMediumPriority(flags) && IsLowPriority(rec->flags)) {
+          rv = NameLookup(rec);
+          if (IS_ADDR_TYPE(type)) {
+            glean::dns::lookup_method.AccumulateSingleSample(
+                METHOD_NETWORK_FIRST);
+          }
+          if (NS_FAILED(rv) && callback->isInList()) {
+            callback->remove();
+          } else {
+            LOG(
+                ("  DNS lookup for host [%s] blocking "
+                 "pending 'getaddrinfo' or trr query: "
+                 "callback [%p]",
+                 host.get(), callback.get()));
+          }
+        }
+      } else {
+        LOG(
+            ("  Host [%s] is being resolved. Appending callback "
+             "[%p].",
+             host.get(), callback.get()));
+
+        rec->mCallbacks.insertBack(callback);
+
+        if (rec && rec->onQueue()) {
+          glean::dns::lookup_method.AccumulateSingleSample(
+              METHOD_NETWORK_SHARED);
+
           
-          mQueue.MoveToAnotherPendingQ(rec, flags);
-          rec->flags = flags;
+          
+          
+
+          if (IsHighPriority(flags) && !IsHighPriority(rec->flags)) {
+            
+            mQueue.MoveToAnotherPendingQ(rec, flags);
+            rec->flags = flags;
+            MaybeDispatchResolveHostTask();
+          } else if (IsMediumPriority(flags) && IsLowPriority(rec->flags)) {
+            
+            mQueue.MoveToAnotherPendingQ(rec, flags);
+            rec->flags = flags;
+          }
         }
       }
-    }
 
-    if (result && callback->isInList()) {
-      callback->remove();
-    }
+      if (result && callback->isInList()) {
+        callback->remove();
+      }
+    }  
+
   }  
 
   if (result) {
@@ -1378,16 +1407,22 @@ nsHostResolver::LookupStatus nsHostResolver::CompleteLookup(
     nsHostRecord* rec, nsresult status, AddrInfo* aNewRRSet, bool pb,
     const nsACString& aOriginsuffix, TRRSkippedReason aReason,
     mozilla::net::TRR* aTRRRequest) {
-  AutoWriteLock dbLock(mDBLock);
-  MutexAutoLock queueLock(mQueue.mLock);
-  return CompleteLookupLocked(rec, status, aNewRRSet, pb, aOriginsuffix,
-                              aReason, aTRRRequest);
+  CallbackArray callbacks;
+  LookupStatus result;
+  {
+    AutoWriteLock dbLock(mDBLock);
+    MutexAutoLock queueLock(mQueue.mLock);
+    result = CompleteLookupLocked(rec, status, aNewRRSet, pb, aOriginsuffix,
+                                  aReason, aTRRRequest, callbacks);
+  }
+  FireCallbacks(callbacks, rec, status);
+  return result;
 }
 
 nsHostResolver::LookupStatus nsHostResolver::CompleteLookupLocked(
-    nsHostRecord* rec, nsresult status, AddrInfo* aNewRRSet, bool pb,
+    nsHostRecord* rec, nsresult& status, AddrInfo* aNewRRSet, bool pb,
     const nsACString& aOriginsuffix, TRRSkippedReason aReason,
-    mozilla::net::TRR* aTRRRequest) {
+    mozilla::net::TRR* aTRRRequest, CallbackArray& aCallbacks) {
   MOZ_ASSERT(rec);
   MOZ_ASSERT(rec->pb == pb);
   MOZ_ASSERT(rec->IsAddrRecord());
@@ -1528,18 +1563,10 @@ nsHostResolver::LookupStatus nsHostResolver::CompleteLookupLocked(
     }
   }
 
-  
-  
-  mozilla::LinkedList<RefPtr<nsResolveHostCallback>> cbs =
-      std::move(rec->mCallbacks);
-
   LOG(("nsHostResolver record %p calling back dns users status:%X\n",
        addrRec.get(), int(status)));
 
-  for (nsResolveHostCallback* c = cbs.getFirst(); c;
-       c = c->removeAndGetNext()) {
-    c->OnResolveHostComplete(this, rec, status);
-  }
+  DrainCallbacks(rec->mCallbacks, aCallbacks);
 
   OnResolveComplete(rec);
 
@@ -1571,15 +1598,22 @@ nsHostResolver::LookupStatus nsHostResolver::CompleteLookupByType(
     nsHostRecord* rec, nsresult status,
     mozilla::net::TypeRecordResultType& aResult, TRRSkippedReason aReason,
     uint32_t aTtl, bool pb) {
-  AutoWriteLock dbLock(mDBLock);
-  MutexAutoLock queueLock(mQueue.mLock);
-  return CompleteLookupByTypeLocked(rec, status, aResult, aReason, aTtl, pb);
+  CallbackArray callbacks;
+  LookupStatus result;
+  {
+    AutoWriteLock dbLock(mDBLock);
+    MutexAutoLock queueLock(mQueue.mLock);
+    result = CompleteLookupByTypeLocked(rec, status, aResult, aReason, aTtl, pb,
+                                        callbacks);
+  }
+  FireCallbacks(callbacks, rec, status);
+  return result;
 }
 
 nsHostResolver::LookupStatus nsHostResolver::CompleteLookupByTypeLocked(
-    nsHostRecord* rec, nsresult status,
+    nsHostRecord* rec, nsresult& status,
     mozilla::net::TypeRecordResultType& aResult, TRRSkippedReason aReason,
-    uint32_t aTtl, bool pb) {
+    uint32_t aTtl, bool pb, CallbackArray& aCallbacks) {
   MOZ_ASSERT(rec);
   MOZ_ASSERT(rec->pb == pb);
   MOZ_ASSERT(!rec->IsAddrRecord());
@@ -1645,18 +1679,10 @@ nsHostResolver::LookupStatus nsHostResolver::CompleteLookupByTypeLocked(
     typeRec->RecordReason(aReason);
   }
 
-  mozilla::LinkedList<RefPtr<nsResolveHostCallback>> cbs =
-      std::move(typeRec->mCallbacks);
-
-  LOG(
-      ("nsHostResolver::CompleteLookupByType record %p calling back dns "
-       "users\n",
+  LOG(("nsHostResolver::CompleteLookupByType record %p collecting callbacks\n",
        typeRec.get()));
 
-  for (nsResolveHostCallback* c = cbs.getFirst(); c;
-       c = c->removeAndGetNext()) {
-    c->OnResolveHostComplete(this, rec, status);
-  }
+  DrainCallbacks(typeRec->mCallbacks, aCallbacks);
 
   OnResolveComplete(rec);
 
@@ -1684,35 +1710,40 @@ void nsHostResolver::CancelAsyncRequest(
     uint16_t af, nsIDNSListener* aListener, nsresult status)
 
 {
-  mozilla::AutoWriteLock dbLock(mDBLock);
-  MutexAutoLock queueLock(mQueue.mLock);
+  CallbackArray callbacks;
+  RefPtr<nsHostRecord> rec;
 
-  nsAutoCString originSuffix;
-  aOriginAttributes.CreateSuffix(originSuffix);
+  {
+    mozilla::AutoWriteLock dbLock(mDBLock);
+    MutexAutoLock queueLock(mQueue.mLock);
 
-  
+    nsAutoCString originSuffix;
+    aOriginAttributes.CreateSuffix(originSuffix);
 
-  nsHostKey key(host, aTrrServer, aType, flags, af,
-                (aOriginAttributes.IsPrivateBrowsing()), originSuffix);
-  RefPtr<nsHostRecord> rec = mRecordDB.Get(key);
-  if (!rec) {
-    return;
-  }
+    
 
-  for (RefPtr<nsResolveHostCallback> c : rec->mCallbacks) {
-    if (c->EqualsAsyncListener(aListener)) {
-      c->remove();
-      c->OnResolveHostComplete(this, rec.get(), status);
-      break;
+    nsHostKey key(host, aTrrServer, aType, flags, af,
+                  (aOriginAttributes.IsPrivateBrowsing()), originSuffix);
+    rec = mRecordDB.Get(key);
+    if (rec) {
+      for (RefPtr<nsResolveHostCallback> c : rec->mCallbacks) {
+        if (c->EqualsAsyncListener(aListener)) {
+          c->remove();
+          callbacks.AppendElement(std::move(c));
+          break;
+        }
+      }
+
+      
+      if (rec->mCallbacks.isEmpty()) {
+        mRecordDB.Remove(*static_cast<nsHostKey*>(rec.get()));
+        
+        mQueue.MaybeRemoveFromQ(rec);
+      }
     }
   }
 
-  
-  if (rec->mCallbacks.isEmpty()) {
-    mRecordDB.Remove(*static_cast<nsHostKey*>(rec.get()));
-    
-    mQueue.MaybeRemoveFromQ(rec);
-  }
+  FireCallbacks(callbacks, rec, status);
 }
 
 size_t nsHostResolver::SizeOfIncludingThis(MallocSizeOf mallocSizeOf) const {
