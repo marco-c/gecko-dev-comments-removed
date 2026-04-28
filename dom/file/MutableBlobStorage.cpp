@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "MutableBlobStorage.h"
 
 #include "EmptyBlobImpl.h"
@@ -513,13 +511,22 @@ void MutableBlobStorage::MaybeCreateTemporaryFileOnMainThread(
     return;
   }
 
-  mActor = new TemporaryIPCBlobChild(this);
-  actorChild->SendPTemporaryIPCBlobConstructor(mActor);
+  auto actor = MakeRefPtr<TemporaryIPCBlobChild>(this);
 
   
   
   
-  mActor.get()->AddRef();
+  
+  actor->AddRef();
+
+  if (!actorChild->SendPTemporaryIPCBlobConstructor(actor)) {
+    
+    
+    
+    return;
+  }
+
+  mActor = std::move(actor);
 
   
 }
