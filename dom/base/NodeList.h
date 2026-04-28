@@ -2,27 +2,23 @@
 
 
 
-#ifndef nsINodeList_h_
-#define nsINodeList_h_
+#ifndef mozilla_dom_NodeList_h_
+#define mozilla_dom_NodeList_h_
 
 #include "nsIContent.h"
 #include "nsISupports.h"
 #include "nsWrapperCache.h"
 
-
-#define NS_INODELIST_IID \
-  {0xadb5e54c, 0x6e96, 0x4102, {0x8d, 0x40, 0xe0, 0x12, 0x3d, 0xcf, 0x48, 0x7a}}
-
 class nsIContent;
 class nsINode;
 
+namespace mozilla::dom {
 
 
 
-class nsINodeList : public nsISupports, public nsWrapperCache {
+
+class NodeList : public nsISupports, public nsWrapperCache {
  public:
-  NS_INLINE_DECL_STATIC_IID(NS_INODELIST_IID)
-
   
 
 
@@ -43,4 +39,6 @@ class nsINodeList : public nsISupports, public nsWrapperCache {
   }
 };
 
-#endif 
+}  
+
+#endif  

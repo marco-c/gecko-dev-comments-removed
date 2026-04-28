@@ -13,11 +13,11 @@
 #include "nsRefPtrHashtable.h"
 #include "nsWrapperCache.h"
 
-class nsContentList;
 class nsINode;
 
 namespace mozilla::dom {
 
+class ContentList;
 class Document;
 class Element;
 class OwningHTMLCollectionOrElement;
@@ -65,13 +65,13 @@ class HTMLAllCollection final : public nsISupports, public nsWrapperCache {
   }
 
  private:
-  nsContentList* Collection();
+  ContentList* Collection();
 
   
 
 
 
-  nsContentList* GetDocumentAllList(const nsAString& aID);
+  ContentList* GetDocumentAllList(const nsAString& aID);
 
   
 
@@ -79,8 +79,8 @@ class HTMLAllCollection final : public nsISupports, public nsWrapperCache {
   Element* Item(uint32_t aIndex);
 
   RefPtr<mozilla::dom::Document> mDocument;
-  RefPtr<nsContentList> mCollection;
-  nsRefPtrHashtable<nsStringHashKey, nsContentList> mNamedMap;
+  RefPtr<ContentList> mCollection;
+  nsRefPtrHashtable<nsStringHashKey, ContentList> mNamedMap;
 };
 
 }  
