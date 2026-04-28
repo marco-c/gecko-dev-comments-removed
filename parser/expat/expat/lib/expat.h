@@ -45,6 +45,7 @@
 #ifndef Expat_INCLUDED
 #  define Expat_INCLUDED 1
 
+#  include <stdint.h> 
 #  include <stdlib.h>
 #  include "expat_external.h"
 
@@ -918,8 +919,19 @@ XML_SetParamEntityParsing(XML_Parser parser,
 
 
 
+
 XMLPARSEAPI(int)
 XML_SetHashSalt(XML_Parser parser, unsigned long hash_salt);
+
+
+
+
+
+
+
+
+XMLPARSEAPI(XML_Bool)
+XML_SetHashSalt16Bytes(XML_Parser parser, const uint8_t entropy[16]);
 
 
 
@@ -1081,8 +1093,8 @@ XML_SetReparseDeferralEnabled(XML_Parser parser, XML_Bool enabled);
 
 
 #  define XML_MAJOR_VERSION 2
-#  define XML_MINOR_VERSION 7
-#  define XML_MICRO_VERSION 5
+#  define XML_MINOR_VERSION 8
+#  define XML_MICRO_VERSION 0
 
 #  ifdef __cplusplus
 }
