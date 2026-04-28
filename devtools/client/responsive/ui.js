@@ -56,7 +56,7 @@ const RELOAD_CONDITION_PREF_PREFIX = "devtools.responsive.reloadConditions.";
 const RELOAD_NOTIFICATION_PREF =
   "devtools.responsive.reloadNotification.enabled";
 const USE_DYNAMIC_TOOLBAR_PREF = "devtools.responsive.dynamicToolbar.enabled";
-const DYNAMIC_TOOLBAR_MAX_HEIGHT = 40; 
+const DYNAMIC_TOOLBAR_MAX_HEIGHT = 50; 
 
 function debug(_msg) {
   
