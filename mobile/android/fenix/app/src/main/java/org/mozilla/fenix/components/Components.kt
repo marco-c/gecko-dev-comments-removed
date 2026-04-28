@@ -54,6 +54,7 @@ import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.appstate.AppState
 import org.mozilla.fenix.components.appstate.setup.checklist.SetupChecklistState
 import org.mozilla.fenix.components.appstate.setup.checklist.getSetupChecklistCollection
+import org.mozilla.fenix.components.appstate.sports.SportsWidgetState
 import org.mozilla.fenix.components.llm.Llm
 import org.mozilla.fenix.components.llm.ext.accessTokenProvider
 import org.mozilla.fenix.components.metrics.MetricsMiddleware
@@ -88,6 +89,7 @@ import org.mozilla.fenix.perf.StrictModeManager
 import org.mozilla.fenix.perf.lazyMonitored
 import org.mozilla.fenix.reviewprompt.ReviewPromptMiddleware
 import org.mozilla.fenix.search.VoiceSearchAIControlFeature
+import org.mozilla.fenix.settings.ai.AIControlsSearchProvider
 import org.mozilla.fenix.settings.datachoices.DataChoicesSearchProvider
 import org.mozilla.fenix.settings.settingssearch.DefaultFenixSettingsIndexer
 import org.mozilla.fenix.termsofuse.TermsOfUseManager
@@ -305,6 +307,7 @@ class Components(private val context: Context) {
                 },
                 recentHistory = emptyList(),
                 setupChecklistState = setupChecklistState(),
+                sportsWidgetState = setupSportsWidgetState(),
             ).run { filterState(blocklistHandler) },
             middlewares = listOf(
                 ProfileMarkerMiddleware(markerName = "AppStore", profiler = core.engine.profiler),
@@ -364,6 +367,10 @@ class Components(private val context: Context) {
         null
     }
 
+    private fun setupSportsWidgetState() = SportsWidgetState(
+        countriesSelected = settings.sportsSelectedCountries,
+    )
+
     val fxSuggest by lazyMonitored { FxSuggest(context, remoteSettingsService.value, analytics.crashReporter) }
 
     val distributionIdManager by lazyMonitored {
@@ -399,6 +406,7 @@ class Components(private val context: Context) {
             context = context,
             additionalProviders = listOf(
                 DataChoicesSearchProvider,
+                AIControlsSearchProvider,
             ),
         )
     }
