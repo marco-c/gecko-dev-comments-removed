@@ -435,6 +435,8 @@ if (typeof Mozilla == "undefined") {
 
 
 
+
+
   
 
 
@@ -716,6 +718,16 @@ if (typeof Mozilla == "undefined") {
     _sendEvent("setDefaultSearchEngine", {
       identifier,
     });
+  };
+
+  
+
+
+
+
+
+  Mozilla.UITour.pinToTaskbar = function () {
+    _sendEvent("pinToTaskbar");
   };
 
   
