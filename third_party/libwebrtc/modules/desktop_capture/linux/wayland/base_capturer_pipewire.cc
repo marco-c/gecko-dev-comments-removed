@@ -75,6 +75,10 @@ BaseCapturerPipeWire::BaseCapturerPipeWire(
 }
 
 BaseCapturerPipeWire::~BaseCapturerPipeWire() {
+  
+  
+  
+  portal_.reset();
   options_.screencast_stream()->StopScreenCastStream();
 }
 

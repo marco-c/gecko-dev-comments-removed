@@ -12,17 +12,15 @@
 #define MODULES_PORTAL_XDG_DESKTOP_PORTAL_UTILS_H_
 
 #include <gio/gio.h>
-#include <stdint.h>
 
+#include <cstdint>
 #include <string>
-#include <vector>
 
 #include "absl/strings/string_view.h"
+#include "api/scoped_refptr.h"
+#include "modules/portal/portal_guard.h"
 #include "modules/portal/portal_request_response.h"
-#include "modules/portal/scoped_glib.h"
-#include "modules/portal/xdg_session_details.h"
-#include "rtc_base/checks.h"
-#include "rtc_base/logging.h"
+#include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
 namespace xdg_portal {
@@ -69,14 +67,17 @@ RTC_EXPORT std::string PrepareSignalHandle(absl::string_view token,
 RTC_EXPORT uint32_t
 SetupRequestResponseSignal(absl::string_view object_path,
                            const GDBusSignalCallback callback,
-                           gpointer user_data,
+                           scoped_refptr<PortalGuard> guard,
                            GDBusConnection* connection);
+
 
 RTC_EXPORT void RequestSessionProxy(
     absl::string_view interface_name,
     const ProxyRequestCallback proxy_request_callback,
     GCancellable* cancellable,
-    gpointer user_data);
+    scoped_refptr<PortalGuard> guard);
+
+
 
 RTC_EXPORT void SetupSessionRequestHandlers(
     absl::string_view portal_prefix,
@@ -87,7 +88,9 @@ RTC_EXPORT void SetupSessionRequestHandlers(
     GCancellable* cancellable,
     std::string& portal_handle,
     guint& session_request_signal_id,
-    gpointer user_data);
+    scoped_refptr<PortalGuard> guard);
+
+
 
 RTC_EXPORT void StartSessionRequest(
     absl::string_view prefix,
@@ -99,7 +102,7 @@ RTC_EXPORT void StartSessionRequest(
     GCancellable* cancellable,
     guint& start_request_signal_id,
     std::string& start_handle,
-    gpointer user_data);
+    scoped_refptr<PortalGuard> guard);
 
 
 RTC_EXPORT void TearDownSession(absl::string_view session_handle,
