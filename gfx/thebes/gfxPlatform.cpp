@@ -3178,28 +3178,12 @@ void gfxPlatform::InitWebGLConfig() {
     }
   }
 
-  bool allowWebGLOop =
-      IsFeatureOk(nsIGfxInfo::FEATURE_ALLOW_WEBGL_OUT_OF_PROCESS);
-  if (!kIsAndroid) {
-    gfxVars::SetAllowWebglOop(allowWebGLOop);
-  } else {
-    
-    gfxVars::SetAllowWebglOop(allowWebGLOop &&
-                              gfxConfig::IsEnabled(Feature::GPU_PROCESS));
-    
-    
 #ifdef MOZ_WIDGET_ANDROID
-    if (gfxVars::AllowWebglOop() &&
-        StaticPrefs::webgl_out_of_process_enable_ahardwarebuffer_AtStartup()) {
-      gfxVars::SetUseAHardwareBufferSharedSurfaceWebglOop(true);
-    }
+  gfxVars::SetUseAHardwareBufferSharedSurfaceWebglOop(
+      StaticPrefs::webgl_out_of_process_enable_ahardwarebuffer_AtStartup());
 #endif
-  }
 
   if (!gfxConfig::IsEnabled(Feature::GPU_PROCESS) &&
-#ifdef ANDROID
-      !StaticPrefs::webgl_allow_in_content_AtStartup() &&
-#endif
       !StaticPrefs::webgl_allow_in_parent_AtStartup()) {
     featureWebGL.Disable(FeatureStatus::UnavailableNoGpuProcess,
                          "Disabled without GPU process",
@@ -4084,8 +4068,7 @@ bool gfxPlatform::FallbackFromAcceleration(FeatureStatus aStatus,
       (gfxVars::AllowWebGPU() &&
        !StaticPrefs::dom_webgpu_allow_in_parent_AtStartup()) ||
       (gfxVars::AllowWebGL() &&
-       !StaticPrefs::webgl_allow_in_parent_AtStartup()) ||
-      (kIsAndroid && gfxVars::AllowWebglOop())) {
+       !StaticPrefs::webgl_allow_in_parent_AtStartup())) {
     
     
     
@@ -4132,17 +4115,9 @@ void gfxPlatform::DisableAllCanvasForFallback(FeatureStatus aStatus,
   }
 
   if (gfxVars::AllowWebGL() &&
-#ifdef ANDROID
-      !StaticPrefs::webgl_allow_in_content_AtStartup() &&
-#endif
       !StaticPrefs::webgl_allow_in_parent_AtStartup()) {
     gfxConfig::Disable(Feature::WEBGL, aStatus, aMessage, aFailureId);
     gfxVars::SetAllowWebGL(false);
-  }
-
-  if (kIsAndroid) {
-    
-    gfxVars::SetAllowWebglOop(false);
   }
 }
 
