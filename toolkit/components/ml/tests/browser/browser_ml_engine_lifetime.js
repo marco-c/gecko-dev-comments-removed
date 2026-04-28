@@ -306,6 +306,55 @@ add_task(async function test_ml_engine_reuse_same() {
 
 
 
+
+
+
+add_task(async function test_ml_engine_reuse_metadata_differs() {
+  const { cleanup, remoteClients } = await setup();
+
+  const engineInstance = await createEngine({
+    taskName: "moz-echo",
+    engineId: "echo-metadata",
+    featureId: "test-feature",
+    flowId: "flow-1",
+    timeoutMS: 1000,
+  });
+  const inferencePromise = engineInstance.run({ data: "This gets echoed." });
+  await remoteClients["ml-onnx-runtime"].resolvePendingDownloads(1);
+  Assert.equal(
+    (await inferencePromise).output.echo,
+    "This gets echoed.",
+    "First inference completes."
+  );
+
+  const engineInstance2 = await createEngine({
+    taskName: "moz-echo",
+    engineId: "echo-metadata",
+    featureId: "test-feature",
+    flowId: "flow-2",
+    timeoutMS: 5000,
+  });
+  is(
+    engineInstance,
+    engineInstance2,
+    "Engine is reused when only per-request metadata differs."
+  );
+
+  const inferencePromise2 = engineInstance2.run({ data: "Echoed again." });
+  await remoteClients["ml-onnx-runtime"].resolvePendingDownloads(1);
+  Assert.equal(
+    (await inferencePromise2).output.echo,
+    "Echoed again.",
+    "Second inference completes on the reused engine."
+  );
+
+  await EngineProcess.destroyMLEngine();
+  await cleanup();
+});
+
+
+
+
 add_task(async function test_ml_two_engines() {
   const { cleanup, remoteClients } = await setup();
 
@@ -378,7 +427,7 @@ add_task(async function test_ml_dupe_engines() {
   let engineInstance2 = await createEngine({
     taskName: "moz-echo",
     engineId: "engine1",
-    timeoutMS: 2000, 
+    numThreads: 2, 
   });
   const inferencePromise2 = engineInstance2.run({ data: "This gets echoed." });
   await remoteClients["ml-onnx-runtime"].resolvePendingDownloads(1);
