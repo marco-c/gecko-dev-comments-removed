@@ -525,7 +525,8 @@ struct Pool {
 
 
 template <size_t InstSize, class Inst, class Asm,
-          unsigned NumShortBranchRanges = 0>
+          unsigned NumShortBranchRanges = 0,
+          size_t ShortRangeBranchHysteresis = jit::ShortRangeBranchHysteresis>
 struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
  private:
   
@@ -694,6 +695,39 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
   static const unsigned OOM_FAIL = unsigned(-1);
   static const unsigned DUMMY_INDEX = unsigned(-2);
 
+  size_t sizeOfSecondaryVeneers(unsigned numNewDeadlines = 0) const {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+    return guardSize_ *
+           (branchDeadlines_.size() - branchDeadlines_.maxRangeSize() +
+            numNewDeadlines) *
+           InstSize;
+  }
+
   
   
   bool hasSpaceForInsts(unsigned numInsts, unsigned numPoolEntries,
@@ -711,40 +745,13 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
     }
 
     
+    
+    
     if (!branchDeadlines_.empty()) {
       size_t deadline = branchDeadlines_.earliestDeadline().getOffset();
       size_t poolEnd = poolOffset + pool_.getPoolSize() +
                        numPoolEntries * sizeof(PoolAllocUnit);
-
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-
-      
-      size_t secondaryVeneers =
-          guardSize_ *
-          (branchDeadlines_.size() - branchDeadlines_.maxRangeSize() +
-           numNewDeadlines) *
-          InstSize;
+      size_t secondaryVeneers = sizeOfSecondaryVeneers(numNewDeadlines);
 
       if (deadline < poolEnd + secondaryVeneers) {
         return false;
@@ -944,6 +951,8 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
 
  private:
   
+  
+  
   bool hasExpirableShortRangeBranches(size_t reservedBytes) const {
     if (branchDeadlines_.empty()) {
       return false;
@@ -956,10 +965,9 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
     
     
     size_t deadline = branchDeadlines_.earliestDeadline().getOffset();
-    using CheckedSize = mozilla::CheckedInt<size_t>;
-    CheckedSize current(this->nextOffset().getOffset());
-    CheckedSize poolFreeSpace(reservedBytes);
-    auto future = current + poolFreeSpace;
+    size_t current = this->nextOffset().getOffset();
+    mozilla::CheckedInt<size_t> poolFreeSpace(reservedBytes);
+    auto future = (current + sizeOfSecondaryVeneers()) + poolFreeSpace;
     return !future.isValid() || deadline < future.value();
   }
 
