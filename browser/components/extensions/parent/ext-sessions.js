@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 
 var { ExtensionError, promiseObserved } = ExtensionUtils;
@@ -137,10 +135,8 @@ this.sessions = class extends ExtensionAPIPersistent {
       sessions: {
         async getRecentlyClosed(filter) {
           await SessionStore.promiseInitialized;
-          let maxResults =
-            filter.maxResults == undefined
-              ? this.MAX_SESSION_RESULTS
-              : filter.maxResults;
+          
+          let maxResults = filter.maxResults ?? Infinity;
           return getRecentlyClosed(maxResults, extension);
         },
 
