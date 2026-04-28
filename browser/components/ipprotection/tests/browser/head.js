@@ -60,9 +60,13 @@ const { SpecialMessageActions } = ChromeUtils.importESModule(
 );
 
 
-function waitForPanelEvent(document, eventName) {
+function waitForPanelEvent(
+  document,
+  eventName,
+  viewId = "PanelUI-ipprotection"
+) {
   return BrowserTestUtils.waitForEvent(document, eventName, false, event => {
-    if (event.target.getAttribute("viewId") === "PanelUI-ipprotection") {
+    if (event.target.getAttribute("viewId") === viewId) {
       return true;
     }
     return false;
@@ -371,6 +375,9 @@ add_setup(async function setupVPN() {
     Services.prefs.clearUserPref("browser.ipProtection.onboardingMessageMask");
     Services.prefs.clearUserPref("browser.ipProtection.egressLocationEnabled");
     Services.prefs.clearUserPref("browser.ipProtection.bandwidthThreshold");
+    Services.prefs.clearUserPref(
+      "browser.ipProtection.bandwidthWarningDismissedThreshold"
+    );
     Services.prefs.clearUserPref("browser.ipProtection.userEnabled");
   });
 });

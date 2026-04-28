@@ -193,3 +193,60 @@ add_task(async function test_user_enable_count() {
   Services.prefs.clearUserPref("browser.ipProtection.userEnableCount");
   Services.prefs.clearUserPref("browser.ipProtection.userEnabled");
 });
+
+
+
+
+add_task(async function test_show_locations() {
+  let button = document.getElementById(lazy.IPProtectionWidget.WIDGET_ID);
+  let panelView = PanelMultiView.getViewNode(
+    document,
+    lazy.IPProtectionPanel.MAIN_PANELVIEW
+  );
+
+  let panelShownPromise = waitForPanelEvent(document, "popupshown");
+  
+  button.click();
+  await panelShownPromise;
+
+  
+  let subview = PanelMultiView.getViewNode(
+    document,
+    lazy.IPProtectionPanel.LOCATIONS_PANELVIEW
+  );
+  let locationsShownPromise = BrowserTestUtils.waitForEvent(
+    subview,
+    "ViewShown"
+  );
+
+  
+  panelView.dispatchEvent(
+    new CustomEvent("IPProtection:UserShowLocations", { bubbles: true })
+  );
+
+  await locationsShownPromise;
+
+  Assert.ok(
+    BrowserTestUtils.isVisible(subview),
+    "Locations area should be visible"
+  );
+
+  Assert.ok(
+    subview.querySelector(lazy.IPProtectionPanel.LOCATIONS_TAGNAME),
+    "Locations component should be present"
+  );
+
+  let headerButton = subview.querySelector(".panel-info-button");
+  Assert.ok(headerButton, "Header button should be present in locations view");
+
+  
+  let panelHiddenPromise = waitForPanelEvent(document, "popuphidden");
+
+  panelView.dispatchEvent(
+    new CustomEvent("IPProtection:Close", { bubbles: true })
+  );
+
+  await panelHiddenPromise;
+
+  Assert.ok(!BrowserTestUtils.isVisible(panelView), "Panel should be closed");
+});

@@ -31,11 +31,23 @@ class FakeIPProtectionPanelElement {
   remove() {
     
   }
+}
 
-  closest() {
-    return {
-      state: "open",
+
+
+
+class FakeIPProtectionPanelView {
+  constructor() {
+    this.state = "open";
+    this.ownerDocument = {
+      removeEventListener() {
+        
+      },
     };
+  }
+
+  hidePopup() {
+    
   }
 }
 
@@ -57,7 +69,8 @@ add_setup(async function () {
 add_task(async function test_setState() {
   let ipProtectionPanel = new IPProtectionPanel();
   let fakeElement = new FakeIPProtectionPanelElement();
-  ipProtectionPanel.panel = fakeElement;
+  ipProtectionPanel.components.add(fakeElement);
+  ipProtectionPanel.panel = new FakeIPProtectionPanelView();
 
   ipProtectionPanel.state = {};
   fakeElement.state = {};
@@ -103,7 +116,8 @@ add_task(async function test_setState() {
 add_task(async function test_updateState() {
   let ipProtectionPanel = new IPProtectionPanel();
   let fakeElement = new FakeIPProtectionPanelElement();
-  ipProtectionPanel.panel = fakeElement;
+  ipProtectionPanel.components.add(fakeElement);
+  ipProtectionPanel.panel = new FakeIPProtectionPanelView();
 
   ipProtectionPanel.state = {};
   fakeElement.state = {};
@@ -131,6 +145,73 @@ add_task(async function test_updateState() {
 
 
 
+add_task(async function test_updateComponentState() {
+  let ipProtectionPanel = new IPProtectionPanel();
+  let fakeElementA = new FakeIPProtectionPanelElement();
+  let fakeElementB = new FakeIPProtectionPanelElement();
+
+  ipProtectionPanel.panel = new FakeIPProtectionPanelView();
+  ipProtectionPanel.state = {
+    foo: "bar",
+  };
+  fakeElementA.state = {};
+  fakeElementA.isConnected = true;
+  fakeElementB.state = {};
+  fakeElementB.isConnected = true;
+
+  ipProtectionPanel.updateComponentState(fakeElementA);
+
+  Assert.ok(
+    ipProtectionPanel.components.has(fakeElementA),
+    "The fake element A should be in the components set"
+  );
+
+  Assert.deepEqual(
+    fakeElementA.state,
+    { foo: "bar" },
+    "The state should be set on the fake element A"
+  );
+
+  Assert.deepEqual(
+    fakeElementB.state,
+    {},
+    "The state should not be set on the fake element B"
+  );
+
+  ipProtectionPanel.updateComponentState(fakeElementB);
+
+  Assert.ok(
+    ipProtectionPanel.components.has(fakeElementB),
+    "The fake element B should be in the components set"
+  );
+
+  Assert.deepEqual(
+    fakeElementB.state,
+    { foo: "bar" },
+    "The state should be set on the fake element B"
+  );
+
+  
+  ipProtectionPanel.setState({
+    isFoo: true,
+  });
+
+  Assert.deepEqual(
+    fakeElementA.state,
+    { foo: "bar", isFoo: true },
+    "The state should be set on the fake element A"
+  );
+
+  Assert.deepEqual(
+    fakeElementB.state,
+    { foo: "bar", isFoo: true },
+    "The state should be set on the fake element B"
+  );
+});
+
+
+
+
 add_task(async function test_IPProtectionPanel_signedIn() {
   let sandbox = sinon.createSandbox();
   sandbox.stub(IPPSignInWatcher, "isSignedIn").get(() => true);
@@ -146,7 +227,8 @@ add_task(async function test_IPProtectionPanel_signedIn() {
 
   let ipProtectionPanel = new IPProtectionPanel();
   let fakeElement = new FakeIPProtectionPanelElement();
-  ipProtectionPanel.panel = fakeElement;
+  ipProtectionPanel.components.add(fakeElement);
+  ipProtectionPanel.panel = new FakeIPProtectionPanelView();
   fakeElement.isConnected = true;
 
   let signedInEventPromise = waitForEvent(
@@ -182,7 +264,8 @@ add_task(async function test_IPProtectionPanel_signedOut() {
 
   let ipProtectionPanel = new IPProtectionPanel();
   let fakeElement = new FakeIPProtectionPanelElement();
-  ipProtectionPanel.panel = fakeElement;
+  ipProtectionPanel.components.add(fakeElement);
+  ipProtectionPanel.panel = new FakeIPProtectionPanelView();
   fakeElement.isConnected = true;
 
   IPProtectionService.setState(IPProtectionStates.READY);
@@ -216,7 +299,8 @@ add_task(async function test_IPProtectionPanel_signedOut() {
 add_task(async function test_IPProtectionPanel_started_stopped() {
   let ipProtectionPanel = new IPProtectionPanel();
   let fakeElement = new FakeIPProtectionPanelElement();
-  ipProtectionPanel.panel = fakeElement;
+  ipProtectionPanel.components.add(fakeElement);
+  ipProtectionPanel.panel = new FakeIPProtectionPanelView();
   fakeElement.isConnected = true;
 
   let sandbox = sinon.createSandbox();
@@ -304,7 +388,8 @@ add_task(async function test_IPProtectionPanel_started_stopped() {
 add_task(async function test_IPProtectionPanel_egressLocation_pref() {
   let ipProtectionPanel = new IPProtectionPanel();
   let fakeElement = new FakeIPProtectionPanelElement();
-  ipProtectionPanel.panel = fakeElement;
+  ipProtectionPanel.components.add(fakeElement);
+  ipProtectionPanel.panel = new FakeIPProtectionPanelView();
   fakeElement.isConnected = true;
 
   const expectedLocation = {
@@ -362,7 +447,8 @@ add_task(async function test_IPProtectionPanel_usage_zero_remaining() {
 
   let ipProtectionPanel = new IPProtectionPanel();
   let fakeElement = new FakeIPProtectionPanelElement();
-  ipProtectionPanel.panel = fakeElement;
+  ipProtectionPanel.components.add(fakeElement);
+  ipProtectionPanel.panel = new FakeIPProtectionPanelView();
   fakeElement.isConnected = true;
 
   Services.prefs.clearUserPref("browser.ipProtection.bandwidthThreshold");
