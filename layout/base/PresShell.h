@@ -1439,6 +1439,8 @@ class PresShell final : public nsStubDocumentObserver,
   MOZ_CAN_RUN_SCRIPT NS_IMETHOD LineMove(bool aForward, bool aExtend) override;
   MOZ_CAN_RUN_SCRIPT NS_IMETHOD IntraLineMove(bool aForward,
                                               bool aExtend) override;
+  MOZ_CAN_RUN_SCRIPT NS_IMETHOD ParagraphMove(bool aForward,
+                                              bool aExtend) override;
   MOZ_CAN_RUN_SCRIPT NS_IMETHOD PageMove(bool aForward, bool aExtend) override;
   NS_IMETHOD ScrollPage(bool aForward) override;
   NS_IMETHOD ScrollLine(bool aForward) override;
@@ -1884,6 +1886,8 @@ class PresShell final : public nsStubDocumentObserver,
 
 
   void MergeAnchorPosAnchorChanges();
+
+  void CleanupFullscreenState();
 
  private:
   ~PresShell();
@@ -2809,31 +2813,6 @@ class PresShell final : public nsStubDocumentObserver,
 
 
 
-
-
-
-
-
-
-    nsIFrame* ComputeRootFrameToHandleEventWithCapturingContent(
-        nsIFrame* aRootFrameToHandleEvent, nsIContent* aCapturingContent,
-        bool* aIsCapturingContentIgnored, bool* aIsCaptureRetargeted);
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     MOZ_CAN_RUN_SCRIPT nsresult
     HandleEventWithPointerCapturingContentWithoutItsFrame(
         AutoWeakFrame& aWeakFrameForPresShell, WidgetGUIEvent* aGUIEvent,
@@ -3205,6 +3184,9 @@ class PresShell final : public nsStubDocumentObserver,
   nsIFrame* mCurrentReflowRoot = nullptr;
 #endif  
 
+  bool ShouldShowFullscreenKeyboardLockWarning(
+      const WidgetKeyboardEvent& aKeyboardEvent);
+
  private:
   
   
@@ -3535,11 +3517,21 @@ class PresShell final : public nsStubDocumentObserver,
 
   
   
+  bool mHasShownFullscreenWarningForCurrentEscapeKeyLongPress : 1;
+
+  
+  
   TimeStamp mLastConsumedEscapeKeyUpForFullscreen;
 
   
   
   TimeStamp mFirstUnmatchedEscapeKeyDownForFullscreen;
+
+  
+  
+  
+  uint8_t mEscapeKeyDownCountForFullscreenKeyboardLockWarning;
+  TimeStamp mLastEscapeKeyDownTimeForFullscreenKeyboardLockWarning;
 
   
   

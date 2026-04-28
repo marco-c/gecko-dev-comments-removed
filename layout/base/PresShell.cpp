@@ -178,6 +178,7 @@
 #include "nsIURI.h"
 #include "nsImageFrame.h"
 #include "nsLayoutUtils.h"
+#include "nsListControlFrame.h"
 #include "nsMenuPopupFrame.h"
 #include "nsNameSpaceManager.h"  
 #include "nsNetUtil.h"
@@ -727,7 +728,9 @@ PresShell::PresShell(Document* aDocument)
       mHasTriedFastUnsuppress(false),
       mProcessingReflowCommands(false),
       mPendingDidDoReflow(false),
-      mHasSeenAnchorPos(false) {
+      mHasSeenAnchorPos(false),
+      mHasShownFullscreenWarningForCurrentEscapeKeyLongPress(false),
+      mEscapeKeyDownCountForFullscreenKeyboardLockWarning(0) {
   MOZ_LOG(gLog, LogLevel::Debug, ("PresShell::PresShell this=%p", this));
   MOZ_ASSERT(aDocument);
 
@@ -2333,6 +2336,12 @@ NS_IMETHODIMP
 PresShell::IntraLineMove(bool aForward, bool aExtend) {
   RefPtr<nsFrameSelection> frameSelection = mSelection;
   return frameSelection->IntraLineMove(aForward, aExtend);
+}
+
+NS_IMETHODIMP
+PresShell::ParagraphMove(bool aForward, bool aExtend) {
+  RefPtr<nsFrameSelection> frameSelection = mSelection;
+  return frameSelection->ParagraphMove(aForward, aExtend);
 }
 
 NS_IMETHODIMP
@@ -7858,6 +7867,12 @@ nsIFrame* PresShell::EventHandler::GetFrameToHandleNonTouchEvent(
     return nullptr;
   }
 
+  Document* doc = GetDocument();
+  if (MOZ_UNLIKELY(doc && doc->RenderingSuppressedForViewTransitions())) {
+    Element* root = doc->GetRootElement();
+    return root ? root->GetPrimaryFrame() : nullptr;
+  }
+
   ViewportType viewportType = ViewportType::Layout;
   if (aWeakRootFrameToHandleEvent->Type() == LayoutFrameType::Viewport) {
     nsPresContext* pc = aWeakRootFrameToHandleEvent->PresContext();
@@ -8634,10 +8649,31 @@ nsIFrame* PresShell::EventHandler::ComputeRootFrameToHandleEvent(
     return rootFrameToHandleEvent;
   }
 
+  *aIsCapturingContentIgnored = false;
+  *aIsCaptureRetargeted = false;
+
   
-  return ComputeRootFrameToHandleEventWithCapturingContent(
-      rootFrameToHandleEvent, aCapturingContent, aIsCapturingContentIgnored,
-      aIsCaptureRetargeted);
+  
+  
+  
+  BrowsingContext* bc = GetPresContext()->Document()->GetBrowsingContext();
+  if (!bc || !bc->IsActive()) {
+    ClearMouseCapture();
+    *aIsCapturingContentIgnored = true;
+    return rootFrameToHandleEvent;
+  }
+
+  *aIsCaptureRetargeted = !!PresShell::sCapturingContentInfo.mRetargetToElement;
+
+  
+  
+  
+  
+  if (nsListControlFrame* lcf =
+          do_QueryFrame(aCapturingContent->GetPrimaryFrame())) {
+    return lcf->GetScrolledFrame();
+  }
+  return rootFrameToHandleEvent;
 }
 
 nsIFrame* PresShell::EventHandler::ComputeRootFrameToHandleEventWithPopup(
@@ -8691,46 +8727,6 @@ nsIFrame* PresShell::EventHandler::ComputeRootFrameToHandleEventWithPopup(
   }
 
   return aRootFrameToHandleEvent;
-}
-
-nsIFrame*
-PresShell::EventHandler::ComputeRootFrameToHandleEventWithCapturingContent(
-    nsIFrame* aRootFrameToHandleEvent, nsIContent* aCapturingContent,
-    bool* aIsCapturingContentIgnored, bool* aIsCaptureRetargeted) {
-  MOZ_ASSERT(aRootFrameToHandleEvent);
-  MOZ_ASSERT(aCapturingContent);
-  MOZ_ASSERT(aIsCapturingContentIgnored);
-  MOZ_ASSERT(aIsCaptureRetargeted);
-
-  *aIsCapturingContentIgnored = false;
-  *aIsCaptureRetargeted = false;
-
-  
-  
-  
-  
-  BrowsingContext* bc = GetPresContext()->Document()->GetBrowsingContext();
-  if (!bc || !bc->IsActive()) {
-    ClearMouseCapture();
-    *aIsCapturingContentIgnored = true;
-    return aRootFrameToHandleEvent;
-  }
-
-  if (PresShell::sCapturingContentInfo.mRetargetToElement) {
-    *aIsCaptureRetargeted = true;
-    return aRootFrameToHandleEvent;
-  }
-
-  nsIFrame* captureFrame = aCapturingContent->GetPrimaryFrame();
-  if (!captureFrame) {
-    return aRootFrameToHandleEvent;
-  }
-
-  
-  
-  ScrollContainerFrame* scrollFrame = do_QueryFrame(captureFrame);
-  return scrollFrame ? scrollFrame->GetScrolledFrame()
-                     : aRootFrameToHandleEvent;
 }
 
 nsresult
@@ -9383,6 +9379,7 @@ void PresShell::EventHandler::MaybeHandleKeyboardEventBeforeDispatch(
   MOZ_ASSERT(aKeyboardEvent);
 
   if (aKeyboardEvent->mKeyCode != NS_VK_ESCAPE) {
+    mPresShell->CleanupFullscreenState();
     return;
   }
 
@@ -9400,10 +9397,30 @@ void PresShell::EventHandler::MaybeHandleKeyboardEventBeforeDispatch(
         
         
         if (!aKeyboardEvent->mIsRepeat) {
+          mPresShell->mHasShownFullscreenWarningForCurrentEscapeKeyLongPress =
+              false;
           mPresShell->mFirstUnmatchedEscapeKeyDownForFullscreen =
               aKeyboardEvent->mTimeStamp;
-        } else if (mPresShell->mFirstUnmatchedEscapeKeyDownForFullscreen) {
-          bool escapeHasBeenHeldLongEnough =
+
+          if (mPresShell->ShouldShowFullscreenKeyboardLockWarning(
+                  *aKeyboardEvent)) {
+            nsContentUtils::DispatchEventOnlyToChrome(
+                root, root, u"MozDOMFullscreen:WarnAboutKeyboardLock"_ns,
+                CanBubble::eYes, Cancelable::eNo,  nullptr);
+          }
+          return;
+        }
+
+        MOZ_ASSERT(aKeyboardEvent->mIsRepeat);
+        if (mPresShell->mFirstUnmatchedEscapeKeyDownForFullscreen) {
+          if (mPresShell->ShouldShowFullscreenKeyboardLockWarning(
+                  *aKeyboardEvent)) {
+            nsContentUtils::DispatchEventOnlyToChrome(
+                root, root, u"MozDOMFullscreen:WarnAboutKeyboardLock"_ns,
+                CanBubble::eYes, Cancelable::eNo,  nullptr);
+          }
+
+          const bool escapeHasBeenHeldLongEnough =
               (aKeyboardEvent->mTimeStamp -
                mPresShell->mFirstUnmatchedEscapeKeyDownForFullscreen) >=
               TimeDuration::FromMilliseconds(
@@ -12922,4 +12939,69 @@ void PresShell::UpdateContentRelevancyImmediately(
 
   EnsureLayoutFlush();
   UpdateRelevancyOfContentVisibilityAutoFrames();
+}
+
+void PresShell::CleanupFullscreenState() {
+  mFirstUnmatchedEscapeKeyDownForFullscreen = TimeStamp();
+  mEscapeKeyDownCountForFullscreenKeyboardLockWarning = 0;
+  mLastEscapeKeyDownTimeForFullscreenKeyboardLockWarning = TimeStamp();
+  mHasShownFullscreenWarningForCurrentEscapeKeyLongPress = false;
+}
+
+bool PresShell::ShouldShowFullscreenKeyboardLockWarning(
+    const WidgetKeyboardEvent& aKeyboardEvent) {
+  MOZ_ASSERT(aKeyboardEvent.mMessage == eKeyDown);
+  MOZ_ASSERT(aKeyboardEvent.mKeyCode == NS_VK_ESCAPE);
+
+  if (!XRE_IsParentProcess()) {
+    
+    return false;
+  }
+
+  if (aKeyboardEvent.mIsRepeat) {
+    
+    
+    if (mFirstUnmatchedEscapeKeyDownForFullscreen &&
+        !mHasShownFullscreenWarningForCurrentEscapeKeyLongPress) {
+      if ((aKeyboardEvent.mTimeStamp -
+           mFirstUnmatchedEscapeKeyDownForFullscreen) >=
+          TimeDuration::FromMilliseconds(
+              StaticPrefs::
+                  dom_fullscreen_keyboard_lock_long_press_warning_interval())) {
+        mHasShownFullscreenWarningForCurrentEscapeKeyLongPress = true;
+        return true;
+      }
+    }
+    return false;
+  }
+
+  MOZ_ASSERT(!aKeyboardEvent.mIsRepeat);
+  const TimeStamp previousEscapeKeyDownTime =
+      mLastEscapeKeyDownTimeForFullscreenKeyboardLockWarning;
+  mLastEscapeKeyDownTimeForFullscreenKeyboardLockWarning =
+      aKeyboardEvent.mTimeStamp;
+
+  const bool escapeKeyDownWithinWarnInterval =
+      previousEscapeKeyDownTime &&
+      (aKeyboardEvent.mTimeStamp - previousEscapeKeyDownTime) <=
+          TimeDuration::FromMilliseconds(
+              StaticPrefs::
+                  dom_fullscreen_keyboard_lock_triple_click_warn_interval());
+  if (!escapeKeyDownWithinWarnInterval) {
+    
+    
+    mEscapeKeyDownCountForFullscreenKeyboardLockWarning = 1;
+    return false;
+  }
+
+  mEscapeKeyDownCountForFullscreenKeyboardLockWarning += 1;
+  if (mEscapeKeyDownCountForFullscreenKeyboardLockWarning < 3) {
+    return false;
+  }
+
+  
+  
+  mEscapeKeyDownCountForFullscreenKeyboardLockWarning = 0;
+  mLastEscapeKeyDownTimeForFullscreenKeyboardLockWarning = TimeStamp();
+  return true;
 }
