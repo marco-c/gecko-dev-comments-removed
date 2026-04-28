@@ -38,6 +38,7 @@ class EventListenerManager;
 class PresState;
 namespace dom {
 class BooleanOrUnrestrictedDoubleOrString;
+class EditContext;
 class ElementInternals;
 class HTMLFormElement;
 class OwningBooleanOrUnrestrictedDoubleOrString;
@@ -207,7 +208,6 @@ class nsGenericHTMLElement : public nsGenericHTMLElementBase {
       mozilla::dom::PopoverVisibilityState aOldState, Element* aSource);
   MOZ_CAN_RUN_SCRIPT void RunPopoverToggleEventTask(
       mozilla::dom::PopoverToggleEventTask* aTask,
-      mozilla::dom::PopoverVisibilityState aOldState,
       mozilla::dom::Element* aSource);
   MOZ_CAN_RUN_SCRIPT void ShowPopover(
       const mozilla::dom::ShowPopoverOptions& aOptions, ErrorResult& aRv);
@@ -298,6 +298,10 @@ class nsGenericHTMLElement : public nsGenericHTMLElementBase {
     SetHTMLAttr(nsGkAtoms::autocorrect, aAutocorrect ? u"on"_ns : u"off"_ns,
                 aError);
   }
+
+  mozilla::dom::EditContext* GetEditContext() const;
+  void SetEditContext(mozilla::dom::EditContext* aContext,
+                      mozilla::ErrorResult& aRv);
 
   
 
