@@ -35,7 +35,17 @@
     <link rel="localization" href="branding/brand.ftl" />
     <link rel="localization" href="toolkit/about/aboutAddons.ftl" />
     <link rel="localization" href="toolkit/global/extensionPermissions.ftl" />
+    <!-- TODO: move these strings into aboutAddons.ftl once promoted out of locales-preview -->
+    <link
+      rel="localization"
+      href="locales-preview/smartWindow-aboutAddons.ftl"
+    />
 
+    <!-- Import panel-list explicitly so it's ready before DOMContentLoaded.-->
+    <script
+      type="module"
+      src="chrome://global/content/elements/panel-list.mjs"
+    ></script>
     <!-- Defer scripts so all the templates are loaded by the time they run. -->
     <script
       defer
@@ -722,6 +732,15 @@
       <moz-message-bar
         data-l10n-id="forced-colors-theme-notice"
         data-l10n-attrs="message"
+      >
+      </moz-message-bar>
+    </template>
+
+    <template name="smartwindow-themes-notice">
+      <moz-message-bar
+        data-l10n-id="smartwindow-themes-notice"
+        data-l10n-attrs="message"
+        dismissable
       >
       </moz-message-bar>
     </template>
