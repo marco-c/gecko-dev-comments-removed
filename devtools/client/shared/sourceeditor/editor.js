@@ -840,7 +840,9 @@ class Editor extends EventEmitter {
       codeFolding({
         placeholderText: "↔",
       }),
-      this.#compartments.foldGutterCompartment.of([]),
+      this.#compartments.foldGutterCompartment.of(
+        this.config.enableCodeFolding ? this.#foldGutterConfiguration() : []
+      ),
       syntaxHighlighting(lezerHighlight.classHighlighter),
       EditorView.updateListener.of(v => {
         if (!cm.isDocumentLoadComplete) {
@@ -1629,6 +1631,26 @@ class Editor extends EventEmitter {
     });
   }
 
+  #foldGutterConfiguration() {
+    const {
+      codemirrorLanguage: { foldGutter },
+    } = this.#CodeMirror6;
+
+    return foldGutter({
+      class: "cm6-dt-foldgutter",
+      markerDOM: open => {
+        if (!this.#ownerDoc) {
+          return null;
+        }
+        const button = this.#ownerDoc.createElement("button");
+        button.classList.add("cm6-dt-foldgutter__toggle-button");
+        button.setAttribute("aria-expanded", open);
+        return button;
+      },
+      domEventHandlers: this.#gutterDOMEventHandlers,
+    });
+  }
+
   
 
 
@@ -1643,7 +1665,6 @@ class Editor extends EventEmitter {
     const cm = editors.get(this);
     const {
       codemirrorView: { lineNumbers },
-      codemirrorLanguage: { foldGutter },
     } = this.#CodeMirror6;
 
     for (const eventName in domEventHandlers) {
@@ -1654,25 +1675,16 @@ class Editor extends EventEmitter {
       };
     }
 
+    this.config.lineNumbers = true;
+    this.config.enableCodeFolding = true;
+
     cm.dispatch({
       effects: [
         this.#compartments.lineNumberCompartment.reconfigure(
           lineNumbers({ domEventHandlers: this.#gutterDOMEventHandlers })
         ),
         this.#compartments.foldGutterCompartment.reconfigure(
-          foldGutter({
-            class: "cm6-dt-foldgutter",
-            markerDOM: open => {
-              if (!this.#ownerDoc) {
-                return null;
-              }
-              const button = this.#ownerDoc.createElement("button");
-              button.classList.add("cm6-dt-foldgutter__toggle-button");
-              button.setAttribute("aria-expanded", open);
-              return button;
-            },
-            domEventHandlers: this.#gutterDOMEventHandlers,
-          })
+          this.#foldGutterConfiguration()
         ),
       ],
     });
@@ -1683,6 +1695,8 @@ class Editor extends EventEmitter {
 
   disableGutter() {
     const cm = editors.get(this);
+    this.config.lineNumbers = false;
+    this.config.enableCodeFolding = false;
     cm.dispatch({
       effects: [
         this.#compartments.lineNumberCompartment.reconfigure([]),
@@ -1860,12 +1874,12 @@ class Editor extends EventEmitter {
     return [searchHighlightView];
   }
 
-  /**
-   * This should add the class to the results of a search pattern specified
-   *
-   * @param {RegExp} pattern - The search pattern
-   * @param {string} className - The class used to decorate each result
-   */
+  
+
+
+
+
+
   highlightSearchMatches(pattern, className) {
     const cm = editors.get(this);
     cm.dispatch({
@@ -1875,19 +1889,19 @@ class Editor extends EventEmitter {
     });
   }
 
-  /**
-   * This clear any decoration on all the search results
-   */
+  
+
+
   clearSearchMatches() {
     this.highlightSearchMatches(undefined, "");
   }
 
-  /**
-   * Retrieves the cursor for the next selection to be highlighted
-   *
-   * @param {boolean} reverse - Determines the direction of the cursor movement
-   * @returns {RegExpSearchCursor}
-   */
+  
+
+
+
+
+
   getNextSearchCursor(reverse) {
     if (reverse) {
       if (this.searchState.currentCursorIndex == 0) {
@@ -1907,13 +1921,13 @@ class Editor extends EventEmitter {
     return this.searchState.cursors[this.searchState.currentCursorIndex];
   }
 
-  /**
-   * Get the start and end locations of the current viewport
-   *
-   * @param {number} offsetHorizontalCharacters - Offset of characters offscreen
-   * @param {number} offsetVerticalLines - Offset of lines offscreen
-   * @returns {object}  - The location information for the current viewport
-   */
+  
+
+
+
+
+
+
   getLocationsInViewport(
     offsetHorizontalCharacters = 0,
     offsetVerticalLines = 0
@@ -1924,7 +1938,7 @@ class Editor extends EventEmitter {
     const cm = editors.get(this);
     let startLine, endLine, scrollLeft, charWidth, rightPosition;
     if (this.config.cm6) {
-      // Report no viewport until we show an actual source (and not a loading/error message)
+      
       if (!this.#currentDocumentId) {
         return null;
       }
@@ -1964,13 +1978,13 @@ class Editor extends EventEmitter {
     };
   }
 
-  /**
-   * Gets the position information for the current selection
-   *
-   * @returns {object} cursor      - The location information for the  current selection
-   *                   cursor.from - An object with the starting line / column of the selection
-   *                   cursor.to   - An object with the end line / column of the selection
-   */
+  
+
+
+
+
+
+
   getSelectionCursor() {
     const cm = editors.get(this);
     if (this.config.cm6) {
@@ -2776,7 +2790,7 @@ class Editor extends EventEmitter {
         }
         effects.push(
           this.#compartments.lineNumberCompartment.reconfigure(
-            lineNumbers(lineNumbersConfig)
+            this.config.lineNumbers ? lineNumbers(lineNumbersConfig) : []
           )
         );
       }
@@ -4183,14 +4197,17 @@ class Editor extends EventEmitter {
 
 
 
-if (!Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
-  CM_MAPPING.forEach(name => {
-    Editor.prototype[name] = function (...args) {
-      const cm = editors.get(this);
-      return cm[name].apply(cm, args);
-    };
-  });
-}
+CM_MAPPING.forEach(name => {
+  Editor.prototype[name] = function (...args) {
+    
+    
+    if (this.config.cm6) {
+      throw new Error("This method is not valid for Codemirror 6");
+    }
+    const cm = editors.get(this);
+    return cm[name].apply(cm, args);
+  };
+});
 
 
 
