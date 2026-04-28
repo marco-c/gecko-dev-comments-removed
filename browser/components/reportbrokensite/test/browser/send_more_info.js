@@ -85,7 +85,7 @@ async function reformatExpectedWebCompatInfo(tab, overrides) {
           },
           experiments,
           graphics: {
-            devicePixelRatio: parseInt(devicePixelRatio),
+            devicePixelRatio: parseFloat(devicePixelRatio),
             devices(actual) {
               const devices = getExpectedGraphicsDevices(snapshot);
               return compareGraphicsDevices(devices, actual);
@@ -246,13 +246,13 @@ async function checkWebcompatComPayload(
   ok(additionalData.tabInfo.useragentString?.length, "Got a final UA string");
 
   
-  
-  if (details.consoleLog) {
+  const { screenshot } = receivedData;
+  if (screenshot) {
     const isScreenshotValid = await new Promise(done => {
       var image = new Image();
       image.onload = () => done(image.width > 0);
       image.onerror = () => done(false);
-      image.src = receivedData.screenshot;
+      image.src = screenshot;
     });
     ok(isScreenshotValid, "Got a valid screenshot");
   }
