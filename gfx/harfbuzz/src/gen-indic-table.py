@@ -255,8 +255,6 @@ category_overrides = {
   
   0x0A72: 'C',
   0x0A73: 'C',
-  0x1CF5: 'C',
-  0x1CF6: 'C',
 
   
   

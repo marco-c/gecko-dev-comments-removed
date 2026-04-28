@@ -1339,15 +1339,12 @@ static inline void sort_r_swap(char *__restrict a, char *__restrict b,
 
 
 
-template <typename ...Ts>
+template <typename Compar>
 static inline int sort_r_cmpswap(char *__restrict a,
                                  char *__restrict b, size_t w,
-                                 int (*compar)(const void *_a,
-                                               const void *_b,
-                                               Ts... _ds),
-                                 Ts... ds)
+                                 Compar compar)
 {
-  if(compar(a, b, ds...) > 0) {
+  if(compar(a, b) > 0) {
     sort_r_swap(a, b, w);
     return 1;
   }
@@ -1372,23 +1369,17 @@ static inline void sort_r_swap_blocks(char *ptr, size_t na, size_t nb)
 
 
 
-template <typename ...Ts>
+template <typename Compar>
 static inline void sort_r_simple(void *base, size_t nel, size_t w,
-                                 int (*compar)(const void *_a,
-                                               const void *_b,
-                                               Ts... _ds),
-                                 Ts... ds)
+                                 Compar compar)
 {
   char *b = (char *)base, *end = b + nel*w;
-
-  
-
 
   if(nel < 10) {
     
     char *pi, *pj;
     for(pi = b+w; pi < end; pi += w) {
-      for(pj = pi; pj > b && sort_r_cmpswap(pj-w,pj,w,compar,ds...); pj -= w) {}
+      for(pj = pi; pj > b && sort_r_cmpswap(pj-w,pj,w,compar); pj -= w) {}
     }
   }
   else
@@ -1399,68 +1390,36 @@ static inline void sort_r_simple(void *base, size_t nel, size_t w,
     char *pl, *ple, *pr, *pre, *pivot;
     char *last = b+w*(nel-1), *tmp;
 
-    
-
-
-
     char *l[3];
     l[0] = b + w;
     l[1] = b+w*(nel/2);
     l[2] = last - w;
 
-    
-
-    if(compar(l[0],l[1],ds...) > 0) { SORT_R_SWAP(l[0], l[1], tmp); }
-    if(compar(l[1],l[2],ds...) > 0) {
+    if(compar(l[0],l[1]) > 0) { SORT_R_SWAP(l[0], l[1], tmp); }
+    if(compar(l[1],l[2]) > 0) {
       SORT_R_SWAP(l[1], l[2], tmp);
-      if(compar(l[0],l[1],ds...) > 0) { SORT_R_SWAP(l[0], l[1], tmp); }
+      if(compar(l[0],l[1]) > 0) { SORT_R_SWAP(l[0], l[1], tmp); }
     }
 
-    
     if(l[1] != last) { sort_r_swap(l[1], last, w); }
-
-    
-
-
-
-
-
-
-
-
-
 
     pivot = last;
     ple = pl = b;
     pre = pr = last;
 
-    
-
-
-
-
-
-
-
-
     while(pl < pr) {
-      
-
       for(; pl < pr; pl += w) {
-        cmp = compar(pl, pivot, ds...);
+        cmp = compar(pl, pivot);
         if(cmp > 0) { break; }
         else if(cmp == 0) {
           if(ple < pl) { sort_r_swap(ple, pl, w); }
           ple += w;
         }
       }
-      
       if(pl >= pr) { break; }
-      
-
       for(; pl < pr; ) {
-        pr -= w; 
-        cmp = compar(pr, pivot, ds...);
+        pr -= w;
+        cmp = compar(pr, pivot);
         if(cmp == 0) {
           pre -= w;
           if(pr < pre) { sort_r_swap(pr, pre, w); }
@@ -1473,22 +1432,13 @@ static inline void sort_r_simple(void *base, size_t nel, size_t w,
       }
     }
 
-    pl = pr; 
-
-    
-
-
-
-
+    pl = pr;
 
     sort_r_swap_blocks(b, ple-b, pl-ple);
     sort_r_swap_blocks(pr, pre-pr, end-pre);
 
-    
-
-
-    sort_r_simple(b, (pl-ple)/w, w, compar, ds...);
-    sort_r_simple(end-(pre-pr), (pre-pr)/w, w, compar, ds...);
+    sort_r_simple(b, (pl-ple)/w, w, compar);
+    sort_r_simple(end-(pre-pr), (pre-pr)/w, w, compar);
   }
 }
 
@@ -1496,24 +1446,10 @@ static inline void
 hb_qsort (void *base, size_t nel, size_t width,
 	  int (*compar)(const void *_a, const void *_b))
 {
-#if defined(__OPTIMIZE_SIZE__) && !defined(HB_USE_INTERNAL_QSORT)
   qsort (base, nel, width, compar);
-#else
-  sort_r_simple (base, nel, width, compar);
-#endif
 }
 
-static inline void
-hb_qsort (void *base, size_t nel, size_t width,
-	  int (*compar)(const void *_a, const void *_b, void *_arg),
-	  void *arg)
-{
-#ifdef HAVE_GNU_QSORT_R
-  qsort_r (base, nel, width, compar, arg);
-#else
-  sort_r_simple (base, nel, width, compar, arg);
-#endif
-}
+
 
 
 template <typename T, typename T2, typename T3 = int> static inline void
@@ -1735,6 +1671,53 @@ double solve_itp (func_t f,
   }
   return 0.5 * (a + b);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename F>
+struct hb_scope_guard_t
+{
+  explicit hb_scope_guard_t (F &&f) : f (std::move (f)), active (true) {}
+  hb_scope_guard_t (hb_scope_guard_t &&o) noexcept
+    : f (std::move (o.f)), active (o.active) { o.active = false; }
+  hb_scope_guard_t (const hb_scope_guard_t &) = delete;
+  hb_scope_guard_t &operator= (const hb_scope_guard_t &) = delete;
+  hb_scope_guard_t &operator= (hb_scope_guard_t &&) = delete;
+  ~hb_scope_guard_t () { if (active) f (); }
+
+  
+
+  void release () { active = false; }
+
+  private:
+  F f;
+  bool active;
+};
+
+template <typename F>
+static inline hb_scope_guard_t<F> hb_make_scope_guard (F &&f)
+{ return hb_scope_guard_t<F> (std::forward<F> (f)); }
+
+#define HB_SCOPE_GUARD_NAME_(line) hb_scope_guard_##line
+#define HB_SCOPE_GUARD_NAME(line) HB_SCOPE_GUARD_NAME_(line)
+#define HB_SCOPE_GUARD(stmt) \
+  auto HB_SCOPE_GUARD_NAME(__LINE__) = \
+    hb_make_scope_guard ([&]() { stmt; }); \
+  (void) HB_SCOPE_GUARD_NAME(__LINE__)
 
 
 #endif 

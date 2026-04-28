@@ -379,7 +379,11 @@ struct hb_hashmap_t
 
   void clear ()
   {
-    if (unlikely (!successful)) return;
+    
+
+
+
+    if (!population && !occupancy) return;
 
     for (auto &_ : hb_iter (items, size ()))
     {

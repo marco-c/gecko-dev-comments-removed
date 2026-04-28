@@ -117,9 +117,15 @@ struct hb_bit_set_t
 
   void clear ()
   {
-    resize (0);
-    if (likely (successful))
-      population = 0;
+    
+
+
+
+
+    if (!pages.length && !population) return;
+    pages.clear ();
+    page_map.clear ();
+    population = 0;
   }
   bool is_empty () const
   {

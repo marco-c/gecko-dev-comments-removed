@@ -138,6 +138,7 @@
 
 
 #ifndef HB_NO_PRAGMA_GCC_DIAGNOSTIC_IGNORED
+#pragma GCC diagnostic ignored "-Warray-bounds" // https://github.com/harfbuzz/harfbuzz/issues/5738
 #pragma GCC diagnostic ignored "-Wclass-memaccess"
 #pragma GCC diagnostic ignored "-Wcast-function-type-strict" // https://github.com/harfbuzz/harfbuzz/pull/3859#issuecomment-1295409126
 #pragma GCC diagnostic ignored "-Wdangling-reference" // https://github.com/harfbuzz/harfbuzz/issues/4043
@@ -568,6 +569,13 @@ extern "C" void  hb_free_impl(void *ptr);
 #include "hb-array.hh"	
 #include "hb-vector.hh"	
 #include "hb-object.hh"	
+
+
+
+
+
+
+template <typename T> using hb_unique_ptr_t = hb::unique_ptr<T>;
 
 
 

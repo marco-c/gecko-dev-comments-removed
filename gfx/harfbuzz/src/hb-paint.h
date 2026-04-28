@@ -30,6 +30,7 @@
 #define HB_PAINT_H
 
 #include "hb-common.h"
+#include "hb-draw.h"
 
 HB_BEGIN_DECLS
 
@@ -224,9 +225,74 @@ typedef void (*hb_paint_push_clip_rectangle_func_t) (hb_paint_funcs_t *funcs,
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+typedef hb_draw_funcs_t * (*hb_paint_push_clip_path_start_func_t) (hb_paint_funcs_t *funcs,
+                                                                   void             *paint_data,
+                                                                   void            **draw_data,
+                                                                   void             *user_data);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef void (*hb_paint_push_clip_path_end_func_t) (hb_paint_funcs_t *funcs,
+                                                    void             *paint_data,
+                                                    void             *user_data);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 typedef void (*hb_paint_pop_clip_func_t) (hb_paint_funcs_t *funcs,
                                           void *paint_data,
                                           void *user_data);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -310,6 +376,9 @@ typedef hb_bool_t (*hb_paint_image_func_t) (hb_paint_funcs_t *funcs,
 					    float slant,
 					    hb_glyph_extents_t *extents,
 					    void *user_data);
+
+
+
 
 
 
@@ -677,6 +746,28 @@ typedef void (*hb_paint_push_group_func_t) (hb_paint_funcs_t *funcs,
 
 
 
+typedef void (*hb_paint_push_group_for_func_t) (hb_paint_funcs_t *funcs,
+                                                void *paint_data,
+                                                hb_paint_composite_mode_t mode,
+                                                void *user_data);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 typedef void (*hb_paint_pop_group_func_t) (hb_paint_funcs_t *funcs,
                                            void *paint_data,
                                            hb_paint_composite_mode_t mode,
@@ -809,6 +900,40 @@ hb_paint_funcs_set_push_clip_rectangle_func (hb_paint_funcs_t                   
 
 
 HB_EXTERN void
+hb_paint_funcs_set_push_clip_path_start_func (hb_paint_funcs_t                     *funcs,
+                                              hb_paint_push_clip_path_start_func_t  func,
+                                              void                                 *user_data,
+                                              hb_destroy_func_t                     destroy);
+
+
+
+
+
+
+
+
+
+
+
+
+HB_EXTERN void
+hb_paint_funcs_set_push_clip_path_end_func (hb_paint_funcs_t                   *funcs,
+                                            hb_paint_push_clip_path_end_func_t  func,
+                                            void                               *user_data,
+                                            hb_destroy_func_t                   destroy);
+
+
+
+
+
+
+
+
+
+
+
+
+HB_EXTERN void
 hb_paint_funcs_set_pop_clip_func (hb_paint_funcs_t         *funcs,
                                   hb_paint_pop_clip_func_t  func,
                                   void                     *user_data,
@@ -928,6 +1053,23 @@ hb_paint_funcs_set_push_group_func (hb_paint_funcs_t           *funcs,
 
 
 HB_EXTERN void
+hb_paint_funcs_set_push_group_for_func (hb_paint_funcs_t               *funcs,
+                                        hb_paint_push_group_for_func_t  func,
+                                        void                           *user_data,
+                                        hb_destroy_func_t               destroy);
+
+
+
+
+
+
+
+
+
+
+
+
+HB_EXTERN void
 hb_paint_funcs_set_pop_group_func (hb_paint_funcs_t          *funcs,
                                    hb_paint_pop_group_func_t  func,
                                    void                       *user_data,
@@ -985,6 +1127,15 @@ hb_paint_push_clip_rectangle (hb_paint_funcs_t *funcs, void *paint_data,
                               float xmin, float ymin,
                               float xmax, float ymax);
 
+HB_EXTERN hb_draw_funcs_t *
+hb_paint_push_clip_path_start (hb_paint_funcs_t  *funcs,
+                               void              *paint_data,
+                               void             **draw_data);
+
+HB_EXTERN void
+hb_paint_push_clip_path_end (hb_paint_funcs_t *funcs,
+                             void             *paint_data);
+
 HB_EXTERN void
 hb_paint_pop_clip (hb_paint_funcs_t *funcs, void *paint_data);
 
@@ -1027,6 +1178,10 @@ HB_EXTERN void
 hb_paint_push_group (hb_paint_funcs_t *funcs, void *paint_data);
 
 HB_EXTERN void
+hb_paint_push_group_for (hb_paint_funcs_t *funcs, void *paint_data,
+                         hb_paint_composite_mode_t mode);
+
+HB_EXTERN void
 hb_paint_pop_group (hb_paint_funcs_t *funcs, void *paint_data,
                     hb_paint_composite_mode_t mode);
 
@@ -1034,6 +1189,58 @@ HB_EXTERN hb_bool_t
 hb_paint_custom_palette_color (hb_paint_funcs_t *funcs, void *paint_data,
                                unsigned int color_index,
                                hb_color_t *color);
+
+
+
+
+
+
+
+
+
+
+
+HB_EXTERN void
+hb_paint_reduce_linear_anchors (float x0, float y0,
+                                float x1, float y1,
+                                float x2, float y2,
+                                float *xx0, float *yy0,
+                                float *xx1, float *yy1);
+
+HB_EXTERN void
+hb_paint_normalize_color_line (hb_color_stop_t *stops,
+                               unsigned int     len,
+                               float           *min,
+                               float           *max);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef void (*hb_paint_sweep_gradient_tile_func_t) (float       a0,
+                                                     hb_color_t  c0,
+                                                     float       a1,
+                                                     hb_color_t  c1,
+                                                     void       *user_data);
+
+HB_EXTERN void
+hb_paint_sweep_gradient_tiles (hb_color_stop_t                     *stops,
+                               unsigned int                         n_stops,
+                               hb_paint_extend_t                    extend,
+                               float                                start_angle,
+                               float                                end_angle,
+                               hb_paint_sweep_gradient_tile_func_t  emit_patch,
+                               void                                *user_data);
+
 
 HB_END_DECLS
 
