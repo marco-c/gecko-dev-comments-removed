@@ -38,9 +38,9 @@ enum class StorageAccess {
   
   ePrivateBrowsing = 1,
   
-  eAllow = 3,
+  eAllow = 2,
   
-  eNumValues = 4,
+  eNumValues = 3,
 };
 
 
