@@ -2,12 +2,11 @@
 
 
 
-
-
 #ifndef AudioConverter_h
 #define AudioConverter_h
 
 #include "MediaInfo.h"
+#include "mozilla/CheckedInt.h"
 
 
 typedef struct SpeexResamplerState_ SpeexResamplerState;
@@ -163,10 +162,15 @@ class AudioConverter {
     AlignedBuffer<Value>* outputBuffer = &temp1;
     AlignedBuffer<Value> temp2;
     if (!frames || mOut.Rate() > mIn.Rate()) {
+      uint32_t resampledFrames;
       
       
-      if (!temp2.SetLength(
-              FramesOutToSamples(ResampleRecipientFrames(frames)))) {
+      if (!ResampleRecipientFrames(frames, &resampledFrames)) {
+        return AudioDataBuffer<Format, Value>(std::move(temp2));
+      }
+      CheckedInt<size_t> outputSamples =
+          CheckedInt<size_t>(resampledFrames) * mOut.Channels();
+      if (!outputSamples.isValid() || !temp2.SetLength(outputSamples.value())) {
         return AudioDataBuffer<Format, Value>(std::move(temp2));
       }
       outputBuffer = &temp2;
@@ -212,11 +216,19 @@ class AudioConverter {
       return frames;
     }
     
-    if ((!frames || mOut.Rate() > mIn.Rate()) &&
-        !aOutBuffer.SetLength(
-            FramesOutToSamples(ResampleRecipientFrames(frames)))) {
-      MOZ_ALWAYS_TRUE(aOutBuffer.SetLength(0));
-      return 0;
+    if (!frames || mOut.Rate() > mIn.Rate()) {
+      uint32_t resampledFrames;
+      if (!ResampleRecipientFrames(frames, &resampledFrames)) {
+        MOZ_ALWAYS_TRUE(aOutBuffer.SetLength(0));
+        return 0;
+      }
+      CheckedInt<size_t> outputSamples =
+          CheckedInt<size_t>(resampledFrames) * mOut.Channels();
+      if (!outputSamples.isValid() ||
+          !aOutBuffer.SetLength(outputSamples.value())) {
+        MOZ_ALWAYS_TRUE(aOutBuffer.SetLength(0));
+        return 0;
+      }
     }
     if (!frames) {
       frames = DrainResampler(aOutBuffer.Data());
@@ -266,7 +278,7 @@ class AudioConverter {
   
   SpeexResamplerState* mResampler;
   size_t ResampleAudio(void* aOut, const void* aIn, size_t aFrames);
-  size_t ResampleRecipientFrames(size_t aFrames) const;
+  bool ResampleRecipientFrames(size_t aFrames, uint32_t* aOutFrames) const;
   void RecreateResampler();
   size_t DrainResampler(void* aOut);
 };
