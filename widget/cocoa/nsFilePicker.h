@@ -14,10 +14,9 @@
 class nsIFile;
 class nsILocalFileMac;
 @class NSArray;
+@class NSSavePanel;
 
 class nsFilePicker final : public nsBaseFilePicker {
-  class AsyncShowFilePicker;
-
  public:
   nsFilePicker();
   using nsIFilePicker::ResultCode;
@@ -49,20 +48,32 @@ class nsFilePicker final : public nsBaseFilePicker {
   virtual ~nsFilePicker();
 
   virtual void InitNative(nsIWidget* aParent, const nsAString& aTitle) override;
-  nsresult Show(ResultCode* _retval);
 
   
   
   
   
-  ResultCode GetLocalFiles(bool inAllowMultiple, nsCOMArray<nsIFile>& outFiles);
-  ResultCode GetLocalFolder(nsIFile** outFile);
-  ResultCode PutLocalFile(nsIFile** outFile);
+  void PresentOpenPanel(bool aAllowMultiple,
+                        nsIFilePickerShownCallback* aCallback);
+  void PresentFolderPanel(nsIFilePickerShownCallback* aCallback);
+  void PresentSavePanel(nsIFilePickerShownCallback* aCallback);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  void BeginPanelAsync(NSSavePanel* aPanel, void (^aHandler)(NSModalResponse));
 
   void SetDialogTitle(const nsString& inTitle, id aDialog);
   NSString* PanelDefaultDirectory();
   NSView* GetAccessoryView();
 
+  nsCOMPtr<nsIWidget> mParentWidget;
   nsString mTitle;
   nsCOMArray<nsIFile> mFiles;
   nsString mDefaultFilename;
