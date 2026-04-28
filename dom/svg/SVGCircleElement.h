@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_SVG_SVGCIRCLEELEMENT_H_
 #define DOM_SVG_SVGCIRCLEELEMENT_H_
 
@@ -46,6 +44,7 @@ class SVGCircleElement final : public SVGCircleElementBase {
 
   nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;
 
+  Maybe<bool> HasCtxDependentLength() const;
   static bool IsLengthChangedViaCSS(const ComputedStyle& aNewStyle,
                                     const ComputedStyle& aOldStyle);
   static NonCustomCSSPropertyId GetCSSPropertyIdForAttrEnum(uint8_t aAttrEnum);

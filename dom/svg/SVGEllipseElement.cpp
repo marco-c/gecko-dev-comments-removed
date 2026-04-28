@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/SVGEllipseElement.h"
 
 #include "ComputedStyle.h"
@@ -161,6 +159,22 @@ already_AddRefed<Path> SVGEllipseElement::BuildPath(PathBuilder* aBuilder) {
   EllipseToBezier(aBuilder, Point(x, y), Size(rx, ry));
 
   return aBuilder->Finish();
+}
+
+Maybe<bool> SVGEllipseElement::HasCtxDependentLength() const {
+  bool hasCtxDependentLength = false;
+  if (SVGGeometryProperty::DoForComputedStyle(
+          this, [&](const ComputedStyle* style) {
+            const nsStyleSVGReset* styleSVGReset = style->StyleSVGReset();
+
+            hasCtxDependentLength = styleSVGReset->mCx.HasPercent() ||
+                                    styleSVGReset->mCy.HasPercent() ||
+                                    styleSVGReset->mRx.HasPercent() ||
+                                    styleSVGReset->mRy.HasPercent();
+          })) {
+    return Some(hasCtxDependentLength);
+  }
+  return Nothing();
 }
 
 bool SVGEllipseElement::IsLengthChangedViaCSS(const ComputedStyle& aNewStyle,

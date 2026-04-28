@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/SVGRectElement.h"
 
 #include <algorithm>
@@ -239,6 +237,25 @@ already_AddRefed<Path> SVGRectElement::BuildPath(PathBuilder* aBuilder) {
   }
 
   return aBuilder->Finish();
+}
+
+Maybe<bool> SVGRectElement::HasCtxDependentLength() const {
+  bool hasCtxDependentLength = false;
+  if (SVGGeometryProperty::DoForComputedStyle(
+          this, [&](const ComputedStyle* style) {
+            const nsStyleSVGReset* styleSVGReset = style->StyleSVGReset();
+            const nsStylePosition* stylePosition = style->StylePosition();
+
+            hasCtxDependentLength = styleSVGReset->mX.HasPercent() ||
+                                    styleSVGReset->mY.HasPercent() ||
+                                    styleSVGReset->mRx.HasPercent() ||
+                                    styleSVGReset->mRy.HasPercent() ||
+                                    stylePosition->mWidth.HasPercent() ||
+                                    stylePosition->mHeight.HasPercent();
+          })) {
+    return Some(hasCtxDependentLength);
+  }
+  return Nothing();
 }
 
 bool SVGRectElement::IsLengthChangedViaCSS(const ComputedStyle& aNewStyle,

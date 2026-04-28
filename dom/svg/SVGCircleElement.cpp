@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/SVGCircleElement.h"
 
 #include "ComputedStyle.h"
@@ -146,6 +144,21 @@ already_AddRefed<Path> SVGCircleElement::BuildPath(PathBuilder* aBuilder) {
   aBuilder->Arc(Point(x, y), r, 0, Float(2 * M_PI));
 
   return aBuilder->Finish();
+}
+
+Maybe<bool> SVGCircleElement::HasCtxDependentLength() const {
+  bool hasCtxDependentLength = false;
+  if (SVGGeometryProperty::DoForComputedStyle(
+          this, [&](const ComputedStyle* style) {
+            const nsStyleSVGReset* styleSVGReset = style->StyleSVGReset();
+
+            hasCtxDependentLength = styleSVGReset->mCx.HasPercent() ||
+                                    styleSVGReset->mCy.HasPercent() ||
+                                    styleSVGReset->mR.HasPercent();
+          })) {
+    return Some(hasCtxDependentLength);
+  }
+  return Nothing();
 }
 
 bool SVGCircleElement::IsLengthChangedViaCSS(const ComputedStyle& aNewStyle,

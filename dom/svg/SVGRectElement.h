@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_SVG_SVGRECTELEMENT_H_
 #define DOM_SVG_SVGRECTELEMENT_H_
 
@@ -46,6 +44,7 @@ class SVGRectElement final : public SVGRectElementBase {
 
   nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;
 
+  Maybe<bool> HasCtxDependentLength() const;
   static bool IsLengthChangedViaCSS(const ComputedStyle& aNewStyle,
                                     const ComputedStyle& aOldStyle);
   static NonCustomCSSPropertyId GetCSSPropertyIdForAttrEnum(uint8_t aAttrEnum);
