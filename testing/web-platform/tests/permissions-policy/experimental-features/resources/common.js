@@ -66,6 +66,21 @@ function wait_for_load(e) {
   });
 }
 
+
+
+function sendAndReceive(iframe, message) {
+  return new Promise(resolve => {
+    function handler(e) {
+      if (e.data && e.data.action === message.action) {
+        window.removeEventListener("message", handler);
+        resolve(e.data);
+      }
+    }
+    window.addEventListener("message", handler);
+    iframe.contentWindow.postMessage(message, "*");
+  });
+}
+
 setup(() => {
   window.reporting_observer_instance = new ReportingObserver((reports, observer) => {
     if (window.reporting_observer_callback) {
