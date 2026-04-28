@@ -38,7 +38,7 @@ class DataChannelConnectionDcSctp : public DataChannelConnection,
   
   
   SendPacketStatus SendPacketWithStatus(
-      webrtc::ArrayView<const uint8_t> aData) override;
+      std::span<const uint8_t> aData) override;
 
   
   
@@ -108,21 +108,21 @@ class DataChannelConnectionDcSctp : public DataChannelConnection,
   
   
   
-  void OnStreamsResetFailed(webrtc::ArrayView<const StreamID> aOutgoingStreams,
+  void OnStreamsResetFailed(std::span<const StreamID> aOutgoingStreams,
                             absl::string_view aReason) override;
 
   
   
   
   void OnStreamsResetPerformed(
-      webrtc::ArrayView<const StreamID> aOutgoingStreams) override;
+      std::span<const StreamID> aOutgoingStreams) override;
 
   
   
   
   
   void OnIncomingStreamsReset(
-      webrtc::ArrayView<const StreamID> aIncomingStreams) override;
+      std::span<const StreamID> aIncomingStreams) override;
 
   
   
