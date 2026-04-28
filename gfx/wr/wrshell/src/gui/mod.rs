@@ -472,13 +472,16 @@ impl Gui {
                         let first = frame_log.first_frame_index();
                         let last = frame_log.last_frame_index();
 
-                        if self.data_model.timeline.current_frame < first  {
-                            self.data_model.timeline.current_frame = first;
+                        let mut current = self.data_model.timeline.current_frame;
+                        current = current.clamp(first, last);
+
+                        
+                        
+                        if last == current + 1 {
+                            current = last
                         }
 
-                        if self.data_model.timeline.current_frame >= last - 1  {
-                            self.data_model.timeline.current_frame = last;
-                        }
+                        self.data_model.timeline.current_frame = current;
                     }
                 }
             }
