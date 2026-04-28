@@ -8,6 +8,7 @@
 #include "nsIProtocolHandler.h"
 #include "nsProxyRelease.h"
 #include "nsNetUtil.h"
+#include "nsQueryObject.h"
 #include "nsSimpleURI.h"
 #include "nsURIHashKey.h"
 
@@ -29,14 +30,13 @@ gfxFontSrcURI::gfxFontSrcURI(nsIURI* aURI) : mURI(aURI) {
   if (scheme.EqualsLiteral("data")) {
     
     
-    
-    
-    RefPtr<mozilla::net::nsSimpleURI> simpleURI =
-        mozilla::net::nsSimpleURI::From(aURI);
-    mSimpleURI = simpleURI;
+    RefPtr<mozilla::net::nsSimpleURI> simpleURI = do_QueryObject(aURI);
+    MOZ_ASSERT(simpleURI, "The data: URL should be backed by nsSimpleURI");
+    MOZ_ASSERT(simpleURI == aURI,
+               "The QueryObject must have the same object, otherwise holding a "
+               "raw pointer here is unsafe");
 
-    NS_ASSERTION(mSimpleURI,
-                 "Why aren't our data: URLs backed by nsSimpleURI?");
+    mSimpleURI = simpleURI;
   } else {
     mSimpleURI = nullptr;
   }
