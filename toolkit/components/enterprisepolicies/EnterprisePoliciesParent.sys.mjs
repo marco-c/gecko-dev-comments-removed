@@ -250,12 +250,12 @@ EnterprisePoliciesManager.prototype = {
     this._callbacks[timing].push(callback);
   },
 
-  async _runPoliciesCallbacks(timing) {
+  _runPoliciesCallbacks(timing) {
     let callbacks = this._callbacks[timing];
     while (callbacks.length) {
       let callback = callbacks.shift();
       try {
-        await callback();
+        callback();
       } catch (ex) {
         lazy.log.error("Error running ", callback, `for ${timing}:`, ex);
       }
@@ -435,6 +435,17 @@ EnterprisePoliciesManager.prototype = {
       }
     }
     return settings;
+  },
+
+  isAddonRequiredByPolicy(addonID) {
+    const policySettings = this.getExtensionSettings(addonID);
+    const legacyLockedSettings =
+      this.getActivePolicies()?.Extensions?.Locked ?? [];
+    return (
+      ["force_installed", "normal_installed"].includes(
+        policySettings?.installation_mode
+      ) || legacyLockedSettings.includes(addonID)
+    );
   },
 
   mayInstallAddon(addon) {
