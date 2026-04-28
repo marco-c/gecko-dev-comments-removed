@@ -151,9 +151,7 @@ class ScrollTimeline : public AnimationTimeline,
     StyleOverflow SourceScrollStyle() const;
     bool APZIsActiveForSource() const;
     
-    Element* SourceElement() const {
-      return mSource.mElement;
-    }
+    Element* SourceElement() const { return mSource.mElement; }
     bool ScrollingDirectionIsAvailable() const;
     
     
@@ -244,9 +242,7 @@ class ScrollTimeline : public AnimationTimeline,
   void WillRefresh();
 
   
-  Element* SourceElement() const {
-    return mScrollerInfo.Source().mElement;
-  }
+  Element* SourceElement() const { return mScrollerInfo.Source().mElement; }
 
   virtual NonOwningAnimationTarget TimelineTarget() const {
     MOZ_ASSERT(!mScrollerInfo.IsAnonymous());
