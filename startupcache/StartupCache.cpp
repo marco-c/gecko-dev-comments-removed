@@ -6,6 +6,7 @@
 #include "PLDHashTable.h"
 #include "mozilla/IOInterposer.h"
 #include "mozilla/AutoMemMap.h"
+#include "mozilla/EndianUtils.h"
 #include "mozilla/IOBuffers.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/MemUtils.h"
@@ -786,6 +787,9 @@ void StartupCache::MaybeWriteOffMainThread(WriteType aWriteType) {
   RefPtr<StartupCache> self = this;
   nsCOMPtr<nsIRunnable> runnable = NS_NewRunnableFunction(
       "StartupCache::Write", [self, aWriteType]() mutable {
+        
+        
+        nsAutoLowPriorityIO lowPriority;
         MutexAutoLock lock(self->mTableLock);
         auto result = self->WriteToDisk(aWriteType);
         (void)NS_WARN_IF(result.isErr());
