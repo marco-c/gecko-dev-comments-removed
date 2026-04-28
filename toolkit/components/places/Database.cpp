@@ -23,6 +23,7 @@
 #include "SQLFunctions.h"
 #include "Helpers.h"
 #include "nsFaviconService.h"
+#include "ConcurrentConnection.h"
 
 #include "nsAppDirectoryServiceDefs.h"
 #include "nsDirectoryServiceUtils.h"
@@ -598,6 +599,19 @@ nsresult Database::EnsureConnection() {
     rv = storage->OpenUnsharedDatabase(databaseFile,
                                        mozIStorageService::CONNECTION_DEFAULT,
                                        getter_AddRefs(mMainConn));
+    if (rv == NS_ERROR_STORAGE_IOERR) {
+      
+      
+      
+      
+      
+      
+      
+      ConcurrentConnection::MaybeInterrupt();
+      rv = storage->OpenUnsharedDatabase(databaseFile,
+                                         mozIStorageService::CONNECTION_DEFAULT,
+                                         getter_AddRefs(mMainConn));
+    }
     if (NS_SUCCEEDED(rv) && !databaseExisted) {
       mDatabaseStatus = nsINavHistoryService::DATABASE_STATUS_CREATE;
     } else if (rv == NS_ERROR_FILE_CORRUPTED) {

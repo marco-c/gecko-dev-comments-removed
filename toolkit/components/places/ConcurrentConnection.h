@@ -11,6 +11,7 @@
 #include "mozIStorageCompletionCallback.h"
 #include "mozIStorageStatementCallback.h"
 #include "Helpers.h"
+#include "mozilla/RefPtr.h"
 #include "nsCOMPtr.h"
 #include "nsDeque.h"
 #include "nsIAsyncShutdown.h"
@@ -35,6 +36,10 @@ struct PendingQuery final {
  private:
   ~PendingQuery() = default;
 };
+
+
+
+
 
 
 
@@ -71,7 +76,16 @@ class ConcurrentConnection final : public nsIObserver,
   
 
 
-  static Maybe<ConcurrentConnection*> GetInstance();
+
+
+  static Maybe<RefPtr<ConcurrentConnection>> GetInstance();
+
+  static bool IsSupportedProcessType();
+
+  
+
+
+  static void MaybeInterrupt();
 
   
 
@@ -94,6 +108,7 @@ class ConcurrentConnection final : public nsIObserver,
       const nsCString& aQuery);
 
  private:
+  void Init();
   void InitializeOnMainThread();
 
   
@@ -146,8 +161,6 @@ class ConcurrentConnection final : public nsIObserver,
 
   nsresult AttachDatabase(const nsString& aFileName,
                           const nsCString& aSchemaName);
-
-  static ConcurrentConnection* gConcurrentConnection;
 
   ~ConcurrentConnection() = default;
 
