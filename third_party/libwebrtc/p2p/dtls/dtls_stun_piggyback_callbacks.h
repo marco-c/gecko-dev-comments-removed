@@ -11,8 +11,11 @@
 #ifndef P2P_DTLS_DTLS_STUN_PIGGYBACK_CALLBACKS_H_
 #define P2P_DTLS_DTLS_STUN_PIGGYBACK_CALLBACKS_H_
 
+#include <cstdint>
 #include <optional>
+#include <span>
 #include <utility>
+#include <vector>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/strings/string_view.h"
@@ -31,14 +34,15 @@ class DtlsStunPiggybackCallbacks {
       
       
       absl::AnyInvocable<std::pair<std::optional<absl::string_view>,
-                                   std::optional<absl::string_view>>(
+                                   std::optional<std::vector<uint32_t>>>(
            StunMessageType)>&& send_data,
 
       
       
+      
       absl::AnyInvocable<void(
-          const StunByteStringAttribute* ,
-          const StunByteStringAttribute* )>&& recv_data)
+          std::optional<std::span<uint8_t>> ,
+          std::optional<std::vector<uint32_t>> )>&& recv_data)
       : send_data_(std::move(send_data)), recv_data_(std::move(recv_data)) {
     RTC_DCHECK(
         
@@ -47,16 +51,17 @@ class DtlsStunPiggybackCallbacks {
         (send_data_ == nullptr && recv_data_ == nullptr));
   }
 
-  std::pair<std::optional<absl::string_view>, std::optional<absl::string_view>>
+  std::pair<std::optional<absl::string_view>,
+            std::optional<std::vector<uint32_t>>>
   send_data(StunMessageType request_type) {
     RTC_DCHECK(send_data_);
     return send_data_(request_type);
   }
 
-  void recv_data(const StunByteStringAttribute* data,
-                 const StunByteStringAttribute* ack) {
+  void recv_data(std::optional<std::span<uint8_t>> data,
+                 std::optional<std::vector<uint32_t>> acks) {
     RTC_DCHECK(recv_data_);
-    return recv_data_(data, ack);
+    return recv_data_(data, acks);
   }
 
   bool empty() const { return send_data_ == nullptr; }
@@ -67,23 +72,15 @@ class DtlsStunPiggybackCallbacks {
 
  private:
   absl::AnyInvocable<std::pair<std::optional<absl::string_view>,
-                               std::optional<absl::string_view>>(
+                               std::optional<std::vector<uint32_t>>>(
        StunMessageType)>
       send_data_;
-  absl::AnyInvocable<void(
-      const StunByteStringAttribute* ,
-      const StunByteStringAttribute* )>
+  absl::AnyInvocable<void(std::optional<std::span<uint8_t>> ,
+                          std::optional<std::vector<uint32_t>> )>
       recv_data_;
 };
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace cricket {
-using ::webrtc::DtlsStunPiggybackCallbacks;
-}  
-#endif  
 
 #endif  

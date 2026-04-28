@@ -11,7 +11,8 @@
 #ifndef P2P_BASE_ICE_AGENT_INTERFACE_H_
 #define P2P_BASE_ICE_AGENT_INTERFACE_H_
 
-#include "api/array_view.h"
+#include <span>
+
 #include "api/units/timestamp.h"
 #include "p2p/base/connection.h"
 #include "p2p/base/ice_switch_reason.h"
@@ -62,7 +63,7 @@ class IceAgentInterface {
   
   
   virtual void ForgetLearnedStateForConnections(
-      ArrayView<const Connection* const> connections) = 0;
+      std::span<const Connection* const> connections) = 0;
 
   
   virtual void SendPingRequest(const Connection* connection) = 0;
@@ -74,7 +75,7 @@ class IceAgentInterface {
   
   
   virtual bool PruneConnections(
-      ArrayView<const Connection* const> connections) = 0;
+      std::span<const Connection* const> connections) = 0;
 };
 
 }  
