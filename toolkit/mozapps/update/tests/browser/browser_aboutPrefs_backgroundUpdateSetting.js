@@ -14,6 +14,22 @@ ChromeUtils.defineESModuleGetters(this, {
 
 const BACKGROUND_UPDATE_PREF = "app.update.background.enabled";
 
+
+
+
+
+
+
+
+async function waitForBackgroundUpdateCheckbox(browser, expectedChecked) {
+  let checkbox = browser.contentDocument.getElementById("backgroundUpdate");
+  await BrowserTestUtils.waitForMutationCondition(
+    checkbox,
+    { attributes: true, attributeFilter: ["checked", "disabled"] },
+    () => checkbox.checked === expectedChecked && !checkbox.disabled
+  );
+}
+
 add_task(async function testBackgroundUpdateSettingUI() {
   if (!AppConstants.MOZ_UPDATE_AGENT) {
     
@@ -72,7 +88,7 @@ WARNING! This test involves background update, but background tasks are
       );
       if (perInstallationPrefsSupported) {
         is(
-          backgroundUpdateCheckbox.disabled,
+          backgroundUpdateCheckbox.inputEl.disabled,
           true,
           `The background update UI should be disabled when auto update is ` +
             `disabled`
@@ -89,6 +105,9 @@ WARNING! This test involves background update, but background tasks are
 
   await UpdateUtils.setAppUpdateAutoEnabled(true);
   await UpdateUtils.writeUpdateConfigSetting(BACKGROUND_UPDATE_PREF, true);
+
+  
+  await waitForBackgroundUpdateCheckbox(tab.linkedBrowser, true);
 
   await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
     let backgroundUpdateCheckbox =
@@ -116,6 +135,9 @@ WARNING! This test involves background update, but background tasks are
     backgroundUpdateCheckbox.click();
   });
 
+  
+  await waitForBackgroundUpdateCheckbox(tab.linkedBrowser, false);
+
   is(
     await UpdateUtils.readUpdateConfigSetting(BACKGROUND_UPDATE_PREF),
     false,
@@ -135,11 +157,17 @@ WARNING! This test involves background update, but background tasks are
     backgroundUpdateCheckbox.click();
   });
 
+  
+  await waitForBackgroundUpdateCheckbox(tab.linkedBrowser, true);
+
   is(
     await UpdateUtils.readUpdateConfigSetting(BACKGROUND_UPDATE_PREF),
     true,
     "Toggling the checkbox should have changed the setting value to true"
   );
+
+  
+  await waitForBackgroundUpdateCheckbox(tab.linkedBrowser, true);
 
   await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
     is(
@@ -152,6 +180,9 @@ WARNING! This test involves background update, but background tasks are
   
   await UpdateUtils.writeUpdateConfigSetting(BACKGROUND_UPDATE_PREF, false);
 
+  
+  await waitForBackgroundUpdateCheckbox(tab.linkedBrowser, false);
+
   await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
     is(
       content.document.getElementById("backgroundUpdate").checked,
@@ -163,6 +194,9 @@ WARNING! This test involves background update, but background tasks are
   await UpdateUtils.setAppUpdateAutoEnabled(true);
   await UpdateUtils.writeUpdateConfigSetting(BACKGROUND_UPDATE_PREF, true);
 
+  
+  await waitForBackgroundUpdateCheckbox(tab.linkedBrowser, true);
+
   await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
     is(
       content.document.getElementById("backgroundUpdate").checked,
@@ -172,27 +206,28 @@ WARNING! This test involves background update, but background tasks are
   });
 
   await UpdateUtils.setAppUpdateAutoEnabled(false);
+  
+  await waitForBackgroundUpdateCheckbox(tab.linkedBrowser, false);
   await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
     let backgroundUpdateCheckbox =
       content.document.getElementById("backgroundUpdate");
-
     is(
       backgroundUpdateCheckbox.checked,
       false,
       "Background update should be unchecked if auto update is unchecked"
     );
-
     is(
-      backgroundUpdateCheckbox.disabled,
+      backgroundUpdateCheckbox.inputEl.disabled,
       true,
       "Background update should be disabled if auto update is unchecked"
     );
   });
 
-  await UpdateUtils.setAppUpdateAutoEnabled(false);
   
   await UpdateUtils.writeUpdateConfigSetting(BACKGROUND_UPDATE_PREF, false);
   await UpdateUtils.writeUpdateConfigSetting(BACKGROUND_UPDATE_PREF, true);
+  
+  await waitForBackgroundUpdateCheckbox(tab.linkedBrowser, false);
   await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
     is(
       content.document.getElementById("backgroundUpdate").checked,
@@ -201,9 +236,11 @@ WARNING! This test involves background update, but background tasks are
     );
   });
 
-  await UpdateUtils.setAppUpdateAutoEnabled(false);
   await UpdateUtils.writeUpdateConfigSetting(BACKGROUND_UPDATE_PREF, false);
+  await waitForBackgroundUpdateCheckbox(tab.linkedBrowser, false);
   await UpdateUtils.setAppUpdateAutoEnabled(true);
+  
+  await waitForBackgroundUpdateCheckbox(tab.linkedBrowser, false);
   await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
     is(
       content.document.getElementById("backgroundUpdate").checked,
@@ -214,7 +251,11 @@ WARNING! This test involves background update, but background tasks are
 
   await UpdateUtils.setAppUpdateAutoEnabled(false);
   await UpdateUtils.writeUpdateConfigSetting(BACKGROUND_UPDATE_PREF, true);
+  
+  await waitForBackgroundUpdateCheckbox(tab.linkedBrowser, false);
   await UpdateUtils.setAppUpdateAutoEnabled(true);
+  
+  await waitForBackgroundUpdateCheckbox(tab.linkedBrowser, true);
   await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
     is(
       content.document.getElementById("backgroundUpdate").checked,
