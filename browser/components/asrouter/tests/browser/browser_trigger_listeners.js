@@ -18,6 +18,10 @@ ChromeUtils.defineLazyGetter(this, "SearchTestUtils", () => {
 ChromeUtils.defineESModuleGetters(this, {
   IPProtection:
     "moz-src:///browser/components/ipprotection/IPProtection.sys.mjs",
+  IPPProxyManager:
+    "moz-src:///toolkit/components/ipprotection/IPPProxyManager.sys.mjs",
+  ProxyUsage:
+    "moz-src:///toolkit/components/ipprotection/GuardianClient.sys.mjs",
 });
 
 const mockIdleService = {
@@ -786,7 +790,7 @@ add_task(async function test_tabSwitch() {
   const triggerData = await receivedTrigger;
   Assert.ok(
     ASRouter.sendTriggerMessage.calledWith(sinon.match({ id: "tabSwitch" })),
-    "tabSwitch trigger sent after switching between tabs 2 times"
+    "tabSwitch trigger sent after switching between tabs 3 times"
   );
   Assert.ok(
     triggerData.context &&
@@ -858,5 +862,48 @@ add_task(async function test_ipprotection_panel_closed() {
 
   IPProtection.uninit();
   await SpecialPowers.popPrefEnv();
+  sandbox.restore();
+});
+
+add_task(async function test_ipprotection_bandwidth_reset() {
+  const sandbox = sinon.createSandbox();
+  const receivedTrigger = new Promise(resolve => {
+    sandbox.stub(ASRouter, "sendTriggerMessage").callsFake(({ id }) => {
+      if (id === "ipProtectionBandwidthReset") {
+        resolve(true);
+      }
+    });
+  });
+
+  IPProtection.init();
+  IPProtection.getPanel(window);
+
+  const oldResetDate = new Date(Date.now() - 86400000).toISOString();
+  const newResetDate = new Date(Date.now() + 86400000).toISOString();
+  const max = "5368709120";
+
+  Services.prefs.setStringPref(
+    "browser.ipProtection.bandwidthResetDate",
+    oldResetDate
+  );
+
+  const usage = new ProxyUsage(max, max, newResetDate);
+  IPPProxyManager.dispatchEvent(
+    new CustomEvent("IPPProxyManager:UsageChanged", {
+      bubbles: true,
+      composed: true,
+      detail: { usage },
+    })
+  );
+
+  Assert.ok(
+    await receivedTrigger,
+    "ipProtectionBandwidthReset trigger sent when bandwidth resets"
+  );
+
+  Services.prefs.clearUserPref("browser.ipProtection.bandwidthResetDate");
+  Services.prefs.clearUserPref("browser.ipProtection.bandwidthThreshold");
+
+  IPProtection.uninit();
   sandbox.restore();
 });
