@@ -53,6 +53,10 @@ class TreeWalker final {
 
   ~TreeWalker();
 
+  TreeWalker() = delete;
+  TreeWalker(const TreeWalker&) = delete;
+  TreeWalker& operator=(const TreeWalker&) = delete;
+
   
 
 
@@ -87,10 +91,6 @@ class TreeWalker final {
   DocAccessible* Document() const { return mDoc; }
 
  private:
-  TreeWalker();
-  TreeWalker(const TreeWalker&);
-  TreeWalker& operator=(const TreeWalker&);
-
   
 
 

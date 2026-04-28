@@ -88,6 +88,10 @@ class LocalAccessible : public nsISupports, public Accessible {
  public:
   LocalAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
+  LocalAccessible() = delete;
+  LocalAccessible(const LocalAccessible&) = delete;
+  LocalAccessible& operator=(const LocalAccessible&) = delete;
+
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_CLASS(LocalAccessible)
 
@@ -1026,10 +1030,6 @@ class LocalAccessible : public nsISupports, public Accessible {
   friend class AccGroupInfo;
 
  private:
-  LocalAccessible() = delete;
-  LocalAccessible(const LocalAccessible&) = delete;
-  LocalAccessible& operator=(const LocalAccessible&) = delete;
-
   
 
 

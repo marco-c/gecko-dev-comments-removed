@@ -25,6 +25,9 @@ class AccGroupInfo {
   AccGroupInfo(AccGroupInfo&&) = default;
   AccGroupInfo& operator=(AccGroupInfo&&) = default;
 
+  AccGroupInfo(const AccGroupInfo&) = delete;
+  AccGroupInfo& operator=(const AccGroupInfo&) = delete;
+
   
 
 
@@ -73,9 +76,6 @@ class AccGroupInfo {
   AccGroupInfo(const Accessible* aItem, a11y::role aRole);
 
  private:
-  AccGroupInfo(const AccGroupInfo&) = delete;
-  AccGroupInfo& operator=(const AccGroupInfo&) = delete;
-
   
 
 

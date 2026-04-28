@@ -30,6 +30,9 @@ class FocusManager {
  public:
   virtual ~FocusManager();
 
+  FocusManager(const FocusManager&) = delete;
+  FocusManager& operator=(const FocusManager&) = delete;
+
   
 
 
@@ -144,10 +147,6 @@ class FocusManager {
 
  protected:
   FocusManager();
-
- private:
-  FocusManager(const FocusManager&);
-  FocusManager& operator=(const FocusManager&);
 
   
 

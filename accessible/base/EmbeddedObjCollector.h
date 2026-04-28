@@ -18,7 +18,7 @@ class LocalAccessible;
 
 class EmbeddedObjCollector final {
  public:
-  ~EmbeddedObjCollector() {}
+  ~EmbeddedObjCollector() = default;
 
   
 
