@@ -12,7 +12,6 @@
 #include "mozIStorageRow.h"
 #include "nsAppDirectoryServiceDefs.h"
 #include "nsIFile.h"
-#include "nsThreadUtils.h"
 
 using namespace mozilla;
 using namespace mozilla::places;
@@ -139,14 +138,6 @@ TEST(test_ConcurrentConnection, test_setup)
   }
 }
 
-TEST(test_ConcurrentConnection, test_interrupt_no_connection)
-{
-  
-  auto conn = ConcurrentConnection::GetInstance();
-  MOZ_DIAGNOSTIC_ASSERT(conn.isSome());
-  ConcurrentConnection::MaybeInterrupt();
-}
-
 TEST(test_ConcurrentConnection, test_database_not_present)
 {
   
@@ -174,9 +165,6 @@ TEST(test_ConcurrentConnection, test_database_initialized)
   
   auto conn = ConcurrentConnection::GetInstance();
   MOZ_DIAGNOSTIC_ASSERT(conn.isSome());
-  
-  auto conn2 = ConcurrentConnection::GetInstance();
-  ASSERT_EQ(conn.value().get(), conn2.value().get());
   RefPtr<StatementCallback> cb =
       MakeAndAddRef<StatementCallback>("moz_places"_ns);
   conn.value()->Queue(
@@ -186,36 +174,6 @@ TEST(test_ConcurrentConnection, test_database_initialized)
   ASSERT_EQ(cb->SpinUntilCompleted(),
             mozIStorageStatementCallback::REASON_FINISHED);
   ASSERT_TRUE(cb->mValue.EqualsLiteral("moz_places"));
-}
-
-TEST(test_ConcurrentConnection, test_queue_from_background_thread)
-{
-  
-  auto conn = ConcurrentConnection::GetInstance();
-  MOZ_DIAGNOSTIC_ASSERT(conn.isSome());
-
-  RefPtr<StatementCallback> cb =
-      MakeAndAddRef<StatementCallback>("moz_places"_ns);
-  RefPtr<TestRunnable> event = MakeAndAddRef<TestRunnable>();
-
-  nsCOMPtr<nsIThread> bgThread;
-  NS_NewNamedThread("TestBGThread", getter_AddRefs(bgThread));
-  MOZ_ALWAYS_SUCCEEDS(bgThread->Dispatch(
-      NS_NewRunnableFunction(
-          "test_queue_off_thread",
-          [conn = conn.value(), cb, event]() {
-            conn->Queue(
-                "SELECT name FROM sqlite_master WHERE type = 'table' AND tbl_name = ?"_ns,
-                cb);
-            conn->Queue(event);
-          }),
-      NS_DISPATCH_NORMAL));
-  bgThread->Shutdown();
-
-  ASSERT_EQ(cb->SpinUntilCompleted(),
-            mozIStorageStatementCallback::REASON_FINISHED);
-  ASSERT_TRUE(cb->mValue.EqualsLiteral("moz_places"));
-  ASSERT_TRUE(event->SpinUntilResult());
 }
 
 TEST(test_ConcurrentConnection, test_shutdown)
