@@ -361,10 +361,6 @@ create_object(
         goto loser;
     }
     rvCachedObject->arena = arena;
-    
-
-
-    (void)nssToken_Destroy(object->token);
     rvCachedObject->object = object;
     rvCachedObject->attributes = nss_ZNEWARRAY(arena, CK_ATTRIBUTE, numTypes);
     if (!rvCachedObject->attributes) {
@@ -386,6 +382,12 @@ create_object(
     *status = PR_SUCCESS;
     nssSlot_Destroy(slot);
 
+    
+
+
+
+
+    (void)nssToken_Destroy(object->token);
     return rvCachedObject;
 loser:
     *status = PR_FAILURE;
