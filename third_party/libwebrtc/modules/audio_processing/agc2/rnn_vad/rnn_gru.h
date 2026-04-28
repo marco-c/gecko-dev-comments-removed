@@ -13,10 +13,10 @@
 
 #include <array>
 #include <cstdint>
+#include <span>
 #include <vector>
 
 #include "absl/strings/string_view.h"
-#include "api/array_view.h"
 #include "modules/audio_processing/agc2/cpu_features.h"
 #include "modules/audio_processing/agc2/rnn_vad/vector_math.h"
 
@@ -33,9 +33,9 @@ class GatedRecurrentLayer {
   
   GatedRecurrentLayer(int input_size,
                       int output_size,
-                      ArrayView<const int8_t> bias,
-                      ArrayView<const int8_t> weights,
-                      ArrayView<const int8_t> recurrent_weights,
+                      std::span<const int8_t> bias,
+                      std::span<const int8_t> weights,
+                      std::span<const int8_t> recurrent_weights,
                       const AvailableCpuFeatures& cpu_features,
                       absl::string_view layer_name);
   GatedRecurrentLayer(const GatedRecurrentLayer&) = delete;
@@ -50,14 +50,14 @@ class GatedRecurrentLayer {
   int size() const { return output_size_; }
 
   
-  ArrayView<const float> output() const {
-    return MakeArrayView(state_.data(), output_size_);
+  std::span<const float> output() const {
+    return std::span(state_.data(), output_size_);
   }
 
   
   void Reset();
   
-  void ComputeOutput(ArrayView<const float> input);
+  void ComputeOutput(std::span<const float> input);
 
  private:
   const int input_size_;

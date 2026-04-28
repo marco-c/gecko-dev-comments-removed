@@ -13,8 +13,7 @@
 #include <stddef.h>
 
 #include <array>
-
-#include "api/array_view.h"
+#include <span>
 
 namespace webrtc {
 
@@ -32,13 +31,13 @@ class SaturationEstimator {
   
   
   
-  void Update(ArrayView<const float> channel0,
-              ArrayView<const float> channel1,
-              ArrayView<const float, 2> dc_levels);
+  void Update(std::span<const float> channel0,
+              std::span<const float> channel1,
+              std::span<const float, 2> dc_levels);
 
   
   
-  ArrayView<const int, 2> GetNumFramesSinceActivity() const {
+  std::span<const int, 2> GetNumFramesSinceActivity() const {
     return num_frames_since_activity_;
   }
 
@@ -46,7 +45,7 @@ class SaturationEstimator {
   
   
   
-  ArrayView<const float, 2> GetSaturationFactors() const {
+  std::span<const float, 2> GetSaturationFactors() const {
     return saturation_factors_;
   }
 

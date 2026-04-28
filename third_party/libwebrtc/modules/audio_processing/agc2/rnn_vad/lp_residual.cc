@@ -14,8 +14,8 @@
 #include <array>
 #include <cmath>
 #include <numeric>
+#include <span>
 
-#include "api/array_view.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/numerics/safe_compare.h"
 
@@ -26,8 +26,8 @@ namespace {
 
 
 
-void ComputeAutoCorrelation(ArrayView<const float> x,
-                            ArrayView<float, kNumLpcCoefficients> auto_corr) {
+void ComputeAutoCorrelation(std::span<const float> x,
+                            std::span<float, kNumLpcCoefficients> auto_corr) {
   constexpr int max_lag = auto_corr.size();
   RTC_DCHECK_LT(max_lag, x.size());
   for (int lag = 0; lag < max_lag; ++lag) {
@@ -37,7 +37,7 @@ void ComputeAutoCorrelation(ArrayView<const float> x,
 }
 
 
-void DenoiseAutoCorrelation(ArrayView<float, kNumLpcCoefficients> auto_corr) {
+void DenoiseAutoCorrelation(std::span<float, kNumLpcCoefficients> auto_corr) {
   
   auto_corr[0] *= 1.0001f;
   
@@ -52,8 +52,8 @@ void DenoiseAutoCorrelation(ArrayView<float, kNumLpcCoefficients> auto_corr) {
 
 
 void ComputeInitialInverseFilterCoefficients(
-    ArrayView<const float, kNumLpcCoefficients> auto_corr,
-    ArrayView<float, kNumLpcCoefficients - 1> lpc_coeffs) {
+    std::span<const float, kNumLpcCoefficients> auto_corr,
+    std::span<float, kNumLpcCoefficients - 1> lpc_coeffs) {
   float error = auto_corr[0];
   for (int i = 0; i < kNumLpcCoefficients - 1; ++i) {
     float reflection_coeff = 0.f;
@@ -87,8 +87,8 @@ void ComputeInitialInverseFilterCoefficients(
 }  
 
 void ComputeAndPostProcessLpcCoefficients(
-    ArrayView<const float> x,
-    ArrayView<float, kNumLpcCoefficients> lpc_coeffs) {
+    std::span<const float> x,
+    std::span<float, kNumLpcCoefficients> lpc_coeffs) {
   std::array<float, kNumLpcCoefficients> auto_corr;
   ComputeAutoCorrelation(x, auto_corr);
   if (auto_corr[0] == 0.f) {  
@@ -113,9 +113,9 @@ void ComputeAndPostProcessLpcCoefficients(
   static_assert(kNumLpcCoefficients == 5, "Update `lpc_coeffs(_pre)`.");
 }
 
-void ComputeLpResidual(ArrayView<const float, kNumLpcCoefficients> lpc_coeffs,
-                       ArrayView<const float> x,
-                       ArrayView<float> y) {
+void ComputeLpResidual(std::span<const float, kNumLpcCoefficients> lpc_coeffs,
+                       std::span<const float> x,
+                       std::span<float> y) {
   RTC_DCHECK_GT(x.size(), kNumLpcCoefficients);
   RTC_DCHECK_EQ(x.size(), y.size());
   

@@ -12,7 +12,8 @@
 
 #include <stddef.h>
 
-#include "api/array_view.h"
+#include <span>
+
 #include "modules/audio_processing/capture_mixer/channel_content_remixer.h"
 
 namespace webrtc {
@@ -48,29 +49,29 @@ class RemixingLogic {
   
   
   StereoMixingVariant SelectStereoChannelMixing(
-      ArrayView<const float, 2> average_energies,
-      ArrayView<const int, 2> num_frames_since_activity,
-      ArrayView<const float, 2> saturation_factors);
+      std::span<const float, 2> average_energies,
+      std::span<const int, 2> num_frames_since_activity,
+      std::span<const float, 2> saturation_factors);
 
  private:
   
   
   bool HandleAnySilentChannels(
-      ArrayView<const float, 2> average_energies,
-      ArrayView<const int, 2> num_frames_since_activity);
+      std::span<const float, 2> average_energies,
+      std::span<const int, 2> num_frames_since_activity);
 
   
   
   
   bool HandleAnyImbalancedAndSaturatedChannels(
-      ArrayView<const float, 2> average_energies,
-      ArrayView<const float, 2> saturation_factors);
+      std::span<const float, 2> average_energies,
+      std::span<const float, 2> saturation_factors);
 
   
   
   
   bool HandleAnyLargelyImbalancedChannels(
-      ArrayView<const float, 2> average_energies);
+      std::span<const float, 2> average_energies);
 
   
   enum class Mode {

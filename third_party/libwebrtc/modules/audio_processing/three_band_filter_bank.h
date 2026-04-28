@@ -13,8 +13,7 @@
 
 #include <array>
 #include <cstring>
-
-#include "api/array_view.h"
+#include <span>
 
 namespace webrtc {
 
@@ -55,13 +54,13 @@ class ThreeBandFilterBank final {
 
   
   
-  void Analysis(ArrayView<const float, kFullBandSize> in,
-                ArrayView<const ArrayView<float>, kNumBands> out);
+  void Analysis(std::span<const float, kFullBandSize> in,
+                std::span<const std::span<float>, kNumBands> out);
 
   
   
-  void Synthesis(ArrayView<const ArrayView<float>, kNumBands> in,
-                 ArrayView<float, kFullBandSize> out);
+  void Synthesis(std::span<const std::span<float>, kNumBands> in,
+                 std::span<float, kFullBandSize> out);
 
  private:
   std::array<std::array<float, kMemorySize>, kNumNonZeroFilters>

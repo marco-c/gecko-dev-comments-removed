@@ -15,8 +15,7 @@
 #include <stdint.h>
 
 #include <optional>
-
-#include "api/array_view.h"
+#include <span>
 
 namespace webrtc {
 
@@ -45,8 +44,8 @@ class RmsLevel {
   void Reset();
 
   
-  void Analyze(ArrayView<const int16_t> data);
-  void Analyze(ArrayView<const float> data);
+  void Analyze(std::span<const int16_t> data);
+  void Analyze(std::span<const float> data);
 
   
   

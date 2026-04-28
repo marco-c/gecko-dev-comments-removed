@@ -11,7 +11,7 @@
 #ifndef MODULES_AUDIO_PROCESSING_NS_FAST_MATH_H_
 #define MODULES_AUDIO_PROCESSING_NS_FAST_MATH_H_
 
-#include "api/array_view.h"
+#include <span>
 
 namespace webrtc {
 
@@ -20,7 +20,7 @@ float SqrtFastApproximation(float f);
 
 
 float LogApproximation(float x);
-void LogApproximation(ArrayView<const float> x, ArrayView<float> y);
+void LogApproximation(std::span<const float> x, std::span<float> y);
 
 
 float Pow2Approximation(float p);
@@ -30,8 +30,8 @@ float PowApproximation(float x, float p);
 
 
 float ExpApproximation(float x);
-void ExpApproximation(ArrayView<const float> x, ArrayView<float> y);
-void ExpApproximationSignFlip(ArrayView<const float> x, ArrayView<float> y);
+void ExpApproximation(std::span<const float> x, std::span<float> y);
+void ExpApproximationSignFlip(std::span<const float> x, std::span<float> y);
 }  
 
 #endif  

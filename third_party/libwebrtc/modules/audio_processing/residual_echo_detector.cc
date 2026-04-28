@@ -15,8 +15,8 @@
 #include <cstddef>
 #include <numeric>
 #include <optional>
+#include <span>
 
-#include "api/array_view.h"
 #include "api/audio/audio_processing.h"
 #include "modules/audio_processing/logging/apm_data_dumper.h"
 #include "rtc_base/checks.h"
@@ -27,7 +27,7 @@ namespace webrtc {
 
 namespace {
 
-float Power(ArrayView<const float> input) {
+float Power(std::span<const float> input) {
   if (input.empty()) {
     return 0.f;
   }
@@ -58,7 +58,7 @@ ResidualEchoDetector::ResidualEchoDetector()
 ResidualEchoDetector::~ResidualEchoDetector() = default;
 
 void ResidualEchoDetector::AnalyzeRenderAudio(
-    ArrayView<const float> render_audio) {
+    std::span<const float> render_audio) {
   
   
   data_dumper_->DumpWav("ed_render", render_audio.size(), render_audio.data(),
@@ -79,7 +79,7 @@ void ResidualEchoDetector::AnalyzeRenderAudio(
 }
 
 void ResidualEchoDetector::AnalyzeCaptureAudio(
-    ArrayView<const float> capture_audio) {
+    std::span<const float> capture_audio) {
   
   
   data_dumper_->DumpWav("ed_capture", capture_audio.size(),

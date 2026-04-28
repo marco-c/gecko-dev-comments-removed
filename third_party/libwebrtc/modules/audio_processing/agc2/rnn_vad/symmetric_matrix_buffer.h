@@ -14,10 +14,10 @@
 #include <algorithm>
 #include <array>
 #include <cstring>
+#include <span>
 #include <type_traits>
 #include <utility>
 
-#include "api/array_view.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/numerics/safe_compare.h"
 
@@ -52,7 +52,7 @@ class SymmetricMatrixBuffer {
   
   
   
-  void Push(ArrayView<T, S - 1> values) {
+  void Push(std::span<T, S - 1> values) {
     
     
     std::memmove(buf_.data(), buf_.data() + S, (buf_.size() - S) * sizeof(T));

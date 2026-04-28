@@ -12,8 +12,8 @@
 #define MODULES_AUDIO_PROCESSING_AGC2_RNN_VAD_PITCH_SEARCH_INTERNAL_H_
 
 #include <cstddef>
+#include <span>
 
-#include "api/array_view.h"
 #include "modules/audio_processing/agc2/cpu_features.h"
 #include "modules/audio_processing/agc2/rnn_vad/common.h"
 
@@ -21,8 +21,8 @@ namespace webrtc {
 namespace rnn_vad {
 
 
-void Decimate2x(ArrayView<const float, kBufSize24kHz> src,
-                ArrayView<float, kBufSize12kHz> dst);
+void Decimate2x(std::span<const float, kBufSize24kHz> src,
+                std::span<float, kBufSize12kHz> dst);
 
 
 
@@ -62,8 +62,8 @@ void Decimate2x(ArrayView<const float, kBufSize24kHz> src,
 
 
 void ComputeSlidingFrameSquareEnergies24kHz(
-    ArrayView<const float, kBufSize24kHz> pitch_buffer,
-    ArrayView<float, kRefineNumLags24kHz> y_energy,
+    std::span<const float, kBufSize24kHz> pitch_buffer,
+    std::span<float, kRefineNumLags24kHz> y_energy,
     AvailableCpuFeatures cpu_features);
 
 
@@ -76,16 +76,16 @@ struct CandidatePitchPeriods {
 
 
 CandidatePitchPeriods ComputePitchPeriod12kHz(
-    ArrayView<const float, kBufSize12kHz> pitch_buffer,
-    ArrayView<const float, kNumLags12kHz> auto_correlation,
+    std::span<const float, kBufSize12kHz> pitch_buffer,
+    std::span<const float, kNumLags12kHz> auto_correlation,
     AvailableCpuFeatures cpu_features);
 
 
 
 
 int ComputePitchPeriod48kHz(
-    ArrayView<const float, kBufSize24kHz> pitch_buffer,
-    ArrayView<const float, kRefineNumLags24kHz> y_energy,
+    std::span<const float, kBufSize24kHz> pitch_buffer,
+    std::span<const float, kRefineNumLags24kHz> y_energy,
     CandidatePitchPeriods pitch_candidates_24kHz,
     AvailableCpuFeatures cpu_features);
 
@@ -99,8 +99,8 @@ struct PitchInfo {
 
 
 PitchInfo ComputeExtendedPitchPeriod48kHz(
-    ArrayView<const float, kBufSize24kHz> pitch_buffer,
-    ArrayView<const float, kRefineNumLags24kHz> y_energy,
+    std::span<const float, kBufSize24kHz> pitch_buffer,
+    std::span<const float, kRefineNumLags24kHz> y_energy,
     int initial_pitch_period_48kHz,
     PitchInfo last_pitch_48kHz,
     AvailableCpuFeatures cpu_features);

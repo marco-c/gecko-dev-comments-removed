@@ -13,9 +13,8 @@
 
 #include <stddef.h>
 
+#include <span>
 #include <vector>
-
-#include "api/array_view.h"
 
 namespace webrtc {
 
@@ -38,21 +37,21 @@ class CascadedBiQuadFilter {
   };
 
   CascadedBiQuadFilter(
-      ArrayView<const CascadedBiQuadFilter::BiQuadCoefficients> coefficients);
+      std::span<const CascadedBiQuadFilter::BiQuadCoefficients> coefficients);
   ~CascadedBiQuadFilter();
   CascadedBiQuadFilter(const CascadedBiQuadFilter&) = delete;
   CascadedBiQuadFilter& operator=(const CascadedBiQuadFilter&) = delete;
 
   
-  void Process(ArrayView<const float> x, ArrayView<float> y);
+  void Process(std::span<const float> x, std::span<float> y);
   
-  void Process(ArrayView<float> y);
+  void Process(std::span<float> y);
   
   void Reset();
 
  private:
-  void ApplyBiQuad(ArrayView<const float> x,
-                   ArrayView<float> y,
+  void ApplyBiQuad(std::span<const float> x,
+                   std::span<float> y,
                    CascadedBiQuadFilter::BiQuad* biquad);
 
   std::vector<BiQuad> biquads_;

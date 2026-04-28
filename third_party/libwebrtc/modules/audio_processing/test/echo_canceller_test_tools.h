@@ -12,19 +12,19 @@
 #define MODULES_AUDIO_PROCESSING_TEST_ECHO_CANCELLER_TEST_TOOLS_H_
 
 #include <cstddef>
+#include <span>
 #include <vector>
 
-#include "api/array_view.h"
 #include "rtc_base/random.h"
 
 namespace webrtc {
 
 
-void RandomizeSampleVector(Random* random_generator, ArrayView<float> v);
+void RandomizeSampleVector(Random* random_generator, std::span<float> v);
 
 
 void RandomizeSampleVector(Random* random_generator,
-                           ArrayView<float> v,
+                           std::span<float> v,
                            float amplitude);
 
 
@@ -35,7 +35,7 @@ class DelayBuffer {
   ~DelayBuffer() = default;
 
   
-  void Delay(ArrayView<const T> x, ArrayView<T> x_delayed);
+  void Delay(std::span<const T> x, std::span<T> x_delayed);
 
  private:
   std::vector<T> buffer_;

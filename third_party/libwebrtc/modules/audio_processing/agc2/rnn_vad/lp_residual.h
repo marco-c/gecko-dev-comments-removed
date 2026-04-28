@@ -13,7 +13,7 @@
 
 #include <stddef.h>
 
-#include "api/array_view.h"
+#include <span>
 
 namespace webrtc {
 namespace rnn_vad {
@@ -24,15 +24,15 @@ constexpr int kNumLpcCoefficients = 5;
 
 
 void ComputeAndPostProcessLpcCoefficients(
-    ArrayView<const float> x,
-    ArrayView<float, kNumLpcCoefficients> lpc_coeffs);
+    std::span<const float> x,
+    std::span<float, kNumLpcCoefficients> lpc_coeffs);
 
 
 
 
-void ComputeLpResidual(ArrayView<const float, kNumLpcCoefficients> lpc_coeffs,
-                       ArrayView<const float> x,
-                       ArrayView<float> y);
+void ComputeLpResidual(std::span<const float, kNumLpcCoefficients> lpc_coeffs,
+                       std::span<const float> x,
+                       std::span<float> y);
 
 }  
 }  

@@ -11,8 +11,7 @@
 #define MODULES_AUDIO_PROCESSING_CAPTURE_MIXER_CHANNEL_CONTENT_REMIXER_H_
 
 #include <cstddef>
-
-#include "api/array_view.h"
+#include <span>
 
 namespace webrtc {
 
@@ -50,8 +49,8 @@ class ChannelContentRemixer {
   
   bool Mix(size_t num_output_channels,
            StereoMixingVariant mixing_variant,
-           ArrayView<float> channel0,
-           ArrayView<float> channel1);
+           std::span<float> channel0,
+           std::span<float> channel1);
 
  private:
   const size_t num_samples_per_channel_;
@@ -67,63 +66,63 @@ class ChannelContentRemixer {
   bool IsCrossfadeCompleted();
 
   
-  void CopyChannelContent(ArrayView<const float> source,
-                          ArrayView<float> destination) const;
+  void CopyChannelContent(std::span<const float> source,
+                          std::span<float> destination) const;
 
   
-  void StoreChannelAverageIntoBothChannels(ArrayView<float> channel0,
-                                           ArrayView<float> channel1) const;
+  void StoreChannelAverageIntoBothChannels(std::span<float> channel0,
+                                           std::span<float> channel1) const;
 
   
   
   void CrossFadeFromSingleChannelToSingleChannel(
-      ArrayView<const float> crossfade_from,
-      ArrayView<const float> crossfade_to,
-      ArrayView<float> destination,
+      std::span<const float> crossfade_from,
+      std::span<const float> crossfade_to,
+      std::span<float> destination,
       size_t& crossfade_sample_counter) const;
 
   
   void CrossFadeFromSingleChannelContentToAverage(
-      ArrayView<const float> crossfade_from,
-      ArrayView<float> channel0,
-      ArrayView<float> channel1,
+      std::span<const float> crossfade_from,
+      std::span<float> channel0,
+      std::span<float> channel1,
       size_t& crossfade_sample_counter) const;
 
   
   void CrossFadeFromAverageToSingleChannelContent(
-      ArrayView<const float> crossfade_to,
-      ArrayView<float> channel0,
-      ArrayView<float> channel1,
+      std::span<const float> crossfade_to,
+      std::span<float> channel0,
+      std::span<float> channel1,
       size_t& crossfade_sample_counter) const;
 
   
   
   void CrossFadeFromAverageToBothChannels(
-      ArrayView<float> channel0,
-      ArrayView<float> channel1,
+      std::span<float> channel0,
+      std::span<float> channel1,
       size_t& crossfade_sample_counter) const;
 
   
   void CrossFadeFromBothChannelsToAverage(
-      ArrayView<float> channel0,
-      ArrayView<float> channel1,
+      std::span<float> channel0,
+      std::span<float> channel1,
       size_t& crossfade_sample_counter) const;
 
   
-  void CrossFadeFromAverageInToChannel0(ArrayView<const float> crossfade_to,
-                                        ArrayView<float> channel0,
-                                        ArrayView<float> channel1,
+  void CrossFadeFromAverageInToChannel0(std::span<const float> crossfade_to,
+                                        std::span<float> channel0,
+                                        std::span<float> channel1,
                                         size_t& crossfade_sample_counter) const;
 
   
-  void CrossFadeChannel0ToAverage(ArrayView<const float> crossfade_from,
-                                  ArrayView<float> channel0,
-                                  ArrayView<const float> channel1,
+  void CrossFadeChannel0ToAverage(std::span<const float> crossfade_from,
+                                  std::span<float> channel0,
+                                  std::span<const float> channel1,
                                   size_t& crossfade_sample_counter) const;
 
   
-  void StoreChannelAverageIntoChannel0(ArrayView<float> channel0,
-                                       ArrayView<const float> channel1) const;
+  void StoreChannelAverageIntoChannel0(std::span<float> channel0,
+                                       std::span<const float> channel1) const;
 };
 
 }  

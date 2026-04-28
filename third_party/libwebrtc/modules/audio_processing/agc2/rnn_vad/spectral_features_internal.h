@@ -14,9 +14,9 @@
 #include <stddef.h>
 
 #include <array>
+#include <span>
 #include <vector>
 
-#include "api/array_view.h"
 #include "modules/audio_processing/agc2/rnn_vad/common.h"
 
 namespace webrtc {
@@ -55,8 +55,8 @@ class SpectralCorrelator {
   
   
   void ComputeAutoCorrelation(
-      ArrayView<const float> x,
-      ArrayView<float, kOpusBands24kHz> auto_corr) const;
+      std::span<const float> x,
+      std::span<float, kOpusBands24kHz> auto_corr) const;
 
   
   
@@ -64,9 +64,9 @@ class SpectralCorrelator {
   
   
   void ComputeCrossCorrelation(
-      ArrayView<const float> x,
-      ArrayView<const float> y,
-      ArrayView<float, kOpusBands24kHz> cross_corr) const;
+      std::span<const float> x,
+      std::span<const float> y,
+      std::span<float, kOpusBands24kHz> cross_corr) const;
 
  private:
   const std::vector<float> weights_;  
@@ -77,8 +77,8 @@ class SpectralCorrelator {
 
 
 void ComputeSmoothedLogMagnitudeSpectrum(
-    ArrayView<const float> bands_energy,
-    ArrayView<float, kNumBands> log_bands_energy);
+    std::span<const float> bands_energy,
+    std::span<float, kNumBands> log_bands_energy);
 
 
 
@@ -90,9 +90,9 @@ std::array<float, kNumBands * kNumBands> ComputeDctTable();
 
 
 
-void ComputeDct(ArrayView<const float> in,
-                ArrayView<const float, kNumBands * kNumBands> dct_table,
-                ArrayView<float> out);
+void ComputeDct(std::span<const float> in,
+                std::span<const float, kNumBands * kNumBands> dct_table,
+                std::span<float> out);
 
 }  
 }  

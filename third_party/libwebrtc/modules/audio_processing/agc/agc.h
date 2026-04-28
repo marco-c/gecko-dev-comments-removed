@@ -13,8 +13,8 @@
 
 #include <cstdint>
 #include <memory>
+#include <span>
 
-#include "api/array_view.h"
 #include "modules/audio_processing/vad/voice_activity_detector.h"
 
 namespace webrtc {
@@ -28,7 +28,7 @@ class Agc {
 
   
   
-  virtual void Process(ArrayView<const int16_t> audio);
+  virtual void Process(std::span<const int16_t> audio);
 
   
   

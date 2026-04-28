@@ -17,7 +17,8 @@
 
 
 
-#include "api/array_view.h"
+#include <span>
+
 #include "test/gtest.h"
 
 namespace webrtc {
@@ -61,8 +62,8 @@ constexpr FloatArraySequence kBiQuadOutputSeq = {
 
 
 
-void ExpectNearRelative(ArrayView<const float> expected,
-                        ArrayView<const float> computed,
+void ExpectNearRelative(std::span<const float> expected,
+                        std::span<const float> computed,
                         const float tolerance) {
   
   

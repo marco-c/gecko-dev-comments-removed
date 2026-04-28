@@ -10,15 +10,14 @@
 
 #include "modules/audio_processing/ns/noise_suppressor.h"
 
-#include <math.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include <algorithm>
 #include <array>
+#include <cmath>
+#include <cstdlib>
+#include <cstring>
 #include <memory>
+#include <span>
 
-#include "api/array_view.h"
 #include "modules/audio_processing/audio_buffer.h"
 #include "modules/audio_processing/ns/fast_math.h"
 #include "modules/audio_processing/ns/ns_common.h"
@@ -77,7 +76,7 @@ constexpr std::array<float, 96> kBlocks160w256FirstHalf = {
     0.99986614f};
 
 
-void ApplyFilterBankWindow(ArrayView<float, kFftSize> x) {
+void ApplyFilterBankWindow(std::span<float, kFftSize> x) {
   for (size_t i = 0; i < 96; ++i) {
     x[i] = kBlocks160w256FirstHalf[i] * x[i];
   }
@@ -89,9 +88,9 @@ void ApplyFilterBankWindow(ArrayView<float, kFftSize> x) {
 }
 
 
-void FormExtendedFrame(ArrayView<const float, kNsFrameSize> frame,
-                       ArrayView<float, kFftSize - kNsFrameSize> old_data,
-                       ArrayView<float, kFftSize> extended_frame) {
+void FormExtendedFrame(std::span<const float, kNsFrameSize> frame,
+                       std::span<float, kFftSize - kNsFrameSize> old_data,
+                       std::span<float, kFftSize> extended_frame) {
   std::copy(old_data.begin(), old_data.end(), extended_frame.begin());
   std::copy(frame.begin(), frame.end(),
             extended_frame.begin() + old_data.size());
@@ -100,9 +99,9 @@ void FormExtendedFrame(ArrayView<const float, kNsFrameSize> frame,
 }
 
 
-void OverlapAndAdd(ArrayView<const float, kFftSize> extended_frame,
-                   ArrayView<float, kOverlapSize> overlap_memory,
-                   ArrayView<float, kNsFrameSize> output_frame) {
+void OverlapAndAdd(std::span<const float, kFftSize> extended_frame,
+                   std::span<float, kOverlapSize> overlap_memory,
+                   std::span<float, kNsFrameSize> output_frame) {
   for (size_t i = 0; i < kOverlapSize; ++i) {
     output_frame[i] = overlap_memory[i] + extended_frame[i];
   }
@@ -114,9 +113,9 @@ void OverlapAndAdd(ArrayView<const float, kFftSize> extended_frame,
 }
 
 
-void DelaySignal(ArrayView<const float, kNsFrameSize> frame,
-                 ArrayView<float, kFftSize - kNsFrameSize> delay_buffer,
-                 ArrayView<float, kNsFrameSize> delayed_frame) {
+void DelaySignal(std::span<const float, kNsFrameSize> frame,
+                 std::span<float, kFftSize - kNsFrameSize> delay_buffer,
+                 std::span<float, kNsFrameSize> delayed_frame) {
   constexpr size_t kSamplesFromFrame = kNsFrameSize - (kFftSize - kNsFrameSize);
   std::copy(delay_buffer.begin(), delay_buffer.end(), delayed_frame.begin());
   std::copy(frame.begin(), frame.begin() + kSamplesFromFrame,
@@ -127,7 +126,7 @@ void DelaySignal(ArrayView<const float, kNsFrameSize> frame,
 }
 
 
-float ComputeEnergyOfExtendedFrame(ArrayView<const float, kFftSize> x) {
+float ComputeEnergyOfExtendedFrame(std::span<const float, kFftSize> x) {
   float energy = 0.f;
   for (float x_k : x) {
     energy += x_k * x_k;
@@ -138,8 +137,8 @@ float ComputeEnergyOfExtendedFrame(ArrayView<const float, kFftSize> x) {
 
 
 float ComputeEnergyOfExtendedFrame(
-    ArrayView<const float, kNsFrameSize> frame,
-    ArrayView<float, kFftSize - kNsFrameSize> old_data) {
+    std::span<const float, kNsFrameSize> frame,
+    std::span<float, kFftSize - kNsFrameSize> old_data) {
   float energy = 0.f;
   for (float v : old_data) {
     energy += v * v;
@@ -153,9 +152,9 @@ float ComputeEnergyOfExtendedFrame(
 
 
 void ComputeMagnitudeSpectrum(
-    ArrayView<const float, kFftSize> real,
-    ArrayView<const float, kFftSize> imag,
-    ArrayView<float, kFftSizeBy2Plus1> signal_spectrum) {
+    std::span<const float, kFftSize> real,
+    std::span<const float, kFftSize> imag,
+    std::span<float, kFftSizeBy2Plus1> signal_spectrum) {
   signal_spectrum[0] = fabsf(real[0]) + 1.f;
   signal_spectrum[kFftSizeBy2Plus1 - 1] =
       fabsf(real[kFftSizeBy2Plus1 - 1]) + 1.f;
@@ -167,13 +166,13 @@ void ComputeMagnitudeSpectrum(
 }
 
 
-void ComputeSnr(ArrayView<const float, kFftSizeBy2Plus1> filter,
-                ArrayView<const float> prev_signal_spectrum,
-                ArrayView<const float> signal_spectrum,
-                ArrayView<const float> prev_noise_spectrum,
-                ArrayView<const float> noise_spectrum,
-                ArrayView<float> prior_snr,
-                ArrayView<float> post_snr) {
+void ComputeSnr(std::span<const float, kFftSizeBy2Plus1> filter,
+                std::span<const float> prev_signal_spectrum,
+                std::span<const float> signal_spectrum,
+                std::span<const float> prev_noise_spectrum,
+                std::span<const float> noise_spectrum,
+                std::span<float> prior_snr,
+                std::span<float> post_snr) {
   for (size_t i = 0; i < kFftSizeBy2Plus1; ++i) {
     
     
@@ -194,10 +193,10 @@ void ComputeSnr(ArrayView<const float, kFftSizeBy2Plus1> filter,
 
 float ComputeUpperBandsGain(
     float minimum_attenuating_gain,
-    ArrayView<const float, kFftSizeBy2Plus1> filter,
-    ArrayView<const float> speech_probability,
-    ArrayView<const float, kFftSizeBy2Plus1> prev_analysis_signal_spectrum,
-    ArrayView<const float, kFftSizeBy2Plus1> signal_spectrum) {
+    std::span<const float, kFftSizeBy2Plus1> filter,
+    std::span<const float> speech_probability,
+    std::span<const float, kFftSizeBy2Plus1> prev_analysis_signal_spectrum,
+    std::span<const float, kFftSizeBy2Plus1> signal_spectrum) {
   
   constexpr int kNumAvgBins = 32;
   constexpr float kOneByNumAvgBins = 1.f / kNumAvgBins;
@@ -278,13 +277,13 @@ NoiseSuppressor::NoiseSuppressor(const NsConfig& config,
 }
 
 void NoiseSuppressor::AggregateWienerFilters(
-    ArrayView<float, kFftSizeBy2Plus1> filter) const {
-  ArrayView<const float, kFftSizeBy2Plus1> filter0 =
+    std::span<float, kFftSizeBy2Plus1> filter) const {
+  std::span<const float, kFftSizeBy2Plus1> filter0 =
       channels_[0]->wiener_filter.get_filter();
   std::copy(filter0.begin(), filter0.end(), filter.begin());
 
   for (size_t ch = 1; ch < num_channels_; ++ch) {
-    ArrayView<const float, kFftSizeBy2Plus1> filter_ch =
+    std::span<const float, kFftSizeBy2Plus1> filter_ch =
         channels_[ch]->wiener_filter.get_filter();
 
     for (size_t k = 0; k < kFftSizeBy2Plus1; ++k) {
@@ -302,7 +301,7 @@ void NoiseSuppressor::Analyze(const AudioBuffer& audio) {
   
   bool zero_frame = true;
   for (size_t ch = 0; ch < num_channels_; ++ch) {
-    ArrayView<const float, kNsFrameSize> y_band0(
+    std::span<const float, kNsFrameSize> y_band0(
         &audio.split_bands_const(ch)[0][0], kNsFrameSize);
     float energy = ComputeEnergyOfExtendedFrame(
         y_band0, channels_[ch]->analyze_analysis_memory);
@@ -332,7 +331,7 @@ void NoiseSuppressor::Analyze(const AudioBuffer& audio) {
   
   for (size_t ch = 0; ch < num_channels_; ++ch) {
     std::unique_ptr<ChannelState>& ch_p = channels_[ch];
-    ArrayView<const float, kNsFrameSize> y_band0(
+    std::span<const float, kNsFrameSize> y_band0(
         &audio.split_bands_const(ch)[0][0], kNsFrameSize);
 
     
@@ -390,34 +389,34 @@ void NoiseSuppressor::Analyze(const AudioBuffer& audio) {
 void NoiseSuppressor::Process(AudioBuffer* audio) {
   
   std::array<FilterBankState, kMaxNumChannelsOnStack> filter_bank_states_stack;
-  ArrayView<FilterBankState> filter_bank_states(filter_bank_states_stack.data(),
+  std::span<FilterBankState> filter_bank_states(filter_bank_states_stack.data(),
                                                 num_channels_);
   std::array<float, kMaxNumChannelsOnStack> upper_band_gains_stack;
-  ArrayView<float> upper_band_gains(upper_band_gains_stack.data(),
+  std::span<float> upper_band_gains(upper_band_gains_stack.data(),
                                     num_channels_);
   std::array<float, kMaxNumChannelsOnStack> energies_before_filtering_stack;
-  ArrayView<float> energies_before_filtering(
+  std::span<float> energies_before_filtering(
       energies_before_filtering_stack.data(), num_channels_);
   std::array<float, kMaxNumChannelsOnStack> gain_adjustments_stack;
-  ArrayView<float> gain_adjustments(gain_adjustments_stack.data(),
+  std::span<float> gain_adjustments(gain_adjustments_stack.data(),
                                     num_channels_);
   if (NumChannelsOnHeap(num_channels_) > 0) {
     
     
-    filter_bank_states = ArrayView<FilterBankState>(
+    filter_bank_states = std::span<FilterBankState>(
         filter_bank_states_heap_.data(), num_channels_);
     upper_band_gains =
-        ArrayView<float>(upper_band_gains_heap_.data(), num_channels_);
+        std::span<float>(upper_band_gains_heap_.data(), num_channels_);
     energies_before_filtering =
-        ArrayView<float>(energies_before_filtering_heap_.data(), num_channels_);
+        std::span<float>(energies_before_filtering_heap_.data(), num_channels_);
     gain_adjustments =
-        ArrayView<float>(gain_adjustments_heap_.data(), num_channels_);
+        std::span<float>(gain_adjustments_heap_.data(), num_channels_);
   }
 
   
   for (size_t ch = 0; ch < num_channels_; ++ch) {
     
-    ArrayView<float, kNsFrameSize> y_band0(&audio->split_bands(ch)[0][0],
+    std::span<float, kNsFrameSize> y_band0(&audio->split_bands(ch)[0][0],
                                            kNsFrameSize);
 
     FormExtendedFrame(y_band0, channels_[ch]->process_analysis_memory,
@@ -464,7 +463,7 @@ void NoiseSuppressor::Process(AudioBuffer* audio) {
 
   
   std::array<float, kFftSizeBy2Plus1> filter_data;
-  ArrayView<const float, kFftSizeBy2Plus1> filter = filter_data;
+  std::span<const float, kFftSizeBy2Plus1> filter = filter_data;
   if (num_channels_ == 1) {
     filter = channels_[0]->wiener_filter.get_filter();
   } else {
@@ -516,7 +515,7 @@ void NoiseSuppressor::Process(AudioBuffer* audio) {
 
   
   for (size_t ch = 0; ch < num_channels_; ++ch) {
-    ArrayView<float, kNsFrameSize> y_band0(&audio->split_bands(ch)[0][0],
+    std::span<float, kNsFrameSize> y_band0(&audio->split_bands(ch)[0][0],
                                            kNsFrameSize);
     OverlapAndAdd(filter_bank_states[ch].extended_frame,
                   channels_[ch]->process_synthesis_memory, y_band0);
@@ -534,7 +533,7 @@ void NoiseSuppressor::Process(AudioBuffer* audio) {
       for (size_t b = 1; b < num_bands_; ++b) {
         
         
-        ArrayView<float, kNsFrameSize> y_band(&audio->split_bands(ch)[b][0],
+        std::span<float, kNsFrameSize> y_band(&audio->split_bands(ch)[b][0],
                                               kNsFrameSize);
         std::array<float, kNsFrameSize> delayed_frame;
         DelaySignal(y_band, channels_[ch]->process_delay_memory[b - 1],
@@ -551,7 +550,7 @@ void NoiseSuppressor::Process(AudioBuffer* audio) {
   
   for (size_t ch = 0; ch < num_channels_; ++ch) {
     for (size_t b = 0; b < num_bands_; ++b) {
-      ArrayView<float, kNsFrameSize> y_band(&audio->split_bands(ch)[b][0],
+      std::span<float, kNsFrameSize> y_band(&audio->split_bands(ch)[b][0],
                                             kNsFrameSize);
       for (size_t j = 0; j < kNsFrameSize; j++) {
         y_band[j] = std::min(std::max(y_band[j], -32768.f), 32767.f);

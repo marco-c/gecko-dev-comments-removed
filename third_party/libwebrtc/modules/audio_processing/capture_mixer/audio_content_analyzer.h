@@ -12,7 +12,8 @@
 
 #include <stddef.h>
 
-#include "api/array_view.h"
+#include <span>
+
 #include "modules/audio_processing/capture_mixer/dc_levels_estimator.h"
 #include "modules/audio_processing/capture_mixer/energy_estimator.h"
 #include "modules/audio_processing/capture_mixer/saturation_estimator.h"
@@ -33,17 +34,17 @@ class AudioContentAnalyzer {
   
   
   
-  bool Analyze(ArrayView<const float> channel0,
-               ArrayView<const float> channel1);
+  bool Analyze(std::span<const float> channel0,
+               std::span<const float> channel1);
 
   
-  ArrayView<const float, 2> GetChannelEnergies() const {
+  std::span<const float, 2> GetChannelEnergies() const {
     return energy_estimator_.GetChannelEnergies();
   }
 
   
   
-  ArrayView<const int, 2> GetNumFramesSinceActivity() const {
+  std::span<const int, 2> GetNumFramesSinceActivity() const {
     return saturation_estimator_.GetNumFramesSinceActivity();
   }
 
@@ -51,7 +52,7 @@ class AudioContentAnalyzer {
   
   
   
-  ArrayView<const float, 2> GetSaturationFactors() const {
+  std::span<const float, 2> GetSaturationFactors() const {
     return saturation_estimator_.GetSaturationFactors();
   }
 

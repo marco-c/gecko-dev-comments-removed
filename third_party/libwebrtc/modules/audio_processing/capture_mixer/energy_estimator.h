@@ -13,8 +13,7 @@
 #include <stddef.h>
 
 #include <array>
-
-#include "api/array_view.h"
+#include <span>
 
 namespace webrtc {
 
@@ -31,12 +30,12 @@ class AverageEnergyEstimator {
   
   
   
-  void Update(ArrayView<const float> channel0,
-              ArrayView<const float> channel1,
-              ArrayView<const float, 2> dc_levels);
+  void Update(std::span<const float> channel0,
+              std::span<const float> channel1,
+              std::span<const float, 2> dc_levels);
 
   
-  ArrayView<const float, 2> GetChannelEnergies() const {
+  std::span<const float, 2> GetChannelEnergies() const {
     return average_energy_in_channels_;
   }
 

@@ -13,8 +13,7 @@
 
 #include <cstddef>
 #include <memory>
-
-#include "api/array_view.h"
+#include <span>
 
 
 struct PFFFT_Setup;
@@ -35,8 +34,8 @@ class Pffft {
     FloatBuffer& operator=(const FloatBuffer&) = delete;
     ~FloatBuffer();
 
-    ArrayView<const float> GetConstView() const;
-    ArrayView<float> GetView();
+    std::span<const float> GetConstView() const;
+    std::span<float> GetView();
 
    private:
     friend class Pffft;

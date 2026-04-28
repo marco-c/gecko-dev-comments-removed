@@ -15,12 +15,12 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <span>
 #include <string>
 #include <tuple>
 #include <utility>
 #include <vector>
 
-#include "api/array_view.h"
 #include "api/audio/audio_processing.h"
 #include "api/audio/builtin_audio_processing_builder.h"
 #include "api/audio/echo_control.h"
@@ -90,12 +90,12 @@ class TestEchoDetector : public EchoDetector {
       : analyze_render_audio_called_(false),
         last_render_audio_first_sample_(0.f) {}
   ~TestEchoDetector() override = default;
-  void AnalyzeRenderAudio(ArrayView<const float> render_audio) override {
+  void AnalyzeRenderAudio(std::span<const float> render_audio) override {
     last_render_audio_first_sample_ = render_audio[0];
     analyze_render_audio_called_ = true;
   }
   void AnalyzeCaptureAudio(
-      ArrayView<const float> ) override {}
+      std::span<const float> ) override {}
   void Initialize(int ,
                   int ,
                   int ,
@@ -125,7 +125,7 @@ class TestRenderPreProcessor : public CustomProcessing {
   void Initialize(int , int ) override {}
   void Process(AudioBuffer* audio) override {
     for (size_t k = 0; k < audio->num_channels(); ++k) {
-      ArrayView<float> channel_view(audio->channels()[k], audio->num_frames());
+      std::span<float> channel_view(audio->channels()[k], audio->num_frames());
       std::transform(channel_view.begin(), channel_view.end(),
                      channel_view.begin(), ProcessSample);
     }

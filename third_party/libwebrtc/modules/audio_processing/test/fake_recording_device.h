@@ -13,8 +13,8 @@
 
 #include <cstdint>
 #include <memory>
+#include <span>
 
-#include "api/array_view.h"
 #include "common_audio/channel_buffer.h"
 
 namespace webrtc {
@@ -53,7 +53,7 @@ class FakeRecordingDevice final {
   
   
   
-  void SimulateAnalogGain(ArrayView<int16_t> buffer);
+  void SimulateAnalogGain(std::span<int16_t> buffer);
 
   
   
