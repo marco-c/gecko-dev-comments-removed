@@ -23,6 +23,8 @@
 
 namespace webrtc {
 
+class RtpPacketReceived;
+
 
 
 
@@ -32,11 +34,17 @@ class RTC_EXPORT RtpPacketInfo {
  public:
   RtpPacketInfo();
 
+  explicit RtpPacketInfo(const RtpPacketReceived& rtp_packet);
+
+  
+  
   RtpPacketInfo(uint32_t ssrc,
                 std::vector<uint32_t> csrcs,
                 uint32_t rtp_timestamp,
                 Timestamp receive_time);
 
+  
+  
   RtpPacketInfo(const RTPHeader& rtp_header, Timestamp receive_time);
 
   RtpPacketInfo(const RtpPacketInfo& other) = default;
@@ -46,6 +54,9 @@ class RTC_EXPORT RtpPacketInfo {
 
   uint32_t ssrc() const { return ssrc_; }
   void set_ssrc(uint32_t value) { ssrc_ = value; }
+
+  uint16_t sequence_number() const { return sequence_number_; }
+  void set_sequence_number(uint16_t value) { sequence_number_ = value; }
 
   const std::vector<uint32_t>& csrcs() const { return csrcs_; }
   void set_csrcs(std::vector<uint32_t> value) { csrcs_ = std::move(value); }
@@ -80,9 +91,12 @@ class RTC_EXPORT RtpPacketInfo {
     return *this;
   }
 
+  friend bool operator==(const RtpPacketInfo& lhs, const RtpPacketInfo& rhs);
+
  private:
   
   
+  uint16_t sequence_number_;
   uint32_t ssrc_;
   std::vector<uint32_t> csrcs_;
   uint32_t rtp_timestamp_;
@@ -105,12 +119,6 @@ class RTC_EXPORT RtpPacketInfo {
   
   std::optional<TimeDelta> local_capture_clock_offset_;
 };
-
-bool operator==(const RtpPacketInfo& lhs, const RtpPacketInfo& rhs);
-
-inline bool operator!=(const RtpPacketInfo& lhs, const RtpPacketInfo& rhs) {
-  return !(lhs == rhs);
-}
 
 }  
 
