@@ -74,10 +74,16 @@ struct ScreamV2Parameters {
   
   
   FieldTrialParameter<double> queue_delay_avg_g;
-  FieldTrialParameter<double> queue_delay_dev_avg_g;
+  
+  
+  FieldTrialParameter<double> delay_min_and_latency_diff_avg_g;
 
   
-  FieldTrialParameter<TimeDelta> queue_delay_dev_normalization;
+  
+  FieldTrialParameter<TimeDelta> queue_delay_min_threshold;
+  
+  
+  FieldTrialParameter<TimeDelta> latency_diff_threshold;
 
   
   
