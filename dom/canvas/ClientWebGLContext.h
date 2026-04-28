@@ -185,6 +185,7 @@ class ContextGenerationInfo final {
 
 
 
+
 struct NotLostData final : public SupportsWeakPtr, RefCounted<NotLostData> {
   MOZ_DECLARE_REFCOUNTED_TYPENAME(NotLostData)
 
@@ -192,6 +193,7 @@ struct NotLostData final : public SupportsWeakPtr, RefCounted<NotLostData> {
   webgl::InitContextResult info;
 
   RefPtr<mozilla::dom::WebGLChild> outOfProcess;
+  std::unique_ptr<HostWebGLContext> inProcess;
 
   webgl::ContextGenerationInfo state;
   std::array<RefPtr<ClientWebGLExtensionBase>,
@@ -2346,6 +2348,7 @@ class ClientWebGLContext final : public nsICanvasRenderingContextInternal,
   
   
  protected:
+  
   
   template <typename MethodType, MethodType method, typename... CallerArgs>
   void Run(const CallerArgs&... args) const {
