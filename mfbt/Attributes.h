@@ -864,16 +864,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 #  ifdef XGILL_PLUGIN
 #    pragma GCC diagnostic ignored "-Wignored-attributes"
 #    pragma GCC diagnostic ignored "-Wattributes"
@@ -937,11 +927,6 @@
 #    define MOZ_INIT_OUTSIDE_CTOR
 #    define MOZ_IS_CLASS_INIT
 #    define MOZ_NON_PARAM __attribute__((annotate("moz_non_param")))
-#    define MOZ_ENUM_SERIALIZER_ALLOW_SENTINEL_UPPER_BOUND \
-      __attribute__((                                      \
-          annotate("moz_enum_serializer_allow_sentinel_upper_bound")))
-#    define MOZ_ENUM_SERIALIZER_ALLOW_MIN_MISMATCH \
-      __attribute__((annotate("moz_enum_serializer_allow_min_mismatch")))
 #    define MOZ_REQUIRED_BASE_METHOD \
       __attribute__((annotate("moz_required_base_method")))
 #    define MOZ_MUST_RETURN_FROM_CALLER_IF_THIS_IS_ARG \
@@ -1023,8 +1008,6 @@
 #    define MOZ_INIT_OUTSIDE_CTOR
 #    define MOZ_IS_CLASS_INIT
 #    define MOZ_NON_PARAM
-#    define MOZ_ENUM_SERIALIZER_ALLOW_SENTINEL_UPPER_BOUND
-#    define MOZ_ENUM_SERIALIZER_ALLOW_MIN_MISMATCH
 #    define MOZ_NON_AUTOABLE
 #    define MOZ_REQUIRED_BASE_METHOD
 #    define MOZ_MUST_RETURN_FROM_CALLER_IF_THIS_IS_ARG
