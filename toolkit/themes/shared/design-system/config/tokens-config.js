@@ -289,6 +289,7 @@ const getLayerString = () => {
     "tokens-foundation",
     "tokens-prefers-contrast",
     "tokens-forced-colors",
+    "tokens-browser-theme",
   ];
 
   const layersWithOverrides = defaultLayers.flatMap(layer => [
@@ -337,6 +338,7 @@ const NEST_MEDIA_QUERIES_COMMENT = `/* Bug 1879900: Can't nest media queries ins
 
 const MEDIA_QUERY_PROPERTY_MAP = {
   "forced-colors": "forcedColors",
+  "browser-theme": "browserTheme",
   "prefers-contrast": "prefersContrast",
 };
 
@@ -388,6 +390,12 @@ const createDesktopFormat =
         surface,
         args,
         componentName,
+      }) +
+      formatTokens({
+        mediaQuery: "browser-theme",
+        surface,
+        args,
+        componentName,
       });
 
     OVERRIDE_IDENTIFIERS.forEach(({ name, pref }) => {
@@ -411,8 +419,14 @@ const createDesktopFormat =
           args,
           overrideIdentifier: name,
           componentName,
+        }) +
+        formatTokens({
+          mediaQuery: "browser-theme",
+          surface,
+          args,
+          overrideIdentifier: name,
+          componentName,
         });
-
       if (!overrideContents) {
         return;
       }
@@ -669,6 +683,19 @@ function formatTokens({
 
   let layer = `tokens-${mediaQuery ?? "foundation"}${overrideIdentifier ? `-${overrideIdentifier}` : ""}`;
   
+  if (mediaQuery === "browser-theme") {
+    return `
+${NEST_MEDIA_QUERIES_COMMENT}
+@layer ${layer} {
+  @media not ((forced-colors) or (-moz-native-theme)) {
+    :root:not([lwtheme]),
+    :host(.anonymous-content-host) {
+${formattedVars}
+    }
+  }
+}
+`;
+  }
   if (mediaQuery) {
     return `
 ${NEST_MEDIA_QUERIES_COMMENT}
@@ -702,12 +729,24 @@ ${formattedVars}
 
 
 function getOriginalTokenValue(token, prop, surface) {
+  const { value } = token.original;
   if (surface) {
-    return token.original.value[surface]?.[prop];
-  } else if (prop == "default" && typeof token.original.value != "object") {
-    return token.original.value;
+    return value[surface]?.[prop];
   }
-  return token.original.value?.[prop];
+  
+  if (typeof value !== "object") {
+    return prop === "default" ? value : undefined;
+  }
+  
+  if (prop === "default") {
+    return value.nativeTheme ?? value.default;
+  }
+  
+  
+  if (prop === "browserTheme") {
+    return value.nativeTheme ? value.default : undefined;
+  }
+  return value[prop];
 }
 
 
