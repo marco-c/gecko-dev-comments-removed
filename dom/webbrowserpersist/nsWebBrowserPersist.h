@@ -3,7 +3,6 @@
 
 
 
-
 #ifndef nsWebBrowserPersist_h_
 #define nsWebBrowserPersist_h_
 
@@ -183,6 +182,8 @@ class nsWebBrowserPersist final : public nsIInterfaceRequestor,
   int16_t mWrapColumn;
   uint32_t mEncodingFlags;
   nsString mContentType;
+  
+  nsCString mFilenameRandomSeed;
 };
 
 #endif

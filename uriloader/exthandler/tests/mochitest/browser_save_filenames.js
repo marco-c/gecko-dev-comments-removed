@@ -234,6 +234,12 @@ function getDirectoryEntries(dir) {
 
 
 
+function stripSeedFromFilename(filename) {
+  return filename.replace(/_[A-Za-z0-9_-]{4}(?=\.[^.]+$|$)/, "");
+}
+
+
+
 add_task(async function save_document() {
   let browser = gBrowser.selectedBrowser;
 
@@ -256,20 +262,19 @@ add_task(async function save_document() {
   saveBrowser(browser);
   await savePromise;
 
-  let filesSaved = getDirectoryEntries(tmpDir);
+  let filesSaved = getDirectoryEntries(tmpDir).map(stripSeedFromFilename);
 
   for (let idx = 0; idx < expectedItems.length; idx++) {
     let filename = expectedItems[idx].filename;
-
-    let file = tmpDir.clone();
-    file.append(filename);
 
     let fileIdx = -1;
     
     if (filename.length > 240) {
       for (let t = 0; t < filesSaved.length; t++) {
+        
+        
         if (
-          filesSaved[t].length > 60 &&
+          filesSaved[t].length > 55 &&
           checkShortenedFilename(filesSaved[t], filename)
         ) {
           fileIdx = t;

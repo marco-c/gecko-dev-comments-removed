@@ -2,15 +2,16 @@
 
 
 
-
 #include "nsWebBrowserPersist.h"
 
 #include <algorithm>
 
 #include "ReferrerInfo.h"
 #include "WebBrowserPersistLocalDocument.h"
+#include "mozilla/Base64.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/Printf.h"
+#include "mozilla/RandomNum.h"
 #include "mozilla/TextUtils.h"
 #include "mozilla/WebBrowserPersistDocumentParent.h"
 #include "mozilla/dom/BrowserParent.h"
@@ -279,6 +280,36 @@ const uint32_t kDefaultPersistFlags =
 const char* kWebBrowserPersistStringBundle =
     "chrome://global/locale/nsWebBrowserPersist.properties";
 
+namespace {
+
+nsCString GenerateRandomSeed() {
+  constexpr size_t SEED_LEN = 3;
+  uint8_t buffer[SEED_LEN];
+  if (!mozilla::GenerateRandomBytesFromOS(buffer, SEED_LEN)) {
+    for (uint8_t& entry : buffer) {
+      Maybe<uint64_t> maybeSeed = mozilla::RandomUint64();
+      if (maybeSeed.isNothing()) {
+        return EmptyCString();
+      }
+      entry = static_cast<uint8_t>(maybeSeed.value());
+    }
+  }
+
+  nsAutoCString seed;
+  nsresult rv = Base64URLEncode(SEED_LEN, buffer,
+                                Base64URLEncodePaddingPolicy::Omit, seed);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return EmptyCString();
+  }
+
+  
+  
+  seed.Insert('_', 0);
+  return seed;
+}
+
+}  
+
 nsWebBrowserPersist::nsWebBrowserPersist()
     : mCurrentDataPathIsRelative(false),
       mCurrentThingsToPersist(0),
@@ -297,7 +328,12 @@ nsWebBrowserPersist::nsWebBrowserPersist()
       mTotalCurrentProgress(0),
       mTotalMaxProgress(0),
       mWrapColumn(72),
-      mEncodingFlags(0) {}
+      mEncodingFlags(0),
+      mFilenameRandomSeed(GenerateRandomSeed()) {
+  MOZ_ASSERT(
+      !mFilenameRandomSeed.IsEmpty(),
+      "Failed to generate random seed; saved filenames will be predictable");
+}
 
 nsWebBrowserPersist::~nsWebBrowserPersist() { Cleanup(); }
 
@@ -1922,16 +1958,33 @@ nsresult nsWebBrowserPersist::CalculateUniqueFilename(
   nsCOMPtr<nsIURL> url(do_QueryInterface(aURI));
   NS_ENSURE_TRUE(url, NS_ERROR_FAILURE);
 
-  bool nameHasChanged = false;
-  nsresult rv;
-
   
   nsAutoCString filename;
-  rv = url->GetFileName(filename);
+  nsresult rv = url->GetFileName(filename);
   NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
   nsAutoCString directory;
   rv = url->GetDirectory(directory);
   NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
+
+  
+  
+  NS_UnescapeURL(filename);
+  if (!mMIMEService) {
+    mMIMEService = do_GetService(NS_MIMESERVICE_CONTRACTID, &rv);
+  }
+  if (mMIMEService) {
+    nsAutoString filenameU16;
+    CopyUTF8toUTF16(filename, filenameU16);
+    nsAutoString sanitized;
+    if (NS_SUCCEEDED(mMIMEService->ValidateFileNameForSaving(
+            filenameU16, EmptyCString(),
+            nsIMIMEService::VALIDATE_SANITIZE_ONLY |
+                nsIMIMEService::VALIDATE_DONT_TRUNCATE |
+                nsIMIMEService::VALIDATE_NO_DEFAULT_FILENAME,
+            sanitized))) {
+      CopyUTF16toUTF8(sanitized, filename);
+    }
+  }
 
   
   
@@ -1949,6 +2002,11 @@ nsresult nsWebBrowserPersist::CalculateUniqueFilename(
     
     base = filename;
   }
+
+  
+  filename.Assign(base);
+  filename.Append(mFilenameRandomSeed);
+  filename.Append(ext);
 
   
   int32_t needToChop = filename.Length() - kDefaultMaxFilenameLength;
@@ -1970,8 +2028,8 @@ nsresult nsWebBrowserPersist::CalculateUniqueFilename(
     }
 
     filename.Assign(base);
+    filename.Append(mFilenameRandomSeed);
     filename.Append(ext);
-    nameHasChanged = true;
   }
 
   
@@ -1990,6 +2048,9 @@ nsresult nsWebBrowserPersist::CalculateUniqueFilename(
       if (base.IsEmpty() || duplicateCounter > 1) {
         SmprintfPointer tmp = mozilla::Smprintf("_%03d", duplicateCounter);
         NS_ENSURE_TRUE(tmp, NS_ERROR_OUT_OF_MEMORY);
+        
+        
+        
         if (filename.Length() < kDefaultMaxFilenameLength - 4) {
           tmpBase = base;
         } else {
@@ -2002,14 +2063,15 @@ nsresult nsWebBrowserPersist::CalculateUniqueFilename(
 
       tmpPath.Assign(directory);
       tmpPath.Append(tmpBase);
+      tmpPath.Append(mFilenameRandomSeed);
       tmpPath.Append(ext);
 
       
       if (!mFilenameList.Contains(tmpPath)) {
         if (!base.Equals(tmpBase)) {
           filename.Assign(tmpBase);
+          filename.Append(mFilenameRandomSeed);
           filename.Append(ext);
-          nameHasChanged = true;
         }
         break;
       }
@@ -2023,36 +2085,30 @@ nsresult nsWebBrowserPersist::CalculateUniqueFilename(
   mFilenameList.AppendElement(newFilepath);
 
   
-  if (nameHasChanged) {
-    
-    if (filename.Length() > kDefaultMaxFilenameLength) {
-      NS_WARNING(
-          "Filename wasn't truncated less than the max file length - how can "
-          "that be?");
-      return NS_ERROR_FAILURE;
-    }
-
-    nsCOMPtr<nsIFile> localFile;
-    GetLocalFileFromURI(aURI, getter_AddRefs(localFile));
-
-    if (localFile) {
-      nsAutoString filenameAsUnichar;
-      CopyASCIItoUTF16(filename, filenameAsUnichar);
-      localFile->SetLeafName(filenameAsUnichar);
-
-      
-      return NS_MutateURI(aURI)
-          .Apply(&nsIFileURLMutator::SetFile, localFile)
-          .Finalize(aOutURI);
-    }
-    return NS_MutateURI(url)
-        .Apply(&nsIURLMutator::SetFileName, filename, nullptr)
-        .Finalize(aOutURI);
+  
+  if (filename.Length() > kDefaultMaxFilenameLength) {
+    NS_WARNING(
+        "Filename wasn't truncated less than the max file length - how can "
+        "that be?");
+    return NS_ERROR_FAILURE;
   }
 
-  
-  aOutURI = aURI;
-  return NS_OK;
+  nsCOMPtr<nsIFile> localFile;
+  GetLocalFileFromURI(aURI, getter_AddRefs(localFile));
+
+  if (localFile) {
+    nsAutoString filenameAsUnichar;
+    CopyUTF8toUTF16(filename, filenameAsUnichar);
+    localFile->SetLeafName(filenameAsUnichar);
+
+    
+    return NS_MutateURI(aURI)
+        .Apply(&nsIFileURLMutator::SetFile, localFile)
+        .Finalize(aOutURI);
+  }
+  return NS_MutateURI(url)
+      .Apply(&nsIURLMutator::SetFileName, filename, nullptr)
+      .Finalize(aOutURI);
 }
 
 nsresult nsWebBrowserPersist::MakeFilenameFromURI(nsIURI* aURI,
@@ -2284,6 +2340,72 @@ void nsWebBrowserPersist::EndDownloadInternal(nsresult aResult) {
   if (NS_FAILED(aResult) &&
       (mPersistFlags & PERSIST_FLAGS_CLEANUP_ON_FAILURE)) {
     CleanupLocalFiles();
+  }
+
+  
+  
+  
+  
+  if (NS_SUCCEEDED(aResult) && mCurrentDataPath) {
+    nsCOMPtr<nsIFile> localDataPath;
+    if (NS_SUCCEEDED(GetLocalFileFromURI(mCurrentDataPath,
+                                         getter_AddRefs(localDataPath)))) {
+      bool exists = false;
+      localDataPath->Exists(&exists);
+      nsCOMPtr<nsIURL> dataPathURL(do_QueryInterface(mCurrentDataPath));
+      nsAutoCString dataDir;
+      if (exists && dataPathURL &&
+          NS_SUCCEEDED(dataPathURL->GetFilePath(dataDir))) {
+        if (!dataDir.IsEmpty() && dataDir.Last() != '/') {
+          dataDir.Append('/');
+        }
+        nsCOMPtr<nsIDirectoryEnumerator> entries;
+        if (NS_SUCCEEDED(
+                localDataPath->GetDirectoryEntries(getter_AddRefs(entries)))) {
+          
+          
+          
+          
+          nsTArray<std::pair<nsString, bool>> toDelete;
+          nsCOMPtr<nsIFile> entry;
+          while (NS_SUCCEEDED(entries->GetNextFile(getter_AddRefs(entry))) &&
+                 entry) {
+            nsAutoString leafNameU16;
+            entry->GetLeafName(leafNameU16);
+            nsAutoCString leafName;
+            CopyUTF16toUTF8(leafNameU16, leafName);
+            
+            
+            
+            
+            nsAutoCString entryPath(dataDir);
+            entryPath.Append(leafName);
+            if (!mFilenameList.Contains(entryPath)) {
+              bool isDir = false;
+              entry->IsDirectory(&isDir);
+              nsAutoString path;
+              entry->GetPath(path);
+              toDelete.AppendElement(std::pair{nsString(path), isDir});
+            }
+          }
+          if (!toDelete.IsEmpty()) {
+            NS_DispatchBackgroundTask(
+                NS_NewRunnableFunction(
+                    "nsWebBrowserPersist::CleanupStaleFiles",
+                    [paths = std::move(toDelete)]() {
+                      for (const auto& [path, isDir] : paths) {
+                        nsCOMPtr<nsIFile> file;
+                        if (NS_SUCCEEDED(
+                                NS_NewLocalFile(path, getter_AddRefs(file)))) {
+                          file->Remove(isDir);
+                        }
+                      }
+                    }),
+                NS_DISPATCH_EVENT_MAY_BLOCK);
+          }
+        }
+      }
+    }
   }
 
   
@@ -2534,6 +2656,8 @@ nsresult nsWebBrowserPersist::SaveSubframeContent(
   NS_ENSURE_SUCCESS(rv, rv);
 
   
+  
+  
   nsCOMPtr<nsIURI> frameDataURI = mCurrentDataPath;
   nsAutoString newFrameDataPath(aData->mFilename);
 
@@ -2543,14 +2667,23 @@ nsresult nsWebBrowserPersist::SaveSubframeContent(
   NS_ENSURE_SUCCESS(rv, rv);
 
   
+  
+  nsCOMPtr<nsIURL> dataURL(do_QueryInterface(frameDataURI));
+  if (dataURL) {
+    nsAutoCString directory, filename;
+    if (NS_SUCCEEDED(dataURL->GetDirectory(directory)) &&
+        NS_SUCCEEDED(dataURL->GetFileName(filename))) {
+      NS_UnescapeURL(filename);
+      directory.Append(filename);
+      mFilenameList.AppendElement(directory);
+    }
+  }
+
+  
   nsCOMPtr<nsIURI> out;
   rv = CalculateUniqueFilename(frameURI, out);
   NS_ENSURE_SUCCESS(rv, rv);
   frameURI = out;
-
-  rv = CalculateUniqueFilename(frameDataURI, out);
-  NS_ENSURE_SUCCESS(rv, rv);
-  frameDataURI = out;
 
   mCurrentThingsToPersist++;
 
