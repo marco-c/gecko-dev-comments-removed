@@ -225,20 +225,6 @@ class RTC_EXPORT RTCError {
   std::optional<uint16_t> sctp_cause_code_;
 };
 
-
-
-
-#define LOG_AND_RETURN_ERROR_EX(type, message, severity)                     \
-  {                                                                          \
-    RTC_DCHECK(type != RTCErrorType::NONE);                                  \
-    RTC_LOG(severity) << message << " (" << ::webrtc::ToString(type) << ")"; \
-    return ::webrtc::RTCError(type, message);                                \
-  }
-
-
-#define LOG_AND_RETURN_ERROR(type, message) \
-  LOG_AND_RETURN_ERROR_EX(type, message, LS_ERROR)
-
 inline RTCError LogErrorImpl(RTCError error,
                              LoggingSeverity severity,
                              const char* file,
@@ -254,7 +240,6 @@ inline RTCError LogErrorImpl(RTCError error,
 #endif
   return error;
 }
-
 
 
 
