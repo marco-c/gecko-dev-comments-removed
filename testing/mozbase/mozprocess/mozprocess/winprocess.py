@@ -363,6 +363,28 @@ CreateIoCompletionPort = CreateIoCompletionPortProto(
 CreateIoCompletionPort.errcheck = ErrCheckHandle
 
 
+
+
+
+PostQueuedCompletionStatusProto = WINFUNCTYPE(
+    BOOL,  
+    HANDLE,  
+    DWORD,  
+    LPVOID,  
+    LPVOID,  
+)
+PostQueuedCompletionStatusFlags = (
+    (1, "CompletionPort", INVALID_HANDLE_VALUE),
+    (1, "dwNumberOfBytesTransferred", c_ulong(0)),
+    (1, "dwCompletionKey", LPVOID(0)),
+    (1, "lpOverlapped", LPVOID()),
+)
+PostQueuedCompletionStatus = PostQueuedCompletionStatusProto(
+    ("PostQueuedCompletionStatus", windll.kernel32),
+    PostQueuedCompletionStatusFlags,
+)
+
+
 SetInformationJobObjectProto = WINFUNCTYPE(
     BOOL,  
     HANDLE,  
