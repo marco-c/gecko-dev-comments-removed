@@ -2,7 +2,6 @@
 
 
 
-
 const { CustomKeys } = ChromeUtils.importESModule(
   "resource:///modules/CustomKeys.sys.mjs"
 );
@@ -215,13 +214,18 @@ var gBrowserInit = {
 
     
     
-    AutoHideMenubar.init();
+    BrowserUtils.callModulesFromCategory(
+      {
+        categoryName:
+          "browser-window-before-initial-xul-layout-document-preparation",
+        jsGlobal: globalThis,
+      },
+      window
+    );
+
     
     
     window.TabBarVisibility.update();
-    CustomTitlebar.init();
-
-    new LightweightThemeConsumer(document);
 
     if (
       Services.prefs.getBoolPref(
@@ -234,7 +238,15 @@ var gBrowserInit = {
 
     
     
-    ToolbarIconColor.init(window);
+    
+    
+    BrowserUtils.callModulesFromCategory(
+      {
+        categoryName: "browser-window-before-initial-xul-layout",
+        jsGlobal: globalThis,
+      },
+      window
+    );
   },
 
   onDOMContentLoaded() {
@@ -747,7 +759,7 @@ var gBrowserInit = {
             PlacesToolbarHelper.populateManagedBookmarks(event.currentTarget)
           );
           managedBookmarksPopup.setAttribute("placespopup", "true");
-          managedBookmarksPopup.setAttribute("native", "false");
+          managedBookmarksPopup.toggleAttribute("nonnative", true);
           managedBookmarksPopup.setAttribute("is", "places-popup");
           managedBookmarksPopup.classList.add("toolbar-menupopup");
           managedBookmarksButton.appendChild(managedBookmarksPopup);
@@ -1162,9 +1174,10 @@ var gBrowserInit = {
   onUnload() {
     gUIDensity.uninit();
 
-    CustomTitlebar.uninit();
-
-    ToolbarIconColor.uninit(window);
+    BrowserUtils.callModulesFromCategory(
+      { categoryName: "browser-window-unload-begin", jsGlobal: globalThis },
+      window
+    );
 
     
     

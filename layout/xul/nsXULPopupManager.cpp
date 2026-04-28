@@ -780,9 +780,7 @@ bool nsXULPopupManager::ShowNativeMenuInternal(
     return false;
   }
 
-  bool disallowsNative = aPopup->AttrValueIs(
-      kNameSpaceID_None, nsGkAtoms::native, nsGkAtoms::_false, eCaseMatters);
-  if (disallowsNative) {
+  if (aPopup->GetBoolAttr(nsGkAtoms::nonnative)) {
     return false;
   }
 
@@ -851,7 +849,7 @@ bool nsXULPopupManager::ShowMenuAsNativeMenu(nsIContent* aMenu,
 #ifdef XP_MACOSX
     
     
-    popup->SetAttr(kNameSpaceID_None, nsGkAtoms::native, u"false"_ns, true);
+    popup->SetBoolAttr(nsGkAtoms::nonnative, true);
 #endif
     return false;
   }
