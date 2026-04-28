@@ -1037,6 +1037,9 @@ typedef struct INTER_MODE_SPEED_FEATURES {
   
   
   
+  
+  
+  
   int prune_comp_ref_frames;
 
   
@@ -1242,7 +1245,9 @@ typedef struct INTER_MODE_SPEED_FEATURES {
 
   
   
-  bool skip_comp_eval_using_top_comp_avg_est_rd;
+  
+  
+  int skip_cmp_using_top_cmp_avg_est_rd_lvl;
 } INTER_MODE_SPEED_FEATURES;
 
 typedef struct INTERP_FILTER_SPEED_FEATURES {
@@ -1271,6 +1276,9 @@ typedef struct INTERP_FILTER_SPEED_FEATURES {
   
   
   int skip_interp_filter_search;
+
+  
+  int use_more_sharp_interp;
 } INTERP_FILTER_SPEED_FEATURES;
 
 typedef struct INTRA_MODE_SPEED_FEATURES {
@@ -1464,6 +1472,12 @@ typedef struct TX_SPEED_FEATURES {
   
   
   bool use_rd_based_breakout_for_intra_tx_search;
+
+  
+  
+  
+  
+  int prune_inter_tx_split_rd_eval_lvl;
 } TX_SPEED_FEATURES;
 
 typedef struct RD_CALC_SPEED_FEATURES {

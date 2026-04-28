@@ -3338,6 +3338,13 @@ typedef struct AV1_COMP {
   
 
 
+
+
+  int keep_comp_ref_frame_mask;
+
+  
+
+
   AV1LrStruct lr_ctxt;
 
   
@@ -3640,6 +3647,11 @@ typedef struct AV1_COMP {
 
 
   uint64_t *src_sad_blk_64x64;
+
+  
+
+
+  int src_sad_blk_alloc_size;
 
   
 
@@ -4231,6 +4243,11 @@ static inline int av1_resize_scaled(const AV1_COMMON *cm) {
 
 static inline int av1_frame_scaled(const AV1_COMMON *cm) {
   return av1_superres_scaled(cm) || av1_resize_scaled(cm);
+}
+
+static inline bool av1_encode_for_extrc(AOM_EXT_RATECTRL const *ext_rc) {
+  return ext_rc->ready && (ext_rc->funcs.rc_type & AOM_RC_QP) != 0 &&
+         ext_rc->funcs.get_encodeframe_decision != NULL;
 }
 
 
