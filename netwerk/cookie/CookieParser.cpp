@@ -333,10 +333,13 @@ void CookieParser::ParseAttributes(nsCString& aCookieHeader,
   
   
   
+  
   GetTokenValue(cookieStart, cookieEnd, tokenString, tokenValue, equalsFound);
   if (equalsFound) {
     mCookieData.name() = tokenString;
     mCookieData.value() = tokenValue;
+  } else if (StaticPrefs::network_cookie_valueless_cookie()) {
+    mCookieData.name() = tokenString;
   } else {
     mCookieData.value() = tokenString;
   }

@@ -597,18 +597,42 @@ TEST(TestCookie, TestCookieMain)
   
   
   
-  SetACookie(cookieService, "http://parser.test/", "six");
-  GetACookie(cookieService, "http://parser.test/", cookie);
-  EXPECT_TRUE(CheckResult(cookie.get(), MUST_EQUAL, "six"));
-  SetACookie(cookieService, "http://parser.test/", "seven");
-  GetACookie(cookieService, "http://parser.test/", cookie);
-  EXPECT_TRUE(CheckResult(cookie.get(), MUST_EQUAL, "seven"));
-  SetACookie(cookieService, "http://parser.test/", " =eight");
-  GetACookie(cookieService, "http://parser.test/", cookie);
-  EXPECT_TRUE(CheckResult(cookie.get(), MUST_EQUAL, "eight"));
-  SetACookie(cookieService, "http://parser.test/", "test=six");
-  GetACookie(cookieService, "http://parser.test/", cookie);
+  
+  Preferences::SetBool("network.cookie.valueless_cookie", true);
+  SetACookie(cookieService, "http://valueless.parser.test/", "six");
+  GetACookie(cookieService, "http://valueless.parser.test/", cookie);
+  EXPECT_TRUE(CheckResult(cookie.get(), MUST_CONTAIN, "six="));
+  SetACookie(cookieService, "http://valueless.parser.test/", "seven");
+  GetACookie(cookieService, "http://valueless.parser.test/", cookie);
+  EXPECT_TRUE(CheckResult(cookie.get(), MUST_CONTAIN, "six="));
+  EXPECT_TRUE(CheckResult(cookie.get(), MUST_CONTAIN, "seven="));
+  
+  
+  SetACookie(cookieService, "http://valueless.parser.test/", " =eight");
+  GetACookie(cookieService, "http://valueless.parser.test/", cookie);
+  EXPECT_TRUE(CheckResult(cookie.get(), MUST_CONTAIN, "six="));
+  EXPECT_TRUE(CheckResult(cookie.get(), MUST_CONTAIN, "seven="));
+  EXPECT_TRUE(CheckResult(cookie.get(), MUST_NOT_CONTAIN, "eight"));
+  SetACookie(cookieService, "http://valueless.parser.test/", "test=six");
+  GetACookie(cookieService, "http://valueless.parser.test/", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_CONTAIN, "test=six"));
+
+  
+  
+  Preferences::SetBool("network.cookie.valueless_cookie", false);
+  SetACookie(cookieService, "http://nameless.parser.test/", "six");
+  GetACookie(cookieService, "http://nameless.parser.test/", cookie);
+  EXPECT_TRUE(CheckResult(cookie.get(), MUST_EQUAL, "six"));
+  SetACookie(cookieService, "http://nameless.parser.test/", "seven");
+  GetACookie(cookieService, "http://nameless.parser.test/", cookie);
+  EXPECT_TRUE(CheckResult(cookie.get(), MUST_EQUAL, "seven"));
+  SetACookie(cookieService, "http://nameless.parser.test/", " =eight");
+  GetACookie(cookieService, "http://nameless.parser.test/", cookie);
+  EXPECT_TRUE(CheckResult(cookie.get(), MUST_EQUAL, "eight"));
+  SetACookie(cookieService, "http://nameless.parser.test/", "test=six");
+  GetACookie(cookieService, "http://nameless.parser.test/", cookie);
+  EXPECT_TRUE(CheckResult(cookie.get(), MUST_CONTAIN, "test=six"));
+  Preferences::SetBool("network.cookie.valueless_cookie", true);
 
   
 
