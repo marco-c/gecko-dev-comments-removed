@@ -15,6 +15,7 @@
 #endif  
 
 #include <functional>
+#include <stack>
 
 #include "MessageLink.h"  
 #include "mozilla/ipc/ScopedPort.h"
