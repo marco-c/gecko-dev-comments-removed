@@ -5385,10 +5385,6 @@ void GCRuntime::collectNursery(JS::GCOptions options, JS::GCReason reason,
 
   startBackgroundFreeAfterMinorGC();
 
-  if (wasMarking) {
-    resumeBackgroundMarking();
-  }
-
   
   
   
@@ -5407,6 +5403,10 @@ void GCRuntime::collectNursery(JS::GCOptions options, JS::GCReason reason,
     AutoGCSession session(this, JS::HeapState::MinorCollecting);
 
     nursery().disable();
+  }
+
+  if (wasMarking) {
+    resumeBackgroundMarking();
   }
 }
 
