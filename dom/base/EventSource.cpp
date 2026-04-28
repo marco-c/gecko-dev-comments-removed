@@ -15,11 +15,13 @@
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/Try.h"
+#include "mozilla/dom/ClientInfo.h"
 #include "mozilla/dom/EventSourceBinding.h"
 #include "mozilla/dom/EventSourceEventService.h"
 #include "mozilla/dom/MessageEvent.h"
 #include "mozilla/dom/MessageEventBinding.h"
 #include "mozilla/dom/ScriptSettings.h"
+#include "mozilla/dom/ServiceWorkerDescriptor.h"
 #include "mozilla/dom/WorkerPrivate.h"
 #include "mozilla/dom/WorkerRef.h"
 #include "mozilla/dom/WorkerRunnable.h"
@@ -240,6 +242,8 @@ class EventSourceImpl final : public nsIChannelEventSink,
   nsCOMPtr<nsIURI> mSrc;
   uint32_t mReconnectionTime;  
   nsCOMPtr<nsIPrincipal> mPrincipal;
+  Maybe<ClientInfo> mClientInfo;
+  Maybe<ServiceWorkerDescriptor> mController;
   nsString mOrigin;
   nsCOMPtr<nsITimer> mTimer;
   nsCOMPtr<nsIHttpChannel> mHttpChannel;
@@ -774,6 +778,13 @@ EventSourceImpl::OnStopRequest(nsIRequest* aRequest, nsresult aStatusCode) {
   
   
   
+  if (aStatusCode == NS_BINDING_ABORTED) {
+    nsresult rv = Dispatch(NewRunnableMethod("dom::EventSourceImpl::Close",
+                                             this, &EventSourceImpl::Close),
+                           NS_DISPATCH_NORMAL);
+    NS_ENSURE_SUCCESS(rv, rv);
+    return NS_OK;
+  }
   if (NS_FAILED(aStatusCode) && aStatusCode != NS_ERROR_CONNECTION_REFUSED &&
       aStatusCode != NS_ERROR_NET_TIMEOUT &&
       aStatusCode != NS_ERROR_NET_RESET &&
@@ -1034,9 +1045,11 @@ nsresult EventSourceImpl::InitChannelAndRequestEventSource(
                        loadGroup,
                        nullptr,     
                        loadFlags);  
-  } else {
+  } else if (mClientInfo.isSome()) {
     
-    rv = NS_NewChannel(getter_AddRefs(channel), mSrc, mPrincipal, securityFlags,
+    
+    rv = NS_NewChannel(getter_AddRefs(channel), mSrc, mPrincipal,
+                       mClientInfo.ref(), mController, securityFlags,
                        nsIContentPolicy::TYPE_INTERNAL_EVENTSOURCE,
                        mCookieJarSettings,
                        nullptr,     
@@ -1052,6 +1065,15 @@ nsresult EventSourceImpl::InitChannelAndRequestEventSource(
       loadInfo->SetIsInThirdPartyContext(
           (*workerRef)->Private()->IsThirdPartyContext());
     }
+  } else {
+    
+    rv = NS_NewChannel(getter_AddRefs(channel), mSrc, mPrincipal, securityFlags,
+                       nsIContentPolicy::TYPE_INTERNAL_EVENTSOURCE,
+                       mCookieJarSettings,
+                       nullptr,     
+                       nullptr,     
+                       nullptr,     
+                       loadFlags);  
   }
 
   NS_ENSURE_SUCCESS(rv, rv);
@@ -2005,6 +2027,10 @@ already_AddRefed<EventSource> EventSource::Constructor(
     MOZ_ASSERT(workerPrivate);
 
     eventSource->mESImpl->mInnerWindowID = workerPrivate->WindowID();
+    eventSource->mESImpl->mClientInfo =
+        workerPrivate->GlobalScope()->GetClientInfo();
+    eventSource->mESImpl->mController =
+        workerPrivate->GlobalScope()->GetController();
 
     eventSource->mESImpl->Init(nullptr, workerPrivate->GetPrincipal(), aURL,
                                aRv);
