@@ -5135,10 +5135,8 @@
     
     if ( exc->GS.gep2 == 0 )
       limit = exc->zp2.n_points;
-    else if ( exc->GS.gep2 == 1 && exc->zp2.n_contours > 0 )
-      limit = exc->zp2.contours[exc->zp2.n_contours - 1] + 1;
     else
-      limit = 0;
+      limit = exc->zp2.n_points - 4U;
 
     
     for ( i = 0; i < limit; i++ )
