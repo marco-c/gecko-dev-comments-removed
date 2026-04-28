@@ -12,6 +12,7 @@
 #include "mozilla/Components.h"
 #include "mozilla/ErrorNames.h"
 #include "mozilla/FileUtils.h"
+#include "mozilla/ProfilerMarkers.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/glean/NetwerkMetrics.h"
 #include "mozilla/ScopeExit.h"
@@ -2070,55 +2071,50 @@ UniquePtr<CookieStruct> CookiePersistentStorage::GetCookieFromRow(
 void CookiePersistentStorage::EnsureInitialized() {
   MOZ_ASSERT(NS_IsMainThread());
 
-  bool isAccumulated = false;
+  TimeStamp startBlockTime;
 
   if (!mInitialized) {
-#ifndef ANDROID
-    TimeStamp startBlockTime = TimeStamp::Now();
-#endif
+    startBlockTime = TimeStamp::Now();
     MonitorAutoLock lock(mMonitor);
 
     while (!mInitialized) {
       mMonitor.Wait();
     }
-#ifndef ANDROID
-    TimeStamp endBlockTime = TimeStamp::Now();
-    mozilla::glean::networking::sqlite_cookies_block_main_thread
-        .AccumulateRawDuration(endBlockTime - startBlockTime);
-    mozilla::glean::networking::sqlite_cookies_time_to_block_main_thread
-        .AccumulateRawDuration(TimeDuration::Zero());
-#endif
-    isAccumulated = true;
   } else if (!mEndInitDBConn.IsNull()) {
     
     
-#ifndef ANDROID
     TimeStamp now = TimeStamp::Now();
     mozilla::glean::networking::sqlite_cookies_time_to_block_main_thread
         .AccumulateRawDuration(now - mEndInitDBConn);
-#endif
+    PROFILER_MARKER_UNTYPED("sqlite_cookies_time_to_block_main_thread", NETWORK,
+                            MarkerTiming::Interval(mEndInitDBConn, now));
     
     mEndInitDBConn = TimeStamp();
-    isAccumulated = true;
-  } else if (!mInitializedDBConn) {
+    return;
+  } else if (mInitializedDBConn) {
+    
+    return;
+  } else {
     
     
     
-#ifndef ANDROID
-    mozilla::glean::networking::sqlite_cookies_time_to_block_main_thread
-        .AccumulateRawDuration(TimeDuration::Zero());
-#endif
-    isAccumulated = true;
+    startBlockTime = TimeStamp::Now();
   }
 
-  if (!mInitializedDBConn) {
-    InitDBConn();
-    if (isAccumulated) {
-      
-      
-      mEndInitDBConn = TimeStamp();
-    }
-  }
+  
+  
+  
+  
+  InitDBConn();
+  mEndInitDBConn = TimeStamp();
+
+  TimeStamp endBlockTime = TimeStamp::Now();
+  mozilla::glean::networking::sqlite_cookies_block_main_thread
+      .AccumulateRawDuration(endBlockTime - startBlockTime);
+  mozilla::glean::networking::sqlite_cookies_time_to_block_main_thread
+      .AccumulateRawDuration(TimeDuration::Zero());
+  PROFILER_MARKER_UNTYPED("sqlite_cookies_block_main_thread", NETWORK,
+                          MarkerTiming::Interval(startBlockTime, endBlockTime));
 }
 
 void CookiePersistentStorage::InitDBConn() {
@@ -2130,6 +2126,13 @@ void CookiePersistentStorage::InitDBConn() {
   if (!mInitialized || mInitializedDBConn) {
     return;
   }
+
+  TimeStamp startInitDBConn = TimeStamp::Now();
+  auto markerGuard = MakeScopeExit([&] {
+    PROFILER_MARKER_UNTYPED(
+        "CookiePersistentStorage::InitDBConn", NETWORK,
+        MarkerTiming::IntervalUntilNowFrom(startInitDBConn));
+  });
 
   
   
@@ -2191,12 +2194,14 @@ void CookiePersistentStorage::InitDBConn() {
     mReadArray.Clear();
   }
 
-  
-  nsCOMPtr<nsIRunnable> idleRunnable = NS_NewRunnableFunction(
-      "CookiePersistentStorage::RecordValidationTelemetry",
-      [self = RefPtr{this}]() { self->RecordValidationTelemetry(); });
-  (void)NS_DispatchToMainThreadQueue(do_AddRef(idleRunnable),
-                                     EventQueuePriority::Idle);
+  if (StaticPrefs::network_cookie_validation_lastEpoch() <
+      StaticPrefs::network_cookie_validation_epoch()) {
+    nsCOMPtr<nsIRunnable> idleRunnable = NS_NewRunnableFunction(
+        "CookiePersistentStorage::RecordValidationTelemetry",
+        [self = RefPtr{this}]() { self->RecordValidationTelemetry(); });
+    (void)NS_DispatchToMainThreadQueue(do_AddRef(idleRunnable),
+                                       EventQueuePriority::Idle);
+  }
 }
 
 nsresult CookiePersistentStorage::InitDBConnInternal() {
@@ -2474,6 +2479,8 @@ void CookiePersistentStorage::CollectCookieJarSizeData() {
       sumUnpartitioned);
 }
 
+
+
 void CookiePersistentStorage::RecordValidationTelemetry() {
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -2562,6 +2569,13 @@ void CookiePersistentStorage::RecordValidationTelemetry() {
     RemoveCookie(data.mBaseDomain, data.mOriginAttributes, data.mCookie->Host(),
                  data.mCookie->Name(), data.mCookie->Path(),
                   true, nullptr);
+  }
+
+  
+  
+  if (listToAdd.IsEmpty() && listToRemove.IsEmpty()) {
+    Preferences::SetUint("network.cookie.validation.lastEpoch",
+                         StaticPrefs::network_cookie_validation_epoch());
   }
 
   nsCOMPtr<nsIObserverService> os = services::GetObserverService();
