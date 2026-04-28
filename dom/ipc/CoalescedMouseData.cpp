@@ -60,7 +60,7 @@ void CoalescedMouseData::Coalesce(const WidgetMouseEvent& aMouseOrPointerEvent,
     
     WidgetPointerEvent* event =
         mCoalescedInputEvent->mCoalescedWidgetEvents->mEvents.AppendElement(
-            aMouseOrPointerEvent);
+            WidgetPointerEvent::MakeCopyFromMouseEvent(aMouseOrPointerEvent));
 
     event->mMessage = ePointerMove;
     event->mButton = MouseButton::eNotPressed;

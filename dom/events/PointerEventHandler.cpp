@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "PointerEventHandler.h"
 
 #include "EventStateManager.h"
@@ -637,7 +635,8 @@ void PointerEventHandler::ProcessPointerCaptureForMouse(
   if (!info || info->mPendingElement == info->mOverrideElement) {
     return;
   }
-  WidgetPointerEvent localEvent(*aEvent);
+  WidgetPointerEvent localEvent =
+      WidgetPointerEvent::MakeCopyFromMouseEvent(*aEvent);
   InitPointerEventFromMouse(&localEvent, aEvent, eVoidEvent);
   CheckPointerCaptureState(&localEvent);
 }
@@ -1118,7 +1117,8 @@ nsresult PointerEventHandler::DispatchPointerEventWithTarget(
     pointerEvent.emplace(aPointerEventMessage,
                          *aMouseOrPointerEvent.AsPointerEvent());
   } else {
-    pointerEvent.emplace(aMouseOrPointerEvent);
+    pointerEvent.emplace(
+        WidgetPointerEvent::MakeCopyFromMouseEvent(aMouseOrPointerEvent));
     PointerEventHandler::InitPointerEventFromMouse(
         pointerEvent.ptr(), &aMouseOrPointerEvent, ePointerCancel);
   }
@@ -1313,7 +1313,8 @@ void PointerEventHandler::DispatchPointerFromMouseOrTouch(
       }
     }
 #endif  
-    WidgetPointerEvent event(*mouseEvent);
+    WidgetPointerEvent event =
+        WidgetPointerEvent::MakeCopyFromMouseEvent(*mouseEvent);
     InitPointerEventFromMouse(&event, mouseEvent, pointerMessage);
     event.convertToPointer = mouseEvent->convertToPointer = false;
     RefPtr<PresShell> shell(aShell);

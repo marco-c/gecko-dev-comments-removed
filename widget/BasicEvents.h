@@ -433,6 +433,51 @@ class WidgetEventTime {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+#ifdef DEBUG
+
+
+
+
+
+
+
+
+
+#  define NS_ASSERT_EVENT_CLASS_ID(aEventClassID, aBaseEventClassID)          \
+    if (mClass != eEventClassUninitialized) [[likely]] {                      \
+      MOZ_ASSERT(                                                             \
+          mClass == (aEventClassID),                                          \
+          "It's now allowed to initialize event class instance with copying " \
+          "or moving from a subclass instance without adjusting mClass");     \
+      mClass = aBaseEventClassID;                                             \
+    }
+
+
+
+
+#  define NS_DEFINE_VIRTUAL_DESTRUCTOR_CHECKING_CLASS_VALUE(     \
+      aClassType, aEventClassID, aBaseEventClassID)              \
+    virtual ~aClassType() {                                      \
+      NS_ASSERT_EVENT_CLASS_ID(aEventClassID, aBaseEventClassID) \
+    }
+#else
+#  define NS_ASSERT_EVENT_CLASS_ID(aEventClassID, aBaseEventClassID)
+#  define NS_DEFINE_VIRTUAL_DESTRUCTOR_CHECKING_CLASS_VALUE( \
+      aClassType, aEventClassID, aBaseEventClassID)
+#endif
+
 class WidgetEvent : public WidgetEventTime {
  private:
   void SetDefaultCancelableAndBubbles() {
@@ -520,7 +565,27 @@ class WidgetEvent : public WidgetEventTime {
               const WidgetEventTime* aTime = nullptr)
       : WidgetEvent(aIsTrusted, aMessage, eBasicEventClass, aTime) {}
 
-  MOZ_COUNTED_DTOR_VIRTUAL(WidgetEvent)
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  virtual ~WidgetEvent() {
+    MOZ_COUNT_DTOR(WidgetEvent);
+    NS_ASSERT_EVENT_CLASS_ID(eBasicEventClass, eEventClassUninitialized);
+  }
 
   WidgetEvent(const WidgetEvent& aOther) : WidgetEventTime(aOther) {
     MOZ_COUNT_CTOR(WidgetEvent);
@@ -557,7 +622,7 @@ class WidgetEvent : public WidgetEventTime {
     return result;
   }
 
-  EventClassID mClass;
+  EventClassID mClass = eEventClassUninitialized;
   EventMessage mMessage;
   
   
@@ -1070,6 +1135,15 @@ class WidgetGUIEvent : public WidgetEvent {
       : WidgetEvent(aIsTrusted, aMessage, eGUIEventClass, aTime),
         mWidget(aWidget) {}
 
+  WidgetGUIEvent(const WidgetGUIEvent&) = default;
+  WidgetGUIEvent(WidgetGUIEvent&&) = default;
+  WidgetGUIEvent& operator=(const WidgetGUIEvent&) = default;
+  WidgetGUIEvent& operator=(WidgetGUIEvent&&) = default;
+
+  NS_DEFINE_VIRTUAL_DESTRUCTOR_CHECKING_CLASS_VALUE(WidgetGUIEvent,
+                                                    eGUIEventClass,
+                                                    eBasicEventClass)
+
   virtual WidgetEvent* Duplicate() const override {
     MOZ_ASSERT(mClass == eGUIEventClass,
                "Duplicate() must be overridden by sub class");
@@ -1221,6 +1295,15 @@ class WidgetInputEvent : public WidgetGUIEvent {
       : WidgetGUIEvent(aIsTrusted, aMessage, aWidget, eInputEventClass, aTime),
         mModifiers(0) {}
 
+  WidgetInputEvent(const WidgetInputEvent&) = default;
+  WidgetInputEvent(WidgetInputEvent&&) = default;
+  WidgetInputEvent& operator=(const WidgetInputEvent&) = default;
+  WidgetInputEvent& operator=(WidgetInputEvent&&) = default;
+
+  NS_DEFINE_VIRTUAL_DESTRUCTOR_CHECKING_CLASS_VALUE(WidgetInputEvent,
+                                                    eInputEventClass,
+                                                    eGUIEventClass)
+
   virtual WidgetEvent* Duplicate() const override {
     MOZ_ASSERT(mClass == eInputEventClass,
                "Duplicate() must be overridden by sub class");
@@ -1348,6 +1431,15 @@ class InternalUIEvent : public WidgetGUIEvent {
         mDetail(0),
         mCausedByUntrustedEvent(aEventCausesThisEvent &&
                                 !aEventCausesThisEvent->IsTrusted()) {}
+
+  InternalUIEvent(const InternalUIEvent&) = default;
+  InternalUIEvent(InternalUIEvent&&) = default;
+  InternalUIEvent& operator=(const InternalUIEvent&) = default;
+  InternalUIEvent& operator=(InternalUIEvent&&) = default;
+
+  NS_DEFINE_VIRTUAL_DESTRUCTOR_CHECKING_CLASS_VALUE(InternalUIEvent,
+                                                    eUIEventClass,
+                                                    eGUIEventClass)
 
   virtual WidgetEvent* Duplicate() const override {
     MOZ_ASSERT(mClass == eUIEventClass,

@@ -84,7 +84,10 @@ class WidgetPointerHelper {
     MOZ_ASSERT(aTiltY <= INT32_MAX);
   }
 
-  explicit WidgetPointerHelper(const WidgetPointerHelper& aHelper) = default;
+  WidgetPointerHelper(const WidgetPointerHelper&) = default;
+  WidgetPointerHelper(WidgetPointerHelper&&) = default;
+  WidgetPointerHelper& operator=(const WidgetPointerHelper&) = default;
+  WidgetPointerHelper& operator=(WidgetPointerHelper&&) = default;
 
   constexpr static double kPi =
 #ifdef M_PI
@@ -200,8 +203,17 @@ class WidgetMouseEventBase : public WidgetInputEvent {
   
   
 
+  WidgetMouseEventBase(const WidgetMouseEventBase&) = default;
+  WidgetMouseEventBase(WidgetMouseEventBase&&) = default;
+  WidgetMouseEventBase& operator=(const WidgetMouseEventBase&) = default;
+  WidgetMouseEventBase& operator=(WidgetMouseEventBase&&) = default;
+
  public:
   virtual WidgetMouseEventBase* AsMouseEventBase() override { return this; }
+
+  NS_DEFINE_VIRTUAL_DESTRUCTOR_CHECKING_CLASS_VALUE(WidgetMouseEventBase,
+                                                    eMouseEventBaseClass,
+                                                    eInputEventClass)
 
   virtual WidgetEvent* Duplicate() const override {
     MOZ_CRASH("WidgetMouseEventBase must not be most-subclass");
@@ -381,13 +393,69 @@ class WidgetMouseEvent : public WidgetMouseEventBase,
     }
   }
 
+  
+
+
+
   WidgetMouseEvent(const WidgetMouseEvent& aEvent)
       : WidgetMouseEventBase(aEvent), WidgetPointerHelper(aEvent) {
     AssignMouseEventDataOnly(aEvent);
   }
+  
+
+
+
+  WidgetMouseEvent(WidgetMouseEvent&& aEvent)
+      : WidgetMouseEventBase(
+            std::move(static_cast<WidgetMouseEventBase&>(aEvent))),
+        WidgetPointerHelper(
+            std::move(static_cast<WidgetPointerHelper&>(aEvent))) {
+    AssignMouseEventDataOnly(aEvent);
+  }
+  WidgetMouseEvent& operator=(const WidgetMouseEvent&) = default;
+  WidgetMouseEvent& operator=(WidgetMouseEvent&&) = default;
+
+  
+  
+  WidgetMouseEvent(const WidgetDragEvent&) = delete;
+  WidgetMouseEvent(const WidgetPointerEvent&) = delete;
+  WidgetMouseEvent(WidgetDragEvent&&) = delete;
+  WidgetMouseEvent(WidgetPointerEvent&&) = delete;
+  WidgetMouseEvent& operator=(const WidgetDragEvent&) = delete;
+  WidgetMouseEvent& operator=(const WidgetPointerEvent&) = delete;
+  WidgetMouseEvent& operator=(WidgetDragEvent&&) = delete;
+  WidgetMouseEvent& operator=(WidgetPointerEvent&&) = delete;
+
+  
+
+
+
+
+
+
+
+  static WidgetMouseEvent MakeLossyCopy(const WidgetMouseEvent& aOther,
+                                        EventMessage aMouseEventMessage) {
+    MOZ_ASSERT(aMouseEventMessage >= eMouseEventFirst &&
+               aMouseEventMessage <= eMouseEventLast);
+    WidgetMouseEvent copy(aOther);
+    copy.mMessage = aMouseEventMessage;
+    copy.mClass = eMouseEventClass;
+    
+    
+    copy.mSpecifiedEventType = nullptr;
+    
+    
+    
+    copy.mContextMenuTrigger = ContextMenuTrigger::eNormal;
+    return copy;
+  }
 
 #ifdef DEBUG
-  virtual ~WidgetMouseEvent() { AssertContextMenuEventButtonConsistency(); }
+  virtual ~WidgetMouseEvent() {
+    AssertContextMenuEventButtonConsistency();
+    NS_ASSERT_EVENT_CLASS_ID(eMouseEventClass, eMouseEventBaseClass);
+  }
 #endif
 
   virtual WidgetEvent* Duplicate() const override {
@@ -401,6 +469,7 @@ class WidgetMouseEvent : public WidgetMouseEventBase,
     return result;
   }
 
+ public:
   
   
   nsCOMPtr<dom::EventTarget> mClickTarget;
@@ -510,7 +579,7 @@ MOZ_DEFINE_BOOL_PRETTY_PRINTER(RealOrSynthesized, Real, Synthesized);
 
 
 
-class WidgetDragEvent : public WidgetMouseEvent {
+class WidgetDragEvent final : public WidgetMouseEvent {
  private:
   friend class mozilla::dom::PBrowserParent;
   friend class mozilla::dom::PBrowserChild;
@@ -532,6 +601,10 @@ class WidgetDragEvent : public WidgetMouseEvent {
         mUserCancelled(false),
         mDefaultPreventedOnContent(false),
         mInHTMLEditorEventListener(false) {}
+
+  NS_DEFINE_VIRTUAL_DESTRUCTOR_CHECKING_CLASS_VALUE(WidgetDragEvent,
+                                                    eDragEventClass,
+                                                    eMouseEventClass)
 
   virtual WidgetEvent* Duplicate() const override {
     MOZ_ASSERT(mClass == eDragEventClass,
@@ -603,6 +676,10 @@ class WidgetMouseScrollEvent : public WidgetMouseEventBase {
                              eMouseScrollEventClass, aTime),
         mDelta(0),
         mIsHorizontal(false) {}
+
+  NS_DEFINE_VIRTUAL_DESTRUCTOR_CHECKING_CLASS_VALUE(WidgetMouseScrollEvent,
+                                                    eMouseScrollEventClass,
+                                                    eMouseEventBaseClass)
 
   virtual WidgetEvent* Duplicate() const override {
     MOZ_ASSERT(mClass == eMouseScrollEventClass,
@@ -695,6 +772,10 @@ class WidgetWheelEvent : public WidgetMouseEventBase {
         mCanTriggerSwipe(false),
         mAllowToOverrideSystemScrollSpeed(true),
         mDeltaValuesHorizontalizedForDefaultHandler(false) {}
+
+  NS_DEFINE_VIRTUAL_DESTRUCTOR_CHECKING_CLASS_VALUE(WidgetWheelEvent,
+                                                    eWheelEventClass,
+                                                    eMouseEventBaseClass)
 
   virtual WidgetEvent* Duplicate() const override {
     MOZ_ASSERT(mClass == eWheelEventClass,
@@ -900,7 +981,7 @@ class WidgetWheelEvent : public WidgetMouseEventBase {
 
 
 
-class WidgetPointerEvent : public WidgetMouseEvent {
+class WidgetPointerEvent final : public WidgetMouseEvent {
   friend class mozilla::dom::PBrowserParent;
   friend class mozilla::dom::PBrowserChild;
   ALLOW_DEPRECATED_READPARAM
@@ -931,6 +1012,24 @@ class WidgetPointerEvent : public WidgetMouseEvent {
     }
   }
 
+ private:
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   explicit WidgetPointerEvent(const WidgetMouseEvent& aEvent)
       : WidgetMouseEvent(aEvent) {
     MOZ_ASSERT(!aEvent.AsPointerEvent(),
@@ -939,11 +1038,27 @@ class WidgetPointerEvent : public WidgetMouseEvent {
     mClass = ePointerEventClass;
   }
 
+ public:
+  static inline WidgetPointerEvent MakeCopyFromMouseEvent(
+      const WidgetMouseEvent& aPointerOrMouseEvent) {
+    if (aPointerOrMouseEvent.mClass == ePointerEventClass) {
+      MOZ_ASSERT(aPointerOrMouseEvent.AsPointerEvent());
+      return WidgetPointerEvent(
+          static_cast<const WidgetPointerEvent&>(aPointerOrMouseEvent));
+    }
+    MOZ_ASSERT(!aPointerOrMouseEvent.AsPointerEvent());
+    return WidgetPointerEvent(aPointerOrMouseEvent);
+  }
+
   explicit WidgetPointerEvent(EventMessage aMsg,
                               const WidgetPointerEvent& aOther)
       : WidgetPointerEvent(aOther.IsTrusted(), aMsg, aOther.mWidget, &aOther) {
     AssignPointerEventData(aOther, false);
   }
+
+  NS_DEFINE_VIRTUAL_DESTRUCTOR_CHECKING_CLASS_VALUE(WidgetPointerEvent,
+                                                    ePointerEventClass,
+                                                    eMouseEventClass)
 
   virtual WidgetEvent* Duplicate() const override {
     MOZ_ASSERT(mClass == ePointerEventClass,

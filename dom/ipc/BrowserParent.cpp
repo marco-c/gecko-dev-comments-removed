@@ -1553,15 +1553,9 @@ void BrowserParent::SendRealMouseEvent(WidgetMouseEvent& aMouseOrPointerEvent) {
     
     
     mIsMouseEnterIntoWidgetEventSuppressed = false;
-    WidgetMouseEvent mouseEnterIntoWidgetEvent(aMouseOrPointerEvent.IsTrusted(),
-                                               eMouseEnterIntoWidget,
-                                               aMouseOrPointerEvent.mWidget);
-    mouseEnterIntoWidgetEvent.AssignMouseEventData(aMouseOrPointerEvent, true,
-                                                   false);
-    
-    mouseEnterIntoWidgetEvent.mSpecifiedEventType = nullptr;
-    mouseEnterIntoWidgetEvent.mContextMenuTrigger =
-        WidgetMouseEvent::ContextMenuTrigger::eNormal;
+    WidgetMouseEvent mouseEnterIntoWidgetEvent =
+        WidgetMouseEvent::MakeLossyCopy(aMouseOrPointerEvent,
+                                        eMouseEnterIntoWidget);
     DebugOnly<bool> ret = isInputPriorityEventEnabled
                               ? SendRealMouseEnterExitWidgetEvent(
                                     mouseEnterIntoWidgetEvent, guid, blockId)
