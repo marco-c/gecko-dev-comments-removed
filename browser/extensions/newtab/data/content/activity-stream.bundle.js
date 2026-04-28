@@ -15749,7 +15749,6 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
     
     this.props.setPref("newtabWallpapers.wallpaper", id);
     this.props.setPref("newtabWallpapers.initialWallpaper", "");
-    this.props.setPref("newtabWallpapers.enabled", true);
   }
 
   
@@ -15766,7 +15765,6 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
     }
     this.props.setPref("newtabWallpapers.wallpaper", id);
     this.props.setPref("newtabWallpapers.initialWallpaper", "");
-    this.props.setPref("newtabWallpapers.enabled", true);
     const uploadedPreviously = this.props.Prefs.values[PREF_WALLPAPER_UPLOADED_PREVIOUSLY];
     this.handleUserEvent(actionTypes.WALLPAPER_CLICK, {
       selected_wallpaper: id,
@@ -15962,7 +15960,6 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
         
         this.props.setPref("newtabWallpapers.wallpaper", "custom");
         this.props.setPref("newtabWallpapers.initialWallpaper", "");
-        this.props.setPref("newtabWallpapers.enabled", true);
 
         
         
@@ -16133,9 +16130,7 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
       
       !novaEnabled && external_React_default().createElement("h2", {
         "data-l10n-id": "newtab-wallpaper-title"
-      }),
-      
-      !novaEnabled && external_React_default().createElement("button", {
+      }), external_React_default().createElement("button", {
         className: "wallpapers-reset",
         onClick: this.handleReset,
         "data-l10n-id": "newtab-wallpaper-reset"
@@ -16654,7 +16649,6 @@ class ContentSection extends (external_React_default()).PureComponent {
       showSectionsMgmtPanel,
       
       novaEnabled,
-      wallpapersSystemEnabled,
       toggleWidgetsManagementPanel,
       showWidgetsManagementPanel,
       widgetsEnabled
@@ -16684,7 +16678,7 @@ class ContentSection extends (external_React_default()).PureComponent {
     
     return external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("div", {
       className: "home-section"
-    }, wallpapersSystemEnabled && external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("div", {
+    }, (wallpapersEnabled || novaEnabled) && external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("div", {
       className: "wallpapers-section"
     }, novaEnabled && external_React_default().createElement("moz-toggle", {
       id: "wallpapers-toggle",
@@ -16694,7 +16688,7 @@ class ContentSection extends (external_React_default()).PureComponent {
       "data-preference": "newtabWallpapers.enabled",
       "data-event-source": "WALLPAPERS",
       "data-l10n-id": "newtab-wallpaper-toggle-title"
-    }), external_React_default().createElement(WallpaperCategories, {
+    }), wallpapersEnabled && external_React_default().createElement(WallpaperCategories, {
       setPref: setPref,
       activeWallpaper: activeWallpaper,
       exitEventFired: exitEventFired,
@@ -17027,7 +17021,6 @@ class _CustomizeMenu extends (external_React_default()).PureComponent {
       setPref: this.props.setPref,
       enabledSections: this.props.enabledSections,
       enabledWidgets: this.props.enabledWidgets,
-      wallpapersSystemEnabled: this.props.wallpapersSystemEnabled,
       wallpapersEnabled: this.props.wallpapersEnabled,
       activeWallpaper: this.props.activeWallpaper,
       pocketRegion: this.props.pocketRegion,
@@ -18660,8 +18653,6 @@ class BaseContent extends (external_React_default()).PureComponent {
     this.applyBodyClasses();
     __webpack_require__.g.addEventListener("scroll", this.onWindowScroll);
     const prefs = this.props.Prefs.values;
-    const novaEnabled = prefs[Base_PREF_NOVA_ENABLED];
-    const wallpapersSystemEnabled = prefs["newtabWallpapers.system.enabled"];
     const wallpapersEnabled = prefs["newtabWallpapers.enabled"];
     if (this.props.document.visibilityState === Base_VISIBLE) {
       this.onVisible();
@@ -18679,8 +18670,7 @@ class BaseContent extends (external_React_default()).PureComponent {
     this.prefersDarkQuery = globalThis.matchMedia("(prefers-color-scheme: dark)");
     this.prefersDarkQuery.addEventListener("change", this.handleColorModeChange);
     this.handleColorModeChange();
-    const isWallpaperVisible = novaEnabled ? wallpapersSystemEnabled && wallpapersEnabled : wallpapersSystemEnabled;
-    if (isWallpaperVisible) {
+    if (wallpapersEnabled) {
       this.updateWallpaper();
     }
     this._onHashChange = () => {
@@ -18717,19 +18707,8 @@ class BaseContent extends (external_React_default()).PureComponent {
       
       this.props.dispatch(actionCreators.SetPref("weather.optInDisplayed", true));
     }
-    const novaEnabled = prefs[Base_PREF_NOVA_ENABLED];
-    const wallpapersSystemEnabled = prefs["newtabWallpapers.system.enabled"];
     const wallpapersEnabled = prefs["newtabWallpapers.enabled"];
-    
-    
-    const prevNovaEnabled = prevProps.Prefs.values[Base_PREF_NOVA_ENABLED];
-    const prevWallpapersSystemEnabled = prevProps.Prefs.values["newtabWallpapers.system.enabled"];
-    const prevWallpapersEnabled = prevProps.Prefs.values["newtabWallpapers.enabled"];
-    const isWallpaperActive = novaEnabled ? wallpapersSystemEnabled && wallpapersEnabled : wallpapersSystemEnabled;
-    
-    
-    const wasWallpaperActive = prevNovaEnabled ? prevWallpapersSystemEnabled && prevWallpapersEnabled : prevWallpapersSystemEnabled;
-    if (isWallpaperActive) {
+    if (wallpapersEnabled) {
       
       
       const {
@@ -18755,9 +18734,7 @@ class BaseContent extends (external_React_default()).PureComponent {
       const prevUploadedWallpaperTheme = prevPrefs["newtabWallpapers.customWallpaper.theme"];
 
       
-      if (!wasWallpaperActive ||
-      
-      selectedWallpaper !== prevSelectedWallpaper ||
+      if (selectedWallpaper !== prevSelectedWallpaper ||
       
       initialWallpaper !== prevInitialWallpaper ||
       
@@ -18770,9 +18747,6 @@ class BaseContent extends (external_React_default()).PureComponent {
       uploadedWallpaperTheme !== prevUploadedWallpaperTheme) {
         this.updateWallpaper();
       }
-    } else if (wasWallpaperActive) {
-      
-      this.updateWallpaper();
     }
     this.spocsOnDemandUpdated();
     this.trackSpocPlaceholderDuration(prevProps);
@@ -18958,11 +18932,7 @@ class BaseContent extends (external_React_default()).PureComponent {
   }
   async updateWallpaper() {
     const prefs = this.props.Prefs.values;
-    const novaEnabled = prefs[Base_PREF_NOVA_ENABLED];
-    const wallpapersSystemEnabled = prefs["newtabWallpapers.system.enabled"];
-    const wallpapersEnabled = prefs["newtabWallpapers.enabled"];
-    const isWallpaperVisible = novaEnabled ? wallpapersSystemEnabled && wallpapersEnabled : wallpapersSystemEnabled;
-    const selectedWallpaper = isWallpaperVisible ? prefs["newtabWallpapers.wallpaper"] || prefs["newtabWallpapers.initialWallpaper"] : null;
+    const selectedWallpaper = prefs["newtabWallpapers.wallpaper"] || prefs["newtabWallpapers.initialWallpaper"];
     const {
       wallpaperList,
       uploadedWallpaper: uploadedWallpaperUrl
@@ -19108,7 +19078,6 @@ class BaseContent extends (external_React_default()).PureComponent {
     
     const novaEnabled = prefs[Base_PREF_NOVA_ENABLED];
     const activeWallpaper = prefs[`newtabWallpapers.wallpaper`] || prefs[`newtabWallpapers.initialWallpaper`];
-    const wallpapersSystemEnabled = prefs["newtabWallpapers.system.enabled"];
     const wallpapersEnabled = prefs["newtabWallpapers.enabled"];
     const weatherEnabled = prefs.showWeather;
     const {
@@ -19246,7 +19215,6 @@ class BaseContent extends (external_React_default()).PureComponent {
         setPref: this.setPref,
         enabledSections: enabledSections,
         enabledWidgets: enabledWidgets,
-        wallpapersSystemEnabled: wallpapersSystemEnabled,
         wallpapersEnabled: wallpapersEnabled,
         activeWallpaper: activeWallpaper,
         pocketRegion: pocketRegion,
@@ -19314,7 +19282,7 @@ class BaseContent extends (external_React_default()).PureComponent {
     }, external_React_default().createElement(DiscoveryStreamBase, {
       locale: props.App.locale,
       spocsLoading: this.isSpocsOnDemandExpired
-    })) : external_React_default().createElement(Sections_Sections, null)), external_React_default().createElement(ConfirmDialog, null), wallpapersSystemEnabled && this.renderWallpaperAttribution()), external_React_default().createElement("aside", null, this.props.Notifications?.showNotifications && external_React_default().createElement(ErrorBoundary, null, external_React_default().createElement(Notifications_Notifications, {
+    })) : external_React_default().createElement(Sections_Sections, null)), external_React_default().createElement(ConfirmDialog, null), wallpapersEnabled && this.renderWallpaperAttribution()), external_React_default().createElement("aside", null, this.props.Notifications?.showNotifications && external_React_default().createElement(ErrorBoundary, null, external_React_default().createElement(Notifications_Notifications, {
       dispatch: this.props.dispatch
     }))), mayShowTopicSelection && pocketEnabled && external_React_default().createElement(TopicSelection, {
       supportUrl: supportUrl
@@ -19327,7 +19295,6 @@ class BaseContent extends (external_React_default()).PureComponent {
       setPref: this.setPref,
       enabledSections: enabledSections,
       enabledWidgets: enabledWidgets,
-      wallpapersSystemEnabled: wallpapersSystemEnabled,
       wallpapersEnabled: wallpapersEnabled,
       activeWallpaper: activeWallpaper,
       pocketRegion: pocketRegion,
