@@ -335,7 +335,6 @@ class PrevWordBreakClassWalker {
       if (!PrevChar()) {
         return Nothing();
       }
-      MOZ_ASSERT(mOffset >= 0);
       WordBreakClass curClass = GetWordBreakClass(mText.CharAt(mOffset));
       if (curClass != mClass) {
         mClass = curClass;
@@ -351,7 +350,6 @@ class PrevWordBreakClassWalker {
       
       return true;
     }
-    MOZ_ASSERT(mOffset >= 0);
     WordBreakClass curClass = GetWordBreakClass(mText.CharAt(mOffset));
     
     ++mOffset;
@@ -368,20 +366,14 @@ class PrevWordBreakClassWalker {
       
       return false;
     }
-    
-    for (;;) {
-      mAcc = PrevLeaf(mAcc);
-      if (!mAcc) {
-        return false;
-      }
-      mText.Truncate();
-      mAcc->AppendTextTo(mText);
-      if (!mText.IsEmpty()) {
-        mOffset = static_cast<int32_t>(mText.Length()) - 1;
-        return true;
-      }
+    mAcc = PrevLeaf(mAcc);
+    if (!mAcc) {
+      return false;
     }
-    return false;
+    mText.Truncate();
+    mAcc->AppendTextTo(mText);
+    mOffset = static_cast<int32_t>(mText.Length()) - 1;
+    return true;
   }
 
   Accessible* mAcc;
