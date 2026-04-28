@@ -736,17 +736,28 @@ int32_t DateTimeHelper::getTimeZoneOffset(DateTimeInfo* dtInfo,
 
 
 
-static int64_t LocalTime(DateTimeInfo* dtInfo, double t) {
-  MOZ_ASSERT(std::isfinite(t));
+static int64_t LocalTime(DateTimeInfo* dtInfo, int64_t t) {
   MOZ_ASSERT(IsTimeValue(t));
 
   
   int32_t offsetMs = DateTimeHelper::getTimeZoneOffset(
-      dtInfo, static_cast<int64_t>(t), DateTimeInfo::TimeZoneOffset::UTC);
+      dtInfo, t, DateTimeInfo::TimeZoneOffset::UTC);
   MOZ_ASSERT(std::abs(offsetMs) < msPerDay);
 
   
-  return static_cast<int64_t>(t) + offsetMs;
+  return t + offsetMs;
+}
+
+
+
+
+
+
+static inline int64_t LocalTime(DateTimeInfo* dtInfo, double t) {
+  MOZ_ASSERT(std::isfinite(t));
+  MOZ_ASSERT(IsTimeValue(t));
+
+  return LocalTime(dtInfo, mozilla::AssertedCast<int64_t>(t));
 }
 
 
@@ -2226,6 +2237,12 @@ JS::ClippedTime js::LocalTimeToUTC(JSContext* cx, int64_t localTime) {
   MOZ_ASSERT(IsLocalTimeValue(localTime),
              "localTime is a valid local time value when called from JIT");
   return TimeClip(UTC(cx->realm()->getDateTimeInfo(), localTime));
+}
+
+int64_t js::UTCToLocalTime(JSContext* cx, int64_t utcTime) {
+  MOZ_ASSERT(IsTimeValue(utcTime),
+             "utcTime is a valid time value when called from JIT");
+  return LocalTime(cx->realm()->getDateTimeInfo(), utcTime);
 }
 
 
@@ -4180,7 +4197,7 @@ static bool FormatDate(JSContext* cx, DateTimeInfo* dtInfo, LanguageId locale,
   }
 
   int64_t epochMilliseconds = static_cast<int64_t>(utcTime);
-  int64_t localTime = LocalTime(dtInfo, utcTime);
+  int64_t localTime = LocalTime(dtInfo, epochMilliseconds);
 
   int offset = 0;
   RootedString timeZoneComment(cx);
