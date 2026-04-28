@@ -233,6 +233,14 @@ struct StackMap final {
     return calcBitmapNumElems(header.numMappedWords) * sizeof(bitmap[0]);
   }
 
+  inline uint32_t numMappedWords() const { return header.numMappedWords; }
+
+#ifdef JS_JITSPEW
+  
+  
+  void show(uint32_t codeOffset) const;
+#endif
+
  private:
   static constexpr uint32_t bitsPerMappedWord = 2;
   static constexpr uint32_t mappedWordsPerBitmapElem =
@@ -349,6 +357,11 @@ class StackMaps {
 
   
   [[nodiscard]] bool add(uint32_t codeOffset, StackMap* map) {
+#ifdef JS_JITSPEW
+    if (JitSpewEnabled(jit::JitSpew_Codegen)) {
+      map->show(codeOffset);
+    }
+#endif
     MOZ_ASSERT(!createdButNotFinalized_);
     MOZ_ASSERT(stackMaps_.contains(map));
     return codeOffsetToStackMap_.put(codeOffset, map);
@@ -565,6 +578,25 @@ void EmitWasmPreBarrierCallImmediate(jit::MacroAssembler& masm,
 void EmitWasmPreBarrierCallIndex(jit::MacroAssembler& masm,
                                  jit::Register instance, jit::Register scratch1,
                                  jit::Register scratch2, jit::BaseIndex addr);
+
+#ifdef ENABLE_WASM_JSPI
+
+
+
+void EmitWasmResumeBarrierGuard(jit::MacroAssembler& masm,
+                                jit::Register instance, jit::Register scratch,
+                                jit::Label* enterBarrier);
+
+
+
+
+
+
+
+void EmitWasmResumeBarrier(jit::MacroAssembler& masm, jit::Register instance,
+                           jit::Register cont);
+
+#endif  
 
 
 
