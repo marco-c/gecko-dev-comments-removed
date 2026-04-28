@@ -20,8 +20,6 @@
 
 #include "mozilla/gfx/Logging.h"  
 
-#include <mutex>
-
 using namespace mozilla::gfx;
 
 #ifndef GBM_FORMAT_P010
