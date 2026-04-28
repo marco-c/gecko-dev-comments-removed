@@ -389,7 +389,7 @@ RtpTransceiver::RtpTransceiver(
   
   
   
-  context_->worker_thread()->BlockingCall([&]() mutable {
+  context_->worker_thread()->BlockingCall([&]() {
     RTC_DCHECK_RUN_ON(this->context()->worker_thread());
     auto channels = CreateMediaContentChannels(
         media_type_, env_, media_engine(), call, media_config, audio_options,

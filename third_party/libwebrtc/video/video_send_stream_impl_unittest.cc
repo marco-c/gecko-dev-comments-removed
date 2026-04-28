@@ -207,7 +207,9 @@ class VideoSendStreamImplTest : public ::testing::Test {
         nullptr, &bitrate_allocator_, &send_delay_stats_,
         config_.Copy(), std::move(encoder_config), suspended_ssrcs,
         suspended_payload_states,
-        nullptr, std::move(video_stream_encoder));
+        nullptr,
+        nullptr,
+        std::move(video_stream_encoder));
 
     
     

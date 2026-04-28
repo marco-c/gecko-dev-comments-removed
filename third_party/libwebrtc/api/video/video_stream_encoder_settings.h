@@ -11,6 +11,9 @@
 #ifndef API_VIDEO_VIDEO_STREAM_ENCODER_SETTINGS_H_
 #define API_VIDEO_VIDEO_STREAM_ENCODER_SETTINGS_H_
 
+#include <optional>
+
+#include "absl/functional/any_invocable.h"
 #include "api/video/video_bitrate_allocator_factory.h"
 #include "api/video_codecs/sdp_video_format.h"
 #include "api/video_codecs/video_encoder.h"
@@ -18,18 +21,13 @@
 
 namespace webrtc {
 
-class EncoderSwitchRequestCallback {
- public:
-  virtual ~EncoderSwitchRequestCallback() {}
 
-  
-  virtual void RequestEncoderFallback() = 0;
 
-  
-  
-  virtual void RequestEncoderSwitch(const SdpVideoFormat& format,
-                                    bool allow_default_fallback) = 0;
-};
+
+
+using EncoderSwitchRequestCallback =
+    absl::AnyInvocable<void(std::optional<SdpVideoFormat> format,
+                            bool allow_default_fallback)>;
 
 struct VideoStreamEncoderSettings {
   explicit VideoStreamEncoderSettings(
@@ -42,9 +40,6 @@ struct VideoStreamEncoderSettings {
 
   
   VideoEncoderFactory* encoder_factory = nullptr;
-
-  
-  EncoderSwitchRequestCallback* encoder_switch_request_callback = nullptr;
 
   
   VideoBitrateAllocatorFactory* bitrate_allocator_factory = nullptr;
