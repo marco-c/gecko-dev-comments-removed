@@ -23,7 +23,6 @@
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsICacheInfoChannel.h"  
-#include "nsIMemoryReporter.h"
 
 #include "jsapi.h"
 #include "ResolvedModuleSet.h"
@@ -132,7 +131,7 @@ class ScriptFetchInfo : public nsISupports {
 
 
 
-class LoadedScript : public nsIMemoryReporter {
+class LoadedScript : public nsISupports {
  protected:
   LoadedScript(ScriptKind aKind, nsIURI* aURI);
 
@@ -144,17 +143,10 @@ class LoadedScript : public nsIMemoryReporter {
   virtual ~LoadedScript();
 
  public:
-  
-  
-  
-  
-  
-  void RegisterMemoryReport();
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
  public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS;
-  NS_DECL_NSIMEMORYREPORTER;
   NS_DECL_CYCLE_COLLECTION_CLASS(LoadedScript)
 
   uint16_t ClampedRefCountForTelemetry() const {
