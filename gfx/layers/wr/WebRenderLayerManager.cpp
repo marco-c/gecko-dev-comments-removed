@@ -79,12 +79,9 @@ RefPtr<WebRenderLayerManager> WebRenderLayerManager::Create(
                         << " isParent: " << XRE_IsParentProcess();
   }
 
-  PWebRenderBridgeChild* wrBridge =
-      (static_cast<CompositorBridgeChild*>(aCBChild))
-          ->AllocPWebRenderBridgeChild(aPipelineId, size, windowKind);
-  PWebRenderBridgeChild* actor = aCBChild->SendPWebRenderBridgeConstructor(
-      wrBridge, aPipelineId, size, windowKind);
-  if (!actor) {
+  PWebRenderBridgeChild* bridge =
+      aCBChild->SendPWebRenderBridgeConstructor(aPipelineId, size, windowKind);
+  if (!bridge) {
     
     
     
@@ -97,7 +94,7 @@ RefPtr<WebRenderLayerManager> WebRenderLayerManager::Create(
   }
 
   RefPtr<WebRenderBridgeChild> wrChild =
-      static_cast<WebRenderBridgeChild*>(actor);
+      static_cast<WebRenderBridgeChild*>(bridge);
   return new WebRenderLayerManager(aWidget, wrChild.forget());
 }
 
