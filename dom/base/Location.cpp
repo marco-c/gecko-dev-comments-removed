@@ -80,7 +80,8 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(Location)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
 
-NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(Location, mInnerWindow)
+NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(Location, mInnerWindow,
+                                      mRelevantDocNullAncestorOriginsList)
 
 NS_IMPL_CYCLE_COLLECTING_ADDREF(Location)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(Location)
@@ -216,7 +217,11 @@ RefPtr<DOMStringList> Location::GetAncestorOrigins(
   Document* doc = mInnerWindow->GetExtantDoc();
   
   if (!doc || !doc->IsActive()) {
-    return MakeRefPtr<DOMStringList>();
+    if (!mRelevantDocNullAncestorOriginsList) {
+      mRelevantDocNullAncestorOriginsList =
+          MakeRefPtr<DOMStringList>(mInnerWindow);
+    }
+    return mRelevantDocNullAncestorOriginsList;
   }
 
   
