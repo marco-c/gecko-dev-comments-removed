@@ -2789,10 +2789,26 @@ function getActiveColumnLayout(screenWidth) {
 
 
 
+function getNovaColumnLayout(el) {
+  if (!el) {
+    return null;
+  }
+  const val = parseInt(getComputedStyle(el).getPropertyValue("--sections-col-count"), 10);
+  return Number.isInteger(val) ? `col-${val}` : null;
+}
 
 
 
-function getActiveCardSize(screenWidth, classNames, sectionsEnabled, flightId) {
+
+
+
+
+
+
+
+
+
+function getActiveCardSize(screenWidth, classNames, sectionsEnabled, flightId, columnLayout) {
   
   if (flightId) {
     return "spoc";
@@ -2805,7 +2821,8 @@ function getActiveCardSize(screenWidth, classNames, sectionsEnabled, flightId) {
   }
 
   
-  if (!screenWidth || !classNames) {
+  
+  if (!screenWidth && !columnLayout || !classNames) {
     
     return null;
   }
@@ -2813,17 +2830,13 @@ function getActiveCardSize(screenWidth, classNames, sectionsEnabled, flightId) {
   const cardTypes = ["small", "medium", "large"];
 
   
-  const currColumnCount = getActiveColumnLayout(screenWidth);
+  
+  const currColumnCount = columnLayout ?? getActiveColumnLayout(screenWidth);
 
   
   for (let type of cardTypes) {
     const className = `${currColumnCount}-${type}`;
     if (classList.includes(className)) {
-      
-      if (screenWidth < 610 && currColumnCount === "col-1" && type === "small") {
-        return "medium-card";
-      }
-      
       return `${type}-card`;
     }
   }
@@ -3098,7 +3111,7 @@ class ImpressionStats_ImpressionStats extends (external_React_default()).PureCom
           ...(link.format ? {
             format: link.format
           } : {
-            format: getActiveCardSize(window.innerWidth, link.class_names, link.section, link.flightId)
+            format: getActiveCardSize(window.innerWidth, link.class_names, link.section, link.flightId, getNovaColumnLayout(this.impressionRef.current))
           }),
           ...(link.section ? {
             section: link.section,
@@ -3835,7 +3848,7 @@ class _DSCard extends (external_React_default()).PureComponent {
           ...(this.props.format ? {
             format: this.props.format
           } : {
-            format: getActiveCardSize(window.innerWidth, this.props.sectionsClassNames, this.props.section, this.props.flightId)
+            format: getActiveCardSize(window.innerWidth, this.props.sectionsClassNames, this.props.section, this.props.flightId, getNovaColumnLayout(this.contextMenuButtonHostElement))
           }),
           ...(this.props.section ? {
             section: this.props.section,
@@ -3863,7 +3876,7 @@ class _DSCard extends (external_React_default()).PureComponent {
           ...(this.props.format ? {
             format: this.props.format
           } : {
-            format: getActiveCardSize(window.innerWidth, this.props.sectionsClassNames, this.props.section, this.props.flightId)
+            format: getActiveCardSize(window.innerWidth, this.props.sectionsClassNames, this.props.section, this.props.flightId, getNovaColumnLayout(this.contextMenuButtonHostElement))
           }),
           ...(this.props.section ? {
             section: this.props.section,
@@ -4214,7 +4227,7 @@ class _DSCard extends (external_React_default()).PureComponent {
       section: this.props.section,
       section_position: this.props.sectionPosition,
       is_section_followed: this.props.sectionFollowed,
-      format: format ? format : getActiveCardSize(window.innerWidth, this.props.sectionsClassNames, this.props.section, this.props.flightId),
+      format: format ? format : getActiveCardSize(window.innerWidth, this.props.sectionsClassNames, this.props.section, this.props.flightId, getNovaColumnLayout(this.contextMenuButtonHostElement)),
       isSectionsCard: this.props.mayHaveSectionsCards,
       topic: this.props.topic,
       selected_topics: this.props.selected_topics,
@@ -11756,18 +11769,15 @@ function CardSections({
     if (!novaEnabled || !gridRef.current) {
       return;
     }
-    const val = parseInt(getComputedStyle(gridRef.current).getPropertyValue("--sections-col-count"), 10);
-    if (Number.isInteger(val)) {
-      setActiveColumnLayout(`col-${val}`);
+    const columnLayout = getNovaColumnLayout(gridRef.current);
+    if (columnLayout) {
+      setActiveColumnLayout(columnLayout);
     }
   }, [novaEnabled]);
   const syncLayoutOnFocus = (0,external_React_namespaceObject.useCallback)(e => {
     let nextLayout = getActiveColumnLayout(window.innerWidth);
     if (novaEnabled) {
-      const val = parseInt(getComputedStyle(e.currentTarget).getPropertyValue("--sections-col-count"), 10);
-      if (Number.isInteger(val)) {
-        nextLayout = `col-${val}`;
-      }
+      nextLayout = getNovaColumnLayout(e.currentTarget);
     }
     setActiveColumnLayout(currLayout => currLayout === nextLayout ? currLayout : nextLayout);
   }, [novaEnabled]);
