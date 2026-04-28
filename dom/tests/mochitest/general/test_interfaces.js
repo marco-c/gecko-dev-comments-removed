@@ -860,10 +860,6 @@ let interfaceNamesInGlobalScope = [
   
   { name: "IIRFilterNode", insecureContext: true },
   
-  { name: "IdentityCredential", nightly: true, desktop: true },
-  
-  { name: "IdentityProvider", nightly: true, desktop: true },
-  
   { name: "IdleDeadline", insecureContext: true },
   
   { name: "Image", insecureContext: true },
