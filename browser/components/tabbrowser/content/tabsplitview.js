@@ -256,6 +256,25 @@
 
 
 
+
+
+    #suspend() {
+      gBrowser.tabpanels.suspendSplitViewPanels(
+        this.#tabs.filter(tab => !tab.splitview || tab.splitview === this)
+      );
+      updateUrlbarButton.arm();
+      this.container.dispatchEvent(
+        new CustomEvent("TabSplitViewDeactivate", {
+          detail: { tabs: this.#tabs, splitview: this },
+          bubbles: true,
+        })
+      );
+    }
+
+    
+
+
+
     #resetPanelWidths() {
       for (const panel of this.panels) {
         const width = panel.getAttribute("width");
@@ -456,11 +475,17 @@
 
 
     on_TabSelect(event) {
+      const wasActive = this.hasActiveTab;
       this.hasActiveTab = event.target.splitview === this;
       if (this.hasActiveTab) {
         this.#activate();
-      } else {
-        this.#deactivate();
+        
+        
+        
+        
+        
+      } else if (wasActive && !event.detail.previousTab?.removedByAdoption) {
+        this.#suspend();
       }
     }
   }

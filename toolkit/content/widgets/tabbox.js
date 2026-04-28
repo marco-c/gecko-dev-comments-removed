@@ -543,10 +543,26 @@
 
 
 
+
+    suspendSplitViewPanels(tabs) {
+      for (const tab of tabs) {
+        const panelEl = document.getElementById(tab.linkedPanel);
+        panelEl?.classList.remove("split-view-panel-active");
+      }
+      this.setSplitViewActive(!!this.#splitViewPanels.length);
+    }
+
+    
+
+
+
+
+
     setSplitViewActive(updatedValue) {
-      let isActive = gBrowser.selectedTab.splitview && updatedValue;
-      this.toggleAttribute("splitview", isActive);
-      this.splitViewSplitter.hidden = !isActive;
+      const splitViewTabSelected =
+        gBrowser.selectedTab.splitview && updatedValue;
+      this.toggleAttribute("splitview", updatedValue);
+      this.splitViewSplitter.hidden = !splitViewTabSelected;
       const selectedPanel = this.selectedPanel;
 
       
@@ -571,7 +587,7 @@
         return isAfterA && isBeforeB;
       };
 
-      if (isActive) {
+      if (splitViewTabSelected) {
         
         
         const firstPanel = document.getElementById(this.splitViewPanels[0]);
