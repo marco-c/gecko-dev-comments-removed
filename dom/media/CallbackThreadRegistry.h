@@ -2,17 +2,12 @@
 
 
 
-
-
 #ifndef CALLBACKTHREADREGISTRY_H
 #define CALLBACKTHREADREGISTRY_H
 
 #include <GeckoProfiler.h>
 #include <mozilla/DataMutex.h>
 #include <nsTArray.h>
-
-#include <cstdint>
-#include <thread>
 
 namespace mozilla {
 

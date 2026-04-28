@@ -1,13 +1,11 @@
 
 
 
-
 #ifndef MOCKCUBEB_H_
 #define MOCKCUBEB_H_
 
 #include <atomic>
 #include <chrono>
-#include <thread>
 #include <utility>
 
 #include "AudioDeviceInfo.h"
