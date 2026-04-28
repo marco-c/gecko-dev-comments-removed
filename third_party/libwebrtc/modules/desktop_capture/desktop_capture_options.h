@@ -227,6 +227,13 @@ class RTC_EXPORT DesktopCaptureOptions {
   void set_wgc_include_secondary_windows(bool include) {
     wgc_include_secondary_windows_ = include;
   }
+
+  
+  
+  bool allow_wgc_using_texture() const { return allow_wgc_using_texture_; }
+  void set_allow_wgc_using_texture(bool allow) {
+    allow_wgc_using_texture_ = allow;
+  }
 #endif  
 #endif  
 
@@ -285,6 +292,7 @@ class RTC_EXPORT DesktopCaptureOptions {
   bool allow_wgc_zero_hertz_ = false;
   bool wgc_require_border_ = false;
   bool wgc_include_secondary_windows_ = false;
+  bool allow_wgc_using_texture_ = false;
 #endif
 #endif
 #if defined(WEBRTC_USE_X11)

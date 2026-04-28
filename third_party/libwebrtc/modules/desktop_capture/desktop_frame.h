@@ -17,15 +17,19 @@
 #include <optional>
 #include <vector>
 
+#include "absl/base/nullability.h"
 #include "media/base/video_common.h"
 #include "modules/desktop_capture/desktop_geometry.h"
 #include "modules/desktop_capture/desktop_region.h"
+#include "modules/desktop_capture/frame_texture.h"
 #include "modules/desktop_capture/shared_memory.h"
 #include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
 
 const float kStandardDPI = 96.0f;
+
+
 
 
 class RTC_EXPORT DesktopFrame {
@@ -63,7 +67,10 @@ class RTC_EXPORT DesktopFrame {
   FourCC pixel_format() const { return pixel_format_; }
 
   
-  uint8_t* data() const { return data_; }
+  uint8_t* absl_nullable data() const { return data_; }
+
+  
+  FrameTexture* texture() const { return texture_; }
 
   
   
@@ -172,13 +179,15 @@ class RTC_EXPORT DesktopFrame {
                int stride,
                FourCC pixel_format,
                uint8_t* data,
-               SharedMemory* shared_memory);
+               SharedMemory* shared_memory,
+               FrameTexture* texture = nullptr);
 
   
   
   
   uint8_t* const data_;
   SharedMemory* const shared_memory_;
+  FrameTexture* texture_;
 
  private:
   const DesktopSize size_;

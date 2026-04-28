@@ -65,10 +65,22 @@ class WgcCaptureSession final {
 
   
   
+  bool MayContainCursor() const;
+
+  
+  
   
   
   
   static constexpr int kNumBuffers = 2;
+
+  
+  
+  
+  
+  
+  
+  static constexpr int kNumBuffersForTexture = 5;
 
  private:
   class RefCountedEvent : public RefCountedNonVirtual<RefCountedEvent>,
@@ -135,6 +147,13 @@ class WgcCaptureSession final {
   
   HRESULT ProcessFrame();
 
+  
+  
+  
+  
+  HRESULT ProcessTexture(Microsoft::WRL::ComPtr<ID3D11Texture2D> texture,
+                         Microsoft::WRL::ComPtr<IUnknown> capture_frame);
+
   void RemoveEventHandlers();
   void RemoveItemClosedEventHandler();
   void RemoveFrameArrivedEventHandler();
@@ -143,6 +162,10 @@ class WgcCaptureSession final {
   bool FrameContentCanBeCompared();
 
   bool allow_zero_hertz() const { return allow_zero_hertz_; }
+
+  int num_buffers() const {
+    return allow_using_texture_ ? kNumBuffersForTexture : kNumBuffers;
+  }
 
   std::unique_ptr<EventRegistrationToken> item_closed_token_;
   std::unique_ptr<EventRegistrationToken> frame_arrived_token_;
@@ -196,6 +219,12 @@ class WgcCaptureSession final {
   
   
   bool allow_zero_hertz_ = false;
+
+  
+  
+  
+  
+  bool allow_using_texture_ = false;
 
   
   
