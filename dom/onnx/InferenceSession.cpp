@@ -1,8 +1,6 @@
 
 
 
-
-
 #include "mozilla/dom/InferenceSession.h"
 
 #include <prlink.h>
@@ -111,8 +109,8 @@ OrtSessionOptions* ToOrtSessionOption(
 
   LOGD("Inter op num threads: {}", aOptions.mInterOpNumThreads);
   CALL_API(SetInterOpNumThreads, aOptions.mInterOpNumThreads);
-  LOGD("Inter op num threads: {}", aOptions.mIntraOpNumThreads);
-  CALL_API(SetInterOpNumThreads, aOptions.mIntraOpNumThreads);
+  LOGD("Intra op num threads: {}", aOptions.mIntraOpNumThreads);
+  CALL_API(SetIntraOpNumThreads, aOptions.mIntraOpNumThreads);
   CALL_API(SetSessionLogId, aOptions.mLogId.get());
   CALL_API(SetSessionLogSeverityLevel, aOptions.mLogSeverityLevel);
   CALL_API(SetSessionLogVerbosityLevel, aOptions.mLogVerbosityLevel);
@@ -581,9 +579,11 @@ void InferenceSession::Destroy() {
   LOGD("{} {}", __PRETTY_FUNCTION__, fmt::ptr(this));
   if (mSession) {
     sAPI->ReleaseSession(mSession);
+    mSession = nullptr;
   }
   if (mOptions) {
     sAPI->ReleaseSessionOptions(mOptions);
+    mOptions = nullptr;
   }
 }
 
