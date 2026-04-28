@@ -311,8 +311,11 @@ WorkerDebugger::GetWindowIDs(nsTArray<uint64_t>& aResult) {
   } else if (mWorkerPrivate->IsSharedWorker()) {
     const RemoteWorkerChild* const controller =
         mWorkerPrivate->GetRemoteWorkerController();
-    MOZ_ASSERT(controller);
-    aResult = controller->WindowIDs().Clone();
+    
+    
+    if (controller) {
+      aResult = controller->WindowIDs().Clone();
+    }
   }
 
   return NS_OK;
