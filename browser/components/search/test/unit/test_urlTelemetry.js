@@ -226,7 +226,9 @@ const TESTS = [
 
 
 
-async function testAdUrlClicked(serpUrl, adUrl, expectedAdKey) {
+
+
+async function testAdUrlClicked(serpUrl, adUrl, expectedAdKey, browser) {
   info(`Testing Ad URL: ${adUrl}`);
   let channel = NetUtil.newChannel({
     uri: NetUtil.newURI(adUrl),
@@ -235,6 +237,15 @@ async function testAdUrlClicked(serpUrl, adUrl, expectedAdKey) {
       {}
     ),
     loadUsingSystemPrincipal: true,
+  });
+  
+  
+  
+  
+  let wrapper = ChannelWrapper.get(channel);
+  Object.defineProperty(wrapper, "browserElement", {
+    get: () => browser,
+    configurable: true,
   });
   SearchSERPTelemetry._contentHandler.observeActivity(
     channel,
@@ -278,20 +289,18 @@ add_task(async function test_parsing_search_urls() {
     if (test.setUp) {
       test.setUp();
     }
-    SearchSERPTelemetry.updateTrackingStatus(
-      {
-        getTabBrowser: () => {},
-        
-        
-        
-        contentPrincipal: {
-          originAttributes: {
-            privateBrowsingId: 0,
-          },
+    let browser = {
+      getTabBrowser: () => {},
+      
+      
+      
+      contentPrincipal: {
+        originAttributes: {
+          privateBrowsingId: 0,
         },
       },
-      test.trackingUrl
-    );
+    };
+    SearchSERPTelemetry.updateTrackingStatus(browser, test.trackingUrl);
     let scalars = TelemetryTestUtils.getProcessScalars("parent", true, true);
     TelemetryTestUtils.assertKeyedScalar(
       scalars,
@@ -302,10 +311,15 @@ add_task(async function test_parsing_search_urls() {
 
     if ("adUrls" in test) {
       for (const adUrl of test.adUrls) {
-        await testAdUrlClicked(test.trackingUrl, adUrl, test.expectedAdKey);
+        await testAdUrlClicked(
+          test.trackingUrl,
+          adUrl,
+          test.expectedAdKey,
+          browser
+        );
       }
       for (const nonAdUrls of test.nonAdUrls) {
-        await testAdUrlClicked(test.trackingUrl, nonAdUrls);
+        await testAdUrlClicked(test.trackingUrl, nonAdUrls, null, browser);
       }
     }
 
