@@ -12623,8 +12623,7 @@ function Lists({
     onClick: () => handleCopyListToClipboard()
   }),
   
-  
-  novaEnabled && external_React_default().createElement("panel-item", {
+  novaEnabled && widgetsMayBeMaximized && external_React_default().createElement("panel-item", {
     submenu: "lists-size-submenu"
   }, external_React_default().createElement("span", {
     "data-l10n-id": "newtab-widget-menu-change-size"
@@ -13524,8 +13523,7 @@ const FocusTimer = ({
     }
   }),
   
-  
-  novaEnabled && external_React_default().createElement("panel-item", {
+  novaEnabled && widgetsMayBeMaximized && external_React_default().createElement("panel-item", {
     submenu: "focus-timer-size-submenu"
   }, external_React_default().createElement("span", {
     "data-l10n-id": "newtab-widget-menu-change-size"
@@ -14230,6 +14228,7 @@ function Weather_Weather({
   const errorRef = (0,external_React_namespaceObject.useRef)(null);
   const sizeSubmenuRef = (0,external_React_namespaceObject.useRef)(null);
   const currentWeatherSize = prefs[Weather_PREF_WEATHER_SIZE] || "medium";
+  const widgetsMayBeMaximized = prefs.trainhopConfig?.widgets?.maximized || prefs["widgets.system.maximized"];
   const handleChangeSize = (0,external_React_namespaceObject.useCallback)(newSize => {
     (0,external_ReactRedux_namespaceObject.batch)(() => {
       dispatch(actionCreators.OnlyToMain({
@@ -14497,7 +14496,7 @@ function Weather_Weather({
     }), !showOptInState && isOptInEnabled && external_React_default().createElement("panel-item", {
       "data-l10n-id": "newtab-weather-menu-detect-my-location",
       onClick: handleDetectLocation
-    }), prefs["widgets.system.enabled"] && prefs["widgets.enabled"] && external_React_default().createElement("panel-item", {
+    }), prefs["widgets.system.enabled"] && prefs["widgets.enabled"] && widgetsMayBeMaximized && external_React_default().createElement("panel-item", {
       submenu: "weather-size-submenu"
     }, external_React_default().createElement("span", {
       "data-l10n-id": "newtab-widget-menu-change-size"
@@ -14787,7 +14786,6 @@ function Widgets() {
   } = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Messages);
   const timerType = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.TimerWidget.timerType);
   const timerData = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.TimerWidget);
-  const widgetsMayBeMaximized = prefs[PREF_WIDGETS_SYSTEM_MAXIMIZED];
   const dispatch = (0,external_ReactRedux_namespaceObject.useDispatch)();
   const novaEnabled = prefs[Widgets_PREF_NOVA_ENABLED];
   const isMaximized = prefs[PREF_WIDGETS_MAXIMIZED];
@@ -14802,6 +14800,7 @@ function Widgets() {
   const hideAllToastEnabled = prefs.trainhopConfig?.widgets?.hideAllToastEnabled || prefs[PREF_WIDGETS_HIDE_ALL_TOAST_ENABLED];
   const feedbackUrl = prefs.trainhopConfig?.widgets?.feedbackUrl ?? WIDGETS_FEEDBACK_URL;
   const showWidgetsSizeToggle = nimbusMaximizedTrainhopEnabled || prefs[PREF_WIDGETS_SYSTEM_MAXIMIZED];
+  const widgetsMayBeMaximized = showWidgetsSizeToggle;
   const widgetsEnabled = prefs[PREF_WIDGETS_ENABLED];
   const listsEnabled = widgetsEnabled && (nimbusListsTrainhopEnabled || nimbusListsEnabled || prefs[PREF_WIDGETS_SYSTEM_LISTS_ENABLED]) && prefs[PREF_WIDGETS_LISTS_ENABLED];
   const timerEnabled = widgetsEnabled && (nimbusTimerTrainhopEnabled || nimbusTimerEnabled || prefs[PREF_WIDGETS_SYSTEM_TIMER_ENABLED]) && prefs[PREF_WIDGETS_TIMER_ENABLED];
