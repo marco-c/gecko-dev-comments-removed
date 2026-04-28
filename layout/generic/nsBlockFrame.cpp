@@ -571,7 +571,7 @@ void nsBlockFrame::InvalidateFrameWithRect(const nsRect& aRect,
 
 nscoord nsBlockFrame::SynthesizeFallbackBaseline(
     WritingMode aWM, BaselineSharingGroup aBaselineGroup) const {
-  if (IsButtonLike() && StyleDisplay()->IsInlineOutsideStyle()) {
+  if (IsButtonOrTextInput() && StyleDisplay()->IsInlineOutsideStyle()) {
     return Baseline::SynthesizeBOffsetFromContentBox(this, aWM, aBaselineGroup);
   }
   return Baseline::SynthesizeBOffsetFromMarginBox(this, aWM, aBaselineGroup);
@@ -646,7 +646,7 @@ Maybe<nscoord> nsBlockFrame::GetNaturalBaselineBOffset(
                                aExportContext)
           : GetBaselineBOffset(LinesRBegin(), LinesREnd(), aWM, aBaselineGroup,
                                aExportContext);
-  if (!offset && IsButtonLike()) {
+  if (!offset && IsButtonOrTextInput()) {
     for (const auto& line : Reversed(Lines())) {
       if (line.IsEmpty()) {
         continue;
@@ -2305,8 +2305,8 @@ nscoord nsBlockFrame::ComputeFinalSize(const ReflowInput& aReflowInput,
 void nsBlockFrame::AlignContent(BlockReflowState& aState,
                                 ReflowOutput& aMetrics,
                                 nscoord aBEndEdgeOfChildren) {
-  StyleAlignFlags alignment = EffectiveAlignContent();
-  alignment &= ~StyleAlignFlags::FLAG_BITS;
+  const StyleAlignFlags originalAlignment = EffectiveAlignContent();
+  const auto alignment = originalAlignment & ~StyleAlignFlags::FLAG_BITS;
 
   
   const bool isCentered = alignment == StyleAlignFlags::CENTER ||
@@ -2336,7 +2336,7 @@ void nsBlockFrame::AlignContent(BlockReflowState& aState,
     shift = std::min(availB, endB) - aBEndEdgeOfChildren;
 
     
-    if (!(StylePosition()->mAlignContent.primary & StyleAlignFlags::UNSAFE)) {
+    if (!(originalAlignment & StyleAlignFlags::UNSAFE)) {
       shift = std::max(0, shift);
     }
     if (isCentered) {
@@ -2435,6 +2435,13 @@ void nsBlockFrame::ComputeOverflowAreas(OverflowAreas& aOverflowAreas,
     const auto paddingInflatedOverflow =
         ComputePaddingInflatedScrollableOverflow(inFlowChildBounds);
     aOverflowAreas.UnionAllWith(paddingInflatedOverflow);
+
+    
+    
+    if (IsSingleLineTextInput()) {
+      overflowClipAxes +=
+          wm.IsVertical() ? PhysicalAxis::Horizontal : PhysicalAxis::Vertical;
+    }
   }
   
   
@@ -2462,8 +2469,6 @@ void nsBlockFrame::ComputeOverflowAreas(OverflowAreas& aOverflowAreas,
 }
 
 
-
-
 static bool RestrictPaddingInflationInInline(const nsIFrame* aFrame) {
   MOZ_ASSERT(aFrame);
   if (aFrame->Style()->GetPseudoType() != PseudoStyleType::MozScrolledContent) {
@@ -2473,13 +2478,7 @@ static bool RestrictPaddingInflationInInline(const nsIFrame* aFrame) {
   }
   
   
-  const auto* parent = aFrame->GetParent();
-  if (!parent) {
-    return false;
-  }
-  MOZ_ASSERT(parent->IsScrollContainerOrSubclass(), "Not a scrolled frame?");
-
-  nsTextControlFrame* textControl = do_QueryFrame(parent->GetParent());
+  nsTextControlFrame* textControl = do_QueryFrame(aFrame->GetParent());
   if (MOZ_LIKELY(!textControl)) {
     return false;
   }
@@ -7785,7 +7784,7 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   }
 
   
-  Maybe<TextOverflow> textOverflow =
+  UniquePtr<TextOverflow> textOverflow =
       TextOverflow::WillProcessLines(aBuilder, this);
 
   const bool hasDescendantPlaceHolders =
@@ -7831,7 +7830,7 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
       
       return false;
     }
-    if (textOverflow.isSome()) {
+    if (textOverflow) {
       
       
       
@@ -7859,7 +7858,7 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
                           : nullptr;
   LineIterator line_end = LinesEnd();
 
-  TextOverflow* textOverflowPtr = textOverflow.ptrOr(nullptr);
+  TextOverflow* textOverflowPtr = textOverflow.get();
   bool foundClamp = false;
 
   if (cursor) {
@@ -7871,7 +7870,7 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
         if (lineArea.y >= aBuilder->GetDirtyRect().YMost()) {
           break;
         }
-        MOZ_ASSERT(textOverflow.isNothing());
+        MOZ_ASSERT(!textOverflow);
 
         if (ShouldDescendIntoLine(lineArea)) {
           DisplayLine(aBuilder, line, line->IsInline(), aLists, this, nullptr,
@@ -7947,8 +7946,8 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
       lineCount++;
     }
 
-    if (GetPrevInFlow()) {
-      DisplayPushedAbsoluteFrames(aBuilder, aLists);
+    if (GetPrevInFlow() || GetNextInFlow()) {
+      DisplayAbsoluteFramesNotBuiltByPlaceholder(aBuilder, aLists);
     }
 
     if (nonDecreasingYs && lineCount >= MIN_LINES_NEEDING_CURSOR) {
@@ -7960,7 +7959,7 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     }
   }
 
-  if (textOverflow.isSome()) {
+  if (textOverflow) {
     
     
     
@@ -8199,8 +8198,7 @@ void nsBlockFrame::SetInitialChildList(ChildListID aListID,
           !GetParent()->Style()->IsPseudoOrAnonBox()) ||
          pseudo == PseudoStyleType::MozFieldsetContent ||
          pseudo == PseudoStyleType::MozColumnContent ||
-         (pseudo == PseudoStyleType::MozScrolledContent &&
-          !GetParent()->IsListControlFrame()) ||
+         pseudo == PseudoStyleType::MozScrolledContent ||
          pseudo == PseudoStyleType::MozSvgText) &&
         !IsMathMLFrame() && !IsColumnSetWrapperFrame() &&
         !IsComboboxControlFrame() &&

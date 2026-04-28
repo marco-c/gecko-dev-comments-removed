@@ -8,6 +8,7 @@
 #include <algorithm>
 
 #include "mozilla/Likely.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/WritingModes.h"
 #include "nsDisplayList.h"
 #include "nsTHashSet.h"
@@ -46,11 +47,10 @@ class TextOverflow final {
 
 
 
-  static Maybe<TextOverflow> WillProcessLines(nsDisplayListBuilder* aBuilder,
-                                              nsBlockFrame*);
+  static UniquePtr<TextOverflow> WillProcessLines(
+      nsDisplayListBuilder* aBuilder, nsBlockFrame*);
 
   
-
 
 
 
