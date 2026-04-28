@@ -20,6 +20,8 @@ pub type SslTokensReadCallback =
 
 
 
+
+
 #[repr(C)]
 pub struct SslTokensPersistedRecord {
     pub id: u64,
@@ -30,11 +32,12 @@ pub struct SslTokensPersistedRecord {
     pub ev_status: u8,
     pub ct_status: u16,
     pub overridable_error: u8,
+    pub server_cert: ThinVec<u8>,
+    pub succeeded_cert_chain: ThinVec<ThinVec<u8>>,
+    pub handshake_certs: ThinVec<ThinVec<u8>>,
+    
+    pub is_built_cert_chain_root_built_in_root: ThinVec<bool>,
 }
-
-
-
-
 
 #[derive(Clone, Serialize, Deserialize)]
 #[expect(
@@ -49,9 +52,23 @@ struct PersistedRecord {
     ev_status: u8,
     ct_status: u16,
     overridable_error: u8,
+    server_cert: Vec<u8>,
+    succeeded_cert_chain: Option<Vec<Vec<u8>>>,
+    handshake_certs: Option<Vec<Vec<u8>>>,
+    is_built_cert_chain_root_built_in_root: Option<bool>,
 }
 
 impl PersistedRecord {
+    fn thin_chain_to_opt(chain: &ThinVec<ThinVec<u8>>) -> Option<Vec<Vec<u8>>> {
+        (!chain.is_empty()).then(|| chain.iter().map(|c| c.to_vec()).collect())
+    }
+
+    fn opt_chain_to_thin(chain: Option<&[Vec<u8>]>) -> ThinVec<ThinVec<u8>> {
+        chain.map_or_else(ThinVec::new, |c| {
+            c.iter().map(|b| b.iter().copied().collect()).collect()
+        })
+    }
+
     
     
     
@@ -69,9 +86,17 @@ impl PersistedRecord {
             ev_status: rec.ev_status,
             ct_status: rec.ct_status,
             overridable_error: rec.overridable_error,
+            server_cert: rec.server_cert.to_vec(),
+            succeeded_cert_chain: Self::thin_chain_to_opt(&rec.succeeded_cert_chain),
+            handshake_certs: Self::thin_chain_to_opt(&rec.handshake_certs),
+            is_built_cert_chain_root_built_in_root: rec
+                .is_built_cert_chain_root_built_in_root
+                .first()
+                .copied(),
         }
     }
 
+    
     
     
     fn with_record<F: FnOnce(&SslTokensPersistedRecord)>(&self, f: F) {
@@ -84,6 +109,13 @@ impl PersistedRecord {
             ev_status: self.ev_status,
             ct_status: self.ct_status,
             overridable_error: self.overridable_error,
+            server_cert: self.server_cert.iter().copied().collect(),
+            succeeded_cert_chain: Self::opt_chain_to_thin(self.succeeded_cert_chain.as_deref()),
+            handshake_certs: Self::opt_chain_to_thin(self.handshake_certs.as_deref()),
+            is_built_cert_chain_root_built_in_root: self
+                .is_built_cert_chain_root_built_in_root
+                .into_iter()
+                .collect(),
         };
         f(&rec);
     }
@@ -101,7 +133,7 @@ static STATE: Mutex<SslTokensState> = Mutex::new(SslTokensState {
 type PrTime = i64;
 
 const MAGIC: [u8; 4] = *b"STCF";
-const VERSION: u8 = 1;
+const VERSION: u8 = 2;
 
 
 const HEADER_SIZE: usize = MAGIC.len() + size_of::<u8>();
@@ -426,6 +458,10 @@ mod tests {
             ev_status: 0,
             ct_status: 0,
             overridable_error: 0,
+            server_cert: vec![1, 2, 3],
+            succeeded_cert_chain: Some(vec![vec![4, 5], vec![6, 7, 8]]),
+            handshake_certs: None,
+            is_built_cert_chain_root_built_in_root: Some(true),
         }
     }
 
@@ -448,6 +484,12 @@ mod tests {
         assert_eq!(output.len(), 2);
         assert_eq!(output[0].key, b"example.com:443");
         assert_eq!(output[0].token, b"token1");
+        assert_eq!(output[0].server_cert, [1, 2, 3]);
+        assert_eq!(
+            output[0].succeeded_cert_chain,
+            Some(vec![vec![4, 5], vec![6, 7, 8]])
+        );
+        assert_eq!(output[0].is_built_cert_chain_root_built_in_root, Some(true));
         assert_eq!(output[1].id, 2);
     }
 
