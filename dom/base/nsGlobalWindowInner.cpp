@@ -2206,6 +2206,8 @@ enum class EmptyFrameLibrary {
 
 
 
+
+
 MOZ_CAN_RUN_SCRIPT static bool IsDeferredLoadEmptyFrame(Element& aEmbedder) {
   const nsAttrValue* classes = aEmbedder.GetClasses();
   if (!classes) {
@@ -2217,6 +2219,10 @@ MOZ_CAN_RUN_SCRIPT static bool IsDeferredLoadEmptyFrame(Element& aEmbedder) {
     lib = EmptyFrameLibrary::CKEditor;
   } else if (StaticPrefs::dom_about_blank_gwt_hack_enabled() &&
              classes->Contains(nsGkAtoms::gwt_RichTextArea, eCaseMatters)) {
+    lib = EmptyFrameLibrary::GWT;
+  } else if (StaticPrefs::dom_about_blank_polarion_gwt_hack_enabled() &&
+             classes->Contains(nsGkAtoms::polarion_rte_RichTextArea,
+                               eCaseMatters)) {
     lib = EmptyFrameLibrary::GWT;
   } else if (StaticPrefs::dom_about_blank_ze_hack_enabled() &&
              classes->Contains(nsGkAtoms::ze_area, eCaseMatters)) {
