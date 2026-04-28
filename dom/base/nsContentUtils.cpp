@@ -8167,8 +8167,6 @@ nsContentUtils::FindInternalDocumentViewer(const nsACString& aType,
     if (docFactory && aLoaderType) {
       if (contractID.EqualsLiteral(CONTENT_DLF_CONTRACTID))
         *aLoaderType = TYPE_CONTENT;
-      else if (contractID.EqualsLiteral(PLUGIN_DLF_CONTRACTID))
-        *aLoaderType = TYPE_FALLBACK;
       else
         *aLoaderType = TYPE_UNKNOWN;
     }
@@ -11104,8 +11102,8 @@ bool nsContentUtils::SerializeNodeToMarkup(
         StartSerializingShadowDOM(aRoot, builder, aSerializableShadowRoots,
                                   aShadowRoots)) {
       SerializeNodeToMarkupInternal<SerializeShadowRoots::Yes>(
-          aRoot->GetShadowRoot()->GetFirstChild(), false, builder,
-          aSerializableShadowRoots, aShadowRoots);
+          aRoot->GetShadowRoot(), true, builder, aSerializableShadowRoots,
+          aShadowRoots);
       
       
       builder.Append(u"</template>");
@@ -12079,8 +12077,7 @@ static bool HtmlObjectContentSupportsDocument(const nsCString& aMimeType) {
   }
 
   if (supported != nsIWebNavigationInfo::UNSUPPORTED) {
-    
-    return supported != nsIWebNavigationInfo::FALLBACK;
+    return true;
   }
 
   
