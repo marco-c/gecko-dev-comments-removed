@@ -3,6 +3,9 @@
 
 
 api = {
+    "bitset": [
+        "bitset",
+    ],
     "deque": [
         "deque",
     ],
