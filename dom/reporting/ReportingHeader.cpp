@@ -18,7 +18,7 @@
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/SimpleGlobalObject.h"
 #include "mozilla/ipc/BackgroundUtils.h"
-#include "mozilla/net/SFVService.h"
+#include "mozilla/net/SFV.h"
 #include "nsCOMPtr.h"
 #include "nsContentUtils.h"
 #include "nsIEffectiveTLDService.h"
@@ -265,8 +265,6 @@ size_t ReportingHeader::ParseReportingEndpointsHeader(
     const nsACString& aHeaderValue, nsIURI* aURI,
     std::function<void(const nsAString&, nsCOMPtr<nsIURI>)>&&
         aOnParsedItemCallback) {
-  nsCOMPtr<nsISFVService> sfv = mozilla::net::GetSFVService();
-
   nsAutoCString uriSpec;
   aURI->GetSpec(uriSpec);
 
@@ -275,14 +273,13 @@ size_t ReportingHeader::ParseReportingEndpointsHeader(
     return 0;
   }
 
-  nsCOMPtr<nsISFVDictionary> parsedHeader;
-  if (NS_FAILED(
-          sfv->ParseDictionary(aHeaderValue, getter_AddRefs(parsedHeader)))) {
+  auto dict = mozilla::net::SFV::ParseDict(aHeaderValue);
+  if (!dict.IsValid()) {
     return 0;
   }
 
   nsTArray<nsCString> keys;
-  if (NS_FAILED(parsedHeader->Keys(keys))) {
+  if (NS_FAILED(dict.GetKeys(keys))) {
     return 0;
   }
 
@@ -293,48 +290,28 @@ size_t ReportingHeader::ParseReportingEndpointsHeader(
   }
 
   for (const auto& key : keys) {
-    
-    nsCOMPtr<nsISFVItemOrInnerList> iil;
-    if (NS_FAILED(parsedHeader->Get(key, getter_AddRefs(iil)))) {
-      continue;
-    }
-
-    
-    nsCOMPtr<nsISFVBareItem> value;
-    if (nsCOMPtr<nsISFVInnerList> innerList = do_QueryInterface(iil)) {
-      
-      
-      nsTArray<RefPtr<nsISFVItem>> items;
-
-      if (NS_FAILED(innerList->GetItems(items))) {
-        continue;
-      }
-
-      if (items.IsEmpty()) {
-        continue;
-      }
-
-      nsCOMPtr<nsISFVItem> firstItem(items[0]);
-
-      if (NS_FAILED(firstItem->GetValue(getter_AddRefs(value)))) {
-        continue;
-      }
-    } else if (nsCOMPtr<nsISFVItem> listItem = do_QueryInterface(iil)) {
-      if (NS_FAILED(listItem->GetValue(getter_AddRefs(value)))) {
-        continue;
-      }
-    }
-
-    
-    
-    nsCOMPtr<nsISFVString> sfvString(do_QueryInterface(value));
-    if (!sfvString) {
-      continue;
-    }
-
     nsAutoCString endpointURLString;
-    if (NS_FAILED(sfvString->GetValue(endpointURLString))) {
-      continue;
+
+    
+    if (NS_SUCCEEDED(dict.GetItem<mozilla::net::SFV::SFVString>(
+            key, endpointURLString))) {
+      
+    } else {
+      
+      auto innerList = dict.GetInnerList(key);
+      if (!innerList.IsValid() || innerList.Length() == 0) {
+        continue;
+      }
+
+      auto firstItem = innerList.GetItemAt(0);
+      if (!firstItem.IsValid()) {
+        continue;
+      }
+
+      if (NS_FAILED(firstItem.GetValue<mozilla::net::SFV::SFVString>(
+              endpointURLString))) {
+        continue;
+      }
     }
 
     nsCOMPtr<nsIURI> endpointURL;

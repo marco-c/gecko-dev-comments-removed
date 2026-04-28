@@ -9,7 +9,7 @@
 #include "mozilla/dom/RequestBinding.h"
 #include "mozilla/dom/WindowGlobalChild.h"
 #include "mozilla/ipc/PBackgroundSharedTypes.h"
-#include "mozilla/net/SFVService.h"
+#include "mozilla/net/SFV.h"
 #include "nsCOMPtr.h"
 #include "nsIClassInfoImpl.h"
 #include "nsIObjectInputStream.h"
@@ -73,20 +73,18 @@ IntegrityPolicy::ContentTypeToDestinationType(nsContentPolicyType aType) {
 
 
 
-nsresult GetTokenValuesFromInnerList(nsISFVInnerList* aList,
+nsresult GetTokenValuesFromInnerList(const net::SFV::InnerListResult& aList,
                                      nsTArray<nsCString>& aValues) {
-  nsTArray<RefPtr<nsISFVItem>> items;
-  MOZ_TRY(aList->GetItems(items));
-
-  for (auto& item : items) {
-    nsCOMPtr<nsISFVBareItem> value;
-    MOZ_TRY(item->GetValue(getter_AddRefs(value)));
-
-    nsCOMPtr<nsISFVToken> token(do_QueryInterface(value));
-    NS_ENSURE_TRUE(token, NS_ERROR_FAILURE);
+  size_t len = aList.Length();
+  for (size_t i = 0; i < len; i++) {
+    auto item = aList.GetItemAt(i);
+    if (!item.IsValid()) {
+      return NS_ERROR_FAILURE;
+    }
 
     nsAutoCString tokenValue;
-    MOZ_TRY(token->GetValue(tokenValue));
+    nsresult rv = item.GetValue<net::SFV::Token>(tokenValue);
+    NS_ENSURE_SUCCESS(rv, rv);
 
     aValues.AppendElement(tokenValue);
   }
@@ -96,23 +94,19 @@ nsresult GetTokenValuesFromInnerList(nsISFVInnerList* aList,
 
 
 Result<IntegrityPolicy::Sources, nsresult> ParseSources(
-    nsISFVDictionary* aDict) {
+    const net::SFV::DictResult& aDict) {
   
 
   
   
-  nsCOMPtr<nsISFVItemOrInnerList> iil;
-  nsresult rv = aDict->Get("sources"_ns, getter_AddRefs(iil));
-  if (NS_FAILED(rv)) {
+  auto innerList = aDict.GetInnerList("sources"_ns);
+  if (!innerList.IsValid()) {
     
     return IntegrityPolicy::Sources(IntegrityPolicy::SourceType::Inline);
   }
 
-  nsCOMPtr<nsISFVInnerList> il(do_QueryInterface(iil));
-  NS_ENSURE_TRUE(il, Err(NS_ERROR_FAILURE));
-
   nsTArray<nsCString> sources;
-  rv = GetTokenValuesFromInnerList(il, sources);
+  nsresult rv = GetTokenValuesFromInnerList(innerList, sources);
   NS_ENSURE_SUCCESS(rv, Err(rv));
 
   IntegrityPolicy::Sources result;
@@ -129,26 +123,23 @@ Result<IntegrityPolicy::Sources, nsresult> ParseSources(
   return result;
 }
 
+
 Result<IntegrityPolicy::Destinations, nsresult>
-IntegrityPolicy::ParseDestinations(nsISFVDictionary* aDict, bool aIsWAICT) {
+IntegrityPolicy::ParseDestinations(const net::SFV::DictResult& aDict,
+                                   bool aIsWAICT) {
   
 
-  nsCOMPtr<nsISFVItemOrInnerList> iil;
-  nsresult rv = aDict->Get("blocked-destinations"_ns, getter_AddRefs(iil));
-  if (NS_FAILED(rv)) {
+  auto innerList = aDict.GetInnerList("blocked-destinations"_ns);
+  if (!innerList.IsValid()) {
     
     if (aIsWAICT) {
-      return Err(rv);
+      return Err(NS_ERROR_FAILURE);
     }
     return IntegrityPolicy::Destinations();
   }
 
-  
-  nsCOMPtr<nsISFVInnerList> il(do_QueryInterface(iil));
-  NS_ENSURE_TRUE(il, Err(NS_ERROR_FAILURE));
-
   nsTArray<nsCString> destinations;
-  rv = GetTokenValuesFromInnerList(il, destinations);
+  nsresult rv = GetTokenValuesFromInnerList(innerList, destinations);
   NS_ENSURE_SUCCESS(rv, Err(rv));
 
   IntegrityPolicy::Destinations result;
@@ -171,20 +162,18 @@ IntegrityPolicy::ParseDestinations(nsISFVDictionary* aDict, bool aIsWAICT) {
   return result;
 }
 
+
 Result<nsTArray<nsCString>, nsresult> IntegrityPolicy::ParseEndpoints(
-    nsISFVDictionary* aDict) {
+    const net::SFV::DictResult& aDict) {
   
-  nsCOMPtr<nsISFVItemOrInnerList> iil;
-  nsresult rv = aDict->Get("endpoints"_ns, getter_AddRefs(iil));
-  if (NS_FAILED(rv)) {
+  auto innerList = aDict.GetInnerList("endpoints"_ns);
+  if (!innerList.IsValid()) {
     
     return nsTArray<nsCString>();
   }
 
-  nsCOMPtr<nsISFVInnerList> il(do_QueryInterface(iil));
-  NS_ENSURE_TRUE(il, Err(NS_ERROR_FAILURE));
   nsTArray<nsCString> endpoints;
-  rv = GetTokenValuesFromInnerList(il, endpoints);
+  nsresult rv = GetTokenValuesFromInnerList(innerList, endpoints);
   NS_ENSURE_SUCCESS(rv, Err(rv));
 
   return endpoints;
@@ -208,9 +197,6 @@ nsresult IntegrityPolicy::ParseHeaders(const nsACString& aHeader,
       static_cast<void*>(policy), PromiseFlatCString(aHeader).get(),
       PromiseFlatCString(aHeaderRO).get());
 
-  nsCOMPtr<nsISFVService> sfv = net::GetSFVService();
-  NS_ENSURE_TRUE(sfv, NS_ERROR_FAILURE);
-
   for (const auto& isROHeader : {false, true}) {
     const auto& headerString = isROHeader ? aHeaderRO : aHeader;
 
@@ -222,9 +208,8 @@ nsresult IntegrityPolicy::ParseHeaders(const nsACString& aHeader,
 
     
     
-    nsCOMPtr<nsISFVDictionary> dict;
-    nsresult rv = sfv->ParseDictionary(headerString, getter_AddRefs(dict));
-    if (NS_FAILED(rv)) {
+    auto dict = net::SFV::ParseDict(headerString);
+    if (!dict.IsValid()) {
       LOG("[{}] Failed to parse {} header.", static_cast<void*>(policy),
           isROHeader ? "report-only" : "enforcement");
       continue;
