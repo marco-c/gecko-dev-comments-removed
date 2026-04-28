@@ -83,7 +83,7 @@ const MOCK_MINIDUMP_EXTRA: &str = r#"{
         "ReleaseChannel": "release",
         "BuildID": "1234",
         "AsyncShutdownTimeout": "{}",
-        "StackTraces": {},
+        "StackTraces": "{}",
         "Version": "100.0",
         "ServerURL": "https://reports.example.com",
         "TelemetryServerURL": "https://telemetry.example.com",
@@ -102,7 +102,7 @@ static MOCK_MINIDUMP_EXTRA_EXPECTED: std::sync::LazyLock<String> = std::sync::La
         "ReleaseChannel": "release",
         "BuildID": "1234",
         "AsyncShutdownTimeout": "{{}}",
-        "StackTraces": {{}},
+        "StackTraces": "{{}}",
         "Version": "100.0",
         "ServerURL": "https://reports.example.com",
         "TelemetryServerURL": "https://telemetry.example.com",
@@ -526,8 +526,7 @@ fn auto_submit() {
     test.assert_files().submitted();
 }
 
-#[test]
-fn restart() {
+fn prepare_restart_test() -> (GuiTest, Counter) {
     let mut test = GuiTest::new();
     test.config.restart_command = Some("my_process".into());
     test.config.restart_args = vec!["a".into(), "b".into()];
@@ -541,30 +540,22 @@ fn restart() {
             Ok(crate::std::process::success_output())
         }),
     );
-    test.run(|interact| {
-        interact.element("restart", |_style, b: &model::Button| b.click.fire(&()));
-    });
-    test.assert_files()
-        .saved_settings(Settings::default())
-        .submitted();
-    ran_process.assert_one();
+    (test, ran_process)
 }
 
-#[test]
-fn no_restart_with_windows_error_reporting() {
-    let mut test = GuiTest::new();
-    test.config.restart_command = Some("my_process".into());
-    test.config.restart_args = vec!["a".into(), "b".into()];
-    
-    test.config.delete_dump = false;
-    
-    let minidump_extra_contents: &str = &format!(
+fn customize_extra_file(test: &mut GuiTest, extra_fields: &[(&str, &str)]) -> String {
+    let extra_fields_json = extra_fields
+        .iter()
+        .map(|(k, v)| format!(r#""{k}": "{v}","#))
+        .collect::<Vec<_>>()
+        .join("\n");
+    let minidump_extra_contents = format!(
         r#"{{
             "Vendor": "FooCorp",
             "ProductName": "Bar",
             "ReleaseChannel": "release",
             "BuildID": "1234",
-            "StackTraces": {{}},
+            "StackTraces": "{{}}",
             "Version": "100.0",
             "ServerURL": "https://reports.example.com",
             "TelemetryServerURL": "https://telemetry.example.com",
@@ -573,7 +564,7 @@ fn no_restart_with_windows_error_reporting() {
             "TelemetrySessionId": "telemetry_session",
             "SomeNestedJson": {{ "foo": "bar" }},
             "URL": "https://url.example.com",
-            "WindowsErrorReporting": "1",
+            {extra_fields_json}
             "ProcessType": "main",
             "CrashTime": "{time}",
             "MinidumpSha256Hash": "{MOCK_MINIDUMP_SHA256}"
@@ -590,22 +581,58 @@ fn no_restart_with_windows_error_reporting() {
             )
             .add_file_result(
                 "minidump.extra",
-                Ok(minidump_extra_contents.into()),
+                Ok(minidump_extra_contents.as_str().into()),
                 current_system_time(),
             );
         test.mock.set(MockFS, mock_files.clone());
         mock_files
     };
-    let ran_process = Counter::new();
-    let mock_ran_process = ran_process.clone();
-    test.mock.set(
-        Command::mock("my_process"),
-        Box::new(move |cmd| {
-            assert_eq!(cmd.args, &["a", "b"]);
-            mock_ran_process.inc();
-            Ok(crate::std::process::success_output())
-        }),
+    minidump_extra_contents
+}
+
+#[test]
+fn restart() {
+    let (mut test, ran_process )= prepare_restart_test();
+    test.run(|interact| {
+        interact.element("restart", |_style, b: &model::Button| b.click.fire(&()));
+    });
+    test.assert_files()
+        .saved_settings(Settings::default())
+        .submitted();
+    ran_process.assert_one();
+}
+
+#[test]
+fn no_restart_on_browser_shutdown() {
+    let (mut test, ran_process) = prepare_restart_test();
+    let minidump_extra_contents = customize_extra_file(
+        &mut test,
+        &[("ShutdownProgress", "xpcom-will-shutdown"), ("ShutdownReason", "Unknown")]
     );
+
+    test.run(|interact| {
+        interact.element("restart", |style, b: &model::Button| {
+            
+            
+            assert_eq!(style.visible.get(), false);
+            b.click.fire(&())
+        });
+    });
+    test.assert_files()
+        .saved_settings(Settings::default())
+        .submitted();
+    assert_eq!(ran_process.count(), 0);
+}
+
+#[test]
+fn no_restart_with_windows_error_reporting() {
+    let (mut test, ran_process) = prepare_restart_test();
+    let minidump_extra_contents = customize_extra_file(
+        &mut test,
+        &[("WindowsErrorReporting", "1")]
+    );
+    test.config.delete_dump = false;
+
     test.run(|interact| {
         interact.element("restart", |style, b: &model::Button| {
             
@@ -620,7 +647,7 @@ fn no_restart_with_windows_error_reporting() {
         let dmp = assert_files.data("pending/minidump.dmp");
         let extra = assert_files.data("pending/minidump.extra");
         assert_files
-            .check(extra, compact_json(minidump_extra_contents))
+            .check(extra, compact_json(&minidump_extra_contents))
             .check_bytes(dmp, MOCK_MINIDUMP_FILE);
     }
 
@@ -724,7 +751,7 @@ fn ping_and_event_files() {
                 serde_json::json! {{
                     "foo": "bar",
                     "MinidumpSha256Hash": MOCK_MINIDUMP_SHA256,
-                    "StackTraces": {}
+                    "StackTraces": "{}"
                 }}
             ),
         );
@@ -766,7 +793,7 @@ fn network_failure() {
                 serde_json::json! {{
                     "foo": "bar",
                     "MinidumpSha256Hash": MOCK_MINIDUMP_SHA256,
-                    "StackTraces": {}
+                    "StackTraces": "{}"
                 }}
             ),
         );
@@ -804,7 +831,7 @@ fn pingsender_failure() {
                     "foo": "bar",
                     "MinidumpSha256Hash": MOCK_MINIDUMP_SHA256,
                     // No crash ping UUID since pingsender fails
-                    "StackTraces": {}
+                    "StackTraces": "{}"
                 }}
             ),
         );
