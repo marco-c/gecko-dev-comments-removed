@@ -4,12 +4,15 @@
 
 package org.mozilla.fenix.tabstray.redux.reducer
 
+import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.tabstray.navigation.TabManagerNavDestination
 import org.mozilla.fenix.tabstray.navigation.TabManagerNavDestination.DeleteTabGroupConfirmationDialog
 import org.mozilla.fenix.tabstray.navigation.TabManagerNavDestination.ExpandedTabGroup
 import org.mozilla.fenix.tabstray.redux.action.TabGroupAction
+import org.mozilla.fenix.tabstray.redux.state.Page
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
 import org.mozilla.fenix.tabstray.redux.state.initializeTabGroupForm
+import kotlin.collections.plus
 
 /**
  * Reducer for [TabGroupAction] dispatched from the Tabs Tray store.
@@ -27,7 +30,7 @@ object TabGroupActionReducer {
         action: TabGroupAction,
     ): TabsTrayState {
         return when (action) {
-            is TabGroupAction.AddToTabGroup -> if (state.tabGroups.isEmpty()) {
+            is TabGroupAction.AddToTabGroup -> if (state.tabGroupState.groups.isEmpty()) {
                 state.navigateToCreateTabGroup()
             } else {
                 state.copy(backStack = state.backStack + TabManagerNavDestination.AddToTabGroup)
@@ -36,31 +39,37 @@ object TabGroupActionReducer {
             is TabGroupAction.AddToNewTabGroup -> state.navigateToCreateTabGroup()
 
             is TabGroupAction.NameChanged -> {
-                val form = requireNotNull(state.tabGroupFormState) {
+                val form = requireNotNull(state.tabGroupState.formState) {
                     "NameChanged dispatched with no TabGroupFormState"
                 }
                 state.copy(
-                    tabGroupFormState = form.copy(
-                        name = action.name,
-                        edited = true,
+                    tabGroupState = state.tabGroupState.copy(
+                        formState = form.copy(
+                            name = action.name,
+                            edited = true,
+                        ),
                     ),
                 )
             }
 
             is TabGroupAction.ThemeChanged -> {
-                val form = requireNotNull(state.tabGroupFormState) {
+                val form = requireNotNull(state.tabGroupState.formState) {
                     "ThemeChanged dispatched with no TabGroupFormState"
                 }
                 state.copy(
-                    tabGroupFormState = form.copy(
-                        theme = action.theme,
-                        edited = true,
+                    tabGroupState = state.tabGroupState.copy(
+                        formState = form.copy(
+                            theme = action.theme,
+                            edited = true,
+                        ),
                     ),
                 )
             }
 
             TabGroupAction.FormDismissed -> state.copy(
-                tabGroupFormState = null,
+                tabGroupState = state.tabGroupState.copy(
+                    formState = null,
+                ),
                 backStack = state.backStack.popTabGroupFlow(),
             )
 
@@ -69,13 +78,10 @@ object TabGroupActionReducer {
                 backStack = state.backStack.popTabGroupFlow(),
             )
 
-            is TabGroupAction.TabGroupClicked -> when (state.mode) {
-                is TabsTrayState.Mode.Normal -> state.copy(
-                    backStack = state.backStack + ExpandedTabGroup(group = action.group),
-                )
-
-                is TabsTrayState.Mode.Select -> state
-            }
+            is TabGroupAction.TabGroupClicked -> processTabGroupClick(
+                currentState = state,
+                group = action.group,
+            )
 
             is TabGroupAction.TabAddedToGroup -> state
 
@@ -93,14 +99,23 @@ object TabGroupActionReducer {
             )
 
             is TabGroupAction.EditTabGroupClicked -> state.copy(
-                tabGroupFormState = action.group.initializeTabGroupForm(),
+                tabGroupState = state.tabGroupState.copy(
+                    formState = action.group.initializeTabGroupForm(),
+                ),
                 backStack = state.navigateToEditTabGroup(),
+            )
+
+            is TabGroupAction.OpenTabGroupClicked -> state.copy(
+                selectedPage = Page.NormalTabs,
+                backStack = state.backStack + ExpandedTabGroup(group = action.group.copy(closed = false)),
             )
         }
     }
 
     private fun TabsTrayState.navigateToCreateTabGroup() = copy(
-        tabGroupFormState = initializeTabGroupForm(),
+        tabGroupState = tabGroupState.copy(
+            formState = initializeTabGroupForm(),
+        ),
         backStack = navigateToEditTabGroup(),
     )
 
@@ -116,4 +131,37 @@ object TabGroupActionReducer {
 
     private fun TabsTrayState.navigateToEditTabGroup(): List<TabManagerNavDestination> =
         backStack + TabManagerNavDestination.EditTabGroup
+
+    private fun processTabGroupClick(
+        currentState: TabsTrayState,
+        group: TabsTrayItem.TabGroup,
+    ): TabsTrayState = when (currentState.mode) {
+        is TabsTrayState.Mode.Normal -> currentState.copy(
+            backStack = currentState.backStack + ExpandedTabGroup(group = group),
+        )
+
+        is TabsTrayState.Mode.Select -> {
+            val selectedTabs = currentState.mode.selectedTabs.toHashSet()
+            val selectedTabGroups = currentState.mode.selectedTabGroups.toHashSet()
+
+            if (group in currentState.mode.selectedTabGroups) {
+                selectedTabGroups.remove(group)
+                selectedTabs.removeAll(group.tabs.toSet())
+            } else {
+                selectedTabGroups.add(group)
+                selectedTabs.addAll(group.tabs)
+            }
+
+            val newMode = if (selectedTabs.isEmpty() && selectedTabGroups.isEmpty()) {
+                TabsTrayState.Mode.Normal
+            } else {
+                TabsTrayState.Mode.Select(
+                    selectedTabs = selectedTabs,
+                    selectedTabGroups = selectedTabGroups,
+                )
+            }
+
+            currentState.copy(mode = newMode)
+        }
+    }
 }
