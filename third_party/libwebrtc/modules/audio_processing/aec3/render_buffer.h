@@ -88,12 +88,12 @@ class RenderBuffer {
   int Headroom() const {
     
     int headroom =
-        fft_buffer_->write < fft_buffer_->read
+        fft_buffer_->write <= fft_buffer_->read
             ? fft_buffer_->read - fft_buffer_->write
             : fft_buffer_->size - fft_buffer_->write + fft_buffer_->read;
 
     RTC_DCHECK_LE(0, headroom);
-    RTC_DCHECK_GE(fft_buffer_->size, headroom);
+    RTC_DCHECK_GT(fft_buffer_->size, headroom);
 
     return headroom;
   }
