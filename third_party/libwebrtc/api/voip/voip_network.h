@@ -12,8 +12,8 @@
 #define API_VOIP_VOIP_NETWORK_H_
 
 #include <cstdint>
+#include <span>
 
-#include "api/array_view.h"
 #include "api/voip/voip_base.h"
 
 namespace webrtc {
@@ -28,7 +28,7 @@ class VoipNetwork {
   
   
   virtual VoipResult ReceivedRTPPacket(ChannelId channel_id,
-                                       ArrayView<const uint8_t> rtp_packet) = 0;
+                                       std::span<const uint8_t> rtp_packet) = 0;
 
   
   
@@ -36,7 +36,7 @@ class VoipNetwork {
   
   virtual VoipResult ReceivedRTCPPacket(
       ChannelId channel_id,
-      ArrayView<const uint8_t> rtcp_packet) = 0;
+      std::span<const uint8_t> rtcp_packet) = 0;
 
  protected:
   virtual ~VoipNetwork() = default;

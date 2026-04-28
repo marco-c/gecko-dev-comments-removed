@@ -13,10 +13,10 @@
 
 #include <cstdint>
 #include <optional>
+#include <span>
 #include <string>
 
 #include "absl/strings/string_view.h"
-#include "api/array_view.h"
 #include "api/scoped_refptr.h"
 #include "api/stats/rtc_stats_report.h"
 #include "api/test/stats_observer_interface.h"
@@ -88,7 +88,7 @@ class VideoQualityAnalyzerInterface
   
   
   virtual void Start(std::string ,
-                     ArrayView<const std::string> ,
+                     std::span<const std::string> ,
                      int ) {}
 
   

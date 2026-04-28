@@ -15,10 +15,10 @@
 #include <stdint.h>
 
 #include <map>
+#include <span>
 #include <string>
 #include <vector>
 
-#include "api/array_view.h"
 #include "api/units/timestamp.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/numerics/running_statistics.h"
@@ -102,7 +102,7 @@ class SamplesStatsCounter {
   
   
   
-  ArrayView<const StatsSample> GetTimedSamples() const { return samples_; }
+  std::span<const StatsSample> GetTimedSamples() const { return samples_; }
   std::vector<double> GetSamples() const {
     std::vector<double> out;
     out.reserve(samples_.size());

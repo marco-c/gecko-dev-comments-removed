@@ -15,8 +15,7 @@
 #include <stdint.h>
 
 #include <optional>
-
-#include "api/array_view.h"
+#include <span>
 
 namespace webrtc {
 
@@ -26,7 +25,7 @@ class BitstreamParser {
   virtual ~BitstreamParser() = default;
 
   
-  virtual void ParseBitstream(ArrayView<const uint8_t> bitstream) = 0;
+  virtual void ParseBitstream(std::span<const uint8_t> bitstream) = 0;
 
   
   

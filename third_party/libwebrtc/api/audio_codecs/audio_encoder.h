@@ -16,12 +16,12 @@
 
 #include <memory>
 #include <optional>
+#include <span>
 #include <utility>
 #include <vector>
 
 #include "absl/base/attributes.h"
 #include "absl/strings/string_view.h"
-#include "api/array_view.h"
 #include "api/audio/audio_view.h"
 #include "api/call/bitrate_allocation.h"
 #include "api/units/data_rate.h"
@@ -150,7 +150,7 @@ class AudioEncoder {
   
   
   EncodedInfo Encode(uint32_t rtp_timestamp,
-                     ArrayView<const int16_t> audio,
+                     std::span<const int16_t> audio,
                      Buffer* encoded);
 
   
@@ -196,7 +196,7 @@ class AudioEncoder {
   
   
   
-  virtual ArrayView<std::unique_ptr<AudioEncoder>> ReclaimContainedEncoders();
+  virtual std::span<std::unique_ptr<AudioEncoder>> ReclaimContainedEncoders();
 
   
   virtual bool EnableAudioNetworkAdaptor(absl::string_view config);
@@ -260,7 +260,7 @@ class AudioEncoder {
   
   
   virtual EncodedInfo EncodeImpl(uint32_t rtp_timestamp,
-                                 ArrayView<const int16_t> audio,
+                                 std::span<const int16_t> audio,
                                  Buffer* encoded) = 0;
 };
 }  

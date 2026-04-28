@@ -13,11 +13,11 @@
 
 #include <cstddef>
 #include <iterator>
+#include <span>
 #include <variant>
 #include <vector>
 
 #include "absl/algorithm/container.h"
-#include "api/array_view.h"
 #include "rtc_base/checks.h"
 
 namespace webrtc {
@@ -45,7 +45,7 @@ namespace webrtc {
 
 
 template <typename T>
-using MonoView = ArrayView<T>;
+using MonoView = std::span<T>;
 
 
 
@@ -59,8 +59,8 @@ template <typename T>
 class InterleavedView {
  public:
   using value_type = T;
-  using iterator = typename ArrayView<T>::iterator;
-  using const_iterator = typename ArrayView<const T>::iterator;
+  using iterator = typename std::span<T>::iterator;
+  using const_iterator = typename std::span<const T>::iterator;
 
   InterleavedView() = default;
 
@@ -90,7 +90,7 @@ class InterleavedView {
 
   size_t num_channels() const { return num_channels_; }
   size_t samples_per_channel() const { return samples_per_channel_; }
-  ArrayView<T> data() const { return data_; }
+  std::span<T> data() const { return data_; }
   bool empty() const { return data_.empty(); }
   size_t size() const { return data_.size(); }
 
@@ -131,7 +131,7 @@ class InterleavedView {
   
   size_t num_channels_ = 0u;
   size_t samples_per_channel_ = 0u;
-  ArrayView<T> data_;
+  std::span<T> data_;
 };
 
 template <typename T>

@@ -14,9 +14,9 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <span>
 #include <vector>
 
-#include "api/array_view.h"
 #include "api/crypto/frame_decryptor_interface.h"
 #include "api/media_types.h"
 
@@ -36,9 +36,9 @@ class FakeFrameDecryptor : public FrameDecryptorInterface {
   
   Result Decrypt(MediaType media_type,
                  const std::vector<uint32_t>& csrcs,
-                 ArrayView<const uint8_t> additional_data,
-                 ArrayView<const uint8_t> encrypted_frame,
-                 ArrayView<uint8_t> frame) override;
+                 std::span<const uint8_t> additional_data,
+                 std::span<const uint8_t> encrypted_frame,
+                 std::span<uint8_t> frame) override;
   
   size_t GetMaxPlaintextByteSize(MediaType media_type,
                                  size_t encrypted_frame_size) override;

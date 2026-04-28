@@ -12,11 +12,11 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <span>
 #include <string_view>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/strings/string_view.h"
-#include "api/array_view.h"
 #include "api/candidate.h"
 #include "api/ref_count.h"
 #include "api/units/timestamp.h"
@@ -48,7 +48,7 @@ class RTC_EXPORT DatagramConnection : public RefCountInterface {
     struct PacketMetadata {
       Timestamp receive_time;
     };
-    virtual void OnPacketReceived(ArrayView<const uint8_t> data,
+    virtual void OnPacketReceived(std::span<const uint8_t> data,
                                   PacketMetadata metadata) = 0;
 
     
@@ -96,13 +96,13 @@ class RTC_EXPORT DatagramConnection : public RefCountInterface {
     
     
     PacketId id = 0;
-    ArrayView<const uint8_t> payload;
+    std::span<const uint8_t> payload;
   };
 
   
   
   
-  virtual void SendPackets(ArrayView<PacketSendParameters> packets) = 0;
+  virtual void SendPackets(std::span<PacketSendParameters> packets) = 0;
 
   
   

@@ -12,11 +12,11 @@
 #define API_RTP_TRANSCEIVER_INTERFACE_H_
 
 #include <optional>
+#include <span>
 #include <string>
 #include <vector>
 
 #include "absl/base/attributes.h"
-#include "api/array_view.h"
 #include "api/media_types.h"
 #include "api/ref_count.h"
 #include "api/rtc_error.h"
@@ -152,7 +152,7 @@ class RTC_EXPORT RtpTransceiverInterface : public RefCountInterface {
   
   
   virtual RTCError SetCodecPreferences(
-      ArrayView<RtpCodecCapability> codecs) = 0;
+      std::span<RtpCodecCapability> codecs) = 0;
   virtual std::vector<RtpCodecCapability> codec_preferences() const = 0;
 
   
@@ -172,7 +172,7 @@ class RTC_EXPORT RtpTransceiverInterface : public RefCountInterface {
   
   
   virtual RTCError SetHeaderExtensionsToNegotiate(
-      ArrayView<const RtpHeaderExtensionCapability> header_extensions) = 0;
+      std::span<const RtpHeaderExtensionCapability> header_extensions) = 0;
 
  protected:
   ~RtpTransceiverInterface() override = default;

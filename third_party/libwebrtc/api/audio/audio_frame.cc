@@ -13,9 +13,9 @@
 #include <cstdint>
 #include <cstring>
 #include <optional>
+#include <span>
 
 #include "absl/algorithm/container.h"
-#include "api/array_view.h"
 #include "api/audio/audio_view.h"
 #include "api/audio/channel_layout.h"
 #include "api/rtp_packet_infos.h"
@@ -137,8 +137,6 @@ InterleavedView<const int16_t> AudioFrame::data_view() const {
   
   
   
-  
-  
   return InterleavedView<const int16_t>(muted_ ? &zeroed_data()[0] : &data_[0],
                                         samples_per_channel_, num_channels_);
 }
@@ -213,9 +211,9 @@ void AudioFrame::SetSampleRateAndChannelSize(int sample_rate) {
 }
 
 
-ArrayView<const int16_t> AudioFrame::zeroed_data() {
+std::span<const int16_t> AudioFrame::zeroed_data() {
   static int16_t* null_data = new int16_t[kMaxDataSizeSamples]();
-  return ArrayView<const int16_t>(null_data, kMaxDataSizeSamples);
+  return std::span<const int16_t>(null_data, kMaxDataSizeSamples);
 }
 
 }  

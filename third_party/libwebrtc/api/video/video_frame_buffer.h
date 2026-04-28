@@ -13,9 +13,9 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <span>
 #include <string>
 
-#include "api/array_view.h"
 #include "api/ref_count.h"
 #include "api/scoped_refptr.h"
 #include "rtc_base/system/rtc_export.h"
@@ -129,7 +129,7 @@ class RTC_EXPORT VideoFrameBuffer : public RefCountInterface {
   
   
   virtual scoped_refptr<VideoFrameBuffer> GetMappedFrameBuffer(
-      ArrayView<Type> types);
+      std::span<Type> types);
 
   
   virtual std::string storage_representation() const;

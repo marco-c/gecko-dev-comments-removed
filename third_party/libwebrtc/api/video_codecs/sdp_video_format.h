@@ -13,10 +13,10 @@
 
 #include <map>
 #include <optional>
+#include <span>
 #include <string>
 
 #include "absl/container/inlined_vector.h"
-#include "api/array_view.h"
 #include "api/rtp_parameters.h"
 #include "api/video_codecs/scalability_mode.h"
 #include "rtc_base/system/rtc_export.h"
@@ -55,7 +55,7 @@ struct RTC_EXPORT SdpVideoFormat {
   
   
   bool IsSameCodec(const SdpVideoFormat& other) const;
-  bool IsCodecInList(ArrayView<const SdpVideoFormat> formats) const;
+  bool IsCodecInList(std::span<const SdpVideoFormat> formats) const;
 
   std::string ToString() const;
 
@@ -92,7 +92,7 @@ struct RTC_EXPORT SdpVideoFormat {
 
 
 std::optional<SdpVideoFormat> FuzzyMatchSdpVideoFormat(
-    ArrayView<const SdpVideoFormat> supported_formats,
+    std::span<const SdpVideoFormat> supported_formats,
     const SdpVideoFormat& format);
 
 }  

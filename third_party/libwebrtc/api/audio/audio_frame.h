@@ -16,8 +16,8 @@
 
 #include <array>
 #include <optional>
+#include <span>
 
-#include "api/array_view.h"
 #include "api/audio/audio_view.h"
 #include "api/audio/channel_layout.h"
 #include "api/rtp_packet_infos.h"
@@ -199,7 +199,7 @@ class AudioFrame {
   
   
   
-  static ArrayView<const int16_t> zeroed_data();
+  static std::span<const int16_t> zeroed_data();
 
   std::array<int16_t, kMaxDataSizeSamples> data_;
   bool muted_ = true;
