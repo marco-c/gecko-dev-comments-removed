@@ -29,6 +29,8 @@ class Document;
 }
 }  
 
+
+
 struct NodeOffset {
   nsCOMPtr<nsINode> mNode;
   int32_t mOffset;
@@ -36,6 +38,12 @@ struct NodeOffset {
   NodeOffset() : mOffset(0) {}
   NodeOffset(nsINode* aNode, int32_t aOffset)
       : mNode(aNode), mOffset(aOffset) {}
+  template <typename PT, typename RT>
+  explicit NodeOffset(const mozilla::RangeBoundaryBase<PT, RT>& aBoundary)
+      : mNode(aBoundary.GetContainer()),
+        mOffset(
+            *aBoundary.Offset(mozilla::RangeBoundaryBase<
+                              PT, RT>::OffsetFilter::kValidOrInvalidOffsets)) {}
 
   bool operator==(const NodeOffset& aOther) const {
     return mNode == aOther.mNode && mOffset == aOther.mOffset;
@@ -92,8 +100,10 @@ class MOZ_STACK_CLASS mozInlineSpellWordUtil {
 
   
   
-  nsresult SetPositionAndEnd(nsINode* aPositionNode, int32_t aPositionOffset,
-                             nsINode* aEndNode, int32_t aEndOffset);
+  template <typename PT, typename RT>
+  nsresult SetPositionAndEnd(
+      const mozilla::RangeBoundaryBase<PT, RT>& aCurrentPosition,
+      const mozilla::RangeBoundaryBase<PT, RT>& aEndBoundary);
 
   
   
