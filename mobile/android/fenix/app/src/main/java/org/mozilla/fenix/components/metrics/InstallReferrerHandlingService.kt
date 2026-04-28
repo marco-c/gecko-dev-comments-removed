@@ -26,7 +26,7 @@ const val ADJUST_REFTAG_PREFIX = "adjust_reftag="
  *
  * This should be only used when user has not gone through the onboarding flow.
  */
-class MarketingAttributionService(private val context: Context) {
+class InstallReferrerHandlingService(private val context: Context) {
     private val logger = Logger("MarketingAttributionService")
     private var referrerClient: InstallReferrerClient? = null
 
@@ -62,6 +62,8 @@ class MarketingAttributionService(private val context: Context) {
                                 response = installReferrerResponse
                                 val utmParams =
                                     UTMParams.parseUTMParameters(installReferrerResponse)
+
+                                context.settings().isUserMetaAttributed = isMetaAttribution(installReferrerResponse)
 
                                 distributionIdManager.updateDistributionIdFromUtmParams(utmParams)
                                 CoroutineScope(Dispatchers.IO).launch {
@@ -116,6 +118,16 @@ class MarketingAttributionService(private val context: Context) {
     companion object {
         private val marketingPrefixes = listOf(GCLID_PREFIX, ADJUST_REFTAG_PREFIX)
         var response: String? = null
+
+        @VisibleForTesting
+        internal fun isMetaAttribution(installReferrerResponse: String?): Boolean {
+            if (installReferrerResponse.isNullOrBlank()) {
+                return false
+            }
+
+            val utmParams = UTMParams.parseUTMParameters(installReferrerResponse)
+            return MetaParams.extractMetaAttribution(utmParams.content) != null
+        }
 
         @VisibleForTesting
         internal suspend fun shouldShowMarketingOnboarding(
