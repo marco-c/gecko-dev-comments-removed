@@ -26,6 +26,8 @@ from gecko_taskgraph.util.bugbug import CT_LOW, BugbugTimeoutException, push_sch
 
 logger = logging.getLogger(__name__)
 here = os.path.abspath(os.path.dirname(__file__))
+
+_CHUNK_SUFFIX_RE = re.compile(r"-\d+$")
 resolver = TestResolver.from_environment(cwd=here, loader_cls=TestManifestLoader)
 
 VARIANTS_YML = os.path.join(TEST_CONFIGS, "variants.yml")
@@ -146,6 +148,12 @@ def guess_mozinfo_from_task(task, repo="", app_version="", test_tags=[]):
     return info
 
 
+def _strip_job_name(job_name):
+    
+    name = _CHUNK_SUFFIX_RE.sub("", job_name)
+    return name.replace("-geckoview-", "-")
+
+
 @functools.cache
 def _load_manifest_runtimes_data():
     index_route = "gecko.v2.mozilla-central.latest.source.test-info-manifest-timings"
@@ -200,16 +208,6 @@ def get_runtimes(platform, suite_name):
             platform_candidates.append(shippable)
     matched_jobs = []
     used_platform = None
-
-    
-    
-    
-    def _strip_job_name(job_name):
-        name = re.sub(r"-\d+$", "", job_name)
-        name = name.replace("-geckoview-", "-")
-        name = name.replace("-swr", "")
-        name = name.replace("-1proc", "")
-        return name
 
     
     for candidate in platform_candidates:
