@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "absl/functional/any_invocable.h"
+#include "api/rtc_error.h"
 #include "api/sequence_checker.h"
 #include "rtc_base/system/no_unique_address.h"
 #include "rtc_base/thread.h"
@@ -35,23 +36,26 @@ namespace webrtc {
 
 
 
+
 class ScopedOperationsBatcher {
  public:
+  using SimpleBatchTask = absl::AnyInvocable<void() &&>;
+  using FinalizerTask = absl::AnyInvocable<void() &&>;
+  using BatchTaskWithFinalizer =
+      absl::AnyInvocable<RTCErrorOr<FinalizerTask>() &&>;
+
   explicit ScopedOperationsBatcher(Thread* target_thread);
   ~ScopedOperationsBatcher();
 
-  void Run();
+  RTCError Run();
 
   
   
-  void Add(absl::AnyInvocable<void() &&> task);
-  void AddWithFinalizer(
-      absl::AnyInvocable<absl::AnyInvocable<void() &&>() &&> task);
+  void Add(SimpleBatchTask task);
+  void AddWithFinalizer(BatchTaskWithFinalizer task);
 
  private:
-  using BatchedTask =
-      std::variant<absl::AnyInvocable<void() &&>,
-                   absl::AnyInvocable<absl::AnyInvocable<void() &&>() &&>>;
+  using BatchedTask = std::variant<SimpleBatchTask, BatchTaskWithFinalizer>;
 
   RTC_NO_UNIQUE_ADDRESS SequenceChecker sequence_checker_;
   Thread* const target_thread_;
