@@ -286,7 +286,7 @@ bool DocAccessibleParent::AttachChild(RemoteAccessible* aParent,
   if (!aChild->GetWrapper()) {
     ProxyCreated(aChild);
   }
-  if (aChild->IsTableCell()) {
+  if (aChild->IsTableRow() || aChild->IsTableCell()) {
     CachedTableAccessible::Invalidate(aChild);
   }
   if (aChild->IsOuterDoc()) {
@@ -338,7 +338,7 @@ void DocAccessibleParent::ShutdownOrPrepareForMove(RemoteAccessible* aAcc) {
   }
   
   
-  if (aAcc->IsTable() || aAcc->IsTableCell()) {
+  if (aAcc->IsTable() || aAcc->IsTableRow() || aAcc->IsTableCell()) {
     
     
     CachedTableAccessible::Invalidate(aAcc);

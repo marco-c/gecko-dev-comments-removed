@@ -3086,7 +3086,7 @@ void DocAccessible::UncacheChildrenInSubtree(LocalAccessible* aRoot) {
   
   
   
-  if (aRoot->IsTable() || aRoot->IsTableCell()) {
+  if (aRoot->IsTable() || aRoot->IsTableRow() || aRoot->IsTableCell()) {
     CachedTableAccessible::Invalidate(aRoot);
   }
 

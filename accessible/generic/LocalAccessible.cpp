@@ -2907,7 +2907,7 @@ void LocalAccessible::BindToParent(LocalAccessible* aParent,
       static_cast<uint32_t>((mParent->IsAlert() || mParent->IsInsideAlert())) &
       eInsideAlert;
 
-  if (IsTableCell()) {
+  if (IsTableRow() || IsTableCell()) {
     CachedTableAccessible::Invalidate(this);
   }
 
@@ -2933,7 +2933,7 @@ void LocalAccessible::BindToParent(LocalAccessible* aParent,
 void LocalAccessible::UnbindFromParent() {
   
   
-  if (IsTable() || IsTableCell()) {
+  if (IsTableRow() || IsTable() || IsTableCell()) {
     CachedTableAccessible::Invalidate(this);
   }
 
