@@ -71,20 +71,10 @@ std::string AV1GetTierOrDefault(const CodecParameterMap& params) {
   return GetFmtpParameterOrDefault(params, kAv1FmtpTier, "0");
 }
 
-bool AV1IsSameTier(const CodecParameterMap& left,
-                   const CodecParameterMap& right) {
-  return AV1GetTierOrDefault(left) == AV1GetTierOrDefault(right);
-}
-
 std::string AV1GetLevelIdxOrDefault(const CodecParameterMap& params) {
   
   
   return GetFmtpParameterOrDefault(params, kAv1FmtpLevelIdx, "5");
-}
-
-bool AV1IsSameLevelIdx(const CodecParameterMap& left,
-                       const CodecParameterMap& right) {
-  return AV1GetLevelIdxOrDefault(left) == AV1GetLevelIdxOrDefault(right);
 }
 
 #ifdef RTC_ENABLE_H265
@@ -117,10 +107,13 @@ bool IsSameCodecSpecific(const std::string& name1,
            H264IsSamePacketizationMode(params1, params2);
   if (either_name_matches(kVp9CodecName))
     return VP9IsSameProfile(params1, params2);
+  
+  
+  
+  
+  
   if (either_name_matches(kAv1CodecName))
-    return AV1IsSameProfile(params1, params2) &&
-           AV1IsSameTier(params1, params2) &&
-           AV1IsSameLevelIdx(params1, params2);
+    return AV1IsSameProfile(params1, params2);
 #ifdef RTC_ENABLE_H265
   if (either_name_matches(kH265CodecName)) {
     return H265IsSameProfile(params1, params2) &&
@@ -170,15 +163,7 @@ bool MatchesWithReferenceAttributesAndComparator(
         potential_match.params.find(kCodecParamNotInNameValueFormat);
     bool has_parameters_1 = red_parameters_1 != codec_to_match.params.end();
     bool has_parameters_2 = red_parameters_2 != potential_match.params.end();
-    
-    
-    
-    if (potential_match.id == Codec::kIdNotSet && !has_parameters_2) {
-      return true;
-    }
-    if (codec_to_match.id == Codec::kIdNotSet && !has_parameters_1) {
-      return true;
-    }
+
     if (has_parameters_1 && has_parameters_2) {
       
       
@@ -210,7 +195,16 @@ bool MatchesWithReferenceAttributesAndComparator(
       return true;
     }
     if (!has_parameters_1 && !has_parameters_2) {
-      
+      return true;
+    }
+    
+    
+    
+    if (codec_to_match.type == Codec::Type::kAudio &&
+        codec_to_match.name == kRedCodecName &&
+        (codec_to_match.id == Codec::kIdNotSet ||
+         potential_match.id == Codec::kIdNotSet ||
+         codec_to_match.id == potential_match.id)) {
       return true;
     }
     return false;
@@ -302,6 +296,11 @@ bool MatchesWithCodecRules(const Codec& left_codec, const Codec& right_codec) {
        right_codec.id <= kLowerDynamicRangeMax) ||
       (right_codec.id >= kUpperDynamicRangeMin &&
        right_codec.id <= kUpperDynamicRangeMax);
+
+  if (left_codec.type != right_codec.type) {
+    return false;
+  }
+
   bool matches_id;
   if ((is_id_in_dynamic_range && is_codec_id_in_dynamic_range) ||
       left_codec.id == Codec::kIdNotSet || right_codec.id == Codec::kIdNotSet) {
@@ -367,12 +366,22 @@ std::optional<Codec> FindMatchingCodec(const std::vector<Codec>& codecs1,
 bool IsSameRtpCodec(const Codec& codec, const RtpCodec& rtp_codec) {
   RtpCodecParameters rtp_codec2 = codec.ToCodecParameters();
 
-  return absl::EqualsIgnoreCase(rtp_codec.name, rtp_codec2.name) &&
-         rtp_codec.kind == rtp_codec2.kind &&
-         rtp_codec.num_channels == rtp_codec2.num_channels &&
-         rtp_codec.clock_rate == rtp_codec2.clock_rate &&
-         InsertDefaultParams(rtp_codec.name, rtp_codec.parameters) ==
-             InsertDefaultParams(rtp_codec2.name, rtp_codec2.parameters);
+  if (!absl::EqualsIgnoreCase(rtp_codec.name, rtp_codec2.name) ||
+      rtp_codec.kind != rtp_codec2.kind ||
+      rtp_codec.num_channels != rtp_codec2.num_channels ||
+      rtp_codec.clock_rate != rtp_codec2.clock_rate) {
+    return false;
+  }
+
+  
+  
+  if (rtp_codec.kind == MediaType::AUDIO &&
+      absl::EqualsIgnoreCase(rtp_codec.name, kRedCodecName)) {
+    return true;
+  }
+
+  return InsertDefaultParams(rtp_codec.name, rtp_codec.parameters) ==
+         InsertDefaultParams(rtp_codec2.name, rtp_codec2.parameters);
 }
 
 bool IsSameRtpCodecIgnoringLevel(const Codec& codec,
@@ -400,7 +409,8 @@ bool IsSameRtpCodecIgnoringLevel(const Codec& codec,
   }
   
   
-  if (rtp_codec.kind == MediaType::AUDIO && rtp_codec.name == kRedCodecName) {
+  if (rtp_codec.kind == MediaType::AUDIO &&
+      absl::EqualsIgnoreCase(rtp_codec.name, kRedCodecName)) {
     return true;
   }
 

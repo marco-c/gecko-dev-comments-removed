@@ -105,6 +105,63 @@ TEST(CodecComparatorsTest, MatchesWithReferenceAttributesRed) {
   EXPECT_FALSE(MatchesWithReferenceAttributes(codec_1, codec_5));
 }
 
+TEST(CodecComparatorsTest, RedParametersMismatch) {
+  Codec with_params = CreateAudioCodec(101, kRedCodecName, 48000, 2);
+  with_params.SetParam(kCodecParamNotInNameValueFormat, "111/111");
+
+  Codec no_params = CreateAudioCodec(102, kRedCodecName, 48000, 2);
+
+  
+  
+  EXPECT_FALSE(MatchesWithReferenceAttributes(with_params, no_params));
+  EXPECT_FALSE(MatchesWithReferenceAttributes(no_params, with_params));
+
+  
+  
+  
+  Codec no_params_unassigned = no_params;
+  no_params_unassigned.id = Codec::kIdNotSet;
+  EXPECT_TRUE(
+      MatchesWithReferenceAttributes(with_params, no_params_unassigned));
+  EXPECT_TRUE(
+      MatchesWithReferenceAttributes(no_params_unassigned, with_params));
+
+  
+  
+  Codec with_params_unassigned = with_params;
+  with_params_unassigned.id = Codec::kIdNotSet;
+  EXPECT_TRUE(
+      MatchesWithReferenceAttributes(with_params_unassigned, no_params));
+  EXPECT_TRUE(
+      MatchesWithReferenceAttributes(no_params, with_params_unassigned));
+
+  
+  EXPECT_TRUE(MatchesWithReferenceAttributes(with_params_unassigned,
+                                             no_params_unassigned));
+  EXPECT_TRUE(MatchesWithReferenceAttributes(no_params_unassigned,
+                                             with_params_unassigned));
+
+  
+  Codec no_params_2 = CreateAudioCodec(103, kRedCodecName, 48000, 2);
+  EXPECT_TRUE(MatchesWithReferenceAttributes(no_params, no_params_2));
+
+  
+  
+  Codec video_red_codec = CreateVideoCodec(107, kRedCodecName);
+  EXPECT_FALSE(MatchesWithReferenceAttributes(no_params, video_red_codec));
+  EXPECT_FALSE(MatchesWithReferenceAttributes(with_params, video_red_codec));
+
+  
+  
+  Codec video_red_with_params = CreateVideoCodec(108, kRedCodecName);
+  video_red_with_params.SetParam(kCodecParamNotInNameValueFormat, "120/120");
+  Codec video_red_no_params = CreateVideoCodec(109, kRedCodecName);
+  EXPECT_FALSE(MatchesWithReferenceAttributes(video_red_with_params,
+                                              video_red_no_params));
+  EXPECT_FALSE(MatchesWithReferenceAttributes(video_red_no_params,
+                                              video_red_with_params));
+}
+
 struct TestParams {
   std::string name;
   SdpVideoFormat codec1;
@@ -469,6 +526,24 @@ TEST(CodecTest, TestAV1CodecMatches) {
   
   EXPECT_FALSE(c_profile0.Matches(c_profile2));
   EXPECT_FALSE(c_no_profile.Matches(c_profile2));
+
+  
+  Codec c_tier0 = CreateVideoCodec(95, kAv1CodecName);
+  c_tier0.params[kAv1FmtpProfile] = kProfile0;
+  c_tier0.params[kAv1FmtpTier] = "0";
+  Codec c_tier1 = CreateVideoCodec(95, kAv1CodecName);
+  c_tier1.params[kAv1FmtpProfile] = kProfile0;
+  c_tier1.params[kAv1FmtpTier] = "1";
+  EXPECT_TRUE(c_tier0.Matches(c_tier1));
+
+  
+  Codec c_level0 = CreateVideoCodec(95, kAv1CodecName);
+  c_level0.params[kAv1FmtpProfile] = kProfile0;
+  c_level0.params[kAv1FmtpLevelIdx] = "0";
+  Codec c_level1 = CreateVideoCodec(95, kAv1CodecName);
+  c_level1.params[kAv1FmtpProfile] = kProfile0;
+  c_level1.params[kAv1FmtpLevelIdx] = "1";
+  EXPECT_TRUE(c_level0.Matches(c_level1));
 }
 
 
