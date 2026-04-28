@@ -4,6 +4,8 @@
 
 
 
+
+
 #ifndef CTKnownLogs_h
 #define CTKnownLogs_h
 
@@ -12,7 +14,7 @@
 
 #include <stddef.h>
 
-static const PRTime kCTExpirationTime = INT64_C(1782849918000000);
+static const PRTime kCTExpirationTime = INT64_C(1783022634000000);
 
 namespace mozilla::ct {
 
