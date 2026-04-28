@@ -513,9 +513,6 @@ struct AssemblerBufferSettings {
   unsigned headerSize;
 
   
-  size_t instBufferAlign;
-
-  
   
   unsigned pcBias;
 
@@ -596,9 +593,6 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
 
   
   Pool pool_;
-
-  
-  static constexpr size_t InstBufferAlign = settings.instBufferAlign;
 
   struct PoolInfo {
     
