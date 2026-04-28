@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(isConstructor(String.prototype.sub), false, 'isConstructor(String.prototype.sub) must return false');
+
+assert.throws(TypeError, () => {
+  new String.prototype.sub();
+});
+

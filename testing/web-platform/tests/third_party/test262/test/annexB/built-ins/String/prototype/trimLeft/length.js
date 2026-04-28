@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(String.prototype.trimLeft, "length", {
+  value: 0,
+  enumerable: false,
+  writable: false,
+  configurable: true,
+});

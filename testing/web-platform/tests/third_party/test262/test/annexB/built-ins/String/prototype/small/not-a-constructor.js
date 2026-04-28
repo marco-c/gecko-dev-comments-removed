@@ -1,0 +1,32 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  isConstructor(String.prototype.small),
+  false,
+  'isConstructor(String.prototype.small) must return false'
+);
+
+assert.throws(TypeError, () => {
+  new String.prototype.small();
+});
+

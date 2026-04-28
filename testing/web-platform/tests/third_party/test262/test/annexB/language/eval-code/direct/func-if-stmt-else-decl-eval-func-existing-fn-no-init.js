@@ -1,0 +1,42 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var init;
+
+(function() {
+  eval(
+    'init = f;if (false) ; else function f() { return "inner declaration"; }function f() {\
+      return "outer declaration";\
+    }'
+  );
+}());
+
+assert.sameValue(init(), 'outer declaration');

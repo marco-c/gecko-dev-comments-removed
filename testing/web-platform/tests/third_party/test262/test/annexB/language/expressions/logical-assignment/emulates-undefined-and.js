@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var IsHTMLDDA = $262.IsHTMLDDA;
+var value = IsHTMLDDA;
+assert.sameValue(value &&= unresolved, IsHTMLDDA);
+assert.sameValue(value, IsHTMLDDA);

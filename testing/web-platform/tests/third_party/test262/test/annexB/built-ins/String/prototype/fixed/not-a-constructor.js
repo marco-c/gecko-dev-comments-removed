@@ -1,0 +1,32 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  isConstructor(String.prototype.fixed),
+  false,
+  'isConstructor(String.prototype.fixed) must return false'
+);
+
+assert.throws(TypeError, () => {
+  new String.prototype.fixed();
+});
+

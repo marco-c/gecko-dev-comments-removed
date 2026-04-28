@@ -1,0 +1,35 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class MyRegExp extends RegExp {}
+
+assert.throws(
+  TypeError,
+  function () {
+    MyRegExp.rightContext;
+  },
+  "RegExp.rightContext getter throws for subclass receiver"
+);
+
+assert.throws(
+  TypeError,
+  function () {
+    MyRegExp["$'"];
+  },
+  "RegExp.$' getter throws for subclass receiver"
+);

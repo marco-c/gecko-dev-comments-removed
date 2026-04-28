@@ -1,0 +1,35 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const other = $262.createRealm().global;
+
+assert.throws(
+  TypeError,
+  function () {
+    Reflect.get(RegExp, "lastParen", other.RegExp);
+  },
+  "RegExp.lastParen getter throws for cross-realm receiver"
+);
+
+assert.throws(
+  TypeError,
+  function () {
+    Reflect.get(RegExp, "$+", other.RegExp);
+  },
+  "RegExp.$+ getter throws for cross-realm receiver"
+);

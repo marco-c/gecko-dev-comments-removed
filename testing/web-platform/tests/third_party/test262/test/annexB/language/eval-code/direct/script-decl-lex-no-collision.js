@@ -1,0 +1,33 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+eval('if (true) { function test262Fn() {} }');
+
+$262.evalScript('let test262Fn = 1;');
+
+assert.sameValue(test262Fn, 1);

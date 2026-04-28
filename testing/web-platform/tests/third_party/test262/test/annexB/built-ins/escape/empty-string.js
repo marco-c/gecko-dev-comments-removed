@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(escape(''), '');

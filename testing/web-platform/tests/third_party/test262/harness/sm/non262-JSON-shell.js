@@ -1,0 +1,63 @@
+
+
+
+
+function testJSON(str) {
+  
+  
+  
+
+  
+  try {
+    JSON.parse(str);
+  } catch (e) {
+    throw new Test262Error("string <" + str + "> should have parsed as JSON");
+  }
+
+  
+  try {
+    JSON.parse(str + " ");
+  } catch (e) {
+    throw new Test262Error("string <" + str + " > should have parsed as JSON");
+  }
+
+  
+  try {
+    JSON.parse(" " + str);
+  } catch (e) {
+    throw new Test262Error("string < " + str + "> should have parsed as JSON");
+  }
+
+  
+  try {
+    JSON.parse(" " + str + " ");
+  } catch (e) {
+    throw new Test262Error("string < " + str + " > should have parsed as JSON");
+  }
+}
+
+function testJSONSyntaxError(str) {
+  
+  
+  
+
+  
+  assert.throws(SyntaxError, function() {
+    JSON.parse(str);
+  }, "string <" + str + "> shouldn't have parsed as JSON");
+
+  
+  assert.throws(SyntaxError, function() {
+    JSON.parse(str + " ");
+  }, "string <" + str + " > shouldn't have parsed as JSON");
+
+  
+  assert.throws(SyntaxError, function() {
+    JSON.parse(" " + str);
+  }, "string < " + str + "> shouldn't have parsed as JSON");
+
+  
+  assert.throws(SyntaxError, function() {
+    JSON.parse(" " + str + " ");
+  }, "string < " + str + " > shouldn't have parsed as JSON");
+}

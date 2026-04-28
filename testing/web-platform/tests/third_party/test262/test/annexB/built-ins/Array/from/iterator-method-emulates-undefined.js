@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var items = {};
+items[Symbol.iterator] = $262.IsHTMLDDA;
+
+assert.throws(TypeError, function() {
+  Array.from(items);
+});

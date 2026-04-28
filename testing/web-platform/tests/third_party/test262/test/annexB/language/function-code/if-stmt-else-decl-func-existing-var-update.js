@@ -1,0 +1,46 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var after;
+
+(function() {
+  
+
+  if (false) ; else function f() { return 'function declaration'; }
+
+  after = f;
+
+  var f = 123;
+}());
+
+assert.sameValue(typeof after, 'function');
+assert.sameValue(after(), 'function declaration');
+

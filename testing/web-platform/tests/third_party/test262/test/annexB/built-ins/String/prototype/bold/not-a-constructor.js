@@ -1,0 +1,32 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  isConstructor(String.prototype.bold),
+  false,
+  'isConstructor(String.prototype.bold) must return false'
+);
+
+assert.throws(TypeError, () => {
+  new String.prototype.bold();
+});
+

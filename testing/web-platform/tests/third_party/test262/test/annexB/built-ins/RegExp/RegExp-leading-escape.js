@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(/\1/.source, "\\1");
+assert.sameValue(/\a/.source, "\\a");

@@ -1,0 +1,36 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var init;
+
+(function() {
+  eval(
+    'init = f;\
+    \
+    {\
+      function f() {}\
+    }if (true) function f() {  } else function _f() {}'
+  );
+}());
+
+assert.sameValue(init, undefined);

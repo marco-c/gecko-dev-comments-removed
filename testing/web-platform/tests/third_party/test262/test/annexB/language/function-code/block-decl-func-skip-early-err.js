@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var init, after;
+
+(function() {
+  let f = 123;
+  init = f;
+
+  {
+    function f() {  }
+  }
+
+  after = f;
+}());
+
+assert.sameValue(init, 123, 'binding is not initialized to `undefined`');
+assert.sameValue(after, 123, 'value is not updated following evaluation');

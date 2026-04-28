@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(isConstructor(String.prototype.big), false, 'isConstructor(String.prototype.big) must return false');
+
+assert.throws(TypeError, () => {
+  new String.prototype.big();
+});
+

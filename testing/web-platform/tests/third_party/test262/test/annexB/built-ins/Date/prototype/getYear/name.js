@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(Date.prototype.getYear, "name", {
+  enumerable: false,
+  writable: false,
+  configurable: true,
+  value: "getYear"
+});

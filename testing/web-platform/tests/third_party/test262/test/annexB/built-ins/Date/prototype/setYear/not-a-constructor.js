@@ -1,0 +1,32 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  isConstructor(Date.prototype.setYear),
+  false,
+  'isConstructor(Date.prototype.setYear) must return false'
+);
+
+assert.throws(TypeError, () => {
+  let date = new Date(Date.now()); new date.setYear();
+});
+

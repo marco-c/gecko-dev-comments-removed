@@ -1,0 +1,40 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var updated;
+
+(function() {
+  {
+    function f() {
+      return 'first declaration';
+    }
+  }
+
+  {
+    function f() { return 'second declaration'; }
+  }
+
+  updated = f;
+}());
+
+assert.sameValue(typeof updated, 'function');
+assert.sameValue(updated(), 'second declaration');

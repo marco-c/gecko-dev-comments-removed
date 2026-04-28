@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(String.prototype.trimRight, String.prototype.trimEnd);

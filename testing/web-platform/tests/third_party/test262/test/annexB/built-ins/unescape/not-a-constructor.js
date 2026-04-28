@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(isConstructor(unescape), false, 'isConstructor(unescape) must return false');
+
+assert.throws(TypeError, () => {
+  new unescape('');
+});
+

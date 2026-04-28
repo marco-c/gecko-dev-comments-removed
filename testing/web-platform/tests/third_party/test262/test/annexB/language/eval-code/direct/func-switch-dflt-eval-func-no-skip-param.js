@@ -1,0 +1,32 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var init, after;
+
+(function(f) {
+  eval(
+    'init = f;switch (1) {' +
+    '  default:' +
+    '    function f() {  }' +
+    '}\
+    after = f;'
+  );
+}(123));
+
+assert.sameValue(init, 123, 'binding is not initialized to `undefined`');
+assert.sameValue(
+  typeof after, 'function', 'value is updated following evaluation'
+);

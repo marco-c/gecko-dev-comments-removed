@@ -1,0 +1,36 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var after;
+
+(function() {
+  eval(
+    'switch (1) {' +
+    '  default:' +
+    '    function f() { return "declaration"; }' +
+    '}\
+    after = f;'
+  );
+}());
+
+assert.sameValue(typeof after, 'function');
+assert.sameValue(after(), 'declaration');

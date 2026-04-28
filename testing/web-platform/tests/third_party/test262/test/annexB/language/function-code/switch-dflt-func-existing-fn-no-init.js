@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var init;
+
+(function() {
+  init = f;
+
+  switch (1) {
+    default:
+      function f() { return 'inner declaration'; }
+  }
+
+  function f() {
+    return 'outer declaration';
+  }
+}());
+
+assert.sameValue(init(), 'outer declaration');

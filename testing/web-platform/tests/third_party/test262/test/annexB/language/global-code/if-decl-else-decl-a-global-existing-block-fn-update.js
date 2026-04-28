@@ -1,0 +1,41 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+{
+  function f() {
+    return 'first declaration';
+  }
+}
+
+if (true) function f() { return 'second declaration'; } else function _f() {}
+
+assert.sameValue(typeof f, 'function');
+assert.sameValue(f(), 'second declaration');

@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(f, undefined);
+
+{
+  function f() {}
+}
+
+{
+  function f() {  }
+}

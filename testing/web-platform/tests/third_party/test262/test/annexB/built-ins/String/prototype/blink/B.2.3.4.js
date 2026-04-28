@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue('_'.blink(), '<blink>_</blink>');
+assert.sameValue('<'.blink(), '<blink><</blink>');
+assert.sameValue(String.prototype.blink.call(0x2A), '<blink>42</blink>');
+assert.throws(TypeError, function() {
+  String.prototype.blink.call(undefined);
+});
+assert.throws(TypeError, function() {
+  String.prototype.blink.call(null);
+});

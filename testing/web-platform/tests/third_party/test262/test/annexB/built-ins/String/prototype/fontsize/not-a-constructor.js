@@ -1,0 +1,32 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  isConstructor(String.prototype.fontsize),
+  false,
+  'isConstructor(String.prototype.fontsize) must return false'
+);
+
+assert.throws(TypeError, () => {
+  new String.prototype.fontsize();
+});
+

@@ -1,0 +1,35 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+eval(
+  'switch (1) {' +
+  '  case 1:' +
+  '    function f() { return "function declaration"; }' +
+  '}\
+  '
+);
+
+assert.sameValue(typeof f, 'function');
+assert.sameValue(f(), 'function declaration');
+
+var f = 123;

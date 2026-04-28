@@ -1,0 +1,32 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  isConstructor(String.prototype.strike),
+  false,
+  'isConstructor(String.prototype.strike) must return false'
+);
+
+assert.throws(TypeError, () => {
+  new String.prototype.strike();
+});
+

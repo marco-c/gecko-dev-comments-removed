@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(f(), 'outer declaration');
+
+if (true) function f() { return 'inner declaration'; } else function _f() {}
+
+function f() {
+  return 'outer declaration';
+}

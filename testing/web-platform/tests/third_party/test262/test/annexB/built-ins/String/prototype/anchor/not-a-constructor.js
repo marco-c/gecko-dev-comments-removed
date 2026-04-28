@@ -1,0 +1,32 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  isConstructor(String.prototype.anchor),
+  false,
+  'isConstructor(String.prototype.anchor) must return false'
+);
+
+assert.throws(TypeError, () => {
+  new String.prototype.anchor();
+});
+

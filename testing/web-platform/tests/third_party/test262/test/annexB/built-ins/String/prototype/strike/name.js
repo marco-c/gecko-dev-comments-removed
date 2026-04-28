@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(String.prototype.strike, "name", {
+  enumerable: false,
+  writable: false,
+  configurable: true,
+  value: "strike"
+});

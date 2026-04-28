@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(unescape('%U0000'), '%U0000');
+assert.sameValue(unescape('%t0000'), '%t0000');
+assert.sameValue(unescape('%v0000'), '%v0000');
+assert.sameValue(unescape('%%0000'), '%\x0000');

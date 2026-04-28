@@ -1,0 +1,40 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var after;
+
+(function() {
+  eval(
+    'switch (1) {' +
+    '  case 1:' +
+    '    function f() { return "inner declaration"; }' +
+    '}\
+    after = f;\
+    \
+    function f() {\
+      return "outer declaration";\
+    }'
+  );
+}());
+
+assert.sameValue(typeof after, 'function');
+assert.sameValue(after(), 'inner declaration');

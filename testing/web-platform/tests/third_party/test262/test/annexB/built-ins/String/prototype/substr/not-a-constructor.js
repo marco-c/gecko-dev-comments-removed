@@ -1,0 +1,32 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  isConstructor(String.prototype.substr),
+  false,
+  'isConstructor(String.prototype.substr) must return false'
+);
+
+assert.throws(TypeError, () => {
+  new String.prototype.substr();
+});
+

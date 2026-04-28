@@ -1,0 +1,41 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function async() {}
+
+assert.throws(ReferenceError, function() {
+  async() = 1;
+});
+
+assert.throws(ReferenceError, function() {
+  async() += 1;
+});
+
+assert.throws(ReferenceError, function() {
+  async()++;
+});
+
+assert.throws(ReferenceError, function() {
+  ++async();
+});
+
+assert.throws(ReferenceError, function() {
+  for (async() in [1]) {}
+});
+
+assert.throws(ReferenceError, function() {
+  for (async() of [1]) {}
+});

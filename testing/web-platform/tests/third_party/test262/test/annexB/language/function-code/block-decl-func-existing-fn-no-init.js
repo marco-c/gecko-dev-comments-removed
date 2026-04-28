@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var init;
+
+(function() {
+  init = f;
+
+  {
+    function f() { return 'inner declaration'; }
+  }
+
+  function f() {
+    return 'outer declaration';
+  }
+}());
+
+assert.sameValue(init(), 'outer declaration');

@@ -1,0 +1,324 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+{
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  let getReport = $262.agent.getReport.bind($262.agent);
+
+  $262.agent.getReport = function() {
+    var r;
+    while ((r = getReport()) == null) {
+      $262.agent.sleep(1);
+    }
+    return r;
+  };
+
+  if (this.setTimeout === undefined) {
+    (function(that) {
+      that.setTimeout = function(callback, delay) {
+        let p = Promise.resolve();
+        let start = Date.now();
+        let end = start + delay;
+        function check() {
+          if ((end - Date.now()) > 0) {
+            p.then(check);
+          }
+          else {
+            callback();
+          }
+        }
+        p.then(check);
+      }
+    })(this);
+  }
+
+  $262.agent.setTimeout = setTimeout;
+
+  $262.agent.getReportAsync = function() {
+    return new Promise(function(resolve) {
+      (function loop() {
+        let result = getReport();
+        if (!result) {
+          setTimeout(loop, 1000);
+        } else {
+          resolve(result);
+        }
+      })();
+    });
+  };
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+$262.agent.safeBroadcast = function(typedArray) {
+  let Constructor = Object.getPrototypeOf(typedArray).constructor;
+  let temp = new Constructor(
+    new SharedArrayBuffer(Constructor.BYTES_PER_ELEMENT)
+  );
+  try {
+    
+    
+    Atomics.wait(temp, 0, Constructor === Int32Array ? 1 : BigInt(1));
+  } catch (error) {
+    throw new Test262Error(`${Constructor.name} cannot be used as a shared typed array. (${error})`);
+  }
+
+  $262.agent.broadcast(typedArray.buffer);
+};
+
+$262.agent.safeBroadcastAsync = async function(ta, index, expected) {
+  await $262.agent.broadcast(ta.buffer);
+  await $262.agent.waitUntil(ta, index, expected);
+  await $262.agent.tryYield();
+  return await Atomics.load(ta, index);
+};
+
+
+
+
+
+
+
+
+
+
+
+
+$262.agent.waitUntil = function(typedArray, index, expected) {
+
+  var agents = 0;
+  while ((agents = Atomics.load(typedArray, index)) !== expected) {
+    
+  }
+  assert.sameValue(agents, expected, "Reporting number of 'agents' equals the value of 'expected'");
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+$262.agent.timeouts = {
+  yield: 100,
+  small: 200,
+  long: 1000,
+  huge: 10000,
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+$262.agent.tryYield = function() {
+  $262.agent.sleep($262.agent.timeouts.yield);
+};
+
+
+
+
+
+
+
+
+
+$262.agent.trySleep = function(ms) {
+  $262.agent.sleep(ms);
+};

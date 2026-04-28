@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof this.unescape, "function");
+assert.sameValue(typeof this["unescape"], "function");
+
+verifyProperty(this, "unescape", {
+  writable: true,
+  enumerable: false,
+  configurable: true
+});

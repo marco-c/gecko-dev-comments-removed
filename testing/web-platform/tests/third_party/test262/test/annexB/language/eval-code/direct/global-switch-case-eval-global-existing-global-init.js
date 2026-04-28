@@ -1,0 +1,45 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Object.defineProperty(fnGlobalObject(), 'f', {
+  value: 'x',
+  enumerable: true,
+  writable: true,
+  configurable: false
+});
+
+eval(
+  'var global = fnGlobalObject();\
+  assert.sameValue(f, "x", "binding is not reinitialized");\
+  \
+  verifyProperty(global, "f", {\
+    enumerable: true,\
+    writable: true,\
+    configurable: false\
+  }, { restore: true });switch (1) {' +
+  '  case 1:' +
+  '    function f() {  }' +
+  '}\
+  '
+);
+
+assert.sameValue(typeof f, "function");
+verifyProperty(global, "f", {
+  enumerable: true,
+  writable: true,
+  configurable: false
+});

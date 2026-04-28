@@ -1,0 +1,34 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+{
+  function f() {
+    return 'first declaration';
+  }
+}
+
+{
+  function f() { return 'second declaration'; }
+}
+
+assert.sameValue(typeof f, 'function');
+assert.sameValue(f(), 'second declaration');

@@ -1,0 +1,32 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  isConstructor(Date.prototype.toGMTString),
+  false,
+  'isConstructor(Date.prototype.toGMTString) must return false'
+);
+
+assert.throws(TypeError, () => {
+  let date = new Date(Date.now()); new date.toGMTString();
+});
+

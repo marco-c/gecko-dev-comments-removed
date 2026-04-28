@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+assert(/\x/.test("x"), "/\\x/");
+assert(/\xa/.test("xa"), "/\\xa/");
+
+
+assert(/\u/.test("u"), "/\\u/");
+assert(/\ua/.test("ua"), "/\\ua/");

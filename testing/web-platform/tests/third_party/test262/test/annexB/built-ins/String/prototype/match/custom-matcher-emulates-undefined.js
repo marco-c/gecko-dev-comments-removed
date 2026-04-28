@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var regexp = $262.IsHTMLDDA;
+var matcherGets = 0;
+Object.defineProperty(regexp, Symbol.match, {
+  get: function() {
+    matcherGets += 1;
+    return regexp;
+  },
+  configurable: true,
+});
+
+assert.sameValue("".match(regexp), null);
+assert.sameValue(matcherGets, 1);

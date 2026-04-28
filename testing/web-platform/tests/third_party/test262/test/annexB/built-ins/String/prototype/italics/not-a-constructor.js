@@ -1,0 +1,32 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  isConstructor(String.prototype.italics),
+  false,
+  'isConstructor(String.prototype.italics) must return false'
+);
+
+assert.throws(TypeError, () => {
+  new String.prototype.italics();
+});
+
