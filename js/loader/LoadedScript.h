@@ -38,8 +38,8 @@ class ScriptLoadRequest;
 
 using Utf8Unit = mozilla::Utf8Unit;
 
-void HostAddRefScriptFetchInfo(const Value& aPrivate);
-void HostReleaseScriptFetchInfo(const Value& aPrivate);
+void HostAddRefTopLevelScript(const Value& aPrivate);
+void HostReleaseTopLevelScript(const Value& aPrivate);
 
 class ClassicScript;
 class ModuleScript;
@@ -54,90 +54,14 @@ class LoadContextBase;
 
 
 
-class ScriptFetchInfo : public nsISupports {
- public:
-  ScriptFetchInfo(ScriptKind aKind,
-                  mozilla::dom::ReferrerPolicy aReferrerPolicy,
-                  ScriptFetchOptions* aFetchOptions, nsIURI* aURI);
-
-  NS_DECL_ISUPPORTS
-
-  size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
-
-  bool IsForModulePreload() const { return mIsForModulePreload; }
-  void SetForModulePreload(bool aValue) { mIsForModulePreload = aValue; }
-
-  bool IsForModuleScript() const { return mKind == ScriptKind::eModule; }
-  bool IsForEventScript() const { return mKind == ScriptKind::eEvent; }
-
-  mozilla::dom::ReferrerPolicy ReferrerPolicy() const {
-    return mReferrerPolicy;
-  }
-  void UpdateReferrerPolicy(mozilla::dom::ReferrerPolicy aReferrerPolicy) {
-    mReferrerPolicy = aReferrerPolicy;
-  }
-
-  ScriptFetchOptions* FetchOptions() const { return mFetchOptions; }
-
-  nsIURI* BaseURL() const { return mBaseURL; }
-  void SetBaseURL(nsIURI* aBaseURL) { mBaseURL = aBaseURL; }
-
-  
-
-
-
-  void SetBaseURLFromChannelAndOriginalURI(nsIChannel* aChannel,
-                                           nsIURI* aOriginalURI);
-
-  void AssociateWithScript(JSScript* aScript);
-  void AssociateWithModule(JSObject* aModuleRecord);
-
- protected:
-  virtual ~ScriptFetchInfo() = default;
-
- private:
-  
-  
-  
-  bool mIsForModulePreload = false;
-
-  
-  ScriptKind mKind;
-
-  
-  
-  
-  
-  mozilla::dom::ReferrerPolicy mReferrerPolicy;
-
-  
-  
-  
-  RefPtr<ScriptFetchOptions> mFetchOptions;
-
-  
-  
-  
-  
-  
-  nsCOMPtr<nsIURI> mBaseURL;
-};
-
-
-
-
-
-
-
-
-
 
 
 class LoadedScript : public nsIMemoryReporter {
  protected:
-  LoadedScript(ScriptKind aKind, nsIURI* aURI);
+  LoadedScript(ScriptKind aKind, mozilla::dom::ReferrerPolicy aReferrerPolicy,
+               ScriptFetchOptions* aFetchOptions, nsIURI* aURI);
 
-  LoadedScript(const LoadedScript& aOther);
+  LoadedScript(const LoadedScript& aOther, ScriptFetchOptions* aFetchOptions);
 
   template <typename T, typename... Args>
   friend RefPtr<T> mozilla::MakeRefPtr(Args&&... aArgs);
@@ -158,6 +82,10 @@ class LoadedScript : public nsIMemoryReporter {
   NS_DECL_NSIMEMORYREPORTER;
   NS_DECL_CYCLE_COLLECTION_CLASS(LoadedScript)
 
+  
+  static already_AddRefed<LoadedScript> FromCache(
+      const LoadedScript& aScript, ScriptFetchOptions* aFetchOptions);
+
   uint16_t ClampedRefCountForTelemetry() const {
     uintptr_t count = mRefCnt.get();
     if (count > 100) {
@@ -174,12 +102,18 @@ class LoadedScript : public nsIMemoryReporter {
   inline ClassicScript* AsClassicScript();
   inline ModuleScript* AsModuleScript();
 
-  nsIURI* GetURI() const { return mURI; }
+  
+  ScriptFetchOptions* GetFetchOptions() const { return mFetchOptions; }
 
-  nsIURI* CachedBaseURL() const { return mCachedBaseURL; }
-  mozilla::dom::ReferrerPolicy CachedReferrerPolicy() const {
-    return mCachedReferrerPolicy;
+  mozilla::dom::ReferrerPolicy ReferrerPolicy() const {
+    return mReferrerPolicy;
   }
+
+  nsIURI* GetURI() const { return mURI; }
+  void SetBaseURL(nsIURI* aBaseURL) { mBaseURL = aBaseURL; }
+  nsIURI* BaseURL() const { return mBaseURL; }
+
+  void AssociateWithScript(JSScript* aScript);
 
  public:
   
@@ -257,13 +191,10 @@ class LoadedScript : public nsIMemoryReporter {
     mDataType = DataType::eSerializedStencil;
   }
 
-  void ConvertToCachedStencil(mozilla::dom::ReferrerPolicy aReferrerPolicy,
-                              nsIURI* aBaseURL) {
+  void ConvertToCachedStencil() {
     MOZ_ASSERT(HasStencil());
     SetUnknownDataType();
     mDataType = DataType::eCachedStencil;
-    mCachedReferrerPolicy = aReferrerPolicy;
-    mCachedBaseURL = aBaseURL;
   }
 
   void SetWasmBytes() {
@@ -425,6 +356,13 @@ class LoadedScript : public nsIMemoryReporter {
   void SetIsEverHitFromMemoryCache() { mIsEverHitFromMemoryCache = true; }
   bool IsEverHitFromMemoryCache() const { return mIsEverHitFromMemoryCache; }
 
+  
+
+
+
+  void SetBaseURLFromChannelAndOriginalURI(nsIChannel* aChannel,
+                                           nsIURI* aOriginalURI);
+
   bool IsDirty() const { return mIsDirty; }
   void SetDirty() {
     MOZ_ASSERT(HasCacheEntryId());
@@ -475,12 +413,10 @@ class LoadedScript : public nsIMemoryReporter {
  private:
   const ScriptKind mKind;
 
+ protected:
   
   
-  
-  
-  
-  mozilla::dom::ReferrerPolicy mCachedReferrerPolicy;
+  mozilla::dom::ReferrerPolicy mReferrerPolicy;
 
  public:
   
@@ -527,14 +463,11 @@ class LoadedScript : public nsIMemoryReporter {
   
   uint64_t mIsEverHitFromMemoryCache : 1;
 
+  RefPtr<ScriptFetchOptions> mFetchOptions;
   nsCOMPtr<nsIURI> mURI;
 
   
-  
-  
-  
-  
-  nsCOMPtr<nsIURI> mCachedBaseURL;
+  nsCOMPtr<nsIURI> mBaseURL;
 
   
   
@@ -593,7 +526,26 @@ class LoadedScriptDelegate {
   using ScriptTextBuffer = LoadedScript::ScriptTextBuffer<Unit>;
   using MaybeSourceText = LoadedScript::MaybeSourceText;
 
+  mozilla::dom::ReferrerPolicy ReferrerPolicy() const {
+    return GetLoadedScript()->ReferrerPolicy();
+  }
+  void UpdateReferrerPolicy(mozilla::dom::ReferrerPolicy aReferrerPolicy) {
+    GetLoadedScript()->AsModuleScript()->UpdateReferrerPolicy(aReferrerPolicy);
+  }
+
+  ScriptFetchOptions* FetchOptions() const {
+    return GetLoadedScript()->GetFetchOptions();
+  }
+
   nsIURI* URI() const { return GetLoadedScript()->GetURI(); }
+
+  nsIURI* BaseURL() const { return GetLoadedScript()->BaseURL(); }
+  void SetBaseURL(nsIURI* aBaseURL) { GetLoadedScript()->SetBaseURL(aBaseURL); }
+  void SetBaseURLFromChannelAndOriginalURI(nsIChannel* aChannel,
+                                           nsIURI* aOriginalURI) {
+    GetLoadedScript()->SetBaseURLFromChannelAndOriginalURI(aChannel,
+                                                           aOriginalURI);
+  }
 
   bool IsUnknownDataType() const {
     return GetLoadedScript()->IsUnknownDataType();
@@ -696,7 +648,8 @@ class ClassicScript final : public LoadedScript {
 
  private:
   
-  explicit ClassicScript(nsIURI* aURI);
+  ClassicScript(mozilla::dom::ReferrerPolicy aReferrerPolicy,
+                ScriptFetchOptions* aFetchOptions, nsIURI* aURI);
 
   friend class ScriptLoadRequest;
 };
@@ -705,14 +658,16 @@ class EventScript final : public LoadedScript {
   ~EventScript() = default;
 
  public:
-  explicit EventScript(nsIURI* aURI);
+  EventScript(mozilla::dom::ReferrerPolicy aReferrerPolicy,
+              ScriptFetchOptions* aFetchOptions, nsIURI* aURI);
 };
 
 class ImportMapScript final : public LoadedScript {
   ~ImportMapScript() = default;
 
  public:
-  explicit ImportMapScript(nsIURI* aURI);
+  ImportMapScript(mozilla::dom::ReferrerPolicy aReferrerPolicy,
+                  ScriptFetchOptions* aFetchOptions, nsIURI* aURI);
 };
 
 
@@ -723,11 +678,7 @@ class ModuleScript final : public LoadedScript {
   Heap<JSObject*> mModuleRecord;
   Heap<Value> mParseError;
   Heap<Value> mErrorToRethrow;
-
-  
-  
-  RefPtr<ScriptFetchInfo> mFetchInfoForAccessingPreloadFlag;
-
+  bool mForPreload = false;
   bool mHadImportMap = false;
 
   mozilla::UniquePtr<JS::loader::ResolvedModuleSet> mPreloadedResolvedSet;
@@ -741,9 +692,10 @@ class ModuleScript final : public LoadedScript {
 
  private:
   
-  ModuleScript(nsIURI* aURI, ScriptFetchInfo* aFetchInfo);
+  ModuleScript(mozilla::dom::ReferrerPolicy aReferrerPolicy,
+               ScriptFetchOptions* aFetchOptions, nsIURI* aURI);
 
-  ModuleScript(const LoadedScript& other, ScriptFetchInfo* aFetchInfo);
+  ModuleScript(const LoadedScript& other, ScriptFetchOptions* aFetchOptions);
 
   template <typename T, typename... Args>
   friend RefPtr<T> mozilla::MakeRefPtr(Args&&... aArgs);
@@ -753,8 +705,8 @@ class ModuleScript final : public LoadedScript {
  public:
   
   
-  static already_AddRefed<ModuleScript> FromCache(const LoadedScript& aScript,
-                                                  ScriptFetchInfo* aFetchInfo);
+  static already_AddRefed<ModuleScript> FromCache(
+      const LoadedScript& aScript, ScriptFetchOptions* aFetchOptions);
   already_AddRefed<LoadedScript> ToCache();
 
   void SetModuleRecord(Handle<JSObject*> aModuleRecord);
@@ -769,9 +721,7 @@ class ModuleScript final : public LoadedScript {
   Value ErrorToRethrow() const { return mErrorToRethrow; }
   bool HasParseError() const { return !mParseError.isUndefined(); }
   bool HasErrorToRethrow() const { return !mErrorToRethrow.isUndefined(); }
-  bool ForPreload() const {
-    return mFetchInfoForAccessingPreloadFlag->IsForModulePreload();
-  }
+  bool ForPreload() const { return mForPreload; }
   bool HadImportMap() const { return mHadImportMap; }
 
   
@@ -779,7 +729,13 @@ class ModuleScript final : public LoadedScript {
   void ResetPreload();
   void Shutdown();
 
+  void UnlinkModuleRecord();
+
   friend void CheckModuleScriptPrivate(LoadedScript*, const Value&);
+
+  void UpdateReferrerPolicy(mozilla::dom::ReferrerPolicy aReferrerPolicy) {
+    mReferrerPolicy = aReferrerPolicy;
+  }
 
   bool HasPreloadedResolvedSet() { return !!mPreloadedResolvedSet; }
   ResolvedModuleSet* GetPreloadedResolvedSet();

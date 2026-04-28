@@ -152,21 +152,6 @@ class ScriptLoadRequest : public nsISupports,
     return mState == State::Ready || mState == State::Canceled;
   }
 
-  mozilla::dom::ReferrerPolicy ReferrerPolicy() const {
-    return FetchInfo()->ReferrerPolicy();
-  }
-
-  nsIURI* BaseURL() const { return FetchInfo()->BaseURL(); }
-  void SetBaseURL(nsIURI* aBaseURL) { FetchInfo()->SetBaseURL(aBaseURL); }
-  void SetBaseURLFromChannelAndOriginalURI(nsIChannel* aChannel,
-                                           nsIURI* aOriginalURI) {
-    FetchInfo()->SetBaseURLFromChannelAndOriginalURI(aChannel, aOriginalURI);
-  }
-
-  ScriptFetchOptions* FetchOptions() const {
-    return FetchInfo()->FetchOptions();
-  }
-
   mozilla::dom::RequestPriority FetchPriority() const {
     return FetchOptions()->mFetchPriority;
   }
@@ -289,9 +274,6 @@ class ScriptLoadRequest : public nsISupports,
   bool HadPostponed() const { return mHadPostponed_; }
   void SetHadPostponed() { mHadPostponed_ = true; }
 
-  const ScriptFetchInfo* FetchInfo() const { return mFetchInfo; }
-  ScriptFetchInfo* FetchInfo() { return mFetchInfo; }
-
  public:
   
 
@@ -358,8 +340,6 @@ class ScriptLoadRequest : public nsISupports,
 
   
   RefPtr<LoadedScript> mLoadedScript;
-
-  RefPtr<ScriptFetchInfo> mFetchInfo;
 
   
   
