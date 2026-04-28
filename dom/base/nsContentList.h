@@ -126,11 +126,10 @@ class nsSimpleContentList : public nsBaseContentList {
 
 
 
-class nsEmptyContentList final : public nsBaseContentList,
-                                 public nsIHTMLCollection {
+class nsEmptyContentList final : public nsIHTMLCollection,
+                                 public nsBaseContentList {
  public:
-  explicit nsEmptyContentList(nsINode* aRoot)
-      : nsBaseContentList(), mRoot(aRoot) {}
+  explicit nsEmptyContentList(nsINode* aRoot) : mRoot(aRoot) {}
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(nsEmptyContentList,
@@ -196,8 +195,8 @@ struct nsContentListKey {
 
 
 
-class nsContentList : public nsBaseContentList,
-                      public nsIHTMLCollection,
+class nsContentList : public nsIHTMLCollection,
+                      public nsBaseContentList,
                       public nsStubMultiMutationObserver {
  protected:
   enum class State : uint8_t {
@@ -236,11 +235,16 @@ class nsContentList : public nsBaseContentList,
 
 
 
+
+
   nsContentList(nsINode* aRootNode, int32_t aMatchNameSpaceId,
                 nsAtom* aHTMLMatchAtom, nsAtom* aXMLMatchAtom,
-                bool aDeep = true, bool aLiveList = true);
+                bool aDeep = true, bool aLiveList = true,
+                bool aKnownParserCreated = false);
 
   
+
+
 
 
 
@@ -262,13 +266,17 @@ class nsContentList : public nsBaseContentList,
                 nsContentListDestroyFunc aDestroyFunc, void* aData,
                 bool aDeep = true, nsAtom* aMatchAtom = nullptr,
                 int32_t aMatchNameSpaceId = kNameSpaceID_None,
-                bool aFuncMayDependOnAttr = true, bool aLiveList = true);
+                bool aFuncMayDependOnAttr = true, bool aLiveList = true,
+                bool aKnownParserCreated = false);
 
   
+  using nsWrapperCache::GetWrapper;
   using nsWrapperCache::GetWrapperPreserveColor;
   using nsWrapperCache::PreserveWrapper;
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
+
+  using nsIHTMLCollection::IndexedGetter;
 
  protected:
   virtual ~nsContentList();
@@ -430,7 +438,7 @@ class nsContentList : public nsBaseContentList,
 
 
 
-  inline void BringSelfUpToDate(bool aDoFlush);
+  void BringSelfUpToDate(bool aDoFlush);
 
   
 

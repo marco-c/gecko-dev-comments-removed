@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_HTMLOptionElement_h_
 #define mozilla_dom_HTMLOptionElement_h_
 
@@ -122,10 +120,6 @@ class HTMLOptionElement final : public nsGenericHTMLElement {
   JSObject* WrapNode(JSContext*, JS::Handle<JSObject*> aGivenProto) override;
 
   bool mSelectedChanged = false;
-
-  
-  
-  bool mIsInSetDefaultSelected = false;
 };
 
 }  

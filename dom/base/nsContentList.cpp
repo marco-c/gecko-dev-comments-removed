@@ -374,9 +374,9 @@ GetFuncStringContentList<nsCacheableFuncStringHTMLCollection>(
 
 nsContentList::nsContentList(nsINode* aRootNode, int32_t aMatchNameSpaceId,
                              nsAtom* aHTMLMatchAtom, nsAtom* aXMLMatchAtom,
-                             bool aDeep, bool aLiveList)
-    : nsBaseContentList(),
-      mRootNode(aRootNode),
+                             bool aDeep, bool aLiveList,
+                             bool aKnownParserCreated)
+    : mRootNode(aRootNode),
       mMatchNameSpaceId(aMatchNameSpaceId),
       mHTMLMatchAtom(aHTMLMatchAtom),
       mXMLMatchAtom(aXMLMatchAtom),
@@ -406,17 +406,17 @@ nsContentList::nsContentList(nsINode* aRootNode, int32_t aMatchNameSpaceId,
   
   
   
-  Document* doc = mRootNode->GetUncomposedDoc();
-  mFlushesNeeded = doc && !doc->IsHTMLDocument();
+  mFlushesNeeded = (aKnownParserCreated || aRootNode->IsInUncomposedDoc()) &&
+                   !mIsHTMLDocument;
 }
 
 nsContentList::nsContentList(nsINode* aRootNode, nsContentListMatchFunc aFunc,
                              nsContentListDestroyFunc aDestroyFunc, void* aData,
                              bool aDeep, nsAtom* aMatchAtom,
                              int32_t aMatchNameSpaceId,
-                             bool aFuncMayDependOnAttr, bool aLiveList)
-    : nsBaseContentList(),
-      mRootNode(aRootNode),
+                             bool aFuncMayDependOnAttr, bool aLiveList,
+                             bool aKnownParserCreated)
+    : mRootNode(aRootNode),
       mMatchNameSpaceId(aMatchNameSpaceId),
       mHTMLMatchAtom(aMatchAtom),
       mXMLMatchAtom(aMatchAtom),
@@ -439,12 +439,8 @@ nsContentList::nsContentList(nsINode* aRootNode, nsContentListMatchFunc aFunc,
   }
 
   
-  
-  
-  
-  
-  Document* doc = mRootNode->GetUncomposedDoc();
-  mFlushesNeeded = doc && !doc->IsHTMLDocument();
+  mFlushesNeeded = (aKnownParserCreated || aRootNode->IsInUncomposedDoc()) &&
+                   !aRootNode->OwnerDoc()->IsHTMLDocument();
 }
 
 nsContentList::~nsContentList() {

@@ -847,6 +847,12 @@ class MOZ_GSL_POINTER Span {
     return index_type(it - begin);
   }
 
+  
+  template <typename Item>
+  constexpr bool Contains(const Item& aItem) const {
+    return IndexOf(aItem) != npos;
+  }
+
  private:
   
   

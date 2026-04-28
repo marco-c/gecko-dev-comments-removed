@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_HTMLOptGroupElement_h
 #define mozilla_dom_HTMLOptGroupElement_h
 
@@ -24,18 +22,6 @@ class HTMLOptGroupElement final : public nsGenericHTMLElement {
   
   NS_INLINE_DECL_REFCOUNTING_INHERITED(HTMLOptGroupElement,
                                        nsGenericHTMLElement)
-
-  
-  void InsertChildBefore(
-      nsIContent* aKid, nsIContent* aBeforeThis, bool aNotify, ErrorResult& aRv,
-      nsINode* aOldParent = nullptr,
-      MutationEffectOnScript aMutationEffectOnScript =
-          MutationEffectOnScript::DropTrustWorthiness) override;
-  void RemoveChildNode(
-      nsIContent* aKid, bool aNotify, const BatchRemovalState* aState,
-      nsINode* aNewParent = nullptr,
-      MutationEffectOnScript aMutationEffectOnScript =
-          MutationEffectOnScript::DropTrustWorthiness) override;
 
   
   void GetEventTargetParent(EventChainPreVisitor& aVisitor) override;
