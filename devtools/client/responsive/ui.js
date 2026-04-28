@@ -91,6 +91,8 @@ class ResponsiveUI extends EventEmitter {
     this.destroyed = false;
     
     this.rdmFrame = null;
+    
+    this.screenBox = null;
 
     
     this.onResizeDrag = this.onResizeDrag.bind(this);
@@ -183,6 +185,9 @@ class ResponsiveUI extends EventEmitter {
     rdmFrame.src = "chrome://devtools/content/responsive/toolbar.xhtml";
     rdmFrame.classList.add("rdm-toolbar");
 
+    this.screenBox = doc.createElement("div");
+    this.screenBox.classList.add("rdm-screen-box");
+
     
     this.dynamicToolbar = doc.createElement("div");
     this.dynamicToolbar.classList.add("rdm-dynamic-toolbar", "dynamic-toolbar");
@@ -229,7 +234,10 @@ class ResponsiveUI extends EventEmitter {
     
     this.browserContainerEl.prepend(rdmFrame);
 
-    this.browserStackEl.append(
+    
+    this.browserStackEl.append(this.screenBox);
+
+    this.screenBox.append(
       this.dynamicToolbar,
       resizeHandle,
       resizeHandleX,
@@ -344,12 +352,7 @@ class ResponsiveUI extends EventEmitter {
     this.rdmFrame.contentWindow?.destroy();
 
     this.rdmFrame.remove();
-
-    
-    this.resizeHandle.remove();
-    this.resizeHandleX.remove();
-    this.resizeHandleY.remove();
-    this.dynamicToolbar.remove();
+    this.screenBox.remove();
 
     this.browserContainerEl.classList.remove("responsive-mode");
     this.browserStackEl.style.removeProperty("--rdm-width");
@@ -399,6 +402,7 @@ class ResponsiveUI extends EventEmitter {
     this.tab = null;
     this.initialized = null;
     this.rdmFrame = null;
+    this.screenBox = null;
     this.resizeHandle = null;
     this.resizeHandleX = null;
     this.resizeHandleY = null;
