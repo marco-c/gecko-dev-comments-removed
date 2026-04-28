@@ -75,7 +75,6 @@ const PERMISSION_MASKS = {
 const PREF_DISCOVERY_API_URL = "extensions.getAddons.discovery.api_url";
 const PREF_THEME_RECOMMENDATION_URL =
   "extensions.recommendations.themeRecommendationUrl";
-const PREF_RECOMMENDATION_HIDE_NOTICE = "extensions.recommendations.hideNotice";
 const PREF_PRIVACY_POLICY_URL = "extensions.recommendations.privacyPolicyUrl";
 const PREF_RECOMMENDATION_ENABLED = "browser.discovery.enabled";
 const PREF_TELEMETRY_ENABLED = "datareporting.healthreport.uploadEnabled";
@@ -4174,94 +4173,6 @@ class RecommendedAddonList extends HTMLElement {
 }
 customElements.define("recommended-addon-list", RecommendedAddonList);
 
-class ColorwayRemovalNotice extends HTMLElement {
-  connectedCallback() {
-    
-    
-    
-    if (
-      Services.prefs.getIntPref(
-        ColorwayThemeMigration.CLEANUP_PREF,
-        ColorwayThemeMigration.CLEANUP_UNKNOWN
-      ) != ColorwayThemeMigration.CLEANUP_COMPLETED_WITH_BUILTIN
-    ) {
-      return;
-    }
-
-    this.appendChild(importTemplate("colorway-removal-notice"));
-    this.addEventListener("click", this);
-    this.messageBar = this.querySelector("moz-message-bar");
-    this.messageBar.addEventListener("message-bar:user-dismissed", this);
-  }
-
-  handleEvent(e) {
-    if (e.type === "message-bar:user-dismissed") {
-      Services.prefs.setIntPref(
-        ColorwayThemeMigration.CLEANUP_PREF,
-        ColorwayThemeMigration.CLEANUP_COMPLETED
-      );
-    }
-
-    if (
-      e.type === "click" &&
-      e.target.getAttribute("action") === "open-amo-colorway-collection"
-    ) {
-      openAmoInTab(this, "collections/4757633/colorways");
-    }
-  }
-}
-customElements.define("colorway-removal-notice", ColorwayRemovalNotice);
-
-class ForcedColorsNotice extends HTMLElement {
-  connectedCallback() {
-    this.forcedColorsMediaQuery = window.matchMedia("(forced-colors)");
-    this.forcedColorsMediaQuery.addListener(this);
-    this.render();
-  }
-
-  render() {
-    let shouldShowNotice =
-      FORCED_COLORS_OVERRIDE_ENABLED && this.forcedColorsMediaQuery.matches;
-    this.hidden = !shouldShowNotice;
-    if (shouldShowNotice && this.childElementCount == 0) {
-      this.appendChild(importTemplate("forced-colors-notice"));
-    }
-  }
-
-  handleEvent(e) {
-    if (e.type == "change") {
-      this.render();
-    }
-  }
-
-  disconnectedCallback() {
-    this.forcedColorsMediaQuery?.removeListener(this);
-    this.forcedColorsMediaQuery = null;
-  }
-}
-customElements.define("forced-colors-notice", ForcedColorsNotice);
-
-class TaarMessageBar extends HTMLElement {
-  connectedCallback() {
-    this.hidden =
-      Services.prefs.getBoolPref(PREF_RECOMMENDATION_HIDE_NOTICE, false) ||
-      !DiscoveryAPI.clientIdDiscoveryEnabled;
-    if (this.childElementCount == 0 && !this.hidden) {
-      this.appendChild(importTemplate("taar-notice"));
-      this.addEventListener("click", this);
-      this.messageBar = this.querySelector("moz-message-bar");
-      this.messageBar.addEventListener("message-bar:user-dismissed", this);
-    }
-  }
-
-  handleEvent(e) {
-    if (e.type == "message-bar:user-dismissed") {
-      Services.prefs.setBoolPref(PREF_RECOMMENDATION_HIDE_NOTICE, true);
-    }
-  }
-}
-customElements.define("taar-notice", TaarMessageBar);
-
 class RecommendedFooter extends HTMLElement {
   connectedCallback() {
     if (this.childElementCount == 0) {
@@ -4409,12 +4320,18 @@ gViewController.defineView("list", async type => {
   });
 
   
+  
   if (type === "theme") {
     const colorwayNotice = document.createElement("colorway-removal-notice");
     frag.appendChild(colorwayNotice);
 
     const forcedColorsNotice = document.createElement("forced-colors-notice");
     frag.appendChild(forcedColorsNotice);
+
+    const smartWindowNotice = document.createElement(
+      "smartwindow-themes-notice"
+    );
+    frag.appendChild(smartWindowNotice);
   }
 
   list.setSections(sections);
