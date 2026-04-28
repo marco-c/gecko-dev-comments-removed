@@ -163,8 +163,6 @@ gfxTextRun::gfxTextRun(const gfxTextRunFactory::Parameters* aParams,
       mUserData(aParams->mUserData),
       mFontGroup(aFontGroup),
       mFlags2(aFlags2),
-      mReleasedFontGroup(false),
-      mReleasedFontGroupSkippedDrawing(false),
       mShapingState(eShapingState_Normal) {
   NS_ASSERTION(mAppUnitsPerDevUnit > 0, "Invalid app unit scale");
   NS_ADDREF(mFontGroup);
@@ -200,37 +198,13 @@ gfxTextRun::~gfxTextRun() {
   mFlags2 = ~nsTextFrameUtils::Flags();
 #endif
 
-  
-  
-  
-  if (!mReleasedFontGroup) {
 #ifndef RELEASE_OR_BETA
-    gfxTextPerfMetrics* tp = mFontGroup->GetTextPerfMetrics();
-    if (tp) {
-      tp->current.textrunDestr++;
-    }
-#endif
-    NS_RELEASE(mFontGroup);
+  gfxTextPerfMetrics* tp = mFontGroup->GetTextPerfMetrics();
+  if (tp) {
+    tp->current.textrunDestr++;
   }
-}
-
-void gfxTextRun::ReleaseFontGroup() {
-  NS_ASSERTION(!mReleasedFontGroup, "doubly released!");
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  mReleasedFontGroupSkippedDrawing = mFontGroup->ShouldSkipDrawing();
-
+#endif
   NS_RELEASE(mFontGroup);
-  mReleasedFontGroup = true;
 }
 
 bool gfxTextRun::SetPotentialLineBreaks(Range aRange,
@@ -577,9 +551,7 @@ void gfxTextRun::Draw(const Range aRange, const gfx::Point aPt,
   NS_ASSERTION(aParams.drawMode == DrawMode::GLYPH_PATH || !aParams.callbacks,
                "callback must not be specified unless using GLYPH_PATH");
 
-  bool skipDrawing =
-      !mDontSkipDrawing && (mFontGroup ? mFontGroup->ShouldSkipDrawing()
-                                       : mReleasedFontGroupSkippedDrawing);
+  bool skipDrawing = !mDontSkipDrawing && mFontGroup->ShouldSkipDrawing();
   auto* textDrawer = aParams.context->GetTextDrawer();
   if (aParams.drawMode & DrawMode::GLYPH_FILL) {
     DeviceColor currentColor;
@@ -3021,18 +2993,11 @@ void gfxFontGroup::InitScriptRun(DrawTarget* aDrawTarget, gfxTextRun* aTextRun,
   }
 }
 
-gfxTextRun* gfxFontGroup::GetEllipsisTextRun(
+already_AddRefed<gfxTextRun> gfxFontGroup::MakeEllipsisTextRun(
     int32_t aAppUnitsPerDevPixel, gfx::ShapedTextFlags aFlags,
-    LazyReferenceDrawTargetGetter& aRefDrawTargetGetter) {
+    DrawTarget* aRefDrawTarget) {
   MOZ_ASSERT(!(aFlags & ~ShapedTextFlags::TEXT_ORIENT_MASK),
              "flags here should only be used to specify orientation");
-  if (mCachedEllipsisTextRun &&
-      (mCachedEllipsisTextRun->GetFlags() &
-       ShapedTextFlags::TEXT_ORIENT_MASK) == aFlags &&
-      mCachedEllipsisTextRun->GetAppUnitsPerDevUnit() == aAppUnitsPerDevPixel) {
-    return mCachedEllipsisTextRun.get();
-  }
-
   
   
   RefPtr<gfxFont> firstFont = GetFirstValidFont();
@@ -3042,19 +3007,10 @@ gfxTextRun* gfxFontGroup::GetEllipsisTextRun(
           : nsDependentString(kASCIIPeriodsChar,
                               std::size(kASCIIPeriodsChar) - 1);
 
-  RefPtr<DrawTarget> refDT = aRefDrawTargetGetter.GetRefDrawTarget();
-  Parameters params = {refDT,   nullptr, nullptr,
-                       nullptr, 0,       aAppUnitsPerDevPixel};
-  mCachedEllipsisTextRun =
-      MakeTextRun(ellipsis.BeginReading(), ellipsis.Length(), &params, aFlags,
-                  nsTextFrameUtils::Flags(), nullptr);
-  if (!mCachedEllipsisTextRun) {
-    return nullptr;
-  }
-  
-  
-  mCachedEllipsisTextRun->ReleaseFontGroup();
-  return mCachedEllipsisTextRun.get();
+  Parameters params = {aRefDrawTarget, nullptr, nullptr,
+                       nullptr,        0,       aAppUnitsPerDevPixel};
+  return MakeTextRun(ellipsis.BeginReading(), ellipsis.Length(), &params,
+                     aFlags, nsTextFrameUtils::Flags(), nullptr);
 }
 
 already_AddRefed<gfxFont> gfxFontGroup::FindFallbackFaceForChar(

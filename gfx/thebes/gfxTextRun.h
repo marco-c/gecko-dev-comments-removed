@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef GFX_TEXTRUN_H
 #define GFX_TEXTRUN_H
 
@@ -898,10 +896,6 @@ class gfxTextRun : public gfxShapedText {
   bool mDontSkipDrawing;  
                           
                           
-  bool mReleasedFontGroup;                
-                                          
-  bool mReleasedFontGroupSkippedDrawing;  
-                                          
 
   
   
@@ -1050,7 +1044,6 @@ class gfxFontGroup final : public gfxTextRunFactory {
     mUnderlineOffset = UNDERLINE_OFFSET_NOT_SET;
     mSkipDrawing = false;
     mHyphenWidth = -1;
-    mCachedEllipsisTextRun = nullptr;
   }
 
   
@@ -1062,18 +1055,11 @@ class gfxFontGroup final : public gfxTextRunFactory {
 
   bool ShouldSkipDrawing() const { return mSkipDrawing; }
 
-  class LazyReferenceDrawTargetGetter {
-   public:
-    virtual already_AddRefed<DrawTarget> GetRefDrawTarget() = 0;
-  };
   
   
-  
-  
-  
-  gfxTextRun* GetEllipsisTextRun(
+  already_AddRefed<gfxTextRun> MakeEllipsisTextRun(
       int32_t aAppUnitsPerDevPixel, mozilla::gfx::ShapedTextFlags aFlags,
-      LazyReferenceDrawTargetGetter& aRefDrawTargetGetter);
+      DrawTarget* aRefDrawTarget);
 
   nsAtom* Language() const { return mLanguage.get(); }
 
@@ -1388,10 +1374,6 @@ class gfxFontGroup final : public gfxTextRunFactory {
                                  
 
   gfxTextPerfMetrics* mTextPerf;
-
-  
-  
-  RefPtr<gfxTextRun> mCachedEllipsisTextRun;
 
   
   FontFamily mLastPrefFamily;
