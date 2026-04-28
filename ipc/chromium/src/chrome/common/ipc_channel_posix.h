@@ -9,6 +9,7 @@
 
 #include <sys/socket.h>  
 
+#include <atomic>
 #include <vector>
 #include <list>
 
