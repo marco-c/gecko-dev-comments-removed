@@ -315,7 +315,11 @@ static RefPtr<LocalAccessible> MaybeCreateSVGAccessible(
     
     
     if (MustSVGElementBeAccessible(aContent, aDocument)) {
-      return new EnumRoleAccessible<roles::GRAPHIC>(aContent, aDocument);
+      
+      
+      
+      return new EnumRoleHyperTextAccessible<roles::GRAPHIC>(aContent,
+                                                             aDocument);
     }
   } else if (aContent->IsSVGElement(nsGkAtoms::text)) {
     return new HyperTextAccessible(aContent->AsElement(), aDocument);
@@ -1604,15 +1608,10 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
     
     
     
-    if (content->IsHTMLElement() || content->IsMathMLElement() ||
-        content->IsSVGElement(nsGkAtoms::foreignObject)) {
-      
-      
-      newAcc = new HyperTextAccessible(content, document);
-    } else {  
-      
-      newAcc = new AccessibleWrap(content, document);
-    }
+    
+    
+    
+    newAcc = new HyperTextAccessible(content, document);
   } else if (!newAcc && MustBeGenericAccessible(content, document)) {
     newAcc = new EnumRoleHyperTextAccessible<roles::TEXT_CONTAINER>(content,
                                                                     document);
@@ -1674,17 +1673,15 @@ bool nsAccessibilityService::Init(uint64_t aCacheDomains) {
 
   eventListenerService->AddListenerChangeListener(this);
 
-  for (uint32_t i = 0; i < std::size(sHTMLMarkupMapList); i++) {
-    mHTMLMarkupMap.InsertOrUpdate(sHTMLMarkupMapList[i].tag,
-                                  &sHTMLMarkupMapList[i]);
+  for (const auto& info : sHTMLMarkupMapList) {
+    mHTMLMarkupMap.InsertOrUpdate(info.tag, &info);
   }
   for (const auto& info : sMathMLMarkupMapList) {
     mMathMLMarkupMap.InsertOrUpdate(info.tag, &info);
   }
 
-  for (uint32_t i = 0; i < std::size(sXULMarkupMapList); i++) {
-    mXULMarkupMap.InsertOrUpdate(sXULMarkupMapList[i].tag,
-                                 &sXULMarkupMapList[i]);
+  for (const auto& info : sXULMarkupMapList) {
+    mXULMarkupMap.InsertOrUpdate(info.tag, &info);
   }
 
 #ifdef A11Y_LOG
