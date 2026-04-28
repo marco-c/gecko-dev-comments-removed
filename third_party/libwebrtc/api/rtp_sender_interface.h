@@ -31,7 +31,9 @@
 #include "api/rtc_error.h"
 #include "api/rtp_parameters.h"
 #include "api/scoped_refptr.h"
+#include "api/sframe/sframe_encrypter_interface.h"
 #include "api/video_codecs/video_encoder_factory.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/system/rtc_export.h"
 
 #include "api/rtp_sender_setparameters_callback.h"
@@ -134,6 +136,17 @@ class RTC_EXPORT RtpSenderInterface : public RefCountInterface,
   
   void SetFrameTransformer(scoped_refptr<FrameTransformerInterface>
                            ) override {}
+
+  
+  
+  
+  
+  
+  virtual RTCErrorOr<scoped_refptr<SframeEncrypterInterface>>
+  CreateSframeEncrypterOrError(const SframeEncrypterInit& options) {
+    RTC_DCHECK_NOTREACHED();
+    return RTCError();
+  }
 
   
   virtual RTCError GenerateKeyFrame(const std::vector<std::string>& rids) {

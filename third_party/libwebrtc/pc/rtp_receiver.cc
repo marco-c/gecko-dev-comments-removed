@@ -10,15 +10,18 @@
 
 #include "pc/rtp_receiver.h"
 
-#include <stddef.h>
-
 #include <atomic>
+#include <cstddef>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "api/media_stream_interface.h"
+#include "api/rtc_error.h"
 #include "api/scoped_refptr.h"
+#include "api/sequence_checker.h"
+#include "api/sframe/sframe_decrypter_interface.h"
+#include "api/sframe/sframe_types.h"
 #include "pc/media_stream.h"
 #include "pc/media_stream_proxy.h"
 #include "rtc_base/thread.h"
@@ -42,6 +45,18 @@ RtpReceiverInternal::CreateStreamsFromIds(std::vector<std::string> stream_ids) {
         Thread::Current(), MediaStream::Create(std::move(stream_ids[i])));
   }
   return streams;
+}
+
+RtpReceiverBase::RtpReceiverBase(Thread* worker_thread)
+    : worker_thread_(worker_thread) {}
+
+RTCErrorOr<scoped_refptr<SframeDecrypterInterface>>
+RtpReceiverBase::CreateSframeDecrypterOrError(SframeCipherSuite cipher_suite) {
+  RTC_DCHECK_RUN_ON(&signaling_thread_checker_);
+  
+  
+  return RTCError(RTCErrorType::UNSUPPORTED_OPERATION,
+                  "Sframe decrypter not yet implemented");
 }
 
 }  
