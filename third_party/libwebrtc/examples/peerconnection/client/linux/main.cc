@@ -8,10 +8,9 @@
 
 
 
-#include <glib.h>
 #include <gtk/gtk.h>
-#include <stdio.h>
 
+#include <cstdio>
 #include <memory>
 #include <string>
 
@@ -73,16 +72,6 @@ class CustomSocketServer : public webrtc::PhysicalSocketServer {
 int main(int argc, char* argv[]) {
   gtk_init(&argc, &argv);
 
-
-#if !GLIB_CHECK_VERSION(2, 35, 0)
-  g_type_init();
-#endif
-
-
-#if !GLIB_CHECK_VERSION(2, 31, 0)
-  g_thread_init(NULL);
-#endif
-
   absl::ParseCommandLine(argc, argv);
 
   webrtc::Environment env =
@@ -103,7 +92,9 @@ int main(int argc, char* argv[]) {
   wnd.Create();
 
   CustomSocketServer socket_server(&wnd);
-  webrtc::AutoSocketServerThread thread(&socket_server);
+  std::unique_ptr<webrtc::Thread> thread =
+      std::make_unique<webrtc::Thread>(&socket_server);
+  webrtc::ThreadManager::Instance()->SetCurrentThread(thread.get());
 
   webrtc::InitializeSSL();
   
@@ -112,7 +103,8 @@ int main(int argc, char* argv[]) {
   socket_server.set_client(&client);
   socket_server.set_conductor(conductor.get());
 
-  thread.Run();
+  thread->Run();
+  webrtc::ThreadManager::Instance()->SetCurrentThread(nullptr);
 
   
   wnd.Destroy();
