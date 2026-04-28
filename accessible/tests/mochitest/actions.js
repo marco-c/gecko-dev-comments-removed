@@ -13,73 +13,99 @@ const FOCUS_EVENT = 16;
 const CLICK_EVENTS = MOUSEDOWN_EVENT | MOUSEUP_EVENT | CLICK_EVENT;
 const XUL_EVENTS = CLICK_EVENTS | COMMAND_EVENT;
 
-async function testAction({
-  id,
-  actionName,
-  events,
-  actionIndex = 0,
-  targetId = null,
-  checkOnClickEvent = null,
-  eventSeq = [],
-}) {
-  const acc = getAccessible(id);
-  if (!acc) {
-    ok(false, `Can't get accessible for '${id}'`);
-    return;
-  }
 
-  if (!acc.actionCount) {
-    ok(false, `No actions on ${prettyName(acc)}`);
-    return;
-  }
 
-  is(
-    acc.getActionName(actionIndex),
-    actionName,
-    "Wrong action name of the accessible for " + prettyName(acc)
-  );
 
-  const target = getNode(targetId || id);
-  const promises = [];
 
-  if (events) {
-    for (const [flag, type] of [
-      [MOUSEDOWN_EVENT, "mousedown"],
-      [MOUSEUP_EVENT, "mouseup"],
-      [CLICK_EVENT, "click"],
-      [COMMAND_EVENT, "command"],
-    ]) {
-      if (events & flag) {
-        promises.push(
-          new Promise(resolve => {
-            target.addEventListener(
-              type,
-              evt => {
-                if (type == "click" && checkOnClickEvent) {
-                  checkOnClickEvent(evt);
-                }
-                resolve(evt);
-              },
-              { once: true }
-            );
-          })
-        );
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function testActions(aArray) {
+  gActionsQueue = new eventQueue();
+
+  for (var idx = 0; idx < aArray.length; idx++) {
+    var actionObj = aArray[idx];
+    var accOrElmOrID = actionObj.ID;
+    var actionIndex = actionObj.actionIndex;
+    var actionName = actionObj.actionName;
+    var events = actionObj.events;
+    var accOrElmOrIDOfTarget = actionObj.targetID
+      ? actionObj.targetID
+      : accOrElmOrID;
+
+    var eventSeq = [];
+    if (events) {
+      var elm = getNode(accOrElmOrIDOfTarget);
+      if (events & MOUSEDOWN_EVENT) {
+        eventSeq.push(new checkerOfActionInvoker("mousedown", elm, actionObj));
+      }
+
+      if (events & MOUSEUP_EVENT) {
+        eventSeq.push(new checkerOfActionInvoker("mouseup", elm, actionObj));
+      }
+
+      if (events & CLICK_EVENT) {
+        eventSeq.push(new checkerOfActionInvoker("click", elm, actionObj));
+      }
+
+      if (events & COMMAND_EVENT) {
+        eventSeq.push(new checkerOfActionInvoker("command", elm, actionObj));
+      }
+
+      if (events & FOCUS_EVENT) {
+        eventSeq.push(new focusChecker(elm));
       }
     }
 
-    if (events & FOCUS_EVENT) {
-      promises.push(waitForEvent(EVENT_FOCUS, target));
+    if (actionObj.eventSeq) {
+      eventSeq = eventSeq.concat(actionObj.eventSeq);
     }
+
+    var invoker = new actionInvoker(
+      accOrElmOrID,
+      actionIndex,
+      actionName,
+      eventSeq
+    );
+    gActionsQueue.push(invoker);
   }
 
-  for (const [eventType, criteria, checkFn] of eventSeq) {
-    const p = waitForEvent(eventType, criteria);
-    promises.push(checkFn ? p.then(evt => checkFn(evt)) : p);
-  }
-
-  acc.doAction(actionIndex);
-
-  await Promise.all(promises);
+  gActionsQueue.invoke();
 }
 
 
@@ -87,23 +113,6 @@ async function testAction({
 
 function testActionNames(aID, aActions) {
   var actions = typeof aActions == "string" ? [aActions] : aActions || [];
-
-  const actionDescrMap = {
-    jump: "Jump",
-    press: "Press",
-    check: "Check",
-    uncheck: "Uncheck",
-    select: "Select",
-    open: "Open",
-    close: "Close",
-    switch: "Switch",
-    click: "Click",
-    collapse: "Collapse",
-    expand: "Expand",
-    activate: "Activate",
-    cycle: "Cycle",
-    clickAncestor: "Click ancestor",
-  };
 
   var acc = getAccessible(aID);
   is(acc.actionCount, actions.length, "Wrong number of actions.");
@@ -115,8 +124,109 @@ function testActionNames(aID, aActions) {
     );
     is(
       acc.getActionDescription(0),
-      actionDescrMap[actions[i]],
+      gActionDescrMap[actions[i]],
       "Wrong action description at " + i + "index."
     );
   }
 }
+
+
+
+
+var gActionsQueue = null;
+
+function actionInvoker(aAccOrElmOrId, aActionIndex, aActionName, aEventSeq) {
+  this.invoke = function actionInvoker_invoke() {
+    var acc = getAccessible(aAccOrElmOrId);
+    if (!acc) {
+      return INVOKER_ACTION_FAILED;
+    }
+
+    var isThereActions = acc.actionCount > 0;
+    ok(
+      isThereActions,
+      "No actions on the accessible for " + prettyName(aAccOrElmOrId)
+    );
+
+    if (!isThereActions) {
+      return INVOKER_ACTION_FAILED;
+    }
+
+    is(
+      acc.getActionName(aActionIndex),
+      aActionName,
+      "Wrong action name of the accessible for " + prettyName(aAccOrElmOrId)
+    );
+
+    try {
+      acc.doAction(aActionIndex);
+    } catch (e) {
+      ok(false, "doAction(" + aActionIndex + ") failed with: " + e.name);
+      return INVOKER_ACTION_FAILED;
+    }
+    return null;
+  };
+
+  this.eventSeq = aEventSeq;
+
+  this.getID = function actionInvoker_getID() {
+    return (
+      "invoke an action " +
+      aActionName +
+      " at index " +
+      aActionIndex +
+      " on " +
+      prettyName(aAccOrElmOrId)
+    );
+  };
+}
+
+function checkerOfActionInvoker(aType, aTarget, aActionObj) {
+  this.type = aType;
+
+  this.target = aTarget;
+
+  if (aActionObj && "eventTarget" in aActionObj) {
+    this.eventTarget = aActionObj.eventTarget;
+  }
+
+  if (aActionObj && aActionObj.allowBubbling) {
+    
+    
+    this.eventTarget = "element";
+    
+    
+    this.match = function (aEvent) {
+      return aEvent.currentTarget == aTarget;
+    };
+  }
+
+  this.phase = false;
+
+  this.getID = function getID() {
+    return aType + " event handling";
+  };
+
+  this.check = function check(aEvent) {
+    if (aType == "click" && aActionObj && "checkOnClickEvent" in aActionObj) {
+      aActionObj.checkOnClickEvent(aEvent);
+    }
+  };
+}
+
+var gActionDescrMap = {
+  jump: "Jump",
+  press: "Press",
+  check: "Check",
+  uncheck: "Uncheck",
+  select: "Select",
+  open: "Open",
+  close: "Close",
+  switch: "Switch",
+  click: "Click",
+  collapse: "Collapse",
+  expand: "Expand",
+  activate: "Activate",
+  cycle: "Cycle",
+  clickAncestor: "Click ancestor",
+};
