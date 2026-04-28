@@ -278,9 +278,7 @@ add_task(async function test() {
   TabUnloader.unloadTabAsync(null);
   ok(tabPriv1.linkedPanel, "a tab in a private window is never unloaded");
 
-  const histogram = TelemetryTestUtils.getAndClearHistogram(
-    "TAB_UNLOAD_TO_RELOAD"
-  );
+  Services.fog.testResetFOG();
 
   
   
@@ -297,9 +295,11 @@ add_task(async function test() {
   await BrowserTestUtils.switchTab(gBrowser, tab1);
   await BrowserTestUtils.switchTab(gBrowser, pinnedTab);
 
-  const hist = histogram.snapshot();
-  const numEvents = Object.values(hist.values).reduce((a, b) => a + b);
-  Assert.equal(numEvents, 2, "two tabs have been reloaded.");
+  Assert.equal(
+    Glean.browserEngagement.tabUnloadToReload.testGetValue().count,
+    2,
+    "two tabs have been reloaded."
+  );
 
   
   await BrowserTestUtils.switchTab(gBrowser, tab0);
