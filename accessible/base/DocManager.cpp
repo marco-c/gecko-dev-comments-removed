@@ -481,6 +481,16 @@ DocAccessible* DocManager::CreateDocOrRootAccessible(Document* aDocument,
     return nullptr;
   }
 
+  
+  
+  
+  if (!aAllowStatic && aDocument->IsUncommittedInitialDocument()) {
+    dom::BrowsingContext* bc = aDocument->GetBrowsingContext();
+    if (bc && bc->Top()->GetIsPrinting()) {
+      return nullptr;
+    }
+  }
+
   if (IPCAccessibilityActive()) {
     nsIContent* ownerContent = aDocument->GetEmbedderElement();
     if (ownerContent && ownerContent->IsXULElement()) {
