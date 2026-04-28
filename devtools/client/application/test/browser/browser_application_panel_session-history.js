@@ -15,7 +15,7 @@ add_task(async function () {
   await enableApplicationPanel();
 
   const { panel, tab } = await openNewTabAndApplicationPanel(TAB_URL);
-  selectPage(panel, "session-history");
+  await selectPage(panel, "session-history");
 
   const doc = panel.panelWin.document;
 
@@ -66,9 +66,12 @@ add_task(async function () {
   
   
   
+  
+  
+  
 
   info("Start checking.");
-  let table = doc.querySelector("table");
+  let table = doc.querySelector("#diagram-container-table");
   Assert.equal(4, table.rows.length);
   Assert.equal(1, table.tHead.rows.length);
   Assert.equal(1, table.tBodies.length);
@@ -172,14 +175,46 @@ add_task(async function () {
     uriString: uri.href,
   });
 
-  table = doc.querySelector("table");
+  table = doc.querySelector("#diagram-container-table");
   tBodyRows = table.tBodies[0].rows;
 
-  Assert.equal(2, tBodyRows[0].cells.length);
-  Assert.equal(uri.pathname, tBodyRows[0].cells[1].innerText);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  Assert.equal(3, tBodyRows[0].cells.length);
+  Assert.equal(uri.pathname, tBodyRows[0].cells[2].innerText);
+  Assert.ok(tBodyRows[0].cells[1].getAttribute("aria-hidden"));
+  Assert.equal(
+    2,
+    tBodyRows[1].cells[2].getAttribute("rowspan"),
+    "empty cell below entry 3"
+  );
+
+  
+  
+  const colgroup = table.querySelector("colgroup");
+  Assert.equal(3, colgroup.children.length);
+  Assert.equal(3, colgroup.children[0].getAttribute("span"));
+  Assert.equal("diagram-spacer", colgroup.children[1].getAttribute("class"));
 
   info("Click on a button to bring up entry info");
-  tBodyRows[0].cells[1].firstChild.click();
+  tBodyRows[0].cells[2].firstChild.click();
 
   popover = doc.querySelector(":popover-open");
   Assert.equal(
@@ -214,7 +249,7 @@ add_task(async function () {
   tBodyRows = table.tBodies[0].rows;
 
   Assert.stringContains(
-    tBodyRows[0].cells[2].getAttribute("class"),
+    tBodyRows[0].cells[3].getAttribute("class"),
     "same-document-nav"
   );
 

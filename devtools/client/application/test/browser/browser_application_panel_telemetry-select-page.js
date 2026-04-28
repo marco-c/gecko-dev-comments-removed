@@ -15,7 +15,7 @@ add_task(async function () {
   
   await waitUntil(() => doc.querySelector(".js-service-workers-page") !== null);
   ok(true, "Service Workers page was loaded per default.");
-  selectPage(panel, "manifest");
+  await selectPage(panel, "manifest");
 
   checkTelemetryEvent({ method: "select_page", page_type: "manifest" });
 

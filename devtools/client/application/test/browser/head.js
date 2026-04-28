@@ -128,14 +128,17 @@ async function waitForWorkerRegistration(swTab) {
   );
 }
 
-function selectPage(panel, page) {
-  
 
 
 
 
+
+async function selectPage(panel, page) {
   info(`Selecting application page: ${page}`);
   const doc = panel.panelWin.document;
   const navItem = doc.querySelector(`.js-sidebar-${page}`);
+  
+  
+  await waitFor(() => navItem.getBoundingClientRect().width > 0);
   navItem.click();
 }
