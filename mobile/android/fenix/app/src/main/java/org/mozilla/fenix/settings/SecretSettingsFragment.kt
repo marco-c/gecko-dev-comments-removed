@@ -193,7 +193,7 @@ class SecretSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFra
         }
 
         requirePreference<Preference>(R.string.pref_key_search_optimization).apply {
-            isVisible = Config.channel.isDebug
+            isVisible = Config.channel.isNightlyOrDebug
         }
 
         requirePreference<SwitchPreferenceCompat>(
@@ -219,11 +219,6 @@ class SecretSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFra
         requirePreference<SwitchPreferenceCompat>(R.string.pref_key_should_show_custom_tab_extensions).apply {
             isVisible = Config.channel.isDebug
             isChecked = context.settings().shouldShowCustomTabExtensions
-            onPreferenceChangeListener = SharedPreferenceUpdater()
-        }
-
-        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_compose_wallpaper).apply {
-            isChecked = context.settings().shouldUseComposeWallpaper
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
@@ -409,8 +404,14 @@ class SecretSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFra
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
-        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_ip_protection).apply {
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_import_bookmarks).apply {
             isVisible = Config.channel.isDebug
+            isChecked = context.settings().importBookmarksFeatureFlagEnabled
+            onPreferenceChangeListener = SharedPreferenceUpdater()
+        }
+
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_ip_protection).apply {
+            isVisible = Config.channel.isNightlyOrDebug
             isChecked = context.settings().isIPProtectionEnabled
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
@@ -506,6 +507,17 @@ class SecretSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFra
         requirePreference<SwitchPreferenceCompat>(R.string.pref_key_google_lens_integration).apply {
             isVisible = Config.channel.isNightlyOrDebug
             isChecked = context.settings().googleLensIntegrationEnabled
+            onPreferenceChangeListener = SharedPreferenceUpdater()
+        }
+
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_homepage_sports_widget).apply {
+            isChecked = context.settings().enableHomepageSportsWidget
+            onPreferenceChangeListener = SharedPreferenceUpdater()
+        }
+
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_tracking_protection_database_status).apply {
+            isVisible = Config.channel.isDebug
+            isChecked = context.settings().shouldUseTrackingProtectionDatabase
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
     }
