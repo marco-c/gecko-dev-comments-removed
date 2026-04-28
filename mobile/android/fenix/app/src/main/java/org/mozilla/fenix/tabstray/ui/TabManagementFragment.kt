@@ -400,8 +400,9 @@ class TabManagementFragment : DialogFragment() {
 
                             entry<TabManagerNavDestination.ExpandedTabGroup>(
                                 metadata = BottomSheetSceneStrategy.bottomSheet(
-                                    // todo: Bug 2022914
-                                    handleContentDescription = "Dismiss tab group bottom sheet",
+                                    handleContentDescription = stringResource(
+                                        id = R.string.tab_group_sheet_dismiss_description,
+                                    ),
                                 ),
                             ) { args ->
                                 val expandedGroup by tabsTrayStore.observeTabGroup(tabGroup = args.group)
@@ -409,7 +410,6 @@ class TabManagementFragment : DialogFragment() {
 
                                 ExpandedTabGroup(
                                     group = expandedGroup,
-                                    focusedTabId = state.selectedTabId,
                                     onItemClick = {
                                         when (it) {
                                             is TabsTrayItem.Tab -> handleTabClick(it)
@@ -447,7 +447,7 @@ class TabManagementFragment : DialogFragment() {
                             entry<TabManagerNavDestination.EditTabGroup>(
                                 metadata = BottomSheetSceneStrategy.bottomSheet(
                                     handleContentDescription = stringResource(
-                                        id = R.string.edit_tab_group_bottom_sheet_close_content_description,
+                                        id = R.string.edit_tab_group_bottom_sheet_grabber_content_description,
                                     ),
                                 ),
                             ) {
@@ -457,12 +457,12 @@ class TabManagementFragment : DialogFragment() {
                             entry<TabManagerNavDestination.AddToTabGroup>(
                                 metadata = BottomSheetSceneStrategy.bottomSheet(
                                     handleContentDescription = stringResource(
-                                        id = R.string.add_to_tab_group_bottom_sheet_close_content_description,
+                                        id = R.string.add_to_tab_group_bottom_sheet_grabber_content_description,
                                     ),
                                 ),
                             ) {
                                 AddToTabGroup(
-                                    tabGroups = tabsTrayStore.state.tabGroups,
+                                    tabGroups = tabsTrayStore.state.tabGroupState.groups,
                                     onAddToNewTabGroup = {
                                         tabsTrayStore.dispatch(TabGroupAction.AddToNewTabGroup)
                                     },
@@ -543,6 +543,7 @@ class TabManagementFragment : DialogFragment() {
                         tabDataFlow = requireComponents.core.store.stateFlow.map { TabData(browserState = it) },
                         tabGroupRepository = requireComponents.core.tabGroupRepository,
                         removeTabsUseCase = requireComponents.useCases.tabsUseCases.removeTabs,
+                        moveTabsUseCase = requireComponents.useCases.tabsUseCases.moveTabs,
                         mainScope = lifecycleScope,
                     ),
                 ),
@@ -556,9 +557,9 @@ class TabManagementFragment : DialogFragment() {
      * This method performs the tab click handling.  Separate from
      * onTabClick() in that an animation may play prior to handling the user action.
      */
-    private fun performTabClick(tab: TabsTrayItem) {
-        if (tab is TabsTrayItem.Tab && shouldConsiderShowingTabSwipeCFR()) {
-            val normalTabs = tabsTrayStore.state.normalTabs
+    private fun performTabClick(tab: TabsTrayItem.Tab) {
+        if (shouldConsiderShowingTabSwipeCFR()) {
+            val normalTabs = tabsTrayStore.state.normalTabsState.items
             val currentTabId = tabsTrayStore.state.selectedTabId
 
             if (normalTabs.size >= 2 && currentTabId != null) {
