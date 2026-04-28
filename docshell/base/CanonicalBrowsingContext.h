@@ -392,6 +392,20 @@ class CanonicalBrowsingContext final : public BrowsingContext {
     mPriorityActive = aIsActive;
   }
 
+  void GetDownloadFolderOverride(nsString& aOut) const {
+    MOZ_RELEASE_ASSERT(IsTop());
+    aOut = mDownloadFolderOverride;
+  }
+  void SetDownloadFolderOverride(const nsAString& aValue, ErrorResult& aRv) {
+    if (!IsTop()) {
+      aRv.ThrowInvalidStateError(
+          "downloadFolderOverride can only be set on the top "
+          "BrowsingContext");
+      return;
+    }
+    mDownloadFolderOverride = aValue;
+  }
+
   void SetIsActive(bool aIsActive, ErrorResult& aRv);
 
   void SetIsActiveInternal(bool aIsActive, ErrorResult& aRv) {
@@ -405,6 +419,15 @@ class CanonicalBrowsingContext final : public BrowsingContext {
                                           ErrorResult& aRv);
 
   bool IsReplaced() const { return mIsReplaced; }
+
+#ifdef ANDROID
+  uint32_t GetAndroidAppLinkLaunchType() const {
+    return mAndroidAppLinkLaunchType;
+  }
+  void SetAndroidAppLinkLaunchType(uint32_t aType) {
+    mAndroidAppLinkLaunchType = aType;
+  }
+#endif
 
   const JS::Heap<JS::Value>& PermanentKey() { return mPermanentKey; }
   void ClearPermanentKey() { mPermanentKey.setNull(); }
@@ -681,11 +704,21 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   bool mPriorityActive = false;
 
   
+  
+  nsString mDownloadFolderOverride;
+
+  
   bool mForceAppWindowActive = false;
 
   uint32_t mDocumentPiPWindowCount = 0;
 
   bool mIsReplaced = false;
+
+#ifdef ANDROID
+  
+  
+  uint32_t mAndroidAppLinkLaunchType = 0;
+#endif
 
   
   RefPtr<GenericNonExclusivePromise> mClonePromise;

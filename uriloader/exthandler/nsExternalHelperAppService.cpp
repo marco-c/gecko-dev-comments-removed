@@ -393,11 +393,28 @@ NS_IMETHODIMP nsExternalHelperAppService::GetPreferredDownloadsDirectory(
 
 
 
+
+
+
 static Result<nsCOMPtr<nsIFile>, nsresult> GetInitialDownloadDirectory(
-    bool aSkipChecks = false) {
+    bool aSkipChecks = false,
+    CanonicalBrowsingContext* aBrowsingContext = nullptr) {
 #if defined(ANDROID)
   return Err(NS_ERROR_FAILURE);
 #else
+
+  if (aBrowsingContext) {
+    nsString folderPath;
+    aBrowsingContext->Top()->GetDownloadFolderOverride(folderPath);
+    if (!folderPath.IsEmpty()) {
+      nsCOMPtr<nsIFile> dir;
+      nsresult rv = NS_NewLocalFile(folderPath, getter_AddRefs(dir));
+      if (NS_SUCCEEDED(rv)) {
+        return dir;
+      }
+    }
+  }
+
   if (StaticPrefs::browser_download_start_downloads_in_tmp_dir()) {
     return GetOsTmpDownloadDirectory();
   }
@@ -732,7 +749,8 @@ nsresult nsExternalHelperAppService::DoContentContentProcessHelper(
 
   NS_ADDREF(*aStreamListener = childListener);
 
-  uint32_t reason = nsIHelperAppLauncherDialog::REASON_CANTHANDLE;
+  nsIHelperAppLauncherDialog::reason reason =
+      nsIHelperAppLauncherDialog::REASON_CANTHANDLE;
 
   SanitizeFileName(fileName, 0);
 
@@ -757,7 +775,8 @@ NS_IMETHODIMP nsExternalHelperAppService::CreateListener(
 
   nsAutoString fileName;
   nsAutoCString fileExtension;
-  uint32_t reason = nsIHelperAppLauncherDialog::REASON_CANTHANDLE;
+  nsIHelperAppLauncherDialog::reason reason =
+      nsIHelperAppLauncherDialog::REASON_CANTHANDLE;
 
   uint32_t contentDisposition = -1;
   aChannel->GetContentDisposition(&contentDisposition);
@@ -1321,7 +1340,8 @@ nsExternalAppHandler::nsExternalAppHandler(
     nsIMIMEInfo* aMIMEInfo, const nsAString& aFileExtension,
     BrowsingContext* aBrowsingContext, nsIInterfaceRequestor* aWindowContext,
     nsExternalHelperAppService* aExtProtSvc,
-    const nsAString& aSuggestedFileName, uint32_t aReason, bool aForceSave)
+    const nsAString& aSuggestedFileName,
+    nsIHelperAppLauncherDialog::reason aReason, bool aForceSave)
     : mMimeInfo(aMIMEInfo),
       mBrowsingContext(aBrowsingContext),
       mWindowContext(aWindowContext),
@@ -1433,7 +1453,8 @@ void nsExternalAppHandler::RetargetLoadNotifications(nsIRequest* request) {
 nsresult nsExternalAppHandler::SetUpTempFile(nsIChannel* aChannel) {
   
   
-  auto res = GetInitialDownloadDirectory();
+  auto res = GetInitialDownloadDirectory(
+      false, mBrowsingContext ? mBrowsingContext->Canonical() : nullptr);
   if (res.isErr()) return res.unwrapErr();
   mTempFile = res.unwrap();
 
@@ -1693,7 +1714,8 @@ NS_IMETHODIMP nsExternalAppHandler::OnStartRequest(nsIRequest* request) {
     mCanceled = true;
     request->Cancel(transferError);
 
-    auto res = GetInitialDownloadDirectory(true);
+    auto res = GetInitialDownloadDirectory(
+        true, mBrowsingContext ? mBrowsingContext->Canonical() : nullptr);
     if (res.isErr()) {
       
       
@@ -2420,7 +2442,8 @@ nsresult nsExternalAppHandler::CreateFailedTransfer() {
   if (!mFinalFileDestination) {
     
     
-    auto res = GetInitialDownloadDirectory(true);
+    auto res = GetInitialDownloadDirectory(
+        true, mBrowsingContext ? mBrowsingContext->Canonical() : nullptr);
     if (res.isErr()) return res.unwrapErr();
     nsCOMPtr<nsIFile> pseudoFile = res.unwrap();
 
@@ -2647,7 +2670,8 @@ NS_IMETHODIMP nsExternalAppHandler::SetDownloadToLaunch(
   if (aNewFileLocation) {
     fileToUse = aNewFileLocation;
   } else {
-    auto res = GetInitialDownloadDirectory();
+    auto res = GetInitialDownloadDirectory(
+        false, mBrowsingContext ? mBrowsingContext->Canonical() : nullptr);
     if (res.isErr()) return res.unwrapErr();
     fileToUse = res.unwrap();
 
