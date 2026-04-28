@@ -40,9 +40,10 @@
 import argparse
 import re
 import pathlib
+import os
 import subprocess
 import sys
-from typing import Tuple
+from typing import List, Tuple
 
 _CLEANER_BINARY_PATH = pathlib.Path(
     "third_party/llvm-build/Release+Asserts/bin/clang-include-cleaner")
@@ -54,10 +55,12 @@ _EXTRA_ARGS = [
 _GTEST_KEY = '"gtest/gtest.h"'
 _GTEST_VALUE = '"test/gtest.h"'
 _IWYU_MAPPING = {
+    
     '"gmock/gmock.h"': '"test/gmock.h"',
     _GTEST_KEY: _GTEST_VALUE,
     '<sys/socket.h>': '"rtc_base/net_helpers.h"',
-
+}
+_IWYU_THIRD_PARTY = {
     
     '"libyuv/': '"third_party/libyuv/include/libyuv/',
     '"aom/': '"third_party/libaom/source/libaom/aom/',
@@ -69,11 +72,38 @@ _SUFFICES = [".cc", ".h"]
 
 
 _IGNORED_HEADERS = [
-    ".pb.h",  
-    "pipewire/.*.h",  
-    "spa/.*.h",  
-    "openssl/.*.h",  
+    "\\.pb\\.h",  
+    "pipewire\\/.*\\.h",  
+    "spa\\/.*\\.h",  
+    "glib\\.h",  
+    "glibconfig\\.h",  
+    "glib-object\\.h",  
+    "gio\\/.*\\.h",  
+    "openssl\\/.*\\.h",  
+    "alsa\\/.*\\.h",  
+    "pulse\\/.*\\.h",  
+    "bits\\/.*\\.h",  
+    "jpeglibmangler\\.h",  
+    "libavcodec\\/.*\\.h",  
+    "libavutil\\/.*\\.h",  
 ]
+
+_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+_SRC_DIR = os.path.abspath(os.path.join(_SCRIPT_DIR, os.pardir, os.pardir))
+sys.path.append(os.path.join(_SRC_DIR, "build"))
+import find_depot_tools
+
+_GN_BINARY_PATH = os.path.join(find_depot_tools.DEPOT_TOOLS_PATH, "gn.py")
+
+
+
+def _is_built(filename, work_dir):
+    gn_cmd = (_GN_BINARY_PATH, "refs", "-C", work_dir, filename)
+    gn_result = subprocess.run(gn_cmd,
+                               capture_output=True,
+                               text=True,
+                               check=False)
+    return gn_result.returncode == 0
 
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -81,7 +111,7 @@ def _parse_args() -> argparse.Namespace:
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument("files",
-                        nargs="+",
+                        nargs="*",
                         type=_valid_file,
                         help="List of files to process")
     parser.add_argument(
@@ -184,6 +214,12 @@ def _modified_content(content: str) -> str:
                                   modified_content,
                                   flags=re.MULTILINE)
     for key, value in _IWYU_MAPPING.items():
+        
+        modified_content = re.sub(rf'^#include {re.escape(key)}$',
+                                  f'#include {value}',
+                                  modified_content,
+                                  flags=re.MULTILINE)
+    for key, value in _IWYU_THIRD_PARTY.items():
         modified_content = re.sub(rf'^#include {re.escape(key)}',
                                   f'#include {value}',
                                   modified_content,
@@ -191,6 +227,19 @@ def _modified_content(content: str) -> str:
     return modified_content
 
 
+def _fetch_modified_files(revision: str) -> List[pathlib.Path]:
+    print(f"Trying to find modified files relative to {revision}")
+    result = subprocess.run(
+        ["git", "diff", "--name-only", "--diff-filter=d", revision],
+        capture_output=True,
+        check=False)
+    if result.returncode != 0:
+        print(f"Failed to run git diff on {revision}, ",
+              f"{result.stderr.decode().strip()}")
+        return []
+    files = result.stdout.decode().split()
+    print("Found files:", '\n'.join(files))
+    return [_valid_file(file.strip()) for file in files]
 
 
 
@@ -258,13 +307,22 @@ def main() -> None:
         should_modify = True
 
     changes_generated = False
+    files = args.files
+    if not files:
+        files = _fetch_modified_files("@{upstream}")
+    if not files:
+        files = _fetch_modified_files("main")
     
     
     
     
     
-    for file in args.files:
+    for file in files:
         if not file.suffix in _SUFFICES:
+            continue
+        if not _is_built(file, args.work_dir):
+            print(
+                f"Skipping include cleaner as {file} is not referenced by GN.")
             continue
         changes_generated = bool(
             apply_include_cleaner_to_file(file, should_modify, tuple(cmd))
