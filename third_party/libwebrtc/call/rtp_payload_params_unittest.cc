@@ -10,6 +10,7 @@
 
 #include "call/rtp_payload_params.h"
 
+#include <cstddef>
 #include <cstdint>
 #include <map>
 #include <optional>
@@ -1012,7 +1013,8 @@ TEST(RtpPayloadParamsVp9ToGenericTest, SpatialScalabilityKSvc) {
   headers[3] = params.GetRtpVideoHeader(image, &info, 7);
 
   ASSERT_TRUE(headers[0].generic);
-  int num_decode_targets = headers[0].generic->decode_target_indications.size();
+  size_t num_decode_targets =
+      headers[0].generic->decode_target_indications.size();
   
   
   
