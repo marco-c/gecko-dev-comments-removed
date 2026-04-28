@@ -420,9 +420,9 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
   
   MainThreadOrGCTaskData<bool> majorFinishedWhileMinorSweeping;
 
-  
-  
+#ifdef DEBUG
   Mutex* multiThreadedMutex = nullptr;
+#endif
 
  public:
   explicit BufferAllocator(JS::Zone* zone);
@@ -506,7 +506,6 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
  private:
   void checkAccess() const;
   void checkMainThread() const;
-  bool isUsedByMainThread() const;
 
   void markNurseryOwnedAlloc(void* alloc, bool nurseryOwned);
   friend class js::Nursery;
