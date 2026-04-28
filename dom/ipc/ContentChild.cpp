@@ -1647,7 +1647,11 @@ mozilla::ipc::IPCResult ContentChild::RecvInitRendering(
     Endpoint<PVRManagerChild>&& aVRBridge,
     Endpoint<PRemoteMediaManagerChild>&& aVideoManager,
     nsTArray<uint32_t>&& namespaces) {
-  MOZ_ASSERT(namespaces.Length() == 3);
+  MOZ_ASSERT(namespaces.Length() == 4);
+  const uint32_t compositorManagerNamespace = namespaces[0];
+  const uint32_t compositorBridgeNamespace = namespaces[1];
+  const uint32_t imageBridgeNamespace = namespaces[2];
+  const uint32_t vrManagerNamespace = namespaces[3];
 
   
   
@@ -1656,17 +1660,20 @@ mozilla::ipc::IPCResult ContentChild::RecvInitRendering(
   
   
   
-  if (!CompositorManagerChild::Init(std::move(aCompositor), namespaces[0])) {
+  if (!CompositorManagerChild::Init(std::move(aCompositor),
+                                    compositorManagerNamespace)) {
     return GetResultForRenderingInitFailure(aCompositor.OtherChildID());
   }
-  if (!CompositorManagerChild::CreateContentCompositorBridge(namespaces[1])) {
+  if (!CompositorManagerChild::CreateContentCompositorBridge(
+          compositorBridgeNamespace)) {
     return GetResultForRenderingInitFailure(aCompositor.OtherChildID());
   }
   if (!ImageBridgeChild::InitForContent(std::move(aImageBridge),
-                                        namespaces[2])) {
+                                        imageBridgeNamespace)) {
     return GetResultForRenderingInitFailure(aImageBridge.OtherChildID());
   }
-  if (!gfx::VRManagerChild::InitForContent(std::move(aVRBridge))) {
+  if (!gfx::VRManagerChild::InitForContent(std::move(aVRBridge),
+                                           vrManagerNamespace)) {
     return GetResultForRenderingInitFailure(aVRBridge.OtherChildID());
   }
   RemoteMediaManagerChild::InitForGPUProcess(std::move(aVideoManager));
@@ -1689,21 +1696,29 @@ mozilla::ipc::IPCResult ContentChild::RecvReinitRendering(
     Endpoint<PVRManagerChild>&& aVRBridge,
     Endpoint<PRemoteMediaManagerChild>&& aVideoManager,
     nsTArray<uint32_t>&& namespaces) {
-  MOZ_ASSERT(namespaces.Length() == 3);
+  MOZ_ASSERT(namespaces.Length() == 4);
+  const uint32_t compositorManagerNamespace = namespaces[0];
+  const uint32_t compositorBridgeNamespace = namespaces[1];
+  const uint32_t imageBridgeNamespace = namespaces[2];
+  const uint32_t vrManagerNamespace = namespaces[3];
+
   nsTArray<RefPtr<BrowserChild>> tabs = BrowserChild::GetAll();
 
   
-  if (!CompositorManagerChild::Init(std::move(aCompositor), namespaces[0])) {
+  if (!CompositorManagerChild::Init(std::move(aCompositor),
+                                    compositorManagerNamespace)) {
     return GetResultForRenderingInitFailure(aCompositor.OtherChildID());
   }
-  if (!CompositorManagerChild::CreateContentCompositorBridge(namespaces[1])) {
+  if (!CompositorManagerChild::CreateContentCompositorBridge(
+          compositorBridgeNamespace)) {
     return GetResultForRenderingInitFailure(aCompositor.OtherChildID());
   }
   if (!ImageBridgeChild::ReinitForContent(std::move(aImageBridge),
-                                          namespaces[2])) {
+                                          imageBridgeNamespace)) {
     return GetResultForRenderingInitFailure(aImageBridge.OtherChildID());
   }
-  if (!gfx::VRManagerChild::InitForContent(std::move(aVRBridge))) {
+  if (!gfx::VRManagerChild::InitForContent(std::move(aVRBridge),
+                                           vrManagerNamespace)) {
     return GetResultForRenderingInitFailure(aVRBridge.OtherChildID());
   }
   gfxPlatform::GetPlatform()->CompositorUpdated();
