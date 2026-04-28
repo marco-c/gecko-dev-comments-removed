@@ -92,10 +92,16 @@ class ScrollTimeline : public AnimationTimeline,
    private:
     
     
-    OwningAnimationTarget mTarget;
+    
+    
+    
+    
+    
+    
+    OwningAnimationTarget mSourceOrTarget;
     ScrollerInfo(Type aType, Element* aElement,
                  const PseudoStyleRequest& aPseudoRequest)
-        : mType{aType}, mTarget{aElement, aPseudoRequest} {}
+        : mType{aType}, mSourceOrTarget{aElement, aPseudoRequest} {}
 
    public:
     ScrollerInfo() = default;
@@ -136,7 +142,7 @@ class ScrollTimeline : public AnimationTimeline,
     }
 
     NonOwningAnimationTarget Source() const;
-    RefPtr<Element>& ElementForCycleCollection() { return mTarget.mElement; }
+    RefPtr<Element>& ElementForCycleCollection() { return mSourceOrTarget.mElement; }
   };
 
  public:
