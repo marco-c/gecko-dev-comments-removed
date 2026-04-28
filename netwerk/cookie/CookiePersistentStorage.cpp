@@ -2006,6 +2006,19 @@ CookiePersistentStorage::OpenDBResult CookiePersistentStorage::Read() {
 
     
     
+    
+    
+    if (StaticPrefs::network_cookie_valueless_cookie() &&
+        cookieStruct->name().IsEmpty()) {
+      CookieDomainTuple* cleanupTuple = mCleanupArray.AppendElement();
+      cleanupTuple->key = CookieKey(baseDomain, attrs);
+      cleanupTuple->originAttributes = attrs;
+      cleanupTuple->cookie = Cookie::Create(*cookieStruct, attrs);
+      continue;
+    }
+
+    
+    
     RefPtr<Cookie> cookie = Cookie::CreateValidated(*cookieStruct, attrs);
 
     
