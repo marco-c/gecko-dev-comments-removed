@@ -163,15 +163,6 @@ nsresult ContentPrincipal::GenerateOriginNoSuffixFromURI(
 
   
   
-  nsCOMPtr<nsIPrincipal> blobPrincipal;
-  if (dom::BlobURLProtocolHandler::GetBlobURLPrincipal(
-          origin, getter_AddRefs(blobPrincipal))) {
-    MOZ_ASSERT(blobPrincipal);
-    return blobPrincipal->GetOriginNoSuffix(aOriginNoSuffix);
-  }
-
-  
-  
   
   
   
@@ -287,7 +278,7 @@ bool ContentPrincipal::MayLoadInternal(nsIURI* aURI) {
 
   nsCOMPtr<nsIPrincipal> blobPrincipal;
   if (dom::BlobURLProtocolHandler::GetBlobURLPrincipal(
-          aURI, getter_AddRefs(blobPrincipal))) {
+          aURI, OriginAttributesRef(), getter_AddRefs(blobPrincipal))) {
     MOZ_ASSERT(blobPrincipal);
     return nsIPrincipal::Subsumes(blobPrincipal);
   }

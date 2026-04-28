@@ -3910,6 +3910,9 @@ ContentParent::Observe(nsISupports* aSubject, const char* aTopic,
     nsCOMPtr<nsICookieNotification> notification = do_QueryInterface(aSubject);
     MOZ_ASSERT(notification,
                "cookie changed notification must have nsICookieNotification.");
+    if (!notification) {
+      return NS_OK;
+    }
     nsICookieNotification::Action action = notification->GetAction();
 
     PNeckoParent* neckoParent = LoneManagedOrNullAsserts(ManagedPNeckoParent());
@@ -6129,11 +6132,12 @@ void ContentParent::TransmitBlobURLsForPrincipal(nsIPrincipal* aPrincipal) {
   }
 }
 
-void ContentParent::TransmitBlobDataIfBlobURL(nsIURI* aURI) {
+void ContentParent::TransmitBlobDataIfBlobURL(nsIURI* aURI,
+                                              const OriginAttributes& aAttrs) {
   MOZ_ASSERT(aURI);
 
   nsCOMPtr<nsIPrincipal> principal;
-  if (BlobURLProtocolHandler::GetBlobURLPrincipal(aURI,
+  if (BlobURLProtocolHandler::GetBlobURLPrincipal(aURI, aAttrs,
                                                   getter_AddRefs(principal))) {
     TransmitBlobURLsForPrincipal(principal);
   }
@@ -6958,11 +6962,6 @@ mozilla::ipc::IPCResult ContentParent::RecvWindowClose(
     return IPC_OK();
   }
   CanonicalBrowsingContext* context = aContext.get_canonical();
-
-  
-  
-  
-
   if (ContentParent* cp = context->GetContentParent()) {
     (void)cp->SendWindowClose(context, aTrustedCaller);
   }

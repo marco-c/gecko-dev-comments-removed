@@ -722,30 +722,23 @@ bool BlobURLProtocolHandler::HasDataEntryTypeBlob(const nsACString& aUri) {
 
 nsresult BlobURLProtocolHandler::GenerateURIString(nsIPrincipal* aPrincipal,
                                                    nsACString& aUri) {
-  nsresult rv;
-  nsCOMPtr<nsIUUIDGenerator> uuidgen =
-      do_GetService("@mozilla.org/uuid-generator;1", &rv);
-  NS_ENSURE_SUCCESS(rv, rv);
+  NS_ENSURE_ARG(aPrincipal);
 
-  nsID id;
-  rv = uuidgen->GenerateUUIDInPlace(&id);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  aUri.AssignLiteral(BLOBURI_SCHEME);
-  aUri.Append(':');
-
-  if (aPrincipal) {
-    nsAutoCString origin;
-    rv = aPrincipal->GetWebExposedOriginSerialization(origin);
-    if (NS_FAILED(rv)) {
-      origin.AssignLiteral("null");
-    }
-
-    aUri.Append(origin);
-    aUri.Append('/');
+  nsID id{};
+  nsresult rv = nsID::GenerateUUIDInPlace(id);
+  if (NS_FAILED(rv)) {
+    return rv;
   }
 
-  aUri += NSID_TrimBracketsASCII(id);
+  nsAutoCString origin;
+  if (NS_FAILED(aPrincipal->GetWebExposedOriginSerialization(origin))) {
+    
+    
+    
+    origin = aPrincipal->IsSystemPrincipal() ? "system"_ns : "null"_ns;
+  }
+
+  aUri = BLOBURI_SCHEME ":"_ns + origin + "/"_ns + NSID_TrimBracketsASCII(id);
 
   return NS_OK;
 }
@@ -826,15 +819,18 @@ NS_IMPL_ISUPPORTS(BlobURLProtocolHandler, nsIProtocolHandler,
   
   
   bool revoked = true;
+  nsCOMPtr<nsIPrincipal> principal;
   {
     StaticMutexAutoLock lock(sMutex);
     mozilla::dom::DataInfo* info = GetDataInfo(aSpec);
     revoked = !info || info->mRevokeId != 0;
+    principal = info ? info->mPrincipal : nullptr;
   }
 
   return NS_MutateURI(new BlobURL::Mutator())
       .SetSpec(aSpec)
       .Apply(&nsIBlobURLMutator::SetRevoked, revoked)
+      .Apply(&nsIBlobURLMutator::MaybeSetNullPrincipal, principal)
       .Finalize(aResult);
 }
 
@@ -862,6 +858,7 @@ BlobURLProtocolHandler::GetScheme(nsACString& result) {
 
 
 bool BlobURLProtocolHandler::GetBlobURLPrincipal(nsIURI* aURI,
+                                                 const OriginAttributes& aAttrs,
                                                  nsIPrincipal** aPrincipal) {
   MOZ_ASSERT(aURI);
   MOZ_ASSERT(aPrincipal);
@@ -871,20 +868,39 @@ bool BlobURLProtocolHandler::GetBlobURLPrincipal(nsIURI* aURI,
     return false;
   }
 
-  StaticMutexAutoLock lock(sMutex);
-  mozilla::dom::DataInfo* info =
-      GetDataInfoFromURI(aURI, true );
-  if (!info || !info->mBlobImpl) {
-    return false;
-  }
-
   nsCOMPtr<nsIPrincipal> principal;
 
-  if (blobURL->Revoked()) {
-    principal = NullPrincipal::Create(
-        BasePrincipal::Cast(info->mPrincipal)->OriginAttributesRef());
+  nsDependentCSubstring originPart = blobURL->OriginPart();
+  if (originPart == "system"_ns) {
+    principal = nsContentUtils::GetSystemPrincipal();
+  } else if (originPart == "null"_ns) {
+    
+    
+    principal = blobURL->GetNullPrincipal();
+
+    
+    
+    
+    MOZ_DIAGNOSTIC_ASSERT(!principal ||
+                          !IsBlobURLBroadcastPrincipal(principal));
   } else {
-    principal = info->mPrincipal;
+    
+    nsCOMPtr<nsIURI> uri;
+    nsresult rv = NS_NewURI(getter_AddRefs(uri), originPart);
+    NS_ENSURE_SUCCESS(rv, false);
+
+    principal = BasePrincipal::CreateContentPrincipal(uri, aAttrs);
+
+    
+    
+    nsAutoCString serialization;
+    rv = principal->GetWebExposedOriginSerialization(serialization);
+    if (NS_WARN_IF(NS_FAILED(rv)) || NS_WARN_IF(originPart != serialization)) {
+      return false;
+    }
+  }
+  if (!principal) {
+    return false;
   }
 
   principal.forget(aPrincipal);
