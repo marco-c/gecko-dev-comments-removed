@@ -43,12 +43,16 @@ class BookmarksRobot(private val composeTestRule: ComposeTestRule) {
         Log.i(TAG, "verifyBookmarksMenuView: Waited for bookmarks toolbar elements to exist.")
         Log.i(TAG, "verifyBookmarksMenuView: Trying to verify the empty bookmarks list is displayed.")
         composeTestRule.onNodeWithText(
-            getStringResource(R.string.bookmark_empty_list_guest_description),
+            getStringResource(R.string.bookmark_empty_list_root_title),
         ).assertIsDisplayed()
         Log.i(TAG, "verifyBookmarksMenuView: Verified the empty bookmarks list is displayed.")
     }
 
+    @OptIn(ExperimentalTestApi::class)
     fun verifyBookmarkedURL(url: String) {
+        Log.i(TAG, "verifyBookmarkedURL: Waiting for $waitingTime ms for bookmarked url: $url to exist")
+        composeTestRule.waitUntilAtLeastOneExists(hasText(url), waitingTime)
+        Log.i(TAG, "verifyBookmarkedURL: Waited for $waitingTime ms for bookmarked url: $url to exist")
         Log.i(TAG, "verifyBookmarkedURL: Trying to verify bookmarks url: $url is displayed")
         composeTestRule.onNodeWithText(url).assertIsDisplayed()
         Log.i(TAG, "verifyBookmarkedURL: Verified bookmarks url: $url is displayed")
