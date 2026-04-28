@@ -122,7 +122,11 @@ class MozBaseAssembler : public js::jit::AssemblerShared {
   
   
   BufferOffset nextInstrOffset() {
-    return armbuffer_.nextInstrOffset();
+    return armbuffer_.nextInstrOffset(1, 0);
+  }
+  BufferOffset nextInstrOffset(ImmBranchRangeType branchRange) {
+    
+    return armbuffer_.nextInstrOffset(1, branchRange < NumShortBranchRangeTypes);
   }
 
   

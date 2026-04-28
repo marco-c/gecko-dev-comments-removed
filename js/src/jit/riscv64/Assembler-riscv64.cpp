@@ -35,8 +35,6 @@
 
 
 
-
-
 #include "jit/riscv64/Assembler-riscv64.h"
 
 #include "mozilla/DebugOnly.h"
@@ -1176,7 +1174,7 @@ int32_t Assembler::branchLongOffsetHelper(Label* L) {
     return kEndOfJumpChain;
   }
 
-  BufferOffset next_instr_offset = nextInstrOffset(2);
+  BufferOffset next_instr_offset = nextInstrOffset(2, 0);
   DEBUG_PRINTF("\tbranchLongOffsetHelper: %p to (%d)\n", L,
                next_instr_offset.getOffset());
 
@@ -1250,7 +1248,7 @@ int32_t Assembler::branchOffsetHelper(Label* L, OffsetSize bits) {
     return kEndOfJumpChain;
   }
 
-  BufferOffset next_instr_offset = nextInstrOffset();
+  BufferOffset next_instr_offset = nextInstrOffset(1, 1);
   DEBUG_PRINTF("\tbranchOffsetHelper: %p to %d\n", L,
                next_instr_offset.getOffset());
 

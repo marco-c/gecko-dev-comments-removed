@@ -36,8 +36,6 @@
 
 
 
-
-
 #ifndef jit_riscv64_Assembler_riscv64_h
 #define jit_riscv64_Assembler_riscv64_h
 
@@ -298,8 +296,8 @@ class Assembler : public AssemblerShared,
   BufferOffset nextOffset() { return m_buffer.nextOffset(); }
   
   
-  BufferOffset nextInstrOffset(int numInstr = 1) {
-    return m_buffer.nextInstrOffset(numInstr);
+  BufferOffset nextInstrOffset(unsigned numInsts, unsigned numNewDeadlines) {
+    return m_buffer.nextInstrOffset(numInsts, numNewDeadlines);
   }
   void comment(const char* msg) { spew("; %s", msg); }
 
