@@ -3550,6 +3550,8 @@ pref("browser.ipProtection.userEnableCount", 0);
 
 pref("browser.ipProtection.everOpenedPanel", false);
 
+pref("browser.ipProtection.openedPanelWithLocation", false);
+
 pref("browser.ipProtection.features.siteExceptions", true);
 
 pref("browser.ipProtection.siteExceptionsHintsEnabled", true);
