@@ -356,9 +356,6 @@ static void AddX11Dependencies(SandboxBroker::Policy* policy) {
   
   
   
-  
-  
-  
   static const bool kIsX11 =
       !mozilla::widget::GdkIsWaylandDisplay() && PR_GetEnv("DISPLAY");
   if (kIsX11) {

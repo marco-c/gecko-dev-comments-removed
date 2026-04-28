@@ -12,12 +12,10 @@
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/StaticPrefs_security.h"
-#include "mozilla/StaticPrefs_webgl.h"
 
 #include "prenv.h"
 
 #ifdef XP_WIN
-#  include "mozilla/gfx/gfxVars.h"
 #  include "nsExceptionHandler.h"
 #  include "PDMFactory.h"
 #endif  
@@ -40,9 +38,6 @@ const char* ContentWin32kLockdownStateToString(
 
     case nsIXULRuntime::ContentWin32kLockdownState::PrefNotSet:
       return "Win32k Lockdown disabled -- Preference not set";
-
-    case nsIXULRuntime::ContentWin32kLockdownState::MissingRemoteWebGL:
-      return "Win32k Lockdown disabled -- Missing Remote WebGL";
 
     case nsIXULRuntime::ContentWin32kLockdownState::MissingNonNativeTheming:
       return "Win32k Lockdown disabled -- Missing Non-Native Theming";
@@ -118,23 +113,6 @@ nsIXULRuntime::ContentWin32kLockdownState GetContentWin32kLockdownState() {
 #endif  
 }
 
-#if defined(XP_WIN)
-static bool IsWebglOutOfProcessEnabled() {
-  if (StaticPrefs::webgl_out_of_process_force()) {
-    return true;
-  }
-
-  
-  
-  
-  if (gfx::gfxVars::IsInitialized() && !gfx::gfxVars::AllowWebglOop()) {
-    return false;
-  }
-
-  return StaticPrefs::webgl_out_of_process();
-}
-#endif
-
 int GetEffectiveContentSandboxLevel() {
   if (PR_GetEnv("MOZ_DISABLE_CONTENT_SANDBOX")) {
     return 0;
@@ -178,8 +156,7 @@ int GetEffectiveContentSandboxLevel() {
   
   
   if (level >= 8 &&
-      (!IsWebglOutOfProcessEnabled() ||
-       !PDMFactory::AllDecodersAreRemote()
+      (!PDMFactory::AllDecodersAreRemote()
 #  if defined(MOZ_WEBRTC) && !defined(MOZ_THUNDERBIRD)
        
        
