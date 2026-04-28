@@ -56,8 +56,7 @@ class InputVolumeController final {
     
     
     
-    int target_range_max_dbfs = -30;
-    int target_range_experimental_max_dbfs = -12;
+    int target_range_max_dbfs = -12;
     int target_range_min_dbfs = -50;
     
     int update_input_volume_wait_frames = 100;
