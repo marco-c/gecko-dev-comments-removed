@@ -263,6 +263,10 @@ class IProtocol : public HasResultCodes {
   already_AddRefed<ActorLifecycleProxy> ActorConnected();
 
   
+  
+  void DoomSubtree();
+
+  
   void ActorDisconnected(ActorDestroyReason aWhy);
 
   
@@ -302,8 +306,6 @@ class IProtocol : public HasResultCodes {
 #else
   void WarnMessageDiscarded(IPC::Message*) {}
 #endif
-
-  void DoomSubtree();
 
   
   

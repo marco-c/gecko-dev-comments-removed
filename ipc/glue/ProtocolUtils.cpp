@@ -609,9 +609,10 @@ void IProtocol::ActorDisconnected(ActorDestroyReason aWhy) {
 }
 
 void IProtocol::DoomSubtree() {
-  MOZ_ASSERT(
-      mLinkStatus == LinkStatus::Connected || mLinkStatus == LinkStatus::Doomed,
-      "Invalid link status for SetDoomed");
+  
+  if (mLinkStatus != LinkStatus::Connected) {
+    return;
+  }
   for (ProtocolId id : ManagedProtocolIds()) {
     for (IProtocol* actor : *GetManagedActors(id)) {
       actor->DoomSubtree();
