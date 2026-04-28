@@ -2111,14 +2111,21 @@ void IonIC::attachCacheIRStub(JSContext* cx, const CacheIRWriter& writer,
   
   if (ionScript->hasProfilingInstrumentation()) {
     uint8_t* addr = rejoinAddr(ionScript);
-    auto entry = MakeJitcodeGlobalEntry<IonICEntry>(cx, code, code->raw(),
-                                                    code->rawEnd(), addr);
+    auto* globalTable = cx->runtime()->jitRuntime()->getJitcodeGlobalTable();
+
+    
+    
+    
+    auto* parent = globalTable->lookup(addr);
+    MOZ_RELEASE_ASSERT(parent && parent->isIon());
+
+    auto entry = MakeJitcodeGlobalEntry<IonICEntry>(
+        cx, code, code->raw(), code->rawEnd(), addr, &parent->asIon());
     if (!entry) {
       cx->recoverFromOutOfMemory();
       return;
     }
 
-    auto* globalTable = cx->runtime()->jitRuntime()->getJitcodeGlobalTable();
     if (!globalTable->addEntry(std::move(entry))) {
       return;
     }

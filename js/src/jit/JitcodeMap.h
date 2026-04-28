@@ -318,23 +318,33 @@ class IonICEntry : public JitcodeGlobalEntry {
   
   void* rejoinAddr_;
 
+  
+  
+  
+  
+  
+  
+  IonEntry* ionEntry_;
+
  public:
   IonICEntry(JitCode* code, void* nativeStartAddr, void* nativeEndAddr,
-             void* rejoinAddr)
+             void* rejoinAddr, IonEntry* ionEntry)
       : JitcodeGlobalEntry(Kind::IonIC, code, nativeStartAddr, nativeEndAddr),
-        rejoinAddr_(rejoinAddr) {
+        rejoinAddr_(rejoinAddr),
+        ionEntry_(ionEntry) {
     MOZ_ASSERT(rejoinAddr_);
+    MOZ_ASSERT(ionEntry_);
   }
 
   void* rejoinAddr() const { return rejoinAddr_; }
+  IonEntry& ionEntry() const { return *ionEntry_; }
 
   void* canonicalNativeAddrFor(void* ptr) const;
 
-  uint32_t callStackAtAddr(JSRuntime* rt, void* ptr,
-                           CallStackFrameInfo* results,
+  uint32_t callStackAtAddr(void* ptr, CallStackFrameInfo* results,
                            uint32_t maxResults) const;
 
-  uint64_t realmID(JSRuntime* rt) const;
+  uint64_t realmID() const;
 };
 
 class BaselineEntry : public JitcodeGlobalEntry {
@@ -516,7 +526,7 @@ class JitcodeGlobalTable {
 
   JitcodeGlobalEntry* lookup(void* ptr) { return lookupInternal(ptr); }
 
-  const JitcodeGlobalEntry* lookupForSampler(void* ptr, JSRuntime* rt,
+  const JitcodeGlobalEntry* lookupForSampler(void* ptr,
                                              uint64_t samplePosInBuffer);
 
   [[nodiscard]] bool addEntry(UniqueJitcodeGlobalEntry entry);

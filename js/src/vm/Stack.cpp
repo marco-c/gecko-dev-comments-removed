@@ -691,8 +691,8 @@ JS::ProfilingFrameIterator::getPhysicalFrameAndEntry(
   
   
   if (samplePositionInProfilerBuffer_) {
-    *entry = table->lookupForSampler(returnAddr, cx_->runtime(),
-                                     *samplePositionInProfilerBuffer_);
+    *entry =
+        table->lookupForSampler(returnAddr, *samplePositionInProfilerBuffer_);
   } else {
     *entry = table->lookup(returnAddr);
   }
