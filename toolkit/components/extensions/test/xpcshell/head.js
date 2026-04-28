@@ -495,6 +495,14 @@ async function assertIsPersistentScriptsCachedFlag(ext, expectedValue) {
   );
 }
 
+
+
+
+
+let gNumTriggeredCrashes = 0;
+
+
+
 function setup_crash_reporter_override_and_cleaner() {
   const crashIds = [];
   
@@ -513,6 +521,7 @@ function setup_crash_reporter_override_and_cleaner() {
       
       
       crashIds.push(id);
+      info(`Detected crash with dumpID: ${id} (total: ${crashIds.length})`);
     },
     QueryInterface: ChromeUtils.generateQI(["nsICrashService"]),
   });
@@ -525,6 +534,30 @@ function setup_crash_reporter_override_and_cleaner() {
       Ci.nsICrashReporter
     );
 
+    let errorIfCrashDumpsNotFound;
+    if (crashIds.length !== gNumTriggeredCrashes) {
+      
+      
+      
+      
+      
+      
+      info(
+        `Got ${crashIds.length} instead of ${gNumTriggeredCrashes} crash dumps`
+      );
+      try {
+        await TestUtils.waitForCondition(
+          () => crashIds.length >= gNumTriggeredCrashes,
+          `Waiting for all expected crash dumps to have been written`
+        );
+      } catch (e) {
+        
+        
+        
+        info(`Did not find all expected crash dumps, cleaning up what we have`);
+        errorIfCrashDumpsNotFound = e;
+      }
+    }
     info(`Observed ${crashIds.length} crash dump(s).`);
     let deletedCount = 0;
     for (let id of crashIds) {
@@ -550,6 +583,9 @@ function setup_crash_reporter_override_and_cleaner() {
       ++deletedCount;
     }
     info(`Removed ${deletedCount} crash dumps out of ${crashIds.length}`);
+    if (errorIfCrashDumpsNotFound) {
+      throw errorIfCrashDumpsNotFound;
+    }
   });
 }
 
@@ -560,6 +596,8 @@ function crashFrame(browser) {
     
     throw new Error("<browser> must be remote");
   }
+
+  ++gNumTriggeredCrashes;
 
   const { BrowserTestUtils } = ChromeUtils.importESModule(
     "resource://testing-common/BrowserTestUtils.sys.mjs"
