@@ -412,6 +412,16 @@ class ResponsiveUI extends EventEmitter {
     this.tab.linkedBrowser.style.removeProperty("top");
 
     
+    InspectorUtils.setVerticalClipping(
+      this.tab.linkedBrowser.browsingContext,
+      0
+    );
+    InspectorUtils.setDynamicToolbarMaxHeight(
+      this.tab.linkedBrowser.browsingContext,
+      0
+    );
+
+    
     
     if (!isTabContentDestroying) {
       let reloadNeeded = false;
