@@ -22,11 +22,19 @@ use crate::prim_store::{
     InternablePrimitive, PrimitiveStore,
 };
 use crate::prim_store::PrimitiveInstanceKind;
+use crate::prim_store::storage;
 use crate::spatial_tree::SpatialNodeIndex;
 use crate::util::clamp_to_scale_factor;
 
 
 pub const MAX_LINE_DECORATION_RESOLUTION: u32 = 4096;
+
+
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+pub struct LineDecorationScratch {
+    pub task_id: RenderTaskId,
+}
 
 #[derive(Clone, Debug, Hash, MallocSizeOf, PartialEq, Eq)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
@@ -95,11 +103,11 @@ impl LineDecorationData {
         prim_spatial_node_index: SpatialNodeIndex,
         frame_context: &FrameBuildingContext,
         frame_state: &mut FrameBuildingState,
-    ) -> Option<RenderTaskId> {
+    ) -> RenderTaskId {
         
         
         let Some(cache_key) = self.cache_key.as_ref() else {
-            return None;
+            return RenderTaskId::INVALID;
         };
 
         
@@ -142,7 +150,7 @@ impl LineDecorationData {
         task_size.height = task_size.height.max(1);
 
         
-        Some(frame_state.resource_cache.request_render_task(
+        frame_state.resource_cache.request_render_task(
             Some(RenderTaskCacheKey {
                 origin: DeviceIntPoint::zero(),
                 size: task_size,
@@ -164,7 +172,7 @@ impl LineDecorationData {
                     ),
                 ))
             }
-        ))
+        )
     }
 
     fn write_prim_gpu_blocks(
@@ -231,7 +239,7 @@ impl InternablePrimitive for LineDecoration {
     ) -> PrimitiveInstanceKind {
         PrimitiveInstanceKind::LineDecoration {
             data_handle,
-            render_task: None,
+            scratch_handle: storage::Index::INVALID,
         }
     }
 }

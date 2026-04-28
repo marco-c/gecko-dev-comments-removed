@@ -22,7 +22,16 @@ use crate::render_task_graph::RenderTaskId;
 use crate::spatial_tree::SpatialNodeIndex;
 use crate::util::clamp_to_scale_factor;
 
-use super::storage;
+use crate::prim_store::storage;
+
+
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+pub struct NormalBorderScratch {
+    
+    
+    pub task_ids: storage::Range<RenderTaskId>,
+}
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
@@ -94,7 +103,7 @@ impl NormalBorderData {
         device_pixel_scale: DevicePixelScale,
         frame_context: &FrameBuildingContext,
         frame_state: &mut FrameBuildingState,
-        segment_cb: &mut dyn FnMut(RenderTaskId),
+        task_ids: &mut [RenderTaskId],
     ) {
         common_data.may_need_repetition =
             matches!(self.border.top.style, BorderStyle::Dotted | BorderStyle::Dashed) ||
@@ -133,7 +142,7 @@ impl NormalBorderData {
         
         
 
-        for segment in &self.border_segments {
+        for (i, segment) in self.border_segments.iter().enumerate() {
             
             let cache_size = to_cache_size(segment.local_task_size, &mut scale);
             let cache_key = RenderTaskCacheKey {
@@ -164,7 +173,7 @@ impl NormalBorderData {
                 }
             );
 
-            segment_cb(task_id);
+            task_ids[i] = task_id;
         }
     }
 }
@@ -231,7 +240,7 @@ impl InternablePrimitive for NormalBorderPrim {
     ) -> PrimitiveInstanceKind {
         PrimitiveInstanceKind::NormalBorder {
             data_handle,
-            render_task_ids: storage::Range::empty(),
+            scratch_handle: storage::Index::INVALID,
         }
     }
 }
