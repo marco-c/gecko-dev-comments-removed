@@ -2,9 +2,9 @@
 
 
 
-
 #include "nsFontCache.h"
 
+#include "gfxFontUtils.h"
 #include "gfxTextRun.h"
 #include "mozilla/Services.h"
 #include "mozilla/ServoUtils.h"
@@ -96,12 +96,12 @@ already_AddRefed<nsFontMetrics> nsFontCache::GetMetricsFor(
   
   
   if (n >= kMaxCacheEntries - 1 && !mFlushPending) {
-    if (NS_IsMainThread()) {
-      Flush(mFontMetrics.Length() - kMaxCacheEntries / 2);
-    } else {
+    if (gfxFontUtils::IsInServoTraversal()) {
       mFlushPending = true;
       nsCOMPtr<nsIRunnable> flushTask = new FlushFontMetricsTask(this);
       MOZ_ALWAYS_SUCCEEDS(NS_DispatchToMainThread(flushTask));
+    } else {
+      Flush(mFontMetrics.Length() - kMaxCacheEntries / 2);
     }
   }
 
