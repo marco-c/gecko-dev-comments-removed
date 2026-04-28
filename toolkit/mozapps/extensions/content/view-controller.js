@@ -1,22 +1,26 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { isDiscoverEnabled } from "./aboutaddons-utils.mjs";
 
-// Used by external callers to load a specific view into the manager
-export function loadView(viewId) {
+
+
+"use strict";
+
+
+
+
+
+
+function loadView(viewId) {
   if (!gViewController.readyForLoadView) {
     throw new Error("loadView called before about:addons is initialized");
   }
   gViewController.loadView(viewId);
 }
 
-/**
- * Helper for saving and restoring the scroll offsets when a previously loaded
- * view is accessed again.
- */
-export var ScrollOffsets = {
+
+
+
+
+var ScrollOffsets = {
   _key: null,
   _offsets: new Map(),
   canRestore: true,
@@ -46,7 +50,7 @@ export var ScrollOffsets = {
   },
 };
 
-export var gViewController = {
+var gViewController = {
   currentViewId: null,
   readyForLoadView: false,
   get defaultViewId() {
@@ -56,11 +60,11 @@ export var gViewController = {
     return "addons://discover/";
   },
   isLoading: true,
-  // All historyEntryId values must be unique within one session, because the
-  // IDs are used to map history entries to page state. It is not possible to
-  // see whether a historyEntryId was used in history entries before this page
-  // was loaded, so start counting from a random value to avoid collisions.
-  // This is used for scroll offsets in aboutaddons.js
+  
+  
+  
+  
+  
   nextHistoryEntryId: Math.floor(Math.random() * 2 ** 32),
   views: {},
 
@@ -80,7 +84,7 @@ export var gViewController = {
 
     if (e.type == "unload") {
       Services.obs.removeObserver(this, "EM-ping");
-      // eslint-disable-next-line no-useless-return
+      
       return;
     }
   },
@@ -98,7 +102,7 @@ export var gViewController = {
   },
 
   notifyEMUpdateCheckFinished() {
-    // Notify the observer about a completed update check (currently only used in tests).
+    
     Services.obs.notifyObservers(null, "EM-update-check-finished");
   },
 
@@ -123,7 +127,7 @@ export var gViewController = {
       return Promise.resolve();
     }
 
-    // Always rewrite history state instead of pushing incorrect state for initial load.
+    
     replace = replace || !this.currentViewId;
 
     const state = {
@@ -154,30 +158,30 @@ export var gViewController = {
     this.currentViewId = state.view;
     this.isLoading = true;
 
-    // Perform tasks before view load
+    
     document.dispatchEvent(
       new CustomEvent("view-selected", {
         detail: { id: state.view, param, type },
       })
     );
 
-    // Render the fragment
+    
     this.container.setAttribute("current-view", type);
     let fragment = await this.views[type](param);
 
-    // Clear and append the fragment
+    
     if (fragment) {
       this.container.textContent = "";
       this.container.append(fragment);
 
-      // Most content has been rendered at this point. The only exception are
-      // recommendations in the discovery pane and extension/theme list, because
-      // they rely on remote data. If loaded before, then these may be rendered
-      // within one tick, so wait a full frame before restoring scroll offsets.
+      
+      
+      
+      
       await new Promise(resolve => {
         window.requestAnimationFrame(() => {
           window.requestAnimationFrame(async () => {
-            // Ensure all our content is translated.
+            
             if (document.hasPendingL10nMutations) {
               await new Promise(r => {
                 document.addEventListener("L10nMutationsFinished", r, {
@@ -191,7 +195,7 @@ export var gViewController = {
         });
       });
     } else {
-      // Reset to default view if no given content
+      
       this.resetState();
       return;
     }

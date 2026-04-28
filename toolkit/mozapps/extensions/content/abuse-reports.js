@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const { AbuseReporter } = ChromeUtils.importESModule(
+  "resource://gre/modules/AbuseReporter.sys.mjs"
+);
+
+async function openAbuseReport({ addonId }) {
+  
+  
+
+  const amoUrl = AbuseReporter.getAMOFormURL({ addonId });
+  windowRoot.ownerGlobal.openTrustedLinkIn(amoUrl, "tab", {
+    
+    
+    forceForeground: true,
+  });
+}
+
+window.openAbuseReport = openAbuseReport;

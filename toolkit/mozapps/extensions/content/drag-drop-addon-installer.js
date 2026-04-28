@@ -1,24 +1,9 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { getBrowserElement } from "../aboutaddons-utils.mjs";
 
-const { AddonManager } = ChromeUtils.importESModule(
-  "resource://gre/modules/AddonManager.sys.mjs"
-);
 
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
 
-const lazy = {};
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
-  "XPINSTALL_ENABLED",
-  "xpinstall.enabled",
-  true
-);
+
+"use strict";
 
 class DragDropAddonInstaller extends HTMLElement {
   connectedCallback() {
@@ -39,8 +24,8 @@ class DragDropAddonInstaller extends HTMLElement {
   }
 
   handleEvent(e) {
-    if (!lazy.XPINSTALL_ENABLED) {
-      // Nothing to do if we can't install add-ons.
+    if (!XPINSTALL_ENABLED) {
+      
       return;
     }
 
@@ -56,7 +41,7 @@ class DragDropAddonInstaller extends HTMLElement {
     let browser = getBrowserElement();
     let urls = [];
 
-    // Convert every dropped item into a url, without this should be sync.
+    
     for (let i = 0; i < dataTransfer.mozItemCount; i++) {
       let url = dataTransfer.mozGetDataAt("text/uri-list", i);
       if (!url) {
@@ -76,7 +61,7 @@ class DragDropAddonInstaller extends HTMLElement {
       }
     }
 
-    // Install the add-ons, the await clears the event data so we do this last.
+    
     for (let url of urls) {
       let install = await AddonManager.getInstallForURL(url, {
         telemetryInfo: {
