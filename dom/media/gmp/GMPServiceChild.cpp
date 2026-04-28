@@ -2,7 +2,6 @@
 
 
 
-
 #include "GMPServiceChild.h"
 
 #include "GMPLog.h"
@@ -369,10 +368,19 @@ GeckoMediaPluginServiceChild::Observe(nsISupports* aSubject, const char* aTopic,
   GMP_LOG_DEBUG("%s::%s: aTopic=%s", __CLASS__, __FUNCTION__, aTopic);
   if (!strcmp(NS_XPCOM_SHUTDOWN_THREADS_OBSERVER_ID, aTopic)) {
     if (mServiceChild) {
-      MutexAutoLock lock(mMutex);
-      mozilla::SyncRunnable::DispatchToThread(
-          mGMPThread,
-          WrapRunnable(mServiceChild.get(), &PGMPServiceChild::Close));
+      
+      
+      
+      
+      
+      
+      nsCOMPtr<nsIThread> gmpThread;
+      nsresult rv = GetThread(getter_AddRefs(gmpThread));
+      if (NS_SUCCEEDED(rv) && gmpThread) {
+        mozilla::SyncRunnable::DispatchToThread(
+            gmpThread,
+            WrapRunnable(mServiceChild.get(), &PGMPServiceChild::Close));
+      }
       mServiceChild = nullptr;
     }
     ShutdownGMPThread();
