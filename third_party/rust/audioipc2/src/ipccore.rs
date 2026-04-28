@@ -40,7 +40,7 @@ enum Request {
     AddConnection(
         sys::Pipe,
         Box<dyn Driver + Send>,
-        Option<mpsc::Sender<Result<Token>>>,
+        mpsc::Sender<Result<Token>>,
     ),
     
     Shutdown,
@@ -77,10 +77,6 @@ impl EventLoopHandle {
         })
     }
 
-    
-    
-    
-    
     pub fn bind_server<S: Server + Send + 'static>(
         &self,
         server: S,
@@ -92,28 +88,12 @@ impl EventLoopHandle {
     {
         let handler = make_server::<S>(server);
         let driver = Box::new(FramedDriver::new(handler));
-        let r = self.add_connection_async(connection, driver);
+        let r = self.add_connection(connection, driver);
         trace!("EventLoop::bind_server {r:?}");
-        r
+        r.map(|_| ())
     }
 
     
-    
-    fn add_connection_async(
-        &self,
-        connection: sys::Pipe,
-        driver: Box<dyn Driver + Send>,
-    ) -> Result<()> {
-        assert_not_in_event_loop_thread();
-        self.requests
-            .push(Request::AddConnection(connection, driver, None))
-            .map_err(|_| {
-                debug!("EventLoopHandle::add_connection_async send failed");
-                io::ErrorKind::ConnectionAborted
-            })?;
-        self.waker.wake()
-    }
-
     
     fn add_connection(
         &self,
@@ -123,7 +103,7 @@ impl EventLoopHandle {
         assert_not_in_event_loop_thread();
         let (tx, rx) = mpsc::channel();
         self.requests
-            .push(Request::AddConnection(connection, driver, Some(tx)))
+            .push(Request::AddConnection(connection, driver, tx))
             .map_err(|_| {
                 debug!("EventLoopHandle::add_connection send failed");
                 io::ErrorKind::ConnectionAborted
@@ -271,14 +251,7 @@ impl EventLoop {
                 Request::AddConnection(pipe, driver, tx) => {
                     debug!("{}: EventLoop: handling add_connection", self.name);
                     let r = self.add_connection(pipe, driver);
-                    if let Some(tx) = tx {
-                        tx.send(r).expect("EventLoop::add_connection");
-                    } else if let Err(e) = r {
-                        debug!(
-                            "{}: EventLoop: async add_connection failed: {:?}",
-                            self.name, e
-                        );
-                    }
+                    tx.send(r).expect("EventLoop::add_connection");
                 }
                 Request::Shutdown => {
                     debug!("{}: EventLoop: handling shutdown", self.name);
@@ -943,147 +916,5 @@ mod test {
         drop(elt);
 
         stop_rx.recv().expect("before_stop callback done");
-    }
-
-    
-    
-    #[test]
-    fn async_bind_server() {
-        init();
-
-        
-        let (gate_tx, gate_rx) = mpsc::channel();
-        let server = EventLoopThread::new(
-            "test-server".to_string(),
-            None,
-            move || {
-                gate_rx.recv().ok();
-            },
-            || {},
-        )
-        .expect("server EventLoopThread");
-        let server_handle = server.handle();
-
-        let (server_pipe, client_pipe) = sys::make_pipe_pair().expect("make_pipe_pair");
-        server_handle
-            .bind_server(TestServerImpl {}, server_pipe)
-            .expect("bind_server");
-
-        
-        let client = EventLoopThread::new("test-client".to_string(), None, || {}, || {})
-            .expect("client EventLoopThread");
-        let client_handle = client.handle();
-        let client_pipe = unsafe { sys::Pipe::from_raw_handle(client_pipe) };
-        let client_proxy = client_handle
-            .bind_client::<TestClientImpl>(client_pipe)
-            .expect("client bind_client");
-
-        
-        
-        let call_thread = thread::spawn(move || client_proxy.call(TestServerMessage::TestRequest));
-
-        
-        
-        
-        
-        
-        thread::sleep(std::time::Duration::from_millis(200));
-
-        
-        
-        
-        gate_tx.send(()).ok();
-
-        let response = call_thread
-            .join()
-            .expect("call thread panicked")
-            .expect("client response");
-        assert_eq!(response, TestClientMessage::TestResponse);
-
-        drop(client);
-        drop(server);
-    }
-
-    
-    
-    #[test]
-    fn async_bind_server_drops_before_processing() {
-        init();
-        let server = EventLoopThread::new("test-server".to_string(), None, || {}, || {})
-            .expect("server EventLoopThread");
-        let server_handle = server.handle();
-
-        let (server_pipe, client_pipe) = sys::make_pipe_pair().expect("make_pipe_pair");
-        server_handle
-            .bind_server(TestServerImpl {}, server_pipe)
-            .expect("bind_server");
-
-        
-        drop(server);
-
-        let client = EventLoopThread::new("test-client".to_string(), None, || {}, || {})
-            .expect("client EventLoopThread");
-        let client_handle = client.handle();
-
-        let client_pipe = unsafe { sys::Pipe::from_raw_handle(client_pipe) };
-        let client_proxy = client_handle
-            .bind_client::<TestClientImpl>(client_pipe)
-            .expect("client bind_client");
-
-        let response = client_proxy.call(TestServerMessage::TestRequest);
-        response.expect_err("server dropped, should get transport error");
-
-        drop(client);
-    }
-
-    
-    
-    
-    #[test]
-    fn async_bind_server_never_processed() {
-        init();
-
-        
-        
-        let (gate_tx, gate_rx) = mpsc::channel();
-        let server = EventLoopThread::new(
-            "test-server".to_string(),
-            None,
-            move || {
-                gate_rx.recv().ok();
-            },
-            || {},
-        )
-        .expect("server EventLoopThread");
-        let server_handle = server.handle().clone();
-
-        
-        
-        
-        
-        server_handle.shutdown().expect("shutdown");
-
-        let (server_pipe, client_pipe) = sys::make_pipe_pair().expect("make_pipe_pair");
-        server_handle
-            .bind_server(TestServerImpl {}, server_pipe)
-            .expect("bind_server");
-
-        
-        gate_tx.send(()).ok();
-        drop(server);
-
-        let client = EventLoopThread::new("test-client".to_string(), None, || {}, || {})
-            .expect("client EventLoopThread");
-        let client_handle = client.handle();
-
-        let client_pipe = unsafe { sys::Pipe::from_raw_handle(client_pipe) };
-        let client_proxy = client_handle
-            .bind_client::<TestClientImpl>(client_pipe)
-            .expect("client bind_client");
-
-        let response = client_proxy.call(TestServerMessage::TestRequest);
-        response.expect_err("server never processed AddConnection, should get transport error");
-
-        drop(client);
     }
 }
