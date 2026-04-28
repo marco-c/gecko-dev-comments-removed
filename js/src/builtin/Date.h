@@ -20,6 +20,8 @@ class JSLinearString;
 
 namespace js {
 
+class JSOffThreadAtom;
+
 
 
 
@@ -41,6 +43,22 @@ JS::ClippedTime DateNow(JSContext* cx);
 
 JS::ClippedTime DateParse(JSContext* cx, const JSLinearString* str);
 
+struct ParsedDate final {
+  
+
+
+  int64_t date;
+
+  
+
+
+  bool isLocalTime;
+};
+
+
+
+
+bool DateParse(const JSOffThreadAtom* str, ParsedDate* result);
 
 
 

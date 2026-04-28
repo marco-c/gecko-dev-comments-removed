@@ -168,6 +168,15 @@ static inline bool IsTimeValue(double t) {
 
 
 
+
+
+static inline bool IsTimeValue(int64_t t) {
+  return int64_t(StartOfTime) <= t && t <= int64_t(EndOfTime);
+}
+
+
+
+
 template <typename T>
 static inline bool IsLocalTimeValue(T t) {
   static_assert(std::is_same_v<T, double> || std::is_same_v<T, int64_t>);
@@ -741,6 +750,9 @@ static int64_t LocalTime(DateTimeInfo* dtInfo, double t) {
 }
 
 
+static constexpr int64_t InvalidTime = INT64_MIN;
+
+
 
 
 
@@ -751,9 +763,6 @@ static int64_t UTC(DateTimeInfo* dtInfo, T t) {
 
   MOZ_ASSERT(!std::isfinite(t) || IsInteger(t),
              "unexpected fractional parts in local time value");
-
-  
-  static constexpr int64_t InvalidTime = INT64_MIN;
 
   
   
@@ -1102,8 +1111,8 @@ static size_t ParseDigitsNOrLess(const CharT* s, size_t start, size_t limit,
 
 
 template <typename CharT>
-static bool ParseISOStyleDate(DateTimeInfo* dtInfo, const CharT* s,
-                              size_t length, ClippedTime* result) {
+static bool ParseISOStyleDate(const CharT* s, size_t length,
+                              ParsedDate* result) {
   
   
   
@@ -1312,14 +1321,14 @@ static bool ParseISOStyleDate(DateTimeInfo* dtInfo, const CharT* s,
 
   int64_t date = MakeDate(MakeDay(yearSign * year, month, day),
                           MakeTime(hour, min, sec, msec));
-
-  if (isLocalTime) {
-    date = UTC(dtInfo, date);
-  } else {
+  if (!isLocalTime) {
     date -= tzSign * (tzHour * msPerHour + tzMin * msPerMinute);
   }
 
-  *result = TimeClip(date);
+  *result = ParsedDate{
+      .date = date,
+      .isLocalTime = isLocalTime,
+  };
   return true;
 
 #undef JS_ALWAYS_INLINE_LAMBDA
@@ -1619,13 +1628,13 @@ static constexpr size_t MinKeywordLength(const CharsAndAction (&keywords)[N]) {
 }
 
 template <typename CharT>
-static bool ParseDate(JSContext* cx, DateTimeInfo* dtInfo, const CharT* s,
-                      size_t length, ClippedTime* result) {
+static bool ParseDate(JSContext* maybecx, const CharT* s, size_t length,
+                      ParsedDate* result) {
   if (length == 0) {
     return false;
   }
 
-  if (ParseISOStyleDate(dtInfo, s, length, result)) {
+  if (ParseISOStyleDate(s, length, result)) {
     return true;
   }
 
@@ -1654,7 +1663,10 @@ static bool ParseDate(JSContext* cx, DateTimeInfo* dtInfo, const CharT* s,
 
   
   
-  cx->runtime()->setUseCounter(cx->global(), JSUseCounter::DATEPARSE_IMPL_DEF);
+  if (maybecx) {
+    maybecx->runtime()->setUseCounter(maybecx->global(),
+                                      JSUseCounter::DATEPARSE_IMPL_DEF);
+  }
 
   size_t index = 0;
   int mon = -1;
@@ -2139,26 +2151,55 @@ static bool ParseDate(JSContext* cx, DateTimeInfo* dtInfo, const CharT* s,
   double date =
       MakeDate(MakeDay(year, mon, mday), MakeTime(hour, min, sec, msec));
 
-  if (tzOffset == -1) { 
-    date = UTC(dtInfo, date);
-  } else {
+  
+  bool isLocalTime = tzOffset == -1;
+  if (!isLocalTime) {
     date += double(tzOffset) * msPerMinute;
   }
+  MOZ_ASSERT(!std::isfinite(date) || IsInteger(date),
+             "unexpected fractional parts");
 
-  *result = TimeClip(date);
+  
+  int64_t datetime;
+  if (std::abs(date) > double(INT64_MAX)) {
+    datetime = InvalidTime;
+  } else {
+    datetime = mozilla::AssertedCast<int64_t>(date);
+  }
+
+  *result = ParsedDate{
+      .date = datetime,
+      .isLocalTime = isLocalTime,
+  };
   return true;
+}
+
+template <typename LinearStringOrOffThreadAtom>
+static bool ParseDate(JSContext* maybecx, const LinearStringOrOffThreadAtom* s,
+                      ParsedDate* result) {
+  JS::AutoCheckCannotGC nogc;
+  return s->hasLatin1Chars()
+             ? ParseDate(maybecx, s->latin1Chars(nogc), s->length(), result)
+             : ParseDate(maybecx, s->twoByteChars(nogc), s->length(), result);
 }
 
 static bool ParseDate(JSContext* cx, DateTimeInfo* dtInfo,
                       const JSLinearString* s, ClippedTime* result) {
-  JS::AutoCheckCannotGC nogc;
   
   
   cx->runtime()->setUseCounter(cx->global(), JSUseCounter::DATEPARSE);
-  return s->hasLatin1Chars()
-             ? ParseDate(cx, dtInfo, s->latin1Chars(nogc), s->length(), result)
-             : ParseDate(cx, dtInfo, s->twoByteChars(nogc), s->length(),
-                         result);
+
+  ParsedDate parsed;
+  if (!ParseDate(cx, s, &parsed)) {
+    return false;
+  }
+
+  auto [date, isLocalTime] = parsed;
+  if (isLocalTime) {
+    date = UTC(dtInfo, date);
+  }
+  *result = TimeClip(date);
+  return true;
 }
 
 ClippedTime js::DateParse(JSContext* cx, const JSLinearString* str) {
@@ -2167,6 +2208,18 @@ ClippedTime js::DateParse(JSContext* cx, const JSLinearString* str) {
     return ClippedTime::invalid();
   }
   return result;
+}
+
+bool js::DateParse(const JSOffThreadAtom* str, ParsedDate* result) {
+  if (!ParseDate(nullptr, str, result)) {
+    return false;
+  }
+
+  
+  if (result->isLocalTime) {
+    return IsLocalTimeValue(result->date);
+  }
+  return IsTimeValue(result->date);
 }
 
 JS::ClippedTime js::LocalTimeToUTC(JSContext* cx, int64_t localTime) {
@@ -4987,7 +5040,6 @@ JS_PUBLIC_API bool js::DateGetMsecSinceEpoch(JSContext* cx, HandleObject obj,
 
 JS_PUBLIC_API bool JS::IsISOStyleDate(JSContext* cx,
                                       const JS::Latin1Chars& str) {
-  ClippedTime result;
-  return ParseISOStyleDate(cx->realm()->getDateTimeInfo(), str.begin().get(),
-                           str.length(), &result);
+  ParsedDate parsed;
+  return ParseISOStyleDate(str.begin().get(), str.length(), &parsed);
 }
