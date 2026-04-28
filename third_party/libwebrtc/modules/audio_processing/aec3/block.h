@@ -12,10 +12,10 @@
 #define MODULES_AUDIO_PROCESSING_AEC3_BLOCK_H_
 
 #include <algorithm>
+#include <span>
 #include <utility>
 #include <vector>
 
-#include "api/array_view.h"
 #include "modules/audio_processing/aec3/aec3_common.h"
 
 namespace webrtc {
@@ -59,13 +59,13 @@ class Block {
   }
 
   
-  ArrayView<float, kBlockSize> View(int band, int channel) {
-    return ArrayView<float, kBlockSize>(&data_[GetIndex(band, channel)],
+  std::span<float, kBlockSize> View(int band, int channel) {
+    return std::span<float, kBlockSize>(&data_[GetIndex(band, channel)],
                                         kBlockSize);
   }
 
-  ArrayView<const float, kBlockSize> View(int band, int channel) const {
-    return ArrayView<const float, kBlockSize>(&data_[GetIndex(band, channel)],
+  std::span<const float, kBlockSize> View(int band, int channel) const {
+    return std::span<const float, kBlockSize>(&data_[GetIndex(band, channel)],
                                               kBlockSize);
   }
 

@@ -10,15 +10,14 @@
 
 #include "modules/audio_processing/aec3/reverb_frequency_response.h"
 
-#include <stddef.h>
-
 #include <algorithm>
 #include <array>
+#include <cstddef>
 #include <numeric>
 #include <optional>
+#include <span>
 #include <vector>
 
-#include "api/array_view.h"
 #include "modules/audio_processing/aec3/aec3_common.h"
 #include "rtc_base/checks.h"
 
@@ -29,8 +28,8 @@ namespace {
 
 
 
-float AverageDecayWithinFilter(ArrayView<const float> freq_resp_direct_path,
-                               ArrayView<const float> freq_resp_tail) {
+float AverageDecayWithinFilter(std::span<const float> freq_resp_direct_path,
+                               std::span<const float> freq_resp_tail) {
   
   constexpr size_t kSkipBins = 1;
   RTC_CHECK_EQ(freq_resp_direct_path.size(), freq_resp_tail.size());
@@ -77,10 +76,10 @@ void ReverbFrequencyResponse::Update(
         frequency_response,
     int filter_delay_blocks,
     float linear_filter_quality) {
-  ArrayView<const float> freq_resp_tail(
+  std::span<const float> freq_resp_tail(
       frequency_response[frequency_response.size() - 1]);
 
-  ArrayView<const float> freq_resp_direct_path(
+  std::span<const float> freq_resp_direct_path(
       frequency_response[filter_delay_blocks]);
 
   float average_decay =

@@ -13,9 +13,8 @@
 
 #include <stddef.h>
 
+#include <span>
 #include <vector>
-
-#include "api/array_view.h"
 
 namespace webrtc {
 namespace aec3 {
@@ -29,7 +28,7 @@ class MovingAverage {
 
   
   
-  void Average(ArrayView<const float> input, ArrayView<float> output);
+  void Average(std::span<const float> input, std::span<float> output);
 
  private:
   const size_t num_elem_;

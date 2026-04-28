@@ -12,8 +12,8 @@
 #define MODULES_AUDIO_PROCESSING_AEC3_REVERB_MODEL_H_
 
 #include <array>
+#include <span>
 
-#include "api/array_view.h"
 #include "modules/audio_processing/aec3/aec3_common.h"
 
 namespace webrtc {
@@ -29,7 +29,7 @@ class ReverbModel {
   void Reset();
 
   
-  ArrayView<const float, kFftLengthBy2Plus1> reverb() const { return reverb_; }
+  std::span<const float, kFftLengthBy2Plus1> reverb() const { return reverb_; }
 
   
   
@@ -37,13 +37,13 @@ class ReverbModel {
   
   
   
-  void UpdateReverbNoFreqShaping(ArrayView<const float> power_spectrum,
+  void UpdateReverbNoFreqShaping(std::span<const float> power_spectrum,
                                  float power_spectrum_scaling,
                                  float reverb_decay);
 
   
-  void UpdateReverb(ArrayView<const float> power_spectrum,
-                    ArrayView<const float> power_spectrum_scaling,
+  void UpdateReverb(std::span<const float> power_spectrum,
+                    std::span<const float> power_spectrum_scaling,
                     float reverb_decay);
 
  private:
