@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_CamerasChild_h
 #define mozilla_CamerasChild_h
 
@@ -118,8 +116,6 @@ class CamerasSingleton {
 
 CamerasChild* GetCamerasChild();
 
-CamerasChild* GetCamerasChildIfExists();
-
 
 
 
@@ -221,6 +217,11 @@ class CamerasChild final : public PCamerasChild {
   }
 
   FrameRelay* Callback(int capture_id);
+
+  
+  static void RemoveCallbackIfExists(int capture_id);
+
+  void ClearAllCallbacks();
 
  private:
   CamerasChild();

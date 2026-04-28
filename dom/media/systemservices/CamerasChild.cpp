@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "CamerasChild.h"
 
 #undef FF
@@ -93,9 +91,13 @@ CamerasChild* GetCamerasChild() {
   return CamerasSingleton::Child();
 }
 
-CamerasChild* GetCamerasChildIfExists() {
+void CamerasChild::RemoveCallbackIfExists(int capture_id) {
+  
+  
   OffTheBooksMutexAutoLock lock(CamerasSingleton::Mutex());
-  return CamerasSingleton::Child();
+  if (CamerasChild* child = CamerasSingleton::Child()) {
+    child->RemoveCallback(capture_id);
+  }
 }
 
 mozilla::ipc::IPCResult CamerasChild::RecvReplyFailure(void) {
@@ -396,6 +398,11 @@ void CamerasChild::RemoveCallback(const int capture_id) {
   }
 }
 
+void CamerasChild::ClearAllCallbacks() {
+  MutexAutoLock lock(mCallbackMutex);
+  mCallbacks.Clear();
+}
+
 int CamerasChild::StartCapture(CaptureEngine aCapEngine, const int capture_id,
                                const webrtc::VideoCaptureCapability& webrtcCaps,
                                const NormalizedConstraints& constraints,
@@ -478,6 +485,7 @@ void Shutdown(void) {
     LOG(("Shutdown when already shut down"));
     return;
   }
+  child->ClearAllCallbacks();
   if (CamerasSingleton::Thread()) {
     LOG(("PBackground thread exists, dispatching close"));
     
