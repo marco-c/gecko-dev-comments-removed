@@ -296,6 +296,19 @@ void GeckoMediaPluginServiceChild::BeginShutdown() {
   
   
   mShuttingDownOnGMPThread = true;
+
+  
+  
+  
+  
+  nsTArray<MozPromiseHolder<GetServiceChildPromise>> holders =
+      std::move(mGetServiceChildPromises);
+  for (auto& holder : holders) {
+    holder.Reject(MediaResult(NS_ERROR_ABORT,
+                              "GeckoMediaPluginServiceChild shutting down"_ns),
+                  __func__);
+  }
+
   RemoveShutdownBlockerIfNeeded();
 }
 
