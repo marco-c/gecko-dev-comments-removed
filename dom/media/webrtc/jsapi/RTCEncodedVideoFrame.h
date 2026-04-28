@@ -2,12 +2,9 @@
 
 
 
-
-
 #ifndef MOZILLA_DOM_MEDIA_WEBRTC_JSAPI_RTCENCODEDVIDEOFRAME_H_
 #define MOZILLA_DOM_MEDIA_WEBRTC_JSAPI_RTCENCODEDVIDEOFRAME_H_
 
-#include "mozilla/RefPtr.h"
 #include "mozilla/dom/RTCEncodedFrameBase.h"
 #include "mozilla/dom/RTCEncodedVideoFrameBinding.h"
 #include "nsIGlobalObject.h"
@@ -15,6 +12,7 @@
 namespace mozilla::dom {
 
 class RTCRtpScriptTransformer;
+class RTCStatsTimestampMaker;
 class StructuredCloneHolder;
 struct RTCEncodedVideoFrameOptions;
 
@@ -36,15 +34,11 @@ class RTCEncodedVideoFrame final : public RTCEncodedVideoFrameData,
   explicit RTCEncodedVideoFrame(
       nsIGlobalObject* aGlobal,
       std::unique_ptr<webrtc::TransformableFrameInterface> aFrame,
-      uint64_t aCounter, RTCRtpScriptTransformer* aOwner);
+      uint64_t aCounter, RTCRtpScriptTransformer* aOwner,
+      const Maybe<RTCStatsTimestampMaker>& aTimestampMaker);
 
   explicit RTCEncodedVideoFrame(nsIGlobalObject* aGlobal,
                                 RTCEncodedVideoFrameData&& aData);
-
-  
-  NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS_INHERITED(RTCEncodedVideoFrame,
-                                                         RTCEncodedFrameBase)
 
   
   JSObject* WrapObject(JSContext* aCx,
@@ -53,8 +47,6 @@ class RTCEncodedVideoFrame final : public RTCEncodedVideoFrameData,
   static already_AddRefed<RTCEncodedVideoFrame> Constructor(
       const GlobalObject& aGlobal, const RTCEncodedVideoFrame& aOriginalFrame,
       const RTCEncodedVideoFrameOptions& aOptions, ErrorResult& aRv);
-
-  nsIGlobalObject* GetParentObject() const;
 
   RTCEncodedVideoFrameType Type() const;
 
@@ -77,7 +69,7 @@ class RTCEncodedVideoFrame final : public RTCEncodedVideoFrameData,
                             StructuredCloneHolder* aHolder) const;
 
  private:
-  virtual ~RTCEncodedVideoFrame();
+  virtual ~RTCEncodedVideoFrame() = default;
 
   
   RTCEncodedVideoFrame(const RTCEncodedVideoFrame&) = delete;
@@ -89,8 +81,6 @@ class RTCEncodedVideoFrame final : public RTCEncodedVideoFrameData,
   void AssertIsOnOwningThread() const {
     NS_ASSERT_OWNINGTHREAD(RTCEncodedVideoFrame);
   }
-
-  RefPtr<RTCRtpScriptTransformer> mOwner;
 };
 
 }  

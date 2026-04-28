@@ -8,6 +8,8 @@
 #include "libwebrtcglue/SystemTime.h"
 #include "mozilla/dom/Performance.h"
 #include "mozilla/dom/PerformanceService.h"
+#include "mozilla/dom/WorkerPrivate.h"
+#include "mozilla/dom/WorkerScope.h"
 #include "nsRFPService.h"
 
 namespace mozilla::dom {
@@ -42,6 +44,16 @@ webrtc::Timestamp RTCStatsTimestamp::ToDomRealtime() const {
       (mMozTime - mState.mStartDomRealtime).ToMicroseconds());
 }
 
+DOMHighResTimeStamp RTCStatsTimestamp::ToDomNoTimeOrigin() const {
+  double realtime = ToDomRealtime().ms<double>();
+  
+  if (mState.mRandomTimelineSeed) {
+    return nsRFPService::ReduceTimePrecisionAsMSecs(
+        realtime, mState.mRandomTimelineSeed, mState.mRTPCallerType);
+  }
+  return realtime;
+}
+
 DOMHighResTimeStamp RTCStatsTimestamp::ToDom() const {
   
   
@@ -51,13 +63,6 @@ DOMHighResTimeStamp RTCStatsTimestamp::ToDom() const {
   
   
 
-  DOMHighResTimeStamp realtime = ToDomRealtime().ms<double>();
-  
-  if (mState.mRandomTimelineSeed) {
-    realtime = nsRFPService::ReduceTimePrecisionAsMSecs(
-        realtime, mState.mRandomTimelineSeed, mState.mRTPCallerType);
-  }
-
   
   
   
@@ -66,7 +71,7 @@ DOMHighResTimeStamp RTCStatsTimestamp::ToDom() const {
   DOMHighResTimeStamp start = nsRFPService::ReduceTimePrecisionAsMSecs(
       mState.mStartWallClockRaw, 0, mState.mRTPCallerType);
 
-  return start + realtime;
+  return start + ToDomNoTimeOrigin();
 }
 
  RTCStatsTimestamp RTCStatsTimestamp::FromMozTime(
@@ -148,6 +153,13 @@ RTCStatsTimestampMaker RTCStatsTimestampMaker::Create(
     return RTCStatsTimestampMaker::Create();
   }
   return RTCStatsTimestampMaker::Create(aWindow->GetPerformance());
+}
+
+
+RTCStatsTimestampMaker RTCStatsTimestampMaker::Create(
+    const WorkerPrivate& aWorkerPrivate) {
+  return RTCStatsTimestampMaker::Create(
+      aWorkerPrivate.GlobalScope()->GetPerformance());
 }
 
 RTCStatsTimestamp RTCStatsTimestampMaker::GetNow() const {

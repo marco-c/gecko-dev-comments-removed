@@ -2,12 +2,11 @@
 
 
 
-
-
 #include "RTCRtpScriptTransformer.h"
 
 #include <stdint.h>
 
+#include <limits>
 #include <memory>
 #include <string>
 #include <utility>
@@ -39,7 +38,9 @@
 #include "mozilla/dom/ToJSValue.h"
 #include "mozilla/dom/UnderlyingSinkCallbackHelpers.h"
 #include "mozilla/dom/UnderlyingSourceCallbackHelpers.h"
+#include "mozilla/dom/WorkerPrivate.h"
 #include "mozilla/dom/WorkerRef.h"
+#include "mozilla/dom/WorkerScope.h"
 #include "mozilla/dom/WritableStream.h"
 #include "mozilla/dom/WritableStreamDefaultController.h"
 #include "nsCOMPtr.h"
@@ -300,6 +301,9 @@ void RTCRtpScriptTransformer::TransformFrame(
     
     mVideo = mProxy->IsVideo();
     MOZ_ASSERT(mVideo.isSome());
+    WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate();
+    MOZ_ASSERT(workerPrivate);
+    mTimestampMaker.emplace(RTCStatsTimestampMaker::Create(*workerPrivate));
   }
 
   RefPtr<RTCEncodedFrameBase> domFrame;
@@ -322,10 +326,12 @@ void RTCRtpScriptTransformer::TransformFrame(
       }
     }
     domFrame = new RTCEncodedVideoFrame(mGlobal, std::move(aFrame),
-                                        ++mLastEnqueuedFrameCounter, this);
+                                        ++mLastEnqueuedFrameCounter, this,
+                                        mTimestampMaker);
   } else {
     domFrame = new RTCEncodedAudioFrame(mGlobal, std::move(aFrame),
-                                        ++mLastEnqueuedFrameCounter, this);
+                                        ++mLastEnqueuedFrameCounter, this,
+                                        mTimestampMaker);
   }
   mReadableSource->Enqueue(domFrame);
 }
@@ -426,8 +432,10 @@ JSObject* RTCRtpScriptTransformer::WrapObject(
 already_AddRefed<Promise> RTCRtpScriptTransformer::OnTransformedFrame(
     RTCEncodedFrameBase* aFrame, ErrorResult& aError) {
   
+  
   if (aFrame->GetCounter() > mLastReceivedFrameCounter &&
-      aFrame->CheckOwner(this) && mProxy) {
+      aFrame->CheckOwner(this) && mProxy &&
+      aFrame->Size() <= std::numeric_limits<int>::max() / 4) {
     mLastReceivedFrameCounter = aFrame->GetCounter();
     
     if (auto frame = aFrame->TakeFrame()) {

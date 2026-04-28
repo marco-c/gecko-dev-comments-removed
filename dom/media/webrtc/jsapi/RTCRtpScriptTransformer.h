@@ -2,14 +2,13 @@
 
 
 
-
-
 #ifndef MOZILLA_DOM_MEDIA_WEBRTC_JSAPI_RTCRTPSCRIPTTRANSFORMER_H_
 #define MOZILLA_DOM_MEDIA_WEBRTC_JSAPI_RTCRTPSCRIPTTRANSFORMER_H_
 
 #include <memory>
 
 #include "js/RootingAPI.h"
+#include "jsapi/RTCStatsReport.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/ReadableStream.h"
@@ -189,6 +188,7 @@ class RTCRtpScriptTransformer final : public nsISupports,
   
   GenerateKeyFramePromises mGenerateKeyFramePromises;
   Maybe<bool> mVideo;
+  Maybe<RTCStatsTimestampMaker> mTimestampMaker;
   RefPtr<StrongWorkerRef> mWorkerRef;
 };
 

@@ -77,6 +77,8 @@ struct RTCStatsTimestampState {
 
 
 
+
+
 class RTCStatsTimestampMaker;
 class RTCStatsTimestamp {
  public:
@@ -85,6 +87,7 @@ class RTCStatsTimestamp {
   webrtc::Timestamp To1Jan1970() const;
   webrtc::Timestamp ToNtp() const;
   webrtc::Timestamp ToDomRealtime() const;
+  DOMHighResTimeStamp ToDomNoTimeOrigin() const;
   DOMHighResTimeStamp ToDom() const;
 
   static RTCStatsTimestamp FromMozTime(const RTCStatsTimestampMaker& aMaker,
@@ -112,6 +115,7 @@ class RTCStatsTimestampMaker {
   static RTCStatsTimestampMaker Create();
   static RTCStatsTimestampMaker Create(Performance* aPerformance);
   static RTCStatsTimestampMaker Create(nsPIDOMWindowInner* aWindow);
+  static RTCStatsTimestampMaker Create(const WorkerPrivate& aWorkerPrivate);
 
   RTCStatsTimestamp GetNow() const;
 
