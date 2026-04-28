@@ -1,8 +1,9 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-
-
-
-
+with Files("**"):
+    BUG_COMPONENT = ("Core", "DOM: Device Interfaces")
 
 IPDL_SOURCES += [
     "MIDITypes.ipdlh",
@@ -64,7 +65,7 @@ if CONFIG["MOZ_WEBMIDI_MIDIR_IMPL"]:
     ]
 
     if CONFIG["OS_TARGET"] == "Linux":
-        OS_LIBS += ["asound"]  
+        OS_LIBS += ["asound"]  # Required by midir
         UNIFIED_SOURCES += ["AlsaCompatibility.cpp"]
 
 FINAL_LIBRARY = "xul"
