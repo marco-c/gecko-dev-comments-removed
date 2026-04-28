@@ -151,7 +151,9 @@ add_task(async function testTemporaryPermissionExpiry() {
     "geo",
     Services.perms.ALLOW_ACTION,
     browserId,
-    500
+    
+    
+    2000
   );
 
   await waitForPermissionState(browser, "geolocation", "granted");
