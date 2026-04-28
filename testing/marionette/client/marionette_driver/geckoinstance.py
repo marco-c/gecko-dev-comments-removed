@@ -61,8 +61,6 @@ class GeckoInstance:
         
         "browser.uitour.enabled": False,
         
-        "captivedetect.canonicalURL": "",
-        
         "datareporting.healthreport.documentServerURI": "http://%(server)s/dummy/healthreport/",
         "datareporting.healthreport.logging.consoleEnabled": False,
         "datareporting.healthreport.service.enabled": False,
@@ -155,6 +153,8 @@ class GeckoInstance:
         
         
         "mousewheel.allow_scrolling_more_than_one_page": True,
+        
+        "network.captive-portal-service.enabled": False,
         
         "network.connectivity-service.enabled": False,
         

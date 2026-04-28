@@ -60,6 +60,7 @@ user_pref("media.libavcodec.allow-obsolete", true);
 user_pref("media.navigator.enabled", true);
 user_pref("media.navigator.permission.disabled", true);
 user_pref("media.peerconnection.enabled", true);
+user_pref("network.captive-portal-service.enabled", true);
 
 
 
