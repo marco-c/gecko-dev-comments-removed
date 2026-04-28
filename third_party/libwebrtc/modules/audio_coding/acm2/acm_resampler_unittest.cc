@@ -26,13 +26,13 @@ TEST(ResamplerHelperTest, MaybeResampleCheckForMaxSize) {
 
   
   
-  const int kCurrentSampleRateHz = 32000;
-  const int kDesiredSampleRateHz = 48000;
-  const size_t kChannels = 24;
+  const int kCurrentSampleRateHz = 48000;
+  const int kDesiredSampleRateHz = 96000;
+  const size_t kChannels = 16;
 
   
-  std::vector<int16_t> dummy_data(320 * 24, 0);
-  audio_frame.UpdateFrame(0, dummy_data.data(), 320, kCurrentSampleRateHz,
+  std::vector<int16_t> dummy_data(480 * 16, 0);
+  audio_frame.UpdateFrame(0, dummy_data.data(), 480, kCurrentSampleRateHz,
                           AudioFrame::kNormalSpeech, AudioFrame::kVadActive,
                           kChannels);
 
@@ -44,10 +44,13 @@ TEST(ResamplerHelperTest, MaybeResampleCheckForMaxSize) {
 
   
   
+  
+  
   EXPECT_FALSE(resample_success);
   EXPECT_TRUE(audio_frame.muted());
   EXPECT_EQ(audio_frame.sample_rate_hz_, kDesiredSampleRateHz);
-  EXPECT_EQ(audio_frame.num_channels_, kChannels);
+  EXPECT_EQ(audio_frame.num_channels_, AudioFrame::kMaxDataSizeSamples /
+                                           audio_frame.samples_per_channel());
 }
 
 TEST(ResamplerHelperTest, MaybeResampleValidMaxSize) {

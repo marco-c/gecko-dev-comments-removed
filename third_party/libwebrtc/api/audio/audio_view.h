@@ -51,8 +51,7 @@ using MonoView = ArrayView<T>;
 
 
 
-
-static constexpr size_t kMaxNumberOfAudioChannels = 24;
+static constexpr size_t kMaxNumberOfAudioChannels = 16;
 
 
 
