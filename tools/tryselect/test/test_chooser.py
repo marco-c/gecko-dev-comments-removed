@@ -28,6 +28,7 @@ TASKS = [
         "label": "test-windows-xpcshell-e10s",
         "attributes": {
             "unittest_suite": "xpcshell",
+            "build_platform": "windows",
         },
     },
     {
@@ -36,6 +37,7 @@ TASKS = [
         "attributes": {
             "unittest_suite": "mochitest-browser-chrome",
             "mochitest_try_name": "mochitest-browser-chrome",
+            "build_platform": "windows",
         },
     },
 ]
@@ -75,6 +77,44 @@ def test_try_chooser_renders_filters(app):
 
     
     assert b"console.log" not in response.data
+
+
+def test_try_chooser_cross_section_narrowing_preconditions(app):
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    client = app.test_client()
+    response = client.get("/")
+    assert response.status_code == 200
+
+    
+    
+    
+    
+    assert re.search(
+        rb"<input\b(?=[^>]*\bname=\"build\")"
+        rb"(?=[^>]*\bvalue='\{\"build_platform\": \[\"windows\"\]\}')",
+        response.data,
+    )
+    
+    
+    
+    
+    assert re.search(
+        rb'"test-windows-xpcshell-e10s":\s*\{[^}]*"build_platform":\s*"windows"',
+        response.data,
+    )
+    assert re.search(
+        rb'"test-windows-mochitest-e10s":\s*\{[^}]*"build_platform":\s*"windows"',
+        response.data,
+    )
 
 
 def test_try_chooser_buildtype_radio_is_scalar(app):

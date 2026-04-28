@@ -16,6 +16,36 @@ var selected = [];
 
 var manualExcluded = new Set();
 
+
+
+
+
+
+
+
+const attrNamespace = {};
+$(".filter[type='checkbox']").each(function () {
+  let attrs = JSON.parse(this.value);
+  for (let attr in attrs) {
+    if (!(attr in attrNamespace)) {
+      attrNamespace[attr] = new Set();
+    }
+    for (let v of attrs[attr]) {
+      attrNamespace[attr].add(v);
+    }
+  }
+});
+
+
+
+
+if (!Object.keys(attrNamespace).length && Object.keys(tasks).length) {
+  throw new Error(
+    `try chooser: no checkbox filter attributes discovered at load; ` +
+      `cross-section narrowing would silently no-op`
+  );
+}
+
 var getExcludeTerms = () =>
   excludeFilter.value
     .toLowerCase()
@@ -87,7 +117,13 @@ var apply = () => {
   
   
   
+  
+  
+  
+  
+  
   let filterSets = [];
+  let crossSection = {};
   let buildTypeFilter = null;
 
   $(".filter:checked").each(function () {
@@ -103,6 +139,14 @@ var apply = () => {
       kinds: new Set(this.name.split(",")),
       filters: attrs,
     });
+    for (let attr in attrs) {
+      if (!(attr in crossSection)) {
+        crossSection[attr] = new Set();
+      }
+      for (let v of attrs[attr]) {
+        crossSection[attr].add(v);
+      }
+    }
   });
   updateLabels();
 
@@ -117,6 +161,7 @@ var apply = () => {
       return false;
     }
 
+    let matchedSection = false;
     for (let { kinds, filters } of filterSets) {
       if (!kinds.has(task.kind)) {
         continue;
@@ -129,10 +174,39 @@ var apply = () => {
         }
       }
       if (ok) {
-        return true;
+        matchedSection = true;
+        break;
       }
     }
-    return false;
+    if (!matchedSection) {
+      return false;
+    }
+
+    for (let attr in crossSection) {
+      if (!(attr in task)) {
+        continue;
+      }
+      
+      
+      
+      
+      
+      
+      
+      const ns = attrNamespace[attr];
+      if (!ns) {
+        throw new Error(
+          `try chooser: attrNamespace missing entry for "${attr}"`
+        );
+      }
+      if (!ns.has(task[attr])) {
+        continue;
+      }
+      if (!crossSection[attr].has(task[attr])) {
+        return false;
+      }
+    }
+    return true;
   };
 
   selected = filterSets.length ? Object.keys(tasks).filter(taskMatches) : [];
