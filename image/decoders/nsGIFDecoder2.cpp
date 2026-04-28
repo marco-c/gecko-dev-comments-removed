@@ -209,6 +209,8 @@ nsresult nsGIFDecoder2::BeginImageFrame(const OrientedIntRect& aFrameRect,
                                         uint16_t aDepth, bool aIsInterlaced) {
   MOZ_ASSERT(HasSize());
 
+  bool hasTransparency = CheckForTransparency(aFrameRect);
+
   
   
   
@@ -216,8 +218,6 @@ nsresult nsGIFDecoder2::BeginImageFrame(const OrientedIntRect& aFrameRect,
     mCurrentFrameIndex = mGIFStruct.images_decoded;
     return NS_OK;
   }
-
-  bool hasTransparency = CheckForTransparency(aFrameRect);
 
   
   MOZ_ASSERT_IF(Size() != OutputSize(), !GetImageMetadata().HasAnimation());
