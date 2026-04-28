@@ -162,7 +162,6 @@ class WebRtcVoiceEngine final : public VoiceEngineInterface {
   scoped_refptr<AudioState> audio_state_ RTC_GUARDED_BY(worker_thread_checker_);
   const std::vector<Codec> legacy_send_codecs_;
   const std::vector<Codec> legacy_recv_codecs_;
-  bool is_dumping_aec_ RTC_GUARDED_BY(worker_thread_checker_) = false;
   bool initialized_ RTC_GUARDED_BY(worker_thread_checker_) = false;
 
   
@@ -304,8 +303,6 @@ class WebRtcVoiceSendChannel final : public MediaChannelUtil,
   
   
   const CryptoOptions crypto_options_;
-  scoped_refptr<FrameTransformerInterface> unsignaled_frame_transformer_
-      RTC_GUARDED_BY(worker_thread_);
 
   
   absl::AnyInvocable<void(const std::set<uint32_t>&)>
@@ -465,9 +462,6 @@ class WebRtcVoiceReceiveChannel final
       RTC_GUARDED_BY(worker_thread_);
 
   AudioReceiverParameters recv_params_ RTC_GUARDED_BY(worker_thread_);
-
-  std::optional<AudioSendStream::Config::SendCodecSpec> send_codec_spec_
-      RTC_GUARDED_BY(worker_thread_);
 
   
   
