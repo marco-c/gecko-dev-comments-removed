@@ -62,12 +62,14 @@ void ConvolveHorizontally(const unsigned char* srcData,
 
     
     
-    accum[0] >>= SkConvolutionFilter1D::kShiftBits;
-    accum[1] >>= SkConvolutionFilter1D::kShiftBits;
-    accum[2] >>= SkConvolutionFilter1D::kShiftBits;
+    
+    constexpr int kRound = 1 << (SkConvolutionFilter1D::kShiftBits - 1);
+    accum[0] = (accum[0] + kRound) >> SkConvolutionFilter1D::kShiftBits;
+    accum[1] = (accum[1] + kRound) >> SkConvolutionFilter1D::kShiftBits;
+    accum[2] = (accum[2] + kRound) >> SkConvolutionFilter1D::kShiftBits;
 
     if (hasAlpha) {
-      accum[3] >>= SkConvolutionFilter1D::kShiftBits;
+      accum[3] = (accum[3] + kRound) >> SkConvolutionFilter1D::kShiftBits;
     }
 
     
@@ -112,11 +114,12 @@ void ConvolveVertically(
 
     
     
-    accum[0] >>= SkConvolutionFilter1D::kShiftBits;
-    accum[1] >>= SkConvolutionFilter1D::kShiftBits;
-    accum[2] >>= SkConvolutionFilter1D::kShiftBits;
+    constexpr int kRound = 1 << (SkConvolutionFilter1D::kShiftBits - 1);
+    accum[0] = (accum[0] + kRound) >> SkConvolutionFilter1D::kShiftBits;
+    accum[1] = (accum[1] + kRound) >> SkConvolutionFilter1D::kShiftBits;
+    accum[2] = (accum[2] + kRound) >> SkConvolutionFilter1D::kShiftBits;
     if (hasAlpha) {
-      accum[3] >>= SkConvolutionFilter1D::kShiftBits;
+      accum[3] = (accum[3] + kRound) >> SkConvolutionFilter1D::kShiftBits;
     }
 
     
@@ -175,7 +178,8 @@ void ConvolveHorizontallyA8(const unsigned char* srcData,
 
     
     
-    accum >>= SkConvolutionFilter1D::kShiftBits;
+    constexpr int kRound = 1 << (SkConvolutionFilter1D::kShiftBits - 1);
+    accum = (accum + kRound) >> SkConvolutionFilter1D::kShiftBits;
 
     
     outRow[outX] = ClampTo8(accum);
@@ -204,7 +208,8 @@ void ConvolveVerticallyA8(
 
     
     
-    accum >>= SkConvolutionFilter1D::kShiftBits;
+    constexpr int kRound = 1 << (SkConvolutionFilter1D::kShiftBits - 1);
+    accum = (accum + kRound) >> SkConvolutionFilter1D::kShiftBits;
 
     
     outRow[outX] = ClampTo8(accum);

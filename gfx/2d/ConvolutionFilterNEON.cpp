@@ -93,6 +93,8 @@ void convolve_horizontally_neon(const unsigned char* srcData,
 
     
     
+    accum = vaddq_s32(
+        accum, vdupq_n_s32(1 << (SkConvolutionFilter1D::kShiftBits - 1)));
     accum = vshrq_n_s32(accum, SkConvolutionFilter1D::kShiftBits);
 
     
@@ -149,10 +151,15 @@ static void ConvolveVertically(
     }
 
     
-    accum0 = vshrq_n_s32(accum0, SkConvolutionFilter1D::kShiftBits);
-    accum1 = vshrq_n_s32(accum1, SkConvolutionFilter1D::kShiftBits);
-    accum2 = vshrq_n_s32(accum2, SkConvolutionFilter1D::kShiftBits);
-    accum3 = vshrq_n_s32(accum3, SkConvolutionFilter1D::kShiftBits);
+    int32x4_t round = vdupq_n_s32(1 << (SkConvolutionFilter1D::kShiftBits - 1));
+    accum0 = vshrq_n_s32(vaddq_s32(accum0, round),
+                         SkConvolutionFilter1D::kShiftBits);
+    accum1 = vshrq_n_s32(vaddq_s32(accum1, round),
+                         SkConvolutionFilter1D::kShiftBits);
+    accum2 = vshrq_n_s32(vaddq_s32(accum2, round),
+                         SkConvolutionFilter1D::kShiftBits);
+    accum3 = vshrq_n_s32(vaddq_s32(accum3, round),
+                         SkConvolutionFilter1D::kShiftBits);
 
     
     
@@ -218,9 +225,13 @@ static void ConvolveVertically(
       accum2 += vmull_s16(src16_2, coeff16);
     }
 
-    accum0 = vshrq_n_s32(accum0, SkConvolutionFilter1D::kShiftBits);
-    accum1 = vshrq_n_s32(accum1, SkConvolutionFilter1D::kShiftBits);
-    accum2 = vshrq_n_s32(accum2, SkConvolutionFilter1D::kShiftBits);
+    int32x4_t round = vdupq_n_s32(1 << (SkConvolutionFilter1D::kShiftBits - 1));
+    accum0 = vshrq_n_s32(vaddq_s32(accum0, round),
+                         SkConvolutionFilter1D::kShiftBits);
+    accum1 = vshrq_n_s32(vaddq_s32(accum1, round),
+                         SkConvolutionFilter1D::kShiftBits);
+    accum2 = vshrq_n_s32(vaddq_s32(accum2, round),
+                         SkConvolutionFilter1D::kShiftBits);
 
     int16x8_t accum16_0 = vcombine_s16(vqmovn_s32(accum0), vqmovn_s32(accum1));
     int16x8_t accum16_1 = vcombine_s16(vqmovn_s32(accum2), vqmovn_s32(accum2));
