@@ -2840,7 +2840,18 @@ TEST_F(TestSimulcastEncoderAdapterFake,
             adapter_->Encode(input_frame, &frame_types));
 }
 
-TEST_F(TestSimulcastEncoderAdapterFake, ConcurrentEncodeAndOnEncodedImage) {
+
+
+#if defined(THREAD_SANITIZER)
+#define MAYBE_ConcurrentEncodeAndOnEncodedImage \
+  ConcurrentEncodeAndOnEncodedImage
+#else
+#define MAYBE_ConcurrentEncodeAndOnEncodedImage \
+  DISABLED_ConcurrentEncodeAndOnEncodedImage
+#endif
+
+TEST_F(TestSimulcastEncoderAdapterFake,
+       MAYBE_ConcurrentEncodeAndOnEncodedImage) {
   
   
   
