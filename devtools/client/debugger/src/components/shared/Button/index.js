@@ -2,7 +2,8 @@
 
 
 
+import CloseButton from "./CloseButton";
 import CommandBarButton, { debugBtn } from "./CommandBarButton";
 import PaneToggleButton from "./PaneToggleButton";
 
-export { CommandBarButton, debugBtn, PaneToggleButton };
+export { CloseButton, CommandBarButton, debugBtn, PaneToggleButton };

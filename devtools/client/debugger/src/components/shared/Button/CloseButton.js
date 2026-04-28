@@ -2,13 +2,11 @@
 
 
 
-"use strict";
+import React from "devtools/client/shared/vendor/react";
+import { button } from "devtools/client/shared/vendor/react-dom-factories";
+import PropTypes from "devtools/client/shared/vendor/react-prop-types";
 
-const React = require("devtools/client/shared/vendor/react");
-const { button } = require("devtools/client/shared/vendor/react-dom-factories");
-const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
-
-const DebuggerImage = require("devtools/client/shared/components/DebuggerImage");
+import DebuggerImage from "../DebuggerImage";
 
 function CloseButton({ handleClick, buttonClass, tooltip }) {
   return button(
@@ -29,4 +27,4 @@ CloseButton.propTypes = {
   tooltip: PropTypes.string,
 };
 
-module.exports = CloseButton;
+export default CloseButton;
