@@ -12,6 +12,7 @@
 
 #include "common_audio/signal_processing/include/signal_processing_library.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/sanitizer.h"
 
 
 static const int16_t kLogConst = 24660;          
@@ -79,7 +80,8 @@ static void HighPassFilter(const int16_t* data_in,
 
 
 
-static void AllPassFilter(const int16_t* data_in,
+static void RTC_NO_SANITIZE("signed-integer-overflow") 
+    AllPassFilter(const int16_t* data_in,
                           size_t data_length,
                           int16_t filter_coefficient,
                           int16_t* filter_state,
