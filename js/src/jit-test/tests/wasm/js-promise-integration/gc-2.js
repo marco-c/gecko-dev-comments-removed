@@ -1,7 +1,5 @@
 
 
-
-
 gczeal(2,5);
 
 var compute_delta = (i) => Promise.resolve(i / 100 || 1);

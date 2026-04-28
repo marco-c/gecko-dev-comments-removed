@@ -1,8 +1,6 @@
 
 
 
-
-
 assertErrorMessage(() => {
   const sf = new WebAssembly.Suspending(async () => {});
   const ins = wasmEvalText(`(module

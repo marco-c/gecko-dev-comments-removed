@@ -1,7 +1,5 @@
 
 
-
-
 var suspending_fib2 = new WebAssembly.Suspending(
   async (i, j) => { return [j, i + j] }
 );

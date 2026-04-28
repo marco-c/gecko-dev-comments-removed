@@ -1,7 +1,5 @@
 
 
-
-
 const suspending = new WebAssembly.Suspending(() => new Promise(() => {}));
 const ins = wasmEvalText(`(module
   (import "" "s" (func $imp))

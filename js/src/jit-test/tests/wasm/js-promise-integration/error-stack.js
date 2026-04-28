@@ -1,5 +1,3 @@
-
-
 const { assertStackTrace } = WasmHelpers;
 
 let e;
