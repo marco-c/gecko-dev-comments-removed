@@ -177,32 +177,20 @@ nsresult nsIndexedToHTML::DoOnStartRequest(nsIRequest* request,
     nsCOMPtr<nsIFileURL> fileUrl = do_QueryInterface(uri);
     nsCOMPtr<nsIFile> file;
     rv = fileUrl->GetFile(getter_AddRefs(file));
-    if (NS_SUCCEEDED(rv)) {
-      nsAutoCString url;
-      rv = net_GetURLSpecFromFile(file, url);
+    if (NS_FAILED(rv)) return rv;
+
+    nsAutoCString url;
+    rv = net_GetURLSpecFromFile(file, url);
+    if (NS_FAILED(rv)) return rv;
+    baseUri.Assign(url);
+
+    nsCOMPtr<nsIFile> parent;
+    rv = file->GetParent(getter_AddRefs(parent));
+
+    if (parent && NS_SUCCEEDED(rv)) {
+      net_GetURLSpecFromDir(parent, url);
       if (NS_FAILED(rv)) return rv;
-      baseUri.Assign(url);
-
-      nsCOMPtr<nsIFile> parent;
-      rv = file->GetParent(getter_AddRefs(parent));
-
-      if (parent && NS_SUCCEEDED(rv)) {
-        net_GetURLSpecFromDir(parent, url);
-        if (NS_FAILED(rv)) return rv;
-        parentStr.Assign(url);
-      }
-    } else {
-#ifndef XP_WIN
-      return rv;
-#else
-      
-      
-      
-      nsAutoCString path;
-      if (NS_FAILED(uri->GetFilePath(path)) || !path.EqualsLiteral("/")) {
-        return rv;
-      }
-#endif
+      parentStr.Assign(url);
     }
 
     
