@@ -55,6 +55,48 @@ void ScriptFetchInfo::SetBaseURLFromChannelAndOriginalURI(
   }
 }
 
+void ScriptFetchInfo::AssociateWithScript(JSScript* aScript) {
+  
+  MOZ_ASSERT(mBaseURL);
+
+  
+  
+  
+  
+
+  MOZ_ASSERT(GetScriptPrivate(aScript).isUndefined());
+  SetScriptPrivate(aScript, PrivateValue(this));
+}
+
+void ScriptFetchInfo::AssociateWithModule(JSObject* aModuleRecord) {
+  MOZ_ASSERT(mBaseURL);
+
+  
+  
+  
+  
+  MOZ_ASSERT(GetModulePrivate(aModuleRecord).isUndefined());
+  SetModulePrivate(aModuleRecord, PrivateValue(this));
+}
+
+void HostAddRefScriptFetchInfo(const Value& aPrivate) {
+  
+  
+  
+
+  auto fetchInfo = static_cast<ScriptFetchInfo*>(aPrivate.toPrivate());
+  fetchInfo->AddRef();
+}
+
+void HostReleaseScriptFetchInfo(const Value& aPrivate) {
+  
+  
+  
+
+  auto fetchInfo = static_cast<ScriptFetchInfo*>(aPrivate.toPrivate());
+  fetchInfo->Release();
+}
+
 
 
 
@@ -225,18 +267,6 @@ size_t LoadedScript::SizeOfIncludingThis(
   return bytes;
 }
 
-void LoadedScript::AssociateWithScript(JSScript* aScript) {
-  
-  MOZ_ASSERT(mBaseURL);
-
-  
-  
-  
-
-  MOZ_ASSERT(GetScriptPrivate(aScript).isUndefined());
-  SetScriptPrivate(aScript, PrivateValue(this));
-}
-
 nsresult LoadedScript::GetScriptSource(JSContext* aCx,
                                        MaybeSourceText* aMaybeSource,
                                        LoadContextBase* aMaybeLoadContext) {
@@ -333,36 +363,6 @@ bool LoadedScript::IsSRIMetadataReusableBy(
   return aSRIMetadata.CanTrustBeDelegatedTo(*mSRIMetadata);
 }
 
-inline void CheckModuleScriptPrivate(LoadedScript* script,
-                                     const Value& aPrivate) {
-#ifdef DEBUG
-  if (script->IsModuleScript()) {
-    JSObject* module = script->AsModuleScript()->mModuleRecord.unbarrieredGet();
-    MOZ_ASSERT_IF(module, GetModulePrivate(module) == aPrivate);
-  }
-#endif
-}
-
-void HostAddRefTopLevelScript(const Value& aPrivate) {
-  
-  
-  
-
-  auto script = static_cast<LoadedScript*>(aPrivate.toPrivate());
-  CheckModuleScriptPrivate(script, aPrivate);
-  script->AddRef();
-}
-
-void HostReleaseTopLevelScript(const Value& aPrivate) {
-  
-  
-  
-
-  auto script = static_cast<LoadedScript*>(aPrivate.toPrivate());
-  CheckModuleScriptPrivate(script, aPrivate);
-  script->Release();
-}
-
 
 
 
@@ -406,7 +406,7 @@ NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED_0(ModuleScript, LoadedScript)
 NS_IMPL_CYCLE_COLLECTION_CLASS(ModuleScript)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(ModuleScript, LoadedScript)
-  tmp->UnlinkModuleRecord();
+  tmp->mModuleRecord = nullptr;
   tmp->mParseError.setUndefined();
   tmp->mErrorToRethrow.setUndefined();
   tmp->DropDiskCacheReference();
@@ -465,30 +465,12 @@ void ModuleScript::Shutdown() {
     ClearModuleEnvironment(mModuleRecord);
   }
 
-  UnlinkModuleRecord();
-}
-
-void ModuleScript::UnlinkModuleRecord() {
-  
-  
-  
-  if (mModuleRecord) {
-    
-    
-    
-    
-    JSObject* module = mModuleRecord.unbarrieredGet();
-    if (IsCyclicModule(module)) {
-      MOZ_ASSERT(GetModulePrivate(module).toPrivate() == this);
-      ClearModulePrivate(module);
-    }
-    mModuleRecord = nullptr;
-  }
+  mModuleRecord = nullptr;
 }
 
 ModuleScript::~ModuleScript() {
   
-  UnlinkModuleRecord();
+  mModuleRecord = nullptr;
 }
 
 void ModuleScript::SetModuleRecord(Handle<JSObject*> aModuleRecord) {
@@ -497,15 +479,6 @@ void ModuleScript::SetModuleRecord(Handle<JSObject*> aModuleRecord) {
   MOZ_ASSERT_IF(IsModuleScript(), !AsModuleScript()->HasErrorToRethrow());
 
   mModuleRecord = aModuleRecord;
-
-  if (IsCyclicModule(mModuleRecord)) {
-    
-    
-    
-    
-    MOZ_ASSERT(GetModulePrivate(mModuleRecord).isUndefined());
-    SetModulePrivate(mModuleRecord, PrivateValue(this));
-  }
 
 #ifdef DEBUG
   
@@ -522,7 +495,7 @@ void ModuleScript::SetParseError(const Value& aError) {
   MOZ_ASSERT(!HasParseError());
   MOZ_ASSERT(!HasErrorToRethrow());
 
-  UnlinkModuleRecord();
+  mModuleRecord = nullptr;
   mParseError = aError;
   mozilla::HoldJSObjects(this);
 }

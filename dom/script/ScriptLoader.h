@@ -464,7 +464,9 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
 
 
 
-  static JS::loader::LoadedScript* GetActiveScript(JSContext* aCx);
+
+
+  static JS::loader::ScriptFetchInfo* GetActiveScriptFetchInfo(JSContext* aCx);
 
   Document* GetDocument() const { return mDocument; }
 
