@@ -145,6 +145,18 @@ class SourceBufferIterator final {
   State AdvanceOrScheduleResume(size_t aRequestedBytes, IResumable* aConsumer);
 
   
+
+
+
+
+
+
+
+  void MarkConsumed(size_t aConsumed);
+
+  bool IsReady() const { return mState == READY; }
+
+  
   nsresult CompletionStatus() const {
     MOZ_ASSERT(mState == COMPLETE,
                "Calling CompletionStatus() in the wrong state");
