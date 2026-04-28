@@ -206,11 +206,7 @@ enum : uint32_t {
       ELEMENT_FLAG_BIT(8) | ELEMENT_FLAG_BIT(9),
 
   
-  
-  ELEMENT_HAS_EDIT_CONTEXT = ELEMENT_FLAG_BIT(10),
-
-  
-  ELEMENT_TYPE_SPECIFIC_BITS_OFFSET = NODE_TYPE_SPECIFIC_BITS_OFFSET + 11
+  ELEMENT_TYPE_SPECIFIC_BITS_OFFSET = NODE_TYPE_SPECIFIC_BITS_OFFSET + 10
 };
 
 #undef ELEMENT_FLAG_BIT
@@ -2040,11 +2036,6 @@ class Element : public FragmentOrElement {
 
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY mozilla::TextEditor* GetTextEditorInternal();
-
-  
-
-
-  void ClearEditContext();
 
   
 
