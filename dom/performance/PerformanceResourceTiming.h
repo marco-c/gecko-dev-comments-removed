@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_PerformanceResourceTiming_h_
 #define mozilla_dom_PerformanceResourceTiming_h_
 
@@ -131,6 +129,10 @@ class PerformanceResourceTiming : public PerformanceEntry {
   IMPL_RESOURCE_TIMING_TAO_PROTECTED_TIMING_PROP(RequestStart)
 
   IMPL_RESOURCE_TIMING_TAO_PROTECTED_TIMING_PROP(ResponseStart)
+
+  IMPL_RESOURCE_TIMING_TAO_PROTECTED_TIMING_PROP(FirstInterimResponseStart)
+
+  IMPL_RESOURCE_TIMING_TAO_PROTECTED_TIMING_PROP(FinalResponseHeadersStart)
 
   DOMHighResTimeStamp ResponseEnd() const {
     return mTimingData->ResponseEndHighRes(mPerformance);

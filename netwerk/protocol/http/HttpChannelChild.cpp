@@ -170,15 +170,25 @@ void HttpChannelChild::ReleaseMainThreadOnlyReferences() {
 NS_IMPL_ADDREF(HttpChannelChild)
 
 NS_IMETHODIMP_(MozExternalRefCountType) HttpChannelChild::Release() {
+  
+  
+  
   if (!NS_IsMainThread()) {
-    nsrefcnt count = mRefCnt;
+    auto [ok, count] = mRefCnt.DecrementWithLimit<2>();
+    if (ok) {
+      NS_LOG_RELEASE(this, count, "HttpChannelChild");
+      return count;
+    }
+    
     nsresult rv = NS_DispatchToMainThread(NewNonOwningRunnableMethod(
         "HttpChannelChild::Release", this, &HttpChannelChild::Release));
-
-    
-    if (!NS_WARN_IF(NS_FAILED(rv))) {
-      return count - 1;
+    if (NS_SUCCEEDED(rv)) {
+      return count;
     }
+    
+    
+    MOZ_CRASH("Failed to dispatch Release to main thread");
+    return count;
   }
 
   nsrefcnt count = --mRefCnt;
@@ -365,6 +375,8 @@ static void ResourceTimingStructArgsToTimingsStruct(
   aTimings.connectEnd = aArgs.connectEnd();
   aTimings.requestStart = aArgs.requestStart();
   aTimings.responseStart = aArgs.responseStart();
+  aTimings.firstInterimResponseStart = aArgs.firstInterimResponseStart();
+  aTimings.finalResponseHeadersStart = aArgs.finalResponseHeadersStart();
   aTimings.responseEnd = aArgs.responseEnd();
   aTimings.transactionPending = aArgs.transactionPending();
 }
