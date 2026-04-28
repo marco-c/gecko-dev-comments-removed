@@ -5,6 +5,7 @@
 package org.mozilla.fenix.tabstray.ui.fab
 
 import androidx.annotation.DrawableRes
+import androidx.annotation.VisibleForTesting
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -20,7 +21,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -41,6 +41,7 @@ import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.button.FloatingActionButton
 import mozilla.components.compose.base.button.FloatingActionButtonDefaults
+import mozilla.components.compose.base.button.IconButton
 import mozilla.components.compose.base.button.TextButton
 import mozilla.components.compose.base.menu.DropdownMenu
 import mozilla.components.compose.base.menu.MenuItem
@@ -55,6 +56,7 @@ import org.mozilla.fenix.tabstray.redux.state.Page
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState.Mode
 import org.mozilla.fenix.tabstray.redux.store.TabsTrayStore
+import org.mozilla.fenix.tabstray.syncedtabs.SyncedTabsListItem
 import org.mozilla.fenix.theme.FirefoxTheme
 import androidx.compose.material3.FloatingActionButtonDefaults as M3FloatingActionButtonDefaults
 import mozilla.components.ui.icons.R as iconsR
@@ -160,7 +162,7 @@ private fun FloatingToolbarActions(
 
     val menuItems = generateMenuItems(
         selectedPage = state.selectedPage,
-        normalTabCount = state.normalTabs.size,
+        normalTabCount = state.normalTabsState.items.size,
         privateTabCount = state.privateBrowsing.tabs.size,
         onAccountSettingsClick = onAccountSettingsClick,
         onTabSettingsClick = onTabSettingsClick,
@@ -185,12 +187,13 @@ private fun FloatingToolbarActions(
             if (state.searchIconVisible) {
                 IconButton(
                     onClick = onSearchClicked,
+                    contentDescription = stringResource(id = R.string.tab_manager_open_tab_search),
                     modifier = Modifier.testTag(TabsTrayTestTag.TAB_SEARCH_ICON),
                     enabled = state.searchIconEnabled,
                 ) {
                     Icon(
                         painter = painterResource(iconsR.drawable.mozac_ic_search_24),
-                        contentDescription = stringResource(id = R.string.tab_manager_open_tab_search),
+                        contentDescription = null,
                     )
                 }
             }
@@ -200,11 +203,12 @@ private fun FloatingToolbarActions(
                     onMenuShown()
                     showBottomAppBarMenu = true
                 },
+                contentDescription = stringResource(id = R.string.open_tabs_menu),
                 modifier = Modifier.testTag(TabsTrayTestTag.THREE_DOT_BUTTON),
             ) {
                 Icon(
                     painter = painterResource(iconsR.drawable.mozac_ic_ellipsis_vertical_24),
-                    contentDescription = stringResource(id = R.string.open_tabs_menu),
+                    contentDescription = null,
                 )
 
                 DropdownMenu(
@@ -228,13 +232,20 @@ private fun FloatingToolbarActions(
 }
 
 @Composable
-private fun FloatingToolbarFAB(
+@VisibleForTesting
+internal fun FloatingToolbarFAB(
     state: TabsTrayState,
     isSignedIn: Boolean,
     onOpenNewNormalTabClicked: () -> Unit,
     onOpenNewPrivateTabClicked: () -> Unit,
     onSyncedTabsFabClicked: () -> Unit,
 ) {
+    val isSyncDisabled = !isSignedIn || state.sync.syncedTabs.any {
+        it is SyncedTabsListItem.Error && it.errorText == stringResource(
+            id = R.string.synced_tabs_reauth,
+        )
+    }
+
     @DrawableRes val icon: Int
     val contentDescription: String
     var colors = FloatingActionButtonDefaults.colorsPrimary()
@@ -261,11 +272,11 @@ private fun FloatingToolbarFAB(
             icon = iconsR.drawable.mozac_ic_sync_24
             contentDescription = stringResource(id = R.string.resync_button_content_description)
             onClick = {
-                if (isSignedIn) {
+                if (!isSyncDisabled) {
                     onSyncedTabsFabClicked()
                 }
             }
-            if (!isSignedIn) {
+            if (isSyncDisabled) {
                 colors = FloatingActionButtonDefaults.colorsDisabled()
                 elevation = M3FloatingActionButtonDefaults.elevation(
                     defaultElevation = 0.dp,
@@ -417,7 +428,9 @@ private class TabManagerFloatingToolbarParameterProvider :
                     config = TabsTrayState.TabsTrayConfig(
                         tabSearchEnabled = false,
                     ),
-                    normalTabs = listOf(createTab(url = "url")),
+                    normalTabsState = TabsTrayState.NormalTabsState(
+                        items = listOf(createTab(url = "url")),
+                    ),
                 ),
             ),
             TabManagerFloatingToolbarPreviewModel(
@@ -426,7 +439,9 @@ private class TabManagerFloatingToolbarParameterProvider :
                     config = TabsTrayState.TabsTrayConfig(
                         tabSearchEnabled = true,
                     ),
-                    normalTabs = emptyList(),
+                    normalTabsState = TabsTrayState.NormalTabsState(
+                        items = emptyList(),
+                    ),
                 ),
             ),
             TabManagerFloatingToolbarPreviewModel(
