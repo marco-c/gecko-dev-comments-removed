@@ -254,8 +254,7 @@ impl DataStores {
                 let prim_data = &self.line_decoration[data_handle];
                 &prim_data.common
             }
-            PrimitiveInstanceKind::LinearGradient { data_handle, .. }
-            | PrimitiveInstanceKind::CachedLinearGradient { data_handle, .. } => {
+            PrimitiveInstanceKind::LinearGradient { data_handle, .. } => {
                 let prim_data = &self.linear_grad[data_handle];
                 &prim_data.common
             }
@@ -1065,6 +1064,18 @@ impl RenderBackend {
                 has_built_scene,
                 None,
             );
+
+            if self.debug_flags.contains(DebugFlags::DUMP_SPATIAL_TREE) {
+                if let Some(doc) = self.documents.get(&txn.document_id) {
+                    let spatial_tree = doc.spatial_tree.print_to_string();
+                    if !spatial_tree.is_empty() {
+                        eprintln!(
+                            "-- WebRender spatial tree ({:?}) --\n{}",
+                            txn.document_id, spatial_tree
+                        );
+                    }
+                }
+            }
         }
 
         built_frame
