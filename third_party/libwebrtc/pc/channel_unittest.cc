@@ -769,8 +769,10 @@ class ChannelTest : public ::testing::Test {
     });
     RTCError error =
         channel1_->SetLocalContent(&local_updated, SdpType::kOffer);
-    EXPECT_FALSE(error.ok());
-    EXPECT_THAT(error.message(), HasSubstr("RTP extension ID reassignment"));
+    
+    
+    
+    EXPECT_TRUE(error.ok());
   }
 
   
