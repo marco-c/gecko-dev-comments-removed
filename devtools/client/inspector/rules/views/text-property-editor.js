@@ -144,13 +144,7 @@ class TextPropertyEditor {
 
 
   get editing() {
-    return (
-      !!(
-        this.nameSpan.inplaceEditor ||
-        this.valueSpan.inplaceEditor ||
-        this.ruleView.tooltips.isEditing
-      ) || this.popup.isOpen
-    );
+    return !!(this.nameSpan.inplaceEditor || this.valueSpan.inplaceEditor);
   }
 
   
@@ -1652,6 +1646,14 @@ class TextPropertyEditor {
 
 
 
+  get isPreviewing() {
+    return this.ruleView.tooltips.isEditing || this.valueSpan.inplaceEditor;
+  }
+
+  
+
+
+
 
 
 
@@ -1659,7 +1661,7 @@ class TextPropertyEditor {
   #previewValue = (value, reverting = false) => {
     
     
-    if (!reverting && (!this.editing || this.ruleEditor.isEditing)) {
+    if (!reverting && (!this.isPreviewing || this.ruleEditor.isEditing)) {
       return;
     }
 

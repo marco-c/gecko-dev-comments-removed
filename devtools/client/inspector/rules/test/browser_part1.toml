@@ -73,6 +73,8 @@ support-files = [
 
 ["browser_rules_anchor-names-autocomplete.js"]
 
+["browser_rules_at_appearance-base.js"]
+
 ["browser_rules_at_scope.js"]
 
 ["browser_rules_at_starting-style.js"]
@@ -108,6 +110,8 @@ skip-if = [
 ["browser_rules_class_panel_state_preserved.js"]
 
 ["browser_rules_class_panel_toggle.js"]
+
+["browser_rules_color-preview.js"]
 
 ["browser_rules_colorUnit.js"]
 
