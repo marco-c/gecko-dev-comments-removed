@@ -9,6 +9,8 @@
 #include <mozilla/DataMutex.h>
 #include <nsTArray.h>
 
+#include <thread>
+
 namespace mozilla {
 
 
