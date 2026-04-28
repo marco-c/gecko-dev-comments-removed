@@ -375,8 +375,7 @@ class RuleEditor extends EventEmitter {
       if (ancestorData.type == "container") {
         this.#createAncestorContainerQuerySelector(
           selectorContainer,
-          ancestorData,
-          index
+          ancestorData
         );
       } else if (ancestorData.type == "layer") {
         selectorContainer.append(
@@ -462,12 +461,7 @@ class RuleEditor extends EventEmitter {
 
 
 
-
-  #createAncestorContainerQuerySelector(
-    selectorContainer,
-    containerQueryData,
-    ancestorDataIndex
-  ) {
+  #createAncestorContainerQuerySelector(selectorContainer, containerQueryData) {
     
     
     
@@ -510,40 +504,8 @@ class RuleEditor extends EventEmitter {
         containerConditionEl.append(containerName);
       }
 
-      if (hasContainer) {
-        const jumpToNodeButton = createChild(containerConditionEl, "button", {
-          class: "open-inspector",
-          title: l10n("rule.containerQuery.selectContainerButton.tooltip"),
-        });
-
-        let containerNodeFront;
-        const getNodeFront = async () => {
-          if (!containerNodeFront) {
-            const res = await this.rule.domRule.getQueryContainerForNode(
-              ancestorDataIndex,
-              this.rule.inherited ||
-                this.ruleView.inspector.selection.nodeFront,
-              conditionIndex
-            );
-            containerNodeFront = res.node;
-          }
-          return containerNodeFront;
-        };
-
-        jumpToNodeButton.addEventListener("click", async () => {
-          const front = await getNodeFront();
-          if (!front) {
-            return;
-          }
-          this.ruleView.inspector.selection.setNodeFront(front);
-          await this.ruleView.inspector.highlighters.hideHighlighterType(
-            this.ruleView.inspector.highlighters.TYPES.BOXMODEL
-          );
-        });
-      }
-
-      // Add a space between the container name and the query so the title,
-      // which is computed from the DOM, displays correctly.
+      
+      
       containerConditionEl.append((containerName ? " " : "") + containerQuery);
 
       if (conditionIndex !== containerQueryData.conditions.length - 1) {
@@ -555,17 +517,17 @@ class RuleEditor extends EventEmitter {
     }
   }
 
-  /**
-   * Returns the selector warnings element, or null if selector at selectorIndex
-   * does not have any warning.
-   *
-   * @param {Integer} selectorIndex: The index of the selector we want to create the
-   *        warnings for
-   * @param {Array<object>} selectorWarnings: An array of object of the following shape:
-   *        - {Integer} index: The index of the selector this applies to
-   *        - {String} kind: Identifies the warning
-   * @returns {Element|null}
-   */
+  
+
+
+
+
+
+
+
+
+
+
   #createWarningsElementForSelector(selectorIndex, selectorWarnings) {
     if (!selectorWarnings) {
       return null;
@@ -601,17 +563,17 @@ class RuleEditor extends EventEmitter {
     return warningsContainer;
   }
 
-  /**
-   * Called when a tool is registered or unregistered.
-   */
+  
+
+
   #onToolChanged = () => {
     if (!this.source) {
       return;
     }
 
-    // When the source editor is registered, update the source links
-    // to be clickable; and if it is unregistered, update the links to
-    // be unclickable.
+    
+    
+    
     if (this.toolbox.isToolRegistered("styleeditor")) {
       this.source.removeAttribute("unselectable");
     } else {
@@ -619,10 +581,10 @@ class RuleEditor extends EventEmitter {
     }
   };
 
-  /**
-   * Event handler called when a property changes on the
-   * StyleRuleActor.
-   */
+  
+
+
+
   #locationChanged = () => {
     this.#updateSourceLink();
   };
@@ -643,14 +605,14 @@ class RuleEditor extends EventEmitter {
     }
   };
 
-  /**
-   * Update the text of the source link to reflect whether we're showing
-   * original sources or not.  This is a callback for
-   * SourceMapURLService.subscribeByID, which see.
-   *
-   * @param {object | null} originalLocation
-   *        The original position object (url/line/column) or null.
-   */
+  
+
+
+
+
+
+
+
   #updateLocation = originalLocation => {
     let displayURL = this.rule.sheet?.href;
     const constructed = this.rule.sheet?.constructed;
@@ -697,8 +659,8 @@ class RuleEditor extends EventEmitter {
       }
 
       if (this.rule.sheet && !this.rule.isSystem) {
-        // Only get the original source link if the rule isn't a system
-        // rule and if it isn't an inline rule.
+        
+        
         if (this.#unsubscribeSourceMap) {
           this.#unsubscribeSourceMap();
         }
@@ -709,7 +671,7 @@ class RuleEditor extends EventEmitter {
           this.#updateLocation
         );
       }
-      // Set "unselectable" appropriately.
+      
       this.#onToolChanged();
     }
 
@@ -718,19 +680,19 @@ class RuleEditor extends EventEmitter {
     });
   }
 
-  /**
-   * Update the rule editor with the contents of the rule.
-   *
-   * @param {boolean} reset
-   *        True to completely reset the rule editor before populating.
-   */
+  
+
+
+
+
+
   populate(reset) {
-    // Clear out existing viewers.
+    
     this.selectorText.replaceChildren();
 
-    // If selector text comes from a css rule, highlight selectors that
-    // actually match.  For custom selector text (such as for the 'element'
-    // style, just show the text directly.
+    
+    
+    
     if (
       this.rule.domRule.type === ELEMENT_STYLE ||
       this.rule.domRule.type === PRES_HINTS
@@ -748,9 +710,9 @@ class RuleEditor extends EventEmitter {
 
     let focusedElSelector;
     if (reset) {
-      // If we're going to reset the rule (i.e. if this is the `element` rule),
-      // we want to restore the focus after the rule is populated.
-      // So if this element contains the active element, retrieve its selector for later use.
+      
+      
+      
       if (this.element.contains(this.doc.activeElement)) {
         focusedElSelector = CssLogic.findCssSelector(this.doc.activeElement);
       }
@@ -762,15 +724,15 @@ class RuleEditor extends EventEmitter {
       this.#getUnusedCssVariableDeclarations();
     const hideUnusedCssVariableDeclarations =
       this.#unusedCssVariableDeclarations.size >=
-      // If the button was already displayed, hide unused variables if we have at least
-      // one, even if it's less than the threshold
+      
+      
       (this.#showUnusedCustomCssPropertiesButton
         ? 1
         : UNUSED_CSS_PROPERTIES_HIDE_THRESHOLD);
 
-    // If we won't hide any variable, clear the Set of unused variables as it's used in
-    // updateUnusedCssVariables and we might do unnecessary computation if we still
-    // track variables which are actually visible.
+    
+    
+    
     if (!hideUnusedCssVariableDeclarations) {
       this.#unusedCssVariableDeclarations.clear();
     }
@@ -785,8 +747,8 @@ class RuleEditor extends EventEmitter {
         });
         this.propertyList.appendChild(editor.element);
       } else if (prop.editor) {
-        // If an editor already existed, append it to the bottom now to make sure the
-        // order of editors in the DOM follow the order of the rule's properties.
+        
+        
         this.propertyList.appendChild(prop.editor.element);
       }
     }
@@ -814,12 +776,12 @@ class RuleEditor extends EventEmitter {
       this.#nullifyShowUnusedCustomCssProperties();
     }
 
-    // Set focus if the focus is still in the current document (avoid stealing
-    // the focus, see Bug 1911627).
+    
+    
     if (this.doc.hasFocus() && focusedElSelector) {
       const elementToFocus = this.doc.querySelector(focusedElSelector);
       if (elementToFocus && this.element.contains(elementToFocus)) {
-        // We need to wait for a tick for the focus to be properly set
+        
         setTimeout(() => {
           elementToFocus.focus();
           this.ruleView.emitForTests("rule-editor-focus-reset");
@@ -836,9 +798,9 @@ class RuleEditor extends EventEmitter {
       return;
     }
 
-    // Store the list of what used to be unused
+    
     const previouslyUnused = Array.from(this.#unusedCssVariableDeclarations);
-    // Then compute the list of unused variables again
+    
     this.#unusedCssVariableDeclarations =
       this.#getUnusedCssVariableDeclarations();
 
@@ -847,7 +809,7 @@ class RuleEditor extends EventEmitter {
         continue;
       }
 
-      // The prop wasn't used, but now is, so let's show it
+      
       this.showUnusedCssVariable(prop, {
         updateButton: false,
       });
@@ -856,15 +818,15 @@ class RuleEditor extends EventEmitter {
     this.#updateShowUnusedCustomCssPropertiesButtonText();
   }
 
-  /**
-   * Create a TextPropertyEditor for TextProperty representing an unused CSS variable.
-   *
-   * @param {TextProperty} prop
-   * @param {object} options
-   * @param {boolean} options.updateButton
-   * @returns {TextPropertyEditor|null} Returns null if passed TextProperty isn't found
-   *          in the list of unused css variables
-   */
+  
+
+
+
+
+
+
+
+
   showUnusedCssVariable(prop, { updateButton = true } = {}) {
     if (prop.editor) {
       return null;
@@ -876,8 +838,8 @@ class RuleEditor extends EventEmitter {
       elementsWithPendingClicks: this.options.elementsWithPendingClicks,
     });
     const declarationIndex = this.rule.textProps.indexOf(prop);
-    // We need to insert the editor according to its index in the list of declarations.
-    // So let's try to find the prop which is placed higher and is visible
+    
+    
     let nextSibling;
     for (let i = declarationIndex + 1; i < this.rule.textProps.length; i++) {
       const currentProp = this.rule.textProps[i];
@@ -886,8 +848,8 @@ class RuleEditor extends EventEmitter {
         break;
       }
     }
-    // If we couldn't find nextSibling, that means that no declaration with higher index
-    // is visible, so we can put the newly visible property at the end
+    
+    
     this.propertyList.insertBefore(editor.element, nextSibling || null);
 
     if (updateButton) {
@@ -897,22 +859,22 @@ class RuleEditor extends EventEmitter {
     return editor;
   }
 
-  /**
-   * Returns a Set containing the list of unused CSS variable TextProperty which shouldn't
-   * be visible.
-   *
-   * @returns {Set<TextProperty>}
-   */
+  
+
+
+
+
+
   #getUnusedCssVariableDeclarations() {
     const unusedCssVariableDeclarations = new Set();
 
-    // No need to go through the declarations if we shouldn't hide unused custom properties
+    
     if (!this.options.shouldHideUnusedCustomCssProperties) {
       return unusedCssVariableDeclarations;
     }
 
-    // Compute a list of variables that will be visible, as there might be unused variables
-    // that will be visible (e.g. if the user added one in the rules view)
+    
+    
     for (const prop of this.rule.textProps) {
       if (prop.isUnusedVariable) {
         unusedCssVariableDeclarations.add(prop);
@@ -922,11 +884,11 @@ class RuleEditor extends EventEmitter {
     return unusedCssVariableDeclarations;
   }
 
-  /**
-   * Handle click on "Show X unused custom CSS properties" button
-   *
-   * @param {Event} e
-   */
+  
+
+
+
+
   #onShowUnusedCustomCssPropertiesButtonClick = e => {
     e.stopPropagation();
 
@@ -937,7 +899,7 @@ class RuleEditor extends EventEmitter {
         const editor = new TextPropertyEditor(this, prop, {
           elementsWithPendingClicks: this.options.elementsWithPendingClicks,
         });
-        // Insert at the original declaration index
+        
         this.propertyList.insertBefore(
           editor.element,
           this.propertyList.childNodes[this.rule.textProps.indexOf(prop)] ||
@@ -950,10 +912,10 @@ class RuleEditor extends EventEmitter {
     }
   };
 
-  /**
-   * Update the text for the "Show X unused custom CSS properties" button, or remove it
-   * if there's no hidden custom properties anymore
-   */
+  
+
+
+
   #updateShowUnusedCustomCssPropertiesButtonText() {
     if (!this.#showUnusedCustomCssPropertiesButton) {
       return;
@@ -997,12 +959,12 @@ class RuleEditor extends EventEmitter {
     this.#showUnusedCustomCssPropertiesButton = null;
   }
 
-  /**
-   * Render a given rule selector in this.selectorText element
-   *
-   * @param {string} selector: The selector text to display
-   * @param {number} selectorIndex: Its index in the rule
-   */
+  
+
+
+
+
+
   #populateSelector(selector, selectorIndex) {
     if (selectorIndex !== 0) {
       createChild(this.selectorText, "span", {
@@ -1022,8 +984,8 @@ class RuleEditor extends EventEmitter {
       typeof this.rule.selector.selectorsSpecificity?.[selectorIndex] !==
       "undefined"
     ) {
-      // The specificity that we get from the platform is a single number that we
-      // need to format into the common `(x,y,z)` specificity string.
+      
+      
       const specificity =
         this.rule.selector.selectorsSpecificity?.[selectorIndex];
       const a = Math.floor(specificity / (1024 * 1024));
@@ -1078,22 +1040,22 @@ class RuleEditor extends EventEmitter {
     }
   }
 
-  /**
-   * Programatically add a new property to the rule.
-   *
-   * @param {string} name
-   *        Property name.
-   * @param {string} value
-   *        Property value.
-   * @param {string} priority
-   *        Property priority.
-   * @param {boolean} enabled
-   *        True if the property should be enabled.
-   * @param {TextProperty} siblingProp
-   *        Optional, property next to which the new property will be added.
-   * @return {TextProperty}
-   *        The new property
-   */
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   addProperty(name, value, priority, enabled, siblingProp) {
     const prop = this.rule.createProperty(
       name,
@@ -1107,11 +1069,11 @@ class RuleEditor extends EventEmitter {
       elementsWithPendingClicks: this.options.elementsWithPendingClicks,
     });
 
-    // Insert this node before the DOM node that is currently at its new index
-    // in the property list.  There is currently one less node in the DOM than
-    // in the property list, so this causes it to appear after siblingProp.
-    // If there is no node at its index, as is the case where this is the last
-    // node being inserted, then this behaves as appendChild.
+    
+    
+    
+    
+    
     this.propertyList.insertBefore(
       editor.element,
       this.propertyList.children[index]
@@ -1120,21 +1082,21 @@ class RuleEditor extends EventEmitter {
     return prop;
   }
 
-  /**
-   * Programatically add a list of new properties to the rule.  Focus the UI
-   * to the proper location after adding (either focus the value on the
-   * last property if it is empty, or create a new property and focus it).
-   *
-   * @param {Array} properties
-   *        Array of properties, which are objects with this signature:
-   *        {
-   *          name: {string},
-   *          value: {string},
-   *          priority: {string}
-   *        }
-   * @param {TextProperty} siblingProp
-   *        Optional, the property next to which all new props should be added.
-   */
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   addProperties(properties, siblingProp) {
     if (!properties || !properties.length) {
       return;
@@ -1153,7 +1115,7 @@ class RuleEditor extends EventEmitter {
       );
     }
 
-    // Either focus on the last value if incomplete, or start a new one.
+    
     if (lastProp && lastProp.value.trim() === "") {
       lastProp.editor.valueSpan.click();
     } else {
@@ -1161,23 +1123,23 @@ class RuleEditor extends EventEmitter {
     }
   }
 
-  /**
-   * Create a text input for a property name.  If a non-empty property
-   * name is given, we'll create a real TextProperty and add it to the
-   * rule.
-   */
+  
+
+
+
+
   newProperty() {
-    // If we're already creating a new property, ignore this.
+    
     if (!this.closeBrace.hasAttribute("tabindex")) {
       return;
     }
 
-    // While we're editing a new property, it doesn't make sense to start a second new
-    // property editor, so disable focusing the close brace for now.
+    
+    
     this.closeBrace.removeAttribute("tabindex");
-    // We also need to make the "Show Unused Variables" button non-focusable so hitting
-    // Tab while focused in the new property editor will move the focus to the next rule
-    // selector editor.
+    
+    
+    
     if (this.#showUnusedCustomCssPropertiesButton) {
       this.#showUnusedCustomCssPropertiesButton.setAttribute("tabindex", "-1");
     }
@@ -1197,7 +1159,7 @@ class RuleEditor extends EventEmitter {
     this.editor = new InplaceEditor({
       element: this.newPropSpan,
       done: this.#onNewProperty,
-      // (Shift+)Tab will move the focus to the previous/next editable field
+      
       focusEditableFieldAfterApply: true,
       focusEditableFieldContainerSelector: ".ruleview-rule",
       destroy: this.#newPropertyDestroy,
@@ -1210,37 +1172,37 @@ class RuleEditor extends EventEmitter {
         this.rule.elementStyle.getAllCustomProperties(this.rule.pseudoElement),
     });
 
-    // Auto-close the input if multiple rules get pasted into new property.
+    
     this.editor.input.addEventListener(
       "paste",
       blurOnMultipleProperties(this.rule.cssProperties)
     );
   }
 
-  /**
-   * Called when the new property input has been dismissed.
-   *
-   * @param {string} value
-   *        The value in the editor.
-   * @param {boolean} commit
-   *        True if the value should be committed.
-   */
+  
+
+
+
+
+
+
+
   #onNewProperty = (value, commit) => {
     if (!value || !commit) {
       return;
     }
 
-    // parseDeclarations allows for name-less declarations, but in the present
-    // case, we're creating a new declaration, it doesn't make sense to accept
-    // these entries
+    
+    
+    
     this.multipleAddedProperties = parseNamedDeclarations(
       this.rule.cssProperties.isKnown,
       value,
       true
     );
 
-    // Blur the editor field now and deal with adding declarations later when
-    // the field gets destroyed (see #newPropertyDestroy)
+    
+    
     this.editor.input.blur();
 
     this.telemetry.recordEvent("edit_rule", "ruleview");
@@ -1263,26 +1225,26 @@ class RuleEditor extends EventEmitter {
     delete this.newPropItem;
     delete this.newPropSpan;
 
-    // If properties were added, we want to focus the proper element.
-    // If the last new property has no value, focus the value on it.
-    // Otherwise, start a new property and focus that field.
+    
+    
+    
     if (this.multipleAddedProperties && this.multipleAddedProperties.length) {
       this.addProperties(this.multipleAddedProperties);
     }
   };
 
-  /**
-   * Called when the selector's inplace editor is closed.
-   * Ignores the change if the user pressed escape, otherwise
-   * commits it.
-   *
-   * @param {string} value
-   *        The value contained in the editor.
-   * @param {boolean} commit
-   *        True if the change should be applied.
-   * @param {number} direction
-   *        The move focus direction number.
-   */
+  
+
+
+
+
+
+
+
+
+
+
+
   #onSelectorDone = async (value, commit, direction) => {
     if (
       !commit ||
@@ -1299,7 +1261,7 @@ class RuleEditor extends EventEmitter {
 
     this.isEditing = true;
 
-    // Remove highlighter for the previous selector.
+    
     const computedSelector = this.rule.domRule.computedSelector;
     if (this.ruleView.isSelectorHighlighted(computedSelector)) {
       await this.ruleView.toggleSelectorHighlighter(
@@ -1311,20 +1273,20 @@ class RuleEditor extends EventEmitter {
     try {
       const response = await this.rule.domRule.modifySelector(element, value);
 
-      // Modifying the selector might have removed the element (e.g. for pseudo element)
+      
       if (!element.actorID) {
         return;
       }
 
-      // We recompute the list of applied styles, because editing a
-      // selector might cause this rule's position to change.
+      
+      
       const applied = await elementStyle.pageStyle.getApplied(element, {
         inherited: true,
         matchedSelectors: true,
         filter: elementStyle.showUserAgentStyles ? "ua" : undefined,
       });
 
-      // The element might have been removed while we were trying to get the applied declarations
+      
       if (!element.actorID) {
         return;
       }
@@ -1333,8 +1295,8 @@ class RuleEditor extends EventEmitter {
 
       const { ruleProps, isMatching } = response;
       if (!ruleProps) {
-        // Notify for changes, even when nothing changes,
-        // just to allow tests being able to track end of this request.
+        
+        
         ruleView.emit("ruleview-invalid-selector");
         return;
       }
@@ -1350,32 +1312,32 @@ class RuleEditor extends EventEmitter {
       let newRuleIndex = applied.findIndex(r => r.rule == ruleProps.rule);
       const oldIndex = rules.indexOf(this.rule);
 
-      // If the selector no longer matches, then we leave the rule in
-      // the same relative position.
+      
+      
       if (newRuleIndex === -1) {
         newRuleIndex = oldIndex;
       }
 
-      // Remove the old rule and insert the new rule.
+      
       rules.splice(oldIndex, 1);
       rules.splice(newRuleIndex, 0, newRule);
       elementStyle.notifyChanged();
       elementStyle.onRuleUpdated();
 
-      // We install the new editor in place of the old -- you might
-      // think we would replicate the list-modification logic above,
-      // but that is complicated due to the way the UI installs
-      // pseudo-element rules and the like.
+      
+      
+      
+      
       this.element.parentNode.replaceChild(editor.element, this.element);
 
-      // As the rules elements will be replaced, and given that the inplace-editor doesn't
-      // wait for this `done` callback to be resolved, the focus management we do there
-      // will be useless as this specific code will usually happen later (and the focused
-      // element might be replaced).
-      // Because of this, we need to handle setting the focus ourselves from here.
+      
+      
+      
+      
+      
       editor.#moveSelectorFocus(direction);
 
-      // Destroy the current editor as it got replaced by the fresh instance
+      
       this.destroy();
     } catch (err) {
       this.isEditing = false;
@@ -1383,12 +1345,12 @@ class RuleEditor extends EventEmitter {
     }
   };
 
-  /**
-   * Handle moving the focus change after a Tab keypress in the selector inplace editor.
-   *
-   * @param {number} direction
-   *        The move focus direction number.
-   */
+  
+
+
+
+
+
   #moveSelectorFocus(direction) {
     if (!direction || direction === Services.focus.MOVEFOCUS_BACKWARD) {
       return;

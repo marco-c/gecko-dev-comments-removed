@@ -478,6 +478,27 @@ class HTMLTooltip extends EventEmitter {
 
 
 
+  async replaceChildrenLocalized(element, contentSizeOptions) {
+    
+    
+    
+    await this.doc.l10n.translateElements([element]);
+    this.doc.l10n.pauseObserving();
+    this.panel.replaceChildren(element);
+    this.doc.l10n.resumeObserving();
+
+    this.setContentSize(contentSizeOptions);
+  }
+
+  
+
+
+
+
+
+
+
+
 
 
 

@@ -62,6 +62,26 @@ const TEST_URI = `
         color: peachpuff;
       }
     }
+
+    article {
+      container-name: post;
+      container-type: inline-size;
+      --x: red;
+      --y: 10px;
+      --empty: ;
+    }
+
+    @container style(--x: red),
+               style(var(--y, 1px) > 20px),
+               post style(--x),
+               mycontainer style(--x),
+               style(--z),
+               style(--empty),
+               style((attr(data-x type(<length>)) < 10px) or (attr(data-y px, 10px) < 100px) or (attr(data-z px) < 1000px)) {
+      h5, [test-hint="style-query"] {
+        color: var(--x);
+      }
+    }
   </style>
   <body id=myBody class="a-container test">
     <h1>Hello @container!</h1>
@@ -74,28 +94,21 @@ const TEST_URI = `
     <aside>
       <h4>Yup</h4>
     </aside>
+    <article data-x="1px" data-z>
+      <h5>News</h5>
+    </article>
   </body>
 `;
 
 add_task(async function () {
+  await pushPref("layout.css.style-queries.enabled", true);
+  
+  await pushPref("layout.css.attr.enabled", true);
   await addTab(
     "https://example.com/document-builder.sjs?html=" +
       encodeURIComponent(TEST_URI)
   );
   const { inspector, view } = await openRuleView();
-
-  await selectNode("h1", inspector);
-  assertContainerQueryData(view, [
-    { selector: "element", ancestorRulesData: null },
-    {
-      selector: `h1, [test-hint="container"]`,
-      ancestorRulesData: ["@container mycontainer (1px < width < 10000px) {"],
-    },
-    {
-      selector: `h1, [test-hint="nocontainername"]`,
-      ancestorRulesData: ["@container (width > 0px) {"],
-    },
-  ]);
 
   info("Check that the query container tooltip works as expected");
   
@@ -112,21 +125,32 @@ add_task(async function () {
       };
     });
 
+  await selectNode("h1", inspector);
+  assertContainerQueryData(view, [
+    { selector: "element", ancestorRulesData: null },
+    {
+      selector: `h1, [test-hint="container"]`,
+      ancestorRulesData: ["@container mycontainer (1px < width < 10000px) {"],
+    },
+    {
+      selector: `h1, [test-hint="nocontainername"]`,
+      ancestorRulesData: ["@container (width > 0px) {"],
+    },
+  ]);
+
   await assertQueryContainerTooltip({
     inspector,
     view,
     ruleIndex: 1,
+    expectedConditionText: "mycontainer (1px < width < 10000px)",
     expectedHeaderText: "<body#myBody.a-container.test>",
     expectedBodyText: [
       "container-name: mycontainer containeralias",
       "container-type: size",
-      `inline-size: ${bodyInlineSize}`,
-      `block-size: ${bodyBlockSize}`,
+      `width: ${bodyInlineSize}`,
     ],
+    expectedSelectedNodeAfterClick: "body",
   });
-
-  info("Check that the 'jump to container' button works as expected");
-  await assertJumpToContainerButton(inspector, view, 1, 0, "body");
 
   info("Check that inherited rules display container query data as expected");
   await selectNode("h2", inspector);
@@ -154,47 +178,40 @@ add_task(async function () {
     inspector,
     view,
     ruleIndex: 1,
+    expectedConditionText: "mycontainer",
     expectedHeaderText: "<section>",
     expectedBodyText: [
       "container-name: mycontainer",
       "container-type: inline-size",
-      `inline-size: ${sectionInlineSize}`,
     ],
+    expectedSelectedNodeAfterClick: "section",
   });
   await assertQueryContainerTooltip({
     inspector,
     view,
     ruleIndex: 2,
+    expectedConditionText: "mycontainer (1px < width < 10000px)",
     expectedHeaderText: "<section>",
     expectedBodyText: [
       "container-name: mycontainer",
       "container-type: inline-size",
-      `inline-size: ${sectionInlineSize}`,
+      `width: ${sectionInlineSize}`,
     ],
+    expectedSelectedNodeAfterClick: "section",
   });
   await assertQueryContainerTooltip({
     inspector,
     view,
     ruleIndex: 3,
+    expectedConditionText: "mycontainer (1px < width < 10000px)",
     expectedHeaderText: "<body#myBody.a-container.test>",
     expectedBodyText: [
       "container-name: mycontainer containeralias",
       "container-type: size",
-      `inline-size: ${bodyInlineSize}`,
-      `block-size: ${bodyBlockSize}`,
+      `width: ${bodyInlineSize}`,
     ],
+    expectedSelectedNodeAfterClick: "body",
   });
-
-  info(
-    "Check that the 'jump to container' button works as expected for inherited rules"
-  );
-  await assertJumpToContainerButton(inspector, view, 1, 0, "section");
-
-  await selectNode("h2", inspector);
-  await assertJumpToContainerButton(inspector, view, 2, 0, "section");
-
-  await selectNode("h2", inspector);
-  await assertJumpToContainerButton(inspector, view, 3, 0, "body");
 
   info("Check that multi-conditions container query are displayed as expected");
   await selectNode("h3", inspector);
@@ -221,12 +238,14 @@ add_task(async function () {
     view,
     ruleIndex: 1,
     conditionIndex: 0,
+    expectedConditionText: "mycontainer (width > 1px)",
     expectedHeaderText: "<section>",
     expectedBodyText: [
       "container-name: mycontainer",
       "container-type: inline-size",
-      `inline-size: ${sectionInlineSize}`,
+      `width: ${sectionInlineSize}`,
     ],
+    expectedSelectedNodeAfterClick: "section",
   });
 
   await assertQueryContainerTooltip({
@@ -234,13 +253,14 @@ add_task(async function () {
     view,
     ruleIndex: 1,
     conditionIndex: 1,
+    expectedConditionText: "containeralias (height > 13000px)",
     expectedHeaderText: "<body#myBody.a-container.test>",
     expectedBodyText: [
       "container-name: mycontainer containeralias",
       "container-type: size",
-      `inline-size: ${bodyInlineSize}`,
-      `block-size: ${bodyBlockSize}`,
+      `height: ${bodyBlockSize}`,
     ],
+    expectedSelectedNodeAfterClick: "body",
     
     unmatched: true,
   });
@@ -250,12 +270,14 @@ add_task(async function () {
     view,
     ruleIndex: 1,
     conditionIndex: 2,
+    expectedConditionText: "(inline-size > 42px)",
     expectedHeaderText: "<section>",
     expectedBodyText: [
       "container-name: mycontainer",
       "container-type: inline-size",
       `inline-size: ${sectionInlineSize}`,
     ],
+    expectedSelectedNodeAfterClick: "section",
   });
 
   await assertQueryContainerTooltip({
@@ -263,28 +285,11 @@ add_task(async function () {
     view,
     ruleIndex: 1,
     conditionIndex: 3,
+    expectedConditionText: "unknowncontainer (width > 0px)",
     unmatched: true,
     hasContainer: false,
     expectedTooltipText: `No container ‘unknowncontainer’ found`,
   });
-
-  info(
-    "Check that the 'jump to container' button works for multi-condition queries"
-  );
-  await assertJumpToContainerButton(inspector, view, 1, 0, "section");
-
-  await selectNode("h3", inspector);
-  await assertJumpToContainerButton(inspector, view, 1, 1, "body");
-
-  await selectNode("h3", inspector);
-  await assertJumpToContainerButton(inspector, view, 1, 2, "section");
-
-  await selectNode("h3", inspector);
-  is(
-    getJumpToContainerButton(view, 1, 3),
-    null,
-    "There's no icon for the condition that references an unknown container"
-  );
 
   info(
     "Check that the query container tooltip works as expected for container without name"
@@ -295,13 +300,172 @@ add_task(async function () {
     view,
     ruleIndex: 1,
     conditionIndex: 0,
+    expectedConditionText: "(width > 2px)",
     expectedHeaderText: "<aside>",
     expectedBodyText: [
       "container-type: inline-size",
-      `inline-size: ${asideInlineSize}`,
+      `width: ${asideInlineSize}`,
     ],
+    expectedSelectedNodeAfterClick: "aside",
   });
-  await assertJumpToContainerButton(inspector, view, 1, 0, "aside");
+
+  info(
+    "Check that the query container tooltip works as expected for style queries"
+  );
+  await selectNode("h5", inspector);
+  assertContainerQueryData(view, [
+    { selector: "element", ancestorRulesData: null },
+    {
+      selector: `h5, [test-hint="style-query"]`,
+      ancestorRulesData: [
+        "@container style(--x: red), " +
+          "style((var(--y, 1px) > 20px)), " +
+          "post style(--x), " +
+          "mycontainer style(--x), " +
+          "style(--z), " +
+          "style(--empty), " +
+          "style(((attr(data-x type(<length>)) < 10px)) or ((attr(data-y px, 10px) < 100px)) or ((attr(data-z px) < 1000px))) {",
+      ],
+    },
+    {
+      selector: `article`,
+    },
+  ]);
+  await assertQueryContainerTooltip({
+    inspector,
+    view,
+    ruleIndex: 1,
+    conditionIndex: 0,
+    expectedConditionText: "style(--x: red)",
+    expectedHeaderText: "<article>",
+    expectedBodyText: [
+      "container-name: post",
+      "container-type: inline-size",
+      `--x: red`,
+    ],
+    expectedSelectedNodeAfterClick: "article",
+  });
+  await assertQueryContainerTooltip({
+    inspector,
+    view,
+    ruleIndex: 1,
+    conditionIndex: 1,
+    expectedConditionText: "style((var(--y, 1px) > 20px))",
+    expectedHeaderText: "<article>",
+    expectedBodyText: [
+      "container-name: post",
+      "container-type: inline-size",
+      `--y: 10px`,
+    ],
+    expectedSelectedNodeAfterClick: "article",
+    
+    unmatched: true,
+  });
+  await assertQueryContainerTooltip({
+    inspector,
+    view,
+    ruleIndex: 1,
+    conditionIndex: 2,
+    expectedConditionText: "post style(--x)",
+    expectedHeaderText: "<article>",
+    expectedBodyText: [
+      "container-name: post",
+      "container-type: inline-size",
+      `--x: red`,
+    ],
+    expectedSelectedNodeAfterClick: "article",
+  });
+  await assertQueryContainerTooltip({
+    inspector,
+    view,
+    ruleIndex: 1,
+    conditionIndex: 3,
+    expectedConditionText: "mycontainer style(--x)",
+    expectedHeaderText: "<body#myBody.a-container.test>",
+    expectedBodyText: [
+      "container-name: mycontainer containeralias",
+      "container-type: size",
+      `--x is not set`,
+    ],
+    expectedSelectedNodeAfterClick: "body",
+    
+    unmatched: true,
+  });
+  await assertQueryContainerTooltip({
+    inspector,
+    view,
+    ruleIndex: 1,
+    conditionIndex: 4,
+    expectedConditionText: "style(--z)",
+    expectedHeaderText: "<article>",
+    expectedBodyText: [
+      "container-name: post",
+      "container-type: inline-size",
+      `--z is not set`,
+    ],
+    expectedSelectedNodeAfterClick: "article",
+    
+    unmatched: true,
+  });
+  await assertQueryContainerTooltip({
+    inspector,
+    view,
+    ruleIndex: 1,
+    conditionIndex: 5,
+    expectedConditionText: "style(--empty)",
+    expectedHeaderText: "<article>",
+    expectedBodyText: [
+      "container-name: post",
+      "container-type: inline-size",
+      `--empty: <empty>`,
+    ],
+    expectedSelectedNodeAfterClick: "article",
+  });
+  await assertQueryContainerTooltip({
+    inspector,
+    view,
+    ruleIndex: 1,
+    conditionIndex: 6,
+    expectedConditionText:
+      "style(((attr(data-x type(<length>)) < 10px)) or ((attr(data-y px, 10px) < 100px)) or ((attr(data-z px) < 1000px)))",
+    expectedHeaderText: "<article>",
+    expectedBodyText: [
+      "container-name: post",
+      "container-type: inline-size",
+      "data-x: 1px",
+      "data-z: <empty>",
+      
+      "Attribute data-y is not set",
+    ],
+    expectedSelectedNodeAfterClick: "article",
+  });
+});
+
+add_task(async function checkStyleQueryWithoutModernAttrSupport() {
+  await pushPref("layout.css.style-queries.enabled", true);
+  
+  await pushPref("layout.css.attr.enabled", false);
+  await addTab(
+    "https://example.com/document-builder.sjs?html=" +
+      encodeURIComponent(TEST_URI)
+  );
+  const { inspector, view } = await openRuleView();
+
+  await selectNode("h5", inspector);
+  await assertQueryContainerTooltip({
+    inspector,
+    view,
+    ruleIndex: 1,
+    conditionIndex: 6,
+    expectedConditionText:
+      "style((attr(data-x type(<length>)) < 10px) or (attr(data-y px, 10px) < 100px) or (attr(data-z px) < 1000px))",
+    expectedHeaderText: "<article>",
+    
+    expectedBodyText: ["container-name: post", "container-type: inline-size"],
+    expectedSelectedNodeAfterClick: "article",
+    
+    unmatched: true,
+  });
 });
 
 function assertContainerQueryData(view, expectedRules) {
@@ -338,89 +502,8 @@ function assertContainerQueryData(view, expectedRules) {
         expectedRule.ancestorRulesData.join("\n"),
         `Expected ancestor rules data displayed for ${selector}`
       );
-      Assert.notStrictEqual(
-        ancestorDataEl.querySelector(".container-condition .open-inspector"),
-        null,
-        "An icon is displayed to select the container in the markup view"
-      );
     }
   }
-}
-
-function getJumpToContainerButton(view, ruleIndex, conditionIndex) {
-  const ancestorEl = getRuleViewAncestorRulesDataElementByIndex(
-    view,
-    ruleIndex
-  );
-  return ancestorEl
-    .querySelectorAll(".container-condition")
-    [conditionIndex].querySelector(".open-inspector");
-}
-
-async function assertJumpToContainerButton(
-  inspector,
-  view,
-  ruleIndex,
-  conditionIndex,
-  expectedSelectedNodeAfterClick
-) {
-  const selectContainerButton = getJumpToContainerButton(
-    view,
-    ruleIndex,
-    conditionIndex
-  );
-
-  
-  selectContainerButton.scrollIntoView();
-
-  const { waitForHighlighterTypeShown, waitForHighlighterTypeHidden } =
-    getHighlighterTestHelpers(inspector);
-
-  const onNodeHighlight = waitForHighlighterTypeShown(
-    inspector.highlighters.TYPES.BOXMODEL
-  );
-  EventUtils.synthesizeMouseAtCenter(
-    selectContainerButton,
-    { type: "mousemove" },
-    selectContainerButton.ownerDocument.defaultView
-  );
-  const { nodeFront: highlightedNodeFront } = await onNodeHighlight;
-  is(
-    highlightedNodeFront.displayName,
-    expectedSelectedNodeAfterClick,
-    "The correct node was highlighted"
-  );
-
-  const onceNewNodeFront = inspector.selection.once("new-node-front");
-  const onNodeUnhighlight = waitForHighlighterTypeHidden(
-    inspector.highlighters.TYPES.BOXMODEL
-  );
-
-  EventUtils.synthesizeMouseAtCenter(
-    selectContainerButton,
-    {},
-    selectContainerButton.ownerDocument.defaultView
-  );
-
-  const nodeFront = await onceNewNodeFront;
-  is(
-    nodeFront.displayName,
-    expectedSelectedNodeAfterClick,
-    "The correct node has been selected"
-  );
-
-  await onNodeUnhighlight;
-  ok(true, "Highlighter was hidden when clicking on icon");
-
-  
-  
-  EventUtils.synthesizeMouse(
-    view.styleDocument.body,
-    0,
-    0,
-    { type: "mouseover" },
-    selectContainerButton.ownerDocument.defaultView
-  );
 }
 
 async function assertQueryContainerTooltip({
@@ -428,15 +511,23 @@ async function assertQueryContainerTooltip({
   view,
   ruleIndex,
   conditionIndex = 0,
+  expectedConditionText,
   expectedHeaderText,
   expectedBodyText,
   expectedTooltipText = null,
+  expectedSelectedNodeAfterClick,
   unmatched = false,
   hasContainer = true,
 }) {
   const parent = getRuleViewAncestorRulesDataElementByIndex(view, ruleIndex);
   const containerConditionEl = parent.querySelector(
     `.container-condition[data-condition-index="${conditionIndex}"]`
+  );
+
+  is(
+    containerConditionEl.textContent.trim(),
+    expectedConditionText,
+    `Got expected #${conditionIndex} condition text for rule #${ruleIndex}`
   );
 
   is(
@@ -455,12 +546,6 @@ async function assertQueryContainerTooltip({
     "container condition element doesn't have the tooltip-anchor class at first"
   );
 
-  const { waitForHighlighterTypeShown, waitForHighlighterTypeHidden } =
-    getHighlighterTestHelpers(inspector);
-
-  const onNodeHighlight = hasContainer
-    ? waitForHighlighterTypeShown(inspector.highlighters.TYPES.BOXMODEL)
-    : null;
   const onTooltipReady = tooltip.once("shown");
 
   info("synthesizing mousemove on container condition");
@@ -475,11 +560,6 @@ async function assertQueryContainerTooltip({
     { type: "mousemove" },
     containerConditionEl.ownerDocument.defaultView
   );
-
-  if (onNodeHighlight) {
-    await onNodeHighlight;
-    info("node was highlighted");
-  }
 
   await onTooltipReady;
   info("tooltip was shown");
@@ -508,30 +588,96 @@ async function assertQueryContainerTooltip({
     Assert.deepEqual(lis, expectedBodyText, "Tooltip has expected body items");
   }
 
-  info("Hide the tooltip");
-  const onHidden = tooltip.once("hidden");
-  const onNodeUnhighlight = hasContainer
-    ? waitForHighlighterTypeHidden(inspector.highlighters.TYPES.BOXMODEL)
-    : null;
+  const selectContainerButton = tooltip.panel.querySelector(".open-inspector");
+  if (hasContainer) {
+    isnot(
+      selectContainerButton,
+      null,
+      "Tooltip header has a button to select the container"
+    );
 
-  
-  EventUtils.synthesizeMouse(
-    containerConditionEl.ownerDocument.body,
-    1,
-    1,
-    { type: "mousemove" },
-    containerConditionEl.ownerDocument.defaultView
-  );
-  await onHidden;
-  info("tooltip was hidden");
+    const { waitForHighlighterTypeShown, waitForHighlighterTypeHidden } =
+      getHighlighterTestHelpers(inspector);
 
-  ok(
-    !containerConditionEl.classList.contains("tooltip-anchor"),
-    "container condition element doesn't have the tooltip-anchor class after the tooltip is hidden"
-  );
+    const onNodeHighlight = waitForHighlighterTypeShown(
+      inspector.highlighters.TYPES.BOXMODEL
+    );
 
-  if (onNodeUnhighlight) {
+    EventUtils.synthesizeMouseAtCenter(
+      tooltip.panel.querySelector(".objectBox-node"),
+      { type: "mouseover" },
+      selectContainerButton.ownerDocument.defaultView
+    );
+    const { nodeFront: highlightedNodeFront } = await onNodeHighlight;
+    is(
+      highlightedNodeFront.displayName,
+      expectedSelectedNodeAfterClick,
+      "The correct node was highlighted"
+    );
+
+    const onceNewNodeFront = inspector.selection.once("new-node-front");
+    const onNodeUnhighlight = waitForHighlighterTypeHidden(
+      inspector.highlighters.TYPES.BOXMODEL
+    );
+    const onHidden = tooltip.once("hidden");
+
+    const nodeToSelectBack = inspector.selection.nodeFront;
+
+    EventUtils.synthesizeMouseAtCenter(
+      selectContainerButton,
+      {},
+      selectContainerButton.ownerDocument.defaultView
+    );
+
+    const nodeFront = await onceNewNodeFront;
+    is(
+      nodeFront.displayName,
+      expectedSelectedNodeAfterClick,
+      "The correct node has been selected"
+    );
+
+    await onHidden;
+    info("Tooltip was hidden when clicking on select container button");
+
     await onNodeUnhighlight;
-    info("highlighter was hidden");
+    info("Highlighter was hidden when clicking on select container button");
+
+    
+    
+    EventUtils.synthesizeMouse(
+      view.styleDocument.body,
+      0,
+      0,
+      { type: "mouseover" },
+      selectContainerButton.ownerDocument.defaultView
+    );
+
+    
+    await selectNode(nodeToSelectBack, inspector);
+  } else {
+    is(
+      selectContainerButton,
+      null,
+      "Tooltip header does not have a button to select the container"
+    );
+
+    info("Hide the tooltip");
+    const onHidden = tooltip.once("hidden");
+
+    
+    EventUtils.synthesizeMouse(
+      containerConditionEl.ownerDocument.body,
+      1,
+      1,
+      { type: "mousemove" },
+      containerConditionEl.ownerDocument.defaultView
+    );
+    await onHidden;
+    info("tooltip was hidden");
+
+    ok(
+      !containerConditionEl.classList.contains("tooltip-anchor"),
+      "container condition element doesn't have the tooltip-anchor class after the tooltip is hidden"
+    );
   }
 }
