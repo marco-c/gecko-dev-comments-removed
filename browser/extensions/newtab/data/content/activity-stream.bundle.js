@@ -11901,7 +11901,257 @@ function CardSections({
 }
 
 ;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const PREF_WIDGETS_LISTS_ENABLED = "widgets.lists.enabled";
+const PREF_WIDGETS_TIMER_ENABLED = "widgets.focusTimer.enabled";
+const PREF_WIDGETS_WEATHER_ENABLED = "widgets.weather.enabled";
+const PREF_LISTS_SIZE = "widgets.lists.size";
+const PREF_FOCUS_TIMER_SIZE = "widgets.focusTimer.size";
+const PREF_WEATHER_SIZE = "widgets.weather.size";
+const PREF_WIDGETS_ORDER = "widgets.order";
+const PREF_WIDGETS_SYSTEM_LISTS_ENABLED = "widgets.system.lists.enabled";
+const PREF_WIDGETS_SYSTEM_TIMER_ENABLED =
+  "widgets.system.focusTimer.enabled";
+const PREF_WIDGETS_SYSTEM_WEATHER_ENABLED =
+  "widgets.system.weather.enabled";
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const WIDGET_REGISTRY = [
+  {
+    id: "lists",
+    telemetryName: "lists",
+    order: 0,
+    enabledPref: PREF_WIDGETS_LISTS_ENABLED,
+    sizePref: PREF_LISTS_SIZE,
+    defaultSize: "large",
+    validSizes: ["small", "medium", "large"],
+    hasSidebar: false,
+    systemEnabledPref: PREF_WIDGETS_SYSTEM_LISTS_ENABLED,
+    trainhopEnabledKey: "listsEnabled",
+    trainhopSizeKey: "listsSize",
+    trainhopSidebarKey: null,
+  },
+  {
+    id: "focusTimer",
+    telemetryName: "focus_timer",
+    order: 1,
+    enabledPref: PREF_WIDGETS_TIMER_ENABLED,
+    sizePref: PREF_FOCUS_TIMER_SIZE,
+    defaultSize: "large",
+    validSizes: ["small", "medium", "large"],
+    hasSidebar: false,
+    systemEnabledPref: PREF_WIDGETS_SYSTEM_TIMER_ENABLED,
+    trainhopEnabledKey: "timerEnabled",
+    trainhopSizeKey: "timerSize",
+    trainhopSidebarKey: null,
+  },
+  {
+    id: "weather",
+    telemetryName: "weather",
+    order: 2,
+    enabledPref: PREF_WIDGETS_WEATHER_ENABLED,
+    sizePref: PREF_WEATHER_SIZE,
+    defaultSize: "medium",
+    validSizes: ["mini", "small", "medium", "large"],
+    hasSidebar: true,
+    systemEnabledPref: PREF_WIDGETS_SYSTEM_WEATHER_ENABLED,
+    trainhopEnabledKey: "weatherEnabled",
+    trainhopSizeKey: "weatherSize",
+    trainhopSidebarKey: "weatherSidebar",
+  },
+];
+
+
+
+
+
+
+
+
+function getWidgetOrder(orderPref) {
+  const registryIds = WIDGET_REGISTRY.map(w => w.id);
+  if (!orderPref) {
+    return registryIds;
+  }
+  const seen = new Set();
+  const saved = orderPref
+    .split(",")
+    .filter(id => registryIds.includes(id) && !seen.has(id) && seen.add(id));
+  const appended = registryIds.filter(id => !seen.has(id));
+  return [...saved, ...appended];
+}
+
+
+
+
+
+
+
+
+function resolveWidgetOrder(prefs) {
+  const userOrder = prefs[PREF_WIDGETS_ORDER];
+  if (userOrder) {
+    return getWidgetOrder(userOrder);
+  }
+  const trainhopOrder = prefs.trainhopConfig?.widgets?.order;
+  if (trainhopOrder) {
+    return getWidgetOrder(trainhopOrder);
+  }
+  return getWidgetOrder(null);
+}
+
+
+
+
+
+
+
+
+
+
+function isWidgetEnabled(widget, prefs, widgetsEnabled) {
+  if (!widgetsEnabled) {
+    return false;
+  }
+  const trainhop = prefs.trainhopConfig?.widgets?.[widget.trainhopEnabledKey];
+  const system = prefs[widget.systemEnabledPref];
+  return Boolean((trainhop || system) && prefs[widget.enabledPref]);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+function resolveWidgetSize(widget, prefs) {
+  const userPref = prefs[widget.sizePref];
+  if (userPref) {
+    return userPref;
+  }
+  const trainhopSize = widget.trainhopSizeKey
+    ? prefs.trainhopConfig?.widgets?.[widget.trainhopSizeKey]
+    : null;
+  return trainhopSize || widget.defaultSize;
+}
+
+
+
+
+
+
+
+
+
+
+function resolveWidgetHasSidebar(widget, prefs) {
+  if (widget.trainhopSidebarKey) {
+    const override = prefs.trainhopConfig?.widgets?.[widget.trainhopSidebarKey];
+    if (override !== undefined) {
+      return override;
+    }
+  }
+  return widget.hasSidebar;
+}
+
+;
 function Lists_extends() { return Lists_extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, Lists_extends.apply(null, arguments); }
+
 
 
 
@@ -11930,7 +12180,7 @@ const PREF_WIDGETS_LISTS_MAX_LISTITEMS = "widgets.lists.maxListItems";
 const PREF_WIDGETS_LISTS_BADGE_ENABLED = "widgets.lists.badge.enabled";
 const PREF_WIDGETS_LISTS_BADGE_LABEL = "widgets.lists.badge.label";
 const Lists_PREF_NOVA_ENABLED = "nova.enabled";
-const PREF_LISTS_SIZE = "widgets.lists.size";
+const Lists_PREF_LISTS_SIZE = "widgets.lists.size";
 
 
 function Lists({
@@ -11953,9 +12203,10 @@ function Lists({
   const novaEnabled = prefs[Lists_PREF_NOVA_ENABLED];
   
   const isSmallSize = novaEnabled ? false : !isMaximized && widgetsMayBeMaximized;
+  const listsWidget = WIDGET_REGISTRY.find(w => w.id === "lists");
   let widgetSize;
   if (novaEnabled) {
-    widgetSize = prefs[PREF_LISTS_SIZE] || "large";
+    widgetSize = resolveWidgetSize(listsWidget, prefs);
   } else {
     widgetSize = isSmallSize ? "small" : "medium";
   }
@@ -12496,7 +12747,7 @@ function Lists({
       dispatch(actionCreators.OnlyToMain({
         type: actionTypes.SET_PREF,
         data: {
-          name: PREF_LISTS_SIZE,
+          name: Lists_PREF_LISTS_SIZE,
           value: size
         }
       }));
@@ -12888,6 +13139,7 @@ function FocusTimer_extends() { return FocusTimer_extends = Object.assign ? Obje
 
 
 
+
 const FocusTimer_USER_ACTION_TYPES = {
   CHANGE_SIZE: "change_size",
   TIMER_SET: "timer_set",
@@ -12899,7 +13151,7 @@ const FocusTimer_USER_ACTION_TYPES = {
   TIMER_TOGGLE_BREAK: "timer_toggle_break"
 };
 const FocusTimer_PREF_NOVA_ENABLED = "nova.enabled";
-const PREF_FOCUS_TIMER_SIZE = "widgets.focusTimer.size";
+const FocusTimer_PREF_FOCUS_TIMER_SIZE = "widgets.focusTimer.size";
 
 
 
@@ -13009,9 +13261,10 @@ const FocusTimer = ({
   
   const novaEnabled = prefs[FocusTimer_PREF_NOVA_ENABLED];
   const isSmallSize = novaEnabled ? false : !isMaximized && widgetsMayBeMaximized;
+  const timerWidget = WIDGET_REGISTRY.find(w => w.id === "focusTimer");
   let widgetSize;
   if (novaEnabled) {
-    widgetSize = prefs[PREF_FOCUS_TIMER_SIZE] || "large";
+    widgetSize = resolveWidgetSize(timerWidget, prefs);
   } else {
     widgetSize = isSmallSize ? "small" : "medium";
   }
@@ -13462,7 +13715,7 @@ const FocusTimer = ({
       dispatch(actionCreators.OnlyToMain({
         type: actionTypes.SET_PREF,
         data: {
-          name: PREF_FOCUS_TIMER_SIZE,
+          name: FocusTimer_PREF_FOCUS_TIMER_SIZE,
           value: size
         }
       }));
@@ -13796,7 +14049,7 @@ const WeatherForecast_USER_ACTION_TYPES = {
   PROVIDER_LINK_CLICK: "provider_link_click"
 };
 const WeatherForecast_PREF_NOVA_ENABLED = "nova.enabled";
-const PREF_WEATHER_SIZE = "widgets.weather.size";
+const WeatherForecast_PREF_WEATHER_SIZE = "widgets.weather.size";
 function WeatherForecast({
   dispatch,
   isMaximized,
@@ -13809,10 +14062,10 @@ function WeatherForecast({
   const errorRef = (0,external_React_namespaceObject.useRef)(null);
   
   const novaEnabled = prefs[WeatherForecast_PREF_NOVA_ENABLED];
-  const isSmallSize = novaEnabled ? (prefs[PREF_WEATHER_SIZE] || "large") !== "large" : !isMaximized && widgetsMayBeMaximized;
+  const isSmallSize = novaEnabled ? (prefs[WeatherForecast_PREF_WEATHER_SIZE] || "large") !== "large" : !isMaximized && widgetsMayBeMaximized;
   let widgetSize;
   if (novaEnabled) {
-    widgetSize = prefs[PREF_WEATHER_SIZE] || "large";
+    widgetSize = prefs[WeatherForecast_PREF_WEATHER_SIZE] || "large";
   } else {
     widgetSize = isSmallSize ? "small" : "medium";
   }
@@ -13821,7 +14074,7 @@ function WeatherForecast({
       dispatch(actionCreators.OnlyToMain({
         type: actionTypes.SET_PREF,
         data: {
-          name: PREF_WEATHER_SIZE,
+          name: WeatherForecast_PREF_WEATHER_SIZE,
           value: size
         }
       }));
@@ -14700,6 +14953,52 @@ function WidgetsFeatureHighlight({
 
 
 
+const weatherEntry = WIDGET_REGISTRY.find(w => w.id === "weather");
+function WeatherRowWidget({
+  dispatch
+}) {
+  const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
+  const weatherSize = resolveWidgetSize(weatherEntry, prefs);
+  return external_React_default().createElement(Weather_Weather, {
+    dispatch: dispatch,
+    size: weatherSize
+  });
+}
+function WeatherSidebarWidget({
+  dispatch
+}) {
+  const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
+  if (!prefs.showWeather) {
+    return null;
+  }
+  return external_React_default().createElement(Weather_Weather, {
+    dispatch: dispatch,
+    size: "small"
+  });
+}
+const WIDGET_ROW_COMPONENTS = {
+  lists: Lists,
+  focusTimer: FocusTimer,
+  weather: WeatherRowWidget
+};
+const WIDGET_SIDEBAR_COMPONENTS = {
+  weather: WeatherSidebarWidget
+};
+;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -14710,20 +15009,11 @@ const CONTAINER_ACTION_TYPES = {
 };
 const PREF_WIDGETS_ENABLED = "widgets.enabled";
 const Widgets_PREF_NOVA_ENABLED = "nova.enabled";
-const PREF_WIDGETS_LISTS_ENABLED = "widgets.lists.enabled";
-const PREF_WIDGETS_SYSTEM_LISTS_ENABLED = "widgets.system.lists.enabled";
-const PREF_WIDGETS_TIMER_ENABLED = "widgets.focusTimer.enabled";
-const PREF_WIDGETS_SYSTEM_TIMER_ENABLED = "widgets.system.focusTimer.enabled";
-const PREF_WIDGETS_WEATHER_ENABLED = "widgets.weather.enabled";
-const PREF_WIDGETS_SYSTEM_WEATHER_ENABLED = "widgets.system.weather.enabled";
 const PREF_WIDGETS_SYSTEM_WEATHER_FORECAST_ENABLED = "widgets.system.weatherForecast.enabled";
 const PREF_WIDGETS_MAXIMIZED = "widgets.maximized";
 const PREF_WIDGETS_SYSTEM_MAXIMIZED = "widgets.system.maximized";
 const PREF_WIDGETS_FEEDBACK_ENABLED = "widgets.feedback.enabled";
 const PREF_WIDGETS_HIDE_ALL_TOAST_ENABLED = "widgets.hideAllToast.enabled";
-const Widgets_PREF_LISTS_SIZE = "widgets.lists.size";
-const Widgets_PREF_FOCUS_TIMER_SIZE = "widgets.focusTimer.size";
-const Widgets_PREF_WEATHER_SIZE = "widgets.weather.size";
 const WIDGETS_FEEDBACK_URL = "https://support.mozilla.org/kb/firefox-new-tab-widgets";
 
 
@@ -14789,12 +15079,6 @@ function Widgets() {
   const dispatch = (0,external_ReactRedux_namespaceObject.useDispatch)();
   const novaEnabled = prefs[Widgets_PREF_NOVA_ENABLED];
   const isMaximized = prefs[PREF_WIDGETS_MAXIMIZED];
-  const nimbusListsEnabled = prefs.widgetsConfig?.listsEnabled;
-  const nimbusTimerEnabled = prefs.widgetsConfig?.timerEnabled;
-  const nimbusListsTrainhopEnabled = prefs.trainhopConfig?.widgets?.listsEnabled;
-  const nimbusTimerTrainhopEnabled = prefs.trainhopConfig?.widgets?.timerEnabled;
-  const nimbusWeatherForecastTrainhopEnabled = prefs.trainhopConfig?.widgets?.weatherForecastEnabled;
-  const nimbusWeatherTrainhopEnabled = prefs.trainhopConfig?.widgets?.weatherEnabled;
   const nimbusMaximizedTrainhopEnabled = prefs.trainhopConfig?.widgets?.maximized;
   const feedbackEnabled = prefs.trainhopConfig?.widgets?.feedbackEnabled || prefs[PREF_WIDGETS_FEEDBACK_ENABLED];
   const hideAllToastEnabled = prefs.trainhopConfig?.widgets?.hideAllToastEnabled || prefs[PREF_WIDGETS_HIDE_ALL_TOAST_ENABLED];
@@ -14802,8 +15086,6 @@ function Widgets() {
   const showWidgetsSizeToggle = nimbusMaximizedTrainhopEnabled || prefs[PREF_WIDGETS_SYSTEM_MAXIMIZED];
   const widgetsMayBeMaximized = showWidgetsSizeToggle;
   const widgetsEnabled = prefs[PREF_WIDGETS_ENABLED];
-  const listsEnabled = widgetsEnabled && (nimbusListsTrainhopEnabled || nimbusListsEnabled || prefs[PREF_WIDGETS_SYSTEM_LISTS_ENABLED]) && prefs[PREF_WIDGETS_LISTS_ENABLED];
-  const timerEnabled = widgetsEnabled && (nimbusTimerTrainhopEnabled || nimbusTimerEnabled || prefs[PREF_WIDGETS_SYSTEM_TIMER_ENABLED]) && prefs[PREF_WIDGETS_TIMER_ENABLED];
 
   
   
@@ -14811,7 +15093,19 @@ function Widgets() {
   
   
   
-  const weatherForecastSystemEnabled = nimbusWeatherForecastTrainhopEnabled || prefs[PREF_WIDGETS_SYSTEM_WEATHER_FORECAST_ENABLED];
+  const listsWidget = WIDGET_REGISTRY.find(w => w.id === "lists");
+  const timerWidget = WIDGET_REGISTRY.find(w => w.id === "focusTimer");
+  const weatherWidget = WIDGET_REGISTRY.find(w => w.id === "weather");
+  const listsEnabled = isWidgetEnabled(listsWidget, prefs, widgetsEnabled);
+  const timerEnabled = isWidgetEnabled(timerWidget, prefs, widgetsEnabled);
+
+  
+  
+  
+  
+  
+  
+  const weatherForecastSystemEnabled = prefs.trainhopConfig?.widgets?.weatherForecastEnabled || prefs[PREF_WIDGETS_SYSTEM_WEATHER_FORECAST_ENABLED];
   const showDetailedView = prefs["weather.display"] === "detailed";
 
   
@@ -14822,11 +15116,21 @@ function Widgets() {
   const weatherExperimentEnabled = prefs.trainhopConfig?.weather?.enabled;
   const isWeatherEnabled = showWeather && (systemShowWeather || weatherExperimentEnabled);
   const weatherForecastEnabled = widgetsEnabled && weatherForecastSystemEnabled && showDetailedView && weatherData?.initialized && isWeatherEnabled;
-  const weatherSystemEnabled = nimbusWeatherTrainhopEnabled || prefs[PREF_WIDGETS_SYSTEM_WEATHER_ENABLED];
-  const weatherEnabled = weatherSystemEnabled && weatherData?.initialized && isWeatherEnabled && prefs[PREF_WIDGETS_WEATHER_ENABLED];
+  const weatherBase = isWidgetEnabled(weatherWidget, prefs, widgetsEnabled);
+  const weatherEnabled = weatherBase && weatherData?.initialized && isWeatherEnabled;
+  const weatherSize = resolveWidgetSize(weatherWidget, prefs);
   
-  const weatherWidgetInRow = weatherEnabled && prefs[Widgets_PREF_WEATHER_SIZE] !== "small";
-  const anyWidgetInRow = listsEnabled || timerEnabled || !novaEnabled && weatherForecastEnabled || weatherWidgetInRow;
+  
+  
+  
+  const weatherGoesToSidebar = resolveWidgetHasSidebar(weatherWidget, prefs) && weatherSize === "small";
+  const widgetEnabledMap = {
+    lists: listsEnabled,
+    focusTimer: timerEnabled,
+    weather: weatherEnabled && !weatherGoesToSidebar
+  };
+  const widgetOrder = resolveWidgetOrder(prefs);
+  const anyWidgetInRow = WIDGET_REGISTRY.some(w => widgetEnabledMap[w.id]) || !novaEnabled && weatherForecastEnabled;
 
   
   
@@ -14848,56 +15152,39 @@ function Widgets() {
     
     prevTimerEnabledRef.current = isTimerEnabled;
   }, [timerEnabled, timerData, dispatch, timerType]);
-
-  
   function hideAllWidgets() {
     (0,external_ReactRedux_namespaceObject.batch)(() => {
-      dispatch(actionCreators.SetPref(PREF_WIDGETS_LISTS_ENABLED, false));
-      dispatch(actionCreators.SetPref(PREF_WIDGETS_TIMER_ENABLED, false));
-      
-      
+      for (const widget of WIDGET_REGISTRY) {
+        if (widget.id !== "weather" || widgetEnabledMap.weather) {
+          dispatch(actionCreators.SetPref(widget.enabledPref, false));
+        }
+      }
       
       if (!novaEnabled && weatherForecastEnabled) {
         dispatch(actionCreators.SetPref("showWeather", false));
       }
-      if (weatherWidgetInRow) {
-        dispatch(actionCreators.SetPref(PREF_WIDGETS_WEATHER_ENABLED, false));
-      }
-      const telemetryData = {
-        action_type: CONTAINER_ACTION_TYPES.HIDE_ALL,
-        widget_size: widgetSize
-      };
       dispatch(actionCreators.OnlyToMain({
         type: actionTypes.WIDGETS_CONTAINER_ACTION,
-        data: telemetryData
+        data: {
+          action_type: CONTAINER_ACTION_TYPES.HIDE_ALL,
+          widget_size: widgetSize
+        }
       }));
-
-      
-      if (listsEnabled) {
-        dispatch(actionCreators.OnlyToMain({
-          type: actionTypes.WIDGETS_ENABLED,
-          data: {
-            widget_name: "lists",
-            widget_source: "widget",
-            enabled: false,
-            widget_size: widgetSize
-          }
-        }));
+      for (const widget of WIDGET_REGISTRY) {
+        if (widgetEnabledMap[widget.id]) {
+          dispatch(actionCreators.OnlyToMain({
+            type: actionTypes.WIDGETS_ENABLED,
+            data: {
+              widget_name: widget.id === "focusTimer" ? "focus_timer" : widget.id,
+              widget_source: "widget",
+              enabled: false,
+              widget_size: widgetSize
+            }
+          }));
+        }
       }
-      if (timerEnabled) {
-        dispatch(actionCreators.OnlyToMain({
-          type: actionTypes.WIDGETS_ENABLED,
-          data: {
-            widget_name: "focus_timer",
-            widget_source: "widget",
-            enabled: false,
-            widget_size: widgetSize
-          }
-        }));
-      }
-
       
-      if (weatherForecastEnabled || weatherWidgetInRow) {
+      if (!novaEnabled && weatherForecastEnabled) {
         dispatch(actionCreators.OnlyToMain({
           type: actionTypes.WIDGETS_ENABLED,
           data: {
@@ -14939,15 +15226,20 @@ function Widgets() {
       
       
       
+      
+      
+      
+      
+      
+      
+      
+      
       if (novaEnabled) {
-        const listsTargetSize = newMaximizedState ? "large" : "small";
         const targetSize = newMaximizedState ? "large" : "medium";
-        dispatch(actionCreators.SetPref(Widgets_PREF_LISTS_SIZE, listsTargetSize));
-        if (prefs[Widgets_PREF_FOCUS_TIMER_SIZE] !== "small") {
-          dispatch(actionCreators.SetPref(Widgets_PREF_FOCUS_TIMER_SIZE, targetSize));
-        }
-        if (prefs[Widgets_PREF_WEATHER_SIZE] !== "small") {
-          dispatch(actionCreators.SetPref(Widgets_PREF_WEATHER_SIZE, targetSize));
+        for (const widget of WIDGET_REGISTRY) {
+          if (resolveWidgetSize(widget, prefs) !== "small") {
+            dispatch(actionCreators.SetPref(widget.sizePref, targetSize));
+          }
         }
       }
       const telemetryData = {
@@ -15077,25 +15369,40 @@ function Widgets() {
     className: "widgets-title-actions"
   }, renderWidgetsActions())), external_React_default().createElement("div", {
     className: `widgets-container${isMaximized ? " is-maximized" : ""}`
-  }, listsEnabled && external_React_default().createElement(Lists, {
-    dispatch: dispatch,
-    handleUserInteraction: handleUserInteraction,
-    isMaximized: isMaximized,
-    widgetsMayBeMaximized: widgetsMayBeMaximized
-  }), timerEnabled && external_React_default().createElement(FocusTimer, {
-    dispatch: dispatch,
-    handleUserInteraction: handleUserInteraction,
-    isMaximized: isMaximized,
-    widgetsMayBeMaximized: widgetsMayBeMaximized
-  }), renderWeather({
-    novaEnabled,
-    weatherEnabled,
-    weatherForecastEnabled,
-    weatherSize: prefs[Widgets_PREF_WEATHER_SIZE],
-    dispatch,
-    handleUserInteraction,
-    isMaximized,
-    widgetsMayBeMaximized
+  }, widgetOrder.map(id => {
+    if (novaEnabled) {
+      const Component = WIDGET_ROW_COMPONENTS[id];
+      return Component && widgetEnabledMap[id] ? external_React_default().createElement(Component, {
+        key: id,
+        dispatch: dispatch,
+        handleUserInteraction: handleUserInteraction,
+        isMaximized: isMaximized,
+        widgetsMayBeMaximized: widgetsMayBeMaximized
+      }) : null;
+    }
+    
+    return external_React_default().createElement((external_React_default()).Fragment, {
+      key: id
+    }, id === "lists" && listsEnabled && external_React_default().createElement(Lists, {
+      dispatch: dispatch,
+      handleUserInteraction: handleUserInteraction,
+      isMaximized: isMaximized,
+      widgetsMayBeMaximized: widgetsMayBeMaximized
+    }), id === "focusTimer" && timerEnabled && external_React_default().createElement(FocusTimer, {
+      dispatch: dispatch,
+      handleUserInteraction: handleUserInteraction,
+      isMaximized: isMaximized,
+      widgetsMayBeMaximized: widgetsMayBeMaximized
+    }), id === "weather" && renderWeather({
+      novaEnabled,
+      weatherEnabled,
+      weatherForecastEnabled,
+      weatherSize,
+      dispatch,
+      handleUserInteraction,
+      isMaximized,
+      widgetsMayBeMaximized
+    }));
   })), feedbackEnabled && !novaEnabled && external_React_default().createElement("a", {
     className: "widgets-feedback-link",
     href: feedbackUrl,
@@ -17997,6 +18304,54 @@ const Weather_Weather_Weather = (0,external_ReactRedux_namespaceObject.connect)(
 
 
 
+
+
+
+
+
+const WidgetsSidebar_PREF_WIDGETS_ENABLED = "widgets.enabled";
+const WidgetsSidebar_PREF_NOVA_ENABLED = "nova.enabled";
+function WidgetsSidebar({
+  dispatch
+}) {
+  const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
+  const widgetsEnabled = prefs[WidgetsSidebar_PREF_WIDGETS_ENABLED];
+  const novaEnabled = prefs[WidgetsSidebar_PREF_NOVA_ENABLED];
+  const sidebarWidgets = WIDGET_REGISTRY.filter(w => resolveWidgetHasSidebar(w, prefs) && isWidgetEnabled(w, prefs, widgetsEnabled) && resolveWidgetSize(w, prefs) === "small");
+  if (!sidebarWidgets.length) {
+    return null;
+  }
+  return external_React_default().createElement((external_React_default()).Fragment, null, sidebarWidgets.map(w => {
+    if (novaEnabled) {
+      const Component = WIDGET_SIDEBAR_COMPONENTS[w.id];
+      return Component ? external_React_default().createElement(ErrorBoundary, {
+        key: w.id
+      }, external_React_default().createElement(Component, {
+        dispatch: dispatch
+      })) : null;
+    }
+    
+    if (w.id === "weather") {
+      if (!prefs.showWeather) {
+        return null;
+      }
+      return external_React_default().createElement(ErrorBoundary, {
+        key: "weather"
+      }, external_React_default().createElement(Weather_Weather, {
+        dispatch: dispatch,
+        size: "small"
+      }));
+    }
+    return null;
+  }));
+}
+
+;
+
+
+
+
+
 function DownloadModalToggle({
   onClick,
   isActive
@@ -18729,6 +19084,7 @@ function Base_extends() { return Base_extends = Object.assign ? Object.assign.bi
 
 
 
+
 const Base_VISIBLE = "visible";
 const Base_VISIBILITY_CHANGE_EVENT = "visibilitychange";
 const PREF_INFERRED_PERSONALIZATION_SYSTEM = "discoverystream.sections.personalization.inferred.enabled";
@@ -19363,7 +19719,6 @@ class BaseContent extends (external_React_default()).PureComponent {
     const mayHaveListsWidget = prefs["widgets.system.lists.enabled"] || nimbusListsEnabled || nimbusListsTrainhopEnabled;
     const mayHaveTimerWidget = prefs["widgets.system.focusTimer.enabled"] || nimbusTimerEnabled || nimbusTimerTrainhopEnabled;
     const mayHaveWeatherWidget = prefs["widgets.system.weather.enabled"] || prefs.trainhopConfig?.widgets?.weatherEnabled;
-    const showWeatherWidgetInSidebar = novaEnabled && mayHaveWeatherWidget && prefs["widgets.weather.enabled"] && weatherEnabled && prefs["widgets.weather.size"] === "small";
 
     
     const enabledWidgets = {
@@ -19412,7 +19767,9 @@ class BaseContent extends (external_React_default()).PureComponent {
       
       
       
-      const hasContentWidgets = mayHaveListsWidget && enabledWidgets.listsEnabled || mayHaveTimerWidget && enabledWidgets.timerEnabled || mayHaveWeatherWidget && enabledWidgets.weatherEnabled && !showWeatherWidgetInSidebar;
+      const weatherWidget = WIDGET_REGISTRY.find(w => w.id === "weather");
+      const weatherGoesToSidebar = resolveWidgetHasSidebar(weatherWidget, prefs) && resolveWidgetSize(weatherWidget, prefs) === "small";
+      const hasContentWidgets = mayHaveListsWidget && enabledWidgets.listsEnabled || mayHaveTimerWidget && enabledWidgets.timerEnabled || mayHaveWeatherWidget && enabledWidgets.weatherEnabled && !weatherGoesToSidebar;
       const logoShouldBeCentered = !pocketEnabled && !hasContentWidgets;
       return external_React_default().createElement("div", {
         className: "nova-outer-wrapper"
@@ -19422,9 +19779,8 @@ class BaseContent extends (external_React_default()).PureComponent {
         className: "sidebar-inline-start"
       }, !logoShouldBeCentered && external_React_default().createElement(ErrorBoundary, null, external_React_default().createElement(Logo, null))), external_React_default().createElement("aside", {
         className: "sidebar-inline-end"
-      }, showWeatherWidgetInSidebar && external_React_default().createElement(ErrorBoundary, null, external_React_default().createElement(Weather_Weather, {
-        dispatch: props.dispatch,
-        size: "small"
+      }, novaEnabled && external_React_default().createElement(ErrorBoundary, null, external_React_default().createElement(WidgetsSidebar, {
+        dispatch: props.dispatch
       }))), external_React_default().createElement("main", {
         className: "content"
       }, logoShouldBeCentered && external_React_default().createElement(ErrorBoundary, null, external_React_default().createElement(Logo, null)), prefs.showSearch && external_React_default().createElement(ErrorBoundary, null, external_React_default().createElement(Search_Search, Base_extends({
