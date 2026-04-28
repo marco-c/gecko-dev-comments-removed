@@ -17,6 +17,7 @@
 
 
 
+
 ChromeUtils.defineESModuleGetters(this, {
   BackgroundUpdate: "resource://gre/modules/BackgroundUpdate.sys.mjs",
   UpdateListener: "resource://gre/modules/UpdateListener.sys.mjs",
@@ -162,6 +163,7 @@ Preferences.addAll([
   },
 
   
+  { id: "intl.multilingual.enabled", type: "bool" },
   { id: "intl.regional_prefs.use_os_locales", type: "bool" },
 
   { id: "intl.accept_languages", type: "string" },
@@ -627,6 +629,316 @@ Preferences.addSetting({
     window.browsingContext.topChromeWindow.BrowserAddonUI.openAddonsMgr(
       "addons://list/theme"
     );
+  },
+});
+
+
+
+
+
+
+
+
+
+const Multilingual = {
+  TransitionType: Object.freeze({
+    LocalesMatch: "LocalesMatch",
+    RestartRequired: "RestartRequired",
+    LiveReload: "LiveReload",
+  }),
+
+  
+
+
+  async installedLocales() {
+    return this.localizeArray(
+       (await LangPackMatcher.getAvailableLocales()),
+      code => code,
+      (code, name) => ({ code, name })
+    );
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  localizeArray(list, getCode, transform) {
+    const localeNames = Services.intl.getLocaleDisplayNames(
+      undefined,
+      list.map(getCode),
+      { preferNative: true }
+    );
+    return list
+      .map((data, i) => [localeNames[i], transform(data, localeNames[i])])
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(d => d[1]);
+  },
+
+  
+
+
+
+  getLocaleDisplayNames(codes) {
+    return Services.intl.getLocaleDisplayNames(undefined, codes, {
+      preferNative: true,
+    });
+  },
+
+  
+
+
+
+
+
+
+  getTransitionType(newLocales) {
+    const { appLocalesAsBCP47 } = Services.locale;
+    if (appLocalesAsBCP47.join(",") === newLocales.join(",")) {
+      
+      return Multilingual.TransitionType.LocalesMatch;
+    }
+
+    if (Services.prefs.getBoolPref("intl.multilingual.liveReload")) {
+      if (
+        Services.intl.getScriptDirection(newLocales[0]) !==
+          Services.intl.getScriptDirection(appLocalesAsBCP47[0]) &&
+        !Services.prefs.getBoolPref("intl.multilingual.liveReloadBidirectional")
+      ) {
+        
+        
+        return Multilingual.TransitionType.RestartRequired;
+      }
+
+      return Multilingual.TransitionType.LiveReload;
+    }
+
+    return Multilingual.TransitionType.RestartRequired;
+  },
+
+  recordTelemetry(method, value = null) {
+    Glean.intlUiBrowserLanguage[method + "Main"].record(
+      value ? { value } : undefined
+    );
+  },
+
+  
+
+
+  applyAndRestart(locales) {
+    Services.locale.requestedLocales = locales;
+
+    
+    this.recordTelemetry("apply");
+
+    
+    let cancelQuit = Cc["@mozilla.org/supports-PRBool;1"].createInstance(
+      Ci.nsISupportsPRBool
+    );
+    Services.obs.notifyObservers(
+      cancelQuit,
+      "quit-application-requested",
+      "restart"
+    );
+    if (!cancelQuit.data) {
+      Services.startup.quit(
+        Services.startup.eAttemptQuit | Services.startup.eRestart
+      );
+    }
+  },
+};
+
+Preferences.addSetting({
+  id: "multilingualEnabled",
+  pref: "intl.multilingual.enabled",
+});
+
+
+
+
+
+function makeBrowserLanguageOption({ code, name }) {
+  return {
+    value: code,
+    controlAttrs: {
+      label: name,
+    },
+  };
+}
+
+class BrowserLanguagesSetting extends Preferences.AsyncSetting {
+  static id = "browserLanguages";
+
+  multilingualEnabled = Preferences.getSetting("multilingualEnabled");
+
+  
+  installedLocales = Promise.resolve([]);
+
+  
+  #pendingLocales = null;
+  #installing = false;
+
+  get currentLocale() {
+    return Services.locale.appLocaleAsBCP47;
+  }
+
+  get pendingLocale() {
+    return this.#pendingLocales?.[0] ?? null;
+  }
+
+  get restartRequired() {
+    return Boolean(this.#pendingLocales?.length);
+  }
+
+  get installing() {
+    return this.#installing;
+  }
+
+  
+
+
+  #updateLocales(newLocales) {
+    switch (Multilingual.getTransitionType(newLocales)) {
+      case Multilingual.TransitionType.RestartRequired:
+        this.#pendingLocales = newLocales;
+        break;
+      case Multilingual.TransitionType.LiveReload:
+        this.#pendingLocales = null;
+        Services.locale.requestedLocales = newLocales;
+        break;
+      case Multilingual.TransitionType.LocalesMatch:
+        this.#pendingLocales = null;
+        break;
+      default:
+        throw new Error("Unhandled transition type.");
+    }
+    this.emitChange();
+  }
+
+  setup() {
+    Services.obs.addObserver(this.emitChange, "intl:app-locales-changed");
+    const deps = [this.multilingualEnabled];
+    deps.forEach(dep => dep.on("change", this.emitChange));
+    return () => {
+      Services.obs.removeObserver(this.emitChange, "intl:app-locales-changed");
+      deps.forEach(dep => dep.off("change", this.emitChange));
+    };
+  }
+
+  beforeRefresh() {
+    this.installedLocales = Multilingual.installedLocales();
+  }
+
+  
+  async get() {
+    return this.#pendingLocales
+      ? [...this.#pendingLocales]
+      : [...Services.locale.appLocalesAsBCP47];
+  }
+
+  async visible() {
+    return Boolean(this.multilingualEnabled.value);
+  }
+
+  async getPreferred() {
+    return this.pendingLocale ?? this.currentLocale;
+  }
+
+  
+
+
+  async setPreferred(code) {
+    if (code == this.currentLocale) {
+      this.#pendingLocales = null;
+      this.emitChange();
+      return;
+    }
+    let locale = (await this.installedLocales).find(l => l.code == code);
+    if (!locale) {
+      this.emitChange();
+      return;
+    }
+    Multilingual.recordTelemetry("reorder");
+    let newLocales = Array.from(
+      new Set([code, ...Services.locale.appLocalesAsBCP47]).values()
+    );
+    this.#updateLocales(newLocales);
+  }
+
+  applyAndRestart() {
+    if (this.restartRequired) {
+      Multilingual.applyAndRestart(this.#pendingLocales);
+    }
+  }
+}
+Preferences.addSetting(BrowserLanguagesSetting);
+
+class BrowserLanguagePreferredSetting extends Preferences.AsyncSetting {
+  static id = "browserLanguagePreferred";
+
+  #browserLanguages = Preferences.getSetting("browserLanguages");
+
+  
+  get #languages() {
+    return  (
+       (
+         (this.#browserLanguages.config)
+          .asyncSetting
+      )
+    );
+  }
+
+  setup() {
+    this.#browserLanguages.on("change", this.emitChange);
+    return () => this.#browserLanguages.off("change", this.emitChange);
+  }
+
+  async get() {
+    return this.#languages.getPreferred();
+  }
+
+  
+
+
+  async set(code) {
+    return this.#languages.setPreferred(code);
+  }
+
+  async disabled() {
+    return this.#languages.installing;
+  }
+
+  async visible() {
+    return this.#browserLanguages.visible;
+  }
+
+  async getControlConfig() {
+    let installed = await this.#languages.installedLocales;
+    return {
+      options: installed.map(makeBrowserLanguageOption),
+    };
+  }
+}
+Preferences.addSetting(BrowserLanguagePreferredSetting);
+
+Preferences.addSetting({
+  id: "browserLanguageRestart",
+  deps: ["browserLanguages"],
+  visible(deps) {
+    let handler =  (
+      deps.browserLanguages.config
+    );
+    let setting =  (
+       (handler.asyncSetting)
+    );
+    return Boolean(setting.restartRequired);
   },
 });
 
@@ -2722,6 +3034,22 @@ SettingGroupManager.registerGroups({
       },
     ],
   },
+  browserLanguage: {
+    inProgress: true,
+    l10nId: "browser-language-heading",
+    headingLevel: 2,
+    items: [
+      {
+        id: "browserLanguagePreferred",
+        l10nId: "browser-language-preferred-label",
+        control: "moz-select",
+      },
+      {
+        id: "browserLanguageRestart",
+        control: "browser-language-restart-message",
+      },
+    ],
+  },
   websiteLanguage: {
     inProgress: true,
     l10nId: "website-language-heading",
@@ -3390,6 +3718,7 @@ var gMainPane = {
     initSettingGroup("contrast");
     initSettingGroup("zoom");
     initSettingGroup("fonts");
+    initSettingGroup("browserLanguage");
     initSettingGroup("websiteLanguage");
     initSettingGroup("browsing");
     initSettingGroup("keyboardAndScrolling");
@@ -4109,25 +4438,7 @@ var gMainPane = {
       return;
     }
     let locales = localesString.split(",");
-    Services.locale.requestedLocales = locales;
-
-    
-    gMainPane.recordBrowserLanguagesTelemetry("apply");
-
-    
-    let cancelQuit = Cc["@mozilla.org/supports-PRBool;1"].createInstance(
-      Ci.nsISupportsPRBool
-    );
-    Services.obs.notifyObservers(
-      cancelQuit,
-      "quit-application-requested",
-      "restart"
-    );
-    if (!cancelQuit.data) {
-      Services.startup.quit(
-        Services.startup.eAttemptQuit | Services.startup.eRestart
-      );
-    }
+    Multilingual.applyAndRestart(locales);
   },
 
   
@@ -4146,22 +4457,22 @@ var gMainPane = {
       new Set([locale, ...Services.locale.requestedLocales]).values()
     );
 
-    gMainPane.recordBrowserLanguagesTelemetry("reorder");
+    Multilingual.recordTelemetry("reorder");
 
-    switch (gMainPane.getLanguageSwitchTransitionType(newLocales)) {
-      case "requires-restart":
+    switch (Multilingual.getTransitionType(newLocales)) {
+      case Multilingual.TransitionType.RestartRequired:
         
         gMainPane.showConfirmLanguageChangeMessageBar(newLocales);
         gMainPane.updatePrimaryBrowserLanguageUI(newLocales[0]);
         break;
-      case "live-reload":
+      case Multilingual.TransitionType.LiveReload:
         Services.locale.requestedLocales = newLocales;
         gMainPane.updatePrimaryBrowserLanguageUI(
           Services.locale.appLocaleAsBCP47
         );
         gMainPane.hideConfirmLanguageChangeMessageBar();
         break;
-      case "locales-match":
+      case Multilingual.TransitionType.LocalesMatch:
         
         gMainPane.updatePrimaryBrowserLanguageUI(
           Services.locale.appLocaleAsBCP47
@@ -4195,12 +4506,6 @@ var gMainPane = {
     );
   },
 
-  recordBrowserLanguagesTelemetry(method, value = null) {
-    Glean.intlUiBrowserLanguage[method + "Main"].record(
-      value ? { value } : undefined
-    );
-  },
-
   
 
 
@@ -4215,7 +4520,7 @@ var gMainPane = {
       10
     ).toString();
     let method = search ? "search" : "manage";
-    gMainPane.recordBrowserLanguagesTelemetry(method, telemetryId);
+    Multilingual.recordTelemetry(method, telemetryId);
 
     let opts = {
       selectedLocalesForRestart: gMainPane.selectedLocalesForRestart,
@@ -4227,37 +4532,6 @@ var gMainPane = {
       { closingCallback: this.browserLanguagesClosed },
       opts
     );
-  },
-
-  
-
-
-
-
-
-
-  getLanguageSwitchTransitionType(newLocales) {
-    const { appLocalesAsBCP47 } = Services.locale;
-    if (appLocalesAsBCP47.join(",") === newLocales.join(",")) {
-      
-      return "locales-match";
-    }
-
-    if (Services.prefs.getBoolPref("intl.multilingual.liveReload")) {
-      if (
-        Services.intl.getScriptDirection(newLocales[0]) !==
-          Services.intl.getScriptDirection(appLocalesAsBCP47[0]) &&
-        !Services.prefs.getBoolPref("intl.multilingual.liveReloadBidirectional")
-      ) {
-        
-        
-        return "requires-restart";
-      }
-
-      return "live-reload";
-    }
-
-    return "requires-restart";
   },
 
   
@@ -4287,12 +4561,12 @@ var gMainPane = {
       this.gBrowserLanguagesDialog.recordTelemetry("setFallback");
     }
 
-    switch (gMainPane.getLanguageSwitchTransitionType(selected)) {
-      case "requires-restart":
+    switch (Multilingual.getTransitionType(selected)) {
+      case Multilingual.TransitionType.RestartRequired:
         gMainPane.showConfirmLanguageChangeMessageBar(selected);
         gMainPane.updatePrimaryBrowserLanguageUI(selected[0]);
         break;
-      case "live-reload":
+      case Multilingual.TransitionType.LiveReload:
         Services.locale.requestedLocales = selected;
 
         gMainPane.updatePrimaryBrowserLanguageUI(
@@ -4300,7 +4574,7 @@ var gMainPane = {
         );
         gMainPane.hideConfirmLanguageChangeMessageBar();
         break;
-      case "locales-match":
+      case Multilingual.TransitionType.LocalesMatch:
         
         gMainPane.updatePrimaryBrowserLanguageUI(
           Services.locale.appLocaleAsBCP47
