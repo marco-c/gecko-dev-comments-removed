@@ -1528,7 +1528,8 @@ class Element : public FragmentOrElement {
     static_assert(sizeof(PseudoStyleType) <= sizeof(uintptr_t),
                   "Need to be able to store this in a void*");
     MOZ_ASSERT(PseudoStyle::IsPseudoElement(aPseudo));
-    SetProperty(nsGkAtoms::pseudoProperty, reinterpret_cast<void*>(aPseudo));
+    SetProperty(nsGkAtoms::pseudoProperty, reinterpret_cast<void*>(aPseudo),
+                 nullptr,  true);
   }
 
   
@@ -1850,10 +1851,12 @@ class Element : public FragmentOrElement {
 
   MOZ_CAN_RUN_SCRIPT
   void GetAnimations(const GetAnimationsOptions& aOptions,
-                     nsTArray<RefPtr<Animation>>& aAnimations);
+                     nsTArray<RefPtr<Animation>>& aAnimations,
+                     ErrorResult& aError);
 
   void GetAnimationsWithoutFlush(const GetAnimationsOptions& aOptions,
-                                 nsTArray<RefPtr<Animation>>& aAnimations);
+                                 nsTArray<RefPtr<Animation>>& aAnimations,
+                                 ErrorResult& aError);
 
   void CloneAnimationsFrom(const Element& aOther);
 

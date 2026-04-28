@@ -67,6 +67,7 @@
 #include "mozilla/TextEditor.h"
 #include "mozilla/TextEvents.h"
 #include "mozilla/Try.h"
+#include "mozilla/UseCounter.h"
 #include "mozilla/dom/AnimatableBinding.h"
 #include "mozilla/dom/Animation.h"
 #include "mozilla/dom/Attr.h"
@@ -4756,6 +4757,10 @@ void Element::ReleaseCapture() {
 already_AddRefed<Promise> Element::RequestFullscreen(
     const FullscreenOptions& aOptions, CallerType aCallerType,
     ErrorResult& aRv) {
+  if (aOptions.mKeyboardLock == FullscreenKeyboardLock::Browser) {
+    OwnerDoc()->SetUseCounter(eUseCounter_custom_RequestedKeyboardLock);
+  }
+
   auto request =
       FullscreenRequest::Create(this, aOptions.mKeyboardLock, aCallerType, aRv);
   RefPtr<Promise> promise = request->GetPromise();
@@ -4921,7 +4926,8 @@ already_AddRefed<Animation> Element::Animate(
 }
 
 void Element::GetAnimations(const GetAnimationsOptions& aOptions,
-                            nsTArray<RefPtr<Animation>>& aAnimations) {
+                            nsTArray<RefPtr<Animation>>& aAnimations,
+                            ErrorResult& aError) {
   if (Document* doc = GetComposedDoc()) {
     
     
@@ -4936,7 +4942,7 @@ void Element::GetAnimations(const GetAnimationsOptions& aOptions,
                         false));
   }
 
-  GetAnimationsWithoutFlush(aOptions, aAnimations);
+  GetAnimationsWithoutFlush(aOptions, aAnimations, aError);
 }
 
 static void GetAnimationsUnsorted(const Element* aElement,
@@ -5044,44 +5050,62 @@ static void GetAnimationsUnsortedForSubtree(
 
 void Element::GetAnimationsWithoutFlush(
     const GetAnimationsOptions& aOptions,
-    nsTArray<RefPtr<Animation>>& aAnimations) {
+    nsTArray<RefPtr<Animation>>& aAnimations, ErrorResult& aError) {
   Element* elem = this;
   PseudoStyleRequest pseudoRequest;
-  
-  
-  if (IsGeneratedContentContainerForBefore()) {
-    elem = GetParentElement();
-    pseudoRequest.mType = PseudoStyleType::Before;
-  } else if (IsGeneratedContentContainerForAfter()) {
-    elem = GetParentElement();
-    pseudoRequest.mType = PseudoStyleType::After;
-  } else if (IsGeneratedContentContainerForMarker()) {
-    elem = GetParentElement();
-    pseudoRequest.mType = PseudoStyleType::Marker;
-  } else if (IsGeneratedContentContainerForBackdrop()) {
-    elem = GetParentElement();
-    pseudoRequest.mType = PseudoStyleType::Backdrop;
+  if (DOMStringIsNull(aOptions.mPseudoElement)) {
+    
+    
+    if (IsGeneratedContentContainerForBefore()) {
+      elem = GetParentElement();
+      pseudoRequest.mType = PseudoStyleType::Before;
+    } else if (IsGeneratedContentContainerForAfter()) {
+      elem = GetParentElement();
+      pseudoRequest.mType = PseudoStyleType::After;
+    } else if (IsGeneratedContentContainerForMarker()) {
+      elem = GetParentElement();
+      pseudoRequest.mType = PseudoStyleType::Marker;
+    } else if (IsGeneratedContentContainerForBackdrop()) {
+      elem = GetParentElement();
+      pseudoRequest.mType = PseudoStyleType::Backdrop;
+    }
+
+    if (!elem) {
+      return;
+    }
+  } else {
+    if (aOptions.mPseudoElement.IsEmpty()) {
+      aError.ThrowSyntaxError("The pseudo-element selector cannot be empty.");
+      return;
+    }
+    Maybe<PseudoStyleRequest> request =
+        PseudoStyleRequest::Parse(aOptions.mPseudoElement);
+    if (request.isNothing()) {
+      aError.ThrowSyntaxError("The pseudo-element selector is not valid.");
+      return;
+    }
+    pseudoRequest = request.value();
   }
 
-  if (!elem) {
+  
+  
+  if (!pseudoRequest.IsNotPseudo() &&
+      !AnimationUtils::IsSupportedPseudoForAnimations(pseudoRequest)) {
     return;
   }
 
   
-  if (!aOptions.mSubtree || (pseudoRequest.mType == PseudoStyleType::Before ||
-                             pseudoRequest.mType == PseudoStyleType::After ||
-                             pseudoRequest.mType == PseudoStyleType::Backdrop ||
-                             pseudoRequest.mType == PseudoStyleType::Marker)) {
-    
-    
-    
-    
-    
-    GetAnimationsUnsorted(elem, pseudoRequest, aAnimations);
+  
+  if (aOptions.mSubtree &&
+      (pseudoRequest.IsNotPseudo() || pseudoRequest.IsViewTransition())) {
+    const auto* subtreeRoot =
+        pseudoRequest.IsNotPseudo() ? this : GetPseudoElement(pseudoRequest);
+    if (!subtreeRoot) {
+      return;
+    }
+    GetAnimationsUnsortedForSubtree(subtreeRoot, aAnimations);
   } else {
-    
-    
-    GetAnimationsUnsortedForSubtree(elem, aAnimations);
+    GetAnimationsUnsorted(elem, pseudoRequest, aAnimations);
   }
   aAnimations.Sort(AnimationPtrComparator<RefPtr<Animation>>());
 }
