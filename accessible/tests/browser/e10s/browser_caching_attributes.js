@@ -9,6 +9,10 @@ loadScripts({ name: "attributes.js", dir: MOCHITESTS_DIR });
 
 
 
+requestLongerTimeout(2);
+
+
+
 
 const defaultAttributes = {
   "margin-top": "0px",
