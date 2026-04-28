@@ -80,15 +80,14 @@ class ScriptRequestProcessor;
 enum class ReferrerPolicy : uint8_t;
 enum class RequestPriority : uint8_t;
 
-class ShutdownAndMemoryPressureObserver final : public nsIObserver {
-  ~ShutdownAndMemoryPressureObserver() { Unregister(); }
+class AsyncCompileShutdownObserver final : public nsIObserver {
+  ~AsyncCompileShutdownObserver() { Unregister(); }
 
  public:
-  explicit ShutdownAndMemoryPressureObserver(ScriptLoader* aLoader)
+  explicit AsyncCompileShutdownObserver(ScriptLoader* aLoader)
       : mScriptLoader(aLoader) {}
 
   void OnShutdown();
-  void OnMemoryPressure();
   void Unregister();
 
   NS_DECL_ISUPPORTS
@@ -139,7 +138,7 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   explicit ScriptLoader(Document* aDocument);
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
-  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(ScriptLoader)
+  NS_DECL_CYCLE_COLLECTION_CLASS(ScriptLoader)
 
   
 
@@ -465,12 +464,6 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
 
 
 
-  void OnMemoryPressure();
-
-  
-
-
-
 
 
   static JS::loader::ScriptFetchInfo* GetActiveScriptFetchInfo(JSContext* aCx);
@@ -690,30 +683,6 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   
   nsresult EvaluateScriptElement(ScriptLoadRequest* aRequest);
 
-  bool StartCollectingDelazifications(JSContext* aCx,
-                                      JS::Handle<JSScript*> aScript,
-                                      JS::Stencil* aStencil);
-  bool StartCollectingDelazifications(JSContext* aCx,
-                                      JS::Handle<JSObject*> aModule,
-                                      JS::Stencil* aStencil);
-
- private:
-  void AppendDelazificationCollection(JS::Handle<JSScript*> aScript);
-  void AppendDelazificationCollection(JS::Handle<JSObject*> aModule);
-
-  enum class CollectDelazifications : bool { No, Yes };
-
-  void InstantiateStencil(JSContext* aCx, JS::CompileOptions& aCompileOptions,
-                          JS::Stencil* aStencil,
-                          JS::MutableHandle<JSScript*> aScript,
-                          JS::Handle<JSScript*> aDebuggerIntroductionScript,
-                          ErrorResult& aRv,
-                          const nsAutoCString& aProfilerLabelString,
-                          JS::InstantiationStorage* aStorage = nullptr,
-                          CollectDelazifications aCollectDelazifications =
-                              CollectDelazifications::No);
-
- public:
   
   
   
@@ -786,13 +755,6 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
 
 
   void UpdateDiskCache();
-
-  void DispatchStopCollectingDelazifications();
-
-  
-
-
-  void StopCollectingDelazifications();
 
  public:
   
@@ -892,11 +854,6 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
 
   Document* mDocument;  
   nsCOMArray<nsIScriptLoaderObserver> mObservers;
-
-  
-  
-  nsTArray<JS::Heap<JSScript*>> mDelazificationCollectingScripts;
-  nsTArray<JS::Heap<JSObject*>> mDelazificationCollectingModules;
 
   
   
@@ -1031,8 +988,7 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   nsCOMPtr<nsIConsoleReportCollector> mReporter;
 
   
-  
-  RefPtr<ShutdownAndMemoryPressureObserver> mObserver;
+  RefPtr<AsyncCompileShutdownObserver> mShutdownObserver;
 
   RefPtr<ModuleLoader> mModuleLoader;
   nsTArray<RefPtr<ModuleLoader>> mWebExtModuleLoaders;

@@ -223,30 +223,17 @@ DecodeStencil(JS::FrontendContext* fc, const ReadOnlyDecodeOptions& options,
 
 
 
-enum class CollectDelazificationsResult {
-  
-  
-  NewlyStarted,
-
-  
-  
-  AlreadyStarted,
-
-  
-  NotSupported,
-};
-
 
 
 
 
 extern JS_PUBLIC_API bool StartCollectingDelazifications(
     JSContext* cx, JS::Handle<JSScript*> script, Stencil* stencil,
-    CollectDelazificationsResult& result);
+    bool& alreadyStarted);
 
 extern JS_PUBLIC_API bool StartCollectingDelazifications(
     JSContext* cx, JS::Handle<JSObject*> module, Stencil* stencil,
-    CollectDelazificationsResult& result);
+    bool& alreadyStarted);
 
 
 
@@ -260,8 +247,10 @@ extern JS_PUBLIC_API bool FinishCollectingDelazifications(
 extern JS_PUBLIC_API bool FinishCollectingDelazifications(
     JSContext* cx, Handle<JSObject*> module, JS::Stencil** stencilOut);
 
-extern JS_PUBLIC_API void AbortCollectingDelazifications(JSScript* script);
-extern JS_PUBLIC_API void AbortCollectingDelazifications(JSObject* module);
+extern JS_PUBLIC_API void AbortCollectingDelazifications(
+    Handle<JSScript*> script);
+extern JS_PUBLIC_API void AbortCollectingDelazifications(
+    Handle<JSObject*> module);
 
 
 
