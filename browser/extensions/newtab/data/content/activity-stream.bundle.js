@@ -16910,7 +16910,9 @@ class ContentSection extends (external_React_default()).PureComponent {
       "data-l10n-id": "newtab-custom-widget-timer-toggle"
     })))), external_React_default().createElement("div", {
       className: "settings-toggles"
-    }, !mayHaveWidgets && mayHaveWeather && external_React_default().createElement("div", {
+    },
+    
+    !mayHaveWidgets && mayHaveWeather && external_React_default().createElement("div", {
       id: "weather-section",
       className: "section"
     }, external_React_default().createElement("moz-toggle", {
@@ -16918,7 +16920,7 @@ class ContentSection extends (external_React_default()).PureComponent {
       pressed: weatherEnabled || null,
       ontoggle: this.onPreferenceSelect,
       onToggle: this.onPreferenceSelect,
-      "data-preference": "showWeather",
+      "data-preference": novaEnabled ? "widgets.weather.enabled" : "showWeather",
       "data-event-source": "WEATHER",
       "data-l10n-id": "newtab-custom-weather-toggle"
     })), external_React_default().createElement("span", {
@@ -18890,8 +18892,11 @@ class BaseContent extends (external_React_default()).PureComponent {
     const prefs = this.props.Prefs.values;
 
     
-    const wasWeatherDisabled = !prevProps.Prefs.values.showWeather;
-    const isWeatherEnabled = this.props.Prefs.values.showWeather;
+    
+    const novaEnabledInUpdate = this.props.Prefs.values["nova.enabled"];
+    const weatherPref = novaEnabledInUpdate ? "widgets.weather.enabled" : "showWeather";
+    const wasWeatherDisabled = !prevProps.Prefs.values[weatherPref];
+    const isWeatherEnabled = this.props.Prefs.values[weatherPref];
     if (wasWeatherDisabled && isWeatherEnabled) {
       
       this.props.dispatch(actionCreators.SetPref("weather.optInDisplayed", true));
@@ -19289,7 +19294,8 @@ class BaseContent extends (external_React_default()).PureComponent {
     const activeWallpaper = prefs[`newtabWallpapers.wallpaper`] || prefs[`newtabWallpapers.initialWallpaper`];
     const wallpapersEnabled = prefs["newtabWallpapers.enabled"];
     const wallpapersUserEnabled = prefs["newtabWallpapers.user.enabled"];
-    const weatherEnabled = prefs.showWeather;
+    
+    const weatherEnabled = novaEnabled ? prefs["widgets.weather.enabled"] : prefs.showWeather;
     const {
       showTopicSelection
     } = DiscoveryStream;
