@@ -20,17 +20,17 @@ var getExcludeTerms = () =>
     .split(/\s+/)
     .filter(t => t);
 
-let excludeDebounce;
-var scheduleApplyChunks = () => {
-  clearTimeout(excludeDebounce);
-  excludeDebounce = setTimeout(applyChunks, 150);
+let applyFiltersDebounce;
+var scheduleApplyFilters = () => {
+  clearTimeout(applyFiltersDebounce);
+  applyFiltersDebounce = setTimeout(applyFilters, 150);
 };
 
 
 
 $("#push")[0].addEventListener("click", () => {
-  clearTimeout(excludeDebounce);
-  applyChunks();
+  clearTimeout(applyFiltersDebounce);
+  applyFilters();
 });
 
 var renderSelection = labels => {
@@ -49,8 +49,8 @@ var renderSelection = labels => {
     remove.addEventListener("click", () => {
       let idx = Array.from(selection.children).indexOf(li);
       manualExcluded.add(label);
-      clearTimeout(excludeDebounce);
-      applyChunks();
+      clearTimeout(applyFiltersDebounce);
+      applyFilters();
       let items = selection.querySelectorAll(".selection-remove");
       items[Math.min(idx, items.length - 1)]?.focus();
     });
@@ -123,12 +123,12 @@ var apply = () => {
 
     selected = Object.keys(tasks).filter(taskMatches);
   }
-  applyChunks();
+  applyFilters();
 };
 
-var applyChunks = () => {
-  
+var applyFilters = () => {
   let filters = {};
+  
   $(".filter:text").each(function () {
     let value = $(this).val();
     if (value === "") {
@@ -141,7 +141,6 @@ var applyChunks = () => {
       filters[key] = [];
     }
 
-    
     for (let item of value.split(",")) {
       if (!item.includes("-")) {
         filters[key].push(parseInt(item));
@@ -177,5 +176,5 @@ var applyChunks = () => {
   }
 
   renderSelection(visible);
-  count.innerText = pluralize(visible.length, "task") + " selected";
+  count.textContent = pluralize(visible.length, "task") + " selected";
 };

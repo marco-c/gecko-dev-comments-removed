@@ -75,7 +75,7 @@ def test_try_chooser(app, queue: multiprocessing.Queue):
     
     assert b'id="exclude-filter"' in response.data
     assert b'placeholder="Exclude jobs containing' in response.data
-    assert b'oninput="scheduleApplyChunks();"' in response.data
+    assert b'oninput="scheduleApplyFilters();"' in response.data
     assert b'aria-label="Exclude jobs containing"' in response.data
     
     assert b'autocomplete="off"' in response.data
