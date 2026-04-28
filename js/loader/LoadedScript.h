@@ -737,6 +737,11 @@ class ModuleScript final : public LoadedScript {
   Heap<JSObject*> mModuleRecord;
   Heap<Value> mParseError;
   Heap<Value> mErrorToRethrow;
+
+  
+  
+  RefPtr<ScriptFetchInfo> mFetchInfoForUpdatingPreload;
+
   bool mForPreload = false;
   bool mHadImportMap = false;
 
@@ -752,9 +757,11 @@ class ModuleScript final : public LoadedScript {
  private:
   
   ModuleScript(mozilla::dom::ReferrerPolicy aReferrerPolicy,
-               ScriptFetchOptions* aFetchOptions, nsIURI* aURI);
+               ScriptFetchOptions* aFetchOptions, nsIURI* aURI,
+               ScriptFetchInfo* aFetchInfo);
 
-  ModuleScript(const LoadedScript& other, ScriptFetchOptions* aFetchOptions);
+  ModuleScript(const LoadedScript& other, ScriptFetchOptions* aFetchOptions,
+               ScriptFetchInfo* aFetchInfo);
 
   template <typename T, typename... Args>
   friend RefPtr<T> mozilla::MakeRefPtr(Args&&... aArgs);
@@ -765,7 +772,8 @@ class ModuleScript final : public LoadedScript {
   
   
   static already_AddRefed<ModuleScript> FromCache(
-      const LoadedScript& aScript, ScriptFetchOptions* aFetchOptions);
+      const LoadedScript& aScript, ScriptFetchOptions* aFetchOptions,
+      ScriptFetchInfo* aFetchInfo);
   already_AddRefed<LoadedScript> ToCache();
 
   void SetModuleRecord(Handle<JSObject*> aModuleRecord);
