@@ -499,6 +499,44 @@ struct Pool {
   }
 };
 
+struct AssemblerBufferSettings {
+  
+  
+  
+  size_t instSize;
+
+  
+  unsigned guardSize;
+
+  
+  
+  unsigned headerSize;
+
+  
+  size_t instBufferAlign;
+
+  
+  
+  unsigned pcBias;
+
+  
+  uint32_t alignFillInst;
+
+  
+  uint32_t nopFillInst;
+
+  
+  
+  
+  
+  
+  
+  
+  unsigned numShortBranchRanges = 0;
+
+  
+  size_t shortRangeBranchHysteresis = jit::ShortRangeBranchHysteresis;
+};
 
 
 
@@ -514,19 +552,7 @@ struct Pool {
 
 
 
-
-
-
-
-
-
-
-
-
-
-template <size_t InstSize, class Inst, class Asm,
-          unsigned NumShortBranchRanges = 0,
-          size_t ShortRangeBranchHysteresis = jit::ShortRangeBranchHysteresis>
+template <class Inst, class Asm, AssemblerBufferSettings settings>
 struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
  private:
   
@@ -547,11 +573,16 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
   };
 
  private:
+  static constexpr size_t InstSize = settings.instSize;
+  static constexpr size_t NumShortBranchRanges = settings.numShortBranchRanges;
+  static constexpr size_t ShortRangeBranchHysteresis =
+      settings.shortRangeBranchHysteresis;
+
   
-  const unsigned guardSize_;
+  static constexpr unsigned GuardSize = settings.guardSize;
   
   
-  const unsigned headerSize_;
+  static constexpr unsigned HeaderSize = settings.headerSize;
 
   
   
@@ -561,13 +592,13 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
 
   
   
-  const unsigned pcBias_;
+  static constexpr unsigned PcBias = settings.pcBias;
 
   
   Pool pool_;
 
   
-  const size_t instBufferAlign_;
+  static constexpr size_t InstBufferAlign = settings.instBufferAlign;
 
   struct PoolInfo {
     
@@ -620,13 +651,13 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
 #endif
 
   
-  const uint32_t alignFillInst_;
+  static constexpr uint32_t AlignFillInst = settings.alignFillInst;
 
   
   
   
   
-  const uint32_t nopFillInst_;
+  static constexpr uint32_t NopFillInst = settings.nopFillInst;
   const unsigned nopFill_;
 
   
@@ -635,17 +666,10 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
   unsigned int inhibitNops_;
 
  public:
-  AssemblerBufferWithConstantPools(unsigned guardSize, unsigned headerSize,
-                                   size_t instBufferAlign, size_t poolMaxOffset,
-                                   unsigned pcBias, uint32_t alignFillInst,
-                                   uint32_t nopFillInst, unsigned nopFill = 0)
+  AssemblerBufferWithConstantPools(size_t poolMaxOffset, unsigned nopFill)
       : poolEntryCount(0),
-        guardSize_(guardSize),
-        headerSize_(headerSize),
         poolMaxOffset_(poolMaxOffset),
-        pcBias_(pcBias),
-        pool_(poolMaxOffset, pcBias, this->lifoAlloc_),
-        instBufferAlign_(instBufferAlign),
+        pool_(poolMaxOffset, PcBias, this->lifoAlloc_),
         poolInfo_(this->lifoAlloc_),
         branchDeadlines_(this->lifoAlloc_),
         inhibitPools_(0),
@@ -655,8 +679,6 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
         inhibitPoolsMaxNewDeadlines_(0),
         inhibitPoolsActualNewDeadlines_(0),
 #endif
-        alignFillInst_(alignFillInst),
-        nopFillInst_(nopFillInst),
         nopFill_(nopFill),
         inhibitNops_(0) {
   }
@@ -685,7 +707,7 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
       
       
       for (size_t i = 0; i < nopFill_; i++) {
-        putInt(nopFillInst_);
+        putInt(NopFillInst);
       }
 
       inhibitNops_--;
@@ -722,7 +744,7 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
     
     
     
-    return guardSize_ *
+    return GuardSize *
            (branchDeadlines_.size() - branchDeadlines_.maxRangeSize() +
             numNewDeadlines) *
            InstSize;
@@ -737,7 +759,7 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
     
     
     size_t poolOffset =
-        nextOffset + (numInsts + guardSize_ + headerSize_) * InstSize;
+        nextOffset + (numInsts + GuardSize + HeaderSize) * InstSize;
 
     
     if (pool_.checkFull(poolOffset)) {
@@ -995,8 +1017,8 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
     MOZ_ASSERT(inhibitPools_ == 0);
 
     
-    BufferOffset guard = this->putBytes(guardSize_ * InstSize, nullptr);
-    BufferOffset header = this->putBytes(headerSize_ * InstSize, nullptr);
+    BufferOffset guard = this->putBytes(GuardSize * InstSize, nullptr);
+    BufferOffset header = this->putBytes(HeaderSize * InstSize, nullptr);
     BufferOffset data =
         this->putBytes(pool_.getPoolSize(), (const uint8_t*)pool_.poolData());
     if (this->oom()) {
@@ -1014,7 +1036,7 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
       branchDeadlines_.removeDeadline(rangeIdx, deadline);
 
       
-      BufferOffset veneer = this->putBytes(guardSize_ * InstSize, nullptr);
+      BufferOffset veneer = this->putBytes(GuardSize * InstSize, nullptr);
       if (this->oom()) {
         return;
       }
@@ -1183,7 +1205,7 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
     MOZ_ASSERT_IF(!this->oom(), isPoolEmptyFor(InstSize) || inhibitPools_ > 0);
   }
 
-  void align(unsigned alignment) { align(alignment, alignFillInst_); }
+  void align(unsigned alignment) { align(alignment, AlignFillInst); }
 
   void align(unsigned alignment, uint32_t pattern) {
     MOZ_ASSERT(std::has_single_bit(alignment));
