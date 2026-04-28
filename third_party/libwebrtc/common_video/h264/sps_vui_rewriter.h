@@ -16,8 +16,8 @@
 #include <stdint.h>
 
 #include <optional>
+#include <span>
 
-#include "api/array_view.h"
 #include "api/video/color_space.h"
 #include "common_video/h264/sps_parser.h"
 #include "rtc_base/buffer.h"
@@ -44,7 +44,7 @@ class SpsVuiRewriter : private SpsParser {
   
   
   
-  static ParseResult ParseAndRewriteSps(ArrayView<const uint8_t> buffer,
+  static ParseResult ParseAndRewriteSps(std::span<const uint8_t> buffer,
                                         std::optional<SpsParser::SpsState>* sps,
                                         const ColorSpace* color_space,
                                         Buffer* destination,
@@ -53,11 +53,11 @@ class SpsVuiRewriter : private SpsParser {
   
   
   static Buffer ParseOutgoingBitstreamAndRewrite(
-      ArrayView<const uint8_t> buffer,
+      std::span<const uint8_t> buffer,
       const ColorSpace* color_space);
 
  private:
-  static ParseResult ParseAndRewriteSps(ArrayView<const uint8_t> buffer,
+  static ParseResult ParseAndRewriteSps(std::span<const uint8_t> buffer,
                                         std::optional<SpsParser::SpsState>* sps,
                                         const ColorSpace* color_space,
                                         Buffer* destination);

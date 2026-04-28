@@ -13,8 +13,8 @@
 
 #include <cstdint>
 #include <optional>
+#include <span>
 
-#include "api/array_view.h"
 #include "rtc_base/bitstream_reader.h"
 #include "rtc_base/system/rtc_export.h"
 
@@ -45,7 +45,7 @@ class RTC_EXPORT SpsParser {
   };
 
   
-  static std::optional<SpsState> ParseSps(ArrayView<const uint8_t> data);
+  static std::optional<SpsState> ParseSps(std::span<const uint8_t> data);
 
  protected:
   

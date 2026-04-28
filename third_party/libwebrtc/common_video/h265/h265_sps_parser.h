@@ -14,9 +14,9 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
+#include <span>
 #include <vector>
 
-#include "api/array_view.h"
 #include "rtc_base/bitstream_reader.h"
 #include "rtc_base/system/rtc_export.h"
 
@@ -106,11 +106,11 @@ class RTC_EXPORT H265SpsParser {
   };
 
   
-  static std::optional<SpsState> ParseSps(ArrayView<const uint8_t> data);
+  static std::optional<SpsState> ParseSps(std::span<const uint8_t> data);
   
   static inline std::optional<SpsState> ParseSps(const uint8_t* data,
                                                  size_t length) {
-    return ParseSps(MakeArrayView(data, length));
+    return ParseSps(std::span(data, length));
   }
 
   static bool ParseScalingListData(BitstreamReader& reader);
@@ -131,7 +131,7 @@ class RTC_EXPORT H265SpsParser {
   
   
   static std::optional<SpsState> ParseSpsInternal(
-      ArrayView<const uint8_t> buffer);
+      std::span<const uint8_t> buffer);
 
   
   static int GetMaxLumaPs(int general_level_idc);

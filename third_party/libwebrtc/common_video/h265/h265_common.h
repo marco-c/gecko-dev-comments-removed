@@ -13,9 +13,9 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <span>
 #include <vector>
 
-#include "api/array_view.h"
 #include "rtc_base/buffer.h"
 #include "rtc_base/system/rtc_export.h"
 
@@ -80,12 +80,12 @@ struct NaluIndex {
 
 
 RTC_EXPORT std::vector<NaluIndex> FindNaluIndices(
-    ArrayView<const uint8_t> buffer);
+    std::span<const uint8_t> buffer);
 
 
 inline std::vector<NaluIndex> FindNaluIndices(const uint8_t* buffer,
                                               size_t buffer_size) {
-  return FindNaluIndices(MakeArrayView(buffer, buffer_size));
+  return FindNaluIndices(std::span(buffer, buffer_size));
 }
 
 
@@ -105,23 +105,23 @@ RTC_EXPORT NaluType ParseNaluType(uint8_t data);
 
 
 
-std::vector<uint8_t> ParseRbsp(ArrayView<const uint8_t> data);
+std::vector<uint8_t> ParseRbsp(std::span<const uint8_t> data);
 
 
 inline std::vector<uint8_t> ParseRbsp(const uint8_t* data, size_t length) {
-  return ParseRbsp(MakeArrayView(data, length));
+  return ParseRbsp(std::span(data, length));
 }
 
 
 
 
-void WriteRbsp(ArrayView<const uint8_t> bytes, Buffer* destination);
+void WriteRbsp(std::span<const uint8_t> bytes, Buffer* destination);
 
 
 inline void WriteRbsp(const uint8_t* bytes,
                       size_t length,
                       Buffer* destination) {
-  WriteRbsp(MakeArrayView(bytes, length), destination);
+  WriteRbsp(std::span(bytes, length), destination);
 }
 
 uint32_t Log2Ceiling(uint32_t value);

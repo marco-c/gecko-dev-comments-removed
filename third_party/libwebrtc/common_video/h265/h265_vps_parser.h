@@ -14,8 +14,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
+#include <span>
 
-#include "api/array_view.h"
 #include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
@@ -32,17 +32,17 @@ class RTC_EXPORT H265VpsParser {
   };
 
   
-  static std::optional<VpsState> ParseVps(ArrayView<const uint8_t> data);
+  static std::optional<VpsState> ParseVps(std::span<const uint8_t> data);
   
   static inline std::optional<VpsState> ParseVps(const uint8_t* data,
                                                  size_t length) {
-    return ParseVps(MakeArrayView(data, length));
+    return ParseVps(std::span(data, length));
   }
 
  protected:
   
   
-  static std::optional<VpsState> ParseInternal(ArrayView<const uint8_t> buffer);
+  static std::optional<VpsState> ParseInternal(std::span<const uint8_t> buffer);
 };
 
 }  
