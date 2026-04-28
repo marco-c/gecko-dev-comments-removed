@@ -274,6 +274,9 @@ class ScriptLoadRequest : public nsISupports,
   bool HadPostponed() const { return mHadPostponed_; }
   void SetHadPostponed() { mHadPostponed_ = true; }
 
+  const ScriptFetchInfo* FetchInfo() const { return mFetchInfo; }
+  ScriptFetchInfo* FetchInfo() { return mFetchInfo; }
+
  public:
   
 
@@ -340,6 +343,8 @@ class ScriptLoadRequest : public nsISupports,
 
   
   RefPtr<LoadedScript> mLoadedScript;
+
+  RefPtr<ScriptFetchInfo> mFetchInfo;
 
   
   
