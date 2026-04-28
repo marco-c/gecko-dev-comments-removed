@@ -20,7 +20,6 @@
 
 
 
-#include <atomic>
 #include <queue>
 
 #include "content_decryption_module.h"
