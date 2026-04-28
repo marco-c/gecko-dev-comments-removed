@@ -123,7 +123,7 @@ add_setup(async function () {
       ["test.wait300msAfterTabSwitch", true],
       
       ["browser.urlbar.scotchBonnet.enableOverride", false],
-      ["browser.urlbar.trustPanel.featureGate", false],
+      ["browser.urlbar.trustPanel.featureGate", true],
       ["browser.toolbars.keyboard_navigation", true],
       ["accessibility.tabfocus", 7],
       
@@ -155,7 +155,7 @@ add_setup(async function () {
 
   
   
-  await SidebarController.initializeUIState({ launcherVisible: true });
+  await SidebarController.updateUIState({ launcherVisible: true });
 });
 
 
@@ -200,10 +200,7 @@ async function doTestTabStopsPageLoaded(aPageActionsVisible) {
     let sidebar = document.querySelector("sidebar-main");
     await waitUntilReloadEnabled();
     startFromUrlBar();
-    await expectFocusAfterKey(
-      "Shift+Tab",
-      "tracking-protection-icon-container"
-    );
+    await expectFocusAfterKey("Shift+Tab", "trust-icon-container");
     if (sidebarRevampEnabled) {
       await expectFocusAfterKey("Shift+Tab", "sidebar-button");
       await expectFocusAfterKey("ArrowRight", "reload-button");
@@ -219,7 +216,7 @@ async function doTestTabStopsPageLoaded(aPageActionsVisible) {
     } else {
       await expectFocusAfterKey("Tab", "reload-button");
     }
-    await expectFocusAfterKey("Tab", "tracking-protection-icon-container");
+    await expectFocusAfterKey("Tab", "trust-icon-container");
     await expectFocusAfterKey("Tab", gURLBar.inputField);
     await expectFocusAfterKey(
       "Tab",
@@ -257,10 +254,7 @@ add_task(async function testTabStopsWithNotification() {
       startFromUrlBar();
       
       
-      await expectFocusAfterKey(
-        "Shift+Tab",
-        "tracking-protection-icon-container"
-      );
+      await expectFocusAfterKey("Shift+Tab", "trust-icon-container");
     }
   );
 });
@@ -392,10 +386,7 @@ add_task(async function testArrowsDisabledButtons() {
     async function (aBrowser) {
       await waitUntilReloadEnabled();
       startFromUrlBar();
-      await expectFocusAfterKey(
-        "Shift+Tab",
-        "tracking-protection-icon-container"
-      );
+      await expectFocusAfterKey("Shift+Tab", "trust-icon-container");
       
       if (sidebarRevampEnabled) {
         await expectFocusAfterKey("Shift+Tab", "sidebar-button");
@@ -422,10 +413,7 @@ add_task(async function testArrowsDisabledButtons() {
       await BrowserTestUtils.browserLoaded(aBrowser);
       await waitUntilReloadEnabled();
       startFromUrlBar();
-      await expectFocusAfterKey(
-        "Shift+Tab",
-        "tracking-protection-icon-container"
-      );
+      await expectFocusAfterKey("Shift+Tab", "trust-icon-container");
       if (sidebarRevampEnabled) {
         await expectFocusAfterKey("Shift+Tab", "sidebar-button");
         await expectFocusAfterKey("ArrowRight", "back-button");
@@ -574,17 +562,9 @@ add_task(async function testArrowKeyForTPIconContainerandIdentityBox() {
       gBrowser.updateBrowserSharing(browser, { geo: true });
       await waitUntilReloadEnabled();
       startFromUrlBar();
-      await expectFocusAfterKey(
-        "Shift+Tab",
-        "tracking-protection-icon-container"
-      );
-      await expectFocusAfterKey("ArrowRight", "identity-icon-box");
+      await expectFocusAfterKey("Shift+Tab", "trust-icon-container");
       await expectFocusAfterKey("ArrowRight", "identity-permission-box");
-      await expectFocusAfterKey("ArrowLeft", "identity-icon-box");
-      await expectFocusAfterKey(
-        "ArrowLeft",
-        "tracking-protection-icon-container"
-      );
+      await expectFocusAfterKey("ArrowLeft", "trust-icon-container");
       gBrowser.updateBrowserSharing(browser, { geo: false });
     }
   );
