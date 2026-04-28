@@ -64,6 +64,8 @@ _mesa_half_is_negative(uint16_t h)
 
 #ifdef __cplusplus
 
+namespace mesa {
+
 
 
 struct float16_t {
@@ -74,6 +76,8 @@ struct float16_t {
    static float16_t one() { return float16_t(FP16_ONE); }
    static float16_t zero() { return float16_t(FP16_ZERO); }
 };
+
+} 
 
 #endif
 
