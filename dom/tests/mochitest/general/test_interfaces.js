@@ -1476,9 +1476,15 @@ let interfaceNamesInGlobalScope = [
   
   { name: "ScrollAreaEvent", insecureContext: true },
   
+  { name: "ScrollTimeline", insecureContext: true, nightly: true },
+  
   { name: "SecurityPolicyViolationEvent", insecureContext: true },
   
   { name: "Selection", insecureContext: true },
+  
+  { name: "Serial", android: false },
+  
+  { name: "SerialPort", android: false },
   
   "ServiceWorker",
   
@@ -1765,7 +1771,6 @@ let interfaceNamesInGlobalScope = [
   {
     name: "documentPictureInPicture",
     insecureContext: false,
-    nightly: true,
     android: false,
   },
   
