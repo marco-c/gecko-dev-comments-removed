@@ -246,31 +246,32 @@ nsInputStreamTransport::OnInputStreamReady(nsIAsyncInputStream* aStream) {
 
 
 
-nsStreamTransportService::nsStreamTransportService() = default;
 
-nsStreamTransportService::~nsStreamTransportService() {
-  NS_ASSERTION(!mPool, "thread pool wasn't shutdown");
-}
+already_AddRefed<nsStreamTransportService> nsStreamTransportService::Create() {
+  nsCOMPtr<nsIThreadPool> pool = new nsThreadPool();
+  pool->SetName("StreamTrans"_ns);
+  
+  pool->SetThreadLimit(25);
+  pool->SetIdleThreadLimit(4);
+  pool->SetIdleThreadMaximumTimeout(30 * 1000);
+  pool->SetIdleThreadGraceTimeout(500);
 
-nsresult nsStreamTransportService::Init() {
-  
-  MOZ_PUSH_IGNORE_THREAD_SAFETY
-  MOZ_ASSERT(!mPool);
-  mPool = new nsThreadPool();
-
-  
-  mPool->SetName("StreamTrans"_ns);
-  
-  mPool->SetThreadLimit(25);
-  mPool->SetIdleThreadLimit(4);
-  mPool->SetIdleThreadMaximumTimeout(30 * 1000);
-  mPool->SetIdleThreadGraceTimeout(500);
-  MOZ_POP_THREAD_SAFETY
+  RefPtr<nsStreamTransportService> svc =
+      new nsStreamTransportService(pool.forget());
 
   nsCOMPtr<nsIObserverService> obsSvc = mozilla::services::GetObserverService();
-  if (obsSvc) obsSvc->AddObserver(this, "xpcom-shutdown-threads", false);
-  return NS_OK;
+  if (obsSvc) {
+    obsSvc->AddObserver(svc, "xpcom-shutdown-threads", false);
+  }
+
+  return svc.forget();
 }
+
+nsStreamTransportService::nsStreamTransportService(
+    already_AddRefed<nsIThreadPool> aPool)
+    : mPool(aPool) {}
+
+nsStreamTransportService::~nsStreamTransportService() = default;
 
 NS_IMPL_ISUPPORTS(nsStreamTransportService, nsIStreamTransportService,
                   nsIEventTarget, nsIObserver)
@@ -284,19 +285,7 @@ nsStreamTransportService::DispatchFromScript(nsIRunnable* task,
 NS_IMETHODIMP
 nsStreamTransportService::Dispatch(already_AddRefed<nsIRunnable> task,
                                    DispatchFlags flags) {
-  
-  
-  nsCOMPtr<nsIRunnable> event(task);  
-  nsCOMPtr<nsIThreadPool> pool;
-  {
-    mozilla::MutexAutoLock lock(mShutdownLock);
-    if (mIsShutdown) {
-      return NS_ERROR_NOT_INITIALIZED;
-    }
-    pool = mPool;
-  }
-  NS_ENSURE_TRUE(pool, NS_ERROR_NOT_INITIALIZED);
-  return pool->Dispatch(event.forget(), flags);
+  return mPool->Dispatch(std::move(task), flags);
 }
 
 NS_IMETHODIMP
@@ -306,45 +295,27 @@ nsStreamTransportService::DelayedDispatch(already_AddRefed<nsIRunnable> aEvent,
 }
 
 NS_IMETHODIMP
-nsStreamTransportService::RegisterShutdownTask(nsITargetShutdownTask*) {
-  return NS_ERROR_NOT_IMPLEMENTED;
+nsStreamTransportService::RegisterShutdownTask(nsITargetShutdownTask* aTask) {
+  return mPool->RegisterShutdownTask(aTask);
 }
 
 NS_IMETHODIMP
-nsStreamTransportService::UnregisterShutdownTask(nsITargetShutdownTask*) {
-  return NS_ERROR_NOT_IMPLEMENTED;
+nsStreamTransportService::UnregisterShutdownTask(nsITargetShutdownTask* aTask) {
+  return mPool->UnregisterShutdownTask(aTask);
 }
 
 nsIEventTarget::FeatureFlags nsStreamTransportService::GetFeatures() {
-  
-  return SUPPORTS_BASE;
+  return mPool->GetFeatures();
 }
 
 NS_IMETHODIMP_(bool)
 nsStreamTransportService::IsOnCurrentThreadInfallible() {
-  nsCOMPtr<nsIThreadPool> pool;
-  {
-    mozilla::MutexAutoLock lock(mShutdownLock);
-    pool = mPool;
-  }
-  if (!pool) {
-    return false;
-  }
-  return pool->IsOnCurrentThread();
+  return mPool->IsOnCurrentThread();
 }
 
 NS_IMETHODIMP
 nsStreamTransportService::IsOnCurrentThread(bool* result) {
-  nsCOMPtr<nsIThreadPool> pool;
-  {
-    mozilla::MutexAutoLock lock(mShutdownLock);
-    if (mIsShutdown) {
-      return NS_ERROR_NOT_INITIALIZED;
-    }
-    pool = mPool;
-  }
-  NS_ENSURE_TRUE(pool, NS_ERROR_NOT_INITIALIZED);
-  return pool->IsOnCurrentThread(result);
+  return mPool->IsOnCurrentThread(result);
 }
 
 NS_IMETHODIMP
@@ -362,18 +333,7 @@ nsStreamTransportService::Observe(nsISupports* subject, const char* topic,
                                   const char16_t* data) {
   NS_ASSERTION(strcmp(topic, "xpcom-shutdown-threads") == 0, "oops");
 
-  {
-    nsCOMPtr<nsIThreadPool> pool;
-    {
-      mozilla::MutexAutoLock lock(mShutdownLock);
-      mIsShutdown = true;
-      pool = mPool.forget();
-    }
-
-    if (pool) {
-      pool->Shutdown();
-    }
-  }
+  mPool->Shutdown();
   return NS_OK;
 }
 
