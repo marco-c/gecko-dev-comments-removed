@@ -408,7 +408,6 @@ ThirdPartyUtil::GetTopWindowForChannel(nsIChannel* aChannel,
 
 
 
-
 NS_IMETHODIMP
 ThirdPartyUtil::GetBaseDomain(nsIURI* aHostURI, nsACString& aBaseDomain) {
   if (!aHostURI) {
@@ -419,11 +418,12 @@ ThirdPartyUtil::GetBaseDomain(nsIURI* aHostURI, nsACString& aBaseDomain) {
   
   
   nsresult rv;
-  nsCOMPtr<nsIPrincipal> blobPrincipal;
   if (aHostURI->SchemeIs("blob")) {
+    
+    
+    nsCOMPtr<nsIPrincipal> blobPrincipal;
     if (BlobURLProtocolHandler::GetBlobURLPrincipal(
-            aHostURI, getter_AddRefs(blobPrincipal))) {
-      
+            aHostURI, OriginAttributes(), getter_AddRefs(blobPrincipal))) {
       rv = blobPrincipal->GetBaseDomain(aBaseDomain);
     } else {
       

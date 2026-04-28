@@ -52,6 +52,17 @@ nsresult BlobURL::ReadPrivate(nsIObjectInputStream* aStream) {
   rv = aStream->ReadBoolean(&mRevoked);
   NS_ENSURE_SUCCESS(rv, rv);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
   return NS_OK;
 }
 
@@ -62,6 +73,8 @@ BlobURL::Write(nsIObjectOutputStream* aStream) {
 
   rv = aStream->WriteBoolean(mRevoked);
   NS_ENSURE_SUCCESS(rv, rv);
+
+  
 
   return NS_OK;
 }
@@ -77,6 +90,8 @@ BlobURL::Serialize(mozilla::ipc::URIParams& aParams) {
   hostParams.simpleParams() = simpleParams;
 
   hostParams.revoked() = mRevoked;
+
+  hostParams.nullPrincipal() = mNullPrincipal;
 
   aParams = std::move(hostParams);
 }
@@ -95,7 +110,15 @@ bool BlobURL::Deserialize(const mozilla::ipc::URIParams& aParams) {
     return false;
   }
 
+  if (OriginPart() != "null"_ns && hostParams.nullPrincipal()) {
+    NS_ERROR("Received nullPrincipal for non-null BlobURL");
+    return false;
+  }
+
   mRevoked = hostParams.revoked();
+
+  mNullPrincipal = hostParams.nullPrincipal();
+
   return true;
 }
 

@@ -678,7 +678,7 @@ class ContentParent final : public PContentParent,
   
   
   
-  void TransmitBlobDataIfBlobURL(nsIURI* aURI);
+  void TransmitBlobDataIfBlobURL(nsIURI* aURI, const OriginAttributes& aAttrs);
 
   void OnCompositorDeviceReset() override;
 

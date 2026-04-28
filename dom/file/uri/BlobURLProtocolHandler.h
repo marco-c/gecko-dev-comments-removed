@@ -94,10 +94,8 @@ class BlobURLProtocolHandler final : public nsIProtocolHandler,
   
   
   
-  
-  
-  
-  static bool GetBlobURLPrincipal(nsIURI* aURI, nsIPrincipal** aPrincipal);
+  static bool GetBlobURLPrincipal(nsIURI* aURI, const OriginAttributes& aAttrs,
+                                  nsIPrincipal** aPrincipal);
 
   
   
