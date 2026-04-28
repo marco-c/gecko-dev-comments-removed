@@ -45,13 +45,22 @@ var PointerlockFsWarning = {
     }
   },
 
+  _getTimeout(keyboardLockEnabled) {
+    if (keyboardLockEnabled) {
+      return Services.prefs.getIntPref(
+        "full-screen-api.keyboardlock-warning.timeout"
+      );
+    }
+    return Services.prefs.getIntPref("full-screen-api.warning.timeout");
+  },
+
   
   
   
   showFullScreen(browsingContext, keyboardLockEnabled) {
     const origin =
       browsingContext.top.currentWindowGlobal.documentPrincipal.originNoSuffix;
-    let timeout = Services.prefs.getIntPref("full-screen-api.warning.timeout");
+    const timeout = this._getTimeout(keyboardLockEnabled);
     let delay = Services.prefs.getIntPref("full-screen-api.warning.delay");
     this.show(
       origin,
