@@ -95,6 +95,11 @@ enum class ObjectFlag : uint32_t {
   
   
   HasNonFunctionAccessor = 1 << 17,
+
+  
+  
+  
+  LegacyFeaturesDisabled = 1 << 18,
 };
 
 using ObjectFlags = EnumFlags<ObjectFlag>;

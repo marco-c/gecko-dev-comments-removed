@@ -93,6 +93,10 @@ RegExpObject* js::RegExpAlloc(JSContext* cx, NewObjectKind newKind,
     
     
     legacyFeaturesEnabled = (!newTarget || newTarget == thisRealmRegExp);
+    if (!legacyFeaturesEnabled &&
+        !JSObject::setLegacyFeaturesDisabled(cx, regexp)) {
+      return nullptr;
+    }
   }
   regexp->setLegacyFeaturesEnabled(legacyFeaturesEnabled);
 
