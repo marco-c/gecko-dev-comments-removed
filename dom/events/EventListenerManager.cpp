@@ -1121,6 +1121,8 @@ nsresult EventListenerManager::CompileEventHandlerInternal(
   nsAutoCString url("-moz-evil:lying-event-listener"_ns);
   MOZ_ASSERT(body);
   MOZ_ASSERT(aElement);
+  MOZ_ASSERT(!aElement->ChromeOnlyAccess(),
+             "Don't use inline handlers on NAC/UAWidget");
   nsIURI* uri = aElement->OwnerDoc()->GetDocumentURI();
   if (uri) {
     uri->GetSpec(url);
@@ -1138,12 +1140,11 @@ nsresult EventListenerManager::CompileEventHandlerInternal(
   
   
   
-  
   JS::Rooted<JSObject*> wrapScope(cx, global->GetGlobalJSObject());
   JS::Rooted<JS::Value> v(cx);
   {
     JSAutoRealm ar(cx, wrapScope);
-    nsresult rv = nsContentUtils::WrapNative(cx, mTarget, &v,
+    nsresult rv = nsContentUtils::WrapNative(cx, global, &v,
                                               false);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
@@ -1182,8 +1183,10 @@ nsresult EventListenerManager::CompileEventHandlerInternal(
           JS::loader::ParserMetadata::NotParserInserted,
           aElement->OwnerDoc()->NodePrincipal());
 
-  RefPtr<JS::loader::EventScript> eventScript = new JS::loader::EventScript(
-      aElement->OwnerDoc()->GetReferrerPolicy(), fetchOptions, uri);
+  RefPtr<JS::loader::ScriptFetchInfo> fetchInfo =
+      new JS::loader::ScriptFetchInfo(JS::loader::ScriptKind::eEvent,
+                                      aElement->OwnerDoc()->GetReferrerPolicy(),
+                                      fetchOptions, uri);
 
   JS::CompileOptions options(cx);
   
@@ -1198,7 +1201,7 @@ nsresult EventListenerManager::CompileEventHandlerInternal(
   NS_ENSURE_SUCCESS(result, result);
   NS_ENSURE_TRUE(handler, NS_ERROR_FAILURE);
 
-  JS::Rooted<JS::Value> privateValue(cx, JS::PrivateValue(eventScript));
+  JS::Rooted<JS::Value> privateValue(cx, JS::PrivateValue(fetchInfo));
   result = nsJSUtils::UpdateFunctionDebugMetadata(jsapi, handler, options,
                                                   jsStr, privateValue);
   NS_ENSURE_SUCCESS(result, result);
