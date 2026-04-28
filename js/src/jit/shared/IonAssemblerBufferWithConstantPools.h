@@ -390,14 +390,7 @@ struct Pool {
   
   
   
-  
-  
-  
-  
-  
-  
   const size_t maxOffset_;
-
   
   
   const unsigned bias_;
@@ -506,41 +499,6 @@ struct Pool {
   }
 };
 
-struct AssemblerBufferSettings {
-  
-  
-  
-  size_t instSize;
-
-  
-  unsigned guardSize;
-
-  
-  
-  unsigned headerSize;
-
-  
-  
-  unsigned pcBias;
-
-  
-  uint32_t alignFillInst;
-
-  
-  uint32_t nopFillInst;
-
-  
-  
-  
-  
-  
-  
-  
-  unsigned numShortBranchRanges = 0;
-
-  
-  size_t shortRangeBranchHysteresis = jit::ShortRangeBranchHysteresis;
-};
 
 
 
@@ -556,7 +514,18 @@ struct AssemblerBufferSettings {
 
 
 
-template <class Inst, class Asm, AssemblerBufferSettings settings>
+
+
+
+
+
+
+
+
+
+
+template <size_t InstSize, class Inst, class Asm,
+          unsigned NumShortBranchRanges = 0>
 struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
  private:
   
@@ -577,27 +546,27 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
   };
 
  private:
-  static constexpr size_t InstSize = settings.instSize;
-  static constexpr size_t NumShortBranchRanges = settings.numShortBranchRanges;
-  static constexpr size_t ShortRangeBranchHysteresis =
-      settings.shortRangeBranchHysteresis;
-
   
-  static constexpr unsigned GuardSize = settings.guardSize;
-
+  const unsigned guardSize_;
   
-  static constexpr unsigned VeneerSize = settings.guardSize;
+  
+  const unsigned headerSize_;
 
   
   
-  static constexpr unsigned HeaderSize = settings.headerSize;
+  
+  
+  const size_t poolMaxOffset_;
 
   
   
-  static constexpr unsigned PcBias = settings.pcBias;
+  const unsigned pcBias_;
 
   
   Pool pool_;
+
+  
+  const size_t instBufferAlign_;
 
   struct PoolInfo {
     
@@ -650,13 +619,13 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
 #endif
 
   
-  static constexpr uint32_t AlignFillInst = settings.alignFillInst;
+  const uint32_t alignFillInst_;
 
   
   
   
   
-  static constexpr uint32_t NopFillInst = settings.nopFillInst;
+  const uint32_t nopFillInst_;
   const unsigned nopFill_;
 
   
@@ -665,9 +634,17 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
   unsigned int inhibitNops_;
 
  public:
-  AssemblerBufferWithConstantPools(size_t poolMaxOffset, unsigned nopFill)
+  AssemblerBufferWithConstantPools(unsigned guardSize, unsigned headerSize,
+                                   size_t instBufferAlign, size_t poolMaxOffset,
+                                   unsigned pcBias, uint32_t alignFillInst,
+                                   uint32_t nopFillInst, unsigned nopFill = 0)
       : poolEntryCount(0),
-        pool_(poolMaxOffset, PcBias, this->lifoAlloc_),
+        guardSize_(guardSize),
+        headerSize_(headerSize),
+        poolMaxOffset_(poolMaxOffset),
+        pcBias_(pcBias),
+        pool_(poolMaxOffset, pcBias, this->lifoAlloc_),
+        instBufferAlign_(instBufferAlign),
         poolInfo_(this->lifoAlloc_),
         branchDeadlines_(this->lifoAlloc_),
         inhibitPools_(0),
@@ -677,6 +654,8 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
         inhibitPoolsMaxNewDeadlines_(0),
         inhibitPoolsActualNewDeadlines_(0),
 #endif
+        alignFillInst_(alignFillInst),
+        nopFillInst_(nopFillInst),
         nopFill_(nopFill),
         inhibitNops_(0) {
   }
@@ -705,7 +684,7 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
       
       
       for (size_t i = 0; i < nopFill_; i++) {
-        putInt(NopFillInst);
+        putInt(nopFillInst_);
       }
 
       inhibitNops_--;
@@ -714,37 +693,6 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
 
   static const unsigned OOM_FAIL = unsigned(-1);
   static const unsigned DUMMY_INDEX = unsigned(-2);
-
-  size_t sizeOfSecondaryVeneers(unsigned numNewDeadlines = 0) const {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    
-    return VeneerSize *
-           (branchDeadlines_.size() - branchDeadlines_.maxRangeSize() +
-            numNewDeadlines) *
-           InstSize;
-  }
 
   
   
@@ -755,7 +703,7 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
     
     
     size_t poolOffset =
-        nextOffset + (numInsts + GuardSize + HeaderSize) * InstSize;
+        nextOffset + (numInsts + guardSize_ + headerSize_) * InstSize;
 
     
     if (pool_.checkFull(poolOffset)) {
@@ -763,13 +711,40 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
     }
 
     
-    
-    
     if (!branchDeadlines_.empty()) {
       size_t deadline = branchDeadlines_.earliestDeadline().getOffset();
       size_t poolEnd = poolOffset + pool_.getPoolSize() +
                        numPoolEntries * sizeof(PoolAllocUnit);
-      size_t secondaryVeneers = sizeOfSecondaryVeneers(numNewDeadlines);
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+
+      
+      size_t secondaryVeneers =
+          guardSize_ *
+          (branchDeadlines_.size() - branchDeadlines_.maxRangeSize() +
+           numNewDeadlines) *
+          InstSize;
 
       if (deadline < poolEnd + secondaryVeneers) {
         return false;
@@ -820,15 +795,12 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
  public:
   
   
-  BufferOffset nextInstrOffset(unsigned numInsts, unsigned numNewDeadlines) {
-    if (!hasSpaceForInsts(numInsts,  0, numNewDeadlines)) {
+  BufferOffset nextInstrOffset(int numInsts = 1) {
+    if (!hasSpaceForInsts(numInsts,  0)) {
       JitSpew(JitSpew_Pools,
               "nextInstrOffset @ %d caused a constant pool spill",
               this->nextOffset().getOffset());
       finishPool(ShortRangeBranchHysteresis);
-      MOZ_ASSERT_IF(
-          !this->oom(),
-          hasSpaceForInsts(numInsts,  0, numNewDeadlines));
     }
     return this->nextOffset();
   }
@@ -972,8 +944,6 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
 
  private:
   
-  
-  
   bool hasExpirableShortRangeBranches(size_t reservedBytes) const {
     if (branchDeadlines_.empty()) {
       return false;
@@ -986,9 +956,10 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
     
     
     size_t deadline = branchDeadlines_.earliestDeadline().getOffset();
-    size_t current = this->nextOffset().getOffset();
-    mozilla::CheckedInt<size_t> poolFreeSpace(reservedBytes);
-    auto future = (current + sizeOfSecondaryVeneers()) + poolFreeSpace;
+    using CheckedSize = mozilla::CheckedInt<size_t>;
+    CheckedSize current(this->nextOffset().getOffset());
+    CheckedSize poolFreeSpace(reservedBytes);
+    auto future = current + poolFreeSpace;
     return !future.isValid() || deadline < future.value();
   }
 
@@ -1013,8 +984,8 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
     MOZ_ASSERT(inhibitPools_ == 0);
 
     
-    BufferOffset guard = this->putBytes(GuardSize * InstSize, nullptr);
-    BufferOffset header = this->putBytes(HeaderSize * InstSize, nullptr);
+    BufferOffset guard = this->putBytes(guardSize_ * InstSize, nullptr);
+    BufferOffset header = this->putBytes(headerSize_ * InstSize, nullptr);
     BufferOffset data =
         this->putBytes(pool_.getPoolSize(), (const uint8_t*)pool_.poolData());
     if (this->oom()) {
@@ -1032,7 +1003,7 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
       branchDeadlines_.removeDeadline(rangeIdx, deadline);
 
       
-      BufferOffset veneer = this->putBytes(VeneerSize * InstSize, nullptr);
+      BufferOffset veneer = this->putBytes(guardSize_ * InstSize, nullptr);
       if (this->oom()) {
         return;
       }
@@ -1201,7 +1172,7 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
     MOZ_ASSERT_IF(!this->oom(), isPoolEmptyFor(InstSize) || inhibitPools_ > 0);
   }
 
-  void align(unsigned alignment) { align(alignment, AlignFillInst); }
+  void align(unsigned alignment) { align(alignment, alignFillInst_); }
 
   void align(unsigned alignment, uint32_t pattern) {
     MOZ_ASSERT(std::has_single_bit(alignment));

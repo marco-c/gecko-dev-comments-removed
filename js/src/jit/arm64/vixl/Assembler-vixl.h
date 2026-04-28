@@ -269,21 +269,21 @@ class Assembler : public MozBaseAssembler {
   void bl(Label* label);
 
   
-  BufferOffset bl(int imm26, const LabelDoc& doc);
+  void bl(int imm26, const LabelDoc& doc);
   static void bl(Instruction* at, int imm26);
 
   
   void cbz(const Register& rt, Label* label);
 
   
-  BufferOffset cbz(const Register& rt, int imm19, const LabelDoc& doc);
+  void cbz(const Register& rt, int imm19, const LabelDoc& doc);
   static void cbz(Instruction* at, const Register& rt, int imm19);
 
   
   void cbnz(const Register& rt, Label* label);
 
   
-  BufferOffset cbnz(const Register& rt, int imm19, const LabelDoc& doc);
+  void cbnz(const Register& rt, int imm19, const LabelDoc& doc);
   static void cbnz(Instruction* at, const Register& rt, int imm19);
 
   
@@ -342,14 +342,14 @@ class Assembler : public MozBaseAssembler {
   void tbz(const Register& rt, unsigned bit_pos, Label* label);
 
   
-  BufferOffset tbz(const Register& rt, unsigned bit_pos, int imm14, const LabelDoc& doc);
+  void tbz(const Register& rt, unsigned bit_pos, int imm14, const LabelDoc& doc);
   static void tbz(Instruction* at, const Register& rt, unsigned bit_pos, int imm14);
 
   
   void tbnz(const Register& rt, unsigned bit_pos, Label* label);
 
   
-  BufferOffset tbnz(const Register& rt, unsigned bit_pos, int imm14, const LabelDoc& doc);
+  void tbnz(const Register& rt, unsigned bit_pos, int imm14, const LabelDoc& doc);
   static void tbnz(Instruction* at, const Register& rt, unsigned bit_pos, int imm14);
 
   
@@ -360,14 +360,14 @@ class Assembler : public MozBaseAssembler {
   void adr(const Register& rd, Label* label);
 
   
-  BufferOffset adr(const Register& rd, int imm21, const LabelDoc& doc);
+  void adr(const Register& rd, int imm21, const LabelDoc& doc);
   static void adr(Instruction* at, const Register& rd, int imm21);
 
   
   void adrp(const Register& rd, Label* label);
 
   
-  BufferOffset adrp(const Register& rd, int imm21, const LabelDoc& doc);
+  void adrp(const Register& rd, int imm21, const LabelDoc& doc);
   static void adrp(Instruction* at, const Register& rd, int imm21);
 
   

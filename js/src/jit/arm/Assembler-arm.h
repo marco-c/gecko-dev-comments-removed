@@ -1086,20 +1086,8 @@ class InstructionIterator {
 };
 
 class Assembler;
-
-using ARMBuffer = js::jit::AssemblerBufferWithConstantPools<
-    Instruction, Assembler,
-    js::jit::AssemblerBufferSettings{
-        .instSize = 4,
-        .guardSize = 1,
-        .headerSize = 1,
-        .pcBias = 8,
-        
-        
-        .alignFillInst = 0xe320f000,
-        
-        .nopFillInst = 0xeaffffff,
-    }>;
+using ARMBuffer =
+    js::jit::AssemblerBufferWithConstantPools<4, Instruction, Assembler>;
 
 class Assembler : public AssemblerShared {
  public:
@@ -1259,8 +1247,11 @@ class Assembler : public AssemblerShared {
 #endif
 
  public:
+  
+  
   Assembler()
-      : m_buffer(GetPoolMaxOffset(), GetNopFill()),
+      : m_buffer(1, 1, 8, GetPoolMaxOffset(), 8, 0xe320f000, 0xeaffffff,
+                 GetNopFill()),
         isFinished(false),
         dtmActive(false),
         dtmCond(Always) {

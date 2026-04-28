@@ -125,18 +125,9 @@ static const Scale ScalePointer = TimesEight;
 
 class Assembler;
 
-using Buffer =
-    js::jit::AssemblerBufferWithConstantPools<Instruction, Assembler,
-                                              js::jit::AssemblerBufferSettings{
-                                                  .instSize = 4,
-                                                  .guardSize = 2,
-                                                  .headerSize = 2,
-                                                  .pcBias = 8,
-                                                  .alignFillInst = kNopByte,
-                                                  .nopFillInst = kNopByte,
-                                                  .numShortBranchRanges =
-                                                      NumShortBranchRangeTypes,
-                                              }>;
+typedef js::jit::AssemblerBufferWithConstantPools<4, Instruction, Assembler,
+                                                  NumShortBranchRangeTypes>
+    Buffer;
 
 class Assembler : public AssemblerShared,
                   public AssemblerRISCVI,
@@ -207,7 +198,9 @@ class Assembler : public AssemblerShared,
 #ifdef JS_JITSPEW
         printer(nullptr),
 #endif
-        m_buffer( GetPoolMaxOffset(),  0),
+        m_buffer( 2,  2,  8,
+                  GetPoolMaxOffset(),  8,
+                  kNopByte,  kNopByte),
         isFinished(false) {
   }
   static uint32_t NopFill;
@@ -303,8 +296,8 @@ class Assembler : public AssemblerShared,
   BufferOffset nextOffset() { return m_buffer.nextOffset(); }
   
   
-  BufferOffset nextInstrOffset(unsigned numInsts, unsigned numNewDeadlines) {
-    return m_buffer.nextInstrOffset(numInsts, numNewDeadlines);
+  BufferOffset nextInstrOffset(int numInstr = 1) {
+    return m_buffer.nextInstrOffset(numInstr);
   }
   void comment(const char* msg) { spew("; %s", msg); }
 
