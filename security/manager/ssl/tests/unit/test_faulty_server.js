@@ -72,7 +72,7 @@ add_task(
   {
     skip_if: () => AppConstants.MOZ_SYSTEM_NSS,
   },
-  async function testRetryMlkem768x25519() {
+  async function testNoRetryMlkem768x25519NetInterrupt() {
     const retryDomain = "mlkem768x25519-net-interrupt.example.com";
 
     Services.prefs.setBoolPref("security.tls.enable_kyber", true);
@@ -84,29 +84,23 @@ add_task(
     
     let countOfMlkem = handlerCount("/callback/4588");
     let countOfX25519 = handlerCount("/callback/29");
-    let countOfPrEndOfFileError =
-      await Glean.tls.xyberIntoleranceReason.PR_END_OF_FILE_ERROR.testGetValue();
 
     let chan = makeChan(`https://${retryDomain}:8443`);
-    let [, buf] = await channelOpenPromise(chan, CL_ALLOW_UNKNOWN_CL);
-    ok(buf);
+    let [req] = await channelOpenPromise(chan, CL_EXPECT_FAILURE);
     
+    equal(req.status, Cr.NS_ERROR_NET_RESET);
     
-    
-    equal(
+    Assert.greater(
       handlerCount("/callback/4588"),
-      countOfMlkem + 1,
+      countOfMlkem,
       "negotiated mlkem768x25519"
     );
-    equal(handlerCount("/callback/29"), countOfX25519 + 1, "negotiated x25519");
-    if (!mozinfo.socketprocess_networking) {
-      
-      equal(
-        countOfPrEndOfFileError + 1,
-        await Glean.tls.xyberIntoleranceReason.PR_END_OF_FILE_ERROR.testGetValue(),
-        "PR_END_OF_FILE_ERROR telemetry accumulated"
-      );
-    }
+    
+    equal(
+      handlerCount("/callback/29"),
+      countOfX25519,
+      "did not negotiate x25519"
+    );
   }
 );
 
@@ -114,7 +108,7 @@ add_task(
   {
     skip_if: () => AppConstants.MOZ_SYSTEM_NSS,
   },
-  async function testNoRetryMlkem768x25519() {
+  async function testNoRetryMlkem768x25519HandshakeFailed() {
     const retryDomain = "mlkem768x25519-alert-after-server-hello.example.com";
 
     Services.prefs.setBoolPref("security.tls.enable_kyber", true);
