@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef _nsRFPService_h_
 #define _nsRFPService_h_
 
@@ -23,7 +22,6 @@
 #include "nsISupports.h"
 #include "nsIRFPService.h"
 #include "nsStringFwd.h"
-#include <queue>
 
 
 

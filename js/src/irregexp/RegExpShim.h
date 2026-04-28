@@ -19,12 +19,8 @@
 #include <algorithm>
 #include <bit>
 #include <cctype>
-#include <iostream>
 #include <optional>
-
-#ifdef JS_JITSPEW
-#  include <queue>
-#endif
+#include <ostream>
 
 #include "irregexp/RegExpTypes.h"
 #include "irregexp/util/BitVectorShim.h"
@@ -650,7 +646,7 @@ std::ostream& operator<<(std::ostream& os, const AsHex& c);
 
 class StdoutStream : public std::ostream {
  public:
-  StdoutStream() : std::ostream(std::cerr.rdbuf()) {}
+  StdoutStream();
 };
 
 
@@ -958,6 +954,12 @@ class FixedIntegerArray : public ByteArray {
     FixedIntegerArray<T> f;
     f.setValue(object.value());
     return f;
+  }
+
+  SafeHeapObjectSize length() const {
+    uint32_t byteLength = ByteArray::length().value();
+    MOZ_ASSERT(byteLength % sizeof(T) == 0);
+    return SafeHeapObjectSize(byteLength / sizeof(T));
   }
 };
 
