@@ -340,6 +340,18 @@
     ${EndIf}
   ${EndIf}
 
+  ${RemoveDeprecatedKeys}
+  ${Set32to64DidMigrateReg}
+
+  ${SetAppKeys}
+  ${FixClassKeys}
+  ${SetUninstallKeys}
+  ${If} $RegHive == "HKLM"
+    ${SetStartMenuInternet} HKLM
+  ${ElseIf} $RegHive == "HKCU"
+    ${SetStartMenuInternet} HKCU
+  ${EndIf}
+
   !ifdef DESKTOP_LAUNCHER_ENABLED
     Call OnUpdateDesktopLauncherHandler
   !endif
@@ -360,18 +372,6 @@
     SetShellVarContext all
   ${ElseIf} $RegHive == "HKCU"
     SetShellVarContext current
-  ${EndIf}
-
-  ${RemoveDeprecatedKeys}
-  ${Set32to64DidMigrateReg}
-
-  ${SetAppKeys}
-  ${FixClassKeys}
-  ${SetUninstallKeys}
-  ${If} $RegHive == "HKLM"
-    ${SetStartMenuInternet} HKLM
-  ${ElseIf} $RegHive == "HKCU"
-    ${SetStartMenuInternet} HKCU
   ${EndIf}
 
   ; Remove files that may be left behind by the application in the
@@ -490,6 +490,15 @@ ${RemoveDefaultBrowserAgentShortcut}
 
 Function OnUpdateDesktopLauncherHandler
   Push $0
+  Push "$INSTDIR\installation_telemetry.json"
+  Call GetInstallationTelemetryFromMsi
+  Pop $0
+  ${IfNot} ${Errors}
+  ${AndIf} $0 == 1
+    Pop $0
+    Return
+  ${EndIf}
+
   Push "$INSTDIR\installation_telemetry.json"
   Call GetInstallationType
   ; Pop the result from the stack into $0
