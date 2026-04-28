@@ -14,8 +14,8 @@
 #include <stddef.h>
 
 #include <cstdint>
+#include <span>
 
-#include "api/array_view.h"
 #include "rtc_base/stream.h"
 
 namespace webrtc {
@@ -28,10 +28,10 @@ class MemoryStream final : public StreamInterface {
   ~MemoryStream() override;
 
   StreamState GetState() const override;
-  StreamResult Read(ArrayView<uint8_t> buffer,
+  StreamResult Read(std::span<uint8_t> buffer,
                     size_t& bytes_read,
                     int& error) override;
-  StreamResult Write(ArrayView<const uint8_t> buffer,
+  StreamResult Write(std::span<const uint8_t> buffer,
                      size_t& bytes_written,
                      int& error) override;
   void Close() override;
@@ -59,12 +59,5 @@ class MemoryStream final : public StreamInterface {
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace rtc {
-using ::webrtc::MemoryStream;
-}  
-#endif  
 
 #endif  

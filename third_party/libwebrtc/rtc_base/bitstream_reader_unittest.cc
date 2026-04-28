@@ -15,10 +15,10 @@
 #include <cstdint>
 #include <limits>
 #include <optional>
+#include <span>
 #include <utility>
 
 #include "absl/numeric/bits.h"
-#include "api/array_view.h"
 #include "rtc_base/checks.h"
 #include "test/gtest.h"
 
@@ -197,14 +197,14 @@ TEST(BitstreamReaderTest, ReadBits) {
 }
 
 TEST(BitstreamReaderTest, ReadZeroBits) {
-  BitstreamReader reader(ArrayView<const uint8_t>{});
+  BitstreamReader reader(std::span<const uint8_t>{});
 
   EXPECT_EQ(reader.ReadBits(0), 0u);
   EXPECT_TRUE(reader.Ok());
 }
 
 TEST(BitstreamReaderTest, ReadBitFromEmptyArray) {
-  BitstreamReader reader(ArrayView<const uint8_t>{});
+  BitstreamReader reader(std::span<const uint8_t>{});
 
   
   
@@ -213,7 +213,7 @@ TEST(BitstreamReaderTest, ReadBitFromEmptyArray) {
 }
 
 TEST(BitstreamReaderTest, ReadBitsFromEmptyArray) {
-  BitstreamReader reader(ArrayView<const uint8_t>{});
+  BitstreamReader reader(std::span<const uint8_t>{});
 
   
   
@@ -324,12 +324,12 @@ TEST(BitstreamReaderTest, NoGolombOverread) {
   const uint8_t bytes[] = {0x00, 0xFF, 0xFF};
   
   
-  BitstreamReader reader1(MakeArrayView(bytes, 1));
+  BitstreamReader reader1(std::span(bytes, 1));
   
   reader1.ReadExponentialGolomb();
   EXPECT_FALSE(reader1.Ok());
 
-  BitstreamReader reader2(MakeArrayView(bytes, 2));
+  BitstreamReader reader2(std::span(bytes, 2));
   reader2.ReadExponentialGolomb();
   EXPECT_FALSE(reader2.Ok());
 

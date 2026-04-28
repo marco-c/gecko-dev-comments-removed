@@ -10,11 +10,10 @@
 
 #include "rtc_base/memory/fifo_buffer.h"
 
-#include <string.h>
-
 #include <cstdint>
+#include <cstring>
+#include <span>
 
-#include "api/array_view.h"
 #include "rtc_base/stream.h"
 #include "rtc_base/thread.h"
 #include "test/gtest.h"
@@ -34,49 +33,49 @@ TEST(FifoBufferTest, TestAll) {
   
   EXPECT_EQ(SS_OPEN, buf.GetState());
   int error;
-  EXPECT_EQ(SR_BLOCK, buf.Read(MakeArrayView(out, kSize), bytes, error));
+  EXPECT_EQ(SR_BLOCK, buf.Read(std::span(out, kSize), bytes, error));
   EXPECT_TRUE(nullptr != buf.GetWriteBuffer(&bytes));
   EXPECT_EQ(kSize, bytes);
   buf.ConsumeWriteBuffer(0);
 
   
-  EXPECT_EQ(SR_SUCCESS, buf.Write(MakeArrayView(in, kSize), bytes, error));
+  EXPECT_EQ(SR_SUCCESS, buf.Write(std::span(in, kSize), bytes, error));
   EXPECT_EQ(kSize, bytes);
 
   
-  EXPECT_EQ(SR_BLOCK, buf.Write(MakeArrayView(in, kSize), bytes, error));
+  EXPECT_EQ(SR_BLOCK, buf.Write(std::span(in, kSize), bytes, error));
 
   
-  EXPECT_EQ(SR_SUCCESS, buf.Read(MakeArrayView(out, kSize), bytes, error));
+  EXPECT_EQ(SR_SUCCESS, buf.Read(std::span(out, kSize), bytes, error));
   EXPECT_EQ(kSize, bytes);
   EXPECT_EQ(0, memcmp(in, out, kSize));
 
   
-  EXPECT_EQ(SR_BLOCK, buf.Read(MakeArrayView(out, kSize), bytes, error));
+  EXPECT_EQ(SR_BLOCK, buf.Read(std::span(out, kSize), bytes, error));
 
   
-  EXPECT_EQ(SR_SUCCESS, buf.Write(MakeArrayView(in, kSize * 2), bytes, error));
+  EXPECT_EQ(SR_SUCCESS, buf.Write(std::span(in, kSize * 2), bytes, error));
   EXPECT_EQ(bytes, kSize);
 
   
-  EXPECT_EQ(SR_SUCCESS, buf.Read(MakeArrayView(out, kSize * 2), bytes, error));
+  EXPECT_EQ(SR_SUCCESS, buf.Read(std::span(out, kSize * 2), bytes, error));
   EXPECT_EQ(kSize, bytes);
   EXPECT_EQ(0, memcmp(in, out, kSize));
 
   
-  EXPECT_EQ(SR_SUCCESS, buf.Write(MakeArrayView(in, kSize / 2), bytes, error));
+  EXPECT_EQ(SR_SUCCESS, buf.Write(std::span(in, kSize / 2), bytes, error));
   EXPECT_EQ(kSize / 2, bytes);
-  EXPECT_EQ(SR_SUCCESS, buf.Read(MakeArrayView(out, kSize / 2), bytes, error));
-  EXPECT_EQ(kSize / 2, bytes);
-  EXPECT_EQ(0, memcmp(in, out, kSize / 2));
-  EXPECT_EQ(SR_SUCCESS, buf.Write(MakeArrayView(in, kSize / 2), bytes, error));
-  EXPECT_EQ(kSize / 2, bytes);
-  EXPECT_EQ(SR_SUCCESS, buf.Write(MakeArrayView(in, kSize / 2), bytes, error));
-  EXPECT_EQ(kSize / 2, bytes);
-  EXPECT_EQ(SR_SUCCESS, buf.Read(MakeArrayView(out, kSize / 2), bytes, error));
+  EXPECT_EQ(SR_SUCCESS, buf.Read(std::span(out, kSize / 2), bytes, error));
   EXPECT_EQ(kSize / 2, bytes);
   EXPECT_EQ(0, memcmp(in, out, kSize / 2));
-  EXPECT_EQ(SR_SUCCESS, buf.Read(MakeArrayView(out, kSize / 2), bytes, error));
+  EXPECT_EQ(SR_SUCCESS, buf.Write(std::span(in, kSize / 2), bytes, error));
+  EXPECT_EQ(kSize / 2, bytes);
+  EXPECT_EQ(SR_SUCCESS, buf.Write(std::span(in, kSize / 2), bytes, error));
+  EXPECT_EQ(kSize / 2, bytes);
+  EXPECT_EQ(SR_SUCCESS, buf.Read(std::span(out, kSize / 2), bytes, error));
+  EXPECT_EQ(kSize / 2, bytes);
+  EXPECT_EQ(0, memcmp(in, out, kSize / 2));
+  EXPECT_EQ(SR_SUCCESS, buf.Read(std::span(out, kSize / 2), bytes, error));
   EXPECT_EQ(kSize / 2, bytes);
   EXPECT_EQ(0, memcmp(in, out, kSize / 2));
 
@@ -88,23 +87,22 @@ TEST(FifoBufferTest, TestAll) {
   
   
   
-  EXPECT_EQ(SR_SUCCESS,
-            buf.Write(MakeArrayView(in, kSize * 3 / 4), bytes, error));
+  EXPECT_EQ(SR_SUCCESS, buf.Write(std::span(in, kSize * 3 / 4), bytes, error));
   EXPECT_EQ(kSize * 3 / 4, bytes);
-  EXPECT_EQ(SR_SUCCESS, buf.Read(MakeArrayView(out, kSize / 2), bytes, error));
+  EXPECT_EQ(SR_SUCCESS, buf.Read(std::span(out, kSize / 2), bytes, error));
   EXPECT_EQ(kSize / 2, bytes);
   EXPECT_EQ(0, memcmp(in, out, kSize / 2));
-  EXPECT_EQ(SR_SUCCESS, buf.Write(MakeArrayView(in, kSize / 2), bytes, error));
+  EXPECT_EQ(SR_SUCCESS, buf.Write(std::span(in, kSize / 2), bytes, error));
   EXPECT_EQ(kSize / 2, bytes);
-  EXPECT_EQ(SR_SUCCESS, buf.Read(MakeArrayView(out, kSize / 4), bytes, error));
+  EXPECT_EQ(SR_SUCCESS, buf.Read(std::span(out, kSize / 4), bytes, error));
   EXPECT_EQ(kSize / 4, bytes);
   EXPECT_EQ(0, memcmp(in + kSize / 2, out, kSize / 4));
-  EXPECT_EQ(SR_SUCCESS, buf.Write(MakeArrayView(in, kSize / 2), bytes, error));
+  EXPECT_EQ(SR_SUCCESS, buf.Write(std::span(in, kSize / 2), bytes, error));
   EXPECT_EQ(kSize / 2, bytes);
-  EXPECT_EQ(SR_SUCCESS, buf.Read(MakeArrayView(out, kSize / 2), bytes, error));
+  EXPECT_EQ(SR_SUCCESS, buf.Read(std::span(out, kSize / 2), bytes, error));
   EXPECT_EQ(kSize / 2, bytes);
   EXPECT_EQ(0, memcmp(in, out, kSize / 2));
-  EXPECT_EQ(SR_SUCCESS, buf.Read(MakeArrayView(out, kSize / 2), bytes, error));
+  EXPECT_EQ(SR_SUCCESS, buf.Read(std::span(out, kSize / 2), bytes, error));
   EXPECT_EQ(kSize / 2, bytes);
   EXPECT_EQ(0, memcmp(in, out, kSize / 2));
 
@@ -113,16 +111,16 @@ TEST(FifoBufferTest, TestAll) {
   buf.ConsumeWriteBuffer(0);
 
   
-  EXPECT_EQ(SR_SUCCESS, buf.Write(MakeArrayView(in, kSize), bytes, error));
+  EXPECT_EQ(SR_SUCCESS, buf.Write(std::span(in, kSize), bytes, error));
   q = buf.GetReadData(&bytes);
   EXPECT_TRUE(nullptr != q);
   EXPECT_EQ(kSize, bytes);
   EXPECT_EQ(0, memcmp(q, in, kSize));
   buf.ConsumeReadData(kSize);
-  EXPECT_EQ(SR_BLOCK, buf.Read(MakeArrayView(out, kSize), bytes, error));
+  EXPECT_EQ(SR_BLOCK, buf.Read(std::span(out, kSize), bytes, error));
 
   
-  EXPECT_EQ(SR_SUCCESS, buf.Write(MakeArrayView(in, kSize), bytes, error));
+  EXPECT_EQ(SR_SUCCESS, buf.Write(std::span(in, kSize), bytes, error));
   q = buf.GetReadData(&bytes);
   EXPECT_TRUE(nullptr != q);
   EXPECT_EQ(kSize, bytes);
@@ -133,7 +131,7 @@ TEST(FifoBufferTest, TestAll) {
   EXPECT_EQ(kSize / 2, bytes);
   EXPECT_EQ(0, memcmp(q, in + kSize / 2, kSize / 2));
   buf.ConsumeReadData(kSize / 2);
-  EXPECT_EQ(SR_BLOCK, buf.Read(MakeArrayView(out, kSize), bytes, error));
+  EXPECT_EQ(SR_BLOCK, buf.Read(std::span(out, kSize), bytes, error));
 
   
   
@@ -141,10 +139,9 @@ TEST(FifoBufferTest, TestAll) {
   
   
   
-  EXPECT_EQ(SR_SUCCESS, buf.Write(MakeArrayView(in, kSize), bytes, error));
-  EXPECT_EQ(SR_SUCCESS,
-            buf.Read(MakeArrayView(out, kSize * 3 / 4), bytes, error));
-  EXPECT_EQ(SR_SUCCESS, buf.Write(MakeArrayView(in, kSize / 2), bytes, error));
+  EXPECT_EQ(SR_SUCCESS, buf.Write(std::span(in, kSize), bytes, error));
+  EXPECT_EQ(SR_SUCCESS, buf.Read(std::span(out, kSize * 3 / 4), bytes, error));
+  EXPECT_EQ(SR_SUCCESS, buf.Write(std::span(in, kSize / 2), bytes, error));
   q = buf.GetReadData(&bytes);
   EXPECT_TRUE(nullptr != q);
   EXPECT_EQ(kSize / 4, bytes);
@@ -166,7 +163,7 @@ TEST(FifoBufferTest, TestAll) {
   EXPECT_EQ(kSize, bytes);
   memcpy(p, in, kSize);
   buf.ConsumeWriteBuffer(kSize);
-  EXPECT_EQ(SR_SUCCESS, buf.Read(MakeArrayView(out, kSize), bytes, error));
+  EXPECT_EQ(SR_SUCCESS, buf.Read(std::span(out, kSize), bytes, error));
   EXPECT_EQ(kSize, bytes);
   EXPECT_EQ(0, memcmp(in, out, kSize));
 
@@ -181,7 +178,7 @@ TEST(FifoBufferTest, TestAll) {
   EXPECT_EQ(kSize / 2, bytes);
   memcpy(p, in + kSize / 2, kSize / 2);
   buf.ConsumeWriteBuffer(kSize / 2);
-  EXPECT_EQ(SR_SUCCESS, buf.Read(MakeArrayView(out, kSize), bytes, error));
+  EXPECT_EQ(SR_SUCCESS, buf.Read(std::span(out, kSize), bytes, error));
   EXPECT_EQ(kSize, bytes);
   EXPECT_EQ(0, memcmp(in, out, kSize));
 
@@ -191,9 +188,8 @@ TEST(FifoBufferTest, TestAll) {
   
   
   
-  EXPECT_EQ(SR_SUCCESS,
-            buf.Write(MakeArrayView(in, kSize * 3 / 4), bytes, error));
-  EXPECT_EQ(SR_SUCCESS, buf.Read(MakeArrayView(out, kSize / 2), bytes, error));
+  EXPECT_EQ(SR_SUCCESS, buf.Write(std::span(in, kSize * 3 / 4), bytes, error));
+  EXPECT_EQ(SR_SUCCESS, buf.Read(std::span(out, kSize / 2), bytes, error));
   p = buf.GetWriteBuffer(&bytes);
   EXPECT_TRUE(nullptr != p);
   EXPECT_EQ(kSize / 4, bytes);
@@ -204,23 +200,22 @@ TEST(FifoBufferTest, TestAll) {
   EXPECT_EQ(kSize / 2, bytes);
   memcpy(p, in + kSize / 4, kSize / 4);
   buf.ConsumeWriteBuffer(kSize / 4);
-  EXPECT_EQ(SR_SUCCESS,
-            buf.Read(MakeArrayView(out, kSize * 3 / 4), bytes, error));
+  EXPECT_EQ(SR_SUCCESS, buf.Read(std::span(out, kSize * 3 / 4), bytes, error));
   EXPECT_EQ(kSize * 3 / 4, bytes);
   EXPECT_EQ(0, memcmp(in + kSize / 2, out, kSize / 4));
   EXPECT_EQ(0, memcmp(in, out + kSize / 4, kSize / 4));
 
   
-  EXPECT_EQ(SR_BLOCK, buf.Read(MakeArrayView(out, kSize), bytes, error));
+  EXPECT_EQ(SR_BLOCK, buf.Read(std::span(out, kSize), bytes, error));
 
   
-  EXPECT_EQ(SR_SUCCESS, buf.Write(MakeArrayView(in, kSize / 2), bytes, error));
+  EXPECT_EQ(SR_SUCCESS, buf.Write(std::span(in, kSize / 2), bytes, error));
   buf.Close();
   EXPECT_EQ(SS_CLOSED, buf.GetState());
-  EXPECT_EQ(SR_EOS, buf.Write(MakeArrayView(in, kSize / 2), bytes, error));
-  EXPECT_EQ(SR_SUCCESS, buf.Read(MakeArrayView(out, kSize / 2), bytes, error));
+  EXPECT_EQ(SR_EOS, buf.Write(std::span(in, kSize / 2), bytes, error));
+  EXPECT_EQ(SR_SUCCESS, buf.Read(std::span(out, kSize / 2), bytes, error));
   EXPECT_EQ(0, memcmp(in, out, kSize / 2));
-  EXPECT_EQ(SR_EOS, buf.Read(MakeArrayView(out, kSize / 2), bytes, error));
+  EXPECT_EQ(SR_EOS, buf.Read(std::span(out, kSize / 2), bytes, error));
 }
 
 TEST(FifoBufferTest, FullBufferCheck) {

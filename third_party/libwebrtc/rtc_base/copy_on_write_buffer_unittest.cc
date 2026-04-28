@@ -13,21 +13,19 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <span>
 #include <type_traits>
 #include <utility>
 #include <vector>
 
-#include "api/array_view.h"
 #include "test/gtest.h"
 
 namespace webrtc {
 
 namespace {
 
-
-const uint8_t kTestData[] = {0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7,
-                             0x8, 0x9, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf};
-
+constexpr uint8_t kTestData[] = {0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7,
+                                 0x8, 0x9, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf};
 
 }  
 
@@ -376,8 +374,8 @@ TEST(CopyOnWriteBufferTest, SlicesAreIndependent) {
 TEST(CopyOnWriteBufferTest, AcceptsVectorLikeTypes) {
   std::vector<uint8_t> a = {1, 2};
   std::vector<int8_t> b = {3, 4};
-  ArrayView<uint8_t> c(a);
-  ArrayView<const int8_t> d(b);
+  std::span<uint8_t> c(a);
+  std::span<const int8_t> d(b);
 
   CopyOnWriteBuffer a_buf(a);
   CopyOnWriteBuffer b_buf(b);

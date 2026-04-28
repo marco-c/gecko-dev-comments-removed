@@ -13,8 +13,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
+#include <span>
 
-#include "api/array_view.h"
 #include "api/transport/ecn_marking.h"
 #include "api/units/timestamp.h"
 #include "rtc_base/socket_address.h"
@@ -37,7 +37,7 @@ class RTC_EXPORT ReceivedIpPacket {
 
   
   
-  ReceivedIpPacket(ArrayView<const uint8_t> payload,
+  ReceivedIpPacket(std::span<const uint8_t> payload,
                    const SocketAddress& source_address,
                    std::optional<Timestamp> arrival_time = std::nullopt,
                    EcnMarking ecn = EcnMarking::kNotEct,
@@ -47,7 +47,7 @@ class RTC_EXPORT ReceivedIpPacket {
 
   
   const SocketAddress& source_address() const { return source_address_; }
-  ArrayView<const uint8_t> payload() const { return payload_; }
+  std::span<const uint8_t> payload() const { return payload_; }
 
   
   
@@ -74,7 +74,7 @@ class RTC_EXPORT ReceivedIpPacket {
       const SocketAddress& = SocketAddress());
 
  private:
-  ArrayView<const uint8_t> payload_;
+  std::span<const uint8_t> payload_;
   std::optional<Timestamp> arrival_time_;
   const SocketAddress& source_address_;
   EcnMarking ecn_;
@@ -83,12 +83,5 @@ class RTC_EXPORT ReceivedIpPacket {
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace rtc {
-using ReceivedPacket = ::webrtc::ReceivedIpPacket;
-}  
-#endif  
 
 #endif  

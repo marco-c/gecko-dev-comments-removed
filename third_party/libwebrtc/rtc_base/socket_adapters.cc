@@ -15,8 +15,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <span>
 
-#include "api/array_view.h"
 #include "rtc_base/async_socket.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
@@ -135,7 +135,7 @@ static const uint8_t kSslClientHello[] = {
 };
 
 
-ArrayView<const uint8_t> AsyncSSLSocket::SslClientHello() {
+std::span<const uint8_t> AsyncSSLSocket::SslClientHello() {
   
   
   return {kSslClientHello, sizeof(kSslClientHello)};
@@ -163,7 +163,7 @@ static const uint8_t kSslServerHello[] = {
 };
 
 
-ArrayView<const uint8_t> AsyncSSLSocket::SslServerHello() {
+std::span<const uint8_t> AsyncSSLSocket::SslServerHello() {
   return {kSslServerHello, sizeof(kSslServerHello)};
 }
 

@@ -14,12 +14,12 @@
 #include <stddef.h>
 
 #include <optional>
+#include <span>
 #include <string>
 #include <type_traits>
 #include <vector>
 
 #include "absl/strings/string_view.h"
-#include "api/array_view.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/string_to_number.h"
 #include "rtc_base/strings/string_format.h"  
@@ -34,13 +34,13 @@ std::string hex_encode(absl::string_view str);
 std::string hex_encode_with_delimiter(absl::string_view source, char delimiter);
 
 
-size_t hex_decode(ArrayView<char> buffer, absl::string_view source);
+size_t hex_decode(std::span<char> buffer, absl::string_view source);
 
 
 
 
 
-size_t hex_decode_with_delimiter(ArrayView<char> buffer,
+size_t hex_decode_with_delimiter(std::span<char> buffer,
                                  absl::string_view source,
                                  char delimiter);
 
@@ -94,56 +94,5 @@ static inline T FromString(absl::string_view str) {
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace rtc {
-using ::webrtc::FromString;
-using ::webrtc::hex_decode;
-using ::webrtc::hex_decode_with_delimiter;
-using ::webrtc::hex_encode;
-using ::webrtc::hex_encode_with_delimiter;
-using ::webrtc::split;
-using ::webrtc::tokenize;
-using ::webrtc::tokenize_first;
-
-namespace internal {
-template <typename T, typename = void>
-struct is_absl_strcat_callable : std::false_type {};
-
-template <typename T>
-struct is_absl_strcat_callable<
-    T,
-    std::void_t<decltype(absl::StrCat(std::declval<T>()))>> : std::true_type {};
-}  
-
-template <typename T>
-ABSL_DEPRECATE_AND_INLINE()
-inline auto ToString(T value) ->
-    typename std::enable_if<!std::is_same_v<T, bool> &&
-                                internal::is_absl_strcat_callable<T>::value,
-                            std::string>::type {
-  return absl::StrCat(value);
-}
-
-template <typename T>
-ABSL_DEPRECATE_AND_INLINE()
-inline auto ToString(T p) ->
-    typename std::enable_if<!internal::is_absl_strcat_callable<T>::value &&
-                                std::is_pointer<T>::value,
-                            std::string>::type {
-  return webrtc::StringFormat("%p", p);
-}
-
-template <typename T>
-ABSL_DEPRECATE_AND_INLINE()
-inline auto ToString(T value) ->
-    typename std::enable_if<!std::is_pointer_v<T> && std::is_same_v<T, bool>,
-                            std::string>::type {
-  return webrtc::BoolToString(value);
-}
-
-}  
-#endif  
 
 #endif  

@@ -22,7 +22,6 @@
 
 #include "absl/algorithm/container.h"
 #include "absl/strings/string_view.h"
-#include "api/array_view.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/type_traits.h"
 #include "rtc_base/zero_memory.h"
@@ -215,12 +214,12 @@ class BufferT {
 
   T& operator[](size_t index) {
     RTC_DCHECK_LT(index, size_);
-    return ArrayView<T>(*this)[index];
+    return std::span<T>(*this)[index];
   }
 
   T operator[](size_t index) const {
     RTC_DCHECK_LT(index, size_);
-    return ArrayView<const T>(*this)[index];
+    return std::span<const T>(*this)[index];
   }
 
   iterator begin() { return std::span(*this).begin(); }
@@ -298,9 +297,9 @@ class BufferT {
     const size_t new_size = size_ + size;
     EnsureCapacityWithHeadroom(new_size, true);
     static_assert(sizeof(T) == sizeof(U), "");
-    ArrayView<const U> source(data, size);
-    ArrayView<T> destination =
-        ArrayView<T>(data_.get(), capacity_).subspan(size_, size);
+    std::span<const U> source(data, size);
+    std::span<T> destination =
+        std::span<T>(data_.get(), capacity_).subspan(size_, size);
     absl::c_copy(source, destination.begin());
     size_ = new_size;
     RTC_DCHECK(IsConsistent());
@@ -346,7 +345,7 @@ class BufferT {
     const size_t old_size = size_;
     SetSizeInternal(old_size + max_elements);
     size_t written_elements =
-        setter(ArrayView<U>(data<U>(), size()).subspan(old_size));
+        setter(std::span<U>(data<U>(), size()).subspan(old_size));
 
     RTC_CHECK_LE(written_elements, max_elements);
     size_ = old_size + written_elements;
@@ -448,7 +447,7 @@ class BufferT {
       
       
       
-      ExplicitZeroMemory(ArrayView<T>(data_.get(), capacity_));
+      ExplicitZeroMemory(std::span<T>(data_.get(), capacity_));
     }
   }
 
@@ -456,7 +455,7 @@ class BufferT {
   void ZeroTrailingData(size_t count) {
     RTC_DCHECK(IsConsistent());
     RTC_DCHECK_LE(count, capacity_ - size_);
-    ExplicitZeroMemory(MakeArrayView(data(), capacity_).subspan(size_));
+    ExplicitZeroMemory(std::span(data(), capacity_).subspan(size_));
   }
 
   

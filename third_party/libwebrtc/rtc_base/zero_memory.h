@@ -13,9 +13,8 @@
 
 #include <stddef.h>
 
+#include <span>
 #include <type_traits>
-
-#include "api/array_view.h"
 
 namespace webrtc {
 
@@ -26,18 +25,11 @@ void ExplicitZeroMemory(void* ptr, size_t len);
 template <typename T,
           typename std::enable_if<!std::is_const<T>::value &&
                                   std::is_trivial<T>::value>::type* = nullptr>
-void ExplicitZeroMemory(ArrayView<T> a) {
+void ExplicitZeroMemory(std::span<T> a) {
   ExplicitZeroMemory(a.data(), a.size());
 }
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace rtc {
-using ::webrtc::ExplicitZeroMemory;
-}  
-#endif  
 
 #endif  

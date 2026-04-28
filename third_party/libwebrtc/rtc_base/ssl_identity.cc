@@ -12,17 +12,17 @@
 #include "rtc_base/ssl_identity.h"
 
 #include <openssl/ossl_typ.h>
-#include <string.h>
-#include <time.h>
 
 #include <cstdint>
+#include <cstring>
+#include <ctime>
 #include <memory>
 #include <optional>
+#include <span>
 #include <string>
 #include <utility>
 
 #include "absl/strings/string_view.h"
-#include "api/array_view.h"
 #include "rtc_base/checks.h"
 #ifdef OPENSSL_IS_BORINGSSL
 #include "rtc_base/boringssl_identity.h"
@@ -206,7 +206,7 @@ std::string SSLIdentity::DerToPem(absl::string_view pem_type,
   StringBuilder result;
   result << "-----BEGIN " << pem_type << "-----\n";
 
-  ArrayView<const uint8_t> data_view(data, length);
+  std::span<const uint8_t> data_view(data, length);
   std::string b64_encoded = Base64Encode(data_view);
   
   
