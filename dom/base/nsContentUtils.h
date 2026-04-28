@@ -3905,8 +3905,6 @@ nsContentUtils::InternalContentPolicyTypeToExternal(nsContentPolicyType aType) {
       
       return static_cast<ExtContentPolicyType>(aType);
 
-    case nsIContentPolicy::TYPE_END:
-      break;
       
   }
 

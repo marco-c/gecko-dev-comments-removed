@@ -407,7 +407,6 @@ CSPDirective CSP_ContentTypeToDirective(nsContentPolicyType aType) {
 
     
     case nsIContentPolicy::TYPE_INVALID:
-    case nsIContentPolicy::TYPE_END:
       MOZ_ASSERT(false, "Can not map nsContentPolicyType to CSPDirective");
       
   }
