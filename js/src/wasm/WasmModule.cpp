@@ -16,8 +16,6 @@
 
 #include "wasm/WasmModule.h"
 
-#include <chrono>
-
 #include "js/BuildId.h"                 
 #include "js/experimental/TypedData.h"  
 #include "js/friend/ErrorMessages.h"    
