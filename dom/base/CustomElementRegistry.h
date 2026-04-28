@@ -155,18 +155,6 @@ struct CustomElementDefinition {
   
   nsTArray<RefPtr<Element>> mConstructionStack;
 
-  
-  
-  
-  
-  
-  nsTArray<RefPtr<nsAtom>> mPrefixStack;
-
-  
-  
-  
-  uint32_t mConstructionDepth = 0;
-
   bool IsCustomBuiltIn() { return mType != mLocalName; }
 
   bool IsInObservedAttributeList(nsAtom* aName) {

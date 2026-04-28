@@ -872,6 +872,11 @@ class nsINode : public mozilla::dom::EventTarget {
   inline mozilla::dom::NodeInfo* NodeInfo() const { return mNodeInfo; }
 
   
+  
+  
+  void SetNamespacePrefix(nsAtom* aPrefix);
+
+  
 
 
 
