@@ -113,6 +113,15 @@ class BaseFile:
     function and/or the path property.
     """
 
+    
+    
+    
+    supports_stamp = False
+
+    
+    
+    is_symlink_backed = False
+
     @staticmethod
     def is_older(first, second):
         """
@@ -333,6 +342,9 @@ class AbsoluteSymlinkFile(File):
     This class only works if the target path is absolute.
     """
 
+    supports_stamp = True
+    is_symlink_backed = True
+
     def __init__(self, path):
         if not os.path.isabs(path):
             raise ValueError("Symlink target not absolute: %s" % path)
@@ -486,6 +498,8 @@ class ExistingFile(BaseFile):
     existing file is required, it must exist during copy() or an error is
     raised.
     """
+
+    supports_stamp = True
 
     def __init__(self, required):
         self.required = required
