@@ -81,13 +81,6 @@ class Calendar final {
 
   Result<Ok, ICUError> SetTimeInMs(double aUnixEpoch);
 
-  
-
-
-
-  static Result<SpanEnumeration<char>, ICUError>
-  GetLegacyKeywordValuesForLocale(const char* aLocale);
-
  private:
   
 

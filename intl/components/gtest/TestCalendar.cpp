@@ -13,26 +13,6 @@ namespace mozilla::intl {
 
 const double CALENDAR_DATE = 1032800850000.0;
 
-TEST(IntlCalendar, GetLegacyKeywordValuesForLocale)
-{
-  bool hasGregorian = false;
-  bool hasIslamic = false;
-  auto gregorian = MakeStringSpan("gregorian");
-  auto islamic = MakeStringSpan("islamic");
-  auto keywords = Calendar::GetLegacyKeywordValuesForLocale("en-US").unwrap();
-  for (auto name : keywords) {
-    
-    if (name.unwrap() == gregorian) {
-      hasGregorian = true;
-    }
-    if (name.unwrap() == islamic) {
-      hasIslamic = true;
-    }
-  }
-  ASSERT_TRUE(hasGregorian);
-  ASSERT_TRUE(hasIslamic);
-}
-
 TEST(IntlCalendar, GetBcp47KeywordValuesForLocale)
 {
   bool hasGregory = false;

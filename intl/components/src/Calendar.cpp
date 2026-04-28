@@ -125,20 +125,6 @@ Result<Ok, ICUError> Calendar::SetTimeInMs(double aUnixEpoch) {
 }
 
 
-Result<SpanEnumeration<char>, ICUError>
-Calendar::GetLegacyKeywordValuesForLocale(const char* aLocale) {
-  UErrorCode status = U_ZERO_ERROR;
-  UEnumeration* enumeration = ucal_getKeywordValuesForLocale(
-      "calendar", aLocale,  false, &status);
-
-  if (U_SUCCESS(status)) {
-    return SpanEnumeration<char>(enumeration);
-  }
-
-  return Err(ToICUError(status));
-}
-
-
 SpanResult<char> Calendar::LegacyIdentifierToBcp47(const char* aIdentifier,
                                                    int32_t aLength) {
   if (aIdentifier == nullptr) {
