@@ -33,6 +33,7 @@
 #include "api/candidate.h"
 #include "api/jsep.h"
 #include "api/media_types.h"
+#include "api/payload_type.h"
 #include "api/rtc_error.h"
 #include "api/rtp_parameters.h"
 #include "api/rtp_transceiver_direction.h"
@@ -192,7 +193,7 @@ const char kDefaultSctpmapProtocol[] = "webrtc-datachannel";
 
 
 
-const int kWildcardPayloadType = -1;
+constexpr PayloadType kWildcardPayloadType = PayloadType::NotSet();
 
 
 
@@ -1013,7 +1014,7 @@ bool GetParameter(const std::string& name,
   return true;
 }
 
-void WriteFmtpHeader(int payload_type, StringBuilder* os) {
+void WriteFmtpHeader(PayloadType payload_type, StringBuilder* os) {
   
   
   InitAttrLine(kAttributeFmtp, os);
@@ -1021,7 +1022,7 @@ void WriteFmtpHeader(int payload_type, StringBuilder* os) {
   *os << kSdpDelimiterColon << payload_type;
 }
 
-void WritePacketizationHeader(int payload_type, StringBuilder* os) {
+void WritePacketizationHeader(PayloadType payload_type, StringBuilder* os) {
   
   
   InitAttrLine(kAttributePacketization, os);
@@ -1029,7 +1030,7 @@ void WritePacketizationHeader(int payload_type, StringBuilder* os) {
   *os << kSdpDelimiterColon << payload_type;
 }
 
-void WriteRtcpFbHeader(int payload_type, StringBuilder* os) {
+void WriteRtcpFbHeader(PayloadType payload_type, StringBuilder* os) {
   
   
   
@@ -2035,7 +2036,7 @@ void BackfillCodecParameters(std::vector<Codec>& codecs) {
 
 Codec GetCodecWithPayloadType(MediaType type,
                               const std::vector<Codec>& codecs,
-                              int payload_type) {
+                              PayloadType payload_type) {
   const Codec* codec = FindCodecById(codecs, payload_type);
   if (codec)
     return *codec;
@@ -2050,7 +2051,7 @@ Codec GetCodecWithPayloadType(MediaType type,
 
 
 void UpdateCodec(MediaContentDescription* content_desc,
-                 int payload_type,
+                 PayloadType payload_type,
                  const CodecParameterMap& parameters) {
   
   Codec new_codec = GetCodecWithPayloadType(
@@ -2062,7 +2063,7 @@ void UpdateCodec(MediaContentDescription* content_desc,
 
 
 void UpdateCodec(MediaContentDescription* content_desc,
-                 int payload_type,
+                 PayloadType payload_type,
                  const FeedbackParam& feedback_param) {
   
   Codec new_codec = GetCodecWithPayloadType(
@@ -2098,11 +2099,12 @@ bool ParseFmtpAttributes(absl::string_view line,
     return false;
   }
 
-  int payload_type = 0;
-  if (!GetPayloadTypeFromString(line_payload, payload_type_str, &payload_type,
+  int pt_int = 0;
+  if (!GetPayloadTypeFromString(line_payload, payload_type_str, &pt_int,
                                 error)) {
     return false;
   }
+  PayloadType payload_type = PayloadType(pt_int);
 
   
   CodecParameterMap codec_params;
@@ -2224,7 +2226,7 @@ bool ParseSsrcAttribute(absl::string_view line,
 
 
 
-void UpdateCodec(int payload_type,
+void UpdateCodec(PayloadType payload_type,
                  absl::string_view name,
                  int clockrate,
                  int bitrate,
@@ -2243,7 +2245,7 @@ void UpdateCodec(int payload_type,
 
 
 
-void UpdateCodec(int payload_type,
+void UpdateCodec(PayloadType payload_type,
                  absl::string_view name,
                  MediaContentDescription* desc) {
   
@@ -2358,7 +2360,7 @@ bool ParseRtpmapAttribute(absl::string_view line,
 
 
 void UpdateVideoCodecPacketization(MediaContentDescription* desc,
-                                   int payload_type,
+                                   PayloadType payload_type,
                                    absl::string_view packetization) {
   if (packetization != kPacketizationParamRaw) {
     
@@ -2389,11 +2391,11 @@ bool ParsePacketizationAttribute(absl::string_view line,
                 &payload_type_string, error)) {
     return false;
   }
-  int payload_type;
-  if (!GetPayloadTypeFromString(line, payload_type_string, &payload_type,
-                                error)) {
+  int pt_int;
+  if (!GetPayloadTypeFromString(line, payload_type_string, &pt_int, error)) {
     return false;
   }
+  PayloadType payload_type = PayloadType(pt_int);
   absl::string_view packetization = packetization_fields[1];
   UpdateVideoCodecPacketization(media_desc, payload_type, packetization);
   return true;
@@ -2416,12 +2418,13 @@ bool ParseRtcpFbAttribute(absl::string_view line,
                 error)) {
     return false;
   }
-  int payload_type = kWildcardPayloadType;
+  PayloadType payload_type = kWildcardPayloadType;
   if (payload_type_string != "*") {
-    if (!GetPayloadTypeFromString(line, payload_type_string, &payload_type,
-                                  error)) {
+    int pt_int;
+    if (!GetPayloadTypeFromString(line, payload_type_string, &pt_int, error)) {
       return false;
     }
+    payload_type = PayloadType(pt_int);
   }
   absl::string_view id = rtcp_fb_fields[1];
   std::string param = "";

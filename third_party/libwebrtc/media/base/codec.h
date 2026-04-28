@@ -20,6 +20,7 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 #include "api/audio_codecs/audio_format.h"
+#include "api/payload_type.h"
 #include "api/rtp_parameters.h"
 #include "api/video_codecs/scalability_mode.h"
 #include "api/video_codecs/sdp_video_format.h"
@@ -87,7 +88,7 @@ struct RTC_EXPORT Codec {
   static const int kIdNotSet = -1;
 
   Type type;
-  int id;
+  PayloadType id;
   std::string name;
   int clockrate;
 
@@ -173,7 +174,11 @@ struct RTC_EXPORT Codec {
   std::string ToString() const;
 
   
-  Codec() : Codec(Type::kAudio, kIdNotSet, "", kDefaultAudioClockRateHz) {}
+  Codec()
+      : Codec(Type::kAudio,
+              PayloadType::NotSet(),
+              "",
+              kDefaultAudioClockRateHz) {}
   Codec& operator=(const Codec& c);
   Codec& operator=(Codec&& c);
 
@@ -183,7 +188,7 @@ struct RTC_EXPORT Codec {
 
   template <typename Sink>
   friend void AbslStringify(Sink& sink, const Codec& c) {
-    absl::Format(&sink, "[%d:", c.id);
+    absl::Format(&sink, "[%v:", c.id);
     switch (c.type) {
       case Codec::Type::kAudio:
         sink.Append("audio/");
@@ -192,6 +197,9 @@ struct RTC_EXPORT Codec {
         sink.Append("video/");
     }
     absl::Format(&sink, "%s/%d/%d", c.name, c.clockrate, c.channels);
+    if (c.packetization) {
+      absl::Format(&sink, ",packetization=%s", *c.packetization);
+    }
     for (auto param : c.params) {
       sink.Append(";");
       sink.Append(param.first);
@@ -205,9 +213,9 @@ struct RTC_EXPORT Codec {
   
   explicit Codec(Type type);
   
-  Codec(Type type, int id, const std::string& name, int clockrate);
+  Codec(Type type, PayloadType id, const std::string& name, int clockrate);
   Codec(Type type,
-        int id,
+        PayloadType id,
         const std::string& name,
         int clockrate,
         size_t channels);
@@ -215,36 +223,38 @@ struct RTC_EXPORT Codec {
   explicit Codec(const SdpAudioFormat& c);
   explicit Codec(const SdpVideoFormat& c);
 
-  friend Codec CreateAudioCodec(int id,
+  friend Codec CreateAudioCodec(PayloadType id,
                                 const std::string& name,
                                 int clockrate,
                                 size_t channels);
   friend Codec CreateAudioCodec(const SdpAudioFormat& c);
-  friend Codec CreateAudioRtxCodec(int rtx_payload_type,
-                                   int associated_payload_type);
-  friend Codec CreateVideoCodec(int id, const std::string& name);
+  friend Codec CreateAudioRtxCodec(PayloadType rtx_payload_type,
+                                   PayloadType associated_payload_type);
+  friend Codec CreateVideoCodec(PayloadType id, const std::string& name);
   friend Codec CreateVideoCodec(const SdpVideoFormat& c);
-  friend Codec CreateVideoRtxCodec(int rtx_payload_type,
-                                   int associated_payload_type);
+  friend Codec CreateVideoCodec(PayloadType id, const SdpVideoFormat& sdp);
 };
 
 using Codecs = std::vector<Codec>;
 
-Codec CreateAudioCodec(int id,
+Codec CreateAudioCodec(PayloadType id,
                        const std::string& name,
                        int clockrate,
                        size_t channels);
 Codec CreateAudioCodec(const SdpAudioFormat& c);
-Codec CreateAudioRtxCodec(int rtx_payload_type, int associated_payload_type);
+Codec CreateAudioRtxCodec(PayloadType rtx_payload_type,
+                          PayloadType associated_payload_type);
 Codec CreateVideoCodec(const std::string& name);
-Codec CreateVideoCodec(int id, const std::string& name);
+Codec CreateVideoCodec(PayloadType id, const std::string& name);
 Codec CreateVideoCodec(const SdpVideoFormat& c);
-Codec CreateVideoCodec(int id, const SdpVideoFormat& sdp);
-Codec CreateVideoRtxCodec(int rtx_payload_type, int associated_payload_type);
+Codec CreateVideoCodec(PayloadType id, const SdpVideoFormat& sdp);
+Codec CreateVideoRtxCodec(PayloadType rtx_payload_type,
+                          PayloadType associated_payload_type);
 
 
 
-const Codec* FindCodecById(const std::vector<Codec>& codecs, int payload_type);
+const Codec* FindCodecById(const std::vector<Codec>& codecs,
+                           PayloadType payload_type);
 
 bool HasLntf(const Codec& codec);
 bool HasNack(const Codec& codec);
@@ -265,97 +275,5 @@ RTC_EXPORT void AddH264ConstrainedBaselineProfileToSupportedFormats(
     std::vector<SdpVideoFormat>* supported_formats);
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace cricket {
-
-using FeedbackParam ABSL_DEPRECATE_AND_INLINE() = webrtc::FeedbackParam;
-using FeedbackParams ABSL_DEPRECATE_AND_INLINE() = webrtc::FeedbackParams;
-using Codec ABSL_DEPRECATE_AND_INLINE() = webrtc::Codec;
-using Codecs ABSL_DEPRECATE_AND_INLINE() = webrtc::Codecs;
-
-
-using VideoCodec ABSL_DEPRECATE_AND_INLINE() = webrtc::Codec;
-using AudioCodec ABSL_DEPRECATE_AND_INLINE() = webrtc::Codec;
-using VideoCodecs ABSL_DEPRECATE_AND_INLINE() = webrtc::Codecs;
-using AudioCodecs ABSL_DEPRECATE_AND_INLINE() = webrtc::Codecs;
-using ::webrtc::AddH264ConstrainedBaselineProfileToSupportedFormats;
-
-ABSL_DEPRECATE_AND_INLINE()
-inline webrtc::Codec CreateAudioCodec(int id,
-                                      const std::string& name,
-                                      int clockrate,
-                                      size_t channels) {
-  return webrtc::CreateAudioCodec(id, name, clockrate, channels);
-}
-ABSL_DEPRECATE_AND_INLINE()
-inline webrtc::Codec CreateAudioCodec(const webrtc::SdpAudioFormat& c) {
-  return webrtc::CreateAudioCodec(c);
-}
-ABSL_DEPRECATE_AND_INLINE()
-inline webrtc::Codec CreateAudioRtxCodec(int rtx_payload_type,
-                                         int associated_payload_type) {
-  return webrtc::CreateAudioRtxCodec(rtx_payload_type, associated_payload_type);
-}
-ABSL_DEPRECATE_AND_INLINE()
-inline webrtc::Codec CreateVideoCodec(const std::string& name) {
-  return webrtc::CreateVideoCodec(name);
-}
-ABSL_DEPRECATE_AND_INLINE()
-inline webrtc::Codec CreateVideoCodec(int id, const std::string& name) {
-  return webrtc::CreateVideoCodec(id, name);
-}
-ABSL_DEPRECATE_AND_INLINE()
-inline webrtc::Codec CreateVideoCodec(const webrtc::SdpVideoFormat& c) {
-  return webrtc::CreateVideoCodec(c);
-}
-ABSL_DEPRECATE_AND_INLINE()
-inline webrtc::Codec CreateVideoCodec(int id, const webrtc::SdpVideoFormat& c) {
-  return webrtc::CreateVideoCodec(id, c);
-}
-ABSL_DEPRECATE_AND_INLINE()
-inline webrtc::Codec CreateVideoRtxCodec(int rtx_payload_type,
-                                         int associated_payload_type) {
-  return webrtc::CreateVideoRtxCodec(rtx_payload_type, associated_payload_type);
-}
-
-ABSL_DEPRECATE_AND_INLINE()
-inline const webrtc::Codec* FindCodecById(
-    const std::vector<webrtc::Codec>& codecs,
-    int payload_type) {
-  return webrtc::FindCodecById(codecs, payload_type);
-}
-
-ABSL_DEPRECATE_AND_INLINE()
-inline bool HasLntf(const webrtc::Codec& codec) {
-  return webrtc::HasLntf(codec);
-}
-ABSL_DEPRECATE_AND_INLINE()
-inline bool HasNack(const webrtc::Codec& codec) {
-  return webrtc::HasNack(codec);
-}
-ABSL_DEPRECATE_AND_INLINE()
-inline bool HasRemb(const webrtc::Codec& codec) {
-  return webrtc::HasRemb(codec);
-}
-ABSL_DEPRECATE_AND_INLINE() inline bool HasRrtr(const webrtc::Codec& codec) {
-  return webrtc::HasRrtr(codec);
-}
-ABSL_DEPRECATE_AND_INLINE()
-inline const webrtc::Codec* FindMatchingVideoCodec(
-    const webrtc::Codecs& supported_codecs,
-    const webrtc::Codec& codec) {
-  return webrtc::FindMatchingVideoCodec(supported_codecs, codec);
-}
-ABSL_DEPRECATE_AND_INLINE()
-inline std::vector<const webrtc::Codec*> FindAllMatchingCodecs(
-    const webrtc::Codecs& supported_codecs,
-    const webrtc::Codec& codec) {
-  return webrtc::FindAllMatchingCodecs(supported_codecs, codec);
-}
-
-}  
-#endif
 
 #endif

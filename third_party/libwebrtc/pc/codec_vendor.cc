@@ -563,7 +563,7 @@ RTCError AssignCodecIdsAndLinkRed(PayloadTypeSuggester* pt_suggester,
   RTC_DCHECK_DISALLOW_THREAD_BLOCKING_CALLS();
   int codec_payload_type = Codec::kIdNotSet;
   for (Codec& codec : codecs) {
-    if (codec.id == Codec::kIdNotSet) {
+    if (codec.id == PayloadType::NotSet()) {
       
       
       
@@ -577,7 +577,7 @@ RTCError AssignCodecIdsAndLinkRed(PayloadTypeSuggester* pt_suggester,
     
     if (absl::EqualsIgnoreCase(codec.name, kOpusCodecName) &&
         codec_payload_type == Codec::kIdNotSet) {
-      codec_payload_type = codec.id;
+      codec_payload_type = codec.id.value();
     }
   }
   if (codec_payload_type != Codec::kIdNotSet) {

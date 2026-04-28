@@ -11,35 +11,64 @@
 #ifndef API_PAYLOAD_TYPE_H_
 #define API_PAYLOAD_TYPE_H_
 
-#include <cstdint>
+#include <optional>
 
 #include "absl/strings/str_format.h"
 #include "rtc_base/strong_alias.h"
 
 namespace webrtc {
 
-class PayloadType : public StrongAlias<class PayloadTypeTag, uint8_t> {
+class PayloadType : public StrongAlias<class PayloadTypeTag, int> {
  public:
   
+  PayloadType() : StrongAlias(-1) {}
   
-  PayloadType(uint8_t pt) { value_ = pt; }                
-  constexpr operator uint8_t() const& { return value_; }  
-  static bool IsValid(PayloadType id, bool rtcp_mux) {
+  
+  constexpr PayloadType(int pt) : StrongAlias(pt) {  
     
     
     
-    if (rtcp_mux && (id > 63 && id < 96)) {
+    
+    
+    
+    
+  }
+
+  constexpr operator int() const& { return value(); }  
+
+  
+  
+  static std::optional<PayloadType> Create(int pt) {
+    if (pt < 0 || pt > 127) {
+      return std::nullopt;
+    }
+    return PayloadType(pt);
+  }
+  
+  
+  static constexpr PayloadType NotSet() { return PayloadType(Internal{}, -1); }
+  bool Valid(bool rtcp_mux = false) {
+    
+    
+    
+    if (rtcp_mux && (value() > 63 && value() < 96)) {
       return false;
     }
-#if defined(WEBRTC_MOZILLA_BUILD)
-    return id <= 127; 
-#else
-    return id >= 0 && id <= 127;
-#endif
+    return value() >= 0 && value() <= 127;
   }
+  
+  static bool IsValid(PayloadType id, bool rtcp_mux) {
+    return id.Valid(rtcp_mux);
+  }
+  bool IsSet() { return value() >= 0; }
+
+ private:
+  class Internal {};
+  
+  explicit constexpr PayloadType(Internal tag, int pt) : StrongAlias(pt) {}
   template <typename Sink>
   friend void AbslStringify(Sink& sink, const PayloadType pt) {
-    absl::Format(&sink, "%d", pt.value_);
+    absl::Format(&sink, "%d", pt.value());
   }
 };
 

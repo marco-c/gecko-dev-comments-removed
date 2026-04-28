@@ -68,6 +68,13 @@ class StrongAlias {
 
  protected:
   UnderlyingType value_;
+
+ private:
+  
+  template <typename H>
+  friend H AbslHashValue(H h, const StrongAlias& st) {
+    return H::combine(std::move(h), st.value_);
+  }
 };
 
 }  
