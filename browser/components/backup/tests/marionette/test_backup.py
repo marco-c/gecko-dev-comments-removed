@@ -31,6 +31,9 @@ class BackupTest(MarionetteTestCase):
             
             "browser.sessionstore.resume_from_crash": True,
             "browser.newtabpage.activity-stream.testing.shouldInitializeFeeds": True,
+            
+            
+            "browser.newtabpage.activity-stream.newtabWallpapers.enabled": False,
         })
 
         self.marionette.set_context("chrome")
@@ -848,7 +851,7 @@ class BackupTest(MarionetteTestCase):
           (async () => {
             let feed = AboutNewTab.activityStream.store.feeds.get("feeds.wallpaperfeed");
             let wallpaperFile = await File.createFromNsIFile(await IOUtils.getFile(wallpaperPath));
-            await feed.wallpaperUpload(wallpaperFile);
+            await feed.wallpaperUpload(wallpaperFile, "light");
             Services.prefs.setStringPref("browser.newtabpage.activity-stream.newtabWallpapers.wallpaper", "custom");
           })().then(outerResolve);
         """,

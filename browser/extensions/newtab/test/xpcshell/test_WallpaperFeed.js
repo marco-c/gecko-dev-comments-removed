@@ -137,11 +137,11 @@ add_task(async function test_onAction_WALLPAPER_UPLOAD() {
 
   feed.onAction({
     type: actionTypes.WALLPAPER_UPLOAD,
-    data: { file: fileData },
+    data: { file: fileData, theme: "light" },
   });
 
   Assert.ok(feed.wallpaperUpload.calledOnce);
-  Assert.ok(feed.wallpaperUpload.calledWith(fileData));
+  Assert.ok(feed.wallpaperUpload.calledWith(fileData, "light"));
 
   Services.prefs.clearUserPref(PREF_WALLPAPERS_ENABLED);
 
@@ -156,12 +156,6 @@ add_task(async function test_Wallpaper_Upload() {
     "File uploaded via WallpaperFeed.wallpaperUpload should match the saved file"
   );
 
-  const fakeWorker = {
-    post: sandbox.stub().resolves("light"),
-    terminate: sandbox.stub(),
-  };
-
-  sandbox.stub(feed, "BasePromiseWorker").callsFake(() => fakeWorker);
   
   const testUploadContents = "custom-wallpaper-upload-test";
   const testFileName = "test-wallpaper.jpg";
@@ -176,7 +170,7 @@ add_task(async function test_Wallpaper_Upload() {
   let testFileToUpload = await File.createFromNsIFile(testNsIFile);
 
   
-  let writtenFile = await feed.wallpaperUpload(testFileToUpload);
+  let writtenFile = await feed.wallpaperUpload(testFileToUpload, "light");
 
   
   Assert.ok(await IOUtils.exists(writtenFile));
@@ -304,13 +298,6 @@ add_task(async function test_Wallpaper_protocolURI() {
   let sandbox = sinon.createSandbox();
   let feed = getWallpaperFeedForTest(sandbox);
 
-  const fakeWorker = {
-    post: sandbox.stub().resolves("light"),
-    terminate: sandbox.stub(),
-  };
-
-  sandbox.stub(feed, "BasePromiseWorker").callsFake(() => fakeWorker);
-
   
   
   feed.wallpaperClient = {
@@ -332,7 +319,7 @@ add_task(async function test_Wallpaper_protocolURI() {
   let testFileToUpload = await File.createFromNsIFile(testNsIFile);
 
   
-  let writtenFile = await feed.wallpaperUpload(testFileToUpload);
+  let writtenFile = await feed.wallpaperUpload(testFileToUpload, "light");
 
   Assert.ok(
     feed.store.dispatch.calledWith(
