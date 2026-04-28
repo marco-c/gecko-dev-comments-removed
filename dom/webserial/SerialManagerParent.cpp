@@ -5,17 +5,14 @@
 #include "mozilla/dom/SerialManagerParent.h"
 
 #include "SerialLogging.h"
-#include "SerialPermissionRequest.h"
 #include "TestSerialPlatformService.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/PSerialPort.h"
-#include "mozilla/dom/Serial.h"
 #include "mozilla/dom/SerialPlatformService.h"
 #include "mozilla/dom/SerialPortParent.h"
-#include "mozilla/dom/WindowGlobalParent.h"
 #include "mozilla/ipc/Endpoint.h"
 #include "nsIObserverService.h"
 #include "nsThreadUtils.h"
@@ -161,227 +158,69 @@ void SerialManagerParent::Init(uint64_t aBrowserId) {
   }
 }
 
-
-
-
-
-
-static void ApplyPortFilters(nsTArray<IPCSerialPortInfo>& aPorts,
-                             const nsTArray<IPCSerialPortFilter>& aFilters) {
-  if (aFilters.IsEmpty()) {
-    return;
-  }
-
-  aPorts.RemoveElementsBy([&](const IPCSerialPortInfo& port) {
-    for (const auto& filter : aFilters) {
-      
-      
-      bool vendorMatches =
-          filter.usbVendorId().isNothing() ||
-          (port.usbVendorId() &&
-           port.usbVendorId().value() == filter.usbVendorId().value());
-
-      
-      
-      bool productMatches =
-          filter.usbProductId().isNothing() ||
-          (port.usbProductId() &&
-           port.usbProductId().value() == filter.usbProductId().value());
-
-      
-      
-      bool bluetoothMatches = true;
-      if (filter.bluetoothServiceClassId().isSome()) {
-        if (port.bluetoothServiceClassId().isNothing()) {
-          bluetoothMatches = false;
-        } else {
-          bluetoothMatches = port.bluetoothServiceClassId().value() ==
-                             filter.bluetoothServiceClassId().value();
-        }
-      }
-
-      if (vendorMatches && productMatches && bluetoothMatches) {
-        return false;
-      }
-    }
-    return true;
-  });
-}
-
-mozilla::ipc::Endpoint<PSerialPortChild>
-SerialManagerParent::CreateAndBindPortActor(const nsAString& aPortId) {
+mozilla::ipc::IPCResult SerialManagerParent::RecvGetAvailablePorts(
+    GetAvailablePortsResolver&& aResolver) {
   AssertIsOnMainThread();
-
-  mozilla::ipc::Endpoint<PSerialPortParent> parentEndpoint;
-  mozilla::ipc::Endpoint<PSerialPortChild> childEndpoint;
-  if (NS_WARN_IF(NS_FAILED(
-          PSerialPort::CreateEndpoints(&parentEndpoint, &childEndpoint)))) {
-    return {};
-  }
-
-  RefPtr<SerialPlatformService> service = SerialPlatformService::GetInstance();
-  RefPtr<SerialDeviceChangeProxy> proxy = mProxy;
-  if (!service || !proxy) {
-    return {};
-  }
-
-  service->IOThread()->Dispatch(NS_NewRunnableFunction(
-      "SerialPortParent::Bind",
-      [portId = nsString(aPortId), browserId = mBrowserId, proxy = proxy,
-       endpoint = std::move(parentEndpoint)]() mutable {
-        auto actor = MakeRefPtr<SerialPortParent>(portId, browserId, proxy);
-        if (!endpoint.Bind(actor)) {
-          MOZ_LOG(gWebSerialLog, LogLevel::Error,
-                  ("SerialPortParent::Bind failed"));
-          return;
-        }
-        proxy->AddPortActor(actor);
-      }));
-
-  return childEndpoint;
-}
-
-mozilla::ipc::IPCResult SerialManagerParent::RecvRequestPort(
-    nsTArray<IPCSerialPortFilter>&& aFilters, bool aAutoselect,
-    RequestPortResolver&& aResolver) {
-  AssertIsOnMainThread();
-
-  auto rejectInternal = MakeScopeExit([&aResolver]() {
-    IPCRequestPortResult result;
-    result.reason() = RequestPortReason::InternalError;
-    aResolver(std::make_tuple(std::move(result),
-                              mozilla::ipc::Endpoint<PSerialPortChild>()));
-  });
-
-  if (!StaticPrefs::dom_webserial_enabled()) {
-    return IPC_OK();
-  }
-
-  if (aAutoselect && !StaticPrefs::dom_webserial_testing_enabled()) {
-    return IPC_OK();
-  }
-
-  if (mChooserRequestInFlight) {
-    
-    return IPC_OK();
-  }
-
   RefPtr<SerialPlatformService> platformService =
       SerialPlatformService::GetInstance();
   if (!platformService) {
+    aResolver(nsTArray<IPCSerialPortInfo>());
     return IPC_OK();
   }
 
-  
-  rejectInternal.release();
-
-  nsCString unusedFailureReason;
-  for (const auto& filter : aFilters) {
-    if (!Serial::ValidatePortFilter(
-            filter.usbVendorId().isSome(), filter.usbProductId().isSome(),
-            filter.bluetoothServiceClassId().isSome(), unusedFailureReason) ||
-        (filter.bluetoothServiceClassId().isSome() &&
-         !Serial::IsValidBluetoothUUID(
-             filter.bluetoothServiceClassId().value()))) {
-      return IPC_FAIL(this, "invalid filter");
-    }
-  }
-
-  
-  
-  
-  mChooserRequestInFlight = true;
-
-  
-  
-  
-  
   nsCOMPtr<nsISerialEventTarget> ioThread = platformService->IOThread();
 
-  InvokeAsync(
-      ioThread, __func__,
-      [service = RefPtr{platformService}] {
-        SerialPortList enumerated;
-        nsresult rv = service->EnumeratePorts(enumerated);
-        if (NS_WARN_IF(NS_FAILED(rv))) {
-          return MozPromise<SerialPortList, nsresult, true>::CreateAndReject(
-              rv, __func__);
+  ioThread->Dispatch(NS_NewRunnableFunction(
+      "SerialManagerParent::RecvGetAvailablePorts",
+      [service = RefPtr{platformService},
+       resolver = std::move(aResolver)]() mutable {
+        SerialPortList result;
+        if (NS_WARN_IF(NS_FAILED(service->EnumeratePorts(result)))) {
+          result.Clear();
         }
-        return MozPromise<SerialPortList, nsresult, true>::CreateAndResolve(
-            std::move(enumerated), __func__);
-      })
-      ->Then(
-          GetCurrentSerialEventTarget(), __func__,
-          [self = RefPtr{this}, filters = std::move(aFilters), aAutoselect,
-           resolver = std::move(aResolver)](
-              MozPromise<SerialPortList, nsresult, true>::ResolveOrRejectValue&&
-                  aValue) mutable {
-            if (aValue.IsReject()) {
-              self->mChooserRequestInFlight = false;
-              IPCRequestPortResult result;
-              result.reason() = RequestPortReason::InternalError;
-              resolver(
-                  std::make_tuple(std::move(result),
-                                  mozilla::ipc::Endpoint<PSerialPortChild>()));
-              return;
-            }
-            SerialPortList ports = std::move(aValue.ResolveValue());
-            ApplyPortFilters(ports, filters);
-            self->StartChooserRequest(aAutoselect, std::move(ports),
-                                      std::move(resolver));
-          });
+
+        NS_DispatchToMainThread(NS_NewRunnableFunction(
+            "SerialManagerParent::RecvGetAvailablePorts::Resolve",
+            [result = std::move(result),
+             resolver = std::move(resolver)]() mutable {
+              resolver(std::move(result));
+            }));
+      }));
 
   return IPC_OK();
 }
 
-void SerialManagerParent::StartChooserRequest(
-    bool aAutoselect, nsTArray<IPCSerialPortInfo>&& aPorts,
-    RequestPortResolver&& aResolver) {
+mozilla::ipc::IPCResult SerialManagerParent::RecvCreatePort(
+    const nsString& aPortId,
+    mozilla::ipc::Endpoint<PSerialPortParent>&& aEndpoint) {
   AssertIsOnMainThread();
-  
-  MOZ_ASSERT(mChooserRequestInFlight);
 
-  auto rejectInternal = MakeScopeExit([this, &aResolver]() {
-    mChooserRequestInFlight = false;
-    IPCRequestPortResult result;
-    result.reason() = RequestPortReason::InternalError;
-    aResolver(std::make_tuple(std::move(result),
-                              mozilla::ipc::Endpoint<PSerialPortChild>()));
-  });
-
-  if (!CanSend()) {
-    return;
+  if (!aEndpoint.IsValid()) {
+    return IPC_FAIL(this, "Invalid parent endpoint in RecvCreatePort");
+  }
+  RefPtr proxy = mProxy;
+  if (!mProxy) {
+    return IPC_OK();
   }
 
-  auto request = MakeRefPtr<SerialPermissionRequest>(
-      static_cast<WindowGlobalParent*>(Manager()), aAutoselect,
-      std::move(aPorts));
-  rejectInternal.release();
-
-  request->Run()->Then(
-      GetMainThreadSerialEventTarget(), __func__,
-      [self = RefPtr{this}, resolver = std::move(aResolver)](
-          SerialChooserPromise::ResolveOrRejectValue&& aValue) mutable {
-        self->mChooserRequestInFlight = false;
-
-        IPCRequestPortResult result;
-        mozilla::ipc::Endpoint<PSerialPortChild> childEndpoint;
-
-        if (aValue.IsResolve()) {
-          const IPCSerialPortInfo& port = aValue.ResolveValue();
-          childEndpoint = self->CreateAndBindPortActor(port.id());
-          if (childEndpoint.IsValid()) {
-            result.reason() = RequestPortReason::Granted;
-            result.port() = Some(port);
-          } else {
-            result.reason() = RequestPortReason::InternalError;
+  
+  RefPtr<SerialPlatformService> service = SerialPlatformService::GetInstance();
+  if (service) {
+    service->IOThread()->Dispatch(NS_NewRunnableFunction(
+        "SerialPortParent::Bind",
+        [portId = nsString(aPortId), browserId = mBrowserId,
+         proxy = std::move(proxy), endpoint = std::move(aEndpoint)]() mutable {
+          auto actor = MakeRefPtr<SerialPortParent>(portId, browserId, proxy);
+          if (!endpoint.Bind(actor)) {
+            MOZ_LOG(gWebSerialLog, LogLevel::Error,
+                    ("SerialPortParent::Bind failed"));
+            return;
           }
-        } else {
-          result.reason() = aValue.RejectValue();
-        }
+          proxy->AddPortActor(actor);
+        }));
+  }
 
-        resolver(std::make_tuple(result, std::move(childEndpoint)));
-      });
+  return IPC_OK();
 }
 
 template <typename TWork, typename TResolver>
