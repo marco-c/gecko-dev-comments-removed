@@ -22,6 +22,7 @@
 #include "nsISupports.h"
 #include "nsIRFPService.h"
 #include "nsStringFwd.h"
+#include <queue>
 
 
 
