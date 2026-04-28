@@ -11,6 +11,7 @@ use super::{
     component::{ColorComponent, ColorComponentType},
     AbsoluteColor,
 };
+use crate::derives::*;
 use crate::{
     parser::{Parse, ParserContext},
     values::{
@@ -145,7 +146,9 @@ fn parse_color_function<'i, 't>(
         
         
         
-        let abs = color.map_origin_color(|_| Some(AbsoluteColor::TRANSPARENT_BLACK));
+        let abs = color
+            .map_origin_color(|_| Ok(AbsoluteColor::TRANSPARENT_BLACK))
+            .unwrap();
         if abs.resolve_to_absolute().is_err() {
             return Err(arguments.new_custom_error(StyleParseErrorKind::UnspecifiedError));
         }

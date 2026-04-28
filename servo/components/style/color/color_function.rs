@@ -12,6 +12,7 @@ use super::{
     parsing::{NumberOrAngleComponent, NumberOrPercentageComponent},
     AbsoluteColor, ColorFlags, ColorSpace,
 };
+use crate::derives::*;
 use crate::values::{
     computed::color::Color as ComputedColor, generics::Optional, normalize,
     specified::color::Color as SpecifiedColor,
@@ -370,18 +371,25 @@ impl ColorFunction<SpecifiedColor> {
     
     pub fn resolve_to_absolute(&self) -> Result<AbsoluteColor, ()> {
         
-        let resolvable = self.map_origin_color(|o| o.resolve_to_absolute());
-        resolvable.resolve_to_absolute()
+        self.map_origin_color(|o| o.resolve_to_absolute())?
+            .resolve_to_absolute()
     }
 }
 
 impl<Color> ColorFunction<Color> {
     
-    pub fn map_origin_color<U>(&self, f: impl FnOnce(&Color) -> Option<U>) -> ColorFunction<U> {
+    pub fn map_origin_color<U>(
+        &self,
+        f: impl FnOnce(&Color) -> Result<U, ()>,
+    ) -> Result<ColorFunction<U>, ()> {
         macro_rules! map {
             ($f:ident, $o:expr, $c0:expr, $c1:expr, $c2:expr, $alpha:expr) => {{
                 ColorFunction::$f(
-                    $o.as_ref().and_then(f).into(),
+                    match $o.as_ref() {
+                        Some(c) => Some(f(c)?),
+                        None => None,
+                    }
+                    .into(),
                     $c0.clone(),
                     $c1.clone(),
                     $c2.clone(),
@@ -389,7 +397,7 @@ impl<Color> ColorFunction<Color> {
                 )
             }};
         }
-        match self {
+        Ok(match self {
             ColorFunction::Rgb(o, c0, c1, c2, alpha) => map!(Rgb, o, c0, c1, c2, alpha),
             ColorFunction::Hsl(o, c0, c1, c2, alpha) => map!(Hsl, o, c0, c1, c2, alpha),
             ColorFunction::Hwb(o, c0, c1, c2, alpha) => map!(Hwb, o, c0, c1, c2, alpha),
@@ -398,14 +406,18 @@ impl<Color> ColorFunction<Color> {
             ColorFunction::Oklab(o, c0, c1, c2, alpha) => map!(Oklab, o, c0, c1, c2, alpha),
             ColorFunction::Oklch(o, c0, c1, c2, alpha) => map!(Oklch, o, c0, c1, c2, alpha),
             ColorFunction::Color(o, c0, c1, c2, alpha, color_space) => ColorFunction::Color(
-                o.as_ref().and_then(f).into(),
+                match o.as_ref() {
+                    Some(c) => Some(f(c)?),
+                    None => None,
+                }
+                .into(),
                 c0.clone(),
                 c1.clone(),
                 c2.clone(),
                 alpha.clone(),
                 color_space.clone(),
             ),
-        }
+        })
     }
 }
 
@@ -413,7 +425,9 @@ impl ColorFunction<ComputedColor> {
     
     pub fn resolve_to_absolute(&self, current_color: &AbsoluteColor) -> AbsoluteColor {
         
-        let resolvable = self.map_origin_color(|o| Some(o.resolve_to_absolute(current_color)));
+        let resolvable = self
+            .map_origin_color(|o| Ok(o.resolve_to_absolute(current_color)))
+            .unwrap();
         match resolvable.resolve_to_absolute() {
             Ok(color) => color,
             Err(..) => {

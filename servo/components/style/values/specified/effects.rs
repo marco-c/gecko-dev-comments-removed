@@ -4,6 +4,7 @@
 
 
 
+use crate::derives::*;
 use crate::parser::{Parse, ParserContext};
 use crate::values::computed::effects::BoxShadow as ComputedBoxShadow;
 use crate::values::computed::effects::SimpleShadow as ComputedSimpleShadow;
@@ -29,7 +30,7 @@ use crate::values::specified::{Angle, NonNegativeNumberOrPercentage, Number, Num
 #[cfg(feature = "servo")]
 use crate::values::Impossible;
 use crate::Zero;
-use cssparser::{BasicParseErrorKind, Parser, Token};
+use cssparser::{match_ignore_ascii_case, BasicParseErrorKind, Parser, Token};
 use style_traits::{ParseError, StyleParseErrorKind, ValueParseErrorKind};
 
 
@@ -241,15 +242,11 @@ impl Filter {
             ))),
             Filter::DropShadow(ref shadow) => {
                 if cfg!(feature = "gecko") {
-                    let color = match shadow
+                    let color = shadow
                         .color
                         .as_ref()
                         .unwrap_or(&Color::currentcolor())
-                        .to_computed_color(None)
-                    {
-                        Some(c) => c,
-                        None => return Err(()),
-                    };
+                        .to_computed_color(None)?;
 
                     let horizontal = ComputedCSSPixelLength::new(
                         shadow
