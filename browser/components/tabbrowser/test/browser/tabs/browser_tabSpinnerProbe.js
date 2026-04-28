@@ -1,7 +1,22 @@
 "use strict";
 
+
+
+
 const MIN_HANG_TIME = 500; 
 const MAX_HANG_TIME = 5 * 1000; 
+
+
+
+
+
+
+
+function sum(aArray) {
+  return aArray.reduce(function (previousValue, currentValue) {
+    return previousValue + currentValue;
+  });
+}
 
 
 
@@ -27,22 +42,16 @@ function hangContentProcess(browser, aMs) {
   });
 }
 
-add_setup(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["test.wait300msAfterTabSwitch", true],
-      ["dom.ipc.processCount", 1],
-      
-      
-      
-      
-      
-      ["browser.tabs.remote.force-paint", false],
-    ],
-  });
-});
 
-add_task(async function test_spinner_visible() {
+
+
+
+
+
+
+async function testProbe(aProbe) {
+  info(`Testing probe: ${aProbe}`);
+  let histogram = Services.telemetry.getHistogramById(aProbe);
   let delayTime = MIN_HANG_TIME + 1; 
 
   
@@ -62,12 +71,34 @@ add_task(async function test_spinner_visible() {
   await BrowserTestUtils.switchTab(gBrowser, origTab);
 
   let tabHangPromise = hangContentProcess(hangBrowser, delayTime);
-  Services.fog.testResetFOG();
+  histogram.clear();
   let hangTabSwitch = BrowserTestUtils.switchTab(gBrowser, hangTab);
   await tabHangPromise;
   await hangTabSwitch;
 
-  Assert.greater(Glean.browserTabswitch.spinnerVisible.testGetValue().sum, 0);
-
+  
+  let snapshot = histogram.snapshot();
   BrowserTestUtils.removeTab(hangTab);
+  Assert.greater(
+    sum(Object.values(snapshot.values)),
+    0,
+    `Spinner probe should now have a value in some bucket`
+  );
+}
+
+add_setup(async function () {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["test.wait300msAfterTabSwitch", true],
+      ["dom.ipc.processCount", 1],
+      
+      
+      
+      
+      
+      ["browser.tabs.remote.force-paint", false],
+    ],
+  });
 });
+
+add_task(testProbe.bind(null, "FX_TAB_SWITCH_SPINNER_VISIBLE_MS"));
