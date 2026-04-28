@@ -2259,9 +2259,6 @@ pref("browser.smartwindow.conversation.logLevel", "Error");
 pref("browser.smartwindow.smartbarMentions.loglevel", "Error");
 
 
-pref("browser.smartwindow.nova.enabled", false);
-
-
 pref("security.mixed_content.block_active_content", true);
 
 
