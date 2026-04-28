@@ -996,11 +996,9 @@ var gBrowserInit = {
       } else {
         
         
-        loadOneOrMoreURIs(
-          uriToLoad,
-          Services.scriptSecurityManager.getSystemPrincipal(),
-          null
-        );
+        loadOneOrMoreURIs(uriToLoad, {
+          newWindowLoad: true,
+        });
       }
     });
   },

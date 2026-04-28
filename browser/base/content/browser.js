@@ -2,7 +2,6 @@
 
 
 
-
 var { XPCOMUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
 );
@@ -29,6 +28,8 @@ ChromeUtils.defineESModuleGetters(this, {
   Color: "resource://gre/modules/Color.sys.mjs",
   ContentAnalysis:
     "moz-src:///browser/components/contentanalysis/content/ContentAnalysis.sys.mjs",
+  ContentSharingUtils:
+    "resource:///modules/contentsharing/ContentSharingUtils.sys.mjs",
   ContextualIdentityService:
     "resource://gre/modules/ContextualIdentityService.sys.mjs",
   CustomizableUI:
@@ -1296,7 +1297,13 @@ function HandleAppCommandEvent(evt) {
   evt.preventDefault();
 }
 
-function loadOneOrMoreURIs(aURIString, aTriggeringPrincipal, aPolicyContainer) {
+function loadOneOrMoreURIs(
+  aURIString,
+  {
+    triggeringPrincipal = Services.scriptSecurityManager.getSystemPrincipal(),
+    newWindowLoad = false,
+  } = {}
+) {
   
   if (window.location.href != AppConstants.BROWSER_CHROME_URL) {
     window.openDialog(
@@ -1314,8 +1321,8 @@ function loadOneOrMoreURIs(aURIString, aTriggeringPrincipal, aPolicyContainer) {
     gBrowser.loadTabs(aURIString.split("|"), {
       inBackground: false,
       replace: true,
-      triggeringPrincipal: aTriggeringPrincipal,
-      policyContainer: aPolicyContainer,
+      triggeringPrincipal,
+      newWindowLoad,
     });
   } catch (e) {}
 }

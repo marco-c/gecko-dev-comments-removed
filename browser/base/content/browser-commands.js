@@ -2,7 +2,6 @@
 
 
 
-
 "use strict";
 
 var kSkipCacheFlags =
@@ -83,6 +82,10 @@ var BrowserCommands = {
     return true;
   },
 
+  duplicateTab() {
+    duplicateTabIn(gBrowser.selectedTab, "tab");
+  },
+
   reloadOrDuplicate(aEvent) {
     aEvent = BrowserUtils.getRootEvent(aEvent);
     const accelKeyPressed =
@@ -147,11 +150,7 @@ var BrowserCommands = {
         if (isInitialPage(homePage)) {
           gBrowser.selectedBrowser.initialPageLoadedFromUserAction = homePage;
         }
-        loadOneOrMoreURIs(
-          homePage,
-          Services.scriptSecurityManager.getSystemPrincipal(),
-          null
-        );
+        loadOneOrMoreURIs(homePage);
         if (isBlankPageURL(homePage)) {
           gURLBar.select();
         } else {
