@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef js_Value_h
 #define js_Value_h
 
@@ -839,12 +837,13 @@ class Value {
   }
 
   
+  
+  
+  
+  
   bool isMagicNoReleaseCheck(JSWhyMagic why) const {
-    if (!isMagic()) {
-      return false;
-    }
-    MOZ_ASSERT(whyMagic() == why);
-    return true;
+    MOZ_ASSERT_IF(isMagic(), whyMagic() == why);
+    return asBits_ == bitsFromTagAndPayload(JSVAL_TAG_MAGIC, uint32_t(why));
   }
 
   JS::TraceKind traceKind() const {
