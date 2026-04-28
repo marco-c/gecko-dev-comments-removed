@@ -948,7 +948,7 @@ class JSTerm extends Component {
       ? "column"
       : "ch";
     const isAddedText =
-      from.line === to.line && from[col] === to[col] && origin === "+input";
+      from.line === to.line && from[col] == to[col] && origin === "+input";
 
     
     
