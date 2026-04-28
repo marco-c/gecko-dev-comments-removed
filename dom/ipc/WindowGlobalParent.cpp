@@ -1127,11 +1127,9 @@ already_AddRefed<mozilla::dom::Promise> WindowGlobalParent::DrawSnapshot(
   return promise.forget();
 }
 
-void WindowGlobalParent::DrawSnapshotInternal(gfx::CrossProcessPaint* aPaint,
-                                              const Maybe<IntRect>& aRect,
-                                              float aScale,
-                                              nscolor aBackgroundColor,
-                                              uint32_t aFlags) {
+void WindowGlobalParent::DrawSnapshotInternal(
+    gfx::CrossProcessPaint* aPaint, const Maybe<IntRect>& aRect, float aScale,
+    nscolor aBackgroundColor, gfx::CrossProcessPaintFlags aFlags) {
   auto promise = SendDrawSnapshot(aRect, aScale, aBackgroundColor, aFlags);
 
   RefPtr<gfx::CrossProcessPaint> paint(aPaint);
@@ -1419,18 +1417,15 @@ WindowGlobalParent::RecvUpdateActivePeerConnectionStatus(bool aIsAdded) {
   return IPC_OK();
 }
 
-mozilla::ipc::IPCResult
-WindowGlobalParent::RecvUpdateFullscreenKeyboardLockStatus(bool aIsEnabled) {
+void WindowGlobalParent::UpdateFullscreenKeyboardLockStatus(
+    FullscreenKeyboardLock aStatus) {
   auto* bc = GetBrowsingContext();
   if (auto* topChromeBc = bc ? bc->TopCrossChromeBoundary() : nullptr;
       topChromeBc != bc) {
     if (auto* doc = topChromeBc->GetExtantDocument()) {
-      doc->SetFullscreenKeyboardLockStatus(aIsEnabled
-                                               ? FullscreenKeyboardLock::Browser
-                                               : FullscreenKeyboardLock::None);
+      doc->SetFullscreenKeyboardLockStatus(aStatus);
     }
   }
-  return IPC_OK();
 }
 
 mozilla::ipc::IPCResult WindowGlobalParent::RecvSetSingleChannelId(

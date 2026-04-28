@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_WindowGlobalChild_h
 #define mozilla_dom_WindowGlobalChild_h
 
@@ -179,7 +177,7 @@ class WindowGlobalChild final : public WindowGlobalActor,
   mozilla::ipc::IPCResult RecvDrawSnapshot(const Maybe<IntRect>& aRect,
                                            const float& aScale,
                                            const nscolor& aBackgroundColor,
-                                           const uint32_t& aFlags,
+                                           const CrossProcessPaintFlags& aFlags,
                                            DrawSnapshotResolver&& aResolve);
 
   mozilla::ipc::IPCResult RecvDispatchSecurityPolicyViolation(

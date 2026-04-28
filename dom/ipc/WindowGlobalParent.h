@@ -300,7 +300,8 @@ class WindowGlobalParent final : public WindowContext,
 
   void DrawSnapshotInternal(gfx::CrossProcessPaint* aPaint,
                             const Maybe<IntRect>& aRect, float aScale,
-                            nscolor aBackgroundColor, uint32_t aFlags);
+                            nscolor aBackgroundColor,
+                            gfx::CrossProcessPaintFlags aFlags);
 
   
   mozilla::ipc::IPCResult RecvShare(IPCWebShareData&& aData,
