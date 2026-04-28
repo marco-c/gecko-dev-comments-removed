@@ -29,7 +29,9 @@ type nsIID = nsIXPCComponents_Interfaces[keyof nsIXPCComponents_Interfaces];
 type nsQIResult<iid> = iid extends { prototype: infer U } ? U : never;
 
 
-type Constants<T> = { [K in keyof T as IfConst<K, T[K]>]: T[K] };
+type Constants<T> = {
+  [K in keyof T as IfConst<K, T[K]>]-?: Exclude<T[K], undefined>;
+};
 
 
 type IfConst<K, T> = T extends number ? (number extends T ? never : K) : never;
