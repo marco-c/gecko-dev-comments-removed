@@ -1094,7 +1094,6 @@ impl TileCacheInstance {
                 frame_context.spatial_tree,
                 &mut frame_state.frame_gpu_data.f32,
                 frame_state.resource_cache,
-                frame_context.global_device_pixel_scale,
                 &surface.culling_rect,
                 &mut frame_state.data_stores.clip,
                 frame_state.rg_builder,
@@ -1120,8 +1119,10 @@ impl TileCacheInstance {
                             .get_instance_from_range(&clip_chain.clips_range, i);
                         let clip_node = &frame_state.data_stores.clip[clip_instance.handle];
 
-                        if let ClipItemKind::RoundedRectangle { rect, radius, mode } = clip_node.item.kind {
+                        if let ClipItemKind::RoundedRectangle { size, radius, mode } = clip_node.item.kind {
                             assert_eq!(mode, ClipMode::Clip);
+
+                            let rect = LayoutRect::from_origin_and_size(clip_instance.clip_rect_origin, size);
 
                             
                             
@@ -1548,7 +1549,7 @@ impl TileCacheInstance {
                             let clip_instance = clip_store.get_instance_from_range(&prim_clip_chain.clips_range, 0);
                             let clip_node = &data_stores.clip[clip_instance.handle];
 
-                            if let ClipItemKind::RoundedRectangle { ref radius, mode: ClipMode::Clip, rect, .. } = clip_node.item.kind {
+                            if let ClipItemKind::RoundedRectangle { ref radius, mode: ClipMode::Clip, size, .. } = clip_node.item.kind {
                                 let max_corner_width = radius.top_left.width
                                                             .max(radius.bottom_left.width)
                                                             .max(radius.top_right.width)
@@ -1558,8 +1559,8 @@ impl TileCacheInstance {
                                                             .max(radius.top_right.height)
                                                             .max(radius.bottom_right.height);
 
-                                if max_corner_width <= 0.5 * rect.size().width &&
-                                    max_corner_height <= 0.5 * rect.size().height {
+                                if max_corner_width <= 0.5 * size.width &&
+                                    max_corner_height <= 0.5 * size.height {
                                     is_supported_rounded_rect = true;
                                 }
                             }
@@ -1886,7 +1887,9 @@ impl TileCacheInstance {
 
             let clip_instance = clip_store.get_instance_from_range(&prim_clip_chain.clips_range, 0);
             let clip_node = &data_stores.clip[clip_instance.handle];
-            if let ClipItemKind::RoundedRectangle { radius, mode: ClipMode::Clip, rect, .. } = clip_node.item.kind {
+            if let ClipItemKind::RoundedRectangle { radius, mode: ClipMode::Clip, size, .. } = clip_node.item.kind {
+                let rect = LayoutRect::from_origin_and_size(clip_instance.clip_rect_origin, size);
+
                 
                 
                 
@@ -2550,8 +2553,7 @@ impl TileCacheInstance {
                     generation: resource_cache.get_image_generation(border_data.request.key),
                 });
             }
-            PrimitiveInstanceKind::LinearGradient { data_handle, .. }
-            | PrimitiveInstanceKind::CachedLinearGradient { data_handle, .. } => {
+            PrimitiveInstanceKind::LinearGradient { data_handle, .. } => {
                 let gradient_data = &data_stores.linear_grad[data_handle];
                 if gradient_data.stops_opacity.is_opaque
                     && gradient_data.tile_spacing == LayoutSize::zero()
@@ -2769,10 +2771,15 @@ impl TileCacheInstance {
         for clip_instance in clip_instances {
             let clip = &data_stores.clip[clip_instance.handle];
             let clip_local_rect = match clip.item.kind {
-                ClipItemKind::Rectangle { rect, .. } => Some(rect),
-                ClipItemKind::RoundedRectangle { rect, .. } => Some(rect),
-                ClipItemKind::Image { rect, .. } => Some(rect),
-                ClipItemKind::BoxShadow { .. } => None,
+                ClipItemKind::Rectangle { size, .. } => {
+                    Some(LayoutRect::from_origin_and_size(clip_instance.clip_rect_origin, size))
+                }
+                ClipItemKind::RoundedRectangle { size, .. } => {
+                    Some(LayoutRect::from_origin_and_size(clip_instance.clip_rect_origin, size))
+                }
+                ClipItemKind::Image { size, .. } => {
+                    Some(LayoutRect::from_origin_and_size(clip_instance.clip_rect_origin, size))
+                }
             };
             let clip_scratch = match clip_local_rect {
                 Some(rect) => self.corners_cache.compute_to_scratch(

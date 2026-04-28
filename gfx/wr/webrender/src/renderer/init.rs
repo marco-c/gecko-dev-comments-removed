@@ -206,11 +206,6 @@ pub struct WebRenderOptions {
     
     
     pub enable_debugger: bool,
-
-    
-    pub precise_linear_gradients: bool,
-    
-    pub use_quad_box_shadow: bool,
 }
 
 impl WebRenderOptions {
@@ -284,8 +279,6 @@ impl Default for WebRenderOptions {
             low_quality_pinch_zoom: false,
             max_shared_surface_size: 2048,
             enable_debugger: true,
-            precise_linear_gradients: false,
-            use_quad_box_shadow: true,
         }
     }
 }
@@ -565,8 +558,6 @@ pub fn create_webrender_instance(
         low_quality_pinch_zoom: options.low_quality_pinch_zoom,
         max_shared_surface_size: options.max_shared_surface_size,
         enable_dithering: options.enable_dithering,
-        precise_linear_gradients: options.precise_linear_gradients,
-        use_quad_box_shadow: options.use_quad_box_shadow,
     };
     info!("WR {:?}", config);
 

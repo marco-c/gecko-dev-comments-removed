@@ -7,7 +7,7 @@
 
 
 use api::{ColorF, DebugFlags};
-use api::{BoxShadowClipMode, ClipMode};
+use api::ClipMode;
 use crate::util::clamp_to_scale_factor;
 use crate::box_shadow::{BoxShadowCacheKey, BLUR_SAMPLE_SCALE};
 use crate::pattern::box_shadow::BoxShadowPatternData;
@@ -16,29 +16,28 @@ use euclid::Scale;
 use smallvec::SmallVec;
 use crate::composite::CompositorSurfaceKind;
 use crate::command_buffer::{CommandBufferIndex, PrimitiveCommand};
-use crate::image_tiling::{self, Repetition};
 use crate::border;
 use crate::clip::{ClipStore, ClipNodeRange};
 use crate::render_task_graph::RenderTaskId;
-use crate::renderer::{GpuBufferAddress, GpuBufferBuilderF, GpuBufferWriterF, GpuBufferDataF};
-use crate::spatial_tree::{SpatialNodeIndex, SpatialTree};
-use crate::clip::{ClipDataStore, ClipNodeFlags, ClipChainInstance, ClipItemKind};
+use crate::renderer::{GpuBufferAddress, GpuBufferWriterF};
+use crate::spatial_tree::SpatialNodeIndex;
+use crate::clip::{ClipNodeFlags, ClipChainInstance, ClipItemKind};
 use crate::frame_builder::{FrameBuildingContext, FrameBuildingState, PictureContext, PictureState};
-use crate::gpu_types::{BrushFlags, LinearGradientBrushData, BlurEdgeMode};
+use crate::gpu_types::{BrushFlags, BlurEdgeMode};
 use crate::render_target::RenderTargetKind;
 use crate::internal_types::{FastHashMap, PlaneSplitAnchor, Filter};
 use crate::picture::{ClusterFlags, PictureCompositeMode, PicturePrimitive};
 use crate::picture::{PrimitiveList, PrimitiveCluster, SurfaceIndex, SubpixelMode, Picture3DContext};
 use crate::tile_cache::{SliceId, TileCacheInstance};
 use crate::prim_store::*;
+use crate::prim_store::borders::NormalBorderScratch;
 use crate::quad::{self, QuadTransformState};
-use crate::prim_store::gradient::GradientGpuBlockBuilder;
 use crate::render_backend::DataStores;
 use crate::render_task_cache::RenderTaskCacheKeyKind;
 use crate::render_task_cache::{RenderTaskCacheKey, to_cache_size, RenderTaskParent};
 use crate::render_task::{EmptyTask, RenderTask, RenderTaskKind, MAX_BLUR_STD_DEVIATION};
 use crate::segment::SegmentBuilder;
-use crate::visibility::{compute_conservative_visible_rect, PrimitiveVisibility, VisibilityState};
+use crate::visibility::VisibilityState;
 
 
 const MAX_MASK_SIZE: i32 = 4096;
@@ -193,10 +192,6 @@ fn can_use_clip_chain_for_quad_path(
 
         match clip_node.item.kind {
             ClipItemKind::RoundedRectangle { .. } | ClipItemKind::Rectangle { .. } => {}
-            ClipItemKind::BoxShadow { .. } => {
-                
-                return false;
-            }
             ClipItemKind::Image { .. } => {
                 panic!("bug: image-masks not expected on rect/quads");
             }
@@ -259,6 +254,7 @@ fn prepare_prim_for_render(
             PrimitiveInstanceKind::Rectangle { .. }
             | PrimitiveInstanceKind::RadialGradient { .. }
             | PrimitiveInstanceKind::ConicGradient { .. }
+            | PrimitiveInstanceKind::LinearGradient { .. }
             => {
                 use_legacy_path = false;
             }
@@ -267,9 +263,6 @@ fn prepare_prim_for_render(
                     &data_stores.image[*data_handle].kind,
                     frame_state.resource_cache,
                 );
-            }
-            PrimitiveInstanceKind::LinearGradient { .. } => {
-                use_legacy_path = !frame_context.fb_config.precise_linear_gradients;
             }
             _ => {}
         };
@@ -571,21 +564,20 @@ fn prepare_interned_prim_for_render(
 
             return;
         }
-        PrimitiveInstanceKind::LineDecoration { data_handle, ref mut render_task, .. } => {
+        PrimitiveInstanceKind::LineDecoration { data_handle, ref mut scratch_handle } => {
             profile_scope!("LineDecoration");
             let prim_data = &mut data_stores.line_decoration[*data_handle];
             let common_data = &mut prim_data.common;
             let line_dec_data = &mut prim_data.kind;
 
-            
-            
             line_dec_data.update(common_data, frame_state);
 
-            *render_task = line_dec_data.prepare_render_task(
+            let render_task = line_dec_data.prepare_render_task(
                 prim_spatial_node_index,
                 frame_context,
                 frame_state,
             );
+            *scratch_handle = scratch.arena.push(render_task);
         }
         PrimitiveInstanceKind::TextRun { run_index, data_handle, .. } => {
             profile_scope!("TextRun");
@@ -652,7 +644,7 @@ fn prepare_interned_prim_for_render(
 
             prim_data.update(frame_state);
         }
-        PrimitiveInstanceKind::NormalBorder { data_handle, ref mut render_task_ids, .. } => {
+        PrimitiveInstanceKind::NormalBorder { data_handle, ref mut scratch_handle } => {
             profile_scope!("NormalBorder");
             let prim_data = &mut data_stores.normal_border[*data_handle];
             let common_data = &mut prim_data.common;
@@ -660,7 +652,9 @@ fn prepare_interned_prim_for_render(
 
             border_data.write_brush_gpu_blocks(common_data, frame_state);
 
-            let mut handles: SmallVec<[RenderTaskId; 8]> = SmallVec::new();
+            let segment_count = border_data.border_segments.len() as u32;
+            let handle = scratch.arena.push(NormalBorderScratch { segment_count });
+            scratch.arena.push_zeroed::<RenderTaskId>(segment_count);
 
             border_data.update(
                 common_data,
@@ -668,12 +662,11 @@ fn prepare_interned_prim_for_render(
                 device_pixel_scale,
                 frame_context,
                 frame_state,
-                &mut |task_id| {
-                    handles.push(task_id);
-                }
+                handle,
+                &mut scratch.arena,
             );
 
-            *render_task_ids = scratch.border_cache_handles.extend(handles)
+            *scratch_handle = handle;
         }
         PrimitiveInstanceKind::ImageBorder { data_handle, .. } => {
             profile_scope!("ImageBorder");
@@ -817,70 +810,20 @@ fn prepare_interned_prim_for_render(
                 },
             );
         }
-        PrimitiveInstanceKind::LinearGradient { data_handle, ref mut visible_tiles_range, .. } => {
+        PrimitiveInstanceKind::LinearGradient { data_handle, .. } => {
             profile_scope!("LinearGradient");
             let prim_data = &mut data_stores.linear_grad[*data_handle];
             let prim_rect = LayoutRect::from_origin_and_size(prim_instance.prim_origin, prim_data.common.prim_size);
-            if !use_legacy_path {
-                if let Some(nine_patch) = &prim_data.border_nine_patch {
-                    quad::prepare_border_image_nine_patch(
-                        &*nine_patch,
-                        prim_data,
-                        &prim_rect,
-                        prim_data.stretch_size,
-                        prim_data.common.aligned_aa_edges,
-                        prim_data.common.transformed_aa_edges,
-                        prim_instance_index,
-                        &prim_instance.vis.clip_chain,
-                        quad_transform,
-                        frame_context,
-                        pic_context,
-                        targets,
-                        &data_stores.clip,
-                        frame_state,
-                        scratch,
-                    );
-                    return;
-                }
 
-                
-                let mut should_cache = !frame_context.fb_config.is_software
-                    && frame_state.resource_cache.texture_cache.allocated_color_bytes() < 10_000_000;
-                if should_cache {
-                    let surface = &frame_state.surfaces[pic_context.surface_index.0];
-                    let clipped_surface_rect = surface.get_surface_rect(
-                        &prim_instance.vis.clip_chain.pic_coverage_rect,
-                        frame_context.spatial_tree,
-                    );
-
-                    should_cache = if let Some(rect) = clipped_surface_rect {
-                        rect.width() < 512 && rect.height() < 512
-                    } else {
-                        false
-                    };
-                }
-
-                let cache_key = if should_cache {
-                    quad::cache_key(
-                        data_handle.uid(),
-                        quad_transform,
-                        &prim_instance.vis.clip_chain,
-                        frame_state.clip_store,
-                    )
-                } else {
-                    None
-                };
-
-                let local_rect = LayoutRect::from_origin_and_size(prim_instance.prim_origin, prim_data.common.prim_size);
-                quad::prepare_repeatable_quad(
+            if let Some(nine_patch) = &prim_data.border_nine_patch {
+                quad::prepare_border_image_nine_patch(
+                    &*nine_patch,
                     prim_data,
-                    &local_rect,
+                    &prim_rect,
                     prim_data.stretch_size,
-                    prim_data.tile_spacing,
                     prim_data.common.aligned_aa_edges,
                     prim_data.common.transformed_aa_edges,
                     prim_instance_index,
-                    &cache_key,
                     &prim_instance.vis.clip_chain,
                     quad_transform,
                     frame_context,
@@ -890,97 +833,58 @@ fn prepare_interned_prim_for_render(
                     frame_state,
                     scratch,
                 );
-
                 return;
             }
 
             
-            
-            prim_data.update(frame_state);
-
-            if prim_data.stretch_size.width >= prim_data.common.prim_size.width &&
-                prim_data.stretch_size.height >= prim_data.common.prim_size.height {
-
-                prim_data.common.may_need_repetition = false;
-            }
-
-            if prim_data.tile_spacing != LayoutSize::zero() {
-                
-                
-                prim_data.common.may_need_repetition = false;
-
-                let local_rect = LayoutRect::from_origin_and_size(prim_instance.prim_origin, prim_data.common.prim_size);
-                *visible_tiles_range = decompose_repeated_gradient(
-                    &prim_instance.vis,
-                    &local_rect,
-                    prim_spatial_node_index,
-                    &prim_data.stretch_size,
-                    &prim_data.tile_spacing,
-                    frame_state,
-                    &mut scratch.gradient_tiles,
-                    &frame_context.spatial_tree,
-                    Some(&mut |_, gpu_buffer| {
-                        let mut writer = gpu_buffer.write_blocks(LinearGradientBrushData::NUM_BLOCKS);
-                        writer.push(&LinearGradientBrushData {
-                            start: prim_data.start_point,
-                            end: prim_data.end_point,
-                            extend_mode: prim_data.extend_mode,
-                            stretch_size: prim_data.stretch_size,
-                        });
-                        writer.finish()
-                    }),
+            let mut should_cache = !frame_context.fb_config.is_software
+                && frame_state.resource_cache.texture_cache.allocated_color_bytes() < 10_000_000;
+            if should_cache {
+                let surface = &frame_state.surfaces[pic_context.surface_index.0];
+                let clipped_surface_rect = surface.get_surface_rect(
+                    &prim_instance.vis.clip_chain.pic_coverage_rect,
+                    frame_context.spatial_tree,
                 );
 
-                if visible_tiles_range.is_empty() {
-                    prim_instance.clear_visibility();
-                }
+                should_cache = if let Some(rect) = clipped_surface_rect {
+                    rect.width() < 512 && rect.height() < 512
+                } else {
+                    false
+                };
             }
 
-            let stops_address = GradientGpuBlockBuilder::build(
-                prim_data.reverse_stops,
-                &mut frame_state.frame_gpu_data.f32,
-                &prim_data.stops,
-            );
+            let cache_key = if should_cache {
+                quad::cache_key(
+                    data_handle.uid(),
+                    quad_transform,
+                    &prim_instance.vis.clip_chain,
+                    frame_state.clip_store,
+                )
+            } else {
+                None
+            };
 
-            
-            
-            frame_state.push_prim(
-                &PrimitiveCommand::instance(prim_instance_index, stops_address),
-                prim_spatial_node_index,
+            let local_rect = LayoutRect::from_origin_and_size(prim_instance.prim_origin, prim_data.common.prim_size);
+            quad::prepare_repeatable_quad(
+                prim_data,
+                &local_rect,
+                prim_data.stretch_size,
+                prim_data.tile_spacing,
+                prim_data.common.aligned_aa_edges,
+                prim_data.common.transformed_aa_edges,
+                prim_instance_index,
+                &cache_key,
+                &prim_instance.vis.clip_chain,
+                quad_transform,
+                frame_context,
+                pic_context,
                 targets,
+                &data_stores.clip,
+                frame_state,
+                scratch,
             );
+
             return;
-        }
-        PrimitiveInstanceKind::CachedLinearGradient { data_handle, ref mut visible_tiles_range, .. } => {
-            profile_scope!("CachedLinearGradient");
-            let prim_data = &mut data_stores.linear_grad[*data_handle];
-            prim_data.common.may_need_repetition = prim_data.stretch_size.width < prim_data.common.prim_size.width
-                || prim_data.stretch_size.height < prim_data.common.prim_size.height;
-
-            
-            
-            prim_data.update(frame_state);
-
-            if prim_data.tile_spacing != LayoutSize::zero() {
-                prim_data.common.may_need_repetition = false;
-
-                let local_rect = LayoutRect::from_origin_and_size(prim_instance.prim_origin, prim_data.common.prim_size);
-                *visible_tiles_range = decompose_repeated_gradient(
-                    &prim_instance.vis,
-                    &local_rect,
-                    prim_spatial_node_index,
-                    &prim_data.stretch_size,
-                    &prim_data.tile_spacing,
-                    frame_state,
-                    &mut scratch.gradient_tiles,
-                    &frame_context.spatial_tree,
-                    None,
-                );
-
-                if visible_tiles_range.is_empty() {
-                    prim_instance.clear_visibility();
-                }
-            }
         }
         PrimitiveInstanceKind::RadialGradient { data_handle, .. } => {
             profile_scope!("RadialGradient");
@@ -1387,64 +1291,6 @@ fn write_segment<F>(
     }
 }
 
-fn decompose_repeated_gradient(
-    prim_vis: &PrimitiveVisibility,
-    prim_local_rect: &LayoutRect,
-    prim_spatial_node_index: SpatialNodeIndex,
-    stretch_size: &LayoutSize,
-    tile_spacing: &LayoutSize,
-    frame_state: &mut FrameBuildingState,
-    gradient_tiles: &mut GradientTileStorage,
-    spatial_tree: &SpatialTree,
-    mut callback: Option<&mut dyn FnMut(&LayoutRect, &mut GpuBufferBuilderF) -> GpuBufferAddress>,
-) -> GradientTileRange {
-    let tile_range = gradient_tiles.open_range();
-
-    
-    
-    
-    if let Some(tight_clip_rect) = prim_vis
-        .clip_chain
-        .local_clip_rect
-        .intersection(prim_local_rect) {
-
-        let visible_rect = compute_conservative_visible_rect(
-            &prim_vis.clip_chain,
-            frame_state.current_dirty_region().combined,
-            frame_state.current_dirty_region().visibility_spatial_node,
-            prim_spatial_node_index,
-            spatial_tree,
-        );
-        let stride = *stretch_size + *tile_spacing;
-
-        let repetitions = image_tiling::repetitions(prim_local_rect, &visible_rect, stride);
-        gradient_tiles.reserve(repetitions.num_repetitions());
-        for Repetition { origin, .. } in repetitions {
-            let rect = LayoutRect::from_origin_and_size(
-                origin,
-                *stretch_size,
-            );
-
-            let mut address = GpuBufferAddress::INVALID;
-
-            if let Some(callback) = &mut callback {
-                address = callback(&rect, &mut frame_state.frame_gpu_data.f32);
-            }
-
-            gradient_tiles.push(VisibleGradientTile {
-                local_rect: rect,
-                local_clip_rect: tight_clip_rect,
-                address,
-            });
-        }
-    }
-
-    
-    
-    gradient_tiles.close_range(tile_range)
-}
-
-
 fn update_clip_task_for_brush(
     instance: &PrimitiveInstance,
     prim_origin: &LayoutPoint,
@@ -1522,8 +1368,7 @@ fn update_clip_task_for_brush(
             
             border_data.brush_segments.as_slice()
         }
-        PrimitiveInstanceKind::LinearGradient { data_handle, .. }
-        | PrimitiveInstanceKind::CachedLinearGradient { data_handle, .. } => {
+        PrimitiveInstanceKind::LinearGradient { data_handle, .. } => {
             let prim_data = &data_stores.linear_grad[data_handle];
 
             
@@ -1565,7 +1410,6 @@ fn update_clip_task_for_brush(
             pic_context.surface_index,
             frame_context,
             frame_state,
-            &mut data_stores.clip,
             device_pixel_scale,
         );
         clip_mask_instances.push(clip_mask_kind);
@@ -1592,7 +1436,6 @@ fn update_clip_task_for_brush(
                     &frame_context.spatial_tree,
                     &mut frame_state.frame_gpu_data.f32,
                     frame_state.resource_cache,
-                    device_pixel_scale,
                     &dirty_rect,
                     &mut data_stores.clip,
                     frame_state.rg_builder,
@@ -1606,7 +1449,6 @@ fn update_clip_task_for_brush(
                 pic_context.surface_index,
                 frame_context,
                 frame_state,
-                &mut data_stores.clip,
                 device_pixel_scale,
             );
             clip_mask_instances.push(clip_mask_kind);
@@ -1686,14 +1528,9 @@ pub fn update_clip_task(
             device_rect,
             instance.vis.clip_chain.clips_range,
             root_spatial_node_index,
-            frame_state.clip_store,
-            &mut frame_state.frame_gpu_data.f32,
-            frame_state.resource_cache,
             frame_state.rg_builder,
-            &mut data_stores.clip,
             device_pixel_scale,
             frame_context.fb_config,
-            &mut frame_state.surface_builder,
         );
         
         let clip_task_index = ClipTaskIndex(scratch.clip_mask_instances.len() as _);
@@ -1720,7 +1557,6 @@ pub fn update_brush_segment_clip_task(
     surface_index: SurfaceIndex,
     frame_context: &FrameBuildingContext,
     frame_state: &mut FrameBuildingState,
-    clip_data_store: &mut ClipDataStore,
     device_pixel_scale: DevicePixelScale,
 ) -> ClipMaskKind {
     let clip_chain = match clip_chain {
@@ -1751,14 +1587,9 @@ pub fn update_brush_segment_clip_task(
         device_rect,
         clip_chain.clips_range,
         root_spatial_node_index,
-        frame_state.clip_store,
-        &mut frame_state.frame_gpu_data.f32,
-        frame_state.resource_cache,
         frame_state.rg_builder,
-        clip_data_store,
         device_pixel_scale,
         frame_context.fb_config,
-        &mut frame_state.surface_builder,
     );
 
     frame_state.surface_builder.add_child_render_task(
@@ -1819,32 +1650,6 @@ fn write_brush_segment_description(
             ClipItemKind::Rectangle { size, mode } => {
                 let rect = LayoutRect::from_origin_and_size(clip_instance.clip_rect_origin, size);
                 (rect, None, mode)
-            }
-            ClipItemKind::BoxShadow { ref source } => {
-                
-                
-                
-                
-                
-                let inner_clip_mode = match source.clip_mode {
-                    BoxShadowClipMode::Outset => None,
-                    BoxShadowClipMode::Inset => Some(ClipMode::ClipOut),
-                };
-
-                
-                
-                
-                
-                segment_builder.push_mask_region(
-                    source.prim_shadow_rect,
-                    source.prim_shadow_rect.inflate(
-                        -0.5 * source.original_alloc_size.width,
-                        -0.5 * source.original_alloc_size.height,
-                    ),
-                    inner_clip_mode,
-                );
-
-                continue;
             }
             ClipItemKind::Image { .. } => {
                 panic!("bug: masks not supported on old segment path");
@@ -1910,7 +1715,6 @@ fn build_segments_if_needed(
         PrimitiveInstanceKind::NormalBorder { .. } |
         PrimitiveInstanceKind::ImageBorder { .. } |
         PrimitiveInstanceKind::LinearGradient { .. } |
-        PrimitiveInstanceKind::CachedLinearGradient { .. } |
         PrimitiveInstanceKind::RadialGradient { .. } |
         PrimitiveInstanceKind::ConicGradient { .. } |
         PrimitiveInstanceKind::LineDecoration { .. } |

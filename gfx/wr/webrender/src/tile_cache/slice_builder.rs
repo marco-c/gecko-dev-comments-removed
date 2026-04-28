@@ -560,18 +560,18 @@ fn create_tile_cache(
 
         let node_valid = if is_rcs {
             match clip_node_data.key.kind {
-                ClipItemKeyKind::BoxShadow(..) |
                 ClipItemKeyKind::ImageMask(..) |
                 ClipItemKeyKind::Rectangle(_, ClipMode::ClipOut) |
                 ClipItemKeyKind::RoundedRectangle(_, _, ClipMode::ClipOut) => {
                     
                     false
                 }
-                ClipItemKeyKind::RoundedRectangle(rect, radius, ClipMode::Clip) => {
+                ClipItemKeyKind::RoundedRectangle(size, radius, ClipMode::Clip) => {
                     
                     
+                    let rect = LayoutRect::from_origin_and_size(node.clip_rect_origin, size.into());
                     let br = BorderRadius::from(radius);
-                    if br.can_use_fast_path_in(&rect.into()) {
+                    if br.can_use_fast_path_in(&rect) {
                         rounded_rect_count += 1;
 
                         if accumulated_rounded_rect.is_none() {
@@ -605,11 +605,12 @@ fn create_tile_cache(
                 let can_combine = match (accumulated_rounded_rect, clip_node_data.key.kind) {
                     (
                         Some((acc_rect, acc_radius)),
-                        ClipItemKeyKind::RoundedRectangle(rect, radius, ClipMode::Clip),
+                        ClipItemKeyKind::RoundedRectangle(size, radius, ClipMode::Clip),
                     ) => {
+                        let rect = LayoutRect::from_origin_and_size(node.clip_rect_origin, size.into());
                         intersect_rounded_rects(
                             acc_rect, acc_radius,
-                            rect.into(), BorderRadius::from(radius),
+                            rect, BorderRadius::from(radius),
                         )
                     }
                     _ => None,
@@ -625,8 +626,9 @@ fn create_tile_cache(
                     
                     shared_clip_node_id = current_node_id;
                     rounded_rect_count = 1;
-                    if let ClipItemKeyKind::RoundedRectangle(rect, radius, ClipMode::Clip) = clip_node_data.key.kind {
-                        accumulated_rounded_rect = Some((rect.into(), BorderRadius::from(radius)));
+                    if let ClipItemKeyKind::RoundedRectangle(size, radius, ClipMode::Clip) = clip_node_data.key.kind {
+                        let rect = LayoutRect::from_origin_and_size(node.clip_rect_origin, size.into());
+                        accumulated_rounded_rect = Some((rect, BorderRadius::from(radius)));
                     }
                 }
             }
