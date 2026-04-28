@@ -106,9 +106,7 @@ class HTMLEditUtils final {
 
 
   static bool IsNeverElementContentsEditableByUser(const nsIContent& aContent) {
-    return aContent.IsElement() &&
-           
-           !aContent.IsHTMLElement(nsGkAtoms::button) &&
+    return aContent.IsElement() && !aContent.IsHTMLElement(nsGkAtoms::button) &&
            (!HTMLEditUtils::IsContainerNode(aContent) ||
             HTMLEditUtils::IsReplacedElement(*aContent.AsElement()) ||
             aContent.IsAnyOfHTMLElements(nsGkAtoms::applet, nsGkAtoms::colgroup,
@@ -471,12 +469,6 @@ class HTMLEditUtils final {
   [[nodiscard]] static bool IsNonVoidReplacedElement(const Element& aElement) {
     return IsReplacedElement(aElement) && IsContainerNode(aElement);
   }
-
-  
-
-
-
-  [[nodiscard]] static bool IsFormWidgetElement(const nsIContent& aContent);
 
   
 

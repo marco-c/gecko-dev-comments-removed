@@ -632,11 +632,6 @@ bool HTMLEditUtils::IsVisibleElementEvenIfLeafNode(const nsIContent& aContent) {
   if (!aContent.IsHTMLElement()) {
     return true;
   }
-  nsIFrame* const primaryFrame = aContent.GetPrimaryFrame();
-  if (primaryFrame && aContent.IsInComposedDoc() &&
-      HTMLEditUtils::IsInclusiveAncestorCSSDisplayNone(aContent)) {
-    return false;
-  }
   if (HTMLEditUtils::IsBlockElement(
           aContent, BlockInlineCheck::UseComputedDisplayStyle)) {
     return true;
@@ -650,11 +645,10 @@ bool HTMLEditUtils::IsVisibleElementEvenIfLeafNode(const nsIContent& aContent) {
                                    nsGkAtoms::select, nsGkAtoms::textarea)) {
     return true;
   }
-  if (const HTMLInputElement* inputElement =
-          HTMLInputElement::FromNode(&aContent)) {
+  if (const auto* inputElement = HTMLInputElement::FromNode(aContent)) {
     return inputElement->ControlType() != FormControlType::InputHidden;
   }
-  if (primaryFrame) {
+  if (nsIFrame* const primaryFrame = aContent.GetPrimaryFrame()) {
     
     
     if (!primaryFrame->IsSubtreeDirty() || !primaryFrame->IsInlineFrame()) {
@@ -831,9 +825,6 @@ bool HTMLEditUtils::IsReplacedElement(const Element& aElement) {
     return !aElement.AttrValueIs(kNameSpaceID_None, nsGkAtoms::type,
                                  nsGkAtoms::hidden, eIgnoreCase);
   }
-  if (HTMLEditUtils::IsFormWidgetElement(aElement)) {
-    return true;
-  }
   
   
   if (aElement.IsHTMLElement(nsGkAtoms::object)) {
@@ -849,20 +840,14 @@ bool HTMLEditUtils::IsReplacedElement(const Element& aElement) {
       nsGkAtoms::audio,
       
       
-      nsGkAtoms::br, nsGkAtoms::canvas, nsGkAtoms::embed, nsGkAtoms::iframe,
-      nsGkAtoms::img,
+      nsGkAtoms::br, nsGkAtoms::button, nsGkAtoms::canvas, nsGkAtoms::embed,
+      nsGkAtoms::iframe, nsGkAtoms::img, nsGkAtoms::meter,
       
       
       
       
-      nsGkAtoms::optgroup, nsGkAtoms::option, nsGkAtoms::video);
-}
-
-bool HTMLEditUtils::IsFormWidgetElement(const nsIContent& aContent) {
-  return aContent.IsAnyOfHTMLElements(nsGkAtoms::textarea, nsGkAtoms::select,
-                                      nsGkAtoms::button, nsGkAtoms::output,
-                                      nsGkAtoms::progress, nsGkAtoms::meter,
-                                      nsGkAtoms::input);
+      nsGkAtoms::optgroup, nsGkAtoms::option, nsGkAtoms::progress,
+      nsGkAtoms::select, nsGkAtoms::textarea, nsGkAtoms::video);
 }
 
 bool HTMLEditUtils::IsAlignAttrSupported(const nsIContent& aContent) {

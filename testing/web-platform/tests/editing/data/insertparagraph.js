@@ -2768,4 +2768,13 @@ var browserTests = [
      '<div style="white-space:pre-line">abc&nbsp;&nbsp;</div><div style="white-space:pre-line"><br></div>'],
     [true],
     {}],
+
+
+
+["<output>a[]b</output>",
+  [["defaultparagraphseparator","div"],["insertparagraph",""]],
+  ["<output>a</output><div><output>b</output></div>",
+   "<div><output>a</output></div><div><output>b</output></div>"],
+  [true,true],
+  {}],
 ]
