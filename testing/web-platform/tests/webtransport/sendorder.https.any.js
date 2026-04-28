@@ -3,7 +3,6 @@
 
 
 
-
 promise_test(async t => {
   
   const wt = new WebTransport(webtransport_url('echo.py'));
@@ -33,10 +32,13 @@ promise_test(async t => {
 
   
   const {readable, writable} = await wt.createBidirectionalStream();
-  assert_equals(writable.sendOrder, null);
+  assert_equals(writable.sendOrder, 0);
   
   writable.sendOrder = 4;
   assert_equals(writable.sendOrder, 4);
+  
+  writable.sendOrder = null;
+  assert_equals(writable.sendOrder, 0);
 }, 'WebTransport client should be able to modify unset sendOrder after stream creation');
 
 promise_test(async t => {
@@ -50,8 +52,8 @@ promise_test(async t => {
   
   writable.sendOrder = 5;
   assert_equals(writable.sendOrder, 5);
-  writable.sendOrder = null;
-  assert_equals(writable.sendOrder, null);
+  writable.sendOrder = 0;
+  assert_equals(writable.sendOrder, 0);
   
   
 }, 'WebTransport client should be able to modify existing sendOrder after stream creation');
