@@ -130,12 +130,35 @@ async function addTestTab(
 
 
 
+function isLinuxOpt() {
+  const { AppConstants } = ChromeUtils.importESModule(
+    "resource://gre/modules/AppConstants.sys.mjs"
+  );
+  return (
+    Services.appinfo.OS === "Linux" &&
+    !AppConstants.DEBUG &&
+    !AppConstants.ASAN &&
+    !AppConstants.CCOV &&
+    !AppConstants.TSAN
+  );
+}
+
+
+
+
 
 
 
 
 
 async function initAccessibilityPanel(tab = gBrowser.selectedTab) {
+  
+  
+  
+  if (isLinuxOpt()) {
+    await wait(1000);
+  }
+
   const toolbox = await gDevTools.showToolboxForTab(tab, {
     toolId: "accessibility",
   });
