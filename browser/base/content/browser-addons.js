@@ -2,7 +2,6 @@
 
 
 
-
 var { XPCOMUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
 );
@@ -1230,7 +1229,7 @@ var gXPInstallObserver = {
       PopupNotifications.getNotification(id, browser)
     ).filter(notification => notification != null);
 
-    PopupNotifications.remove(notifications, true);
+    PopupNotifications.remove(notifications,  true);
 
     return !!notifications.length;
   },
