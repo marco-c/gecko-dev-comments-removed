@@ -18,10 +18,44 @@ extern mozilla::LazyLogModule gDcompSurface;
 
 namespace mozilla::layers {
 
+static constexpr int32_t kMaxDcompSurfaceDimension = 16384;
+
+static bool IsValidDcompSurfaceDescriptor(
+    const SurfaceDescriptorDcompSurface& aDescriptor) {
+  if (!aDescriptor.handle().IsValid()) {
+    gfxCriticalNote << "DcompSurfaceHandleHost: invalid FileDescriptor";
+    return false;
+  }
+
+  const gfx::SurfaceFormat fmt = aDescriptor.format();
+  if (fmt != gfx::SurfaceFormat::B8G8R8A8 &&
+      fmt != gfx::SurfaceFormat::R8G8B8A8 &&
+      fmt != gfx::SurfaceFormat::R16G16B16A16F) {
+    gfxCriticalNote << "DcompSurfaceHandleHost: unsupported format "
+                    << static_cast<int>(fmt);
+    return false;
+  }
+
+  const gfx::IntSize size = aDescriptor.size();
+  if (size.width <= 0 || size.height <= 0 ||
+      size.width > kMaxDcompSurfaceDimension ||
+      size.height > kMaxDcompSurfaceDimension) {
+    gfxCriticalNote << "DcompSurfaceHandleHost: bad size " << size.width << "x"
+                    << size.height;
+    return false;
+  }
+
+  return true;
+}
+
 already_AddRefed<TextureHost> CreateTextureHostDcompSurface(
     const SurfaceDescriptor& aDesc, ISurfaceAllocator* aDeallocator,
     LayersBackend aBackend, TextureFlags aFlags) {
   MOZ_ASSERT(aDesc.type() == SurfaceDescriptor::TSurfaceDescriptorDcompSurface);
+  if (!IsValidDcompSurfaceDescriptor(
+          aDesc.get_SurfaceDescriptorDcompSurface())) {
+    return nullptr;
+  }
   RefPtr<TextureHost> result = new DcompSurfaceHandleHost(
       aFlags, aDesc.get_SurfaceDescriptorDcompSurface());
   return result.forget();
@@ -106,7 +140,12 @@ void DcompSurfaceHandleHost::PushResourceUpdates(
     return;
   }
   MOZ_ASSERT(mHandle);
-  MOZ_ASSERT(aImageKeys.length() == 1);
+
+  if (aImageKeys.length() != 1) {
+    MOZ_ASSERT_UNREACHABLE("unexpected key length");
+    return;
+  }
+
   auto method = aOp == TextureHost::ADD_IMAGE
                     ? &wr::TransactionBuilder::AddExternalImage
                     : &wr::TransactionBuilder::UpdateExternalImage;
@@ -137,7 +176,10 @@ void DcompSurfaceHandleHost::PushDisplayItems(
     return;
   }
   LOG("DcompSurfaceHandleHost %p PushDisplayItems", this);
-  MOZ_ASSERT(aImageKeys.length() == 1);
+  if (aImageKeys.length() != 1) {
+    MOZ_ASSERT_UNREACHABLE("unexpected key length");
+    return;
+  }
   aBuilder.PushImage(
       aBounds, aClip, true, false, aFilter, aImageKeys[0],
       !(mFlags & TextureFlags::NON_PREMULTIPLIED),
