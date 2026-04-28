@@ -5,7 +5,12 @@
 #define mozilla_dom_HTMLOptionsCollection_h
 
 #include "mozilla/dom/HTMLOptionElement.h"
-#include "nsContentList.h"
+#include "nsCOMPtr.h"
+#include "nsError.h"
+#include "nsGenericHTMLElement.h"
+#include "nsIHTMLCollection.h"
+#include "nsTArray.h"
+#include "nsWrapperCache.h"
 
 namespace mozilla {
 class ErrorResult;
@@ -21,22 +26,78 @@ class HTMLSelectElement;
 
 
 
-class HTMLOptionsCollection final : public nsContentList {
+class HTMLOptionsCollection final : public nsIHTMLCollection,
+                                    public nsWrapperCache {
+  typedef HTMLOptionElementOrHTMLOptGroupElement HTMLOptionOrOptGroupElement;
+
  public:
-  HTMLOptionsCollection(HTMLSelectElement*, bool aFromParser);
-  HTMLSelectElement* Select() const;
-  DocGroup* GetDocGroup() const { return mRootNode->GetDocGroup(); }
-  static bool IsValidOption(const HTMLOptionElement&, const HTMLSelectElement&);
-  
-  JSObject* WrapObject(JSContext* aCx,
-                       JS::Handle<JSObject*> aGivenProto) override;
+  explicit HTMLOptionsCollection(HTMLSelectElement* aSelect);
+
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
 
   
+  using nsWrapperCache::GetWrapper;
+  using nsWrapperCache::GetWrapperPreserveColor;
+  using nsWrapperCache::PreserveWrapper;
+  virtual JSObject* WrapObject(JSContext* aCx,
+                               JS::Handle<JSObject*> aGivenProto) override;
+
+ protected:
+  virtual ~HTMLOptionsCollection() = default;
+
+  virtual JSObject* GetWrapperPreserveColorInternal() override {
+    return nsWrapperCache::GetWrapperPreserveColor();
+  }
+  virtual void PreserveWrapperInternal(
+      nsISupports* aScriptObjectHolder) override {
+    nsWrapperCache::PreserveWrapper(aScriptObjectHolder);
+  }
+
+ public:
+  virtual uint32_t Length() override;
+  virtual Element* GetElementAt(uint32_t aIndex) override;
+  virtual nsINode* GetParentObject() override;
+  DocGroup* GetDocGroup() const;
+
+  NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS_AMBIGUOUS(HTMLOptionsCollection,
+                                                        nsIHTMLCollection)
+
+  
+  
 
 
 
-  HTMLOptionElement* ItemAsOption(uint32_t aIndex) {
-    return static_cast<HTMLOptionElement*>(nsContentList::Item(aIndex));
+
+  void InsertOptionAt(mozilla::dom::HTMLOptionElement* aOption,
+                      uint32_t aIndex) {
+    mElements.InsertElementAt(aIndex, aOption);
+  }
+
+  
+
+
+
+  void RemoveOptionAt(uint32_t aIndex) { mElements.RemoveElementAt(aIndex); }
+
+  
+
+
+
+
+  mozilla::dom::HTMLOptionElement* ItemAsOption(uint32_t aIndex) {
+    return mElements.SafeElementAt(aIndex, nullptr);
+  }
+
+  
+
+
+  void Clear() { mElements.Clear(); }
+
+  
+
+
+  void AppendOption(mozilla::dom::HTMLOptionElement* aOption) {
+    mElements.AppendElement(aOption);
   }
 
   
@@ -52,19 +113,32 @@ class HTMLOptionsCollection final : public nsContentList {
   nsresult GetOptionIndex(Element* aOption, int32_t aStartIndex, bool aForward,
                           int32_t* aIndex);
 
-  void Add(const HTMLOptionElementOrHTMLOptGroupElement& aElement,
+  HTMLOptionElement* GetNamedItem(const nsAString& aName) {
+    bool dummy;
+    return NamedGetter(aName, dummy);
+  }
+  HTMLOptionElement* NamedGetter(const nsAString& aName, bool& aFound);
+  virtual Element* GetFirstNamedElement(const nsAString& aName,
+                                        bool& aFound) override {
+    return NamedGetter(aName, aFound);
+  }
+  void Add(const HTMLOptionOrOptGroupElement& aElement,
            const Nullable<HTMLElementOrLong>& aBefore, ErrorResult& aError);
   void Remove(int32_t aIndex);
   int32_t SelectedIndex();
   void SetSelectedIndex(int32_t aSelectedIndex);
   void IndexedSetter(uint32_t aIndex, HTMLOptionElement* aOption,
                      ErrorResult& aError);
+  virtual void GetSupportedNames(nsTArray<nsString>& aNames) override;
   void SetLength(uint32_t aLength, ErrorResult& aError);
-};
 
-inline nsISupports* ToSupports(HTMLOptionsCollection* aCollection) {
-  return static_cast<nsIHTMLCollection*>(aCollection);
-}
+ private:
+  
+
+  nsTArray<RefPtr<mozilla::dom::HTMLOptionElement> > mElements;
+  
+  RefPtr<HTMLSelectElement> mSelect;
+};
 
 }  
 }  

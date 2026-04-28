@@ -35,6 +35,39 @@ class HTMLElementOrLong;
 class HTMLOptionElementOrHTMLOptGroupElement;
 class HTMLSelectElement;
 
+class MOZ_STACK_CLASS SafeOptionListMutation {
+ public:
+  
+
+
+
+
+
+
+
+  SafeOptionListMutation(nsIContent* aSelect, nsIContent* aParent,
+                         nsIContent* aKid, uint32_t aIndex, bool aNotify);
+  ~SafeOptionListMutation();
+  void MutationFailed() { mNeedsRebuild = true; }
+
+ private:
+  static void* operator new(size_t) noexcept(true) { return nullptr; }
+  static void operator delete(void*, size_t) {}
+  
+  RefPtr<HTMLSelectElement> mSelect;
+  
+  bool mTopLevelMutation;
+  
+  bool mNeedsRebuild;
+  
+
+  const bool mNotify;
+  
+  RefPtr<HTMLOptionElement> mInitialSelectedOption;
+  
+  nsMutationGuard mGuard;
+};
+
 
 
 
@@ -137,8 +170,7 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
     return mOptions->ItemAsOption(aIdx);
   }
   HTMLOptionElement* NamedItem(const nsAString& aName) const {
-    return static_cast<HTMLOptionElement*>(
-        mOptions->NamedItem(aName,  true));
+    return mOptions->GetNamedItem(aName);
   }
   void Add(const HTMLOptionElementOrHTMLOptGroupElement& aElement,
            const Nullable<HTMLElementOrLong>& aBefore, ErrorResult& aRv);
@@ -152,11 +184,7 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
 
   nsIHTMLCollection* SelectedOptions();
 
-  int32_t SelectedIndex() const;
-  
-  
-  using IgnoredOptionList = Span<RefPtr<HTMLOptionElement>>;
-  HTMLOptionElement* GetSelectedOption(IgnoredOptionList = {}) const;
+  int32_t SelectedIndex() const { return mSelectedIndex; }
   void SetSelectedIndex(int32_t aIdx) { SetSelectedIndexInternal(aIdx, true); }
   void GetValue(nsAString& aValue) const;
   void SetValue(const nsAString& aValue);
@@ -181,6 +209,16 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
 
   bool IsHTMLFocusable(IsFocusableFlags, bool* aIsFocusable,
                        int32_t* aTabIndex) override;
+  void InsertChildBefore(
+      nsIContent* aKid, nsIContent* aBeforeThis, bool aNotify, ErrorResult& aRv,
+      nsINode* aOldParent = nullptr,
+      MutationEffectOnScript aMutationEffectOnScript =
+          MutationEffectOnScript::DropTrustWorthiness) override;
+  void RemoveChildNode(
+      nsIContent* aKid, bool aNotify, const BatchRemovalState* aState,
+      nsINode* aNewParent = nullptr,
+      MutationEffectOnScript aMutationEffectOnScript =
+          MutationEffectOnScript::DropTrustWorthiness) override;
 
   
   bool IsDisabledForEvents(WidgetEvent* aEvent) override;
@@ -194,6 +232,30 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
   NS_IMETHOD SubmitNamesValues(FormData* aFormData) override;
 
   void FieldSetDisabledChanged(bool aNotify) override;
+
+  
+
+
+
+
+
+
+
+
+
+  NS_IMETHOD WillAddOptions(nsIContent* aOptions, nsIContent* aParent,
+                            int32_t aContentIndex, bool aNotify);
+
+  
+
+
+
+
+
+
+
+  NS_IMETHOD WillRemoveOptions(nsIContent* aParent, int32_t aContentIndex,
+                               bool aNotify);
 
   
 
@@ -254,7 +316,7 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
   nsresult GetValidationMessage(nsAString& aValidationMessage,
                                 ValidityStateType aType) override;
 
-  void UpdateValueMissingValidityState(IgnoredOptionList = {});
+  void UpdateValueMissingValidityState();
   void UpdateValidityElementStates(bool aNotify);
   
 
@@ -292,11 +354,12 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
   
   
   Text* GetSelectedContentText() const;
-  void SelectedContentTextMightHaveChanged(bool aNotify = true,
-                                           IgnoredOptionList = {});
+  void SelectedContentTextMightHaveChanged(bool aNotify = true);
 
  protected:
   virtual ~HTMLSelectElement();
+
+  friend class SafeOptionListMutation;
 
   
   
@@ -315,9 +378,13 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
 
 
 
+  bool SelectSomething(bool aNotify);
+  
 
 
-  bool TrySelectSomething(bool aNotify, IgnoredOptionList aIgnore = {});
+
+
+  bool CheckSelectSomething(bool aNotify);
   
 
 
@@ -337,8 +404,26 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
   void RestoreStateTo(const SelectContentData& aNewSelected);
 
   
+  
+
+
+
+
+
+  void InsertOptionsIntoList(nsIContent* aOptions, int32_t aListIndex,
+                             int32_t aDepth, bool aNotify);
+  
+
+
+
+
+
+  nsresult RemoveOptionsFromList(nsIContent* aOptions, int32_t aListIndex,
+                                 int32_t aDepth, bool aNotify);
+
+  
   void UpdateBarredFromConstraintValidation();
-  bool IsValueMissing(IgnoredOptionList = {}) const;
+  bool IsValueMissing() const;
 
   
 
@@ -381,6 +466,15 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
 
   void DispatchContentReset();
 
+  
+
+
+  void RebuildOptionsArray(bool aNotify);
+
+#ifdef DEBUG
+  void VerifyOptionsArray();
+#endif
+
   void SetSelectedIndexInternal(int32_t aIndex, bool aNotify);
 
   void OnSelectionChanged();
@@ -416,8 +510,6 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
   MOZ_CAN_RUN_SCRIPT void FireDropDownEvent(bool aShow,
                                             bool aIsSourceTouchEvent);
 
-  void ContentAppendedOrInserted(nsIContent* aFirstNewContent, bool aIsAppend);
-
   
   RefPtr<HTMLOptionsCollection> mOptions;
   nsContentUtils::AutocompleteAttrState mAutocompleteAttrState;
@@ -427,6 +519,12 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
   
   bool mDisabledChanged : 1 = false;
   
+
+
+  bool mMutating : 1 = false;
+  
+
+
   bool mInhibitStateRestoration : 1;
   
   bool mUserInteracted : 1 = false;
@@ -436,6 +534,16 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
   bool mIsOpenInParentProcess : 1 = false;
   bool mButtonDown : 1 = false;
   bool mControlSelectMode : 1 = false;
+
+  
+  uint32_t mNonOptionChildren;
+  
+  uint32_t mOptGroupCount;
+  
+
+
+
+  int32_t mSelectedIndex;
   
 
 

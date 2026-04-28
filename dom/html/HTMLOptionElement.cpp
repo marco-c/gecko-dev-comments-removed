@@ -144,8 +144,8 @@ void HTMLOptionElement::BeforeSetAttr(int32_t aNamespaceID, nsAtom* aName,
   
   
   
-  HTMLSelectElement* select = GetSelect();
-  if (!select) {
+  HTMLSelectElement* selectInt = GetSelect();
+  if (!selectInt) {
     
     
     SetStates(ElementState::CHECKED, !!aValue, aNotify);
@@ -153,6 +153,9 @@ void HTMLOptionElement::BeforeSetAttr(int32_t aNamespaceID, nsAtom* aName,
   }
 
   NS_ASSERTION(!mSelectedChanged, "Shouldn't be here");
+
+  bool inSetDefaultSelected = mIsInSetDefaultSelected;
+  mIsInSetDefaultSelected = true;
 
   int32_t index = Index();
   HTMLSelectElement::OptionFlags mask =
@@ -169,8 +172,11 @@ void HTMLOptionElement::BeforeSetAttr(int32_t aNamespaceID, nsAtom* aName,
   
   
   
-  select->SetOptionsSelectedByIndex(index, index, mask);
+  selectInt->SetOptionsSelectedByIndex(index, index, mask);
 
+  
+  
+  mIsInSetDefaultSelected = inSetDefaultSelected;
   
   
   

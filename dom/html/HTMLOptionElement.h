@@ -120,6 +120,10 @@ class HTMLOptionElement final : public nsGenericHTMLElement {
   JSObject* WrapNode(JSContext*, JS::Handle<JSObject*> aGivenProto) override;
 
   bool mSelectedChanged = false;
+
+  
+  
+  bool mIsInSetDefaultSelected = false;
 };
 
 }  
