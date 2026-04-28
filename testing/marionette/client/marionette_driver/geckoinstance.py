@@ -132,6 +132,8 @@ class GeckoInstance:
         
         "general.useragent.updates.enabled": False,
         
+        "geo.prompt.open_system_prefs": False,
+        
         "geo.provider.network.url": "",
         
         
