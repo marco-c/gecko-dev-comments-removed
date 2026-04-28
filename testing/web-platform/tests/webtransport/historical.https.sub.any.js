@@ -2,12 +2,29 @@
 
 
 
-promise_test(async t => {
-  
+async function get_wt() {
   const wt = new WebTransport(webtransport_url('{{domains[nonexistent]}}'));
   
   
   wt.ready.catch(() => {});
   wt.closed.catch(() => {});
+  return wt;
+}
+
+promise_test(async t => {
+  
+  const wt = await get_wt();
   assert_false('writable' in wt.datagrams);
-}, 'WebTransportDatagramDuplexStream#writable');
+}, 'WebTransportDatagramDuplexStream#writable is removed');
+
+promise_test(async t => {
+  
+  const wt = await get_wt();
+  assert_false('incomingHighWaterMark' in wt.datagrams);
+}, 'WebTransportDatagramDuplexStream#incomingHighWaterMark is removed');
+
+promise_test(async t => {
+  
+  const wt = await get_wt();
+  assert_false('outgoingHighWaterMark' in wt.datagrams);
+}, 'WebTransportDatagramDuplexStream#outgoingHighWaterMark is removed');

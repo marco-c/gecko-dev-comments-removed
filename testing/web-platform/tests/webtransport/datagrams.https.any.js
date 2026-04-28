@@ -230,7 +230,7 @@ promise_test(async t => {
 
   
   const N = 5;
-  wt.datagrams.outgoingHighWaterMark = N;
+  wt.datagrams.outgoingMaxBufferedDatagrams = N;
   const [sentTokens, receivedTokens] = await Promise.all([
       write_N_datagrams(writer, N),
       read_datagrams(reader, controller, N)
@@ -250,7 +250,7 @@ promise_test(async t => {
   await wt.ready;
 
   const N = 5;
-  wt.datagrams.outgoingHighWaterMark = N;
+  wt.datagrams.outgoingMaxBufferedDatagrams = N;
 
   const writer = wt.datagrams.createWritable().getWriter();
   const encoder = new TextEncoder();
@@ -287,7 +287,7 @@ promise_test(async t => {
 
   
   await writer.ready;
-}, 'Datagram\'s outgoingHighWaterMark correctly regulates written datagrams');
+}, 'Datagram\'s outgoingMaxBufferedDatagrams correctly regulates written datagrams');
 
 promise_test(async t => {
   
@@ -295,7 +295,7 @@ promise_test(async t => {
   await wt.ready;
 
   const N = 5;
-  wt.datagrams.incomingHighWaterMark = N;
+  wt.datagrams.incomingMaxBufferedDatagrams = N;
 
   const writer = wt.datagrams.createWritable().getWriter();
   const encoder = new TextEncoder();
@@ -332,7 +332,7 @@ promise_test(async t => {
   
   
   assert_less_than_equal(receivedDatagrams, N);
-}, 'Datagrams read is less than or equal to the incomingHighWaterMark');
+}, 'Datagrams read is less than or equal to the incomingMaxBufferedDatagrams');
 
 promise_test(async t => {
   
@@ -364,25 +364,32 @@ promise_test(async t => {
   await wt.ready;
 
   
-  assert_greater_than_equal(wt.datagrams.incomingHighWaterMark, 1);
-  assert_greater_than_equal(wt.datagrams.outgoingHighWaterMark, 1);
+  assert_greater_than_equal(wt.datagrams.incomingMaxBufferedDatagrams, 1);
+  assert_greater_than_equal(wt.datagrams.outgoingMaxBufferedDatagrams, 1);
 
-  wt.datagrams.incomingHighWaterMark = 5;
-  assert_equals(wt.datagrams.incomingHighWaterMark, 5);
-  wt.datagrams.outgoingHighWaterMark = 5;
-  assert_equals(wt.datagrams.outgoingHighWaterMark, 5);
+  wt.datagrams.incomingMaxBufferedDatagrams = 5;
+  assert_equals(wt.datagrams.incomingMaxBufferedDatagrams, 5);
+  wt.datagrams.outgoingMaxBufferedDatagrams = 5;
+  assert_equals(wt.datagrams.outgoingMaxBufferedDatagrams, 5);
 
-  assert_throws_js(RangeError, () => { wt.datagrams.incomingHighWaterMark = -1; });
-  assert_throws_js(RangeError, () => { wt.datagrams.outgoingHighWaterMark = -1; });
-  assert_throws_js(RangeError, () => { wt.datagrams.incomingHighWaterMark = NaN; });
-  assert_throws_js(RangeError, () => { wt.datagrams.outgoingHighWaterMark = NaN; });
+  
+  wt.datagrams.incomingMaxBufferedDatagrams = -1;
+  assert_equals(wt.datagrams.incomingMaxBufferedDatagrams, 4294967295);
+  wt.datagrams.outgoingMaxBufferedDatagrams = -1;
+  assert_equals(wt.datagrams.outgoingMaxBufferedDatagrams, 4294967295);
 
-  wt.datagrams.incomingHighWaterMark = 0.5;
-  assert_equals(wt.datagrams.incomingHighWaterMark, 1);
-  wt.datagrams.outgoingHighWaterMark = 0.5;
-  assert_equals(wt.datagrams.outgoingHighWaterMark, 1);
-  wt.datagrams.incomingHighWaterMark = 0;
-  assert_equals(wt.datagrams.incomingHighWaterMark, 1);
-  wt.datagrams.outgoingHighWaterMark = 0;
-  assert_equals(wt.datagrams.outgoingHighWaterMark, 1);
-}, 'Datagram HighWaterMark getters/setters work correctly');
+  
+  wt.datagrams.incomingMaxBufferedDatagrams = NaN;
+  assert_equals(wt.datagrams.incomingMaxBufferedDatagrams, 1);
+  wt.datagrams.outgoingMaxBufferedDatagrams = NaN;
+  assert_equals(wt.datagrams.outgoingMaxBufferedDatagrams, 1);
+
+  wt.datagrams.incomingMaxBufferedDatagrams = 0.5;
+  assert_equals(wt.datagrams.incomingMaxBufferedDatagrams, 1);
+  wt.datagrams.outgoingMaxBufferedDatagrams = 0.5;
+  assert_equals(wt.datagrams.outgoingMaxBufferedDatagrams, 1);
+  wt.datagrams.incomingMaxBufferedDatagrams = 0;
+  assert_equals(wt.datagrams.incomingMaxBufferedDatagrams, 1);
+  wt.datagrams.outgoingMaxBufferedDatagrams = 0;
+  assert_equals(wt.datagrams.outgoingMaxBufferedDatagrams, 1);
+}, 'Datagram MaxBufferedDatagrams getters/setters work correctly');
