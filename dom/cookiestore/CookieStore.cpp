@@ -2,14 +2,13 @@
 
 
 
-
-
 #include "CookieStore.h"
 
 #include "CookieStoreChild.h"
 #include "CookieStoreNotificationWatcherWrapper.h"
 #include "CookieStoreNotifier.h"
 #include "ThirdPartyUtil.h"
+#include "mozilla/Components.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StorageAccess.h"
 #include "mozilla/dom/Document.h"
@@ -23,6 +22,7 @@
 #include "mozilla/net/NeckoChannelParams.h"
 #include "nsGlobalWindowInner.h"
 #include "nsICookie.h"
+#include "nsIEffectiveTLDService.h"
 #include "nsIGlobalObject.h"
 #include "nsIPrincipal.h"
 #include "nsIURL.h"
@@ -164,6 +164,21 @@ bool ValidateCookieDomain(nsIPrincipal* aPrincipal, const nsAString& aName,
       aPromise->MaybeRejectWithTypeError(
           "Cookie domain must domain-match current host");
       return false;
+    }
+
+    
+    
+    
+    if (nsCOMPtr<nsIEffectiveTLDService> etld =
+            mozilla::components::EffectiveTLD::Service()) {
+      nsAutoCString baseDomain;
+      NS_ConvertUTF16toUTF8 utf8CookieDomain(aRetDomain);
+      rv = etld->GetBaseDomainFromHost(utf8CookieDomain, 0, baseDomain);
+      if (rv == NS_ERROR_INSUFFICIENT_DOMAIN_LEVELS) {
+        aPromise->MaybeRejectWithTypeError(
+            "Cookie domain must not be a public suffix");
+        return false;
+      }
     }
   }
 
