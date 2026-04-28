@@ -1,0 +1,6 @@
+
+
+
+
+"use strict";
+foo.bar();

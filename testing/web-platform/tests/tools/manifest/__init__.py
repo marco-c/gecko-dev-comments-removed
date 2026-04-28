@@ -1,1 +1,1 @@
-from . import item, manifest, sourcefile, update  
+from . import item, manifest, sourcefile, test262, update  

@@ -1,0 +1,8 @@
+
+
+
+
+
+
+$DONOTEVALUATE();
+!@#$ // Invalid syntax

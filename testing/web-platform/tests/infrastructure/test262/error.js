@@ -1,0 +1,5 @@
+
+
+
+
+throw new Test262Error("This is a deliberate test failure.");

@@ -33,7 +33,8 @@ __wptrunner__ = {"product": "chrome",
                               "reftest": "ChromeDriverRefTestExecutor",
                               "print-reftest": "ChromeDriverPrintRefTestExecutor",
                               "wdspec": "WdspecExecutor",
-                              "crashtest": "ChromeDriverCrashTestExecutor"},
+                              "crashtest": "ChromeDriverCrashTestExecutor",
+                              "test262": "ChromeDriverTestharnessExecutor"},
                  "browser_kwargs": "browser_kwargs",
                  "executor_kwargs": "executor_kwargs",
                  "env_extras": "env_extras",
@@ -149,11 +150,13 @@ def executor_kwargs(logger, test_type, test_environment, run_info_data, subsuite
     
     chrome_options["args"].append("--remote-debugging-pipe")
     
-    chrome_options["args"].append("--enable-features=" + ",".join([
-        "EnableBoundSessionCredentialsSoftwareKeysForManualTesting",
-        "DeviceBoundSessions:RefreshQuota/false/RequireOriginTrialTokens/false",
-        "DeviceBoundSessionsFederatedRegistration",
-    ]))
+    
+    if run_info_data.get("os") in ["win", "mac", "linux"]:
+        chrome_options["args"].append("--enable-features=" + ",".join([
+            "EnableBoundSessionCredentialsSoftwareKeysForManualTesting",
+            "DeviceBoundSessions:RefreshQuota/false/RequireOriginTrialTokens/false",
+            "DeviceBoundSessionsFederatedRegistration",
+        ]))
 
     
     

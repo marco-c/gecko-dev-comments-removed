@@ -1,0 +1,7 @@
+
+
+
+
+Promise.resolve().then(() => {
+    print('Test262:AsyncTestComplete');
+});

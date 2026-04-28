@@ -1,0 +1,6 @@
+
+
+
+
+
+$DONE(new Error("Explicit async failure"));
