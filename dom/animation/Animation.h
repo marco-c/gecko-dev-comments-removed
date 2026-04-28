@@ -112,10 +112,9 @@ class Animation : public DOMEventTargetHelper,
 
   
   
-  
   already_AddRefed<AnimationTimeline> GetTimelineFromJS() const {
-    return mTimeline && mTimeline->IsScrollTimeline() ? nullptr
-                                                      : do_AddRef(mTimeline);
+    return mTimeline && mTimeline->IsViewTimeline() ? nullptr
+                                                    : do_AddRef(mTimeline);
   }
   void SetTimelineFromJS(AnimationTimeline* aTimeline) {
     SetTimeline(aTimeline);
