@@ -6,7 +6,6 @@
 #define mozilla_MouseEvents_h_
 
 #include <stdint.h>
-#include <math.h>
 
 #include "mozilla/BasicEvents.h"
 #include "mozilla/EventForwards.h"
@@ -46,11 +45,13 @@ class WidgetPointerEventHolder final {
 class WidgetPointerHelper {
  public:
   struct Tilt {
+    bool operator==(const Tilt&) const = default;
     int32_t mX = 0;
     int32_t mY = 0;
   };
 
   struct Angle {
+    bool operator==(const Angle&) const = default;
     double mAltitude = 0.0;
     double mAzimuth = 0.0;
   };
