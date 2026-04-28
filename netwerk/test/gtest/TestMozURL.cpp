@@ -1,7 +1,6 @@
 #include "gtest/gtest.h"
 #include "gtest/MozGTestBench.h"  
 
-#include <regex>
 #include "json/json.h"
 #include "json/reader.h"
 #include "nsString.h"
