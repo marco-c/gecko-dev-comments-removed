@@ -13,10 +13,10 @@ assert_return(() => call($1, "get-a", []), "global.wast:204", -2);
 assert_return(() => call($1, "get-b", []), "global.wast:205", -5n);
 
 
-assert_return(() => call($1, "get-r", []), "global.wast:206", null);
+assert_return(() => call($1, "get-r", []), "global.wast:206", "ref.null");
 
 
-assert_return(() => call($1, "get-mr", []), "global.wast:207", null);
+assert_return(() => call($1, "get-mr", []), "global.wast:207", "ref.null");
 
 
 assert_return(() => call($1, "get-x", []), "global.wast:208", -12);
