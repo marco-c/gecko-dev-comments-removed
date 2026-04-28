@@ -172,6 +172,7 @@ class IMEContentObserver final : public nsStubMutationObserver,
   nsPresContext* GetPresContext() const;
   nsresult GetSelectionAndRoot(dom::Selection** aSelection,
                                dom::Element** aRootElement) const;
+  dom::Selection* GetSelection() const;
 
   
 
@@ -392,7 +393,6 @@ class IMEContentObserver final : public nsStubMutationObserver,
   
   
   nsCOMPtr<nsIWidget> mFocusedWidget;
-  RefPtr<dom::Selection> mSelection;
   
   
   RefPtr<dom::Element> mRootElement;
