@@ -56,6 +56,8 @@ const RELOAD_CONDITION_PREF_PREFIX = "devtools.responsive.reloadConditions.";
 const RELOAD_NOTIFICATION_PREF =
   "devtools.responsive.reloadNotification.enabled";
 const USE_DYNAMIC_TOOLBAR_PREF = "devtools.responsive.dynamicToolbar.enabled";
+const DYNAMIC_TOOLBAR_PREF_ON_TOP_PREF =
+  "devtools.responsive.dynamicToolbar.onTop";
 const DYNAMIC_TOOLBAR_MAX_HEIGHT = 50; 
 const DYNAMIC_TOOLBAR_SNAP_ANIMATION_DURATION_MS = 120; 
 
@@ -109,8 +111,14 @@ class ResponsiveUI extends EventEmitter {
     this.resolveInited = resolve;
 
     this.dynamicToolbar = null;
+    this.browserBottomCover = null;
     this.dynamicToolbarEnabled = Services.prefs.getBoolPref(
-      USE_DYNAMIC_TOOLBAR_PREF
+      USE_DYNAMIC_TOOLBAR_PREF,
+      false
+    );
+    this.dynamicToolbarOnTop = Services.prefs.getBoolPref(
+      DYNAMIC_TOOLBAR_PREF_ON_TOP_PREF,
+      false
     );
     this.currentDynamicToolbarHeight = 0;
     this.dynamicToolbarSnapAnimation = null;
@@ -201,22 +209,28 @@ class ResponsiveUI extends EventEmitter {
       "dynamic-toolbar-enabled",
       this.dynamicToolbarEnabled
     );
+    this.dynamicToolbar.classList.toggle(
+      "dynamic-toolbar-on-top",
+      this.dynamicToolbarOnTop
+    );
 
     const dynamicToolbarInner = doc.createElement("div");
     dynamicToolbarInner.classList.add("rdm-dynamic-toolbar-inner");
     this.dynamicToolbar.append(dynamicToolbarInner);
 
-    if (this.dynamicToolbarEnabled) {
-      this.dynamicToolbar.style.height = DYNAMIC_TOOLBAR_MAX_HEIGHT + "px";
-      InspectorUtils.setDynamicToolbarMaxHeight(
-        this.tab.linkedBrowser.browsingContext,
-        DYNAMIC_TOOLBAR_MAX_HEIGHT
-      );
-      this.setCurrentDynamicToolbarHeight(DYNAMIC_TOOLBAR_MAX_HEIGHT);
-      this.tab.linkedBrowser.addEventListener("mousedown", this);
-      this.tab.linkedBrowser.addEventListener("mousemove", this);
-      this.tab.linkedBrowser.addEventListener("mouseup", this);
-    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    this.browserBottomCover = doc.createElement("div");
+    this.browserBottomCover.classList.add("rdm-browser-bottom-cover");
 
     
     const resizeHandle = doc.createElement("div");
@@ -256,10 +270,23 @@ class ResponsiveUI extends EventEmitter {
 
     this.screenBox.append(
       this.dynamicToolbar,
+      this.browserBottomCover,
       resizeHandle,
       resizeHandleX,
       resizeHandleY
     );
+
+    if (this.dynamicToolbarEnabled) {
+      this.dynamicToolbar.style.height = DYNAMIC_TOOLBAR_MAX_HEIGHT + "px";
+      InspectorUtils.setDynamicToolbarMaxHeight(
+        this.tab.linkedBrowser.browsingContext,
+        DYNAMIC_TOOLBAR_MAX_HEIGHT
+      );
+      this.setCurrentDynamicToolbarHeight(DYNAMIC_TOOLBAR_MAX_HEIGHT);
+      this.tab.linkedBrowser.addEventListener("mousedown", this);
+      this.tab.linkedBrowser.addEventListener("mousemove", this);
+      this.tab.linkedBrowser.addEventListener("mouseup", this);
+    }
 
     
     message.wait(rdmFrame.contentWindow, "script-init").then(async () => {
@@ -380,6 +407,9 @@ class ResponsiveUI extends EventEmitter {
     this.browserStackEl.style.removeProperty("--rdm-width");
     this.browserStackEl.style.removeProperty("--rdm-height");
     this.browserStackEl.style.removeProperty("--rdm-zoom");
+
+    
+    this.tab.linkedBrowser.style.removeProperty("top");
 
     
     
@@ -1182,6 +1212,10 @@ class ResponsiveUI extends EventEmitter {
     const height = this.clamp(0, DYNAMIC_TOOLBAR_MAX_HEIGHT, unclampedHeight);
     this.currentDynamicToolbarHeight = height;
     this.dynamicToolbar.style.height = height + "px";
+    if (this.dynamicToolbarOnTop) {
+      this.tab.linkedBrowser.style.top = height + "px";
+      this.browserBottomCover.style.height = height + "px";
+    }
     const offset = height - DYNAMIC_TOOLBAR_MAX_HEIGHT;
     InspectorUtils.setVerticalClipping(
       this.tab.linkedBrowser.browsingContext,
