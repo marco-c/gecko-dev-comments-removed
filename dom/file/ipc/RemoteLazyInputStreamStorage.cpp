@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "RemoteLazyInputStreamStorage.h"
 
 #include "RemoteLazyInputStreamParent.h"
@@ -84,8 +82,21 @@ void RemoteLazyInputStreamStorage::AddStream(nsIInputStream* aInputStream,
       gRemoteLazyStreamLog, LogLevel::Verbose,
       ("Storage::AddStream(%s) = %p", nsIDToCString(aID).get(), aInputStream));
 
+  
+  
+  
+  nsCOMPtr<nsIInputStream> replacement;
+  nsCOMPtr<nsICloneableInputStream> cloneable;
+  nsresult rv = NS_EnsureInputStreamIsCloneable(
+      aInputStream, getter_AddRefs(cloneable), getter_AddRefs(replacement));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return;
+  }
+
+  MOZ_ASSERT(cloneable->GetCloneable(), "NS_EnsureInputStreamIsCloneable lied");
+
   UniquePtr<StreamData> data = MakeUnique<StreamData>();
-  data->mInputStream = aInputStream;
+  data->mInputStream = cloneable.forget();
 
   mozilla::StaticMutexAutoLock lock(gMutex);
   mStorage.InsertOrUpdate(aID, std::move(data));
@@ -105,7 +116,8 @@ nsCOMPtr<nsIInputStream> RemoteLazyInputStreamStorage::ForgetStream(
     return nullptr;
   }
 
-  return std::move(entry->mInputStream);
+  nsCOMPtr<nsIInputStream> stream = do_QueryInterface(entry->mInputStream);
+  return stream;
 }
 
 bool RemoteLazyInputStreamStorage::HasStream(const nsID& aID) {
@@ -123,11 +135,8 @@ void RemoteLazyInputStreamStorage::GetStream(const nsID& aID, uint64_t aStart,
           ("Storage::GetStream(%s, %" PRIu64 " %" PRIu64 ")",
            nsIDToCString(aID).get(), aStart, aLength));
 
-  nsCOMPtr<nsIInputStream> inputStream;
+  nsCOMPtr<nsICloneableInputStream> inputStream;
 
-  
-  
-  
   {
     mozilla::StaticMutexAutoLock lock(gMutex);
     StreamData* data = mStorage.Get(aID);
@@ -138,29 +147,13 @@ void RemoteLazyInputStreamStorage::GetStream(const nsID& aID, uint64_t aStart,
     inputStream = data->mInputStream;
   }
 
-  MOZ_ASSERT(inputStream);
-
-  
-  
+  MOZ_ASSERT(inputStream && inputStream->GetCloneable());
 
   nsCOMPtr<nsIInputStream> clonedStream;
-  nsCOMPtr<nsIInputStream> replacementStream;
 
-  nsresult rv = NS_CloneInputStream(inputStream, getter_AddRefs(clonedStream),
-                                    getter_AddRefs(replacementStream));
+  nsresult rv = inputStream->Clone(getter_AddRefs(clonedStream));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return;
-  }
-
-  if (replacementStream) {
-    mozilla::StaticMutexAutoLock lock(gMutex);
-    StreamData* data = mStorage.Get(aID);
-    
-    if (!data) {
-      return;
-    }
-
-    data->mInputStream = std::move(replacementStream);
   }
 
   

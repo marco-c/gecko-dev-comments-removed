@@ -12,6 +12,7 @@
 #include "nsIRunnable.h"
 
 class nsIAsyncInputStream;
+class nsICloneableInputStream;
 class nsIOutputStream;
 class nsIInputStreamCallback;
 class nsIOutputStreamCallback;
@@ -277,6 +278,26 @@ extern nsresult NS_FillArray(FallibleTArray<char>& aDest,
 
 
 extern bool NS_InputStreamIsCloneable(nsIInputStream* aSource);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+extern nsresult NS_EnsureInputStreamIsCloneable(
+    nsIInputStream* aSource, nsICloneableInputStream** aCloneableOut,
+    nsIInputStream** aReplacementOut = nullptr);
 
 
 
