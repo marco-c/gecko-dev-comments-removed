@@ -130,7 +130,6 @@ class DecodedStream : public MediaSink {
   
   const bool mShouldConfigAudioOutput;
   RefPtr<AudioDeviceInfo> mDevice;
-  bool mAudioOutputRegistered MOZ_GUARDED_BY(sMainThreadCapability) = false;
 
   media::NullableTimeUnit mStartTime;
   media::TimeUnit mLastOutputTime;
