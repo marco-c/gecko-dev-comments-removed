@@ -122,14 +122,6 @@ static mozilla::BackgroundHangMonitor* sMainHangMonitor;
 
 } 
 
-
-
-
-
-
-extern nsresult NS_RegistryGetFactory(nsIFactory** aFactory);
-extern nsresult NS_CategoryManagerGetFactory(nsIFactory**);
-
 #ifdef XP_WIN
 extern nsresult CreateAnonTempFileRemover();
 #endif
