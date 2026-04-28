@@ -16,9 +16,6 @@ void ParamTraitsEnumChecker::registerMatchers(MatchFinder *AstMatcher) {
               isDerivedFrom("EnumSerializer"),
               
               
-              isDerivedFrom("ParamTraits_IsEnumCase"),
-              
-              
               hasTemplateArgument(
                   0, refersToType(hasDeclaration(namedDecl(hasName("nsresult"))))))))
           .bind("decl"),

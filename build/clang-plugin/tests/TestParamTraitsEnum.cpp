@@ -32,11 +32,6 @@ enum class TypedClassEnum : uint32_t {
   TypedLast
 };
 
-enum class IsEnumCaseEnum {
-  IsEnumCaseFirst,
-  IsEnumCaseLast
-};
-
 enum class nsresult : uint32_t {
   NS_OK = 0
 };
@@ -61,11 +56,6 @@ template <typename E,
 struct ContiguousEnumSerializer
   : EnumSerializer<E,
                    ContiguousEnumValidator<E, MinLegal, HighBound>>
-{};
-
-
-template <typename E>
-struct ParamTraits_IsEnumCase
 {};
 
 
@@ -124,12 +114,6 @@ struct ParamTraits<GoodEnum>
 : public ContiguousEnumSerializer<GoodEnum,
                                   GoodEnum::GoodFirst,
                                   GoodEnum::GoodLast>
-{};
-
-
-template<>
-struct ParamTraits<IsEnumCaseEnum>
-: public ParamTraits_IsEnumCase<IsEnumCaseEnum>
 {};
 
 

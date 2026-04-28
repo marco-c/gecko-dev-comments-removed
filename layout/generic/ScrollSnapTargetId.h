@@ -8,6 +8,7 @@
 #include <cstdint>
 
 #include "Units.h"
+#include "mozilla/WritingModes.h"
 #include "nsPoint.h"
 #include "nsTArray.h"
 
@@ -18,7 +19,6 @@ namespace mozilla {
 enum class ScrollSnapTargetId : uintptr_t {
   None = 0,
 };
-inline constexpr bool IsEnumCase(ScrollSnapTargetId) { return true; }
 
 struct ScrollSnapTargetIds {
   CopyableTArray<ScrollSnapTargetId> mIdsOnX;
@@ -26,6 +26,12 @@ struct ScrollSnapTargetIds {
   bool operator==(const ScrollSnapTargetIds&) const = default;
   bool Contains(ScrollSnapTargetId aId) const {
     return mIdsOnX.Contains(aId) || mIdsOnY.Contains(aId);
+  }
+  const CopyableTArray<ScrollSnapTargetId>& IdsOnInline(WritingMode aWM) const {
+    return aWM.IsVertical() ? mIdsOnY : mIdsOnX;
+  }
+  const CopyableTArray<ScrollSnapTargetId>& IdsOnBlock(WritingMode aWM) const {
+    return aWM.IsVertical() ? mIdsOnX : mIdsOnY;
   }
 };
 

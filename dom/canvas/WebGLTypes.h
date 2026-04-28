@@ -19,8 +19,7 @@
 #include "gfxTypes.h"
 #include "mozilla/Casting.h"
 #include "mozilla/CheckedInt.h"
-#include "mozilla/EnumTypeTraits.h"
-#include "mozilla/IsEnumCase.h"
+#include "mozilla/DefineEnum.h"
 #include "mozilla/Range.h"
 #include "mozilla/RefCounted.h"
 #include "mozilla/Result.h"
@@ -303,26 +302,11 @@ struct SampleableInfo final {
   bool IsComplete() const { return bool(levels); }
 };
 
-enum class AttribBaseType : uint8_t {
-  Boolean,  
-  Float,    
-  Int,
-  Uint,
-};
-}  
-template <>
-inline constexpr bool IsEnumCase<webgl::AttribBaseType>(
-    const webgl::AttribBaseType v) {
-  switch (v) {
-    case webgl::AttribBaseType::Boolean:
-    case webgl::AttribBaseType::Float:
-    case webgl::AttribBaseType::Int:
-    case webgl::AttribBaseType::Uint:
-      return true;
-  }
-  return false;
-}
-namespace webgl {
+MOZ_DEFINE_ENUM_CLASS_WITH_BASE(AttribBaseType, uint8_t,
+                                (Boolean,  
+                                 Float,    
+                                 Int, Uint))
+
 webgl::AttribBaseType ToAttribBaseType(GLenum);
 const char* ToString(AttribBaseType);
 
@@ -740,27 +724,10 @@ enum class OptionalRenderableFormatBits : uint8_t {
   RGB8 = (1 << 0),
   SRGB8 = (1 << 1),
 };
-MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(OptionalRenderableFormatBits)
+constexpr auto kAllOptionalRenderableFormatBits =
+    OptionalRenderableFormatBits((1 << 2) - 1);
 
-}  
-template <>
-inline constexpr bool IsEnumCase<webgl::OptionalRenderableFormatBits>(
-    const webgl::OptionalRenderableFormatBits raw) {
-  auto rawWithoutValidBits = UnderlyingValue(raw);
-  auto bit = decltype(rawWithoutValidBits){1};
-  while (bit) {
-    switch (webgl::OptionalRenderableFormatBits{bit}) {
-      
-      case webgl::OptionalRenderableFormatBits::RGB8:
-      case webgl::OptionalRenderableFormatBits::SRGB8:
-        rawWithoutValidBits &= ~bit;
-        break;
-    }
-    bit <<= 1;
-  }
-  return rawWithoutValidBits == 0;
-}
-namespace webgl {
+MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(OptionalRenderableFormatBits)
 
 
 
@@ -1324,21 +1291,6 @@ enum class ProvokingVertex : GLenum {
   FirstVertex = LOCAL_GL_FIRST_VERTEX_CONVENTION,
   LastVertex = LOCAL_GL_LAST_VERTEX_CONVENTION,
 };
-
-}  
-
-template <>
-inline constexpr bool IsEnumCase<webgl::ProvokingVertex>(
-    const webgl::ProvokingVertex raw) {
-  switch (raw) {
-    case webgl::ProvokingVertex::FirstVertex:
-    case webgl::ProvokingVertex::LastVertex:
-      return true;
-  }
-  return false;
-}
-
-namespace webgl {
 
 
 
