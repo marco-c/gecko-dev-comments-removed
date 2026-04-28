@@ -145,7 +145,10 @@ void nsServerSocket::CreateClientTransport(PRFileDesc* aClientFD,
     return;
   }
 
-  mListener->OnSocketAccepted(this, trans);
+  nsCOMPtr<nsIServerSocketListener> listener = GetListener();
+  if (listener) {
+    listener->OnSocketAccepted(this, trans);
+  }
 }
 
 
@@ -196,22 +199,19 @@ void nsServerSocket::OnSocketDetached(PRFileDesc* fd) {
     mFD = nullptr;
   }
 
-  if (mListener) {
-    mListener->OnStopListening(this, mCondition);
+  RefPtr<nsIServerSocketListener> listener;
+  {
+    MutexAutoLock lock(mLock);
+    listener = ToRefPtr(std::move(mListener));
+  }
+
+  if (listener) {
+    listener->OnStopListening(this, mCondition);
 
     
-    RefPtr<nsIServerSocketListener> listener = nullptr;
-    {
-      MutexAutoLock lock(mLock);
-      listener = ToRefPtr(std::move(mListener));
-    }
-
     
-    
-    if (listener) {
-      NS_ProxyRelease("nsServerSocket::mListener", mListenerTarget,
-                      listener.forget());
-    }
+    NS_ProxyRelease("nsServerSocket::mListener", mListenerTarget,
+                    listener.forget());
   }
 }
 
@@ -536,9 +536,9 @@ NS_IMETHODIMP
 nsServerSocket::AsyncListen(nsIServerSocketListener* aListener) {
   
   NS_ENSURE_TRUE(mFD, NS_ERROR_NOT_INITIALIZED);
-  NS_ENSURE_TRUE(mListener == nullptr, NS_ERROR_IN_PROGRESS);
   {
     MutexAutoLock lock(mLock);
+    NS_ENSURE_TRUE(mListener == nullptr, NS_ERROR_IN_PROGRESS);
     mListener = new ServerSocketListenerProxy(aListener);
     mListenerTarget = GetCurrentSerialEventTarget();
   }

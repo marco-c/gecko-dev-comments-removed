@@ -41,7 +41,7 @@ class nsServerSocket : public nsASocketHandler, public nsIServerSocket {
  protected:
   virtual ~nsServerSocket();
   PRFileDesc* mFD{nullptr};
-  nsCOMPtr<nsIServerSocketListener> mListener;
+  nsCOMPtr<nsIServerSocketListener> mListener MOZ_GUARDED_BY(mLock);
 
  private:
   void OnMsgClose();
@@ -53,8 +53,24 @@ class nsServerSocket : public nsASocketHandler, public nsIServerSocket {
   nsresult InitWithAddressInternal(const PRNetAddr* aAddr, int32_t aBackLog,
                                    bool aDualStack = false);
 
+ protected:
   
-  mozilla::Mutex mLock MOZ_UNANNOTATED{"nsServerSocket.mLock"};
+  
+  
+  bool HasListener() {
+    MutexAutoLock lock(mLock);
+    return mListener != nullptr;
+  }
+
+  
+  already_AddRefed<nsIServerSocketListener> GetListener() {
+    MutexAutoLock lock(mLock);
+    return do_AddRef(mListener.get());
+  }
+
+ private:
+  
+  mozilla::Mutex mLock{"nsServerSocket.mLock"};
   PRNetAddr mAddr = {.raw = {0, {0}}};
   nsCOMPtr<nsIEventTarget> mListenerTarget;
   bool mAttached{false};

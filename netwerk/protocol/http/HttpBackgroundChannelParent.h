@@ -107,9 +107,10 @@ class HttpBackgroundChannelParent final : public PHttpBackgroundChannelParent {
   Atomic<bool> mIPCOpened;
 
   
-  Mutex mBgThreadMutex MOZ_UNANNOTATED;
+  Mutex mBgThreadMutex;
 
-  nsCOMPtr<nsISerialEventTarget> mBackgroundThread;
+  nsCOMPtr<nsISerialEventTarget> mBackgroundThread
+      MOZ_GUARDED_BY(mBgThreadMutex);
 
   
   RefPtr<HttpChannelParent> mChannelParent;

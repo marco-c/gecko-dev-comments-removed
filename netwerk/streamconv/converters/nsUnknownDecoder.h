@@ -67,7 +67,7 @@ class nsUnknownDecoder : public nsIStreamConverter, public nsIContentSniffer {
   };
 
  protected:
-  nsCOMPtr<nsIStreamListener> mNextListener;
+  nsCOMPtr<nsIStreamListener> mNextListener MOZ_GUARDED_BY(mMutex);
 
   
   
@@ -119,15 +119,16 @@ class nsUnknownDecoder : public nsIStreamConverter, public nsIContentSniffer {
   mozilla::Atomic<char*> mBuffer;
   mozilla::Atomic<uint32_t> mBufferLen;
 
-  nsCString mContentType;
+  nsCString mContentType MOZ_GUARDED_BY(mMutex);
 
   
-  mutable mozilla::Mutex mMutex MOZ_UNANNOTATED;
+  mutable mozilla::Mutex mMutex;
 
  protected:
   nsresult ConvertEncodedData(nsIRequest* request, const char* data,
                               uint32_t length);
-  nsCString mDecodedData;  
+  nsCString mDecodedData MOZ_GUARDED_BY(
+      mMutex);  
 };
 
 #define NS_BINARYDETECTOR_CID                 \

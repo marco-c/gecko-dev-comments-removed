@@ -57,7 +57,7 @@ class nvFIFO {
   
   
   
-  mutable Mutex mMutex MOZ_UNANNOTATED{"nvFIFO"};
+  mutable Mutex mMutex MOZ_ANNOTATED{"nvFIFO"};
 };
 
 class HpackDynamicTableReporter;

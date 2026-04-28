@@ -141,13 +141,25 @@ class HttpConnectionBase : public nsSupportsWeakReference {
   virtual void SetLastTransactionExpectedNoContent(bool) = 0;
   virtual int64_t BytesWritten() = 0;  
   void SetSecurityCallbacks(nsIInterfaceRequestor* aCallbacks);
+  already_AddRefed<nsIInterfaceRequestor> GetCallbacks() {
+    MutexAutoLock lock(mCallbacksLock);
+    return do_AddRef(mCallbacks.get());
+  }
+  
+  void InitCallbacks(nsIInterfaceRequestor* aCallbacks,
+                     const char* aName) MOZ_NO_THREAD_SAFETY_ANALYSIS {
+    mCallbacks = new nsMainThreadPtrHolder<nsIInterfaceRequestor>(
+        aName, aCallbacks, false);
+  }
   void SetTrafficCategory(HttpTrafficCategory);
 
   void BootstrapTimings(TimingStruct times);
   void SetDnsBootstrapTimings(TimeStamp domainLookupStart,
                               TimeStamp domainLookupEnd);
   void SetConnectBootstrapTimings(TimeStamp connectStart,
-                                  TimeStamp tcpConnectEnd);
+                                  TimeStamp tcpConnectEnd,
+                                  TimeStamp secureConnectionStart = TimeStamp(),
+                                  TimeStamp connectEnd = TimeStamp());
 
   virtual bool IsPersistent() = 0;
   virtual bool IsReused() = 0;
@@ -207,8 +219,9 @@ class HttpConnectionBase : public nsSupportsWeakReference {
   bool mBootstrappedTimingsSet{false};
   TimingStruct mBootstrappedTimings;
 
-  Mutex mCallbacksLock MOZ_UNANNOTATED{"nsHttpConnection::mCallbacksLock"};
-  nsMainThreadPtrHandle<nsIInterfaceRequestor> mCallbacks;
+  Mutex mCallbacksLock{"nsHttpConnection::mCallbacksLock"};
+  nsMainThreadPtrHandle<nsIInterfaceRequestor> mCallbacks
+      MOZ_GUARDED_BY(mCallbacksLock);
 
   nsTArray<HttpTrafficCategory> mTrafficCategory;
   PRIntervalTime mRtt{0};

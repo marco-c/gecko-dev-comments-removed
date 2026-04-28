@@ -36,7 +36,7 @@ using namespace mozilla;
 
 
 
-static StaticMutex gInitLock MOZ_UNANNOTATED;
+static StaticMutex gInitLock MOZ_ANNOTATED;
 
 
 static Atomic<bool, MemoryOrdering::Relaxed> gInitialized(false);

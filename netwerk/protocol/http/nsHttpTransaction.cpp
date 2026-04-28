@@ -246,16 +246,18 @@ nsresult nsHttpTransaction::Init(
   if (NS_FAILED(rv)) return rv;
 
   mConnInfo = cinfo->Clone();
+  
+  
+  MOZ_PUSH_IGNORE_THREAD_SAFETY
   mFinalizedConnInfo = mConnInfo;
   mCallbacks = callbacks;
+  mEarlyHintObserver = do_QueryInterface(eventsink);
+  MOZ_POP_THREAD_SAFETY
   mConsumerTarget = target;
   mCaps = caps;
 
   mParentIPAddressSpace = aParentIpAddressSpace;
   mLnaPermissionStatus = aLnaPermissionStatus;
-  
-  
-  mEarlyHintObserver = do_QueryInterface(eventsink);
 
   if (requestHead->IsHead()) {
     mNoContent = true;
@@ -389,7 +391,10 @@ nsresult nsHttpTransaction::Init(
     RefPtr<WebTransportSessionEventListener> listener =
         httpChannel->GetWebTransportSessionEventListener();
     if (listener) {
+      
+      MOZ_PUSH_IGNORE_THREAD_SAFETY
       mWebTransportSessionEventListener = std::move(listener);
+      MOZ_POP_THREAD_SAFETY
     }
     nsCOMPtr<nsIURI> uri;
     if (NS_SUCCEEDED(httpChannel->GetURI(getter_AddRefs(uri)))) {
@@ -672,13 +677,21 @@ void nsHttpTransaction::OnTransportStatus(nsITransport* transport,
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
 
   
-  
-
-  
   if ((mHasRequestBody) && (status == NS_NET_STATUS_WAITING_FOR)) {
     gHttpHandler->ObserveHttpActivityWithArgs(
         HttpActivityArgs(mChannelId), NS_HTTP_ACTIVITY_TYPE_HTTP_TRANSACTION,
         NS_HTTP_ACTIVITY_SUBTYPE_REQUEST_BODY_SENT, PR_Now(), 0, ""_ns);
+  }
+
+  if (status == NS_NET_STATUS_SENDING_TO && mReader) {
+    
+    LOG(
+        ("nsHttpTransaction::OnSocketStatus [this=%p] "
+         "Skipping Re-Entrant NS_NET_STATUS_SENDING_TO\n",
+         this));
+    
+    mDeferredSendProgress = true;
+    return;
   }
 
   
@@ -698,17 +711,6 @@ void nsHttpTransaction::OnTransportStatus(nsITransport* transport,
           ("nsHttpTransaction::OnTransportStatus %p "
            "SENDING_TO without request body\n",
            this));
-      return;
-    }
-
-    if (mReader) {
-      
-      LOG(
-          ("nsHttpTransaction::OnSocketStatus [this=%p] "
-           "Skipping Re-Entrant NS_NET_STATUS_SENDING_TO\n",
-           this));
-      
-      mDeferredSendProgress = true;
       return;
     }
 
@@ -3415,8 +3417,10 @@ nsresult nsHttpTransaction::OnHTTPSRRAvailable(
   
   bool needFastFallback = newInfo->IsHttp3() && !newInfo->GetWebTransport() &&
                           !newInfo->IsHttp3ProxyConnection();
-  bool foundInPendingQ = gHttpHandler->ConnMgr()->RemoveTransFromConnEntry(
-      this, mHashKeyOfConnectionEntry);
+  nsAutoCString hashKey;
+  GetHashKeyOfConnectionEntry(hashKey);
+  bool foundInPendingQ =
+      gHttpHandler->ConnMgr()->RemoveTransFromConnEntry(this, hashKey);
 
   
   
@@ -3662,8 +3666,10 @@ void nsHttpTransaction::HandleFallback(
   LOG(("nsHttpTransaction %p HandleFallback to connInfo[%s]", this,
        aFallbackConnInfo->HashKey().get()));
 
-  bool foundInPendingQ = gHttpHandler->ConnMgr()->RemoveTransFromConnEntry(
-      this, mHashKeyOfConnectionEntry);
+  nsAutoCString hashKey;
+  GetHashKeyOfConnectionEntry(hashKey);
+  bool foundInPendingQ =
+      gHttpHandler->ConnMgr()->RemoveTransFromConnEntry(this, hashKey);
   if (!foundInPendingQ) {
     MOZ_ASSERT(false, "transaction not in entry");
     return;
@@ -3707,13 +3713,18 @@ nsHttpTransaction::GetName(nsACString& aName) {
 bool nsHttpTransaction::GetSupportsHTTP3() { return mSupportsHTTP3; }
 
 void nsHttpTransaction::CollectTelemetryForUploads() {
+  TimingStruct timings;
+  {
+    MutexAutoLock lock(mLock);
+    timings = mTimings;
+  }
   if ((mRequestSize < TELEMETRY_REQUEST_SIZE_1M) ||
-      mTimings.requestStart.IsNull() || mTimings.responseStart.IsNull()) {
+      timings.requestStart.IsNull() || timings.responseStart.IsNull()) {
     return;
   }
 
   nsAutoCString protocolVersion(nsHttp::GetProtocolVersion(mHttpVersion));
-  TimeDuration sendTime = mTimings.responseStart - mTimings.requestStart;
+  TimeDuration sendTime = timings.responseStart - timings.requestStart;
   double megabits = static_cast<double>(mRequestSize) * 8.0 / 1000000.0;
   uint32_t mpbs = static_cast<uint32_t>(megabits / sendTime.ToSeconds());
 

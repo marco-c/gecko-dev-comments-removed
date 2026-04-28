@@ -117,13 +117,14 @@ class nsBufferedInputStream final : public nsBufferedStream,
   NS_IMETHOD Fill() override;
   NS_IMETHOD Flush() override { return NS_OK; }  
 
-  mozilla::Mutex mMutex MOZ_UNANNOTATED{"nsBufferedInputStream::mMutex"};
+  mozilla::Mutex mMutex{"nsBufferedInputStream::mMutex"};
 
   
-  nsCOMPtr<nsIInputStreamCallback> mAsyncWaitCallback;
+  nsCOMPtr<nsIInputStreamCallback> mAsyncWaitCallback MOZ_GUARDED_BY(mMutex);
 
   
-  nsCOMPtr<nsIInputStreamLengthCallback> mAsyncInputStreamLengthCallback;
+  nsCOMPtr<nsIInputStreamLengthCallback> mAsyncInputStreamLengthCallback
+      MOZ_GUARDED_BY(mMutex);
 
   bool mIsIPCSerializable{true};
   bool mIsAsyncInputStream{false};

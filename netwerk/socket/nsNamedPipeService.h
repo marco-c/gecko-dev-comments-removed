@@ -50,12 +50,11 @@ class NamedPipeService final : public nsINamedPipeService,
 
 
 
-  Mutex mLock MOZ_UNANNOTATED;
-  nsTArray<nsCOMPtr<nsINamedPipeDataObserver>>
-      mObservers;  
-  nsTArray<nsCOMPtr<nsINamedPipeDataObserver>>
-      mRetiredObservers;             
-  nsTArray<HANDLE> mRetiredHandles;  
+  Mutex mLock;
+  nsTArray<nsCOMPtr<nsINamedPipeDataObserver>> mObservers MOZ_GUARDED_BY(mLock);
+  nsTArray<nsCOMPtr<nsINamedPipeDataObserver>> mRetiredObservers
+      MOZ_GUARDED_BY(mLock);
+  nsTArray<HANDLE> mRetiredHandles MOZ_GUARDED_BY(mLock);
 
   static StaticRefPtr<NamedPipeService> gSingleton;
 };

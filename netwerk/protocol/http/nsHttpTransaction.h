@@ -141,6 +141,8 @@ class nsHttpTransaction final : public nsAHttpTransaction,
     mDoNotResetIPFamilyPreference = true;
   }
   void DisableHttp3(bool aAllowRetryHTTPSRR) override;
+  void RemoveAltSvcUsedHeader();
+  void Deactivate();
 
   nsHttpTransaction* QueryHttpTransaction() override { return this; }
 
@@ -163,6 +165,14 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   
   void Refused0RTT();
 
+  bool Connected() const { return mConnected; }
+
+  void SetHappyEyeballsProxy(nsAHttpTransaction* aProxy) {
+    mHappyEyeballsProxy = aProxy;
+  }
+  nsAHttpTransaction* HappyEyeballsProxy() const {
+    return mHappyEyeballsProxy.get();
+  }
   uint64_t BrowserId() override { return mBrowserId; }
 
   void SetHttpTrailers(nsCString& aTrailers);
@@ -299,6 +309,7 @@ class nsHttpTransaction final : public nsAHttpTransaction,
     TRANSACTION_RESTART_POSSIBLE_0RTT_ERROR
   };
   void SetRestartReason(TRANSACTION_RESTART_REASON aReason);
+  bool MaybeForceRestart(const char* aLogMessage);
 
   bool HandleWebTransportResponse(uint16_t aStatus);
 
@@ -342,12 +353,17 @@ class nsHttpTransaction final : public nsAHttpTransaction,
     uint32_t mPriority;
   };
 
-  Mutex mLock MOZ_UNANNOTATED{"transaction lock"};
+  
+  
+  
+  
+  
+  Mutex mLock{"transaction lock"};
 
-  nsCOMPtr<nsIInterfaceRequestor> mCallbacks;
+  nsCOMPtr<nsIInterfaceRequestor> mCallbacks MOZ_GUARDED_BY(mLock);
   nsCOMPtr<nsITransportEventSink> mTransportSink;
   nsCOMPtr<nsIEventTarget> mConsumerTarget;
-  nsCOMPtr<nsITransportSecurityInfo> mSecurityInfo;
+  nsCOMPtr<nsITransportSecurityInfo> mSecurityInfo MOZ_GUARDED_BY(mLock);
   nsCOMPtr<nsIAsyncInputStream> mPipeIn;
   nsCOMPtr<nsIAsyncOutputStream> mPipeOut;
   nsCOMPtr<nsIRequestContext> mRequestContext;
@@ -394,7 +410,7 @@ class nsHttpTransaction final : public nsAHttpTransaction,
 
   nsHttpChunkedDecoder* mChunkedDecoder{nullptr};
 
-  TimingStruct mTimings;
+  TimingStruct mTimings MOZ_GUARDED_BY(mLock);
 
   nsresult mStatus{NS_OK};
 
@@ -545,7 +561,10 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   Atomic<bool, Relaxed> mClassOfServiceIncremental{false};
 
  public:
-  nsIInterfaceRequestor* SecurityCallbacks() { return mCallbacks; }
+  nsIInterfaceRequestor* SecurityCallbacks() {
+    MutexAutoLock lock(mLock);
+    return mCallbacks;
+  }
   
   void OnPendingQueueInserted(const nsACString& aConnectionHashKey);
 
@@ -588,7 +607,7 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   RefPtr<nsHttpConnectionInfo> mBackupConnInfo;
   
   
-  RefPtr<nsHttpConnectionInfo> mFinalizedConnInfo;
+  RefPtr<nsHttpConnectionInfo> mFinalizedConnInfo MOZ_GUARDED_BY(mLock);
   RefPtr<HTTPSRecordResolver> mResolver;
   TRANSACTION_RESTART_REASON mRestartReason = TRANSACTION_RESTART_NONE;
 
@@ -607,20 +626,22 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   bool mEarlyDataWasAvailable = false;
   bool ShouldRestartOn0RttError(nsresult reason);
 
-  nsCOMPtr<nsIEarlyHintObserver> mEarlyHintObserver;
+  nsCOMPtr<nsIEarlyHintObserver> mEarlyHintObserver MOZ_GUARDED_BY(mLock);
   
   
   
   
   
-  nsCString mHashKeyOfConnectionEntry;
+  nsCString mHashKeyOfConnectionEntry MOZ_GUARDED_BY(mLock);
   
   nsCString mCname;
   nsCString mServerHeader;
 
-  nsCOMPtr<WebTransportSessionEventListener> mWebTransportSessionEventListener;
+  nsCOMPtr<WebTransportSessionEventListener> mWebTransportSessionEventListener
+      MOZ_GUARDED_BY(mLock);
 
   nsAutoCString mUrl;
+  RefPtr<nsAHttpTransaction> mHappyEyeballsProxy;
 };
 
 }  

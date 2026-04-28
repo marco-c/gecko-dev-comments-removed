@@ -1230,7 +1230,10 @@ NetlinkService::Run() {
 nsresult NetlinkService::Init(NetlinkServiceListener* aListener) {
   nsresult rv;
 
+  
+  MOZ_PUSH_IGNORE_THREAD_SAFETY
   mListener = aListener;
+  MOZ_POP_THREAD_SAFETY
 
   if (inet_pton(AF_INET, ROUTE_CHECK_IPV4, &mRouteCheckIPv4) != 1) {
     LOG(("Cannot parse address " ROUTE_CHECK_IPV4));

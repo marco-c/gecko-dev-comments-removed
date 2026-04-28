@@ -15,7 +15,6 @@
 #include "nsIChannelEventSink.h"
 #include "nsICORSPreflightCache.h"
 #include "nsIThreadRetargetableStreamListener.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Mutex.h"
 
@@ -100,7 +99,7 @@ class nsCORSListenerProxy final : public nsIInterfaceRequestor,
                                               UpdateType aUpdateType,
                                               bool aStripAuthHeader);
 
-  nsCOMPtr<nsIStreamListener> mOuterListener;
+  nsCOMPtr<nsIStreamListener> mOuterListener MOZ_GUARDED_BY(mMutex);
   
   nsCOMPtr<nsIPrincipal> mRequestingPrincipal;
   
@@ -127,7 +126,7 @@ class nsCORSListenerProxy final : public nsIInterfaceRequestor,
   
   
   
-  mutable mozilla::Mutex mMutex MOZ_UNANNOTATED;
+  mutable mozilla::Mutex mMutex;
 };
 
 #endif

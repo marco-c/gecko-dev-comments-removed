@@ -380,7 +380,7 @@ class TypeHostRecord final : public nsHostRecord,
 
   mozilla::net::TypeRecordResultType mResults MOZ_GUARDED_BY(mResultsLock) =
       AsVariant(mozilla::Nothing());
-  mozilla::Mutex mResultsLock{"TypeHostRecord.mResultsLock"};
+  mutable mozilla::Mutex mResultsLock{"TypeHostRecord.mResultsLock"};
 
   mozilla::Maybe<nsCString> mOriginHost MOZ_GUARDED_BY(mResultsLock);
   bool mAllRecordsExcluded = false;

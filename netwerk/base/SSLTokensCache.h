@@ -100,22 +100,23 @@ class SSLTokensCache : public nsIMemoryReporter,
   SSLTokensCache();
   virtual ~SSLTokensCache();
 
-  nsresult RemoveLocked(const nsACString& aKey, uint64_t aId);
-  nsresult RemoveAllLocked(const nsACString& aKey);
+  nsresult RemoveLocked(const nsACString& aKey, uint64_t aId)
+      MOZ_REQUIRES(sLock);
+  nsresult RemoveAllLocked(const nsACString& aKey) MOZ_REQUIRES(sLock);
   
   
   nsresult GetLocked(const nsACString& aKey, nsTArray<uint8_t>& aToken,
                      SessionCacheInfo& aResult, uint64_t* aTokenId,
-                     nsTArray<uint64_t>& aRemovedIds);
+                     nsTArray<uint64_t>& aRemovedIds) MOZ_REQUIRES(sLock);
 
   
   
   
-  void EvictIfNecessary(nsTArray<uint64_t>& aEvictedIds);
-  void LogStats();
+  void EvictIfNecessary(nsTArray<uint64_t>& aEvictedIds) MOZ_REQUIRES(sLock);
+  void LogStats() MOZ_REQUIRES(sLock);
   
   
-  void ClearCacheLocked();
+  void ClearCacheLocked() MOZ_REQUIRES(sLock);
   
   
   static bool ShouldPersistKey(const nsACString& aKey,
@@ -124,8 +125,8 @@ class SSLTokensCache : public nsIMemoryReporter,
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const
       MOZ_REQUIRES(sLock);
 
-  static mozilla::StaticRefPtr<SSLTokensCache> gInstance;
-  static StaticMutex sLock MOZ_UNANNOTATED;
+  static mozilla::StaticRefPtr<SSLTokensCache> gInstance MOZ_GUARDED_BY(sLock);
+  static StaticMutex sLock;
   static uint64_t sRecordId MOZ_GUARDED_BY(sLock);
 
   uint32_t mCacheSize MOZ_GUARDED_BY(sLock){0};
@@ -162,19 +163,19 @@ class SSLTokensCache : public nsIMemoryReporter,
       const mozilla::OriginAttributesPattern& aPattern);
 
   
+  template <typename Pred>
+  nsTArray<uint64_t> RemoveMatchingLocked(Pred&& aPredicate)
+      MOZ_REQUIRES(sLock);
+  
+  nsTArray<uint64_t> CollectValidIdsLocked() const MOZ_REQUIRES(sLock);
+  
+  
+  static void SyncRustShadow(nsTArray<uint64_t>&& aRemainingIds)
+      MOZ_EXCLUDES(sLock);
+  
   
   template <typename Pred>
-  nsTArray<uint64_t> RemoveMatchingLocked(Pred&& aPredicate);
-  
-  
-  nsTArray<uint64_t> CollectValidIdsLocked() const;
-  
-  
-  static void SyncRustShadow(nsTArray<uint64_t>&& aRemainingIds);
-  
-  
-  template <typename Pred>
-  static void RemoveMatchingAndSync(Pred&& aPredicate);
+  static void RemoveMatchingAndSync(Pred&& aPredicate) MOZ_EXCLUDES(sLock);
   
   static void PutFromPersistedCallback(void*,
                                        const SslTokensPersistedRecord* aRec);
@@ -216,13 +217,14 @@ class SSLTokensCache : public nsIMemoryReporter,
     nsTArray<UniquePtr<TokenCacheRecord>> mRecords;
   };
 
-  void OnRecordDestroyed(TokenCacheRecord* aRec);
+  void OnRecordDestroyed(TokenCacheRecord* aRec) MOZ_REQUIRES(sLock);
   
   
   
   
   uint64_t InsertRecordLocked(UniquePtr<TokenCacheRecord> aRec,
-                              nsTArray<uint64_t>& aEvictedIds);
+                              nsTArray<uint64_t>& aEvictedIds)
+      MOZ_REQUIRES(sLock);
 
   nsClassHashtable<nsCStringHashKey, TokenCacheEntry> mTokenCacheRecords
       MOZ_GUARDED_BY(sLock);
