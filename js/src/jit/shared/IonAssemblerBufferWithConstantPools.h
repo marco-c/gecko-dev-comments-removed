@@ -577,6 +577,10 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
 
   
   static constexpr unsigned GuardSize = settings.guardSize;
+
+  
+  static constexpr unsigned VeneerSize = settings.guardSize;
+
   
   
   static constexpr unsigned HeaderSize = settings.headerSize;
@@ -736,9 +740,7 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
     
 
     
-    
-    
-    return GuardSize *
+    return VeneerSize *
            (branchDeadlines_.size() - branchDeadlines_.maxRangeSize() +
             numNewDeadlines) *
            InstSize;
@@ -1030,7 +1032,7 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
       branchDeadlines_.removeDeadline(rangeIdx, deadline);
 
       
-      BufferOffset veneer = this->putBytes(GuardSize * InstSize, nullptr);
+      BufferOffset veneer = this->putBytes(VeneerSize * InstSize, nullptr);
       if (this->oom()) {
         return;
       }
