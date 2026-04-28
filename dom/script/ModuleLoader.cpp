@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ModuleLoader.h"
 
 #include "GeckoProfiler.h"
@@ -229,6 +227,7 @@ nsresult ModuleLoader::CompileFetchedModule(
     case JS::ModuleType::CSS:
       return CompileCssModule(aCx, aOptions, aRequest, aModuleOut);
     case JS::ModuleType::Bytes:
+    case JS::ModuleType::Text:
       MOZ_CRASH("Unexpected module type");
   }
 
@@ -264,12 +263,10 @@ nsresult ModuleLoader::CompileJavaScriptOrWasmModule(
       return NS_ERROR_FAILURE;
     }
 
-    bool alreadyStarted;
-    if (!JS::StartCollectingDelazifications(aCx, aModuleOut, stencil,
-                                            alreadyStarted)) {
+    if (!GetScriptLoader()->StartCollectingDelazifications(aCx, aModuleOut,
+                                                           stencil)) {
       return NS_ERROR_FAILURE;
     }
-    (void)alreadyStarted;
 
     return NS_OK;
   }
@@ -292,12 +289,10 @@ nsresult ModuleLoader::CompileJavaScriptOrWasmModule(
     }
 
     if (aRequest->PassedConditionForEitherCache()) {
-      bool alreadyStarted;
-      if (!JS::StartCollectingDelazifications(aCx, aModuleOut, stencil,
-                                              alreadyStarted)) {
+      if (!GetScriptLoader()->StartCollectingDelazifications(aCx, aModuleOut,
+                                                             stencil)) {
         return NS_ERROR_FAILURE;
       }
-      MOZ_ASSERT(!alreadyStarted);
     }
 
     GetScriptLoader()->TryCacheRequest(aRequest);
@@ -343,12 +338,10 @@ nsresult ModuleLoader::CompileJavaScriptOrWasmModule(
   }
 
   if (aRequest->PassedConditionForEitherCache()) {
-    bool alreadyStarted;
-    if (!JS::StartCollectingDelazifications(aCx, aModuleOut, stencil,
-                                            alreadyStarted)) {
+    if (!GetScriptLoader()->StartCollectingDelazifications(aCx, aModuleOut,
+                                                           stencil)) {
       return NS_ERROR_FAILURE;
     }
-    MOZ_ASSERT(!alreadyStarted);
   }
 
   GetScriptLoader()->TryCacheRequest(aRequest);
@@ -380,6 +373,67 @@ nsresult ModuleLoader::CompileJsonModule(
   return NS_OK;
 }
 
+nsresult CreateCssModule(JSContext* aCx, nsIGlobalObject* aGlobal,
+                         const nsACString& aSource, nsIURI* aBaseURI,
+                         JS::MutableHandle<JSObject*> aModuleOut) {
+  
+  nsCOMPtr<nsPIDOMWindowInner> window = do_QueryInterface(aGlobal);
+  if (!window) {
+    JS_ReportErrorASCII(aCx,
+                        "CSS module scripts not supported when there is no "
+                        "window");
+    return NS_ERROR_FAILURE;
+  }
+
+  Document* constructorDocument = window->GetExtantDoc();
+  if (!constructorDocument) {
+    JS_ReportErrorASCII(aCx,
+                        "CSS module scripts not supported when there is no "
+                        "document");
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  
+  
+  
+  
+  ErrorResult error;
+  CSSStyleSheetInit options;
+  RefPtr<StyleSheet> sheet = StyleSheet::CreateConstructedSheet(
+      *constructorDocument, aBaseURI, options, error);
+  if (error.Failed()) {
+    MOZ_ALWAYS_TRUE(error.MaybeSetPendingException(aCx));
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  
+  
+  sheet->ReplaceSync(aSource, error);
+  if (error.Failed()) {
+    MOZ_ALWAYS_TRUE(error.MaybeSetPendingException(aCx));
+    return NS_ERROR_FAILURE;
+  }
+
+  JS::Rooted<JS::Value> val(aCx, JS::NullValue());
+  if (!GetOrCreateDOMReflector(aCx, sheet, &val) || !val.isObject()) {
+    if (!JS_IsExceptionPending(aCx)) {
+      JS_ReportErrorASCII(aCx, "Internal error");
+    }
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  JSObject* cssModule = JS::CreateDefaultExportSyntheticModule(aCx, val);
+  if (!cssModule) {
+    return NS_ERROR_FAILURE;
+  }
+
+  aModuleOut.set(cssModule);
+  return NS_OK;
+}
+
 nsresult ModuleLoader::CompileCssModule(
     JSContext* aCx, JS::CompileOptions& aOptions, ModuleLoadRequest* aRequest,
     JS::MutableHandle<JSObject*> aModuleOut) {
@@ -392,7 +446,6 @@ nsresult ModuleLoader::CompileCssModule(
                                           aRequest->mLoadContext.get());
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
   JS::Rooted<JSObject*> cssModule(aCx, nullptr);
   ErrorResult error;
   auto compile = [&](auto& source) {
@@ -400,58 +453,19 @@ nsresult ModuleLoader::CompileCssModule(
     static_assert(std::is_same_v<T, JS::SourceText<char16_t>&> ||
                   std::is_same_v<T, JS::SourceText<Utf8Unit>&>);
 
-    nsCOMPtr<nsPIDOMWindowInner> window =
-        do_QueryInterface(aRequest->GetGlobalObject());
-    if (!window) {
-      error.ThrowNotSupportedError(
-          "CSS module scripts not supported when there is no window");
-      return;
-    }
-
-    Document* constructorDocument = window->GetExtantDoc();
-    if (!constructorDocument) {
-      error.ThrowNotSupportedError(
-          "CSS module scripts not supported when there is no document");
-      return;
-    }
-
-    
-    
-    
-    
-    
-    
-    dom::CSSStyleSheetInit options;
-    RefPtr<StyleSheet> sheet = StyleSheet::CreateConstructedSheet(
-        *constructorDocument, aRequest->BaseURL(), options, error);
-    if (error.Failed()) {
-      return;
-    }
-
-    
-    
-    
+    nsCString text;
     if constexpr (std::is_same_v<T, JS::SourceText<mozilla::Utf8Unit>&>) {
-      nsDependentCSubstring text(source.get(), source.length());
-      sheet->ReplaceSync(text, error);
-    } else if constexpr (std::is_same_v<T, JS::SourceText<char16_t>&>) {
-      nsDependentSubstring text(source.get(), source.length());
-      sheet->ReplaceSync(NS_ConvertUTF16toUTF8(text), error);
-    }
-    if (error.Failed()) {
-      return;
+      text.Assign(source.get(), source.length());
+    } else {
+      CopyUTF16toUTF8(nsDependentSubstring(source.get(), source.length()),
+                      text);
     }
 
-    JS::Rooted<JS::Value> val(aCx, JS::NullValue());
-    if (!GetOrCreateDOMReflector(aCx, sheet, &val) || !val.isObject()) {
-      if (!JS_IsExceptionPending(aCx)) {
-        error.ThrowUnknownError("Internal error");
-      }
-      return;
+    nsresult rv2 = CreateCssModule(aCx, aRequest->GetGlobalObject(), text,
+                                   aRequest->BaseURL(), &cssModule);
+    if (NS_FAILED(rv2) && !JS_IsExceptionPending(aCx)) {
+      error.ThrowUnknownError("Internal error");
     }
-
-    
-    cssModule.set(JS::CreateDefaultExportSyntheticModule(aCx, val));
   };
 
   maybeSource.mapNonEmpty(compile);
