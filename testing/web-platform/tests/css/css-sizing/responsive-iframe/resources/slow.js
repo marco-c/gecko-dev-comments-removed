@@ -1,0 +1,15 @@
+
+
+
+
+
+
+(function () {
+  const start = new Date().getTime();
+  while (true) {
+    const now = new Date().getTime();
+    if (now - start > 500) {
+      break;
+    }
+  }
+})();
