@@ -282,12 +282,6 @@ class BaseChannel : public ChannelInterface,
   
   
   
-  bool MaybeAddHandledPayloadType(int payload_type) RTC_RUN_ON(worker_thread());
-
-  
-  
-  
-  
   bool CheckRtpExtensionValidity(const RtpHeaderExtensions& extensions,
                                  std::string& error_desc) const
       RTC_RUN_ON(worker_thread());
@@ -297,13 +291,17 @@ class BaseChannel : public ChannelInterface,
   
   bool MaybeUpdateDemuxerAndRtpExtensions_w(
       bool update_demuxer,
+      std::optional<flat_set<uint8_t>> payload_types,
       const RtpHeaderExtensions& extensions,
+      std::optional<flat_set<uint32_t>> ssrcs,
       std::string& error_desc) RTC_RUN_ON(worker_thread());
 
   
   
   
-  bool RegisterRtpDemuxerSink_w() RTC_RUN_ON(worker_thread());
+  bool RegisterRtpDemuxerSink_w(bool clear_payload_types,
+                                std::optional<flat_set<uint32_t>> ssrcs)
+      RTC_RUN_ON(worker_thread());
 
   
   std::string ToString() const;
@@ -317,10 +315,7 @@ class BaseChannel : public ChannelInterface,
   void DisconnectFromRtpTransport_n() RTC_RUN_ON(network_thread());
   void SignalSentPacket_n(const SentPacketInfo& sent_packet);
   
-  
-  
-  
-  RtpDemuxerCriteria demuxer_criteria() const RTC_NO_THREAD_SAFETY_ANALYSIS;
+  RtpDemuxerCriteria demuxer_criteria() const RTC_RUN_ON(network_thread());
 
   TaskQueueBase* const worker_thread_;
   Thread* const network_thread_;
@@ -367,7 +362,7 @@ class BaseChannel : public ChannelInterface,
       RTC_GUARDED_BY(worker_thread()) = RtpTransceiverDirection::kInactive;
 
   
-  flat_set<uint8_t> payload_types_ RTC_GUARDED_BY(worker_thread());
+  flat_set<uint8_t> payload_types_ RTC_GUARDED_BY(network_thread());
   
   RtpHeaderExtensions rtp_header_extensions_ RTC_GUARDED_BY(worker_thread());
 
@@ -377,7 +372,7 @@ class BaseChannel : public ChannelInterface,
       RTC_GUARDED_BY(worker_thread());
 
   const std::string mid_;
-  flat_set<uint32_t> ssrcs_ RTC_GUARDED_BY(worker_thread());
+  flat_set<uint32_t> ssrcs_ RTC_GUARDED_BY(network_thread());
   
   
   
