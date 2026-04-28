@@ -13,8 +13,8 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <span>
 
-#include "api/array_view.h"
 #include "rtc_base/checks.h"
 
 namespace dcsctp {
@@ -53,8 +53,7 @@ inline uint32_t LoadBigEndian32(const uint8_t* data) {
 template <int FixedSize>
 class BoundedByteReader {
  public:
-  explicit BoundedByteReader(webrtc::ArrayView<const uint8_t> data)
-      : data_(data) {
+  explicit BoundedByteReader(std::span<const uint8_t> data) : data_(data) {
     RTC_CHECK(data.size() >= FixedSize);
   }
 
@@ -82,19 +81,19 @@ class BoundedByteReader {
   BoundedByteReader<SubSize> sub_reader(size_t variable_offset) const {
     RTC_CHECK(FixedSize + variable_offset + SubSize <= data_.size());
 
-    webrtc::ArrayView<const uint8_t> sub_span =
+    std::span<const uint8_t> sub_span =
         data_.subspan(FixedSize + variable_offset, SubSize);
     return BoundedByteReader<SubSize>(sub_span);
   }
 
   size_t variable_data_size() const { return data_.size() - FixedSize; }
 
-  webrtc::ArrayView<const uint8_t> variable_data() const {
+  std::span<const uint8_t> variable_data() const {
     return data_.subspan(FixedSize);
   }
 
  private:
-  const webrtc::ArrayView<const uint8_t> data_;
+  const std::span<const uint8_t> data_;
 };
 
 }  

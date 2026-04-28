@@ -11,20 +11,20 @@
 #define NET_DCSCTP_SOCKET_CALLBACK_DEFERRER_H_
 
 #include <cstdint>
-#include <functional>
 #include <memory>
+#include <span>
 #include <string>
 #include <utility>
 #include <variant>
 #include <vector>
 
 #include "absl/strings/string_view.h"
-#include "api/array_view.h"
-#include "api/ref_counted_base.h"
-#include "api/scoped_refptr.h"
 #include "api/task_queue/task_queue_base.h"
+#include "api/units/timestamp.h"
 #include "net/dcsctp/public/dcsctp_message.h"
 #include "net/dcsctp/public/dcsctp_socket.h"
+#include "net/dcsctp/public/timeout.h"
+#include "net/dcsctp/public/types.h"
 
 namespace dcsctp {
 
@@ -61,8 +61,7 @@ class CallbackDeferrer : public DcSctpSocketCallbacks {
       : underlying_(underlying) {}
 
   
-  SendPacketStatus SendPacketWithStatus(
-      webrtc::ArrayView<const uint8_t> data) override;
+  SendPacketStatus SendPacketWithStatus(std::span<const uint8_t> data) override;
   std::unique_ptr<Timeout> CreateTimeout(
       webrtc::TaskQueueBase::DelayPrecision precision) override;
   TimeMs TimeMillis() override;
@@ -75,12 +74,12 @@ class CallbackDeferrer : public DcSctpSocketCallbacks {
   void OnConnected() override;
   void OnClosed() override;
   void OnConnectionRestarted() override;
-  void OnStreamsResetFailed(webrtc::ArrayView<const StreamID> outgoing_streams,
+  void OnStreamsResetFailed(std::span<const StreamID> outgoing_streams,
                             absl::string_view reason) override;
   void OnStreamsResetPerformed(
-      webrtc::ArrayView<const StreamID> outgoing_streams) override;
+      std::span<const StreamID> outgoing_streams) override;
   void OnIncomingStreamsReset(
-      webrtc::ArrayView<const StreamID> incoming_streams) override;
+      std::span<const StreamID> incoming_streams) override;
   void OnBufferedAmountLow(StreamID stream_id) override;
   void OnTotalBufferedAmountLow() override;
 

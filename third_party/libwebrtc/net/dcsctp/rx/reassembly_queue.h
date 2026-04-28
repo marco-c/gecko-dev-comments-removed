@@ -10,26 +10,23 @@
 #ifndef NET_DCSCTP_RX_REASSEMBLY_QUEUE_H_
 #define NET_DCSCTP_RX_REASSEMBLY_QUEUE_H_
 
-#include <stddef.h>
-
-#include <cstdint>
+#include <cstddef>
 #include <deque>
 #include <memory>
-#include <set>
-#include <string>
+#include <optional>
+#include <span>
 #include <utility>
 #include <vector>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/strings/string_view.h"
-#include "api/array_view.h"
 #include "net/dcsctp/common/internal_types.h"
 #include "net/dcsctp/common/sequence_numbers.h"
 #include "net/dcsctp/packet/chunk/forward_tsn_common.h"
 #include "net/dcsctp/packet/data.h"
-#include "net/dcsctp/packet/parameter/outgoing_ssn_reset_request_parameter.h"
-#include "net/dcsctp/packet/parameter/reconfiguration_response_parameter.h"
+#include "net/dcsctp/public/dcsctp_handover_state.h"
 #include "net/dcsctp/public/dcsctp_message.h"
+#include "net/dcsctp/public/types.h"
 #include "net/dcsctp/rx/reassembly_streams.h"
 #include "rtc_base/containers/flat_set.h"
 
@@ -96,17 +93,15 @@ class ReassemblyQueue {
   
   void HandleForwardTsn(
       TSN new_cumulative_tsn,
-      webrtc::ArrayView<const AnyForwardTsnChunk::SkippedStream>
-          skipped_streams);
+      std::span<const AnyForwardTsnChunk::SkippedStream> skipped_streams);
 
   
   
-  void ResetStreamsAndLeaveDeferredReset(
-      webrtc::ArrayView<const StreamID> stream_ids);
+  void ResetStreamsAndLeaveDeferredReset(std::span<const StreamID> stream_ids);
 
   
   void EnterDeferredReset(TSN sender_last_assigned_tsn,
-                          webrtc::ArrayView<const StreamID> streams);
+                          std::span<const StreamID> streams);
 
   
   
@@ -145,7 +140,7 @@ class ReassemblyQueue {
   };
 
   bool IsConsistent() const;
-  void AddReassembledMessage(webrtc::ArrayView<const UnwrappedTSN> tsns,
+  void AddReassembledMessage(std::span<const UnwrappedTSN> tsns,
                              DcSctpMessage message);
 
   const absl::string_view log_prefix_;

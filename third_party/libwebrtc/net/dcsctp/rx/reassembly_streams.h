@@ -10,19 +10,16 @@
 #ifndef NET_DCSCTP_RX_REASSEMBLY_STREAMS_H_
 #define NET_DCSCTP_RX_REASSEMBLY_STREAMS_H_
 
-#include <stddef.h>
-#include <stdint.h>
-
+#include <cstddef>
 #include <functional>
-#include <vector>
+#include <span>
 
-#include "absl/strings/string_view.h"
-#include "api/array_view.h"
 #include "net/dcsctp/common/sequence_numbers.h"
 #include "net/dcsctp/packet/chunk/forward_tsn_common.h"
 #include "net/dcsctp/packet/data.h"
 #include "net/dcsctp/public/dcsctp_handover_state.h"
 #include "net/dcsctp/public/dcsctp_message.h"
+#include "net/dcsctp/public/types.h"
 
 namespace dcsctp {
 
@@ -46,7 +43,7 @@ class ReassemblyStreams {
   
   
   using OnAssembledMessage =
-      std::function<void(webrtc::ArrayView<const UnwrappedTSN> tsns,
+      std::function<void(std::span<const UnwrappedTSN> tsns,
                          DcSctpMessage message)>;
 
   virtual ~ReassemblyStreams() = default;
@@ -71,13 +68,12 @@ class ReassemblyStreams {
   
   virtual size_t HandleForwardTsn(
       UnwrappedTSN new_cumulative_ack_tsn,
-      webrtc::ArrayView<const AnyForwardTsnChunk::SkippedStream>
-          skipped_streams) = 0;
+      std::span<const AnyForwardTsnChunk::SkippedStream> skipped_streams) = 0;
 
   
   
   
-  virtual void ResetStreams(webrtc::ArrayView<const StreamID> stream_ids) = 0;
+  virtual void ResetStreams(std::span<const StreamID> stream_ids) = 0;
 
   virtual HandoverReadinessStatus GetHandoverReadiness() const = 0;
   virtual void AddHandoverState(DcSctpSocketHandoverState& state) = 0;

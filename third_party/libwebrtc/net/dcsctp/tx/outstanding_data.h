@@ -16,10 +16,10 @@
 #include <functional>
 #include <optional>
 #include <set>
+#include <span>
 #include <utility>
 #include <vector>
 
-#include "api/array_view.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
 #include "net/dcsctp/common/internal_types.h"
@@ -89,10 +89,9 @@ class OutstandingData {
         last_cumulative_tsn_ack_(last_cumulative_tsn_ack),
         discard_from_send_queue_(std::move(discard_from_send_queue)) {}
 
-  AckInfo HandleSack(
-      UnwrappedTSN cumulative_tsn_ack,
-      webrtc::ArrayView<const SackChunk::GapAckBlock> gap_ack_blocks,
-      bool is_in_fast_recovery);
+  AckInfo HandleSack(UnwrappedTSN cumulative_tsn_ack,
+                     std::span<const SackChunk::GapAckBlock> gap_ack_blocks,
+                     bool is_in_fast_recovery);
 
   
   
@@ -314,10 +313,9 @@ class OutstandingData {
 
   
   
-  void AckGapBlocks(
-      UnwrappedTSN cumulative_tsn_ack,
-      webrtc::ArrayView<const SackChunk::GapAckBlock> gap_ack_blocks,
-      AckInfo& ack_info);
+  void AckGapBlocks(UnwrappedTSN cumulative_tsn_ack,
+                    std::span<const SackChunk::GapAckBlock> gap_ack_blocks,
+                    AckInfo& ack_info);
 
   
   
@@ -325,7 +323,7 @@ class OutstandingData {
   
   void NackBetweenAckBlocks(
       UnwrappedTSN cumulative_tsn_ack,
-      webrtc::ArrayView<const SackChunk::GapAckBlock> gap_ack_blocks,
+      std::span<const SackChunk::GapAckBlock> gap_ack_blocks,
       bool is_in_fast_recovery,
       bool cumulative_tsn_acked_advanced,
       OutstandingData::AckInfo& ack_info);

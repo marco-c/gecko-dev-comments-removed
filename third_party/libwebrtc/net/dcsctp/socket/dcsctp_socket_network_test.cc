@@ -12,13 +12,13 @@
 #include <functional>
 #include <memory>
 #include <optional>
+#include <span>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "absl/base/nullability.h"
 #include "absl/strings/string_view.h"
-#include "api/array_view.h"
 #include "api/task_queue/pending_task_safety_flag.h"
 #include "api/task_queue/task_queue_base.h"
 #include "api/test/create_network_emulation_manager.h"
@@ -126,7 +126,7 @@ class BoundSocket : public webrtc::EmulatedNetworkReceiverInterface {
     receiver_ = std::move(receiver);
   }
 
-  void SendPacket(webrtc::ArrayView<const uint8_t> data) {
+  void SendPacket(std::span<const uint8_t> data) {
     endpoint_->SendPacket(source_address_, dest_address_,
                           webrtc::CopyOnWriteBuffer(data.data(), data.size()));
   }
@@ -191,7 +191,7 @@ class SctpActor : public DcSctpSocketCallbacks {
     }
   }
 
-  void SendPacket(webrtc::ArrayView<const uint8_t> data) override {
+  void SendPacket(std::span<const uint8_t> data) override {
     emulated_socket_.SendPacket(data);
   }
 
@@ -227,15 +227,14 @@ class SctpActor : public DcSctpSocketCallbacks {
 
   void OnConnectionRestarted() override {}
 
-  void OnStreamsResetFailed(
-      webrtc::ArrayView<const StreamID> ,
-      absl::string_view ) override {}
+  void OnStreamsResetFailed(std::span<const StreamID> ,
+                            absl::string_view ) override {}
 
   void OnStreamsResetPerformed(
-      webrtc::ArrayView<const StreamID> ) override {}
+      std::span<const StreamID> ) override {}
 
   void OnIncomingStreamsReset(
-      webrtc::ArrayView<const StreamID> ) override {}
+      std::span<const StreamID> ) override {}
 
   void NotifyOutgoingMessageBufferEmpty() override {}
 

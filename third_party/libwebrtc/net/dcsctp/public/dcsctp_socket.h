@@ -14,11 +14,11 @@
 #include <cstdint>
 #include <memory>
 #include <optional>
+#include <span>
 #include <vector>
 
 #include "absl/base/attributes.h"
 #include "absl/strings/string_view.h"
-#include "api/array_view.h"
 #include "api/task_queue/task_queue_base.h"
 #include "api/units/timestamp.h"
 #include "net/dcsctp/public/dcsctp_handover_state.h"
@@ -287,14 +287,13 @@ class DcSctpSocketCallbacks {
   
   
   
-  virtual void SendPacket(webrtc::ArrayView<const uint8_t> ) {}
+  virtual void SendPacket(std::span<const uint8_t> ) {}
 
   
   
   
   
-  virtual SendPacketStatus SendPacketWithStatus(
-      webrtc::ArrayView<const uint8_t> data) {
+  virtual SendPacketStatus SendPacketWithStatus(std::span<const uint8_t> data) {
     SendPacket(data);
     return SendPacketStatus::kSuccess;
   }
@@ -410,22 +409,21 @@ class DcSctpSocketCallbacks {
   
   
   
-  virtual void OnStreamsResetFailed(
-      webrtc::ArrayView<const StreamID> outgoing_streams,
-      absl::string_view reason) = 0;
+  virtual void OnStreamsResetFailed(std::span<const StreamID> outgoing_streams,
+                                    absl::string_view reason) = 0;
 
   
   
   
   virtual void OnStreamsResetPerformed(
-      webrtc::ArrayView<const StreamID> outgoing_streams) = 0;
+      std::span<const StreamID> outgoing_streams) = 0;
 
   
   
   
   
   virtual void OnIncomingStreamsReset(
-      webrtc::ArrayView<const StreamID> incoming_streams) = 0;
+      std::span<const StreamID> incoming_streams) = 0;
 
   
   
@@ -531,7 +529,7 @@ class DcSctpSocketInterface {
   virtual ~DcSctpSocketInterface() = default;
 
   
-  virtual void ReceivePacket(webrtc::ArrayView<const uint8_t> data) = 0;
+  virtual void ReceivePacket(std::span<const uint8_t> data) = 0;
 
   
   
@@ -558,9 +556,8 @@ class DcSctpSocketInterface {
   
   
   
-  virtual bool ConnectWithConnectionToken(
-      webrtc::ArrayView<const uint8_t> my_data,
-      webrtc::ArrayView<const uint8_t> peer_data) {
+  virtual bool ConnectWithConnectionToken(std::span<const uint8_t> my_data,
+                                          std::span<const uint8_t> peer_data) {
     return false;
   }
 
@@ -615,9 +612,8 @@ class DcSctpSocketInterface {
   
   
   
-  virtual std::vector<SendStatus> SendMany(
-      webrtc::ArrayView<DcSctpMessage> messages,
-      const SendOptions& send_options) = 0;
+  virtual std::vector<SendStatus> SendMany(std::span<DcSctpMessage> messages,
+                                           const SendOptions& send_options) = 0;
 
   
   
@@ -635,7 +631,7 @@ class DcSctpSocketInterface {
   
   
   virtual ResetStreamsStatus ResetStreams(
-      webrtc::ArrayView<const StreamID> outgoing_streams) = 0;
+      std::span<const StreamID> outgoing_streams) = 0;
 
   
   

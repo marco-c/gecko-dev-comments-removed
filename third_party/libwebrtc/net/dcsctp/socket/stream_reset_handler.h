@@ -12,12 +12,12 @@
 
 #include <memory>
 #include <optional>
+#include <span>
 #include <utility>
 #include <vector>
 
 #include "absl/functional/bind_front.h"
 #include "absl/strings/string_view.h"
-#include "api/array_view.h"
 #include "api/units/time_delta.h"
 #include "net/dcsctp/common/internal_types.h"
 #include "net/dcsctp/common/sequence_numbers.h"
@@ -97,7 +97,7 @@ class StreamResetHandler {
   
   
   
-  void ResetStreams(webrtc::ArrayView<const StreamID> outgoing_streams);
+  void ResetStreams(std::span<const StreamID> outgoing_streams);
 
   
   
