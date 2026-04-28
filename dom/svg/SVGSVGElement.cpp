@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/SVGSVGElement.h"
 
 #include "DOMSVGAngle.h"
@@ -234,10 +232,13 @@ void SVGSVGElement::SetCurrentTime(float seconds) {
 }
 
 void SVGSVGElement::DeselectAll() {
-  nsIFrame* frame = GetPrimaryFrame();
-  if (frame) {
-    RefPtr<nsFrameSelection> frameSelection = frame->GetFrameSelection();
-    frameSelection->ClearNormalSelection();
+  if (Document* doc = GetComposedDoc()) {
+    if (RefPtr<PresShell> presShell = doc->GetPresShell()) {
+      if (RefPtr<Selection> docSel =
+              presShell->GetCurrentSelection(SelectionType::eNormal)) {
+        docSel->RemoveAllRanges(IgnoreErrors());
+      }
+    }
   }
 }
 
