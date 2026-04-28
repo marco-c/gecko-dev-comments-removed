@@ -14,9 +14,14 @@ class AllowList {
     this._id = id;
   }
 
-  setShims(patterns, notHosts) {
-    this._shimPatterns = patterns;
-    this._shimMatcher = new MatchPatternSet(patterns || []);
+  setShims(matchEntries, notHosts) {
+    this._shimEntries = (matchEntries || []).map(entry => ({
+      types: entry.types,
+      matcher: new MatchPatternSet(entry.patterns),
+    }));
+    this._shimMatcher = new MatchPatternSet(
+      matchEntries?.flatMap(e => e.patterns) || []
+    );
     this._shimNotHosts = notHosts || [];
     return this;
   }
@@ -28,9 +33,17 @@ class AllowList {
     return this;
   }
 
-  shims(url, topHost) {
+  
+  
+  shims(url, topHost, requestType) {
     return (
-      this._shimMatcher?.matches(url) && !this._shimNotHosts?.includes(topHost)
+      this._shimMatcher?.matches(url) &&
+      !this._shimNotHosts?.includes(topHost) &&
+      this._shimEntries.some(
+        entry =>
+          (!requestType || entry.types.includes(requestType)) &&
+          entry.matcher.matches(url)
+      )
     );
   }
 
@@ -89,6 +102,9 @@ class Manager {
           );
           const isPrivateMode = subject.isPrivateBrowsing;
           const { channelId, url } = channel;
+          const requestType = channel.channel
+            ? ChannelWrapper.get(channel.channel).type
+            : undefined;
           let topHost;
           try {
             topHost = new URL(channel.topLevelUrl).hostname;
@@ -115,7 +131,7 @@ class Manager {
           }
           
           for (const allowList of activeAllowLists.values()) {
-            if (allowList.shims(url, topHost)) {
+            if (allowList.shims(url, topHost, requestType)) {
               activeUnblockedChannelIds.add(channelId);
               channel.replace();
               return;
@@ -155,9 +171,12 @@ class Manager {
     this._getAllowList(allowListId, isPrivateMode).setAllows(patterns, hosts);
   }
 
-  shim(allowListId, patterns, isPrivateMode, notHosts) {
+  shim(allowListId, matchEntries, isPrivateMode, notHosts) {
     this._ensureStarted();
-    this._getAllowList(allowListId, isPrivateMode).setShims(patterns, notHosts);
+    this._getAllowList(allowListId, isPrivateMode).setShims(
+      matchEntries,
+      notHosts
+    );
   }
 
   revoke(allowListId) {
@@ -319,6 +338,9 @@ this.trackingProtection = class extends ExtensionAPI {
             {
               id: "smartblock-placeholder-button-text",
               args: { websitehost: websiteHost },
+            },
+            {
+              id: "smartblock-placeholder-content-header",
             },
           ];
 
