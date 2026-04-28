@@ -86,6 +86,11 @@ extern "C" {
 #define NESTEGG_VIDEO_STEREO_TOP_BOTTOM 3 /**< Track is top-bottom stereo video.  Left first. */
 #define NESTEGG_VIDEO_STEREO_RIGHT_LEFT 11 /**< Track is side-by-side stereo video.  Right first. */
 
+#define NESTEGG_VIDEO_PROJECTION_RECTANGULAR     0 /**< Track uses rectangular projection type. */
+#define NESTEGG_VIDEO_PROJECTION_EQUIRECTANGULAR 1 /**< Track uses equirectangular projection type. */
+#define NESTEGG_VIDEO_PROJECTION_CUBEMAP         2 /**< Track uses cubemap projection type. */
+#define NESTEGG_VIDEO_PROJECTION_MESH            3 /**< Track uses mesh projection type. */
+
 #define NESTEGG_SEEK_SET 0 /**< Seek offset relative to beginning of stream. */
 #define NESTEGG_SEEK_CUR 1 /**< Seek offset relative to current position in stream. */
 #define NESTEGG_SEEK_END 2 /**< Seek offset relative to end of stream. */
@@ -112,6 +117,10 @@ typedef struct nestegg nestegg;
 typedef struct nestegg_packet nestegg_packet; 
 
 
+
+
+
+
 typedef struct {
   
 
@@ -120,7 +129,7 @@ typedef struct {
 
 
 
-  int (* read)(void * buffer, size_t length, void * userdata);
+  int64_t (* read)(void * buffer, size_t length, void * userdata);
 
   
 
@@ -179,6 +188,20 @@ typedef struct {
   double luminance_max;                  
 
   double luminance_min;                  
+
+  unsigned int max_cll;                  
+
+  unsigned int max_fall;                 
+
+  unsigned int projection_type;          
+
+
+
+  double projection_pose_yaw;            
+
+  double projection_pose_pitch;          
+
+  double projection_pose_roll;           
 
 } nestegg_video_params;
 
@@ -389,6 +412,14 @@ int nestegg_read_last_packet(nestegg * context,
 
 
 
+
+
+
+
+int nestegg_read_total_frames_count(nestegg * context, uint64_t * frames_out);
+
+
+
 void nestegg_free_packet(nestegg_packet * packet);
 
 
@@ -503,6 +534,16 @@ int nestegg_packet_offsets(nestegg_packet * packet,
 
 int nestegg_packet_reference_block(nestegg_packet * packet,
                                    int64_t * reference_block);
+
+
+
+
+
+
+
+
+
+int nestegg_packet_end_offset(nestegg_packet * packet, int64_t * end_offset);
 
 
 
