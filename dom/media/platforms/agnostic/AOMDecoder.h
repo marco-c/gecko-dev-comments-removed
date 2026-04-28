@@ -1,8 +1,6 @@
 
 
 
-
-
 #if !defined(AOMDecoder_h_)
 #  define AOMDecoder_h_
 
@@ -240,6 +238,13 @@ class AOMDecoder final : public MediaDataDecoder,
   
   static MediaResult ReadSequenceHeaderInfo(const Span<const uint8_t>& aSample,
                                             AV1SequenceInfo& aDestInfo);
+
+  
+  
+  
+  static mozilla::Maybe<mozilla::gfx::HDRMetadata> ReadMetadataOBUHDR(
+      const Span<const uint8_t>& aSample);
+
   
   static already_AddRefed<MediaByteBuffer> CreateSequenceHeader(
       const AV1SequenceInfo& aInfo, nsresult& aResult);
