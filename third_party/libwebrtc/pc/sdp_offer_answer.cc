@@ -5221,24 +5221,21 @@ RTCError SdpOfferAnswerHandler::PushdownMediaDescription(
     }
 
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    ScopedOperationsBatcher batcher(context_->worker_thread());
+
     for (const auto& [transceiver, content] : channels) {
-      RTCError error =
-          (source == CS_LOCAL)
-              ? transceiver->SetChannelLocalContent(content, type)
-              : transceiver->SetChannelRemoteContent(content, type);
-      if (!error.ok()) {
-        return error;
+      if (source == CS_LOCAL) {
+        transceiver->SetChannelLocalContent(content, type, batcher);
+      } else {
+        transceiver->SetChannelRemoteContent(content, type, batcher);
       }
     }
+
+    RTCError error = batcher.Run();
+    if (!error.ok()) {
+      return error;
+    }
+
     
     
     if (pc_->trials().IsEnabled("WebRTC-RFC8888CongestionControlFeedback")) {

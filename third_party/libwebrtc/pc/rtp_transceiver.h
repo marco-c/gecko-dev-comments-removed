@@ -65,6 +65,7 @@ namespace webrtc {
 class DtlsTransport;
 
 class PeerConnectionSdpMethods;
+class ScopedOperationsBatcher;
 
 
 
@@ -377,10 +378,20 @@ class RtpTransceiver : public RtpTransceiverInterface {
   }
 
   bool SetChannelRtpTransport(RtpTransportInternal* rtp_transport);
-  RTCError SetChannelLocalContent(const MediaContentDescription* content,
-                                  SdpType type);
-  RTCError SetChannelRemoteContent(const MediaContentDescription* content,
-                                   SdpType type);
+  
+  
+  
+  
+  void SetChannelLocalContent(const MediaContentDescription* content,
+                              SdpType type,
+                              ScopedOperationsBatcher& batcher);
+  
+  
+  
+  
+  void SetChannelRemoteContent(const MediaContentDescription* content,
+                               SdpType type,
+                               ScopedOperationsBatcher& batcher);
   bool SetChannelPayloadTypeDemuxingEnabled(bool enabled);
   void EnableChannel(bool enable);
   const std::vector<StreamParams>& channel_local_streams() const;
@@ -431,7 +442,38 @@ class RtpTransceiver : public RtpTransceiverInterface {
   GetOfferedAndImplementedHeaderExtensions(
       const MediaContentDescription* content) const;
 
-  RTCError SetChannelContent(absl::AnyInvocable<RTCError() &&> set_content);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  void SetChannelContent(absl::AnyInvocable<RTCError() &&> set_content,
+                         ScopedOperationsBatcher& batcher);
 
   const Environment env_;
   
