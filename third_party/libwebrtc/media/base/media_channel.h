@@ -235,6 +235,18 @@ class MediaSendChannelInterface {
       uint32_t ,
       VideoEncoderFactory::EncoderSelectorInterface* ) {}
   virtual RtpParameters GetRtpSendParameters(uint32_t ssrc) const = 0;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  virtual absl::AnyInvocable<RtpParameters(uint32_t)>
+  GetRtpSendParametersCallback() const = 0;
   virtual bool SendCodecHasNack() const = 0;
   
   virtual void SetSsrcListChangedCallback(
@@ -908,6 +920,13 @@ class VoiceMediaSendChannelInterface : public MediaSendChannelInterface {
   
   virtual bool InsertDtmf(uint32_t ssrc, int event, int duration) = 0;
   virtual bool GetStats(VoiceMediaSendInfo* stats) = 0;
+  
+  
+  
+  
+  
+  virtual absl::AnyInvocable<std::optional<VoiceMediaSendInfo>()>
+  GetStatsCallback() = 0;
   virtual bool SenderNackEnabled() const = 0;
   virtual bool SenderNonSenderRttEnabled() const = 0;
   virtual bool SetOptions(const AudioOptions& options) = 0;
@@ -933,6 +952,13 @@ class VoiceMediaReceiveChannelInterface : public MediaReceiveChannelInterface {
   virtual void SetDefaultRawAudioSink(
       std::unique_ptr<AudioSinkInterface> sink) = 0;
   virtual bool GetStats(VoiceMediaReceiveInfo* stats, bool reset_legacy) = 0;
+  
+  
+  
+  
+  
+  virtual absl::AnyInvocable<std::optional<VoiceMediaReceiveInfo>()>
+  GetStatsCallback(bool reset_legacy) = 0;
   virtual enum RtcpMode RtcpMode() const = 0;
   virtual void SetRtcpMode(enum RtcpMode mode) = 0;
   virtual void SetReceiveNackEnabled(bool enabled) = 0;
@@ -981,6 +1007,13 @@ class VideoMediaSendChannelInterface : public MediaSendChannelInterface {
   
   
   
+  virtual absl::AnyInvocable<std::optional<VideoMediaSendInfo>()>
+  GetStatsCallback() = 0;
+  
+  
+  
+  
+  
   
   
   
@@ -1013,6 +1046,13 @@ class VideoMediaReceiveChannelInterface : public MediaReceiveChannelInterface {
   
   virtual void ClearRecordableEncodedFrameCallback(uint32_t ssrc) = 0;
   virtual bool GetStats(VideoMediaReceiveInfo* stats) = 0;
+  
+  
+  
+  
+  
+  virtual absl::AnyInvocable<std::optional<VideoMediaReceiveInfo>()>
+  GetStatsCallback() = 0;
   virtual bool AddDefaultRecvStreamForTesting(const StreamParams& sp) = 0;
 };
 
