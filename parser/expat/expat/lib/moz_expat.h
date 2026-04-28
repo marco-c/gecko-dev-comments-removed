@@ -87,8 +87,10 @@ int
 MOZ_XML_SetParamEntityParsing(XML_Parser parser,
                               enum XML_ParamEntityParsing parsing);
 
-int
-MOZ_XML_SetHashSalt(XML_Parser parser, unsigned long hash_salt);
+
+
+XML_Bool
+MOZ_XML_SetHashSalt16Bytes(XML_Parser parser, const char entropy[16]);
 
 
 int
