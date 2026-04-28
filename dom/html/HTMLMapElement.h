@@ -2,17 +2,15 @@
 
 
 
-
-
 #ifndef mozilla_dom_HTMLMapElement_h
 #define mozilla_dom_HTMLMapElement_h
 
 #include "nsGenericHTMLElement.h"
 #include "nsGkAtoms.h"
 
-class nsContentList;
-
 namespace mozilla::dom {
+
+class ContentList;
 
 class HTMLMapElement final : public nsGenericHTMLElement {
  public:
@@ -29,14 +27,14 @@ class HTMLMapElement final : public nsGenericHTMLElement {
   void SetName(const nsAString& aName, ErrorResult& aError) {
     SetHTMLAttr(nsGkAtoms::name, aName, aError);
   }
-  nsIHTMLCollection* Areas();
+  HTMLCollection* Areas();
 
   JSObject* WrapNode(JSContext*, JS::Handle<JSObject*> aGivenProto) override;
 
  protected:
   ~HTMLMapElement() = default;
 
-  RefPtr<nsContentList> mAreas;
+  RefPtr<ContentList> mAreas;
 };
 
 }  

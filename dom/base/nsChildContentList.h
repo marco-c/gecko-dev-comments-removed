@@ -7,7 +7,7 @@
 
 #include "js/TypeDecls.h"  
 #include "mozilla/RefPtr.h"
-#include "nsINodeList.h"  
+#include "mozilla/dom/NodeList.h"  
 #include "nsISupportsImpl.h"
 
 class nsIContent;
@@ -18,8 +18,7 @@ class nsINode;
 
 
 
-
-class nsAttrChildContentList : public nsINodeList {
+class nsAttrChildContentList : public mozilla::dom::NodeList {
  public:
   explicit nsAttrChildContentList(nsINode* aNode) : mNode(aNode) {}
 

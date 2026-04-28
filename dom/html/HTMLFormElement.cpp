@@ -18,6 +18,7 @@
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/BindContext.h"
 #include "mozilla/dom/BrowsingContext.h"
+#include "mozilla/dom/ContentList.h"
 #include "mozilla/dom/CustomEvent.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/HTMLFormControlsCollection.h"
@@ -27,7 +28,6 @@
 #include "mozilla/dom/nsCSPUtils.h"
 #include "mozilla/dom/nsMixedContentBlocker.h"
 #include "nsCOMArray.h"
-#include "nsContentList.h"
 #include "nsContentUtils.h"
 #include "nsDOMAttributeMap.h"
 #include "nsDocShell.h"
@@ -71,7 +71,6 @@
 #include "mozilla/dom/HTMLInputElement.h"
 #include "mozilla/dom/HTMLSelectElement.h"
 #include "nsIConstraintValidation.h"
-#include "nsIHTMLCollection.h"
 #include "nsLayoutUtils.h"
 #include "nsSandboxFlags.h"
 
@@ -1804,7 +1803,7 @@ nsresult HTMLFormElement::AddElementToTableInternal(
 
         
         
-        RadioNodeList* list = new RadioNodeList(this);
+        RefPtr list = new RadioNodeList(this);
 
         
         
@@ -1820,10 +1819,8 @@ nsresult HTMLFormElement::AddElementToTableInternal(
         list->AppendElement(newFirst ? aChild : content.get());
         list->AppendElement(newFirst ? content.get() : aChild);
 
-        nsCOMPtr<nsISupports> listSupports = do_QueryObject(list);
-
         
-        entry.Data() = std::move(listSupports);
+        entry.Data() = std::move(list);
       } else {
         
         MOZ_ASSERT(nsCOMPtr<RadioNodeList>(do_QueryInterface(entry.Data())));

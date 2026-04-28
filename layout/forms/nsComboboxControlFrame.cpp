@@ -6,7 +6,6 @@
 
 #include <algorithm>
 
-#include "HTMLSelectEventListener.h"
 #include "gfxContext.h"
 #include "mozilla/Likely.h"
 #include "mozilla/PresShell.h"
@@ -173,7 +172,7 @@ dom::HTMLSelectElement& nsComboboxControlFrame::Select() const {
 void nsComboboxControlFrame::GetOptionText(uint32_t aIndex,
                                            nsAString& aText) const {
   aText.Truncate();
-  if (Element* el = Select().Options()->GetElementAt(aIndex)) {
+  if (Element* el = Select().Options()->Item(aIndex)) {
     static_cast<dom::HTMLOptionElement*>(el)->GetRenderedLabel(aText);
   }
 }
@@ -215,8 +214,6 @@ void nsComboboxControlFrame::Init(nsIContent* aContent,
                                   nsContainerFrame* aParent,
                                   nsIFrame* aPrevInFlow) {
   ButtonControlFrame::Init(aContent, aParent, aPrevInFlow);
-  mEventListener = new HTMLSelectEventListener(
-      Select(), HTMLSelectEventListener::SelectType::Combobox);
 }
 
 bool nsComboboxControlFrame::IsDroppedDown() const {
@@ -287,7 +284,6 @@ nsIFrame* NS_NewComboboxLabelFrame(PresShell* aPresShell,
 }
 
 void nsComboboxControlFrame::Destroy(DestroyContext& aContext) {
-  mEventListener->Detach();
   auto& select = Select();
   if (select.OpenInParentProcess()) {
     nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(

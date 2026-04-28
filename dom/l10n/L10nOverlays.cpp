@@ -2,16 +2,14 @@
 
 
 
-
-
 #include "L10nOverlays.h"
 
 #include "HTMLSplitOnSpacesTokenizer.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentFragment.h"
 #include "mozilla/dom/HTMLInputElement.h"
+#include "mozilla/dom/NodeList.h"
 #include "nsHtml5StringParser.h"
-#include "nsINodeList.h"
 #include "nsIParserUtils.h"
 #include "nsTextNode.h"
 
@@ -247,7 +245,7 @@ already_AddRefed<nsINode> L10nOverlays::GetNodeForNamedElement(
   aTranslatedChild->GetAttr(nsGkAtoms::datal10nname, childName);
   RefPtr<Element> sourceChild = nullptr;
 
-  nsINodeList* childNodes = aSourceElement->ChildNodes();
+  NodeList* childNodes = aSourceElement->ChildNodes();
   for (uint32_t i = 0; i < childNodes->Length(); i++) {
     nsINode* childNode = childNodes->Item(i);
 
@@ -352,7 +350,7 @@ void L10nOverlays::OverlayChildNodes(DocumentFragment* aFromFragment,
                                      Element* aToElement,
                                      nsTArray<L10nOverlaysError>& aErrors,
                                      ErrorResult& aRv) {
-  nsINodeList* childNodes = aFromFragment->ChildNodes();
+  NodeList* childNodes = aFromFragment->ChildNodes();
   for (uint32_t i = 0; i < childNodes->Length(); i++) {
     nsINode* childNode = childNodes->Item(i);
 

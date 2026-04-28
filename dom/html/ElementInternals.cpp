@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/ElementInternals.h"
 
 #include "mozAutoDocUpdate.h"
@@ -14,6 +12,7 @@
 #include "mozilla/dom/FormData.h"
 #include "mozilla/dom/HTMLElement.h"
 #include "mozilla/dom/HTMLFieldSetElement.h"
+#include "mozilla/dom/LifecycleCallbackArgs.h"
 #include "mozilla/dom/MutationObservers.h"
 #include "mozilla/dom/ShadowRoot.h"
 #include "mozilla/dom/ValidityState.h"
@@ -332,8 +331,7 @@ bool ElementInternals::ReportValidity(ErrorResult& aRv) {
 }
 
 
-already_AddRefed<nsINodeList> ElementInternals::GetLabels(
-    ErrorResult& aRv) const {
+already_AddRefed<NodeList> ElementInternals::GetLabels(ErrorResult& aRv) const {
   MOZ_ASSERT(mTarget);
 
   if (!mTarget->IsFormAssociatedElement()) {

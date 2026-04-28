@@ -131,9 +131,7 @@ class JSTracer;
 class PolicyContainer;
 class gfxUserFontSet;
 class mozIDOMWindowProxy;
-class nsCachableElementsByNameNodeList;
 class nsCommandManager;
-class nsContentList;
 class nsCycleCollectionTraversalCallback;
 class nsDOMCaretPosition;
 class nsDOMNavigationTiming;
@@ -159,7 +157,6 @@ class nsIDocumentObserver;
 class nsIEventTarget;
 class nsIFrame;
 class nsIGlobalObject;
-class nsIHTMLCollection;
 class nsIInputStream;
 class nsILayoutHistoryState;
 class nsIObjectLoadingContent;
@@ -176,7 +173,6 @@ class nsNodeInfoManager;
 class nsPIWindowRoot;
 class nsPresContext;
 class nsRange;
-class nsSimpleContentList;
 class nsTextNode;
 class nsViewManager;
 class nsViewportInfo;
@@ -251,6 +247,7 @@ class FrameRequestCallback;
 class HighlightRegistry;
 class HTMLAllCollection;
 class HTMLBodyElement;
+class HTMLCollection;
 class HTMLInputElement;
 class HTMLMetaElement;
 class HTMLDialogElement;
@@ -276,6 +273,7 @@ class ScriptLoader;
 class Selection;
 class ServiceWorkerDescriptor;
 class ShadowRoot;
+class SimpleContentList;
 class SVGDocument;
 class SVGElement;
 class SVGSVGElement;
@@ -1473,7 +1471,7 @@ class Document : public nsINode,
   
   
   
-  already_AddRefed<nsSimpleContentList> BlockedNodesByClassifier() const;
+  already_AddRefed<SimpleContentList> BlockedNodesByClassifier() const;
 
   
   
@@ -1994,7 +1992,7 @@ class Document : public nsINode,
   void SetAncestorOriginsList(nsTArray<nsString>&& aAncestorOriginsList);
   Span<const nsString> GetAncestorOriginsList() const;
   
-  already_AddRefed<DOMStringList> AncestorOrigins() const;
+  already_AddRefed<DOMStringList> AncestorOrigins();
 
   
   
@@ -2141,6 +2139,7 @@ class Document : public nsINode,
   static void ClearPendingFullscreenRequests(Document* aDocument);
 
   void SetFullscreenKeyboardLockStatus(FullscreenKeyboardLock aStatus);
+  FullscreenKeyboardLock GetFullscreenKeyboardLockStatus() const;
   bool HasFullscreenKeyboardLockEnabled();
 
   
@@ -3381,7 +3380,7 @@ class Document : public nsINode,
     mPageloadEventData.SetDocumentFeature(aFeature);
   }
 
-  nsContentList* ImageMapList();
+  ContentList* ImageMapList();
 
   
   void RegisterPendingLinkUpdate(Link* aLink);
@@ -3542,14 +3541,14 @@ class Document : public nsINode,
   void SetTitle(const nsAString& aTitle, ErrorResult& rv);
   void GetDir(nsAString& aDirection) const;
   void SetDir(const nsAString& aDirection);
-  nsIHTMLCollection* Images();
-  nsIHTMLCollection* Embeds();
-  nsIHTMLCollection* Plugins() { return Embeds(); }
-  nsIHTMLCollection* Links();
-  nsIHTMLCollection* Forms();
-  nsIHTMLCollection* Scripts();
-  already_AddRefed<nsContentList> GetElementsByName(const nsAString& aName) {
-    return GetFuncStringContentList<nsCachableElementsByNameNodeList>(
+  HTMLCollection* Images();
+  HTMLCollection* Embeds();
+  HTMLCollection* Plugins() { return Embeds(); }
+  HTMLCollection* Links();
+  HTMLCollection* Forms();
+  HTMLCollection* Scripts();
+  already_AddRefed<ContentList> GetElementsByName(const nsAString& aName) {
+    return GetFuncStringContentList<CachableElementsByNameNodeList>(
         this, MatchNameAttribute, nullptr, UseExistingNameString, aName);
   }
   MOZ_CAN_RUN_SCRIPT
@@ -3607,8 +3606,8 @@ class Document : public nsINode,
   MOZ_CAN_RUN_SCRIPT void QueryCommandValue(const nsAString& aHTMLCommandName,
                                             nsAString& aValue,
                                             mozilla::ErrorResult& aRv);
-  nsIHTMLCollection* Applets();
-  nsIHTMLCollection* Anchors();
+  HTMLCollection* Applets();
+  HTMLCollection* Anchors();
   TimeStamp LastFocusTime() const;
   void SetLastFocusTime(const TimeStamp& aFocusTime);
   
@@ -3826,7 +3825,7 @@ class Document : public nsINode,
   void UnlockAllWakeLocks(WakeLockType aType);
 
   
-  nsIHTMLCollection* Children();
+  HTMLCollection* Children();
   uint32_t ChildElementCount();
 
   
@@ -4937,16 +4936,16 @@ class Document : public nsINode,
   nsPropertyTable mPropertyTable;
 
   
-  nsCOMPtr<nsIHTMLCollection> mChildrenCollection;
+  RefPtr<HTMLCollection> mChildrenCollection;
 
   
-  RefPtr<nsContentList> mImages;
-  RefPtr<nsContentList> mEmbeds;
-  RefPtr<nsContentList> mLinks;
-  RefPtr<nsContentList> mForms;
-  RefPtr<nsContentList> mScripts;
-  nsCOMPtr<nsIHTMLCollection> mApplets;
-  RefPtr<nsContentList> mAnchors;
+  RefPtr<ContentList> mImages;
+  RefPtr<ContentList> mEmbeds;
+  RefPtr<ContentList> mLinks;
+  RefPtr<ContentList> mForms;
+  RefPtr<ContentList> mScripts;
+  RefPtr<HTMLCollection> mApplets;
+  RefPtr<ContentList> mAnchors;
 
   
   RefPtr<FontFaceSet> mFontFaceSet;
@@ -5383,6 +5382,7 @@ class Document : public nsINode,
   nsCString mContentType;
 
   nsTArray<nsString> mAncestorOriginsList;
+  RefPtr<DOMStringList> mCachedAncestorOrigins;
 
  protected:
   
@@ -5620,13 +5620,9 @@ class Document : public nsINode,
   
   WeakPtr<Document> mFullscreenRoot;
 
-  
-  FullscreenKeyboardLock mFullscreenKeyboardLockStatus =
-      FullscreenKeyboardLock::None;
-
   RefPtr<DOMImplementation> mDOMImplementation;
 
-  RefPtr<nsContentList> mImageMaps;
+  RefPtr<ContentList> mImageMaps;
 
   
   nsTHashSet<HTMLImageElement*> mResponsiveContent;

@@ -2,13 +2,11 @@
 
 
 
-
-
 #include "mozilla/dom/HTMLMapElement.h"
 
+#include "mozilla/dom/ContentList.h"
 #include "mozilla/dom/HTMLMapElementBinding.h"
 #include "nsCOMPtr.h"
-#include "nsContentList.h"
 #include "nsGkAtoms.h"
 #include "nsStyleConsts.h"
 
@@ -27,11 +25,11 @@ NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED_0(HTMLMapElement,
 
 NS_IMPL_ELEMENT_CLONE(HTMLMapElement)
 
-nsIHTMLCollection* HTMLMapElement::Areas() {
+HTMLCollection* HTMLMapElement::Areas() {
   if (!mAreas) {
     
-    mAreas = new nsContentList(this, kNameSpaceID_XHTML, nsGkAtoms::area,
-                               nsGkAtoms::area, false);
+    mAreas = new ContentList(this, kNameSpaceID_XHTML, nsGkAtoms::area,
+                             nsGkAtoms::area, false);
   }
 
   return mAreas;

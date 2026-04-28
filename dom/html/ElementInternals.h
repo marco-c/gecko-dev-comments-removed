@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_ElementInternals_h
 #define mozilla_dom_ElementInternals_h
 
@@ -45,7 +43,6 @@
     SetAttrElements(nsGkAtoms::attr, aElements);                     \
   }
 
-class nsINodeList;
 class nsGenericHTMLElement;
 
 namespace mozilla::dom {
@@ -54,6 +51,7 @@ class DocGroup;
 class HTMLElement;
 class HTMLFieldSetElement;
 class HTMLFormElement;
+class NodeList;
 class ShadowRoot;
 class ValidityState;
 
@@ -88,7 +86,7 @@ class ElementInternals final : public nsIFormControl,
                             ErrorResult& aRv) const;
   bool CheckValidity(ErrorResult& aRv);
   bool ReportValidity(ErrorResult& aRv);
-  already_AddRefed<nsINodeList> GetLabels(ErrorResult& aRv) const;
+  already_AddRefed<NodeList> GetLabels(ErrorResult& aRv) const;
   nsGenericHTMLElement* GetValidationAnchor(ErrorResult& aRv) const;
   CustomStateSet* States();
 

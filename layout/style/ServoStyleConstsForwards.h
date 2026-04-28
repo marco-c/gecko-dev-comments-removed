@@ -41,7 +41,6 @@ class nsIContent;
 class nsCSSPropertyIDSet;
 class nsPresContext;
 class nsStaticAtom;
-class nsSimpleContentList;
 class imgRequestProxy;
 struct nsCSSValueSharedList;
 struct AnchorPosResolutionParams;
@@ -53,6 +52,11 @@ namespace mozilla {
 
 
 struct StyleCalcLengthPercentage;
+
+
+
+struct StyleUnparsedSegment;
+using StyleUnparsedValue = CopyableTArray<StyleUnparsedSegment>;
 
 
 
@@ -135,11 +139,14 @@ enum SheetParsingMode : uint8_t;
 namespace dom {
 enum class IterationCompositeOperation : uint8_t;
 enum class CallerType : uint32_t;
+class SimpleContentList;
 
 class Element;
 class Document;
 
 }  
+
+using StyleSimpleContentList = dom::SimpleContentList;
 
 
 

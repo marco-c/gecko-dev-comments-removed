@@ -82,7 +82,7 @@ class HTMLFieldSetElement final : public nsGenericHTMLFormControlElement,
 
   void GetType(nsAString& aType) const;
 
-  nsIHTMLCollection* Elements();
+  HTMLCollection* Elements();
 
   
 
@@ -124,7 +124,7 @@ class HTMLFieldSetElement final : public nsGenericHTMLFormControlElement,
                                   nsAtom* aAtom, void* aData);
 
   
-  RefPtr<nsContentList> mElements;
+  RefPtr<ContentList> mElements;
 
   
   nsTArray<nsGenericHTMLFormElement*> mDependentElements;
