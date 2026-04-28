@@ -8,25 +8,72 @@
 
 
 
-async function assert_arrow_navigation_bidirectional(elements, shouldWrap = false) {
+
+const kUp = "up";
+const kDown = "down";
+const kLeft = "left";
+const kRight = "right";
+
+const DirectionalInputMap = {
+  [kUp]:    kArrowUp,
+  [kDown]:  kArrowDown,
+  [kLeft]:  kArrowLeft,
+  [kRight]: kArrowRight,
+  home:  kHome,
+  end:   kEnd,
+};
+
+function keyForDirection(direction) {
+  const key = DirectionalInputMap[direction];
+  if (!key) {
+    throw new Error(`Unknown direction: "${direction}"`);
+  }
+  return key;
+}
+
+async function focusAndSendDirectionalInput(element, direction) {
+  return focusAndKeyPress(element, keyForDirection(direction));
+}
+
+
+
+
+async function sendDirectionalKey(direction) {
+  return sendKey(keyForDirection(direction));
+}
+
+async function focusAndSendHomeInput(element) {
+  return focusAndKeyPress(element, keyForDirection("home"));
+}
+
+async function focusAndSendEndInput(element) {
+  return focusAndKeyPress(element, keyForDirection("end"));
+}
+
+
+
+
+
+async function assert_directional_navigation_bidirectional(elements, shouldWrap = false) {
   
   for (let i = 0; i < elements.length; i++) {
-    await focusAndKeyPress(elements[i], kArrowRight);
+    await focusAndSendDirectionalInput(elements[i], kRight);
     const nextIndex = shouldWrap ? (i + 1) % elements.length : Math.min(i + 1, elements.length - 1);
     const expectedElement = elements[nextIndex];
     assert_equals(document.activeElement, expectedElement,
-      `From ${elements[i].id}, right arrow should move to ${expectedElement.id}`);
+      `From ${elements[i].id}, right should move to ${expectedElement.id}`);
   }
 
   
   for (let i = elements.length - 1; i >= 0; i--) {
-    await focusAndKeyPress(elements[i], kArrowLeft);
+    await focusAndSendDirectionalInput(elements[i], kLeft);
     const prevIndex = shouldWrap ? (i - 1 + elements.length) % elements.length : Math.max(i - 1, 0);
     const expectedElement = elements[prevIndex];
     assert_equals(document.activeElement, expectedElement,
-      `From ${elements[i].id}, left arrow should move to ${expectedElement.id}`);
+      `From ${elements[i].id}, left should move to ${expectedElement.id}`);
   }
 }
+
 
 
 
@@ -42,11 +89,12 @@ async function assert_focusgroup_tab_navigation(elements) {
     `Failed to focus starting element ${elements[0].id}`);
 
   for (let i = 0; i < elements.length - 1; i++) {
-    await navigateFocusForward();
+    await sendTabForward();
     assert_equals(document.activeElement, elements[i + 1],
       `Tab from ${elements[i].id} should move to ${elements[i + 1].id}`);
   }
 }
+
 
 
 
@@ -55,7 +103,6 @@ async function assert_focusgroup_shift_tab_navigation(elements) {
     return;
   }
 
-  
   elements[0].focus();
   assert_equals(document.activeElement, elements[0],
     `Failed to focus starting element ${elements[0].id}`);
@@ -67,14 +114,12 @@ async function assert_focusgroup_shift_tab_navigation(elements) {
   }
 }
 
+async function assert_directional_input_does_not_move_focus(element) {
+  const directions = [kRight, kLeft, kDown, kUp];
 
-async function assert_arrow_keys_do_not_move_focus(element) {
-  const arrows = [kArrowRight, kArrowLeft, kArrowDown, kArrowUp];
-  const arrowNames = ['right', 'left', 'down', 'up'];
-
-  for (let i = 0; i < arrows.length; i++) {
-    await focusAndKeyPress(element, arrows[i]);
+  for (const direction of directions) {
+    await focusAndSendDirectionalInput(element, direction);
     assert_equals(document.activeElement, element,
-      `Arrow ${arrowNames[i]} should not move focus from ${element.id}`);
+      `Direction ${direction} should not move focus from ${element.id}`);
   }
 }
