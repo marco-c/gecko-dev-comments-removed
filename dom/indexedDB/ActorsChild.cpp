@@ -1413,6 +1413,10 @@ void BackgroundTransactionChild::SendDeleteMeInternal() {
 void BackgroundTransactionChild::ActorDestroy(ActorDestroyReason aWhy) {
   AssertIsOnOwningThread();
 
+  if (mTransaction) {
+    mTransaction->DrainDeferredResponses();
+  }
+
   MaybeCollectGarbageOnIPCMessage();
 
   NoteActorDestroyed();
@@ -1986,10 +1990,16 @@ mozilla::ipc::IPCResult BackgroundRequestChild::Recv__delete__(
   }
 
   if (runnable) {
-    runnable->Run();
+    if (mTransaction->IsDeferralActive()) {
+      mTransaction->QueueDeferredResponse(runnable.forget());
+    } else {
+      runnable->Run();
+      mTransaction->OnRequestFinished( true);
+    }
+  } else {
+    
+    mTransaction->OnRequestFinished( true);
   }
-
-  mTransaction->OnRequestFinished( true);
 
   
   

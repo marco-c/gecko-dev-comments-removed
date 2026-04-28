@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_idbtransaction_h_
 #define mozilla_dom_idbtransaction_h_
 
@@ -83,6 +81,12 @@ class IDBTransaction final
   nsTArray<RefPtr<IDBObjectStore>> mDeletedObjectStores;
   RefPtr<StrongWorkerRef> mWorkerRef;
   nsTArray<NotNull<IDBCursor*>> mCursors;
+  
+  
+  
+  
+  
+  nsTArray<nsCOMPtr<nsIRunnable>> mDeferredRunnables;
 
   
   
@@ -128,6 +132,7 @@ class IDBTransaction final
   FlippedOnce<false> mAbortedByScript;
   bool mNotedActiveTransaction;
   FlippedOnce<false> mSentCommitOrAbort;
+  bool mDeferralActive = false;
 
 #ifdef DEBUG
   FlippedOnce<false> mFiredCompleteOrAbort;
@@ -222,10 +227,23 @@ class IDBTransaction final
   bool WasExplicitlyCommitted() const { return mWasExplicitlyCommitted; }
 #endif
 
-  void TransitionToActive() {
-    MOZ_ASSERT(mReadyState == ReadyState::Inactive);
-    mReadyState = ReadyState::Active;
+  void TransitionToActive();
+
+  void TransitionToInactiveWithDeferral();
+
+  bool IsDeferralActive() const {
+    AssertIsOnOwningThread();
+    return mDeferralActive;
   }
+
+  void DeactivateDeferral() {
+    AssertIsOnOwningThread();
+    mDeferralActive = false;
+  }
+
+  void QueueDeferredResponse(already_AddRefed<nsIRunnable> aRunnable);
+
+  void DrainDeferredResponses();
 
   void TransitionToInactive() {
     MOZ_ASSERT(mReadyState == ReadyState::Active);
