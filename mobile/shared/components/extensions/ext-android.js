@@ -314,11 +314,13 @@ class Tab extends TabBase {
   }
 
   get attention() {
+    
     return false;
   }
 
   get audible() {
-    return this.nativeTab.playingAudio;
+    
+    return undefined;
   }
 
   get browser() {
@@ -326,11 +328,17 @@ class Tab extends TabBase {
   }
 
   get discarded() {
-    return this.browser.getAttribute("pending") === "true";
+    
+    return false;
   }
 
   get cookieStoreId() {
     return getCookieStoreIdForTab(this, this.nativeTab);
+  }
+
+  get openerTabId() {
+    
+    return undefined;
   }
 
   get height() {
@@ -342,6 +350,7 @@ class Tab extends TabBase {
   }
 
   get index() {
+    
     return 0;
   }
 
@@ -350,10 +359,12 @@ class Tab extends TabBase {
   }
 
   get lastAccessed() {
-    return this.nativeTab.lastTouchedAt;
+    
+    return undefined;
   }
 
   get pinned() {
+    
     return false;
   }
 
@@ -377,10 +388,12 @@ class Tab extends TabBase {
   }
 
   get groupId() {
+    
     return -1;
   }
 
   get splitViewId() {
+    
     return -1;
   }
 
@@ -396,17 +409,18 @@ class Tab extends TabBase {
     return windowTracker.getId(this.window);
   }
 
-  
-  
   get isArticle() {
+    
     return false;
   }
 
   get isInReaderMode() {
+    
     return false;
   }
 
   get hidden() {
+    
     return false;
   }
 
@@ -417,6 +431,9 @@ class Tab extends TabBase {
   }
 
   get sharingState() {
+    
+    
+    
     return {
       screen: undefined,
       microphone: false,

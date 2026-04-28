@@ -139,6 +139,7 @@ this.tabs = class extends ExtensionAPIPersistent {
       },
     }),
     onUpdated({ fire }) {
+      
       const { tabManager } = this.extension;
       const restricted = ["url", "favIconUrl", "title"];
 
@@ -175,14 +176,6 @@ this.tabs = class extends ExtensionAPIPersistent {
             needed.push("title");
             break;
           }
-
-          case "DOMAudioPlaybackStarted":
-          case "DOMAudioPlaybackStopped": {
-            const window = event.target.ownerGlobal;
-            nativeTab = window.tab;
-            needed.push("audible");
-            break;
-          }
         }
 
         if (!nativeTab) {
@@ -210,6 +203,9 @@ this.tabs = class extends ExtensionAPIPersistent {
         }
       };
 
+      
+      
+      
       windowTracker.addListener("status", statusListener);
       windowTracker.addListener("pagetitlechanged", listener);
 
