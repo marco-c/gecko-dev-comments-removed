@@ -1478,6 +1478,11 @@ static void TraceJitActivation(JSTracer* trc, JitActivation* activation) {
 #ifdef ENABLE_WASM_JSPI
       if (wasmFrameIter.currentFrameStackSwitched()) {
         highestByteVisitedInPrevWasmFrame = 0;
+        if (wasmFrameIter.contStack()) {
+          
+          
+          wasmFrameIter.contStack()->traceFields(trc);
+        }
       }
 #endif
       wasm::Instance* instance = wasmFrameIter.instance();
@@ -1488,13 +1493,36 @@ static void TraceJitActivation(JSTracer* trc, JitActivation* activation) {
   }
 }
 
+#ifdef ENABLE_WASM_JSPI
+static void TraceWasmSuspendedContStacks(JSContext* cx, JSTracer* trc) {
+  gc::AssertRootMarkingPhase(trc);
+
+  
+  
+  
+  
+  
+  
+  if (!trc->isTenuringTracer()) {
+    return;
+  }
+
+  for (wasm::ContStack* stack : cx->wasm().stacks()) {
+    if (stack->canResume()) {
+      stack->traceSuspended(trc);
+    }
+  }
+}
+#endif
+
 void TraceJitActivations(JSContext* cx, JSTracer* trc) {
   for (JitActivationIterator activations(cx); !activations.done();
        ++activations) {
     TraceJitActivation(trc, activations->asJit());
   }
+
 #ifdef ENABLE_WASM_JSPI
-  cx->wasm().traceRoots(trc);
+  TraceWasmSuspendedContStacks(cx, trc);
 #endif
 }
 
@@ -1532,6 +1560,13 @@ void UpdateJitActivationsForMinorGC(JSRuntime* rt) {
       }
     }
   }
+#ifdef ENABLE_WASM_JSPI
+  for (wasm::ContStack* stack : cx->wasm().stacks()) {
+    if (stack->canResume()) {
+      stack->updateSuspendedForMovingGC(nursery);
+    }
+  }
+#endif
 }
 
 void UpdateJitActivationsForCompactingGC(JSRuntime* rt) {
@@ -1548,6 +1583,13 @@ void UpdateJitActivationsForCompactingGC(JSRuntime* rt) {
       }
     }
   }
+#ifdef ENABLE_WASM_JSPI
+  for (wasm::ContStack* stack : cx->wasm().stacks()) {
+    if (stack->canResume()) {
+      stack->updateSuspendedForMovingGC(nursery);
+    }
+  }
+#endif
 }
 
 JSScript* GetTopJitJSScript(JSContext* cx) {
@@ -1697,10 +1739,15 @@ bool SnapshotIterator::allocationReadable(const RValueAllocation& alloc,
 
   switch (alloc.mode()) {
     case RValueAllocation::DOUBLE_REG:
+    case RValueAllocation::FLOAT32_REG:
       return hasRegister(alloc.fpuReg());
+    case RValueAllocation::FLOAT32_STACK:
+      return hasStack(alloc.stackOffset());
 
     case RValueAllocation::TYPED_REG:
       return hasRegister(alloc.reg2());
+    case RValueAllocation::TYPED_STACK:
+      return hasStack(alloc.stackOffset2());
 
 #if defined(JS_NUNBOX32)
     case RValueAllocation::UNTYPED_REG_REG:
@@ -1747,8 +1794,15 @@ bool SnapshotIterator::allocationReadable(const RValueAllocation& alloc,
       return hasStack(alloc.stackOffset());
 #endif
 
-    default:
+    case RValueAllocation::CONSTANT:
+    case RValueAllocation::CST_UNDEFINED:
+    case RValueAllocation::CST_NULL:
+    case RValueAllocation::INTPTR_CST:
+    case RValueAllocation::INT64_CST:
       return true;
+
+    default:
+      MOZ_CRASH("Unexpected mode");
   }
 }
 
