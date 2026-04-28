@@ -23,17 +23,18 @@ exclude: true
     ([bug 2015480]({{bugzilla}}2015480))
 - Added [`isReaderable`][151.5] to [`PageMetadata`][150.6] in `PageExtractionController` to indicate whether the page is likely readable by reader mode.
     ([bug 2030001]({{bugzilla}}2030001))
+- Added `getContentBlockingDatabaseStatus` \ `setContentBlockingDatabaseStatus` to [`ContentBlocking.Settings`][151.6] to enable the trackers blocked database recording blocked trackers events. ([bug 1974742]({{bugzilla}}1974742))
+- Added experimental [`IPProtectionController`][151.7] for accessing the IPProtection feature.
+
 
 [151.1]: {{javadoc_uri}}/AIFeaturesController.RuntimeAIFeatures.html#makeFeatureAvailable(java.lang.String)
 [151.2]: {{javadoc_uri}}/TranslationsController.TranslationsException.html#ERROR_ENGINE_DEACTIVATED
 [151.3]: {{javadoc_uri}}/PageExtractionController.GetTextOptions.html
-<<<<<<< HEAD
 [151.4]: {{javadoc_uri}}/PageExtractionController.SessionPageExtractor.html#getPageContent(org.mozilla.geckoview.PageExtractionController.ContentParams)
-=======
 [151.4]: {{javadoc_uri}}/PageExtractionController.SessionPageExtractor.html#getPageContent(org.mozilla.geckoview.PageExtractionController.GetTextOptionsParams)
 [151.5]: {{javadoc_uri}}/PageExtractionController.PageMetadata.html#isReaderable
->>>>>>> 6fb0d6000fb9 (Bug 2030001 - add ability to check readerability through page extractor)
-
+[151.6]: {{javadoc_uri}}/ContentBlocking.Settings.html
+[151.7]: {{javadoc_uri}}/IPProtectionController.html
 ## v150
 - Added support for `COOKIES_PARTITIONED_TRACKER` in the tracking protection blocking log. ([bug 2020898 ]({{bugzilla}}2020898))
 - Added [`GeckoSession.qwacStatus`][150.1] API.
@@ -1950,4 +1951,4 @@ to allow adding gecko profiler markers.
 [65.24]: {{javadoc_uri}}/CrashReporter.html#sendCrashReport(android.content.Context,android.os.Bundle,java.lang.String)
 [65.25]: {{javadoc_uri}}/GeckoResult.html
 
-[api-version]: 55820add3b1ad74e83897809b6e4b93c5804be3a
+[api-version]: 9c4a2021556c8a4adff79e726c8cefd41735cc47

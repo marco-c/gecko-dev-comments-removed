@@ -261,6 +261,10 @@ public final class GeckoRuntime implements Parcelable {
   private StorageController mStorageController;
   private final WebExtensionController mWebExtensionController;
   private WebPushController mPushController;
+
+  @OptIn(markerClass = ExperimentalGeckoViewApi.class)
+  private IPProtectionController mIPProtectionController;
+
   private final ContentBlockingController mContentBlockingController;
   private final Autocomplete.StorageProxy mAutocompleteStorageProxy;
   private final CrashPullController.CrashPullProxy mCrashPullProxy;
@@ -1152,6 +1156,24 @@ public final class GeckoRuntime implements Parcelable {
     }
 
     return mPushController;
+  }
+
+  
+
+
+
+
+
+  @ExperimentalGeckoViewApi
+  @UiThread
+  public @NonNull IPProtectionController getIPProtectionController() {
+    ThreadUtils.assertOnUiThread();
+
+    if (mIPProtectionController == null) {
+      mIPProtectionController = new IPProtectionController();
+    }
+
+    return mIPProtectionController;
   }
 
   
