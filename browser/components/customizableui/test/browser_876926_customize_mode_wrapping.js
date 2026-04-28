@@ -48,16 +48,22 @@ async function ensureVisible(node) {
     return nodeBounds.height && nodeBounds.width;
   });
 }
-
 var move = {
   async drag(id, target) {
     let targetNode = document.getElementById(target);
     if (CustomizableUI.getCustomizationTarget(targetNode)) {
       targetNode = CustomizableUI.getCustomizationTarget(targetNode);
     }
+    
+    
+    
+    
+    
+    if (target == kVisiblePalette) {
+      targetNode = document.getElementById("customization-content-container");
+    }
     let nodeToMove = document.getElementById(id);
     await ensureVisible(nodeToMove);
-
     simulateItemDrag(nodeToMove, targetNode, "end");
   },
   async dragToItem(id, target) {
@@ -216,11 +222,6 @@ async function checkPalette(id, method) {
     method == "dragToItem"
       ? visibleChildren[0]
       : visibleChildren[visibleChildren.length - 1];
-  
-  
-  if (method == "drag") {
-    expectedChild = expectedChild.previousElementSibling;
-  }
   is(
     expectedChild.firstElementChild.id,
     id,
