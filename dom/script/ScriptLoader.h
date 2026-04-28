@@ -80,14 +80,15 @@ class ScriptRequestProcessor;
 enum class ReferrerPolicy : uint8_t;
 enum class RequestPriority : uint8_t;
 
-class AsyncCompileShutdownObserver final : public nsIObserver {
-  ~AsyncCompileShutdownObserver() { Unregister(); }
+class ShutdownAndMemoryPressureObserver final : public nsIObserver {
+  ~ShutdownAndMemoryPressureObserver() { Unregister(); }
 
  public:
-  explicit AsyncCompileShutdownObserver(ScriptLoader* aLoader)
+  explicit ShutdownAndMemoryPressureObserver(ScriptLoader* aLoader)
       : mScriptLoader(aLoader) {}
 
   void OnShutdown();
+  void OnMemoryPressure();
   void Unregister();
 
   NS_DECL_ISUPPORTS
@@ -464,6 +465,12 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
 
 
 
+  void OnMemoryPressure();
+
+  
+
+
+
 
 
   static JS::loader::ScriptFetchInfo* GetActiveScriptFetchInfo(JSContext* aCx);
@@ -780,6 +787,11 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
 
   void UpdateDiskCache();
 
+  
+
+
+  void StopCollectingDelazifications();
+
  public:
   
 
@@ -879,6 +891,7 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   Document* mDocument;  
   nsCOMArray<nsIScriptLoaderObserver> mObservers;
 
+  
   
   nsTArray<JS::Heap<JSScript*>> mDelazificationCollectingScripts;
   nsTArray<JS::Heap<JSObject*>> mDelazificationCollectingModules;
@@ -1016,7 +1029,8 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   nsCOMPtr<nsIConsoleReportCollector> mReporter;
 
   
-  RefPtr<AsyncCompileShutdownObserver> mShutdownObserver;
+  
+  RefPtr<ShutdownAndMemoryPressureObserver> mObserver;
 
   RefPtr<ModuleLoader> mModuleLoader;
   nsTArray<RefPtr<ModuleLoader>> mWebExtModuleLoaders;
