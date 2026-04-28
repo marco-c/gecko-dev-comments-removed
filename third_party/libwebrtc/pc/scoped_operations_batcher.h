@@ -44,8 +44,9 @@ class ScopedOperationsBatcher {
 
   
   
-  void push_back(absl::AnyInvocable<void() &&> task);
-  void push_back(absl::AnyInvocable<absl::AnyInvocable<void() &&>() &&> task);
+  void Add(absl::AnyInvocable<void() &&> task);
+  void AddWithFinalizer(
+      absl::AnyInvocable<absl::AnyInvocable<void() &&>() &&> task);
 
  private:
   using BatchedTask =
