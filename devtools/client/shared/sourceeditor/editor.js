@@ -217,6 +217,7 @@ class Editor extends EventEmitter {
     EXCEPTION_POSITION_MARKER: "exception-position-marker",
     ACTIVE_SELECTION_MARKER: "active-selection-marker",
     PAUSED_LOCATION_MARKER: "paused-location-marker",
+    AUTOCOMPLETE_CONTENT_MARKER: "autocomplete-content-marker",
     
     EMPTY_LINE_MARKER: "empty-line-marker",
     BLACKBOX_LINE_GUTTER_MARKER: "blackbox-line-gutter-marker",
@@ -891,6 +892,9 @@ class Editor extends EventEmitter {
                 to: lezerUtils.positionToLocation(tr.newDoc, toB),
                 origin: !inserted.length ? "+delete" : "+input",
                 text: inserted.toString(),
+                
+                
+                canceled: false,
               });
             });
             this.#beforeUpdateListener(a);
@@ -1382,6 +1386,12 @@ class Editor extends EventEmitter {
       newMarkerDecorations
     ) {
       const viewport = marker._view.viewport;
+      
+      
+      
+      if (viewport.to > transaction.state.doc.length) {
+        return;
+      }
       const vStartLine = transaction.state.doc.lineAt(viewport.from);
       const vEndLine = transaction.state.doc.lineAt(viewport.to);
 
@@ -1624,6 +1634,9 @@ class Editor extends EventEmitter {
 
   removePositionContentMarker(markerId) {
     const cm = editors.get(this);
+    if (!this.#posContentMarkers.has(markerId)) {
+      return;
+    }
     this.#posContentMarkers.delete(markerId);
     cm.dispatch({
       effects:
@@ -2251,9 +2264,12 @@ class Editor extends EventEmitter {
     const cm = editors.get(this);
     if (this.config.cm6) {
       const pos = cm.state.selection.main.head;
+      
+      
+      const offset = pos - numberOfCharsToReplaceCharsBeforeCursor;
       cm.dispatch({
         changes: {
-          from: pos - numberOfCharsToReplaceCharsBeforeCursor, 
+          from: offset >= 0 ? offset : 0, 
           to: pos, 
           insert: str, 
         },
@@ -3207,6 +3223,29 @@ class Editor extends EventEmitter {
   
 
 
+
+
+  getDecorationsForMarker(markerType) {
+    const cm = editors.get(this);
+    const {
+      codemirrorView: { EditorView },
+    } = this.#CodeMirror6;
+    const decorations = [];
+    const decoSets = cm.state.facet(EditorView.decorations);
+    decoSets.forEach(deco => {
+      const decoSet = typeof deco === "function" ? deco(cm) : deco;
+      decoSet.between(0, cm.state.doc.length, (from, to, decoration) => {
+        if (decoration?.markerType === markerType) {
+          decorations.push(decoration);
+        }
+      });
+    });
+    return decorations;
+  }
+
+  
+
+
   removeAllMarkers(gutterName) {
     const cm = editors.get(this);
     cm.clearGutter(gutterName);
@@ -3630,39 +3669,82 @@ class Editor extends EventEmitter {
     }
   }
 
+  
+
+
+
+
   getAutoCompletionText() {
     const cm = editors.get(this);
+    if (this.config.cm6) {
+      const decorations = this.getDecorationsForMarker(
+        this.markerTypes.AUTOCOMPLETE_CONTENT_MARKER
+      );
+      if (!decorations.length) {
+        return "";
+      }
+      
+      
+      const mark = decorations[0].widget.toDOM();
+      return mark.attributes["data-completion"].value || "";
+    }
     const mark = cm
       .getAllMarks()
       .find(m => m.className === AUTOCOMPLETE_MARK_CLASSNAME);
+
     if (!mark) {
       return "";
     }
-
     return mark.attributes["data-completion"] || "";
   }
 
+  
+
+
+
+
+
   setAutoCompletionText(text) {
     const cm = editors.get(this);
-    const cursor = cm.getCursor();
     const className = AUTOCOMPLETE_MARK_CLASSNAME;
 
-    cm.operation(() => {
-      cm.getAllMarks().forEach(mark => {
-        if (mark.className === className) {
-          mark.clear();
-        }
-      });
-
+    if (this.config.cm6) {
+      const pos = cm.state.selection.main.head;
+      const line = cm.state.doc.lineAt(pos);
+      this.removePositionContentMarker(
+        this.markerTypes.AUTOCOMPLETE_CONTENT_MARKER
+      );
       if (text) {
-        cm.markText({ ...cursor, ch: cursor.ch - 1 }, cursor, {
-          className,
-          attributes: {
-            "data-completion": text,
+        this.setPositionContentMarker({
+          id: this.markerTypes.AUTOCOMPLETE_CONTENT_MARKER,
+          positions: [{ line: line.number, column: pos - line.from }],
+          createPositionElementNode: () => {
+            const autocompleteMarker = this.#win.document.createElement("span");
+            autocompleteMarker.className = AUTOCOMPLETE_MARK_CLASSNAME;
+            autocompleteMarker.setAttribute("data-completion", text);
+            return autocompleteMarker;
           },
         });
       }
-    });
+    } else {
+      const cursor = cm.getCursor();
+      cm.operation(() => {
+        cm.getAllMarks().forEach(mark => {
+          if (mark.className === className) {
+            mark.clear();
+          }
+        });
+
+        if (text) {
+          cm.markText({ ...cursor, ch: cursor.ch - 1 }, cursor, {
+            className,
+            attributes: {
+              "data-completion": text,
+            },
+          });
+        }
+      });
+    }
   }
 
   
