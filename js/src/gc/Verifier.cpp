@@ -498,7 +498,7 @@ struct GCChunkHasher {
 class js::gc::MarkingValidator {
  public:
   explicit MarkingValidator(GCRuntime* gc);
-  void nonIncrementalMark(AutoGCSession& session);
+  bool nonIncrementalMark(AutoGCSession& session);
   void validate();
 
  private:
@@ -513,28 +513,21 @@ class js::gc::MarkingValidator {
 js::gc::MarkingValidator::MarkingValidator(GCRuntime* gc)
     : gc(gc), initialized(false) {}
 
-void js::gc::MarkingValidator::nonIncrementalMark(AutoGCSession& session) {
+bool js::gc::MarkingValidator::nonIncrementalMark(AutoGCSession& session) {
   
 
 
 
 
   GCMarker* gcmarker = &gc->marker();
-
   MOZ_ASSERT(!gcmarker->isWeakMarking());
 
-#  ifdef DEBUG
-  
-  
-  
-  
-  if (gc->testMarkQueueRemaining() > 0) {
-    return;
-  }
-#  endif
+  MOZ_ASSERT(gc->testMarkQueueRemaining() == 0);
 
   
   MOZ_ASSERT(gc->nursery().isEmpty());
+
+  MOZ_ASSERT(map.empty());
 
   
   WaitForAllHelperThreads();
@@ -551,12 +544,12 @@ void js::gc::MarkingValidator::nonIncrementalMark(AutoGCSession& session) {
       
       void* buffer = js_malloc(sizeof(ChunkMarkBitmap));
       if (!buffer) {
-        return;
+        return false;
       }
       UniquePtr<ChunkMarkBitmap> entry(new (buffer) ChunkMarkBitmap);
       entry->copyFrom(chunk->markBits);
       if (!map.putNew(chunk, std::move(entry))) {
-        return;
+        return false;
       }
     }
   }
@@ -576,10 +569,9 @@ void js::gc::MarkingValidator::nonIncrementalMark(AutoGCSession& session) {
 
   for (GCZonesIter zone(gc); !zone.done(); zone.next()) {
     if (!WeakMapBase::saveZoneMarkedWeakMaps(zone, markedWeakMaps)) {
-      return;
+      return false;
     }
 
-    AutoEnterOOMUnsafeRegion oomUnsafe;
     for (auto iter = zone->gcEphemeronEdges().iter(); !iter.done();
          iter.next()) {
       MOZ_ASSERT(iter.get().key()->zone() == zone);
@@ -587,7 +579,7 @@ void js::gc::MarkingValidator::nonIncrementalMark(AutoGCSession& session) {
                                       std::move(iter.get().value()))) {
         
         
-        oomUnsafe.crash("saving weak keys table for validator");
+        return false;
       }
     }
 
@@ -683,11 +675,10 @@ void js::gc::MarkingValidator::nonIncrementalMark(AutoGCSession& session) {
   WeakMapBase::restoreMarkedWeakMaps(markedWeakMaps);
 
   for (auto iter = savedEphemeronEdges.iter(); !iter.done(); iter.next()) {
-    AutoEnterOOMUnsafeRegion oomUnsafe;
     Zone* zone = iter.get().key()->asTenured().zone();
     if (!zone->gcEphemeronEdges().putNew(iter.get().key(),
                                          std::move(iter.get().value()))) {
-      oomUnsafe.crash("restoring weak keys table for validator");
+      return false;
     }
   }
 
@@ -697,6 +688,8 @@ void js::gc::MarkingValidator::nonIncrementalMark(AutoGCSession& session) {
 #  endif
 
   gc->incrementalState = state;
+
+  return true;
 }
 
 void js::gc::MarkingValidator::validate() {
@@ -803,12 +796,29 @@ void js::gc::MarkingValidator::validate() {
 
 void GCRuntime::computeNonIncrementalMarkingForValidation(
     AutoGCSession& session) {
-  MOZ_ASSERT(!markingValidator);
-  if (isIncremental && hasZealMode(ZealMode::IncrementalMarkingValidator)) {
-    markingValidator = js_new<MarkingValidator>(this);
+  MOZ_ASSERT(isIncremental);
+  MOZ_ASSERT(!markingValidator.ref());
+
+#  ifdef DEBUG
+  
+  
+  
+  
+  if (testMarkQueueRemaining() > 0) {
+    return;
   }
-  if (markingValidator) {
-    markingValidator->nonIncrementalMark(session);
+#  endif
+
+  markingValidator = js_new<MarkingValidator>(this);
+  if (!markingValidator) {
+    return;
+  }
+
+  AutoEnterOOMUnsafeRegion oomUnsafe;
+  if (!markingValidator->nonIncrementalMark(session)) {
+    
+    
+    oomUnsafe.crash("GCRuntime::computeNonIncrementalMarkingForValidation");
   }
 }
 
