@@ -333,13 +333,6 @@ bool LoadedScript::IsSRIMetadataReusableBy(
 
 
 
-EventScript::EventScript(nsIURI* aURI)
-    : LoadedScript(ScriptKind::eEvent, aURI) {}
-
-
-
-
-
 ClassicScript::ClassicScript(nsIURI* aURI)
     : LoadedScript(ScriptKind::eClassic, aURI) {}
 

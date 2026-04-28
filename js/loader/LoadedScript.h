@@ -43,7 +43,6 @@ void HostReleaseScriptFetchInfo(const Value& aPrivate);
 
 class ClassicScript;
 class ModuleScript;
-class EventScript;
 class LoadContextBase;
 
 
@@ -68,7 +67,7 @@ class ScriptFetchInfo : public nsISupports {
   void SetForModulePreload(bool aValue) { mIsForModulePreload = aValue; }
 
   bool IsForModuleScript() const { return mKind == ScriptKind::eModule; }
-  bool IsForEventScript() const { return mKind == ScriptKind::eEvent; }
+  bool IsForEvent() const { return mKind == ScriptKind::eEvent; }
 
   mozilla::dom::ReferrerPolicy ReferrerPolicy() const {
     return mReferrerPolicy;
@@ -168,7 +167,6 @@ class LoadedScript : public nsIMemoryReporter {
 
   bool IsClassicScript() const { return mKind == ScriptKind::eClassic; }
   bool IsModuleScript() const { return mKind == ScriptKind::eModule; }
-  bool IsEventScript() const { return mKind == ScriptKind::eEvent; }
   bool IsImportMapScript() const { return mKind == ScriptKind::eImportMap; }
 
   inline ClassicScript* AsClassicScript();
@@ -697,13 +695,6 @@ class ClassicScript final : public LoadedScript {
   explicit ClassicScript(nsIURI* aURI);
 
   friend class ScriptLoadRequest;
-};
-
-class EventScript final : public LoadedScript {
-  ~EventScript() = default;
-
- public:
-  explicit EventScript(nsIURI* aURI);
 };
 
 class ImportMapScript final : public LoadedScript {
