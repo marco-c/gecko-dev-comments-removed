@@ -631,9 +631,11 @@ void nsCocoaWindow::PostHandleKeyEvent(mozilla::WidgetKeyboardEvent* aEvent) {
   
   
   
+  Document* doc = GetDocument();
   if (StaticPrefs::browser_fullscreen_exit_on_escape() &&
       [cocoaEvent keyCode] == kVK_Escape &&
-      [[mChildView window] styleMask] & NSWindowStyleMaskFullScreen) {
+      [[mChildView window] styleMask] & NSWindowStyleMaskFullScreen &&
+      !(doc && doc->HasFullscreenKeyboardLockEnabled())) {
     [[mChildView window] toggleFullScreen:nil];
   }
 
@@ -1810,6 +1812,8 @@ NSEvent* gLastDragMouseDownEvent = nil;
   nsAutoRetainCocoaObject kungFuDeathGrip(self);
   WidgetPointerEvent geckoEvent(true, eContextMenu, mGeckoChild,
                                 WidgetMouseEvent::eContextMenuKey);
+  geckoEvent.mTimeStamp =
+      nsCocoaUtils::GetEventTimeStamp([[NSApp currentEvent] timestamp]);
   geckoEvent.mRefPoint = {};
   mGeckoChild->DispatchInputEvent(&geckoEvent);
 }
@@ -2564,6 +2568,8 @@ static bool ShouldDispatchBackForwardCommandForMouseButton(int16_t aButton) {
         true,
         (button == MouseButton::eX2) ? nsGkAtoms::Forward : nsGkAtoms::Back,
         mGeckoChild);
+    appCommandEvent.mTimeStamp =
+        nsCocoaUtils::GetEventTimeStamp([theEvent timestamp]);
     mGeckoChild->DispatchWindowEvent(appCommandEvent);
     return;
   }
@@ -3063,6 +3069,8 @@ static gfx::IntPoint GetIntegerDeltaForEvent(NSEvent* aEvent) {
 
   WidgetContentCommandEvent contentCommandEvent(
       true, eContentCommandLookUpDictionary, mGeckoChild);
+  contentCommandEvent.mTimeStamp =
+      nsCocoaUtils::GetEventTimeStamp([event timestamp]);
   NSPoint point = [self convertPoint:[event locationInWindow] fromView:nil];
   contentCommandEvent.mRefPoint = mGeckoChild->CocoaPointsToDevPixels(point);
   mGeckoChild->DispatchWindowEvent(contentCommandEvent);
@@ -4104,6 +4112,8 @@ static NSURL* GetPasteLocation(NSPasteboard* aPasteboard, bool aUseFallback) {
       if (mGeckoChild && returnType) {
         WidgetContentCommandEvent command(
             true, eContentCommandPasteTransferable, mGeckoChild, true);
+        command.mTimeStamp =
+            nsCocoaUtils::GetEventTimeStamp([[NSApp currentEvent] timestamp]);
         
         mGeckoChild->DispatchWindowEvent(command);
         if (!mGeckoChild || !command.mSucceeded || !command.mIsEnabled)
@@ -4236,6 +4246,8 @@ static NSURL* GetPasteLocation(NSPasteboard* aPasteboard, bool aUseFallback) {
 
   WidgetContentCommandEvent command(true, eContentCommandPasteTransferable,
                                     mGeckoChild);
+  command.mTimeStamp =
+      nsCocoaUtils::GetEventTimeStamp([[NSApp currentEvent] timestamp]);
   command.mTransferable = trans;
   mGeckoChild->DispatchWindowEvent(command);
 
@@ -5927,6 +5939,13 @@ void nsCocoaWindow::CocoaWindowWillEnterFullscreen(bool aFullscreen) {
 
   
   
+  
+  if (aFullscreen && mSizeMode == nsSizeMode_Normal) {
+    mRestoredBounds = Some(mBounds);
+  }
+
+  
+  
   mUpdateFullscreenOnResize =
       Some(aFullscreen ? TransitionType::Fullscreen : TransitionType::Windowed);
 }
@@ -6106,6 +6125,11 @@ void nsCocoaWindow::ProcessTransitions() {
 
       case TransitionType::EmulatedFullscreen: {
         if (!mInFullScreenMode) {
+          
+          
+          if (mSizeMode == nsSizeMode_Normal) {
+            mRestoredBounds = Some(mBounds);
+          }
           mSuppressSizeModeEvents = true;
           
           
@@ -6175,6 +6199,10 @@ void nsCocoaWindow::ProcessTransitions() {
       case TransitionType::Miniaturize:
         if (!mWindow.miniaturized) {
           
+          if (mSizeMode == nsSizeMode_Normal) {
+            mRestoredBounds = Some(mBounds);
+          }
+          
           [mWindow miniaturize:nil];
           continue;
         }
@@ -6190,6 +6218,11 @@ void nsCocoaWindow::ProcessTransitions() {
 
       case TransitionType::Zoom:
         if (!mWindow.zoomed) {
+          
+          
+          if (mSizeMode == nsSizeMode_Normal) {
+            mRestoredBounds = Some(mBounds);
+          }
           [mWindow zoom:nil];
         }
         break;
@@ -6402,6 +6435,18 @@ LayoutDeviceIntRect nsCocoaWindow::GetScreenBounds() {
   return mBounds;
 
   NS_OBJC_END_TRY_BLOCK_RETURN(LayoutDeviceIntRect(0, 0, 0, 0));
+}
+
+nsresult nsCocoaWindow::GetRestoredBounds(LayoutDeviceIntRect& aRect) {
+  if (SizeMode() == nsSizeMode_Normal) {
+    aRect = GetScreenBounds();
+    return NS_OK;
+  }
+  if (mRestoredBounds.isSome()) {
+    aRect = *mRestoredBounds;
+    return NS_OK;
+  }
+  return NS_ERROR_FAILURE;
 }
 
 double nsCocoaWindow::GetDefaultScaleInternal() { return BackingScaleFactor(); }
