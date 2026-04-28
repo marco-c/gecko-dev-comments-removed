@@ -38,7 +38,6 @@ add_setup(async function () {
   
   
   prefs.setBoolPref("network.proxy.allow_hijacking_localhost", true);
-  prefs.setBoolPref("network.http.altsvc.oe", true);
 
   if (mozinfo.os == "android") {
     
@@ -86,7 +85,6 @@ add_setup(async function () {
     prefs.clearUserPref("network.http.http3.enable");
     prefs.clearUserPref("network.dns.localDomains");
     prefs.clearUserPref("network.proxy.allow_hijacking_localhost");
-    prefs.clearUserPref("network.http.altsvc.oe");
     prefs.clearUserPref("network.http.http3.alt-svc-mapping-for-testing");
     pps.unregisterFilter(proxyFilter);
     if (mozinfo.os == "android") {
@@ -143,21 +141,6 @@ add_task(async function test_post() {
 add_task(async function test_patch() {
   await do_test_patch(httpsOrigin, h3Route);
 });
-
-add_task(
-  {
-    
-    
-    
-    skip_if: () => mozinfo.os == "android",
-  },
-  async function test_http_alt_svc() {
-    setup_h1_server(h3ServerDomain);
-    await waitForHttp3Route(httpOrigin + "http3-test", h3Route, h3AltSvc, {
-      delayMs: 500,
-    });
-  }
-);
 
 add_task(async function test_slow_receiver() {
   await do_test_slow_receiver(httpsOrigin, h3Route);

@@ -985,7 +985,8 @@ void HappyEyeballsConnectionAttempt::OnSucceeded() {
   if (connTCP) {
     
     
-    if (mConnInfo->IsHttp3()) {
+    
+    if (!mConnInfo->GetRoutedHost().IsEmpty()) {
       if (nsHttpTransaction* trans = mTransaction->QueryHttpTransaction()) {
         trans->RemoveAltSvcUsedHeader();
       }

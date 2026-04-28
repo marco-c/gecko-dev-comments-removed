@@ -26,7 +26,6 @@
 #include "nsString.h"
 #include "nsIDataStorage.h"
 #include "nsIInterfaceRequestor.h"
-#include "nsIStreamListener.h"
 #include "nsISpeculativeConnect.h"
 #include "mozilla/BasePrincipal.h"
 #include "SpeculativeTransaction.h"
@@ -39,8 +38,6 @@ namespace net {
 class nsProxyInfo;
 class nsHttpConnectionInfo;
 class nsHttpTransaction;
-class nsHttpChannel;
-class WellKnownChecker;
 
 class AltSvcMapping {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(AltSvcMapping)
@@ -182,31 +179,6 @@ class AltSvcOverride : public nsIInterfaceRequestor,
  private:
   virtual ~AltSvcOverride() = default;
   nsCOMPtr<nsIInterfaceRequestor> mCallbacks;
-};
-
-class TransactionObserver final : public nsIStreamListener {
- public:
-  NS_DECL_THREADSAFE_ISUPPORTS
-  NS_DECL_NSISTREAMLISTENER
-  NS_DECL_NSIREQUESTOBSERVER
-
-  TransactionObserver(nsHttpChannel* channel, WellKnownChecker* checker);
-  void Complete(bool versionOK, bool authOK, nsresult reason);
-
- private:
-  friend class WellKnownChecker;
-  virtual ~TransactionObserver() = default;
-
-  nsCOMPtr<nsISupports> mChannelRef;
-  nsHttpChannel* mChannel;
-  WellKnownChecker* mChecker;
-  nsCString mWKResponse;
-
-  bool mRanOnce;
-  bool mStatusOK;  
-  
-  Atomic<bool> mAuthOK;     
-  Atomic<bool> mVersionOK;  
 };
 
 class AltSvcCache {

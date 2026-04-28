@@ -1,28 +1,18 @@
 "use strict";
 
-const { HttpServer } = ChromeUtils.importESModule(
-  "resource://testing-common/httpd.sys.mjs"
-);
-
 var h2Port;
 var prefs;
 var http2pref;
 var altsvcpref1;
-var altsvcpref2;
 
 
 
-var h1Foo; 
-var h1Bar; 
 
 var otherServer; 
 
 var h2FooRoute; 
 var h2BarRoute; 
-var h2Route; 
-var httpFooOrigin; 
 var httpsFooOrigin; 
-var httpBarOrigin; 
 var httpsBarOrigin; 
 
 function run_test() {
@@ -36,11 +26,10 @@ function run_test() {
 
   http2pref = prefs.getBoolPref("network.http.http2.enabled");
   altsvcpref1 = prefs.getBoolPref("network.http.altsvc.enabled");
-  altsvcpref2 = prefs.getBoolPref("network.http.altsvc.oe", true);
 
+  prefs.setBoolPref("network.http.happy_eyeballs_enabled", false);
   prefs.setBoolPref("network.http.http2.enabled", true);
   prefs.setBoolPref("network.http.altsvc.enabled", true);
-  prefs.setBoolPref("network.http.altsvc.oe", true);
   prefs.setCharPref(
     "network.dns.localDomains",
     "foo.example.com, bar.example.com"
@@ -55,42 +44,14 @@ function run_test() {
   );
   addCertFromFile(certdb, "http2-ca.pem", "CTu,u,u");
 
-  h1Foo = new HttpServer();
-  h1Foo.registerPathHandler("/altsvc-test", h1Server);
-  h1Foo.registerPathHandler("/.well-known/http-opportunistic", h1ServerWK);
-  h1Foo.start(-1);
-  h1Foo.identity.setPrimary(
-    "http",
-    "foo.example.com",
-    h1Foo.identity.primaryPort
-  );
-
-  h1Bar = new HttpServer();
-  h1Bar.registerPathHandler("/altsvc-test", h1Server);
-  h1Bar.start(-1);
-  h1Bar.identity.setPrimary(
-    "http",
-    "bar.example.com",
-    h1Bar.identity.primaryPort
-  );
-
   h2FooRoute = "foo.example.com:" + h2Port;
   h2BarRoute = "bar.example.com:" + h2Port;
-  h2Route = ":" + h2Port;
 
-  httpFooOrigin = "http://foo.example.com:" + h1Foo.identity.primaryPort + "/";
   httpsFooOrigin = "https://" + h2FooRoute + "/";
-  httpBarOrigin = "http://bar.example.com:" + h1Bar.identity.primaryPort + "/";
   httpsBarOrigin = "https://" + h2BarRoute + "/";
   dump(
-    "http foo - " +
-      httpFooOrigin +
-      "\n" +
-      "https foo - " +
+    "https foo - " +
       httpsFooOrigin +
-      "\n" +
-      "http bar - " +
-      httpBarOrigin +
       "\n" +
       "https bar - " +
       httpsBarOrigin +
@@ -100,41 +61,9 @@ function run_test() {
   doTest1();
 }
 
-function h1Server(metadata, response) {
-  response.setStatusLine(metadata.httpVersion, 200, "OK");
-  response.setHeader("Content-Type", "text/plain", false);
-  response.setHeader("Connection", "close", false);
-  response.setHeader("Cache-Control", "no-cache", false);
-  response.setHeader("Access-Control-Allow-Origin", "*", false);
-  response.setHeader("Access-Control-Allow-Method", "GET", false);
-  response.setHeader("Access-Control-Allow-Headers", "x-altsvc", false);
-
-  try {
-    var hval = "h2=" + metadata.getHeader("x-altsvc");
-    response.setHeader("Alt-Svc", hval, false);
-  } catch (e) {}
-
-  var body = "Q: What did 0 say to 8? A: Nice Belt!\n";
-  response.bodyOutputStream.write(body, body.length);
-}
-
-function h1ServerWK(metadata, response) {
-  response.setStatusLine(metadata.httpVersion, 200, "OK");
-  response.setHeader("Content-Type", "application/json", false);
-  response.setHeader("Connection", "close", false);
-  response.setHeader("Cache-Control", "no-cache", false);
-  response.setHeader("Access-Control-Allow-Origin", "*", false);
-  response.setHeader("Access-Control-Allow-Method", "GET", false);
-  response.setHeader("Access-Control-Allow-Headers", "x-altsvc", false);
-
-  var body = '["http://foo.example.com:' + h1Foo.identity.primaryPort + '"]';
-  response.bodyOutputStream.write(body, body.length);
-}
-
 function resetPrefs() {
   prefs.setBoolPref("network.http.http2.enabled", http2pref);
   prefs.setBoolPref("network.http.altsvc.enabled", altsvcpref1);
-  prefs.setBoolPref("network.http.altsvc.oe", altsvcpref2);
   prefs.clearUserPref("network.dns.localDomains");
   prefs.clearUserPref("network.security.ports.banned");
 }
@@ -149,12 +78,9 @@ function makeChan(origin) {
 var origin;
 var xaltsvc;
 var loadWithoutClearingMappings = false;
-var disallowH3 = false;
-var disallowH2 = false;
 var nextTest;
 var expectPass = true;
 var waitFor = 0;
-var originAttributes = {};
 
 var Listener = function () {};
 Listener.prototype = {
@@ -214,10 +140,6 @@ function testsDone() {
   resetPrefs();
   do_test_pending();
   otherServer.close();
-  do_test_pending();
-  h1Foo.stop(do_test_finished);
-  do_test_pending();
-  h1Bar.stop(do_test_finished);
 }
 
 function doTest() {
@@ -234,18 +156,7 @@ function doTest() {
       Ci.nsIRequest.LOAD_FRESH_CONNECTION |
       Ci.nsIChannel.LOAD_INITIAL_DOCUMENT_URI;
   }
-  if (disallowH3) {
-    let internalChannel = chan.QueryInterface(Ci.nsIHttpChannelInternal);
-    internalChannel.allowHttp3 = false;
-    disallowH3 = false;
-  }
-  if (disallowH2) {
-    let internalChannel = chan.QueryInterface(Ci.nsIHttpChannelInternal);
-    internalChannel.allowSpdy = false;
-    disallowH2 = false;
-  }
   loadWithoutClearingMappings = false;
-  chan.loadInfo.originAttributes = originAttributes;
   chan.asyncOpen(listener);
 }
 
@@ -260,29 +171,29 @@ function doTest() {
 
 function doTest1() {
   dump("doTest1()\n");
-  origin = httpFooOrigin;
-  xaltsvc = h2Route;
+  origin = httpsBarOrigin;
+  xaltsvc = "";
+  expectPass = false;
   nextTest = doTest2;
   do_test_pending();
   doTest();
-  xaltsvc = h2FooRoute;
 }
 
 
 function doTest2() {
   dump("doTest2()\n");
-  origin = httpFooOrigin;
-  xaltsvc = h2FooRoute;
+  origin = httpsFooOrigin;
+  xaltsvc = "NA";
+  expectPass = true;
   nextTest = doTest3;
   do_test_pending();
   doTest();
 }
 
 
-
 function doTest3() {
   dump("doTest3()\n");
-  origin = httpFooOrigin;
+  origin = httpsFooOrigin;
   xaltsvc = h2BarRoute;
   nextTest = doTest4;
   do_test_pending();
@@ -303,9 +214,9 @@ function doTest4() {
 
 function doTest5() {
   dump("doTest5()\n");
-  origin = httpsFooOrigin;
-  xaltsvc = "NA";
-  expectPass = true;
+  origin = httpsBarOrigin;
+  xaltsvc = "";
+  expectPass = false;
   nextTest = doTest6;
   do_test_pending();
   doTest();
@@ -315,177 +226,7 @@ function doTest5() {
 function doTest6() {
   dump("doTest6()\n");
   origin = httpsFooOrigin;
-  xaltsvc = h2BarRoute;
-  nextTest = doTest7;
-  do_test_pending();
-  doTest();
-}
-
-
-function doTest7() {
-  dump("doTest7()\n");
-  origin = httpsBarOrigin;
-  xaltsvc = "";
-  expectPass = false;
-  nextTest = doTest8;
-  do_test_pending();
-  doTest();
-}
-
-
-
-
-
-function doTest8() {
-  dump("doTest8()\n");
-  origin = httpBarOrigin;
-  xaltsvc = h2BarRoute;
   expectPass = true;
-  waitFor = 500;
-  nextTest = doTest9;
-  do_test_pending();
-  doTest();
-}
-
-
-function doTest9() {
-  dump("doTest9()\n");
-  origin = httpBarOrigin;
-  xaltsvc = h2Route;
-  expectPass = true;
-  waitFor = 500;
-  nextTest = doTest10;
-  do_test_pending();
-  doTest();
-  xaltsvc = h2BarRoute;
-}
-
-
-function doTest10() {
-  dump("doTest10()\n");
-  origin = httpsBarOrigin;
-  xaltsvc = "";
-  expectPass = false;
-  nextTest = doTest11;
-  do_test_pending();
-  doTest();
-}
-
-
-
-
-function doTest11() {
-  dump("doTest11()\n");
-  origin = httpBarOrigin;
-  xaltsvc = h2FooRoute;
-  expectPass = true;
-  waitFor = 500;
-  nextTest = doTest12;
-  do_test_pending();
-  doTest();
-}
-
-
-
-function doTest12() {
-  dump("doTest12()\n");
-  origin = httpFooOrigin;
-  xaltsvc = h2Route;
-  originAttributes = {
-    userContextId: 1,
-    firstPartyDomain: "a.com",
-  };
-  nextTest = doTest13;
-  do_test_pending();
-  doTest();
-  xaltsvc = h2FooRoute;
-}
-
-
-function doTest13() {
-  dump("doTest13()\n");
-  origin = httpFooOrigin;
-  xaltsvc = "NA";
-  originAttributes = {
-    userContextId: 2,
-    firstPartyDomain: "a.com",
-  };
-  loadWithoutClearingMappings = true;
-  nextTest = doTest14;
-  do_test_pending();
-  doTest();
-}
-
-
-function doTest14() {
-  dump("doTest14()\n");
-  origin = httpFooOrigin;
-  xaltsvc = "NA";
-  originAttributes = {
-    userContextId: 1,
-    firstPartyDomain: "b.com",
-  };
-  loadWithoutClearingMappings = true;
-  nextTest = doTest15;
-  do_test_pending();
-  doTest();
-}
-
-
-function doTest15() {
-  dump("doTest15()\n");
-  origin = httpFooOrigin;
-  xaltsvc = "NA";
-  originAttributes = {
-    userContextId: 1,
-    firstPartyDomain: "a.com",
-  };
-  loadWithoutClearingMappings = true;
-  nextTest = doTest16;
-  do_test_pending();
-  doTest();
-  
-  xaltsvc = h2FooRoute;
-}
-
-
-function doTest16() {
-  dump("doTest16()\n");
-  origin = httpFooOrigin;
-  xaltsvc = "NA";
-  disallowH2 = true;
-  originAttributes = {
-    userContextId: 1,
-    firstPartyDomain: "a.com",
-  };
-  loadWithoutClearingMappings = true;
-  nextTest = doTest17;
-  do_test_pending();
-  doTest();
-}
-
-
-function doTest17() {
-  dump("doTest17()\n");
-  origin = httpFooOrigin;
-  xaltsvc = h2Route;
-  disallowH3 = true;
-  originAttributes = {
-    userContextId: 1,
-    firstPartyDomain: "a.com",
-  };
-  loadWithoutClearingMappings = true;
-  nextTest = doTest18;
-  do_test_pending();
-  doTest();
-  
-  xaltsvc = h2FooRoute;
-}
-
-
-function doTest18() {
-  dump("doTest18()\n");
-  origin = httpFooOrigin;
   nextTest = testsDone;
   otherServer = Cc["@mozilla.org/network/server-socket;1"].createInstance(
     Ci.nsIServerSocket
@@ -503,20 +244,18 @@ function doTest18() {
       Assert.ok(false, "Got connection to socket when we didn't expect it!");
     },
     onStopListening() {
-      
-      
       do_test_finished();
     },
   });
-  nextTest = doTest19;
+  nextTest = doTest7;
   do_test_pending();
   doTest();
 }
 
 
-function doTest19() {
-  dump("doTest19()\n");
-  origin = httpFooOrigin;
+function doTest7() {
+  dump("doTest7()\n");
+  origin = httpsFooOrigin;
   nextTest = testsDone;
   otherServer = Cc["@mozilla.org/network/server-socket;1"].createInstance(
     Ci.nsIServerSocket
@@ -532,18 +271,16 @@ function doTest19() {
       Assert.ok(false, "Got connection to socket when we didn't expect it!");
     },
     onStopListening() {
-      
-      
       do_test_finished();
     },
   });
-  nextTest = doTest20;
+  nextTest = doTest8;
   do_test_pending();
   doTest();
 }
-function doTest20() {
-  dump("doTest20()\n");
-  origin = httpFooOrigin;
+function doTest8() {
+  dump("doTest8()\n");
+  origin = httpsFooOrigin;
   nextTest = testsDone;
   otherServer = Cc["@mozilla.org/network/server-socket;1"].createInstance(
     Ci.nsIServerSocket
@@ -559,19 +296,17 @@ function doTest20() {
       Assert.ok(false, "Got connection to socket when we didn't expect it!");
     },
     onStopListening() {
-      
-      
       do_test_finished();
     },
   });
-  nextTest = doTest21;
+  nextTest = doTest9;
   do_test_pending();
   doTest();
 }
 
-function doTest21() {
-  dump("doTest21()\n");
-  origin = httpFooOrigin;
+function doTest9() {
+  dump("doTest9()\n");
+  origin = httpsFooOrigin;
   nextTest = testsDone;
   otherServer = Cc["@mozilla.org/network/server-socket;1"].createInstance(
     Ci.nsIServerSocket
@@ -587,8 +322,6 @@ function doTest21() {
       Assert.ok(true, "Got connection to socket when we didn't expect it!");
     },
     onStopListening() {
-      
-      
       do_test_finished();
     },
   });

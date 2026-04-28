@@ -25,7 +25,6 @@
 #include "nsIEarlyHintObserver.h"
 #include "nsIHttpAuthenticableChannel.h"
 #include "nsIProtocolProxyCallback.h"
-#include "nsIRaceCacheWithNetwork.h"
 #include "nsIRequestContext.h"
 #include "nsIStreamListener.h"
 #include "nsIThreadRetargetableRequest.h"
@@ -72,7 +71,6 @@ class nsHttpChannel final : public HttpBaseChannel,
                             public nsIDNSListener,
                             public nsSupportsWeakReference,
                             public nsICorsPreflightCallback,
-                            public nsIRaceCacheWithNetwork,
                             public nsIRequestTailUnblockCallback,
                             public nsIEarlyHintObserver {
  public:
@@ -90,7 +88,6 @@ class nsHttpChannel final : public HttpBaseChannel,
   NS_DECL_NSITHREADRETARGETABLEREQUEST
   NS_DECL_NSIDNSLISTENER
   NS_INLINE_DECL_STATIC_IID(NS_HTTPCHANNEL_IID)
-  NS_DECL_NSIRACECACHEWITHNETWORK
   NS_DECL_NSIREQUESTTAILUNBLOCKCALLBACK
   NS_DECL_NSIEARLYHINTOBSERVER
 
@@ -279,15 +276,7 @@ class nsHttpChannel final : public HttpBaseChannel,
   already_AddRefed<WebTransportSessionEventListener>
   GetWebTransportSessionEventListener();
 
- private:  
-  RefPtr<TransactionObserver> mTransactionObserver;
-
  public:
-  void SetTransactionObserver(TransactionObserver* arg) {
-    mTransactionObserver = arg;
-  }
-  TransactionObserver* GetTransactionObserver() { return mTransactionObserver; }
-
   CacheDisposition mCacheDisposition{kCacheUnresolved};
 
  protected:
@@ -519,8 +508,6 @@ class nsHttpChannel final : public HttpBaseChannel,
 
   
   void ReportSystemChannelTelemetry(nsresult status);
-  
-  void ReportRcwnStats(bool isFromNet);
 
   
   
@@ -637,7 +624,6 @@ class nsHttpChannel final : public HttpBaseChannel,
   mozilla::TimeStamp mOnStartRequestTimestamp;
   
   mozilla::TimeStamp mSuspendTimestamp;
-  mozilla::TimeStamp mOnCacheEntryCheckTimestamp;
 
   
   
@@ -815,13 +801,6 @@ class nsHttpChannel final : public HttpBaseChannel,
   };
 
   
-  
-  nsCOMPtr<nsITimer> mCacheOpenTimer;
-  std::function<void(nsHttpChannel*)> mCacheOpenFunc;
-  uint32_t mCacheOpenDelay = 0;
-  uint32_t mNetworkTriggerDelay = 0;
-
-  
   enum ResponseSource {
     RESPONSE_PENDING = 0,      
     RESPONSE_FROM_CACHE = 1,   
@@ -829,16 +808,6 @@ class nsHttpChannel final : public HttpBaseChannel,
   };
   Atomic<ResponseSource, Relaxed> mFirstResponseSource{RESPONSE_PENDING};
 
-  
-  
-  void MaybeRaceCacheWithNetwork();
-
-  
-  
-  
-  void MaybeCreateCacheEntryWhenRCWN();
-
-  nsresult TriggerNetworkWithDelay(uint32_t aDelay);
   nsresult TriggerNetwork();
   nsresult OnSuspendTimeout();
   void CancelNetworkRequest(nsresult aStatus);
@@ -852,9 +821,6 @@ class nsHttpChannel final : public HttpBaseChannel,
   void MaybeGenerateNELReport();
 
   
-  
-  nsCOMPtr<nsITimer> mNetworkTriggerTimer;
-  
   bool mNetworkTriggered = false;
 
   
@@ -866,18 +832,6 @@ class nsHttpChannel final : public HttpBaseChannel,
   bool mStaleRevalidation = false;
   
   bool mIsDictionaryCompressed = false;
-  
-  
-  Atomic<bool> mRaceCacheWithNetwork{false};
-  uint32_t mRaceDelay{0};
-  
-  
-  
-  bool mIgnoreCacheEntry{false};
-  bool mAllowRCWN{true};
-  
-  
-  mozilla::Mutex mRCWNLock MOZ_UNANNOTATED{"nsHttpChannel.mRCWNLock"};
 
   
   
@@ -941,7 +895,7 @@ class nsHttpChannel final : public HttpBaseChannel,
  private:  
   bool mDidReval{false};
 
-  RefPtr<nsIEarlyHintObserver> mEarlyHintObserver;
+  nsCOMPtr<nsIEarlyHintObserver> mEarlyHintObserver;
   Maybe<nsCString> mOpenerCallingScriptLocation;
   RefPtr<WebTransportSessionEventListener> mWebTransportSessionEventListener;
   nsMainThreadPtrHandle<nsIReplacedHttpResponse> mOverrideResponse;
