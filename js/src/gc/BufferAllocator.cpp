@@ -2530,13 +2530,10 @@ bool BufferAllocator::sweepChunk(BufferChunk* chunk, SweepKind sweepKind,
 
   GCRuntime* gc = &zone->runtimeFromAnyThread()->gc;
 
-  bool hasNurseryOwnedAllocs = false;
-
-  size_t freeStart = FirstMediumAllocOffset;
-  bool sweptAny = false;
-  size_t tenuredBytesFreed = 0;
-
   
+  bool sweptAny = false;
+  bool hasNurseryOwnedSmallRegions = false;
+  size_t smallRegionBytesFreed = 0;
   for (auto iter = chunk->smallRegionIter(); !iter.done(); iter.next()) {
     SmallBufferRegion* region = iter.get();
     MOZ_ASSERT(!chunk->isMarked(region));
@@ -2547,58 +2544,26 @@ bool BufferAllocator::sweepChunk(BufferChunk* chunk, SweepKind sweepKind,
       chunk->setDeallocated(region, SmallRegionSize);
       PoisonAlloc(region, JS_SWEPT_TENURED_PATTERN, sizeof(SmallBufferRegion),
                   MemCheckKind::MakeUndefined);
-      tenuredBytesFreed += SmallRegionSize;
+      smallRegionBytesFreed += SmallRegionSize;
       sweptAny = true;
     } else if (region->hasNurseryOwnedAllocs()) {
-      hasNurseryOwnedAllocs = true;
+      hasNurseryOwnedSmallRegions = true;
     }
   }
 
-  for (auto iter = chunk->allocIter(); !iter.done(); iter.next()) {
-    void* alloc = iter.get();
-
-    size_t bytes = chunk->allocBytes(alloc);
-    uintptr_t allocEnd = iter.getOffset() + bytes;
-
-    bool nurseryOwned = chunk->isNurseryOwned(alloc);
-    bool canSweep = !chunk->isSmallBufferRegion(alloc) &&
-                    CanSweepAlloc(nurseryOwned, sweepKind);
-
-    bool shouldSweep = canSweep && !chunk->isMarked(alloc);
-    if (shouldSweep) {
-      
-      if (!nurseryOwned) {
-        tenuredBytesFreed += bytes;
-      }
-      MOZ_ASSERT(!chunk->isSmallBufferRegion(alloc));
-      chunk->setDeallocated(alloc, bytes);
-      PoisonAlloc(alloc, JS_SWEPT_TENURED_PATTERN, bytes,
-                  MemCheckKind::MakeUndefined);
-      sweptAny = true;
-    } else {
-      
-      uintptr_t allocStart = iter.getOffset();
-      if (freeStart != allocStart) {
-        addSweptRegion(chunk, freeStart, allocStart, shouldDecommit, !sweptAny,
-                       freeLists);
-      }
-      freeStart = allocEnd;
-      if (canSweep) {
-        chunk->setUnmarked(alloc);
-      }
-      if (nurseryOwned) {
-        MOZ_ASSERT(sweepKind == SweepKind::Nursery);
-        hasNurseryOwnedAllocs = true;
-      }
-    }
-  }
-
-  if (tenuredBytesFreed) {
+  if (smallRegionBytesFreed) {
     bool inMajorGC = sweepKind == SweepKind::Tenured;
-    decreaseHeapSize(tenuredBytesFreed, false, inMajorGC);
+    decreaseHeapSize(smallRegionBytesFreed, false, inMajorGC);
   }
 
-  if (freeStart == FirstMediumAllocOffset) {
+  auto result =
+      chunk->sweep(this, freeLists, sweepKind, sweptAny, shouldDecommit);
+
+  if (sweepKind == SweepKind::Tenured && result.bytesFreed) {
+    decreaseHeapSize(result.bytesFreed, false, true);
+  }
+
+  if (result.isEmpty) {
     
     bool allMemoryCommitted = chunk->decommittedPages.ref().IsEmpty();
     chunk->~BufferChunk();
@@ -2608,13 +2573,8 @@ bool BufferAllocator::sweepChunk(BufferChunk* chunk, SweepKind sweepKind,
     return false;
   }
 
-  
-  if (freeStart != ChunkSize) {
-    addSweptRegion(chunk, freeStart, ChunkSize, shouldDecommit, !sweptAny,
-                   freeLists);
-  }
-
-  chunk->hasNurseryOwnedAllocsAfterSweep = hasNurseryOwnedAllocs;
+  chunk->hasNurseryOwnedAllocsAfterSweep =
+      hasNurseryOwnedSmallRegions || result.hasNurseryOwnedAllocs;
 
   return true;
 }
@@ -2682,65 +2642,84 @@ void BufferAllocator::addSweptRegion(BufferChunk* chunk, uintptr_t freeStart,
 bool BufferAllocator::sweepSmallBufferRegion(BufferChunk* chunk,
                                              SmallBufferRegion* region,
                                              SweepKind sweepKind) {
-  bool hasNurseryOwnedAllocs = false;
-
   FreeLists& freeLists = chunk->freeLists.ref();
+  auto result = region->sweep(this, freeLists, sweepKind, false, false);
 
-  size_t freeStart = FirstSmallAllocOffset;
-  bool sweptAny = false;
+  if (result.isEmpty) {
+    return false;
+  }
 
-  for (auto iter = region->allocIter(); !iter.done(); iter.next()) {
+  region->setHasNurseryOwnedAllocs(result.hasNurseryOwnedAllocs);
+  return true;
+}
+
+template <typename D, size_t S, size_t G>
+AllocSpace<D, S, G>::SweepResult AllocSpace<D, S, G>::sweep(
+    BufferAllocator* allocator, FreeLists& freeLists, SweepKind sweepKind,
+    bool sweptAnyPreviously, bool shouldDecommit) {
+  static_assert(std::is_same_v<D, BufferChunk> ||
+                std::is_same_v<D, SmallBufferRegion>);
+
+  SweepResult result;
+
+  size_t freeStart = firstAllocOffset();
+  bool sweptAny = sweptAnyPreviously;
+
+  for (auto iter = allocIter(); !iter.done(); iter.next()) {
     void* alloc = iter.get();
 
-    size_t bytes = region->allocBytes(alloc);
+    size_t bytes = allocBytes(alloc);
     uintptr_t allocEnd = iter.getOffset() + bytes;
 
-    bool nurseryOwned = region->isNurseryOwned(alloc);
-    bool canSweep = CanSweepAlloc(nurseryOwned, sweepKind);
+    bool nurseryOwned = isNurseryOwned(alloc);
+    bool canSweep = BufferAllocator::CanSweepAlloc(nurseryOwned, sweepKind);
+    if constexpr (std::is_same_v<D, BufferChunk>) {
+      if (static_cast<BufferChunk*>(this)->isSmallBufferRegion(alloc)) {
+        canSweep = false;
+      }
+    }
 
-    bool shouldSweep = canSweep && !region->isMarked(alloc);
+    bool shouldSweep = canSweep && !isMarked(alloc);
     if (shouldSweep) {
       
-      region->setDeallocated(alloc, bytes);
+      setDeallocated(alloc, bytes);
       PoisonAlloc(alloc, JS_SWEPT_TENURED_PATTERN, bytes,
                   MemCheckKind::MakeUndefined);
+      result.bytesFreed += bytes;
       sweptAny = true;
     } else {
       
       uintptr_t allocStart = iter.getOffset();
       if (freeStart != allocStart) {
-        addSweptRegion(region, freeStart, allocStart, !sweptAny, freeLists);
+        allocator->addSweptRegion(asDerived(), freeStart, allocStart,
+                                  shouldDecommit, !sweptAny, freeLists);
       }
       freeStart = allocEnd;
       if (canSweep) {
-        region->setUnmarked(alloc);
+        setUnmarked(alloc);
       }
       if (nurseryOwned) {
         MOZ_ASSERT(sweepKind == SweepKind::Nursery);
-        hasNurseryOwnedAllocs = true;
+        result.hasNurseryOwnedAllocs = true;
       }
-      sweptAny = false;
+      sweptAny = sweptAnyPreviously;
     }
   }
 
-  if (freeStart == FirstSmallAllocOffset) {
-    
-    return false;
-  }
-
   
-  if (freeStart != SmallRegionSize) {
-    addSweptRegion(region, freeStart, SmallRegionSize, !sweptAny, freeLists);
+  
+  result.isEmpty = freeStart == firstAllocOffset();
+  if (freeStart != SizeBytes && !result.isEmpty) {
+    allocator->addSweptRegion(asDerived(), freeStart, SizeBytes, shouldDecommit,
+                              !sweptAny, freeLists);
   }
 
-  region->setHasNurseryOwnedAllocs(hasNurseryOwnedAllocs);
-
-  return true;
+  return result;
 }
 
 void BufferAllocator::addSweptRegion(SmallBufferRegion* region,
                                      uintptr_t freeStart, uintptr_t freeEnd,
-                                     bool expectUnchanged,
+                                     bool shouldDecommit, bool expectUnchanged,
                                      FreeLists& freeLists) {
   
   
@@ -2751,6 +2730,7 @@ void BufferAllocator::addSweptRegion(SmallBufferRegion* region,
   MOZ_ASSERT(freeEnd <= SmallRegionSize);
   MOZ_ASSERT(freeStart % SmallAllocGranularity == 0);
   MOZ_ASSERT(freeEnd % SmallAllocGranularity == 0);
+  MOZ_ASSERT(!shouldDecommit);
 
   freeStart += uintptr_t(region);
   freeEnd += uintptr_t(region);
