@@ -48,10 +48,16 @@ class BlobURLProtocolHandler final : public nsIProtocolHandler,
                                const nsCString& aPartitionKey,
                                nsACString& aUri);
   
-  static void AddDataEntry(
-      const nsACString& aURI, nsIPrincipal* aPrincipal,
-      const nsCString& aPartitionKey, BlobImpl* aBlobImpl,
-      const Maybe<ContentParentId>& aContentParentId = Nothing());
+  static void AddDataEntryParent(const nsACString& aURI,
+                                 nsIPrincipal* aPrincipal,
+                                 const nsCString& aPartitionKey,
+                                 BlobImpl* aBlobImpl,
+                                 const ContentParentId& aContentParentId);
+
+  
+  static void AddDataEntryChild(const nsACString& aURI,
+                                nsIPrincipal* aPrincipal,
+                                const nsCString& aPartitionKey);
 
   
   
