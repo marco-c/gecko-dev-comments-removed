@@ -381,10 +381,6 @@ var SidebarController = {
     return this.installedExtensions ? this.installedExtensions.split(",") : [];
   },
 
-  get launcherSplitter() {
-    return this._launcherSplitter;
-  },
-
   init() {
     
     this.SidebarManager;
@@ -494,6 +490,7 @@ var SidebarController = {
         };
         this._splitter.addEventListener("command", this._browserResizeObserver);
       }
+      this._enableLauncherDragging();
       this._enablePinnedTabsSplitterDragging();
 
       
@@ -1504,16 +1501,14 @@ var SidebarController = {
 
 
   _enableLauncherDragging() {
-    if (this._launcherDropHandler) {
+    if (!this._launcherSplitter.hidden) {
+      
       
       return;
     }
-    if (!this._panelResizeObserver) {
-      this._panelResizeObserver = new ResizeObserver(
-        ([entry]) =>
-          (this._state.panelWidth = entry.contentBoxSize[0].inlineSize)
-      );
-    }
+    this._panelResizeObserver = new ResizeObserver(
+      ([entry]) => (this._state.panelWidth = entry.contentBoxSize[0].inlineSize)
+    );
     this._panelResizeObserver.observe(this._box);
 
     this._launcherDropHandler = () => {
@@ -1524,6 +1519,8 @@ var SidebarController = {
       "command",
       this._launcherDropHandler
     );
+
+    this._launcherSplitter.hidden = false;
   },
 
   
@@ -1582,7 +1579,8 @@ var SidebarController = {
       "command",
       this._launcherDropHandler
     );
-    delete this._launcherDropHandler;
+
+    this._launcherSplitter.hidden = true;
   },
 
   
