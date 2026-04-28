@@ -8,12 +8,10 @@
 #include "mozilla/Mutex.h"
 #include "mozilla/dom/PSerialManagerParent.h"
 #include "mozilla/dom/SerialPlatformService.h"
-#include "mozilla/ipc/Endpoint.h"
 #include "nsIObserver.h"
 
 namespace mozilla::dom {
 
-class SerialPermissionRequest;
 class SerialPortParent;
 
 
@@ -59,11 +57,14 @@ class SerialManagerParent final : public PSerialManagerParent {
 
   void Init(uint64_t aBrowserId);
 
-  void ActorDestroy(ActorDestroyReason aWhy) override;
+  mozilla::ipc::IPCResult RecvGetAvailablePorts(
+      GetAvailablePortsResolver&& aResolver);
 
-  mozilla::ipc::IPCResult RecvRequestPort(
-      nsTArray<IPCSerialPortFilter>&& aFilters, bool aAutoselect,
-      RequestPortResolver&& aResolver);
+  mozilla::ipc::IPCResult RecvCreatePort(
+      const nsString& aPortId,
+      mozilla::ipc::Endpoint<PSerialPortParent>&& aEndpoint);
+
+  void ActorDestroy(ActorDestroyReason aWhy) override;
 
   mozilla::ipc::IPCResult RecvSimulateDeviceConnection(
       const nsString& aDeviceId, const nsString& aDevicePath,
@@ -83,18 +84,6 @@ class SerialManagerParent final : public PSerialManagerParent {
  private:
   ~SerialManagerParent();
 
-  
-  
-  void StartChooserRequest(bool aAutoselect,
-                           nsTArray<IPCSerialPortInfo>&& aPorts,
-                           RequestPortResolver&& aResolver);
-
-  
-  
-  
-  mozilla::ipc::Endpoint<PSerialPortChild> CreateAndBindPortActor(
-      const nsAString& aPortId);
-
   template <typename TWork, typename TResolver>
   mozilla::ipc::IPCResult DispatchTestOperation(const char* aName,
                                                 TWork&& aWork,
@@ -102,10 +91,6 @@ class SerialManagerParent final : public PSerialManagerParent {
 
   uint64_t mBrowserId = 0;
   RefPtr<SerialDeviceChangeProxy> mProxy;
-
-  
-  
-  bool mChooserRequestInFlight = false;
 };
 
 }  
