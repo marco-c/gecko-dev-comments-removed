@@ -8,8 +8,16 @@
 #include "MFMediaEngineExtra.h"
 #include "ipc/EnumSerializer.h"
 #include "mozilla/Logging.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/ProfilerMarkerTypes.h"
+#include "mozilla/gfx/Types.h"
 #include "nsPrintfCString.h"
+
+
+
+#ifndef MFVideoTransFunc_HLG
+#  define MFVideoTransFunc_HLG static_cast<MFVideoTransferFunction>(16)
+#endif
 
 namespace mozilla {
 
@@ -124,6 +132,8 @@ const char* GUIDToStr(GUID aGUID);
 const char* MFVideoRotationFormatToStr(MFVideoRotationFormat aFormat);
 const char* MFVideoTransferFunctionToStr(MFVideoTransferFunction aFunc);
 const char* MFVideoPrimariesToStr(MFVideoPrimaries aPrimaries);
+MFVideoTransferFunction ToMFVideoTransFunc(
+    const Maybe<gfx::TransferFunction>& aTransferFunction);
 void ByteArrayFromGUID(REFGUID aGuidIn, nsTArray<uint8_t>& aByteArrayOut);
 void GUIDFromByteArray(const nsTArray<uint8_t>& aByteArrayIn, GUID& aGuidOut);
 BSTR CreateBSTRFromConstChar(const char* aNarrowStr);
@@ -201,13 +211,20 @@ struct ParamTraits<mozilla::MFMediaEngineError>
           mozilla::MFMediaEngineError::MF_MEDIA_ENGINE_ERR_ABORTED,
           mozilla::MFMediaEngineError::MF_MEDIA_ENGINE_ERR_ENCRYPTED> {};
 
+struct MFMediaEngineEventValidator {
+  using IntegralType = std::underlying_type_t<MFMediaEngineEvent>;
+
+  static bool IsLegalValue(const IntegralType e) {
+    
+    
+    return true;
+  }
+};
+
 template <>
 struct ParamTraits<mozilla::MFMediaEngineEvent>
-    : public ContiguousEnumSerializerInclusive<
-          mozilla::MFMediaEngineEvent,
-          mozilla::MFMediaEngineEvent::MF_MEDIA_ENGINE_EVENT_LOADSTART,
-          mozilla::MFMediaEngineEvent::
-              MF_MEDIA_ENGINE_EVENT_AUDIOENDPOINTCHANGE> {};
+    : public EnumSerializer<mozilla::MFMediaEngineEvent,
+                            MFMediaEngineEventValidator> {};
 
 }  
 
