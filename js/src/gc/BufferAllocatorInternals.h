@@ -216,14 +216,18 @@ struct AllocSpace {
       mozilla::BitSet<MaxAllocCount, mozilla::Atomic<size_t, mozilla::Relaxed>>;
 
   
+  
+  
   MainThreadOrGCTaskData<AtomicBitmap<MaxAllocCount>> markBits;
 
+  
   
   
   
   MainThreadOrGCTaskData<PerAllocBitmap> allocStartBitmap;
   MainThreadOrGCTaskData<AtomicPerAllocBitmap> allocEndBitmap;
 
+  
   
   
   MainThreadOrGCTaskData<AtomicPerAllocBitmap> nurseryOwnedBitmap;
@@ -377,6 +381,9 @@ struct BufferChunk
   using PerPageBitmap = mozilla::BitSet<PagesPerChunk, uint32_t>;
   MainThreadOrGCTaskData<PerPageBitmap> decommittedPages;
 
+  
+  
+  
   static constexpr size_t SmallRegionsPerChunk = ChunkSize / SmallRegionSize;
   using SmallRegionBitmap = AtomicBitmap<SmallRegionsPerChunk>;
   MainThreadOrGCTaskData<SmallRegionBitmap> smallRegionBitmap;
