@@ -95,10 +95,20 @@ enum CharStringOperator {
   
 };
 
+
+
+enum HintState {
+  kHs,
+  kVs,
+  kCm,
+  kHm,
+};
+
 struct CharStringContext {
   bool endchar_seen = false;
   bool width_seen = false;
   size_t num_stems = 0;
+  HintState hint_state = kHs;
   bool cff2 = false;
   bool blend_seen = false;
   bool vsindex_seen = false;
