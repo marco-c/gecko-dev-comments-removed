@@ -155,11 +155,8 @@ class StringBuilder {
 
   size_t size() const { return str_.size(); }
 
-  std::string Release() {
-    std::string ret = std::move(str_);
-    str_.clear();
-    return ret;
-  }
+  
+  std::string Release() { return std::move(str_); }
 
   
   StringBuilder& AppendFormat(const char* fmt, ...)
