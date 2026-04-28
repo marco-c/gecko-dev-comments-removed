@@ -152,6 +152,10 @@ ENameValueFlag LocalAccessible::Name(nsString& aName) const {
   }
 
   if (auto cssAlt = CssAltContent(mContent)) {
+    
+    
+    
+    
     cssAlt.AppendToString(aName);
     return eNameOK;
   }

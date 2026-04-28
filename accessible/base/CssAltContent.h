@@ -20,7 +20,15 @@ class MOZ_STACK_CLASS CssAltContent {
 
 
 
+
   explicit operator bool() const { return !mItems.IsEmpty(); }
+
+  
+
+
+
+
+  bool IsEmpty() const { return mText.IsEmpty(); }
 
   
 
@@ -40,6 +48,7 @@ class MOZ_STACK_CLASS CssAltContent {
   dom::Element* mRealElement = nullptr;
   dom::Element* mPseudoElement = nullptr;
   mozilla::Span<const mozilla::StyleContentItem> mItems;
+  nsString mText;
 };
 
 }  

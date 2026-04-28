@@ -264,7 +264,7 @@ bool nsAccessibilityService::ShouldCreateImgAccessible(
       ((!aElement->IsHTMLElement(nsGkAtoms::embed) &&
         !aElement->IsHTMLElement(nsGkAtoms::object)) ||
        frame->AccessibleType() != AccType::eImageType) &&
-      !CssAltContent(aElement)) {
+      CssAltContent(aElement).IsEmpty()) {
     return false;
   }
 
@@ -1415,7 +1415,12 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
 
       return nullptr;
     }
-
+    if (cssAlt && cssAlt.IsEmpty()) {
+      if (aIsSubtreeHidden) {
+        *aIsSubtreeHidden = true;
+      }
+      return nullptr;
+    }
     newAcc = CreateAccessibleByFrameType(frame, content, aContext);
     MOZ_ASSERT(newAcc, "Accessible not created for text node!");
     document->BindToDocument(newAcc, nullptr);
@@ -1582,7 +1587,8 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
       if (aIsSubtreeHidden) {
         *aIsSubtreeHidden = true;
       }
-    } else if (auto cssAlt = CssAltContent(content)) {
+    } else if (auto cssAlt = CssAltContent(content);
+               cssAlt && !cssAlt.IsEmpty()) {
       
       
       
