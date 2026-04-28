@@ -1,78 +1,8 @@
 "use strict";
 
-var gAnimHistogram = Services.telemetry.getHistogramById(
-  "FX_TAB_CLOSE_TIME_ANIM_MS"
-);
-var gNoAnimHistogram = Services.telemetry.getHistogramById(
-  "FX_TAB_CLOSE_TIME_NO_ANIM_MS"
-);
-
-
-
-
-
-
-
-
-
-function snapshotCount(snapshot) {
-  
-  
-  return Object.values(snapshot.values).reduce((a, b) => a + b, 0);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-function assertCount(snapshot, expectedCount) {
-  Assert.equal(
-    snapshotCount(snapshot),
-    expectedCount,
-    `Should only be ${expectedCount} collected value.`
-  );
-}
-
-
-
-
-
-
-
-
-
-
-
-
-function waitForSnapshotCount(histogram, expectedCount) {
-  return BrowserTestUtils.waitForCondition(() => {
-    return snapshotCount(histogram.snapshot()) == expectedCount;
-  }, `Collected value should become ${expectedCount}.`);
-}
-
 add_setup(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["test.wait300msAfterTabSwitch", true]],
-  });
-
   
   gReduceMotionOverride = false;
-
-  
-  
-  let oldCanRecord = Services.telemetry.canRecordExtended;
-  Services.telemetry.canRecordExtended = true;
-  registerCleanupFunction(() => {
-    Services.telemetry.canRecordExtended = oldCanRecord;
-  });
 });
 
 
@@ -83,16 +13,15 @@ add_task(async function test_close_time_anim_probe() {
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser);
   await BrowserTestUtils.waitForCondition(() => tab._fullyOpen);
 
-  gAnimHistogram.clear();
-  gNoAnimHistogram.clear();
+  Services.fog.testResetFOG();
 
   BrowserTestUtils.removeTab(tab, { animate: true });
 
-  await waitForSnapshotCount(gAnimHistogram, 1);
-  assertCount(gNoAnimHistogram.snapshot(), 0);
-
-  gAnimHistogram.clear();
-  gNoAnimHistogram.clear();
+  await BrowserTestUtils.waitForCondition(() =>
+    Glean.browserTabclose.timeAnim.testGetValue()
+  );
+  Assert.equal(Glean.browserTabclose.timeAnim.testGetValue().count, 1);
+  Assert.equal(Glean.browserTabclose.timeNoAnim.testGetValue()?.count ?? 0, 0);
 });
 
 
@@ -103,14 +32,13 @@ add_task(async function test_close_time_no_anim_probe() {
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser);
   await BrowserTestUtils.waitForCondition(() => tab._fullyOpen);
 
-  gAnimHistogram.clear();
-  gNoAnimHistogram.clear();
+  Services.fog.testResetFOG();
 
   BrowserTestUtils.removeTab(tab, { animate: false });
 
-  await waitForSnapshotCount(gNoAnimHistogram, 1);
-  assertCount(gAnimHistogram.snapshot(), 0);
-
-  gAnimHistogram.clear();
-  gNoAnimHistogram.clear();
+  await BrowserTestUtils.waitForCondition(() =>
+    Glean.browserTabclose.timeNoAnim.testGetValue()
+  );
+  Assert.equal(Glean.browserTabclose.timeAnim.testGetValue()?.count ?? 0, 0);
+  Assert.equal(Glean.browserTabclose.timeNoAnim.testGetValue().count, 1);
 });
