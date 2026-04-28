@@ -5,64 +5,64 @@
 #ifndef mozilla_dom_SerialPermissionRequest_h
 #define mozilla_dom_SerialPermissionRequest_h
 
-#include "mozilla/dom/SerialBinding.h"
+#include "mozilla/MozPromise.h"
+#include "mozilla/dom/SerialPortIPCTypes.h"
 #include "mozilla/dom/SerialTypes.h"
-#include "nsContentPermissionHelper.h"
-#include "nsIRunnable.h"
+#include "nsCOMPtr.h"
+#include "nsIContentPermissionPrompt.h"
 #include "nsITimer.h"
+
+class nsIPrincipal;
 
 namespace mozilla::dom {
 
-class Promise;
-class Serial;
+class Element;
+class WindowGlobalParent;
 
-class SerialPermissionRequest final : public ContentPermissionRequestBase,
-                                      public nsIRunnable {
+
+
+
+using SerialChooserPromise =
+    MozPromise<IPCSerialPortInfo, RequestPortReason,  true>;
+
+
+
+
+
+
+
+
+class SerialPermissionRequest final : public nsIContentPermissionRequest {
  public:
-  SerialPermissionRequest(nsPIDOMWindowInner* aWindow, Promise* aPromise,
-                          const SerialPortRequestOptions& aOptions,
-                          Serial* aSerial);
+  SerialPermissionRequest(WindowGlobalParent* aWindowGlobalParent,
+                          bool aAutoselect,
+                          nsTArray<IPCSerialPortInfo>&& aPorts);
 
-  NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_NSIRUNNABLE
-  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(SerialPermissionRequest,
-                                           ContentPermissionRequestBase)
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSICONTENTPERMISSIONREQUEST
 
   
-  NS_IMETHOD Cancel(void) override;
-  NS_IMETHOD Allow(JS::Handle<JS::Value> choices) override;
-  NS_IMETHOD GetTypes(nsIArray** aTypes) override;
-
   
-  bool ShouldAutoselect() const;
+  
+  RefPtr<SerialChooserPromise> Run();
 
  private:
-  ~SerialPermissionRequest() override = default;
+  ~SerialPermissionRequest();
+
+  nsIPrincipal* Principal() const;
+  bool IsSitePermAllow() const;
+  bool IsSitePermDeny() const;
+  bool ShouldShowAddonGate() const;
+  void CancelWithRandomizedDelay(RequestPortReason aReason);
   nsresult DoPrompt();
-  void CancelWithRandomizedDelay();
-  
-  bool FilterPorts(nsTArray<IPCSerialPortInfo>& aPorts);
-  bool IsSitePermAllow();
-  bool IsSitePermDeny();
+  void ResolveWithPort(const IPCSerialPortInfo& aPort);
+  void ResolveCancelled(RequestPortReason aReason);
 
-  
-  enum class CancellationReason {
-    UserCancelled,  
-    AddonDenied,    
-    InternalError   
-  };
-
-  
-  
+  RefPtr<WindowGlobalParent> mWindowGlobalParent;
+  bool mAutoselect;
+  nsTArray<IPCSerialPortInfo> mPorts;
+  MozPromiseHolder<SerialChooserPromise> mPromiseHolder;
   nsCOMPtr<nsITimer> mCancelTimer;
-
-  
-  RefPtr<Promise> mPromise;
-  SerialPortRequestOptions mOptions;
-  nsTArray<IPCSerialPortInfo> mAvailablePorts;
-  RefPtr<Serial> mSerial;
-
-  CancellationReason mCancellationReason = CancellationReason::UserCancelled;
 };
 
 }  
