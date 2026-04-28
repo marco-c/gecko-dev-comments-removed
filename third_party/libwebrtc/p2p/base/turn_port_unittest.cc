@@ -23,7 +23,6 @@
 #include "absl/strings/string_view.h"
 #include "api/candidate.h"
 #include "api/environment/environment.h"
-#include "api/environment/environment_factory.h"
 #include "api/packet_socket_factory.h"
 #include "api/test/mock_async_dns_resolver.h"
 #include "api/test/rtc_error_matchers.h"
@@ -50,8 +49,6 @@
 #include "rtc_base/buffer.h"
 #include "rtc_base/byte_buffer.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/fake_clock.h"
-#include "rtc_base/gunit.h"
 #include "rtc_base/ip_address.h"
 #include "rtc_base/net_helper.h"
 #include "rtc_base/net_helpers.h"
@@ -62,8 +59,10 @@
 #include "rtc_base/thread.h"
 #include "rtc_base/virtual_socket_server.h"
 #include "system_wrappers/include/metrics.h"
+#include "test/create_test_environment.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
+#include "test/time_controller/simulated_time_controller.h"
 #include "test/wait_until.h"
 
 #if defined(WEBRTC_POSIX)
@@ -116,13 +115,13 @@ constexpr char kTurnUsername[] = "test";
 constexpr char kTurnPassword[] = "test";
 
 
-constexpr unsigned int kSimulatedRtt = 50;
+constexpr TimeDelta kSimulatedRtt = TimeDelta::Millis(50);
 
 
-constexpr unsigned int kConnectionDestructionDelay = 1;
+constexpr TimeDelta kConnectionDestructionDelay = TimeDelta::Millis(1);
 
 
-constexpr unsigned int kResolverTimeout = 10000;
+constexpr TimeDelta kResolverTimeout = TimeDelta::Millis(10000);
 
 constexpr uint64_t kTiebreakerDefault = 44444;
 
@@ -156,13 +155,12 @@ int GetFDCount() {
 
 }  
 
-
 class TurnPortTestVirtualSocketServer : public VirtualSocketServer {
  public:
   TurnPortTestVirtualSocketServer() {
     
     
-    set_delay_mean(kSimulatedRtt / 2);
+    set_delay_mean((kSimulatedRtt / 2).ms());
     UpdateDelayDistribution();
   }
 
@@ -200,14 +198,11 @@ class TurnPortTest : public ::testing::Test, public TurnPort::CallbacksForTest {
  public:
   TurnPortTest()
       : ss_(new TurnPortTestVirtualSocketServer()),
-        main_(ss_.get()),
-        turn_server_(env_, &main_, ss_.get(), kTurnUdpIntAddr, kTurnUdpExtAddr),
-        socket_factory_(ss_.get()) {
-    
-    
-    
-    fake_clock_.AdvanceTime(TimeDelta::Seconds(1));
-  }
+        time_controller_(Timestamp::Seconds(1), ss_.get()),
+        env_(CreateTestEnvironment({.time = &time_controller_})),
+        main_(time_controller_.GetMainThread()),
+        turn_server_(env_, main_, ss_.get(), kTurnUdpIntAddr, kTurnUdpExtAddr),
+        socket_factory_(ss_.get()) {}
 
   void OnTurnPortComplete(Port* port) { turn_ready_ = true; }
   void OnTurnPortError(Port* port) { turn_error_ = true; }
@@ -287,7 +282,7 @@ class TurnPortTest : public ::testing::Test, public TurnPort::CallbacksForTest {
     RelayServerConfig config;
     config.credentials = RelayCredentials(username, password);
     CreateRelayPortArgs args = {.env = env_};
-    args.network_thread = &main_;
+    args.network_thread = main_;
     args.socket_factory = socket_factory();
     args.network = network;
     args.username = kIceUfrag1;
@@ -334,7 +329,7 @@ class TurnPortTest : public ::testing::Test, public TurnPort::CallbacksForTest {
     RelayServerConfig config;
     config.credentials = RelayCredentials(username, password);
     CreateRelayPortArgs args = {.env = env_};
-    args.network_thread = &main_;
+    args.network_thread = main_;
     args.socket_factory = socket_factory();
     args.network = MakeNetwork(kLocalAddr1);
     args.username = kIceUfrag1;
@@ -373,7 +368,7 @@ class TurnPortTest : public ::testing::Test, public TurnPort::CallbacksForTest {
 
   void CreateUdpPort(const SocketAddress& address) {
     udp_port_ = UDPPort::Create({.env = env_,
-                                 .network_thread = &main_,
+                                 .network_thread = main_,
                                  .socket_factory = socket_factory(),
                                  .network = MakeNetwork(address),
                                  .ice_username_fragment = kIceUfrag2,
@@ -392,22 +387,21 @@ class TurnPortTest : public ::testing::Test, public TurnPort::CallbacksForTest {
     ASSERT_TRUE(turn_port_ != nullptr);
     turn_port_->PrepareAddress();
     ASSERT_THAT(WaitUntil([&] { return turn_ready_; }, IsTrue(),
-                          {.timeout = TimeDelta::Millis(
-                               TimeToGetTurnCandidate(protocol_type)),
-                           .clock = &fake_clock_}),
+                          {.timeout = TimeToGetTurnCandidate(protocol_type),
+                           .clock = &time_controller_}),
                 IsRtcOk());
 
     CreateUdpPort();
     udp_port_->PrepareAddress();
-    ASSERT_THAT(WaitUntil([&] { return udp_ready_; }, IsTrue(),
-                          {.timeout = TimeDelta::Millis(kSimulatedRtt),
-                           .clock = &fake_clock_}),
-                IsRtcOk());
+    ASSERT_THAT(
+        WaitUntil([&] { return udp_ready_; }, IsTrue(),
+                  {.timeout = kSimulatedRtt, .clock = &time_controller_}),
+        IsRtcOk());
   }
 
   
   
-  int TimeToConnect(ProtocolType protocol_type) {
+  TimeDelta TimeToConnect(ProtocolType protocol_type) {
     switch (protocol_type) {
       case PROTO_TCP:
         
@@ -420,13 +414,13 @@ class TurnPortTest : public ::testing::Test, public TurnPort::CallbacksForTest {
       case PROTO_UDP:
       default:
         
-        return 0;
+        return TimeDelta::Zero();
     }
   }
 
   
   
-  int TimeToGetTurnCandidate(ProtocolType protocol_type) {
+  TimeDelta TimeToGetTurnCandidate(ProtocolType protocol_type) {
     
     
     
@@ -439,7 +433,7 @@ class TurnPortTest : public ::testing::Test, public TurnPort::CallbacksForTest {
   
   
   
-  int TimeToGetAlternateTurnCandidate(ProtocolType protocol_type) {
+  TimeDelta TimeToGetAlternateTurnCandidate(ProtocolType protocol_type) {
     return 3 * kSimulatedRtt + 2 * TimeToConnect(protocol_type);
   }
 
@@ -463,12 +457,11 @@ class TurnPortTest : public ::testing::Test, public TurnPort::CallbacksForTest {
     return true;
   }
 
-  void TestTurnAllocateSucceeds(unsigned int timeout) {
+  void TestTurnAllocateSucceeds(TimeDelta timeout) {
     ASSERT_TRUE(turn_port_);
     turn_port_->PrepareAddress();
     EXPECT_THAT(WaitUntil([&] { return turn_ready_; }, IsTrue(),
-                          {.timeout = TimeDelta::Millis(timeout),
-                           .clock = &fake_clock_}),
+                          {.timeout = timeout, .clock = &time_controller_}),
                 IsRtcOk());
     ASSERT_EQ(1U, turn_port_->Candidates().size());
     EXPECT_EQ(kTurnUdpExtAddr.ipaddr(),
@@ -481,9 +474,8 @@ class TurnPortTest : public ::testing::Test, public TurnPort::CallbacksForTest {
     ASSERT_TRUE(turn_port_);
     turn_port_->PrepareAddress();
     ASSERT_THAT(WaitUntil([&] { return turn_ready_; }, IsTrue(),
-                          {.timeout = TimeDelta::Millis(
-                               TimeToGetTurnCandidate(protocol_type)),
-                           .clock = &fake_clock_}),
+                          {.timeout = TimeToGetTurnCandidate(protocol_type),
+                           .clock = &time_controller_}),
                 IsRtcOk());
     ASSERT_EQ(1U, turn_port_->Candidates().size());
     EXPECT_EQ(turn_port_->Candidates()[0].url(), expected_url);
@@ -505,11 +497,11 @@ class TurnPortTest : public ::testing::Test, public TurnPort::CallbacksForTest {
     const SocketAddress old_addr = turn_port_->server_address().address;
 
     turn_port_->PrepareAddress();
-    EXPECT_THAT(WaitUntil([&] { return turn_ready_; }, IsTrue(),
-                          {.timeout = TimeDelta::Millis(
-                               TimeToGetAlternateTurnCandidate(protocol_type)),
-                           .clock = &fake_clock_}),
-                IsRtcOk());
+    EXPECT_THAT(
+        WaitUntil([&] { return turn_ready_; }, IsTrue(),
+                  {.timeout = TimeToGetAlternateTurnCandidate(protocol_type),
+                   .clock = &time_controller_}),
+        IsRtcOk());
     
     
     const SocketAddress new_addr = turn_port_->server_address().address;
@@ -532,11 +524,11 @@ class TurnPortTest : public ::testing::Test, public TurnPort::CallbacksForTest {
     turn_port_->PrepareAddress();
     
     
-    EXPECT_THAT(WaitUntil([&] { return turn_error_; }, IsTrue(),
-                          {.timeout = TimeDelta::Millis(
-                               kSimulatedRtt + TimeToConnect(protocol_type)),
-                           .clock = &fake_clock_}),
-                IsRtcOk());
+    EXPECT_THAT(
+        WaitUntil([&] { return turn_error_; }, IsTrue(),
+                  {.timeout = kSimulatedRtt + TimeToConnect(protocol_type),
+                   .clock = &time_controller_}),
+        IsRtcOk());
   }
 
   void TestTurnAlternateServerPingPong(ProtocolType protocol_type) {
@@ -553,11 +545,11 @@ class TurnPortTest : public ::testing::Test, public TurnPort::CallbacksForTest {
                    ProtocolAddress(kTurnIntAddr, protocol_type));
 
     turn_port_->PrepareAddress();
-    EXPECT_THAT(WaitUntil([&] { return turn_error_; }, IsTrue(),
-                          {.timeout = TimeDelta::Millis(
-                               TimeToGetAlternateTurnCandidate(protocol_type)),
-                           .clock = &fake_clock_}),
-                IsRtcOk());
+    EXPECT_THAT(
+        WaitUntil([&] { return turn_error_; }, IsTrue(),
+                  {.timeout = TimeToGetAlternateTurnCandidate(protocol_type),
+                   .clock = &time_controller_}),
+        IsRtcOk());
     ASSERT_EQ(0U, turn_port_->Candidates().size());
     SocketAddress address;
     
@@ -579,11 +571,11 @@ class TurnPortTest : public ::testing::Test, public TurnPort::CallbacksForTest {
                    ProtocolAddress(kTurnIntAddr, protocol_type));
 
     turn_port_->PrepareAddress();
-    EXPECT_THAT(WaitUntil([&] { return turn_error_; }, IsTrue(),
-                          {.timeout = TimeDelta::Millis(
-                               TimeToGetAlternateTurnCandidate(protocol_type)),
-                           .clock = &fake_clock_}),
-                IsRtcOk());
+    EXPECT_THAT(
+        WaitUntil([&] { return turn_error_; }, IsTrue(),
+                  {.timeout = TimeToGetAlternateTurnCandidate(protocol_type),
+                   .clock = &time_controller_}),
+        IsRtcOk());
     ASSERT_EQ(0U, turn_port_->Candidates().size());
   }
 
@@ -622,15 +614,14 @@ class TurnPortTest : public ::testing::Test, public TurnPort::CallbacksForTest {
 
     turn_port_->PrepareAddress();
     EXPECT_THAT(WaitUntil([&] { return turn_error_; }, IsTrue(),
-                          {.timeout = TimeDelta::Millis(
-                               TimeToGetTurnCandidate(protocol_type)),
-                           .clock = &fake_clock_}),
+                          {.timeout = TimeToGetTurnCandidate(protocol_type),
+                           .clock = &time_controller_}),
                 IsRtcOk());
 
     
     
     
-    SIMULATED_WAIT(false, kSimulatedRtt, fake_clock_);
+    time_controller_.AdvanceTime(kSimulatedRtt);
     if (protocol_type == PROTO_UDP) {
       char buf[1];
       EXPECT_EQ(-1, loopback_socket->Recv(&buf, 1, nullptr));
@@ -650,7 +641,9 @@ class TurnPortTest : public ::testing::Test, public TurnPort::CallbacksForTest {
                                                     Port::ORIGIN_MESSAGE);
     ASSERT_TRUE(conn1 != nullptr);
     conn1->Ping();
-    SIMULATED_WAIT(!turn_unknown_address_, kSimulatedRtt * 2, fake_clock_);
+    EXPECT_TRUE(
+        WaitUntil([&] { return !turn_unknown_address_; },
+                  {.timeout = kSimulatedRtt * 2, .clock = &time_controller_}));
     EXPECT_FALSE(turn_unknown_address_);
     EXPECT_FALSE(conn1->receiving());
     EXPECT_EQ(Connection::STATE_WRITE_INIT, conn1->write_state());
@@ -661,28 +654,27 @@ class TurnPortTest : public ::testing::Test, public TurnPort::CallbacksForTest {
     ASSERT_TRUE(conn2 != nullptr);
     ASSERT_THAT(
         WaitUntil([&] { return turn_create_permission_success_; }, IsTrue(),
-                  {.timeout = TimeDelta::Millis(kSimulatedRtt),
-                   .clock = &fake_clock_}),
+                  {.timeout = kSimulatedRtt, .clock = &time_controller_}),
         IsRtcOk());
     conn2->Ping();
 
     
-    EXPECT_THAT(WaitUntil([&] { return conn2->write_state(); },
-                          Eq(Connection::STATE_WRITABLE),
-                          {.timeout = TimeDelta::Millis(kSimulatedRtt * 2),
-                           .clock = &fake_clock_}),
-                IsRtcOk());
+    EXPECT_THAT(
+        WaitUntil([&] { return conn2->write_state(); },
+                  Eq(Connection::STATE_WRITABLE),
+                  {.timeout = kSimulatedRtt * 2, .clock = &time_controller_}),
+        IsRtcOk());
     EXPECT_TRUE(conn1->receiving());
     EXPECT_TRUE(conn2->receiving());
     EXPECT_EQ(Connection::STATE_WRITE_INIT, conn1->write_state());
 
     
     conn1->Ping();
-    EXPECT_THAT(WaitUntil([&] { return conn1->write_state(); },
-                          Eq(Connection::STATE_WRITABLE),
-                          {.timeout = TimeDelta::Millis(kSimulatedRtt * 2),
-                           .clock = &fake_clock_}),
-                IsRtcOk());
+    EXPECT_THAT(
+        WaitUntil([&] { return conn1->write_state(); },
+                  Eq(Connection::STATE_WRITABLE),
+                  {.timeout = kSimulatedRtt * 2, .clock = &time_controller_}),
+        IsRtcOk());
     EXPECT_TRUE(conn2->receiving());
   }
 
@@ -702,16 +694,15 @@ class TurnPortTest : public ::testing::Test, public TurnPort::CallbacksForTest {
     ASSERT_TRUE(conn2 != nullptr);
     ASSERT_THAT(
         WaitUntil([&] { return turn_create_permission_success_; }, IsTrue(),
-                  {.timeout = TimeDelta::Millis(kSimulatedRtt),
-                   .clock = &fake_clock_}),
+                  {.timeout = kSimulatedRtt, .clock = &time_controller_}),
         IsRtcOk());
     
     conn1->Ping();
-    EXPECT_THAT(WaitUntil([&] { return conn1->write_state(); },
-                          Eq(Connection::STATE_WRITABLE),
-                          {.timeout = TimeDelta::Millis(kSimulatedRtt * 2),
-                           .clock = &fake_clock_}),
-                IsRtcOk());
+    EXPECT_THAT(
+        WaitUntil([&] { return conn1->write_state(); },
+                  Eq(Connection::STATE_WRITABLE),
+                  {.timeout = kSimulatedRtt * 2, .clock = &time_controller_}),
+        IsRtcOk());
     EXPECT_FALSE(turn_unknown_address_);
 
     
@@ -719,16 +710,16 @@ class TurnPortTest : public ::testing::Test, public TurnPort::CallbacksForTest {
     turn_port_->DestroyConnection(conn2);
 
     conn1->Ping();
-    EXPECT_THAT(WaitUntil([&] { return turn_unknown_address_; }, IsTrue(),
-                          {.timeout = TimeDelta::Millis(kSimulatedRtt),
-                           .clock = &fake_clock_}),
-                IsRtcOk());
+    EXPECT_THAT(
+        WaitUntil([&] { return turn_unknown_address_; }, IsTrue(),
+                  {.timeout = kSimulatedRtt, .clock = &time_controller_}),
+        IsRtcOk());
 
     
     
     
     turn_unknown_address_ = false;
-    fake_clock_.AdvanceTime(TimeDelta::Seconds(5 * 60));
+    time_controller_.AdvanceTime(TimeDelta::Seconds(5 * 60));
 
     
     
@@ -754,19 +745,19 @@ class TurnPortTest : public ::testing::Test, public TurnPort::CallbacksForTest {
     conn1->set_remote_password_for_test(pwd);
 
     conn1->Ping();
-    EXPECT_THAT(WaitUntil([&] { return turn_unknown_address_; }, IsTrue(),
-                          {.timeout = TimeDelta::Millis(kSimulatedRtt),
-                           .clock = &fake_clock_}),
-                IsRtcOk());
+    EXPECT_THAT(
+        WaitUntil([&] { return turn_unknown_address_; }, IsTrue(),
+                  {.timeout = kSimulatedRtt, .clock = &time_controller_}),
+        IsRtcOk());
 
     
     conn2 = turn_port_->CreateConnection(udp_port_->Candidates()[0],
                                          Port::ORIGIN_MESSAGE);
     conn1->Ping();
-    EXPECT_THAT(WaitUntil([&] { return conn2->receiving(); }, IsTrue(),
-                          {.timeout = TimeDelta::Millis(kSimulatedRtt),
-                           .clock = &fake_clock_}),
-                IsRtcOk());
+    EXPECT_THAT(
+        WaitUntil([&] { return conn2->receiving(); }, IsTrue(),
+                  {.timeout = kSimulatedRtt, .clock = &time_controller_}),
+        IsRtcOk());
   }
 
   void TestTurnSendData(ProtocolType protocol_type, bool expect_ecn_propagate) {
@@ -795,17 +786,17 @@ class TurnPortTest : public ::testing::Test, public TurnPort::CallbacksForTest {
       OnConnectionSignalDestroyed(connection);
     });
     conn1->Ping();
-    EXPECT_THAT(WaitUntil([&] { return conn1->write_state(); },
-                          Eq(Connection::STATE_WRITABLE),
-                          {.timeout = TimeDelta::Millis(kSimulatedRtt * 2),
-                           .clock = &fake_clock_}),
-                IsRtcOk());
+    EXPECT_THAT(
+        WaitUntil([&] { return conn1->write_state(); },
+                  Eq(Connection::STATE_WRITABLE),
+                  {.timeout = kSimulatedRtt * 2, .clock = &time_controller_}),
+        IsRtcOk());
     conn2->Ping();
-    EXPECT_THAT(WaitUntil([&] { return conn2->write_state(); },
-                          Eq(Connection::STATE_WRITABLE),
-                          {.timeout = TimeDelta::Millis(kSimulatedRtt * 2),
-                           .clock = &fake_clock_}),
-                IsRtcOk());
+    EXPECT_THAT(
+        WaitUntil([&] { return conn2->write_state(); },
+                  Eq(Connection::STATE_WRITABLE),
+                  {.timeout = kSimulatedRtt * 2, .clock = &time_controller_}),
+        IsRtcOk());
 
     
     size_t num_packets = 256;
@@ -817,7 +808,7 @@ class TurnPortTest : public ::testing::Test, public TurnPort::CallbacksForTest {
       options.ect_1 = (i % 2 == 0);
       conn1->Send(buf, i + 1, options);
       conn2->Send(buf, i + 1, options);
-      SIMULATED_WAIT(false, kSimulatedRtt, fake_clock_);
+      time_controller_.AdvanceTime(kSimulatedRtt);
     }
 
     
@@ -845,8 +836,7 @@ class TurnPortTest : public ::testing::Test, public TurnPort::CallbacksForTest {
     EXPECT_THAT(
         WaitUntil([&] { return turn_server_.server()->allocations().size(); },
                   Eq(0U),
-                  {.timeout = TimeDelta::Millis(kSimulatedRtt),
-                   .clock = &fake_clock_}),
+                  {.timeout = kSimulatedRtt, .clock = &time_controller_}),
         IsRtcOk());
   }
 
@@ -875,17 +865,17 @@ class TurnPortTest : public ::testing::Test, public TurnPort::CallbacksForTest {
     });
 
     conn1->Ping();
-    EXPECT_THAT(WaitUntil([&] { return conn1->write_state(); },
-                          Eq(Connection::STATE_WRITABLE),
-                          {.timeout = TimeDelta::Millis(kSimulatedRtt * 2),
-                           .clock = &fake_clock_}),
-                IsRtcOk());
+    EXPECT_THAT(
+        WaitUntil([&] { return conn1->write_state(); },
+                  Eq(Connection::STATE_WRITABLE),
+                  {.timeout = kSimulatedRtt * 2, .clock = &time_controller_}),
+        IsRtcOk());
     conn2->Ping();
-    EXPECT_THAT(WaitUntil([&] { return conn2->write_state(); },
-                          Eq(Connection::STATE_WRITABLE),
-                          {.timeout = TimeDelta::Millis(kSimulatedRtt * 2),
-                           .clock = &fake_clock_}),
-                IsRtcOk());
+    EXPECT_THAT(
+        WaitUntil([&] { return conn2->write_state(); },
+                  Eq(Connection::STATE_WRITABLE),
+                  {.timeout = kSimulatedRtt * 2, .clock = &time_controller_}),
+        IsRtcOk());
 
     
     unsigned char buf[256] = {0};
@@ -896,10 +886,10 @@ class TurnPortTest : public ::testing::Test, public TurnPort::CallbacksForTest {
     turn_port_->Release();
 
     
-    ASSERT_THAT(WaitUntil([&] { return turn_port_closed_; }, IsTrue(),
-                          {.timeout = TimeDelta::Millis(kSimulatedRtt),
-                           .clock = &fake_clock_}),
-                IsRtcOk());
+    ASSERT_THAT(
+        WaitUntil([&] { return turn_port_closed_; }, IsTrue(),
+                  {.timeout = kSimulatedRtt, .clock = &time_controller_}),
+        IsRtcOk());
 
     
     ASSERT_EQ(1ul, turn_packets_.size());
@@ -923,14 +913,11 @@ class TurnPortTest : public ::testing::Test, public TurnPort::CallbacksForTest {
 
   virtual PacketSocketFactory* socket_factory() { return &socket_factory_; }
 
-  ScopedFakeClock fake_clock_;
-  const Environment env_ = CreateEnvironment();
-  
-  
-  
   std::list<Network> networks_;
   std::unique_ptr<TurnPortTestVirtualSocketServer> ss_;
-  AutoSocketServerThread main_;
+  GlobalSimulatedTimeController time_controller_;
+  const Environment env_;
+  webrtc::Thread* main_;
   std::unique_ptr<AsyncPacketSocket> socket_;
   TestTurnServer turn_server_;
   std::unique_ptr<TurnPort> turn_port_;
@@ -996,7 +983,7 @@ TEST_F(TurnPortTest, TestReconstructedServerUrlForHostname) {
   
   turn_port_->PrepareAddress();
   EXPECT_THAT(WaitUntil([&] { return turn_error_; }, IsTrue(),
-                        {.timeout = TimeDelta::Millis(kResolverTimeout)}),
+                        {.timeout = kResolverTimeout}),
               IsRtcOk());
   std::string server_url =
       "turn:" + kTurnInvalidAddr.ToString() + "?transport=udp";
@@ -1052,16 +1039,16 @@ TEST_F(TurnPortTest, TestTurnAllocateWithoutLoggingId) {
 TEST_F(TurnPortTest, TestTurnBadCredentials) {
   CreateTurnPort(kTurnUsername, "bad", kTurnUdpProtoAddr);
   turn_port_->PrepareAddress();
-  EXPECT_THAT(WaitUntil([&] { return turn_error_; }, IsTrue(),
-                        {.timeout = TimeDelta::Millis(kSimulatedRtt * 3),
-                         .clock = &fake_clock_}),
-              IsRtcOk());
+  EXPECT_THAT(
+      WaitUntil([&] { return turn_error_; }, IsTrue(),
+                {.timeout = kSimulatedRtt * 3, .clock = &time_controller_}),
+      IsRtcOk());
   ASSERT_EQ(0U, turn_port_->Candidates().size());
-  EXPECT_THAT(WaitUntil([&] { return error_event_.error_code; },
-                        Eq(STUN_ERROR_UNAUTHORIZED),
-                        {.timeout = TimeDelta::Millis(kSimulatedRtt * 3),
-                         .clock = &fake_clock_}),
-              IsRtcOk());
+  EXPECT_THAT(
+      WaitUntil([&] { return error_event_.error_code; },
+                Eq(STUN_ERROR_UNAUTHORIZED),
+                {.timeout = kSimulatedRtt * 3, .clock = &time_controller_}),
+      IsRtcOk());
   EXPECT_EQ(error_event_.error_text, "Unauthorized.");
 }
 
@@ -1070,10 +1057,10 @@ TEST_F(TurnPortTest, TestTurnBadCredentials) {
 TEST_F(TurnPortTest, TestServerAddressFamilyMismatch) {
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnUdpIPv6ProtoAddr);
   turn_port_->PrepareAddress();
-  EXPECT_THAT(WaitUntil([&] { return turn_error_; }, IsTrue(),
-                        {.timeout = TimeDelta::Millis(kSimulatedRtt * 3),
-                         .clock = &fake_clock_}),
-              IsRtcOk());
+  EXPECT_THAT(
+      WaitUntil([&] { return turn_error_; }, IsTrue(),
+                {.timeout = kSimulatedRtt * 3, .clock = &time_controller_}),
+      IsRtcOk());
   ASSERT_EQ(0U, turn_port_->Candidates().size());
   EXPECT_EQ(0, error_event_.error_code);
 }
@@ -1084,10 +1071,10 @@ TEST_F(TurnPortTest, TestServerAddressFamilyMismatch6) {
   CreateTurnPort(kLocalIPv6Addr, kTurnUsername, kTurnPassword,
                  kTurnUdpProtoAddr);
   turn_port_->PrepareAddress();
-  EXPECT_THAT(WaitUntil([&] { return turn_error_; }, IsTrue(),
-                        {.timeout = TimeDelta::Millis(kSimulatedRtt * 3),
-                         .clock = &fake_clock_}),
-              IsRtcOk());
+  EXPECT_THAT(
+      WaitUntil([&] { return turn_error_; }, IsTrue(),
+                {.timeout = kSimulatedRtt * 3, .clock = &time_controller_}),
+      IsRtcOk());
   ASSERT_EQ(0U, turn_port_->Candidates().size());
   EXPECT_EQ(0, error_event_.error_code);
 }
@@ -1141,13 +1128,11 @@ TEST_F(TurnPortTest,
   
   
   EXPECT_THAT(WaitUntil([&] { return turn_error_; }, IsTrue(),
-                        {.timeout = TimeDelta::Millis(kSimulatedRtt),
-                         .clock = &fake_clock_}),
+                        {.timeout = kSimulatedRtt, .clock = &time_controller_}),
               IsRtcOk());
   EXPECT_THAT(WaitUntil([&] { return error_event_.error_code; },
                         Eq(STUN_ERROR_SERVER_NOT_REACHABLE),
-                        {.timeout = TimeDelta::Millis(kSimulatedRtt),
-                         .clock = &fake_clock_}),
+                        {.timeout = kSimulatedRtt, .clock = &time_controller_}),
               IsRtcOk());
   EXPECT_NE(error_event_.error_text.find('.'), std::string::npos);
   EXPECT_NE(error_event_.address.find(kLocalAddr2.HostAsSensitiveURIString()),
@@ -1180,10 +1165,10 @@ TEST_F(TurnPortTest, TurnTcpAllocationNotDiscardedIfNotBoundToBestIP) {
   turn_port_->PrepareAddress();
 
   
-  EXPECT_THAT(WaitUntil([&] { return turn_ready_; }, IsTrue(),
-                        {.timeout = TimeDelta::Millis(kSimulatedRtt * 3),
-                         .clock = &fake_clock_}),
-              IsRtcOk());
+  EXPECT_THAT(
+      WaitUntil([&] { return turn_ready_; }, IsTrue(),
+                {.timeout = kSimulatedRtt * 3, .clock = &time_controller_}),
+      IsRtcOk());
   ASSERT_EQ(1U, turn_port_->Candidates().size());
 
   
@@ -1209,10 +1194,10 @@ TEST_F(TurnPortTest, TCPPortNotDiscardedIfBoundToTemporaryIP) {
   turn_port_->PrepareAddress();
 
   
-  EXPECT_THAT(WaitUntil([&] { return turn_ready_; }, IsTrue(),
-                        {.timeout = TimeDelta::Millis(kSimulatedRtt * 3),
-                         .clock = &fake_clock_}),
-              IsRtcOk());
+  EXPECT_THAT(
+      WaitUntil([&] { return turn_ready_; }, IsTrue(),
+                {.timeout = kSimulatedRtt * 3, .clock = &time_controller_}),
+      IsRtcOk());
   ASSERT_EQ(1U, turn_port_->Candidates().size());
 }
 
@@ -1224,7 +1209,7 @@ TEST_F(TurnPortTest, TestTurnTcpOnAddressResolveFailure) {
                  ProtocolAddress(kTurnInvalidAddr, PROTO_TCP));
   turn_port_->PrepareAddress();
   EXPECT_THAT(WaitUntil([&] { return turn_error_; }, IsTrue(),
-                        {.timeout = TimeDelta::Millis(kResolverTimeout)}),
+                        {.timeout = kResolverTimeout}),
               IsRtcOk());
   
   
@@ -1232,8 +1217,7 @@ TEST_F(TurnPortTest, TestTurnTcpOnAddressResolveFailure) {
   EXPECT_EQ(SOCKET_ERROR, turn_port_->error());
   EXPECT_THAT(WaitUntil([&] { return error_event_.error_code; },
                         Eq(STUN_ERROR_SERVER_NOT_REACHABLE),
-                        {.timeout = TimeDelta::Millis(kSimulatedRtt),
-                         .clock = &fake_clock_}),
+                        {.timeout = kSimulatedRtt, .clock = &time_controller_}),
               IsRtcOk());
   std::string server_url =
       "turn:" + kTurnInvalidAddr.ToString() + "?transport=tcp";
@@ -1248,7 +1232,7 @@ TEST_F(TurnPortTest, TestTurnTlsOnAddressResolveFailure) {
                  ProtocolAddress(kTurnInvalidAddr, PROTO_TLS));
   turn_port_->PrepareAddress();
   EXPECT_THAT(WaitUntil([&] { return turn_error_; }, IsTrue(),
-                        {.timeout = TimeDelta::Millis(kResolverTimeout)}),
+                        {.timeout = kResolverTimeout}),
               IsRtcOk());
   EXPECT_EQ(SOCKET_ERROR, turn_port_->error());
 }
@@ -1260,7 +1244,7 @@ TEST_F(TurnPortTest, TestTurnUdpOnAddressResolveFailure) {
                  ProtocolAddress(kTurnInvalidAddr, PROTO_UDP));
   turn_port_->PrepareAddress();
   EXPECT_THAT(WaitUntil([&] { return turn_error_; }, IsTrue(),
-                        {.timeout = TimeDelta::Millis(kResolverTimeout)}),
+                        {.timeout = kResolverTimeout}),
               IsRtcOk());
   
   EXPECT_NE(SOCKET_ERROR, turn_port_->error());
@@ -1270,10 +1254,10 @@ TEST_F(TurnPortTest, TestTurnUdpOnAddressResolveFailure) {
 TEST_F(TurnPortTest, TestTurnAllocateBadPassword) {
   CreateTurnPort(kTurnUsername, "bad", kTurnUdpProtoAddr);
   turn_port_->PrepareAddress();
-  EXPECT_THAT(WaitUntil([&] { return turn_error_; }, IsTrue(),
-                        {.timeout = TimeDelta::Millis(kSimulatedRtt * 2),
-                         .clock = &fake_clock_}),
-              IsRtcOk());
+  EXPECT_THAT(
+      WaitUntil([&] { return turn_error_; }, IsTrue(),
+                {.timeout = kSimulatedRtt * 2, .clock = &time_controller_}),
+      IsRtcOk());
   ASSERT_EQ(0U, turn_port_->Candidates().size());
 }
 
@@ -1283,16 +1267,16 @@ TEST_F(TurnPortTest, TestTurnAllocateNonceResetAfterAllocateMismatch) {
   
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnUdpProtoAddr);
   turn_port_->PrepareAddress();
-  EXPECT_THAT(WaitUntil([&] { return turn_ready_; }, IsTrue(),
-                        {.timeout = TimeDelta::Millis(kSimulatedRtt * 2),
-                         .clock = &fake_clock_}),
-              IsRtcOk());
+  EXPECT_THAT(
+      WaitUntil([&] { return turn_ready_; }, IsTrue(),
+                {.timeout = kSimulatedRtt * 2, .clock = &time_controller_}),
+      IsRtcOk());
   SocketAddress first_addr(turn_port_->socket()->GetLocalAddress());
   
   
   ss_->set_drop_probability(1.0);
   turn_port_.reset();
-  SIMULATED_WAIT(false, kSimulatedRtt, fake_clock_);
+  time_controller_.AdvanceTime(kSimulatedRtt);
   ss_->set_drop_probability(0.0);
 
   
@@ -1312,10 +1296,10 @@ TEST_F(TurnPortTest, TestTurnAllocateNonceResetAfterAllocateMismatch) {
   
   
   
-  EXPECT_THAT(WaitUntil([&] { return turn_ready_; }, IsTrue(),
-                        {.timeout = TimeDelta::Millis(kSimulatedRtt * 4),
-                         .clock = &fake_clock_}),
-              IsRtcOk());
+  EXPECT_THAT(
+      WaitUntil([&] { return turn_ready_; }, IsTrue(),
+                {.timeout = kSimulatedRtt * 4, .clock = &time_controller_}),
+      IsRtcOk());
   EXPECT_NE(first_nonce, turn_port_->nonce());
 }
 
@@ -1325,10 +1309,10 @@ TEST_F(TurnPortTest, TestTurnAllocateMismatch) {
   
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnUdpProtoAddr);
   turn_port_->PrepareAddress();
-  EXPECT_THAT(WaitUntil([&] { return turn_ready_; }, IsTrue(),
-                        {.timeout = TimeDelta::Millis(kSimulatedRtt * 2),
-                         .clock = &fake_clock_}),
-              IsRtcOk());
+  EXPECT_THAT(
+      WaitUntil([&] { return turn_ready_; }, IsTrue(),
+                {.timeout = kSimulatedRtt * 2, .clock = &time_controller_}),
+      IsRtcOk());
   SocketAddress first_addr(turn_port_->socket()->GetLocalAddress());
 
   
@@ -1348,10 +1332,10 @@ TEST_F(TurnPortTest, TestTurnAllocateMismatch) {
   
   
   
-  EXPECT_THAT(WaitUntil([&] { return turn_ready_; }, IsTrue(),
-                        {.timeout = TimeDelta::Millis(kSimulatedRtt * 4),
-                         .clock = &fake_clock_}),
-              IsRtcOk());
+  EXPECT_THAT(
+      WaitUntil([&] { return turn_ready_; }, IsTrue(),
+                {.timeout = kSimulatedRtt * 4, .clock = &time_controller_}),
+      IsRtcOk());
 
   
   EXPECT_NE(first_addr, turn_port_->socket()->GetLocalAddress());
@@ -1371,10 +1355,10 @@ TEST_F(TurnPortTest, TestSharedSocketAllocateMismatch) {
   
   CreateSharedTurnPort(kTurnUsername, kTurnPassword, kTurnUdpProtoAddr);
   turn_port_->PrepareAddress();
-  EXPECT_THAT(WaitUntil([&] { return turn_ready_; }, IsTrue(),
-                        {.timeout = TimeDelta::Millis(kSimulatedRtt * 2),
-                         .clock = &fake_clock_}),
-              IsRtcOk());
+  EXPECT_THAT(
+      WaitUntil([&] { return turn_ready_; }, IsTrue(),
+                {.timeout = kSimulatedRtt * 2, .clock = &time_controller_}),
+      IsRtcOk());
   SocketAddress first_addr(turn_port_->socket()->GetLocalAddress());
 
   
@@ -1390,10 +1374,10 @@ TEST_F(TurnPortTest, TestSharedSocketAllocateMismatch) {
 
   turn_port_->PrepareAddress();
   
-  EXPECT_THAT(WaitUntil([&] { return turn_ready_; }, IsTrue(),
-                        {.timeout = TimeDelta::Millis(kSimulatedRtt * 4),
-                         .clock = &fake_clock_}),
-              IsRtcOk());
+  EXPECT_THAT(
+      WaitUntil([&] { return turn_ready_; }, IsTrue(),
+                {.timeout = kSimulatedRtt * 4, .clock = &time_controller_}),
+      IsRtcOk());
 
   
   EXPECT_NE(first_addr, turn_port_->socket()->GetLocalAddress());
@@ -1406,10 +1390,10 @@ TEST_F(TurnPortTest, TestTurnTcpAllocateMismatch) {
 
   
   turn_port_->PrepareAddress();
-  EXPECT_THAT(WaitUntil([&] { return turn_ready_; }, IsTrue(),
-                        {.timeout = TimeDelta::Millis(kSimulatedRtt * 3),
-                         .clock = &fake_clock_}),
-              IsRtcOk());
+  EXPECT_THAT(
+      WaitUntil([&] { return turn_ready_; }, IsTrue(),
+                {.timeout = kSimulatedRtt * 3, .clock = &time_controller_}),
+      IsRtcOk());
   SocketAddress first_addr(turn_port_->socket()->GetLocalAddress());
 
   
@@ -1427,10 +1411,10 @@ TEST_F(TurnPortTest, TestTurnTcpAllocateMismatch) {
   EXPECT_EQ(first_addr, turn_port_->socket()->GetLocalAddress());
 
   
-  EXPECT_THAT(WaitUntil([&] { return turn_ready_; }, IsTrue(),
-                        {.timeout = TimeDelta::Millis(kSimulatedRtt * 5),
-                         .clock = &fake_clock_}),
-              IsRtcOk());
+  EXPECT_THAT(
+      WaitUntil([&] { return turn_ready_; }, IsTrue(),
+                {.timeout = kSimulatedRtt * 5, .clock = &time_controller_}),
+      IsRtcOk());
 
   
   EXPECT_NE(first_addr, turn_port_->socket()->GetLocalAddress());
@@ -1450,14 +1434,12 @@ TEST_F(TurnPortTest, TestRefreshRequestGetsErrorResponse) {
   
   turn_port_->request_manager().FlushForTest(TURN_REFRESH_REQUEST);
   EXPECT_THAT(WaitUntil([&] { return turn_refresh_success_; }, IsTrue(),
-                        {.timeout = TimeDelta::Millis(kSimulatedRtt),
-                         .clock = &fake_clock_}),
+                        {.timeout = kSimulatedRtt, .clock = &time_controller_}),
               IsRtcOk());
   
   turn_port_->request_manager().FlushForTest(TURN_REFRESH_REQUEST);
   EXPECT_THAT(WaitUntil([&] { return !turn_refresh_success_; }, IsTrue(),
-                        {.timeout = TimeDelta::Millis(kSimulatedRtt),
-                         .clock = &fake_clock_}),
+                        {.timeout = kSimulatedRtt, .clock = &time_controller_}),
               IsRtcOk());
   EXPECT_FALSE(turn_port_->connected());
   EXPECT_TRUE(CheckAllConnectionsFailedAndPruned());
@@ -1477,17 +1459,17 @@ TEST_F(TurnPortTest, TestStopProcessingPacketsAfterClosed) {
   ASSERT_TRUE(conn2 != nullptr);
   
   conn2->Ping();
-  EXPECT_THAT(WaitUntil([&] { return conn2->write_state(); },
-                        Eq(Connection::STATE_WRITABLE),
-                        {.timeout = TimeDelta::Millis(kSimulatedRtt * 2),
-                         .clock = &fake_clock_}),
-              IsRtcOk());
+  EXPECT_THAT(
+      WaitUntil([&] { return conn2->write_state(); },
+                Eq(Connection::STATE_WRITABLE),
+                {.timeout = kSimulatedRtt * 2, .clock = &time_controller_}),
+      IsRtcOk());
 
   turn_port_->CloseForTest();
-  SIMULATED_WAIT(false, kSimulatedRtt, fake_clock_);
+  time_controller_.AdvanceTime(kSimulatedRtt);
   turn_unknown_address_ = false;
   conn2->Ping();
-  SIMULATED_WAIT(false, kSimulatedRtt, fake_clock_);
+  time_controller_.AdvanceTime(kSimulatedRtt);
   
   
   EXPECT_FALSE(turn_unknown_address_);
@@ -1522,9 +1504,9 @@ TEST_F(TurnPortTest, TestSocketCloseWillDestroyConnection) {
   EXPECT_TRUE(!turn_port_->connections().empty());
   turn_port_->socket()->NotifyClosedForTest(1);
   EXPECT_THAT(
-      WaitUntil([&] { return turn_port_->connections().empty(); }, IsTrue(),
-                {.timeout = TimeDelta::Millis(kConnectionDestructionDelay),
-                 .clock = &fake_clock_}),
+      WaitUntil(
+          [&] { return turn_port_->connections().empty(); }, IsTrue(),
+          {.timeout = kConnectionDestructionDelay, .clock = &time_controller_}),
       IsRtcOk());
 }
 
@@ -1669,9 +1651,8 @@ TEST_F(TurnPortTest, TestRefreshCreatePermissionRequest) {
                                                   Port::ORIGIN_MESSAGE);
   ASSERT_TRUE(conn != nullptr);
   EXPECT_THAT(
-      WaitUntil(
-          [&] { return turn_create_permission_success_; }, IsTrue(),
-          {.timeout = TimeDelta::Millis(kSimulatedRtt), .clock = &fake_clock_}),
+      WaitUntil([&] { return turn_create_permission_success_; }, IsTrue(),
+                {.timeout = kSimulatedRtt, .clock = &time_controller_}),
       IsRtcOk());
   turn_create_permission_success_ = false;
   
@@ -1681,16 +1662,14 @@ TEST_F(TurnPortTest, TestRefreshCreatePermissionRequest) {
   turn_port_->set_credentials(bad_credentials);
   turn_port_->request_manager().FlushForTest(kAllRequestsForTest);
   EXPECT_THAT(
-      WaitUntil(
-          [&] { return turn_create_permission_success_; }, IsTrue(),
-          {.timeout = TimeDelta::Millis(kSimulatedRtt), .clock = &fake_clock_}),
+      WaitUntil([&] { return turn_create_permission_success_; }, IsTrue(),
+                {.timeout = kSimulatedRtt, .clock = &time_controller_}),
       IsRtcOk());
   
   turn_port_->request_manager().FlushForTest(kAllRequestsForTest);
   EXPECT_THAT(
-      WaitUntil(
-          [&] { return !turn_create_permission_success_; }, IsTrue(),
-          {.timeout = TimeDelta::Millis(kSimulatedRtt), .clock = &fake_clock_}),
+      WaitUntil([&] { return !turn_create_permission_success_; }, IsTrue(),
+                {.timeout = kSimulatedRtt, .clock = &time_controller_}),
       IsRtcOk());
   EXPECT_TRUE(CheckConnectionFailedAndPruned(conn));
 }
@@ -1706,10 +1685,10 @@ TEST_F(TurnPortTest, TestChannelBindGetErrorResponse) {
 
   ASSERT_TRUE(conn2 != nullptr);
   conn1->Ping();
-  EXPECT_THAT(WaitUntil([&] { return conn1->writable(); }, IsTrue(),
-                        {.timeout = TimeDelta::Millis(kSimulatedRtt * 2),
-                         .clock = &fake_clock_}),
-              IsRtcOk());
+  EXPECT_THAT(
+      WaitUntil([&] { return conn1->writable(); }, IsTrue(),
+                {.timeout = kSimulatedRtt * 2, .clock = &time_controller_}),
+      IsRtcOk());
 
   
   turn_server_.server()->set_reject_bind_requests(true);
@@ -1718,9 +1697,8 @@ TEST_F(TurnPortTest, TestChannelBindGetErrorResponse) {
   conn1->Send(data.data(), data.length(), options);
 
   EXPECT_THAT(
-      WaitUntil(
-          [&] { return CheckConnectionFailedAndPruned(conn1); }, IsTrue(),
-          {.timeout = TimeDelta::Millis(kSimulatedRtt), .clock = &fake_clock_}),
+      WaitUntil([&] { return CheckConnectionFailedAndPruned(conn1); }, IsTrue(),
+                {.timeout = kSimulatedRtt, .clock = &time_controller_}),
       IsRtcOk());
   
   
@@ -1732,8 +1710,7 @@ TEST_F(TurnPortTest, TestChannelBindGetErrorResponse) {
       });
   conn1->Send(data.data(), data.length(), options);
   EXPECT_THAT(WaitUntil([&] { return !udp_packets_.empty(); }, IsTrue(),
-                        {.timeout = TimeDelta::Millis(kSimulatedRtt),
-                         .clock = &fake_clock_}),
+                        {.timeout = kSimulatedRtt, .clock = &time_controller_}),
               IsRtcOk());
   conn2->DeregisterReceivedPacketCallback();
 }
@@ -1771,8 +1748,7 @@ TEST_F(TurnPortTest, TestTurnLocalIPv6AddressServerIPv4) {
                  kTurnUdpProtoAddr);
   turn_port_->PrepareAddress();
   ASSERT_THAT(WaitUntil([&] { return turn_error_; }, IsTrue(),
-                        {.timeout = TimeDelta::Millis(kSimulatedRtt),
-                         .clock = &fake_clock_}),
+                        {.timeout = kSimulatedRtt, .clock = &time_controller_}),
               IsRtcOk());
   EXPECT_TRUE(turn_port_->Candidates().empty());
 }
@@ -1797,10 +1773,10 @@ TEST_F(TurnPortTest, TestCandidateAddressFamilyMatch) {
   CreateTurnPort(kLocalIPv6Addr, kTurnUsername, kTurnPassword,
                  kTurnUdpIPv6ProtoAddr);
   turn_port_->PrepareAddress();
-  EXPECT_THAT(WaitUntil([&] { return turn_ready_; }, IsTrue(),
-                        {.timeout = TimeDelta::Millis(kSimulatedRtt * 2),
-                         .clock = &fake_clock_}),
-              IsRtcOk());
+  EXPECT_THAT(
+      WaitUntil([&] { return turn_ready_; }, IsTrue(),
+                {.timeout = kSimulatedRtt * 2, .clock = &time_controller_}),
+      IsRtcOk());
   ASSERT_EQ(1U, turn_port_->Candidates().size());
 
   
@@ -1826,16 +1802,15 @@ TEST_F(TurnPortTest, TestConnectionFailedAndPrunedOnCreatePermissionFailure) {
   turn_server_.server()->set_reject_private_addresses(true);
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnTcpProtoAddr);
   turn_port_->PrepareAddress();
-  EXPECT_THAT(WaitUntil([&] { return turn_ready_; }, IsTrue(),
-                        {.timeout = TimeDelta::Millis(kSimulatedRtt * 3),
-                         .clock = &fake_clock_}),
-              IsRtcOk());
+  EXPECT_THAT(
+      WaitUntil([&] { return turn_ready_; }, IsTrue(),
+                {.timeout = kSimulatedRtt * 3, .clock = &time_controller_}),
+      IsRtcOk());
 
   CreateUdpPort(SocketAddress("10.0.0.10", 0));
   udp_port_->PrepareAddress();
   EXPECT_THAT(WaitUntil([&] { return udp_ready_; }, IsTrue(),
-                        {.timeout = TimeDelta::Millis(kSimulatedRtt),
-                         .clock = &fake_clock_}),
+                        {.timeout = kSimulatedRtt, .clock = &time_controller_}),
               IsRtcOk());
   
   TestConnectionWrapper conn(turn_port_->CreateConnection(
@@ -1847,17 +1822,14 @@ TEST_F(TurnPortTest, TestConnectionFailedAndPrunedOnCreatePermissionFailure) {
   EXPECT_THAT(
       WaitUntil(
           [&] { return CheckConnectionFailedAndPruned(conn.connection()); },
-          IsTrue(),
-          {.timeout = TimeDelta::Millis(kSimulatedRtt), .clock = &fake_clock_}),
+          IsTrue(), {.timeout = kSimulatedRtt, .clock = &time_controller_}),
       IsRtcOk());
   EXPECT_THAT(
-      WaitUntil(
-          [&] { return !turn_create_permission_success_; }, IsTrue(),
-          {.timeout = TimeDelta::Millis(kSimulatedRtt), .clock = &fake_clock_}),
+      WaitUntil([&] { return !turn_create_permission_success_; }, IsTrue(),
+                {.timeout = kSimulatedRtt, .clock = &time_controller_}),
       IsRtcOk());
   
-  SIMULATED_WAIT(conn.connection() == nullptr, kConnectionDestructionDelay,
-                 fake_clock_);
+  time_controller_.AdvanceTime(kConnectionDestructionDelay);
   EXPECT_NE(nullptr, conn.connection());
 }
 
@@ -1923,14 +1895,14 @@ TEST_F(TurnPortTest, TestResolverShutdown) {
                  ProtocolAddress(kTurnInvalidAddr, PROTO_UDP));
   turn_port_->PrepareAddress();
   ASSERT_THAT(WaitUntil([&] { return turn_error_; }, IsTrue(),
-                        {.timeout = TimeDelta::Millis(kResolverTimeout)}),
+                        {.timeout = kResolverTimeout}),
               IsRtcOk());
   EXPECT_TRUE(turn_port_->Candidates().empty());
   turn_port_.reset();
   Thread::Current()->PostTask([this] { test_finish_ = true; });
   
   ASSERT_THAT(WaitUntil([&] { return test_finish_; }, IsTrue(),
-                        {.clock = &fake_clock_}),
+                        {.clock = &time_controller_}),
               IsRtcOk());
   EXPECT_EQ(last_fd_count, GetFDCount());
 }
@@ -2123,11 +2095,11 @@ TEST_F(TurnPortTest, TestTurnDangerousAlternateServer) {
 
   turn_port_->PrepareAddress();
   
-  EXPECT_THAT(WaitUntil([&] { return error_event_.error_code; }, Ne(0),
-                        {.timeout = TimeDelta::Millis(
-                             TimeToGetAlternateTurnCandidate(protocol_type)),
-                         .clock = &fake_clock_}),
-              IsRtcOk());
+  EXPECT_THAT(
+      WaitUntil([&] { return error_event_.error_code; }, Ne(0),
+                {.timeout = TimeToGetAlternateTurnCandidate(protocol_type),
+                 .clock = &time_controller_}),
+      IsRtcOk());
   
   
   EXPECT_FALSE(turn_ready_);
@@ -2153,18 +2125,17 @@ class TurnPortWithMockDnsResolverTest : public TurnPortTest {
 
 TEST_F(TurnPortWithMockDnsResolverTest, TestHostnameResolved) {
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnPortValidHostnameProtoAddr);
-  SetDnsResolverExpectations(
-      [](MockAsyncDnsResolver* resolver,
-         MockAsyncDnsResolverResult* resolver_result) {
-        EXPECT_CALL(*resolver, Start(kTurnValidAddr, AF_INET, _))
-            .WillOnce([](const SocketAddress& addr, int family,
-                         absl::AnyInvocable<void()> callback) { callback(); });
-        EXPECT_CALL(*resolver, result)
-            .WillRepeatedly(ReturnPointee(resolver_result));
-        EXPECT_CALL(*resolver_result, GetError).WillRepeatedly(Return(0));
-        EXPECT_CALL(*resolver_result, GetResolvedAddress(AF_INET, _))
-            .WillOnce(DoAll(SetArgPointee<1>(kTurnUdpIntAddr), Return(true)));
-      });
+  SetDnsResolverExpectations([](MockAsyncDnsResolver* resolver,
+                                MockAsyncDnsResolverResult* resolver_result) {
+    EXPECT_CALL(*resolver, Start(kTurnValidAddr, AF_INET, _))
+        .WillOnce([](const SocketAddress& addr, int family,
+                     absl::AnyInvocable<void()> callback) { callback(); });
+    EXPECT_CALL(*resolver, result)
+        .WillRepeatedly(ReturnPointee(resolver_result));
+    EXPECT_CALL(*resolver_result, GetError).WillRepeatedly(Return(0));
+    EXPECT_CALL(*resolver_result, GetResolvedAddress(AF_INET, _))
+        .WillOnce(DoAll(SetArgPointee<1>(kTurnUdpIntAddr), Return(true)));
+  });
   TestTurnAllocateSucceeds(kSimulatedRtt * 2);
 }
 
@@ -2174,19 +2145,17 @@ TEST_F(TurnPortWithMockDnsResolverTest, TestHostnameResolvedIPv6Network) {
   turn_server_.AddInternalSocket(kTurnUdpIPv6IntAddr, PROTO_UDP);
   CreateTurnPort(kLocalIPv6Addr, kTurnUsername, kTurnPassword,
                  kTurnPortValidHostnameProtoAddr);
-  SetDnsResolverExpectations(
-      [](MockAsyncDnsResolver* resolver,
-         MockAsyncDnsResolverResult* resolver_result) {
-        EXPECT_CALL(*resolver, Start(kTurnValidAddr, AF_INET6, _))
-            .WillOnce([](const SocketAddress& addr, int family,
-                         absl::AnyInvocable<void()> callback) { callback(); });
-        EXPECT_CALL(*resolver, result)
-            .WillRepeatedly(ReturnPointee(resolver_result));
-        EXPECT_CALL(*resolver_result, GetError).WillRepeatedly(Return(0));
-        EXPECT_CALL(*resolver_result, GetResolvedAddress(AF_INET6, _))
-            .WillOnce(
-                DoAll(SetArgPointee<1>(kTurnUdpIPv6IntAddr), Return(true)));
-      });
+  SetDnsResolverExpectations([](MockAsyncDnsResolver* resolver,
+                                MockAsyncDnsResolverResult* resolver_result) {
+    EXPECT_CALL(*resolver, Start(kTurnValidAddr, AF_INET6, _))
+        .WillOnce([](const SocketAddress& addr, int family,
+                     absl::AnyInvocable<void()> callback) { callback(); });
+    EXPECT_CALL(*resolver, result)
+        .WillRepeatedly(ReturnPointee(resolver_result));
+    EXPECT_CALL(*resolver_result, GetError).WillRepeatedly(Return(0));
+    EXPECT_CALL(*resolver_result, GetResolvedAddress(AF_INET6, _))
+        .WillOnce(DoAll(SetArgPointee<1>(kTurnUdpIPv6IntAddr), Return(true)));
+  });
   TestTurnAllocateSucceeds(kSimulatedRtt * 2);
 }
 
