@@ -9,9 +9,11 @@ add_task(async function () {
   
   
   
-  let pageURI = NetUtil.newURI("http://places.test/page/");
+  let pageURI = Services.io.newURI("http://places.test/page/");
   await PlacesTestUtils.addVisits(pageURI);
-  let faviconURI = NetUtil.newURI("http://places.test/icon/favicon-multi.ico");
+  let faviconURI = Services.io.newURI(
+    "http://places.test/icon/favicon-multi.ico"
+  );
   
   let win = { devicePixelRatio: 1.0 };
   let icoDataURL = await readFileDataAsDataURL(

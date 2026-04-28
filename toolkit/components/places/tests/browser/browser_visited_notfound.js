@@ -22,7 +22,7 @@ add_task(async function test() {
   Assert.greater(frecency, 0, "Check initial frecency");
 
   
-  PlacesUtils.history.markPageAsTyped(NetUtil.newURI(url));
+  PlacesUtils.history.markPageAsTyped(Services.io.newURI(url));
 
   await BrowserTestUtils.withNewTab(
     {

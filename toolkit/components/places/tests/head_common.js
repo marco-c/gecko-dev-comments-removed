@@ -46,7 +46,7 @@ ChromeUtils.defineESModuleGetters(this, {
 });
 
 ChromeUtils.defineLazyGetter(this, "SMALLPNG_DATA_URI", function () {
-  return NetUtil.newURI(
+  return Services.io.newURI(
     "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAA" +
       "AAAA6fptVAAAACklEQVQI12NgAAAAAgAB4iG8MwAAAABJRU5ErkJggg=="
   );
@@ -54,7 +54,7 @@ ChromeUtils.defineLazyGetter(this, "SMALLPNG_DATA_URI", function () {
 const SMALLPNG_DATA_LEN = 67;
 
 ChromeUtils.defineLazyGetter(this, "SMALLSVG_DATA_URI", function () {
-  return NetUtil.newURI(
+  return Services.io.newURI(
     "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy5" +
       "3My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIiBmaWxs" +
       "PSIjNDI0ZTVhIj4NCiAgPGNpcmNsZSBjeD0iNTAiIGN5PSI1MCIgcj0iN" +
@@ -86,7 +86,7 @@ clearDB();
 
 
 function uri(aSpec) {
-  return NetUtil.newURI(aSpec);
+  return Services.io.newURI(aSpec);
 }
 
 
