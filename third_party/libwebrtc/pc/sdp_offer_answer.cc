@@ -706,6 +706,12 @@ std::vector<RtpEncodingParameters> GetSendEncodingsFromRemoteDescription(
   
   
   for (const auto& alternatives : simulcast.receive_layers()) {
+    if (result.size() >= kMaxSimulcastStreams) {
+      RTC_LOG(LS_WARNING)
+          << "Excessive simulcast layers in remote description. Clamping to "
+          << kMaxSimulcastStreams;
+      break;
+    }
     RTC_DCHECK(!alternatives.empty());
     
     
