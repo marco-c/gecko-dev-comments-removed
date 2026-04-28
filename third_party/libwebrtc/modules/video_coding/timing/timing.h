@@ -33,27 +33,34 @@ namespace webrtc {
 class VCMTiming {
  public:
   struct VideoDelayTimings {
-    size_t num_decoded_frames;
+    static constexpr TimeDelta kDefaultRenderDelay = TimeDelta::Millis(10);
+
+    void Reset();
+    
+    
+    bool UseLowLatencyRendering() const;
+
+    size_t num_decoded_frames = 0;
     
     
     
-    TimeDelta minimum_delay;
+    TimeDelta minimum_delay = TimeDelta::Zero();
     
     
-    TimeDelta estimated_max_decode_time;
+    TimeDelta estimated_max_decode_time = TimeDelta::Zero();
     
     
-    TimeDelta render_delay;
+    TimeDelta render_delay = kDefaultRenderDelay;
     
     
-    TimeDelta min_playout_delay;
+    TimeDelta min_playout_delay = TimeDelta::Zero();
     
     
-    TimeDelta max_playout_delay;
+    TimeDelta max_playout_delay = TimeDelta::Seconds(10);
     
-    TimeDelta target_delay;
+    TimeDelta target_delay = TimeDelta::Zero();
     
-    TimeDelta current_delay;
+    TimeDelta current_delay = TimeDelta::Zero();
   };
 
   VCMTiming(Clock* clock, const FieldTrialsView& field_trials);
@@ -129,7 +136,6 @@ class VCMTiming {
   TimeDelta TargetDelayInternal() const RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
   TimeDelta StatsTargetDelayInternal() const
       RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
-  bool UseLowLatencyRendering() const RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
   mutable Mutex mutex_;
   Clock* const clock_;
@@ -137,17 +143,10 @@ class VCMTiming {
       RTC_PT_GUARDED_BY(mutex_);
   std::unique_ptr<DecodeTimePercentileFilter> decode_time_filter_
       RTC_GUARDED_BY(mutex_) RTC_PT_GUARDED_BY(mutex_);
-  TimeDelta render_delay_ RTC_GUARDED_BY(mutex_);
+
   
-  
-  
-  
-  
-  TimeDelta min_playout_delay_ RTC_GUARDED_BY(mutex_);
-  TimeDelta max_playout_delay_ RTC_GUARDED_BY(mutex_);
-  TimeDelta jitter_delay_ RTC_GUARDED_BY(mutex_);
-  TimeDelta current_delay_ RTC_GUARDED_BY(mutex_);
-  size_t num_decoded_frames_ RTC_GUARDED_BY(mutex_);
+  VideoDelayTimings timings_ RTC_GUARDED_BY(mutex_);
+
   std::optional<int> max_composition_delay_in_frames_ RTC_GUARDED_BY(mutex_);
   
   
