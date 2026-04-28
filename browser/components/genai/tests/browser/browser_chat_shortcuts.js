@@ -33,6 +33,36 @@ add_task(async function test_no_shortcuts() {
 
 
 
+add_task(async function test_no_shortcuts_with_smartwindow() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.ml.chat.shortcuts", true],
+      ["browser.ml.chat.provider", "http://localhost:8080"],
+    ],
+  });
+  const win = await BrowserTestUtils.openNewBrowserWindow();
+  win.document.documentElement.setAttribute("ai-window", "");
+
+  await BrowserTestUtils.openNewForegroundTab(
+    win.gBrowser,
+    "data:text/plain,hi"
+  );
+  win.goDoCommand("cmd_selectAll");
+
+  const selectionShortcutActionPanel = win.document.getElementById(
+    "selection-shortcut-action-panel"
+  );
+  Assert.ok(
+    !selectionShortcutActionPanel.hasAttribute("panelopen"),
+    "Shortcuts not shown in a smartwindow"
+  );
+
+  await BrowserTestUtils.closeWindow(win);
+});
+
+
+
+
 add_task(async function test_show_shortcuts() {
   Services.fog.testResetFOG();
   await SpecialPowers.pushPrefEnv({
@@ -189,6 +219,12 @@ add_task(async function test_show_shortcuts() {
 
 add_task(async function test_show_shortcuts_second_tab() {
   
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.ml.chat.shortcuts", true],
+      ["browser.ml.chat.provider", "http://localhost:8080"],
+    ],
+  });
   await BrowserTestUtils.withNewTab(
     "data:text/html,<title>second</title>page",
     async browser => {
