@@ -381,6 +381,10 @@ var SidebarController = {
     return this.installedExtensions ? this.installedExtensions.split(",") : [];
   },
 
+  get launcherSplitter() {
+    return this._launcherSplitter;
+  },
+
   init() {
     
     this.SidebarManager;
@@ -490,7 +494,6 @@ var SidebarController = {
         };
         this._splitter.addEventListener("command", this._browserResizeObserver);
       }
-      this._enableLauncherDragging();
       this._enablePinnedTabsSplitterDragging();
 
       
@@ -1501,14 +1504,16 @@ var SidebarController = {
 
 
   _enableLauncherDragging() {
-    if (!this._launcherSplitter.hidden) {
-      
+    if (this._launcherDropHandler) {
       
       return;
     }
-    this._panelResizeObserver = new ResizeObserver(
-      ([entry]) => (this._state.panelWidth = entry.contentBoxSize[0].inlineSize)
-    );
+    if (!this._panelResizeObserver) {
+      this._panelResizeObserver = new ResizeObserver(
+        ([entry]) =>
+          (this._state.panelWidth = entry.contentBoxSize[0].inlineSize)
+      );
+    }
     this._panelResizeObserver.observe(this._box);
 
     this._launcherDropHandler = () => {
@@ -1519,8 +1524,6 @@ var SidebarController = {
       "command",
       this._launcherDropHandler
     );
-
-    this._launcherSplitter.hidden = false;
   },
 
   
@@ -1579,8 +1582,7 @@ var SidebarController = {
       "command",
       this._launcherDropHandler
     );
-
-    this._launcherSplitter.hidden = true;
+    delete this._launcherDropHandler;
   },
 
   
@@ -1606,8 +1608,7 @@ var SidebarController = {
 
   updatePinnedTabsHeightOnResize() {
     
-    
-    if (this.isLauncherDragging) {
+    if (this.isLauncherDragging || this.isPinnedTabsDragging) {
       return;
     }
 
@@ -1617,11 +1618,6 @@ var SidebarController = {
 
     if (!preferredHeight || !this._pinnedTabsContainer.childElementCount) {
       return;
-    }
-
-    if (this.isLauncherDragging) {
-      
-      this._pinnedTabsContainer.style.height = "";
     }
 
     let itemsWrapperHeight = window.windowUtils.getBoundsWithoutFlushing(
