@@ -117,10 +117,6 @@ typedef struct nestegg nestegg;
 typedef struct nestegg_packet nestegg_packet; 
 
 
-
-
-
-
 typedef struct {
   
 
@@ -129,7 +125,7 @@ typedef struct {
 
 
 
-  int64_t (* read)(void * buffer, size_t length, void * userdata);
+  int (* read)(void * buffer, size_t length, void * userdata);
 
   
 
@@ -188,10 +184,6 @@ typedef struct {
   double luminance_max;                  
 
   double luminance_min;                  
-
-  unsigned int max_cll;                  
-
-  unsigned int max_fall;                 
 
   unsigned int projection_type;          
 
@@ -534,16 +526,6 @@ int nestegg_packet_offsets(nestegg_packet * packet,
 
 int nestegg_packet_reference_block(nestegg_packet * packet,
                                    int64_t * reference_block);
-
-
-
-
-
-
-
-
-
-int nestegg_packet_end_offset(nestegg_packet * packet, int64_t * end_offset);
 
 
 
