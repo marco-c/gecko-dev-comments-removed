@@ -5,7 +5,8 @@
 #include "mozilla/Maybe.h"  
 #include "mozilla/Utf8.h"  
 
-#include <stdint.h>  
+#include <inttypes.h>  
+#include <stdint.h>    
 
 #include "js/Exception.h"   
 #include "js/RootingAPI.h"  

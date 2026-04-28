@@ -3,6 +3,7 @@
 
 
 #include <cerrno>
+#include <cinttypes>
 #include <cstdio>
 
 #ifdef XP_WIN
