@@ -499,10 +499,6 @@ class nsGridContainerFrame final : public nsContainerFrame,
     
 
 
-    bool mCanBreakAtStart;
-    
-
-
     bool mCanBreakAtEnd;
     
 

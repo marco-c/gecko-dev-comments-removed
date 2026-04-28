@@ -8035,8 +8035,6 @@ nsGridContainerFrame::GetNearestFragmentainer(
         data->mToFragmentainerEnd = NS_UNCONSTRAINEDSIZE;
       }
       const auto numRows = aGridRI.mRows.mSizes.Length();
-      data->mCanBreakAtStart =
-          numRows > 0 && aGridRI.mRows.mSizes[0].mPosition > 0;
       nscoord bSize = gridRI->ComputedBSize();
       data->mIsAutoBSize = bSize == NS_UNCONSTRAINEDSIZE;
       if (data->mIsAutoBSize) {
@@ -8387,8 +8385,7 @@ nscoord nsGridContainerFrame::ReflowInFragmentainer(
 
     
     
-    if (startRow == endRow && startRow != numRows &&
-        (startRow != 0 || !aFragmentainer.mCanBreakAtStart)) {
+    if (startRow == endRow && startRow != numRows) {
       ++endRow;
     }
 
@@ -8529,9 +8526,7 @@ nscoord nsGridContainerFrame::ReflowRowsInFragmentainer(
   
   
   
-  
-  
-  bool isRowTopOfPage = aStartRow != 0 || !aFragmentainer.mCanBreakAtStart;
+  bool isRowTopOfPage = true;
   const bool isStartRowTopOfPage = isRowTopOfPage;
   
   const nscoord gridAvailableSize = aFragmentainer.mToFragmentainerEnd;
@@ -10316,8 +10311,8 @@ void nsGridContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     BuildDisplayListForChild(aBuilder, child, aLists, flags);
   }
 
-  if (GetPrevInFlow()) {
-    DisplayPushedAbsoluteFrames(aBuilder, aLists);
+  if (GetPrevInFlow() || GetNextInFlow()) {
+    DisplayAbsoluteFramesNotBuiltByPlaceholder(aBuilder, aLists);
   }
 }
 
