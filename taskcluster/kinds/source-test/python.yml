@@ -12,7 +12,7 @@ task-defaults:
         by-platform:
             linux2404-64.*: t-linux-docker-amd
             macosx1470-64.*: t-osx-1400-r8
-            windows11-64.*: win11-64-24h2-source
+            windows11-64.*: win11-64-25h2-source
     worker:
         by-platform:
             linux2404-64.*:
@@ -214,12 +214,15 @@ mozlint:
                 linux2404-64/opt:
                     - linux64-node
                     - linux64-rust
+                    - linux64-mozcheck
                 macosx1470-64/opt:
                     - macosx64-node
                     - macosx64-rust
+                    - macosx64-aarch64-mozcheck
                 windows11-64/opt:
                     - win64-node
                     - win64-rust
+                    - win64-mozcheck
         clang-tidy:
             - artifact: clang-tidy.tar.zst
               dest: clang-tools
@@ -416,6 +419,22 @@ mozbuild:
             - 'python/mozversioncontrol/**'
             - 'testing/mozbase/**'
             - 'testing/xpcshell/xpcshellcommandline.py'
+
+coverage:
+    description: code coverage unit tests
+    treeherder:
+        symbol: cov
+        tier: 2
+    run:
+        using: python-test
+        subsuite: coverage
+    fetches:
+        toolchain:
+            - linux64-grcov
+    when:
+        files-changed:
+            - 'python/mach/mach/command_util.py'
+            - 'tools/code-coverage/**'
 
 mozperftest:
     description: mozperftest unit tests
