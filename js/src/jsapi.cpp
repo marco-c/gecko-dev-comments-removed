@@ -715,9 +715,9 @@ JS_PUBLIC_API JSObject* JS_TransplantObject(JSContext* cx, HandleObject origobj,
   if (origobj->compartment() != destination) {
     
     
-    if (!gc::GCRuntime::relocateWeakRefTarget(ObjectValue(*origobj),
-                                              ObjectValue(*newIdentity))) {
-      oomUnsafe.crash("JS_TransplantObject weak ref relocation");
+    if (!gc::GCRuntime::relocateFinalizationObserverTarget(
+            ObjectValue(*origobj), ObjectValue(*newIdentity))) {
+      oomUnsafe.crash("JS_TransplantObject finalization observer relocation");
     }
 
     RootedObject newIdentityWrapper(cx, newIdentity);

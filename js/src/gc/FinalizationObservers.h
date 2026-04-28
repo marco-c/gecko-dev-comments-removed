@@ -225,8 +225,10 @@ class FinalizationObservers {
 
   
   bool isTarget(const Value& target);
-  ObserverList removeWeakRefTargets(const Value& target);
-  bool addWeakRefTargets(const Value& target, ObserverList&& list);
+  ObserverList extractWeakRefObservers(const Value& target);
+  bool addWeakRefObservers(const Value& target, ObserverList&& list);
+  ObserverList extractRecordObservers(const Value& target);
+  bool addRecordObservers(const Value& target, ObserverList&& list);
 
   
   void clearWeakRefTargets(JS::Compartment* source, const Value& target);
