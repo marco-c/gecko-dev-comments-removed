@@ -5,11 +5,24 @@
 #ifndef mozilla_dom_SerialPortIPCTypes_h
 #define mozilla_dom_SerialPortIPCTypes_h
 
+#include "ipc/EnumSerializer.h"
 #include "mozilla/dom/BindingIPCUtils.h"
 #include "mozilla/dom/SerialPortBinding.h"
 
 namespace mozilla::dom {
 constexpr uint32_t kMaxSerialBufferSize = 16u * 1024u * 1024u;  
+
+
+
+
+
+enum class RequestPortReason : uint8_t {
+  Granted,        
+  UserCancelled,  
+  AddonDenied,    
+  InternalError,  
+  EndGuard_
+};
 }  
 
 namespace IPC {
@@ -21,6 +34,13 @@ template <>
 struct ParamTraits<mozilla::dom::FlowControlType>
     : public mozilla::dom::WebIDLEnumSerializer<mozilla::dom::FlowControlType> {
 };
+
+template <>
+struct ParamTraits<mozilla::dom::RequestPortReason>
+    : public ContiguousEnumSerializer<
+          mozilla::dom::RequestPortReason,
+          mozilla::dom::RequestPortReason::Granted,
+          mozilla::dom::RequestPortReason::EndGuard_> {};
 }  
 
 #endif  
