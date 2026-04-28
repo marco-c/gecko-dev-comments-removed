@@ -21,6 +21,7 @@
 #include "api/rtp_packet_infos.h"
 #include "api/scoped_refptr.h"
 #include "api/transport/rtp/dependency_descriptor.h"
+#include "api/units/timestamp.h"
 #include "api/video/encoded_image.h"
 #include "api/video/video_frame_type.h"
 #include "api/video/video_timing.h"
@@ -179,14 +180,16 @@ RtpVideoFrameAssembler::Impl::AssembleFrames(
         continue;
       }
 
+      
+      
       const video_coding::PacketBuffer::Packet& last_packet = *packet;
       result.push_back(std::make_unique<RtpFrameObject>(
           first_packet->seq_num(),                              
           last_packet.seq_num(),                                
           last_packet.marker_bit,                               
           0,                                   
-          0,                     
-          0,                      
+          Timestamp::Zero(),     
+          Timestamp::Zero(),      
           first_packet->timestamp,                              
           0,                                    
           VideoSendTiming(),                         

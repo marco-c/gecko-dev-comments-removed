@@ -911,23 +911,23 @@ TEST_P(VideoReceiveStream2Test, FramesScheduledInOrder) {
       .Times(1);
 
   
-  key_frame->SetReceivedTime(env_.clock().CurrentTime().ms());
+  key_frame->SetReceivedTime(env_.clock().CurrentTime());
   video_receive_stream_->OnCompleteFrame(std::move(key_frame));
   
   EXPECT_THAT(fake_renderer_.WaitForFrame(TimeDelta::Zero()), RenderedFrame());
 
   
   time_controller_.AdvanceTime(2 * k30FpsDelay);
-  int64_t delta_frame2_received_time_ms = env_.clock().CurrentTime().ms();
-  delta_frame2->SetReceivedTime(delta_frame2_received_time_ms);
+  Timestamp delta_frame2_received_time = env_.clock().CurrentTime();
+  delta_frame2->SetReceivedTime(delta_frame2_received_time);
   video_receive_stream_->OnCompleteFrame(std::move(delta_frame2));
   
   EXPECT_THAT(fake_renderer_.WaitForFrame(TimeDelta::Zero()),
               DidNotReceiveFrame());
 
   
-  delta_frame1->SetReceivedTime(env_.clock().CurrentTime().ms());
-  EXPECT_EQ(delta_frame1->ReceivedTime(), delta_frame2_received_time_ms);
+  delta_frame1->SetReceivedTime(env_.clock().CurrentTime());
+  EXPECT_EQ(delta_frame1->ReceivedTimestamp(), delta_frame2_received_time);
   video_receive_stream_->OnCompleteFrame(std::move(delta_frame1));
   
   EXPECT_THAT(fake_renderer_.WaitForFrame(TimeDelta::Zero()), RenderedFrame());
@@ -963,7 +963,7 @@ TEST_P(VideoReceiveStream2Test, WaitsforAllSpatialLayers) {
 
   
   EXPECT_CALL(mock_decoder_, Decode(_, _)).Times(0);
-  sl0->SetReceivedTime(env_.clock().CurrentTime().ms());
+  sl0->SetReceivedTime(env_.clock().CurrentTime());
   video_receive_stream_->OnCompleteFrame(std::move(sl0));
   EXPECT_THAT(fake_renderer_.WaitForFrame(TimeDelta::Zero()),
               DidNotReceiveFrame());

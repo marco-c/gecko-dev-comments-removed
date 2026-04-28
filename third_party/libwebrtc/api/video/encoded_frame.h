@@ -37,10 +37,20 @@ class EncodedFrame : public EncodedImage {
 
   
   
-  virtual int64_t ReceivedTime() const { return -1; }
+
   
+  virtual int64_t ReceivedTime() const {
+    const std::optional<Timestamp> t = ReceivedTimestamp();
+    return t.has_value() ? t->ms() : -1;
+  }
   
-  std::optional<Timestamp> ReceivedTimestamp() const;
+  virtual std::optional<Timestamp> ReceivedTimestamp() const {
+    const int64_t received_time_ms = ReceivedTime();
+    if (received_time_ms == -1) {
+      return std::nullopt;
+    }
+    return Timestamp::Millis(received_time_ms);
+  }
 
   
   
