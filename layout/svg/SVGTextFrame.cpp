@@ -35,6 +35,7 @@
 #include "mozilla/dom/SVGRect.h"
 #include "mozilla/dom/SVGTextContentElementBinding.h"
 #include "mozilla/dom/SVGTextPathElement.h"
+#include "mozilla/dom/SVGTextPathElementBinding.h"
 #include "mozilla/dom/Selection.h"
 #include "mozilla/dom/Text.h"
 #include "mozilla/gfx/2D.h"
@@ -4806,7 +4807,7 @@ void SVGTextFrame::DoTextPathLayout() {
       
       Point tangent;  
       Point pt;
-      if (side == TEXTPATH_SIDETYPE_RIGHT) {
+      if (side == dom::SVGTextPathElement_Binding::TEXTPATH_SIDETYPE_RIGHT) {
         pt = path->ComputePointAtLength(Float(pathLength - midx), &tangent);
         tangent = -tangent;
       } else {

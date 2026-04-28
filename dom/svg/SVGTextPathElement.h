@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_SVG_SVGTEXTPATHELEMENT_H_
 #define DOM_SVG_SVGTEXTPATHELEMENT_H_
 
@@ -20,10 +18,6 @@ nsresult NS_NewSVGTextPathElement(
     nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
 
 namespace mozilla::dom {
-
-
-static const uint16_t TEXTPATH_SIDETYPE_LEFT = 1;
-static const uint16_t TEXTPATH_SIDETYPE_RIGHT = 2;
 
 using SVGTextPathElementBase = SVGTextContentElement;
 
