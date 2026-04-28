@@ -281,7 +281,7 @@ TEST(VideoStreamTest, SuspendsBelowMinBitrate) {
     
     
     c->transport.rates.min_rate = kMinVideoBitrate / 2;
-    c->transport.rates.start_rate = kMinVideoBitrate;
+    c->transport.rates.start_rate = kMinVideoBitrate * 2;
     c->transport.rates.max_rate = kMinVideoBitrate * 2;
   });
   auto send_net = s.CreateMutableSimulationNode(
