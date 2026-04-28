@@ -75,11 +75,10 @@ void convolve_vertically_avx2(
     }
 
     
-    __m256i round = _mm256_set1_epi32(1 << 13);
-    accum04 = _mm256_srai_epi32(_mm256_add_epi32(accum04, round), 14);
-    accum15 = _mm256_srai_epi32(_mm256_add_epi32(accum15, round), 14);
-    accum26 = _mm256_srai_epi32(_mm256_add_epi32(accum26, round), 14);
-    accum37 = _mm256_srai_epi32(_mm256_add_epi32(accum37, round), 14);
+    accum04 = _mm256_srai_epi32(accum04, 14);
+    accum15 = _mm256_srai_epi32(accum15, 14);
+    accum26 = _mm256_srai_epi32(accum26, 14);
+    accum37 = _mm256_srai_epi32(accum37, 14);
 
     
     auto pixels = _mm256_packus_epi16(_mm256_packs_epi32(accum04, accum15),

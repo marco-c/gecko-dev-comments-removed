@@ -104,9 +104,6 @@ void convolve_horizontally_sse2(const unsigned char* srcData,
     }
 
     
-    __m128i round =
-        _mm_set1_epi32(1 << (SkConvolutionFilter1D::kShiftBits - 1));
-    accum = _mm_add_epi32(accum, round);
     accum = _mm_srai_epi32(accum, SkConvolutionFilter1D::kShiftBits);
 
     
@@ -181,16 +178,10 @@ static void ConvolveVertically(
     }
 
     
-    __m128i round =
-        _mm_set1_epi32(1 << (SkConvolutionFilter1D::kShiftBits - 1));
-    accum0 = _mm_srai_epi32(_mm_add_epi32(accum0, round),
-                            SkConvolutionFilter1D::kShiftBits);
-    accum1 = _mm_srai_epi32(_mm_add_epi32(accum1, round),
-                            SkConvolutionFilter1D::kShiftBits);
-    accum2 = _mm_srai_epi32(_mm_add_epi32(accum2, round),
-                            SkConvolutionFilter1D::kShiftBits);
-    accum3 = _mm_srai_epi32(_mm_add_epi32(accum3, round),
-                            SkConvolutionFilter1D::kShiftBits);
+    accum0 = _mm_srai_epi32(accum0, SkConvolutionFilter1D::kShiftBits);
+    accum1 = _mm_srai_epi32(accum1, SkConvolutionFilter1D::kShiftBits);
+    accum2 = _mm_srai_epi32(accum2, SkConvolutionFilter1D::kShiftBits);
+    accum3 = _mm_srai_epi32(accum3, SkConvolutionFilter1D::kShiftBits);
 
     
     
@@ -261,14 +252,9 @@ static void ConvolveVertically(
       accum2 = _mm_add_epi32(accum2, t);
     }
 
-    __m128i round =
-        _mm_set1_epi32(1 << (SkConvolutionFilter1D::kShiftBits - 1));
-    accum0 = _mm_srai_epi32(_mm_add_epi32(accum0, round),
-                            SkConvolutionFilter1D::kShiftBits);
-    accum1 = _mm_srai_epi32(_mm_add_epi32(accum1, round),
-                            SkConvolutionFilter1D::kShiftBits);
-    accum2 = _mm_srai_epi32(_mm_add_epi32(accum2, round),
-                            SkConvolutionFilter1D::kShiftBits);
+    accum0 = _mm_srai_epi32(accum0, SkConvolutionFilter1D::kShiftBits);
+    accum1 = _mm_srai_epi32(accum1, SkConvolutionFilter1D::kShiftBits);
+    accum2 = _mm_srai_epi32(accum2, SkConvolutionFilter1D::kShiftBits);
     
     accum0 = _mm_packs_epi32(accum0, accum1);
     
