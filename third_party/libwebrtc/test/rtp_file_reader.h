@@ -22,7 +22,7 @@ namespace test {
 struct RtpPacket {
   
   
-  static const size_t kMaxPacketBufferSize = 3500;
+  static const size_t kMaxPacketBufferSize = 5100;
   uint8_t data[kMaxPacketBufferSize];
   size_t length;
   
