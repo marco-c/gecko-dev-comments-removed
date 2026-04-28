@@ -168,13 +168,6 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal,
   bool PruneConnections(
       std::span<const Connection* const> connections) override;
 
-  
-  
-  const Connection* best_connection() const {
-    RTC_DCHECK_RUN_ON(&network_thread_);
-    return selected_connection_;
-  }
-
   void set_incoming_only(bool value) {
     RTC_DCHECK_RUN_ON(&network_thread_);
     incoming_only_ = value;
