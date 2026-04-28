@@ -64,6 +64,12 @@ std::thread_local! {
     static RECV_BUF: RefCell<neqo_udp::RecvBuf> = RefCell::new(neqo_udp::RecvBuf::default());
 }
 
+#[cfg(target_vendor = "apple")]
+use std::sync::atomic::{AtomicBool, Ordering};
+
+#[cfg(target_vendor = "apple")]
+static APPLE_FAST_PATH: AtomicBool = AtomicBool::new(false);
+
 #[allow(clippy::cast_possible_truncation, reason = "see check below")]
 const AF_INET_U16: u16 = AF_INET as u16;
 static_assertions::const_assert_eq!(AF_INET_U16 as c_int, AF_INET);
@@ -386,10 +392,21 @@ impl NeqoHttp3Conn {
                     })?;
                     unsafe { BorrowedSocket::borrow_raw(raw) }
                 };
-                neqo_udp::Socket::new(borrowed).map_err(|e| {
+                let s = neqo_udp::Socket::new(borrowed).map_err(|e| {
                     qerror!("failed to initialize socket {}: {}", socket, e);
                     into_nsresult(&e)
-                })
+                })?;
+                
+                
+                
+                #[cfg(target_vendor = "apple")]
+                if APPLE_FAST_PATH.load(Ordering::Relaxed)
+                    && static_prefs::pref!("network.http.http3.apple_fast_datapath")
+                {
+                    
+                    unsafe { s.enable_apple_fast_path() }
+                }
+                Ok(s)
             })
             .transpose()?;
 
@@ -2872,6 +2889,91 @@ pub unsafe extern "C" fn neqo_decoder_remaining(decoder: &mut NeqoDecoder) -> u6
 pub unsafe extern "C" fn neqo_decoder_offset(decoder: &mut NeqoDecoder) -> u64 {
     let decoder = decoder.decoder.as_mut().unwrap();
     decoder.offset() as u64
+}
+
+
+
+
+#[cfg(target_vendor = "apple")]
+#[no_mangle]
+pub extern "C" fn neqo_glue_enable_apple_fast_path() {
+    APPLE_FAST_PATH.store(true, Ordering::Relaxed);
+}
+
+
+#[cfg(target_vendor = "apple")]
+fn probe_apple_fast_path_inner(send_fd: c_int, recv_fd: c_int) -> io::Result<()> {
+    use std::os::fd::BorrowedFd;
+
+    use neqo_common::Ecn;
+    use rustix::{
+        fs::{fcntl_getfl, fcntl_setfl, OFlags},
+        net::{getsockname, sockopt::{set_socket_timeout, Timeout}, SocketAddrAny},
+    };
+
+    
+    
+    
+    let make_socket = |fd: c_int| -> io::Result<(neqo_udp::Socket<BorrowedFd<'static>>, SocketAddr)> {
+        let bfd = unsafe { BorrowedFd::borrow_raw(fd) };
+        let socket = neqo_udp::Socket::new(bfd)?;
+        
+        unsafe { socket.enable_apple_fast_path() };
+        fcntl_setfl(bfd, fcntl_getfl(bfd)? & !OFlags::NONBLOCK)?;
+        set_socket_timeout(bfd, Timeout::Recv, Some(Duration::from_secs(1)))?;
+        let addr: SocketAddr = match getsockname(bfd)? {
+            SocketAddrAny::V4(a) => a.into(),
+            SocketAddrAny::V6(a) => a.into(),
+            _ => return Err(io::Error::other("unexpected address family")),
+        };
+        Ok((socket, addr))
+    };
+    let (sender, send_addr) = make_socket(send_fd)?;
+    let (receiver, recv_addr) = make_socket(recv_fd)?;
+
+    if sender.max_gso_segments() <= 1 {
+        return Err(io::Error::other("max_gso_segments not increased"));
+    }
+
+    
+    
+    let mut remaining: Vec<(u8, Ecn)> = vec![(0, Ecn::Ect0), (1, Ecn::Ect1)];
+    for &(byte, ecn) in &remaining {
+        sender.send(&Datagram::new(send_addr, recv_addr, Tos::from(ecn), vec![byte]).into())?;
+    }
+    let mut recv_buf = neqo_udp::RecvBuf::default();
+    while !remaining.is_empty() {
+        for d in receiver.recv(recv_addr, &mut recv_buf)? {
+            let &byte = d
+                .as_ref()
+                .first()
+                .ok_or_else(|| io::Error::other("empty datagram"))?;
+            let idx = remaining
+                .iter()
+                .position(|&(b, _)| b == byte)
+                .ok_or_else(|| io::Error::other("unexpected datagram payload"))?;
+            let (_, expected_ecn) = remaining.swap_remove(idx);
+            if Ecn::from(d.tos()) != expected_ecn {
+                return Err(io::Error::other("ECN mismatch"));
+            }
+            if d.source() != send_addr {
+                return Err(io::Error::other("source address mismatch"));
+            }
+        }
+    }
+
+    Ok(())
+}
+
+
+
+
+
+
+#[cfg(target_vendor = "apple")]
+#[no_mangle]
+pub extern "C" fn neqo_glue_probe_apple_fast_path(send_fd: c_int, recv_fd: c_int) -> bool {
+    probe_apple_fast_path_inner(send_fd, recv_fd).is_ok()
 }
 
 

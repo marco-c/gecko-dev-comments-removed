@@ -1,0 +1,23 @@
+
+
+
+
+#ifndef AppleFastDatapathProbe_h_
+#define AppleFastDatapathProbe_h_
+
+namespace mozilla::net {
+
+
+
+
+
+
+
+
+
+
+bool InitAppleFastDatapathProbe();
+
+}  
+
+#endif  
