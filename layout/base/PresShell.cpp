@@ -1404,22 +1404,6 @@ bool PresShell::FixUpFocus() {
   if (NS_WARN_IF(!window)) {
     return false;
   }
-  
-  
-  
-  
-  if (RefPtr element = fm->GetFocusedElement();
-      element && !element->IsInNativeAnonymousSubtree()) {
-    RefPtr selection = window->GetSelection();
-    if (MOZ_LIKELY(selection)) {
-      
-      
-      selection->SetAncestorLimiter(nullptr);
-      DebugOnly<nsresult> rv = selection->CollapseInLimiter(element, 0);
-      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                           "Selection::CollapseInLimiter failed.");
-    }
-  }
   fm->ClearFocus(window);
   return true;
 }

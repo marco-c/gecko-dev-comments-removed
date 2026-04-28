@@ -260,7 +260,12 @@ addAccessibleTask(
     
     info("Focusing before");
     const before = findAccessibleChildByID(docAcc, "before");
-    let events = waitForOrderedEvents([[EVENT_FOCUS, before]]);
+    
+    
+    let events = waitForOrderedEvents([
+      [EVENT_FOCUS, before],
+      [EVENT_TEXT_SELECTION_CHANGED, docAcc],
+    ]);
     before.takeFocus();
     await events;
 
