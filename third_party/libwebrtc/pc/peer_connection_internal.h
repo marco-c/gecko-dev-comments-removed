@@ -130,14 +130,6 @@ class PeerConnectionSdpMethods {
   
   
   virtual RTCError StartSctpTransport(const SctpOptions& options) = 0;
-  [[deprecated("Call with SctpOptions")]]
-  virtual void StartSctpTransport(int local_port,
-                                  int remote_port,
-                                  int max_message_size) {
-    StartSctpTransport({.local_port = local_port,
-                        .remote_port = remote_port,
-                        .max_message_size = max_message_size});
-  }
 
   
   virtual void AddRemoteCandidate(absl::string_view mid,
