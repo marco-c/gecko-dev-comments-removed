@@ -1364,7 +1364,7 @@ already_AddRefed<Promise> nsImageLoadingContent::RecognizeCurrentImageText(
                 textRecognitionResult.quads().Length());
             
             
-            nsIGlobalObject* global = el->GetOwnerDocGlobal();
+            nsIGlobalObject* global = el->GetDocumentGlobal();
 
             for (const auto& quad : textRecognitionResult.quads()) {
               NotNull<ImageText*> imageText = imageTexts.AppendElement();

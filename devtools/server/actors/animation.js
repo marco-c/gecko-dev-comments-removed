@@ -71,7 +71,7 @@ exports.getAnimationTypeForLonghand = getAnimationTypeForLonghand;
 
 
 function getAnimationBrowsingContextPlayBackRateMultiplier(animation) {
-  return animation.effect.target.ownerGlobal.browsingContext
+  return animation.effect.target.documentGlobal.browsingContext
     .animationsPlayBackRateMultiplier;
 }
 
