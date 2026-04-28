@@ -1,6 +1,8 @@
 
 
 
+
+
 var compute_delta = async (i) => Promise.resolve(i / 100 || 1);
 
 var suspending_compute_delta = new WebAssembly.Suspending(

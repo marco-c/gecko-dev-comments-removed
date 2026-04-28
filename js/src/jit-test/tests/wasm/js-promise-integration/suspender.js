@@ -1,4 +1,5 @@
 
+
 var ins = wasmEvalText(`
 (module
   (func (export "w0") (param nullexternref)

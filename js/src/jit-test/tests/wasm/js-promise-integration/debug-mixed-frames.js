@@ -1,6 +1,8 @@
 
 
 
+
+
 const g1 = newGlobal({ newCompartment: true });
 const g2 = newGlobal({ sameCompartmentAs: g1 });
 const dbg = new Debugger(g1);

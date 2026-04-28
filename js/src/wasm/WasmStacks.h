@@ -152,7 +152,7 @@ class ContStack {
 
   
   SwitchTarget initialResumeTarget_{};
-  GCPtr<JSFunction*> initialResumeCallee_;
+  HeapPtr<JSFunction*> initialResumeCallee_;
 
   
   StackTarget target_{};
