@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "gtest/gtest.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/ExpandedPrincipal.h"
@@ -110,6 +108,9 @@ class MockEnterprisePoliciesService final : public nsIEnterprisePolicies {
     return NS_ERROR_NOT_IMPLEMENTED;
   }
   NS_IMETHOD MayInstallAddon(JS::Handle<JS::Value>, bool*) override {
+    return NS_ERROR_NOT_IMPLEMENTED;
+  }
+  NS_IMETHOD IsAddonRequiredByPolicy(const nsACString&, bool*) override {
     return NS_ERROR_NOT_IMPLEMENTED;
   }
   NS_IMETHOD AllowedInstallSource(nsIURI*, bool*) override {
