@@ -48,6 +48,8 @@ export default class IPProtectionContentElement extends MozLitElement {
     _messageDismissed: { type: Boolean, state: true },
   };
 
+  #prevBandwidthWarning = false;
+
   constructor() {
     super();
 
@@ -205,6 +207,16 @@ export default class IPProtectionContentElement extends MozLitElement {
     if (this.state.error) {
       this._messageDismissed = false;
     }
+
+    // Reset dismissed state when a higher bandwidth threshold is crossed.
+    if (
+      this.state.bandwidthWarning &&
+      !this.#prevBandwidthWarning &&
+      this._messageDismissed
+    ) {
+      this._messageDismissed = false;
+    }
+    this.#prevBandwidthWarning = !!this.state.bandwidthWarning;
   }
 
   messageBarTemplate() {
@@ -270,6 +282,7 @@ export default class IPProtectionContentElement extends MozLitElement {
         .bandwidthUsage=${ifDefined(this.state.bandwidthUsage)}
         .hasExclusion=${hasExclusion}
         .isActivating=${this.state.isActivating}
+        .showLocationButtonBadge=${this.state.showLocationButtonBadge}
       ></ipprotection-status-card>
     `;
   }
@@ -355,8 +368,8 @@ export default class IPProtectionContentElement extends MozLitElement {
   pausedTemplate() {
     return html`
       <ipprotection-status-box
-        headerL10nId="ipprotection-connection-status-paused-title"
-        descriptionL10nId="ipprotection-connection-status-paused-description"
+        headerL10nId="ipprotection-connection-status-paused-title-1"
+        descriptionL10nId="ipprotection-connection-status-paused-description-1"
         .descriptionL10nArgs=${JSON.stringify({
           maxUsage: this.state.bandwidthUsage.max / BANDWIDTH.BYTES_IN_GB,
         })}

@@ -479,6 +479,48 @@ add_task(async function test_IPProtectionPanel_usage_zero_remaining() {
   sandbox.restore();
 });
 
+
+
+
+add_task(async function test_location_badge_initial_state_pref_unset() {
+  Services.prefs.clearUserPref(
+    "browser.ipProtection.locationButtonBadgeDismissed"
+  );
+
+  let ipProtectionPanel = new IPProtectionPanel();
+
+  Assert.equal(
+    ipProtectionPanel.state.showLocationButtonBadge,
+    true,
+    "showLocationButtonBadge should be true when pref is not set"
+  );
+
+  ipProtectionPanel.uninit();
+});
+
+
+
+
+add_task(async function test_location_badge_initial_state_pref_set() {
+  Services.prefs.setBoolPref(
+    "browser.ipProtection.locationButtonBadgeDismissed",
+    true
+  );
+
+  let ipProtectionPanel = new IPProtectionPanel();
+
+  Assert.equal(
+    ipProtectionPanel.state.showLocationButtonBadge,
+    false,
+    "showLocationButtonBadge should be false when pref is set to true"
+  );
+
+  ipProtectionPanel.uninit();
+  Services.prefs.clearUserPref(
+    "browser.ipProtection.locationButtonBadgeDismissed"
+  );
+});
+
 function dispatchUsageEvent(max, remaining) {
   IPPProxyManager.dispatchEvent(
     new CustomEvent("IPPProxyManager:UsageChanged", {
