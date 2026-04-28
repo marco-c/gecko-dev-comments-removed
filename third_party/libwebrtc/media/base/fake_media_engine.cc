@@ -654,7 +654,9 @@ FakeVideoEngine::CreateSendChannel(
     const MediaConfig& ,
     const VideoOptions& options,
     const CryptoOptions& ,
-    VideoBitrateAllocatorFactory* ) {
+    VideoBitrateAllocatorFactory* ,
+    VideoMediaSendChannelInterface::EncoderSwitchRequestCallback
+    ) {
   std::unique_ptr<FakeVideoMediaSendChannel> ch =
       std::make_unique<FakeVideoMediaSendChannel>(options,
                                                   call->network_thread());

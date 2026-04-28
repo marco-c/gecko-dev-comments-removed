@@ -261,9 +261,15 @@ void RtpSenderBase::SetEncoderSelectorOnChannel() {
   });
 }
 
-void RtpSenderBase::SetCachedParameters(RtpParameters parameters) {
+void RtpSenderBase::SetCachedParameters(
+    std::optional<RtpParameters> parameters) {
   RTC_DCHECK_RUN_ON(signaling_thread_);
-  cached_parameters_ = std::move(parameters);
+  if (parameters.has_value()) {
+    cached_parameters_ = std::move(*parameters);
+  } else {
+    cached_parameters_.reset();
+    last_transaction_id_.reset();
+  }
 }
 
 void RtpSenderBase::SetMediaChannel(MediaSendChannelInterface* media_channel) {
@@ -383,10 +389,8 @@ RtpParameters RtpSenderBase::GetParameters() const {
           << "Cached: " << cached_filtered << "\n"
           << "Result: " << result;
     }
-    
-    
-    
-    
+    RTC_DCHECK(cached_filtered == result)
+        << "The cached value should have been equal (filtered)";
   }
 #endif
   return result;
