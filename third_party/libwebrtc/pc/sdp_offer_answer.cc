@@ -5233,13 +5233,12 @@ RTCError SdpOfferAnswerHandler::PushdownMediaDescription(
     
     
     for (const auto& [transceiver, content] : channels) {
-      std::string error;
-      bool success =
+      RTCError error =
           (source == CS_LOCAL)
-              ? transceiver->SetChannelLocalContent(content, type, error)
-              : transceiver->SetChannelRemoteContent(content, type, error);
-      if (!success) {
-        return LOG_ERROR(RTCError::InvalidParameter() << error);
+              ? transceiver->SetChannelLocalContent(content, type)
+              : transceiver->SetChannelRemoteContent(content, type);
+      if (!error.ok()) {
+        return error;
       }
     }
     
