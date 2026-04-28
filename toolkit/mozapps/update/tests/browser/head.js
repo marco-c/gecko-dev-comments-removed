@@ -960,7 +960,7 @@ function runAboutDialogUpdateTest(params, steps) {
         });
         
         is(
-          update.state,
+          update?.state,
           params.waitForUpdateState,
           "The update state value should equal " + params.waitForUpdateState
         );
@@ -1013,7 +1013,8 @@ function runAboutPrefsUpdateTest(params, steps) {
         [{ panelId }],
         async ({ panelId }) => {
           await ContentTaskUtils.waitForCondition(
-            () => content.gAppUpdater.selectedPanel?.id == panelId,
+            () =>
+              content.Preferences.getSetting("updateState").value == panelId,
             "Waiting for the expected panel ID: " + panelId,
             undefined,
             200
@@ -1024,8 +1025,11 @@ function runAboutPrefsUpdateTest(params, steps) {
             
             info(e);
           });
+          let updateStateControl =
+            content.document.querySelector("update-state");
+          await updateStateControl.updateComplete;
           is(
-            content.gAppUpdater.selectedPanel.id,
+            updateStateControl.value,
             panelId,
             "The panel ID should equal " + panelId
           );
@@ -1048,8 +1052,10 @@ function runAboutPrefsUpdateTest(params, steps) {
           tab.linkedBrowser,
           [{ panelId }],
           ({ panelId }) => {
+            let updateStateControl =
+              content.document.querySelector("update-state");
             is(
-              content.gAppUpdater.selectedPanel.id,
+              updateStateControl.value,
               panelId,
               "The panel ID should equal " + panelId
             );
@@ -1104,6 +1110,22 @@ function runAboutPrefsUpdateTest(params, steps) {
         for (let i = 0; i < downloadInfo.length; ++i) {
           let data = downloadInfo[i];
           
+          
+          
+          
+          
+          await SpecialPowers.spawn(tab.linkedBrowser, [], () => {
+            let updateStateControl =
+              content.document.querySelector("update-state");
+            content._updateTransferText = updateStateControl.transfer;
+            updateStateControl.addEventListener(
+              "update-state:downloading",
+              () => {
+                content._updateTransferText = updateStateControl.transfer;
+              }
+            );
+          });
+          
           await continueFileHandler(continueFile);
           let patch = getPatchOfType(
             data.patchType,
@@ -1141,18 +1163,12 @@ function runAboutPrefsUpdateTest(params, steps) {
             
             
             
-            let actualText = await SpecialPowers.spawn(
+            
+            let actualTransferText = await SpecialPowers.spawn(
               tab.linkedBrowser,
               [],
-              async () => {
-                const { document } = content;
-                if (document.hasPendingL10nMutations) {
-                  await ContentTaskUtils.waitForEvent(
-                    document,
-                    "L10nMutationsFinished"
-                  );
-                }
-                return document.getElementById("downloading").textContent;
+              () => {
+                return content._updateTransferText;
               }
             );
             let expectedSuffix = DownloadUtils.getTransferTotal(
@@ -1163,10 +1179,11 @@ function runAboutPrefsUpdateTest(params, steps) {
               expectedSuffix,
               "Sanity check: Expected download status text should be non-empty"
             );
-            Assert.ok(
-              actualText.endsWith(expectedSuffix),
+            Assert.equal(
+              actualTransferText,
+              expectedSuffix,
               "Download status text should end as expected: " +
-                JSON.stringify({ actualText, expectedSuffix })
+                JSON.stringify({ actualTransferText, expectedSuffix })
             );
           }
         }
@@ -1184,30 +1201,21 @@ function runAboutPrefsUpdateTest(params, steps) {
             "unsupportedSystem",
             "internalError",
           ];
+          const { document } = content;
           if (linkPanels.includes(panelId)) {
-            let { selectedPanel } = content.gAppUpdater;
+            let updateStateControl = document.querySelector("update-state");
             
             
             
-            let selector = "label.text-link";
-            
-            
-            if (selectedPanel.id == "downloadFailed") {
-              selector = "a.text-link";
-            }
-            
-            
-            
-            if (selectedPanel.id == "manualUpdate") {
-              selector = "a.manualLink";
-            }
-            if (selectedPanel.ownerDocument.hasPendingL10nMutations) {
+            if (updateStateControl.ownerDocument.hasPendingL10nMutations) {
               await ContentTaskUtils.waitForEvent(
-                selectedPanel.ownerDocument,
+                updateStateControl.ownerDocument,
                 "L10nMutationsFinished"
               );
             }
-            let link = selectedPanel.querySelector(selector);
+            let link = updateStateControl.shadowRoot
+              .querySelector("moz-box-item")
+              .querySelector("a");
             is(
               link.href,
               gDetailsURL,
@@ -1221,24 +1229,28 @@ function runAboutPrefsUpdateTest(params, steps) {
               link,
               `The panel's link should have non-empty textContent`
             );
-            let linkWrapperClone = link.parentNode.cloneNode(true);
-            linkWrapperClone.querySelector(selector).remove();
+            let label = updateStateControl.shadowRoot
+              .querySelector("moz-box-item")
+              .querySelector("#label");
+            let linkWrapperClone = label.cloneNode(true);
+            linkWrapperClone.querySelector("a").remove();
             assertNonEmptyText(
               linkWrapperClone,
-              `The panel's link should have text around the link`
+              `The panel's label should have non-empty textContent`
             );
           }
 
           let buttonPanels = ["downloadAndInstall", "apply"];
           if (buttonPanels.includes(panelId)) {
-            let { selectedPanel } = content.gAppUpdater;
-            let buttonEl = selectedPanel.querySelector("button");
+            let updateStateControl = document.querySelector("update-state");
+            let buttonEl =
+              updateStateControl.shadowRoot.querySelector("moz-box-button");
             
             
             ok(!buttonEl.disabled, "The button should be enabled");
             
             
-            if (selectedPanel.id != "apply" || forceApply) {
+            if (updateStateControl.value != "apply" || forceApply) {
               buttonEl.click();
             }
           }
@@ -1290,14 +1302,14 @@ function runAboutPrefsUpdateTest(params, steps) {
           },
           "Waiting for update state: " + params.waitForUpdateState,
           undefined,
-          200
+          400
         ).catch(e => {
           
           
           logTestInfo(e);
         });
         is(
-          update.state,
+          update?.state,
           params.waitForUpdateState,
           "The update state value should equal " + params.waitForUpdateState
         );
@@ -1317,7 +1329,9 @@ function runAboutPrefsUpdateTest(params, steps) {
 
     
     await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
-      content.document.getElementById("updatesCategory").scrollIntoView();
+      content.document
+        .querySelector('setting-group[groupid="updates"]')
+        .scrollIntoView();
     });
 
     for (let step of steps) {
