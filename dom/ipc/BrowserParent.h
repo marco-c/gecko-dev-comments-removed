@@ -557,7 +557,7 @@ class BrowserParent final : public PBrowserParent,
 
 
 
-  void SendRealMouseEvent(WidgetMouseEvent& aEvent);
+  void SendRealMouseEvent(WidgetMouseEvent& aMouseOrPointerEvent);
 
   void SendRealDragEvent(WidgetDragEvent& aEvent, uint32_t aDragAction,
                          uint32_t aDropEffect, nsIPrincipal* aPrincipal,
