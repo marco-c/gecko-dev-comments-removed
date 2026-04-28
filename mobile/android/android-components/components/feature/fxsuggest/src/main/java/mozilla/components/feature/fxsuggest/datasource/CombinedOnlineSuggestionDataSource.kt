@@ -7,7 +7,15 @@ package mozilla.components.feature.fxsuggest.datasource
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
+import kotlinx.serialization.json.Json
+import mozilla.appservices.merino.MerinoSuggestApiException
 import mozilla.components.concept.awesomebar.AwesomeBar
+import mozilla.components.feature.fxsuggest.dto.CombinedSuggestionResponseDto
+import mozilla.components.feature.fxsuggest.dto.SuggestionDto
+import mozilla.components.feature.fxsuggest.parser.FlightsSuggestionParser
+import mozilla.components.feature.fxsuggest.parser.SportsSuggestionParser
+import mozilla.components.feature.fxsuggest.parser.StocksSuggestionParser
+import mozilla.components.support.base.log.logger.Logger
 
 /**
  * Minimum length of the query that will trigger network request for fetching online suggestions.
@@ -63,6 +71,12 @@ class CombinedOnlineSuggestionDataSource(
     @Volatile
     private var pendingRequest: Pair<String, Deferred<CombinedResults>>? = null
 
+    private val json = Json { ignoreUnknownKeys = true }
+    private val stocksParser = StocksSuggestionParser()
+    private val sportsParser = SportsSuggestionParser()
+    private val flightsParser = FlightsSuggestionParser()
+    private val logger = Logger("CombinedOnlineSuggestionDataSource")
+
     /**
      * Returns suggestions for [query], making at most one network request even when called
      * concurrently by multiple providers for the same query.
@@ -87,13 +101,46 @@ class CombinedOnlineSuggestionDataSource(
         return parseResponse(body)
     }
 
-    private fun makeRequest(query: String): String? {
+    private fun makeRequest(query: String): String? = try {
         println(query)
         TODO()
+    } catch (e: MerinoSuggestApiException) {
+        when (e) {
+            is MerinoSuggestApiException.Network -> logger.error(message = "$NETWORK_ERROR_MESSAGE - ${e.message}")
+            is MerinoSuggestApiException.Other -> logger.error(message = "$UNEXPECTED_ERROR_MESSAGE - ${e.message}")
+        }
+        null
     }
 
     private fun parseResponse(body: String): CombinedResults {
-        println(body)
-        TODO()
+        return try {
+            val response = json.decodeFromString<CombinedSuggestionResponseDto>(body)
+            val winner = response.suggestions.maxByOrNull { it.score } ?: return CombinedResults.Empty
+            toResults(winner)
+        } catch (_: Exception) {
+            CombinedResults.Empty
+        }
+    }
+
+    private fun toResults(suggestion: SuggestionDto): CombinedResults {
+        val details = suggestion.customDetails ?: return CombinedResults.Empty
+
+        return when (suggestion.provider) {
+            StocksSuggestionParser.PROVIDER_NAME -> details.polygon?.let {
+                CombinedResults.Stocks(stocksParser.parse(it))
+            }
+            SportsSuggestionParser.PROVIDER_NAME -> details.sports?.let {
+                CombinedResults.Sports(sportsParser.parse(it))
+            }
+            FlightsSuggestionParser.PROVIDER_NAME -> details.flightaware?.let {
+                CombinedResults.Flights(flightsParser.parse(it))
+            }
+            else -> null
+        } ?: CombinedResults.Empty
+    }
+
+    companion object {
+        private const val NETWORK_ERROR_MESSAGE = "Network error when fetching Online Suggestions"
+        private const val UNEXPECTED_ERROR_MESSAGE = "Unexpected error when fetching Online Suggestions"
     }
 }
