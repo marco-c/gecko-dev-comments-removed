@@ -1528,16 +1528,16 @@ static nsTArray<uint8_t> BuildSEINALU(bool aInclude137, bool aInclude144) {
     nalu.AppendElement(137);  
     nalu.AppendElement(24);   
     
-    AppendU16BE(nalu, 50000);    
-    AppendU16BE(nalu, 25000);    
-    AppendU16BE(nalu, 15000);    
-    AppendU16BE(nalu, 7500);     
-    AppendU16BE(nalu, 35000);    
-    AppendU16BE(nalu, 17500);    
-    AppendU16BE(nalu, 15635);    
-    AppendU16BE(nalu, 16450);    
-    AppendU32BE(nalu, 10000000); 
-    AppendU32BE(nalu, 100);      
+    AppendU16BE(nalu, 50000);     
+    AppendU16BE(nalu, 25000);     
+    AppendU16BE(nalu, 15000);     
+    AppendU16BE(nalu, 7500);      
+    AppendU16BE(nalu, 35000);     
+    AppendU16BE(nalu, 17500);     
+    AppendU16BE(nalu, 15635);     
+    AppendU16BE(nalu, 16450);     
+    AppendU32BE(nalu, 10000000);  
+    AppendU32BE(nalu, 100);       
   }
 
   if (aInclude144) {

@@ -12,6 +12,7 @@ using namespace mozilla;
 
 static constexpr float kAV1PrimariesDivisor = 65536.0f;
 
+
 static constexpr float kAV1MaxLumDivisor = 256.0f;
 static constexpr float kAV1MinLumDivisor = 16384.0f;
 
@@ -60,16 +61,16 @@ static nsTArray<uint8_t> BuildMDCVPayload() {
   
   
   nsTArray<uint8_t> p;
-  AppendU16BE(p, 35000);    
-  AppendU16BE(p, 17500);    
-  AppendU16BE(p, 50000);    
-  AppendU16BE(p, 25000);    
-  AppendU16BE(p, 15000);    
-  AppendU16BE(p, 7500);     
-  AppendU16BE(p, 15635);    
-  AppendU16BE(p, 16450);    
-  AppendU32BE(p, 10000000); 
-  AppendU32BE(p, 100);      
+  AppendU16BE(p, 35000);     
+  AppendU16BE(p, 17500);     
+  AppendU16BE(p, 50000);     
+  AppendU16BE(p, 25000);     
+  AppendU16BE(p, 15000);     
+  AppendU16BE(p, 7500);      
+  AppendU16BE(p, 15635);     
+  AppendU16BE(p, 16450);     
+  AppendU32BE(p, 10000000);  
+  AppendU32BE(p, 100);       
   return p;
 }
 
