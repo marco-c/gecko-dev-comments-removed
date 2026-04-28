@@ -69,7 +69,7 @@
 
 #define GEMMOLOGY_DISPATCH(FUNC)                                 \
   xsimd::dispatch<SUPPORTED_ARCHS>([](auto arch, auto... args) { \
-    return gemmology::Engine<decltype(arch)>::FUNC(args...);  \
+    return gemmology::Engine<decltype(arch)>::FUNC(args...);     \
   })
 
 #define GEMMOLOGY_DISPATCH_E(FUNC)                               \
