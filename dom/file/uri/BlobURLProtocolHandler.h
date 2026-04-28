@@ -48,16 +48,10 @@ class BlobURLProtocolHandler final : public nsIProtocolHandler,
                                const nsCString& aPartitionKey,
                                nsACString& aUri);
   
-  static void AddDataEntryParent(const nsACString& aURI,
-                                 nsIPrincipal* aPrincipal,
-                                 const nsCString& aPartitionKey,
-                                 BlobImpl* aBlobImpl,
-                                 const ContentParentId& aContentParentId);
-
-  
-  static void AddDataEntryChild(const nsACString& aURI,
-                                nsIPrincipal* aPrincipal,
-                                const nsCString& aPartitionKey);
+  static void AddDataEntry(
+      const nsACString& aURI, nsIPrincipal* aPrincipal,
+      const nsCString& aPartitionKey, BlobImpl* aBlobImpl,
+      const Maybe<ContentParentId>& aContentParentId = Nothing());
 
   
   
@@ -100,8 +94,10 @@ class BlobURLProtocolHandler final : public nsIProtocolHandler,
   
   
   
-  static bool GetBlobURLPrincipal(nsIURI* aURI, const OriginAttributes& aAttrs,
-                                  nsIPrincipal** aPrincipal);
+  
+  
+  
+  static bool GetBlobURLPrincipal(nsIURI* aURI, nsIPrincipal** aPrincipal);
 
   
   
@@ -122,5 +118,16 @@ bool IsBlobURI(nsIURI* aUri);
 
 }  
 }  
+
+extern nsresult NS_GetBlobForBlobURI(nsIURI* aURI,
+                                     mozilla::dom::BlobImpl** aBlob);
+
+extern nsresult NS_GetBlobForBlobURISpec(const nsACString& aSpec,
+                                         mozilla::dom::BlobImpl** aBlob,
+                                         bool aAlsoIfRevoked = false);
+
+extern nsresult NS_SetChannelContentRangeForBlobURI(nsIChannel* aChannel,
+                                                    nsIURI* aURI,
+                                                    nsACString& aRangeHeader);
 
 #endif 

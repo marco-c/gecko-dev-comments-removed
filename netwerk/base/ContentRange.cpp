@@ -5,41 +5,48 @@
 #include "ContentRange.h"
 #include "nsContentUtils.h"
 
-mozilla::net::ContentRange::ContentRange(
-    const nsContentUtils::ParsedRange& aRangeHeader, uint64_t aSize) {
+mozilla::net::ContentRange::ContentRange(const nsACString& aRangeHeader,
+                                         uint64_t aSize)
+    : mStart(0), mEnd(0), mSize(0) {
+  auto parsed = nsContentUtils::ParseSingleRangeRequest(aRangeHeader, true);
   
   
-  MOZ_ASSERT(aRangeHeader.Start().isSome() || aRangeHeader.End().isSome());
-  
-  
-  MOZ_ASSERT(aRangeHeader.Start().isNothing() ||
-             aRangeHeader.End().isNothing() ||
-             *aRangeHeader.Start() <= *aRangeHeader.End());
+  if (!parsed) {
+    return;
+  }
 
   
   
-  if (aRangeHeader.Start().isNothing()) {
+  MOZ_ASSERT(parsed->Start().isSome() || parsed->End().isSome());
+  
+  
+  MOZ_ASSERT(parsed->Start().isNothing() || parsed->End().isNothing() ||
+             *parsed->Start() <= *parsed->End());
+
+  
+  
+  if (parsed->Start().isNothing()) {
     
-    mStart = aSize - *aRangeHeader.End();
+    mStart = aSize - *parsed->End();
 
     
-    mEnd = mStart + *aRangeHeader.End() - 1;
+    mEnd = mStart + *parsed->End() - 1;
 
     
   } else {
     
     
-    if (*aRangeHeader.Start() >= aSize) {
+    if (*parsed->Start() >= aSize) {
       return;
     }
-    mStart = *aRangeHeader.Start();
+    mStart = *parsed->Start();
 
     
     
-    if (aRangeHeader.End().isNothing() || *aRangeHeader.End() >= aSize) {
+    if (parsed->End().isNothing() || *parsed->End() >= aSize) {
       mEnd = aSize - 1;
     } else {
-      mEnd = *aRangeHeader.End();
+      mEnd = *parsed->End();
     }
   }
   mSize = aSize;

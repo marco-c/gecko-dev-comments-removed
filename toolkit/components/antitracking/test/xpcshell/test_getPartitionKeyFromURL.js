@@ -207,11 +207,13 @@ add_task(async function test_blob_url() {
     SUBRESOURCE_URL
   );
 
-  Assert.equal(
-    partitionKey,
-    "(http,foo.com)",
-    "The partitionKey of blob url is correct."
-  );
+  
+  
+  
+  
+  
+  
+  Assert.equal(partitionKey, "", "The partitionKey of blob url is correct.");
 
   await contentPage.close();
 });

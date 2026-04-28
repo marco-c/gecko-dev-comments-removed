@@ -60,7 +60,7 @@ class BodyConsumer final : public AbortFollower,
   static already_AddRefed<Promise> Create(
       nsIGlobalObject* aGlobal, nsISerialEventTarget* aMainThreadEventTarget,
       nsIInputStream* aBodyStream, AbortSignalImpl* aSignalImpl,
-      ConsumeType aType, BlobImpl* aBodyBlobImpl,
+      ConsumeType aType, const nsACString& aBodyBlobURISpec,
       const nsAString& aBodyLocalPath, const nsACString& aBodyMimeType,
       const nsACString& aMixedCaseMimeType,
       MutableBlobStorage::MutableBlobStorageType aBlobStorageType,
@@ -94,7 +94,8 @@ class BodyConsumer final : public AbortFollower,
  private:
   BodyConsumer(nsISerialEventTarget* aMainThreadEventTarget,
                nsIGlobalObject* aGlobalObject, nsIInputStream* aBodyStream,
-               Promise* aPromise, ConsumeType aType, BlobImpl* aBodyBlobImpl,
+               Promise* aPromise, ConsumeType aType,
+               const nsACString& aBodyBlobURISpec,
                const nsAString& aBodyLocalPath, const nsACString& aBodyMimeType,
                const nsACString& aMixedCaseMimeType,
                MutableBlobStorage::MutableBlobStorageType aBlobStorageType);
@@ -126,7 +127,7 @@ class BodyConsumer final : public AbortFollower,
   nsCString mBodyMimeType;
   nsCString mMixedCaseMimeType;
 
-  RefPtr<BlobImpl> mBodyBlobImpl;
+  nsCString mBodyBlobURISpec;
   nsString mBodyLocalPath;
 
   nsCOMPtr<nsIGlobalObject> mGlobal;
