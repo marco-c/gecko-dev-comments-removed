@@ -56,8 +56,6 @@ class VCMTiming {
     TimeDelta current_delay;
   };
 
-  static constexpr TimeDelta kDefaultRenderDelay = TimeDelta::Millis(10);
-
   VCMTiming(Clock* clock, const FieldTrialsView& field_trials);
   virtual ~VCMTiming() = default;
 
