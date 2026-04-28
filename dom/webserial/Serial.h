@@ -19,6 +19,7 @@ class Promise;
 class SerialManagerChild;
 class SerialPort;
 struct SerialPortRequestOptions;
+struct SerialPortFilter;
 
 class Serial final : public DOMEventTargetHelper, public SupportsWeakPtr {
  public:
@@ -38,6 +39,13 @@ class Serial final : public DOMEventTargetHelper, public SupportsWeakPtr {
 
   IMPL_EVENT_HANDLER(connect)
   IMPL_EVENT_HANDLER(disconnect)
+
+  
+  
+  
+  
+  static bool ApplyPortFilters(nsTArray<IPCSerialPortInfo>& aPorts,
+                               const Sequence<SerialPortFilter>& aFilters);
 
   void Shutdown();
 
@@ -60,11 +68,7 @@ class Serial final : public DOMEventTargetHelper, public SupportsWeakPtr {
 
   
   
-  
-  
-  RefPtr<SerialPort> GetOrCreatePort(
-      const IPCSerialPortInfo& aInfo,
-      mozilla::ipc::Endpoint<PSerialPortChild>&& aEndpoint);
+  RefPtr<SerialPort> GetOrCreatePort(const IPCSerialPortInfo& aInfo);
 
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void ForgetPort(const nsAString& aPortId);
@@ -74,17 +78,11 @@ class Serial final : public DOMEventTargetHelper, public SupportsWeakPtr {
 
   bool AutoselectPorts() const { return mAutoselectPorts; }
 
-  static bool IsValidBluetoothUUID(const nsAString& aString);
-
-  
-  
-  
-  static bool ValidatePortFilter(bool aHasUsbVendorId, bool aHasUsbProductId,
-                                 bool aHasBluetoothServiceClassId,
-                                 nsACString& aFailureReason);
-
  private:
   ~Serial() override;
+
+  already_AddRefed<Promise> RequestPortWithTestingAutoselect(
+      const SerialPortRequestOptions& aOptions, RefPtr<Promise> aPromise);
 
   
   
