@@ -257,11 +257,13 @@ class LoadedScript : public nsIMemoryReporter {
     mDataType = DataType::eSerializedStencil;
   }
 
-  void ConvertToCachedStencil(mozilla::dom::ReferrerPolicy aReferrerPolicy,
+  void ConvertToCachedStencil(JS::Stencil* aStencil,
+                              mozilla::dom::ReferrerPolicy aReferrerPolicy,
                               nsIURI* aBaseURL) {
-    MOZ_ASSERT(HasStencil());
+    MOZ_ASSERT(!IsCachedStencil());
     SetUnknownDataType();
     mDataType = DataType::eCachedStencil;
+    mCachedStencil = aStencil;
     mCachedReferrerPolicy = aReferrerPolicy;
     mCachedBaseURL = aBaseURL;
   }
@@ -385,21 +387,10 @@ class LoadedScript : public nsIMemoryReporter {
 
   
 
-  bool HasStencil() const { return mStencil; }
-
-  Stencil* GetStencil() const {
-    MOZ_ASSERT(!IsUnknownDataType());
-    MOZ_ASSERT(HasStencil());
-    return mStencil;
+  Stencil* GetCachedStencil() const {
+    MOZ_ASSERT(IsCachedStencil());
+    return mCachedStencil;
   }
-
-  void SetStencil(Stencil* aStencil) {
-    MOZ_ASSERT(aStencil);
-    MOZ_ASSERT(!HasStencil());
-    mStencil = aStencil;
-  }
-
-  void ClearStencil() { mStencil = nullptr; }
 
   
 
@@ -561,7 +552,7 @@ class LoadedScript : public nsIMemoryReporter {
   TranscodeBuffer mSRIAndSerializedStencil;
 
   
-  RefPtr<Stencil> mStencil;
+  RefPtr<Stencil> mCachedStencil;
 
   
   
