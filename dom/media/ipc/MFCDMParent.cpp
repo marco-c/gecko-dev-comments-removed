@@ -1013,8 +1013,10 @@ void MFCDMParent::GetCapabilities(const nsString& aKeySystem,
   }
 
   
+  
   if (isHardwareDecryption && gfx::gfxVars::IsInitialized() &&
-      !gfx::gfxVars::UseWMFHWDWM()) {
+      !gfx::gfxVars::UseWMFHWDWM() &&
+      !StaticPrefs::media_eme_wmf_use_mock_cdm_for_external_cdms()) {
     MFCDM_PARENT_SLOG("Block HWDRM for %s",
                       NS_ConvertUTF16toUTF8(aKeySystem).get());
     return;
