@@ -32,6 +32,7 @@
 #include "mozilla/AsyncEventDispatcher.h"
 #include "nsICachingChannel.h"
 #include "nsHttp.h"
+#include "mozilla/net/CacheControlParser.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -208,13 +209,22 @@ nsPrefetchNode::OnStartRequest(nsIRequest* aRequest) {
   
   
   
+  
+  
+  
   uint32_t expTime;
   if (NS_SUCCEEDED(cacheInfoChannel->GetCacheTokenExpirationTime(&expTime))) {
     if (mozilla::net::NowInSeconds() >= expTime) {
-      LOG(
-          ("document cannot be reused from cache; "
-           "canceling prefetch\n"));
-      return NS_BINDING_ABORTED;
+      nsAutoCString cacheControlHeader, expires;
+      (void)httpChannel->GetResponseHeader("Cache-Control"_ns,
+                                           cacheControlHeader);
+      (void)httpChannel->GetResponseHeader("Expires"_ns, expires);
+      mozilla::net::CacheControlParser ccParser(cacheControlHeader);
+      uint32_t maxAge;
+      if (ccParser.MaxAge(&maxAge) || !expires.IsEmpty()) {
+        LOG(("document cannot be reused from cache; canceling prefetch\n"));
+        return NS_BINDING_ABORTED;
+      }
     }
   }
 
