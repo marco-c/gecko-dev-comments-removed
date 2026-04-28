@@ -806,8 +806,7 @@ fn corrupted_initial() {
         .iter()
         .enumerate()
         .rev()
-        .skip(1) 
-        .find(|&(_, &v)| v != Connection::SCONE_INDICATION[0]) 
+        .find(|&(_, &v)| v != 0)
         .unwrap();
     corrupted[idx] ^= 0x76;
 

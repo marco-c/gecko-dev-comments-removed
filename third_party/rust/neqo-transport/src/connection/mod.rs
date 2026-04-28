@@ -2689,7 +2689,9 @@ impl Connection {
                 path.borrow().pmtud().probe_size()
             } else {
                 profile.limit()
-                    - if space == PacketNumberSpace::Initial {
+                    - if space == PacketNumberSpace::Initial
+                        && self.conn_params.scone_enabled()
+                    {
                         
                         
                         
@@ -2857,16 +2859,20 @@ impl Connection {
         );
         let pad_amount = profile.limit() - encoder.len();
         initial.track_padding(pad_amount);
-        
-        
-        if pad_amount >= Self::SCONE_INDICATION.len() {
-            encoder.pad_to(
-                profile.limit() - Self::SCONE_INDICATION.len() + 1,
-                Self::SCONE_INDICATION[0],
-            );
-            encoder.encode(&Self::SCONE_INDICATION[1..]);
+        if self.conn_params.scone_enabled() {
+            
+            
+            if pad_amount >= Self::SCONE_INDICATION.len() {
+                encoder.pad_to(
+                    profile.limit() - Self::SCONE_INDICATION.len() + 1,
+                    Self::SCONE_INDICATION[0],
+                );
+                encoder.encode(&Self::SCONE_INDICATION[1..]);
+            } else {
+                encoder.pad_to(profile.limit(), Self::SCONE_INDICATION[0]);
+            }
         } else {
-            encoder.pad_to(profile.limit(), Self::SCONE_INDICATION[0]);
+            encoder.pad_to(profile.limit(), 0);
         }
     }
 
