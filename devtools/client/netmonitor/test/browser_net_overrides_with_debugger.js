@@ -53,8 +53,11 @@ add_task(async function setOverrideInDebugger_removeOverrideInNetmonitor() {
     findSourceNodeWithText(dbg, "script.js"),
     "#node-menu-overrides"
   );
-  await writeTextContentToPath(OVERRIDDEN_SCRIPT, path);
   await waitForSetOverride;
+
+  
+  
+  await writeTextContentToPath(OVERRIDDEN_SCRIPT, path);
 
   overrides = [...findAllElementsWithSelector(dbg, ".has-network-override")];
   is(overrides.length, 1, "An override is now displayed in the debugger");
