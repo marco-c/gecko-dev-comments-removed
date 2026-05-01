@@ -7,6 +7,7 @@
 #include <windows.h>
 
 #include "mozilla/Logging.h"
+#include "mozilla/UniquePtrExtensions.h"  
 #include "mozilla/Vector.h"
 #include "nsExceptionHandler.h"
 #include "nsStringFwd.h"

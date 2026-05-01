@@ -2,11 +2,7 @@
 
 
 
-
-
 #include "nsExceptionHandler.h"
-
-using mozilla::UniqueFileHandle;
 
 namespace CrashReporter {
 
@@ -211,9 +207,8 @@ void SetNotificationPipeForChild(FileHandle breakpadFd,
                                  FileHandle crashHelperFd) {}
 #endif  
 
-CrashPipeType GetChildNotificationPipe() { return nullptr; }
-
-bool RegisterChildIPCChannel(mozilla::geckoargs::ChildProcessArgs& aArgs) {
+bool RegisterChildIPCChannel(mozilla::geckoargs::ChildProcessArgs& aArgs,
+                             GeckoChildID aID) {
   return false;
 }
 
