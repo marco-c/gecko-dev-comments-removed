@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "FileBlockCache.h"
 
 #include <algorithm>
@@ -181,15 +179,11 @@ void FileBlockCache::Close() {
   
   
   
-  
   nsresult rv = thread->Dispatch(NS_NewRunnableFunction("FileBlockCache::Close",
-                                                        [thread, fd] {
+                                                        [fd] {
                                                           if (fd) {
                                                             CloseFD(fd);
                                                           }
-                                                          
-                                                          
-                                                          
                                                         }),
                                  NS_DISPATCH_EVENT_MAY_BLOCK);
   NS_ENSURE_SUCCESS_VOID(rv);
