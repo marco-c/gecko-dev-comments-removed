@@ -18,6 +18,7 @@
 #include "mozilla/intl/Calendar.h"
 #include "mozilla/intl/DateTimeFormat.h"
 #include "mozilla/intl/DateTimePatternGenerator.h"
+#include "mozilla/intl/Locale.h"
 
 namespace mozilla::intl {
 
@@ -635,13 +636,8 @@ Result<UniquePtr<Calendar>, ICUError> DateTimeFormat::CloneCalendar(
 
 class LanguageRegionLocaleId {
   
-  static constexpr size_t LanguageLength = 8;
-
-  
-  static constexpr size_t RegionLength = 3;
-
-  
-  static constexpr size_t LRLength = LanguageLength + RegionLength + 1;
+  static constexpr size_t LRLength =
+      LanguageTagLimits::LanguageLength + LanguageTagLimits::RegionLength + 1;
 
   
   char mLocale[LRLength + 1] = {};
@@ -650,38 +646,34 @@ class LanguageRegionLocaleId {
   char* mRegion = nullptr;
 
  public:
-  LanguageRegionLocaleId(Span<const char> aLanguage,
-                         Maybe<Span<const char>> aRegion);
+  LanguageRegionLocaleId(const LanguageSubtag& aLanguage,
+                         const RegionSubtag& aRegion);
 
   const char* languageRegion() const { return mLocale; }
   const char* region() const { return mRegion; }
 };
 
-LanguageRegionLocaleId::LanguageRegionLocaleId(
-    Span<const char> aLanguage, Maybe<Span<const char>> aRegion) {
-  MOZ_RELEASE_ASSERT(aLanguage.Length() <= LanguageLength);
-  MOZ_RELEASE_ASSERT(!aRegion || aRegion->Length() <= RegionLength);
+LanguageRegionLocaleId::LanguageRegionLocaleId(const LanguageSubtag& aLanguage,
+                                               const RegionSubtag& aRegion) {
+  auto language = aLanguage.Span();
+  MOZ_ASSERT(IsStructurallyValidLanguageTag(language));
 
-  size_t languageLength = aLanguage.Length();
+  auto region = aRegion.Span();
+  MOZ_ASSERT(IsStructurallyValidRegionTag(region));
 
-  std::memcpy(mLocale, aLanguage.Elements(), languageLength);
+  char* out = std::copy_n(language.Elements(), language.Length(), mLocale);
 
   
-  mLocale[languageLength] = '_';
+  *out++ = '_';
 
-  mRegion = mLocale + languageLength + 1;
-  if (aRegion) {
-    std::memcpy(mRegion, aRegion->Elements(), aRegion->Length());
-  } else {
-    
-    std::strcpy(mRegion, "001");
-  }
+  mRegion = out;
+  std::copy_n(region.Elements(), region.Length(), mRegion);
 }
 
 
 Result<DateTimeFormat::HourCyclesVector, ICUError>
-DateTimeFormat::GetAllowedHourCycles(Span<const char> aLanguage,
-                                     Maybe<Span<const char>> aRegion) {
+DateTimeFormat::GetAllowedHourCycles(const LanguageSubtag& aLanguage,
+                                     const RegionSubtag& aRegion) {
   
   
   
@@ -692,6 +684,8 @@ DateTimeFormat::GetAllowedHourCycles(Span<const char> aLanguage,
   
   
   
+
+  LanguageRegionLocaleId localeId(aLanguage, aRegion);
 
   HourCyclesVector result;
 
@@ -699,8 +693,6 @@ DateTimeFormat::GetAllowedHourCycles(Span<const char> aLanguage,
   
   
   MOZ_ALWAYS_TRUE(result.reserve(HourCyclesVector::InlineLength));
-
-  LanguageRegionLocaleId localeId(aLanguage, aRegion);
 
   
   UErrorCode status = U_ZERO_ERROR;
@@ -729,8 +721,6 @@ DateTimeFormat::GetAllowedHourCycles(Span<const char> aLanguage,
     hclocale = ures_getByKey(timeData, localeId.region(), nullptr, &status);
   }
   if (status == U_MISSING_RESOURCE_ERROR) {
-    
-    result.infallibleAppend(HourCycle::H23);
     return result;
   }
   if (U_FAILURE(status)) {

@@ -3,11 +3,11 @@
 
 #ifndef intl_components_DateTimeFormat_h_
 #define intl_components_DateTimeFormat_h_
-#include <functional>
 #include "unicode/udat.h"
 
 #include "mozilla/intl/ICU4CGlue.h"
 #include "mozilla/intl/ICUError.h"
+#include "mozilla/intl/Locale.h"
 
 #include "mozilla/intl/DateTimePart.h"
 #include "mozilla/intl/DateTimePatternGenerator.h"
@@ -495,13 +495,8 @@ class DateTimeFormat final {
   
 
 
-
-
-
-
-
   static Result<HourCyclesVector, ICUError> GetAllowedHourCycles(
-      Span<const char> aLanguage, Maybe<Span<const char>> aRegion);
+      const LanguageSubtag& aLanguage, const RegionSubtag& aRegion);
 
   
 
