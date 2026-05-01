@@ -2188,6 +2188,10 @@ nsresult BrowsingContext::CheckFramebusting(nsDocShellLoadState* aLoadState) {
     return NS_OK;
   }
 
+  if (XRE_IsParentProcess()) {
+    return NS_OK;
+  }
+
   
   if (!IsTop()) {
     return NS_OK;
@@ -2197,32 +2201,14 @@ nsresult BrowsingContext::CheckFramebusting(nsDocShellLoadState* aLoadState) {
     return NS_OK;
   }
 
-  if (aLoadState->LoadIsFromSessionHistory()) {
-    return NS_OK;
-  }
-
   const auto& sourceBC = aLoadState->SourceBrowsingContext();
   if (sourceBC.IsNull()) {
     return NS_OK;
   }
 
   if (BrowsingContext* bc = sourceBC.GetMaybeDiscarded()) {
-    
-    
-    if (bc->BrowserId() != BrowserId()) {
+    if (bc->IsFramebustingAllowed(this)) {
       return NS_OK;
-    }
-
-    if (bc->GetCurrentWindowContext() &&
-        bc->GetCurrentWindowContext()->GetIsFramebustingAllowed()) {
-      return NS_OK;
-    }
-
-    for (auto* context = bc->GetCurrentWindowContext(); context;
-         context = context->GetParentWindowContext()) {
-      if (context->CanFramebust()) {
-        return NS_OK;
-      }
     }
 
     if (bc->GetDOMWindow()) {
@@ -2247,25 +2233,43 @@ nsresult BrowsingContext::CheckFramebusting(nsDocShellLoadState* aLoadState) {
   return NS_ERROR_DOM_SECURITY_ERR;
 }
 
-bool BrowsingContext::ComputeIsFramebustingAllowed() {
-  MOZ_ASSERT(IsInProcess());
+bool BrowsingContext::IsFramebustingAllowed(BrowsingContext* aTarget) {
+  MOZ_ASSERT(aTarget->IsTop());
 
-  if (IsTop()) {
+  if (aTarget->BrowserId() == BrowserId()) {
+    for (auto* context = GetCurrentWindowContext(); context;
+         context = context->GetParentWindowContext()) {
+      if (context->CanFramebust()) {
+        return true;
+      }
+    }
+
+    return IsFramebustingAllowedInner();
+  }
+
+  
+  
+  return true;
+}
+
+bool BrowsingContext::IsFramebustingAllowedInner() {
+  if (IsInProcess() && SameOriginWithTop()) {
     return true;
   }
 
-  if (SameOriginWithTop()) {
-    return true;
-  }
-
   
   
   
   
-  uint32_t sandboxFlags = GetSandboxFlags();
-  if (sandboxFlags && !(sandboxFlags & SANDBOXED_TOPLEVEL_NAVIGATION)) {
-    return GetParentWindowContext() &&
-           GetParentWindowContext()->GetIsFramebustingAllowed();
+  Document* doc;
+  nsIChannel* channel;
+  if ((doc = GetExtantDocument()) && (channel = doc->GetChannel())) {
+    nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
+    uint32_t sandboxFlags = loadInfo->GetSandboxFlags();
+    if (sandboxFlags && !(sandboxFlags & SANDBOXED_TOPLEVEL_NAVIGATION)) {
+      BrowsingContext* parent = GetParent();
+      return !parent || parent->IsFramebustingAllowedInner();
+    }
   }
 
   return false;
