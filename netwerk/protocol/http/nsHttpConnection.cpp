@@ -569,17 +569,8 @@ nsresult nsHttpConnection::Activate(nsAHttpTransaction* trans, uint32_t caps,
   if (httpTrans && httpTrans->Connection() && !mConnInfo->UsingProxy()) {
     NetAddr peerAddr;
     httpTrans->Connection()->GetPeerAddr(&peerAddr);
-    auto addrSpace = peerAddr.GetIpAddressSpace();
-    
-    
-    
-    bool deferPrivate = mConnInfo->FirstHopSSL() &&
-                        StaticPrefs::network_lna_defer_https_check() &&
-                        !mTlsHandshaker->NPNComplete();
-    bool checkNow =
-        addrSpace == nsILoadInfo::IPAddressSpace::Local ||
-        (addrSpace == nsILoadInfo::IPAddressSpace::Private && !deferPrivate);
-    if (checkNow && !httpTrans->AllowedToConnectToIpAddressSpace(addrSpace)) {
+    if (!httpTrans->AllowedToConnectToIpAddressSpace(
+            peerAddr.GetIpAddressSpace())) {
       mSocketOutCondition = NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED;
       CloseTransaction(mTransaction, mSocketOutCondition);
       return mSocketOutCondition;
@@ -2522,35 +2513,6 @@ void nsHttpConnection::HandshakeDoneInternal() {
       mTransaction->Close(NS_ERROR_NET_RESET);
     }
     return;
-  }
-
-  
-  
-  
-  
-  
-  
-  if (mTransaction && mConnInfo->FirstHopSSL() && !mConnInfo->UsingProxy() &&
-      StaticPrefs::network_lna_blocking() &&
-      StaticPrefs::network_lna_defer_https_check()) {
-    nsHttpTransaction* httpTrans = mTransaction->QueryHttpTransaction();
-    if (httpTrans) {
-      NetAddr peerAddr;
-      if (NS_SUCCEEDED(GetPeerAddr(&peerAddr))) {
-        auto addrSpace = peerAddr.GetIpAddressSpace();
-        if (addrSpace == nsILoadInfo::IPAddressSpace::Private &&
-            !httpTrans->AllowedToConnectToIpAddressSpace(addrSpace)) {
-          DontReuse();
-          mTransaction->Close(NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED);
-          
-          
-          
-          mTransaction = nullptr;
-          mTlsHandshaker->FinishNPNSetup(true, true);
-          return;
-        }
-      }
-    }
   }
 
   bool earlyDataAccepted = false;
