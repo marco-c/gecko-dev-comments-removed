@@ -1064,14 +1064,6 @@ static void RecordZeroLengthEvent(bool aIsSync, const nsCString& aSpec,
       return;
     }
 
-    
-    
-    if (fileName.EqualsLiteral(
-            "omni.ja!/chrome/browser/search-extensions/google/favicon.ico") &&
-        aStatus == NS_BINDING_ABORTED) {
-      return;
-    }
-
     glean::zero_byte_load::LoadOthersExtra extra = {
         .cancelReason = Some(aCanceledReason),
         .cancelled = Some(aCanceled),
