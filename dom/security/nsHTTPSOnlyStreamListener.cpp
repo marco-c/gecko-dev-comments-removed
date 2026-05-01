@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsHTTPSOnlyStreamListener.h"
 
 #include "NSSErrorsService.h"
@@ -237,6 +235,7 @@ void nsHTTPSOnlyStreamListener::RecordUpgradeTelemetry(nsIRequest* request,
       case ExtContentPolicy::TYPE_WEB_TRANSPORT:
       case ExtContentPolicy::TYPE_WEB_IDENTITY:
       case ExtContentPolicy::TYPE_JSON:
+      case ExtContentPolicy::TYPE_TEXT:
         break;
         
     }
