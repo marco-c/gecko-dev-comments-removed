@@ -280,16 +280,6 @@ bool ValidationRequired(bool isForcedValid,
   }
 
   
-  
-  
-  
-  if (isForcedValid && (!cachedResponseHead->ExpiresInPast() ||
-                        !cachedResponseHead->MustValidateIfExpired())) {
-    LOG(("NOT validating based on isForcedValid being true.\n"));
-    return false;
-  }
-
-  
   if (loadFlags & nsIRequest::LOAD_FROM_CACHE || allowStaleCacheContent) {
     LOG(("NOT validating based on LOAD_FROM_CACHE load flag\n"));
     return false;
@@ -302,6 +292,16 @@ bool ValidationRequired(bool isForcedValid,
       !isImmutable) {
     LOG(("Validating based on VALIDATE_ALWAYS load flag\n"));
     return true;
+  }
+
+  
+  
+  
+  
+  if (isForcedValid && (!cachedResponseHead->ExpiresInPast() ||
+                        !cachedResponseHead->MustValidateIfExpired())) {
+    LOG(("NOT validating based on isForcedValid being true.\n"));
+    return false;
   }
 
   

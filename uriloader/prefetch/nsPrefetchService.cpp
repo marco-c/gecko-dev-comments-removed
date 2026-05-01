@@ -204,16 +204,15 @@ nsPrefetchNode::OnStartRequest(nsIRequest* aRequest) {
     return NS_BINDING_ABORTED;
   }
 
-  
-  
-  
-  
   uint32_t expTime;
   if (NS_SUCCEEDED(cacheInfoChannel->GetCacheTokenExpirationTime(&expTime))) {
-    if (mozilla::net::NowInSeconds() >= expTime) {
-      LOG(
-          ("document cannot be reused from cache; "
-           "canceling prefetch\n"));
+    
+    
+    
+    
+    
+    if (expTime == 0) {
+      LOG(("document cannot be reused from cache; canceling prefetch\n"));
       return NS_BINDING_ABORTED;
     }
   }
