@@ -44,7 +44,7 @@ class IDecodingTask : public IResumable {
   void Resume() override;
 
  protected:
-  virtual ~IDecodingTask() {}
+  virtual ~IDecodingTask() = default;
 
   
   void NotifyProgress(NotNull<RasterImage*> aImage, NotNull<Decoder*> aDecoder);
@@ -75,7 +75,7 @@ class MetadataDecodingTask final : public IDecodingTask {
   TaskPriority Priority() const override { return TaskPriority::eHigh; }
 
  private:
-  virtual ~MetadataDecodingTask() {}
+  virtual ~MetadataDecodingTask() = default;
 
   
   Mutex mMutex MOZ_UNANNOTATED;
@@ -101,7 +101,7 @@ class AnonymousDecodingTask : public IDecodingTask {
   void Resume() override;
 
  protected:
-  virtual ~AnonymousDecodingTask() {}
+  virtual ~AnonymousDecodingTask() = default;
 
   NotNull<RefPtr<Decoder>> mDecoder;
   bool mResumable;

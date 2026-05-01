@@ -37,7 +37,7 @@ enum class ICOState {
 
 class nsICODecoder : public Decoder {
  public:
-  virtual ~nsICODecoder() {}
+  virtual ~nsICODecoder() = default;
 
   
   size_t FirstResourceOffset() const;

@@ -71,7 +71,7 @@ class AnimationFrameBuffer {
         mRedecodeError(aOther.mRedecodeError),
         mRecycling(aOther.mRecycling) {}
 
-  virtual ~AnimationFrameBuffer() {}
+  virtual ~AnimationFrameBuffer() = default;
 
   
 

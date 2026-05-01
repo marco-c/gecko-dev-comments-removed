@@ -84,7 +84,7 @@ class ObserverTable : public nsTHashMap<nsPtrHashKey<IProgressObserver>,
   }
 
  private:
-  ~ObserverTable() {}
+  ~ObserverTable() = default;
 };
 
 
@@ -98,12 +98,13 @@ class ObserverTable : public nsTHashMap<nsPtrHashKey<IProgressObserver>,
 
 
 class ProgressTracker : public mozilla::SupportsWeakPtr {
-  virtual ~ProgressTracker() {}
+  virtual ~ProgressTracker() = default;
 
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(ProgressTracker)
 
   ProgressTracker();
+  ProgressTracker(const ProgressTracker& aOther) = delete;
 
   bool HasImage() const {
     MutexAutoLock lock(mMutex);
@@ -188,8 +189,6 @@ class ProgressTracker : public mozilla::SupportsWeakPtr {
   friend class AsyncNotifyRunnable;
   friend class AsyncNotifyCurrentStateRunnable;
   friend class ImageFactory;
-
-  ProgressTracker(const ProgressTracker& aOther) = delete;
 
   
   void SetImage(Image* aImage);
