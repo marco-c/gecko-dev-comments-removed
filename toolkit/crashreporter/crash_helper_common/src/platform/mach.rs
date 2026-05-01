@@ -13,7 +13,10 @@ use mach2::{
         MACH_MSG_TYPE_COPY_SEND, MACH_MSG_TYPE_MAKE_SEND, MACH_RCV_MSG, MACH_RCV_TIMEOUT,
         MACH_SEND_MSG, MACH_SEND_TIMEOUT,
     },
-    port::{mach_port_name_t, mach_port_t, MACH_PORT_NULL, MACH_PORT_RIGHT_RECEIVE},
+    port::{
+        mach_port_name_t, mach_port_t, MACH_PORT_NULL, MACH_PORT_RIGHT_RECEIVE,
+        MACH_PORT_RIGHT_SEND,
+    },
     traps::mach_task_self,
 };
 use nix::errno::Errno;
@@ -32,7 +35,7 @@ pub(crate) const CHILD_RENDEZVOUS_ANCILLARY_DATA_LEN: usize = 1;
 
 pub type Result<T> = result::Result<T, PlatformError>;
 
-pub type ProcessHandle = ();
+pub type ProcessHandle = SendRight;
 
 #[derive(Error, Debug)]
 pub enum PlatformError {
@@ -167,12 +170,29 @@ impl Drop for SendRight {
         
         
         
+
+        
         let rv = unsafe { mach_port_deallocate(mach_task_self(), self.0) };
         assert!(
             rv == KERN_SUCCESS,
             "Could not dispose of a send right {}, error {rv}",
             self.0,
         );
+    }
+}
+
+impl Clone for SendRight {
+    fn clone(&self) -> Self {
+        
+        
+        let rv = unsafe { mach_port_mod_refs(mach_task_self(), self.0, MACH_PORT_RIGHT_SEND, 1) };
+        assert!(
+            rv == KERN_SUCCESS,
+            "Could not increase reference count of a send right {}, error {rv}",
+            self.0,
+        );
+
+        SendRight(self.0)
     }
 }
 
