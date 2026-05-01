@@ -397,14 +397,22 @@ Result<Span<const char>, ICUError> TimeZone::GetTZDataVersion() {
 }
 
 Result<SpanEnumeration<char>, ICUError> TimeZone::GetAvailableTimeZones(
-    const char* aRegion) {
+    const RegionSubtag& aRegion) {
+  auto regionSpan = aRegion.Span();
+  MOZ_ASSERT(IsStructurallyValidRegionTag(regionSpan));
+
+  
+  char region[LanguageTagLimits::RegionLength + 1] = {};
+  std::copy_n(regionSpan.Elements(), regionSpan.Length(), region);
+
+  
   
   
   
   
   UErrorCode status = U_ZERO_ERROR;
   UEnumeration* enumeration = ucal_openTimeZoneIDEnumeration(
-      UCAL_ZONE_TYPE_ANY, aRegion, nullptr, &status);
+      UCAL_ZONE_TYPE_CANONICAL, region, nullptr, &status);
   if (U_FAILURE(status)) {
     return Err(ToICUError(status));
   }
