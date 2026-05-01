@@ -59,6 +59,7 @@
 #include "wasm/WasmModule.h"
 #include "wasm/WasmModuleTypes.h"
 #include "wasm/WasmPI.h"
+#include "wasm/WasmStacks.h"
 #include "wasm/WasmStubs.h"
 #include "wasm/WasmTypeDef.h"
 #include "wasm/WasmValType.h"
@@ -248,7 +249,7 @@ bool Instance::callImport(JSContext* cx, uint32_t funcImportIndex,
 
 #ifdef ENABLE_WASM_JSPI
   
-  MOZ_ASSERT(!cx->wasm().onSuspendableStack());
+  MOZ_ASSERT(!cx->wasm().onContStack());
 #endif
 
   FuncImportInstanceData& instanceFuncImport =
@@ -922,13 +923,15 @@ static int32_t MemoryInit(JSContext* cx, Instance* instance,
     return -1;
   }
 
-  if (&srcTable == &dstTable && dstOffset > srcOffset) {
+  if (srcTable.get() == dstTable.get() && dstOffset == srcOffset) {
+    
+  } else if (dstOffset > srcOffset) {
+    
     for (uint32_t i = len; i > 0; i--) {
       dstTable->copy(*srcTable, dstOffset + (i - 1), srcOffset + (i - 1));
     }
-  } else if (&srcTable == &dstTable && dstOffset == srcOffset) {
-    
   } else {
+    
     for (uint32_t i = 0; i < len; i++) {
       dstTable->copy(*srcTable, dstOffset + i, srcOffset + i);
     }
@@ -1896,6 +1899,39 @@ static bool ArrayCopyFromElem(JSContext* cx, Handle<WasmArrayObject*> arrayObj,
   return 0;
 }
 
+#ifdef ENABLE_WASM_JSPI
+
+ void* Instance::contNew(Instance* instance, void* funcRef) {
+  MOZ_ASSERT(SASigContNew.failureMode == FailureMode::FailOnNullPtr);
+  JSContext* cx = instance->cx();
+  Rooted<JSFunction*> target(cx, static_cast<JSFunction*>(funcRef));
+  if (!target) {
+    ReportTrapError(cx, JSMSG_WASM_DEREF_NULL);
+    return nullptr;
+  }
+  MOZ_ASSERT(target->isWasm());
+
+  void* stub = instance->code().sharedStubs().codeBase +
+               instance->code().contBaseFrameOffset();
+  ContObject* cont = ContObject::create(cx, target, stub);
+  return AnyRef::fromJSObjectOrNull(cont).forCompiledCode();
+}
+
+ void* Instance::contNewEmpty(Instance* instance) {
+  MOZ_ASSERT(SASigContNewEmpty.failureMode == FailureMode::FailOnNullPtr);
+  JSContext* cx = instance->cx();
+  ContObject* cont = ContObject::createEmpty(cx);
+  return AnyRef::fromJSObjectOrNull(cont).forCompiledCode();
+}
+
+ void Instance::contUnwind(Instance* instance,
+                                       wasm::Handlers* handlers) {
+  MOZ_ASSERT(SASigContUnwind.failureMode == FailureMode::Infallible);
+  ContStack::unwind(instance->cx(), handlers);
+}
+
+#endif  
+
  void* Instance::exceptionNew(Instance* instance, void* tagArg) {
   MOZ_ASSERT(SASigExceptionNew.failureMode == FailureMode::FailOnNullPtr);
   JSContext* cx = instance->cx();
@@ -2617,7 +2653,13 @@ bool Instance::init(JSContext* cx, const JSObjectVector& funcImports,
       }
     } else if (typeDef.kind() == TypeDefKind::Func) {
       
-    } else {
+    }
+#ifdef ENABLE_WASM_JSPI
+    else if (typeDef.kind() == TypeDefKind::Cont) {
+      
+    }
+#endif
+    else {
       MOZ_ASSERT(typeDef.kind() == TypeDefKind::None);
       MOZ_CRASH();
     }
@@ -2647,8 +2689,8 @@ bool Instance::init(JSContext* cx, const JSObjectVector& funcImports,
       
       const FuncType& funcType = codeMeta().getFuncType(i);
       RootedObject wrapped(cx, suspendingObject);
-      RootedFunction wrapper(
-          cx, WasmSuspendingFunctionCreate(cx, wrapped, funcType));
+      RootedFunction wrapper(cx, WasmSuspendingFunctionCreate(
+                                     cx, wrapped, funcType, codeMeta().types));
       if (!wrapper) {
         return false;
       }
