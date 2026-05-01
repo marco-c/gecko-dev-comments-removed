@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_worklet_WorkletModuleLoader_h
 #define mozilla_dom_worklet_WorkletModuleLoader_h
 
@@ -49,9 +47,10 @@ class WorkletModuleLoader : public JS::loader::ModuleLoaderBase {
   void RemoveRequest(nsIURI* aURI);
   JS::loader::ModuleLoadRequest* GetRequest(nsIURI* aURI) const;
 
-  bool HasSetLocalizedStrings() const { return (bool)mLocalizedStrs; }
-  void SetLocalizedStrings(const nsTArray<nsString>* aStrings) {
-    mLocalizedStrs = aStrings;
+  bool HasSetLocalizedStrings() const { return !mLocalizedStrs.IsEmpty(); }
+  void SetLocalizedStrings(nsTArray<nsString>&& aStrings) {
+    MOZ_ASSERT(!aStrings.IsEmpty());
+    mLocalizedStrs = std::move(aStrings);
   }
 
  private:
@@ -95,7 +94,8 @@ class WorkletModuleLoader : public JS::loader::ModuleLoaderBase {
     
     
     return aModuleType == JS::ModuleType::JavaScript ||
-           aModuleType == JS::ModuleType::JSON;
+           aModuleType == JS::ModuleType::JSON ||
+           aModuleType == JS::ModuleType::Text;
   }
 
   
@@ -105,7 +105,7 @@ class WorkletModuleLoader : public JS::loader::ModuleLoaderBase {
 
   
   
-  const nsTArray<nsString>* mLocalizedStrs = nullptr;
+  nsTArray<nsString> mLocalizedStrs;
 };
 }  
 

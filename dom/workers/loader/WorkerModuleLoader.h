@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_loader_WorkerModuleLoader_h
 #define mozilla_loader_WorkerModuleLoader_h
 
@@ -96,7 +94,8 @@ class WorkerModuleLoader : public JS::loader::ModuleLoaderBase {
     
     
     return aModuleType == JS::ModuleType::JavaScript ||
-           aModuleType == JS::ModuleType::JSON;
+           aModuleType == JS::ModuleType::JSON ||
+           aModuleType == JS::ModuleType::Text;
   }
 
   virtual bool IsForServiceWorker() const override;
