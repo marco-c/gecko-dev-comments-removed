@@ -377,6 +377,9 @@ class DigestOutputStream : public nsIOutputStream {
   
   DigestOutputStream(nsIOutputStream* aStream, Digest& aDigest);
 
+  
+  DigestOutputStream(const DigestOutputStream& d) = delete;
+
  private:
   virtual ~DigestOutputStream() = default;
 
@@ -384,9 +387,6 @@ class DigestOutputStream : public nsIOutputStream {
   nsCOMPtr<nsIOutputStream> mOutputStream;
   
   Digest& mDigest;
-
-  
-  DigestOutputStream(const DigestOutputStream& d) = delete;
 };
 
 }  

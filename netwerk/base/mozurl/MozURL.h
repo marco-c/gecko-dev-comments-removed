@@ -39,6 +39,13 @@ namespace net {
 
 class MozURL final {
  public:
+  
+  
+  MozURL() = delete;
+  ~MozURL() = delete;
+  MozURL(const MozURL&) = delete;
+  MozURL& operator=(const MozURL&) = delete;
+
   static nsresult Init(MozURL** aURL, const nsACString& aSpec,
                        const MozURL* aBaseURL = nullptr) {
     return mozurl_new(aURL, &aSpec, aBaseURL);
@@ -217,14 +224,6 @@ class MozURL final {
   
   void AddRef() { mozurl_addref(this); }
   void Release() { mozurl_release(this); }
-
- private:
-  
-  
-  MozURL();  
-  ~MozURL(); 
-  MozURL(const MozURL&) = delete;
-  MozURL& operator=(const MozURL&) = delete;
 };
 
 }  

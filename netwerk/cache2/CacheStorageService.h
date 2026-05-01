@@ -45,6 +45,9 @@ class CacheEntryHandle;
 class CacheEntryTable;
 
 class CacheMemoryConsumer {
+ public:
+  CacheMemoryConsumer() = delete;
+
  private:
   friend class CacheStorageService;
   
@@ -53,9 +56,6 @@ class CacheMemoryConsumer {
     (uint32_t, Flags, 2)
   ))
   
-
- private:
-  CacheMemoryConsumer() = delete;
 
  protected:
   enum {
@@ -364,6 +364,8 @@ class CacheStorageService final : public nsICacheStorageService,
     explicit MemoryPool(EType aType);
     ~MemoryPool();
 
+    MemoryPool() = delete;
+
     
     LinkedList<RefPtr<CacheEntry>> mManagedEntries;
     Atomic<uint32_t, Relaxed> mMemorySize{0};
@@ -380,7 +382,6 @@ class CacheStorageService final : public nsICacheStorageService,
 
    private:
     uint32_t Limit() const;
-    MemoryPool() = delete;
   };
 
   MemoryPool mDiskPool{MemoryPool::DISK};
