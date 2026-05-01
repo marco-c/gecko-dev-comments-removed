@@ -18,6 +18,9 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ExperimentAPI: "resource://nimbus/ExperimentAPI.sys.mjs",
   FxAccounts: "resource://gre/modules/FxAccounts.sys.mjs",
   GenAI: "resource:///modules/GenAI.sys.mjs",
+  IPProtection:
+    // eslint-disable-next-line mozilla/no-browser-refs-in-toolkit
+    "moz-src:///browser/components/ipprotection/IPProtection.sys.mjs",
   MigrationUtils: "resource:///modules/MigrationUtils.sys.mjs",
   ON_SERVICE_ENABLED_NOTIFICATION:
     "resource://gre/modules/FxAccountsCommon.sys.mjs",
@@ -258,6 +261,7 @@ export const SpecialMessageActions = {
       "browser.smartwindow.enabled",
       "browser.smartwindow.firstrun.hasCompleted",
       "browser.smartwindow.firstrun.modelChoice",
+      "browser.smartwindow.sidebar.openByDefault",
       "browser.crashReports.unsubmittedCheck.autoSubmit2",
       "browser.dataFeatureRecommendations.enabled",
       "browser.ipProtection.enabled",
@@ -944,6 +948,9 @@ export const SpecialMessageActions = {
         }
         break;
       }
+      case "IPPROTECTION_ENROLL":
+        await lazy.IPProtection.getPanel(window)?.enroll();
+        break;
     }
     return undefined;
   },
