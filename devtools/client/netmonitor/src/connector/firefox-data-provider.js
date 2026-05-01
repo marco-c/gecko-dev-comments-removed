@@ -64,6 +64,15 @@ class FirefoxDataProvider {
     this.stackTraceRequestInfoByActorID = new Map();
 
     
+    
+    this.resourceIdToActorId = new Map();
+
+    
+    
+    
+    this.decodedBodySizes = new Map();
+
+    
     this.pendingRequests = new Set();
 
     
@@ -98,6 +107,8 @@ class FirefoxDataProvider {
     this.pendingRequests.clear();
     this.lazyRequestData.clear();
     this.stackTraceRequestInfoByActorID.clear();
+    this.decodedBodySizes.clear();
+    this.resourceIdToActorId.clear();
     this.#requestDataEnabled = false;
     this.#lastRequestDataClearId++;
   }
@@ -413,6 +424,26 @@ class FirefoxDataProvider {
 
 
 
+
+  async onDecodedBodySizeAvailable(resource) {
+    const actor = this.resourceIdToActorId.get(resource.resourceId);
+    this.decodedBodySizes.set(resource.resourceId, resource.decodedBodySize);
+    if (actor && this.actionsEnabled && this.actions.updateRequest) {
+      await this.actions.updateRequest(
+        actor,
+        {
+          contentSize: resource.decodedBodySize,
+        },
+        true
+      );
+    }
+  }
+
+  
+
+
+
+
   async onNetworkResourceAvailable(resource) {
     const { actor, stacktraceResourceId, cause } = resource;
 
@@ -445,6 +476,7 @@ class FirefoxDataProvider {
       
       this.stackTraces.set(stacktraceResourceId, { actor, cause });
     }
+    this.resourceIdToActorId.set(resource.resourceId, actor);
     await this.addRequest(actor, resource);
     this.emitForTests(TEST_EVENTS.NETWORK_EVENT, resource);
   }
@@ -459,6 +491,14 @@ class FirefoxDataProvider {
     
     if (resource?.mimeType?.includes("text/event-stream")) {
       await this.setEventStreamFlag(resource.actor);
+    }
+
+    
+    
+    
+    
+    if (this.decodedBodySizes.has(resource.resourceId)) {
+      resource.contentSize = this.decodedBodySizes.get(resource.resourceId);
     }
 
     if (this.actionsEnabled && this.actions.updateRequest) {
