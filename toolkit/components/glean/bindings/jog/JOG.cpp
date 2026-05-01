@@ -18,12 +18,6 @@
 #include "nsThreadUtils.h"
 #include "nsTHashMap.h"
 #include "nsTHashSet.h"
-#ifdef ANDROID
-#  include "nsContentUtils.h"
-#  include "nsIChannel.h"
-#  include "nsIInputStream.h"
-#  include "nsNetUtil.h"
-#endif  
 
 namespace mozilla::glean {
 
@@ -64,45 +58,6 @@ bool JOG::EnsureRuntimeMetricsRegistered(bool aForce) {
             ("!telemetry.fog.artifact_build. No JOG for you."));
     return false;
   }
-
-#ifdef ANDROID
-  
-  
-  
-  
-  nsCOMPtr<nsIURI> uri;
-  if (NS_WARN_IF(NS_FAILED(NS_NewURI(
-          getter_AddRefs(uri), "resource://android/assets/jogfile.json"))) ||
-      NS_WARN_IF(!uri)) {
-    MOZ_LOG(sLog, LogLevel::Debug, ("Unable to create URI to jogfile."));
-    return false;
-  }
-  nsCOMPtr<nsIChannel> channel;
-  nsresult rv = NS_NewChannel(
-      getter_AddRefs(channel), uri, nsContentUtils::GetSystemPrincipal(),
-      nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL,
-      nsIContentPolicy::TYPE_OTHER, nullptr, 
-      nullptr,                               
-      nullptr,                               
-      nullptr,                               
-      nsIRequest::LOAD_NORMAL);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    MOZ_LOG(sLog, LogLevel::Debug, ("Unable to create channel for jogfile."));
-    return false;
-  }
-  nsCOMPtr<nsIInputStream> input;
-  if (NS_WARN_IF(NS_FAILED(channel->Open(getter_AddRefs(input))))) {
-    MOZ_LOG(sLog, LogLevel::Debug, ("Unable to open stream for jogfile."));
-    return false;
-  }
-  nsCString contents;
-  if (NS_WARN_IF(NS_FAILED(NS_ReadInputStreamToString(input, contents, -1)))) {
-    MOZ_LOG(sLog, LogLevel::Debug, ("Unable to read jogfile to string."));
-    return false;
-  }
-  sFoundAndLoadedJogfile = Some(jog::jog_load_jogfile_str(&contents));
-
-#else
   
   
   
@@ -127,9 +82,6 @@ bool JOG::EnsureRuntimeMetricsRegistered(bool aForce) {
     return false;
   }
   sFoundAndLoadedJogfile = Some(jog::jog_load_jogfile(&jogfileString));
-
-#endif
-
   MOZ_LOG(sLog, LogLevel::Debug,
           ("%s", sFoundAndLoadedJogfile.value()
                      ? "Found and loaded jogfile. Yes! JOG for you!"
