@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef GLCONTEXT_H_
 #define GLCONTEXT_H_
@@ -18,8 +18,8 @@
 #  undef GetClassName
 #endif
 
-
-
+// Define MOZ_GL_DEBUG_BUILD unconditionally to enable GL debugging in opt
+// builds.
 #ifdef DEBUG
 #  define MOZ_GL_DEBUG_BUILD 1
 #endif
@@ -38,7 +38,7 @@
 #include "nsString.h"
 #include "GLContextTypes.h"
 #include "GLContextSymbols.h"
-#include "base/platform_thread.h"  
+#include "base/platform_thread.h"  // for PlatformThreadId
 #include "mozilla/GenericRefCounted.h"
 #include "mozilla/WeakPtr.h"
 
@@ -61,16 +61,16 @@ class GLReadTexImageHelper;
 class SharedSurface;
 class SymbolLoader;
 struct SymLoadStruct;
-}  
+}  // namespace gl
 
 namespace layers {
 class ColorTextureLayerProgram;
-}  
+}  // namespace layers
 
 namespace widget {
 class CompositorWidget;
-}  
-}  
+}  // namespace widget
+}  // namespace mozilla
 
 namespace mozilla {
 namespace gl {
@@ -80,6 +80,7 @@ enum class GLFeature {
   blend_minmax,
   clear_buffers,
   copy_buffer,
+  copy_image,
   depth_clamp,
   depth_texture,
   draw_buffers,
@@ -214,36 +215,36 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
     }
   };
 
-  
-  
+  // -----------------------------------------------------------------------------
+  // basic getters
  public:
-  
-
-
-
+  /**
+   * Returns true if the context is using ANGLE. This should only be overridden
+   * for an ANGLE implementation.
+   */
   virtual bool IsANGLE() const { return false; }
 
-  
-
-
-
+  /**
+   * Returns true if the context is using WARP. This should only be overridden
+   * for an ANGLE implementation.
+   */
   virtual bool IsWARP() const { return false; }
 
   virtual void GetWSIInfo(nsCString* const out) const = 0;
 
-  
-
-
+  /**
+   * Return true if we are running on a OpenGL core profile context
+   */
   inline bool IsCoreProfile() const {
     MOZ_ASSERT(mProfile != ContextProfile::Unknown, "unknown context profile");
 
     return mProfile == ContextProfile::OpenGLCore;
   }
 
-  
-
-
-
+  /**
+   * Return true if we are running on a OpenGL compatibility profile context
+   * (legacy profile 2.1 on Max OS X)
+   */
   inline bool IsCompatibilityProfile() const {
     MOZ_ASSERT(mProfile != ContextProfile::Unknown, "unknown context profile");
 
@@ -269,11 +270,11 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
     return profile == mProfile;
   }
 
-  
-
-
-
-
+  /**
+   * Return the version of the context.
+   * Example :
+   *   If this a OpenGL 2.1, that will return 210
+   */
   inline uint32_t Version() const { return mVersion; }
 
   inline uint32_t ShadingLanguageVersion() const {
@@ -301,9 +302,9 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
   bool HasPBOState() const { return (!IsGLES() || Version() >= 300); }
   bool HasTexParamMipmapLevel() const { return HasPBOState(); }
 
-  
-
-
+  /**
+   * If this context is double-buffered, returns TRUE.
+   */
   virtual bool IsDoubleBuffered() const { return false; }
 
   virtual GLContextType GetContextType() const = 0;
@@ -319,9 +320,9 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
 
   bool MakeCurrent(bool aForce = false) const;
 
-  
-
-
+  /**
+   * Get the default framebuffer for this context.
+   */
   UniquePtr<MozFramebuffer> mOffscreenDefaultFb;
 
   bool CreateOffscreenDefaultFb(const gfx::IntSize& size);
@@ -333,10 +334,10 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
     return 0;
   }
 
-  
-
-
-
+  /**
+   * mVersion store the OpenGL's version, multiplied by 100. For example, if
+   * the context is an OpenGL 2.1 context, mVersion value will be 210.
+   */
   uint32_t mVersion = 0;
   ContextProfile mProfile = ContextProfile::Unknown;
 
@@ -351,22 +352,22 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
   nsCString mVersionString;
   nsTArray<nsCString> mExtensionStrings;
 
-  
-  
-  
+  // -----------------------------------------------------------------------------
+  // Extensions management
+  /**
+   * This mechanism is designed to know if an extension is supported. In the
+   * long term, we would like to only use the extension group queries XXX_* to
+   * have full compatibility with context version and profiles (especialy the
+   * core that officialy don't bring any extensions).
+   */
 
-
-
-
-
-
-  
-
-
-
-
-
-
+  /**
+   * Known GL extensions that can be queried by
+   * IsExtensionSupported.  The results of this are cached, and as
+   * such it's safe to use this even in performance critical code.
+   * If you add to this array, remember to add to the string names
+   * in GLContext.cpp.
+   */
   enum GLExtensions {
     Extension_None = 0,
     AMD_compressed_ATC_texture,
@@ -390,6 +391,7 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
     ARB_color_buffer_float,
     ARB_compatibility,
     ARB_copy_buffer,
+    ARB_copy_image,
     ARB_depth_clamp,
     ARB_depth_texture,
     ARB_draw_buffers,
@@ -531,13 +533,13 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
 
   std::bitset<Extensions_Max> mAvailableExtensions;
 
-  
-  
-  
-
-
-
-
+  // -----------------------------------------------------------------------------
+  // Feature queries
+  /*
+   * This mecahnism introduces a new way to check if a OpenGL feature is
+   * supported, regardless of whether it is supported by an extension or
+   * natively by the context version/profile
+   */
  public:
   bool IsSupported(GLFeature feature) const {
     return mAvailableFeatures[size_t(feature)];
@@ -548,23 +550,23 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
  private:
   std::bitset<size_t(GLFeature::EnumMax)> mAvailableFeatures;
 
-  
-
-
+  /**
+   * Init features regarding OpenGL extension and context version and profile
+   */
   void InitFeatures();
 
-  
-
-
+  /**
+   * Mark the feature and associated extensions as unsupported
+   */
   void MarkUnsupported(GLFeature feature);
 
-  
-
-
+  /**
+   * Is this feature supported using the core (unsuffixed) symbols?
+   */
   bool IsFeatureProvidedByCoreSymbols(GLFeature feature);
 
-  
-  
+  // -----------------------------------------------------------------------------
+  // Error handling
 
  private:
   mutable bool mContextLost = false;
@@ -586,8 +588,8 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
   mutable std::stack<const LocalErrorScope*> mLocalErrorScopeStack;
   mutable UniquePtr<LocalErrorScope> mDebugErrorScope;
 
-  
-  
+  ////////////////////////////////////
+  // Use this safer option.
 
  public:
   class LocalErrorScope {
@@ -602,7 +604,7 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
       mOldTop = mGL.GetError();
     }
 
-    
+    /// Never returns CONTEXT_LOST.
     GLenum GetError() {
       MOZ_ASSERT(!mHasBeenChecked);
       mHasBeenChecked = true;
@@ -624,7 +626,7 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
     }
   };
 
-  
+  // -
 
   bool GetPotentialInteger(GLenum pname, GLint* param) {
     LocalErrorScope localError(*this);
@@ -646,8 +648,8 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
                                              const GLchar* message,
                                              const GLvoid* userParam);
 
-  
-  
+  // -----------------------------------------------------------------------------
+  // Debugging implementation
  private:
 #ifndef MOZ_FUNCTION_NAME
 #  ifdef __GNUC__
@@ -657,12 +659,12 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
 #  else
 #    define MOZ_FUNCTION_NAME \
       __func__  // defined in C99, supported in various C++ compilers. Just raw
-                
+                // function name.
 #  endif
 #endif
 
 #ifdef MOZ_WIDGET_ANDROID
-
+// Record the name of the GL call for better hang stacks on Android.
 #  define ANDROID_ONLY_PROFILER_LABEL AUTO_PROFILER_LABEL(__func__, GRAPHICS);
 #else
 #  define ANDROID_ONLY_PROFILER_LABEL
@@ -736,7 +738,7 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
       }                                                                  \
     } while (0)
 
-#else  
+#else  // ifdef MOZ_GL_DEBUG_BUILD
 
 #  define TRACKING_CONTEXT(a) \
     do {                      \
@@ -748,22 +750,22 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
     do {                              \
     } while (0)
 
-#endif  
+#endif  // ifdef MOZ_GL_DEBUG_BUILD
 
-  
-  
+  // Do whatever setup is necessary to draw to our offscreen FBO, if it's
+  // bound.
   void BeforeGLDrawCall() {}
 
-  
-  
+  // Do whatever tear-down is necessary after drawing to our offscreen FBO,
+  // if it's bound.
   void AfterGLDrawCall() { mHeavyGLCallsSinceLastFlush = true; }
 
-  
-  
+  // Do whatever setup is necessary to read from our offscreen FBO, if it's
+  // bound.
   void BeforeGLReadCall() {}
 
-  
-  
+  // Do whatever tear-down is necessary after reading from our offscreen FBO,
+  // if it's bound.
   void AfterGLReadCall() {}
 
  public:
@@ -773,20 +775,20 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
 
   void ResetSyncCallCount(const char* resetReason) const;
 
-  
-  
+  // -----------------------------------------------------------------------------
+  // GL official entry points
  public:
-  
-  
-  
-  
+  // We smash all errors together, so you never have to loop on this. We
+  // guarantee that immediately after this call, there are no errors left.
+  // Always returns the top-most error, except if followed by CONTEXT_LOST, then
+  // return that instead.
   GLenum GetError() const;
 
   GLenum fGetError() { return GetError(); }
 
   GLenum fGetGraphicsResetStatus() const;
 
-  
+  // -
 
   void fActiveTexture(GLenum texture) {
     BEFORE_GL_CALL;
@@ -821,7 +823,7 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
 
   void InvalidateFramebuffer(GLenum target) {
 #ifdef XP_IOS
-    
+    // LOCAL_GL_DEPTH_STENCIL_ATTACHMENT cannot be invalidated on iOS.
     constexpr auto ATTACHMENTS = make_array(GLenum{LOCAL_GL_COLOR_ATTACHMENT0});
 #else
     constexpr auto ATTACHMENTS = make_array(GLenum{LOCAL_GL_COLOR_ATTACHMENT0},
@@ -916,8 +918,8 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
                    GLenum usage) {
     if (WorkAroundDriverBugs() && target == LOCAL_GL_ARRAY_BUFFER &&
         mVertexBufferExtraPadding) {
-      
-      
+      // Some drivers require extra padding at the end of array buffers.
+      // See bug 1983036.
       raw_fBufferData(target, size + *mVertexBufferExtraPadding, nullptr,
                       usage);
       if (data) {
@@ -927,7 +929,7 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
       raw_fBufferData(target, size, data, usage);
     }
 
-    
+    // bug 744888
     if (WorkAroundDriverBugs() && !data && Vendor() == GLVendor::NVIDIA) {
       UniquePtr<char[]> buf = MakeUnique<char[]>(1);
       buf[0] = 0;
@@ -2053,8 +2055,8 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
       raw_fGetShaderPrecisionFormat(shadertype, precisiontype, range,
                                     precision);
     } else {
-      
-      
+      // Fall back to automatic values because almost all desktop hardware
+      // supports the OpenGL standard precisions.
       GetShaderPrecisionFormatNonES2(shadertype, precisiontype, range,
                                      precision);
     }
@@ -2082,7 +2084,7 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
  public:
   bool mElideDuplicateBindFramebuffers = false;
 
-  
+  // If e.g. GL_DRAW_FRAMEBUFFER isn't supported, will bind GL_FRAMEBUFFER.
   void fBindFramebuffer(GLenum target, const GLuint fb) const {
     if (!IsSupported(gl::GLFeature::framebuffer_blit)) {
       target = LOCAL_GL_FRAMEBUFFER;
@@ -2431,18 +2433,18 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
 
   void fDeleteTextures(GLsizei n, const GLuint* names) {
 #ifdef XP_MACOSX
-    
-    
-    
-    
+    // On the Mac the call to fDeleteTextures() triggers a flush. But it
+    // happens at the wrong time, which can lead to crashes. To work around
+    // this we call fFlush() explicitly ourselves, before the call to
+    // fDeleteTextures(). This fixes bug 1666293.
     fFlush();
 #endif
     raw_fDeleteTextures(n, names);
     TRACKING_CONTEXT(DeletedTextures(this, n, names));
   }
 
-  
-  
+  // -----------------------------------------------------------------------------
+  // Extension ARB_sync (GL)
  public:
   GLsync fFenceSync(GLenum condition, GLbitfield flags) {
     GLsync ret = 0;
@@ -2505,8 +2507,8 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
     AFTER_GL_CALL;
   }
 
-  
-  
+  // -----------------------------------------------------------------------------
+  // Extension OES_EGL_image (GLES)
  public:
   void fEGLImageTargetTexture2D(GLenum target, GLeglImage image) {
     BEFORE_GL_CALL;
@@ -2523,8 +2525,8 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
     AFTER_GL_CALL;
   }
 
-  
-  
+  // -----------------------------------------------------------------------------
+  // Package XXX_bind_buffer_offset
  public:
   void fBindBufferOffset(GLenum target, GLuint index, GLuint buffer,
                          GLintptr offset) {
@@ -2534,8 +2536,8 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
     AFTER_GL_CALL;
   }
 
-  
-  
+  // -----------------------------------------------------------------------------
+  // Package XXX_draw_buffers
  public:
   void fDrawBuffers(GLsizei n, const GLenum* bufs) {
     BEFORE_GL_CALL;
@@ -2544,8 +2546,8 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
     AFTER_GL_CALL;
   }
 
-  
-  
+  // -----------------------------------------------------------------------------
+  // Package XXX_draw_instanced
  public:
   void fDrawArraysInstanced(GLenum mode, GLint first, GLsizei count,
                             GLsizei primcount) {
@@ -2578,10 +2580,10 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
     AFTER_GL_CALL;
   }
 
-  
-  
+  // -----------------------------------------------------------------------------
+  // Package XXX_framebuffer_blit
  public:
-  
+  // Draw/Read
   void fBlitFramebuffer(GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1,
                         GLint dstX0, GLint dstY0, GLint dstX1, GLint dstY1,
                         GLbitfield mask, GLenum filter) {
@@ -2604,8 +2606,8 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
     AFTER_GL_CALL;
   }
 
-  
-  
+  // -----------------------------------------------------------------------------
+  // Package XXX_framebuffer_multisample
  public:
   void fRenderbufferStorageMultisample(GLenum target, GLsizei samples,
                                        GLenum internalFormat, GLsizei width,
@@ -2617,8 +2619,8 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
     AFTER_GL_CALL;
   }
 
-  
-  
+  // -----------------------------------------------------------------------------
+  //  GL 3.0, GL ES 3.0 & EXT_gpu_shader4
  public:
   void fGetVertexAttribIiv(GLuint index, GLenum pname, GLint* params) {
     ASSERT_SYMBOL_PRESENT(fGetVertexAttribIiv);
@@ -2738,8 +2740,8 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
     return result;
   }
 
-  
-  
+  // -----------------------------------------------------------------------------
+  // Package XXX_instanced_arrays
  public:
   void fVertexAttribDivisor(GLuint index, GLuint divisor) {
     BEFORE_GL_CALL;
@@ -2748,8 +2750,8 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
     AFTER_GL_CALL;
   }
 
-  
-  
+  // -----------------------------------------------------------------------------
+  // Feature internalformat_query
  public:
   void fGetInternalformativ(GLenum target, GLenum internalformat, GLenum pname,
                             GLsizei bufSize, GLint* params) {
@@ -2761,14 +2763,14 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
     AFTER_GL_CALL;
   }
 
-  
-  
-  
-
-
-
-
-
+  // -----------------------------------------------------------------------------
+  // Package XXX_query_counter
+  /**
+   * XXX_query_counter:
+   *  - depends on XXX_query_objects
+   *  - provide all followed entry points
+   *  - provide GL_TIMESTAMP
+   */
  public:
   void fQueryCounter(GLuint id, GLenum target) {
     BEFORE_GL_CALL;
@@ -2777,20 +2779,20 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
     AFTER_GL_CALL;
   }
 
-  
-  
-  
-
-
-
-
-
-
-
-
-
-
-
+  // -----------------------------------------------------------------------------
+  // Package XXX_query_objects
+  /**
+   * XXX_query_objects:
+   *  - provide all followed entry points
+   *
+   * XXX_occlusion_query2:
+   *  - depends on XXX_query_objects
+   *  - provide ANY_SAMPLES_PASSED
+   *
+   * XXX_occlusion_query_boolean:
+   *  - depends on XXX_occlusion_query2
+   *  - provide ANY_SAMPLES_PASSED_CONSERVATIVE
+   */
  public:
   void fDeleteQueries(GLsizei n, const GLuint* names) {
     BEFORE_GL_CALL;
@@ -2834,13 +2836,13 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
     return retval;
   }
 
-  
-  
-  
-
-
-
-
+  // -----------------------------------------------------------------------------
+  // Package XXX_get_query_object_i64v
+  /**
+   * XXX_get_query_object_i64v:
+   *  - depends on XXX_query_objects
+   *  - provide the followed entry point
+   */
  public:
   void fGetQueryObjecti64v(GLuint id, GLenum pname, GLint64* params) {
     BEFORE_GL_CALL;
@@ -2858,17 +2860,17 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
     AFTER_GL_CALL;
   }
 
-  
-  
-  
-
-
-
-
-
-
-
-
+  // -----------------------------------------------------------------------------
+  // Package XXX_get_query_object_iv
+  /**
+   * XXX_get_query_object_iv:
+   *  - depends on XXX_query_objects
+   *  - provide the followed entry point
+   *
+   * XXX_occlusion_query:
+   *  - depends on XXX_get_query_object_iv
+   *  - provide LOCAL_GL_SAMPLES_PASSED
+   */
  public:
   void fGetQueryObjectiv(GLuint id, GLenum pname, GLint* params) {
     BEFORE_GL_CALL;
@@ -2878,8 +2880,8 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
     AFTER_GL_CALL;
   }
 
-  
-  
+  // -----------------------------------------------------------------------------
+  // GL 4.0, GL ES 3.0, ARB_transform_feedback2, NV_transform_feedback2
  public:
   void fBindBufferBase(GLenum target, GLuint index, GLuint buffer) {
     BEFORE_GL_CALL;
@@ -2992,8 +2994,8 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
     AFTER_GL_CALL;
   }
 
-  
-  
+  // -----------------------------------------------------------------------------
+  // Package XXX_vertex_array_object
  public:
   void fBindVertexArray(GLuint array) {
     BEFORE_GL_CALL;
@@ -3026,8 +3028,8 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
     return ret;
   }
 
-  
-  
+  // -----------------------------------------------------------------------------
+  // Extension NV_fence
  public:
   void fGenFences(GLsizei n, GLuint* fences) {
     ASSERT_SYMBOL_PRESENT(fGenFences);
@@ -3086,8 +3088,8 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
     AFTER_GL_CALL;
   }
 
-  
-  
+  // -----------------------------------------------------------------------------
+  // Extension NV_texture_barrier
  public:
   void fTextureBarrier() {
     ASSERT_SYMBOL_PRESENT(fTextureBarrier);
@@ -3096,7 +3098,7 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
     AFTER_GL_CALL;
   }
 
-  
+  // Core GL & Extension ARB_copy_buffer
  public:
   void fCopyBufferSubData(GLenum readtarget, GLenum writetarget,
                           GLintptr readoffset, GLintptr writeoffset,
@@ -3108,8 +3110,22 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
     AFTER_GL_CALL;
   }
 
-  
-  
+  // Core GL & Extension ARB_copy_image
+ public:
+  void fCopyImageSubData(GLuint srcName, GLenum srcTarget, GLint srcLevel,
+                         GLint srcX, GLint srcY, GLint srcZ, GLuint dstName,
+                         GLenum dstTarget, GLint dstLevel, GLint dstX,
+                         GLint dstY, GLint dstZ, GLsizei srcWidth,
+                         GLsizei srcHeight, GLsizei srcDepth) {
+    BEFORE_GL_CALL;
+    mSymbols.fCopyImageSubData(srcName, srcTarget, srcLevel, srcX, srcY, srcZ,
+                               dstName, dstTarget, dstLevel, dstX, dstY, dstZ,
+                               srcWidth, srcHeight, srcDepth);
+    AFTER_GL_CALL;
+  }
+
+  // -----------------------------------------------------------------------------
+  // Core GL & Extension ARB_map_buffer_range
  public:
   void* fMapBufferRange(GLenum target, GLintptr offset, GLsizeiptr length,
                         GLbitfield access) {
@@ -3130,8 +3146,8 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
     AFTER_GL_CALL;
   }
 
-  
-  
+  // -----------------------------------------------------------------------------
+  // Core GL & Extension ARB_sampler_objects
  public:
   void fGenSamplers(GLsizei count, GLuint* samplers) {
     BEFORE_GL_CALL;
@@ -3206,8 +3222,8 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
     AFTER_GL_CALL;
   }
 
-  
-  
+  // -----------------------------------------------------------------------------
+  // Core GL & Extension ARB_uniform_buffer_object
  public:
   void fGetUniformIndices(GLuint program, GLsizei uniformCount,
                           const GLchar* const* uniformNames,
@@ -3271,8 +3287,8 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
     AFTER_GL_CALL;
   }
 
-  
-  
+  // -----------------------------------------------------------------------------
+  // Core GL 4.2, GL ES 3.0 & Extension ARB_texture_storage/EXT_texture_storage
   void fTexStorage2D(GLenum target, GLsizei levels, GLenum internalformat,
                      GLsizei width, GLsizei height) {
     BEFORE_GL_CALL;
@@ -3292,8 +3308,8 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
     AFTER_GL_CALL;
   }
 
-  
-  
+  // -----------------------------------------------------------------------------
+  // 3D Textures
   void fTexImage3D(GLenum target, GLint level, GLint internalFormat,
                    GLsizei width, GLsizei height, GLsizei depth, GLint border,
                    GLenum format, GLenum type, const GLvoid* data) {
@@ -3352,8 +3368,8 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
     AFTER_GL_CALL;
   }
 
-  
-  
+  // -----------------------------------------------------------------------------
+  // GL3+, ES3+
 
   const GLubyte* fGetStringi(GLenum name, GLuint index) {
     const GLubyte* ret = nullptr;
@@ -3365,8 +3381,8 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
     return ret;
   }
 
-  
-  
+  // -----------------------------------------------------------------------------
+  // APPLE_framebuffer_multisample
 
   void fResolveMultisampleFramebufferAPPLE() {
     BEFORE_GL_CALL;
@@ -3375,8 +3391,8 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
     AFTER_GL_CALL;
   }
 
-  
-  
+  // -----------------------------------------------------------------------------
+  // APPLE_fence
 
   void fFinishObjectAPPLE(GLenum object, GLint name) {
     BEFORE_GL_CALL;
@@ -3394,8 +3410,8 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
     return ret;
   }
 
-  
-  
+  // -----------------------------------------------------------------------------
+  // prim_restart
 
   void fPrimitiveRestartIndex(GLuint index) {
     BEFORE_GL_CALL;
@@ -3404,8 +3420,8 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
     AFTER_GL_CALL;
   }
 
-  
-  
+  // -----------------------------------------------------------------------------
+  // multiview
 
   void fFramebufferTextureMultiview(GLenum target, GLenum attachment,
                                     GLuint texture, GLint level,
@@ -3418,8 +3434,8 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
     AFTER_GL_CALL;
   }
 
-  
-  
+  // -
+  // draw_buffers_indexed
 
   void fBlendEquationSeparatei(GLuint i, GLenum modeRGB,
                                GLenum modeAlpha) const {
@@ -3455,7 +3471,7 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
     AFTER_GL_CALL;
   }
 
-  
+  // -
 
   void fProvokingVertex(GLenum mode) const {
     BEFORE_GL_CALL;
@@ -3463,8 +3479,8 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
     AFTER_GL_CALL;
   }
 
-  
-  
+  // -----------------------------------------------------------------------------
+  // GL_EXT_semaphore
   void fDeleteSemaphoresEXT(GLsizei n, const GLuint* semaphores) {
     BEFORE_GL_CALL;
     mSymbols.fDeleteSemaphoresEXT(n, semaphores);
@@ -3517,16 +3533,16 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
     AFTER_GL_CALL;
   }
 
-  
-  
+  // -----------------------------------------------------------------------------
+  // GL_EXT_semaphore_fd
   void fImportSemaphoreFdEXT(GLuint semaphore, GLenum handleType, GLint fd) {
     BEFORE_GL_CALL;
     mSymbols.fImportSemaphoreFdEXT(semaphore, handleType, fd);
     AFTER_GL_CALL;
   }
 
-  
-  
+  // -----------------------------------------------------------------------------
+  // Extension EXT_memory_object
   void fGetUnsignedBytevEXT(GLenum pname, GLubyte* data) {
     BEFORE_GL_CALL;
     mSymbols.fGetUnsignedBytevEXT(pname, data);
@@ -3670,8 +3686,8 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
     AFTER_GL_CALL;
   }
 
-  
-  
+  // -----------------------------------------------------------------------------
+  // Extension EXT_memory_object_fd
 
   void fImportMemoryFdEXT(GLuint memory, GLuint64 size, GLenum handleType,
                           GLint fd) {
@@ -3680,34 +3696,34 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
     AFTER_GL_CALL;
   }
 
-  
+  // -
 
 #undef BEFORE_GL_CALL
 #undef AFTER_GL_CALL
 #undef ASSERT_SYMBOL_PRESENT
-
+// #undef TRACKING_CONTEXT // Needed in GLContext.cpp
 #undef ASSERT_NOT_PASSING_STACK_BUFFER_TO_GL
 
-  
-  
+  // -----------------------------------------------------------------------------
+  // Constructor
  protected:
   explicit GLContext(const GLContextDesc&, GLContext* sharedContext = nullptr,
                      bool canUseTLSIsCurrent = false);
 
-  
-  
+  // -----------------------------------------------------------------------------
+  // Destructor
  public:
   virtual ~GLContext();
 
-  
-  
+  // Mark this context as destroyed.  This will nullptr out all
+  // the GL function pointers!
   void MarkDestroyed();
 
  protected:
   virtual void OnMarkDestroyed() {}
 
-  
-  
+  // -----------------------------------------------------------------------------
+  // Everything that isn't standard GL APIs
  protected:
   typedef gfx::SurfaceFormat SurfaceFormat;
 
@@ -3715,51 +3731,51 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
   virtual void ReleaseSurface() {}
 
   bool IsDestroyed() const {
-    
+    // MarkDestroyed will mark all these as null.
     return mContextLost && mSymbols.fUseProgram == nullptr;
   }
 
   GLContext* GetSharedContext() { return mSharedContext; }
 
-  
-
-
-
+  /**
+   * Returns true if the thread on which this context was created is the
+   * currently executing thread.
+   */
   bool IsValidOwningThread() const;
 
   static void PlatformStartup();
 
  public:
-  
-
-
-
-
+  /**
+   * If this context wraps a double-buffered target, swap the back
+   * and front buffers.  It should be assumed that after a swap, the
+   * contents of the new back buffer are undefined.
+   */
   virtual bool SwapBuffers() { return false; }
 
-  
-
-
-
-
-
-
-
+  /**
+   * Stores a damage region (in origin bottom left coordinates), which
+   * makes the next SwapBuffers call do eglSwapBuffersWithDamage if supported.
+   *
+   * Note that even if only part of the context is damaged, the entire buffer
+   * needs to be filled with up-to-date contents. This region is only a hint
+   * telling the system compositor which parts of the buffer were updated.
+   */
   virtual void SetDamage(const nsIntRegion& aDamageRegion) {}
 
-  
-
-
-
+  /**
+   * Get the buffer age. If it returns 0, that indicates the buffer state is
+   * unknown and the entire frame should be redrawn.
+   */
   virtual GLint GetBufferAge() const { return 0; }
 
-  
-
-
+  /**
+   * Defines a two-dimensional texture image for context target surface
+   */
   virtual bool BindTexImage() { return false; }
-  
-
-
+  /*
+   * Releases a color buffer that is being used as a texture
+   */
   virtual bool ReleaseTexImage() { return false; }
 
   virtual Maybe<SymbolLoader> GetSymbolLoader() const = 0;
@@ -3802,7 +3818,7 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
       case LOCAL_GL_LOW_FLOAT:
       case LOCAL_GL_MEDIUM_FLOAT:
       case LOCAL_GL_HIGH_FLOAT:
-        
+        // Assume IEEE 754 precision
         range[0] = 127;
         range[1] = 127;
         *precision = 23;
@@ -3810,8 +3826,8 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
       case LOCAL_GL_LOW_INT:
       case LOCAL_GL_MEDIUM_INT:
       case LOCAL_GL_HIGH_INT:
-        
-        
+        // Some (most) hardware only supports single-precision floating-point
+        // numbers, which can accurately represent integers up to +/-16777216
         range[0] = 24;
         range[1] = 24;
         *precision = 0;
@@ -3836,7 +3852,7 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
 
   virtual bool RenewSurface(widget::CompositorWidget* aWidget) { return false; }
 
-  
+  // Shared code for GL extensions and GLX extensions.
   static bool ListHasExtension(const GLubyte* extensions,
                                const char* extension);
 
@@ -3854,7 +3870,7 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
   RefPtr<GLContext> mSharedContext;
 
  public:
-  
+  // The thread id which this context was created.
   Maybe<PlatformThreadId> mOwningThreadId;
 
  protected:
@@ -3867,7 +3883,7 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
   GLBlitHelper* BlitHelper();
   GLReadTexImageHelper* ReadTexImageHelper();
 
-  
+  // Assumes shares are created by all sharing with the same global context.
   bool SharesWith(const GLContext* other) const {
     MOZ_ASSERT(!this->mSharedContext || !this->mSharedContext->mSharedContext);
     MOZ_ASSERT(!other->mSharedContext ||
@@ -3885,12 +3901,12 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
 
   bool IsFramebufferComplete(GLuint fb, GLenum* status = nullptr);
 
-  
+  // Does not check completeness.
   void AttachBuffersToFB(GLuint colorTex, GLuint colorRB, GLuint depthRB,
                          GLuint stencilRB, GLuint fb,
                          GLenum target = LOCAL_GL_TEXTURE_2D);
 
-  
+  // Passing null is fine if the value you'd get is 0.
   bool AssembleOffscreenFBs(const GLuint colorMSRB, const GLuint depthRB,
                             const GLuint stencilRB, const GLuint texture,
                             GLuint* drawFB, GLuint* readFB);
@@ -3939,8 +3955,8 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
   bool mNeedsTextureSizeChecks = false;
   bool mNeedsFlushBeforeDeleteFB = false;
   bool mTextureAllocCrashesOnMapFailure = false;
-  
-  
+  // Amount of additional padding bytes that must be allocated for
+  // GL_ARRAY_BUFFER buffers to work around driver bugs. See bug 1983036.
   Maybe<GLint> mVertexBufferExtraPadding;
   const bool mWorkAroundDriverBugs;
   mutable uint64_t mSyncGLCallCount = 0;
@@ -3948,11 +3964,11 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
   bool IsTextureSizeSafeToPassToDriver(GLenum target, GLsizei width,
                                        GLsizei height) const {
     if (mNeedsTextureSizeChecks) {
-      
-      
-      
-      
-      
+      // some drivers incorrectly handle some large texture sizes that are below
+      // the max texture size that they report. So we check ourselves against
+      // our own values (mMax[CubeMap]TextureSize). see bug 737182 for Mac Intel
+      // 2D textures see bug 684882 for Mac Intel cube map textures see bug
+      // 814716 for Mesa Nouveau
       GLsizei maxSize =
           target == LOCAL_GL_TEXTURE_CUBE_MAP ||
                   (target >= LOCAL_GL_TEXTURE_CUBE_MAP_POSITIVE_X &&
@@ -4002,7 +4018,7 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
     GLuint name;
     bool originDeleted;
 
-    
+    // for sorting
     bool operator<(const NamedResource& aOther) const {
       if (intptr_t(origin) < intptr_t(aOther.origin)) return true;
       if (name < aOther.name) return true;
@@ -4031,7 +4047,7 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
   static bool ShouldSpew();
   static bool ShouldDumpExts();
 
-  
+  // --
 
   void TexParams_SetClampNoMips(GLenum target) {
     fTexParameteri(target, LOCAL_GL_TEXTURE_WRAP_S, LOCAL_GL_CLAMP_TO_EDGE);
@@ -4040,7 +4056,7 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
     fTexParameteri(target, LOCAL_GL_TEXTURE_MIN_FILTER, LOCAL_GL_NEAREST);
   }
 
-  
+  // --
 
   GLuint CreateFramebuffer() {
     GLuint x = 0;
@@ -4094,7 +4110,7 @@ void MarkBitfieldByStrings(Span<const nsCString> strList, bool dumpStrings,
   }
 }
 
-
+// -
 
 class Renderbuffer final {
  public:
@@ -4118,7 +4134,7 @@ class Renderbuffer final {
   }
 };
 
-
+// -
 
 class Texture final {
  public:
@@ -4142,7 +4158,7 @@ class Texture final {
   }
 };
 
-
+// -
 
 class Sampler final {
  public:
@@ -4166,23 +4182,23 @@ class Sampler final {
   }
 };
 
-
-
-
-
-
-
+/**
+ * Helper function that creates a 2D texture aSize.width x aSize.height with
+ * storage type specified by aFormats. Returns GL texture object id.
+ *
+ * See mozilla::gl::CreateTexture.
+ */
 UniquePtr<Texture> CreateTexture(GLContext&, const gfx::IntSize& size);
 
-
-
-
-
+/**
+ * Helper function that calculates the number of bytes required per
+ * texel for a texture from its format and type.
+ */
 uint32_t GetBytesPerTexel(GLenum format, GLenum type);
 
 void MesaMemoryLeakWorkaround();
 
-} 
-} 
+} /* namespace gl */
+} /* namespace mozilla */
 
-#endif 
+#endif /* GLCONTEXT_H_ */
