@@ -559,8 +559,6 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   
   void DropMedia();
   
-  void UpdateRelevantGlobal();
-  
   void UnlinkInner();
   
   void TraverseInner(nsCycleCollectionTraversalCallback&);
@@ -569,13 +567,6 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   static bool RuleHasPendingChildSheet(css::Rule* aRule);
 
   StyleSheet* mParentSheet;  
-
-  
-  
-  
-  
-  
-  nsCOMPtr<nsIGlobalObject> mRelevantGlobal;
 
   RefPtr<dom::Document> mConstructorDocument;
 
