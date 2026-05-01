@@ -930,10 +930,8 @@ pub type ImageInstanceIndex = storage::Index<ImageInstance>;
 
 
 
-
-
 #[cfg_attr(feature = "capture", derive(Serialize))]
-pub struct PrimitiveScratchBuffer {
+pub struct PrimitiveFrameScratch {
     
     pub line_decoration: storage::Storage<LineDecorationScratch>,
 
@@ -950,69 +948,40 @@ pub struct PrimitiveScratchBuffer {
 
     
     
-    pub glyph_keys: GlyphKeyStorage,
-
-    
-    pub segments: SegmentStorage,
-
-    
-    
-    
-    pub segment_instances: SegmentInstanceStorage,
-
-
     
     pub debug_items: Vec<DebugItem>,
-
-    
-    messages: Vec<DebugMessage>,
 
     
     pub required_sub_graphs: FastHashSet<PictureIndex>,
 
     
     pub quad_direct_segments: Vec<QuadSegment>,
-    pub quad_color_segments: Vec<QuadSegment>,
     pub quad_indirect_segments: Vec<QuadSegment>,
-
-    
-    
-    pub quad_tile_classifier: QuadTileClassifier,
 }
 
-impl Default for PrimitiveScratchBuffer {
+impl Default for PrimitiveFrameScratch {
     fn default() -> Self {
-        PrimitiveScratchBuffer {
+        PrimitiveFrameScratch {
             line_decoration: storage::Storage::new(0),
             normal_border: storage::Storage::new(0),
             border_task_ids: storage::Storage::new(0),
             clip_mask_instances: Vec::new(),
-            glyph_keys: GlyphKeyStorage::new(0),
-            segments: SegmentStorage::new(0),
-            segment_instances: SegmentInstanceStorage::new(0),
             debug_items: Vec::new(),
-            messages: Vec::new(),
             required_sub_graphs: FastHashSet::default(),
             quad_direct_segments: Vec::new(),
-            quad_color_segments: Vec::new(),
             quad_indirect_segments: Vec::new(),
-            quad_tile_classifier: QuadTileClassifier::new(),
         }
     }
 }
 
-impl PrimitiveScratchBuffer {
+impl PrimitiveFrameScratch {
     pub fn recycle(&mut self, recycler: &mut Recycler) {
         self.line_decoration.recycle(recycler);
         self.normal_border.recycle(recycler);
         self.border_task_ids.recycle(recycler);
         recycler.recycle_vec(&mut self.clip_mask_instances);
-        self.glyph_keys.recycle(recycler);
-        self.segments.recycle(recycler);
-        self.segment_instances.recycle(recycler);
         recycler.recycle_vec(&mut self.debug_items);
         recycler.recycle_vec(&mut self.quad_direct_segments);
-        recycler.recycle_vec(&mut self.quad_color_segments);
         recycler.recycle_vec(&mut self.quad_indirect_segments);
     }
 
@@ -1027,17 +996,99 @@ impl PrimitiveScratchBuffer {
         self.clip_mask_instances.clear();
         self.clip_mask_instances.push(ClipMaskKind::None);
         self.quad_direct_segments.clear();
-        self.quad_color_segments.clear();
         self.quad_indirect_segments.clear();
-
-        
-        
-        
-        
 
         self.required_sub_graphs.clear();
 
         self.debug_items.clear();
+    }
+}
+
+
+
+
+
+#[cfg_attr(feature = "capture", derive(Serialize))]
+pub struct PrimitiveSceneCache {
+    
+    
+    pub glyph_keys: GlyphKeyStorage,
+
+    
+    pub segments: SegmentStorage,
+
+    
+    
+    
+    pub segment_instances: SegmentInstanceStorage,
+}
+
+impl Default for PrimitiveSceneCache {
+    fn default() -> Self {
+        PrimitiveSceneCache {
+            glyph_keys: GlyphKeyStorage::new(0),
+            segments: SegmentStorage::new(0),
+            segment_instances: SegmentInstanceStorage::new(0),
+        }
+    }
+}
+
+impl PrimitiveSceneCache {
+    pub fn recycle(&mut self, recycler: &mut Recycler) {
+        self.glyph_keys.recycle(recycler);
+        self.segments.recycle(recycler);
+        self.segment_instances.recycle(recycler);
+    }
+}
+
+
+
+
+#[cfg_attr(feature = "capture", derive(Serialize))]
+pub struct PrimitiveRetained {
+    
+    
+    
+    messages: Vec<DebugMessage>,
+
+    
+    
+    pub quad_tile_classifier: QuadTileClassifier,
+}
+
+impl Default for PrimitiveRetained {
+    fn default() -> Self {
+        PrimitiveRetained {
+            messages: Vec::new(),
+            quad_tile_classifier: QuadTileClassifier::new(),
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[derive(Default)]
+pub struct PrimitiveScratchBuffer {
+    pub frame: PrimitiveFrameScratch,
+    pub scene: PrimitiveSceneCache,
+    pub retained: PrimitiveRetained,
+}
+
+impl PrimitiveScratchBuffer {
+    pub fn recycle(&mut self, recycler: &mut Recycler) {
+        self.frame.recycle(recycler);
+        self.scene.recycle(recycler);
+    }
+
+    pub fn begin_frame(&mut self) {
+        self.frame.begin_frame();
     }
 
     pub fn end_frame(&mut self) {
@@ -1048,10 +1099,11 @@ impl PrimitiveScratchBuffer {
         const Y0: f32 = 32.0;
         let now = zeitstempel::now();
 
-        let msgs_to_remove = self.messages.len().max(MSGS_TO_RETAIN) - MSGS_TO_RETAIN;
+        let messages = &mut self.retained.messages;
+        let msgs_to_remove = messages.len().max(MSGS_TO_RETAIN) - MSGS_TO_RETAIN;
         let mut msgs_removed = 0;
 
-        self.messages.retain(|msg| {
+        messages.retain(|msg| {
             if msgs_removed < msgs_to_remove {
                 msgs_removed += 1;
                 return false;
@@ -1064,17 +1116,18 @@ impl PrimitiveScratchBuffer {
             true
         });
 
-        let mut y = Y0 + self.messages.len() as f32 * LINE_HEIGHT;
+        let mut y = Y0 + messages.len() as f32 * LINE_HEIGHT;
         let shadow_offset = 1.0;
+        let debug_items = &mut self.frame.debug_items;
 
-        for msg in &self.messages {
-            self.debug_items.push(DebugItem::Text {
+        for msg in messages.iter() {
+            debug_items.push(DebugItem::Text {
                 position: DevicePoint::new(X0 + shadow_offset, y + shadow_offset),
                 color: debug_colors::BLACK,
                 msg: msg.msg.clone(),
             });
 
-            self.debug_items.push(DebugItem::Text {
+            debug_items.push(DebugItem::Text {
                 position: DevicePoint::new(X0, y),
                 color: debug_colors::RED,
                 msg: msg.msg.clone(),
@@ -1123,7 +1176,7 @@ impl PrimitiveScratchBuffer {
         outer_color: ColorF,
         inner_color: ColorF,
     ) {
-        self.debug_items.push(DebugItem::Rect {
+        self.frame.debug_items.push(DebugItem::Rect {
             rect,
             outer_color,
             inner_color,
@@ -1138,7 +1191,7 @@ impl PrimitiveScratchBuffer {
         color: ColorF,
         msg: String,
     ) {
-        self.debug_items.push(DebugItem::Text {
+        self.frame.debug_items.push(DebugItem::Text {
             position,
             color,
             msg,
@@ -1150,7 +1203,7 @@ impl PrimitiveScratchBuffer {
         &mut self,
         msg: String,
     ) {
-        self.messages.push(DebugMessage {
+        self.retained.messages.push(DebugMessage {
             msg,
             timestamp: zeitstempel::now(),
         })

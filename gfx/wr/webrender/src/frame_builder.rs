@@ -840,7 +840,7 @@ impl FrameBuilder {
             has_been_rendered: false,
             has_texture_cache_tasks,
             prim_headers,
-            debug_items: mem::replace(&mut scratch.primitive.debug_items, Vec::new()),
+            debug_items: mem::replace(&mut scratch.primitive.frame.debug_items, Vec::new()),
             composite_state,
             gpu_buffer_f,
             gpu_buffer_i,

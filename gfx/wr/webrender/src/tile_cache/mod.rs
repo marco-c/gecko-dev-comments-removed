@@ -2604,7 +2604,7 @@ impl TileCacheInstance {
                 if !pic_coverage_rect.is_empty() {
                     
                     
-                    scratch.required_sub_graphs.insert(pic_index);
+                    scratch.frame.required_sub_graphs.insert(pic_index);
 
                     
                     
