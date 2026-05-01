@@ -686,18 +686,27 @@ nsRect LocalAccessible::ParentRelativeBounds() {
       return result;
     }
 
-    if (ScrollContainerFrame* sf =
-            mParent == mDoc
-                ? mDoc->PresShellPtr()->GetRootScrollContainerFrame()
-                : boundingFrame->GetScrollTargetFrame()) {
-      
-      
-      
-      
-      
-      nsPoint scrollPos = sf->GetScrollPosition().ApplyResolution(
-          mDoc->PresShellPtr()->GetResolution());
-      result.MoveBy(scrollPos.x, scrollPos.y);
+    if (!IsDoc()) {
+      if (ScrollContainerFrame* sf =
+              boundingFrame == mDoc->GetFrame()
+                  ? mDoc->PresShellPtr()->GetRootScrollContainerFrame()
+                  : boundingFrame->GetScrollTargetFrame()) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        nsPoint scrollPos = sf->GetScrollPosition().ApplyResolution(
+            mDoc->PresShellPtr()->GetResolution());
+        result.MoveBy(scrollPos.x, scrollPos.y);
+      }
     }
 
     return result;
