@@ -20,7 +20,7 @@ class nsHttpNegotiateAuth final : public nsIHttpAuthenticator {
   static already_AddRefed<nsIHttpAuthenticator> GetOrCreate();
 
  private:
-  ~nsHttpNegotiateAuth() {}
+  ~nsHttpNegotiateAuth() = default;
 
   
   bool TestBoolPref(const char* pref);

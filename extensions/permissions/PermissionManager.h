@@ -115,7 +115,7 @@ class PermissionManager final : public nsIPermissionManager,
     PermissionKey() = delete;
 
     
-    ~PermissionKey() {};
+    ~PermissionKey() = default;
   };
 
   class PermissionHashKey : public nsRefPtrHashKey<PermissionKey> {
