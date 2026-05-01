@@ -4188,14 +4188,6 @@ nsresult nsDocShell::StopInternal(
     
     
     
-    if (aUnsetOngoingNavigation == UnsetOngoingNavigation::No && mLoadGroup) {
-      
-      
-      
-
-      
-      mLoadGroup->SetCanceledReason("navigation"_ns);
-    }
     Stop();
 
     
