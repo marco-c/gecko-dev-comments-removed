@@ -2055,21 +2055,21 @@ window.onerror = function simpletestOnerror(
   
   var isExpected = !!SimpleTest._expectingUncaughtException;
   var message = (isExpected ? "expected " : "") + "uncaught exception";
-  var stack;
+  var error = errorMsg + " at ";
   try {
-    stack = originalException.stack;
+    error += originalException.stack;
   } catch (e) {
     
-    stack = url + ":" + lineNumber + ":" + columnNumber;
+    error += url + ":" + lineNumber + ":" + columnNumber;
   }
   if (!SimpleTest._ignoringAllUncaughtExceptions) {
     
     if (!SimpleTest._alreadyFinished) {
-      SimpleTest.record(isExpected, message, errorMsg, stack);
+      SimpleTest.record(isExpected, message, error);
     }
     SimpleTest._expectingUncaughtException = false;
   } else {
-    SimpleTest.todo(false, message + ": " + errorMsg + " at " + stack);
+    SimpleTest.todo(false, message + ": " + error);
   }
   
 
