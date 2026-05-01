@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/CompressionStream.h"
 
 #include "FormatBrotli.h"

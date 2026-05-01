@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "FormatZlib.h"
 
 #include "BaseAlgorithms.h"
