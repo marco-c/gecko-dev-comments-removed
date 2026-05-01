@@ -10,9 +10,8 @@ mod crash_generation;
 mod ipc_server;
 mod logging;
 mod phc;
+mod platform;
 
-#[cfg(target_os = "android")]
-use crash_helper_common::RawIPCConnector;
 use crash_helper_common::{BreakpadData, BreakpadRawData, IPCConnector, IPCListener, Pid};
 use std::{
     ffi::{c_char, CStr, OsString},
@@ -51,7 +50,7 @@ pub unsafe extern "C" fn crash_generator_logic_desktop(
     #[cfg(any(target_os = "ios", target_os = "macos"))]
     const BOOTSTRAP_UNKNOWN_SERVICE: std::ffi::c_int = 1102;
 
-    daemonize();
+    platform::daemonize();
     logging::init();
 
     let breakpad_data = BreakpadData::new(breakpad_data);
@@ -116,7 +115,7 @@ pub unsafe extern "C" fn crash_generator_logic_android(
     pid: Pid,
     breakpad_data: BreakpadRawData,
     minidump_path: *const c_char,
-    pipe: RawIPCConnector,
+    pipe: crash_helper_common::RawIPCConnector,
 ) {
     logging::init();
 
@@ -157,47 +156,6 @@ fn main_loop(mut ipc_server: IPCServer) -> i32 {
                 return -1;
             }
             _ => {} 
-        }
-    }
-}
-
-
-
-
-
-
-
-
-
-
-
-#[cfg(not(target_os = "android"))]
-fn daemonize() {
-    #[cfg(not(target_os = "windows"))]
-    {
-        use nix::unistd::{fork, setsid, ForkResult};
-
-        
-        
-        
-        
-        
-        
-        
-        
-        let _ = setsid();
-
-        let res = unsafe { fork() };
-        let Ok(res) = res else {
-            return;
-        };
-
-        match res {
-            ForkResult::Child => {}
-            ForkResult::Parent { child: _ } => unsafe {
-                
-                nix::libc::_exit(0);
-            },
         }
     }
 }
