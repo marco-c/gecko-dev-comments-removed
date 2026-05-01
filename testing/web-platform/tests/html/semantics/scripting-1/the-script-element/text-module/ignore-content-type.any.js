@@ -1,0 +1,138 @@
+
+
+const content_types = [
+  "",
+  "text",
+  "text/plain",
+  "text/json",
+  "application/json",
+  "text/html+json",
+  "image/svg+json",
+  "text/json;boundary=something",
+  "text/json;foo=bar",
+  "text/json;+json",
+  "text/html+xml+json",
+
+  "application/json+protobuf",
+  "application/json+blah",
+  "text/x-json",
+  "text/json+blah",
+  "application/blahjson",
+  "image/json",
+  "text+json",
+  "json+json",
+  "text/json/json+json",
+  "text/html;+json",
+  "text/html+json+xml",
+  "text/json/json",
+
+  
+  "applic\x09ation/vnd.api+json",     
+  "applic\x0Aation/vnd.api+json",     
+  "applic\x0Dation/vnd.api+json",     
+  "applic ation/vnd.api+json",        
+  "applic\x7Fation/vnd.api+json",     
+  "\x01application/vnd.api+json",     
+  "application\x1F/vnd.api+json",     
+
+  
+  "application/vnd\x09.api+json",     
+  "application/vnd\x0A.api+json",     
+  "application/vnd\x0D.api+json",     
+  "application/vnd .api+json",        
+  "application/vnd\x7F.api+json",     
+  "application/\x01vnd.api+json",     
+  "application/vnd.api\x1F+json",     
+
+  
+  "applic\"ation/vnd.api+json",       
+  "applic(ation/vnd.api+json",        
+  "applic)ation/vnd.api+json",        
+  "applic,ation/vnd.api+json",        
+  "applic:ation/vnd.api+json",        
+  "applic;ation/vnd.api+json",        
+  "applic<ation/vnd.api+json",        
+  "applic>ation/vnd.api+json",        
+  "applic=ation/vnd.api+json",        
+  "applic?ation/vnd.api+json",        
+  "applic@ation/vnd.api+json",        
+  "applic[ation/vnd.api+json",        
+  "applic]ation/vnd.api+json",        
+  "applic{ation/vnd.api+json",        
+  "applic}ation/vnd.api+json",        
+
+  
+  "application/vnd\"api\"+json",      
+  "application/vnd(api+json",         
+  "application/vnd)api+json",         
+  "application/vnd,api+json",         
+  "application/vnd:api+json",         
+  "application/vnd;api+json",         
+  "application/vnd<api+json",         
+  "application/vnd>api+json",         
+  "application/vnd=api+json",         
+  "application/vnd?api+json",         
+  "application/vnd@api+json",         
+  "application/vnd[api+json",         
+  "application/vnd]api+json",         
+  "application/vnd{api+json",         
+  "application/vnd}api+json",         
+
+  
+  "aplicación/vnd.api+json",          
+  "申请/vnd.api+json",                 
+  "app™lication/vnd.api+json",        
+  "appli€cation/vnd.api+json",        
+  "🚀application/vnd.api+json",       
+  "applicatioñ/vnd.api+json",         
+
+  
+  "application/vñd.api+json",         
+  "application/vnd.apí+json",         
+  "application/vnd.api™+json",        
+  "application/vnd.api€+json",        
+  "application/vnd.中文+json",         
+  "application/vnd.api🚀+json",       
+  "application/café.api+json",        
+
+  
+  "applic ation/vnd api+json",        
+  "applic\"ation/vnd\"api+json",      
+  "applic(ation/vnd(api+json",        
+  "applic)ation/vnd)api+json",        
+  "applic,ation/vnd,api+json",        
+  "applic=ation/vnd=api+json",        
+  "申请/中文.api+json",                 
+  "app™/vnd€.api+json",               
+  "applic;ation/vnd;api+json",        
+  "applic{ation/vnd{api+json",        
+  "applic}ation/vnd}api+json",        
+  "applic[ation/vnd[api+json",        
+  "applic]ation/vnd]api+json",        
+  "applic<ation/vnd<api+json",        
+  "applic>ation/vnd>api+json",        
+
+  
+  "\"application/vnd.api+json",       
+  "application\"/vnd.api+json",       
+  "application /vnd.api+json",        
+  "/vnd.api+json",                    
+
+  
+  "application/\"vnd.api+json",       
+  "application/vnd.api\"+json",       
+  "application/ vnd.api+json",        
+  "application/vnd.api +json",        
+  "application/vnd.api+json\"",       
+
+  
+  "\"application\"/\"vnd.api\"+json", 
+  "app(lic)ation/vnd(api)+json",      
+];
+
+for (const content_type of content_types) {
+  promise_test(async test => {
+    const enc_content_type = encodeURIComponent(content_type.replaceAll(',', '\\,').replaceAll(')', '\\)'));
+    await import(`./file.txt?pipe=header(Content-Type,${enc_content_type})`, { with: { type: "text" } });
+  }, `Import of a text module with MIME type ${content_type} should succeed`);
+}
