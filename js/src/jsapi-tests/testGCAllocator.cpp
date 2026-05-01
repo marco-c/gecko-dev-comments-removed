@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include "mozilla/MathAlgorithms.h"
 
 #include <cstdlib>
@@ -556,6 +553,7 @@ BEGIN_TEST(testBufferAllocator_API) {
 
       CHECK(!IsBufferAllocMarkedBlack(zone, alloc));
 
+      gc::WaitForBackgroundTasks(cx);
       CHECK(cx->runtime()->gc.isPointerWithinBufferAlloc(alloc));
       void* ptr = reinterpret_cast<void*>(uintptr_t(alloc) + 8);
       CHECK(cx->runtime()->gc.isPointerWithinBufferAlloc(ptr));
@@ -587,6 +585,23 @@ BEGIN_TEST(testBufferAllocator_API) {
   return true;
 }
 END_TEST(testBufferAllocator_API)
+
+BEGIN_TEST(testBufferAllocator_largeAllocOverflow) {
+  AutoLeaveZeal leaveZeal(cx);
+
+  JS::NonIncrementalGC(cx, JS::GCOptions::Shrink, JS::GCReason::API);
+
+  Zone* zone = cx->zone();
+  size_t initialGCHeapSize = zone->gcHeapSize.bytes();
+  size_t initialMallocHeapSize = zone->mallocHeapSize.bytes();
+
+  CHECK(AllocBuffer(zone, size_t(-1), false) == nullptr);
+  CHECK(zone->gcHeapSize.bytes() == initialGCHeapSize);
+  CHECK(zone->mallocHeapSize.bytes() == initialMallocHeapSize);
+
+  return true;
+}
+END_TEST(testBufferAllocator_largeAllocOverflow)
 
 BEGIN_TEST(testBufferAllocator_realloc) {
   AutoLeaveZeal leaveZeal(cx);
@@ -1067,6 +1082,7 @@ bool testVector(bool allocInNursery, bool dieInNursery) {
   
   void* oldVector = obj->getVector();
   void* oldBuffer = obj->getVector()->begin();
+  gc::WaitForBackgroundTasks(cx);
   CHECK(zone->bufferAllocator.isPointerWithinBuffer(oldVector));
   CHECK(zone->bufferAllocator.isPointerWithinBuffer(oldBuffer));
 
@@ -1226,6 +1242,7 @@ bool testSet(bool allocInNursery, bool dieInNursery) {
 
   
   void* oldSet = obj->getSet();
+  gc::WaitForBackgroundTasks(cx);
   CHECK(zone->bufferAllocator.isPointerWithinBuffer(oldSet));
 
   obj = nullptr;
