@@ -6,6 +6,7 @@
 
 #include "mozilla/Assertions.h"
 #include "nsError.h"
+#include "nsString.h"
 #include "sdp/RsdparsaSdpInc.h"
 #include "sdp/RsdparsaSdpMediaSection.h"
 
@@ -16,6 +17,8 @@
 
 namespace mozilla {
 
+namespace ffi = mozilla::sdp::ffi;
+
 RsdparsaSdp::RsdparsaSdp(RsdparsaSessionHandle session, const SdpOrigin& origin)
     : mSession(std::move(session)), mOrigin(origin) {
   RsdparsaSessionHandle attributeSession(sdp_new_reference(mSession.get()));
@@ -24,18 +27,9 @@ RsdparsaSdp::RsdparsaSdp(RsdparsaSessionHandle session, const SdpOrigin& origin)
 
   size_t section_count = sdp_media_section_count(mSession.get());
   for (size_t level = 0; level < section_count; level++) {
-    RustMediaSection* mediaSection =
-        sdp_get_media_section(mSession.get(), level);
-    if (!mediaSection) {
-      MOZ_ASSERT(false,
-                 "sdp_get_media_section failed because level was out of"
-                 " bounds, but we did a bounds check!");
-      break;
-    }
     RsdparsaSessionHandle newSession(sdp_new_reference(mSession.get()));
-    RsdparsaSdpMediaSection* sdpMediaSection;
-    sdpMediaSection = new RsdparsaSdpMediaSection(
-        level, std::move(newSession), mediaSection, mAttributeList.get());
+    auto* sdpMediaSection = new RsdparsaSdpMediaSection(
+        level, std::move(newSession), mAttributeList.get());
     mMediaSections.emplace_back(sdpMediaSection);
   }
 }
@@ -49,7 +43,8 @@ Sdp* RsdparsaSdp::Clone() const { return new RsdparsaSdp(*this); }
 const SdpOrigin& RsdparsaSdp::GetOrigin() const { return mOrigin; }
 
 uint32_t RsdparsaSdp::GetBandwidth(const std::string& type) const {
-  return get_sdp_bandwidth(mSession.get(), type.c_str());
+  nsDependentCString bwType(type.data(), type.size());
+  return get_sdp_bandwidth(mSession.get(), &bwType);
 }
 
 const SdpMediaSection& RsdparsaSdp::GetMediaSection(size_t level) const {
@@ -66,7 +61,8 @@ SdpMediaSection& RsdparsaSdp::AddMediaSection(
     SdpMediaSection::MediaType mediaType, SdpDirectionAttribute::Direction dir,
     uint16_t port, SdpMediaSection::Protocol protocol, sdp::AddrType addrType,
     const std::string& addr) {
-  StringView rustAddr{addr.c_str(), addr.size()};
+  sdp::ffi::StringView rustAddr{reinterpret_cast<const uint8_t*>(addr.c_str()),
+                                addr.size()};
   auto nr = sdp_add_media_section(mSession.get(), mediaType, dir, port,
                                   protocol, addrType, rustAddr);
 
@@ -74,10 +70,8 @@ SdpMediaSection& RsdparsaSdp::AddMediaSection(
     size_t level = mMediaSections.size();
     RsdparsaSessionHandle newSessHandle(sdp_new_reference(mSession.get()));
 
-    auto rustMediaSection = sdp_get_media_section(mSession.get(), level);
-    auto mediaSection =
-        new RsdparsaSdpMediaSection(level, std::move(newSessHandle),
-                                    rustMediaSection, mAttributeList.get());
+    auto* mediaSection = new RsdparsaSdpMediaSection(
+        level, std::move(newSessHandle), mAttributeList.get());
     mMediaSections.emplace_back(mediaSection);
 
     return *mediaSection;
@@ -93,12 +87,10 @@ void RsdparsaSdp::Serialize(std::ostream& os) const {
   
   
 
-  BandwidthVec* bwVec = sdp_get_session_bandwidth_vec(mSession.get());
-  char* bwString = sdp_serialize_bandwidth(bwVec);
-  if (bwString) {
-    os << bwString;
-    sdp_free_string(bwString);
-  }
+  nsAutoCString bwString;
+  sdp_serialize_bandwidth(sdp_get_session_bandwidth_vec(mSession.get()),
+                          &bwString);
+  os << bwString.get();
 
   os << "t=0 0" << CRLF;
 

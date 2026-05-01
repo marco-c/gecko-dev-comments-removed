@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef RUSTSDPMEDIASECTION_H_
 #define RUSTSDPMEDIASECTION_H_
 
@@ -50,14 +48,15 @@ class RsdparsaSdpMediaSection final : public SdpMediaSection {
 
  private:
   RsdparsaSdpMediaSection(size_t level, RsdparsaSessionHandle session,
-                          const RustMediaSection* const section,
                           const RsdparsaSdpAttributeList* sessionLevel);
+
+  using RustMediaSection = sdp::ffi::SdpMedia;
+  RustMediaSection* GetSection() const;
 
   void LoadFormats();
   void LoadConnection();
 
   RsdparsaSessionHandle mSession;
-  const RustMediaSection* mSection;
 
   MediaType mMediaType;
   std::vector<std::string> mFormats;
