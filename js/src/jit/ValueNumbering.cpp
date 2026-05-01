@@ -217,7 +217,7 @@ static bool BlockHasInterestingDefs(MBasicBlock* block) {
 
 static bool ScanDominatorsForDefs(MBasicBlock* block) {
   for (MBasicBlock* i = block;;) {
-    if (BlockHasInterestingDefs(block)) {
+    if (BlockHasInterestingDefs(i)) {
       return true;
     }
 
