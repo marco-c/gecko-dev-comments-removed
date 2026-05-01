@@ -26,6 +26,7 @@
 #include "mozilla/ipc/PBackgroundParent.h"
 #include "mozilla/media/DesktopCaptureInterface.h"
 #include "mozilla/media/MediaUtils.h"
+#include "nsAppRunner.h"
 #include "nsIPermissionManager.h"
 #include "nsIThread.h"
 #include "nsNetUtil.h"
@@ -485,10 +486,11 @@ auto AggregateCapturer::RemoveStreamsFor(CamerasParent* aParent)
           .mNumRemainingStreamsForParent = 0};
 }
 
-Maybe<int> AggregateCapturer::CaptureIdFor(int aStreamId) {
+Maybe<int> AggregateCapturer::CaptureIdFor(int aStreamId,
+                                           CamerasParent* aParent) {
   auto streamsGuard = mStreams.Lock();
   for (auto& stream : *streamsGuard) {
-    if (stream->mId == aStreamId) {
+    if (stream->mId == aStreamId && stream->mParent == aParent) {
       return Some(mCaptureId);
     }
   }
@@ -854,7 +856,7 @@ void CamerasParent::CloseEngines() {
 }
 
 std::shared_ptr<webrtc::VideoCaptureModule::DeviceInfo>
-CamerasParent::GetDeviceInfo(int aEngine) {
+CamerasParent::GetDeviceInfo(CaptureEngine aEngine) {
   MOZ_ASSERT(mVideoCaptureThread->IsOnCurrentThread());
   LOG_VERBOSE("CamerasParent(%p)::%s", this, __func__);
 
@@ -873,21 +875,19 @@ CamerasParent::GetDeviceInfo(int aEngine) {
   return info;
 }
 
-VideoEngine* CamerasParent::EnsureInitialized(int aEngine) {
+VideoEngine* CamerasParent::EnsureInitialized(CaptureEngine aEngine) {
   MOZ_ASSERT(mVideoCaptureThread->IsOnCurrentThread());
   LOG_VERBOSE("CamerasParent(%p)::%s", this, __func__);
   if (mDestroyedCaptureThread) {
     return nullptr;
   }
 
-  CaptureEngine capEngine = static_cast<CaptureEngine>(aEngine);
-
-  if (VideoEngine* engine = mEngines->ElementAt(capEngine); engine) {
+  if (VideoEngine* engine = mEngines->ElementAt(aEngine); engine) {
     return engine;
   }
 
   CaptureDeviceType captureDeviceType = CaptureDeviceType::Camera;
-  switch (capEngine) {
+  switch (aEngine) {
     case ScreenEngine:
       captureDeviceType = CaptureDeviceType::Screen;
       break;
@@ -912,7 +912,7 @@ VideoEngine* CamerasParent::EnsureInitialized(int aEngine) {
     return nullptr;
   }
 
-  return mEngines->ElementAt(capEngine) = std::move(engine);
+  return mEngines->ElementAt(aEngine) = std::move(engine);
 }
 
 
@@ -1219,11 +1219,28 @@ ipc::IPCResult CamerasParent::RecvAllocateCapture(
 
   LOG("CamerasParent(%p)::%s: Verifying permissions", this, __func__);
 
-  using Promise1 = MozPromise<bool, bool, true>;
+  PBackgroundParent* manager = Manager();
+  MOZ_ASSERT_IF(!manager, RunningGTest());
+  RefPtr<dom::ThreadsafeContentParentHandle> contentParent =
+      manager ? ipc::BackgroundParent::GetContentParentHandle(manager)
+              : nullptr;
+
+  enum class CapturePermission { Invalid, Allowed, NotAllowed };
+  using Promise1 = MozPromise<CapturePermission, bool, true>;
   using Promise2 = MozPromise<Maybe<int>, bool, true>;
   InvokeAsync(
       GetMainThreadSerialEventTarget(), __func__,
-      [aWindowID] {
+      [aWindowID, contentParent] {
+        if (contentParent) {
+          RefPtr<dom::WindowGlobalParent> wgp =
+              dom::WindowGlobalParent::GetByInnerWindowId(aWindowID);
+          if (!wgp || wgp->ContentParentId() != contentParent->ChildID()) {
+            LOG("Window does not belong to sending process");
+            return Promise1::CreateAndResolve(
+                CapturePermission::Invalid,
+                "CamerasParent::RecvAllocateCapture");
+          }
+        }
         
         
         
@@ -1237,7 +1254,9 @@ ipc::IPCResult CamerasParent::RecvAllocateCapture(
         if (!allowed) {
           LOG("No camera permission for this origin");
         }
-        return Promise1::CreateAndResolve(allowed,
+        return Promise1::CreateAndResolve(allowed
+                                              ? CapturePermission::Allowed
+                                              : CapturePermission::NotAllowed,
                                           "CamerasParent::RecvAllocateCapture");
       })
       ->Then(mVideoCaptureThread, __func__,
@@ -1249,7 +1268,12 @@ ipc::IPCResult CamerasParent::RecvAllocateCapture(
                  return Promise2::CreateAndResolve(
                      Nothing(), "CamerasParent::RecvAllocateCapture no engine");
                }
-               bool allowed = aValue.ResolveValue();
+               CapturePermission permission = aValue.ResolveValue();
+               if (permission == CapturePermission::Invalid) {
+                 return Promise2::CreateAndResolve(
+                     Nothing(), "CamerasParent::RecvAllocateCapture");
+               }
+               bool allowed = permission == CapturePermission::Allowed;
                if (!allowed && IsWindowCapturing(aWindowID, unique_id)) {
                  allowed = true;
                  LOG("No permission but window is already capturing this "
@@ -1478,7 +1502,7 @@ AggregateCapturer* CamerasParent::GetAggregator(CaptureEngine aEngine,
     if (aggregator->mCapEngine != aEngine) {
       continue;
     }
-    Maybe captureId = aggregator->CaptureIdFor(aStreamId);
+    Maybe captureId = aggregator->CaptureIdFor(aStreamId, this);
     if (captureId) {
       return aggregator.get();
     }

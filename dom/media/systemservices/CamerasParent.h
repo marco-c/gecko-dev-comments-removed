@@ -66,7 +66,7 @@ class AggregateCapturer final
   };
   RemoveStreamResult RemoveStream(int aStreamId);
   RemoveStreamResult RemoveStreamsFor(CamerasParent* aParent);
-  Maybe<int> CaptureIdFor(int aStreamId);
+  Maybe<int> CaptureIdFor(int aStreamId, CamerasParent* aParent);
   int32_t StartStream(int aStreamId,
                       const webrtc::VideoCaptureCapability& aCapability,
                       const NormalizedConstraints& aConstraints,
@@ -251,8 +251,8 @@ class CamerasParent : public PCamerasParent {
   
   
   std::shared_ptr<webrtc::VideoCaptureModule::DeviceInfo> GetDeviceInfo(
-      int aEngine);
-  VideoEngine* EnsureInitialized(int aEngine);
+      CaptureEngine aEngine);
+  VideoEngine* EnsureInitialized(CaptureEngine aEngine);
 
   
   
