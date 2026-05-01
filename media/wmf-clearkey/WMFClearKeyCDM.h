@@ -64,9 +64,6 @@ class WMFClearKeyCDM final
 
  private:
   RefPtr<SessionManagerWrapper> mSessionManager;
-  Microsoft::WRL::ComPtr<
-      ABI::Windows::Media::Protection::IMediaProtectionPMPServer>
-      mPMPServer;
 };
 
 

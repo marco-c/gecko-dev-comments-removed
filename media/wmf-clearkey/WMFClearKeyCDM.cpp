@@ -6,6 +6,7 @@
 
 #include <Mferror.h>
 #include <mfapi.h>
+#include <mutex>
 #include <oleauto.h>
 #include <windows.h>
 #include <windows.media.h>
@@ -79,8 +80,19 @@ MF_MEDIAKEYSESSION_MESSAGETYPE ToMFMessageType(cdm::MessageType aMessageType) {
 
 namespace mozilla {
 
-HRESULT WMFClearKeyCDM::RuntimeClassInitialize(IPropertyStore* aProperties) {
-  ENTRY_LOG();
+
+
+
+static HRESULT GetOrCreateSharedPMPServer(
+    Microsoft::WRL::ComPtr<WMFPMPServer>& aOut) {
+  static std::mutex sMutex;
+  static Microsoft::WRL::ComPtr<WMFPMPServer> sServer;
+
+  std::lock_guard<std::mutex> lock(sMutex);
+  if (sServer) {
+    aOut = sServer;
+    return S_OK;
+  }
   
   
   
@@ -97,11 +109,15 @@ HRESULT WMFClearKeyCDM::RuntimeClassInitialize(IPropertyStore* aProperties) {
   RETURN_IF_FAILED(AddBoolToPropertySet(
       propertyPmp.Get(), L"Windows.Media.Protection.UseHardwareProtectionLayer",
       TRUE));
-  RETURN_IF_FAILED((MakeAndInitialize<
-                    WMFPMPServer,
-                    ABI::Windows::Media::Protection::IMediaProtectionPMPServer>(
-      &mPMPServer, propertyPmp.Get())));
+  Microsoft::WRL::ComPtr<WMFPMPServer> server;
+  RETURN_IF_FAILED(MakeAndInitialize<WMFPMPServer>(&server, propertyPmp.Get()));
+  sServer = server;
+  aOut = std::move(server);
+  return S_OK;
+}
 
+HRESULT WMFClearKeyCDM::RuntimeClassInitialize(IPropertyStore* aProperties) {
+  ENTRY_LOG();
   mSessionManager = new SessionManagerWrapper(this);
   return S_OK;
 }
@@ -169,15 +185,13 @@ STDMETHODIMP WMFClearKeyCDM::GetService(REFGUID aGuidService, REFIID aRiid,
     ENTRY_LOG_ARGS("unsupported guid!");
     return MF_E_UNSUPPORTED_SERVICE;
   }
-  if (!mPMPServer) {
-    ENTRY_LOG_ARGS("no PMP server!");
-    return MF_INVALID_STATE_ERR;
-  }
+  ComPtr<WMFPMPServer> pmpServer;
+  RETURN_IF_FAILED(GetOrCreateSharedPMPServer(pmpServer));
   if (aRiid == ABI::Windows::Media::Protection::IID_IMediaProtectionPMPServer) {
-    RETURN_IF_FAILED(mPMPServer.CopyTo(aRiid, aPpvObject));
+    RETURN_IF_FAILED(pmpServer.CopyTo(aRiid, aPpvObject));
   } else {
     ComPtr<IMFGetService> getService;
-    RETURN_IF_FAILED(mPMPServer.As(&getService));
+    RETURN_IF_FAILED(pmpServer.As(&getService));
     RETURN_IF_FAILED(getService->GetService(MF_PMP_SERVICE, aRiid, aPpvObject));
   }
   return S_OK;
