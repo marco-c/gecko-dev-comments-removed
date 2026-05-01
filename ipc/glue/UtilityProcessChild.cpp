@@ -86,7 +86,7 @@ RefPtr<UtilityProcessChild> UtilityProcessChild::Get() {
 
 bool UtilityProcessChild::Init(mozilla::ipc::UntypedEndpoint&& aEndpoint,
                                const nsCString& aParentBuildID,
-                               uint64_t aSandboxingKind) {
+                               SandboxingKind aSandboxingKind) {
   MOZ_ASSERT(NS_IsMainThread());
 
   
@@ -117,7 +117,7 @@ bool UtilityProcessChild::Init(mozilla::ipc::UntypedEndpoint&& aEndpoint,
     return false;
   }
 
-  mSandbox = (SandboxingKind)aSandboxingKind;
+  mSandbox = aSandboxingKind;
 
   
   
