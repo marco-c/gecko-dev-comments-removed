@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ActorsParent.h"
 
 
@@ -2120,8 +2118,10 @@ uint64_t QuotaManager::CollectOriginsForEviction(
                         });
 
         if (!match) {
-          MOZ_ASSERT(!originInfo->mCanonicalQuotaObjects.Count(),
-                     "Inactive origin shouldn't have open files!");
+          
+          if (NS_WARN_IF(originInfo->mCanonicalQuotaObjects.Count())) {
+            continue;
+          }
           aInactiveOriginInfos.InsertElementSorted(
               originInfo, OriginInfoAccessTimeComparator());
         }
