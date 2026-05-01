@@ -170,10 +170,7 @@ class PlacesViewBase {
     
     
     let popupNode = PlacesUIUtils.lastContextMenuTriggerNode;
-    if (
-      popupNode &&
-      (popupNode.localName == "menupopup" || !popupNode._placesNode)
-    ) {
+    if (popupNode && (popupNode == "menupopup" || !popupNode._placesNode)) {
       return [];
     }
 
@@ -238,18 +235,6 @@ class PlacesViewBase {
   }
 
   buildContextMenu(aPopup) {
-    
-    
-    let triggerNode = aPopup.triggerNode;
-    
-    
-    if (
-      triggerNode?.localName == "menupopup" &&
-      triggerNode._placesNode?.childCount > 0
-    ) {
-      return false;
-    }
-
     this._contextMenuShown = aPopup;
     window.updateCommands("places");
 
