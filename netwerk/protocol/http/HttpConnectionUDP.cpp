@@ -820,6 +820,9 @@ void HttpConnectionUDP::ResetTransaction(nsHttpTransaction* aHttpTransaction) {
                                                    this);
   mConnInfo = wildCardProxyCi;
   aHttpTransaction->DoNotRemoveAltSvc();
+  
+  
+  aHttpTransaction->MakeRestartable();
   aHttpTransaction->Close(NS_ERROR_NET_RESET);
 }
 
