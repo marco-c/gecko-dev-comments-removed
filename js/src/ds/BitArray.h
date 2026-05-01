@@ -5,12 +5,23 @@
 #ifndef ds_BitArray_h
 #define ds_BitArray_h
 
+#include "mozilla/Assertions.h"
+
 #include <limits.h>
+#include <stddef.h>
 #include <string.h>
+#include <utility>
 
 #include "jstypes.h"
 
 namespace js {
+
+
+
+
+
+
+
 
 template <size_t nbits>
 class BitArray {
@@ -91,6 +102,70 @@ class BitArray {
   }
 
   static size_t offsetOfMap() { return offsetof(BitArray<nbits>, map); }
+};
+
+
+
+
+template <typename StorageType>
+class ExternalBitArray {
+ public:
+  using WordT = StorageType;
+  static constexpr size_t bitsPerElement = sizeof(WordT) * CHAR_BIT;
+
+ private:
+  WordT* array_;
+
+#ifdef DEBUG
+  size_t length_;
+#endif
+
+  auto getIndexAndMask(size_t bitIndex) const {
+    MOZ_ASSERT(bitIndex < length_);
+    size_t wordIndex = bitIndex / bitsPerElement;
+    MOZ_ASSERT(wordIndex < NumWordsForLength(length_));
+    WordT wordMask = WordT(1) << (bitIndex % bitsPerElement);
+    return std::pair{wordIndex, wordMask};
+  }
+
+ public:
+  ExternalBitArray(WordT* array, size_t length)
+      : array_(array)
+#ifdef DEBUG
+        ,
+        length_(length)
+#endif
+  {
+  }
+
+  bool get(size_t bitIndex) const {
+    auto [index, mask] = getIndexAndMask(bitIndex);
+    return array_[index] & mask;
+  }
+
+  void set(size_t bitIndex) {
+    auto [index, mask] = getIndexAndMask(bitIndex);
+    array_[index] |= mask;
+  }
+
+  void unset(size_t bitIndex) {
+    auto [index, mask] = getIndexAndMask(bitIndex);
+    array_[index] &= ~mask;
+  }
+
+  
+
+
+  static constexpr size_t NumWordsForLength(size_t length) {
+    return HowMany(length, bitsPerElement);
+  }
+
+  
+
+
+  static constexpr size_t LengthForNumWords(size_t numWords) {
+    return numWords * bitsPerElement;
+  }
 };
 
 } 

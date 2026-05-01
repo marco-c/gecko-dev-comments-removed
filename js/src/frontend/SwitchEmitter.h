@@ -227,6 +227,7 @@ class MOZ_STACK_CLASS SwitchEmitter {
     BytecodeEmitter* bce_;
 
     
+    using BitArray = ExternalBitArray<size_t>;
     mozilla::Maybe<js::Vector<size_t, 128, SystemAllocPolicy>> intmap_;
 
     

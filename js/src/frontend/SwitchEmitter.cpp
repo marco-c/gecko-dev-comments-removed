@@ -11,11 +11,11 @@
 
 #include "jstypes.h"  
 
+#include "ds/BitArray.h"
 #include "frontend/BytecodeEmitter.h"  
 #include "frontend/SharedContext.h"    
 #include "js/friend/ErrorMessages.h"   
 #include "js/TypeDecls.h"              
-#include "util/BitArray.h"
 #include "vm/BytecodeUtil.h"  
 #include "vm/Opcodes.h"       
 #include "vm/Runtime.h"       
@@ -47,19 +47,20 @@ bool SwitchEmitter::TableGenerator::addNumber(int32_t caseValue) {
     caseValue += Bit(16);
   }
   if (caseValue >= intmapBitLength_) {
-    size_t newLength = NumWordsForBitArrayOfLength(caseValue + 1);
+    size_t newLength = BitArray::NumWordsForLength(caseValue + 1);
     if (!intmap_->resize(newLength)) {
       ReportOutOfMemory(bce_->fc);
       return false;
     }
-    intmapBitLength_ = newLength * BitArrayElementBits;
+    intmapBitLength_ = BitArray::LengthForNumWords(newLength);
   }
-  if (IsBitArrayElementSet(intmap_->begin(), intmap_->length(), caseValue)) {
+  BitArray bitArray(intmap_->begin(), intmapBitLength_);
+  if (bitArray.get(caseValue)) {
     
     setInvalid();
     return true;
   }
-  SetBitArrayElement(intmap_->begin(), intmap_->length(), caseValue);
+  bitArray.set(caseValue);
   return true;
 }
 
