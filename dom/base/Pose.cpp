@@ -35,28 +35,26 @@ void Pose::SetFloat32Array(JSContext* aJSContext, nsWrapperCache* creator,
                            JS::MutableHandle<JSObject*> aRetVal,
                            JS::Heap<JSObject*>& aObj, float* aVal,
                            uint32_t aValLength, ErrorResult& aRv) {
-  if (!aVal) {
-    aRetVal.set(nullptr);
-    return;
-  }
-
-  if (!aObj) {
+  if (!aVal || aValLength == 0) {
+    
+    aObj = nullptr;
+  } else if (!aObj || JS_GetTypedArrayLength(aObj) != aValLength) {
+    
+    
     aObj =
         Float32Array::Create(aJSContext, creator, Span(aVal, aValLength), aRv);
-    if (aRv.Failed()) {
-      return;
-    }
   } else {
+    
     JS::AutoCheckCannotGC nogc;
     bool isShared = false;
-    JS::Rooted<JSObject*> obj(aJSContext, aObj.get());
-    float* data = JS_GetFloat32ArrayData(obj, &isShared, nogc);
-    if (data) {
-      memcpy(data, aVal, aValLength * sizeof(float));
-    }
+    float* data = JS_GetFloat32ArrayData(aObj, &isShared, nogc);
+    MOZ_ASSERT(data);
+    memcpy(data, aVal, aValLength * sizeof(float));
   }
 
-  aRetVal.set(aObj);
+  if (!aRv.Failed()) {
+    aRetVal.set(aObj);
+  }
 }
 
 }  
