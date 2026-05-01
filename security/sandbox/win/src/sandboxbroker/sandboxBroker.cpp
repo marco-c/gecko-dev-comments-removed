@@ -1215,12 +1215,6 @@ void SandboxBroker::SetSecurityLevelForContentProcess(int32_t aSandboxLevel,
       sandbox::SBOX_ALL_OK == result,
       "With these static arguments AddRule should never fail, what happened?");
 
-  
-  result = config->AllowLineBreaking();
-  MOZ_RELEASE_ASSERT(
-      sandbox::SBOX_ALL_OK == result,
-      "With these static arguments AddRule should never fail, what happened?");
-
   if (aSandboxLevel >= 8) {
     
     AddCachedWindowsDirRule(config, sandbox::FileSemantics::kAllowReadonly,
