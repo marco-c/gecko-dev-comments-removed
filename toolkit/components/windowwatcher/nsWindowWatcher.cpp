@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsWindowWatcher.h"
 #include "nsAutoWindowStateHelper.h"
 
@@ -1320,9 +1318,15 @@ nsresult nsWindowWatcher::OpenWindowInternal(
           targetDocShell->GetBrowsingContext()->GetSessionStorageManager();
 
       if (parentStorageManager && newStorageManager) {
+        nsCOMPtr<nsIPrincipal> storagePrincipal;
+        if (parentDoc) {
+          storagePrincipal = parentDoc->EffectiveStoragePrincipal();
+        } else {
+          storagePrincipal = subjectPrincipal;
+        }
         RefPtr<Storage> storage;
         parentStorageManager->GetStorage(
-            parentInnerWin, subjectPrincipal, subjectPrincipal,
+            parentInnerWin, subjectPrincipal, storagePrincipal,
             targetBC->UsePrivateBrowsing(), getter_AddRefs(storage));
         if (storage) {
           newStorageManager->CloneStorage(storage);
