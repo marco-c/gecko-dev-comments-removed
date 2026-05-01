@@ -1281,15 +1281,23 @@ bool nsHttpConnectionMgr::ProcessPendingQForEntry(nsHttpConnectionInfo* ci) {
 
 
 
+
+
 bool nsHttpConnectionMgr::AtActiveConnectionLimit(ConnectionEntry* ent,
-                                                  uint32_t caps) {
+                                                  uint32_t caps,
+                                                  bool forInnerConn) {
   nsHttpConnectionInfo* ci = ent->mConnInfo;
   if (ci->GetWebTransport()) {
     
     return false;
   }
-  if (ent->HasActiveH3Connection()) {
-    return true;
+
+  
+  
+  if (!(ci->IsHttp3ProxyConnection() && forInnerConn)) {
+    if (ent->HasActiveH3Connection()) {
+      return true;
+    }
   }
 
   uint32_t totalCount = ent->TotalActiveConnections();
@@ -1969,7 +1977,7 @@ nsresult nsHttpConnectionMgr::ProcessNewTransaction(nsHttpTransaction* trans) {
       }
 
       ent = specificEnt;
-      bool atLimit = AtActiveConnectionLimit(ent, trans->Caps());
+      bool atLimit = AtActiveConnectionLimit(ent, trans->Caps(), true);
       if (atLimit) {
         LOG(("hit limit in proxy conn"));
         rv = NS_ERROR_NOT_AVAILABLE;
@@ -3578,23 +3586,30 @@ ConnectionEntry* nsHttpConnectionMgr::GetOrCreateConnectionEntry(
   
   
   
-  nsAutoCString anonInvertedKey;
-  specificCI->AnonymousInvertedHashKey(anonInvertedKey);
-  ConnectionEntry* invertedEnt = mCT.GetWeak(anonInvertedKey);
-  if (invertedEnt) {
-    HttpConnectionBase* h2orh3conn =
-        GetH2orH3ActiveConn(invertedEnt, aNoHttp2, aNoHttp3);
-    if (h2orh3conn && h2orh3conn->IsExperienced() &&
-        h2orh3conn->NoClientCertAuth()) {
-      MOZ_ASSERT(h2orh3conn->UsingSpdy() || h2orh3conn->UsingHttp3());
-      LOG(
-          ("GetOrCreateConnectionEntry is coalescing h2/3 an/onymous "
-           "connections, ent=%p",
-           invertedEnt));
-      if (aAvailableForDispatchNow) {
-        *aAvailableForDispatchNow = true;
+  
+  
+  
+  
+  
+  if (!specificCI->IsWildCard()) {
+    nsAutoCString anonInvertedKey;
+    specificCI->AnonymousInvertedHashKey(anonInvertedKey);
+    ConnectionEntry* invertedEnt = mCT.GetWeak(anonInvertedKey);
+    if (invertedEnt) {
+      HttpConnectionBase* h2orh3conn =
+          GetH2orH3ActiveConn(invertedEnt, aNoHttp2, aNoHttp3);
+      if (h2orh3conn && h2orh3conn->IsExperienced() &&
+          h2orh3conn->NoClientCertAuth()) {
+        MOZ_ASSERT(h2orh3conn->UsingSpdy() || h2orh3conn->UsingHttp3());
+        LOG(
+            ("GetOrCreateConnectionEntry is coalescing h2/3 an/onymous "
+             "connections, ent=%p",
+             invertedEnt));
+        if (aAvailableForDispatchNow) {
+          *aAvailableForDispatchNow = true;
+        }
+        return invertedEnt;
       }
-      return invertedEnt;
     }
   }
 
