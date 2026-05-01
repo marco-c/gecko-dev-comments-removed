@@ -21,7 +21,7 @@ ChromeUtils.defineESModuleGetters(this, {
   IPPProxyManager:
     "moz-src:///toolkit/components/ipprotection/IPPProxyManager.sys.mjs",
   ProxyUsage:
-    "moz-src:///toolkit/components/ipprotection/GuardianClient.sys.mjs",
+    "moz-src:///toolkit/components/ipprotection/GuardianTypes.sys.mjs",
 });
 
 const mockIdleService = {
@@ -303,10 +303,10 @@ add_task(async function test_nthTabOpened() {
 
   const win = await BrowserTestUtils.openNewBrowserWindow();
 
-  await BrowserTestUtils.openNewForegroundTab(win);
+  await BrowserTestUtils.openNewForegroundTab(win.gBrowser);
   Assert.ok(handlerStub.calledOnce, "Called once after first tab opened");
 
-  await BrowserTestUtils.openNewForegroundTab(win);
+  await BrowserTestUtils.openNewForegroundTab(win.gBrowser);
   Assert.ok(handlerStub.calledTwice, "Called twice after second tab opened");
 
   BrowserTestUtils.closeWindow(win);
