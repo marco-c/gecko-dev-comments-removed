@@ -972,32 +972,34 @@ class TrustPanel {
     let owner = "";
 
     
-    if (this.#isSecureConnection || this.#isCertUserOverridden) {
-      verifier = this.#tooltipText();
+    if (this.#isSecureConnection) {
+      verifier = this.#getIdentityData().caOrg;
     }
 
     
     
     if (this.#isEV || this.#qwac) {
-      let iData = this.#getIdentityData(this.#qwac || this.#secInfo.serverCert);
-      owner = iData.subjectOrg;
-      verifier = this.#tooltipText();
+      let identityData = this.#getIdentityData(
+        this.#qwac || this.#secInfo.serverCert
+      );
+      owner = identityData.subjectOrg;
+      verifier = identityData.caOrg;
 
       
-      if (iData.city) {
-        supplemental += iData.city + "\n";
+      if (identityData.city) {
+        supplemental += identityData.city + "\n";
       }
-      if (iData.state && iData.country) {
+      if (identityData.state && identityData.country) {
         supplemental += gNavigatorBundle.getFormattedString(
           "identity.identified.state_and_country",
-          [iData.state, iData.country]
+          [identityData.state, identityData.country]
         );
-      } else if (iData.state) {
+      } else if (identityData.state) {
         
-        supplemental += iData.state;
-      } else if (iData.country) {
+        supplemental += identityData.state;
+      } else if (identityData.country) {
         
-        supplemental += iData.country;
+        supplemental += identityData.country;
       }
     }
     return { supplemental, verifier, owner };
