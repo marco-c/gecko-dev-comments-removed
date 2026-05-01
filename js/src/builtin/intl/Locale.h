@@ -9,6 +9,7 @@
 
 #include "js/Class.h"
 #include "vm/NativeObject.h"
+#include "vm/StringType.h"
 
 namespace js::intl {
 
@@ -22,22 +23,43 @@ class LocaleObject : public NativeObject {
   static constexpr uint32_t UNICODE_EXTENSION_SLOT = 2;
   static constexpr uint32_t SLOT_COUNT = 3;
 
-  
-
-
-
-  JSString* languageTag() const {
-    return getFixedSlot(LANGUAGE_TAG_SLOT).toString();
+  void initialize(JSLinearString* languageTag, JSLinearString* baseName,
+                  JSLinearString* unicodeExtension) {
+    initFixedSlot(LANGUAGE_TAG_SLOT, JS::StringValue(languageTag));
+    initFixedSlot(BASENAME_SLOT, JS::StringValue(baseName));
+    if (unicodeExtension) {
+      initFixedSlot(UNICODE_EXTENSION_SLOT, JS::StringValue(unicodeExtension));
+    } else {
+      MOZ_ASSERT(getFixedSlot(UNICODE_EXTENSION_SLOT).isUndefined());
+    }
   }
 
   
 
 
 
-  JSString* baseName() const { return getFixedSlot(BASENAME_SLOT).toString(); }
+  JSLinearString* getLanguageTag() const {
+    return &getFixedSlot(LANGUAGE_TAG_SLOT).toString()->asLinear();
+  }
 
-  const Value& unicodeExtension() const {
-    return getFixedSlot(UNICODE_EXTENSION_SLOT);
+  
+
+
+
+  JSLinearString* getBaseName() const {
+    return &getFixedSlot(BASENAME_SLOT).toString()->asLinear();
+  }
+
+  
+
+
+
+  JSLinearString* getUnicodeExtension() const {
+    const auto& slot = getFixedSlot(UNICODE_EXTENSION_SLOT);
+    if (slot.isUndefined()) {
+      return nullptr;
+    }
+    return &slot.toString()->asLinear();
   }
 
  private:

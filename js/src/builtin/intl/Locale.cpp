@@ -107,28 +107,26 @@ static LocaleObject* CreateLocaleObject(JSContext* cx,
     return nullptr;
   }
 
-  Rooted<JSString*> tagStr(cx, buffer.toAsciiString(cx));
+  Rooted<JSLinearString*> tagStr(cx, buffer.toAsciiString(cx));
   if (!tagStr) {
     return nullptr;
   }
 
   size_t baseNameLength = BaseNameLength(tag);
 
-  Rooted<JSString*> baseName(cx,
-                             NewDependentString(cx, tagStr, 0, baseNameLength));
+  Rooted<JSLinearString*> baseName(
+      cx, NewDependentString(cx, tagStr, 0, baseNameLength));
   if (!baseName) {
     return nullptr;
   }
 
-  Rooted<JS::Value> unicodeExtension(cx, JS::UndefinedValue());
+  Rooted<JSLinearString*> unicodeExtension(cx);
   if (auto result = UnicodeExtensionPosition(tag)) {
-    JSString* str = NewDependentString(
+    unicodeExtension = NewDependentString(
         cx, tagStr, baseNameLength + 1 + result->index, result->length);
-    if (!str) {
+    if (!unicodeExtension) {
       return nullptr;
     }
-
-    unicodeExtension.setString(str);
   }
 
   auto* locale = NewObjectWithClassProto<LocaleObject>(cx, prototype);
@@ -136,9 +134,8 @@ static LocaleObject* CreateLocaleObject(JSContext* cx,
     return nullptr;
   }
 
-  locale->initFixedSlot(LocaleObject::LANGUAGE_TAG_SLOT, StringValue(tagStr));
-  locale->initFixedSlot(LocaleObject::BASENAME_SLOT, StringValue(baseName));
-  locale->initFixedSlot(LocaleObject::UNICODE_EXTENSION_SLOT, unicodeExtension);
+  
+  locale->initialize(tagStr, baseName, unicodeExtension);
 
   return locale;
 }
@@ -495,10 +492,10 @@ bool js::intl::ApplyUnicodeExtensionToTag(
   return true;
 }
 
-static JS::Result<JSString*> LanguageTagFromMaybeWrappedLocale(JSContext* cx,
-                                                               JSObject* obj) {
+static JS::Result<JSLinearString*> LanguageTagFromMaybeWrappedLocale(
+    JSContext* cx, JSObject* obj) {
   if (obj->is<LocaleObject>()) {
-    return obj->as<LocaleObject>().languageTag();
+    return obj->as<LocaleObject>().getLanguageTag();
   }
 
   JSObject* unwrapped = CheckedUnwrapStatic(obj);
@@ -511,11 +508,16 @@ static JS::Result<JSString*> LanguageTagFromMaybeWrappedLocale(JSContext* cx,
     return nullptr;
   }
 
-  Rooted<JSString*> tagStr(cx, unwrapped->as<LocaleObject>().languageTag());
+  Rooted<JSString*> tagStr(cx, unwrapped->as<LocaleObject>().getLanguageTag());
   if (!cx->compartment()->wrap(cx, &tagStr)) {
     return cx->alreadyReportedError();
   }
-  return tagStr.get();
+
+  auto* linear = tagStr->ensureLinear(cx);
+  if (!linear) {
+    return cx->alreadyReportedError();
+  }
+  return linear;
 }
 
 
@@ -785,38 +787,30 @@ static inline auto FindUnicodeExtensionType(
 
 static bool GetUnicodeExtension(JSContext* cx, LocaleObject* locale,
                                 UnicodeKey key,
-                                MutableHandle<JS::Value> value) {
+                                MutableHandle<JS::Value> result) {
   
-  const Value& unicodeExtensionValue = locale->unicodeExtension();
-  if (unicodeExtensionValue.isUndefined()) {
-    value.setUndefined();
-    return true;
-  }
-
-  JSLinearString* unicodeExtension =
-      unicodeExtensionValue.toString()->ensureLinear(cx);
+  auto* unicodeExtension = locale->getUnicodeExtension();
   if (!unicodeExtension) {
-    return false;
-  }
-
-  
-  auto result = FindUnicodeExtensionType(unicodeExtension, key);
-
-  
-  if (!result) {
-    value.setUndefined();
+    result.setUndefined();
     return true;
   }
 
-  size_t index = result->index;
-  size_t length = result->length;
+  
+  auto indexAndLength = FindUnicodeExtensionType(unicodeExtension, key);
 
   
-  JSString* str = NewDependentString(cx, unicodeExtension, index, length);
+  if (!indexAndLength) {
+    result.setUndefined();
+    return true;
+  }
+  auto [index, length] = *indexAndLength;
+
+  
+  auto* str = NewDependentString(cx, unicodeExtension, index, length);
   if (!str) {
     return false;
   }
-  value.setString(str);
+  result.setString(str);
   return true;
 }
 
@@ -912,10 +906,7 @@ static bool Locale_maximize(JSContext* cx, const CallArgs& args) {
 
   
   auto* locale = &args.thisv().toObject().as<LocaleObject>();
-  Rooted<JSLinearString*> tagStr(cx, locale->languageTag()->ensureLinear(cx));
-  if (!tagStr) {
-    return false;
-  }
+  Rooted<JSLinearString*> tagStr(cx, locale->getLanguageTag());
 
   mozilla::intl::Locale tag;
   if (!ParseLocale(cx, tagStr, tag)) {
@@ -949,10 +940,7 @@ static bool Locale_minimize(JSContext* cx, const CallArgs& args) {
 
   
   auto* locale = &args.thisv().toObject().as<LocaleObject>();
-  Rooted<JSLinearString*> tagStr(cx, locale->languageTag()->ensureLinear(cx));
-  if (!tagStr) {
-    return false;
-  }
+  Rooted<JSLinearString*> tagStr(cx, locale->getLanguageTag());
 
   mozilla::intl::Locale tag;
   if (!ParseLocale(cx, tagStr, tag)) {
@@ -986,7 +974,7 @@ static bool Locale_toString(JSContext* cx, const CallArgs& args) {
 
   
   auto* locale = &args.thisv().toObject().as<LocaleObject>();
-  args.rval().setString(locale->languageTag());
+  args.rval().setString(locale->getLanguageTag());
   return true;
 }
 
@@ -1003,7 +991,7 @@ static bool Locale_baseName(JSContext* cx, const CallArgs& args) {
 
   
   auto* locale = &args.thisv().toObject().as<LocaleObject>();
-  args.rval().setString(locale->baseName());
+  args.rval().setString(locale->getBaseName());
   return true;
 }
 
@@ -1129,10 +1117,7 @@ static bool Locale_language(JSContext* cx, const CallArgs& args) {
 
   
   auto* locale = &args.thisv().toObject().as<LocaleObject>();
-  JSLinearString* baseName = locale->baseName()->ensureLinear(cx);
-  if (!baseName) {
-    return false;
-  }
+  auto* baseName = locale->getBaseName();
 
   
 
@@ -1164,10 +1149,7 @@ static bool Locale_script(JSContext* cx, const CallArgs& args) {
 
   
   auto* locale = &args.thisv().toObject().as<LocaleObject>();
-  JSLinearString* baseName = locale->baseName()->ensureLinear(cx);
-  if (!baseName) {
-    return false;
-  }
+  auto* baseName = locale->getBaseName();
 
   
 
@@ -1205,10 +1187,7 @@ static bool Locale_region(JSContext* cx, const CallArgs& args) {
 
   
   auto* locale = &args.thisv().toObject().as<LocaleObject>();
-  JSLinearString* baseName = locale->baseName()->ensureLinear(cx);
-  if (!baseName) {
-    return false;
-  }
+  auto* baseName = locale->getBaseName();
 
   
 
@@ -1246,10 +1225,7 @@ static bool Locale_variants(JSContext* cx, const CallArgs& args) {
 
   
   auto* locale = &args.thisv().toObject().as<LocaleObject>();
-  JSLinearString* baseName = locale->baseName()->ensureLinear(cx);
-  if (!baseName) {
-    return false;
-  }
+  auto* baseName = locale->getBaseName();
 
   auto parts = BaseNameParts(baseName);
 
@@ -1375,12 +1351,12 @@ static JSLinearString* ValidateAndCanonicalizeLanguageTag(
 static JSLinearString* ValidateAndCanonicalizeLanguageTag(
     JSContext* cx, Handle<Value> tagValue) {
   if (tagValue.isObject()) {
-    JSString* tagStr;
+    JSLinearString* tagStr;
     JS_TRY_VAR_OR_RETURN_NULL(
         cx, tagStr,
         LanguageTagFromMaybeWrappedLocale(cx, &tagValue.toObject()));
     if (tagStr) {
-      return tagStr->ensureLinear(cx);
+      return tagStr;
     }
   }
 
@@ -1425,16 +1401,12 @@ bool js::intl::CanonicalizeLocaleList(JSContext* cx, Handle<Value> locales,
   }
 
   if (locales.isObject()) {
-    JSString* languageTag;
+    JSLinearString* languageTag;
     JS_TRY_VAR_OR_RETURN_FALSE(
         cx, languageTag,
         LanguageTagFromMaybeWrappedLocale(cx, &locales.toObject()));
     if (languageTag) {
-      auto* linear = languageTag->ensureLinear(cx);
-      if (!linear) {
-        return false;
-      }
-      return result.append(linear);
+      return result.append(languageTag);
     }
   }
 
