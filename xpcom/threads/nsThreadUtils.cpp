@@ -26,19 +26,13 @@
 #  include <windows.h>
 #elif defined(XP_MACOSX)
 #  include <sys/resource.h>
-#elif defined(XP_LINUX)
+#elif defined(XP_LINUX) && !defined(ANDROID)
 #  include <sys/syscall.h>
 
 
-#  ifndef IOPRIO_WHO_THREAD
-#    define IOPRIO_WHO_THREAD 1
-#  endif
-#  ifndef IOPRIO_CLASS_BE
-#    define IOPRIO_CLASS_BE 2
-#  endif
-#  ifndef IOPRIO_PRIO_VALUE
-#    define IOPRIO_PRIO_VALUE(class, data) (((class) << 13) | (data))
-#  endif
+#  define IOPRIO_WHO_THREAD 1
+#  define IOPRIO_CLASS_BE 2
+#  define IOPRIO_PRIO_VALUE(class, data) (((class) << 13) | (data))
 #endif
 
 #if defined(ANDROID)
@@ -529,7 +523,7 @@ nsAutoLowPriorityIO::nsAutoLowPriorityIO() {
   lowIOPrioritySet =
       oldPriority != -1 &&
       setiopolicy_np(IOPOL_TYPE_DISK, IOPOL_SCOPE_THREAD, IOPOL_THROTTLE) != -1;
-#elif defined(XP_LINUX)
+#elif defined(XP_LINUX) && !defined(ANDROID)
   
   
   oldPriority =
@@ -552,7 +546,7 @@ nsAutoLowPriorityIO::~nsAutoLowPriorityIO() {
   if (MOZ_LIKELY(lowIOPrioritySet)) {
     setiopolicy_np(IOPOL_TYPE_DISK, IOPOL_SCOPE_THREAD, oldPriority);
   }
-#elif defined(XP_LINUX)
+#elif defined(XP_LINUX) && !defined(ANDROID)
   if (MOZ_LIKELY(lowIOPrioritySet)) {
     syscall(__NR_ioprio_set, IOPRIO_WHO_THREAD, 0, oldPriority);
   }
