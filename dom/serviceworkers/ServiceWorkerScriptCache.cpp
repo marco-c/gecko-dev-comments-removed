@@ -1071,28 +1071,37 @@ CompareNetwork::OnStreamComplete(nsIStreamLoader* aLoader,
     mRegistration->RefreshLastUpdateCheckTime();
   }
 
-  nsAutoCString mimeType;
-  rv = httpChannel->GetContentType(mimeType);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    
-    
-    
-    
-    rv = NS_ERROR_DOM_SECURITY_ERR;
-    return rv;
-  }
+#ifdef NIGHTLY_BUILD
+  nsCOMPtr<nsILoadInfo> loadInfo = mChannel->LoadInfo();
+  if (!JS::Prefs::experimental_import_text() ||
+      (loadInfo->GetExternalContentPolicyType() !=
+       ExtContentPolicyType::TYPE_TEXT)) {
+#endif
+    nsAutoCString mimeType;
+    rv = httpChannel->GetContentType(mimeType);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      
+      
+      
+      
+      rv = NS_ERROR_DOM_SECURITY_ERR;
+      return rv;
+    }
 
-  auto mimeTypeUTF16 = NS_ConvertUTF8toUTF16(mimeType);
-  if (mimeTypeUTF16.IsEmpty() ||
-      !(nsContentUtils::IsJavascriptMIMEType(mimeTypeUTF16) ||
-        nsContentUtils::IsJsonMimeType(mimeTypeUTF16))) {
-    ServiceWorkerManager::LocalizeAndReportToAllClients(
-        mRegistration->Scope(), "ServiceWorkerRegisterMimeTypeError2",
-        nsTArray<nsString>{NS_ConvertUTF8toUTF16(mRegistration->Scope()),
-                           mimeTypeUTF16, NS_ConvertUTF8toUTF16(mURL)});
-    rv = NS_ERROR_DOM_SECURITY_ERR;
-    return rv;
+    auto mimeTypeUTF16 = NS_ConvertUTF8toUTF16(mimeType);
+    if (mimeTypeUTF16.IsEmpty() ||
+        !(nsContentUtils::IsJavascriptMIMEType(mimeTypeUTF16) ||
+          nsContentUtils::IsJsonMimeType(mimeTypeUTF16))) {
+      ServiceWorkerManager::LocalizeAndReportToAllClients(
+          mRegistration->Scope(), "ServiceWorkerRegisterMimeTypeError2",
+          nsTArray<nsString>{NS_ConvertUTF8toUTF16(mRegistration->Scope()),
+                             mimeTypeUTF16, NS_ConvertUTF8toUTF16(mURL)});
+      rv = NS_ERROR_DOM_SECURITY_ERR;
+      return rv;
+    }
+#ifdef NIGHTLY_BUILD
   }
+#endif
 
   nsCOMPtr<nsIURI> channelURL;
   rv = httpChannel->GetURI(getter_AddRefs(channelURL));
