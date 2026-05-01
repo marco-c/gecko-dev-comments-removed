@@ -3110,89 +3110,14 @@ bool WriteExtraFile(const nsAString& id, const AnnotationTable& annotations) {
   return WriteExtraFile(pw, annotations);
 }
 
-template <typename T>
-static bool IsFixedSizeAnnotation(AnnotationContents& contents) {
-  return ((contents.tag == AnnotationContents::Tag::ByteBuffer) &&
-          (contents.byte_buffer._0 == sizeof(T))) ||
-         ((contents.tag == AnnotationContents::Tag::OwnedByteBuffer) &&
-          (contents.owned_byte_buffer._0 == sizeof(T)));
-}
-
-
 
 
 
 static void AddSharedAnnotations(AnnotationTable& aAnnotations) {
   for (auto key : MakeEnumeratedRange(Annotation::Count)) {
-    AnnotationContents contents = {};
-    nsAutoCString value;
-    size_t address =
-        mozannotation_get_contents(static_cast<uint32_t>(key), &contents);
-
-    if (address) {
-      switch (TypeOfAnnotation(key)) {
-        case AnnotationType::String:
-          switch (contents.tag) {
-            case AnnotationContents::Tag::Empty:
-              break;
-            case AnnotationContents::Tag::CStringPointer:
-              address = *reinterpret_cast<size_t*>(address);
-              if (address == 0) {
-                break;
-              }
-              
-            case AnnotationContents::Tag::CString:
-              value.Assign(reinterpret_cast<const char*>(address));
-              break;
-            case AnnotationContents::Tag::NSCStringPointer:
-              value.Assign(*reinterpret_cast<nsCString*>(address));
-              break;
-            case AnnotationContents::Tag::ByteBuffer:
-              value.Assign(reinterpret_cast<const char*>(address),
-                           contents.byte_buffer._0);
-              break;
-            case AnnotationContents::Tag::OwnedByteBuffer:
-              value.Assign(reinterpret_cast<const char*>(address),
-                           contents.owned_byte_buffer._0);
-              break;
-          }
-
-          break;
-        case AnnotationType::Boolean:
-          if (IsFixedSizeAnnotation<bool>(contents)) {
-            value.Assign(*reinterpret_cast<const bool*>(address) ? "1" : "0");
-          }
-          break;
-        case AnnotationType::U32:
-          if (IsFixedSizeAnnotation<uint32_t>(contents)) {
-            value.AppendInt(*reinterpret_cast<const uint32_t*>(address));
-          }
-          break;
-        case AnnotationType::U64:
-          if (IsFixedSizeAnnotation<uint64_t>(contents)) {
-            value.AppendInt(*reinterpret_cast<const uint64_t*>(address));
-          }
-          break;
-        case AnnotationType::USize:
-          if (IsFixedSizeAnnotation<size_t>(contents)) {
-#ifdef XP_MACOSX
-            
-            
-            value.AppendInt(*reinterpret_cast<const uint64_t*>(address));
-#else
-            value.AppendInt(*reinterpret_cast<const size_t*>(address));
-#endif
-          }
-          break;
-        case AnnotationType::Object:
-          
-          break;
-      }
-
-      if (!value.IsEmpty() && aAnnotations[key].IsEmpty() &&
-          ShouldIncludeAnnotation(key, value.get())) {
-        aAnnotations[key] = value;
-      }
+    if (!aAnnotations[key].IsEmpty() &&
+        !ShouldIncludeAnnotation(key, aAnnotations[key].get())) {
+      aAnnotations[key] = EmptyCString();
     }
   }
 
