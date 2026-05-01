@@ -525,6 +525,9 @@ class WeakMap : public WeakMapBase {
   }
 
   void valueReadBarrier(const JS::Value& v) const {
+    
+    
+    
     JS::ExposeValueToActiveJS(v);
     if (MOZ_UNLIKELY(v.isSymbol())) {
       gc::MarkSymbolForWeakMapReadBarrier(zone(), v.toSymbol());

@@ -3446,24 +3446,29 @@ void AssertPropertyLookup(NativeObject* obj, PropertyKey id, uint32_t slot) {
 }
 
 
-void ReadBarrier(gc::Cell* cell) {
+
+void WeakMapValueReadBarrier(js::gc::TenuredCell* cell, Zone* zone) {
   AutoUnsafeCallWithABI unsafe;
 
-  MOZ_ASSERT(!JS::RuntimeHeapIsCollecting());
-  MOZ_ASSERT(!gc::IsInsideNursery(cell));
+  
+  {
+    MOZ_ASSERT(!JS::RuntimeHeapIsCollecting());
+    MOZ_ASSERT(!gc::IsInsideNursery(cell));
+    MOZ_ASSERT(!gc::detail::TenuredCellIsMarkedBlack(cell));
 
-  gc::TenuredCell* tenured = &cell->asTenured();
-  MOZ_ASSERT(!gc::detail::TenuredCellIsMarkedBlack(tenured));
-
-  Zone* zone = tenured->zone();
-  if (zone->needsMarkingBarrier()) {
-    gc::PerformIncrementalReadBarrier(tenured);
-  } else if (!zone->isGCPreparing() &&
-             gc::detail::NonBlackCellIsMarkedGray(tenured)) {
-    gc::UnmarkGrayGCThingRecursively(tenured);
+    if (zone->needsMarkingBarrier()) {
+      gc::PerformIncrementalReadBarrier(cell);
+    } else if (!zone->isGCPreparing() &&
+               gc::detail::NonBlackCellIsMarkedGray(cell)) {
+      gc::UnmarkGrayGCThingRecursively(cell);
+    }
+    MOZ_ASSERT_IF(!zone->isGCPreparing(),
+                  !gc::detail::TenuredCellIsMarkedGray(cell));
   }
-  MOZ_ASSERT_IF(!zone->isGCPreparing(),
-                !gc::detail::TenuredCellIsMarkedGray(tenured));
+
+  if (MOZ_UNLIKELY(cell->is<JS::Symbol>())) {
+    gc::MarkSymbolForWeakMapReadBarrier(zone, cell->as<JS::Symbol>());
+  }
 }
 
 void AssumeUnreachable(const char* output) {
