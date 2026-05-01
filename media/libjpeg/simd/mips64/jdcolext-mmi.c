@@ -160,10 +160,10 @@ void jsimd_ycc_rgb_convert_mmi(JDIMENSION out_width, JSAMPIMAGE input_buf,
 
       be = _mm_add_pi16(be, cbe);
       bo = _mm_add_pi16(bo, cbo);
-      be = _mm_add_pi16(be, cbe);             
-      bo = _mm_add_pi16(bo, cbo);             
-      re = _mm_add_pi16(re, cre);             
-      ro = _mm_add_pi16(ro, cro);             
+      be = _mm_add_pi16(be, cbe);         
+      bo = _mm_add_pi16(bo, cbo);         
+      re = _mm_add_pi16(re, cre);         
+      ro = _mm_add_pi16(ro, cro);         
 
       gle = _mm_unpacklo_pi16(cbe, cre);
       ghe = _mm_unpackhi_pi16(cbe, cre);
@@ -183,33 +183,43 @@ void jsimd_ycc_rgb_convert_mmi(JDIMENSION out_width, JSAMPIMAGE input_buf,
       glo = _mm_srai_pi32(glo, SCALEBITS);
       gho = _mm_srai_pi32(gho, SCALEBITS);
 
-      ge = _mm_packs_pi32(gle, ghe);       
-      go = _mm_packs_pi32(glo, gho);       
+      ge = _mm_packs_pi32(gle, ghe);  
+      go = _mm_packs_pi32(glo, gho);  
       ge = _mm_sub_pi16(ge, cre);  
       go = _mm_sub_pi16(go, cro);  
 
       ye = _mm_and_si64(mask, y);             
       yo = _mm_srli_pi16(y, BYTE_BIT);        
 
-      re = _mm_add_pi16(re, ye);              
-      ro = _mm_add_pi16(ro, yo);              
+      re = _mm_add_pi16(re, ye);          
+      ro = _mm_add_pi16(ro, yo);          
       re = _mm_packs_pu16(re, re);            
       ro = _mm_packs_pu16(ro, ro);            
 
-      ge = _mm_add_pi16(ge, ye);              
-      go = _mm_add_pi16(go, yo);              
+      ge = _mm_add_pi16(ge, ye);          
+      go = _mm_add_pi16(go, yo);          
       ge = _mm_packs_pu16(ge, ge);            
       go = _mm_packs_pu16(go, go);            
 
-      be = _mm_add_pi16(be, ye);              
-      bo = _mm_add_pi16(bo, yo);              
+      be = _mm_add_pi16(be, ye);          
+      bo = _mm_add_pi16(bo, yo);          
       be = _mm_packs_pu16(be, be);            
       bo = _mm_packs_pu16(bo, bo);            
 
 #if RGB_PIXELSIZE == 3
 
       
-      
+
+
+
+
+
+
+
+
+
+
+
       mmA = _mm_unpacklo_pi8(mmA, mmC);       
       mmE = _mm_unpacklo_pi8(mmE, mmB);       
       mmD = _mm_unpacklo_pi8(mmD, mmF);       
@@ -320,10 +330,18 @@ void jsimd_ycc_rgb_convert_mmi(JDIMENSION out_width, JSAMPIMAGE input_buf,
       xe = _mm_xor_si64(xe, xe);
       xo = _mm_xor_si64(xo, xo);
 #endif
+
       
-      
-      
-      
+
+
+
+
+
+
+
+
+
+
 
       mmA = _mm_unpacklo_pi8(mmA, mmC);       
       mmE = _mm_unpacklo_pi8(mmE, mmG);       

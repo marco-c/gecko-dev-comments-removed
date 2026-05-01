@@ -1267,7 +1267,7 @@ jsimd_can_encode_mcu_AC_first_prepare(void)
     return 0;
   if (SIZEOF_SIZE_T != 4)
     return 0;
-  if (simd_support & JSIMD_SSE2)
+  if ((simd_support & JSIMD_SSE2) && simd_huffman)
     return 1;
 
   return 0;
@@ -1293,7 +1293,7 @@ jsimd_can_encode_mcu_AC_refine_prepare(void)
     return 0;
   if (SIZEOF_SIZE_T != 4)
     return 0;
-  if (simd_support & JSIMD_SSE2)
+  if ((simd_support & JSIMD_SSE2) && simd_huffman)
     return 1;
 
   return 0;

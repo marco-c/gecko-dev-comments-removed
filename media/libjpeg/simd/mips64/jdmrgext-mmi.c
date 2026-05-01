@@ -120,7 +120,7 @@ void jsimd_h2v1_merged_upsample_mmi(JDIMENSION output_width,
     mask = decenter = 0.0;
     mask = _mm_cmpeq_pi16(mask, mask);
     decenter = _mm_cmpeq_pi16(decenter, decenter);
-    mask = _mm_srli_pi16(mask, BYTE_BIT);   
+    mask = _mm_srli_pi16(mask, BYTE_BIT);     
     decenter = _mm_slli_pi16(decenter, 7);  
 
     cbl = _mm_unpacklo_pi8(cb, zero);         
@@ -164,10 +164,10 @@ void jsimd_h2v1_merged_upsample_mmi(JDIMENSION output_width,
 
     bl = _mm_add_pi16(bl, cbl);
     bh = _mm_add_pi16(bh, cbh);
-    bl = _mm_add_pi16(bl, cbl);               
-    bh = _mm_add_pi16(bh, cbh);               
-    rl = _mm_add_pi16(rl, crl);               
-    rh = _mm_add_pi16(rh, crh);               
+    bl = _mm_add_pi16(bl, cbl);           
+    bh = _mm_add_pi16(bh, cbh);           
+    rl = _mm_add_pi16(rl, crl);           
+    rh = _mm_add_pi16(rh, crh);           
 
     ga = _mm_unpacklo_pi16(cbl, crl);
     gb = _mm_unpackhi_pi16(cbl, crl);
@@ -187,10 +187,10 @@ void jsimd_h2v1_merged_upsample_mmi(JDIMENSION output_width,
     gc = _mm_srai_pi32(gc, SCALEBITS);
     gd = _mm_srai_pi32(gd, SCALEBITS);
 
-    gl = _mm_packs_pi32(ga, gb);           
-    gh = _mm_packs_pi32(gc, gd);           
-    gl = _mm_sub_pi16(gl, crl);    
-    gh = _mm_sub_pi16(gh, crh);    
+    gl = _mm_packs_pi32(ga, gb);     
+    gh = _mm_packs_pi32(gc, gd);     
+    gl = _mm_sub_pi16(gl, crl);  
+    gh = _mm_sub_pi16(gh, crh);  
 
     ythise = _mm_and_si64(mask, ythis);       
     ythiso = _mm_srli_pi16(ythis, BYTE_BIT);  
@@ -221,8 +221,17 @@ void jsimd_h2v1_merged_upsample_mmi(JDIMENSION output_width,
 #if RGB_PIXELSIZE == 3
 
     
-    
-    
+
+
+
+
+
+
+
+
+
+
+
     mmG = _mm_unpacklo_pi8(mmA, mmC);         
     mmA = _mm_unpackhi_pi8(mmA, mmC);         
     mmH = _mm_unpacklo_pi8(mmE, mmB);         
@@ -367,10 +376,18 @@ void jsimd_h2v1_merged_upsample_mmi(JDIMENSION output_width,
     xe = _mm_xor_si64(xe, xe);
     xo = _mm_xor_si64(xo, xo);
 #endif
+
     
-    
-    
-    
+
+
+
+
+
+
+
+
+
+
 
     mm8 = _mm_unpacklo_pi8(mmA, mmC);         
     mm9 = _mm_unpackhi_pi8(mmA, mmC);         
@@ -523,14 +540,14 @@ void jsimd_h2v1_merged_upsample_mmi(JDIMENSION output_width,
       rl = _mm_srai_pi16(rl, 1);              
 
       bl = _mm_add_pi16(bl, cbl);
-      bl = _mm_add_pi16(bl, cbl);             
-      rl = _mm_add_pi16(rl, crl);             
+      bl = _mm_add_pi16(bl, cbl);         
+      rl = _mm_add_pi16(rl, crl);         
 
       gl = _mm_unpacklo_pi16(cbl, crl);
       gl = _mm_madd_pi16(gl, PW_MF0344_F0285);
       gl = _mm_add_pi32(gl, PD_ONEHALF);
       gl = _mm_srai_pi32(gl, SCALEBITS);
-      gl = _mm_packs_pi32(gl, zero);       
+      gl = _mm_packs_pi32(gl, zero);  
       gl = _mm_sub_pi16(gl, crl);  
 
       yl = _mm_unpacklo_pi8(y, zero);         

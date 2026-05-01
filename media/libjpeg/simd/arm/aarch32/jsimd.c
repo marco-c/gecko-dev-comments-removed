@@ -15,6 +15,7 @@
 
 
 
+
 #define JPEG_INTERNALS
 #include "../../../src/jinclude.h"
 #include "../../../src/jpeglib.h"
@@ -907,7 +908,7 @@ jsimd_can_huff_encode_one_block(void)
   if (sizeof(JCOEF) != 2)
     return 0;
 
-  if (simd_support & JSIMD_NEON && simd_huffman)
+  if ((simd_support & JSIMD_NEON) && simd_huffman)
     return 1;
 
   return 0;
@@ -932,7 +933,7 @@ jsimd_can_encode_mcu_AC_first_prepare(void)
   if (sizeof(JCOEF) != 2)
     return 0;
 
-  if (simd_support & JSIMD_NEON)
+  if ((simd_support & JSIMD_NEON) && simd_huffman)
     return 1;
 
   return 0;
@@ -957,7 +958,7 @@ jsimd_can_encode_mcu_AC_refine_prepare(void)
   if (sizeof(JCOEF) != 2)
     return 0;
 
-  if (simd_support & JSIMD_NEON)
+  if ((simd_support & JSIMD_NEON) && simd_huffman)
     return 1;
 
   return 0;

@@ -39,7 +39,7 @@ enum const_index {
   index_PW_TWO,
   index_PW_THREE,
   index_PW_SEVEN,
-  index_PW_EIGHT,
+  index_PW_EIGHT
 };
 
 static uint64_t const_value[] = {
@@ -216,13 +216,13 @@ void jsimd_h2v2_fancy_upsample_mmi(int max_v_samp_factor,
         wk[2] = _mm_slli_si64(nextcolsum_1l, (SIZEOF_MMWORD - 2) * BYTE_BIT);  
         wk[3] = _mm_slli_si64(nextcolsum1l, (SIZEOF_MMWORD - 2) * BYTE_BIT);   
       } else {
-        __m64 tmp;
+        __m64 mmitmp;
 
         
-        tmp = _mm_load_si64((__m64 *)outptr0 + 1);
-        wk[2] = _mm_and_si64(masklast, tmp);        
-        tmp = _mm_load_si64((__m64 *)outptr1 + 1);
-        wk[3] = _mm_and_si64(masklast, tmp);        
+        mmitmp = _mm_load_si64((__m64 *)outptr0 + 1);
+        wk[2] = _mm_and_si64(masklast, mmitmp);        
+        mmitmp = _mm_load_si64((__m64 *)outptr1 + 1);
+        wk[3] = _mm_and_si64(masklast, mmitmp);        
       }
 
       
