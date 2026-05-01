@@ -10,8 +10,9 @@ mod crash_generation;
 mod ipc_server;
 mod logging;
 mod phc;
-mod platform;
 
+#[cfg(target_os = "android")]
+use crash_helper_common::RawIPCConnector;
 use crash_helper_common::{BreakpadData, BreakpadRawData, IPCConnector, IPCListener, Pid};
 use std::{
     ffi::{c_char, CStr, OsString},
@@ -37,7 +38,6 @@ use ipc_server::{IPCServer, IPCServerState};
 #[no_mangle]
 pub unsafe extern "C" fn crash_generator_logic_desktop(
     client_pid: Pid,
-    client_handle: *const c_char,
     breakpad_data: BreakpadRawData,
     minidump_path: *const c_char,
     listener: *const c_char,
@@ -51,18 +51,9 @@ pub unsafe extern "C" fn crash_generator_logic_desktop(
     #[cfg(any(target_os = "ios", target_os = "macos"))]
     const BOOTSTRAP_UNKNOWN_SERVICE: std::ffi::c_int = 1102;
 
-    
-    unsafe {
-        platform::daemonize();
-    }
-
+    daemonize();
     logging::init();
 
-    let client_handle = unsafe { CStr::from_ptr(client_handle) };
-    let client_handle = unwrap_with_message(
-        platform::get_client_handle(client_handle),
-        "Could not deserialize the client process handle",
-    );
     let breakpad_data = BreakpadData::new(breakpad_data);
     let minidump_path = unsafe { CStr::from_ptr(minidump_path) }
         .to_owned()
@@ -97,7 +88,6 @@ pub unsafe extern "C" fn crash_generator_logic_desktop(
     let ipc_server = unwrap_with_message(
         IPCServer::new(
             client_pid,
-            client_handle,
             listener,
             connector,
             breakpad_data,
@@ -126,7 +116,7 @@ pub unsafe extern "C" fn crash_generator_logic_android(
     pid: Pid,
     breakpad_data: BreakpadRawData,
     minidump_path: *const c_char,
-    pipe: crash_helper_common::RawIPCConnector,
+    pipe: RawIPCConnector,
 ) {
     logging::init();
 
@@ -148,14 +138,7 @@ pub unsafe extern "C" fn crash_generator_logic_android(
             "Could not use the pipe",
         );
         let ipc_server = unwrap_with_message(
-            IPCServer::new(
-                pid,
-                 None,
-                listener,
-                connector,
-                breakpad_data,
-                minidump_path,
-            ),
+            IPCServer::new(pid, listener, connector, breakpad_data, minidump_path),
             "Could not create the IPC server",
         );
 
@@ -174,6 +157,47 @@ fn main_loop(mut ipc_server: IPCServer) -> i32 {
                 return -1;
             }
             _ => {} 
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+#[cfg(not(target_os = "android"))]
+fn daemonize() {
+    #[cfg(not(target_os = "windows"))]
+    {
+        use nix::unistd::{fork, setsid, ForkResult};
+
+        
+        
+        
+        
+        
+        
+        
+        
+        let _ = setsid();
+
+        let res = unsafe { fork() };
+        let Ok(res) = res else {
+            return;
+        };
+
+        match res {
+            ForkResult::Child => {}
+            ForkResult::Parent { child: _ } => unsafe {
+                
+                nix::libc::_exit(0);
+            },
         }
     }
 }

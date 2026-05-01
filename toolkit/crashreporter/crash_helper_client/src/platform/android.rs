@@ -4,7 +4,7 @@
 
 use anyhow::Result;
 use crash_helper_common::{
-    messages::ProcessRendezVous, GeckoChildId, IPCConnector, Pid, RawIPCConnector,
+    messages::ChildProcessRendezVousReply, GeckoChildId, IPCConnector, Pid, RawIPCConnector,
 };
 use std::process;
 
@@ -15,26 +15,16 @@ impl CrashHelperClient {
         
         let connector = unsafe { IPCConnector::from_raw_connector(server_socket)? };
 
-        let rendezvous =
-            Self::prepare_for_minidump( None,  0).unwrap();
-        connector.send_message(rendezvous)?;
-
         Ok(CrashHelperClient {
             connector,
             spawner_thread: None,
-            pid: 0, 
         })
     }
 
     pub(crate) fn prepare_for_minidump(
-        _crash_helper_pid: Option<Pid>,
+        _crash_helper_pid: Pid,
         id: GeckoChildId,
-    ) -> Option<ProcessRendezVous> {
-        Some(ProcessRendezVous::new(
-             true,
-            process::id() as Pid,
-            id,
-            [],
-        ))
+    ) -> ChildProcessRendezVousReply {
+        ChildProcessRendezVousReply::new( true, process::id() as Pid, id, [])
     }
 }

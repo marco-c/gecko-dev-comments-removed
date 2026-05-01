@@ -3,7 +3,7 @@
 
 
 use crash_helper_common::{
-    messages::ProcessRendezVous, GeckoChildId, MachPortRight, Pid, SendRightRef,
+    messages::ChildProcessRendezVousReply, GeckoChildId, MachPortRight, Pid, SendRightRef,
 };
 use mach2::traps::mach_task_self;
 use std::process;
@@ -12,19 +12,19 @@ use crate::CrashHelperClient;
 
 impl CrashHelperClient {
     pub(crate) fn prepare_for_minidump(
-        _crash_helper_pid: Option<Pid>,
+        _crash_helper_pid: Pid,
         id: GeckoChildId,
-    ) -> Option<ProcessRendezVous> {
+    ) -> ChildProcessRendezVousReply {
         
         
         let send_right = unsafe { SendRightRef::from_raw_port(mach_task_self()) };
         let task_right = MachPortRight::SendRef(send_right);
 
-        Some(ProcessRendezVous::new(
+        ChildProcessRendezVousReply::new(
              true,
             process::id() as Pid,
             id,
             [task_right],
-        ))
+        )
     }
 }
