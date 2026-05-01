@@ -603,7 +603,8 @@ class StoreBuffer {
 class ArenaCellSet {
   friend class StoreBuffer;
 
-  using ArenaCellBits = BitArray<MaxArenaCellIndex>;
+  
+  using ArenaCellBits = BitArray<MaxArenaCellIndex, uint32_t>;
 
   
   Arena* arena = nullptr;
@@ -627,7 +628,6 @@ class ArenaCellSet {
  public:
   using WordT = ArenaCellBits::WordT;
   static constexpr size_t BitsPerWord = ArenaCellBits::bitsPerElement;
-  static constexpr size_t NumWords = ArenaCellBits::numSlots;
 
   explicit ArenaCellSet(Arena* arena);
 
@@ -661,15 +661,16 @@ class ArenaCellSet {
   static ArenaCellSet Empty;
 
   static size_t getCellIndex(const TenuredCell* cell);
-  static void getWordIndexAndMask(size_t cellIndex, size_t* wordp,
-                                  uint32_t* maskp);
+  static std::pair<size_t, uint32_t> getWordIndexAndMask(size_t cellIndex);
 
   
   
   static const size_t NurseryFreeThresholdBytes = 64 * 1024;
 
   static size_t offsetOfArena() { return offsetof(ArenaCellSet, arena); }
-  static size_t offsetOfBits() { return offsetof(ArenaCellSet, bits); }
+  static size_t offsetOfBits() {
+    return offsetof(ArenaCellSet, bits) + ArenaCellBits::offsetOfMap();
+  }
 };
 
 

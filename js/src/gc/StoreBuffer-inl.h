@@ -18,10 +18,11 @@ inline  size_t ArenaCellSet::getCellIndex(const TenuredCell* cell) {
   return cellOffset / ArenaCellIndexBytes;
 }
 
-inline  void ArenaCellSet::getWordIndexAndMask(size_t cellIndex,
-                                                           size_t* wordp,
-                                                           uint32_t* maskp) {
-  BitArray<MaxArenaCellIndex>::getIndexAndMask(cellIndex, wordp, maskp);
+inline  std::pair<size_t, uint32_t>
+ArenaCellSet::getWordIndexAndMask(size_t cellIndex) {
+  static_assert(ArenaCellBits::bitsPerElement == 32,
+                "unexpected bitsPerElement value");
+  return ArenaCellBits::getIndexAndMask(cellIndex);
 }
 
 inline bool ArenaCellSet::hasCell(size_t cellIndex) const {
