@@ -4,8 +4,6 @@
 
 "use strict";
 
-
-
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
@@ -16,41 +14,32 @@ add_setup(async function () {
   });
 });
 
-add_task(async function test_framebusting_navigation() {
+add_task(async function () {
   const tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
     "about:blank"
   );
 
   
-  await triggerFramebustingIntervention(tab, "", {
-    exception: true,
-    notification: true,
-  });
-
   
-  await triggerFramebustingIntervention(tab, "?initiator=open", {
-    exception: true,
-    notification: false,
-  });
+  const variants = [
+    "top", 
+    "open", 
+    "form", 
+    "link", 
+    "mailto", 
+  ];
+  for (const variant of variants) {
+    info(`Triggering framebusting (${variant})...`);
+    await triggerFramebusting(tab,  {},  { variant });
 
-  
-  await triggerFramebustingIntervention(tab, "?initiator=form", {
-    exception: true,
-    notification: true,
-  });
+    info("Waiting for notification...");
+    await BrowserTestUtils.waitForCondition(() =>
+      gBrowser.getNotificationBox().getNotificationWithValue("popup-blocked")
+    );
 
-  
-  await triggerFramebustingIntervention(tab, "?initiator=link", {
-    exception: false,
-    notification: true,
-  });
-
-  
-  await triggerFramebustingIntervention(tab, "?initiator=mailto", {
-    exception: true,
-    notification: true,
-  });
+    is(tab.linkedBrowser.currentURI.spec, FRAMEBUSTING_PARENT_URL);
+  }
 
   BrowserTestUtils.removeTab(tab);
 });
