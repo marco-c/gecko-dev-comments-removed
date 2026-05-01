@@ -4121,3 +4121,8 @@ pref("captchadetection.actor.enabled", true);
 
 
 pref("general.smoothScroll", true, sticky);
+
+
+#ifdef MOZ_ARTIFACT_BUILDS
+  pref("telemetry.fog.artifact_build", true);
+#endif
