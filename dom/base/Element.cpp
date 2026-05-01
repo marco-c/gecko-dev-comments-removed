@@ -1499,7 +1499,8 @@ already_AddRefed<ShadowRoot> Element::AttachShadow(const ShadowRootInit& aInit,
 
 
 already_AddRefed<ShadowRoot> Element::AttachShadowWithoutNameChecks(
-    const ShadowRootInit& aInit, bool aNotify) {
+    const ShadowRootInit& aInit, bool aNotify,
+    CustomSlotDispatch aCustomSlotDispatch) {
   nsAutoScriptBlocker scriptBlocker;
 
   auto* nim = NodeInfoManager();
@@ -1520,11 +1521,11 @@ already_AddRefed<ShadowRoot> Element::AttachShadowWithoutNameChecks(
   
   
   
-  RefPtr<ShadowRoot> shadowRoot = new (nim)
-      ShadowRoot(this, aInit.mMode, DelegatesFocus(aInit.mDelegatesFocus),
-                 aInit.mSlotAssignment, ShadowRootClonable(aInit.mClonable),
-                 ShadowRootSerializable(aInit.mSerializable),
-                 ShadowRootDeclarative::No, nodeInfo.forget());
+  RefPtr<ShadowRoot> shadowRoot = new (nim) ShadowRoot(
+      this, aInit.mMode, DelegatesFocus(aInit.mDelegatesFocus),
+      aInit.mSlotAssignment, ShadowRootClonable(aInit.mClonable),
+      ShadowRootSerializable(aInit.mSerializable), ShadowRootDeclarative::No,
+      aCustomSlotDispatch, nodeInfo.forget());
   
   
   if (aInit.mReferenceTarget.WasPassed()) {
@@ -1576,6 +1577,7 @@ already_AddRefed<ShadowRoot> Element::AttachShadowWithoutNameChecks(
 
 void Element::AttachAndSetUAShadowRoot(NotifyUAWidget aNotifyUAWidget,
                                        DelegatesFocus aDelegatesFocus,
+                                       CustomSlotDispatch aCustomSlotDispatch,
                                        bool aNotify) {
   MOZ_DIAGNOSTIC_ASSERT(!CanAttachShadowDOM(),
                         "Cannot be used to attach UA shadow DOM");
@@ -1588,7 +1590,7 @@ void Element::AttachAndSetUAShadowRoot(NotifyUAWidget aNotifyUAWidget,
     init.mMode = ShadowRootMode::Closed;
     init.mDelegatesFocus = aDelegatesFocus == DelegatesFocus::Yes;
     RefPtr<ShadowRoot> shadowRoot =
-        AttachShadowWithoutNameChecks(init, aNotify);
+        AttachShadowWithoutNameChecks(init, aNotify, aCustomSlotDispatch);
     shadowRoot->SetIsUAWidget();
   }
 

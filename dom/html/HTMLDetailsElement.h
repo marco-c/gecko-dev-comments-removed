@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_HTMLDetailsElement_h
 #define mozilla_dom_HTMLDetailsElement_h
 
@@ -68,6 +66,10 @@ class HTMLDetailsElement final : public nsGenericHTMLElement {
  protected:
   virtual ~HTMLDetailsElement();
   void SetupShadowTree();
+  void GetSlotNameFor(const ShadowRoot&, const nsIContent&,
+                      nsAString&) const override;
+  void OnChildBeforeSlotted(ShadowRoot&, nsIContent&) override;
+  void OnChildUnslotted(ShadowRoot&, nsIContent&) override;
 
   
   void CloseElementIfNeeded();
