@@ -1974,7 +1974,7 @@ nsresult nsFrameSelection::PhysicalMove(int16_t aDirection, int16_t aAmount,
   }
 
   
-  if (aDirection < 0 || aDirection > 3 || aAmount < 0 || aAmount > 1) {
+  if (aDirection < 0 || aDirection > 3 || aAmount < 0 || aAmount > 2) {
     return NS_ERROR_FAILURE;
   }
 
@@ -2036,6 +2036,21 @@ nsresult nsFrameSelection::PhysicalMove(int16_t aDirection, int16_t aAmount,
                  "can only appear in vertical text");
     }
   }
+
+  if (aAmount == 2) {
+    
+    
+    
+    
+    bool isLeftOrUp = (aDirection == nsISelectionController::MOVE_LEFT ||
+                       aDirection == nsISelectionController::MOVE_UP);
+    
+    
+    bool forward = wm.IsBidiRTL() ? isLeftOrUp : !isLeftOrUp;
+    return IntraLineMove(forward, aExtend);
+  }
+
+  MOZ_ASSERT(aAmount <= 1, "aAmount == 2 should have been handled above");
 
   const PhysicalToLogicalMapping& mapping =
       wm.IsVertical()

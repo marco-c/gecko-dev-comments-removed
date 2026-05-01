@@ -3305,14 +3305,14 @@ static gfx::IntPoint GetIntegerDeltaForEvent(NSEvent* aEvent) {
 - (void)moveToRightEndOfLine:(id)sender {
   
   if (mTextInputHandler) {
-    mTextInputHandler->HandleCommand(Command::EndLine);
+    mTextInputHandler->HandleCommand(Command::MoveRight3);
   }
 }
 
 - (void)moveToRightEndOfLineAndModifySelection:(id)sender {
   
   if (mTextInputHandler) {
-    mTextInputHandler->HandleCommand(Command::SelectEndLine);
+    mTextInputHandler->HandleCommand(Command::SelectRight3);
   }
 }
 
@@ -3347,14 +3347,14 @@ static gfx::IntPoint GetIntegerDeltaForEvent(NSEvent* aEvent) {
 - (void)moveToLeftEndOfLine:(id)sender {
   
   if (mTextInputHandler) {
-    mTextInputHandler->HandleCommand(Command::BeginLine);
+    mTextInputHandler->HandleCommand(Command::MoveLeft3);
   }
 }
 
 - (void)moveToLeftEndOfLineAndModifySelection:(id)sender {
   
   if (mTextInputHandler) {
-    mTextInputHandler->HandleCommand(Command::SelectBeginLine);
+    mTextInputHandler->HandleCommand(Command::SelectLeft3);
   }
 }
 
