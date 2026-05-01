@@ -188,7 +188,7 @@ class alignas(uintptr_t) BaselineScript final
     : public TrailingArray<BaselineScript> {
  private:
   
-  HeapPtr<JitCode*> method_ = nullptr;
+  HeapPtr<JitCode*> method_{nullptr};
 
   
   MainThreadData<IonCompileTask*> pendingIonCompileTask_{nullptr};

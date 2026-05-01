@@ -68,7 +68,7 @@ class alignas(8) IonScript final : public TrailingArray<IonScript> {
   Offset allocBytes_ = 0;
 
   
-  HeapPtr<JitCode*> method_ = nullptr;
+  HeapPtr<JitCode*> method_{nullptr};
 
   
   jsbytecode* osrPc_ = nullptr;
