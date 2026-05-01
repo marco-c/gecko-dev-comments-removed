@@ -2,7 +2,6 @@
 
 
 
-
 #include "gfxPlatformMac.h"
 
 #include "gfxQuartzSurface.h"
@@ -82,7 +81,8 @@ PRThread* gfxPlatformMac::sFontRegistrationThread = nullptr;
 
 
 
-void gfxPlatformMac::RegisterSupplementalFonts() {
+gfxPlatformMac::SupplementalFontThread
+gfxPlatformMac::RegisterSupplementalFonts() {
   if (XRE_GetProcessType() == GeckoProcessType_Default) {
     
     
@@ -90,6 +90,7 @@ void gfxPlatformMac::RegisterSupplementalFonts() {
         PR_USER_THREAD, FontRegistrationCallback, nullptr, PR_PRIORITY_NORMAL,
         PR_GLOBAL_THREAD, PR_JOINABLE_THREAD, 0);
   }
+  return SupplementalFontThread();
 }
 
 

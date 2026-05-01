@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef GFX_PLATFORM_MAC_H
 #define GFX_PLATFORM_MAC_H
 
@@ -22,11 +21,16 @@ class gfxPlatformMac : public gfxPlatform {
   gfxPlatformMac();
   virtual ~gfxPlatformMac();
 
+  struct SupplementalFontThread {
+    ~SupplementalFontThread() { WaitForFontRegistration(); }
+  };
+
   
   
   
   
-  static void RegisterSupplementalFonts();
+  
+  static SupplementalFontThread RegisterSupplementalFonts();
 
   
   
