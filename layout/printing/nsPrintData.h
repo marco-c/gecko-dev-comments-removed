@@ -38,10 +38,10 @@ class nsPrintData {
   bool mOnStartSent;
   bool mIsAborted;  
 
- private:
   nsPrintData() = delete;
   nsPrintData& operator=(const nsPrintData& aOther) = delete;
 
+ private:
   ~nsPrintData();  
 };
 

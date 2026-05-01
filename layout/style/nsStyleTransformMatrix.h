@@ -70,6 +70,11 @@ class MOZ_STACK_CLASS TransformReferenceBox final {
     }
   }
 
+  
+  
+  
+  TransformReferenceBox(const TransformReferenceBox&) = delete;
+
   void Init(const nsIFrame* aFrame) {
     MOZ_ASSERT(!mFrame && !mIsCached);
     mFrame = aFrame;
@@ -111,11 +116,6 @@ class MOZ_STACK_CLASS TransformReferenceBox final {
   bool IsEmpty() { return !mFrame; }
 
  private:
-  
-  
-  
-  TransformReferenceBox(const TransformReferenceBox&) = delete;
-
   void EnsureDimensionsAreCached();
 
   const nsIFrame* mFrame = nullptr;

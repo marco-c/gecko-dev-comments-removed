@@ -758,7 +758,6 @@ class nsIFrame : public nsQueryFrame {
         mFrameIsModified(false),
         mHasModifiedDescendants(false),
         mHasOverrideDirtyRegion(false),
-        mMayHaveWillChangeBudget(false),
 #ifdef DEBUG
         mWasVisitedByAutoFrameConstructionPageName(false),
 #endif
@@ -2540,11 +2539,13 @@ class nsIFrame : public nsQueryFrame {
 
   bool HasAnyStateBits(nsFrameState aBits) const { return mState & aBits; }
 
- private:
+ protected:
   
 
 
-  void InitPrimaryFrame();
+  virtual void InitPrimaryFrame();
+
+ private:
   
 
 
@@ -5121,11 +5122,6 @@ class nsIFrame : public nsQueryFrame {
     mHasOverrideDirtyRegion = aHasDirtyRegion;
   }
 
-  bool MayHaveWillChangeBudget() const { return mMayHaveWillChangeBudget; }
-  void SetMayHaveWillChangeBudget(const bool aHasBudget) {
-    mMayHaveWillChangeBudget = aHasBudget;
-  }
-
   bool HasBSizeChange() const { return mHasBSizeChange; }
   void SetHasBSizeChange(const bool aHasBSizeChange) {
     mHasBSizeChange = aHasBSizeChange;
@@ -5347,12 +5343,6 @@ class nsIFrame : public nsQueryFrame {
 
   bool mHasOverrideDirtyRegion : 1;
 
-  
-
-
-
-  bool mMayHaveWillChangeBudget : 1;
-
 #ifdef DEBUG
  public:
   
@@ -5497,7 +5487,7 @@ class nsIFrame : public nsQueryFrame {
     
     nsAutoString mContext;
 
-    PeekWordState() {}
+    PeekWordState() = default;
     void SetSawBeforeType() { mSawBeforeType = true; }
     void SetSawInlineCharacter() { mSawInlineCharacter = true; }
     void Update(bool aAfterPunctuation, bool aAfterWhitespace,
@@ -5765,13 +5755,13 @@ class MOZ_NONHEAP_CLASS AutoWeakFrame {
 
   ~AutoWeakFrame();
 
- private:
   
   void* operator new(size_t) = delete;
   void* operator new[](size_t) = delete;
   void operator delete(void*) = delete;
   void operator delete[](void*) = delete;
 
+ private:
   void Init(nsIFrame* aFrame);
 
   AutoWeakFrame* mPrev;
