@@ -824,6 +824,7 @@ _jinit_d_coef_controller(j_decompress_ptr cinfo, boolean need_full_buffer)
   coef = (my_coef_ptr)
     (*cinfo->mem->alloc_small) ((j_common_ptr)cinfo, JPOOL_IMAGE,
                                 sizeof(my_coef_controller));
+  memset(coef, 0, sizeof(my_coef_controller));
   cinfo->coef = (struct jpeg_d_coef_controller *)coef;
   coef->pub.start_input_pass = start_input_pass;
   coef->pub.start_output_pass = start_output_pass;

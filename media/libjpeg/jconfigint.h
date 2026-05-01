@@ -1,5 +1,5 @@
 
-#define BUILD  "20241212"
+#define BUILD  "20250606"
 
 
 #define HIDDEN __attribute__((visibility("hidden")))
@@ -19,7 +19,7 @@
 #define PACKAGE_NAME  "libjpeg-turbo"
 
 
-#define VERSION  "3.1.0"
+#define VERSION  "3.1.1"
 
 
 #ifdef HAVE_64BIT_BUILD
