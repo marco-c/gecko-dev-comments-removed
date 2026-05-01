@@ -2253,10 +2253,40 @@ XMLHttpRequestMainThread::OnStopRequest(nsIRequest* request, nsresult status) {
   mXMLParserStreamListener = nullptr;
 
   
+  
+  
   if (status == NS_BINDING_ABORTED) {
     mFlagParseBody = false;
-    IgnoredErrorResult rv;
-    RequestErrorSteps(Events::abort, NS_ERROR_DOM_ABORT_ERR, rv);
+
+    nsAutoCString cancelReason;
+    if (mChannel) {
+      mChannel->GetCanceledReason(cancelReason);
+    }
+
+    if (cancelReason.EqualsLiteral("navigation")) {
+      CancelTimeoutTimer();
+      CancelSyncTimeoutTimer();
+      StopProgressEventTimer();
+
+      mState = XMLHttpRequest_Binding::DONE;
+      mFlagSend = false;
+      ResetResponse();
+
+      if (!mFlagDeleted) {
+        FireReadystatechangeEvent();
+        if (mUpload && !mUploadComplete) {
+          mUploadComplete = true;
+          if (mFlagHadUploadListenersOnSend) {
+            DispatchProgressEvent(mUpload, Events::loadend, 0, -1);
+          }
+        }
+        DispatchProgressEvent(this, Events::loadend, 0, -1);
+      }
+    } else {
+      IgnoredErrorResult rv;
+      RequestErrorSteps(Events::abort, NS_ERROR_DOM_ABORT_ERR, rv);
+    }
+
     ChangeState(XMLHttpRequest_Binding::UNSENT, false);
     return NS_OK;
   }

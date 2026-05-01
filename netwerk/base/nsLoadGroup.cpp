@@ -211,6 +211,7 @@ nsLoadGroup::Cancel(nsresult status) {
 
   mStatus = NS_OK;
   mIsCanceling = false;
+  mCanceledReason.Truncate();
 
   return firstError;
 }
@@ -414,6 +415,7 @@ nsLoadGroup::AddRequest(nsIRequest* request, nsISupports* ctxt) {
     
     
     nsCOMPtr<nsIRequestObserver> observer = do_QueryReferent(mObserver);
+    RefPtr<nsLoadGroup> self{this};
     if (observer) {
       LOG(
           ("LOADGROUP [%p]: Firing OnStartRequest for request %p."
@@ -568,6 +570,7 @@ nsresult nsLoadGroup::NotifyRemovalObservers(nsIRequest* request,
   if (foreground || mNotifyObserverAboutBackgroundRequests) {
     
     nsCOMPtr<nsIRequestObserver> observer = do_QueryReferent(mObserver);
+    RefPtr<nsLoadGroup> self{this};
     if (observer) {
       LOG(
           ("LOADGROUP [%p]: Firing OnStopRequest for request %p."
