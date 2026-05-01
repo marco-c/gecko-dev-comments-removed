@@ -109,6 +109,8 @@ function verifyBlobProperties(blob1, blob2, fileId) {
 
 
 
+
+
 async function verifyBlobAsync(blob1, blob2, fileId) {
   verifyBlobProperties(blob1, blob2, fileId);
 
@@ -143,18 +145,31 @@ async function verifyBlobAsync(blob1, blob2, fileId) {
     });
   };
 
-  if (!buffer1) {
-    buffer1 = await getBuffer(blob1);
-    bufferCache.push({ blob: blob1, buffer: buffer1 });
-  }
-
   if (!buffer2) {
     buffer2 = await getBuffer(blob2);
     bufferCache.push({ blob: blob2, buffer: buffer2 });
   }
 
+  buffer1 = await getBuffer(blob1);
+
   verifyBuffers(buffer1, buffer2);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 function verifyBlob(blob1, blob2, fileId, blobReadHandler) {
   verifyBlobProperties(blob1, blob2, fileId);
@@ -253,7 +268,7 @@ function grabFileUsageAndContinueHandler(request) {
 
 function getCurrentUsage(usageHandler) {
   let qms = SpecialPowers.Services.qms;
-  let principal = SpecialPowers.wrap(document).nodePrincipal;
+  let principal = SpecialPowers.wrap(document).effectiveStoragePrincipal;
   let cb = SpecialPowers.wrapCallback(usageHandler);
   qms.getUsageForPrincipal(principal, cb);
 }
