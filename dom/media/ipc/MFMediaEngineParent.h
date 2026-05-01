@@ -15,6 +15,7 @@
 #include "MFMediaSource.h"
 #include "MediaInfo.h"
 #include "PlatformDecoderModule.h"
+#include "mozilla/MozPromise.h"
 #include "mozilla/PMFMediaEngineParent.h"
 
 namespace mozilla {
@@ -140,6 +141,11 @@ class MFMediaEngineParent final : public PMFMediaEngineParent {
   
   
   bool mHardwareResetInProgress = false;
+  
+  
+  
+  static inline RefPtr<GenericPromise> sPendingHDCPCheck;
+  MozPromiseRequestHolder<GenericPromise> mHDCPRequestHolder;
 #endif
 
   
