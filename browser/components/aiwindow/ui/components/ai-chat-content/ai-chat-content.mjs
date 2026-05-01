@@ -173,6 +173,14 @@ export class AIChatContent extends MozLitElement {
     this.addEventListener("open-memories-learn-more", event => {
       this.#dispatchAction("open-memories-learn-more", event.detail);
     });
+
+    this.addEventListener("thumbs-up", event => {
+      this.#dispatchAction("thumbs-up", event.detail);
+    });
+
+    this.addEventListener("thumbs-down", event => {
+      this.#dispatchAction("thumbs-down", event.detail);
+    });
   }
 
   #initOverflowObserver() {
@@ -472,7 +480,6 @@ export class AIChatContent extends MozLitElement {
       body: content.body,
       appliedMemories: memoriesApplied ?? [],
       showCallout: showMemoriesCallout ?? false,
-      searchTokens: webSearchQueries ?? [],
       isLastChunk: !!isPreviousMessage,
     };
 
@@ -594,7 +601,6 @@ export class AIChatContent extends MozLitElement {
           .message=${msg.body}
           .role=${msg.role}
           .messageId=${msg.messageId}
-          .searchTokens=${msg.searchTokens || []}
           .conversationId=${this.conversationId}
           .seenUrls=${this.seenUrls}
         ></ai-chat-message>
