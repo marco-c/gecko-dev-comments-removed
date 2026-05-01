@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_TextComposition_h
 #define mozilla_TextComposition_h
 
@@ -263,12 +261,12 @@ class TextComposition final {
     ~CompositionChangeEventHandlingMarker() {
       mComposition->EditorDidHandleCompositionChangeEvent();
     }
+    CompositionChangeEventHandlingMarker() = delete;
+    CompositionChangeEventHandlingMarker(
+        const CompositionChangeEventHandlingMarker& aOther) = delete;
 
    private:
     RefPtr<TextComposition> mComposition;
-    CompositionChangeEventHandlingMarker();
-    CompositionChangeEventHandlingMarker(
-        const CompositionChangeEventHandlingMarker& aOther);
   };
 
   
@@ -315,9 +313,8 @@ class TextComposition final {
 
  private:
   
-  ~TextComposition() {
-    
-  }
+  
+  ~TextComposition() = default;
 
   
   

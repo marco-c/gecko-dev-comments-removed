@@ -153,6 +153,10 @@ class WebrtcVideoConduit : public VideoSessionConduit,
   virtual ~WebrtcVideoConduit();
 
   
+  WebrtcVideoConduit(const WebrtcVideoConduit&) = delete;
+  void operator=(const WebrtcVideoConduit&) = delete;
+
+  
   void InitControl(VideoConduitControlInterface* aControl) override;
 
   
@@ -252,10 +256,6 @@ class WebrtcVideoConduit : public VideoSessionConduit,
                         FrameTransformerProxy* aProxy) override;
 
  private:
-  
-  WebrtcVideoConduit(const WebrtcVideoConduit&) = delete;
-  void operator=(const WebrtcVideoConduit&) = delete;
-
   
   void DumpCodecDB() const;
 

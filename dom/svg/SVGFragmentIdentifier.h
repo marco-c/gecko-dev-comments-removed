@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_SVG_SVGFRAGMENTIDENTIFIER_H_
 #define DOM_SVG_SVGFRAGMENTIDENTIFIER_H_
 
@@ -21,10 +19,10 @@ class SVGSVGElement;
 
 
 class SVGFragmentIdentifier {
+ public:
   
   SVGFragmentIdentifier() = delete;
 
- public:
   
 
 

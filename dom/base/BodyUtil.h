@@ -17,10 +17,9 @@ class ErrorResult;
 namespace dom {
 
 class BodyUtil final {
- private:
+ public:
   BodyUtil() = delete;
 
- public:
   
 
 

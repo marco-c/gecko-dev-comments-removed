@@ -38,6 +38,12 @@ class RTCEncodedAudioFrame final : public RTCEncodedAudioFrameData,
                                 RTCEncodedAudioFrameData&& aData);
 
   
+  RTCEncodedAudioFrame(const RTCEncodedAudioFrame&) = delete;
+  RTCEncodedAudioFrame& operator=(const RTCEncodedAudioFrame&) = delete;
+  RTCEncodedAudioFrame(RTCEncodedAudioFrame&&) = delete;
+  RTCEncodedAudioFrame& operator=(RTCEncodedAudioFrame&&) = delete;
+
+  
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
 
@@ -59,12 +65,6 @@ class RTCEncodedAudioFrame final : public RTCEncodedAudioFrameData,
 
  private:
   virtual ~RTCEncodedAudioFrame() = default;
-
-  
-  RTCEncodedAudioFrame(const RTCEncodedAudioFrame&) = delete;
-  RTCEncodedAudioFrame& operator=(const RTCEncodedAudioFrame&) = delete;
-  RTCEncodedAudioFrame(RTCEncodedAudioFrame&&) = delete;
-  RTCEncodedAudioFrame& operator=(RTCEncodedAudioFrame&&) = delete;
 
   
   void AssertIsOnOwningThread() const {

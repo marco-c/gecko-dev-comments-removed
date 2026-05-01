@@ -51,6 +51,9 @@ using mozilla::UniquePtr;
 
 class HRTFKernel {
  public:
+  HRTFKernel(const HRTFKernel& other) = delete;
+  void operator=(const HRTFKernel& other) = delete;
+
   
   
   
@@ -81,9 +84,6 @@ class HRTFKernel {
   }
 
  private:
-  HRTFKernel(const HRTFKernel& other) = delete;
-  void operator=(const HRTFKernel& other) = delete;
-
   
   HRTFKernel(float* impulseResponse, size_t fftSize, float sampleRate);
 

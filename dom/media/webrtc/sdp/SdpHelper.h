@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef SDPHELPER_H_
 #define SDPHELPER_H_
 
@@ -25,7 +23,7 @@ class SdpHelper {
   
   
   explicit SdpHelper(std::string* errorDest) : mLastError(*errorDest) {}
-  ~SdpHelper() {}
+  ~SdpHelper() = default;
 
   nsresult GetComponent(const std::string& candidate, size_t* component);
   nsresult CopyTransportParams(size_t numComponents,

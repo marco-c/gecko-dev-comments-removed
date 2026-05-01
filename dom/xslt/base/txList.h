@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef TRANSFRMX_LIST_H
 #define TRANSFRMX_LIST_H
 
@@ -26,6 +25,8 @@ class txList : public txObject {
 
 
   ~txList();
+
+  txList(const txList& aOther) = delete;
 
   
 
@@ -60,8 +61,6 @@ class txList : public txObject {
   ListItem* remove(ListItem* sItem);
 
  private:
-  txList(const txList& aOther);  
-
   ListItem* firstItem;
   ListItem* lastItem;
   int32_t itemCount;

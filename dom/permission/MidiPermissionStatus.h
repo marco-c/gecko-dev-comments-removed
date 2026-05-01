@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_MidiPermissionStatus_h_
 #define mozilla_dom_MidiPermissionStatus_h_
 
@@ -16,7 +14,7 @@ class MidiPermissionStatus final : public PermissionStatus {
   MidiPermissionStatus(nsIGlobalObject* aGlobal, bool aSysex);
 
  private:
-  ~MidiPermissionStatus() {}
+  ~MidiPermissionStatus() = default;
 
   nsLiteralCString GetPermissionType() const override;
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_FetchUtil_h
 #define mozilla_dom_FetchUtil_h
 
@@ -28,9 +26,10 @@ class WorkerPrivate;
 class FetchUtil final {
  private:
   static nsCString WasmAltDataType;
-  FetchUtil() = delete;
 
  public:
+  FetchUtil() = delete;
+
   
 
 

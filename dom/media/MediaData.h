@@ -125,7 +125,7 @@ class AlignedBuffer {
   }
   
   
-  bool SetLength(size_t aLength) {
+  [[nodiscard]] bool SetLength(size_t aLength) {
     if (aLength > mLength && !EnsureCapacity(aLength)) {
       return false;
     }
@@ -689,6 +689,8 @@ class MediaRawData final : public MediaData {
   explicit MediaRawData(AlignedByteBuffer&& aData);
   MediaRawData(AlignedByteBuffer&& aData, AlignedByteBuffer&& aAlphaData);
 
+  MediaRawData(const MediaRawData&) = delete;
+
   
   const uint8_t* Data() const { return mBuffer.Data(); }
   
@@ -749,7 +751,6 @@ class MediaRawData final : public MediaData {
   AlignedByteBuffer mBuffer;
   AlignedByteBuffer mAlphaBuffer;
   CryptoSample mCryptoInternal;
-  MediaRawData(const MediaRawData&);  
 };
 
 

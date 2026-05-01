@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef MOZILLA_DOM_MEDIA_WEBRTC_JSAPI_RTCENCODEDFRAMEBASE_H_
 #define MOZILLA_DOM_MEDIA_WEBRTC_JSAPI_RTCENCODEDFRAMEBASE_H_
 
@@ -45,11 +43,20 @@ class RTCRtpScriptTransformer;
 class RTCEncodedFrameBase : public nsISupports, public nsWrapperCache {
  public:
   explicit RTCEncodedFrameBase(nsIGlobalObject* aGlobal,
-                               RTCEncodedFrameState& aState);
+                               RTCEncodedFrameState& aState,
+                               RTCRtpScriptTransformer* aOwner);
+
+  
+  RTCEncodedFrameBase(const RTCEncodedFrameBase&) = delete;
+  RTCEncodedFrameBase& operator=(const RTCEncodedFrameBase&) = delete;
+  RTCEncodedFrameBase(RTCEncodedFrameBase&&) = delete;
+  RTCEncodedFrameBase& operator=(RTCEncodedFrameBase&&) = delete;
 
   
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(RTCEncodedFrameBase)
+
+  nsIGlobalObject* GetParentObject() const;
 
   
   unsigned long Timestamp() const;
@@ -59,6 +66,8 @@ class RTCEncodedFrameBase : public nsISupports, public nsWrapperCache {
   void GetData(JSContext* aCx, JS::Rooted<JSObject*>* aObj) const;
 
   uint64_t GetCounter() const;
+
+  size_t Size() const;
 
   virtual bool CheckOwner(RTCRtpScriptTransformer* aOwner) const = 0;
 
@@ -70,13 +79,8 @@ class RTCEncodedFrameBase : public nsISupports, public nsWrapperCache {
   virtual ~RTCEncodedFrameBase();
   void DetachData();
 
-  
-  RTCEncodedFrameBase(const RTCEncodedFrameBase&) = delete;
-  RTCEncodedFrameBase& operator=(const RTCEncodedFrameBase&) = delete;
-  RTCEncodedFrameBase(RTCEncodedFrameBase&&) = delete;
-  RTCEncodedFrameBase& operator=(RTCEncodedFrameBase&&) = delete;
-
   RefPtr<nsIGlobalObject> mGlobal;
+  RefPtr<RTCRtpScriptTransformer> mOwner;
 
   
   

@@ -39,8 +39,6 @@
 
 
 
-
-
 #ifndef nricemediastream_h_
 #define nricemediastream_h_
 
@@ -222,7 +220,7 @@ class NrIceMediaStream {
   sigslot::signal4<NrIceMediaStream*, int, const unsigned char*, int>
       SignalPacketReceived;  
 
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(NrIceMediaStream)
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(NrIceMediaStream);
 
  private:
   ~NrIceMediaStream();

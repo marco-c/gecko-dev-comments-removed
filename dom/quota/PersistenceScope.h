@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_QUOTA_PERSISTENCESCOPE_H_
 #define DOM_QUOTA_PERSISTENCESCOPE_H_
 
@@ -41,6 +39,8 @@ class PersistenceScope {
 
  public:
   PersistenceScope() : mData(Null()) {}
+
+  bool operator==(const PersistenceScope& aOther) = delete;
 
   
   static PersistenceScope CreateFromValue(PersistenceType aValue) {
@@ -159,8 +159,6 @@ class PersistenceScope {
 
     return mData.match(SetMatcher(aOther));
   }
-
-  bool operator==(const PersistenceScope& aOther) = delete;
 };
 
 bool MatchesPersistentPersistenceScope(

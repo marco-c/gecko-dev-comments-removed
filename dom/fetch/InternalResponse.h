@@ -347,10 +347,10 @@ class InternalResponse final : public AtomicSafeRefCounted<InternalResponse> {
 
   ~InternalResponse();
 
- private:
   explicit InternalResponse(const InternalResponse& aOther) = delete;
   InternalResponse& operator=(const InternalResponse&) = delete;
 
+ private:
   
   
   

@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef TRANSFRMX_EXPR_H
 #define TRANSFRMX_EXPR_H
 
@@ -746,12 +745,7 @@ class RootExpr : public Expr {
   
 
 
-  RootExpr()
-#ifdef TX_TO_STRING
-      : mSerialize(true)
-#endif
-  {
-  }
+  RootExpr() = default;
 
   TX_DECL_EXPR
 
@@ -761,7 +755,7 @@ class RootExpr : public Expr {
 
  private:
   
-  bool mSerialize;
+  bool mSerialize = true;
 #endif
 };  
 

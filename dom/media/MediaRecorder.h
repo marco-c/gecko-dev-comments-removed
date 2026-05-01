@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef MediaRecorder_h
 #define MediaRecorder_h
 
@@ -56,6 +54,9 @@ class MediaRecorder final : public DOMEventTargetHelper,
   class Session;
 
   explicit MediaRecorder(nsPIDOMWindowInner* aOwnerWindow);
+
+  MediaRecorder& operator=(const MediaRecorder& x) = delete;
+  MediaRecorder(const MediaRecorder& x) = delete;  
 
   static nsTArray<RefPtr<Session>> GetSessions();
 
@@ -121,7 +122,6 @@ class MediaRecorder final : public DOMEventTargetHelper,
  protected:
   virtual ~MediaRecorder();
 
-  MediaRecorder& operator=(const MediaRecorder& x) = delete;
   
   nsresult CreateAndDispatchBlobEvent(BlobImpl* aBlobImpl);
   
@@ -129,7 +129,6 @@ class MediaRecorder final : public DOMEventTargetHelper,
   
   void NotifyError(nsresult aRv);
 
-  MediaRecorder(const MediaRecorder& x) = delete;  
   
   void RemoveSession(Session* aSession);
   

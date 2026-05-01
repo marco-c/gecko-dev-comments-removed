@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_SMIL_SMILTIMEVALUESPEC_H_
 #define DOM_SMIL_SMILTIMEVALUESPEC_H_
 
@@ -122,7 +120,7 @@ class SMILTimeValueSpec {
   TimeReferenceTracker mReferencedElement;
 
   class EventListener final : public nsIDOMEventListener {
-    ~EventListener() {}
+    ~EventListener() = default;
 
    public:
     explicit EventListener(SMILTimeValueSpec* aOwner) : mSpec(aOwner) {}

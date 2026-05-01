@@ -793,7 +793,7 @@ class PeerConnectionImpl final
     
     
     const std::string mPcHandle;
-    virtual ~StunAddrsHandler() {}
+    virtual ~StunAddrsHandler() = default;
   };
 
   

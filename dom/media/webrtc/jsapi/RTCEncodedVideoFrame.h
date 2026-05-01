@@ -41,6 +41,12 @@ class RTCEncodedVideoFrame final : public RTCEncodedVideoFrameData,
                                 RTCEncodedVideoFrameData&& aData);
 
   
+  RTCEncodedVideoFrame(const RTCEncodedVideoFrame&) = delete;
+  RTCEncodedVideoFrame& operator=(const RTCEncodedVideoFrame&) = delete;
+  RTCEncodedVideoFrame(RTCEncodedVideoFrame&&) = delete;
+  RTCEncodedVideoFrame& operator=(RTCEncodedVideoFrame&&) = delete;
+
+  
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
 
@@ -70,12 +76,6 @@ class RTCEncodedVideoFrame final : public RTCEncodedVideoFrameData,
 
  private:
   virtual ~RTCEncodedVideoFrame() = default;
-
-  
-  RTCEncodedVideoFrame(const RTCEncodedVideoFrame&) = delete;
-  RTCEncodedVideoFrame& operator=(const RTCEncodedVideoFrame&) = delete;
-  RTCEncodedVideoFrame(RTCEncodedVideoFrame&&) = delete;
-  RTCEncodedVideoFrame& operator=(RTCEncodedVideoFrame&&) = delete;
 
   
   void AssertIsOnOwningThread() const {

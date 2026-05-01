@@ -64,6 +64,9 @@ class nsRange final : public mozilla::dom::AbstractRange,
   explicit nsRange(nsINode* aNode);
 
  public:
+  nsRange(const nsRange&) = delete;
+  nsRange& operator=(const nsRange&) = delete;
+
   
 
 
@@ -368,10 +371,6 @@ class nsRange final : public mozilla::dom::AbstractRange,
       const CharacterDataChangeInfo& aInfo, const RawRangeBoundary& aBoundary);
 
  private:
-  
-  nsRange(const nsRange&);
-  nsRange& operator=(const nsRange&);
-
   void SetStartInternal(const RawRangeBoundary& aPoint,
                         AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary,
                         ErrorResult& aRv);

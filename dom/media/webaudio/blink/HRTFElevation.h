@@ -43,6 +43,9 @@ namespace WebCore {
 
 class HRTFElevation {
  public:
+  HRTFElevation(const HRTFElevation& other) = delete;
+  void operator=(const HRTFElevation& other) = delete;
+
   
   
   
@@ -77,9 +80,6 @@ class HRTFElevation {
   size_t sizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
  private:
-  HRTFElevation(const HRTFElevation& other) = delete;
-  void operator=(const HRTFElevation& other) = delete;
-
   HRTFElevation(HRTFKernelList&& kernelListL, int elevation, float sampleRate)
       : m_kernelListL(std::move(kernelListL)),
         m_elevationAngle(elevation),

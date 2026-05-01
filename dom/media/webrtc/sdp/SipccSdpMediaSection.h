@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef SIPCCSDPMEDIASECTION_H_
 #define SIPCCSDPMEDIASECTION_H_
 
@@ -34,7 +32,7 @@ class SipccSdpMediaSection final : public SdpMediaSection {
   friend class SipccSdp;
 
  public:
-  ~SipccSdpMediaSection() {}
+  ~SipccSdpMediaSection() = default;
 
   virtual MediaType GetMediaType() const override { return mMediaType; }
 

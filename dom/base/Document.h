@@ -567,9 +567,6 @@ class Document : public nsINode,
   Document(const char* aContentType, LoadedAsData aLoadedAsData);
   virtual ~Document();
 
-  Document(const Document&) = delete;
-  Document& operator=(const Document&) = delete;
-
  public:
   using ExternalResourceLoad = dom::ExternalResourceMap::ExternalResourceLoad;
   using ReferrerPolicyEnum = dom::ReferrerPolicy;
@@ -579,6 +576,8 @@ class Document : public nsINode,
   
   
   void* operator new(size_t aSize) { return ::operator new(aSize); }
+  Document(const Document&) = delete;
+  Document& operator=(const Document&) = delete;
 
   
 
@@ -3368,6 +3367,8 @@ class Document : public nsINode,
   
   void ObserveAutoSizesImage(HTMLImageElement& aElement);
   void UnobserveAutoSizesImage(HTMLImageElement& aElement);
+  
+  bool ObservesAutoSizesImage(HTMLImageElement& aElement) const;
 
   nsresult GetStateObject(JS::MutableHandle<JS::Value> aState);
 
@@ -4310,17 +4311,12 @@ class Document : public nsINode,
   }
 
  private:
-  void DoCacheAllKnownLangPrefs();
   void RecomputeLanguageFromCharset();
   bool GetSHEntryHasUserInteraction();
 
   void AppendAutoFocusCandidateToTopDocument(Element* aAutoFocusCandidate);
 
  public:
-  void SetMayNeedFontPrefsUpdate() { mMayNeedFontPrefsUpdate = true; }
-
-  bool MayNeedFontPrefsUpdate() { return mMayNeedFontPrefsUpdate; }
-
   void SetSHEntryHasUserInteraction(bool aHasInteraction);
 
   nsAtom* GetContentLanguageAsAtomForStyle() const;
@@ -4330,22 +4326,7 @@ class Document : public nsINode,
 
 
 
-  const LangGroupFontPrefs* GetFontPrefsForLang(
-      nsAtom* aLanguage, bool* aNeedsToCache = nullptr) const;
-
-  void ForceCacheLang(nsAtom* aLanguage) {
-    if (!mLanguagesUsed.EnsureInserted(aLanguage)) {
-      return;
-    }
-    GetFontPrefsForLang(aLanguage);
-  }
-
-  void CacheAllKnownLangPrefs() {
-    if (!mMayNeedFontPrefsUpdate) {
-      return;
-    }
-    DoCacheAllKnownLangPrefs();
-  }
+  const LangGroupFontPrefs* GetFontPrefsForLang(nsAtom* aLanguage) const;
 
   nsINode* GetServoRestyleRoot() const { return mServoRestyleRoot; }
 
@@ -4990,8 +4971,6 @@ class Document : public nsINode,
 
   
   bool mBidiEnabled : 1;
-  
-  bool mMayNeedFontPrefsUpdate : 1;
 
   
   
@@ -5705,8 +5684,6 @@ class Document : public nsINode,
   
   
   nsTHashSet<Element*> mLazyPresElements;
-
-  nsTHashSet<RefPtr<nsAtom>> mLanguagesUsed;
 
   
   

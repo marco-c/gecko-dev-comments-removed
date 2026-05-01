@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_ProcessPriorityManager_h_
 #define mozilla_ProcessPriorityManager_h_
 
@@ -33,6 +31,11 @@ class ContentParent;
 
 class ProcessPriorityManager final {
  public:
+  ProcessPriorityManager() = delete;
+  ProcessPriorityManager(const ProcessPriorityManager&) = delete;
+  const ProcessPriorityManager& operator=(const ProcessPriorityManager&) =
+      delete;
+
   
 
 
@@ -79,13 +82,6 @@ class ProcessPriorityManager final {
                                      bool aPriority);
   static void BrowserPriorityChanged(dom::BrowserParent* aBrowserParent,
                                      bool aPriority);
-
- private:
-  ProcessPriorityManager();
-  ProcessPriorityManager(const ProcessPriorityManager&) = delete;
-
-  const ProcessPriorityManager& operator=(const ProcessPriorityManager&) =
-      delete;
 };
 
 }  

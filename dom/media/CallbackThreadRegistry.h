@@ -21,11 +21,10 @@ class CallbackThreadRegistry final {
  public:
   CallbackThreadRegistry();
 
-  ~CallbackThreadRegistry() {
-    
-    
-    
-  }
+  
+  
+  
+  ~CallbackThreadRegistry() = default;
 
   CallbackThreadRegistry(const CallbackThreadRegistry&) = delete;
   CallbackThreadRegistry& operator=(const CallbackThreadRegistry&) = delete;
