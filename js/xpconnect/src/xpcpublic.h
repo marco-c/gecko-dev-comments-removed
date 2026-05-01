@@ -65,8 +65,6 @@ class Exception;
 }  
 }  
 
-using xpcGCCallback = void (*)(JSGCStatus);
-
 namespace xpc {
 
 class Scriptability {
@@ -829,9 +827,6 @@ void FindExceptionStackForConsoleReport(
 extern void GetCurrentRealmName(JSContext*, nsCString& name);
 
 nsCString GetFunctionName(JSContext* cx, JS::Handle<JSObject*> obj);
-
-void AddGCCallback(xpcGCCallback cb);
-void RemoveGCCallback(xpcGCCallback cb);
 
 
 #if (defined(XP_DARWIN) && defined(__aarch64__)) || defined(__loongarch__)
