@@ -15,8 +15,6 @@
 
 
 
-
-
 #define JSIMD_NONE     0x00
 #define JSIMD_MMX      0x01
 #define JSIMD_3DNOW    0x02

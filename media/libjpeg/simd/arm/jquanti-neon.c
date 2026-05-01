@@ -102,7 +102,8 @@ void jsimd_quantize_neon(JCOEFPTR coef_block, DCTELEM *divisors,
   DCTELEM *shift_ptr = divisors + 3 * DCTSIZE2;
   int i;
 
-#if defined(__clang__) && (defined(__aarch64__) || defined(_M_ARM64))
+#if defined(__clang__) && (defined(__aarch64__) || defined(_M_ARM64) || \
+                           defined(_M_ARM64EC))
 #pragma unroll
 #endif
   for (i = 0; i < DCTSIZE; i += DCTSIZE / 2) {

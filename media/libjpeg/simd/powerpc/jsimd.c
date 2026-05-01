@@ -12,8 +12,6 @@
 
 
 
-
-
 #ifdef __amigaos4__
 
 #include <proto/exec.h>

@@ -251,7 +251,7 @@ void jsimd_encode_mcu_AC_first_prepare_neon
   uint8x8_t bitmap_rows_4567 = vpadd_u8(bitmap_rows_45, bitmap_rows_67);
   uint8x8_t bitmap_all = vpadd_u8(bitmap_rows_0123, bitmap_rows_4567);
 
-#if defined(__aarch64__) || defined(_M_ARM64)
+#if defined(__aarch64__) || defined(_M_ARM64) || defined(_M_ARM64EC)
   
   uint64_t bitmap = vget_lane_u64(vreinterpret_u64_u8(bitmap_all), 0);
   
@@ -511,7 +511,7 @@ int jsimd_encode_mcu_AC_refine_prepare_neon
   uint8x8_t bitmap_rows_4567 = vpadd_u8(bitmap_rows_45, bitmap_rows_67);
   uint8x8_t bitmap_all = vpadd_u8(bitmap_rows_0123, bitmap_rows_4567);
 
-#if defined(__aarch64__) || defined(_M_ARM64)
+#if defined(__aarch64__) || defined(_M_ARM64) || defined(_M_ARM64EC)
   
   uint64_t bitmap = vget_lane_u64(vreinterpret_u64_u8(bitmap_all), 0);
   
@@ -552,7 +552,7 @@ int jsimd_encode_mcu_AC_refine_prepare_neon
   bitmap_rows_4567 = vpadd_u8(bitmap_rows_45, bitmap_rows_67);
   bitmap_all = vpadd_u8(bitmap_rows_0123, bitmap_rows_4567);
 
-#if defined(__aarch64__) || defined(_M_ARM64)
+#if defined(__aarch64__) || defined(_M_ARM64) || defined(_M_ARM64EC)
   
   bitmap = vget_lane_u64(vreinterpret_u64_u8(bitmap_all), 0);
   
@@ -595,7 +595,7 @@ int jsimd_encode_mcu_AC_refine_prepare_neon
   bitmap_rows_4567 = vpadd_u8(bitmap_rows_45, bitmap_rows_67);
   bitmap_all = vpadd_u8(bitmap_rows_0123, bitmap_rows_4567);
 
-#if defined(__aarch64__) || defined(_M_ARM64)
+#if defined(__aarch64__) || defined(_M_ARM64) || defined(_M_ARM64EC)
   
   bitmap = vget_lane_u64(vreinterpret_u64_u8(bitmap_all), 0);
 

@@ -17,7 +17,7 @@
 
 
 #if (defined(__x86_64__) || defined(__i386__) || defined(_M_IX86) || \
-     defined(_M_X64)) && defined(WITH_SIMD)
+     (defined(_M_X64) && !defined(_M_ARM64EC))) && defined(WITH_SIMD)
 #undef INCLUDE_JPEG_NBITS_TABLE
 #endif
 

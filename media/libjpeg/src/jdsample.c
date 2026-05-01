@@ -501,7 +501,8 @@ _jinit_upsampler(j_decompress_ptr cinfo)
                v_in_group * 2 == v_out_group && do_fancy) {
       
 #if defined(WITH_SIMD) && (defined(__arm__) || defined(__aarch64__) || \
-                           defined(_M_ARM) || defined(_M_ARM64))
+                           defined(_M_ARM) || defined(_M_ARM64) || \
+                           defined(_M_ARM64EC))
       if (jsimd_can_h1v2_fancy_upsample())
         upsample->methods[ci] = jsimd_h1v2_fancy_upsample;
       else

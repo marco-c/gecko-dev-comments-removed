@@ -17,7 +17,7 @@
 
 
 
-#if defined(__aarch64__) || defined(_M_ARM64)
+#if defined(__aarch64__) || defined(_M_ARM64) || defined(_M_ARM64EC)
 #define BIT_BUF_SIZE  64
 #else
 #define BIT_BUF_SIZE  32
@@ -54,7 +54,7 @@ typedef struct {
 
 
 
-#if defined(__aarch64__) || defined(_M_ARM64)
+#if defined(__aarch64__) || defined(_M_ARM64) || defined(_M_ARM64EC)
 
 #define FLUSH() { \
   if (put_buffer & 0x8080808080808080 & ~(put_buffer + 0x0101010101010101)) { \

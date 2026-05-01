@@ -15,8 +15,6 @@
 
 
 
-
-
 #define JPEG_INTERNALS
 #include "../../../src/jinclude.h"
 #include "../../../src/jpeglib.h"

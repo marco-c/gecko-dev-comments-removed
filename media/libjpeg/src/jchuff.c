@@ -55,7 +55,8 @@ typedef size_t bit_buf_type;
 
 
 #if defined(WITH_SIMD) && !(defined(__arm__) || defined(__aarch64__) || \
-                            defined(_M_ARM) || defined(_M_ARM64))
+                            defined(_M_ARM) || defined(_M_ARM64) || \
+                            defined(_M_ARM64EC))
 typedef unsigned long long simd_bit_buf_type;
 #else
 typedef bit_buf_type simd_bit_buf_type;

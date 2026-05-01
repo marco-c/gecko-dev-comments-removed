@@ -408,7 +408,8 @@ read_and_discard_scanlines(j_decompress_ptr cinfo, JDIMENSION num_lines)
   void (*color_quantize) (j_decompress_ptr cinfo, _JSAMPARRAY input_buf,
                           _JSAMPARRAY output_buf, int num_rows) = NULL;
 
-  if (cinfo->cconvert && cinfo->cconvert->_color_convert) {
+  if (!master->using_merged_upsample && cinfo->cconvert &&
+      cinfo->cconvert->_color_convert) {
     color_convert = cinfo->cconvert->_color_convert;
     cinfo->cconvert->_color_convert = noop_convert;
     
@@ -417,7 +418,8 @@ read_and_discard_scanlines(j_decompress_ptr cinfo, JDIMENSION num_lines)
     scanlines = &dummy_row;
   }
 
-  if (cinfo->cquantize && cinfo->cquantize->_color_quantize) {
+  if (cinfo->quantize_colors && cinfo->cquantize &&
+      cinfo->cquantize->_color_quantize) {
     color_quantize = cinfo->cquantize->_color_quantize;
     cinfo->cquantize->_color_quantize = noop_quantize;
   }

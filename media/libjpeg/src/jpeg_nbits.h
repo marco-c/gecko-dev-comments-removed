@@ -23,7 +23,7 @@
 
 
 #if (defined(__GNUC__) && (defined(__arm__) || defined(__aarch64__))) || \
-    defined(_M_ARM) || defined(_M_ARM64)
+    defined(_M_ARM) || defined(_M_ARM64) || defined(_M_ARM64EC)
 #if !defined(__thumb__) || defined(__thumb2__)
 #define USE_CLZ_INTRINSIC
 #endif
