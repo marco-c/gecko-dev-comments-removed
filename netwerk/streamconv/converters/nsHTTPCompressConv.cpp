@@ -233,19 +233,6 @@ void nsHTTPCompressConv::ReportDecodingErrorWithSite(const nsACString& aLabel) {
 
 NS_IMETHODIMP
 nsHTTPCompressConv::GetDecodedDataLength(uint64_t* aDecodedDataLength) {
-  
-  
-  
-  
-  
-  nsCOMPtr<nsIStreamListener> listener;
-  {
-    MutexAutoLock lock(mMutex);
-    listener = mListener;
-  }
-  if (nsCOMPtr<nsICompressConvStats> inner = do_QueryInterface(listener)) {
-    return inner->GetDecodedDataLength(aDecodedDataLength);
-  }
   *aDecodedDataLength = mDecodedDataLength;
   return NS_OK;
 }
