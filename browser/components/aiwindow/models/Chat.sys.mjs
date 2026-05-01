@@ -4,14 +4,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
-
 import { ToolRoleOpts } from "moz-src:///browser/components/aiwindow/ui/modules/ChatMessage.sys.mjs";
-import {
-  openAIEngine,
-  DEFAULT_MODEL,
-  MODEL_FEATURES,
-} from "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs";
+import { openAIEngine } from "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs";
 import {
   toolsConfig,
   toolFns,
@@ -68,13 +62,6 @@ ChromeUtils.defineLazyGetter(lazy, "console", () =>
  */
 export const Chat = {};
 
-XPCOMUtils.defineLazyPreferenceGetter(
-  Chat,
-  "modelId",
-  "browser.smartwindow.model",
-  DEFAULT_MODEL[MODEL_FEATURES.CHAT]
-);
-
 /**
  * Log chat stream traffic.
  * Automatically formats the output and is controlled by the logLevel pref.
@@ -121,12 +108,14 @@ Object.assign(Chat, {
    * @param {openAIEngine} options.engineInstance
    * @param {BrowsingContext} options.browsingContext - Omitted for tests only.
    * @param {"fullpage" | "sidebar" | "urlbar"} options.mode - See the MODE in ai-window.mjs
+   * @param {AbortSignal} [options.signal]
    */
   async fetchWithHistory({
     conversation,
     engineInstance,
     browsingContext,
     mode,
+    signal,
   }) {
     if (!browsingContext && !Cu.isInAutomation) {
       throw new Error(
@@ -141,7 +130,7 @@ Object.assign(Chat, {
       throw fxaError;
     }
 
-    const toolRoleOpts = new ToolRoleOpts(this.modelId);
+    const toolRoleOpts = new ToolRoleOpts(engineInstance.model);
     const currentTurn = conversation.currentTurnIndex();
     const config = engineInstance.getConfig(engineInstance.feature);
     const inferenceParams = config?.parameters || {};
@@ -183,6 +172,7 @@ Object.assign(Chat, {
         tool_choice: "auto",
         tools: chatToolsConfig,
         args: messages,
+        signal,
         ...inferenceParams,
       });
     };
@@ -217,6 +207,11 @@ Object.assign(Chat, {
       if (!pendingToolCalls || pendingToolCalls.length === 0) {
         // Debug logging: Mark the end of the streaming loop for this turn
         logConversationStream(currentTurn, "STREAM END");
+        return;
+      }
+
+      if (signal?.aborted) {
+        logConversationStream(currentTurn, "STREAM END", null, "aborted");
         return;
       }
 
