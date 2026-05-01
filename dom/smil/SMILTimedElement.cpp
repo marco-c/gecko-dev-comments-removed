@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "SMILTimedElement.h"
 
 #include <algorithm>
@@ -595,7 +593,8 @@ void SMILTimedElement::DoSampleAt(SMILTime aContainerTime, bool aEndOnly) {
         } else if (mCurrentInterval->Begin()->Time() <= sampleTime) {
           MOZ_ASSERT(!didApplyEarlyEnd, "We got an early end, but didn't end");
           SMILTime beginTime = mCurrentInterval->Begin()->Time().GetMillis();
-          SMILTime activeTime = aContainerTime - beginTime;
+          SMILTime activeTime = std::max<SMILTime>(
+              SaturatingCast<SMILTime>(double(aContainerTime) - beginTime), 0);
 
           
           
@@ -1932,8 +1931,8 @@ void SMILTimedElement::AddInstanceTimeFromCurrentTime(SMILTime aCurrentTime,
                                                       bool aIsBegin) {
   double offset = NS_round(aOffsetSeconds * PR_MSEC_PER_SEC);
 
-  SMILTimeValue timeVal(std::clamp<SMILTime>(
-      aCurrentTime + offset, 0, std::numeric_limits<SMILTime>::max()));
+  SMILTimeValue timeVal(
+      std::max<SMILTime>(SaturatingCast<SMILTime>(aCurrentTime + offset), 0));
 
   RefPtr<SMILInstanceTime> instanceTime = new SMILInstanceTime(
       timeVal, SMILInstanceTime::SMILInstanceTimeSource::DOM);
