@@ -1005,13 +1005,16 @@ function do_note_exception(ex, text) {
 function do_report_result(passed, text, stack, todo) {
   
   
+  
+  
+  
   while (/(\/head(_.+)?|head)\.js$/.test(stack.filename) && stack.caller) {
     stack = stack.caller;
   }
 
-  let name = _gRunningTest ? _gRunningTest.name : stack.name;
+  let name = _gRunningTest ? _gRunningTest.name : (stack.name ?? "");
   let message;
-  if (name) {
+  if (name && stack.lineNumber) {
     message = "[" + name + " : " + stack.lineNumber + "] " + text;
   } else {
     message = text;
