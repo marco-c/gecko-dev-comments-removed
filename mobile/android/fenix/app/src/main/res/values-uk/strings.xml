@@ -335,7 +335,11 @@
     Content description for the Home screen button on the browser toolbar
   -->
   <string name="browser_toolbar_home">Домашній екран</string>
-  <!-- Content description for the translate page toolbar button that opens the translations dialog when no translation has occurred. -->
+  <!--
+    Browser Toolbar
+
+    Content description for the translate page toolbar button that opens the translations dialog when no translation has occurred.
+  -->
   <string name="browser_toolbar_translate">Перекласти сторінку</string>
   <!--
     Content description (not visible, for screen readers etc.) for the translate page toolbar button that opens the translations dialog when the page is translated successfully.
@@ -427,7 +431,11 @@
   <string name="search_scan_button_2">Сканувати QR-код</string>
   <!-- Button in the search view when shortcuts are displayed that takes a user to the search engine settings -->
   <string name="search_shortcuts_engine_settings">Налаштування пошукових систем</string>
-  <!-- Button in the search view that lets a user navigate to the site in their clipboard -->
+  <!--
+    Search Fragment
+
+    Button in the search view that lets a user navigate to the site in their clipboard
+  -->
   <string name="awesomebar_clipboard_title">Заповнити посилання з буфера обміну</string>
   <!-- Button in the search suggestions onboarding that allows search suggestions in private sessions -->
   <string name="search_suggestions_onboarding_allow_button">Дозволити</string>
@@ -1118,6 +1126,8 @@
   <string name="customize_wallpapers">Шпалери</string>
   <!-- Title for the customize home screen section with sponsored shortcuts. -->
   <string name="customize_toggle_contile">Спонсоровані ярлики</string>
+  <!-- Title for the customize home screen section that toggles the Homepage sports widget. -->
+  <string name="customize_toggle_world_cup" tools:ignore="UnusedResources">Кубок світу</string>
   <!--
     Wallpapers
 
@@ -1701,6 +1711,10 @@
   <string name="pwa_site_controls_title_private">%1$s (Приватний режим)</string>
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">Відкрити пошук у вкладках</string>
+  <!-- The header text displayed on the tab groups page when no tab groups are open -->
+  <string name="tab_manager_empty_tab_groups_page_header">Спробуйте групи вкладок – менше дій та краща продуктивність</string>
+  <!-- The description displayed on the tab groups page when no tab groups are open -->
+  <string name="tab_manager_empty_tab_groups_page_description">Виберіть вкладки для створення групи. Вони зберігатимуться тут, готові до використання в будь-який момент.</string>
   <!--
     Tab Group
 
@@ -1727,6 +1741,10 @@
   <!-- Title for adding more tabs to a tab group. -->
   <string name="add_to_tab_group_title">Додати до</string>
   <!-- Content Description for closing the "Add to Tab Group" panel. -->
+  <string name="add_to_tab_group_bottom_sheet_grabber_content_description">Додати до групи вкладок, згорнути маркер перетягування</string>
+  <!-- Content Description for "New tab group" panel. -->
+  <string name="add_to_new_tab_group_content_description">Додати до нової групи вкладок</string>
+  <!-- Content Description for closing the "Add to Tab Group" panel. -->
   <string name="add_to_tab_group_bottom_sheet_close_content_description">Закрити додавання до групи вкладок</string>
   <!-- Label for adding to a new tab group. -->
   <string name="add_to_new_tab_group_title">Нова група вкладок</string>
@@ -1739,6 +1757,36 @@
     <item quantity="few">%1$d вкладки</item>
     <item quantity="other">%1$d вкладок</item>
   </plurals>
+  <plurals name="add_to_exiting_tab_group_content_description">
+    <!--
+      Accessibility description for add to existing tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">Додати до групи вкладок %1$s, %2$d вкладка, %3$s колір</item>
+    <item quantity="few">Додати до групи вкладок %1$s, %2$d вкладки, %3$s колір</item>
+    <item quantity="other">Додати до групи вкладок %1$s, %2$d вкладок, %3$s колір</item>
+  </plurals>
+  <plurals name="share_tab_group_button_content_description">
+    <!--
+      Content Description for share tab group button.
+      %1$s is the name of the tab group.
+      %2$d is the number of tabs in a tab group.
+    -->
+    <item quantity="one">Поділитися групою вкладок %1$s з %2$d вкладкою.</item>
+    <item quantity="few">Поділитися групою вкладок %1$s з %2$d вкладками.</item>
+    <item quantity="other">Поділитися групою вкладок %1$s з %2$d вкладками.</item>
+  </plurals>
+  <!-- Content description for the grabber/handle of the tab group bottom sheet. -->
+  <string name="tab_group_sheet_dismiss_description">Переглянути групу вкладок, згорнути маркер перетягування</string>
+  <plurals name="expanded_tab_group_header_description">
+    <!--
+      Accessibility description for the header of an expanded tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">Група вкладок %1$s з %2$d вкладкою, %3$s колір</item>
+    <item quantity="few">Група вкладок %1$s з %2$d вкладками, %3$s колір</item>
+    <item quantity="other">Група вкладок %1$s з %2$d вкладками, %3$s колір</item>
+  </plurals>
   <!-- Title for the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_title">Видалити групу вкладок?</string>
   <!-- Text shown in the body of the Delete tab group confirmation dialog. -->
@@ -1747,6 +1795,30 @@
   <string name="delete_tab_group_confirmation_dialog_confirm">Видалити групу</string>
   <!-- Text shown on the cancel button in the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_cancel">Скасувати</string>
+  <!--
+    Color labels for tab groups, used for accessibility and selection UI.
+
+    Tab group color: Yellow
+  -->
+  <string name="tab_group_color_yellow">Жовтий</string>
+  <!-- Tab group color: Orange -->
+  <string name="tab_group_color_orange">Помаранчевий</string>
+  <!-- Tab group color: Red -->
+  <string name="tab_group_color_red">Червоний</string>
+  <!-- Tab group color: Pink -->
+  <string name="tab_group_color_pink">Рожевий</string>
+  <!-- Tab group color: Purple -->
+  <string name="tab_group_color_purple">Бузковий</string>
+  <!-- Tab group color: Violet -->
+  <string name="tab_group_color_violet">Фіолетовий</string>
+  <!-- Tab group color: Blue -->
+  <string name="tab_group_color_blue">Блакитний</string>
+  <!-- Tab group color: Cyan -->
+  <string name="tab_group_color_cyan">Бірюзовий</string>
+  <!-- Tab group color: Green -->
+  <string name="tab_group_color_green">Зелений</string>
+  <!-- Tab group color: Grey -->
+  <string name="tab_group_color_grey">Сірий</string>
   <!--
     History
 
@@ -1825,6 +1897,12 @@
     This button will dismiss the dialog.
   -->
   <string name="download_file_has_not_enough_storage_dialog_cancel_button_text">Скасувати</string>
+  <plurals name="downloads_delete_dialog_title">
+    <!-- Title for the download deletion confirmation dialog. The message changes depending on how many files are selected. %d is the number of files to be deleted. -->
+    <item quantity="one">Видалити файл?</item>
+    <item quantity="few">Видалити %d файли?</item>
+    <item quantity="other">Видалити %d файлів?</item>
+  </plurals>
   <!-- Text for the button to delete a single downloaded file item -->
   <string name="download_delete_item">Видалити</string>
   <!-- Content description for the toolbar "Navigate back" button -->
@@ -1856,6 +1934,14 @@
   <string name="download_delete_multi_select_dialog_confirm">Видалити</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the negative action. -->
   <string name="download_delete_multi_select_dialog_cancel">Скасувати</string>
+  <!-- Alert dialog confirmation before deleting a single download item or many download items, this is one of the radio buttons within the dialog box for the user to select. -->
+  <string name="download_delete_dialog_from_device">Видалити з пристрою</string>
+  <!-- Alert dialog confirmation before deleting a single download item or many download items, this is one of the radio buttons within the dialog box for the user to select. -->
+  <string name="download_delete_dialog_from_history">Лише вилучити з історії завантажень</string>
+  <!-- Alert dialog confirmation before deleting a single download item or many download items, this is the negative action. -->
+  <string name="download_delete_dialog_cancel">Скасувати</string>
+  <!-- Alert dialog confirmation before deleting a single download item or many download items, this is the positive action. -->
+  <string name="download_delete_dialog_confirm">Підтвердити</string>
   <!-- Title for the alert dialog confirmation before renaming a download item. -->
   <string name="download_rename_dialog_title">Перейменувати файл</string>
   <!-- Label for the name field in the alert dialog confirmation before renaming a download item. -->
@@ -1869,11 +1955,21 @@
   <string name="download_rename_error_exists_error">Файл з назвою “%s” вже існує в цьому розташуванні</string>
   <!-- Error message when renaming with an invalid file name. -->
   <string name="download_rename_error_invalid_name_error">Назви файлів не можуть містити символ “/”</string>
+  <!-- Error message shown when a user tries to rename a downloaded file but only changes the casing (e.g., "file.txt" to "File.txt"). -->
+  <string name="download_rename_error_case_only_error">Введена назва змінює лише регістр великих або малих літер. Введіть іншу назву файлу.</string>
   <!-- Title for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_title">Не вдається перейменувати файл</string>
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_description">Цей файл неможливо перейменувати через обмеження системи або сховища.</string>
   <string name="download_rename_error_dismiss_button">OK</string>
+  <!--
+    Title for the alert dialog to change file extension.
+    %s is the file type to change to.
+  -->
+  <string name="change_file_extension_title">Змінити тип файлу на %s?</string>
+  <string name="change_file_extension_description">Ця дія може відкрити файл в іншій програмі, що може бути ризиковано для вашого пристрою.</string>
+  <string name="change_file_extension_cancel_button">Скасувати</string>
+  <string name="change_file_extension_confirm_button">Так, змінити</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">Виконується</string>
   <!--
@@ -1945,6 +2041,16 @@
   <string name="download_content_type_filter_document">Документи</string>
   <!-- Text for the filter button to show all other file types in the downloads list -->
   <string name="download_content_type_filter_other_1">Інше</string>
+  <!--
+    Title for the alert dialog to rename a file and/or change its download location before downloading it.
+    %s is the formatted size of the file (e.g., "12.5 MB").
+  -->
+  <string name="download_rename_and_change_location_dialog_title">Завантажити файл?\n(%s)</string>
+  <!--
+    Title for the alert dialog to rename a file and/or change its download location
+    when the file size is not available before downloading it.
+  -->
+  <string name="download_rename_and_change_location_dialog_title_with_unknown_size">Завантажити файл?</string>
   <!--
     WebCompat Reporter
 
@@ -2100,6 +2206,10 @@
   <string name="bookmark_sort_menu_a_to_z">Сортувати від А до Я</string>
   <!-- Label for button to sort bookmarks in reverse alphabetical order in the bookmark sorting overflow menu. -->
   <string name="bookmark_sort_menu_z_to_a">Сортувати від Я до А</string>
+  <!-- Label for button to import bookmarks from file. -->
+  <string name="bookmark_import_menu_button">Імпортувати з файлу</string>
+  <!-- Snackbar message shown when a bookmark import attempt fails. -->
+  <string name="bookmark_import_failure_snackbar">Не вдалося імпортувати закладки. Повторіть спробу.</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -2158,8 +2268,12 @@
   <string name="bookmark_select_folder_close_folder_content_description">Закрити теку: %s</string>
   <!-- Content description for the "close" button in bookmarks screen. -->
   <string name="bookmark_close_button_content_description">Закрити закладки</string>
+  <!-- Content description for the Import bookmarks button in bookmarks screen. -->
+  <string name="bookmark_import_bookmarks_button_content_description">Імпортувати з файлу</string>
   <!-- Title for the bookmark list empty state -->
   <string name="bookmark_empty_list_title">Немає закладок</string>
+  <!-- Title for the bookmark list empty state at the root level. -->
+  <string name="bookmark_empty_list_root_title">Зберігайте всі свої улюблені закладки разом</string>
   <!-- Bookmark screen folder description. %s is the count of bookmark folder children -->
   <string name="bookmarks_folder_description">Закладки в теці: %s</string>
   <!-- Description for the bookmark list empty state when you're not signed into sync. -->
@@ -2347,6 +2461,24 @@
   <string name="menu_print">Друк</string>
   <!-- Sub-header in the dialog to share a link to another sync device -->
   <string name="share_device_subheader">Надіслати на пристрій</string>
+  <!-- Content description for the drag handle that dismisses the Send to Device bottom sheet -->
+  <string name="send_to_devices_bottom_sheet_close_content_description">Закрити надсилання на пристрій</string>
+  <!-- Text for the QR code action in the native share sheet -->
+  <string name="share_qr_code">QR-код</string>
+  <!-- Title shown in the QR code display screen -->
+  <string name="qr_code_display_title">QR-код</string>
+  <!-- Content description for the close button in the QR code display screen -->
+  <string name="qr_code_display_close">Закрити</string>
+  <!-- Heading on the QR code display screen -->
+  <string name="qr_code_display_share_nearby">Поділитися посиланням поруч</string>
+  <!-- Body text on the QR code display screen instructing the user to have others scan the code -->
+  <string name="qr_code_display_instructions">Щоб поділитися цим посиланням з людьми поруч, попросіть їх сканувати QR-код.</string>
+  <!-- Label for the download button on the QR code display screen -->
+  <string name="qr_code_display_download">Завантажити</string>
+  <!-- Toast shown when the QR code is successfully saved to Downloads -->
+  <string name="qr_code_download_success">QR-код збережено в теці \"Завантаження\"</string>
+  <!-- Toast shown when saving the QR code to Downloads fails -->
+  <string name="qr_code_download_failure">Не вдалося зберегти QR-код</string>
   <!-- Sub-header in the dialog to share a link to an app from the full list -->
   <string name="share_link_all_apps_subheader">Усі дії</string>
   <!-- Sub-header in the dialog to share a link to an app from the most-recent sorted list -->
@@ -2593,6 +2725,18 @@
   <string name="preference_enhanced_tracking_protection_explanation_2">%s захищає вас від численних найпоширеніших елементів стеження, що переслідують вас в мережі.</string>
   <!-- Text displayed that links to website about enhanced tracking protection -->
   <string name="preference_enhanced_tracking_protection_explanation_learn_more">Докладніше</string>
+  <plurals name="trackers_blocked_count">
+    <!--
+      Trackers blocked card on homepage
+
+      Text shown on the trackers blocked card. %d is the number of trackers blocked.
+    -->
+    <item quantity="one">Заблоковано %d вистежувач</item>
+    <item quantity="few">Заблоковано %d вистежувачі</item>
+    <item quantity="other">Заблоковано %d вистежувачів</item>
+  </plurals>
+  <!-- Text shown on the trackers blocked card when no trackers have been blocked yet -->
+  <string name="trackers_blocked_empty">Ви захищені</string>
   <!-- Preference for enhanced tracking protection for the standard protection settings -->
   <string name="preference_enhanced_tracking_protection_standard_default_1">Стандартний (типово)</string>
   <!-- Preference description for enhanced tracking protection for the standard protection settings -->
@@ -2990,6 +3134,71 @@
   <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
   <string name="email_masks_error_retrieving_masks">Маски електронної пошти зараз недоступні. Повторіть спробу за кілька хвилин.</string>
   <!--
+    Firefox browser VPN (a browser-only proxy, distinct from the Mozilla VPN service)
+
+    Title for the browser VPN entry in the settings list
+  -->
+  <string name="preferences_ip_protection_title_2">Вбудована VPN</string>
+  <!-- Label for the BETA badge for the browser VPN entry in the settings list -->
+  <string name="preferences_ip_protection_beta_badge_label">BETA</string>
+  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
+  <string name="ip_protection_title">VPN</string>
+  <!-- Label for the browser VPN toggle on the settings screen -->
+  <string name="ip_protection_toggle_label">VPN</string>
+  <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->
+  <string name="ip_protection_promo_headline">VPN, вбудована у %s</string>
+  <!-- Body text for the browser VPN promo card -->
+  <string name="ip_protection_promo_body">Переглядайте вебсторінки з додатковим захистом, приховуючи своє розташування, навіть у публічних мережах Wi-Fi.</string>
+  <!-- Link text that opens additional information about the browser VPN -->
+  <string name="ip_protection_learn_more">Докладніше</string>
+  <!-- Label for the monthly data allowance section on the browser VPN settings screen -->
+  <string name="ip_protection_data_limit_label">Місячний ліміт даних</string>
+  <!--
+    Data usage shown on the browser VPN settings screen.
+    %1$.1f is the data remaining in GB (for example "8.3").
+    %2$.1f is the total monthly allowance in GB (for example "50.0").
+  -->
+  <string name="ip_protection_data_limit_value">Залишилося %1$.1f ГБ з %2$.1f ГБ</string>
+  <!--
+    Text shown below the data usage bar describing when the monthly allowance resets.
+    %1$.0f is the total monthly data allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_data_reset_info">Скидається до %1$.0f ГБ першого числа кожного місяця.</string>
+  <!-- Header for the browser VPN `location` section -->
+  <string name="ip_protection_location_section">Розташування</string>
+  <!-- Label for the recommended automatic location option on the browser VPN settings screen -->
+  <string name="ip_protection_location_recommended_label">Рекомендовано</string>
+  <!-- Description for the recommended automatic location option on the browser VPN settings screen -->
+  <string name="ip_protection_location_recommended_description">Вибір найшвидшого для вас розташування VPN.</string>
+  <!-- Badge label shown in the menu item when the browser VPN is active -->
+  <string name="preferences_ip_protection_on">Увімкнено</string>
+  <!-- Badge label shown in the menu item when the browser VPN is off -->
+  <string name="preferences_ip_protection_off">Вимкнено</string>
+  <!-- Badge label shown in the menu item while the browser VPN is connecting -->
+  <string name="ip_protection_menu_connecting">З’єднання…</string>
+  <!-- Badge label shown in the menu item when the browser VPN is paused -->
+  <string name="ip_protection_menu_paused">Призупинено</string>
+  <!-- Badge label shown in the menu item when the browser VPN has an error -->
+  <string name="ip_protection_menu_error">Помилка</string>
+  <!-- Content description for the chevron button that opens the browser VPN settings screen -->
+  <string name="ip_protection_navigate_settings">Відкрити налаштування VPN</string>
+  <!--
+    Subtitle shown below the VPN label in menus when the monthly data allowance is exhausted.
+    %1$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_menu_limit_reached">Досягнуто ліміту %1$d ГБ</string>
+  <!--
+    Error message shown on the browser VPN settings screen when the monthly data allowance is exhausted.
+    %1$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_data_limit_reached_description">Ви використали всі %1$d ГБ своїх даних VPN. Доступ буде скинуто наступного місяця.</string>
+  <!-- Label shown next to the browser protection icon in the address bar when the browser VPN is active -->
+  <string name="ip_protection_toolbar_pill_label" tools:ignore="UnusedResources">VPN увімкнено</string>
+  <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
+  <string name="ip_protection_toolbar_pill_description" tools:ignore="UnusedResources">VPN-з’єднання активне.</string>
+  <!-- Label for the button that starts the browser VPN authentication or authorization flow on the settings screen -->
+  <string name="ip_protection_get_started">Розпочати</string>
+  <!--
     Autofill
 
     Preference and title for managing the autofill settings
@@ -3287,6 +3496,8 @@
     which navigates the user to a screen displaying all the shortcuts.
   -->
   <string name="homepage_shortcuts_show_all_content_description">Показати всі ярлики</string>
+  <!-- Label for the "Add shortcut" button displayed as a tile. -->
+  <string name="homepage_shortcuts_add_shortcut">Додати ярлик</string>
   <!-- Title text displayed in the dialog when shortcuts limit is reached. -->
   <string name="shortcut_max_limit_title">Досягнуто обмеження кількості ярликів</string>
   <!-- Content description text displayed in the dialog when shortcut limit is reached. -->
@@ -3385,6 +3596,8 @@
     Header text for a section on the home screen.
   -->
   <string name="pocket_stories_header_2">Історії</string>
+  <!-- Header text for the Stories screen. -->
+  <string name="stories_screen_text_news">Новини</string>
   <!--
     Context description text for the "Discover more" button in the stories home screen section
     which navigates the user to a screen displaying more stories.
