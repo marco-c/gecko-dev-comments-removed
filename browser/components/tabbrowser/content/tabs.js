@@ -136,16 +136,6 @@
 
       this.allTabs[0].label = this.emptyTabTitle;
 
-      
-      const language = Services.locale.appLocaleAsBCP47;
-      const unsupportedLocales = Services.prefs.getCharPref(
-        "browser.tabs.secondaryTextUnsupportedLocales"
-      );
-      this.toggleAttribute(
-        "secondarytext-unsupported",
-        unsupportedLocales.split(",").includes(language.split("-")[0])
-      );
-
       this.newTabButton.setAttribute(
         "aria-label",
         DynamicShortcutTooltip.getText("tabs-newtab-button")

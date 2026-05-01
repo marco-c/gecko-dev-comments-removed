@@ -1046,10 +1046,6 @@ pref("browser.tabs.tabMinWidth", 76);
 
 
 
-pref("browser.tabs.secondaryTextUnsupportedLocales", "ar,bn,bo,ckb,fa,gu,he,hi,ja,km,kn,ko,lo,mr,my,ne,pa,si,ta,te,th,ur,zh");
-
-
-
 
 
 
@@ -2115,6 +2111,7 @@ pref("messaging-system.log", "warn");
 pref("messaging-system.rsexperimentloader.collection_id", "nimbus-desktop-experiments");
 pref("nimbus.debug", false);
 pref("nimbus.validation.enabled", true);
+pref("nimbus.firstUpdateComplete", false);
 
 
 
@@ -2264,6 +2261,9 @@ pref("browser.smartwindow.chatHistory.loglevel", "Error");
 pref("browser.smartwindow.chatStore.loglevel", "Error");
 pref("browser.smartwindow.conversation.logLevel", "Error");
 pref("browser.smartwindow.smartbarMentions.loglevel", "Error");
+
+
+pref("browser.smartwindow.userFeedbackCollection", false);
 
 
 pref("security.mixed_content.block_active_content", true);
