@@ -9,10 +9,8 @@
 #include "nsString.h"
 
 class nsAlertsUtils final {
- private:
-  nsAlertsUtils() = delete;
-
  public:
+  nsAlertsUtils() = delete;
   
 
 

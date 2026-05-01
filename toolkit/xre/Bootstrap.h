@@ -8,7 +8,6 @@
 
 
 
-
 #ifndef mozilla_Bootstrap_h
 #define mozilla_Bootstrap_h
 
@@ -60,11 +59,11 @@ struct BootstrapConfig {
 
 class Bootstrap {
  protected:
-  Bootstrap() {}
+  Bootstrap() = default;
 
   
   
-  virtual ~Bootstrap() {}
+  virtual ~Bootstrap() = default;
 
   
 
@@ -76,7 +75,7 @@ class Bootstrap {
 
   class BootstrapDelete {
    public:
-    constexpr BootstrapDelete() {}
+    constexpr BootstrapDelete() = default;
     void operator()(Bootstrap* aPtr) const { aPtr->Dispose(); }
   };
 

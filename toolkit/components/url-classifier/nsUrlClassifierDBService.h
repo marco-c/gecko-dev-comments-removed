@@ -71,6 +71,7 @@ class nsUrlClassifierDBService final : public nsIUrlClassifierDBService,
 
   
   nsUrlClassifierDBService();
+  nsUrlClassifierDBService(nsUrlClassifierDBService&) = delete;
 
   nsresult Init();
 
@@ -108,9 +109,6 @@ class nsUrlClassifierDBService final : public nsIUrlClassifierDBService,
 
   
   ~nsUrlClassifierDBService();
-
-  
-  nsUrlClassifierDBService(nsUrlClassifierDBService&);
 
   nsresult LookupURI(const nsACString& aKey, FeatureHolder* aHolder,
                      nsIUrlClassifierCallback* c);
@@ -159,6 +157,7 @@ class nsUrlClassifierDBService final : public nsIUrlClassifierDBService,
 class nsUrlClassifierDBServiceWorker final : public nsIUrlClassifierDBService {
  public:
   nsUrlClassifierDBServiceWorker();
+  nsUrlClassifierDBServiceWorker(nsUrlClassifierDBServiceWorker&) = delete;
 
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIURLCLASSIFIERDBSERVICE
@@ -213,9 +212,6 @@ class nsUrlClassifierDBServiceWorker final : public nsIUrlClassifierDBService {
  private:
   
   ~nsUrlClassifierDBServiceWorker();
-
-  
-  nsUrlClassifierDBServiceWorker(nsUrlClassifierDBServiceWorker&);
 
   nsresult NotifyUpdateObserver(nsresult aUpdateStatus);
 

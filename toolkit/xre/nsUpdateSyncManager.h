@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsUpdateSyncManager_h_
 #define nsUpdateSyncManager_h_
 
@@ -26,6 +24,11 @@ class nsUpdateSyncManager final : public nsIUpdateSyncManager,
  public:
   explicit nsUpdateSyncManager(nsIFile* anAppFile = nullptr);
 
+  nsUpdateSyncManager(nsUpdateSyncManager&) = delete;
+  nsUpdateSyncManager(nsUpdateSyncManager&&) = delete;
+  nsUpdateSyncManager& operator=(nsUpdateSyncManager&) = delete;
+  nsUpdateSyncManager& operator=(nsUpdateSyncManager&&) = delete;
+
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIUPDATESYNCMANAGER
   NS_DECL_NSIOBSERVER
@@ -34,11 +37,6 @@ class nsUpdateSyncManager final : public nsIUpdateSyncManager,
 
  private:
   ~nsUpdateSyncManager();
-
-  nsUpdateSyncManager(nsUpdateSyncManager&) = delete;
-  nsUpdateSyncManager(nsUpdateSyncManager&&) = delete;
-  nsUpdateSyncManager& operator=(nsUpdateSyncManager&) = delete;
-  nsUpdateSyncManager& operator=(nsUpdateSyncManager&&) = delete;
 
   nsresult OpenLock(nsIFile* anAppFile = nullptr);
   void ReleaseLock();
