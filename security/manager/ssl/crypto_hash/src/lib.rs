@@ -177,7 +177,7 @@ impl CryptoHash {
 }
 
 #[no_mangle]
-pub extern "C" fn crypto_hash_constructor(
+pub unsafe extern "C" fn crypto_hash_constructor(
     iid: *const xpcom::nsIID,
     result: *mut *mut xpcom::reexports::libc::c_void,
 ) -> nserror::nsresult {
@@ -190,7 +190,7 @@ pub extern "C" fn crypto_hash_constructor(
 
 
 #[no_mangle]
-pub extern "C" fn crypto_hash_sha256(data: *const u8, length: usize, result: *mut u8) {
+pub unsafe extern "C" fn crypto_hash_sha256(data: *const u8, length: usize, result: *mut u8) {
     let mut hasher = sha2::Sha256::new();
     
     
