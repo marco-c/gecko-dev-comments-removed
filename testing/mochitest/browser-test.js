@@ -850,9 +850,13 @@ Tester.prototype = {
     }
     let changedPrefs = [];
     for (let p of failures) {
-      this.structuredLogger.error(
-        
-        `TEST-${gConfig.comparePrefs ? "UN" : ""}EXPECTED-FAIL | ${testPath} | changed preference: ${p}`
+      this.currentTest.addResult(
+        new testResult({
+          name: `changed preference: ${p}`,
+          pass: !gConfig.comparePrefs,
+          todo: !gConfig.comparePrefs,
+          allowFailure: this.currentTest.allowFailure,
+        })
       );
       changedPrefs.push(p);
     }
@@ -1521,6 +1525,7 @@ Tester.prototype = {
             ? {
                 name: err.message,
                 stack: err.stack,
+                time: err.time,
                 allowFailure: currentTest.allowFailure,
               }
             : {
@@ -1773,10 +1778,13 @@ function isErrorOrException(err) {
 
 
 
-function testResult({ name, pass, todo, ex, stack, allowFailure }) {
+function testResult({ name, pass, todo, ex, stack, allowFailure, time }) {
   this.info = false;
   this.name = name;
   this.msg = "";
+  if (time) {
+    this.time = time;
+  }
 
   if (allowFailure && !pass) {
     this.allowedFailure = true;
