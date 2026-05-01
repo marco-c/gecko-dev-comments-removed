@@ -647,10 +647,6 @@ class ArenaCellSet {
 
   WordT getWord(size_t wordIndex) const { return bits.getWord(wordIndex); }
 
-  void setWord(size_t wordIndex, WordT value) {
-    bits.setWord(wordIndex, value);
-  }
-
   
   void trace(TenuringTracer& mover);
 
