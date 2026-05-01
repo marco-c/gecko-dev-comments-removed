@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+import value from './text-javascript_FIXTURE.js' with { type: 'text' };
+
+assert.sameValue(typeof value, 'string');
+
+reportCompare(0, 0);
