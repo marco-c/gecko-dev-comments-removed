@@ -504,16 +504,7 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
 
   
   
-  bool IsFramebustingAllowed(BrowsingContext* aTarget);
-
-  
-  
-  
-  
-  
-  
-  
-  bool IsFramebustingAllowedInner();
+  bool ComputeIsFramebustingAllowed();
 
   void DisplayLoadError(const nsAString& aURI);
 
