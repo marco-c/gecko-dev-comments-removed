@@ -996,10 +996,17 @@ void nsContainerFrame::DisplayOverflowContainers(
   }
 }
 
-void nsContainerFrame::DisplayPushedAbsoluteFrames(
+void nsContainerFrame::DisplayAbsoluteFramesNotBuiltByPlaceholder(
     nsDisplayListBuilder* aBuilder, const nsDisplayListSet& aLists) {
   for (nsIFrame* frame : GetChildList(FrameChildListID::Absolute)) {
     if (frame->HasAnyStateBits(NS_FRAME_IS_PUSHED_OUT_OF_FLOW)) {
+      BuildDisplayListForChild(aBuilder, frame, aLists);
+    } else if (IsTransformed() && !nsLayoutUtils::IsProperAncestorFrame(
+                                      this, frame->GetPlaceholderFrame())) {
+      
+      
+      
+      
       BuildDisplayListForChild(aBuilder, frame, aLists);
     }
   }
@@ -2185,11 +2192,13 @@ LogicalSize nsContainerFrame::ComputeSizeWithIntrinsicDimensions(
             (blockFillCB == FillCB::Stretch ? FillCB::Stretch : FillCB::Clamp);
       }
 
-      if (hasIntrinsicBSize) {
-        tentBSize = intrinsicBSize;
-      } else if (aspectRatio) {
+      
+      
+      if (aspectRatio && (!hasIntrinsicBSize || hasIntrinsicISize)) {
         tentBSize = aspectRatio.ComputeRatioDependentSize(
             LogicalAxis::Block, aWM, tentISize, boxSizingAdjust);
+      } else if (hasIntrinsicBSize) {
+        tentBSize = intrinsicBSize;
       } else {
         tentBSize = fallbackIntrinsicSize.BSize(aWM);
       }

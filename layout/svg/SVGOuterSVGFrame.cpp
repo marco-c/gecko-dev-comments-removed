@@ -221,7 +221,6 @@ IntrinsicSize SVGOuterSVGFrame::GetIntrinsicSize() {
   return FinishIntrinsicSize(containAxes, intrinsicSize);
 }
 
-
 AspectRatio SVGOuterSVGFrame::GetIntrinsicRatio() const {
   if (ContainSizeAxesIfApplicable(this).IsAny()) {
     return AspectRatio();
@@ -251,8 +250,7 @@ AspectRatio SVGOuterSVGFrame::GetIntrinsicRatio() const {
     }
   }
 
-  const auto& viewBox = content->GetViewBoxInternal();
-  if (viewBox.HasRect()) {
+  if (const auto& viewBox = content->GetViewBoxInternal(); viewBox.HasRect()) {
     float zoom = Style()->EffectiveZoom().ToFloat();
     const auto& anim = viewBox.GetAnimValue() * zoom;
     return AspectRatio::FromSize(anim.width, anim.height);
@@ -278,11 +276,10 @@ nsIFrame::SizeComputationResult SVGOuterSVGFrame::ComputeSize(
 
   LogicalSize cbSize = aCBSize;
   IntrinsicSize intrinsicSize = GetIntrinsicSize();
-
+  AspectRatio ratio = GetAspectRatio();
   if (mIsRootContent) {
     
     
-
     NS_ASSERTION(aCBSize.ISize(aWritingMode) != NS_UNCONSTRAINEDSIZE &&
                      aCBSize.BSize(aWritingMode) != NS_UNCONSTRAINEDSIZE,
                  "root should not have auto-width/height containing block");
@@ -327,12 +324,17 @@ nsIFrame::SizeComputationResult SVGOuterSVGFrame::ComputeSize(
     MOZ_ASSERT(intrinsicSize.height && intrinsicSize.width,
                "We should have just handled the only situation where"
                "we lack an intrinsic height or width.");
+    const auto& pos = *StylePosition();
+    if (pos.mWidth.IsAuto() && pos.mHeight.IsAuto()) {
+      
+      
+      ratio = {};
+    }
   }
 
   return {ComputeSizeWithIntrinsicDimensions(
               aSizingInput.mRenderingContext, aWritingMode, intrinsicSize,
-              GetAspectRatio(), cbSize, aMargin, aBorderPadding, aSizeOverrides,
-              aFlags),
+              ratio, cbSize, aMargin, aBorderPadding, aSizeOverrides, aFlags),
           AspectRatioUsage::None};
 }
 
@@ -702,7 +704,7 @@ void SVGOuterSVGFrame::AppendDirectlyOwnedAnonBoxes(
 
 void SVGOuterSVGFrame::MaybeSendIntrinsicSizeAndRatioToEmbedder() {
   MaybeSendIntrinsicSizeAndRatioToEmbedder(Some(GetIntrinsicSize()),
-                                           Some(GetAspectRatio()));
+                                           Some(GetIntrinsicRatio()));
 }
 
 void SVGOuterSVGFrame::MaybeSendIntrinsicSizeAndRatioToEmbedder(

@@ -1166,13 +1166,7 @@ void nsIFrame::RemoveDisplayItemDataForDeletion() {
   DL_LOGV("Removing display item data for frame %p (%s)", this,
           NS_ConvertUTF16toUTF8(name).get());
 
-  auto* data = builder->Data();
-  if (MayHaveWillChangeBudget()) {
-    
-    data->Flags(this) = RetainedDisplayListData::FrameFlag::HadWillChange;
-  } else {
-    data->Remove(this);
-  }
+  builder->Data()->Remove(this);
 }
 
 void nsIFrame::MarkNeedsDisplayItemRebuild() {
@@ -3176,10 +3170,6 @@ void nsIFrame::BuildDisplayListForStackingContext(
     return;
   }
 
-  if (aBuilder->IsForPainting() && disp->mWillChange.bits) {
-    aBuilder->AddToWillChangeBudget(this, GetSize());
-  }
-
   
   
   
@@ -3724,7 +3714,7 @@ void nsIFrame::BuildDisplayListForStackingContext(
   
   if (useOpacity) {
     const bool needsActiveOpacityLayer =
-        nsDisplayOpacity::NeedsActiveLayer(aBuilder, this);
+        nsDisplayOpacity::NeedsActiveLayer(this);
     resultList.AppendNewToTop<nsDisplayOpacity>(
         aBuilder, this, &resultList, containerItemASR,
         nsDisplayItem::ContainerASRType::AncestorOfContained,
@@ -4300,10 +4290,6 @@ void nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder* aBuilder,
       !(!overflowClipAxes.isEmpty() || child->MayHaveTransformAnimation() ||
         child->MayHaveOpacityAnimation());
 
-  if (aBuilder->IsForPainting()) {
-    aBuilder->ClearWillChangeBudgetStatus(child);
-  }
-
   if (StaticPrefs::layout_css_scroll_anchoring_highlight()) {
     if (child->FirstContinuation()->IsScrollAnchor()) {
       nsRect bounds = child->GetContentRectRelativeToSelf() +
@@ -4340,9 +4326,6 @@ void nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder* aBuilder,
     }
 
     child = childOrOutOfFlow;
-    if (aBuilder->IsForPainting()) {
-      aBuilder->ClearWillChangeBudgetStatus(child);
-    }
 
     
     
@@ -6667,24 +6650,25 @@ AspectRatio nsIFrame::GetAspectRatio() const {
     return AspectRatio();
   }
 
-  const StyleAspectRatio& aspectRatio = StylePosition()->mAspectRatio;
+  const StyleAspectRatio& ar = StylePosition()->mAspectRatio;
+  const bool hasRatio = ar.HasRatio();
   
   
   
-  if (!aspectRatio.BehavesAsAuto()) {
-    
-    return aspectRatio.ratio.AsRatio().ToLayoutRatio(UseBoxSizing::Yes);
+  
+  if (hasRatio && !ar.auto_) {
+    if (auto ratio = ar.ratio.AsRatio().ToLayoutRatio(UseBoxSizing::Yes)) {
+      return ratio;
+    }
   }
 
-  
   if (auto intrinsicRatio = GetIntrinsicRatio()) {
     return intrinsicRatio;
   }
 
-  if (aspectRatio.HasRatio()) {
+  if (hasRatio) {
     
-    
-    return aspectRatio.ratio.AsRatio().ToLayoutRatio(UseBoxSizing::No);
+    return ar.ratio.AsRatio().ToLayoutRatio(UseBoxSizing::No);
   }
 
   return AspectRatio();
