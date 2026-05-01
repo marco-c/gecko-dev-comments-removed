@@ -19,7 +19,7 @@ use std::{
     fmt::Display,
 };
 
-use crash_generation::CrashGenerator;
+use crash_generation::finalize_breakpad_minidump;
 use ipc_server::{IPCServer, IPCServerState};
 
 
@@ -85,17 +85,18 @@ pub unsafe extern "C" fn crash_generator_logic_desktop(
         Ok(connector) => connector,
     };
 
-    let crash_generator = unwrap_with_message(
-        CrashGenerator::new(breakpad_data, minidump_path),
-        "Could not create the crash generator",
-    );
-
     let ipc_server = unwrap_with_message(
-        IPCServer::new(client_pid, listener, connector),
+        IPCServer::new(
+            client_pid,
+            listener,
+            connector,
+            breakpad_data,
+            minidump_path,
+        ),
         "Could not create the IPC server",
     );
 
-    main_loop(ipc_server, crash_generator)
+    main_loop(ipc_server)
 }
 
 
@@ -129,11 +130,6 @@ pub unsafe extern "C" fn crash_generator_logic_android(
     
     
     let _ = std::thread::spawn(move || {
-        let crash_generator = unwrap_with_message(
-            CrashGenerator::new(breakpad_data, minidump_path),
-            "Could not create the crash generator",
-        );
-
         let listener = IPCListener::new(0).unwrap();
         
         
@@ -142,16 +138,17 @@ pub unsafe extern "C" fn crash_generator_logic_android(
             "Could not use the pipe",
         );
         let ipc_server = unwrap_with_message(
-            IPCServer::new(pid, listener, connector),
+            IPCServer::new(pid, listener, connector, breakpad_data, minidump_path),
             "Could not create the IPC server",
         );
-        main_loop(ipc_server, crash_generator)
+
+        main_loop(ipc_server)
     });
 }
 
-fn main_loop(mut ipc_server: IPCServer, mut crash_generator: CrashGenerator) -> i32 {
+fn main_loop(mut ipc_server: IPCServer) -> i32 {
     loop {
-        match ipc_server.run(&mut crash_generator) {
+        match ipc_server.run() {
             Ok(_result @ IPCServerState::ClientDisconnected) => {
                 return 0;
             }

@@ -2,7 +2,6 @@
 
 
 
-
 #include <string>
 
 #if defined(XP_LINUX)
@@ -62,15 +61,22 @@ struct BreakpadProcessId {
 #endif
 };
 
-using RustDumpCallback = void (*)(BreakpadProcessId, const char*,
+using RustDumpCallback = void (*)(const void*, BreakpadProcessId, const char*,
                                   const breakpad_char*);
+
+struct BreakpadContext {
+  RustDumpCallback callback;
+  const void* generator;
+};
+
 #if defined(XP_LINUX)
 using RustAuxvCallback = bool (*)(breakpad_pid, DirectAuxvDumpInfo*);
 #endif  
 
 void onClientDumpRequestCallback(void* context, const ClientInfo& client_info,
                                  const breakpad_string& file_path) {
-  RustDumpCallback callback = reinterpret_cast<RustDumpCallback>(context);
+  BreakpadContext* breakpad_context = static_cast<BreakpadContext*>(context);
+  RustDumpCallback callback = breakpad_context->callback;
   BreakpadProcessId process_id = {
       .pid = client_info.pid(),
 #if defined(XP_MACOSX)
@@ -86,7 +92,8 @@ void onClientDumpRequestCallback(void* context, const ClientInfo& client_info,
       nullptr;
 #endif  
 
-  callback(process_id, error_msg, file_path.c_str());
+  callback(breakpad_context->generator, process_id, error_msg,
+           file_path.c_str());
 }
 
 #if defined(XP_LINUX)
@@ -100,7 +107,7 @@ bool getAuxvDumpInfo(RustAuxvCallback callback, breakpad_pid aPid,
 
 extern "C" void* CrashGenerationServer_init(breakpad_init_type aBreakpadData,
                                             const breakpad_char* aMinidumpPath,
-                                            RustDumpCallback aDumpCallback) {
+                                            BreakpadContext* aContext) {
   breakpad_string minidumpPath(aMinidumpPath);
   breakpad_string breakpadData(aBreakpadData);
 
@@ -109,7 +116,7 @@ extern "C" void* CrashGenerationServer_init(breakpad_init_type aBreakpadData,
        nullptr,
        nullptr,
        nullptr, onClientDumpRequestCallback,
-      reinterpret_cast<void*>(aDumpCallback),
+      reinterpret_cast<void*>(aContext),
        nullptr,
        nullptr,
        nullptr,
@@ -129,7 +136,7 @@ extern "C" void* CrashGenerationServer_init(breakpad_init_type aBreakpadData,
 
 extern "C" void* CrashGenerationServer_init(breakpad_init_type aBreakpadData,
                                             const breakpad_char* aMinidumpPath,
-                                            RustDumpCallback aDumpCallback) {
+                                            BreakpadContext* aContext) {
   breakpad_string minidumpPath(aMinidumpPath);
   breakpad_init_type breakpadData = aBreakpadData;
 
@@ -137,7 +144,7 @@ extern "C" void* CrashGenerationServer_init(breakpad_init_type aBreakpadData,
       breakpadData,
        nullptr,
        nullptr, onClientDumpRequestCallback,
-      reinterpret_cast<void*>(aDumpCallback),
+      reinterpret_cast<void*>(aContext),
        nullptr,
        nullptr,
        true, minidumpPath);
@@ -154,7 +161,7 @@ extern "C" void* CrashGenerationServer_init(breakpad_init_type aBreakpadData,
 
 extern "C" void* CrashGenerationServer_init(breakpad_init_type aBreakpadData,
                                             const breakpad_char* aMinidumpPath,
-                                            RustDumpCallback aDumpCallback,
+                                            BreakpadContext* aContext,
                                             RustAuxvCallback aAuxvCallback) {
   breakpad_string minidumpPath(aMinidumpPath);
   breakpad_init_type breakpadData = aBreakpadData;
@@ -164,10 +171,9 @@ extern "C" void* CrashGenerationServer_init(breakpad_init_type aBreakpadData,
       [aAuxvCallback](pid_t aPid, DirectAuxvDumpInfo* aAuxvInfo) {
         return getAuxvDumpInfo(aAuxvCallback, aPid, aAuxvInfo);
       },
-      [aDumpCallback](void* dump_context, const ClientInfo& aClientInfo,
-                      const breakpad_string& aFilePath) {
-        onClientDumpRequestCallback(reinterpret_cast<void*>(aDumpCallback),
-                                    aClientInfo, aFilePath);
+      [aContext](void* dump_context, const ClientInfo& aClientInfo,
+                 const breakpad_string& aFilePath) {
+        onClientDumpRequestCallback(aContext, aClientInfo, aFilePath);
       },
        nullptr, &minidumpPath);
 
