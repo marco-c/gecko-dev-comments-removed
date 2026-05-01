@@ -1,0 +1,7 @@
+
+
+
+
+fn main() {
+    uniffi::generate_scaffolding("./src/push.udl").unwrap();
+}

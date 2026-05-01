@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub mod curated_recommendations;
+pub mod suggest;
+uniffi::setup_scaffolding!("merino");

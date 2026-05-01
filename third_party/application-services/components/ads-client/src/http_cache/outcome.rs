@@ -1,0 +1,16 @@
+
+
+
+
+
+#[derive(Debug)]
+pub enum CacheOutcome {
+    CleanupFailed(rusqlite::Error), 
+    Hit,                            
+    LookupFailed(rusqlite::Error),  
+    MissNotCacheable,               
+    MissStored,                     
+    NoCache,                        
+    StoreFailed(rusqlite::Error),   
+    TrimFailed(rusqlite::Error),    
+}

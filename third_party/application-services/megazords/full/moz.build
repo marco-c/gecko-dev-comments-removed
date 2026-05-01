@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+USE_LIBS += ["nss"]
+
+UNIFIED_SOURCES += [
+    "stub.cpp",
+    "stub.cpp",
+]
+
+
+RustLibrary("megazord")
+
+
+RUST_TESTS = [
+    "megazord",
+]

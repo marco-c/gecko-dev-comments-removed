@@ -1,0 +1,7 @@
+
+
+
+
+fn main() {
+    uniffi::generate_scaffolding("./src/fxa_client.udl").unwrap();
+}

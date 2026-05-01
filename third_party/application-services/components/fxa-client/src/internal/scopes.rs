@@ -1,0 +1,6 @@
+
+
+
+
+pub const PROFILE: &str = "profile";
+pub const OLD_SYNC: &str = "https://identity.mozilla.com/apps/oldsync";

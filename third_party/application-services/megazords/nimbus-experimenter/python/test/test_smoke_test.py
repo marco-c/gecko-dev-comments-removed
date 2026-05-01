@@ -1,0 +1,7 @@
+
+
+
+
+
+def test_smoke_test(fml_client):
+    fml_client("test.fml.yml", "developer")
