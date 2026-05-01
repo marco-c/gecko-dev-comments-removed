@@ -3675,7 +3675,11 @@ const MultiSelect = ({
     text: description
   }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("p", {
     id: `${id}-description`
-  })) : null)));
+  })) : null)), content.tiles.footer ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
+    text: items.some(i => activeMultiSelect?.includes(i.id)) ? content.tiles.footer.checkedLabel : content.tiles.footer.unCheckAllLabel
+  }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("h2", {
+    id: "multi-stage-multi-select-footer-label"
+  })) : null);
 };
 
  }),
