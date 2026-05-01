@@ -93,6 +93,7 @@
 #include "nsListControlFrame.h"
 #include "nsNameSpaceManager.h"
 #include "nsNodeInfoManager.h"
+#include "nsPlaceholderFrame.h"
 #include "nsPresContext.h"
 #include "nsPresContextInlines.h"
 #include "nsRefreshDriver.h"
@@ -101,6 +102,7 @@
 #include "nsStyleConsts.h"
 #include "nsStyleTransformMatrix.h"
 #include "nsSubDocumentFrame.h"
+#include "nsTextControlFrame.h"
 #include "nsViewportInfo.h"
 
 static mozilla::LazyLogModule sApzPaintSkipLog("apz.paintskip");
@@ -446,6 +448,11 @@ static ShowScrollbar ShouldShowScrollbar(StyleOverflow aOverflow) {
   }
 }
 
+static bool IsSingleLineTextInput(const nsIFrame* aFrame) {
+  const nsTextControlFrame* tcf = do_QueryFrame(aFrame);
+  return tcf && !tcf->IsTextArea();
+}
+
 struct MOZ_STACK_CLASS ScrollReflowInput {
   
   
@@ -460,7 +467,12 @@ struct MOZ_STACK_CLASS ScrollReflowInput {
   
   
   bool mVScrollbarAllowedForScrollingVVInsideLV = true;
-  nsMargin mComputedBorder;
+  
+  
+  nsMargin mScrollportMargin;
+  
+  
+  nscoord mButtonISize = 0;
 
   
   OverflowAreas mContentsOverflowAreas;
@@ -524,6 +536,17 @@ struct MOZ_STACK_CLASS ScrollReflowInput {
     return gutter;
   }
 
+  LogicalMargin KidPadding() const {
+    const auto wm = mReflowInput.GetWritingMode();
+    LogicalMargin kidPadding = mReflowInput.ComputedLogicalPadding(wm);
+    if (IsSingleLineTextInput(mReflowInput.mFrame)) {
+      
+      
+      kidPadding.IStart(wm) = kidPadding.IEnd(wm) = 0;
+    }
+    return kidPadding;
+  }
+
   bool OverlayScrollbars() const { return mOverlayScrollbars; }
 
  private:
@@ -537,11 +560,23 @@ struct MOZ_STACK_CLASS ScrollReflowInput {
   nsMargin mScrollbarGutter;
 };
 
+static nsMargin GetScrollPortMargin(ScrollContainerFrame* aFrame,
+                                    const ReflowInput& aRI) {
+  if (!IsSingleLineTextInput(aFrame)) {
+    return aRI.ComputedPhysicalBorder();
+  }
+  const auto wm = aRI.GetWritingMode();
+  auto margin = aRI.ComputedLogicalBorder(wm);
+  const auto& padding = aRI.ComputedLogicalPadding(wm);
+  margin.IStart(wm) += padding.IStart(wm);
+  margin.IEnd(wm) += padding.IEnd(wm);
+  return margin.GetPhysicalMargin(wm);
+}
+
 ScrollReflowInput::ScrollReflowInput(ScrollContainerFrame* aFrame,
                                      const ReflowInput& aReflowInput)
     : mReflowInput(aReflowInput),
-      mComputedBorder(aReflowInput.ComputedPhysicalBorderPadding() -
-                      aReflowInput.ComputedPhysicalPadding()),
+      mScrollportMargin(GetScrollPortMargin(aFrame, aReflowInput)),
       mScrollbarGutterFromLastReflow(aFrame->GetWritingMode()) {
   ScrollStyles styles = aFrame->GetScrollStyles();
   mHScrollbar = ShouldShowScrollbar(styles.mHorizontal);
@@ -590,6 +625,12 @@ ScrollReflowInput::ScrollReflowInput(ScrollContainerFrame* aFrame,
 
   mScrollbarGutter = aFrame->ComputeStableScrollbarGutter(
       scrollbarWidth, scrollbarStyle->StyleDisplay()->mScrollbarGutter);
+
+  if (nsIFrame* buttonBox = aFrame->GetButtonBoxFrame()) {
+    mButtonISize = nsLayoutUtils::IntrinsicForContainer(
+        aReflowInput.mRenderingContext, buttonBox,
+        IntrinsicISizeType::PrefISize);
+  }
 }
 
 }  
@@ -602,7 +643,7 @@ static nsSize ComputeInsideBorderSize(const ScrollReflowInput& aState,
   const WritingMode wm = aState.mReflowInput.GetWritingMode();
   const LogicalSize desiredInsideBorderSize(wm, aDesiredInsideBorderSize);
   LogicalSize contentSize = aState.mReflowInput.ComputedSize();
-  const LogicalMargin padding = aState.mReflowInput.ComputedLogicalPadding(wm);
+  const LogicalMargin padding = aState.KidPadding();
 
   if (contentSize.ISize(wm) == NS_UNCONSTRAINEDSIZE) {
     contentSize.ISize(wm) =
@@ -675,8 +716,17 @@ bool ScrollContainerFrame::TryLayout(ScrollReflowInput& aState,
     ReflowScrolledFrame(aState, aAssumeHScroll, aAssumeVScroll, aKidMetrics);
   }
 
-  const nsSize scrollbarGutterSize(scrollbarGutter.LeftRight(),
-                                   scrollbarGutter.TopBottom());
+  
+  
+  nsMargin buttonBoxMargin;
+  if (aState.mButtonISize > 0) {
+    LogicalMargin logical(wm);
+    logical.IEnd(wm) = aState.mButtonISize;
+    buttonBoxMargin = logical.GetPhysicalMargin(wm);
+  }
+  const nsSize scrollbarGutterSize(
+      scrollbarGutter.LeftRight() + buttonBoxMargin.LeftRight(),
+      scrollbarGutter.TopBottom() + buttonBoxMargin.TopBottom());
 
   
   nsSize kidSize = GetContainSizeAxes().ContainSize(
@@ -688,11 +738,9 @@ bool ScrollContainerFrame::TryLayout(ScrollReflowInput& aState,
   nsSize layoutSize =
       mIsUsingMinimumScaleSize ? mMinimumScaleSize : aState.mInsideBorderSize;
 
-  const nsSize scrollPortSize =
-      Max(nsSize(0, 0), layoutSize - scrollbarGutterSize);
+  const nsSize scrollPortSize = Max(nsSize(), layoutSize - scrollbarGutterSize);
   if (mIsUsingMinimumScaleSize) {
-    mICBSize =
-        Max(nsSize(0, 0), aState.mInsideBorderSize - scrollbarGutterSize);
+    mICBSize = Max(nsSize(), aState.mInsideBorderSize - scrollbarGutterSize);
   }
 
   nsSize visualViewportSize = scrollPortSize;
@@ -796,8 +844,9 @@ bool ScrollContainerFrame::TryLayout(ScrollReflowInput& aState,
   aState.mShowHScrollbar = showHScrollbar;
   aState.mShowVScrollbar = showVScrollbar;
   const nsPoint scrollPortOrigin(
-      aState.mComputedBorder.left + scrollbarGutter.left,
-      aState.mComputedBorder.top + scrollbarGutter.top);
+      aState.mScrollportMargin.left + scrollbarGutter.left +
+          buttonBoxMargin.left,
+      aState.mScrollportMargin.top + scrollbarGutter.top + buttonBoxMargin.top);
   SetScrollPort(nsRect(scrollPortOrigin, scrollPortSize));
 
   if (mIsRoot && gfxPlatform::UseDesktopZoomingScrollbars()) {
@@ -862,12 +911,11 @@ void ScrollContainerFrame::ReflowScrolledFrame(ScrollReflowInput& aState,
                                                bool aAssumeVScroll,
                                                ReflowOutput* aMetrics) {
   const WritingMode wm = GetWritingMode();
+  MOZ_ASSERT(wm == mScrolledFrame->GetWritingMode(), "How?");
 
-  
-  
-  LogicalMargin padding = aState.mReflowInput.ComputedLogicalPadding(wm);
+  LogicalMargin kidPadding = aState.KidPadding();
   nscoord availISize =
-      aState.mReflowInput.ComputedISize() + padding.IStartEnd(wm);
+      aState.mReflowInput.ComputedISize() + kidPadding.IStartEnd(wm);
 
   nscoord computedBSize = aState.mReflowInput.ComputedBSize();
   nscoord computedMinBSize = aState.mReflowInput.ComputedMinBSize();
@@ -876,10 +924,8 @@ void ScrollContainerFrame::ReflowScrolledFrame(ScrollReflowInput& aState,
   const LogicalMargin scrollbarGutter(
       wm, aState.ScrollbarGutter(aAssumeVScroll, aAssumeHScroll,
                                  IsScrollbarOnRight()));
-  if (const nscoord inlineEndsGutter = scrollbarGutter.IStartEnd(wm);
-      inlineEndsGutter > 0) {
-    availISize = std::max(0, availISize - inlineEndsGutter);
-  }
+  availISize = std::max(
+      0, availISize - scrollbarGutter.IStartEnd(wm) - aState.mButtonISize);
   if (const nscoord blockEndsGutter = scrollbarGutter.BStartEnd(wm);
       blockEndsGutter > 0) {
     if (computedBSize != NS_UNCONSTRAINEDSIZE) {
@@ -898,8 +944,7 @@ void ScrollContainerFrame::ReflowScrolledFrame(ScrollReflowInput& aState,
                              LogicalSize(wm, availISize, NS_UNCONSTRAINEDSIZE),
                              Nothing(), ReflowInput::InitFlag::CallerWillInit);
   const WritingMode kidWM = kidReflowInput.GetWritingMode();
-  kidReflowInput.Init(presContext, Nothing(), Nothing(),
-                      Some(padding.ConvertTo(kidWM, wm)));
+  kidReflowInput.Init(presContext, Nothing(), Nothing(), Some(kidPadding));
   kidReflowInput.mFlags.mAssumingHScrollbar = aAssumeHScroll;
   kidReflowInput.mFlags.mAssumingVScrollbar = aAssumeVScroll;
   kidReflowInput.mFlags.mTreatBSizeAsIndefinite =
@@ -1488,8 +1533,9 @@ void ScrollContainerFrame::Reflow(nsPresContext* aPresContext,
 
   nsSize layoutSize =
       mIsUsingMinimumScaleSize ? mMinimumScaleSize : state.mInsideBorderSize;
-  aDesiredSize.Width() = layoutSize.width + state.mComputedBorder.LeftRight();
-  aDesiredSize.Height() = layoutSize.height + state.mComputedBorder.TopBottom();
+  aDesiredSize.Width() = layoutSize.width + state.mScrollportMargin.LeftRight();
+  aDesiredSize.Height() =
+      layoutSize.height + state.mScrollportMargin.TopBottom();
 
   
   
@@ -1536,9 +1582,14 @@ void ScrollContainerFrame::Reflow(nsPresContext* aPresContext,
                                                  state.mShowVScrollbar);
     
     const nsRect insideBorderArea(
-        nsPoint(state.mComputedBorder.left, state.mComputedBorder.top),
+        nsPoint(state.mScrollportMargin.left, state.mScrollportMargin.top),
         layoutSize);
     LayoutScrollbars(state, insideBorderArea, oldScrollPort);
+  }
+
+  
+  if (nsIFrame* buttonBox = GetButtonBoxFrame()) {
+    LayoutButtonBox(state, buttonBox);
   }
   if (mIsRoot) {
     if (RefPtr<MobileViewportManager> manager =
@@ -3982,12 +4033,6 @@ void ScrollContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   
   AppendScrollPartsTo(aBuilder, aLists, createLayersForScrollbars, false);
 
-  const nsStyleDisplay* disp = StyleDisplay();
-  if (aBuilder->IsForPainting() &&
-      disp->mWillChange.bits & StyleWillChangeBits::SCROLL) {
-    aBuilder->AddToWillChangeBudget(this, GetVisualViewportSize());
-  }
-
   mScrollParentID = aBuilder->GetCurrentScrollParentId();
 
   AutoContainsBlendModeCapturer blendCapture(*aBuilder);
@@ -4028,7 +4073,24 @@ void ScrollContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   }
 
   {
-    DisplayListClipState::AutoSaveRestore clipState(aBuilder);
+    DisplayListClipState::AutoSaveRestore paddingBoxClipState(aBuilder);
+    
+    
+    
+    
+    const bool radiiOnScrollPort = haveRadii && !IsSingleLineTextInput(this);
+    if (haveRadii && !radiiOnScrollPort) {
+      auto paddingBoxClip =
+          GetPaddingRectRelativeToSelf() + aBuilder->ToReferenceFrame(this);
+      nsRegion intersection = nsLayoutUtils::RoundedRectIntersectRect(
+          paddingBoxClip, radii, clipRect);
+      if (!intersection.GetLargestRectangle().Contains(clipRect)) {
+        paddingBoxClipState.ClipContainingBlockDescendants(paddingBoxClip,
+                                                           &radii);
+      }
+    }
+
+    DisplayListClipState::AutoSaveRestore scrollPortClipState(aBuilder);
 
     
     
@@ -4037,11 +4099,11 @@ void ScrollContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     nsRect clipRectForContents =
         willBuildAsyncZoomContainer ? scrollPortClip : clipRect;
     if (mIsRoot) {
-      clipState.ClipContentDescendants(clipRectForContents,
-                                       haveRadii ? &radii : nullptr);
+      scrollPortClipState.ClipContentDescendants(
+          clipRectForContents, radiiOnScrollPort ? &radii : nullptr);
     } else {
-      clipState.ClipContainingBlockDescendants(clipRectForContents,
-                                               haveRadii ? &radii : nullptr);
+      scrollPortClipState.ClipContainingBlockDescendants(
+          clipRectForContents, radiiOnScrollPort ? &radii : nullptr);
     }
 
     nsDisplayListBuilder::AutoCurrentActiveScrolledRootSetter asrSetter(
@@ -4667,6 +4729,11 @@ ScrollStyles ScrollContainerFrame::GetScrollStyles() const {
   }
 
   if (!mIsRoot) {
+    if (IsSingleLineTextInput(this)) {
+      return !GetWritingMode().IsVertical()
+                 ? ScrollStyles(StyleOverflow::Auto, StyleOverflow::Hidden)
+                 : ScrollStyles(StyleOverflow::Hidden, StyleOverflow::Auto);
+    }
     return ScrollStyles(*StyleDisplay(),
                         ScrollStyles::MapOverflowToValidScrollStyle);
   }
@@ -5458,13 +5525,6 @@ RefPtr<nsINode> ScrollContainerFrame::ScrollEventTargetNode(
     RootTargetsDocument aRootTargetsDocument) const {
   if (aRootTargetsDocument == RootTargetsDocument::Yes && mIsRoot) {
     return PresContext()->Document();
-  }
-  if (Style()->GetPseudoType() == PseudoStyleType::MozTextControlEditingRoot) {
-    
-    
-    
-    
-    return mContent->GetContainingShadowHost();
   }
   return mContent.get();
 }
@@ -6282,10 +6342,11 @@ bool ScrollContainerFrame::ReflowFinished() {
     const bool hasVerticalOverflow =
         GetOverflowAxes().contains(PhysicalAxis::Vertical) &&
         GetScrollStyles().mVertical != StyleOverflow::Hidden;
-    if (!mFirstReflow && mHasVerticalOverflowForDynamicToolbar &&
-        !hasVerticalOverflow) {
+    if (!hasVerticalOverflow &&
+        (mFirstReflow || mHasVerticalOverflowForDynamicToolbar)) {
       PresShell()->MaybeNotifyShowDynamicToolbar();
     }
+
     mHasVerticalOverflowForDynamicToolbar = hasVerticalOverflow;
 #endif  
   }
@@ -6601,6 +6662,36 @@ void ScrollContainerFrame::LayoutScrollbarPartAtRect(
               flags, status);
   FinishReflowChild(kid, pc, kidDesiredSize, &aKidReflowInput, wm, pos,
                     containerSize, flags);
+}
+
+void ScrollContainerFrame::LayoutButtonBox(const ScrollReflowInput& aState,
+                                           nsIFrame* aButtonBox) {
+  const auto wm = GetWritingMode();
+  nsPresContext* pc = PresContext();
+
+  
+  
+  const nscoord buttonISize = aState.mButtonISize;
+  const LogicalRect scrollPort(wm, mScrollPort, GetSize());
+
+  const auto kidWM = aButtonBox->GetWritingMode();
+  auto availSize =
+      LogicalSize(wm, buttonISize, NS_UNCONSTRAINEDSIZE).ConvertTo(kidWM, wm);
+  ReflowInput kidRI(pc, aState.mReflowInput, aButtonBox, availSize);
+  ReflowOutput kidDesiredSize(kidRI);
+  nsReflowStatus status;
+  const nsSize containerSize = GetSize();
+  ReflowChild(aButtonBox, pc, kidDesiredSize, kidRI, wm, LogicalPoint(wm),
+              containerSize, ReflowChildFlags::Default, status);
+
+  
+  const LogicalSize buttonSize =
+      kidDesiredSize.Size(kidWM).ConvertTo(wm, kidWM);
+  LogicalPoint pos = scrollPort.Origin(wm);
+  pos.I(wm) += scrollPort.ISize(wm);
+  pos.B(wm) += (scrollPort.BSize(wm) - buttonSize.BSize(wm)) / 2;
+  FinishReflowChild(aButtonBox, pc, kidDesiredSize, &kidRI, wm, pos,
+                    containerSize, ReflowChildFlags::Default);
 }
 
 void ScrollContainerFrame::LayoutScrollbars(ScrollReflowInput& aState,
@@ -6935,15 +7026,30 @@ nsRect ScrollContainerFrame::GetScrollPortRectAccountingForMaxDynamicToolbar()
 }
 
 StyleDirection ScrollContainerFrame::GetScrolledFrameDir() const {
-  return GetScrolledFrameDir(mScrolledFrame);
+  return GetScrolledFrameDir(mScrolledFrame, IsTextInputFrame());
 }
 
 StyleDirection ScrollContainerFrame::GetScrolledFrameDir(
-    const nsIFrame* aScrolledFrame) {
+    const nsIFrame* aScrolledFrame, bool aForTextInput) {
   
   
   if (aScrolledFrame->StyleTextReset()->mUnicodeBidi ==
       StyleUnicodeBidi::Plaintext) {
+    if (aForTextInput) {
+      
+      
+      
+      
+      auto sr = aScrolledFrame->ScrollableOverflowRectRelativeToSelf();
+      auto leftOverflow = -sr.x;
+      auto rightOverflow = sr.XMost() - aScrolledFrame->GetRect().Width();
+      MOZ_ASSERT(leftOverflow >= 0);
+      MOZ_ASSERT(rightOverflow >= 0);
+      return leftOverflow > rightOverflow ? StyleDirection::Rtl
+                                          : StyleDirection::Ltr;
+    }
+    
+    
     if (nsIFrame* child = aScrolledFrame->PrincipalChildList().FirstChild()) {
       return nsBidiPresUtils::ParagraphDirection(child) ==
                      intl::BidiDirection::LTR
@@ -6956,9 +7062,10 @@ StyleDirection ScrollContainerFrame::GetScrolledFrameDir(
 }
 
 auto ScrollContainerFrame::ComputePerAxisScrollDirections(
-    const nsIFrame* aScrolledFrame) -> PerAxisScrollDirections {
+    const nsIFrame* aScrolledFrame, bool aForTextInput)
+    -> PerAxisScrollDirections {
   auto wm = aScrolledFrame->GetWritingMode();
-  auto dir = GetScrolledFrameDir(aScrolledFrame);
+  auto dir = GetScrolledFrameDir(aScrolledFrame, aForTextInput);
   wm.SetDirectionFromBidiLevel(dir == StyleDirection::Rtl
                                    ? intl::BidiEmbeddingLevel::RTL()
                                    : intl::BidiEmbeddingLevel::LTR());
@@ -6995,7 +7102,7 @@ nsRect ScrollContainerFrame::GetUnsnappedScrolledRectInternal(
     const nsRect& aScrolledOverflowArea, const nsSize& aScrollPortSize) const {
   nscoord x1 = aScrolledOverflowArea.x, x2 = aScrolledOverflowArea.XMost(),
           y1 = aScrolledOverflowArea.y, y2 = aScrolledOverflowArea.YMost();
-  auto dirs = ComputePerAxisScrollDirections(mScrolledFrame);
+  auto dirs = ComputePerAxisScrollDirections();
   
   
   
@@ -7040,8 +7147,14 @@ nsRect ScrollContainerFrame::GetUnsnappedScrolledRectInternal(
 
 nsMargin ScrollContainerFrame::GetActualScrollbarSizes(
     ScrollbarSizesOptions aOptions ) const {
-  nsRect r = GetPaddingRectRelativeToSelf();
+  if (IsSingleLineTextInput(this)) {
+    
+    
+    
+    return {};
+  }
 
+  nsRect r = GetPaddingRectRelativeToSelf();
   nsMargin m(mScrollPort.y - r.y, r.XMost() - mScrollPort.XMost(),
              r.YMost() - mScrollPort.YMost(), mScrollPort.x - r.x);
 
@@ -7510,6 +7623,8 @@ static void AppendScrollPositionsForSnap(
   }
 }
 
+enum class ContainingBlockContext { Direct, Nested };
+
 
 
 
@@ -7518,16 +7633,42 @@ static void CollectScrollPositionsForSnap(
     nsIFrame* aFrame, nsIFrame* aScrolledFrame, const nsRect& aScrolledRect,
     const nsMargin& aScrollPadding, const nsRect& aScrollRange,
     WritingMode aWritingModeOnScroller, ScrollSnapInfo& aSnapInfo,
-    ScrollContainerFrame::SnapTargetSet* aSnapTargets) {
-  
-  
+    ScrollContainerFrame::SnapTargetSet* aSnapTargets,
+    ContainingBlockContext aContext) {
   ScrollContainerFrame* sf = do_QueryFrame(aFrame);
+  
+  
+  
+  if (aFrame->IsAbsPosContainingBlock() &&
+      aContext == ContainingBlockContext::Nested) {
+    return;
+  }
+  
+  
   if (sf) {
+    
+    
+    
+    
+    
+    
+    if (aFrame->IsAbsPosContainingBlock()) {
+      return;
+    }
+    
+    
+    
+    for (nsIFrame* f : aFrame->PrincipalChildList()) {
+      CollectScrollPositionsForSnap(
+          f, aScrolledFrame, aScrolledRect, aScrollPadding, aScrollRange,
+          aWritingModeOnScroller, aSnapInfo, aSnapTargets,
+          ContainingBlockContext::Nested);
+    }
     return;
   }
 
-  for (const auto& childList : aFrame->ChildLists()) {
-    for (nsIFrame* f : childList.mList) {
+  auto processFrame = [&](nsIFrame* f, ContainingBlockContext aCtx) {
+    if (aCtx == ContainingBlockContext::Direct) {
       const nsStyleDisplay* styleDisplay = f->StyleDisplay();
       if (styleDisplay->mScrollSnapAlign.inline_ !=
               StyleScrollSnapAlignKeyword::None ||
@@ -7537,10 +7678,23 @@ static void CollectScrollPositionsForSnap(
             f, aScrolledFrame, aScrolledRect, aScrollPadding, aScrollRange,
             aWritingModeOnScroller, aSnapInfo, aSnapTargets);
       }
-      CollectScrollPositionsForSnap(
-          f, aScrolledFrame, aScrolledRect, aScrollPadding, aScrollRange,
-          aWritingModeOnScroller, aSnapInfo, aSnapTargets);
     }
+    CollectScrollPositionsForSnap(
+        f, aScrolledFrame, aScrolledRect, aScrollPadding, aScrollRange,
+        aWritingModeOnScroller, aSnapInfo, aSnapTargets, aCtx);
+  };
+
+  for (nsIFrame* f : aFrame->PrincipalChildList()) {
+    if (f->IsPlaceholderFrame()) {
+      if (nsIFrame* oof =
+              static_cast<nsPlaceholderFrame*>(f)->GetOutOfFlowFrame()) {
+        if (nsLayoutUtils::IsProperAncestorFrame(aScrolledFrame, oof)) {
+          processFrame(oof, ContainingBlockContext::Direct);
+        }
+      }
+      continue;
+    }
+    processFrame(f, aContext);
   }
 }
 
@@ -7618,9 +7772,10 @@ ScrollSnapInfo ScrollContainerFrame::ComputeScrollSnapInfo() {
     return result;
   }
 
-  CollectScrollPositionsForSnap(
-      mScrolledFrame, mScrolledFrame, GetScrolledRect(), GetScrollPadding(),
-      GetLayoutScrollRange(), writingMode, result, &mSnapTargets);
+  CollectScrollPositionsForSnap(mScrolledFrame, mScrolledFrame,
+                                GetScrolledRect(), GetScrollPadding(),
+                                GetLayoutScrollRange(), writingMode, result,
+                                &mSnapTargets, ContainingBlockContext::Direct);
   return result;
 }
 
@@ -7653,7 +7808,7 @@ Maybe<SnapDestination> ScrollContainerFrame::GetSnapPointForResnap() {
       NeedRestorePosition() ? mRestorePos : GetScrollPosition();
   return ScrollSnapUtils::GetSnapPointForResnap(
       ComputeScrollSnapInfo(), GetLayoutScrollRange(), currentOrRestorePos,
-      mLastSnapTargetIds, focusedContent);
+      mLastSnapTargetIds, focusedContent, GetWritingMode());
 }
 
 bool ScrollContainerFrame::NeedsResnap() {
@@ -7817,6 +7972,10 @@ bool ScrollContainerFrame::UseOverlayScrollbars() const {
 
 StyleScrollbarWidth ScrollContainerFrame::ScrollbarWidth(
     const ComputedStyle* aStyle) const {
+  if (IsSingleLineTextInput(this)) {
+    return StyleScrollbarWidth::None;
+  }
+
   auto PrefGatedScrollbarWidth =
       [](StyleScrollbarWidth aComputedScrollbarWidth) {
         if (MOZ_UNLIKELY(
