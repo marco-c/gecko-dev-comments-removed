@@ -87,10 +87,13 @@ extern "C" {
 
 
 typedef JSAMPLE *JSAMPROW;      
+
 typedef JSAMPROW *JSAMPARRAY;   
+
 typedef JSAMPARRAY *JSAMPIMAGE; 
 
 typedef J12SAMPLE *J12SAMPROW;      
+
 
 typedef J12SAMPROW *J12SAMPARRAY;   
 
@@ -98,6 +101,7 @@ typedef J12SAMPARRAY *J12SAMPIMAGE;
 
 
 typedef J16SAMPLE *J16SAMPROW;      
+
 
 typedef J16SAMPROW *J16SAMPARRAY;   
 
@@ -708,6 +712,7 @@ struct jpeg_decompress_struct {
 
 
   JSAMPLE *sample_range_limit;  
+
 
 
 

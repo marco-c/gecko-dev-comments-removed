@@ -346,6 +346,14 @@ _jinit_c_diff_controller(j_compress_ptr cinfo, boolean need_full_buffer)
   int ci, row;
   jpeg_component_info *compptr;
 
+#if BITS_IN_JSAMPLE == 8
+  if (cinfo->data_precision > BITS_IN_JSAMPLE || cinfo->data_precision < 2)
+#else
+  if (cinfo->data_precision > BITS_IN_JSAMPLE ||
+      cinfo->data_precision < BITS_IN_JSAMPLE - 3)
+#endif
+    ERREXIT1(cinfo, JERR_BAD_PRECISION, cinfo->data_precision);
+
   diff = (my_diff_ptr)
     (*cinfo->mem->alloc_small) ((j_common_ptr)cinfo, JPOOL_IMAGE,
                                 sizeof(my_diff_controller));

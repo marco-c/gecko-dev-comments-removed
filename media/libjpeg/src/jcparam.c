@@ -221,6 +221,9 @@ jpeg_set_defaults(j_compress_ptr cinfo)
   cinfo->num_scans = 0;
 
   
+  cinfo->master->lossless = FALSE;
+
+  
   cinfo->raw_data_in = FALSE;
 
   
@@ -297,9 +300,11 @@ jpeg_default_colorspace(j_compress_ptr cinfo)
   case JCS_EXT_BGRA:
   case JCS_EXT_ABGR:
   case JCS_EXT_ARGB:
+#ifdef C_LOSSLESS_SUPPORTED
     if (cinfo->master->lossless)
       jpeg_set_colorspace(cinfo, JCS_RGB);
     else
+#endif
       jpeg_set_colorspace(cinfo, JCS_YCbCr);
     break;
   case JCS_YCbCr:
@@ -479,10 +484,12 @@ jpeg_simple_progression(j_compress_ptr cinfo)
   if (cinfo->global_state != CSTATE_START)
     ERREXIT1(cinfo, JERR_BAD_STATE, cinfo->global_state);
 
+#ifdef C_LOSSLESS_SUPPORTED
   if (cinfo->master->lossless) {
     cinfo->master->lossless = FALSE;
     jpeg_default_colorspace(cinfo);
   }
+#endif
 
   
   if (ncomps == 3 && cinfo->jpeg_color_space == JCS_YCbCr) {

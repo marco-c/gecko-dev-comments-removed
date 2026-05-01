@@ -31,3 +31,11 @@
 #else
 #error "Unknown compiler"
 #endif
+
+#if defined(__clang__)
+#pragma clang diagnostic ignored "-Wdeclaration-after-statement"
+#pragma clang diagnostic ignored "-Wc99-extensions"
+#elif defined(__GNUC__)
+#pragma GCC diagnostic ignored "-Wdeclaration-after-statement"
+#pragma GCC diagnostic ignored "-Wpedantic"
+#endif

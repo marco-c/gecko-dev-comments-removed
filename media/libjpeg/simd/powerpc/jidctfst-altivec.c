@@ -127,12 +127,12 @@ void jsimd_idct_ifast_altivec(void *dct_table_, JCOEFPTR coef_block,
   __vector short pw_zero = { __8X(0) },
     pw_F1414 = { __8X(F_1_414 << CONST_SHIFT) },
     pw_F1847 = { __8X(F_1_847 << CONST_SHIFT) },
-    pw_MF1613 = { __8X(-F_1_613 << CONST_SHIFT) },
+    pw_MF1613 = { __8X((short)((unsigned short)(-F_1_613) << CONST_SHIFT)) },
     pw_F1082 = { __8X(F_1_082 << CONST_SHIFT) };
   __vector unsigned short
     pre_multiply_scale_bits = { __8X(PRE_MULTIPLY_SCALE_BITS) },
     pass1_bits3 = { __8X(PASS1_BITS + 3) };
-  __vector signed char pb_centerjsamp = { __16X(CENTERJSAMPLE) };
+  __vector signed char pb_centerjsamp = { __16X((signed char)CENTERJSAMPLE) };
 
   
 

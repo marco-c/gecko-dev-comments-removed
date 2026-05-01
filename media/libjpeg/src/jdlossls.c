@@ -278,6 +278,14 @@ _jinit_lossless_decompressor(j_decompress_ptr cinfo)
 {
   lossless_decomp_ptr losslessd;
 
+#if BITS_IN_JSAMPLE == 8
+  if (cinfo->data_precision > BITS_IN_JSAMPLE || cinfo->data_precision < 2)
+#else
+  if (cinfo->data_precision > BITS_IN_JSAMPLE ||
+      cinfo->data_precision < BITS_IN_JSAMPLE - 3)
+#endif
+    ERREXIT1(cinfo, JERR_BAD_PRECISION, cinfo->data_precision);
+
   
   losslessd = (lossless_decomp_ptr)
     (*cinfo->mem->alloc_small) ((j_common_ptr)cinfo, JPOOL_PERMANENT,

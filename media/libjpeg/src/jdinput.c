@@ -57,13 +57,18 @@ initial_setup(j_decompress_ptr cinfo)
     ERREXIT1(cinfo, JERR_IMAGE_TOO_BIG, (unsigned int)JPEG_MAX_DIMENSION);
 
   
+
+
 #ifdef D_LOSSLESS_SUPPORTED
-  if (cinfo->data_precision != 8 && cinfo->data_precision != 12 &&
-      cinfo->data_precision != 16)
-#else
-  if (cinfo->data_precision != 8 && cinfo->data_precision != 12)
+  if (cinfo->master->lossless) {
+    if (cinfo->data_precision < 2 || cinfo->data_precision > 16)
+      ERREXIT1(cinfo, JERR_BAD_PRECISION, cinfo->data_precision);
+  } else
 #endif
-    ERREXIT1(cinfo, JERR_BAD_PRECISION, cinfo->data_precision);
+  {
+    if (cinfo->data_precision != 8 && cinfo->data_precision != 12)
+      ERREXIT1(cinfo, JERR_BAD_PRECISION, cinfo->data_precision);
+  }
 
   
   if (cinfo->num_components > MAX_COMPONENTS)

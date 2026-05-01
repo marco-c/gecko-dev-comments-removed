@@ -25,10 +25,11 @@
 
 
 
+
 #define JPEG_INTERNALS
-#include "../../jinclude.h"
-#include "../../jpeglib.h"
-#include "../../jdct.h"
+#include "../../src/jinclude.h"
+#include "../../src/jpeglib.h"
+#include "../../src/jdct.h"
 #include "loongson-mmintrin.h"
 
 

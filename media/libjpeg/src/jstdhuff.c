@@ -25,7 +25,7 @@ add_huff_table(j_common_ptr cinfo, JHUFF_TBL **htblptr, const UINT8 *bits,
 
   if (*htblptr == NULL)
     *htblptr = jpeg_alloc_huff_table(cinfo);
-  else
+  else if (cinfo->is_decompressor)
     return;
 
   

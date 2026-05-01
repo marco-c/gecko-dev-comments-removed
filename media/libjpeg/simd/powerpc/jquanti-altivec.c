@@ -29,7 +29,7 @@
 
 
 
-#if __BIG_ENDIAN__
+#ifdef __BIG_ENDIAN__
 
 #define LOAD_ROW(row) { \
   elemptr = sample_data[row] + start_col; \
@@ -125,7 +125,7 @@ void jsimd_quantize_altivec(JCOEFPTR coef_block, DCTELEM *divisors,
 
   
   __vector unsigned short pw_word_bit_m1 = { __8X(WORD_BIT - 1) };
-#if __BIG_ENDIAN__
+#ifdef __BIG_ENDIAN__
   __vector unsigned char shift_pack_index =
     {  0,  1, 16, 17,  4,  5, 20, 21,  8,  9, 24, 25, 12, 13, 28, 29 };
 #else
