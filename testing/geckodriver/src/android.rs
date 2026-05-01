@@ -430,7 +430,7 @@ impl AndroidHandler {
         Ok(())
     }
 
-    pub fn launch(&self) -> Result<()> {
+    pub fn launch(&self) -> Result<u32> {
         
         
         
@@ -458,7 +458,7 @@ impl AndroidHandler {
                 &self.process.activity,
                 &intent_arguments,
             ) {
-                Ok(_) => break,
+                Ok(pid) => break Ok(pid),
                 Err(e) => {
                     n += 1;
                     if n < max_start_attempts
@@ -482,8 +482,6 @@ impl AndroidHandler {
                 }
             }
         }
-
-        Ok(())
     }
 
     pub fn force_stop(&self) -> Result<()> {
