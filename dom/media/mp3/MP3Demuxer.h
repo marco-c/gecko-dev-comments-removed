@@ -171,6 +171,11 @@ class MP3TrackDemuxer : public MediaTrackDemuxer,
   uint32_t mChannels;
 
   
+  
+  
+  uint32_t mBitrate = 0;
+
+  
   UniquePtr<AudioInfo> mInfo;
 
   

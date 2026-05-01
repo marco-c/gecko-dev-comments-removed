@@ -374,10 +374,13 @@ media::NullableTimeUnit MP3TrackDemuxer::Duration() const {
   }
 
   
-  if (!mParser.VBRInfo().IsValid()) {
-    const uint32_t bitrate = mParser.CurrentFrame().Header().Bitrate();
+  
+  
+  
+  
+  if (!mParser.VBRInfo().IsComplete() && mBitrate) {
     return NothingIfNegative(
-        media::TimeUnit::FromSeconds(static_cast<double>(size) * 8 / bitrate));
+        media::TimeUnit::FromSeconds(static_cast<double>(size) * 8 / mBitrate));
   }
 
   if (AverageFrameLength() > 0) {
@@ -833,6 +836,7 @@ void MP3TrackDemuxer::UpdateState(const MediaByteRange& aRange) {
     mSamplesPerFrame = mParser.CurrentFrame().Header().SamplesPerFrame();
     mSamplesPerSecond = mParser.CurrentFrame().Header().SampleRate();
     mChannels = mParser.CurrentFrame().Header().Channels();
+    mBitrate = mParser.CurrentFrame().Header().Bitrate();
   }
 
   ++mNumParsedFrames;
