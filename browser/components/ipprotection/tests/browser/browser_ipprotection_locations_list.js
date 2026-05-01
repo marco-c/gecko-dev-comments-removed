@@ -4,6 +4,10 @@
 
 "use strict";
 
+const { LINKS } = ChromeUtils.importESModule(
+  "chrome://browser/content/ipprotection/ipprotection-constants.mjs"
+);
+
 const MOCK_LOCATIONS_LIST = [
   { code: "US", available: true },
   { code: "CA", available: true },
@@ -37,13 +41,15 @@ async function openLocationsList(state = {}) {
   panel.showLocationSelector();
   await viewShownPromise;
 
-  await locationsView.querySelector(IPProtectionPanel.LOCATIONS_TAGNAME)
-    ?.updateComplete;
+  let locationsEl = locationsView.querySelector(
+    IPProtectionPanel.LOCATIONS_TAGNAME
+  );
+  await locationsEl?.updateComplete;
 
   let locationsList = locationsView.querySelector("locations-list");
   await locationsList?.updateComplete;
 
-  return { locationsList, locationsView };
+  return { locationsList, locationsView, locationsEl };
 }
 
 
@@ -198,6 +204,85 @@ add_task(async function test_locations_list_sorted_alphabetically() {
 
 
 
+
+add_task(async function test_locations_list_selection_persists_to_pref() {
+  const EGRESS_LOCATION_PREF = "browser.ipProtection.egressLocation";
+
+  registerCleanupFunction(() => {
+    Services.prefs.clearUserPref(EGRESS_LOCATION_PREF);
+  });
+
+  let { locationsList } = await openLocationsList({ location: null });
+
+  let caButton = locationsList.querySelector("#location-option-CA");
+  Assert.ok(caButton, "CA location button should be present");
+
+  caButton.click();
+
+  let panel = IPProtection.getPanel(window);
+
+  await BrowserTestUtils.waitForCondition(
+    () => panel.state.location === "CA",
+    "panel state.location should update to the selected code"
+  );
+
+  Assert.equal(
+    Services.prefs.getStringPref(EGRESS_LOCATION_PREF, ""),
+    "CA",
+    "egressLocation pref should hold the selected code"
+  );
+
+  await closePanel();
+  cleanupService();
+});
+
+
+
+
+
+
+add_task(
+  async function test_locations_list_selection_calls_switch_when_active() {
+    const EGRESS_LOCATION_PREF = "browser.ipProtection.egressLocation";
+
+    registerCleanupFunction(() => {
+      Services.prefs.clearUserPref(EGRESS_LOCATION_PREF);
+    });
+
+    let sandbox = sinon.createSandbox();
+    sandbox.stub(IPPProxyManager, "state").get(() => IPPProxyStates.ACTIVE);
+
+    let switchStub = sandbox.stub(IPPProxyManager, "switch").returns({
+      switched: true,
+    });
+
+    let { locationsList } = await openLocationsList({ location: null });
+
+    locationsList.querySelector("#location-option-CA").click();
+
+    await BrowserTestUtils.waitForCondition(
+      () => switchStub.calledWith("CA"),
+      "switch should be called with the selected country code"
+    );
+
+    switchStub.resetHistory();
+
+    locationsList.querySelector("#location-option-REC").click();
+
+    await BrowserTestUtils.waitForCondition(
+      () => switchStub.calledWith(undefined),
+      "switch should be called with undefined when REC is selected"
+    );
+
+    await closePanel();
+    cleanupService();
+    sandbox.restore();
+  }
+);
+
+
+
+
 add_task(async function test_locations_list_disabled_locations() {
   let { locationsList } = await openLocationsList({ location: null });
 
@@ -207,6 +292,48 @@ add_task(async function test_locations_list_disabled_locations() {
 
   let usButton = locationsList.querySelector("#location-option-US");
   Assert.ok(!usButton.disabled, "available location should not be disabled");
+
+  await closePanel();
+  cleanupService();
+});
+
+
+
+
+add_task(async function test_promo_shown_when_not_upgraded() {
+  let { locationsEl } = await openLocationsList({ hasUpgraded: false });
+
+  let promo = locationsEl.querySelector("moz-promo#locations-subview-promo");
+  Assert.ok(promo, "moz-promo should be present when user has not upgraded");
+  Assert.equal(
+    promo.getAttribute("imagealignment"),
+    "end",
+    "promo should have imagealignment='end'"
+  );
+  Assert.ok(
+    promo.getAttribute("imagesrc"),
+    "promo should have an imagesrc attribute"
+  );
+
+  let button = promo.querySelector("moz-button");
+  Assert.ok(button, "promo should have an actions button");
+  let openWebLinkInStub = sinon.stub(window, "openWebLinkIn");
+  button.click();
+  Assert.ok(
+    openWebLinkInStub.calledOnce,
+    "openWebLinkIn should be called once"
+  );
+  cleanupService();
+});
+
+
+
+
+add_task(async function test_promo_not_shown_when_upgraded() {
+  let { locationsEl } = await openLocationsList({ hasUpgraded: true });
+
+  let promo = locationsEl.querySelector("moz-promo");
+  Assert.ok(!promo, "moz-promo should not be present when user has upgraded");
 
   await closePanel();
   cleanupService();
