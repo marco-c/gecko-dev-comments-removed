@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "WebMBufferedParser.h"
 
 #include <algorithm>
@@ -395,6 +393,16 @@ MediaResult WebMBufferedParser::Append(const unsigned char* aBuffer,
         }
         if (!mSkipBytes) {
           mBlockEndOffset = mCurrentOffset + (p - aBuffer);
+          
+          
+          
+          
+          
+          
+          
+          if (mInitEndOffset >= 0 && mClusterOffset < 0) {
+            mInitEndOffset = mBlockEndOffset;
+          }
           mState = mNextState;
         }
         break;
