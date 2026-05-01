@@ -62,7 +62,7 @@ use crate::hit_test::HitTestingScene;
 use crate::intern::Interner;
 use crate::internal_types::{FastHashMap, LayoutPrimitiveInfo, Filter, PlaneSplitterIndex, PipelineInstanceId};
 use crate::svg_filter::{FilterGraphNode, FilterGraphOp, FilterGraphPictureReference};
-use crate::picture::{Picture3DContext, PictureCompositeMode, PicturePrimitive};
+use crate::picture::{Picture3DContext, PictureCompositeMode, PictureInstance};
 use crate::picture::{BlitReason, OrderedPictureChild, PrimitiveList, SurfaceInfo, PictureFlags};
 use crate::picture_graph::PictureGraph;
 use crate::prim_store::{PrimitiveInstance, PrimitiveStoreStats};
@@ -324,7 +324,7 @@ impl PictureChainBuilder {
 
         let pic_index = PictureIndex(prim_store.pictures
             .alloc()
-            .init(PicturePrimitive::new_image(
+            .init(PictureInstance::new_image(
                 Some(composite_mode.clone()),
                 context_3d,
                 self.flags,
@@ -396,7 +396,7 @@ impl PictureChainBuilder {
 
                 let pic_index = PictureIndex(prim_store.pictures
                     .alloc()
-                    .init(PicturePrimitive::new_image(
+                    .init(PictureInstance::new_image(
                         composite_mode,
                         Picture3DContext::Out,
                         self.flags,
@@ -704,7 +704,7 @@ impl<'a> SceneBuilder<'a> {
     fn finalize_picture(
         pic_index: PictureIndex,
         prim_index: Option<usize>,
-        pictures: &mut [PicturePrimitive],
+        pictures: &mut [PictureInstance],
         parent_spatial_node_index: Option<SpatialNodeIndex>,
         clip_tree_builder: &ClipTreeBuilder,
         prim_instances: &[PrimitiveInstance],
@@ -2522,7 +2522,7 @@ impl<'a> SceneBuilder<'a> {
                 
                 let pic_index = PictureIndex(self.prim_store.pictures
                     .alloc()
-                    .init(PicturePrimitive::new_image(
+                    .init(PictureInstance::new_image(
                         composite_mode.clone(),
                         Picture3DContext::In { root_data: None, ancestor_index, plane_splitter_index },
                         stacking_context.prim_flags,
@@ -2567,7 +2567,7 @@ impl<'a> SceneBuilder<'a> {
                     
                     let pic_index = PictureIndex(self.prim_store.pictures
                         .alloc()
-                        .init(PicturePrimitive::new_image(
+                        .init(PictureInstance::new_image(
                             composite_mode.clone(),
                             Picture3DContext::Out,
                             stacking_context.prim_flags,
@@ -2676,7 +2676,7 @@ impl<'a> SceneBuilder<'a> {
             
             let pic_index = PictureIndex(self.prim_store.pictures
                 .alloc()
-                .init(PicturePrimitive::new_image(
+                .init(PictureInstance::new_image(
                     None,
                     context_3d,
                     stacking_context.prim_flags,
@@ -3160,7 +3160,7 @@ impl<'a> SceneBuilder<'a> {
                         
                         let shadow_pic_index = PictureIndex(self.prim_store.pictures
                             .alloc()
-                            .init(PicturePrimitive::new_image(
+                            .init(PictureInstance::new_image(
                                 composite_mode,
                                 Picture3DContext::Out,
                                 PrimitiveFlags::IS_BACKFACE_VISIBLE,
@@ -4635,7 +4635,7 @@ impl FlattenedStackingContext {
 
         let pic_index = PictureIndex(prim_store.pictures
             .alloc()
-            .init(PicturePrimitive::new_image(
+            .init(PictureInstance::new_image(
                 composite_mode.clone(),
                 flat_items_context_3d,
                 self.prim_flags,
