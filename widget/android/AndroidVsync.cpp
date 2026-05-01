@@ -5,9 +5,11 @@
 #include "AndroidVsync.h"
 
 #include "AndroidBridge.h"
-#include "AndroidUiThread.h"
 #include "nsTArray.h"
-#include "nsThreadUtils.h"
+
+
+
+
 
 namespace mozilla {
 namespace widget {
@@ -20,38 +22,73 @@ constinit StaticDataMutex<ThreadSafeWeakPtr<AndroidVsync>>
   RefPtr<AndroidVsync> instance(*weakInstance);
   if (!instance) {
     instance = new AndroidVsync();
-    
-    
-    if (RefPtr<nsThread> uiThread = GetAndroidUiThread()) {
-      uiThread->Dispatch(
-          NS_NewRunnableFunction("AndroidVsync::Init", [instance]() {
-            {
-              auto impl = instance->mImpl.Lock();
-              impl->mToken =
-                  std::make_unique<ThreadSafeWeakPtr<AndroidVsync>>(instance);
-              impl->mChoreographer = AChoreographer_getInstance();
-            }
-            
-            
-            
-            instance->MaybePostFrameCallback();
-          }));
-    }
     *weakInstance = instance;
   }
   return instance;
 }
 
-void AndroidVsync::RegisterObserver(Observer* aObserver, ObserverType aType) {
-  {
-    auto impl = mImpl.Lock();
-    if (aType == AndroidVsync::INPUT) {
-      impl->mInputObservers.AppendElement(aObserver);
-    } else {
-      impl->mRenderObservers.AppendElement(aObserver);
+
+
+
+class AndroidVsyncSupport final
+    : public java::AndroidVsync::Natives<AndroidVsyncSupport> {
+ public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(AndroidVsyncSupport)
+
+  using Base = java::AndroidVsync::Natives<AndroidVsyncSupport>;
+  using Base::AttachNative;
+  using Base::DisposeNative;
+
+  explicit AndroidVsyncSupport(AndroidVsync* aAndroidVsync)
+      : mAndroidVsync(std::move(aAndroidVsync),
+                      "AndroidVsyncSupport::mAndroidVsync") {}
+
+  
+  void NotifyVsync(const java::AndroidVsync::LocalRef& aInstance,
+                   int64_t aFrameTimeNanos) {
+    auto androidVsync = mAndroidVsync.Lock();
+    if (*androidVsync) {
+      (*androidVsync)->NotifyVsync(aFrameTimeNanos);
     }
   }
-  MaybePostFrameCallback();
+
+  
+  void Unlink() {
+    auto androidVsync = mAndroidVsync.Lock();
+    *androidVsync = nullptr;
+  }
+
+ protected:
+  ~AndroidVsyncSupport() = default;
+
+  DataMutex<AndroidVsync*> mAndroidVsync;
+};
+
+AndroidVsync::AndroidVsync() : mImpl("AndroidVsync.mImpl") {
+  AndroidVsyncSupport::Init();
+
+  auto impl = mImpl.Lock();
+  impl->mSupport = new AndroidVsyncSupport(this);
+  impl->mSupportJava = java::AndroidVsync::New();
+  AndroidVsyncSupport::AttachNative(impl->mSupportJava, impl->mSupport);
+}
+
+AndroidVsync::~AndroidVsync() {
+  auto impl = mImpl.Lock();
+  impl->mInputObservers.Clear();
+  impl->mRenderObservers.Clear();
+  impl->UpdateObservingVsync();
+  impl->mSupport->Unlink();
+}
+
+void AndroidVsync::RegisterObserver(Observer* aObserver, ObserverType aType) {
+  auto impl = mImpl.Lock();
+  if (aType == AndroidVsync::INPUT) {
+    impl->mInputObservers.AppendElement(aObserver);
+  } else {
+    impl->mRenderObservers.AppendElement(aObserver);
+  }
+  impl->UpdateObservingVsync();
 }
 
 void AndroidVsync::UnregisterObserver(Observer* aObserver, ObserverType aType) {
@@ -62,90 +99,20 @@ void AndroidVsync::UnregisterObserver(Observer* aObserver, ObserverType aType) {
     impl->mRenderObservers.RemoveElement(aObserver);
   }
   aObserver->Dispose();
+  impl->UpdateObservingVsync();
 }
 
-Maybe<std::pair<AChoreographer*, AndroidVsync::CallbackToken>>
-AndroidVsync::Impl::ShouldPostFrameCallback() {
-  
-  
-  
-  
-  
-  if ((!mInputObservers.IsEmpty() || !mRenderObservers.IsEmpty()) &&
-      mChoreographer && mToken) {
-    return Some(std::make_pair(mChoreographer, std::move(mToken)));
-  }
-  return Nothing();
-}
-
-void AndroidVsync::MaybePostFrameCallback() {
-  auto shouldPost = [&]() {
-    auto lock = mImpl.Lock();
-    return lock->ShouldPostFrameCallback();
-  }();
-  if (shouldPost) {
-    auto [choreographer, token] = shouldPost.extract();
-    PostFrameCallback(choreographer, std::move(token));
+void AndroidVsync::Impl::UpdateObservingVsync() {
+  bool shouldObserve =
+      !mInputObservers.IsEmpty() || !mRenderObservers.IsEmpty();
+  if (shouldObserve != mObservingVsync) {
+    mObservingVsync = mSupportJava->ObserveVsync(shouldObserve);
   }
 }
 
 
-void AndroidVsync::PostFrameCallback(AChoreographer* aChoreographer,
-                                     CallbackToken aToken) {
-  MOZ_ASSERT(aChoreographer);
-  MOZ_ASSERT(aToken);
-  if (__builtin_available(android 29, *)) {
-    AChoreographer_postFrameCallback64(
-        aChoreographer, &AndroidVsync::FrameCallback64, aToken.release());
-  } else {
-    AChoreographer_postFrameCallback(
-        aChoreographer, &AndroidVsync::FrameCallback, aToken.release());
-  }
-}
-
-
-void AndroidVsync::FrameCallback(long aFrameTimeNanos, void* aData) {
+void AndroidVsync::NotifyVsync(int64_t aFrameTimeNanos) {
   MOZ_ASSERT(AndroidBridge::IsJavaUiThread());
-  static_assert(sizeof(long) == 4 || sizeof(long) == 8);
-
-  if constexpr (sizeof(long) == 8) {
-    FrameCallback64(aFrameTimeNanos, aData);
-  } else {
-    
-    
-    
-    
-    
-    struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    const int64_t now =
-        static_cast<int64_t>(ts.tv_sec) * 1'000'000'000LL + ts.tv_nsec;
-    
-    
-    
-    
-    
-    
-    int64_t fullFrameTime =
-        (now & ~0xFFFFFFFFLL) | static_cast<uint32_t>(aFrameTimeNanos);
-    if (static_cast<uint32_t>(aFrameTimeNanos) > static_cast<uint32_t>(now)) {
-      fullFrameTime -= (1LL << 32);
-    }
-
-    FrameCallback64(fullFrameTime, aData);
-  }
-}
-
-
-
-void AndroidVsync::FrameCallback64(int64_t aFrameTimeNanos, void* aData) {
-  MOZ_ASSERT(AndroidBridge::IsJavaUiThread());
-
-  CallbackToken token(static_cast<ThreadSafeWeakPtr<AndroidVsync>*>(aData));
-  RefPtr<AndroidVsync> self(*token);
-  if (!self) {
-    return;
-  }
 
   
   
@@ -153,28 +120,12 @@ void AndroidVsync::FrameCallback64(int64_t aFrameTimeNanos, void* aData) {
   TimeStamp timeStamp = TimeStamp::FromSystemTime(aFrameTimeNanos);
 
   
-  
-  
-  AutoTArray<Observer*, 2> observers;
-  AChoreographer* choreographer = nullptr;
+  nsTArray<Observer*> observers;
   {
-    auto impl = self->mImpl.Lock();
-    choreographer = impl->mChoreographer;
+    auto impl = mImpl.Lock();
     observers.AppendElements(impl->mInputObservers);
     observers.AppendElements(impl->mRenderObservers);
-
-    if (observers.IsEmpty()) {
-      
-      
-      MOZ_ASSERT(!impl->mToken);
-      impl->mToken = std::move(token);
-    }
   }
-
-  if (token) {
-    PostFrameCallback(choreographer, std::move(token));
-  }
-
   for (Observer* observer : observers) {
     observer->OnVsync(timeStamp);
   }
