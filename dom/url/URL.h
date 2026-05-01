@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_URL_h
 #define mozilla_dom_URL_h
 
@@ -104,7 +102,7 @@ class URL final : public URLSearchParamsObserver, public nsWrapperCache {
   void GetSearch(nsACString& aSearch) const;
   void SetSearch(const nsACString& aSearch);
 
-  URLSearchParams* SearchParams();
+  already_AddRefed<URLSearchParams> SearchParams();
 
   void GetHash(nsACString& aHash) const;
   void SetHash(const nsACString& aHash);
