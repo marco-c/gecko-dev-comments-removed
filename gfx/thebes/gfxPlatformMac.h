@@ -21,16 +21,11 @@ class gfxPlatformMac : public gfxPlatform {
   gfxPlatformMac();
   virtual ~gfxPlatformMac();
 
-  struct SupplementalFontThread {
-    ~SupplementalFontThread() { WaitForFontRegistration(); }
-  };
-
   
   
   
   
-  
-  static SupplementalFontThread RegisterSupplementalFonts();
+  static void RegisterSupplementalFonts();
 
   
   

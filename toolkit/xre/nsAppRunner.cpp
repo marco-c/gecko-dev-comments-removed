@@ -6068,7 +6068,7 @@ int XREMain::XRE_main(int argc, char* argv[], const BootstrapConfig& aConfig) {
   
   
   
-  auto _supplementalFontThread = gfxPlatformMac::RegisterSupplementalFonts();
+  gfxPlatformMac::RegisterSupplementalFonts();
 #endif
 
 #ifdef MOZ_WIDGET_ANDROID
