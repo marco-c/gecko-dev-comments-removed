@@ -390,8 +390,18 @@ nsresult HttpConnectionUDP::Activate(nsAHttpTransaction* trans, uint32_t caps,
     
     
     
-    if (!hTrans->AllowedToConnectToIpAddressSpace(
-            peerAddr.GetIpAddressSpace())) {
+    auto addrSpace = peerAddr.GetIpAddressSpace();
+    
+    
+    
+    
+    
+    bool deferPrivate = addrSpace == nsILoadInfo::IPAddressSpace::Private &&
+                        StaticPrefs::network_lna_defer_https_check() &&
+                        mHttp3Session && !mHttp3Session->IsConnected();
+    if (deferPrivate) {
+      mDeferredLnaTransactions.AppendElement(hTrans);
+    } else if (!hTrans->AllowedToConnectToIpAddressSpace(addrSpace)) {
       
       
       CloseTransaction(mHttp3Session, NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED);
@@ -508,6 +518,37 @@ void HttpConnectionUDP::OnConnected() {
   MOZ_ASSERT(!mConnected, "Called more than once");
 
   mConnected = true;
+
+  
+  
+  
+  
+  if (!mDeferredLnaTransactions.IsEmpty()) {
+    nsTArray<RefPtr<nsHttpTransaction>> deferred =
+        std::move(mDeferredLnaTransactions);
+    NetAddr peerAddr;
+    if (NS_SUCCEEDED(GetPeerAddr(&peerAddr))) {
+      auto addrSpace = peerAddr.GetIpAddressSpace();
+      bool denied = false;
+      for (const auto& t : deferred) {
+        if (!t->AllowedToConnectToIpAddressSpace(addrSpace)) {
+          denied = true;
+          
+          
+          
+        }
+      }
+      if (denied) {
+        DontReuse();
+        CloseTransaction(mHttp3Session, NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED);
+        for (const auto& t : deferred) {
+          t->Close(NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED);
+        }
+        return;
+      }
+    }
+  }
+
   if (mIsInTunnel) {
     return;
   }
