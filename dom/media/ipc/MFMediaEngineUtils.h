@@ -123,6 +123,15 @@ inline constexpr HRESULT DRM_OEM_E_ASD_ACTIVE_DISPLAY_FAIL =
 
 inline constexpr HRESULT MSPR_E_NO_DECRYPTOR_AVAILABLE =
     static_cast<HRESULT>(0x8004B895);
+
+
+
+
+
+#ifndef MF_E_HARDWARE_DRM_UNSUPPORTED
+inline constexpr HRESULT MF_E_HARDWARE_DRM_UNSUPPORTED =
+    static_cast<HRESULT>(0xC00D3706);
+#endif
 #endif
 
 const char* MediaEventTypeToStr(MediaEventType aType);
