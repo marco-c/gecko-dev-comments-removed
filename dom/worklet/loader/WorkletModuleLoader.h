@@ -83,10 +83,6 @@ class WorkletModuleLoader : public JS::loader::ModuleLoaderBase {
                              ModuleLoadRequest* aRequest,
                              JS::MutableHandle<JSObject*> aModuleScript);
 
-  nsresult CreateTextModule(JSContext* aCx, JS::CompileOptions& aOptions,
-                            ModuleLoadRequest* aRequest,
-                            JS::MutableHandle<JSObject*> aModuleScript);
-
   void OnModuleLoadComplete(JS::loader::ModuleLoadRequest* aRequest) override;
 
   nsresult GetResolveFailureMessage(JS::loader::ResolveError aError,
@@ -98,8 +94,7 @@ class WorkletModuleLoader : public JS::loader::ModuleLoaderBase {
     
     
     return aModuleType == JS::ModuleType::JavaScript ||
-           aModuleType == JS::ModuleType::JSON ||
-           aModuleType == JS::ModuleType::Text;
+           aModuleType == JS::ModuleType::JSON;
   }
 
   

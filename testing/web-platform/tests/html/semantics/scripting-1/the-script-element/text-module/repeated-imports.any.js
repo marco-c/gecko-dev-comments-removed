@@ -79,12 +79,12 @@ promise_test(async test => {
     const uuid_token = token();
     
     const result_js = await import(`./serve-js-then-text.py?key=${uuid_token}`);
-    assert_equals(result_js.default, "world");
+    assert_equals(result_js.default, "hello");
 
     
     
     
     
     const result_js_2 = await import(`./serve-js-then-text.py?key=${uuid_token}`);
-    assert_equals(result_js_2.default, "world");
+    assert_equals(result_js_2.default, "hello");
 }, "If an import previously succeeded for a given specifier with no type attribute, future uses of the same values should yield the same result");

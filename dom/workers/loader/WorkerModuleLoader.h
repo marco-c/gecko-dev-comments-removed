@@ -85,10 +85,6 @@ class WorkerModuleLoader : public JS::loader::ModuleLoaderBase {
                              ModuleLoadRequest* aRequest,
                              JS::MutableHandle<JSObject*> aModuleScript);
 
-  nsresult CreateTextModule(JSContext* aCx, JS::CompileOptions& aOptions,
-                            ModuleLoadRequest* aRequest,
-                            JS::MutableHandle<JSObject*> aModuleScript);
-
   void OnModuleLoadComplete(ModuleLoadRequest* aRequest) override;
 
   bool IsModuleEvaluationAborted(ModuleLoadRequest* aRequest) override;
@@ -98,8 +94,7 @@ class WorkerModuleLoader : public JS::loader::ModuleLoaderBase {
     
     
     return aModuleType == JS::ModuleType::JavaScript ||
-           aModuleType == JS::ModuleType::JSON ||
-           aModuleType == JS::ModuleType::Text;
+           aModuleType == JS::ModuleType::JSON;
   }
 
   virtual bool IsForServiceWorker() const override;
