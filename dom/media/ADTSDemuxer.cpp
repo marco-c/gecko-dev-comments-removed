@@ -110,7 +110,15 @@ bool ADTSTrackDemuxer::Init() {
   mInfo->mRate = mSamplesPerSecond;
   mInfo->mChannels = mChannels;
   mInfo->mBitDepth = 16;
-  mInfo->mDuration = Duration();
+  
+  
+  
+  
+  
+  if (auto duration = Duration();
+      duration.IsValid() && !duration.IsInfinite()) {
+    mInfo->mDuration = duration;
+  }
 
   
   mInfo->mMimeType = "audio/mp4a-latm";
