@@ -901,6 +901,102 @@ static inline auto BaseNameParts(const JSLinearString* baseName) {
 }
 
 
+
+
+static auto GetLocaleLanguage(const LocaleObject* locale) {
+  const auto* baseName = locale->getBaseName();
+
+  auto language = [](auto baseName) {
+    mozilla::intl::LanguageSubtag language{};
+
+    auto parts = BaseNameParts(baseName);
+    language.Set(baseName.subspan(parts.language.index, parts.language.length));
+    return language;
+  };
+
+  JS::AutoCheckCannotGC nogc;
+  return baseName->hasLatin1Chars()
+             ? language(mozilla::AsChars(baseName->latin1Range(nogc)))
+             : language(mozilla::Span{baseName->twoByteRange(nogc)});
+}
+
+
+
+
+static auto GetLocaleScript(const LocaleObject* locale) {
+  const auto* baseName = locale->getBaseName();
+
+  auto script = [](auto baseName) {
+    mozilla::intl::ScriptSubtag script{};
+
+    auto parts = BaseNameParts(baseName);
+    if (parts.script) {
+      script.Set(baseName.subspan(parts.script->index, parts.script->length));
+    }
+    return script;
+  };
+
+  JS::AutoCheckCannotGC nogc;
+  return baseName->hasLatin1Chars()
+             ? script(mozilla::AsChars(baseName->latin1Range(nogc)))
+             : script(mozilla::Span{baseName->twoByteRange(nogc)});
+}
+
+
+
+
+static auto GetLocaleRegion(const LocaleObject* locale) {
+  const auto* baseName = locale->getBaseName();
+
+  auto region = [](auto baseName) {
+    mozilla::intl::RegionSubtag region{};
+
+    auto parts = BaseNameParts(baseName);
+    if (parts.region) {
+      region.Set(baseName.subspan(parts.region->index, parts.region->length));
+    }
+    return region;
+  };
+
+  JS::AutoCheckCannotGC nogc;
+  return baseName->hasLatin1Chars()
+             ? region(mozilla::AsChars(baseName->latin1Range(nogc)))
+             : region(mozilla::Span{baseName->twoByteRange(nogc)});
+}
+
+
+
+
+static mozilla::Maybe<IndexAndLength> GetLocaleVariants(
+    const LocaleObject* locale) {
+  const auto* baseName = locale->getBaseName();
+  auto parts = BaseNameParts(baseName);
+
+  
+  
+  auto precedingSubtag = parts.region   ? *parts.region
+                         : parts.script ? *parts.script
+                                        : parts.language;
+
+  
+  size_t index = precedingSubtag.index + precedingSubtag.length;
+
+  if (index == baseName->length()) {
+    return mozilla::Nothing();
+  }
+  MOZ_ASSERT(baseName->latin1OrTwoByteChar(index) == '-',
+             "missing '-' separator after precedingSubtag");
+
+  
+  index += 1;
+
+  
+  size_t length = baseName->length() - index;
+
+  return mozilla::Some(IndexAndLength{index, length});
+}
+
+
 static bool Locale_maximize(JSContext* cx, const CallArgs& args) {
   MOZ_ASSERT(IsLocale(args.thisv()));
 
@@ -1119,17 +1215,15 @@ static bool Locale_language(JSContext* cx, const CallArgs& args) {
   auto* locale = &args.thisv().toObject().as<LocaleObject>();
   auto* baseName = locale->getBaseName();
 
-  
-
-  auto language = BaseNameParts(baseName).language;
-
-  size_t index = language.index;
-  size_t length = language.length;
-
-  
-  JSString* str = NewDependentString(cx, baseName, index, length);
-  if (!str) {
-    return false;
+  JSString* str;
+  if (baseName->length() > 3) {
+    str = NewStringCopy<CanGC>(cx, GetLocaleLanguage(locale).Span());
+    if (!str) {
+      return false;
+    }
+  } else {
+    
+    str = baseName;
   }
 
   args.rval().setString(str);
@@ -1149,23 +1243,15 @@ static bool Locale_script(JSContext* cx, const CallArgs& args) {
 
   
   auto* locale = &args.thisv().toObject().as<LocaleObject>();
-  auto* baseName = locale->getBaseName();
+  auto script = GetLocaleScript(locale);
 
   
-
-  auto script = BaseNameParts(baseName).script;
-
-  
-  if (!script) {
+  if (script.Missing()) {
     args.rval().setUndefined();
     return true;
   }
 
-  size_t index = script->index;
-  size_t length = script->length;
-
-  
-  JSString* str = NewDependentString(cx, baseName, index, length);
+  auto* str = NewStringCopy<CanGC>(cx, script.Span());
   if (!str) {
     return false;
   }
@@ -1187,23 +1273,15 @@ static bool Locale_region(JSContext* cx, const CallArgs& args) {
 
   
   auto* locale = &args.thisv().toObject().as<LocaleObject>();
-  auto* baseName = locale->getBaseName();
+  auto region = GetLocaleRegion(locale);
 
   
-
-  auto region = BaseNameParts(baseName).region;
-
-  
-  if (!region) {
+  if (region.Missing()) {
     args.rval().setUndefined();
     return true;
   }
 
-  size_t index = region->index;
-  size_t length = region->length;
-
-  
-  JSString* str = NewDependentString(cx, baseName, index, length);
+  auto* str = NewStringCopy<CanGC>(cx, region.Span());
   if (!str) {
     return false;
   }
@@ -1225,33 +1303,22 @@ static bool Locale_variants(JSContext* cx, const CallArgs& args) {
 
   
   auto* locale = &args.thisv().toObject().as<LocaleObject>();
-  auto* baseName = locale->getBaseName();
-
-  auto parts = BaseNameParts(baseName);
+  auto variants = GetLocaleVariants(locale);
 
   
-  
-  auto precedingSubtag = parts.region   ? *parts.region
-                         : parts.script ? *parts.script
-                                        : parts.language;
-
-  
-  size_t index = precedingSubtag.index + precedingSubtag.length;
-
-  
-  size_t length = baseName->length() - index;
-
-  
-  if (length == 0) {
+  if (!variants) {
     args.rval().setUndefined();
     return true;
   }
-  MOZ_ASSERT(baseName->latin1OrTwoByteChar(index) == '-',
-             "missing '-' separator after precedingSubtag");
-  MOZ_ASSERT(length >= 4 + 1,
-             "variant subtag is at least four characters long");
 
-  JSString* str = NewDependentString(cx, baseName, index + 1, length - 1);
+  auto [index, length] = *variants;
+  MOZ_ASSERT(length >= 4, "variant subtag is at least four characters long");
+
+  auto* baseName = locale->getBaseName();
+  MOZ_ASSERT(index + length == baseName->length(),
+             "unexpected base name subtags after variant subtags");
+
+  auto* str = NewDependentString(cx, baseName, index, length);
   if (!str) {
     return false;
   }
