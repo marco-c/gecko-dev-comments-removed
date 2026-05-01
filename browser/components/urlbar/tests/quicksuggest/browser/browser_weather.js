@@ -41,7 +41,19 @@ add_task(async function showLessFrequentlyCapReached_manySearches() {
       },
     },
   ]);
+  try {
+    await doShowLessFrequentlyCapReachedManySearches();
+  } finally {
+    await UrlbarTestUtils.promisePopupClose(window);
+    await QuickSuggestTestUtils.setRemoteSettingsRecords([
+      QuickSuggestTestUtils.weatherRecord(),
+    ]);
+    UrlbarPrefs.clear("weather.minKeywordLength");
+    UrlbarPrefs.clear("weather.showLessFrequentlyCount");
+  }
+});
 
+async function doShowLessFrequentlyCapReachedManySearches() {
   
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
@@ -106,14 +118,7 @@ add_task(async function showLessFrequentlyCapReached_manySearches() {
   );
   Assert.ok(!menuitem, "Menuitem should be absent");
   gURLBar.view.resultMenu.hidePopup(true);
-
-  await UrlbarTestUtils.promisePopupClose(window);
-  await QuickSuggestTestUtils.setRemoteSettingsRecords([
-    QuickSuggestTestUtils.weatherRecord(),
-  ]);
-  UrlbarPrefs.clear("weather.minKeywordLength");
-  UrlbarPrefs.clear("weather.showLessFrequentlyCount");
-});
+}
 
 
 add_task(async function dontShow() {
