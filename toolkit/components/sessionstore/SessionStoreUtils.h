@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_SessionStoreUtils_h
 #define mozilla_dom_SessionStoreUtils_h
 
@@ -41,16 +39,6 @@ class SessionStoreUtils {
   static void ForEachNonDynamicChildFrame(
       const GlobalObject& aGlobal, WindowProxyHolder& aWindow,
       SessionStoreUtilsFrameCallback& aCallback, ErrorResult& aRv);
-
-  static already_AddRefed<nsISupports> AddDynamicFrameFilteredListener(
-      const GlobalObject& aGlobal, EventTarget& aTarget, const nsAString& aType,
-      JS::Handle<JS::Value> aListener, bool aUseCapture, bool aMozSystemGroup,
-      ErrorResult& aRv);
-
-  static void RemoveDynamicFrameFilteredListener(
-      const GlobalObject& aGlobal, EventTarget& aTarget, const nsAString& aType,
-      nsISupports* aListener, bool aUseCapture, bool aMozSystemGroup,
-      ErrorResult& aRv);
 
   static void CollectDocShellCapabilities(const GlobalObject& aGlobal,
                                           nsIDocShell* aDocShell,
