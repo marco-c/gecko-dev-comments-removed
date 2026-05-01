@@ -35,6 +35,10 @@ class FileDescriptor;
 class SandboxBroker final : private SandboxBrokerCommon,
                             public PlatformThread::Delegate {
  public:
+  
+  SandboxBroker(const SandboxBroker&) = delete;
+  void operator=(const SandboxBroker&) = delete;
+
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(SandboxBroker)
 
   enum Perms {
@@ -166,10 +170,6 @@ class SandboxBroker final : private SandboxBrokerCommon,
   
   char* SymlinkPath(const Policy* aPolicy, const char* __restrict aPath,
                     char* __restrict aResolved, int* aPermission);
-
-  
-  SandboxBroker(const SandboxBroker&) = delete;
-  void operator=(const SandboxBroker&) = delete;
 };
 
 }  
