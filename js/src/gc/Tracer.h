@@ -403,10 +403,9 @@ void TraceWeakMapKeyEdgeInternal(JSTracer* trc, Zone* weakMapZone, T* thingp,
 
 template <typename T>
 inline void TraceWeakMapKeyEdge(JSTracer* trc, Zone* weakMapZone,
-                                const BarrieredBase<T>* thingp,
-                                const char* name) {
-  TraceWeakMapKeyEdgeInternal(
-      trc, weakMapZone, gc::ConvertToBase(thingp->unbarrieredAddress()), name);
+                                const T* thingp, const char* name) {
+  TraceWeakMapKeyEdgeInternal(trc, weakMapZone,
+                              gc::ConvertToBase(const_cast<T*>(thingp)), name);
 }
 
 

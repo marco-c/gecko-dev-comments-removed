@@ -345,17 +345,11 @@ void WeakMap<K, V, AP>::trace(JSTracer* trc) {
 
 template <class K, class V, class AP>
 void WeakMap<K, V, AP>::traceKey(JSTracer* trc, ModIterator& iter) {
-  PreBarriered<K> key = iter.get().key();
+  K key = iter.get().key();
   TraceWeakMapKeyEdge(trc, zone(), &key, "WeakMap entry key");
   if (key != iter.get().key()) {
     iter.rekey(key);
   }
-
-  
-  
-  
-  
-  key.unbarrieredSet(JS::SafelyInitialized<K>::create());
 }
 
 template <class K, class V, class AP>
