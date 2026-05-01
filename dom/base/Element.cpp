@@ -1373,7 +1373,7 @@ void Element::SetSlot(const nsAString& aName, ErrorResult& aError) {
 void Element::GetSlot(nsAString& aName) { GetAttr(nsGkAtoms::slot, aName); }
 
 
-ShadowRoot* Element::GetShadowRootByMode() const {
+ShadowRoot* Element::GetShadowRootForBindings() const {
   
 
 
@@ -1386,6 +1386,17 @@ ShadowRoot* Element::GetShadowRootByMode() const {
   
 
 
+  return shadowRoot;
+}
+
+ShadowRoot* Element::GetOpenOrClosedShadowRoot(nsIPrincipal& aSubject) const {
+  ShadowRoot* shadowRoot = GetShadowRoot();
+  if (!shadowRoot) {
+    return nullptr;
+  }
+  if (!aSubject.IsSystemPrincipal() && shadowRoot->IsUAWidget()) {
+    return nullptr;
+  }
   return shadowRoot;
 }
 

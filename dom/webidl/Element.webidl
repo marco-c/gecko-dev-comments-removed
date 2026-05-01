@@ -289,10 +289,10 @@ partial interface Element {
   // Shadow DOM v1
   [Throws, UseCounter]
   ShadowRoot attachShadow(ShadowRootInit shadowRootInitDict);
-  [BinaryName="shadowRootByMode"]
+  [BinaryName="shadowRootForBindings"]
   readonly attribute ShadowRoot? shadowRoot;
 
-  [Func="Document::IsCallerChromeOrAddon", BinaryName="shadowRoot"]
+  [NeedsSubjectPrincipal, Func="Document::IsCallerChromeOrAddon"]
   readonly attribute ShadowRoot? openOrClosedShadowRoot;
 
   [BinaryName="assignedSlotByMode"]
@@ -333,7 +333,7 @@ dictionary FullscreenOptions {
 
 // https://fullscreen.spec.whatwg.org/#api
 partial interface Element {
-  [NewObject, NeedsCallerType]
+  [NewObject, NeedsCallerType, UseCounter]
   Promise<undefined> requestFullscreen(optional FullscreenOptions options = {});
   [NewObject, BinaryName="requestFullscreen", NeedsCallerType, Deprecated="MozRequestFullScreenDeprecatedPrefix"]
   Promise<undefined> mozRequestFullScreen(optional FullscreenOptions options = {});
