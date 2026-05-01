@@ -80,7 +80,6 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Casting.h"
-#include "mozilla/EndianUtils.h"
 #include "mozilla/HashFunctions.h"
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/Maybe.h"
@@ -154,8 +153,9 @@ class MOZ_STANDALONE_DEBUG HashMap {
 
     static const Key& getKey(TableEntry& aEntry) { return aEntry.key(); }
 
-    static void setKey(TableEntry& aEntry, Key& aKey) {
-      HashPolicy::rekey(aEntry.mutableKey(), aKey);
+    template <typename KeyInput>
+    static void setKey(TableEntry& aEntry, KeyInput&& aKey) {
+      HashPolicy::rekey(aEntry.mutableKey(), std::forward<KeyInput>(aKey));
     }
   };
 
@@ -168,8 +168,8 @@ class MOZ_STANDALONE_DEBUG HashMap {
 
   
 
-  explicit HashMap(AllocPolicy aAllocPolicy = AllocPolicy(),
-                   uint32_t aLen = Impl::sDefaultLen)
+  constexpr explicit HashMap(AllocPolicy aAllocPolicy = AllocPolicy(),
+                             uint32_t aLen = Impl::sDefaultLen)
       : mImpl(std::move(aAllocPolicy), aLen) {}
 
   explicit HashMap(uint32_t aLen) : mImpl(AllocPolicy(), aLen) {}
@@ -376,17 +376,18 @@ class MOZ_STANDALONE_DEBUG HashMap {
 
   
   
-  void rekeyIfMoved(const Key& aOldKey, const Key& aNewKey) {
-    if (aOldKey != aNewKey) {
-      rekeyAs(aOldKey, aNewKey, aNewKey);
+  void rekeyIfMoved(const Lookup& aOldKey, const Lookup& aNewKeyInput) {
+    if (aOldKey != aNewKeyInput) {
+      rekeyAs(aOldKey, aNewKeyInput, aNewKeyInput);
     }
   }
 
   
+  template <typename KeyInput>
   bool rekeyAs(const Lookup& aOldLookup, const Lookup& aNewLookup,
-               const Key& aNewKey) {
+               KeyInput&& aNewKey) {
     if (Ptr p = lookup(aOldLookup)) {
-      mImpl.rekeyAndMaybeRehash(p, aNewLookup, aNewKey);
+      mImpl.rekeyAndMaybeRehash(p, aNewLookup, std::forward<KeyInput>(aNewKey));
       return true;
     }
     return false;
@@ -477,7 +478,10 @@ class HashSet {
 
     static const KeyType& getKey(const T& aT) { return aT; }
 
-    static void setKey(T& aT, KeyType& aKey) { HashPolicy::rekey(aT, aKey); }
+    template <typename KeyInput>
+    static void setKey(T& aT, KeyInput&& aKey) {
+      HashPolicy::rekey(aT, std::forward<KeyInput>(aKey));
+    }
   };
 
   using Impl = detail::HashTable<const T, SetHashPolicy, AllocPolicy>;
@@ -678,17 +682,18 @@ class HashSet {
 
   
   
-  void rekeyIfMoved(const Lookup& aOldValue, const T& aNewValue) {
+  void rekeyIfMoved(const Lookup& aOldValue, const Lookup& aNewValue) {
     if (aOldValue != aNewValue) {
       rekeyAs(aOldValue, aNewValue, aNewValue);
     }
   }
 
   
+  template <typename U>
   bool rekeyAs(const Lookup& aOldLookup, const Lookup& aNewLookup,
-               const T& aNewValue) {
+               U&& aNewValue) {
     if (Ptr p = lookup(aOldLookup)) {
-      mImpl.rekeyAndMaybeRehash(p, aNewLookup, aNewValue);
+      mImpl.rekeyAndMaybeRehash(p, aNewLookup, std::forward<U>(aNewValue));
       return true;
     }
     return false;
@@ -698,12 +703,12 @@ class HashSet {
   
   
   
-  void replaceKey(Ptr aPtr, const Lookup& aLookup, const T& aNewValue) {
+  template <typename U>
+  void replaceKey(Ptr aPtr, const Lookup& aLookup, U&& aNewValue) {
     MOZ_ASSERT(aPtr.found());
-    MOZ_ASSERT(*aPtr != aNewValue);
     MOZ_ASSERT(HashPolicy::match(*aPtr, aLookup));
-    MOZ_ASSERT(HashPolicy::match(aNewValue, aLookup));
-    const_cast<T&>(*aPtr) = aNewValue;
+    MOZ_ASSERT(*aPtr != aNewValue);
+    const_cast<T&>(*aPtr) = std::forward<U>(aNewValue);
     MOZ_ASSERT(*lookup(aLookup) == aNewValue);
   }
   void replaceKey(Ptr aPtr, const T& aNewValue) {
@@ -791,6 +796,8 @@ class HashSet {
 
 template <typename Key>
 struct PointerHasher {
+  static_assert(std::is_pointer_v<Key>);
+
   using Lookup = Key;
 
   static HashNumber hash(const Lookup& aLookup) { return HashGeneric(aLookup); }
@@ -857,9 +864,7 @@ struct DefaultHasher<UniquePtr<T, D>> {
     return PtrHasher::match(aKey.get(), aLookup.get());
   }
 
-  static void rekey(UniquePtr<T, D>& aKey, UniquePtr<T, D>&& aNewKey) {
-    aKey = std::move(aNewKey);
-  }
+  static void rekey(Key& aKey, Key&& aNewKey) { aKey = std::move(aNewKey); }
 };
 
 
@@ -1518,10 +1523,14 @@ class MOZ_STANDALONE_DEBUG HashTable : private AllocPolicy {
     
     
     
-    void rekey(const Lookup& l, const Key& k) {
-      MOZ_ASSERT(&k != &HashPolicy::getKey(this->mCur.get()));
+    template <typename KeyInput>
+    void rekey(const Lookup& l, KeyInput&& k) {
+      MOZ_ASSERT(
+          static_cast<const void*>(&k) !=
+              static_cast<const void*>(&HashPolicy::getKey(this->mCur.get())),
+          "Don't pass a reference into the table here");
       Ptr p(this->mCur, mTable);
-      mTable.rekeyWithoutRehash(p, l, k);
+      mTable.rekeyWithoutRehash(p, l, std::forward<KeyInput>(k));
       mRekeyed = true;
 #ifdef DEBUG
       this->mValidEntry = false;
@@ -1529,7 +1538,7 @@ class MOZ_STANDALONE_DEBUG HashTable : private AllocPolicy {
 #endif
     }
 
-    void rekey(const Key& k) { rekey(k, k); }
+    void rekey(const Lookup& l) { rekey(l, l); }
 
     
     
@@ -1659,7 +1668,7 @@ class MOZ_STANDALONE_DEBUG HashTable : private AllocPolicy {
     mGenAndHashShift = (mGenAndHashShift & ~sHashShiftMask) | aHashShift;
   }
 
-  static uint32_t bestCapacity(uint32_t aLen) {
+  constexpr static uint32_t bestCapacity(uint32_t aLen) {
     static_assert(
         (sMaxInit * sAlphaDenominator) / sAlphaDenominator == sMaxInit,
         "multiplication in numerator below could overflow");
@@ -1683,7 +1692,7 @@ class MOZ_STANDALONE_DEBUG HashTable : private AllocPolicy {
     return capacity;
   }
 
-  static uint32_t hashShiftForLength(uint32_t aLen) {
+  constexpr static uint32_t hashShiftForLength(uint32_t aLen) {
     
     
     
@@ -1751,7 +1760,7 @@ class MOZ_STANDALONE_DEBUG HashTable : private AllocPolicy {
   }
 
  public:
-  HashTable(AllocPolicy aAllocPolicy, uint32_t aLen)
+  constexpr HashTable(AllocPolicy aAllocPolicy, uint32_t aLen)
       : AllocPolicy(std::move(aAllocPolicy)),
         mGenAndHashShift(hashShiftForLength(aLen)),
         mTable(nullptr),
@@ -2306,20 +2315,22 @@ class MOZ_STANDALONE_DEBUG HashTable : private AllocPolicy {
     shrinkIfUnderloaded();
   }
 
-  void rekeyWithoutRehash(Ptr aPtr, const Lookup& aLookup, const Key& aKey) {
+  template <typename KeyInput>
+  void rekeyWithoutRehash(Ptr aPtr, const Lookup& aLookup, KeyInput&& aKey) {
     MOZ_ASSERT(mTable);
     ReentrancyGuard g(*this);
     MOZ_ASSERT(aPtr.found());
     MOZ_ASSERT(aPtr.mGeneration == generation());
     typename HashTableEntry<T>::NonConstT t(std::move(*aPtr));
-    HashPolicy::setKey(t, const_cast<Key&>(aKey));
+    HashPolicy::setKey(t, std::forward<KeyInput>(aKey));
     remove(aPtr.mSlot);
     HashNumber keyHash = prepareHash(HashPolicy::hash(aLookup));
     putNewInfallibleInternal(keyHash, std::move(t));
   }
 
-  void rekeyAndMaybeRehash(Ptr aPtr, const Lookup& aLookup, const Key& aKey) {
-    rekeyWithoutRehash(aPtr, aLookup, aKey);
+  template <typename KeyInput>
+  void rekeyAndMaybeRehash(Ptr aPtr, const Lookup& aLookup, KeyInput&& aKey) {
+    rekeyWithoutRehash(aPtr, aLookup, std::forward<KeyInput>(aKey));
     infallibleRehashIfOverloaded();
   }
 
@@ -2331,12 +2342,12 @@ class MOZ_STANDALONE_DEBUG HashTable : private AllocPolicy {
     
     
     
-#if MOZ_BIG_ENDIAN()
-    return offsetof(HashTable, mGenAndHashShift) + sizeof(mGenAndHashShift) -
-           sizeof(uint8_t);
-#else
-    return offsetof(HashTable, mGenAndHashShift);
-#endif
+    if constexpr (std::endian::native == std::endian::big) {
+      return offsetof(HashTable, mGenAndHashShift) + sizeof(mGenAndHashShift) -
+             sizeof(uint8_t);
+    } else {
+      return offsetof(HashTable, mGenAndHashShift);
+    }
   }
   static size_t offsetOfTable() { return offsetof(HashTable, mTable); }
   static size_t offsetOfEntryCount() {
