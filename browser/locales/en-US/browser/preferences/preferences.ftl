@@ -1059,6 +1059,10 @@ home-prefs-lists-header =
 home-prefs-timer-header =
     .label = Timer
 
+# Sports is a widget on New Tab showing sports scores and schedules.
+home-prefs-sports-widget-header =
+    .label = Sports
+
 # "Support" here means to help sustain or contribute to something, especially through funding or sponsorship.
 home-prefs-support-firefox-header =
     .label = Support { -brand-product-name }
@@ -1078,6 +1082,12 @@ home-prefs-choose-wallpaper-link = Choose a wallpaper
 
 home-prefs-choose-wallpaper-link2 =
     .label = Choose a wallpaper
+
+# Informational message bar that appears in the Firefox Home section when the options are disabled.
+# The user must select Firefox Home as their homepage for either new tabs or new windows to enable
+# the features in settings.
+home-prefs-firefox-home-disabled-notice =
+    .message = To use these features, set new tabs or new windows to { -firefox-home-brand-name }.
 
 # Variables:
 #   $num (number) - Number of rows displayed

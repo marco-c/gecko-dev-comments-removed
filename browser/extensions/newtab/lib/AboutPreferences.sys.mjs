@@ -250,6 +250,14 @@ export class AboutPreferences {
         type: "bool",
       },
       {
+        id: "browser.newtabpage.activity-stream.widgets.system.sportsWidget.enabled",
+        type: "bool",
+      },
+      {
+        id: "browser.newtabpage.activity-stream.widgets.sportsWidget.enabled",
+        type: "bool",
+      },
+      {
         id: "browser.newtabpage.activity-stream.feeds.topsites",
         type: "bool",
       },
@@ -786,10 +794,24 @@ export class AboutPreferences {
   _setupHomeGroup(window) {
     const { Preferences } = window;
 
+    // The Firefox Home section should be disabled when neither "New windows"
+    // nor "New tabs" is set to Firefox Home.
+    const firefoxHomeDeps = ["homepageNewWindows", "homepageNewTabs"];
+    const firefoxHomeActive = ({ homepageNewWindows, homepageNewTabs }) =>
+      homepageNewWindows.value === "home" || homepageNewTabs.value === "true";
+
+    Preferences.addSetting({
+      id: "firefoxHomeDisabledNotice",
+      deps: firefoxHomeDeps,
+      visible: deps => !firefoxHomeActive(deps),
+    });
+
     // Search
     Preferences.addSetting({
       id: "webSearch",
       pref: "browser.newtabpage.activity-stream.showSearch",
+      deps: firefoxHomeDeps,
+      disabled: deps => !firefoxHomeActive(deps),
     });
 
     // Weather
@@ -808,8 +830,9 @@ export class AboutPreferences {
       Preferences.addSetting({
         id: "weather",
         pref: "browser.newtabpage.activity-stream.widgets.weather.enabled",
-        deps: ["weatherEnabled"],
+        deps: ["weatherEnabled", ...firefoxHomeDeps],
         visible: ({ weatherEnabled }) => weatherEnabled.value,
+        disabled: deps => !firefoxHomeActive(deps),
       });
     } else {
       Preferences.addSetting({
@@ -820,8 +843,9 @@ export class AboutPreferences {
       Preferences.addSetting({
         id: "weather",
         pref: "browser.newtabpage.activity-stream.showWeather",
-        deps: ["showWeather"],
+        deps: ["showWeather", ...firefoxHomeDeps],
         visible: ({ showWeather }) => showWeather.value,
+        disabled: deps => !firefoxHomeActive(deps),
       });
     }
 
@@ -834,8 +858,9 @@ export class AboutPreferences {
     Preferences.addSetting({
       id: "widgets",
       pref: "browser.newtabpage.activity-stream.widgets.enabled",
-      deps: ["widgetsEnabled"],
+      deps: ["widgetsEnabled", ...firefoxHomeDeps],
       visible: ({ widgetsEnabled }) => widgetsEnabled.value,
+      disabled: deps => !firefoxHomeActive(deps),
     });
 
     // Widgets: lists
@@ -864,10 +889,25 @@ export class AboutPreferences {
       visible: ({ timerEnabled }) => timerEnabled.value,
     });
 
+    // Widgets: sports
+    Preferences.addSetting({
+      id: "sportsWidgetEnabled",
+      pref: "browser.newtabpage.activity-stream.widgets.system.sportsWidget.enabled",
+    });
+
+    Preferences.addSetting({
+      id: "sportsWidget",
+      pref: "browser.newtabpage.activity-stream.widgets.sportsWidget.enabled",
+      deps: ["sportsWidgetEnabled"],
+      visible: ({ sportsWidgetEnabled }) => sportsWidgetEnabled.value,
+    });
+
     // Shortcuts
     Preferences.addSetting({
       id: "shortcuts",
       pref: "browser.newtabpage.activity-stream.feeds.topsites",
+      deps: firefoxHomeDeps,
+      disabled: deps => !firefoxHomeActive(deps),
     });
     Preferences.addSetting({
       id: "shortcutsRows",
@@ -884,8 +924,9 @@ export class AboutPreferences {
     Preferences.addSetting({
       id: "stories",
       pref: "browser.newtabpage.activity-stream.feeds.section.topstories",
-      deps: ["systemTopstories"],
+      deps: ["systemTopstories", ...firefoxHomeDeps],
       visible: ({ systemTopstories }) => systemTopstories.value,
+      disabled: deps => !firefoxHomeActive(deps),
     });
 
     // Dependencies for "manage topics" checkbox
@@ -933,7 +974,8 @@ export class AboutPreferences {
     Preferences.addSetting({
       id: "supportFirefox",
       pref: "browser.newtabpage.activity-stream.showSponsoredCheckboxes",
-      deps: ["sponsoredShortcuts", "sponsoredStories"],
+      deps: ["sponsoredShortcuts", "sponsoredStories", ...firefoxHomeDeps],
+      disabled: deps => !firefoxHomeActive(deps),
       onUserChange(value, { sponsoredShortcuts, sponsoredStories }) {
         // When supportFirefox changes, automatically update child preferences to match
         sponsoredShortcuts.value = !!value;
@@ -957,6 +999,8 @@ export class AboutPreferences {
       visible: ({ systemTopstories }) => !!systemTopstories.value,
       disabled: ({ stories }) => !stories.value,
     });
+    // Not disabled when Firefox Home is off — the promo remains visible
+    // regardless of the homepage setting.
     Preferences.addSetting({
       id: "supportFirefoxPromo",
       deps: ["supportFirefox"],
@@ -966,6 +1010,8 @@ export class AboutPreferences {
     Preferences.addSetting({
       id: "recentActivity",
       pref: "browser.newtabpage.activity-stream.feeds.section.highlights",
+      deps: firefoxHomeDeps,
+      disabled: deps => !firefoxHomeActive(deps),
     });
     Preferences.addSetting({
       id: "recentActivityRows",
@@ -984,6 +1030,8 @@ export class AboutPreferences {
       pref: "browser.newtabpage.activity-stream.section.highlights.includeDownloads",
     });
 
+    // Not hidden when Firefox Home is off — the wallpaper link remains
+    // visible regardless of the homepage setting.
     Preferences.addSetting({
       id: "chooseWallpaper",
     });
@@ -994,6 +1042,14 @@ export class AboutPreferences {
       l10nId: "home-prefs-content-header",
       iconSrc: "chrome://browser/skin/home.svg",
       items: [
+        {
+          id: "firefoxHomeDisabledNotice",
+          control: "moz-message-bar",
+          l10nId: "home-prefs-firefox-home-disabled-notice",
+          controlAttrs: {
+            type: "info",
+          },
+        },
         {
           id: "webSearch",
           l10nId: "home-prefs-search-header2",
@@ -1016,6 +1072,10 @@ export class AboutPreferences {
             {
               id: "timer",
               l10nId: "home-prefs-timer-header",
+            },
+            {
+              id: "sportsWidget",
+              l10nId: "home-prefs-sports-widget-header",
             },
           ],
         },
