@@ -8,6 +8,8 @@ use nix::{
 };
 use std::{io::stdout, os::fd::AsFd};
 
+pub(crate) const PROXY_RENDEZ_VOUS: bool = false;
+
 
 
 
