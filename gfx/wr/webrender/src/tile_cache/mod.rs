@@ -43,7 +43,7 @@ use crate::space::SpaceMapper;
 use crate::spatial_tree::{SpatialNodeIndex, SpatialTree};
 use crate::surface::{SubpixelMode, SurfaceInfo};
 use crate::util::{ScaleOffset, MatrixHelpers, MaxRect};
-use crate::visibility::{FrameVisibilityContext, FrameVisibilityState, VisibilityState, PrimitiveVisibilityFlags};
+use crate::visibility::{FrameVisibilityContext, FrameVisibilityState, DrawState, PrimitiveVisibilityFlags};
 use euclid::approxeq::ApproxEq;
 use euclid::Box2D;
 use peek_poke::{PeekPoke, ensure_red_zone};
@@ -2159,13 +2159,13 @@ impl TileCacheInstance {
         is_root_tile_cache: bool,
         surfaces: &mut [SurfaceInfo],
         profile: &mut TransactionProfile,
-    ) -> VisibilityState {
+    ) -> DrawState {
         use SurfacePromotionFailure::*;
 
         
         profile_scope!("update_prim_dependencies");
         let prim_surface_index = surface_stack.last().unwrap().1;
-        let prim_clip_chain = &prim_instance.vis.clip_chain;
+        let prim_clip_chain = &prim_instance.draw.clip_chain;
 
         
         
@@ -2212,7 +2212,7 @@ impl TileCacheInstance {
                         ).cast_unit()
                     }
                     None => {
-                        return VisibilityState::Culled;
+                        return DrawState::Culled;
                     }
                 };
 
@@ -2228,7 +2228,7 @@ impl TileCacheInstance {
         
         
         if p0.x == p1.x || p0.y == p1.y {
-            return VisibilityState::Culled;
+            return DrawState::Culled;
         }
 
         
@@ -2401,7 +2401,7 @@ impl TileCacheInstance {
 
                     if kind == CompositorSurfaceKind::Overlay {
                         profile.inc(profiler::COMPOSITOR_SURFACE_OVERLAYS);
-                        return VisibilityState::Culled;
+                        return DrawState::Culled;
                     }
 
                     assert!(kind == CompositorSurfaceKind::Blit, "Image prims should either be overlays or blits.");
@@ -2524,7 +2524,7 @@ impl TileCacheInstance {
                     *compositor_surface_kind = kind;
                     if kind == CompositorSurfaceKind::Overlay {
                         profile.inc(profiler::COMPOSITOR_SURFACE_OVERLAYS);
-                        return VisibilityState::Culled;
+                        return DrawState::Culled;
                     }
 
                     profile.inc(profiler::COMPOSITOR_SURFACE_UNDERLAYS);
@@ -2831,7 +2831,7 @@ impl TileCacheInstance {
             }
         }
 
-        VisibilityState::Visible {
+        DrawState::Visible {
             vis_flags,
             sub_slice_index: SubSliceIndex::new(sub_slice_index),
         }

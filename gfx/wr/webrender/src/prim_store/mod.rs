@@ -26,7 +26,7 @@ use crate::resource_cache::ImageProperties;
 use std::{hash, u32, usize};
 use crate::util::Recycler;
 use crate::internal_types::{FastHashSet, LayoutPrimitiveInfo};
-use crate::visibility::PrimitiveVisibility;
+use crate::visibility::PrimitiveDrawHeader;
 
 pub mod backdrop;
 pub mod borders;
@@ -834,7 +834,7 @@ pub struct PrimitiveInstance {
     
     
     
-    pub vis: PrimitiveVisibility,
+    pub draw: PrimitiveDrawHeader,
 }
 
 impl PrimitiveInstance {
@@ -845,7 +845,7 @@ impl PrimitiveInstance {
     ) -> Self {
         PrimitiveInstance {
             kind,
-            vis: PrimitiveVisibility::new(),
+            draw: PrimitiveDrawHeader::new(),
             clip_leaf_id,
             prim_origin,
         }
@@ -853,11 +853,11 @@ impl PrimitiveInstance {
 
     
     pub fn reset(&mut self) {
-        self.vis.reset();
+        self.draw.reset();
     }
 
     pub fn clear_visibility(&mut self) {
-        self.vis.reset();
+        self.draw.reset();
     }
 
     pub fn uid(&self) -> intern::ItemUid {
