@@ -947,7 +947,10 @@ GLOBAL(void)
 jpeg_gen_optimal_table(j_compress_ptr cinfo, JHUFF_TBL *htbl, long freq[])
 {
 #define MAX_CLEN  32            /* assumed maximum initial code length */
-  UINT8 bits[MAX_CLEN + 1];     
+  
+
+
+  UINT8 bits[MAX_CLEN + 2];     
   int bit_pos[MAX_CLEN + 1];    
   int codesize[257];            
   int nz_index[257];            

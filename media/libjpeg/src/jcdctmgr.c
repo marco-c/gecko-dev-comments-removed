@@ -23,6 +23,9 @@
 #include "jsimddct.h"
 
 
+#if defined(DCT_ISLOW_SUPPORTED) || defined(DCT_IFAST_SUPPORTED) || \
+    defined(DCT_FLOAT_SUPPORTED)
+
 
 
 typedef void (*forward_DCT_method_ptr) (DCTELEM *data);
@@ -176,8 +179,14 @@ compute_reciprocal(UINT16 divisor, DCTELEM *dtbl)
   UDCTELEM c;
   int b, r;
 
-  if (divisor == 1) {
+  if (divisor <= 1) {
     
+
+
+
+
+
+
 
 
 
@@ -746,3 +755,6 @@ _jinit_forward_dct(j_compress_ptr cinfo)
 #endif
   }
 }
+
+#endif 
+

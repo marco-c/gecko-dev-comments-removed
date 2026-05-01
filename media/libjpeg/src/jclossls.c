@@ -228,6 +228,9 @@ jpeg_difference_first_row(j_compress_ptr cinfo, int ci,
     case 7:
       losslessc->predict_difference[ci] = jpeg_difference7;
       break;
+    default:
+      ERREXIT4(cinfo, JERR_BAD_PROGRESSION,
+               cinfo->Ss, cinfo->Se, cinfo->Ah, cinfo->Al);
     }
   }
 }

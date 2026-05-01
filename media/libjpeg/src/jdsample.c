@@ -392,7 +392,8 @@ h2v2_fancy_upsample(j_decompress_ptr cinfo, jpeg_component_info *compptr,
 
       for (colctr = compptr->downsampled_width - 2; colctr > 0; colctr--) {
         
-        
+
+
         nextcolsum = (*inptr0++) * 3 + (*inptr1++);
         *outptr++ = (_JSAMPLE)((thiscolsum * 3 + lastcolsum + 8) >> 4);
         *outptr++ = (_JSAMPLE)((thiscolsum * 3 + nextcolsum + 7) >> 4);

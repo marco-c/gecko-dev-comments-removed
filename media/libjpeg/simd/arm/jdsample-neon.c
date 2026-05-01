@@ -105,7 +105,7 @@ void jsimd_h2v1_fancy_upsample_neon(int max_v_samp_factor,
 
 
     unsigned outptr_offset = 1;
-    uint8x16x2_t output_pixels;
+    uint8x16x2_t output_components;
 
     
 
@@ -116,10 +116,10 @@ void jsimd_h2v1_fancy_upsample_neon(int max_v_samp_factor,
         s1 = vld1q_u8(inptr + colctr);
 
       
-      output_pixels.val[0] = vcombine_u8(vrshrn_n_u16(s1_add_3s0_l, 2),
-                                         vrshrn_n_u16(s1_add_3s0_h, 2));
-      output_pixels.val[1] = vcombine_u8(vshrn_n_u16(s0_add_3s1_l, 2),
-                                         vshrn_n_u16(s0_add_3s1_h, 2));
+      output_components.val[0] = vcombine_u8(vrshrn_n_u16(s1_add_3s0_l, 2),
+                                             vrshrn_n_u16(s1_add_3s0_h, 2));
+      output_components.val[1] = vcombine_u8(vshrn_n_u16(s0_add_3s1_l, 2),
+                                             vshrn_n_u16(s0_add_3s1_h, 2));
 
         
 
@@ -137,19 +137,19 @@ void jsimd_h2v1_fancy_upsample_neon(int max_v_samp_factor,
         s0_add_3s1_h = vaddq_u16(s0_add_3s1_h, one_u16);
 
       
-      vst2q_u8(outptr + outptr_offset, output_pixels);
+      vst2q_u8(outptr + outptr_offset, output_components);
       outptr_offset = 2 * colctr - 1;
     }
 
     
 
     
-    output_pixels.val[0] = vcombine_u8(vrshrn_n_u16(s1_add_3s0_l, 2),
-                                       vrshrn_n_u16(s1_add_3s0_h, 2));
-    output_pixels.val[1] = vcombine_u8(vshrn_n_u16(s0_add_3s1_l, 2),
-                                       vshrn_n_u16(s0_add_3s1_h, 2));
+    output_components.val[0] = vcombine_u8(vrshrn_n_u16(s1_add_3s0_l, 2),
+                                           vrshrn_n_u16(s1_add_3s0_h, 2));
+    output_components.val[1] = vcombine_u8(vshrn_n_u16(s0_add_3s1_l, 2),
+                                           vshrn_n_u16(s0_add_3s1_h, 2));
     
-    vst2q_u8(outptr + outptr_offset, output_pixels);
+    vst2q_u8(outptr + outptr_offset, output_components);
 
     
     outptr[2 * downsampled_width - 1] =
@@ -268,27 +268,27 @@ void jsimd_h2v2_fancy_upsample_neon(int max_v_samp_factor,
 
     
 
-    uint16x8_t output0_p1_l = vmlaq_u16(s1colsum0_l, s0colsum0_l, three_u16);
-    uint16x8_t output0_p1_h = vmlaq_u16(s1colsum0_h, s0colsum0_h, three_u16);
-    uint16x8_t output0_p2_l = vmlaq_u16(s0colsum0_l, s1colsum0_l, three_u16);
-    uint16x8_t output0_p2_h = vmlaq_u16(s0colsum0_h, s1colsum0_h, three_u16);
-    uint16x8_t output1_p1_l = vmlaq_u16(s1colsum1_l, s0colsum1_l, three_u16);
-    uint16x8_t output1_p1_h = vmlaq_u16(s1colsum1_h, s0colsum1_h, three_u16);
-    uint16x8_t output1_p2_l = vmlaq_u16(s0colsum1_l, s1colsum1_l, three_u16);
-    uint16x8_t output1_p2_h = vmlaq_u16(s0colsum1_h, s1colsum1_h, three_u16);
+    uint16x8_t output0_c1_l = vmlaq_u16(s1colsum0_l, s0colsum0_l, three_u16);
+    uint16x8_t output0_c1_h = vmlaq_u16(s1colsum0_h, s0colsum0_h, three_u16);
+    uint16x8_t output0_c2_l = vmlaq_u16(s0colsum0_l, s1colsum0_l, three_u16);
+    uint16x8_t output0_c2_h = vmlaq_u16(s0colsum0_h, s1colsum0_h, three_u16);
+    uint16x8_t output1_c1_l = vmlaq_u16(s1colsum1_l, s0colsum1_l, three_u16);
+    uint16x8_t output1_c1_h = vmlaq_u16(s1colsum1_h, s0colsum1_h, three_u16);
+    uint16x8_t output1_c2_l = vmlaq_u16(s0colsum1_l, s1colsum1_l, three_u16);
+    uint16x8_t output1_c2_h = vmlaq_u16(s0colsum1_h, s1colsum1_h, three_u16);
     
-    output0_p1_l = vaddq_u16(output0_p1_l, seven_u16);
-    output0_p1_h = vaddq_u16(output0_p1_h, seven_u16);
-    output1_p1_l = vaddq_u16(output1_p1_l, seven_u16);
-    output1_p1_h = vaddq_u16(output1_p1_h, seven_u16);
+    output0_c1_l = vaddq_u16(output0_c1_l, seven_u16);
+    output0_c1_h = vaddq_u16(output0_c1_h, seven_u16);
+    output1_c1_l = vaddq_u16(output1_c1_l, seven_u16);
+    output1_c1_h = vaddq_u16(output1_c1_h, seven_u16);
     
-    uint8x16x2_t output_pixels0 = { {
-      vcombine_u8(vshrn_n_u16(output0_p1_l, 4), vshrn_n_u16(output0_p1_h, 4)),
-      vcombine_u8(vrshrn_n_u16(output0_p2_l, 4), vrshrn_n_u16(output0_p2_h, 4))
+    uint8x16x2_t output_components0 = { {
+      vcombine_u8(vshrn_n_u16(output0_c1_l, 4), vshrn_n_u16(output0_c1_h, 4)),
+      vcombine_u8(vrshrn_n_u16(output0_c2_l, 4), vrshrn_n_u16(output0_c2_h, 4))
     } };
-    uint8x16x2_t output_pixels1 = { {
-      vcombine_u8(vshrn_n_u16(output1_p1_l, 4), vshrn_n_u16(output1_p1_h, 4)),
-      vcombine_u8(vrshrn_n_u16(output1_p2_l, 4), vrshrn_n_u16(output1_p2_h, 4))
+    uint8x16x2_t output_components1 = { {
+      vcombine_u8(vshrn_n_u16(output1_c1_l, 4), vshrn_n_u16(output1_c1_h, 4)),
+      vcombine_u8(vrshrn_n_u16(output1_c2_l, 4), vrshrn_n_u16(output1_c2_h, 4))
     } };
 
     
@@ -296,8 +296,8 @@ void jsimd_h2v2_fancy_upsample_neon(int max_v_samp_factor,
 
 
 
-    vst2q_u8(outptr0 + 1, output_pixels0);
-    vst2q_u8(outptr1 + 1, output_pixels1);
+    vst2q_u8(outptr0 + 1, output_components0);
+    vst2q_u8(outptr1 + 1, output_components1);
 
     
 
@@ -336,31 +336,31 @@ void jsimd_h2v2_fancy_upsample_neon(int max_v_samp_factor,
 
       
 
-      output0_p1_l = vmlaq_u16(s1colsum0_l, s0colsum0_l, three_u16);
-      output0_p1_h = vmlaq_u16(s1colsum0_h, s0colsum0_h, three_u16);
-      output0_p2_l = vmlaq_u16(s0colsum0_l, s1colsum0_l, three_u16);
-      output0_p2_h = vmlaq_u16(s0colsum0_h, s1colsum0_h, three_u16);
-      output1_p1_l = vmlaq_u16(s1colsum1_l, s0colsum1_l, three_u16);
-      output1_p1_h = vmlaq_u16(s1colsum1_h, s0colsum1_h, three_u16);
-      output1_p2_l = vmlaq_u16(s0colsum1_l, s1colsum1_l, three_u16);
-      output1_p2_h = vmlaq_u16(s0colsum1_h, s1colsum1_h, three_u16);
+      output0_c1_l = vmlaq_u16(s1colsum0_l, s0colsum0_l, three_u16);
+      output0_c1_h = vmlaq_u16(s1colsum0_h, s0colsum0_h, three_u16);
+      output0_c2_l = vmlaq_u16(s0colsum0_l, s1colsum0_l, three_u16);
+      output0_c2_h = vmlaq_u16(s0colsum0_h, s1colsum0_h, three_u16);
+      output1_c1_l = vmlaq_u16(s1colsum1_l, s0colsum1_l, three_u16);
+      output1_c1_h = vmlaq_u16(s1colsum1_h, s0colsum1_h, three_u16);
+      output1_c2_l = vmlaq_u16(s0colsum1_l, s1colsum1_l, three_u16);
+      output1_c2_h = vmlaq_u16(s0colsum1_h, s1colsum1_h, three_u16);
       
-      output0_p1_l = vaddq_u16(output0_p1_l, seven_u16);
-      output0_p1_h = vaddq_u16(output0_p1_h, seven_u16);
-      output1_p1_l = vaddq_u16(output1_p1_l, seven_u16);
-      output1_p1_h = vaddq_u16(output1_p1_h, seven_u16);
+      output0_c1_l = vaddq_u16(output0_c1_l, seven_u16);
+      output0_c1_h = vaddq_u16(output0_c1_h, seven_u16);
+      output1_c1_l = vaddq_u16(output1_c1_l, seven_u16);
+      output1_c1_h = vaddq_u16(output1_c1_h, seven_u16);
       
-      output_pixels0.val[0] = vcombine_u8(vshrn_n_u16(output0_p1_l, 4),
-                                          vshrn_n_u16(output0_p1_h, 4));
-      output_pixels0.val[1] = vcombine_u8(vrshrn_n_u16(output0_p2_l, 4),
-                                          vrshrn_n_u16(output0_p2_h, 4));
-      output_pixels1.val[0] = vcombine_u8(vshrn_n_u16(output1_p1_l, 4),
-                                          vshrn_n_u16(output1_p1_h, 4));
-      output_pixels1.val[1] = vcombine_u8(vrshrn_n_u16(output1_p2_l, 4),
-                                          vrshrn_n_u16(output1_p2_h, 4));
+      output_components0.val[0] = vcombine_u8(vshrn_n_u16(output0_c1_l, 4),
+                                              vshrn_n_u16(output0_c1_h, 4));
+      output_components0.val[1] = vcombine_u8(vrshrn_n_u16(output0_c2_l, 4),
+                                              vrshrn_n_u16(output0_c2_h, 4));
+      output_components1.val[0] = vcombine_u8(vshrn_n_u16(output1_c1_l, 4),
+                                              vshrn_n_u16(output1_c1_h, 4));
+      output_components1.val[1] = vcombine_u8(vrshrn_n_u16(output1_c2_l, 4),
+                                              vrshrn_n_u16(output1_c2_h, 4));
       
-      vst2q_u8(outptr0 + 2 * colctr - 1, output_pixels0);
-      vst2q_u8(outptr1 + 2 * colctr - 1, output_pixels1);
+      vst2q_u8(outptr0 + 2 * colctr - 1, output_components0);
+      vst2q_u8(outptr1 + 2 * colctr - 1, output_components1);
     }
 
     
@@ -373,7 +373,6 @@ void jsimd_h2v2_fancy_upsample_neon(int max_v_samp_factor,
     inrow++;
   }
 }
-
 
 
 
@@ -456,13 +455,13 @@ void jsimd_h1v2_fancy_upsample_neon(int max_v_samp_factor,
       colsum0_l = vaddq_u16(colsum0_l, one_u16);
       colsum0_h = vaddq_u16(colsum0_h, one_u16);
       
-      uint8x16_t output_pixels0 = vcombine_u8(vshrn_n_u16(colsum0_l, 2),
-                                              vshrn_n_u16(colsum0_h, 2));
-      uint8x16_t output_pixels1 = vcombine_u8(vrshrn_n_u16(colsum1_l, 2),
-                                              vrshrn_n_u16(colsum1_h, 2));
+      uint8x16_t output_components0 = vcombine_u8(vshrn_n_u16(colsum0_l, 2),
+                                                  vshrn_n_u16(colsum0_h, 2));
+      uint8x16_t output_components1 = vcombine_u8(vrshrn_n_u16(colsum1_l, 2),
+                                                  vrshrn_n_u16(colsum1_h, 2));
       
-      vst1q_u8(outptr0 + colctr, output_pixels0);
-      vst1q_u8(outptr1 + colctr, output_pixels1);
+      vst1q_u8(outptr0 + colctr, output_components0);
+      vst1q_u8(outptr1 + colctr, output_components1);
     }
   }
 }
@@ -502,17 +501,16 @@ void jsimd_h2v1_upsample_neon(int max_v_samp_factor, JDIMENSION output_width,
 
 
 
-      uint8x16x2_t output_pixels = { { samples, samples } };
+      uint8x16x2_t output_components = { { samples, samples } };
       
 
 
 
 
-      vst2q_u8(outptr + 2 * colctr, output_pixels);
+      vst2q_u8(outptr + 2 * colctr, output_components);
     }
   }
 }
-
 
 
 
@@ -557,14 +555,14 @@ void jsimd_h2v2_upsample_neon(int max_v_samp_factor, JDIMENSION output_width,
 
 
 
-      uint8x16x2_t output_pixels = { { samples, samples } };
+      uint8x16x2_t output_components = { { samples, samples } };
       
 
 
 
 
-      vst2q_u8(outptr0 + 2 * colctr, output_pixels);
-      vst2q_u8(outptr1 + 2 * colctr, output_pixels);
+      vst2q_u8(outptr0 + 2 * colctr, output_components);
+      vst2q_u8(outptr1 + 2 * colctr, output_components);
     }
   }
 }

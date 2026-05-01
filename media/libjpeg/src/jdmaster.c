@@ -675,6 +675,8 @@ master_selection(j_decompress_ptr cinfo)
     ERREXIT(cinfo, JERR_NOT_COMPILED);
 #endif
   } else {
+#if defined(DCT_ISLOW_SUPPORTED) || defined(DCT_IFAST_SUPPORTED) || \
+    defined(DCT_FLOAT_SUPPORTED)
     
     if (cinfo->data_precision == 8)
       jinit_inverse_dct(cinfo);
@@ -707,6 +709,9 @@ master_selection(j_decompress_ptr cinfo)
       j12init_d_coef_controller(cinfo, use_c_buffer);
     else
       jinit_d_coef_controller(cinfo, use_c_buffer);
+#else
+    ERREXIT(cinfo, JERR_NOT_COMPILED);
+#endif
   }
 
   if (!cinfo->raw_data_out) {

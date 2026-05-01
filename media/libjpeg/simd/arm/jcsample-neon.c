@@ -96,9 +96,9 @@ void jsimd_h2v1_downsample_neon(JDIMENSION image_width, int max_v_samp_factor,
 
     
     for (i = 0; i < width_in_blocks - 1; i++) {
-      uint8x16_t pixels = vld1q_u8(inptr + i * 2 * DCTSIZE);
+      uint8x16_t components = vld1q_u8(inptr + i * 2 * DCTSIZE);
       
-      uint16x8_t samples_u16 = vpadalq_u8(bias, pixels);
+      uint16x8_t samples_u16 = vpadalq_u8(bias, components);
       
       uint8x8_t samples_u8 = vshrn_n_u16(samples_u16, 1);
       
@@ -106,17 +106,19 @@ void jsimd_h2v1_downsample_neon(JDIMENSION image_width, int max_v_samp_factor,
     }
 
     
-    uint8x16_t pixels = vld1q_u8(inptr + (width_in_blocks - 1) * 2 * DCTSIZE);
+    uint8x16_t components =
+      vld1q_u8(inptr + (width_in_blocks - 1) * 2 * DCTSIZE);
 #if defined(__aarch64__) || defined(_M_ARM64) || defined(_M_ARM64EC)
     
-    pixels = vqtbl1q_u8(pixels, expand_mask);
+    components = vqtbl1q_u8(components, expand_mask);
 #else
-    uint8x8x2_t table = { { vget_low_u8(pixels), vget_high_u8(pixels) } };
-    pixels = vcombine_u8(vtbl2_u8(table, vget_low_u8(expand_mask)),
-                         vtbl2_u8(table, vget_high_u8(expand_mask)));
+    uint8x8x2_t table =
+      { { vget_low_u8(components), vget_high_u8(components) } };
+    components = vcombine_u8(vtbl2_u8(table, vget_low_u8(expand_mask)),
+                             vtbl2_u8(table, vget_high_u8(expand_mask)));
 #endif
     
-    uint16x8_t samples_u16 = vpadalq_u8(bias, pixels);
+    uint16x8_t samples_u16 = vpadalq_u8(bias, components);
     
     uint8x8_t samples_u8 = vshrn_n_u16(samples_u16, 1);
     vst1_u8(outptr + (width_in_blocks - 1) * DCTSIZE, samples_u8);
@@ -151,13 +153,16 @@ void jsimd_h2v2_downsample_neon(JDIMENSION image_width, int max_v_samp_factor,
 
     
     for (i = 0; i < width_in_blocks - 1; i++) {
-      uint8x16_t pixels_r0 = vld1q_u8(inptr0 + i * 2 * DCTSIZE);
-      uint8x16_t pixels_r1 = vld1q_u8(inptr1 + i * 2 * DCTSIZE);
-      
-      uint16x8_t samples_u16 = vpadalq_u8(bias, pixels_r0);
+      uint8x16_t components_r0 = vld1q_u8(inptr0 + i * 2 * DCTSIZE);
+      uint8x16_t components_r1 = vld1q_u8(inptr1 + i * 2 * DCTSIZE);
       
 
-      samples_u16 = vpadalq_u8(samples_u16, pixels_r1);
+
+      uint16x8_t samples_u16 = vpadalq_u8(bias, components_r0);
+      
+
+
+      samples_u16 = vpadalq_u8(samples_u16, components_r1);
       
       uint8x8_t samples_u8 = vshrn_n_u16(samples_u16, 2);
       
@@ -165,28 +170,31 @@ void jsimd_h2v2_downsample_neon(JDIMENSION image_width, int max_v_samp_factor,
     }
 
     
-    uint8x16_t pixels_r0 =
+    uint8x16_t components_r0 =
       vld1q_u8(inptr0 + (width_in_blocks - 1) * 2 * DCTSIZE);
-    uint8x16_t pixels_r1 =
+    uint8x16_t components_r1 =
       vld1q_u8(inptr1 + (width_in_blocks - 1) * 2 * DCTSIZE);
 #if defined(__aarch64__) || defined(_M_ARM64) || defined(_M_ARM64EC)
     
-    pixels_r0 = vqtbl1q_u8(pixels_r0, expand_mask);
-    pixels_r1 = vqtbl1q_u8(pixels_r1, expand_mask);
+    components_r0 = vqtbl1q_u8(components_r0, expand_mask);
+    components_r1 = vqtbl1q_u8(components_r1, expand_mask);
 #else
     uint8x8x2_t table_r0 =
-      { { vget_low_u8(pixels_r0), vget_high_u8(pixels_r0) } };
+      { { vget_low_u8(components_r0), vget_high_u8(components_r0) } };
     uint8x8x2_t table_r1 =
-      { { vget_low_u8(pixels_r1), vget_high_u8(pixels_r1) } };
-    pixels_r0 = vcombine_u8(vtbl2_u8(table_r0, vget_low_u8(expand_mask)),
-                            vtbl2_u8(table_r0, vget_high_u8(expand_mask)));
-    pixels_r1 = vcombine_u8(vtbl2_u8(table_r1, vget_low_u8(expand_mask)),
-                            vtbl2_u8(table_r1, vget_high_u8(expand_mask)));
+      { { vget_low_u8(components_r1), vget_high_u8(components_r1) } };
+    components_r0 = vcombine_u8(vtbl2_u8(table_r0, vget_low_u8(expand_mask)),
+                                vtbl2_u8(table_r0, vget_high_u8(expand_mask)));
+    components_r1 = vcombine_u8(vtbl2_u8(table_r1, vget_low_u8(expand_mask)),
+                                vtbl2_u8(table_r1, vget_high_u8(expand_mask)));
 #endif
     
-    uint16x8_t samples_u16 = vpadalq_u8(bias, pixels_r0);
+
+    uint16x8_t samples_u16 = vpadalq_u8(bias, components_r0);
     
-    samples_u16 = vpadalq_u8(samples_u16, pixels_r1);
+
+
+    samples_u16 = vpadalq_u8(samples_u16, components_r1);
     
     uint8x8_t samples_u8 = vshrn_n_u16(samples_u16, 2);
     vst1_u8(outptr + (width_in_blocks - 1) * DCTSIZE, samples_u8);

@@ -16,6 +16,7 @@
 
 
 
+
 #include <stdint.h>
 
 
@@ -233,9 +234,10 @@ typedef int boolean;
 
 #define C_MULTISCAN_FILES_SUPPORTED
 #define C_PROGRESSIVE_SUPPORTED
+
+
 #define C_LOSSLESS_SUPPORTED
 #define ENTROPY_OPT_SUPPORTED
-
 
 
 
@@ -250,11 +252,13 @@ typedef int boolean;
 
 #define D_MULTISCAN_FILES_SUPPORTED
 #define D_PROGRESSIVE_SUPPORTED
+
 #define D_LOSSLESS_SUPPORTED
+
 #define SAVE_MARKERS_SUPPORTED
 #define BLOCK_SMOOTHING_SUPPORTED
 #define IDCT_SCALING_SUPPORTED
-#undef  UPSAMPLE_SCALING_SUPPORTED  /* Output rescaling at upsample stage? */
+
 #define UPSAMPLE_MERGING_SUPPORTED
 #define QUANT_1PASS_SUPPORTED
 #define QUANT_2PASS_SUPPORTED

@@ -206,6 +206,9 @@ jpeg_undifference_first_row(j_decompress_ptr cinfo, int comp_index,
   case 7:
     losslessd->predict_undifference[comp_index] = jpeg_undifference7;
     break;
+  default:
+    ERREXIT4(cinfo, JERR_BAD_PROGRESSION,
+             cinfo->Ss, cinfo->Se, cinfo->Ah, cinfo->Al);
   }
 }
 

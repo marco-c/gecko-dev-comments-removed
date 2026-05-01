@@ -29,6 +29,9 @@
 #include "jpegapicomp.h"
 
 
+#if defined(DCT_ISLOW_SUPPORTED) || defined(DCT_IFAST_SUPPORTED) || \
+    defined(DCT_FLOAT_SUPPORTED)
+
 
 
 
@@ -363,3 +366,6 @@ _jinit_inverse_dct(j_decompress_ptr cinfo)
     idct->cur_method[ci] = -1;
   }
 }
+
+#endif 
+

@@ -276,11 +276,11 @@ validate_script(j_compress_ptr cinfo)
 
 {
   const jpeg_scan_info *scanptr;
-  int scanno, ncomps, ci, coefi, thisi;
+  int scanno, ncomps, ci, thisi;
   int Ss, Se, Ah, Al;
   boolean component_sent[MAX_COMPONENTS];
 #ifdef C_PROGRESSIVE_SUPPORTED
-  int *last_bitpos_ptr;
+  int coefi, *last_bitpos_ptr;
   int last_bitpos[MAX_COMPONENTS][DCTSIZE2];
   
 #endif
@@ -619,8 +619,8 @@ prepare_for_pass(j_compress_ptr cinfo)
 
     master->pass_type = output_pass;
     master->pass_number++;
-#endif
     FALLTHROUGH                 
+#endif
   case output_pass:
     
     

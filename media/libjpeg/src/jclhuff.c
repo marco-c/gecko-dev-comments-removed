@@ -190,7 +190,9 @@ start_pass_lhuff(j_compress_ptr cinfo, boolean gather_statistics)
         entropy->input_ptr_index[sampn] = ptrn;
         
         entropy->cur_tbls[sampn] = entropy->derived_tbls[compptr->dc_tbl_no];
+#ifdef ENTROPY_OPT_SUPPORTED
         entropy->cur_counts[sampn] = entropy->count_ptrs[compptr->dc_tbl_no];
+#endif
       }
     }
   }
