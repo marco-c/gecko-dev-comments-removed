@@ -55,26 +55,6 @@ async function openCustomHomepageSubpage() {
 
 
 
-async function settingControlRenders(settingId, win) {
-  await BrowserTestUtils.waitForCondition(
-    () => getSettingControl(settingId, win),
-    `Wait for ${settingId} control to render`
-  );
-  let control = getSettingControl(settingId, win);
-  if (control?.updateComplete) {
-    await control.updateComplete;
-  }
-  return control;
-}
-
-
-
-
-
-
-
-
-
 async function waitForCheckboxState(checkbox, expectedValue) {
   return TestUtils.waitForCondition(
     () => checkbox.checked === expectedValue,
