@@ -9,9 +9,6 @@ const TEST_DATA_DIR = "test_content_signing/";
 
 const ONECRL_NAME = "oneCRL-signer.mozilla.org";
 const ABOUT_NEWTAB_NAME = "remotenewtab.content-signature.mozilla.org";
-var VERIFICATION_HISTOGRAM = Services.telemetry.getHistogramById(
-  "CONTENT_SIGNATURE_VERIFICATION_STATUS"
-);
 
 
 
@@ -67,18 +64,19 @@ function check_telemetry(expected_index, expected, expectedId) {
         );
       }
     }
+    let verificationHistogram =
+      Glean.security.contentSignatureVerificationStatus.testGetValue();
     equal(
-      VERIFICATION_HISTOGRAM.snapshot().values[i] || 0,
+      verificationHistogram.values[i] || 0,
       expected_value,
       "count " +
         i +
         ": " +
-        VERIFICATION_HISTOGRAM.snapshot().values[i] +
+        verificationHistogram.values[i] +
         " expected " +
         expected_value
     );
   }
-  VERIFICATION_HISTOGRAM.clear();
   Services.fog.testResetFOG();
 }
 
@@ -132,7 +130,7 @@ add_task(async function run_test() {
 
   
   
-  VERIFICATION_HISTOGRAM.clear();
+  Services.fog.testResetFOG();
   let chain1 = oneCRLChain.join("\n");
   let verifier = getSignatureVerifier();
   ok(
