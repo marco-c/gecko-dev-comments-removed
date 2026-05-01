@@ -196,11 +196,19 @@ def lint_gkrust(path_group, config, log, fix, root, lint_results):
     ]
     if fix:
         clippy_args.extend(CLIPPY_FIX_ARGS)
-    clippy_args.extend(["--", "--message-format=json"])
+    
+    
+    clippy_args.extend(["--", "--keep-going", "--message-format=json"])
     driver_flags = get_clippy_driver_flags(config)
+    
+    
+    
+    
+    
+    
+    flags = ["-W", "warnings"] + driver_flags
     env = os.environ.copy()
-    if driver_flags:
-        env["extra_rustflags"] = " ".join(driver_flags)
+    env["extra_rustflags"] = " ".join(flags)
     log.debug("Run clippy with = {}".format(" ".join(clippy_args)))
     completed_proc = subprocess.run(
         clippy_args,
