@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_FS_FILESYSTEMHANDLE_H_
 #define DOM_FS_FILESYSTEMHANDLE_H_
 
@@ -78,6 +76,11 @@ class FileSystemHandle : public nsISupports, public nsWrapperCache {
 
   void UpdateMetadata(const fs::FileSystemEntryMetadata& aMetadata) {
     mMetadata = aMetadata;
+  }
+
+  void UpdateMetadata(fs::EntryId&& aEntryId, const fs::Name& aName) {
+    mMetadata.entryId() = std::move(aEntryId);
+    mMetadata.entryName() = aName;
   }
 
  protected:
