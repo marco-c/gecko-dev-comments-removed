@@ -77,6 +77,123 @@ module.exports = function (config) {
           functions: 80,
           branches: 80,
           overrides: {
+            "content-src/lib/multistage-utils.mjs": {
+              statements: 73.68,
+              lines: 73.68,
+              functions: 71.43,
+              branches: 66.67,
+            },
+            "content-src/components/LanguageSwitcher.jsx": {
+              
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
+            "content-src/components/EmbeddedMigrationWizard.jsx": {
+              
+              
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
+            "content-src/components/AddonsPicker.jsx": {
+              
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
+            "content-src/components/SubmenuButton.jsx": {
+              
+              
+              
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
+            "content-src/components/EmbeddedBrowser.jsx": {
+              
+              
+              
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
+            "content-src/components/EmbeddedFxBackupOptIn.jsx": {
+              statements: 60,
+              lines: 60,
+              functions: 50,
+              branches: 60,
+            },
+            "content-src/components/MSLocalized.jsx": {
+              statements: 77.42,
+              lines: 77.42,
+              functions: 75,
+              branches: 73.08,
+            },
+            "content-src/components/CTAParagraph.jsx": {
+              functions: 50,
+              branches: 70,
+            },
+            "content-src/components/HeroImage.jsx": {
+              branches: 62.5,
+            },
+            "content-src/components/LinkParagraph.jsx": {
+              functions: 75,
+              branches: 37.5,
+            },
+            "content-src/components/MobileDownloads.jsx": {
+              branches: 56.25,
+            },
+            "content-src/components/Themes.jsx": {
+              branches: 50,
+            },
+            "content-src/components/MultiStageAboutWelcome.jsx": {
+              statements: 78.06,
+              lines: 79,
+              functions: 73.17,
+              branches: 61.74,
+            },
+            "content-src/components/AdditionalCTA.jsx": {
+              branches: 75,
+            },
+            "content-src/components/MultiStageProtonScreen.jsx": {
+              functions: 78,
+              branches: 78,
+            },
+            
+            
+            "content-src/components/InstallButton.jsx": {
+              statements: 60,
+              lines: 60,
+              functions: 60,
+              branches: 30,
+            },
+            "content-src/components/TileButton.jsx": {
+              
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
+            "content-src/components/TileList.jsx": {
+              
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
+            "content-src/components/ConfirmationChecklist.jsx": {
+              
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
             "content-src/components/ASRouterAdmin/SimpleHashRouter.jsx": {
               statements: 0,
               functions: 0,
@@ -112,7 +229,11 @@ module.exports = function (config) {
       
       resolve: {
         extensions: [".mjs", ".js", ".jsx"],
-        modules: [PATHS.moduleResolveDirectory, "node_modules"],
+        modules: [
+          PATHS.moduleResolveDirectory,
+          path.join(__dirname, "../aboutwelcome"),
+          "node_modules",
+        ],
       },
       plugins: [
         
@@ -160,7 +281,7 @@ module.exports = function (config) {
           },
           {
             enforce: "post",
-            test: /\.js[x]?$/,
+            test: /\.jsx?$/,
             loader: "@jsdevtools/coverage-istanbul-loader",
             options: { esModules: true },
             include: [path.resolve("content-src"), path.resolve("modules")],
@@ -173,6 +294,14 @@ module.exports = function (config) {
               path.resolve("modules/CFRPageActions.sys.mjs"),
               path.resolve("modules/OnboardingMessageProvider.sys.mjs"),
             ],
+          },
+          {
+            enforce: "post",
+            test: /\.mjs$/,
+            loader: "@jsdevtools/coverage-istanbul-loader",
+            options: { esModules: true },
+            include: [path.resolve("content-src/lib")],
+            exclude: [path.resolve("tests")],
           },
         ],
       },

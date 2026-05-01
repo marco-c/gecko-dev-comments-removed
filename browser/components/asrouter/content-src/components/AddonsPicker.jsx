@@ -3,40 +3,36 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import React from "react";
-import { AboutWelcomeUtils } from "../lib/aboutwelcome-utils.mjs";
+import { MultiStageUtils } from "../lib/multistage-utils.mjs";
 import { Localized } from "./MSLocalized";
 import { InstallButton } from "./InstallButton";
 
 export const AddonsPicker = props => {
-  const { content, installedAddons, layout } = props;
+  const { content, installedAddons, layout, handleAction } = props;
 
   if (!content) {
     return null;
   }
 
-  function handleAction(event) {
+  function handleInstallClick(event) {
     const { message_id, writeInMicrosurvey } = props;
     let { action, source_id } = content.tiles.data[event.currentTarget.value];
-    let { type, data } = action;
 
-    if (type === "INSTALL_ADDON_FROM_URL") {
-      if (!data) {
+    if (action.type === "INSTALL_ADDON_FROM_URL") {
+      if (!action.data) {
         return;
       }
     }
 
-    AboutWelcomeUtils.handleUserAction({ type, data });
-    AboutWelcomeUtils.sendActionTelemetry(
-      message_id,
-      source_id,
-      "CLICK_BUTTON",
-      { writeInMicrosurvey }
-    );
+    handleAction(event, action);
+    MultiStageUtils.sendActionTelemetry(message_id, source_id, "CLICK_BUTTON", {
+      writeInMicrosurvey,
+    });
   }
 
   function handleAuthorClick(event, authorId) {
     event.stopPropagation();
-    AboutWelcomeUtils.handleUserAction({
+    MultiStageUtils.handleUserAction({
       type: "OPEN_URL",
       data: {
         args: `https://addons.mozilla.org/firefox/user/${authorId}/`,
@@ -102,7 +98,7 @@ export const AddonsPicker = props => {
                     <InstallButton
                       key={id}
                       addonId={id}
-                      handleAction={handleAction}
+                      handleAction={handleInstallClick}
                       index={index}
                       installedAddons={installedAddons}
                       install_label={install_label}
@@ -129,7 +125,7 @@ export const AddonsPicker = props => {
                   <InstallButton
                     key={id}
                     addonId={id}
-                    handleAction={handleAction}
+                    handleAction={handleInstallClick}
                     index={index}
                     installedAddons={installedAddons}
                     install_label={install_label}
