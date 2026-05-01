@@ -239,27 +239,36 @@ add_task(async function test_toggleOn() {
 });
 
 add_task(async function test_classifyLocationForTelemetry() {
+  
+  
+  
   let bs = new BackupService();
   for (const prop of Object.keys(kKnownMappings)) {
     let file = Services.dirsvc.get(prop, Ci.nsIFile);
+
+    
     Assert.equal(
       bs.classifyLocationForTelemetry(file.path),
       "other",
-      `'${file.path}' was correctly classified.`
+      `'${file.path}' (known dir itself) was correctly classified as other.`
     );
 
+    
+    
     file.append("child");
     Assert.equal(
       bs.classifyLocationForTelemetry(file.path),
-      kKnownMappings[prop],
-      `'${file.path}' was correctly classified.`
+      "other",
+      `'${file.path}' (one level deep) was correctly classified as other.`
     );
 
-    file = file.parent.parent;
+    
+    
+    file.append("grandchild");
     Assert.equal(
       bs.classifyLocationForTelemetry(file.path),
-      "other",
-      `'${file.path}' was correctly classified.`
+      kKnownMappings[prop],
+      `'${file.path}' (two levels deep) was correctly classified.`
     );
   }
 

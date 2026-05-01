@@ -286,6 +286,7 @@ let JSWINDOWACTORS = {
           wantUntrusted: true,
         },
         "BackupUI:ErrorBarDismissed": { wantUntrusted: true },
+        "BackupUI:FindBackupsInWellKnownLocations": { wantUntrusted: true },
       },
     },
     includeChrome: true,
@@ -460,6 +461,8 @@ let JSWINDOWACTORS = {
         "MozDOMFullscreen:NewOrigin": {},
         "MozDOMFullscreen:Exit": {},
         "MozDOMFullscreen:Exited": {},
+        "MozDOMFullscreen:WarnAboutKeyboardLock": {},
+        "MozDOMFullscreen:UpdateKeyboardLock": {},
       },
     },
 
