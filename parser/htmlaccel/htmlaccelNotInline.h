@@ -7,6 +7,8 @@
 
 #include "mozilla/Attributes.h"
 
+#include <cstddef>
+
 namespace mozilla::htmlaccel {
 
 
@@ -27,22 +29,22 @@ MOZ_NEVER_INLINE bool ContainsMarkup(const char16_t* aPtr,
 
 
 
-MOZ_NEVER_INLINE size_t SkipNonEscapedInTextNode(const char16_t* aPtr,
-                                                 const char16_t* aEnd);
+MOZ_NEVER_INLINE std::size_t SkipNonEscapedInTextNode(const char16_t* aPtr,
+                                                      const char16_t* aEnd);
 
 
 
 
 
-MOZ_NEVER_INLINE size_t SkipNonEscapedInTextNode(const char* aPtr,
-                                                 const char* aEnd);
+MOZ_NEVER_INLINE std::size_t SkipNonEscapedInTextNode(const char* aPtr,
+                                                      const char* aEnd);
 
 
 
 
 
-MOZ_NEVER_INLINE size_t SkipNonEscapedInAttributeValue(const char16_t* aPtr,
-                                                       const char16_t* aEnd);
+MOZ_NEVER_INLINE std::size_t SkipNonEscapedInAttributeValue(
+    const char16_t* aPtr, const char16_t* aEnd);
 
 
 MOZ_NEVER_INLINE uint32_t CountEscapedInTextNode(const char16_t* aPtr,

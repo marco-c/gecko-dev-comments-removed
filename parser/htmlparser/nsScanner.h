@@ -29,9 +29,8 @@ class nsReadEndCondition {
   char16_t mFilter;
   explicit nsReadEndCondition(const char16_t* aTerminateChars);
 
- private:
-  nsReadEndCondition(const nsReadEndCondition& aOther);  
-  void operator=(const nsReadEndCondition& aOther);      
+  nsReadEndCondition(const nsReadEndCondition& aOther) = delete;  
+  void operator=(const nsReadEndCondition& aOther) = delete;  
 };
 
 class nsScanner final {
@@ -52,6 +51,8 @@ class nsScanner final {
   explicit nsScanner(nsIURI* aURI);
 
   ~nsScanner();
+
+  nsScanner& operator=(const nsScanner&) = delete;
 
   
 
@@ -178,9 +179,6 @@ class nsScanner final {
   int32_t mCharsetSource = kCharsetUninitialized;
   nsCString mCharset;
   mozilla::UniquePtr<mozilla::Decoder> mUnicodeDecoder;
-
- private:
-  nsScanner& operator=(const nsScanner&);  
 };
 
 #endif
