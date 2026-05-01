@@ -557,6 +557,8 @@ nsresult PeerConnectionImpl::Initialize(PeerConnectionObserver& aObserver,
   
   mAllowOldSetParameters = Preferences::GetBool(
       "media.peerconnection.allow_old_setParameters", false);
+  mAllowOldSetParameters |= media::HostnameInPref(
+      "media.peerconnection.allow_old_setParameters.allowlist", mHostname);
 
   
   InitLocalAddrs();
