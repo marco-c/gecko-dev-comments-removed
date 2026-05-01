@@ -488,8 +488,9 @@ nsContentPolicyType ScriptLoadRequestToContentPolicyType(
           return nsIContentPolicy::TYPE_INTERNAL_JSON_PRELOAD;
         case JS::ModuleType::CSS:
           return nsIContentPolicy::TYPE_INTERNAL_STYLESHEET_PRELOAD;
-        case JS::ModuleType::Bytes:
         case JS::ModuleType::Text:
+          return nsIContentPolicy::TYPE_INTERNAL_TEXT_PRELOAD;
+        case JS::ModuleType::Bytes:
         case JS::ModuleType::Unknown:
           MOZ_ASSERT_UNREACHABLE("Unknown module type");
       }
@@ -502,7 +503,6 @@ nsContentPolicyType ScriptLoadRequestToContentPolicyType(
     switch (aRequest->AsModuleRequest()->mModuleType) {
       case JS::ModuleType::Unknown:
       case JS::ModuleType::Bytes:
-      case JS::ModuleType::Text:
         MOZ_CRASH("Unexpected module type");
       case JS::ModuleType::JavaScript:
         return nsIContentPolicy::TYPE_INTERNAL_MODULE;
@@ -510,6 +510,8 @@ nsContentPolicyType ScriptLoadRequestToContentPolicyType(
         return nsIContentPolicy::TYPE_JSON;
       case JS::ModuleType::CSS:
         return nsIContentPolicy::TYPE_STYLESHEET;
+      case JS::ModuleType::Text:
+        return nsIContentPolicy::TYPE_TEXT;
     }
   }
 
@@ -3872,19 +3874,6 @@ void ScriptLoader::OnMemoryPressure() {
   StopCollectingDelazifications();
 }
 
-void ScriptLoader::DispatchStopCollectingDelazifications() {
-  if (mDelazificationCollectingScripts.IsEmpty() &&
-      mDelazificationCollectingModules.IsEmpty()) {
-    return;
-  }
-
-  nsCOMPtr<nsIRunnable> encoder =
-      NewRunnableMethod("ScriptLoader::StopCollectingDelazifications", this,
-                        &ScriptLoader::StopCollectingDelazifications);
-  (void)NS_DispatchToCurrentThreadQueue(encoder.forget(),
-                                        EventQueuePriority::Idle);
-}
-
 void ScriptLoader::StopCollectingDelazifications() {
   
   
@@ -3929,7 +3918,7 @@ void ScriptLoader::MaybeUpdateDiskCache() {
       TRACE_FOR_TEST_0("diskcache:noschedule");
     }
 
-    DispatchStopCollectingDelazifications();
+    StopCollectingDelazifications();
     return;
   }
 
@@ -3958,7 +3947,7 @@ void ScriptLoader::MaybeUpdateDiskCache() {
     return;
   }
 
-  DispatchStopCollectingDelazifications();
+  StopCollectingDelazifications();
 
   LOG(("ScriptLoader (%p): Schedule the disk cache encoding.", this));
 }
