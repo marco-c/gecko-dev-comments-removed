@@ -21,6 +21,10 @@ ChromeUtils.defineESModuleGetters(this, {
   sinon: "resource://testing-common/Sinon.sys.mjs",
 });
 
+
+
+
+
 const AIWINDOW_URL = "chrome://browser/content/aiwindow/aiWindow.html";
 
 let gIntentEngineStub;
@@ -385,10 +389,13 @@ async function getSmartbarContextChipLabels(browser, expectedUrl) {
 
 async function submitSmartbar(browser, { useButton = false } = {}) {
   await SpecialPowers.spawn(browser, [useButton], async clickButton => {
-    const aiWindowElement = content.document.querySelector("ai-window");
-    const smartbar = aiWindowElement.shadowRoot.querySelector(
-      "#ai-window-smartbar"
+    const aiWindow = content.document.querySelector("ai-window");
+    await ContentTaskUtils.waitForMutationCondition(
+      aiWindow.shadowRoot,
+      { childList: true, subtree: true },
+      () => aiWindow.shadowRoot.querySelector("#ai-window-smartbar")
     );
+    const smartbar = aiWindow.shadowRoot.querySelector("#ai-window-smartbar");
     if (clickButton) {
       const inputCta = smartbar.querySelector("input-cta");
       const mozButton = inputCta.shadowRoot.querySelector("moz-button");
@@ -405,6 +412,132 @@ async function submitSmartbar(browser, { useButton = false } = {}) {
       EventUtils.synthesizeKey("KEY_Enter", {}, content);
     }
   });
+}
+
+
+
+
+
+
+
+async function selectExplicitSmartbarAction(browser, action) {
+  await SpecialPowers.spawn(browser, [action], async actionType => {
+    const aiWindow = content.document.querySelector("ai-window");
+    await ContentTaskUtils.waitForMutationCondition(
+      aiWindow.shadowRoot,
+      { childList: true, subtree: true },
+      () => aiWindow.shadowRoot.querySelector("#ai-window-smartbar")
+    );
+    const smartbar = aiWindow.shadowRoot.querySelector("#ai-window-smartbar");
+    const inputCta = smartbar.querySelector("input-cta");
+    const mozButton = inputCta.shadowRoot.querySelector("moz-button");
+
+    await ContentTaskUtils.waitForMutationCondition(
+      mozButton.shadowRoot,
+      { childList: true, subtree: true },
+      () => mozButton.shadowRoot.querySelector("#chevron-button")
+    );
+    const chevronButton = mozButton.shadowRoot.querySelector("#chevron-button");
+    const panelList = inputCta.shadowRoot.querySelector("panel-list");
+    const shownPromise = ContentTaskUtils.waitForEvent(panelList, "shown");
+    chevronButton.click();
+    await shownPromise;
+
+    const actionItem = panelList.querySelector(
+      `panel-item[icon="${actionType}"]`
+    );
+    actionItem.click();
+  });
+}
+
+
+
+
+
+
+
+async function waitForSmartbarAction(browser, expectedAction) {
+  await SpecialPowers.spawn(browser, [expectedAction], async action => {
+    const aiWindow = content.document.querySelector("ai-window");
+    await ContentTaskUtils.waitForMutationCondition(
+      aiWindow.shadowRoot,
+      { childList: true, subtree: true },
+      () => aiWindow.shadowRoot.querySelector("#ai-window-smartbar")
+    );
+    const smartbar = aiWindow.shadowRoot.querySelector("#ai-window-smartbar");
+    await ContentTaskUtils.waitForCondition(
+      () => smartbar.smartbarAction === action,
+      `Wait for smartbar action to be "${action}"`
+    );
+  });
+}
+
+
+
+
+
+
+
+
+async function stubLoadURL(browser, { captureURL = false } = {}) {
+  await SpecialPowers.spawn(browser, [captureURL], async capture => {
+    const aiWindow = content.document.querySelector("ai-window");
+    await ContentTaskUtils.waitForMutationCondition(
+      aiWindow.shadowRoot,
+      { childList: true, subtree: true },
+      () => aiWindow.shadowRoot.querySelector("#ai-window-smartbar")
+    );
+    const smartbar = aiWindow.shadowRoot.querySelector("#ai-window-smartbar");
+    if (capture) {
+      content._stubLoadURLCalled = false;
+      content._stubLoadedURL = null;
+      smartbar._loadURL = url => {
+        content._stubLoadURLCalled = true;
+        content._stubLoadedURL = url;
+      };
+    } else {
+      smartbar._loadURL = () => {};
+    }
+  });
+}
+
+
+
+
+
+
+
+async function getStubLoadURLResult(browser) {
+  return SpecialPowers.spawn(browser, [], async () => {
+    return {
+      called: content._stubLoadURLCalled,
+      url: content._stubLoadedURL,
+    };
+  });
+}
+
+
+
+
+
+
+
+
+async function assertSmartbarValue(browser, expectedValue, message) {
+  await SpecialPowers.spawn(
+    browser,
+    [expectedValue, message],
+    async (val, msg) => {
+      const aiWindow = content.document.querySelector("ai-window");
+      await ContentTaskUtils.waitForMutationCondition(
+        aiWindow.shadowRoot,
+        { childList: true, subtree: true },
+        () => aiWindow.shadowRoot.querySelector("#ai-window-smartbar")
+      );
+      const smartbar = aiWindow.shadowRoot.querySelector("#ai-window-smartbar");
+      Assert.equal(smartbar.value, val, msg);
+    }
+  );
 }
 
 

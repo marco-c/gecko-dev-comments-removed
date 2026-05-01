@@ -64,36 +64,6 @@ async function resetTelemetry() {
 
 
 
-
-
-
-async function stubLoadURL(browser) {
-  await SpecialPowers.spawn(browser, [], async () => {
-    const aiWindow = content.document.querySelector("ai-window");
-    const smartbar = aiWindow.shadowRoot.querySelector("#ai-window-smartbar");
-    smartbar._loadURL = () => {};
-  });
-}
-
-
-
-
-
-
-
-async function waitForSmartbarAction(browser, expectedAction) {
-  await SpecialPowers.spawn(browser, [expectedAction], async action => {
-    const aiWindow = content.document.querySelector("ai-window");
-    const smartbar = aiWindow.shadowRoot.querySelector("#ai-window-smartbar");
-    await ContentTaskUtils.waitForCondition(
-      () => smartbar.smartbarAction === action,
-      `Wait for smartbar action to be "${action}"`
-    );
-  });
-}
-
-
-
 add_task(async function test_smartbar_telemetry_navigate_submit_enter() {
   await resetTelemetry();
 
@@ -120,6 +90,7 @@ add_task(async function test_smartbar_telemetry_navigate_submit_enter() {
     "gemini-2.5-flash-lite",
     "navigate_submit has correct model"
   );
+  Assert.equal(extra.length, "20", "navigate_submit has correct length");
   Assert.equal(
     extra.location,
     "fullpage",
@@ -264,6 +235,11 @@ add_task(
       "chat",
       "search_submit detected_intent is chat even though user picked search"
     );
+    Assert.equal(
+      searchEvents[0].extra.submit_type,
+      "button",
+      "search_submit has correct submit_type for explicit action selection"
+    );
 
     await BrowserTestUtils.closeWindow(win);
   }
@@ -308,7 +284,7 @@ add_task(async function test_smartbar_telemetry_chat_submit_enter() {
   await BrowserTestUtils.closeWindow(win);
 });
 
-add_task(async function test_smartbar_telemetry_chat_submit_button() {
+add_task(async function test_smartbar_telemetry_chat_submit_button_click() {
   await resetTelemetry();
 
   const win = await openAIWindow();
@@ -326,6 +302,35 @@ add_task(async function test_smartbar_telemetry_chat_submit_button() {
     extra.submit_type,
     "button",
     "chat_submit has correct submit_type for button click"
+  );
+  Assert.equal(
+    extra.detected_intent,
+    "chat",
+    "chat_submit has correct detected_intent"
+  );
+  Assert.equal(extra.location, "fullpage", "chat_submit has correct location");
+
+  await BrowserTestUtils.closeWindow(win);
+});
+
+add_task(async function test_smartbar_telemetry_chat_submit_keyboard() {
+  await resetTelemetry();
+
+  const win = await openAIWindow();
+  const browser = win.gBrowser.selectedBrowser;
+
+  await typeInSmartbar(browser, "tell me a joke");
+  await waitForSmartbarAction(browser, "chat");
+  await submitSmartbar(browser);
+
+  const events = Glean.smartWindow.chatSubmit.testGetValue();
+  Assert.equal(events.length, 1, "Should have one chat_submit event");
+
+  const extra = events[0].extra;
+  Assert.equal(
+    extra.submit_type,
+    "enter",
+    "chat_submit has correct submit_type when pressing Enter"
   );
   Assert.equal(
     extra.detected_intent,

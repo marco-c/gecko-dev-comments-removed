@@ -160,6 +160,8 @@ async function doTest({
     expectedEndDetails.result = result;
     expectedEndDetails.element = element;
 
+    
+    delete details.event;
     Assert.deepEqual(
       details,
       Object.assign(detailsDefaults, expectedEndDetails),
