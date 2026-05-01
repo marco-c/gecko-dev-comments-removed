@@ -2,8 +2,6 @@
 
 
 
-
-
 #include <Cocoa/Cocoa.h>
 #include <CoreServices/CoreServices.h>
 #include <crt_externs.h>
@@ -97,6 +95,7 @@ void LaunchMacApp(int argc, const char** argv) {
     NSWorkspaceOpenConfiguration* config =
         [NSWorkspaceOpenConfiguration configuration];
     [config setArguments:arguments];
+    [config setActivates:NO];
     [config setCreatesNewApplicationInstance:YES];
     [config setEnvironment:[[NSProcessInfo processInfo] environment]];
 
