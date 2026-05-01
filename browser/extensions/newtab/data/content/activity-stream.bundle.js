@@ -16055,13 +16055,13 @@ function Widgets() {
 
 
 
+
+const defaultImportModule = url => import(url);
 function ExternalComponentWrapper({
   type,
   className,
   
-  
-  
-  importModule = url => import(url),
+  importModule = defaultImportModule,
   ...props
 }) {
   const containerRef = external_React_default().useRef(null);
