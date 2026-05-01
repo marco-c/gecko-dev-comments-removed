@@ -67,7 +67,7 @@ struct MOZ_CAPABILITY("mutex") Mutex {
 
   
   
-  constexpr Mutex() {}
+  constexpr Mutex() = default;
 
   
   inline bool Init() {
