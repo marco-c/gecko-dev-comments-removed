@@ -8,6 +8,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "js/GCVector.h"
 #include "js/ProtoKey.h"
 #include "js/RootingAPI.h"
 #include "js/TypeDecls.h"
@@ -20,6 +21,10 @@ enum class ICUError : uint8_t;
 
 namespace JS {
 class CallArgs;
+}
+
+namespace js {
+class ArrayObject;
 }
 
 namespace js::intl {
@@ -63,6 +68,14 @@ extern JS::UniqueChars EncodeLocale(JSContext* cx, JSString* locale);
 
 
 constexpr size_t INITIAL_CHAR_BUFFER_SIZE = 32;
+
+using StringList = JS::GCVector<JSLinearString*>;
+
+
+
+
+ArrayObject* CreateSortedArrayFromList(JSContext* cx,
+                                       JS::MutableHandle<StringList> list);
 
 void AddICUCellMemory(JSObject* obj, size_t nbytes);
 

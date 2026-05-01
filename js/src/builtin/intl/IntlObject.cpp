@@ -24,7 +24,6 @@
 #include "builtin/intl/MeasureUnitGenerated.h"
 #include "builtin/intl/NumberingSystemsGenerated.h"
 #include "builtin/intl/SharedIntlData.h"
-#include "ds/Sort.h"
 #include "js/Class.h"
 #include "js/experimental/Intl.h"
 #include "js/friend/ErrorMessages.h"  
@@ -220,50 +219,6 @@ bool JS::AddMozGetCalendarInfo(JSContext* cx, Handle<JSObject*> intl) {
 
 
 
-using StringList = GCVector<JSLinearString*>;
-
-
-
-
-static ArrayObject* CreateArrayFromList(JSContext* cx,
-                                        MutableHandle<StringList> list) {
-  
-  size_t initialLength = list.length();
-  if (!list.growBy(initialLength)) {
-    return nullptr;
-  }
-
-  
-  MOZ_ALWAYS_TRUE(
-      MergeSort(list.begin(), initialLength, list.begin() + initialLength,
-                [](const auto* a, const auto* b, bool* lessOrEqual) {
-                  *lessOrEqual = CompareStrings(a, b) <= 0;
-                  return true;
-                }));
-
-  
-  auto* end = std::unique(
-      list.begin(), list.begin() + initialLength,
-      [](const auto* a, const auto* b) { return EqualStrings(a, b); });
-
-  
-  
-  list.shrinkBy(std::distance(end, list.end()));
-
-  
-  auto* array = NewDenseFullyAllocatedArray(cx, list.length());
-  if (!array) {
-    return nullptr;
-  }
-  array->setDenseInitializedLength(list.length());
-
-  for (size_t i = 0; i < list.length(); ++i) {
-    array->initDenseElement(i, StringValue(list[i]));
-  }
-
-  return array;
-}
-
 
 
 
@@ -379,7 +334,7 @@ static ArrayObject* AvailableCalendars(JSContext* cx) {
     }
   }
 
-  return CreateArrayFromList(cx, &list);
+  return CreateSortedArrayFromList(cx, &list);
 }
 
 
@@ -394,7 +349,7 @@ static ArrayObject* AvailableCollations(JSContext* cx) {
     return nullptr;
   }
 
-  return CreateArrayFromList(cx, &list);
+  return CreateSortedArrayFromList(cx, &list);
 }
 
 
@@ -434,7 +389,7 @@ static ArrayObject* AvailableCurrencies(JSContext* cx) {
     }
   }
 
-  return CreateArrayFromList(cx, &list);
+  return CreateSortedArrayFromList(cx, &list);
 }
 
 
@@ -476,7 +431,7 @@ static ArrayObject* AvailableTimeZones(JSContext* cx) {
     }
   }
 
-  return CreateArrayFromList(cx, &timeZones);
+  return CreateSortedArrayFromList(cx, &timeZones);
 }
 
 template <size_t N>
