@@ -122,10 +122,11 @@ static auto ToLanguageId(JSContext* cx, const JSLinearString* locale) {
 
   
   JS::AutoSuppressGCAnalysis nogc;
-  if (locale->hasLatin1Chars()) {
-    return LanguageId::fromBcp49(mozilla::AsChars(locale->latin1Range(nogc)));
-  }
-  return LanguageId::fromBcp49(mozilla::Span{locale->twoByteRange(nogc)});
+  auto parsedLangId =
+      locale->hasLatin1Chars()
+          ? LanguageId::fromBcp49(mozilla::AsChars(locale->latin1Range(nogc)))
+          : LanguageId::fromBcp49(mozilla::Span{locale->twoByteRange(nogc)});
+  return parsedLangId.map([](const auto& pair) { return pair.first; });
 }
 
 
@@ -193,10 +194,10 @@ static bool BestAvailableLocale(JSContext* cx,
                                 Handle<JSLinearString*> locale,
                                 mozilla::Maybe<LanguageId> defaultLocale,
                                 mozilla::Maybe<LanguageId>* result) {
-  auto parsedLangId = ToLanguageId(cx, locale);
+  auto langId = ToLanguageId(cx, locale);
 
   
-  if (!parsedLangId) {
+  if (!langId) {
     *result = mozilla::Nothing();
     return true;
   }
@@ -204,8 +205,8 @@ static bool BestAvailableLocale(JSContext* cx,
   
   
   
-  return BestAvailableLocale(cx, availableLocales, parsedLangId->first,
-                             defaultLocale, result);
+  return BestAvailableLocale(cx, availableLocales, *langId, defaultLocale,
+                             result);
 }
 
 
@@ -851,10 +852,10 @@ bool js::intl::DefaultLocale(JSContext* cx, LanguageId* result) {
 
 JSLinearString* js::intl::DefaultCalendar(JSContext* cx,
                                           const JSLinearString* locale) {
-  auto parsedLangId = ToLanguageId(cx, locale);
-  MOZ_RELEASE_ASSERT(parsedLangId, "locale expected to be a valid data locale");
+  auto langId = ToLanguageId(cx, locale);
+  MOZ_RELEASE_ASSERT(langId, "locale expected to be a valid data locale");
 
-  auto localeStr = parsedLangId->first.toString();
+  auto localeStr = langId->toString();
 
   auto calendar = mozilla::intl::Calendar::TryCreate(localeStr.c_str());
   if (calendar.isErr()) {
@@ -876,10 +877,10 @@ JSLinearString* js::intl::DefaultCalendar(JSContext* cx,
 
 JSLinearString* js::intl::DefaultNumberingSystem(JSContext* cx,
                                                  const JSLinearString* locale) {
-  auto parsedLangId = ToLanguageId(cx, locale);
-  MOZ_RELEASE_ASSERT(parsedLangId, "locale expected to be a valid data locale");
+  auto langId = ToLanguageId(cx, locale);
+  MOZ_RELEASE_ASSERT(langId, "locale expected to be a valid data locale");
 
-  auto localeStr = parsedLangId->first.toString();
+  auto localeStr = langId->toString();
 
   auto numberingSystem =
       mozilla::intl::NumberingSystem::TryCreate(localeStr.c_str());
