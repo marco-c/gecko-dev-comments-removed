@@ -25,7 +25,6 @@
 #include "mozilla/LookAndFeel.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/Preferences.h"
-#include "mozilla/RWLock.h"
 #include "mozilla/RestyleManager.h"
 #include "mozilla/ServoBindings.h"
 #include "mozilla/ServoElementSnapshot.h"
@@ -90,28 +89,7 @@ using namespace mozilla::dom;
 
 ServoTraversalStatistics* ServoTraversalStatistics::sSingleton = nullptr;
 
-static StaticAutoPtr<RWLock> sServoFFILock;
-
-static const LangGroupFontPrefs* ThreadSafeGetLangGroupFontPrefs(
-    const Document& aDocument, nsAtom* aLanguage) {
-  bool needsCache = false;
-  {
-    AutoReadLock guard(*sServoFFILock);
-    if (auto* prefs = aDocument.GetFontPrefsForLang(aLanguage, &needsCache)) {
-      return prefs;
-    }
-  }
-  MOZ_ASSERT(needsCache);
-  AutoWriteLock guard(*sServoFFILock);
-  return aDocument.GetFontPrefsForLang(aLanguage);
-}
-
-static const nsFont& ThreadSafeGetDefaultVariableFont(const Document& aDocument,
-                                                      nsAtom* aLanguage) {
-  return ThreadSafeGetLangGroupFontPrefs(aDocument, aLanguage)
-      ->mDefaultVariableFont;
-}
-
+static StaticAutoPtr<Mutex> sServoFFILock;
 
 
 
@@ -373,7 +351,7 @@ nscoord Gecko_CalcLineHeight(const StyleLineHeight* aLh,
                              const nsStyleFont* aAgainstFont,
                              const mozilla::dom::Element* aElement) {
   
-  AutoWriteLock guard(*sServoFFILock);
+  MutexAutoLock guard(*sServoFFILock);
   return ReflowInput::CalcLineHeight(*aLh, *aAgainstFont,
                                      const_cast<nsPresContext*>(aPc), aVertical,
                                      aElement, NS_UNCONSTRAINEDSIZE, 1.0f);
@@ -1005,7 +983,7 @@ void Gecko_nsFont_InitSystem(nsFont* aDest, StyleSystemFont aFontId,
                              const nsStyleFont* aFont,
                              const Document* aDocument) {
   const nsFont& defaultVariableFont =
-      ThreadSafeGetDefaultVariableFont(*aDocument, aFont->mLanguage);
+      aDocument->GetFontPrefsForLang(aFont->mLanguage)->mDefaultVariableFont;
 
   
   
@@ -1021,14 +999,12 @@ void Gecko_nsFont_Destroy(nsFont* aDest) { aDest->~nsFont(); }
 
 StyleGenericFontFamily Gecko_nsStyleFont_ComputeFallbackFontTypeForLanguage(
     const Document* aDoc, nsAtom* aLanguage) {
-  return ThreadSafeGetLangGroupFontPrefs(*aDoc, aLanguage)->GetDefaultGeneric();
+  return aDoc->GetFontPrefsForLang(aLanguage)->GetDefaultGeneric();
 }
 
 Length Gecko_GetBaseSize(const Document* aDoc, nsAtom* aLang,
                          StyleGenericFontFamily aGeneric) {
-  return ThreadSafeGetLangGroupFontPrefs(*aDoc, aLang)
-      ->GetDefaultFont(aGeneric)
-      ->size;
+  return aDoc->GetFontPrefsForLang(aLang)->GetDefaultFont(aGeneric)->size;
 }
 
 gfxFontFeatureValueSet* Gecko_ConstructFontFeatureValueSet() {
@@ -1299,29 +1275,11 @@ Length Gecko_nsStyleFont_ComputeMinSize(const nsStyleFont* aFont,
   if (!aFont->MinFontSizeEnabled()) {
     return {0};
   }
-  Length minFontSize;
-  bool needsCache = false;
-
-  auto MinFontSize = [&](bool* aNeedsToCache) {
-    const auto* prefs =
-        aDocument->GetFontPrefsForLang(aFont->mLanguage, aNeedsToCache);
-    return prefs ? prefs->mMinimumFontSize : Length{0};
-  };
-
-  {
-    AutoReadLock guard(*sServoFFILock);
-    minFontSize = MinFontSize(&needsCache);
-  }
-
-  if (needsCache) {
-    AutoWriteLock guard(*sServoFFILock);
-    minFontSize = MinFontSize(nullptr);
-  }
-
+  Length minFontSize =
+      aDocument->GetFontPrefsForLang(aFont->mLanguage)->mMinimumFontSize;
   if (minFontSize.ToCSSPixels() <= 0.0f) {
     return {0};
   }
-
   minFontSize.ScaleBy(aFont->mMinFontSizeRatio._0);
   return minFontSize;
 }
@@ -1337,7 +1295,7 @@ void InitializeServo() {
   gUACacheReporter = new UACacheReporter();
   RegisterWeakMemoryReporter(gUACacheReporter);
 
-  sServoFFILock = new RWLock("Servo::FFILock");
+  sServoFFILock = new Mutex("Servo::FFILock");
 }
 
 void ShutdownServo() {
@@ -1354,8 +1312,8 @@ void ShutdownServo() {
 
 void AssertIsMainThreadOrServoFontMetricsLocked() {
   if (!NS_IsMainThread()) {
-    MOZ_ASSERT(sServoFFILock &&
-               sServoFFILock->LockedForWritingByCurrentThread());
+    MOZ_ASSERT(sServoFFILock);
+    sServoFFILock->AssertCurrentThreadOwns();
   }
 }
 
@@ -1366,7 +1324,7 @@ GeckoFontMetrics Gecko_GetFontMetrics(const nsPresContext* aPresContext,
                                       const nsStyleFont* aFont,
                                       Length aFontSize,
                                       StyleQueryFontMetricsFlags flags) {
-  AutoWriteLock guard(*sServoFFILock);
+  MutexAutoLock guard(*sServoFFILock);
 
   
   
