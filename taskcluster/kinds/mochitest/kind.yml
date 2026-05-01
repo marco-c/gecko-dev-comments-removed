@@ -29,9 +29,9 @@ task-defaults:
     use-uv: true
     worker-type:
         by-test-platform:
-            windows11-64-24h2-asan/.*: win11-64-25h2-large
-            windows11-(32|64)-24h2(-ccov|-devedition|-mingwclang|-shippable)?/.*: win11-64-25h2
-            windows11-aarch64-24h2(-devedition|-shippable)?/.*: win11-a64-25h2
+            windows.*-asan/.*: win11-64-25h2-large
+            windows.*aarch64.*/.*: win11-a64-25h2
+            windows.*/.*: win11-64-25h2
             default: default
     require-signed-extensions:
         by-release-type:
@@ -84,10 +84,6 @@ task-defaults:
         by-test-platform:
             android-em.*: geckoview-test_runner.apk
             android-hw.*: geckoview-test_runner.apk
-            windows11-64.*:
-                by-variant:
-                    msix: target.installer.msix
-                    default: null
             default: null
     tier:
         by-variant:
@@ -162,7 +158,7 @@ tasks:
                         .*-wayland.*: []
                         windows.*-ccov.*: []
                         linux.*64(-shippable)?/.*: ['trunk']
-                        macosx.*64-aarch64(-shippable)?(-qr)?/.*: ['mozilla-central']
+                        macosx.*64-aarch64(-shippable)?(-qr)?/.*: ['trunk']
                         macosx.*64(-shippable)?(-qr)?/.*: ['trunk']
                         windows11-64-24h2(-shippable)?(-qr)?/.*: ['trunk']
                         linux.*64-ccov/opt: ['mozilla-central']
@@ -336,7 +332,7 @@ tasks:
                         .*-32.*: []
                         linux2404-64(-shippable)?/opt: ['trunk']
                         macosx.*-64(-shippable)?(-qr)?/opt: ['trunk']
-                        windows11-64-24h2(-shippable)?/opt: ['trunk']
+                        windows11-64-25h2(-shippable)?/opt: ['trunk']
                         default: []
                 trainhop-release:
                     by-test-platform:
@@ -344,7 +340,7 @@ tasks:
                         .*-32.*: []
                         linux2404-64(-shippable)?/opt: ['trunk']
                         macosx.*-64(-shippable)?(-qr)?/opt: ['trunk']
-                        windows11-64-24h2(-shippable)?/opt: ['trunk']
+                        windows11-64-25h2(-shippable)?/opt: ['trunk']
                         default: []
                 webrender-sw:
                     by-test-platform:
@@ -801,7 +797,7 @@ tasks:
         loopback-video: true
         worker-type:
             by-test-platform:
-                windows11-(32|64)-24h2(-asan|-ccov|-devedition|-mingwclang|-shippable)?/.*: win11-64-25h2-gpu
+                windows.*/.*: win11-64-25h2-gpu
                 default: default
         variants:
             - no-fission
@@ -867,7 +863,7 @@ tasks:
         virtualization: virtual-with-gpu
         worker-type:
             by-test-platform:
-                windows11-(32|64)-24h2(-asan|-ccov|-devedition|-mingwclang|-shippable)?/.*: win11-64-25h2-gpu
+                windows.*/.*: win11-64-25h2-gpu
                 default: default
         run-without-variant: false
         variants:
@@ -1065,9 +1061,9 @@ tasks:
                         default: default
                 default:
                     by-test-platform:
-                        windows11-64-24h2-asan/.*: win11-64-25h2-large
-                        windows11-(32|64)-24h2(-ccov|-devedition|-mingwclang|-shippable)?/.*: win11-64-25h2
-                        windows11-aarch64-24h2(-devedition|-shippable)?/.*: win11-a64-25h2
+                        windows.*-asan/.*: win11-64-25h2-large
+                        windows.*aarch64.*/.*: win11-a64-25h2
+                        windows.*/.*: win11-64-25h2
                         default: default
 
     mochitest-valgrind:
@@ -1095,7 +1091,7 @@ tasks:
         virtualization: virtual-with-gpu
         worker-type:
             by-test-platform:
-                windows11-(32|64)-24h2(-asan|-ccov|-devedition|-mingwclang|-shippable)?/.*: win11-64-25h2-gpu
+                windows.*/.*: win11-64-25h2-gpu
                 default: default
         test-manifest-loader: null  # don't load tests in the taskgraph
         loopback-video: true
@@ -1140,7 +1136,7 @@ tasks:
         virtualization: virtual-with-gpu
         worker-type:
             by-test-platform:
-                windows11-(32|64)-24h2(-asan|-ccov|-devedition|-mingwclang|-shippable)?/.*: win11-64-25h2-gpu
+                windows.*/.*: win11-64-25h2-gpu
                 default: default
         test-manifest-loader: null  # don't load tests in the taskgraph
         loopback-video: true
@@ -1185,7 +1181,7 @@ tasks:
         virtualization: virtual-with-gpu
         worker-type:
             by-test-platform:
-                windows11-(32|64)-24h2(-asan|-ccov|-devedition|-mingwclang|-shippable)?/.*: win11-64-25h2-gpu
+                windows.*/.*: win11-64-25h2-gpu
                 default: default
         chunks:
             by-test-platform:
@@ -1236,7 +1232,7 @@ tasks:
         virtualization: virtual-with-gpu
         worker-type:
             by-test-platform:
-                windows11-(32|64)-24h2(-asan|-ccov|-devedition|-mingwclang|-shippable)?/.*: win11-64-25h2-gpu
+                windows.*/.*: win11-64-25h2-gpu
                 default: default
         variants:
             - no-fission
@@ -1280,7 +1276,7 @@ tasks:
         virtualization: virtual-with-gpu
         worker-type:
             by-test-platform:
-                windows11-(32|64)-24h2(-asan|-ccov|-devedition|-mingwclang|-shippable)?/.*: win11-64-25h2-gpu
+                windows.*/.*: win11-64-25h2-gpu
                 default: default
         variants:
             - webrender-sw
@@ -1302,7 +1298,7 @@ tasks:
         virtualization: virtual-with-gpu
         worker-type:
             by-test-platform:
-                windows11-(32|64)-24h2(-asan|-ccov|-devedition|-mingwclang|-shippable)?/.*: win11-64-25h2-gpu
+                windows.*/.*: win11-64-25h2-gpu
                 default: default
         loopback-video: true
         variants:
