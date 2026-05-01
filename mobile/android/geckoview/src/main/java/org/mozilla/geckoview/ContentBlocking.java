@@ -416,6 +416,104 @@ public class ContentBlocking {
         getSettings().setAllowListConvenienceTrackingProtection(enabled);
         return this;
       }
+
+      
+
+
+
+
+
+
+
+      public @NonNull Builder contentBlockingDatabase(final boolean enabled) {
+        getSettings().setContentBlockingDatabaseStatus(enabled);
+        return this;
+      }
+
+      
+
+
+
+
+
+      public @NonNull Builder safeBrowsingGlobalCacheEnabled(final boolean enabled) {
+        getSettings().setSafeBrowsingGlobalCacheEnabled(enabled);
+        return this;
+      }
+
+      
+
+
+
+
+
+      public @NonNull Builder safeBrowsingRealTimeEnabled(final boolean enabled) {
+        getSettings().setSafeBrowsingRealTimeEnabled(enabled);
+        return this;
+      }
+
+      
+
+
+
+
+
+      @ExperimentalGeckoViewApi
+      public @NonNull Builder safeBrowsingRealTimeSimulationEnabled(final boolean enabled) {
+        getSettings().setSafeBrowsingRealTimeSimulationEnabled(enabled);
+        return this;
+      }
+
+      
+
+
+
+
+
+      @ExperimentalGeckoViewApi
+      public @NonNull Builder safeBrowsingRealTimeSimulationHitProbability(
+          final int hitProbability) {
+        getSettings().setSafeBrowsingRealTimeSimulationHitProbability(hitProbability);
+        return this;
+      }
+
+      
+
+
+
+
+
+      @ExperimentalGeckoViewApi
+      public @NonNull Builder safeBrowsingRealTimeSimulationCacheTTLSec(final int cacheTTLSec) {
+        getSettings().setSafeBrowsingRealTimeSimulationCacheTTLSec(cacheTTLSec);
+        return this;
+      }
+
+      
+
+
+
+
+
+      @ExperimentalGeckoViewApi
+      public @NonNull Builder safeBrowsingRealTimeSimulationNegativeCacheEnabled(
+          final boolean enabled) {
+        getSettings().setSafeBrowsingRealTimeSimulationNegativeCacheEnabled(enabled);
+        return this;
+      }
+
+      
+
+
+
+
+
+      @ExperimentalGeckoViewApi
+      public @NonNull Builder safeBrowsingRealTimeSimulationNegativeCacheTTLSec(
+          final int negativeCacheTTLSec) {
+        getSettings().setSafeBrowsingRealTimeSimulationNegativeCacheTTLSec(negativeCacheTTLSec);
+        return this;
+      }
     }
 
      final Pref<String> mAt =
@@ -479,6 +577,9 @@ public class ContentBlocking {
 
      final Pref<String> mEtpCategory =
         new Pref<String>("browser.contentblocking.category", "standard");
+
+     final Pref<Boolean> mContentBlockingDatabase =
+        new Pref<Boolean>("browser.contentblocking.database.enabled", false);
 
      final Pref<Boolean> mAllowListBaselineTrackingProtection =
         new Pref<Boolean>("privacy.trackingprotection.allow_list.baseline.enabled", true);
@@ -1374,6 +1475,27 @@ public class ContentBlocking {
 
     public @NonNull Settings setAllowListConvenienceTrackingProtection(final boolean enabled) {
       mAllowListConvenienceTrackingProtection.commit(enabled);
+      return this;
+    }
+
+    
+
+
+
+
+    public boolean getContentBlockingDatabaseStatus() {
+      return mContentBlockingDatabase.get();
+    }
+
+    
+
+
+
+
+
+
+    public @NonNull Settings setContentBlockingDatabaseStatus(final boolean enabled) {
+      mContentBlockingDatabase.commit(enabled);
       return this;
     }
   }
