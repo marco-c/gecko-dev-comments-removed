@@ -917,6 +917,18 @@ bool RTCRtpReceiver::HasTrack(const dom::MediaStreamTrack* aTrack) const {
 }
 
 void RTCRtpReceiver::SyncFromJsep(const JsepTransceiver& aJsepTransceiver) {
+  
+  
+  
+  
+  
+  
+  bool wasReceptive = mReceptive;
+  mReceptive = aJsepTransceiver.mRecvTrack.GetReceptive();
+  if (wasReceptive && !mReceptive) {
+    mUnmuteListener.DisconnectIfExists();
+  }
+
   if (!mPipeline) {
     return;
   }
@@ -949,16 +961,9 @@ void RTCRtpReceiver::SyncFromJsep(const JsepTransceiver& aJsepTransceiver) {
     }
   }
 
-  
-  
-  
-  bool wasReceptive = mReceptive;
-  mReceptive = aJsepTransceiver.mRecvTrack.GetReceptive();
   if (!wasReceptive && mReceptive) {
     mUnmuteListener = mPipeline->mConduit->RtpPacketEvent().Connect(
         GetMainThreadSerialEventTarget(), this, &RTCRtpReceiver::OnRtpPacket);
-  } else if (wasReceptive && !mReceptive) {
-    mUnmuteListener.DisconnectIfExists();
   }
 }
 
@@ -1041,6 +1046,11 @@ void RTCRtpReceiver::SetTrackMuteFromRemoteSdp() {
   MOZ_ASSERT(!mReceptive,
              "PeerConnectionImpl should have blocked unmute events prior to "
              "firing mute");
+  if (!mTrack || mTrack->Ended()) {
+    
+    
+    return;
+  }
   mReceiveTrackMute = true;
   
   
