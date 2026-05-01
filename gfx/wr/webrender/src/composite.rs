@@ -14,7 +14,7 @@ use crate::internal_types::{FrameAllocator, FrameMemory, FrameVec, TextureSource
 use crate::invalidation::compare::ImageDependency;
 use crate::tile_cache::{TileCacheInstance, TileSurface};
 use crate::tile_cache::TileId;
-use crate::prim_store::DeferredResolve;
+use crate::prim_store::{DeferredResolve, PrimitiveInstanceIndex};
 use crate::resource_cache::{ImageRequest, ResourceCache};
 use crate::segment::EdgeMask;
 use crate::util::{extract_inner_rect_safe, Preallocator, ScaleOffset};
@@ -192,6 +192,7 @@ pub fn tile_kind(surface: &CompositeTileSurface, is_opaque: bool) -> TileKind {
     }
 }
 
+#[derive(Clone)]
 pub enum ExternalSurfaceDependency {
     Yuv {
         image_dependencies: [ImageDependency; 3],
@@ -207,6 +208,7 @@ pub enum ExternalSurfaceDependency {
 
 
 
+#[derive(Clone)]
 pub struct ExternalSurfaceDescriptor {
     
     
@@ -227,6 +229,7 @@ pub struct ExternalSurfaceDescriptor {
     pub update_params: Option<DeviceIntSize>,
     
     pub external_image_id: Option<ExternalImageId>,
+    pub prim_instance_index: PrimitiveInstanceIndex,
 }
 
 impl ExternalSurfaceDescriptor {
