@@ -1462,46 +1462,58 @@ nsresult nsHttpConnectionMgr::TryDispatchTransaction(
   
   
 
-  
-  
-  
-  
-  
-  
-  
-  if ((trans->IsWebsocketUpgrade() || trans->IsForWebTransport()) &&
-      ent->IsHttp3ProxyConnection()) {
-    
-    
-    
-    
-    
-    
+  if (ent->IsHttp3ProxyConnection()) {
     RefPtr<nsHttpConnection> h2Tunnel = ent->GetH2TunnelActiveConn();
-    if (h2Tunnel) {
-      LOG(
-          ("TryDispatchTransaction: WebSocket through H3 proxy - using "
-           "existing H2 tunnel"));
-      return TryDispatchExtendedCONNECTransaction(ent, trans, h2Tunnel);
-    }
-
     
-    RefPtr<HttpConnectionBase> conn = GetH2orH3ActiveConn(ent, true, false);
-    RefPtr<HttpConnectionUDP> connUDP = do_QueryObject(conn);
-    if (connUDP) {
-      LOG(("TryDispatchTransaction: WebSocket through HTTP/3 proxy"));
-      RefPtr<HttpConnectionBase> tunnelConn;
-      nsresult rv =
-          connUDP->CreateTunnelStream(trans, getter_AddRefs(tunnelConn), true);
-      if (NS_FAILED(rv)) {
-        return rv;
+    
+    
+    
+    
+    
+    
+    if (trans->IsWebsocketUpgrade() || trans->IsForWebTransport()) {
+      
+      
+      
+      
+      
+      
+      if (h2Tunnel) {
+        LOG(
+            ("TryDispatchTransaction: WebSocket through H3 proxy - using "
+             "existing H2 tunnel"));
+        return TryDispatchExtendedCONNECTransaction(ent, trans, h2Tunnel);
       }
-      ent->InsertIntoActiveConns(tunnelConn);
-      tunnelConn->SetInTunnel();
-      if (trans->IsWebsocketUpgrade()) {
-        trans->SetIsHttp2Websocket(true);
+
+      
+      RefPtr<HttpConnectionBase> conn = GetH2orH3ActiveConn(ent, true, false);
+      RefPtr<HttpConnectionUDP> connUDP = do_QueryObject(conn);
+      if (connUDP) {
+        LOG(("TryDispatchTransaction: WebSocket through HTTP/3 proxy"));
+        RefPtr<HttpConnectionBase> tunnelConn;
+        nsresult rv = connUDP->CreateTunnelStream(
+            trans, getter_AddRefs(tunnelConn), true);
+        if (NS_FAILED(rv)) {
+          return rv;
+        }
+        ent->InsertIntoActiveConns(tunnelConn);
+        tunnelConn->SetInTunnel();
+        if (trans->IsWebsocketUpgrade()) {
+          trans->SetIsHttp2Websocket(true);
+        }
+        return DispatchTransaction(ent, trans, tunnelConn);
       }
-      return DispatchTransaction(ent, trans, tunnelConn);
+    } else {
+      
+      
+      
+      
+      
+      if (h2Tunnel) {
+        LOG(("   dispatch to spdy: [conn=%p]\n", h2Tunnel.get()));
+        trans->RemoveDispatchedAsBlocking(); 
+        return DispatchTransaction(ent, trans, h2Tunnel);
+      }
     }
   }
 
@@ -1959,6 +1971,7 @@ nsresult nsHttpConnectionMgr::ProcessNewTransaction(nsHttpTransaction* trans) {
       ent = specificEnt;
       bool atLimit = AtActiveConnectionLimit(ent, trans->Caps());
       if (atLimit) {
+        LOG(("hit limit in proxy conn"));
         rv = NS_ERROR_NOT_AVAILABLE;
       } else {
         RefPtr<HttpConnectionBase> newTunnel;
@@ -2581,7 +2594,11 @@ void nsHttpConnectionMgr::OnMsgDoShiftReloadConnectionCleanup(int32_t,
 
   nsHttpConnectionInfo* ci = static_cast<nsHttpConnectionInfo*>(param);
 
+  bool preserveTRR = StaticPrefs::network_trr_preserve_on_background();
   for (const auto& entry : mCT.Values()) {
+    if (preserveTRR && entry->mConnInfo->GetIsTrrServiceChannel()) {
+      continue;
+    }
     entry->ClosePersistentConnections();
   }
 
