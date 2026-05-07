@@ -13296,9 +13296,10 @@ function Lists({
     "data-l10n-id": "newtab-widget-lists-menu-copy",
     onClick: () => handleCopyListToClipboard()
   }), novaEnabled && widgetsMayBeMaximized && external_React_default().createElement("panel-item", {
-    submenu: "lists-size-submenu",
+    submenu: "lists-size-submenu"
+  }, external_React_default().createElement("span", {
     "data-l10n-id": "newtab-widget-menu-change-size"
-  }, external_React_default().createElement("panel-list", {
+  }), external_React_default().createElement("panel-list", {
     ref: sizeSubmenuRef,
     slot: "submenu",
     id: "lists-size-submenu"
