@@ -1323,14 +1323,6 @@ Tester.prototype = {
         );
 
         barrier.wait().then(() => {
-          
-          
-          Services.obs.notifyObservers(
-            null,
-            "memory-pressure",
-            "heap-minimize"
-          );
-
           Services.ppmm.broadcastAsyncMessage("browser-test:collect-request");
 
           this._shutdownCleanup(() => {
