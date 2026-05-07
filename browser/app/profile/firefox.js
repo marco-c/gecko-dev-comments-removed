@@ -2379,6 +2379,12 @@ pref("media.videocontrols.picture-in-picture.enable-when-switching-tabs.enabled"
 pref("media.videocontrols.picture-in-picture.auto-close.enabled", true);
 pref("media.videocontrols.picture-in-picture.auto-close.timeoutMs", 1000);
 
+#ifdef NIGHTLY_BUILD
+  pref("media.contextmenu.video-overlay-detection", true);
+#else
+  pref("media.contextmenu.video-overlay-detection", false);
+#endif
+
 
 
 
@@ -2918,9 +2924,7 @@ pref("browser.toolbars.bookmarks.showOtherBookmarks", true);
 
 
 
-#ifndef XP_LINUX
-  pref("browser.toolbars.share-button.enabled", true);
-#endif
+pref("browser.toolbars.share-button.enabled", true);
 
 
 pref("browser.privatebrowsing.felt-privacy-v1", false);

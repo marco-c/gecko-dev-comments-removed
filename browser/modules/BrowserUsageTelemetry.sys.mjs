@@ -154,6 +154,7 @@ const PREFERENCES_PANES = [
   "paneExperimental",
   "paneMoreFromMozilla",
   "paneAi",
+  "paneAbout",
   "paneAccessibility",
   "paneLanguages",
 ];
@@ -830,6 +831,14 @@ export let BrowserUsageTelemetry = {
       return shareItem.browsersToShare !== null
         ? "context-copy-multiple-urls"
         : "context-copy-url";
+    }
+
+    if (node.classList?.contains("share-qrcode-item")) {
+      return "generate-qr-code";
+    }
+
+    if (node.classList?.contains("share-windows-item")) {
+      return "microsoft-system-share";
     }
 
     if (node.hasAttribute("data-share-name")) {
