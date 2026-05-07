@@ -175,8 +175,7 @@ already_AddRefed<Animation> Animation::Constructor(
   }
 
   RefPtr<Animation> animation = new Animation(global);
-  
-  animation->SetTimelineNoUpdate(timeline, nullptr);
+  animation->SetTimelineNoUpdate(timeline);
   animation->SetEffectNoUpdate(aEffect);
 
   return animation.forget();
@@ -272,45 +271,17 @@ static TimeStamp EnsurePaintIsScheduled(Document& aDoc) {
   return rd->MostRecentRefresh();
 }
 
-void Animation::RemovedNamedTimelineReferenceFromJS(const nsAtom* aName) {
-  if (!AsCSSAnimation()) {
-    MOZ_ASSERT_UNREACHABLE("How?");
-    return;
-  }
-  auto* animationManager = [&]() -> nsAnimationManager* {
-    auto* doc = GetRenderedDocument();
-    if (!doc) {
-      return nullptr;
-    }
-    auto* presContext = doc->GetPresContext();
-    if (!presContext) {
-      return nullptr;
-    }
-    return presContext->AnimationManager();
-  }();
-  if (!animationManager) {
-    return;
-  }
-  animationManager->RemoveNamedTimelineAnimation(aName, AsCSSAnimation());
-}
-
-void Animation::SetTimeline(AnimationTimeline* aTimeline,
-                            const nsAtom* aTimelineName) {
-  SetTimelineNoUpdate(aTimeline, aTimelineName);
+void Animation::SetTimeline(AnimationTimeline* aTimeline) {
+  SetTimelineNoUpdate(aTimeline);
   PostUpdate();
 }
 
 
-void Animation::SetTimelineNoUpdate(AnimationTimeline* aTimeline,
-                                    const nsAtom* aTimelineName) {
+void Animation::SetTimelineNoUpdate(AnimationTimeline* aTimeline) {
   
   
   
   if (mTimeline == aTimeline) {
-    
-    if (mTimelineName != aTimelineName) {
-      mTimelineName = aTimelineName;
-    }
     return;
   }
 
@@ -355,7 +326,6 @@ void Animation::SetTimelineNoUpdate(AnimationTimeline* aTimeline,
     oldTimeline->RemoveAnimation(this);
   }
   mTimeline = aTimeline;
-  mTimelineName = aTimelineName;
   
   if (mEffect) {
     mEffect->UpdateNormalizedTiming();
@@ -405,15 +375,6 @@ void Animation::SetTimelineNoUpdate(AnimationTimeline* aTimeline,
     
     SetCurrentTimeNoUpdate(
         TimeDuration(EffectEnd().MultDouble(previousProgress.Value())));
-  }
-  if (fromFiniteTimeline && !aTimeline && mTimelineName) {
-    
-    
-    Document* doc = GetRenderedDocument();
-    auto* tracker = doc ? doc->GetScrollTimelineAnimationTracker() : nullptr;
-    if (tracker) {
-      tracker->RemovePending(*this);
-    }
   }
 
   

@@ -555,25 +555,20 @@ void Gecko_UpdateAnimations(const Element* aElement,
   if (aTasks & UpdateAnimationsTasks::TimelineScopes) {
     presContext->TimelineManager()->UpdateTimelineScopes(element,
                                                          aComputedData);
-    
-    
-    presContext->AnimationManager()->UpdateAllNamedTimelineAnimations();
   }
 
   
   
   if (aTasks & UpdateAnimationsTasks::ScrollTimelines) {
-    const auto affected = presContext->TimelineManager()->UpdateTimelines(
+    presContext->TimelineManager()->UpdateTimelines(
         const_cast<Element*>(element), pseudoRequest, aComputedData,
         TimelineManager::ProgressTimelineType::Scroll);
-    presContext->AnimationManager()->UpdateNamedTimelineAnimations(affected);
   }
 
   if (aTasks & UpdateAnimationsTasks::ViewTimelines) {
-    const auto affected = presContext->TimelineManager()->UpdateTimelines(
+    presContext->TimelineManager()->UpdateTimelines(
         const_cast<Element*>(element), pseudoRequest, aComputedData,
         TimelineManager::ProgressTimelineType::View);
-    presContext->AnimationManager()->UpdateNamedTimelineAnimations(affected);
   }
 
   if (aTasks & UpdateAnimationsTasks::CSSAnimations) {

@@ -55,9 +55,8 @@ void ViewTimeline::ReplacePropertiesWith(
   for (auto* anim = mAnimationOrder.getFirst(); anim;
        anim = static_cast<LinkedListElement<Animation>*>(anim)->getNext()) {
     MOZ_ASSERT(anim->GetTimeline() == this);
-    MOZ_ASSERT(anim->GetTimelineName() == aNew.GetName());
     
-    anim->SetTimeline(this, aNew.GetName());
+    anim->SetTimeline(this);
   }
 }
 
