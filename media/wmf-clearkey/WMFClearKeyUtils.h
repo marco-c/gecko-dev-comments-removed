@@ -16,6 +16,7 @@
 
 #include "MFCDMExtra.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/EndianUtils.h"
 
 namespace mozilla {
 
@@ -84,6 +85,18 @@ inline std::string GetPrettyFunctionName(const char* aPrettyFunc) {
       (void)(0, ##__VA_ARGS__);    \
     } while (0)
 #endif
+
+
+
+
+inline void GuidToKeyId(const GUID& aGuid, uint8_t aKeyId[16]) {
+  GUID swapped = aGuid;
+  swapped.Data1 = NativeEndian::swapToBigEndian(aGuid.Data1);
+  swapped.Data2 = NativeEndian::swapToBigEndian(aGuid.Data2);
+  swapped.Data3 = NativeEndian::swapToBigEndian(aGuid.Data3);
+  
+  memcpy(aKeyId, &swapped, 16);
+}
 
 
 

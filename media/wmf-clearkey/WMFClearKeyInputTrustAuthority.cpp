@@ -9,7 +9,7 @@
 
 #include "WMFClearKeyActivate.h"
 #include "WMFClearKeyCDM.h"
-
+#include "WMFClearKeyDecryptor.h"
 #include "WMFClearKeyUtils.h"
 #include "WMFClearKeyOutputPolicy.h"
 
@@ -29,11 +29,8 @@ STDMETHODIMP WMFClearKeyInputTrustAuthority::GetDecrypter(REFIID aRiid,
                                                           void** aPpv) {
   ENTRY_LOG();
   ComPtr<IMFTransform> decryptor;
-  
-  
-  
-  
-  
+  RETURN_IF_FAILED((MakeAndInitialize<WMFClearKeyDecryptor, IMFTransform>(
+      &decryptor, mSessionManager)));
   RETURN_IF_FAILED(decryptor.CopyTo(aRiid, aPpv));
   return S_OK;
 }
