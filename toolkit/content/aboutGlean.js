@@ -14,6 +14,7 @@ const { AppConstants } = ChromeUtils.importESModule(
   "resource://gre/modules/AppConstants.sys.mjs"
 );
 
+let REDESIGN_ENABLED = false;
 const METRIC_DATA = {};
 let MAPPED_METRIC_DATA = [];
 let FILTERED_METRIC_DATA = [];
@@ -214,39 +215,52 @@ function showTab(button) {
 }
 
 function handleRedesign() {
-  const categories = document.getElementById("categories");
-  const div = document.createElement("div");
-  div.id = "category-metrics-table";
-  div.className = "category";
-  div.setAttribute("role", "menuitem");
-  div.setAttribute("tabindex", 0);
-  const span = document.createElement("span");
-  span.className = "category-name";
-  span.setAttribute("data-l10n-id", "about-glean-category-metrics-table");
-  div.appendChild(span);
-  categories.appendChild(div);
-
+  REDESIGN_ENABLED = Services.prefs.getBoolPref("about.glean.redesign.enabled");
   
+  if (REDESIGN_ENABLED) {
+    const categories = document.getElementById("categories");
+    const div = document.createElement("div");
+    div.id = "category-metrics-table";
+    div.className = "category";
+    div.setAttribute("role", "menuitem");
+    div.setAttribute("tabindex", 0);
+    const span = document.createElement("span");
+    span.className = "category-name";
+    span.setAttribute("data-l10n-id", "about-glean-category-metrics-table");
+    div.appendChild(span);
+    categories.appendChild(div);
+
+    document
+      .getElementById("enable-new-features")
+      .setAttribute("data-l10n-id", "about-glean-disable-new-features-button");
+
+    
 
 
 
 
 
-  let inputTimeout = undefined;
-  document.getElementById("filter-metrics").addEventListener("input", e => {
-    clearTimeout(inputTimeout);
-    inputTimeout = setTimeout(() => {
-      updateFilteredMetricData(e.target.value.toLowerCase() ?? "");
-    }, 200);
-  });
-
-  
-  document.getElementById("load-all").addEventListener("click", () => {
-    MAPPED_METRIC_DATA.forEach(datum => {
-      updateDatum(datum);
+    let inputTimeout = undefined;
+    document.getElementById("filter-metrics").addEventListener("input", e => {
+      clearTimeout(inputTimeout);
+      inputTimeout = setTimeout(() => {
+        updateFilteredMetricData(e.target.value.toLowerCase() ?? "");
+      }, 200);
     });
-    updateTable();
-  });
+
+    
+    document.getElementById("load-all").addEventListener("click", () => {
+      MAPPED_METRIC_DATA.forEach(datum => {
+        updateDatum(datum);
+      });
+      updateTable();
+    });
+  } else {
+    document
+      .getElementById("enable-new-features")
+      .setAttribute("data-l10n-id", "about-glean-enable-new-features-button");
+    document.getElementById("category-metrics-table")?.remove();
+  }
 }
 
 function onLoad() {
@@ -301,6 +315,17 @@ function onLoad() {
   handleRedesign();
 
   DOCUMENT_BODY_SEL = d3.select(document.body);
+
+  document
+    .getElementById("enable-new-features")
+    .addEventListener("click", () => {
+      if (!REDESIGN_ENABLED) {
+        Services.prefs.setBoolPref("about.glean.redesign.enabled", true);
+      } else {
+        Services.prefs.setBoolPref("about.glean.redesign.enabled", false);
+      }
+      handleRedesign();
+    });
 
   document
     .getElementById("metrics-table-settings-button")
