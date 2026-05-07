@@ -2,6 +2,12 @@
 
 
 
+add_setup(async function () {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.trustPanel.featureGate", false]],
+  });
+});
+
 add_task(async function test_displayURI_geo() {
   await BrowserTestUtils.withNewTab(
     "https://test1.example.com/",
@@ -12,23 +18,22 @@ add_task(async function test_displayURI_geo() {
       });
       await popupShownPromise;
 
-      let trustPanel = document.getElementById("trustpanel-popup");
       popupShownPromise = BrowserTestUtils.waitForEvent(
         window,
         "popupshown",
         true,
-        event => event.target == trustPanel
+        event => event.target == gIdentityHandler._identityPopup
       );
-      gIdentityHandler._identityIconBox.click();
+      EventUtils.synthesizeMouseAtCenter(gIdentityHandler._identityIconBox, {});
       await popupShownPromise;
 
       Assert.ok(!PopupNotifications.isPanelOpen, "Geolocation popup is hidden");
 
       let popupHidden = BrowserTestUtils.waitForEvent(
-        trustPanel,
+        gIdentityHandler._identityPopup,
         "popuphidden"
       );
-      trustPanel.hidePopup();
+      gIdentityHandler._identityPopup.hidePopup();
       await popupHidden;
 
       Assert.ok(PopupNotifications.isPanelOpen, "Geolocation popup is showing");
