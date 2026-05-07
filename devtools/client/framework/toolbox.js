@@ -4295,7 +4295,7 @@ class Toolbox extends EventEmitter {
 
 
   isDestroying() {
-    return this._destroyer;
+    return !!this._destroyer;
   }
 
   
