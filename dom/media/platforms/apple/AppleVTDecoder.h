@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_AppleVTDecoder_h
 #define mozilla_AppleVTDecoder_h
 
@@ -124,6 +122,7 @@ class AppleVTDecoder final : public MediaDataDecoder,
   const gfx::TransferFunction mTransferFunction;
   const gfx::ColorRange mColorRange;
   const gfx::ColorDepth mColorDepth;
+  const Maybe<gfx::HDRMetadata> mHDRMetadata;
 
   
   MediaResult InitializeSession();

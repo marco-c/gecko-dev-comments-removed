@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "AppleVTDecoder.h"
 
 #include <CoreVideo/CVPixelBufferIOSurface.h>
@@ -16,6 +14,7 @@
 #include "CallbackThreadRegistry.h"
 #include "H264.h"
 #include "H265.h"
+#include "HDRUtils.h"
 #include "MP4Decoder.h"
 #include "MacIOSurfaceImage.h"
 #include "MediaData.h"
@@ -54,6 +53,7 @@ AppleVTDecoder::AppleVTDecoder(const VideoInfo& aConfig,
                             : gfx::TransferFunction::BT709),
       mColorRange(aConfig.mColorRange),
       mColorDepth(aConfig.mColorDepth),
+      mHDRMetadata(aConfig.mHDRMetadata),
       mStreamType(AppleVTDecoder::GetStreamType(aConfig.mMimeType)),
       mTaskQueue(TaskQueue::Create(
           GetMediaThreadPool(MediaThreadType::PLATFORM_DECODER),
@@ -517,12 +517,56 @@ void AppleVTDecoder::OutputFrame(CVPixelBufferRef aImage,
         gfxMacUtils::CFStringForTransferFunction(mTransferFunction),
         kCVAttachmentMode_ShouldPropagate);
 
+    if (mHDRMetadata && mHDRMetadata->mSmpte2086) {
+      nsTArray<uint8_t> buf;
+      if (EncodeSmpte2086Payload(*mHDRMetadata->mSmpte2086, buf)) {
+        AutoCFTypeRef<CFDataRef> data(
+            CFDataCreate(kCFAllocatorDefault, buf.Elements(), buf.Length()));
+        if (data) {
+          CVBufferSetAttachment(aImage,
+                                kCVImageBufferMasteringDisplayColorVolumeKey,
+                                data, kCVAttachmentMode_ShouldPropagate);
+        }
+      }
+    }
+    if (mHDRMetadata && mHDRMetadata->mContentLightLevel) {
+      nsTArray<uint8_t> buf;
+      if (EncodeContentLightLevelPayload(*mHDRMetadata->mContentLightLevel,
+                                         buf)) {
+        AutoCFTypeRef<CFDataRef> data(
+            CFDataCreate(kCFAllocatorDefault, buf.Elements(), buf.Length()));
+        if (data) {
+          CVBufferSetAttachment(aImage, kCVImageBufferContentLightLevelInfoKey,
+                                data, kCVAttachmentMode_ShouldPropagate);
+        }
+      }
+    }
+
     CFTypeRefPtr<IOSurfaceRef> surface =
         CFTypeRefPtr<IOSurfaceRef>::WrapUnderGetRule(
             CVPixelBufferGetIOSurface(aImage));
     MOZ_ASSERT(surface, "Decoder didn't return an IOSurface backed buffer");
 
-    RefPtr<MacIOSurface> macSurface = new MacIOSurface(std::move(surface));
+    
+    bool hasAlpha = true;
+    CGImageRef cgImage;
+    if (VTCreateCGImageFromCVPixelBuffer(aImage, NULL, &cgImage) == noErr) {
+      
+      auto alphaInfo = CGImageGetAlphaInfo(cgImage);
+      switch (alphaInfo) {
+        case kCGImageAlphaNone:
+        case kCGImageAlphaNoneSkipFirst:
+        case kCGImageAlphaNoneSkipLast:
+          hasAlpha = false;
+          break;
+        default:
+          break;
+      }
+    }
+    CGImageRelease(cgImage);
+
+    RefPtr<MacIOSurface> macSurface = new MacIOSurface(
+        std::move(surface), hasAlpha, mColorSpace, mTransferFunction);
     macSurface->SetYUVColorSpace(mColorSpace);
     macSurface->mColorPrimaries = mColorPrimaries;
 
