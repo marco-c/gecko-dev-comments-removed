@@ -2,11 +2,13 @@ ChromeUtils.defineESModuleGetters(this, {
   AppProvidedConfigEngine:
     "moz-src:///toolkit/components/search/ConfigSearchEngine.sys.mjs",
   HttpServer: "resource://testing-common/httpd.sys.mjs",
+  ObjectUtils: "resource://gre/modules/ObjectUtils.sys.mjs",
   PlacesTestUtils: "resource://testing-common/PlacesTestUtils.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
   Preferences: "resource://gre/modules/Preferences.sys.mjs",
   SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   sinon: "resource://testing-common/Sinon.sys.mjs",
+  TelemetryTestUtils: "resource://testing-common/TelemetryTestUtils.sys.mjs",
   TopSites: "resource:///modules/topsites/TopSites.sys.mjs",
   UrlbarProvider: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
   ProvidersManager:
@@ -30,6 +32,12 @@ XPCOMUtils.defineLazyServiceGetter(
   "@mozilla.org/widget/clipboardhelper;1",
   Ci.nsIClipboardHelper
 );
+
+ChromeUtils.defineLazyGetter(this, "PlacesFrecencyRecalculator", () => {
+  return Cc["@mozilla.org/places/frecency-recalculator;1"].getService(
+    Ci.nsIObserver
+  ).wrappedJSObject;
+});
 
 ChromeUtils.defineLazyGetter(this, "UrlbarTestUtils", () => {
   const { UrlbarTestUtils: module } = ChromeUtils.importESModule(
@@ -204,6 +212,16 @@ async function resetApplicationProvidedEngines() {
   await settingsWritten;
 }
 
+
+
+
+
+async function flakyWaitForManyIdles() {
+  for (let i = 0; i < 10; i++) {
+    await new Promise(resolve => Services.tm.idleDispatchToMainThread(resolve));
+  }
+}
+
 async function startCustomizing(win = window) {
   if (!win.document.documentElement.hasAttribute("customizing")) {
     let eventPromise = BrowserTestUtils.waitForEvent(
@@ -224,4 +242,161 @@ async function endCustomizing(win = window) {
     win.gCustomizeMode.exit();
     await eventPromise;
   }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function search({
+  searchString,
+  valueBefore,
+  valueAfter,
+  placeholderAfter,
+}) {
+  info(
+    "Searching: " +
+      JSON.stringify({
+        searchString,
+        valueBefore,
+        valueAfter,
+        placeholderAfter,
+      })
+  );
+
+  await SimpleTest.promiseFocus(window);
+  gURLBar.inputField.focus();
+
+  
+  
+  
+  gURLBar._setValue(searchString);
+  gURLBar.inputField.setSelectionRange(
+    searchString.length,
+    searchString.length
+  );
+
+  
+  
+  
+  
+  UrlbarTestUtils.fireInputEvent(window);
+
+  
+  
+  Assert.equal(
+    gURLBar.value,
+    valueBefore,
+    "gURLBar.value before the search completes"
+  );
+  Assert.equal(
+    gURLBar.selectionStart,
+    searchString.length,
+    "gURLBar.selectionStart before the search completes"
+  );
+  Assert.equal(
+    gURLBar.selectionEnd,
+    valueBefore.length,
+    "gURLBar.selectionEnd before the search completes"
+  );
+
+  
+  info("Waiting for the search to complete");
+  await UrlbarTestUtils.promiseSearchComplete(window);
+
+  
+  Assert.equal(
+    gURLBar.value,
+    valueAfter,
+    "gURLBar.value after the search completes"
+  );
+  Assert.equal(
+    gURLBar.selectionStart,
+    searchString.length,
+    "gURLBar.selectionStart after the search completes"
+  );
+  Assert.equal(
+    gURLBar.selectionEnd,
+    valueAfter.length,
+    "gURLBar.selectionEnd after the search completes"
+  );
+
+  
+  if (placeholderAfter) {
+    Assert.ok(
+      gURLBar._autofillPlaceholder,
+      "gURLBar._autofillPlaceholder exists after the search completes"
+    );
+    Assert.strictEqual(
+      gURLBar._autofillPlaceholder.value,
+      placeholderAfter,
+      "gURLBar._autofillPlaceholder.value after the search completes"
+    );
+  } else {
+    Assert.strictEqual(
+      gURLBar._autofillPlaceholder,
+      null,
+      "gURLBar._autofillPlaceholder does not exist after the search completes"
+    );
+  }
+
+  
+  let details = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
+  Assert.equal(
+    !!details.autofill,
+    !!placeholderAfter,
+    "First result is an autofill result iff a placeholder is expected"
+  );
+}
+
+
+
+
+
+
+
+
+
+
+
+function waitForLoadStartOrTimeout(win = window, timeoutMs = 1000) {
+  let listener;
+  let timeout;
+  return Promise.race([
+    new Promise(resolve => {
+      listener = {
+        onStateChange(browser, webprogress, request, flags) {
+          if (flags & Ci.nsIWebProgressListener.STATE_START) {
+            resolve(request.QueryInterface(Ci.nsIChannel).URI);
+          }
+        },
+      };
+      win.gBrowser.addTabsProgressListener(listener);
+    }),
+    new Promise((resolve, reject) => {
+      timeout = win.setTimeout(() => reject("timed out"), timeoutMs);
+    }),
+  ]).finally(() => {
+    win.gBrowser.removeTabsProgressListener(listener);
+    win.clearTimeout(timeout);
+  });
 }

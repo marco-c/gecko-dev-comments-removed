@@ -1061,6 +1061,12 @@ async function doTitleTest({ visits, input, expected }) {
 
 add_task(async function just_multiple_unvisited_bookmarks() {
   
+  Services.prefs.setBoolPref(
+    "browser.urlbar.autoFill.adaptiveHistory.enabled",
+    false
+  );
+
+  
   
   let filledUrl = "https://www.tld2.com/";
   let urls = [
@@ -1118,5 +1124,8 @@ add_task(async function just_multiple_unvisited_bookmarks() {
     ],
   });
 
+  Services.prefs.clearUserPref(
+    "browser.urlbar.autoFill.adaptiveHistory.enabled"
+  );
   await cleanup();
 });

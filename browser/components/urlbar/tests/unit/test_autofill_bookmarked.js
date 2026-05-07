@@ -6,6 +6,21 @@
 
 
 
+add_setup(async function () {
+  
+  
+  
+  Services.prefs.setBoolPref(
+    "browser.urlbar.autoFill.adaptiveHistory.enabled",
+    false
+  );
+  registerCleanupFunction(() => {
+    Services.prefs.clearUserPref(
+      "browser.urlbar.autoFill.adaptiveHistory.enabled"
+    );
+  });
+});
+
 add_task(async function () {
   registerCleanupFunction(async () => {
     Services.prefs.clearUserPref("browser.urlbar.suggest.searches");

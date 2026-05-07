@@ -26,6 +26,12 @@ add_setup(async function () {
     "browser.search.separatePrivateDefault.ui.enabled",
     false
   );
+  
+  
+  Services.prefs.setBoolPref(
+    "browser.urlbar.autoFill.adaptiveHistory.enabled",
+    false
+  );
 
   registerCleanupFunction(() => {
     Services.prefs.clearUserPref("browser.urlbar.suggest.searches");
@@ -35,6 +41,9 @@ add_setup(async function () {
     );
     Services.prefs.clearUserPref(
       "browser.urlbar.tabToSearch.onboard.interactionsLeft"
+    );
+    Services.prefs.clearUserPref(
+      "browser.urlbar.autoFill.adaptiveHistory.enabled"
     );
   });
 });

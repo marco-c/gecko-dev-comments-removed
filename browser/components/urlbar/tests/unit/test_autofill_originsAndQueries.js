@@ -65,6 +65,25 @@ function add_autofill_task(callback) {
 }
 
 
+
+
+function add_nonadaptive_autofill_task(callback) {
+  add_autofill_task(async () => {
+    Services.prefs.setBoolPref(
+      "browser.urlbar.autoFill.adaptiveHistory.enabled",
+      false
+    );
+    try {
+      await callback();
+    } finally {
+      Services.prefs.clearUserPref(
+        "browser.urlbar.autoFill.adaptiveHistory.enabled"
+      );
+    }
+  });
+}
+
+
 add_autofill_task(async function basic() {
   await PlacesTestUtils.addVisits([
     {
@@ -931,7 +950,7 @@ add_autofill_task(async function frecency() {
 
 
 
-add_autofill_task(async function bookmarkBelowThreshold() {
+add_nonadaptive_autofill_task(async function bookmarkBelowThreshold() {
   
   for (let i = 0; i < 3; i++) {
     await PlacesTestUtils.addVisits([
@@ -1058,7 +1077,7 @@ add_autofill_task(async function bookmarkAboveThreshold() {
 
 
 
-add_autofill_task(async function zeroThreshold() {
+add_nonadaptive_autofill_task(async function zeroThreshold() {
   const pageUrl = "http://" + url;
   await PlacesTestUtils.addBookmarkWithDetails({
     uri: pageUrl,
@@ -1776,54 +1795,56 @@ add_autofill_task(async function suggestBookmarkFalse_visit_prefix_3() {
 
 
 
-add_autofill_task(async function suggestBookmarkFalse_unvisitedBookmark() {
-  await PlacesTestUtils.addBookmarkWithDetails({
-    uri: "http://" + url,
-  });
-  await PlacesFrecencyRecalculator.recalculateAnyOutdatedFrecencies();
-  let context = createContext(search, { isPrivate: false });
-  await check_results({
-    context,
-    autofilled: url,
-    completed: "http://" + url,
-    matches: [
-      makeVisitResult(context, {
-        uri: "http://" + url,
-        title: "A bookmark",
-        heuristic: true,
-      }),
-    ],
-  });
-  Services.prefs.setBoolPref("browser.urlbar.suggest.bookmark", false);
-  context = createContext(search, { isPrivate: false });
-  if (origins) {
-    await check_results({
-      context,
-      matches: [
-        makeSearchResult(context, {
-          engineName: SUGGESTIONS_ENGINE_NAME,
-          heuristic: true,
-          providerName: HEURISTIC_FALLBACK_PROVIDERNAME,
-        }),
-      ],
+add_nonadaptive_autofill_task(
+  async function suggestBookmarkFalse_unvisitedBookmark() {
+    await PlacesTestUtils.addBookmarkWithDetails({
+      uri: "http://" + url,
     });
-  } else {
+    await PlacesFrecencyRecalculator.recalculateAnyOutdatedFrecencies();
+    let context = createContext(search, { isPrivate: false });
     await check_results({
       context,
+      autofilled: url,
+      completed: "http://" + url,
       matches: [
         makeVisitResult(context, {
-          source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
-          uri: "http://" + search,
-          title: search,
-          iconUri: `page-icon:http://${host}/`,
+          uri: "http://" + url,
+          title: "A bookmark",
           heuristic: true,
-          providerName: HEURISTIC_FALLBACK_PROVIDERNAME,
         }),
       ],
     });
+    Services.prefs.setBoolPref("browser.urlbar.suggest.bookmark", false);
+    context = createContext(search, { isPrivate: false });
+    if (origins) {
+      await check_results({
+        context,
+        matches: [
+          makeSearchResult(context, {
+            engineName: SUGGESTIONS_ENGINE_NAME,
+            heuristic: true,
+            providerName: HEURISTIC_FALLBACK_PROVIDERNAME,
+          }),
+        ],
+      });
+    } else {
+      await check_results({
+        context,
+        matches: [
+          makeVisitResult(context, {
+            source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+            uri: "http://" + search,
+            title: search,
+            iconUri: `page-icon:http://${host}/`,
+            heuristic: true,
+            providerName: HEURISTIC_FALLBACK_PROVIDERNAME,
+          }),
+        ],
+      });
+    }
+    await cleanup();
   }
-  await cleanup();
-});
+);
 
 
 
@@ -1837,7 +1858,7 @@ add_autofill_task(async function suggestBookmarkFalse_unvisitedBookmark() {
 
 
 
-add_autofill_task(
+add_nonadaptive_autofill_task(
   async function suggestBookmarkFalse_unvisitedBookmark_prefix_0() {
     await PlacesTestUtils.addBookmarkWithDetails({
       uri: "http://" + url,
