@@ -1184,25 +1184,49 @@ static HRESULT SetDebugName(T* d3d11Object, const char* debugString) {
 
 RefPtr<ID3D11Device> DeviceManagerDx::CreateMediaEngineDevice() {
   MutexAutoLock lock(mDeviceLock);
-  if (!LoadD3D11()) {
-    return nullptr;
+  
+  
+  if (!sD3D11CreateDeviceFn) {
+    nsModuleHandle module(LoadLibrarySystem32(L"d3d11.dll"));
+    if (!module) {
+      return nullptr;
+    }
+    sD3D11CreateDeviceFn = (decltype(D3D11CreateDevice)*)GetProcAddress(
+        module, "D3D11CreateDevice");
+    if (!sD3D11CreateDeviceFn) {
+      return nullptr;
+    }
+    mD3D11Module.steal(module);
   }
 
   HRESULT hr;
   RefPtr<ID3D11Device> device;
-  UINT flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT |
-               D3D11_CREATE_DEVICE_PREVENT_INTERNAL_THREADING_OPTIMIZATIONS;
-  RefPtr<IDXGIAdapter1> adapter = GetDXGIAdapterLocked();
-  if (!adapter) {
-    return nullptr;
+  UINT baseFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT |
+                   D3D11_CREATE_DEVICE_PREVENT_INTERNAL_THREADING_OPTIMIZATIONS;
+  UINT flags = D3D11_CREATE_DEVICE_VIDEO_SUPPORT | baseFlags;
+  
+  
+  
+  bool useWarp = !gfxVars::CanUseHardwareVideoDecoding();
+  if (!useWarp) {
+    if (!CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, flags, hr, device) ||
+        FAILED(hr) || !device || !D3D11Checks::DoesDeviceWork()) {
+      useWarp = true;
+    }
   }
-  if (!CreateDevice(adapter, D3D_DRIVER_TYPE_UNKNOWN, flags, hr, device)) {
-    return nullptr;
+  if (useWarp) {
+    gfxWarning()
+        << "MFMediaEngine: hardware D3D11 device unavailable, using WARP";
+    device = nullptr;
+    
+    
+    if (!CreateDevice(nullptr, D3D_DRIVER_TYPE_WARP, baseFlags, hr, device) ||
+        FAILED(hr) || !device) {
+      return nullptr;
+    }
   }
-  if (FAILED(hr) || !device || !D3D11Checks::DoesDeviceWork()) {
-    return nullptr;
-  }
-  (void)SetDebugName(device.get(), "MFMediaEngineDevice");
+  (void)SetDebugName(device.get(), useWarp ? "MFMediaEngineDevice(WARP)"
+                                           : "MFMediaEngineDevice");
 
   RefPtr<ID3D10Multithread> multi;
   device->QueryInterface(__uuidof(ID3D10Multithread), getter_AddRefs(multi));
