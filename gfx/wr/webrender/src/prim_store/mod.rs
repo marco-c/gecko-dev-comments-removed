@@ -415,7 +415,6 @@ pub struct PrimKeyCommonData {
     pub flags: PrimitiveFlags,
     pub aligned_aa_edges: EdgeMask,
     pub transformed_aa_edges: EdgeMask,
-    pub prim_size: SizeKey,
 }
 
 impl From<&LayoutPrimitiveInfo> for PrimKeyCommonData {
@@ -424,7 +423,6 @@ impl From<&LayoutPrimitiveInfo> for PrimKeyCommonData {
             flags: info.flags,
             aligned_aa_edges: info.aligned_aa_edges,
             transformed_aa_edges: info.transformed_aa_edges,
-            prim_size: info.rect.size().into(),
         }
     }
 }
@@ -443,7 +441,6 @@ pub struct PrimKey<T: MallocSizeOf> {
 #[derive(Debug)]
 pub struct PrimTemplateCommonData {
     pub flags: PrimitiveFlags,
-    pub prim_size: LayoutSize,
     pub opacity: PrimitiveOpacity,
     
     
@@ -459,7 +456,6 @@ impl PrimTemplateCommonData {
     pub fn with_key_common(common: PrimKeyCommonData) -> Self {
         PrimTemplateCommonData {
             flags: common.flags,
-            prim_size: common.prim_size.into(),
             gpu_buffer_address: GpuBufferAddress::INVALID,
             opacity: PrimitiveOpacity::translucent(),
             aligned_aa_edges: common.aligned_aa_edges,
@@ -819,19 +815,23 @@ pub struct PrimitiveInstance {
     pub clip_leaf_id: ClipLeafId,
 
     
-    pub prim_origin: LayoutPoint,
+    
+    
+    
+    
+    pub prim_rect: LayoutRect,
 }
 
 impl PrimitiveInstance {
     pub fn new(
         kind: PrimitiveKind,
         clip_leaf_id: ClipLeafId,
-        prim_origin: LayoutPoint,
+        prim_rect: LayoutRect,
     ) -> Self {
         PrimitiveInstance {
             kind,
             clip_leaf_id,
-            prim_origin,
+            prim_rect,
         }
     }
 
@@ -1326,6 +1326,6 @@ fn test_struct_sizes() {
     
     
     
-    assert_eq!(mem::size_of::<PrimitiveInstance>(), 40, "PrimitiveInstance size changed");
+    assert_eq!(mem::size_of::<PrimitiveInstance>(), 48, "PrimitiveInstance size changed");
     assert_eq!(mem::size_of::<PrimitiveKind>(), 24, "PrimitiveKind size changed");
 }
