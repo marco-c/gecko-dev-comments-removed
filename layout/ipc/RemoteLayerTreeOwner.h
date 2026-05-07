@@ -59,7 +59,7 @@ class RemoteLayerTreeOwner final {
  private:
   
   
-  base::ProcessId mTabProcessId;
+  base::ProcessId mTabProcessId = 0;
   
   LayersId mLayersId;
   

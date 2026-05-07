@@ -87,7 +87,7 @@ class nsRubyBaseContainerFrame final : public nsContainerFrame {
   void PullOneColumn(nsLineLayout* aLineLayout, PullFrameState& aPullFrameState,
                      mozilla::RubyColumn& aColumn, bool& aIsComplete);
 
-  nscoord mBaseline;
+  nscoord mBaseline = 0;
 
   
   mozilla::RubyBlockLeadings mDescendantLeadings;

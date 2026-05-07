@@ -245,7 +245,7 @@ class SVGFilterInstance {
   
 
 
-  uint16_t mPrimitiveUnits;
+  uint16_t mPrimitiveUnits = SVG_UNIT_TYPE_USERSPACEONUSE;
 
   
 

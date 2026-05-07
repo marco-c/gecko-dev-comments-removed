@@ -502,40 +502,40 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
 
   mozilla::UniquePtr<mozilla::ProfileChunkedBuffer> mPaintCause;
 
-  bool mThrottled : 1;
-  bool mNeedToRecomputeVisibility : 1;
-  bool mTestControllingRefreshes : 1;
-  bool mInRefresh : 1;
+  bool mThrottled : 1 = false;
+  bool mNeedToRecomputeVisibility : 1 = false;
+  bool mTestControllingRefreshes : 1 = false;
+  bool mInRefresh : 1 = false;
 
   
   
-  bool mWaitingForTransaction : 1;
+  bool mWaitingForTransaction : 1 = false;
   
   
   
-  bool mSkippedPaints : 1;
+  bool mSkippedPaints : 1 = false;
 
   
   
   
-  bool mResizeSuppressed : 1;
+  bool mResizeSuppressed : 1 = false;
 
   
-  bool mNeedToRunFrameRequestCallbacks : 1;
-
-  
-  
-  bool mInNormalTick : 1;
+  bool mNeedToRunFrameRequestCallbacks : 1 = false;
 
   
   
-  bool mAttemptedExtraTickSinceLastVsync : 1;
+  bool mInNormalTick : 1 = false;
 
-  bool mHasExceededAfterLoadTickPeriod : 1;
+  
+  
+  bool mAttemptedExtraTickSinceLastVsync : 1 = false;
 
-  bool mHasImageAnimations : 1;
+  bool mHasExceededAfterLoadTickPeriod : 1 = false;
 
-  bool mHasStartedTimerAtLeastOnce : 1;
+  bool mHasImageAnimations : 1 = false;
+
+  bool mHasStartedTimerAtLeastOnce : 1 = false;
 
   mozilla::TimeStamp mMostRecentRefresh;
   mozilla::TimeStamp mTickStart;
