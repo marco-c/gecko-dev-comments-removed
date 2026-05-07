@@ -8842,13 +8842,6 @@
   value: false
   mirror: always
 
-# Force the ICC color management path for JXL decoding even when the output
-# profile is sRGB. Intended for testing purposes only.
-- name: image.jxl.force_icc_slow_path
-  type: RelaxedAtomicBool
-  value: false
-  mirror: always
-  rust: true
 #endif
 
 #---------------------------------------------------------------------------
@@ -9643,7 +9636,7 @@
 
 -   name: javascript.options.wasm_js_promise_integration
     type: bool
-    value: false
+    value: @IS_NIGHTLY_BUILD@
     mirror: always
     set_spidermonkey_pref: always
 
