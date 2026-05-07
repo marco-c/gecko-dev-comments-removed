@@ -296,7 +296,7 @@ class Generator:
             
             
             logger.warning(
-                "PerfDocs are outdated, run `./mach lint -l perfdocs --outgoing --fix` "
+                "PerfDocs are outdated, run `./mach perfdocs --generate` "
                 + "to update them. You can also apply the "
                 + f"{'perfdocs.diff' if ON_TRY else 'diff.txt'} patch file "
                 + f"{'produced from this reviewbot test ' if ON_TRY else ''}"

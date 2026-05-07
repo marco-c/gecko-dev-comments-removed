@@ -48,6 +48,10 @@ class PerfDocLogger:
         if type(files) is not list:
             files = [files]
 
+        
+        
+        PerfDocLogger.FAILED = True
+
         if len(files) == 0:
             self.logger.info("No file was provided for the warning")
             self.logger.lint_error(
@@ -58,8 +62,6 @@ class PerfDocLogger:
                 linter="perfdocs",
                 rule="Flawless performance docs (unknown file)",
             )
-
-            PerfDocLogger.FAILED = True
             return
 
         
