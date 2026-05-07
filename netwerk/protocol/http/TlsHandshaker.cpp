@@ -270,19 +270,6 @@ void TlsHandshaker::Check0RttEnabled(nsITLSSocketControl* ssl) {
         ("TlsHandshaker::Check0RttEnabled %p - "
          "early selected alpn not available",
          mOwner.get()));
-    
-    
-    
-    
-    
-    bool resumptionTokenPresent = false;
-    if (NS_SUCCEEDED(ssl->GetResumptionTokenPresent(&resumptionTokenPresent)) &&
-        resumptionTokenPresent) {
-      RefPtr<nsAHttpTransaction> transaction = mOwner->Transaction();
-      if (transaction) {
-        (void)transaction->Do0RTT(false);
-      }
-    }
   } else {
     mOwner->ChangeConnectionState(ConnectionState::ZERORTT);
     LOG1(

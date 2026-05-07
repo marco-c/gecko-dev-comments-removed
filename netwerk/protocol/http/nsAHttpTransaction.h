@@ -205,16 +205,7 @@ class nsAHttpTransaction : public nsSupportsWeakReference {
   
   
   
-  
-  
-  [[nodiscard]] virtual bool Do0RTT(bool aCanSendEarlyData = true) {
-    return false;
-  }
-
-  
-  
-  
-  virtual void OnPSKResumptionAccepted() {}
+  [[nodiscard]] virtual bool Do0RTT() { return false; }
   
   
   
