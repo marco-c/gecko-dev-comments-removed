@@ -7,6 +7,7 @@
 #include <d3d11.h>
 #include <d3d11_1.h>
 
+#include "gfxPlatform.h"
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/gfx/Types.h"
 #include "mozilla/layers/TextureD3D11.h"
@@ -63,7 +64,7 @@ static Maybe<DXGI_COLOR_SPACE_TYPE> GetSourceDXGIColorSpace(
       return Nothing();
     case gfx::YUVColorSpace::BT2020:
       
-      if (!StaticPrefs::gfx_color_management_hdr()) {
+      if (!gfxPlatform::UseHDR()) {
         
         
         switch (aColorRange) {
