@@ -608,7 +608,10 @@ nsresult DnsAndConnectSocket::SetupConn(bool isPrimary, nsresult status) {
 
   
   
-  mHasConnected = true;
+  if (!mHasConnected) {
+    mHasConnected = true;
+    ent->OnConnectionAttemptConnected();
+  }
 
   
   RefPtr<PendingTransactionInfo> pendingTransInfo =
