@@ -19,10 +19,8 @@ import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
-import mozilla.components.browser.state.action.CustomTabListAction
 import mozilla.components.browser.state.action.EngineAction
 import mozilla.components.browser.state.action.RecentlyClosedAction
-import mozilla.components.browser.state.action.TabListAction
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.engine.Engine
 import mozilla.components.concept.engine.translate.ModelManagementOptions
@@ -39,6 +37,7 @@ import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.PermissionStorage
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.utils.Settings
+import kotlin.test.assertIs
 
 class DefaultDeleteBrowsingDataControllerTest {
 
@@ -93,10 +92,6 @@ class DefaultDeleteBrowsingDataControllerTest {
 
         coVerify(ordering = Ordering.ORDERED) {
             historyStorage.deleteEverything()
-
-            store.dispatch(TabListAction.RemoveAllNormalTabsAction)
-            store.dispatch(TabListAction.RemoveAllPrivateTabsAction)
-            store.dispatch(CustomTabListAction.RemoveAllCustomTabsAction)
             store.dispatch(EngineAction.PurgeHistoryAction)
             store.dispatch(RecentlyClosedAction.RemoveAllClosedTabAction)
         }
@@ -238,7 +233,7 @@ class DefaultDeleteBrowsingDataControllerTest {
         val succeedingType = DeleteBrowsingDataOnQuitType.TABS
 
         val exceptionHandler = CoroutineExceptionHandler { _, throwable ->
-            assertTrue(throwable is RuntimeException)
+            assertIs<RuntimeException>(throwable)
             assertEquals("Deletion failed!", throwable.message)
         }
 
