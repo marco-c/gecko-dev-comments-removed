@@ -205,11 +205,7 @@ class nsAHttpTransaction : public nsSupportsWeakReference {
   
   
   
-  
-  
-  [[nodiscard]] virtual bool Do0RTT(bool aCanSendEarlyData = true) {
-    return false;
-  }
+  [[nodiscard]] virtual bool Do0RTT() { return false; }
   
   
   
