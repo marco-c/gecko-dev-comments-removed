@@ -68,7 +68,7 @@ NS_INTERFACE_MAP_END
 NS_IMPL_CYCLE_COLLECTING_ADDREF(FontFace)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(FontFace)
 
-FontFace::FontFace(nsIGlobalObject* aParent) { BindToOwner(aParent); }
+FontFace::FontFace(nsIGlobalObject* aParent) { BindToGlobal(aParent); }
 
 FontFace::~FontFace() {
   
