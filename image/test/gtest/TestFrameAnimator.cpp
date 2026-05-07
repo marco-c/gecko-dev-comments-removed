@@ -130,6 +130,6 @@ TEST_F(ImageFrameAnimator, BlendAVIFWithFilter) {
 
 #ifdef MOZ_JXL
 TEST_F(ImageFrameAnimator, BlendJXLWithFilter) {
-  CheckFrameAnimatorBlend(BlendAnimatedJXLTestCase());
+  CheckFrameAnimatorBlend(BlendAnimatedJXLTestCase(),  1);
 }
 #endif
