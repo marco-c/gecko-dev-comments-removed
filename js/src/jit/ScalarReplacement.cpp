@@ -1965,6 +1965,11 @@ bool ArgumentsReplacer::escapes(MInstruction* ins, bool guardedForMapped) {
       }
 
       case MDefinition::Opcode::ApplyArgsObj: {
+        
+        if (args_->block()->info().anyFormalIsForwarded()) {
+          JitSpew(JitSpew_Escape, "has forwarded formal arguments\n");
+          return true;
+        }
         if (ins == def->toApplyArgsObj()->getThis()) {
           JitSpew(JitSpew_Escape, "is escaped as |this| arg of ApplyArgsObj\n");
           return true;
@@ -1973,14 +1978,21 @@ bool ArgumentsReplacer::escapes(MInstruction* ins, bool guardedForMapped) {
         break;
       }
 
+      case MDefinition::Opcode::ArgumentsSlice:
+      case MDefinition::Opcode::ArrayFromArgumentsObject:
+      case MDefinition::Opcode::LoadArgumentsObjectArg:
+      case MDefinition::Opcode::LoadArgumentsObjectArgHole:
+        
+        if (args_->block()->info().anyFormalIsForwarded()) {
+          JitSpew(JitSpew_Escape, "has forwarded formal arguments\n");
+          return true;
+        }
+        break;
+
       
       case MDefinition::Opcode::ArgumentsObjectLength:
       case MDefinition::Opcode::GetArgumentsObjectArg:
-      case MDefinition::Opcode::LoadArgumentsObjectArg:
-      case MDefinition::Opcode::LoadArgumentsObjectArgHole:
       case MDefinition::Opcode::InArgumentsObjectArg:
-      case MDefinition::Opcode::ArrayFromArgumentsObject:
-      case MDefinition::Opcode::ArgumentsSlice:
         break;
 
       
@@ -2082,9 +2094,6 @@ void ArgumentsReplacer::visitGuardArgumentsObjectFlags(
   }
 
 #ifdef DEBUG
-  
-  
-  
   
   
   
