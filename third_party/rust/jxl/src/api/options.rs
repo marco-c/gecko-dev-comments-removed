@@ -27,7 +27,7 @@ pub struct JxlDecoderOptions {
     
     
     
-    pub pixel_limit: Option<usize>,
+    pub sample_limit: Option<usize>,
     
     
     
@@ -56,7 +56,7 @@ impl Default for JxlDecoderOptions {
             desired_intensity_target: None,
             progressive_mode: JxlProgressiveMode::Pass,
             cms: None,
-            pixel_limit: None,
+            sample_limit: None,
             high_precision: false,
             premultiply_output: false,
             scan_frames_only: false,
