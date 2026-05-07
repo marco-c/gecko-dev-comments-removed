@@ -57,17 +57,18 @@ CodecType ConvertWebrtcCodecTypeToCodecType(
   return CodecType::Unknown;
 }
 
-bool WebrtcMediaDataEncoder::CanCreate(
+
+media::EncodeSupportSet WebrtcMediaDataEncoder::SupportsCodec(
     const webrtc::VideoCodecType aCodecType) {
   if (aCodecType != webrtc::VideoCodecType::kVideoCodecH264 &&
       aCodecType != webrtc::VideoCodecType::kVideoCodecVP8 &&
       aCodecType != webrtc::VideoCodecType::kVideoCodecVP9) {
     
-    return false;
+    return {};
   }
   auto factory = MakeRefPtr<PEMFactory>();
   CodecType type = ConvertWebrtcCodecTypeToCodecType(aCodecType);
-  return !factory->SupportsCodec(type).isEmpty();
+  return factory->SupportsCodec(type);
 }
 
 static const char* PacketModeStr(const webrtc::CodecSpecificInfo& aInfo) {
