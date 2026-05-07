@@ -170,7 +170,11 @@ function clickSecondaryAction(actionIndex) {
     
     let actionMenuItem =
       popupNotification.querySelectorAll("menuitem")[actionIndex - 1];
-    popupNotification.menupopup.activateItem(actionMenuItem);
+    if (popupNotification.menupopup.isNativeMenu) {
+      popupNotification.menupopup.activateItem(actionMenuItem);
+    } else {
+      await EventUtils.synthesizeMouseAtCenter(actionMenuItem, {});
+    }
     await removePromise;
   })();
 }

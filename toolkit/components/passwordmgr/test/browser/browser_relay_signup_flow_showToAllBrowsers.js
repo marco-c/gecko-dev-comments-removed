@@ -15,7 +15,7 @@ add_setup(async () => {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["signon.firefoxRelay.showToAllBrowsers", true],
-      ["browser.settings-redesign.nonTechnicalPrivacy2.enabled", true],
+      ["browser.settings-redesign.enabled", true],
     ],
   });
 });
@@ -190,7 +190,11 @@ async function clickThruMoreActionsToDisableRelay(notificationPopup) {
   );
   await BrowserTestUtils.waitForPopupEvent(menuPopup, "shown");
   const buttonToClick = menuPopup.querySelector("menuitem[accesskey='D']");
-  notificationPopup.activateItem(buttonToClick);
+  if (buttonToClick.parentNode.isNativeMenu) {
+    notificationPopup.activateItem(buttonToClick);
+  } else {
+    await clickButtonAndWaitForPopupToClose(buttonToClick);
+  }
 }
 
 add_task(
