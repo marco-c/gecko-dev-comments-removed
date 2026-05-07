@@ -1173,9 +1173,6 @@ class MOZ_RAII EnvironmentIter {
   void incrementScopeIter();
   void settle();
 
-  
-  EnvironmentIter(const EnvironmentIter& ei) = delete;
-
  public:
   
   EnvironmentIter(JSContext* cx, const EnvironmentIter& ei);
@@ -1192,6 +1189,9 @@ class MOZ_RAII EnvironmentIter {
   
   EnvironmentIter(JSContext* cx, JSObject* env, Scope* scope,
                   AbstractFramePtr frame);
+
+  
+  EnvironmentIter(const EnvironmentIter& ei) = delete;
 
   bool done() const { return si_.done(); }
 

@@ -123,12 +123,11 @@ class Thread {
   
   Thread(Thread&& aOther);
   Thread& operator=(Thread&& aOther);
-
- private:
   
   Thread(const Thread&) = delete;
   void operator=(const Thread&) = delete;
 
+ private:
   
   ThreadId id_;
 

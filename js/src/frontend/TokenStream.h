@@ -323,9 +323,9 @@ class MOZ_STACK_CLASS TokenStreamPosition final {
   inline explicit TokenStreamPosition(
       TokenStreamSpecific<Unit, AnyCharsAccess>& tokenStream);
 
- private:
   TokenStreamPosition(const TokenStreamPosition&) = delete;
 
+ private:
   
   
   
@@ -1681,11 +1681,6 @@ class TokenStreamCharsBase : public TokenStreamCharsShared {
     return this->sourceUnits.internalMatchCodeUnit(Unit(expect));
   }
 
-  template <typename T>
-  bool matchCodeUnit(T) = delete;
-  template <typename T>
-  bool matchLineTerminator(T) = delete;
-
   int32_t peekCodeUnit() {
     return MOZ_LIKELY(!sourceUnits.atEnd())
                ? CodeUnitValue(sourceUnits.peekCodeUnit())
@@ -1694,13 +1689,6 @@ class TokenStreamCharsBase : public TokenStreamCharsShared {
 
   
   inline void consumeKnownCodeUnit(int32_t unit);
-
-  
-  
-  
-  
-  template <typename T>
-  inline void consumeKnownCodeUnit(T) = delete;
 
   
 
@@ -1717,6 +1705,19 @@ class TokenStreamCharsBase : public TokenStreamCharsShared {
 
   [[nodiscard]] bool addLineOfContext(ErrorMetadata* err,
                                       uint32_t offset) const;
+
+ public:
+  template <typename T>
+  bool matchCodeUnit(T) = delete;
+  template <typename T>
+  bool matchLineTerminator(T) = delete;
+
+  
+  
+  
+  
+  template <typename T>
+  inline void consumeKnownCodeUnit(T) = delete;
 };
 
 template <>

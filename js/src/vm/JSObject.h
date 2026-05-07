@@ -589,6 +589,9 @@ class JSObject
       4 * sizeof(void*) + 16 * sizeof(JS::Value);
 #endif
 
+  JSObject(const JSObject& other) = delete;
+  void operator=(const JSObject& other) = delete;
+
  protected:
   
   
@@ -597,10 +600,6 @@ class JSObject
   friend class js::jit::MacroAssembler;
 
   static constexpr size_t offsetOfShape() { return offsetOfHeaderPtr(); }
-
- private:
-  JSObject(const JSObject& other) = delete;
-  void operator=(const JSObject& other) = delete;
 
  protected:
   
@@ -1092,8 +1091,12 @@ extern bool TestIntegrityLevel(JSContext* cx, HandleObject obj,
     JSContext* cx, HandleObject obj, JSProtoKey ctorKey,
     bool (*isDefaultSpecies)(JSContext*, JSFunction*));
 
-extern bool GetObjectFromHostDefinedData(JSContext* cx,
-                                         MutableHandleObject obj);
+extern bool GetObjectFromHostDefinedData(
+    JSContext* cx, MutableHandleObject incumbentGlobal,
+    MutableHandleObject optionalHostDefinedData);
+
+extern bool GetIncumbentGlobalRepresentative(
+    JSContext* cx, MutableHandleObject incumbentGlobalRepresentative);
 
 #ifdef DEBUG
 inline bool IsObjectValueInCompartment(const Value& v, JS::Compartment* comp) {

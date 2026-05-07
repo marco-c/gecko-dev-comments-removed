@@ -103,13 +103,13 @@ static PlainObjectSlotsKind PlainObjectSlotsKindFromAllocKind(
 class GlobalObjectData {
   friend class js::GlobalObject;
 
-  GlobalObjectData(const GlobalObjectData&) = delete;
-  void operator=(const GlobalObjectData&) = delete;
-
  public:
   explicit GlobalObjectData(Zone* zone);
 
   ~GlobalObjectData();
+
+  GlobalObjectData(const GlobalObjectData&) = delete;
+  void operator=(const GlobalObjectData&) = delete;
 
   
   
@@ -461,9 +461,6 @@ class GlobalObject : public NativeObject {
     return inited;
   }
 
-  
-  static GlobalObject* create(...) = delete;
-
   friend struct ::JSRuntime;
   static GlobalObject* createInternal(JSContext* cx, const JSClass* clasp);
 
@@ -472,6 +469,9 @@ class GlobalObject : public NativeObject {
                             JSPrincipals* principals,
                             JS::OnNewGlobalHookOption hookOption,
                             const JS::RealmOptions& options);
+
+  
+  static GlobalObject* create(...) = delete;
 
   
 

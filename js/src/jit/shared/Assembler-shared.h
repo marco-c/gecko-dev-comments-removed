@@ -786,7 +786,7 @@ class MOZ_RAII AutoCreatedBy {
   inline AutoCreatedBy(AssemblerShared& ash, const char* who) {}
   
   
-  inline ~AutoCreatedBy() {}
+  inline ~AutoCreatedBy() = default;
 };
 #endif
 

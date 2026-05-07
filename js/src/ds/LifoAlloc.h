@@ -470,9 +470,6 @@ class BumpChunk : public SingleLinkedListElement<BumpChunk> {
     MOZ_ASSERT(end() <= capacity_);
   }
 
-  BumpChunk& operator=(const BumpChunk&) = delete;
-  BumpChunk(const BumpChunk&) = delete;
-
   explicit BumpChunk(uintptr_t capacity)
       : bump_(begin()),
         capacity_(base() + capacity)
@@ -526,6 +523,9 @@ class BumpChunk : public SingleLinkedListElement<BumpChunk> {
 
  public:
   ~BumpChunk() { release(); }
+
+  BumpChunk& operator=(const BumpChunk&) = delete;
+  BumpChunk(const BumpChunk&) = delete;
 
   
   bool empty() const { return end() == begin(); }
@@ -742,9 +742,6 @@ class LifoAlloc {
   bool fallibleScope_;
 #endif
 
-  void operator=(const LifoAlloc&) = delete;
-  LifoAlloc(const LifoAlloc&) = delete;
-
   
   UniqueBumpChunk newChunkWithCapacity(size_t n, bool oversize);
 
@@ -815,6 +812,9 @@ class LifoAlloc {
   {
     reset(defaultChunkSize);
   }
+
+  void operator=(const LifoAlloc&) = delete;
+  LifoAlloc(const LifoAlloc&) = delete;
 
   
   

@@ -226,6 +226,9 @@ class RegExpObject : public NativeObject {
   void dumpOwnStringContent(js::GenericPrinter& out) const;
 #endif
 
+  
+  void setPrivate(void* priv) = delete;
+
  private:
   
 
@@ -233,9 +236,6 @@ class RegExpObject : public NativeObject {
 
   static RegExpShared* createShared(JSContext* cx,
                                     Handle<RegExpObject*> regexp);
-
-  
-  void setPrivate(void* priv) = delete;
 };
 
 

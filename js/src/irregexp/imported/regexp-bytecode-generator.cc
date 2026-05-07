@@ -231,7 +231,7 @@ void BytecodeWriter::EmitOperand<ReBcOpType::kBitTable>(const uint8_t* src,
 template <Bytecode bytecode, typename... Args>
 void BytecodeGenerator::Emit(Args... args) {
   
-  auto fix_label = [this](auto arg) {
+  [[maybe_unused]] auto fix_label = [this](auto arg) {
     if constexpr (std::is_convertible_v<decltype(arg), Label*>) {
       Label* l = static_cast<Label*>(arg);
       return l ? l : &backtrack_;
