@@ -24,6 +24,8 @@ export type GetTextOptions = Partial<{
   removeBoilerplate: boolean;
   
   _forceRemoveBoilerplate: boolean;
+  
+  sourceUrl: string;
 }>;
 
 export type CanvasSnapshot = {
@@ -43,6 +45,15 @@ export type ExtractionResult = {
   links: string[];
   canvasSnapshots: CanvasSnapshot[];
 };
+
+export type ExtractionStrategy = Partial<{
+  
+  filterSelector: string;
+  
+  formatBlockAnchorsAsMarkdown: boolean;
+  
+  formatBlockAnchorSelector: string;
+}>;
 
 export type PageMetadata = {
   
