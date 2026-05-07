@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_MEDIA_MEDIACAPABILITIES_MEDIACAPABILITIESVALIDATION_H_
 #define DOM_MEDIA_MEDIACAPABILITIES_MEDIACAPABILITIESVALIDATION_H_
 #include "mozilla/DefineEnum.h"
@@ -55,6 +53,9 @@ ValidationResult IsValidMediaEncodingConfiguration(
 void RejectWithValidationResult(dom::Promise* aPromise,
                                 const ValidationError aErr);
 void ThrowWithValidationResult(ErrorResult& aRv, const ValidationError aErr);
+
+
+bool IsMediaTypeWebRTC(const MediaType& aType);
 }  
 }  
 

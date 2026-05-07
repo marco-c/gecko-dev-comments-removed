@@ -1,8 +1,6 @@
 
 
 
-
-
 #include "MediaCapabilitiesValidation.h"
 
 #include <algorithm>
@@ -126,10 +124,17 @@ static ValidationResult CheckMIMETypeValidity(
   
   
   
+  
+  
+  
+  
+  
   const size_t numParams = aMime.GetParameterCount();
   if (IsSingleCodecType(aMime) && numParams != 0) {
     ValidationResult err = Err(ValidationError::SingleCodecHasParams);
-    LOG(("[Invalid MIME Validity #2, %s] Rejecting '%s'",
+    LOG(
+        ("[Invalid MIME Validity #2, %s] Rejecting '%s' (single codec type "
+         "has params)",
          EnumValueToString(err.unwrapErr()), aMime.OriginalString().get()));
     return err;
   }
@@ -481,6 +486,16 @@ static bool IsContainerType(const MediaExtendedMIMEType& aMime) {
 }
 static bool IsSingleCodecType(const MediaExtendedMIMEType& aMime) {
   return MimePrefixStartsWith(aMime, kSingleWebRTCCodecTypes);
+}
+
+bool IsMediaTypeWebRTC(const MediaType& aType) {
+  return aType.match(
+      [&](const MediaEncodingType& aType) {
+        return aType == MediaEncodingType::Webrtc;
+      },
+      [&](const MediaDecodingType& aType) {
+        return aType == MediaDecodingType::Webrtc;
+      });
 }
 
 static nsAutoCString GetMIMEDebugString(const MediaConfiguration& aConfig) {
