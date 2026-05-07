@@ -6678,14 +6678,6 @@ nsresult nsDocShell::CreateAboutBlankDocumentViewer(
         rv = Embed(viewer, aActor, true, nullptr, mCurrentURI);
         NS_ENSURE_SUCCESS(rv, rv);
 
-        if (nsIContentSecurityPolicy* csp =
-                PolicyContainer::GetCSP(blankDoc->GetPolicyContainer())) {
-          
-          
-          
-          MOZ_TRY(csp->SetRequestContextWithDocument(blankDoc));
-        }
-
         SetCurrentURI(blankDoc->GetDocumentURI(), nullptr,
                        true,
                        aIsInitialDocument,
@@ -10097,6 +10089,13 @@ nsresult nsDocShell::CompleteInitialAboutBlankLoad(
   MOZ_ASSERT(doc->GetReadyStateEnum() == Document::READYSTATE_COMPLETE);
   MOZ_ASSERT(!mIsLoadingDocument);
 
+  if (nsIContentSecurityPolicy* csp =
+          PolicyContainer::GetCSP(doc->GetPolicyContainer())) {
+    
+    
+    
+    MOZ_TRY(csp->SetRequestContextWithDocument(doc));
+  }
   doc->ApplyCspFromLoadInfo(aLoadInfo);
   doc->ApplySettingsFromCSP(false);
   doc->RecomputeResistFingerprinting();
