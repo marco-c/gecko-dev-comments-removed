@@ -1,0 +1,251 @@
+
+
+const { HandlerServiceTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/HandlerServiceTestUtils.sys.mjs"
+);
+
+let gHandlerService = Cc["@mozilla.org/uriloader/handler-service;1"].getService(
+  Ci.nsIHandlerService
+);
+
+let gOldMailHandlers = [];
+let gDummyHandlers = [];
+let gOriginalPreferredMailHandler;
+let gOriginalPreferredPDFHandler;
+
+
+
+
+let appHandlerInitialized;
+
+registerCleanupFunction(function () {
+  function removeDummyHandlers(handlers) {
+    
+    for (let i = handlers.Count() - 1; i >= 0; i--) {
+      try {
+        if (
+          gDummyHandlers.some(
+            h =>
+              h.uriTemplate ==
+              handlers.queryElementAt(i, Ci.nsIWebHandlerApp).uriTemplate
+          )
+        ) {
+          handlers.removeElementAt(i);
+        }
+      } catch (ex) {
+        
+      }
+    }
+  }
+  
+  let mailHandlerInfo = HandlerServiceTestUtils.getHandlerInfo("mailto");
+  let mailHandlers = mailHandlerInfo.possibleApplicationHandlers;
+  for (let h of gOldMailHandlers) {
+    mailHandlers.appendElement(h);
+  }
+  removeDummyHandlers(mailHandlers);
+  mailHandlerInfo.preferredApplicationHandler = gOriginalPreferredMailHandler;
+  gHandlerService.store(mailHandlerInfo);
+
+  let pdfHandlerInfo =
+    HandlerServiceTestUtils.getHandlerInfo("application/pdf");
+  removeDummyHandlers(pdfHandlerInfo.possibleApplicationHandlers);
+  pdfHandlerInfo.preferredApplicationHandler = gOriginalPreferredPDFHandler;
+  gHandlerService.store(pdfHandlerInfo);
+
+  gBrowser.removeCurrentTab();
+});
+
+function scrubMailtoHandlers(handlerInfo) {
+  
+  
+  let handlers = handlerInfo.possibleApplicationHandlers;
+  for (let i = handlers.Count() - 1; i >= 0; i--) {
+    try {
+      let handler = handlers.queryElementAt(i, Ci.nsIWebHandlerApp);
+      gOldMailHandlers.push(handler);
+      
+      handlers.removeElementAt(i);
+    } catch (ex) {}
+  }
+}
+
+add_setup(async function () {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.settings-redesign.enabled", true]],
+  });
+
+  
+  let handler1 = Cc["@mozilla.org/uriloader/web-handler-app;1"].createInstance(
+    Ci.nsIWebHandlerApp
+  );
+  handler1.name = "UniqueMailHandler";
+  handler1.uriTemplate = "https://example.com/mail/%s";
+
+  let handler2 = Cc["@mozilla.org/uriloader/web-handler-app;1"].createInstance(
+    Ci.nsIWebHandlerApp
+  );
+  handler2.name = "UniquePDFHandler";
+  handler2.uriTemplate = "https://example.com/pdf/%s";
+  gDummyHandlers.push(handler1, handler2);
+
+  
+  let mailtoHandlerInfo = HandlerServiceTestUtils.getHandlerInfo("mailto");
+  scrubMailtoHandlers(mailtoHandlerInfo);
+  gOriginalPreferredMailHandler = mailtoHandlerInfo.preferredApplicationHandler;
+  mailtoHandlerInfo.possibleApplicationHandlers.appendElement(handler1);
+  gHandlerService.store(mailtoHandlerInfo);
+
+  
+  let pdfHandlerInfo =
+    HandlerServiceTestUtils.getHandlerInfo("application/pdf");
+  
+  gOriginalPreferredPDFHandler = pdfHandlerInfo.preferredApplicationHandler;
+  pdfHandlerInfo.possibleApplicationHandlers.appendElement(handler2);
+  gHandlerService.store(pdfHandlerInfo);
+
+  appHandlerInitialized = TestUtils.topicObserved("app-handler-loaded");
+
+  await openPreferencesViaOpenPreferencesAPI("downloads", { leaveOpen: true });
+
+  info("Preferences page opened on the downloads pane.");
+
+  await gBrowser.selectedBrowser.contentWindow.promiseLoadHandlersList;
+  info("Apps list loaded.");
+});
+
+
+
+
+
+function setFilterAndWait(win, value) {
+  let filterInput = win.document.getElementById("applicationsFilter");
+  filterInput.value = value;
+  filterInput.dispatchEvent(new CustomEvent("MozInputSearch:search"));
+}
+
+
+
+
+
+async function selectItemInList(list, item) {
+  list.value = item.value;
+  list.dispatchEvent(new CustomEvent("change"));
+  await list.updateComplete;
+}
+
+add_task(async function testFilterByTypeLabel() {
+  await appHandlerInitialized;
+
+  let win = gBrowser.selectedBrowser.contentWindow;
+  let container = win.document.getElementById("applicationsHandlersView");
+
+  let mailItem = container.querySelector("moz-box-item[type='mailto']");
+  let pdfItem = container.querySelector("moz-box-item[type='application/pdf']");
+  Assert.ok(mailItem, "mailItem is present in handlersView.");
+  Assert.ok(pdfItem, "pdfItem is present in handlersView.");
+
+  await win.document.l10n.translateFragment(mailItem);
+  let mailLabel = mailItem.label.toLowerCase();
+
+  setFilterAndWait(win, mailLabel.slice(0, 4));
+  Assert.ok(
+    !mailItem.hidden,
+    "mailto item should be visible when its label matches the filter"
+  );
+  Assert.ok(
+    pdfItem.hidden,
+    "pdf item should be hidden when its label does not match the filter"
+  );
+
+  setFilterAndWait(win, "");
+  Assert.ok(
+    !mailItem.hidden,
+    "mailto item should be visible after clearing filter"
+  );
+  Assert.ok(
+    !pdfItem.hidden,
+    "pdf item should be visible after clearing filter"
+  );
+});
+
+add_task(async function testFilterByActionLabel() {
+  await appHandlerInitialized;
+
+  let win = gBrowser.selectedBrowser.contentWindow;
+  let container = win.document.getElementById("applicationsHandlersView");
+
+  let mailItem = container.querySelector("moz-box-item[type='mailto']");
+  let pdfItem = container.querySelector("moz-box-item[type='application/pdf']");
+  Assert.ok(mailItem, "mailItem is present in handlersView.");
+  Assert.ok(pdfItem, "pdfItem is present in handlersView.");
+
+  
+  let mailList = mailItem.querySelector(".actionsMenu");
+  let mailHandlerOption = mailList.querySelector(
+    "moz-option[data-l10n-args*='UniqueMailHandler']"
+  );
+  Assert.ok(
+    mailHandlerOption,
+    "UniqueMailHandler option is present in mailto actions"
+  );
+  await selectItemInList(mailList, mailHandlerOption);
+  await win.document.l10n.translateFragment(mailHandlerOption);
+  await win.document.l10n.translateFragment(mailItem);
+
+  
+  let pdfList = pdfItem.querySelector(".actionsMenu");
+  let pdfHandlerOption = pdfList.querySelector(
+    "moz-option[data-l10n-args*='UniquePDFHandler']"
+  );
+  Assert.ok(
+    pdfHandlerOption,
+    "UniquePDFHandler option is present in pdf actions"
+  );
+  await selectItemInList(pdfList, pdfHandlerOption);
+  await win.document.l10n.translateFragment(pdfHandlerOption);
+  await win.document.l10n.translateFragment(pdfItem);
+
+  
+  setFilterAndWait(win, "unique");
+  Assert.ok(
+    !mailItem.hidden,
+    "mailto item should be visible when filter matches its selected action label"
+  );
+  Assert.ok(
+    !pdfItem.hidden,
+    "pdf item should be visible when filter matches its selected action label"
+  );
+
+  
+  setFilterAndWait(win, "uniquemailhandler");
+  Assert.ok(
+    !mailItem.hidden,
+    "mailto item should be visible when its selected action label matches the filter"
+  );
+  Assert.ok(
+    pdfItem.hidden,
+    "pdf item should be hidden when neither its type label nor action label matches"
+  );
+
+  
+  setFilterAndWait(win, "uniquepdfhandler");
+  Assert.ok(
+    mailItem.hidden,
+    "mailto item should be hidden when neither its type label nor action label matches"
+  );
+  Assert.ok(
+    !pdfItem.hidden,
+    "pdf item should be visible when its selected action label matches the filter"
+  );
+
+  setFilterAndWait(win, "");
+  Assert.ok(
+    !mailItem.hidden,
+    "mailto item should be visible after clearing filter"
+  );
+  Assert.ok(
+    !pdfItem.hidden,
+    "pdf item should be visible after clearing filter"
+  );
+});

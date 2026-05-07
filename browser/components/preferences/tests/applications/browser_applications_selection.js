@@ -113,9 +113,9 @@ add_setup(async function () {
 
   appHandlerInitialized = TestUtils.topicObserved("app-handler-loaded");
 
-  await openPreferencesViaOpenPreferencesAPI("general", { leaveOpen: true });
+  await openPreferencesViaOpenPreferencesAPI("downloads", { leaveOpen: true });
 
-  info("Preferences page opened on the general pane.");
+  info("Preferences page opened on the downloads pane.");
 
   await gBrowser.selectedBrowser.contentWindow.promiseLoadHandlersList;
   info("Apps list loaded.");
@@ -206,11 +206,25 @@ async function selectStandardOptions(itemToUse) {
   webAppItems = webAppItems.filter(
     item => item.handlerApp instanceof Ci.nsIWebHandlerApp
   );
+
+  
+  await BrowserTestUtils.waitForMutationCondition(
+    list,
+    {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["label"],
+    },
+    () => webAppItems.every(item => item.label && item.label.trim() !== "")
+  );
+
   Assert.equal(
     webAppItems.length,
     2,
     "Should have 2 web application handler. (" + itemType + ")"
   );
+
   Assert.notEqual(
     webAppItems[0].label,
     webAppItems[1].label,
