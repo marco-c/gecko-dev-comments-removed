@@ -197,15 +197,15 @@ impl InternablePrimitive for TextRun {
         prim_store: &mut PrimitiveStore,
     ) -> PrimitiveKind {
         let run_index = prim_store.text_runs.push(TextRunInstance {
-            used_font: key.font.clone(),
-            glyph_keys_range: storage::Range::empty(),
-            snapped_reference_frame_relative_offset: LayoutVector2D::zero(),
             shadow: key.shadow,
-            raster_scale: 1.0,
             requested_raster_space: key.requested_raster_space,
         });
 
-        PrimitiveKind::TextRun{ data_handle, run_index }
+        PrimitiveKind::TextRun {
+            data_handle,
+            run_index,
+            scratch_handle: storage::Index::INVALID,
+        }
     }
 }
 
@@ -245,20 +245,37 @@ impl IsVisible for TextRun {
     }
 }
 
+
+
+
+#[derive(Debug)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+pub struct TextRunScratch {
+    
+    
+    
+    pub used_font: FontInstance,
+    
+    
+    pub glyph_keys_range: storage::Range<GlyphKey>,
+    
+    pub snapped_reference_frame_relative_offset: LayoutVector2D,
+    
+    pub raster_scale: f32,
+}
+
 #[derive(Debug)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 pub struct TextRunInstance {
-    pub used_font: FontInstance,
-    pub glyph_keys_range: storage::Range<GlyphKey>,
-    pub snapped_reference_frame_relative_offset: LayoutVector2D,
     pub shadow: bool,
-    pub raster_scale: f32,
     pub requested_raster_space: RasterSpace,
 }
 
 impl TextRunInstance {
-    pub fn update_font_instance(
-        &mut self,
+    
+    
+    
+    fn compute_font_instance(
         specified_font: &FontInstance,
         surface: &SurfaceInfo,
         spatial_node_index: SpatialNodeIndex,
@@ -266,14 +283,14 @@ impl TextRunInstance {
         allow_subpixel: bool,
         raster_space: RasterSpace,
         spatial_tree: &SpatialTree,
-    ) -> bool {
+    ) -> (FontInstance, f32, LayoutVector2D) {
         
         
         
         
         
         
-        let raster_scale = raster_space.local_scale().unwrap_or(1.0).max(0.001);
+        let raster_scale_input = raster_space.local_scale().unwrap_or(1.0).max(0.001);
 
         let dps = surface.device_pixel_scale.0;
         let font_size = specified_font.size.to_f32_px();
@@ -282,7 +299,7 @@ impl TextRunInstance {
         
         
         
-        let quantized_scale = (dps * raster_scale * 100.0).round() / 100.0;
+        let quantized_scale = (dps * raster_scale_input * 100.0).round() / 100.0;
         let mut device_font_size = font_size * quantized_scale;
 
         
@@ -300,28 +317,24 @@ impl TextRunInstance {
             (true, !transform.is_simple_2d_translation(), false, false)
         };
 
+        let mut raster_scale = raster_scale_input;
         let font_transform = if transform_glyphs {
             
             
-            self.raster_scale = 1.0;
+            raster_scale = 1.0;
             FontTransform::from(transform)
         } else {
             if oversized {
                 
                 
                 
-                let limited_raster_scale = FONT_SIZE_LIMIT / (font_size * dps);
+                raster_scale = FONT_SIZE_LIMIT / (font_size * dps);
                 device_font_size = FONT_SIZE_LIMIT;
-
-                
-                
-                self.raster_scale = limited_raster_scale;
-            } else {
-                
-                
-                
-                self.raster_scale = raster_scale;
             }
+            
+            
+            
+            
 
             
             FontTransform::identity()
@@ -335,7 +348,7 @@ impl TextRunInstance {
         
         
         
-        self.snapped_reference_frame_relative_offset = if transform_glyphs {
+        let snapped_offset = if transform_glyphs {
             LayoutVector2D::zero()
         } else {
             
@@ -363,14 +376,7 @@ impl TextRunInstance {
         }
 
         
-        
-        let cache_dirty =
-            self.used_font.transform != font_transform ||
-            self.used_font.size != device_font_size.into() ||
-            self.used_font.flags != flags;
-
-        
-        self.used_font = FontInstance {
+        let mut used_font = FontInstance {
             transform: font_transform,
             size: device_font_size.into(),
             flags,
@@ -379,7 +385,7 @@ impl TextRunInstance {
 
         
         if !allow_subpixel || !use_subpixel_aa {
-            self.used_font.disable_subpixel_aa();
+            used_font.disable_subpixel_aa();
 
             
             
@@ -387,11 +393,11 @@ impl TextRunInstance {
             
             
             if oversized {
-                self.used_font.disable_subpixel_position();
+                used_font.disable_subpixel_position();
             }
         }
 
-        cache_dirty
+        (used_font, raster_scale, snapped_offset)
     }
 
     
@@ -444,7 +450,7 @@ impl TextRunInstance {
     }
 
     pub fn request_resources(
-        &mut self,
+        &self,
         prim_offset: LayoutVector2D,
         specified_font: &FontInstance,
         glyphs: &[GlyphInstance],
@@ -457,7 +463,7 @@ impl TextRunInstance {
         gpu_buffer: &mut GpuBufferBuilderF,
         spatial_tree: &SpatialTree,
         scratch: &mut PrimitiveScratchBuffer,
-    ) {
+    ) -> storage::Index<TextRunScratch> {
         let raster_space = self.get_raster_space_for_prim(
             spatial_node_index,
             low_quality_pinch_zoom,
@@ -465,7 +471,7 @@ impl TextRunInstance {
             spatial_tree,
         );
 
-        let cache_dirty = self.update_font_instance(
+        let (used_font, raster_scale, snapped_offset) = Self::compute_font_instance(
             specified_font,
             surface,
             spatial_node_index,
@@ -475,28 +481,35 @@ impl TextRunInstance {
             spatial_tree,
         );
 
-        if self.glyph_keys_range.is_empty() || cache_dirty {
-            let subpx_dir = self.used_font.get_subpx_dir();
+        
+        
+        let subpx_dir = used_font.get_subpx_dir();
 
-            let dps = surface.device_pixel_scale.0;
-            let transform = match raster_space {
-                RasterSpace::Local(scale) => FontTransform::new(scale * dps, 0.0, 0.0, scale * dps),
-                RasterSpace::Screen => self.used_font.transform.scale(dps),
-            };
+        let dps = surface.device_pixel_scale.0;
+        let glyph_transform = match raster_space {
+            RasterSpace::Local(scale) => FontTransform::new(scale * dps, 0.0, 0.0, scale * dps),
+            RasterSpace::Screen => used_font.transform.scale(dps),
+        };
 
-            self.glyph_keys_range = scratch.scene.glyph_keys.extend(
-                glyphs.iter().map(|src| {
-                    let src_point = src.point + prim_offset;
-                    let device_offset = transform.transform(&src_point);
-                    GlyphKey::new(src.index, device_offset, subpx_dir)
-                }));
-        }
+        let glyph_keys_range = scratch.frame.glyph_keys.extend(
+            glyphs.iter().map(|src| {
+                let src_point = src.point + prim_offset;
+                let device_offset = glyph_transform.transform(&src_point);
+                GlyphKey::new(src.index, device_offset, subpx_dir)
+            }));
 
         resource_cache.request_glyphs(
-            self.used_font.clone(),
-            &scratch.scene.glyph_keys[self.glyph_keys_range],
+            used_font.clone(),
+            &scratch.frame.glyph_keys[glyph_keys_range],
             gpu_buffer,
         );
+
+        scratch.frame.text_runs.push(TextRunScratch {
+            used_font,
+            glyph_keys_range,
+            snapped_reference_frame_relative_offset: snapped_offset,
+            raster_scale,
+        })
     }
 }
 
@@ -514,5 +527,5 @@ fn test_struct_sizes() {
     assert_eq!(mem::size_of::<TextRun>(), 80, "TextRun size changed");
     assert_eq!(mem::size_of::<TextRunTemplate>(), 88, "TextRunTemplate size changed");
     assert_eq!(mem::size_of::<TextRunKey>(), 88, "TextRunKey size changed");
-    assert_eq!(mem::size_of::<TextRunInstance>(), 72, "TextRunInstance size changed");
+    assert_eq!(mem::size_of::<TextRunInstance>(), 12, "TextRunInstance size changed");
 }

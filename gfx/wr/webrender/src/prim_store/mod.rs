@@ -20,7 +20,7 @@ use crate::debug_colors;
 use glyph_rasterizer::GlyphKey;
 use crate::gpu_types::{BrushFlags, BrushSegmentGpuData, QuadSegment};
 use crate::intern;
-use crate::picture::PictureInstance;
+use crate::picture::{PictureInstance, PictureScratch};
 use crate::render_task_graph::RenderTaskId;
 use crate::resource_cache::ImageProperties;
 use std::{hash, u32, usize};
@@ -40,14 +40,14 @@ pub mod interned;
 
 pub mod storage;
 
-use backdrop::{BackdropCaptureDataHandle, BackdropRenderDataHandle};
+use backdrop::{BackdropCaptureDataHandle, BackdropRenderDataHandle, BackdropRenderScratch};
 use borders::{ImageBorderDataHandle, NormalBorderDataHandle, NormalBorderScratch};
 use gradient::{LinearGradientDataHandle, RadialGradientDataHandle, ConicGradientDataHandle};
-use image::{ImageDataHandle, ImageInstance, YuvImageDataHandle};
+use image::{ImageDataHandle, ImageInstance, ImageScratch, VisibleImageTile, YuvImageDataHandle};
 use line_dec::{LineDecorationDataHandle, LineDecorationScratch};
 use picture::PictureDataHandle;
 use rectangle::RectangleDataHandle;
-use text_run::{TextRunDataHandle, TextRunInstance};
+use text_run::{TextRunDataHandle, TextRunInstance, TextRunScratch};
 use crate::box_shadow::BoxShadowDataHandle;
 
 pub const VECS_PER_SEGMENT: usize = 2;
@@ -735,6 +735,11 @@ pub enum PrimitiveKind {
         
         data_handle: PictureDataHandle,
         pic_index: PictureIndex,
+        
+        
+        
+        
+        scratch_handle: storage::Index<PictureScratch>,
     },
     
     TextRun {
@@ -742,6 +747,9 @@ pub enum PrimitiveKind {
         data_handle: TextRunDataHandle,
         
         run_index: TextRunIndex,
+        
+        
+        scratch_handle: storage::Index<TextRunScratch>,
     },
     
     
@@ -776,6 +784,7 @@ pub enum PrimitiveKind {
         data_handle: ImageDataHandle,
         image_instance_index: ImageInstanceIndex,
         compositor_surface_kind: CompositorSurfaceKind,
+        scratch_handle: storage::Index<ImageScratch>,
     },
     LinearGradient {
         
@@ -796,6 +805,7 @@ pub enum PrimitiveKind {
     BackdropRender {
         data_handle: BackdropRenderDataHandle,
         pic_index: PictureIndex,
+        scratch_handle: storage::Index<BackdropRenderScratch>,
     },
     BoxShadow {
         data_handle: BoxShadowDataHandle,
@@ -940,6 +950,38 @@ pub struct PrimitiveFrameScratch {
 
     
     
+    
+    pub backdrop_render: storage::Storage<BackdropRenderScratch>,
+
+    
+    
+    
+    
+    pub pictures: storage::Storage<PictureScratch>,
+
+    
+    
+    
+    pub images: storage::Storage<ImageScratch>,
+
+    
+    
+    pub visible_image_tiles: storage::Storage<VisibleImageTile>,
+
+    
+    
+    
+    pub text_runs: storage::Storage<TextRunScratch>,
+
+    
+    
+    
+    
+    
+    pub glyph_keys: GlyphKeyStorage,
+
+    
+    
     pub border_task_ids: storage::Storage<RenderTaskId>,
 
     
@@ -964,6 +1006,12 @@ impl Default for PrimitiveFrameScratch {
         PrimitiveFrameScratch {
             line_decoration: storage::Storage::new(0),
             normal_border: storage::Storage::new(0),
+            backdrop_render: storage::Storage::new(0),
+            pictures: storage::Storage::new(0),
+            images: storage::Storage::new(0),
+            visible_image_tiles: storage::Storage::new(0),
+            text_runs: storage::Storage::new(0),
+            glyph_keys: GlyphKeyStorage::new(0),
             border_task_ids: storage::Storage::new(0),
             clip_mask_instances: Vec::new(),
             debug_items: Vec::new(),
@@ -978,6 +1026,12 @@ impl PrimitiveFrameScratch {
     pub fn recycle(&mut self, recycler: &mut Recycler) {
         self.line_decoration.recycle(recycler);
         self.normal_border.recycle(recycler);
+        self.backdrop_render.recycle(recycler);
+        self.pictures.recycle(recycler);
+        self.images.recycle(recycler);
+        self.visible_image_tiles.recycle(recycler);
+        self.text_runs.recycle(recycler);
+        self.glyph_keys.recycle(recycler);
         self.border_task_ids.recycle(recycler);
         recycler.recycle_vec(&mut self.clip_mask_instances);
         recycler.recycle_vec(&mut self.debug_items);
@@ -988,6 +1042,12 @@ impl PrimitiveFrameScratch {
     pub fn begin_frame(&mut self) {
         self.line_decoration.clear();
         self.normal_border.clear();
+        self.backdrop_render.clear();
+        self.pictures.clear();
+        self.images.clear();
+        self.visible_image_tiles.clear();
+        self.text_runs.clear();
+        self.glyph_keys.clear();
         self.border_task_ids.clear();
 
         
@@ -1011,10 +1071,6 @@ impl PrimitiveFrameScratch {
 #[cfg_attr(feature = "capture", derive(Serialize))]
 pub struct PrimitiveSceneCache {
     
-    
-    pub glyph_keys: GlyphKeyStorage,
-
-    
     pub segments: SegmentStorage,
 
     
@@ -1026,7 +1082,6 @@ pub struct PrimitiveSceneCache {
 impl Default for PrimitiveSceneCache {
     fn default() -> Self {
         PrimitiveSceneCache {
-            glyph_keys: GlyphKeyStorage::new(0),
             segments: SegmentStorage::new(0),
             segment_instances: SegmentInstanceStorage::new(0),
         }
@@ -1035,7 +1090,6 @@ impl Default for PrimitiveSceneCache {
 
 impl PrimitiveSceneCache {
     pub fn recycle(&mut self, recycler: &mut Recycler) {
-        self.glyph_keys.recycle(recycler);
         self.segments.recycle(recycler);
         self.segment_instances.recycle(recycler);
     }

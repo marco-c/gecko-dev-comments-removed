@@ -23,6 +23,7 @@ use crate::internal_types::LayoutPrimitiveInfo;
 use crate::prim_store::{
     EdgeMask, InternablePrimitive, PrimKey, PrimTemplate, PrimTemplateCommonData, PrimitiveInstanceIndex, PrimitiveKind, PrimitiveOpacity, PrimitiveScratchBuffer, PrimitiveStore, SegmentInstanceIndex, SizeKey
 };
+use crate::prim_store::storage;
 use crate::render_target::RenderTargetKind;
 use crate::render_task_graph::RenderTaskId;
 use crate::render_task::RenderTask;
@@ -58,10 +59,32 @@ pub struct ImageCacheKey {
 
 
 
+#[derive(Debug)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+pub struct ImageScratch {
+    
+    
+    pub visible_tiles: storage::Range<VisibleImageTile>,
+    
+    pub src_color: Option<RenderTaskId>,
+    
+    
+    pub normalized_uvs: bool,
+    
+    
+    pub adjustment: AdjustedImageSource,
+}
 
-
-
-
+impl ImageScratch {
+    pub fn empty() -> Self {
+        ImageScratch {
+            visible_tiles: storage::Range::empty(),
+            src_color: None,
+            normalized_uvs: false,
+            adjustment: AdjustedImageSource::new(),
+        }
+    }
+}
 
 
 
@@ -71,10 +94,6 @@ pub struct ImageCacheKey {
 pub struct ImageInstance {
     pub segment_instance_index: SegmentInstanceIndex,
     pub tight_local_clip_rect: LayoutRect,
-    pub visible_tiles: Vec<VisibleImageTile>,
-    pub src_color: Option<RenderTaskId>,
-    pub normalized_uvs: bool,
-    pub adjustment: AdjustedImageSource,
 }
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
@@ -144,7 +163,8 @@ impl ImageData {
         frame_context: &FrameBuildingContext,
         visibility: &mut PrimitiveDrawHeader,
         prim_origin: LayoutPoint,
-    ) {
+        scratch: &mut PrimitiveScratchBuffer,
+    ) -> storage::Index<ImageScratch> {
 
         let image_properties = frame_state
             .resource_cache
@@ -186,12 +206,12 @@ impl ImageData {
             .intersection(&prim_rect).unwrap();
         image_instance.tight_local_clip_rect = tight_clip_rect;
 
-        image_instance.adjustment = AdjustedImageSource::new();
+        let mut image_scratch = ImageScratch::empty();
 
         match image_properties {
             
             Some(ImageProperties { tiling: None, ref descriptor, ref external_image, adjustment, .. }) => {
-                image_instance.adjustment = adjustment;
+                image_scratch.adjustment = adjustment;
 
                 let mut size = frame_state.resource_cache.request_image(
                     request,
@@ -233,7 +253,7 @@ impl ImageData {
                     
                     
                     if !requires_copy {
-                        image_instance.normalized_uvs = external_image.normalized_uvs;
+                        image_scratch.normalized_uvs = external_image.normalized_uvs;
                     }
                 }
 
@@ -243,7 +263,7 @@ impl ImageData {
                 
                 if self.tile_spacing == LayoutSize::zero() {
                     
-                    image_instance.src_color = Some(task_id);
+                    image_scratch.src_color = Some(task_id);
                 } else {
                     let padding = DeviceIntSideOffsets::new(
                         0,
@@ -305,15 +325,14 @@ impl ImageData {
                         }
                     );
 
-                    image_instance.src_color = Some(cached_task_handle);
+                    image_scratch.src_color = Some(cached_task_handle);
                 }
             }
             
             Some(ImageProperties { tiling: Some(tile_size), visible_rect, .. }) => {
                 
-                image_instance.src_color = None;
+                image_scratch.src_color = None;
 
-                image_instance.visible_tiles.clear();
                 
                 
                 
@@ -342,6 +361,7 @@ impl ImageData {
                     stride,
                 );
 
+                let tiles_open = scratch.frame.visible_image_tiles.open_range();
                 for image_tiling::Repetition { origin, edge_flags } in repetitions {
                     let edge_flags = base_edge_flags | edge_flags;
 
@@ -368,7 +388,7 @@ impl ImageData {
                             RenderTask::new_image(size, request, false)
                         );
 
-                        image_instance.visible_tiles.push(VisibleImageTile {
+                        scratch.frame.visible_image_tiles.push(VisibleImageTile {
                             src_color: task_id,
                             edge_flags: tile.edge_flags & edge_flags,
                             local_rect: tile.rect,
@@ -376,14 +396,15 @@ impl ImageData {
                         });
                     }
                 }
+                image_scratch.visible_tiles = scratch.frame.visible_image_tiles.close_range(tiles_open);
 
-                if image_instance.visible_tiles.is_empty() {
+                if image_scratch.visible_tiles.is_empty() {
                     
                     visibility.reset();
                 }
             }
             None => {
-                image_instance.src_color = None;
+                image_scratch.src_color = None;
             }
         }
 
@@ -395,8 +416,10 @@ impl ImageData {
         }
 
         let mut writer = frame_state.frame_gpu_data.f32.write_blocks(3);
-        self.write_prim_gpu_blocks(&image_instance.adjustment, &mut writer);
+        self.write_prim_gpu_blocks(&image_scratch.adjustment, &mut writer);
         common.gpu_buffer_address = writer.finish();
+
+        scratch.frame.images.push(image_scratch)
     }
 
     pub fn write_prim_gpu_blocks(&self, adjustment: &AdjustedImageSource, writer: &mut GpuBufferWriterF) {
@@ -596,16 +619,13 @@ impl InternablePrimitive for Image {
         let image_instance_index = prim_store.images.push(ImageInstance {
             segment_instance_index: SegmentInstanceIndex::INVALID,
             tight_local_clip_rect: LayoutRect::zero(),
-            visible_tiles: Vec::new(),
-            src_color: None,
-            normalized_uvs: false,
-            adjustment: AdjustedImageSource::new(),
         });
 
         PrimitiveKind::Image {
             data_handle,
             image_instance_index,
             compositor_surface_kind: CompositorSurfaceKind::Blit,
+            scratch_handle: storage::Index::INVALID,
         }
     }
 }
