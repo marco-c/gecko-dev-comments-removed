@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/TimeEvent.h"
 
 #include "mozilla/ContentEvents.h"
@@ -54,5 +52,5 @@ using namespace mozilla::dom;
 already_AddRefed<TimeEvent> NS_NewDOMTimeEvent(EventTarget* aOwner,
                                                nsPresContext* aPresContext,
                                                InternalSMILTimeEvent* aEvent) {
-  return do_AddRef(new TimeEvent(aOwner, aPresContext, aEvent));
+  return MakeAndAddRef<TimeEvent>(aOwner, aPresContext, aEvent);
 }
