@@ -6264,6 +6264,10 @@ bool EditorBase::CanKeepHandlingFocusEvent(
   if (!focusedElement) {
     return false;
   }
+  
+  if (IsHTMLEditor() && !focusedElement->IsEditable()) {
+    return false;
+  }
 
   
   

@@ -656,13 +656,6 @@ nsFocusManager::MoveCaretToFocus(mozIDOMWindowProxy* aWindow) {
       nsCOMPtr<nsIDocShell> docShell = do_QueryInterface(dsti);
       NS_ENSURE_TRUE(docShell, NS_ERROR_FAILURE);
 
-      
-      bool isEditable;
-      docShell->GetEditable(&isEditable);
-      if (isEditable) {
-        return NS_OK;
-      }
-
       RefPtr<PresShell> presShell = docShell->GetPresShell();
       NS_ENSURE_TRUE(presShell, NS_ERROR_FAILURE);
 
@@ -1059,6 +1052,26 @@ nsresult nsFocusManager::ContentRemoved(Document* aDocument,
 
   RefPtr previousFocusedElement = previousFocusedElementPtr;
   RefPtr window = windowPtr;
+
+  
+  
+  
+  
+  
+  
+  
+  if (!detachingShadow &&
+      !previousFocusedElement->IsInNativeAnonymousSubtree()) {
+    if (RefPtr selection = window->GetSelection()) {
+      
+      selection->SetAncestorLimiter(nullptr);
+      DebugOnly<nsresult> rv =
+          selection->CollapseInLimiter(previousFocusedElement, 0);
+      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                           "Selection::CollapseInLimiter failed.");
+    }
+  }
+
   RefPtr<Element> newFocusedElement =
       detachingShadow && focusWithinElement->IsHTMLElement(nsGkAtoms::input)
           ? focusWithinElement
@@ -3248,7 +3261,7 @@ void nsFocusManager::UpdateCaret(bool aMoveCaretToFocus, bool aUpdateVisibility,
     }
   }
 
-  if (!isEditable && aMoveCaretToFocus) {
+  if (aMoveCaretToFocus) {
     MoveCaretToFocus(presShell, aContent);
   }
 
@@ -3277,6 +3290,19 @@ void nsFocusManager::UpdateCaret(bool aMoveCaretToFocus, bool aUpdateVisibility,
 
 void nsFocusManager::MoveCaretToFocus(PresShell* aPresShell,
                                       nsIContent* aContent) {
+  if (aContent && aContent->IsEditable()) {
+    
+    return;
+  }
+  const auto* textControl = TextControlElement::FromNodeOrNull(aContent);
+  const bool isTextControl =
+      textControl && textControl->IsSingleLineTextControlOrTextArea();
+  
+  
+  
+  if (!StaticPrefs::accessibility_browsewithcaret() && !isTextControl) {
+    return;
+  }
   nsCOMPtr<Document> doc = aPresShell->GetDocument();
   if (doc) {
     RefPtr<nsFrameSelection> frameSelection = aPresShell->FrameSelection();
