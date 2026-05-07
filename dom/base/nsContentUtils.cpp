@@ -2951,7 +2951,7 @@ bool nsContentUtils::ShouldResistFingerprinting_dangerous(
     return ShouldResistFingerprinting("Null object", aTarget);
   }
 
-  auto originAttributes =
+  const auto& originAttributes =
       BasePrincipal::Cast(aPrincipal)->OriginAttributesRef();
   
   
