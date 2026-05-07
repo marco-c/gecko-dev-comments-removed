@@ -6673,8 +6673,6 @@ void ScrollContainerFrame::LayoutButtonBox(const ScrollReflowInput& aState,
   
   
   const nscoord buttonISize = aState.mButtonISize;
-  const LogicalRect scrollPort(wm, mScrollPort, GetSize());
-
   const auto kidWM = aButtonBox->GetWritingMode();
   auto availSize =
       LogicalSize(wm, buttonISize, NS_UNCONSTRAINEDSIZE).ConvertTo(kidWM, wm);
@@ -6686,11 +6684,13 @@ void ScrollContainerFrame::LayoutButtonBox(const ScrollReflowInput& aState,
               containerSize, ReflowChildFlags::Default, status);
 
   
+  LogicalRect contentBox(wm, mScrollPort, GetSize());
+  contentBox.Deflate(wm, aState.KidPadding());
   const LogicalSize buttonSize =
       kidDesiredSize.Size(kidWM).ConvertTo(wm, kidWM);
-  LogicalPoint pos = scrollPort.Origin(wm);
-  pos.I(wm) += scrollPort.ISize(wm);
-  pos.B(wm) += (scrollPort.BSize(wm) - buttonSize.BSize(wm)) / 2;
+  LogicalPoint pos = contentBox.Origin(wm);
+  pos.I(wm) += contentBox.ISize(wm);
+  pos.B(wm) += (contentBox.BSize(wm) - buttonSize.BSize(wm)) / 2;
   FinishReflowChild(aButtonBox, pc, kidDesiredSize, &kidRI, wm, pos,
                     containerSize, ReflowChildFlags::Default);
 }
