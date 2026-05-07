@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef MOZILLA_LAYERS_RENDEREROGL_H
 #define MOZILLA_LAYERS_RENDEREROGL_H
 
@@ -173,8 +171,6 @@ class RendererOGL {
   wr::WindowId mWindowId;
   TimeStamp mFrameStartTime;
 
-  bool mDisableNativeCompositor;
-
 #ifdef MOZ_WIDGET_ANDROID
   struct ScreenPixelsRequest {
     gfx::IntRect mSourceRect;
@@ -189,7 +185,7 @@ class RendererOGL {
   
   
   
-  wr::PipelineId mRootPipelineId;
+  wr::PipelineId mRootPipelineId{};
 
   
   

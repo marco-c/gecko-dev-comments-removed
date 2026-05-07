@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/StaticPrefs_gfx.h"
 #include "gfxUtils.h"
 #include "mozilla/Mutex.h"
@@ -69,7 +67,7 @@ struct FontTemplate {
 };
 
 struct FontInstanceData {
-  WrFontKey mFontKey;
+  WrFontKey mFontKey{};
   float mSize;
   Maybe<FontInstanceOptions> mOptions;
   Maybe<FontInstancePlatformOptions> mPlatformOptions;
