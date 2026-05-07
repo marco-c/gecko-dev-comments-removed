@@ -2334,16 +2334,23 @@ void MacroAssembler::test32LoadPtr(Condition cond, const Address& addr,
                                    Register dest) {
   MOZ_ASSERT(cond == Assembler::Zero || cond == Assembler::NonZero);
 
-  Label done;
-  branchTest32(Assembler::InvertCondition(cond), addr, mask, &done);
-
-  
-  
   vixl::UseScratchRegisterScope temps(this);
-  const ARMRegister scratch64 = temps.AcquireX();
+  Register scratch = temps.AcquireX().asUnsized();
+  MOZ_ASSERT(scratch != addr.base);
 
-  loadPtr(src, scratch64.asUnsized());
-  Csel(ARMRegister(dest, 64), scratch64, ARMRegister(dest, 64), cond);
+  
+  
+  Label done;
+  load32(addr, scratch);
+  test32(scratch, mask);
+  B(&done, Assembler::InvertCondition(cond));
+
+  
+  
+
+  loadPtr(src, scratch);
+  Csel(ARMRegister(dest, 64), ARMRegister(scratch, 64), ARMRegister(dest, 64),
+       cond);
   bind(&done);
 }
 
