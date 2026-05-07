@@ -228,6 +228,33 @@ class MOZ_STACK_CLASS CodecSupportState final {
     return *mWebrtcCodecInfo;
   }
 
+  bool IsAcceleratedEncode(const MediaExtendedMIMEType& aMime,
+                           MediaEncodingType aType) const {
+    
+    
+    if (aType == MediaEncodingType::Webrtc) {
+      return WebrtcCodecInfo().SupportsMimeHWEncode(aMime);
+    }
+
+    
+    
+    return false;
+  }
+
+  [[nodiscard]]
+  RefPtr<CodecSupportPromise> GetVideoEncodeSupportPromise(
+      const MediaEncodingConfiguration& aConfig,
+      const MediaExtendedMIMEType& aMime) const {
+    return GetSingleSupportPromise(aConfig, mediacaps::AVType::VIDEO, aMime);
+  }
+
+  [[nodiscard]]
+  RefPtr<CodecSupportPromise> GetAudioEncodeSupportPromise(
+      const MediaEncodingConfiguration& aConfig,
+      const MediaExtendedMIMEType& aMime) const {
+    return GetSingleSupportPromise(aConfig, mediacaps::AVType::AUDIO, aMime);
+  }
+
  private:
   const MediaCapabilities& mCaps;
   mutable std::unique_ptr<mozilla::WebrtcCodecInfo> mWebrtcCodecInfo;
