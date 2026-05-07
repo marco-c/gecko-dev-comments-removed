@@ -183,9 +183,6 @@ def add_additional_fetches_and_command(config, jobs):
         if cert_overrides:
             cmd.extend([
                 
-                "--cert-replace-script",
-                "tools/update-verify/release/replace-updater-certs.py",
-                
                 
                 
                 
