@@ -11156,7 +11156,11 @@ void nsTextFrame::ReflowText(nsLineLayout& aLineLayout, nscoord aAvailableWidth,
     nscoord width = finalSize.ISize(wm);
     nscoord em = fm->EmHeight();
     
-    auto* data = GetOrCreateDeletableProperty(TextCombineDataProperty());
+    auto* data = GetProperty(TextCombineDataProperty());
+    if (!data) {
+      data = new TextCombineData;
+      SetProperty(TextCombineDataProperty(), data);
+    }
     data->mNaturalWidth = width;
     finalSize.ISize(wm) = em;
     
