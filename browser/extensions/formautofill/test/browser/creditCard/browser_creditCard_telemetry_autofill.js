@@ -94,7 +94,14 @@ add_task(async function test_clear_creditCard_autofill() {
 
   let browser = tab.linkedBrowser;
 
-  await openPopupOn(browser, "#cc-number");
+  let popupShown = BrowserTestUtils.waitForPopupEvent(
+    browser.autoCompletePopup,
+    "shown"
+  );
+  
+  await BrowserTestUtils.synthesizeKey("KEY_ArrowDown", {}, browser);
+
+  await popupShown;
 
   
   await Services.fog.testFlushAllChildren();
@@ -119,7 +126,7 @@ add_task(async function test_clear_creditCard_autofill() {
 
   await popupHidden;
 
-  let popupShown = BrowserTestUtils.waitForPopupEvent(
+  popupShown = BrowserTestUtils.waitForPopupEvent(
     browser.autoCompletePopup,
     "shown"
   );

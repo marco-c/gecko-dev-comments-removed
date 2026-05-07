@@ -892,25 +892,18 @@ nsresult nsFormFillController::HandleFocus(Element* aElement) {
 
   bool shouldShowPopup = false;
 
-  if (mControlledElement && !mAutoCompleteActive) {
-    nsFocusManager* fm = nsFocusManager::GetFocusManager();
-    uint32_t focusMethod = fm ? fm->GetLastFocusMethod(nullptr) : 0;
-    if (focusMethod & nsIFocusManager::FLAG_BYKEY) {
-      
-    } else if (mLastRightClickTimeStamp.IsNull()) {
-      
-      
-      
-      
-      if (HasBeenTypePassword(mControlledElement)) {
+  
+  if (mControlledElement) {
+    if (HasBeenTypePassword(mControlledElement)) {
+      if (mLastRightClickTimeStamp.IsNull()) {
         mPasswordPopupAutomaticallyOpened = true;
-      }
-      shouldShowPopup = true;
-    } else {
-      uint64_t timeDiff =
-          (TimeStamp::Now() - mLastRightClickTimeStamp).ToMilliseconds();
-      if (timeDiff > mFocusAfterRightClickThreshold) {
         shouldShowPopup = true;
+      } else {
+        uint64_t timeDiff =
+            (TimeStamp::Now() - mLastRightClickTimeStamp).ToMilliseconds();
+        if (timeDiff > mFocusAfterRightClickThreshold) {
+          shouldShowPopup = true;
+        }
       }
     }
   }
