@@ -2266,6 +2266,26 @@ add_task(async function test_blocked_applicationReputation_confirmBlock() {
 
 
 
+add_task(
+  async function test_blocked_applicationReputation_confirmBlock_sets_deleted() {
+    let download = await promiseBlockedDownload({
+      keepPartialData: true,
+      keepBlockedData: true,
+    });
+
+    Assert.ok(download.hasBlockedData);
+    Assert.ok(!download.deleted);
+
+    await download.confirmBlock();
+
+    Assert.ok(!download.hasBlockedData);
+    Assert.ok(download.deleted);
+  }
+);
+
+
+
+
 
 add_task(async function test_blocked_applicationReputation_unblock() {
   let download = await promiseBlockedDownload({
