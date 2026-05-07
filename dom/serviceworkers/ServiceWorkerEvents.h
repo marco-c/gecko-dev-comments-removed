@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_serviceworkerevents_h_
 #define mozilla_dom_serviceworkerevents_h_
 
@@ -202,7 +200,7 @@ class PushMessageData final : public nsISupports, public nsWrapperCache {
   virtual JSObject* WrapObject(JSContext* aCx,
                                JS::Handle<JSObject*> aGivenProto) override;
 
-  nsIGlobalObject* GetParentObject() const { return mOwner; }
+  nsIGlobalObject* GetParentObject() const { return mGlobal; }
 
   void Json(JSContext* cx, JS::MutableHandle<JS::Value> aRetval,
             ErrorResult& aRv);
@@ -213,10 +211,10 @@ class PushMessageData final : public nsISupports, public nsWrapperCache {
   void Bytes(JSContext* cx, JS::MutableHandle<JSObject*> aRetval,
              ErrorResult& aRv);
 
-  PushMessageData(nsIGlobalObject* aOwner, nsTArray<uint8_t>&& aBytes);
+  PushMessageData(nsIGlobalObject* aGlobal, nsTArray<uint8_t>&& aBytes);
 
  private:
-  nsCOMPtr<nsIGlobalObject> mOwner;
+  nsCOMPtr<nsIGlobalObject> mGlobal;
   nsTArray<uint8_t> mBytes;
   nsString mDecodedText;
   ~PushMessageData();

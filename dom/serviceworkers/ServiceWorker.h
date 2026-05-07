@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_serviceworker_h_
 #define mozilla_dom_serviceworker_h_
 
@@ -36,7 +34,7 @@ class ServiceWorker final : public DOMEventTargetHelper {
   IMPL_EVENT_HANDLER(error)
 
   static already_AddRefed<ServiceWorker> Create(
-      nsIGlobalObject* aOwner, const ServiceWorkerDescriptor& aDescriptor);
+      nsIGlobalObject* aGlobal, const ServiceWorkerDescriptor& aDescriptor);
 
   virtual JSObject* WrapObject(JSContext* aCx,
                                JS::Handle<JSObject*> aGivenProto) override;

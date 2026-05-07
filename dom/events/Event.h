@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_Event_h_
 #define mozilla_dom_Event_h_
 
@@ -92,7 +90,7 @@ class Event : public nsISupports, public nsWrapperCache {
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SKIPPABLE_WRAPPERCACHE_CLASS(Event)
 
-  nsIGlobalObject* GetParentObject() const { return mOwner; }
+  nsIGlobalObject* GetParentObject() const { return mGlobal; }
 
   JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) final;
 
@@ -437,7 +435,7 @@ class Event : public nsISupports, public nsWrapperCache {
   
   WeakPtr<nsPresContext> mPresContext;
   nsCOMPtr<EventTarget> mExplicitOriginalTarget;
-  nsCOMPtr<nsIGlobalObject> mOwner;
+  nsCOMPtr<nsIGlobalObject> mGlobal;
   bool mEventIsInternal;
   bool mPrivateDataDuplicated;
   bool mIsMainThreadEvent;

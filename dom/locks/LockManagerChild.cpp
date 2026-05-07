@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "LockManagerChild.h"
 
 #include "LockRequestChild.h"
@@ -16,7 +14,8 @@
 
 namespace mozilla::dom::locks {
 
-LockManagerChild::LockManagerChild(nsIGlobalObject* aOwner) : mOwner(aOwner) {
+LockManagerChild::LockManagerChild(nsIGlobalObject* aGlobal)
+    : mGlobal(aGlobal) {
   if (!NS_IsMainThread()) {
     mWorkerRef = IPCWorkerRef::Create(GetCurrentThreadWorkerPrivate(),
                                       "LockManagerChild");

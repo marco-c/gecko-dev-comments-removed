@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_LockManager_h
 #define mozilla_dom_LockManager_h
 
@@ -41,7 +39,7 @@ class LockManager final : public nsISupports, public nsWrapperCache {
  public:
   static already_AddRefed<LockManager> Create(nsIGlobalObject& aGlobal);
 
-  nsIGlobalObject* GetParentObject() const { return mOwner; }
+  nsIGlobalObject* GetParentObject() const { return mGlobal; }
 
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
@@ -61,7 +59,7 @@ class LockManager final : public nsISupports, public nsWrapperCache {
  private:
   ~LockManager() = default;
 
-  nsCOMPtr<nsIGlobalObject> mOwner;
+  nsCOMPtr<nsIGlobalObject> mGlobal;
   RefPtr<locks::LockManagerChild> mActor;
 
   

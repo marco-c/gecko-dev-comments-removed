@@ -2,7 +2,6 @@
 
 
 
-
 #include "Instance.h"
 
 #include <optional>
@@ -30,7 +29,7 @@ namespace mozilla::webgpu {
 
 GPU_IMPL_CYCLE_COLLECTION(WGSLLanguageFeatures, mParent)
 
-GPU_IMPL_CYCLE_COLLECTION(Instance, mOwner, mWgslLanguageFeatures)
+GPU_IMPL_CYCLE_COLLECTION(Instance, mGlobal, mWgslLanguageFeatures)
 
  bool Instance::PrefEnabled(JSContext* aCx, JSObject* aObj) {
   if (!StaticPrefs::dom_webgpu_enabled()) {
@@ -55,13 +54,13 @@ GPU_IMPL_CYCLE_COLLECTION(Instance, mOwner, mWgslLanguageFeatures)
 }
 
 
-already_AddRefed<Instance> Instance::Create(nsIGlobalObject* aOwner) {
-  RefPtr<Instance> result = new Instance(aOwner);
+already_AddRefed<Instance> Instance::Create(nsIGlobalObject* aGlobal) {
+  RefPtr<Instance> result = new Instance(aGlobal);
   return result.forget();
 }
 
-Instance::Instance(nsIGlobalObject* aOwner)
-    : mOwner(aOwner), mWgslLanguageFeatures(new WGSLLanguageFeatures(this)) {
+Instance::Instance(nsIGlobalObject* aGlobal)
+    : mGlobal(aGlobal), mWgslLanguageFeatures(new WGSLLanguageFeatures(this)) {
   
   IgnoredErrorResult rv;
   nsCString wgslFeature;
@@ -96,13 +95,13 @@ JSObject* Instance::WrapObject(JSContext* cx,
 
 already_AddRefed<dom::Promise> Instance::RequestAdapter(
     const dom::GPURequestAdapterOptions& aOptions, ErrorResult& aRv) {
-  RefPtr<dom::Promise> promise = dom::Promise::Create(mOwner, aRv);
+  RefPtr<dom::Promise> promise = dom::Promise::Create(mGlobal, aRv);
   if (NS_WARN_IF(aRv.Failed())) {
     return nullptr;
   }
 
   if (NS_IsMainThread()) {
-    JSObject* obj = mOwner->GetGlobalJSObject();
+    JSObject* obj = mGlobal->GetGlobalJSObject();
     if (obj) {
       dom::SetUseCounter(obj, eUseCounter_custom_WebgpuRequestAdapter);
     }
@@ -120,7 +119,7 @@ already_AddRefed<dom::Promise> Instance::RequestAdapter(
       rejectionMessage = message;
       promise->MaybeResolve(JS::NullValue());
       dom::AutoJSAPI api;
-      if (api.Init(mOwner)) {
+      if (api.Init(mGlobal)) {
         JS::WarnUTF8(api.cx(), "%s", rejectionMessage.value().data());
       }
     }
@@ -141,7 +140,7 @@ already_AddRefed<dom::Promise> Instance::RequestAdapter(
   
   {
     const auto prefLock = mozilla::StaticPrefs::dom_webgpu_blocked_domains();
-    rejectIf(nsContentUtils::IsURIInList(mOwner->GetBaseURI(), *prefLock),
+    rejectIf(nsContentUtils::IsURIInList(mGlobal->GetBaseURI(), *prefLock),
              "WebGPU is blocked for this domain by the "
              "`dom.webgpu.blocked-domains` pref.");
   }
@@ -169,7 +168,7 @@ already_AddRefed<dom::Promise> Instance::RequestAdapter(
     
   } else if (aOptions.mFeatureLevel.EqualsASCII("compatibility")) {
     dom::AutoJSAPI api;
-    if (api.Init(mOwner)) {
+    if (api.Init(mGlobal)) {
       JS::WarnUTF8(api.cx(),
                    "User requested a WebGPU adapter with `featureLevel: "
                    "\"compatibility\"`, which is not yet supported; returning "
@@ -180,7 +179,7 @@ already_AddRefed<dom::Promise> Instance::RequestAdapter(
   } else {
     NS_ConvertUTF16toUTF8 featureLevel(aOptions.mFeatureLevel);
     dom::AutoJSAPI api;
-    if (api.Init(mOwner)) {
+    if (api.Init(mGlobal)) {
       JS::WarnUTF8(api.cx(),
                    "expected one of `\"core\"` or `\"compatibility\"` for "
                    "`GPUAdapter.featureLevel`, got %s",
@@ -192,7 +191,7 @@ already_AddRefed<dom::Promise> Instance::RequestAdapter(
 
   if (aOptions.mXrCompatible) {
     dom::AutoJSAPI api;
-    if (api.Init(mOwner)) {
+    if (api.Init(mGlobal)) {
       JS::WarnUTF8(
           api.cx(),
           "User requested a WebGPU adapter with `xrCompatible: true`, "

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_IdentityProvider_h
 #define mozilla_dom_IdentityProvider_h
 
@@ -23,7 +21,7 @@ class IdentityProvider : public nsWrapperCache {
   NS_DECL_CYCLE_COLLECTION_NATIVE_WRAPPERCACHE_CLASS(IdentityProvider)
 
   explicit IdentityProvider(nsIGlobalObject* aGlobal);
-  nsIGlobalObject* GetParentObject() const { return mOwner; }
+  nsIGlobalObject* GetParentObject() const { return mGlobal; }
   virtual JSObject* WrapObject(JSContext* aCx,
                                JS::Handle<JSObject*> aGivenProto) override;
 
@@ -36,7 +34,7 @@ class IdentityProvider : public nsWrapperCache {
   virtual ~IdentityProvider();
 
  private:
-  nsCOMPtr<nsIGlobalObject> mOwner;
+  nsCOMPtr<nsIGlobalObject> mGlobal;
 };
 
 }  

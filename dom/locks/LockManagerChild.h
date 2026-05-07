@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_LOCKS_LOCKMANAGERCHILD_H_
 #define DOM_LOCKS_LOCKMANAGERCHILD_H_
 
@@ -23,9 +21,9 @@ class LockManagerChild final : public PLockManagerChild {
   static void NotifyBFCacheOnMainThread(nsPIDOMWindowInner* aInner,
                                         bool aCreated);
 
-  explicit LockManagerChild(nsIGlobalObject* aOwner);
+  explicit LockManagerChild(nsIGlobalObject* aGlobal);
 
-  nsIGlobalObject* GetParentObject() const { return mOwner; };
+  nsIGlobalObject* GetParentObject() const { return mGlobal; };
 
   void RequestLock(const LockRequest& aRequest, const LockOptions& aOptions);
 
@@ -36,7 +34,7 @@ class LockManagerChild final : public PLockManagerChild {
  private:
   ~LockManagerChild() = default;
 
-  nsCOMPtr<nsIGlobalObject> mOwner;
+  nsCOMPtr<nsIGlobalObject> mGlobal;
 
   
   
