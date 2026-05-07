@@ -10,4 +10,9 @@
 
 
 
-import("chrome://global/content/elements/panel-list.mjs");
+import("chrome://global/content/elements/panel-list.mjs").catch(e => {
+  
+  if (e !== undefined) {
+    console.error("panel-list.mjs failed to load:", e);
+  }
+});
