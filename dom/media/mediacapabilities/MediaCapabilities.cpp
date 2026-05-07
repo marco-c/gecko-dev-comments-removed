@@ -231,175 +231,101 @@ class MOZ_STACK_CLASS CodecSupportState final {
     return *mWebrtcCodecInfo;
   }
 
-  bool IsAcceleratedEncode(const MediaExtendedMIMEType& aMime,
-                           MediaEncodingType aType) const {
-    
-    
-    if (aType == MediaEncodingType::Webrtc) {
-      return WebrtcCodecInfo().SupportsMimeHWEncode(aMime);
-    }
-
-    
-    
-    return false;
-  }
-
   [[nodiscard]]
-  RefPtr<CodecSupportPromise> GetVideoDecodeSupportPromise(
+  CodecSupport CheckVideoDecodeSupport(
       const MediaDecodingConfiguration& aConfig,
       const MediaExtendedMIMEType& aMime) const {
-    return GetSingleSupportPromise(aConfig, mediacaps::AVType::VIDEO, aMime);
+    const VideoConfiguration& videoConfig = aConfig.mVideo.Value();
+    Maybe<ColorGamut> gamut = videoConfig.mColorGamut.WasPassed()
+                                  ? Some(videoConfig.mColorGamut.Value())
+                                  : Nothing();
+    Maybe<TransferFunction> transfer =
+        videoConfig.mTransferFunction.WasPassed()
+            ? Some(videoConfig.mTransferFunction.Value())
+            : Nothing();
+    return CheckCodecSupport(aMime, aConfig.mType, gamut, transfer);
   }
 
   [[nodiscard]]
-  RefPtr<CodecSupportPromise> GetVideoEncodeSupportPromise(
+  CodecSupport CheckVideoEncodeSupport(
       const MediaEncodingConfiguration& aConfig,
       const MediaExtendedMIMEType& aMime) const {
-    return GetSingleSupportPromise(aConfig, mediacaps::AVType::VIDEO, aMime);
+    const VideoConfiguration& videoConfig = aConfig.mVideo.Value();
+    Maybe<ColorGamut> gamut = videoConfig.mColorGamut.WasPassed()
+                                  ? Some(videoConfig.mColorGamut.Value())
+                                  : Nothing();
+    Maybe<TransferFunction> transfer =
+        videoConfig.mTransferFunction.WasPassed()
+            ? Some(videoConfig.mTransferFunction.Value())
+            : Nothing();
+    return CheckCodecSupport(aMime, aConfig.mType, gamut, transfer);
   }
 
   [[nodiscard]]
-  RefPtr<CodecSupportPromise> GetAudioDecodeSupportPromise(
+  CodecSupport CheckAudioDecodeSupport(
       const MediaDecodingConfiguration& aConfig,
       const MediaExtendedMIMEType& aMime) const {
-    return GetSingleSupportPromise(aConfig, mediacaps::AVType::AUDIO, aMime);
+    return CheckCodecSupport(aMime, aConfig.mType, Nothing(), Nothing());
   }
 
   [[nodiscard]]
-  RefPtr<CodecSupportPromise> GetAudioEncodeSupportPromise(
+  CodecSupport CheckAudioEncodeSupport(
       const MediaEncodingConfiguration& aConfig,
       const MediaExtendedMIMEType& aMime) const {
-    return GetSingleSupportPromise(aConfig, mediacaps::AVType::AUDIO, aMime);
-  }
-
-  [[nodiscard]]
-  RefPtr<CodecSupportPromise> GetWebRTCHWDecodeSupportPromise(
-      const nsString& aContentType) const {
-    Maybe<MediaExtendedMIMEType> mime = MakeMediaExtendedMIMEType(aContentType);
-    return CodecSupportPromise::CreateAndResolve(
-        mime && WebrtcCodecInfo().SupportsMimeHWDecode(*mime)
-            ? CodecSupport::Supported
-            : CodecSupport::Unsupported,
-        __func__);
+    return CheckCodecSupport(aMime, aConfig.mType, Nothing(), Nothing());
   }
 
  private:
   const MediaCapabilities& mCaps;
   mutable std::unique_ptr<mozilla::WebrtcCodecInfo> mWebrtcCodecInfo;
 
-  [[nodiscard]] RefPtr<CodecSupportPromise> CreateDecodeSupportPromise(
+  [[nodiscard]] CodecSupport CheckCodecSupport(
       const MediaExtendedMIMEType& aMime, MediaDecodingType aType,
       const Maybe<ColorGamut>& aColorGamut,
       const Maybe<TransferFunction>& aTransferFunction) const {
     if (mediacaps::CheckMIMETypeSupport(aMime, AsVariant(aType), aColorGamut,
                                         aTransferFunction)
             .isErr()) {
-      return CodecSupportPromise::CreateAndResolve(CodecSupport::Unsupported,
-                                                   __func__);
+      return CodecSupport::Unsupported;
     }
     switch (aType) {
       case MediaDecodingType::File:
-        return CodecSupportPromise::CreateAndResolve(
-            mCaps.CheckTypeForFile(aMime) ? CodecSupport::Supported
-                                          : CodecSupport::Unsupported,
-            __func__);
+        return mCaps.CheckTypeForFile(aMime) ? CodecSupport::Supported
+                                             : CodecSupport::Unsupported;
       case MediaDecodingType::Media_source:
-        return CodecSupportPromise::CreateAndResolve(
-            mCaps.CheckTypeForMediaSource(aMime) ? CodecSupport::Supported
-                                                 : CodecSupport::Unsupported,
-            __func__);
+        return mCaps.CheckTypeForMediaSource(aMime) ? CodecSupport::Supported
+                                                    : CodecSupport::Unsupported;
       case MediaDecodingType::Webrtc:
-        return CodecSupportPromise::CreateAndResolve(
-            WebrtcCodecInfo().SupportsMimeDecode(aMime)
-                ? CodecSupport::Supported
-                : CodecSupport::Unsupported,
-            __func__);
+        return WebrtcCodecInfo().CheckDecodeType(aMime)
+                   ? CodecSupport::Supported
+                   : CodecSupport::Unsupported;
       default:
         MOZ_ASSERT_UNREACHABLE("Unhandled MediaDecodingType");
-        return CodecSupportPromise::CreateAndResolve(CodecSupport::Unsupported,
-                                                     __func__);
+        return CodecSupport::Unsupported;
     }
   }
 
-  [[nodiscard]] RefPtr<CodecSupportPromise> CreateEncodeSupportPromise(
+  [[nodiscard]] CodecSupport CheckCodecSupport(
       const MediaExtendedMIMEType& aMime, MediaEncodingType aType,
       const Maybe<ColorGamut>& aColorGamut,
       const Maybe<TransferFunction>& aTransferFunction) const {
     if (mediacaps::CheckMIMETypeSupport(aMime, AsVariant(aType), aColorGamut,
                                         aTransferFunction)
             .isErr()) {
-      return CodecSupportPromise::CreateAndResolve(CodecSupport::Unsupported,
-                                                   __func__);
+      return CodecSupport::Unsupported;
     }
     switch (aType) {
       case MediaEncodingType::Record:
-        return CodecSupportPromise::CreateAndResolve(
-            mCaps.CheckTypeForEncoder(aMime) ? CodecSupport::Supported
-                                             : CodecSupport::Unsupported,
-            __func__);
+        return mCaps.CheckTypeForEncoder(aMime) ? CodecSupport::Supported
+                                                : CodecSupport::Unsupported;
       case MediaEncodingType::Webrtc:
-        return CodecSupportPromise::CreateAndResolve(
-            WebrtcCodecInfo().SupportsMimeEncode(aMime)
-                ? CodecSupport::Supported
-                : CodecSupport::Unsupported,
-            __func__);
+        return WebrtcCodecInfo().CheckEncodeType(aMime)
+                   ? CodecSupport::Supported
+                   : CodecSupport::Unsupported;
       default:
         MOZ_ASSERT_UNREACHABLE("Unhandled MediaEncodingType");
-        return CodecSupportPromise::CreateAndResolve(CodecSupport::Unsupported,
-                                                     __func__);
+        return CodecSupport::Unsupported;
     }
-  }
-
-  
-  
-  
-  
-  template <typename ConfigType>
-  [[nodiscard]] RefPtr<CodecSupportPromise> GetSingleSupportPromise(
-      const ConfigType& aConfig, mediacaps::AVType aType,
-      const MediaExtendedMIMEType& aMime) const {
-    static_assert(std::is_same_v<ConfigType, MediaEncodingConfiguration> ||
-                      std::is_same_v<ConfigType, MediaDecodingConfiguration>,
-                  "ConfigType must be MediaEncodingConfiguration or "
-                  "MediaDecodingConfiguration");
-    constexpr bool isDecode =
-        std::is_same_v<ConfigType, MediaDecodingConfiguration>;
-    const bool audioPassed = aConfig.mAudio.WasPassed();
-    const bool videoPassed = aConfig.mVideo.WasPassed();
-    if (!audioPassed && !videoPassed) {
-      return CodecSupportPromise::CreateAndResolve(CodecSupport::Unknown,
-                                                   __func__);
-    }
-    if ((aType == mediacaps::AVType::VIDEO) && videoPassed) {
-      const VideoConfiguration& videoConfig = aConfig.mVideo.Value();
-      Maybe<ColorGamut> gamut = videoConfig.mColorGamut.WasPassed()
-                                    ? Some(videoConfig.mColorGamut.Value())
-                                    : Nothing();
-      Maybe<TransferFunction> transfer =
-          videoConfig.mTransferFunction.WasPassed()
-              ? Some(videoConfig.mTransferFunction.Value())
-              : Nothing();
-      if constexpr (isDecode) {
-        return CreateDecodeSupportPromise(aMime, aConfig.mType, gamut,
-                                          transfer);
-      } else {
-        return CreateEncodeSupportPromise(aMime, aConfig.mType, gamut,
-                                          transfer);
-      }
-    }
-
-    if ((aType == mediacaps::AVType::AUDIO) && audioPassed) {
-      if constexpr (isDecode) {
-        return CreateDecodeSupportPromise(aMime, aConfig.mType, Nothing(),
-                                          Nothing());
-      } else {
-        return CreateEncodeSupportPromise(aMime, aConfig.mType, Nothing(),
-                                          Nothing());
-      }
-    }
-
-    return CodecSupportPromise::CreateAndResolve(CodecSupport::Unknown,
-                                                 __func__);
   }
 };
 
@@ -485,43 +411,68 @@ bool MediaCapabilitiesKeySystemConfigurationToMediaKeySystemConfiguration(
 MediaCapabilities::MediaCapabilities(nsIGlobalObject* aParent)
     : mParent(aParent) {}
 
-void CreateWebRTCDecodingInfo(const MediaDecodingConfiguration& aConfiguration,
-                              Promise* aPromise, CodecSupport aVideoSupported,
-                              CodecSupport aWebRTCAccelSupported) {
-  MediaCapabilitiesDecodingInfo info;
-  info.mSupported = true;  
-  info.mSmooth = false;
-  info.mPowerEfficient = false;
-
-  
-  
-  const bool hwSupported = (aWebRTCAccelSupported == CodecSupport::Supported);
-  bool lowResolution = false;
-  if (aVideoSupported == CodecSupport::Supported) {
-    MOZ_ASSERT(aConfiguration.mVideo.WasPassed());
-    const auto& v = aConfiguration.mVideo.Value();
-    const CheckedInt<uint32_t> pixels =
-        CheckedInt<uint32_t>(v.mWidth) * CheckedInt<uint32_t>(v.mHeight);
-    lowResolution =
-        pixels.isValid() && pixels.value() <= kLowResolutionPixelCount;
-    info.mSmooth = hwSupported || lowResolution;
-  } else {
-    
-    
-    
-    MOZ_ASSERT(aConfiguration.mAudio.WasPassed());
-    info.mSmooth = true;
+void MediaCapabilities::CreateWebRTCDecodingInfo(
+    const MediaDecodingConfiguration& aConfiguration, Promise* aPromise,
+    Maybe<MediaContainerType> aVideoContainer,
+    Maybe<MediaContainerType> aAudioContainer) {
+  using PromiseType =
+      MozPromise<MediaCapabilitiesDecodingInfo, bool, true>;
+  RefPtr<DOMMozPromiseRequestHolder<PromiseType>> holder;
+  RefPtr<nsISerialEventTarget> targetThread;
+  RefPtr<StrongWorkerRef> workerRef;
+  if (!GetThreadForAsyncRequest<PromiseType>(
+          mParent, &holder, &targetThread, &workerRef,
+          "MediaCapabilities::DecodingInfo")) {
+    aPromise->MaybeRejectWithInvalidStateError("The worker is shutting down");
+    return;
   }
 
-  
-  if (aVideoSupported == CodecSupport::Supported) {
-    info.mPowerEfficient = hwSupported || lowResolution;
-  } else {
-    MOZ_ASSERT(aConfiguration.mAudio.WasPassed());
-    info.mPowerEfficient = true;
-  }
+  RefPtr<TaskQueue> taskQueue =
+      TaskQueue::Create(GetMediaThreadPool(MediaThreadType::PLATFORM_DECODER),
+                        "MediaCapabilities::TaskQueue");
+  InvokeAsync(
+      taskQueue, __func__,
+      [aConfiguration, videoContainer = std::move(aVideoContainer),
+       audioContainer = std::move(aAudioContainer)] {
+        MOZ_ASSERT(videoContainer || audioContainer);
 
-  aPromise->MaybeResolve(std::move(info));
+        
+        
+        
+        
+        MediaCapabilitiesDecodingInfo info;
+        info.mSupported = true;  
+        info.mSmooth = true;
+        info.mPowerEfficient = true;
+
+        if (videoContainer) {
+          auto videoSupport =
+              
+              SupportsVideoMimeDecodeForWebrtc(videoContainer->ExtendedType());
+          const auto& v = aConfiguration.mVideo.Value();
+          const CheckedInt<uint32_t> pixels =
+              CheckedInt<uint32_t>(v.mWidth) * CheckedInt<uint32_t>(v.mHeight);
+          const bool lowResolution =
+              pixels.isValid() && pixels.value() <= kLowResolutionPixelCount;
+          const bool hwSupported =
+              videoSupport.contains(media::DecodeSupport::HardwareDecode);
+          info.mPowerEfficient = hwSupported || lowResolution;
+        }
+
+        return PromiseType::CreateAndResolve(
+            std::move(info), "MediaCapabilities::CreateWebRTCDecodingInfo");
+      })
+      ->Then(
+          targetThread, __func__,
+          [promise = RefPtr(aPromise),
+           holder](MediaCapabilitiesDecodingInfo&& aInfo) {
+            holder->Complete();
+            nsIGlobalObject* global = holder->GetParentObject();
+            NS_ENSURE_TRUE_VOID(global);
+            promise->MaybeResolve(std::move(aInfo));
+          },
+          [] { MOZ_CRASH("Unexpected"); })
+      ->Track(*holder);
 }
 
 
@@ -586,8 +537,8 @@ void MediaCapabilities::CreateMediaCapabilitiesDecodingInfo(
 
   const bool isWebRTC =
       mediacaps::IsMediaTypeWebRTC(AsVariant(aConfiguration.mType));
-  RefPtr<CodecSupportPromise> videoPromise;
-  RefPtr<CodecSupportPromise> audioPromise;
+  CodecSupport videoSupported = CodecSupport::Unknown;
+  CodecSupport audioSupported = CodecSupport::Unknown;
   CodecSupportState state(*this);
 
   Maybe<MediaContainerType> videoContainer;
@@ -601,12 +552,10 @@ void MediaCapabilities::CreateMediaCapabilitiesDecodingInfo(
       aPromise->MaybeRejectWithTypeError("Invalid VideoConfiguration");
       return;
     }
-    videoPromise =
-        state.GetVideoDecodeSupportPromise(aConfiguration, *videoMime);
-    videoContainer = Some(MediaContainerType(std::move(*videoMime)));
-  } else {
-    videoPromise =
-        CodecSupportPromise::CreateAndResolve(CodecSupport::Unknown, __func__);
+    videoSupported = state.CheckVideoDecodeSupport(aConfiguration, *videoMime);
+    if (videoSupported == CodecSupport::Supported) {
+      videoContainer = Some(MediaContainerType(std::move(*videoMime)));
+    }
   }
 
   if (aConfiguration.mAudio.WasPassed()) {
@@ -615,79 +564,36 @@ void MediaCapabilities::CreateMediaCapabilitiesDecodingInfo(
       aPromise->MaybeRejectWithTypeError("Invalid AudioConfiguration");
       return;
     }
-    audioPromise =
-        state.GetAudioDecodeSupportPromise(aConfiguration, *audioMime);
-    audioContainer = Some(MediaContainerType(std::move(*audioMime)));
-  } else {
-    audioPromise =
-        CodecSupportPromise::CreateAndResolve(CodecSupport::Unknown, __func__);
+    audioSupported = state.CheckAudioDecodeSupport(aConfiguration, *audioMime);
+    if (audioSupported == CodecSupport::Supported) {
+      audioContainer = Some(MediaContainerType(std::move(*audioMime)));
+    }
   }
+  const bool bothSupportUnknown = videoSupported == CodecSupport::Unknown &&
+                                  audioSupported == CodecSupport::Unknown;
 
-  RefPtr<CodecSupportPromise> webRTCAccelPromise;
-  if (aConfiguration.mVideo.WasPassed() && isWebRTC) {
-    webRTCAccelPromise = state.GetWebRTCHWDecodeSupportPromise(
-        aConfiguration.mVideo.Value().mContentType);
-  } else {
-    webRTCAccelPromise =
-        CodecSupportPromise::CreateAndResolve(CodecSupport::Unknown, __func__);
-  }
-  RefPtr<DOMMozPromiseRequestHolder<CodecSupportPromise::AllPromiseType>>
-      holder;
-  RefPtr<nsISerialEventTarget> targetThread;
-  RefPtr<StrongWorkerRef> workerRef;
-  if (!GetThreadForAsyncRequest<CodecSupportPromise::AllPromiseType>(
-          mParent, &holder, &targetThread, &workerRef,
-          "MediaCapabilities::DecodingInfo")) {
-    
-    
+  
+  
+  
+  if (videoSupported == CodecSupport::Unsupported ||
+      audioSupported == CodecSupport::Unsupported || bothSupportUnknown) {
+    MediaCapabilitiesDecodingInfo info;
+    info.mSupported = false;
+    info.mSmooth = false;
+    info.mPowerEfficient = false;
+    aPromise->MaybeResolve(std::move(info));
     return;
   }
-  nsTArray<RefPtr<CodecSupportPromise>> supportPromises{
-      audioPromise, videoPromise, webRTCAccelPromise};
-  CodecSupportPromise::All(targetThread, supportPromises)
-      ->Then(
-          targetThread, __func__,
-          [self = RefPtr{this}, aPromise = RefPtr<Promise>(aPromise), workerRef,
-           holder, aConfiguration, isWebRTC,
-           videoContainer = std::move(videoContainer),
-           audioContainer = std::move(audioContainer)](
-              const CodecSupportPromise::AllPromiseType::ResolveOrRejectValue&
-                  aValue) {
-            MOZ_RELEASE_ASSERT(aValue.IsResolve(),
-                               "CodecSupportPromise should never reject");
-            holder->Complete();
-            const auto& results = aValue.ResolveValue();
 
-            const CodecSupport audioSupported = results[0];
-            const CodecSupport videoSupported = results[1];
-            const bool bothSupportUnknown =
-                videoSupported == CodecSupport::Unknown &&
-                audioSupported == CodecSupport::Unknown;
-
-            
-            
-            
-            if ((videoSupported == CodecSupport::Unsupported) ||
-                (audioSupported == CodecSupport::Unsupported) ||
-                bothSupportUnknown) {
-              MediaCapabilitiesDecodingInfo info;
-              info.mSupported = false;
-              info.mSmooth = false;
-              info.mPowerEfficient = false;
-              aPromise->MaybeResolve(std::move(info));
-              return;
-            }
-
-            if (isWebRTC) {
-              CreateWebRTCDecodingInfo(aConfiguration, aPromise, videoSupported,
-                                       results[2] );
-            } else {
-              self->CreateNonWebRTCDecodingInfo(aConfiguration, aPromise,
-                                                std::move(videoContainer),
-                                                std::move(audioContainer));
-            }
-          })
-      ->Track(*holder);
+  if (isWebRTC) {
+    CreateWebRTCDecodingInfo(aConfiguration, aPromise,
+                             std::move(videoContainer),
+                             std::move(audioContainer));
+  } else {
+    CreateNonWebRTCDecodingInfo(aConfiguration, aPromise,
+                                std::move(videoContainer),
+                                std::move(audioContainer));
+  }
 }
 
 static MediaCapabilitiesDecodingInfo CreateVideoDecodingInfo(
@@ -815,9 +721,8 @@ void MediaCapabilities::CreateNonWebRTCDecodingInfo(
     CheckEncryptedDecodingSupport(aConfiguration)
         ->Then(
             mainThread, __func__,
-            [promise = RefPtr<Promise>{aPromise}, aConfiguration,
-             mainThread = RefPtr<nsISerialEventTarget>{mainThread}, taskQueue,
-             compositor, shouldResistFingerprinting, frameRate,
+            [promise = RefPtr<Promise>{aPromise}, aConfiguration, mainThread,
+             taskQueue, compositor, shouldResistFingerprinting, frameRate,
              videoInfo = std::move(videoInfo)](
                 MediaKeySystemAccessManager::MediaKeySystemAccessPromise::
                     ResolveOrRejectValue&& aValue) mutable {
@@ -945,6 +850,8 @@ void MediaCapabilities::CreateNonWebRTCDecodingInfo(
                  CapabilitiesPromise::AllPromiseType::ResolveOrRejectValue&&
                      aValue) {
                holder->Complete();
+               nsIGlobalObject* global = holder->GetParentObject();
+               NS_ENSURE_TRUE_VOID(global);
                if (aValue.IsReject()) {
                  MediaCapabilitiesDecodingInfo info;
                  info.mSupported = false;
@@ -1108,8 +1015,8 @@ already_AddRefed<Promise> MediaCapabilities::EncodingInfo(
   
   if (auto configCheck = IsValidMediaEncodingConfiguration(aConfiguration);
       configCheck.isErr()) {
-    ThrowWithValidationResult(aRv, configCheck.unwrapErr());
-    return nullptr;
+    RejectWithValidationResult(encodePromise, configCheck.unwrapErr());
+    return encodePromise.forget();
   }
 
   LOG("Processing EncodingInfo for: {}", aConfiguration);
@@ -1121,166 +1028,156 @@ already_AddRefed<Promise> MediaCapabilities::EncodingInfo(
   
 
   
-  RefPtr<CodecSupportPromise> videoPromise;
-  RefPtr<CodecSupportPromise> videoAccelPromise;
+  CodecSupport videoSupported = CodecSupport::Unknown;
   CodecSupportState state(*this);
 
   
   
   
-  
+  Maybe<MediaExtendedMIMEType> videoMime;
   
   
   if (aConfiguration.mVideo.WasPassed()) {
-    Maybe<MediaExtendedMIMEType> mime =
+    videoMime =
         MakeMediaExtendedMIMEType(aConfiguration.mVideo.Value().mContentType);
-    videoPromise =
-        mime ? state.GetVideoEncodeSupportPromise(aConfiguration, *mime)
-             : CodecSupportPromise::CreateAndResolve(CodecSupport::Unknown,
-                                                     __func__);
-
-    
-    videoAccelPromise = CodecSupportPromise::CreateAndResolve(
-        mime && state.IsAcceleratedEncode(*mime, aConfiguration.mType)
-            ? CodecSupport::Supported
-            : CodecSupport::Unsupported,
-        __func__);
-  } else {
-    videoPromise =
-        CodecSupportPromise::CreateAndResolve(CodecSupport::Unknown, __func__);
-    videoAccelPromise =
-        CodecSupportPromise::CreateAndResolve(CodecSupport::Unknown, __func__);
+    MOZ_ASSERT(videoMime, "Validation already succeeded");
+    if (videoMime) {
+      videoSupported =
+          state.CheckVideoEncodeSupport(aConfiguration, *videoMime);
+    }
   }
 
   
-  RefPtr<CodecSupportPromise> audioPromise;
+  CodecSupport audioSupported = CodecSupport::Unknown;
 
   
+  Maybe<MediaExtendedMIMEType> audioMime;
   if (aConfiguration.mAudio.WasPassed()) {
     
     
-    Maybe<MediaExtendedMIMEType> audioMime =
+    audioMime =
         MakeMediaExtendedMIMEType(aConfiguration.mAudio.Value().mContentType);
     
     
-    audioPromise = audioMime ? state.GetAudioEncodeSupportPromise(
-                                   aConfiguration, *audioMime)
-                             : CodecSupportPromise::CreateAndResolve(
-                                   CodecSupport::Unknown, __func__);
-  } else {
-    audioPromise =
-        CodecSupportPromise::CreateAndResolve(CodecSupport::Unknown, __func__);
+    audioSupported =
+        audioMime ? state.CheckAudioEncodeSupport(aConfiguration, *audioMime)
+                  : CodecSupport::Unknown;
   }
 
-  RefPtr<DOMMozPromiseRequestHolder<CodecSupportPromise::AllPromiseType>>
-      holder;
+  MediaCapabilitiesInfo info;
+  const bool bothSupportUnknown = videoSupported == CodecSupport::Unknown &&
+                                  audioSupported == CodecSupport::Unknown;
+
+  
+  
+  
+  if (videoSupported == CodecSupport::Unsupported ||
+      audioSupported == CodecSupport::Unsupported || bothSupportUnknown) {
+    info.mSupported = false;
+    info.mSmooth = false;
+    info.mPowerEfficient = false;
+    encodePromise->MaybeResolve(std::move(info));
+    return encodePromise.forget();
+  }
+
+  
+  info.mSupported = true;
+
+  
+  
+  using PromiseType =
+      MozPromise<MediaCapabilitiesInfo, bool, true>;
+  RefPtr<DOMMozPromiseRequestHolder<PromiseType>> holder;
   RefPtr<nsISerialEventTarget> targetThread;
   RefPtr<StrongWorkerRef> workerRef;
-  if (!GetThreadForAsyncRequest<CodecSupportPromise::AllPromiseType>(
+  if (!GetThreadForAsyncRequest<PromiseType>(
           mParent, &holder, &targetThread, &workerRef,
           "MediaCapabilities::EncodingInfo")) {
     
     
     return encodePromise.forget();
   }
-  nsTArray<RefPtr<CodecSupportPromise>> supportPromises{
-      audioPromise, videoPromise, videoAccelPromise};
-  CodecSupportPromise::All(targetThread, supportPromises)
+
+  RefPtr<TaskQueue> taskQueue =
+      TaskQueue::Create(GetMediaThreadPool(MediaThreadType::PLATFORM_ENCODER),
+                        "MediaCapabilities::TaskQueue");
+  InvokeAsync(taskQueue, __func__,
+              [aConfiguration, videoMime, videoSupported, audioMime,
+               audioSupported, info = std::move(info)]() mutable {
+                
+                
+                
+                
+                MOZ_ASSERT(audioSupported == CodecSupport::Supported ||
+                           videoSupported == CodecSupport::Supported);
+                (void)audioSupported;
+                info.mSmooth = true;
+                info.mPowerEfficient = true;
+
+                bool lowResolution = false;
+                if (videoSupported == CodecSupport::Supported) {
+                  
+                  const media::EncodeSupportSet videoEncoderSupport =
+                      SupportsVideoMimeEncodeForWebrtc(*videoMime);
+                  MOZ_ASSERT(!videoEncoderSupport.isEmpty());
+                  const bool hwSupported = videoEncoderSupport.contains(
+                      media::EncodeSupport::HardwareEncode);
+                  MOZ_ASSERT(aConfiguration.mVideo.WasPassed());
+                  const auto& v = aConfiguration.mVideo.Value();
+                  const CheckedInt<uint32_t> pixels =
+                      CheckedInt<uint32_t>(v.mWidth) *
+                      CheckedInt<uint32_t>(v.mHeight);
+                  lowResolution = pixels.isValid() &&
+                                  pixels.value() <= kLowResolutionPixelCount;
+
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  info.mSmooth &= hwSupported || lowResolution;
+
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  info.mPowerEfficient &= (hwSupported || lowResolution);
+                }
+
+                LOG("{} -> {}", aConfiguration, info);
+
+                return PromiseType::CreateAndResolve(
+                    std::move(info), "MediaCapabilities::EncodingInfo");
+              })
       ->Then(
           targetThread, __func__,
-          [encodePromise, workerRef, holder, aConfiguration](
-              const CodecSupportPromise::AllPromiseType::ResolveOrRejectValue&
-                  aValue) {
-            MOZ_RELEASE_ASSERT(aValue.IsResolve(),
-                               "CodecSupportPromise should never reject");
+          [encodePromise, workerRef, holder,
+           aConfiguration](MediaCapabilitiesInfo aInfo) {
             holder->Complete();
-            const auto& results = aValue.ResolveValue();
-
-            MediaCapabilitiesInfo info;
-
-            const CodecSupport audioSupported = results[0];
-            const CodecSupport videoSupported = results[1];
-            const CodecSupport videoAccelSupported = results[2];
-            const bool bothSupportUnknown =
-                videoSupported == CodecSupport::Unknown &&
-                audioSupported == CodecSupport::Unknown;
-
+            nsIGlobalObject* global = holder->GetParentObject();
+            NS_ENSURE_TRUE_VOID(global);
             
-            
-            
-            if ((videoSupported == CodecSupport::Unsupported) ||
-                (audioSupported == CodecSupport::Unsupported) ||
-                bothSupportUnknown) {
-              info.mSupported = false;
-              info.mSmooth = false;
-              info.mPowerEfficient = false;
-              encodePromise->MaybeResolve(std::move(info));
-              return;
-            }
-
-            
-            info.mSupported = true;
-
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            const bool hwSupported =
-                (videoAccelSupported == CodecSupport::Supported);
-            bool lowResolution = false;
-            if (videoSupported == CodecSupport::Supported) {
-              MOZ_ASSERT(aConfiguration.mVideo.WasPassed());
-              const auto& v = aConfiguration.mVideo.Value();
-              const CheckedInt<uint32_t> pixels =
-                  CheckedInt<uint32_t>(v.mWidth) *
-                  CheckedInt<uint32_t>(v.mHeight);
-              lowResolution = pixels.isValid() &&
-                              pixels.value() <= kLowResolutionPixelCount;
-              info.mSmooth = hwSupported || lowResolution;
-            } else {
-              
-              
-              
-              MOZ_ASSERT(aConfiguration.mAudio.WasPassed());
-              info.mSmooth = true;
-            }
-
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-
-            
-            if (videoSupported == CodecSupport::Supported) {
-              info.mPowerEfficient = hwSupported || lowResolution;
-            } else {
-              
-              MOZ_ASSERT(aConfiguration.mAudio.WasPassed());
-              info.mPowerEfficient = true;
-            }
-
-            LOG("{} -> {}", aConfiguration, info);
-
-            
-            encodePromise->MaybeResolve(std::move(info));
-          })
+            encodePromise->MaybeResolve(std::move(aInfo));
+          },
+          [] { MOZ_CRASH("Unexpected"); })
       ->Track(*holder);
   return encodePromise.forget();
 }

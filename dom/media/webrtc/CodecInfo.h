@@ -34,15 +34,9 @@ class WebrtcCodecInfo {
   [[nodiscard]] static std::unique_ptr<WebrtcCodecInfo> Create();
 
   
-  [[nodiscard]] virtual bool SupportsMimeEncode(
+  [[nodiscard]] virtual bool CheckEncodeType(
       const MediaExtendedMIMEType& aMime) const = 0;
-  [[nodiscard]] virtual bool SupportsMimeDecode(
-      const MediaExtendedMIMEType& aMime) const = 0;
-
-  
-  [[nodiscard]] virtual bool SupportsMimeHWEncode(
-      const MediaExtendedMIMEType& aMime) const = 0;
-  [[nodiscard]] virtual bool SupportsMimeHWDecode(
+  [[nodiscard]] virtual bool CheckDecodeType(
       const MediaExtendedMIMEType& aMime) const = 0;
 };
 
