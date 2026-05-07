@@ -158,12 +158,10 @@ bool SandboxBroker::Policy::ValidatePath(const char* path) const {
       path[len - 1] == '.')
     return false;
   
-  for (size_t i = 0; i < len; i++) {
-    if (path[i] == '/' && (len - i) > 3) {
-      if (path[i + 1] == '.' && path[i + 2] == '.' && path[i + 3] == '/') {
-        return false;
-      }
-    }
+  
+  
+  if (strstr(path, "//") || strstr(path, "/./") || strstr(path, "/../")) {
+    return false;
   }
   return true;
 }
