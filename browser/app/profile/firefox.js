@@ -2924,7 +2924,9 @@ pref("browser.toolbars.bookmarks.showOtherBookmarks", true);
 
 
 
-pref("browser.toolbars.share-button.enabled", true);
+#ifndef XP_LINUX
+  pref("browser.toolbars.share-button.enabled", true);
+#endif
 
 
 pref("browser.privatebrowsing.felt-privacy-v1", false);
