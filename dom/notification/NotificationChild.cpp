@@ -100,7 +100,7 @@ void NotificationChild::ActorDestroy(ActorDestroyReason aWhy) {
   }
 }
 
-void NotificationChild::FrozenCallback(nsIGlobalObject* aOwner) {
+void NotificationChild::FrozenCallback(nsIGlobalObject* aGlobal) {
   
   
   mNonPersistentNotification = nullptr;
