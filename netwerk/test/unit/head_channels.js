@@ -603,12 +603,16 @@ function sleep(seconds) {
 
 
 
-async function asyncSetupFaultyServer(callbackServer) {
+
+
+async function asyncSetupFaultyServer(callbackServer, { use0RTT = true } = {}) {
   Services.env.set(
     "FAULTY_SERVER_CALLBACK_PORT",
     callbackServer.identity.primaryPort
   );
-  Services.env.set("MOZ_TLS_SERVER_0RTT", "1");
+  if (use0RTT) {
+    Services.env.set("MOZ_TLS_SERVER_0RTT", "1");
+  }
   await asyncStartTLSTestServer(
     "FaultyServer",
     "../../../security/manager/ssl/tests/unit/test_faulty_server"

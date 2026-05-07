@@ -110,6 +110,9 @@ class nsAHttpTransaction : public nsSupportsWeakReference {
   virtual void Close(nsresult reason) = 0;
 
   
+  virtual void Cancel(nsresult aReason) {}
+
+  
   virtual void SetProxyConnectFailed() = 0;
 
   
@@ -202,7 +205,11 @@ class nsAHttpTransaction : public nsSupportsWeakReference {
   
   
   
-  [[nodiscard]] virtual bool Do0RTT() { return false; }
+  
+  
+  [[nodiscard]] virtual bool Do0RTT(bool aCanSendEarlyData = true) {
+    return false;
+  }
   
   
   
