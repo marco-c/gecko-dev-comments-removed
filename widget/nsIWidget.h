@@ -272,9 +272,6 @@ enum nsCursor {
   
   
   eCursorCount,
-
-  
-  eCursorInvalid = eCursorCount + 1
 };
 
 
@@ -1896,14 +1893,14 @@ class nsIWidget : public nsSupportsWeakReference {
   virtual void CreateCompositor(int aWidth, int aHeight);
   virtual void SetCompositorWidgetDelegate(CompositorWidgetDelegate*) {}
 
-  WindowRenderer* CreateFallbackRenderer();
+  already_AddRefed<WindowRenderer> CreateFallbackRenderer();
 
   
 
 
 
 
-  WindowRenderer* CreateBackgroundedFallbackRenderer();
+  already_AddRefed<WindowRenderer> CreateBackgroundedFallbackRenderer();
 
   
 
