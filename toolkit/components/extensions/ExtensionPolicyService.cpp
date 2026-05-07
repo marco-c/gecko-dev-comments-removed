@@ -366,9 +366,11 @@ already_AddRefed<Promise> ExtensionPolicyService::ExecuteContentScripts(
 
 
 
+
 static bool IsTabOrExtensionBrowser(dom::BrowsingContext* aBC) {
   const auto& group = aBC->Top()->GetMessageManagerGroup();
-  bool rv = group == u"browsers"_ns || group == u"webext-browsers"_ns;
+  bool rv = group == u"browsers"_ns || group == u"webext-browsers"_ns ||
+            group == u"chatbot-browser"_ns;
 
 #ifdef MOZ_THUNDERBIRD
   
