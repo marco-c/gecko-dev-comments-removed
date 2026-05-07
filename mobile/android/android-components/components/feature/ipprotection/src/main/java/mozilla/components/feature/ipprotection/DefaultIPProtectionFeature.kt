@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import mozilla.components.ExperimentalAndroidComponentsApi
 import mozilla.components.browser.state.selector.findTab
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.engine.Engine
@@ -25,7 +26,6 @@ import mozilla.components.concept.sync.OAuthAccount
 import mozilla.components.feature.tabs.TabsUseCases
 import mozilla.components.lib.state.ext.flow
 import mozilla.components.service.fxa.manager.FxaAccountManager
-import mozilla.components.support.base.feature.LifecycleAwareFeature
 import mozilla.components.support.base.log.logger.Logger
 
 private val logger = Logger("DefaultIPProtectionFeature")
@@ -35,18 +35,22 @@ private const val TOKEN_SCOPE = "https://identity.mozilla.com/apps/vpn"
   * AC feature that brings IP protection proxy functionality to Android.
  *
  * @param engine [Engine] used to register the IP protection delegate and obtain the handler.
- * @param accountManager [FxaAccountManager] used to supply FxA tokens to the proxy Guardian.
+ * @param lazyAccountManager [Lazy] wrapper around [FxaAccountManager] that is used to supply
+ * FxA tokens to the proxy Guardian.
+ * @param storage [IPProtectionAvailabilityStorage] exposes the availability of the feature.
  * @param store [IPProtectionStore] holds the feature state.
  * @param browserStore [BrowserStore] to observe enrollment tab URL changes.
  * @param tabsUseCases [TabsUseCases] to open/remove the enrollment tab.
  */
+@OptIn(ExperimentalAndroidComponentsApi::class)
 class DefaultIPProtectionFeature(
     private val engine: Engine,
-    private val accountManager: FxaAccountManager,
+    private val lazyAccountManager: Lazy<FxaAccountManager>,
+    private val storage: IPProtectionAvailabilityStorage,
     private val store: IPProtectionStore,
     private val browserStore: BrowserStore,
     private val tabsUseCases: TabsUseCases,
-) : LifecycleAwareFeature, IPProtectionFeature {
+) : IPProtectionFeature {
     private val scope = CoroutineScope(Dispatchers.Main)
     private var handler: IPProtectionHandler? = null
     private var enrollmentTabId: String? = null
@@ -66,7 +70,26 @@ class DefaultIPProtectionFeature(
         }
     }
 
-    override fun start() {
+    /**
+     * Starts listening for feature availability changes.
+     */
+    fun start() {
+        scope.launch {
+            storage.isFeatureAvailable
+                .distinctUntilChanged()
+                .collect { isAvailable ->
+                    if (isAvailable) {
+                        setUp()
+                    } else {
+                        tearDown()
+                    }
+                    store.dispatch(IPProtectionAction.AvailabilityChanged(isAvailable))
+                }
+        }
+        storage.init()
+    }
+
+    private fun setUp() {
         handler = engine.registerIPProtectionDelegate(object : IPProtectionDelegate {
             override fun onStateChanged(info: IPProtectionHandler.StateInfo) {
                 val state = info.toState()
@@ -80,9 +103,11 @@ class DefaultIPProtectionFeature(
             }
         })
 
-        accountManager.register(accountObserver)
+        lazyAccountManager.value.register(accountObserver)
 
-        val account = accountManager.authenticatedAccount()
+        val account = lazyAccountManager.value.authenticatedAccount()
+        // NB: this is possibly a footgun, refactoring tracked in
+        // https://bugzilla.mozilla.org/show_bug.cgi?id=2035937
         if (account != null) {
             setTokenProvider(account)
         } else {
@@ -90,8 +115,8 @@ class DefaultIPProtectionFeature(
         }
     }
 
-    override fun stop() {
-        accountManager.unregister(accountObserver)
+    private fun tearDown() {
+        lazyAccountManager.value.unregister(accountObserver)
         engine.unregisterIPProtectionDelegate()
         handler?.setTokenProvider(null)
         handler = null
@@ -166,7 +191,7 @@ class DefaultIPProtectionFeature(
     }
 
     override fun retriggerEnrollment() {
-        val account = accountManager.authenticatedAccount() ?: return
+        val account = lazyAccountManager.value.authenticatedAccount() ?: return
         logger.debug("retriggerEnrollment: re-firing token provider")
         setTokenProvider(account)
     }
@@ -202,7 +227,7 @@ class DefaultIPProtectionFeature(
         resetDate = resetTime,
         isEnrollmentNeeded = proxyState == IPProtectionHandler.StateInfo.PROXY_STATE_NOT_READY &&
             serviceState == IPProtectionHandler.StateInfo.SERVICE_STATE_UNAUTHENTICATED &&
-            accountManager.authenticatedAccount() != null,
+            lazyAccountManager.value.authenticatedAccount() != null,
     )
 
     private fun proxyStateToStatus(proxyState: Int): IPProtectionStatus = when (proxyState) {
