@@ -143,9 +143,11 @@ STATIC_ASSERT_CONSTANT_EQ(NOTATION_NODE);
 
 #undef STATIC_ASSERT_CONSTANT_EQ
 
+#ifdef DEBUG
 static bool ShouldUseNACScope(const nsINode* aNode) {
   return aNode->IsInNativeAnonymousSubtree();
 }
+#endif
 
 static bool ShouldUseUAWidgetScope(const nsINode* aNode) {
   return aNode->HasBeenInUAWidget();
@@ -1813,35 +1815,6 @@ static void AdoptNodeIntoOwnerDoc(nsINode* aParent, nsINode* aNode,
 #endif  
 }
 
-static nsresult UpdateGlobalsInSubtree(nsIContent* aRoot) {
-  MOZ_ASSERT(ShouldUseNACScope(aRoot));
-  
-  AutoJSAPI jsapi;
-  jsapi.Init();
-
-  JSContext* cx = jsapi.cx();
-
-  ErrorResult rv;
-  JS::Rooted<JSObject*> reflector(cx);
-  for (nsIContent* cur = aRoot; cur; cur = cur->GetNextNode(aRoot)) {
-    if ((reflector = cur->GetWrapper())) {
-      JSAutoRealm ar(cx, reflector);
-      UpdateReflectorGlobal(cx, reflector, rv);
-      rv.WouldReportJSException();
-      if (rv.Failed()) {
-        
-        
-        
-        
-        
-        return rv.StealNSResult();
-      }
-    }
-  }
-
-  return NS_OK;
-}
-
 void nsINode::InsertChildBefore(
     nsIContent* aKid, nsIContent* aBeforeThis, bool aNotify, ErrorResult& aRv,
     nsINode* aOldParent, MutationEffectOnScript aMutationEffectOnScript) {
@@ -1876,16 +1849,9 @@ void nsINode::InsertChildBefore(
 
   nsIContent* parent = IsContent() ? AsContent() : nullptr;
 
-  
-  bool wasInNACScope = ShouldUseNACScope(aKid);
   BindContext context(*this);
   context.SetIsMove(aOldParent != nullptr);
   aRv = aKid->BindToTree(context, *this);
-  if (!aRv.Failed() && !wasInNACScope && ShouldUseNACScope(aKid)) {
-    MOZ_ASSERT(ShouldUseNACScope(this),
-               "Why does the kid need to use an the anonymous content scope?");
-    aRv = UpdateGlobalsInSubtree(aKid);
-  }
   if (aRv.Failed()) {
     DisconnectChild(aKid);
     aKid->UnbindFromTree();
