@@ -735,11 +735,6 @@ pub enum PrimitiveKind {
         
         data_handle: PictureDataHandle,
         pic_index: PictureIndex,
-        
-        
-        
-        
-        scratch_handle: storage::Index<PictureScratch>,
     },
     
     TextRun {
@@ -747,21 +742,16 @@ pub enum PrimitiveKind {
         data_handle: TextRunDataHandle,
         
         run_index: TextRunIndex,
-        
-        
-        scratch_handle: storage::Index<TextRunScratch>,
     },
     
     
     LineDecoration {
         
         data_handle: LineDecorationDataHandle,
-        scratch_handle: storage::Index<LineDecorationScratch>,
     },
     NormalBorder {
         
         data_handle: NormalBorderDataHandle,
-        scratch_handle: storage::Index<NormalBorderScratch>,
     },
     ImageBorder {
         
@@ -784,7 +774,6 @@ pub enum PrimitiveKind {
         data_handle: ImageDataHandle,
         image_instance_index: ImageInstanceIndex,
         compositor_surface_kind: CompositorSurfaceKind,
-        scratch_handle: storage::Index<ImageScratch>,
     },
     LinearGradient {
         
@@ -805,7 +794,6 @@ pub enum PrimitiveKind {
     BackdropRender {
         data_handle: BackdropRenderDataHandle,
         pic_index: PictureIndex,
-        scratch_handle: storage::Index<BackdropRenderScratch>,
     },
     BoxShadow {
         data_handle: BoxShadowDataHandle,
