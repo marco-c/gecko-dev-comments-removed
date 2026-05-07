@@ -1950,8 +1950,6 @@ void nsDisplayListBuilder::AddSizeOfExcludingThis(nsWindowSizes& aSizes) const {
 
   size_t n = 0;
   MallocSizeOf mallocSizeOf = aSizes.mState.mMallocSizeOf;
-  n += mDocumentWillChangeBudgets.ShallowSizeOfExcludingThis(mallocSizeOf);
-  n += mFrameWillChangeBudgets.ShallowSizeOfExcludingThis(mallocSizeOf);
   n += mRetainedWindowDraggingRegion.SizeOfExcludingThis(mallocSizeOf);
   n += mRetainedWindowNoDraggingRegion.SizeOfExcludingThis(mallocSizeOf);
   n += mRetainedWindowOpaqueRegion.SizeOfExcludingThis(mallocSizeOf);
@@ -2029,113 +2027,6 @@ void nsDisplayListBuilder::ClearRetainedWindowRegions() {
   mRetainedWindowDraggingRegion.Clear();
   mRetainedWindowNoDraggingRegion.Clear();
   mRetainedWindowOpaqueRegion.Clear();
-}
-
-const uint32_t gWillChangeAreaMultiplier = 3;
-static uint32_t GetLayerizationCost(const nsSize& aSize) {
-  
-  
-  
-  const int minBudgetCost = 64 * 64;
-
-  const uint32_t budgetCost = std::max(
-      minBudgetCost, nsPresContext::AppUnitsToIntCSSPixels(aSize.width) *
-                         nsPresContext::AppUnitsToIntCSSPixels(aSize.height));
-
-  return budgetCost;
-}
-
-bool nsDisplayListBuilder::AddToWillChangeBudget(nsIFrame* aFrame,
-                                                 const nsSize& aSize) {
-  MOZ_ASSERT(IsForPainting());
-
-  if (aFrame->MayHaveWillChangeBudget()) {
-    
-    return true;
-  }
-
-  const nsPresContext* presContext = aFrame->PresContext();
-  const nsRect area = presContext->GetVisibleArea();
-  const uint32_t budgetLimit =
-      nsPresContext::AppUnitsToIntCSSPixels(area.width) *
-      nsPresContext::AppUnitsToIntCSSPixels(area.height);
-  const uint32_t cost = GetLayerizationCost(aSize);
-
-  DocumentWillChangeBudget& documentBudget =
-      mDocumentWillChangeBudgets.LookupOrInsert(presContext);
-
-  const bool onBudget =
-      (documentBudget + cost) / gWillChangeAreaMultiplier < budgetLimit;
-
-  if (onBudget) {
-    documentBudget += cost;
-    mFrameWillChangeBudgets.InsertOrUpdate(
-        aFrame, FrameWillChangeBudget(presContext, cost));
-    aFrame->SetMayHaveWillChangeBudget(true);
-  }
-
-  return onBudget;
-}
-
-bool nsDisplayListBuilder::IsInWillChangeBudget(nsIFrame* aFrame,
-                                                const nsSize& aSize) {
-  if (!IsForPainting()) {
-    
-    
-    return false;
-  }
-
-  const bool onBudget = AddToWillChangeBudget(aFrame, aSize);
-  if (onBudget) {
-    return true;
-  }
-
-  auto* pc = aFrame->PresContext();
-  auto* doc = pc->Document();
-  if (!doc->HasWarnedAbout(Document::eIgnoringWillChangeOverBudget)) {
-    AutoTArray<nsString, 2> params;
-    params.AppendElement()->AppendInt(gWillChangeAreaMultiplier);
-
-    nsRect area = pc->GetVisibleArea();
-    uint32_t budgetLimit = nsPresContext::AppUnitsToIntCSSPixels(area.width) *
-                           nsPresContext::AppUnitsToIntCSSPixels(area.height);
-    params.AppendElement()->AppendInt(budgetLimit);
-
-    doc->WarnOnceAbout(Document::eIgnoringWillChangeOverBudget, false, params);
-  }
-
-  return false;
-}
-
-void nsDisplayListBuilder::ClearWillChangeBudgetStatus(nsIFrame* aFrame) {
-  MOZ_ASSERT(IsForPainting());
-
-  if (!aFrame->MayHaveWillChangeBudget()) {
-    return;
-  }
-
-  aFrame->SetMayHaveWillChangeBudget(false);
-  RemoveFromWillChangeBudgets(aFrame);
-}
-
-void nsDisplayListBuilder::RemoveFromWillChangeBudgets(const nsIFrame* aFrame) {
-  if (auto entry = mFrameWillChangeBudgets.Lookup(aFrame)) {
-    const FrameWillChangeBudget& frameBudget = entry.Data();
-
-    auto documentBudget =
-        mDocumentWillChangeBudgets.Lookup(frameBudget.mPresContext);
-
-    if (documentBudget) {
-      *documentBudget -= frameBudget.mUsage;
-    }
-
-    entry.Remove();
-  }
-}
-
-void nsDisplayListBuilder::ClearWillChangeBudgets() {
-  mFrameWillChangeBudgets.Clear();
-  mDocumentWillChangeBudgets.Clear();
 }
 
 void nsDisplayListBuilder::EnterSVGEffectsContents(
@@ -4543,6 +4434,38 @@ bool nsDisplayBoxShadowOuter::CreateWebRenderCommands(
   }
 
   
+  
+  
+  
+  
+  
+  Sides skipSides = mFrame->GetSkipSides();
+  if (!skipSides.IsEmpty()) {
+    if (skipSides.Left()) {
+      nscoord xmost = bounds.XMost();
+      bounds.x = borderRect.x;
+      bounds.width = xmost - bounds.x;
+    }
+    if (skipSides.Right()) {
+      nscoord overflow = bounds.XMost() - borderRect.XMost();
+      if (overflow > 0) {
+        bounds.width -= overflow;
+      }
+    }
+    if (skipSides.Top()) {
+      nscoord ymost = bounds.YMost();
+      bounds.y = borderRect.y;
+      bounds.height = ymost - bounds.y;
+    }
+    if (skipSides.Bottom()) {
+      nscoord overflow = bounds.YMost() - borderRect.YMost();
+      if (overflow > 0) {
+        bounds.height -= overflow;
+      }
+    }
+  }
+
+  
   LayoutDeviceRect clipRect =
       LayoutDeviceRect::FromAppUnits(bounds, appUnitsPerDevPixel);
   auto shadows = mFrame->StyleEffects()->mBoxShadow.AsSpan();
@@ -4979,12 +4902,10 @@ void nsDisplayOpacity::Paint(nsDisplayListBuilder* aBuilder, gfxContext* aCtx) {
 }
 
 
-bool nsDisplayOpacity::NeedsActiveLayer(nsDisplayListBuilder* aBuilder,
-                                        nsIFrame* aFrame) {
+bool nsDisplayOpacity::NeedsActiveLayer(nsIFrame* aFrame) {
   return EffectCompositor::HasAnimationsForCompositor(
              aFrame, DisplayItemType::TYPE_OPACITY) ||
-         ActiveLayerTracker::IsStyleAnimated(
-             aBuilder, aFrame, nsCSSPropertyIDSet::OpacityProperties());
+         ActiveLayerTracker::IsOpacityAnimated(aFrame);
 }
 
 bool nsDisplayOpacity::CanApplyOpacity(WebRenderLayerManager* aManager,
@@ -6527,27 +6448,23 @@ Matrix4x4 nsDisplayTransform::GetResultingTransformMatrixInternal(
   return result;
 }
 
-bool nsDisplayOpacity::CanUseAsyncAnimations(nsDisplayListBuilder* aBuilder) {
-  static constexpr nsCSSPropertyIDSet opacitySet =
-      nsCSSPropertyIDSet::OpacityProperties();
-  if (ActiveLayerTracker::IsStyleAnimated(aBuilder, mFrame, opacitySet)) {
+bool nsDisplayOpacity::CanUseAsyncAnimations() {
+  if (ActiveLayerTracker::IsOpacityAnimated(mFrame)) {
     return true;
   }
 
   EffectCompositor::SetPerformanceWarning(
-      mFrame, opacitySet,
+      mFrame, nsCSSPropertyIDSet::OpacityProperties(),
       AnimationPerformanceWarning(
           AnimationPerformanceWarning::Type::OpacityFrameInactive));
-
   return false;
 }
 
-bool nsDisplayTransform::CanUseAsyncAnimations(nsDisplayListBuilder* aBuilder) {
+bool nsDisplayTransform::CanUseAsyncAnimations() {
   return mPrerenderDecision != PrerenderDecision::No;
 }
 
-bool nsDisplayBackgroundColor::CanUseAsyncAnimations(
-    nsDisplayListBuilder* aBuilder) {
+bool nsDisplayBackgroundColor::CanUseAsyncAnimations() {
   return StaticPrefs::gfx_omta_background_color();
 }
 
@@ -6601,7 +6518,9 @@ auto nsDisplayTransform::ShouldPrerenderTransformedContent(
   
   static constexpr nsCSSPropertyIDSet transformSet =
       nsCSSPropertyIDSet::TransformLikeProperties();
-  if (!ActiveLayerTracker::IsTransformMaybeAnimated(aFrame) &&
+  if (!ActiveLayerTracker::IsTransformAnimated(aFrame) &&
+      !(aFrame->StyleDisplay()->mWillChange.bits &
+        StyleWillChangeBits::TRANSFORM) &&
       !EffectCompositor::HasAnimationsForCompositor(
           aFrame, DisplayItemType::TYPE_TRANSFORM)) {
     EffectCompositor::SetPerformanceWarning(
@@ -6901,8 +6820,8 @@ bool nsDisplayTransform::CreateWebRenderCommands(
   }
 
   
-  bool animated = !mIsTransformSeparator &&
-                  ActiveLayerTracker::IsTransformMaybeAnimated(Frame());
+  const bool animated = !mIsTransformSeparator &&
+                        ActiveLayerTracker::IsTransformAnimated(Frame());
 
   wr::StackingContextParams params;
   params.mBoundTransform = &newTransformMatrix;
@@ -7147,7 +7066,7 @@ bool nsDisplayTransform::MayBeAnimated(nsDisplayListBuilder* aBuilder) const {
   
   return EffectCompositor::HasAnimationsForCompositor(
              mFrame, DisplayItemType::TYPE_TRANSFORM) ||
-         (ActiveLayerTracker::IsTransformAnimated(aBuilder, mFrame));
+         ActiveLayerTracker::IsTransformAnimated(mFrame);
 }
 
 nsRect nsDisplayTransform::TransformUntransformedBounds(
