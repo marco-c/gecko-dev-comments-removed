@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef XULPopupElement_h_
 #define XULPopupElement_h_
 
@@ -95,6 +93,8 @@ class XULPopupElement : public XULMenuParentElement {
 
   bool IsWaylandDragSource() const;
   bool IsWaylandPopup() const;
+
+  bool IsNativeMenu() const;
 
   NS_IMPL_FROMNODE_HELPER(XULPopupElement,
                           IsAnyOfXULElements(nsGkAtoms::menupopup,
