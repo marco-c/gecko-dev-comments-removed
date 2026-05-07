@@ -11,6 +11,7 @@
 
 #include <functional>
 
+#include "mozilla/Atomics.h"
 #include "mozilla/Mutex.h"
 #include "nsSocketTransportService2.h"
 #include "nsString.h"
@@ -224,7 +225,7 @@ class nsSocketTransport final : public nsASocketHandler,
   bool mProxyTransparent{false};
   bool mProxyTransparentResolvesHost{false};
   bool mHttpsProxy{false};
-  uint32_t mConnectionFlags{0};
+  Atomic<uint32_t, Relaxed> mConnectionFlags{0};
   
   
   bool mResetFamilyPreference{false};
