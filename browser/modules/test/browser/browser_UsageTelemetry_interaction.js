@@ -297,6 +297,10 @@ add_task(async function contextMenu() {
 });
 
 add_task(async function contextMenu_copyLink() {
+  
+  if (AppConstants.platform == "win") {
+    return;
+  }
   await BrowserTestUtils.withNewTab("https://example.com", async () => {
     resetGleanEvents();
 
@@ -312,21 +316,27 @@ add_task(async function contextMenu_copyLink() {
 
     let hidden = BrowserTestUtils.waitForEvent(context, "popuphidden");
 
-    await BrowserTestUtils.waitForMutationCondition(
-      context,
-      { childList: true },
-      () => context.querySelector(".share-tab-url-item")
-    );
-    let shareMenu = context.querySelector(".share-tab-url-item");
-    let submenuShown = BrowserTestUtils.waitForPopupEvent(
-      shareMenu.menupopup,
-      "shown"
-    );
-    shareMenu.openMenu(true);
-    await submenuShown;
-    shareMenu.menupopup.activateItem(
-      shareMenu.menupopup.querySelector(".share-copy-link")
-    );
+    
+    
+    if (AppConstants.platform == "macosx") {
+      await BrowserTestUtils.waitForMutationCondition(
+        context,
+        { childList: true },
+        () => context.querySelector(".share-tab-url-item")
+      );
+      let shareMenu = context.querySelector(".share-tab-url-item");
+      let submenuShown = BrowserTestUtils.waitForPopupEvent(
+        shareMenu.menupopup,
+        "shown"
+      );
+      shareMenu.openMenu(true);
+      await submenuShown;
+      shareMenu.menupopup.activateItem(
+        shareMenu.menupopup.querySelector(".share-copy-link")
+      );
+    } else {
+      context.activateItem(context.querySelector(".share-tab-url-item"));
+    }
 
     await hidden;
 
@@ -375,21 +385,27 @@ add_task(async function contextMenu_copyMultipleLinks() {
 
   let hidden = BrowserTestUtils.waitForEvent(context, "popuphidden");
 
-  await BrowserTestUtils.waitForMutationCondition(
-    context,
-    { childList: true },
-    () => context.querySelector(".share-tab-url-item")
-  );
-  let shareMenu = context.querySelector(".share-tab-url-item");
-  let submenuShown = BrowserTestUtils.waitForPopupEvent(
-    shareMenu.menupopup,
-    "shown"
-  );
-  shareMenu.openMenu(true);
-  await submenuShown;
-  shareMenu.menupopup.activateItem(
-    shareMenu.menupopup.querySelector(".share-copy-link")
-  );
+  
+  
+  if (AppConstants.platform == "macosx") {
+    await BrowserTestUtils.waitForMutationCondition(
+      context,
+      { childList: true },
+      () => context.querySelector(".share-tab-url-item")
+    );
+    let shareMenu = context.querySelector(".share-tab-url-item");
+    let submenuShown = BrowserTestUtils.waitForPopupEvent(
+      shareMenu.menupopup,
+      "shown"
+    );
+    shareMenu.openMenu(true);
+    await submenuShown;
+    shareMenu.menupopup.activateItem(
+      shareMenu.menupopup.querySelector(".share-copy-link")
+    );
+  } else {
+    context.activateItem(context.querySelector(".share-tab-url-item"));
+  }
   await hidden;
 
   let events = Glean.browserUsage.interaction

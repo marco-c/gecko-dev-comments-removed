@@ -32,58 +32,26 @@ registerCleanupFunction(function () {
 add_task(async function test_contextmenu_share_win() {
   await BrowserTestUtils.withNewTab(TEST_URL_1, async () => {
     let contextMenu = await openTabContextMenu(gBrowser.selectedTab);
-    let shareMenu = contextMenu.querySelector(".share-tab-url-item");
-
-    ok(shareMenu, "Got Share menu on Windows");
-    is(shareMenu.tagName, "menu", "Share item is a submenu");
-
-    await openShareMenuPopup(contextMenu);
-
-    let popup = shareMenu.menupopup;
-    let winShareItem = popup.querySelector(".share-windows-item");
-    ok(winShareItem, "Share with Windows item exists");
-
-    info("Test the correct URL is shared when Share with Windows is selected.");
     let contextMenuClosedPromise = BrowserTestUtils.waitForPopupEvent(
       contextMenu,
       "hidden"
     );
-    popup.activateItem(winShareItem);
+    let itemCreated = contextMenu.querySelector(".share-tab-url-item");
+
+    ok(itemCreated, "Got Share item on Windows 10");
+
+    info("Test the correct URL is shared when Share is selected.");
+    EventUtils.synthesizeMouseAtCenter(itemCreated, {});
     await contextMenuClosedPromise;
 
     ok(shareUrlSpy.calledOnce, "shareUrl called");
     let [url, title] = shareUrlSpy.getCall(0).args;
     is(url, TEST_URL_1, "Shared correct URL");
-    is(title, "Sharing URL", "Shared correct title");
+    is(title, "Sharing URL", "Shared correct URL");
     shareUrlSpy.resetHistory();
   });
 });
 
-
-
-
-add_task(async function test_contextmenu_share_copy_link_win() {
-  await BrowserTestUtils.withNewTab(TEST_URL_1, async () => {
-    let contextMenu = await openTabContextMenu(gBrowser.selectedTab);
-    await openShareMenuPopup(contextMenu);
-
-    let popup = contextMenu.querySelector(".share-tab-url-item").menupopup;
-    let copyLinkItem = popup.querySelector(".share-copy-link");
-    ok(copyLinkItem, "Copy Link item exists in submenu");
-
-    let contextMenuClosedPromise = BrowserTestUtils.waitForPopupEvent(
-      contextMenu,
-      "hidden"
-    );
-    await SimpleTest.promiseClipboardChange(TEST_URL_1, () =>
-      popup.activateItem(copyLinkItem)
-    );
-    await contextMenuClosedPromise;
-
-    ok(!shareUrlSpy.called, "native Windows share dialog was not invoked");
-    shareUrlSpy.resetHistory();
-  });
-});
 
 
 
@@ -97,22 +65,22 @@ add_task(async function test_contextmenu_share_multiselect_win() {
   ok(tab2.multiselected, "tab2 is multiselected");
 
   let contextMenu = await openTabContextMenu(tab2);
-  let shareMenu = contextMenu.querySelector(".share-tab-url-item");
-  ok(shareMenu, "share menu exists");
-  is(shareMenu.tagName, "menu", "share item is a submenu for multi-tab too");
+  let shareItem = contextMenu.querySelector(".share-tab-url-item");
+  ok(shareItem, "share item exists");
 
-  await openShareMenuPopup(contextMenu);
-
-  let popup = shareMenu.menupopup;
-  let copyLinkItem = popup.querySelector(".share-copy-link");
-  ok(copyLinkItem, "Copy Link item exists");
+  info("For multi-tab on Windows, the item should be a copy-link menuitem");
+  is(shareItem.tagName, "menuitem", "share item is a flat menuitem");
+  ok(
+    shareItem.classList.contains("share-copy-link"),
+    "share item has share-copy-link class"
+  );
 
   let contextMenuClosed = BrowserTestUtils.waitForPopupEvent(
     contextMenu,
     "hidden"
   );
   await SimpleTest.promiseClipboardChange(TEST_URL_1 + "\n" + TEST_URL_2, () =>
-    popup.activateItem(copyLinkItem)
+    contextMenu.activateItem(shareItem)
   );
   await contextMenuClosed;
 
@@ -156,11 +124,11 @@ add_task(async function test_contextmenu_share_multiselect_blank_first_win() {
   ok(tab2.multiselected, "tab2 (real URL) is multiselected");
 
   let contextMenu = await openTabContextMenu(tab1);
-  let shareMenu = contextMenu.querySelector(".share-tab-url-item");
-  ok(shareMenu, "share menu exists");
+  let shareItem = contextMenu.querySelector(".share-tab-url-item");
+  ok(shareItem, "share item exists");
   ok(
-    !shareMenu.hidden,
-    "share menu is visible when at least one tab has a shareable URL"
+    !shareItem.hidden,
+    "share item is visible when at least one tab has a shareable URL"
   );
 
   let contextMenuClosed = BrowserTestUtils.waitForPopupEvent(
@@ -192,11 +160,11 @@ add_task(async function test_contextmenu_share_multiselect_all_blank_win() {
   ok(tab2.multiselected, "tab2 is multiselected");
 
   let contextMenu = await openTabContextMenu(tab2);
-  let shareMenu = contextMenu.querySelector(".share-tab-url-item");
-  ok(shareMenu, "share menu exists");
+  let shareItem = contextMenu.querySelector(".share-tab-url-item");
+  ok(shareItem, "share item exists");
   ok(
-    shareMenu.hidden,
-    "share menu is hidden when all selected tabs have non-shareable URLs"
+    shareItem.hidden,
+    "share item is hidden when all selected tabs have non-shareable URLs"
   );
 
   let contextMenuClosed = BrowserTestUtils.waitForPopupEvent(
@@ -209,3 +177,18 @@ add_task(async function test_contextmenu_share_multiselect_all_blank_win() {
   BrowserTestUtils.removeTab(tab1);
   BrowserTestUtils.removeTab(tab2);
 });
+
+
+
+
+async function openTabContextMenu(tab) {
+  info("Opening tab context menu");
+  let contextMenu = document.getElementById("tabContextMenu");
+  let openTabContextMenuPromise = BrowserTestUtils.waitForPopupEvent(
+    contextMenu,
+    "shown"
+  );
+  EventUtils.synthesizeMouseAtCenter(tab, { type: "contextmenu" });
+  await openTabContextMenuPromise;
+  return contextMenu;
+}

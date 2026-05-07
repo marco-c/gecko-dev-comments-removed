@@ -23,6 +23,7 @@ let mockShareData = [
   },
 ];
 
+
 let shareUrlSpy = sinon.spy();
 let openSharingPreferencesSpy = sinon.spy();
 let getSharingProvidersSpy = sinon.spy();
@@ -57,7 +58,6 @@ const qrCodeEnabled = Services.prefs.getBoolPref(
 );
 
 const expectedItemCount = qrCodeEnabled ? 4 : 3;
-
 
 
 
@@ -163,3 +163,19 @@ add_task(async function test_file_menu_share() {
     await simulateMenuClosed(menu);
   });
 });
+
+async function simulateMenuOpen(menu) {
+  return new Promise(resolve => {
+    menu.addEventListener("popupshown", resolve, { once: true });
+    menu.dispatchEvent(new MouseEvent("popupshowing", { bubbles: true }));
+    menu.dispatchEvent(new MouseEvent("popupshown", { bubbles: true }));
+  });
+}
+
+async function simulateMenuClosed(menu) {
+  return new Promise(resolve => {
+    menu.addEventListener("popuphidden", resolve, { once: true });
+    menu.dispatchEvent(new MouseEvent("popuphiding", { bubbles: true }));
+    menu.dispatchEvent(new MouseEvent("popuphidden", { bubbles: true }));
+  });
+}
