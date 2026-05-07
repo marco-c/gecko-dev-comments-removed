@@ -26,7 +26,7 @@ add_task(async function test_panel_no_error_when_opened_offline() {
       pass: makePass(),
     },
   });
-  await IPPEnrollAndEntitleManager.refetchEntitlement();
+  await IPPFxaAuthProvider.checkForUpgrade();
 
   
   Services.io.offline = true;

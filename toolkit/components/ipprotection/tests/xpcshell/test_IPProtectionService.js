@@ -127,7 +127,7 @@ add_task(
 
 
 add_task(
-  async function test_IPProtectionService_refetchEntitlement_has_vpn_linked() {
+  async function test_IPProtectionService_checkForUpgrade_has_vpn_linked() {
     const sandbox = sinon.createSandbox();
     setupStubs(sandbox);
 
@@ -153,7 +153,7 @@ add_task(
       () => IPProtectionService.authProvider.hasUpgraded
     );
 
-    await IPPEnrollAndEntitleManager.refetchEntitlement();
+    await IPProtectionService.authProvider.checkForUpgrade();
 
     await hasUpgradedEventPromise;
 
@@ -172,7 +172,7 @@ add_task(
 
 
 add_task(
-  async function test_IPProtectionService_refetchEntitlement_no_vpn_linked() {
+  async function test_IPProtectionService_checkForUpgrade_no_vpn_linked() {
     const sandbox = sinon.createSandbox();
     setupStubs(sandbox);
 
@@ -187,7 +187,7 @@ add_task(
       "IPPAuthProvider:StateChanged"
     );
 
-    await IPPEnrollAndEntitleManager.refetchEntitlement();
+    await IPProtectionService.authProvider.checkForUpgrade();
 
     await hasUpgradedEventPromise;
 

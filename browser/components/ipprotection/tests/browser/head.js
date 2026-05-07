@@ -294,7 +294,7 @@ let STUBS = {
   isEnrolling: undefined,
   isCheckingEntitlement: undefined,
   updateEntitlement: undefined,
-  refetchEntitlement: undefined,
+  checkForUpgrade: undefined,
   enrollAndEntitle: undefined,
   fetchProxyPass: undefined,
   fetchProxyUsage: undefined,
@@ -407,8 +407,8 @@ function setupStubs(stubs = STUBS) {
   stubs.updateEntitlement = setupSandbox
     .stub(IPPEnrollAndEntitleManager, "updateEntitlement")
     .resolves();
-  stubs.refetchEntitlement = setupSandbox
-    .stub(IPPEnrollAndEntitleManager, "refetchEntitlement")
+  stubs.checkForUpgrade = setupSandbox
+    .stub(IPPFxaAuthProvider, "checkForUpgrade")
     .resolves();
 
   stubs.enrollAndEntitle = setupSandbox.stub(
