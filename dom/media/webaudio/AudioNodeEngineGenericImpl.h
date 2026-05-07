@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef MOZILLA_AUDIONODEENGINEGENERICIMPL_H_
 #define MOZILLA_AUDIONODEENGINEGENERICIMPL_H_
 
@@ -60,7 +59,15 @@ void Engine<Arch>::AudioBufferAddWithScale(const float* aInput, float aScale,
   for (unsigned i = 0; i < aVSize; i += xsimd::batch<float, Arch>::size) {
     auto vin1 = xsimd::batch<float, Arch>::load_aligned(&aInput[i]);
     auto vin2 = xsimd::batch<float, Arch>::load_aligned(&aOutput[i]);
-    auto vout = xsimd::fma(vin1, vgain, vin2);
+    
+    
+    
+    
+    
+    
+    
+    auto vmul = vin1 * vgain;
+    auto vout = vmul + vin2;
     vout.store_aligned(&aOutput[i]);
   }
 
