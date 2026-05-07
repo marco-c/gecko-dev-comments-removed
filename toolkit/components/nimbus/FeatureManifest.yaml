@@ -79,29 +79,6 @@ prefFlips:
     uri: resource://nimbus/schemas/PrefFlipsFeature.schema.json
     path: toolkit/components/nimbus/schemas/PrefFlipsFeature.schema.json
 
-# TODO(bug 1972426): Remove this feature.
-nimbusStore:
-  description: Configuration for the Nimbus ExperimentStore.
-  owner: beth@mozilla.com
-  hasExposure: false
-  variables:
-    dbEnabled:
-      type: boolean
-      description: >
-        If enabled, the NimbusEnrollments database table will be used as the
-        primary enrollment store.
-      setPref:
-        branch: user
-        pref: nimbus.profilesdatastoreservice.read.enabled
-    dbSyncEnabled:
-      type: boolean
-      description: >
-        If enabled, the RemoteSettingsExperimentLoader will trigger
-        unenrollments for experiments that are unenrolled in other profiles.
-      setPref:
-        branch: user
-        pref: nimbus.profilesdatastoreservice.sync.enabled
-
 search:
   description: Search service related features.
   owner: search-and-suggest-program@mozilla.com
@@ -381,13 +358,6 @@ urlbar:
       type: int
       fallbackPref: browser.urlbar.merino.timeoutMs
       description: Timeout for Merino fetches (ms)
-    novaFeatureGate:
-      type: boolean
-      setPref:
-        branch: default
-        pref: browser.urlbar.nova.featureGate
-      description: >-
-        Feature gate that enables Nova UI.
     exposureResults:
       type: string
       setPref:
@@ -4572,12 +4542,6 @@ cookieBannerHandling:
         When set to true, cookie banners are detected and detection events are
         dispatched, but they will not be handled.
         This pref applies to both normal and private browsing windows.
-    enableFirefoxDesktopUI:
-      type: boolean
-      setPref:
-        branch: default
-        pref: cookiebanners.ui.desktop.enabled
-      description: Enables the cookie banner desktop UI.
     enablePromo:
       type: boolean
       setPref:

@@ -53,12 +53,18 @@ user_pref("javascript.options.asyncstack_capture_debuggee_only", false);
 
 
 
+
 user_pref("nimbus.profilesdatastoreservice.enabled", false);
 
 
 
 
 user_pref("nimbus.profilesdatastoreservice.read.enabled", false);
+
+
+
+
+user_pref("nimbus.profilesdatastoreservice.sync.enabled", false);
 
 
 
