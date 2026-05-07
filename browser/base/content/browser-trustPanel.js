@@ -9,13 +9,21 @@ ChromeUtils.defineESModuleGetters(this, {
   ContentBlockingAllowList:
     "resource://gre/modules/ContentBlockingAllowList.sys.mjs",
   E10SUtils: "resource://gre/modules/E10SUtils.sys.mjs",
+  FX_MONITOR_OAUTH_CLIENT_ID: "resource://gre/modules/FxAccountsCommon.sys.mjs",
   PanelMultiView:
     "moz-src:///browser/components/customizableui/PanelMultiView.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
   QWACs: "resource://gre/modules/psm/QWACs.sys.mjs",
   RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
   SiteDataManager: "resource:///modules/SiteDataManager.sys.mjs",
+  UIState: "resource://services-sync/UIState.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
+});
+
+ChromeUtils.defineLazyGetter(this, "fxAccounts", () => {
+  return ChromeUtils.importESModule(
+    "resource://gre/modules/FxAccounts.sys.mjs"
+  ).getFxAccountsSingleton();
 });
 
 XPCOMUtils.defineLazyPreferenceGetter(
@@ -114,6 +122,12 @@ const SMARTBLOCK_EMBED_INFO = [
 class TrustPanel {
   #state = null;
   #secInfo = null;
+  
+
+
+
+
+  #clearFxaOauthClientCache = false;
 
   
 
@@ -154,6 +168,9 @@ class TrustPanel {
 
     
     Services.obs.addObserver(this, "smartblock:open-protections-panel");
+
+    
+    Services.obs.addObserver(this, "fxaccounts:onlogout");
   }
 
   uninit() {
@@ -164,6 +181,7 @@ class TrustPanel {
     }
 
     Services.obs.removeObserver(this, "smartblock:open-protections-panel");
+    Services.obs.removeObserver(this, "fxaccounts:onlogout");
   }
 
   get #popup() {
@@ -535,6 +553,13 @@ class TrustPanel {
       return "disabled";
     }
 
+    if (await this.#hasMonitorAccountOrPasswords()) {
+      
+      
+      
+      return "disabled";
+    }
+
     
     
     
@@ -686,6 +711,45 @@ class TrustPanel {
     return (
       !ContentBlockingAllowList.canHandle(window.gBrowser.selectedBrowser) ||
       !ContentBlockingAllowList.includes(window.gBrowser.selectedBrowser)
+    );
+  }
+
+  async #hasMonitorAccount() {
+    const state = UIState.get();
+    if (state.status !== UIState.STATUS_SIGNED_IN) {
+      return false;
+    }
+    try {
+      const attachedClients =
+        (await fxAccounts.listAttachedOAuthClients(
+          this.#clearFxaOauthClientCache
+        )) ?? [];
+      this.#clearFxaOauthClientCache = false;
+
+      const hasMonitorClient = attachedClients.some(
+        client => client.id === FX_MONITOR_OAUTH_CLIENT_ID
+      );
+
+      return hasMonitorClient;
+    } catch (error) {
+      console.warn("Failed to fetch attached OAuth clients:", error);
+      return false;
+    }
+  }
+
+  async #hasStoredPasswords() {
+    try {
+      const count = await Services.logins.countLoginsAsync("", "", "");
+      return count > 0;
+    } catch (error) {
+      console.warn("Failed to check stored passwords:", error);
+      return false;
+    }
+  }
+
+  async #hasMonitorAccountOrPasswords() {
+    return (
+      (await this.#hasMonitorAccount()) || (await this.#hasStoredPasswords())
     );
   }
 
@@ -1417,6 +1481,11 @@ class TrustPanel {
       return;
     }
     switch (topic) {
+      case "fxaccounts:onlogout": {
+        
+        this.#clearFxaOauthClientCache = true;
+        break;
+      }
       case "smartblock:open-protections-panel": {
         if (gBrowser.selectedBrowser.browserId !== subject.browserId) {
           break;
