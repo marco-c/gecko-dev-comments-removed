@@ -31,6 +31,7 @@ use crate::tile_cache::{SliceId, TileCacheInstance};
 use crate::prim_store::*;
 use crate::prim_store::backdrop::BackdropRenderScratch;
 use crate::prim_store::borders::{ImageBorderScratch, NormalBorderScratch};
+use crate::prim_store::gradient::LinearGradientScratch;
 use crate::prim_store::line_dec::LineDecorationScratch;
 use crate::quad::{self, QuadTransformState};
 use crate::render_backend::DataStores;
@@ -303,7 +304,6 @@ fn prepare_prim_for_render(
         
         
         
-        
         match prim_instance.kind {
             PrimitiveKind::NormalBorder { data_handle } => {
                 NormalBorderScratch::build_for_prim(
@@ -315,6 +315,14 @@ fn prepare_prim_for_render(
             }
             PrimitiveKind::ImageBorder { data_handle } => {
                 ImageBorderScratch::build_for_prim(
+                    data_handle,
+                    PrimitiveInstanceIndex(prim_instance_index as u32),
+                    data_stores,
+                    scratch,
+                );
+            }
+            PrimitiveKind::LinearGradient { data_handle } => {
+                LinearGradientScratch::build_for_prim(
                     data_handle,
                     PrimitiveInstanceIndex(prim_instance_index as u32),
                     data_stores,
@@ -1400,7 +1408,11 @@ fn update_clip_task_for_brush(
             &segments_store[segment_instance.segments_range]
         }
         PrimitiveKind::NormalBorder { .. } |
-        PrimitiveKind::ImageBorder { .. } => {
+        PrimitiveKind::ImageBorder { .. } |
+        PrimitiveKind::LinearGradient { .. } => {
+            
+            
+            
             
             
             
@@ -1409,17 +1421,6 @@ fn update_clip_task_for_brush(
                 return None;
             }
             &segments_store[prim_brush_segments_range]
-        }
-        PrimitiveKind::LinearGradient { data_handle, .. } => {
-            let prim_data = &data_stores.linear_grad[data_handle];
-
-            
-            
-            if prim_data.brush_segments.is_empty() {
-                return None;
-            }
-
-            prim_data.brush_segments.as_slice()
         }
         PrimitiveKind::RadialGradient { .. } => {
             unreachable!("BUG: radial gradients should always use quad path");
@@ -1534,6 +1535,7 @@ pub fn update_clip_task(
     
     
     
+    
     let prim_brush_segments_range = match instance.kind {
         PrimitiveKind::NormalBorder { .. } => {
             let nb_handle = scratch.frame.draws[prim_instance_index.0 as usize]
@@ -1546,6 +1548,13 @@ pub fn update_clip_task(
                 .kind_scratch
                 .unwrap_image_border();
             scratch.frame.image_border[ib_handle].brush_segments_range
+        }
+        PrimitiveKind::LinearGradient { .. } => {
+            match scratch.frame.draws[prim_instance_index.0 as usize].kind_scratch {
+                KindScratchHandle::LinearGradient(h) =>
+                    scratch.frame.linear_gradient[h].brush_segments_range,
+                _ => storage::Range::empty(),
+            }
         }
         _ => storage::Range::empty(),
     };
