@@ -129,15 +129,20 @@ class ExtensionSidebar extends EventEmitter {
 
 
 
-  destroy() {
+
+
+
+  destroy({ fromInspectorDestroy } = {}) {
     if (this.destroyed) {
       throw new Error(
         `ExtensionSidebar instances cannot be destroyed more than once`
       );
     }
 
-    
-    this.store.dispatch(removeExtensionSidebar(this.id));
+    if (fromInspectorDestroy !== true) {
+      
+      this.store.dispatch(removeExtensionSidebar(this.id));
+    }
 
     this.inspector = null;
     this.store = null;
