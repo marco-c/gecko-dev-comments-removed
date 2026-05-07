@@ -140,7 +140,6 @@ pub const MAX_FONT_WEIGHT: f32 = 1000.;
 #[derive(
     Clone, Copy, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped,
 )]
-#[typed_value(derive_fields)]
 pub enum FontWeight {
     
     Absolute(AbsoluteFontWeight),
@@ -205,7 +204,6 @@ impl ToComputedValue for FontWeight {
 #[derive(
     Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped,
 )]
-#[typed_value(derive_fields)]
 pub enum AbsoluteFontWeight {
     
     
@@ -371,6 +369,7 @@ impl SpecifiedFontStyle {
     Clone, Copy, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped,
 )]
 #[allow(missing_docs)]
+#[typed(todo_derive_fields)]
 pub enum FontStyle {
     Specified(SpecifiedFontStyle),
     #[css(skip)]
@@ -409,7 +408,6 @@ impl ToComputedValue for FontStyle {
 #[derive(
     Clone, Copy, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped,
 )]
-#[typed_value(derive_fields)]
 pub enum FontStretch {
     Stretch(NonNegativePercentage),
     Keyword(FontStretchKeyword),
@@ -563,7 +561,6 @@ impl Default for FontSizeKeyword {
     ToTyped,
 )]
 #[cfg_attr(feature = "servo", derive(Serialize, Deserialize))]
-#[typed_value(derive_fields)]
 
 pub struct KeywordInfo {
     
@@ -629,7 +626,6 @@ impl SpecifiedValueInfo for KeywordInfo {
 }
 
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped)]
-#[typed_value(derive_fields)]
 
 pub enum FontSize {
     
@@ -657,6 +653,7 @@ pub enum FontSize {
 
 #[derive(Clone, Debug, Eq, PartialEq, ToCss, ToShmem, ToTyped)]
 #[cfg_attr(feature = "servo", derive(Hash))]
+#[typed(todo_derive_fields)]
 pub enum FontFamily {
     
     #[css(comma)]
@@ -743,7 +740,6 @@ impl Parse for FamilyName {
 #[derive(
     Clone, Copy, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped,
 )]
-#[typed_value(derive_fields)]
 pub enum FontSizeAdjustFactor {
     
     Number(NonNegativeNumber),
@@ -1008,6 +1004,7 @@ impl FontSize {
                         .unwrap()
                         .font_size
                         .computed_size()
+                        .zoom(context.builder.effective_zoom)
                 }
             },
         };
@@ -1154,6 +1151,7 @@ pub enum VariantAlternates {
     ToTyped,
 )]
 #[repr(transparent)]
+#[typed(todo_derive_fields)]
 
 pub struct FontVariantAlternates(
     #[css(if_empty = "normal", iterable)] crate::OwnedSlice<VariantAlternates>,
@@ -1599,6 +1597,7 @@ pub enum FontSynthesisStyle {
     ToTyped,
 )]
 #[repr(C)]
+#[typed(todo_derive_fields)]
 
 
 pub struct FontPalette(Atom);
