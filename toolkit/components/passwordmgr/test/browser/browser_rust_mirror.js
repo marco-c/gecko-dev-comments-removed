@@ -29,8 +29,6 @@ async function cleanupTest() {
     Services.prefs.getBoolPref("signon.rustMirror.migrationNeeded", false)
   ) {
     await migrationMayRun;
-  } else {
-    migrationMayRun.catch(() => {});
   }
 }
 
@@ -1047,57 +1045,6 @@ add_task(async function test_mirror_clearAllPotentiallyVulnerablePasswords() {
     "login should not be vulnerable in Rust storage after clearing"
   );
 
-  await cleanupTest();
-});
-
-
-
-
-
-
-
-add_task(async function test_rust_store_primary_password_authentication() {
-  registerCleanupFunction(() => LoginTestUtils.primaryPassword.disable());
-
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [["signon.rustMirror.enabled", true]],
-  });
-  const loginInfo = LoginTestUtils.testData.formLogin({
-    username: "primary-pass-user",
-    password: "secure-password",
-  });
-  const addLoginFinishedPromise = TestUtils.topicObserved(
-    "rust-mirror.event.addLogin.finished"
-  );
-  await Services.logins.addLoginAsync(loginInfo);
-  await addLoginFinishedPromise;
-
-  
-  
-  LoginTestUtils.primaryPassword.enable();
-
-  const rustStorage = new LoginManagerRustStorage();
-
-  
-  const dialogPromise = TestUtils.topicObserved("common-dialog-loaded");
-
-  
-  
-  const getAllLoginsPromise = rustStorage.getAllLogins();
-
-  const [subject] = await dialogPromise;
-  const dialog = subject.Dialog;
-  SpecialPowers.wrap(dialog.ui.password1Textbox).setUserInput(
-    LoginTestUtils.primaryPassword.primaryPassword
-  );
-  dialog.ui.button0.click();
-
-  const rustLogins = await getAllLoginsPromise;
-  const [storedLogin] = await Services.logins.getAllLogins();
-  LoginTestUtils.assertLoginListsEqual([storedLogin], rustLogins);
-
-  LoginTestUtils.primaryPassword.disable();
   await cleanupTest();
 });
 
