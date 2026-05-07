@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/HTMLSharedElement.h"
 
 #include "mozilla/AsyncEventDispatcher.h"
@@ -39,7 +37,7 @@ void HTMLSharedElement::GetHref(nsAString& aValue) {
                                             doc->GetFallbackBaseURI());
 
   if (!uri) {
-    aValue = href;
+    aValue = std::move(href);
     return;
   }
 
