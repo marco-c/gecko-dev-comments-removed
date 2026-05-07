@@ -6537,7 +6537,13 @@ void HTMLMediaElement::UpdateReadyStateInternal() {
 
   if (IsVideo() && VideoTracks() && !VideoTracks()->IsEmpty() &&
       !IsPlaybackEnded() && GetImageContainer() &&
-      !GetImageContainer()->HasCurrentImage()) {
+      !GetImageContainer()->HasCurrentImage()
+#ifdef MOZ_WMF_CDM
+      
+      
+      && !(mDecoder && mDecoder->IsUsingWMFClearKey())
+#endif
+  ) {
     
     
     

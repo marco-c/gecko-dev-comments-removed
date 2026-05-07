@@ -2,8 +2,6 @@
 
 
 
-
-
 #if !defined(MediaDecoder_h_)
 #  define MediaDecoder_h_
 
@@ -386,6 +384,13 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
 
   bool IsVideoDecodingSuspended() const;
 
+#  ifdef MOZ_WMF_CDM
+  
+  
+  
+  bool IsUsingWMFClearKey() const;
+#  endif
+
   
   bool ShouldResistFingerprinting() const {
     return mShouldResistFingerprinting;
@@ -697,6 +702,10 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
 
   
   bool mIsVideoDecodingSuspended = false;
+
+#  ifdef MOZ_WMF_CDM
+  bool mIsFrameServerMode = false;
+#  endif
 
  protected:
   
