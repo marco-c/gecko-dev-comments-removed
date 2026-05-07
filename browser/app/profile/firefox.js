@@ -1810,6 +1810,8 @@ pref("browser.partnerlink.campaign.topsites", "amzn_2020_a1");
 pref("browser.newtab.preload", true);
 
 
+
+
 #ifdef XP_LINUX
   pref("browser.preonboarding.enabled", false);
 #endif
