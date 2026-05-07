@@ -29,6 +29,8 @@ class ArenaAvailRunsSize {
  public:
   arena_chunk_map_t* Search() { return &(*mRuns.begin()); }
 
+  bool IsEmpty() const { return mRuns.isEmpty(); }
+
   void Insert(arena_chunk_map_t* aElem) { mRuns.pushFront(aElem); }
 
   void Remove(arena_chunk_map_t* aElem) { mRuns.remove(aElem); }
@@ -37,6 +39,14 @@ class ArenaAvailRunsSize {
 class ArenaAvailRuns {
  private:
   BaseArray<ArenaAvailRunsSize> mSizeClasses;
+  
+  
+  
+  
+  
+  
+  
+  BaseArray<unsigned> mHints;
 
   static unsigned GetSizeClass(size_t aSize) {
     
@@ -55,29 +65,76 @@ class ArenaAvailRuns {
   }
 
  public:
-  ArenaAvailRuns() { mSizeClasses.Init(MaxSizeClass() + 1); }
+  ArenaAvailRuns() {
+    mSizeClasses.Init(MaxSizeClass() + 1);
+    mHints.Init(MaxSizeClass() + 1);
+  }
 
   arena_chunk_map_t* SearchOrNext(size_t aSize) {
-    MOZ_ASSERT(GetSizeClass(aSize) <= MaxSizeClass());
-    
-    
-    for (unsigned i = GetSizeClass(aSize); i <= MaxSizeClass(); i++) {
-      arena_chunk_map_t* elem = mSizeClasses[i].Search();
-      if (elem) {
-        MOZ_ASSERT(RunSize(elem) >= aSize);
-        return elem;
-      }
+    unsigned size_class = GetSizeClass(aSize);
+    MOZ_ASSERT(size_class <= MaxSizeClass());
+
+    arena_chunk_map_t* elem = mSizeClasses[size_class].Search();
+    if (MOZ_LIKELY(elem)) {
+      MOZ_ASSERT(RunSize(elem) >= aSize);
+      return elem;
     }
 
-    return nullptr;
+    if (size_class == MaxSizeClass()) {
+      
+      return nullptr;
+    }
+
+    
+    unsigned start_size_class = size_class;
+    do {
+      unsigned prev_size_class = size_class;
+      size_class = mHints[prev_size_class];
+      if (size_class == 0) {
+        
+        size_class = prev_size_class + 1;
+      }
+
+      if (size_class > MaxSizeClass()) {
+        
+        
+        mHints[prev_size_class] = MaxSizeClass() + 1;
+        mHints[start_size_class] = MaxSizeClass() + 1;
+        return nullptr;
+      }
+    } while (mSizeClasses[size_class].IsEmpty());
+
+    
+    mHints[start_size_class] = size_class;
+    elem = mSizeClasses[size_class].Search();
+    MOZ_ASSERT(elem);
+    MOZ_ASSERT(RunSize(elem) >= aSize);
+    return elem;
   }
 
   void Insert(arena_chunk_map_t* aElem) {
-    mSizeClasses[GetSizeClass(RunSize(aElem))].Insert(aElem);
+    unsigned size_class = GetSizeClass(RunSize(aElem));
+
+    if (mSizeClasses[size_class].IsEmpty() && size_class != 0) {
+      
+      
+      
+      
+      for (int i = size_class - 1; i >= 0; i--) {
+        mHints[i] = size_class;
+        if (!mSizeClasses[i].IsEmpty()) {
+          break;
+        }
+      }
+    }
+
+    mSizeClasses[size_class].Insert(aElem);
   }
 
   void Remove(arena_chunk_map_t* aElem) {
     mSizeClasses[GetSizeClass(RunSize(aElem))].Remove(aElem);
+
+    
   }
 };
 
