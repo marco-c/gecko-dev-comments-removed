@@ -67,18 +67,6 @@ fn rect_basic() -> Result<()> {
     Ok(())
 }
 
-#[test]
-#[should_panic(expected = "image byte offset must be aligned to element size")]
-fn image_from_raw_rejects_misaligned_offset() {
-    use super::OwnedRawImage;
-    
-    
-    
-    
-    let raw = OwnedRawImage::new_zeroed_with_padding((4, 1), (1, 0), (1, 0)).unwrap();
-    let _ = Image::<u32>::from_raw(raw);
-}
-
 fn f64_conversions<T: ImageDataType + Eq + for<'a> Arbitrary<'a>>() {
     arbtest::arbtest(|u| {
         let t = T::arbitrary(u)?;

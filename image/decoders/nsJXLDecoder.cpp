@@ -25,8 +25,28 @@ nsJXLDecoder::nsJXLDecoder(RasterImage* aImage) : Decoder(aImage) {
 }
 
 nsresult nsJXLDecoder::InitInternal() {
-  bool hasCMS = GetCMSOutputProfile() && mCMSMode != CMSMode::Off;
-  mDecoder.reset(jxl_decoder_new(IsMetadataDecode(), hasCMS));
+  bool premultiply = !(GetSurfaceFlags() & SurfaceFlags::NO_PREMULTIPLY_ALPHA);
+
+  qcms_profile* outputProfile = nullptr;
+  const uint8_t* iccData = nullptr;
+  size_t iccLen = 0;
+
+  
+  
+  if (GetCMSOutputProfile() && mCMSMode != CMSMode::Off) {
+    outputProfile = GetCMSOutputProfile();
+    if (!qcms_profile_is_sRGB(GetCMSOutputProfile())) {
+      const auto& outputICC = gfxPlatform::GetCMSOutputICCProfileData();
+      if (outputICC.isSome() && !outputICC->IsEmpty()) {
+        iccData = outputICC->Elements();
+        iccLen = outputICC->Length();
+      }
+    }
+  }
+
+  mDecoder.reset(jxl_decoder_new(IsMetadataDecode(), premultiply,
+                                 gfxPlatform::GetRenderingIntent(),
+                                 outputProfile, iccData, iccLen));
   if (WantsFrameCount()) {
     mScanner.reset(jxl_scanner_new());
   }
@@ -54,21 +74,6 @@ LexerResult nsJXLDecoder::DoDecode(SourceBufferIterator& aIterator,
     if (!aIterator.IsReady() || aIterator.Length() == 0) {
       SourceBufferIterator::State state =
           aIterator.AdvanceOrScheduleResume(SIZE_MAX, aOnResume);
-
-      if (state == SourceBufferIterator::WAITING ||
-          state == SourceBufferIterator::COMPLETE) {
-        
-        
-        
-        
-        
-        
-        
-        if (!HasAnimation() && !mPixelBuffer.empty() && mCurrentPipe) {
-          FlushPartialFrame();
-        }
-      }
-
       if (state == SourceBufferIterator::WAITING) {
         return LexerResult(Yield::NEED_MORE_DATA);
       }
@@ -130,8 +135,7 @@ LexerResult nsJXLDecoder::ScanForFrameCount(SourceBufferIterator& aIterator,
     }
 
     JxlDecoderStatus scanStatus = jxl_decoder_process_data(
-        mScanner.get(), &currentData, &currentLength,
-        nullptr, 0, nullptr, 0);
+        mScanner.get(), &currentData, &currentLength, nullptr, 0);
     if (scanStatus == JxlDecoderStatus::Error) {
       return LexerResult(TerminalState::FAILURE);
     }
@@ -210,6 +214,9 @@ nsJXLDecoder::ProcessResult nsJXLDecoder::ProcessAvailableData(
         return ProcessResult::Error;
 
       case JxlDecoderStatus::NeedMoreData:
+        if (!HasAnimation() && !mPixelBuffer.empty() && mCurrentPipe) {
+          FlushPartialFrame();
+        }
         return ProcessResult::NeedMoreData;
 
       case JxlDecoderStatus::Ok: {
@@ -321,10 +328,8 @@ JxlDecoderStatus nsJXLDecoder::ProcessInput(const uint8_t** aData,
                                             size_t* aLength) {
   uint8_t* bufferPtr = mPixelBuffer.empty() ? nullptr : mPixelBuffer.begin();
   size_t bufferLen = mPixelBuffer.length();
-  uint8_t* kPtr = mKBuffer.empty() ? nullptr : mKBuffer.begin();
-  size_t kLen = mKBuffer.length();
   return jxl_decoder_process_data(mDecoder.get(), aData, aLength, bufferPtr,
-                                  bufferLen, kPtr, kLen);
+                                  bufferLen);
 }
 
 nsJXLDecoder::FrameOutputResult nsJXLDecoder::HandleFrameOutput() {
@@ -348,44 +353,18 @@ nsJXLDecoder::FrameOutputResult nsJXLDecoder::HandleFrameOutput() {
     }
     mFrameIndex++;
     mPixelBuffer.clear();
-    mKBuffer.clear();
     return FrameOutputResult::FrameAdvanced;
   }
 
   return FrameOutputResult::NoOutput;
 }
 
-nsJXLDecoder::PixelFormat nsJXLDecoder::DetectPixelFormat(
-    JxlApiDecoder* aDecoder, const JxlBasicInfo& aBasicInfo) {
-  if (jxl_decoder_use_f16(aDecoder)) {
-    return PixelFormat::Rgba16f;
-  }
-  if (jxl_decoder_is_gray(aDecoder)) {
-    return aBasicInfo.has_alpha ? PixelFormat::GrayAlpha8 : PixelFormat::Gray8;
-  }
-  
-  
-  return jxl_decoder_has_black_channel(aDecoder) ? PixelFormat::Cmyk8
-                                                 : PixelFormat::Rgba8;
-}
-
 nsJXLDecoder::FrameOutputResult nsJXLDecoder::BeginFrame() {
   MOZ_ASSERT(HasSize());
+
   OrientedIntSize size = Size();
-  JxlBasicInfo basicInfo = jxl_decoder_get_basic_info(mDecoder.get());
-  MOZ_ASSERT(basicInfo.valid);
-
-  
-  if (mFrameIndex == 0) {
-    mPixelFormat.set(DetectPixelFormat(mDecoder.get(), basicInfo));
-  }
-
-  
-  
-  
-  
   CheckedInt<size_t> bufferSize =
-      CheckedInt<size_t>(size.width) * size.height * BytesPerPixel();
+      CheckedInt<size_t>(size.width) * size.height * 4;
   if (!bufferSize.isValid() || !mPixelBuffer.resize(bufferSize.value())) {
     MOZ_LOG(sJXLLog, LogLevel::Error,
             ("[this=%p] nsJXLDecoder::BeginFrame -- "
@@ -394,20 +373,7 @@ nsJXLDecoder::FrameOutputResult nsJXLDecoder::BeginFrame() {
     return FrameOutputResult::Error;
   }
 
-  if (mPixelFormat.value() == PixelFormat::Cmyk8 &&
-      !mKBuffer.resize(size.width * size.height)) {
-    return FrameOutputResult::Error;
-  }
-
-  
-  
-  
-  if (mPixelFormat.value() != PixelFormat::Rgba8) {
-    CheckedInt<size_t> rowBufSize = CheckedInt<size_t>(size.width) * 4;
-    if (!rowBufSize.isValid() || !mU8RowBuf.resize(rowBufSize.value())) {
-      return FrameOutputResult::Error;
-    }
-  }
+  JxlBasicInfo basicInfo = jxl_decoder_get_basic_info(mDecoder.get());
 
   Maybe<AnimationParams> animParams;
   if (HasAnimation()) {
@@ -420,209 +386,19 @@ nsJXLDecoder::FrameOutputResult nsJXLDecoder::BeginFrame() {
                        mFrameIndex, BlendMethod::SOURCE, DisposalMethod::KEEP);
   }
 
-  
-  
-  if (mFrameIndex == 0 && GetCMSOutputProfile() && mCMSMode != CMSMode::Off) {
-    BuildCMSTransform();
-  }
-
-  
-  
-  SurfaceFormat inFormat;
-  SurfaceFormat outFormat;
-  if (mPixelFormat.value() == PixelFormat::Cmyk8 && mTransform) {
-    inFormat = SurfaceFormat::R8G8B8;
-    outFormat = SurfaceFormat::OS_RGBX;
-  } else {
-    inFormat = SurfaceFormat::R8G8B8A8;
-    outFormat =
-        basicInfo.has_alpha && mPixelFormat.value() != PixelFormat::Cmyk8
-            ? SurfaceFormat::OS_RGBA
-            : SurfaceFormat::OS_RGBX;
-  }
-
-  
-  
-  
-  
-  
-  bool usePipeTransform = mPixelFormat.value() == PixelFormat::Rgba8;
-  qcms_transform* pipeTransform = usePipeTransform ? mTransform : nullptr;
-
-  
-  
-  const bool wantPremultiply =
-      !(GetSurfaceFlags() & SurfaceFlags::NO_PREMULTIPLY_ALPHA);
+  SurfaceFormat inFormat = SurfaceFormat::R8G8B8A8;
+  SurfaceFormat outFormat =
+      basicInfo.has_alpha ? SurfaceFormat::OS_RGBA : SurfaceFormat::OS_RGBX;
   SurfacePipeFlags pipeFlags = SurfacePipeFlags();
-  if (wantPremultiply && mPixelFormat.value() != PixelFormat::Cmyk8) {
-    pipeFlags |= SurfacePipeFlags::PREMULTIPLY_ALPHA;
-  }
 
   mCurrentPipe = SurfacePipeFactory::CreateSurfacePipe(
       this, size, OutputSize(), FullFrame(), inFormat, outFormat, animParams,
-      pipeTransform, pipeFlags);
+      nullptr, pipeFlags);
   if (!mCurrentPipe) {
     return FrameOutputResult::Error;
   }
 
   return FrameOutputResult::BufferAllocated;
-}
-
-void nsJXLDecoder::BuildCMSTransform() {
-  size_t iccLen = 0;
-  const uint8_t* iccData = jxl_decoder_get_icc_profile(mDecoder.get(), &iccLen);
-  if (iccData && iccLen) {
-    mInProfile = qcms_profile_from_memory(
-        reinterpret_cast<const char*>(iccData), iccLen);
-    if (mInProfile) {
-      auto intent = static_cast<qcms_intent>(gfxPlatform::GetRenderingIntent());
-      if (intent < QCMS_INTENT_MIN || intent > QCMS_INTENT_MAX) {
-        intent = qcms_profile_get_rendering_intent(mInProfile);
-      }
-
-      uint32_t profileSpace = qcms_profile_get_color_space(mInProfile);
-      qcms_data_type inType;
-      qcms_data_type outType;
-      bool compatible = true;
-
-      if (profileSpace == icSigGrayData) {
-        if (mPixelFormat.value() != PixelFormat::Gray8 &&
-            mPixelFormat.value() != PixelFormat::GrayAlpha8) {
-          compatible = false;
-        }
-        
-        inType = mPixelFormat.value() == PixelFormat::GrayAlpha8
-                     ? QCMS_DATA_GRAYA_8
-                     : QCMS_DATA_GRAY_8;
-        outType = QCMS_DATA_RGBA_8;
-      } else if (profileSpace == icSigCmykData) {
-        if (mPixelFormat.value() != PixelFormat::Cmyk8) {
-          compatible = false;
-        }
-        
-        
-        inType = QCMS_DATA_CMYK;
-        outType = QCMS_DATA_RGB_8;
-      } else {
-        if (mPixelFormat.value() != PixelFormat::Rgba8 &&
-            mPixelFormat.value() != PixelFormat::Rgba16f) {
-          compatible = false;
-        }
-        inType = QCMS_DATA_RGBA_8;
-        outType = QCMS_DATA_RGBA_8;
-      }
-
-      if (compatible) {
-        mTransform = qcms_transform_create(
-            mInProfile, inType, GetCMSOutputProfile(), outType, intent);
-      }
-    }
-  }
-}
-
-
-static float F16ToF32(uint16_t h) {
-  uint32_t sign = (h >> 15) & 1u;
-  uint32_t exp = (h >> 10) & 0x1fu;
-  uint32_t mantissa = h & 0x3ffu;
-  uint32_t f;
-  if (exp == 0) {
-    f = sign << 31;  
-  } else if (exp == 31) {
-    f = (sign << 31) | (0xffu << 23) | (mantissa << 13);  
-  } else {
-    f = (sign << 31) | ((exp + 127u - 15u) << 23) | (mantissa << 13);
-  }
-  float result;
-  memcpy(&result, &f, sizeof(result));
-  return result;
-}
-
-bool nsJXLDecoder::WritePixelRowsToPipe() {
-  MOZ_ASSERT(mCurrentPipe);
-#ifdef DEBUG
-  ++mWritePixelRowsCount;
-#endif
-  OrientedIntSize size = Size();
-
-  uint8_t* currentRow = mPixelBuffer.begin();
-  for (int32_t y = 0; y < size.height; ++y) {
-    uint8_t* pipeInput;
-    if (mPixelFormat.value() == PixelFormat::Rgba16f) {
-      if (mTransform) {
-        qcms_transform_data_rgba_f16_to_rgba_u8(
-            mTransform, reinterpret_cast<const uint16_t*>(currentRow),
-            mU8RowBuf.begin(), size.width);
-      } else {
-        
-        const uint16_t* src = reinterpret_cast<const uint16_t*>(currentRow);
-        for (int32_t i = 0; i < size.width * 4; ++i) {
-          float v = F16ToF32(src[i]);
-          mU8RowBuf[i] =
-              v <= 0.0f ? 0 : (v >= 1.0f ? 255 : uint8_t(v * 255.0f + 0.5f));
-        }
-      }
-      pipeInput = mU8RowBuf.begin();
-    } else if (mPixelFormat.value() == PixelFormat::Gray8 ||
-               mPixelFormat.value() == PixelFormat::GrayAlpha8) {
-      if (mTransform) {
-        
-        qcms_transform_data(mTransform, currentRow, mU8RowBuf.begin(),
-                            size.width);
-      } else {
-        
-        uint8_t* out = mU8RowBuf.begin();
-        for (int32_t x = 0; x < size.width; ++x) {
-          uint8_t g = currentRow[x * BytesPerPixel()];
-          uint8_t a = mPixelFormat.value() == PixelFormat::GrayAlpha8
-                          ? currentRow[x * BytesPerPixel() + 1]
-                          : 255;
-          out[x * 4] = g;
-          out[x * 4 + 1] = g;
-          out[x * 4 + 2] = g;
-          out[x * 4 + 3] = a;
-        }
-      }
-      pipeInput = mU8RowBuf.begin();
-    } else if (mPixelFormat.value() == PixelFormat::Cmyk8) {
-      uint8_t* out = mU8RowBuf.begin();
-      const uint8_t* kRow =
-          mKBuffer.empty() ? nullptr : mKBuffer.begin() + y * size.width;
-      if (mTransform) {
-        
-        
-        
-        for (int32_t x = 0; x < size.width; ++x) {
-          out[x * 4] = 255 - currentRow[x * 4];
-          out[x * 4 + 1] = 255 - currentRow[x * 4 + 1];
-          out[x * 4 + 2] = 255 - currentRow[x * 4 + 2];
-          
-          out[x * 4 + 3] = kRow ? (255 - kRow[x]) : 0;
-        }
-        qcms_transform_data(mTransform, out, out, size.width);
-      } else {
-        
-        
-        
-        for (int32_t x = 0; x < size.width; ++x) {
-          uint8_t k = kRow ? kRow[x] : 255;
-          out[x * 4] = (uint16_t)currentRow[x * 4] * k / 255;
-          out[x * 4 + 1] = (uint16_t)currentRow[x * 4 + 1] * k / 255;
-          out[x * 4 + 2] = (uint16_t)currentRow[x * 4 + 2] * k / 255;
-          out[x * 4 + 3] = 255;
-        }
-      }
-      pipeInput = out;
-    } else {
-      pipeInput = currentRow;
-    }
-    if (mCurrentPipe->WriteBuffer(reinterpret_cast<uint32_t*>(pipeInput)) ==
-        WriteState::FAILURE) {
-      return false;
-    }
-    currentRow += size.width * BytesPerPixel();
-  }
-  return true;
 }
 
 nsresult nsJXLDecoder::FinishFrame() {
@@ -631,11 +407,19 @@ nsresult nsJXLDecoder::FinishFrame() {
   MOZ_ASSERT(mCurrentPipe);
 
   JxlBasicInfo basicInfo = jxl_decoder_get_basic_info(mDecoder.get());
+  OrientedIntSize size = Size();
 
   mCurrentPipe->ResetToFirstRow();
-  if (!WritePixelRowsToPipe()) {
-    mCurrentPipe.reset();
-    return NS_ERROR_FAILURE;
+
+  uint8_t* currentRow = mPixelBuffer.begin();
+  for (int32_t y = 0; y < size.height; ++y) {
+    WriteState result =
+        mCurrentPipe->WriteBuffer(reinterpret_cast<uint32_t*>(currentRow));
+    if (result == WriteState::FAILURE) {
+      mCurrentPipe.reset();
+      return NS_ERROR_FAILURE;
+    }
+    currentRow += size.width * 4;
   }
 
   if (Maybe<SurfaceInvalidRect> invalidRect = mCurrentPipe->TakeInvalidRect()) {
@@ -643,12 +427,8 @@ nsresult nsJXLDecoder::FinishFrame() {
                      Some(invalidRect->mOutputSpaceRect));
   }
 
-  
-  
-  bool hasTransparency =
-      basicInfo.has_alpha && mPixelFormat.value() != PixelFormat::Cmyk8;
-  PostFrameStop(hasTransparency ? Opacity::SOME_TRANSPARENCY
-                                : Opacity::FULLY_OPAQUE);
+  PostFrameStop(basicInfo.has_alpha ? Opacity::SOME_TRANSPARENCY
+                                    : Opacity::FULLY_OPAQUE);
   mCurrentPipe.reset();
   return NS_OK;
 }
@@ -658,15 +438,21 @@ void nsJXLDecoder::FlushPartialFrame() {
   MOZ_ASSERT(mCurrentPipe);
 
   JxlDecoderStatus status = jxl_decoder_flush_pixels(
-      mDecoder.get(), mPixelBuffer.begin(), mPixelBuffer.length(),
-      mKBuffer.empty() ? nullptr : mKBuffer.begin(), mKBuffer.length());
+      mDecoder.get(), mPixelBuffer.begin(), mPixelBuffer.length());
   if (status != JxlDecoderStatus::Ok) {
-    
     return;
   }
 
+  OrientedIntSize size = Size();
   mCurrentPipe->ResetToFirstRow();
-  WritePixelRowsToPipe();
+  uint8_t* currentRow = mPixelBuffer.begin();
+  for (int32_t y = 0; y < size.height; ++y) {
+    if (mCurrentPipe->WriteBuffer(reinterpret_cast<uint32_t*>(currentRow)) ==
+        WriteState::FAILURE) {
+      return;
+    }
+    currentRow += size.width * 4;
+  }
 
   if (Maybe<SurfaceInvalidRect> invalidRect = mCurrentPipe->TakeInvalidRect()) {
     PostInvalidation(invalidRect->mInputSpaceRect,

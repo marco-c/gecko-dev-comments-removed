@@ -132,10 +132,7 @@ impl JxlDecoderInner {
     }
 
     
-    
-    
-    
-    pub fn flush_pixels(&mut self, buffers: &mut [JxlOutputBuffer]) -> Result<bool> {
+    pub fn flush_pixels(&mut self, buffers: &mut [JxlOutputBuffer]) -> Result<()> {
         let mut input: &[u8] = &[];
         match self.codestream_parser.process(
             &mut self.box_parser,
@@ -144,11 +141,8 @@ impl JxlDecoderInner {
             Some(buffers),
             true,
         ) {
-            Ok(()) | Err(crate::error::Error::OutOfBounds(_)) => {
-                let updated = self.codestream_parser.pixels_dirty;
-                self.codestream_parser.pixels_dirty = false;
-                Ok(updated)
-            }
+            Ok(()) => Ok(()),
+            Err(crate::error::Error::OutOfBounds(_)) => Ok(()),
             Err(e) => Err(e),
         }
     }
