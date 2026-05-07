@@ -30,7 +30,7 @@ add_task(async function test_tabGroups_move_index() {
       const windowId = testWindow.id; 
       let numberOfTabsInTestWindow = 1;
 
-      async function setTabCountInTestWindow(tabCount) {
+      async function prepareTestWindow(tabCount) {
         await browser.tabs.ungroup(
           reusableTabIds.slice(0, numberOfTabsInTestWindow)
         );
@@ -63,7 +63,8 @@ add_task(async function test_tabGroups_move_index() {
       
       
       async function testTabGroupMove(testCase) {
-        browser.test.log(`testTabGroupMove: ${JSON.stringify(testCase)}`);
+        const testCaseStr = JSON.stringify(testCase);
+        browser.test.log(`testTabGroupMove: ${testCaseStr}`);
         const DUMMY_TABGROUPS_MOVE_NO_ERROR = "(tabGroups.move succeeded)";
         const {
           description,
@@ -77,12 +78,12 @@ add_task(async function test_tabGroups_move_index() {
         let allTabIndexes = starting_tabstrip.flatMap(num => num);
         
         if (allTabIndexes.some((num, i) => num !== i)) {
-          browser.test.fail(`Bad starting_tabstrip: ${starting_tabstrip}`);
+          browser.test.fail(`Bad starting_tabstrip: ${testCaseStr}`);
         }
 
         
         
-        await setTabCountInTestWindow(allTabIndexes.length);
+        await prepareTestWindow( allTabIndexes.length);
         const groupIdAtIndex = new Map();
         for (let v of starting_tabstrip) {
           if (Array.isArray(v)) {
@@ -100,7 +101,7 @@ add_task(async function test_tabGroups_move_index() {
 
         if (!groupIdAtIndex.has(group_at_tab)) {
           
-          browser.test.fail("Bad group_at_tab: no group found at index");
+          browser.test.fail(`Bad no group at group_at_tab: ${testCaseStr}`);
         }
 
         const groupId = groupIdAtIndex.get(group_at_tab);
