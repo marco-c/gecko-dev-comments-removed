@@ -251,7 +251,7 @@ nsTreeBodyFrame::nsTreeBodyFrame(ComputedStyle* aStyle,
       mVerticalOverflow(false),
       mReflowCallbackPosted(false),
       mCheckingOverflow(false) {
-  mColumns = new nsTreeColumns(this);
+  mColumns = MakeRefPtr<nsTreeColumns>(this);
 }
 
 
@@ -3989,7 +3989,7 @@ void nsTreeBodyFrame::PostScrollEvent() {
     return;
   }
 
-  RefPtr<ScrollEvent> event = new ScrollEvent(this);
+  auto event = MakeRefPtr<ScrollEvent>(this);
   nsresult rv = mContent->OwnerDoc()->Dispatch(do_AddRef(event));
   if (NS_FAILED(rv)) {
     NS_WARNING("failed to dispatch ScrollEvent");
@@ -4153,7 +4153,7 @@ bool nsTreeBodyFrame::FullScrollbarsUpdate(bool aNeedsFullInvalidation) {
   
   
   
-  RefPtr<nsOverflowChecker> checker = new nsOverflowChecker(this);
+  auto checker = MakeRefPtr<nsOverflowChecker>(this);
   if (!mCheckingOverflow) {
     nsContentUtils::AddScriptRunner(checker);
   } else {

@@ -830,16 +830,16 @@ void PresShell::Init(nsPresContext* aPresContext) {
       AccessibleCaretEnabled(mDocument->GetDocShell());
   if (accessibleCaretEnabled) {
     
-    mAccessibleCaretEventHub = new AccessibleCaretEventHub(this);
+    mAccessibleCaretEventHub = MakeRefPtr<AccessibleCaretEventHub>(this);
     mAccessibleCaretEventHub->Init();
   }
 
-  mSelection = new nsFrameSelection(this, accessibleCaretEnabled);
+  mSelection = MakeRefPtr<nsFrameSelection>(this, accessibleCaretEnabled);
 
   
 #ifdef SHOW_CARET
   
-  mCaret = new nsCaret();
+  mCaret = MakeRefPtr<nsCaret>();
   mCaret->Init(this);
   mOriginalCaret = mCaret;
 
@@ -910,7 +910,7 @@ void PresShell::Init(nsPresContext* aPresContext) {
   mTouchManager.Init(this, mDocument);
 
   if (mPresContext->IsRootContentDocumentCrossProcess()) {
-    mZoomConstraintsClient = new ZoomConstraintsClient();
+    mZoomConstraintsClient = MakeRefPtr<ZoomConstraintsClient>();
     mZoomConstraintsClient->Init(this, mDocument);
 
     
@@ -7414,7 +7414,7 @@ nsresult PresShell::EnsurePrecedingPointerRawUpdate(
           !TouchManager::ShouldConvertTouchToPointer(touch, &touchRawUpdate)) {
         continue;
       }
-      RefPtr<Touch> newTouch = new Touch(*touch);
+      auto newTouch = MakeRefPtr<Touch>(*touch);
       newTouch->mMessage = eTouchRawUpdate;
       newTouch->mCoalescedWidgetEvents = nullptr;
       touchRawUpdate.mTouches.AppendElement(std::move(newTouch));
@@ -11877,8 +11877,9 @@ void PresShell::MaybeRecreateMobileViewportManager(bool aAfterInitialization) {
     
     MOZ_ASSERT(!mMobileViewportManager);
 
-    mMVMContext = new GeckoMVMContext(mDocument, this);
-    mMobileViewportManager = new MobileViewportManager(mMVMContext, *mvmType);
+    mMVMContext = MakeRefPtr<GeckoMVMContext>(mDocument, this);
+    mMobileViewportManager =
+        MakeRefPtr<MobileViewportManager>(mMVMContext, *mvmType);
     if (MOZ_UNLIKELY(
             MOZ_LOG_TEST(MobileViewportManager::gLog, LogLevel::Debug))) {
       nsIURI* uri = mDocument->GetDocumentURI();
