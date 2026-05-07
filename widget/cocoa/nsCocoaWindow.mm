@@ -4,6 +4,7 @@
 
 #include "nsCocoaWindow.h"
 
+#include "nsISupportsPrimitives.h"
 #include "nsArrayUtils.h"
 #include "MOZDynamicCursor.h"
 #include "nsIAppStartup.h"
@@ -3996,6 +3997,31 @@ static NSURL* GetPasteLocation(NSPasteboard* aPasteboard, bool aUseFallback) {
         }
 
         item->SetTransferData(kFilePromiseDirectoryMime, macLocalFile);
+
+        
+        
+        
+        
+        
+        nsCOMPtr<nsISupports> filenamePrimitive;
+        nsresult fnRv = item->GetTransferData(
+            kFilePromiseDestFilename, getter_AddRefs(filenamePrimitive));
+        if (NS_SUCCEEDED(fnRv)) {
+          nsCOMPtr<nsISupportsString> filenameStr =
+              do_QueryInterface(filenamePrimitive);
+          nsAutoString filename;
+          if (filenameStr) {
+            filenameStr->GetData(filename);
+          }
+          if (filename.IsEmpty()) {
+            nsCOMPtr<nsISupportsString> fallback =
+                do_CreateInstance(NS_SUPPORTS_STRING_CONTRACTID);
+            if (fallback) {
+              fallback->SetData(u"unknown"_ns);
+              item->SetTransferData(kFilePromiseDestFilename, fallback);
+            }
+          }
+        }
 
         
         
