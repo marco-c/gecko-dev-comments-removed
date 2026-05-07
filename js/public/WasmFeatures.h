@@ -35,6 +35,8 @@
 
 
 
+
+
 #ifdef ENABLE_WASM_RELAXED_SIMD
 #  define WASM_RELAXED_SIMD_ENABLED 1
 #else
@@ -75,7 +77,7 @@
 #define JS_FOR_WASM_FEATURES(FEATURE)                                   \
   FEATURE(                                                              \
     /* capitalized name   */ RelaxedSimd,                               \
-    /* lower case name    */ v128Relaxed,                               \
+    /* lower case name    */ relaxedSimd,                               \
     /* compile predicate  */ WASM_RELAXED_SIMD_ENABLED,                 \
     /* compiler predicate */ AnyCompilerAvailable(cx),                  \
     /* flag predicate     */ js::jit::JitSupportsWasmSimd(),            \
