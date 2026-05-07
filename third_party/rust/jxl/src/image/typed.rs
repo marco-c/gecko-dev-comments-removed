@@ -16,6 +16,7 @@ use super::{ImageDataType, OwnedRawImage, RawImageRect, RawImageRectMut, Rect};
 #[repr(transparent)]
 pub struct Image<T: ImageDataType> {
     
+    
     raw: OwnedRawImage,
     _ph: PhantomData<T>,
 }
@@ -112,6 +113,10 @@ impl<T: ImageDataType> Image<T> {
     pub fn from_raw(raw: OwnedRawImage) -> Self {
         const { assert!(CACHE_LINE_BYTE_SIZE.is_multiple_of(T::DATA_TYPE_ID.size())) };
         assert!(raw.data.is_aligned(T::DATA_TYPE_ID.size()));
+        assert!(
+            raw.byte_offset().0.is_multiple_of(T::DATA_TYPE_ID.size()),
+            "image byte offset must be aligned to element size"
+        );
         Image {
             
             raw,

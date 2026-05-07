@@ -62,7 +62,7 @@ pub struct VisibleFrameInfo {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct VisibleFrameSeekTarget {
     
-    pub decode_start_file_offset: usize,
+    pub decode_start_file_offset: u64,
     
     
     pub remaining_in_box: u64,
@@ -194,7 +194,10 @@ impl JxlDecoder<WithImageInfo> {
     
     
     
-    pub fn flush_pixels(&mut self, buffers: &mut [JxlOutputBuffer<'_>]) -> Result<()> {
+    
+    
+    
+    pub fn flush_pixels(&mut self, buffers: &mut [JxlOutputBuffer<'_>]) -> Result<bool> {
         self.inner.flush_pixels(buffers)
     }
 
@@ -277,7 +280,10 @@ impl JxlDecoder<WithFrameInfo> {
     
     
     
-    pub fn flush_pixels(&mut self, buffers: &mut [JxlOutputBuffer<'_>]) -> Result<()> {
+    
+    
+    
+    pub fn flush_pixels(&mut self, buffers: &mut [JxlOutputBuffer<'_>]) -> Result<bool> {
         self.inner.flush_pixels(buffers)
     }
 
@@ -544,11 +550,7 @@ pub(crate) mod tests {
         let simple_frames = decode(&file, usize::MAX, true, false, None)?.1;
         let frames = decode(&file, usize::MAX, false, false, None)?.1;
         assert_eq!(frames.len(), simple_frames.len());
-        for (fc, (f, sf)) in frames
-            .into_iter()
-            .zip(simple_frames.into_iter())
-            .enumerate()
-        {
+        for (fc, (f, sf)) in frames.into_iter().zip(simple_frames).enumerate() {
             compare_frames(path, fc, &f, &sf)?;
         }
         Ok(())
@@ -565,11 +567,7 @@ pub(crate) mod tests {
 
         
         assert_eq!(one_shot_frames.len(), frames.len());
-        for (fc, (f, sf)) in frames
-            .into_iter()
-            .zip(one_shot_frames.into_iter())
-            .enumerate()
-        {
+        for (fc, (f, sf)) in frames.into_iter().zip(one_shot_frames).enumerate() {
             compare_frames(path, fc, &f, &sf)?;
         }
 
@@ -1714,7 +1712,7 @@ pub(crate) mod tests {
 
                 
                 decoder.start_new_frame(seek_target);
-                let mut input = &data[seek_target.decode_start_file_offset..];
+                let mut input = &data[seek_target.decode_start_file_offset as usize..];
 
                 
                 assert!(matches!(
@@ -1881,7 +1879,7 @@ pub(crate) mod tests {
         assert!(frames[0].is_keyframe);
         assert_eq!(
             frames[0].seek_target.decode_start_file_offset,
-            frames[0].file_offset
+            frames[0].file_offset as u64
         );
     }
 
@@ -1921,7 +1919,7 @@ pub(crate) mod tests {
         assert_eq!(frames.len(), 1);
         let f = &frames[0];
         assert!(f.is_keyframe);
-        assert_eq!(f.seek_target.decode_start_file_offset, f.file_offset);
+        assert_eq!(f.seek_target.decode_start_file_offset, f.file_offset as u64);
         assert_eq!(f.seek_target.visible_frames_to_skip, 0);
     }
 
@@ -1934,7 +1932,7 @@ pub(crate) mod tests {
 
         for frame in &frames {
             assert!(
-                frame.seek_target.decode_start_file_offset <= frame.file_offset,
+                frame.seek_target.decode_start_file_offset <= frame.file_offset as u64,
                 "frame {}: decode_start_file_offset {} > file_offset {}",
                 frame.index,
                 frame.seek_target.decode_start_file_offset,
@@ -1985,7 +1983,7 @@ pub(crate) mod tests {
         ];
 
         let opts = JxlDecoderOptions {
-            pixel_limit: Some(1024 * 1024 * 1024),
+            sample_limit: Some(1024 * 1024 * 1024),
             ..Default::default()
         };
         let mut decoder = JxlDecoderInner::new(opts);
@@ -1995,6 +1993,33 @@ pub(crate) mod tests {
             && let Some(profile) = decoder.output_color_profile()
         {
             let _ = profile.try_as_icc();
+        }
+    }
+
+    
+    
+    
+    
+    
+    #[test]
+    fn test_scan_frames_only_empty_followup_no_panic_502853162() {
+        #[rustfmt::skip]
+        let data: &[u8] = &[
+            0xff, 0x0a, 0x31, 0xbd, 0xa2, 0xd0, 0x2a, 0x18,
+            0x07, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x0f, 0xa0, 0x26, 0x00, 0xff,
+        ];
+
+        let opts = JxlDecoderOptions {
+            scan_frames_only: true,
+            sample_limit: Some(1024 * 1024 * 1024),
+            ..Default::default()
+        };
+        let mut decoder = JxlDecoderInner::new(opts);
+
+        let mut input = data;
+        while decoder.has_more_frames() {
+            let _ = decoder.process(&mut input, None).unwrap();
         }
     }
 
