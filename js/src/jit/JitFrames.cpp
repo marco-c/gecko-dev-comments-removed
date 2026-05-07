@@ -2576,6 +2576,10 @@ char* MachineState::SafepointState::addressOfRegister(FloatRegister reg) const {
   char* ptr = floatSpillBase;
   for (FloatRegisterBackwardIterator iter(floatRegs); iter.more(); ++iter) {
     ptr -= (*iter).size();
+    if ((*iter).size() < reg.size()) {
+      
+      continue;
+    }
     for (uint32_t a = 0; a < (*iter).numAlignedAliased(); a++) {
       
       
@@ -2586,6 +2590,24 @@ char* MachineState::SafepointState::addressOfRegister(FloatRegister reg) const {
     }
   }
   MOZ_CRASH("Invalid register");
+}
+
+bool MachineState::has(FloatRegister reg) const {
+  if (state_.is<BailoutState>()) {
+    return true;
+  }
+  
+  
+  
+  
+  const auto& s = state_.as<SafepointState>();
+  for (uint32_t a = 0; a < reg.numAlignedAliased(); a++) {
+    FloatRegister alias = reg.alignedAliased(a);
+    if (alias.size() >= reg.size() && s.floatRegs.hasRegisterIndex(alias)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 uintptr_t MachineState::read(Register reg) const {
