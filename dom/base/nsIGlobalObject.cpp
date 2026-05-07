@@ -158,7 +158,7 @@ void nsIGlobalObject::RemoveGlobalTeardownObserver(
     GlobalTeardownObserver* aObject) {
   MOZ_DIAGNOSTIC_ASSERT(aObject);
   MOZ_ASSERT(aObject->isInList());
-  MOZ_ASSERT(aObject->GetOwnerGlobal() == this);
+  MOZ_ASSERT(aObject->GetRelevantGlobal() == this);
   aObject->remove();
 }
 
@@ -191,7 +191,7 @@ void nsIGlobalObject::ForEachGlobalTeardownObserver(
   for (auto& target : targetList) {
     
     
-    if (target->GetOwnerGlobal() != this) {
+    if (target->GetRelevantGlobal() != this) {
       continue;
     }
     aFunc(target, &done);
@@ -208,7 +208,7 @@ void nsIGlobalObject::DisconnectGlobalTeardownObservers() {
 
         
         
-        MOZ_DIAGNOSTIC_ASSERT(aTarget->GetOwnerGlobal() != this);
+        MOZ_DIAGNOSTIC_ASSERT(aTarget->GetRelevantGlobal() != this);
       });
 }
 

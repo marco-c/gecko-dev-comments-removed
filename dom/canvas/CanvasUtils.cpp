@@ -474,7 +474,7 @@ bool IsImageExtractionAllowed(dom::OffscreenCanvas* aOffscreenCanvas,
     }
 
     if (NS_IsMainThread()) {
-      nsCOMPtr<nsIGlobalObject> global = canvasRef->GetOwnerGlobal();
+      nsCOMPtr<nsIGlobalObject> global = canvasRef->GetRelevantGlobal();
       NS_ENSURE_TRUE_VOID(global);
 
       RefPtr<nsPIDOMWindowInner> window = global->GetAsInnerWindow();
@@ -693,7 +693,7 @@ void DoDrawImageSecurityCheck(dom::OffscreenCanvas* aOffscreenCanvas,
   }
 
   
-  nsIGlobalObject* global = aOffscreenCanvas->GetOwnerGlobal();
+  nsIGlobalObject* global = aOffscreenCanvas->GetRelevantGlobal();
   nsIPrincipal* canvasPrincipal = global ? global->PrincipalOrNull() : nullptr;
   if (!aPrincipal || !canvasPrincipal) {
     aOffscreenCanvas->SetWriteOnly();

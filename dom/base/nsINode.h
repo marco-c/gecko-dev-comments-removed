@@ -1288,7 +1288,7 @@ class nsINode : public mozilla::dom::EventTarget {
 
   bool IsApzAware() const override;
 
-  nsIGlobalObject* GetOwnerGlobal() const override;
+  nsIGlobalObject* GetRelevantGlobal() const override;
   
   
   nsIGlobalObject* GetDocumentGlobal() const;

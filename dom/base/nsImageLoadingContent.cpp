@@ -109,7 +109,7 @@ class ImageLoadTask : public MicroTaskRunnable {
   }
 
   bool Suppressed() override {
-    nsIGlobalObject* global = mElement->AsContent()->GetOwnerGlobal();
+    nsIGlobalObject* global = mElement->AsContent()->GetRelevantGlobal();
     return global && global->IsInSyncOperation();
   }
 
