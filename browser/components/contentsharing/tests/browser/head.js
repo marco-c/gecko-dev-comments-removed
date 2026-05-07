@@ -38,12 +38,7 @@ async function assertContentSharingModal(window, expected) {
       "content-sharing-modal"
     )
   );
-  await modalEl.getUpdateComplete();
-  
-  
-  await TestUtils.waitForCondition(
-    () => modalEl.links?.length === Math.min(expected.share.links.length, 3)
-  );
+  await modalEl.updateComplete;
 
   Assert.equal(
     modalEl.title.innerText,
