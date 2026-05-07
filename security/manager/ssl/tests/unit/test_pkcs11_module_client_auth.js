@@ -11,29 +11,63 @@ const gCertDB = Cc["@mozilla.org/security/x509certdb;1"].getService(
   Ci.nsIX509CertDB
 );
 
-var gPrompt = {
-  QueryInterface: ChromeUtils.generateQI(["nsIPrompt"]),
 
-  
-  
-  
-  alert(_title, text) {
-    const EXPECTED_PROMPT_TEXT =
-      "Please authenticate to the token “Test PKCS11 Tokeñ 2 Label”. How to do so depends on the token (for example, using a fingerprint reader or entering a code with a keypad).";
-    equal(text, EXPECTED_PROMPT_TEXT, "expecting alert() to be called");
-  },
 
-  promptPassword() {
-    ok(false, "not expecting promptPassword() to be called");
+
+
+
+let gWindowlessBrowser = Services.appShell.createWindowlessBrowser(false);
+let gSystemPrincipal = Services.scriptSecurityManager.getSystemPrincipal();
+gWindowlessBrowser.docShell.createAboutBlankDocumentViewer(
+  gSystemPrincipal,
+  gSystemPrincipal
+);
+
+
+
+
+
+
+
+var gWindowWatcher = {
+  get activeWindow() {
+    return gWindowlessBrowser.document.defaultView;
   },
+  getNewPrompter: () => {
+    ok(false, "not expecting getNewPrompter() to be called");
+    return null;
+  },
+  openWindow(_parent, url, _name, _features, args) {
+    equal(
+      url,
+      "chrome://pippki/content/protectedAuth.xhtml",
+      "expected protected-auth dialog URL"
+    );
+    let bag = args.QueryInterface(Ci.nsIWritablePropertyBag2);
+    equal(
+      bag.getPropertyAsAString("tokenName"),
+      "Test PKCS11 Tokeñ 2 Label",
+      "expected token name in dialog args"
+    );
+    let promptId = bag.getPropertyAsAString("promptId");
+    Services.obs.notifyObservers(
+      null,
+      "pk11-protected-auth-complete",
+      promptId
+    );
+    return null;
+  },
+  QueryInterface: ChromeUtils.generateQI(["nsIWindowWatcher"]),
 };
 
-const gPromptFactory = {
-  QueryInterface: ChromeUtils.generateQI(["nsIPromptFactory"]),
-  getPrompt: () => gPrompt,
-};
-
-MockRegistrar.register("@mozilla.org/prompter;1", gPromptFactory);
+let watcherCID = MockRegistrar.register(
+  "@mozilla.org/embedcomp/window-watcher;1",
+  gWindowWatcher
+);
+registerCleanupFunction(() => {
+  MockRegistrar.unregister(watcherCID);
+  gWindowlessBrowser.close();
+});
 
 
 const gClientAuthDialogService = {

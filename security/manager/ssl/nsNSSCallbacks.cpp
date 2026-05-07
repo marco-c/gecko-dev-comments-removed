@@ -13,22 +13,27 @@
 #include "mozilla/Logging.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/ScopeExit.h"
+#include "mozilla/Services.h"
 #include "mozilla/Span.h"
 #include "mozilla/SpinEventLoopUntil.h"
 #include "mozilla/StaticPrefs_security.h"
 #include "mozilla/SyncRunnable.h"
+#include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/glean/SecurityManagerSslMetrics.h"
-#include "mozilla/intl/Localization.h"
+#include "nsComponentManagerUtils.h"
 #include "nsContentUtils.h"
 #include "nsIChannel.h"
 #include "nsIHttpChannel.h"
 #include "nsIHttpChannelInternal.h"
+#include "nsIObserverService.h"
 #include "nsIPrompt.h"
 #include "nsIProtocolProxyService.h"
 #include "nsISupportsPriority.h"
 #include "nsIStreamLoader.h"
 #include "nsIUploadChannel.h"
 #include "nsIWebProgressListener.h"
+#include "nsIWindowWatcher.h"
+#include "nsIWritablePropertyBag2.h"
 #include "nsNSSCertHelper.h"
 #include "nsNSSCertificate.h"
 #include "nsNSSComponent.h"
@@ -37,7 +42,6 @@
 #include "nsNetUtil.h"
 #include "nsProxyRelease.h"
 #include "nsStringStream.h"
-#include "nsThreadUtils.h"
 #include "mozpkix/pkixtypes.h"
 #include "ssl.h"
 #include "sslproto.h"
@@ -485,77 +489,180 @@ mozilla::pkix::Result DoOCSPRequest(
   return Success;
 }
 
+namespace {
 
-struct BackgroundPromptStatus final {
-  explicit BackgroundPromptStatus(PK11SlotInfo* slot)
-      : mSlot(slot), mDone(false), mResult(SECFailure) {}
+static Atomic<uint64_t> sProtectedAuthPromptCounter{0};
 
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(BackgroundPromptStatus)
 
+
+
+
+
+
+class ProtectedAuthState final {
+ public:
+  explicit ProtectedAuthState(PK11SlotInfo* slot)
+      : mSlot(PK11_ReferenceSlot(slot)) {}
   UniquePK11SlotInfo mSlot;
-  Atomic<bool> mDone;
-  SECStatus mResult;
+  Atomic<bool> done{false};
+  Atomic<bool> cancelled{false};
+  Atomic<SECStatus> result{SECFailure};
+
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(ProtectedAuthState)
 
  private:
-  ~BackgroundPromptStatus() = default;
+  ~ProtectedAuthState() = default;
 };
 
-static char* ShowProtectedAuthPrompt(PK11SlotInfo* slot, nsIPrompt* prompt) {
+class ProtectedAuthCancelObserver final : public nsIObserver {
+ public:
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_NSIOBSERVER
+
+  ProtectedAuthCancelObserver(RefPtr<ProtectedAuthState> aState,
+                              const nsAString& aPromptId)
+      : mState(std::move(aState)), mPromptId(aPromptId) {}
+
+ private:
+  ~ProtectedAuthCancelObserver() = default;
+  RefPtr<ProtectedAuthState> mState;
+  nsString mPromptId;
+};
+
+NS_IMPL_ISUPPORTS(ProtectedAuthCancelObserver, nsIObserver)
+
+NS_IMETHODIMP
+ProtectedAuthCancelObserver::Observe(nsISupports*, const char*,
+                                     const char16_t* aData) {
+  
+  
+  if (aData && mPromptId.Equals(nsDependentString(aData))) {
+    mState->cancelled = true;
+  }
+  return NS_OK;
+}
+
+}  
+
+static char* ShowProtectedAuthPrompt(PK11SlotInfo* slot) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(slot);
-  MOZ_ASSERT(prompt);
-  if (!NS_IsMainThread() || !slot || !prompt) {
+  if (!NS_IsMainThread() || !slot) {
     return nullptr;
   }
 
+  RefPtr<ProtectedAuthState> state = MakeRefPtr<ProtectedAuthState>(slot);
+
   
   
-  RefPtr<BackgroundPromptStatus> backgroundPromptStatus(
-      new BackgroundPromptStatus(PK11_ReferenceSlot(slot)));
+  nsString promptId;
+  promptId.AppendInt(++sProtectedAuthPromptCounter);
+
+  
+  
+  
+  
   nsresult rv = NS_DispatchBackgroundTask(
-      NS_NewRunnableFunction(__func__, [backgroundPromptStatus]() mutable {
-        backgroundPromptStatus->mResult = PK11_CheckUserPassword(
-            backgroundPromptStatus->mSlot.get(), nullptr);
-        backgroundPromptStatus->mDone = true;
-      }));
-  if (NS_FAILED(rv)) {
-    return nullptr;
-  }
-
-  nsTArray<nsCString> resIds = {
-      "security/pippki/pippki.ftl"_ns,
-  };
-  RefPtr<mozilla::intl::Localization> l10n =
-      mozilla::intl::Localization::Create(resIds, true);
-  auto l10nId = "protected-auth-alert"_ns;
-  auto l10nArgs = mozilla::dom::Optional<intl::L10nArgs>();
-  l10nArgs.Construct();
-  auto dirArg = l10nArgs.Value().Entries().AppendElement();
-  dirArg->mKey = "tokenName"_ns;
-  dirArg->mValue.SetValue().SetAsUTF8String().Assign(PK11_GetTokenName(slot));
-  nsAutoCString promptString;
-  ErrorResult errorResult;
-  l10n->FormatValueSync(l10nId, l10nArgs, promptString, errorResult);
-  if (NS_FAILED(errorResult.StealNSResult())) {
-    return nullptr;
-  }
-
-  
-  
-  
-  
-  rv = prompt->Alert(nullptr, NS_ConvertUTF8toUTF16(promptString).get());
+      NS_NewRunnableFunction(
+          __func__,
+          [state, promptId]() {
+            state->result = PK11_CheckUserPassword(state->mSlot.get(), nullptr);
+            state->done = true;
+            
+            
+            NS_DispatchToMainThread(NS_NewRunnableFunction(
+                "pk11-protected-auth-done", [promptId]() {
+                  nsCOMPtr<nsIObserverService> obs =
+                      mozilla::services::GetObserverService();
+                  if (obs) {
+                    obs->NotifyObservers(nullptr,
+                                         "pk11-protected-auth-complete",
+                                         promptId.get());
+                  }
+                }));
+          }),
+      NS_DISPATCH_EVENT_MAY_BLOCK);
   if (NS_FAILED(rv)) {
     return nullptr;
   }
 
   
-  MOZ_ALWAYS_TRUE(SpinEventLoopUntil(
-      "ShowProtectedAuthPrompt"_ns, [backgroundPromptStatus]() {
-        return static_cast<bool>(backgroundPromptStatus->mDone);
-      }));
+  
+  
+  nsCOMPtr<nsIObserverService> obsService =
+      mozilla::services::GetObserverService();
+  if (!obsService) {
+    return nullptr;
+  }
+  RefPtr<ProtectedAuthCancelObserver> cancelObserver =
+      MakeRefPtr<ProtectedAuthCancelObserver>(state, promptId);
+  rv = obsService->AddObserver(cancelObserver, "pk11-protected-auth-cancel",
+                               false);
+  if (NS_FAILED(rv)) {
+    return nullptr;
+  }
+  auto removeObserver = MakeScopeExit([&]() {
+    obsService->RemoveObserver(cancelObserver, "pk11-protected-auth-cancel");
+  });
 
-  switch (backgroundPromptStatus->mResult) {
+  
+  
+  
+  
+  nsCOMPtr<nsIWindowWatcher> ww =
+      do_GetService("@mozilla.org/embedcomp/window-watcher;1");
+  nsCOMPtr<mozIDOMWindowProxy> activeWindow;
+  if (ww) {
+    ww->GetActiveWindow(getter_AddRefs(activeWindow));
+  }
+  if (activeWindow) {
+    
+    
+    
+    nsCOMPtr<nsIWritablePropertyBag2> dialogArgs =
+        do_CreateInstance("@mozilla.org/hash-property-bag;1");
+    if (!dialogArgs) {
+      return nullptr;
+    }
+    rv = dialogArgs->SetPropertyAsAString(
+        u"tokenName"_ns, NS_ConvertUTF8toUTF16(PK11_GetTokenName(slot)));
+    if (NS_FAILED(rv)) {
+      return nullptr;
+    }
+    rv = dialogArgs->SetPropertyAsAString(u"promptId"_ns, promptId);
+    if (NS_FAILED(rv)) {
+      return nullptr;
+    }
+    
+    
+    
+    
+    
+    mozilla::dom::AutoNoJSAPI nojsapi;
+    nsCOMPtr<mozIDOMWindowProxy> newWindow;
+    rv = ww->OpenWindow(activeWindow,
+                        "chrome://pippki/content/protectedAuth.xhtml"_ns,
+                        "_blank"_ns, "centerscreen,chrome,modal,titlebar"_ns,
+                        dialogArgs, getter_AddRefs(newWindow));
+    if (NS_FAILED(rv)) {
+      return nullptr;
+    }
+  }
+
+  
+  MOZ_ALWAYS_TRUE(SpinEventLoopUntil("ShowProtectedAuthPrompt"_ns, [&state]() {
+    return static_cast<bool>(state->done) ||
+           static_cast<bool>(state->cancelled);
+  }));
+
+  
+  
+  
+  if (state->cancelled && !state->done) {
+    return nullptr;
+  }
+
+  switch (state->result) {
     case SECSuccess:
       return ToNewCString(nsDependentCString(PK11_PW_AUTHENTICATED));
     case SECWouldBlock:
@@ -609,6 +716,13 @@ PK11PasswordPromptRunnable::Run() {
   mRunning = true;
   auto setRunningToFalseOnExit = MakeScopeExit([&]() { mRunning = false; });
 
+  
+  
+  if (PK11_ProtectedAuthenticationPath(mSlot)) {
+    mResult = ShowProtectedAuthPrompt(mSlot);
+    return NS_OK;
+  }
+
   nsresult rv;
   nsCOMPtr<nsIPrompt> prompt;
   if (!mIR) {
@@ -625,19 +739,14 @@ PK11PasswordPromptRunnable::Run() {
     return NS_ERROR_FAILURE;
   }
 
-  if (PK11_ProtectedAuthenticationPath(mSlot)) {
-    mResult = ShowProtectedAuthPrompt(mSlot, prompt);
-    return NS_OK;
-  }
-
   nsAutoString promptString;
   if (PK11_IsInternal(mSlot)) {
     rv = GetPIPNSSBundleString("CertPasswordPromptDefault", promptString);
   } else {
     AutoTArray<nsString, 1> formatStrings = {
         NS_ConvertUTF8toUTF16(PK11_GetTokenName(mSlot))};
-    rv = PIPBundleFormatStringFromName("CertPasswordPrompt", formatStrings,
-                                       promptString);
+    rv = PIPBundleFormatStringFromName("CertSecurityDeviceAuthenticationPrompt",
+                                       formatStrings, promptString);
   }
   if (NS_FAILED(rv)) {
     return rv;
