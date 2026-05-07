@@ -907,10 +907,12 @@ void nsFocusManager::FocusedElementMayHaveMoved(nsIContent* aContent,
     NotifyFocusStateChange(aOldParent->AsElement(), nullptr, 0, false, false);
   }
   
+  bool showFocusRing =
+      focusedElement->State().HasState(ElementState::FOCUSRING);
   
   NotifyFocusStateChange(focusedElement, nullptr, 0, false, false);
   
-  NotifyFocusStateChange(focusedElement, nullptr, 0, true, false);
+  NotifyFocusStateChange(focusedElement, nullptr, 0, true, showFocusRing);
 }
 
 void nsFocusManager::ContentInserted(nsIContent* aChild,
