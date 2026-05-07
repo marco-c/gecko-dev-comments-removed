@@ -264,7 +264,7 @@ add_task(async function test_guardian_endpoint_updates_on_reinit() {
 
 
 
-add_task(async function test_isCheckingEntitlement_during_updateEntitlement() {
+add_task(async function test_isEnrolling_during_updateEntitlement() {
   const sandbox = sinon.createSandbox();
   setupStubs(sandbox);
 
@@ -280,23 +280,23 @@ add_task(async function test_isCheckingEntitlement_during_updateEntitlement() {
   );
 
   Assert.ok(
-    !IPPEnrollAndEntitleManager.isCheckingEntitlement,
-    "isCheckingEntitlement should be false before updateEntitlement"
+    !IPProtectionService.authProvider.isEnrolling,
+    "isEnrolling should be false before updateEntitlement"
   );
 
   let updatePromise = IPPEnrollAndEntitleManager.updateEntitlement(true);
 
   Assert.ok(
-    IPPEnrollAndEntitleManager.isCheckingEntitlement,
-    "isCheckingEntitlement should be true while updateEntitlement is in progress"
+    IPProtectionService.authProvider.isEnrolling,
+    "isEnrolling should be true while updateEntitlement is in progress"
   );
 
   resolveEntitlement({ entitlement: createTestEntitlement() });
   await updatePromise;
 
   Assert.ok(
-    !IPPEnrollAndEntitleManager.isCheckingEntitlement,
-    "isCheckingEntitlement should be false after updateEntitlement completes"
+    !IPProtectionService.authProvider.isEnrolling,
+    "isEnrolling should be false after updateEntitlement completes"
   );
 
   IPProtectionService.uninit();
