@@ -116,7 +116,8 @@ LexerResult nsJXLDecoder::ScanForFrameCount(SourceBufferIterator& aIterator,
     }
 
     JxlDecoderStatus scanStatus = jxl_decoder_process_data(
-        mScanner.get(), &currentData, &currentLength, nullptr, 0);
+        mScanner.get(), &currentData, &currentLength,
+        nullptr, 0, nullptr, 0);
     if (scanStatus == JxlDecoderStatus::Error) {
       return LexerResult(TerminalState::FAILURE);
     }
@@ -309,8 +310,10 @@ JxlDecoderStatus nsJXLDecoder::ProcessInput(const uint8_t** aData,
                                             size_t* aLength) {
   uint8_t* bufferPtr = mPixelBuffer.empty() ? nullptr : mPixelBuffer.begin();
   size_t bufferLen = mPixelBuffer.length();
+  uint8_t* kPtr = mKBuffer.empty() ? nullptr : mKBuffer.begin();
+  size_t kLen = mKBuffer.length();
   return jxl_decoder_process_data(mDecoder.get(), aData, aLength, bufferPtr,
-                                  bufferLen);
+                                  bufferLen, kPtr, kLen);
 }
 
 nsJXLDecoder::FrameOutputResult nsJXLDecoder::HandleFrameOutput() {
@@ -334,18 +337,44 @@ nsJXLDecoder::FrameOutputResult nsJXLDecoder::HandleFrameOutput() {
     }
     mFrameIndex++;
     mPixelBuffer.clear();
+    mKBuffer.clear();
     return FrameOutputResult::FrameAdvanced;
   }
 
   return FrameOutputResult::NoOutput;
 }
 
+nsJXLDecoder::PixelFormat nsJXLDecoder::DetectPixelFormat(
+    JxlApiDecoder* aDecoder, const JxlBasicInfo& aBasicInfo) {
+  if (jxl_decoder_use_f16(aDecoder)) {
+    return PixelFormat::Rgba16f;
+  }
+  if (jxl_decoder_is_gray(aDecoder)) {
+    return aBasicInfo.has_alpha ? PixelFormat::GrayAlpha8 : PixelFormat::Gray8;
+  }
+  
+  
+  return jxl_decoder_has_black_channel(aDecoder) ? PixelFormat::Cmyk8
+                                                 : PixelFormat::Rgba8;
+}
+
 nsJXLDecoder::FrameOutputResult nsJXLDecoder::BeginFrame() {
   MOZ_ASSERT(HasSize());
-
   OrientedIntSize size = Size();
+  JxlBasicInfo basicInfo = jxl_decoder_get_basic_info(mDecoder.get());
+  MOZ_ASSERT(basicInfo.valid);
+
+  
+  if (mFrameIndex == 0) {
+    mPixelFormat.set(DetectPixelFormat(mDecoder.get(), basicInfo));
+  }
+
+  
+  
+  
+  
   CheckedInt<size_t> bufferSize =
-      CheckedInt<size_t>(size.width) * size.height * 4;
+      CheckedInt<size_t>(size.width) * size.height * BytesPerPixel();
   if (!bufferSize.isValid() || !mPixelBuffer.resize(bufferSize.value())) {
     MOZ_LOG(sJXLLog, LogLevel::Error,
             ("[this=%p] nsJXLDecoder::BeginFrame -- "
@@ -354,7 +383,20 @@ nsJXLDecoder::FrameOutputResult nsJXLDecoder::BeginFrame() {
     return FrameOutputResult::Error;
   }
 
-  JxlBasicInfo basicInfo = jxl_decoder_get_basic_info(mDecoder.get());
+  if (mPixelFormat.value() == PixelFormat::Cmyk8 &&
+      !mKBuffer.resize(size.width * size.height)) {
+    return FrameOutputResult::Error;
+  }
+
+  
+  
+  
+  if (mPixelFormat.value() != PixelFormat::Rgba8) {
+    CheckedInt<size_t> rowBufSize = CheckedInt<size_t>(size.width) * 4;
+    if (!rowBufSize.isValid() || !mU8RowBuf.resize(rowBufSize.value())) {
+      return FrameOutputResult::Error;
+    }
+  }
 
   Maybe<AnimationParams> animParams;
   if (HasAnimation()) {
