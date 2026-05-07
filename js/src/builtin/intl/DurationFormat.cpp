@@ -1168,29 +1168,54 @@ static auto ComputeFractionalDigits(const temporal::Duration& duration,
   }
 
   
-  auto res =
-      std::to_chars(chars, std::end(result.decimal), timeDuration.seconds);
-  MOZ_ASSERT(res.ec == std::errc());
+  [[maybe_unused]] const char* integer = chars;
 
   
-  chars = res.ptr;
+  bool isZero = timeDuration.seconds == 0;
+
+  
+  if (!isZero) {
+    auto res =
+        std::to_chars(chars, std::end(result.decimal), timeDuration.seconds);
+    MOZ_ASSERT(res.ec == std::errc());
+
+    
+    chars = res.ptr;
+  }
 
   
   
   int32_t nanos = timeDuration.nanoseconds;
-  for (int32_t k = 100'000'000; k != 0 && nanos != 0; k /= 10) {
+  [[maybe_unused]] bool hasFractional = false;
+  for (int32_t k = 100'000'000; k != 0 && (k > exponent || nanos != 0);
+       k /= 10) {
     
     if (k == exponent) {
+      
+      if (isZero) {
+        isZero = false;
+        *chars++ = '0';
+      }
+      hasFractional = true;
       *chars++ = '.';
     }
 
-    *chars++ = char('0' + (nanos / k));
+    int32_t digit = (nanos / k);
     nanos %= k;
+
+    isZero = isZero && digit == 0;
+    if (!isZero) {
+      *chars++ = char('0' + digit);
+    }
   }
 
   MOZ_ASSERT((chars - result.decimal) <=
                  ptrdiff_t(DurationValue::MaximumDecimalStringLength),
              "unexpected decimal string length");
+  MOZ_ASSERT(chars > integer, "unexpected empty decimal string");
+  MOZ_ASSERT(!isZero, "unexpected all zero decimal string");
+  MOZ_ASSERT(integer[0] != '0' || integer[1] == '.', "unexpected leading zero");
+  MOZ_ASSERT(!hasFractional || chars[-1] != '0', "unexpected trailing zero");
 
   return result;
 }
