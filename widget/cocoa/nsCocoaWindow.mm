@@ -5497,23 +5497,44 @@ void nsCocoaWindow::SetSizeConstraints(const SizeConstraints& aConstraints) {
   NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   
-  
-
-  
   NSRect rect = (mWindowType == WindowType::Popup)
                     ? NSZeroRect
                     : NSMakeRect(0.0, 0.0, 32, 32);
   rect = [mWindow frameRectForChildViewRect:rect];
 
   SizeConstraints c = aConstraints;
-  c.mMinSize.width = std::max(NSToIntRound(rect.size.width), c.mMinSize.width);
-  c.mMinSize.height =
-      std::max(NSToIntRound(rect.size.height), c.mMinSize.height);
 
-  mWindow.minSize = NSMakeSize(c.mMinSize.width, c.mMinSize.height);
-  mWindow.maxSize =
-      NSMakeSize(c.mMaxSize.width == NS_MAXSIZE ? FLT_MAX : c.mMaxSize.width,
-                 c.mMaxSize.height == NS_MAXSIZE ? FLT_MAX : c.mMaxSize.height);
+  if (c.mScale.scale == MOZ_WIDGET_INVALID_SCALE) {
+    c.mScale.scale = BackingScaleFactor();
+  }
+
+  c.mMinSize.width = std::max(
+      nsCocoaUtils::CocoaPointsToDevPixels(rect.size.width, c.mScale.scale),
+      c.mMinSize.width);
+  c.mMinSize.height = std::max(
+      nsCocoaUtils::CocoaPointsToDevPixels(rect.size.height, c.mScale.scale),
+      c.mMinSize.height);
+
+  NSSize minSize = {
+      nsCocoaUtils::DevPixelsToCocoaPoints(c.mMinSize.width, c.mScale.scale),
+      nsCocoaUtils::DevPixelsToCocoaPoints(c.mMinSize.height, c.mScale.scale)};
+  mWindow.minSize = minSize;
+
+  c.mMaxSize.width = std::max(
+      nsCocoaUtils::CocoaPointsToDevPixels(c.mMaxSize.width, c.mScale.scale),
+      c.mMaxSize.width);
+  c.mMaxSize.height = std::max(
+      nsCocoaUtils::CocoaPointsToDevPixels(c.mMaxSize.height, c.mScale.scale),
+      c.mMaxSize.height);
+
+  NSSize maxSize = {
+      c.mMaxSize.width == NS_MAXSIZE ? FLT_MAX
+                                     : nsCocoaUtils::DevPixelsToCocoaPoints(
+                                           c.mMaxSize.width, c.mScale.scale),
+      c.mMaxSize.height == NS_MAXSIZE ? FLT_MAX
+                                      : nsCocoaUtils::DevPixelsToCocoaPoints(
+                                            c.mMaxSize.height, c.mScale.scale)};
+  mWindow.maxSize = maxSize;
   nsIWidget::SetSizeConstraints(c);
 
   NS_OBJC_END_TRY_IGNORE_BLOCK;
@@ -6352,16 +6373,23 @@ void nsCocoaWindow::DoResize(double aX, double aY, double aWidth,
   AutoRestore<bool> reentrantResizeGuard(mInResize);
   mInResize = true;
 
+  CGFloat scale = mSizeConstraints.mScale.scale;
+  if (scale == MOZ_WIDGET_INVALID_SCALE) {
+    scale = BackingScaleFactor();
+  }
+
   
-  int32_t width = NSToIntRound(aWidth);
-  int32_t height = NSToIntRound(aHeight);
+  int32_t width = NSToIntRound(aWidth * scale);
+  int32_t height = NSToIntRound(aHeight * scale);
 
   width = std::max(mSizeConstraints.mMinSize.width,
                    std::min(mSizeConstraints.mMaxSize.width, width));
   height = std::max(mSizeConstraints.mMinSize.height,
                     std::min(mSizeConstraints.mMaxSize.height, height));
 
-  DesktopIntRect newBounds(NSToIntRound(aX), NSToIntRound(aY), width, height);
+  DesktopIntRect newBounds(NSToIntRound(aX), NSToIntRound(aY),
+                           NSToIntRound(width / scale),
+                           NSToIntRound(height / scale));
 
   
   NSRect newFrame = nsCocoaUtils::GeckoRectToCocoaRect(newBounds);

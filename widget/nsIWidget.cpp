@@ -1883,12 +1883,12 @@ void nsIWidget::SetSizeConstraints(const SizeConstraints& aConstraints) {
   
   
   
-  DesktopIntSize curSize =
-      DesktopIntSize::Round(GetBounds().Size() / GetDesktopToDeviceScale());
-  DesktopIntSize clampedSize =
+  LayoutDeviceIntSize curSize = GetBounds().Size();
+  LayoutDeviceIntSize clampedSize =
       Max(aConstraints.mMinSize, Min(aConstraints.mMaxSize, curSize));
   if (clampedSize != curSize) {
-    Resize(DesktopSize(clampedSize), true);
+    DesktopSize desktopSize = clampedSize / GetDesktopToDeviceScale();
+    Resize(desktopSize, true);
   }
 }
 
