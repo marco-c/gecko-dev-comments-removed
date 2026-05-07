@@ -65,6 +65,12 @@ ArrayObject* CanonicalizeLocaleList(JSContext* cx,
 
 
 
+mozilla::Maybe<LanguageId> ToLanguageId(JSContext* cx,
+                                        const JSLinearString* locale);
+
+
+
+
 enum class LocaleData {
   
 
