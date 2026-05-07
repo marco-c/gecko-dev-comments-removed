@@ -873,14 +873,44 @@ var FullPageTranslationsPanel = new (class {
 
 
 
-  onChangeFromLanguage(event) {
-    const { target } = event;
-    if (target?.value) {
+  async onChangeFromLanguage(event) {
+    try {
+      const { target } = event;
+
+      if (!target?.value) {
+        return;
+      }
+
       TranslationsParent.telemetry()
         .fullPagePanel()
         .onChangeFromLanguage(target.value);
+
+      const selectedFrom = target.value;
+
+      
+      if (this.elements.toMenuList.value) {
+        return;
+      }
+
+      let toValue = await TranslationsParent.getTopPreferredSupportedToLang({
+        excludeLangTags: [selectedFrom], 
+      });
+
+      
+      if (this.elements.toMenuList.value) {
+        return;
+      }
+
+      if (TranslationsUtils.langTagsMatch(selectedFrom, toValue)) {
+        toValue = "";
+      }
+
+      this.elements.toMenuList.value = toValue;
+    } catch (error) {
+      this.console?.error(error);
+    } finally {
+      this.onChangeLanguages();
     }
-    this.onChangeLanguages();
   }
 
   
