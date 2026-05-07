@@ -194,6 +194,14 @@ already_AddRefed<Promise> MediaCapabilities::DecodingInfo(
   }
 
   
+  if (aConfiguration.mType == MediaDecodingType::Webrtc &&
+      !StaticPrefs::media_mediacapabilities_webrtc_enabled()) {
+    promise->MaybeRejectWithTypeError<MSG_INVALID_ENUM_VALUE>(
+        "type", "webrtc", "MediaDecodingType");
+    return promise.forget();
+  }
+
+  
   
   if (auto configCheck = IsValidMediaDecodingConfiguration(aConfiguration);
       configCheck.isErr()) {
@@ -703,6 +711,15 @@ already_AddRefed<Promise> MediaCapabilities::EncodingInfo(
   RefPtr<Promise> promise = Promise::Create(mParent, aRv);
   if (aRv.Failed()) {
     return nullptr;
+  }
+
+  
+  if (aConfiguration.mType == MediaEncodingType::Webrtc &&
+      !StaticPrefs::media_mediacapabilities_webrtc_enabled()) {
+    promise->MaybeRejectWithTypeError<MSG_INVALID_ENUM_VALUE>(
+        "type", "webrtc", "MediaDecodingType");
+
+    return promise.forget();
   }
 
   
