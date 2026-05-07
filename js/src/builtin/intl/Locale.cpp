@@ -8,6 +8,7 @@
 
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/intl/Calendar.h"
 #include "mozilla/intl/Collator.h"
 #include "mozilla/intl/Locale.h"
 #include "mozilla/intl/Region.h"
@@ -1294,6 +1295,78 @@ static bool RegionPreference(JSContext* cx, Handle<LocaleObject*> locale,
 
 
 
+static ArrayObject* CalendarsOfLocale(JSContext* cx,
+                                      Handle<LocaleObject*> locale) {
+  
+  Rooted<JS::Value> preferred(cx);
+  if (!GetUnicodeExtension(cx, locale, "ca", &preferred)) {
+    return nullptr;
+  }
+  MOZ_ASSERT(preferred.isString() || preferred.isUndefined());
+
+  if (preferred.isString()) {
+    return CreateArrayFromValue(cx, preferred);
+  }
+
+  
+  RegionPref preference;
+  if (!RegionPreference(cx, locale, &preference)) {
+    return nullptr;
+  }
+  auto region = preference.region;
+
+  Rooted<ArrayObject*> array(cx, NewDenseEmptyArray(cx));
+  if (!array) {
+    return nullptr;
+  }
+
+  
+  
+  
+  {
+    
+    
+    
+
+    auto keywords = mozilla::intl::Calendar::GetBcp47KeywordValuesForRegion(
+        region, mozilla::intl::Calendar::CommonlyUsed::Yes);
+    if (keywords.isErr()) {
+      ReportInternalError(cx, keywords.unwrapErr());
+      return nullptr;
+    }
+
+    
+    for (auto keyword : keywords.unwrap()) {
+      if (keyword.isErr()) {
+        ReportInternalError(cx);
+        return nullptr;
+      }
+      auto calendar = keyword.unwrap();
+
+      
+      if (calendar == mozilla::MakeStringSpan("islamic") ||
+          calendar == mozilla::MakeStringSpan("islamic-rgsa")) {
+        continue;
+      }
+
+      auto* string = NewStringCopy<CanGC>(cx, calendar);
+      if (!string) {
+        return nullptr;
+      }
+      if (!NewbornArrayPush(cx, array, JS::StringValue(string))) {
+        return nullptr;
+      }
+    }
+  }
+
+  return array;
+}
+
+
+
+
+
+
 static ArrayObject* CollationsOfLocale(JSContext* cx,
                                        Handle<LocaleObject*> locale) {
   
@@ -1804,6 +1877,29 @@ static bool Locale_toSource(JSContext* cx, unsigned argc, Value* vp) {
 
 #ifdef NIGHTLY_BUILD
 
+static bool Locale_getCalendars(JSContext* cx, const CallArgs& args) {
+  MOZ_ASSERT(IsLocale(args.thisv()));
+
+  Rooted<LocaleObject*> locale(cx, &args.thisv().toObject().as<LocaleObject>());
+
+  
+  auto* result = CalendarsOfLocale(cx, locale);
+  if (!result) {
+    return false;
+  }
+
+  args.rval().setObject(*result);
+  return true;
+}
+
+
+static bool Locale_getCalendars(JSContext* cx, unsigned argc, Value* vp) {
+  
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsLocale, Locale_getCalendars>(cx, args);
+}
+
+
 static bool Locale_getCollations(JSContext* cx, const CallArgs& args) {
   MOZ_ASSERT(IsLocale(args.thisv()));
 
@@ -1890,6 +1986,7 @@ static const JSFunctionSpec locale_methods[] = {
     JS_FN("toString", Locale_toString, 0, 0),
     JS_FN("toSource", Locale_toSource, 0, 0),
 #ifdef NIGHTLY_BUILD
+    JS_FN("getCalendars", Locale_getCalendars, 0, 0),
     JS_FN("getCollations", Locale_getCollations, 0, 0),
     JS_FN("getNumberingSystems", Locale_getNumberingSystems, 0, 0),
     JS_FN("getTextInfo", Locale_getTextInfo, 0, 0),
