@@ -1948,9 +1948,26 @@ class Document : public nsINode,
   bool TopLayerContains(Element&) const;
 
   
+  enum class ElementReadyCheckResult {
+    
+    eOk,
+    
+    
+    
+    eKeyboardLockOnly,
+    
+    
+    eSame,
+    
+    eErrorPromiseRejected
+  };
+
   
   
-  bool FullscreenElementReadyCheck(FullscreenRequest&);
+  
+  
+  
+  ElementReadyCheckResult FullscreenElementReadyCheck(FullscreenRequest&);
 
   
 
