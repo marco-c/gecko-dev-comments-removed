@@ -170,6 +170,23 @@ WebAccessibleResource::WebAccessibleResource(
   }
 }
 
+bool WebAccessibleResource::IsHostMatch(const URLInfo& aURI) {
+  if (!mMatches) {
+    return false;
+  }
+  return mMatches->Matches(aURI) ||
+         
+         
+         
+         
+         
+         
+         
+         
+         
+         (!MatchPattern::MatchesAllURLs(aURI) && mMatches->MatchesAllWebUrls());
+}
+
 bool WebAccessibleResource::IsExtensionMatch(const URLInfo& aURI) {
   if (!mExtensionIDs) {
     return false;
