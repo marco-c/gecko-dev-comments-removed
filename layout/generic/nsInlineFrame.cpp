@@ -1067,7 +1067,11 @@ void nsFirstLineFrame::Reflow(nsPresContext* aPresContext,
   ReflowFrames(aPresContext, aReflowInput, irs, aReflowOutput, aStatus);
   aReflowInput.mLineLayout->SetInFirstLine(false);
 
-  ReflowAbsoluteFrames(aPresContext, aReflowOutput, aReflowInput, aStatus);
+  
+  
+  MOZ_ASSERT(!IsAbsoluteContainer(),
+             "None of the properties that apply to ::first-line could make it "
+             "an abspos containing block!");
 
   
 }
