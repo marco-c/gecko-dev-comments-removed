@@ -175,7 +175,8 @@ already_AddRefed<Animation> Animation::Constructor(
   }
 
   RefPtr<Animation> animation = new Animation(global);
-  animation->SetTimelineNoUpdate(timeline);
+  
+  animation->SetTimelineNoUpdate(timeline, nullptr);
   animation->SetEffectNoUpdate(aEffect);
 
   return animation.forget();
@@ -271,17 +272,45 @@ static TimeStamp EnsurePaintIsScheduled(Document& aDoc) {
   return rd->MostRecentRefresh();
 }
 
-void Animation::SetTimeline(AnimationTimeline* aTimeline) {
-  SetTimelineNoUpdate(aTimeline);
+void Animation::RemovedNamedTimelineReferenceFromJS(const nsAtom* aName) {
+  if (!AsCSSAnimation()) {
+    MOZ_ASSERT_UNREACHABLE("How?");
+    return;
+  }
+  auto* animationManager = [&]() -> nsAnimationManager* {
+    auto* doc = GetRenderedDocument();
+    if (!doc) {
+      return nullptr;
+    }
+    auto* presContext = doc->GetPresContext();
+    if (!presContext) {
+      return nullptr;
+    }
+    return presContext->AnimationManager();
+  }();
+  if (!animationManager) {
+    return;
+  }
+  animationManager->RemoveNamedTimelineAnimation(aName, AsCSSAnimation());
+}
+
+void Animation::SetTimeline(AnimationTimeline* aTimeline,
+                            const nsAtom* aTimelineName) {
+  SetTimelineNoUpdate(aTimeline, aTimelineName);
   PostUpdate();
 }
 
 
-void Animation::SetTimelineNoUpdate(AnimationTimeline* aTimeline) {
+void Animation::SetTimelineNoUpdate(AnimationTimeline* aTimeline,
+                                    const nsAtom* aTimelineName) {
   
   
   
   if (mTimeline == aTimeline) {
+    
+    if (mTimelineName != aTimelineName) {
+      mTimelineName = aTimelineName;
+    }
     return;
   }
 
@@ -326,6 +355,7 @@ void Animation::SetTimelineNoUpdate(AnimationTimeline* aTimeline) {
     oldTimeline->RemoveAnimation(this);
   }
   mTimeline = aTimeline;
+  mTimelineName = aTimelineName;
   
   if (mEffect) {
     mEffect->UpdateNormalizedTiming();

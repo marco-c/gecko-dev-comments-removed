@@ -117,12 +117,20 @@ class Animation : public DOMEventTargetHelper,
                                                     : do_AddRef(mTimeline);
   }
   void SetTimelineFromJS(AnimationTimeline* aTimeline) {
-    SetTimeline(aTimeline);
+    
+    const auto prevTimelineName = GetTimelineName();
+    SetTimeline(aTimeline, nullptr);
+    if (prevTimelineName) {
+      RemovedNamedTimelineReferenceFromJS(prevTimelineName);
+    }
   }
 
+  void RemovedNamedTimelineReferenceFromJS(const nsAtom* aName);
+
   AnimationTimeline* GetTimeline() const { return mTimeline; }
-  void SetTimeline(AnimationTimeline* aTimeline);
-  void SetTimelineNoUpdate(AnimationTimeline* aTimeline);
+  void SetTimeline(AnimationTimeline* aTimeline, const nsAtom* aTimelineName);
+  void SetTimelineNoUpdate(AnimationTimeline* aTimeline,
+                           const nsAtom* aTimelineName);
 
   const AnimationRange& GetTimelineRange() const { return mTimelineRange; }
   void SetTimelineRange(AnimationRange&& aRange);
@@ -445,6 +453,8 @@ class Animation : public DOMEventTargetHelper,
 
   void AutoAlignStartTime();
 
+  const nsAtom* GetTimelineName() const { return mTimelineName; }
+
  protected:
   void SilentlySetCurrentTime(const TimeDuration& aNewCurrentTime);
   void CancelNoUpdate();
@@ -625,6 +635,11 @@ class Animation : public DOMEventTargetHelper,
   
   
   bool mAutoAlignStartTime = false;
+
+  
+  
+  
+  RefPtr<const nsAtom> mTimelineName;
 };
 
 }  
