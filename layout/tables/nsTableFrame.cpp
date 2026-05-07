@@ -251,14 +251,9 @@ void nsTableFrame::PositionedTablePartMaybeChanged(nsContainerFrame* aFrame,
   tableFrame = static_cast<nsTableFrame*>(tableFrame->FirstContinuation());
 
   
-  TablePartsArray* positionedParts =
-      tableFrame->GetProperty(PositionedTablePartsProperty());
-
   
-  if (!positionedParts) {
-    positionedParts = new TablePartsArray;
-    tableFrame->SetProperty(PositionedTablePartsProperty(), positionedParts);
-  }
+  TablePartsArray* positionedParts =
+      tableFrame->GetOrCreateDeletableProperty(PositionedTablePartsProperty());
 
   if (isPositioned) {
     
@@ -2135,17 +2130,6 @@ TableBCData* nsTableFrame::GetTableBCData() const {
   return GetProperty(TableBCDataProperty());
 }
 
-TableBCData* nsTableFrame::GetOrCreateTableBCData() {
-  TableBCData* value = GetProperty(TableBCDataProperty());
-  if (!value) {
-    value = new TableBCData();
-    SetProperty(TableBCDataProperty(), value);
-  }
-
-  MOZ_ASSERT(value, "TableBCData must exist!");
-  return value;
-}
-
 static void DivideBCBorderSize(nscoord aPixelSize, nscoord& aSmallHalf,
                                nscoord& aLargeHalf) {
   aSmallHalf = aPixelSize / 2;
@@ -3431,7 +3415,7 @@ void nsTableFrame::AddBCDamageArea(const TableArea& aValue) {
   SetNeedToCalcBCBorders(true);
   SetNeedToCalcHasBCBorders(true);
   
-  TableBCData* value = GetOrCreateTableBCData();
+  TableBCData* value = GetOrCreateDeletableProperty(TableBCDataProperty());
 
 #ifdef DEBUG
   VerifyNonNegativeDamageRect(value->mDamageArea);
@@ -3467,7 +3451,7 @@ void nsTableFrame::SetFullBCDamageArea() {
   SetNeedToCalcBCBorders(true);
   SetNeedToCalcHasBCBorders(true);
 
-  TableBCData* value = GetOrCreateTableBCData();
+  TableBCData* value = GetOrCreateDeletableProperty(TableBCDataProperty());
   value->mDamageArea = TableArea(0, 0, GetColCount(), GetRowCount());
 }
 
