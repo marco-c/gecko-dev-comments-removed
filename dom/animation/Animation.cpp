@@ -406,6 +406,15 @@ void Animation::SetTimelineNoUpdate(AnimationTimeline* aTimeline,
     SetCurrentTimeNoUpdate(
         TimeDuration(EffectEnd().MultDouble(previousProgress.Value())));
   }
+  if (fromFiniteTimeline && !aTimeline && mTimelineName) {
+    
+    
+    Document* doc = GetRenderedDocument();
+    auto* tracker = doc ? doc->GetScrollTimelineAnimationTracker() : nullptr;
+    if (tracker) {
+      tracker->RemovePending(*this);
+    }
+  }
 
   
   
