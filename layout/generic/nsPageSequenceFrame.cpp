@@ -349,7 +349,7 @@ void nsPageSequenceFrame::Reflow(nsPresContext* aPresContext,
       
       
       
-      kidReflowInput.mBreakType = ReflowInput::BreakType::Page;
+      kidReflowInput.mBreakType = BreakType::Page;
       kidReflowInput.mFlags.mIsInFragmentainerMeasuringReflow = true;
 
       ReflowOutput kidReflowOutput(kidReflowInput);
@@ -413,7 +413,7 @@ void nsPageSequenceFrame::Reflow(nsPresContext* aPresContext,
     ReflowInput kidReflowInput(
         aPresContext, aReflowInput, kidFrame,
         LogicalSize(kidFrame->GetWritingMode(), sheetSize));
-    kidReflowInput.mBreakType = ReflowInput::BreakType::Page;
+    kidReflowInput.mBreakType = BreakType::Page;
 
     ReflowOutput kidReflowOutput(kidReflowInput);
     nsReflowStatus status;
