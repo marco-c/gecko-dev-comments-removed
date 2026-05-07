@@ -322,6 +322,7 @@ Preferences.addSetting(
       return !this.startWithLastProfile || !launchOnLoginApproved.value;
     },
     onUserChange(checked) {
+      Glean.launchOnLogin.userToggle.record({ enabled: checked });
       if (checked) {
         
         
