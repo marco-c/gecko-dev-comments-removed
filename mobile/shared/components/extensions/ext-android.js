@@ -496,6 +496,12 @@ class TabContext extends EventEmitter {
 }
 
 class Window extends WindowBase {
+  get type() {
+    
+    
+    return "normal";
+  }
+
   get focused() {
     return this.window.document.hasFocus();
   }
