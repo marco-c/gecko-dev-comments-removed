@@ -79,23 +79,21 @@ RefPtr<WebRenderLayerManager> WebRenderLayerManager::Create(
                         << " isParent: " << XRE_IsParentProcess();
   }
 
-  PWebRenderBridgeChild* bridge =
-      aCBChild->SendPWebRenderBridgeConstructor(aPipelineId, size, windowKind);
-  if (!bridge) {
+  auto bridge = MakeRefPtr<WebRenderBridgeChild>(aPipelineId);
+  if (!aCBChild->SendPWebRenderBridgeConstructor(bridge, aPipelineId, size,
+                                                 windowKind)) {
     
     
     
     
-    gfxCriticalNote << "Failed to create WebRenderBridgeChild.";
+    gfxCriticalNote << "Failed to send WebRenderBridgeChild.";
     aError.Assign(sHasInitialized
                       ? "FEATURE_FAILURE_WEBRENDER_INITIALIZE_IPDL_POST"_ns
                       : "FEATURE_FAILURE_WEBRENDER_INITIALIZE_IPDL_FIRST"_ns);
     return nullptr;
   }
 
-  RefPtr<WebRenderBridgeChild> wrChild =
-      static_cast<WebRenderBridgeChild*>(bridge);
-  return new WebRenderLayerManager(aWidget, wrChild.forget());
+  return new WebRenderLayerManager(aWidget, bridge.forget());
 }
 
 bool WebRenderLayerManager::Initialize(
