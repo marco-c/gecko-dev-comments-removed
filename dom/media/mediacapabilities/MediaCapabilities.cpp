@@ -1088,9 +1088,10 @@ MediaCapabilities::CheckEncryptedDecodingSupport(
       aConfiguration.mKeySystemConfiguration.Value().mKeySystem, configs);
 }
 
+
 already_AddRefed<Promise> MediaCapabilities::EncodingInfo(
     const MediaEncodingConfiguration& aConfiguration, ErrorResult& aRv) {
-  RefPtr<Promise> promise = Promise::Create(mParent, aRv);
+  RefPtr<Promise> encodePromise = Promise::Create(mParent, aRv);
   if (aRv.Failed()) {
     return nullptr;
   }
@@ -1098,10 +1099,9 @@ already_AddRefed<Promise> MediaCapabilities::EncodingInfo(
   
   if (aConfiguration.mType == MediaEncodingType::Webrtc &&
       !StaticPrefs::media_mediacapabilities_webrtc_enabled()) {
-    promise->MaybeRejectWithTypeError<MSG_INVALID_ENUM_VALUE>(
-        "type", "webrtc", "MediaDecodingType");
-
-    return promise.forget();
+    encodePromise->MaybeRejectWithTypeError<MSG_INVALID_ENUM_VALUE>(
+        "type", "webrtc", "MediaEncodingType");
+    return encodePromise.forget();
   }
 
   
@@ -1112,38 +1112,177 @@ already_AddRefed<Promise> MediaCapabilities::EncodingInfo(
     return nullptr;
   }
 
-  bool supported = true;
+  LOG("Processing EncodingInfo for: {}", aConfiguration);
 
+  
+  
+  
+  
+  
+
+  
+  RefPtr<CodecSupportPromise> videoPromise;
+  RefPtr<CodecSupportPromise> videoAccelPromise;
+  CodecSupportState state(*this);
+
+  
+  
+  
+  
   
   
   if (aConfiguration.mVideo.WasPassed()) {
-    if (!CheckVideoConfiguration(aConfiguration.mVideo.Value())) {
-      aRv.ThrowTypeError<MSG_INVALID_MEDIA_VIDEO_CONFIGURATION>();
-      return nullptr;
-    }
-    
     Maybe<MediaExtendedMIMEType> mime =
         MakeMediaExtendedMIMEType(aConfiguration.mVideo.Value().mContentType);
-    supported &= mime && CheckTypeForEncoder(*mime);
-  }
-  if (aConfiguration.mAudio.WasPassed()) {
-    if (!CheckAudioConfiguration(aConfiguration.mAudio.Value())) {
-      aRv.ThrowTypeError<MSG_INVALID_MEDIA_AUDIO_CONFIGURATION>();
-      return nullptr;
-    }
+    videoPromise =
+        mime ? state.GetVideoEncodeSupportPromise(aConfiguration, *mime)
+             : CodecSupportPromise::CreateAndResolve(CodecSupport::Unknown,
+                                                     __func__);
+
     
-    Maybe<MediaExtendedMIMEType> mime =
-        MakeMediaExtendedMIMEType(aConfiguration.mAudio.Value().mContentType);
-    supported &= mime && CheckTypeForEncoder(*mime);
+    videoAccelPromise = CodecSupportPromise::CreateAndResolve(
+        mime && state.IsAcceleratedEncode(*mime, aConfiguration.mType)
+            ? CodecSupport::Supported
+            : CodecSupport::Unsupported,
+        __func__);
+  } else {
+    videoPromise =
+        CodecSupportPromise::CreateAndResolve(CodecSupport::Unknown, __func__);
+    videoAccelPromise =
+        CodecSupportPromise::CreateAndResolve(CodecSupport::Unknown, __func__);
   }
 
-  MediaCapabilitiesInfo info;
-  info.mSupported = supported;
-  info.mSmooth = supported;
-  info.mPowerEfficient = false;
-  promise->MaybeResolve(std::move(info));
+  
+  RefPtr<CodecSupportPromise> audioPromise;
 
-  return promise.forget();
+  
+  if (aConfiguration.mAudio.WasPassed()) {
+    
+    
+    Maybe<MediaExtendedMIMEType> audioMime =
+        MakeMediaExtendedMIMEType(aConfiguration.mAudio.Value().mContentType);
+    
+    
+    audioPromise = audioMime ? state.GetAudioEncodeSupportPromise(
+                                   aConfiguration, *audioMime)
+                             : CodecSupportPromise::CreateAndResolve(
+                                   CodecSupport::Unknown, __func__);
+  } else {
+    audioPromise =
+        CodecSupportPromise::CreateAndResolve(CodecSupport::Unknown, __func__);
+  }
+
+  RefPtr<DOMMozPromiseRequestHolder<CodecSupportPromise::AllPromiseType>>
+      holder;
+  RefPtr<nsISerialEventTarget> targetThread;
+  RefPtr<StrongWorkerRef> workerRef;
+  if (!GetThreadForAsyncRequest<CodecSupportPromise::AllPromiseType>(
+          mParent, &holder, &targetThread, &workerRef,
+          "MediaCapabilities::EncodingInfo")) {
+    
+    
+    return encodePromise.forget();
+  }
+  nsTArray<RefPtr<CodecSupportPromise>> supportPromises{
+      audioPromise, videoPromise, videoAccelPromise};
+  CodecSupportPromise::All(targetThread, supportPromises)
+      ->Then(
+          targetThread, __func__,
+          [encodePromise, workerRef, holder, aConfiguration](
+              const CodecSupportPromise::AllPromiseType::ResolveOrRejectValue&
+                  aValue) {
+            MOZ_RELEASE_ASSERT(aValue.IsResolve(),
+                               "CodecSupportPromise should never reject");
+            holder->Complete();
+            const auto& results = aValue.ResolveValue();
+
+            MediaCapabilitiesInfo info;
+
+            const CodecSupport audioSupported = results[0];
+            const CodecSupport videoSupported = results[1];
+            const CodecSupport videoAccelSupported = results[2];
+            const bool bothSupportUnknown =
+                videoSupported == CodecSupport::Unknown &&
+                audioSupported == CodecSupport::Unknown;
+
+            
+            
+            
+            if ((videoSupported == CodecSupport::Unsupported) ||
+                (audioSupported == CodecSupport::Unsupported) ||
+                bothSupportUnknown) {
+              info.mSupported = false;
+              info.mSmooth = false;
+              info.mPowerEfficient = false;
+              encodePromise->MaybeResolve(std::move(info));
+              return;
+            }
+
+            
+            info.mSupported = true;
+
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            const bool hwSupported =
+                (videoAccelSupported == CodecSupport::Supported);
+            bool lowResolution = false;
+            if (videoSupported == CodecSupport::Supported) {
+              MOZ_ASSERT(aConfiguration.mVideo.WasPassed());
+              const auto& v = aConfiguration.mVideo.Value();
+              const CheckedInt<uint32_t> pixels =
+                  CheckedInt<uint32_t>(v.mWidth) *
+                  CheckedInt<uint32_t>(v.mHeight);
+              lowResolution = pixels.isValid() &&
+                              pixels.value() <= kLowResolutionPixelCount;
+              info.mSmooth = hwSupported || lowResolution;
+            } else {
+              
+              
+              
+              MOZ_ASSERT(aConfiguration.mAudio.WasPassed());
+              info.mSmooth = true;
+            }
+
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+
+            
+            if (videoSupported == CodecSupport::Supported) {
+              info.mPowerEfficient = hwSupported || lowResolution;
+            } else {
+              
+              MOZ_ASSERT(aConfiguration.mAudio.WasPassed());
+              info.mPowerEfficient = true;
+            }
+
+            LOG("{} -> {}", aConfiguration, info);
+
+            
+            encodePromise->MaybeResolve(std::move(info));
+          })
+      ->Track(*holder);
+  return encodePromise.forget();
 }
 
 Maybe<MediaContainerType> MediaCapabilities::CheckVideoConfiguration(
