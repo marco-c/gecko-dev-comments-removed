@@ -344,7 +344,7 @@ nsLoadGroup::SetDefaultLoadRequest(nsIRequest* aRequest) {
     
     
     
-    mLoadFlags &= nsIRequest::LOAD_REQUESTMASK;
+    mLoadFlags &= nsIRequest::LOAD_INHERIT_MASK;
 
     nsCOMPtr<nsITimedChannel> timedChannel = do_QueryInterface(aRequest);
     mDefaultLoadIsTimed = timedChannel != nullptr;

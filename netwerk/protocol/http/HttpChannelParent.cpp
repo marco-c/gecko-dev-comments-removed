@@ -1197,7 +1197,7 @@ HttpChannelParent::OnStartRequest(nsIRequest* aRequest) {
   
   
   
-  if (!mIPCClosed) {
+  if (!mIPCClosed && chan->IsNavigation()) {
     
     
     
