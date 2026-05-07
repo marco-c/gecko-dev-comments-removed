@@ -55,6 +55,7 @@ ignored_js_src_dirs = [
 
 included_inclnames_to_ignore = set([
     "ffi.h",  
+    "builtin/intl/glue/Locale.h",  
     "devtools/Instruments.h",  
     "double-conversion/double-conversion.h",  
     "frontend/ReservedWordsGenerated.h",  
