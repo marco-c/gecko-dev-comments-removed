@@ -418,13 +418,20 @@ function checkConnectionActivities(activites, host, port) {
     };
   }
 
-  Assert.equal(connections.length, 2);
+  
+  
+  
+  Assert.equal(connections.length, 3);
 
   const firstConn = parseConnInfoHash(connections[0]);
   Assert.equal(firstConn.h2Flag, ".");
   Assert.equal(firstConn.host, host);
   Assert.equal(firstConn.port, port);
-  const fallbackConn = parseConnInfoHash(connections[1]);
+  const retryConn = parseConnInfoHash(connections[1]);
+  Assert.equal(retryConn.h2Flag, "X");
+  Assert.equal(retryConn.host, host);
+  Assert.equal(retryConn.port, port);
+  const fallbackConn = parseConnInfoHash(connections[2]);
   Assert.equal(fallbackConn.h2Flag, "X");
   Assert.equal(fallbackConn.host, host);
   Assert.equal(fallbackConn.port, port);
