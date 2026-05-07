@@ -3382,6 +3382,9 @@ class Document : public nsINode,
   void NotifyMediaFeatureValuesChanged();
 
   
+  
+  bool AutoSizesEnabled() const { return mAutoSizesEnabled; }
+  
   void ObserveAutoSizesImage(HTMLImageElement& aElement);
   void UnobserveAutoSizesImage(HTMLImageElement& aElement);
   
@@ -5286,6 +5289,9 @@ class Document : public nsINode,
 
   
   bool mHasBeenRevealed : 1;
+
+  
+  const bool mAutoSizesEnabled : 1;
 
   
   
