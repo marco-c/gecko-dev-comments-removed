@@ -15,11 +15,7 @@ add_task(async function test_fill_creditCard_with_failed_decryption() {
     return;
   }
 
-  
-  
-  
   Services.fog.testResetFOG();
-  Services.telemetry.clearEvents();
 
   await setStorage(TEST_CREDIT_CARD_2);
 
