@@ -213,6 +213,7 @@
         UrlbarProviderOpenTabs:
           "moz-src:///browser/components/urlbar/UrlbarProviderOpenTabs.sys.mjs",
         FaviconUtils: "moz-src:///toolkit/modules/FaviconUtils.sys.mjs",
+        KeyboardLockUtils: "resource://gre/modules/KeyboardLockUtils.sys.mjs",
       });
       ChromeUtils.defineLazyGetter(this, "tabLocalization", () => {
         return new Localization(
@@ -8104,14 +8105,22 @@
       }
 
       
-      if (aEvent.defaultPreventedByChrome) {
+      if (aEvent.defaultPrevented) {
+        return;
+      }
+
+      
+      const action = ShortcutUtils.getSystemActionForEvent(aEvent);
+      if (
+        action != null &&
+        this.KeyboardLockUtils.mustWaitForKeyboardLockRequestedReply(aEvent)
+      ) {
         return;
       }
 
       
       
-
-      switch (ShortcutUtils.getSystemActionForEvent(aEvent)) {
+      switch (action) {
         case ShortcutUtils.TOGGLE_CARET_BROWSING:
           this._maybeRequestReplyFromRemoteContent(aEvent);
           return;

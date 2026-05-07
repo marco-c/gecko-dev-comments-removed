@@ -14,6 +14,7 @@
   let imports = {};
   ChromeUtils.defineESModuleGetters(imports, {
     DeferredTask: "resource://gre/modules/DeferredTask.sys.mjs",
+    KeyboardLockUtils: "resource://gre/modules/KeyboardLockUtils.sys.mjs",
     ShortcutUtils: "resource://gre/modules/ShortcutUtils.sys.mjs",
   });
 
@@ -117,16 +118,26 @@
       }
 
       
-      if (event.defaultPreventedByChrome) {
+      
+      if (event.defaultPrevented) {
         return;
       }
 
       
       
 
-      const { ShortcutUtils } = imports;
+      const { KeyboardLockUtils, ShortcutUtils } = imports;
 
-      switch (ShortcutUtils.getSystemActionForEvent(event)) {
+      const action = ShortcutUtils.getSystemActionForEvent(event);
+      
+      if (
+        action != null &&
+        KeyboardLockUtils.mustWaitForKeyboardLockRequestedReply(event)
+      ) {
+        return;
+      }
+
+      switch (action) {
         case ShortcutUtils.CYCLE_TABS:
           Glean.browserUiInteraction.keyboard["ctrl-tab"].add(1);
           Services.prefs.setBoolPref(
