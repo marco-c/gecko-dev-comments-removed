@@ -2,7 +2,6 @@
 
 
 
-
 #define PANGO_ENABLE_BACKEND
 #define PANGO_ENABLE_ENGINE
 
@@ -243,6 +242,16 @@ void gfxPlatformGtk::InitPlatformHardwareVideoConfig() {
   if (!featureDec.IsEnabled()) {
     return;
   }
+
+#ifdef MOZ_WIDGET_GTK
+  
+  
+  
+  
+  if (!GdkIsWaylandDisplay()) {
+    GetGlobalDMABufFormats()->AppendEGLVideoModifiers();
+  }
+#endif
 
   
   FeatureState& featureZeroCopy =
