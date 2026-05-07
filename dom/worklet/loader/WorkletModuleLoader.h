@@ -94,7 +94,8 @@ class WorkletModuleLoader : public JS::loader::ModuleLoaderBase {
     
     
     return aModuleType == JS::ModuleType::JavaScript ||
-           aModuleType == JS::ModuleType::JSON;
+           aModuleType == JS::ModuleType::JSON ||
+           aModuleType == JS::ModuleType::Text;
   }
 
   
