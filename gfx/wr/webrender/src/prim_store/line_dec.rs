@@ -12,7 +12,7 @@ use crate::gpu_types::ImageBrushPrimitiveData;
 use crate::render_task::{RenderTask, RenderTaskKind};
 use crate::render_task_cache::{RenderTaskCacheKey, RenderTaskCacheKeyKind, RenderTaskParent};
 use crate::render_task_graph::RenderTaskId;
-use crate::renderer::GpuBufferWriterF;
+use crate::renderer::GpuBufferAddress;
 use crate::scene_building::{CreateShadow, IsVisible};
 use crate::frame_builder::{FrameBuildingContext, FrameBuildingState};
 use crate::intern;
@@ -33,6 +33,7 @@ pub const MAX_LINE_DECORATION_RESOLUTION: u32 = 4096;
 #[cfg_attr(feature = "capture", derive(Serialize))]
 pub struct LineDecorationScratch {
     pub task_id: RenderTaskId,
+    pub gpu_address: GpuBufferAddress,
 }
 
 #[derive(Clone, Debug, Hash, MallocSizeOf, PartialEq, Eq)]
@@ -46,15 +47,17 @@ pub struct LineDecorationCacheKey {
 }
 
 
+
+
+
+
 #[derive(Clone, Debug, Hash, MallocSizeOf, PartialEq, Eq)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct LineDecoration {
-    
-    
-    
-    
-    pub cache_key: Option<LineDecorationCacheKey>,
+    pub style: LineStyle,
+    pub orientation: LineOrientation,
+    pub wavy_line_thickness: Au,
     pub color: ColorU,
 }
 
@@ -78,7 +81,9 @@ impl intern::InternDebug for LineDecorationKey {}
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 #[derive(MallocSizeOf)]
 pub struct LineDecorationData {
-    pub cache_key: Option<LineDecorationCacheKey>,
+    pub style: LineStyle,
+    pub orientation: LineOrientation,
+    pub wavy_line_thickness: Au,
     pub color: ColorF,
 }
 
@@ -87,28 +92,63 @@ impl LineDecorationData {
     
     
     
-    pub fn update(
-        &mut self,
-        common: &mut PrimTemplateCommonData,
+    pub fn prepare(
+        &self,
+        prim_size: LayoutSize,
+        prim_spatial_node_index: SpatialNodeIndex,
+        frame_context: &FrameBuildingContext,
         frame_state: &mut FrameBuildingState,
-    ) {
+    ) -> (RenderTaskId, GpuBufferAddress) {
+        let cache_key = get_line_decoration_size(
+            &prim_size,
+            self.orientation,
+            self.style,
+            self.wavy_line_thickness.to_f32_px(),
+        ).map(|size| LineDecorationCacheKey {
+            style: self.style,
+            orientation: self.orientation,
+            wavy_line_thickness: self.wavy_line_thickness,
+            size: size.to_au(),
+        });
+
         let mut writer = frame_state.frame_gpu_data.f32.write_blocks(3);
-        self.write_prim_gpu_blocks(&mut writer);
-        common.gpu_buffer_address = writer.finish();
+        match cache_key.as_ref() {
+            Some(cache_key) => {
+                writer.push(&ImageBrushPrimitiveData {
+                    color: self.color.premultiplied(),
+                    background_color: PremultipliedColorF::WHITE,
+                    stretch_size: LayoutSize::new(
+                        cache_key.size.width.to_f32_px(),
+                        cache_key.size.height.to_f32_px(),
+                    ),
+                });
+            }
+            None => {
+                writer.push_one(self.color.premultiplied());
+            }
+        }
+        let gpu_address = writer.finish();
+
+        let task_id = match cache_key {
+            Some(cache_key) => self.allocate_render_task(
+                cache_key,
+                prim_spatial_node_index,
+                frame_context,
+                frame_state,
+            ),
+            None => RenderTaskId::INVALID,
+        };
+
+        (task_id, gpu_address)
     }
 
-    pub fn prepare_render_task(
-        &mut self,
+    fn allocate_render_task(
+        &self,
+        cache_key: LineDecorationCacheKey,
         prim_spatial_node_index: SpatialNodeIndex,
         frame_context: &FrameBuildingContext,
         frame_state: &mut FrameBuildingState,
     ) -> RenderTaskId {
-        
-        
-        let Some(cache_key) = self.cache_key.as_ref() else {
-            return RenderTaskId::INVALID;
-        };
-
         
         
         let scale = frame_context
@@ -173,27 +213,6 @@ impl LineDecorationData {
             }
         )
     }
-
-    fn write_prim_gpu_blocks(
-        &self,
-        writer: &mut GpuBufferWriterF
-    ) {
-        match self.cache_key.as_ref() {
-            Some(cache_key) => {
-                writer.push(&ImageBrushPrimitiveData {
-                    color: self.color.premultiplied(),
-                    background_color: PremultipliedColorF::WHITE,
-                    stretch_size: LayoutSize::new(
-                        cache_key.size.width.to_f32_px(),
-                        cache_key.size.height.to_f32_px(),
-                    ),
-                });
-            }
-            None => {
-                writer.push_one(self.color.premultiplied());
-            }
-        }
-    }
 }
 
 pub type LineDecorationTemplate = PrimTemplate<LineDecorationData>;
@@ -204,7 +223,9 @@ impl From<LineDecorationKey> for LineDecorationTemplate {
         LineDecorationTemplate {
             common,
             kind: LineDecorationData {
-                cache_key: line_dec.kind.cache_key,
+                style: line_dec.kind.style,
+                orientation: line_dec.kind.orientation,
+                wavy_line_thickness: line_dec.kind.wavy_line_thickness,
                 color: line_dec.kind.color.into(),
             }
         }
@@ -250,8 +271,10 @@ impl CreateShadow for LineDecoration {
         _: RasterSpace,
     ) -> Self {
         LineDecoration {
+            style: self.style,
+            orientation: self.orientation,
+            wavy_line_thickness: self.wavy_line_thickness,
             color: shadow.color.into(),
-            cache_key: self.cache_key.clone(),
         }
     }
 }
@@ -340,7 +363,7 @@ fn test_struct_sizes() {
     
     
     
-    assert_eq!(mem::size_of::<LineDecoration>(), 20, "LineDecoration size changed");
-    assert_eq!(mem::size_of::<LineDecorationTemplate>(), 48, "LineDecorationTemplate size changed");
-    assert_eq!(mem::size_of::<LineDecorationKey>(), 32, "LineDecorationKey size changed");
+    assert_eq!(mem::size_of::<LineDecoration>(), 12, "LineDecoration size changed");
+    assert_eq!(mem::size_of::<LineDecorationTemplate>(), 40, "LineDecorationTemplate size changed");
+    assert_eq!(mem::size_of::<LineDecorationKey>(), 24, "LineDecorationKey size changed");
 }
