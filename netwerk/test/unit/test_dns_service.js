@@ -25,6 +25,10 @@ class Listener {
 
 Listener.prototype.QueryInterface = ChromeUtils.generateQI(["nsIDNSListener"]);
 
+
+
+overrideService.addIPOverride("xn--bcher-kva.org", "127.0.0.1");
+
 const DOMAIN_IDN = "bücher.org";
 const ACE_IDN = "xn--bcher-kva.org";
 
@@ -154,3 +158,40 @@ add_task(
     Assert.equal(inRecord.getNextAddrAsString(), "3.4.5.6");
   }
 );
+
+add_task(async function bug2024251() {
+  overrideService.addIPOverride("bug2024251.com", "1.2.3.4");
+
+  let listener = new Listener();
+  Services.dns.asyncResolve(
+    "bug2024251.com",
+    Ci.nsIDNSService.RESOLVE_TYPE_DEFAULT,
+    Ci.nsIDNSService.RESOLVE_CANONICAL_NAME,
+    null, 
+    listener,
+    mainThread,
+    defaultOriginAttributes
+  );
+
+  let [, inRecord] = await listener;
+  inRecord.QueryInterface(Ci.nsIDNSAddrRecord);
+  Assert.equal(inRecord.getNextAddrAsString(), "1.2.3.4");
+  info(`hasMore: ${inRecord.hasMore()}`);
+
+  listener = new Listener();
+  Services.dns.asyncResolve(
+    "bug2024251.com",
+    Ci.nsIDNSService.RESOLVE_TYPE_DEFAULT,
+    Ci.nsIDNSService.RESOLVE_BYPASS_CACHE |
+      Ci.nsIDNSService.RESOLVE_CANONICAL_NAME,
+    null, 
+    listener,
+    mainThread,
+    defaultOriginAttributes
+  );
+
+  let [, inRecord2] = await listener;
+  inRecord2.QueryInterface(Ci.nsIDNSAddrRecord);
+  Assert.equal(inRecord2.getNextAddrAsString(), "1.2.3.4");
+  Assert.equal(inRecord.getNextAddrAsString(), "1.2.3.4");
+});
