@@ -343,7 +343,7 @@ class LoadedScript : public nsISupports {
     return IsTextSource() || IsCachedStencil() || IsInvalidatedCachedStencil();
   }
 
-  bool HasSRI() {
+  bool HasSRI() const {
     MOZ_ASSERT(CanHaveSRIOnly());
     return !mSRIAndSerializedStencil.empty();
   }
@@ -458,6 +458,17 @@ class LoadedScript : public nsISupports {
   
   
   bool IsSRIMetadataReusableBy(const mozilla::dom::SRIMetadata& aSRIMetadata);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  LoadedScript* ModuleScriptToCache();
 
  public:
   
@@ -757,7 +768,6 @@ class ModuleScript final : public LoadedScript {
   
   static already_AddRefed<ModuleScript> FromCache(const LoadedScript& aScript,
                                                   ScriptFetchInfo* aFetchInfo);
-  already_AddRefed<LoadedScript> ToCache();
 
   void SetModuleRecord(Handle<JSObject*> aModuleRecord);
   void SetParseError(const Value& aError);

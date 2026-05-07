@@ -156,15 +156,19 @@ LoadedScript::LoadedScript(ScriptKind aKind, nsIURI* aURI)
 
 LoadedScript::LoadedScript(const LoadedScript& aOther)
     : mDataType(DataType::eCachedStencil),
+      mFetchCount(aOther.mFetchCount),
       mKind(aOther.mKind),
+      mCachedReferrerPolicy(aOther.mCachedReferrerPolicy),
       mSerializedStencilOffset(0),
       mCacheEntryId(aOther.mCacheEntryId),
       mIsDirty(aOther.mIsDirty),
       mTookLongInPreviousRuns(aOther.mTookLongInPreviousRuns),
       mIsEverHitFromMemoryCache(aOther.mIsEverHitFromMemoryCache),
       mURI(aOther.mURI),
+      mCachedBaseURL(aOther.mCachedBaseURL),
       mReceivedScriptTextLength(0),
-      mCachedStencil(aOther.mCachedStencil) {
+      mCachedStencil(aOther.mCachedStencil),
+      mCacheEntry(aOther.mCacheEntry) {
   MOZ_ASSERT(mURI);
   
   
@@ -357,13 +361,22 @@ already_AddRefed<ModuleScript> ModuleScript::FromCache(
   return mozilla::MakeRefPtr<ModuleScript>(aScript, aFetchInfo).forget();
 }
 
-already_AddRefed<LoadedScript> ModuleScript::ToCache() {
-  
+LoadedScript* LoadedScript::ModuleScriptToCache() {
   MOZ_DIAGNOSTIC_ASSERT(IsCachedStencil());
-  MOZ_DIAGNOSTIC_ASSERT(!HasParseError());
-  MOZ_DIAGNOSTIC_ASSERT(!HasErrorToRethrow());
+  MOZ_DIAGNOSTIC_ASSERT(IsModuleScript());
+  MOZ_DIAGNOSTIC_ASSERT(!AsModuleScript()->HasParseError());
+  MOZ_DIAGNOSTIC_ASSERT(!AsModuleScript()->HasErrorToRethrow());
 
-  return mozilla::MakeRefPtr<LoadedScript>(*this).forget();
+  LoadedScript* result = new LoadedScript(*this);
+
+  if (HasSRI()) {
+    
+    
+    
+    result->mSRIAndSerializedStencil = std::move(mSRIAndSerializedStencil);
+  }
+
+  return result;
 }
 
 void ModuleScript::Shutdown() {
