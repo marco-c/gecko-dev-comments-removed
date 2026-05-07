@@ -13,17 +13,12 @@
 #include "mozilla/IMEContentObserver.h"
 #include "mozilla/IMEStateManager.h"
 #include "mozilla/PresShell.h"
-#include "mozilla/PresState.h"
-#include "mozilla/ScrollContainerFrame.h"
+#include "mozilla/ReflowInput.h"
 #include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/TextEditor.h"
 #include "mozilla/dom/HTMLInputElement.h"
 #include "mozilla/dom/HTMLTextAreaElement.h"
-#include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/Selection.h"
-#include "mozilla/dom/Text.h"
-#include "nsAttrValueInlines.h"
-#include "nsCOMPtr.h"
 #include "nsCaret.h"
 #include "nsContentUtils.h"
 #include "nsDisplayList.h"
@@ -33,17 +28,15 @@
 #include "nsGenericHTMLElement.h"
 #include "nsIContent.h"
 #include "nsIEditor.h"
-#include "nsILayoutHistoryState.h"
 #include "nsINode.h"
 #include "nsLayoutUtils.h"
-#include "nsPIDOMWindow.h"  
 #include "nsPresContext.h"
-#include "nsRange.h"  
 
 using namespace mozilla;
 using namespace mozilla::dom;
 
-nsIFrame* NS_NewTextControlFrame(PresShell* aPresShell, ComputedStyle* aStyle) {
+nsTextControlFrame* NS_NewTextControlFrame(PresShell* aPresShell,
+                                           ComputedStyle* aStyle) {
   return new (aPresShell)
       nsTextControlFrame(aStyle, aPresShell->GetPresContext());
 }
@@ -52,8 +45,7 @@ NS_IMPL_FRAMEARENA_HELPERS(nsTextControlFrame)
 
 NS_QUERYFRAME_HEAD(nsTextControlFrame)
   NS_QUERYFRAME_ENTRY(nsTextControlFrame)
-  NS_QUERYFRAME_ENTRY(nsIStatefulFrame)
-NS_QUERYFRAME_TAIL_INHERITING(nsContainerFrame)
+NS_QUERYFRAME_TAIL_INHERITING(ScrollContainerFrame)
 
 #ifdef ACCESSIBILITY
 a11y::AccType nsTextControlFrame::AccessibleType() {
@@ -65,29 +57,71 @@ a11y::AccType nsTextControlFrame::AccessibleType() {
 #endif
 
 nsTextControlFrame::nsTextControlFrame(ComputedStyle* aStyle,
-                                       nsPresContext* aPresContext,
-                                       nsIFrame::ClassID aClassID)
-    : nsContainerFrame(aStyle, aPresContext, aClassID) {}
+                                       nsPresContext* aPresContext)
+    : ScrollContainerFrame(aStyle, aPresContext, kClassID,
+                            false) {}
 
 nsTextControlFrame::~nsTextControlFrame() = default;
 
-ScrollContainerFrame* nsTextControlFrame::GetScrollTargetFrame() const {
-  auto* root = GetRootNode();
-  if (!root) {
-    return nullptr;
+Element* nsTextControlFrame::GetButton() const { return mButtonContent; }
+
+nsIFrame* nsTextControlFrame::GetButtonBoxFrame() const {
+  return mButtonContent ? mButtonContent->GetPrimaryFrame() : nullptr;
+}
+
+nsresult nsTextControlFrame::CreateAnonymousContent(
+    nsTArray<ContentInfo>& aElements) {
+  nsresult rv = ScrollContainerFrame::CreateAnonymousContent(aElements);
+  NS_ENSURE_SUCCESS(rv, rv);
+  mButtonContent = ControlElement()->CreateButton();
+  if (mButtonContent) {
+    aElements.AppendElement(mButtonContent);
   }
-  return do_QueryFrame(root->GetPrimaryFrame());
+  return NS_OK;
+}
+
+void nsTextControlFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle) {
+  switch (StyleUIReset()->mFieldSizing) {
+    case StyleFieldSizing::Content:
+      RemoveStateBits(NS_FRAME_REFLOW_ROOT);
+      break;
+    case StyleFieldSizing::Fixed:
+      
+      
+      
+      AddStateBits(NS_FRAME_REFLOW_ROOT);
+      break;
+  }
+  ScrollContainerFrame::DidSetComputedStyle(aOldComputedStyle);
+}
+
+void nsTextControlFrame::AppendAnonymousContentTo(
+    nsTArray<nsIContent*>& aElements, uint32_t aFilter) {
+  ScrollContainerFrame::AppendAnonymousContentTo(aElements, aFilter);
+  if (mButtonContent) {
+    aElements.AppendElement(mButtonContent);
+  }
+}
+
+void nsTextControlFrame::InitPrimaryFrame() {
+  if (auto* ts = ControlElement()->GetTextControlState()) {
+    ts->InitializeSelection(PresShell());
+  }
+  nsIFrame::InitPrimaryFrame();
 }
 
 void nsTextControlFrame::Destroy(DestroyContext& aContext) {
   if (auto* ts = ControlElement()->GetTextControlState()) {
     ts->DeinitSelection();
   }
-  nsContainerFrame::Destroy(aContext);
+  aContext.AddAnonymousContent(mButtonContent.forget());
+  ScrollContainerFrame::Destroy(aContext);
 }
 
-LogicalSize nsTextControlFrame::CalcIntrinsicSize(gfxContext* aRenderingContext,
-                                                  WritingMode aWM) const {
+LogicalSize nsTextControlFrame::CalcFixedSize(gfxContext* aRenderingContext,
+                                              WritingMode aWM) const {
+  MOZ_ASSERT(StyleUIReset()->mFieldSizing == StyleFieldSizing::Fixed);
+
   LogicalSize intrinsicSize(aWM);
   const float inflation = nsLayoutUtils::FontSizeInflationFor(this);
   RefPtr<nsFontMetrics> fontMet =
@@ -168,17 +202,15 @@ LogicalSize nsTextControlFrame::CalcIntrinsicSize(gfxContext* aRenderingContext,
   return intrinsicSize;
 }
 
-void nsTextControlFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
-                              nsIFrame* aPrevInFlow) {
-  nsContainerFrame::Init(aContent, aParent, aPrevInFlow);
-}
-
 nscoord nsTextControlFrame::IntrinsicISize(const IntrinsicSizeInput& aInput,
                                            IntrinsicISizeType aType) {
+  if (StyleUIReset()->mFieldSizing == StyleFieldSizing::Content) {
+    return ScrollContainerFrame::IntrinsicISize(aInput, aType);
+  }
   
   
   WritingMode wm = GetWritingMode();
-  return CalcIntrinsicSize(aInput.mContext, wm).ISize(wm);
+  return CalcFixedSize(aInput.mContext, wm).ISize(wm);
 }
 
 Maybe<nscoord> nsTextControlFrame::ComputeBaseline(
@@ -205,20 +237,12 @@ void nsTextControlFrame::Reflow(nsPresContext* aPresContext,
                                 ReflowOutput& aDesiredSize,
                                 const ReflowInput& aReflowInput,
                                 nsReflowStatus& aStatus) {
-  MarkInReflow();
   DO_GLOBAL_REFLOW_COUNT("nsTextControlFrame");
   MOZ_ASSERT(aStatus.IsEmpty(), "Caller should pass a fresh reflow status!");
-
-  
-  WritingMode wm = aReflowInput.GetWritingMode();
-  const auto contentBoxSize = aReflowInput.ComputedSizeWithBSizeFallback([&] {
-    return CalcIntrinsicSize(aReflowInput.mRenderingContext, wm).BSize(wm);
-  });
-  aDesiredSize.SetSize(
-      wm,
-      contentBoxSize + aReflowInput.ComputedLogicalBorderPadding(wm).Size(wm));
-
+  MOZ_ASSERT_IF(StyleUIReset()->mFieldSizing == StyleFieldSizing::Fixed,
+                HasAnyStateBits(NS_FRAME_REFLOW_ROOT));
   {
+    
     
     auto baseline =
         ComputeBaseline(this, aReflowInput, IsSingleLineTextControl());
@@ -229,137 +253,20 @@ void nsTextControlFrame::Reflow(nsPresContext* aPresContext,
   }
 
   
-  aDesiredSize.SetOverflowAreasToDesiredBounds();
-
-  nsIFrame* buttonBox = [&]() -> nsIFrame* {
-    nsIFrame* last = mFrames.LastChild();
-    if (!last || !IsButtonBox(last)) {
-      return nullptr;
-    }
-    return last;
-  }();
-
   
-  
-  nscoord buttonBoxISize = 0;
-  if (buttonBox) {
-    ReflowTextControlChild(buttonBox, aPresContext, aReflowInput, aStatus,
-                           aDesiredSize, contentBoxSize, buttonBoxISize);
+  const auto oldBSize = aReflowInput.ComputedBSize();
+  const WritingMode wm = aReflowInput.GetWritingMode();
+  if (oldBSize == NS_UNCONSTRAINEDSIZE &&
+      StyleUIReset()->mFieldSizing != StyleFieldSizing::Content) {
+    const nscoord fixedBSize = aReflowInput.ApplyMinMaxBSize(
+        CalcFixedSize(aReflowInput.mRenderingContext, wm).BSize(wm));
+    const_cast<ReflowInput&>(aReflowInput)
+        .SetComputedBSize(fixedBSize, ReflowInput::ResetResizeFlags::No);
   }
-
-  
-  nsIFrame* kid = mFrames.FirstChild();
-  while (kid) {
-    if (kid != buttonBox) {
-      MOZ_ASSERT(!IsButtonBox(kid),
-                 "Should only have one button box, and should be last");
-      ReflowTextControlChild(kid, aPresContext, aReflowInput, aStatus,
-                             aDesiredSize, contentBoxSize, buttonBoxISize);
-    }
-    kid = kid->GetNextSibling();
-  }
-
-  
-  FinishAndStoreOverflow(&aDesiredSize);
-
-  aStatus.Reset();  
-}
-
-void nsTextControlFrame::ReflowTextControlChild(
-    nsIFrame* aKid, nsPresContext* aPresContext,
-    const ReflowInput& aReflowInput, nsReflowStatus& aStatus,
-    ReflowOutput& aParentDesiredSize, const LogicalSize& aParentContentBoxSize,
-    nscoord& aButtonBoxISize) {
-  const WritingMode outerWM = aReflowInput.GetWritingMode();
-  
-  const WritingMode wm = aKid->GetWritingMode();
-  const auto parentPadding = aReflowInput.ComputedLogicalPadding(wm);
-  const LogicalSize contentBoxSize =
-      aParentContentBoxSize.ConvertTo(wm, outerWM);
-  const LogicalSize paddingBoxSize = contentBoxSize + parentPadding.Size(wm);
-  const LogicalSize borderBoxSize =
-      paddingBoxSize + aReflowInput.ComputedLogicalBorder(wm).Size(wm);
-  const bool singleLine = IsSingleLineTextControl();
-  const bool isButtonBox = IsButtonBox(aKid);
-  LogicalSize availSize =
-      !isButtonBox && singleLine ? contentBoxSize : paddingBoxSize;
-  availSize.BSize(wm) = NS_UNCONSTRAINEDSIZE;
-  ReflowInput kidReflowInput(aPresContext, aReflowInput, aKid, availSize,
-                             Nothing(), ReflowInput::InitFlag::CallerWillInit);
-
-  
-  
-  auto overridePadding = isButtonBox ? Nothing() : Some(parentPadding);
-  if (!isButtonBox && singleLine) {
-    
-    
-    
-    overridePadding->IStart(wm) = overridePadding->IEnd(wm) = 0;
-  }
-
-  
-  
-  
-  auto overrideCBSize = isButtonBox ? Some(paddingBoxSize) : Nothing();
-  kidReflowInput.Init(aPresContext, overrideCBSize, Nothing(), overridePadding);
-
-  LogicalPoint position(wm);
-  if (!isButtonBox) {
-    MOZ_ASSERT(wm == outerWM || aKid->IsPlaceholderFrame(),
-               "Shouldn't have to care about orthogonal "
-               "writing-modes and such inside the control, "
-               "except for the number spin-box which forces "
-               "horizontal-tb");
-
-    const auto& border = aReflowInput.ComputedLogicalBorder(wm);
-
-    
-    
-    
-    position.B(wm) = border.BStart(wm);
-    position.I(wm) = border.IStart(wm);
-    if (singleLine) {
-      position.I(wm) += parentPadding.IStart(wm);
-    }
-
-    
-    
-    kidReflowInput.SetComputedISize(
-        std::max(0, aReflowInput.ComputedISize() - aButtonBoxISize));
-    kidReflowInput.SetComputedBSize(contentBoxSize.BSize(wm));
-  }
-
-  
-  ReflowOutput desiredSize(aReflowInput);
-  const nsSize containerSize = borderBoxSize.GetPhysicalSize(wm);
-  ReflowChild(aKid, aPresContext, desiredSize, kidReflowInput, wm, position,
-              containerSize, ReflowChildFlags::Default, aStatus);
-
-  if (isButtonBox) {
-    const auto& bp = aReflowInput.ComputedLogicalBorderPadding(outerWM);
-    auto size = desiredSize.Size(outerWM);
-    
-    
-    LogicalRect buttonRect(outerWM);
-    buttonRect.BSize(outerWM) = size.BSize(outerWM);
-    buttonRect.ISize(outerWM) = size.ISize(outerWM);
-    buttonRect.BStart(outerWM) =
-        bp.BStart(outerWM) +
-        (aParentContentBoxSize.BSize(outerWM) - size.BSize(outerWM)) / 2;
-    
-    buttonRect.IStart(outerWM) =
-        bp.IStart(outerWM) + aReflowInput.ComputedISize() - size.ISize(outerWM);
-    buttonRect = buttonRect.ConvertTo(wm, outerWM, containerSize);
-    position = buttonRect.Origin(wm);
-    aButtonBoxISize = size.ISize(outerWM);
-  }
-
-  
-  FinishReflowChild(aKid, aPresContext, desiredSize, &kidReflowInput, wm,
-                    position, containerSize, ReflowChildFlags::Default);
-
-  
-  aParentDesiredSize.mOverflowAreas.UnionWith(desiredSize.mOverflowAreas);
+  ScrollContainerFrame::Reflow(aPresContext, aDesiredSize, aReflowInput,
+                               aStatus);
+  const_cast<ReflowInput&>(aReflowInput)
+      .SetComputedBSize(oldBSize, ReflowInput::ResetResizeFlags::No);
 }
 
 void nsTextControlFrame::HandleReadonlyOrDisabledChange() {
@@ -390,107 +297,11 @@ void nsTextControlFrame::ElementStateChanged(dom::ElementState aStates) {
                                     dom::ElementState::DISABLED)) {
     HandleReadonlyOrDisabledChange();
   }
-  return nsContainerFrame::ElementStateChanged(aStates);
-}
-
-
-
-
-
-static nsIFrame* FindRootNodeFrame(const nsFrameList& aChildList,
-                                   const nsIContent* aRoot) {
-  for (nsIFrame* f : aChildList) {
-    if (f->GetContent() == aRoot) {
-      return f;
-    }
-    if (nsIFrame* root = FindRootNodeFrame(f->PrincipalChildList(), aRoot)) {
-      return root;
-    }
-  }
-  return nullptr;
-}
-void nsTextControlFrame::SetInitialChildList(ChildListID aListID,
-                                             nsFrameList&& aChildList) {
-  nsContainerFrame::SetInitialChildList(aListID, std::move(aChildList));
-  if (aListID != FrameChildListID::Principal) {
-    return;
-  }
-
-  
-  
-  
-  if (nsIFrame* frame =
-          FindRootNodeFrame(PrincipalChildList(), GetRootNode())) {
-    frame->AddStateBits(NS_FRAME_REFLOW_ROOT);
-
-    if (auto* ts = ControlElement()->GetTextControlState()) {
-      ts->InitializeSelection(PresShell());
-    }
-
-    bool hasProperty;
-    nsPoint contentScrollPos = TakeProperty(ContentScrollPos(), &hasProperty);
-    if (hasProperty) {
-      
-      
-      nsIStatefulFrame* statefulFrame = do_QueryFrame(frame);
-      NS_ASSERTION(statefulFrame,
-                   "unexpected type of frame for the anonymous div");
-      UniquePtr<PresState> fakePresState = NewPresState();
-      fakePresState->scrollState() = contentScrollPos;
-      statefulFrame->RestoreState(fakePresState.get());
-    }
-  } else {
-    MOZ_ASSERT(!GetRootNode() || PrincipalChildList().IsEmpty());
-  }
-}
-
-UniquePtr<PresState> nsTextControlFrame::SaveState() {
-  if (nsIStatefulFrame* scrollStateFrame = GetScrollTargetFrame()) {
-    return scrollStateFrame->SaveState();
-  }
-
-  return nullptr;
-}
-
-NS_IMETHODIMP
-nsTextControlFrame::RestoreState(PresState* aState) {
-  NS_ENSURE_ARG_POINTER(aState);
-
-  if (nsIStatefulFrame* scrollStateFrame = GetScrollTargetFrame()) {
-    return scrollStateFrame->RestoreState(aState);
-  }
-
-  
-  
-  
-  
-  SetProperty(ContentScrollPos(), aState->scrollState());
-  return NS_OK;
+  return ScrollContainerFrame::ElementStateChanged(aStates);
 }
 
 nsresult nsTextControlFrame::PeekOffset(PeekOffsetStruct* aPos) {
   return NS_ERROR_FAILURE;
-}
-
-void nsTextControlFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
-                                          const nsDisplayListSet& aLists) {
-  DO_GLOBAL_REFLOW_COUNT_DSP("nsTextControlFrame");
-
-  DisplayBorderBackgroundOutline(aBuilder, aLists);
-
-  if (HidesContent()) {
-    return;
-  }
-
-  
-  
-  
-  nsDisplayList* content = aLists.Content();
-  nsDisplayListSet set(content, content, content, content, content, content);
-
-  for (auto* kid : mFrames) {
-    BuildDisplayListForChild(aBuilder, kid, set);
-  }
 }
 
 Maybe<nscoord> nsTextControlFrame::GetNaturalBaselineBOffset(

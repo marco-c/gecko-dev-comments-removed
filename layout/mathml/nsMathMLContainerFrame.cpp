@@ -8,6 +8,7 @@
 #include "gfxUtils.h"
 #include "mozilla/Likely.h"
 #include "mozilla/PresShell.h"
+#include "mozilla/ReflowInput.h"
 #include "mozilla/StaticPrefs_mathml.h"
 #include "mozilla/dom/MathMLElement.h"
 #include "mozilla/gfx/2D.h"
@@ -166,7 +167,7 @@ nscoord nsMathMLContainerFrame::ApplyAdjustmentForWidthAndHeight(
     auto oldWidth = aReflowOutput.Width();
     if (IsMathContentBoxHorizontallyCentered()) {
       shiftX = (width - oldWidth) / 2;
-    } else if (StyleVisibility()->mDirection == StyleDirection::Rtl) {
+    } else if (GetWritingMode().IsBidiRTL()) {
       shiftX = width - oldWidth;
     }
     aBoundingMetrics.leftBearing = 0;
@@ -293,161 +294,159 @@ nsMathMLContainerFrame::Stretch(DrawTarget* aDrawTarget,
                                 StretchDirection aStretchDirection,
                                 nsBoundingMetrics& aContainerSize,
                                 ReflowOutput& aDesiredStretchSize) {
-  if (mEmbellishData.flags.contains(MathMLEmbellishFlag::EmbellishedOperator)) {
-    if (mPresentationData.flags.contains(MathMLPresentationFlag::StretchDone)) {
-      NS_WARNING("it is wrong to fire stretch more than once on a frame");
-      return NS_OK;
+  if (!mEmbellishData.flags.contains(
+          MathMLEmbellishFlag::EmbellishedOperator)) {
+    return NS_OK;
+  }
+  if (mPresentationData.flags.contains(MathMLPresentationFlag::StretchDone)) {
+    NS_WARNING("it is wrong to fire stretch more than once on a frame");
+    return NS_OK;
+  }
+  mPresentationData.flags += MathMLPresentationFlag::StretchDone;
+
+  
+  nsIFrame* baseFrame = mPresentationData.baseFrame;
+  if (!baseFrame) {
+    return NS_OK;
+  }
+  nsIMathMLFrame* mathMLFrame = do_QueryFrame(baseFrame);
+  NS_ASSERTION(mathMLFrame, "Something is wrong somewhere");
+  if (!mathMLFrame) {
+    return NS_OK;
+  }
+  
+  
+  ReflowOutput childSize(aDesiredStretchSize);
+  GetReflowAndBoundingMetricsFor(baseFrame, childSize,
+                                 childSize.mBoundingMetrics);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  nsBoundingMetrics containerSize = aContainerSize;
+  if (aStretchDirection != mEmbellishData.direction &&
+      mEmbellishData.direction != StretchDirection::Unsupported) {
+    NS_ASSERTION(mEmbellishData.direction != StretchDirection::Default,
+                 "Stretches may have a default direction, operators can not.");
+    if (mPresentationData.flags.contains(
+            mEmbellishData.direction == StretchDirection::Vertical
+                ? MathMLPresentationFlag::StretchAllChildrenVertically
+                : MathMLPresentationFlag::StretchAllChildrenHorizontally)) {
+      GetPreferredStretchSize(
+          aDrawTarget,
+          PreferredStretchSizeMode::EmbellishmentsIfSameStretchDirection,
+          mEmbellishData.direction, containerSize);
+      
+      aStretchDirection = mEmbellishData.direction;
+    } else {
+      
+      
+      containerSize = childSize.mBoundingMetrics;
     }
-    mPresentationData.flags += MathMLPresentationFlag::StretchDone;
+  }
 
+  
+  mathMLFrame->Stretch(aDrawTarget, aStretchDirection, containerSize,
+                       childSize);
+  
+  SaveReflowAndBoundingMetricsFor(baseFrame, childSize,
+                                  childSize.mBoundingMetrics);
+
+  
+  
+  
+
+  if (mPresentationData.flags.contains(
+          MathMLPresentationFlag::StretchAllChildrenVertically) ||
+      mPresentationData.flags.contains(
+          MathMLPresentationFlag::StretchAllChildrenHorizontally)) {
+    StretchDirection stretchDir =
+        mPresentationData.flags.contains(
+            MathMLPresentationFlag::StretchAllChildrenVertically)
+            ? StretchDirection::Vertical
+            : StretchDirection::Horizontal;
+
+    GetPreferredStretchSize(aDrawTarget,
+                            PreferredStretchSizeMode::Embellishments,
+                            stretchDir, containerSize);
+
+    nsIFrame* childFrame = mFrames.FirstChild();
+    while (childFrame) {
+      if (childFrame != mPresentationData.baseFrame) {
+        mathMLFrame = do_QueryFrame(childFrame);
+        if (mathMLFrame) {
+          
+          GetReflowAndBoundingMetricsFor(childFrame, childSize,
+                                         childSize.mBoundingMetrics);
+          
+          mathMLFrame->Stretch(aDrawTarget, stretchDir, containerSize,
+                               childSize);
+          
+          SaveReflowAndBoundingMetricsFor(childFrame, childSize,
+                                          childSize.mBoundingMetrics);
+        }
+      }
+      childFrame = childFrame->GetNextSibling();
+    }
+  }
+
+  
+  PlaceFlags flags;
+  Place(aDrawTarget, flags, aDesiredStretchSize);
+
+  
+  
+  
+  
+
+  nsEmbellishData parentData;
+  GetEmbellishDataFrom(GetParent(), parentData);
+  
+  
+  if (parentData.coreFrame != mEmbellishData.coreFrame) {
     
+    
+    
+    nsEmbellishData coreData;
+    GetEmbellishDataFrom(mEmbellishData.coreFrame, coreData);
 
-    nsIFrame* baseFrame = mPresentationData.baseFrame;
-    if (baseFrame) {
-      nsIMathMLFrame* mathMLFrame = do_QueryFrame(baseFrame);
-      NS_ASSERTION(mathMLFrame, "Something is wrong somewhere");
-      if (mathMLFrame) {
-        
-        
-        ReflowOutput childSize(aDesiredStretchSize);
-        GetReflowAndBoundingMetricsFor(baseFrame, childSize,
-                                       childSize.mBoundingMetrics);
+    nscoord leadingSpace = 0, trailingSpace = 0;
+    if (!StaticPrefs::
+            mathml_lspace_rspace_for_child_spacing_during_mrow_layout_enabled()) {
+      leadingSpace = coreData.leadingSpace;
+      trailingSpace = coreData.trailingSpace;
+    }
+    mBoundingMetrics.width += leadingSpace + trailingSpace;
+    aDesiredStretchSize.Width() = mBoundingMetrics.width;
+    aDesiredStretchSize.mBoundingMetrics.width = mBoundingMetrics.width;
 
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        nsBoundingMetrics containerSize = aContainerSize;
-        if (aStretchDirection != mEmbellishData.direction &&
-            mEmbellishData.direction != StretchDirection::Unsupported) {
-          NS_ASSERTION(
-              mEmbellishData.direction != StretchDirection::Default,
-              "Stretches may have a default direction, operators can not.");
-          if (mPresentationData.flags.contains(
-                  mEmbellishData.direction == StretchDirection::Vertical
-                      ? MathMLPresentationFlag::StretchAllChildrenVertically
-                      : MathMLPresentationFlag::
-                            StretchAllChildrenHorizontally)) {
-            GetPreferredStretchSize(
-                aDrawTarget,
-                PreferredStretchSizeMode::EmbellishmentsIfSameStretchDirection,
-                mEmbellishData.direction, containerSize);
-            
-            aStretchDirection = mEmbellishData.direction;
-          } else {
-            
-            
-            containerSize = childSize.mBoundingMetrics;
-          }
-        }
+    nscoord dx = GetWritingMode().IsBidiRTL() ? trailingSpace : leadingSpace;
+    if (dx != 0) {
+      mBoundingMetrics.leftBearing += dx;
+      mBoundingMetrics.rightBearing += dx;
+      aDesiredStretchSize.mBoundingMetrics.leftBearing += dx;
+      aDesiredStretchSize.mBoundingMetrics.rightBearing += dx;
 
-        
-        mathMLFrame->Stretch(aDrawTarget, aStretchDirection, containerSize,
-                             childSize);
-        
-        SaveReflowAndBoundingMetricsFor(baseFrame, childSize,
-                                        childSize.mBoundingMetrics);
-
-        
-        
-        
-
-        if (mPresentationData.flags.contains(
-                MathMLPresentationFlag::StretchAllChildrenVertically) ||
-            mPresentationData.flags.contains(
-                MathMLPresentationFlag::StretchAllChildrenHorizontally)) {
-          StretchDirection stretchDir =
-              mPresentationData.flags.contains(
-                  MathMLPresentationFlag::StretchAllChildrenVertically)
-                  ? StretchDirection::Vertical
-                  : StretchDirection::Horizontal;
-
-          GetPreferredStretchSize(aDrawTarget,
-                                  PreferredStretchSizeMode::Embellishments,
-                                  stretchDir, containerSize);
-
-          nsIFrame* childFrame = mFrames.FirstChild();
-          while (childFrame) {
-            if (childFrame != mPresentationData.baseFrame) {
-              mathMLFrame = do_QueryFrame(childFrame);
-              if (mathMLFrame) {
-                
-                GetReflowAndBoundingMetricsFor(childFrame, childSize,
-                                               childSize.mBoundingMetrics);
-                
-                mathMLFrame->Stretch(aDrawTarget, stretchDir, containerSize,
-                                     childSize);
-                
-                SaveReflowAndBoundingMetricsFor(childFrame, childSize,
-                                                childSize.mBoundingMetrics);
-              }
-            }
-            childFrame = childFrame->GetNextSibling();
-          }
-        }
-
-        
-        PlaceFlags flags;
-        Place(aDrawTarget, flags, aDesiredStretchSize);
-
-        
-        
-        
-        
-
-        nsEmbellishData parentData;
-        GetEmbellishDataFrom(GetParent(), parentData);
-        
-        
-        if (parentData.coreFrame != mEmbellishData.coreFrame) {
-          
-          
-          
-          nsEmbellishData coreData;
-          GetEmbellishDataFrom(mEmbellishData.coreFrame, coreData);
-
-          nscoord leadingSpace = 0, trailingSpace = 0;
-          if (!StaticPrefs::
-                  mathml_lspace_rspace_for_child_spacing_during_mrow_layout_enabled()) {
-            leadingSpace = coreData.leadingSpace;
-            trailingSpace = coreData.trailingSpace;
-          }
-          mBoundingMetrics.width += leadingSpace + trailingSpace;
-          aDesiredStretchSize.Width() = mBoundingMetrics.width;
-          aDesiredStretchSize.mBoundingMetrics.width = mBoundingMetrics.width;
-
-          nscoord dx = StyleVisibility()->mDirection == StyleDirection::Rtl
-                           ? trailingSpace
-                           : leadingSpace;
-          if (dx != 0) {
-            mBoundingMetrics.leftBearing += dx;
-            mBoundingMetrics.rightBearing += dx;
-            aDesiredStretchSize.mBoundingMetrics.leftBearing += dx;
-            aDesiredStretchSize.mBoundingMetrics.rightBearing += dx;
-
-            nsIFrame* childFrame = mFrames.FirstChild();
-            while (childFrame) {
-              childFrame->SetPosition(childFrame->GetPosition() +
-                                      nsPoint(dx, 0));
-              childFrame = childFrame->GetNextSibling();
-            }
-          }
-        }
-
-        
-        ClearSavedChildMetrics();
-        
-        GatherAndStoreOverflow(&aDesiredStretchSize);
+      nsIFrame* childFrame = mFrames.FirstChild();
+      while (childFrame) {
+        childFrame->SetPosition(childFrame->GetPosition() + nsPoint(dx, 0));
+        childFrame = childFrame->GetNextSibling();
       }
     }
   }
+
+  
+  ClearSavedChildMetrics();
+  
+  GatherAndStoreOverflow(&aDesiredStretchSize);
   return NS_OK;
 }
 
@@ -1131,8 +1130,7 @@ class nsMathMLContainerFrame::RowChildFrameIterator {
         mChildFrameType(MathMLFrameType::Unknown),
         mCarrySpace(0),
         mFromFrameType(MathMLFrameType::Unknown),
-        mRTL(aParentFrame->StyleVisibility()->mDirection ==
-             StyleDirection::Rtl) {
+        mRTL(aParentFrame->GetWritingMode().IsBidiRTL()) {
     if (!mRTL) {
       mChildFrame = aParentFrame->mFrames.FirstChild();
     } else {
@@ -1375,7 +1373,7 @@ static nscoord AddInterFrameSpacingToSize(ReflowOutput& aDesiredSize,
 
     
     nscoord leftSpace, rightSpace;
-    bool isRTL = parent->StyleVisibility()->mDirection == StyleDirection::Rtl;
+    bool isRTL = parent->GetWritingMode().IsBidiRTL();
     GetCoreOperatorLeftAndRightSpace(aFrame, isRTL, leftSpace, rightSpace);
     gap += leftSpace;
 

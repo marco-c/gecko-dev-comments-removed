@@ -11,6 +11,7 @@
 #include "mozilla/Likely.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/PresShell.h"
+#include "mozilla/ReflowInput.h"
 #include "mozilla/ScrollContainerFrame.h"
 #include "mozilla/dom/HTMLLegendElement.h"
 #include "mozilla/gfx/2D.h"
@@ -248,8 +249,8 @@ void nsFieldSetFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     BuildDisplayListForChild(aBuilder, legend, set);
   }
 
-  if (GetPrevInFlow()) {
-    DisplayPushedAbsoluteFrames(aBuilder, aLists);
+  if (GetPrevInFlow() || GetNextInFlow()) {
+    DisplayAbsoluteFramesNotBuiltByPlaceholder(aBuilder, aLists);
   }
 
   
