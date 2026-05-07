@@ -31,7 +31,7 @@ add_task(async function test_check_uncheck_checkbox() {
   
   
   await TestUtils.waitForCondition(async () => {
-    let enabled = await WindowsLaunchOnLogin.getLaunchOnLoginEnabled();
+    let enabled = await WindowsLaunchOnLogin.getLaunchOnLoginEnabledMSIX();
     return enabled;
   }, "Wait for async get enabled operation to return true");
 
@@ -39,7 +39,7 @@ add_task(async function test_check_uncheck_checkbox() {
   ok(!launchOnLoginCheckbox.checked, "Autostart checkbox unchecked");
 
   await TestUtils.waitForCondition(async () => {
-    let enabled = await WindowsLaunchOnLogin.getLaunchOnLoginEnabled();
+    let enabled = await WindowsLaunchOnLogin.getLaunchOnLoginEnabledMSIX();
     return !enabled;
   }, "Wait for async get enabled operation to return false");
 
