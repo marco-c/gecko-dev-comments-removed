@@ -5923,8 +5923,6 @@ void EventStateManager::SetPointerLock(nsIWidget* aWidget,
     
     sLastRefPoint = sLastRefPointOfRawUpdate =
         GetWindowClientRectCenter(aWidget);
-    aWidget->SynthesizeNativeMouseMove(
-        sLastRefPoint + aWidget->WidgetToScreenOffset(), nullptr);
 
     
     if (dragService) {
@@ -5933,6 +5931,10 @@ void EventStateManager::SetPointerLock(nsIWidget* aWidget,
 
     
     aWidget->LockNativePointer();
+
+    
+    aWidget->SynthesizeNativeMouseMove(
+        sLastRefPoint + aWidget->WidgetToScreenOffset(), nullptr);
   } else {
     if (aWidget) {
       
