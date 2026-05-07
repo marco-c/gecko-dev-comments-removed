@@ -136,6 +136,11 @@ static const Command sMoveCommands[][2][2] = {
     
     
     
+    
+    
+    
+    
+    
     {
      {Command::CharPrevious, Command::CharNext},
      {Command::SelectCharPrevious, Command::SelectCharNext}},
@@ -144,7 +149,7 @@ static const Command sMoveCommands[][2][2] = {
      {Command::SelectCharPrevious, Command::SelectCharNext}},
     {
      {Command::WordPrevious, Command::WordNext},
-     {Command::SelectWordPrevious, Command::SelectWordNext}},
+     {Command::SelectLeft2, Command::SelectRight2}},
     {
      {Command::LinePrevious, Command::LineNext},
      {Command::SelectLinePrevious, Command::SelectLineNext}},
