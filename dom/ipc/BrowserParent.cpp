@@ -1576,23 +1576,30 @@ void BrowserParent::SendRealMouseEvent(WidgetMouseEvent& aMouseOrPointerEvent) {
       return;
     }
 
-    if (!aMouseOrPointerEvent.mFlags.mIsSynthesizedForTests) {
+    
+    
+    
+    
+    
+    if (aMouseOrPointerEvent.mFlags.mIsSynthesizedForTests ||
+        aMouseOrPointerEvent.mMovement) {
       DebugOnly<bool> ret =
           isInputPriorityEventEnabled
-              ? SendRealMouseMoveEvent(aMouseOrPointerEvent, guid, blockId)
-              : SendNormalPriorityRealMouseMoveEvent(aMouseOrPointerEvent, guid,
-                                                     blockId);
-      NS_WARNING_ASSERTION(ret, "SendRealMouseMoveEvent() failed");
+              ? SendRealMouseMoveEventNoCompress(aMouseOrPointerEvent, guid,
+                                                 blockId)
+              : SendNormalPriorityRealMouseMoveEventNoCompress(
+                    aMouseOrPointerEvent, guid, blockId);
+      NS_WARNING_ASSERTION(ret, "SendRealMouseMoveEventNoCompress() failed");
       MOZ_ASSERT(!ret || aMouseOrPointerEvent.HasBeenPostedToRemoteProcess());
       return;
     }
 
-    DebugOnly<bool> ret = isInputPriorityEventEnabled
-                              ? SendRealMouseMoveEventForTests(
-                                    aMouseOrPointerEvent, guid, blockId)
-                              : SendNormalPriorityRealMouseMoveEventForTests(
-                                    aMouseOrPointerEvent, guid, blockId);
-    NS_WARNING_ASSERTION(ret, "SendRealMouseMoveEventForTests() failed");
+    DebugOnly<bool> ret =
+        isInputPriorityEventEnabled
+            ? SendRealMouseMoveEvent(aMouseOrPointerEvent, guid, blockId)
+            : SendNormalPriorityRealMouseMoveEvent(aMouseOrPointerEvent, guid,
+                                                   blockId);
+    NS_WARNING_ASSERTION(ret, "SendRealMouseMoveEvent() failed");
     MOZ_ASSERT(!ret || aMouseOrPointerEvent.HasBeenPostedToRemoteProcess());
     return;
   }

@@ -253,11 +253,7 @@ class nsCocoaWindow final : public nsIWidget {
 
   nsresult SynthesizeNativeMouseMove(
       LayoutDeviceIntPoint aPoint,
-      nsISynthesizedEventCallback* aCallback) override {
-    return SynthesizeNativeMouseEvent(
-        aPoint, NativeMouseMessage::Move, mozilla::MouseButton::eNotPressed,
-        nsIWidget::Modifiers::NO_MODIFIERS, aCallback);
-  }
+      nsISynthesizedEventCallback* aCallback) override;
   nsresult SynthesizeNativeMouseScrollEvent(
       LayoutDeviceIntPoint aPoint, uint32_t aNativeMessage, double aDeltaX,
       double aDeltaY, double aDeltaZ, uint32_t aModifierFlags,
@@ -506,6 +502,12 @@ class nsCocoaWindow final : public nsIWidget {
   
   bool HandleUpdateFullscreenOnResize();
 
+  void LockNativePointer() override;
+  void UnlockNativePointer() override;
+
+  static bool IsNativePointerLocked();
+  static LayoutDeviceIntPoint GetNativeLockedPoint();
+
  protected:
   virtual ~nsCocoaWindow();
 
@@ -677,6 +679,10 @@ class nsCocoaWindow final : public nsIWidget {
   
   bool CanStartNativeTransition();
   void EndOurNativeTransition();
+
+  
+  static bool sIsNativePointerLocked;
+  static LayoutDeviceIntPoint sNativeLockedPoint;
 };
 
 #endif  

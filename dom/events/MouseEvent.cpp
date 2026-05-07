@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "MouseEvent.h"
 
 #include "mozilla/BasePrincipal.h"
@@ -446,6 +444,13 @@ nsIntPoint MouseEvent::GetMovementPoint() const {
     
     
     return nsIntPoint(0, 0);
+  }
+
+  
+  
+  if (WidgetMouseEvent* mouseEvent = mEvent->AsMouseEvent();
+      mouseEvent && mouseEvent->mMovement) {
+    return nsIntPoint(mouseEvent->mMovement->x, mouseEvent->mMovement->y);
   }
 
   
