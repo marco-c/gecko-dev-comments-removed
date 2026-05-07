@@ -173,6 +173,7 @@ class BaseProcessLauncher {
 #endif
   {
     aHost->mInitialChannelId.ToProvidedString(mInitialChannelIdString);
+    mChildID = aHost->mChildID;
     SprintfLiteral(mChildIDString, "%d", aHost->mChildID);
 
     
@@ -243,6 +244,7 @@ class BaseProcessLauncher {
 #endif
   LaunchResults mResults = LaunchResults();
   char mInitialChannelIdString[NSID_LENGTH];
+  GeckoChildID mChildID;
   char mChildIDString[32];
 
   
@@ -1126,18 +1128,7 @@ Result<Ok, LaunchError> BaseProcessLauncher::DoSetup() {
 
   if (!CrashReporter::IsDummy() && CrashReporter::GetEnabled() &&
       mProcessType != GeckoProcessType_ForkServer) {
-#if defined(MOZ_WIDGET_COCOA) || defined(XP_WIN)
-    geckoargs::sCrashReporter.Put(CrashReporter::GetChildNotificationPipe(),
-                                  mChildArgs);
-#elif defined(XP_UNIX) && !defined(XP_IOS)
-    UniqueFileHandle childCrashFd = CrashReporter::GetChildNotificationPipe();
-    if (!childCrashFd) {
-      return Err(LaunchError("DuplicateFileHandle failed"));
-    }
-    geckoargs::sCrashReporter.Put(std::move(childCrashFd), mChildArgs);
-#endif  
-
-    if (!CrashReporter::RegisterChildIPCChannel(mChildArgs)) {
+    if (!CrashReporter::RegisterChildIPCChannel(mChildArgs, mChildID)) {
       NS_WARNING("Could not create an IPC channel to the crash helper");
     }
   }
