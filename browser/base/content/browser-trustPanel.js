@@ -127,7 +127,6 @@ class TrustPanel {
 
   #qwacStatusPromise = null;
 
-  #host = null;
   #uri = null;
   #uriHasHost = null;
   #pageExtensionPolicy = null;
@@ -136,6 +135,9 @@ class TrustPanel {
 
   #popupToggleDelayTimer = null;
   #openingReason = null;
+
+  #breaches = [];
+  #breachesPromise = null;
 
   #blockers = {
     SocialTracking,
@@ -152,6 +154,12 @@ class TrustPanel {
       }
     }
 
+    void this.#ensureBreachesLoaded().then(() => {
+      if (this.#uri) {
+        this.#updateUrlbarIcon();
+      }
+    });
+
     
     Services.obs.addObserver(this, "smartblock:open-protections-panel");
   }
@@ -164,6 +172,27 @@ class TrustPanel {
     }
 
     Services.obs.removeObserver(this, "smartblock:open-protections-panel");
+  }
+
+  
+  
+  
+  #ensureBreachesLoaded() {
+    if (this.#breaches.length) {
+      return Promise.resolve();
+    }
+    if (this.#breachesPromise) {
+      return this.#breachesPromise;
+    }
+    this.#breachesPromise = RemoteSettings("fxmonitor-breaches")
+      .get()
+      .then(breaches => {
+        this.#breaches = breaches ?? [];
+      })
+      .finally(() => {
+        this.#breachesPromise = null;
+      });
+    return this.#breachesPromise;
   }
 
   get #popup() {
@@ -332,7 +361,6 @@ class TrustPanel {
     this.#qwac = null;
     this.#qwacStatusPromise = null;
     this.#pageExtensionPolicy = WebExtensionPolicy.getByURI(uri);
-
     this.#updateUrlbarIcon();
   }
 
@@ -352,27 +380,39 @@ class TrustPanel {
 
   #updateUrlbarIcon() {
     let icon = document.getElementById("trust-icon-container");
-    icon.className =
-      this.#isSecurePage() || this.#isCertUserOverridden
-        ? "secure"
-        : "insecure";
+    let targetClasses = new Set();
+    targetClasses.add(this.#isSecurePage() ? "secure" : "insecure");
 
+    if (this.#breachedStatusSync() === "breached") {
+      targetClasses.add("breached");
+    }
     if (!this.#trackingProtectionEnabled) {
-      icon.classList.add("inactive");
+      targetClasses.add("inactive");
     }
-
     if (this.#isAboutNetErrorPage || this.#isCertUserOverridden) {
-      icon.classList.add("warning");
+      targetClasses.add("warning");
     }
 
+    icon.className = "";
+
+    
+    if (targetClasses.has("breached")) {
+      let browser = gBrowser.selectedBrowser;
+      if (browser.lastAnimatedBreachURI !== this.#uri?.spec) {
+        
+        targetClasses.add("breach-animating");
+        browser.lastAnimatedBreachURI = this.#uri?.spec;
+        
+        
+      }
+    }
+
+    icon.classList.add(...targetClasses);
     icon.setAttribute("tooltiptext", this.#tooltipText());
     icon.classList.toggle("chickletShown", this.#isInternalSecurePage);
   }
 
   async #updatePopup() {
-    this.#host = BrowserUtils.formatURIForDisplay(this.#uri, {
-      onlyBaseDomain: true,
-    });
     this.#popup.setAttribute("connection", this.#connectionState());
     this.#popup.setAttribute(
       "tracking-protection",
@@ -845,6 +885,18 @@ class TrustPanel {
       !this.#isURILoadedFromFile &&
       this.#state & Ci.nsIWebProgressListener.STATE_IS_SECURE
     );
+  }
+
+  
+  
+  
+  get #host() {
+    if (!this.#uri) {
+      return null;
+    }
+    return BrowserUtils.formatURIForDisplay(this.#uri, {
+      onlyBaseDomain: true,
+    });
   }
 
   get #isEV() {
@@ -1547,6 +1599,39 @@ class TrustPanel {
     return breaches.find(breach => {
       return breach.Domain && Services.eTLD.hasRootDomain(site, breach.Domain);
     });
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  #getBreachForSiteSync(site) {
+    if (!site || !this.#breaches.length) {
+      return null;
+    }
+
+    return this.#breaches.find(breach => {
+      return breach.Domain && Services.eTLD.hasRootDomain(site, breach.Domain);
+    });
+  }
+
+  #breachedStatusSync() {
+    if (!UrlbarPrefs.get("trustPanel.breachAlerts")) {
+      return "disabled";
+    }
+
+    return this.#getBreachForSiteSync(this.#host) ? "breached" : "not-breached";
+  }
+
+  
+
+
+  resetBreachCacheForTest() {
+    this.#breachesPromise = null;
+    this.#breaches = [];
   }
 }
 
