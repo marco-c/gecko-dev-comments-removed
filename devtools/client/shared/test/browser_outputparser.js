@@ -335,7 +335,7 @@ function testParseCssProperty(doc, parser) {
       expected: getColorMarkup({
         color: "rgb(from gold r g b)",
         
-        content: `rgb(from ${getColorMarkup({ color: "gold" })} r g b)`,
+        content: `rgb(from ${getColorMarkup({ color: "gold", colorFunction: "rgb" })} r g b)`,
       }),
     },
 
@@ -347,7 +347,7 @@ function testParseCssProperty(doc, parser) {
         
         content:
           `color(from ` +
-          getColorMarkup({ color: "hsl(0 100% 50%)" }) +
+          getColorMarkup({ color: "hsl(0 100% 50%)", colorFunction: "color" }) +
           ` xyz x y 0.5)`,
       }),
     },
@@ -360,7 +360,7 @@ function testParseCssProperty(doc, parser) {
         
         content:
           `oklab(from ` +
-          getColorMarkup({ color: "red" }) +
+          getColorMarkup({ color: "red", colorFunction: "oklab" }) +
           ` calc(l - 1) calc(a * 2) calc(b + 3) / alpha)`,
       }),
     },
@@ -375,6 +375,7 @@ function testParseCssProperty(doc, parser) {
           
           getColorMarkup({
             color: "color-mix(in lch, plum 40%, pink)",
+            colorFunction: "rgb",
             content:
               `color-mix(in lch, ` +
               
@@ -397,10 +398,11 @@ function testParseCssProperty(doc, parser) {
           
           getColorMarkup({
             color: "rgb(from gold r g b)",
+            colorFunction: "rgb",
             content:
               `rgb(from ` +
               
-              getColorMarkup({ color: "gold" }) +
+              getColorMarkup({ color: "gold", colorFunction: "rgb" }) +
               ` r g b)`,
           }) +
           ` r g b)`,
@@ -422,7 +424,7 @@ function testParseCssProperty(doc, parser) {
             
             getColorMarkup({
               color: "gold",
-              colorFunction: "linear-gradient",
+              colorFunction: "rgb",
             }) +
             " r g b)",
         }) +

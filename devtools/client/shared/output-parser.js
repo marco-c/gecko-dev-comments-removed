@@ -48,6 +48,15 @@ const COLOR_TAKING_FUNCTIONS = new Set([
   "color-mix",
   "contrast-color",
   "light-dark",
+  
+  "color",
+  "hsl",
+  "hwb",
+  "lab",
+  "lch",
+  "oklab",
+  "oklch",
+  "rgb",
 ]);
 
 const BASIC_SHAPE_FUNCTIONS = new Set([
