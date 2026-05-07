@@ -63,9 +63,13 @@ impl PseudoElement {
     fn flags_for_index(i: usize) -> PseudoStyleTypeFlags {
         static FLAGS: [PseudoStyleTypeFlags; PSEUDO_COUNT + 1] = [
         % for pseudo in PSEUDOS:
-        PseudoStyleTypeFlags::from_bits_truncate(${' | '.join(f"PseudoStyleTypeFlags::{flag}.bits()" for flag in pseudo.flags())}),
+        PseudoStyleTypeFlags::from_bits_truncate(${' | '.join(f"PseudoStyleTypeFlags::{flag}.bits()" for flag in pseudo.flags())}), 
         % endfor
-        PseudoStyleTypeFlags::NONE, 
+        
+        PseudoStyleTypeFlags::from_bits_truncate(
+            PseudoStyleTypeFlags::IS_PSEUDO_ELEMENT.bits() |
+            PseudoStyleTypeFlags::SUPPORTS_USER_ACTION_STATE.bits()
+        ),
         ];
         FLAGS[i]
     }
