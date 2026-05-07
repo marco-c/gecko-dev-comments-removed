@@ -92,8 +92,6 @@ pub struct RadialGradientTemplate {
     pub extend_mode: ExtendMode,
     pub params: RadialGradientParams,
     pub center: LayoutPoint,
-    pub task_size: DeviceIntSize,
-    pub scale: DeviceVector2D,
     pub stretch_size: LayoutSize,
     pub tile_spacing: LayoutSize,
     pub border_nine_patch: Option<Box<NinePatchDescriptor>>,
@@ -160,29 +158,12 @@ impl From<RadialGradientKey> for RadialGradientTemplate {
         stretch_size.width = stretch_size.width.min(common.prim_size.width);
         stretch_size.height = stretch_size.height.min(common.prim_size.height);
 
-        
-        
-        
-        const MAX_SIZE: f32 = 1024.0;
-        let mut task_size: DeviceSize = stretch_size.cast_unit();
-        let mut scale = vec2(1.0, 1.0);
-        if task_size.width > MAX_SIZE {
-            scale.x = task_size.width/ MAX_SIZE;
-            task_size.width = MAX_SIZE;
-        }
-        if task_size.height > MAX_SIZE {
-            scale.y = task_size.height /MAX_SIZE;
-            task_size.height = MAX_SIZE;
-        }
-
         RadialGradientTemplate {
             common,
             center: item.center.into(),
             extend_mode: item.extend_mode,
             params: item.params,
             stretch_size,
-            task_size: task_size.ceil().to_i32(),
-            scale,
             tile_spacing: item.tile_spacing.into(),
             border_nine_patch: item.nine_patch,
             stops_opacity,
