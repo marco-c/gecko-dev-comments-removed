@@ -7,6 +7,7 @@
 #include "mozilla/DefineEnum.h"
 #include "mozilla/Result.h"
 #include "mozilla/Variant.h"
+#include "nsStringFwd.h"
 
 
 
@@ -17,6 +18,9 @@
 
 namespace mozilla {
 class ErrorResult;
+class MediaExtendedMIMEType;
+template <typename T>
+class Maybe;
 
 namespace dom {
 class Promise;
@@ -41,6 +45,12 @@ MOZ_DEFINE_ENUM_CLASS_WITH_TOSTRING(
 
 using MediaType = Variant<dom::MediaEncodingType, dom::MediaDecodingType>;
 using ValidationResult = mozilla::Result<mozilla::Ok, ValidationError>;
+
+ValidationResult CheckMIMETypeSupport(
+    const MediaExtendedMIMEType& aMime,
+    const MediaType& aEncodingOrDecodingType,
+    const Maybe<dom::ColorGamut>& aColorGamut,
+    const Maybe<dom::TransferFunction>& aTransferFunction);
 
 
 ValidationResult IsValidMediaDecodingConfiguration(

@@ -63,17 +63,68 @@ static const std::array kContainerTypes = {
     "audio/ogg"_ns, "audio/mp4"_ns, "audio/webm"_ns, "audio/mpeg"_ns};
 
 
-ValidationResult CheckMIMETypeSupport(const MediaExtendedMIMEType& aMime,
-                                      const AVType& aAVType,
-                                      const MediaType& aMediaType) {
+ValidationResult CheckMIMETypeSupport(
+    const MediaExtendedMIMEType& aMime,
+    const MediaType& aEncodingOrDecodingType,
+    const Maybe<dom::ColorGamut>& aColorGamut,
+    const Maybe<dom::TransferFunction>& aTransferFunction) {
   
   
+  
+  
+  if (IsMediaTypeWebRTC(aEncodingOrDecodingType) && !IsSingleCodecType(aMime)) {
+    ValidationResult err = Err(ValidationError::InvalidMIMEType);
+    LOG(
+        ("[CheckMIMETypeSupport (encodingOrDecodingType is webrtc, "
+         "but MIME type is not one used with RTP, %s) #1] Rejecting '%s'\n",
+         EnumValueToString(err.unwrapErr()), aMime.OriginalString().get()));
+    return err;
+  }
+
+  
+  
+  
+  
+  if (aColorGamut || aTransferFunction) {
+    
+    MOZ_ASSERT_IF(aMime.Type().HasAudioMajorType(), !aColorGamut);
+    MOZ_ASSERT_IF(aMime.Type().HasAudioMajorType(), !aTransferFunction);
+    
+    if (!aEncodingOrDecodingType.is<MediaDecodingType>()) {
+      ValidationResult err = Err(ValidationError::InapplicableMember);
+      LOG(
+          ("[CheckMIMETypeSupport (colorGamut/transferFunction are decode "
+           "only, %s), #2, #3] Rejecting '%s'\n",
+           EnumValueToString(err.unwrapErr()), aMime.OriginalString().get()));
+      return err;
+    }
+    const MediaDecodingType& dType =
+        aEncodingOrDecodingType.as<MediaDecodingType>();
+    
+    if (dType != MediaDecodingType::Media_source &&
+        dType != MediaDecodingType::File) {
+      ValidationResult err = Err(ValidationError::InapplicableMember);
+      LOG(
+          ("[CheckMIMETypeSupport #3 (colorGamut/transferFunction only for "
+           "media-source, file; got %s, %s), #2, #3] Rejecting '%s'\n",
+           GetEnumString(dType).get(), EnumValueToString(err.unwrapErr()),
+           aMime.OriginalString().get()));
+      return err;
+    }
+    if (!ValidateMatchingCodecColorSpace(aMime, aColorGamut,
+                                         aTransferFunction)) {
+      ValidationResult err = Err(ValidationError::InvalidVideoType);
+      LOG(
+          ("[CheckMIMETypeSupport #3 (color coding space does not match, %s), "
+           "#2, #3] Rejecting '%s'\n",
+           EnumValueToString(err.unwrapErr()), aMime.OriginalString().get()));
+      return err;
+    }
+  }
   
   
   
 
-  
-  
   
   return Ok();
 }
@@ -282,6 +333,24 @@ ValidationResult IsValidVideoConfiguration(const VideoConfiguration& aConfig,
            NS_ConvertUTF16toUTF8(aConfig.mContentType).get()));
       return err;
     }
+    
+    if (aConfig.mColorGamut.WasPassed()) {
+      ValidationResult err = Err(ValidationError::InapplicableMember);
+      LOG(("[Invalid VideoConfiguration (Color Gamut, %s) #2] Rejecting '%s'\n",
+           EnumValueToString(err.unwrapErr()),
+           NS_ConvertUTF16toUTF8(aConfig.mContentType).get()));
+      return err;
+    }
+    
+    if (aConfig.mTransferFunction.WasPassed()) {
+      ValidationResult err = Err(ValidationError::InapplicableMember);
+      LOG(
+          ("[Invalid VideoConfiguration (Transfer Function, %s) #2] Rejecting "
+           "'%s'\n",
+           EnumValueToString(err.unwrapErr()),
+           NS_ConvertUTF16toUTF8(aConfig.mContentType).get()));
+      return err;
+    }
   }
 
   
@@ -430,7 +499,6 @@ ValidationResult IsValidMediaDecodingConfiguration(
 
 
 
-[[maybe_unused]]
 static bool ValidateMatchingCodecColorSpace(
     const MediaExtendedMIMEType& aMime, const Maybe<dom::ColorGamut>& aGamut,
     const Maybe<dom::TransferFunction>& aTransfer) {
