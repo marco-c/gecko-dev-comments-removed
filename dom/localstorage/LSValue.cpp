@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/LSValue.h"
 
 #include "mozIStorageStatement.h"
@@ -186,7 +184,7 @@ nsresult LSValue::InitFromStatement(mozIStorageStatement* aStatement,
     return rv;
   }
 
-  mBuffer = buffer;
+  mBuffer = std::move(buffer);
   mUTF16Length = static_cast<uint32_t>(utf16Length);
   mConversionType = static_cast<decltype(mConversionType)>(conversionType);
   mCompressionType = static_cast<decltype(mCompressionType)>(compressionType);
