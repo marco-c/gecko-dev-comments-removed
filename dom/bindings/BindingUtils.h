@@ -1911,24 +1911,6 @@ inline JSObject* FindAssociatedGlobal(JSContext* cx,
   return global;
 }
 
-template <typename T,
-          bool hasAssociatedGlobal = NativeHasMember<T>::GetParentObject>
-struct FindAssociatedGlobalForNative {
-  static JSObject* Get(JSContext* cx, JS::Handle<JSObject*> obj) {
-    MOZ_ASSERT(js::IsObjectInContextCompartment(obj, cx));
-    T* native = UnwrapDOMObject<T>(obj);
-    return FindAssociatedGlobal(cx, native->GetParentObject());
-  }
-};
-
-template <typename T>
-struct FindAssociatedGlobalForNative<T, false> {
-  static JSObject* Get(JSContext* cx, JS::Handle<JSObject*> obj) {
-    MOZ_CRASH();
-    return nullptr;
-  }
-};
-
 
 
 template <class T, bool isSmartPtr = IsSmartPtr<T>::value>
@@ -2693,17 +2675,6 @@ MOZ_ALWAYS_INLINE const nsTSubstring<CharT>& NonNullHelper(
     const nsTAutoString<CharT>& aArg) {
   return aArg;
 }
-
-
-
-
-
-
-
-
-
-void UpdateReflectorGlobal(JSContext* aCx, JS::Handle<JSObject*> aObj,
-                           ErrorResult& aError);
 
 
 

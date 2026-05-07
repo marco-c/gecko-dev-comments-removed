@@ -173,10 +173,6 @@ JSObject* XrayTraits::getExpandoChain(HandleObject obj) {
   return ObjectScope(obj)->GetExpandoChain(obj);
 }
 
-JSObject* XrayTraits::detachExpandoChain(HandleObject obj) {
-  return ObjectScope(obj)->DetachExpandoChain(obj);
-}
-
 bool XrayTraits::setExpandoChain(JSContext* cx, HandleObject obj,
                                  HandleObject chain) {
   return ObjectScope(obj)->SetExpandoChain(cx, obj, chain);
@@ -1462,72 +1458,6 @@ JSObject* XrayTraits::ensureExpandoObject(JSContext* cx, HandleObject wrapper,
                             wrapperGlobal, WrapperPrincipal(wrapper));
   }
   return expandoObject;
-}
-
-bool XrayTraits::cloneExpandoChain(JSContext* cx, HandleObject dst,
-                                   HandleObject srcChain) {
-  MOZ_ASSERT(js::IsObjectInContextCompartment(dst, cx));
-  MOZ_ASSERT(getExpandoChain(dst) == nullptr);
-
-  RootedObject oldHead(cx, srcChain);
-  while (oldHead) {
-    
-    
-    
-    bool movingIntoXrayCompartment;
-
-    
-    RootedObject exclusiveWrapper(cx);
-    RootedObject exclusiveWrapperGlobal(cx);
-    RootedObject wrapperHolder(
-        cx,
-        JS::GetReservedSlot(oldHead, JSSLOT_EXPANDO_EXCLUSIVE_WRAPPER_HOLDER)
-            .toObjectOrNull());
-    if (wrapperHolder) {
-      RootedObject unwrappedHolder(cx, UncheckedUnwrap(wrapperHolder));
-      
-      
-      
-      movingIntoXrayCompartment =
-          js::IsObjectInContextCompartment(unwrappedHolder, cx);
-
-      if (!movingIntoXrayCompartment) {
-        
-        
-        
-        JSAutoRealm ar(cx, unwrappedHolder);
-        exclusiveWrapper = dst;
-        if (!JS_WrapObject(cx, &exclusiveWrapper)) {
-          return false;
-        }
-        exclusiveWrapperGlobal = JS::CurrentGlobalOrNull(cx);
-      }
-    } else {
-      JSAutoRealm ar(cx, oldHead);
-      movingIntoXrayCompartment =
-          expandoObjectMatchesConsumer(cx, oldHead, GetObjectPrincipal(dst));
-    }
-
-    if (movingIntoXrayCompartment) {
-      
-      if (!JS_CopyOwnPropertiesAndPrivateFields(cx, dst, oldHead)) {
-        return false;
-      }
-    } else {
-      
-      
-      RootedObject newHead(
-          cx,
-          attachExpandoObject(cx, dst, exclusiveWrapper, exclusiveWrapperGlobal,
-                              GetExpandoObjectPrincipal(oldHead)));
-      if (!JS_CopyOwnPropertiesAndPrivateFields(cx, newHead, oldHead)) {
-        return false;
-      }
-    }
-    oldHead =
-        JS::GetReservedSlot(oldHead, JSSLOT_EXPANDO_NEXT).toObjectOrNull();
-  }
-  return true;
 }
 
 JSObject* EnsureXrayExpandoObject(JSContext* cx, JS::HandleObject wrapper) {

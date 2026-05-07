@@ -169,11 +169,7 @@ class JS_HAZ_ROOTED nsWrapperCache {
     }
   }
 
-  
-
-
-  template <typename T>
-  void UpdateWrapperForNewGlobal(T* aScriptObjectHolder, JSObject* aNewWrapper);
+  void ClearWrapperOnWrapFailure();
 
   
 

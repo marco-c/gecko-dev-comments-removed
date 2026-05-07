@@ -67,36 +67,4 @@ inline void nsWrapperCache::MarkWrapperLive() {
   GetWrapper();
 }
 
-template <typename T>
-inline void nsWrapperCache::UpdateWrapperForNewGlobal(T* aScriptObjectHolder,
-                                                      JSObject* aNewWrapper) {
-  
-  
-
-  bool preserving = PreservingWrapper();
-  bool zoneChanged =
-      preserving && (JS::GetObjectZone(GetWrapperPreserveColor()) !=
-                     JS::GetObjectZone(aNewWrapper));
-
-  if (zoneChanged) {
-    ReleaseWrapper(aScriptObjectHolder);
-  } else if (preserving) {
-    SetPreservingWrapper(false);
-  }
-
-  JSObject* oldWrapper = mWrapper;
-  SetWrapper(aNewWrapper);
-
-  if (zoneChanged) {
-    PreserveWrapper(aScriptObjectHolder);
-  } else if (preserving) {
-    SetPreservingWrapper(true);
-    if (!JS::ObjectIsTenured(mWrapper)) {
-      
-      
-      JS::HeapObjectPostWriteBarrier(&mWrapper, oldWrapper, mWrapper);
-    }
-  }
-}
-
 #endif 
