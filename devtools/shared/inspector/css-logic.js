@@ -681,7 +681,7 @@ const findCssSelector = function (ele) {
     return "";
   }
 
-  const cssEscape = ele.documentGlobal.CSS.escape;
+  const cssEscape = ele.ownerGlobal.CSS.escape;
 
   
   if (
@@ -752,7 +752,7 @@ function getCssPath(ele) {
     return "";
   }
 
-  const nodeGlobal = ele.documentGlobal.Node;
+  const nodeGlobal = ele.ownerGlobal.Node;
 
   const getElementSelector = element => {
     if (!element.localName) {
@@ -814,7 +814,7 @@ function getXPath(ele) {
   
   const parts = [];
 
-  const nodeGlobal = ele.documentGlobal.Node;
+  const nodeGlobal = ele.ownerGlobal.Node;
   
   while (ele && ele.nodeType === nodeGlobal.ELEMENT_NODE) {
     let nbOfPreviousSiblings = 0;

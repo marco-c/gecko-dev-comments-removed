@@ -59,7 +59,7 @@ class LinearEasingFunctionWidget extends EventEmitter {
 
     
     
-    this.#reducedMotion = parent.documentGlobal.matchMedia(
+    this.#reducedMotion = parent.ownerGlobal.matchMedia(
       "(prefers-reduced-motion)"
     );
     if (!this.#reducedMotion.matches) {

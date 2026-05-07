@@ -136,7 +136,7 @@ already_AddRefed<Promise> Permissions::Query(JSContext* aCx,
   
   
 
-  nsCOMPtr<nsIGlobalObject> global = GetRelevantGlobal();
+  nsCOMPtr<nsIGlobalObject> global = GetOwnerGlobal();
   if (NS_WARN_IF(!global)) {
     aRv.ThrowInvalidStateError("The context is not fully active.");
     return nullptr;

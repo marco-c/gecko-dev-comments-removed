@@ -63,7 +63,7 @@ class NegativePath extends PureComponent {
     }
 
     const simulatedElement = simulatedAnimation.effect.target;
-    const win = simulatedElement.documentGlobal;
+    const win = simulatedElement.ownerGlobal;
     const endTime = simulatedAnimation.effect.getComputedTiming().endTime;
 
     

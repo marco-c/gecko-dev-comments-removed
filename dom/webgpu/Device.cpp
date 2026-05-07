@@ -1008,7 +1008,7 @@ void Device::Destroy() {
   
   
   dom::AutoJSAPI jsapi;
-  if (jsapi.Init(GetRelevantGlobal())) {
+  if (jsapi.Init(GetOwnerGlobal())) {
     IgnoredErrorResult rv;
     for (const auto& buffer : mTrackedBuffers) {
       buffer->Unmap(jsapi.cx(), rv);

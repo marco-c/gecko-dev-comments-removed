@@ -256,7 +256,7 @@ function nodeHasSize(node) {
 
 
 function ensureImageLoaded(image, timeout) {
-  const { HTMLImageElement } = image.documentGlobal;
+  const { HTMLImageElement } = image.ownerGlobal;
   if (!(image instanceof HTMLImageElement)) {
     return Promise.reject("image must be an HTMLImageELement");
   }
@@ -311,7 +311,7 @@ function ensureImageLoaded(image, timeout) {
 
 
 const imageToImageData = async function (node, maxDim) {
-  const { HTMLCanvasElement, HTMLImageElement } = node.documentGlobal;
+  const { HTMLCanvasElement, HTMLImageElement } = node.ownerGlobal;
 
   const isImg = node instanceof HTMLImageElement;
   const isCanvas = node instanceof HTMLCanvasElement;
@@ -432,7 +432,7 @@ function getClosestBackgroundImage(node) {
 function findGridParentContainerForNode(node) {
   try {
     while ((node = node.parentNode)) {
-      const display = node.documentGlobal.getComputedStyle(node).display;
+      const display = node.ownerGlobal.getComputedStyle(node).display;
 
       if (display.includes("grid")) {
         return node;
@@ -488,11 +488,7 @@ async function getBackgroundColor({ rawNode: node, walker }) {
     };
   }
 
-  const quads = getAdjustedQuads(
-    node.documentGlobal,
-    node.firstChild,
-    "content"
-  );
+  const quads = getAdjustedQuads(node.ownerGlobal, node.firstChild, "content");
 
   
   
@@ -521,7 +517,7 @@ async function getBackgroundColor({ rawNode: node, walker }) {
   }
 
   
-  const win = node.documentGlobal;
+  const win = node.ownerGlobal;
   loadSheetForBackgroundCalculation(win);
   const computedStyle = CssLogic.getComputedStyle(node);
   const props = computedStyle ? getTextProperties(computedStyle) : null;

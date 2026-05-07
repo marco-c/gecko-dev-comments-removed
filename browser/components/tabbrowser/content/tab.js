@@ -320,7 +320,7 @@
 
     get lastSeenActive() {
       const isForegroundWindow =
-        this.documentGlobal ==
+        this.ownerGlobal ==
         BrowserWindowTracker.getTopWindow({ allowPopups: true });
       
       if (isForegroundWindow && this.selected) {

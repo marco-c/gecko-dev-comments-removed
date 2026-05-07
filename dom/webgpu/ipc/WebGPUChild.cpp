@@ -355,7 +355,7 @@ ipc::IPCResult WebGPUChild::RecvUncapturedError(RawId aDeviceId,
 
   
   if (device->CheckNewWarning(aMessage)) {
-    JsWarning(device->GetRelevantGlobal(), aMessage);
+    JsWarning(device->GetOwnerGlobal(), aMessage);
 
     dom::GPUUncapturedErrorEventInit init;
     switch (aType) {

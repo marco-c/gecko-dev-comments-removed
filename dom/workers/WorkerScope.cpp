@@ -283,7 +283,7 @@ WorkerGlobalScopeBase::WorkerGlobalScopeBase(
 
   
   
-  BindToGlobal(static_cast<nsIGlobalObject*>(this));
+  BindToOwner(static_cast<nsIGlobalObject*>(this));
 }
 
 WorkerGlobalScopeBase::~WorkerGlobalScopeBase() = default;

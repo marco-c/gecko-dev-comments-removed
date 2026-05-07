@@ -11,7 +11,7 @@
 namespace mozilla::dom {
 
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(DebuggerNotificationObserver,
-                                      mRelevantGlobal, mEventListenerCallbacks)
+                                      mOwnerGlobal, mEventListenerCallbacks)
 
 NS_IMPL_CYCLE_COLLECTING_ADDREF(DebuggerNotificationObserver)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(DebuggerNotificationObserver)
@@ -36,8 +36,8 @@ DebuggerNotificationObserver::Constructor(GlobalObject& aGlobal,
 }
 
 DebuggerNotificationObserver::DebuggerNotificationObserver(
-    nsIGlobalObject* aRelevantGlobal)
-    : mRelevantGlobal(aRelevantGlobal) {}
+    nsIGlobalObject* aOwnerGlobal)
+    : mOwnerGlobal(aOwnerGlobal) {}
 
 JSObject* DebuggerNotificationObserver::WrapObject(
     JSContext* aCx, JS::Handle<JSObject*> aGivenProto) {
@@ -134,7 +134,7 @@ void DebuggerNotificationObserver::NotifyListeners(
   
   
   RefPtr<DebuggerNotification> debuggerNotification(
-      aNotification->CloneInto(mRelevantGlobal));
+      aNotification->CloneInto(mOwnerGlobal));
 
   for (RefPtr<DebuggerNotificationCallback> callback :
        mEventListenerCallbacks.ForwardRange()) {

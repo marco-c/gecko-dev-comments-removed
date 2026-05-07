@@ -7,7 +7,7 @@ add_task(async function test_click_return_to_opener_button() {
   
   
   const [tab, chromePiP] = await newTabWithPiP({ width: 100, height: 100 });
-  const win = tab.documentGlobal;
+  const win = tab.ownerGlobal;
   const tab2 = await BrowserTestUtils.openNewForegroundTab({
     gBrowser,
     opening: "https://example.org",

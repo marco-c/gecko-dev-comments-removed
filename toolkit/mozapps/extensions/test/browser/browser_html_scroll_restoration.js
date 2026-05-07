@@ -118,7 +118,7 @@ function scrollTopLeftIntoView(elem) {
   
   
   
-  assertNonZeroScrollOffsets(getScrollOffset(elem.documentGlobal));
+  assertNonZeroScrollOffsets(getScrollOffset(elem.ownerGlobal));
 }
 
 function assertNonZeroScrollOffsets(offsets) {

@@ -151,7 +151,7 @@ void Buffer::Cleanup() {
     
     
     dom::AutoJSAPI jsapi;
-    if (jsapi.Init(mParent->GetRelevantGlobal())) {
+    if (jsapi.Init(mParent->GetOwnerGlobal())) {
       IgnoredErrorResult rv;
       UnmapArrayBuffers(jsapi.cx(), rv);
     }

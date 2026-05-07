@@ -2278,7 +2278,7 @@ MOZ_CAN_RUN_SCRIPT static bool IsDeferredLoadEmptyFrame(Element& aEmbedder) {
   }
   
   
-  RefPtr global = aEmbedder.GetRelevantGlobal();
+  RefPtr global = aEmbedder.GetOwnerGlobal();
   if (!global || !global->GetGlobalJSObject()) {
     return false;
   }
@@ -4417,6 +4417,10 @@ void nsGlobalWindowInner::Btoa(const nsAString& aBinaryData,
 
 
 
+
+nsPIDOMWindowOuter* nsGlobalWindowInner::GetOwnerGlobalForBindingsInternal() {
+  return nsPIDOMWindowOuter::GetFromCurrentInner(this);
+}
 
 bool nsGlobalWindowInner::DispatchEvent(Event& aEvent, CallerType aCallerType,
                                         ErrorResult& aRv) {

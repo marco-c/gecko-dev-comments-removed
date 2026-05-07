@@ -62,9 +62,9 @@ add_task(async function test_ShowCertificate() {
     });
 
     if (newWindow) {
-      await BrowserTestUtils.closeWindow(browser.documentGlobal);
+      await BrowserTestUtils.closeWindow(browser.ownerGlobal);
     } else {
-      browser.documentGlobal.gBrowser.removeCurrentTab(); 
+      browser.ownerGlobal.gBrowser.removeCurrentTab(); 
     }
   }
 

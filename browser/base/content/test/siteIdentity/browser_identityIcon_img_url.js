@@ -133,7 +133,7 @@ add_task(async function test() {
     let identityIcon = document.getElementById("identity-icon");
 
     
-    let identityIconImageURL = gBrowser.documentGlobal
+    let identityIconImageURL = gBrowser.ownerGlobal
       .getComputedStyle(identityIcon)
       .getPropertyValue("list-style-image");
 

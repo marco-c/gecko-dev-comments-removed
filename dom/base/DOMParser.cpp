@@ -29,9 +29,9 @@
 using namespace mozilla;
 using namespace mozilla::dom;
 
-DOMParser::DOMParser(nsIGlobalObject* aGlobal, nsIPrincipal* aDocPrincipal,
+DOMParser::DOMParser(nsIGlobalObject* aOwner, nsIPrincipal* aDocPrincipal,
                      nsIURI* aDocumentURI)
-    : mGlobal(aGlobal),
+    : mOwner(aOwner),
       mPrincipal(aDocPrincipal),
       mDocumentURI(aDocumentURI),
       mForceEnableXULXBL(false),
@@ -48,7 +48,7 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(DOMParser)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
 
-NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(DOMParser, mGlobal)
+NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(DOMParser, mOwner)
 
 NS_IMPL_CYCLE_COLLECTING_ADDREF(DOMParser)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(DOMParser)
@@ -103,12 +103,12 @@ already_AddRefed<Document> DOMParser::ParseFromString(
     nsIPrincipal* aSubjectPrincipal, ErrorResult& aRv) {
   constexpr nsLiteralString sink = u"DOMParser parseFromString"_ns;
 
-  MOZ_ASSERT(mGlobal);
-  nsCOMPtr<nsIGlobalObject> pinnedGlobal = mGlobal;
+  MOZ_ASSERT(mOwner);
+  nsCOMPtr<nsIGlobalObject> pinnedOwner = mOwner;
   Maybe<nsAutoString> compliantStringHolder;
   const nsAString* compliantString =
       TrustedTypeUtils::GetTrustedTypesCompliantString(
-          aStr, sink, kTrustedTypesOnlySinkGroup, *pinnedGlobal,
+          aStr, sink, kTrustedTypesOnlySinkGroup, *pinnedOwner,
           aSubjectPrincipal, compliantStringHolder, aRv);
   if (aRv.Failed()) {
     return nullptr;
@@ -125,8 +125,8 @@ already_AddRefed<Document> DOMParser::ParseFromSafeString(const nsAString& aStr,
   
   
   nsCOMPtr<nsIPrincipal> docPrincipal = mPrincipal;
-  if (mGlobal && mGlobal->PrincipalOrNull()) {
-    mPrincipal = mGlobal->PrincipalOrNull();
+  if (mOwner && mOwner->PrincipalOrNull()) {
+    mPrincipal = mOwner->PrincipalOrNull();
   }
 
   RefPtr<Document> ret = ParseFromStringInternal(aStr, aType, aRv);
@@ -317,7 +317,7 @@ already_AddRefed<Document> DOMParser::SetUpDocument(DocumentFlavor aFlavor,
   
   
   nsCOMPtr<nsIScriptGlobalObject> scriptHandlingObject =
-      do_QueryInterface(mGlobal);
+      do_QueryInterface(mOwner);
 
   
   NS_ASSERTION(mPrincipal, "Must have principal by now");

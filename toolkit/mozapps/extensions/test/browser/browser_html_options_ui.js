@@ -16,7 +16,7 @@ function waitOptionsBrowserInserted() {
     async function listener(eventName, browser) {
       
       
-      if (browser.documentGlobal.top.location.href == "about:addons") {
+      if (browser.ownerGlobal.top.location.href == "about:addons") {
         ExtensionParent.apiManager.off("extension-browser-inserted", listener);
         resolve(browser);
       }

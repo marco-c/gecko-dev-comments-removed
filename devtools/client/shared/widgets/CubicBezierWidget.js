@@ -161,7 +161,7 @@ class BezierCanvas {
   plot(settings = {}) {
     const xy = this.bezier.coordinates;
 
-    const win = this.canvas.documentGlobal;
+    const win = this.canvas.ownerGlobal;
     const computedStyle = win.getComputedStyle(win.document.documentElement);
 
     const defaultSettings = {
@@ -276,7 +276,7 @@ class CubicBezierWidget extends EventEmitter {
 
     
     
-    this.reducedMotion = parent.documentGlobal.matchMedia(
+    this.reducedMotion = parent.ownerGlobal.matchMedia(
       "(prefers-reduced-motion)"
     );
     if (!this.reducedMotion.matches) {
@@ -311,7 +311,7 @@ class CubicBezierWidget extends EventEmitter {
 
     const curve = doc.createElementNS(XHTML_NS, "canvas");
     curve.className = "curve";
-    const parentComputedStyle = this.parent.documentGlobal.getComputedStyle(
+    const parentComputedStyle = this.parent.ownerGlobal.getComputedStyle(
       this.parent
     );
     

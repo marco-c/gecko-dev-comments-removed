@@ -1368,7 +1368,7 @@ already_AddRefed<nsPIDOMWindowInner> EventListenerManager::WindowFromListener(
         
         
         
-        if (nsIGlobalObject* global = mTarget->GetRelevantGlobal()) {
+        if (nsIGlobalObject* global = mTarget->GetOwnerGlobal()) {
           innerWindow = global->GetAsInnerWindow();
         }
       }
