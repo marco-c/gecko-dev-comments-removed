@@ -11,11 +11,8 @@ async function loadShortcutsView() {
   let win = await loadInitialView("extension");
 
   
-  let shortcutsLink = win.document.querySelector('[action="manage-shortcuts"]');
-
-  
   let loaded = waitForViewLoad(win);
-  shortcutsLink.click();
+  await triggerPageOptionsAction(win, "manage-shortcuts");
   await loaded;
 
   return win;

@@ -1,6 +1,6 @@
 
-function checkAll(win) {
-  triggerPageOptionsAction(win, "check-for-updates");
+async function checkAll(win) {
+  await triggerPageOptionsAction(win, "check-for-updates");
   return new Promise(resolve => {
     let observer = {
       observe() {

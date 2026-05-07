@@ -48,7 +48,7 @@ async function testUpdateNoPrompt(
 
   
   let updatePromise = waitForUpdate(addon);
-  triggerPageOptionsAction(win, "check-for-updates");
+  await triggerPageOptionsAction(win, "check-for-updates");
   await updatePromise;
 
   addon = await AddonManager.getAddonByID(id);
