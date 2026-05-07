@@ -263,7 +263,7 @@ async function doTest(testFn) {
 async function initGroupTest() {
   
   Services.scriptloader.loadSubScript(
-    "chrome://mochitests/content/browser/browser/components/urlbar/tests/engagementTelemetry/browser/head-groups.js",
+    "chrome://mochitests/content/browser/browser/components/urlbar/tests/browser-engagementTelemetry/head-groups.js",
     this
   );
   await setup();
@@ -272,7 +272,7 @@ async function initGroupTest() {
 async function initInteractionTest() {
   
   Services.scriptloader.loadSubScript(
-    "chrome://mochitests/content/browser/browser/components/urlbar/tests/engagementTelemetry/browser/head-interaction.js",
+    "chrome://mochitests/content/browser/browser/components/urlbar/tests/browser-engagementTelemetry/head-interaction.js",
     this
   );
   await setup();
@@ -281,7 +281,7 @@ async function initInteractionTest() {
 async function initNCharsAndNWordsTest() {
   
   Services.scriptloader.loadSubScript(
-    "chrome://mochitests/content/browser/browser/components/urlbar/tests/engagementTelemetry/browser/head-n_chars_n_words.js",
+    "chrome://mochitests/content/browser/browser/components/urlbar/tests/browser-engagementTelemetry/head-n_chars_n_words.js",
     this
   );
   await setup();
@@ -290,7 +290,7 @@ async function initNCharsAndNWordsTest() {
 async function initSapTest() {
   
   Services.scriptloader.loadSubScript(
-    "chrome://mochitests/content/browser/browser/components/urlbar/tests/engagementTelemetry/browser/head-sap.js",
+    "chrome://mochitests/content/browser/browser/components/urlbar/tests/browser-engagementTelemetry/head-sap.js",
     this
   );
   await setup();
@@ -299,7 +299,7 @@ async function initSapTest() {
 async function initSearchEngineDefaultIdTest() {
   
   Services.scriptloader.loadSubScript(
-    "chrome://mochitests/content/browser/browser/components/urlbar/tests/engagementTelemetry/browser/head-search_engine_default_id.js",
+    "chrome://mochitests/content/browser/browser/components/urlbar/tests/browser-engagementTelemetry/head-search_engine_default_id.js",
     this
   );
   await setup();
@@ -308,7 +308,7 @@ async function initSearchEngineDefaultIdTest() {
 async function initSearchModeTest() {
   
   Services.scriptloader.loadSubScript(
-    "chrome://mochitests/content/browser/browser/components/urlbar/tests/engagementTelemetry/browser/head-search_mode.js",
+    "chrome://mochitests/content/browser/browser/components/urlbar/tests/browser-engagementTelemetry/head-search_mode.js",
     this
   );
   await setup();
@@ -317,7 +317,7 @@ async function initSearchModeTest() {
 async function initExposureTest() {
   
   Services.scriptloader.loadSubScript(
-    "chrome://mochitests/content/browser/browser/components/urlbar/tests/engagementTelemetry/browser/head-exposure.js",
+    "chrome://mochitests/content/browser/browser/components/urlbar/tests/browser-engagementTelemetry/head-exposure.js",
     this
   );
   await setup();

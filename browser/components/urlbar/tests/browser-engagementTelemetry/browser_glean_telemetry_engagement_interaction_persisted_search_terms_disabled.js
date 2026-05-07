@@ -5,11 +5,6 @@
 
 
 
-Services.scriptloader.loadSubScript(
-  "chrome://mochitests/content/browser/browser/components/urlbar/tests/engagementTelemetry/browser/head-interaction.js",
-  this
-);
-
 
 if (AppConstants.platform == "macosx") {
   requestLongerTimeout(3);
