@@ -4,7 +4,6 @@
 
 package org.mozilla.fenix.ui
 
-import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.test.espresso.Espresso.pressBack
 import org.junit.Ignore
 import org.junit.Rule
@@ -28,6 +27,7 @@ import org.mozilla.fenix.ui.robots.composeBookmarksMenu
 import org.mozilla.fenix.ui.robots.homeScreen
 import org.mozilla.fenix.ui.robots.multipleSelectionToolbar
 import org.mozilla.fenix.ui.robots.navigationToolbar
+import androidx.compose.ui.test.junit4.v2.AndroidComposeTestRule as AndroidComposeTestRuleV2
 
 class BookmarksTest {
     private val testBookmark = object {
@@ -46,7 +46,7 @@ class BookmarksTest {
 
     @get:Rule
     val composeTestRule =
-        AndroidComposeTestRule(
+        AndroidComposeTestRuleV2(
             HomeActivityIntentTestRule(
                 isMenuRedesignCFREnabled = false,
                 shouldUseBottomToolbar = true,
@@ -251,7 +251,6 @@ class BookmarksTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2833710
-    @Ignore("Disabled after enabling the composable toolbar and main menu: https://bugzilla.mozilla.org/show_bug.cgi?id=2006295")
     @Test
     fun verifySearchBookmarksViewTest() {
         val defaultWebPage = mockWebServer.getGenericAsset(1)
@@ -266,8 +265,8 @@ class BookmarksTest {
             verifySearchSelectorButton()
             verifySearchEngineIcon("Bookmarks")
             verifySearchBarPlaceholder("Search bookmarks")
-            verifySearchBarPosition(true)
-            tapOutsideToDismissSearchBar()
+            verifySearchBarPosition()
+            tapOutsideToDismissSearchBar(defaultWebPage.url.toString())
             verifySearchToolbar(false)
         }
         composeBookmarksMenu(composeTestRule) {
@@ -286,7 +285,7 @@ class BookmarksTest {
         }.clickSearchButton {
             verifySearchToolbar(true)
             verifySearchEngineIcon("Bookmarks")
-            verifySearchBarPosition(false)
+            verifySearchBarPosition()
             pressBack()
             verifySearchToolbar(false)
         }
