@@ -2,13 +2,11 @@
 
 
 
-use crate::cms::{QcmsCms, RenderingIntent, SRGB_ICC};
 use jxl::api::{
-    JxlBitstreamInput, JxlColorEncoding, JxlColorProfile, JxlColorType, JxlDataFormat,
-    JxlDecoderInner, JxlDecoderOptions, JxlOutputBuffer, JxlPixelFormat, ProcessingResult,
+    JxlBitstreamInput, JxlColorType, JxlDataFormat, JxlDecoderInner, JxlDecoderOptions,
+    JxlOutputBuffer, JxlPixelFormat, ProcessingResult, VisibleFrameInfo,
 };
 use jxl::headers::extra_channels::ExtraChannel;
-use qcms::Profile;
 
 pub struct JxlApiDecoder {
     pub inner: JxlDecoderInner,
@@ -40,38 +38,11 @@ impl From<jxl::error::Error> for Error {
 }
 
 impl JxlApiDecoder {
-    pub fn new(
-        metadata_only: bool,
-        premultiply: bool,
-        rendering_intent: RenderingIntent,
-        output_profile: Option<&'static Profile>,
-        output_icc: Option<&[u8]>,
-    ) -> Self {
+    pub fn new(metadata_only: bool, premultiply: bool, _has_cms: bool) -> Self {
         let mut options = JxlDecoderOptions::default();
         options.premultiply_output = premultiply;
-        if output_profile.is_some() {
-            options.cms = Some(Box::new(QcmsCms::new(rendering_intent, output_profile))
-                as Box<dyn jxl::api::JxlCms>);
-        }
 
-        let mut inner = JxlDecoderInner::new(options);
-
-        if output_profile.is_some() {
-            let output_profile = match output_icc {
-                
-                Some(icc) => JxlColorProfile::Icc(icc.to_vec()),
-                None => {
-                    if static_prefs::pref!("image.jxl.force_icc_slow_path") {
-                        JxlColorProfile::Icc(SRGB_ICC.clone())
-                    } else {
-                        JxlColorProfile::Simple(JxlColorEncoding::srgb( false))
-                    }
-                }
-            };
-            inner
-                .set_output_color_profile(output_profile)
-                .expect("Output color profile should be valid");
-        }
+        let inner = JxlDecoderInner::new(options);
 
         Self {
             inner,
@@ -80,6 +51,42 @@ impl JxlApiDecoder {
             frame_ready: false,
             frame_duration: None,
         }
+    }
+
+    pub fn new_scanner() -> Self {
+        let mut options = JxlDecoderOptions::default();
+        options.scan_frames_only = true;
+
+        let inner = JxlDecoderInner::new(options);
+
+        Self {
+            inner,
+            metadata_only: false,
+            pixel_format_set: false,
+            frame_ready: false,
+            frame_duration: None,
+        }
+    }
+
+    pub fn scanned_frames(&self) -> &[VisibleFrameInfo] {
+        self.inner.scanned_frames()
+    }
+
+    pub fn flush_pixels(&mut self, output_buffer: &mut [u8]) -> Result<(), Error> {
+        let (width, height) = self
+            .inner
+            .basic_info()
+            .map(|bi| (bi.size.0, bi.size.1))
+            .unwrap_or((0, 0));
+        let bytes_per_row = width.checked_mul(4).ok_or(Error::Overflow)?;
+        let mut output_buf = JxlOutputBuffer::new(output_buffer, height, bytes_per_row);
+        self.inner
+            .flush_pixels(std::slice::from_mut(&mut output_buf))
+            .map_err(Error::from)
+    }
+
+    pub fn num_completed_passes(&self) -> usize {
+        self.inner.num_completed_passes().unwrap_or(0)
     }
 
     pub fn get_basic_info(&self) -> Option<BasicInfo> {
@@ -171,7 +178,7 @@ impl JxlApiDecoder {
                             self.frame_duration = frame_header.duration.or(Some(0.0));
                             self.frame_ready = true;
                             
-                            assert!(
+                            debug_assert!(
                                 !has_output_buffer,
                                 "frame_header present with output buffer"
                             );
