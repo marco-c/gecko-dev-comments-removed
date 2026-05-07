@@ -190,6 +190,31 @@ namespace mozilla::dom {
 using mediacaps::IsValidMediaDecodingConfiguration;
 using mediacaps::IsValidMediaEncodingConfiguration;
 
+
+
+
+
+template <typename T>
+[[nodiscard]]
+static bool GetThreadForAsyncRequest(
+    nsIGlobalObject* aParent, RefPtr<DOMMozPromiseRequestHolder<T>>* aHolderOut,
+    RefPtr<nsISerialEventTarget>* aTargetThreadOut,
+    RefPtr<StrongWorkerRef>* aWorkerRefOut, const char* aTag) {
+  *aHolderOut = MakeRefPtr<DOMMozPromiseRequestHolder<T>>(aParent);
+  *aTargetThreadOut = aParent->SerialEventTarget();
+
+  MOZ_ASSERT(aParent->SerialEventTarget()->IsOnCurrentThread());
+  if (!NS_IsMainThread()) {
+    WorkerPrivate* wp = GetCurrentThreadWorkerPrivate();
+    
+    *aWorkerRefOut = StrongWorkerRef::Create(wp, aTag, []() {});
+    if (NS_WARN_IF(!*aWorkerRefOut)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 bool MediaCapabilitiesKeySystemConfigurationToMediaKeySystemConfiguration(
     const MediaDecodingConfiguration& aInConfig,
     MediaKeySystemConfiguration& aOutConfig) {
