@@ -194,6 +194,14 @@ var SettingGroupManager = ChromeUtils.importESModule(
 
 
 const CONFIG_PANES = Object.freeze({
+  about: {
+    l10nId: "about-firefox-header",
+    iconSrc: "chrome://browser/skin/sidebar/firefox.svg",
+    groupIds: ["updates", "support"],
+    module: "chrome://browser/content/preferences/config/about-firefox.mjs",
+    visible: () =>
+      Services.prefs.getBoolPref("browser.settings-redesign.enabled", false),
+  },
   accessibility: {
     l10nId: "preferences-accessibility-header",
     groupIds: [
@@ -307,6 +315,13 @@ const CONFIG_PANES = Object.freeze({
     l10nId: "preferences-profiles-group-header",
     groupIds: ["profilePane"],
   },
+  permissionsData: {
+    l10nId: "permissions-data-section",
+    iconSrc: "chrome://browser/skin/permissions.svg",
+    groupIds: ["permissions", "dataCollection"],
+    module: "chrome://browser/content/preferences/config/permissions-data.mjs",
+    visible: () => srdSectionEnabled("permissionsData"),
+  },
   personalizeSmartWindow: {
     parent: "ai",
     l10nId: "ai-window-personalize-header",
@@ -314,18 +329,6 @@ const CONFIG_PANES = Object.freeze({
     badge: "beta",
     groupIds: ["assistantDefaultGroup", "assistantModelGroup", "memoriesGroup"],
     module: "chrome://browser/content/preferences/config/aiFeatures.mjs",
-  },
-  search: {
-    l10nId: "search-section",
-    groupIds: [
-      "defaultEngine",
-      "searchShortcuts",
-      "searchSuggestions",
-      "firefoxSuggest",
-    ],
-    iconSrc: "chrome://browser/skin/preferences/category-search.svg",
-    module: "chrome://browser/content/preferences/config/search.mjs",
-    replaces: "search",
   },
   privacy: {
     l10nId: "pane-privacy-section",
@@ -343,16 +346,24 @@ const CONFIG_PANES = Object.freeze({
       
       "payments",
       "history2",
-      
-      "permissions",
-      
-      "dataCollection",
       "nonTechnicalPrivacy2",
       "dnsOverHttps",
       "connectionLink",
     ],
     module: "chrome://browser/content/preferences/config/privacy.mjs",
     replaces: "privacy",
+  },
+  search: {
+    l10nId: "search-section",
+    groupIds: [
+      "defaultEngine",
+      "searchShortcuts",
+      "searchSuggestions",
+      "firefoxSuggest",
+    ],
+    iconSrc: "chrome://browser/skin/preferences/category-search.svg",
+    module: "chrome://browser/content/preferences/config/search.mjs",
+    replaces: "search",
   },
   sync: {
     l10nId: "account-sync-section",
