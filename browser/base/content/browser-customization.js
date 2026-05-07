@@ -7,7 +7,6 @@
 
 
 
-
 var CustomizationHandler = {
   handleEvent(aEvent) {
     switch (aEvent.type) {
@@ -29,6 +28,10 @@ var CustomizationHandler = {
     let menubar = document.getElementById("main-menubar");
     for (let childNode of menubar.children) {
       childNode.setAttribute("disabled", true);
+    }
+
+    if (!Services.policies.isAllowed("profileImport")) {
+      document.documentElement.setAttribute("disableprofileimport", "true");
     }
 
     UpdateUrlbarSearchSplitterState();
