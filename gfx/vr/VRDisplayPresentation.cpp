@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "VRDisplayPresentation.h"
 #include "mozilla/dom/DocGroup.h"
 #include "mozilla/dom/Document.h"
@@ -42,10 +40,12 @@ void VRDisplayPresentation::UpdateXRWebGLLayer(dom::XRWebGLLayer* aLayer) {
 
   if (mLayers.Length() == 0) {
     
-    RefPtr<VRLayerChild> vrLayer =
-        static_cast<VRLayerChild*>(manager->CreateVRLayer(
-            mDisplayClient->GetDisplayInfo().GetDisplayID(), mGroup));
-    mLayers.AppendElement(vrLayer);
+    RefPtr<VRLayerChild> vrLayer = manager->CreateVRLayer(
+        mDisplayClient->GetDisplayInfo().GetDisplayID(), mGroup);
+    if (NS_WARN_IF(!vrLayer)) {
+      return;
+    }
+    mLayers.AppendElement(std::move(vrLayer));
   }
   RefPtr<VRLayerChild> vrLayer = mLayers[0];
 
@@ -103,15 +103,14 @@ void VRDisplayPresentation::CreateLayers() {
 
     if (mLayers.Length() <= iLayer) {
       
-      RefPtr<VRLayerChild> vrLayer =
-          static_cast<VRLayerChild*>(manager->CreateVRLayer(
-              mDisplayClient->GetDisplayInfo().GetDisplayID(), mGroup));
+      RefPtr<VRLayerChild> vrLayer = manager->CreateVRLayer(
+          mDisplayClient->GetDisplayInfo().GetDisplayID(), mGroup);
       if (!vrLayer) {
         NS_WARNING("CreateVRLayer returned null!");
         continue;
       }
       vrLayer->Initialize(canvasElement, leftBounds, rightBounds);
-      mLayers.AppendElement(vrLayer);
+      mLayers.AppendElement(std::move(vrLayer));
     } else {
       
       mLayers[iLayer]->Initialize(canvasElement, leftBounds, rightBounds);
@@ -125,7 +124,7 @@ void VRDisplayPresentation::CreateLayers() {
 
 void VRDisplayPresentation::DestroyLayers() {
   for (VRLayerChild* layer : mLayers) {
-    if (layer->IsIPCOpen()) {
+    if (layer->CanSend()) {
       (void)layer->SendDestroy();
     }
   }

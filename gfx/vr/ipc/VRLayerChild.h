@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef GFX_VR_LAYERCHILD_H
 #define GFX_VR_LAYERCHILD_H
 
@@ -29,36 +27,25 @@ class SurfaceFactory;
 }
 namespace gfx {
 
-class VRLayerChild : public PVRLayerChild {
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(VRLayerChild)
+class VRLayerChild final : public PVRLayerChild {
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(VRLayerChild, final)
+
+  VRLayerChild();
 
  public:
-  static PVRLayerChild* CreateIPDLActor();
-  static bool DestroyIPDLActor(PVRLayerChild* actor);
+  static already_AddRefed<VRLayerChild> CreateIPDLActor();
 
   void Initialize(dom::HTMLCanvasElement* aCanvasElement,
                   const gfx::Rect& aLeftEyeRect,
                   const gfx::Rect& aRightEyeRect);
   void SetXRFramebuffer(WebGLFramebufferJS*);
   void SubmitFrame(const VRDisplayInfo& aDisplayInfo);
-  bool IsIPCOpen();
 
  private:
-  VRLayerChild();
   virtual ~VRLayerChild();
   void ClearSurfaces();
-  virtual void ActorDestroy(ActorDestroyReason aWhy) override;
 
   RefPtr<dom::HTMLCanvasElement> mCanvasElement;
-  bool mIPCOpen = false;
-
-  
-  
-  
-  
-  
-  void AddIPDLReference();
-  void ReleaseIPDLReference();
 
   gfx::Rect mLeftEyeRect;
   gfx::Rect mRightEyeRect;
