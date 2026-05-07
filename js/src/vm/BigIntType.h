@@ -91,115 +91,19 @@ class BigInt final : public js::gc::CellWithLengthAndFlags {
   bool hasInlineDigits() const { return digitLength() <= InlineDigitsLength; }
   bool hasHeapDigits() const { return !hasInlineDigits(); }
 
-  
-  
-  
-  
   using Digits = mozilla::Span<Digit>;
-  using ConstDigits = mozilla::Span<const Digit>;
-
-  
-  
-  MOZ_ALWAYS_INLINE Digit individualDigit(size_t index) const {
-    MOZ_ASSERT(index < digitLength());
-    return (hasInlineDigits() ? inlineDigits_ : heapDigits_)[index];
-  }
-
-  
-  
-  MOZ_ALWAYS_INLINE void setIndividualDigit(size_t index, Digit value) {
-    MOZ_ASSERT(index < digitLength());
-    (hasInlineDigits() ? inlineDigits_ : heapDigits_)[index] = value;
-  }
-
-  
-  
-  
-  
-  template <typename T>
-  class DigitsGuardT {
-    using SpanT = mozilla::Span<T>;
-    SpanT span_;
-#ifdef DEBUG
-    const BigInt* owner_ = nullptr;
-    bool wasInline_ = false;
-#endif
-
-   public:
-    DigitsGuardT() = default;
-
-    MOZ_IMPLICIT DigitsGuardT(SpanT span, const BigInt* owner)
-        : span_(span)
-#ifdef DEBUG
-          ,
-          owner_(owner),
-          wasInline_(owner ? owner->hasInlineDigits() : false)
-#endif
-    {
-#ifndef DEBUG
-      (void)owner;
-#endif
-    }
-
-    
-    
-    void release() {
-#ifdef DEBUG
-      owner_ = nullptr;
-#endif
-    }
-
-    ~DigitsGuardT() {
-#ifdef DEBUG
-      if (!owner_) {
-        return;
-      }
-      
-      
-      const T* nowData = owner_->hasInlineDigits() ? owner_->inlineDigits_
-                                                   : owner_->heapDigits_;
-      MOZ_ASSERT(owner_->hasInlineDigits() == wasInline_);
-      MOZ_ASSERT(nowData == span_.data());
-      MOZ_ASSERT(owner_->digitLength() == span_.size());
-#endif
-    }
-
-    DigitsGuardT(const DigitsGuardT&) = delete;
-    DigitsGuardT& operator=(const DigitsGuardT&) = delete;
-    DigitsGuardT(DigitsGuardT&&) = default;
-    DigitsGuardT& operator=(DigitsGuardT&&) = default;
-
-    
-    MOZ_ALWAYS_INLINE T& operator[](size_t i) const { return span_[i]; }
-    MOZ_ALWAYS_INLINE size_t size() const { return span_.size(); }
-    MOZ_ALWAYS_INLINE size_t Length() const { return span_.Length(); }
-    MOZ_ALWAYS_INLINE T* data() const { return span_.data(); }
-    MOZ_ALWAYS_INLINE auto begin() const { return span_.begin(); }
-    MOZ_ALWAYS_INLINE auto end() const { return span_.end(); }
-  };
-
-  using DigitsGuard = DigitsGuardT<Digit>;
-  using ConstDigitsGuard = DigitsGuardT<const Digit>;
-
- private:
-  
-  
-  MOZ_ALWAYS_INLINE Digits unguardedDigits() {
+  MOZ_ALWAYS_INLINE Digits digits() {
     return Digits(hasInlineDigits() ? inlineDigits_ : heapDigits_,
                   digitLength());
   }
-
-  MOZ_ALWAYS_INLINE ConstDigits unguardedDigits() const {
+  using ConstDigits = mozilla::Span<const Digit>;
+  MOZ_ALWAYS_INLINE ConstDigits digits() const {
     return ConstDigits(hasInlineDigits() ? inlineDigits_ : heapDigits_,
                        digitLength());
   }
-
- public:
-  MOZ_ALWAYS_INLINE DigitsGuard digits() {
-    return DigitsGuard(unguardedDigits(), this);
-  }
-  MOZ_ALWAYS_INLINE ConstDigitsGuard digits() const {
-    return ConstDigitsGuard(unguardedDigits(), this);
+  MOZ_ALWAYS_INLINE Digit digit(size_t idx) const { return digits()[idx]; }
+  MOZ_ALWAYS_INLINE void setDigit(size_t idx, Digit digit) {
+    digits()[idx] = digit;
   }
 
   bool isZero() const { return digitLength() == 0; }
@@ -532,9 +436,9 @@ class BigInt final : public js::gc::CellWithLengthAndFlags {
   uint64_t uint64FromAbsNonZero() const {
     MOZ_ASSERT(!isZero());
 
-    uint64_t val = individualDigit(0);
+    uint64_t val = digit(0);
     if (DigitBits == 32 && digitLength() > 1) {
-      val |= static_cast<uint64_t>(individualDigit(1)) << 32;
+      val |= static_cast<uint64_t>(digit(1)) << 32;
     }
     return val;
   }
