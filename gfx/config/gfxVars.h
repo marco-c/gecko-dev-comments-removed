@@ -118,9 +118,9 @@ class MOZ_STACK_CLASS gfxVarsCollectUpdates;
   _(AllowGLNorm16Textures, bool, false)                            \
   _(WebRenderLayerCompositorDCompTexture, bool, false)             \
   _(WebRenderOverlayHDR, bool, false)                              \
-  _(UseWebRenderDCompositionTextureOverlayWin, bool, false)        \
-  _(VideoHDR, bool, false)                                         \
-/* Add new entries above this line. */
+  _(UseWebRenderDCompositionTextureOverlayWin, bool, false)
+
+
 
 
 

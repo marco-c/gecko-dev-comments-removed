@@ -2637,7 +2637,7 @@ static Maybe<DXGI_COLOR_SPACE_TYPE> GetSourceDXGIColorSpace(
       return Nothing();
     case gfx::YUVColorSpace::BT2020:
       
-      if (!gfxPlatform::UseHDR()) {
+      if (!StaticPrefs::gfx_color_management_hdr()) {
         
         
         switch (aColorRange) {
