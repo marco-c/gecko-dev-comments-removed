@@ -2,11 +2,13 @@
 
 
 
+use anyhow::Result;
+use crash_helper_common::ProcessHandle;
 use nix::{
     libc::_exit,
     unistd::{fork, getpid, setsid, write, ForkResult},
 };
-use std::{io::stdout, os::fd::AsFd};
+use std::{ffi::CStr, io::stdout, os::fd::AsFd};
 
 pub(crate) const PROXY_RENDEZ_VOUS: bool = false;
 
@@ -56,4 +58,8 @@ pub(crate) unsafe fn daemonize() {
     let rv = write(stdout().as_fd(), &raw_pid_bytes);
 
     _exit(if rv.is_ok_and(|rv| rv == 4) { 0 } else { 1 });
+}
+
+pub(crate) fn get_client_handle(_handle: &CStr) -> Result<Option<ProcessHandle>> {
+    Ok(None)
 }
