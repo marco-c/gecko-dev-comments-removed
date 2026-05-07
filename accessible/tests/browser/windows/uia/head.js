@@ -76,6 +76,17 @@ function waitForUiaEvent() {
 
 
 
+async function testPatternSupported(id, patternName) {
+  const hasPattern = await runPython(`
+    el = findUiaByDomId(doc, "${id}")
+    return bool(getUiaPattern(el, "${patternName}"))
+  `);
+  ok(hasPattern, `${id} has ${patternName} pattern`);
+}
+
+
+
+
 async function testPatternAbsent(id, patternName) {
   const hasPattern = await runPython(`
     el = findUiaByDomId(doc, "${id}")

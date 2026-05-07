@@ -132,9 +132,13 @@ static MsaaAccessible* GetTextPatternProviderFor(Accessible* aOrigin) {
   return MsaaAccessible::GetFrom(GetTextContainer(aOrigin));
 }
 
-static bool IsSingleSelectOption(Accessible* aAcc) {
+static bool IsOption(Accessible* aAcc) {
   const role accRole = aAcc->Role();
-  if (accRole != roles::OPTION && accRole != roles::COMBOBOX_OPTION) {
+  return accRole == roles::OPTION || accRole == roles::COMBOBOX_OPTION;
+}
+
+static bool IsSingleSelectOption(Accessible* aAcc) {
+  if (!IsOption(aAcc)) {
     return false;
   }
   Accessible* container =
@@ -476,8 +480,13 @@ uiaRawElmProvider::GetPatternProvider(
       
       
       
+      
+      
+      
+      
       if (acc->ActionCount() > 0 && !HasTogglePattern() &&
-          !HasExpandCollapsePattern() && !HasSelectionItemPattern()) {
+          !HasExpandCollapsePattern() &&
+          (!HasSelectionItemPattern() || IsOption(acc))) {
         RefPtr<IInvokeProvider> invoke = this;
         invoke.forget(aPatternProvider);
       }
