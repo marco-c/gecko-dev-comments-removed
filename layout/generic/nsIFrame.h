@@ -4517,6 +4517,21 @@ class nsIFrame : public nsQueryFrame {
     return storedValue;
   }
 
+  
+  
+  template <typename T>
+  FrameProperties::PropertyType<T> GetOrCreateDeletableProperty(
+      FrameProperties::Descriptor<T> aProperty) {
+    bool found;
+    using DataType = std::remove_pointer_t<FrameProperties::PropertyType<T>>;
+    DataType* storedValue = GetProperty(aProperty, &found);
+    if (!found) {
+      storedValue = new DataType{};
+      AddProperty(aProperty, storedValue);
+    }
+    return storedValue;
+  }
+
   void RemoveAllProperties() { mProperties.RemoveAll(this); }
 
   

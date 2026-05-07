@@ -238,8 +238,13 @@ class AnchorPosReferenceData {
 };
 
 struct LastSuccessfulPositionData {
-  RefPtr<const ComputedStyle> mStyle;
-  uint32_t mIndex = 0;
+  
+  RefPtr<const ComputedStyle> mLastStyle;
+  Maybe<uint32_t> mLastIndex;
+  
+  
+  Maybe<uint32_t> mRecordedIndex;
+  
   bool mTriedAllFallbacks = false;
 };
 

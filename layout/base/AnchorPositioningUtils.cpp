@@ -1199,19 +1199,34 @@ static bool TriggerFallbackReflow(PresShell* aPresShell, nsIFrame* aPositioned,
 
   const bool positionedFitsInCB = AnchorPositioningUtils::FitsInContainingBlock(
       aPositioned, aReferencedAnchors);
-  if (positionedFitsInCB) {
-    return false;
-  }
-
-  
   auto* lastSuccessfulPosition =
       aPositioned->GetProperty(nsIFrame::LastSuccessfulPositionFallback());
-  const bool needsRetry =
-      aEvaluateAllFallbacksIfNeeded ||
-      (lastSuccessfulPosition && !lastSuccessfulPosition->mTriedAllFallbacks);
+
+  const bool needsRetry = [&] {
+    if (positionedFitsInCB) {
+      return false;
+    }
+    
+    if (aEvaluateAllFallbacksIfNeeded) {
+      return true;
+    }
+    return lastSuccessfulPosition && lastSuccessfulPosition->mLastIndex &&
+           !lastSuccessfulPosition->mTriedAllFallbacks;
+  }();
+
   if (!needsRetry) {
+    
+    if (lastSuccessfulPosition) {
+      if (lastSuccessfulPosition->mLastIndex) {
+        lastSuccessfulPosition->mRecordedIndex =
+            lastSuccessfulPosition->mLastIndex;
+      } else {
+        aPositioned->RemoveProperty(nsIFrame::LastSuccessfulPositionFallback());
+      }
+    }
     return false;
   }
+  
   aPresShell->MarkPositionedFrameForReflow(aPositioned);
   return true;
 }

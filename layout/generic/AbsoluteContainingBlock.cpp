@@ -1740,15 +1740,13 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
 
   Maybe<nsRect> firstTryRect;
   if (auto* lastSuccessfulPosition =
-          aKidFrame->GetProperty(nsIFrame::LastSuccessfulPositionFallback())) {
-    if (SeekFallbackTo(Some(lastSuccessfulPosition->mIndex))) {
-      
-      
-      firstTryIndex = Some(lastSuccessfulPosition->mIndex);
-      firstTryStyle = currentFallbackStyle;
-    } else {
-      aKidFrame->RemoveProperty(nsIFrame::LastSuccessfulPositionFallback());
-    }
+          aKidFrame->GetProperty(nsIFrame::LastSuccessfulPositionFallback());
+      lastSuccessfulPosition && lastSuccessfulPosition->mRecordedIndex &&
+      SeekFallbackTo(lastSuccessfulPosition->mRecordedIndex)) {
+    
+    
+    firstTryIndex = lastSuccessfulPosition->mRecordedIndex;
+    firstTryStyle = currentFallbackStyle;
   }
 
   
@@ -2144,8 +2142,16 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
       
       isOverflowingCB = !fits;
       fallback.CommitCurrentFallback();
-      if (currentFallbackIndex == Nothing()) {
-        aKidFrame->RemoveProperty(nsIFrame::LastSuccessfulPositionFallback());
+      if (currentFallbackIndex.isNothing()) {
+        if (auto* prop = aKidFrame->GetProperty(
+                nsIFrame::LastSuccessfulPositionFallback())) {
+          
+          
+          MOZ_ASSERT(!fallbacks.IsEmpty(), "how?");
+          prop->mLastIndex.reset();
+          prop->mLastStyle = nullptr;
+          prop->mTriedAllFallbacks = isOverflowingCB;
+        }
       }
       break;
     }
@@ -2234,10 +2240,13 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
   }();
 
   if (currentFallbackIndex) {
-    aKidFrame->SetOrUpdateDeletableProperty(
-        nsIFrame::LastSuccessfulPositionFallback(),
-        LastSuccessfulPositionData{currentFallbackStyle, *currentFallbackIndex,
-                                   isOverflowingCB});
+    auto* lastSuccessfulPosition = aKidFrame->GetOrCreateDeletableProperty(
+        nsIFrame::LastSuccessfulPositionFallback());
+    
+    
+    lastSuccessfulPosition->mLastIndex = currentFallbackIndex;
+    lastSuccessfulPosition->mLastStyle = std::move(currentFallbackStyle);
+    lastSuccessfulPosition->mTriedAllFallbacks = isOverflowingCB;
   }
 
 #ifdef DEBUG
