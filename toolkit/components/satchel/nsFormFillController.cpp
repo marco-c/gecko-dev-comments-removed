@@ -892,9 +892,16 @@ nsresult nsFormFillController::HandleFocus(Element* aElement) {
 
   bool shouldShowPopup = false;
 
-  
   if (mControlledElement && !mAutoCompleteActive) {
-    if (mLastRightClickTimeStamp.IsNull()) {
+    nsFocusManager* fm = nsFocusManager::GetFocusManager();
+    uint32_t focusMethod = fm ? fm->GetLastFocusMethod(nullptr) : 0;
+    if (focusMethod & nsIFocusManager::FLAG_BYKEY) {
+      
+    } else if (mLastRightClickTimeStamp.IsNull()) {
+      
+      
+      
+      
       if (HasBeenTypePassword(mControlledElement)) {
         mPasswordPopupAutomaticallyOpened = true;
       }
