@@ -13,6 +13,7 @@
 #include "mozjemalloc_types.h"
 #include "mozjemalloc_profiling.h"
 
+#include "ArenaAvailRuns.h"
 #include "Constants.h"
 #include "Chunk.h"
 #include "Globals.h"
@@ -87,38 +88,6 @@ class SizeClass {
 
 
 struct arena_bin_t;
-
-struct ArenaChunkMapLink {
-  static RedBlackTreeNode<arena_chunk_map_t>& GetTreeNode(
-      arena_chunk_map_t* aThis) {
-    return aThis->link;
-  }
-};
-
-struct ArenaAvailTreeTrait : public ArenaChunkMapLink {
-  
-  
-  
-  static inline Order Compare(arena_chunk_map_t* aNode,
-                              arena_chunk_map_t* aOther) {
-    size_t size1 = aNode->bits & ~mozilla::gPageSizeMask;
-    size_t size2 = aOther->bits & ~mozilla::gPageSizeMask;
-    Order ret = CompareInt(size1, size2);
-    return (ret != Order::eEqual) ? ret : CompareAddr(aNode, aOther);
-  }
-
-  using SearchKey = size_t;
-
-  
-  
-  
-  
-  static inline Order Compare(SearchKey aSize, arena_chunk_map_t* aOther) {
-    size_t size2 = aOther->bits & ~mozilla::gPageSizeMask;
-    Order ret = CompareInt(aSize, size2);
-    return (ret != Order::eEqual) ? ret : Order::eLess;
-  }
-};
 
 namespace mozilla {
 
@@ -415,8 +384,7 @@ struct arena_t : public BaseAllocClass {
  private:
   
   
-  RedBlackTree<arena_chunk_map_t, ArenaAvailTreeTrait> mRunsAvail
-      MOZ_GUARDED_BY(mLock);
+  ArenaAvailRuns mRunsAvail MOZ_GUARDED_BY(mLock);
 
  public:
   

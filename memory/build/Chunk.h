@@ -10,7 +10,6 @@
 #include "mozjemalloc_types.h"
 
 #include "RadixTree.h"
-#include "RedBlackTree.h"
 
 #include "mozilla/DoublyLinkedList.h"
 
@@ -30,7 +29,8 @@ enum ChunkType {
 
 struct arena_chunk_map_t {
   
-  RedBlackTreeNode<arena_chunk_map_t> link;
+  
+  mozilla::DoublyLinkedListElement<arena_chunk_map_t> link;
 
   
   

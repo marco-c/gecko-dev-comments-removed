@@ -1157,8 +1157,6 @@ arena_run_t* arena_t::AllocRun(size_t aSize, bool aLarge, bool aZero) {
   MOZ_ASSERT((aSize & gPageSizeMask) == 0);
 
   
-  
-  
   mapelm = mRunsAvail.SearchOrNext(aSize);
   if (mapelm) {
     arena_chunk_t* chunk = GetChunkForPtr(mapelm);
