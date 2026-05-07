@@ -1129,6 +1129,10 @@ var gSync = {
     const fxaToolbarMenuBtn = document.getElementById(
       "fxa-toolbar-menu-button"
     );
+    const sendTabButton = PanelMultiView.getViewNode(
+      document,
+      "PanelUI-fxa-menu-sendtab-button"
+    );
 
     if (anchor === null) {
       anchor = fxaToolbarMenuBtn;
@@ -1158,10 +1162,8 @@ var gSync = {
         return;
       }
 
-      PanelMultiView.getViewNode(
-        document,
-        "PanelUI-fxa-menu-sendtab-button"
-      ).setAttribute("data-l10n-id", "fxa-menu-send-to-mobile");
+      sendTabButton.setAttribute("data-l10n-id", "fxa-menu-send-to-mobile");
+      sendTabButton.classList.remove("subviewbutton-nav");
 
       
       
@@ -1194,16 +1196,11 @@ var gSync = {
       !sendTabTargets.length ||
       this.hasOnlyMobileSendTabTargets(sendTabTargets)
     ) {
-      PanelMultiView.getViewNode(
-        document,
-        "PanelUI-fxa-menu-sendtab-button"
-      ).setAttribute("data-l10n-id", "fxa-menu-send-to-mobile");
+      sendTabButton.setAttribute("data-l10n-id", "fxa-menu-send-to-mobile");
     } else {
-      PanelMultiView.getViewNode(
-        document,
-        "PanelUI-fxa-menu-sendtab-button"
-      ).setAttribute("data-l10n-id", "fxa-menu-send-to-device");
+      sendTabButton.setAttribute("data-l10n-id", "fxa-menu-send-to-device");
     }
+    sendTabButton.classList.add("subviewbutton-nav");
 
     if (anchor.getAttribute("open") == "true") {
       PanelUI.hide();
@@ -2124,6 +2121,7 @@ var gSync = {
       tab: "tabContextMenu",
       page: "pageContextMenu",
       link: "pageContextMenu",
+      toolbar: "sendTabToolbar",
     };
 
     
@@ -2136,7 +2134,11 @@ var gSync = {
     const category = categoryMap[contextType];
     const method = methodMap[eventType];
 
-    if (!category || !method) {
+    if (
+      !category ||
+      !method ||
+      (category == "sendTabToolbar" && method == "sendTabExposed")
+    ) {
       this.log.error(
         `Invalid telemetry parameters: eventType=${eventType}, contextType=${contextType}`
       );
@@ -3031,6 +3033,32 @@ var gSync = {
 
   openLink(url) {
     switchToTabHavingURI(url, true, { replaceQueryString: true });
+  },
+
+  sendTabToolbarButtonShouldBeEnabled(uri) {
+    this.init();
+
+    if (!this.FXA_ENABLED) {
+      
+      
+      return false;
+    }
+
+    if (this.sendTabConfiguredAndLoading) {
+      
+      return false;
+    }
+
+    return !!BrowserUtils.getShareableURL(uri);
+  },
+
+  async populateSendTabToolbarButton(menuPopup) {
+    this.populateSendTabToDevicesMenu(
+      menuPopup,
+      menuPopup.ownerGlobal.gBrowser.currentURI,
+      menuPopup.ownerGlobal.gBrowser.contentTitle,
+      { contextMenuType: "toolbar" }
+    );
   },
 
   QueryInterface: ChromeUtils.generateQI([
