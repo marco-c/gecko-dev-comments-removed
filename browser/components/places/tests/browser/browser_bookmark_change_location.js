@@ -11,51 +11,8 @@ const TEST_URL = "about:buildconfig";
 const TEST_URL2 = "about:credits";
 const TEST_URL3 = "about:config";
 
-
 add_setup(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.toolbars.bookmarks.visibility", "always"]],
-  });
-
-  
-  
-  
-  
-  info("Ensure Places init is complete");
-  let placesInitCompleteObserved = TestUtils.topicObserved(
-    "places-browser-init-complete"
-  );
-  Cc["@mozilla.org/browser/browserglue;1"]
-    .getService(Ci.nsIObserver)
-    .observe(null, "browser-glue-test", "places-browser-init-complete");
-  await placesInitCompleteObserved;
-  info("Add a bookmark to avoid showing the empty toolbar placeholder.");
-  await PlacesUtils.bookmarks.insert({
-    parentGuid: PlacesUtils.bookmarks.toolbarGuid,
-    title: "initial",
-    url: TEST_URL,
-  });
-
-  let toolbar = document.getElementById("PersonalToolbar");
-  let wasCollapsed = toolbar.collapsed;
-  if (wasCollapsed) {
-    info("Show the bookmarks toolbar");
-    await promiseSetToolbarVisibility(toolbar, true);
-    info("Ensure toolbar visibility was updated");
-    await BrowserTestUtils.waitForEvent(
-      toolbar,
-      "BookmarksToolbarVisibilityUpdated"
-    );
-  }
-
-  
-  registerCleanupFunction(async () => {
-    
-    if (wasCollapsed) {
-      await promiseSetToolbarVisibility(toolbar, false);
-    }
-    await PlacesUtils.bookmarks.eraseEverything();
-  });
+  await ensureBookmarksToolbarIsVisibleAndPopulated();
 });
 
 add_task(async function test_change_location_from_Toolbar() {

@@ -445,6 +445,74 @@ function promisePopupHidden(popup) {
 }
 
 
+
+
+
+async function ensureBookmarksToolbarIsVisibleAndPopulated() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.toolbars.bookmarks.visibility", "always"]],
+  });
+
+  
+  
+  await promisePlacesInitComplete();
+  await PlacesUtils.bookmarks.eraseEverything();
+
+  
+  let bm = await PlacesUtils.bookmarks.insert({
+    parentGuid: PlacesUtils.bookmarks.toolbarGuid,
+    title: "initial",
+    url: "about:robots",
+  });
+
+  let toolbar = document.getElementById("PersonalToolbar");
+  let wasCollapsed = toolbar.collapsed;
+  if (wasCollapsed) {
+    await promiseSetToolbarVisibility(toolbar, true);
+    await BrowserTestUtils.waitForEvent(
+      toolbar,
+      "BookmarksToolbarVisibilityUpdated"
+    );
+  }
+
+  registerCleanupFunction(async () => {
+    if (wasCollapsed) {
+      await promiseSetToolbarVisibility(toolbar, false);
+    }
+    try {
+      await PlacesUtils.bookmarks.remove(bm);
+    } catch (ex) {
+      
+    }
+  });
+
+  await waitForBookmarksToolbarElements(1);
+}
+
+
+
+
+
+
+
+function waitForBookmarksToolbarElements(expectedCount) {
+  let container = document.getElementById("PlacesToolbarItems");
+  if (container.childElementCount == expectedCount) {
+    return Promise.resolve();
+  }
+  return new Promise(resolve => {
+    info("Waiting for bookmarks");
+    let mut = new MutationObserver(() => {
+      if (container.childElementCount == expectedCount) {
+        resolve();
+        mut.disconnect();
+      }
+    });
+    mut.observe(container, { childList: true });
+  });
+}
+
+
 function getToolbarNodeForItemGuid(itemGuid, win = window) {
   let children = win.document.getElementById("PlacesToolbarItems").childNodes;
   for (let child of children) {
