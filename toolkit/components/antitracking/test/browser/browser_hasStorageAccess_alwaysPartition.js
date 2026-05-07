@@ -213,10 +213,6 @@ var testCases = [
         allowList: false,
         callback,
         extraPrefs: [
-          [
-            "privacy.partition.always_partition_third_party_non_cookie_storage",
-            true,
-          ],
           
           ["dom.storage_access.dont_grant_insecure_contexts", true],
         ],
