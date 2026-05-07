@@ -80,13 +80,7 @@ add_task(async function () {
 
   let popupHidePromise = promiseWaitForEvent(window, "popuphidden");
 
-  if (
-    !AppConstants.platform == "macosx" ||
-    !Services.prefs.getBoolPref("widget.macos.native-context-menus", false)
-  ) {
-    info("Send the first escape");
-    EventUtils.synthesizeKey("KEY_Escape");
-  } else {
+  if (contextMenu.isNativeMenu) {
     
     
     
@@ -94,6 +88,9 @@ add_task(async function () {
     
     info("Close the context menu");
     contextMenu.hidePopup();
+  } else {
+    info("Send the first escape");
+    EventUtils.synthesizeKey("KEY_Escape");
   }
   await popupHidePromise;
   is(contextMenu.state, "closed", "Should have closed context menu");
