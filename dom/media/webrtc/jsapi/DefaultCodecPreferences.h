@@ -2,13 +2,12 @@
 
 
 
-
-
 #ifndef DOM_MEDIA_WEBRTC_JSAPI_DEFAULTCODECPREFERENCES_H_
 #define DOM_MEDIA_WEBRTC_JSAPI_DEFAULTCODECPREFERENCES_H_
 
 #include "jsep/JsepCodecDescription.h"
 #include "mozilla/Preferences.h"
+#include "nsTArrayForwardDeclare.h"
 
 namespace mozilla {
 
@@ -17,6 +16,21 @@ enum class OverrideRtxPreference {
   OverrideWithEnabled,
   OverrideWithDisabled,
 };
+
+void EnumerateDefaultVideoCodecs(
+    nsTArray<UniquePtr<JsepCodecDescription>>& aSupportedCodecs,
+    const OverrideRtxPreference aOverrideRtxPreference);
+
+void EnumerateDefaultVideoCodecs(
+    nsTArray<UniquePtr<JsepCodecDescription>>& aSupportedCodecs,
+    const JsepCodecPreferences& aPrefs);
+
+void EnumerateDefaultAudioCodecs(
+    nsTArray<UniquePtr<JsepCodecDescription>>& aSupportedCodecs);
+
+void EnumerateDefaultAudioCodecs(
+    nsTArray<UniquePtr<JsepCodecDescription>>& aSupportedCodecs,
+    const JsepCodecPreferences& aPrefs);
 
 class DefaultCodecPreferences final : public JsepCodecPreferences {
  public:
