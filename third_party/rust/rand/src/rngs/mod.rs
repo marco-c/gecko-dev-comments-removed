@@ -96,7 +96,7 @@
 
 
 
-#[cfg_attr(doc_cfg, doc(cfg(feature = "std")))]
+#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 #[cfg(feature = "std")] pub mod adapter;
 
 pub mod mock; 
@@ -115,5 +115,5 @@ mod xoshiro128plusplus;
 #[cfg(feature = "std_rng")] pub use self::std::StdRng;
 #[cfg(all(feature = "std", feature = "std_rng"))] pub use self::thread::ThreadRng;
 
-#[cfg_attr(doc_cfg, doc(cfg(feature = "getrandom")))]
+#[cfg_attr(docsrs, doc(cfg(feature = "getrandom")))]
 #[cfg(feature = "getrandom")] pub use rand_core::OsRng;

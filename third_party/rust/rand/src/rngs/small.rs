@@ -76,7 +76,7 @@ type Rng = super::xoshiro128plusplus::Xoshiro128PlusPlus;
 
 
 
-#[cfg_attr(doc_cfg, doc(cfg(feature = "small_rng")))]
+#[cfg_attr(docsrs, doc(cfg(feature = "small_rng")))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SmallRng(Rng);
 
