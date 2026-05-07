@@ -3,9 +3,12 @@
 
 
 import os
+from pathlib import Path
 
 
 from typing import Any, Dict, Optional  
+
+import yaml
 
 DictAny = Dict[str, Any]  
 DictStr = Dict[str, str]  
@@ -14,23 +17,8 @@ OptTestSettings = Optional[DictAny]
 
 
 
-
-
-android_os_to_api_map = {
-    "7.0": "24",
-    "7.1": "25",
-    "8.0": "26",
-    "8.1": "27",
-    "9.0": "28",
-    "10.0": "29",
-    "11.0": "30",
-    "12.0": "31",
-    "12.1": "32",
-    "13": "33",
-    "14": "34",
-    "15": "35",
-    "16": "36",
-}
+with (Path(__file__).parent / "android_os_to_api_map.yaml").open() as _f:
+    android_os_to_api_map: DictStr = yaml.safe_load(_f)["android_os_to_api_map"]
 
 
 def android_os_to_api_version(os_version: str):
@@ -131,6 +119,8 @@ class PlatformInfo:
         if build is not None and self.os == "win":
             if build == "24h2":
                 version += ".26100"
+            elif build == "25h2":
+                version += ".26200"
             else:
                 version += "." + build
         return version
