@@ -553,7 +553,8 @@ nsresult XULButtonElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
       if (!keyEvent) {
         break;
       }
-      if (keyEvent->ShouldWorkAsSpaceKey() && aVisitor.mPresContext) {
+      if (keyEvent->ShouldWorkAsSpaceKey() && aVisitor.mPresContext &&
+          !IsDisabled()) {
         EventStateManager* esm = aVisitor.mPresContext->EventStateManager();
         
         esm->SetContentState(this, ElementState::HOVER);
@@ -563,13 +564,13 @@ nsresult XULButtonElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
       break;
     }
 
-
-#ifndef XP_MACOSX
     case eKeyPress: {
       WidgetKeyboardEvent* keyEvent = event->AsKeyboardEvent();
       if (!keyEvent) {
         break;
       }
+
+#ifndef XP_MACOSX
       if (NS_VK_RETURN == keyEvent->mKeyCode) {
         if (RefPtr<nsIDOMXULButtonElement> button = AsXULButton()) {
           if (OnPointerClicked(*keyEvent)) {
@@ -577,9 +578,13 @@ nsresult XULButtonElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
           }
         }
       }
+#endif
+      if (keyEvent->ShouldWorkAsSpaceKey() && mIsHandlingKeyEvent) {
+        
+        aVisitor.mEventStatus = nsEventStatus_eConsumeNoDefault;
+      }
       break;
     }
-#endif
 
     case eKeyUp: {
       WidgetKeyboardEvent* keyEvent = event->AsKeyboardEvent();
@@ -588,9 +593,7 @@ nsresult XULButtonElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
       }
       if (keyEvent->ShouldWorkAsSpaceKey()) {
         mIsHandlingKeyEvent = false;
-        ElementState buttonState = State();
-        if (buttonState.HasAllStates(ElementState::ACTIVE |
-                                     ElementState::HOVER) &&
+        if (State().HasAllStates(ElementState::ACTIVE | ElementState::HOVER) &&
             aVisitor.mPresContext) {
           
           EventStateManager* esm = aVisitor.mPresContext->EventStateManager();
@@ -622,9 +625,8 @@ nsresult XULButtonElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
 }
 
 void XULButtonElement::Blurred() {
-  ElementState buttonState = State();
   if (mIsHandlingKeyEvent &&
-      buttonState.HasAllStates(ElementState::ACTIVE | ElementState::HOVER)) {
+      State().HasAllStates(ElementState::ACTIVE | ElementState::HOVER)) {
     
     if (nsPresContext* pc = OwnerDoc()->GetPresContext()) {
       EventStateManager* esm = pc->EventStateManager();
