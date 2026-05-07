@@ -4604,7 +4604,7 @@ class MOZ_STACK_CLASS IterativeFailureTest {
 
   JSContext* const cx;
   FailureSimulator& simulator;
-  size_t compartmentCount;
+  size_t compartmentCount = 0;
 
   
   RootedFunction testFunction;

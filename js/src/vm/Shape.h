@@ -675,7 +675,7 @@ class DictionaryShape : public NativeShape {
 
 class ProxyShape : public Shape {
   
-  uintptr_t padding_;
+  uintptr_t padding_ = 0;
 
   friend class js::gc::CellAllocator;
   ProxyShape(BaseShape* base, ObjectFlags objectFlags)

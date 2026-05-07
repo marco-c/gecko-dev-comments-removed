@@ -66,7 +66,7 @@ class MOZ_NON_PARAM JS_PUBLIC_API ProfilingFrameIterator {
   
   
   void* endStackAddress_ = nullptr;
-  Kind kind_;
+  Kind kind_ = Kind::JSJit;
 
   static const unsigned StorageSpace = 9 * sizeof(void*);
   alignas(void*) unsigned char storage_[StorageSpace];

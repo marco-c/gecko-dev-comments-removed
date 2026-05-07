@@ -90,8 +90,9 @@ class InternalJobQueue : public JS::JobQueue {
   ~InternalJobQueue() = default;
 
   
-  bool getHostDefinedData(JSContext* cx,
-                          JS::MutableHandle<JSObject*> data) const override;
+  bool getHostDefinedData(
+      JSContext* cx, JS::MutableHandle<JSObject*> incumbentGlobal,
+      JS::MutableHandle<JSObject*> optionalHostDefinedData) const override;
 
   bool getHostDefinedGlobal(JSContext*,
                             JS::MutableHandle<JSObject*>) const override;
@@ -1258,7 +1259,7 @@ class MOZ_RAII AutoUnsafeCallWithABI {
 #ifdef JS_CHECK_UNSAFE_CALL_WITH_ABI
   JSContext* cx_;
   bool nested_;
-  bool checkForPendingException_;
+  bool checkForPendingException_ = false;
 #endif
   JS::AutoCheckCannotGC nogc;
 

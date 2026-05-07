@@ -35,7 +35,7 @@ class MOZ_STACK_CLASS ExpressionStatementEmitter {
 
 #ifdef DEBUG
   
-  int32_t depth_;
+  int32_t depth_ = 0;
 #endif
 
   

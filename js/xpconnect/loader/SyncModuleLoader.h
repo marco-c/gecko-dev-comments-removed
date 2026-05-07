@@ -86,7 +86,7 @@ class SyncLoadContext : public JS::loader::LoadContextBase {
  public:
   
   
-  nsresult mRv;
+  nsresult mRv = NS_OK;
 
   
   

@@ -632,7 +632,7 @@ class Nursery {
 
 #ifdef JS_GC_ZEAL
   
-  bool reportPromotion_;
+  bool reportPromotion_ = false;
 #endif
 
   

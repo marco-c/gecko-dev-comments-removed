@@ -1847,7 +1847,7 @@ class MWasmStackResultArea : public MNullaryInstruction {
  public:
   class StackResult {
     
-    uint32_t offset_;
+    uint32_t offset_ = 0;
     MIRType type_;
 
    public:

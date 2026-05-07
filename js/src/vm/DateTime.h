@@ -312,7 +312,7 @@ class DateTimeInfo {
 
   enum class TimeZoneStatus : uint8_t { Valid, NeedsUpdate, UpdateIfChanged };
 
-  TimeZoneStatus timeZoneStatus_;
+  TimeZoneStatus timeZoneStatus_ = TimeZoneStatus::NeedsUpdate;
 
   
 
@@ -352,7 +352,7 @@ class DateTimeInfo {
 
 
 
-  int32_t utcToLocalStandardOffsetSeconds_;
+  int32_t utcToLocalStandardOffsetSeconds_ = 0;
 
   RangeCache dstRange_;  
 

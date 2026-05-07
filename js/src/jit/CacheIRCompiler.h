@@ -649,7 +649,7 @@ class FailurePath {
   Vector<OperandLocation, 4, SystemAllocPolicy> inputs_;
   SpilledRegisterVector spilledRegs_;
   NonAssertingLabel label_;
-  uint32_t stackPushed_;
+  uint32_t stackPushed_ = 0;
 #ifdef DEBUG
   
   

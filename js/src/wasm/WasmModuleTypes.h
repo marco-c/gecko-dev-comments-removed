@@ -453,17 +453,17 @@ struct GlobalType {
 
 
 class GlobalDesc {
-  GlobalKind kind_;
+  GlobalKind kind_ = GlobalKind::Constant;
   
   
   InitExpr initial_;
   
-  unsigned offset_;
-  bool isMutable_;
-  bool isWasm_;
-  bool isExport_;
+  unsigned offset_ = 0;
+  bool isMutable_ = false;
+  bool isWasm_ = false;
+  bool isExport_ = false;
   
-  uint32_t importIndex_;
+  uint32_t importIndex_ = 0;
 
   
 
@@ -600,7 +600,7 @@ using MutableTagType = RefPtr<TagType>;
 using SharedTagType = RefPtr<const TagType>;
 
 struct TagDesc {
-  TagKind kind;
+  TagKind kind = TagKind::Exception;
   SharedTagType type;
   bool isExport;
 

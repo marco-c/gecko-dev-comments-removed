@@ -446,7 +446,7 @@ class SnapshotWriter {
   RValueAllocMap allocMap_;
 
   
-  uint32_t allocWritten_;
+  uint32_t allocWritten_ = 0;
 
   
   SnapshotOffset lastStart_;
@@ -481,8 +481,8 @@ class MNode;
 class RecoverWriter {
   CompactBufferWriter writer_;
 
-  uint32_t instructionCount_;
-  uint32_t instructionsWritten_;
+  uint32_t instructionCount_ = 0;
+  uint32_t instructionsWritten_ = 0;
 
  public:
   SnapshotOffset startRecover(uint32_t instructionCount);

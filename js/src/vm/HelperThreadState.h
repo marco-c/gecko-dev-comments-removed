@@ -110,7 +110,7 @@ class GlobalHelperThreadState {
   size_t threadCount;
 
   
-  size_t stackQuota;
+  size_t stackQuota = 0;
 
   bool terminating_ = false;
 
