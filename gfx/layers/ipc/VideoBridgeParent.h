@@ -32,16 +32,14 @@ class VideoBridgeParent final : public PVideoBridgeParent,
       const dom::ContentParentId& aContentId, uint64_t aSerial);
   already_AddRefed<TextureHost> LookupTexture(
       const dom::ContentParentId& aContentId, uint64_t aSerial);
+  void RemoveTexture(uint64_t aSerial);
 
   
   void ActorDestroy(ActorDestroyReason aWhy) override;
-  PTextureParent* AllocPTextureParent(const SurfaceDescriptor& aSharedData,
-                                      ReadLockDescriptor& aReadLock,
-                                      const LayersBackend& aLayersBackend,
-                                      const TextureFlags& aFlags,
-                                      const dom::ContentParentId& aContentId,
-                                      const uint64_t& aSerial);
-  bool DeallocPTextureParent(PTextureParent* actor);
+  already_AddRefed<PTextureParent> AllocPTextureParent(
+      const SurfaceDescriptor& aSharedData, ReadLockDescriptor& aReadLock,
+      const LayersBackend& aLayersBackend, const TextureFlags& aFlags,
+      const dom::ContentParentId& aContentId, const uint64_t& aSerial);
 
   
   base::ProcessId GetChildProcessId() override { return OtherPid(); }

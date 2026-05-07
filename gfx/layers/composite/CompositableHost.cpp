@@ -13,7 +13,6 @@
 #include "nsDebug.h"          
 #include "nsISupportsImpl.h"  
 #include "gfxPlatform.h"      
-#include "IPDLActor.h"
 
 namespace mozilla {
 

@@ -27,6 +27,7 @@
 #include "mozilla/layers/ISurfaceAllocator.h"
 #include "mozilla/layers/LayersSurfaces.h"  
 #include "mozilla/layers/LayersTypes.h"
+#include "mozilla/layers/PTextureChild.h"  
 #include "mozilla/layers/SyncObject.h"
 #include "mozilla/mozalloc.h"             
 #include "mozilla/UniquePtrExtensions.h"  
@@ -383,6 +384,7 @@ class TextureClient : public AtomicRefCountedWithFinalize<TextureClient> {
       const gfx::IntSize& aCbCrSize, uint32_t aCbCrStride,
       StereoMode aStereoMode, gfx::ColorDepth aColorDepth,
       gfx::YUVColorSpace aYUVColorSpace, gfx::ColorRange aColorRange,
+      gfx::TransferFunction aTransferFunction,
       gfx::ChromaSubsampling aSubsampling, TextureFlags aTextureFlags);
 
   
@@ -498,10 +500,7 @@ class TextureClient : public AtomicRefCountedWithFinalize<TextureClient> {
 
 
 
-
-
-  static PTextureChild* CreateIPDLActor();
-  static bool DestroyIPDLActor(PTextureChild* actor);
+  static already_AddRefed<PTextureChild> CreateIPDLActor();
 
   
 

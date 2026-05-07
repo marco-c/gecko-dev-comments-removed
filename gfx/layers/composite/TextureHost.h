@@ -543,17 +543,12 @@ class TextureHost : public AtomicRefCountedWithFinalize<TextureHost> {
 
 
 
-  static PTextureParent* CreateIPDLActor(
+  static already_AddRefed<PTextureParent> CreateIPDLActor(
       HostIPCAllocator* aAllocator, const SurfaceDescriptor& aSharedData,
       ReadLockDescriptor&& aDescriptor, LayersBackend aLayersBackend,
       TextureFlags aFlags, const dom::ContentParentId& aContentId,
       uint64_t aSerial, const wr::MaybeExternalImageId& aExternalImageId);
   static bool DestroyIPDLActor(PTextureParent* actor);
-
-  
-
-
-  static bool SendDeleteIPDLActor(PTextureParent* actor);
 
   static void ReceivedDestroy(PTextureParent* actor);
 
@@ -767,7 +762,7 @@ class TextureHost : public AtomicRefCountedWithFinalize<TextureHost> {
   void CallNotifyNotUsed();
 
   TextureHostType mTextureHostType;
-  PTextureParent* mActor;
+  RefPtr<TextureParent> mActor;
   RefPtr<TextureReadLock> mReadLock;
   TextureFlags mFlags;
   int mCompositableCount;
