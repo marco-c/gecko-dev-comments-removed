@@ -2930,6 +2930,14 @@ class MCompare : public MBinaryInstruction, public ComparePolicy::Data {
   [[nodiscard]] MDefinition* tryFoldBigInt64(TempAllocator& alloc);
   [[nodiscard]] MDefinition* tryFoldBigIntPtr(TempAllocator& alloc);
   [[nodiscard]] MDefinition* tryFoldBigInt(TempAllocator& alloc);
+  [[nodiscard]] MDefinition* tryFoldIntZero(TempAllocator& alloc);
+
+  
+  
+  
+  [[nodiscard]] MCompare* newCompareInt(TempAllocator& alloc,
+                                        MDefinition* operand, int64_t value,
+                                        JSOp op, bool isSigned = true);
 
  public:
   bool congruentTo(const MDefinition* ins) const override {
@@ -9048,7 +9056,9 @@ class MGuardToFunction : public MUnaryInstruction,
 
   MDefinition* foldsTo(TempAllocator& alloc) override;
   AliasSet getAliasSet() const override {
-    return AliasSet::Load(AliasSet::ObjectFields);
+    
+    
+    return AliasSet::None();
   }
   bool congruentTo(const MDefinition* ins) const override {
     if (!ins->isGuardToFunction()) {
