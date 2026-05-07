@@ -781,7 +781,7 @@ nsresult ProtocolParserProtobuf::ProcessOneResponse(
   
   nsTArray<nsCString> possibleListNameArray;
   Classifier::SplitTables(possibleListNames, possibleListNameArray);
-  for (auto possibleName : possibleListNameArray) {
+  for (const auto& possibleName : possibleListNameArray) {
     if (mRequestedTables.Contains(possibleName)) {
       aListName = possibleName;
       break;

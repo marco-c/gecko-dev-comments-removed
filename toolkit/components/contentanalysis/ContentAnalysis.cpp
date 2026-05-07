@@ -1976,7 +1976,9 @@ RefPtr<MozPromise<T, nsresult, true>> ContentAnalysis::CallClientWithRetry(
   AssertIsOnMainThread();
   auto promise =
       MakeRefPtr<typename MozPromise<T, nsresult, true>::Private>(aMethodName);
-  auto reconnectAndRetry = [aClientCallFunc, aMethodName,
+
+  
+  auto reconnectAndRetry = [clientCallFunc = aClientCallFunc, aMethodName,
                             promise](nsresult rv) {
     AssertIsOnMainThread();
     LOGD("Failed to get client - trying to reconnect: %s",
@@ -1997,7 +1999,7 @@ RefPtr<MozPromise<T, nsresult, true>> ContentAnalysis::CallClientWithRetry(
     }
     owner->mCaClientPromise->Then(
         GetCurrentSerialEventTarget(), aMethodName,
-        [aMethodName, promise, clientCallFunc = std::move(aClientCallFunc)](
+        [aMethodName, promise, clientCallFunc = std::move(clientCallFunc)](
             std::shared_ptr<content_analysis::sdk::Client> client) mutable {
           auto contentAnalysis = GetContentAnalysisFromService();
           if (!contentAnalysis) {
@@ -2033,7 +2035,9 @@ RefPtr<MozPromise<T, nsresult, true>> ContentAnalysis::CallClientWithRetry(
 
   mCaClientPromise->Then(
       GetCurrentSerialEventTarget(), aMethodName,
-      [aMethodName, promise, aClientCallFunc, reconnectAndRetry](
+      
+      [aMethodName, promise, clientCallFunc = std::forward<U>(aClientCallFunc),
+       reconnectAndRetry](
           std::shared_ptr<content_analysis::sdk::Client> client) mutable {
         auto contentAnalysis = GetContentAnalysisFromService();
         if (!contentAnalysis) {
@@ -2042,10 +2046,11 @@ RefPtr<MozPromise<T, nsresult, true>> ContentAnalysis::CallClientWithRetry(
         }
         nsresult rv = contentAnalysis->mThreadPool->Dispatch(
             NS_NewCancelableRunnableFunction(
-                aMethodName, [aMethodName, promise, aClientCallFunc,
+                aMethodName, [aMethodName, promise,
+                              clientCallFunc = std::move(clientCallFunc),
                               reconnectAndRetry = std::move(reconnectAndRetry),
                               client = std::move(client)]() mutable {
-                  auto result = aClientCallFunc(client);
+                  auto result = clientCallFunc(client);
                   if (result.isOk()) {
                     promise->Resolve(result.unwrap(), aMethodName);
                     return;
@@ -2135,8 +2140,8 @@ nsresult ContentAnalysis::RunAnalyzeRequestTask(
 
   CallClientWithRetry<std::nullptr_t>(
       __func__,
-      [userActionId, pbRequest = std::move(pbRequest), aAutoAcknowledge,
-       ignoreCanceled](
+      [userActionId = userActionId, pbRequest = std::move(pbRequest),
+       aAutoAcknowledge, ignoreCanceled](
           std::shared_ptr<content_analysis::sdk::Client> client) mutable {
         MOZ_ASSERT(!NS_IsMainThread());
         return DoAnalyzeRequest(std::move(userActionId), std::move(pbRequest),
@@ -2144,7 +2149,8 @@ nsresult ContentAnalysis::RunAnalyzeRequestTask(
       })
       ->Then(
           GetMainThreadSerialEventTarget(), __func__, []() {  },
-          [userActionId, requestToken](nsresult rv) mutable {
+          [userActionId = std::move(userActionId),
+           requestToken = std::move(requestToken)](nsresult rv) mutable {
             LOGD(
                 "RunAnalyzeRequestTask failed to get client a second time for "
                 "requestToken=%s, userActionId=%s",

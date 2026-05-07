@@ -179,7 +179,7 @@ void StreamFilterParent::Disconnect(const nsACString& aReason) {
   nsAutoCString reason(aReason);
 
   RefPtr<StreamFilterParent> self(this);
-  RunOnActorThread(FUNC, [self, reason] {
+  RunOnActorThread(FUNC, [self, reason = std::move(reason)] {
     if (self->IPCActive()) {
       self->mState = State::Disconnected;
       self->CheckResult(self->SendError(reason));
@@ -872,7 +872,8 @@ void StreamFilterParent::AssertIsIOThread() { MOZ_ASSERT(IsIOThread()); }
 
 template <typename Function>
 void StreamFilterParent::RunOnMainThread(const char* aName, Function&& aFunc) {
-  mQueue->RunOrEnqueue(new ChannelEventFunction(mMainThread, std::move(aFunc)));
+  mQueue->RunOrEnqueue(
+      new ChannelEventFunction(mMainThread, std::forward<Function>(aFunc)));
 }
 
 void StreamFilterParent::RunOnMainThread(already_AddRefed<Runnable> aRunnable) {
@@ -882,7 +883,8 @@ void StreamFilterParent::RunOnMainThread(already_AddRefed<Runnable> aRunnable) {
 
 template <typename Function>
 void StreamFilterParent::RunOnIOThread(const char* aName, Function&& aFunc) {
-  mQueue->RunOrEnqueue(new ChannelEventFunction(mIOThread, std::move(aFunc)));
+  mQueue->RunOrEnqueue(
+      new ChannelEventFunction(mIOThread, std::forward<Function>(aFunc)));
 }
 
 void StreamFilterParent::RunOnIOThread(already_AddRefed<Runnable> aRunnable) {
