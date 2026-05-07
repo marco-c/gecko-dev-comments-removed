@@ -10,8 +10,6 @@
 
 #include "content_decryption_module_export.h"
 
-#include "mozilla/DefineEnum.h"
-
 
 
 
@@ -69,15 +67,15 @@ CDM_API const char* GetCdmVersion();
 
 namespace cdm {
 
-MOZ_DEFINE_ENUM_WITH_BASE_AND_TOSTRING(Status, uint32_t, (
-  kSuccess,
+enum Status : uint32_t {
+  kSuccess = 0,
   kNeedMoreData,  
   kNoKey,         
   kInitializationError,    
   kDecryptError,           
   kDecodeError,            
   kDeferredInitialization  
-));
+};
 CHECK_TYPE(Status, 4, 4);
 
 
@@ -993,6 +991,10 @@ class CDM_CLASS_API ContentDecryptionModule_11 {
                             const char* session_id,
                             uint32_t session_id_size) = 0;
 
+  
+  
+  
+  
   
   
   
