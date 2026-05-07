@@ -64,8 +64,14 @@ class AudioSession final : public IAudioSessionEvents {
     
     MOZ_ASSERT(!sService);
     NS_ENSURE_TRUE_VOID(!sService);
-    sService = new AudioSession(std::move(aDisplayName), std::move(aIconPath),
-                                std::move(aSessionGroupingParameter));
+    
+    
+    
+    RefPtr session =
+        new AudioSession(std::move(aDisplayName), std::move(aIconPath),
+                         std::move(aSessionGroupingParameter));
+    session->Start();
+    sService = std::move(session);
     LOGD("Created AudioSession.");
   }
 
@@ -143,9 +149,7 @@ class AudioSession final : public IAudioSessionEvents {
                nsID&& aSessionGroupingParameter) MOZ_REQUIRES(sMutex)
       : mDisplayName(aDisplayName),
         mIconPath(aIconPath),
-        mSessionGroupingParameter(aSessionGroupingParameter) {
-    Start();
-  }
+        mSessionGroupingParameter(aSessionGroupingParameter) {}
   ~AudioSession() {
     
     MOZ_ASSERT(!mAudioSessionControl);
