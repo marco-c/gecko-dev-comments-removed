@@ -124,6 +124,10 @@ FlexfecReceiveStreamImpl::FlexfecReceiveStreamImpl(
            .rtt_stats = rtt_stats},
           [packet_router] {
             
+            
+            
+            RTC_CHECK_NOTREACHED();
+            
             if (packet_router != nullptr) {
               return packet_router->SsrcOfFirstSender().value_or(
                   kFallbackRtcpSsrcForVideo);
