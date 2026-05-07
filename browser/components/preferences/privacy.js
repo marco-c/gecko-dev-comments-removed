@@ -1783,8 +1783,7 @@ var gPrivacyPane = {
       "about-logins-os-auth-dialog-caption"
     );
     let win =
-      osReauthCheckbox.documentGlobal.docShell.chromeEventHandler
-        .documentGlobal;
+      osReauthCheckbox.ownerGlobal.docShell.chromeEventHandler.ownerGlobal;
 
     
     

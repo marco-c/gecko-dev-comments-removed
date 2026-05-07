@@ -184,7 +184,7 @@ testUrlsWithForm.forEach(testUrl => {
       "The first tab should be backgrounded"
     );
 
-    const dialogObserved = waitForMPDialog("authenticate", tab1.documentGlobal);
+    const dialogObserved = waitForMPDialog("authenticate", tab1.ownerGlobal);
 
     
     

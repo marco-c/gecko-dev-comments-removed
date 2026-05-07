@@ -1174,7 +1174,7 @@ class Editor extends EventEmitter {
           
           
           
-          event.target.documentGlobal.setTimeout(() => {
+          event.target.ownerGlobal.setTimeout(() => {
             const view = editor.viewState;
             const cursorPos = lezerUtils.positionToLocation(
               view.state.doc,

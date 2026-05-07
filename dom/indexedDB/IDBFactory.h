@@ -128,7 +128,7 @@ class IDBFactory final : public GlobalTeardownObserver, public nsWrapperCache {
   void UpdateActiveDatabaseCount(int32_t aDelta);
 
   
-  nsIGlobalObject* GetParentObject() const { return GetRelevantGlobal(); }
+  nsIGlobalObject* GetParentObject() const { return GetOwnerGlobal(); }
 
   BrowserChild* GetBrowserChild() const { return mBrowserChild; }
 

@@ -204,7 +204,7 @@ class EventTarget : public nsISupports, public nsWrapperCache {
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void DispatchEvent(Event& aEvent,
                                                  ErrorResult& aRv);
 
-  nsIGlobalObject* GetParentObject() const { return GetRelevantGlobal(); }
+  nsIGlobalObject* GetParentObject() const { return GetOwnerGlobal(); }
 
   
   EventHandlerNonNull* GetEventHandler(const nsAString& aType) {
@@ -225,8 +225,13 @@ class EventTarget : public nsISupports, public nsWrapperCache {
   
   
   
+  Nullable<WindowProxyHolder> GetOwnerGlobalForBindings();
+  virtual nsPIDOMWindowOuter* GetOwnerGlobalForBindingsInternal() = 0;
+
   
-  virtual nsIGlobalObject* GetRelevantGlobal() const = 0;
+  
+  
+  virtual nsIGlobalObject* GetOwnerGlobal() const = 0;
 
   
 

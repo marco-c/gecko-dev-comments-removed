@@ -16,7 +16,7 @@ async function navigateTo(browser, urls, expectedPersist) {
   
   
   let pageShowCheck = evt => {
-    evt.target.documentGlobal.document.documentElement.setAttribute(
+    evt.target.ownerGlobal.document.documentElement.setAttribute(
       "persisted",
       evt.persisted
     );

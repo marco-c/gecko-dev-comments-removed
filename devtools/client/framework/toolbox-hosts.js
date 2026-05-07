@@ -51,7 +51,7 @@ class BaseInBrowserHost {
     this.hostTab = hostTab;
     this.type = type;
 
-    this._gBrowser = this.hostTab.documentGlobal.gBrowser;
+    this._gBrowser = this.hostTab.ownerGlobal.gBrowser;
     this._browserContainer = this._gBrowser.getBrowserContainer(
       this.hostTab.linkedBrowser
     );
@@ -138,7 +138,7 @@ class BottomHost extends BaseInBrowserHost {
 
 
   async create() {
-    await gDevToolsBrowser.loadBrowserStyleSheet(this.hostTab.documentGlobal);
+    await gDevToolsBrowser.loadBrowserStyleSheet(this.hostTab.ownerGlobal);
 
     const { ownerDocument } = this.hostTab;
     this.#splitter = ownerDocument.createXULElement("splitter");
@@ -204,7 +204,7 @@ class SidebarHost extends BaseInBrowserHost {
 
 
   async create() {
-    await gDevToolsBrowser.loadBrowserStyleSheet(this.hostTab.documentGlobal);
+    await gDevToolsBrowser.loadBrowserStyleSheet(this.hostTab.ownerGlobal);
 
     this.#browserPanel = this._gBrowser.getPanel(this.hostTab.linkedBrowser);
     const { ownerDocument } = this.hostTab;
@@ -221,7 +221,7 @@ class SidebarHost extends BaseInBrowserHost {
       ) + "px";
 
     
-    const topWindow = this.hostTab.documentGlobal;
+    const topWindow = this.hostTab.ownerGlobal;
     const topDoc = topWindow.document.documentElement;
     const isLTR = topWindow.getComputedStyle(topDoc).direction === "ltr";
 
@@ -313,7 +313,7 @@ class WindowHost extends EventEmitter {
       
       
       
-      const owner = this.hostTab?.documentGlobal;
+      const owner = this.hostTab?.ownerGlobal;
       if (owner && lazy.PrivateBrowsingUtils.isWindowPrivate(owner)) {
         flags += ",private";
       }
@@ -322,7 +322,7 @@ class WindowHost extends EventEmitter {
       
       
       
-      if (this.hostTab && !this.hostTab.documentGlobal.gFissionBrowser) {
+      if (this.hostTab && !this.hostTab.ownerGlobal.gFissionBrowser) {
         flags += ",non-fission";
       }
 
@@ -474,7 +474,7 @@ class PageHost {
   raise() {
     
     
-    focusTab(this.frame.documentGlobal.gBrowser.getTabForBrowser(this.frame));
+    focusTab(this.frame.ownerGlobal.gBrowser.getTabForBrowser(this.frame));
   }
 
   
@@ -490,7 +490,7 @@ class PageHost {
 
 
 function focusTab(tab) {
-  const browserWindow = tab.documentGlobal;
+  const browserWindow = tab.ownerGlobal;
   browserWindow.focus();
   browserWindow.gBrowser.selectedTab = tab;
 }

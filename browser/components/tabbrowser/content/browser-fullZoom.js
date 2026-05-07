@@ -629,7 +629,7 @@ var FullZoom = {
     
     
     if (target.nodeType == Node.DOCUMENT_NODE) {
-      return target.documentGlobal.docShell.chromeEventHandler;
+      return target.ownerGlobal.docShell.chromeEventHandler;
     }
 
     throw new Error("Unexpected zoom event source");

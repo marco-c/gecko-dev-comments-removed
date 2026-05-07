@@ -346,7 +346,7 @@ already_AddRefed<Promise> DocumentPictureInPicture::RequestWindow(
   asyncDispatcher->PostDOMEvent();
 
   
-  RefPtr<Promise> promise = Promise::CreateInfallible(GetRelevantGlobal());
+  RefPtr<Promise> promise = Promise::CreateInfallible(GetOwnerGlobal());
   promise->MaybeResolve(nsGlobalWindowInner::Cast(mLastOpenedWindow));
   return promise.forget();
 }

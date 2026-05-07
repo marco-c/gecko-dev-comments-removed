@@ -167,7 +167,7 @@ void DecoderTemplate<DecoderType>::Configure(const ConfigType& aConfig,
   
   
   if constexpr (std::is_same_v<ConfigType, VideoDecoderConfig>) {
-    ApplyResistFingerprintingIfNeeded(config, GetRelevantGlobal());
+    ApplyResistFingerprintingIfNeeded(config, GetOwnerGlobal());
   }
 
   mState = CodecState::Configured;

@@ -325,7 +325,7 @@ async function checkJumpToDeclaration({
 
   
   ok(
-    isInViewport(highlightedElement, highlightedElement.documentGlobal),
+    isInViewport(highlightedElement, highlightedElement.ownerGlobal),
     `Highlighted element is in view`
   );
   const activeElement = highlightedElement.ownerDocument.activeElement;

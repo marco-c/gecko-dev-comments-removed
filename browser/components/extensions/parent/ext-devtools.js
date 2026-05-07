@@ -42,7 +42,7 @@ global.getTargetTabIdForToolbox = toolbox => {
     );
   }
 
-  let parentWindow = descriptorFront.localTab.linkedBrowser.documentGlobal;
+  let parentWindow = descriptorFront.localTab.linkedBrowser.ownerGlobal;
   let tab = parentWindow.gBrowser.getTabForBrowser(
     descriptorFront.localTab.linkedBrowser
   );
@@ -202,7 +202,7 @@ class DevToolsPageDefinition {
   buildForToolbox(toolbox) {
     if (
       !this.extension.canAccessWindow(
-        toolbox.commands.descriptorFront.localTab.documentGlobal
+        toolbox.commands.descriptorFront.localTab.ownerGlobal
       )
     ) {
       
@@ -273,7 +273,7 @@ class DevToolsPageDefinition {
         
         
         !this.extension.canAccessWindow(
-          toolbox.commands.descriptorFront.localTab.documentGlobal
+          toolbox.commands.descriptorFront.localTab.ownerGlobal
         )
       ) {
         continue;
@@ -418,7 +418,7 @@ this.devtools = class extends ExtensionAPI {
     if (
       !toolbox.commands.descriptorFront.isLocalTab ||
       !this.extension.canAccessWindow(
-        toolbox.commands.descriptorFront.localTab.documentGlobal
+        toolbox.commands.descriptorFront.localTab.ownerGlobal
       )
     ) {
       

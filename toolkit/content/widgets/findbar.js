@@ -798,7 +798,7 @@
       }
 
       
-      let event = new target.documentGlobal.KeyboardEvent("keypress", {
+      let event = new target.ownerGlobal.KeyboardEvent("keypress", {
         ...fakeEvent,
         bubbles: false,
       });

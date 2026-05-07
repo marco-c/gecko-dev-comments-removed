@@ -75,10 +75,7 @@ add_task(async () => {
   );
 
   
-  const restyleCount = await observeStylingInTargetWindow(
-    panel.documentGlobal,
-    5
-  );
+  const restyleCount = await observeStylingInTargetWindow(panel.ownerGlobal, 5);
 
   
   

@@ -481,7 +481,7 @@ async function waitForAnimationReadyToRestyle(aAnimation) {
   
   
   if (animationStartsRightNow(aAnimation)) {
-    await waitForNextFrame(aAnimation.documentGlobal);
+    await waitForNextFrame(aAnimation.ownerGlobal);
   }
 }
 

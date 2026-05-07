@@ -104,7 +104,7 @@ async function openTabInUserContext(userContextId) {
 
   
   gBrowser.selectedTab = tab;
-  tab.documentGlobal.focus();
+  tab.ownerGlobal.focus();
 
   let browser = gBrowser.getBrowserForTab(tab);
   await BrowserTestUtils.browserLoaded(browser);

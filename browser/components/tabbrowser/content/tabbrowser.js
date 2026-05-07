@@ -332,7 +332,7 @@
       this._initialized = true;
     }
 
-    documentGlobal = window;
+    ownerGlobal = window;
 
     ownerDocument = document;
 
@@ -1783,7 +1783,7 @@
         newTab.updateLastAccessed();
         oldTab.updateLastAccessed();
         
-        if (this.documentGlobal == BrowserWindowTracker.getTopWindow()) {
+        if (this.ownerGlobal == BrowserWindowTracker.getTopWindow()) {
           newTab.updateLastSeenActive();
           oldTab.updateLastSeenActive();
         }
@@ -3980,8 +3980,7 @@
       group.removedByAdoption = true;
       group.saveOnWindowClose = false;
 
-      let oldSelectedTab =
-        selectTab && group.documentGlobal.gBrowser.selectedTab;
+      let oldSelectedTab = selectTab && group.ownerGlobal.gBrowser.selectedTab;
       let newTabs = [];
       let adoptedTab;
       let splitview;
@@ -3989,10 +3988,9 @@
       
       
       
-      let noOtherTabsInWindow =
-        group.documentGlobal.gBrowser.nonHiddenTabs.every(
-          t => t.group == group
-        );
+      let noOtherTabsInWindow = group.ownerGlobal.gBrowser.nonHiddenTabs.every(
+        t => t.group == group
+      );
 
       
       
@@ -4051,7 +4049,7 @@
       }
 
       let oldSelectedTab =
-        selectTab && container.documentGlobal.gBrowser.selectedTab;
+        selectTab && container.ownerGlobal.gBrowser.selectedTab;
       let newTabs = [];
 
       
@@ -6361,14 +6359,14 @@
       
       if (
         PrivateBrowsingUtils.isWindowPrivate(window) !=
-        PrivateBrowsingUtils.isWindowPrivate(aOtherTab.documentGlobal)
+        PrivateBrowsingUtils.isWindowPrivate(aOtherTab.ownerGlobal)
       ) {
         return false;
       }
 
       
       
-      if (gFissionBrowser != aOtherTab.documentGlobal.gFissionBrowser) {
+      if (gFissionBrowser != aOtherTab.ownerGlobal.gFissionBrowser) {
         return false;
       }
 
@@ -6389,7 +6387,7 @@
       }
 
       
-      var remoteBrowser = aOtherTab.documentGlobal.gBrowser;
+      var remoteBrowser = aOtherTab.ownerGlobal.gBrowser;
       var isPending = aOtherTab.hasAttribute("pending");
 
       let otherTabListener = remoteBrowser._tabListeners.get(aOtherTab);
@@ -6423,7 +6421,7 @@
       
       let [closeWindow] = aOtherTab._endRemoveArgs;
       if (closeWindow) {
-        let win = aOtherTab.documentGlobal;
+        let win = aOtherTab.ownerGlobal;
         win.windowUtils.suppressAnimation(true);
         
         
@@ -6556,7 +6554,7 @@
 
       
       if (closeWindow) {
-        aOtherTab.documentGlobal.close();
+        aOtherTab.ownerGlobal.close();
       } else {
         remoteBrowser._endRemoveTab(aOtherTab);
       }
@@ -6590,7 +6588,7 @@
       this._swapBrowserDocShells(aOurTab, otherBrowser);
 
       
-      tabListener = new otherTabBrowser.documentGlobal.TabProgressListener(
+      tabListener = new otherTabBrowser.ownerGlobal.TabProgressListener(
         aOtherTab,
         otherBrowser,
         false,
@@ -6617,7 +6615,7 @@
       
       this._swapRegisteredOpenURIs(ourBrowser, aOtherBrowser);
 
-      let remoteBrowser = aOtherBrowser.documentGlobal.gBrowser;
+      let remoteBrowser = aOtherBrowser.ownerGlobal.gBrowser;
 
       
       
@@ -9126,13 +9124,13 @@
     }
 
     setSuccessor(aTab, successorTab) {
-      if (aTab.documentGlobal != window) {
+      if (aTab.ownerGlobal != window) {
         throw new Error("Cannot set the successor of another window's tab");
       }
       if (successorTab == aTab) {
         successorTab = null;
       }
-      if (successorTab && successorTab.documentGlobal != window) {
+      if (successorTab && successorTab.ownerGlobal != window) {
         throw new Error("Cannot set the successor to another window's tab");
       }
       if (aTab.successor) {
@@ -11003,7 +11001,7 @@ var TabContextMenu = {
         gBrowser.TabMetrics.METRIC_SOURCE.TAB_MENU
       )
     );
-    group.documentGlobal.focus();
+    group.ownerGlobal.focus();
   },
 
   addTabsToSavedGroup(groupId) {

@@ -155,7 +155,7 @@ async function waitForSubDialog(browser, url, state) {
     eventTarget = browser.tabContainer.ownerDocument.documentElement;
   } else {
     
-    let tabDialogBox = browser.documentGlobal.gBrowser.getTabDialogBox(browser);
+    let tabDialogBox = browser.ownerGlobal.gBrowser.getTabDialogBox(browser);
     eventTarget = tabDialogBox.getTabDialogManager()._dialogStack;
   }
 

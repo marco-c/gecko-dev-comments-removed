@@ -183,7 +183,7 @@ class CSSRegisteredPropertiesWatcher {
     
     if (
       this.#targetActor.ignoreSubFrames &&
-      event.target.documentGlobal !== this.#targetActor.window
+      event.target.ownerGlobal !== this.#targetActor.window
     ) {
       return;
     }

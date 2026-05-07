@@ -68,7 +68,7 @@ NS_INTERFACE_MAP_END
 NS_IMPL_CYCLE_COLLECTING_ADDREF(FontFace)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(FontFace)
 
-FontFace::FontFace(nsIGlobalObject* aParent) { BindToGlobal(aParent); }
+FontFace::FontFace(nsIGlobalObject* aParent) { BindToOwner(aParent); }
 
 FontFace::~FontFace() {
   
@@ -301,11 +301,11 @@ void FontFace::MaybeReject(FontFaceLoadedRejectReason aReason,
 }
 
 void FontFace::EnsurePromise() {
-  if (mLoaded || !mImpl || !GetRelevantGlobal()) {
+  if (mLoaded || !mImpl || !GetOwnerGlobal()) {
     return;
   }
 
-  mLoaded = Promise::CreateInfallible(GetRelevantGlobal());
+  mLoaded = Promise::CreateInfallible(GetOwnerGlobal());
 
   if (mImpl->Status() == FontFaceLoadStatus::Loaded) {
     mLoaded->MaybeResolve(this);

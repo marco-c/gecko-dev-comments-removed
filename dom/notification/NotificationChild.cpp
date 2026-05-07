@@ -21,7 +21,7 @@ NotificationChild::NotificationChild(Notification* aNonPersistentNotification,
                                      WindowGlobalChild* aWindow)
     : mNonPersistentNotification(aNonPersistentNotification), mWindow(aWindow) {
   if (mWindow) {
-    BindToGlobal(mWindow->GetWindowGlobal()->AsGlobal());
+    BindToOwner(mWindow->GetWindowGlobal()->AsGlobal());
     return;
   }
 }
@@ -100,7 +100,7 @@ void NotificationChild::ActorDestroy(ActorDestroyReason aWhy) {
   }
 }
 
-void NotificationChild::FrozenCallback(nsIGlobalObject* aGlobal) {
+void NotificationChild::FrozenCallback(nsIGlobalObject* aOwner) {
   
   
   mNonPersistentNotification = nullptr;

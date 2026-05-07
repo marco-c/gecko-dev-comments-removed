@@ -228,7 +228,7 @@ ExternalTextureSourceClient::Create(
   
   
   if (!sfeResult.mCORSUsed) {
-    const nsIGlobalObject* const global = aDevice->GetRelevantGlobal();
+    const nsIGlobalObject* const global = aDevice->GetOwnerGlobal();
     nsIPrincipal* const dstPrincipal =
         global ? global->PrincipalOrNull() : nullptr;
     if (!sfeResult.mPrincipal || !dstPrincipal ||

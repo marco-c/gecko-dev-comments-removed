@@ -90,7 +90,7 @@ async function getColorsForOptionsUI({ browser_style, open_in_tab }) {
     
     
     Assert.ok(!open_in_tab, "Background only transparent without open_in_tab");
-    let style = optionsBrowser.documentGlobal.getComputedStyle(optionsBrowser);
+    let style = optionsBrowser.ownerGlobal.getComputedStyle(optionsBrowser);
     colors.bgColor = style.backgroundColor;
   }
 
