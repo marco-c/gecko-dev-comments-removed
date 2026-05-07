@@ -4908,6 +4908,12 @@ already_AddRefed<Animation> Element::Animate(
 
   
   
+
+  
+
+  
+  
+  
   
   
   RefPtr<KeyframeEffect> effect =
@@ -4920,17 +4926,34 @@ already_AddRefed<Animation> Element::Animate(
   
   JSAutoRealm ar(aContext, global.Get());
 
-  AnimationTimeline* timeline = OwnerDoc()->Timeline();
+  
+  
+  
+  AnimationTimeline* timeline = nullptr;
+  if (aOptions.IsKeyframeAnimationOptions()) {
+    const auto& kfOpts = aOptions.GetAsKeyframeAnimationOptions();
+    if (kfOpts.mTimeline.WasPassed()) {
+      timeline = kfOpts.mTimeline.Value();
+    }
+  }
+  if (!timeline) {
+    timeline = OwnerDoc()->Timeline();
+  }
+
+  
   RefPtr<Animation> animation = Animation::Constructor(
       global, effect, Optional<AnimationTimeline*>(timeline), aError);
   if (aError.Failed()) {
     return nullptr;
   }
 
+  
+  
   if (aOptions.IsKeyframeAnimationOptions()) {
     animation->SetId(aOptions.GetAsKeyframeAnimationOptions().mId);
   }
 
+  
   animation->Play(aError, Animation::LimitBehavior::AutoRewind);
   if (aError.Failed()) {
     return nullptr;
