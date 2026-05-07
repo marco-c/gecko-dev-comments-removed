@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "FFmpegVideoEncoder.h"
 
 #include <aom/aomcx.h>
@@ -160,7 +158,7 @@ static Maybe<H264Setting> GetH264Level(const H264_LEVEL& aLevel) {
   int val = static_cast<int>(aLevel);
   nsPrintfCString str("%d", val);
   str.Insert('.', 1);
-  return Some(H264Setting{val, str});
+  return Some(H264Setting{val, std::move(str)});
 }
 
 struct VPXSVCAppendix {

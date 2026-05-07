@@ -324,7 +324,7 @@ class GMPDiskStorage : public GMPStorage {
       f->Exists(&exists);
       if (!exists) {
         
-        aOutFilename = hashStr;
+        aOutFilename = std::move(hashStr);
         return NS_OK;
       } else {
         

@@ -515,7 +515,7 @@ std::vector<std::string> NrIceMediaStream::GetAttributes() const {
   }
 
   for (int i = 0; i < attrct; i++) {
-    ret.push_back(attrs[i]);
+    ret.emplace_back(attrs[i]);
     free(attrs[i]);
   }
 
@@ -538,7 +538,7 @@ static nsresult GetCandidatesFromStream(
         
         
         if (ToNrIceCandidate(*cand, &new_cand)) {
-          candidates->push_back(new_cand);
+          candidates->push_back(std::move(new_cand));
         }
         cand = TAILQ_NEXT(cand, entry_comp);
       }

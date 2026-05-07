@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "OnlineSpeechRecognitionService.h"
 
 #include <json/json.h>
@@ -288,7 +286,7 @@ void OnlineSpeechRecognitionService::DoSTT() {
                           prefEndpoint);
 
   if (!prefEndpoint.IsEmpty()) {
-    speechRecognitionEndpoint = prefEndpoint;
+    speechRecognitionEndpoint = std::move(prefEndpoint);
   } else {
     speechRecognitionEndpoint = DEFAULT_RECOGNITION_ENDPOINT;
   }

@@ -81,8 +81,8 @@ void ClearKeySessionManager::CreateSession(uint32_t aPromiseId,
   vector<uint8_t> initData(aInitData, aInitData + aInitDataSize);
 
   RefPtr<ClearKeySessionManager> self(this);
-  function<void()> deferrer = [self, aPromiseId, aInitDataType, initData,
-                               aSessionType]() {
+  function<void()> deferrer = [self, aPromiseId, aInitDataType,
+                               initData = std::move(initData), aSessionType]() {
     self->CreateSession(aPromiseId, aInitDataType, initData.data(),
                         initData.size(), aSessionType);
   };
@@ -291,6 +291,8 @@ void ClearKeySessionManager::UpdateSession(uint32_t aPromiseId,
   
   
   RefPtr<ClearKeySessionManager> self(this);
+  
+  
   function<void()> deferrer = [self, aPromiseId, sessionId, response]() {
     self->UpdateSession(aPromiseId, sessionId.data(), sessionId.size(),
                         response.data(), response.size());
