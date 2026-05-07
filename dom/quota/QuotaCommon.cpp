@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/quota/QuotaCommon.h"
 
 #ifdef QM_ERROR_STACKS_ENABLED
@@ -14,6 +12,7 @@
 #include "mozilla/ErrorNames.h"
 #include "mozilla/Logging.h"
 #include "mozilla/MozPromise.h"
+#include "mozilla/SourcePathLiteral.h"
 #include "mozilla/TextUtils.h"
 #include "mozilla/dom/quota/ResultExtensions.h"
 #include "mozilla/dom/quota/ScopedLogExtraInfo.h"
@@ -269,7 +268,7 @@ nsDependentCSubstring GetTreeBase(const nsLiteralCString& aPath,
 
 nsDependentCSubstring GetSourceTreeBase() {
   static constexpr auto thisSourceFileRelativePath =
-      "/dom/quota/QuotaCommon.cpp"_ns;
+      "/dom/quota/QuotaCommon.cpp"_sp;
 
   return GetTreeBase(nsLiteralCString(__FILE__), thisSourceFileRelativePath);
 }
@@ -277,20 +276,79 @@ nsDependentCSubstring GetSourceTreeBase() {
 nsDependentCSubstring GetObjdirDistIncludeTreeBase(
     const nsLiteralCString& aQuotaCommonHPath) {
   static constexpr auto quotaCommonHSourceFileRelativePath =
-      "/mozilla/dom/quota/QuotaCommon.h"_ns;
+      "/mozilla/dom/quota/QuotaCommon.h"_sp;
 
   return GetTreeBase(aQuotaCommonHPath, quotaCommonHSourceFileRelativePath);
 }
 
 static constexpr auto kSourceFileRelativePathMap =
     std::array<std::pair<nsLiteralCString, nsLiteralCString>, 1>{
-        {{"mozilla/dom/LocalStorageCommon.h"_ns,
-          "dom/localstorage/LocalStorageCommon.h"_ns}}};
+        {{"mozilla/dom/LocalStorageCommon.h"_sp,
+          "dom/localstorage/LocalStorageCommon.h"_sp}}};
+
+static nsDependentCSubstring StripRelativeComponents(
+    const nsACString& aSourceFilePath) {
+  
+  
+  
+  size_t index = 0;
+  for (char c : Span(aSourceFilePath)) {
+    if (c == '.' || c == '/' || c == '\\') {
+      index++;
+    } else {
+      break;
+    }
+  }
+  return Substring(aSourceFilePath, index);
+}
+
+static nsDependentCSubstring MapDistIncludePathToSource(
+    const nsACString& aDistIncludePath) {
+  
+  
+  
+  const auto foundIt = std::find_if(kSourceFileRelativePathMap.cbegin(),
+                                    kSourceFileRelativePathMap.cend(),
+                                    [&aDistIncludePath](const auto& entry) {
+                                      return entry.first == aDistIncludePath;
+                                    });
+
+  if (MOZ_UNLIKELY(foundIt != kSourceFileRelativePathMap.cend())) {
+    return Substring(foundIt->second, 0);
+  }
+
+  static constexpr auto mozillaRelativeBase = "mozilla/"_sp;
+  
+  
+  if (StringBeginsWith(aDistIncludePath, mozillaRelativeBase)) [[likely]] {
+    return Substring(aDistIncludePath, mozillaRelativeBase.Length());
+  }
+
+  
+  
+  
+  
+  
+  return nsDependentCSubstring(aDistIncludePath);
+}
 
 nsDependentCSubstring MakeSourceFileRelativePath(
     const nsACString& aSourceFilePath) {
   static constexpr auto error = "ERROR"_ns;
-  static constexpr auto mozillaRelativeBase = "mozilla/"_ns;
+  static constexpr auto kDistInclude = "dist/include/"_sp;
+  static constexpr auto kCheckoutsGecko = "checkouts/gecko/"_sp;
+
+  if (StringBeginsWith(aSourceFilePath, "."_ns)) {
+    nsDependentCSubstring stripped = StripRelativeComponents(aSourceFilePath);
+    if (StringBeginsWith(stripped, kDistInclude)) {
+      return MapDistIncludePathToSource(
+          Substring(stripped, kDistInclude.Length()));
+    }
+    if (StringBeginsWith(stripped, kCheckoutsGecko)) {
+      return Substring(stripped, kCheckoutsGecko.Length());
+    }
+    return stripped;
+  }
 
   static const auto sourceTreeBase = GetSourceTreeBase();
 
@@ -304,39 +362,12 @@ nsDependentCSubstring MakeSourceFileRelativePath(
 
   if (MOZ_LIKELY(
           StringBeginsWith(aSourceFilePath, objdirDistIncludeTreeBase))) {
-    const auto sourceFileRelativePath =
-        Substring(aSourceFilePath, objdirDistIncludeTreeBase.Length() + 1);
-
-    
-    
-    
-    const auto foundIt = std::find_if(
-        kSourceFileRelativePathMap.cbegin(), kSourceFileRelativePathMap.cend(),
-        [&sourceFileRelativePath](const auto& entry) {
-          return entry.first == sourceFileRelativePath;
-        });
-
-    if (MOZ_UNLIKELY(foundIt != kSourceFileRelativePathMap.cend())) {
-      return Substring(foundIt->second, 0);
-    }
-
-    
-    
-    if (MOZ_LIKELY(
-            StringBeginsWith(sourceFileRelativePath, mozillaRelativeBase))) {
-      return Substring(sourceFileRelativePath, mozillaRelativeBase.Length());
-    }
-
-    
-    
-    
-    
-    
-    return sourceFileRelativePath;
+    return MapDistIncludePathToSource(
+        Substring(aSourceFilePath, objdirDistIncludeTreeBase.Length() + 1));
   }
 
   nsCString::const_iterator begin, end;
-  if (RFindInReadable("/"_ns, aSourceFilePath.BeginReading(begin),
+  if (RFindInReadable("/"_sp, aSourceFilePath.BeginReading(begin),
                       aSourceFilePath.EndReading(end))) {
     
     
@@ -344,8 +375,7 @@ nsDependentCSubstring MakeSourceFileRelativePath(
     return Substring(begin, aSourceFilePath.EndReading(end));
   }
 
-  return nsDependentCSubstring{static_cast<mozilla::Span<const char>>(
-      static_cast<const nsCString&>(error))};
+  return nsDependentCSubstring{Span(static_cast<const nsCString&>(error))};
 }
 
 }  
