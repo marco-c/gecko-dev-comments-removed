@@ -28,11 +28,11 @@ import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.integrity.IntegrityClient
 import mozilla.components.concept.storage.CreditCardsAddressesStorage
 import mozilla.components.concept.storage.LoginsStorage
-import mozilla.components.lib.llm.mlpa.MlpaTokenStorage
 import mozilla.telemetry.glean.Glean
 import org.mozilla.fenix.R
+import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.ClientUUID
-import org.mozilla.fenix.components.llm.Llm
+import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.debugsettings.addresses.AddressesDebugRegionRepository
 import org.mozilla.fenix.debugsettings.addresses.AddressesTools
 import org.mozilla.fenix.debugsettings.addresses.FakeAddressesDebugRegionRepository
@@ -46,10 +46,7 @@ import org.mozilla.fenix.debugsettings.gleandebugtools.DefaultGleanDebugToolsSto
 import org.mozilla.fenix.debugsettings.gleandebugtools.GleanDebugToolsMiddleware
 import org.mozilla.fenix.debugsettings.gleandebugtools.GleanDebugToolsState
 import org.mozilla.fenix.debugsettings.gleandebugtools.GleanDebugToolsStore
-import org.mozilla.fenix.debugsettings.llm.FakeClient
-import org.mozilla.fenix.debugsettings.llm.FakeClientUUID
-import org.mozilla.fenix.debugsettings.llm.FakeIntegrityClient
-import org.mozilla.fenix.debugsettings.llm.FakeUserIdProvider
+import org.mozilla.fenix.debugsettings.integrity.FakeClientUUID
 import org.mozilla.fenix.debugsettings.logins.FakeLoginsStorage
 import org.mozilla.fenix.debugsettings.logins.LoginsTools
 import org.mozilla.fenix.debugsettings.navigation.DebugDrawerRoute
@@ -86,6 +83,7 @@ fun FenixOverlay(
 
     FenixOverlay(
         browserStore = browserStore,
+        appStore = context.components.appStore,
         cfrToolsStore = CfrToolsStore(
             middlewares = listOf(
                 CfrToolsPreferencesMiddleware(
@@ -129,7 +127,6 @@ fun FenixOverlay(
         inactiveTabsEnabled = inactiveTabsEnabled,
         clientUUID = context.components.clientUUID,
         integrityClient = context.components.integrityClient,
-        llm = context.components.llm,
         tabGroupRepository = tabGroupRepository,
     )
 }
@@ -137,6 +134,7 @@ fun FenixOverlay(
 /**
  * Overlay for presenting Fenix-wide debugging content.
  *
+ * @param appStore [AppStore] used to dispatch [AppAction] actions.
  * @param browserStore [BrowserStore] used to access [BrowserState].
  * @param cfrToolsStore [CfrToolsStore] used to access [CfrToolsState].
  * @param gleanDebugToolsStore [GleanDebugToolsStore] used to access [GleanDebugToolsState].
@@ -145,13 +143,13 @@ fun FenixOverlay(
  * @param creditCardsAddressesStorage used to access addresses for [AddressesTools].
  * @param clientUUID used to test an [IntegrityClient].
  * @param integrityClient used to test an [IntegrityClient].
- * @param llm the component group [Llm].
  * @param tabGroupRepository [TabGroupRepository] used to access and modify tab groups for [TabGroupTools].
  * @param inactiveTabsEnabled Whether the inactive tabs feature is enabled.
  */
 @Suppress("LongParameterList")
 @Composable
 private fun FenixOverlay(
+    appStore: AppStore,
     browserStore: BrowserStore,
     cfrToolsStore: CfrToolsStore,
     gleanDebugToolsStore: GleanDebugToolsStore,
@@ -160,7 +158,6 @@ private fun FenixOverlay(
     creditCardsAddressesStorage: CreditCardsAddressesStorage,
     clientUUID: ClientUUID,
     integrityClient: IntegrityClient,
-    llm: Llm,
     tabGroupRepository: TabGroupRepository,
     inactiveTabsEnabled: Boolean,
 ) {
@@ -186,6 +183,7 @@ private fun FenixOverlay(
     val debugDrawerDestinations = remember {
         DebugDrawerRoute.generateDebugDrawerDestinations(
             debugDrawerStore = debugDrawerStore,
+            appStore = appStore,
             browserStore = browserStore,
             cfrToolsStore = cfrToolsStore,
             gleanDebugToolsStore = gleanDebugToolsStore,
@@ -195,7 +193,6 @@ private fun FenixOverlay(
             creditCardsAddressesStorage = creditCardsAddressesStorage,
             clientUUID = clientUUID,
             integrityClient = integrityClient,
-            llm = llm,
             tabGroupRepository = tabGroupRepository,
         )
     }
@@ -263,6 +260,7 @@ private fun FenixOverlayPreview() {
         browserStore = BrowserStore(
             BrowserState(selectedTabId = selectedTab.id, tabs = listOf(selectedTab)),
         ),
+        appStore = org.mozilla.fenix.components.AppStore(),
         cfrToolsStore = CfrToolsStore(),
         gleanDebugToolsStore = GleanDebugToolsStore(
             initialState = GleanDebugToolsState(
@@ -282,7 +280,6 @@ private fun FenixOverlayPreview() {
         creditCardsAddressesStorage = FakeCreditCardsAddressesStorage(),
         clientUUID = FakeClientUUID(),
         integrityClient = IntegrityClient.testSuccess,
-        llm = Llm(FakeClient(), MlpaTokenStorage.static(), { null }, FakeIntegrityClient(), FakeUserIdProvider()),
         tabGroupRepository = mockTabGroupRepository,
     )
 }
