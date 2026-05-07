@@ -465,9 +465,6 @@ HRESULT MFMediaEngineParent::SetMediaInfo(const MediaInfoIPDL& aInfo,
   if (aInfo.videoInfo()) {
     ComPtr<IMFMediaEngineEx> mediaEngineEx;
     RETURN_IF_FAILED(mMediaEngine.As(&mediaEngineEx));
-    RETURN_IF_FAILED(mediaEngineEx->EnableWindowlessSwapchainMode(true));
-    LOG("Enabled dcomp swap chain mode");
-    ENGINE_MARKER("MFMediaEngineParent,EnabledSwapChain");
     if (isEncrypted) {
       
       RETURN_IF_FAILED(mediaEngineEx->SetRealTimeMode(false));
@@ -505,6 +502,17 @@ void MFMediaEngineParent::SetMediaSourceOnEngine() {
                       "Failed to set media source");
     DestroyEngineIfExists(Some(error));
   });
+
+  
+  
+  
+  if (mMediaSource->GetVideoStream()) {
+    ComPtr<IMFMediaEngineEx> mediaEngineEx;
+    RETURN_VOID_IF_FAILED(mMediaEngine.As(&mediaEngineEx));
+    RETURN_VOID_IF_FAILED(mediaEngineEx->EnableWindowlessSwapchainMode(true));
+    LOG("Enabled dcomp swap chain mode");
+    ENGINE_MARKER("MFMediaEngineParent,EnabledSwapChain");
+  }
 
   mMediaEngineExtension->SetMediaSource(mMediaSource.Get());
 
