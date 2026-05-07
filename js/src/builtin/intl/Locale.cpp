@@ -10,6 +10,7 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/intl/Calendar.h"
 #include "mozilla/intl/Collator.h"
+#include "mozilla/intl/DateTimeFormat.h"
 #include "mozilla/intl/Locale.h"
 #include "mozilla/intl/Region.h"
 #include "mozilla/Maybe.h"
@@ -1434,6 +1435,85 @@ static ArrayObject* CollationsOfLocale(JSContext* cx,
 
 
 
+static ArrayObject* HourCyclesOfLocale(JSContext* cx,
+                                       Handle<LocaleObject*> locale) {
+  
+  Rooted<JS::Value> preferred(cx);
+  if (!GetUnicodeExtension(cx, locale, "hc", &preferred)) {
+    return nullptr;
+  }
+  MOZ_ASSERT(preferred.isString() || preferred.isUndefined());
+
+  if (preferred.isString()) {
+    return CreateArrayFromValue(cx, preferred);
+  }
+
+  
+  
+  
+  auto language = GetLocaleLanguage(locale);
+
+  RegionPref preference;
+  if (!RegionPreference(cx, locale, &preference)) {
+    return nullptr;
+  }
+  auto region = preference.region;
+
+  auto result =
+      mozilla::intl::DateTimeFormat::GetAllowedHourCycles(language, region);
+  if (result.isErr()) {
+    ReportInternalError(cx, result.unwrapErr());
+    return nullptr;
+  }
+  auto hourCycles = result.unwrap();
+
+  using HourCycle = mozilla::intl::DateTimeFormat::HourCycle;
+
+  
+  if (hourCycles.empty()) {
+    static_assert(decltype(hourCycles)::InlineLength > 0);
+    MOZ_ALWAYS_TRUE(hourCycles.reserve(1));
+
+    hourCycles.infallibleAppend(HourCycle::H23);
+  }
+
+  
+  auto* array = NewDenseFullyAllocatedArray(cx, hourCycles.length());
+  if (!array) {
+    return nullptr;
+  }
+  array->setDenseInitializedLength(hourCycles.length());
+
+  uint32_t index = 0;
+  for (auto hourCycle : hourCycles) {
+    JSString* hcname;
+    switch (hourCycle) {
+      case HourCycle::H11:
+        hcname = cx->names().h11;
+        break;
+      case HourCycle::H12:
+        hcname = cx->names().h12;
+        break;
+      case HourCycle::H23:
+        hcname = cx->names().h23;
+        break;
+      case HourCycle::H24:
+        hcname = cx->names().h24;
+        break;
+    }
+
+    array->initDenseElement(index++, JS::StringValue(hcname));
+  }
+  MOZ_ASSERT(index == hourCycles.length());
+
+  return array;
+}
+
+
+
+
+
+
 static ArrayObject* NumberingSystemsOfLocale(JSContext* cx,
                                              Handle<LocaleObject*> locale) {
   
@@ -1923,6 +2003,29 @@ static bool Locale_getCollations(JSContext* cx, unsigned argc, Value* vp) {
 }
 
 
+static bool Locale_getHourCycles(JSContext* cx, const CallArgs& args) {
+  MOZ_ASSERT(IsLocale(args.thisv()));
+
+  Rooted<LocaleObject*> locale(cx, &args.thisv().toObject().as<LocaleObject>());
+
+  
+  auto* result = HourCyclesOfLocale(cx, locale);
+  if (!result) {
+    return false;
+  }
+
+  args.rval().setObject(*result);
+  return true;
+}
+
+
+static bool Locale_getHourCycles(JSContext* cx, unsigned argc, Value* vp) {
+  
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsLocale, Locale_getHourCycles>(cx, args);
+}
+
+
 static bool Locale_getNumberingSystems(JSContext* cx, const CallArgs& args) {
   MOZ_ASSERT(IsLocale(args.thisv()));
 
@@ -1988,6 +2091,7 @@ static const JSFunctionSpec locale_methods[] = {
 #ifdef NIGHTLY_BUILD
     JS_FN("getCalendars", Locale_getCalendars, 0, 0),
     JS_FN("getCollations", Locale_getCollations, 0, 0),
+    JS_FN("getHourCycles", Locale_getHourCycles, 0, 0),
     JS_FN("getNumberingSystems", Locale_getNumberingSystems, 0, 0),
     JS_FN("getTextInfo", Locale_getTextInfo, 0, 0),
 #endif
