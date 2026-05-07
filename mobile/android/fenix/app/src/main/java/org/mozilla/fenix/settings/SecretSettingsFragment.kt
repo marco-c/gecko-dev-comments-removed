@@ -239,6 +239,11 @@ class SecretSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFra
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_top_sites_pager).apply {
+            isChecked = context.settings().topSitesPager
+            onPreferenceChangeListener = SharedPreferenceUpdater()
+        }
+
         requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_add_shortcuts_improvement).apply {
             isChecked = context.settings().enableAddShortcutsImprovement
             onPreferenceChangeListener = SharedPreferenceUpdater()
@@ -395,12 +400,6 @@ class SecretSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFra
         requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_shake_to_summarize).apply {
             isVisible = Config.channel.isNightlyOrDebug
             isChecked = context.settings().shakeToSummarizeFeatureFlagEnabled
-            onPreferenceChangeListener = SharedPreferenceUpdater()
-        }
-
-        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_ai_controls).apply {
-            isVisible = Config.channel.isDebug
-            isChecked = context.settings().aiControlsFeatureFlagEnabled
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
