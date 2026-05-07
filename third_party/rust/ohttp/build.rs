@@ -161,7 +161,6 @@ mod nss {
         
         
         let accel_libs = &[
-            
             "gcm-aes-x86_c_lib",
             "sha-x86_c_lib",
             "hw-acc-crypto-avx",
@@ -171,11 +170,6 @@ mod nss {
             "gcm-aes-aarch64_c_lib",
             "intel-gcm-s_lib",
             "intel-gcm-wrap_c_lib",
-            
-            "gcm",
-            "ghash-aes-x86_c_lib",
-            "ghash-aes-arm32-neon_c_lib",
-            "ghash-aes-aarch64_c_lib",
         ];
 
         
@@ -397,12 +391,14 @@ mod nss {
         flags
     }
 
-    #[cfg(any(feature = "gecko", feature = "app-svc"))]
+    #[cfg(feature = "gecko")]
     fn setup_for_gecko() -> Vec<String> {
         use mozbuild::{
             config::{BINDGEN_SYSTEM_FLAGS, NSPR_CFLAGS, NSS_CFLAGS},
             TOPOBJDIR,
         };
+
+        let mut flags: Vec<String> = Vec::new();
 
         let fold_libs = mozbuild::config::MOZ_FOLD_LIBS;
         let libs = if fold_libs {
@@ -446,7 +442,7 @@ mod nss {
             );
         }
 
-        let mut flags: Vec<String> = BINDGEN_SYSTEM_FLAGS
+        flags = BINDGEN_SYSTEM_FLAGS
             .iter()
             .chain(&NSPR_CFLAGS)
             .chain(&NSS_CFLAGS)
@@ -466,21 +462,13 @@ mod nss {
         flags
     }
 
-    #[cfg(not(any(feature = "gecko", feature = "app-svc")))]
+    #[cfg(not(feature = "gecko"))]
     fn setup_for_gecko() -> Vec<String> {
         unreachable!()
     }
 
     #[cfg(feature = "app-svc")]
     fn setup_for_app_svc() -> Vec<String> {
-        
-        
-        
-        
-        if env::var_os("MOZ_TOPOBJDIR").is_some() {
-            return setup_for_gecko();
-        }
-
         
         
         
