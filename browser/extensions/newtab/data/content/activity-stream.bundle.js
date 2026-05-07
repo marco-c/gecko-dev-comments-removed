@@ -12215,31 +12215,17 @@ function getHideAllTargets(prefs, widgetEnabledMap) {
 
 
 
-const DEFAULT_GRADIENT_STOPS = [{
-  offset: "0%",
-  color: "var(--color-orange-20)"
-}, {
-  offset: "28%",
-  color: "var(--color-orange-30)"
-}, {
-  offset: "64%",
-  color: "var(--color-pink-30)"
-}, {
-  offset: "100%",
-  color: "var(--color-pink-40)"
-}];
 const WidgetCelebration = ({
   classNamePrefix = "widget-celebration",
   celebrationFrame,
   celebrationId,
-  gradientStops = DEFAULT_GRADIENT_STOPS,
   headlineL10nId,
   illustrationSrc,
   onComplete,
   subheadL10nId
 }) => {
   const className = suffix => suffix ? `${classNamePrefix}-${suffix}` : classNamePrefix;
-  const resolvedIllustrationSrc = illustrationSrc?.endsWith(".svg") ? `${illustrationSrc}?run=${celebrationId}` : illustrationSrc;
+  const resolvedIllustrationSrc = illustrationSrc.endsWith(".svg") ? `${illustrationSrc}?run=${celebrationId}` : illustrationSrc;
   const strokeSize = celebrationFrame.strokeInset * 2;
   const strokeWidth = celebrationFrame.width - strokeSize;
   const strokeHeight = celebrationFrame.height - strokeSize;
@@ -12265,14 +12251,19 @@ const WidgetCelebration = ({
     y1: "0%",
     x2: "100%",
     y2: "100%"
-  }, gradientStops.map(({
-    offset,
-    color
-  }) => external_React_default().createElement("stop", {
-    key: offset,
-    offset: offset,
-    stopColor: color
-  })))), external_React_default().createElement("rect", {
+  }, external_React_default().createElement("stop", {
+    offset: "0%",
+    stopColor: "var(--color-orange-20)"
+  }), external_React_default().createElement("stop", {
+    offset: "28%",
+    stopColor: "var(--color-orange-30)"
+  }), external_React_default().createElement("stop", {
+    offset: "64%",
+    stopColor: "var(--color-pink-30)"
+  }), external_React_default().createElement("stop", {
+    offset: "100%",
+    stopColor: "var(--color-pink-40)"
+  }))), external_React_default().createElement("rect", {
     className: className("stroke-track"),
     x: celebrationFrame.strokeInset,
     y: celebrationFrame.strokeInset,
@@ -12308,7 +12299,7 @@ const WidgetCelebration = ({
   }), external_React_default().createElement("span", {
     className: className("subhead"),
     "data-l10n-id": subheadL10nId
-  })), resolvedIllustrationSrc && external_React_default().createElement("img", {
+  })), external_React_default().createElement("img", {
     alt: "",
     "aria-hidden": "true",
     className: className("illustration"),
@@ -12353,19 +12344,17 @@ const WidgetCelebration = ({
 
 
 
-
-
 const useWidgetCelebration = widgetRef => {
   const [celebrationId, setCelebrationId] = (0,external_React_namespaceObject.useState)(0);
   const [isCelebrating, setIsCelebrating] = (0,external_React_namespaceObject.useState)(false);
   const [celebrationFrame, setCelebrationFrame] = (0,external_React_namespaceObject.useState)(null);
   const triggerCelebration = (0,external_React_namespaceObject.useCallback)(() => {
     if (typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      return false;
+      return;
     }
     const widget = widgetRef.current;
     if (!widget) {
-      return false;
+      return;
     }
     const {
       width,
@@ -12382,7 +12371,6 @@ const useWidgetCelebration = widgetRef => {
     setCelebrationFrame(frame);
     setCelebrationId(currentValue => currentValue + 1);
     setIsCelebrating(true);
-    return true;
   }, [widgetRef]);
   const completeCelebration = (0,external_React_namespaceObject.useCallback)(() => {
     setIsCelebrating(false);
@@ -13544,15 +13532,6 @@ function FocusTimer_extends() { return FocusTimer_extends = Object.assign ? Obje
 
 
 
-
-
-const FOCUS_TIMER_CELEBRATION_GRADIENT_STOPS = [{
-  offset: "0%",
-  color: "var(--timer-celebration-leading)"
-}, {
-  offset: "100%",
-  color: "var(--timer-celebration-trailing)"
-}];
 const FocusTimer_USER_ACTION_TYPES = {
   CHANGE_SIZE: "change_size",
   TIMER_SET: "timer_set",
@@ -13622,25 +13601,6 @@ const isAtMaxLength = currentValue => {
 
 
 
-
-
-const isValidSpinbuttonInput = (current, input, start, end) => {
-  if (input === null || input === undefined) {
-    return true;
-  }
-  const next = current.slice(0, start) + input + current.slice(end);
-  return /^(\d{1,2})?(:\d{0,2})?$/.test(next);
-};
-
-
-
-
-
-
-
-
-
-
 const polarToPercent = (cx, cy, radius, angle) => {
   const rad = (angle - 90) * Math.PI / 180;
   const x = cx + radius * Math.cos(rad);
@@ -13667,8 +13627,6 @@ const getClipPath = progress => {
   }
   return `polygon(${points.join(", ")})`;
 };
-
-
 const FocusTimer = ({
   dispatch,
   handleUserInteraction,
@@ -13702,16 +13660,6 @@ const FocusTimer = ({
   } else {
     widgetSize = isSmallSize ? "small" : "medium";
   }
-
-  
-  
-  
-  const minutesValue = Math.max(1, Math.ceil((timeLeft || duration) / 60));
-  
-  
-  const minutesFloor = Math.floor((timeLeft || duration) / 60);
-  const hasProgressed = duration < initialDuration || isRunning;
-  const isComplete = progress === 1;
   const handleTimerInteraction = (0,external_React_namespaceObject.useCallback)(() => handleUserInteraction("focusTimer"), [handleUserInteraction]);
   const handleIntersection = (0,external_React_namespaceObject.useCallback)(() => {
     if (impressionFired.current) {
@@ -13733,21 +13681,6 @@ const FocusTimer = ({
     });
   }, [dispatch, widgetSize]);
   const timerRef = useIntersectionObserver(handleIntersection);
-  const widgetCelebrationRef = (0,external_React_namespaceObject.useRef)(null);
-  const {
-    celebrationFrame,
-    celebrationId,
-    completeCelebration,
-    isCelebrating,
-    triggerCelebration
-  } = useWidgetCelebration(widgetCelebrationRef);
-  
-  const celebrationCompletedRef = (0,external_React_namespaceObject.useRef)(false);
-  (0,external_React_namespaceObject.useEffect)(() => {
-    if (isCelebrating) {
-      celebrationCompletedRef.current = false;
-    }
-  }, [isCelebrating]);
   const resetProgressCircle = (0,external_React_namespaceObject.useCallback)(() => {
     if (arcRef?.current) {
       arcRef.current.style.clipPath = "polygon(50% 50%)";
@@ -13756,119 +13689,108 @@ const FocusTimer = ({
     setProgress(0);
     handleTimerInteraction();
   }, [arcRef, handleTimerInteraction]);
-  const handleCelebrationComplete = (0,external_React_namespaceObject.useCallback)(() => {
-    if (celebrationCompletedRef.current) {
-      return;
-    }
-    celebrationCompletedRef.current = true;
-    resetProgressCircle();
-    (0,external_ReactRedux_namespaceObject.batch)(() => {
-      dispatch(actionCreators.AlsoToMain({
-        type: actionTypes.WIDGETS_TIMER_SET_TYPE,
-        data: {
-          timerType: timerType === "focus" ? "break" : "focus"
-        }
-      }));
-      const userAction = timerType === "focus" ? FocusTimer_USER_ACTION_TYPES.TIMER_TOGGLE_BREAK : FocusTimer_USER_ACTION_TYPES.TIMER_TOGGLE_FOCUS;
-      dispatch(actionCreators.OnlyToMain({
-        type: actionTypes.WIDGETS_TIMER_USER_EVENT,
-        data: {
-          userAction
-        }
-      }));
-      dispatch(actionCreators.OnlyToMain({
-        type: actionTypes.WIDGETS_USER_EVENT,
-        data: {
-          widget_name: "focus_timer",
-          widget_source: "widget",
-          user_action: userAction,
-          widget_size: widgetSize
-        }
-      }));
-    });
-    completeCelebration();
-  }, [completeCelebration, dispatch, resetProgressCircle, timerType, widgetSize]);
   const showSystemNotifications = prefs["widgets.focusTimer.showSystemNotifications"];
-
-  
-  
-  
-  const handleTimerEndRef = (0,external_React_namespaceObject.useRef)(null);
-  handleTimerEndRef.current = () => {
-    (0,external_ReactRedux_namespaceObject.batch)(() => {
-      dispatch(actionCreators.AlsoToMain({
-        type: actionTypes.WIDGETS_TIMER_END,
-        data: {
-          timerType,
-          duration: initialTimerDuration,
-          initialDuration: initialTimerDuration
-        }
-      }));
-      dispatch(actionCreators.OnlyToMain({
-        type: actionTypes.WIDGETS_TIMER_USER_EVENT,
-        data: {
-          userAction: FocusTimer_USER_ACTION_TYPES.TIMER_END
-        }
-      }));
-      dispatch(actionCreators.OnlyToMain({
-        type: actionTypes.WIDGETS_USER_EVENT,
-        data: {
-          widget_name: "focus_timer",
-          widget_source: "widget",
-          user_action: FocusTimer_USER_ACTION_TYPES.TIMER_END,
-          widget_size: widgetSize
-        }
-      }));
-    });
-    celebrationCompletedRef.current = false;
-
-    
-    setProgress(1);
-
-    
-    
-    
-    if (!(novaEnabled && triggerCelebration())) {
-      handleCelebrationComplete();
-    }
-  };
-
-  
   (0,external_React_namespaceObject.useEffect)(() => {
-    if (!isRunning || duration <= 0) {
-      return undefined;
-    }
+    
+    let interval;
     let hasReachedZero = false;
-    const interval = setInterval(() => {
-      const currentTime = Math.floor(Date.now() / 1000);
-      const elapsed = currentTime - startTime;
-      const remaining = calculateTimeRemaining(duration, startTime);
+    if (isRunning && duration > 0) {
+      interval = setInterval(() => {
+        const currentTime = Math.floor(Date.now() / 1000);
+        const elapsed = currentTime - startTime;
+        const remaining = calculateTimeRemaining(duration, startTime);
 
-      
-      setTimeLeft(remaining);
-      setProgress((initialDuration - remaining) / initialDuration);
-      if (elapsed >= duration && hasReachedZero) {
-        clearInterval(interval);
-        handleTimerEndRef.current?.();
-      } else if (elapsed >= duration) {
-        hasReachedZero = true;
-      }
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [isRunning, startTime, duration, initialDuration]);
+        
+        setTimeLeft(remaining);
+        setProgress((initialDuration - remaining) / initialDuration);
+        if (elapsed >= duration && hasReachedZero) {
+          clearInterval(interval);
+          (0,external_ReactRedux_namespaceObject.batch)(() => {
+            dispatch(actionCreators.AlsoToMain({
+              type: actionTypes.WIDGETS_TIMER_END,
+              data: {
+                timerType,
+                duration: initialTimerDuration,
+                initialDuration: initialTimerDuration
+              }
+            }));
+            dispatch(actionCreators.OnlyToMain({
+              type: actionTypes.WIDGETS_TIMER_USER_EVENT,
+              data: {
+                userAction: FocusTimer_USER_ACTION_TYPES.TIMER_END
+              }
+            }));
+            const telemetryData = {
+              widget_name: "focus_timer",
+              widget_source: "widget",
+              user_action: FocusTimer_USER_ACTION_TYPES.TIMER_END,
+              widget_size: widgetSize
+            };
+            dispatch(actionCreators.OnlyToMain({
+              type: actionTypes.WIDGETS_USER_EVENT,
+              data: telemetryData
+            }));
+          });
 
-  
-  
-  (0,external_React_namespaceObject.useEffect)(() => {
-    setTimeLeft(isRunning ? calculateTimeRemaining(duration, startTime) : duration);
+          
+          setProgress(1);
+
+          
+          setTimeout(() => {
+            
+            resetProgressCircle();
+
+            
+            setTimeout(() => {
+              
+              
+              (0,external_ReactRedux_namespaceObject.batch)(() => {
+                dispatch(actionCreators.AlsoToMain({
+                  type: actionTypes.WIDGETS_TIMER_SET_TYPE,
+                  data: {
+                    timerType: timerType === "focus" ? "break" : "focus"
+                  }
+                }));
+                const userAction = timerType === "focus" ? FocusTimer_USER_ACTION_TYPES.TIMER_TOGGLE_BREAK : FocusTimer_USER_ACTION_TYPES.TIMER_TOGGLE_FOCUS;
+                dispatch(actionCreators.OnlyToMain({
+                  type: actionTypes.WIDGETS_TIMER_USER_EVENT,
+                  data: {
+                    userAction
+                  }
+                }));
+                const telemetryData = {
+                  widget_name: "focus_timer",
+                  widget_source: "widget",
+                  user_action: userAction,
+                  widget_size: widgetSize
+                };
+                dispatch(actionCreators.OnlyToMain({
+                  type: actionTypes.WIDGETS_USER_EVENT,
+                  data: telemetryData
+                }));
+              });
+            }, 500);
+          }, 1000);
+        } else if (elapsed >= duration) {
+          hasReachedZero = true;
+        }
+      }, 1000);
+    }
+
+    
+    const newTime = isRunning ? calculateTimeRemaining(duration, startTime) : duration;
+    setTimeLeft(newTime);
+
+    
     if (!isRunning && duration < initialDuration) {
       
       setProgress((initialDuration - duration) / initialDuration);
-    } else if (!isRunning && !isCelebrating) {
+    } else if (!isRunning) {
       
       setProgress(0);
     }
-  }, [isRunning, startTime, duration, initialDuration, isCelebrating]);
+    return () => clearInterval(interval);
+  }, [isRunning, startTime, duration, initialDuration, dispatch, resetProgressCircle, timerType, initialTimerDuration, widgetSize]);
 
   
   (0,external_React_namespaceObject.useEffect)(() => {
@@ -13886,10 +13808,10 @@ const FocusTimer = ({
   const setTimerDuration = () => {
     const minutesEl = activeMinutesRef.current;
     const secondsEl = activeSecondsRef.current;
-    const minutesText = minutesEl.innerText.trim() || "0";
-    const secondsText = secondsEl.innerText.trim() || "0";
-    let minutes = parseInt(minutesText || "0", 10);
-    let seconds = parseInt(secondsText || "0", 10);
+    const minutesValue = minutesEl.innerText.trim() || "0";
+    const secondsValue = secondsEl.innerText.trim() || "0";
+    let minutes = parseInt(minutesValue || "0", 10);
+    let seconds = parseInt(secondsValue || "0", 10);
 
     
     minutes = Math.min(minutes, 99);
@@ -13928,11 +13850,6 @@ const FocusTimer = ({
 
   
   const toggleTimer = () => {
-    
-    
-    if (isCelebrating) {
-      return;
-    }
     if (!isRunning && duration > 0) {
       (0,external_ReactRedux_namespaceObject.batch)(() => {
         dispatch(actionCreators.AlsoToMain({
@@ -13992,11 +13909,6 @@ const FocusTimer = ({
 
   
   const resetTimer = () => {
-    
-    
-    if (isCelebrating) {
-      return;
-    }
     (0,external_ReactRedux_namespaceObject.batch)(() => {
       dispatch(actionCreators.AlsoToMain({
         type: actionTypes.WIDGETS_TIMER_RESET,
@@ -14211,148 +14123,6 @@ const FocusTimer = ({
       }));
     });
   }, [dispatch]);
-
-  
-  const setTimerMinutes = (0,external_React_namespaceObject.useCallback)(nextMinutes => {
-    const clamped = Math.max(1, Math.min(99, nextMinutes));
-    const totalSeconds = clamped * 60;
-    if (totalSeconds === duration) {
-      return;
-    }
-    (0,external_ReactRedux_namespaceObject.batch)(() => {
-      dispatch(actionCreators.AlsoToMain({
-        type: actionTypes.WIDGETS_TIMER_SET_DURATION,
-        data: {
-          timerType,
-          duration: totalSeconds
-        }
-      }));
-      dispatch(actionCreators.OnlyToMain({
-        type: actionTypes.WIDGETS_TIMER_USER_EVENT,
-        data: {
-          userAction: FocusTimer_USER_ACTION_TYPES.TIMER_SET
-        }
-      }));
-      dispatch(actionCreators.OnlyToMain({
-        type: actionTypes.WIDGETS_USER_EVENT,
-        data: {
-          widget_name: "focus_timer",
-          widget_source: "widget",
-          user_action: FocusTimer_USER_ACTION_TYPES.TIMER_SET,
-          widget_size: widgetSize
-        }
-      }));
-    });
-    handleTimerInteraction();
-  }, [dispatch, duration, timerType, widgetSize, handleTimerInteraction]);
-
-  
-  const commitSpinbuttonDuration = (0,external_React_namespaceObject.useCallback)(() => {
-    const el = activeMinutesRef.current;
-    if (!el) {
-      return;
-    }
-    const text = el.innerText.replace(/\s+/g, "");
-    const [mmRaw, ssRaw = "0"] = text.split(":");
-    const mm = parseInt(mmRaw, 10);
-    const ss = parseInt(ssRaw, 10);
-    if (Number.isNaN(mm)) {
-      
-      el.innerText = formatTime(timeLeft);
-      return;
-    }
-    const minutes = Math.min(99, Math.max(0, mm));
-    const seconds = Math.min(59, Math.max(0, Number.isNaN(ss) ? 0 : ss));
-    const totalSeconds = Math.max(1, minutes * 60 + seconds);
-    if (totalSeconds === duration) {
-      
-      el.innerText = formatTime(totalSeconds);
-      return;
-    }
-    (0,external_ReactRedux_namespaceObject.batch)(() => {
-      dispatch(actionCreators.AlsoToMain({
-        type: actionTypes.WIDGETS_TIMER_SET_DURATION,
-        data: {
-          timerType,
-          duration: totalSeconds
-        }
-      }));
-      dispatch(actionCreators.OnlyToMain({
-        type: actionTypes.WIDGETS_TIMER_USER_EVENT,
-        data: {
-          userAction: FocusTimer_USER_ACTION_TYPES.TIMER_SET
-        }
-      }));
-      dispatch(actionCreators.OnlyToMain({
-        type: actionTypes.WIDGETS_USER_EVENT,
-        data: {
-          widget_name: "focus_timer",
-          widget_source: "widget",
-          user_action: FocusTimer_USER_ACTION_TYPES.TIMER_SET,
-          widget_size: widgetSize
-        }
-      }));
-    });
-    handleTimerInteraction();
-  }, [dispatch, duration, timerType, widgetSize, handleTimerInteraction, timeLeft]);
-
-  
-  const handleSpinBeforeInput = e => {
-    const input = e.data;
-    if (input === null || input === undefined) {
-      return;
-    }
-    const current = e.target.innerText;
-    const selection = window.getSelection();
-    const start = selection ? Math.min(selection.anchorOffset, selection.focusOffset) : current.length;
-    const end = selection ? Math.max(selection.anchorOffset, selection.focusOffset) : current.length;
-    if (!isValidSpinbuttonInput(current, input, start, end)) {
-      e.preventDefault();
-    }
-  };
-
-  
-  const handleSpinKeyDown = e => {
-    let next = minutesValue;
-    switch (e.key) {
-      case "Enter":
-        e.preventDefault();
-        commitSpinbuttonDuration();
-        e.target.blur();
-        return;
-      case "ArrowUp":
-        next = minutesFloor + 1;
-        break;
-      case "ArrowDown":
-        next = minutesFloor - 1;
-        break;
-      case "PageUp":
-        next = minutesFloor + 5;
-        break;
-      case "PageDown":
-        next = minutesFloor - 5;
-        break;
-      case "Home":
-        next = 1;
-        break;
-      case "End":
-        next = 99;
-        break;
-      default:
-        return;
-    }
-    e.preventDefault();
-    setTimerMinutes(next);
-  };
-
-  
-  const handleRadiogroupKeyDown = e => {
-    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") {
-      return;
-    }
-    e.preventDefault();
-    toggleType(timerType === "focus" ? "break" : "focus");
-  };
   const sizeSubmenuRef = (0,external_React_namespaceObject.useRef)(null);
   (0,external_React_namespaceObject.useEffect)(() => {
     const el = sizeSubmenuRef.current;
@@ -14372,29 +14142,13 @@ const FocusTimer = ({
     el.addEventListener("click", listener);
     return () => el.removeEventListener("click", listener);
   }, [handleChangeSize]);
-
-  
-  
-  const bodyShowsRunningLayout = hasProgressed || isCelebrating || isComplete;
   return timerData ? external_React_default().createElement("article", {
     
-    className: `focus-timer widget ${novaEnabled ? `col-4 ${widgetSize}-widget` : ""} ${isSmallSize ? "is-small" : ""} ${isMaximized ? "is-maximized" : ""}${isComplete ? " is-complete" : ""}${isCelebrating ? " is-celebrating" : ""}${hasProgressed && !isComplete ? " is-active" : ""}`,
+    className: `focus-timer widget ${novaEnabled ? `col-4 ${widgetSize}-widget` : ""} ${isSmallSize ? "is-small" : ""} ${isMaximized ? "is-maximized" : ""}`,
     ref: el => {
       timerRef.current = [el];
-      widgetCelebrationRef.current = el;
     }
-  },
-  
-  novaEnabled && isCelebrating && celebrationFrame ? external_React_default().createElement(WidgetCelebration, {
-    classNamePrefix: "focus-timer-celebration",
-    celebrationFrame: celebrationFrame,
-    celebrationId: celebrationId,
-    gradientStops: FOCUS_TIMER_CELEBRATION_GRADIENT_STOPS,
-    headlineL10nId: timerType === "focus" ? "newtab-widget-timer-celebration-heading-focus" : "newtab-widget-timer-celebration-heading-break",
-    illustrationSrc: null,
-    onComplete: handleCelebrationComplete,
-    subheadL10nId: timerType === "focus" ? "newtab-widget-timer-celebration-message-focus" : "newtab-widget-timer-celebration-message-break"
-  }) : null, external_React_default().createElement("div", {
+  }, external_React_default().createElement("div", {
     className: "newtab-widget-timer-notification-title-wrapper"
   }, external_React_default().createElement("h2", {
     "data-l10n-id": "newtab-widget-timer-notification-title"
@@ -14411,25 +14165,6 @@ const FocusTimer = ({
     "data-l10n-id": showSystemNotifications ? "newtab-widget-timer-menu-notifications" : "newtab-widget-timer-menu-notifications-on",
     onClick: () => {
       handlePrefUpdate("widgets.focusTimer.showSystemNotifications", !showSystemNotifications);
-    }
-  }), external_React_default().createElement("panel-item", {
-    
-    
-    "data-l10n-id": novaEnabled ? "newtab-widget-timer-menu-hide" : "newtab-widget-menu-hide",
-    onClick: () => {
-      (0,external_ReactRedux_namespaceObject.batch)(() => {
-        handlePrefUpdate("widgets.focusTimer.enabled", false);
-        const telemetryData = {
-          widget_name: "focus_timer",
-          widget_source: "context_menu",
-          enabled: false,
-          widget_size: widgetSize
-        };
-        dispatch(actionCreators.OnlyToMain({
-          type: actionTypes.WIDGETS_ENABLED,
-          data: telemetryData
-        }));
-      });
     }
   }),
   
@@ -14449,123 +14184,27 @@ const FocusTimer = ({
     "data-l10n-id": `newtab-widget-size-${size}`
   }, size === "small" ? {
     disabled: true
-  } : {}))))),
-  
-  novaEnabled && external_React_default().createElement("hr", null), external_React_default().createElement("panel-item", {
+  } : {}))))), external_React_default().createElement("panel-item", {
+    "data-l10n-id": "newtab-widget-menu-hide",
+    onClick: () => {
+      (0,external_ReactRedux_namespaceObject.batch)(() => {
+        handlePrefUpdate("widgets.focusTimer.enabled", false);
+        const telemetryData = {
+          widget_name: "focus_timer",
+          widget_source: "context_menu",
+          enabled: false,
+          widget_size: widgetSize
+        };
+        dispatch(actionCreators.OnlyToMain({
+          type: actionTypes.WIDGETS_ENABLED,
+          data: telemetryData
+        }));
+      });
+    }
+  }), external_React_default().createElement("panel-item", {
     "data-l10n-id": "newtab-widget-timer-menu-learn-more",
     onClick: handleLearnMore
-  })))),
-  
-  novaEnabled ? external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("div", {
-    role: "progress",
-    className: `progress-circle-wrapper${isComplete ? " is-complete" : ""}${hasProgressed ? " is-active" : ""}`,
-    onClick: toggleTimer
-  }, external_React_default().createElement("div", {
-    className: `progress-circle-background${timerType === "break" ? "-break" : ""}`
-  }), external_React_default().createElement("div", {
-    className: `progress-circle ${timerType === "focus" ? "focus-visible" : "focus-hidden"}`,
-    ref: timerType === "focus" ? arcRef : null
-  }), external_React_default().createElement("div", {
-    className: `progress-circle ${timerType === "break" ? "break-visible" : "break-hidden"}`,
-    ref: timerType === "break" ? arcRef : null
-  }), external_React_default().createElement("div", {
-    className: `progress-circle-complete${isComplete ? " visible" : ""}`
-  }), progress > 0 && progress < 1 && external_React_default().createElement("div", {
-    className: `progress-circle-cap-rotator is-${timerType}`,
-    style: {
-      "--progress-angle": `${progress * 360}deg`
-    },
-    "aria-hidden": "true"
-  }, external_React_default().createElement("div", {
-    className: "progress-circle-cap"
-  })), external_React_default().createElement("moz-button", {
-    className: "focus-timer-play-button",
-    type: "icon ghost",
-    iconsrc: `chrome://global/skin/media/${isRunning ? "pause" : "play"}-fill.svg`,
-    "data-l10n-id": isRunning ? "newtab-widget-timer-pause-aria" : "newtab-widget-timer-start-aria",
-    "data-l10n-args": JSON.stringify({
-      minutes: minutesValue
-    }),
-    onClick: e => {
-      e.stopPropagation();
-      toggleTimer();
-    }
-  })), external_React_default().createElement("div", {
-    className: "focus-timer-body"
-  }, external_React_default().createElement("div", {
-    className: "focus-timer-time-slot"
-  }, bodyShowsRunningLayout && external_React_default().createElement("div", {
-    className: "focus-timer-time-display"
-  }, external_React_default().createElement("span", {
-    className: "focus-timer-time-text"
-  }, formatTime(timeLeft)), external_React_default().createElement("span", {
-    className: "focus-timer-time-mode",
-    "data-l10n-id": timerType === "focus" ? "newtab-widget-timer-running-focus" : "newtab-widget-timer-running-break"
-  })), !bodyShowsRunningLayout && external_React_default().createElement("div", {
-    className: "focus-timer-time-row"
-  }, external_React_default().createElement("moz-button", {
-    className: "focus-timer-minute-decrement",
-    type: "icon ghost",
-    iconsrc: "chrome://global/skin/icons/minus.svg",
-    "data-l10n-id": "newtab-widget-timer-decrease-min",
-    "aria-controls": "focus-timer-spinbutton",
-    tabindex: "-1",
-    onClick: () => setTimerMinutes(minutesFloor - 1)
-  }), external_React_default().createElement("span", {
-    id: "focus-timer-spinbutton",
-    className: "focus-timer-spinbutton",
-    role: "spinbutton",
-    "aria-valuemin": 1,
-    "aria-valuemax": 99,
-    "aria-valuenow": minutesValue,
-    "data-l10n-id": "newtab-widget-timer-spinbutton-name",
-    "data-l10n-args": JSON.stringify({
-      minutes: minutesValue
-    }),
-    contentEditable: "true",
-    suppressContentEditableWarning: true,
-    tabIndex: 0,
-    onKeyDown: handleSpinKeyDown,
-    onBeforeInput: handleSpinBeforeInput,
-    onFocus: handleFocus,
-    onBlur: commitSpinbuttonDuration,
-    ref: activeMinutesRef
-  }, formatTime(timeLeft)), external_React_default().createElement("moz-button", {
-    className: "focus-timer-minute-increment",
-    type: "icon ghost",
-    iconsrc: "chrome://global/skin/icons/plus.svg",
-    "data-l10n-id": "newtab-widget-timer-increase-min",
-    "aria-controls": "focus-timer-spinbutton",
-    tabindex: "-1",
-    onClick: () => setTimerMinutes(minutesFloor + 1)
-  }))), external_React_default().createElement("div", {
-    className: "focus-timer-bottom-slot"
-  }, bodyShowsRunningLayout && widgetSize === "large" && external_React_default().createElement("moz-button", {
-    className: "focus-timer-reset-button",
-    type: "icon",
-    iconsrc: "chrome://newtab/content/data/content/assets/arrow-clockwise-16.svg",
-    "data-l10n-id": "newtab-widget-timer-reset",
-    onClick: resetTimer
-  }), !bodyShowsRunningLayout && external_React_default().createElement("div", {
-    className: "focus-timer-mode-group",
-    role: "radiogroup",
-    "data-l10n-id": "newtab-widget-timer-mode-group",
-    onKeyDown: handleRadiogroupKeyDown
-  }, external_React_default().createElement("moz-button", {
-    role: "radio",
-    "aria-checked": timerType === "focus" ? "true" : "false",
-    tabindex: timerType === "focus" ? "0" : "-1",
-    type: timerType === "focus" ? "default" : "ghost",
-    "data-l10n-id": "newtab-widget-timer-mode-focus",
-    onClick: () => toggleType("focus")
-  }), external_React_default().createElement("moz-button", {
-    role: "radio",
-    "aria-checked": timerType === "break" ? "true" : "false",
-    tabindex: timerType === "break" ? "0" : "-1",
-    type: timerType === "break" ? "default" : "ghost",
-    "data-l10n-id": "newtab-widget-timer-mode-break",
-    onClick: () => toggleType("break")
-  }))))) : external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("div", {
+  })))), external_React_default().createElement("div", {
     className: "focus-timer-tabs"
   }, external_React_default().createElement("div", {
     className: "focus-timer-tabs-buttons"
@@ -14621,10 +14260,8 @@ const FocusTimer = ({
   }))), !showSystemNotifications && !timerData[timerType].isRunning && external_React_default().createElement("p", {
     className: "timer-notification-status",
     "data-l10n-id": "newtab-widget-timer-notification-warning"
-  }))) : null;
+  })) : null;
 };
-
-
 function EditableTimerFields({
   minutesRef,
   secondsRef,
