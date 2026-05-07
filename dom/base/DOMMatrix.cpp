@@ -572,7 +572,7 @@ void DOMMatrixReadOnly::Stringify(nsAString& aResult, ErrorResult& aRv) {
     matrixStr.AppendLiteral(")");
   }
 
-  aResult = matrixStr;
+  aResult = std::move(matrixStr);
 }
 
 
