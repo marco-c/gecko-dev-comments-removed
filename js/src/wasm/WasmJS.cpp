@@ -3188,7 +3188,8 @@ bool WasmTableObject::growImpl(JSContext* cx, const CallArgs& args) {
 
   RootedValue fillValue(
       cx, args.length() < 2 ? RefTypeDefaultValue(table.elemType()) : args[1]);
-  if (!CheckRefType(cx, table.elemType(), fillValue)) {
+  Rooted<wasm::AnyRef> fillRef(cx);
+  if (!CheckRefType(cx, table.elemType(), fillValue, &fillRef)) {
     return false;
   }
 
@@ -3202,13 +3203,12 @@ bool WasmTableObject::growImpl(JSContext* cx, const CallArgs& args) {
 
   
   
-  if (!fillValue.isNull() &&
-      !tableObj->fillRange(cx, oldLength, delta, fillValue)) {
-    return false;
+  if (!fillRef.isNull()) {
+    table.fillUninitialized(oldLength, delta, fillRef, cx);
   }
 #ifdef DEBUG
   
-  if (fillValue.isNull()) {
+  if (fillRef.isNull()) {
     table.assertRangeNull(oldLength, delta);
   }
   if (!table.elemType().isNullable()) {
