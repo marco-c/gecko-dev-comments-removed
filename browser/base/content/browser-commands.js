@@ -265,6 +265,38 @@ var BrowserCommands = {
 
   openFileWindow() {
     
+    
+    
+    
+    
+    
+    
+    
+    if (window.location.href != AppConstants.BROWSER_CHROME_URL) {
+      let targetWin = URILoadingHelper.getTargetWindow(window);
+      if (targetWin) {
+        targetWin.focus();
+        targetWin.BrowserCommands.openFileWindow();
+        return;
+      }
+      let newWin = window.openDialog(
+        AppConstants.BROWSER_CHROME_URL,
+        "_blank",
+        "chrome,all,dialog=no",
+        "about:blank"
+      );
+      newWin.addEventListener(
+        "load",
+        () => {
+          newWin.focus();
+          newWin.BrowserCommands.openFileWindow();
+        },
+        { once: true }
+      );
+      return;
+    }
+
+    
     try {
       const nsIFilePicker = Ci.nsIFilePicker;
       const fp = Cc["@mozilla.org/filepicker;1"].createInstance(nsIFilePicker);
