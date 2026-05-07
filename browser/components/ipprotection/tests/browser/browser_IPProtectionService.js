@@ -213,7 +213,7 @@ add_task(async function test_IPProtectionService_updateEntitlement() {
 
 add_task(async function test_IPProtectionService_update_usage_on_sign_in() {
   Services.prefs.clearUserPref("browser.ipProtection.enabled");
-  IPPEnrollAndEntitleManager.resetEntitlement();
+  IPPFxaAuthProvider.resetEntitlement();
   
   STUBS.updateEntitlement.restore();
 
@@ -232,7 +232,6 @@ add_task(async function test_IPProtectionService_update_usage_on_sign_in() {
 
   await waitForWidgetAdded();
 
-  
   const sandbox = sinon.createSandbox();
   sandbox.stub(IPPSignInWatcher, "isSignedIn").get(() => true);
 
@@ -277,7 +276,7 @@ add_task(async function test_IPProtectionService_update_usage_on_sign_in() {
   await SpecialPowers.popPrefEnv();
   
   STUBS.updateEntitlement = setupSandbox
-    .stub(IPPEnrollAndEntitleManager, "updateEntitlement")
+    .stub(IPPFxaAuthProvider, "updateEntitlement")
     .resolves();
 });
 
@@ -392,7 +391,7 @@ add_task(async function test_IPProtectionService_retry_errors() {
   let statusCard = content.statusCardEl;
 
   
-  IPPEnrollAndEntitleManager.resetEntitlement();
+  IPPFxaAuthProvider.resetEntitlement();
   IPPProxyManager.setErrorState(ERRORS.GENERIC);
 
   let startedEventPromise = BrowserTestUtils.waitForEvent(
