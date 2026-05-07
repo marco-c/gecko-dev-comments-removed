@@ -42,6 +42,11 @@ class MFMediaEngineVideoStream final : public MFMediaEngineStream {
 
   void SetDCompSurfaceHandle(HANDLE aDCompSurfaceHandle, gfx::IntSize aDisplay);
 
+  
+  
+  
+  void SetFrameServerMode();
+
   MFMediaEngineVideoStream* AsVideoStream() override { return this; }
 
   MediaDataDecoder::ConversionRequired NeedsConversion() const override;
@@ -136,6 +141,11 @@ class MFMediaEngineVideoStream final : public MFMediaEngineStream {
   
   
   bool mSwitchedClearToEncrypted = false;
+
+  
+  
+  
+  bool mFrameServerMode = false;
 };
 
 }  

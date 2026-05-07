@@ -111,6 +111,14 @@ class ExternalEngineStateMachine final
         "ExternalEngineStateMachine::NotifyWaitingForKey",
         [self = RefPtr{this}] { self->NotifyWaitingForKeyInternal(); }));
   }
+  
+  
+  void NotifyFrameServerMode() {
+    
+    (void)OwnerThread()->Dispatch(NS_NewRunnableFunction(
+        "ExternalEngineStateMachine::NotifyFrameServerMode",
+        [self = RefPtr{this}] { self->NotifyFrameServerModeInternal(); }));
+  }
 #endif
 
   const char* GetStateStr() const;
@@ -317,6 +325,7 @@ class ExternalEngineStateMachine final
   void RecoverFromHardwareReset();
 #ifdef MOZ_WMF_CDM
   void NotifyWaitingForKeyInternal();
+  void NotifyFrameServerModeInternal();
 #endif
 
   void ReportTelemetry(const MediaResult& aError);
@@ -331,6 +340,15 @@ class ExternalEngineStateMachine final
   bool mHasEnoughVideo = false;
   bool mSentPlaybackEndedEvent = false;
   bool mHasReceivedFirstDecodedVideoFrame = false;
+#ifdef MOZ_WMF_CDM
+  bool mIsFrameServerMode = false;
+  
+  
+  
+  
+  
+  bool mVideoEOSSentToEngine = false;
+#endif
 
   
   MozPromiseHolder<SetCDMPromise> mSetCDMProxyPromise;

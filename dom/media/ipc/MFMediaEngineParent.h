@@ -125,6 +125,12 @@ class MFMediaEngineParent final : public PMFMediaEngineParent {
   MediaEventListener mMediaEngineEventListener;
   MediaEventListener mRequestSampleListener;
   bool mIsCreatedMediaEngine = false;
+  
+  
+  
+  
+  bool mDCompModeEnabled = false;
+  bool mIsFrameServerMode = false;
 
   Microsoft::WRL::ComPtr<IMFDXGIDeviceManager> mDXGIDeviceManager;
 

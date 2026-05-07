@@ -43,6 +43,11 @@ struct MediaPlaybackEvent {
     VideoOnlySeekBegin,
     VideoOnlySeekCompleted,
     PlaybackRateFallback,
+#ifdef MOZ_WMF_CDM
+    
+    
+    FrameServerMode,
+#endif
   } mType;
 
   using DataType = Variant<Nothing, int64_t>;
