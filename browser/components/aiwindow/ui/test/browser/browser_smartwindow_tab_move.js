@@ -193,6 +193,9 @@ add_task(async function test_smarttab_with_conversation_becomes_classic() {
   );
 
   
+  await SimpleTest.promiseFocus(smartWin);
+
+  
   
   await typeInSmartbar(reAdoptedTab.linkedBrowser, "hello");
 

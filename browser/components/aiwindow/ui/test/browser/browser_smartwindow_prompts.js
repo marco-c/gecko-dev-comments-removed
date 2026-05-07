@@ -188,6 +188,12 @@ describe("sidebar conversation starter prompts", () => {
       await submitSmartbar(sidebarBrowser);
 
       
+      await TestUtils.waitForCondition(() => {
+        const el = sidebarBrowser?.contentDocument?.querySelector("ai-window");
+        return el && el.conversationMessageCount > 0;
+      }, "Tab 2's conversation should have messages after submit");
+
+      
       mock.server.delay = 200;
 
       
@@ -202,6 +208,19 @@ describe("sidebar conversation starter prompts", () => {
         () => mock.pendingResponses.length === 0,
         "Waiting for all starter prompt requests/etc to resolve"
       );
+
+      
+      const sidebarBrowser2 =
+        gAiWindow.document.getElementById("ai-window-browser");
+      await TestUtils.waitForCondition(() => {
+        const aiWindowEl =
+          sidebarBrowser2?.contentDocument?.querySelector("ai-window");
+        return (
+          aiWindowEl &&
+          aiWindowEl.conversationMessageCount > 0 &&
+          !aiWindowEl.showStarters
+        );
+      }, "Sidebar should have settled on tab 2's conversation with starters hidden");
 
       
       Assert.deepEqual(
