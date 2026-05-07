@@ -5503,7 +5503,7 @@ NSInteger TextInputHandlerBase::GetWindowLevel() {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
   MOZ_LOG_KEY_OR_IME(LogLevel::Info,
-                     ("%p TextInputHandlerBase::GetWindowLevel, Destryoed()=%s",
+                     ("%p TextInputHandlerBase::GetWindowLevel, Destroyed()=%s",
                       this, TrueOrFalse(Destroyed())));
 
   if (Destroyed()) {
