@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_MIDIPort_h
 #define mozilla_dom_MIDIPort_h
 
@@ -40,7 +38,7 @@ class MIDIPort : public DOMEventTargetHelper {
   virtual ~MIDIPort();
 
  public:
-  nsIGlobalObject* GetParentObject() const { return GetOwnerGlobal(); }
+  nsIGlobalObject* GetParentObject() const { return GetRelevantGlobal(); }
 
   
   void GetId(nsString& aRetVal) const;

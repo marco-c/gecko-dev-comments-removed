@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/Clipboard.h"
 
 #include <algorithm>
@@ -778,7 +776,7 @@ already_AddRefed<Promise> Clipboard::Write(
 already_AddRefed<Promise> Clipboard::WriteText(const nsAString& aData,
                                                nsIPrincipal& aSubjectPrincipal,
                                                ErrorResult& aRv) {
-  nsCOMPtr<nsIGlobalObject> global = GetOwnerGlobal();
+  nsCOMPtr<nsIGlobalObject> global = GetRelevantGlobal();
   if (!global) {
     aRv.ThrowInvalidStateError("Unable to get global.");
     return nullptr;

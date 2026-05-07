@@ -2,7 +2,6 @@
 
 
 
-
 #include "Buffer.h"
 
 #include "Device.h"
@@ -152,7 +151,7 @@ void Buffer::Cleanup() {
     
     
     dom::AutoJSAPI jsapi;
-    if (jsapi.Init(mParent->GetOwnerGlobal())) {
+    if (jsapi.Init(mParent->GetRelevantGlobal())) {
       IgnoredErrorResult rv;
       UnmapArrayBuffers(jsapi.cx(), rv);
     }

@@ -1293,7 +1293,6 @@ Document::Document(const char* aContentType,
       mLoadedAsData(aLoadedAsData == LoadedAsData::AsData),
       mRenderingSuppressedForViewTransitions(false),
       mBidiEnabled(false),
-      mMayNeedFontPrefsUpdate(true),
       mInitialAboutBlankLoadCompleting(false),
       mIgnoreDocGroupMismatches(false),
       mAddedToMemoryReportingAsDataDocument(false),
@@ -7283,7 +7282,6 @@ void Document::SetHeaderData(nsAtom* aHeaderField, const nsAString& aData) {
     } else {
       mContentLanguage = NS_AtomizeMainThread(aData);
     }
-    mMayNeedFontPrefsUpdate = true;
     if (auto* presContext = GetPresContext()) {
       presContext->ContentLanguageChanged();
     }
@@ -14573,6 +14571,16 @@ void Document::ObserveAutoSizesImage(HTMLImageElement& aElement) {
           for (const auto& entry : aEntries) {
             auto* element = HTMLImageElement::FromNode(entry->Target());
             MOZ_ASSERT(element);
+            
+            
+            
+            if (MOZ_UNLIKELY(!element->AllowsAutoSizes())) {
+              
+              
+              MOZ_ASSERT(
+                  !element->OwnerDoc()->ObservesAutoSizesImage(*element));
+              continue;
+            }
             element->MaybeRecomputeAutoSizes(true);
           }
         });
@@ -14584,6 +14592,10 @@ void Document::UnobserveAutoSizesImage(HTMLImageElement& aElement) {
   if (mAutoSizeImageObserver) {
     mAutoSizeImageObserver->Unobserve(aElement);
   }
+}
+
+bool Document::ObservesAutoSizesImage(HTMLImageElement& aElement) const {
+  return mAutoSizeImageObserver && mAutoSizeImageObserver->Observes(aElement);
 }
 
 already_AddRefed<Touch> Document::CreateTouch(
@@ -15566,7 +15578,7 @@ static void DispatchFullscreenUpdateKeyboardLockEvent(Document* aDoc) {
   aDoc->Dispatch(NS_NewRunnableFunction(
       "DispatchFullscreenUpdateKeyboardLockEvent", [doc = RefPtr{aDoc}]() {
         AutoJSAPI jsapi;
-        if (!jsapi.Init(doc->GetOwnerGlobal())) {
+        if (!jsapi.Init(doc->GetRelevantGlobal())) {
           return;
         }
         JSContext* cx = jsapi.cx();
@@ -16672,7 +16684,7 @@ void Document::RequestFullscreenInContentProcess(
         }
 
         AutoJSAPI jsapi;
-        if (!jsapi.Init(self->GetOwnerGlobal())) {
+        if (!jsapi.Init(self->GetRelevantGlobal())) {
           return;
         }
         JSContext* cx = jsapi.cx();
@@ -20274,23 +20286,9 @@ void Document::GetContentLanguageForBindings(DOMString& aString) const {
 }
 
 const LangGroupFontPrefs* Document::GetFontPrefsForLang(
-    nsAtom* aLanguage, bool* aNeedsToCache) const {
+    nsAtom* aLanguage) const {
   nsAtom* lang = aLanguage ? aLanguage : mLanguageFromCharset;
-  return StaticPresData::Get()->GetFontPrefsForLang(lang, aNeedsToCache);
-}
-
-void Document::DoCacheAllKnownLangPrefs() {
-  MOZ_ASSERT(mMayNeedFontPrefsUpdate);
-  RefPtr<nsAtom> lang = GetLanguageForStyle();
-  StaticPresData* data = StaticPresData::Get();
-  data->GetFontPrefsForLang(lang ? lang.get() : mLanguageFromCharset);
-  data->GetFontPrefsForLang(nsGkAtoms::x_math);
-  
-  data->GetFontPrefsForLang(nsGkAtoms::Unicode);
-  for (const auto& key : mLanguagesUsed) {
-    data->GetFontPrefsForLang(key);
-  }
-  mMayNeedFontPrefsUpdate = false;
+  return StaticPresData::Get()->GetFontPrefsForLang(lang);
 }
 
 void Document::RecomputeLanguageFromCharset() {
@@ -20300,7 +20298,6 @@ void Document::RecomputeLanguageFromCharset() {
     return;
   }
 
-  mMayNeedFontPrefsUpdate = true;
   mLanguageFromCharset = language;
 }
 

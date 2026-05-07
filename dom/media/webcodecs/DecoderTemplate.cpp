@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "DecoderTemplate.h"
 
 #include <atomic>
@@ -169,7 +167,7 @@ void DecoderTemplate<DecoderType>::Configure(const ConfigType& aConfig,
   
   
   if constexpr (std::is_same_v<ConfigType, VideoDecoderConfig>) {
-    ApplyResistFingerprintingIfNeeded(config, GetOwnerGlobal());
+    ApplyResistFingerprintingIfNeeded(config, GetRelevantGlobal());
   }
 
   mState = CodecState::Configured;

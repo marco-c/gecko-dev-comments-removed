@@ -9,6 +9,7 @@
 #include "PerformanceInteractionMetrics.h"
 #include "PerformanceNavigation.h"
 #include "PerformancePaintTiming.h"
+#include "SharedLcpMarkerState.h"
 #include "js/GCAPI.h"
 #include "js/PropertyAndElement.h"  
 #include "jsapi.h"
@@ -123,21 +124,17 @@ PerformanceMainThread::PerformanceMainThread(nsPIDOMWindowInner* aWindow,
     
     
     
-    
-    
-    
-    uintptr_t self = reinterpret_cast<uintptr_t>(this);
+    RefPtr<SharedLcpMarkerState> sharedLcpMarkerState =
+        aDOMTiming->GetSharedLcpMarkerState();
     profiler_add_state_change_callback(
         
         
         ProfilingState::Pausing,
-        [self, innerWindowID](ProfilingState aProfilingState) {
-          const PerformanceMainThread* selfPtr =
-              reinterpret_cast<const PerformanceMainThread*>(self);
-
-          selfPtr->GetDOMTiming()->MaybeAddLCPProfilerMarker(innerWindowID);
+        [sharedLcpMarkerState = std::move(sharedLcpMarkerState),
+         innerWindowID](ProfilingState aProfilingState) {
+          sharedLcpMarkerState->MaybeAddLCPProfilerMarker(innerWindowID);
         },
-        self);
+        reinterpret_cast<uintptr_t>(this));
   }
 }
 
@@ -676,11 +673,11 @@ void PerformanceMainThread::GetEntriesByName(
 }
 
 mozilla::PresShell* PerformanceMainThread::GetPresShell() {
-  nsIGlobalObject* ownerGlobal = GetOwnerGlobal();
-  if (!ownerGlobal) {
+  nsIGlobalObject* global = GetRelevantGlobal();
+  if (!global) {
     return nullptr;
   }
-  if (Document* doc = ownerGlobal->GetAsInnerWindow()->GetExtantDoc()) {
+  if (Document* doc = global->GetAsInnerWindow()->GetExtantDoc()) {
     return doc->GetPresShell();
   }
   return nullptr;
@@ -738,8 +735,8 @@ void PerformanceMainThread::ProcessElementTiming() {
   
   TimeStamp rawNowTime = presContext->GetMarkPaintTimingStart();
 
-  MOZ_ASSERT(GetOwnerGlobal());
-  Document* document = GetOwnerGlobal()->GetAsInnerWindow()->GetExtantDoc();
+  MOZ_ASSERT(GetRelevantGlobal());
+  Document* document = GetRelevantGlobal()->GetAsInnerWindow()->GetExtantDoc();
   if (!document ||
       !nsContentUtils::GetInProcessSubtreeRootDocument(document)->IsActive()) {
     return;
@@ -821,12 +818,12 @@ void PerformanceMainThread::ClearGeneratedTempDataForLCP() {
   mTextFrameUnions.Clear();
   mImagesPendingRendering.Clear();
 
-  nsIGlobalObject* ownerGlobal = GetOwnerGlobal();
-  if (!ownerGlobal) {
+  nsIGlobalObject* global = GetRelevantGlobal();
+  if (!global) {
     return;
   }
 
-  if (Document* document = ownerGlobal->GetAsInnerWindow()->GetExtantDoc()) {
+  if (Document* document = global->GetAsInnerWindow()->GetExtantDoc()) {
     document->ContentIdentifiersForLCP().Clear();
   }
 }

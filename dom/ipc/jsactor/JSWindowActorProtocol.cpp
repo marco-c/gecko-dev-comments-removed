@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include "mozilla/dom/JSWindowActorProtocol.h"
 
 #include "JSActorProtocolUtils.h"
@@ -159,7 +156,7 @@ NS_IMETHODIMP JSWindowActorProtocol::HandleEvent(Event* aEvent) {
   }
 
   nsCOMPtr<nsPIDOMWindowInner> inner =
-      do_QueryInterface(target->GetOwnerGlobal());
+      do_QueryInterface(target->GetRelevantGlobal());
   if (!inner) {
     return NS_ERROR_FAILURE;
   }

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "MediaTrack.h"
 
 #include "AudioTrack.h"
@@ -12,10 +10,10 @@
 
 namespace mozilla::dom {
 
-MediaTrack::MediaTrack(nsIGlobalObject* aOwnerGlobal, const nsAString& aId,
+MediaTrack::MediaTrack(nsIGlobalObject* aRelevantGlobal, const nsAString& aId,
                        const nsAString& aKind, const nsAString& aLabel,
                        const nsAString& aLanguage)
-    : DOMEventTargetHelper(aOwnerGlobal),
+    : DOMEventTargetHelper(aRelevantGlobal),
       mId(aId),
       mKind(aKind),
       mLabel(aLabel),

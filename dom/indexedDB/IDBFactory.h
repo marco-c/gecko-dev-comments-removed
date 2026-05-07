@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_idbfactory_h_
 #define mozilla_dom_idbfactory_h_
 
@@ -130,7 +128,7 @@ class IDBFactory final : public GlobalTeardownObserver, public nsWrapperCache {
   void UpdateActiveDatabaseCount(int32_t aDelta);
 
   
-  nsIGlobalObject* GetParentObject() const { return GetOwnerGlobal(); }
+  nsIGlobalObject* GetParentObject() const { return GetRelevantGlobal(); }
 
   BrowserChild* GetBrowserChild() const { return mBrowserChild; }
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_CloseWatcher_h
 #define mozilla_dom_CloseWatcher_h
 
@@ -17,7 +15,7 @@ class CloseWatcher : public DOMEventTargetHelper, public AbortFollower {
  public:
   NS_DECL_ISUPPORTS_INHERITED
 
-  nsIGlobalObject* GetParentObject() const { return GetOwnerGlobal(); }
+  nsIGlobalObject* GetParentObject() const { return GetRelevantGlobal(); }
 
   mozilla::Maybe<EventCallbackDebuggerNotificationType>
   GetDebuggerNotificationType() const override {

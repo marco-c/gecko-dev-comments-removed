@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/Permissions.h"
 
 #include "PermissionUtils.h"
@@ -138,7 +136,7 @@ already_AddRefed<Promise> Permissions::Query(JSContext* aCx,
   
   
 
-  nsCOMPtr<nsIGlobalObject> global = GetOwnerGlobal();
+  nsCOMPtr<nsIGlobalObject> global = GetRelevantGlobal();
   if (NS_WARN_IF(!global)) {
     aRv.ThrowInvalidStateError("The context is not fully active.");
     return nullptr;

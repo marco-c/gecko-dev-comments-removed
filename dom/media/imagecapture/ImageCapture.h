@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef IMAGECAPTURE_H
 #define IMAGECAPTURE_H
 
@@ -60,7 +58,7 @@ class ImageCapture final : public DOMEventTargetHelper {
   }
 
   
-  nsIGlobalObject* GetParentObject() const { return GetOwnerGlobal(); }
+  nsIGlobalObject* GetParentObject() const { return GetRelevantGlobal(); }
 
   static already_AddRefed<ImageCapture> Constructor(const GlobalObject& aGlobal,
                                                     MediaStreamTrack& aTrack,

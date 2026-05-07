@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_MediaTrack_h
 #define mozilla_dom_MediaTrack_h
 
@@ -31,7 +29,7 @@ class AudioTrack;
 
 class MediaTrack : public DOMEventTargetHelper {
  public:
-  MediaTrack(nsIGlobalObject* aOwnerGlobal, const nsAString& aId,
+  MediaTrack(nsIGlobalObject* aRelevantGlobal, const nsAString& aId,
              const nsAString& aKind, const nsAString& aLabel,
              const nsAString& aLanguage);
 

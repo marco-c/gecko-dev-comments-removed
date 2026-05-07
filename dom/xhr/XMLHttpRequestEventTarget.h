@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_XMLHttpRequestEventTarget_h
 #define mozilla_dom_XMLHttpRequestEventTarget_h
 
@@ -37,7 +35,7 @@ class XMLHttpRequestEventTarget : public DOMEventTargetHelper {
   IMPL_EVENT_HANDLER(timeout)
   IMPL_EVENT_HANDLER(loadend)
 
-  nsISupports* GetParentObject() const { return GetOwnerGlobal(); }
+  nsISupports* GetParentObject() const { return GetRelevantGlobal(); }
   void DisconnectFromOwner() override;
 };
 

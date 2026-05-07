@@ -2278,7 +2278,7 @@ MOZ_CAN_RUN_SCRIPT static bool IsDeferredLoadEmptyFrame(Element& aEmbedder) {
   }
   
   
-  RefPtr global = aEmbedder.GetOwnerGlobal();
+  RefPtr global = aEmbedder.GetRelevantGlobal();
   if (!global || !global->GetGlobalJSObject()) {
     return false;
   }

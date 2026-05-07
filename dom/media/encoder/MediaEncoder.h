@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef MediaEncoder_h_
 #define MediaEncoder_h_
 

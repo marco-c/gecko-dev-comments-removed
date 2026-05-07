@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_MediaTrackList_h
 #define mozilla_dom_MediaTrackList_h
 
@@ -57,7 +55,7 @@ class MediaTrackList : public DOMEventTargetHelper {
   
   
   static already_AddRefed<AudioTrack> CreateAudioTrack(
-      nsIGlobalObject* aOwnerGlobal, const nsAString& aId,
+      nsIGlobalObject* aRelevantGlobal, const nsAString& aId,
       const nsAString& aKind, const nsAString& aLabel,
       const nsAString& aLanguage, bool aEnabled,
       AudioStreamTrack* aAudioTrack = nullptr);
@@ -65,7 +63,7 @@ class MediaTrackList : public DOMEventTargetHelper {
   
   
   static already_AddRefed<VideoTrack> CreateVideoTrack(
-      nsIGlobalObject* aOwnerGlobal, const nsAString& aId,
+      nsIGlobalObject* aRelevantGlobal, const nsAString& aId,
       const nsAString& aKind, const nsAString& aLabel,
       const nsAString& aLanguage, VideoStreamTrack* aVideoTrack = nullptr);
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ServiceWorker.h"
 
 #include "ServiceWorkerChild.h"
@@ -172,7 +170,7 @@ void ServiceWorker::PostMessage(JSContext* aCx, JS::Handle<JS::Value> aMessage,
     return;
   }
 
-  nsIGlobalObject* global = GetOwnerGlobal();
+  nsIGlobalObject* global = GetRelevantGlobal();
   if (NS_WARN_IF(!global)) {
     aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return;

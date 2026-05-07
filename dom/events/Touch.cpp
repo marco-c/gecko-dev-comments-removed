@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/Touch.h"
 
 #include "mozilla/dom/EventTarget.h"
@@ -226,7 +224,7 @@ nsIGlobalObject* Touch::GetParentObject() const {
   if (!mOriginalTarget) {
     return nullptr;
   }
-  return mOriginalTarget->GetOwnerGlobal();
+  return mOriginalTarget->GetRelevantGlobal();
 }
 
 }  

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_DebuggerNotificationObserver_h
 #define mozilla_dom_DebuggerNotificationObserver_h
 
@@ -28,7 +26,7 @@ class DebuggerNotificationObserver final : public nsISupports,
   static already_AddRefed<DebuggerNotificationObserver> Constructor(
       GlobalObject& aGlobal, ErrorResult& aRv);
 
-  nsIGlobalObject* GetParentObject() const { return mOwnerGlobal; }
+  nsIGlobalObject* GetParentObject() const { return mRelevantGlobal; }
 
   
   virtual JSObject* WrapObject(JSContext* aCx,
@@ -47,12 +45,12 @@ class DebuggerNotificationObserver final : public nsISupports,
   MOZ_CAN_RUN_SCRIPT void NotifyListeners(DebuggerNotification* aNotification);
 
  private:
-  explicit DebuggerNotificationObserver(nsIGlobalObject* aOwnerGlobal);
+  explicit DebuggerNotificationObserver(nsIGlobalObject* aRelevantGlobal);
   ~DebuggerNotificationObserver() = default;
 
   nsTObserverArray<RefPtr<DebuggerNotificationCallback>>
       mEventListenerCallbacks;
-  nsCOMPtr<nsIGlobalObject> mOwnerGlobal;
+  nsCOMPtr<nsIGlobalObject> mRelevantGlobal;
 };
 
 }  

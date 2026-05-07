@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "MessagePort.h"
 
 #include "MessageEvent.h"
@@ -313,7 +311,7 @@ void MessagePort::PostMessage(JSContext* aCx, JS::Handle<JS::Value> aMessage,
   }
 
   Maybe<nsID> agentClusterId;
-  nsCOMPtr<nsIGlobalObject> global = GetOwnerGlobal();
+  nsCOMPtr<nsIGlobalObject> global = GetRelevantGlobal();
   if (global) {
     agentClusterId = global->GetAgentClusterId();
   }

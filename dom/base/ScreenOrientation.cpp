@@ -67,14 +67,21 @@ ScreenOrientation::ScreenOrientation(nsPIDOMWindowInner* aWindow,
     : DOMEventTargetHelper(aWindow), mScreen(aScreen) {
   MOZ_ASSERT(aWindow);
   MOZ_ASSERT(aScreen);
+}
 
-  mAngle = aScreen->GetOrientationAngle();
-  mType = InternalOrientationToType(aScreen->GetOrientationType());
+ already_AddRefed<ScreenOrientation> ScreenOrientation::Create(
+    nsPIDOMWindowInner* aWindow, nsScreen* aScreen) {
+  RefPtr screenOrientation = new ScreenOrientation(aWindow, aScreen);
 
-  Document* doc = GetResponsibleDocument();
+  screenOrientation->mAngle = aScreen->GetOrientationAngle();
+  screenOrientation->mType =
+      InternalOrientationToType(aScreen->GetOrientationType());
+
+  Document* doc = screenOrientation->GetResponsibleDocument();
   BrowsingContext* bc = doc ? doc->GetBrowsingContext() : nullptr;
   if (bc && !bc->IsDiscarded() && !bc->HasOrientationOverride()) {
-    MOZ_ALWAYS_SUCCEEDS(bc->SetCurrentOrientation(mType, mAngle));
+    MOZ_ALWAYS_SUCCEEDS(bc->SetCurrentOrientation(screenOrientation->mType,
+                                                  screenOrientation->mAngle));
   } else if (bc && !bc->IsTop() && bc->HasOrientationOverride()) {
     
     BrowsingContext* topBC = bc->Top();
@@ -82,6 +89,8 @@ ScreenOrientation::ScreenOrientation(nsPIDOMWindowInner* aWindow,
         bc->SetOrientationOverride(topBC->GetCurrentOrientationType(),
                                    topBC->GetCurrentOrientationAngle()));
   }
+
+  return screenOrientation.forget();
 }
 
 ScreenOrientation::~ScreenOrientation() {
@@ -684,7 +693,7 @@ void ScreenOrientation::CleanupFullscreenListener() {
 
 OrientationType ScreenOrientation::DeviceType(CallerType aCallerType) const {
   if (nsContentUtils::ShouldResistFingerprinting(
-          aCallerType, GetOwnerGlobal(), RFPTarget::ScreenOrientation)) {
+          aCallerType, GetRelevantGlobal(), RFPTarget::ScreenOrientation)) {
     Document* doc = GetResponsibleDocument();
     BrowsingContext* bc = doc ? doc->GetBrowsingContext() : nullptr;
     if (!bc) {
@@ -698,7 +707,7 @@ OrientationType ScreenOrientation::DeviceType(CallerType aCallerType) const {
 
 uint16_t ScreenOrientation::DeviceAngle(CallerType aCallerType) const {
   if (nsContentUtils::ShouldResistFingerprinting(
-          aCallerType, GetOwnerGlobal(), RFPTarget::ScreenOrientation)) {
+          aCallerType, GetRelevantGlobal(), RFPTarget::ScreenOrientation)) {
     Document* doc = GetResponsibleDocument();
     BrowsingContext* bc = doc ? doc->GetBrowsingContext() : nullptr;
     if (!bc) {
@@ -721,7 +730,7 @@ OrientationType ScreenOrientation::GetType(CallerType aCallerType,
 
   OrientationType orientation = bc->GetCurrentOrientationType();
   if (nsContentUtils::ShouldResistFingerprinting(
-          aCallerType, GetOwnerGlobal(), RFPTarget::ScreenOrientation)) {
+          aCallerType, GetRelevantGlobal(), RFPTarget::ScreenOrientation)) {
     CSSIntSize size = bc->TopInnerSizeSpoofedForRFP();
     return nsRFPService::ViewportSizeToOrientationType(size.width, size.height);
   }
@@ -739,7 +748,7 @@ uint16_t ScreenOrientation::GetAngle(CallerType aCallerType,
 
   uint16_t angle = static_cast<uint16_t>(bc->GetCurrentOrientationAngle());
   if (nsContentUtils::ShouldResistFingerprinting(
-          aCallerType, GetOwnerGlobal(), RFPTarget::ScreenOrientation)) {
+          aCallerType, GetRelevantGlobal(), RFPTarget::ScreenOrientation)) {
     CSSIntSize size = bc->TopInnerSizeSpoofedForRFP();
     return nsRFPService::ViewportSizeToAngle(size.width, size.height);
   }
