@@ -516,6 +516,7 @@ struct AutoHandlingTrap {
 };
 
 [[nodiscard]] static bool HandleTrap(CONTEXT* context,
+                                     uint8_t* faultAddr = nullptr,
                                      JSContext* assertCx = nullptr) {
   MOZ_ASSERT(sAlreadyHandlingTrap.get());
 
@@ -544,6 +545,20 @@ struct AutoHandlingTrap {
 
   
   
+  
+  
+  
+  uint32_t faultMemoryIndex = 0;
+  uint64_t faultByteOffset = 0;
+  if (trap == Trap::OutOfBounds && faultAddr) {
+    if (!instance->memoryAccessInMappedRegion(faultAddr, &faultMemoryIndex,
+                                              &faultByteOffset)) {
+      return false;
+    }
+  }
+
+  
+  
   ((FrameWithInstances*)frame)->setCalleeInstance(instance);
 
   JSContext* cx =
@@ -555,6 +570,9 @@ struct AutoHandlingTrap {
   
   jit::JitActivation* activation = cx->activation()->asJit();
   activation->startWasmTrap(trap, trapSite, ToRegisterState(context));
+  if (trap == Trap::OutOfBounds && faultAddr) {
+    activation->setWasmTrapFaultInfo(faultMemoryIndex, faultByteOffset);
+  }
   SetContextPC(context, codeBlock->code->trapCode());
   return true;
 }
@@ -586,8 +604,13 @@ static LONG WINAPI WasmTrapHandler(LPEXCEPTION_POINTERS exception) {
     return EXCEPTION_CONTINUE_SEARCH;
   }
 
+  uint8_t* faultAddr = nullptr;
+  if (record->ExceptionCode == EXCEPTION_ACCESS_VIOLATION) {
+    faultAddr = (uint8_t*)record->ExceptionInformation[1];
+  }
+
   JSContext* cx = TlsContext.get();  
-  if (!HandleTrap(exception->ContextRecord, cx)) {
+  if (!HandleTrap(exception->ContextRecord, faultAddr, cx)) {
     return EXCEPTION_CONTINUE_SEARCH;
   }
 
@@ -671,7 +694,11 @@ static bool HandleMachException(const ExceptionRequest& request) {
   {
     AutoNoteSingleThreadedRegion anstr;
     AutoHandlingTrap aht;
-    if (!HandleTrap(&context)) {
+    uint8_t* faultAddr = nullptr;
+    if (request.body.exception == EXC_BAD_ACCESS) {
+      faultAddr = (uint8_t*)request.body.code[1];
+    }
+    if (!HandleTrap(&context, faultAddr)) {
       return false;
     }
   }
@@ -770,8 +797,12 @@ static void WasmTrapHandler(int signum, siginfo_t* info, void* context) {
     AutoHandlingTrap aht;
     MOZ_RELEASE_ASSERT(signum == SIGSEGV || signum == SIGBUS ||
                        signum == kWasmTrapSignal);
+    uint8_t* faultAddr = nullptr;
+    if (signum == SIGSEGV || signum == SIGBUS) {
+      faultAddr = (uint8_t*)info->si_addr;
+    }
     JSContext* cx = TlsContext.get();  
-    if (HandleTrap((CONTEXT*)context, cx)) {
+    if (HandleTrap((CONTEXT*)context, faultAddr, cx)) {
       return;
     }
   }
@@ -1039,11 +1070,15 @@ bool wasm::MemoryAccessTraps(const RegisterState& regs, uint8_t* addr,
   
   frame->setCalleeInstance(&instance);
 
+  uint32_t faultMemoryIndex = 0;
+  uint64_t faultByteOffset = 0;
   switch (trap) {
     case Trap::OutOfBounds:
       if (!instance.memoryAccessInGuardRegion((uint8_t*)addr, numBytes)) {
         return false;
       }
+      MOZ_ALWAYS_TRUE(instance.memoryAccessInMappedRegion(
+          (uint8_t*)addr, &faultMemoryIndex, &faultByteOffset));
       break;
     case Trap::NullPointerDereference:
     case Trap::BadCast:
@@ -1067,6 +1102,9 @@ bool wasm::MemoryAccessTraps(const RegisterState& regs, uint8_t* addr,
   JSContext* cx = TlsContext.get();  
   jit::JitActivation* activation = cx->activation()->asJit();
   activation->startWasmTrap(trap, trapSite, regs);
+  if (trap == Trap::OutOfBounds) {
+    activation->setWasmTrapFaultInfo(faultMemoryIndex, faultByteOffset);
+  }
   *newPC = codeBlock->code->trapCode();
   return true;
 #endif

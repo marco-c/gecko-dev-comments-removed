@@ -19,6 +19,7 @@
 
 #include "mozilla/CheckedInt.h"
 #include "mozilla/EnumeratedArray.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/Span.h"
 
 #include <stdint.h>
@@ -744,6 +745,15 @@ struct TrapData {
   
   
   bool failedUnwindSignatureMismatch;
+
+  struct FaultInfo {
+    uint32_t memoryIndex;
+    uint64_t byteOffset;
+  };
+
+  
+  
+  mozilla::Maybe<FaultInfo> faultInfo;
 };
 
 
@@ -830,6 +840,9 @@ class CodeRange {
     DebugStub,                 
     RequestTierUpStub,         
     UpdateCallRefMetricsStub,  
+#ifdef ENABLE_WASM_JSPI
+    ContBaseFrame,  
+#endif
     FarJumpIsland,  
     Throw           
   };
@@ -921,6 +934,9 @@ class CodeRange {
   bool isJitEntry() const { return kind() == JitEntry; }
   bool isInterpEntry() const { return kind() == InterpEntry; }
   bool isEntry() const { return isInterpEntry() || isJitEntry(); }
+#ifdef ENABLE_WASM_JSPI
+  bool isContBaseFrame() const { return kind() == ContBaseFrame; }
+#endif
   bool hasFuncIndex() const {
     return isFunction() || isImportExit() || isEntry();
   }

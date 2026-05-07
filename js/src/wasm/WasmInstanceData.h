@@ -170,6 +170,10 @@ struct MemoryInstanceData {
 
   
   bool isShared;
+
+  
+  
+  size_t mappedSize;
 };
 
 
