@@ -311,8 +311,13 @@ pub unsafe extern "C" fn jxl_decoder_flush_pixels(
         
         Some(unsafe { slice::from_raw_parts_mut(k_buffer, k_buffer_len) })
     };
+    
+    
+    
+    
     match decoder.flush_pixels(buf, k_slice) {
-        Ok(()) => JxlDecoderStatus::Ok,
+        Ok(true) => JxlDecoderStatus::Ok,
+        Ok(false) => JxlDecoderStatus::NeedMoreData,
         Err(_) => JxlDecoderStatus::Error,
     }
 }

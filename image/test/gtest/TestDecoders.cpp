@@ -11,6 +11,9 @@
 #include "Decoder.h"
 #include "DecoderFactory.h"
 #include "decoders/nsBMPDecoder.h"
+#ifdef MOZ_JXL
+#  include "decoders/nsJXLDecoder.h"
+#endif
 #include "IDecodingTask.h"
 #include "ImageOps.h"
 #include "imgIContainer.h"
@@ -1013,7 +1016,23 @@ TEST_F(ImageDecoders, AVIFLargeMultiChunk) {
 TEST_F(ImageDecoders, JXLLargeMultiChunk) {
   CheckDecoderMultiChunk(LargeJXLTestCase(),  64);
 }
-#endif
+
+#  ifdef DEBUG
+
+
+
+TEST_F(ImageDecoders, JXLLargeMultiChunkPipeWriteCount) {
+  ImageTestCase testCase = LargeJXLTestCase();
+  WithMultiChunkDecode(testCase,  64,
+                       [&](image::Decoder* aDecoder) {
+                         ASSERT_FALSE(aDecoder->HasError());
+                         ASSERT_EQ(aDecoder->GetType(), DecoderType::JXL);
+                         auto* jxl = static_cast<nsJXLDecoder*>(aDecoder);
+                         EXPECT_LE(jxl->GetWritePixelRowsCount(), 16u);
+                       });
+}
+#  endif 
+#endif   
 
 TEST_F(ImageDecoders, AnimatedGIFSingleChunk) {
   CheckDecoderSingleChunk(GreenFirstFrameAnimatedGIFTestCase());
