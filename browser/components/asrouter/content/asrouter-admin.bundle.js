@@ -139,7 +139,6 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-
 const MESSAGE_TYPE_LIST = [
   "BLOCK_MESSAGE_BY_ID",
   "USER_ACTION",
@@ -177,6 +176,8 @@ const MESSAGE_TYPE_LIST = [
   "RESET_MESSAGE_STATE",
   "RESET_SCREEN_IMPRESSIONS",
   "EDIT_STATE",
+  "AW_EVALUATE_SCREEN_TARGETING",
+  "AW_ADD_SCREEN_IMPRESSION",
 ];
 
 const MESSAGE_TYPE_HASH = MESSAGE_TYPE_LIST.reduce((hash, value) => {
