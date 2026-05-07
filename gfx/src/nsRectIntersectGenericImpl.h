@@ -29,15 +29,14 @@ void mozilla::IntersectEngine<Arch>::Intersect(const int32_t lhs[4],
       rect2 - resultRect + xsimd::slide_right<8>(rect2));  
   widthheight = xsimd::slide_left<8>(widthheight);         
 
-  constexpr xsimd::batch_bool_constant<int32_t, xsimd::default_arch, true, true,
-                                       false, false>
+  constexpr xsimd::batch_bool_constant<int32_t, Arch, true, true, false, false>
       mask;
   resultRect = xsimd::select(mask, resultRect, widthheight);  
 
   if (((resultRect < 0).mask() & 0xC) != 0) {
     
     
-    resultRect = resultRect & xsimd::batch<int32_t>{-1, -1, 0, 0};
+    resultRect = resultRect & xsimd::batch<int32_t, Arch>{-1, -1, 0, 0};
   }
 
   resultRect.store_unaligned(result);
@@ -63,8 +62,7 @@ bool mozilla::IntersectEngine<Arch>::IntersectRect(const int32_t lhs[4],
       rect2 - resultRect + xsimd::slide_right<8>(rect2));  
   widthheight = xsimd::slide_left<8>(widthheight);         
 
-  constexpr xsimd::batch_bool_constant<int32_t, xsimd::default_arch, true, true,
-                                       false, false>
+  constexpr xsimd::batch_bool_constant<int32_t, Arch, true, true, false, false>
       mask;
   resultRect = xsimd::select(mask, resultRect, widthheight);  
 
@@ -72,7 +70,7 @@ bool mozilla::IntersectEngine<Arch>::IntersectRect(const int32_t lhs[4],
   if (isDisjoint) {
     
     
-    resultRect = resultRect & xsimd::batch<int32_t>{-1, -1, 0, 0};
+    resultRect = resultRect & xsimd::batch<int32_t, Arch>{-1, -1, 0, 0};
   }
   resultRect.store_unaligned(result);
   return !isDisjoint;
