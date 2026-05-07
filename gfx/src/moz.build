@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 XPIDL_SOURCES += [
     "nsIFontEnumerator.idl",
@@ -31,6 +29,7 @@ EXPORTS += [
     "nsPoint.h",
     "nsRect.h",
     "nsRectAbsolute.h",
+    "nsRectIntersectGeneric.h",
     "nsRegion.h",
     "nsRegionFwd.h",
     "nsSize.h",
@@ -74,7 +73,7 @@ UNIFIED_SOURCES += [
     "nsTransform2D.cpp",
 ]
 
-
+# nsDeviceContext.cpp cannot be built in unified mode because it pulls in OS X system headers.
 SOURCES += [
     "nsDeviceContext.cpp",
 ]
@@ -86,7 +85,7 @@ XPCOM_MANIFESTS += [
 include("/ipc/chromium/chromium-config.mozbuild")
 
 LOCAL_INCLUDES += [
-    "/dom/ipc",  
+    "/dom/ipc",  # for ContentChild.h
     "/gfx/cairo/cairo/src",
 ]
 
@@ -95,3 +94,16 @@ FINAL_LIBRARY = "xul"
 if CONFIG["MOZ_WIDGET_TOOLKIT"] == "gtk":
     CXXFLAGS += CONFIG["MOZ_GTK3_CFLAGS"]
     CXXFLAGS += CONFIG["MOZ_PANGO_CFLAGS"]
+
+if CONFIG["TARGET_CPU"] == "aarch64":
+    DEFINES["USE_NEON"] = True
+    LOCAL_INCLUDES += ["/third_party/xsimd/include"]
+    SOURCES += ["nsRectIntersectGenericNeon.cpp"]
+    SOURCES["nsRectIntersectGenericNeon.cpp"].flags += CONFIG["NEON_FLAGS"]
+
+if CONFIG["INTEL_ARCHITECTURE"]:
+    if CONFIG["SSE4_2_FLAGS"]:
+        DEFINES["USE_SSE4_2"] = True
+        LOCAL_INCLUDES += ["/third_party/xsimd/include"]
+        SOURCES += ["nsRectIntersectGenericSSE42.cpp"]
+        SOURCES["nsRectIntersectGenericSSE42.cpp"].flags += CONFIG["SSE4_2_FLAGS"]

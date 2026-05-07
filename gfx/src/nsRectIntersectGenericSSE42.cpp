@@ -1,0 +1,9 @@
+
+
+
+
+#include "nsRectIntersectGenericImpl.h"
+
+namespace mozilla {
+template struct IntersectEngine<xsimd::sse4_2>;
+}
