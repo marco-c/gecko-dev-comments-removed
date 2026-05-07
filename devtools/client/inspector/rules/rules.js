@@ -1689,10 +1689,17 @@ class CssRuleView extends EventEmitter {
 
       
       const lastElement = lastElementPerContainer.get(container);
-      if (lastElement) {
+      
+      if (
+        lastElement &&
+        lastElement.nextElementSibling != rule.editor.element
+      ) {
         lastElement.insertAdjacentElement("afterend", rule.editor.element);
-      } else {
-        container.appendChild(rule.editor.element);
+      } else if (
+        !lastElement &&
+        container.firstElementChild != rule.editor.element
+      ) {
+        container.insertAdjacentElement("afterbegin", rule.editor.element);
       }
       lastElementPerContainer.set(container, rule.editor.element);
     }
@@ -1812,10 +1819,14 @@ class CssRuleView extends EventEmitter {
       const lastContainer = currentContainers.at(-1);
       
       
+      
+      
       if (id == PSEUDO_ELEMENTS_CONTAINER_ID || !lastContainer) {
-        this.element.insertAdjacentElement("afterbegin", header);
-        header.insertAdjacentElement("afterend", container);
-      } else {
+        if (this.element.firstElementChild != header) {
+          this.element.insertAdjacentElement("afterbegin", header);
+          header.insertAdjacentElement("afterend", container);
+        }
+      } else if (lastContainer.nextElementSibling != header) {
         lastContainer.insertAdjacentElement("afterend", header);
         header.insertAdjacentElement("afterend", container);
       }
@@ -1855,16 +1866,21 @@ class CssRuleView extends EventEmitter {
   }
 
   #createRegisteredPropertyEditors() {
+    const targetRegisteredProperties =
+      this.getRegisteredPropertiesForSelectedNodeTarget();
+    if (!targetRegisteredProperties?.size) {
+      
+      const entry = this.#containers.get(REGISTERED_PROPERTIES_CONTAINER_ID);
+      if (entry) {
+        entry.container.replaceChildren();
+      }
+      return;
+    }
+
     const registeredPropertiesContainer =
       this.getOrCreateRegisteredPropertiesExpandableContainer();
     
     registeredPropertiesContainer.replaceChildren();
-
-    const targetRegisteredProperties =
-      this.getRegisteredPropertiesForSelectedNodeTarget();
-    if (!targetRegisteredProperties?.size) {
-      return;
-    }
 
     
     const propertyDefinitions = Array.from(
