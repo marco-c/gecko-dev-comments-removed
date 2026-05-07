@@ -100,12 +100,11 @@ add_setup(async function () {
 
 
 
-
 add_task(async function () {
   await BrowserTestUtils.withNewTab(
     {
       gBrowser,
-      url: "about:logo",
+      url: getRootDirectory(gTestPath) + "large.png",
     },
     async () => {
       let dirSvc = Cc["@mozilla.org/file/directory_service;1"].getService(

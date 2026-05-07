@@ -12,7 +12,7 @@ add_task(async function () {
   await BrowserTestUtils.withNewTab(
     {
       gBrowser,
-      url: "about:logo",
+      url: getRootDirectory(gTestPath) + "large.png",
     },
     () => {
       var brandName = Services.strings
