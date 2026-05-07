@@ -158,6 +158,11 @@ class ConnectionEntry : public SupportsWeakPtr {
   
   
   
+  bool mPendingQProcessingScheduled : 1;
+
+  
+  
+  
   bool IsEmpty() const {
     return IdleConnectionsLength() == 0 && ActiveConnsLength() == 0 &&
            DnsAndConnectSocketsLength() == 0 && PendingQueueIsEmpty() &&
