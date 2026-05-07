@@ -530,6 +530,13 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
     return mMouseEnterLeaveHelper;
   }
 
+  
+
+
+
+
+
+
   nsIContent* GetTrackingDragGestureContent() const {
     return mGestureDownContent;
   }
@@ -1375,6 +1382,9 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
 
   
   LayoutDeviceIntPoint mGestureDownPoint;  
+  
+  
+  
   
   RefPtr<nsIContent> mGestureDownContent;
   
