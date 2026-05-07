@@ -511,6 +511,9 @@ BackgroundParentImpl::AllocPIdleSchedulerParent() {
 already_AddRefed<dom::PRemoteWorkerControllerParent>
 BackgroundParentImpl::AllocPRemoteWorkerControllerParent(
     const dom::RemoteWorkerData& aRemoteWorkerData) {
+  if (BackgroundParent::IsOtherProcessActor(this)) {
+    return nullptr;
+  }
   RefPtr<dom::RemoteWorkerControllerParent> actor =
       new dom::RemoteWorkerControllerParent(aRemoteWorkerData);
   return actor.forget();
@@ -520,9 +523,6 @@ IPCResult BackgroundParentImpl::RecvPRemoteWorkerControllerConstructor(
     dom::PRemoteWorkerControllerParent* aActor,
     const dom::RemoteWorkerData& aRemoteWorkerData) {
   MOZ_ASSERT(aActor);
-  if (BackgroundParent::IsOtherProcessActor(this)) {
-    return IPC_FAIL_NO_REASON(this);
-  }
   return IPC_OK();
 }
 
@@ -1374,7 +1374,8 @@ BackgroundParentImpl::RecvEnsureUtilityProcessAndCreateBridge(
   }
   NS_DispatchToMainThread(NS_NewRunnableFunction(
       "BackgroundParentImpl::RecvEnsureUtilityProcessAndCreateBridge()",
-      [aResolver, managerThread, otherProcInfo, childId, aLocation]() {
+      [aResolver = std::move(aResolver), managerThread, otherProcInfo, childId,
+       aLocation]() {
         RefPtr<UtilityProcessManager> upm =
             UtilityProcessManager::GetSingleton();
         using Type = std::tuple<const nsresult&,
