@@ -1,0 +1,8 @@
+
+
+
+
+
+
+if CONFIG["COMPILE_ENVIRONMENT"]:
+    CbindgenHeader("../glue/Locale.h", inputs=["/js/src/builtin/intl/locale_glue"])
