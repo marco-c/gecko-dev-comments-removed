@@ -540,16 +540,11 @@ class nsWindow : public nsIWidget {
   void UnlockCursor() { mWidgetCursorLocked = false; };
   void InsertEmoji(RefPtr<nsWindow> aToplevelWindow = nullptr);
 
-  static void SessionRestoreFinished();
-
  protected:
   virtual ~nsWindow();
 
   virtual void CreateNative() = 0;
   virtual void DestroyNative() = 0;
-
-  void ConfigureToplevelWindow();
-  virtual void ConfigureToplevelWindowNative() {};
 
   virtual void EnableVSyncSource() {};
   virtual void DisableVSyncSource() {};
@@ -770,10 +765,6 @@ class nsWindow : public nsIWidget {
 
   
   bool mPopupTemporaryHidden : 1;
-
-  
-  
-  bool mWaitingToSessionRestore : 1;
 
   
   void InitDragEvent(mozilla::WidgetDragEvent& aEvent);
