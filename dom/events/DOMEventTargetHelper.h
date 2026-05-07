@@ -93,8 +93,6 @@ class DOMEventTargetHelper : public dom::EventTarget,
 
   bool HasListenersFor(nsAtom* aTypeWithOn) const;
 
-  nsPIDOMWindowOuter* GetOwnerGlobalForBindingsInternal() override;
-
   
   
   nsPIDOMWindowInner* GetWindowIfCurrent() const;

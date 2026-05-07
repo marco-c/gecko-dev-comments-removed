@@ -8,7 +8,7 @@ function assertNoLeaksInTabTracker() {
   const { tabTracker } = ExtensionParent.apiManager.global;
 
   for (const [tabId, nativeTab] of tabTracker._tabIds) {
-    if (!nativeTab.ownerGlobal) {
+    if (!nativeTab.documentGlobal) {
       
       
       info(

@@ -488,11 +488,11 @@ class NodeActor extends Actor {
     
     const name = this.rawNode.localName;
 
-    if (!this.rawNode.ownerGlobal) {
+    if (!this.rawNode.documentGlobal) {
       return undefined;
     }
 
-    const customElementsRegistry = this.rawNode.ownerGlobal.customElements;
+    const customElementsRegistry = this.rawNode.documentGlobal.customElements;
     const customElement =
       customElementsRegistry && customElementsRegistry.get(name);
     if (!customElement) {
@@ -760,7 +760,7 @@ class NodeActor extends Actor {
 
 
   getOwnerGlobalDimensions() {
-    const win = this.rawNode.ownerGlobal;
+    const win = this.rawNode.documentGlobal;
     return {
       innerWidth: win.innerWidth,
       innerHeight: win.innerHeight,
@@ -793,7 +793,7 @@ class NodeActor extends Actor {
       
       
 
-      const { chromeEventHandler } = this.rawNode.ownerGlobal.docShell;
+      const { chromeEventHandler } = this.rawNode.documentGlobal.docShell;
       const browsingContextID = this.rawNode.browsingContext.id;
       await new Promise((resolve, reject) => {
         this._waitForFrameLoadAbortController = new AbortController();

@@ -137,7 +137,7 @@ async function checkEventsForNode(test, inspector) {
     header.scrollIntoView();
 
     
-    EventUtils.synthesizeMouse(header, 2, 2, {}, type.ownerGlobal);
+    EventUtils.synthesizeMouse(header, 2, 2, {}, type.documentGlobal);
     await tooltip.once("event-tooltip-ready");
 
     is(

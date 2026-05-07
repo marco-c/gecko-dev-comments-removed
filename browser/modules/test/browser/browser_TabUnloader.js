@@ -194,7 +194,7 @@ add_task(async function test() {
 
   
   gBrowser.selectedTab = tab0;
-  tab0.ownerGlobal.focus();
+  tab0.documentGlobal.focus();
 
   
   await BrowserTestUtils.switchTab(windowPriv.gBrowser, tabPriv1);

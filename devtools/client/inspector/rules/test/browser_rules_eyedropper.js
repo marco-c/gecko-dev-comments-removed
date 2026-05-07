@@ -83,10 +83,10 @@ async function runTest(inspector, view, isWindowHost) {
     
     info("Ensure the swatch window is focused");
     const onWindowFocus = BrowserTestUtils.waitForEvent(
-      swatch.ownerGlobal,
+      swatch.documentGlobal,
       "focus"
     );
-    swatch.ownerGlobal.focus();
+    swatch.documentGlobal.focus();
     await onWindowFocus;
   }
 

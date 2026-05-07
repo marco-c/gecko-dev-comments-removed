@@ -220,7 +220,7 @@ async function setDefaultEngine(
   EventUtils.synthesizeMouseAtCenter(
     defaultEngineSelector,
     {},
-    defaultEngineSelector.ownerGlobal
+    defaultEngineSelector.documentGlobal
   );
   await popupShown;
 
@@ -236,7 +236,11 @@ async function setDefaultEngine(
   
   
   
-  EventUtils.synthesizeMouseAtCenter(engine2Item, {}, engine2Item.ownerGlobal);
+  EventUtils.synthesizeMouseAtCenter(
+    engine2Item,
+    {},
+    engine2Item.documentGlobal
+  );
   await defaultChanged;
 
   const newDefault = testPrivate

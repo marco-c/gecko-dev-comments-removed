@@ -229,7 +229,7 @@ async function testRequestWithFormattedView(
 
   
   rawDataToggle.focus();
-  EventUtils.synthesizeKey("VK_SPACE", {}, rawDataToggle.ownerGlobal);
+  EventUtils.synthesizeKey("VK_SPACE", {}, rawDataToggle.documentGlobal);
   await waitForContent;
   ok(!rawDataToggle.checked, "Raw toggle is unchecked");
 }

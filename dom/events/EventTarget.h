@@ -225,12 +225,6 @@ class EventTarget : public nsISupports, public nsWrapperCache {
   
   
   
-  Nullable<WindowProxyHolder> GetOwnerGlobalForBindings();
-  virtual nsPIDOMWindowOuter* GetOwnerGlobalForBindingsInternal() = 0;
-
-  
-  
-  
   virtual nsIGlobalObject* GetOwnerGlobal() const = 0;
 
   

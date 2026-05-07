@@ -1069,7 +1069,7 @@ class HTMLTooltip extends EventEmitter {
     
     
     const margin = parseFloat(
-      this.xulPanelWrapper.ownerGlobal.getComputedStyle(this.xulPanelWrapper)
+      this.xulPanelWrapper.documentGlobal.getComputedStyle(this.xulPanelWrapper)
         .marginTop
     );
     this.xulPanelWrapper.moveTo(left + margin, top + margin);

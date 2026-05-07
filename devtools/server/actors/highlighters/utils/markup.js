@@ -582,7 +582,7 @@ function waitForContentLoaded(iframeOrWindow) {
   
   if (
     iframeOrWindow.contentWindow &&
-    iframeOrWindow.ownerGlobal !==
+    iframeOrWindow.documentGlobal !==
       iframeOrWindow.contentWindow.browsingContext.topChromeWindow
   ) {
     loadEvent = "load";

@@ -16,7 +16,7 @@ function openTabInUserContext(uri, userContextId) {
 
   
   gBrowser.selectedTab = tab;
-  tab.ownerGlobal.focus();
+  tab.documentGlobal.focus();
 
   return tab;
 }

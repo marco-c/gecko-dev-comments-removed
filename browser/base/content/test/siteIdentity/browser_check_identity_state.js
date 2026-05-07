@@ -36,7 +36,7 @@ function getSecurityConnectionBG() {
   
   document.getElementById("identity-icon-box").click();
   gIdentityHandler.refreshIdentityPopup();
-  return gBrowser.ownerGlobal
+  return gBrowser.documentGlobal
     .getComputedStyle(
       document
         .getElementById("identity-popup-mainView")

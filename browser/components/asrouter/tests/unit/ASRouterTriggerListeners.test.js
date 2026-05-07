@@ -291,7 +291,7 @@ describe("ASRouterTriggerListeners", () => {
       existingWindow.gBrowser.currentURI.host = hosts[0]; 
 
       frequentVisitsListener.onTabSwitch({
-        target: { ownerGlobal: existingWindow },
+        target: { documentGlobal: existingWindow },
       });
 
       assert.calledOnce(stub);
@@ -301,7 +301,7 @@ describe("ASRouterTriggerListeners", () => {
       existingWindow.gBrowser.currentURI.host = "foo.com";
 
       frequentVisitsListener.onTabSwitch({
-        target: { ownerGlobal: existingWindow },
+        target: { documentGlobal: existingWindow },
       });
 
       assert.notCalled(stub);
@@ -315,7 +315,7 @@ describe("ASRouterTriggerListeners", () => {
       };
 
       frequentVisitsListener.onTabSwitch({
-        target: { ownerGlobal: existingWindow },
+        target: { documentGlobal: existingWindow },
       });
 
       assert.calledOnce(stub);

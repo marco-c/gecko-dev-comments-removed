@@ -53,7 +53,7 @@ function checkForPrompt(prefVal) {
     await EventUtils.synthesizeMouseAtCenter(
       checkbox,
       {},
-      checkbox.ownerGlobal
+      checkbox.documentGlobal
     );
 
     

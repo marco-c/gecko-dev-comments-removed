@@ -112,7 +112,7 @@ const dismissDialog = async (tab, dialog, shouldAccept) => {
 const cleanup = async (tab, cardSelector) => {
   
   
-  await tab.linkedBrowser.ownerGlobal.SpecialPowers.spawn(
+  await tab.linkedBrowser.documentGlobal.SpecialPowers.spawn(
     tab.linkedBrowser,
     [cardSelector],
     async selector => {

@@ -38,7 +38,7 @@ async function runTests(browser) {
   });
   
   is(
-    PopupNotifications.panel.ownerGlobal,
+    PopupNotifications.panel.documentGlobal,
     getMainChromeWindow(window),
     "Popup panel is associated with the chrome window"
   );
