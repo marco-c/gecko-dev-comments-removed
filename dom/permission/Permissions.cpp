@@ -163,12 +163,22 @@ already_AddRefed<Promise> Permissions::Query(JSContext* aCx,
     return nullptr;
   }
 
+  RefPtr<StrongWorkerRef> workerRef;
+  if (!NS_IsMainThread()) {
+    workerRef = StrongWorkerRef::Create(GetCurrentThreadWorkerPrivate(),
+                                        "Permissions::Query");
+    if (!workerRef) {
+      aRv.ThrowUnknownError("Invalid worker state");
+      return nullptr;
+    }
+  }
+
   
   
   
   status->Init()->Then(
       GetCurrentSerialEventTarget(), __func__,
-      [status, promise]() {
+      [workerRef = std::move(workerRef), status, promise]() {
         promise->MaybeResolve(status);
         return;
       },
