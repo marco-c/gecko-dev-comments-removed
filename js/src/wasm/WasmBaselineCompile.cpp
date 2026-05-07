@@ -732,11 +732,13 @@ bool BaseCompiler::endFunction() {
                         HasDebugFrameWithLiveRefs::Maybe)) {
       return false;
     }
+
     insertBreakablePoint(CallSiteKind::LeaveFrame);
     if (!createStackMap("debug: leave-frame breakpoint",
                         HasDebugFrameWithLiveRefs::Maybe)) {
       return false;
     }
+
     restoreRegisterReturnValues(resultType);
   }
 
@@ -1649,6 +1651,7 @@ bool BaseCompiler::insertDebugCollapseFrame() {
   if (!compilerEnv_.debugEnabled() || deadCode_) {
     return true;
   }
+
   insertBreakablePoint(CallSiteKind::CollapseFrame);
   return createStackMap("debug: collapse-frame breakpoint",
                         HasDebugFrameWithLiveRefs::Maybe);
@@ -4665,8 +4668,8 @@ bool BaseCompiler::emitTryTable() {
 
     
     const TagType& tagType = *codeMeta_.tags[tryTableCatch.tagIndex].type;
-    const TagOffsetVector& tagOffsets = tagType.argOffsets();
-    ResultType tagParams = tagType.resultType();
+    const TagOffsetVector& tagOffsets = tagType.exceptionArgOffsets();
+    ResultType tagParams = tagType.argResultType();
 
     
     
@@ -4885,7 +4888,7 @@ bool BaseCompiler::emitCatch() {
   
   const SharedTagType& tagType = codeMeta_.tags[tagIndex].type;
   const ValTypeVector& params = tagType->argTypes();
-  const TagOffsetVector& offsets = tagType->argOffsets();
+  const TagOffsetVector& offsets = tagType->exceptionArgOffsets();
 
   
   
@@ -5179,8 +5182,8 @@ bool BaseCompiler::emitThrow() {
   }
 
   const TagDesc& tagDesc = codeMeta_.tags[tagIndex];
-  const ResultType& params = tagDesc.type->resultType();
-  const TagOffsetVector& offsets = tagDesc.type->argOffsets();
+  const ResultType& params = tagDesc.type->argResultType();
+  const TagOffsetVector& offsets = tagDesc.type->exceptionArgOffsets();
 
   
 #ifdef RABALDR_PIN_INSTANCE
@@ -7275,43 +7278,54 @@ bool BaseCompiler::emitI64MulWide(bool isSigned) {
 #ifdef JS_CODEGEN_X64
   
   
+  
+  
   need2xI64(specific_.rax, specific_.rdx);
   RegI64 y = popI64ToSpecific(specific_.rdx);
   RegI64 x = popI64ToSpecific(specific_.rax);
-  RegI64 temp0 = needI64();
-  RegI64 temp1 = needI64();
-  RegI64 temp2 = needI64();
+  RegI64 temp = needI64();
+  MOZ_ASSERT(temp.reg != x.reg && temp.reg != y.reg);
 
   
-  masm.move64(x, temp0);
-  masm.mul64(y, temp0);
-  pushI64(temp0);  
+  
+  masm.move64(x, temp);
+  masm.mul64(y, temp);
+  pushI64(temp);  
 
-  temp0 = needI64();
-  masm.wasmMulI64WideHI64(x.reg, y.reg, temp1.reg, temp2.reg, temp0.reg,
-                          isSigned);
-  pushI64(temp0);  
+  temp = needI64();
+  MOZ_ASSERT(x.reg == rax);
+  MOZ_ASSERT(y.reg == rdx);
+  MOZ_ASSERT(temp.reg != rax && temp.reg != rdx);
+  masm.move64(y, temp);
 
-  free(temp1);
-  free(temp2);
-  free(x);
+  
+  
+  
+  masm.wasmMulI64WideHI64(temp.reg, isSigned);
+  free(temp);
+  temp = needI64();
+  MOZ_ASSERT(temp.reg != rax && temp.reg != rdx);
+  masm.move64(x , temp);
+  pushI64(temp);  
+
   free(y);
+  free(x);
 
 #elif JS_64BIT
   
   
   RegI64 y = popI64();
   RegI64 x = popI64();
-  RegI64 temp0 = needI64();
+  RegI64 temp = needI64();
 
   
-  masm.move64(x, temp0);
-  masm.mul64(y, temp0);
-  pushI64(temp0);  
+  masm.move64(x, temp);
+  masm.mul64(y, temp);
+  pushI64(temp);  
 
-  temp0 = needI64();
-  masm.wasmMulI64WideHI64(x.reg, y.reg, temp0.reg, isSigned);
-  pushI64(temp0);  
+  temp = needI64();
+  masm.wasmMulI64WideHI64(x.reg, y.reg, temp.reg, isSigned);
+  pushI64(temp);  
 
   free(x);
   free(y);
