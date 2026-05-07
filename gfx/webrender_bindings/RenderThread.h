@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef MOZILLA_LAYERS_RENDERTHREAD_H
 #define MOZILLA_LAYERS_RENDERTHREAD_H
 
@@ -169,6 +167,9 @@ class RenderThread final {
 
   
   static void ShutDown();
+
+  
+  bool HasShutdown() const { return mHasShutdown; }
 
   
   static bool IsInRenderThread();
