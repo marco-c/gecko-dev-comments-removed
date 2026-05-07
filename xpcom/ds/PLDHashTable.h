@@ -373,7 +373,7 @@ class PLDHashTable {
       nullptr;                   
   EntryStore mEntryStore;        
   uint16_t mGeneration = 0;      
-  uint8_t mHashShift;            
+  uint8_t mHashShift = 0;        
   const uint8_t mEntrySize = 0;  
   uint32_t mEntryCount = 0;      
   uint32_t mRemovedCount = 0;    
