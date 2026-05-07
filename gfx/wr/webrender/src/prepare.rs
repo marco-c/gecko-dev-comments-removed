@@ -18,7 +18,6 @@ use crate::composite::CompositorSurfaceKind;
 use crate::command_buffer::{CommandBufferIndex, PrimitiveCommand};
 use crate::border;
 use crate::clip::{ClipStore, ClipNodeRange};
-use crate::render_task_graph::RenderTaskId;
 use crate::renderer::{GpuBufferAddress, GpuBufferWriterF};
 use crate::spatial_tree::SpatialNodeIndex;
 use crate::clip::{clamped_radius, ClipNodeFlags, ClipChainInstance, ClipItemKind};
@@ -300,6 +299,23 @@ fn prepare_prim_for_render(
             PrimitiveKind::Picture { .. } => false,
             _ => true,
         };
+
+        
+        
+        
+        
+        
+        match prim_instance.kind {
+            PrimitiveKind::NormalBorder { data_handle } => {
+                NormalBorderScratch::build_for_prim(
+                    data_handle,
+                    PrimitiveInstanceIndex(prim_instance_index as u32),
+                    data_stores,
+                    scratch,
+                );
+            }
+            _ => {}
+        }
 
         if should_update_clip_task {
             let prim_rect = data_stores.get_local_prim_rect(
@@ -664,25 +680,35 @@ fn prepare_interned_prim_for_render(
             let common_data = &mut prim_data.common;
             let border_data = &mut prim_data.kind;
 
-            border_data.write_brush_gpu_blocks(common_data, frame_state);
+            
+            
+            
+            
+            let nb_handle = scratch.frame.draws[prim_instance_index.0 as usize]
+                .kind_scratch
+                .unwrap_normal_border();
+            let nb_scratch = scratch.frame.normal_border[nb_handle];
 
-            let segment_count = border_data.border_segments.len();
-            let task_ids = scratch.frame.border_task_ids.extend(
-                std::iter::repeat(RenderTaskId::INVALID).take(segment_count),
-            );
-            let handle = scratch.frame.normal_border.push(NormalBorderScratch { task_ids });
+            let brush_segments = &scratch.frame.segments[nb_scratch.brush_segments_range];
+            border_data.write_brush_gpu_blocks(common_data, brush_segments, frame_state);
 
+            
+            
+            
+            let PrimitiveFrameScratch {
+                ref border_segments,
+                ref mut border_task_ids,
+                ..
+            } = scratch.frame;
             border_data.update(
                 common_data,
+                &border_segments[nb_scratch.border_segments_range],
                 prim_spatial_node_index,
                 device_pixel_scale,
                 frame_context,
                 frame_state,
-                &mut scratch.frame.border_task_ids[task_ids],
+                &mut border_task_ids[nb_scratch.task_ids],
             );
-
-            scratch.frame.draws[prim_instance_index.0 as usize].kind_scratch =
-                KindScratchHandle::NormalBorder(handle);
         }
         PrimitiveKind::ImageBorder { data_handle, .. } => {
             profile_scope!("ImageBorder");
@@ -1319,6 +1345,7 @@ fn write_segment<F>(
 fn update_clip_task_for_brush(
     instance: &PrimitiveInstance,
     prim_segment_instance_index: SegmentInstanceIndex,
+    prim_normal_border_brush_segments_range: storage::Range<BrushSegment>,
     prim_clip_chain: &ClipChainInstance,
     prim_origin: &LayoutPoint,
     prim_spatial_node_index: SpatialNodeIndex,
@@ -1363,12 +1390,15 @@ fn update_clip_task_for_brush(
             
             border_data.brush_segments.as_slice()
         }
-        PrimitiveKind::NormalBorder { data_handle, .. } => {
-            let border_data = &data_stores.normal_border[data_handle].kind;
-
+        PrimitiveKind::NormalBorder { .. } => {
             
             
-            border_data.brush_segments.as_slice()
+            
+            
+            if prim_normal_border_brush_segments_range.is_empty() {
+                return None;
+            }
+            &segments_store[prim_normal_border_brush_segments_range]
         }
         PrimitiveKind::LinearGradient { data_handle, .. } => {
             let prim_data = &data_stores.linear_grad[data_handle];
@@ -1490,9 +1520,22 @@ pub fn update_clip_task(
 
     
     let prim_segment_instance_index = scratch.frame.draws[prim_instance_index.0 as usize].segment_instance_index;
+    
+    
+    
+    let prim_normal_border_brush_segments_range = match instance.kind {
+        PrimitiveKind::NormalBorder { .. } => {
+            let nb_handle = scratch.frame.draws[prim_instance_index.0 as usize]
+                .kind_scratch
+                .unwrap_normal_border();
+            scratch.frame.normal_border[nb_handle].brush_segments_range
+        }
+        _ => storage::Range::empty(),
+    };
     let new_clip_task_index = if let Some(clip_task_index) = update_clip_task_for_brush(
         instance,
         prim_segment_instance_index,
+        prim_normal_border_brush_segments_range,
         &clip_chain_snapshot,
         prim_origin,
         prim_spatial_node_index,
