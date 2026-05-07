@@ -1694,7 +1694,10 @@ void LocalAccessible::ApplyARIAState(uint64_t* aState) const {
     
     
     
-    if (roleMapEntry->role != roles::NOTHING) *aState &= ~states::READONLY;
+    
+    
+    if (roleMapEntry->role != roles::NOTHING && !IsTextField())
+      *aState &= ~states::READONLY;
 
     if (mContent->HasID()) {
       
