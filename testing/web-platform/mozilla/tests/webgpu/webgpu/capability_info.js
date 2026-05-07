@@ -78,6 +78,10 @@ export const kAllBufferUsageBits = kBufferUsages.reduce(
 );
 
 
+export const kSomeBogusBufferUsage = 0x4000_0000;
+assert((kSomeBogusBufferUsage & kAllBufferUsageBits) === 0);
+
+
 
 
 export const kErrorScopeFilterInfo =
@@ -225,7 +229,7 @@ const kTextureUsageInfo =
 
 export const kTextureUsages = numericKeysOf(kTextureUsageInfo);
 
-const kAllTextureUsages = kTextureUsages.reduce((acc, usage) => acc | usage, 0);
+export const kAllTextureUsages = kTextureUsages.reduce((acc, usage) => acc | usage, 0);
 
 
 export const kSomeBogusTextureUsage = 0x4000_0000;

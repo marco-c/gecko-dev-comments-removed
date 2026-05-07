@@ -20,6 +20,7 @@ Test various validation behaviors when a resolveTarget is provided.
 - resolve source is not multisampled.
 - resolve target is not single sampled.
 - resolve target missing RENDER_ATTACHMENT usage.
+- resolve target has TRANSIENT_ATTACHMENT usage.
 - resolve target must have exactly one subresource:
     - base mip level {0, >0}, mip level count {1, >1}.
     - base array layer {0, >0}, array layer count {1, >1}.
@@ -35,12 +36,20 @@ paramsSimple([
 
 { _valid: true },
 { bindTextureResource: true, _valid: true },
+{ resolveTargetUsage: GPUConst.TextureUsage.RENDER_ATTACHMENT, _valid: true },
 
 { colorAttachmentSamples: 1, _valid: false },
 
 { resolveTargetSamples: 4, _valid: false },
 
 { resolveTargetUsage: GPUConst.TextureUsage.COPY_SRC, _valid: false },
+
+
+{
+  resolveTargetUsage:
+  GPUConst.TextureUsage.RENDER_ATTACHMENT | GPUConst.TextureUsage.TRANSIENT_ATTACHMENT,
+  _valid: false
+},
 
 {
   resolveTargetViewBaseMipLevel: 1,
@@ -97,6 +106,11 @@ fn((t) => {
     resolveTargetWidth = 2,
     _valid
   } = t.params;
+
+  
+  if ((resolveTargetUsage & GPUConst.TextureUsage.TRANSIENT_ATTACHMENT) !== 0) {
+    t.skipIfTransientAttachmentNotSupported();
+  }
 
   
   
