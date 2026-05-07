@@ -104,6 +104,11 @@ class nsAnimationManager final
   
   nsTHashSet<RefPtr<nsAtom>> mMaybeReferencedAnimations;
   
+  
+  
+  
+  
+  
   TimelineNamesToAnimationMap mAnimationsWithNamedTimeline;
 
   void DoUpdateAnimations(const mozilla::NonOwningAnimationTarget& aTarget,
