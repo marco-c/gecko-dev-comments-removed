@@ -763,14 +763,22 @@ DnsAndConnectSocket::OnTransportStatus(nsITransport* trans, nsresult status,
     
     
     
+    
+    
+    
+    
+    
     if (mConnInfo->FirstHopSSL() && !mConnInfo->UsingProxy() &&
         StaticPrefs::network_lna_blocking()) {
       NetAddr peerAddr;
       if (NS_SUCCEEDED(transport->mSocketTransport->GetPeerAddr(&peerAddr))) {
         auto addrSpace = peerAddr.GetIpAddressSpace();
-        if ((addrSpace == nsILoadInfo::IPAddressSpace::Local ||
-             addrSpace == nsILoadInfo::IPAddressSpace::Private) &&
-            mTransaction &&
+        bool deferPrivate = addrSpace == nsILoadInfo::IPAddressSpace::Private &&
+                            StaticPrefs::network_lna_defer_https_check();
+        bool checkNow = addrSpace == nsILoadInfo::IPAddressSpace::Local ||
+                        (addrSpace == nsILoadInfo::IPAddressSpace::Private &&
+                         !deferPrivate);
+        if (checkNow && mTransaction &&
             !mTransaction->AllowedToConnectToIpAddressSpace(addrSpace)) {
           transport->mSocketTransport->Close(
               NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED);
