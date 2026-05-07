@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "jsapi-tests/testsJit.h"
 
 #include "jit/JitCommon.h"
@@ -94,11 +92,11 @@ bool ExecuteJit(JSContext* cx, js::jit::MacroAssembler& masm) {
     
     
     
-    MOZ_RELEASE_ASSERT(PseudoStackPointer64.code() == 28);
-    uintptr_t savedX28;
-    __asm__ __volatile__("str x28, %0" : : "m"(savedX28) : "cc", "memory");
+    MOZ_RELEASE_ASSERT(PseudoStackPointer64.code() == 20);
+    uintptr_t savedX20;
+    __asm__ __volatile__("str x20, %0" : : "m"(savedX20) : "cc", "memory");
     CALL_GENERATED_0(test);
-    __asm__ __volatile__("ldr x28, %0" : : "m"(savedX28) : "cc", "memory");
+    __asm__ __volatile__("ldr x20, %0" : : "m"(savedX20) : "cc", "memory");
   }
 #else
   CALL_GENERATED_0(test);

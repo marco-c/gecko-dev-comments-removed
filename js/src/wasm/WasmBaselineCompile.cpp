@@ -7410,8 +7410,8 @@ void BaseCompiler::emitPreBarrier(RegPtr valueAddr) {
   
   
   
-  MOZ_ASSERT(!GeneralRegisterSet::All().hasRegisterIndex(x28.asUnsized()));
-  masm.Mov(x28, sp);
+  MOZ_ASSERT(!GeneralRegisterSet::All().hasRegisterIndex(x20.asUnsized()));
+  masm.Mov(x20, sp);
 #endif
   
   EmitWasmPreBarrierCallImmediate(masm, instance, scratch, valueAddr,

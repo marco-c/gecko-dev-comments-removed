@@ -282,7 +282,7 @@ void wasm::EmitWasmPreBarrierCallImmediate(MacroAssembler& masm,
 #if defined(DEBUG) && defined(JS_CODEGEN_ARM64)
   
   Label ok;
-  masm.Cmp(sp, vixl::Operand(x28));
+  masm.Cmp(sp, vixl::Operand(x20));
   masm.B(&ok, Assembler::Equal);
   masm.breakpoint();
   masm.bind(&ok);
@@ -314,7 +314,7 @@ void wasm::EmitWasmPreBarrierCallIndex(MacroAssembler& masm, Register instance,
 #if defined(DEBUG) && defined(JS_CODEGEN_ARM64)
   
   Label ok;
-  masm.Cmp(sp, vixl::Operand(x28));
+  masm.Cmp(sp, vixl::Operand(x20));
   masm.B(&ok, Assembler::Equal);
   masm.breakpoint();
   masm.bind(&ok);

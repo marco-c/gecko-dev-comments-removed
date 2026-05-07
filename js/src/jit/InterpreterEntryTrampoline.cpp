@@ -166,7 +166,7 @@ void JitRuntime::generateInterpreterEntryTrampoline(MacroAssembler& masm) {
   masm.moveStackPtrTo(FramePointer);
 
   
-  masm.push(r19, r28);
+  masm.push(r19, r20);
 
   
   masm.SetStackPointer64(PseudoStackPointer64);
@@ -216,7 +216,7 @@ void JitRuntime::generateInterpreterEntryTrampoline(MacroAssembler& masm) {
   masm.SetStackPointer64(sp);
 
   
-  masm.pop(r28, r19);
+  masm.pop(r20, r19);
 
   
   masm.pop(FramePointer, lr);

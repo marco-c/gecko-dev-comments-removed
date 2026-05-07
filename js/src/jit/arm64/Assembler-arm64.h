@@ -344,9 +344,9 @@ static constexpr ARMRegister ZeroRegister32{Registers::sp, 32};
 
 static constexpr Register RealStackPointer{Registers::sp};
 
-static constexpr Register PseudoStackPointer{Registers::x28};
-static constexpr ARMRegister PseudoStackPointer64 = {Registers::x28, 64};
-static constexpr ARMRegister PseudoStackPointer32 = {Registers::x28, 32};
+static constexpr Register PseudoStackPointer{Registers::x20};
+static constexpr ARMRegister PseudoStackPointer64 = {Registers::x20, 64};
+static constexpr ARMRegister PseudoStackPointer32 = {Registers::x20, 32};
 
 static constexpr Register IntArgReg0{Registers::x0};
 static constexpr Register IntArgReg1{Registers::x1};

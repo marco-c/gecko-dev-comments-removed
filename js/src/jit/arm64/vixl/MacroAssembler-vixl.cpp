@@ -35,7 +35,7 @@ namespace vixl {
 
 MacroAssembler::MacroAssembler()
     : js::jit::Assembler(),
-      sp_(x28),
+      sp_(x20),
       tmp_list_(ip0, ip1),
       fptmp_list_(d31)
 {
