@@ -35,7 +35,7 @@ function simulateCameraFlash(browsingContext) {
   }
 
   
-  if (node.ownerGlobal.matchMedia("(prefers-reduced-motion)").matches) {
+  if (node.documentGlobal.matchMedia("(prefers-reduced-motion)").matches) {
     return;
   }
 

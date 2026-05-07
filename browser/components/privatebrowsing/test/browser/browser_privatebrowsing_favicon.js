@@ -178,7 +178,7 @@ async function openTab(aBrowser, aURL) {
 
   
   aBrowser.selectedTab = tab;
-  tab.ownerGlobal.focus();
+  tab.documentGlobal.focus();
 
   let browser = aBrowser.getBrowserForTab(tab);
   await BrowserTestUtils.browserLoaded(browser);

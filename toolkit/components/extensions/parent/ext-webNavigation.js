@@ -144,7 +144,7 @@ this.webNavigation = class extends ExtensionAPIPersistent {
 
         
         
-        const chromeWin = data.browser.ownerGlobal;
+        const chromeWin = data.browser.documentGlobal;
 
         if (
           chromeWin &&

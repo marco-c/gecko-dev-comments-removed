@@ -2408,7 +2408,7 @@ class CssRuleView extends EventEmitter {
     }
 
     
-    const win = elementToScrollTo.ownerGlobal;
+    const win = elementToScrollTo.documentGlobal;
     const reducedMotion = win.matchMedia("(prefers-reduced-motion)").matches;
     scrollBehavior = reducedMotion ? "instant" : scrollBehavior;
     elementToScrollTo.scrollIntoView({

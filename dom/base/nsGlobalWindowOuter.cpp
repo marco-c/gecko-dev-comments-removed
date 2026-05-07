@@ -6510,10 +6510,6 @@ bool nsGlobalWindowOuter::FindOuter(const nsAString& aString,
 
 
 
-nsPIDOMWindowOuter* nsGlobalWindowOuter::GetOwnerGlobalForBindingsInternal() {
-  return this;
-}
-
 nsIGlobalObject* nsGlobalWindowOuter::GetOwnerGlobal() const {
   return GetCurrentInnerWindowInternal(this);
 }

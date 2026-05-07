@@ -532,7 +532,7 @@ class AccessibleActor extends Actor {
     }
 
     const { DOMNode: rawNode } = this.rawAccessible;
-    const win = rawNode.ownerGlobal;
+    const win = rawNode.documentGlobal;
 
     
     

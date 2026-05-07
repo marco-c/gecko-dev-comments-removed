@@ -96,19 +96,19 @@ add_task(async function test_pip_throttling_window_hidden() {
   const [tab, chromePiP] = await newTabWithPiP();
 
   
-  await setMinimized(tab.ownerGlobal);
+  await setMinimized(tab.documentGlobal);
   ok(tab.linkedBrowser.browsingContext.isActive, "Hidden opener is active");
   ok(!(await isThrottled(tab)), "Hidden opener not throttled");
   is(await getVisibility(tab), "visible", "Hidden opener is visible");
 
   
-  await setMinimized(tab.ownerGlobal, false);
+  await setMinimized(tab.documentGlobal, false);
   ok(tab.linkedBrowser.browsingContext.isActive, "Visible opener is active");
   ok(!(await isThrottled(tab)), "Visible opener not throttled");
   is(await getVisibility(tab), "visible", "Visible opener is visible");
 
   
-  await setMinimized(tab.ownerGlobal);
+  await setMinimized(tab.documentGlobal);
   ok(tab.linkedBrowser.browsingContext.isActive, "Hidden opener is active");
   await BrowserTestUtils.closeWindow(chromePiP);
   await ensureActivity(tab, false);
@@ -117,7 +117,7 @@ add_task(async function test_pip_throttling_window_hidden() {
   is(await getVisibility(tab), "hidden", "Hidden tab is hidden");
 
   
-  await setMinimized(tab.ownerGlobal, false);
+  await setMinimized(tab.documentGlobal, false);
   
   await TestUtils.waitForCondition(
     async () => !(await isThrottled(tab)),
@@ -147,7 +147,7 @@ add_task(async function test_pip_throttling_opener_tab_adoption() {
   const adoptedTab = win2.gBrowser.adoptTab(originalTab, 0, true);
 
   
-  await setMinimized(tab2win1.ownerGlobal);
+  await setMinimized(tab2win1.documentGlobal);
   ok(
     !tab2win1.linkedBrowser.browsingContext.isActive,
     "Hidden tab is inactive"
@@ -159,7 +159,7 @@ add_task(async function test_pip_throttling_opener_tab_adoption() {
   
 
   
-  await setMinimized(tab2win1.ownerGlobal, false);
+  await setMinimized(tab2win1.documentGlobal, false);
   if (chromePiP && !chromePiP.closed) {
     
     await BrowserTestUtils.closeWindow(chromePiP);

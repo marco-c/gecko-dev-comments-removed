@@ -161,7 +161,7 @@ function _ensurePopupsInitialized(element) {
 
 function getRawListStyleImage(button) {
   _ensurePopupsInitialized(button);
-  return button.ownerGlobal.getComputedStyle(button).listStyleImage;
+  return button.documentGlobal.getComputedStyle(button).listStyleImage;
 }
 
 function getListStyleImage(button) {
@@ -171,7 +171,7 @@ function getListStyleImage(button) {
 
 function getRawMenuitemImage(menuitem) {
   _ensurePopupsInitialized(menuitem);
-  return menuitem.ownerGlobal
+  return menuitem.documentGlobal
     .getComputedStyle(menuitem)
     .getPropertyValue("--webextension-menuitem-image");
 }
@@ -500,7 +500,7 @@ async function openContextMenuInPopup(
 
   
   
-  await browser.ownerGlobal.promiseDocumentFlushed(() => {});
+  await browser.documentGlobal.promiseDocumentFlushed(() => {});
   let popupShownPromise = BrowserTestUtils.waitForEvent(
     contentAreaContextMenu,
     "popupshown"
@@ -758,7 +758,7 @@ function openTabContextMenu(tab = gBrowser.selectedTab) {
   return openChromeContextMenu(
     "tabContextMenu",
     `.tabbrowser-tab:nth-child(${indexOfTab + 1})`,
-    tab.ownerGlobal
+    tab.documentGlobal
   );
 }
 
