@@ -232,6 +232,11 @@ export class ExperimentManager {
 
       isFirstStartup: lazy.FirstStartup.state === lazy.FirstStartup.IN_PROGRESS,
 
+      isNonStubFirstRun: !Services.prefs.getBoolPref(
+        "nimbus.firstUpdateComplete",
+        false
+      ),
+
       get currentDate() {
         return new Date();
       },
@@ -347,7 +352,6 @@ export class ExperimentManager {
       const cfg = {
         metrics_enabled: {
           "nimbus_targeting_environment.targeting_context_value": false,
-          "nimbus_events.enrollment_status": false,
         },
       };
 
