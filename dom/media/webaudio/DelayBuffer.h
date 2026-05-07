@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DelayBuffer_h_
 #define DelayBuffer_h_
 
@@ -94,7 +92,7 @@ class DelayBuffer final {
   
   int mCurrentChunk;
   
-  int mLastReadChunk;
+  int mLastReadChunk = -1;
 #ifdef DEBUG
   bool mHaveWrittenBlock;
 #endif

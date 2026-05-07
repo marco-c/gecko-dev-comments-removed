@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef AudioBufferSourceNode_h_
 #define AudioBufferSourceNode_h_
 
@@ -114,8 +112,8 @@ class AudioBufferSourceNode final : public AudioScheduledSourceNode,
 
   double mLoopStart;
   double mLoopEnd;
-  double mOffset;
-  double mDuration;
+  double mOffset = 0.0;
+  double mDuration = 0.0;
   RefPtr<AudioBuffer> mBuffer;
   RefPtr<AudioParam> mPlaybackRate;
   RefPtr<AudioParam> mDetune;

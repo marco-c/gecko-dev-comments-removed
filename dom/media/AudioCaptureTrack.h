@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef MOZILLA_AUDIOCAPTURETRACK_H_
 #define MOZILLA_AUDIOCAPTURETRACK_H_
 
@@ -31,7 +30,7 @@ class AudioCaptureTrack : public ProcessedMediaTrack {
  protected:
   AudioMixer mMixer;
   bool mStarted;
-  bool mTrackCreated;
+  bool mTrackCreated = false;
 };
 }  
 

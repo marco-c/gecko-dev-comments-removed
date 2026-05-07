@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef MOZILLA_MEDIATRACKGRAPHIMPL_H_
 #define MOZILLA_MEDIATRACKGRAPHIMPL_H_
 
@@ -1021,7 +1020,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
 
-  bool mRealtime;
+  bool mRealtime = false;
   
 
 

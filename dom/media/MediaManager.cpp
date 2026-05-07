@@ -225,7 +225,7 @@ struct DeviceState {
   
   
   
-  bool mDeviceMuted;
+  bool mDeviceMuted = false;
 
   
   

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef AudioProcessingEvent_h_
 #define AudioProcessingEvent_h_
 
@@ -63,7 +61,7 @@ class AudioProcessingEvent final : public Event {
   RefPtr<AudioBuffer> mInputBuffer;
   RefPtr<AudioBuffer> mOutputBuffer;
   RefPtr<ScriptProcessorNode> mNode;
-  uint32_t mNumberOfInputChannels;
+  uint32_t mNumberOfInputChannels = 0;
 };
 
 }  

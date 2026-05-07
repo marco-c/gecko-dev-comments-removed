@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef WebMDemuxer_h_
 #define WebMDemuxer_h_
 
@@ -151,10 +149,20 @@ class WebMDemuxer : public MediaDataDemuxer,
     nsresult mLastIORV = NS_OK;
   };
 
- private:
+ protected:
+  virtual nsresult SetVideoCodecInfo(nestegg* aContext, int aTrackId);
+  virtual nsresult SetAudioCodecInfo(nestegg* aContext, int aTrackId,
+                                     const nestegg_audio_params& aParams);
+  virtual nsresult GetCodecPrivateData(nestegg* aContext, int aTrackId,
+                                       nsTArray<const unsigned char*>* aHeaders,
+                                       nsTArray<size_t>* aHeaderLens);
+
+  virtual bool CheckKeyFrameByExamineByteStream(const MediaRawData* aSample);
+
+  virtual ~WebMDemuxer();
+
   friend class WebMTrackDemuxer;
 
-  ~WebMDemuxer();
   void InitBufferedState();
   int64_t FloorDefaultDurationToTimecodeScale(nestegg* aContext,
                                               unsigned aTrackNumber);
@@ -231,8 +239,9 @@ class WebMDemuxer : public MediaDataDemuxer,
   
   int mVideoCodec;
   
-  int64_t mAudioDefaultDuration;
-  int64_t mVideoDefaultDuration;
+  
+  int64_t mAudioDefaultDuration = -1;
+  int64_t mVideoDefaultDuration = -1;
 
   
   bool mHasVideo;

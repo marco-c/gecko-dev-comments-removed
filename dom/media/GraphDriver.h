@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef GRAPHDRIVER_H_
 #define GRAPHDRIVER_H_
 
@@ -773,7 +772,7 @@ class AudioCallbackDriver final : public GraphDriver,
 
 
   const RefPtr<TaskQueue> mCubebOperationThread;
-  cubeb_device_pref mInputDevicePreference;
+  cubeb_device_pref mInputDevicePreference = CUBEB_DEVICE_PREF_NONE;
   
 
   cubeb_input_processing_params mConfiguredInputProcessingParams =

@@ -78,8 +78,6 @@
 
 
 
-
-
 #ifndef test_nr_socket_
 #define test_nr_socket_
 
@@ -269,7 +267,7 @@ class TestNrSocket : public NrSocketBase {
     int send_from_queue();
     NS_INLINE_DECL_THREADSAFE_REFCOUNTING(PortMapping);
 
-    PRIntervalTime last_used_;
+    PRIntervalTime last_used_ = 0;
     RefPtr<NrSocketBase> external_socket_;
     
     nr_transport_addr remote_address_;

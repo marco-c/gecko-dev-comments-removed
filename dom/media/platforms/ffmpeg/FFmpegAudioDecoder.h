@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef FFmpegAACDecoder_h_
 #define FFmpegAACDecoder_h_
 
@@ -53,7 +51,7 @@ class FFmpegAudioDecoder<LIBAV_VER>
                                 int32_t aSubmitted);
   const AudioInfo mAudioInfo;
   
-  bool mDefaultPlaybackDeviceMono;
+  bool mDefaultPlaybackDeviceMono = false;
 };
 
 }  

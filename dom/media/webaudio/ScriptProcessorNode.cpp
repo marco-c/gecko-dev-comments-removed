@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ScriptProcessorNode.h"
 
 #include <deque>
@@ -237,7 +235,7 @@ class SharedBuffers final {
   
   bool mDroppingBuffers;
   
-  bool mNodeIsConnected;
+  bool mNodeIsConnected = false;
 };
 
 class ScriptProcessorNodeEngine final : public AudioNodeEngine {
