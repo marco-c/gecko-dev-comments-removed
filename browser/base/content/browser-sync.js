@@ -832,16 +832,9 @@ var gSync = {
     );
     if (sendTabButton && !sendTabButton.hidden) {
       const targets = this.getSendTabTargets();
-      
-      const triggerNode =
-        panelview.triggerNode ||
-        document.getElementById("fxa-toolbar-menu-button") ||
-        document.getElementById("appMenu-fxa-label2");
-      if (triggerNode) {
-        this.emitFxaToolbarTelemetry("send_tab_exposed", triggerNode, {
-          device_count: String(targets.length),
-        });
-      }
+      this.emitFxaToolbarTelemetry("send_tab_exposed", sendTabButton, {
+        device_count: String(targets.length),
+      });
     }
   },
 
@@ -1483,54 +1476,50 @@ var gSync = {
   },
 
   
-  
-  
+
+
+
+
+
+
+
+
+
+
+
   emitFxaToolbarTelemetry(type, sourceElement, extraOpts = {}) {
-    if (UIState.isReady()) {
-      const state = UIState.get();
-      const hasAvatar = state.avatarURL && !state.avatarIsDefault;
-      let extraOptions = {
-        fxa_status: state.status,
-        fxa_avatar: hasAvatar ? "true" : "false",
-        fxa_sync_on: state.syncEnabled,
-        ...extraOpts,
-      };
-
-      let eventName = this._getEntryPointForElement(sourceElement);
-      let category = "";
-      if (eventName == "fxa_avatar_menu") {
-        category = "fxaAvatarMenu";
-      } else if (eventName == "fxa_app_menu") {
-        category = "fxaAppMenu";
-      } else {
-        return;
-      }
-
-      
-      
-      
-      
-      let methodName;
-      if (type.startsWith("send_tab_")) {
-        
-        methodName = type
-          .split("_")
-          .map((word, i) =>
-            i === 0 ? word : word[0].toUpperCase() + word.slice(1)
-          )
-          .join("");
-      } else {
-        
-        methodName =
-          "click" +
-          type
-            .split("_")
-            .map(word => word[0].toUpperCase() + word.slice(1))
-            .join("");
-      }
-
-      Glean[category][methodName]?.record(extraOptions);
+    if (!UIState.isReady()) {
+      return;
     }
+    const entryPoint = this._getEntryPointForElement(sourceElement);
+    let category = null;
+    if (entryPoint == "fxa_avatar_menu") {
+      category = "fxaAvatarMenu";
+    } else if (entryPoint == "fxa_app_menu") {
+      category = "fxaAppMenu";
+    } else {
+      return;
+    }
+
+    const state = UIState.get();
+    const hasAvatar = state.avatarURL && !state.avatarIsDefault;
+    const extraOptions = {
+      fxa_status: state.status,
+      fxa_avatar: hasAvatar ? "true" : "false",
+      fxa_sync_on: state.syncEnabled,
+      ...extraOpts,
+    };
+
+    
+    
+    
+    const cap = w => w[0].toUpperCase() + w.slice(1);
+    const parts = type.split("_");
+    const methodName = type.startsWith("send_tab_")
+      ? parts[0] + parts.slice(1).map(cap).join("")
+      : "click" + parts.map(cap).join("");
+
+    Glean[category][methodName]?.record(extraOptions);
   },
 
   updatePanelPopup({ email, displayName, status }) {
@@ -1759,8 +1748,8 @@ var gSync = {
       return "fxa_avatar_menu";
     }
     
-    const fxaMenu = document.getElementById("PanelUI-fxa-menu");
-    if (fxaMenu && fxaMenu.contains(sourceElement)) {
+    
+    if (sourceElement.closest?.('[id^="PanelUI-fxa-menu"]')) {
       return "fxa_avatar_menu";
     }
     return "fxa_discoverability_native";
@@ -1973,10 +1962,11 @@ var gSync = {
       send(targets);
       
       if (isFxaMenu) {
-        const triggerNode =
-          document.getElementById("fxa-toolbar-menu-button") ||
-          document.getElementById("appMenu-fxa-label2");
-        this.emitFxaToolbarTelemetry("send_tab", triggerNode, {
+        const sendTabButton = PanelMultiView.getViewNode(
+          document,
+          "PanelUI-fxa-menu-sendtab-button"
+        );
+        this.emitFxaToolbarTelemetry("send_tab", sendTabButton, {
           device_count: String(targets.length),
           action: "all_devices",
         });
@@ -1995,10 +1985,11 @@ var gSync = {
       send([target]);
       
       if (isFxaMenu) {
-        const triggerNode =
-          document.getElementById("fxa-toolbar-menu-button") ||
-          document.getElementById("appMenu-fxa-label2");
-        this.emitFxaToolbarTelemetry("send_tab", triggerNode, {
+        const sendTabButton = PanelMultiView.getViewNode(
+          document,
+          "PanelUI-fxa-menu-sendtab-button"
+        );
+        this.emitFxaToolbarTelemetry("send_tab", sendTabButton, {
           device_count: String(targets.length),
           action: "device",
         });
@@ -2079,10 +2070,11 @@ var gSync = {
           gSync.openDevicesManagementPage("sendtab");
           
           if (isFxaMenu) {
-            const triggerNode =
-              document.getElementById("fxa-toolbar-menu-button") ||
-              document.getElementById("appMenu-fxa-label2");
-            this.emitFxaToolbarTelemetry("send_tab", triggerNode, {
+            const sendTabButton = PanelMultiView.getViewNode(
+              document,
+              "PanelUI-fxa-menu-sendtab-button"
+            );
+            this.emitFxaToolbarTelemetry("send_tab", sendTabButton, {
               device_count: String(targets.length),
               action: "manage_devices",
             });
