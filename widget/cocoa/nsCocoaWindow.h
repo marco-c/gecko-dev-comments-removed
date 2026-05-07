@@ -359,6 +359,7 @@ class nsCocoaWindow final : public nsIWidget {
   LayoutDeviceIntRect GetClientBounds() override;
   LayoutDeviceIntRect GetScreenBounds() override;
   LayoutDeviceIntRect GetBounds() override { return mBounds; }
+  [[nodiscard]] nsresult GetRestoredBounds(LayoutDeviceIntRect& aRect) override;
   void ReportMoveEvent();
   void ReportSizeEvent();
   bool WidgetTypeSupportsAcceleration() override { return true; }
@@ -414,7 +415,7 @@ class nsCocoaWindow final : public nsIWidget {
                         const bool aIsVertical,
                         const LayoutDeviceIntPoint& aPoint) override;
 
-  mozilla::DesktopToLayoutDeviceScale GetDesktopToDeviceScale() final {
+  mozilla::DesktopToLayoutDeviceScale GetDesktopToDeviceScale() const final {
     return mozilla::DesktopToLayoutDeviceScale(BackingScaleFactor());
   }
 
@@ -655,6 +656,13 @@ class nsCocoaWindow final : public nsIWidget {
   NSWindowAnimationBehavior mWindowAnimationBehavior;
 
   LayoutDeviceIntRect mBounds;
+
+  
+  
+  
+  
+  
+  mozilla::Maybe<LayoutDeviceIntRect> mRestoredBounds;
 
   mozilla::widget::PlatformCompositorWidgetDelegate* mCompositorWidgetDelegate =
       nullptr;

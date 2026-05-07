@@ -218,7 +218,6 @@ enum TouchPointerState : uint8_t {
 #endif
 
 #define MOZ_WIDGET_MAX_SIZE 16384
-#define MOZ_WIDGET_INVALID_SCALE 0.0
 
 
 #define NS_IWIDGET_IID \
@@ -309,15 +308,15 @@ namespace mozilla::widget {
 
 
 
-struct SizeConstraints {
-  SizeConstraints()
-      : mMaxSize(MOZ_WIDGET_MAX_SIZE, MOZ_WIDGET_MAX_SIZE),
-        mScale(MOZ_WIDGET_INVALID_SCALE) {}
 
-  SizeConstraints(mozilla::LayoutDeviceIntSize aMinSize,
-                  mozilla::LayoutDeviceIntSize aMaxSize,
-                  mozilla::DesktopToLayoutDeviceScale aScale)
-      : mMinSize(aMinSize), mMaxSize(aMaxSize), mScale(aScale) {
+
+
+struct SizeConstraints {
+  SizeConstraints() : mMaxSize(MOZ_WIDGET_MAX_SIZE, MOZ_WIDGET_MAX_SIZE) {}
+
+  SizeConstraints(mozilla::DesktopIntSize aMinSize,
+                  mozilla::DesktopIntSize aMaxSize)
+      : mMinSize(aMinSize), mMaxSize(aMaxSize) {
     if (mMaxSize.width > MOZ_WIDGET_MAX_SIZE) {
       mMaxSize.width = MOZ_WIDGET_MAX_SIZE;
     }
@@ -326,18 +325,8 @@ struct SizeConstraints {
     }
   }
 
-  mozilla::LayoutDeviceIntSize mMinSize;
-  mozilla::LayoutDeviceIntSize mMaxSize;
-
-  
-
-
-
-
-
-
-
-  mozilla::DesktopToLayoutDeviceScale mScale;
+  mozilla::DesktopIntSize mMinSize;
+  mozilla::DesktopIntSize mMaxSize;
 };
 
 class MOZ_RAII AutoSynthesizedEventCallbackNotifier final {
@@ -630,7 +619,7 @@ class nsIWidget : public nsSupportsWeakReference {
 
 
 
-  virtual mozilla::DesktopToLayoutDeviceScale GetDesktopToDeviceScale() {
+  virtual mozilla::DesktopToLayoutDeviceScale GetDesktopToDeviceScale() const {
     return mozilla::DesktopToLayoutDeviceScale(1.0);
   }
 
@@ -2188,10 +2177,19 @@ class nsIWidget : public nsSupportsWeakReference {
 
 
 
+
+
   virtual void ConstrainSize(int32_t* aWidth, int32_t* aHeight) {
     SizeConstraints c = GetSizeConstraints();
-    *aWidth = std::clamp(*aWidth, c.mMinSize.width, c.mMaxSize.width);
-    *aHeight = std::clamp(*aHeight, c.mMinSize.height, c.mMaxSize.height);
+    const double scale = GetDesktopToDeviceScale().scale;
+    auto ToDevice = [scale](int32_t aDesktop) {
+      return aDesktop == NS_MAXSIZE ? NS_MAXSIZE
+                                    : NSToIntRound(aDesktop * scale);
+    };
+    *aWidth = std::clamp(*aWidth, ToDevice(c.mMinSize.width),
+                         ToDevice(c.mMaxSize.width));
+    *aHeight = std::clamp(*aHeight, ToDevice(c.mMinSize.height),
+                          ToDevice(c.mMaxSize.height));
   }
 
   

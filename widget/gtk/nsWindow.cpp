@@ -654,7 +654,7 @@ float nsWindow::GetDPI() {
 
 double nsWindow::GetDefaultScaleInternal() { return FractionalScaleFactor(); }
 
-DesktopToLayoutDeviceScale nsWindow::GetDesktopToDeviceScale() {
+DesktopToLayoutDeviceScale nsWindow::GetDesktopToDeviceScale() const {
   return DesktopToLayoutDeviceScale(FractionalScaleFactor());
 }
 
@@ -837,7 +837,7 @@ void nsWindow::SetSizeConstraints(const SizeConstraints& aConstraints) {
 
   
   if (SizeMode() == nsSizeMode_Normal) {
-    auto margin = ToLayoutDevicePixels(mClientMargin);
+    const auto& margin = mClientMargin;
     if (mSizeConstraints.mMinSize.height) {
       mSizeConstraints.mMinSize.height -= margin.TopBottom();
     }
@@ -892,22 +892,20 @@ void nsWindow::ApplySizeConstraints() {
 
   uint32_t hints = 0;
   auto constraints = mSizeConstraints;
-  if (constraints.mMinSize != LayoutDeviceIntSize()) {
-    gtk_widget_set_size_request(
-        GTK_WIDGET(mContainer),
-        DevicePixelsToGdkCoordRound(constraints.mMinSize.width),
-        DevicePixelsToGdkCoordRound(constraints.mMinSize.height));
+  if (constraints.mMinSize != DesktopIntSize()) {
+    gtk_widget_set_size_request(GTK_WIDGET(mContainer),
+                                constraints.mMinSize.width,
+                                constraints.mMinSize.height);
     if (ToplevelUsesCSD()) {
-      auto margin = ToLayoutDevicePixels(mClientMargin);
+      const auto& margin = mClientMargin;
       constraints.mMinSize.height += margin.TopBottom();
       constraints.mMinSize.width += margin.LeftRight();
     }
     hints |= GDK_HINT_MIN_SIZE;
   }
-  if (mSizeConstraints.mMaxSize !=
-      LayoutDeviceIntSize(NS_MAXSIZE, NS_MAXSIZE)) {
+  if (mSizeConstraints.mMaxSize != DesktopIntSize(NS_MAXSIZE, NS_MAXSIZE)) {
     if (ToplevelUsesCSD()) {
-      auto margin = ToLayoutDevicePixels(mClientMargin);
+      const auto& margin = mClientMargin;
       constraints.mMaxSize.height += margin.TopBottom();
       constraints.mMaxSize.width += margin.LeftRight();
     }
@@ -917,10 +915,10 @@ void nsWindow::ApplySizeConstraints() {
   
   
   GdkGeometry geometry{
-      .min_width = DevicePixelsToGdkCoordRound(constraints.mMinSize.width),
-      .min_height = DevicePixelsToGdkCoordRound(constraints.mMinSize.height),
-      .max_width = DevicePixelsToGdkCoordRound(constraints.mMaxSize.width),
-      .max_height = DevicePixelsToGdkCoordRound(constraints.mMaxSize.height),
+      .min_width = constraints.mMinSize.width,
+      .min_height = constraints.mMinSize.height,
+      .max_width = constraints.mMaxSize.width,
+      .max_height = constraints.mMaxSize.height,
   };
 
   if (mAspectRatio != 0.0f && !mAspectResizer) {
