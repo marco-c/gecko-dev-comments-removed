@@ -67,11 +67,7 @@ pref("extensions.geckoProfiler.acceptedExtensionIds", "geckoprofiler@mozilla.com
 pref("extensions.webextensions.remote", true);
 
 
-#ifdef NIGHTLY_BUILD
-  pref("extensions.webextensions.pageActionIconDarkModeFilter.enabled", false);
-#else
-  pref("extensions.webextensions.pageActionIconDarkModeFilter.enabled", true);
-#endif
+pref("extensions.webextensions.pageActionIconDarkModeFilter.enabled", false);
 
 
 pref("extensions.langpacks.signatures.required", true);
