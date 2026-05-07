@@ -1488,14 +1488,48 @@ NativeObject* js::InitClass(JSContext* cx, HandleObject obj,
 
 
 
-bool js::GetObjectFromHostDefinedData(JSContext* cx, MutableHandleObject obj) {
-  if (!cx->runtime()->getHostDefinedData(cx, obj)) {
+bool js::GetObjectFromHostDefinedData(
+    JSContext* cx, MutableHandleObject incumbentGlobalRepresentative,
+    MutableHandleObject optionalHostDefinedData) {
+  
+  
+  
+  
+  
+  if (!cx->runtime()->getHostDefinedData(cx, incumbentGlobalRepresentative,
+                                         optionalHostDefinedData)) {
     return false;
   }
 
+  if (!incumbentGlobalRepresentative) {
+    MOZ_ASSERT(!optionalHostDefinedData);
+    return true;
+  }
+
+  MOZ_ASSERT(incumbentGlobalRepresentative->is<GlobalObject>());
+
   
-  if (obj && !cx->compartment()->wrap(cx, obj)) {
+  incumbentGlobalRepresentative.set(
+      &incumbentGlobalRepresentative->as<GlobalObject>().getObjectPrototype());
+
+  return cx->compartment()->wrap(cx, incumbentGlobalRepresentative);
+}
+
+
+bool js::GetIncumbentGlobalRepresentative(
+    JSContext* cx, MutableHandleObject incumbentGlobalRepresentative) {
+  if (!cx->jobQueue->getHostDefinedGlobal(cx, incumbentGlobalRepresentative)) {
     return false;
+  }
+
+  if (incumbentGlobalRepresentative) {
+    MOZ_ASSERT(incumbentGlobalRepresentative->is<GlobalObject>());
+    incumbentGlobalRepresentative.set(
+        &incumbentGlobalRepresentative->as<GlobalObject>()
+             .getObjectPrototype());
+    if (!cx->compartment()->wrap(cx, incumbentGlobalRepresentative)) {
+      return false;
+    }
   }
 
   return true;
@@ -2236,6 +2270,11 @@ JS_PUBLIC_API bool js::ShouldIgnorePropertyDefinition(JSContext* cx,
     }
     if (!JS::Prefs::experimental_iterator_includes() &&
         id == NameToId(cx->names().includes)) {
+      return true;
+    }
+  }
+  if (key == JSProto_Locale && !JS::Prefs::experimental_intl_locale_info()) {
+    if (id == NameToId(cx->names().firstDayOfWeek)) {
       return true;
     }
   }

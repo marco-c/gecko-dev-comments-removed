@@ -285,6 +285,13 @@ bool GetUnicodeExtensionOption(JSContext* cx, JS::Handle<JSObject*> options,
                                UnicodeExtensionKey key,
                                JS::MutableHandle<JSLinearString*> result);
 
+
+
+
+JSLinearString* GetUnicodeExtensionOption(JSContext* cx,
+                                          UnicodeExtensionKey key,
+                                          JS::Handle<JSLinearString*> option);
+
 }  
 
 #endif 
