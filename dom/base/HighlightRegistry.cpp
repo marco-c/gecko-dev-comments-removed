@@ -63,9 +63,10 @@ void HighlightRegistry::MaybeAddRangeToHighlightSelection(
     return;
   }
   MOZ_ASSERT(frameSelection->GetPresShell());
-  if (!frameSelection->GetPresShell()->GetDocument() ||
-      frameSelection->GetPresShell()->GetDocument() !=
-          aRange.GetComposedDocOfContainers()) {
+  Document* rangeDoc = aRange.GetComposedDocOfContainers();
+  if (rangeDoc && rangeDoc != frameSelection->GetPresShell()->GetDocument()) {
+    
+    
     
     return;
   }
