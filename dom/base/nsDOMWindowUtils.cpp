@@ -1728,7 +1728,7 @@ Result<mozilla::LayoutDeviceRect, nsresult> nsDOMWindowUtils::ConvertTo(
   }
 
   LayoutDeviceRect devPixelsRect = LayoutDeviceRect::FromAppUnits(
-      appUnitsRect, presContext->AppUnitsPerDevPixel());
+      appUnitsRect, rootPresContext->AppUnitsPerDevPixel());
 
   
   devPixelsRect =
