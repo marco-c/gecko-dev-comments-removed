@@ -760,13 +760,11 @@ pub enum PrimitiveKind {
     Rectangle {
         
         data_handle: RectangleDataHandle,
-        segment_instance_index: SegmentInstanceIndex,
         color_binding_index: ColorBindingIndex,
     },
     YuvImage {
         
         data_handle: YuvImageDataHandle,
-        segment_instance_index: SegmentInstanceIndex,
         compositor_surface_kind: CompositorSurfaceKind,
     },
     Image {
@@ -967,6 +965,18 @@ pub struct PrimitiveFrameScratch {
 
     
     
+    
+    
+    pub segments: SegmentStorage,
+
+    
+    
+    
+    
+    pub segment_instances: SegmentInstanceStorage,
+
+    
+    
     pub border_task_ids: storage::Storage<RenderTaskId>,
 
     
@@ -998,6 +1008,8 @@ impl Default for PrimitiveFrameScratch {
             visible_image_tiles: storage::Storage::new(0),
             text_runs: storage::Storage::new(0),
             glyph_keys: GlyphKeyStorage::new(0),
+            segments: SegmentStorage::new(0),
+            segment_instances: SegmentInstanceStorage::new(0),
             border_task_ids: storage::Storage::new(0),
             clip_mask_instances: Vec::new(),
             debug_items: Vec::new(),
@@ -1019,6 +1031,8 @@ impl PrimitiveFrameScratch {
         self.visible_image_tiles.recycle(recycler);
         self.text_runs.recycle(recycler);
         self.glyph_keys.recycle(recycler);
+        self.segments.recycle(recycler);
+        self.segment_instances.recycle(recycler);
         self.border_task_ids.recycle(recycler);
         recycler.recycle_vec(&mut self.clip_mask_instances);
         recycler.recycle_vec(&mut self.debug_items);
@@ -1035,6 +1049,8 @@ impl PrimitiveFrameScratch {
         self.visible_image_tiles.clear();
         self.text_runs.clear();
         self.glyph_keys.clear();
+        self.segments.clear();
+        self.segment_instances.clear();
         self.border_task_ids.clear();
 
         
@@ -1055,31 +1071,13 @@ impl PrimitiveFrameScratch {
 
 
 
+
 #[cfg_attr(feature = "capture", derive(Serialize))]
-pub struct PrimitiveSceneCache {
-    
-    pub segments: SegmentStorage,
-
-    
-    
-    
-    pub segment_instances: SegmentInstanceStorage,
-}
-
-impl Default for PrimitiveSceneCache {
-    fn default() -> Self {
-        PrimitiveSceneCache {
-            segments: SegmentStorage::new(0),
-            segment_instances: SegmentInstanceStorage::new(0),
-        }
-    }
-}
+#[derive(Default)]
+pub struct PrimitiveSceneCache {}
 
 impl PrimitiveSceneCache {
-    pub fn recycle(&mut self, recycler: &mut Recycler) {
-        self.segments.recycle(recycler);
-        self.segment_instances.recycle(recycler);
-    }
+    pub fn recycle(&mut self, _recycler: &mut Recycler) {}
 }
 
 

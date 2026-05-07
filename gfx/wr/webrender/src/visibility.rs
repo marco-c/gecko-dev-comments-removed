@@ -21,7 +21,7 @@ use crate::picture::{PictureCompositeMode, ClusterFlags, SurfaceInfo};
 use crate::tile_cache::TileCacheInstance;
 use crate::picture::{PictureScratch, SurfaceIndex, RasterConfig};
 use crate::tile_cache::SubSliceIndex;
-use crate::prim_store::{ClipTaskIndex, PictureIndex, PrimitiveKind};
+use crate::prim_store::{ClipTaskIndex, PictureIndex, PrimitiveKind, SegmentInstanceIndex};
 use crate::prim_store::{PrimitiveStore, PrimitiveInstance, PrimitiveInstanceIndex};
 use crate::prim_store::backdrop::BackdropRenderScratch;
 use crate::prim_store::borders::NormalBorderScratch;
@@ -206,6 +206,13 @@ pub struct PrimitiveDrawHeader {
     
     
     pub kind_scratch: KindScratchHandle,
+
+    
+    
+    
+    
+    
+    pub segment_instance_index: SegmentInstanceIndex,
 }
 
 impl PrimitiveDrawHeader {
@@ -216,6 +223,7 @@ impl PrimitiveDrawHeader {
             clip_chain: ClipChainInstance::empty(),
             clip_task_index: ClipTaskIndex::INVALID,
             kind_scratch: KindScratchHandle::None,
+            segment_instance_index: SegmentInstanceIndex::UNUSED,
         }
     }
 
@@ -223,6 +231,7 @@ impl PrimitiveDrawHeader {
         self.state = DrawState::Culled;
         self.clip_task_index = ClipTaskIndex::INVALID;
         self.kind_scratch = KindScratchHandle::None;
+        self.segment_instance_index = SegmentInstanceIndex::UNUSED;
     }
 }
 

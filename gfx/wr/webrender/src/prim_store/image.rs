@@ -21,7 +21,7 @@ use crate::frame_builder::{FrameBuildingContext, FrameBuildingState, PictureCont
 use crate::intern::{DataStore, Handle as InternHandle, InternDebug, Internable};
 use crate::internal_types::LayoutPrimitiveInfo;
 use crate::prim_store::{
-    EdgeMask, InternablePrimitive, PrimKey, PrimTemplate, PrimTemplateCommonData, PrimitiveInstanceIndex, PrimitiveKind, PrimitiveOpacity, PrimitiveScratchBuffer, PrimitiveStore, SegmentInstanceIndex, SizeKey
+    EdgeMask, InternablePrimitive, PrimKey, PrimTemplate, PrimTemplateCommonData, PrimitiveInstanceIndex, PrimitiveKind, PrimitiveOpacity, PrimitiveScratchBuffer, PrimitiveStore, SizeKey
 };
 use crate::prim_store::storage;
 use crate::render_target::RenderTargetKind;
@@ -89,10 +89,10 @@ impl ImageScratch {
 
 
 
+
 #[derive(Debug)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 pub struct ImageInstance {
-    pub segment_instance_index: SegmentInstanceIndex,
     pub tight_local_clip_rect: LayoutRect,
 }
 
@@ -617,7 +617,6 @@ impl InternablePrimitive for Image {
         
         
         let image_instance_index = prim_store.images.push(ImageInstance {
-            segment_instance_index: SegmentInstanceIndex::INVALID,
             tight_local_clip_rect: LayoutRect::zero(),
         });
 
@@ -911,7 +910,6 @@ impl InternablePrimitive for YuvImage {
     ) -> PrimitiveKind {
         PrimitiveKind::YuvImage {
             data_handle,
-            segment_instance_index: SegmentInstanceIndex::INVALID,
             compositor_surface_kind: CompositorSurfaceKind::Blit,
         }
     }
