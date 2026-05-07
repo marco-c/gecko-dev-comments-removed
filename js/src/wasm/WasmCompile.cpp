@@ -231,26 +231,12 @@ FeatureArgs FeatureArgs::build(JSContext* cx, const FeatureOptions& options) {
 
   features.simd = jit::JitSupportsWasmSimd();
   features.isBuiltinModule = options.isBuiltinModule;
-  if (features.isBuiltinModule) {
-    
-    
-    features.stackSwitching = wasm::IonPlatformSupport();
-    
-    
-    
-    
-    MOZ_ASSERT(!options.jsStringBuiltins);
-    MOZ_ASSERT(!options.jsStringConstants);
-    MOZ_ASSERT(!options.mozIntGemm);
-  } else {
-    
-    features.builtinModules.jsString = options.jsStringBuiltins;
-    features.builtinModules.jsStringConstants = options.jsStringConstants;
-    features.builtinModules.jsStringConstantsNamespace =
-        options.jsStringConstantsNamespace;
-    features.builtinModules.intGemm =
-        MozIntGemmAvailable(cx) && options.mozIntGemm;
-  }
+  features.builtinModules.jsString = options.jsStringBuiltins;
+  features.builtinModules.jsStringConstants = options.jsStringConstants;
+  features.builtinModules.jsStringConstantsNamespace =
+      options.jsStringConstantsNamespace;
+  features.builtinModules.intGemm =
+      MozIntGemmAvailable(cx) && options.mozIntGemm;
 
   return features;
 }

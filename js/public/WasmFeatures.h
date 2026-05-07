@@ -35,8 +35,6 @@
 
 
 
-
-
 #ifdef ENABLE_WASM_RELAXED_SIMD
 #  define WASM_RELAXED_SIMD_ENABLED 1
 #else
@@ -77,7 +75,7 @@
 #define JS_FOR_WASM_FEATURES(FEATURE)                                   \
   FEATURE(                                                              \
     /* capitalized name   */ RelaxedSimd,                               \
-    /* lower case name    */ relaxedSimd,                               \
+    /* lower case name    */ v128Relaxed,                               \
     /* compile predicate  */ WASM_RELAXED_SIMD_ENABLED,                 \
     /* compiler predicate */ AnyCompilerAvailable(cx),                  \
     /* flag predicate     */ js::jit::JitSupportsWasmSimd(),            \
@@ -108,7 +106,7 @@
     /* compile predicate  */ WASM_JSPI_ENABLED,                         \
     /* compiler predicate */ IonPlatformSupport(),                      \
     /* flag predicate     */ true,                                      \
-    /* flag force enable  */ false,                                     \
+    /* flag force enable  */ WasmJSPromiseIntegrationFlag(cx),          \
     /* flag fuzz enable   */ true,                                      \
     /* preference name    */ stack_switching)                           \
   FEATURE(                                                              \
