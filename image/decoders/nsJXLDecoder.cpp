@@ -54,6 +54,21 @@ LexerResult nsJXLDecoder::DoDecode(SourceBufferIterator& aIterator,
     if (!aIterator.IsReady() || aIterator.Length() == 0) {
       SourceBufferIterator::State state =
           aIterator.AdvanceOrScheduleResume(SIZE_MAX, aOnResume);
+
+      if (state == SourceBufferIterator::WAITING ||
+          state == SourceBufferIterator::COMPLETE) {
+        
+        
+        
+        
+        
+        
+        
+        if (!HasAnimation() && !mPixelBuffer.empty() && mCurrentPipe) {
+          FlushPartialFrame();
+        }
+      }
+
       if (state == SourceBufferIterator::WAITING) {
         return LexerResult(Yield::NEED_MORE_DATA);
       }
@@ -195,9 +210,6 @@ nsJXLDecoder::ProcessResult nsJXLDecoder::ProcessAvailableData(
         return ProcessResult::Error;
 
       case JxlDecoderStatus::NeedMoreData:
-        if (!HasAnimation() && !mPixelBuffer.empty() && mCurrentPipe) {
-          FlushPartialFrame();
-        }
         return ProcessResult::NeedMoreData;
 
       case JxlDecoderStatus::Ok: {
@@ -528,6 +540,9 @@ static float F16ToF32(uint16_t h) {
 
 bool nsJXLDecoder::WritePixelRowsToPipe() {
   MOZ_ASSERT(mCurrentPipe);
+#ifdef DEBUG
+  ++mWritePixelRowsCount;
+#endif
   OrientedIntSize size = Size();
 
   uint8_t* currentRow = mPixelBuffer.begin();
@@ -646,6 +661,7 @@ void nsJXLDecoder::FlushPartialFrame() {
       mDecoder.get(), mPixelBuffer.begin(), mPixelBuffer.length(),
       mKBuffer.empty() ? nullptr : mKBuffer.begin(), mKBuffer.length());
   if (status != JxlDecoderStatus::Ok) {
+    
     return;
   }
 
