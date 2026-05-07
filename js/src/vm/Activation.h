@@ -245,7 +245,8 @@ class LiveSavedFrameCache {
    public:
     
     
-    static inline mozilla::Maybe<FramePtr> create(const FrameIter& iter);
+    static inline mozilla::Maybe<FramePtr> create(JSContext* cx,
+                                                  const FrameIter& iter);
 
     inline bool hasCachedSavedFrame() const;
     inline void setHasCachedSavedFrame();
