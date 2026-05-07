@@ -349,12 +349,16 @@ ModuleScript::ModuleScript(const LoadedScript& aOther,
 already_AddRefed<ModuleScript> ModuleScript::FromCache(
     const LoadedScript& aScript, ScriptFetchInfo* aFetchInfo) {
   MOZ_DIAGNOSTIC_ASSERT(aScript.IsModuleScript());
+  
+  
+  
   MOZ_DIAGNOSTIC_ASSERT(aScript.IsCachedStencil());
 
   return mozilla::MakeRefPtr<ModuleScript>(aScript, aFetchInfo).forget();
 }
 
 already_AddRefed<LoadedScript> ModuleScript::ToCache() {
+  
   MOZ_DIAGNOSTIC_ASSERT(IsCachedStencil());
   MOZ_DIAGNOSTIC_ASSERT(!HasParseError());
   MOZ_DIAGNOSTIC_ASSERT(!HasErrorToRethrow());
