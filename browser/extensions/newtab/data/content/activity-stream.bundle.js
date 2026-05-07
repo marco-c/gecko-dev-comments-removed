@@ -10631,10 +10631,14 @@ function SectionFollowButton({
   }
 
   
-  const labelL10nId = following ? "newtab-section-unfollow-button-label" : "newtab-section-follow-button-label";
-  const labelL10nArgs = JSON.stringify({
-    topic: title
-  });
+  let labelL10nId = null;
+  let labelL10nArgs = null;
+  if (title) {
+    labelL10nId = following ? "newtab-section-unfollow-button-label" : "newtab-section-follow-button-label";
+    labelL10nArgs = JSON.stringify({
+      topic: title
+    });
+  }
   const handleFollowClick = () => {
     setJustFollowed(true);
     onFollowClick();
@@ -15344,12 +15348,28 @@ const SportsWidget_USER_ACTION_TYPES = {
   FOLLOW_TEAMS: "follow_teams",
   VIEW_UPCOMING: "view_upcoming",
   VIEW_RESULTS: "view_results",
+  VIEW_SCHEDULE: "view_schedule",
   CHANGE_SIZE: "change_size",
   LEARN_MORE: "learn_more"
 };
 const SportsWidget_PREF_NOVA_ENABLED = "nova.enabled";
 const SportsWidget_PREF_SPORTS_WIDGET_SIZE = "widgets.sportsWidget.size";
 const PREF_SPORTS_WIDGET_LIVE_ENABLED = "widgets.sportsWidget.live.enabled";
+
+
+const WORLD_CUP_KICKOFF = new Date("2026-06-11T06:00:00Z");
+const calculateCountdown = targetDate => {
+  const diff = targetDate.getTime() - Date.now();
+  if (diff <= 0) {
+    return null;
+  }
+  const totalSeconds = Math.floor(diff / 1000);
+  return {
+    days: Math.floor(totalSeconds / 86400),
+    hours: Math.floor(totalSeconds % 86400 / 3600),
+    minutes: Math.floor(totalSeconds % 3600 / 60)
+  };
+};
 function SportsWidget_SportsWidget({
   dispatch,
   handleUserInteraction
@@ -15473,6 +15493,30 @@ function SportsWidget_SportsWidget({
     el.addEventListener("click", listener);
     return () => el.removeEventListener("click", listener);
   }, [handleChangeSize]);
+  function handleCountdownViewSchedule() {
+    dispatch(actionCreators.OnlyToMain({
+      type: actionTypes.WIDGETS_USER_EVENT,
+      data: {
+        widget_name: "sports_widget",
+        widget_source: "countdown",
+        user_action: SportsWidget_USER_ACTION_TYPES.VIEW_SCHEDULE,
+        widget_size: widgetSize
+      }
+    }));
+    handleInteraction();
+  }
+  function handleCountdownFollowTeams() {
+    dispatch(actionCreators.OnlyToMain({
+      type: actionTypes.WIDGETS_USER_EVENT,
+      data: {
+        widget_name: "sports_widget",
+        widget_source: "countdown",
+        user_action: SportsWidget_USER_ACTION_TYPES.FOLLOW_TEAMS,
+        widget_size: widgetSize
+      }
+    }));
+    handleInteraction();
+  }
   function handleLearnMore() {
     (0,external_ReactRedux_namespaceObject.batch)(() => {
       dispatch(actionCreators.OnlyToMain({
@@ -15493,6 +15537,7 @@ function SportsWidget_SportsWidget({
       }));
     });
   }
+  const countdownActive = calculateCountdown(WORLD_CUP_KICKOFF);
 
   
   if (!prefs[SportsWidget_PREF_NOVA_ENABLED]) {
@@ -15505,9 +15550,15 @@ function SportsWidget_SportsWidget({
     }
   }, external_React_default().createElement("div", {
     className: "sports-widget-title-wrapper"
-  }, external_React_default().createElement("h3", {
-    className: "newtab-sports-widget-title"
-  }, "Sports"), external_React_default().createElement("div", {
+  }, external_React_default().createElement("div", null), countdownActive && external_React_default().createElement("div", {
+    className: "countdown-text-wrapper"
+  }, external_React_default().createElement("h2", {
+    className: "sports-widget-countdown-title",
+    "data-l10n-id": "newtab-sports-widget-countdown-title"
+  }), external_React_default().createElement("p", {
+    className: "sports-widget-countdown-lede",
+    "data-l10n-id": "newtab-sports-widget-get-updates"
+  })), external_React_default().createElement("div", {
     className: "sports-widget-context-menu-wrapper"
   }, external_React_default().createElement("moz-button", {
     className: "sports-widget-context-menu-button",
@@ -15547,8 +15598,72 @@ function SportsWidget_SportsWidget({
     onClick: handleLearnMore
   })))), external_React_default().createElement("div", {
     className: "sports-widget-body"
-  }, liveEnabled && sportsWidgetData?.initialized && external_React_default().createElement("div", {
+  }, countdownActive && external_React_default().createElement(SportsWidgetCountdown, {
+    widgetSize: widgetSize,
+    onViewSchedule: handleCountdownViewSchedule,
+    onFollowTeams: handleCountdownFollowTeams
+  }), liveEnabled && sportsWidgetData?.initialized && external_React_default().createElement("div", {
     className: "sports-widget-live-scores"
+  })));
+}
+function SportsWidgetCountdown({
+  widgetSize,
+  onViewSchedule,
+  onFollowTeams
+}) {
+  const [countdown, setCountdown] = (0,external_React_namespaceObject.useState)(() => calculateCountdown(WORLD_CUP_KICKOFF));
+  (0,external_React_namespaceObject.useEffect)(() => {
+    const interval = setInterval(() => {
+      const remaining = calculateCountdown(WORLD_CUP_KICKOFF);
+      setCountdown(remaining);
+      if (!remaining) {
+        clearInterval(interval);
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+  if (!countdown) {
+    return null;
+  }
+  const units = [{
+    value: countdown.days,
+    labelId: "newtab-sports-widget-countdown-days"
+  }, {
+    value: countdown.hours,
+    labelId: "newtab-sports-widget-countdown-hours"
+  }, {
+    value: countdown.minutes,
+    labelId: "newtab-sports-widget-countdown-minutes"
+  }];
+  return external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("div", {
+    className: "sports-widget-countdown"
+  }, external_React_default().createElement("div", {
+    className: "sports-widget-countdown-units",
+    "aria-live": "off"
+  }, units.map(({
+    value,
+    labelId
+  }) => external_React_default().createElement("div", {
+    key: labelId,
+    className: "sports-widget-countdown-unit"
+  }, external_React_default().createElement("span", {
+    className: "sports-widget-countdown-value"
+  }, String(value).padStart(2, "0")), external_React_default().createElement("span", {
+    className: "sports-widget-countdown-label",
+    "data-l10n-id": labelId
+  }))))), external_React_default().createElement("div", {
+    className: "countdown-buttons-wrapper"
+  }, widgetSize !== "medium" && external_React_default().createElement("moz-button", {
+    type: "primary",
+    "data-l10n-id": "newtab-sports-widget-view-schedule",
+    className: "countdown-view-schedule",
+    onClick: onViewSchedule
+  }), external_React_default().createElement("moz-button", {
+    type: "secondary",
+    size: widgetSize === "medium" ? "small" : undefined,
+    "data-l10n-id": "newtab-sports-widget-follow-teams",
+    className: "countdown-follow-teams",
+    onClick: onFollowTeams
   })));
 }
 
@@ -16049,13 +16164,13 @@ function Widgets() {
 
 
 
+
+const defaultImportModule = url => import(url);
 function ExternalComponentWrapper({
   type,
   className,
   
-  
-  
-  importModule = url => import(url),
+  importModule = defaultImportModule,
   ...props
 }) {
   const containerRef = external_React_default().useRef(null);
