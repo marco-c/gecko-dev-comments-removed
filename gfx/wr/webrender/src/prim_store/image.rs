@@ -59,6 +59,7 @@ pub struct ImageCacheKey {
 
 
 
+
 #[derive(Debug)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 pub struct ImageScratch {
@@ -73,6 +74,12 @@ pub struct ImageScratch {
     
     
     pub adjustment: AdjustedImageSource,
+    
+    
+    
+    
+    
+    pub tight_local_clip_rect: LayoutRect,
 }
 
 impl ImageScratch {
@@ -82,18 +89,9 @@ impl ImageScratch {
             src_color: None,
             normalized_uvs: false,
             adjustment: AdjustedImageSource::new(),
+            tight_local_clip_rect: LayoutRect::zero(),
         }
     }
-}
-
-
-
-
-
-#[derive(Debug)]
-#[cfg_attr(feature = "capture", derive(Serialize))]
-pub struct ImageInstance {
-    pub tight_local_clip_rect: LayoutRect,
 }
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
@@ -157,7 +155,6 @@ impl ImageData {
     pub fn update(
         &mut self,
         common: &mut PrimTemplateCommonData,
-        image_instance: &mut ImageInstance,
         prim_instance_index: PrimitiveInstanceIndex,
         prim_spatial_node_index: SpatialNodeIndex,
         frame_state: &mut FrameBuildingState,
@@ -204,9 +201,9 @@ impl ImageData {
             .clip_chain
             .local_clip_rect
             .intersection(&prim_rect).unwrap();
-        image_instance.tight_local_clip_rect = tight_clip_rect;
 
         let mut image_scratch = ImageScratch::empty();
+        image_scratch.tight_local_clip_rect = tight_clip_rect;
 
         match image_properties {
             
@@ -612,17 +609,10 @@ impl InternablePrimitive for Image {
     fn make_instance_kind(
         _key: ImageKey,
         data_handle: ImageDataHandle,
-        prim_store: &mut PrimitiveStore,
+        _prim_store: &mut PrimitiveStore,
     ) -> PrimitiveKind {
-        
-        
-        let image_instance_index = prim_store.images.push(ImageInstance {
-            tight_local_clip_rect: LayoutRect::zero(),
-        });
-
         PrimitiveKind::Image {
             data_handle,
-            image_instance_index,
             compositor_surface_kind: CompositorSurfaceKind::Blit,
         }
     }
