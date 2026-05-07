@@ -797,6 +797,14 @@ FontList::Header& FontList::GetHeader() const MOZ_NO_THREAD_SAFETY_ANALYSIS {
 
 bool FontList::AppendShmBlock(uint32_t aSizeNeeded) {
   MOZ_ASSERT(XRE_IsParentProcess());
+
+  
+  
+  
+  
+  MOZ_RELEASE_ASSERT(mBlocks.Length() < (1u << Pointer::kIndexBits),
+                     "FontList shm block limit exceeded");
+
   uint32_t size = std::max(aSizeNeeded, SHM_BLOCK_SIZE);
   auto handle = ipc::shared_memory::CreateFreezable(size);
   if (!handle) {
@@ -1269,7 +1277,17 @@ Family* FontList::FindFamily(const nsCString& aName, bool aPrimaryNameOnly) {
                        FamilyNameComparator(this, base), &match)) {
       
       
+
+      
+      
+      const auto oldLength = mFaceNamesRead.Length();
       mFaceNamesRead.EnsureLengthAtLeast(familyCount);
+      for (auto i = oldLength; i < mFaceNamesRead.Length(); i++) {
+        mFaceNamesRead[i] = false;
+      }
+
+      
+      
       if (mFaceNamesRead[match]) {
         return nullptr;
       }
