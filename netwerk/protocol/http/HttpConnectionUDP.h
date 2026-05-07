@@ -154,6 +154,10 @@ class HttpConnectionUDP final : public HttpConnectionBase,
   nsTArray<RefPtr<nsHttpTransaction>> mQueuedHttpConnectTransaction;
   nsTArray<RefPtr<nsHttpTransaction>> mQueuedConnectUdpTransaction;
   bool mAlreadyWildcard = false;
+
+  
+  
+  nsTArray<RefPtr<nsHttpTransaction>> mDeferredLnaTransactions;
 };
 
 }  

@@ -412,8 +412,16 @@ nsresult HappyEyeballsConnectionAttempt::CheckLNA(
   }
 
   auto addrSpace = peerAddr.GetIpAddressSpace();
+  
+  
+  
+  
+  
+  
+  bool deferPrivate = addrSpace == nsILoadInfo::IPAddressSpace::Private &&
+                      StaticPrefs::network_lna_defer_https_check();
   if (addrSpace != nsILoadInfo::IPAddressSpace::Local &&
-      addrSpace != nsILoadInfo::IPAddressSpace::Private) {
+      (addrSpace != nsILoadInfo::IPAddressSpace::Private || deferPrivate)) {
     return NS_OK;
   }
 
