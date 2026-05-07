@@ -645,23 +645,29 @@ nsresult HTMLCanvasElement::DispatchPrintCallback(nsITimerCallback* aCallback) {
   mPrintState = new HTMLCanvasPrintState(this, mCurrentContext, aCallback);
 
   RefPtr<nsRunnableMethod<HTMLCanvasElement>> renderEvent =
-      NewRunnableMethod("dom::HTMLCanvasElement::CallPrintCallback", this,
-                        &HTMLCanvasElement::CallPrintCallback);
+      NewRunnableMethod<RefPtr<HTMLCanvasPrintState>>(
+          "dom::HTMLCanvasElement::CallPrintCallback", this,
+          &HTMLCanvasElement::CallPrintCallback, mPrintState);
   return OwnerDoc()->Dispatch(renderEvent.forget());
 }
 
-void HTMLCanvasElement::CallPrintCallback() {
+void HTMLCanvasElement::CallPrintCallback(
+    RefPtr<HTMLCanvasPrintState> aPrintState) {
   AUTO_PROFILER_MARKER_TEXT("HTMLCanvasElement Printing", LAYOUT_Printing, {},
                             "HTMLCanvasElement::CallPrintCallback"_ns);
-  if (!mPrintState) {
+  MOZ_ASSERT(aPrintState,
+             "Our caller should always infallibly allocate a print state, "
+             "and give us a strong ref, before dispatching us");
+  if (mPrintState != aPrintState) {
     
     
     
     return;
   }
   RefPtr<PrintCallback> callback = GetMozPrintCallback();
-  RefPtr<HTMLCanvasPrintState> state = mPrintState;
-  callback->Call(*state);
+  
+  
+  callback->Call(*aPrintState);
 }
 
 void HTMLCanvasElement::ResetPrintCallback() {

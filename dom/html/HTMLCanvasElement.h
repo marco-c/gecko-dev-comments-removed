@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_HTMLCanvasElement_h
 #define mozilla_dom_HTMLCanvasElement_h
 
@@ -335,7 +333,8 @@ class HTMLCanvasElement final : public nsGenericHTMLElement,
       CanvasUtils::ImageExtraction aExtractionBehavior, int32_t* aOutFormat,
       gfx::IntSize* aOutImageSize) override;
 
-  MOZ_CAN_RUN_SCRIPT void CallPrintCallback();
+  MOZ_CAN_RUN_SCRIPT void CallPrintCallback(
+      RefPtr<HTMLCanvasPrintState> aPrintState);
 
   virtual void AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
                             const nsAttrValue* aValue,
