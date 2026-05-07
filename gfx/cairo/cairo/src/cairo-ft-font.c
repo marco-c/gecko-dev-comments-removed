@@ -1031,6 +1031,11 @@ _compute_xrender_bitmap_size(FT_Bitmap      *target,
 
     width = ftbit->width;
     height = ftbit->rows;
+
+    
+    if (width < 0 || width > INT_MAX / 4 || height < 0)
+	return -1;
+
     pitch = (width + 3) & ~3;
 
     switch (ftbit->pixel_mode) {
@@ -1081,6 +1086,10 @@ _compute_xrender_bitmap_size(FT_Bitmap      *target,
     target->rows = height;
     target->pitch = pitch;
     target->buffer = NULL;
+
+    
+    if ((cairo_int64_t) pitch * height > INT_MAX)
+	return -1;
 
     return pitch * height;
 }
