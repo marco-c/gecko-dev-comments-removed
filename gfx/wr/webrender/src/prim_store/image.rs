@@ -79,6 +79,12 @@ pub struct ImageScratch {
     
     
     pub tight_local_clip_rect: LayoutRect,
+    
+    
+    
+    
+    
+    pub may_need_repetition: bool,
 }
 
 impl ImageScratch {
@@ -89,6 +95,7 @@ impl ImageScratch {
             normalized_uvs: false,
             adjustment: AdjustedImageSource::new(),
             tight_local_clip_rect: LayoutRect::zero(),
+            may_need_repetition: true,
         }
     }
 }
@@ -177,12 +184,6 @@ impl ImageData {
             None => PrimitiveOpacity::opaque(),
         };
 
-        if self.stretch_size.width >= common.prim_size.width &&
-            self.stretch_size.height >= common.prim_size.height {
-
-            common.may_need_repetition = false;
-        }
-
         let request = ImageRequest {
             key: self.key,
             rendering: self.image_rendering,
@@ -203,6 +204,11 @@ impl ImageData {
 
         let mut image_scratch = ImageScratch::empty();
         image_scratch.tight_local_clip_rect = tight_clip_rect;
+        if self.stretch_size.width >= common.prim_size.width
+            && self.stretch_size.height >= common.prim_size.height
+        {
+            image_scratch.may_need_repetition = false;
+        }
 
         match image_properties {
             
@@ -348,7 +354,7 @@ impl ImageData {
 
                 
                 
-                common.may_need_repetition = false;
+                image_scratch.may_need_repetition = false;
 
                 let prim_rect = LayoutRect::from_origin_and_size(prim_origin, common.prim_size);
                 let repetitions = image_tiling::repetitions(
@@ -919,9 +925,9 @@ fn test_struct_sizes() {
     
     
     assert_eq!(mem::size_of::<Image>(), 32, "Image size changed");
-    assert_eq!(mem::size_of::<ImageTemplate>(), 64, "ImageTemplate size changed");
+    assert_eq!(mem::size_of::<ImageTemplate>(), 60, "ImageTemplate size changed");
     assert_eq!(mem::size_of::<ImageKey>(), 44, "ImageKey size changed");
     assert_eq!(mem::size_of::<YuvImage>(), 32, "YuvImage size changed");
-    assert_eq!(mem::size_of::<YuvImageTemplate>(), 76, "YuvImageTemplate size changed");
+    assert_eq!(mem::size_of::<YuvImageTemplate>(), 72, "YuvImageTemplate size changed");
     assert_eq!(mem::size_of::<YuvImageKey>(), 44, "YuvImageKey size changed");
 }

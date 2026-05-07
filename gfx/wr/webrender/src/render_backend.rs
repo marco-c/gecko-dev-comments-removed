@@ -202,23 +202,6 @@ impl DataStores {
     }
 
     
-    
-    
-    pub fn prim_may_need_repetition(
-        &self,
-        prim_instance: &PrimitiveInstance,
-    ) -> bool {
-        match prim_instance.kind {
-            PrimitiveKind::Picture { .. } => {
-                false
-            }
-            _ => {
-                self.as_common_data(prim_instance).may_need_repetition
-            }
-        }
-    }
-
-    
     pub fn prim_has_anti_aliasing(
         &self,
         prim_instance: &PrimitiveInstance,

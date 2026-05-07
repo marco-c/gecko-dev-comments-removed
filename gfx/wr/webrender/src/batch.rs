@@ -962,7 +962,31 @@ impl BatchBuilder {
         );
 
         let mut batch_features = BatchFeatures::empty();
-        if ctx.data_stores.prim_may_need_repetition(prim_instance) {
+        let may_need_repetition = match prim_instance.kind {
+            PrimitiveKind::Image { .. } => {
+                let idx = prim_info.kind_scratch.unwrap_image();
+                ctx.scratch.frame.images[idx].may_need_repetition
+            }
+            PrimitiveKind::NormalBorder { .. } => {
+                let idx = prim_info.kind_scratch.unwrap_normal_border();
+                ctx.scratch.frame.normal_border[idx].may_need_repetition
+            }
+            
+            
+            
+            PrimitiveKind::ImageBorder { .. } => true,
+            
+            
+            
+            
+            
+            PrimitiveKind::LineDecoration { .. } => true,
+            
+            
+            
+            _ => false,
+        };
+        if may_need_repetition {
             batch_features |= BatchFeatures::REPETITION;
         }
 
