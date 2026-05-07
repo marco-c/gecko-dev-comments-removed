@@ -16,8 +16,8 @@ user-login = "epage"
 user-name = "Ed Page"
 
 [[publisher.async-trait]]
-version = "0.1.68"
-when = "2023-03-24"
+version = "0.1.80"
+when = "2024-04-11"
 user-id = 3618
 user-login = "dtolnay"
 user-name = "David Tolnay"
@@ -987,8 +987,8 @@ user-id = 73222
 user-login = "wasmtime-publish"
 
 [[publisher.zeitstempel]]
-version = "0.2.0"
-when = "2025-10-06"
+version = "0.2.1"
+when = "2026-05-05"
 user-id = 48
 user-login = "badboy"
 user-name = "Jan-Erik Rediger"
@@ -3054,6 +3054,11 @@ version = "0.10.6"
 who = "Brandon Pitman <bran@bran.land>"
 criteria = "safe-to-deploy"
 delta = "0.10.7 -> 0.10.8"
+
+[[audits.isrg.audits.subtle]]
+who = "David Cook <dcook@divviup.org>"
+criteria = "safe-to-deploy"
+delta = "2.5.0 -> 2.6.1"
 
 [[audits.isrg.audits.zlib-rs]]
 who = "Ameer Ghani <inahga@divviup.org>"

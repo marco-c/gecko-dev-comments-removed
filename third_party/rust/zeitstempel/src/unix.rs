@@ -30,13 +30,18 @@ pub fn now_including_suspend() -> u64 {
 
 
 
+
 pub fn now_awake() -> u64 {
     let mut ts = libc::timespec {
         tv_sec: 0,
         tv_nsec: 0,
     };
+    #[cfg(any(target_os = "linux", target_os = "android"))]
+    let clock = libc::CLOCK_MONOTONIC;
+    #[cfg(target_os = "freebsd")]
+    let clock = libc::CLOCK_UPTIME;
     unsafe {
-        libc::clock_gettime(libc::CLOCK_MONOTONIC, &mut ts);
+        libc::clock_gettime(clock, &mut ts);
     }
 
     timespec_to_ns(ts)
