@@ -819,8 +819,15 @@ var gIdentityHandler = {
 
 
 
+
+
   _hasCustomRoot() {
-    return !this._secInfo.isBuiltCertChainRootBuiltInRoot;
+    return (
+      this._isSecureConnection &&
+      !this._isCertUserOverridden &&
+      this._secInfo &&
+      !this._secInfo.isBuiltCertChainRootBuiltInRoot
+    );
   },
 
   
@@ -1043,13 +1050,8 @@ var gIdentityHandler = {
       });
     }
 
-    let customRoot = false;
-
     
     let connection = this.getConnectionSecurityInformation();
-    if (this._isSecureConnection) {
-      customRoot = this._hasCustomRoot();
-    }
 
     let securityButtonNode = document.getElementById(
       "identity-popup-security-button"
@@ -1156,7 +1158,7 @@ var gIdentityHandler = {
       this._updateAttribute(element, "ciphers", ciphers);
       this._updateAttribute(element, "mixedcontent", mixedcontent);
       this._updateAttribute(element, "isbroken", this._isBrokenConnection);
-      this._updateAttribute(element, "customroot", customRoot);
+      element.toggleAttribute("customroot", this._hasCustomRoot());
       this._updateAttribute(element, "httpsonlystatus", httpsOnlyStatus);
     }
 
