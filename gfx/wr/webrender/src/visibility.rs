@@ -16,6 +16,7 @@ use crate::profiler::TransactionProfile;
 use crate::renderer::GpuBufferBuilder;
 use crate::spatial_tree::{SpatialTree, SpatialNodeIndex};
 use crate::clip::{ClipChainInstance, ClipTree};
+use crate::composite::CompositorSurfaceKind;
 use crate::frame_builder::FrameBuilderConfig;
 use crate::picture::{PictureCompositeMode, ClusterFlags, SurfaceInfo};
 use crate::tile_cache::TileCacheInstance;
@@ -213,6 +214,12 @@ pub struct PrimitiveDrawHeader {
     
     
     pub segment_instance_index: SegmentInstanceIndex,
+
+    
+    
+    
+    
+    pub compositor_surface_kind: CompositorSurfaceKind,
 }
 
 impl PrimitiveDrawHeader {
@@ -224,6 +231,7 @@ impl PrimitiveDrawHeader {
             clip_task_index: ClipTaskIndex::INVALID,
             kind_scratch: KindScratchHandle::None,
             segment_instance_index: SegmentInstanceIndex::UNUSED,
+            compositor_surface_kind: CompositorSurfaceKind::Blit,
         }
     }
 
@@ -232,6 +240,7 @@ impl PrimitiveDrawHeader {
         self.clip_task_index = ClipTaskIndex::INVALID;
         self.kind_scratch = KindScratchHandle::None;
         self.segment_instance_index = SegmentInstanceIndex::UNUSED;
+        self.compositor_surface_kind = CompositorSurfaceKind::Blit;
     }
 }
 

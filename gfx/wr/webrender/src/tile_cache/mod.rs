@@ -2173,7 +2173,8 @@ impl TileCacheInstance {
         
         profile_scope!("update_prim_dependencies");
         let prim_surface_index = surface_stack.last().unwrap().1;
-        let prim_clip_chain = &scratch.frame.draws[prim_instance_index.0 as usize].clip_chain;
+        let prim_clip_chain = scratch.frame.draws[prim_instance_index.0 as usize].clip_chain;
+        let prim_clip_chain = &prim_clip_chain;
 
         
         
@@ -2321,7 +2322,7 @@ impl TileCacheInstance {
                     prim_info.color_binding = Some(color_u.into());
                 }
             }
-            PrimitiveKind::Image { data_handle, ref mut compositor_surface_kind, .. } => {
+            PrimitiveKind::Image { data_handle, .. } => {
                 let image_key = &data_stores.image[data_handle];
                 let image_data = &image_key.kind;
 
@@ -2406,8 +2407,9 @@ impl TileCacheInstance {
                     }
                 }
 
+                let draw_idx = prim_instance_index.0 as usize;
                 if let Ok(kind) = promotion_result {
-                    *compositor_surface_kind = kind;
+                    scratch.frame.draws[draw_idx].compositor_surface_kind = kind;
 
                     if kind == CompositorSurfaceKind::Overlay {
                         profile.inc(profiler::COMPOSITOR_SURFACE_OVERLAYS);
@@ -2418,7 +2420,7 @@ impl TileCacheInstance {
                 } else {
                     
                     self.report_promotion_failure(promotion_result, pic_coverage_rect, false);
-                    *compositor_surface_kind = CompositorSurfaceKind::Blit;
+                    scratch.frame.draws[draw_idx].compositor_surface_kind = CompositorSurfaceKind::Blit;
                 }
 
                 if image_key.common.flags.contains(PrimitiveFlags::PREFER_COMPOSITOR_SURFACE) {
@@ -2430,7 +2432,7 @@ impl TileCacheInstance {
                     generation: resource_cache.get_image_generation(image_data.key),
                 });
             }
-            PrimitiveKind::YuvImage { data_handle, ref mut compositor_surface_kind, .. } => {
+            PrimitiveKind::YuvImage { data_handle, .. } => {
                 let prim_data = &data_stores.yuv_image[data_handle];
 
                 let mut promotion_result: Result<CompositorSurfaceKind, SurfacePromotionFailure> = Ok(CompositorSurfaceKind::Blit);
@@ -2531,8 +2533,9 @@ impl TileCacheInstance {
                 
                 
                 
+                let draw_idx = prim_instance_index.0 as usize;
                 if let Ok(kind) = promotion_result {
-                    *compositor_surface_kind = kind;
+                    scratch.frame.draws[draw_idx].compositor_surface_kind = kind;
                     if kind == CompositorSurfaceKind::Overlay {
                         profile.inc(profiler::COMPOSITOR_SURFACE_OVERLAYS);
                         return DrawState::Culled;
@@ -2542,7 +2545,7 @@ impl TileCacheInstance {
                 } else {
                     
                     self.report_promotion_failure(promotion_result, pic_coverage_rect, false);
-                    *compositor_surface_kind = CompositorSurfaceKind::Blit;
+                    scratch.frame.draws[draw_idx].compositor_surface_kind = CompositorSurfaceKind::Blit;
                     if prim_data.common.flags.contains(PrimitiveFlags::PREFER_COMPOSITOR_SURFACE) {
                         profile.inc(profiler::COMPOSITOR_SURFACE_BLITS);
                     }
@@ -2550,8 +2553,9 @@ impl TileCacheInstance {
 
                 
                 
-                if *compositor_surface_kind == CompositorSurfaceKind::Blit ||
-                    *compositor_surface_kind == CompositorSurfaceKind::Underlay &&
+                let kind = scratch.frame.draws[draw_idx].compositor_surface_kind;
+                if kind == CompositorSurfaceKind::Blit ||
+                    kind == CompositorSurfaceKind::Underlay &&
                     self.slice_flags.contains(SliceFlags::IS_ATOMIC) {
                     prim_info.images.extend(
                         prim_data.kind.yuv_key.iter().map(|key| {
@@ -2947,6 +2951,7 @@ impl TileCacheInstance {
         prim_instances: &mut [PrimitiveInstance],
         composite_state: &mut CompositeState,
         resource_cache: &mut ResourceCache,
+        scratch: &mut PrimitiveScratchBuffer,
     ) {
         assert!(self.current_surface_traversal_depth == 0);
 
@@ -2995,15 +3000,12 @@ impl TileCacheInstance {
             if !cancel_underlays.is_empty() {
                 for desc in cancel_underlays {
                     
-                    let prim_instance = &mut prim_instances[desc.prim_instance_index.0 as usize];
-                    match prim_instance.kind {
-                        PrimitiveKind::YuvImage { ref mut compositor_surface_kind, .. } => {
-                            *compositor_surface_kind = CompositorSurfaceKind::Blit;
-                        }
-                        _ => {
-                            unreachable!();
-                        }
-                    };
+                    debug_assert!(matches!(
+                        prim_instances[desc.prim_instance_index.0 as usize].kind,
+                        PrimitiveKind::YuvImage { .. }
+                    ));
+                    scratch.frame.draws[desc.prim_instance_index.0 as usize].compositor_surface_kind =
+                        CompositorSurfaceKind::Blit;
                 }
 
                 let mut underlays: Vec<ExternalSurfaceDescriptor> = underlays
