@@ -2090,57 +2090,38 @@ static const char* const kMainThreadName = "GeckoMain";
 
 class Registers {
  public:
-  Registers()
-      : mPC{nullptr},
-        mSP{nullptr},
-        mFP{nullptr}
-#if defined(UNWINDING_REGS_HAVE_ECX_EDX)
-        ,
-        mEcx{nullptr},
-        mEdx{nullptr}
-#elif defined(UNWINDING_REGS_HAVE_R10_R12)
-        ,
-        mR10{nullptr},
-        mR12{nullptr}
-#elif defined(UNWINDING_REGS_HAVE_LR_R7)
-        ,
-        mLR{nullptr},
-        mR7{nullptr}
-#elif defined(UNWINDING_REGS_HAVE_LR_R11)
-        ,
-        mLR{nullptr},
-        mR11{nullptr}
-#endif
-  {
-  }
+  Registers() = default;
 
   void Clear() { memset(this, 0, sizeof(*this)); }
 
   
   
   
-  Address mPC;  
-  Address mSP;  
-  Address mFP;  
+  Address mPC{nullptr};  
+  Address mSP{nullptr};  
+  Address mFP{nullptr};  
 #if defined(UNWINDING_REGS_HAVE_ECX_EDX)
-  Address mEcx;  
-  Address mEdx;  
+  Address mEcx{nullptr};  
+  Address mEdx{nullptr};  
 #elif defined(UNWINDING_REGS_HAVE_R10_R12)
-  Address mR10;  
-  Address mR12;  
+  Address mR10{nullptr};  
+  Address mR12{nullptr};  
 #elif defined(UNWINDING_REGS_HAVE_LR_R7)
-  Address mLR;  
-  Address mR7;  
+  Address mLR{nullptr};  
+  Address mR7{nullptr};  
 #elif defined(UNWINDING_REGS_HAVE_LR_R11)
-  Address mLR;   
-  Address mR11;  
+  Address mLR{nullptr};   
+  Address mR11{nullptr};  
 #endif
 
 #if defined(GP_OS_linux) || defined(GP_OS_android) || defined(GP_OS_freebsd)
   
   
-  ucontext_t* mContext;  
-  ucontext_t mContextSyncStorage;  
+
+  
+  ucontext_t* mContext{nullptr};
+  
+  ucontext_t mContextSyncStorage;
 #endif
 };
 
@@ -7920,7 +7901,7 @@ bool profiler_backtrace_into_buffer(ProfileChunkedBuffer& aChunkedBuffer,
         ProfileBufferCollector collector(profileBuffer, samplePos,
                                          bufferRangeStart);
 
-        for (int nativeIndex = (int)(aNativeStack.mCount); nativeIndex >= 0;
+        for (int nativeIndex = (int)(aNativeStack.mCount) - 1; nativeIndex >= 0;
              --nativeIndex) {
           collector.CollectNativeLeafAddr(
               (void*)aNativeStack.mPCs[nativeIndex]);
