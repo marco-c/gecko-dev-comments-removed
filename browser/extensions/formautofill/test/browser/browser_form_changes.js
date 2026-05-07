@@ -114,7 +114,6 @@ async function checkFormChangeHappened(formId) {
     },
     async browser => {
       await openPopupOn(browser, `#${formId} input[name=tel]`);
-      await BrowserTestUtils.synthesizeKey("VK_DOWN", {}, browser);
 
       await checkMenuEntries(
         browser,
@@ -128,6 +127,7 @@ async function checkFormChangeHappened(formId) {
         { checkComment: true }
       );
 
+      await BrowserTestUtils.synthesizeKey("VK_DOWN", {}, browser);
       await BrowserTestUtils.synthesizeKey("VK_RETURN", {}, browser);
 
       
@@ -151,6 +151,9 @@ async function checkFormChangeHappened(formId) {
         ],
         0
       );
+
+      
+      await sleep(500);
 
       const fieldDetectedAfterRemovingField =
         getFieldDetectionCompletedPromiseResolver();
