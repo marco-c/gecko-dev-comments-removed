@@ -414,11 +414,7 @@ addAccessibleTask(
       ],
     });
 
-    if (
-      AppConstants.platform == "macosx" &&
-      Services.prefs.getBoolPref("widget.macos.native-anchored-menus", false) &&
-      Services.prefs.getBoolPref("widget.macos.allow-native-select", false)
-    ) {
+    if (selectPopup.isNativeMenu) {
       
       selectPopup.activateItem(selectPopup.childNodes[0]);
     } else {

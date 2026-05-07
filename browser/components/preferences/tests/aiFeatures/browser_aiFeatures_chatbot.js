@@ -32,14 +32,6 @@ describe("settings ai features", () => {
     BrowserTestUtils.removeTab(gBrowser.selectedTab);
   });
 
-  async function openAiFeaturePanel() {
-    const paneLoaded = waitForPaneChange("ai");
-    const categoryButton = doc.getElementById("category-ai-features");
-    categoryButton.scrollIntoView();
-    EventUtils.synthesizeMouseAtCenter(categoryButton, {}, win);
-    await paneLoaded;
-  }
-
   it("can change the chatbot provider value", async () => {
     await SpecialPowers.pushPrefEnv({
       set: [
@@ -56,7 +48,7 @@ describe("settings ai features", () => {
       "category is visible"
     );
 
-    await openAiFeaturePanel();
+    await openAiFeaturePanel(doc, win);
 
     const providerControl = doc.getElementById("aiControlSidebarChatbotSelect");
     mockSidebarChatbotUrls(providerControl);
@@ -85,7 +77,7 @@ describe("settings ai features", () => {
     );
     EventUtils.sendKey("space");
     const selectPopup = await pickerOpened;
-    if (nativeSelectEnabled()) {
+    if (selectPopup.isNativeMenu) {
       selectPopup.activateItem(selectPopup.childNodes[3]);
     } else {
       EventUtils.sendKey("down");
@@ -129,7 +121,7 @@ describe("settings ai features", () => {
       "category is visible"
     );
 
-    await openAiFeaturePanel();
+    await openAiFeaturePanel(doc, win);
 
     let providerControl = doc.getElementById("aiControlSidebarChatbotSelect");
     Assert.ok(providerControl, "control exists");
@@ -153,7 +145,7 @@ describe("settings ai features", () => {
     );
     EventUtils.sendKey("space");
     let selectPopup = await pickerOpened;
-    if (nativeSelectEnabled()) {
+    if (selectPopup.isNativeMenu) {
       selectPopup.activateItem(selectPopup.childNodes[1]);
     } else {
       EventUtils.sendKey("down");
@@ -199,7 +191,7 @@ describe("settings ai features", () => {
     );
     EventUtils.sendKey("space");
     selectPopup = await pickerOpened;
-    if (nativeSelectEnabled()) {
+    if (selectPopup.isNativeMenu) {
       selectPopup.activateItem(selectPopup.childNodes[3]);
     } else {
       EventUtils.sendKey("down");
@@ -245,7 +237,7 @@ describe("settings ai features", () => {
       "category is visible"
     );
 
-    await openAiFeaturePanel();
+    await openAiFeaturePanel(doc, win);
 
     const providerControl = doc.getElementById("aiControlSidebarChatbotSelect");
     mockSidebarChatbotUrls(providerControl);
