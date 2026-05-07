@@ -87,6 +87,13 @@ def get_resolution():
     return 0
 
 
+def is_virtual_machine():
+    result = subprocess.run(
+        "sysctl -n hw.model", shell=True, capture_output=True, text=True
+    )
+    return result.stdout.strip().startswith("VirtualMac")
+
+
 def main():
     
     parser = OptionParser()
@@ -106,6 +113,9 @@ def main():
     os_version = get_os_version()
     
     if os_version == "10.15":
+        return 0
+    
+    if platform.system() == "Darwin" and is_virtual_machine():
         return 0
     return retVal
 
