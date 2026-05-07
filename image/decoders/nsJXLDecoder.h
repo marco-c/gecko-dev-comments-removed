@@ -43,6 +43,8 @@ class nsJXLDecoder final : public Decoder {
     GrayAlpha8,  
     Cmyk8,       
     Rgba16f,     
+                 
+                 
   };
 
   enum class FrameOutputResult {

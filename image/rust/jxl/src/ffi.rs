@@ -36,16 +36,8 @@ pub struct JxlFrameInfo {
 
 
 #[no_mangle]
-pub unsafe extern "C" fn jxl_decoder_new(
-    metadata_only: bool,
-    premultiply: bool,
-    has_cms: bool,
-) -> *mut JxlApiDecoder {
-    Box::into_raw(Box::new(JxlApiDecoder::new(
-        metadata_only,
-        premultiply,
-        has_cms,
-    )))
+pub unsafe extern "C" fn jxl_decoder_new(metadata_only: bool, has_cms: bool) -> *mut JxlApiDecoder {
+    Box::into_raw(Box::new(JxlApiDecoder::new(metadata_only, has_cms)))
 }
 
 
