@@ -3724,6 +3724,12 @@ static bool Duration_round(JSContext* cx, const CallArgs& args) {
     auto calendar = plainRelativeTo.calendar();
 
     
+    if (std::abs(targetTime.days) > TimeDuration::max().toDays()) {
+      JS_ReportErrorNumberASCII(
+          cx, GetErrorMessage, nullptr,
+          JSMSG_TEMPORAL_DURATION_INVALID_NORMALIZED_TIME);
+      return false;
+    }
     auto dateDuration = DateDuration{
         internalDuration.date.years,
         internalDuration.date.months,
@@ -3938,6 +3944,12 @@ static bool Duration_total(JSContext* cx, const CallArgs& args) {
     auto calendar = plainRelativeTo.calendar();
 
     
+    if (std::abs(targetTime.days) > TimeDuration::max().toDays()) {
+      JS_ReportErrorNumberASCII(
+          cx, GetErrorMessage, nullptr,
+          JSMSG_TEMPORAL_DURATION_INVALID_NORMALIZED_TIME);
+      return false;
+    }
     auto dateDuration = DateDuration{
         internalDuration.date.years,
         internalDuration.date.months,
