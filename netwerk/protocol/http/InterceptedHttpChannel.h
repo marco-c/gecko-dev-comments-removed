@@ -168,7 +168,7 @@ class InterceptedHttpChannel final
     
     Status mStatus;
 
-    bool mIsNonSubresourceRequest;
+    bool mIsNonSubresourceRequest = false;
     
     nsCString mKey;
     nsCString mSubresourceKey;

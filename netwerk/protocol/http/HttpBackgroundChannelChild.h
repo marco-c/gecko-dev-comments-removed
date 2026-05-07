@@ -136,7 +136,7 @@ class HttpBackgroundChannelChild final : public PHttpBackgroundChannelChild {
   
   
   
-  ODASource mFirstODASource;
+  ODASource mFirstODASource = ODA_PENDING;
 
   
   bool mOnStopRequestCalled = false;
