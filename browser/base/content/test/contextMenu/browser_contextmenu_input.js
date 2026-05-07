@@ -361,13 +361,6 @@ add_task(
           null,
           "context-viewsource",
           true,
-          "---",
-          null,
-          "context-sendpagetodevice",
-          true,
-          
-          [],
-          null,
         ],
         {
           skipFocusChange: true,
