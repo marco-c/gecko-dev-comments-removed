@@ -2,7 +2,11 @@
 
 
 
-use nix::unistd::{fork, setsid, ForkResult};
+use nix::{
+    libc::_exit,
+    unistd::{fork, getpid, setsid, write, ForkResult},
+};
+use std::{io::stdout, os::fd::AsFd};
 
 
 
@@ -14,7 +18,14 @@ use nix::unistd::{fork, setsid, ForkResult};
 
 
 
-pub(crate) fn daemonize() {
+
+
+
+
+
+
+
+pub(crate) unsafe fn daemonize() {
     
     
     
@@ -25,16 +36,22 @@ pub(crate) fn daemonize() {
     
     let _ = setsid();
 
-    let res = unsafe { fork() };
-    let Ok(res) = res else {
-        return;
+    let pid = if let Ok(res) = fork() {
+        match res {
+            ForkResult::Child => {
+                return;
+            }
+            ForkResult::Parent { child } => child,
+        }
+    } else {
+        getpid()
     };
 
-    match res {
-        ForkResult::Child => {}
-        ForkResult::Parent { child: _ } => unsafe {
-            
-            nix::libc::_exit(0);
-        },
-    }
+    
+    
+    let raw_pid = pid.as_raw();
+    let raw_pid_bytes: [u8; 4] = raw_pid.to_ne_bytes();
+    let rv = write(stdout().as_fd(), &raw_pid_bytes);
+
+    _exit(if rv.is_ok_and(|rv| rv == 4) { 0 } else { 1 });
 }

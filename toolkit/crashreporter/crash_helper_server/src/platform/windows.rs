@@ -4,4 +4,4 @@
 
 
 
-pub(crate) fn daemonize() {}
+pub(crate) unsafe fn daemonize() {}
