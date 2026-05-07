@@ -187,11 +187,16 @@ class MozBaseAssembler : public js::jit::AssemblerShared {
       
       
       
-      size_t i;
+      size_t sharp = 0;
       const size_t BUFLEN = sizeof(buffer)-1;
-      for ( i=0 ; i < BUFLEN && buffer[i] && buffer[i] != '#' ; i++ )
-	;
-      buffer[i] = 0;
+      for (size_t i = 0; i < BUFLEN && buffer[i]; i++) {
+        if (buffer[i] == '#') {
+          sharp = i;
+        }
+      }
+      if (sharp) {
+        buffer[sharp] = 0;
+      }
 
       SprintfLiteral(labelBuf, "-> %d%s", target.doc, !target.bound ? "f" : "");
       hasTarget = false;
