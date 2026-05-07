@@ -3205,7 +3205,9 @@ void gfxPlatform::InitWebGLConfig() {
       StaticPrefs::webgl_out_of_process_enable_ahardwarebuffer_AtStartup());
 #endif
 
-  if (!gfxConfig::IsEnabled(Feature::GPU_PROCESS) &&
+  
+  
+  if (!gfxConfig::IsEnabled(Feature::GPU_PROCESS) && !IsHeadless() &&
       !StaticPrefs::webgl_allow_in_parent_AtStartup()) {
     featureWebGL.Disable(FeatureStatus::UnavailableNoGpuProcess,
                          "Disabled without GPU process",
