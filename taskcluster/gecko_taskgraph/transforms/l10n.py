@@ -34,6 +34,10 @@ def _by_platform(arg):
     return optionally_keyed_by("build-platform", arg, use_msgspec=True)
 
 
+def _by_platform_or_project(arg):
+    return optionally_keyed_by("build-platform", "project", arg, use_msgspec=True)
+
+
 class MozharnessSchema(Schema, kw_only=True):
     
     script: _by_platform(str)  
@@ -97,7 +101,7 @@ class L10nDescriptionSchema(Schema, kw_only=True):
     
     worker_type: _by_platform(str)  
     
-    locales_file: _by_platform(str)  
+    locales_file: _by_platform_or_project(str)  
     
     tooltool: _by_platform(Literal["internal", "public"])  
     
@@ -238,7 +242,12 @@ def handle_keyed_by(config, jobs):
     for job in jobs:
         job = deepcopy(job)  
         for field in fields:
-            resolve_keyed_by(item=job, field=field, item_name=job["name"])
+            resolve_keyed_by(
+                item=job,
+                field=field,
+                item_name=job["name"],
+                project=config.params["project"],
+            )
         yield job
 
 
