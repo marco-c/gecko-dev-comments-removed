@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/DOMEventTargetHelper.h"
 
 #include "MainThreadUtils.h"
@@ -115,10 +113,6 @@ void DOMEventTargetHelper::DisconnectFromOwner() {
   }
 
   MaybeDontKeepAlive();
-}
-
-nsPIDOMWindowOuter* DOMEventTargetHelper::GetOwnerGlobalForBindingsInternal() {
-  return nsPIDOMWindowOuter::GetFromCurrentInner(GetOwnerWindow());
 }
 
 nsPIDOMWindowInner* DOMEventTargetHelper::GetWindowIfCurrent() const {

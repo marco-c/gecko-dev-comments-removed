@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_EventTarget_h_
 #define mozilla_dom_EventTarget_h_
 
@@ -223,12 +221,6 @@ class EventTarget : public nsISupports, public nsWrapperCache {
 
   
   virtual void EventListenerRemoved(nsAtom* aType) {}
-
-  
-  
-  
-  Nullable<WindowProxyHolder> GetOwnerGlobalForBindings();
-  virtual nsPIDOMWindowOuter* GetOwnerGlobalForBindingsInternal() = 0;
 
   
   

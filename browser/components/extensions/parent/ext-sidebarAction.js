@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 
 var { ExtensionParent } = ChromeUtils.importESModule(
@@ -54,11 +52,10 @@ this.sidebarAction = class extends ExtensionAPI {
     this.globals = Object.create(this.defaults);
 
     this.tabContext = new TabContext(target => {
-      let window = target.ownerGlobal;
-      if (target === window) {
+      if (ChromeUtils.getClassName(target) == "Window") {
         return this.globals;
       }
-      return this.tabContext.get(window);
+      return this.tabContext.get(target.documentGlobal);
     });
 
     
@@ -127,7 +124,7 @@ this.sidebarAction = class extends ExtensionAPI {
   build() {
     
     this.tabContext.on("tab-select", (evt, tab) => {
-      this.updateWindow(tab.ownerGlobal);
+      this.updateWindow(tab.documentGlobal);
     });
 
     let install = this.extension.startupReason === "ADDON_INSTALL";
@@ -243,9 +240,10 @@ this.sidebarAction = class extends ExtensionAPI {
 
   updateOnChange(target) {
     if (target) {
-      let window = target.ownerGlobal;
-      if (target === window || target.selected) {
-        this.updateWindow(window);
+      if (ChromeUtils.getClassName(target) == "Window") {
+        this.updateWindow(target);
+      } else if (target.selected) {
+        this.updateWindow(target.documentGlobal);
       }
     } else {
       for (let window of windowTracker.browserWindows()) {
@@ -279,7 +277,7 @@ this.sidebarAction = class extends ExtensionAPI {
     let target = null;
     if (tabId != null) {
       target = tabTracker.getTab(tabId);
-      if (!this.extension.canAccessWindow(target.ownerGlobal)) {
+      if (!this.extension.canAccessWindow(target.documentGlobal)) {
         throw new ExtensionError(`Invalid tab ID: ${tabId}`);
       }
     } else if (windowId != null) {

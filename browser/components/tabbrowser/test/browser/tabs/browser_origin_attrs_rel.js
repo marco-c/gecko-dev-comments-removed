@@ -44,7 +44,7 @@ function handleEventLocal(aEvent) {
     return;
   }
   
-  if ("gBrowser" in aEvent.target.ownerGlobal) {
+  if ("gBrowser" in aEvent.target.documentGlobal) {
     xulFrameLoaderCreatedCounter.numCalledSoFar++;
   }
 }
@@ -223,7 +223,7 @@ async function clickOnLink(aBrowser, aCurrURI, aLinkInfo, aIdxForRemoteTypes) {
 
   
   initXulFrameLoaderCreatedCounter(xulFrameLoaderCreatedCounter);
-  aBrowser.ownerGlobal.gBrowser.addEventListener(
+  aBrowser.documentGlobal.gBrowser.addEventListener(
     "XULFrameLoaderCreated",
     handleEventLocal
   );
@@ -234,7 +234,7 @@ async function clickOnLink(aBrowser, aCurrURI, aLinkInfo, aIdxForRemoteTypes) {
   
   info(`Clicking on link, expected remote type= ${expectedRemoteType}`);
   let newTabLoaded = BrowserTestUtils.waitForNewTab(
-    aBrowser.ownerGlobal.gBrowser,
+    aBrowser.documentGlobal.gBrowser,
     aLinkInfo.uri,
     true
   );
@@ -273,7 +273,7 @@ async function clickOnLink(aBrowser, aCurrURI, aLinkInfo, aIdxForRemoteTypes) {
   );
 
   
-  aBrowser.ownerGlobal.gBrowser.removeEventListener(
+  aBrowser.documentGlobal.gBrowser.removeEventListener(
     "XULFrameLoaderCreated",
     handleEventLocal
   );

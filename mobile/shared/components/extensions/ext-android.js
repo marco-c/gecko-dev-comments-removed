@@ -88,7 +88,7 @@ class BrowserProgressListener {
   }
 
   onLocationChange(webProgress, request, locationURI, flags) {
-    const window = this.browser.ownerGlobal;
+    const window = this.browser.documentGlobal;
     
     
     if (!windowTracker.isBrowserWindow(window)) {
@@ -258,7 +258,7 @@ class TabTracker extends TabTrackerBase {
   }
 
   getBrowserData(browser) {
-    const window = browser.ownerGlobal;
+    const window = browser.documentGlobal;
     const tab = window?.tab;
     if (!tab) {
       return {
@@ -402,7 +402,7 @@ class Tab extends TabBase {
   }
 
   get window() {
-    return this.browser.ownerGlobal;
+    return this.browser.documentGlobal;
   }
 
   get windowId() {
@@ -460,7 +460,7 @@ class TabContext extends EventEmitter {
       
       return;
     }
-    const { tab } = browser.ownerGlobal;
+    const { tab } = browser.documentGlobal;
     
     const fromBrowse = !(
       flags & Ci.nsIWebProgressListener.LOCATION_CHANGE_SAME_DOCUMENT
@@ -630,7 +630,7 @@ extensions.on("startup", (type, extension) => {
 
 extensions.on("page-shutdown", (type, context) => {
   if (context.viewType == "tab") {
-    const window = context.xulBrowser.ownerGlobal;
+    const window = context.xulBrowser.documentGlobal;
     if (!windowTracker.isBrowserWindow(window)) {
       
       
@@ -666,7 +666,7 @@ global.openOptionsPage = async extension => {
       triggeringPrincipal: extension.principal,
     });
 
-    const newWindow = browser.ownerGlobal;
+    const newWindow = browser.documentGlobal;
     mobileWindowTracker.setTabActive(newWindow, true);
     return;
   }

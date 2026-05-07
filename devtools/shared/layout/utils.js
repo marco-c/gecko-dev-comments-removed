@@ -428,7 +428,8 @@ exports.isNodeConnected = isNodeConnected;
 
 function isTemplateElement(node) {
   return (
-    node.ownerGlobal && node.ownerGlobal.HTMLTemplateElement.isInstance(node)
+    node.documentGlobal &&
+    node.documentGlobal.HTMLTemplateElement.isInstance(node)
   );
 }
 exports.isTemplateElement = isTemplateElement;
@@ -651,7 +652,7 @@ function getUntransformedQuad(node, region = "border") {
   
   const matrix = node.getTransformToViewport();
   const inverse = matrix.inverse();
-  const win = node.ownerGlobal;
+  const win = node.documentGlobal;
 
   
   const quads = getAdjustedQuads(win, node, region, {

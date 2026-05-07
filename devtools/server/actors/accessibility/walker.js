@@ -1100,7 +1100,7 @@ class AccessibleWalkerActor extends Actor {
 
   _findAndAttachAccessible(event) {
     const target = event.originalTarget || event.target;
-    const win = target.ownerGlobal;
+    const win = target.documentGlobal;
     
     const docAcc = this.getRawAccessibleFor(win.document);
     

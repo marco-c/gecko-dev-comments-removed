@@ -18,7 +18,7 @@ function handleEvent(aEvent) {
     return;
   }
   
-  if ("gBrowser" in aEvent.target.ownerGlobal) {
+  if ("gBrowser" in aEvent.target.documentGlobal) {
     xulFrameLoaderCreatedListenerInfo.numCalledSoFar++;
   }
 }

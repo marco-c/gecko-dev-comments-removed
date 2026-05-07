@@ -453,7 +453,7 @@ add_task(async function testTrackingProtectionIcon() {
   let TPIcon = document.getElementById("tracking-protection-icon");
   
   is(
-    gBrowser.ownerGlobal
+    gBrowser.documentGlobal
       .getComputedStyle(TPIcon)
       .getPropertyValue("list-style-image"),
     `url("chrome://browser/skin/tracking-protection.svg")`,
@@ -472,7 +472,7 @@ add_task(async function testTrackingProtectionIcon() {
   
   
   is(
-    gBrowser.ownerGlobal
+    gBrowser.documentGlobal
       .getComputedStyle(TPIcon)
       .getPropertyValue("list-style-image"),
     `url("chrome://browser/skin/tracking-protection-disabled.svg")`,

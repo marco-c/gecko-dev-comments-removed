@@ -2,7 +2,6 @@
 
 
 
-
 ChromeUtils.defineESModuleGetters(this, {
   PlacesTransactions: "resource://gre/modules/PlacesTransactions.sys.mjs",
   PlacesUIUtils: "moz-src:///browser/components/places/PlacesUIUtils.sys.mjs",
@@ -1666,7 +1665,7 @@ var PlacesControllerDragHelper = {
       } else if (
         XULElement.isInstance(data) &&
         data.localName == "tab" &&
-        data.ownerGlobal.isChromeWindow
+        data.documentGlobal.isChromeWindow
       ) {
         let uri = data.linkedBrowser.currentURI;
         let spec = uri ? uri.spec : "about:blank";
@@ -1678,7 +1677,7 @@ var PlacesControllerDragHelper = {
       } else if (
         XULElement.isInstance(data) &&
         data.localName == "tab-split-view-wrapper" &&
-        data.ownerGlobal.isChromeWindow
+        data.documentGlobal.isChromeWindow
       ) {
         
         

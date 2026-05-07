@@ -1,5 +1,3 @@
-
-
 "use strict";
 
 XPCOMUtils.defineLazyPreferenceGetter(
@@ -159,7 +157,7 @@ function openContextMenu(menuId, targetId) {
 }
 
 function waitForElementShown(element) {
-  let win = element.ownerGlobal;
+  let win = element.documentGlobal;
   let dwu = win.windowUtils;
   return BrowserTestUtils.waitForCondition(() => {
     info("Waiting for overflow button to have non-0 size");

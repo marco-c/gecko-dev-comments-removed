@@ -71,6 +71,7 @@ exports.STATUS = {
 
 
 exports.CSSAtRuleClassNameType = {
+  CSSAppearanceBaseRule: "appearance-base",
   CSSContainerRule: "container",
   CSSCounterStyleRule: "counter-style",
   CSSDocumentRule: "document",
@@ -680,7 +681,7 @@ const findCssSelector = function (ele) {
     return "";
   }
 
-  const cssEscape = ele.ownerGlobal.CSS.escape;
+  const cssEscape = ele.documentGlobal.CSS.escape;
 
   
   if (
@@ -751,7 +752,7 @@ function getCssPath(ele) {
     return "";
   }
 
-  const nodeGlobal = ele.ownerGlobal.Node;
+  const nodeGlobal = ele.documentGlobal.Node;
 
   const getElementSelector = element => {
     if (!element.localName) {
@@ -813,7 +814,7 @@ function getXPath(ele) {
   
   const parts = [];
 
-  const nodeGlobal = ele.ownerGlobal.Node;
+  const nodeGlobal = ele.documentGlobal.Node;
   
   while (ele && ele.nodeType === nodeGlobal.ELEMENT_NODE) {
     let nbOfPreviousSiblings = 0;

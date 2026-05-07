@@ -1,4 +1,3 @@
-/* vim: set ts=2 sw=2 sts=2 et tw=80: */
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -2450,14 +2449,14 @@ export class _ASRouter {
       }
       if (typeof trigger.context === "object") {
         trigger.context.onThirdPartyPage = isThirdPartyPage(
-          browser.ownerGlobal.gBrowser?.currentURI
+          browser.documentGlobal.gBrowser?.currentURI
         );
         trigger.context.isAIWindow = !!lazy.AIWindow?.isAIWindowActive?.(
-          browser.ownerGlobal
+          browser.documentGlobal
         );
         trigger.context.browserIsSelected =
           trigger.context.browserIsSelected ||
-          browser === browser.ownerGlobal.gBrowser?.selectedBrowser;
+          browser === browser.documentGlobal.gBrowser?.selectedBrowser;
       }
     }
 
@@ -2520,7 +2519,7 @@ export class _ASRouter {
       (
         resolveOnContentBrowserCreated // wrap this in a promise to give back the right browser
       ) =>
-        browser.ownerGlobal.openTrustedLinkIn(
+        browser.documentGlobal.openTrustedLinkIn(
           "about:privatebrowsing?debug",
           "window",
           {

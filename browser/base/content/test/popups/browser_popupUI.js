@@ -146,7 +146,7 @@ add_task(async function titlebar_buttons_visibility() {
 
 
 function isVisible(element) {
-  const style = element.ownerGlobal.getComputedStyle(element);
+  const style = element.documentGlobal.getComputedStyle(element);
   return style.visibility == "visible";
 }
 

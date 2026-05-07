@@ -71,6 +71,19 @@ loader.lazyRequireGetter(
 
 const XHTML_NS = "http://www.w3.org/1999/xhtml";
 
+const lazy = {};
+
+const { XPCOMUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/XPCOMUtils.sys.mjs",
+  { global: "contextual" }
+);
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "layoutCssAttrEnabled",
+  "layout.css.attr.enabled",
+  false
+);
+
 
 
 
@@ -271,7 +284,7 @@ class StyleRuleActor extends Actor {
         
         index: data.selector,
         
-        isFramed: this.rawNode.ownerGlobal !== this.pageStyle.ownerWindow,
+        isFramed: this.rawNode.documentGlobal !== this.pageStyle.ownerWindow,
       };
 
       const nodeActor = this.pageStyle.walker.getNode(this.rawNode);
@@ -351,7 +364,7 @@ class StyleRuleActor extends Actor {
     if (selectedElement.nodeName !== nodeName) {
       const walker = new DocumentWalker(
         selectedElement,
-        selectedElement.ownerGlobal
+        selectedElement.documentGlobal
       );
 
       for (let next = walker.firstChild(); next; next = walker.nextSibling()) {
@@ -372,7 +385,7 @@ class StyleRuleActor extends Actor {
 
     const { selectedElement } = this.pageStyle;
 
-    return selectedElement.ownerGlobal.getComputedStyle(
+    return selectedElement.documentGlobal.getComputedStyle(
       selectedElement,
       
       
@@ -1450,17 +1463,19 @@ class StyleRuleActor extends Actor {
       nodeActor.rawNode,
       conditionIndex
     );
+    const condition = ancestorRule.rawRule.conditions[conditionIndex];
 
     
     
     if (!containerEl) {
       return {
         node: null,
-        containerName: ancestorRule.rawRule.conditions[conditionIndex]?.name,
+        containerName: condition?.name,
       };
     }
 
     const computedStyle = CssLogic.getComputedStyle(containerEl);
+
     return {
       node: this.pageStyle.walker.getNode(containerEl),
       containerType: computedStyle.containerType,
@@ -1468,9 +1483,136 @@ class StyleRuleActor extends Actor {
         computedStyle.containerName !== "none"
           ? computedStyle.containerName
           : null,
-      inlineSize: computedStyle.inlineSize,
-      blockSize: computedStyle.blockSize,
+      queryFeatures: this.#getFeaturesForContainerQueryConditions({
+        condition,
+        computedStyle,
+        containerEl,
+      }),
     };
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  #getFeaturesForContainerQueryConditions({
+    condition,
+    computedStyle,
+    containerEl,
+  }) {
+    const queryFeatures = [];
+    
+    
+    const addQueryFeature = (type, name, value) => {
+      if (
+        queryFeatures.some(
+          
+          
+          
+          feature => feature.name === name && feature.type === type
+        )
+      ) {
+        return;
+      }
+      queryFeatures.push({ type, name, value });
+    };
+    const parser = new InspectorCSSParser(condition.query);
+    let token;
+    const stack = [];
+    while ((token = parser.nextToken())) {
+      const lastStack = stack.at(-1);
+      if (token.tokenType === "Function") {
+        stack.push({
+          tokenType: token.tokenType,
+          functionName: token.value.toLowerCase(),
+        });
+        continue;
+      }
+      if (token.tokenType === "ParenthesisBlock") {
+        stack.push({ tokenType: token.tokenType });
+        continue;
+      }
+      if (token.tokenType === "CloseParenthesis") {
+        stack.pop();
+        continue;
+      }
+
+      if (token.tokenType === "Ident") {
+        let ident = token.text;
+        if (ident === "and" || ident === "or" || ident === "not") {
+          continue;
+        }
+
+        let propertyValue = computedStyle.getPropertyValue(ident);
+
+        
+        
+        if (
+          lastStack.tokenType === "Function" &&
+          (lastStack.functionName === "style" ||
+            lastStack.functionName === "var") &&
+          ident.startsWith("--")
+        ) {
+          
+          if (!lastStack.varNameFound) {
+            
+            
+            addQueryFeature(
+              "var",
+              ident,
+              
+              
+              computedStyle.hasLonghandProperty(ident) ? propertyValue : null
+            );
+            lastStack.varNameFound = true;
+          }
+          continue;
+        }
+        if (
+          lastStack.tokenType === "Function" &&
+          lastStack.functionName === "attr" &&
+          
+          
+          
+          lazy.layoutCssAttrEnabled
+        ) {
+          
+          if (!lastStack.attrNameFound) {
+            
+            
+            addQueryFeature("attr", ident, containerEl.getAttribute(ident));
+            lastStack.attrNameFound = true;
+          }
+          continue;
+        }
+        if (lastStack.tokenType === "ParenthesisBlock") {
+          
+          
+          if (!propertyValue) {
+            
+            ident = ident.replace(/(min|max)-/, "");
+            propertyValue = computedStyle.getPropertyValue(ident);
+          }
+
+          
+          if (!propertyValue) {
+            continue;
+          }
+
+          
+          
+          addQueryFeature("size", ident, propertyValue);
+        }
+      }
+    }
+
+    return queryFeatures;
   }
 
   

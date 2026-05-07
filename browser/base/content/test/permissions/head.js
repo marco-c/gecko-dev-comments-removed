@@ -9,7 +9,7 @@ SpecialPowers.addTaskImport(
 
 function openPermissionPopup() {
   let promise = BrowserTestUtils.waitForEvent(
-    gBrowser.ownerGlobal,
+    gBrowser.documentGlobal,
     "popupshown",
     true,
     event => event.target == gPermissionPanel._permissionPopup
@@ -25,4 +25,41 @@ function closePermissionPopup() {
   );
   gPermissionPanel._permissionPopup.hidePopup();
   return promise;
+}
+
+
+
+
+async function queryPermissionInTab(browser, permName) {
+  return SpecialPowers.spawn(browser, [permName], async name => {
+    let status = await content.navigator.permissions.query({ name });
+    return status.state;
+  });
+}
+
+
+
+
+async function waitForPermissionState(browser, permName, expectedState) {
+  await BrowserTestUtils.waitForCondition(
+    () =>
+      queryPermissionInTab(browser, permName).then(s => s === expectedState),
+    `Waiting for ${permName} to become "${expectedState}"`
+  );
+}
+
+
+
+
+async function installOnChangeListener(browser, permName) {
+  await SpecialPowers.spawn(browser, [permName], async name => {
+    let status = await content.navigator.permissions.query({ name });
+    content._permChangePromise = new Promise(resolve => {
+      status.onchange = () => resolve(status.state);
+    });
+  });
+}
+
+async function waitForPermissionChange(browser) {
+  return SpecialPowers.spawn(browser, [], () => content._permChangePromise);
 }

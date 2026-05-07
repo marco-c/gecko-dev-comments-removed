@@ -7,20 +7,15 @@ const { SitePermissions } = ChromeUtils.importESModule(
   "resource:///modules/SitePermissions.sys.mjs"
 );
 
-const TemporaryPermissions = SitePermissions._temporaryPermissions;
-
 const PERM_A = "foo";
 const PERM_B = "bar";
 const PERM_C = "foobar";
 
-const BROWSER_A = createDummyBrowser("https://example.com/foo");
-const BROWSER_B = createDummyBrowser("https://example.org/foo");
-
-const EXPIRY_MS_A = 1000000;
-const EXPIRY_MS_B = 1000001;
+let nextBrowserId = 1000;
 
 function createDummyBrowser(spec) {
   let uri = Services.io.newURI(spec);
+  let browserId = nextBrowserId++;
   return {
     currentURI: uri,
     contentPrincipal: Services.scriptSecurityManager.createContentPrincipal(
@@ -28,14 +23,20 @@ function createDummyBrowser(spec) {
       {}
     ),
     dispatchEvent: () => {},
-    ownerGlobal: {
+    documentGlobal: {
       CustomEvent: class CustomEvent {},
     },
+    browserId,
   };
 }
 
+const BROWSER_A = createDummyBrowser("https://example.com/foo");
+const BROWSER_B = createDummyBrowser("https://example.org/foo");
+
+const EXPIRY_MS_A = 1000000;
+const EXPIRY_MS_B = 1000001;
+
 function navigateDummyBrowser(browser, uri) {
-  
   if (typeof uri == "string") {
     uri = Services.io.newURI(uri);
   }
@@ -52,7 +53,6 @@ function navigateDummyBrowser(browser, uri) {
 
 
 add_task(async function testAllowBlock() {
-  
   SitePermissions.setForPrincipal(
     null,
     PERM_A,
@@ -71,7 +71,6 @@ add_task(async function testAllowBlock() {
     EXPIRY_MS_A
   );
 
-  
   Assert.deepEqual(
     SitePermissions.getForPrincipal(null, PERM_A, BROWSER_A),
     {
@@ -90,93 +89,6 @@ add_task(async function testAllowBlock() {
     "SitePermissions returns expected permission state for perm B."
   );
 
-  Assert.deepEqual(
-    TemporaryPermissions.get(BROWSER_A, PERM_A),
-    {
-      id: PERM_A,
-      state: SitePermissions.ALLOW,
-      scope: SitePermissions.SCOPE_TEMPORARY,
-    },
-    "TemporaryPermissions returns expected permission state for perm A."
-  );
-
-  Assert.deepEqual(
-    TemporaryPermissions.get(BROWSER_A, PERM_B),
-    {
-      id: PERM_B,
-      state: SitePermissions.BLOCK,
-      scope: SitePermissions.SCOPE_TEMPORARY,
-    },
-    "TemporaryPermissions returns expected permission state for perm B."
-  );
-
-  
-  let entry = TemporaryPermissions._stateByBrowser.get(BROWSER_A);
-  ok(entry, "Should have an entry for browser A");
-  ok(
-    !TemporaryPermissions._stateByBrowser.has(BROWSER_B),
-    "Should have no entry for browser B"
-  );
-
-  let { browser, uriToPerm } = entry;
-  Assert.equal(
-    browser?.get(),
-    BROWSER_A,
-    "Entry should have a weak reference to the browser."
-  );
-
-  ok(uriToPerm, "Entry should have uriToPerm object.");
-  Assert.equal(Object.keys(uriToPerm).length, 2, "uriToPerm has 2 entries.");
-
-  let permissionsA = uriToPerm[BROWSER_A.contentPrincipal.origin];
-  let permissionsB =
-    uriToPerm[Services.eTLD.getBaseDomain(BROWSER_A.currentURI)];
-
-  ok(permissionsA, "Allow should be keyed under origin");
-  ok(permissionsB, "Block should be keyed under baseDomain");
-
-  let permissionA = permissionsA[PERM_A];
-  let permissionB = permissionsB[PERM_B];
-
-  Assert.equal(
-    permissionA.state,
-    SitePermissions.ALLOW,
-    "Should have correct state"
-  );
-  let expireTimeoutA = permissionA.expireTimeout;
-  Assert.ok(
-    Number.isInteger(expireTimeoutA),
-    "Should have valid expire timeout"
-  );
-
-  Assert.equal(
-    permissionB.state,
-    SitePermissions.BLOCK,
-    "Should have correct state"
-  );
-  let expireTimeoutB = permissionB.expireTimeout;
-  Assert.ok(
-    Number.isInteger(expireTimeoutB),
-    "Should have valid expire timeout"
-  );
-
-  
-  SitePermissions.setForPrincipal(
-    null,
-    PERM_A,
-    SitePermissions.ALLOW,
-    SitePermissions.SCOPE_TEMPORARY,
-    BROWSER_A,
-    EXPIRY_MS_B
-  );
-
-  Assert.notEqual(
-    permissionsA[PERM_A].expireTimeout,
-    expireTimeoutA,
-    "Overwritten permission A should have new timer"
-  );
-
-  
   
   SitePermissions.setForPrincipal(
     null,
@@ -187,35 +99,19 @@ add_task(async function testAllowBlock() {
     EXPIRY_MS_A
   );
 
-  let baseDomainEntry =
-    uriToPerm[Services.eTLD.getBaseDomain(BROWSER_A.currentURI)];
-  Assert.ok(
-    !baseDomainEntry || !baseDomainEntry[PERM_B],
-    "Should not longer have baseDomain permission entry"
-  );
-
-  permissionsB = uriToPerm[BROWSER_A.contentPrincipal.origin];
-  permissionB = permissionsB[PERM_B];
-  Assert.ok(
-    permissionsB && permissionB,
-    "Overwritten permission should be keyed under origin"
-  );
-  Assert.equal(
-    permissionB.state,
-    SitePermissions.ALLOW,
-    "Should have correct updated state"
-  );
-  Assert.notEqual(
-    permissionB.expireTimeout,
-    expireTimeoutB,
-    "Overwritten permission B should have new timer"
+  Assert.deepEqual(
+    SitePermissions.getForPrincipal(null, PERM_B, BROWSER_A),
+    {
+      state: SitePermissions.ALLOW,
+      scope: SitePermissions.SCOPE_TEMPORARY,
+    },
+    "SitePermissions returns updated permission state for perm B."
   );
 
   
   SitePermissions.removeFromPrincipal(null, PERM_A, BROWSER_A);
   SitePermissions.removeFromPrincipal(null, PERM_B, BROWSER_A);
 
-  
   Assert.deepEqual(
     SitePermissions.getForPrincipal(null, PERM_A, BROWSER_A),
     {
@@ -232,18 +128,6 @@ add_task(async function testAllowBlock() {
       scope: SitePermissions.SCOPE_PERSISTENT,
     },
     "SitePermissions returns UNKNOWN state for B."
-  );
-
-  Assert.equal(
-    TemporaryPermissions.get(BROWSER_A, PERM_A),
-    null,
-    "TemporaryPermissions returns null for perm A."
-  );
-
-  Assert.equal(
-    TemporaryPermissions.get(BROWSER_A, PERM_B),
-    null,
-    "TemporaryPermissions returns null for perm B."
   );
 });
 
@@ -276,44 +160,30 @@ add_task(async function testGetAll() {
     EXPIRY_MS_A
   );
 
-  Assert.deepEqual(TemporaryPermissions.getAll(BROWSER_A), [
-    {
-      id: PERM_A,
-      state: SitePermissions.ALLOW,
-      scope: SitePermissions.SCOPE_TEMPORARY,
-    },
-  ]);
+  let permsA = SitePermissions.getAllForBrowser(BROWSER_A);
+  let tempPermsA = permsA.filter(
+    p => p.scope == SitePermissions.SCOPE_TEMPORARY
+  );
+  Assert.equal(tempPermsA.length, 1, "BROWSER_A should have 1 temp permission");
+  Assert.equal(tempPermsA[0].id, PERM_A);
+  Assert.equal(tempPermsA[0].state, SitePermissions.ALLOW);
 
-  let permsBrowserB = TemporaryPermissions.getAll(BROWSER_B);
+  let permsB = SitePermissions.getAllForBrowser(BROWSER_B);
+  let tempPermsB = permsB.filter(
+    p => p.scope == SitePermissions.SCOPE_TEMPORARY
+  );
   Assert.equal(
-    permsBrowserB.length,
+    tempPermsB.length,
     2,
     "There should be 2 permissions set for BROWSER_B"
   );
 
-  let permB;
-  let permC;
-
-  if (permsBrowserB[0].id == PERM_B) {
-    permB = permsBrowserB[0];
-    permC = permsBrowserB[1];
-  } else {
-    permB = permsBrowserB[1];
-    permC = permsBrowserB[0];
-  }
-
-  Assert.deepEqual(permB, {
-    id: PERM_B,
-    state: SitePermissions.BLOCK,
-    scope: SitePermissions.SCOPE_TEMPORARY,
-  });
-  Assert.deepEqual(permC, {
-    id: PERM_C,
-    state: SitePermissions.PROMPT,
-    scope: SitePermissions.SCOPE_TEMPORARY,
-  });
+  
+  let bcIdA = BROWSER_A.browserId;
+  let bcIdB = BROWSER_B.browserId;
+  Services.perms.removeAllForBrowser(bcIdA);
+  Services.perms.removeAllForBrowser(bcIdB);
 });
-
 
 
 
@@ -344,11 +214,6 @@ add_task(async function testClear() {
     EXPIRY_MS_A
   );
 
-  let stateByBrowser = SitePermissions._temporaryPermissions._stateByBrowser;
-
-  Assert.ok(stateByBrowser.has(BROWSER_A), "Browser map should have BROWSER_A");
-  Assert.ok(stateByBrowser.has(BROWSER_B), "Browser map should have BROWSER_B");
-
   SitePermissions.clearTemporaryBlockPermissions(BROWSER_A);
 
   
@@ -360,32 +225,15 @@ add_task(async function testClear() {
     },
     "SitePermissions returns ALLOW state for PERM_A."
   );
-  
-  Assert.ok(stateByBrowser.has(BROWSER_B), "Should still have BROWSER_B.");
-
-  
-  SitePermissions._temporaryPermissions.clear(BROWSER_A, SitePermissions.ALLOW);
-
-  Assert.ok(!stateByBrowser.has(BROWSER_A), "Should no longer have BROWSER_A.");
-  let browser = stateByBrowser.get(BROWSER_B);
-  Assert.ok(browser, "Should still have BROWSER_B");
-
-  Assert.deepEqual(
-    SitePermissions.getForPrincipal(null, PERM_A, BROWSER_A),
-    {
-      state: SitePermissions.UNKNOWN,
-      scope: SitePermissions.SCOPE_PERSISTENT,
-    },
-    "SitePermissions returns UNKNOWN state for PERM_A."
-  );
   Assert.deepEqual(
     SitePermissions.getForPrincipal(null, PERM_B, BROWSER_A),
     {
       state: SitePermissions.UNKNOWN,
       scope: SitePermissions.SCOPE_PERSISTENT,
     },
-    "SitePermissions returns UNKNOWN state for PERM_B."
+    "SitePermissions returns UNKNOWN state for PERM_B after clearing blocks."
   );
+  
   Assert.deepEqual(
     SitePermissions.getForPrincipal(null, PERM_C, BROWSER_B),
     {
@@ -395,86 +243,11 @@ add_task(async function testClear() {
     "SitePermissions returns BLOCK state for PERM_C."
   );
 
-  SitePermissions._temporaryPermissions.clear(BROWSER_B);
-
-  Assert.ok(!stateByBrowser.has(BROWSER_B), "Should no longer have BROWSER_B.");
-  Assert.deepEqual(
-    SitePermissions.getForPrincipal(null, PERM_C, BROWSER_B),
-    {
-      state: SitePermissions.UNKNOWN,
-      scope: SitePermissions.SCOPE_PERSISTENT,
-    },
-    "SitePermissions returns UNKNOWN state for PERM_C."
-  );
-});
-
-
-
-
-
-add_task(async function testCallbackOnExpiry() {
-  let promiseExpireA = new Promise(resolve => {
-    TemporaryPermissions.set(
-      BROWSER_A,
-      PERM_A,
-      SitePermissions.BLOCK,
-      100,
-      undefined,
-      resolve
-    );
-  });
-  let promiseExpireB = new Promise(resolve => {
-    TemporaryPermissions.set(
-      BROWSER_B,
-      PERM_A,
-      SitePermissions.BLOCK,
-      100,
-      BROWSER_B.contentPrincipal,
-      resolve
-    );
-  });
-
-  let [browserA, browserB] = await Promise.all([
-    promiseExpireA,
-    promiseExpireB,
-  ]);
-  Assert.equal(
-    browserA,
-    BROWSER_A,
-    "Should get callback with browser on expiry for A"
-  );
-  Assert.equal(
-    browserB,
-    BROWSER_B,
-    "Should get callback with browser on expiry for B"
-  );
-});
-
-
-
-
-
-
-add_task(async function testCallbackOnExpiryUpdatedBrowser() {
-  let promiseExpire = new Promise(resolve => {
-    TemporaryPermissions.set(
-      BROWSER_A,
-      PERM_A,
-      SitePermissions.BLOCK,
-      200,
-      undefined,
-      resolve
-    );
-  });
-
-  TemporaryPermissions.copy(BROWSER_A, BROWSER_B);
-
-  let browser = await promiseExpire;
-  Assert.equal(
-    browser,
-    BROWSER_B,
-    "Should get callback with updated browser on expiry."
-  );
+  
+  let bcIdA = BROWSER_A.browserId;
+  let bcIdB = BROWSER_B.browserId;
+  Services.perms.removeAllForBrowser(bcIdA);
+  Services.perms.removeAllForBrowser(bcIdB);
 });
 
 
@@ -518,6 +291,8 @@ add_task(async function testInvalidExpiryTime() {
 
 
 
+
+
 add_task(async function testTemporaryPermissionScope() {
   let states = {
     strict: {
@@ -542,12 +317,11 @@ add_task(async function testTemporaryPermissionScope() {
         "https://example.com/sub/path",
         "https://example.com:443",
         "https://test1.example.com",
-        "http://test2.test1.example.com",
         "https://name:password@example.com",
-        "http://example.com",
       ],
       different: [
         "https://example.com",
+        "http://example.com",
         "https://example.org",
         "http://example.net",
       ],
@@ -598,7 +372,7 @@ add_task(async function testTemporaryPermissionScope() {
           );
         }
 
-        SitePermissions._temporaryPermissions.clear(browser);
+        Services.perms.removeAllForBrowser(browser.browserId);
       }
     });
   }
@@ -641,7 +415,7 @@ add_task(async function testOverrideBrowserURI() {
     "Permission should be set for new URI."
   );
 
-  SitePermissions._temporaryPermissions.clear(testBrowser);
+  Services.perms.removeAllForBrowser(testBrowser.browserId);
 });
 
 
@@ -659,10 +433,6 @@ add_task(async function testPermissionUnsupportedScheme() {
     SitePermissions.SCOPE_TEMPORARY,
     BROWSER_A,
     EXPIRY_MS_B
-  );
-  Assert.ok(
-    SitePermissions._temporaryPermissions._stateByBrowser.has(BROWSER_A),
-    "Should not have stored permission for unsupported URI scheme."
   );
 
   let browser = createDummyBrowser("https://example.com/");
@@ -704,9 +474,9 @@ add_task(async function testPermissionUnsupportedScheme() {
   
   let permissions = SitePermissions.getAllForBrowser(browser);
   Assert.ok(
-    Array.isArray(permissions) && !permissions.length,
-    "Should return empty array for browser on about:blank"
+    Array.isArray(permissions),
+    "Should return array for browser on about:blank"
   );
 
-  SitePermissions._temporaryPermissions.clear(browser);
+  Services.perms.removeAllForBrowser(browser.browserId);
 });

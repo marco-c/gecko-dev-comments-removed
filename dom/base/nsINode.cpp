@@ -1560,14 +1560,19 @@ EventListenerManager* nsINode::GetExistingListenerManager() const {
 }
 
 Nullable<WindowProxyHolder> nsINode::GetDocumentGlobalForBindings() {
-  return OwnerDoc()->GetOwnerGlobalForBindings();
-}
-
-nsPIDOMWindowOuter* nsINode::GetOwnerGlobalForBindingsInternal() {
-  
-  
-  auto* window = static_cast<nsGlobalWindowInner*>(GetOwnerGlobal());
-  return window ? nsPIDOMWindowOuter::GetFromCurrentInner(window) : nullptr;
+  nsIGlobalObject* global = GetDocumentGlobal();
+  if (!global) {
+    return {};
+  }
+  auto* win = nsGlobalWindowInner::Cast(global->GetAsInnerWindow());
+  if (!win) {
+    return {};
+  }
+  auto* bc = win->GetBrowsingContext();
+  if (!bc) {
+    return {};
+  }
+  return WindowProxyHolder(bc);
 }
 
 nsIGlobalObject* nsINode::GetDocumentGlobal() const {

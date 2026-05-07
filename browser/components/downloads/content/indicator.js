@@ -22,8 +22,6 @@
 
 
 
-
-
 "use strict";
 
 
@@ -384,7 +382,7 @@ const DownloadsIndicatorView = {
       return;
     }
 
-    if (anchor.ownerGlobal.matchMedia("(prefers-reduced-motion)").matches) {
+    if (anchor.documentGlobal.matchMedia("(prefers-reduced-motion)").matches) {
       
       return;
     }

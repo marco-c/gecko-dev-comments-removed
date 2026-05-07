@@ -25,8 +25,6 @@
 
 
 
-
-
 const SORT_LOOKUP_TABLE = {
   title: { key: "TITLE", dir: "ASCENDING" },
   tags: { key: "TAGS", dir: "ASCENDING" },
@@ -230,7 +228,7 @@ function testSortByDir(aOrganizerWin, aPlaceContentTree, aUnsortFirst) {
 add_task(async function test() {
   await withLibraryWindow("BookmarksToolbar", async ({ right: tree }) => {
     isnot(tree, null, "sanity check: placeContent tree should exist");
-    let win = tree.ownerGlobal;
+    let win = tree.documentGlobal;
     
     testSortByColAndDir(win, tree, true);
     testSortByColAndDir(win, tree, false);

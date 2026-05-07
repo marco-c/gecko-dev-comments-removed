@@ -154,7 +154,7 @@ async function openPopupAndGetEngineButton(
   baseId,
   engineName
 ) {
-  const win = oneOffInstance.container.ownerGlobal;
+  const win = oneOffInstance.container.documentGlobal;
   
   win.gURLBar.blur();
   let shownPromise = promiseEvent(popup, "popupshown");
@@ -222,7 +222,7 @@ async function openPopupAndGetEngineButton(
 async function promiseClosePopup(popup) {
   
   let promise = promiseEvent(popup, "popuphidden");
-  EventUtils.synthesizeKey("KEY_Escape", {}, popup.ownerGlobal);
+  EventUtils.synthesizeKey("KEY_Escape", {}, popup.documentGlobal);
   await promise;
 
   
@@ -231,6 +231,6 @@ async function promiseClosePopup(popup) {
     target: popup,
     offsetX: 0,
     offsetY: 0,
-    win: popup.ownerGlobal,
+    win: popup.documentGlobal,
   });
 }

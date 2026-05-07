@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_DOMEventTargetHelper_h_
 #define mozilla_DOMEventTargetHelper_h_
 
@@ -94,8 +92,6 @@ class DOMEventTargetHelper : public dom::EventTarget,
   bool HasListenersFor(const nsAString& aType) const;
 
   bool HasListenersFor(nsAtom* aTypeWithOn) const;
-
-  nsPIDOMWindowOuter* GetOwnerGlobalForBindingsInternal() override;
 
   
   

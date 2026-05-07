@@ -39,6 +39,37 @@ export class SidebarBookmarkList extends SidebarTabList {
     this.getItemHeight = (item, h) => this.#itemHeightGetter(item, h);
   }
 
+  #containingDetails = null;
+  #onContainingDetailsToggle = () => {
+    if (this.#containingDetails?.open) {
+      // The inner <virtual-list> was first observed by its IntersectionObserver
+      // while the containing <details> had no layout box, so it never flipped
+      // its `isVisible` flag and skipped rendering rows. Re-observe now that
+      // the details has opened and a layout box exists.
+      this.shadowRoot
+        ?.querySelector("virtual-list")
+        ?.triggerIntersectionObserver();
+    }
+  };
+
+  connectedCallback() {
+    super.connectedCallback();
+    this.#containingDetails = this.closest("details");
+    this.#containingDetails?.addEventListener(
+      "toggle",
+      this.#onContainingDetailsToggle
+    );
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    this.#containingDetails?.removeEventListener(
+      "toggle",
+      this.#onContainingDetailsToggle
+    );
+    this.#containingDetails = null;
+  }
+
   willUpdate(changes) {
     super.willUpdate(changes);
     if (changes.has("expandedFolderGuids")) {
@@ -686,7 +717,7 @@ export class SidebarBookmarkList extends SidebarTabList {
       if (
         XULElement.isInstance(data) &&
         data.localName === "tab" &&
-        data.ownerGlobal.isChromeWindow
+        data.documentGlobal.isChromeWindow
       ) {
         const uri = data.linkedBrowser.currentURI;
         nodes.push({
@@ -697,7 +728,7 @@ export class SidebarBookmarkList extends SidebarTabList {
       } else if (
         XULElement.isInstance(data) &&
         data.localName === "tab-split-view-wrapper" &&
-        data.ownerGlobal.isChromeWindow
+        data.documentGlobal.isChromeWindow
       ) {
         for (const tab of data.tabs) {
           nodes.push({

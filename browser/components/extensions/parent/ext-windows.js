@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 
 ChromeUtils.defineESModuleGetters(this, {
@@ -273,7 +271,7 @@ this.windows = class extends ExtensionAPIPersistent {
             }
 
             let tab = tabTracker.getTab(createData.tabId);
-            if (!context.canAccessWindow(tab.ownerGlobal)) {
+            if (!context.canAccessWindow(tab.documentGlobal)) {
               throw new ExtensionError(`Invalid tab ID: ${createData.tabId}`);
             }
             

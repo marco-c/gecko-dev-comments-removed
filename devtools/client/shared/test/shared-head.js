@@ -159,6 +159,32 @@ if (DEBUG_TRACE_LINE) {
   });
 }
 
+
+
+
+
+
+
+
+
+
+function startTracing(options = {}) {
+  const { JSTracer } = ChromeUtils.importESModule(
+    "resource://devtools/server/tracer/tracer.sys.mjs",
+    { global: "devtools" }
+  );
+  
+  
+  JSTracer.startTracing({
+    traceAllGlobals: true,
+    ...options,
+  });
+
+  return function () {
+    JSTracer.stopTracing();
+  };
+}
+
 const { loader, require } = ChromeUtils.importESModule(
   "resource://devtools/shared/loader/Loader.sys.mjs"
 );
@@ -1250,27 +1276,56 @@ function waitForNEvents(target, eventName, numTimes, useCapture = false) {
 
 
 
+async function waitForBrowserLoaded(browser) {
+  return waitFor(
+    () =>
+      !browser.webProgress.isLoadingDocument &&
+      browser.currentURI?.spec &&
+      browser.currentURI?.spec !== "about:blank",
+    {
+      toString() {
+        return (
+          `Browser element did not load as expected. ` +
+          `isLoadingDocument=${browser.webProgress.isLoadingDocument} and ` +
+          `URI.spec=${browser.currentURI?.spec}.`
+        );
+      },
+    }
+  );
+}
 
 
-function waitForDOM(target, selector, expectedLength = 1) {
-  return new Promise(resolve => {
-    const observer = new MutationObserver(mutations => {
-      mutations.forEach(mutation => {
-        const elements = mutation.target.querySelectorAll(selector);
 
-        if (elements.length === expectedLength) {
-          observer.disconnect();
-          resolve(elements);
-        }
-      });
-    });
 
-    observer.observe(target, {
-      attributes: true,
-      childList: true,
-      subtree: true,
-    });
-  });
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function waitForDOM(target, selector, expectedLength = 1) {
+  info(`Wait for ${expectedLength} elements to match selector "${selector}"`);
+  await waitFor(
+    () => target.querySelectorAll(selector).length === expectedLength,
+    {
+      toString() {
+        return (
+          `Expected ${expectedLength} elements for selector: "${selector}", ` +
+          `got ${target.querySelectorAll(selector).length}.`
+        );
+      },
+    }
+  );
+
+  info(`Successfully found ${expectedLength} elements matching "${selector}"`);
+  return target.querySelectorAll(selector);
 }
 
 
@@ -2137,7 +2192,7 @@ async function getFluentStringHelper(resourceIds) {
 async function openRDM(tab, { waitForDeviceList = true } = {}) {
   info("Opening responsive design mode");
   const manager = ResponsiveUIManager;
-  const ui = await manager.openIfNeeded(tab.ownerGlobal, tab, {
+  const ui = await manager.openIfNeeded(tab.documentGlobal, tab, {
     trigger: "test",
   });
   info("Responsive design mode opened");
@@ -2170,7 +2225,7 @@ async function waitForRDMLoaded(ui, { waitForDeviceList = true } = {}) {
 async function closeRDM(tab, options) {
   info("Closing responsive design mode");
   const manager = ResponsiveUIManager;
-  await manager.closeIfNeeded(tab.ownerGlobal, tab, options);
+  await manager.closeIfNeeded(tab.documentGlobal, tab, options);
   info("Responsive design mode closed");
 }
 

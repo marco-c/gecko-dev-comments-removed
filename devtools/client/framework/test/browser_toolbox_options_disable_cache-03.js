@@ -18,8 +18,6 @@ const TEST_PAGE = `<html>
 add_task(async function () {
   info("Setup preferences for testing");
   
-  await pushPref("network.http.rcwn.enabled", false);
-  
   await pushPref("devtools.cache.disabled", true);
 
   info("Open inspector");
@@ -55,6 +53,6 @@ async function getInspectorContent(inspector) {
 async function getWebContent() {
   return SpecialPowers.spawn(gBrowser.selectedBrowser, [], () => {
     const doc = content.document;
-    return doc.ownerGlobal.getComputedStyle(doc.body, "::before").content;
+    return doc.documentGlobal.getComputedStyle(doc.body, "::before").content;
   });
 }

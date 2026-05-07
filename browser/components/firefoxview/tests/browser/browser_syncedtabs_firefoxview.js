@@ -69,7 +69,9 @@ add_task(async function test_unconfigured_initial_state() {
       { category: "firefoxview_next" },
       { clear: true, process: "parent" }
     );
-    await BrowserTestUtils.removeTab(browser.ownerGlobal.gBrowser.selectedTab);
+    await BrowserTestUtils.removeTab(
+      browser.documentGlobal.gBrowser.selectedTab
+    );
   });
   await tearDown(sandbox);
 });
@@ -583,9 +585,9 @@ add_task(async function search_synced_tabs() {
     );
 
     info("Clear the search query.");
-    let clearButton = SpecialPowers.wrap(
+    let clearButton = SpecialPowers.getInputButton(
       syncedTabsComponent.searchTextbox.inputEl
-    ).openOrClosedShadowRoot.querySelector("button");
+    );
     info(`CLEAR BUTTON: ${clearButton}`);
     EventUtils.synthesizeMouseAtCenter(clearButton, {}, content);
     await TestUtils.waitForCondition(
@@ -649,9 +651,9 @@ add_task(async function search_synced_tabs() {
     );
 
     info("Clear the search query.");
-    clearButton = SpecialPowers.wrap(
+    clearButton = SpecialPowers.getInputButton(
       syncedTabsComponent.searchTextbox.inputEl
-    ).openOrClosedShadowRoot.querySelector("button");
+    );
     EventUtils.synthesizeMouseAtCenter(clearButton, {}, content);
     await TestUtils.waitForCondition(
       () => syncedTabsComponent.fullyUpdated,

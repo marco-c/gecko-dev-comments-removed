@@ -218,7 +218,7 @@ add_task(async function test_list_ordering() {
     await EventUtils.synthesizeMouseAtCenter(firstHistoryLink, {}, content);
     await historyTelemetry();
     await promiseHidden;
-    await openFirefoxViewTab(browser.ownerGlobal);
+    await openFirefoxViewTab(browser.documentGlobal);
 
     
     await clearAllParentTelemetryEvents();
@@ -424,7 +424,7 @@ add_task(async function test_observers_removed_when_view_is_hidden() {
     );
 
     info("The list should update when Firefox View is visible.");
-    await openFirefoxViewTab(browser.ownerGlobal);
+    await openFirefoxViewTab(browser.documentGlobal);
     visitList = await TestUtils.waitForCondition(
       () => historyComponent.cards?.[0]?.querySelector("fxview-tab-list"),
       "the first history card to have a tab list"
@@ -536,9 +536,7 @@ add_task(async function test_search_history() {
       searchTextbox,
       "Search input is focused"
     );
-    let clearButton = SpecialPowers.wrap(
-      searchTextbox.inputEl
-    ).openOrClosedShadowRoot.querySelector("button");
+    let clearButton = SpecialPowers.getInputButton(searchTextbox.inputEl);
     EventUtils.synthesizeMouseAtCenter(clearButton, {}, content);
     await BrowserTestUtils.waitForMutationCondition(
       historyComponent.shadowRoot,
@@ -592,9 +590,7 @@ add_task(async function test_search_ignores_stale_queries() {
     );
 
     info("Clear the bogus query.");
-    let clearButton = SpecialPowers.wrap(
-      searchTextbox.inputEl
-    ).openOrClosedShadowRoot.querySelector("button");
+    let clearButton = SpecialPowers.getInputButton(searchTextbox.inputEl);
     EventUtils.synthesizeMouseAtCenter(clearButton, {}, content);
     await searchTextbox.updateComplete;
 

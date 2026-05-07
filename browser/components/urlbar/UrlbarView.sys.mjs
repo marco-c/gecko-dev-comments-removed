@@ -51,7 +51,7 @@ const RESULT_MENU_COMMANDS = {
 };
 
 const getBoundsWithoutFlushing = element =>
-  element.ownerGlobal.windowUtils.getBoundsWithoutFlushing(element);
+  element.documentGlobal.windowUtils.getBoundsWithoutFlushing(element);
 
 // Used to get a unique id to use for row elements, it wraps at 9999, that
 // should be plenty for our needs.
@@ -958,6 +958,11 @@ export class UrlbarView {
       queryContext.results.forEach(r => {
         queryContext.deferUserSelectionProviders.delete(r.providerName);
       });
+    }
+
+    if (lazy.UrlbarPrefs.get("unifiedSearchButton.always")) {
+      // Update the search mode switcher icon to reflect what pressing Enter will do after new results show.
+      this.input.searchModeSwitcher?.updateSearchIcon();
     }
   }
 
@@ -2205,6 +2210,8 @@ export class UrlbarView {
 
     item._content.id = item.id + "-inner";
 
+    item.toggleAttribute("is-top-pick", !!result.isBestMatch);
+
     if (result.isBottomUrlSuggestion) {
       this.#updateRowContentForBottomUrl(item, result);
       return;
@@ -2233,7 +2240,8 @@ export class UrlbarView {
     if (
       result.type == lazy.UrlbarUtils.RESULT_TYPE.SEARCH &&
       !result.payload.providesSearchMode &&
-      !result.payload.inPrivateWindow
+      !result.payload.inPrivateWindow &&
+      result.providerName != lazy.UrlbarProviderQuickSuggest.name
     ) {
       item.setAttribute(
         "type",
@@ -4093,7 +4101,7 @@ export class UrlbarView {
 
     // Attaching the event listener to the window so we can capture `mouseup`
     // outside of the panel when the mouse is dragged.
-    this.panel.ownerGlobal.addEventListener("mouseup", this);
+    this.panel.documentGlobal.addEventListener("mouseup", this);
 
     // Select the element and open a speculative connection unless it's a
     // button. Buttons are special in the two ways listed below. Some buttons
@@ -4134,7 +4142,7 @@ export class UrlbarView {
       return;
     }
 
-    this.panel.ownerGlobal.removeEventListener("mouseup", this);
+    this.panel.documentGlobal.removeEventListener("mouseup", this);
 
     // Since the listener must be on the window use `event.composedPath()`
     // instead of `event.target` to handle shadow DOM encapsulation while
@@ -4264,7 +4272,7 @@ export class UrlbarView {
     } else if (
       event.target.id == "urlbarView-context-menu-open-in-container-tab-popup"
     ) {
-      event.target.ownerGlobal.createUserContextMenu(event, {
+      event.target.documentGlobal.createUserContextMenu(event, {
         isContextMenu: true,
       });
     }
