@@ -5,6 +5,14 @@
 #ifndef FFmpegLibWrapper_h_
 #define FFmpegLibWrapper_h_
 
+
+
+
+
+#define FFMPEG_MAX_MAJOR_VERSION 62
+#define FFMPEG_MAX_MAJOR_VERSION_STR_HELPER(x) #x
+#define FFMPEG_MAX_MAJOR_VERSION_STR(x) FFMPEG_MAX_MAJOR_VERSION_STR_HELPER(x)
+
 #include "ffvpx/tx.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/DefineEnum.h"
