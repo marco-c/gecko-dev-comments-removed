@@ -211,7 +211,13 @@ IceServerParser::ParseStunTurnUri(const nsACString& aUri) {
   
   
   if (port == -1) {
-    port = defaultPort;
+    
+    auto idx = hostPort.RFind(":443");
+    if (idx != kNotFound && (hostPort.Length() - idx == 4)) {
+      port = 443;
+    } else {
+      port = defaultPort;
+    }
   }
 
   
