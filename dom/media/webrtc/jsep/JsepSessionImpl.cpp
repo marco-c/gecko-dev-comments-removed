@@ -1286,7 +1286,7 @@ nsresult JsepSessionImpl::MakeNegotiatedTransceiver(
   }
 
   if (answer.GetAttributeList().HasAttribute(SdpAttribute::kExtmapAttribute)) {
-    const auto extmaps = answer.GetAttributeList().GetExtmap().mExtmaps;
+    const auto& extmaps = answer.GetAttributeList().GetExtmap().mExtmaps;
     for (const auto& negotiatedExtension : extmaps) {
       if (negotiatedExtension.entry == 0) {
         MOZ_ASSERT(false, "This should have been caught sooner");
@@ -1956,14 +1956,31 @@ nsresult JsepSessionImpl::ValidateRemoteDescription(const Sdp& description) {
     const SdpMediaSection& oldMsection =
         mCurrentRemoteDescription->GetMediaSection(i);
 
+    if (mSdpHelper.MsectionIsDisabled(oldMsection)) {
+      bool oldIsApp =
+          oldMsection.GetMediaType() == SdpMediaSection::kApplication;
+      bool newIsApp =
+          newMsection.GetMediaType() == SdpMediaSection::kApplication;
+      if (oldIsApp != newIsApp) {
+        JSEP_SET_ERROR("Remote description changes the media type of m-line "
+                       << i
+                       << " to or from application, which is not"
+                          " permitted");
+        return NS_ERROR_INVALID_ARG;
+      }
+      continue;
+    }
+
     if (oldMsection.GetMediaType() != newMsection.GetMediaType()) {
       JSEP_SET_ERROR("Remote description changes the media type of m-line "
-                     << i);
+                     << i
+                     << "; media type changes are only permitted when the "
+                        "m-section was previously disabled");
       return NS_ERROR_INVALID_ARG;
     }
 
-    if (mSdpHelper.MsectionIsDisabled(newMsection) ||
-        mSdpHelper.MsectionIsDisabled(oldMsection)) {
+    if (mSdpHelper.MsectionIsDisabled(newMsection)) {
+      
       continue;
     }
 
