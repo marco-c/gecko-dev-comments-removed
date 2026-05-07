@@ -122,7 +122,6 @@ let propNameAllowlist = [
   { propName: "--clickToPlay-width", isFromDevTools: false },
   { propName: "--playButton-width", isFromDevTools: false },
   { propName: "--muteButton-width", isFromDevTools: false },
-  { propName: "--castingButton-width", isFromDevTools: false },
   { propName: "--closedCaptionButton-width", isFromDevTools: false },
   { propName: "--fullscreenButton-width", isFromDevTools: false },
   { propName: "--durationSpan-width", isFromDevTools: false },
@@ -146,10 +145,9 @@ let propNameAllowlist = [
   
   { propName: "--panel-border-radius", isFromDevTools: true },
   { propName: "--panel-padding", isFromDevTools: true },
-  { propName: "--panel-background", isFromDevTools: true },
+  { propName: "--panel-background-color", isFromDevTools: true },
   { propName: "--panel-border-color", isFromDevTools: true },
-  { propName: "--panel-shadow", isFromDevTools: true },
-  { propName: "--panel-shadow-margin", isFromDevTools: true },
+  { propName: "--panel-box-shadow", isFromDevTools: true },
 
   
   

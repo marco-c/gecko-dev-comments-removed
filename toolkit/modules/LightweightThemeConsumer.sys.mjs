@@ -57,13 +57,13 @@ const toolkitVariableMap = [
     },
   ],
   [
-    "--panel-background",
+    "--panel-background-color",
     {
       lwtProperty: "popup",
     },
   ],
   [
-    "--panel-color",
+    "--panel-text-color",
     {
       lwtProperty: "popup_text",
     },
@@ -218,6 +218,10 @@ const toolkitVariableMap = [
     },
   ],
 ];
+
+LightweightThemeConsumer.init = function (window) {
+  new LightweightThemeConsumer(window.document);
+};
 
 export function LightweightThemeConsumer(aDocument) {
   this._doc = aDocument;
