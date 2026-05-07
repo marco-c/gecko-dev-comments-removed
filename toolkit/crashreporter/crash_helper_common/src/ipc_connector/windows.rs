@@ -45,7 +45,7 @@ pub const CONNECTOR_ANCILLARY_DATA_LEN: usize = 1;
 
 const INVALID_ANCILLARY_DATA: HANDLE = 0;
 const HANDLE_SIZE: usize = size_of::<HANDLE>();
-const MAX_HANDLES_PER_MESSAGE: usize = size_of::<HANDLE>();
+const MAX_HANDLES_PER_MESSAGE: usize = 2;
 
 
 

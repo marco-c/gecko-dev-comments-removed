@@ -12,7 +12,7 @@ use minidump_writer::minidump_writer::{AuxvType, DirectAuxvDumpInfo};
 #[cfg(target_os = "android")]
 use std::os::fd::RawFd;
 #[cfg(target_os = "windows")]
-use std::os::windows::io::OwnedHandle;
+use std::os::windows::io::{BorrowedHandle, OwnedHandle, RawHandle};
 use std::{
     ffi::{c_char, CString, OsString},
     hint::spin_loop,
@@ -21,10 +21,13 @@ use std::{
         atomic::{AtomicBool, Ordering},
         OnceLock,
     },
-    thread::{self, JoinHandle},
+    thread::JoinHandle,
 };
 #[cfg(target_os = "windows")]
-use windows_sys::Win32::System::Diagnostics::Debug::{CONTEXT, EXCEPTION_RECORD};
+use windows_sys::Win32::{
+    Foundation::HANDLE,
+    System::Diagnostics::Debug::{CONTEXT, EXCEPTION_RECORD},
+};
 
 extern crate num_traits;
 
@@ -66,6 +69,17 @@ impl CrashHelperClient {
         self.connector.send_message(message)?;
 
         Ok(client_endpoint)
+    }
+
+    #[cfg(target_os = "windows")]
+    fn child_process_proxy_rendezvous(
+        &mut self,
+        id: GeckoChildId,
+        pid: Pid,
+        handle: OwnedHandle,
+    ) -> bool {
+        let message = messages::ProcessRendezVous::new( true, pid, id, [handle]);
+        self.connector.send_message(message).is_ok()
     }
 
     #[cfg(any(target_os = "android", target_os = "linux"))]
@@ -180,6 +194,20 @@ pub unsafe extern "C" fn crash_helper_shutdown(client: *mut CrashHelperClient) {
     
     
     let _crash_helper_box = Box::from_raw(client);
+}
+
+
+
+
+
+
+
+
+#[no_mangle]
+pub unsafe extern "C" fn crash_helper_pid(client: *mut CrashHelperClient) -> Pid {
+    let client = client.as_mut().unwrap();
+
+    client.pid
 }
 
 #[repr(C)]
@@ -339,6 +367,33 @@ fn collect_exception_records(
 
 
 
+
+
+#[cfg(target_os = "windows")]
+#[no_mangle]
+pub unsafe extern "C" fn child_process_proxy_rendezvous(
+    client: *mut CrashHelperClient,
+    id: GeckoChildId,
+    pid: Pid,
+    handle: HANDLE,
+) -> bool {
+    let client = client.as_mut().unwrap();
+
+    let Ok(handle) = BorrowedHandle::borrow_raw(handle as RawHandle).try_clone_to_owned() else {
+        return false;
+    };
+    client.child_process_proxy_rendezvous(id, pid, handle)
+}
+
+
+
+
+
+
+
+
+
+
 #[cfg(any(target_os = "android", target_os = "linux"))]
 #[no_mangle]
 pub unsafe extern "C" fn register_child_auxv_info(
@@ -398,36 +453,30 @@ static RENDEZVOUS_FAILED: AtomicBool = AtomicBool::new(false);
 
 
 #[no_mangle]
-pub unsafe extern "C" fn crash_helper_rendezvous(raw_connector: RawIPCConnector, id: GeckoChildId) {
+pub unsafe extern "C" fn crash_helper_rendezvous(
+    raw_connector: RawIPCConnector,
+    id: GeckoChildId,
+    crash_helper_pid: Option<&Pid>,
+) {
     let Ok(connector) = IPCConnector::from_raw_connector(raw_connector) else {
         RENDEZVOUS_FAILED.store(true, Ordering::Relaxed);
         return;
     };
 
-    let join_handle = thread::spawn(move || {
-        if let Ok(message) = connector.recv_reply::<messages::ChildProcessRendezVous>() {
-            let reply = CrashHelperClient::prepare_for_minidump(message.crash_helper_pid, id);
-            if connector.send_message(reply).is_ok() {
-                assert!(
-                    CHILD_IPC_ENDPOINT
-                        .set(Box::new(connector.into_raw_connector()))
-                        .is_ok(),
-                    "The crash_helper_rendezvous() function must only be called once"
-                );
-                return;
-            }
+    let rendezvous = CrashHelperClient::prepare_for_minidump(crash_helper_pid.copied(), id);
+    if let Some(rendezvous) = rendezvous {
+        if connector.send_message(rendezvous).is_err() {
+            RENDEZVOUS_FAILED.store(true, Ordering::Relaxed);
+            return;
         }
-
-        RENDEZVOUS_FAILED.store(true, Ordering::Relaxed);
-    });
-
-    
-    
-    
-    
-    if join_handle.is_finished() && join_handle.join().is_err() {
-        RENDEZVOUS_FAILED.store(true, Ordering::Relaxed);
     }
+
+    assert!(
+        CHILD_IPC_ENDPOINT
+            .set(Box::new(connector.into_raw_connector()))
+            .is_ok(),
+        "The crash_helper_rendezvous() function must only be called once"
+    );
 }
 
 

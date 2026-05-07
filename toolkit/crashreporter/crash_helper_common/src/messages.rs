@@ -18,7 +18,8 @@ use windows_sys::Win32::System::Diagnostics::Debug::{CONTEXT, EXCEPTION_RECORD};
 
 use crate::{
     breakpad::Pid, ipc_connector::CONNECTOR_ANCILLARY_DATA_LEN,
-    platform::CHILD_RENDEZVOUS_ANCILLARY_DATA_LEN, AncillaryData, BreakpadString, GeckoChildId,
+    platform::PROCESS_RENDEZVOUS_ANCILLARY_DATA_LEN, AncillaryData, BreakpadString, GeckoChildId,
+    ProcessHandle,
 };
 
 #[derive(Debug, Error)]
@@ -74,10 +75,8 @@ pub enum Kind {
     RegisterChildProcess = 10,
     
     
-    ChildProcessRendezVous = 11,
     
-    
-    ChildProcessRendezVousReply = 12,
+    ProcessRendezVous = 11,
 }
 
 
@@ -778,89 +777,55 @@ impl Message for RegisterChildProcess {
 
 
 
-pub struct ChildProcessRendezVous {
-    pub crash_helper_pid: Pid,
-}
 
-impl ChildProcessRendezVous {
-    pub fn new(pid: Pid) -> ChildProcessRendezVous {
-        ChildProcessRendezVous {
-            crash_helper_pid: pid,
-        }
-    }
-}
-
-impl Message for ChildProcessRendezVous {
-    fn kind() -> Kind {
-        Kind::ChildProcessRendezVous
-    }
-
-    fn payload_size(&self) -> usize {
-        size_of::<Pid>()
-    }
-
-    fn ancillary_data_len(&self) -> usize {
-        0
-    }
-
-    fn encode(self) -> (Bytes, Bytes, Vec<AncillaryData>) {
-        let header = Header::encode(Self::kind(), self.payload_size());
-        let mut payload = BytesMut::with_capacity(self.payload_size());
-
-        payload.put_pid_ne(self.crash_helper_pid);
-
-        (header, payload.freeze(), vec![])
-    }
-
-    fn decode(
-        data: Vec<u8>,
-        ancillary_data: Vec<AncillaryData>,
-    ) -> Result<ChildProcessRendezVous, MessageError> {
-        if !ancillary_data.is_empty() {
-            return Err(MessageError::UnexpectedAncillaryData);
-        }
-
-        let mut data = Bytes::from(data);
-        let pid = data.try_get_pid_ne()?;
-
-        Ok(ChildProcessRendezVous {
-            crash_helper_pid: pid,
-        })
-    }
-}
-
-
-
-
-
-
-
-pub struct ChildProcessRendezVousReply {
+pub struct ProcessRendezVous {
     pub dumpable: bool,
     pub child_pid: Pid,
     pub id: GeckoChildId,
-    pub ancillary_data: [AncillaryData; CHILD_RENDEZVOUS_ANCILLARY_DATA_LEN],
+    pub ancillary_data: [AncillaryData; PROCESS_RENDEZVOUS_ANCILLARY_DATA_LEN],
 }
 
-impl ChildProcessRendezVousReply {
+impl ProcessRendezVous {
     pub fn new(
         dumpable: bool,
         child_pid: Pid,
         id: GeckoChildId,
-        ancillary_data: [AncillaryData; CHILD_RENDEZVOUS_ANCILLARY_DATA_LEN],
-    ) -> ChildProcessRendezVousReply {
-        ChildProcessRendezVousReply {
+        ancillary_data: [AncillaryData; PROCESS_RENDEZVOUS_ANCILLARY_DATA_LEN],
+    ) -> ProcessRendezVous {
+        ProcessRendezVous {
             dumpable,
             child_pid,
             id,
             ancillary_data,
         }
     }
+
+    pub fn get_process_handle(self) -> ProcessHandle {
+        #[cfg(target_os = "windows")]
+        {
+            let handle = self.ancillary_data.into_iter().next().unwrap();
+            ProcessHandle(handle)
+        }
+        #[cfg(any(target_os = "android", target_os = "linux"))]
+        {
+            ProcessHandle(self.child_pid)
+        }
+        #[cfg(any(target_os = "ios", target_os = "macos"))]
+        {
+            let task_right = self.ancillary_data.into_iter().next().unwrap();
+            match task_right {
+                crate::MachPortRight::Send(task_right) => task_right,
+                _ => {
+                    panic!("Wrong task right was provided")
+                }
+            }
+        }
+    }
 }
 
-impl Message for ChildProcessRendezVousReply {
+impl Message for ProcessRendezVous {
     fn kind() -> Kind {
-        Kind::ChildProcessRendezVousReply
+        Kind::ProcessRendezVous
     }
 
     fn payload_size(&self) -> usize {
@@ -868,7 +833,7 @@ impl Message for ChildProcessRendezVousReply {
     }
 
     fn ancillary_data_len(&self) -> usize {
-        CHILD_RENDEZVOUS_ANCILLARY_DATA_LEN
+        PROCESS_RENDEZVOUS_ANCILLARY_DATA_LEN
     }
 
     fn encode(self) -> (Bytes, Bytes, Vec<AncillaryData>) {
@@ -885,11 +850,11 @@ impl Message for ChildProcessRendezVousReply {
     fn decode(
         data: Vec<u8>,
         ancillary_data: Vec<AncillaryData>,
-    ) -> Result<ChildProcessRendezVousReply, MessageError> {
+    ) -> Result<ProcessRendezVous, MessageError> {
         #[allow(clippy::absurd_extreme_comparisons)]
-        if ancillary_data.len() < CHILD_RENDEZVOUS_ANCILLARY_DATA_LEN {
+        if ancillary_data.len() < PROCESS_RENDEZVOUS_ANCILLARY_DATA_LEN {
             return Err(MessageError::MissingAncillary);
-        } else if ancillary_data.len() > CHILD_RENDEZVOUS_ANCILLARY_DATA_LEN {
+        } else if ancillary_data.len() > PROCESS_RENDEZVOUS_ANCILLARY_DATA_LEN {
             return Err(MessageError::UnexpectedAncillaryData);
         }
 
@@ -899,7 +864,7 @@ impl Message for ChildProcessRendezVousReply {
         let id = data.try_get_i32_ne()?;
         let ancillary_data = ancillary_data.try_into().unwrap();
 
-        Ok(ChildProcessRendezVousReply {
+        Ok(ProcessRendezVous {
             dumpable,
             child_pid,
             id,
