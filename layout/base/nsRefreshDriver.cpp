@@ -554,7 +554,7 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
       
       
       bool useVsyncPriority = mozilla::BrowserTabsRemoteAutostart();
-      nsCOMPtr<nsIRunnable> vsyncEvent = new PrioritizableRunnable(
+      nsCOMPtr<nsIRunnable> vsyncEvent = MakeAndAddRef<PrioritizableRunnable>(
           NS_NewRunnableFunction(
               "RefreshDriverVsyncObserver::NotifyVsyncTimerOnMainThread",
               [self = RefPtr{this}]() {
