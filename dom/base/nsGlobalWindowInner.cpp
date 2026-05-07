@@ -4824,13 +4824,7 @@ nsGlobalWindowInner::GetComputedStyleHelper(Element& aElt,
 
 Storage* nsGlobalWindowInner::GetSessionStorage(ErrorResult& aError) {
   nsIPrincipal* principal = GetPrincipal();
-  nsIPrincipal* storagePrincipal;
-  if (StaticPrefs::
-          privacy_partition_always_partition_third_party_non_cookie_storage_exempt_sessionstorage()) {
-    storagePrincipal = GetEffectiveCookiePrincipal();
-  } else {
-    storagePrincipal = GetEffectiveStoragePrincipal();
-  }
+  nsIPrincipal* storagePrincipal = GetEffectiveStoragePrincipal();
   BrowsingContext* browsingContext = GetBrowsingContext();
 
   if (!principal || !storagePrincipal || !browsingContext ||
@@ -7755,31 +7749,26 @@ RefPtr<GenericPromise> nsGlobalWindowInner::StorageAccessPermissionChanged(
   ClearStorageAllowedCache();
 
   
-  
-  if (StaticPrefs::
-          privacy_partition_always_partition_third_party_non_cookie_storage()) {
-    
-    nsCOMPtr<nsICookieJarSettings> cjs;
+  nsCOMPtr<nsICookieJarSettings> cjs;
+  if (mDoc) {
+    cjs = mDoc->CookieJarSettings();
+  }
+  StorageAccess storageAccess = StorageAllowedForWindow(this);
+  if (ShouldPartitionStorage(storageAccess) &&
+      StoragePartitioningEnabled(storageAccess, cjs)) {
     if (mDoc) {
-      cjs = mDoc->CookieJarSettings();
+      mDoc->ClearActiveCookieAndStoragePrincipals();
     }
-    StorageAccess storageAccess = StorageAllowedForWindow(this);
-    if (ShouldPartitionStorage(storageAccess) &&
-        StoragePartitioningEnabled(storageAccess, cjs)) {
-      if (mDoc) {
-        mDoc->ClearActiveCookieAndStoragePrincipals();
-      }
-      
-      
-      
-      
-      if (aGranted) {
-        nsIChannel* channel = mDoc->GetChannel();
-        if (channel) {
-          
-          
-          return ContentChild::UpdateCookieStatus(channel);
-        }
+    
+    
+    
+    
+    if (aGranted) {
+      nsIChannel* channel = mDoc->GetChannel();
+      if (channel) {
+        
+        
+        return ContentChild::UpdateCookieStatus(channel);
       }
     }
   }

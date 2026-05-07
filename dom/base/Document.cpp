@@ -20425,11 +20425,6 @@ bool Document::InAndroidPipMode() const {
 }
 
 nsIPrincipal* Document::EffectiveStoragePrincipal() const {
-  if (!StaticPrefs::
-          privacy_partition_always_partition_third_party_non_cookie_storage()) {
-    return EffectiveCookiePrincipal();
-  }
-
   nsPIDOMWindowInner* inner = GetInnerWindow();
   if (!inner) {
     return NodePrincipal();
@@ -20485,22 +20480,7 @@ nsIPrincipal* Document::EffectiveCookiePrincipal() const {
     return NodePrincipal();
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (mActiveCookiePrincipal &&
-      (StaticPrefs::
-           privacy_partition_always_partition_third_party_non_cookie_storage() ||
-       mActiveCookiePrincipal != mPartitionedPrincipal)) {
+  if (mActiveCookiePrincipal) {
     return mActiveCookiePrincipal;
   }
 
