@@ -47,7 +47,9 @@ let wasmGlobalInterfaces = [
   { name: "LinkError", insecureContext: true },
   { name: "Memory", insecureContext: true },
   { name: "Module", insecureContext: true },
+  { name: "promising", insecureContext: true, nightly: true },
   { name: "RuntimeError", insecureContext: true },
+  { name: "Suspending", insecureContext: true, nightly: true },
   { name: "Table", insecureContext: true },
   { name: "Tag", insecureContext: true },
   { name: "compile", insecureContext: true },
@@ -517,6 +519,10 @@ let interfaceNamesInGlobalScope = [
   { name: "Response", insecureContext: true },
   
   { name: "Scheduler", insecureContext: true },
+  
+  { name: "Serial", android: false },
+  
+  { name: "SerialPort", android: false },
   
   "ServiceWorker",
   
