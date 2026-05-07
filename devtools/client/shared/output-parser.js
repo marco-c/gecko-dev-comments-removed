@@ -25,24 +25,6 @@ loader.lazyGetter(this, "VARIABLE_JUMP_DEFINITION_TITLE", function () {
 });
 
 
-const ANGLE_TAKING_FUNCTIONS = new Set([
-  "linear-gradient",
-  "-moz-linear-gradient",
-  "repeating-linear-gradient",
-  "-moz-repeating-linear-gradient",
-  "conic-gradient",
-  "repeating-conic-gradient",
-  "rotate",
-  "rotateX",
-  "rotateY",
-  "rotateZ",
-  "rotate3d",
-  "skew",
-  "skewX",
-  "skewY",
-  "hue-rotate",
-]);
-
 const BEZIER_KEYWORDS = new Set([
   "linear",
   "ease-in-out",
@@ -94,7 +76,10 @@ const URL_REGEX =
 const TRUNCATE_LENGTH_THRESHOLD = 5000;
 const TRUNCATE_NODE_CLASSNAME = "propertyvalue-long-text";
 
-const CLOSED_STACK_ENTRY = Symbol("CLOSED_STACK_ENTRY");
+
+
+
+const AGGREGATED_TOKEN_TYPE = Symbol("AGGREGATED_TOKEN_TYPE");
 
 
 
@@ -194,257 +179,9 @@ class OutputParser {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  #parseMatchingParens(text, tokenStream, options, stopAtComma) {
-    let depth = 1;
-    const functionData = [];
-    const tokens = [];
-    let sawVariable = false;
-
-    while (depth > 0) {
-      const token = tokenStream.nextToken();
-      if (!token) {
-        break;
-      }
-      if (token.tokenType === "Comment") {
-        continue;
-      }
-
-      if (stopAtComma && depth === 1 && token.tokenType === "Comma") {
-        return { tokens, functionData, sawComma: true, sawVariable, depth };
-      } else if (token.tokenType === "ParenthesisBlock") {
-        ++depth;
-        this.#createStackEntry({ isParenthesis: true, text: "(" });
-      } else if (token.tokenType === "CloseParenthesis") {
-        --depth;
-        if (depth === 0) {
-          break;
-        }
-        
-        
-        
-        this.#onCloseParenthesis(options);
-      } else if (
-        token.tokenType === "Function" &&
-        token.value === "var" &&
-        options.getVariableData
-      ) {
-        sawVariable = true;
-        const { node, value, computedValue, fallbackValue } =
-          this.#parseVariable(token, text, tokenStream, options);
-        functionData.push({ node, value, computedValue, fallbackValue });
-      } else if (token.tokenType === "Function") {
-        ++depth;
-      }
-
-      if (
-        token.tokenType !== "Function" ||
-        token.value !== "var" ||
-        !options.getVariableData
-      ) {
-        functionData.push(text.substring(token.startOffset, token.endOffset));
-      }
-
-      if (token.tokenType !== "WhiteSpace") {
-        tokens.push(token);
-      }
-    }
-
-    return { tokens, functionData, sawComma: false, sawVariable, depth };
-  }
-
   
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  #parseVariable(initialToken, text, tokenStream, options) {
-    
-    const varText = text.substring(
-      initialToken.startOffset,
-      initialToken.endOffset
-    );
-    const variableNode = this.#createNode("span", {}, varText);
-
-    
-    const { tokens, sawComma } = this.#parseMatchingParens(
-      text,
-      tokenStream,
-      options,
-      
-      true
-    );
-
-    
-    const firstOpts = {};
-    const secondOpts = {};
-
-    let varData;
-    let varFallbackValue;
-    let varSubstitutedValue;
-    let varComputedValue;
-    let varName;
-
-    
-    if (tokens && tokens.length === 1) {
-      varName = tokens[0].text;
-      varData = options.getVariableData(varName);
-      const varValue =
-        typeof varData.value === "string"
-          ? varData.value
-          : varData.registeredProperty?.initialValue;
-
-      const varStartingStyleValue =
-        typeof varData.startingStyle === "string"
-          ? varData.startingStyle
-          : 
-            
-            
-            varValue;
-
-      varSubstitutedValue = options.inStartingStyleRule
-        ? varStartingStyleValue
-        : varValue;
-
-      varComputedValue = varData.computedValue;
-    }
-
-    if (typeof varSubstitutedValue === "string") {
-      
-      
-      firstOpts["data-variable"] = varSubstitutedValue;
-      firstOpts.class = options.matchedVariableClass;
-      secondOpts.class = options.unmatchedClass;
-
-      
-      
-      if (
-        !options.inStartingStyleRule &&
-        typeof varComputedValue === "string" &&
-        varComputedValue !== varSubstitutedValue
-      ) {
-        firstOpts["data-variable-computed"] = varComputedValue;
-      }
-
-      
-      if (
-        !options.inStartingStyleRule &&
-        typeof varData.startingStyle === "string"
-      ) {
-        firstOpts["data-starting-style-variable"] = varData.startingStyle;
-      }
-
-      if (varData.registeredProperty) {
-        const { initialValue, syntax, inherits } = varData.registeredProperty;
-        firstOpts["data-registered-property-initial-value"] = initialValue;
-        firstOpts["data-registered-property-syntax"] = syntax;
-        
-        firstOpts["data-registered-property-inherits"] = `${inherits}`;
-      }
-
-      const customPropNode = this.#createNode("span", firstOpts, varName);
-      if (options.showJumpToVariableButton) {
-        customPropNode.append(
-          this.#createNode("button", {
-            class: "ruleview-variable-link jump-definition",
-            "data-variable-name": varName,
-            title: VARIABLE_JUMP_DEFINITION_TITLE,
-          })
-        );
-      }
-
-      variableNode.appendChild(customPropNode);
-    } else if (varName) {
-      
-      firstOpts.class = options.unmatchedClass;
-
-      firstOpts["data-variable"] = STYLE_INSPECTOR_L10N.getFormatStr(
-        "rule.variableUnset",
-        varName
-      );
-      variableNode.appendChild(this.#createNode("span", firstOpts, varName));
-    }
-
-    
-    
-    if (sawComma) {
-      variableNode.appendChild(this.#doc.createTextNode(","));
-
-      
-      
-      const subOptions = Object.assign({}, options);
-      subOptions.expectFilter = false;
-      const saveParsed = this.#parsed;
-      const savedStack = this.#stack;
-      this.#parsed = [];
-      this.#stack = [];
-      const rest = this.#doParse(text, subOptions, tokenStream, true);
-      this.#parsed = saveParsed;
-      this.#stack = savedStack;
-
-      const span = this.#createNode("span", secondOpts);
-      span.appendChild(rest);
-      varFallbackValue = span.textContent;
-      variableNode.appendChild(span);
-    }
-    variableNode.appendChild(this.#doc.createTextNode(")"));
-
-    return {
-      node: variableNode,
-      value: varSubstitutedValue,
-      computedValue: varComputedValue,
-      fallbackValue: varFallbackValue,
-    };
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
-  #doParse(text, options, tokenStream, stopAtCloseParen) {
-    let fontFamilyNameParts = [];
+  #doParse(text, options, tokenStream) {
+    let fontFamilyNameIndex = null;
     let previousWasBang = false;
 
     const colorOK = () => {
@@ -461,13 +198,9 @@ class OutputParser {
     };
 
     let spaceNeeded = false;
-    let done = false;
 
-    while (!done) {
-      const token = tokenStream.nextToken();
-      if (!token) {
-        break;
-      }
+    let token;
+    while ((token = tokenStream.nextToken())) {
       const tokenType = token.tokenType;
       if (tokenType === "Comment") {
         
@@ -486,14 +219,19 @@ class OutputParser {
         tokenType !== "Function" &&
         tokenType !== "ParenthesisBlock"
       ) {
-        this.#stack.at(-1).text += tokenText;
+        const stackEntry = this.#stack.at(-1);
+        stackEntry.text += tokenText;
+        
+        
+        if (stackEntry.substitutedText !== null) {
+          stackEntry.substitutedText += tokenText;
+        }
       }
 
       switch (tokenType) {
         case "Function": {
           const functionName = token.value;
           const lowerCaseFunctionName = functionName.toLowerCase();
-
           const isColorTakingFunction = COLOR_TAKING_FUNCTIONS.has(
             lowerCaseFunctionName
           );
@@ -505,131 +243,7 @@ class OutputParser {
             text: tokenText,
           });
 
-          if (
-            isColorTakingFunction ||
-            ANGLE_TAKING_FUNCTIONS.has(lowerCaseFunctionName) ||
-            lowerCaseFunctionName === "cubic-bezier" ||
-            lowerCaseFunctionName === "linear" ||
-            lowerCaseFunctionName === "attr" ||
-            BASIC_SHAPE_FUNCTIONS.has(lowerCaseFunctionName) ||
-            lowerCaseFunctionName === "url"
-          ) {
-            
-            
-            
-            
-            this.#appendTextNode(tokenText, token);
-          } else if (
-            lowerCaseFunctionName === "var" &&
-            options.getVariableData
-          ) {
-            const {
-              node: variableNode,
-              value,
-              computedValue,
-            } = this.#parseVariable(token, text, tokenStream, options);
-
-            const variableValue = computedValue ?? value;
-            
-            
-            
-            const colorObj =
-              value &&
-              colorOK() &&
-              InspectorUtils.isValidCSSColor(variableValue)
-                ? new colorUtils.CssColor(variableValue)
-                : null;
-
-            if (colorObj && this.#isValidColor(colorObj)) {
-              const colorFunctionEntry = this.#stack.findLast(
-                entry => entry.isColorTakingFunction
-              );
-              this.#appendColor(variableValue, {
-                ...options,
-                colorObj,
-                variableContainer: variableNode,
-                colorFunction: colorFunctionEntry?.functionName,
-              });
-            } else {
-              this.#append(variableNode);
-            }
-            this.#onCloseParenthesis(options);
-          } else {
-            const { functionData, sawVariable, depth } =
-              this.#parseMatchingParens(text, tokenStream, options);
-
-            if (sawVariable) {
-              const computedFunctionText =
-                functionName +
-                "(" +
-                functionData
-                  .map(data => {
-                    if (typeof data === "string") {
-                      return data;
-                    }
-                    return (
-                      data.computedValue ?? data.value ?? data.fallbackValue
-                    );
-                  })
-                  .join("") +
-                ")";
-              if (
-                colorOK() &&
-                InspectorUtils.isValidCSSColor(computedFunctionText)
-              ) {
-                const colorFunctionEntry = this.#stack.findLast(
-                  entry => entry.isColorTakingFunction
-                );
-
-                this.#appendColor(computedFunctionText, {
-                  ...options,
-                  colorFunction: colorFunctionEntry?.functionName,
-                  valueParts: [
-                    functionName,
-                    "(",
-                    ...functionData.map(data => data.node || data),
-                    ")",
-                  ],
-                });
-              } else {
-                
-                
-                this.#appendTextNode(functionName + "(");
-                for (const data of functionData) {
-                  if (typeof data === "string") {
-                    this.#appendTextNode(data);
-                  } else if (data) {
-                    this.#append(data.node);
-                  }
-                }
-                this.#appendTextNode(")");
-              }
-            } else {
-              
-              
-              const functionText =
-                functionName +
-                "(" +
-                functionData.join("") +
-                
-                
-                
-                (depth == 0 ? ")" : "");
-
-              if (colorOK() && InspectorUtils.isValidCSSColor(functionText)) {
-                const colorFunctionEntry = this.#stack.findLast(
-                  entry => entry.isColorTakingFunction
-                );
-                this.#appendColor(functionText, {
-                  ...options,
-                  colorFunction: colorFunctionEntry?.functionName,
-                });
-              } else {
-                this.#appendTextNode(functionText, token);
-              }
-            }
-            this.#onCloseParenthesis(options);
-          }
+          this.#appendTextNode(tokenText, token);
           break;
         }
 
@@ -669,13 +283,21 @@ class OutputParser {
             );
           } else if (angleOK(token.text)) {
             this.#appendAngle(token.text, options, token);
-          } else if (options.expectFont && !previousWasBang) {
-            
-            
-            
-            fontFamilyNameParts.push(token.text);
           } else {
-            this.#appendTextNode(tokenText, token);
+            const idx = this.#appendTextNode(tokenText, token);
+            if (
+              options.expectFont &&
+              
+              
+              
+              !previousWasBang &&
+              fontFamilyNameIndex == null &&
+              
+              
+              (!this.#stack.length || this.#stack.at(-1).sawComma)
+            ) {
+              fontFamilyNameIndex = idx;
+            }
           }
           break;
 
@@ -724,19 +346,16 @@ class OutputParser {
           break;
 
         case "QuotedString":
-          if (options.expectFont) {
-            fontFamilyNameParts.push(tokenText);
-          } else {
-            this.#appendTextNode(tokenText, token);
+          {
+            const idx = this.#appendTextNode(tokenText, token);
+            if (options.expectFont && fontFamilyNameIndex == null) {
+              fontFamilyNameIndex = idx;
+            }
           }
           break;
 
         case "WhiteSpace":
-          if (options.expectFont) {
-            fontFamilyNameParts.push(" ");
-          } else {
-            this.#appendTextNode(tokenText, token);
-          }
+          this.#appendTextNode(tokenText, token);
           break;
 
         case "ParenthesisBlock":
@@ -745,20 +364,13 @@ class OutputParser {
           break;
 
         case "CloseParenthesis": {
-          
-          
-          
-          const isClosingTopStack = this.#stack.length <= 1;
-
-          if (!stopAtCloseParen || !isClosingTopStack) {
-            this.#appendTextNode(")", token);
+          if (options.expectFont && fontFamilyNameIndex !== null) {
+            this.#wrapFontFamilyName(fontFamilyNameIndex, options);
+            
+            fontFamilyNameIndex = null;
           }
+          this.#appendTextNode(")", token);
           this.#onCloseParenthesis(options);
-
-          if (stopAtCloseParen && isClosingTopStack) {
-            done = true;
-          }
-
           break;
         }
 
@@ -767,17 +379,19 @@ class OutputParser {
           if (
             (token.tokenType === "Comma" || token.text === "!") &&
             options.expectFont &&
-            fontFamilyNameParts.length !== 0
+            fontFamilyNameIndex !== null
           ) {
-            this.#appendFontFamily(fontFamilyNameParts.join(""), options);
-            fontFamilyNameParts = [];
+            this.#wrapFontFamilyName(fontFamilyNameIndex, options);
+            
+            fontFamilyNameIndex = null;
           }
 
-          
-          if (this.#stack.length) {
-            this.#appendTextNode(token.text, token);
-            break;
+          if (tokenType === "Comma" && this.#stack.length) {
+            this.#stack.at(-1).sawComma = true;
           }
+
+          this.#appendTextNode(token.text, token);
+          break;
 
         
         default:
@@ -799,8 +413,8 @@ class OutputParser {
       previousWasBang = token.tokenType === "Delim" && token.text === "!";
     }
 
-    if (options.expectFont && fontFamilyNameParts.length !== 0) {
-      this.#appendFontFamily(fontFamilyNameParts.join(""), options);
+    if (options.expectFont && fontFamilyNameIndex !== null) {
+      this.#wrapFontFamilyName(fontFamilyNameIndex, options);
     }
 
     
@@ -837,6 +451,7 @@ class OutputParser {
       
       
       
+      
       tokensByPart: new WeakMap(),
       
       functionName: null,
@@ -849,12 +464,26 @@ class OutputParser {
       
       isParenthesis: null,
       
+      
       text: "",
+      
+      
+      
+      
+      
+      
+      
+      
+      substitutedText: null,
+      
+      
+      sawComma: false,
       ...entryData,
     };
     this.#stack.push(stackEntry);
   }
 
+  
   #onCloseParenthesis(options) {
     if (!this.#stack.length) {
       return;
@@ -874,6 +503,34 @@ class OutputParser {
       parts = this.#onCloseParenthesisForBasicShape(stackEntry, options);
     } else if (lowerCaseFunctionName === "url") {
       parts = this.#onCloseParenthesisForUrl(stackEntry, options);
+    } else if (lowerCaseFunctionName === "var") {
+      parts = this.#onCloseParenthesisForVar(stackEntry, options);
+    } else if (
+      (options.supportsColor ||
+        ((options.expectFilter || options.isVariable) &&
+          this.#stack.length !== 0 &&
+          this.#stack.at(-1).isColorTakingFunction)) &&
+      InspectorUtils.isValidCSSColor(
+        
+        
+        stackEntry.substitutedText ?? stackEntry.text
+      )
+    ) {
+      const colorFunctionEntry = this.#stack.findLast(
+        entry => entry.isColorTakingFunction
+      );
+      const colorObj =
+        options.colorObj ||
+        new colorUtils.CssColor(stackEntry.substitutedText ?? stackEntry.text);
+      const colorContainerEl = this.#createColorContainerElement(
+        colorObj,
+        {
+          ...options,
+          colorFunction: colorFunctionEntry?.functionName,
+        },
+        stackEntry.parts
+      );
+      parts = [colorContainerEl];
     }
 
     
@@ -882,15 +539,35 @@ class OutputParser {
 
     if (this.#stack.length) {
       const lastStackEntry = this.#stack.at(-1);
+      
+      if (
+        
+        stackEntry.substitutedText ||
+        
+        lastStackEntry.substitutedText
+      ) {
+        
+        
+        if (lastStackEntry.substitutedText === null) {
+          lastStackEntry.substitutedText = lastStackEntry.text;
+        }
+
+        
+        
+        const textToAdd = stackEntry.substitutedText ?? text;
+        lastStackEntry.substitutedText += textToAdd;
+      }
+      
       lastStackEntry.text += text;
-      const closedStackEntryToken = {
+
+      const compoundEntryToken = {
         
         
-        tokenType: CLOSED_STACK_ENTRY,
-        stackEntry,
+        tokenType: AGGREGATED_TOKEN_TYPE,
+        data: stackEntry,
       };
       for (const part of parts) {
-        lastStackEntry.tokensByPart.set(part, closedStackEntryToken);
+        lastStackEntry.tokensByPart.set(part, compoundEntryToken);
       }
     }
   }
@@ -1079,17 +756,17 @@ class OutputParser {
     return [container];
   }
 
-  
-
-
-
-
-
-
-
-
-
-  
+  /**
+   * Called when we got the closing bracket for `attr()`
+   *
+   * @param {object} stackEntry
+   *        The last item in this.#stack
+   * @param {object} options
+   *        options passed to the parse function. @see #mergeOptions for valid options
+   *        and default values
+   * @returns {Array<string|Element>} The updated parts for the stack entry that is being closed.
+   */
+  // eslint-disable-next-line complexity
   #onCloseParenthesisForAttr(stackEntry, options) {
     if (typeof options.getAttributeValue !== "function") {
       return stackEntry.parts;
@@ -1103,7 +780,7 @@ class OutputParser {
         continue;
       }
       const token = stackEntry.tokensByPart.get(part);
-      if (token.tokenType === CLOSED_STACK_ENTRY) {
+      if (token.tokenType === AGGREGATED_TOKEN_TYPE) {
         continue;
       }
 
@@ -1200,7 +877,7 @@ class OutputParser {
       if (
         // we might get into a part that was already handled, for example a nested function,
         // and in such case, it should be part of the fallback element
-        token.tokenType === CLOSED_STACK_ENTRY ||
+        token.tokenType === AGGREGATED_TOKEN_TYPE ||
         token.tokenType !== "WhiteSpace"
       ) {
         fallbackStartIndex = i;
@@ -1224,7 +901,7 @@ class OutputParser {
       if (
         // we might get into a part that was already handled, for example a nested function,
         // and in such case, it should be part of the fallback element
-        token.tokenType === CLOSED_STACK_ENTRY ||
+        token.tokenType === AGGREGATED_TOKEN_TYPE ||
         token.tokenType !== "WhiteSpace"
       ) {
         fallbackEndTokenIndex = i;
@@ -1347,9 +1024,8 @@ class OutputParser {
         token.tokenType !== "Number" &&
         token.tokenType !== "Dimension" &&
         token.tokenType !== "Percentage" &&
-        // when we have a stack entry, we can consider all the parts related to it as a
-        // single point
-        token.tokenType !== CLOSED_STACK_ENTRY
+        // a collapsed function call (e.g. `var(…)`) counts as a single argument
+        token.tokenType !== AGGREGATED_TOKEN_TYPE
       ) {
         continue;
       }
@@ -1446,9 +1122,8 @@ class OutputParser {
           token.tokenType === "Dimension" ||
           token.tokenType === "Percentage" ||
           token.tokenType === "Ident" ||
-          // when we have a stack entry, we can consider all the parts related to it as a
-          // single item
-          token.tokenType === CLOSED_STACK_ENTRY)
+          // a collapsed function call (e.g. `var(…)`) counts as a single argument
+          token.tokenType === AGGREGATED_TOKEN_TYPE)
       ) {
         // we have a single radius, the array will contain all the indexes of parts that
         // refer to it.
@@ -1464,9 +1139,8 @@ class OutputParser {
           token.tokenType === "Dimension" ||
           token.tokenType === "Percentage" ||
           token.tokenType === "Ident" ||
-          // when we have a stack entry, we can consider all the parts related to it as a
-          // single item
-          token.tokenType === CLOSED_STACK_ENTRY)
+          // a collapsed function call (e.g. `var(…)`) counts as a single argument
+          token.tokenType === AGGREGATED_TOKEN_TYPE)
       ) {
         if (token !== previousToken) {
           positionsPartsIndexes.push([i]);
@@ -1579,9 +1253,8 @@ class OutputParser {
           token.tokenType === "Dimension" ||
           token.tokenType === "Percentage" ||
           token.tokenType === "Ident" ||
-          // when we have a stack entry, we can consider all the parts related to it as a
-          // single point
-          token.tokenType === CLOSED_STACK_ENTRY)
+          // a collapsed function call (e.g. `var(…)`) counts as a single argument
+          token.tokenType === AGGREGATED_TOKEN_TYPE)
       ) {
         if (token !== previousToken) {
           radiiPartsIndexes.push([i]);
@@ -1602,9 +1275,8 @@ class OutputParser {
           token.tokenType === "Dimension" ||
           token.tokenType === "Percentage" ||
           token.tokenType === "Ident" ||
-          // when we have a stack entry, we can consider all the parts related to it as a
-          // single point
-          token.tokenType === CLOSED_STACK_ENTRY)
+          // a collapsed function call (e.g. `var(…)`) counts as a single argument
+          token.tokenType === AGGREGATED_TOKEN_TYPE)
       ) {
         if (token !== previousToken) {
           positionsPartsIndexes.push([i]);
@@ -1719,9 +1391,8 @@ class OutputParser {
         token.tokenType !== "Number" &&
         token.tokenType !== "Dimension" &&
         token.tokenType !== "Percentage" &&
-        // when we have a stack entry, we can consider all the parts related to it as a
-        // single point
-        token.tokenType !== CLOSED_STACK_ENTRY
+        // a collapsed function call (e.g. `var(…)`) counts as a single argument
+        token.tokenType !== AGGREGATED_TOKEN_TYPE
       ) {
         continue;
       }
@@ -1825,35 +1496,272 @@ class OutputParser {
   }
 
   /**
-   * Parse a string.
+   * Called when we got the closing parenthesis for `var()`.
    *
-   * @param  {string} text
-   *         Text to parse.
-   * @param  {object} [options]
-   *         Options object. For valid options and default values see
-   *         #mergeOptions().
-   * @return {DocumentFragment}
-   *         A document fragment.
+   * @param {object} stackEntry
+   *        The last item in this.#stack
+   * @param {object} options
+   *        options passed to the parse function. @see #mergeOptions for valid options
+   *        and default values
+   * @returns {Array<string|Element>} The updated parts for the stack entry that is being closed.
    */
+  // eslint-disable-next-line complexity
+  #onCloseParenthesisForVar(stackEntry, options) {
+    if (!options.getVariableData) {
+      return stackEntry.parts;
+    }
+
+    let varNameIndex = null;
+    let varName = null;
+    let fallbackStartIndex = null;
+    for (let i = 0; i < stackEntry.parts.length; i++) {
+      const part = stackEntry.parts[i];
+      const token = stackEntry.tokensByPart.get(part);
+
+      // The variable name is the first Ident we find
+      if (varNameIndex === null && token.tokenType === "Ident") {
+        varNameIndex = i;
+        varName = token.text;
+      } else if (token.tokenType === "Comma") {
+        // Anything between the first comma and the end of the function is considered a
+        // fallback value.
+        fallbackStartIndex = i + 1;
+        break;
+      }
+    }
+
+    // Shouldn't happen, but let's be safe
+    if (varNameIndex === null) {
+      return stackEntry.parts;
+    }
+
+    const varData = options.getVariableData(varName);
+    const varValue =
+      typeof varData.value === "string"
+        ? varData.value
+        : varData.registeredProperty?.initialValue;
+    let varStartingStyleValue;
+    if (options.inStartingStyleRule) {
+      varStartingStyleValue =
+        typeof varData.startingStyle === "string"
+          ? varData.startingStyle
+          : // If the variable is not set in starting style, then it will default to either:
+            // - a declaration in a "regular" rule
+            // - or if there's no declaration in regular rule, to the registered property initial-value.
+            varValue;
+    }
+
+    let varSubstitutedValue = options.inStartingStyleRule
+      ? varStartingStyleValue
+      : varValue;
+    const variableExists = typeof varSubstitutedValue === "string";
+    // TODO: we should also check if the variable is not guaranteed invalid (see Bug 1904013)
+    const shouldUseFallback = !variableExists;
+    const varComputedValue = varData.computedValue;
+    const varNameNodeOptions = {};
+    const varFallbackNodeOptions = {};
+
+    if (variableExists) {
+      // The variable value is valid, store the substituted value in a data attribute to
+      // be reused by the variable tooltip.
+      varNameNodeOptions["data-variable"] = varSubstitutedValue;
+      varNameNodeOptions.class = options.matchedVariableClass;
+      varFallbackNodeOptions.class = options.unmatchedClass;
+
+      // Display computed value when it exists, is different from the substituted value
+      // we computed, and we're not inside a starting-style rule
+      if (
+        !options.inStartingStyleRule &&
+        typeof varComputedValue === "string" &&
+        varComputedValue !== varSubstitutedValue
+      ) {
+        varNameNodeOptions["data-variable-computed"] = varComputedValue;
+      }
+
+      // Display starting-style value when not in a starting style rule
+      if (
+        !options.inStartingStyleRule &&
+        typeof varData.startingStyle === "string"
+      ) {
+        varNameNodeOptions["data-starting-style-variable"] =
+          varData.startingStyle;
+      }
+
+      if (varData.registeredProperty) {
+        const { initialValue, syntax, inherits } = varData.registeredProperty;
+        varNameNodeOptions["data-registered-property-initial-value"] =
+          initialValue;
+        varNameNodeOptions["data-registered-property-syntax"] = syntax;
+        // createNode does not handle `false`, let's stringify the boolean.
+        varNameNodeOptions["data-registered-property-inherits"] = `${inherits}`;
+      }
+    } else {
+      // The variable is not set and does not have an initial value, mark it unmatched.
+      varNameNodeOptions.class = options.unmatchedClass;
+      varNameNodeOptions["data-variable"] = STYLE_INSPECTOR_L10N.getFormatStr(
+        "rule.variableUnset",
+        varName
+      );
+    }
+
+    const varNameNode = this.#createNode("span", varNameNodeOptions);
+    varNameNode.append(stackEntry.parts[varNameIndex]);
+    stackEntry.parts.splice(varNameIndex, 1, varNameNode);
+
+    if (variableExists && options.showJumpToVariableButton) {
+      varNameNode.append(
+        this.#createNode("button", {
+          class: "ruleview-variable-link jump-definition",
+          "data-variable-name": varName,
+          title: VARIABLE_JUMP_DEFINITION_TITLE,
+        })
+      );
+    }
+
+    // From https://drafts.csswg.org/css-variables/#using-variables:
+    // > var(--a,) is a valid function, specifying that if the --a custom property is
+    // > invalid or missing, the var() should be replaced with nothing.
+    //
+    // So if we saw a comma, initialize the value with an empty string
+    let fallbackSubstitutedValue = fallbackStartIndex !== null ? "" : null;
+
+    if (fallbackStartIndex !== null) {
+      // We want to wrap the fallback into a span, so let's find the last non whitespace
+      // token before the closing parenthesis now
+      let fallbackEndIndex = null;
+      for (
+        // we can start at the part before the last one, as the last one will always be
+        // the closing parenthesis
+        let i = stackEntry.parts.length - 2;
+        i >= fallbackStartIndex;
+        i--
+      ) {
+        const part = stackEntry.parts[i];
+        const token = stackEntry.tokensByPart.get(part);
+        if (token.tokenType !== "WhiteSpace") {
+          fallbackEndIndex = i;
+          break;
+        }
+      }
+
+      const fallbackNode = this.#createNode("span", varFallbackNodeOptions);
+      let previousToken;
+      for (let i = fallbackStartIndex; i <= fallbackEndIndex; i++) {
+        const part = stackEntry.parts[i];
+        const token = stackEntry.tokensByPart.get(part);
+        fallbackNode.append(part);
+        if (previousToken === token) {
+          continue;
+        }
+        if (token?.tokenType === AGGREGATED_TOKEN_TYPE) {
+          fallbackSubstitutedValue +=
+            token.data.substitutedText ?? token.data.text;
+        } else {
+          fallbackSubstitutedValue += part.textContent;
+        }
+        previousToken = token;
+      }
+      stackEntry.parts.splice(
+        fallbackStartIndex,
+        fallbackEndIndex - fallbackStartIndex + 1,
+        fallbackNode
+      );
+    }
+
+    // Now that we went through the fallback, we can re-compute varSubstitutedValue
+    // to potentially include the fallback value.
+    if (shouldUseFallback) {
+      // If the fallback should be used (i.e. the variable value is guaranteed invalid)
+      // but none was found, then the substituted value should be an empty string, as
+      // defined in https://drafts.csswg.org/css-variables/#guaranteed-invalid:
+      // > The guaranteed-invalid value serializes as the empty string
+      if (fallbackSubstitutedValue === null) {
+        varSubstitutedValue = "";
+      } else {
+        varSubstitutedValue = fallbackSubstitutedValue;
+      }
+    }
+
+    // TODO: We should handle the following case (see Bug 2006565)
+    // From https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Values/var#invalid_values:
+    // > var() functions can resolve to invalid values if:
+    // > - […]
+    // > - The custom property is defined but its value is an invalid value for the
+    //     property it is used in.
+    // > When this happens, the property is treated as if it has value unset
+
+    // TODO: When we're in a @starting-style rule, we shouldn't use the computed value (see Bug 2016778)
+    const varComputedOrSubstitutedValue =
+      varComputedValue ?? varSubstitutedValue;
+
+    // Put the substitutedText in the entry so it can then be consumed in onCloseParenthesis
+    stackEntry.substitutedText = varComputedOrSubstitutedValue;
+
+    if (
+      options.supportsColor ||
+      ((options.expectFilter || options.isVariable) &&
+        this.#stack.length !== 0 &&
+        this.#stack.at(-1).isColorTakingFunction)
+    ) {
+      // InspectorUtils.isValidCSSColor returns true for `light-dark()` function,
+      // but `#isValidColor` returns false. As the latter is used in #appendColor,
+      
+      const colorObj =
+        varSubstitutedValue &&
+        InspectorUtils.isValidCSSColor(varComputedOrSubstitutedValue)
+          ? new colorUtils.CssColor(varComputedOrSubstitutedValue)
+          : null;
+      if (colorObj && this.#isValidColor(colorObj)) {
+        const colorFunctionEntry = this.#stack.findLast(
+          entry => entry.isColorTakingFunction
+        );
+        const colorContainerEl = this.#createColorContainerElement(
+          colorObj,
+          {
+            ...options,
+            colorFunction: colorFunctionEntry?.functionName,
+          },
+          stackEntry.parts
+        );
+        return [colorContainerEl];
+      }
+    }
+
+    const variableNode = this.#createNode("span", {});
+    variableNode.append(...stackEntry.parts);
+    return [variableNode];
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
   #parse(text, options = {}) {
     text = text.trim();
     this.#parsed.length = 0;
     this.#stack.length = 0;
 
     const tokenStream = new InspectorCSSParserWrapper(text);
-    return this.#doParse(text, options, tokenStream, false);
+    return this.#doParse(text, options, tokenStream);
   }
 
-  /**
-   * Returns true if it's a "display: [inline-]flex" token.
-   *
-   * @param  {string} text
-   *         The parsed text.
-   * @param  {object} token
-   *         The parsed token.
-   * @param  {object} options
-   *         The options given to #parse.
-   */
+  
+
+
+
+
+
+
+
+
+
   #isDisplayFlex(text, token, options) {
     return (
       options.expectDisplay &&
@@ -1861,16 +1769,16 @@ class OutputParser {
     );
   }
 
-  /**
-   * Returns true if it's a "display: [inline-]grid" token.
-   *
-   * @param  {string} text
-   *         The parsed text.
-   * @param  {object} token
-   *         The parsed token.
-   * @param  {object} options
-   *         The options given to #parse.
-   */
+  
+
+
+
+
+
+
+
+
+
   #isDisplayGrid(text, token, options) {
     return (
       options.expectDisplay &&
@@ -1878,18 +1786,18 @@ class OutputParser {
     );
   }
 
-  /**
-   * Create an element for a cubic-bezier timing function.
-   * Returns null if the element couldn't be created
-   *
-   * @param {object} options
-   * @param {Array<string|Node>} options.children
-   *        Children (strings or node) of the container that will be created.
-   * @param {object} options.parseOptions
-   *        Options object. For valid options and default values see
-   *        #mergeOptions()
-   * @return {Node|null}
-   */
+  
+
+
+
+
+
+
+
+
+
+
+
   #createCubicBezierContainer({ children, parseOptions }) {
     let bezier = "";
     for (const child of children) {
@@ -1897,7 +1805,7 @@ class OutputParser {
     }
 
     if (bezier.includes("var(")) {
-      // For now, we don't support cubic-bezier with CSS variables (see Bug 2031695)
+      
       return null;
     }
 
@@ -1973,10 +1881,10 @@ class OutputParser {
       this.#angleSwatches.set(swatch, angleObj);
       swatch.addEventListener("mousedown", this.#onAngleSwatchMouseDown);
 
-      // Add click listener to stop event propagation when shift key is pressed
-      // in order to prevent the value input to be focused.
-      // Bug 711942 will add a tooltip to edit angle values and we should
-      // be able to move this listener to Tooltip.js when it'll be implemented.
+      
+      
+      
+      
       swatch.addEventListener("click", function (event) {
         if (event.shiftKey) {
           event.stopPropagation();
@@ -1997,36 +1905,36 @@ class OutputParser {
     this.#append(container, token);
   }
 
-  /**
-   * Check if a CSS property supports a specific value.
-   *
-   * @param  {string} name
-   *         CSS Property name to check
-   * @param  {string} value
-   *         CSS Property value to check
-   * @param  {object} options
-   *         Options object. For valid options and default values see #mergeOptions().
-   */
+  
+
+
+
+
+
+
+
+
+
   #cssPropertySupportsValue(name, value, options) {
     if (
       options.isValid ||
-      // The filter property is special in that we want to show the swatch even if the
-      // value is invalid, because this way the user can easily use the editor to fix it.
+      
+      
       options.expectFilter
     ) {
       return true;
     }
 
-    // Checking pair as a CSS declaration string to account for "!important" in value.
+    
     const declaration = `${name}:${value}`;
     return this.#doc.defaultView.CSS.supports(declaration);
   }
 
-  /**
-   * Tests if a given colorObject output by CssColor is valid for parsing.
-   * Valid means it's really a color, not any of the CssColor SPECIAL_VALUES
-   * except transparent
-   */
+  
+
+
+
+
   #isValidColor(colorObj) {
     return (
       colorObj.valid &&
@@ -2034,105 +1942,100 @@ class OutputParser {
     );
   }
 
-  /**
-   * Append a color to the output.
-   *
-   * @param {string} color
-   *         Color to append
-   * @param {object} [options]
-   * @param {CSSColor} options.colorObj: A css color for the passed color. Will be computed
-   *         if not passed.
-   * @param {DOMNode} options.variableContainer: A DOM Node that is the result of parsing
-   *        a CSS variable
-   * @param {string} options.colorFunction: The color function that is used to produce this color
-   * @param {*} For all the other valid options and default values see #mergeOptions().
-   * @param {object} token
-   */
+  
+
+
+
+
+
+
+
+
+
+
+
   #appendColor(color, options, token) {
     const colorObj = options.colorObj || new colorUtils.CssColor(color);
 
     if (this.#isValidColor(colorObj)) {
-      const container = this.#createNode("span", {
-        "data-color": color,
-      });
+      const colorContainerEl = this.#createColorContainerElement(
+        colorObj,
+        options
+      );
 
-      if (options.colorSwatchClass) {
-        let attributes = {
-          class: options.colorSwatchClass,
-          style: "background-color:" + color,
-        };
-
-        // Color swatches next to values trigger the color editor everywhere aside from
-        // the Computed panel where values are read-only.
-        if (!options.colorSwatchReadOnly) {
-          attributes = { ...attributes, tabindex: "0", role: "button" };
-        }
-
-        // The swatch is a <span> instead of a <button> intentionally. See Bug 1597125.
-        // It is made keyboard accessible via `tabindex` and has keydown handlers
-        // attached for pressing SPACE and RETURN in SwatchBasedEditorTooltip.js
-        const swatch = this.#createNode("span", attributes);
-        this.#colorSwatches.set(swatch, colorObj);
-        if (options.colorFunction) {
-          swatch.dataset.colorFunction = options.colorFunction;
-        }
-        swatch.addEventListener("mousedown", this.#onColorSwatchMouseDown);
-        container.appendChild(swatch);
-        container.classList.add("color-swatch-container");
-      }
-
-      let colorUnit = options.defaultColorUnit;
-      if (!options.useDefaultColorUnit) {
-        // If we're not being asked to convert the color to the default color type
-        // specified by the user, then force the CssColor instance to be set to the type
-        // of the current color.
-        // Not having a type means that the default color type will be automatically used.
-        colorUnit = colorUtils.classifyColor(color);
-      }
-      color = colorObj.toString(colorUnit);
-      container.dataset.color = color;
-
-      // Next we create the markup to show the value of the property.
-      if (options.variableContainer) {
-        // If we are creating a color swatch for a CSS variable we simply reuse
-        // the markup created for the variableContainer.
-        if (options.colorClass) {
-          options.variableContainer.classList.add(options.colorClass);
-        }
-        container.appendChild(options.variableContainer);
-      } else {
-        // Otherwise we create a new element with the `color` as textContent.
-        const value = this.#createNode("span", {
-          class: options.colorClass,
-        });
-        if (options.valueParts) {
-          value.append(...options.valueParts);
-        } else {
-          value.append(this.#doc.createTextNode(color));
-        }
-
-        container.appendChild(value);
-      }
-
-      this.#append(container, token);
+      this.#append(colorContainerEl, token);
     } else {
       this.#appendTextNode(color, token);
     }
   }
 
-  /**
-   * Wrap some existing nodes in a filter editor.
-   *
-   * @param {string} filters
-   *        The full text of the "filter" property.
-   * @param {object} options
-   *        The options object passed to parseCssProperty().
-   * @param {object} nodes
-   *        Nodes created by #toDOM().
-   *
-   * @returns {object}
-   *        A new node that supplies a filter swatch and that wraps |nodes|.
-   */
+  #createColorContainerElement(colorObj, options, children) {
+    let color = colorObj.authored;
+    const containerEl = this.#createNode("span", {
+      "data-color": color,
+    });
+
+    if (options.colorSwatchClass) {
+      let attributes = {
+        class: options.colorSwatchClass,
+        style: "background-color:" + color,
+      };
+
+      
+      
+      if (!options.colorSwatchReadOnly) {
+        attributes = { ...attributes, tabindex: "0", role: "button" };
+      }
+
+      
+      
+      
+      const swatch = this.#createNode("span", attributes);
+      this.#colorSwatches.set(swatch, colorObj);
+      if (options.colorFunction) {
+        swatch.dataset.colorFunction = options.colorFunction;
+      }
+      swatch.addEventListener("mousedown", this.#onColorSwatchMouseDown);
+      containerEl.appendChild(swatch);
+      containerEl.classList.add("color-swatch-container");
+    }
+
+    let colorUnit = options.defaultColorUnit;
+    if (!options.useDefaultColorUnit) {
+      
+      
+      
+      
+      colorUnit = colorUtils.classifyColor(color);
+    }
+    color = colorObj.toString(colorUnit);
+    containerEl.dataset.color = color;
+
+    const valueEl = this.#createNode("span", {
+      class: options.colorClass,
+    });
+    if (children) {
+      valueEl.append(...children);
+    } else {
+      valueEl.append(color);
+    }
+    containerEl.append(valueEl);
+    return containerEl;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
   #wrapFilter(filters, options, nodes) {
     const container = this.#createNode("span", {
       "data-filters": filters,
@@ -2261,74 +2164,112 @@ class OutputParser {
     ];
   }
 
-  /**
-   * Append a font family to the output.
-   *
-   * @param  {string} fontFamily
-   *         Font family to append
-   * @param  {object} options
-   *         Options object. For valid options and default values see
-   *         #mergeOptions().
-   */
-  #appendFontFamily(fontFamily, options) {
-    let spanContents = fontFamily;
-    let quoteChar = null;
-    let trailingWhitespace = false;
+  
 
-    // Before appending the actual font-family span, we need to trim
-    // down the actual contents by removing any whitespace before and
-    // after, and any quotation characters in the passed string.  Any
-    // such characters are preserved in the actual output, but just
-    // not inside the span element.
 
-    if (spanContents[0] === " ") {
-      this.#appendTextNode(" ");
-      spanContents = spanContents.slice(1);
+
+
+
+
+
+
+  #wrapFontFamilyName(fontFamilyStartPartIndex, options) {
+    if (!options.expectFont) {
+      return;
     }
 
-    if (spanContents[spanContents.length - 1] === " ") {
-      spanContents = spanContents.slice(0, -1);
-      trailingWhitespace = true;
+    const parts = this.#getCurrentStackParts();
+    
+    
+    
+    let fontFamilyEndPartIndex = parts.length - 1;
+    for (let i = parts.length - 1; i >= fontFamilyStartPartIndex; i--) {
+      const part = parts[i];
+      if (part.textContent.trim() !== "") {
+        fontFamilyEndPartIndex = i;
+        break;
+      }
     }
 
-    if (spanContents[0] === "'" || spanContents[0] === '"') {
-      quoteChar = spanContents[0];
+    
+    const fontFamilyNode = this.#createNode("span", {
+      class: options.fontFamilyClass,
+    });
+
+    
+    
+    
+    let familyName = "";
+    for (let i = fontFamilyStartPartIndex; i <= fontFamilyEndPartIndex; i++) {
+      familyName += parts[i].textContent;
     }
 
-    if (quoteChar) {
-      this.#appendTextNode(quoteChar);
-      spanContents = spanContents.slice(1, -1);
+    
+    
+    const aggregatedToken = this.#stack.length
+      ? {
+          tokenType: AGGREGATED_TOKEN_TYPE,
+          data: {
+            text: familyName,
+          },
+        }
+      : null;
+    const stackEntry = this.#stack.length ? this.#stack.at(-1) : null;
+    if (stackEntry) {
+      stackEntry.tokensByPart.set(fontFamilyNode, aggregatedToken);
     }
 
-    this.#appendNode(
-      "span",
-      {
-        class: options.fontFamilyClass,
-      },
-      spanContents
+    
+    const quoteRegex = /^(?<open>['"])(?<name>[^'"]*)(?<close>['"])$/g;
+    const regexResult = quoteRegex.exec(familyName);
+    
+    if (regexResult !== null) {
+      
+      
+      const part = this.#doc.createTextNode(regexResult.groups.close);
+      parts.splice(fontFamilyEndPartIndex + 1, 0, part);
+
+      if (stackEntry) {
+        stackEntry.tokensByPart.set(part, aggregatedToken);
+      }
+      
+      familyName = regexResult.groups.name;
+    }
+
+    fontFamilyNode.append(familyName);
+
+    
+    const fontFamilyNodeChildCount =
+      fontFamilyEndPartIndex - fontFamilyStartPartIndex + 1;
+    parts.splice(
+      fontFamilyStartPartIndex,
+      fontFamilyNodeChildCount,
+      fontFamilyNode
     );
 
-    if (quoteChar) {
-      this.#appendTextNode(quoteChar);
-    }
+    
+    if (regexResult !== null) {
+      const part = this.#doc.createTextNode(regexResult.groups.open);
+      parts.splice(fontFamilyStartPartIndex, 0, part);
 
-    if (trailingWhitespace) {
-      this.#appendTextNode(" ");
+      if (stackEntry) {
+        stackEntry.tokensByPart.set(part, aggregatedToken);
+      }
     }
   }
 
-  /**
-   * Create a node.
-   *
-   * @param  {string} tagName
-   *         Tag type e.g. "div"
-   * @param  {object} attributes
-   *         e.g. {class: "someClass", style: "cursor:pointer"};
-   * @param  {string} [value]
-   *         If a value is included it will be appended as a text node inside
-   *         the tag. This is useful e.g. for span tags.
-   * @return {Node} Newly created Node.
-   */
+  
+
+
+
+
+
+
+
+
+
+
+
   #createNode(tagName, attributes, value = "") {
     const node = this.#doc.createElementNS(HTML_NS, tagName);
     const attrs = Object.getOwnPropertyNames(attributes);
@@ -2350,84 +2291,89 @@ class OutputParser {
     return node;
   }
 
-  /**
-   * Create an element representing a simple text.
-   *
-   * @param  {string} text
-   *         Text to append
-   * @returns {Text|Element} Returns a Text, or, if the text is greater than the truncate
-   *          threshold, a Node with a specific class to trigger CSS "truncation".
-   */
+  
+
+
+
+
+
+
+
   #createTextElement(text) {
     if (text.length > TRUNCATE_LENGTH_THRESHOLD) {
-      // If the text is too long, force creating a node, which will add the
-      // necessary classname to truncate the property correctly.
+      
+      
       return this.#createNode("span", {}, text);
     }
 
     return this.#doc.createTextNode(text);
   }
 
-  /**
-   * Create and append a node to the output.
-   *
-   * @param  {string} tagName
-   *         Tag type e.g. "div"
-   * @param  {object} attributes
-   *         e.g. {class: "someClass", style: "cursor:pointer"};
-   * @param  {string} [value]
-   *         If a value is included it will be appended as a text node inside
-   *         the tag. This is useful e.g. for span tags.
-   * @param  {object} token
-   */
+  
+
+
+
+
+
+
+
+
+
+
+
+
   #appendNode(tagName, attributes, value, token) {
     const node = this.#createNode(tagName, attributes, value);
-    this.#append(node, token);
+    return this.#append(node, token);
   }
 
-  /**
-   * Append an element or a text node to the output.
-   *
-   * @param {Element|Text} item
-   * @param {object} token
-   */
+  
+
+
+
+
+
+
   #append(item, token = null) {
-    this.#getCurrentStackParts().push(item);
+    const len = this.#getCurrentStackParts().push(item);
 
     if (token !== null && this.#stack.length) {
       const stackEntry = this.#stack.at(-1);
       stackEntry.tokensByPart.set(item, token);
     }
+
+    return len - 1;
   }
 
-  /**
-   * Append a text node to the output. If the previously output item was a text
-   * node then we append the text to that node.
-   *
-   * @param  {string} text
-   *         Text to append
-   * @param  {object} token
-   */
+  
+
+
+
+
+
+
+
+
   #appendTextNode(text, token) {
     if (text.length > TRUNCATE_LENGTH_THRESHOLD) {
-      // If the text is too long, force creating a node, which will add the
-      // necessary classname to truncate the property correctly.
-      this.#appendNode("span", {}, text, token);
-    } else {
-      this.#append(this.#doc.createTextNode(text), token);
+      
+      
+      return this.#appendNode("span", {}, text, token);
     }
+
+    return this.#append(this.#doc.createTextNode(text), token);
   }
 
   #getCurrentStackParts() {
     return this.#stack.at(-1)?.parts || this.#parsed;
   }
 
-  /**
-   * Take all output and append it into a single DocumentFragment.
-   *
-   * @return {DocumentFragment}
-   *         Document Fragment
-   */
+  
+
+
+
+
+
   #toDOM() {
     const frag = this.#doc.createDocumentFragment();
 
@@ -2444,54 +2390,54 @@ class OutputParser {
     return frag;
   }
 
-  /**
-   * Merges options objects. Default values are set here.
-   *
-   * @param  {object} overrides
-   *         The option values to override e.g. #mergeOptions({colors: false})
-   * @param {boolean} overrides.useDefaultColorUnit: Convert colors to the default type
-   *                                                 selected in the options panel.
-   * @param {string} overrides.angleClass: The class to use for the angle value that follows
-   *                                       the swatch.
-   * @param {string} overrides.angleSwatchClass: The class to use for angle swatches.
-   * @param {string} overrides.bezierClass: The class to use for the bezier value that
-   *        follows the swatch.
-   * @param {string} overrides.bezierSwatchClass: The class to use for bezier swatches.
-   * @param {string} overrides.colorClass: The class to use for the color value that
-   *        follows the swatch.
-   * @param {string} overrides.colorSwatchClass: The class to use for color swatches.
-   * @param {boolean} overrides.colorSwatchReadOnly: Whether the resulting color swatch
-   *        should be read-only or not. Defaults to false.
-   * @param {boolean} overrides.filterSwatch: A special case for parsing a "filter" property,
-   *        causing the parser to skip the call to #wrapFilter. Used only for previewing
-   *        with the filter swatch.
-   * @param {string} overrides.flexClass: The class to use for the flex icon.
-   * @param {string} overrides.gridClass: The class to use for the grid icon.
-   * @param {string} overrides.shapeClass: The class to use for the shape value that
-   *         follows the swatch.
-   * @param {string} overrides.shapeSwatchClass: The class to use for the shape swatch.
-   * @param {string} overrides.urlClass: The class to be used for url() links.
-   * @param {string} overrides.fontFamilyClass: The class to be used for font families.
-   * @param {string} overrides.unmatchedClass: The class to use for a component of
-   *        a `var(…)` or `attr(…)` that is not in use.
-   * @param {boolean} overrides.supportsColor: Does the CSS property support colors?
-   * @param {string} overrides.baseURI: A string used to resolve relative links.
-   * @param {Function} overrides.getVariableData: A function taking a single argument,
-   *        the name of a variable. This should return an object with the following properties:
-   *          - {String|undefined} value: The variable's value. Undefined if variable is
-   *            not set.
-   *          - {RegisteredPropertyResource|undefined} registeredProperty: The registered
-   *            property data (syntax, initial value, inherits). Undefined if the variable
-   *            is not a registered property.
-   * @param {Function} overrides.getAttributeValue: A function taking a single argument,
-   *        the name of an attribute. This should return the value of the attribute, or
-   *        null if the attribute doesn't exist.
-   * @param {boolean} overrides.showJumpToVariableButton: Should we show a jump to
-   *        definition for CSS variables. Defaults to true.
-   * @param {boolean} overrides.isDarkColorScheme: Is the currently applied color scheme dark.
-   * @param {boolean} overrides.isValid: Is the name+value valid.
-   * @return {object} Overridden options object
-   */
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   #mergeOptions(overrides) {
     const defaults = {
       useDefaultColorUnit: true,

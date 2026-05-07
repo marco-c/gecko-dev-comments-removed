@@ -82,6 +82,10 @@ class CssColor {
   
   #lowerCased = null;
 
+  get authored() {
+    return this.#authored;
+  }
+
   get hasAlpha() {
     if (!this.valid) {
       return false;
