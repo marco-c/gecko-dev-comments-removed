@@ -46,6 +46,8 @@ run-if = [
 
 ["test_permissions.js"]
 
+["test_policy_descriptions.js"]
+
 ["test_policy_search_engine.js"]
 
 ["test_popups_cookies_addons.js"]
@@ -58,6 +60,8 @@ support-files = ["config_popups_cookies_addons.json"]
 ["test_requestedlocales.js"]
 
 ["test_runOnce_helper.js"]
+
+["test_security_devices.js"]
 
 ["test_simple_pref_policies.js"]
 
