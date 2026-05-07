@@ -1,0 +1,7 @@
+
+
+fn main() -> Result<(), minreq::Error> {
+    let response = minreq::get("http://example.com").send()?;
+    println!("{}", response.as_str()?);
+    Ok(())
+}
