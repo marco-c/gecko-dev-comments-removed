@@ -14,7 +14,6 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.ComposeTimeoutException
 import androidx.compose.ui.test.ExperimentalTestApi
-import androidx.compose.ui.test.assertAny
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotDisplayed
@@ -59,7 +58,6 @@ import org.mozilla.fenix.helpers.AppAndSystemHelper.registerAndCleanupIdlingReso
 import org.mozilla.fenix.helpers.Constants.RETRY_COUNT
 import org.mozilla.fenix.helpers.Constants.TAG
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
-import org.mozilla.fenix.helpers.HomeActivityComposeTestRule
 import org.mozilla.fenix.helpers.MatcherHelper.assertItemTextEquals
 import org.mozilla.fenix.helpers.MatcherHelper.assertUIObjectExists
 import org.mozilla.fenix.helpers.MatcherHelper.assertUIObjectIsGone
@@ -70,7 +68,6 @@ import org.mozilla.fenix.helpers.MatcherHelper.itemWithResId
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithResIdAndText
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithResIdContainingText
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithText
-import org.mozilla.fenix.helpers.MatcherHelper.itemWithTextAndIndex
 import org.mozilla.fenix.helpers.SessionLoadedIdlingResource
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTime
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTimeLong
@@ -92,6 +89,7 @@ import org.mozilla.fenix.webcompat.BrokenSiteReporterTestTags.BROKEN_SITE_REPORT
 import java.time.LocalDate
 import mozilla.components.browser.errorpages.R as errorpagesR
 import mozilla.components.browser.toolbar.R as toolbarR
+import mozilla.components.compose.base.R as composeBaseR
 import mozilla.components.feature.app.links.R as applinksR
 import mozilla.components.feature.contextmenu.R as contextmenuR
 import mozilla.components.feature.downloads.R as downloadsR
@@ -1204,7 +1202,7 @@ class BrowserRobot(private val composeTestRule: ComposeTestRule) {
                 R.string.webcompat_reporter_description_3,
                 appName,
                 getStringResource(R.string.webcompat_reporter_learn_more),
-            ) + " " + getStringResource(R.string.a11y_links_available),
+            ) + " " + getStringResource(composeBaseR.string.mozac_compose_base_link_text_links_available),
         ).assertIsDisplayed()
         Log.i(TAG, "verifyWebCompatReporterViewItems: Verified that the report broken site description is displayed")
         Log.i(TAG, "verifyWebCompatReporterViewItems: Trying to verify that the \"URL\" header is displayed")
