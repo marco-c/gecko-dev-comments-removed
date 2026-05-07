@@ -7,7 +7,10 @@
 #include <array>
 #include <cmath>
 
+#include "AOMDecoder.h"
+#include "MediaInfo.h"
 #include "MediaMIMETypes.h"
+#include "VPXDecoder.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/Logging.h"
@@ -36,6 +39,9 @@ using dom::VideoConfiguration;
 static nsAutoCString GetMIMEDebugString(const MediaConfiguration& aConfig);
 static bool IsContainerType(const MediaExtendedMIMEType& aMime);
 static bool IsSingleCodecType(const MediaExtendedMIMEType& aMime);
+static bool ValidateMatchingCodecColorSpace(
+    const MediaExtendedMIMEType& aMime, const Maybe<dom::ColorGamut>& aGamut,
+    const Maybe<dom::TransferFunction>& aTransfer);
 
 
 
@@ -400,6 +406,134 @@ ValidationResult IsValidMediaDecodingConfiguration(
     }
   }
   return Ok();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[[maybe_unused]]
+static bool ValidateMatchingCodecColorSpace(
+    const MediaExtendedMIMEType& aMime, const Maybe<dom::ColorGamut>& aGamut,
+    const Maybe<dom::TransferFunction>& aTransfer) {
+  
+  if (!aGamut && !aTransfer) {
+    return true;
+  }
+
+  
+  for (const auto& codec : aMime.Codecs().Range()) {
+    if (codec.IsEmpty()) {
+      continue;
+    }
+    VideoInfo vi;
+    bool parsed = false;
+    
+    
+    
+    
+    
+#ifdef MOZ_AV1
+    if (!parsed && AOMDecoder::SetVideoInfo(&vi, codec)) {
+      parsed = true;
+    }
+#endif
+    
+    if (!parsed && VPXDecoder::SetVideoInfo(&vi, codec)) {
+      parsed = true;
+    }
+    
+    if (!parsed) {
+      continue;
+    }
+    
+    Maybe<dom::ColorGamut> gotGamut;
+    if (vi.mColorPrimaries) {
+      switch (*vi.mColorPrimaries) {
+        case gfx::ColorSpace2::SRGB:
+        case gfx::ColorSpace2::BT709:
+        case gfx::ColorSpace2::BT601_525:
+          gotGamut = Some(dom::ColorGamut::Srgb);
+          break;
+        case gfx::ColorSpace2::DISPLAY_P3:
+          gotGamut = Some(dom::ColorGamut::P3);
+          break;
+        case gfx::ColorSpace2::BT2020:
+          gotGamut = Some(dom::ColorGamut::Rec2020);
+          break;
+        default:
+          break;
+      }
+    }
+    
+    
+    
+    
+    
+    if (!gotGamut && vi.mColorSpace) {
+      switch (*vi.mColorSpace) {
+        case gfx::YUVColorSpace::BT2020:
+          gotGamut = Some(dom::ColorGamut::Rec2020);
+          break;
+        default:
+          break;
+      }
+    }
+    
+    
+    
+    
+    Maybe<dom::TransferFunction> gotTF;
+    if (vi.mTransferFunction) {
+      switch (*vi.mTransferFunction) {
+        case gfx::TransferFunction::SRGB:
+        case gfx::TransferFunction::BT709:
+          gotTF = Some(dom::TransferFunction::Srgb);
+          break;
+        case gfx::TransferFunction::PQ:
+          gotTF = Some(dom::TransferFunction::Pq);
+          break;
+        case gfx::TransferFunction::HLG:
+          gotTF = Some(dom::TransferFunction::Hlg);
+          break;
+        default:
+          break;
+      }
+    }
+    
+    const bool gamutOK = !aGamut || (gotGamut && *aGamut == *gotGamut);
+    const bool transferOK = !aTransfer || (gotTF && *aTransfer == *gotTF);
+    return gamutOK && transferOK;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  return true;
 }
 
 
