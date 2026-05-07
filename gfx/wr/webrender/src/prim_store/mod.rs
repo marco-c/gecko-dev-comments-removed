@@ -40,7 +40,7 @@ pub mod storage;
 
 use backdrop::{BackdropCaptureDataHandle, BackdropRenderDataHandle, BackdropRenderScratch};
 use borders::{ImageBorderDataHandle, ImageBorderScratch, NormalBorderDataHandle, NormalBorderScratch};
-use gradient::{LinearGradientDataHandle, LinearGradientScratch, RadialGradientDataHandle, ConicGradientDataHandle};
+use gradient::{LinearGradientDataHandle, RadialGradientDataHandle, ConicGradientDataHandle};
 use image::{ImageDataHandle, ImageScratch, VisibleImageTile, YuvImageDataHandle};
 use line_dec::{LineDecorationDataHandle, LineDecorationScratch};
 use picture::PictureDataHandle;
@@ -976,12 +976,6 @@ pub struct PrimitiveFrameScratch {
 
     
     
-    
-    
-    pub linear_gradient: storage::Storage<LinearGradientScratch>,
-
-    
-    
     pub clip_mask_instances: Vec<ClipMaskKind>,
 
     
@@ -1014,7 +1008,6 @@ impl Default for PrimitiveFrameScratch {
             border_task_ids: storage::Storage::new(0),
             border_segments: storage::Storage::new(0),
             image_border: storage::Storage::new(0),
-            linear_gradient: storage::Storage::new(0),
             clip_mask_instances: Vec::new(),
             debug_items: Vec::new(),
             required_sub_graphs: FastHashSet::default(),
@@ -1040,7 +1033,6 @@ impl PrimitiveFrameScratch {
         self.border_task_ids.recycle(recycler);
         self.border_segments.recycle(recycler);
         self.image_border.recycle(recycler);
-        self.linear_gradient.recycle(recycler);
         recycler.recycle_vec(&mut self.clip_mask_instances);
         recycler.recycle_vec(&mut self.debug_items);
         recycler.recycle_vec(&mut self.quad_direct_segments);
@@ -1061,7 +1053,6 @@ impl PrimitiveFrameScratch {
         self.border_task_ids.clear();
         self.border_segments.clear();
         self.image_border.clear();
-        self.linear_gradient.clear();
 
         
         

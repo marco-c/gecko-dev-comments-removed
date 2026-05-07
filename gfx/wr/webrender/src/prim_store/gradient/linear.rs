@@ -14,18 +14,14 @@ use api::{ExtendMode, GradientStop};
 use api::units::*;
 use crate::pattern::gradient::linear_gradient_pattern;
 use crate::pattern::{Pattern, PatternBuilder, PatternBuilderContext, PatternBuilderState};
-use crate::render_backend::DataStores;
 use crate::scene_building::IsVisible;
 use crate::intern::{Internable, InternDebug, Handle as InternHandle};
 use crate::internal_types::LayoutPrimitiveInfo;
 use crate::image_tiling::simplify_repeated_primitive;
-use crate::prim_store::BrushSegment;
-use crate::prim_store::{PrimitiveInstanceIndex, PrimitiveKind, PrimitiveOpacity, PrimitiveScratchBuffer};
+use crate::prim_store::{PrimitiveKind, PrimitiveOpacity};
 use crate::prim_store::{PrimKeyCommonData, PrimTemplateCommonData, PrimitiveStore};
 use crate::prim_store::{NinePatchDescriptor, PointKey, SizeKey, InternablePrimitive};
-use crate::prim_store::storage;
 use crate::segment::EdgeMask;
-use crate::visibility::KindScratchHandle;
 use super::{stops_and_min_alpha, GradientStopKey, apply_gradient_local_clip};
 use std::ops::{Deref, DerefMut};
 use std::mem::swap;
@@ -83,55 +79,6 @@ pub struct LinearGradientTemplate {
     pub stops: Vec<GradientStop>,
     pub border_nine_patch: Option<Box<NinePatchDescriptor>>,
     pub reverse_stops: bool,
-}
-
-
-
-
-#[derive(Copy, Clone, Debug)]
-#[cfg_attr(feature = "capture", derive(Serialize))]
-pub struct LinearGradientScratch {
-    
-    
-    
-    
-    pub brush_segments_range: storage::Range<BrushSegment>,
-}
-
-impl LinearGradientScratch {
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn build_for_prim(
-        data_handle: LinearGradientDataHandle,
-        prim_instance_index: PrimitiveInstanceIndex,
-        data_stores: &DataStores,
-        scratch: &mut PrimitiveScratchBuffer,
-    ) {
-        let prim_data = &data_stores.linear_grad[data_handle];
-        let nine_patch = match prim_data.border_nine_patch.as_deref() {
-            Some(np) => np,
-            None => return,
-        };
-        let prim_size = prim_data.common.prim_size;
-
-        let brush_open = scratch.frame.segments.open_range();
-        scratch.frame.segments.data_mut().extend(
-            nine_patch.create_brush_segments(prim_size),
-        );
-        let brush_segments_range = scratch.frame.segments.close_range(brush_open);
-
-        let handle = scratch.frame.linear_gradient.push(LinearGradientScratch {
-            brush_segments_range,
-        });
-        scratch.frame.draws[prim_instance_index.0 as usize].kind_scratch =
-            KindScratchHandle::LinearGradient(handle);
-    }
 }
 
 impl PatternBuilder for LinearGradientTemplate {
