@@ -247,12 +247,12 @@ class nsUrlClassifierDBServiceWorker final : public nsIUrlClassifierDBService {
 
   TableUpdateArray mTableUpdates;
 
-  uint32_t mUpdateWaitSec;
+  uint32_t mUpdateWaitSec = 0;
 
   
   ConstCacheResultArray mLastResults;
 
-  nsresult mUpdateStatus;
+  nsresult mUpdateStatus = NS_OK;
   nsTArray<nsCString> mUpdateTables;
 
   

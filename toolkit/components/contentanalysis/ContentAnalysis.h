@@ -112,10 +112,10 @@ class ContentAnalysisRequest final : public nsIContentAnalysisRequest {
   ContentAnalysisRequest() = default;
 
   
-  AnalysisType mAnalysisType;
+  AnalysisType mAnalysisType = AnalysisType::eUnspecified;
 
   
-  Reason mReason;
+  Reason mReason = Reason::eUnknown;
 
   RefPtr<nsITransferable> mTransferable;
   RefPtr<dom::DataTransfer> mDataTransfer;
@@ -151,7 +151,7 @@ class ContentAnalysisRequest final : public nsIContentAnalysisRequest {
   int64_t mUserActionRequestsCount = 1;
 
   
-  OperationType mOperationTypeForDisplay;
+  OperationType mOperationTypeForDisplay = OperationType::eClipboard;
 
   
   
@@ -416,7 +416,7 @@ class ContentAnalysis final : public nsIContentAnalysis,
     nsCString mUserActionId;
 
     
-    size_t mNumCARequestsRemaining;
+    size_t mNumCARequestsRemaining = 0;
 
     
     bool mResponded = false;

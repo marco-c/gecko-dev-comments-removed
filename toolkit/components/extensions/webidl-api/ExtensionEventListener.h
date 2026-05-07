@@ -180,7 +180,7 @@ class ExtensionListenerCallWorkerRunnable final
   RefPtr<dom::Promise> mPromiseResult;
   bool mIsCallResultCancelled = false;
   
-  bool mAPIObjectPrepended;
+  bool mAPIObjectPrepended = false;
   APIObjectType mAPIObjectType;
   CallbackType mCallbackArgType;
 };
