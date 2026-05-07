@@ -300,8 +300,8 @@ class ProfileSymbolicator:
         
         if "MOZ_AUTOMATION" in os.environ:
             moz_fetch = os.environ["MOZ_FETCHES_DIR"]
-            symbolicator_path = Path(
-                moz_fetch, "symbolicator-cli", "symbolicator-cli.js"
+            profiler_edit_path = Path(
+                moz_fetch, "profiler-node-tools", "profiler-edit.js"
             )
             if platform.system() == "Windows":
                 samply_path = Path(moz_fetch, "samply", "samply.exe")
@@ -315,7 +315,7 @@ class ProfileSymbolicator:
             
 
             if not self._validate_symbolication_deps([
-                symbolicator_path,
+                profiler_edit_path,
                 samply_path,
                 node_path,
             ]):
@@ -370,22 +370,22 @@ class ProfileSymbolicator:
                     with subprocess.Popen(
                         [
                             node_path,
-                            str(Path(symbolicator_path)),
-                            "--input",
+                            str(profiler_edit_path),
+                            "-i",
                             str(unsym_profile),
-                            "--output",
+                            "-o",
                             str(sym_profile),
-                            "--server",
+                            "--symbolicate-with-server",
                             server_url,
                         ],
                         stdout=subprocess.PIPE,
                         stderr=subprocess.STDOUT,
                         text=True,
                         bufsize=1,
-                    ) as symbolicator_process:
+                    ) as profiler_edit_process:
                         
-                        for line in symbolicator_process.stdout:
-                            LOG.info(f"symbolicator-cli {line.strip()}")
+                        for line in profiler_edit_process.stdout:
+                            LOG.info(f"profiler-edit {line.strip()}")
 
                     
                     if platform.system() == "Windows":

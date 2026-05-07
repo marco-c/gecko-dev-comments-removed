@@ -1088,7 +1088,7 @@ def add_gecko_profile_symbolication_deps(config, tasks):
         ):
             fetches = task.setdefault("fetches", {})
             fetch_toolchains = fetches.setdefault("toolchain", [])
-            fetch_toolchains.append("symbolicator-cli")
+            fetch_toolchains.append("profiler-node-tools")
 
             test_platform = task["test-platform"]
 
