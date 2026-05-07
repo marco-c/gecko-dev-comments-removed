@@ -462,8 +462,8 @@ pub fn recalc_style_at<E, D, F>(
     
     
     
-    let mut traverse_children = has_dirty_descendants_for_this_restyle
-        || !propagated_hint.is_empty();
+    let mut traverse_children =
+        has_dirty_descendants_for_this_restyle || !propagated_hint.is_empty();
 
     traverse_children = traverse_children && !data.styles.is_display_none();
 

@@ -2,7 +2,7 @@
 
 
 
-use nserror::{NS_ERROR_NULL_POINTER, nsresult};
+use nserror::{nsresult, NS_ERROR_NULL_POINTER};
 
 
 

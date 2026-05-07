@@ -52,6 +52,7 @@ pub type VerticalPosition = PositionComponent<VerticalPositionKeyword>;
 
 
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped)]
+#[typed(todo_derive_fields)]
 pub enum PositionComponent<S> {
     
     Center,
@@ -364,6 +365,7 @@ impl<S: Side> PositionComponent<S> {
 )]
 #[css(comma)]
 #[repr(transparent)]
+#[typed(todo_derive_fields)]
 pub struct AnchorNameIdent(
     #[css(iterable, if_empty = "none")]
     #[ignore_malloc_size_of = "Arc"]
@@ -430,6 +432,7 @@ impl AnchorName {
 )]
 #[repr(transparent)]
 #[css(comma)]
+#[typed(todo_derive_fields)]
 pub struct ScopedNameList(
     
     #[css(iterable, if_empty = "none")]
@@ -520,7 +523,10 @@ impl ScopedName {
     ToTyped,
 )]
 #[repr(u8)]
+#[typed(todo_derive_fields)]
 pub enum PositionAnchorKeyword {
+    
+    Normal,
     
     None,
     
@@ -529,17 +535,10 @@ pub enum PositionAnchorKeyword {
     Ident(DashedIdent),
 }
 
-impl PositionAnchorKeyword {
-    
-    pub fn none() -> Self {
-        Self::None
-    }
-}
-
 impl IsTreeScoped for PositionAnchorKeyword {
     fn is_tree_scoped(&self) -> bool {
         match *self {
-            Self::None | Self::Auto => false,
+            Self::Normal | Self::None | Self::Auto => false,
             Self::Ident(_) => true,
         }
     }
@@ -550,8 +549,8 @@ pub type PositionAnchor = TreeScoped<PositionAnchorKeyword>;
 
 impl PositionAnchor {
     
-    pub fn none() -> Self {
-        Self::with_default_level(PositionAnchorKeyword::none())
+    pub fn normal() -> Self {
+        Self::with_default_level(PositionAnchorKeyword::Normal)
     }
 }
 
@@ -739,6 +738,7 @@ pub enum PositionTryFallbacksItem {
 )]
 #[css(comma)]
 #[repr(C)]
+#[typed(todo_derive_fields)]
 
 pub struct PositionTryFallbacks(
     #[css(iterable, if_empty = "none")]
@@ -1297,6 +1297,7 @@ impl PositionAreaKeyword {
     ToTyped,
 )]
 #[repr(C)]
+#[typed(todo_derive_fields)]
 
 pub struct PositionArea {
     
@@ -1682,6 +1683,7 @@ pub enum MasonryItemOrder {
     ToTyped,
 )]
 #[repr(C)]
+#[typed(todo_derive_fields)]
 
 
 pub struct MasonryAutoFlow {
@@ -2048,6 +2050,7 @@ fn is_name_code_point(c: char) -> bool {
     ToShmem,
     ToTyped,
 )]
+#[typed(todo_derive_fields)]
 pub enum GridTemplateAreas {
     
     None,
