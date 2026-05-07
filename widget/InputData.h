@@ -619,9 +619,9 @@ class PinchGestureInput : public InputData {
   
   
   
-  int32_t mLineOrPageDeltaY;
+  int32_t mLineOrPageDeltaY = 0;
 
-  bool mHandledByAPZ;
+  bool mHandledByAPZ = false;
 };
 
 
@@ -797,11 +797,12 @@ class ScrollWheelInput : public InputData {
 
   bool mMayHaveMomentum;
   bool mIsMomentum;
-  bool mAllowToOverrideSystemScrollSpeed;
+  bool mAllowToOverrideSystemScrollSpeed = false;
 
   
   
-  WheelDeltaAdjustmentStrategy mWheelDeltaAdjustmentStrategy;
+  WheelDeltaAdjustmentStrategy mWheelDeltaAdjustmentStrategy =
+      WheelDeltaAdjustmentStrategy::eNone;
 
   APZWheelAction mAPZAction;
 };

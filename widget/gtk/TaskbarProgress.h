@@ -22,7 +22,7 @@ class TaskbarProgress final : public nsIGtkTaskbarProgress {
 
   
   
-  unsigned long mCurrentProgress;
+  unsigned long mCurrentProgress = 0;
 
   RefPtr<nsWindow> mPrimaryWindow;
 };
