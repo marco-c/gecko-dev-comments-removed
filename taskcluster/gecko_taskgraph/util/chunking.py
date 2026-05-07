@@ -35,12 +35,14 @@ TEST_VARIANTS = {}
 if os.path.exists(VARIANTS_YML):
     TEST_VARIANTS = load_yaml(VARIANTS_YML)
 
+
 WPT_SUBSUITES = {
     "canvas": ["html/canvas"],
-    "webgpu": ["_mozilla/webgpu"],
+    "webgpu": ["webgpu"],
     "webcodecs": ["webcodecs"],
     "eme": ["encrypted-media"],
 }
+
 
 
 def get_test_tags(config, env):
