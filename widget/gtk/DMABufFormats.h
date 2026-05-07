@@ -113,12 +113,6 @@ class GlobalDMABufFormats final {
 
   bool SupportsDirectComposition(mozilla::gfx::SurfaceFormat aFormat) const;
 
-  
-  
-  
-  
-  void AppendEGLVideoModifiers();
-
  private:
   void LoadFormatModifiers();
   void SetModifiersToGfxVars();

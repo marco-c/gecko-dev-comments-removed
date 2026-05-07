@@ -243,16 +243,6 @@ void gfxPlatformGtk::InitPlatformHardwareVideoConfig() {
     return;
   }
 
-#ifdef MOZ_WIDGET_GTK
-  
-  
-  
-  
-  if (!GdkIsWaylandDisplay()) {
-    GetGlobalDMABufFormats()->AppendEGLVideoModifiers();
-  }
-#endif
-
   
   FeatureState& featureZeroCopy =
       gfxConfig::GetFeature(Feature::HW_DECODED_VIDEO_ZERO_COPY);
