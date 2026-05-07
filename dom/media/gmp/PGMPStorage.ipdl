@@ -1,7 +1,6 @@
-
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 include protocol PGMP;
 include GMPTypes;
@@ -13,7 +12,7 @@ using GMPErr from "gmp-errors.h";
 namespace mozilla {
 namespace gmp {
 
-[ManualDealloc, ChildImpl="GMPStorageChild", ParentImpl=virtual]
+[ChildImpl="GMPStorageChild", ParentImpl=virtual]
 async protocol PGMPStorage
 {
   manager PGMP;
@@ -33,5 +32,5 @@ parent:
 
 };
 
-} 
-} 
+} // namespace gmp
+} // namespace mozilla
