@@ -3,5 +3,5 @@
 
 
 fn main() {
-    unreachable!("a place-holder for the app-services monorepo migration");
+    embedded_uniffi_bindgen::main().unwrap()
 }
