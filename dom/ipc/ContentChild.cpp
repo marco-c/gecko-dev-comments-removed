@@ -966,6 +966,7 @@ nsresult ContentChild::ProvideWindowCommon(
   *aReturn = nullptr;
 
   nsAutoCString features(aFeatures);
+  nsAutoString name(aName);
 
   nsresult rv;
 
@@ -979,6 +980,92 @@ nsresult ContentChild::ProvideWindowCommon(
     return NS_ERROR_ABORT;
   }
 
+  bool useRemoteSubframes =
+      aChromeFlags & nsIWebBrowserChrome::CHROME_FISSION_WINDOW;
+
+  uint32_t parentSandboxFlags = parent->SandboxFlags();
+  Document* doc = parent->GetDocument();
+  if (doc) {
+    parentSandboxFlags = doc->GetSandboxFlags();
+  }
+
+  const bool isForPrinting = aOpenWindowInfo->GetIsForPrinting();
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  const bool cannotLoadInDifferentProcess =
+      useRemoteSubframes || isForPrinting ||
+      (parentSandboxFlags &
+       SANDBOX_PROPAGATES_TO_AUXILIARY_BROWSING_CONTEXTS) ||
+      (aLoadState &&
+       (aLoadState->IsFormSubmission() || aLoadState->PostDataStream()));
+  if (!cannotLoadInDifferentProcess) {
+    
+    
+    bool loadInDifferentProcess =
+        aForceNoOpener && StaticPrefs::dom_noopener_newprocess_enabled();
+    if (loadInDifferentProcess) {
+      nsCOMPtr<nsIPrincipal> triggeringPrincipal;
+      nsCOMPtr<nsIPolicyContainer> policyContainer;
+      nsCOMPtr<nsIReferrerInfo> referrerInfo;
+      rv = GetCreateWindowParams(aOpenWindowInfo, aLoadState, aForceNoReferrer,
+                                 getter_AddRefs(referrerInfo),
+                                 getter_AddRefs(triggeringPrincipal),
+                                 getter_AddRefs(policyContainer));
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
+
+      if (name.LowerCaseEqualsLiteral("_blank")) {
+        name.Truncate();
+      }
+
+      MOZ_DIAGNOSTIC_ASSERT(!nsContentUtils::IsSpecialName(name));
+
+      const bool hasValidUserGestureActivation = [aLoadState, doc] {
+        if (aLoadState) {
+          return aLoadState->HasValidUserGestureActivation();
+        }
+        if (doc) {
+          return doc->HasValidTransientUserGestureActivation();
+        }
+        return false;
+      }();
+
+      const bool textDirectiveUserActivation = [aLoadState, doc] {
+        if (doc && doc->ConsumeTextDirectiveUserActivation()) {
+          return true;
+        }
+        if (aLoadState) {
+          return aLoadState->GetTextDirectiveUserActivation();
+        }
+        return false;
+      }() || hasValidUserGestureActivation;
+
+      (void)SendCreateWindowInDifferentProcess(
+          aTabOpener, parent, aChromeFlags, aCalledFromJS,
+          aOpenWindowInfo->GetIsTopLevelCreatedByWebContent(), aURI, features,
+          aModifiers, name, triggeringPrincipal, policyContainer, referrerInfo,
+          aOpenWindowInfo->GetOriginAttributes(), hasValidUserGestureActivation,
+          textDirectiveUserActivation);
+
+      
+      
+      return NS_ERROR_ABORT;
+    }
+  }
+
+  TabId tabId(nsContentUtils::GenerateTabId());
+
+  
+  
+  
   RefPtr<BrowsingContext> openerBC;
   if (!aForceNoOpener) {
     openerBC = parent;
@@ -989,11 +1076,10 @@ nsresult ContentChild::ProvideWindowCommon(
       BrowsingContext::CreateDetachedOptions{
           .isPopupRequested = aIsPopupRequested,
           .topLevelCreatedByWebContent = true,
-          .isForPrinting = aOpenWindowInfo->GetIsForPrinting(),
+          .isForPrinting = isForPrinting,
       });
   MOZ_ALWAYS_SUCCEEDS(browsingContext->SetRemoteTabs(true));
-  MOZ_ALWAYS_SUCCEEDS(browsingContext->SetRemoteSubframes(
-      aChromeFlags & nsIWebBrowserChrome::CHROME_FISSION_WINDOW));
+  MOZ_ALWAYS_SUCCEEDS(browsingContext->SetRemoteSubframes(useRemoteSubframes));
   MOZ_ALWAYS_SUCCEEDS(browsingContext->SetOriginAttributes(
       aOpenWindowInfo->GetOriginAttributes()));
 
@@ -1030,8 +1116,6 @@ nsresult ContentChild::ProvideWindowCommon(
   if (NS_WARN_IF(!windowChild)) {
     return NS_ERROR_ABORT;
   }
-
-  TabId tabId(nsContentUtils::GenerateTabId());
 
   auto newChild = MakeNotNull<RefPtr<BrowserChild>>(
       this, tabId, *aTabOpener, browsingContext, aChromeFlags,
