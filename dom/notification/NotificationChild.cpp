@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "NotificationChild.h"
 
 #include "WindowGlobalChild.h"
@@ -23,7 +21,7 @@ NotificationChild::NotificationChild(Notification* aNonPersistentNotification,
                                      WindowGlobalChild* aWindow)
     : mNonPersistentNotification(aNonPersistentNotification), mWindow(aWindow) {
   if (mWindow) {
-    BindToOwner(mWindow->GetWindowGlobal()->AsGlobal());
+    BindToGlobal(mWindow->GetWindowGlobal()->AsGlobal());
     return;
   }
 }

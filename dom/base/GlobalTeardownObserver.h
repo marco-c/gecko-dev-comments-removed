@@ -49,7 +49,7 @@ class GlobalTeardownObserver
  protected:
   virtual ~GlobalTeardownObserver();
 
-  void BindToOwner(nsIGlobalObject* aOwner);
+  void BindToGlobal(nsIGlobalObject* aOwner);
 
  private:
   
