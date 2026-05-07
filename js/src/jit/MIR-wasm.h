@@ -2042,7 +2042,8 @@ class MWasmCallBase {
     
     
     AliasSet exclude = AliasSet(AliasSet::WasmArrayNumElements) |
-                       AliasSet(AliasSet::WasmArrayDataPointer);
+                       AliasSet(AliasSet::WasmArrayDataPointer) |
+                       AliasSet(AliasSet::WasmStructOutlineDataPointer);
     return AliasSet::Store(AliasSet::Any) & ~exclude;
   }
 };
