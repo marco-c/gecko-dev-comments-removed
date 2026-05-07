@@ -1285,50 +1285,6 @@ already_AddRefed<Promise> MediaCapabilities::EncodingInfo(
   return encodePromise.forget();
 }
 
-Maybe<MediaContainerType> MediaCapabilities::CheckVideoConfiguration(
-    const VideoConfiguration& aConfig) const {
-  Maybe<MediaExtendedMIMEType> container = MakeMediaExtendedMIMEType(aConfig);
-  if (!container) {
-    return Nothing();
-  }
-  
-  
-  if (!container->Type().HasVideoMajorType() &&
-      !container->Type().HasApplicationMajorType()) {
-    return Nothing();
-  }
-
-  
-  
-  
-  
-  
-
-  return Some(MediaContainerType(std::move(*container)));
-}
-
-Maybe<MediaContainerType> MediaCapabilities::CheckAudioConfiguration(
-    const AudioConfiguration& aConfig) const {
-  Maybe<MediaExtendedMIMEType> container = MakeMediaExtendedMIMEType(aConfig);
-  if (!container) {
-    return Nothing();
-  }
-  
-  
-  if (!container->Type().HasAudioMajorType() &&
-      !container->Type().HasApplicationMajorType()) {
-    return Nothing();
-  }
-
-  
-  
-  
-  
-  
-
-  return Some(MediaContainerType(std::move(*container)));
-}
-
 bool MediaCapabilities::CheckTypeForMediaSource(
     const MediaExtendedMIMEType& aType) const {
   IgnoredErrorResult rv;
