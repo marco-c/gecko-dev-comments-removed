@@ -13,6 +13,7 @@
 #include "mozilla/intl/DateTimeFormat.h"
 #include "mozilla/intl/Locale.h"
 #include "mozilla/intl/Region.h"
+#include "mozilla/intl/TimeZone.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Span.h"
 #include "mozilla/TextUtils.h"
@@ -1588,6 +1589,91 @@ static JS::Value TextDirectionOfLocale(JSContext* cx, LocaleObject* locale) {
   MOZ_CRASH("invalid text direction");
 }
 
+static bool AddTimeZonesToList(JSContext* cx,
+                               const mozilla::intl::RegionSubtag& region,
+                               MutableHandle<StringList> list) {
+  
+  auto values = mozilla::intl::TimeZone::GetAvailableTimeZones(region);
+  if (values.isErr()) {
+    ReportInternalError(cx, values.unwrapErr());
+    return false;
+  }
+
+  auto& sharedIntlData = cx->runtime()->sharedIntlData.ref();
+
+  Rooted<JSAtom*> availableTimeZone(cx);
+  Rooted<JSAtom*> primaryTimeZone(cx);
+  for (auto value : values.unwrap()) {
+    if (value.isErr()) {
+      ReportInternalError(cx);
+      return false;
+    }
+
+    
+    availableTimeZone.set(nullptr);
+    primaryTimeZone.set(nullptr);
+
+    
+    if (!sharedIntlData.validateAndCanonicalizeTimeZone(
+            cx, value.unwrap(), &availableTimeZone, &primaryTimeZone)) {
+      return false;
+    }
+
+    
+    if (primaryTimeZone) {
+      if (!list.append(primaryTimeZone)) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+
+
+
+
+
+static bool TimeZonesOfLocale(JSContext* cx, LocaleObject* locale,
+                              JS::MutableHandle<JS::Value> result) {
+  
+  auto region = GetLocaleRegion(locale);
+
+  
+  if (region.Missing()) {
+    result.setUndefined();
+    return true;
+  }
+
+  
+  
+  
+  Rooted<StringList> list(cx, StringList(cx));
+
+  
+  auto regionResult = mozilla::intl::Region::From(region);
+  if (regionResult.isErr()) {
+    ReportInternalError(cx, regionResult.unwrapErr());
+    return false;
+  }
+
+  auto regionMaybe = regionResult.unwrap();
+  if (regionMaybe && regionMaybe->IsRegular()) {
+    if (!AddTimeZonesToList(cx, region, &list)) {
+      return false;
+    }
+  }
+
+  
+  auto* array = CreateSortedArrayFromList(cx, &list);
+  if (!array) {
+    return false;
+  }
+
+  result.setObject(*array);
+  return true;
+}
+
 struct WeekInfo {
   
 
@@ -2196,6 +2282,23 @@ static bool Locale_getTextInfo(JSContext* cx, unsigned argc, Value* vp) {
 }
 
 
+static bool Locale_getTimeZones(JSContext* cx, const CallArgs& args) {
+  MOZ_ASSERT(IsLocale(args.thisv()));
+
+  auto* locale = &args.thisv().toObject().as<LocaleObject>();
+
+  
+  return TimeZonesOfLocale(cx, locale, args.rval());
+}
+
+
+static bool Locale_getTimeZones(JSContext* cx, unsigned argc, Value* vp) {
+  
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsLocale, Locale_getTimeZones>(cx, args);
+}
+
+
 static bool Locale_getWeekInfo(JSContext* cx, const CallArgs& args) {
   MOZ_ASSERT(IsLocale(args.thisv()));
 
@@ -2262,6 +2365,7 @@ static const JSFunctionSpec locale_methods[] = {
     JS_FN("getHourCycles", Locale_getHourCycles, 0, 0),
     JS_FN("getNumberingSystems", Locale_getNumberingSystems, 0, 0),
     JS_FN("getTextInfo", Locale_getTextInfo, 0, 0),
+    JS_FN("getTimeZones", Locale_getTimeZones, 0, 0),
     JS_FN("getWeekInfo", Locale_getWeekInfo, 0, 0),
 #endif
     JS_FS_END,
