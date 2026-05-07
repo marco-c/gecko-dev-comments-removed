@@ -24,6 +24,7 @@
 #include "mozilla/net/CookieValidation.h"
 #include "Cookie.h"
 #include "CookieParser.h"
+#include "CookieStorage.h"
 #include "nsIURI.h"
 #include "nsIConsoleReportCollector.h"
 
@@ -1246,4 +1247,90 @@ TEST(TestCookie, MaxAgeParser)
   SetACookie(cookieService, "http://maxage.net/", "a=1; max-age=-1");
   GetACookie(cookieService, "http://maxage.net/", cookieStr);
   EXPECT_TRUE(CheckResult(cookieStr.get(), MUST_EQUAL, ""));
+}
+
+
+class TestableCookieStorage final : public CookieStorage {
+ public:
+  static already_AddRefed<TestableCookieStorage> Create() {
+    RefPtr<TestableCookieStorage> storage = new TestableCookieStorage();
+    storage->Init();
+    return storage.forget();
+  }
+
+  using CookieStorage::AddCookieToList;
+  using CookieStorage::mHostTable;
+
+  void StaleCookies(const nsTArray<RefPtr<Cookie>>&, int64_t) override {}
+  void Close() override {}
+  void EnsureInitialized() override {}
+  nsresult RunInTransaction(nsICookieTransactionCallback*) override {
+    return NS_ERROR_NOT_IMPLEMENTED;
+  }
+
+ protected:
+  const char* NotificationTopic() const override { return "test-cookie"; }
+  void NotifyChangedInternal(nsICookieNotification*, bool) override {}
+  void RemoveAllInternal() override {}
+  void RemoveCookieFromDB(const Cookie&) override {}
+  void StoreCookie(const nsACString&, const OriginAttributes&,
+                   Cookie*) override {}
+
+ private:
+  ~TestableCookieStorage() = default;
+  void CollectCookieJarSizeData() override {}
+  already_AddRefed<nsIArray> PurgeCookies(int64_t, uint16_t, int64_t) override {
+    return nullptr;
+  }
+};
+
+
+
+
+TEST(TestCookie, RemoveOlderCookiesByBytesEntryFreed)
+{
+  RefPtr<TestableCookieStorage> storage = TestableCookieStorage::Create();
+
+  nsAutoCString baseDomain("localhost"_ns);
+  OriginAttributes attrs;
+  attrs.mPartitionKey = u"(http,example.com)"_ns;
+
+  
+  CookieStruct cookieData;
+  cookieData.name() = "B"_ns;
+  cookieData.value() = "xx"_ns;
+  cookieData.host() = "localhost"_ns;
+  cookieData.path() = "/"_ns;
+  cookieData.expiryInMSec() = PR_Now() / PR_USEC_PER_MSEC + 86400 * 1000;
+  cookieData.lastAccessedInUSec() = 0;
+  cookieData.creationTimeInUSec() = 0;
+  cookieData.updateTimeInUSec() = 0;
+  cookieData.isHttpOnly() = false;
+  cookieData.isSession() = true;
+  cookieData.isSecure() = false;
+  cookieData.isPartitioned() = true;
+  cookieData.sameSite() = nsICookie::SAMESITE_LAX;
+  cookieData.schemeMap() = 2;
+
+  RefPtr<Cookie> cookie = Cookie::Create(cookieData, attrs);
+  ASSERT_TRUE(cookie);
+
+  storage->AddCookieToList(baseDomain, attrs, cookie);
+
+  CookieKey key(baseDomain, attrs);
+  CookieEntry* entry = storage->mHostTable.GetEntry(key);
+  ASSERT_TRUE(entry);
+  EXPECT_EQ(entry->GetCookies().Length(), 1u);
+
+  uint32_t cookieBytes = cookie->NameAndValueBytes();
+  ASSERT_GT(cookieBytes, 0u);
+
+  
+  
+  
+  nsCOMPtr<nsIArray> purgedList;
+  storage->RemoveOlderCookiesByBytes(entry, cookieBytes + 100, purgedList);
+
+  
+  EXPECT_FALSE(storage->mHostTable.GetEntry(key));
 }
