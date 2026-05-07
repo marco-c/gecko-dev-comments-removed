@@ -16523,8 +16523,7 @@ static bool ElementIsRemoteFrame(Element* aElement) {
   return loader && loader->IsRemoteFrame();
 }
 
-Document::ElementReadyCheckResult Document::FullscreenElementReadyCheck(
-    FullscreenRequest& aRequest) {
+bool Document::FullscreenElementReadyCheck(FullscreenRequest& aRequest) {
   Element* elem = aRequest.Element();
   
   
@@ -16532,7 +16531,9 @@ Document::ElementReadyCheckResult Document::FullscreenElementReadyCheck(
   
   
   Element* fullscreenElement = GetUnretargetedFullscreenElement();
-  if (NS_WARN_IF(elem == fullscreenElement)) {
+  if (NS_WARN_IF(elem == fullscreenElement &&
+                 aRequest.mFullscreenKeyboardLock ==
+                     GetFullscreenKeyboardLockStatus())) {
     
     
     
@@ -16543,57 +16544,44 @@ Document::ElementReadyCheckResult Document::FullscreenElementReadyCheck(
     
     
     if (ElementIsRemoteFrame(elem)) {
-      
-      
-      
-      
-      
-      if (XRE_IsParentProcess()) {
-        SetFullscreenKeyboardLockStatus(aRequest.mFullscreenKeyboardLock);
-      }
       PropagateFullscreenRequest(this, elem);
     }
-
-    
-    return (aRequest.mFullscreenKeyboardLock ==
-                GetFullscreenKeyboardLockStatus() ||
-            XRE_IsParentProcess())
-               ? ElementReadyCheckResult::eSame
-               : ElementReadyCheckResult::eKeyboardLockOnly;
+    aRequest.MayResolvePromise();
+    return false;
   }
   if (!elem->IsInComposedDoc()) {
     aRequest.Reject("FullscreenDeniedNotInDocument");
-    return ElementReadyCheckResult::eErrorPromiseRejected;
+    return false;
   }
   if (elem->IsPopoverOpen()) {
     aRequest.Reject("FullscreenDeniedPopoverOpen");
-    return ElementReadyCheckResult::eErrorPromiseRejected;
+    return false;
   }
   if (elem->OwnerDoc() != this) {
     aRequest.Reject("FullscreenDeniedMovedDocument");
-    return ElementReadyCheckResult::eErrorPromiseRejected;
+    return false;
   }
   if (!GetWindow()) {
     aRequest.Reject("FullscreenDeniedLostWindow");
-    return ElementReadyCheckResult::eErrorPromiseRejected;
+    return false;
   }
   if (const char* msg = GetFullscreenError(aRequest.mCallerType)) {
     aRequest.Reject(msg);
-    return ElementReadyCheckResult::eErrorPromiseRejected;
+    return false;
   }
   if (HasFullscreenSubDocument(*this)) {
     aRequest.Reject("FullscreenDeniedSubDocFullScreen");
-    return ElementReadyCheckResult::eErrorPromiseRejected;
+    return false;
   }
   if (elem->IsHTMLElement(nsGkAtoms::dialog)) {
     aRequest.Reject("FullscreenDeniedHTMLDialog");
-    return ElementReadyCheckResult::eErrorPromiseRejected;
+    return false;
   }
   if (!nsContentUtils::IsChromeDoc(this) && !IsInFocusedTab(this)) {
     aRequest.Reject("FullscreenDeniedNotFocusedTab");
-    return ElementReadyCheckResult::eErrorPromiseRejected;
+    return false;
   }
-  return ElementReadyCheckResult::eOk;
+  return true;
 }
 
 static nsCOMPtr<nsPIDOMWindowOuter> GetRootWindow(Document* aDoc) {
@@ -16660,28 +16648,15 @@ void Document::RequestFullscreen(UniquePtr<FullscreenRequest> aRequest,
   }
 }
 
-static void SetKeyboardLockStatusAndMaybeDispatchEvent(
-    Document* aDoc, const FullscreenRequest& aRequest) {
-  aDoc->SetFullscreenKeyboardLockStatus(aRequest.mFullscreenKeyboardLock);
-  if (aRequest.ShouldDispatchKeyboardLockEvent()) {
-    DispatchFullscreenUpdateKeyboardLockEvent(aDoc);
-  }
-}
-
 void Document::RequestFullscreenInContentProcess(
     UniquePtr<FullscreenRequest> aRequest, bool aApplyFullscreenDirectly) {
   MOZ_ASSERT(XRE_IsContentProcess());
-  
-  
-  
 
+  
+  
+  
   if (aApplyFullscreenDirectly ||
       nsContentUtils::GetInProcessSubtreeRootDocument(this)->Fullscreen()) {
-    
-    
-    
-    aRequest->SetShouldDispatchKeyboardLockEvent(aRequest->GetPromise() &&
-                                                 aRequest->Document() == this);
     ApplyFullscreen(std::move(aRequest));
     return;
   }
@@ -16693,14 +16668,8 @@ void Document::RequestFullscreenInContentProcess(
 
   
   
-  switch (FullscreenElementReadyCheck(*aRequest)) {
-    case ElementReadyCheckResult::eSame:
-      aRequest->MayResolvePromise();
-      [[fallthrough]];
-    case ElementReadyCheckResult::eErrorPromiseRejected:
-      return;
-    default:
-      break;
+  if (!FullscreenElementReadyCheck(*aRequest)) {
+    return;
   }
 
   auto fullscreenKeyboardLock = aRequest->mFullscreenKeyboardLock;
@@ -16761,16 +16730,11 @@ void Document::RequestFullscreenInParentProcess(
     rootWin->SetFullscreenInternal(FullscreenReason::ForFullscreenAPI, true);
     return;
   }
+
   
   
-  switch (FullscreenElementReadyCheck(*aRequest)) {
-    case ElementReadyCheckResult::eSame:
-      aRequest->MayResolvePromise();
-      [[fallthrough]];
-    case ElementReadyCheckResult::eErrorPromiseRejected:
-      return;
-    default:
-      break;
+  if (!FullscreenElementReadyCheck(*aRequest)) {
+    return;
   }
 
   PendingFullscreenChangeList::Add(std::move(aRequest));
@@ -16833,20 +16797,22 @@ bool Document::HasPendingFullscreenRequests() {
 
 MOZ_CAN_RUN_SCRIPT_BOUNDARY
 bool Document::ApplyFullscreen(UniquePtr<FullscreenRequest> aRequest) {
-  Element* elem = aRequest->Element();
+  if (!FullscreenElementReadyCheck(*aRequest)) {
+    return false;
+  }
 
-  switch (FullscreenElementReadyCheck(*aRequest)) {
-    case ElementReadyCheckResult::eOk:
-      break;
-    case ElementReadyCheckResult::eKeyboardLockOnly:
-      SetKeyboardLockStatusAndMaybeDispatchEvent(this, *aRequest);
+  Element* elem = aRequest->Element();
+  if (GetUnretargetedFullscreenElement() == elem) {
+    
+    
+    if (aRequest->mFullscreenKeyboardLock !=
+        GetFullscreenKeyboardLockStatus()) {
+      SetFullscreenKeyboardLockStatus(aRequest->mFullscreenKeyboardLock);
+      DispatchFullscreenUpdateKeyboardLockEvent(this);
       aRequest->MayResolvePromise();
       return true;
-    case ElementReadyCheckResult::eSame:
-      aRequest->MayResolvePromise();
-      [[fallthrough]];
-    case ElementReadyCheckResult::eErrorPromiseRejected:
-      return false;
+    }
+    return false;
   }
 
   
@@ -16948,7 +16914,10 @@ bool Document::ApplyFullscreen(UniquePtr<FullscreenRequest> aRequest) {
 
   FullscreenRoots::Add(this);
 
-  SetKeyboardLockStatusAndMaybeDispatchEvent(this, *aRequest);
+  SetFullscreenKeyboardLockStatus(aRequest->mFullscreenKeyboardLock);
+  if (previousFullscreenDoc) {
+    DispatchFullscreenUpdateKeyboardLockEvent(this);
+  }
 
   
   
