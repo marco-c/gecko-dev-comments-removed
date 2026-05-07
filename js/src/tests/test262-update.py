@@ -16,6 +16,7 @@ from operator import itemgetter
 
 UNSUPPORTED_FEATURES = set([
     "tail-call-optimization",
+    "Intl.Locale-info",  
     "import-defer",
     "import-text",
     "nonextensible-applies-to-private",  
@@ -35,7 +36,6 @@ FEATURE_CHECK_NEEDED = {
     "immutable-arraybuffer": "!ArrayBuffer.prototype.sliceToImmutable",  
     "await-dictionary": "!Promise.allKeyed",
     "source-phase-imports": "!(this.hasOwnProperty('getBuildConfiguration')&&getBuildConfiguration('source-phase-imports'))",
-    "Intl.Locale-info": "!this.hasOwnProperty('Intl')||!this.Intl.Locale.prototype.hasOwnProperty('firstDayOfWeek')",
 }
 RELEASE_OR_BETA = set([
     "legacy-regexp",
@@ -53,7 +53,6 @@ SHELL_OPTIONS = {
     "await-dictionary": "--enable-promise-allkeyed",
     "source-phase-imports": "--enable-source-phase-imports",
     "source-phase-imports-module-source": "--enable-source-phase-imports-test262-module-source",
-    "Intl.Locale-info": "--enable-intl-locale-info",
 }
 
 INCLUDE_FEATURE_DETECTED_OPTIONAL_SHELL_OPTIONS = {}

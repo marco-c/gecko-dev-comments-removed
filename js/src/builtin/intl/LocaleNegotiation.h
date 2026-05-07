@@ -27,7 +27,6 @@ enum class UnicodeExtensionKey : uint8_t {
   Collation ,
   CollationCaseFirst ,
   CollationNumeric ,
-  FirstDayOfWeek ,
   HourCycle ,
   NumberingSystem ,
 };
@@ -61,18 +60,6 @@ bool CanonicalizeLocaleList(JSContext* cx, JS::Handle<JS::Value> locales,
 
 ArrayObject* CanonicalizeLocaleList(JSContext* cx,
                                     JS::Handle<JS::Value> locales);
-
-
-
-
-mozilla::Maybe<LanguageId> ToLanguageId(JSContext* cx,
-                                        const JSLinearString* locale);
-
-
-
-
-bool LookupMatcher(JSContext* cx, AvailableLocaleKind availableLocales,
-                   LanguageId locale, mozilla::Maybe<LanguageId>* result);
 
 
 
@@ -208,11 +195,6 @@ bool DefaultLocale(JSContext* cx, LanguageId* result);
 
 
 JSLinearString* DefaultCalendar(JSContext* cx, const JSLinearString* locale);
-
-
-
-
-JSLinearString* DefaultNumberingSystem(JSContext* cx, LanguageId locale);
 
 
 
