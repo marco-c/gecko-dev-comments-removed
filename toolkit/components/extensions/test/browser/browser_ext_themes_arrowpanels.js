@@ -1,29 +1,22 @@
 "use strict";
 
+ChromeUtils.defineESModuleGetters(this, {
+  UrlbarTestUtils: "resource://testing-common/UrlbarTestUtils.sys.mjs",
+});
+
 function openIdentityPopup() {
   let promise = BrowserTestUtils.waitForEvent(
     window,
     "popupshown",
     true,
-    event => event.target == gIdentityHandler._identityPopup
+    event => event.target == document.getElementById("trustpanel-popup")
   );
   gIdentityHandler._identityIconBox.click();
   return promise;
 }
 
-function closeIdentityPopup() {
-  let promise = BrowserTestUtils.waitForEvent(
-    gIdentityHandler._identityPopup,
-    "popuphidden"
-  );
-  gIdentityHandler._identityPopup.hidePopup();
-  return promise;
-}
-
-add_setup(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.trustPanel.featureGate", false]],
-  });
+add_setup(function () {
+  UrlbarTestUtils.init(this);
 });
 
 
@@ -61,8 +54,8 @@ add_task(async function test_popup_styling() {
 
       
       await openIdentityPopup();
-
-      let arrowContent = gIdentityHandler._identityPopup.panelContent;
+      let arrowContent =
+        document.getElementById("trustpanel-popup").panelContent;
       let arrowContentComputedStyle = window.getComputedStyle(arrowContent);
       
       Assert.equal(
@@ -81,7 +74,7 @@ add_task(async function test_popup_styling() {
       
       testBorderColor(arrowContent, POPUP_BORDER_COLOR);
 
-      await closeIdentityPopup();
+      await UrlbarTestUtils.closeTrustPanel(window);
       await extension.unload();
     }
   );
