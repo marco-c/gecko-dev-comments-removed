@@ -51,6 +51,10 @@ class nsAnimationManager final
   void RemoveNamedTimelineAnimation(const nsAtom* aName,
                                     mozilla::dom::CSSAnimation* aAnimation);
 
+  void UpdateNamedTimelineAnimations(
+      const nsTArray<RefPtr<const nsAtom>>& aChanged);
+  void UpdateAllNamedTimelineAnimations();
+
   
   
   
