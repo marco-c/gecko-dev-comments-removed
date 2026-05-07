@@ -4,10 +4,13 @@
 
 package mozilla.components.concept.engine.ipprotection
 
+import mozilla.components.ExperimentalAndroidComponentsApi
+
 /**
  * App-to-engine handle for controlling the IP protection proxy. Returned by
  * [mozilla.components.concept.engine.Engine.registerIPProtectionDelegate].
  */
+@ExperimentalAndroidComponentsApi
 interface IPProtectionHandler {
 
     /**
@@ -19,6 +22,11 @@ interface IPProtectionHandler {
      * Deactivates the IP protection proxy.
      */
     fun deactivate()
+
+    /**
+     * Initializes the proxy state machine.
+     */
+    fun init()
 
     /**
      * Sets the [TokenProvider] used to supply authentication tokens to the IP protection service.
@@ -71,6 +79,28 @@ interface IPProtectionHandler {
             const val PROXY_STATE_ACTIVE = 3
             const val PROXY_STATE_ERROR = 4
             const val PROXY_STATE_PAUSED = 5
+        }
+
+        override fun toString(): String {
+            val service = when (serviceState) {
+                SERVICE_STATE_UNINITIALIZED -> "UNINITIALIZED"
+                SERVICE_STATE_UNAVAILABLE -> "UNAVAILABLE"
+                SERVICE_STATE_UNAUTHENTICATED -> "UNAUTHENTICATED"
+                SERVICE_STATE_READY -> "READY"
+                else -> "UNKNOWN($serviceState)"
+            }
+            val proxy = when (proxyState) {
+                PROXY_STATE_NOT_READY -> "NOT_READY"
+                PROXY_STATE_READY -> "READY"
+                PROXY_STATE_ACTIVATING -> "ACTIVATING"
+                PROXY_STATE_ACTIVE -> "ACTIVE"
+                PROXY_STATE_ERROR -> "ERROR"
+                PROXY_STATE_PAUSED -> "PAUSED"
+                else -> "UNKNOWN($proxyState)"
+            }
+            return "StateInfo(serviceState=$service, proxyState=$proxy," +
+                " remaining=$remaining, max=$max, resetTime=$resetTime," +
+                " lastError=$lastError)"
         }
     }
 }
