@@ -54,7 +54,7 @@ class VideoBridgeChild final : public PVideoBridgeChild,
   base::ProcessId GetParentPid() const override { return OtherPid(); }
   nsISerialEventTarget* GetThread() const override { return mThread; }
   void CancelWaitForNotifyNotUsed(uint64_t aTextureId) override {
-    MOZ_ASSERT(false, "NO RECYCLING HERE");
+    MOZ_ASSERT_UNREACHABLE("NO RECYCLING HERE");
   }
 
   

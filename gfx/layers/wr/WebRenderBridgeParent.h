@@ -64,6 +64,8 @@ class WebRenderBridgeParent final : public PWebRenderBridgeParent,
                                     public CompositableParentManager,
                                     public FrameRecorder {
  public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(WebRenderBridgeParent, final);
+
   
   WebRenderBridgeParent(CompositorBridgeParent* aCompositorBridge,
                         const wr::PipelineId& aPipelineId,
