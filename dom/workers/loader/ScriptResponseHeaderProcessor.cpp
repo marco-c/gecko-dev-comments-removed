@@ -40,6 +40,10 @@ nsresult ScriptResponseHeaderProcessor::ProcessCrossOriginEmbedderPolicyHeader(
 
 nsresult ScriptResponseHeaderProcessor::EnsureExpectedModuleType(
     nsIRequest* aRequest) {
+  if (mModuleType == JS::ModuleType::Text) {
+    return NS_OK;
+  }
+
   nsCOMPtr<nsIChannel> channel = do_QueryInterface(aRequest);
   MOZ_ASSERT(channel);
   nsAutoCString mimeType;
