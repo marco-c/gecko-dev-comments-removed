@@ -71,6 +71,12 @@ mozilla::Maybe<LanguageId> ToLanguageId(JSContext* cx,
 
 
 
+bool LookupMatcher(JSContext* cx, AvailableLocaleKind availableLocales,
+                   LanguageId locale, mozilla::Maybe<LanguageId>* result);
+
+
+
+
 enum class LocaleData {
   
 
@@ -202,6 +208,11 @@ bool DefaultLocale(JSContext* cx, LanguageId* result);
 
 
 JSLinearString* DefaultCalendar(JSContext* cx, const JSLinearString* locale);
+
+
+
+
+JSLinearString* DefaultNumberingSystem(JSContext* cx, LanguageId locale);
 
 
 
