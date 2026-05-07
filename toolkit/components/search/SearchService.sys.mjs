@@ -1984,7 +1984,6 @@ export const SearchService = new (class SearchService {
 
     // Don't show the notification if the previous engine was an enterprise engine -
     // the text doesn't quite make sense.
-    // let checkPolicyEngineId = prevCurrentEngineId ? prevCurrentEngineId : prevAppDefaultEngineId;
     let checkPolicyEngineId = prevCurrentEngineId || prevAppDefaultEngineId;
     if (checkPolicyEngineId) {
       let engineSettings = settings.engines.find(
@@ -2238,7 +2237,14 @@ export const SearchService = new (class SearchService {
         if (engine instanceof lazy.AddonSearchEngine) {
           // If this is an add-on search engine, check to see if it needs
           // an update.
-          await engine.update();
+          await engine
+            .update()
+            .catch(ex =>
+              lazy.logConsole.error(
+                `Failed to update add-on search engine ${engine.id}`,
+                ex
+              )
+            );
         }
         continue;
       }
