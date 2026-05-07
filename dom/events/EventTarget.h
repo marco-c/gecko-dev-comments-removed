@@ -204,7 +204,7 @@ class EventTarget : public nsISupports, public nsWrapperCache {
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void DispatchEvent(Event& aEvent,
                                                  ErrorResult& aRv);
 
-  nsIGlobalObject* GetParentObject() const { return GetOwnerGlobal(); }
+  nsIGlobalObject* GetParentObject() const { return GetRelevantGlobal(); }
 
   
   EventHandlerNonNull* GetEventHandler(const nsAString& aType) {
@@ -225,7 +225,8 @@ class EventTarget : public nsISupports, public nsWrapperCache {
   
   
   
-  virtual nsIGlobalObject* GetOwnerGlobal() const = 0;
+  
+  virtual nsIGlobalObject* GetRelevantGlobal() const = 0;
 
   
 

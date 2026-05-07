@@ -6331,7 +6331,7 @@ static void SetAndFilterHTML(
 
   
   
-  nsCOMPtr<nsIGlobalObject> global = aTarget->GetOwnerGlobal();
+  nsCOMPtr<nsIGlobalObject> global = aTarget->GetRelevantGlobal();
   if (!global) {
     aError.ThrowInvalidStateError("Missing owner global.");
     return;
