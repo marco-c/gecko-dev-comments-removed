@@ -2894,15 +2894,10 @@ static gfx::IntPoint GetIntegerDeltaForEvent(NSEvent* aEvent) {
     outGeckoEvent->mRefPoint = nsCocoaWindow::GetNativeLockedPoint();
     WidgetMouseEvent* widgetMouseEvent = outGeckoEvent->AsMouseEvent();
     if (widgetMouseEvent && widgetMouseEvent->mMessage == eMouseMove) {
-      int32_t movementX = int32_t(aMouseEvent.deltaX);
-      int32_t movementY = int32_t(aMouseEvent.deltaY);
-      if (movementX == 0 && movementY == 0) {
-        
-        
-        return;
-      }
-      widgetMouseEvent->mMovement =
-          Some(LayoutDeviceIntPoint(movementX, movementY));
+      
+      
+      widgetMouseEvent->mMovement = Some(LayoutDeviceIntPoint(
+          int32_t(aMouseEvent.deltaX), int32_t(aMouseEvent.deltaY)));
     }
   } else {
     outGeckoEvent->mRefPoint = [self convertWindowCoordinates:locationInWindow];
