@@ -18,6 +18,7 @@ import mozilla.components.feature.addons.amo.AMOAddonsProvider
 import mozilla.components.feature.addons.migration.DefaultSupportedAddonsChecker
 import mozilla.components.feature.addons.update.DefaultAddonUpdater
 import mozilla.components.feature.autofill.AutofillConfiguration
+import mozilla.components.feature.ipprotection.IPProtectionStore
 import mozilla.components.feature.summarize.PageSummaryFeature
 import mozilla.components.feature.summarize.settings.SummarizationSettings
 import mozilla.components.lib.ai.controls.default
@@ -247,6 +248,7 @@ class Components(private val context: Context) {
     val clipboardHandler by lazyMonitored { ClipboardHandler(context) }
     val performance by lazyMonitored { PerformanceComponent() }
     val push by lazyMonitored { Push(context, analytics.crashReporter) }
+    val ipProtectionStore by lazyMonitored { IPProtectionStore() }
     val wifiConnectionMonitor by lazyMonitored { WifiConnectionMonitor(context as Application) }
 
     val strictMode by lazyMonitored {
@@ -339,6 +341,10 @@ class Components(private val context: Context) {
                 SetupChecklistPreferencesMiddleware(DefaultSetupChecklistRepository(context)),
                 SetupChecklistTelemetryMiddleware(),
                 ReviewPromptMiddleware(
+                    continuousOnboardingInProgress = {
+                        val continuousOnboardingCompleted = settings.seventhDayOnboardingCompletedTimestamp != -1L
+                        settings.continuousOnboardingFeatureEnabled && !continuousOnboardingCompleted
+                    },
                     shouldUseNewTriggerCriteria = { settings.newReviewPromptTriggerCriteriaEnabled },
                     shouldShowCustomPrompt = { settings.customReviewPromptUiEnabled && settings.isTelemetryEnabled },
                     disableCustomPrompt = { settings.customReviewPromptUiEnabled = false },
