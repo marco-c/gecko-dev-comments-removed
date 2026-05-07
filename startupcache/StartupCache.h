@@ -260,7 +260,7 @@ class StartupCache : public nsIMemoryReporter {
   
   
   nsTArray<decltype(mTable)> mOldTables MOZ_GUARDED_BY(mTableLock);
-  size_t mAllowedInvalidationsCount;
+  size_t mAllowedInvalidationsCount = 0;
   nsCOMPtr<nsIFile> mFile;
   mozilla::loader::AutoMemMap mCacheData MOZ_GUARDED_BY(mTableLock);
   Mutex mTableLock;
