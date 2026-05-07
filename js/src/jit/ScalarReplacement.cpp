@@ -3856,7 +3856,7 @@ class WasmStructMemoryView : public MDefinitionVisitorDefaultNoop {
 
  private:
   TempAllocator& alloc_;
-  MInstruction* struct_;
+  MWasmNewStructObject* struct_;
   MConstant* undefinedVal_;
   MBasicBlock* startBlock_;
   BlockState* state_;
@@ -3864,7 +3864,7 @@ class WasmStructMemoryView : public MDefinitionVisitorDefaultNoop {
   bool oom_;
 
  public:
-  WasmStructMemoryView(TempAllocator& alloc, MInstruction* wasmStruct);
+  WasmStructMemoryView(TempAllocator& alloc, MWasmNewStructObject* wasmStruct);
 
   MBasicBlock* startingBlock();
   bool initStartingState(BlockState** pState);
@@ -3908,7 +3908,7 @@ bool WasmStructMemoryView::initStartingState(BlockState** pState) {
   
   
   BlockState* state = BlockState::New(alloc_, struct_);
-  if (!state || !state->init()) {
+  if (!state) {
     return false;
   }
 
@@ -4120,13 +4120,6 @@ static bool IsWasmStructEscaped(MDefinition* ins, MInstruction* newStruct) {
   }
 
   
-  if (newStruct->isWasmNewStructObject() &&
-      newStruct->toWasmNewStructObject()->zeroFields()) {
-    JitSpew(JitSpew_Escape, "Struct is created with new_default\n");
-    return true;
-  }
-
-  
   
   
   for (MUseIterator i(ins->usesBegin()); i != ins->usesEnd(); i++) {
@@ -4189,7 +4182,7 @@ static bool IsWasmStructEscaped(MDefinition* ins, MInstruction* newStruct) {
     "Scalar Replacement of wasm structs";
 
 WasmStructMemoryView::WasmStructMemoryView(TempAllocator& alloc,
-                                           MInstruction* wasmStruct)
+                                           MWasmNewStructObject* wasmStruct)
     : alloc_(alloc),
       struct_(wasmStruct),
       undefinedVal_(nullptr),
@@ -4554,7 +4547,7 @@ bool ScalarReplacement(const MIRGenerator* mir, MIRGraph& graph) {
 
       if (IsOptimizableWasmStructInstruction(*ins) &&
           !IsWasmStructEscaped(*ins, *ins)) {
-        WasmStructMemoryView view(graph.alloc(), *ins);
+        WasmStructMemoryView view(graph.alloc(), ins->toWasmNewStructObject());
         if (!replaceWasmStructs.run(view)) {
           return false;
         }
