@@ -84,10 +84,6 @@ addAccessibleTask(
   <button id="button">you</button></p>`,
   async browser => {
     
-    await SpecialPowers.pushPrefEnv({
-      set: [["accessibility.browsewithcaret", true]],
-    });
-    
     
     
     

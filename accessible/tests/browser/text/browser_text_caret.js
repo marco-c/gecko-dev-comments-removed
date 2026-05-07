@@ -601,11 +601,6 @@ addAccessibleTask(
     await caretMoved;
     is(textarea.caretOffset, 0, "textarea caret correct");
     
-    
-    await new Promise(r =>
-      requestAnimationFrame(() => requestAnimationFrame(r))
-    );
-    
     info("textarea: Set caret offset to 3");
     caretMoved = waitForEvent(EVENT_TEXT_CARET_MOVED, textarea);
     textarea.caretOffset = 3;
