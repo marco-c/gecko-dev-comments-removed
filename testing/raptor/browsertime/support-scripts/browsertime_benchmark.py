@@ -428,7 +428,7 @@ class BenchmarkSupport(PageloadSupport):
         if "twitch-animation" in testname:
             return round(filters.geometric_mean(_filter(vals, "run")), 2)
 
-        if "ve" in testname:
+        if testname.startswith("ve-"):
             if "rt" in testname:
                 
                 
@@ -538,7 +538,7 @@ class BenchmarkSupport(PageloadSupport):
         subtests = None
         if "youtube-playback" in test["name"]:
             subtests, vals = self.parseYoutubePlaybackPerformanceOutput(test)
-        elif "ve" in test["name"]:
+        elif test["name"].startswith("ve-"):
             subtests, vals = self.parseWebCodecsOutput(test)
         else:
             
