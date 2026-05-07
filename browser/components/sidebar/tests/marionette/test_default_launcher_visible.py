@@ -124,11 +124,9 @@ class TestDefaultLauncherVisible(MarionetteTestCase):
         self.marionette.set_context("chrome")
         self.wait_for_sidebar_initialized()
 
-        
-        
-        Wait(self.marionette).until(
-            lambda _: self.is_button_visible(),
-            message="Sidebar button should be visible",
+        self.assertTrue(
+            self.is_button_visible(),
+            "Sidebar button should be visible",
         )
 
         self.assertFalse(
