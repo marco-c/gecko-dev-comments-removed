@@ -717,7 +717,7 @@ async function openPopupOn(browser, selector) {
     );
     
     
-    if (previouslyFocused) {
+    if (previouslyFocused || !selector.includes("cc-")) {
       info(`openPopupOn: before VK_DOWN on ${selector}`);
       await BrowserTestUtils.synthesizeKey("VK_DOWN", {}, browser);
     }
@@ -734,7 +734,7 @@ async function openPopupOnSubframe(browser, frameBrowsingContext, selector) {
     );
     
     
-    if (previouslyFocused) {
+    if (previouslyFocused || !selector.includes("cc-")) {
       info(`openPopupOnSubframe: before VK_DOWN on ${selector}`);
       await BrowserTestUtils.synthesizeKey("VK_DOWN", {}, frameBrowsingContext);
     }
