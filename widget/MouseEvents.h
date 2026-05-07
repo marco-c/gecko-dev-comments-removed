@@ -521,13 +521,6 @@ class WidgetMouseEvent : public WidgetMouseEventBase,
 
   Maybe<uint64_t> mCallbackId;
 
-  
-
-
-
-
-  Maybe<LayoutDeviceIntPoint> mMovement;
-
   void AssignMouseEventData(const WidgetMouseEvent& aEvent, bool aCopyTargets,
                             bool aCopyCoalescedEvents = true) {
     AssignMouseEventBaseData(aEvent, aCopyTargets);
@@ -551,7 +544,6 @@ class WidgetMouseEvent : public WidgetMouseEventBase,
     mTriggerEvent = aEvent.mTriggerEvent;
     
     
-    mMovement = aEvent.mMovement;
   }
 
   

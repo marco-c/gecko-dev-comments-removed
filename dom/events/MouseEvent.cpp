@@ -447,13 +447,6 @@ nsIntPoint MouseEvent::GetMovementPoint() const {
   }
 
   
-  
-  if (WidgetMouseEvent* mouseEvent = mEvent->AsMouseEvent();
-      mouseEvent && mouseEvent->mMovement) {
-    return nsIntPoint(mouseEvent->mMovement->x, mouseEvent->mMovement->y);
-  }
-
-  
   nsIntPoint current = DevPixelsToCSSPixels(mEvent->mRefPoint, mPresContext);
   nsIntPoint last = DevPixelsToCSSPixels(mEvent->mLastRefPoint, mPresContext);
   return current - last;
