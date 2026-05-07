@@ -370,6 +370,15 @@ impl FrameBuilder {
             visited_pictures.push(false);
         }
 
+        
+        
+        
+        scratch.primitive.frame.draws.clear();
+        scratch.primitive.frame.draws.resize_with(
+            scene.prim_instances.len(),
+            crate::visibility::PrimitiveDrawHeader::new,
+        );
+
         {
             profile_scope!("UpdateVisibility");
             profile_marker!("UpdateVisibility");

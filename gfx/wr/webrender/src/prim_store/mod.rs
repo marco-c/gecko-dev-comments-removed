@@ -826,6 +826,10 @@ impl PrimitiveKind {
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct PrimitiveInstanceIndex(pub u32);
 
+impl PrimitiveInstanceIndex {
+    pub const INVALID: PrimitiveInstanceIndex = PrimitiveInstanceIndex(!0);
+}
+
 #[derive(Debug)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 pub struct PrimitiveInstance {
@@ -840,11 +844,6 @@ pub struct PrimitiveInstance {
 
     
     pub prim_origin: LayoutPoint,
-
-    
-    
-    
-    pub draw: PrimitiveDrawHeader,
 }
 
 impl PrimitiveInstance {
@@ -855,19 +854,9 @@ impl PrimitiveInstance {
     ) -> Self {
         PrimitiveInstance {
             kind,
-            draw: PrimitiveDrawHeader::new(),
             clip_leaf_id,
             prim_origin,
         }
-    }
-
-    
-    pub fn reset(&mut self) {
-        self.draw.reset();
-    }
-
-    pub fn clear_visibility(&mut self) {
-        self.draw.reset();
     }
 
     pub fn uid(&self) -> intern::ItemUid {
@@ -943,6 +932,14 @@ pub type ImageInstanceIndex = storage::Index<ImageInstance>;
 #[cfg_attr(feature = "capture", derive(Serialize))]
 pub struct PrimitiveFrameScratch {
     
+    
+    
+    
+    
+    
+    pub draws: Vec<PrimitiveDrawHeader>,
+
+    
     pub line_decoration: storage::Storage<LineDecorationScratch>,
 
     
@@ -1004,6 +1001,7 @@ pub struct PrimitiveFrameScratch {
 impl Default for PrimitiveFrameScratch {
     fn default() -> Self {
         PrimitiveFrameScratch {
+            draws: Vec::new(),
             line_decoration: storage::Storage::new(0),
             normal_border: storage::Storage::new(0),
             backdrop_render: storage::Storage::new(0),
@@ -1024,6 +1022,7 @@ impl Default for PrimitiveFrameScratch {
 
 impl PrimitiveFrameScratch {
     pub fn recycle(&mut self, recycler: &mut Recycler) {
+        recycler.recycle_vec(&mut self.draws);
         self.line_decoration.recycle(recycler);
         self.normal_border.recycle(recycler);
         self.backdrop_render.recycle(recycler);
@@ -1365,6 +1364,6 @@ fn test_struct_sizes() {
     
     
     
-    assert_eq!(mem::size_of::<PrimitiveInstance>(), 96, "PrimitiveInstance size changed");
+    assert_eq!(mem::size_of::<PrimitiveInstance>(), 40, "PrimitiveInstance size changed");
     assert_eq!(mem::size_of::<PrimitiveKind>(), 24, "PrimitiveKind size changed");
 }

@@ -1319,7 +1319,7 @@ pub struct ClipStore {
 
 
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 pub struct ClipChainInstance {
     pub clips_range: ClipNodeRange,

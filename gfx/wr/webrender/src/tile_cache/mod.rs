@@ -2175,7 +2175,7 @@ impl TileCacheInstance {
         
         profile_scope!("update_prim_dependencies");
         let prim_surface_index = surface_stack.last().unwrap().1;
-        let prim_clip_chain = &prim_instance.draw.clip_chain;
+        let prim_clip_chain = &scratch.frame.draws[prim_instance_index.0 as usize].clip_chain;
 
         
         

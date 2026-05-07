@@ -22,8 +22,7 @@ use crate::tile_cache::TileCacheInstance;
 use crate::picture::{SurfaceIndex, RasterConfig};
 use crate::tile_cache::SubSliceIndex;
 use crate::prim_store::{ClipTaskIndex, PictureIndex, PrimitiveKind};
-use crate::prim_store::PrimitiveInstanceIndex;
-use crate::prim_store::{PrimitiveStore, PrimitiveInstance};
+use crate::prim_store::{PrimitiveStore, PrimitiveInstance, PrimitiveInstanceIndex};
 use crate::render_backend::{DataStores, ScratchBuffer};
 use crate::render_task_graph::RenderTaskGraphBuilder;
 use crate::resource_cache::ResourceCache;
@@ -89,7 +88,7 @@ bitflags! {
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 pub enum DrawState {
     
@@ -112,9 +111,17 @@ pub enum DrawState {
 
 
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 pub struct PrimitiveDrawHeader {
+    
+    
+    
+    
+    
+    
+    pub prim_instance_index: PrimitiveInstanceIndex,
+
     
     pub clip_chain: ClipChainInstance,
 
@@ -134,6 +141,7 @@ pub struct PrimitiveDrawHeader {
 impl PrimitiveDrawHeader {
     pub fn new() -> Self {
         PrimitiveDrawHeader {
+            prim_instance_index: PrimitiveInstanceIndex::INVALID,
             state: DrawState::Unset,
             clip_chain: ClipChainInstance::empty(),
             clip_task_index: ClipTaskIndex::INVALID,
@@ -237,8 +245,10 @@ pub fn update_prim_visibility(
         
         
         
-        for prim_instance in &mut frame_state.prim_instances[cluster.prim_range()] {
-            prim_instance.reset();
+        for idx in cluster.prim_range() {
+            frame_state.scratch.primitive.frame.draws[idx].reset();
+            frame_state.scratch.primitive.frame.draws[idx].prim_instance_index =
+                PrimitiveInstanceIndex(idx as u32);
         }
 
         
@@ -290,7 +300,7 @@ pub fn update_prim_visibility(
 
                 if is_passthrough {
                     
-                    frame_state.prim_instances[prim_instance_index].draw.state = DrawState::PassThrough;
+                    frame_state.scratch.primitive.frame.draws[prim_instance_index].state = DrawState::PassThrough;
 
                     continue;
                 } else {
@@ -331,7 +341,7 @@ pub fn update_prim_visibility(
                     true,
                 );
 
-            prim_instance.draw.clip_chain = match clip_chain {
+            frame_state.scratch.primitive.frame.draws[prim_instance_index].clip_chain = match clip_chain {
                 Some(clip_chain) => clip_chain,
                 None => {
                     continue;
@@ -340,14 +350,14 @@ pub fn update_prim_visibility(
 
             {
                 let prim_surface_index = frame_state.surface_stack.last().unwrap().1;
-                let prim_clip_chain = &prim_instance.draw.clip_chain;
+                let prim_clip_chain = &frame_state.scratch.primitive.frame.draws[prim_instance_index].clip_chain;
 
                 
                 let surface = &mut frame_state.surfaces[prim_surface_index.0];
                 surface.clipped_local_rect = surface.clipped_local_rect.union(&prim_clip_chain.pic_coverage_rect);
             }
 
-            prim_instance.draw.state = match tile_cache {
+            let new_state = match tile_cache {
                 Some(tile_cache) => {
                     tile_cache.update_prim_dependencies(
                         PrimitiveInstanceIndex(prim_instance_index as u32),
@@ -379,6 +389,7 @@ pub fn update_prim_visibility(
                     }
                 }
             };
+            frame_state.scratch.primitive.frame.draws[prim_instance_index].state = new_state;
         }
     }
 
