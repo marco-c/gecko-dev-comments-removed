@@ -23,6 +23,7 @@
 #include <mutex>
 
 #if defined(MOZ_WIDGET_GTK)
+#  include "WidgetUtilsGtk.h"
 
 
 
@@ -435,10 +436,8 @@ RefPtr<DMABufFormats> CreateDMABufFeedbackFormats(
 
 void GlobalDMABufFormats::SetModifiersToGfxVars() {
   RefPtr<DMABufFormats> formats;
-  bool isWaylandDisplay = false;
 #ifdef MOZ_WAYLAND
-  isWaylandDisplay = GdkIsWaylandDisplay();
-  if (isWaylandDisplay) {
+  if (GdkIsWaylandDisplay()) {
     formats = WaylandDisplayGet()->GetDMABufFormats();
   }
 #endif
@@ -463,11 +462,6 @@ void GlobalDMABufFormats::SetModifiersToGfxVars() {
     LOGDMABUF(("GBM_FORMAT_P010 is directly composited"));
     modsP010.Assign(*format->GetModifiers());
   }
-#if defined(MOZ_WIDGET_GTK)
-  if (!isWaylandDisplay) {
-    AppendDmaBufModifiersFromEGLIfEmpty(DRM_FORMAT_P010, modsP010);
-  }
-#endif
   if (!modsP010.IsEmpty()) {
     mFormatP010 = new DRMFormat(GBM_FORMAT_P010, modsP010);
     gfxVars::SetDMABufModifiersP010(modsP010);
@@ -479,11 +473,6 @@ void GlobalDMABufFormats::SetModifiersToGfxVars() {
     LOGDMABUF(("GBM_FORMAT_NV12 is directly composited"));
     modsNV12.Assign(*format->GetModifiers());
   }
-#if defined(MOZ_WIDGET_GTK)
-  if (!isWaylandDisplay) {
-    AppendDmaBufModifiersFromEGLIfEmpty(DRM_FORMAT_NV12, modsNV12);
-  }
-#endif
   if (!modsNV12.IsEmpty()) {
     mFormatNV12 = new DRMFormat(GBM_FORMAT_NV12, modsNV12);
     gfxVars::SetDMABufModifiersNV12(modsNV12);
@@ -493,6 +482,31 @@ void GlobalDMABufFormats::SetModifiersToGfxVars() {
     LOGDMABUF(("GBM_FORMAT_YUV420 is directly composited"));
     mFormatYUV420 = new DRMFormat(*format);
   }
+}
+
+void GlobalDMABufFormats::AppendEGLVideoModifiers() {
+#if defined(MOZ_WIDGET_GTK)
+  if (GdkIsWaylandDisplay()) {
+    return;
+  }
+  
+  
+  
+  
+  nsTArray<uint64_t> modsP010;
+  AppendDmaBufModifiersFromEGLIfEmpty(DRM_FORMAT_P010, modsP010);
+  if (!modsP010.IsEmpty()) {
+    mFormatP010 = new DRMFormat(GBM_FORMAT_P010, modsP010);
+    gfxVars::SetDMABufModifiersP010(modsP010);
+  }
+
+  nsTArray<uint64_t> modsNV12;
+  AppendDmaBufModifiersFromEGLIfEmpty(DRM_FORMAT_NV12, modsNV12);
+  if (!modsNV12.IsEmpty()) {
+    mFormatNV12 = new DRMFormat(GBM_FORMAT_NV12, modsNV12);
+    gfxVars::SetDMABufModifiersNV12(modsNV12);
+  }
+#endif
 }
 
 void GlobalDMABufFormats::GetModifiersFromGfxVars() {
