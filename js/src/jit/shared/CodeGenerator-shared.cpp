@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "jit/shared/CodeGenerator-shared-inl.h"
 
 #include "mozilla/DebugOnly.h"
@@ -760,7 +758,7 @@ bool CodeGeneratorShared::createNativeToBytecodeScriptList(
     
     bool found = false;
     for (uint32_t i = 0; i < scripts.length(); i++) {
-      if (scripts[i].scriptData.sourceAndExtent.matches(tree->script())) {
+      if (scripts[i].scriptData.scriptKey.matches(tree->script())) {
         found = true;
         break;
       }
