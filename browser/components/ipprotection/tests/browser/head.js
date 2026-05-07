@@ -395,10 +395,7 @@ function setupStubs(stubs = STUBS) {
     IPPEnrollAndEntitleManager,
     "isEnrolledAndEntitled"
   );
-  stubs.hasUpgraded = setupSandbox.stub(
-    IPPEnrollAndEntitleManager,
-    "hasUpgraded"
-  );
+  stubs.hasUpgraded = setupSandbox.stub(IPPFxaAuthProvider, "hasUpgraded");
   
   
   stubs.isEnrolling = setupSandbox
