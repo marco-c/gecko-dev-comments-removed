@@ -2,11 +2,11 @@
 
 
 
-
 #include "mozilla/dom/TextTrackCue.h"
 
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/dom/HTMLMediaElement.h"
 #include "mozilla/dom/HTMLTrackElement.h"
 #include "mozilla/dom/TextTrackList.h"
 #include "mozilla/dom/TextTrackRegion.h"
