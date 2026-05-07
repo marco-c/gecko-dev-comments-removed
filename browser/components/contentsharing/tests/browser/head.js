@@ -16,11 +16,43 @@ ChromeUtils.defineLazyGetter(this, "ContentSharingMockServer", () => {
 
 
 
+
+
+
+function setCookie(name, value, expiry = 1000 * 60 * 5, host = "localhost") {
+  Services.cookies.add(
+    host,
+    "/",
+    name,
+    value,
+    true, 
+    false, 
+    false, 
+    Date.now() + expiry,
+    {}, 
+    Ci.nsICookie.SAMESITE_LAX,
+    Ci.nsICookie.SCHEME_HTTPS
+  );
+}
+
+function clearCookies() {
+  Services.cookies.removeAll();
+}
+
+
+
+
+
+
+
+
 async function withContentSharingMockServer(task) {
+  setCookie("auth", "1");
   await ContentSharingMockServer.start();
   try {
     await task(ContentSharingMockServer);
   } finally {
+    clearCookies();
     await ContentSharingMockServer.stop();
   }
 }
