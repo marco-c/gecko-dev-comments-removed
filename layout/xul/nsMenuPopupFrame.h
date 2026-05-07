@@ -61,6 +61,8 @@ enum class FlipType {
   Slide = 3,  
 };
 
+enum class IsNativeMenu : bool { No, Yes };
+
 enum class MenuPopupAnchorType : uint8_t {
   Node = 0,   
   Point = 1,  
@@ -311,22 +313,18 @@ class nsMenuPopupFrame final : public nsBlockFrame, public nsIWidgetListener {
   
   bool IsInContentShell() const { return mInContentShell; }
 
-  void InitializePopupProperties(nsIContent* aAnchorContent,
-                                 nsIContent* aTriggerContent,
-                                 const nsAString& aPosition, int32_t aXPos,
-                                 int32_t aYPos, MenuPopupAnchorType aAnchorType,
-                                 bool aAttributesOverride);
-
   
   
   void InitializePopup(nsIContent* aAnchorContent, nsIContent* aTriggerContent,
                        const nsAString& aPosition, int32_t aXPos, int32_t aYPos,
                        MenuPopupAnchorType aAnchorType,
-                       bool aAttributesOverride);
+                       bool aAttributesOverride,
+                       enum IsNativeMenu aIsNativeMenu);
 
   void InitializePopupAtRect(nsIContent* aTriggerContent,
                              const nsAString& aPosition, const nsIntRect& aRect,
-                             bool aAttributesOverride);
+                             bool aAttributesOverride,
+                             enum IsNativeMenu aIsNativeMenu);
 
   
 
@@ -334,18 +332,8 @@ class nsMenuPopupFrame final : public nsBlockFrame, public nsIWidgetListener {
 
 
   void InitializePopupAtScreen(nsIContent* aTriggerContent, int32_t aXPos,
-                               int32_t aYPos, bool aIsContextMenu);
-
-  
-  void InitializePopupAsNativeContextMenu(nsIContent* aTriggerContent,
-                                          int32_t aXPos, int32_t aYPos);
-
-  
-  void InitializePopupAsNativeAnchoredMenu(nsIContent* aAnchorContent,
-                                           nsIContent* aTriggerContent,
-                                           const nsAString& aPosition,
-                                           const mozilla::CSSIntRect& aRect,
-                                           bool aIsContextMenu);
+                               int32_t aYPos, bool aIsContextMenu,
+                               enum IsNativeMenu aIsNativeMenu);
 
   
   void ShowPopup(bool aIsContextMenu);
@@ -660,7 +648,6 @@ class nsMenuPopupFrame final : public nsBlockFrame, public nsIWidgetListener {
   
   bool mConstrainedByLayout = false;
 
-  
   
   bool mIsNativeMenu = false;
 

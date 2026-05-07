@@ -463,18 +463,6 @@ class nsXULPopupManager final : public nsIDOMEventListener,
 
 
 
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY bool ShowMenuAsNativeMenu(
-      nsIContent* aMenu, nsMenuPopupFrame* popupFrame,
-      const nsAString& aPosition, bool parentIsContextMenu);
-
-  
-
-
-
-
-
-
-
 
 
 
@@ -514,9 +502,9 @@ class nsXULPopupManager final : public nsIDOMEventListener,
 
 
 
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY bool ShowPopupAsNativeMenu(
-      Element* aPopup, int32_t aXPos, int32_t aYPos, bool aIsContextMenu,
-      bool aIsScreenPoint, mozilla::dom::Event* aTriggerEvent);
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY bool ShowPopupAtAnchorAsNativeMenu(
+      nsIContent* aAnchorContent, Element* aPopup, const nsAString& aPosition,
+      bool aAttributesOverride, mozilla::dom::Event* aTriggerEvent);
 
   
 
@@ -527,9 +515,22 @@ class nsXULPopupManager final : public nsIDOMEventListener,
 
 
 
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY bool ShowPopupAsNativeAnchoredMenu(
-      nsIContent* aAnchorContent, Element* aPopup, const nsAString& aPosition,
-      const mozilla::CSSIntRect& aRect, bool aIsContextMenu,
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY bool ShowPopupAtScreenAsNativeMenu(
+      Element* aPopup, mozilla::CSSIntPoint aScreenPoint, bool aIsContextMenu,
+      mozilla::dom::Event* aTriggerEvent);
+
+  
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY bool ShowPopupAtScreenRectAsNativeMenu(
+      Element* aPopup, const nsAString& aPosition,
+      const mozilla::CSSIntRect& aRect, bool aAttributesOverride,
       mozilla::dom::Event* aTriggerEvent);
 
   
@@ -840,10 +841,11 @@ class nsXULPopupManager final : public nsIDOMEventListener,
       nsNavigationDirection aDir);
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY bool ShowNativeMenuInternal(
-      Element* aPopup, PendingPopup& aPendingPopup,
-      mozilla::FunctionRef<void(nsMenuPopupFrame*)> aInitFn,
-      mozilla::FunctionRef<void(mozilla::widget::NativeMenu*,
-                                nsMenuPopupFrame*)>
+      Element* aPopup, nsIFrame* aClickedFrame,
+      mozilla::dom::Event* aTriggerEvent,
+      mozilla::FunctionRef<void(nsMenuPopupFrame*, nsIContent*)> aInitFn,
+      mozilla::FunctionRef<void(mozilla::widget::NativeMenu*, nsMenuPopupFrame*,
+                                nsIFrame*)>
           aShowFn);
 
  protected:
