@@ -2,11 +2,11 @@
 
 
 
-
 #include <type_traits>
 
 #include "H264.h"
 #include "PDMFactory.h"
+#include "gfxPlatform.h"
 #include "gtest/gtest.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/gtest/WaitFor.h"
@@ -19,6 +19,9 @@ using ParamType = std::underlying_type<MDD::PropertyName>::type;
 class PropertyTest : public ::testing::TestWithParam<ParamType> {
  public:
   static void SetUpTestSuite() {
+    
+    gfxPlatform::GetPlatform();
+
     sFactory = MakeRefPtr<PDMFactory>();
     sAVCInfo = MakeUnique<VideoInfo>(sDummyVideoSize);
     sAVCInfo->mMimeType = "video/avc"_ns;
