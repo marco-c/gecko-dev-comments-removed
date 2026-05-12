@@ -5,3 +5,37 @@ Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/browser/components/preferences/tests/head.js",
   this
 );
+
+
+async function setupPolicyEngineWithJson(json, customSchema) {
+  PoliciesPrefTracker.restoreDefaultValues();
+  return EnterprisePolicyTesting.setupPolicyEngineWithJson(json, customSchema);
+}
+
+
+
+
+
+
+
+
+async function runSyncPaneTest(uiStateData, testCallback) {
+  let { UIState } = ChromeUtils.importESModule(
+    "resource://services-sync/UIState.sys.mjs"
+  );
+
+  const oldUIState = UIState.get;
+  UIState.get = () => uiStateData;
+
+  await openPreferencesViaOpenPreferencesAPI("paneSync", {
+    leaveOpen: true,
+  });
+  let doc = gBrowser.contentDocument;
+
+  try {
+    await testCallback(doc);
+  } finally {
+    UIState.get = oldUIState;
+    BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  }
+}
