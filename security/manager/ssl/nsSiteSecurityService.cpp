@@ -256,9 +256,9 @@ static void GetOldStorageKey(const nsACString& hostname,
   storageKey.Append(kHSTSKeySuffix);
 }
 
-static void GetStorageKey(const nsACString& hostname,
-                          const OriginAttributes& aOriginAttributes,
-                           nsAutoCString& storageKey) {
+static void GetNormalizedStorageKey(const nsACString& hostname,
+                                    const OriginAttributes& aOriginAttributes,
+                                     nsAutoCString& storageKey) {
   storageKey = hostname;
 
   
@@ -323,7 +323,7 @@ nsresult nsSiteSecurityService::SetHSTSState(
   
   if (rv == NS_ERROR_NOT_AVAILABLE) {
     nsAutoCString storageKey;
-    GetStorageKey(hostname, aOriginAttributes, storageKey);
+    GetNormalizedStorageKey(hostname, aOriginAttributes, storageKey);
     return mSiteStateStorage->Put(storageKey, stateString, storageType);
   }
   
@@ -829,7 +829,7 @@ nsresult nsSiteSecurityService::GetWithMigration(
     nsIDataStorage::DataType aDataStorageType, nsACString& aValue) {
   
   nsAutoCString storageKey;
-  GetStorageKey(aHostname, aOriginAttributes, storageKey);
+  GetNormalizedStorageKey(aHostname, aOriginAttributes, storageKey);
   nsresult rv = mSiteStateStorage->Get(storageKey, aDataStorageType, aValue);
   if (NS_SUCCEEDED(rv)) {
     return NS_OK;
@@ -876,7 +876,7 @@ nsresult nsSiteSecurityService::PutWithMigration(
   }
 
   nsAutoCString storageKey;
-  GetStorageKey(aHostname, aOriginAttributes, storageKey);
+  GetNormalizedStorageKey(aHostname, aOriginAttributes, storageKey);
   return mSiteStateStorage->Put(storageKey, aStateString, aDataStorageType);
 }
 
@@ -895,7 +895,7 @@ nsresult nsSiteSecurityService::RemoveWithMigration(
   }
 
   nsAutoCString storageKey;
-  GetStorageKey(aHostname, aOriginAttributes, storageKey);
+  GetNormalizedStorageKey(aHostname, aOriginAttributes, storageKey);
   return mSiteStateStorage->Remove(storageKey, aDataStorageType);
 }
 
@@ -947,7 +947,7 @@ nsresult nsSiteSecurityService::HostMatchesHSTSEntry(
         if (!GetPreloadStatus(aHost)) {
           SSSLOG(("No static preload - removing expired entry"));
           nsAutoCString storageKey;
-          GetStorageKey(aHost, aOriginAttributes, storageKey);
+          GetNormalizedStorageKey(aHost, aOriginAttributes, storageKey);
           rv = mSiteStateStorage->Remove(storageKey, storageType);
           if (NS_FAILED(rv)) {
             return rv;
