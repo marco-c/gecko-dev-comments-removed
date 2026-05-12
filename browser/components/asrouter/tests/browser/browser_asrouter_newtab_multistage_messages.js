@@ -22,10 +22,10 @@ let gTestMultistageMessage;
 
 
 
-if (Services.vc.compare(AppConstants.MOZ_APP_VERSION, "152.0a1") < 0) {
+if (Services.vc.compare(AppConstants.MOZ_APP_VERSION, "151.0a1") < 0) {
   todo(
     false,
-    "The asrouter-newtab-multistage component is only supported in 152 onwards."
+    "The asrouter-newtab-multistage component is only supported in 151 onwards."
   );
 }
 
@@ -101,7 +101,7 @@ add_task(
 
 
     skip_if: () => {
-      return Services.vc.compare(AppConstants.MOZ_APP_VERSION, "152.0a1") < 0;
+      return Services.vc.compare(AppConstants.MOZ_APP_VERSION, "151.0a1") < 0;
     },
   },
   async function test_show_multistage_message() {
@@ -142,7 +142,7 @@ add_task(
 
 
     skip_if: () => {
-      return Services.vc.compare(AppConstants.MOZ_APP_VERSION, "152.0a1") < 0;
+      return Services.vc.compare(AppConstants.MOZ_APP_VERSION, "151.0a1") < 0;
     },
   },
   async function test_dismiss_button_blocks_message() {
@@ -201,7 +201,7 @@ add_task(
 
 
     skip_if: () => {
-      return Services.vc.compare(AppConstants.MOZ_APP_VERSION, "152.0a1") < 0;
+      return Services.vc.compare(AppConstants.MOZ_APP_VERSION, "151.0a1") < 0;
     },
   },
   async function test_impression_telemetry() {
@@ -259,7 +259,7 @@ add_task(
 
 
     skip_if: () => {
-      return Services.vc.compare(AppConstants.MOZ_APP_VERSION, "152.0a1") < 0;
+      return Services.vc.compare(AppConstants.MOZ_APP_VERSION, "151.0a1") < 0;
     },
   },
   async function test_screen_impression() {
@@ -309,7 +309,7 @@ add_task(
 
 
     skip_if: () => {
-      return Services.vc.compare(AppConstants.MOZ_APP_VERSION, "152.0a1") < 0;
+      return Services.vc.compare(AppConstants.MOZ_APP_VERSION, "151.0a1") < 0;
     },
   },
   async function test_no_click_telemetry_on_render() {
@@ -366,7 +366,7 @@ add_task(
 
 
     skip_if: () => {
-      return Services.vc.compare(AppConstants.MOZ_APP_VERSION, "152.0a1") < 0;
+      return Services.vc.compare(AppConstants.MOZ_APP_VERSION, "151.0a1") < 0;
     },
   },
   async function test_primary_button_click_telemetry() {
@@ -448,7 +448,7 @@ add_task(
 
 
     skip_if: () => {
-      return Services.vc.compare(AppConstants.MOZ_APP_VERSION, "152.0a1") < 0;
+      return Services.vc.compare(AppConstants.MOZ_APP_VERSION, "151.0a1") < 0;
     },
   },
   async function test_dismiss_button_telemetry() {
