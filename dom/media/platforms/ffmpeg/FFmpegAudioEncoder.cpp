@@ -143,6 +143,17 @@ MediaResult FFmpegAudioEncoder<LIBAV_VER>::InitEncoder() {
     if (mConfig.mBitrateMode == BitrateMode::Constant) {
       mLib->av_opt_set(mCodecContext->priv_data, "vbr", "off", 0);
     }
+    
+    
+    
+    
+    if (mConfig.mNumberOfChannels > 8) {
+      if (mLib->av_opt_set_int(mCodecContext->priv_data, "mapping_family", 255,
+                               0) < 0) {
+        return MediaResult(NS_ERROR_FAILURE,
+                           "Failed to set Opus mapping_family for >8ch"_ns);
+      }
+    }
     if (mConfig.mCodecSpecific.is<OpusSpecific>()) {
       const OpusSpecific& specific = mConfig.mCodecSpecific.as<OpusSpecific>();
       
