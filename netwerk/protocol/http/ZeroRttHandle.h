@@ -60,7 +60,7 @@ class ZeroRttHandle {
   
   
   
-  bool Do0RTT(HappyEyeballsTransaction* aCaller);
+  bool Do0RTT(HappyEyeballsTransaction* aCaller, bool aCanSendEarlyData);
 
   
   

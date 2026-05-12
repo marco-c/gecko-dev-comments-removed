@@ -247,6 +247,16 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   void SetIsTRRTransaction() override { mIsTRRTransaction = true; }
   bool IsTRRTransaction() { return mIsTRRTransaction; }
 
+  
+  
+  
+  
+  
+  void SetSecurityInfo(nsITransportSecurityInfo* aSecurityInfo) {
+    MutexAutoLock lock(mLock);
+    mSecurityInfo = aSecurityInfo;
+  }
+
  private:
   friend class DeleteHttpTransaction;
   virtual ~nsHttpTransaction();

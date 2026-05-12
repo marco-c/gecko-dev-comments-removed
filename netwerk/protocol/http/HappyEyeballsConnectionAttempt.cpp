@@ -9,6 +9,7 @@
 
 #include "HappyEyeballsConnectionAttempt.h"
 #include "ConnectionEntry.h"
+#include "NSSErrorsService.h"
 #include "mozilla/net/NeckoChannelParams.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "nsIHttpActivityObserver.h"
@@ -20,6 +21,7 @@
 #include "nsHttpConnectionMgr.h"
 #include "nsHttpHandler.h"
 #include "nsQueryObject.h"
+#include "nsSocketTransport2.h"
 #include "nsSocketTransportService2.h"
 
 
@@ -186,8 +188,35 @@ nsresult HappyEyeballsConnectionAttempt::ProcessConnectionResult(
     if (mTransaction) {
       mTransaction->Close(aStatus);
     }
-    
+    Abandon();
+    if (entry) {
+      entry->RemoveConnectionAttempt(this, false);
+    }
+    return NS_OK;
+  }
+
+  
+  
+  
+  
+  if (NS_ERROR_GET_MODULE(aStatus) == NS_ERROR_MODULE_SECURITY) {
+    nsresult closeReason = aStatus;
+    PRErrorCode prCode = -static_cast<PRErrorCode>(NS_ERROR_GET_CODE(aStatus));
+    if (!mozilla::psm::IsNSSErrorCode(prCode)) {
+      
+      
+      
+      closeReason = ErrorAccordingToNSPR(prCode);
+    }
     RefPtr<ConnectionEntry> entry(mEntry);
+    if (mTransaction) {
+      if (nsHttpTransaction* trans = mTransaction->QueryHttpTransaction()) {
+        if (entry) {
+          entry->RemoveTransFromPendingQ(trans);
+        }
+      }
+      mTransaction->Close(closeReason);
+    }
     Abandon();
     if (entry) {
       entry->RemoveConnectionAttempt(this, false);

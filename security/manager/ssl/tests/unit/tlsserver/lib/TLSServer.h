@@ -20,6 +20,7 @@
 #include "prio.h"
 #include "secerr.h"
 #include "ssl.h"
+#include "sslexp.h"
 
 namespace mozilla {
 
@@ -57,10 +58,37 @@ SECStatus InitializeNSS(const char* nssCertDBDir);
 
 
 
+struct Connection {
+  PRFileDesc* mSocket;
+  char mByte;
+
+  explicit Connection(PRFileDesc* aSocket);
+  ~Connection();
+};
+
+nsresult SetupTLS(Connection* aConn, PRFileDesc* aModelSocket);
+nsresult SendAll(PRFileDesc* aSocket, const char* aData, size_t aDataLen);
+
+
+
+
+
+SSLAntiReplayContext* GetAntiReplayContext();
+
+
+using ConnectionHandlerFunc = void (*)(PRFileDesc* aSocket,
+                                       const UniquePRFileDesc& aModelSocket);
+
+
+
+
+
+
 
 int StartServer(int argc, char* argv[], SSLSNISocketConfig sniSocketConfig,
                 void* sniSocketConfigArg,
-                ServerConfigFunc configFunc = nullptr);
+                ServerConfigFunc configFunc = nullptr,
+                ConnectionHandlerFunc connectionHandler = nullptr);
 
 template <typename Host>
 inline const Host* GetHostForSNI(const SECItem* aSrvNameArr,

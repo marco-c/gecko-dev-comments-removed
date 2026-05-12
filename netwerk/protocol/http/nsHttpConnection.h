@@ -120,6 +120,8 @@ class nsHttpConnection final : public HttpConnectionBase,
   int64_t MaxBytesRead() { return mMaxBytesRead; }
   HttpVersion GetLastHttpResponseVersion() { return mLastHttpResponseVersion; }
 
+  nsresult HandshakeError() const { return mHandshakeError; }
+
   friend class HttpConnectionForceIO;
   friend class TlsHandshaker;
 
@@ -338,6 +340,12 @@ class nsHttpConnection final : public HttpConnectionBase,
 
   
   HttpVersion mLastHttpResponseVersion{HttpVersion::v1_1};
+
+  
+  
+  
+  
+  nsresult mHandshakeError{NS_OK};
 
   
   
