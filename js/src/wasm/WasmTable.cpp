@@ -104,7 +104,7 @@ void Table::tracePrivate(JSTracer* trc) {
   
   
   
-  TraceNullableEdge(trc, &maybeObject_, "wasm table object");
+  TraceEdge(trc, &maybeObject_, "wasm table object");
 
   switch (repr()) {
     case TableRepr::Func: {

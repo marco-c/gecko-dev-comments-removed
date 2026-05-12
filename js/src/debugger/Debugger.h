@@ -629,7 +629,7 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
     bool inNursery;
 
     void trace(JSTracer* trc) {
-      TraceNullableEdge(trc, &frame, "Debugger::AllocationsLogEntry::frame");
+      TraceEdge(trc, &frame, "Debugger::AllocationsLogEntry::frame");
     }
   };
 

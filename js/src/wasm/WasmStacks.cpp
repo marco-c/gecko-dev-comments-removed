@@ -680,14 +680,14 @@ void SwitchTarget::trace(JSTracer* trc) const {
 void Handlers::trace(JSTracer* trc) const {
   returnTarget.trace(trc);
   for (uint32_t i = 0; i < numHandlers; i++) {
-    TraceManuallyBarrieredNullableEdge(trc, &((Handler*)handler(i))->tag,
-                                       "handler tag");
+    TraceManuallyBarrieredEdge(trc, &((Handler*)handler(i))->tag,
+                               "handler tag");
   }
 }
 
 void ContStack::traceFields(JSTracer* trc) {
   
-  TraceNullableEdge(trc, &initialResumeCallee_, "base frame callee");
+  TraceEdge(trc, &initialResumeCallee_, "base frame callee");
   initialResumeTarget_.trace(trc);
 
   

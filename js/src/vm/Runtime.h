@@ -417,8 +417,9 @@ struct JSRuntime {
   js::UnprotectedData<JS::ConsumeStreamCallback> consumeStreamCallback;
   js::UnprotectedData<JS::ReportStreamErrorCallback> reportStreamErrorCallback;
 
-  bool getHostDefinedData(JSContext* cx,
-                          JS::MutableHandle<JSObject*> data) const;
+  bool getHostDefinedData(
+      JSContext* cx, JS::MutableHandle<JSObject*> incumbentGlobal,
+      JS::MutableHandle<JSObject*> optionalHostDefinedData) const;
 
   void addUnhandledRejectedPromise(JSContext* cx, js::HandleObject promise);
   void removeUnhandledRejectedPromise(JSContext* cx, js::HandleObject promise);
@@ -498,9 +499,7 @@ struct JSRuntime {
     js::PreBarriered<JSAtom*> name;
     bool isDebuggee;
 
-    void trace(JSTracer* trc) {
-      TraceNullableEdge(trc, &name, "JitCacheKey::name");
-    }
+    void trace(JSTracer* trc) { TraceEdge(trc, &name, "JitCacheKey::name"); }
   };
 
   struct JitCacheKeyHasher : public js::DefaultHasher<JitCacheKey> {
