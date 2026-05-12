@@ -1419,9 +1419,23 @@ bool Element::CanAttachShadowDOM() const {
   
 
 
+
+
+
+
   nsAtom* nameAtom = NodeInfo()->NameAtom();
   uint32_t namespaceID = NodeInfo()->NamespaceID();
-  if (!nsContentUtils::IsValidShadowHostName(nameAtom, namespaceID)) {
+  if (!(nsContentUtils::IsCustomElementName(nameAtom, namespaceID) ||
+        nameAtom == nsGkAtoms::article || nameAtom == nsGkAtoms::aside ||
+        nameAtom == nsGkAtoms::blockquote || nameAtom == nsGkAtoms::body ||
+        nameAtom == nsGkAtoms::div || nameAtom == nsGkAtoms::footer ||
+        nameAtom == nsGkAtoms::h1 || nameAtom == nsGkAtoms::h2 ||
+        nameAtom == nsGkAtoms::h3 || nameAtom == nsGkAtoms::h4 ||
+        nameAtom == nsGkAtoms::h5 || nameAtom == nsGkAtoms::h6 ||
+        nameAtom == nsGkAtoms::header || nameAtom == nsGkAtoms::main ||
+        nameAtom == nsGkAtoms::nav || nameAtom == nsGkAtoms::p ||
+        nameAtom == nsGkAtoms::section || nameAtom == nsGkAtoms::search ||
+        nameAtom == nsGkAtoms::span)) {
     return false;
   }
 
