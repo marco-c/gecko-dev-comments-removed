@@ -149,44 +149,55 @@ void BaseAlloc::free(void* aPtr) MOZ_EXCLUDES(mMutex) {
     return;
   }
 
-  MutexAutoLock lock(mMutex);
-
-  BaseAllocCell* cell = BaseAllocCell::GetCell(aPtr);
-
   
   
-  
-  cell->ClearPayload();
-  cell->SetFreed();
+  void* chunkToDealloc = nullptr;
+  size_t chunkSizeToDealloc = 0;
 
-  Log("free(%p), size: %u\n", aPtr, cell->Size());
+  {
+    MutexAutoLock lock(mMutex);
 
-  
-  BaseAllocCell* left = cell->LeftCell();
-  if (left && !left->Allocated() && left->Committed()) {
-    Unlink(left);
-    left->Merge(cell);
-    cell = left;
-  }
-  
-  BaseAllocCell* right = cell->RightCell();
-  if (right && !right->Allocated() && right->Committed()) {
-    Unlink(right);
-    cell->Merge(right);
-  }
+    BaseAllocCell* cell = BaseAllocCell::GetCell(aPtr);
 
-  if (cell->Size() >= kChunkSize && !cell->RightCell() && !cell->LeftCell()) {
     
-    uintptr_t addr = reinterpret_cast<uintptr_t>(cell) & ~gRealPageSizeMask;
-    size_t size = REAL_PAGE_CEILING(cell->Size());
-    Log("Releasing entire chunk %p, size %d", addr, size);
-    base_chunk_dealloc(reinterpret_cast<void*>(addr), size, UNKNOWN_CHUNK);
-    mStats.mCommitted -= size;
-    mStats.mMapped -= size;
-    return;
+    
+    
+    cell->ClearPayload();
+    cell->SetFreed();
+
+    Log("free(%p), size: %u\n", aPtr, cell->Size());
+
+    
+    BaseAllocCell* left = cell->LeftCell();
+    if (left && !left->Allocated() && left->Committed()) {
+      Unlink(left);
+      left->Merge(cell);
+      cell = left;
+    }
+    
+    BaseAllocCell* right = cell->RightCell();
+    if (right && !right->Allocated() && right->Committed()) {
+      Unlink(right);
+      cell->Merge(right);
+    }
+
+    if (cell->Size() >= kChunkSize && !cell->RightCell() && !cell->LeftCell()) {
+      
+      uintptr_t addr = reinterpret_cast<uintptr_t>(cell) & ~gRealPageSizeMask;
+      size_t size = REAL_PAGE_CEILING(cell->Size());
+      Log("Releasing entire chunk %p, size %d", addr, size);
+      chunkToDealloc = reinterpret_cast<void*>(addr);
+      chunkSizeToDealloc = size;
+      mStats.mCommitted -= size;
+      mStats.mMapped -= size;
+    } else {
+      Link(cell);
+    }
   }
 
-  Link(cell);
+  if (chunkToDealloc) {
+    base_chunk_dealloc(chunkToDealloc, chunkSizeToDealloc, UNKNOWN_CHUNK);
+  }
 }
 
 void* BaseAlloc::alloc(size_t aSize) {
