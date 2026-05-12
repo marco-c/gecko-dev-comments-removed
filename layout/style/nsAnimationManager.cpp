@@ -113,7 +113,7 @@ class MOZ_STACK_CLASS ServoCSSAnimationBuilder final {
   
   
   
-  void NotifyNewOrRemovedAnimation(const Animation& aAnimation) {
+  void NotifyNewOrRemovedAnimation(const dom::Animation& aAnimation) {
     dom::AnimationEffect* effect = aAnimation.GetEffect();
     if (!effect) {
       return;

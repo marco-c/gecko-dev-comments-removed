@@ -129,7 +129,7 @@ pkix::Result PDFTrustDomain::DigestBuf(Input item, DigestAlgorithm digestAlg,
 }
 
 pkix::Result PDFTrustDomain::CheckRevocation(EndEntityOrCA, const CertID&, Time,
-                                             Duration,
+                                             pkix::Duration,
                                               const Input*,
                                               const Input*) {
   return Success;

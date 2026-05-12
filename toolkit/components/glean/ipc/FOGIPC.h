@@ -27,7 +27,7 @@ namespace glean {
 
 
 
-void FlushFOGData(std::function<void(ipc::ByteBuf&&)>&& aResolver);
+void FlushFOGData(std::function<void(mozilla::ipc::ByteBuf&&)>&& aResolver);
 
 
 
@@ -35,19 +35,19 @@ void FlushFOGData(std::function<void(ipc::ByteBuf&&)>&& aResolver);
 
 
 void FlushAllChildData(
-    std::function<void(nsTArray<ipc::ByteBuf>&&)>&& aResolver);
+    std::function<void(nsTArray<mozilla::ipc::ByteBuf>&&)>&& aResolver);
 
 
 
 
 
-void FOGData(ipc::ByteBuf&& buf);
+void FOGData(mozilla::ipc::ByteBuf&& buf);
 
 
 
 
 
-void SendFOGData(ipc::ByteBuf&& buf);
+void SendFOGData(mozilla::ipc::ByteBuf&& buf);
 
 
 

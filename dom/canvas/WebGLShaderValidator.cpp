@@ -485,25 +485,30 @@ bool ShaderValidatorResults::CanLinkTo(const ShaderValidatorResults& vert,
 }
 
 size_t ShaderValidatorResults::SizeOfIncludingThis(
-    const MallocSizeOf fnSizeOf) const {
+    const mozilla::MallocSizeOf fnSizeOf) const {
   auto ret = fnSizeOf(this);
-  ret += mInfoLog.size();
-  ret += mObjectCode.size();
 
-  for (const auto& cur : mAttributes) {
-    ret += fnSizeOf(&cur);
+  
+  
+  
+  
+  
+  
+
+  if (!mAttributes.empty()) {
+    ret += fnSizeOf(mAttributes.data());
   }
-  for (const auto& cur : mInterfaceBlocks) {
-    ret += fnSizeOf(&cur);
+  if (!mInterfaceBlocks.empty()) {
+    ret += fnSizeOf(mInterfaceBlocks.data());
   }
-  for (const auto& cur : mOutputVariables) {
-    ret += fnSizeOf(&cur);
+  if (!mOutputVariables.empty()) {
+    ret += fnSizeOf(mOutputVariables.data());
   }
-  for (const auto& cur : mUniforms) {
-    ret += fnSizeOf(&cur);
+  if (!mUniforms.empty()) {
+    ret += fnSizeOf(mUniforms.data());
   }
-  for (const auto& cur : mVaryings) {
-    ret += fnSizeOf(&cur);
+  if (!mVaryings.empty()) {
+    ret += fnSizeOf(mVaryings.data());
   }
 
   return ret;

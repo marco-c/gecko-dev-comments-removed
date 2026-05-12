@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef GPU_BUFFER_H_
 #define GPU_BUFFER_H_
 
@@ -118,7 +117,7 @@ class Buffer final : public nsWrapperCache,
 
  private:
   Buffer(Device* const aParent, RawId aId, BufferAddress aSize, uint32_t aUsage,
-         ipc::SharedMemoryMapping&& aShmem);
+         mozilla::ipc::SharedMemoryMapping&& aShmem);
   virtual ~Buffer();
   void Cleanup();
   void UnmapArrayBuffers(JSContext* aCx, ErrorResult& aRv);
@@ -151,7 +150,7 @@ class Buffer final : public nsWrapperCache,
   
   
   
-  std::shared_ptr<ipc::SharedMemoryMapping> mShmem;
+  std::shared_ptr<mozilla::ipc::SharedMemoryMapping> mShmem;
 };
 
 }  

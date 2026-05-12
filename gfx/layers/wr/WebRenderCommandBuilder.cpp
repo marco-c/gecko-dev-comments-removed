@@ -388,9 +388,6 @@ struct DIGroup {
        mClippedImageBounds.height);
     LayerIntSize size = mVisibleRect.Size();
     GP("imageSize: %d %d\n", size.width, size.height);
-    
-
-
 
     GP("pre mInvalidRect: %s %p-%d - inv: %d %d %d %d\n", aItem->Name(),
        aItem->Frame(), aItem->GetPerFrameKey(), mInvalidRect.x, mInvalidRect.y,
@@ -1207,9 +1204,8 @@ static ItemActivity IsItemProbablyActive(
       return activity;
     }
     case DisplayItemType::TYPE_OPACITY: {
-      nsDisplayOpacity* opacityItem = static_cast<nsDisplayOpacity*>(aItem);
-      if (opacityItem->NeedsActiveLayer(aDisplayListBuilder,
-                                        opacityItem->Frame())) {
+      auto* opacityItem = static_cast<nsDisplayOpacity*>(aItem);
+      if (opacityItem->NeedsActiveLayer()) {
         return ItemActivity::Must;
       }
       return HasActiveChildren(*opacityItem->GetChildren(), aBuilder,
@@ -1853,11 +1849,6 @@ void WebRenderCommandBuilder::CreateWebRenderCommands(
   auto* item = aItem->AsPaintedDisplayItem();
   MOZ_RELEASE_ASSERT(item, "Tried to paint item that cannot be painted");
 
-  if (aBuilder.ReuseItem(item)) {
-    
-    return;
-  }
-
   RenderRootStateManager* manager = mManager->GetRenderRootStateManager();
 
   
@@ -2034,14 +2025,8 @@ void WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(
     
     
     
-    Maybe<AutoDisplayItemCacheSuppressor> cacheSuppressor;
-
     if (itemType == DisplayItemType::TYPE_OPACITY) {
       nsDisplayOpacity* opacity = static_cast<nsDisplayOpacity*>(item);
-
-      if (!opacity->IsReused()) {
-        cacheSuppressor.emplace(aBuilder.GetDisplayItemCache());
-      }
 
       if (opacity->CanApplyOpacityToChildren(
               mManager->GetRenderRootStateManager()->LayerManager(),
@@ -2752,8 +2737,8 @@ Maybe<wr::ImageMask> WebRenderCommandBuilder::BuildWrMaskImage(
   
   
   
-  bool sameScale = FuzzyEqual(scale.xScale, oldScale.xScale, 1e-6f) &&
-                   FuzzyEqual(scale.yScale, oldScale.yScale, 1e-6f);
+  bool sameScale = gfx::FuzzyEqual(scale.xScale, oldScale.xScale, 1e-6f) &&
+                   gfx::FuzzyEqual(scale.yScale, oldScale.yScale, 1e-6f);
 
   LayerIntRect itemRect =
       LayerIntRect::FromUnknownRect(bounds.ScaleToOutsidePixels(

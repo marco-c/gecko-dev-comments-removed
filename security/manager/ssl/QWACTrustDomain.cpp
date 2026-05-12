@@ -100,7 +100,7 @@ pkix::Result QWACTrustDomain::DigestBuf(Input item, DigestAlgorithm digestAlg,
 }
 
 pkix::Result QWACTrustDomain::CheckRevocation(EndEntityOrCA, const CertID&,
-                                              Time, Duration,
+                                              Time, pkix::Duration,
                                                const Input*,
                                                const Input*) {
   return Success;

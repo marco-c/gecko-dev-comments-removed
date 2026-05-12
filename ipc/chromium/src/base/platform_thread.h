@@ -39,7 +39,7 @@ typedef mach_port_t PlatformThreadId;
 class PlatformThread {
  public:
   
-  static PlatformThreadId CurrentId();
+  static ::PlatformThreadId CurrentId();
 
   
   static void YieldCurrentThread();
