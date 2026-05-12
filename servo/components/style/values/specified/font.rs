@@ -421,7 +421,7 @@ impl ToComputedValue for FontStyle {
 
 #[allow(missing_docs)]
 #[derive(
-    Clone, Copy, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped,
+    Clone, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped,
 )]
 pub enum FontStretch {
     Stretch(NonNegativePercentage),
@@ -964,8 +964,8 @@ impl FontSize {
             FontSize::Length(LengthPercentage::Percentage(pc)) => {
                 
                 
-                info = compose_keyword(pc.0);
-                (base_size.resolve(context).computed_size() * pc.0).normalized()
+                info = compose_keyword(pc.get());
+                (base_size.resolve(context).computed_size() * pc.get()).normalized()
             },
             FontSize::Length(LengthPercentage::Calc(ref calc)) => {
                 let calc = calc.to_computed_value_zoomed(context, base_size, line_height_base);
@@ -1747,9 +1747,7 @@ impl FontVariationSettings {
 
 
 
-#[derive(
-    Clone, Copy, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss, ToShmem,
-)]
+#[derive(Clone, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
 pub enum MetricsOverride {
     
     Override(NonNegativePercentage),
@@ -1768,12 +1766,13 @@ impl MetricsOverride {
     
     
     
+    
     #[inline]
-    pub fn compute(&self) -> ComputedPercentage {
-        match *self {
-            MetricsOverride::Normal => ComputedPercentage(-1.0),
-            MetricsOverride::Override(percent) => ComputedPercentage(percent.0.get()),
-        }
+    pub fn compute(&self) -> Option<ComputedPercentage> {
+        Some(ComputedPercentage(match self {
+            MetricsOverride::Normal => -1.0,
+            MetricsOverride::Override(percent) => percent.compute()?.0,
+        }))
     }
 }
 
@@ -1970,7 +1969,7 @@ impl ToComputedValue for LineHeight {
 
     #[inline]
     fn to_computed_value(&self, context: &Context) -> Self::ComputedValue {
-        match *self {
+        match self {
             GenericLineHeight::Normal => GenericLineHeight::Normal,
             #[cfg(feature = "gecko")]
             GenericLineHeight::MozBlockHeight => GenericLineHeight::MozBlockHeight,
@@ -1993,7 +1992,7 @@ impl ToComputedValue for LineHeight {
                             LineHeightBase::InheritedStyle,
                         )
                     },
-                    LengthPercentage::Percentage(ref p) => FontRelativeLength::Em(p.0)
+                    LengthPercentage::Percentage(ref p) => FontRelativeLength::Em(p.get())
                         .to_computed_value(
                             context,
                             FontBaseSize::CurrentStyle,

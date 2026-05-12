@@ -373,17 +373,20 @@ pub struct ComputedFontStretchRange(FontStretch, FontStretch);
 
 impl FontStretchRange {
     
-    pub fn compute(&self) -> ComputedFontStretchRange {
-        fn compute_stretch(s: &SpecifiedFontStretch) -> FontStretch {
+    
+    pub fn compute(&self) -> Option<ComputedFontStretchRange> {
+        fn compute_stretch(s: &SpecifiedFontStretch) -> Option<FontStretch> {
             match *s {
-                SpecifiedFontStretch::Keyword(ref kw) => kw.compute(),
-                SpecifiedFontStretch::Stretch(ref p) => FontStretch::from_percentage(p.0.get()),
+                SpecifiedFontStretch::Keyword(ref kw) => Some(kw.compute()),
+                SpecifiedFontStretch::Stretch(ref p) => {
+                    Some(FontStretch::from_percentage(p.compute()?.0))
+                },
                 SpecifiedFontStretch::System(..) => unreachable!(),
             }
         }
 
-        let (min, max) = sort_range(compute_stretch(&self.0), compute_stretch(&self.1));
-        ComputedFontStretchRange(min, max)
+        let (min, max) = sort_range(compute_stretch(&self.0)?, compute_stretch(&self.1)?);
+        Some(ComputedFontStretchRange(min, max))
     }
 }
 
