@@ -799,6 +799,9 @@ bool gfxPlatformFontList::InitFontList() {
         newList->SetLocalNames(mLocalNameTable);
         mLocalNameTable.Clear();
       }
+      
+      
+      (void)InitializeFamily(newList->Families());
     } else {
       
       gfxCriticalNote << "Failed to initialize shared font list, "
