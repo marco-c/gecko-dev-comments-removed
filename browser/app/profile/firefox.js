@@ -3553,6 +3553,8 @@ pref("browser.ipProtection.hasUpgraded", false);
 
 pref("browser.ipProtection.bandwidth.enabled", true);
 
+pref("browser.ipProtection.bandwidth.maxInGb", 50);
+
 pref("browser.ipProtection.egressLocation", "");
 
 pref("browser.ipProtection.bandwidthThreshold", 0);
