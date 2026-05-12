@@ -2,17 +2,11 @@
 
 
 
-
-
 #include "SVGTransform.h"
 
 #include "nsContentUtils.h"  
 #include "nsError.h"
 #include "nsTextFormatter.h"
-
-namespace {
-const double kRadPerDegree = 2.0 * M_PI / 360.0;
-}  
 
 namespace mozilla {
 
@@ -130,8 +124,8 @@ SVGTransformSMILData::SVGTransformSMILData(const SVGTransform& aTransform)
                  mTransformType <= SVG_TRANSFORM_SKEWY,
              "Unexpected transform type");
 
-  for (uint32_t i = 0; i < NUM_STORED_PARAMS; ++i) {
-    mParams[i] = 0.f;
+  for (float& mParam : mParams) {
+    mParam = 0.f;
   }
 
   switch (mTransformType) {
