@@ -4,6 +4,7 @@
 
 
 
+use crate::derives::*;
 use crate::parser::{Parse, ParserContext};
 use cssparser::Parser;
 use style_traits::ParseError;
@@ -60,6 +61,7 @@ pub use self::GenericSVGPaintFallback as SVGPaintFallback;
 )]
 #[animation(no_bound(Url))]
 #[repr(C)]
+#[typed(todo_derive_fields)]
 pub struct GenericSVGPaint<Color, Url> {
     
     pub kind: GenericSVGPaintKind<Color, Url>,
@@ -181,6 +183,7 @@ pub use self::GenericSVGLength as SVGLength;
     ToTyped,
 )]
 #[repr(C, u8)]
+#[typed(todo_derive_fields)]
 pub enum GenericSVGStrokeDashArray<L> {
     
     #[css(comma)]
@@ -212,6 +215,7 @@ pub use self::GenericSVGStrokeDashArray as SVGStrokeDashArray;
     ToTyped,
 )]
 #[repr(C, u8)]
+#[typed(todo_derive_fields)]
 pub enum GenericSVGOpacity<OpacityType> {
     
     Opacity(OpacityType),
