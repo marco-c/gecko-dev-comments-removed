@@ -5169,20 +5169,13 @@ UniquePtr<TextMetrics> CanvasRenderingContext2D::DrawOrMeasureText(
     }
   }
 
-  gfx::ShapedTextFlags runOrientation =
-      (processor.mTextRunFlags & gfx::ShapedTextFlags::TEXT_ORIENT_MASK);
-  nsFontMetrics::FontOrientation fontOrientation =
-      (runOrientation == gfx::ShapedTextFlags::TEXT_ORIENT_VERTICAL_MIXED ||
-       runOrientation == gfx::ShapedTextFlags::TEXT_ORIENT_VERTICAL_UPRIGHT)
-          ? nsFontMetrics::eVertical
-          : nsFontMetrics::eHorizontal;
-
   nscoord totalWidthCoord;
 
   processor.mFontgrp
       ->UpdateUserFonts();  
   RefPtr<gfxFont> font = processor.mFontgrp->GetFirstValidFont();
-  const gfxFont::Metrics& fontMetrics = font->GetMetrics(fontOrientation);
+  const gfxFont::Metrics& fontMetrics =
+      font->GetMetrics(nsFontMetrics::eHorizontal);
 
   
   
@@ -5220,6 +5213,14 @@ UniquePtr<TextMetrics> CanvasRenderingContext2D::DrawOrMeasureText(
   float offsetX = anchorX * totalWidth;
   processor.mPt.x -= offsetX;
 
+  gfx::ShapedTextFlags runOrientation =
+      (processor.mTextRunFlags & gfx::ShapedTextFlags::TEXT_ORIENT_MASK);
+  nsFontMetrics::FontOrientation fontOrientation =
+      (runOrientation == gfx::ShapedTextFlags::TEXT_ORIENT_VERTICAL_MIXED ||
+       runOrientation == gfx::ShapedTextFlags::TEXT_ORIENT_VERTICAL_UPRIGHT)
+          ? nsFontMetrics::eVertical
+          : nsFontMetrics::eHorizontal;
+
   
   gfxFloat baselineAnchor;
 
@@ -5250,6 +5251,11 @@ UniquePtr<TextMetrics> CanvasRenderingContext2D::DrawOrMeasureText(
   
   
   if (runOrientation != gfx::ShapedTextFlags::TEXT_ORIENT_HORIZONTAL) {
+    if (fontOrientation == nsFontMetrics::eVertical) {
+      
+      
+      baselineAnchor -= (fontMetrics.emAscent - fontMetrics.emDescent) * .5f;
+    }
     processor.mPt.x -= baselineAnchor;
   } else {
     processor.mPt.y += baselineAnchor;

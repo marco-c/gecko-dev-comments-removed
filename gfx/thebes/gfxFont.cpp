@@ -2442,9 +2442,12 @@ void gfxFont::Draw(const gfxTextRun* aTextRun, uint32_t aStart, uint32_t aEnd,
     
     
     
+    
+    
+    
     if (aTextRun->UseCenterBaseline()) {
-      float baseAdj = (GetBaseline(kAlphabetic, nsFontMetrics::eHorizontal) -
-                       GetBaseline(kAlphabetic, nsFontMetrics::eVertical));
+      const Metrics& metrics = GetMetrics(nsFontMetrics::eHorizontal);
+      float baseAdj = (metrics.emAscent - metrics.emDescent) / 2;
       baseline += baseAdj * aTextRun->GetAppUnitsPerDevUnit() * baselineDir;
     }
   } else if (textDrawer &&
@@ -3129,9 +3132,10 @@ gfxFont::RunMetrics gfxFont::Measure(const gfxTextRun* aTextRun,
     
     
     
-    float baseAdj = (GetBaseline(kAlphabetic, nsFontMetrics::eHorizontal) -
-                     GetBaseline(kAlphabetic, nsFontMetrics::eVertical));
-    baselineOffset = appUnitsPerDevUnit * baseAdj;
+    
+    
+    baselineOffset =
+        appUnitsPerDevUnit * (fontMetrics.emAscent - fontMetrics.emDescent) / 2;
   }
 
   RunMetrics metrics;
@@ -4405,14 +4409,6 @@ void gfxFont::SanitizeMetrics(gfxFont::Metrics* aMetrics,
   }
 }
 
-static gfxFloat SynthesizeVerticalMetricFromHorizontalMetric(
-    const gfxFont::Metrics& aHMetrics, const gfxFont::Metrics& aVMetrics,
-    gfxFloat aHValue) {
-  gfxFloat hAbsolute = aHValue + aHMetrics.maxDescent;
-  gfxFloat vAbsolute = hAbsolute / aHMetrics.maxHeight * aVMetrics.maxHeight;
-  return vAbsolute - aVMetrics.maxDescent;
-}
-
 gfxFloat gfxFont::GetBaseline(const Baseline& aBaseline,
                               Orientation aOrientation) {
   std::atomic<gfxFloat>& baseline =
@@ -4424,29 +4420,16 @@ gfxFloat gfxFont::GetBaseline(const Baseline& aBaseline,
     
     
     
-    hb_font_t* hbFont = GetHarfBuzzShaper()->GetHBFont();
+    hb_font_t* hbFont = gfxHarfBuzzShaper::CreateHBFont(this);
     hb_direction_t hbDir = aOrientation == nsFontMetrics::eHorizontal
                                ? HB_DIRECTION_LTR
                                : HB_DIRECTION_TTB;
-
-    
-    
-    const Metrics& horizMetrics = GetMetrics(nsFontMetrics::eHorizontal);
-    if (aOrientation == nsFontMetrics::eVertical &&
-        horizMetrics.maxHeight != 0) {
-      const Metrics& vertMetrics = GetMetrics(nsFontMetrics::eVertical);
-      gfxFloat horizBaseline =
-          GetBaseline(aBaseline, nsFontMetrics::eHorizontal);
-      value = SynthesizeVerticalMetricFromHorizontalMetric(
-          horizMetrics, vertMetrics, horizBaseline);
-    } else {
-      hb_position_t position;
-      hb_ot_layout_get_baseline_with_fallback(
-          hbFont, tag, hbDir, HB_OT_TAG_DEFAULT_SCRIPT,
-          HB_OT_TAG_DEFAULT_LANGUAGE, &position);
-      value = position / 65536.0;
-    }
-
+    hb_position_t position;
+    hb_ot_layout_get_baseline_with_fallback(
+        hbFont, tag, hbDir, HB_OT_TAG_DEFAULT_SCRIPT,
+        HB_OT_TAG_DEFAULT_LANGUAGE, &position);
+    hb_font_destroy(hbFont);
+    value = position / 65536.0;
     [[maybe_unused]] gfxFloat oldValue = baseline.exchange(value);
     MOZ_ASSERT(std::isnan(oldValue) || oldValue == value,
                "computed baseline mismatch");
@@ -4473,7 +4456,6 @@ void gfxFont::CreateVerticalMetrics() {
 
   auto* metrics = new Metrics();
   ::memset(metrics, 0, sizeof(Metrics));
-  const Metrics& horizMetrics = GetHorizontalMetrics();
 
   
   
@@ -4591,6 +4573,7 @@ void gfxFont::CreateVerticalMetrics() {
   
   if (!metrics->aveCharWidth ||
       metrics->externalLeading == UNINITIALIZED_LEADING) {
+    const Metrics& horizMetrics = GetHorizontalMetrics();
     if (!metrics->aveCharWidth) {
       metrics->aveCharWidth = horizMetrics.maxAscent + horizMetrics.maxDescent;
     }
@@ -4636,26 +4619,12 @@ void gfxFont::CreateVerticalMetrics() {
 
   
   metrics->spaceWidth = metrics->aveCharWidth;
+  metrics->xHeight = metrics->emHeight / 2;
+  metrics->capHeight = metrics->maxAscent;
 
-  
-  
-  if (horizMetrics.emHeight != 0) {
-    metrics->internalLeading = horizMetrics.internalLeading /
-                               horizMetrics.emHeight * metrics->emHeight;
-    metrics->maxAscent += metrics->internalLeading / 2;
-    metrics->maxDescent += metrics->internalLeading / 2;
-    metrics->maxHeight = metrics->maxAscent + metrics->maxDescent;
-  } else {
-    metrics->maxHeight = metrics->maxAscent + metrics->maxDescent;
-    metrics->internalLeading =
-        std::max(0.0, metrics->maxHeight - metrics->emHeight);
-  }
-
-  
-  metrics->xHeight = SynthesizeVerticalMetricFromHorizontalMetric(
-      horizMetrics, *metrics, horizMetrics.xHeight);
-  metrics->capHeight = SynthesizeVerticalMetricFromHorizontalMetric(
-      horizMetrics, *metrics, horizMetrics.capHeight);
+  metrics->maxHeight = metrics->maxAscent + metrics->maxDescent;
+  metrics->internalLeading =
+      std::max(0.0, metrics->maxHeight - metrics->emHeight);
 
   if (metrics->zeroWidth < 0.0) {
     metrics->zeroWidth = metrics->aveCharWidth;
