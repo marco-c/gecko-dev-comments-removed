@@ -199,10 +199,13 @@ class IMEHandler final {
   static bool MaybeCreateNativeCaret(nsWindow* aWindow);
 
   static decltype(SetInputScopes)* sSetInputScopes;
+  enum class InPrivateBrowsing : bool { No, Yes };
+  enum class ForCleanUp : bool { No, Yes };
   static void SetInputScopeForIMM32(nsWindow* aWindow,
                                     const nsAString& aHTMLInputType,
                                     const nsAString& aHTMLInputMode,
-                                    bool aInPrivateBrowsing);
+                                    InPrivateBrowsing aInPrivateBrowsing,
+                                    ForCleanUp aForCleanUp);
   
   
   static bool sIsIMMEnabled;

@@ -398,10 +398,16 @@ void IMEHandler::OnDestroyWindow(nsWindow* aWindow) {
 
   
   
+  
+  IMMHandler::OnDestroyWindow(aWindow);
+
+  
+  
   if (!TSFUtils::IsAvailable()) {
     
     
-    SetInputScopeForIMM32(aWindow, u""_ns, u""_ns, false);
+    SetInputScopeForIMM32(aWindow, u""_ns, u""_ns, InPrivateBrowsing::No,
+                          ForCleanUp::Yes);
   }
   AssociateIMEContext(aWindow, true);
 }
@@ -443,9 +449,11 @@ void IMEHandler::SetInputContext(nsWindow* aWindow, InputContext& aInputContext,
     }
   } else {
     
-    SetInputScopeForIMM32(aWindow, aInputContext.mHTMLInputType,
-                          aInputContext.mHTMLInputMode,
-                          aInputContext.mInPrivateBrowsing);
+    SetInputScopeForIMM32(
+        aWindow, aInputContext.mHTMLInputType, aInputContext.mHTMLInputMode,
+        aInputContext.mInPrivateBrowsing ? InPrivateBrowsing::Yes
+                                         : InPrivateBrowsing::No,
+        ForCleanUp::No);
   }
 
   AssociateIMEContext(aWindow, enable);
@@ -538,8 +546,11 @@ void IMEHandler::OnKeyboardLayoutChanged() {
 void IMEHandler::SetInputScopeForIMM32(nsWindow* aWindow,
                                        const nsAString& aHTMLInputType,
                                        const nsAString& aHTMLInputMode,
-                                       bool aInPrivateBrowsing) {
-  if (TSFUtils::IsAvailable() || !sSetInputScopes || aWindow->Destroyed()) {
+                                       InPrivateBrowsing aInPrivateBrowsing,
+                                       ForCleanUp aForCleanUp) {
+  if (TSFUtils::IsAvailable() || !sSetInputScopes ||
+      !aWindow->GetWindowHandle() ||
+      (aForCleanUp == ForCleanUp::No && aWindow->Destroyed())) {
     return;
   }
   AutoTArray<InputScope, 3> scopes;
@@ -549,7 +560,7 @@ void IMEHandler::SetInputScopeForIMM32(nsWindow* aWindow,
   AppendInputScopeFromType(aHTMLInputType, scopes);
   AppendInputScopeFromInputMode(aHTMLInputMode, scopes);
 
-  if (aInPrivateBrowsing) {
+  if (aInPrivateBrowsing == InPrivateBrowsing::Yes) {
     scopes.AppendElement(IS_PRIVATE);
   }
 

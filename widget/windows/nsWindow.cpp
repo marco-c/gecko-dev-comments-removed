@@ -1307,6 +1307,10 @@ void nsWindow::Destroy() {
   DestroyDirectManipulation();
 
   
+  
+  IMEHandler::OnDestroyWindow(this);
+
+  
 
 
 
@@ -6841,6 +6845,10 @@ void nsWindow::OnDestroy() {
 
   DestroyDirectManipulation();
 
+  
+  
+  IMEHandler::OnDestroyWindow(this);
+
   if (mWnd == mLastKillFocusWindow) {
     mLastKillFocusWindow = nullptr;
   }
@@ -6877,8 +6885,6 @@ void nsWindow::OnDestroy() {
     rollupListener->Rollup({});
     CaptureRollupEvents(false);
   }
-
-  IMEHandler::OnDestroyWindow(this);
 
   
   if (mCursor.IsCustom()) {
