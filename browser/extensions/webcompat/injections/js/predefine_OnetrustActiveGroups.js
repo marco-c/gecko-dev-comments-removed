@@ -1,0 +1,12 @@
+
+
+
+
+"use strict";
+
+if (typeof OnetrustActiveGroups == "undefined") {
+  window.OnetrustActiveGroups = {};
+  window.__webcompat = (window.__webcompat ?? new Set()).add(
+    "window.OnetrustActiveGroups"
+  );
+}

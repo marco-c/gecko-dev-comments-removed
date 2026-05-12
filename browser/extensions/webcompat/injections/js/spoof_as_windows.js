@@ -1,0 +1,7 @@
+
+
+
+
+"use strict";
+
+window.__webcompat_spoof_platform = "windows";

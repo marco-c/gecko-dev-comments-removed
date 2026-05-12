@@ -1,0 +1,14 @@
+
+
+
+
+Object.defineProperty(navigator.clipboard, "read", {
+  configurable: true,
+  value() {
+    return Promise.resolve();
+  },
+});
+
+window.__webcompat = (window.__webcompat ?? new Set()).add(
+  "navigator.clipboard.read"
+);

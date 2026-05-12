@@ -1,0 +1,12 @@
+
+
+
+
+"use strict";
+
+if (!window.TouchEvent) {
+  window.TouchEvent = window.MouseEvent;
+  window.__webcompat = (window.__webcompat ?? new Set()).add(
+    "window.TouchEvent"
+  );
+}

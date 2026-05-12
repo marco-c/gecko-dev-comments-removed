@@ -1,0 +1,12 @@
+
+
+
+
+"use strict";
+
+if (!window.SpeechRecognition) {
+  window.SpeechRecognition = function () {};
+  window.__webcompat = (window.__webcompat ?? new Set()).add(
+    "SpeechRecognition"
+  );
+}

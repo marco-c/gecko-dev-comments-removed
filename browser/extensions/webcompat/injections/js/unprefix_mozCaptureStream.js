@@ -1,0 +1,13 @@
+
+
+
+
+"use strict";
+
+if (!HTMLMediaElement.prototype.captureStream) {
+  const { prototype } = HTMLMediaElement;
+  prototype.captureStream = prototype.mozCaptureStream;
+  window.__webcompat = (window.__webcompat ?? new Set()).add(
+    "HTMLMediaElement.captureStream"
+  );
+}

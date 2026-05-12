@@ -1,0 +1,12 @@
+
+
+
+
+"use strict";
+
+if (!window.WebKitMutationObserver) {
+  window.WebKitMutationObserver = window.MutationObserver;
+  window.__webcompat = (window.__webcompat ?? new Set()).add(
+    "WebKitMutationObserver"
+  );
+}
