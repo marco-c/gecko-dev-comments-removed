@@ -20,20 +20,6 @@
 
 class JSJitInfo;
 
-
-
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API void JS_SetGrayGCRootsTracer(JSContext* cx,
-                                                  JSGrayRootsTracer traceOp,
-                                                  void* data);
-
 extern JS_PUBLIC_API JSObject* JS_FindCompilationScope(JSContext* cx,
                                                        JS::HandleObject obj);
 
@@ -77,20 +63,9 @@ extern JS_PUBLIC_API bool JS_IsDeadWrapper(JSObject* obj);
 extern JS_PUBLIC_API JSObject* JS_NewDeadWrapper(
     JSContext* cx, JSObject* origObject = nullptr);
 
-
-
-
-
-extern JS_PUBLIC_API void JS_TraceShapeCycleCollectorChildren(
-    JS::CallbackTracer* trc, JS::GCCellPtr shape);
-
 extern JS_PUBLIC_API JSPrincipals* JS_GetScriptPrincipals(JSScript* script);
 
 extern JS_PUBLIC_API bool JS_ScriptHasMutedErrors(JSScript* script);
-
-extern JS_PUBLIC_API JSObject* JS_CloneObject(JSContext* cx,
-                                              JS::HandleObject obj,
-                                              JS::HandleObject proto);
 
 
 
@@ -145,17 +120,6 @@ extern JS_PUBLIC_API bool GetIsSecureContext(JS::Realm* realm);
 extern JS_PUBLIC_API bool GetDebuggerObservesWasm(JS::Realm* realm);
 
 }  
-
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API bool JS_CopyOwnPropertiesAndPrivateFields(
-    JSContext* cx, JS::HandleObject target, JS::HandleObject obj);
 
 extern JS_PUBLIC_API bool JS_WrapPropertyDescriptor(
     JSContext* cx, JS::MutableHandle<JS::PropertyDescriptor> desc);
@@ -235,50 +199,8 @@ extern JS_PUBLIC_API bool IsSystemCompartment(JS::Compartment* comp);
 
 extern JS_PUBLIC_API bool IsSystemZone(JS::Zone* zone);
 
-struct WeakMapTracer {
-  JSRuntime* runtime;
-
-  explicit WeakMapTracer(JSRuntime* rt) : runtime(rt) {}
-
-  
-  
-  
-  
-  
-  
-  
-  virtual void trace(JSObject* m, JS::GCCellPtr key, JS::GCCellPtr value) = 0;
-};
-
-extern JS_PUBLIC_API void TraceWeakMaps(WeakMapTracer* trc);
-
-extern JS_PUBLIC_API bool AreGCGrayBitsValid(JSRuntime* rt);
-
-extern JS_PUBLIC_API bool ZoneGlobalsAreAllGray(JS::Zone* zone);
-
 extern JS_PUBLIC_API bool IsCompartmentZoneSweepingOrCompacting(
     JS::Compartment* comp);
-
-using IterateGCThingCallback = void (*)(void*, JS::GCCellPtr,
-                                        const JS::AutoRequireNoGC&);
-
-extern JS_PUBLIC_API void TraceGrayWrapperTargets(JSTracer* trc,
-                                                  JS::Zone* zone);
-
-
-
-
-extern JS_PUBLIC_API void IterateGrayObjects(
-    JS::Zone* zone, IterateGCThingCallback cellCallback, void* data);
-
-#if defined(JS_GC_ZEAL) || defined(DEBUG)
-
-
-
-
-
-extern JS_PUBLIC_API bool CheckGrayMarkingState(JSRuntime* rt);
-#endif
 
 
 extern JS_PUBLIC_API JS::Realm* GetAnyRealmInZone(JS::Zone* zone);

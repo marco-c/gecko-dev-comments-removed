@@ -6,28 +6,16 @@ const otherGlobalNewCompartment = newGlobal({newCompartment: true});
 
 const globals = [thisGlobal, otherGlobalSameCompartment, otherGlobalNewCompartment];
 
-function testWithOptions(fn, variants = [undefined]) {
+function test(fn, variants = [undefined]) {
     for (let variant of variants) {
         for (let global of globals) {
-            for (let options of [
-                {},
-                {proxy: true},
-                {object: new FakeDOMObject()},
-            ]) {
-                fn(options, global, variant);
-            }
+            fn(global, variant);
         }
     }
 }
 
-function testWithGlobals(fn) {
-    for (let global of globals) {
-        fn(global);
-    }
-}
-
-function testBasic(options, global) {
-    let {object: source, transplant} = transplantableObject(options);
+function testBasic(global) {
+    let {object: source, transplant} = transplantableObject();
 
     
     assertEq(typeof source, "object");
@@ -37,13 +25,7 @@ function testBasic(options, global) {
     assertEq(objectGlobal(source), this);
 
     
-    let oldPrototype;
-    if (options.object) {
-        oldPrototype = FakeDOMObject.prototype;
-    } else {
-        oldPrototype = Object.prototype;
-    }
-    assertEq(Object.getPrototypeOf(source), oldPrototype);
+    assertEq(Object.getPrototypeOf(source), Object.prototype);
 
     
     assertEq(source.foo, undefined);
@@ -66,66 +48,44 @@ function testBasic(options, global) {
     assertEq(source.foo, 1);
 
     
-    
-    let newPrototype;
-    if (options.object) {
-        newPrototype = global.FakeDOMObject.prototype;
-    } else {
-        newPrototype = global.Object.prototype;
-    }
-    assertEq(Object.getPrototypeOf(source), newPrototype);
+    assertEq(Object.getPrototypeOf(source), global.Object.prototype);
 }
-testWithOptions(testBasic);
+test(testBasic);
 
 
-function testTransplantMulti(options, global1, global2) {
-    let {object: source, transplant} = transplantableObject(options);
+function testTransplantMulti(global1, global2) {
+    let {object: source, transplant} = transplantableObject();
 
     transplant(global1);
     transplant(global2);
 }
-testWithOptions(testTransplantMulti, globals);
+test(testTransplantMulti, globals);
 
 
-function testHasWrapperInTarget(options, global) {
-    let {object: source, transplant} = transplantableObject(options);
+function testHasWrapperInTarget(global) {
+    let {object: source, transplant} = transplantableObject();
 
     
     global.p = source;
     assertEq(global.eval("p"), source);
 
-    if (options.proxy) {
-        
-        assertEq(global.eval("isProxy(p)"), true);
-    } else {
-        if (global === otherGlobalNewCompartment) {
-            
-            assertEq(global.eval("isProxy(p)"), true);
-        } else {
-            
-            assertEq(global.eval("isProxy(p)"), false);
-        }
-    }
+    
+    assertEq(global.eval("isProxy(p)"), true);
 
     
     transplant(global);
 
     assertEq(global.eval("p"), source);
 
-    if (options.proxy) {
-        
-        assertEq(global.eval("isProxy(p)"), true);
-    } else {
-        
-        assertEq(global.eval("isProxy(p)"), false);
-    }
+    
+    assertEq(global.eval("isProxy(p)"), true);
 }
-testWithOptions(testHasWrapperInTarget);
+test(testHasWrapperInTarget);
 
 
-function testHasWrapperOtherCompartment(options, global) {
+function testHasWrapperOtherCompartment(global) {
     let thirdGlobal = newGlobal({newCompartment: true});
-    let {object: source, transplant} = transplantableObject(options);
+    let {object: source, transplant} = transplantableObject();
 
     
     thirdGlobal.p = source;
@@ -136,11 +96,11 @@ function testHasWrapperOtherCompartment(options, global) {
 
     assertEq(thirdGlobal.eval("p"), source);
 }
-testWithOptions(testHasWrapperOtherCompartment);
+test(testHasWrapperOtherCompartment);
 
 
-function testCollections(options, global, AnySet) {
-    let {object, transplant} = transplantableObject(options);
+function testCollections(global, AnySet) {
+    let {object, transplant} = transplantableObject();
 
     let set = new AnySet();
 
@@ -152,23 +112,7 @@ function testCollections(options, global, AnySet) {
 
     assertEq(set.has(object), true);
 }
-testWithOptions(testCollections, [Set, WeakSet]);
-
-
-function testDOMObjectSlot(global) {
-    let domObject = new FakeDOMObject();
-    let expectedValue = domObject.x;
-    assertEq(typeof expectedValue, "number");
-
-    let {object, transplant} = transplantableObject({object: domObject});
-    assertEq(object, domObject);
-
-    transplant(global);
-
-    assertEq(object, domObject);
-    assertEq(domObject.x, expectedValue);
-}
-testWithGlobals(testDOMObjectSlot);
+test(testCollections, [Set, WeakSet]);
 
 function testArgumentValidation() {
     
@@ -187,9 +131,5 @@ function testArgumentValidation() {
 
     
     assertThrowsInstanceOf(() => transplant({}), Error);
-
-    
-    assertThrowsInstanceOf(() => transplant({object: null}), Error);
-    assertThrowsInstanceOf(() => transplant({object: {}}), Error);
 }
 testArgumentValidation();
