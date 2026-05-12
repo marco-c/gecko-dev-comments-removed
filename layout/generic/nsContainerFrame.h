@@ -440,8 +440,10 @@ class nsContainerFrame : public nsSplittableFrame {
 
 
 
-  void DisplayPushedAbsoluteFrames(nsDisplayListBuilder* aBuilder,
-                                   const nsDisplayListSet& aLists);
+
+
+  void DisplayAbsoluteFramesNotBuiltByPlaceholder(
+      nsDisplayListBuilder* aBuilder, const nsDisplayListSet& aLists);
 
   
 
@@ -513,7 +515,9 @@ class nsContainerFrame : public nsSplittableFrame {
   
   
   void ConsiderChildOverflow(mozilla::OverflowAreas& aOverflowAreas,
-                             nsIFrame* aChildFrame, bool aAsIfScrolled = false);
+                             nsIFrame* aChildFrame,
+                             mozilla::OverflowAreaUnionFlags aFlags =
+                                 mozilla::OverflowAreaUnionFlags::None);
 
  protected:
   nsContainerFrame(ComputedStyle* aStyle, nsPresContext* aPresContext,
