@@ -2571,25 +2571,29 @@ void nsHttpConnection::HandshakeDoneInternal() {
   
   
   
+  
+  
+  
+  
+  
+  
+  
   if (mTransaction && mConnInfo->FirstHopSSL() && !mConnInfo->UsingProxy() &&
       StaticPrefs::network_lna_blocking() &&
       StaticPrefs::network_lna_defer_https_check()) {
-    nsHttpTransaction* httpTrans = mTransaction->QueryHttpTransaction();
-    if (httpTrans) {
-      NetAddr peerAddr;
-      if (NS_SUCCEEDED(GetPeerAddr(&peerAddr))) {
-        auto addrSpace = peerAddr.GetIpAddressSpace();
-        if (addrSpace == nsILoadInfo::IPAddressSpace::Private &&
-            !httpTrans->AllowedToConnectToIpAddressSpace(addrSpace)) {
-          DontReuse();
-          mTransaction->Close(NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED);
-          
-          
-          
-          mTransaction = nullptr;
-          mTlsHandshaker->FinishNPNSetup(true, true);
-          return;
-        }
+    NetAddr peerAddr;
+    if (NS_SUCCEEDED(GetPeerAddr(&peerAddr))) {
+      auto addrSpace = peerAddr.GetIpAddressSpace();
+      if (addrSpace == nsILoadInfo::IPAddressSpace::Private &&
+          !mTransaction->AllowedToConnectToIpAddressSpace(addrSpace)) {
+        DontReuse();
+        mTransaction->Close(NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED);
+        
+        
+        
+        mTransaction = nullptr;
+        mTlsHandshaker->FinishNPNSetup(true, true);
+        return;
       }
     }
   }

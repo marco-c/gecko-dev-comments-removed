@@ -115,6 +115,14 @@ class HappyEyeballsTransaction final : public SpeculativeTransaction {
   
   
   
+  
+  bool AllowedToConnectToIpAddressSpace(
+      nsILoadInfo::IPAddressSpace aTargetIpAddressSpace) override;
+
+  
+  
+  
+  
   nsHttpRequestHead* RequestHead() override;
 
   

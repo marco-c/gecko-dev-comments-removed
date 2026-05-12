@@ -43,7 +43,6 @@ HappyEyeballsTransaction::~HappyEyeballsTransaction() {
 }
 
 void HappyEyeballsTransaction::Adopt(nsHttpTransaction* aRealTxn) {
-  MOZ_ASSERT(OnSocketThread());
   MOZ_ASSERT(aRealTxn, "Adopt with null real transaction");
   LOG(("HappyEyeballsTransaction::Adopt %p realTxn=%p entered0RTT=%d", this,
        aRealTxn, Entered0RTT()));
@@ -137,7 +136,6 @@ void HappyEyeballsTransaction::Close(nsresult aReason) {
 void HappyEyeballsTransaction::Transition(State aNext,
                                           nsHttpTransaction* aRealTxn,
                                           nsresult aReason) {
-  MOZ_ASSERT(OnSocketThread());
   LOG(("HappyEyeballsTransaction::Transition %p mState=%d aNext=%d", this,
        static_cast<int>(mState), static_cast<int>(aNext)));
   switch (aNext) {
@@ -204,6 +202,25 @@ void HappyEyeballsTransaction::Transition(State aNext,
 
 nsHttpTransaction* HappyEyeballsTransaction::QueryHttpTransaction() {
   return mRealTxn;
+}
+
+bool HappyEyeballsTransaction::AllowedToConnectToIpAddressSpace(
+    nsILoadInfo::IPAddressSpace aTargetIpAddressSpace) {
+  
+  
+  
+  
+  nsHttpTransaction* real = mRealTxn;
+  if (!real && mZeroRttHandle) {
+    real = mZeroRttHandle->RealTxn();
+  }
+  if (!real) {
+    
+    
+    
+    return true;
+  }
+  return real->AllowedToConnectToIpAddressSpace(aTargetIpAddressSpace);
 }
 
 nsHttpRequestHead* HappyEyeballsTransaction::RequestHead() {
