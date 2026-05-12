@@ -1332,13 +1332,23 @@ class TypeContext : public AtomicRefCounted<TypeContext> {
     return true;
   }
 
+  
+  [[nodiscard]] bool clone(const TypeContext& other) {
+    for (const SharedRecGroup& rg : other.groups()) {
+      if (!addRecGroup(rg)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   template <typename T>
   [[nodiscard]] const TypeDef* addType(T&& type) {
     MutableRecGroup recGroup = startRecGroup(1);
     if (!recGroup) {
       return nullptr;
     }
-    recGroup->type(0) = std::move(type);
+    recGroup->type(0) = std::forward<T>(type);
     if (!endRecGroup()) {
       return nullptr;
     }

@@ -50,7 +50,7 @@ class MessagePumpLibevent : public MessagePump {
   
   class Watcher {
    public:
-    virtual ~Watcher() {}
+    virtual ~Watcher() = default;
     
     
     virtual void OnFileCanReadWithoutBlocking(int fd) = 0;

@@ -76,7 +76,7 @@ class BaseTimer_Helper {
   }
 
  protected:
-  BaseTimer_Helper() {}
+  BaseTimer_Helper() = default;
 
   
   class TimerTask : public mozilla::Runnable {
@@ -86,7 +86,7 @@ class BaseTimer_Helper {
           delay_(delay) {
       
     }
-    virtual ~TimerTask() {}
+    virtual ~TimerTask() = default;
     BaseTimer_Helper* timer_;
     TimeDelta delay_;
   };
