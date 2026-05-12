@@ -551,7 +551,6 @@ dependencies {
     implementation project(':components:browser-domains')
     implementation project(':components:browser-icons')
     implementation project(':components:browser-menu')
-    implementation project(':components:browser-menu2')
     implementation project(':components:browser-session-storage')
     implementation project(':components:browser-state')
     implementation project(':components:browser-storage-sync')
@@ -571,6 +570,7 @@ dependencies {
     implementation project(':components:feature-fxsuggest')
     implementation project(':components:feature-importer')
     implementation project(':components:feature-intent')
+    implementation project(':components:feature-ipprotection')
     implementation project(':components:feature-logins')
     implementation project(':components:feature-media')
     implementation project(':components:feature-privatemode')
@@ -744,6 +744,7 @@ dependencies {
     androidTestImplementation libs.androidx.test.runner
     androidTestImplementation libs.androidx.test.uiautomator
     androidTestImplementation libs.androidx.work.testing
+    androidTestImplementation libs.kotlin.test
     androidTestImplementation libs.leakcanary.instrumentation
     androidTestImplementation libs.mockk.android
     androidTestImplementation libs.mockwebserver
