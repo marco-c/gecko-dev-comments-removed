@@ -14,18 +14,9 @@ for (const dataType in BeaconDataType) {
     body: makeBeaconData('', dataType)
   };
 
-  if (dataType === BeaconDataType.FormData) {
-    
-    
-    parallelPromiseTest(async _ => {
-      expectFetchLater(requestInit);
-    }, `fetchLater() accepts a non-empty POST request body of ${dataType}.`);
-    continue;
-  }
-  test(
-      () => assert_throws_js(TypeError, () => fetchLater('/', requestInit)),
-      `fetchLater() does not accept an empty POST request body of ${
-          dataType}.`);
+  parallelPromiseTest(async _ => {
+    expectFetchLater(requestInit);
+  }, `fetchLater() accepts an empty POST request body of ${dataType}.`);
 }
 
 
