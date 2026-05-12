@@ -1752,7 +1752,6 @@ var SidebarController = {
     if (this.toolsAndExtensions.has(commandID)) {
       
       let extensionToUpdate = this.toolsAndExtensions.get(commandID);
-      extensionToUpdate.icon = extension.icon;
       extensionToUpdate.iconUrl = extension.iconUrl;
       extensionToUpdate.tooltiptext = extension.label;
       window.dispatchEvent(new CustomEvent("SidebarItemChanged"));
@@ -1762,7 +1761,6 @@ var SidebarController = {
       this.toolsAndExtensions.set(commandID, {
         view: commandID,
         extensionId: extension.extensionId,
-        icon: extension.icon,
         iconUrl: extension.iconUrl,
         tooltiptext: extension.label,
         disabled: !this.sidebarTools.includes(name), 
@@ -1804,7 +1802,6 @@ var SidebarController = {
       switcherMenuId: `sidebarswitcher_menu_${commandID}`,
       keyId: `ext-key-id-${commandID}`,
       label: props.title,
-      icon: props.icon,
       iconUrl: props.iconUrl,
       classAttribute: "menuitem-iconic webextension-menuitem",
       
@@ -1830,7 +1827,7 @@ var SidebarController = {
     }
     this._setExtensionAttributes(
       commandID,
-      { icon: props.icon, iconUrl: props.iconUrl, label: props.title },
+      { iconUrl: props.iconUrl, label: props.title },
       sidebar
     );
   },
@@ -1874,7 +1871,6 @@ var SidebarController = {
 
 
 
-
   setExtensionAttributes(commandID, attributes, needsRefresh) {
     const sidebar = this.sidebars.get(commandID);
     this._setExtensionAttributes(commandID, attributes, sidebar, needsRefresh);
@@ -1883,18 +1879,20 @@ var SidebarController = {
 
   _setExtensionAttributes(
     commandID,
-    { icon, iconUrl, label },
+    { iconUrl, label },
     sidebar,
     needsRefresh = false
   ) {
-    sidebar.icon = icon;
     sidebar.iconUrl = iconUrl;
     sidebar.label = label;
 
     const updateAttributes = el => {
       
       
-      el.style.setProperty("--webextension-menuitem-image", sidebar.icon);
+      el.style.setProperty(
+        "--webextension-menuitem-image",
+        `url("${sidebar.iconUrl}")`
+      );
       el.setAttribute("label", sidebar.label);
     };
 
