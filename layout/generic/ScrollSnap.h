@@ -88,14 +88,15 @@ struct ScrollSnapUtils {
                                const nsRect& aScrolledRect);
 
   
-  static nsAutoString StringifySnapTarget(
+  static nsAutoCString StringifySnapTarget(
       const ScrollSnapInfo::SnapTarget& aSnapTarget);
 
   
   
   template <typename T>
-  static nsAutoString StringifySnapTargetList(const nsTArray<T>& aSnapTargets) {
-    nsAutoString string;
+  static nsAutoCString StringifySnapTargetList(
+      const nsTArray<T>& aSnapTargets) {
+    nsAutoCString string;
     string.AppendPrintf("[ ");
     bool first{true};
     for (const auto& target : aSnapTargets) {
