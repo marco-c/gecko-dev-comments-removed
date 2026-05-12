@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "XULPersist.h"
 
 #include "mozilla/BasePrincipal.h"
@@ -215,6 +213,11 @@ nsresult XULPersist::ApplyPersistentAttributesToElements(
     RefPtr<nsAtom> attr = NS_Atomize(attrstr);
     if (NS_WARN_IF(!attr)) {
       return NS_ERROR_OUT_OF_MEMORY;
+    }
+
+    if (NS_WARN_IF(
+            nsContentUtils::IsEventAttributeName(attr, EventNameType_All))) {
+      continue;
     }
 
     uint32_t cnt = aElements.Length();
