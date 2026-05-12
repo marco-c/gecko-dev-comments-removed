@@ -5,6 +5,7 @@
 #ifndef nsTreeSanitizer_h_
 #define nsTreeSanitizer_h_
 
+#include "mozilla/StaticPtr.h"
 #include "mozilla/dom/NameSpaceConstants.h"
 #include "mozilla/dom/StaticAtomSet.h"
 #include "nsAtom.h"
@@ -223,42 +224,43 @@ class nsTreeSanitizer {
   
 
 
-  static mozilla::dom::StaticAtomSet* sElementsHTML;
+  static mozilla::StaticAutoPtr<mozilla::dom::StaticAtomSet> sElementsHTML;
 
   
 
 
-  static mozilla::dom::StaticAtomSet* sAttributesHTML;
+  static mozilla::StaticAutoPtr<mozilla::dom::StaticAtomSet> sAttributesHTML;
 
   
 
 
-  static mozilla::dom::StaticAtomSet* sPresAttributesHTML;
+  static mozilla::StaticAutoPtr<mozilla::dom::StaticAtomSet>
+      sPresAttributesHTML;
 
   
 
 
-  static mozilla::dom::StaticAtomSet* sElementsSVG;
+  static mozilla::StaticAutoPtr<mozilla::dom::StaticAtomSet> sElementsSVG;
 
   
 
 
-  static mozilla::dom::StaticAtomSet* sAttributesSVG;
+  static mozilla::StaticAutoPtr<mozilla::dom::StaticAtomSet> sAttributesSVG;
 
   
 
 
-  static mozilla::dom::StaticAtomSet* sElementsMathML;
+  static mozilla::StaticAutoPtr<mozilla::dom::StaticAtomSet> sElementsMathML;
 
   
 
 
-  static mozilla::dom::StaticAtomSet* sAttributesMathML;
+  static mozilla::StaticAutoPtr<mozilla::dom::StaticAtomSet> sAttributesMathML;
 
   
 
 
-  static nsIPrincipal* sNullPrincipal;
+  static mozilla::StaticRefPtr<nsIPrincipal> sNullPrincipal;
 };
 
 #endif  
