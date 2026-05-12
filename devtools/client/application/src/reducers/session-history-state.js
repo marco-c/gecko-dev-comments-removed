@@ -38,14 +38,19 @@ function sessionHistoryReducer(state = SessionHistory(), action) {
       if (!entry) {
         return state;
       }
+      
+      
+      
+      
       return {
         ...state,
         entriesByKey: {
           ...state.entriesByKey,
           [entryKey]: {
             ...entry,
-            
+            url: sessionHistoryEntry.url,
             title: sessionHistoryEntry.title,
+            name: sessionHistoryEntry.name,
           },
         },
       };
