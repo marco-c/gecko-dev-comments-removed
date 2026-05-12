@@ -491,15 +491,7 @@ async function assertGleanDefaultEngine(expected) {
 
 
 async function setupPolicyEngineWithJson(policy) {
-  SearchService.reset();
-
-  await this.EnterprisePolicyTesting.setupPolicyEngineWithJson(policy);
-
-  let settingsWritten = SearchTestUtils.promiseSearchNotification(
-    "write-settings-to-disk-complete"
-  );
-  await SearchService.init();
-  await settingsWritten;
+  await this.EnterprisePolicyTesting.setupPolicyEngineWithJsonForSearch(policy);
 }
 
 
