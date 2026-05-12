@@ -3428,6 +3428,13 @@ void HttpChannelChild::ActorDestroy(ActorDestroyReason aWhy) {
     mIPCActorDeleted = true;
     mCanceled = true;
   }
+
+  
+  
+  
+  
+  
+  mEventQ->DiscardQueuedEvents();
 }
 
 mozilla::ipc::IPCResult HttpChannelChild::RecvLogBlockedCORSRequest(
