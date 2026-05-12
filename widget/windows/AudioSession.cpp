@@ -381,3 +381,5 @@ void AudioSession::Stop(bool aShouldRestart) {
 
 }  
 }  
+
+#undef LOGD
