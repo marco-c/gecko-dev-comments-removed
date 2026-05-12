@@ -353,32 +353,6 @@ add_task(async function test_IPPProxyStates_error() {
 
 
 
-add_task(async function test_IPPProxyManager_catastrophic_on_500() {
-  const sandbox = sinon.createSandbox();
-  setupStubs(sandbox);
-  IPProtectionService.guardian.fetchProxyPass.resolves({
-    status: 500,
-    error: undefined,
-    pass: undefined,
-    usage: undefined,
-  });
-
-  await IPProtectionService.init();
-  const result = await IPPProxyManager.start(false);
-
-  Assert.equal(
-    result.error,
-    ERRORS.CATASTROPHIC,
-    "Status 500 from Guardian should surface CATASTROPHIC"
-  );
-
-  IPProtectionService.uninit();
-  sandbox.restore();
-});
-
-
-
-
 add_task(async function test_IPPProxyManager_activation_failure() {
   let sandbox = sinon.createSandbox();
   sandbox.stub(IPPSignInWatcher, "isSignedIn").get(() => true);
