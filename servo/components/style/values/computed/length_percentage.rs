@@ -8,22 +8,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 use super::{position::AnchorSide, Context, Length, Percentage, ToComputedValue};
 use crate::derives::*;
 #[cfg(feature = "gecko")]
@@ -45,141 +29,37 @@ use crate::values::resolved::{Context as ResolvedContext, ToResolvedValue};
 use crate::values::specified::length::{EqualsPercentage, FontBaseSize, LineHeightBase};
 use crate::values::specified::number::NoCalcNumber;
 use crate::values::specified::percentage::NoCalcPercentage;
+use crate::values::tagged_numeric::{self as tagged, NumericUnion};
 use crate::values::{specified, CSSFloat};
 use crate::{Zero, ZeroNoPercent};
 use app_units::Au;
 use debug_unreachable::debug_unreachable;
-use malloc_size_of::{MallocSizeOf, MallocSizeOfOps};
 use serde::{Deserialize, Serialize};
 use std::fmt::{self, Write};
 use style_traits::values::specified::AllowedNumericType;
 use style_traits::{CssWriter, ToCss, ToTyped, TypedValue};
 use thin_vec::ThinVec;
 
-#[doc(hidden)]
-#[derive(Clone, Copy)]
-#[repr(C)]
-pub struct LengthVariant {
-    tag: u8,
-    length: Length,
-}
 
-#[doc(hidden)]
-#[derive(Clone, Copy)]
-#[repr(C)]
-pub struct PercentageVariant {
-    tag: u8,
-    percentage: Percentage,
-}
-
-
-
-#[doc(hidden)]
-#[derive(Clone, Copy)]
-#[repr(C)]
-#[cfg(target_pointer_width = "32")]
-pub struct CalcVariant {
-    tag: u8,
-    
-    
-    ptr: *mut (),
-}
-
-#[doc(hidden)]
-#[derive(Clone, Copy)]
-#[repr(C)]
-#[cfg(target_pointer_width = "64")]
-pub struct CalcVariant {
-    ptr: usize, 
-}
-
-
-unsafe impl Send for CalcVariant {}
-unsafe impl Sync for CalcVariant {}
-
-#[doc(hidden)]
-#[derive(Clone, Copy)]
-#[repr(C)]
-pub struct TagVariant {
-    tag: u8,
-}
-
-
-
-
-/// cbindgen:private-default-tagged-enum-constructor=false
-/// cbindgen:derive-mut-casts=true
-
-
-
-
-
-
-
-
-
-
-
-#[repr(transparent)]
-pub struct LengthPercentage(LengthPercentageUnion);
-
-#[doc(hidden)]
-#[repr(C)]
-pub union LengthPercentageUnion {
-    length: LengthVariant,
-    percentage: PercentageVariant,
-    calc: CalcVariant,
-    tag: TagVariant,
-}
-
-impl LengthPercentageUnion {
-    #[doc(hidden)] 
-    pub const TAG_CALC: u8 = 0;
-    #[doc(hidden)]
-    pub const TAG_LENGTH: u8 = 1;
-    #[doc(hidden)]
-    pub const TAG_PERCENTAGE: u8 = 2;
-    #[doc(hidden)]
-    pub const TAG_MASK: u8 = 0b11;
-}
-
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToShmem)]
 #[repr(u8)]
-enum Tag {
-    Calc = LengthPercentageUnion::TAG_CALC,
-    Length = LengthPercentageUnion::TAG_LENGTH,
-    Percentage = LengthPercentageUnion::TAG_PERCENTAGE,
+pub enum LengthPercentageTag {
+    
+    Length = 0,
+    
+    Percentage = 1,
 }
 
 
-#[allow(unused)]
-unsafe fn static_assert() {
-    fn assert_send_and_sync<T: Send + Sync>() {}
-    std::mem::transmute::<u64, LengthVariant>(0u64);
-    std::mem::transmute::<u64, PercentageVariant>(0u64);
-    std::mem::transmute::<u64, CalcVariant>(0u64);
-    std::mem::transmute::<u64, LengthPercentage>(0u64);
-    assert_send_and_sync::<LengthVariant>();
-    assert_send_and_sync::<PercentageVariant>();
-    assert_send_and_sync::<CalcLengthPercentage>();
-}
 
-impl Drop for LengthPercentage {
-    fn drop(&mut self) {
-        if self.tag() == Tag::Calc {
-            let _ = unsafe { Box::from_raw(self.calc_ptr()) };
-        }
-    }
-}
 
-impl MallocSizeOf for LengthPercentage {
-    fn size_of(&self, ops: &mut MallocSizeOfOps) -> usize {
-        match self.unpack() {
-            Unpacked::Length(..) | Unpacked::Percentage(..) => 0,
-            Unpacked::Calc(c) => unsafe { ops.malloc_size_of(c) },
-        }
-    }
-}
+
+
+/// cbindgen:derive-eq=false
+/// cbindgen:derive-neq=false
+#[derive(MallocSizeOf)]
+#[repr(C)]
+pub struct LengthPercentage(NumericUnion<LengthPercentageTag, f32, CalcLengthPercentage>);
 
 impl ToAnimatedValue for LengthPercentage {
     type AnimatedValue = Self;
@@ -295,27 +175,19 @@ impl LengthPercentage {
     
     #[inline]
     pub fn new_length(length: Length) -> Self {
-        let length = Self(LengthPercentageUnion {
-            length: LengthVariant {
-                tag: LengthPercentageUnion::TAG_LENGTH,
-                length,
-            },
-        });
-        debug_assert_eq!(length.tag(), Tag::Length);
-        length
+        Self(NumericUnion::inline(
+            LengthPercentageTag::Length,
+            length.px(),
+        ))
     }
 
     
     #[inline]
     pub fn new_percent(percentage: Percentage) -> Self {
-        let percent = Self(LengthPercentageUnion {
-            percentage: PercentageVariant {
-                tag: LengthPercentageUnion::TAG_PERCENTAGE,
-                percentage,
-            },
-        });
-        debug_assert_eq!(percent.tag(), Tag::Percentage);
-        percent
+        Self(NumericUnion::inline(
+            LengthPercentageTag::Percentage,
+            percentage.0,
+        ))
     }
 
     
@@ -386,45 +258,17 @@ impl LengthPercentage {
     
     
     fn new_calc_unchecked(calc: Box<CalcLengthPercentage>) -> Self {
-        let ptr = Box::into_raw(calc);
-
-        #[cfg(target_pointer_width = "32")]
-        let calc = CalcVariant {
-            tag: LengthPercentageUnion::TAG_CALC,
-            ptr: ptr as *mut (),
-        };
-
-        #[cfg(target_pointer_width = "64")]
-        let calc = CalcVariant {
-            #[cfg(target_endian = "little")]
-            ptr: ptr as usize,
-            #[cfg(target_endian = "big")]
-            ptr: (ptr as usize).swap_bytes(),
-        };
-
-        let calc = Self(LengthPercentageUnion { calc });
-        debug_assert_eq!(calc.tag(), Tag::Calc);
-        calc
-    }
-
-    #[inline]
-    fn tag(&self) -> Tag {
-        match unsafe { self.0.tag.tag & LengthPercentageUnion::TAG_MASK } {
-            LengthPercentageUnion::TAG_CALC => Tag::Calc,
-            LengthPercentageUnion::TAG_LENGTH => Tag::Length,
-            LengthPercentageUnion::TAG_PERCENTAGE => Tag::Percentage,
-            _ => unsafe { debug_unreachable!("Bogus tag?") },
-        }
+        Self(NumericUnion::boxed(calc))
     }
 
     #[inline]
     fn unpack_mut<'a>(&'a mut self) -> UnpackedMut<'a> {
-        unsafe {
-            match self.tag() {
-                Tag::Calc => UnpackedMut::Calc(&mut *self.calc_ptr()),
-                Tag::Length => UnpackedMut::Length(self.0.length.length),
-                Tag::Percentage => UnpackedMut::Percentage(self.0.percentage.percentage),
-            }
+        match self.0.unpack_mut() {
+            tagged::UnpackedMut::Boxed(calc) => UnpackedMut::Calc(calc),
+            tagged::UnpackedMut::Inline(t, n) => match *t {
+                LengthPercentageTag::Length => UnpackedMut::Length(Length::new(*n)),
+                LengthPercentageTag::Percentage => UnpackedMut::Percentage(Percentage(*n)),
+            },
         }
     }
 
@@ -432,24 +276,14 @@ impl LengthPercentage {
     
     #[inline]
     pub fn unpack<'a>(&'a self) -> Unpacked<'a> {
-        unsafe {
-            match self.tag() {
-                Tag::Calc => Unpacked::Calc(&*self.calc_ptr()),
-                Tag::Length => Unpacked::Length(self.0.length.length),
-                Tag::Percentage => Unpacked::Percentage(self.0.percentage.percentage),
-            }
-        }
-    }
-
-    #[inline]
-    unsafe fn calc_ptr(&self) -> *mut CalcLengthPercentage {
-        #[cfg(not(all(target_endian = "big", target_pointer_width = "64")))]
-        {
-            self.0.calc.ptr as *mut _
-        }
-        #[cfg(all(target_endian = "big", target_pointer_width = "64"))]
-        {
-            self.0.calc.ptr.swap_bytes() as *mut _
+        match self.0.unpack() {
+            tagged::Unpacked::Boxed(calc) => Unpacked::Calc(calc),
+            tagged::Unpacked::Inline(LengthPercentageTag::Length, v) => {
+                Unpacked::Length(Length::new(v))
+            },
+            tagged::Unpacked::Inline(LengthPercentageTag::Percentage, v) => {
+                Unpacked::Percentage(Percentage(v))
+            },
         }
     }
 

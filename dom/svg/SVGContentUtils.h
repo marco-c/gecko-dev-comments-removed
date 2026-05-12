@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_SVG_SVGCONTENTUTILS_H_
 #define DOM_SVG_SVGCONTENTUTILS_H_
 
@@ -31,7 +29,7 @@ class SVGAnimatedTransformList;
 class SVGAnimatedPreserveAspectRatio;
 class SVGContextPaint;
 class SVGPreserveAspectRatio;
-union StyleLengthPercentageUnion;
+struct StyleLengthPercentage;
 namespace dom {
 class Document;
 class Element;
@@ -285,17 +283,11 @@ class SVGContentUtils {
   static bool ParseInteger(const nsAString& aString, int32_t& aValue);
 
   
-  
-  
-  
-  
-  
-  
 
 
 
   static float CoordToFloat(const dom::SVGElement* aContent,
-                            const StyleLengthPercentageUnion&,
+                            const StyleLengthPercentage&,
                             SVGLength::Axis aAxis = SVGLength::Axis::XY);
   
 
