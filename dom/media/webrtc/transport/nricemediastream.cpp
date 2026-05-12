@@ -158,7 +158,6 @@ static bool ToNrIceCandidate(const nr_ice_candidate& candc,
   out->tcp_type = tcp_type;
   out->codeword = candc.codeword;
   out->label = candc.label;
-  out->foundation = candc.foundation;
   out->trickled = candc.trickled;
   out->priority = candc.priority;
   return true;
@@ -539,7 +538,6 @@ static nsresult GetCandidatesFromStream(
         
         
         if (ToNrIceCandidate(*cand, &new_cand)) {
-          new_cand.username_fragment = stream->ufrag;
           candidates->push_back(std::move(new_cand));
         }
         cand = TAILQ_NEXT(cand, entry_comp);
