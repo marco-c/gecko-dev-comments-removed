@@ -2,11 +2,9 @@
 
 
 
-
-
 #include "sdp/SipccSdp.h"
 
-#include <cstdlib>
+#include <charconv>
 
 #include "mozilla/Assertions.h"
 #include "mozilla/UniquePtr.h"
@@ -76,8 +74,17 @@ SdpMediaSection& SipccSdp::AddMediaSection(SdpMediaSection::MediaType mediaType,
 
 bool SipccSdp::LoadOrigin(sdp_t* sdp, InternalResults& results) {
   std::string username = sdp_get_owner_username(sdp);
-  uint64_t sessId = strtoull(sdp_get_owner_sessionid(sdp), nullptr, 10);
-  uint64_t sessVer = strtoull(sdp_get_owner_version(sdp), nullptr, 10);
+
+  
+  uint64_t sessId = 0;
+  const char* sessionIdStr = sdp_get_owner_sessionid(sdp);
+  std::from_chars(sessionIdStr, sessionIdStr + strlen(sessionIdStr), sessId,
+                  10);
+
+  uint64_t sessVer = 0;
+  const char* sessionVersionStr = sdp_get_owner_version(sdp);
+  std::from_chars(sessionVersionStr,
+                  sessionVersionStr + strlen(sessionVersionStr), sessVer, 10);
 
   sdp_nettype_e type = sdp_get_owner_network_type(sdp);
   if (type != SDP_NT_INTERNET) {

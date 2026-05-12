@@ -37,10 +37,7 @@
 
 
 
-
-
-#include <stdlib.h>
-
+#include <charconv>
 #include <iostream>
 
 #include "runnable_utils.h"
@@ -202,8 +199,17 @@ class TurnClient : public MtransportTest {
     std::string host = target.substr(4, offset - 4);
     std::string port = target.substr(offset + 1);
 
-    r = nr_str_port_to_transport_addr(host.c_str(), atoi(port.c_str()),
-                                      IPPROTO_UDP, &addr);
+    
+    uint16_t port_val = 0;
+    auto res =
+        std::from_chars(port.data(), port.data() + port.size(), port_val, 10);
+
+    
+    ASSERT_EQ(res.ec, std::errc{});
+    ASSERT_EQ(res.ptr, port.data() + port.size());
+
+    r = nr_str_port_to_transport_addr(host.c_str(), port_val, IPPROTO_UDP,
+                                      &addr);
     ASSERT_EQ(0, r);
 
     r = nr_turn_client_ensure_perm(turn_ctx_, &addr);
@@ -282,8 +288,17 @@ class TurnClient : public MtransportTest {
     std::string host = target.substr(4, offset - 4);
     std::string port = target.substr(offset + 1);
 
-    r = nr_str_port_to_transport_addr(host.c_str(), atoi(port.c_str()),
-                                      IPPROTO_UDP, &addr);
+    
+    uint16_t port_val = 0;
+    auto res =
+        std::from_chars(port.data(), port.data() + port.size(), port_val, 10);
+
+    
+    ASSERT_EQ(res.ec, std::errc{});
+    ASSERT_EQ(res.ptr, port.data() + port.size());
+
+    r = nr_str_port_to_transport_addr(host.c_str(), port_val, IPPROTO_UDP,
+                                      &addr);
     ASSERT_EQ(0, r);
 
     unsigned char test[100];
