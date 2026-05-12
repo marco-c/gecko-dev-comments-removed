@@ -238,6 +238,14 @@ class SMILAnimationFunction {
   void SetWasSkipped() { mWasSkippedInPrevSample = true; }
 
   
+
+
+
+  bool ValueNeedsReparsingEverySample() const {
+    return mValueNeedsReparsingEverySample;
+  }
+
+  
   class MOZ_STACK_CLASS Comparator final {
    public:
     bool Equals(const SMILAnimationFunction* aElem1,
