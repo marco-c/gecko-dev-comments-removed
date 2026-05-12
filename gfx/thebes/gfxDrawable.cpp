@@ -2,7 +2,6 @@
 
 
 
-
 #include "gfxDrawable.h"
 #include "gfxContext.h"
 #include "gfxPlatform.h"
@@ -113,9 +112,7 @@ already_AddRefed<gfxSurfaceDrawable> gfxCallbackDrawable::MakeSurfaceDrawable(
 
   RefPtr<SourceSurface> surface = dt->Snapshot();
   if (surface) {
-    RefPtr<gfxSurfaceDrawable> drawable =
-        new gfxSurfaceDrawable(surface, mSize);
-    return drawable.forget();
+    return MakeAndAddRef<gfxSurfaceDrawable>(surface, mSize);
   }
   return nullptr;
 }
