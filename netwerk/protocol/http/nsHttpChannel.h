@@ -320,6 +320,14 @@ class nsHttpChannel final : public HttpBaseChannel,
   
   bool StorageAccessReloadedChannel();
 
+  
+  void PrimeSuspendAfterExamineResponse();
+  
+  void CancelSuspendOrResumeAfterExamineResponse();
+  
+  
+  void MaybeSuspendAfterExamineResponse();
+
  private:
   
   
@@ -833,6 +841,12 @@ class nsHttpChannel final : public HttpBaseChannel,
   
   
   nsCOMPtr<nsITimer> mSuspendTimer;
+  
+  
+  
+  
+  
+  Maybe<Atomic<bool>> mSuspendAfterExamineResponse;
   bool mWritingToCache = false;
   bool mWaitingForProxy = false;
   bool mStaleRevalidation = false;
