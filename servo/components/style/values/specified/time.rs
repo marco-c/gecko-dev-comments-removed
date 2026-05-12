@@ -9,6 +9,7 @@ use crate::parser::{Parse, ParserContext};
 use crate::values::computed::time::Time as ComputedTime;
 use crate::values::computed::{Context, ToComputedValue};
 use crate::values::specified::calc::{CalcNode, CalcNumeric, Leaf};
+use crate::values::tagged_numeric::{NumericUnion, Unpacked};
 use crate::values::CSSFloat;
 use crate::Zero;
 use cssparser::{match_ignore_ascii_case, Parser, Token};
@@ -21,14 +22,6 @@ use style_traits::{
 use thin_vec::ThinVec;
 
 
-#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToShmem)]
-#[repr(C)]
-pub struct NoCalcTime {
-    seconds: CSSFloat,
-    unit: TimeUnit,
-}
-
-
 #[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, ToShmem)]
 #[repr(u8)]
 pub enum TimeUnit {
@@ -38,18 +31,34 @@ pub enum TimeUnit {
     Millisecond,
 }
 
+
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToShmem)]
+#[repr(C)]
+pub struct NoCalcTime {
+    unit: TimeUnit,
+    value: CSSFloat,
+}
+
 impl NoCalcTime {
     
-    pub fn from_seconds(seconds: CSSFloat) -> Self {
-        Self {
-            seconds,
-            unit: TimeUnit::Second,
-        }
+    #[inline]
+    pub fn new(unit: TimeUnit, value: CSSFloat) -> Self {
+        Self { unit, value }
     }
 
     
+    #[inline]
+    pub fn from_seconds(seconds: CSSFloat) -> Self {
+        Self::new(TimeUnit::Second, seconds)
+    }
+
+    
+    #[inline]
     pub fn seconds(&self) -> CSSFloat {
-        self.seconds
+        match self.unit {
+            TimeUnit::Second => self.value,
+            TimeUnit::Millisecond => self.value / 1000.0,
+        }
     }
 
     
@@ -64,10 +73,7 @@ impl NoCalcTime {
     
     #[inline]
     pub fn unitless_value(&self) -> CSSFloat {
-        match self.unit {
-            TimeUnit::Second => self.seconds,
-            TimeUnit::Millisecond => self.seconds * 1000.,
-        }
+        self.value
     }
 
     
@@ -77,27 +83,26 @@ impl NoCalcTime {
 
     
     pub fn to(&self, unit: &str) -> Result<Self, ()> {
-        let unit = match_ignore_ascii_case! { unit,
+        let target = match_ignore_ascii_case! { unit,
             "s" => TimeUnit::Second,
             "ms" => TimeUnit::Millisecond,
              _ => return Err(()),
         };
-
-        Ok(Self {
-            seconds: self.seconds,
-            unit,
-        })
+        let value = match target {
+            TimeUnit::Second => self.seconds(),
+            TimeUnit::Millisecond => self.seconds() * 1000.0,
+        };
+        Ok(Self::new(target, value))
     }
 
     
     pub fn parse_dimension(value: CSSFloat, unit: &str) -> Result<Self, ()> {
-        let (seconds, unit) = match_ignore_ascii_case! { unit,
-            "s" => (value, TimeUnit::Second),
-            "ms" => (value / 1000.0, TimeUnit::Millisecond),
+        let unit = match_ignore_ascii_case! { unit,
+            "s" => TimeUnit::Second,
+            "ms" => TimeUnit::Millisecond,
             _ => return Err(())
         };
-
-        Ok(Self { seconds, unit })
+        Ok(Self::new(unit, value))
     }
 }
 
@@ -144,18 +149,55 @@ impl ToTyped for NoCalcTime {
 impl SpecifiedValueInfo for NoCalcTime {}
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped)]
-pub enum Time {
-    
-    NoCalc(NoCalcTime),
-    
-    Calc(Box<CalcNumeric>),
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToShmem)]
+pub struct Time(NumericUnion<TimeUnit, f32, CalcNumeric>);
+
+impl ToCss for Time {
+    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
+    where
+        W: Write,
+    {
+        match self.0.unpack() {
+            Unpacked::Inline(unit, value) => NoCalcTime::new(unit, value).to_css(dest),
+            Unpacked::Boxed(calc) => calc.to_css(dest),
+        }
+    }
 }
+
+impl ToTyped for Time {
+    fn to_typed(&self, dest: &mut ThinVec<TypedValue>) -> Result<(), ()> {
+        match self.0.unpack() {
+            Unpacked::Inline(unit, value) => NoCalcTime::new(unit, value).to_typed(dest),
+            Unpacked::Boxed(calc) => calc.to_typed(dest),
+        }
+    }
+}
+
+impl SpecifiedValueInfo for Time {}
 
 impl Time {
     
+    #[inline]
+    pub fn new(time: NoCalcTime) -> Self {
+        Self(NumericUnion::inline(time.unit, time.value))
+    }
+
+    
+    #[inline]
+    pub fn new_calc(calc: Box<CalcNumeric>) -> Self {
+        Self(NumericUnion::boxed(calc))
+    }
+
+    
+    #[inline]
     pub fn from_seconds(seconds: CSSFloat) -> Self {
-        Time::NoCalc(NoCalcTime::from_seconds(seconds))
+        Self::new(NoCalcTime::from_seconds(seconds))
+    }
+
+    
+    #[inline]
+    pub fn is_calc(&self) -> bool {
+        self.0.is_boxed()
     }
 
     fn parse_with_clamping_mode<'i, 't>(
@@ -177,13 +219,13 @@ impl Time {
             } if clamping_mode.is_ok(ParsingMode::DEFAULT, value) => {
                 NoCalcTime::parse_dimension(value, unit)
                     .map_err(|()| location.new_custom_error(StyleParseErrorKind::UnspecifiedError))
-                    .map(Time::NoCalc)
+                    .map(Self::new)
             },
             Token::Function(ref name) => {
                 let function = CalcNode::math_function(context, name, location)?;
                 CalcNode::parse_time(context, input, clamping_mode, function)
                     .map(Box::new)
-                    .map(Time::Calc)
+                    .map(Self::new_calc)
             },
             ref t => return Err(location.new_unexpected_token_error(t.clone())),
         }
@@ -207,7 +249,10 @@ impl Zero for Time {
     #[inline]
     fn is_zero(&self) -> bool {
         
-        matches!(self, Self::NoCalc(t) if t.seconds() == 0.0)
+        match self.0.unpack() {
+            Unpacked::Inline(_, value) => value == 0.0,
+            Unpacked::Boxed(_) => false,
+        }
     }
 }
 
@@ -215,9 +260,11 @@ impl ToComputedValue for Time {
     type ComputedValue = ComputedTime;
 
     fn to_computed_value(&self, context: &Context) -> Self::ComputedValue {
-        match self {
-            Time::NoCalc(t) => t.to_computed_value(context),
-            Time::Calc(ref calc) => {
+        match self.0.unpack() {
+            Unpacked::Inline(unit, value) => {
+                NoCalcTime::new(unit, value).to_computed_value(context)
+            },
+            Unpacked::Boxed(calc) => {
                 let value = match calc.node.with_computed_context(context).resolve() {
                     Ok(Leaf::Time(t)) => t.seconds(),
                     _ => {
@@ -235,7 +282,7 @@ impl ToComputedValue for Time {
     }
 
     fn from_computed_value(computed: &Self::ComputedValue) -> Self {
-        Time::NoCalc(NoCalcTime::from_seconds(computed.seconds()))
+        Self::from_seconds(computed.seconds())
     }
 }
 
