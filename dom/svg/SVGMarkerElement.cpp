@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/SVGMarkerElement.h"
 
 #include "DOMSVGAngle.h"
@@ -165,7 +163,7 @@ gfx::Matrix SVGMarkerElement::GetMarkerTransform(float aStrokeWidth,
       angle = aMark.angle + (aMark.type == SVGMark::Type::Start ? M_PI : 0.0f);
       break;
     default:  
-      angle = mOrient.GetAnimValue() * M_PI / 180.0f;
+      angle = mOrient.GetAnimValue() * kRadPerDegree;
       break;
   }
 
