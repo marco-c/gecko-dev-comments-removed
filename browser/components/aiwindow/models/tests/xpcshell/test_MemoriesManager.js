@@ -143,6 +143,9 @@ add_task(async function test_getAggregatedBrowserHistory() {
   ];
   await PlacesUtils.history.clear();
   await PlacesUtils.history.insertMany(seeded);
+  for (const { url, visits } of [seeded[1], seeded[2]]) {
+    await insertPlacesMetadata(url, visits[0].date.getTime());
+  }
 
   
   const [domainItems, titleItems, searchItems] =
