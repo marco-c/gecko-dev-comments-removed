@@ -575,10 +575,8 @@ LogicalRect TextOverflow::ExamineLineFrames(nsLineBox* aLine,
     
     
     bool foundVisibleTextOrAtomic = false;
-    int32_t n = aLine->GetChildCount();
-    nsIFrame* child = aLine->mFirstChild;
     InnerClipEdges clippedMarkerEdges;
-    for (; n-- > 0; child = child->GetNextSibling()) {
+    for (nsIFrame* child : aLine->ChildFrames()) {
       ExamineFrameSubtree(child, contentArea, insideMarkersArea, aFramesToHide,
                           aAlignmentEdges, &foundVisibleTextOrAtomic,
                           &clippedMarkerEdges);

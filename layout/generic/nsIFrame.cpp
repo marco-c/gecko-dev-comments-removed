@@ -5914,7 +5914,6 @@ static FrameTarget GetSelectionClosestFrameForLine(
   if (aLine == aParent->LinesEnd()) {
     return DrillDownToSelectionFrame(aParent, true, aFlags);
   }
-  nsIFrame* frame = aLine->mFirstChild;
   nsIFrame* closestFromIStart = nullptr;
   nsIFrame* closestFromIEnd = nullptr;
   nscoord closestIStart = aLine->IStart(), closestIEnd = aLine->IEnd();
@@ -5922,8 +5921,7 @@ static FrameTarget GetSelectionClosestFrameForLine(
   LogicalPoint pt(wm, aPoint, aLine->mContainerSize);
   bool canSkipBr = false;
   bool lastFrameWasEditable = false;
-  for (int32_t n = aLine->GetChildCount(); n;
-       --n, frame = frame->GetNextSibling()) {
+  for (nsIFrame* frame : aLine->ChildFrames()) {
     
     
     
