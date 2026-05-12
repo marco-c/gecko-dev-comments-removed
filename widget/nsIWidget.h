@@ -1914,13 +1914,6 @@ class nsIWidget : public nsSupportsWeakReference {
     Unadjusted,
   };
 
-  
-
-
-
-
-  virtual void SetNativePointerLockCenter(
-      const LayoutDeviceIntPoint& aLockCenter) {}
   virtual void LockNativePointer(NativePointerLockMode aNativePointerLockMode) {
   }
   virtual void UnlockNativePointer() {}
