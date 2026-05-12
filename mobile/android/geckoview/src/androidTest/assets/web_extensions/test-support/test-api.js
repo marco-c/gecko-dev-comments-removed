@@ -284,6 +284,22 @@ this.test = class extends ExtensionAPI {
             "NotifyUserGestureActivation"
           );
         },
+
+        
+        async saveTrackingDBEvents(logJson) {
+          const trackingDBService = Cc[
+            "@mozilla.org/tracking-db-service;1"
+          ].getService(Ci.nsITrackingDBService);
+          await trackingDBService.saveEvents(logJson);
+        },
+
+        
+        async clearTrackingDB() {
+          const trackingDBService = Cc[
+            "@mozilla.org/tracking-db-service;1"
+          ].getService(Ci.nsITrackingDBService);
+          await trackingDBService.clearAll();
+        },
       },
     };
   }

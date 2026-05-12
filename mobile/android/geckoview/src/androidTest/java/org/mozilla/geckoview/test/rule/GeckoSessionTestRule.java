@@ -2760,6 +2760,25 @@ public class GeckoSessionTestRule implements TestRule {
     webExtensionApiCall("RemoveAllCertOverrides", null);
   }
 
+  
+
+
+
+
+
+  public void saveTrackingDBEvents(final @NonNull String logJson) {
+    webExtensionApiCall(
+        "SaveTrackingDBEvents",
+        args -> {
+          args.put("log", logJson);
+        });
+  }
+
+  
+  public void clearTrackingDB() {
+    webExtensionApiCall("ClearTrackingDB", null);
+  }
+
   private interface SetArgs {
     void setArgs(JSONObject object) throws JSONException;
   }

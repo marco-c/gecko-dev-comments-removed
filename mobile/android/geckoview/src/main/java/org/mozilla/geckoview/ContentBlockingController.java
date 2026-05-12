@@ -7,13 +7,16 @@ package org.mozilla.geckoview;
 import androidx.annotation.AnyThread;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import org.mozilla.gecko.EventDispatcher;
 import org.mozilla.gecko.util.GeckoBundle;
+import org.mozilla.gecko.util.ThreadUtils;
 
 
 
@@ -239,5 +242,122 @@ public class ContentBlockingController {
         .getEventDispatcher()
         .queryBundle("ContentBlocking:RequestLog")
         .map(this::logFromBundle);
+  }
+
+  
+
+
+
+  @AnyThread
+  public static class TrackingDbEvent {
+    
+    public static final int OTHER_COOKIES_BLOCKED_ID = 0;
+
+    
+    public static final int TRACKERS_ID = 1;
+
+    
+    public static final int TRACKING_COOKIES_ID = 2;
+
+    
+    public static final int CRYPTOMINERS_ID = 3;
+
+    
+    public static final int FINGERPRINTERS_ID = 4;
+
+    
+    public static final int SOCIAL_ID = 5;
+
+    
+    public static final int SUSPICIOUS_FINGERPRINTERS_ID = 6;
+
+    
+
+
+
+    public static final int BOUNCETRACKERS_ID = 7;
+
+    
+    public final int type;
+
+    
+    public final int count;
+
+    
+    public final @Nullable String date;
+
+     TrackingDbEvent(final @NonNull GeckoBundle bundle) {
+      type = bundle.getInt("type");
+      count = bundle.getInt("count");
+      date = bundle.getString("date", null);
+    }
+
+    
+    protected TrackingDbEvent() {
+      type = 0;
+      count = 0;
+      date = null;
+    }
+  }
+
+  
+
+
+
+
+
+
+  @HandlerThread
+  public @NonNull GeckoResult<List<TrackingDbEvent>> getTrackingDbEventsByDateRange(
+      final long dateFrom, final long dateTo) {
+    ThreadUtils.assertOnHandlerThread();
+
+    final GeckoBundle msg = new GeckoBundle(2);
+    msg.putLong("dateFrom", dateFrom);
+    msg.putLong("dateTo", dateTo);
+    return EventDispatcher.getInstance()
+        .queryBundle("GeckoView:TrackingDB:GetEventsByDateRange", msg)
+        .map(this::eventsFromBundle);
+  }
+
+  
+
+
+
+
+  @HandlerThread
+  public @NonNull GeckoResult<Integer> sumAllTrackingDbEvents() {
+    ThreadUtils.assertOnHandlerThread();
+
+    return EventDispatcher.getInstance()
+        .queryBundle("GeckoView:TrackingDB:SumAllEvents")
+        .map(bundle -> bundle.getInt("sum", 0));
+  }
+
+  
+
+
+
+
+
+  @HandlerThread
+  public @NonNull GeckoResult<Long> getTrackingDbEarliestRecordedDate() {
+    ThreadUtils.assertOnHandlerThread();
+
+    return EventDispatcher.getInstance()
+        .queryBundle("GeckoView:TrackingDB:GetEarliestRecordedDate")
+        .map(bundle -> bundle.getLong("date", 0L));
+  }
+
+  private List<TrackingDbEvent> eventsFromBundle(final GeckoBundle value) {
+    final GeckoBundle[] bundles = value.getBundleArray("events");
+    if (bundles == null) {
+      return Collections.emptyList();
+    }
+    final ArrayList<TrackingDbEvent> list = new ArrayList<>(bundles.length);
+    for (final GeckoBundle b : bundles) {
+      list.add(new TrackingDbEvent(b));
+    }
+    return Collections.unmodifiableList(list);
   }
 }
