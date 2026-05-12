@@ -882,10 +882,8 @@ static inline uint32_t RescalingFactorForColorDepth(ColorDepth aColorDepth) {
     case ColorDepth::COLOR_8:
       break;
     case ColorDepth::COLOR_10:
-      factor = 64;
       break;
     case ColorDepth::COLOR_12:
-      factor = 16;
       break;
     case ColorDepth::COLOR_16:
       break;
