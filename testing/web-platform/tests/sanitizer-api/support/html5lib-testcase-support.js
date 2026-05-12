@@ -176,7 +176,7 @@ function build_node_tree(root, docstr) {
       
       append_child_at(root, level,
          document.implementation.createDocumentType(match[1], match[3], match[5]));
-    } else if (match = remainder.match(/^<?([a-z]*)( (.*))>$/)) {
+    } else if (match = remainder.match(/^<\?([a-zA-Z0-9-]*)( (.*))>$/)) {
       
       append_child_at(root, level, document.createProcessingInstruction(
           match[1], match[3]));
