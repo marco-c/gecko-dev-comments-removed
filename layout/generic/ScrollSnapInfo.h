@@ -155,6 +155,12 @@ struct ScrollSnapInfo {
 std::ostream& operator<<(std::ostream& aStream,
                          const ScrollSnapInfo::SnapTarget& aTarget);
 
+
+
+
+std::ostream& operator<<(std::ostream& aStream,
+                         const ScrollSnapInfo::SnapTarget* aTarget);
+
 }  
 
 #endif  
