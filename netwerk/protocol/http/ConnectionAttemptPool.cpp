@@ -81,6 +81,7 @@ void ConnectionAttemptPool::InsertIntoConnectionAttempts(
 
 void ConnectionAttemptPool::RemoveConnectionAttempt(ConnectionAttempt* sock,
                                                     bool abandon) {
+  RefPtr<ConnectionAttempt> keepAlive(sock);
   if (abandon) {
     sock->Abandon();
   }
@@ -168,7 +169,12 @@ void ConnectionAttemptPool::TimeoutTick() {
 
   TimeStamp currentTime = TimeStamp::Now();
   double maxConnectTime_ms = gHttpHandler->ConnectTimeout();
-  for (const auto& sock : Reversed(mAttempts)) {
+
+  
+  
+  
+  nsTArray<RefPtr<ConnectionAttempt>> snapshot(mAttempts.Clone());
+  for (const auto& sock : snapshot) {
     double delta = sock->Duration(currentTime);
     
     
