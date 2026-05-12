@@ -1263,7 +1263,7 @@ void gfxUserFontSet::UserFontCache::CacheFont(gfxFontEntry* aFontEntry) {
     
     
     
-    RegisterStrongMemoryReporter(MakeAndAddRef<MemoryReporter>());
+    RegisterStrongMemoryReporter(new MemoryReporter());
   }
 
   

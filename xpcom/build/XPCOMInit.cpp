@@ -441,8 +441,8 @@ NS_InitXPCOM(nsIServiceManager** aResult, nsIFile* aBinDirectory,
 #endif
 
   
-  RegisterStrongMemoryReporter(mozilla::MakeAndAddRef<ICUReporter>());
-  RegisterStrongMemoryReporter(mozilla::MakeAndAddRef<OggReporter>());
+  RegisterStrongMemoryReporter(new ICUReporter());
+  RegisterStrongMemoryReporter(new OggReporter());
   xpc::SelfHostedShmem::GetSingleton().InitMemoryReporter();
 
   mozilla::gecko_trace::Init();

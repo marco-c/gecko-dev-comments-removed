@@ -664,7 +664,7 @@ void ContentParent::StartUp() {
   nsDebugImpl::SetMultiprocessMode("Parent");
 
   
-  RegisterStrongMemoryReporter(MakeAndAddRef<ContentParentsMemoryReporter>());
+  RegisterStrongMemoryReporter(new ContentParentsMemoryReporter());
 
   BackgroundChild::Startup();
   ClientManager::Startup();
