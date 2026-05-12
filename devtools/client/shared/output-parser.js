@@ -66,6 +66,35 @@ const BASIC_SHAPE_FUNCTIONS = new Set([
   "inset",
 ]);
 
+const CSS_EXPLAINERS_SUPPORTED_FUNCTIONS = new Set([
+  "abs",
+  "acos",
+  "asin",
+  "atan",
+  "atan2",
+  "attr",
+  "calc",
+  "clamp",
+  "cos",
+  "env",
+  "exp",
+  "hypot",
+  "log",
+  "max",
+  "min",
+  "mod",
+  "pow",
+  
+  "progress",
+  "rem",
+  "round",
+  "sign",
+  "sin",
+  "sqrt",
+  "tan",
+  "var",
+]);
+
 const BACKDROP_FILTER_ENABLED = Services.prefs.getBoolPref(
   "layout.css.backdrop-filter.enabled"
 );
@@ -252,7 +281,21 @@ class OutputParser {
             text: tokenText,
           });
 
-          this.#appendTextNode(tokenText, token);
+          if (
+            options.cssExplainersEnabled &&
+            CSS_EXPLAINERS_SUPPORTED_FUNCTIONS.has(lowerCaseFunctionName)
+          ) {
+            this.#appendNode(
+              "span",
+              { class: "css-explainers-function-name" },
+              functionName,
+              token
+            );
+            this.#appendTextNode("(", token);
+          } else {
+            this.#appendTextNode(tokenText, token);
+          }
+
           break;
         }
 
@@ -399,7 +442,7 @@ class OutputParser {
             this.#stack.at(-1).sawComma = true;
           }
 
-          this.#appendTextNode(token.text, token);
+          this.#appendTextNode(tokenText, token);
           break;
 
         
@@ -467,6 +510,8 @@ class OutputParser {
       
       
       lowerCaseFunctionName: null,
+      
+      nestedFunctions: [],
       
       
       isColorTakingFunction: null,
@@ -542,6 +587,21 @@ class OutputParser {
       parts = [colorContainerEl];
     }
 
+    if (
+      options.cssExplainersEnabled &&
+      CSS_EXPLAINERS_SUPPORTED_FUNCTIONS.has(lowerCaseFunctionName) &&
+      stackEntry.nestedFunctions.every(fn =>
+        CSS_EXPLAINERS_SUPPORTED_FUNCTIONS.has(fn)
+      )
+    ) {
+      const functionNode = this.#createNode("span", {
+        class: options.functionClass,
+        "data-function-expression": stackEntry.text,
+      });
+      functionNode.append(...parts);
+      parts = [functionNode];
+    }
+
     
     
     this.#getCurrentStackParts().push(...parts);
@@ -568,6 +628,12 @@ class OutputParser {
       }
       
       lastStackEntry.text += text;
+
+      
+      lastStackEntry.nestedFunctions = [
+        stackEntry.lowerCaseFunctionName,
+        ...stackEntry.nestedFunctions,
+      ];
 
       const compoundEntryToken = {
         
@@ -2447,6 +2513,7 @@ class OutputParser {
 
 
 
+
   #mergeOptions(overrides) {
     const defaults = {
       useDefaultColorUnit: true,
@@ -2458,6 +2525,7 @@ class OutputParser {
       colorClass: null,
       colorSwatchClass: null,
       colorSwatchReadOnly: false,
+      cssExplainersEnabled: false,
       filterSwatch: false,
       flexClass: null,
       gridClass: null,

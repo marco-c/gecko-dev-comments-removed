@@ -456,12 +456,6 @@ class TextPropertyEditor {
 
 
   #getAnchorNames = async () => {
-    
-    
-    if (!this.ruleView.pageStyle.traits.hasGetAnchorNames) {
-      return [];
-    }
-
     const names = await this.ruleView.pageStyle.getAnchorNames(
       this.ruleView.inspector.selection.nodeFront
     );
@@ -645,6 +639,7 @@ class TextPropertyEditor {
       },
       inStartingStyleRule: this.rule.isInStartingStyle(),
       isValid: this.isValid(),
+      cssExplainersEnabled: this.ruleView.cssExplainersEnabled,
     };
 
     if (this.rule.darkColorScheme !== undefined) {
