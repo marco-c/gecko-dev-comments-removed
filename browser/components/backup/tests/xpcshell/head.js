@@ -485,3 +485,18 @@ function assertSingleTimeMeasurement(timerTestValue) {
   );
   Assert.greater(timerTestValue.sum, 0, "Timer measurement should be non-zero");
 }
+
+
+
+
+
+
+
+
+async function createStubBackupFile(dirPath, filename) {
+  const filePath = PathUtils.join(dirPath, filename);
+  await IOUtils.writeUTF8(filePath, "<!-- stub backup -->", {
+    tmpPath: filePath + ".tmp",
+  });
+  return filePath;
+}
