@@ -13,13 +13,22 @@ promise_test(async t => {
 
   
   const rc1 = await rcHelper.addWindow(
-       null,  { features: 'noopener' });
+       {scripts: ['/resources/testharness.js']},
+       {features: 'noopener'});
   await openWebTransport(rc1);
   
   
   await assertBFCacheEligibility(rc1,  true);
   await rc1.executeScript(async () => {
     assert_false(window.testWebTransport === undefined);
-    await window.testWebTransport.closed;
+    try {
+      await window.testWebTransport.closed;
+      
+      
+      assert_unreached('The WebTransport closed promise should reject.');
+    } catch (e) {
+      assert_equals(
+          e.source, 'session', 'The error source should be \'session\'');
+    }
   });
 });
