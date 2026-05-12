@@ -80,7 +80,8 @@ class AcceleratedCanvas2DMemoryReporter final : public nsIMemoryReporter {
     static bool registered = false;
     if (!registered) {
       registered = true;
-      RegisterStrongMemoryReporter(new AcceleratedCanvas2DMemoryReporter);
+      RegisterStrongMemoryReporter(
+          MakeAndAddRef<AcceleratedCanvas2DMemoryReporter>());
     }
   }
 };
@@ -2573,6 +2574,7 @@ bool SharedContextWebgl::UploadSurface(DataSourceSurface* aData,
   if (srcRect.IsEmpty()) {
     return true;
   }
+  Maybe<DataSourceSurface::ScopedMap> map;
   if (aData) {
     
     
@@ -2593,15 +2595,15 @@ bool SharedContextWebgl::UploadSurface(DataSourceSurface* aData,
     
     
     
-    DataSourceSurface::ScopedMap map(aData, DataSourceSurface::READ);
-    if (!map.IsMapped()) {
+    map.emplace(aData, DataSourceSurface::READ);
+    if (!map->IsMapped()) {
       return false;
     }
-    int32_t stride = map.GetStride();
+    int32_t stride = map->GetStride();
     
     
     Span<const uint8_t> range(
-        map.GetData() + srcRect.y * size_t(stride) + srcRect.x * bpp,
+        map->GetData() + srcRect.y * size_t(stride) + srcRect.x * bpp,
         std::max(srcRect.height - 1, 0) * size_t(stride) + srcRect.width * bpp);
     texDesc.cpuData = Some(range);
     

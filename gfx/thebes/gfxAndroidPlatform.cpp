@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "base/basictypes.h"
 
 #include "gfxAndroidPlatform.h"
@@ -170,7 +168,7 @@ gfxAndroidPlatform::gfxAndroidPlatform() {
 
   Factory::SetFTLibrary(gPlatformFTLibrary);
 
-  RegisterStrongMemoryReporter(new FreetypeReporter());
+  RegisterStrongMemoryReporter(MakeAndAddRef<FreetypeReporter>());
 
   
   

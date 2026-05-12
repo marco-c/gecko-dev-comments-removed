@@ -336,7 +336,7 @@ gfxPlatformFontList::gfxPlatformFontList(bool aNeedFullnamePostscriptNames)
                                   kFontSystemWhitelistPref);
   }
 
-  RegisterStrongMemoryReporter(new MemoryReporter());
+  RegisterStrongMemoryReporter(MakeAndAddRef<MemoryReporter>());
 
   
   mDefaultGenericsLangGroup.AppendElements(std::size(gPrefLangNames));

@@ -109,7 +109,7 @@ CacheStorageService::CacheStorageService() {
   sSelf = this;
   sGlobalEntryTables = new GlobalEntryTables();
 
-  RegisterStrongMemoryReporter(this);
+  RegisterStrongMemoryReporter(do_AddRef(this));
 }
 
 CacheStorageService::~CacheStorageService() {
@@ -132,6 +132,15 @@ void CacheStorageService::Shutdown() {
   Dispatch(event);
 
 #ifdef NS_FREE_PERMANENT_DATA
+  
+  
+  
+  
+  for (const auto& table : sGlobalEntryTables->Values()) {
+    for (const auto& entry : table->Values()) {
+      entry->ClearCallbacks();
+    }
+  }
   sGlobalEntryTables->Clear();
   delete sGlobalEntryTables;
 #endif

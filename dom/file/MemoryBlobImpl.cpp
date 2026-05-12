@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "MemoryBlobImpl.h"
 
 #include "mozilla/IntegerPrintfMacros.h"
@@ -107,8 +105,8 @@ class MemoryBlobImplDataOwnerMemoryReporter final : public nsIMemoryReporter {
         sha1.finish(digest);
 
         nsAutoCString digestString;
-        for (size_t i = 0; i < sizeof(digest); i++) {
-          digestString.AppendPrintf("%02x", digest[i]);
+        for (unsigned char i : digest) {
+          digestString.AppendPrintf("%02x", i);
         }
 
         aHandleReport->Callback(
@@ -161,7 +159,8 @@ void MemoryBlobImpl::DataOwner::EnsureMemoryReporterRegistered() {
     return;
   }
 
-  RegisterStrongMemoryReporter(new MemoryBlobImplDataOwnerMemoryReporter());
+  RegisterStrongMemoryReporter(
+      MakeAndAddRef<MemoryBlobImplDataOwnerMemoryReporter>());
 
   sMemoryReporterRegistered = true;
 }
