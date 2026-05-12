@@ -34,7 +34,7 @@ use to_shmem::{SharedMemoryBuilder, ToShmem};
 
 
 #[derive(Clone)]
-#[cfg_attr(feature = "servo", derive(MallocSizeOf))]
+#[cfg_attr(feature = "servo", derive(crate::derives::MallocSizeOf))]
 pub struct SharedRwLock {
     #[cfg(feature = "servo")]
     #[cfg_attr(feature = "servo", ignore_malloc_size_of = "Arc")]
@@ -238,7 +238,6 @@ impl<T> Locked<T> {
     }
 
     
-    #[cfg(feature = "gecko")]
     pub unsafe fn read_unchecked<'a>(&'a self) -> &'a T {
         let ptr = self.data.get();
         &*ptr

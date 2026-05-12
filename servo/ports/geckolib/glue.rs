@@ -2616,6 +2616,21 @@ pub extern "C" fn Servo_NestedDeclarationsRule_SetStyle(
 }
 
 #[no_mangle]
+pub extern "C" fn Servo_DeclarationBlock_MayBeInRuleTree(
+    declarations: &LockedDeclarationBlock,
+) -> bool {
+    use std::sync::atomic::Ordering;
+    
+    
+    unsafe {
+        declarations
+            .read_unchecked()
+            .may_be_in_rule_tree
+            .load(Ordering::Relaxed)
+    }
+}
+
+#[no_mangle]
 pub extern "C" fn Servo_StyleRule_GetStyle(
     rule: &LockedStyleRule,
 ) -> Strong<LockedDeclarationBlock> {

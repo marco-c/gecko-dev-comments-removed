@@ -493,9 +493,6 @@ where
             &mut matching_context,
         );
 
-        
-        self.element.unset_dirty_style_attribute();
-
         let rule_node = stylist
             .rule_tree()
             .compute_rule_node(&mut applicable_declarations, &self.context.shared.guards);

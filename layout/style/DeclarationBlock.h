@@ -11,7 +11,6 @@
 #define mozilla_DeclarationBlock_h
 
 #include "NonCustomCSSPropertyId.h"
-#include "mozilla/Atomics.h"
 #include "mozilla/ServoBindings.h"
 #include "nsString.h"
 
@@ -28,15 +27,14 @@ class Rule;
 class DeclarationBlock final {
   DeclarationBlock(const DeclarationBlock& aCopy)
       : mRaw(Servo_DeclarationBlock_Clone(aCopy.mRaw).Consume()),
-        mImmutable(false),
-        mIsDirty(false) {
+        mImmutable(false) {
     mContainer.mRaw = 0;
   }
 
  public:
   explicit DeclarationBlock(
       already_AddRefed<const StyleLockedDeclarationBlock> aRaw)
-      : mRaw(aRaw), mImmutable(false), mIsDirty(false) {
+      : mRaw(aRaw), mImmutable(false) {
     mContainer.mRaw = 0;
   }
 
@@ -70,44 +68,20 @@ class DeclarationBlock final {
   
 
 
-  bool IsDirty() const { return mIsDirty; }
-
-  
-
-
-  void SetDirty() { mIsDirty = true; }
-
-  
-
-
-  void UnsetDirty() { mIsDirty = false; }
-
-  
-
-
   already_AddRefed<DeclarationBlock> EnsureMutable() {
     MOZ_ASSERT(!OwnerIsReadOnly());
-
-    if (!IsDirty()) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
+    if (!IsMutable() || InnerMayBeInRuleTree()) {
       return Clone();
     }
-
-    if (!IsMutable()) {
-      return Clone();
-    }
-
     return do_AddRef(this);
+  }
+
+  
+  
+  
+  
+  bool InnerMayBeInRuleTree() const {
+    return Servo_DeclarationBlock_MayBeInRuleTree(mRaw.get());
   }
 
   void SetOwningRule(css::Rule* aRule) {
@@ -194,10 +168,10 @@ class DeclarationBlock final {
     return Servo_DeclarationBlock_GetPropertyIsImportant(mRaw, &aProperty);
   }
 
-  bool GetPropertyTypedValue(const CSSPropertyId& aPropId,
-                             StylePropertyTypedValue& aValue) const {
-    return Servo_DeclarationBlock_GetPropertyTypedValue(mRaw, &aPropId,
-                                                        &aValue);
+  bool GetPropertyTypedValueList(const CSSPropertyId& aPropId,
+                                 StylePropertyTypedValueList& aValue) const {
+    return Servo_DeclarationBlock_GetPropertyTypedValueList(mRaw, &aPropId,
+                                                            &aValue);
   }
 
   
@@ -237,20 +211,9 @@ class DeclarationBlock final {
   RefPtr<const StyleLockedDeclarationBlock> mRaw;
 
   
+  
+  
   bool mImmutable;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  Atomic<bool, MemoryOrdering::Relaxed> mIsDirty;
 };
 
 }  

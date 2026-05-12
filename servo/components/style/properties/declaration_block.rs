@@ -44,6 +44,7 @@ use smallvec::SmallVec;
 use std::fmt::{self, Write};
 use std::iter::Zip;
 use std::slice::Iter;
+use std::sync::atomic::AtomicBool;
 use style_traits::{
     CssString, CssStringWriter, CssWriter, ParseError, ParsingMode, StyleParseErrorKind, ToCss,
     TypedValueList,
@@ -230,7 +231,7 @@ impl<'a> Iterator for PropertyDeclarationIdSetIterator<'a> {
 
 
 #[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[derive(Clone, ToShmem, Default)]
+#[derive(ToShmem, Default)]
 pub struct PropertyDeclarationBlock {
     
     
@@ -242,10 +243,25 @@ pub struct PropertyDeclarationBlock {
 
     
     property_ids: PropertyDeclarationIdSet,
+
+    
+    pub may_be_in_rule_tree: AtomicBool,
+}
+
+impl Clone for PropertyDeclarationBlock {
+    fn clone(&self) -> Self {
+        Self {
+            declarations: self.declarations.clone(),
+            declarations_importance: self.declarations_importance.clone(),
+            property_ids: self.property_ids.clone(),
+            may_be_in_rule_tree: AtomicBool::new(false),
+        }
+    }
 }
 
 impl PartialEq for PropertyDeclarationBlock {
     fn eq(&self, other: &Self) -> bool {
+        
         
         
         self.declarations == other.declarations
@@ -391,6 +407,7 @@ impl PropertyDeclarationBlock {
             declarations: ThinVec::new(),
             declarations_importance: SmallBitVec::new(),
             property_ids: PropertyDeclarationIdSet::default(),
+            may_be_in_rule_tree: AtomicBool::new(false),
         }
     }
 
@@ -404,6 +421,7 @@ impl PropertyDeclarationBlock {
             declarations,
             declarations_importance: SmallBitVec::from_elem(1, importance.important()),
             property_ids,
+            may_be_in_rule_tree: AtomicBool::new(false),
         }
     }
 
@@ -1030,6 +1048,7 @@ impl PropertyDeclarationBlock {
             declarations,
             property_ids,
             declarations_importance: SmallBitVec::from_elem(len, false),
+            may_be_in_rule_tree: AtomicBool::new(false),
         }
     }
 

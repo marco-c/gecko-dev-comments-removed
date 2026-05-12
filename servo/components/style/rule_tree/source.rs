@@ -2,7 +2,7 @@
 
 
 
-#![forbid(unsafe_code)]
+#![deny(unsafe_code)]
 
 use crate::properties::PropertyDeclarationBlock;
 use crate::shared_lock::{Locked, SharedRwLockReadGuard};
@@ -52,5 +52,26 @@ impl StyleSource {
     #[inline]
     pub fn get(&self) -> &Arc<Locked<PropertyDeclarationBlock>> {
         &self.0
+    }
+
+    
+    #[inline]
+    pub fn mark_in_rule_tree(&self) {
+        use std::sync::atomic::Ordering;
+        if self.0.is_static() {
+            
+            
+            return;
+        }
+        
+        
+        
+        #[allow(unsafe_code)]
+        unsafe {
+            self.0
+                .read_unchecked()
+                .may_be_in_rule_tree
+                .store(true, Ordering::Relaxed);
+        }
     }
 }

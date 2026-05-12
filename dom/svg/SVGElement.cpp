@@ -253,7 +253,6 @@ nsresult SVGElement::CopyInnerTo(mozilla::dom::Element* aDest) {
     if (const auto* smilOverrideStyleDecoration =
             GetSMILOverrideStyleDeclaration()) {
       RefPtr<DeclarationBlock> declClone = smilOverrideStyleDecoration->Clone();
-      declClone->SetDirty();
       dest->SetSMILOverrideStyleDeclaration(*declClone);
     }
   }
@@ -264,32 +263,30 @@ nsresult SVGElement::CopyInnerTo(mozilla::dom::Element* aDest) {
 
 
 
-void SVGElement::DidAnimateClass() {
-  auto* doc = GetComposedDoc();
-  
-  if (doc) {
+void SVGElement::WillAnimateClass() {
+  if (auto* doc = GetComposedDoc()) {
     if (auto* pc = doc->GetPresContext()) {
       pc->RestyleManager()->ClassAttributeWillBeChangedBySMIL(this);
     }
   }
+}
 
-  nsAutoString src;
-  mClassAttribute.GetAnimValue(src, this);
-  if (!mClassAnimAttr) {
-    mClassAnimAttr = std::make_unique<nsAttrValue>();
+void SVGElement::DidAnimateClass() {
+  if (mClassAttribute.IsAnimated()) {
+    nsAutoString src;
+    mClassAttribute.GetAnimValue(src, this);
+    if (!mClassAnimAttr) {
+      mClassAnimAttr = std::make_unique<nsAttrValue>();
+    }
+    mClassAnimAttr->ParseAtomArray(src);
+  } else {
+    mClassAnimAttr.reset();
   }
-  mClassAnimAttr->ParseAtomArray(src);
 
   
-  UpdateSubtreeBloomFilterForClass(mClassAnimAttr.get());
+  UpdateSubtreeBloomFilterForClass(GetClasses());
   UpdateSubtreeBloomFilterForAttribute(nsGkAtoms::_class);
   PropagateBloomFilterToParents();
-
-  if (doc) {
-    if (PresShell* presShell = doc->GetPresShell()) {
-      presShell->RestyleForAnimation(this, RestyleHint::RESTYLE_SELF);
-    }
-  }
 
   DidAnimateAttribute(kNameSpaceID_None, nsGkAtoms::_class);
 }
@@ -456,12 +453,13 @@ bool SVGElement::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
       
       if (GetPointListAttrName() == aAttribute) {
         if (SVGAnimatedPointList* pointList = GetAnimatedPointList()) {
-          pointList->SetBaseValueString(aValue);
-          
-          
-          
-          aResult.SetTo(pointList->GetBaseValue(), &aValue);
-          didSetResult = true;
+          rv = pointList->SetBaseValueString(aValue);
+          if (NS_FAILED(rv)) {
+            pointList->ClearBaseValue();
+          } else {
+            aResult.SetTo(pointList->GetBaseValue(), &aValue);
+            didSetResult = true;
+          }
           foundMatch = true;
         }
       }

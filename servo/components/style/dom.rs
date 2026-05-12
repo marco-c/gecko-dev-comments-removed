@@ -535,10 +535,6 @@ pub trait TElement:
     fn style_attribute(&self) -> Option<ArcBorrow<'_, Locked<PropertyDeclarationBlock>>>;
 
     
-    
-    fn unset_dirty_style_attribute(&self) {}
-
-    
     fn smil_override(&self) -> Option<ArcBorrow<'_, Locked<PropertyDeclarationBlock>>> {
         None
     }

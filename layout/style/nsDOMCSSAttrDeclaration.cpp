@@ -74,8 +74,6 @@ nsresult nsDOMCSSAttributeDeclaration::SetCSSDeclaration(
   
   MOZ_ASSERT_IF(aClosureData && aClosureData->mShouldBeCalled,
                 aClosureData->mWasCalled);
-
-  aDecl->SetDirty();
   if (mIsSMILOverride) {
     mElement->SetSMILOverrideStyleDeclaration(*aDecl);
     return NS_OK;
@@ -114,9 +112,6 @@ DeclarationBlock* nsDOMCSSAttributeDeclaration::GetOrCreateCSSDeclaration(
 
   
   auto decl = MakeRefPtr<DeclarationBlock>();
-  
-  
-  decl->SetDirty();
 #ifdef DEBUG
   RefPtr<DeclarationBlock> mutableDecl = decl->EnsureMutable();
   MOZ_ASSERT(mutableDecl == decl);
