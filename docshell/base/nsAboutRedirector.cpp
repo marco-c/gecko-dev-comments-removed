@@ -143,8 +143,6 @@ static const RedirEntry kRedirMap[] = {
          nsIAboutModule::IS_SECURE_CHROME_UI},
     {"logging", "chrome://global/content/aboutLogging/aboutLogging.html",
      nsIAboutModule::ALLOW_SCRIPT},
-    {"logo", "chrome://branding/content/about.png",
-     nsIAboutModule::URI_SAFE_FOR_UNTRUSTED_CONTENT},
     {"memory", "chrome://global/content/aboutMemory.xhtml",
      nsIAboutModule::ALLOW_SCRIPT},
     {"certificate", "chrome://global/content/certviewer/certviewer.html",
@@ -240,7 +238,6 @@ static const RedirEntry kRedirMap[] = {
 #endif
     {"crashgpu", "about:blank", nsIAboutModule::HIDE_FROM_ABOUTABOUT},
     {"crashextensions", "about:blank", nsIAboutModule::HIDE_FROM_ABOUTABOUT}};
-static const int kRedirTotal = std::size(kRedirMap);
 
 NS_IMETHODIMP
 nsAboutRedirector::NewChannel(nsIURI* aURI, nsILoadInfo* aLoadInfo,
@@ -280,11 +277,11 @@ nsAboutRedirector::NewChannel(nsIURI* aURI, nsILoadInfo* aLoadInfo,
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  for (int i = 0; i < kRedirTotal; i++) {
-    if (!strcmp(path.get(), kRedirMap[i].id)) {
+  for (const auto& redir : kRedirMap) {
+    if (!strcmp(path.get(), redir.id)) {
       nsCOMPtr<nsIChannel> tempChannel;
       nsCOMPtr<nsIURI> tempURI;
-      rv = NS_NewURI(getter_AddRefs(tempURI), kRedirMap[i].url);
+      rv = NS_NewURI(getter_AddRefs(tempURI), redir.url);
       NS_ENSURE_SUCCESS(rv, rv);
 
       rv = NS_NewChannelInternal(getter_AddRefs(tempChannel), tempURI,
@@ -325,9 +322,9 @@ nsAboutRedirector::GetURIFlags(nsIURI* aURI, uint32_t* aResult) {
   nsresult rv = NS_GetAboutModuleName(aURI, name);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  for (int i = 0; i < kRedirTotal; i++) {
-    if (name.EqualsASCII(kRedirMap[i].id)) {
-      *aResult = kRedirMap[i].flags;
+  for (const auto& redir : kRedirMap) {
+    if (name.EqualsASCII(redir.id)) {
+      *aResult = redir.flags;
       return NS_OK;
     }
   }
