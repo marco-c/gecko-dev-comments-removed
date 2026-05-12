@@ -85,20 +85,6 @@ Result<WorkerIsolationOptions, nsresult> IsolationOptionsForWorker(
 
 
 
-Result<nsCString, nsresult> PredictRemoteTypeForURI(
-    nsIURI* aURI, const OriginAttributes& aOriginAttributes,
-    const nsACString& aPreferredRemoteType, bool aUseRemoteSubframes);
-
-
-
-
-
-
-
-
-
-
-
 
 
 
