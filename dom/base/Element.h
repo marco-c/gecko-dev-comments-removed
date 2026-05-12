@@ -1186,8 +1186,9 @@ class Element : public FragmentOrElement {
 
 
 
-
-  void Describe(nsAString& aOutDescription, bool aShort = false) const;
+  enum class DescriptionKind { IdOnly, IdAndClass, AllAttributes };
+  void Describe(nsAString& aOutDescription,
+                DescriptionKind aKind = DescriptionKind::AllAttributes) const;
 
   
 
