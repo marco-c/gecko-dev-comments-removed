@@ -82,10 +82,6 @@ using UtilityActorName = mozilla::dom::WebIDLUtilityActorName;
 
 nsCString GetUtilityActorName(const UtilityActorName aActorName);
 
-#ifdef XP_WIN
-int GetCpuFrequencyMHz();
-#endif
-
 
 
 
