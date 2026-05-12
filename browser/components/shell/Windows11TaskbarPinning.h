@@ -7,7 +7,6 @@
 
 
 
-
 #ifndef SHELL_WINDOWS11TASKBARPINNING_H_
 #define SHELL_WINDOWS11TASKBARPINNING_H_
 
@@ -30,8 +29,9 @@ struct Win11PinToTaskBarResult {
 };
 
 Win11PinToTaskBarResult PinCurrentAppToTaskbarWin11(
-    bool aCheckOnly, const nsAString& aAppUserModelId);
+    bool aCheckOnly, const nsAString& aAppUserModelId,
+    const bool aFireAndForget);
 
-Win11PinToTaskBarResult IsCurrentAppPinnedToTaskbarWin11(bool aCheckOnly);
+Win11PinToTaskBarResult IsCurrentAppPinnedToTaskbarWin11();
 
 #endif  

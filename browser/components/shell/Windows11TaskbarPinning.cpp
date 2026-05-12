@@ -2,7 +2,6 @@
 
 
 
-
 #include "Windows11TaskbarPinning.h"
 
 #include "nsILimitedAccessFeature.h"
@@ -192,7 +191,8 @@ static Win11PinToTaskBarResultStatus IsTaskbarPinningAllowed(
 }
 
 Win11PinToTaskBarResult PinCurrentAppToTaskbarWin11(
-    bool aCheckOnly, const nsAString& aAppUserModelId) {
+    bool aCheckOnly, const nsAString& aAppUserModelId,
+    const bool aFireAndForget) {
   MOZ_DIAGNOSTIC_ASSERT(!NS_IsMainThread(),
                         "PinCurrentAppToTaskbarWin11 should be called off main "
                         "thread only. It blocks, waiting on things to execute "
@@ -221,8 +221,9 @@ Win11PinToTaskBarResult PinCurrentAppToTaskbarWin11(
   
   
   NS_DispatchToMainThread(NS_NewRunnableFunction(
-      "PinCurrentAppToTaskbarWin11", [&event, &hr, &resultStatus, aCheckOnly,
-                                      aumid = nsString(aAppUserModelId)] {
+      "PinCurrentAppToTaskbarWin11",
+      [&event, &hr, &resultStatus, aCheckOnly, aFireAndForget,
+       aumid = nsString(aAppUserModelId)] {
         
         
         
@@ -287,9 +288,9 @@ Win11PinToTaskBarResult PinCurrentAppToTaskbarWin11(
         
         auto isPinnedCallback = Callback<IAsyncOperationCompletedHandler<
             bool>>([taskbar, &event, &resultStatus, &hr,
-                    primaryAumid = nsString(primaryAumid)](
-                       IAsyncOperation<bool>* asyncInfo,
-                       AsyncStatus status) mutable -> HRESULT {
+                    primaryAumid = nsString(primaryAumid),
+                    aFireAndForget](IAsyncOperation<bool>* asyncInfo,
+                                    AsyncStatus status) mutable -> HRESULT {
           auto CompletedOperations =
               [&event, &resultStatus,
                primaryAumid](Win11PinToTaskBarResultStatus status) -> HRESULT {
@@ -343,6 +344,8 @@ Win11PinToTaskBarResult PinCurrentAppToTaskbarWin11(
                 "HRESULT = 0x%lx",
                 hr);
             return CompletedOperations(Win11PinToTaskBarResultStatus::Failed);
+          } else if (aFireAndForget) {
+            return CompletedOperations(Win11PinToTaskBarResultStatus::Success);
           }
 
           auto pinAppCallback = Callback<IAsyncOperationCompletedHandler<
@@ -420,7 +423,7 @@ Win11PinToTaskBarResult PinCurrentAppToTaskbarWin11(
   return {hr, resultStatus};
 }
 
-Win11PinToTaskBarResult IsCurrentAppPinnedToTaskbarWin11(bool aCheckOnly) {
+Win11PinToTaskBarResult IsCurrentAppPinnedToTaskbarWin11() {
   MOZ_DIAGNOSTIC_ASSERT(
       !NS_IsMainThread(),
       "IsCurrentAppPinnedToTaskbarWin11 should be called off main "
@@ -450,22 +453,21 @@ Win11PinToTaskBarResult IsCurrentAppPinnedToTaskbarWin11(bool aCheckOnly) {
   
   
   NS_DispatchToMainThread(NS_NewRunnableFunction(
-      "IsCurrentAppPinnedToTaskbarWin11",
-      [&event, &hr, &resultStatus, aCheckOnly] {
+      "IsCurrentAppPinnedToTaskbarWin11", [&event, &hr, &resultStatus] {
         auto CompletedOperations =
             [&event, &resultStatus](Win11PinToTaskBarResultStatus status) {
               resultStatus = status;
               event.Set();
             };
 
-        ComPtr<ITaskbarManager> taskbar;
-        Win11PinToTaskBarResultStatus allowed =
-            IsTaskbarPinningAllowed(aCheckOnly, taskbar);
-        if ((aCheckOnly && allowed == Win11PinToTaskBarResultStatus::Success) ||
-            allowed != Win11PinToTaskBarResultStatus::Success) {
-          return CompletedOperations(allowed);
+        auto result = InitializeTaskbar();
+        if (result.isErr()) {
+          hr = result.unwrapErr();
+          return CompletedOperations(
+              Win11PinToTaskBarResultStatus::NotSupported);
         }
 
+        ComPtr<ITaskbarManager> taskbar = result.unwrap();
         ComPtr<IAsyncOperation<bool>> isPinnedOperation = nullptr;
         hr = taskbar->IsCurrentAppPinnedAsync(&isPinnedOperation);
         if (FAILED(hr)) {
@@ -548,7 +550,8 @@ Win11PinToTaskBarResult IsCurrentAppPinnedToTaskbarWin11(bool aCheckOnly) {
 #else  
 
 Win11PinToTaskBarResult PinCurrentAppToTaskbarWin11(
-    bool aCheckOnly, const nsAString& aAppUserModelId) {
+    bool aCheckOnly, const nsAString& aAppUserModelId,
+    const bool aFireAndForget) {
   return {S_OK, Win11PinToTaskBarResultStatus::NotSupported};
 }
 

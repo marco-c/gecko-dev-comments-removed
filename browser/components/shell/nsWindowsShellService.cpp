@@ -1591,8 +1591,7 @@ static bool IsCurrentAppPinnedToTaskbarSync(const nsAString& aumid) {
   
   
   if (widget::WinUtils::HasPackageIdentity()) {
-    auto pinWithWin11TaskbarAPIResults =
-        IsCurrentAppPinnedToTaskbarWin11(false);
+    auto pinWithWin11TaskbarAPIResults = IsCurrentAppPinnedToTaskbarWin11();
     switch (pinWithWin11TaskbarAPIResults.result) {
       case Win11PinToTaskBarResultStatus::NotPinned:
         return false;
