@@ -292,7 +292,7 @@ class nsSocketTransportService final : public nsPISocketTransportService,
   
   int32_t mKeepaliveProbeCount{kDefaultTCPKeepCount};
   
-  bool mKeepaliveEnabledPref{false};
+  Atomic<bool, Relaxed> mKeepaliveEnabledPref{false};
   
   TimeDuration mPollableEventTimeout MOZ_GUARDED_BY(mLock);
 
