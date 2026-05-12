@@ -2510,7 +2510,7 @@ static bool WriteToFile(const NS_tchar* aFilename, const char* aStatus) {
   }
 #endif
 
-  AutoFile statusFile(NS_tfopen(statusFilePath, NS_T("wb+")));
+  AutoFile statusFile(CreateAndOpenFile(statusFilePath, true));
   if (statusFile == nullptr) {
     LOG(("WriteToFile failed to open status file: %d", errno));
     return false;
@@ -3303,6 +3303,8 @@ bool ShouldRunSilently(int argc, NS_tchar** argv) {
 }
 
 int NS_main(int argc, NS_tchar** argv) {
+  LogToOS(NS_T("Updater started"));
+
   
   
   
@@ -3339,6 +3341,7 @@ int NS_main(int argc, NS_tchar** argv) {
 
 #ifdef XP_MACOSX
   if (argc > 2 && NS_tstrcmp(argv[1], NS_T("--openAppBundle")) == 0) {
+    LogToOS(NS_T("Opening App Bundle"));
     
     
     
@@ -3398,6 +3401,7 @@ int NS_main(int argc, NS_tchar** argv) {
 
 #ifdef XP_MACOSX
   if (isElevated) {
+    LogToOS(NS_T("Updater is elevated"));
     if (!ObtainUpdaterArguments(&argc, &argv, &gMARStrings)) {
       
       
@@ -3712,32 +3716,36 @@ int NS_main(int argc, NS_tchar** argv) {
       threadArgs.argc = suiArgc;
       threadArgs.argv = suiArgv.get();
       threadArgs.marChannelID = "";
-      bool shouldServeElevatedUpdate = true;
 
 #  ifdef MOZ_VERIFY_MAR_SIGNATURE
-      int rv = PopulategMARStrings();
-      if (rv != OK) {
-        shouldServeElevatedUpdate = false;
-        WriteStatusFile(UPDATE_SETTINGS_FILE_CHANNEL);
-        fprintf(stderr,
-                "Unable to start unelevated update process to serve elevated "
-                "updater due to inability to retrieve MAR channels.");
-      } else {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (PopulategMARStrings() == OK) {
         threadArgs.marChannelID = gMARStrings.MARChannelID.get();
+      } else {
+        fprintf(stderr,
+                "Unable to retrieve MAR channels in unelevated updater; "
+                "proceeding with elevation using an empty channel ID.\n");
       }
 #  endif  
 
-      if (shouldServeElevatedUpdate) {
-        Thread t1;
-        if (t1.Run(ServeElevatedUpdateThreadFunc, &threadArgs) == 0) {
-          
-          
-          if (!isDMGInstall) {
-            ShowProgressUI(true);
-          }
+      Thread t1;
+      if (t1.Run(ServeElevatedUpdateThreadFunc, &threadArgs) == 0) {
+        
+        
+        if (!isDMGInstall) {
+          ShowProgressUI(true);
         }
-        t1.Join();
       }
+      t1.Join();
     }
 
     LaunchCallbackAndPostProcessApps(argc, argv, std::move(umaskContext));
