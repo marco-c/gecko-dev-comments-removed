@@ -40,17 +40,25 @@ class WaylandSurface final {
   void SetLoggingWidget(void* aWidget) { mLoggingWidget = aWidget; }
 #endif
 
+  
   void VSyncCallbackHandler(struct wl_callback* aCallback, uint32_t aTime,
-                            bool aRoutedFromChildSurface);
+                            bool aEmulated, bool aRoutedFromChildSurface);
 
   
   
   
   
   
-  void SetVSyncCallbackLocked(
+  
+  
+  
+  
+  
+  
+  void SetVSyncCallbackHandlerLocked(
       const WaylandSurfaceLock& aProofOfLock,
-      const std::function<void(wl_callback*, uint32_t)>& aVSyncCallbackHandler,
+      const std::function<void(wl_callback*, uint32_t, bool)>&
+          aVSyncCallbackHandler,
       bool aEmulateVSyncCallback = false);
 
   
@@ -61,6 +69,8 @@ class WaylandSurface final {
   
   void SetVSyncCallbackStateLocked(const WaylandSurfaceLock& aProofOfLock,
                                    bool aEnabled);
+  
+  
   void SetVSyncCallbackStateHandlerLocked(
       const WaylandSurfaceLock& aProofOfLock,
       const std::function<void(bool)>& aVSyncCallbackStateHandler);
@@ -302,7 +312,7 @@ class WaylandSurface final {
   
   void ReleaseAllWaylandTransactionsLocked(WaylandSurfaceLock& aSurfaceLock);
 
-  void SetVSyncCallbacksLocked(const WaylandSurfaceLock& aProofOfLock);
+  void SetVSyncCallbackLocked(const WaylandSurfaceLock& aProofOfLock);
   void ClearVSyncCallbackLocked(const WaylandSurfaceLock& aProofOfLock);
   bool HasEmulatedVSyncCallbackLocked(
       const WaylandSurfaceLock& aProofOfLock) const;
@@ -391,19 +401,20 @@ class WaylandSurface final {
   wl_callback* mVisibleFrameCallback = nullptr;
 
   
-  
   struct VSyncCallback {
-    std::function<void(wl_callback*, uint32_t)> mCb = nullptr;
+    std::function<void(wl_callback*, uint32_t, bool)> mCb = nullptr;
     bool mEmulated = false;
     bool IsSet() const { return !!mCb; }
   };
   VSyncCallback mVSyncCallbackHandler;
 
-  
   wl_callback* mVSyncFrameCallback = nullptr;
 
   bool mVSyncCallbackEnabled = true;
   std::function<void(bool)> mVSyncCallbackStateHandler = nullptr;
+
+  guint mEmulatedVSyncCallbackTimerID = 0;
+  constexpr static int sEmulatedVSyncCallbackTimeoutMs = (int)(1000.0 / 60.0);
 
   
   wl_region* mPendingOpaqueRegion = nullptr;
@@ -422,8 +433,6 @@ class WaylandSurface final {
                                                      struct wl_surface*);
   static void (*sGdkWaylandWindowRemoveCallbackSurface)(GdkWindow*,
                                                         struct wl_surface*);
-  guint mEmulatedVSyncCallbackTimerID = 0;
-  constexpr static int sEmulatedVSyncCallbackTimeoutMs = (int)(1000.0 / 60.0);
 
   
   
