@@ -166,6 +166,9 @@ struct ArenaChunkInfo {
 
   
   bool isCurrentChunk = false;
+
+  
+  JS::Zone* zone = nullptr;
 };
 
 
