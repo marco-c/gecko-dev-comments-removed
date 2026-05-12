@@ -1,3 +1,4 @@
+use objc2::rc::autoreleasepool;
 use objc2::runtime::{AnyObject, ProtocolObject, Sel};
 use objc2::{available, sel};
 use objc2_foundation::{NSOperatingSystemVersion, NSProcessInfo};
@@ -79,52 +80,54 @@ impl crate::Adapter for super::Adapter {
         limits: &wgt::Limits,
         _memory_hints: &wgt::MemoryHints,
     ) -> Result<crate::OpenDevice<super::Api>, crate::DeviceError> {
-        let queue = self
-            .shared
-            .device
-            .newCommandQueueWithMaxCommandBufferCount(MAX_COMMAND_BUFFERS)
-            .unwrap();
+        autoreleasepool(|_| {
+            let queue = self
+                .shared
+                .device
+                .newCommandQueueWithMaxCommandBufferCount(MAX_COMMAND_BUFFERS)
+                .unwrap();
 
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        let timestamp_period = if self.shared.device.name().to_string().starts_with("Intel") {
-            83.333
-        } else {
             
-            1.0
-        };
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            let timestamp_period = if self.shared.device.name().to_string().starts_with("Intel") {
+                83.333
+            } else {
+                
+                1.0
+            };
 
-        Ok(crate::OpenDevice {
-            device: super::Device {
-                shared: Arc::clone(&self.shared),
-                features,
-                counters: Default::default(),
-                limits: limits.clone(),
-            },
-            queue: super::Queue {
-                shared: Arc::new(QueueShared {
-                    raw: queue,
-                    command_buffer_created_not_submitted: atomic::AtomicUsize::new(0),
-                }),
-                timestamp_period,
-            },
+            Ok(crate::OpenDevice {
+                device: super::Device {
+                    shared: Arc::clone(&self.shared),
+                    features,
+                    counters: Default::default(),
+                    limits: limits.clone(),
+                },
+                queue: super::Queue {
+                    shared: Arc::new(QueueShared {
+                        raw: queue,
+                        command_buffer_created_not_submitted: atomic::AtomicUsize::new(0),
+                    }),
+                    timestamp_period,
+                },
+            })
         })
     }
 
@@ -1059,6 +1062,10 @@ impl super::CapabilitiesQuery {
                     && (device.supportsFamily(MTLGPUFamily::Apple7)
                         || device.supportsFamily(MTLGPUFamily::Mac2)))
                 || (available!(macos = 10.15, ios = 14.0, tvos = 16.0, visionos = 1.0)
+                    && device_class_responds_to(
+                        device,
+                        sel!(supportsShaderBarycentricCoordinates),
+                    )
                     && device.supportsShaderBarycentricCoordinates()),
             
             
@@ -1149,6 +1156,7 @@ impl super::CapabilitiesQuery {
             | F::CLEAR_TEXTURE
             | F::TEXTURE_FORMAT_16BIT_NORM
             | F::SHADER_F16
+            | F::SHADER_I16
             | F::DEPTH32FLOAT_STENCIL8
             | F::BGRA8UNORM_STORAGE
             | F::PASSTHROUGH_SHADERS

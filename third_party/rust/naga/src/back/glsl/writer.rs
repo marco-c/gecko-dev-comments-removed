@@ -2337,6 +2337,8 @@ impl<'a, W: Write> Writer<'a, W> {
                     
                     
                     
+                    crate::Literal::U16(value) => write!(self.out, "uint16_t({value})")?,
+                    crate::Literal::I16(value) => write!(self.out, "int16_t({value})")?,
                     crate::Literal::U32(value) => write!(self.out, "{value}u")?,
                     crate::Literal::I32(value) => write!(self.out, "{value}")?,
                     crate::Literal::Bool(value) => write!(self.out, "{value}")?,
