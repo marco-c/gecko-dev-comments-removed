@@ -226,15 +226,17 @@ add_task(async function test_ui_state_signedin() {
     ),
     "expected toolbar to be visible after opening"
   );
-  let sendTabButtonId = PanelMultiView.getViewNode(
+  let sendTabButton = PanelMultiView.getViewNode(
     document,
     "PanelUI-fxa-menu-sendtab-button"
-  ).getAttribute("data-l10n-id");
+  );
+  let sendTabButtonId = sendTabButton.getAttribute("data-l10n-id");
   Assert.equal(
     sendTabButtonId,
     "fxa-menu-send-to-device",
     "'Send to Device' displayed on send tab button"
   );
+
   checkFxaToolbarButtonPanel({
     headerTitle: "Manage account",
     headerDescription: state.displayName,
@@ -1369,6 +1371,22 @@ add_task(async function test_ui_state_signed_out_send_tab() {
     sendTabButton.getAttribute("data-l10n-id"),
     "fxa-menu-send-to-mobile",
     "'Send to Mobile' displayed on send tab button when all targets are mobile"
+  );
+
+  sendTabButton.click();
+
+  let signInView = PanelMultiView.getViewNode(
+    document,
+    "PanelUI-fxa-menu-sendtab-sign-in"
+  );
+  await BrowserTestUtils.waitForEvent(signInView, "ViewShown");
+
+  let signInButton = signInView.querySelector(
+    "#PanelUI-fxa-menu-sendtab-sign-in-button"
+  );
+  ok(
+    BrowserTestUtils.isVisible(signInButton),
+    "expected sign in button to be visible after opening"
   );
 
   await closeFxaPanel();
