@@ -19,6 +19,7 @@ import org.mozilla.fenix.components.appstate.recommendations.ContentRecommendati
 import org.mozilla.fenix.components.appstate.search.SearchState
 import org.mozilla.fenix.components.appstate.setup.checklist.SetupChecklistState
 import org.mozilla.fenix.components.appstate.snackbar.SnackbarState
+import org.mozilla.fenix.components.appstate.sports.SportsWidgetState
 import org.mozilla.fenix.components.appstate.webcompat.WebCompatState
 import org.mozilla.fenix.home.HomeFragment
 import org.mozilla.fenix.home.bookmarks.Bookmark
@@ -52,7 +53,6 @@ import org.mozilla.fenix.wallpapers.WallpaperState
  * @property mode Whether the app is in private browsing mode.
  * @property orientation Current orientation of the application.
  * @property topSites The list of [TopSite] in the [HomeFragment].
- * @property showCollectionPlaceholder If true, shows a placeholder when there are no collections.
  * @property recentTabs The list of recent [RecentTab] in the [HomeFragment].
  * @property recentSyncedTabState The [RecentSyncedTabState] in the [HomeFragment].
  * @property bookmarks The list of recently saved [BookmarkNode]s to show on the [HomeFragment].
@@ -83,6 +83,7 @@ import org.mozilla.fenix.wallpapers.WallpaperState
  * @property voiceSearchState The [VoiceSearchState] representing the current state of voice search functionality.
  * @property isDefaultBrowser Whether Firefox is the default browser or not.
  * @property trackersBlockedCount The total number of trackers blocked to display in the privacy report.
+ * @property sportsWidgetState The [sportsWidgetState] to display.
  */
 data class AppState(
     val isForeground: Boolean = true,
@@ -95,7 +96,6 @@ data class AppState(
     val mode: BrowsingMode = BrowsingMode.Normal,
     val orientation: OrientationMode = OrientationMode.Undefined,
     val topSites: List<TopSite> = emptyList(),
-    val showCollectionPlaceholder: Boolean = false,
     val recentTabs: List<RecentTab> = emptyList(),
     val recentSyncedTabState: RecentSyncedTabState = RecentSyncedTabState.None,
     val bookmarks: List<Bookmark> = emptyList(),
@@ -122,4 +122,5 @@ data class AppState(
     val voiceSearchState: VoiceSearchState = VoiceSearchState(),
     val isDefaultBrowser: Boolean = false,
     val trackersBlockedCount: Int = 0,
+    val sportsWidgetState: SportsWidgetState = SportsWidgetState(),
 ) : State
