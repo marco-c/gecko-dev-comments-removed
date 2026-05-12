@@ -56,12 +56,26 @@ void UrlClassifierFeatureFactory::Shutdown() {
 void UrlClassifierFeatureFactory::GetFeaturesFromChannel(
     nsIChannel* aChannel,
     nsTArray<nsCOMPtr<nsIUrlClassifierFeature>>& aFeatures) {
+  UrlClassifierFeatureFactory::GetCancelingFeaturesFromChannel(aChannel,
+                                                               aFeatures);
+  UrlClassifierFeatureFactory::GetNonCancelingFeaturesFromChannel(aChannel,
+                                                                  aFeatures);
+}
+
+
+void UrlClassifierFeatureFactory::GetCancelingFeaturesFromChannel(
+    nsIChannel* aChannel,
+    nsTArray<nsCOMPtr<nsIUrlClassifierFeature>>& aFeatures) {
   MOZ_ASSERT(XRE_IsParentProcess());
   MOZ_ASSERT(aChannel);
 
   nsCOMPtr<nsIUrlClassifierFeature> feature;
 
   
+  
+  
+  
+
   
   
   
@@ -127,6 +141,15 @@ void UrlClassifierFeatureFactory::GetFeaturesFromChannel(
   if (feature) {
     aFeatures.AppendElement(feature);
   }
+}
+
+
+void UrlClassifierFeatureFactory::GetNonCancelingFeaturesFromChannel(
+    nsIChannel* aChannel,
+    nsTArray<nsCOMPtr<nsIUrlClassifierFeature>>& aFeatures) {
+  MOZ_ASSERT(XRE_IsParentProcess());
+  MOZ_ASSERT(aChannel);
+  nsCOMPtr<nsIUrlClassifierFeature> feature;
 
   
   feature = UrlClassifierFeatureCryptominingAnnotation::MaybeCreate(aChannel);
