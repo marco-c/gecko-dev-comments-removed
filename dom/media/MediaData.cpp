@@ -178,7 +178,7 @@ size_t AudioData::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
 AlignedAudioBuffer AudioData::MoveableData() {
   
   mAudioData.PopFront(mDataOffset);
-  mAudioData.SetLength(mFrames * mChannels);
+  (void)mAudioData.SetLength(mFrames * mChannels);
   mDataOffset = 0;
   mFrames = 0;
   mTrimWindow.reset();
@@ -328,6 +328,7 @@ PlanarYCbCrData ConstructPlanarYCbCrData(const VideoInfo& aInfo,
   if (aInfo.mTransferFunction) {
     data.mTransferFunction = *aInfo.mTransferFunction;
   }
+  data.mHDRMetadata = aInfo.mHDRMetadata;
   data.mColorRange = aBuffer.mColorRange;
   data.mChromaSubsampling = aBuffer.mChromaSubsampling;
   return data;
