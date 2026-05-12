@@ -2849,20 +2849,6 @@ public class GeckoSessionTestRule implements TestRule {
   }
 
   
-  public String addVirtualAuthenticator() {
-    return (String) webExtensionApiCall("AddVirtualAuthenticator", null);
-  }
-
-  
-  public void removeVirtualAuthenticator(final String authenticatorId) {
-    webExtensionApiCall(
-        "RemoveVirtualAuthenticator",
-        args -> {
-          args.put("authenticatorId", authenticatorId);
-        });
-  }
-
-  
 
 
 

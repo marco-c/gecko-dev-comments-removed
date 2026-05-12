@@ -5089,52 +5089,6 @@ public class GeckoSession {
     }
 
     
-    class WebAuthnRelatedOriginPrompt extends BasePrompt {
-      
-      public final @Nullable String origin;
-
-      
-      public final @Nullable String rpId;
-
-      
-      public final boolean isCreate;
-
-      
-
-
-
-
-
-
-
-
-      protected WebAuthnRelatedOriginPrompt(
-          @NonNull final String id,
-          @Nullable final String origin,
-          @Nullable final String rpId,
-          final boolean isCreate,
-          @NonNull final Observer observer) {
-        super(id, null, observer);
-        this.origin = origin;
-        this.rpId = rpId;
-        this.isCreate = isCreate;
-      }
-
-      
-
-
-
-
-
-
-      @UiThread
-      public @NonNull PromptResponse confirm(final @Nullable AllowOrDeny allowOrDeny) {
-        ensureResult().putBoolean("allow", allowOrDeny != AllowOrDeny.DENY);
-        return super.confirm();
-      }
-    }
-
-    
 
 
 
@@ -6543,20 +6497,6 @@ public class GeckoSession {
     default @Nullable GeckoResult<PromptResponse> onFolderUploadPrompt(
         @NonNull final GeckoSession session, @NonNull final FolderUploadPrompt prompt) {
       return null;
-    }
-
-    
-
-
-
-
-
-
-
-    @UiThread
-    default @Nullable GeckoResult<PromptResponse> onWebAuthnRelatedOriginPrompt(
-        @NonNull final GeckoSession session, @NonNull final WebAuthnRelatedOriginPrompt prompt) {
-      return GeckoResult.fromValue(prompt.confirm(AllowOrDeny.DENY));
     }
 
     

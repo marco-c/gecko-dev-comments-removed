@@ -95,8 +95,6 @@ user_pref("security.webauthn.always_allow_direct_attestation", true);
 
 user_pref("security.webauthn.enable_conditional_mediation", true);
 
-user_pref("security.webauthn.related_origin_requests_mode", 0);
-
 user_pref("network.captive-portal-service.enabled", false);
 
 user_pref("network.http.http2.websockets", true);
