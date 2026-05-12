@@ -606,7 +606,8 @@ class EditorBase : public nsIEditor,
 
 
 
-  virtual nsresult OnBlur(const dom::EventTarget* aEventTarget) = 0;
+  MOZ_CAN_RUN_SCRIPT virtual nsresult OnBlur(
+      const dom::EventTarget* aEventTarget) = 0;
 
   
 
