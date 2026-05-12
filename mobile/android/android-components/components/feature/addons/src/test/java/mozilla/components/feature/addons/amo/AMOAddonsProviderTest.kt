@@ -35,6 +35,7 @@ import java.io.IOException
 import java.io.InputStream
 import java.util.Date
 import java.util.concurrent.TimeUnit
+import kotlin.test.assertIs
 
 @RunWith(AndroidJUnit4::class)
 class AMOAddonsProviderTest {
@@ -155,8 +156,6 @@ class AMOAddonsProviderTest {
                 conservative = true,
             ),
         )
-
-        Unit
     }
 
     @Test
@@ -173,7 +172,6 @@ class AMOAddonsProviderTest {
                 conservative = true,
             ),
         )
-        Unit
     }
 
     @Test(expected = IOException::class)
@@ -181,7 +179,6 @@ class AMOAddonsProviderTest {
         val mockedClient = prepareClient(status = 500)
         val provider = AMOAddonsProvider(testContext, client = mockedClient, ioDispatcher = dispatcher)
         provider.getFeaturedAddons()
-        Unit
     }
 
     @Test
@@ -199,7 +196,6 @@ class AMOAddonsProviderTest {
         whenever(provider.cacheExpired(testContext, null, useFallbackFile = false)).thenReturn(false)
         provider.getFeaturedAddons(true)
         verify(provider).readFromDiskCache(null, useFallbackFile = false)
-        Unit
     }
 
     @Test
@@ -381,7 +377,7 @@ class AMOAddonsProviderTest {
         val provider = AMOAddonsProvider(testContext, client = mockedClient, ioDispatcher = dispatcher)
 
         val bitmap = provider.loadIconAsync("id", "https://example.com/image.png").await()
-        assertTrue(bitmap is Bitmap)
+        assertIs<Bitmap>(bitmap)
     }
 
     @Test
@@ -397,7 +393,7 @@ class AMOAddonsProviderTest {
 
         verify(mockedClient, times(0)).fetch(any())
         assertEquals(expectedIcon, bitmap)
-        assertTrue(bitmap is Bitmap)
+        assertIs<Bitmap>(bitmap)
     }
 
     @Test
@@ -552,8 +548,6 @@ class AMOAddonsProviderTest {
                 conservative = true,
             ),
         )
-
-        Unit
     }
 
     @Test
