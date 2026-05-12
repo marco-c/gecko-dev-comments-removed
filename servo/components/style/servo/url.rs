@@ -8,7 +8,7 @@ use crate::derives::*;
 use crate::parser::{Parse, ParserContext};
 use crate::stylesheets::CorsMode;
 use crate::values::computed::{Context, ToComputedValue};
-use cssparser::Parser;
+use cssparser::{Parser, SourceLocation};
 use servo_arc::Arc;
 use std::fmt::{self, Write};
 use std::ops::Deref;
@@ -65,8 +65,41 @@ impl CssUrl {
     
     
     
+    pub fn parse_from_string<'i>(
+        url: String,
+        url_start: usize,
+        url_end: usize,
+        context: &ParserContext,
+        cors_mode: CorsMode,
+        location: SourceLocation,
+    ) -> Result<Self, ParseError<'i>> {
+        use crate::custom_properties::AttrTaintedRange;
+        use style_traits::StyleParseErrorKind;
+        let range = AttrTaintedRange::new(url_start, url_end);
+        if context.disallow_urls_in_range(&range) {
+            return Err(location.new_custom_error(StyleParseErrorKind::UnspecifiedError));
+        }
+        Ok(Self::new_from_string(url, context, cors_mode))
+    }
+
     
-    pub fn parse_from_string(url: String, context: &ParserContext, _: CorsMode) -> Self {
+    
+    
+    
+    pub fn new_from_untainted_string(
+        url: String,
+        context: &ParserContext,
+        cors_mode: CorsMode,
+    ) -> Self {
+        debug_assert!(context.attr_tainted_regions.is_empty());
+        Self::new_from_string(url, context, cors_mode)
+    }
+
+    
+    
+    
+    
+    fn new_from_string(url: String, context: &ParserContext, _cors_mode: CorsMode) -> Self {
         let serialization = Arc::new(url);
         
         
@@ -142,12 +175,18 @@ impl CssUrl {
         input: &mut Parser<'i, 't>,
         cors_mode: CorsMode,
     ) -> Result<Self, ParseError<'i>> {
+        let start = input.position().byte_index();
+        let location = input.current_source_location();
         let url = input.expect_url()?;
-        Ok(Self::parse_from_string(
+        let end = input.position().byte_index();
+        Self::parse_from_string(
             url.as_ref().to_owned(),
+            start,
+            end,
             context,
             cors_mode,
-        ))
+            location,
+        )
     }
 }
 

@@ -15,9 +15,10 @@ use crate::properties::longhands::position::computed_value::T as Position;
 use crate::properties::longhands::{
     contain::computed_value::T as Contain, container_type::computed_value::T as ContainerType,
     content_visibility::computed_value::T as ContentVisibility,
-    overflow_x::computed_value::T as Overflow,
 };
-use crate::properties::{ComputedValues, LonghandId, LonghandIdSet, StyleBuilder};
+#[cfg(feature = "gecko")]
+use crate::properties::LonghandId;
+use crate::properties::{ComputedValues, LonghandIdSet, StyleBuilder};
 use crate::values::computed::position::{
     PositionTryFallbacksTryTactic, PositionTryFallbacksTryTacticKeyword, TryTacticAdjustment,
 };
@@ -560,20 +561,6 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
                 .mutate_inherited_text()
                 .set_white_space_collapse(new_collapse);
         }
-
-        let box_style = self.style.get_box();
-        let overflow_x = box_style.clone_overflow_x();
-        let overflow_y = box_style.clone_overflow_y();
-
-        
-        
-        if overflow_x.is_scrollable() || overflow_y.is_scrollable() {
-            return;
-        }
-
-        let box_style = self.style.mutate_box();
-        box_style.set_overflow_x(Overflow::Auto);
-        box_style.set_overflow_y(Overflow::Auto);
     }
 
     
@@ -1034,6 +1021,7 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
     }
 
     
+    #[allow(unused_variables)]
     pub fn adjust<E>(
         &mut self,
         layout_parent_style: &ComputedValues,
@@ -1070,8 +1058,6 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
         {
             self.adjust_for_prohibited_display_contents(element);
             self.adjust_for_fieldset_content();
-            
-            
             self.adjust_for_text_control_editing_root();
         }
         self.adjust_for_top_layer();
