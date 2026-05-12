@@ -14,7 +14,7 @@
 
 #include "absl/base/internal/thread_identity.h"
 
-#if !defined(_WIN32) || defined(__MINGW32__)
+#if !defined(_WIN32)
 #include <pthread.h>
 #ifndef __wasi__
 
@@ -84,7 +84,7 @@ void SetCurrentThreadIdentity(ThreadIdentity* identity,
   absl::call_once(init_thread_identity_key_once, AllocateThreadIdentityKey,
                   reclaimer);
 
-#if defined(__wasi__) || defined(__EMSCRIPTEN__) || defined(__MINGW32__) || \
+#if defined(__wasi__) || defined(__EMSCRIPTEN__) || \
     defined(__hexagon__)
   
   
