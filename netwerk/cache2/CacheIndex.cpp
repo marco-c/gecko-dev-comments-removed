@@ -860,7 +860,7 @@ nsresult CacheIndex::RemoveEntry(const SHA1Sum::Hash* aHash,
   
   
   if (aClearDictionary) {
-    DictionaryCache::RemoveDictionaryFor(aKey);
+    DictionaryCache::RemoveDictionaryOMT(aKey);
   }
 
   StaticMutexAutoLock lock(sLock);
@@ -1361,6 +1361,21 @@ nsresult CacheIndex::GetEntryForEviction(EvictionSortedSnapshot& aSnapshot,
 
     if (IsForcedValidEntry(&hash)) {
       continue;
+    }
+
+    
+    
+    
+    
+    
+    
+    {
+      RefPtr<CacheFileHandle> handle;
+      if (CacheFileIOManager::gInstance &&
+          NS_SUCCEEDED(CacheFileIOManager::gInstance->mHandles.GetHandle(
+              &hash, getter_AddRefs(handle)))) {
+        continue;
+      }
     }
 
     if (CacheIndexEntry::IsPinned(rec)) {
