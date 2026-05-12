@@ -82,8 +82,9 @@ class IMediaInfoUpdater {
   
   
   
-  virtual void NotifyMediaAudibleChanged(uint64_t aBrowsingContextId,
-                                         MediaAudibleState aState) = 0;
+  virtual void NotifyMediaAudibleChanged(
+      uint64_t aBrowsingContextId, MediaAudibleState aState,
+      ControlType aType = ControlType::eControllable) = 0;
 
   
   
@@ -157,8 +158,9 @@ class MediaStatusManager : public IMediaInfoUpdater {
   
   void NotifyMediaPlaybackChanged(uint64_t aBrowsingContextId,
                                   MediaPlaybackState aState) override;
-  void NotifyMediaAudibleChanged(uint64_t aBrowsingContextId,
-                                 MediaAudibleState aState) override;
+  void NotifyMediaAudibleChanged(
+      uint64_t aBrowsingContextId, MediaAudibleState aState,
+      ControlType aType = ControlType::eControllable) override;
   void SetDeclaredPlaybackState(uint64_t aSessionContextId,
                                 MediaSessionPlaybackState aState) override;
   void NotifySessionCreated(uint64_t aSessionContextId) override;

@@ -50,8 +50,9 @@ class ContentMediaAgent : public IMediaInfoUpdater {
   
   void NotifyMediaPlaybackChanged(uint64_t aBrowsingContextId,
                                   MediaPlaybackState aState) override;
-  void NotifyMediaAudibleChanged(uint64_t aBrowsingContextId,
-                                 MediaAudibleState aState) override;
+  void NotifyMediaAudibleChanged(
+      uint64_t aBrowsingContextId, MediaAudibleState aState,
+      ControlType aType = ControlType::eControllable) override;
   void SetIsInPictureInPictureMode(uint64_t aBrowsingContextId,
                                    bool aIsInPictureInPictureMode) override;
   void SetDeclaredPlaybackState(uint64_t aBrowsingContextId,
@@ -74,8 +75,14 @@ class ContentMediaAgent : public IMediaInfoUpdater {
 
   
   
-  virtual void AddReceiver(ContentMediaControlKeyReceiver* aReceiver) = 0;
-  virtual void RemoveReceiver(ContentMediaControlKeyReceiver* aReceiver) = 0;
+  
+  
+  
+  virtual void AddReceiver(ContentMediaControlKeyReceiver* aReceiver,
+                           ControlType aType = ControlType::eControllable) = 0;
+  virtual void RemoveReceiver(
+      ContentMediaControlKeyReceiver* aReceiver,
+      ControlType aType = ControlType::eControllable) = 0;
 };
 
 
@@ -91,8 +98,10 @@ class ContentMediaController final : public ContentMediaAgent,
 
   explicit ContentMediaController(uint64_t aId);
   
-  void AddReceiver(ContentMediaControlKeyReceiver* aListener) override;
-  void RemoveReceiver(ContentMediaControlKeyReceiver* aListener) override;
+  void AddReceiver(ContentMediaControlKeyReceiver* aListener,
+                   ControlType aType = ControlType::eControllable) override;
+  void RemoveReceiver(ContentMediaControlKeyReceiver* aListener,
+                      ControlType aType = ControlType::eControllable) override;
 
   
   void HandleMediaKey(MediaControlKey aKey,
@@ -106,7 +115,8 @@ class ContentMediaController final : public ContentMediaAgent,
 
   void PauseOrStopMedia();
 
-  nsTArray<RefPtr<ContentMediaControlKeyReceiver>> mReceivers;
+  nsTArray<RefPtr<ContentMediaControlKeyReceiver>> mControllableReceivers;
+  nsTArray<RefPtr<ContentMediaControlKeyReceiver>> mUncontrollableReceivers;
 };
 
 }  

@@ -93,7 +93,8 @@ void ContentMediaAgent::NotifyMediaPlaybackChanged(uint64_t aBrowsingContextId,
 }
 
 void ContentMediaAgent::NotifyMediaAudibleChanged(uint64_t aBrowsingContextId,
-                                                  MediaAudibleState aState) {
+                                                  MediaAudibleState aState,
+                                                  ControlType aType) {
   MOZ_ASSERT(NS_IsMainThread());
   RefPtr<BrowsingContext> bc = GetBrowsingContextForAgent(aBrowsingContextId);
   if (!bc || bc->IsDiscarded()) {
@@ -105,13 +106,13 @@ void ContentMediaAgent::NotifyMediaAudibleChanged(uint64_t aBrowsingContextId,
       bc->Id());
   if (XRE_IsContentProcess()) {
     ContentChild* contentChild = ContentChild::GetSingleton();
-    (void)contentChild->SendNotifyMediaAudibleChanged(bc, aState);
+    (void)contentChild->SendNotifyMediaAudibleChanged(bc, aState, aType);
   } else {
     
     
     if (RefPtr<IMediaInfoUpdater> updater =
             bc->Canonical()->GetMediaController()) {
-      updater->NotifyMediaAudibleChanged(bc->Id(), aState);
+      updater->NotifyMediaAudibleChanged(bc->Id(), aState, aType);
     }
   }
 }
@@ -338,25 +339,34 @@ ContentMediaController::ContentMediaController(uint64_t aId) {
 }
 
 void ContentMediaController::AddReceiver(
-    ContentMediaControlKeyReceiver* aListener) {
+    ContentMediaControlKeyReceiver* aListener, ControlType aType) {
   MOZ_ASSERT(NS_IsMainThread());
-  mReceivers.AppendElement(aListener);
+  if (aType == ControlType::eControllable) {
+    mControllableReceivers.AppendElement(aListener);
+  } else {
+    mUncontrollableReceivers.AppendElement(aListener);
+  }
 }
 
 void ContentMediaController::RemoveReceiver(
-    ContentMediaControlKeyReceiver* aListener) {
+    ContentMediaControlKeyReceiver* aListener, ControlType aType) {
   MOZ_ASSERT(NS_IsMainThread());
-  mReceivers.RemoveElement(aListener);
+  if (aType == ControlType::eControllable) {
+    mControllableReceivers.RemoveElement(aListener);
+  } else {
+    mUncontrollableReceivers.RemoveElement(aListener);
+  }
 }
 
 void ContentMediaController::HandleMediaKey(
     MediaControlKey aKey, const MediaControlActionParams& aParams) {
   MOZ_ASSERT(NS_IsMainThread());
-  if (mReceivers.IsEmpty()) {
+  if (mControllableReceivers.IsEmpty() && mUncontrollableReceivers.IsEmpty()) {
     return;
   }
-  LOG("Handle '%s' event, receiver num=%zu", GetEnumString(aKey).get(),
-      mReceivers.Length());
+  LOG("Handle '%s' event, controllable num=%zu, uncontrollable num=%zu",
+      GetEnumString(aKey).get(), mControllableReceivers.Length(),
+      mUncontrollableReceivers.Length());
   
   
   switch (aKey) {
@@ -368,13 +378,20 @@ void ContentMediaController::HandleMediaKey(
     case MediaControlKey::Seekto:
     case MediaControlKey::Seekforward:
     case MediaControlKey::Seekbackward:
+      
+      
+      
+      for (auto& receiver : Reversed(mControllableReceivers)) {
+        receiver->HandleMediaKey(aKey, aParams);
+      }
+      return;
     case MediaControlKey::Setvolume:
     case MediaControlKey::Mute:
     case MediaControlKey::Unmute:
-      
-      
-      
-      for (auto& receiver : Reversed(mReceivers)) {
+      for (auto& receiver : Reversed(mControllableReceivers)) {
+        receiver->HandleMediaKey(aKey, aParams);
+      }
+      for (auto& receiver : Reversed(mUncontrollableReceivers)) {
         receiver->HandleMediaKey(aKey, aParams);
       }
       return;
@@ -392,14 +409,14 @@ void ContentMediaController::PauseOrStopMedia() {
   
   
   bool isAnyMediaPlaying = false;
-  for (const auto& receiver : mReceivers) {
+  for (const auto& receiver : mControllableReceivers) {
     if (receiver->IsPlaying()) {
       isAnyMediaPlaying = true;
       break;
     }
   }
 
-  for (auto& receiver : Reversed(mReceivers)) {
+  for (auto& receiver : Reversed(mControllableReceivers)) {
     if (isAnyMediaPlaying && !receiver->IsPlaying()) {
       receiver->HandleMediaKey(MediaControlKey::Stop);
     } else {

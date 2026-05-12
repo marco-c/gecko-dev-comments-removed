@@ -121,8 +121,9 @@ class MediaController final : public DOMEventTargetHelper,
   
   void NotifyMediaPlaybackChanged(uint64_t aBrowsingContextId,
                                   MediaPlaybackState aState) override;
-  void NotifyMediaAudibleChanged(uint64_t aBrowsingContextId,
-                                 MediaAudibleState aState) override;
+  void NotifyMediaAudibleChanged(
+      uint64_t aBrowsingContextId, MediaAudibleState aState,
+      ControlType aType = ControlType::eControllable) override;
   void SetIsInPictureInPictureMode(uint64_t aBrowsingContextId,
                                    bool aIsInPictureInPictureMode) override;
   void NotifyMediaFullScreenState(uint64_t aBrowsingContextId,
@@ -193,6 +194,11 @@ class MediaController final : public DOMEventTargetHelper,
   bool mShutdown = false;
   bool mIsInPictureInPictureMode = false;
   bool mIsInFullScreenMode = false;
+
+  
+  
+  
+  nsTHashMap<nsUint64HashKey, uint32_t> mUncontrollableAudibleMap;
 
   
   

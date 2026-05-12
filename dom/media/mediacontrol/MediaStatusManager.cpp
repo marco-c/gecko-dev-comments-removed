@@ -50,7 +50,11 @@ MediaStatusManager::MediaStatusManager(uint64_t aBrowsingContextId)
 }
 
 void MediaStatusManager::NotifyMediaAudibleChanged(uint64_t aBrowsingContextId,
-                                                   MediaAudibleState aState) {
+                                                   MediaAudibleState aState,
+                                                   ControlType aType) {
+  
+  
+  MOZ_ASSERT(aType == ControlType::eControllable);
   Maybe<uint64_t> oldAudioFocusOwnerId =
       mPlaybackStatusDelegate.GetAudioFocusOwnerContextId();
   mPlaybackStatusDelegate.UpdateMediaAudibleState(aBrowsingContextId, aState);
