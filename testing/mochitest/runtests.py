@@ -597,6 +597,15 @@ class MochitestServer:
                 os.path.join(os.path.dirname(here), "bin"),
                 env["LD_LIBRARY_PATH"],
             ])
+            
+            
+            
+            
+            
+            
+            
+            
+            env.pop("MOZ_CRASHREPORTER", None)
 
         
         
