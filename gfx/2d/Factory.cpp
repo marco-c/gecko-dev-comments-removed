@@ -74,83 +74,6 @@ GFX2D_API mozilla::LogModule* GetGFX2DLog() {
 }
 #endif
 
-
-
-enum CPUIDRegister { eax = 0, ebx = 1, ecx = 2, edx = 3 };
-
-#ifdef HAVE_CPUID_H
-
-#  if !(defined(__SSE2__) || defined(_M_X64) ||      \
-        (defined(_M_IX86_FP) && _M_IX86_FP >= 2)) || \
-      !defined(__SSE4__)
-
-#    include <cpuid.h>
-
-static inline bool HasCPUIDBit(unsigned int level, CPUIDRegister reg,
-                               unsigned int bit) {
-  unsigned int regs[4];
-  return __get_cpuid(level, &regs[0], &regs[1], &regs[2], &regs[3]) &&
-         (regs[reg] & bit);
-}
-#  endif
-
-#  define HAVE_CPU_DETECTION
-#else
-
-#  if defined(_MSC_VER) && (defined(_M_IX86) || defined(_M_AMD64))
-
-#    include <intrin.h>
-
-#    define HAVE_CPU_DETECTION
-#  elif defined(__SUNPRO_CC) && (defined(__i386) || defined(__x86_64__))
-
-
-#    ifdef __i386
-static void __cpuid(int CPUInfo[4], int InfoType) {
-  asm("xchg %esi, %ebx\n"
-      "cpuid\n"
-      "movl %eax, (%edi)\n"
-      "movl %ebx, 4(%edi)\n"
-      "movl %ecx, 8(%edi)\n"
-      "movl %edx, 12(%edi)\n"
-      "xchg %esi, %ebx\n"
-      :
-      : "a"(InfoType),  
-        "D"(CPUInfo)    
-      : "%ecx", "%edx", "%esi");
-}
-#    else
-static void __cpuid(int CPUInfo[4], int InfoType) {
-  asm("xchg %rsi, %rbx\n"
-      "cpuid\n"
-      "movl %eax, (%rdi)\n"
-      "movl %ebx, 4(%rdi)\n"
-      "movl %ecx, 8(%rdi)\n"
-      "movl %edx, 12(%rdi)\n"
-      "xchg %rsi, %rbx\n"
-      :
-      : "a"(InfoType),  
-        "D"(CPUInfo)    
-      : "%ecx", "%edx", "%rsi");
-}
-
-#      define HAVE_CPU_DETECTION
-#    endif
-#  endif
-
-#  ifdef HAVE_CPU_DETECTION
-static inline bool HasCPUIDBit(unsigned int level, CPUIDRegister reg,
-                               unsigned int bit) {
-  
-  volatile int regs[4];
-  __cpuid((int*)regs, level & 0x80000000u);
-  if (unsigned(regs[0]) < level) return false;
-  __cpuid((int*)regs, level);
-  return !!(unsigned(regs[reg]) & bit);
-}
-#  endif
-#endif
-
 #ifdef MOZ_ENABLE_FREETYPE
 extern "C" {
 
@@ -256,49 +179,6 @@ void Factory::ShutDown() {
 
 #ifdef MOZ_ENABLE_FREETYPE
   mFTLibrary = nullptr;
-#endif
-}
-
-bool Factory::HasSSE2() {
-#if defined(__SSE2__) || defined(_M_X64) || \
-    (defined(_M_IX86_FP) && _M_IX86_FP >= 2)
-  
-  
-  return true;
-#elif defined(HAVE_CPU_DETECTION)
-  static enum {
-    UNINITIALIZED,
-    NO_SSE2,
-    HAS_SSE2
-  } sDetectionState = UNINITIALIZED;
-
-  if (sDetectionState == UNINITIALIZED) {
-    sDetectionState = HasCPUIDBit(1u, edx, (1u << 26)) ? HAS_SSE2 : NO_SSE2;
-  }
-  return sDetectionState == HAS_SSE2;
-#else
-  return false;
-#endif
-}
-
-bool Factory::HasSSE4() {
-#if defined(__SSE4__)
-  
-  
-  return true;
-#elif defined(HAVE_CPU_DETECTION)
-  static enum {
-    UNINITIALIZED,
-    NO_SSE4,
-    HAS_SSE4
-  } sDetectionState = UNINITIALIZED;
-
-  if (sDetectionState == UNINITIALIZED) {
-    sDetectionState = HasCPUIDBit(1u, ecx, (1u << 19)) ? HAS_SSE4 : NO_SSE4;
-  }
-  return sDetectionState == HAS_SSE4;
-#else
-  return false;
 #endif
 }
 
@@ -1028,7 +908,8 @@ void Factory::CopyDataSourceSurface(DataSourceSurface* aSource,
 already_AddRefed<DataSourceSurface>
 Factory::CreateBGRA8DataSourceSurfaceForD3D11Texture(
     ID3D11Texture2D* aSrcTexture, uint32_t aArrayIndex,
-    gfx::ColorSpace2 aColorSpace, gfx::ColorRange aColorRange) {
+    gfx::ColorSpace2 aColorSpace, gfx::ColorRange aColorRange,
+    gfx::TransferFunction aTransferFunction) {
   D3D11_TEXTURE2D_DESC srcDesc = {0};
   aSrcTexture->GetDesc(&srcDesc);
 
@@ -1039,7 +920,7 @@ Factory::CreateBGRA8DataSourceSurfaceForD3D11Texture(
     return nullptr;
   }
   if (!ReadbackTexture(destTexture, aSrcTexture, aArrayIndex, aColorSpace,
-                       aColorRange)) {
+                       aColorRange, aTransferFunction)) {
     return nullptr;
   }
   return destTexture.forget();
@@ -1074,11 +955,10 @@ Factory::CreateBGRA8DataSourceSurfaceForD3D11Texture(
 }
 
 
-bool Factory::ConvertSourceAndRetryReadback(DataSourceSurface* aDestCpuTexture,
-                                            ID3D11Texture2D* aSrcTexture,
-                                            uint32_t aArrayIndex,
-                                            gfx::ColorSpace2 aColorSpace,
-                                            gfx::ColorRange aColorRange) {
+bool Factory::ConvertSourceAndRetryReadback(
+    DataSourceSurface* aDestCpuTexture, ID3D11Texture2D* aSrcTexture,
+    uint32_t aArrayIndex, gfx::ColorSpace2 aColorSpace,
+    gfx::ColorRange aColorRange, gfx::TransferFunction aTransferFunction) {
   MOZ_ASSERT(aDestCpuTexture);
   MOZ_ASSERT(aSrcTexture);
 
@@ -1123,15 +1003,15 @@ bool Factory::ConvertSourceAndRetryReadback(DataSourceSurface* aDestCpuTexture,
     return false;
   }
 
-  layers::VideoProcessorD3D11::InputTextureInfo info(aColorSpace, aColorRange,
-                                                     aArrayIndex, aSrcTexture);
+  layers::VideoProcessorD3D11::InputTextureInfo info(
+      aColorSpace, aColorRange, aTransferFunction, aArrayIndex, aSrcTexture);
   if (!videoProcessor->CallVideoProcessorBlt(info, newSrcTexture)) {
     gfxWarning() << "CallVideoProcessorBlt failed";
     return false;
   }
 
   return ReadbackTexture(aDestCpuTexture, newSrcTexture, 0, aColorSpace,
-                         aColorRange);
+                         aColorRange, aTransferFunction);
 }
 
 
@@ -1139,7 +1019,8 @@ bool Factory::ReadbackTexture(DataSourceSurface* aDestCpuTexture,
                               ID3D11Texture2D* aSrcTexture,
                               uint32_t aArrayIndex,
                               gfx::ColorSpace2 aColorSpace,
-                              gfx::ColorRange aColorRange) {
+                              gfx::ColorRange aColorRange,
+                              gfx::TransferFunction aTransferFunction) {
   D3D11_TEXTURE2D_DESC srcDesc = {0};
   aSrcTexture->GetDesc(&srcDesc);
 
@@ -1148,7 +1029,8 @@ bool Factory::ReadbackTexture(DataSourceSurface* aDestCpuTexture,
   if ((srcDesc.Format != DXGIFormat(aDestCpuTexture->GetFormat())) &&
       (aDestCpuTexture->GetFormat() == SurfaceFormat::B8G8R8A8)) {
     return ConvertSourceAndRetryReadback(aDestCpuTexture, aSrcTexture,
-                                         aArrayIndex, aColorSpace, aColorRange);
+                                         aArrayIndex, aColorSpace, aColorRange,
+                                         aTransferFunction);
   }
 
   if ((IntSize(srcDesc.Width, srcDesc.Height) != aDestCpuTexture->GetSize()) ||

@@ -2164,9 +2164,6 @@ class GFX2D_API Factory {
   static void Init(const Config& aConfig);
   static void ShutDown();
 
-  static bool HasSSE2();
-  static bool HasSSE4();
-
   
 
 
@@ -2385,10 +2382,10 @@ class GFX2D_API Factory {
   static void SetSystemTextQuality(uint8_t aQuality);
 
   static already_AddRefed<DataSourceSurface>
-  CreateBGRA8DataSourceSurfaceForD3D11Texture(ID3D11Texture2D* aSrcTexture,
-                                              uint32_t aArrayIndex,
-                                              gfx::ColorSpace2 aColorSpace,
-                                              gfx::ColorRange aColorRange);
+  CreateBGRA8DataSourceSurfaceForD3D11Texture(
+      ID3D11Texture2D* aSrcTexture, uint32_t aArrayIndex,
+      gfx::ColorSpace2 aColorSpace, gfx::ColorRange aColorRange,
+      gfx::TransferFunction aTransferFunction);
 
   static nsresult CreateSdbForD3D11Texture(
       ID3D11Texture2D* aSrcTexture, const IntSize& aSrcSize,
@@ -2399,7 +2396,8 @@ class GFX2D_API Factory {
                               ID3D11Texture2D* aSrcTexture,
                               uint32_t aArrayIndex,
                               gfx::ColorSpace2 aColorSpace,
-                              gfx::ColorRange aColorRange);
+                              gfx::ColorRange aColorRange,
+                              gfx::TransferFunction aTransferFunction);
 
  private:
   static StaticRefPtr<ID3D11Device> mD3D11Device;
@@ -2411,11 +2409,10 @@ class GFX2D_API Factory {
                               ID3D11Texture2D* aSrcTexture);
 
   
-  static bool ConvertSourceAndRetryReadback(DataSourceSurface* aDestCpuTexture,
-                                            ID3D11Texture2D* aSrcTexture,
-                                            uint32_t aArrayIndex,
-                                            gfx::ColorSpace2 aColorSpace,
-                                            gfx::ColorRange aColorRange);
+  static bool ConvertSourceAndRetryReadback(
+      DataSourceSurface* aDestCpuTexture, ID3D11Texture2D* aSrcTexture,
+      uint32_t aArrayIndex, gfx::ColorSpace2 aColorSpace,
+      gfx::ColorRange aColorRange, gfx::TransferFunction aTransferFunction);
 
  protected:
   
