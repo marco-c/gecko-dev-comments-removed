@@ -219,11 +219,8 @@ impl LifetimeTracker {
         });
     }
 
-    
-    
-    
-    
     pub(crate) fn map(&mut self, buffer: &Arc<Buffer>) -> Option<SubmissionIndex> {
+        
         let submission = self
             .active
             .iter_mut()

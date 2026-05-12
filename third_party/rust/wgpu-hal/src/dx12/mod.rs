@@ -509,10 +509,6 @@ crate::impl_dyn_resource!(
 
 
 const MAX_ROOT_ELEMENTS: usize = 64;
-
-
-const MAX_IMMEDIATE_SIZE: u32 = 128;
-const MAX_IMMEDIATES: usize = MAX_IMMEDIATE_SIZE as usize / 4;
 const ZERO_BUFFER_SIZE: wgt::BufferAddress = 256 << 10;
 
 pub struct Instance {
@@ -795,49 +791,11 @@ pub struct Queue {
     idle_fence: Direct3D12::ID3D12Fence,
     idle_event: Event,
     idle_fence_value: AtomicU64,
-    pending_waits: Mutex<Vec<(Direct3D12::ID3D12Fence, u64)>>,
-    pending_signals: Mutex<Vec<(Direct3D12::ID3D12Fence, u64)>>,
 }
 
 impl Queue {
     pub fn as_raw(&self) -> &Direct3D12::ID3D12CommandQueue {
         &self.raw
-    }
-
-    
-    
-    
-    
-    pub fn add_wait_fence(&self, fence: Direct3D12::ID3D12Fence, value: u64) {
-        self.pending_waits.lock().push((fence, value));
-    }
-
-    
-    
-    pub fn remove_wait_fence(&self, fence: &Direct3D12::ID3D12Fence) -> bool {
-        let target = fence.as_raw();
-        let mut waits = self.pending_waits.lock();
-        let before = waits.len();
-        waits.retain(|(f, _)| f.as_raw() != target);
-        waits.len() != before
-    }
-
-    
-    
-    
-    
-    pub fn add_signal_fence(&self, fence: Direct3D12::ID3D12Fence, value: u64) {
-        self.pending_signals.lock().push((fence, value));
-    }
-
-    
-    
-    pub fn remove_signal_fence(&self, fence: &Direct3D12::ID3D12Fence) -> bool {
-        let target = fence.as_raw();
-        let mut signals = self.pending_signals.lock();
-        let before = signals.len();
-        signals.retain(|(f, _)| f.as_raw() != target);
-        signals.len() != before
     }
 }
 
@@ -863,51 +821,31 @@ struct PassResolve {
     format: Dxgi::Common::DXGI_FORMAT,
 }
 
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
-struct SpecialConstants {
-    
-    first_vertex_or_x: i32,
-    
-    first_instance_or_y: u32,
-    
-    unused_or_z: u32,
-}
-
-impl SpecialConstants {
-    fn from_indirect_draw_call_params(first_vertex: i32, first_instance: u32) -> Self {
-        Self {
-            first_vertex_or_x: first_vertex,
-            first_instance_or_y: first_instance,
-            unused_or_z: 0,
-        }
-    }
-
-    fn from_compute_dispatch_params(workgroup_count: [u32; 3]) -> Self {
-        Self {
-            first_vertex_or_x: workgroup_count[0] as i32,
-            first_instance_or_y: workgroup_count[1],
-            unused_or_z: workgroup_count[2],
-        }
-    }
-}
-
 #[derive(Clone, Copy, Debug)]
 enum RootElement {
     Empty,
-    Immediates,
-    SpecialConstants(SpecialConstants),
-    DescriptorTable(Direct3D12::D3D12_GPU_DESCRIPTOR_HANDLE),
+    Constant,
+    SpecialConstantBuffer {
+        
+        first_vertex: i32,
+        
+        first_instance: u32,
+        
+        other: u32,
+    },
     
-    SamplerHeapDescriptorTable,
+    Table(Direct3D12::D3D12_GPU_DESCRIPTOR_HANDLE),
     
     DynamicUniformBuffer {
         address: Direct3D12::D3D12_GPU_DESCRIPTOR_HANDLE,
     },
     
+    SamplerHeap,
     
     
     
-    DynamicStorageBufferOffsets {
+    
+    DynamicOffsetsBuffer {
         start: usize,
         end: usize,
     },
@@ -925,7 +863,7 @@ struct PassState {
     resolves: ArrayVec<PassResolve, { crate::MAX_COLOR_ATTACHMENTS }>,
     layout: PipelineLayoutShared,
     root_elements: [RootElement; MAX_ROOT_ELEMENTS],
-    immediates: [u32; MAX_IMMEDIATES],
+    constant_data: [u32; MAX_ROOT_ELEMENTS],
     dynamic_storage_buffer_offsets: Vec<u32>,
     dirty_root_elements: u64,
     vertex_buffers: [Direct3D12::D3D12_VERTEX_BUFFER_VIEW; crate::MAX_VERTEX_BUFFERS],
@@ -933,8 +871,10 @@ struct PassState {
     kind: PassKind,
 }
 
-
-const _: () = assert!(MAX_ROOT_ELEMENTS == u64::BITS as usize);
+#[test]
+fn test_dirty_mask() {
+    assert_eq!(MAX_ROOT_ELEMENTS, u64::BITS as usize);
+}
 
 impl PassState {
     fn new() -> Self {
@@ -945,11 +885,11 @@ impl PassState {
                 signature: None,
                 total_root_elements: 0,
                 special_constants: None,
-                immediates_info: None,
+                root_constant_info: None,
                 sampler_heap_root_index: None,
             },
             root_elements: [RootElement::Empty; MAX_ROOT_ELEMENTS],
-            immediates: [0; MAX_IMMEDIATES],
+            constant_data: [0; MAX_ROOT_ELEMENTS],
             dynamic_storage_buffer_offsets: Vec::new(),
             dirty_root_elements: 0,
             vertex_buffers: [Default::default(); crate::MAX_VERTEX_BUFFERS],
@@ -1208,9 +1148,9 @@ struct BindGroupInfo {
 }
 
 #[derive(Debug, Clone)]
-struct ImmediatesInfo {
+struct RootConstantInfo {
     root_index: RootIndex,
-    size: u32,
+    range: core::ops::Range<u32>,
 }
 
 #[derive(Debug, Clone)]
@@ -1224,7 +1164,7 @@ struct PipelineLayoutShared {
     signature: Option<Direct3D12::ID3D12RootSignature>,
     total_root_elements: RootIndex,
     special_constants: Option<PipelineLayoutSpecialConstants>,
-    immediates_info: Option<ImmediatesInfo>,
+    root_constant_info: Option<RootConstantInfo>,
     sampler_heap_root_index: Option<RootIndex>,
 }
 
@@ -1678,17 +1618,6 @@ impl crate::Queue for Queue {
             temp_lists.push(Some(cmd_buf.raw.clone().into()));
         }
 
-        
-        
-        
-        
-        {
-            let mut waits = self.pending_waits.lock();
-            for (fence, value) in waits.drain(..) {
-                unsafe { self.raw.Wait(&fence, value) }.into_device_result("Wait pending fence")?;
-            }
-        }
-
         {
             profiling::scope!("ID3D12CommandQueue::ExecuteCommandLists");
             unsafe { self.raw.ExecuteCommandLists(&temp_lists) }
@@ -1696,16 +1625,6 @@ impl crate::Queue for Queue {
 
         unsafe { self.raw.Signal(&signal_fence.raw, signal_value) }
             .into_device_result("Signal fence")?;
-
-        
-        
-        {
-            let mut signals = self.pending_signals.lock();
-            for (fence, value) in signals.drain(..) {
-                unsafe { self.raw.Signal(&fence, value) }
-                    .into_device_result("Signal pending fence")?;
-            }
-        }
 
         
         

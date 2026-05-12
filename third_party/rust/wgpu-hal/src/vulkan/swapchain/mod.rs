@@ -11,6 +11,11 @@ pub(super) trait Surface: Send + Sync + 'static {
     
     
     
+    unsafe fn delete_surface(self: Box<Self>);
+
+    
+    
+    
     fn surface_capabilities(&self, adapter: &super::Adapter) -> Option<crate::SurfaceCapabilities>;
 
     
@@ -36,6 +41,12 @@ pub(super) trait Swapchain: Send + Sync + 'static {
     
     
     unsafe fn release_resources(&mut self, device: &super::Device);
+
+    
+    
+    
+    
+    unsafe fn delete_swapchain(self: Box<Self>);
 
     
     

@@ -480,7 +480,6 @@ impl super::Adapter {
             | wgt::Features::DUAL_SOURCE_BLENDING
             | wgt::Features::TEXTURE_FORMAT_NV12
             | wgt::Features::FLOAT32_FILTERABLE
-            | wgt::Features::FLOAT32_BLENDABLE
             | wgt::Features::TEXTURE_ATOMIC
             | wgt::Features::PASSTHROUGH_SHADERS
             | wgt::Features::EXTERNAL_TEXTURE
@@ -584,10 +583,6 @@ impl super::Adapter {
 
         features.set(
             wgt::Features::SHADER_F16,
-            shader_model >= naga::back::hlsl::ShaderModel::V6_2 && float16_supported,
-        );
-        features.set(
-            wgt::Features::SHADER_I16,
             shader_model >= naga::back::hlsl::ShaderModel::V6_2 && float16_supported,
         );
 
@@ -764,7 +759,7 @@ impl super::Adapter {
         
         
         
-        let max_immediate_size = super::MAX_IMMEDIATE_SIZE;
+        let max_immediate_size = 128;
         let max_bind_groups = 8;
         let max_dynamic_uniform_buffers_per_pipeline_layout = 8;
         let max_dynamic_storage_buffers_per_pipeline_layout = 4;
@@ -1095,8 +1090,6 @@ impl crate::Adapter for super::Adapter {
                 idle_fence,
                 idle_event,
                 idle_fence_value: AtomicU64::new(0),
-                pending_waits: Mutex::new(Vec::new()),
-                pending_signals: Mutex::new(Vec::new()),
             },
         })
     }

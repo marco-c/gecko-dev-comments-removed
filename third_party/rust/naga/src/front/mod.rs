@@ -2,8 +2,7 @@
 
 
 
-#[cfg(any(feature = "spv-in", feature = "wgsl-in"))]
-pub(crate) mod interpolator;
+mod interpolator;
 mod type_gen;
 
 #[cfg(feature = "spv-in")]
