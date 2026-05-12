@@ -130,6 +130,7 @@ pub enum KeyframesIterationState {
 
 
 
+#[derive(Debug)]
 struct IntermediateComputedKeyframe {
     declarations: PropertyDeclarationBlock,
     timing_function: Option<TimingFunction>,
@@ -259,8 +260,26 @@ impl IntermediateComputedKeyframe {
     }
 }
 
+#[derive(Clone, Debug, MallocSizeOf)]
+struct PropertyDeclarationOffsets {
+    
+    
+    preceding_declaration: usize,
+    
+    
+    following_declaration: usize,
+}
 
-#[derive(Clone, MallocSizeOf)]
+#[derive(Clone, Debug, MallocSizeOf)]
+enum AnimationValueOrReference {
+    
+    AnimationValue(AnimationValue),
+    
+    NotDefinedHere(PropertyDeclarationOffsets),
+}
+
+
+#[derive(Clone, Debug, MallocSizeOf)]
 struct ComputedKeyframe {
     
     
@@ -272,9 +291,100 @@ struct ComputedKeyframe {
 
     
     
-    values: Box<[AnimationValue]>,
+    values: Box<[AnimationValueOrReference]>,
 }
 
+
+
+
+
+
+#[derive(Clone, Copy, Debug, Default)]
+struct KeyframeOffsetCacheForProperty {
+    
+    
+    
+    
+    
+    last_keyframe_that_defined_property: usize,
+
+    
+    
+    
+    
+    
+    next_keyframe_that_defines_property: Option<usize>,
+}
+
+struct KeyframeDataForProperty<'a> {
+    
+    
+    timing_function: &'a TimingFunction,
+
+    
+    
+    start_percentage: f32,
+
+    value: &'a AnimationValue,
+}
+
+#[derive(Clone, Copy, Debug)]
+enum Direction {
+    Forward,
+    Backward,
+}
+
+impl Direction {
+    fn relative_to_animation_direction(&self, reverse: bool) -> Self {
+        match self {
+            Self::Forward if reverse => Self::Backward,
+            Self::Backward if reverse => Self::Forward,
+            _ => *self,
+        }
+    }
+}
+
+impl Animation {
+    
+    
+    
+    
+    fn next_relevant_keyframe_for_property_in_direction(
+        &self,
+        property_index: usize,
+        keyframe_index: usize,
+        direction: Direction,
+    ) -> Option<KeyframeDataForProperty<'_>> {
+        let relevant_keyframe = &self.computed_steps[keyframe_index];
+        let parameters = match &relevant_keyframe.values[property_index] {
+            AnimationValueOrReference::AnimationValue(animation_value) => KeyframeDataForProperty {
+                timing_function: &relevant_keyframe.timing_function,
+                start_percentage: relevant_keyframe.start_percentage,
+                value: animation_value,
+            },
+            AnimationValueOrReference::NotDefinedHere(offsets) => {
+                let next_relevant_keyframe_index = match direction {
+                    Direction::Forward => offsets.following_declaration,
+                    Direction::Backward => offsets.preceding_declaration,
+                };
+                let next_relevant_keyframe = &self.computed_steps[next_relevant_keyframe_index];
+                let AnimationValueOrReference::AnimationValue(animation_value) =
+                    &next_relevant_keyframe.values[property_index]
+                else {
+                    panic!("Referenced keyframe does not set property");
+                };
+
+                KeyframeDataForProperty {
+                    timing_function: &next_relevant_keyframe.timing_function,
+                    start_percentage: next_relevant_keyframe.start_percentage,
+                    value: &animation_value,
+                }
+            },
+        };
+
+        Some(parameters)
+    }
+}
 impl ComputedKeyframe {
     fn generate_for_keyframes<E>(
         element: E,
@@ -283,16 +393,12 @@ impl ComputedKeyframe {
         base_style: &Arc<ComputedValues>,
         default_timing_function: TimingFunction,
         resolver: &mut StyleResolverForElement<E>,
+        animating_properties: PropertyDeclarationIdSet,
+        number_of_animating_properties: usize,
     ) -> Box<[Self]>
     where
         E: TElement,
     {
-        let mut animating_properties = PropertyDeclarationIdSet::default();
-        for property in animation.properties_changed.iter() {
-            debug_assert!(property.is_animatable());
-            animating_properties.insert(property.to_physical(base_style.writing_mode));
-        }
-
         let animation_values_from_style: Vec<AnimationValue> = animating_properties
             .iter()
             .map(|property| {
@@ -304,52 +410,112 @@ impl ComputedKeyframe {
         let intermediate_steps =
             IntermediateComputedKeyframe::generate_for_keyframes(animation, context, base_style);
 
+        
+        
+        
+        let mut keyframe_offset_caches: Vec<KeyframeOffsetCacheForProperty> =
+            vec![Default::default(); number_of_animating_properties];
+
         let mut computed_steps: Vec<Self> = Vec::with_capacity(intermediate_steps.len());
-        for (step_index, step) in intermediate_steps.into_iter().enumerate() {
+        let mut remaining_steps = intermediate_steps.into_iter();
+        let mut step_index = 0;
+        while let Some(step) = remaining_steps.next() {
             let start_percentage = step.start_percentage;
             let properties_changed_in_step = step.declarations.property_ids().clone();
-            let step_timing_function = step.timing_function.clone();
+            let timing_function = step
+                .timing_function
+                .clone()
+                .unwrap_or_else(|| default_timing_function.clone());
             let step_style = step.resolve_style(element, context, base_style, resolver);
-            let timing_function =
-                step_timing_function.unwrap_or_else(|| default_timing_function.clone());
 
-            let values = {
-                
-                
-                
-                
-                
-                
-                let default_values = if start_percentage == 0. || start_percentage == 1.0 {
-                    animation_values_from_style.as_slice()
-                } else {
-                    debug_assert!(step_index != 0);
-                    &computed_steps[step_index - 1].values
-                };
-
-                
+            let values: Box<[_]> = {
                 
                 
                 animating_properties
                     .iter()
-                    .zip(default_values.iter())
-                    .map(|(property_declaration, default_value)| {
+                    .enumerate()
+                    .map(|(property_index, property_declaration)| {
+                        let keyframe_offset_cache = &mut keyframe_offset_caches[property_index];
                         if properties_changed_in_step.contains(property_declaration) {
-                            AnimationValue::from_computed_values(property_declaration, &step_style)
-                                .unwrap_or_else(|| default_value.clone())
-                        } else {
-                            default_value.clone()
+                            keyframe_offset_cache.last_keyframe_that_defined_property = step_index;
+                            let animation_value = AnimationValue::from_computed_values(
+                                property_declaration,
+                                &step_style,
+                            )
+                            .unwrap();
+                            return AnimationValueOrReference::AnimationValue(animation_value);
                         }
+
+                        
+                        
+                        
+                        
+                        
+                        if step_index == 0 || remaining_steps.as_slice().is_empty() {
+                            return AnimationValueOrReference::AnimationValue(
+                                animation_values_from_style[property_index].clone(),
+                            );
+                        }
+
+                        
+                        
+                        
+                        
+                        
+                        
+                        let preceding_declaration =
+                            keyframe_offset_cache.last_keyframe_that_defined_property;
+                        let following_declaration = keyframe_offset_cache
+                            .next_keyframe_that_defines_property
+                            .filter(|offset| *offset > step_index)
+                            .unwrap_or_else(|| {
+                                let relative_offset = remaining_steps
+                                    .as_slice()
+                                    .iter()
+                                    .position(|step| {
+                                        step.declarations.contains(property_declaration)
+                                    })
+                                    .unwrap_or(remaining_steps.as_slice().len());
+                                let absolute_offset = step_index + 1 + relative_offset;
+
+                                keyframe_offset_cache.next_keyframe_that_defines_property =
+                                    Some(absolute_offset);
+                                absolute_offset
+                            });
+
+                        AnimationValueOrReference::NotDefinedHere(PropertyDeclarationOffsets {
+                            preceding_declaration,
+                            following_declaration,
+                        })
                     })
                     .collect()
             };
+            debug_assert_eq!(values.len(), number_of_animating_properties);
 
             computed_steps.push(ComputedKeyframe {
                 timing_function,
                 start_percentage,
                 values,
             });
+
+            step_index += 1;
         }
+
+        
+        
+        debug_assert!(computed_steps.first().is_none_or(|first_step| {
+            first_step
+                .values
+                .iter()
+                .all(|value| matches!(value, AnimationValueOrReference::AnimationValue(_)))
+        }));
+        debug_assert!(computed_steps.last().is_none_or(|first_step| {
+            first_step
+                .values
+                .iter()
+                .all(|value| matches!(value, AnimationValueOrReference::AnimationValue(_)))
+        }));
+
         computed_steps.into_boxed_slice()
     }
 }
@@ -392,9 +558,7 @@ pub struct Animation {
     pub current_direction: AnimationDirection,
 
     
-    
-    #[ignore_malloc_size_of = "ComputedValues"]
-    pub cascade_style: Arc<ComputedValues>,
+    pub number_of_animating_properties: usize,
 
     
     
@@ -655,45 +819,79 @@ impl Animation {
             prev_keyframe_index, next_keyframe_index
         );
 
-        let prev_keyframe = &self.computed_steps[prev_keyframe_index];
-        let next_keyframe = match next_keyframe_index {
-            Some(index) => &self.computed_steps[index],
-            None => return,
+        let Some(next_keyframe_index) = next_keyframe_index else {
+            return;
         };
 
         
         
-        let mut add_declarations_to_map = |keyframe: &ComputedKeyframe| {
-            for value in keyframe.values.iter() {
+        let mut add_declarations_to_map = |keyframe_index: usize| {
+            for value_or_reference in &self.computed_steps[keyframe_index].values {
+                let AnimationValueOrReference::AnimationValue(value) = value_or_reference else {
+                    unreachable!("First or last keyframes define all properties");
+                };
+
                 map.insert(value.id().to_owned(), value.clone());
             }
         };
+
+        let reversed = self.current_direction != AnimationDirection::Normal;
         if total_progress <= 0.0 {
-            add_declarations_to_map(&prev_keyframe);
+            if reversed {
+                add_declarations_to_map(self.computed_steps.len() - 1);
+            } else {
+                add_declarations_to_map(0);
+            }
             return;
         }
         if total_progress >= 1.0 {
-            add_declarations_to_map(&next_keyframe);
+            if reversed {
+                add_declarations_to_map(0);
+            } else {
+                add_declarations_to_map(self.computed_steps.len() - 1);
+            }
             return;
         }
 
-        let percentage_between_keyframes =
-            (next_keyframe.start_percentage - prev_keyframe.start_percentage).abs() as f64;
-        let duration_between_keyframes = percentage_between_keyframes * self.duration;
-        let direction_aware_prev_keyframe_start_percentage = match self.current_direction {
-            AnimationDirection::Normal => prev_keyframe.start_percentage as f64,
-            AnimationDirection::Reverse => 1. - prev_keyframe.start_percentage as f64,
-            _ => unreachable!(),
-        };
-        let progress_between_keyframes = (total_progress
-            - direction_aware_prev_keyframe_start_percentage)
-            / percentage_between_keyframes;
+        
+        for property_index in 0..self.number_of_animating_properties {
+            let Some(previous_keyframe) = self.next_relevant_keyframe_for_property_in_direction(
+                property_index,
+                prev_keyframe_index,
+                Direction::Backward.relative_to_animation_direction(reversed),
+            ) else {
+                
+                continue;
+            };
 
-        for (from, to) in prev_keyframe.values.iter().zip(next_keyframe.values.iter()) {
+            let Some(next_keyframe) = self.next_relevant_keyframe_for_property_in_direction(
+                property_index,
+                next_keyframe_index,
+                Direction::Forward.relative_to_animation_direction(reversed),
+            ) else {
+                
+                map.insert(
+                    previous_keyframe.value.id().to_owned(),
+                    previous_keyframe.value.clone(),
+                );
+                continue;
+            };
+
+            let percentage_between_keyframes =
+                (next_keyframe.start_percentage - previous_keyframe.start_percentage).abs() as f64;
+            let duration_between_keyframes = percentage_between_keyframes * self.duration;
+            let direction_aware_prev_keyframe_start_percentage = match self.current_direction {
+                AnimationDirection::Normal => previous_keyframe.start_percentage as f64,
+                AnimationDirection::Reverse => 1. - previous_keyframe.start_percentage as f64,
+                _ => unreachable!(),
+            };
+            let progress_between_keyframes = (total_progress
+                - direction_aware_prev_keyframe_start_percentage)
+                / percentage_between_keyframes;
             let animation = PropertyAnimation {
-                from: from.clone(),
-                to: to.clone(),
-                timing_function: prev_keyframe.timing_function.clone(),
+                from: previous_keyframe.value.clone(),
+                to: next_keyframe.value.clone(),
+                timing_function: previous_keyframe.timing_function.clone(),
                 duration: duration_between_keyframes as f64,
             };
 
@@ -1541,6 +1739,19 @@ pub fn maybe_start_animations<E>(
             AnimationPlayState::Running => AnimationState::Pending,
         };
 
+        
+        
+        
+        let mut animating_properties = PropertyDeclarationIdSet::default();
+        let mut number_of_animating_properties = 0;
+        for property in keyframe_animation.properties_changed.iter() {
+            debug_assert!(property.is_animatable());
+
+            if animating_properties.insert(property.to_physical(new_style.writing_mode)) {
+                number_of_animating_properties += 1;
+            }
+        }
+
         let computed_steps = ComputedKeyframe::generate_for_keyframes(
             element,
             &keyframe_animation,
@@ -1548,6 +1759,8 @@ pub fn maybe_start_animations<E>(
             new_style,
             style.animation_timing_function_mod(i),
             resolver,
+            animating_properties,
+            number_of_animating_properties,
         );
 
         let mut new_animation = Animation {
@@ -1562,7 +1775,7 @@ pub fn maybe_start_animations<E>(
             state,
             direction: animation_direction,
             current_direction: initial_direction,
-            cascade_style: new_style.clone(),
+            number_of_animating_properties,
             is_new: true,
         };
 
