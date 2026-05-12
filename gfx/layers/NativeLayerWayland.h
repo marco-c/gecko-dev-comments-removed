@@ -225,6 +225,7 @@ class NativeLayerWayland : public NativeLayer {
   
   
   bool IsMapped();
+  bool IsVisible();
   bool Map(widget::WaylandSurfaceLock* aParentWaylandSurfaceLock);
   void Unmap();
 
