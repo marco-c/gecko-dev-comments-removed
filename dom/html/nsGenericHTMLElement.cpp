@@ -369,9 +369,67 @@ EditContext* nsGenericHTMLElement::GetEditContext() const {
   return EditContext::GetForElement(*this);
 }
 
-void nsGenericHTMLElement::SetEditContext(EditContext* aContext,
-                                          ErrorResult& aRv) {
+void nsGenericHTMLElement::SetEditContext(mozilla::dom::EditContext* aContext,
+                                          mozilla::ErrorResult& aRv) {
   
+  
+  
+  nsAtom* name = NodeInfo()->NameAtom();
+  if (name != nsGkAtoms::canvas &&
+      !nsContentUtils::IsValidShadowHostName(name)) {
+    aRv.ThrowNotSupportedError(
+        nsFmtCString(FMT_STRING("EditContext can only be attached to <canvas> "
+                                "and valid shadow hosts, not <{}>."),
+                     NS_ConvertUTF16toUTF8(LocalName())));
+    return;
+  }
+  
+  if (aContext) {
+    
+    
+    if (aContext->GetAssociatedElement() == this) {
+      return;
+    }
+    
+    
+    if (aContext->GetAssociatedElement()) {
+      aRv.ThrowNotSupportedError(
+          "EditContext can only be attached to one element at a time.");
+      return;
+    }
+  }
+  
+  RefPtr<EditContext> oldEditContext = GetEditContext();
+  if (oldEditContext) {
+    
+    
+    if (oldEditContext == OwnerDoc()->GetActiveEditContext()) {
+      
+      oldEditContext->Deactivate();
+      
+      
+      if (oldEditContext->GetAssociatedElement() != this) {
+        return;
+      }
+      
+      
+      
+      if (aContext && aContext->GetAssociatedElement() &&
+          aContext->GetAssociatedElement() != this) {
+        aRv.ThrowNotSupportedError(
+            "EditContext can only be attached to one element at a time.");
+        return;
+      }
+    }
+    
+    
+    oldEditContext->SetAssociatedElement(nullptr);
+  }
+  
+  
+  if (aContext) {
+    aContext->SetAssociatedElement(this);
+  }
   
   if (aContext) {
     SetFlags(ELEMENT_HAS_EDIT_CONTEXT);
@@ -379,6 +437,13 @@ void nsGenericHTMLElement::SetEditContext(EditContext* aContext,
     UnsetFlags(ELEMENT_HAS_EDIT_CONTEXT);
   }
   EditContext::SetForElement(*this, aContext);
+
+  int32_t delta = (aContext != nullptr) - (oldEditContext != nullptr);
+  if (delta) {
+    ChangeEditableState(delta);
+  }
+  
+  OwnerDoc()->UpdateTextEditContext();
 }
 
 bool nsGenericHTMLElement::InNavQuirksMode(Document* aDoc) {
@@ -387,6 +452,11 @@ bool nsGenericHTMLElement::InNavQuirksMode(Document* aDoc) {
 
 void nsGenericHTMLElement::UpdateEditableState(bool aNotify) {
   
+  if (GetEditContext()) {
+    SetEditableFlag(true);
+    UpdateReadOnlyState(aNotify);
+    return;
+  }
   ContentEditableState state = GetContentEditableState();
   if (state != ContentEditableState::Inherit) {
     SetEditableFlag(IsEditableState(state));

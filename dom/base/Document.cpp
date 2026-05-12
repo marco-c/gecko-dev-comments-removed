@@ -168,6 +168,7 @@
 #include "mozilla/dom/DocumentL10n.h"
 #include "mozilla/dom/DocumentTimeline.h"
 #include "mozilla/dom/DocumentType.h"
+#include "mozilla/dom/EditContext.h"
 #include "mozilla/dom/ElementBinding.h"
 #include "mozilla/dom/ErrorEvent.h"
 #include "mozilla/dom/Event.h"
@@ -2523,6 +2524,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INTERNAL(Document)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mLazyLoadObserver)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mAutoSizeImageObserver)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mElementsObservedForLastRememberedSize)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mActiveEditContext)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDOMImplementation)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mImageMaps)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mOrientationPendingPromise)
@@ -2648,6 +2650,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(Document)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mLazyLoadObserver)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mAutoSizeImageObserver)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mElementsObservedForLastRememberedSize);
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mActiveEditContext)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mFontFaceSet)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mReadyForIdle)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mDocumentL10n)
@@ -6623,6 +6626,71 @@ void Document::DeferredContentEditableCountChange(Element* aElement) {
           "ignored");
     }
   }
+}
+
+EditContext* Document::DetermineActiveEditContext() const {
+  
+  
+  
+  if (!GetBrowsingContext()) {
+    return nullptr;
+  }
+  
+  
+  
+  
+  
+  
+  
+  
+  nsINode* focused = nsFocusManager::GetFocusedElementStatic();
+  if (!focused || focused->GetComposedDoc() != this) {
+    return nullptr;
+  }
+  
+  EditContext* editContext = nullptr;
+  
+  while (focused && focused->IsEditable()) {
+    
+    
+    editContext = nullptr;
+    if (auto* element = nsGenericHTMLElement::FromNode(focused)) {
+      editContext = element->GetEditContext();
+    }
+    
+    
+    
+    
+    focused = focused->GetParentOrShadowHostNode();
+  }
+  
+  return editContext;
+}
+
+void Document::UpdateTextEditContext() {
+  
+  
+  RefPtr<EditContext> oldActiveEditContext = mActiveEditContext;
+  
+  
+  RefPtr<EditContext> newActiveEditContext = DetermineActiveEditContext();
+  
+  if (oldActiveEditContext == newActiveEditContext) {
+    return;
+  }
+  
+  
+  if (oldActiveEditContext) {
+    oldActiveEditContext->Deactivate();
+  }
+  
+  if (newActiveEditContext) {
+    
+    
+    
+  }
+  
+  mActiveEditContext = newActiveEditContext;
 }
 
 void Document::MaybeDispatchCheckKeyPressEventModelEvent() {
