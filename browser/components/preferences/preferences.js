@@ -488,15 +488,22 @@ function init_all() {
   
   
   
-  if (Services.prefs.getBoolPref("identity.fxaccounts.enabled")) {
-    document.getElementById("category-sync").hidden = false;
-    register_module("paneSync", gSyncPane);
-  }
-  register_module("paneSearchResults", gSearchResultsPane);
-
   let redesignEnabled = Services.prefs.getBoolPref(
     "browser.settings-redesign.enabled"
   );
+  let accountsEnabled = Services.prefs.getBoolPref(
+    "identity.fxaccounts.enabled"
+  );
+  let categorySync = document.getElementById("category-sync");
+  if (redesignEnabled) {
+    categorySync.setAttribute("data-l10n-id", "pane-account-sync-title");
+    categorySync.iconSrc = "chrome://browser/skin/fxa/avatar-empty.svg";
+    categorySync.hidden = false;
+  } else if (accountsEnabled) {
+    categorySync.hidden = false;
+    register_module("paneSync", gSyncPane);
+  }
+  register_module("paneSearchResults", gSearchResultsPane);
   for (let [id, config] of Object.entries(CONFIG_PANES)) {
     if (!redesignEnabled && config.replaces) {
       continue;
