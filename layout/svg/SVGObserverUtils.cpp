@@ -1868,22 +1868,35 @@ void SVGObserverUtils::InvalidateRenderingObservers(nsIFrame* aFrame) {
   NS_ASSERTION(!aFrame->GetPrevContinuation(),
                "aFrame must be first continuation");
 
-  bool ceaseInvalidation = false;
+  auto* element = Element::FromNodeOrNull(aFrame->GetContent());
+  if (!element) {
+    return;
+  }
+
+  
+  aFrame->RemoveProperty(SVGUtils::ObjectBoundingBoxProperty());
+
+  if (auto* observers = GetObserverSet(element)) {
+    observers->InvalidateAll(aFrame->HasAnyStateBits(NS_FRAME_IN_REFLOW));
+    return;
+  }
+
+  if (aFrame->IsSVGRenderingObserverContainer()) {
+    return;
+  }
 
   
   
-  for (nsIFrame* f = aFrame; f->IsSVGContainerFrame(); f = f->GetParent()) {
-    f->RemoveProperty(SVGUtils::ObjectBoundingBoxProperty());
-    if (ceaseInvalidation) {
-      continue;
-    }
+  for (nsIFrame* f = aFrame->GetParent(); f->IsSVGContainerFrame();
+       f = f->GetParent()) {
     if (auto* element = Element::FromNode(f->GetContent())) {
       if (auto* observers = GetObserverSet(element)) {
         observers->InvalidateAll(f->HasAnyStateBits(NS_FRAME_IN_REFLOW));
+        return;
       }
     }
     if (f->IsSVGRenderingObserverContainer()) {
-      ceaseInvalidation = true;
+      return;
     }
   }
 }
