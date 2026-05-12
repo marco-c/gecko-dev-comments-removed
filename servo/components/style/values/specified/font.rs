@@ -362,7 +362,7 @@ impl SpecifiedFontStyle {
     ) -> Result<Angle, ParseError<'i>> {
         let angle = Angle::parse(context, input)?;
         
-        if matches!(angle, Angle::Calc(_)) {
+        if angle.is_calc() {
             return Ok(angle);
         }
 
