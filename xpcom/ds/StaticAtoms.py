@@ -538,6 +538,7 @@ STATIC_ATOMS = [
     Atom("hidechrome", "hidechrome"),
     Atom("hidecolumnpicker", "hidecolumnpicker"),
     Atom("hidetitlebarseparator", "hidetitlebarseparator"),
+    Atom("hidepopovertail", "hidepopovertail"),
     Atom("hide_popover", "hide-popover"),
     Atom("high", "high"),
     Atom("highest", "highest"),
@@ -2465,6 +2466,7 @@ STATIC_ATOMS = [
     Atom("onpositionstatechange", "onpositionstatechange"),
     Atom("onsupportedkeyschange", "onsupportedkeyschange"),
     
+    Atom("dom_image_sizes_auto_enabled", "dom.image.sizes_auto.enabled"),
     Atom("mathml_legacy_mathvariant_attribute_disabled", "mathml.legacy_mathvariant_attribute.disabled"),
     Atom("mathml_font_family_math_enabled", "mathml.font_family_math.enabled"),
     Atom("layout_css_always_underline_links", "layout.css.always_underline_links"),

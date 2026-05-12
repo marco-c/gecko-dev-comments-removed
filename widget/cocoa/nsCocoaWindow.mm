@@ -6,6 +6,9 @@
 
 #include "nsISupportsPrimitives.h"
 #include "nsArrayUtils.h"
+#include "nsMenuPopupFrame.h"
+#include "nsDeviceContext.h"
+#include "mozilla/dom/XULPopupElement.h"
 #include "MOZDynamicCursor.h"
 #include "nsIAppStartup.h"
 #include "nsIDOMWindowUtils.h"
@@ -5068,6 +5071,11 @@ nsresult nsCocoaWindow::CreateNativeWindow(const NSRect& aRect,
     mWindow.opaque = NO;
 
     
+    if ([mWindow isKindOfClass:[PopupWindow class]] && ShouldUseNSPopover()) {
+      [(PopupWindow*)mWindow setAllowPopover];
+    }
+
+    
     
     
     
@@ -5272,6 +5280,53 @@ void nsCocoaWindow::SetModal(bool aModal) {
 
 bool nsCocoaWindow::IsRunningAppModal() { return [NSApp _isRunningAppModal]; }
 
+static NSRectEdge AlignmentPositionToNSRectEdge(int8_t aPosition) {
+  switch (aPosition) {
+    case POPUPPOSITION_BEFORESTART:
+    case POPUPPOSITION_BEFOREEND:
+      return NSRectEdgeMaxY;
+    case POPUPPOSITION_AFTERSTART:
+    case POPUPPOSITION_AFTEREND:
+      return NSRectEdgeMinY;
+    case POPUPPOSITION_STARTBEFORE:
+    case POPUPPOSITION_STARTAFTER:
+      return NSRectEdgeMaxX;
+    case POPUPPOSITION_ENDBEFORE:
+    case POPUPPOSITION_ENDAFTER:
+      return NSRectEdgeMinX;
+    default:
+      return NSRectEdgeMinY;
+  }
+}
+
+static void SyncPopoverBounds(NSPopover* aPopover,
+                              nsMenuPopupFrame* aPopupFrame) {
+  if (!aPopover || !aPopover.shown || !aPopupFrame) {
+    return;
+  }
+  NSWindow* popoverWindow = aPopover.contentViewController.view.window;
+  if (!popoverWindow) {
+    return;
+  }
+
+  
+  
+  NSView* contentView = popoverWindow.contentView;
+  NSRect contentFrame = [contentView convertRect:contentView.bounds toView:nil];
+  NSRect windowFrame = [popoverWindow convertRectToScreen:contentFrame];
+
+  CGFloat backingScale = popoverWindow.backingScaleFactor;
+  mozilla::LayoutDeviceIntRect devPixRect =
+      nsCocoaUtils::CocoaRectToGeckoRectDevPix(windowFrame, backingScale);
+
+  nsPresContext* presContext = aPopupFrame->PresContext();
+  mozilla::CSSIntPoint cssPos =
+      presContext->DevPixelsToIntCSSPixels(devPixRect.TopLeft());
+
+  aPopupFrame->MoveTo(mozilla::CSSPoint(cssPos.x, cssPos.y),
+                       false);
+}
+
 
 void nsCocoaWindow::Show(bool aState) {
   NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
@@ -5336,6 +5391,51 @@ void nsCocoaWindow::Show(bool aState) {
         [mWindow orderFront:nil];
       }
       NS_OBJC_END_TRY_IGNORE_BLOCK;
+      if (ShouldShowAsNSPopover() && nativeParentWindow) {
+        nsMenuPopupFrame* popupFrame = GetPopupFrame();
+        NSRectEdge preferredEdge =
+            AlignmentPositionToNSRectEdge(popupFrame->GetAlignmentPosition());
+        nsRect anchorRectAppUnits = popupFrame->GetUntransformedAnchorRect();
+        nsPresContext* pc = popupFrame->PresContext();
+        int32_t appUnitsPerDevPixel = pc->AppUnitsPerDevPixel();
+        mozilla::DesktopToLayoutDeviceScale desktopToLayoutScale =
+            pc->DeviceContext()->GetDesktopToDeviceScale();
+        mozilla::DesktopIntRect popupAnchorRectScaled =
+            mozilla::DesktopIntRect::RoundOut(
+                mozilla::LayoutDeviceRect::FromAppUnits(anchorRectAppUnits,
+                                                        appUnitsPerDevPixel) /
+                desktopToLayoutScale);
+        
+        
+        
+        NSRect cocoaScreenRect =
+            nsCocoaUtils::GeckoRectToCocoaRect(popupAnchorRectScaled);
+        
+        
+        
+        
+        NSRect windowRect =
+            [nativeParentWindow convertRectFromScreen:cocoaScreenRect];
+        NSView* parentView = [nativeParentWindow contentView];
+        
+        
+        NSRect positioningRect = [parentView convertRect:windowRect
+                                                fromView:nil];
+        bool shouldHideAnchor =
+            popupFrame->PopupElement().GetBoolAttr(nsGkAtoms::hidepopovertail);
+        [(PopupWindow*)mWindow showPopoverRelativeToRect:positioningRect
+                                                  ofView:parentView
+                                           preferredEdge:preferredEdge
+                                            hiddenAnchor:shouldHideAnchor];
+        SyncPopoverBounds([(PopupWindow*)mWindow popover], popupFrame);
+        if (mPopupLevel == PopupLevel::Parent) {
+          [nativeParentWindow addChildWindow:mWindow ordered:NSWindowAbove];
+        }
+
+        
+        mWindow.isBeingShown = NO;
+        return;
+      }
       
       
       
@@ -5409,7 +5509,11 @@ void nsCocoaWindow::Show(bool aState) {
     if (mWindowType == WindowType::Popup && nativeParentWindow) {
       [nativeParentWindow removeChildWindow:mWindow];
     }
-
+    
+    if ([mWindow isKindOfClass:[PopupWindow class]] &&
+        [(PopupWindow*)mWindow usePopover]) {
+      [(PopupWindow*)mWindow closePopover];
+    }
     [mWindow orderOut:nil];
     
     
@@ -5458,6 +5562,24 @@ bool nsCocoaWindow::ShouldUseOffMainThreadCompositing() {
     return false;
   }
   return nsIWidget::ShouldUseOffMainThreadCompositing();
+}
+
+bool nsCocoaWindow::ShouldUseNSPopover() const {
+  
+  
+  return mWindowType == WindowType::Popup && mPopupType == PopupType::Panel &&
+         mozilla::StaticPrefs::widget_macos_native_popovers();
+}
+
+bool nsCocoaWindow::ShouldShowAsNSPopover() const {
+  if (!ShouldUseNSPopover()) {
+    return false;
+  }
+  nsMenuPopupFrame* popupFrame = GetPopupFrame();
+  return [mWindow isKindOfClass:[PopupWindow class]] &&
+         [(PopupWindow*)mWindow usePopover] && popupFrame &&
+         popupFrame->ShouldFollowAnchor() &&
+         !popupFrame->PopupElement().GetBoolAttr(nsGkAtoms::nonnative);
 }
 
 TransparencyMode nsCocoaWindow::GetTransparencyMode() {
@@ -6421,6 +6543,15 @@ void nsCocoaWindow::DoResize(double aX, double aY, double aWidth,
   
   
   [mWindow setFrame:newFrame display:YES];
+  if (ShouldUseNSPopover() && [(PopupWindow*)mWindow usePopover]) {
+    [(PopupWindow*)mWindow updatePopoverContent];
+    
+    
+    
+    NSSize contentSize = NSMakeSize(aWidth, aHeight);
+    [[(PopupWindow*)mWindow popover] setContentSize:contentSize];
+    SyncPopoverBounds([(PopupWindow*)mWindow popover], GetPopupFrame());
+  }
 
   NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
@@ -8482,12 +8613,25 @@ static CGFloat DefaultTitlebarHeight() {
   if (!self) {
     return nil;
   }
-
+  mPopover = nil;
+  mPopoverViewController = nil;
+  mUsePopover = NO;
   mIsContextMenu = false;
 
   return self;
 
   NS_OBJC_END_TRY_BLOCK_RETURN(nil);
+}
+
+- (void)dealloc {
+  if (mPopover) {
+    ChildViewMouseTracker::OnDestroyWindow(
+        mPopover.contentViewController.view.window);
+  }
+
+  [mPopover release];
+  [mPopoverViewController release];
+  [super dealloc];
 }
 
 
@@ -8547,6 +8691,118 @@ static const NSUInteger kWindowShadowOptionsTooltip = 4;
 
 - (void)setIsContextMenu:(BOOL)flag {
   mIsContextMenu = flag;
+}
+
+- (void)setAllowPopover {
+  mUsePopover = YES;
+
+  if (!mPopover) {
+    mPopover = [[NSPopover alloc] init];
+
+    
+    
+    
+    mPopover.behavior = NSPopoverBehaviorApplicationDefined;
+    mPopover.delegate = self;
+
+    
+    mPopoverViewController = [[NSViewController alloc] init];
+
+    NSView* contentView = self.contentView;
+    if (contentView) {
+      
+      [contentView
+          setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
+
+      mPopoverViewController.view = contentView;
+      mPopover.contentViewController = mPopoverViewController;
+
+      
+      NSRect contentRect = [contentView frame];
+      if (contentRect.size.width > 0 && contentRect.size.height > 0) {
+        [mPopover setContentSize:contentRect.size];
+      }
+    }
+  }
+}
+
+- (BOOL)usePopover {
+  return mUsePopover;
+}
+
+- (void)showPopoverRelativeToRect:(NSRect)positioningRect
+                           ofView:(NSView*)positioningView
+                    preferredEdge:(NSRectEdge)preferredEdge
+                     hiddenAnchor:(BOOL)hiddenAnchor {
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
+  if (!mPopover) {
+    return;
+  }
+
+  
+  if (mPopover.shown) {
+    [mPopover close];
+  }
+
+  
+  [self updatePopoverContent];
+
+  if (mPopoverViewController.view) {
+    mPopover.behavior = NSPopoverBehaviorApplicationDefined;
+
+    
+    
+    [mPopover setShouldHideAnchor:hiddenAnchor];
+
+    [mPopover showRelativeToRect:positioningRect
+                          ofView:positioningView
+                   preferredEdge:preferredEdge];
+  }
+
+  NSWindow* popoverWindow = mPopover.contentViewController.view.window;
+  [popoverWindow setAcceptsMouseMovedEvents:YES];
+
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
+}
+
+- (void)closePopover {
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
+
+  if (mPopover && mPopover.shown) {
+    [mPopover close];
+  }
+
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
+}
+
+- (void)updatePopoverContent {
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
+  if (!mPopover || !mPopoverViewController) {
+    return;
+  }
+
+  NSView* contentView = self.contentView;
+  if (!contentView) {
+    return;
+  }
+  
+  [contentView setWantsLayer:YES];
+  [contentView setAcceptsTouchEvents:YES];
+
+  
+  mPopoverViewController.view = contentView;
+
+  
+  NSRect contentRect = [contentView frame];
+  if (contentRect.size.width > 0 && contentRect.size.height > 0) {
+    mPopover.contentSize = contentRect.size;
+  }
+
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
+}
+
+- (NSPopover*)popover {
+  return mPopover;
 }
 
 - (BOOL)canBecomeMainWindow {
