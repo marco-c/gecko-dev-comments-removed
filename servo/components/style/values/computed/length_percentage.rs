@@ -635,7 +635,7 @@ impl ToComputedValue for specified::LengthPercentage {
                 
                 
                 specified::LengthPercentage::Calc(Box::new(
-                    specified::CalcLengthPercentage::from_computed_value(c),
+                    specified::CalcNumeric::from_computed_value(c),
                 ))
             },
         }
@@ -1165,7 +1165,7 @@ impl PartialEq for CalcLengthPercentage {
     }
 }
 
-impl specified::CalcLengthPercentage {
+impl specified::CalcNumeric {
     
     fn to_computed_value_with_zoom<F>(
         &self,
@@ -1266,7 +1266,7 @@ impl specified::CalcLengthPercentage {
         use crate::values::specified::calc::Leaf;
         use crate::values::specified::length::NoCalcLength;
 
-        specified::CalcLengthPercentage {
+        specified::CalcNumeric {
             clamping_mode: computed.clamping_mode,
             node: computed.node.map_leaves(|l| match l {
                 CalcLengthPercentageLeaf::Length(ref l) => {
