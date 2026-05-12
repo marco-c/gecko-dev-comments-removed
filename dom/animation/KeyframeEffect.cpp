@@ -775,7 +775,7 @@ static const KeyframeEffectOptions& KeyframeEffectOptionsFromUnion(
 
 template <class OptionsType>
 static KeyframeEffectParams KeyframeEffectParamsFromUnion(
-    const OptionsType& aOptions, CallerType aCallerType, ErrorResult& aRv) {
+    const OptionsType& aOptions, Document* aDocument, ErrorResult& aRv) {
   KeyframeEffectParams result;
   if (aOptions.IsUnrestrictedDouble()) {
     return result;
@@ -792,8 +792,8 @@ static KeyframeEffectParams KeyframeEffectParamsFromUnion(
     return result;
   }
 
-  Maybe<PseudoStyleRequest> pseudoRequest =
-      PseudoStyleRequest::Parse(options.mPseudoElement);
+  Maybe<PseudoStyleRequest> pseudoRequest = PseudoStyleRequest::Parse(
+      options.mPseudoElement, aDocument->DefaultStyleAttrURLData());
   if (!pseudoRequest) {
     
     aRv.ThrowSyntaxError(
@@ -835,7 +835,7 @@ already_AddRefed<KeyframeEffect> KeyframeEffect::ConstructKeyframeEffect(
   }
 
   KeyframeEffectParams effectOptions =
-      KeyframeEffectParamsFromUnion(aOptions, aGlobal.CallerType(), aRv);
+      KeyframeEffectParamsFromUnion(aOptions, doc, aRv);
   
   if (aRv.Failed()) {
     return nullptr;
@@ -1100,8 +1100,8 @@ void KeyframeEffect::SetPseudoElement(const nsAString& aPseudoElement,
 
   
   
-  Maybe<PseudoStyleRequest> pseudoRequest =
-      PseudoStyleRequest::Parse(aPseudoElement);
+  Maybe<PseudoStyleRequest> pseudoRequest = PseudoStyleRequest::Parse(
+      aPseudoElement, mDocument->DefaultStyleAttrURLData());
   if (!pseudoRequest || pseudoRequest->IsNotPseudo()) {
     
     aRv.ThrowSyntaxError(
