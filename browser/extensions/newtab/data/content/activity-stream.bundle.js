@@ -16167,15 +16167,6 @@ function SportsWidgetFollowTeams({
 
 
 
-
-const DEV_SCAFFOLDING = true;
-
-
-const DEFAULT_LABELS = ["Home", "Head office", "Label 3", "Label 4"];
-
-
-
-
 const LABEL_PALETTE = [
   "cyan",
   "green",
@@ -16188,6 +16179,9 @@ const LABEL_PALETTE = [
   "violet",
   "neutral",
 ];
+const RANDOM_LABEL_PALETTE = LABEL_PALETTE.filter(
+  colorName => colorName !== "neutral"
+);
 
 
 
@@ -16197,7 +16191,11 @@ function isValidPaletteName(paletteName) {
   return typeof paletteName === "string" && LABEL_PALETTE.includes(paletteName);
 }
 
-
+function getRandomLabelColor() {
+  return RANDOM_LABEL_PALETTE[
+    Math.floor(Math.random() * RANDOM_LABEL_PALETTE.length)
+  ];
+}
 
 const FIXED_DEFAULT_ZONES = [
   "Europe/Berlin",
@@ -16205,6 +16203,7 @@ const FIXED_DEFAULT_ZONES = [
   "America/New_York",
   "America/Los_Angeles",
 ];
+const MAX_CLOCK_COUNT = 4;
 
 
 
@@ -16323,15 +16322,11 @@ function getDefaultTimeZones() {
   return result;
 }
 
-
-
-
-
 function decorateDefaultZones(timeZones) {
-  return timeZones.map((timeZone, i) => ({
+  return timeZones.map(timeZone => ({
     timeZone,
-    label: DEV_SCAFFOLDING ? (DEFAULT_LABELS[i] ?? null) : null,
-    labelColor: DEV_SCAFFOLDING ? (LABEL_PALETTE[i] ?? null) : null,
+    label: null,
+    labelColor: null,
   }));
 }
 
@@ -16341,6 +16336,77 @@ function decorateDefaultZones(timeZones) {
 function buildDefaultZones() {
   return decorateDefaultZones(getDefaultTimeZones());
 }
+
+const isValidTimeZone = timeZone => {
+  if (typeof timeZone !== "string" || !timeZone) {
+    return false;
+  }
+  try {
+    new Intl.DateTimeFormat(undefined, { timeZone }).format(new Date(0));
+    return true;
+  } catch (e) {
+    return false;
+  }
+};
+
+const getSupportedTimeZones = () => {
+  try {
+    if (typeof Intl.supportedValuesOf === "function") {
+      const timeZones = Intl.supportedValuesOf("timeZone");
+      if (timeZones.length) {
+        return timeZones;
+      }
+    }
+  } catch (e) {
+    
+  }
+  return FIXED_DEFAULT_ZONES;
+};
+
+const normalizeClockZone = clock => {
+  const normalizedClock =
+    typeof clock === "string" ? { timeZone: clock } : clock;
+  if (!normalizedClock || !isValidTimeZone(normalizedClock.timeZone)) {
+    return null;
+  }
+  const label =
+    typeof normalizedClock.label === "string" && normalizedClock.label.trim()
+      ? normalizedClock.label.trim()
+      : null;
+  const labelColor = isValidPaletteName(normalizedClock.labelColor)
+    ? normalizedClock.labelColor
+    : null;
+  const city =
+    typeof normalizedClock.city === "string" && normalizedClock.city.trim()
+      ? normalizedClock.city.trim()
+      : undefined;
+  return {
+    timeZone: normalizedClock.timeZone,
+    ...(city !== undefined && { city }),
+    label,
+    labelColor,
+  };
+};
+
+const parseClockZonesPref = prefValue => {
+  if (!prefValue) {
+    return null;
+  }
+  try {
+    const parsed =
+      typeof prefValue === "string" ? JSON.parse(prefValue) : prefValue;
+    if (!Array.isArray(parsed)) {
+      return null;
+    }
+    const clocks = parsed
+      .map(normalizeClockZone)
+      .filter(Boolean)
+      .slice(0, MAX_CLOCK_COUNT);
+    return clocks.length ? clocks : null;
+  } catch (e) {
+    return null;
+  }
+};
 
 
 
@@ -16354,6 +16420,77 @@ function getCityFromTimeZone(tz) {
   const last = segments[segments.length - 1];
   return last.replace(/_/g, " ");
 }
+
+
+
+
+
+
+
+
+const buildClockZone = timeZone => ({
+  timeZone,
+  city: getCityFromTimeZone(timeZone),
+  label: null,
+  labelColor: null,
+});
+
+const backfillClockLabelColors = clockZones =>
+  clockZones.map(clock =>
+    clock.label && !clock.labelColor
+      ? {
+          ...clock,
+          labelColor: getRandomLabelColor(),
+        }
+      : clock
+  );
+
+const getClockFormDerivedState = ({
+  canAddClock,
+  clockSearchQuery,
+  clockSelectedTimeZone,
+  isEditingClock,
+  supportedTimeZones,
+}) => {
+  let resolvedClockTimeZone = "";
+  const query = clockSearchQuery.trim().toLowerCase();
+  if (clockSelectedTimeZone && isValidTimeZone(clockSelectedTimeZone)) {
+    resolvedClockTimeZone = clockSelectedTimeZone;
+  } else if (query) {
+    resolvedClockTimeZone =
+      supportedTimeZones.find(timeZone => {
+        const city = getCityFromTimeZone(timeZone).toLowerCase();
+        return timeZone.toLowerCase() === query || city === query;
+      }) ?? "";
+  }
+
+  const filteredTimeZones = query
+    ? supportedTimeZones
+        .filter(timeZone => {
+          const city = getCityFromTimeZone(timeZone).toLowerCase();
+          return timeZone.toLowerCase().includes(query) || city.includes(query);
+        })
+        .slice(0, 8)
+    : [];
+
+  return {
+    canAddSelectedClock:
+      (isEditingClock || canAddClock) && !!resolvedClockTimeZone,
+    filteredTimeZones,
+    resolvedClockTimeZone,
+    showLocationDropdown: !!(query && !resolvedClockTimeZone),
+  };
+};
+
+const buildNextClockZones = (clockZones, editingClockIndex, zone) =>
+  editingClockIndex === null
+    ? [...clockZones, zone]
+    : clockZones.map((clock, index) =>
+        index === editingClockIndex ? zone : clock
+      );
+
+const removeClockZoneAtIndex = (clockZones, indexToRemove) =>
+  clockZones.filter((_, index) => index !== indexToRemove);
 
 
 
@@ -16393,6 +16530,29 @@ function getTimeZoneAbbreviation(tz, locale, date = new Date()) {
 
 
 
+
+
+function formatDateTimeAttr(date, tz) {
+  try {
+    const parts = new Intl.DateTimeFormat(undefined, {
+      timeZone: tz,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23",
+    }).formatToParts(date);
+    const get = type => parts.find(p => p.type === type)?.value ?? "00";
+    return `${get("year")}-${get("month")}-${get("day")}T${get("hour")}:${get("minute")}`;
+  } catch (e) {
+    return date.toISOString();
+  }
+}
+
+
+
+
 function ClocksHelpers_formatTime(date, tz, locale, hour12) {
   try {
     const opts = {
@@ -16413,12 +16573,186 @@ function ClocksHelpers_formatTime(date, tz, locale, hour12) {
 
 
 
-function buildClocksRowAriaLabel(city, tzLabel, timeDisplay, label) {
-  const head = label ? `${label}, ${city}, ${tzLabel}` : `${city}, ${tzLabel}`;
-  return timeDisplay ? `${head}, ${timeDisplay}` : head;
-}
+const buildClocksRowAriaLabel = (city, tzLabel, timeDisplay, label) => {
+  const parts = label ? [label, city, tzLabel] : [city, tzLabel];
+  if (timeDisplay) {
+    parts.push(timeDisplay);
+  }
+  return parts.join(", ");
+};
 
 ;
+
+
+
+
+
+
+const MAX_NICKNAME_LENGTH = 11;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function AddClockForm({
+  isEditing,
+  initialClock,
+  canAddClock,
+  supportedTimeZones,
+  onSave,
+  onCancel
+}) {
+  const [searchQuery, setSearchQuery] = (0,external_React_namespaceObject.useState)(initialClock ? initialClock.city || getCityFromTimeZone(initialClock.timeZone) : "");
+  const [selectedTimeZone, setSelectedTimeZone] = (0,external_React_namespaceObject.useState)(initialClock?.timeZone || "");
+  const [nickname, setNickname] = (0,external_React_namespaceObject.useState)(initialClock?.label || "");
+  const searchInputRef = (0,external_React_namespaceObject.useRef)(null);
+  const {
+    canAddSelectedClock,
+    filteredTimeZones,
+    resolvedClockTimeZone,
+    showLocationDropdown
+  } = (0,external_React_namespaceObject.useMemo)(() => getClockFormDerivedState({
+    canAddClock,
+    clockSearchQuery: searchQuery,
+    clockSelectedTimeZone: selectedTimeZone,
+    isEditingClock: isEditing,
+    supportedTimeZones
+  }), [canAddClock, searchQuery, selectedTimeZone, isEditing, supportedTimeZones]);
+
+  
+  
+  (0,external_React_namespaceObject.useEffect)(() => {
+    let frameId = 0;
+    let remainingFrames = 5;
+    const focusWhenReady = () => {
+      const input = searchInputRef.current?.inputEl;
+      if (input) {
+        input.focus();
+        return;
+      }
+      if (remainingFrames > 0) {
+        remainingFrames -= 1;
+        frameId = requestAnimationFrame(focusWhenReady);
+      }
+    };
+    frameId = requestAnimationFrame(focusWhenReady);
+    return () => cancelAnimationFrame(frameId);
+  }, []);
+  const handleSelectLocation = (0,external_React_namespaceObject.useCallback)(timeZone => {
+    setSearchQuery(getCityFromTimeZone(timeZone));
+    setSelectedTimeZone(timeZone);
+  }, []);
+  const handleSubmit = (0,external_React_namespaceObject.useCallback)(() => {
+    if (!canAddSelectedClock) {
+      return;
+    }
+    const trimmed = nickname.trim();
+    const label = trimmed ? trimmed.slice(0, MAX_NICKNAME_LENGTH) : null;
+    
+    
+    const baseZone = initialClock && initialClock.timeZone === resolvedClockTimeZone ? {
+      ...initialClock
+    } : buildClockZone(resolvedClockTimeZone);
+    onSave({
+      ...baseZone,
+      label,
+      labelColor: label ? baseZone.labelColor || getRandomLabelColor() : null
+    });
+  }, [canAddSelectedClock, nickname, initialClock, resolvedClockTimeZone, onSave]);
+  return external_React_default().createElement("form", {
+    className: "clocks-panel clocks-add-form",
+    "data-l10n-id": isEditing ? "newtab-clock-widget-edit-clock-form" : "newtab-clock-widget-add-clock-form",
+    onSubmit: e => {
+      e.preventDefault();
+      handleSubmit();
+    },
+    onKeyDown: e => {
+      if (e.key === "Escape") {
+        onCancel();
+      } else if (e.key === "Enter" && !e.target.closest(".clocks-search-result") && !e.target.closest("moz-button, button")) {
+        e.preventDefault();
+        handleSubmit();
+      }
+    },
+    onBlur: e => {
+      if (e.relatedTarget && !e.currentTarget.contains(e.relatedTarget)) {
+        onCancel();
+      }
+    }
+  }, external_React_default().createElement("div", {
+    className: "clocks-location-wrapper"
+  }, external_React_default().createElement("moz-input-search", {
+    role: "combobox",
+    "aria-haspopup": "listbox",
+    "aria-expanded": showLocationDropdown,
+    "aria-controls": "clocks-search-results",
+    "aria-activedescendant": showLocationDropdown && selectedTimeZone && filteredTimeZones.includes(selectedTimeZone) ? `clocks-result-${filteredTimeZones.indexOf(selectedTimeZone)}` : undefined,
+    "aria-autocomplete": "list",
+    className: "clocks-search-location-input",
+    "data-l10n-id": "newtab-clock-widget-search-location-input",
+    id: "clocks-location-input",
+    ref: searchInputRef,
+    value: searchQuery,
+    onInput: e => {
+      setSearchQuery(e.target.value);
+      setSelectedTimeZone("");
+    }
+  }), showLocationDropdown && external_React_default().createElement("div", {
+    id: "clocks-search-results",
+    className: "clocks-search-results",
+    role: "listbox",
+    "data-l10n-id": "newtab-clock-widget-search-results"
+  }, filteredTimeZones.map((timeZone, index) => external_React_default().createElement("div", {
+    id: `clocks-result-${index}`,
+    className: "clocks-search-result",
+    key: timeZone,
+    onClick: () => handleSelectLocation(timeZone),
+    onKeyDown: e => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        handleSelectLocation(timeZone);
+      }
+    },
+    role: "option",
+    "aria-selected": timeZone === selectedTimeZone,
+    tabIndex: 0
+  }, external_React_default().createElement("span", {
+    className: "clocks-search-result-city"
+  }, getCityFromTimeZone(timeZone)), external_React_default().createElement("span", {
+    className: "clocks-search-result-timezone"
+  }, timeZone))))), external_React_default().createElement("moz-input-text", {
+    className: "clocks-nickname-input",
+    "data-l10n-id": "newtab-clock-widget-input-nickname",
+    id: "clocks-nickname-input",
+    value: nickname,
+    onInput: e => setNickname(e.target.value.slice(0, MAX_NICKNAME_LENGTH))
+  }), external_React_default().createElement("moz-button-group", {
+    className: "clocks-add-actions"
+  }, external_React_default().createElement("moz-button", {
+    "data-l10n-id": "newtab-clock-widget-button-cancel",
+    onClick: onCancel
+  }), external_React_default().createElement("moz-button", {
+    className: "clocks-form-submit",
+    "data-l10n-id": isEditing ? "newtab-clock-widget-button-save" : "newtab-clock-widget-button-add-clock",
+    disabled: !canAddSelectedClock,
+    onClick: handleSubmit,
+    type: "primary"
+  })));
+}
+;
+
+
+
+
 
 
 
@@ -16441,11 +16775,15 @@ function ClocksRow({
   clock,
   locale,
   now,
+  onEdit,
+  onRemove,
+  hideTimeOnInlineActions,
   shouldAbbreviate,
   showLabel,
+  showInlineActions,
   use12HourFormat
 }) {
-  const city = getCityFromTimeZone(clock.timeZone);
+  const city = clock.city || getCityFromTimeZone(clock.timeZone);
   const cityDisplay = shouldAbbreviate ? getCityAbbreviation(city) : city;
   
   
@@ -16453,15 +16791,18 @@ function ClocksRow({
   const timeDisplay = now ? ClocksHelpers_formatTime(now, clock.timeZone, locale, use12HourFormat) : "";
 
   
+  
+  
   const ariaLabel = buildClocksRowAriaLabel(city, tzLabel, timeDisplay, clock.label);
 
   
   
-  const chipClassName = isValidPaletteName(clock.labelColor) ? `clocks-label-chip clocks-chip-${clock.labelColor}` : "clocks-label-chip";
+  const chipClassName = isValidPaletteName(clock.labelColor) ? `clocks-label-chip clocks-chip-${clock.labelColor}` : "clocks-label-chip clocks-chip-neutral";
   return external_React_default().createElement("li", {
-    className: "clocks-row",
+    className: `clocks-row${showInlineActions ? " has-inline-actions" : ""}${hideTimeOnInlineActions ? " hides-time-on-inline-actions" : ""}`,
     "data-timezone": clock.timeZone,
-    "aria-label": ariaLabel
+    "aria-label": ariaLabel,
+    tabIndex: showInlineActions ? 0 : undefined
   }, external_React_default().createElement("div", {
     className: "clocks-meta",
     "aria-hidden": "true"
@@ -16476,8 +16817,123 @@ function ClocksRow({
   }, tzLabel))), external_React_default().createElement("time", {
     className: "clocks-time",
     "aria-hidden": "true",
-    dateTime: now ? now.toISOString() : undefined
-  }, timeDisplay));
+    dateTime: now ? formatDateTimeAttr(now, clock.timeZone) : undefined
+  }, timeDisplay), showInlineActions && external_React_default().createElement("div", {
+    className: "clocks-row-actions"
+  }, external_React_default().createElement("moz-button", {
+    className: "clocks-row-action-button clocks-row-edit-button",
+    type: "icon ghost",
+    size: "small",
+    iconSrc: "chrome://global/skin/icons/edit-outline.svg",
+    "data-l10n-id": "newtab-clock-widget-button-edit-clock",
+    onClick: onEdit ?? undefined
+  }), onRemove && external_React_default().createElement("moz-button", {
+    className: "clocks-row-action-button clocks-row-remove-button",
+    type: "icon ghost",
+    size: "small",
+    iconSrc: "chrome://global/skin/icons/delete.svg",
+    "data-l10n-id": "newtab-clock-widget-button-remove-clock",
+    onClick: onRemove
+  })));
+}
+;
+
+
+
+
+
+
+function EditClocksPanel({
+  clockZones,
+  canAddClock,
+  onShowAddClock,
+  onEditClock,
+  onRemoveClock,
+  onClose
+}) {
+  const backButtonRef = (0,external_React_namespaceObject.useRef)(null);
+
+  
+  
+  
+  (0,external_React_namespaceObject.useEffect)(() => {
+    let outerId = 0;
+    let innerId = 0;
+    outerId = requestAnimationFrame(() => {
+      innerId = requestAnimationFrame(() => {
+        backButtonRef.current?.focus?.();
+      });
+    });
+    return () => {
+      cancelAnimationFrame(outerId);
+      cancelAnimationFrame(innerId);
+    };
+  }, []);
+  return external_React_default().createElement("section", {
+    className: "clocks-panel clocks-edit-panel",
+    "aria-labelledby": "clocks-edit-title",
+    onKeyDown: e => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    }
+  }, external_React_default().createElement("div", {
+    className: "clocks-edit-header"
+  }, external_React_default().createElement("div", {
+    className: "clocks-edit-title-group"
+  }, external_React_default().createElement("moz-button", {
+    className: "clocks-edit-back-button",
+    type: "icon ghost",
+    size: "small",
+    iconSrc: "chrome://global/skin/icons/arrow-left.svg",
+    "data-l10n-id": "newtab-clock-widget-button-back",
+    onClick: onClose,
+    ref: backButtonRef
+  }), external_React_default().createElement("h3", {
+    id: "clocks-edit-title",
+    className: "clocks-edit-title",
+    "data-l10n-id": "newtab-clock-widget-label-your-clocks"
+  })), canAddClock && external_React_default().createElement("moz-button", {
+    className: "clocks-edit-add-button",
+    type: "icon primary",
+    size: "small",
+    iconSrc: "chrome://global/skin/icons/plus.svg",
+    "data-l10n-id": "newtab-clock-widget-button-add",
+    onClick: onShowAddClock
+  })), external_React_default().createElement("ul", {
+    className: "clocks-edit-list"
+  }, clockZones.map((clock, i) => external_React_default().createElement("li", {
+    className: "clocks-edit-item",
+    key: `${clock.timeZone}-${i}`,
+    tabIndex: 0
+  }, external_React_default().createElement("div", {
+    className: "clocks-edit-top-row"
+  }, external_React_default().createElement("span", {
+    className: "clocks-edit-city"
+  }, clock.city || getCityFromTimeZone(clock.timeZone)), external_React_default().createElement("div", {
+    className: "clocks-edit-item-actions"
+  }, external_React_default().createElement("moz-button", {
+    className: "clocks-edit-item-button clocks-edit-item-edit-button",
+    type: "icon ghost",
+    size: "small",
+    iconSrc: "chrome://global/skin/icons/edit-outline.svg",
+    "data-l10n-id": "newtab-clock-widget-button-edit-clock",
+    onClick: () => onEditClock(i)
+  }), clockZones.length > 1 && external_React_default().createElement("moz-button", {
+    className: "clocks-edit-item-button clocks-edit-item-remove-button",
+    type: "icon ghost",
+    size: "small",
+    iconSrc: "chrome://global/skin/icons/delete.svg",
+    "data-l10n-id": "newtab-clock-widget-button-remove-clock",
+    onClick: () => onRemoveClock(i)
+  }))), external_React_default().createElement("span", {
+    "aria-hidden": !clock.label,
+    className: "clocks-edit-subtitle",
+    "data-l10n-id": clock.label ? "newtab-clock-widget-label-nickname-with-value" : undefined,
+    "data-l10n-args": clock.label ? JSON.stringify({
+      nickname: clock.label
+    }) : undefined
+  }, clock.label ? null : " ")))));
 }
 ;
 
@@ -16490,13 +16946,49 @@ function ClocksRow({
 
 
 
+
+
+
 const Clocks_USER_ACTION_TYPES = {
-  CHANGE_SIZE: "change_size",
+  ADD_CLOCK: "add_clock",
+  ADD_NICKNAME: "add_nickname",
   CHANGE_HOUR_FORMAT: "change_hour_format",
-  LEARN_MORE: "learn_more"
+  CHANGE_SIZE: "change_size",
+  COLLAPSE: "collapse",
+  EDIT_CLOCK: "edit_clock",
+  EXPAND: "expand",
+  LEARN_MORE: "learn_more",
+  REMOVE_CLOCK: "remove_clock"
 };
-const Clocks_PREF_CLOCKS_SIZE = "widgets.clocks.size";
 const PREF_CLOCKS_HOUR_FORMAT = "widgets.clocks.hourFormat";
+const PREF_CLOCKS_ZONES = "widgets.clocks.zones";
+const CLOCKS_PANEL = {
+  FORM: "form",
+  EDIT: "edit"
+};
+const CLOCK_WIDGET_SOURCE = {
+  CONTEXT_MENU: "context_menu",
+  MANAGE: "manage",
+  ROW: "row",
+  TOOLBAR: "toolbar"
+};
+function getClockWidgetDisplayState({
+  activePanel,
+  hourFormatPref,
+  size
+}) {
+  const currentSize = size || "medium";
+  const locale = typeof navigator !== "undefined" ? navigator.language : undefined;
+  return {
+    currentSize,
+    locale,
+    panelDisplaySize: activePanel ? "large" : currentSize,
+    use12HourFormat: shouldUse12HourTimeFormat({
+      prefValue: hourFormatPref,
+      locale
+    })
+  };
+}
 
 
 
@@ -16510,19 +17002,20 @@ function Clocks({
   dispatch,
   size
 }) {
-  
+  const clocksZonesPref = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values[PREF_CLOCKS_ZONES]);
   const hourFormatPref = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values[PREF_CLOCKS_HOUR_FORMAT]);
   const [now, setNow] = (0,external_React_namespaceObject.useState)(null);
   const impressionFired = (0,external_React_namespaceObject.useRef)(false);
   const sizeSubmenuRef = (0,external_React_namespaceObject.useRef)(null);
   const contextMenuRef = (0,external_React_namespaceObject.useRef)(null);
+  const contextMenuButtonRef = (0,external_React_namespaceObject.useRef)(null);
   
   const [isDismissed, setIsDismissed] = (0,external_React_namespaceObject.useState)(false);
-  
-  const [devClockCount, setDevClockCount] = (0,external_React_namespaceObject.useState)(4);
-  const devCountSubmenuRef = (0,external_React_namespaceObject.useRef)(null);
-  
-  const [devLabelsOn, setDevLabelsOn] = (0,external_React_namespaceObject.useState)(true);
+  const [activePanel, setActivePanel] = (0,external_React_namespaceObject.useState)(null);
+  const [formSource, setFormSource] = (0,external_React_namespaceObject.useState)(CLOCK_WIDGET_SOURCE.TOOLBAR);
+  const [panelOpenSource, setPanelOpenSource] = (0,external_React_namespaceObject.useState)(null);
+  const [editingClockIndex, setEditingClockIndex] = (0,external_React_namespaceObject.useState)(null);
+  const addButtonRef = (0,external_React_namespaceObject.useRef)(null);
 
   
   
@@ -16536,12 +17029,20 @@ function Clocks({
       }
     });
   }, []);
-  const currentSize = size || "medium";
-  const locale = typeof navigator !== "undefined" ? navigator.language : undefined;
-  const use12HourFormat = shouldUse12HourTimeFormat({
-    prefValue: hourFormatPref,
-    locale
+  const {
+    currentSize,
+    locale,
+    panelDisplaySize,
+    use12HourFormat
+  } = getClockWidgetDisplayState({
+    activePanel,
+    hourFormatPref,
+    size
   });
+  const currentSizeRef = (0,external_React_namespaceObject.useRef)(currentSize);
+  (0,external_React_namespaceObject.useEffect)(() => {
+    currentSizeRef.current = currentSize;
+  }, [currentSize]);
 
   
   
@@ -16564,17 +17065,17 @@ function Clocks({
       type: actionTypes.WIDGETS_IMPRESSION,
       data: {
         widget_name: "clocks",
-        widget_size: currentSize
+        widget_size: currentSizeRef.current
       }
     }));
-  }, [dispatch, currentSize]);
+  }, [dispatch]);
   const clocksRef = useIntersectionObserver(handleIntersection);
   const handleChangeSize = (0,external_React_namespaceObject.useCallback)(newSize => {
     (0,external_ReactRedux_namespaceObject.batch)(() => {
       dispatch(actionCreators.OnlyToMain({
         type: actionTypes.SET_PREF,
         data: {
-          name: Clocks_PREF_CLOCKS_SIZE,
+          name: PREF_CLOCKS_SIZE,
           value: newSize
         }
       }));
@@ -16582,7 +17083,7 @@ function Clocks({
         type: actionTypes.WIDGETS_USER_EVENT,
         data: {
           widget_name: "clocks",
-          widget_source: "context_menu",
+          widget_source: CLOCK_WIDGET_SOURCE.CONTEXT_MENU,
           user_action: Clocks_USER_ACTION_TYPES.CHANGE_SIZE,
           action_value: newSize,
           widget_size: newSize
@@ -16608,27 +17109,7 @@ function Clocks({
     el.addEventListener("click", listener);
     return () => el.removeEventListener("click", listener);
   }, [handleChangeSize]);
-
-  
-  (0,external_React_namespaceObject.useEffect)(() => {
-    if (!DEV_SCAFFOLDING) {
-      return undefined;
-    }
-    const el = devCountSubmenuRef.current;
-    if (!el) {
-      return undefined;
-    }
-    const listener = e => {
-      const item = e.composedPath().find(node => node.dataset?.count);
-      if (item) {
-        setDevClockCount(parseInt(item.dataset.count, 10));
-        closeContextMenu();
-      }
-    };
-    el.addEventListener("click", listener);
-    return () => el.removeEventListener("click", listener);
-  }, [closeContextMenu]);
-  function handleToggleHourFormat() {
+  const handleToggleHourFormat = (0,external_React_namespaceObject.useCallback)(() => {
     const nextFormat = use12HourFormat ? "24" : "12";
     (0,external_ReactRedux_namespaceObject.batch)(() => {
       dispatch(actionCreators.OnlyToMain({
@@ -16642,7 +17123,7 @@ function Clocks({
         type: actionTypes.WIDGETS_USER_EVENT,
         data: {
           widget_name: "clocks",
-          widget_source: "context_menu",
+          widget_source: CLOCK_WIDGET_SOURCE.CONTEXT_MENU,
           user_action: Clocks_USER_ACTION_TYPES.CHANGE_HOUR_FORMAT,
           action_value: nextFormat,
           widget_size: currentSize
@@ -16650,13 +17131,13 @@ function Clocks({
       }));
     });
     closeContextMenu();
-  }
-  function handleHide() {
+  }, [use12HourFormat, dispatch, currentSize, closeContextMenu]);
+  const handleHide = (0,external_React_namespaceObject.useCallback)(() => {
     (0,external_ReactRedux_namespaceObject.batch)(() => {
       dispatch(actionCreators.OnlyToMain({
         type: actionTypes.SET_PREF,
         data: {
-          name: "widgets.clocks.enabled",
+          name: PREF_WIDGETS_CLOCKS_ENABLED,
           value: false
         }
       }));
@@ -16664,15 +17145,15 @@ function Clocks({
         type: actionTypes.WIDGETS_ENABLED,
         data: {
           widget_name: "clocks",
-          widget_source: "context_menu",
+          widget_source: CLOCK_WIDGET_SOURCE.CONTEXT_MENU,
           enabled: false,
           widget_size: currentSize
         }
       }));
     });
     closeContextMenu();
-  }
-  function handleLearnMore() {
+  }, [dispatch, currentSize, closeContextMenu]);
+  const handleLearnMore = (0,external_React_namespaceObject.useCallback)(() => {
     (0,external_ReactRedux_namespaceObject.batch)(() => {
       dispatch(actionCreators.OnlyToMain({
         type: actionTypes.OPEN_LINK,
@@ -16684,44 +17165,174 @@ function Clocks({
         type: actionTypes.WIDGETS_USER_EVENT,
         data: {
           widget_name: "clocks",
-          widget_source: "context_menu",
+          widget_source: CLOCK_WIDGET_SOURCE.CONTEXT_MENU,
           user_action: Clocks_USER_ACTION_TYPES.LEARN_MORE,
           widget_size: currentSize
         }
       }));
     });
     closeContextMenu();
-  }
-
-  
-  const clocks = (0,external_React_namespaceObject.useMemo)(() => {
-    const zones = buildDefaultZones();
-    return DEV_SCAFFOLDING ? zones.slice(0, devClockCount) : zones;
-  }, [devClockCount]);
-  const isHero = clocks.length === 1;
+  }, [dispatch, currentSize, closeContextMenu]);
+  const clockZones = (0,external_React_namespaceObject.useMemo)(() => parseClockZonesPref(clocksZonesPref) || buildDefaultZones(), [clocksZonesPref]);
+  (0,external_React_namespaceObject.useEffect)(() => {
+    if (!clockZones.some(clock => clock.label && !clock.labelColor)) {
+      return;
+    }
+    dispatch(actionCreators.OnlyToMain({
+      type: actionTypes.SET_PREF,
+      data: {
+        name: PREF_CLOCKS_ZONES,
+        value: JSON.stringify(backfillClockLabelColors(clockZones))
+      }
+    }));
+  }, [clockZones, dispatch]);
+  const canAddClock = clockZones.length < MAX_CLOCK_COUNT;
+  const supportedTimeZones = (0,external_React_namespaceObject.useMemo)(() => getSupportedTimeZones(), []);
+  const resetAddClockForm = (0,external_React_namespaceObject.useCallback)(() => {
+    setEditingClockIndex(null);
+  }, []);
+  const handleShowAddClock = (0,external_React_namespaceObject.useCallback)((source = CLOCK_WIDGET_SOURCE.TOOLBAR) => {
+    setActivePanel(CLOCKS_PANEL.FORM);
+    setFormSource(source);
+    setEditingClockIndex(null);
+    setIsDismissed(false);
+  }, []);
+  const handleShowEditClocks = (0,external_React_namespaceObject.useCallback)(source => {
+    setActivePanel(CLOCKS_PANEL.EDIT);
+    setPanelOpenSource(source);
+    setIsDismissed(false);
+    dispatch(actionCreators.OnlyToMain({
+      type: actionTypes.WIDGETS_USER_EVENT,
+      data: {
+        widget_name: "clocks",
+        widget_source: source,
+        user_action: Clocks_USER_ACTION_TYPES.EXPAND,
+        widget_size: currentSize
+      }
+    }));
+  }, [currentSize, dispatch]);
+  const handleCloseDisplayPanel = (0,external_React_namespaceObject.useCallback)(() => {
+    if (activePanel === CLOCKS_PANEL.EDIT) {
+      dispatch(actionCreators.OnlyToMain({
+        type: actionTypes.WIDGETS_USER_EVENT,
+        data: {
+          widget_name: "clocks",
+          widget_source: panelOpenSource,
+          user_action: Clocks_USER_ACTION_TYPES.COLLAPSE,
+          widget_size: currentSize
+        }
+      }));
+    }
+    setActivePanel(null);
+    resetAddClockForm();
+    requestAnimationFrame(() => {
+      (addButtonRef.current ?? contextMenuButtonRef.current)?.focus();
+    });
+  }, [activePanel, panelOpenSource, currentSize, dispatch, resetAddClockForm]);
+  const handleCloseClockForm = (0,external_React_namespaceObject.useCallback)(() => {
+    if (formSource === CLOCK_WIDGET_SOURCE.MANAGE) {
+      setActivePanel(CLOCKS_PANEL.EDIT);
+      resetAddClockForm();
+      return;
+    }
+    handleCloseDisplayPanel();
+  }, [formSource, handleCloseDisplayPanel, resetAddClockForm]);
+  const handleShowEditClockForm = (0,external_React_namespaceObject.useCallback)((index, source = CLOCK_WIDGET_SOURCE.ROW) => {
+    setActivePanel(CLOCKS_PANEL.FORM);
+    setFormSource(source);
+    setEditingClockIndex(index);
+    setIsDismissed(false);
+  }, []);
+  const handleSaveClock = (0,external_React_namespaceObject.useCallback)(zone => {
+    const existingClock = editingClockIndex !== null ? clockZones[editingClockIndex] : null;
+    (0,external_ReactRedux_namespaceObject.batch)(() => {
+      dispatch(actionCreators.OnlyToMain({
+        type: actionTypes.SET_PREF,
+        data: {
+          name: PREF_CLOCKS_ZONES,
+          value: JSON.stringify(buildNextClockZones(clockZones, editingClockIndex, zone))
+        }
+      }));
+      dispatch(actionCreators.OnlyToMain({
+        type: actionTypes.WIDGETS_USER_EVENT,
+        data: {
+          widget_name: "clocks",
+          widget_source: formSource,
+          user_action: editingClockIndex !== null ? Clocks_USER_ACTION_TYPES.EDIT_CLOCK : Clocks_USER_ACTION_TYPES.ADD_CLOCK,
+          widget_size: currentSize
+        }
+      }));
+      if (zone.label && !existingClock?.label) {
+        dispatch(actionCreators.OnlyToMain({
+          type: actionTypes.WIDGETS_USER_EVENT,
+          data: {
+            widget_name: "clocks",
+            widget_source: formSource,
+            user_action: Clocks_USER_ACTION_TYPES.ADD_NICKNAME,
+            widget_size: currentSize
+          }
+        }));
+      }
+    });
+    if (formSource === CLOCK_WIDGET_SOURCE.MANAGE) {
+      setActivePanel(CLOCKS_PANEL.EDIT);
+      resetAddClockForm();
+      return;
+    }
+    handleCloseDisplayPanel();
+  }, [clockZones, formSource, currentSize, editingClockIndex, handleCloseDisplayPanel, resetAddClockForm, dispatch]);
+  const handleRemoveClock = (0,external_React_namespaceObject.useCallback)((index, source = CLOCK_WIDGET_SOURCE.ROW) => {
+    if (clockZones.length <= 1) {
+      return;
+    }
+    (0,external_ReactRedux_namespaceObject.batch)(() => {
+      dispatch(actionCreators.OnlyToMain({
+        type: actionTypes.SET_PREF,
+        data: {
+          name: PREF_CLOCKS_ZONES,
+          value: JSON.stringify(removeClockZoneAtIndex(clockZones, index))
+        }
+      }));
+      dispatch(actionCreators.OnlyToMain({
+        type: actionTypes.WIDGETS_USER_EVENT,
+        data: {
+          widget_name: "clocks",
+          widget_source: source,
+          user_action: Clocks_USER_ACTION_TYPES.REMOVE_CLOCK,
+          widget_size: currentSize
+        }
+      }));
+    });
+  }, [clockZones, currentSize, dispatch]);
+  const isClockFormOpen = activePanel === CLOCKS_PANEL.FORM;
+  const isEditingClocks = activePanel === CLOCKS_PANEL.EDIT;
   return external_React_default().createElement("article", {
-    className: `clocks-widget col-4 ${currentSize}-widget${isHero ? " is-hero" : ""}${isDismissed ? " is-dismissed" : ""}`,
-    "data-clock-count": clocks.length,
+    className: `clocks-widget col-4 ${panelDisplaySize}-widget${clockZones.length === 1 ? " is-hero" : ""}${isDismissed ? " is-dismissed" : ""}${isClockFormOpen ? " is-clock-form-open" : ""}${isEditingClocks ? " is-editing-clocks" : ""}${activePanel ? " is-panel-open" : ""}`,
+    "data-clock-count": clockZones.length,
     onMouseLeave: () => setIsDismissed(false),
     ref: el => {
+      
       clocksRef.current = [el];
     }
   }, external_React_default().createElement("div", {
-    className: "widget-toolbar"
-  }, external_React_default().createElement("moz-button", {
+    className: "widget-toolbar",
+    inert: !!activePanel
+  }, canAddClock && external_React_default().createElement("moz-button", {
     className: "clocks-add-button",
     type: "icon primary",
     size: "small",
     iconSrc: "chrome://global/skin/icons/plus.svg",
     "data-l10n-id": "newtab-clock-widget-button-add",
-    disabled: clocks.length >= 4
+    onClick: () => handleShowAddClock(),
+    ref: addButtonRef
   }), external_React_default().createElement("moz-button", {
     className: "clocks-context-menu-button",
     "data-l10n-id": "newtab-clock-widget-menu-button",
     iconSrc: "chrome://global/skin/icons/more.svg",
     menuId: "clocks-widget-context-menu",
     type: "icon ghost",
-    size: "small"
+    size: "small",
+    ref: contextMenuButtonRef
   }), external_React_default().createElement("panel-list", {
     ref: contextMenuRef,
     id: "clocks-widget-context-menu"
@@ -16740,6 +17351,12 @@ function Clocks({
     "data-size": s,
     "data-l10n-id": `newtab-widget-size-${s}`
   })))), external_React_default().createElement("panel-item", {
+    "data-l10n-id": "newtab-clock-widget-menu-edit",
+    onClick: () => {
+      handleShowEditClocks(CLOCK_WIDGET_SOURCE.CONTEXT_MENU);
+      closeContextMenu();
+    }
+  }), external_React_default().createElement("panel-item", {
     "data-l10n-id": use12HourFormat ? "newtab-clock-widget-menu-switch-to-24h" : "newtab-clock-widget-menu-switch-to-12h",
     onClick: handleToggleHourFormat
   }), external_React_default().createElement("panel-item", {
@@ -16748,38 +17365,41 @@ function Clocks({
   }), external_React_default().createElement("panel-item", {
     "data-l10n-id": "newtab-clock-widget-menu-learn-more",
     onClick: handleLearnMore
-  }), DEV_SCAFFOLDING && external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("panel-item", {
-    submenu: "clocks-dev-count-submenu"
-  }, external_React_default().createElement("span", null, "DEV: Show N clocks"), external_React_default().createElement("panel-list", {
-    ref: devCountSubmenuRef,
-    slot: "submenu",
-    id: "clocks-dev-count-submenu"
-  }, [1, 2, 3, 4].map(n => external_React_default().createElement("panel-item", {
-    key: n,
-    type: "checkbox",
-    checked: devClockCount === n,
-    "data-count": n
-  }, n === 1 ? "1 clock" : `${n} clocks`)))), external_React_default().createElement("panel-item", {
-    type: "checkbox",
-    checked: devLabelsOn,
-    onClick: () => {
-      setDevLabelsOn(v => !v);
-      closeContextMenu();
-    }
-  }, "DEV: Show labels")))), external_React_default().createElement("ul", {
-    className: "clocks-list"
-  }, clocks.map(c => {
+  }))), isClockFormOpen && external_React_default().createElement(AddClockForm, {
+    key: editingClockIndex ?? "add",
+    isEditing: editingClockIndex !== null,
+    initialClock: editingClockIndex !== null ? clockZones[editingClockIndex] : null,
+    canAddClock: canAddClock,
+    supportedTimeZones: supportedTimeZones,
+    onSave: handleSaveClock,
+    onCancel: handleCloseClockForm
+  }), isEditingClocks && external_React_default().createElement(EditClocksPanel, {
+    clockZones: clockZones,
+    canAddClock: canAddClock,
+    onShowAddClock: () => handleShowAddClock(CLOCK_WIDGET_SOURCE.MANAGE),
+    onEditClock: index => handleShowEditClockForm(index, CLOCK_WIDGET_SOURCE.MANAGE),
+    onRemoveClock: index => handleRemoveClock(index, CLOCK_WIDGET_SOURCE.MANAGE),
+    onClose: handleCloseDisplayPanel
+  }), external_React_default().createElement("ul", {
+    className: "clocks-list",
+    inert: !!activePanel
+  }, clockZones.map((c, i) => {
+    const showLabel = panelDisplaySize === "large" && !!c.label;
     
-    const shouldAbbreviate = currentSize === "small" || currentSize === "medium" && clocks.length >= 3;
-    const labelsOn = DEV_SCAFFOLDING ? devLabelsOn : true;
-    const showLabel = currentSize === "large" && !!c.label && labelsOn;
+    const shouldAbbreviate = panelDisplaySize === "small" || panelDisplaySize === "medium" && clockZones.length >= 3;
+    const showInlineActions = !activePanel && currentSize !== "small";
+    const hideTimeOnInlineActions = showInlineActions && clockZones.length > 1;
     return external_React_default().createElement(ClocksRow, {
-      key: c.timeZone,
+      key: `${c.timeZone}-${i}`,
       clock: c,
       locale: locale,
       now: now,
+      onEdit: showInlineActions ? () => handleShowEditClockForm(i) : null,
+      onRemove: showInlineActions && clockZones.length > 1 ? () => handleRemoveClock(i) : null,
       shouldAbbreviate: shouldAbbreviate,
       showLabel: showLabel,
+      hideTimeOnInlineActions: hideTimeOnInlineActions,
+      showInlineActions: showInlineActions,
       use12HourFormat: use12HourFormat
     });
   })));
