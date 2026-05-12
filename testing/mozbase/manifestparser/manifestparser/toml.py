@@ -8,7 +8,6 @@ import re
 
 from typing import Callable, Dict, List, Optional, Tuple  
 
-from mozinfo.platforminfo import android_api_to_os_version
 from tomlkit.items import Array, Table
 from tomlkit.toml_document import TOMLDocument
 
@@ -351,6 +350,8 @@ def idiomatic_condition(cond: str, condition: str) -> TupleOptStrListStr:
 
     
     if android_version is not None:
+        from mozinfo.platforminfo import android_api_to_os_version
+
         v = android_api_to_os_version(android_version)
         if os is None:
             os = "android"
