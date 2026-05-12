@@ -788,8 +788,6 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
 
   void UpdateDiskCache();
 
-  void DispatchStopCollectingDelazifications();
-
   
 
 
@@ -814,6 +812,10 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
                               const Vector<uint8_t>& aCompressed);
 
  private:
+  void Decode(JSContext* aCx, JS::CompileOptions& aCompileOptions,
+              const JS::TranscodeRange& aRange, RefPtr<JS::Stencil>& aStencil,
+              ErrorResult& aRv);
+
   
 
 
@@ -851,6 +853,8 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   void MaybeMoveToLoadedList(ScriptLoadRequest* aRequest);
 
   bool IsBeforeFCP();
+
+  bool UsesMemoryCache() const { return !!mCache; }
 
  public:
   struct DiskCacheStrategy {
