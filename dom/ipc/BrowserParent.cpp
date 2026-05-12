@@ -1009,6 +1009,8 @@ void BrowserParent::InitRendering() {
   RefPtr<nsIWidget> widget = GetTopLevelWidget();
   if (widget) {
     (void)SendSafeAreaInsetsChanged(widget->GetSafeAreaInsets());
+    (void)SendInitSupportsUnadjustedMovement(
+        widget->SupportsUnadjustedMovement());
   }
 
 #if defined(MOZ_WIDGET_ANDROID)
@@ -1130,7 +1132,6 @@ void BrowserParent::UpdateDimensions(const LayoutDeviceIntRect& rect,
     mChromeOffset = chromeOffset;
 
     (void)SendUpdateDimensions(GetDimensionInfo());
-    UpdateNativePointerLockCenter(widget);
   }
 }
 
@@ -1139,14 +1140,6 @@ DimensionInfo BrowserParent::GetDimensionInfo() {
   CSSSize unscaledSize = mDimensions / mDefaultScale;
   return DimensionInfo(unscaledRect, unscaledSize, mClientOffset,
                        mChromeOffset);
-}
-
-void BrowserParent::UpdateNativePointerLockCenter(nsIWidget* aWidget) {
-  if (!mLockedNativePointer) {
-    return;
-  }
-  aWidget->SetNativePointerLockCenter(
-      LayoutDeviceIntRect(mChromeOffset, mDimensions).Center());
 }
 
 void BrowserParent::SizeModeChanged(const nsSizeMode& aSizeMode) {
@@ -1368,34 +1361,23 @@ IPCResult BrowserParent::RecvNewWindowGlobal(
     return IPC_FAIL(this, "Cannot create without valid principal");
   }
 
+  nsCOMPtr<nsIURI> docURI = aInit.documentURI();
+  WindowGlobalParent* parentWgp = browsingContext->GetParentWindowContext();
+
+  
+  
   
   
   EnumSet<ValidatePrincipalOptions> validationOptions = {};
-  nsCOMPtr<nsIURI> docURI = aInit.documentURI();
-  if (docURI->SchemeIs("blob") || docURI->SchemeIs("chrome")) {
-    
-    
-    
-    
-    
-    
-    
-    validationOptions = {ValidatePrincipalOptions::AllowSystem};
-  }
-
   
   
-  if (xpc::IsInAutomation() && docURI->SchemeIs("about")) {
-    WindowGlobalParent* wgp = browsingContext->GetParentWindowContext();
-    nsAutoCString spec;
-    NS_ENSURE_SUCCESS(docURI->GetSpec(spec),
-                      IPC_FAIL(this, "Should have spec for about: URI"));
-    if (spec.Equals("about:blank") && wgp &&
-        wgp->DocumentPrincipal()->IsSystemPrincipal()) {
-      validationOptions = {ValidatePrincipalOptions::AllowSystem};
-    }
+  
+  if (docURI->SchemeIs("blob") || docURI->SchemeIs("chrome") ||
+      (xpc::IsInAutomation() && NS_IsAboutBlank(docURI) && parentWgp &&
+       parentWgp->Manager() == this &&
+       parentWgp->DocumentPrincipal()->IsSystemPrincipal())) {
+    validationOptions += ValidatePrincipalOptions::AllowSystem;
   }
-
   if (!Manager()->ValidatePrincipal(aInit.principal(), validationOptions)) {
     ContentParent::LogAndAssertFailedPrincipalValidationInfo(aInit.principal(),
                                                              __func__);
@@ -2067,11 +2049,11 @@ mozilla::ipc::IPCResult BrowserParent::RecvSynthesizeNativeTouchpadPan(
   return IPC_OK();
 }
 
-mozilla::ipc::IPCResult BrowserParent::RecvLockNativePointer() {
+mozilla::ipc::IPCResult BrowserParent::RecvLockNativePointer(
+    const nsIWidget::NativePointerLockMode& aNativePointerLockMode) {
   if (nsCOMPtr<nsIWidget> widget = GetWidget()) {
-    mLockedNativePointer = true;  
-    UpdateNativePointerLockCenter(widget);
-    widget->LockNativePointer();
+    mLockedNativePointer = true;
+    widget->LockNativePointer(aNativePointerLockMode);
   }
   return IPC_OK();
 }
@@ -2088,6 +2070,14 @@ void BrowserParent::UnlockNativePointer() {
 
 mozilla::ipc::IPCResult BrowserParent::RecvUnlockNativePointer() {
   UnlockNativePointer();
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult BrowserParent::RecvSetNativePointerLockMode(
+    const nsIWidget::NativePointerLockMode& aNativePointerLockMode) {
+  if (nsCOMPtr<nsIWidget> widget = GetWidget()) {
+    widget->SetNativePointerLockMode(aNativePointerLockMode);
+  }
   return IPC_OK();
 }
 

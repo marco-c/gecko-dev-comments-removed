@@ -2469,12 +2469,27 @@ void DocumentLoadListener::TriggerRedirectToRealChannel(
   
   
   if (contentParent && !silentErrorLoad) {
+    nsCOMPtr<nsIURI> docURI;
+    MOZ_ALWAYS_SUCCEEDS(
+        NS_GetFinalChannelURI(mChannel, getter_AddRefs(docURI)));
+
     
     
     
     
-    if (!contentParent->ValidatePrincipal(
-            unsandboxedPrincipal, {ValidatePrincipalOptions::AllowSystem})) {
+    EnumSet<ValidatePrincipalOptions> validationOptions = {};
+    
+    
+    
+    if (docURI->SchemeIs("blob") || docURI->SchemeIs("chrome") ||
+        (xpc::IsInAutomation() && NS_IsAboutBlank(docURI) &&
+         GetParentWindowContext() &&
+         GetParentWindowContext()->Manager()->Manager() == contentParent &&
+         GetParentWindowContext()->DocumentPrincipal()->IsSystemPrincipal())) {
+      validationOptions += ValidatePrincipalOptions::AllowSystem;
+    }
+    if (!contentParent->ValidatePrincipal(unsandboxedPrincipal,
+                                          validationOptions)) {
       ContentParent::LogAndAssertFailedPrincipalValidationInfo(
           unsandboxedPrincipal, "TriggerRedirectToRealChannel");
       RedirectToRealChannelFinished(NS_ERROR_FAILURE);
