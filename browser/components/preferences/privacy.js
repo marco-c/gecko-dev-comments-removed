@@ -1,15 +1,15 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/** @import MozCheckbox from "chrome://global/content/elements/moz-checkbox.mjs";*/
+/** @import MozMessageBar from "chrome://global/content/elements/moz-message-bar.mjs";*/
+/** @import {SettingValue, SettingDeps, SettingEmitChange} from "chrome://global/content/preferences/Setting.mjs";*/
 
+/* import-globals-from extensionControlled.js */
+/* import-globals-from preferences.js */
 
-
-
-
-
-
-
-
-
-
+// import the new Permissions & Data settings pane code.
 const { PRIVACY_SEGMENTATION_PREF } = ChromeUtils.importESModule(
   "chrome://browser/content/preferences/config/permissions-data.mjs",
   { global: "current" }
@@ -91,10 +91,10 @@ const SANITIZE_ON_SHUTDOWN_MAPPINGS = {
   offlineApps: "privacy.clearOnShutdown.offlineApps",
 };
 
-
-
-
-
+/*
+ * Prefs that are unique to sanitizeOnShutdown and are not shared
+ * with the deleteOnClose mechanism like privacy.clearOnShutdown.cookies, -cache and -offlineApps
+ */
 const SANITIZE_ON_SHUTDOWN_PREFS_ONLY = [
   "privacy.clearOnShutdown.history",
   "privacy.clearOnShutdown.downloads",
@@ -117,7 +117,7 @@ function setSyncToPrefListener(aId, aCallback) {
   Preferences.addSyncToPrefListener(document.getElementById(aId), aCallback);
 }
 
-
+// Sets the "Learn how" SUMO link in the Strict/Custom options of Content Blocking.
 function setUpContentBlockingWarnings() {
   document.getElementById("fpiIncompatibilityWarning").hidden =
     !gIsFirstPartyIsolated;
@@ -143,14 +143,14 @@ function initTCPStandardSection() {
 var gPrivacyPane = {
   _pane: null,
 
-  
-
-
+  /**
+   * Whether the prompt to restart Firefox should appear when changing the autostart pref.
+   */
   _shouldPromptForRestart: true,
 
-  
-
-
+  /**
+   * Update the tracking protection UI to deal with extension control.
+   */
   _updateTrackingProtectionUI() {
     let cBPrefisLocked = CONTENT_BLOCKING_PREFS.some(pref =>
       Services.prefs.prefIsLocked(pref)
@@ -165,7 +165,7 @@ var gPrivacyPane = {
       let tpCheckbox = document.getElementById(
         "contentBlockingTrackingProtectionCheckbox"
       );
-      
+      // Only enable the TP menu if Detect All Trackers is enabled.
       document.getElementById("trackingProtectionMenu").disabled =
         tpDisabled || !tpCheckbox.checked;
       tpCheckbox.disabled = tpDisabled;
@@ -183,9 +183,9 @@ var gPrivacyPane = {
         button.disabled = disabled;
       }
 
-      
-      
-      
+      // Notify observers that the TP UI has been updated.
+      // This is needed since our tests need to be notified about the
+      // trackingProtectionMenu element getting disabled/enabled at the right time.
       Services.obs.notifyObservers(window, "privacy-pane-tp-ui-updated");
     }
 
@@ -193,7 +193,7 @@ var gPrivacyPane = {
       setInputsDisabledState(true);
     }
     if (tPPrefisLocked) {
-      
+      // An extension can't control this setting if either pref is locked.
       hideControllingExtension(TRACKING_PROTECTION_KEY);
       setInputsDisabledState(false);
     } else {
@@ -204,10 +204,10 @@ var gPrivacyPane = {
     }
   },
 
-  
-
-
-
+  /**
+   * Set up handlers for showing and hiding controlling extension info
+   * for tracking protection.
+   */
   _initTrackingProtectionExtensionControl() {
     setEventListener(
       "contentBlockingDisableTrackingProtectionExtension",
@@ -234,14 +234,14 @@ var gPrivacyPane = {
     });
   },
 
-  
-
-
-
-
+  /**
+   * Ensure the tracking protection exception list is migrated before the privacy
+   * preferences UI is shown.
+   * If the migration has already been run, this is a no-op.
+   */
   _ensureTrackingProtectionExceptionListMigration() {
-    
-    
+    // Let's check the migration pref here as well to avoid the extra xpcom call
+    // for the common case where we've already migrated.
     if (
       Services.prefs.getBoolPref(
         "privacy.trackingprotection.allow_list.hasMigratedCategoryPrefs",
@@ -260,12 +260,12 @@ var gPrivacyPane = {
 
   get dnsOverHttpsResolvers() {
     let providers = DoHConfigController.currentConfig.providerList;
-    
+    // if there's no default, we'll hold its position with an empty string
     let defaultURI = DoHConfigController.currentConfig.fallbackProviderURI;
     let defaultIndex = providers.findIndex(p => p.uri == defaultURI);
     if (defaultIndex == -1 && defaultURI) {
-      
-      
+      // the default value for the pref isn't included in the resolvers list
+      // so we'll make a stub for it. Without an id, we'll have to use the url as the label
       providers.unshift({ uri: defaultURI });
     }
     return providers;
@@ -283,7 +283,7 @@ var gPrivacyPane = {
       ? resolvers.findIndex(r => r.uri == currentURI)
       : 0;
     if (selectedIndex == -1) {
-      
+      // select the last "Custom" item
       selectedIndex = menu.itemCount - 1;
     }
     menu.selectedIndex = selectedIndex;
@@ -297,7 +297,7 @@ var gPrivacyPane = {
     let defaultURI = DoHConfigController.currentConfig.fallbackProviderURI;
     let menu = document.getElementById(`${mode}ResolverChoices`);
 
-    
+    // populate the DNS-Over-HTTPS resolver list
     menu.removeAllItems();
     for (let resolver of resolvers) {
       let item = menu.appendItem(undefined, resolver.uri);
@@ -319,18 +319,18 @@ var gPrivacyPane = {
       "connection-dns-over-https-url-custom"
     );
 
-    
+    // set initial selection in the resolver provider picker
     this.updateDoHResolverList(mode);
 
     let customInput = document.getElementById(`${mode}InputField`);
 
     function updateURIPref() {
       if (customInput.value == "") {
-        
-        
-        
-        
-        
+        // Setting the pref to empty string will make it have the default
+        // pref value which makes us fallback to using the default TRR
+        // resolver in network.trr.default_provider_uri.
+        // If the input is empty we set it to "(space)" which is essentially
+        // the same.
         Services.prefs.setStringPref("network.trr.uri", " ");
       } else {
         Services.prefs.setStringPref("network.trr.uri", customInput.value);
@@ -349,7 +349,7 @@ var gPrivacyPane = {
         value: menu.value,
       });
 
-      
+      // Update other menu too.
       let otherMode = mode == "dohEnabled" ? "dohStrict" : "dohEnabled";
       let otherMenu = document.getElementById(`${otherMode}ResolverChoices`);
       let otherInput = document.getElementById(`${otherMode}InputField`);
@@ -357,7 +357,7 @@ var gPrivacyPane = {
       otherInput.hidden = otherMenu.value != "custom";
     });
 
-    
+    // Change the URL when you press ENTER in the input field it or loses focus
     customInput.addEventListener("change", () => {
       updateURIPref();
     });
@@ -431,14 +431,14 @@ var gPrivacyPane = {
       );
     }
     let statusLabel = computeStatus();
-    
+    // setStatus will format and set the statusLabel asynchronously.
     setStatus(statusLabel, { reason: errReason });
     dohResolver.hidden = statusLabel == "preferences-doh-status-disabled";
 
     let statusLearnMore = document.getElementById("dohStatusLearnMore");
     statusLearnMore.hidden = statusLabel != "preferences-doh-status-not-active";
 
-    
+    // No need to set the resolver name since we're not going to show it.
     if (statusLabel == "preferences-doh-status-disabled") {
       return;
     }
@@ -450,7 +450,7 @@ var gPrivacyPane = {
         }
       }
 
-      
+      // Also check if this is a steering provider.
       for (let resolver of DoHConfigController.currentConfig.providerSteering
         .providerList) {
         if (resolver.uri == trrURI) {
@@ -493,24 +493,24 @@ var gPrivacyPane = {
         offOption.classList.add("selected");
         break;
       default:
-        
-        
+        // The pref is set to a random value.
+        // This shouldn't happen, but let's make sure off is selected.
         offOption.classList.add("selected");
         document.getElementById("dohCategoryRadioGroup").selectedIndex = 3;
         break;
     }
 
-    
-    
+    // When the mode is set to 0 we need to clear the URI so
+    // doh-rollout can kick in.
     if (value == Ci.nsIDNSService.MODE_NATIVEONLY) {
       Services.prefs.clearUserPref("network.trr.uri");
       Services.prefs.clearUserPref("doh-rollout.disable-heuristics");
     }
 
-    
-    
-    
-    
+    // Bug 1861285
+    // When the mode is set to 2 or 3, we need to check if network.trr.uri is a empty string.
+    // In this case, we need to update network.trr.uri to default to fallbackProviderURI.
+    // This occurs when the mode is previously set to 0 (Default Protection).
     if (
       value == Ci.nsIDNSService.MODE_TRRFIRST ||
       value == Ci.nsIDNSService.MODE_TRRONLY
@@ -523,9 +523,9 @@ var gPrivacyPane = {
       }
     }
 
-    
-    
-    
+    // Bug 1900672
+    // When the mode is set to 5, clear the pref to ensure that
+    // network.trr.uri is set to fallbackProviderURIwhen the mode is set to 2 or 3 afterwards
     if (value == Ci.nsIDNSService.MODE_TRROFF) {
       Services.prefs.clearUserPref("network.trr.uri");
     }
@@ -533,16 +533,16 @@ var gPrivacyPane = {
     gPrivacyPane.updateDoHStatus();
   },
 
-  
-
-
+  /**
+   * Init DoH corresponding prefs
+   */
   initDoH() {
     setEventListener("dohDefaultArrow", "command", this.toggleExpansion);
     setEventListener("dohEnabledArrow", "command", this.toggleExpansion);
     setEventListener("dohStrictArrow", "command", this.toggleExpansion);
 
     function modeButtonPressed(e) {
-      
+      // Clicking the active mode again should not generate another event
       if (
         parseInt(e.target.value) == Preferences.get("network.trr.mode").value
       ) {
@@ -567,7 +567,7 @@ var gPrivacyPane = {
       gPrivacyPane.updateDoHStatus();
     });
 
-    
+    // Update status box and hightlightling when the pref changes
     Preferences.get("network.trr.mode").on(
       "change",
       gPrivacyPane.highlightDoHCategoryAndUpdateStatus
@@ -585,8 +585,8 @@ var gPrivacyPane = {
     window.addEventListener("unload", unload, { once: true });
 
     let uriPref = Services.prefs.getStringPref("network.trr.uri");
-    
-    
+    // If the value isn't one of the providers, we need to update the
+    // custom_uri pref to make sure the input box contains the correct URL.
     if (uriPref && !this.dnsOverHttpsResolvers.some(e => e.uri == uriPref)) {
       Services.prefs.setStringPref(
         "network.trr.custom_uri",
@@ -608,10 +608,10 @@ var gPrivacyPane = {
       );
   },
 
-  
-
-
-
+  /**
+   * Sets up the UI for the number of days of history to keep, and updates the
+   * label of the "Clear Now..." button.
+   */
   init() {
     initSettingGroup("nonTechnicalPrivacy");
     initSettingGroup("nonTechnicalPrivacy2");
@@ -637,7 +637,7 @@ var gPrivacyPane = {
     initSettingGroup("etpCustomize");
     initSettingGroup("networkProxy");
 
-    
+    /* Initialize Content Blocking */
     this.initContentBlocking();
 
     this.trackingProtectionReadPrefs();
@@ -655,7 +655,7 @@ var gPrivacyPane = {
       gPrivacyPane.trackingProtectionReadPrefs.bind(gPrivacyPane)
     );
 
-    
+    // Watch all of the prefs that the new Cookies & Site Data UI depends on
     Preferences.get("network.cookie.cookieBehavior").on(
       "change",
       gPrivacyPane.networkCookieBehaviorReadPrefs.bind(gPrivacyPane)
@@ -713,7 +713,7 @@ var gPrivacyPane = {
     this._initMasterPasswordUI();
     this._initOSAuthentication();
 
-    
+    // Init passwords settings group
     initSettingGroup("passwords");
 
     this.initListenersForExtensionControllingPasswordManager();
@@ -732,8 +732,6 @@ var gPrivacyPane = {
     );
 
     setSyncFromPrefListener("savePasswords", () => this.readSavePasswords());
-
-    this.initSiteDataControls();
 
     this.initPrivacySegmentation();
 
@@ -770,19 +768,15 @@ var gPrivacyPane = {
 
     this.initWebAuthn();
 
-    
+    // Notify observers that the UI is now ready
     Services.obs.notifyObservers(window, "privacy-pane-loaded");
   },
 
-  initSiteDataControls() {
-    SiteDataManager.updateSites();
-  },
+  // CONTENT BLOCKING
 
-  
-
-  
-
-
+  /**
+   * Initializes the content blocking section.
+   */
   initContentBlocking() {
     setEventListener(
       "contentBlockingTrackingProtectionCheckbox",
@@ -836,12 +830,12 @@ var gPrivacyPane = {
       gPrivacyPane.highlightCBCategory
     );
 
-    
-    
+    // If any relevant content blocking pref changes, show a warning that the changes will
+    // not be implemented until they refresh their tabs.
     for (let pref of CONTENT_BLOCKING_PREFS) {
-      
-      
-      
+      // Skip registering change listeners for baseline and convenience allow list prefs.
+      // Their UI is handled in gPrivacyPane.onBaselineCheckboxChange to prevent redundant reload
+      // warnings when user toggles the checkboxes.
       if (
         pref == "privacy.trackingprotection.allow_list.baseline.enabled" ||
         pref == "privacy.trackingprotection.allow_list.convenience.enabled"
@@ -849,8 +843,8 @@ var gPrivacyPane = {
         continue;
       }
       Preferences.get(pref).on("change", gPrivacyPane.maybeNotifyUserToReload);
-      
-      
+      // If the value changes, run populateCategoryContents, since that change might have been
+      // triggered by a default value changing in the standard category.
       Preferences.get(pref).on("change", gPrivacyPane.populateCategoryContents);
     }
     Preferences.get("urlclassifier.trackingTable").on(
@@ -897,9 +891,9 @@ var gPrivacyPane = {
     this.highlightCBCategory();
     this.readBlockCookies();
 
-    
-    
-    
+    // Toggles the text "Cross-site and social media trackers" based on the
+    // social tracking pref. If the pref is false, the text reads
+    // "Cross-site trackers".
     const STP_COOKIES_PREF = "privacy.socialtracking.block_cookies.enabled";
     if (Services.prefs.getBoolPref(STP_COOKIES_PREF)) {
       let contentBlockOptionSocialMedia = document.getElementById(
@@ -943,7 +937,7 @@ var gPrivacyPane = {
         }
       } else {
         selector = "#contentBlockingOptionStandard";
-        
+        // In standard show/hide UI items based on the default values of the relevant prefs.
         let defaults = Services.prefs.getDefaultBranch("");
 
         let cookieBehavior = defaults.getIntPref(
@@ -1031,7 +1025,7 @@ var gPrivacyPane = {
         );
       }
 
-      
+      // Hide all cookie options first, until we learn which one should be showing.
       document.querySelector(selector + " .all-cookies-option").hidden = true;
       document.querySelector(selector + " .unvisited-cookies-option").hidden =
         true;
@@ -1049,7 +1043,7 @@ var gPrivacyPane = {
       document.querySelector(selector + " .social-media-option").hidden = true;
 
       for (let item of rulesArray) {
-        
+        // Note "cookieBehavior0", will result in no UI changes, so is not listed here.
         switch (item) {
           case "tp":
             document.querySelector(selector + " .trackers-option").hidden =
@@ -1086,7 +1080,7 @@ var gPrivacyPane = {
               true;
             break;
           case "stp": {
-            
+            // Store social tracking cookies pref
             const STP_COOKIES_PREF =
               "privacy.socialtracking.block_cookies.enabled";
 
@@ -1098,7 +1092,7 @@ var gPrivacyPane = {
             break;
           }
           case "-stp":
-            
+            // Store social tracking cookies pref
             document.querySelector(selector + " .social-media-option").hidden =
               true;
             break;
@@ -1127,9 +1121,9 @@ var gPrivacyPane = {
             ).hidden = false;
             break;
           case "cookieBehaviorPBM5":
-            
-            
-            
+            // We only need to show the cookie option for private windows if the
+            // cookieBehaviors are different between regular windows and private
+            // windows.
             if (!rulesArray.includes("cookieBehavior5")) {
               document.querySelector(
                 selector + " .all-third-party-cookies-private-windows-option"
@@ -1138,8 +1132,8 @@ var gPrivacyPane = {
             break;
         }
       }
-      
-      
+      // Hide the "tracking protection in private browsing" list item
+      // if the "tracking protection enabled in all windows" list item is showing.
       if (!document.querySelector(selector + " .trackers-option").hidden) {
         document.querySelector(selector + " .pb-trackers-option").hidden = true;
       }
@@ -1163,7 +1157,7 @@ var gPrivacyPane = {
         customEl.classList.add("selected");
         break;
       case "standard":
-      
+      /* fall through */
       default:
         standardEl.classList.add("selected");
         break;
@@ -1194,11 +1188,11 @@ var gPrivacyPane = {
     listManager.forceUpdates(listValue);
   },
 
-  
+  // TRACKING PROTECTION MODE
 
-  
-
-
+  /**
+   * Selects the right item of the Tracking Protection menulist and checkbox.
+   */
   trackingProtectionReadPrefs() {
     let enabledPref = Preferences.get("privacy.trackingprotection.enabled");
     let pbmPref = Preferences.get("privacy.trackingprotection.pbmode.enabled");
@@ -1209,7 +1203,7 @@ var gPrivacyPane = {
 
     this._updateTrackingProtectionUI();
 
-    
+    // Global enable takes precedence over enabled in Private Browsing.
     if (enabledPref.value) {
       tpMenu.value = "always";
       tpCheckbox.checked = true;
@@ -1222,10 +1216,10 @@ var gPrivacyPane = {
     }
   },
 
-  
-
-
-
+  /**
+   * Selects the right item of the Fingerprinting Protection menulist and
+   * checkbox.
+   */
   fingerprintingProtectionReadPrefs() {
     let enabledPref = Preferences.get("privacy.fingerprintingProtection");
     let pbmPref = Preferences.get("privacy.fingerprintingProtection.pbmode");
@@ -1234,7 +1228,7 @@ var gPrivacyPane = {
       "contentBlockingFingerprintingProtectionCheckbox"
     );
 
-    
+    // Global enable takes precedence over enabled in Private Browsing.
     if (enabledPref.value) {
       fppMenu.value = "always";
       fppCheckbox.checked = true;
@@ -1249,9 +1243,9 @@ var gPrivacyPane = {
     fppCheckbox.disabled = enabledPref.locked;
   },
 
-  
-
-
+  /**
+   * Selects the right items of the new Cookies & Site Data UI.
+   */
   networkCookieBehaviorReadPrefs() {
     let behavior = Services.cookies.getCookieBehavior(false);
     let blockCookiesMenu = document.getElementById("blockCookiesMenu");
@@ -1283,9 +1277,9 @@ var gPrivacyPane = {
     }
   },
 
-  
-
-
+  /**
+   * Sets the pref values based on the selected item of the radiogroup.
+   */
   trackingProtectionWritePrefs() {
     let enabledPref = Preferences.get("privacy.trackingprotection.enabled");
     let pbmPref = Preferences.get("privacy.trackingprotection.pbmode.enabled");
@@ -1295,9 +1289,9 @@ var gPrivacyPane = {
     let stpCookiePref = Preferences.get(
       "privacy.socialtracking.block_cookies.enabled"
     );
-    
-    
-    
+    // Currently, we don't expose the email tracking protection setting on our
+    // privacy UI. Instead, we use the existing tracking protection checkbox to
+    // control the email tracking protection.
     let emailTPPref = Preferences.get(
       "privacy.trackingprotection.emailtracking.enabled"
     );
@@ -1398,19 +1392,19 @@ var gPrivacyPane = {
     );
   },
 
-  
+  // CLEAR PRIVATE DATA
 
-  
+  /*
+   * Preferences:
+   *
+   * privacy.sanitize.sanitizeOnShutdown
+   * - true if the user's private data is cleared on startup according to the
+   *   Clear Private Data settings, false otherwise
+   */
 
-
-
-
-
-
-
-  
-
-
+  /**
+   * Displays the Clear Private Data settings dialog.
+   */
   showClearPrivateDataSettings() {
     let dialogFile = "chrome://browser/content/sanitize_v2.xhtml";
 
@@ -1425,10 +1419,10 @@ var gPrivacyPane = {
     );
   },
 
-  
-
-
-
+  /**
+   * Displays a dialog from which individual parts of private data may be
+   * cleared.
+   */
   clearPrivateDataNow(aClearEverything) {
     PrivacySettingHelpers.clearPrivateDataNow(aClearEverything);
   },
@@ -1437,9 +1431,9 @@ var gPrivacyPane = {
     return PrivacySettingHelpers._isCustomCleaningPrefPresent();
   },
 
-  
-
-
+  /**
+   * Displays fine-grained, per-site preferences for tracking protection.
+   */
   showTrackingProtectionExceptions() {
     let params = {
       permissionType: "trackingprotection",
@@ -1454,26 +1448,26 @@ var gPrivacyPane = {
     );
   },
 
-  
+  // COOKIES AND SITE DATA
 
-  
+  /*
+   * Preferences:
+   *
+   * network.cookie.cookieBehavior
+   * - determines how the browser should handle cookies:
+   *     0   means enable all cookies
+   *     1   means reject all third party cookies
+   *     2   means disable all cookies
+   *     3   means reject third party cookies unless at least one is already set for the eTLD
+   *     4   means reject all trackers
+   *     5   means reject all trackers and partition third-party cookies
+   *         see netwerk/cookie/src/CookieService.cpp for details
+   */
 
-
-
-
-
-
-
-
-
-
-
-
-
-  
-
-
-
+  /**
+   * Reads the network.cookie.cookieBehavior preference value and
+   * enables/disables the "blockCookiesMenu" menulist accordingly.
+   */
   readBlockCookies() {
     let bcControl = document.getElementById("blockCookiesMenu");
     bcControl.disabled =
@@ -1481,16 +1475,16 @@ var gPrivacyPane = {
       Ci.nsICookieService.BEHAVIOR_ACCEPT;
   },
 
-  
-
-
-
+  /**
+   * Updates the "accept third party cookies" menu based on whether the
+   * "contentBlockingBlockCookiesCheckbox" checkbox is checked.
+   */
   writeBlockCookies() {
     let block = document.getElementById("contentBlockingBlockCookiesCheckbox");
     let blockCookiesMenu = document.getElementById("blockCookiesMenu");
 
     if (block.checked) {
-      
+      // Automatically select 'third-party trackers' as the default.
       blockCookiesMenu.selectedIndex = 0;
       return this.writeBlockCookiesFrom();
     }
@@ -1533,26 +1527,26 @@ var gPrivacyPane = {
     }
   },
 
-  
-
-
-
-
+  /**
+   * Discard the browsers of all tabs in all windows. Pinned tabs, as
+   * well as tabs for which discarding doesn't succeed (e.g. selected
+   * tabs, tabs with beforeunload listeners), are reloaded.
+   */
   reloadAllOtherTabs() {
     PrivacySettingHelpers.reloadAllOtherTabs();
   },
 
-  
-
-
-
+  /**
+   * If there are more tabs than just the preferences tab, show a warning to the user that
+   * they need to reload their tabs to apply the setting.
+   */
   maybeNotifyUserToReload() {
     PrivacySettingHelpers.maybeNotifyUserToReload();
   },
 
-  
-
-
+  /**
+   * Displays per-site preferences for HTTPS-Only Mode exceptions.
+   */
   showHttpsOnlyModeExceptions() {
     PrivacySettingHelpers.showHttpsOnlyModeExceptions();
   },
@@ -1561,108 +1555,108 @@ var gPrivacyPane = {
     PrivacySettingHelpers.showDoHExceptions();
   },
 
-  
+  // GEOLOCATION
 
-  
-
-
-
+  /**
+   * Displays the location exceptions dialog where specific site location
+   * preferences can be set.
+   */
   showLocationExceptions() {
     PrivacySettingHelpers.showLocationExceptions();
   },
 
-  
+  // LOOPBACK-NETWORK
 
-  
-
-
-
+  /**
+   * Displays the loopback network exceptions dialog where specific site loopback network
+   * preferences can be set.
+   */
   showLoopbackNetworkExceptions() {
     PrivacySettingHelpers.showLoopbackNetworkExceptions();
   },
 
-  
+  // LOCAL-NETWORK
 
-  
-
-
-
+  /**
+   * Displays the local network exceptions dialog where specific site local network
+   * preferences can be set.
+   */
   showLocalNetworkExceptions() {
     PrivacySettingHelpers.showLocalNetworkExceptions();
   },
 
-  
+  // XR
 
-  
-
-
-
+  /**
+   * Displays the XR exceptions dialog where specific site XR
+   * preferences can be set.
+   */
   showXRExceptions() {
     PrivacySettingHelpers.showXRExceptions();
   },
 
-  
+  // CAMERA
 
-  
-
-
-
+  /**
+   * Displays the camera exceptions dialog where specific site camera
+   * preferences can be set.
+   */
   showCameraExceptions() {
     PrivacySettingHelpers.showCameraExceptions();
   },
 
-  
+  // MICROPHONE
 
-  
-
-
-
+  /**
+   * Displays the microphone exceptions dialog where specific site microphone
+   * preferences can be set.
+   */
   showMicrophoneExceptions() {
     PrivacySettingHelpers.showMicrophoneExceptions();
   },
 
-  
+  // SPEAKER
 
-  
-
-
-
+  /**
+   * Displays the speaker exceptions dialog where specific site speaker
+   * preferences can be set.
+   */
   showSpeakerExceptions() {
     PrivacySettingHelpers.showSpeakerExceptions();
   },
 
-  
+  // NOTIFICATIONS
 
-  
-
-
-
+  /**
+   * Displays the notifications exceptions dialog where specific site notification
+   * preferences can be set.
+   */
   showNotificationExceptions() {
     PrivacySettingHelpers.showNotificationExceptions();
   },
 
-  
+  // MEDIA
 
   showAutoplayMediaExceptions() {
     PrivacySettingHelpers.showAutoplayMediaExceptions();
   },
 
-  
+  // POP-UPS
 
-  
-
-
-
+  /**
+   * Displays the popup exceptions dialog where specific site popup preferences
+   * can be set.
+   */
   showPopupExceptions() {
     PrivacySettingHelpers.showPopupExceptions();
   },
 
-  
+  // UTILITY FUNCTIONS
 
-  
-
-
-
+  /**
+   * Utility function to enable/disable the button specified by aButtonID based
+   * on the value of the Boolean preference specified by aPreferenceID.
+   */
   updateButtons(aButtonID, aPreferenceID) {
     var button = document.getElementById(aButtonID);
     var preference = Preferences.get(aPreferenceID);
@@ -1670,40 +1664,40 @@ var gPrivacyPane = {
     return undefined;
   },
 
-  
+  // BEGIN UI CODE
 
-  
+  /*
+   * Preferences:
+   *
+   * dom.disable_open_during_load
+   * - true if popups are blocked by default, false otherwise
+   */
 
+  // POP-UPS
 
-
-
-
-
-  
-
-  
-
-
-
+  /**
+   * Displays a dialog in which the user can view and modify the list of sites
+   * where passwords are never saved.
+   */
   showPasswordExceptions() {
     PasswordSettingHelpers.showPasswordExceptions();
   },
 
-  
-
-
-
-
-
+  /**
+   * Initializes master password UI: the "use master password" checkbox, selects
+   * the master password button to show, and enables/disables it as necessary.
+   * The master password is controlled by various bits of NSS functionality, so
+   * the UI for it can't be controlled by the normal preference bindings.
+   */
   _initMasterPasswordUI() {
     PasswordSettingHelpers._initMasterPasswordUI();
   },
 
-  
-
-
-
-
+  /**
+   * Enables/disables the master password button depending on the state of the
+   * "use master password" checkbox, and prompts for master password removal if
+   * one is set.
+   */
   async updateMasterPasswordButton() {
     let checkbox = document.getElementById("useMasterPassword");
     let button = document.getElementById("changeMasterPassword");
@@ -1724,12 +1718,12 @@ var gPrivacyPane = {
     await PasswordSettingHelpers.changeMasterPassword();
   },
 
-  
-
-
-
+  /**
+   * Set up the initial state for the password generation UI.
+   * It will be hidden unless the .available pref is true
+   */
   _initPasswordGenerationUI() {
-    
+    // we don't watch the .available pref for runtime changes
     let prefValue = Services.prefs.getBoolPref(
       PREF_PASSWORD_GENERATION_AVAILABLE,
       false
@@ -1786,12 +1780,12 @@ var gPrivacyPane = {
       osReauthCheckbox.documentGlobal.docShell.chromeEventHandler
         .documentGlobal;
 
-    
-    
+    // Calling OSKeyStore.ensureLoggedIn() instead of LoginHelper.verifyOSAuth()
+    // since we want to authenticate user each time this setting is changed.
 
-    
-    
-    
+    // Note on Glean collection: because OSKeyStore.ensureLoggedIn() is not wrapped in
+    // verifyOSAuth(), it will be documenting "success" for unsupported platforms
+    // and won't record "fail_error", only "fail_user_canceled"
     let isAuthorized = (
       await OSKeyStore.ensureLoggedIn(messageText, captionText, win, false)
     ).authenticated;
@@ -1806,7 +1800,7 @@ var gPrivacyPane = {
       return;
     }
 
-    
+    // If osReauthCheckbox is checked enable osauth.
     LoginHelper.setOSAuthEnabled(osReauthCheckbox.checked);
 
     Glean.pwmgr.requireOsReauthToggle.record({
@@ -1833,19 +1827,19 @@ var gPrivacyPane = {
     );
   },
 
-  
-
-
-
+  /**
+   * Shows the sites where the user has saved passwords and the associated login
+   * information.
+   */
   showPasswords() {
     PasswordSettingHelpers.showPasswords();
   },
 
-  
-
-
-
-
+  /**
+   * Enables/disables dependent controls related to password saving
+   * When password saving is not enabled, we need to also disable the password generation checkbox
+   * The Exceptions button is used to configure sites where passwords are never saved.
+   */
   readSavePasswords() {
     var prefValue = Preferences.get("signon.rememberSignons").value;
     document.getElementById("passwordExceptions").disabled = !prefValue;
@@ -1853,15 +1847,15 @@ var gPrivacyPane = {
     document.getElementById("passwordAutofillCheckbox").disabled = !prefValue;
     document.getElementById("relayIntegration").disabled =
       !prefValue || Services.prefs.prefIsLocked("signon.firefoxRelay.feature");
-    
+    // don't override pref value in UI
     return undefined;
   },
 
-  
-
-
-
-
+  /**
+   * Initalizes pref listeners for the password manager.
+   *
+   * This ensures that the user is always notified if an extension is controlling the password manager.
+   */
   initListenersForExtensionControllingPasswordManager() {
     this._passwordManagerCheckbox = document.getElementById("savePasswords");
     this._disableExtensionButton = document.getElementById(
@@ -1883,23 +1877,23 @@ var gPrivacyPane = {
     );
   },
 
-  
-
-
+  /**
+   * Displays the exceptions lists for add-on installation warnings.
+   */
   showAddonExceptions() {
     PrivacySettingHelpers.showAddonExceptions();
   },
 
-  
-
-
+  /**
+   * Displays the user's certificates and associated options.
+   */
   showCertificates() {
     PrivacySettingHelpers.showCertificates();
   },
 
-  
-
-
+  /**
+   * Displays a dialog from which the user can manage his security devices.
+   */
   showSecurityDevices() {
     PrivacySettingHelpers.showSecurityDevices();
   },
@@ -1912,7 +1906,7 @@ var gPrivacyPane = {
       return;
     }
 
-    
+    // Section visibility
     let section = document.getElementById("privacySegmentationSection");
     let updatePrivacySegmentationSectionVisibilityState = () => {
       section.hidden = !Services.prefs.getBoolPref(PRIVACY_SEGMENTATION_PREF);
@@ -1943,15 +1937,15 @@ var gPrivacyPane = {
     }
   },
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Handles change events on baseline and convenience exception checkboxes for content blocking preferences.
+   *
+   * - For baseline checkboxes: If the user attempts to uncheck, shows a confirmation dialog.
+   *   If confirmed, disables the baseline allow list preference.
+   * - For other cases: Toggles the checkbox and updates the corresponding preference.
+   *
+   * @param {Event} event - The change event triggered by the checkbox.
+   */
   async onBaselineCheckboxChange(event) {
     await PrivacySettingHelpers.onBaselineCheckboxChange(event);
   },
