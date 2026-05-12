@@ -147,13 +147,13 @@ impl ToTyped for Leaf {
 
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, ToCss, ToShmem, ToTyped)]
 #[allow(missing_docs)]
-pub struct CalcLengthPercentage {
+pub struct CalcNumeric {
     #[css(skip)]
     pub clamping_mode: AllowedNumericType,
     pub node: CalcNode,
 }
 
-impl CalcLengthPercentage {
+impl CalcNumeric {
     fn same_unit_length_as(a: &Self, b: &Self) -> Option<(CSSFloat, CSSFloat)> {
         debug_assert_eq!(a.clamping_mode, b.clamping_mode);
         debug_assert_eq!(a.clamping_mode, AllowedNumericType::All);
@@ -171,7 +171,7 @@ impl CalcLengthPercentage {
     }
 }
 
-impl SpecifiedValueInfo for CalcLengthPercentage {}
+impl SpecifiedValueInfo for CalcNumeric {}
 
 
 #[derive(Clone, Copy, PartialEq)]
@@ -914,7 +914,7 @@ impl CalcNode {
 
                         let a = a.into_length_or_percentage(AllowedNumericType::All)?;
                         let b = b.into_length_or_percentage(AllowedNumericType::All)?;
-                        let (a, b) = CalcLengthPercentage::same_unit_length_as(&a, &b).ok_or(())?;
+                        let (a, b) = CalcNumeric::same_unit_length_as(&a, &b).ok_or(())?;
 
                         Ok(a.atan2(b))
                     })?;
@@ -1168,7 +1168,7 @@ impl CalcNode {
     pub fn into_length_or_percentage(
         mut self,
         clamping_mode: AllowedNumericType,
-    ) -> Result<CalcLengthPercentage, ()> {
+    ) -> Result<CalcNumeric, ()> {
         self.simplify_and_sort();
 
         
@@ -1177,7 +1177,7 @@ impl CalcNode {
         if !CalcUnits::LENGTH_PERCENTAGE.intersects(unit) {
             Err(())
         } else {
-            Ok(CalcLengthPercentage {
+            Ok(CalcNumeric {
                 clamping_mode,
                 node: self,
             })
@@ -1268,7 +1268,7 @@ impl CalcNode {
         clamping_mode: AllowedNumericType,
         function: MathFunction,
         allow_anchor: AllowAnchorPositioningFunctions,
-    ) -> Result<CalcLengthPercentage, ParseError<'i>> {
+    ) -> Result<CalcNumeric, ParseError<'i>> {
         let allowed = if allow_anchor == AllowAnchorPositioningFunctions::No {
             AllowParse::new(CalcUnits::LENGTH_PERCENTAGE)
         } else {
@@ -1313,7 +1313,7 @@ impl CalcNode {
         input: &mut Parser<'i, 't>,
         clamping_mode: AllowedNumericType,
         function: MathFunction,
-    ) -> Result<CalcLengthPercentage, ParseError<'i>> {
+    ) -> Result<CalcNumeric, ParseError<'i>> {
         Self::parse(context, input, function, AllowParse::new(CalcUnits::LENGTH))?
             .into_length_or_percentage(clamping_mode)
             .map_err(|()| input.new_custom_error(StyleParseErrorKind::UnspecifiedError))
