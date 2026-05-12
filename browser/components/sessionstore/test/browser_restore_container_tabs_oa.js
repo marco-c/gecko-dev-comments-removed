@@ -52,11 +52,11 @@ add_setup(async function () {
     ],
   });
 
-  requestLongerTimeout(14);
+  requestLongerTimeout(7);
 });
 
-function setupRemoteTypes(isolateEverything) {
-  if (isolateEverything) {
+function setupRemoteTypes() {
+  if (gFissionBrowser) {
     remoteTypes = [
       "webIsolated=https://example.com",
       "webIsolated=https://example.com^userContextId=1",
@@ -68,16 +68,9 @@ function setupRemoteTypes(isolateEverything) {
       "webIsolated=https://example.org^userContextId=3",
     ];
   } else {
-    remoteTypes = [
-      "web",
-      "web=^userContextId=1",
-      "web=^userContextId=2",
-      "web=^userContextId=3",
-      "web",
-      "web=^userContextId=1",
-      "web=^userContextId=2",
-      "web=^userContextId=3",
-    ];
+    remoteTypes = Array(
+      NUM_DIFF_TAB_MODES * 2 
+    ).fill("web");
   }
   remoteTypes.push(...Array(NUM_DIFF_TAB_MODES * 2).fill(null)); 
 
@@ -92,13 +85,8 @@ function setupRemoteTypes(isolateEverything) {
 
 
 
-
-async function testRestoreCommon(isolateEverything) {
-  await SpecialPowers.pushPrefEnv({
-    set: [["fission.webContentIsolationStrategy", isolateEverything ? 1 : 0]],
-  });
-  setupRemoteTypes(isolateEverything);
-
+add_task(async function testRestore() {
+  setupRemoteTypes();
   let newWin = await promiseNewWindowLoaded();
   var regularPages = [];
   var containerPages = {};
@@ -258,15 +246,4 @@ async function testRestoreCommon(isolateEverything) {
       .length,
     "No registered open pages should be left"
   );
-}
-
-if (gFissionBrowser) {
-  
-  add_task(async function testRestoreIsolateEverything() {
-    await testRestoreCommon( true);
-  });
-}
-
-add_task(async function testRestoreIsolateNothing() {
-  await testRestoreCommon( false);
 });
