@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_SMIL_SMILANIMATIONFUNCTION_H_
 #define DOM_SMIL_SMILANIMATIONFUNCTION_H_
 
@@ -238,14 +236,6 @@ class SMILAnimationFunction {
 
 
   void SetWasSkipped() { mWasSkippedInPrevSample = true; }
-
-  
-
-
-
-  bool ValueNeedsReparsingEverySample() const {
-    return mValueNeedsReparsingEverySample;
-  }
 
   
   class MOZ_STACK_CLASS Comparator final {
