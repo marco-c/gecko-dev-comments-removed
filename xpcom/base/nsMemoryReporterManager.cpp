@@ -2876,9 +2876,8 @@ nsresult RegisterStrongMemoryReporter(
   return mgr->RegisterStrongReporter(reporter);
 }
 
-nsresult RegisterStrongAsyncMemoryReporter(nsIMemoryReporter* aReporter) {
-  
-  
+nsresult RegisterStrongAsyncMemoryReporter(
+    already_AddRefed<nsIMemoryReporter> aReporter) {
   nsCOMPtr<nsIMemoryReporter> reporter = aReporter;
   GET_MEMORY_REPORTER_MANAGER(mgr)
   return mgr->RegisterStrongAsyncReporter(reporter);
