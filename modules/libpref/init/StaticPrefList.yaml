@@ -4053,6 +4053,15 @@
   mirror: always
 #endif
 
+# Whether the |unadjustedMovement| dictionary member of PointerLockOptions
+# is honored. When true, requestPointerLock({unadjustedMovement: true})
+# asks the widget to deliver raw, unaccelerated mouse delta in mouse events
+# while the lock is active.
+- name: dom.pointer-lock.unadjusted-movement.enabled
+  type: bool
+  value: @IS_NIGHTLY_BUILD@
+  mirror: always
+
 # re-SAB: Whether to allow postMessage of a SharedArrayBuffer if various
 # preconditions related to COOP and COEP are met
 - name: dom.postMessage.sharedArrayBuffer.withCOOP_COEP
@@ -16409,7 +16418,7 @@
 
 - name: network.http.happy_eyeballs_enabled
   type: RelaxedAtomicBool
-  value: false
+  value: @IS_EARLY_BETA_OR_EARLIER@
   mirror: always
 
 # The time to wait after receiving the first DNS response before moving on
@@ -18008,6 +18017,17 @@
 - name: security.webauthn.enable_conditional_mediation
   type: RelaxedAtomicBool
   value: true
+  mirror: always
+
+# WebAuthn Related Origin Requests
+# 0: disabled, 1: enabled without prompt, 2: enabled with prompt
+- name: security.webauthn.related_origin_requests_mode
+  type: RelaxedAtomicUint32
+#ifdef ANDROID
+  value: 0
+#else
+  value: 2
+#endif
   mirror: always
 
 # Dispatch WebAuthn requests to virtual authenticators (mutually exclusive

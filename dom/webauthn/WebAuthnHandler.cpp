@@ -149,11 +149,6 @@ void WebAuthnHandler::MakeCredential(
       return;
     }
   }
-  if (!IsValidRpId(principal, rpId)) {
-    aPromise->MaybeReject(NS_ERROR_DOM_SECURITY_ERR);
-    return;
-  }
-
   
   
   
@@ -450,11 +445,6 @@ void WebAuthnHandler::GetAssertion(
       return;
     }
   }
-  if (!IsValidRpId(principal, rpId)) {
-    aPromise->MaybeReject(NS_ERROR_DOM_SECURITY_ERR);
-    return;
-  }
-
   
   
   
