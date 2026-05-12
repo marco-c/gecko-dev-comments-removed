@@ -20,6 +20,7 @@ enum class CallerType : uint32_t;
 class Document;
 class Element;
 class Promise;
+struct PointerLockOptions;
 }  
 
 class PointerLockManager final {
@@ -28,8 +29,9 @@ class PointerLockManager final {
   
   
   
-  static void RequestLock(dom::Element* aElement, dom::CallerType aCallerType,
-                          dom::Promise* aPromise);
+  static void RequestLock(dom::Element* aElement,
+                          const dom::PointerLockOptions& aOptions,
+                          dom::CallerType aCallerType, dom::Promise* aPromise);
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   static void Unlock(const char* aReason, dom::Document* aDoc = nullptr);
@@ -60,13 +62,14 @@ class PointerLockManager final {
   class PointerLockRequest final : public Runnable {
    public:
     PointerLockRequest(dom::Element* aElement, bool aUserInputOrChromeCaller,
-                       dom::Promise* aPromise);
+                       bool aUnadjustedMovement, dom::Promise* aPromise);
     MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHOD Run() final;
 
    private:
     nsWeakPtr mElement;
     nsWeakPtr mDocument;
     bool mUserInputOrChromeCaller;
+    bool mUnadjustedMovement;
     
     
     
@@ -79,13 +82,15 @@ class PointerLockManager final {
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   static bool StartSetPointerLock(dom::Element* aElement,
-                                  dom::Document* aDocument);
+                                  dom::Document* aDocument,
+                                  bool aUnadjustedMovement);
 
   MOZ_CAN_RUN_SCRIPT
   static bool SetPointerLock(dom::Element* aElement, dom::Document* aDocument,
-                             StyleCursorKind);
+                             StyleCursorKind, bool aUnadjustedMovement);
 
   static bool sIsLocked;
+  static bool sIsLockUnadjustedMovement;
 };
 
 }  
