@@ -1453,8 +1453,15 @@ void nsHttpTransaction::Close(nsresult reason) {
   
   
   
-  if (shouldRestartTransactionForHTTPSRR &&
-      ShouldRestartOnResumptionError(reason)) {
+  
+  
+  
+  
+  
+  
+  
+  
+  if (shouldRestartTransactionForHTTPSRR && mResumptionAttempted) {
     shouldRestartTransactionForHTTPSRR = false;
     mDontRetryWithDirectRoute = true;
   }
