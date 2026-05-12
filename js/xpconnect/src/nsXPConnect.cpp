@@ -32,6 +32,7 @@
 #include "mozilla/dom/DOMException.h"
 #include "mozilla/dom/Exceptions.h"
 #include "mozilla/dom/Promise.h"
+#include "mozilla/dom/WorkerCommon.h"
 #include "mozilla/glean/bindings/Glean.h"
 #include "mozilla/glean/bindings/GleanPings.h"
 #include "mozilla/ScriptPreloader.h"
@@ -1145,6 +1146,17 @@ bool IsNotUAWidget(JSContext* cx, JSObject* ) {
   JS::Compartment* c = JS::GetCompartmentForRealm(realm);
 
   return !IsUAWidgetCompartment(c);
+}
+
+bool IsChromeOrWorkerDebugger(JSContext* cx, JSObject* ) {
+  
+  if (nsContentUtils::ThreadsafeIsSystemCaller(cx)) {
+    return true;
+  }
+
+  
+  JS::Rooted<JSObject*> global(cx, JS::CurrentGlobalOrNull(cx));
+  return IsWorkerDebuggerGlobal(global);
 }
 
 extern bool IsCurrentThreadRunningChromeWorker();

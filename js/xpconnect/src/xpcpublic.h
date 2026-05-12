@@ -942,6 +942,12 @@ bool IsChromeOrUAWidget(JSContext* cx, JSObject* );
 
 
 
+
+bool IsChromeOrWorkerDebugger(JSContext* cx, JSObject* );
+
+
+
+
 bool ThreadSafeIsChromeOrUAWidget(JSContext* cx, JSObject* obj);
 
 }  
