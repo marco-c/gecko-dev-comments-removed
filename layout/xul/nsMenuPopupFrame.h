@@ -518,14 +518,6 @@ class nsMenuPopupFrame final : public nsBlockFrame, public nsIWidgetListener {
   
   void MoveToAttributePosition();
 
-  
-  
-  
-  
-  
-  
-  bool ShouldFollowAnchor() const;
-
   nsIFrame* GetAnchorFrame() const;
 
  public:
@@ -537,6 +529,14 @@ class nsMenuPopupFrame final : public nsBlockFrame, public nsIWidgetListener {
 
 
   bool IsDirectionRTL() const;
+
+  
+  
+  
+  
+  
+  
+  bool ShouldFollowAnchor() const;
 
   bool ShouldFollowAnchor(nsRect& aRect);
 
