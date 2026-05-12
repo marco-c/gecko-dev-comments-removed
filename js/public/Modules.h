@@ -340,6 +340,12 @@ GetModuleRequestType(JSContext* cx, Handle<JSObject*> moduleRequestArg);
 
 
 
+extern JS_PUBLIC_API bool ModuleRequestIsSourcePhase(
+    JSContext* cx, Handle<JSObject*> moduleRequestArg);
+
+
+
+
 extern JS_PUBLIC_API JSObject* GetModuleObject(Handle<JSScript*> moduleScript);
 
 
