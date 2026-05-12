@@ -27,7 +27,6 @@
 mod adapter;
 mod command;
 pub mod conv;
-mod descriptor;
 mod device;
 mod drm;
 mod instance;
@@ -38,7 +37,14 @@ mod swapchain;
 pub use adapter::PhysicalDeviceFeatures;
 
 use alloc::{boxed::Box, ffi::CString, sync::Arc, vec::Vec};
-use core::{borrow::Borrow, ffi::CStr, fmt, marker::PhantomData, mem, num::NonZeroU32};
+use core::{
+    borrow::Borrow,
+    ffi::CStr,
+    fmt,
+    marker::PhantomData,
+    mem::{self, ManuallyDrop},
+    num::NonZeroU32,
+};
 
 use arrayvec::ArrayVec;
 use ash::{ext, khr, vk};
@@ -185,8 +191,8 @@ pub struct Instance {
 }
 
 pub struct Surface {
+    inner: ManuallyDrop<Box<dyn swapchain::Surface>>,
     swapchain: RwLock<Option<Box<dyn swapchain::Swapchain>>>,
-    inner: Box<dyn swapchain::Surface>,
 }
 
 impl Surface {
@@ -515,7 +521,8 @@ impl Drop for DeviceShared {
 
 pub struct Device {
     mem_allocator: Mutex<gpu_allocator::vulkan::Allocator>,
-    desc_allocator: Mutex<descriptor::DescriptorAllocator>,
+    desc_allocator:
+        Mutex<gpu_descriptor::DescriptorAllocator<vk::DescriptorPool, vk::DescriptorSet>>,
     valid_ash_memory_types: u32,
     naga_options: naga::back::spv::Options<'static>,
     #[cfg(feature = "renderdoc")]
@@ -527,7 +534,9 @@ pub struct Device {
 }
 
 impl Drop for Device {
-    fn drop(&mut self) {}
+    fn drop(&mut self) {
+        unsafe { self.desc_allocator.lock().cleanup(&*self.shared) };
+    }
 }
 
 
@@ -611,7 +620,6 @@ pub struct Queue {
     family_index: u32,
     relay_semaphores: Mutex<RelaySemaphores>,
     signal_semaphores: Mutex<SemaphoreList>,
-    wait_semaphores: Mutex<SemaphoreList>,
 }
 
 impl Queue {
@@ -654,28 +662,10 @@ impl BufferMemoryBacking {
         }
     }
 }
-
-
-#[derive(Debug)]
-enum BufferOwnership {
-    
-    
-    Managed(Mutex<BufferMemoryBacking>),
-    
-    
-    RawHandle,
-    
-    
-    
-    External(crate::DropGuard),
-}
-
 #[derive(Debug)]
 pub struct Buffer {
     raw: vk::Buffer,
-
-    
-    ownership: BufferOwnership,
+    allocation: Option<Mutex<BufferMemoryBacking>>,
 }
 impl Buffer {
     
@@ -685,25 +675,9 @@ impl Buffer {
     pub unsafe fn from_raw(vk_buffer: vk::Buffer) -> Self {
         Self {
             raw: vk_buffer,
-            ownership: BufferOwnership::RawHandle,
+            allocation: None,
         }
     }
-
-    
-    
-    
-    
-    
-    pub unsafe fn from_raw_externally_owned(
-        vk_buffer: vk::Buffer,
-        drop_callback: crate::DropCallback,
-    ) -> Self {
-        Self {
-            raw: vk_buffer,
-            ownership: BufferOwnership::External(crate::DropGuard::new(drop_callback)),
-        }
-    }
-
     
     
     
@@ -716,18 +690,12 @@ impl Buffer {
     ) -> Self {
         Self {
             raw: vk_buffer,
-            ownership: BufferOwnership::Managed(Mutex::new(BufferMemoryBacking::VulkanMemory {
+            allocation: Some(Mutex::new(BufferMemoryBacking::VulkanMemory {
                 memory,
                 offset,
                 size,
             })),
         }
-    }
-
-    
-    
-    pub unsafe fn raw_handle(&self) -> vk::Buffer {
-        self.raw
     }
 }
 
@@ -839,7 +807,7 @@ struct BindingInfo {
 #[derive(Debug)]
 pub struct BindGroupLayout {
     raw: vk::DescriptorSetLayout,
-    desc_count: descriptor::DescriptorCounts,
+    desc_count: gpu_descriptor::DescriptorTotalCount,
     
     entries: Box<[wgt::BindGroupLayoutEntry]>,
     
@@ -860,7 +828,7 @@ impl crate::DynPipelineLayout for PipelineLayout {}
 
 #[derive(Debug)]
 pub struct BindGroup {
-    set: descriptor::DescriptorSet,
+    set: gpu_descriptor::DescriptorSet<vk::DescriptorSet>,
 }
 
 impl crate::DynBindGroup for BindGroup {}
@@ -1323,11 +1291,6 @@ impl crate::Queue for Queue {
             signal_semaphores.append(&mut guard);
         }
 
-        let mut wait_guard = self.wait_semaphores.lock();
-        if !wait_guard.is_empty() {
-            wait_semaphores.append(&mut wait_guard);
-        }
-
         
         
         let semaphore_state = self.relay_semaphores.lock().advance(&self.device)?;
@@ -1430,39 +1393,6 @@ impl Queue {
     pub fn remove_signal_semaphore(&self, semaphore: vk::Semaphore) -> bool {
         self.signal_semaphores.lock().remove(semaphore)
     }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn add_wait_semaphore(
-        &self,
-        semaphore: vk::Semaphore,
-        semaphore_value: Option<u64>,
-        stage: vk::PipelineStageFlags,
-    ) {
-        let mut guard = self.wait_semaphores.lock();
-        if let Some(value) = semaphore_value {
-            guard.push_wait(SemaphoreType::Timeline(semaphore, value), stage);
-        } else {
-            guard.push_wait(SemaphoreType::Binary(semaphore), stage);
-        }
-    }
-
-    
-    
-    
-    
-    pub fn remove_wait_semaphore(&self, semaphore: vk::Semaphore) -> bool {
-        self.wait_semaphores.lock().remove(semaphore)
-    }
 }
 
 
@@ -1486,18 +1416,6 @@ fn map_host_device_oom_err(err: vk::Result) -> crate::DeviceError {
 fn map_host_device_oom_and_lost_err(err: vk::Result) -> crate::DeviceError {
     match err {
         vk::Result::ERROR_DEVICE_LOST => get_lost_err(),
-        other => map_host_device_oom_err(other),
-    }
-}
-
-
-
-
-
-
-fn map_host_device_oom_and_fragmentation_err(err: vk::Result) -> crate::DeviceError {
-    match err {
-        vk::Result::ERROR_FRAGMENTATION => get_oom_err(err),
         other => map_host_device_oom_err(other),
     }
 }

@@ -56,12 +56,7 @@ pub(super) const fn map_storage_class(space: crate::AddressSpace) -> spirv::Stor
         crate::AddressSpace::WorkGroup => spirv::StorageClass::Workgroup,
         crate::AddressSpace::Immediate => spirv::StorageClass::PushConstant,
         crate::AddressSpace::TaskPayload => spirv::StorageClass::TaskPayloadWorkgroupEXT,
-        
-        
-        
-        
-        crate::AddressSpace::RayPayload => spirv::StorageClass::RayPayloadKHR,
-        crate::AddressSpace::IncomingRayPayload => spirv::StorageClass::IncomingRayPayloadKHR,
+        crate::AddressSpace::IncomingRayPayload | crate::AddressSpace::RayPayload => unreachable!(),
     }
 }
 

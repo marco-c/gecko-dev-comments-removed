@@ -470,7 +470,7 @@ pub enum IndexFormat {
 
 impl IndexFormat {
     
-    pub fn byte_size(&self) -> u32 {
+    pub fn byte_size(&self) -> usize {
         match self {
             IndexFormat::Uint16 => 2,
             IndexFormat::Uint32 => 4,

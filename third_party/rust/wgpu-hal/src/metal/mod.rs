@@ -416,29 +416,27 @@ impl AdapterShared {
     }
 
     fn expose(device: Retained<ProtocolObject<dyn MTLDevice>>) -> crate::ExposedAdapter<Api> {
-        autoreleasepool(|_| {
-            let name = device.name().to_string();
-            let capabilities_query = CapabilitiesQuery::new(&device);
-            let shared = AdapterShared::new(device, &capabilities_query);
-            let features = capabilities_query.features();
-            let capabilities = capabilities_query.capabilities();
-            crate::ExposedAdapter {
-                info: wgt::AdapterInfo {
-                    name,
-                    
-                    
-                    
-                    
-                    subgroup_min_size: 4,
-                    subgroup_max_size: 64,
-                    transient_saves_memory: shared.private_caps.supports_memoryless_storage,
-                    ..wgt::AdapterInfo::new(shared.private_caps.device_type(), wgt::Backend::Metal)
-                },
-                features,
-                capabilities,
-                adapter: Adapter::new(Arc::new(shared)),
-            }
-        })
+        let name = device.name().to_string();
+        let capabilities_query = CapabilitiesQuery::new(&device);
+        let shared = AdapterShared::new(device, &capabilities_query);
+        let features = capabilities_query.features();
+        let capabilities = capabilities_query.capabilities();
+        crate::ExposedAdapter {
+            info: wgt::AdapterInfo {
+                name,
+                
+                
+                
+                
+                subgroup_min_size: 4,
+                subgroup_max_size: 64,
+                transient_saves_memory: shared.private_caps.supports_memoryless_storage,
+                ..wgt::AdapterInfo::new(shared.private_caps.device_type(), wgt::Backend::Metal)
+            },
+            features,
+            capabilities,
+            adapter: Adapter::new(Arc::new(shared)),
+        }
     }
 }
 

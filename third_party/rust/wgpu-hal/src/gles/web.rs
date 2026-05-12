@@ -179,44 +179,6 @@ impl crate::Instance for Instance {
     }
 }
 
-impl super::Adapter {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub unsafe fn new_external(
-        webgl2_context: web_sys::WebGl2RenderingContext,
-        options: wgt::GlBackendOptions,
-    ) -> Option<crate::ExposedAdapter<super::Api>> {
-        let glow_context = glow::Context::from_webgl2_context(webgl2_context.clone());
-        unsafe {
-            Self::expose(
-                AdapterContext {
-                    glow_context,
-                    webgl2_context,
-                },
-                options,
-            )
-        }
-    }
-
-    pub fn adapter_context(&self) -> &AdapterContext {
-        &self.shared.context
-    }
-}
-
-impl super::Device {
-    
-    pub fn context(&self) -> &AdapterContext {
-        &self.shared.context
-    }
-}
-
 #[derive(Debug)]
 pub struct Surface {
     canvas: Canvas,

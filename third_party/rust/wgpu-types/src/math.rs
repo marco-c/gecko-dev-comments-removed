@@ -1,26 +1,6 @@
 
 
-
-pub trait AlignTo: Copy {
-    
-    
-    
-    fn align_to(self, alignment: Self) -> Self;
-}
-
-macro_rules! impl_align_to {
-    ($ty:ty) => {
-        impl AlignTo for $ty {
-            fn align_to(self, alignment: Self) -> Self {
-                self.checked_next_multiple_of(alignment).unwrap()
-            }
-        }
-    };
-}
-
-impl_align_to!(u32);
-impl_align_to!(u64);
-impl_align_to!(usize);
+use core::ops::{Add, Rem, Sub};
 
 
 
@@ -38,9 +18,14 @@ impl_align_to!(usize);
 
 
 
-
-
-
-pub fn align_to<T: AlignTo>(value: T, alignment: T) -> T {
-    value.align_to(alignment)
+pub fn align_to<T>(value: T, alignment: T) -> T
+where
+    T: Add<Output = T> + Copy + Default + PartialEq<T> + Rem<Output = T> + Sub<Output = T>,
+{
+    let remainder = value % alignment;
+    if remainder == T::default() {
+        value
+    } else {
+        value + alignment - remainder
+    }
 }

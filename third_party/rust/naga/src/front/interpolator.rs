@@ -36,19 +36,28 @@ impl crate::Binding {
     
     
     
-    pub(crate) fn apply_default_interpolation(&mut self, ty: &crate::TypeInner) {
-        let crate::Binding::Location {
+    
+    
+    pub fn apply_default_interpolation(&mut self, ty: &crate::TypeInner) {
+        if let crate::Binding::Location {
+            location: _,
             interpolation: ref mut interpolation @ None,
             ref mut sampling,
-            ..
+            blend_src: _,
+            per_primitive: _,
         } = *self
-        else {
-            return;
-        };
-
-        if let Some(crate::ScalarKind::Float) = ty.scalar_kind() {
-            *interpolation = Some(crate::Interpolation::Perspective);
-            *sampling = Some(crate::Sampling::Center);
+        {
+            match ty.scalar_kind() {
+                Some(crate::ScalarKind::Float) => {
+                    *interpolation = Some(crate::Interpolation::Perspective);
+                    *sampling = Some(crate::Sampling::Center);
+                }
+                Some(crate::ScalarKind::Sint | crate::ScalarKind::Uint) => {
+                    *interpolation = Some(crate::Interpolation::Flat);
+                    *sampling = None;
+                }
+                Some(_) | None => {}
+            }
         }
     }
 }
