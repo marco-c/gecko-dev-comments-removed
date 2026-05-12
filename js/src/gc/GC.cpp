@@ -1801,11 +1801,11 @@ void GCRuntime::setHostCleanupFinalizationRegistryCallback(
 }
 
 void GCRuntime::callHostCleanupFinalizationRegistryCallback(
-    JSFunction* doCleanup, JSObject* hostDefinedData) {
+    JSFunction* doCleanup, JSObject* incumbentGlobal) {
   JS::AutoSuppressGCAnalysis nogc;
   const auto& callback = hostCleanupFinalizationRegistryCallback.ref();
   if (callback.op) {
-    callback.op(doCleanup, hostDefinedData, callback.data);
+    callback.op(doCleanup, incumbentGlobal, callback.data);
   }
 }
 
@@ -5929,9 +5929,13 @@ js::gc::ClearEdgesTracer::ClearEdgesTracer(JSRuntime* rt)
 
 template <typename T>
 void js::gc::ClearEdgesTracer::onEdge(T** thingp, const char* name) {
-  
-  
   T* thing = *thingp;
+  if (!thing) {
+    return;
+  }
+
+  
+  
   MOZ_ASSERT(!IsInsideNursery(thing));
 
   

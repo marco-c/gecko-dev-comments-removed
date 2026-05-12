@@ -242,7 +242,10 @@ class JS_PUBLIC_API CallbackTracer
  private:
   template <typename T>
   void onEdge(T** thingp, const char* name) {
-    onChild(JS::GCCellPtr(*thingp), name);
+    T* thing = *thingp;
+    if (thing) {
+      onChild(JS::GCCellPtr(thing), name);
+    }
   }
   friend class js::GenericTracerImpl<CallbackTracer>;
 };
@@ -394,9 +397,6 @@ namespace js {
 inline bool IsTracerKind(JSTracer* trc, JS::TracerKind kind) {
   return trc->kind() == kind;
 }
-
-
-
 
 
 
