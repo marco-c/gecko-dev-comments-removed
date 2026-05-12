@@ -2,12 +2,11 @@
 
 
 
-
-
 #ifndef nsXMLContentSink_h_
 #define nsXMLContentSink_h_
 
 #include "js/ColumnNumber.h"  
+#include "mozilla/Span.h"
 #include "mozilla/dom/FromParser.h"
 #include "nsCOMPtr.h"
 #include "nsCRT.h"
@@ -105,7 +104,7 @@ class nsXMLContentSink : public nsContentSink,
 
   virtual nsresult AddAttributes(const char16_t** aNode,
                                  mozilla::dom::Element* aElement);
-  nsresult AddText(const char16_t* aString, int32_t aLength);
+  nsresult AddText(mozilla::Span<const char16_t> aText);
 
   virtual bool OnOpenContainer(const char16_t** aAtts, uint32_t aAttsCount,
                                int32_t aNameSpaceID, nsAtom* aTagName,
@@ -187,9 +186,6 @@ class nsXMLContentSink : public nsContentSink,
 
   XMLContentSinkState mState = eXMLContentSinkState_InProlog;
 
-  
-  int32_t mTextLength = 0;
-
   int32_t mNotifyLevel = 0;
   RefPtr<nsTextNode> mLastTextNode;
 
@@ -213,9 +209,8 @@ class nsXMLContentSink : public nsContentSink,
   
   nsTArray<nsCOMPtr<nsIContent>> mDocumentChildren;
 
-  static const int NS_ACCUMULATION_BUFFER_SIZE = 4096;
   
-  char16_t mText[NS_ACCUMULATION_BUFFER_SIZE] = {0};
+  AutoTArray<char16_t, 4096> mText;
 };
 
 #endif  

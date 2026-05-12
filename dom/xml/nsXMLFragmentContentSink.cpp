@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/css/Loader.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentFragment.h"
@@ -246,9 +244,7 @@ nsXMLFragmentContentSink::ReportError(const char16_t* aErrorText,
   }
 
   
-  
-  
-  mTextLength = 0;
+  mText.ClearAndRetainStorage();
 
   return NS_OK;
 }
