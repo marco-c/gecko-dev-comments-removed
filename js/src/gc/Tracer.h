@@ -181,39 +181,6 @@ inline void TraceCellHeaderEdge(JSTracer* trc, gc::CellWithGCPointer<T>* thingp,
 
 
 
-template <typename T>
-inline void TraceNullableEdge(JSTracer* trc, const BarrieredBase<T>* thingp,
-                              const char* name) {
-  T thing = *thingp->unbarrieredAddress();
-  if (InternalBarrierMethods<T>::isMarkable(thing)) {
-    TraceEdge(trc, thingp, name);
-  }
-}
-
-template <typename T>
-inline void TraceNullableEdge(JSTracer* trc, WeakHeapPtr<T>* thingp,
-                              const char* name) {
-  if (InternalBarrierMethods<T>::isMarkable(thingp->unbarrieredGet())) {
-    TraceEdge(trc, thingp, name);
-  }
-}
-
-template <class BC, class T>
-inline void TraceNullableCellHeaderEdge(
-    JSTracer* trc, gc::CellWithTenuredGCPointer<BC, T>* thingp,
-    const char* name) {
-  T* thing = thingp->headerPtr();
-  if (thing) {
-    gc::TraceEdgeInternal(trc, gc::ConvertToBase(&thing), name);
-    if (thing != thingp->headerPtr()) {
-      thingp->unbarrieredSetHeaderPtr(thing);
-    }
-  }
-}
-
-
-
-
 
 template <typename T>
 inline void TraceRoot(JSTracer* trc, T* thingp, const char* name) {
@@ -247,36 +214,11 @@ void BufferHolder<T>::trace(JSTracer* trc) {
 
 
 
-template <typename T>
-inline void TraceNullableRoot(JSTracer* trc, T* thingp, const char* name) {
-  gc::AssertRootMarkingPhase(trc);
-  if (InternalBarrierMethods<T>::isMarkable(*thingp)) {
-    gc::TraceEdgeInternal(trc, gc::ConvertToBase(thingp), name);
-  }
-}
-
-template <typename T>
-inline void TraceNullableRoot(JSTracer* trc, WeakHeapPtr<T>* thingp,
-                              const char* name) {
-  TraceNullableRoot(trc, thingp->unbarrieredAddress(), name);
-}
-
-
-
-
 
 template <typename T>
 inline void TraceManuallyBarrieredEdge(JSTracer* trc, T* thingp,
                                        const char* name) {
   gc::TraceEdgeInternal(trc, gc::ConvertToBase(thingp), name);
-}
-
-template <typename T>
-inline void TraceManuallyBarrieredNullableEdge(JSTracer* trc, T* thingp,
-                                               const char* name) {
-  if (InternalBarrierMethods<T>::isMarkable(*thingp)) {
-    gc::TraceEdgeInternal(trc, gc::ConvertToBase(thingp), name);
-  }
 }
 
 
