@@ -397,6 +397,7 @@ JitExecStatus EnterBaselineInterpreterAtBranch(JSContext* cx,
                                                jsbytecode* pc);
 
 bool CanBaselineInterpretScript(JSScript* script);
+bool CanBaselineCompileScript(JSContext* cx, JSScript* script);
 
 
 

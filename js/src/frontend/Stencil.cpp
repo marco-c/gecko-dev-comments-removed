@@ -2721,7 +2721,7 @@ static bool MaybeDoEagerBaselineCompilations(JSContext* cx,
                                              const CompilationStencil& stencil,
                                              CompilationGCOutput& gcOutput,
                                              bool doAggressive) {
-  if (!jit::IsBaselineInterpreterEnabled()) {
+  if (!jit::IsBaselineJitEnabled(cx)) {
     return true;
   }
 
@@ -2760,11 +2760,7 @@ static bool MaybeDoEagerBaselineCompilations(JSContext* cx,
       }
     }
 
-    if (script->baselineDisabled()) {
-      continue;
-    }
-
-    if (!jit::CanBaselineInterpretScript(script)) {
+    if (!jit::CanBaselineCompileScript(cx, script)) {
       continue;
     }
 
