@@ -317,9 +317,11 @@ class JSObject
     return JS::shadow::Zone::from(zone());
   }
   MOZ_ALWAYS_INLINE JS::Zone* zoneFromAnyThread() const {
-    MOZ_ASSERT_IF(!isTenured(),
-                  nurseryZoneFromAnyThread() == shape()->zoneFromAnyThread());
-    return shape()->zoneFromAnyThread();
+    MOZ_ASSERT_IF(!isTenured(), nurseryZoneFromAnyThread() ==
+                                    shapeMaybeForwarded()->zoneFromAnyThread());
+    
+    
+    return shapeMaybeForwarded()->zoneFromAnyThread();
   }
   MOZ_ALWAYS_INLINE JS::shadow::Zone* shadowZoneFromAnyThread() const {
     return JS::shadow::Zone::from(zoneFromAnyThread());
