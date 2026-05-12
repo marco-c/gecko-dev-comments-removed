@@ -2310,8 +2310,13 @@ class SystemResourceMonitor:
                     func_name = hex(offset)
 
                 
+                
+                
                 resource_index = -1
-                resource_name = module_name or (file_name if is_js else None)
+                if is_js:
+                    resource_name = file_name
+                else:
+                    resource_name = module_name or "unknown"
                 if resource_name:
                     
                     for i, name_idx in enumerate(resourceTable["name"]):
@@ -2327,7 +2332,7 @@ class SystemResourceMonitor:
                         
                         
                         
-                        resource_type = 1 if module_name else (5 if is_js else 0)
+                        resource_type = 5 if is_js else 1
                         resourceTable["type"].append(resource_type)
                         resourceTable["length"] += 1
 
