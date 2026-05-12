@@ -63,6 +63,9 @@ struct WhereToScroll {
   
   
   Maybe<int16_t> mPercentage;
+  
+  
+  bool mIsAuto = false;
 
   
   constexpr WhereToScroll() = default;
@@ -78,6 +81,8 @@ struct WhereToScroll {
   MOZ_IMPLICIT constexpr WhereToScroll(decltype(Center)) : WhereToScroll(50) {}
   enum { End };
   MOZ_IMPLICIT constexpr WhereToScroll(decltype(End)) : WhereToScroll(100) {}
+  enum { Auto };
+  MOZ_IMPLICIT constexpr WhereToScroll(decltype(Auto)) : mIsAuto(true) {}
 };
 
 

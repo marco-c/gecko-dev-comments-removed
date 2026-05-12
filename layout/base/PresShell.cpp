@@ -3177,6 +3177,7 @@ nsresult PresShell::GoToAnchor(const nsAString& aAnchorName,
       
       
       
+      
       ScrollingInteractionContext scrollToAnchorContext(true);
       if (thereIsATextFragment) {
         MOZ_TRY(ScrollSelectionIntoView(
@@ -3188,9 +3189,8 @@ nsresult PresShell::GoToAnchor(const nsAString& aAnchorName,
             SelectionScrollMode::SyncFlush));
       } else {
         MOZ_TRY(ScrollContentIntoView(
-            target,
-            AxisScrollParams(WhereToScroll::Start, WhenToScroll::Always),
-            AxisScrollParams(),
+            target, AxisScrollParams(WhereToScroll::Auto, WhenToScroll::Always),
+            AxisScrollParams(WhereToScroll::Auto),
             ScrollFlags::AnchorScrollFlags | aAdditionalScrollFlags));
       }
       if (ScrollContainerFrame* rootScroll = GetRootScrollContainerFrame()) {
@@ -3319,9 +3319,8 @@ nsresult PresShell::ScrollToAnchor() {
       return NS_OK;
     }
     return ScrollContentIntoView(
-        lastAnchor,
-        AxisScrollParams(WhereToScroll::Start, WhenToScroll::Always),
-        AxisScrollParams(), ScrollFlags::AnchorScrollFlags);
+        lastAnchor, AxisScrollParams(WhereToScroll::Auto, WhenToScroll::Always),
+        AxisScrollParams(WhereToScroll::Auto), ScrollFlags::AnchorScrollFlags);
   }
 
   return ScrollSelectionIntoView(
@@ -3457,8 +3456,19 @@ static WhereToScroll GetApplicableWhereToScroll(
     const nsIFrame* aScrollableFrame, const nsIFrame* aTarget,
     ScrollDirection aScrollDirection, WhereToScroll aOriginal) {
   MOZ_ASSERT(do_QueryFrame(aScrollContainerFrame) == aScrollableFrame);
-  if (aTarget == aScrollableFrame) {
+
+  if (!aOriginal.mIsAuto) {
     return aOriginal;
+  }
+
+  
+  
+  const WhereToScroll fallback = aScrollDirection == ScrollDirection::eVertical
+                                     ? WhereToScroll{WhereToScroll::Start}
+                                     : WhereToScroll{WhereToScroll::Nearest};
+
+  if (aTarget == aScrollableFrame) {
+    return fallback;
   }
 
   StyleScrollSnapAlignKeyword align =
@@ -3468,7 +3478,7 @@ static WhereToScroll GetApplicableWhereToScroll(
 
   switch (align) {
     case StyleScrollSnapAlignKeyword::None:
-      return aOriginal;
+      return fallback;
     case StyleScrollSnapAlignKeyword::Start:
       return WhereToScroll::Start;
     case StyleScrollSnapAlignKeyword::Center:
@@ -3476,7 +3486,7 @@ static WhereToScroll GetApplicableWhereToScroll(
     case StyleScrollSnapAlignKeyword::End:
       return WhereToScroll::End;
   }
-  return aOriginal;
+  return fallback;
 }
 
 static ScrollMode GetScrollModeForScrollIntoView(
@@ -3563,7 +3573,6 @@ static Maybe<nsPoint> ScrollToShowRect(
     if (ComputeNeedToScroll(aVertical.mWhenToScroll, lineSize.height, aRect.y,
                             aRect.YMost(), visibleRect.y + padding.top,
                             visibleRect.YMost() - padding.bottom)) {
-      
       WhereToScroll whereToScroll = GetApplicableWhereToScroll(
           aScrollContainerFrame, aScrollableFrame, aTarget,
           ScrollDirection::eVertical, aVertical.mWhereToScroll);
@@ -3583,7 +3592,6 @@ static Maybe<nsPoint> ScrollToShowRect(
     if (ComputeNeedToScroll(aHorizontal.mWhenToScroll, lineSize.width, aRect.x,
                             aRect.XMost(), visibleRect.x + padding.left,
                             visibleRect.XMost() - padding.right)) {
-      
       WhereToScroll whereToScroll = GetApplicableWhereToScroll(
           aScrollContainerFrame, aScrollableFrame, aTarget,
           ScrollDirection::eHorizontal, aHorizontal.mWhereToScroll);
