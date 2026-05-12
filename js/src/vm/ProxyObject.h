@@ -44,13 +44,8 @@ class ProxyObject : public JSObject {
   void init(const BaseProxyHandler* handler, HandleValue priv, JSContext* cx);
 
   
-  
-  
   void* inlineDataStart() const {
     return (void*)(uintptr_t(this) + sizeof(ProxyObject));
-  }
-  bool usingInlineValueArray() const {
-    return data.values() == inlineDataStart();
   }
   void setInlineValueArray() {
     data.reservedSlots =
@@ -129,8 +124,6 @@ class ProxyObject : public JSObject {
   static void trace(JSTracer* trc, JSObject* obj);
 
   static void traceEdgeToTarget(JSTracer* trc, ProxyObject* obj);
-
-  void nurseryProxyTenured(ProxyObject* old);
 
   void nuke();
 };
