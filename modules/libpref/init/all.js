@@ -3072,7 +3072,7 @@ pref("network.tcp.keepalive.idle_time", 600);
 
 
 
-#if !defined(ANDROID) && !defined(XP_WIN)
+#ifndef ANDROID
   pref("geo.provider.network.url", "https://www.googleapis.com/geolocation/v1/geolocate?key=%GOOGLE_LOCATION_SERVICE_API_KEY%&solution_channel=%OS%");
 
   
