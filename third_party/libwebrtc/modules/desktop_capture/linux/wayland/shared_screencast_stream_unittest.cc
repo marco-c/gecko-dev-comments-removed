@@ -396,6 +396,17 @@ TEST_F(MAYBE_PipeWireStreamTest, TestModifierFallback) {
   emptyFrameEvent.Wait(kShortWait);
 
   
+  Event invalidStrideEvent;
+  EXPECT_CALL(*this, OnFrameRecorded);
+  EXPECT_CALL(*this, OnFailedToProcessBuffer).WillOnce([&invalidStrideEvent] {
+    invalidStrideEvent.Set();
+  });
+
+  test_screencast_stream_provider_->RecordFrame(
+      blue_color, TestScreenCastStreamProvider::InvalidStride);
+  invalidStrideEvent.Wait(kShortWait);
+
+  
   EXPECT_CALL(*this, OnStopStreaming);
   shared_screencast_stream_->StopScreenCastStream();
 }
