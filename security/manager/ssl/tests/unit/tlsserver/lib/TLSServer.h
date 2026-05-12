@@ -86,8 +86,7 @@ using ConnectionHandlerFunc = void (*)(PRFileDesc* aSocket,
 
 
 int StartServer(int argc, char* argv[], SSLSNISocketConfig sniSocketConfig,
-                void* sniSocketConfigArg,
-                ServerConfigFunc configFunc = nullptr,
+                void* sniSocketConfigArg, ServerConfigFunc configFunc = nullptr,
                 ConnectionHandlerFunc connectionHandler = nullptr);
 
 template <typename Host>
