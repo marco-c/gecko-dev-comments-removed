@@ -1160,20 +1160,6 @@ class NativeObject : public JSObject {
   static bool freezeOrSealProperties(JSContext* cx, Handle<NativeObject*> obj,
                                      IntegrityLevel level);
 
- protected:
-  static bool changeNumFixedSlotsAfterSwap(JSContext* cx,
-                                           Handle<NativeObject*> obj,
-                                           uint32_t nfixed);
-
-  
-  [[nodiscard]] bool prepareForSwap(JSContext* cx, JSObject* other,
-                                    MutableHandleValueVector slotValuesOut);
-  [[nodiscard]] static bool fixupAfterSwap(JSContext* cx,
-                                           Handle<NativeObject*> obj,
-                                           gc::AllocKind kind,
-                                           HandleValueVector slotValues);
-
- public:
   
   
   bool inDictionaryMode() const { return shape()->isDictionary(); }
@@ -1313,7 +1299,6 @@ class NativeObject : public JSObject {
   inline uint64_t maybeUniqueId() const {
     return getSlotsHeader()->maybeUniqueId();
   }
-  bool setOrUpdateUniqueId(JSContext* cx, uint64_t uid);
 
   
   

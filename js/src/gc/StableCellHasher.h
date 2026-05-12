@@ -33,9 +33,6 @@ void TransferUniqueId(Cell* tgt, Cell* src);
 
 void RemoveUniqueId(Cell* cell);
 
-
-bool SetOrUpdateUniqueId(JSContext* cx, Cell* cell, uint64_t uid);
-
 }  
 
 #endif  

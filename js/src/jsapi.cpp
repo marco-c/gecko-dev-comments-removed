@@ -641,20 +641,10 @@ static void ReleaseAssertObjectHasNoWrappers(JSContext* cx,
 
 
 
-
-
-
-
-
-
-
-
-
 static void CheckTransplantObject(JSObject* obj) {
-#ifdef DEBUG
-  MOZ_ASSERT(!obj->is<CrossCompartmentWrapperObject>());
+  MOZ_RELEASE_ASSERT(obj->is<ProxyObject>());
+  MOZ_RELEASE_ASSERT(!obj->is<CrossCompartmentWrapperObject>());
   JS::AssertCellIsNotGray(obj);
-#endif
 }
 
 JS_PUBLIC_API JSObject* JS_TransplantObject(JSContext* cx, HandleObject origobj,
