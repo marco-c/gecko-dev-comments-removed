@@ -10,6 +10,8 @@
 
 ChromeUtils.defineESModuleGetters(this, {
   PageActions: "resource:///modules/PageActions.sys.mjs",
+  TranslationsFeature:
+    "chrome://global/content/translations/TranslationsFeature.sys.mjs",
   TranslationsUtils:
     "chrome://global/content/translations/TranslationsUtils.mjs",
   TranslationsPanelShared:
@@ -1458,7 +1460,7 @@ var FullPageTranslationsPanel = new (class {
 
     if (TranslationsParent.isFullPageTranslationsRestrictedForPage(gBrowser)) {
       this.buttonElements.button.hidden = true;
-    } else if (!TranslationsParent.AIFeature.isEnabled) {
+    } else if (!TranslationsFeature.isEnabled) {
       
       
       this.buttonElements.button.hidden = true;
@@ -1613,7 +1615,7 @@ var FullPageTranslationsPanel = new (class {
 
         if (
           
-          TranslationsParent.AIFeature.isEnabled &&
+          TranslationsFeature.isEnabled &&
           
           (requestedLanguagePair ||
             
