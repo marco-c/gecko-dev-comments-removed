@@ -2979,6 +2979,13 @@ nsCSSFrameConstructor::FindSelectData(const Element& aElement,
   
   const auto* sel = dom::HTMLSelectElement::FromNode(aElement);
   MOZ_ASSERT(sel);
+  switch (aStyle.StyleDisplay()->EffectiveAppearance()) {
+    case StyleAppearance::Base:
+    case StyleAppearance::BaseSelect:
+      return nullptr;
+    default:
+      break;
+  }
   if (sel->IsCombobox()) {
     static constexpr FrameConstructionData sComboboxData{
         ToCreationFunc(NS_NewComboboxControlFrame)};

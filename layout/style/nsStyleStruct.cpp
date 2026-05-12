@@ -1084,7 +1084,7 @@ nsStylePosition::nsStylePosition()
       mHeight(StyleSize::Auto()),
       mMinHeight(StyleSize::Auto()),
       mMaxHeight(StyleMaxSize::None()),
-      mPositionAnchor(StylePositionAnchorKeyword::None()),
+      mPositionAnchor(StylePositionAnchorKeyword::Normal()),
       mPositionVisibility(StylePositionVisibility::ANCHORS_VISIBLE),
       mPositionTryFallbacks(StylePositionTryFallbacks()),
       mPositionTryOrder(StylePositionTryOrder::Normal),
@@ -2437,9 +2437,15 @@ static bool AppearanceValueAffectsFrames(StyleAppearance aAppearance,
                                          StyleAppearance aDefaultAppearance) {
   switch (aAppearance) {
     case StyleAppearance::Base:
-      
-      return aDefaultAppearance == StyleAppearance::Checkbox ||
+      return aDefaultAppearance == StyleAppearance::Menulist ||
+             aDefaultAppearance == StyleAppearance::Listbox ||
+             aDefaultAppearance == StyleAppearance::Checkbox ||
              aDefaultAppearance == StyleAppearance::Radio;
+    case StyleAppearance::BaseSelect:
+      
+      
+      return aDefaultAppearance == StyleAppearance::Menulist ||
+             aDefaultAppearance == StyleAppearance::Listbox;
     case StyleAppearance::None:
       
       
@@ -3390,7 +3396,7 @@ nsChangeHint nsStyleUIReset::CalcDifference(
     hint |= nsChangeHint_RepaintFrame;
   }
   if (mFieldSizing != aNewData.mFieldSizing) {
-    hint |= nsChangeHint_NeutralChange;
+    hint |= nsChangeHint_AllReflowHints;
   }
   if (mScrollbarWidth != aNewData.mScrollbarWidth) {
     
