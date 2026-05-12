@@ -78,6 +78,7 @@
 #include "mozilla/dom/nsMixedContentBlocker.h"
 #include "mozilla/dom/BlobURLProtocolHandler.h"
 #include "mozilla/net/HttpBaseChannel.h"
+#include "nsHttpChannel.h"
 #include "nsIScriptError.h"
 #include "nsISiteSecurityService.h"
 #include "nsHttpHandler.h"
@@ -3335,6 +3336,15 @@ bool NS_ShouldClassifyChannel(nsIChannel* aChannel, ClassifyType aType) {
     
     
     if (NS_SUCCEEDED(rv) && beConservative) {
+      return false;
+    }
+  }
+
+  
+  if (aType == ClassifyType::ETP) {
+    RefPtr<mozilla::net::nsHttpChannel> concreteHttpChannel =
+        do_QueryObject(aChannel);
+    if (concreteHttpChannel && concreteHttpChannel->IsAuthRedirectedChannel()) {
       return false;
     }
   }

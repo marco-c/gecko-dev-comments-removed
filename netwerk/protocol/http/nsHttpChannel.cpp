@@ -7611,8 +7611,7 @@ void nsHttpChannel::AsyncOpenFinal(TimeStamp aTimeStamp) {
   
   
   
-  if (!LoadAuthRedirectedChannel() &&
-      NS_ShouldClassifyChannel(this, ClassifyType::ETP)) {
+  if (NS_ShouldClassifyChannel(this, ClassifyType::ETP)) {
     RefPtr<nsHttpChannel> self = this;
     willCallback = NS_SUCCEEDED(
         AsyncUrlChannelClassifier::CheckChannel(this, [self]() -> void {
@@ -8042,7 +8041,6 @@ nsresult nsHttpChannel::BeginConnect() {
   
   
   bool shouldBeClassifiedForTracker =
-      !LoadAuthRedirectedChannel() &&
       NS_ShouldClassifyChannel(this, ClassifyType::ETP);
 
   if (shouldBeClassifiedForTracker) {

@@ -548,6 +548,8 @@ class nsHttpChannel final : public HttpBaseChannel,
   
   void SetCachedContentType();
 
+  bool IsAuthRedirectedChannel() { return !!LoadAuthRedirectedChannel(); }
+
  private:
   
   
