@@ -163,13 +163,6 @@ class alignas(ArenaSize) Arena {
 
   AllocKind allocKind;
 
-  
-
-
-
-
-  JS::Zone* zone_;
-
  public:
   
 
@@ -228,9 +221,9 @@ class alignas(ArenaSize) Arena {
   uint8_t data[ArenaSize - ArenaHeaderSize];
 
   
-  void init(GCRuntime* gc, JS::Zone* zone, AllocKind kind);
+  void init(GCRuntime* gc, AllocKind kind);
 
-  JS::Zone* zone() const { return zone_; }
+  inline JS::Zone* zone() const;
 
   
   
