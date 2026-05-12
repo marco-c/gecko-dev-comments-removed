@@ -258,22 +258,6 @@ static IsolationBehavior IsolationBehaviorForURI(nsIURI* aURI, bool aIsSubframe,
 
   if (scheme == "chrome"_ns) {
     
-    
-    
-    
-    
-    nsCOMPtr<nsIXULChromeRegistry> chromeReg =
-        do_GetService("@mozilla.org/chrome/chrome-registry;1");
-    bool mustLoadRemotely = false;
-    if (NS_SUCCEEDED(chromeReg->MustLoadURLRemotely(aURI, &mustLoadRemotely)) &&
-        mustLoadRemotely) {
-      return IsolationBehavior::ForceWebRemoteType;
-    }
-    bool canLoadRemotely = false;
-    if (NS_SUCCEEDED(chromeReg->CanLoadURLRemotely(aURI, &canLoadRemotely)) &&
-        canLoadRemotely) {
-      return IsolationBehavior::Anywhere;
-    }
     return IsolationBehavior::Parent;
   }
 
