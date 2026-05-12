@@ -315,6 +315,14 @@ class AbstractModuleSourceObject : public NativeObject {
  public:
   static const JSClass class_;
 };
+
+
+class ModuleSourceObject : public NativeObject {
+ public:
+  static const JSClass class_;
+  static bool isInstance(HandleValue value);
+  [[nodiscard]] static ModuleSourceObject* create(JSContext* cx);
+};
 #endif
 
 
@@ -424,8 +432,7 @@ class ModuleObject : public NativeObject {
   
   void initScriptSlots(HandleScript script);
 #ifdef ENABLE_SOURCE_PHASE_IMPORTS
-  void initModuleSourceSlot(HandleObject moduleSource);
-  void initScriptSourceObject(ScriptSourceObject* sso);
+  void initModuleSourceSlot(Handle<ModuleSourceObject*> moduleSource);
 #endif
 
   void setInitialEnvironment(
@@ -449,8 +456,7 @@ class ModuleObject : public NativeObject {
   ModuleEnvironmentObject* environment() const;
   ModuleNamespaceObject* namespace_();
 #ifdef ENABLE_SOURCE_PHASE_IMPORTS
-  JSObject* moduleSource() const;
-  bool isSourcePhaseModule() const { return moduleSource() != nullptr; }
+  ModuleSourceObject* moduleSource() const;
 #endif
   ModuleStatus status() const;
   mozilla::Maybe<uint32_t> maybeDfsAncestorIndex() const;
@@ -520,9 +526,6 @@ class ModuleObject : public NativeObject {
   static bool createSyntheticEnvironment(JSContext* cx,
                                          Handle<ModuleObject*> self,
                                          JS::HandleVector<Value> values);
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
-  static bool createWasmEnvironment(JSContext* cx, Handle<ModuleObject*> self);
-#endif
 
   void initAsyncSlots(JSContext* cx, bool hasTopLevelAwait,
                       Handle<ListObject*> asyncParentModules);

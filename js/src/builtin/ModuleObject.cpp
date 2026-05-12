@@ -25,7 +25,6 @@
 #include "vm/PlainObject.h"    
 #include "vm/PromiseObject.h"  
 #include "vm/SharedStencil.h"  
-#include "wasm/WasmJS.h"       
 
 #include "gc/GCContext-inl.h"
 #include "vm/EnvironmentObject-inl.h"  
@@ -789,20 +788,16 @@ static bool AbstractModuleSource_toStringTagGetter(JSContext* cx, unsigned argc,
   
   
   
-  
-  if (!obj->is<WasmModuleObject>()) {
-    
+  if (!obj->is<ModuleSourceObject>()) {
     args.rval().setUndefined();
     return true;
   }
 
+  MOZ_ASSERT(
+      JS::Prefs::experimental_source_phase_imports_test262_module_source());
+
   
-  
-  JSAtom* name = Atomize(cx, WasmModuleObject::class_.name,
-                         strlen(WasmModuleObject::class_.name));
-  if (!name) {
-    return false;
-  }
+  JSAtom* name = cx->names().Module;
 
   
   
@@ -841,6 +836,28 @@ static const ClassSpec AbstractModuleSourceObjectClassSpec = {
     JS_NULL_CLASS_OPS,
     &AbstractModuleSourceObjectClassSpec,
 };
+
+
+
+
+ const JSClass ModuleSourceObject::class_ = {
+    "ModuleSource",
+};
+
+
+bool ModuleSourceObject::isInstance(HandleValue value) {
+  return value.isObject() && value.toObject().is<ModuleSourceObject>();
+}
+
+
+ModuleSourceObject* ModuleSourceObject::create(JSContext* cx) {
+  RootedObject proto(
+      cx, GlobalObject::getOrCreatePrototype(cx, JSProto_AbstractModuleSource));
+  if (!proto) {
+    return nullptr;
+  }
+  return NewObjectWithGivenProto<ModuleSourceObject>(cx, proto);
+}
 #endif
 
 
@@ -1153,12 +1170,12 @@ ScriptSourceObject* ModuleObject::scriptSourceObject() const {
 }
 
 #ifdef ENABLE_SOURCE_PHASE_IMPORTS
-JSObject* ModuleObject::moduleSource() const {
+ModuleSourceObject* ModuleObject::moduleSource() const {
   Value value = getReservedSlot(ModuleSourceSlot);
   if (value.isUndefined()) {
     return nullptr;
   }
-  return &value.toObject();
+  return &value.toObject().as<ModuleSourceObject>();
 }
 #endif
 
@@ -1177,12 +1194,9 @@ void ModuleObject::initScriptSlots(HandleScript script) {
 }
 
 #ifdef ENABLE_SOURCE_PHASE_IMPORTS
-void ModuleObject::initModuleSourceSlot(HandleObject moduleSource) {
+void ModuleObject::initModuleSourceSlot(
+    Handle<ModuleSourceObject*> moduleSource) {
   initReservedSlot(ModuleSourceSlot, ObjectValue(*moduleSource));
-}
-
-void ModuleObject::initScriptSourceObject(ScriptSourceObject* sso) {
-  cyclicModuleFields()->scriptSourceObject = sso;
 }
 #endif
 
@@ -1245,13 +1259,7 @@ const char* ModuleObject::filename() const {
   if (!hasCyclicModuleFields()) {
     return "(JSON module)";
   }
-  ScriptSourceObject* sso = cyclicModuleFields()->scriptSourceObject;
-  if (!sso->hasSource()) {
-    
-    
-    return "(unknown)";
-  }
-  return sso->source()->filename();
+  return cyclicModuleFields()->scriptSourceObject->source()->filename();
 }
 
 static inline void AssertValidModuleStatus(ModuleStatus status) {
@@ -1615,20 +1623,6 @@ bool ModuleObject::createSyntheticEnvironment(JSContext* cx,
 
   return true;
 }
-
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
-
-bool ModuleObject::createWasmEnvironment(JSContext* cx,
-                                         Handle<ModuleObject*> self) {
-  Rooted<ModuleEnvironmentObject*> env(
-      cx, ModuleEnvironmentObject::createForWasmModule(cx, self));
-  if (!env) {
-    return false;
-  }
-  self->setInitialEnvironment(env);
-  return true;
-}
-#endif
 
 
 

@@ -31,10 +31,8 @@
 #include "vm/JSContext.h"               
 #include "vm/JSObject.h"                
 #include "vm/JSONParser.h"              
-#include "vm/JSScript.h"                
 #include "vm/List.h"                    
 #include "vm/Runtime.h"                 
-#include "wasm/WasmCompile.h"
 
 #include "builtin/HandlerFunction-inl.h"  
 #include "vm/JSAtomUtils-inl.h"           
@@ -112,21 +110,6 @@ JS_PUBLIC_API bool JS::FinishLoadingImportedModule(
   MOZ_ASSERT(moduleRequest->is<ModuleRequestObject>());
   MOZ_ASSERT(result);
   Rooted<ModuleObject*> module(cx, &result->as<ModuleObject>());
-
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
-  
-  
-  
-  
-  
-  if (moduleRequest->as<ModuleRequestObject>().phase() ==
-          ImportPhase::Evaluation &&
-      module->moduleSource()) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_WASM_ESM_EVAL_NOT_SUPPORTED);
-    return FinishLoadingImportedModuleFailedWithPendingException(cx, payload);
-  }
-#endif
 
   if (referrer && referrer->isModule()) {
     
@@ -322,7 +305,6 @@ JS_PUBLIC_API JSObject* JS::CreateDefaultExportSyntheticModule(
   return moduleObject;
 }
 
-
 JS_PUBLIC_API JSObject* JS::CompileWasmModule(
     JSContext* cx, const ReadOnlyCompileOptions& options,
     js::Vector<uint8_t, 0, js::MallocAllocPolicy>& srcBuf) {
@@ -334,49 +316,6 @@ JS_PUBLIC_API JSObject* JS::CompileWasmModule(
                            "Compilation of wasm modules not implemented.");
 
   return nullptr;
-}
-
-
-JS_PUBLIC_API JSObject* JS::CompileWasmModuleAsSource(
-    JSContext* cx, const ReadOnlyCompileOptions& options,
-    js::Vector<uint8_t, 0, js::MallocAllocPolicy>& srcBuf) {
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
-  MOZ_ASSERT(!cx->zone()->isAtomsZone());
-  AssertHeapIsIdle();
-  CHECK_THREAD(cx);
-
-  wasm::BytecodeSource source(srcBuf.begin(), srcBuf.length());
-  RootedObject wasmModuleObject(cx);
-  if (!wasm::CompileForESM(cx, options, source, &wasmModuleObject)) {
-    return nullptr;
-  }
-
-  Rooted<ModuleObject*> moduleObject(cx, ModuleObject::create(cx));
-  if (!moduleObject) {
-    return nullptr;
-  }
-
-  moduleObject->initModuleSourceSlot(wasmModuleObject);
-
-  Rooted<ScriptSourceObject*> sso(cx,
-                                  ScriptSourceObject::createForWasmModule(cx));
-  if (!sso) {
-    return nullptr;
-  }
-  moduleObject->initScriptSourceObject(sso);
-
-  if (!ModuleObject::createWasmEnvironment(cx, moduleObject)) {
-    return nullptr;
-  }
-
-  return moduleObject;
-#else
-  JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
-                           JSMSG_WASM_COMPILE_ERROR,
-                           "Compilation of wasm modules not enabled.");
-
-  return nullptr;
-#endif
 }
 
 JS_PUBLIC_API void JS::SetModulePrivate(JSObject* module, const Value& value) {
@@ -495,11 +434,7 @@ JS_PUBLIC_API JSScript* JS::GetModuleScript(JS::HandleObject moduleRecord) {
   auto& module = moduleRecord->as<ModuleObject>();
 
   
-  if (module.hasSyntheticModuleFields()
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
-      || module.isSourcePhaseModule()
-#endif
-  ) {
+  if (module.hasSyntheticModuleFields()) {
     return nullptr;
   }
 
@@ -559,16 +494,6 @@ JS_PUBLIC_API JS::ModuleType JS::GetModuleRequestType(
   cx->check(moduleRequestArg);
 
   return moduleRequestArg->as<ModuleRequestObject>().moduleType();
-}
-
-JS_PUBLIC_API bool JS::ModuleRequestIsSourcePhase(
-    JSContext* cx, Handle<JSObject*> moduleRequestArg) {
-  AssertHeapIsIdle();
-  CHECK_THREAD(cx);
-  cx->check(moduleRequestArg);
-
-  return moduleRequestArg->as<ModuleRequestObject>().phase() ==
-         ImportPhase::Source;
 }
 
 JS_PUBLIC_API void JS::ClearModuleEnvironment(JSObject* moduleObj) {
@@ -1459,7 +1384,7 @@ static bool ModuleInitializeEnvironment(JSContext* cx,
       
       
       
-      JSObject* moduleSourceObject = importedModule->moduleSource();
+      ModuleSourceObject* moduleSourceObject = importedModule->moduleSource();
 
       
       
@@ -2835,7 +2760,7 @@ static bool TryStartDynamicModuleImport(JSContext* cx, HandleScript script,
     
     
     moduleRequest = ModuleRequestObject::create(
-        cx, specifierAtom, JS::ModuleType::JavaScriptOrWasm, phase);
+        cx, specifierAtom, JS::ModuleType::JavaScript, phase);
   } else
 #endif
   {
@@ -3033,7 +2958,7 @@ bool ContinueDynamicImport(JSContext* cx, Handle<JSScript*> referrer,
   
   if (phase == ImportPhase::Source) {
     
-    JSObject* moduleSource = module->moduleSource();
+    ModuleSourceObject* moduleSource = module->moduleSource();
 
     
     if (!moduleSource) {

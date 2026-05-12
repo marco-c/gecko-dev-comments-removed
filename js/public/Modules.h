@@ -218,14 +218,8 @@ extern JS_PUBLIC_API JSObject* CreateDefaultExportSyntheticModule(
 
 
 
+
 extern JS_PUBLIC_API JSObject* CompileWasmModule(
-    JSContext* cx, const ReadOnlyCompileOptions& options,
-    js::Vector<uint8_t, 0, js::MallocAllocPolicy>& srcBuf);
-
-
-
-
-extern JS_PUBLIC_API JSObject* CompileWasmModuleAsSource(
     JSContext* cx, const ReadOnlyCompileOptions& options,
     js::Vector<uint8_t, 0, js::MallocAllocPolicy>& srcBuf);
 
@@ -336,12 +330,6 @@ extern JS_PUBLIC_API JSString* GetModuleRequestSpecifier(
 
 extern JS_PUBLIC_API ModuleType
 GetModuleRequestType(JSContext* cx, Handle<JSObject*> moduleRequestArg);
-
-
-
-
-extern JS_PUBLIC_API bool ModuleRequestIsSourcePhase(
-    JSContext* cx, Handle<JSObject*> moduleRequestArg);
 
 
 
