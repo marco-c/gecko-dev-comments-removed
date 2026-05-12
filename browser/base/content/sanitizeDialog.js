@@ -4,7 +4,6 @@
 
 
 
-
 var { Sanitizer } = ChromeUtils.importESModule(
   "resource:///modules/Sanitizer.sys.mjs"
 );
@@ -200,6 +199,14 @@ var gSanitizePromptDialog = {
         this.sanitize(e);
       }
     });
+
+    const { onAccept, onCancel } = arg.wrappedJSObject ?? arg;
+    if (typeof onAccept === "function") {
+      document.addEventListener("dialogaccept", onAccept);
+    }
+    if (typeof onCancel === "function") {
+      document.addEventListener("dialogcancel", onCancel);
+    }
 
     this._allCheckboxes = document.querySelectorAll("checkbox[preference]");
 
