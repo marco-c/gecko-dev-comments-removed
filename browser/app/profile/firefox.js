@@ -3497,7 +3497,7 @@ pref("browser.backup.scheduled.user-disabled", false);
 
 
 pref("browser.backup.tab-flush-timeout", 5000);
-pref("browser.backup.enabled_on.profiles", "[]");
+pref("browser.backup.enabled_on.profiles", "{}");
 
 
 pref("browser.profiles.enabled", true);
