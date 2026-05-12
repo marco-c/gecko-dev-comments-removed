@@ -606,6 +606,73 @@ pub mod specified {
 
 
 
+#[derive(Clone, Debug)]
+#[repr(C)]
+pub enum UnparsedSegment {
+    
+    
+    
+    
+    String(CssString),
+
+    
+    
+    
+    
+    VariableReference(VariableReferenceValue),
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub type UnparsedValue = ThinVec<UnparsedSegment>;
+
+
+
+
+
+#[derive(Clone, Debug)]
+#[repr(C)]
+pub struct VariableReferenceValue {
+    
+    
+    
+    
+    pub variable: CssString,
+
+    
+    
+    
+    
+    
+    
+    pub fallback: UnparsedValue,
+
+    
+    
+    
+    
+    
+    pub has_fallback: bool,
+}
+
+
+
+
+
+
 
 #[derive(Clone, Debug)]
 #[repr(C)]
@@ -672,6 +739,12 @@ pub enum TypedValue {
     
     
     
+    Unparsed(UnparsedValue),
+
+    
+    
+    
+    
     
     Keyword(KeywordValue),
 
@@ -680,6 +753,18 @@ pub enum TypedValue {
     
     
     Numeric(NumericValue),
+}
+
+
+
+
+
+
+#[derive(Clone, Debug)]
+#[repr(C)]
+pub struct TypedValueList {
+    
+    pub values: ThinVec<TypedValue>,
 }
 
 
@@ -756,6 +841,7 @@ pub trait ToTyped {
     
     
     
+    
     fn to_typed(&self, _dest: &mut ThinVec<TypedValue>) -> Result<(), ()> {
         Err(())
     }
@@ -771,6 +857,18 @@ pub trait ToTyped {
         self.to_typed(&mut dest).ok()?;
         dest.into_iter().next()
     }
+
+    
+    
+    
+    
+    
+    
+    fn to_typed_value_list(&self) -> Option<TypedValueList> {
+        let mut dest = ThinVec::new();
+        self.to_typed(&mut dest).ok()?;
+        Some(TypedValueList { values: dest })
+    }
 }
 
 impl<'a, T> ToTyped for &'a T
@@ -783,6 +881,15 @@ where
 }
 
 impl<T> ToTyped for Box<T>
+where
+    T: ?Sized + ToTyped,
+{
+    fn to_typed(&self, dest: &mut ThinVec<TypedValue>) -> Result<(), ()> {
+        (**self).to_typed(dest)
+    }
+}
+
+impl<T> ToTyped for Arc<T>
 where
     T: ?Sized + ToTyped,
 {

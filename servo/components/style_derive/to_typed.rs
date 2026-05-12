@@ -73,6 +73,10 @@ use synstructure::{BindingInfo, Structure};
 
 
 
+
+
+
+
 pub fn derive(mut input: DeriveInput) -> TokenStream {
     
     
@@ -85,7 +89,7 @@ pub fn derive(mut input: DeriveInput) -> TokenStream {
 
     let css_input_attrs = cg::parse_input_attrs::<CssInputAttrs>(&input);
 
-    let input_attrs = cg::parse_input_attrs::<TypedValueInputAttrs>(&input);
+    let input_attrs = cg::parse_input_attrs::<TypedInputAttrs>(&input);
 
     let body = match &input.data {
         
@@ -112,7 +116,11 @@ pub fn derive(mut input: DeriveInput) -> TokenStream {
                 
                 let s = Structure::new(&input);
                 let match_body = s.each_variant(|variant| {
-                    derive_variant_arm(variant, input_attrs.derive_fields, &mut where_clause)
+                    derive_variant_arm(
+                        variant,
+                        input_attrs.skip_derive_fields || input_attrs.todo_derive_fields,
+                        &mut where_clause,
+                    )
                 });
 
                 quote! {
@@ -130,7 +138,11 @@ pub fn derive(mut input: DeriveInput) -> TokenStream {
             if css_input_attrs.bitflags.is_none() {
                 let s = Structure::new(&input);
                 let match_body = s.each_variant(|variant| {
-                    derive_variant_arm(variant, input_attrs.derive_fields, &mut where_clause)
+                    derive_variant_arm(
+                        variant,
+                        input_attrs.skip_derive_fields || input_attrs.todo_derive_fields,
+                        &mut where_clause,
+                    )
                 });
 
                 quote! {
@@ -184,7 +196,7 @@ pub fn derive(mut input: DeriveInput) -> TokenStream {
 
 fn derive_variant_arm(
     variant: &synstructure::VariantInfo,
-    derive_fields: bool,
+    skip_derive_fields: bool,
     where_clause: &mut Option<WhereClause>,
 ) -> TokenStream {
     let bindings = variant.bindings();
@@ -196,7 +208,7 @@ fn derive_variant_arm(
     let css_variant_attrs = cg::parse_variant_attrs_from_ast::<CssVariantAttrs>(&ast);
 
     
-    let variant_attrs = cg::parse_variant_attrs_from_ast::<TypedValueVariantAttrs>(&ast);
+    let variant_attrs = cg::parse_variant_attrs_from_ast::<TypedVariantAttrs>(&ast);
 
     
     
@@ -204,7 +216,6 @@ fn derive_variant_arm(
         return quote! {Err(())};
     }
 
-    
     
     
     if variant_attrs.skip || variant_attrs.todo {
@@ -228,8 +239,10 @@ fn derive_variant_arm(
             ));
             Ok(())
         }
-    } else if derive_fields {
-        derive_variant_fields_expr(bindings, where_clause, css_variant_attrs.comma)
+    } else if !skip_derive_fields {
+        let allow_multiple_values = css_variant_attrs.comma && !variant_attrs.no_multiple_values;
+
+        derive_variant_fields_expr(bindings, where_clause, allow_multiple_values)
     } else {
         
         
@@ -259,7 +272,7 @@ fn derive_variant_arm(
 fn derive_variant_fields_expr(
     bindings: &[BindingInfo],
     where_clause: &mut Option<WhereClause>,
-    comma: bool,
+    allow_multiple_values: bool,
 ) -> TokenStream {
     
     
@@ -267,7 +280,7 @@ fn derive_variant_fields_expr(
         .iter()
         .filter_map(|binding| {
             let css_field_attrs = cg::parse_field_attrs::<CssFieldAttrs>(&binding.ast());
-            let field_attrs = cg::parse_field_attrs::<TypedValueFieldAttrs>(&binding.ast());
+            let field_attrs = cg::parse_field_attrs::<TypedFieldAttrs>(&binding.ast());
             if css_field_attrs.skip {
                 return None;
             }
@@ -315,7 +328,7 @@ fn derive_variant_fields_expr(
     quote! {{
         let old_len = dest.len();
         #expr
-        if !#comma && dest.len() - old_len > 1 {
+        if !#allow_multiple_values && dest.len() - old_len > 1 {
             dest.truncate(old_len);
             return Err(());
         }
@@ -339,11 +352,10 @@ fn derive_variant_fields_expr(
 
 
 
-
 fn derive_single_field_expr(
     field: &BindingInfo,
     css_field_attrs: CssFieldAttrs,
-    field_attrs: TypedValueFieldAttrs,
+    field_attrs: TypedFieldAttrs,
     where_clause: &mut Option<WhereClause>,
 ) -> TokenStream {
     let mut expr = if css_field_attrs.iterable {
@@ -453,8 +465,8 @@ pub(crate) fn field_generic_arguments(field: &BindingInfo) -> Vec<syn::Type> {
 }
 
 #[derive(Default, FromDeriveInput)]
-#[darling(attributes(typed_value), default)]
-pub struct TypedValueInputAttrs {
+#[darling(attributes(typed), default)]
+pub struct TypedInputAttrs {
     
     
     
@@ -463,18 +475,52 @@ pub struct TypedValueInputAttrs {
     
     
     
+    pub skip_derive_fields: bool,
+
     
     
-    pub derive_fields: bool,
+    
+    
+    
+    
+    
+    
+    pub todo_derive_fields: bool,
+
+    
+    
+    
+    
+    
+    pub no_multiple_values: bool,
 }
 
 #[derive(Default, FromVariant)]
-#[darling(attributes(typed_value), default)]
-pub struct TypedValueVariantAttrs {
+#[darling(attributes(typed), default)]
+pub struct TypedVariantAttrs {
     
     
     
-    pub derive_fields: bool,
+    
+    
+    
+    pub skip_derive_fields: bool,
+
+    
+    
+    
+    
+    
+    
+    pub todo_derive_fields: bool,
+
+    
+    
+    
+    
+    
+    
+    pub no_multiple_values: bool,
 
     
     
@@ -487,8 +533,8 @@ pub struct TypedValueVariantAttrs {
 }
 
 #[derive(Default, FromField)]
-#[darling(attributes(typed_value), default)]
-pub struct TypedValueFieldAttrs {
+#[darling(attributes(typed), default)]
+pub struct TypedFieldAttrs {
     
     
     
