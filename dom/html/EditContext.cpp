@@ -6,13 +6,15 @@
 
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/ErrorResult.h"
+#include "mozilla/dom/CompositionEvent.h"
 #include "mozilla/dom/Element.h"
+#include "nsGenericHTMLElement.h"
 
 namespace mozilla::dom {
 
 NS_IMPL_ADDREF_INHERITED(EditContext, DOMEventTargetHelper)
 NS_IMPL_RELEASE_INHERITED(EditContext, DOMEventTargetHelper)
-NS_IMPL_CYCLE_COLLECTION(EditContext)
+NS_IMPL_CYCLE_COLLECTION(EditContext, mAssociatedElement)
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(EditContext)
 NS_INTERFACE_MAP_END_INHERITING(DOMEventTargetHelper)
@@ -65,6 +67,27 @@ void EditContext::SetForElement(const Element& aElement,
   } else {
     sEditContextHashMap->Remove(&aElement);
   }
+}
+
+void EditContext::Deactivate() {
+  
+
+  
+  if (!mIsComposing) {
+    return;
+  }
+
+  
+  mIsComposing = false;
+  
+  
+  
+}
+
+
+bool EditContext::IsAnyAttached() {
+  MOZ_ASSERT(NS_IsMainThread());
+  return sEditContextHashMap && !sEditContextHashMap->IsEmpty();
 }
 
 }  

@@ -606,7 +606,8 @@ class EditorBase : public nsIEditor,
 
 
 
-  virtual nsresult OnBlur(const dom::EventTarget* aEventTarget) = 0;
+  MOZ_CAN_RUN_SCRIPT virtual nsresult OnBlur(
+      const dom::EventTarget* aEventTarget) = 0;
 
   
 
@@ -820,6 +821,8 @@ class EditorBase : public nsIEditor,
   struct MOZ_STACK_CLASS TopLevelEditSubActionData final {
     friend class AutoEditActionDataSetter;
 
+    TopLevelEditSubActionData(const TopLevelEditSubActionData& aOther) = delete;
+
     
     
     RefPtr<RangeItem> mSelectedRange;
@@ -941,7 +944,6 @@ class EditorBase : public nsIEditor,
                                     const EditorRawDOMPoint& aEnd);
 
     TopLevelEditSubActionData() = default;
-    TopLevelEditSubActionData(const TopLevelEditSubActionData& aOther) = delete;
   };
 
   struct MOZ_STACK_CLASS EditSubActionData final {
