@@ -5902,6 +5902,13 @@ nsresult XREMain::XRE_mainRun() {
         tempArgv[i] = strdup(gArgv[i]);
       }
       CommandLineServiceMac::SetupMacCommandLine(gArgc, tempArgv, false);
+
+      
+      
+      
+      
+      StartupURLCollectionComplete();
+
       rv = cmdLine->Init(gArgc, tempArgv, workingDir,
                          nsICommandLine::STATE_INITIAL_LAUNCH);
       free(tempArgv);

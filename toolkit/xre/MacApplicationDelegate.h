@@ -5,7 +5,6 @@
 
 
 
-
 #ifndef MacApplicationDelegate_h_
 #define MacApplicationDelegate_h_
 
@@ -13,6 +12,7 @@ void EnsureUseCocoaDockAPI(void);
 void SetupMacApplicationDelegate(bool* gRestartedByOS);
 void InitializeMacApp(void);
 nsTArray<nsCString> TakeStartupURLs();
+void StartupURLCollectionComplete(void);
 void DisableAppNap(void);
 
 #endif
