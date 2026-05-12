@@ -502,7 +502,7 @@ nsresult nsCocoaWindow::SynthesizeNativeMouseEvent(
 
 nsresult nsCocoaWindow::SynthesizeNativeMouseMove(
     LayoutDeviceIntPoint aPoint, nsISynthesizedEventCallback* aCallback) {
-  if (GetNativePointerLockedMode()) {
+  if (IsNativePointerLocked()) {
     AutoSynthesizedEventCallbackNotifier notifier(aCallback);
     sNativeLockedPoint = aPoint - WidgetToScreenOffset();
 
@@ -2890,37 +2890,14 @@ static gfx::IntPoint GetIntegerDeltaForEvent(NSEvent* aEvent) {
   
   
   
-  if (const auto& nativePointerLockMode =
-          nsCocoaWindow::GetNativePointerLockedMode()) {
+  if (nsCocoaWindow::IsNativePointerLocked()) {
     outGeckoEvent->mRefPoint = nsCocoaWindow::GetNativeLockedPoint();
     WidgetMouseEvent* widgetMouseEvent = outGeckoEvent->AsMouseEvent();
     if (widgetMouseEvent && widgetMouseEvent->mMessage == eMouseMove) {
-      Maybe<LayoutDeviceIntPoint> movement;
       
       
-      
-      
-      
-      
-      if (*nativePointerLockMode ==
-          nsIWidget::NativePointerLockMode::Unadjusted) {
-        if (CGEventRef cgEvent = [aMouseEvent CGEvent]) {
-          movement.emplace(
-              int32_t(CGEventGetIntegerValueField(
-                  cgEvent, kCGEventUnacceleratedPointerMovementX)),
-              int32_t(CGEventGetIntegerValueField(
-                  cgEvent, kCGEventUnacceleratedPointerMovementY)));
-        }
-      }
-
-      
-      
-      if (!movement) {
-        movement.emplace(int32_t(aMouseEvent.deltaX),
-                         int32_t(aMouseEvent.deltaY));
-      }
-
-      widgetMouseEvent->mMovement = std::move(movement);
+      widgetMouseEvent->mMovement = Some(LayoutDeviceIntPoint(
+          int32_t(aMouseEvent.deltaX), int32_t(aMouseEvent.deltaY)));
     }
   } else {
     outGeckoEvent->mRefPoint = [self convertWindowCoordinates:locationInWindow];
@@ -7279,63 +7256,49 @@ void nsCocoaWindow::CocoaWindowDidResize() {
   ReportSizeEvent();
 }
 
-void nsCocoaWindow::LockNativePointer(
-    NativePointerLockMode aNativePointerLockMode) {
+void nsCocoaWindow::LockNativePointer() {
   if (!StaticPrefs::dom_pointer_lock_native_lock_enabled()) {
     return;
   }
 
-  if (GetNativePointerLockedMode()) {
-    MOZ_ASSERT(*GetNativePointerLockedMode() == aNativePointerLockMode,
-               "Should not call LockNativePointer() with a different mode "
-               "whenthe pointer is already locked");
+  if (sIsNativePointerLocked) {
     
     
     
     return;
   }
 
-  sNativePointerLockMode.emplace(aNativePointerLockMode);
+  sIsNativePointerLocked = true;
   CGAssociateMouseAndMouseCursorPosition(false);
 }
 
 void nsCocoaWindow::UnlockNativePointer() {
-  if (NS_WARN_IF(!GetNativePointerLockedMode())) {
+  if (!StaticPrefs::dom_pointer_lock_native_lock_enabled()) {
     return;
   }
 
-  sNativePointerLockMode.reset();
+  if (NS_WARN_IF(!sIsNativePointerLocked)) {
+    return;
+  }
+
+  sIsNativePointerLocked = false;
   CGAssociateMouseAndMouseCursorPosition(true);
   sNativeLockedPoint = LayoutDeviceIntPoint(0, 0);
 }
 
-void nsCocoaWindow::SetNativePointerLockMode(
-    NativePointerLockMode aNativePointerLockMode) {
-  if (NS_WARN_IF(!GetNativePointerLockedMode())) {
-    return;
-  }
-  sNativePointerLockMode.ref() = aNativePointerLockMode;
-}
-
-bool nsCocoaWindow::SupportsUnadjustedMovement() {
-  return StaticPrefs::dom_pointer_lock_native_lock_enabled();
-}
-
- Maybe<nsIWidget::NativePointerLockMode>
-    nsCocoaWindow::sNativePointerLockMode;
+ bool nsCocoaWindow::sIsNativePointerLocked = false;
  LayoutDeviceIntPoint nsCocoaWindow::sNativeLockedPoint;
 
 
-const Maybe<nsIWidget::NativePointerLockMode>&
-nsCocoaWindow::GetNativePointerLockedMode() {
-  MOZ_ASSERT_IF(sNativePointerLockMode,
+bool nsCocoaWindow::IsNativePointerLocked() {
+  MOZ_ASSERT_IF(sIsNativePointerLocked,
                 StaticPrefs::dom_pointer_lock_native_lock_enabled());
-  return sNativePointerLockMode;
+  return sIsNativePointerLocked;
 }
 
 
 LayoutDeviceIntPoint nsCocoaWindow::GetNativeLockedPoint() {
-  MOZ_ASSERT(GetNativePointerLockedMode());
+  MOZ_ASSERT(IsNativePointerLocked());
   return sNativeLockedPoint;
 }
 

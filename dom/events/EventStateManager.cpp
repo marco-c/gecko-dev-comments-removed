@@ -5894,8 +5894,7 @@ OverOutElementsWrapper* EventStateManager::GetWrapperByEventID(
 
 
 void EventStateManager::SetPointerLock(nsIWidget* aWidget,
-                                       nsPresContext* aPresContext,
-                                       bool aUnadjustedMovement) {
+                                       nsPresContext* aPresContext) {
   
   WheelTransaction::EndTransaction();
 
@@ -5931,9 +5930,7 @@ void EventStateManager::SetPointerLock(nsIWidget* aWidget,
     }
 
     
-    aWidget->LockNativePointer(
-        aUnadjustedMovement ? nsIWidget::NativePointerLockMode::Unadjusted
-                            : nsIWidget::NativePointerLockMode::Regular);
+    aWidget->LockNativePointer();
 
     
     aWidget->SynthesizeNativeMouseMove(
