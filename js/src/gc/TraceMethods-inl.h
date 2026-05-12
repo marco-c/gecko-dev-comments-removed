@@ -197,7 +197,7 @@ void js::gc::MarkingTracerT<opts>::eagerlyMarkChildren(JSRope* rope) {
     
     
     
-    if constexpr (bool(opts & gc::MarkingOptions::ConcurrentMarking)) {
+    if constexpr (hasOption(gc::MarkingOptions::ConcurrentMarking)) {
       gc::MemoryAcquireFence<opts>(rope->runtimeFromAnyThread());
       if (!rope->isRopeAtomic()) {
         shouldMark = false;
