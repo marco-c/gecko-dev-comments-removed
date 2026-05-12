@@ -1660,11 +1660,6 @@ static bool TryEnumerableOwnPropertiesNative(JSContext* cx, HandleObject obj,
     }
   }
 
-  
-  
-  MOZ_ASSERT(obj->is<NativeObject>());
-  MOZ_ASSERT(obj.as<NativeObject>() == nobj);
-
   size_t approximatePropertyCount =
       nobj->shape()->propMap()
           ? nobj->shape()->propMap()->approximateEntryCount()

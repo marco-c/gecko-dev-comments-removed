@@ -1329,22 +1329,15 @@ class NativeObject : public JSObject {
   
   
   
-  
-  
-  
-  
-  
   MOZ_ALWAYS_INLINE HeapSlot& getReservedSlotRef(uint32_t index) {
     MOZ_ASSERT(index < JSSLOT_FREE(getClass()));
     MOZ_ASSERT(slotIsFixed(index) == (index < MAX_FIXED_SLOTS));
-    MOZ_ASSERT(!ObjectMayBeSwapped(this));
     return index < MAX_FIXED_SLOTS ? fixedSlots()[index]
                                    : slots_[index - MAX_FIXED_SLOTS];
   }
   MOZ_ALWAYS_INLINE const HeapSlot& getReservedSlotRef(uint32_t index) const {
     MOZ_ASSERT(index < JSSLOT_FREE(getClass()));
     MOZ_ASSERT(slotIsFixed(index) == (index < MAX_FIXED_SLOTS));
-    MOZ_ASSERT(!ObjectMayBeSwapped(this));
     return index < MAX_FIXED_SLOTS ? fixedSlots()[index]
                                    : slots_[index - MAX_FIXED_SLOTS];
   }

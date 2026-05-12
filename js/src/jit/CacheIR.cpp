@@ -1169,10 +1169,8 @@ static bool CanAttachDOMCall(JSContext* cx, JSJitInfo::OpType type,
   }
 
   
-  
-  
-  if (obj->is<NativeObject>() && obj->as<NativeObject>().numFixedSlots() == 0) {
-    return false;
+  if (obj->is<NativeObject>()) {
+    MOZ_RELEASE_ASSERT(obj->as<NativeObject>().numFixedSlots() > 0);
   }
 
   

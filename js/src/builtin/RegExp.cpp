@@ -2735,13 +2735,9 @@ bool js::intrinsic_GetStringDataProperty(JSContext* cx, unsigned argc,
   MOZ_ASSERT(args.length() == 2);
 
   JSObject* obj = &args[0].toObject();
-  if (!obj->is<NativeObject>()) {
-    
-    
-    
-    args.rval().setUndefined();
-    return true;
-  }
+
+  
+  MOZ_ASSERT(obj->is<NativeObject>());
 
   
   JS::AutoCheckCannotGC nogc;
