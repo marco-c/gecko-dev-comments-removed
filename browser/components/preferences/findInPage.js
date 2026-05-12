@@ -371,11 +371,7 @@ var gSearchResultsPane = {
       noResultsEl.hidden = true;
       document.getElementById("sorry-message-query").textContent = "";
       
-      let redesignEnabled = Services.prefs.getBoolPref(
-        "browser.settings-redesign.enabled"
-      );
-      let defaultPane = redesignEnabled ? "paneSync" : "paneGeneral";
-      await gotoPref(defaultPane);
+      await gotoPref("paneGeneral");
       srHeader.hidden = true;
 
       
@@ -501,7 +497,6 @@ var gSearchResultsPane = {
       
       if (
         keywordsResult &&
-        
         (nodeObject instanceof HTMLElement ||
           nodeObject.localName === "button" ||
           nodeObject.localName == "menulist")
