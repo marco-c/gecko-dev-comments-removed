@@ -336,7 +336,7 @@ static bool ShouldTraceCrossCompartment(JSTracer* trc, JSObject* src,
 }
 
 template <typename T>
-static inline bool ShouldMark(GCMarker* gcmarker, T* thing) {
+static inline bool ShouldMark(MarkColor color, T* thing) {
   
   
   if (!thing->isTenured()) {
@@ -347,8 +347,7 @@ static inline bool ShouldMark(GCMarker* gcmarker, T* thing) {
   
   
   
-  if (std::is_same_v<T, JS::Symbol> &&
-      gcmarker->markColor() == MarkColor::Black) {
+  if (std::is_same_v<T, JS::Symbol> && color == MarkColor::Black) {
     return true;
   }
 
@@ -356,7 +355,7 @@ static inline bool ShouldMark(GCMarker* gcmarker, T* thing) {
   
   
   Zone* zone = thing->asTenured().zoneFromAnyThread();
-  return zone->shouldMarkInZone(gcmarker->markColor());
+  return zone->shouldMarkInZone(color);
 }
 
 #ifdef DEBUG
@@ -494,18 +493,23 @@ class MOZ_RAII AutoClearTracingSource {
   Compartment* prevCompartment = nullptr;
 #endif
 
+  void init(GCMarker* marker) {
+    this->marker = marker;
+    prevZone = marker->tracingZone;
+    marker->tracingZone = nullptr;
+#ifdef DEBUG
+    prevCompartment = marker->tracingCompartment;
+    marker->tracingCompartment = nullptr;
+#endif
+  }
+
  public:
   explicit AutoClearTracingSource(JSTracer* trc) {
     if (trc->isMarkingTracer()) {
-      marker = GCMarker::fromTracer(trc);
-      prevZone = marker->tracingZone;
-      marker->tracingZone = nullptr;
-#ifdef DEBUG
-      prevCompartment = marker->tracingCompartment;
-      marker->tracingCompartment = nullptr;
-#endif
+      init(GCMarker::fromTracer(trc));
     }
   }
+  explicit AutoClearTracingSource(GCMarker* marker) { init(marker); }
   ~AutoClearTracingSource() {
     if (marker) {
       marker->tracingZone = prevZone;
@@ -744,8 +748,8 @@ namespace js {
 void GCMarker::markEphemeronEdges(EphemeronEdgeVector& edges,
                                   gc::MarkColor srcColor) {
   
-  MOZ_ASSERT_IF(CurrentThreadIsPerformingGC(),
-                state == MarkingState::WeakMarking);
+  MOZ_ASSERT(isWeakMarking());
+  auto* trc = &tracer_.as<WeakMarkingTracer>();
 
   DebugOnly<size_t> initialLength = edges.length();
 
@@ -754,9 +758,7 @@ void GCMarker::markEphemeronEdges(EphemeronEdgeVector& edges,
     MOZ_ASSERT(markColor() >= targetColor);
     if (targetColor == markColor()) {
       ApplyGCThingTyped(edge.target(), edge.target()->getTraceKind(),
-                        [this](auto t) {
-                          markAndTraverse<MarkingOptions::MarkImplicitEdges>(t);
-                        });
+                        [trc](auto t) { trc->markAndTraverse(t); });
     }
   }
 
@@ -834,12 +836,16 @@ MarkingTracerT<opts>::MarkingTracerT(JSRuntime* runtime, GCMarker* marker)
                            JS::WeakEdgeTraceAction::Skip)) {
   
   MOZ_ASSERT(this == marker->tracer());
-  MOZ_ASSERT(getMarker() == marker);
+  MOZ_ASSERT(gcMarker() == marker);
 }
 
 template <uint32_t opts>
-MOZ_ALWAYS_INLINE GCMarker* MarkingTracerT<opts>::getMarker() {
+MOZ_ALWAYS_INLINE GCMarker* MarkingTracerT<opts>::gcMarker() {
   return GCMarker::fromTracer(this);
+}
+template <uint32_t opts>
+MOZ_ALWAYS_INLINE const GCMarker* MarkingTracerT<opts>::gcMarker() const {
+  return GCMarker::fromTracer(const_cast<MarkingTracerT<opts>*>(this));
 }
 
 
@@ -864,9 +870,8 @@ void MarkingTracerT<opts>::onEdge(T** thingp, const char* name) {
   T* thing = *thingp;
 
   
-  GCMarker* marker = getMarker();
-  if (!ShouldMark(marker, thing)) {
-    MOZ_ASSERT(gc::detail::GetEffectiveColor(marker, thing) ==
+  if (!ShouldMark(markColor(), thing)) {
+    MOZ_ASSERT(gc::detail::GetEffectiveColor(gcMarker(), thing) ==
                js::gc::CellColor::Black);
     return;
   }
@@ -875,17 +880,23 @@ void MarkingTracerT<opts>::onEdge(T** thingp, const char* name) {
                 thing->isMarkedBlack());
 
   if constexpr (std::is_same_v<T, JS::Symbol>) {
-    if (marker->markColor() == MarkColor::Black && marker->tracingZone) {
-      MaybeUnmarkGraySymbol(this->runtime(), marker->tracingZone, thing);
+    Zone* zone = tracingZone();
+    if (markColor() == MarkColor::Black && zone) {
+      MaybeUnmarkGraySymbol(this->runtime(), zone, thing);
     }
   }
 
 #ifdef DEBUG
-  CheckMarkedThing(marker, thing);
+  CheckMarkedThing(gcMarker(), thing);
 #endif
 
   AutoClearTracingSource acts(this);
-  marker->markAndTraverse<opts>(thing);
+  this->markAndTraverse(thing);
+
+  if constexpr (bool(opts & MarkingOptions::MarkRootCompartments)) {
+    
+    SetCompartmentHasMarkedCells(thing);
+  }
 }
 
 #define INSTANTIATE_ONEDGE_METHOD(name, type, _1, _2)                 \
@@ -903,14 +914,20 @@ JS_FOR_EACH_TRACEKIND(INSTANTIATE_ONEDGE_METHOD)
 static void TraceEdgeForBarrier(GCMarker* gcmarker, TenuredCell* thing,
                                 JS::TraceKind kind) {
   
-  ApplyGCThingTyped(thing, kind, [gcmarker](auto thing) {
-    MOZ_ASSERT(ShouldMark(gcmarker, thing));
-    CheckTracedThing(gcmarker->tracer(), thing);
-    AutoClearTracingSource acts(gcmarker->tracer());
+
 #ifdef DEBUG
-    AutoSetThreadIsMarking threadIsMarking;
+  MOZ_ASSERT(gcmarker->markColor() == MarkColor::Black);
+  AutoSetThreadIsMarking threadIsMarking;
 #endif  
-    gcmarker->markAndTraverse<NormalMarkingOptions>(thing);
+
+  AutoClearTracingSource acts(gcmarker);
+
+  ApplyGCThingTyped(thing, kind, [gcmarker](auto thing) {
+    MOZ_ASSERT(ShouldMark(MarkColor::Black, thing));
+    gcmarker->matchRegularOrParallelTracer([thing](auto& trc) {
+      CheckTracedThing(&trc, thing);
+      trc.markAndTraverse(thing);
+    });
   });
 }
 
@@ -984,6 +1001,35 @@ void js::gc::PerformIncrementalPreWriteBarrier(TenuredCell* cell) {
   TraceEdgeForBarrier(gcmarker, cell, cell->getTraceKind());
 }
 
+#ifdef ENABLE_WASM_JSPI
+void js::gc::PerformIncrementalPreWriteBarrierAllChildren(JSObject* cell) {
+  if (!cell) {
+    return;
+  }
+
+  
+  
+  
+  
+  Zone* zone = cell->zoneFromAnyThread();
+  MOZ_ASSERT(!zone->isAtomsZone());
+  MOZ_ASSERT(zone->needsMarkingBarrier());
+  MOZ_ASSERT(CurrentThreadIsMainThread());
+  MOZ_ASSERT(!JS::RuntimeHeapIsMajorCollecting());
+
+  
+  GCMarker* gcmarker = GCMarker::fromTracer(zone->barrierTracer());
+
+  MOZ_ASSERT(ShouldMark(gcmarker->markColor(), cell));
+  CheckTracedThing(gcmarker->tracer(), cell);
+  AutoClearTracingSource acts(gcmarker->tracer());
+#  ifdef DEBUG
+  AutoSetThreadIsMarking threadIsMarking;
+#  endif  
+  cell->traceChildren(zone->barrierTracer());
+}
+#endif  
+
 void js::gc::PerformIncrementalBarrierDuringFlattening(JSString* str) {
   TenuredCell* cell = &str->asTenured();
 
@@ -997,135 +1043,132 @@ void js::gc::PerformIncrementalBarrierDuringFlattening(JSString* str) {
   PerformIncrementalPreWriteBarrier(cell);
 }
 
-template <uint32_t opts, typename T>
-void js::GCMarker::markAndTraverse(T* thing) {
-  if (mark<opts>(thing)) {
-    
-    MOZ_ASSERT_IF(thing->isPermanentAndMayBeShared(),
-                  !runtime()->permanentAtomsPopulated());
-
-    
-    constexpr uint32_t traverseOpts =
-        opts & ~MarkingOptions::MarkRootCompartments;
-
-    MemoryAcquireFence<opts>(runtime());
-
-    traverse<traverseOpts>(thing);
-
-    if constexpr (bool(opts & MarkingOptions::MarkRootCompartments)) {
-      
-      SetCompartmentHasMarkedCells(thing);
-    }
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 template <uint32_t opts>
-void GCMarker::traverse(GetterSetter* thing) {
-  traceChildren<opts>(thing);
-}
-template <uint32_t opts>
-void GCMarker::traverse(JS::Symbol* thing) {
-  if constexpr (bool(opts & MarkingOptions::MarkImplicitEdges)) {
-    pushThing<opts>(thing);
+template <typename T>
+void MarkingTracerT<opts>::markAndTraverse(T* thing) {
+  if (!mark(thing)) {
     return;
   }
-  traceChildren<opts>(thing);
-}
-template <uint32_t opts>
-void GCMarker::traverse(JS::BigInt* thing) {
-  traceChildren<opts>(thing);
-}
-template <uint32_t opts>
-void GCMarker::traverse(RegExpShared* thing) {
-  traceChildren<opts>(thing);
-}
-template <uint32_t opts>
-void GCMarker::traverse(JSString* thing) {
-  scanChildren<opts>(thing);
-}
-template <uint32_t opts>
-void GCMarker::traverse(Shape* thing) {
-  scanChildren<opts>(thing);
-}
-template <uint32_t opts>
-void GCMarker::traverse(BaseShape* thing) {
-  scanChildren<opts>(thing);
-}
-template <uint32_t opts>
-void GCMarker::traverse(PropMap* thing) {
-  scanChildren<opts>(thing);
-}
-template <uint32_t opts>
-void GCMarker::traverse(js::Scope* thing) {
-  scanChildren<opts>(thing);
-}
-template <uint32_t opts>
-void GCMarker::traverse(JSObject* thing) {
-  pushThing<opts>(thing);
-}
-template <uint32_t opts>
-void GCMarker::traverse(jit::JitCode* thing) {
-  pushThing<opts>(thing);
-}
-template <uint32_t opts>
-void GCMarker::traverse(BaseScript* thing) {
-  pushThing<opts>(thing);
+
+  
+  MOZ_ASSERT_IF(thing->isPermanentAndMayBeShared(),
+                !this->runtime()->permanentAtomsPopulated());
+
+  MemoryAcquireFence<opts>(this->runtime());
+
+  traverse(thing);
 }
 
-template <uint32_t opts, typename T>
-void js::GCMarker::traceChildren(T* thing) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <uint32_t opts>
+void MarkingTracerT<opts>::traverse(GetterSetter* thing) {
+  traceChildren(thing);
+}
+template <uint32_t opts>
+void MarkingTracerT<opts>::traverse(JS::Symbol* thing) {
+  if constexpr (bool(opts & MarkingOptions::MarkImplicitEdges)) {
+    pushThing(thing);
+    return;
+  }
+  traceChildren(thing);
+}
+template <uint32_t opts>
+void MarkingTracerT<opts>::traverse(JS::BigInt* thing) {
+  traceChildren(thing);
+}
+template <uint32_t opts>
+void MarkingTracerT<opts>::traverse(RegExpShared* thing) {
+  traceChildren(thing);
+}
+template <uint32_t opts>
+void MarkingTracerT<opts>::traverse(JSString* thing) {
+  scanChildren(thing);
+}
+template <uint32_t opts>
+void MarkingTracerT<opts>::traverse(Shape* thing) {
+  scanChildren(thing);
+}
+template <uint32_t opts>
+void MarkingTracerT<opts>::traverse(BaseShape* thing) {
+  scanChildren(thing);
+}
+template <uint32_t opts>
+void MarkingTracerT<opts>::traverse(PropMap* thing) {
+  scanChildren(thing);
+}
+template <uint32_t opts>
+void MarkingTracerT<opts>::traverse(js::Scope* thing) {
+  scanChildren(thing);
+}
+template <uint32_t opts>
+void MarkingTracerT<opts>::traverse(JSObject* thing) {
+  pushThing(thing);
+}
+template <uint32_t opts>
+void MarkingTracerT<opts>::traverse(jit::JitCode* thing) {
+  pushThing(thing);
+}
+template <uint32_t opts>
+void MarkingTracerT<opts>::traverse(BaseScript* thing) {
+  pushThing(thing);
+}
+
+template <uint32_t opts>
+template <typename T>
+void MarkingTracerT<opts>::traceChildren(T* thing) {
   MOZ_ASSERT(!thing->isPermanentAndMayBeShared());
   MOZ_ASSERT(thing->isMarkedAny());
-  AutoSetTracingSource asts(tracer(), thing);
-  thing->traceChildren(tracer());
+  AutoSetTracingSource asts(this, thing);
+  thing->traceChildren(this);
 }
 
-template <uint32_t opts, typename T>
-void js::GCMarker::scanChildren(T* thing) {
+template <uint32_t opts>
+template <typename T>
+void MarkingTracerT<opts>::scanChildren(T* thing) {
   MOZ_ASSERT(!thing->isPermanentAndMayBeShared());
   MOZ_ASSERT(thing->isMarkedAny());
-  eagerlyMarkChildren<opts>(thing);
+  eagerlyMarkChildren(thing);
 }
 
-template <uint32_t opts, typename T>
-void js::GCMarker::pushThing(T* thing) {
+template <uint32_t opts>
+template <typename T>
+void MarkingTracerT<opts>::pushThing(T* thing) {
   MOZ_ASSERT(!thing->isPermanentAndMayBeShared());
   MOZ_ASSERT(thing->isMarkedAny());
-  pushTaggedPtr(thing);
+  gcMarker()->pushTaggedPtr(thing);
 }
 
-template void js::GCMarker::markAndTraverse<MarkingOptions::None, JSObject>(
+template void MarkingTracerT<MarkingOptions::None>::markAndTraverse(
     JSObject* thing);
-template void js::GCMarker::markAndTraverse<MarkingOptions::MarkImplicitEdges,
-                                            JSObject>(JSObject* thing);
-template void js::GCMarker::markAndTraverse<
-    MarkingOptions::MarkRootCompartments, JSObject>(JSObject* thing);
+template void MarkingTracerT<
+    MarkingOptions::MarkImplicitEdges>::markAndTraverse(JSObject* thing);
+template void MarkingTracerT<
+    MarkingOptions::MarkRootCompartments>::markAndTraverse(JSObject* thing);
 
 #ifdef DEBUG
 void GCMarker::setCheckAtomMarking(bool check) {
@@ -1178,36 +1221,38 @@ inline void GCMarker::checkTraversedEdge(S source, T* target) {
 #endif
 }
 
-template <uint32_t opts, typename S, typename T>
-void js::GCMarker::markAndTraverseEdge(S* source, T* target) {
+template <uint32_t opts>
+template <typename S, typename T>
+void MarkingTracerT<opts>::markAndTraverseEdge(S* source, T* target) {
   if constexpr (std::is_same_v<T, JS::Symbol>) {
     if (markColor() == MarkColor::Black) {
-      MaybeUnmarkGraySymbol(runtime(), source->zone(), target);
+      MaybeUnmarkGraySymbol(this->runtime(), source->zone(), target);
     }
   }
 
-  checkTraversedEdge(source, target);
-  markAndTraverse<opts>(target);
-}
-
-template <uint32_t opts, typename S, typename T>
-void js::GCMarker::markAndTraverseEdge(S* source, const T& target) {
-  ApplyGCThingTyped(target, [this, source](auto t) {
-    this->markAndTraverseEdge<opts>(source, t);
-  });
+  gcMarker()->checkTraversedEdge(source, target);
+  markAndTraverse(target);
 }
 
 template <uint32_t opts>
-MOZ_NEVER_INLINE bool js::GCMarker::markAndTraversePrivateGCThing(
+template <typename S, typename T>
+void MarkingTracerT<opts>::markAndTraverseEdge(S* source, const T& target) {
+  ApplyGCThingTyped(
+      target, [this, source](auto t) { this->markAndTraverseEdge(source, t); });
+}
+
+template <uint32_t opts>
+MOZ_NEVER_INLINE bool MarkingTracerT<opts>::markAndTraversePrivateGCThing(
     JSObject* source, Cell* target) {
   JS::TraceKind kind = target->getTraceKind();
   ApplyGCThingTyped(target, kind, [this, source](auto t) {
-    this->markAndTraverseEdge<opts>(source, t);
+    this->markAndTraverseEdge(source, t);
   });
 
+  GCMarker* marker = gcMarker();
   
-  if (MOZ_UNLIKELY(!stack.ensureSpace(ValueRangeWords))) {
-    delayMarkingChildrenOnOOM(source);
+  if (MOZ_UNLIKELY(!marker->stack.ensureSpace(ValueRangeWords))) {
+    marker->delayMarkingChildrenOnOOM(source);
     return false;
   }
 
@@ -1215,20 +1260,23 @@ MOZ_NEVER_INLINE bool js::GCMarker::markAndTraversePrivateGCThing(
 }
 
 template <uint32_t opts>
-bool js::GCMarker::markAndTraverseSymbol(JSObject* source, JS::Symbol* target) {
-  this->markAndTraverseEdge<opts>(source, target);
+bool MarkingTracerT<opts>::markAndTraverseSymbol(JSObject* source,
+                                                 JS::Symbol* target) {
+  this->markAndTraverseEdge(source, target);
 
+  GCMarker* marker = gcMarker();
   
-  if (MOZ_UNLIKELY(!stack.ensureSpace(ValueRangeWords))) {
-    delayMarkingChildrenOnOOM(source);
+  if (MOZ_UNLIKELY(!marker->stack.ensureSpace(ValueRangeWords))) {
+    marker->delayMarkingChildrenOnOOM(source);
     return false;
   }
 
   return true;
 }
 
-template <uint32_t opts, typename T>
-bool js::GCMarker::mark(T* thing) {
+template <uint32_t opts>
+template <typename T>
+bool MarkingTracerT<opts>::mark(T* thing) {
   if (!thing->isTenured()) {
     return false;
   }
@@ -1237,14 +1285,14 @@ bool js::GCMarker::mark(T* thing) {
     
     
     
-    if (IsOwnedByOtherRuntime(runtime(), thing) ||
+    if (IsOwnedByOtherRuntime(this->runtime(), thing) ||
         (markColor() == MarkColor::Gray &&
          !thing->zone()->isGCMarkingOrVerifyingPreBarriers())) {
       return false;
     }
   }
 
-  AssertShouldMarkInZone(this, thing);
+  AssertShouldMarkInZone(gcMarker(), thing);
 
   MarkColor color =
       TraceKindCanBeGray<T>::value ? markColor() : MarkColor::Black;
@@ -1318,6 +1366,8 @@ void GCMarker::freeStack() {
 
 bool GCMarker::markUntilBudgetExhausted(SliceBudget& budget,
                                         ShouldReportMarkTime reportTime) {
+  MOZ_ASSERT(isRegularMarking() || isWeakMarking() || isConcurrentMarking());
+
 #ifdef DEBUG
   MOZ_ASSERT(!strictCompartmentChecking);
   strictCompartmentChecking = true;
@@ -1328,59 +1378,60 @@ bool GCMarker::markUntilBudgetExhausted(SliceBudget& budget,
     return false;
   }
 
-  if (isWeakMarking()) {
-    return doMarking<MarkingOptions::MarkImplicitEdges>(budget, reportTime);
-  }
-
-  if (isConcurrentMarking()) {
-    return doMarking<ConcurrentMarkingOptions>(budget, reportTime);
-  }
-
-  MOZ_ASSERT(isRegularMarking());
-  return doMarking<MarkingOptions::None>(budget, reportTime);
+  return matchTracer(
+      [&](auto& trc) { return trc.doMarking(budget, reportTime); });
 }
 
 template <uint32_t opts>
-bool GCMarker::doMarking(SliceBudget& budget, ShouldReportMarkTime reportTime) {
-  GCRuntime& gc = runtime()->gc;
+bool MarkingTracerT<opts>::doMarking(SliceBudget& budget,
+                                     ShouldReportMarkTime reportTime) {
+  GCMarker* marker = gcMarker();
+  GCRuntime& gc = this->runtime()->gc;
 
   
 
-  if (hasBlackEntries() && !markOneColor<opts, MarkColor::Black>(budget)) {
+  if (marker->hasBlackEntries() && !markOneColor<MarkColor::Black>(budget)) {
     return false;
   }
 
-  if (hasGrayEntries()) {
+  if (marker->hasGrayEntries()) {
     mozilla::Maybe<gcstats::AutoPhase> ap;
     if (reportTime) {
-      auto& stats = runtime()->gc.stats();
+      auto& stats = this->runtime()->gc.stats();
       ap.emplace(stats, GrayMarkingPhaseForCurrentPhase(stats));
     }
 
-    if (!markOneColor<opts, MarkColor::Gray>(budget)) {
+    if (!markOneColor<MarkColor::Gray>(budget)) {
       return false;
     }
   }
 
   
   
-  if (this == &gc.marker() && gc.hasDelayedMarking()) {
+  if (marker == &gc.marker() && gc.hasDelayedMarking()) {
     gc.markAllDelayedChildren(reportTime);
     MOZ_ASSERT(!gc.hasDelayedMarking());
   }
 
-  MOZ_ASSERT(isMarkStackEmpty());
+  MOZ_ASSERT(marker->isMarkStackEmpty());
 
   return true;
 }
 
-template <uint32_t opts, MarkColor color>
-bool GCMarker::markOneColor(SliceBudget& budget) {
-  AutoSetMarkColor setColor(*this, color);
-  AutoUpdateMarkStackRanges updateRanges(*this);
+template <uint32_t opts>
+template <MarkColor color>
+bool MarkingTracerT<opts>::markOneColor(SliceBudget& budget) {
+  GCMarker* marker = gcMarker();
+  AutoSetMarkColor setColor(*marker, color);
+  AutoUpdateMarkStackRanges updateRanges(*marker);
+  return markCurrentColor(budget);
+}
 
-  while (processMarkStackTop<opts>(budget)) {
-    if (stack.isEmpty()) {
+template <uint32_t opts>
+bool MarkingTracerT<opts>::markCurrentColor(SliceBudget& budget) {
+  GCMarker* marker = gcMarker();
+  while (processMarkStackTop(budget)) {
+    if (marker->stack.isEmpty()) {
       return true;
     }
   }
@@ -1390,11 +1441,13 @@ bool GCMarker::markOneColor(SliceBudget& budget) {
 
 bool GCMarker::markCurrentColorInParallel(ParallelMarkTask* task,
                                           SliceBudget& budget) {
+  MOZ_ASSERT(isParallelMarking());
   MOZ_ASSERT(stack.elementsRangesAreValid);
 
   ParallelMarkTask::AtomicCount& waitingTaskCount = task->waitingTaskCountRef();
 
-  while (processMarkStackTop<MarkingOptions::AtomicMarking>(budget)) {
+  auto* trc = &tracer_.as<ParallelMarkingTracer>();
+  while (trc->processMarkStackTop(budget)) {
     if (stack.isEmpty()) {
       return true;
     }
@@ -1415,18 +1468,18 @@ bool GCMarker::markOneObjectForTest(JSObject* obj) {
   MOZ_ASSERT(obj->zone()->isGCMarking());
   MOZ_ASSERT(!obj->isMarked(markColor()));
 
-  size_t oldPosition = stack.position();
-  markAndTraverse<NormalMarkingOptions>(obj);
-  if (stack.position() == oldPosition) {
-    return false;
-  }
+  return matchTracer([this, obj](auto& trc) {
+    size_t oldPosition = stack.position();
+    trc.markAndTraverse(obj);
+    if (stack.position() == oldPosition) {
+      return false;
+    }
 
-  AutoUpdateMarkStackRanges updateRanges(*this);
-
-  SliceBudget unlimited = SliceBudget::unlimited();
-  processMarkStackTop<NormalMarkingOptions>(unlimited);
-
-  return true;
+    AutoUpdateMarkStackRanges updateRanges(*this);
+    SliceBudget unlimited = SliceBudget::unlimited();
+    trc.processMarkStackTop(unlimited);
+    return true;
+  });
 }
 #endif
 
@@ -1595,7 +1648,7 @@ void GCMarker::updateRangesAtEndOfSlice() {
 }
 
 template <uint32_t opts>
-inline bool GCMarker::processMarkStackTop(SliceBudget& budget) {
+inline bool MarkingTracerT<opts>::processMarkStackTop(SliceBudget& budget) {
   
 
 
@@ -1606,9 +1659,12 @@ inline bool GCMarker::processMarkStackTop(SliceBudget& budget) {
 
 
 
+  GCMarker* marker = gcMarker();
+  MarkStack& stack = marker->stack;
+
   MOZ_ASSERT(!stack.isEmpty());
   MOZ_ASSERT(stack.elementsRangesAreValid);
-  MOZ_ASSERT_IF(markColor() == MarkColor::Gray, !hasBlackEntries());
+  MOZ_ASSERT_IF(markColor() == MarkColor::Gray, !marker->hasBlackEntries());
 
   JSObject* obj;             
   SlotsOrElementsKind kind;  
@@ -1666,34 +1722,34 @@ inline bool GCMarker::processMarkStackTop(SliceBudget& budget) {
     switch (ptr.tag()) {
       case MarkStack::ObjectTag: {
         obj = ptr.as<JSObject>();
-        AssertShouldMarkInZone(this, obj);
+        AssertShouldMarkInZone(marker, obj);
         goto scan_obj;
       }
 
       case MarkStack::SymbolTag: {
         auto* symbol = ptr.as<JS::Symbol>();
         if constexpr (bool(opts & MarkingOptions::MarkImplicitEdges)) {
-          markImplicitEdges(symbol);
+          marker->markImplicitEdges(symbol);
         }
-        AutoSetTracingSource asts(tracer(), symbol);
-        symbol->traceChildren(tracer());
+        AutoSetTracingSource asts(this, symbol);
+        symbol->traceChildren(this);
         return true;
       }
 
       case MarkStack::JitCodeTag: {
         auto* code = ptr.as<jit::JitCode>();
-        AutoSetTracingSource asts(tracer(), code);
-        code->traceChildren(tracer());
+        AutoSetTracingSource asts(this, code);
+        code->traceChildren(this);
         return true;
       }
 
       case MarkStack::ScriptTag: {
         auto* script = ptr.as<BaseScript>();
         if constexpr (bool(opts & MarkingOptions::MarkImplicitEdges)) {
-          markImplicitEdges(script);
+          marker->markImplicitEdges(script);
         }
-        AutoSetTracingSource asts(tracer(), script);
-        script->traceChildren(tracer());
+        AutoSetTracingSource asts(this, script);
+        script->traceChildren(this);
         return true;
       }
 
@@ -1705,14 +1761,14 @@ inline bool GCMarker::processMarkStackTop(SliceBudget& budget) {
   return true;
 
 scan_value_range:
-  MemoryAcquireFence<opts>(runtime());
+  MemoryAcquireFence<opts>(this->runtime());
 
   while (index < end) {
     MOZ_ASSERT(stack.capacity() >= stack.position() + ValueRangeWords);
 
     budget.step();
     if (budget.isOverBudget()) {
-      pushValueRange(obj, kind, index, end);
+      marker->pushValueRange(obj, kind, index, end);
       return false;
     }
 
@@ -1724,7 +1780,7 @@ scan_value_range:
     }
 
     if (v.isString()) {
-      markAndTraverseEdge<opts>(obj, v.toString());
+      markAndTraverseEdge(obj, v.toString());
     } else if (v.isObject()) {
       JSObject* obj2 = &v.toObject();
 #ifdef DEBUG
@@ -1737,22 +1793,22 @@ scan_value_range:
       }
 #endif
       CheckForCompartmentMismatch(obj, obj2);
-      if (mark<opts>(obj2)) {
+      if (mark(obj2)) {
         
         
-        pushValueRange(obj, kind, index, end);
+        marker->pushValueRange(obj, kind, index, end);
         obj = obj2;
         goto scan_obj;
       }
     } else if (v.isSymbol()) {
-      if (!markAndTraverseSymbol<opts>(obj, v.toSymbol())) {
+      if (!markAndTraverseSymbol(obj, v.toSymbol())) {
         return true;
       }
     } else if (v.isBigInt()) {
-      markAndTraverseEdge<opts>(obj, v.toBigInt());
+      markAndTraverseEdge(obj, v.toBigInt());
     } else {
       MOZ_ASSERT(v.isPrivateGCThing());
-      if (!markAndTraversePrivateGCThing<opts>(obj, v.toGCThing())) {
+      if (!markAndTraversePrivateGCThing(obj, v.toGCThing())) {
         return true;
       }
     }
@@ -1761,15 +1817,15 @@ scan_value_range:
   return true;
 
 scan_obj: {
-  AssertShouldMarkInZone(this, obj);
+  AssertShouldMarkInZone(marker, obj);
 
   if constexpr (bool(opts & MarkingOptions::MarkImplicitEdges)) {
-    markImplicitEdges(obj);
+    marker->markImplicitEdges(obj);
   }
-  markAndTraverseEdge<opts>(obj, obj->shape());
+  markAndTraverseEdge(obj, obj->shape());
 
   const JSClass* clasp = obj->getClass();
-  if (clasp->hasTrace() && !callOrDelayTraceHook<opts>(obj, clasp, budget)) {
+  if (clasp->hasTrace() && !callOrDelayTraceHook(obj, clasp, budget)) {
     return false;
   }
 
@@ -1780,7 +1836,7 @@ scan_obj: {
   
   
   if (MOZ_UNLIKELY(!stack.ensureSpace(ValueRangeWords * 3))) {
-    delayMarkingChildrenOnOOM(obj);
+    marker->delayMarkingChildrenOnOOM(obj);
     return true;
   }
 
@@ -1817,7 +1873,7 @@ scan_obj: {
       goto scan_value_range;
     }
 
-    pushValueRange(nobj, kind, index, end);
+    marker->pushValueRange(nobj, kind, index, end);
   }
 
   base = nobj->fixedSlots();
@@ -1826,7 +1882,8 @@ scan_obj: {
 
   if (nslots > nfixed) {
     
-    pushValueRange(nobj, SlotsOrElementsKind::DynamicSlots, 0, nslots - nfixed);
+    marker->pushValueRange(nobj, SlotsOrElementsKind::DynamicSlots, 0,
+                           nslots - nfixed);
     end = nfixed;
   } else {
     end = nslots;
@@ -1838,25 +1895,26 @@ scan_obj: {
 }
 
 template <uint32_t opts>
-bool GCMarker::callOrDelayTraceHook(JSObject* obj, const JSClass* clasp,
-                                    JS::SliceBudget& budget) {
+bool MarkingTracerT<opts>::callOrDelayTraceHook(JSObject* obj,
+                                                const JSClass* clasp,
+                                                JS::SliceBudget& budget) {
   MOZ_ASSERT(clasp->hasTrace());
 
 #ifdef JS_GC_CONCURRENT_MARKING
   if constexpr (bool(opts & MarkingOptions::ConcurrentMarking)) {
     
     
-    if (MOZ_UNLIKELY(!addToMainThreadBuffer(obj, budget))) {
-      delayMarkingChildrenOnOOM(obj);
+    GCMarker* marker = gcMarker();
+    if (MOZ_UNLIKELY(!marker->addToMainThreadBuffer(obj, budget))) {
+      marker->delayMarkingChildrenOnOOM(obj);
       return false;
     }
     return true;
   }
 #endif
 
-  JSTracer* trc = tracer();
-  AutoSetTracingSource asts(trc, obj);
-  clasp->doTrace(trc, obj);
+  AutoSetTracingSource asts(this, obj);
+  clasp->doTrace(this, obj);
   return true;
 }
 
@@ -2743,10 +2801,11 @@ void GCRuntime::processDelayedMarkingList(MarkColor color) {
         markDelayedChildren(arena, color);
       }
     }
-    while (marker().hasEntriesForCurrentColor()) {
-      SliceBudget budget = SliceBudget::unlimited();
-      MOZ_ALWAYS_TRUE(
-          marker().processMarkStackTop<NormalMarkingOptions>(budget));
+    if (marker().hasEntriesForCurrentColor()) {
+      MOZ_ALWAYS_TRUE(marker().matchTracer([](auto& trc) {
+        SliceBudget budget = SliceBudget::unlimited();
+        return trc.markCurrentColor(budget);
+      }));
     }
   } while (delayedMarkingWorkAdded);
 
@@ -2966,23 +3025,25 @@ inline void SweepingTracer::onEdge(T** thingp, const char* name) {
     return;
   }
 
-  
   TenuredCell* cell = &thing->asTenured();
   Zone* zone = cell->zoneFromAnyThread();
+
 #ifdef DEBUG
+  
   if (IsOwnedByOtherRuntime(runtime(), thing)) {
     MOZ_ASSERT(!zone->wasGCStarted());
     MOZ_ASSERT(thing->isMarkedBlack());
   }
-#endif
 
   
   
   
   
-  MOZ_ASSERT_IF(cell->getTraceKind() == JS::TraceKind::Symbol &&
-                    !allowSweepingSymbolsEarly,
-                !zone->isGCMarking());
+  if (cell->getTraceKind() == JS::TraceKind::Symbol && !cell->isMarkedBlack() &&
+      !allowSweepingSymbolsEarly) {
+    MOZ_ASSERT(!zone->isGCMarking());
+  }
+#endif
 
   
   
@@ -3164,7 +3225,6 @@ void UnmarkGrayTracer::onChild(JS::GCCellPtr thing, const char* name) {
   }
 
   if (zone->isGCMarking()) {
-    
     
     
     
