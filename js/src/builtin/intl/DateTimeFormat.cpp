@@ -1171,15 +1171,6 @@ static bool ResolveLocale(JSContext* cx,
         return false;
       }
       dateTimeFormat->setCalendar(str);
-    } else if (StringEqualsLiteral(ca, "islamic-rgsa")) {
-      
-      
-      
-      auto* str = NewStringCopyZ<CanGC>(cx, "islamic-tbla");
-      if (!str) {
-        return false;
-      }
-      dateTimeFormat->setCalendar(str);
     } else {
       dateTimeFormat->setCalendar(ca);
     }
