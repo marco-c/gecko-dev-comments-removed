@@ -5,7 +5,7 @@
 
 
 use crate::derives::*;
-use crate::values::specified::{NoCalcLength, NoCalcNumber, NoCalcPercentage, NoCalcTime};
+use crate::values::specified::{NoCalcLength, Number, Percentage, Time};
 use crate::values::CSSFloat;
 use cssparser::match_ignore_ascii_case;
 use style_traits::ParsingMode;
@@ -22,17 +22,17 @@ pub enum NoCalcNumeric {
     
     
     
-    Time(NoCalcTime),
+    Time(Time),
 
     
     
     
-    Number(NoCalcNumber),
+    Number(Number),
 
     
     
     
-    Percentage(NoCalcPercentage),
+    Percentage(Percentage),
     
 }
 
@@ -98,13 +98,13 @@ impl NoCalcNumeric {
             return Ok(NoCalcNumeric::Length(length));
         }
 
-        if let Ok(time) = NoCalcTime::parse_dimension(value, unit) {
+        if let Ok(time) = Time::parse_dimension(value, unit) {
             return Ok(NoCalcNumeric::Time(time));
         }
 
         match_ignore_ascii_case! { unit,
-            "number" => Ok(NoCalcNumeric::Number(NoCalcNumber::new(value))),
-            "percent" => Ok(NoCalcNumeric::Percentage(NoCalcPercentage::new(value))),
+            "number" => Ok(NoCalcNumeric::Number(Number::new(value))),
+            "percent" => Ok(NoCalcNumeric::Percentage(Percentage::new(value))),
             _ => Err(()),
         }
 

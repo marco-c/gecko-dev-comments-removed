@@ -110,7 +110,7 @@ fn parse_counters<'i, 't>(
 
         let value = match input.try_parse(|input| Integer::parse(context, input)) {
             Ok(start) => {
-                if matches!(start.get(), Some(v) if v == i32::min_value()) {
+                if start.value() == i32::min_value() {
                     
                     
                     

@@ -6,26 +6,32 @@
 
 
 
+use super::computed::transform::DirectionVector;
 use super::computed::{Context, ToComputedValue};
 use super::generics::grid::ImplicitGridTracks as GenericImplicitGridTracks;
 use super::generics::grid::{GridLine as GenericGridLine, TrackBreadth as GenericTrackBreadth};
 use super::generics::grid::{TrackList as GenericTrackList, TrackSize as GenericTrackSize};
-use super::generics::{self, NonNegative};
-use super::CSSFloat;
+use super::generics::transform::IsParallelTo;
+use super::generics::{self, GreaterThanOrEqualToOne, NonNegative};
+use super::{CSSFloat, CSSInteger};
 use crate::context::QuirksMode;
 use crate::derives::*;
 use crate::parser::{Parse, ParserContext};
-use crate::values::specified::number::parse_number_with_clamping_mode;
-use crate::values::{computed, serialize_atom_identifier, AtomString};
-use crate::{Atom, Namespace, Prefix};
+use crate::values::specified::calc::CalcNode;
+use crate::values::{reify_number, serialize_atom_identifier, serialize_number, AtomString};
+use crate::{Atom, Namespace, One, Prefix, Zero};
 use cssparser::{Parser, Token};
 use rustc_hash::FxHashMap;
 use std::fmt::{self, Write};
+use std::ops::Add;
 use style_traits::values::specified::AllowedNumericType;
-use style_traits::{CssWriter, ParseError, StyleParseErrorKind, ToCss};
+use style_traits::{
+    CssWriter, ParseError, SpecifiedValueInfo, StyleParseErrorKind, ToCss, ToTyped, TypedValue,
+};
+use thin_vec::ThinVec;
 
 pub use self::align::{ContentDistribution, ItemPlacement, JustifyItems, SelfAlignment};
-pub use self::angle::{AllowUnitlessZeroAngle, Angle, NoCalcAngle};
+pub use self::angle::{AllowUnitlessZeroAngle, Angle};
 pub use self::animation::{
     AnimationComposition, AnimationDirection, AnimationDuration, AnimationFillMode,
     AnimationIterationCount, AnimationName, AnimationPlayState, AnimationRangeEnd,
@@ -65,7 +71,7 @@ pub use self::font::{FontVariantAlternates, FontWeight};
 pub use self::font::{FontVariantEastAsian, FontVariationSettings, LineHeight};
 pub use self::font::{MathDepth, MozScriptMinSize, MozScriptSizeMultiplier, XLang, XTextScale};
 pub use self::image::{EndingShape as GradientEndingShape, Gradient, Image, ImageRendering};
-pub use self::length::{AbsoluteLength, CalcNumeric, CharacterWidth};
+pub use self::length::{AbsoluteLength, CalcLengthPercentage, CharacterWidth};
 pub use self::length::{FontRelativeLength, Length, LengthOrNumber, NonNegativeLengthOrNumber};
 pub use self::length::{LengthOrAuto, LengthPercentage, LengthPercentageOrAuto};
 pub use self::length::{Margin, MaxSize, Size};
@@ -76,13 +82,9 @@ pub use self::length::{
 pub use self::list::ListStyleType;
 pub use self::list::Quotes;
 pub use self::motion::{OffsetPath, OffsetPosition, OffsetRotate};
-pub use self::number::{
-    GreaterThanOrEqualToOneNumber, Integer, NoCalcNumber, NonNegativeInteger, NonNegativeNumber,
-    Number, PositiveInteger,
-};
 pub use self::outline::OutlineStyle;
 pub use self::page::{PageName, PageOrientation, PageSize, PageSizeOrientation, PaperSize};
-pub use self::percentage::{NoCalcPercentage, NonNegativePercentage, Percentage};
+pub use self::percentage::{NonNegativePercentage, Percentage};
 pub use self::position::{
     AnchorFunction, AnchorName, AnchorNameIdent, AspectRatio, GridAutoFlow, GridTemplateAreas,
     Inset, MasonryAutoFlow, MasonryItemOrder, MasonryPlacement, Position, PositionAnchor,
@@ -91,7 +93,7 @@ pub use self::position::{
 };
 pub use self::ratio::Ratio;
 pub use self::rect::NonNegativeLengthOrNumberRect;
-pub use self::resolution::{NoCalcResolution, Resolution};
+pub use self::resolution::Resolution;
 pub use self::svg::{DProperty, MozContextProperties};
 pub use self::svg::{SVGLength, SVGOpacity, SVGPaint};
 pub use self::svg::{SVGPaintOrder, SVGStrokeDashArray, SVGWidth, VectorEffect};
@@ -106,7 +108,7 @@ pub use self::text::{TextBoxEdge, TextBoxTrim};
 pub use self::text::{
     TextDecorationInset, TextDecorationLength, TextDecorationSkipInk, TextJustify, TextTransform,
 };
-pub use self::time::{NoCalcTime, Time};
+pub use self::time::Time;
 pub use self::transform::{Rotate, Scale, Transform};
 pub use self::transform::{TransformBox, TransformOrigin, TransformStyle, Translate};
 #[cfg(feature = "gecko")]
@@ -138,7 +140,6 @@ pub mod intersection_observer;
 pub mod length;
 pub mod list;
 pub mod motion;
-pub mod number;
 pub mod outline;
 pub mod page;
 pub mod percentage;
@@ -159,7 +160,7 @@ pub mod url;
 
 
 #[allow(missing_docs)]
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
 pub enum AngleOrPercentage {
     Percentage(Percentage),
     Angle(Angle),
@@ -198,10 +199,300 @@ impl Parse for AngleOrPercentage {
 }
 
 
+fn parse_number_with_clamping_mode<'i, 't>(
+    context: &ParserContext,
+    input: &mut Parser<'i, 't>,
+    clamping_mode: AllowedNumericType,
+) -> Result<Number, ParseError<'i>> {
+    let location = input.current_source_location();
+    match *input.next()? {
+        Token::Number { value, .. } if clamping_mode.is_ok(context.parsing_mode, value) => {
+            Ok(Number {
+                value,
+                calc_clamping_mode: None,
+            })
+        },
+        Token::Function(ref name) => {
+            let function = CalcNode::math_function(context, name, location)?;
+            let value = CalcNode::parse_number(context, input, function)?;
+            Ok(Number {
+                value,
+                calc_clamping_mode: Some(clamping_mode),
+            })
+        },
+        ref t => Err(location.new_unexpected_token_error(t.clone())),
+    }
+}
+
+
+
+
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialOrd, ToShmem)]
+pub struct Number {
+    
+    value: CSSFloat,
+    
+    
+    calc_clamping_mode: Option<AllowedNumericType>,
+}
+
+impl Parse for Number {
+    fn parse<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Result<Self, ParseError<'i>> {
+        parse_number_with_clamping_mode(context, input, AllowedNumericType::All)
+    }
+}
+
+impl PartialEq<Number> for Number {
+    fn eq(&self, other: &Number) -> bool {
+        if self.calc_clamping_mode != other.calc_clamping_mode {
+            return false;
+        }
+
+        self.value == other.value || (self.value.is_nan() && other.value.is_nan())
+    }
+}
+
+impl Number {
+    
+    #[inline]
+    fn new_with_clamping_mode(
+        value: CSSFloat,
+        calc_clamping_mode: Option<AllowedNumericType>,
+    ) -> Self {
+        Self {
+            value,
+            calc_clamping_mode,
+        }
+    }
+
+    
+    pub fn to_percentage(&self) -> Percentage {
+        Percentage::new_with_clamping_mode(self.value, self.calc_clamping_mode)
+    }
+
+    
+    #[inline]
+    pub fn new(val: CSSFloat) -> Self {
+        Self::new_with_clamping_mode(val, None)
+    }
+
+    
+    #[inline]
+    pub fn was_calc(&self) -> bool {
+        self.calc_clamping_mode.is_some()
+    }
+
+    
+    #[inline]
+    pub fn get(&self) -> f32 {
+        crate::values::normalize(
+            self.calc_clamping_mode
+                .map_or(self.value, |mode| mode.clamp(self.value)),
+        )
+        .min(f32::MAX)
+        .max(f32::MIN)
+    }
+
+    
+    pub fn unit(&self) -> &'static str {
+        "number"
+    }
+
+    
+    pub fn canonical_unit(&self) -> Option<&'static str> {
+        None
+    }
+
+    
+    
+    pub fn to(&self, unit: &str) -> Result<Self, ()> {
+        if !unit.eq_ignore_ascii_case("number") {
+            return Err(());
+        }
+        Ok(Self {
+            value: self.value,
+            calc_clamping_mode: self.calc_clamping_mode,
+        })
+    }
+
+    #[allow(missing_docs)]
+    pub fn parse_non_negative<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Result<Number, ParseError<'i>> {
+        parse_number_with_clamping_mode(context, input, AllowedNumericType::NonNegative)
+    }
+
+    #[allow(missing_docs)]
+    pub fn parse_at_least_one<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Result<Number, ParseError<'i>> {
+        parse_number_with_clamping_mode(context, input, AllowedNumericType::AtLeastOne)
+    }
+
+    
+    #[inline]
+    pub fn clamp_to_one(self) -> Self {
+        Number {
+            value: self.value.min(1.),
+            calc_clamping_mode: self.calc_clamping_mode,
+        }
+    }
+}
+
+impl ToComputedValue for Number {
+    type ComputedValue = CSSFloat;
+
+    #[inline]
+    fn to_computed_value(&self, _: &Context) -> CSSFloat {
+        self.get()
+    }
+
+    #[inline]
+    fn from_computed_value(computed: &CSSFloat) -> Self {
+        Number {
+            value: *computed,
+            calc_clamping_mode: None,
+        }
+    }
+}
+
+impl ToCss for Number {
+    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
+    where
+        W: Write,
+    {
+        serialize_number(self.value, self.calc_clamping_mode.is_some(), dest)
+    }
+}
+
+impl ToTyped for Number {
+    fn to_typed(&self, dest: &mut ThinVec<TypedValue>) -> Result<(), ()> {
+        reify_number(self.value, self.calc_clamping_mode.is_some(), dest)
+    }
+}
+
+impl IsParallelTo for (Number, Number, Number) {
+    fn is_parallel_to(&self, vector: &DirectionVector) -> bool {
+        use euclid::approxeq::ApproxEq;
+        
+        
+        let self_vector = DirectionVector::new(self.0.get(), self.1.get(), self.2.get());
+        self_vector
+            .cross(*vector)
+            .square_length()
+            .approx_eq(&0.0f32)
+    }
+}
+
+impl SpecifiedValueInfo for Number {}
+
+impl Add for Number {
+    type Output = Self;
+
+    fn add(self, other: Self) -> Self {
+        Self::new(self.get() + other.get())
+    }
+}
+
+impl Zero for Number {
+    #[inline]
+    fn zero() -> Self {
+        Self::new(0.)
+    }
+
+    #[inline]
+    fn is_zero(&self) -> bool {
+        self.get() == 0.
+    }
+}
+
+impl From<Number> for f32 {
+    #[inline]
+    fn from(n: Number) -> Self {
+        n.get()
+    }
+}
+
+impl From<Number> for f64 {
+    #[inline]
+    fn from(n: Number) -> Self {
+        n.get() as f64
+    }
+}
+
+
+pub type NonNegativeNumber = NonNegative<Number>;
+
+impl Parse for NonNegativeNumber {
+    fn parse<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Result<Self, ParseError<'i>> {
+        parse_number_with_clamping_mode(context, input, AllowedNumericType::NonNegative)
+            .map(NonNegative::<Number>)
+    }
+}
+
+impl One for NonNegativeNumber {
+    #[inline]
+    fn one() -> Self {
+        NonNegativeNumber::new(1.0)
+    }
+
+    #[inline]
+    fn is_one(&self) -> bool {
+        self.get() == 1.0
+    }
+}
+
+impl NonNegativeNumber {
+    
+    pub fn new(val: CSSFloat) -> Self {
+        NonNegative::<Number>(Number::new(val.max(0.)))
+    }
+
+    
+    #[inline]
+    pub fn get(&self) -> f32 {
+        self.0.get()
+    }
+}
+
+
+pub type NonNegativeInteger = NonNegative<Integer>;
+
+impl Parse for NonNegativeInteger {
+    fn parse<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Result<Self, ParseError<'i>> {
+        Ok(NonNegative(Integer::parse_non_negative(context, input)?))
+    }
+}
+
+
+pub type GreaterThanOrEqualToOneNumber = GreaterThanOrEqualToOne<Number>;
+
+impl Parse for GreaterThanOrEqualToOneNumber {
+    fn parse<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Result<Self, ParseError<'i>> {
+        parse_number_with_clamping_mode(context, input, AllowedNumericType::AtLeastOne)
+            .map(GreaterThanOrEqualToOne::<Number>)
+    }
+}
+
+
 
 
 #[allow(missing_docs)]
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
 pub enum NumberOrPercentage {
     Percentage(Percentage),
     Number(Number),
@@ -231,31 +522,19 @@ impl NumberOrPercentage {
     }
 
     
-    pub fn to_percentage(self) -> Option<Percentage> {
+    pub fn to_percentage(self) -> Percentage {
         match self {
-            Self::Percentage(p) => Some(p),
+            Self::Percentage(p) => p,
             Self::Number(n) => n.to_percentage(),
         }
     }
 
     
-    pub fn to_number(&self) -> Option<Number> {
+    pub fn to_number(self) -> Number {
         match self {
             Self::Percentage(p) => p.to_number(),
-            Self::Number(n) => Some(n.clone()),
+            Self::Number(n) => n,
         }
-    }
-
-    
-    pub fn to_computed_value_without_context(&self) -> Result<computed::NumberOrPercentage, ()> {
-        Ok(match self {
-            NumberOrPercentage::Percentage(percentage) => computed::NumberOrPercentage::Percentage(
-                computed::Percentage(percentage.resolve().ok_or(())?),
-            ),
-            NumberOrPercentage::Number(number) => {
-                computed::NumberOrPercentage::Number(number.resolve().ok_or(())?)
-            },
-        })
     }
 }
 
@@ -300,7 +579,16 @@ impl Parse for NonNegativeNumberOrPercentage {
 
 
 #[derive(
-    Clone, Debug, MallocSizeOf, PartialEq, PartialOrd, SpecifiedValueInfo, ToCss, ToShmem, ToTyped,
+    Clone,
+    Copy,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    PartialOrd,
+    SpecifiedValueInfo,
+    ToCss,
+    ToShmem,
+    ToTyped,
 )]
 pub struct Opacity(Number);
 
@@ -312,11 +600,7 @@ impl Parse for Opacity {
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
-        
-        
-        let Some(number) = NumberOrPercentage::parse(context, input)?.to_number() else {
-            return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError));
-        };
+        let number = NumberOrPercentage::parse(context, input)?.to_number();
         Ok(Opacity(number))
     }
 }
@@ -339,6 +623,171 @@ impl ToComputedValue for Opacity {
     #[inline]
     fn from_computed_value(computed: &CSSFloat) -> Self {
         Opacity(Number::from_computed_value(computed))
+    }
+}
+
+
+
+
+
+
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, PartialOrd, ToShmem, ToTyped)]
+#[typed(todo_derive_fields)]
+pub enum Integer {
+    
+    Literal(CSSInteger),
+    
+    Calc(CSSFloat),
+}
+
+impl Zero for Integer {
+    #[inline]
+    fn zero() -> Self {
+        Self::new(0)
+    }
+
+    #[inline]
+    fn is_zero(&self) -> bool {
+        *self == 0
+    }
+}
+
+impl One for Integer {
+    #[inline]
+    fn one() -> Self {
+        Self::new(1)
+    }
+
+    #[inline]
+    fn is_one(&self) -> bool {
+        *self == 1
+    }
+}
+
+impl PartialEq<i32> for Integer {
+    fn eq(&self, value: &i32) -> bool {
+        self.value() == *value
+    }
+}
+
+impl Integer {
+    
+    pub fn new(val: CSSInteger) -> Self {
+        Self::Literal(val)
+    }
+
+    
+    pub fn value(&self) -> CSSInteger {
+        match *self {
+            Self::Literal(i) => i,
+            Self::Calc(n) => (n + 0.5).floor() as CSSInteger,
+        }
+    }
+
+    
+    fn from_calc(val: CSSFloat) -> Self {
+        Self::Calc(val)
+    }
+}
+
+impl Parse for Integer {
+    fn parse<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Result<Self, ParseError<'i>> {
+        let location = input.current_source_location();
+        match *input.next()? {
+            Token::Number {
+                int_value: Some(v), ..
+            } => Ok(Integer::new(v)),
+            Token::Function(ref name) => {
+                let function = CalcNode::math_function(context, name, location)?;
+                let result = CalcNode::parse_number(context, input, function)?;
+                Ok(Integer::from_calc(result))
+            },
+            ref t => Err(location.new_unexpected_token_error(t.clone())),
+        }
+    }
+}
+
+impl Integer {
+    
+    pub fn parse_with_minimum<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+        min: i32,
+    ) -> Result<Integer, ParseError<'i>> {
+        let value = Integer::parse(context, input)?;
+        
+        
+        
+        
+        
+        if value.value() < min {
+            return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError));
+        }
+        Ok(value)
+    }
+
+    
+    pub fn parse_non_negative<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Result<Integer, ParseError<'i>> {
+        Integer::parse_with_minimum(context, input, 0)
+    }
+
+    
+    pub fn parse_positive<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Result<Integer, ParseError<'i>> {
+        Integer::parse_with_minimum(context, input, 1)
+    }
+}
+
+impl ToComputedValue for Integer {
+    type ComputedValue = i32;
+
+    #[inline]
+    fn to_computed_value(&self, _: &Context) -> i32 {
+        self.value()
+    }
+
+    #[inline]
+    fn from_computed_value(computed: &i32) -> Self {
+        Integer::new(*computed)
+    }
+}
+
+impl ToCss for Integer {
+    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
+    where
+        W: Write,
+    {
+        match *self {
+            Integer::Literal(i) => i.to_css(dest),
+            Integer::Calc(n) => {
+                dest.write_str("calc(")?;
+                n.to_css(dest)?;
+                dest.write_char(')')
+            },
+        }
+    }
+}
+
+impl SpecifiedValueInfo for Integer {}
+
+
+pub type PositiveInteger = GreaterThanOrEqualToOne<Integer>;
+
+impl Parse for PositiveInteger {
+    #[inline]
+    fn parse<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Result<Self, ParseError<'i>> {
+        Integer::parse_positive(context, input).map(GreaterThanOrEqualToOne)
     }
 }
 

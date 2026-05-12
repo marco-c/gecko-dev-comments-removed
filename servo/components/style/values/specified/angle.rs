@@ -8,7 +8,7 @@ use crate::derives::*;
 use crate::parser::{Parse, ParserContext};
 use crate::values::computed::angle::Angle as ComputedAngle;
 use crate::values::computed::{Context, ToComputedValue};
-use crate::values::specified::calc::{CalcNode, CalcNumeric, Leaf};
+use crate::values::specified::calc::CalcNode;
 use crate::values::CSSFloat;
 use crate::Zero;
 use cssparser::{match_ignore_ascii_case, Parser, Token};
@@ -19,22 +19,25 @@ use style_traits::{CssWriter, ParseError, SpecifiedValueInfo, ToCss};
 
 
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
-#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, PartialOrd, ToShmem)]
-#[repr(C)]
-pub enum NoCalcAngle {
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, PartialOrd, ToCss, ToShmem)]
+pub enum AngleDimension {
     
+    #[css(dimension)]
     Deg(CSSFloat),
     
+    #[css(dimension)]
     Grad(CSSFloat),
     
+    #[css(dimension)]
     Rad(CSSFloat),
     
+    #[css(dimension)]
     Turn(CSSFloat),
 }
 
-impl Zero for NoCalcAngle {
+impl Zero for AngleDimension {
     fn zero() -> Self {
-        Self::from_degrees(0.)
+        AngleDimension::Deg(0.)
     }
 
     fn is_zero(&self) -> bool {
@@ -42,117 +45,153 @@ impl Zero for NoCalcAngle {
     }
 }
 
-impl ToCss for NoCalcAngle {
-    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
-    where
-        W: Write,
-    {
-        crate::values::serialize_specified_dimension(
-            self.unitless_value(),
-            self.unit(),
-             false,
-            dest,
-        )
-    }
-}
-
-impl SpecifiedValueInfo for NoCalcAngle {}
-
-impl NoCalcAngle {
+impl AngleDimension {
     
     #[inline]
-    pub fn from_degrees(value: CSSFloat) -> Self {
-        Self::Deg(value)
-    }
-
-    
-    #[inline]
-    pub fn from_radians(value: CSSFloat) -> Self {
-        Self::Rad(value)
-    }
-
-    
-    pub fn zero() -> Self {
-        Self::from_degrees(0.0)
-    }
-
-    
-    #[inline]
-    pub fn degrees(&self) -> CSSFloat {
+    fn degrees(&self) -> CSSFloat {
         const DEG_PER_RAD: f32 = 180.0 / PI;
         const DEG_PER_TURN: f32 = 360.0;
         const DEG_PER_GRAD: f32 = 180.0 / 200.0;
 
         match *self {
-            Self::Deg(d) => d,
-            Self::Rad(rad) => rad * DEG_PER_RAD,
-            Self::Turn(turns) => turns * DEG_PER_TURN,
-            Self::Grad(gradians) => gradians * DEG_PER_GRAD,
+            AngleDimension::Deg(d) => d,
+            AngleDimension::Rad(rad) => rad * DEG_PER_RAD,
+            AngleDimension::Turn(turns) => turns * DEG_PER_TURN,
+            AngleDimension::Grad(gradians) => gradians * DEG_PER_GRAD,
         }
+    }
+
+    fn unitless_value(&self) -> CSSFloat {
+        match *self {
+            AngleDimension::Deg(v)
+            | AngleDimension::Rad(v)
+            | AngleDimension::Turn(v)
+            | AngleDimension::Grad(v) => v,
+        }
+    }
+
+    fn unit(&self) -> &'static str {
+        match *self {
+            AngleDimension::Deg(_) => "deg",
+            AngleDimension::Rad(_) => "rad",
+            AngleDimension::Turn(_) => "turn",
+            AngleDimension::Grad(_) => "grad",
+        }
+    }
+}
+
+
+
+#[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToShmem)]
+pub struct Angle {
+    value: AngleDimension,
+    was_calc: bool,
+}
+
+impl Zero for Angle {
+    fn zero() -> Self {
+        Self {
+            value: Zero::zero(),
+            was_calc: false,
+        }
+    }
+
+    fn is_zero(&self) -> bool {
+        self.value.is_zero()
+    }
+}
+
+impl ToCss for Angle {
+    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
+    where
+        W: Write,
+    {
+        crate::values::serialize_specified_dimension(
+            self.value.unitless_value(),
+            self.value.unit(),
+            self.was_calc,
+            dest,
+        )
+    }
+}
+
+impl ToComputedValue for Angle {
+    type ComputedValue = ComputedAngle;
+
+    #[inline]
+    fn to_computed_value(&self, _context: &Context) -> Self::ComputedValue {
+        let degrees = self.degrees();
+
+        
+        ComputedAngle::from_degrees(if degrees.is_finite() { degrees } else { 0.0 })
+    }
+
+    #[inline]
+    fn from_computed_value(computed: &Self::ComputedValue) -> Self {
+        Angle {
+            value: AngleDimension::Deg(computed.degrees()),
+            was_calc: false,
+        }
+    }
+}
+
+impl Angle {
+    
+    #[inline]
+    pub fn from_degrees(value: CSSFloat, was_calc: bool) -> Self {
+        Angle {
+            value: AngleDimension::Deg(value),
+            was_calc,
+        }
+    }
+
+    
+    #[inline]
+    pub fn from_radians(value: CSSFloat) -> Self {
+        Angle {
+            value: AngleDimension::Rad(value),
+            was_calc: false,
+        }
+    }
+
+    
+    pub fn zero() -> Self {
+        Self::from_degrees(0.0, false)
+    }
+
+    
+    #[inline]
+    pub fn degrees(&self) -> CSSFloat {
+        self.value.degrees()
     }
 
     
     #[inline]
     pub fn radians(&self) -> CSSFloat {
         const RAD_PER_DEG: f32 = PI / 180.0;
-        self.degrees() * RAD_PER_DEG
+        self.value.degrees() * RAD_PER_DEG
+    }
+
+    
+    #[inline]
+    pub fn was_calc(&self) -> bool {
+        self.was_calc
+    }
+
+    
+    pub fn from_calc(degrees: CSSFloat) -> Self {
+        Angle {
+            value: AngleDimension::Deg(degrees),
+            was_calc: true,
+        }
     }
 
     
     #[inline]
     pub fn unit(&self) -> &'static str {
-        match *self {
-            Self::Deg(_) => "deg",
-            Self::Rad(_) => "rad",
-            Self::Turn(_) => "turn",
-            Self::Grad(_) => "grad",
-        }
+        self.value.unit()
     }
-
-    
-    #[inline]
-    pub fn unitless_value(&self) -> CSSFloat {
-        match *self {
-            Self::Deg(v) | Self::Rad(v) | Self::Turn(v) | Self::Grad(v) => v,
-        }
-    }
-
-    
-    pub fn parse_dimension(value: CSSFloat, unit: &str) -> Result<Self, ()> {
-        Ok(match_ignore_ascii_case! { unit,
-            "deg" => Self::Deg(value),
-            "grad" => Self::Grad(value),
-            "turn" => Self::Turn(value),
-            "rad" => Self::Rad(value),
-             _ => return Err(())
-        })
-    }
-}
-
-impl Neg for NoCalcAngle {
-    type Output = NoCalcAngle;
-
-    #[inline]
-    fn neg(self) -> NoCalcAngle {
-        match self {
-            Self::Deg(v) => Self::Deg(-v),
-            Self::Rad(v) => Self::Rad(-v),
-            Self::Turn(v) => Self::Turn(-v),
-            Self::Grad(v) => Self::Grad(-v),
-        }
-    }
-}
-
-
-
-
-#[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
-pub enum Angle {
-    
-    NoCalc(NoCalcAngle),
-    
-    Calc(Box<CalcNumeric>),
 }
 
 
@@ -178,71 +217,18 @@ impl Parse for Angle {
     }
 }
 
-impl Zero for Angle {
-    fn zero() -> Self {
-        Angle::NoCalc(NoCalcAngle::zero())
-    }
-
-    fn is_zero(&self) -> bool {
-        match self {
-            Angle::NoCalc(a) => a.is_zero(),
-            Angle::Calc(_) => false,
-        }
-    }
-}
-
-impl ToComputedValue for Angle {
-    type ComputedValue = ComputedAngle;
-
-    #[inline]
-    fn to_computed_value(&self, context: &Context) -> Self::ComputedValue {
-        let degrees = match self {
-            Angle::NoCalc(a) => a.degrees(),
-            Angle::Calc(ref calc) => {
-                calc.clamping_mode
-                    .clamp(match calc.node.with_computed_context(context).resolve() {
-                        Ok(Leaf::Angle(a)) => a.degrees(),
-                        _ => {
-                            debug_assert!(false, "Unexpected Angle::Calc without resolved angle");
-                            f32::NAN
-                        },
-                    })
-            },
-        };
-
-        
-        ComputedAngle::from_degrees(if degrees.is_finite() { degrees } else { 0.0 })
-    }
-
-    #[inline]
-    fn from_computed_value(computed: &Self::ComputedValue) -> Self {
-        Angle::NoCalc(NoCalcAngle::from_degrees(computed.degrees()))
-    }
-}
-
 impl Angle {
     
-    #[inline]
-    pub fn from_degrees(value: CSSFloat) -> Self {
-        Angle::NoCalc(NoCalcAngle::from_degrees(value))
-    }
+    pub fn parse_dimension(value: CSSFloat, unit: &str, was_calc: bool) -> Result<Angle, ()> {
+        let value = match_ignore_ascii_case! { unit,
+            "deg" => AngleDimension::Deg(value),
+            "grad" => AngleDimension::Grad(value),
+            "turn" => AngleDimension::Turn(value),
+            "rad" => AngleDimension::Rad(value),
+             _ => return Err(())
+        };
 
-    
-    pub fn zero() -> Self {
-        Angle::NoCalc(NoCalcAngle::zero())
-    }
-
-    
-    
-    
-    #[inline]
-    pub fn degrees(&self) -> Option<CSSFloat> {
-        match self {
-            Angle::NoCalc(a) => Some(a.degrees()),
-            Angle::Calc(ref calc) => calc
-                .as_angle()
-                .map(|a| calc.clamping_mode.clamp(a.degrees())),
-        }
+        Ok(Self { value, was_calc })
     }
 
     
@@ -267,18 +253,18 @@ impl Angle {
         match *t {
             Token::Dimension {
                 value, ref unit, ..
-            } => match NoCalcAngle::parse_dimension(value, unit) {
-                Ok(angle) => Ok(Angle::NoCalc(angle)),
-                Err(()) => {
-                    let t = t.clone();
-                    Err(input.new_unexpected_token_error(t))
-                },
+            } => {
+                match Angle::parse_dimension(value, unit,  false) {
+                    Ok(angle) => Ok(angle),
+                    Err(()) => {
+                        let t = t.clone();
+                        Err(input.new_unexpected_token_error(t))
+                    },
+                }
             },
             Token::Function(ref name) => {
                 let function = CalcNode::math_function(context, name, location)?;
                 CalcNode::parse_angle(context, input, function)
-                    .map(Box::new)
-                    .map(Angle::Calc)
             },
             Token::Number { value, .. } if value == 0. && allow_unitless_zero => Ok(Angle::zero()),
             ref t => {
@@ -289,21 +275,22 @@ impl Angle {
     }
 }
 
+impl SpecifiedValueInfo for Angle {}
+
 impl Neg for Angle {
     type Output = Angle;
 
     #[inline]
     fn neg(self) -> Angle {
-        match self {
-            Angle::NoCalc(a) => Angle::NoCalc(-a),
-            Angle::Calc(c) => {
-                let mut node = c.node;
-                node.negate();
-                Angle::Calc(Box::new(CalcNumeric {
-                    clamping_mode: c.clamping_mode,
-                    node,
-                }))
-            },
+        let value = match self.value {
+            AngleDimension::Deg(v) => AngleDimension::Deg(-v),
+            AngleDimension::Rad(v) => AngleDimension::Rad(-v),
+            AngleDimension::Turn(v) => AngleDimension::Turn(-v),
+            AngleDimension::Grad(v) => AngleDimension::Grad(-v),
+        };
+        Angle {
+            value,
+            was_calc: self.was_calc,
         }
     }
 }

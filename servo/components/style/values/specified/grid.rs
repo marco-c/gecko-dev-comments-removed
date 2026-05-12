@@ -354,13 +354,6 @@ impl Parse for NameRepeat<Integer> {
         input.expect_function_matching("repeat")?;
         input.parse_nested_block(|i| {
             let count = RepeatCount::parse(context, i)?;
-
-            
-            
-            if matches!(count, RepeatCount::Number(ref n) if n.resolve().is_none()) {
-                return Err(i.new_custom_error(StyleParseErrorKind::UnspecifiedError));
-            }
-
             
             
             if matches!(count, RepeatCount::AutoFit) {
@@ -405,10 +398,7 @@ impl LineNameListValue<Integer> {
             Self::Repeat(ref r) => {
                 match r.count {
                     
-                    
-                    RepeatCount::Number(ref v) => {
-                        r.line_names.len() * v.resolve().unwrap() as usize
-                    },
+                    RepeatCount::Number(v) => r.line_names.len() * v.value() as usize,
                     _ => 0,
                 }
             },

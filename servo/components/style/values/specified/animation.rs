@@ -176,7 +176,7 @@ impl Parse for AnimationDuration {
 
 
 #[derive(
-    Clone, Debug, MallocSizeOf, PartialEq, Parse, SpecifiedValueInfo, ToCss, ToShmem, ToTyped,
+    Copy, Clone, Debug, MallocSizeOf, PartialEq, Parse, SpecifiedValueInfo, ToCss, ToShmem, ToTyped,
 )]
 pub enum AnimationIterationCount {
     

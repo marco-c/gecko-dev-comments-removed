@@ -138,7 +138,7 @@ pub const MAX_FONT_WEIGHT: f32 = 1000.;
 
 
 #[derive(
-    Clone, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped,
+    Clone, Copy, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped,
 )]
 pub enum FontWeight {
     
@@ -175,7 +175,7 @@ impl ToComputedValue for FontWeight {
     #[inline]
     fn to_computed_value(&self, context: &Context) -> Self::ComputedValue {
         match *self {
-            FontWeight::Absolute(ref abs) => abs.to_computed_value(context),
+            FontWeight::Absolute(ref abs) => abs.compute(),
             FontWeight::Bolder => context
                 .builder
                 .get_parent_font()
@@ -192,14 +192,18 @@ impl ToComputedValue for FontWeight {
 
     #[inline]
     fn from_computed_value(computed: &computed::FontWeight) -> Self {
-        FontWeight::Absolute(AbsoluteFontWeight::from_computed_value(computed))
+        FontWeight::Absolute(AbsoluteFontWeight::Weight(Number::from_computed_value(
+            &computed.value(),
+        )))
     }
 }
 
 
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped)]
+#[derive(
+    Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped,
+)]
 pub enum AbsoluteFontWeight {
     
     
@@ -213,33 +217,12 @@ pub enum AbsoluteFontWeight {
 
 impl AbsoluteFontWeight {
     
-    
-    pub fn compute(&self) -> Option<computed::FontWeight> {
-        match self {
-            AbsoluteFontWeight::Weight(weight) => {
-                Some(computed::FontWeight::from_float(weight.resolve()?))
-            },
-            AbsoluteFontWeight::Normal => Some(computed::FontWeight::NORMAL),
-            AbsoluteFontWeight::Bold => Some(computed::FontWeight::BOLD),
-        }
-    }
-}
-
-impl ToComputedValue for AbsoluteFontWeight {
-    type ComputedValue = computed::FontWeight;
-
-    fn to_computed_value(&self, context: &Context) -> computed::FontWeight {
-        match self {
-            AbsoluteFontWeight::Weight(weight) => {
-                computed::FontWeight::from_float(weight.to_computed_value(context))
-            },
+    pub fn compute(&self) -> computed::FontWeight {
+        match *self {
+            AbsoluteFontWeight::Weight(weight) => computed::FontWeight::from_float(weight.get()),
             AbsoluteFontWeight::Normal => computed::FontWeight::NORMAL,
             AbsoluteFontWeight::Bold => computed::FontWeight::BOLD,
         }
-    }
-
-    fn from_computed_value(computed: &computed::FontWeight) -> Self {
-        AbsoluteFontWeight::Weight(Number::from_computed_value(&computed.value()))
     }
 }
 
@@ -252,7 +235,9 @@ impl Parse for AbsoluteFontWeight {
             
             
             
-            if matches!(number.get(), Some(v) if v < MIN_FONT_WEIGHT || v > MAX_FONT_WEIGHT) {
+            if !number.was_calc()
+                && (number.get() < MIN_FONT_WEIGHT || number.get() > MAX_FONT_WEIGHT)
+            {
                 return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError));
             }
             return Ok(AbsoluteFontWeight::Weight(number));
@@ -315,12 +300,10 @@ impl Parse for SpecifiedFontStyle {
 impl ToComputedValue for SpecifiedFontStyle {
     type ComputedValue = computed::FontStyle;
 
-    fn to_computed_value(&self, context: &Context) -> Self::ComputedValue {
+    fn to_computed_value(&self, _: &Context) -> Self::ComputedValue {
         match *self {
             Self::Italic => computed::FontStyle::ITALIC,
-            Self::Oblique(ref angle) => {
-                computed::FontStyle::oblique(angle.to_computed_value(context).degrees())
-            },
+            Self::Oblique(ref angle) => computed::FontStyle::oblique(angle.degrees()),
         }
     }
 
@@ -329,7 +312,7 @@ impl ToComputedValue for SpecifiedFontStyle {
             return Self::Italic;
         }
         let degrees = computed.oblique_degrees();
-        generics::FontStyle::Oblique(Angle::from_degrees(degrees))
+        generics::FontStyle::Oblique(Angle::from_degrees(degrees,  false))
     }
 }
 
@@ -346,13 +329,11 @@ pub const FONT_STYLE_OBLIQUE_MIN_ANGLE_DEGREES: f32 = -90.;
 
 impl SpecifiedFontStyle {
     
-    pub fn compute_angle_degrees(angle: &Angle) -> Option<f32> {
-        Some(
-            angle
-                .degrees()?
-                .max(FONT_STYLE_OBLIQUE_MIN_ANGLE_DEGREES)
-                .min(FONT_STYLE_OBLIQUE_MAX_ANGLE_DEGREES),
-        )
+    pub fn compute_angle_degrees(angle: &Angle) -> f32 {
+        angle
+            .degrees()
+            .max(FONT_STYLE_OBLIQUE_MIN_ANGLE_DEGREES)
+            .min(FONT_STYLE_OBLIQUE_MAX_ANGLE_DEGREES)
     }
 
     
@@ -361,12 +342,11 @@ impl SpecifiedFontStyle {
         input: &mut Parser<'i, 't>,
     ) -> Result<Angle, ParseError<'i>> {
         let angle = Angle::parse(context, input)?;
-        
-        if matches!(angle, Angle::Calc(_)) {
+        if angle.was_calc() {
             return Ok(angle);
         }
 
-        let degrees = angle.degrees().unwrap();
+        let degrees = angle.degrees();
         if degrees < FONT_STYLE_OBLIQUE_MIN_ANGLE_DEGREES
             || degrees > FONT_STYLE_OBLIQUE_MAX_ANGLE_DEGREES
         {
@@ -377,13 +357,16 @@ impl SpecifiedFontStyle {
 
     
     pub fn default_angle() -> Angle {
-        Angle::from_degrees(computed::FontStyle::DEFAULT_OBLIQUE_DEGREES as f32)
+        Angle::from_degrees(
+            computed::FontStyle::DEFAULT_OBLIQUE_DEGREES as f32,
+             false,
+        )
     }
 }
 
 
 #[derive(
-    Clone, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped,
+    Clone, Copy, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped,
 )]
 #[allow(missing_docs)]
 #[typed(todo_derive_fields)]
@@ -423,7 +406,7 @@ impl ToComputedValue for FontStyle {
 
 #[allow(missing_docs)]
 #[derive(
-    Clone, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped,
+    Clone, Copy, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped,
 )]
 pub enum FontStretch {
     Stretch(NonNegativePercentage),
@@ -755,7 +738,7 @@ impl Parse for FamilyName {
 
 
 #[derive(
-    Clone, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped,
+    Clone, Copy, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped,
 )]
 pub enum FontSizeAdjustFactor {
     
@@ -966,8 +949,8 @@ impl FontSize {
             FontSize::Length(LengthPercentage::Percentage(pc)) => {
                 
                 
-                info = compose_keyword(pc.get());
-                (base_size.resolve(context).computed_size() * pc.get()).normalized()
+                info = compose_keyword(pc.0);
+                (base_size.resolve(context).computed_size() * pc.0).normalized()
             },
             FontSize::Length(LengthPercentage::Calc(ref calc)) => {
                 let calc = calc.to_computed_value_zoomed(context, base_size, line_height_base);
@@ -1516,25 +1499,6 @@ impl FontVariantNumeric {
 
 pub type FontFeatureSettings = FontSettings<FeatureTagValue<Integer>>;
 
-impl FontFeatureSettings {
-    
-    
-    pub fn parse_for_font_face_rule<'i, 't>(
-        context: &ParserContext,
-        input: &mut Parser<'i, 't>,
-    ) -> Result<Self, ParseError<'i>> {
-        let settings = FontFeatureSettings::parse(context, input)?;
-        if settings
-            .0
-            .iter()
-            .any(|setting| setting.value.resolve().is_none())
-        {
-            return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError));
-        }
-        Ok(settings)
-    }
-}
-
 
 pub use crate::values::computed::font::FontLanguageOverride;
 
@@ -1727,29 +1691,12 @@ impl Parse for VariationValue<Number> {
     }
 }
 
-impl FontVariationSettings {
-    
-    
-    pub fn parse_for_font_face_rule<'i, 't>(
-        context: &ParserContext,
-        input: &mut Parser<'i, 't>,
-    ) -> Result<Self, ParseError<'i>> {
-        let settings = FontVariationSettings::parse(context, input)?;
-        if settings
-            .0
-            .iter()
-            .any(|setting| setting.value.resolve().is_none())
-        {
-            return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError));
-        }
-        Ok(settings)
-    }
-}
 
 
 
-
-#[derive(Clone, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
+#[derive(
+    Clone, Copy, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss, ToShmem,
+)]
 pub enum MetricsOverride {
     
     Override(NonNegativePercentage),
@@ -1768,13 +1715,12 @@ impl MetricsOverride {
     
     
     
-    
     #[inline]
-    pub fn compute(&self) -> Option<ComputedPercentage> {
-        Some(ComputedPercentage(match self {
-            MetricsOverride::Normal => -1.0,
-            MetricsOverride::Override(percent) => percent.compute()?.0,
-        }))
+    pub fn compute(&self) -> ComputedPercentage {
+        match *self {
+            MetricsOverride::Normal => ComputedPercentage(-1.0),
+            MetricsOverride::Override(percent) => ComputedPercentage(percent.0.get()),
+        }
     }
 }
 
@@ -1878,7 +1824,7 @@ impl Parse for MozScriptMinSize {
 
 
 #[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[derive(Clone, Debug, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped)]
+#[derive(Clone, Copy, Debug, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped)]
 pub enum MathDepth {
     
     AutoAdd,
@@ -1971,11 +1917,11 @@ impl ToComputedValue for LineHeight {
 
     #[inline]
     fn to_computed_value(&self, context: &Context) -> Self::ComputedValue {
-        match self {
+        match *self {
             GenericLineHeight::Normal => GenericLineHeight::Normal,
             #[cfg(feature = "gecko")]
             GenericLineHeight::MozBlockHeight => GenericLineHeight::MozBlockHeight,
-            GenericLineHeight::Number(ref number) => {
+            GenericLineHeight::Number(number) => {
                 GenericLineHeight::Number(number.to_computed_value(context))
             },
             GenericLineHeight::Length(ref non_negative_lp) => {
@@ -1994,7 +1940,7 @@ impl ToComputedValue for LineHeight {
                             LineHeightBase::InheritedStyle,
                         )
                     },
-                    LengthPercentage::Percentage(ref p) => FontRelativeLength::Em(p.get())
+                    LengthPercentage::Percentage(ref p) => FontRelativeLength::Em(p.0)
                         .to_computed_value(
                             context,
                             FontBaseSize::CurrentStyle,

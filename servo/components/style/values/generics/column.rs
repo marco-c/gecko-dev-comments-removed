@@ -38,7 +38,7 @@ pub use self::GenericColumnCount as ColumnCount;
 impl<I> ColumnCount<I> {
     
     #[inline]
-    pub fn is_auto(&self) -> bool {
+    pub fn is_auto(self) -> bool {
         matches!(self, ColumnCount::Auto)
     }
 }

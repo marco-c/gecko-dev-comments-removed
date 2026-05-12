@@ -240,7 +240,9 @@ fn direction_specified_and_angle_is_zero(direction: &OffsetRotateDirection, angl
 
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped)]
+#[derive(
+    Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped,
+)]
 #[typed(todo_derive_fields)]
 pub struct OffsetRotate {
     
