@@ -764,7 +764,7 @@ bool nsListControlFrame::ReflowFinished() {
     
     
     const bool scroll = !DidHistoryRestore() || mPostChildrenLoadedReset;
-    nsContentUtils::AddScriptRunner(new AsyncReset(this, scroll));
+    nsContentUtils::AddScriptRunner(MakeAndAddRef<AsyncReset>(this, scroll));
   }
   mReflowWasInterrupted = false;
   return ScrollContainerFrame::ReflowFinished();

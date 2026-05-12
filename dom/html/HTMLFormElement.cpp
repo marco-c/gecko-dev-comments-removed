@@ -1269,7 +1269,7 @@ nsresult HTMLFormElement::RemoveElement(nsGenericHTMLFormElement* aChild,
     
     
     SetDefaultSubmitElement(nullptr);
-    nsContentUtils::AddScriptRunner(new RemoveElementRunnable(this));
+    nsContentUtils::AddScriptRunner(MakeAndAddRef<RemoveElementRunnable>(this));
 
     
     

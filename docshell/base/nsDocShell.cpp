@@ -10151,7 +10151,7 @@ nsresult nsDocShell::CompleteInitialAboutBlankLoad(
   doc->BeginLoad();
 
   nsContentUtils::AddScriptRunner(
-      new nsDocElementCreatedNotificationRunner(doc));
+      MakeAndAddRef<nsDocElementCreatedNotificationRunner>(doc));
   
   
   

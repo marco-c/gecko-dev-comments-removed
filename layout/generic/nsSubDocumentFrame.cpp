@@ -158,7 +158,7 @@ void nsSubDocumentFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
   
   
   UpdateEmbeddedBrowsingContextDependentData();
-  nsContentUtils::AddScriptRunner(new AsyncFrameInit(this));
+  nsContentUtils::AddScriptRunner(MakeAndAddRef<AsyncFrameInit>(this));
 }
 
 void nsSubDocumentFrame::UpdateEmbeddedBrowsingContextDependentData() {
@@ -949,7 +949,7 @@ void nsSubDocumentFrame::Destroy(DestroyContext& aContext) {
 
     
     
-    nsContentUtils::AddScriptRunner(new nsHideViewer(
+    nsContentUtils::AddScriptRunner(MakeAndAddRef<nsHideViewer>(
         mContent, frameloader, PresShell(), (mDidCreateDoc || mCallingShow)));
   }
 
@@ -996,7 +996,7 @@ void nsSubDocumentFrame::ResetFrameLoader(RetainPaintData aRetain) {
   }
   mFrameLoader = nullptr;
   ClearDisplayItems();
-  nsContentUtils::AddScriptRunner(new AsyncFrameInit(this));
+  nsContentUtils::AddScriptRunner(MakeAndAddRef<AsyncFrameInit>(this));
 }
 
 void nsSubDocumentFrame::ClearRetainedPaintData() {

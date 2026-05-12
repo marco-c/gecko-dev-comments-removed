@@ -130,7 +130,7 @@ void SVGOuterSVGFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
   
   
   nsContentUtils::AddScriptRunner(
-      new AsyncSendIntrinsicSizeAndRatioToEmbedder(this));
+      MakeAndAddRef<AsyncSendIntrinsicSizeAndRatioToEmbedder>(this));
 }
 
 

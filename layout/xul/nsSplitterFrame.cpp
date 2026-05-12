@@ -961,14 +961,14 @@ void nsSplitterFrameInner::UpdateState() {
           
           
           
-          nsContentUtils::AddScriptRunner(new nsUnsetAttrRunnable(
+          nsContentUtils::AddScriptRunner(MakeAndAddRef<nsUnsetAttrRunnable>(
               sibling->AsElement(), nsGkAtoms::collapsed));
         } else if ((mState == State::Open || mState == State::Dragging) &&
                    (newState == State::CollapsedBefore ||
                     newState == State::CollapsedAfter)) {
           
           
-          nsContentUtils::AddScriptRunner(new nsSetAttrRunnable(
+          nsContentUtils::AddScriptRunner(MakeAndAddRef<nsSetAttrRunnable>(
               sibling->AsElement(), nsGkAtoms::collapsed, u"true"_ns));
         }
       }

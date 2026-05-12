@@ -1484,7 +1484,7 @@ nsresult TextControlState::InitializeSelection(PresShell* aPresShell) {
 
   
   if (mTextEditor) {
-    nsContentUtils::AddScriptRunner(new PrepareEditorEvent(*this));
+    nsContentUtils::AddScriptRunner(MakeAndAddRef<PrepareEditorEvent>(*this));
   }
 
   return NS_OK;

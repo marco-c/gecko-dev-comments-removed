@@ -2,7 +2,6 @@
 
 
 
-
 #include "txMozillaXMLOutput.h"
 
 #include <algorithm>
@@ -521,7 +520,7 @@ nsresult txMozillaXMLOutput::closePrevious(bool aFlushText) {
     if (currentIsDoc) {
       mRootContentCreated = true;
       nsContentUtils::AddScriptRunner(
-          new nsDocElementCreatedNotificationRunner(mDocument));
+          MakeAndAddRef<nsDocElementCreatedNotificationRunner>(mDocument));
     }
 
     mCurrentNode = mOpenedElement;
