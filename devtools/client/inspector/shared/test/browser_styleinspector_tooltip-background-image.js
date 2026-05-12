@@ -208,8 +208,16 @@ async function testCase({
   const computedPropertyEl = computedProperty.nameSpan.closest(
     ".computed-property-view"
   );
+
   
+  AccessibilityUtils.setEnv({
+    
+    
+    focusableRule: false,
+  });
   computedPropertyEl.querySelector(".computed-expandable").click();
+  AccessibilityUtils.resetEnv();
+
   await waitFor(() => computedPropertyEl.querySelector(".rule-text"));
   
   const computedRuleEl = [
