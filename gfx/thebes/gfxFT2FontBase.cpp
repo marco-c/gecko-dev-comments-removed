@@ -353,6 +353,12 @@ void gfxFT2FontBase::InitMetrics() {
   mMetrics.maxAdvance = FLOAT_FROM_26_6(ftMetrics.max_advance);
   gfxFloat lineHeight = FLOAT_FROM_26_6(ftMetrics.height);
 
+  
+  
+  if (mMetrics.maxDescent < 0.0) {
+    mMetrics.maxDescent = -mMetrics.maxDescent;
+  }
+
   gfxFloat emHeight;
   
   
