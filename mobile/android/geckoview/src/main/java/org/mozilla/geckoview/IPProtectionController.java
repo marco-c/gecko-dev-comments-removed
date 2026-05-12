@@ -134,6 +134,26 @@ public class IPProtectionController {
   }
 
   
+  public static class EnrollResult {
+    
+    public final boolean isEnrolledAndEntitled;
+
+    
+    public final @Nullable String error;
+
+    
+    protected EnrollResult() {
+      isEnrolledAndEntitled = false;
+      error = null;
+    }
+
+     EnrollResult(final @NonNull GeckoBundle bundle) {
+      isEnrolledAndEntitled = bundle.getBoolean("isEnrolledAndEntitled", false);
+      error = bundle.getString("error");
+    }
+  }
+
+  
   public static class UsageInfo {
     
     public final long remaining;
@@ -368,6 +388,20 @@ public class IPProtectionController {
                     e instanceof EventDispatcher.QueryException
                         ? ((EventDispatcher.QueryException) e).data.toString()
                         : null));
+  }
+
+  
+
+
+
+
+
+  @HandlerThread
+  public @NonNull GeckoResult<EnrollResult> enroll() {
+    ThreadUtils.assertOnHandlerThread();
+    return EventDispatcher.getInstance()
+        .queryBundle("GeckoView:IPProtection:Enroll")
+        .map(bundle -> bundle != null ? new EnrollResult(bundle) : new EnrollResult());
   }
 
   
