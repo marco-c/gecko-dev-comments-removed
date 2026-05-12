@@ -437,6 +437,10 @@ function useCustomGeoServer(region, waitToRespond = Promise.resolve()) {
 
 
 
+
+
+
+
 async function assertGleanDefaultEngine(expected) {
   for (let property of [
     "providerId",
@@ -454,7 +458,21 @@ async function assertGleanDefaultEngine(expected) {
         `Should have set ${property} correctly`
       );
     }
-    if (expected.private && property in expected.private) {
+    if (!expected.private) {
+      let expectedValue;
+      if (property === "overriddenByThirdParty") {
+        expectedValue = false;
+      } else if (property === "submissionUrl") {
+        expectedValue = "blank:";
+      } else {
+        expectedValue = "";
+      }
+      Assert.equal(
+        Glean.searchEnginePrivate[property].testGetValue(),
+        expectedValue,
+        `Private engine ${property} should be unset`
+      );
+    } else if (property in expected.private) {
       Assert.equal(
         Glean.searchEnginePrivate[property].testGetValue(),
         expected.private[property] ?? "",
