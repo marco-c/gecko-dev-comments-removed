@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 GeckoProgram("jsapi-tests", linkage=None)
 
@@ -104,6 +102,7 @@ UNIFIED_SOURCES += [
     "testObjectEmulatingUndefined.cpp",
     "testObjectSwap.cpp",
     "testObjectWithStashedPointer.cpp",
+    "testObserverList.cpp",
     "testOOM.cpp",
     "testParseJSON.cpp",
     "testParserAtom.cpp",
@@ -161,12 +160,12 @@ UNIFIED_SOURCES += [
 ]
 
 SOURCES += [
-    
+    # There are clashing definitions of js::jit::AssemblerBuffer.
     "testAssemblerBuffer.cpp",
 ]
 
 SOURCES += [
-    
+    # We don't want this in the C++ files with the test cases.
     "hidePointer.cpp",
 ]
 
@@ -185,14 +184,14 @@ if not CONFIG["JS_CODEGEN_NONE"]:
     ]
 
 if CONFIG["NIGHTLY_BUILD"]:
-    
+    # The Error interceptor only exists on Nightly.
     UNIFIED_SOURCES += [
         "testErrorInterceptor.cpp",
         "testErrorInterceptorGC.cpp",
     ]
 
 if CONFIG["OS_ARCH"] not in ("WINNT", "Darwin") and CONFIG["OS_TARGET"] != "Android":
-    
+    # open_memstream() not available on Windows, macOS, or Android
     UNIFIED_SOURCES += [
         "testPrintError.cpp",
     ]
