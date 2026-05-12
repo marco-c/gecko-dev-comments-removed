@@ -11,7 +11,6 @@
 #include "js/String.h"  
 #include "js/TypeDecls.h"
 #include "jsfriendapi.h"  
-#include "mozilla/Likely.h"
 #include "mozilla/TextUtils.h"
 
 namespace mozilla::dom {
@@ -26,23 +25,23 @@ inline uint32_t GetArrayIndexFromId(JS::Handle<jsid> id) {
   
   
   
-  if (MOZ_LIKELY(id.isInt())) {
+  if (id.isInt()) [[likely]] {
     return id.toInt();
   }
-  if (MOZ_LIKELY(id.get() == s_length_id)) {
+  if (id.get() == s_length_id) [[likely]] {
     return UINT32_MAX;
   }
-  if (MOZ_UNLIKELY(!id.isAtom())) {
+  if (!id.isAtom()) [[unlikely]] {
     return UINT32_MAX;
   }
 
   JSLinearString* str = JS::AtomToLinearString(id.toAtom());
-  if (MOZ_UNLIKELY(JS::GetLinearStringLength(str) == 0)) {
+  if (JS::GetLinearStringLength(str) == 0) [[unlikely]] {
     return UINT32_MAX;
   }
 
   char16_t firstChar = JS::GetLinearStringCharAt(str, 0);
-  if (MOZ_LIKELY(IsAsciiLowercaseAlpha(firstChar))) {
+  if (IsAsciiLowercaseAlpha(firstChar)) [[likely]] {
     return UINT32_MAX;
   }
 

@@ -53,11 +53,11 @@ NS_IMPL_CYCLE_COLLECTION_CAN_SKIP_BEGIN(CallbackObject)
   
   
 
-  if (MOZ_UNLIKELY(!callback)) {
+  if (!callback) [[unlikely]] {
     return true;
   }
-  if (MOZ_LIKELY(tmp->mIncumbentGlobal) &&
-      MOZ_UNLIKELY(js::NukedObjectRealm(tmp->CallbackGlobalPreserveColor()))) {
+  if (tmp->mIncumbentGlobal &&
+      js::NukedObjectRealm(tmp->CallbackGlobalPreserveColor())) [[unlikely]] {
     
     
     AddForDeferredFinalization(new JSObjectsDropper(tmp));
