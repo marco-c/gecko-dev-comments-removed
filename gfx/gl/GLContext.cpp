@@ -1794,7 +1794,7 @@ void GLContext::InitExtensions() {
 }
 
 void GLContext::PlatformStartup() {
-  RegisterStrongMemoryReporter(new GfxTexturesReporter());
+  RegisterStrongMemoryReporter(MakeAndAddRef<GfxTexturesReporter>());
 }
 
 

@@ -168,7 +168,7 @@ gfxAndroidPlatform::gfxAndroidPlatform() {
 
   Factory::SetFTLibrary(gPlatformFTLibrary);
 
-  RegisterStrongMemoryReporter(new FreetypeReporter());
+  RegisterStrongMemoryReporter(MakeAndAddRef<FreetypeReporter>());
 
   
   
