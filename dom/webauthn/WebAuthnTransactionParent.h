@@ -2,11 +2,10 @@
 
 
 
-
-
 #ifndef mozilla_dom_WebAuthnTransactionParent_h
 #define mozilla_dom_WebAuthnTransactionParent_h
 
+#include "mozilla/MozPromise.h"
 #include "mozilla/RandomNum.h"
 #include "mozilla/dom/PWebAuthnTransactionParent.h"
 #include "mozilla/dom/WebAuthnPromiseHolder.h"
@@ -18,14 +17,17 @@
 
 namespace mozilla::dom {
 
+enum class WebAuthnOp { Create, Assert };
+
 class WebAuthnRegisterPromiseHolder;
 class WebAuthnSignPromiseHolder;
+class RelatedOriginCheckHandler;  
 
 class WebAuthnTransactionParent final : public PWebAuthnTransactionParent {
   NS_INLINE_DECL_REFCOUNTING(WebAuthnTransactionParent, override);
 
  public:
-  WebAuthnTransactionParent() = default;
+  WebAuthnTransactionParent();
 
   mozilla::ipc::IPCResult RecvRequestRegister(
       const WebAuthnMakeCredentialInfo& aTransactionInfo,
@@ -45,15 +47,34 @@ class WebAuthnTransactionParent final : public PWebAuthnTransactionParent {
   virtual void ActorDestroy(ActorDestroyReason aWhy) override;
 
  private:
-  ~WebAuthnTransactionParent() = default;
+  friend class RelatedOriginCheckHandler;
+
+  ~WebAuthnTransactionParent();
 
   void CompleteTransaction();
   void DisconnectTransaction();
+
+  nsresult BeginRelatedOriginCheck(const nsACString& aRpId, WebAuthnOp aOp);
+
+  void RelatedOriginApproved();
+  void AbortPendingRelatedOriginCheck(nsresult aError);
+  void ContinueWithRegister(const nsCString& aOrigin,
+                            const WebAuthnMakeCredentialInfo& aInfo,
+                            RequestRegisterResolver&& aResolver);
+
+  void ContinueWithSign(const nsCString& aOrigin,
+                        const WebAuthnGetAssertionInfo& aInfo,
+                        RequestSignResolver&& aResolver);
 
   nsCOMPtr<nsIWebAuthnService> mWebAuthnService;
   Maybe<uint64_t> mTransactionId;
   MozPromiseRequestHolder<WebAuthnRegisterPromise> mRegisterPromiseRequest;
   MozPromiseRequestHolder<WebAuthnSignPromise> mSignPromiseRequest;
+  RefPtr<RelatedOriginCheckHandler> mRelatedOriginCheckHandler;
+  Maybe<WebAuthnMakeCredentialInfo> mPendingRegisterInfo;
+  Maybe<RequestRegisterResolver> mPendingRegisterResolver;
+  Maybe<WebAuthnGetAssertionInfo> mPendingSignInfo;
+  Maybe<RequestSignResolver> mPendingSignResolver;
 
   
   
