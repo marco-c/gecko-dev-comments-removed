@@ -28,7 +28,6 @@ use crate::values::CSSFloat;
 use crate::{Zero, ZeroNoPercent};
 use app_units::AU_PER_PX;
 use cssparser::{match_ignore_ascii_case, Parser, Token};
-use debug_unreachable::debug_unreachable;
 use std::cmp;
 use std::fmt::{self, Write};
 use style_traits::values::specified::AllowedNumericType;
@@ -58,45 +57,252 @@ pub const PX_PER_PC: CSSFloat = PX_PER_PT * 12.;
 
 
 
-#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToCss, ToShmem)]
+
+
+
+
+#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, PartialOrd, ToShmem)]
 #[repr(u8)]
-pub enum FontRelativeLength {
+#[allow(missing_docs)]
+pub enum LengthUnit {
     
-    #[css(dimension)]
-    Em(CSSFloat),
+    Px,
+    In,
+    Cm,
+    Mm,
+    Q,
+    Pt,
+    Pc,
     
-    #[css(dimension)]
-    Ex(CSSFloat),
+    Em,
+    Ex,
+    Rex,
+    Ch,
+    Rch,
+    Cap,
+    Rcap,
+    Ic,
+    Ric,
+    Rem,
+    Lh,
+    Rlh,
     
-    #[css(dimension)]
-    Rex(CSSFloat),
+    Vw,
+    Svw,
+    Lvw,
+    Dvw,
+    Vh,
+    Svh,
+    Lvh,
+    Dvh,
+    Vmin,
+    Svmin,
+    Lvmin,
+    Dvmin,
+    Vmax,
+    Svmax,
+    Lvmax,
+    Dvmax,
+    Vb,
+    Svb,
+    Lvb,
+    Dvb,
+    Vi,
+    Svi,
+    Lvi,
+    Dvi,
     
-    #[css(dimension)]
-    Ch(CSSFloat),
+    Cqw,
+    Cqh,
+    Cqi,
+    Cqb,
+    Cqmin,
+    Cqmax,
     
-    #[css(dimension)]
-    Rch(CSSFloat),
+    ServoCharacterWidth,
+}
+
+impl LengthUnit {
     
-    #[css(dimension)]
-    Cap(CSSFloat),
+    #[inline]
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Px => "px",
+            Self::In => "in",
+            Self::Cm => "cm",
+            Self::Mm => "mm",
+            Self::Q => "q",
+            Self::Pt => "pt",
+            Self::Pc => "pc",
+            Self::Em => NoCalcLength::EM,
+            Self::Ex => NoCalcLength::EX,
+            Self::Rex => NoCalcLength::REX,
+            Self::Ch => NoCalcLength::CH,
+            Self::Rch => NoCalcLength::RCH,
+            Self::Cap => NoCalcLength::CAP,
+            Self::Rcap => NoCalcLength::RCAP,
+            Self::Ic => NoCalcLength::IC,
+            Self::Ric => NoCalcLength::RIC,
+            Self::Rem => NoCalcLength::REM,
+            Self::Lh => NoCalcLength::LH,
+            Self::Rlh => NoCalcLength::RLH,
+            Self::Vw => "vw",
+            Self::Svw => "svw",
+            Self::Lvw => "lvw",
+            Self::Dvw => "dvw",
+            Self::Vh => "vh",
+            Self::Svh => "svh",
+            Self::Lvh => "lvh",
+            Self::Dvh => "dvh",
+            Self::Vmin => "vmin",
+            Self::Svmin => "svmin",
+            Self::Lvmin => "lvmin",
+            Self::Dvmin => "dvmin",
+            Self::Vmax => "vmax",
+            Self::Svmax => "svmax",
+            Self::Lvmax => "lvmax",
+            Self::Dvmax => "dvmax",
+            Self::Vb => "vb",
+            Self::Svb => "svb",
+            Self::Lvb => "lvb",
+            Self::Dvb => "dvb",
+            Self::Vi => "vi",
+            Self::Svi => "svi",
+            Self::Lvi => "lvi",
+            Self::Dvi => "dvi",
+            Self::Cqw => "cqw",
+            Self::Cqh => "cqh",
+            Self::Cqi => "cqi",
+            Self::Cqb => "cqb",
+            Self::Cqmin => "cqmin",
+            Self::Cqmax => "cqmax",
+            Self::ServoCharacterWidth => "",
+        }
+    }
+
     
-    #[css(dimension)]
-    Rcap(CSSFloat),
+    #[inline]
+    pub fn is_absolute(self) -> bool {
+        matches!(
+            self,
+            Self::Px | Self::In | Self::Cm | Self::Mm | Self::Q | Self::Pt | Self::Pc
+        )
+    }
+
     
-    #[css(dimension)]
-    Ic(CSSFloat),
+    #[inline]
+    pub fn is_font_relative(self) -> bool {
+        matches!(
+            self,
+            Self::Em
+                | Self::Ex
+                | Self::Rex
+                | Self::Ch
+                | Self::Rch
+                | Self::Cap
+                | Self::Rcap
+                | Self::Ic
+                | Self::Ric
+                | Self::Rem
+                | Self::Lh
+                | Self::Rlh
+        )
+    }
+
     
-    #[css(dimension)]
-    Ric(CSSFloat),
+    #[inline]
+    pub fn is_viewport_percentage(self) -> bool {
+        matches!(
+            self,
+            Self::Vw
+                | Self::Svw
+                | Self::Lvw
+                | Self::Dvw
+                | Self::Vh
+                | Self::Svh
+                | Self::Lvh
+                | Self::Dvh
+                | Self::Vmin
+                | Self::Svmin
+                | Self::Lvmin
+                | Self::Dvmin
+                | Self::Vmax
+                | Self::Svmax
+                | Self::Lvmax
+                | Self::Dvmax
+                | Self::Vb
+                | Self::Svb
+                | Self::Lvb
+                | Self::Dvb
+                | Self::Vi
+                | Self::Svi
+                | Self::Lvi
+                | Self::Dvi
+        )
+    }
+
     
-    #[css(dimension)]
-    Rem(CSSFloat),
+    #[inline]
+    pub fn is_container_relative(self) -> bool {
+        matches!(
+            self,
+            Self::Cqw | Self::Cqh | Self::Cqi | Self::Cqb | Self::Cqmin | Self::Cqmax
+        )
+    }
+
     
-    #[css(dimension)]
-    Lh(CSSFloat),
     
-    #[css(dimension)]
-    Rlh(CSSFloat),
+    fn sort_key(self) -> crate::values::generics::calc::SortKey {
+        use crate::values::generics::calc::SortKey;
+        match self {
+            Self::Px | Self::In | Self::Cm | Self::Mm | Self::Q | Self::Pt | Self::Pc => {
+                SortKey::Px
+            },
+            Self::Em => SortKey::Em,
+            Self::Ex => SortKey::Ex,
+            Self::Rex => SortKey::Rex,
+            Self::Ch => SortKey::Ch,
+            Self::Rch => SortKey::Rch,
+            Self::Cap => SortKey::Cap,
+            Self::Rcap => SortKey::Rcap,
+            Self::Ic => SortKey::Ic,
+            Self::Ric => SortKey::Ric,
+            Self::Rem => SortKey::Rem,
+            Self::Lh => SortKey::Lh,
+            Self::Rlh => SortKey::Rlh,
+            Self::Vw => SortKey::Vw,
+            Self::Svw => SortKey::Svw,
+            Self::Lvw => SortKey::Lvw,
+            Self::Dvw => SortKey::Dvw,
+            Self::Vh => SortKey::Vh,
+            Self::Svh => SortKey::Svh,
+            Self::Lvh => SortKey::Lvh,
+            Self::Dvh => SortKey::Dvh,
+            Self::Vmin => SortKey::Vmin,
+            Self::Svmin => SortKey::Svmin,
+            Self::Lvmin => SortKey::Lvmin,
+            Self::Dvmin => SortKey::Dvmin,
+            Self::Vmax => SortKey::Vmax,
+            Self::Svmax => SortKey::Svmax,
+            Self::Lvmax => SortKey::Lvmax,
+            Self::Dvmax => SortKey::Dvmax,
+            Self::Vb => SortKey::Vb,
+            Self::Svb => SortKey::Svb,
+            Self::Lvb => SortKey::Lvb,
+            Self::Dvb => SortKey::Dvb,
+            Self::Vi => SortKey::Vi,
+            Self::Svi => SortKey::Svi,
+            Self::Lvi => SortKey::Lvi,
+            Self::Dvi => SortKey::Dvi,
+            Self::Cqw => SortKey::Cqw,
+            Self::Cqh => SortKey::Cqh,
+            Self::Cqi => SortKey::Cqi,
+            Self::Cqb => SortKey::Cqb,
+            Self::Cqmin => SortKey::Cqmin,
+            Self::Cqmax => SortKey::Cqmax,
+            Self::ServoCharacterWidth => unreachable!(),
+        }
+    }
 }
 
 
@@ -128,389 +334,6 @@ impl FontBaseSize {
                 
                 let zoom = style.effective_zoom_for_inheritance;
                 style.get_parent_font().clone_font_size().zoom(zoom)
-            },
-        }
-    }
-}
-
-impl FontRelativeLength {
-    
-    pub const EM: &'static str = "em";
-    
-    pub const EX: &'static str = "ex";
-    
-    pub const REX: &'static str = "rex";
-    
-    pub const CH: &'static str = "ch";
-    
-    pub const RCH: &'static str = "rch";
-    
-    pub const CAP: &'static str = "cap";
-    
-    pub const RCAP: &'static str = "rcap";
-    
-    pub const IC: &'static str = "ic";
-    
-    pub const RIC: &'static str = "ric";
-    
-    pub const REM: &'static str = "rem";
-    
-    pub const LH: &'static str = "lh";
-    
-    pub const RLH: &'static str = "rlh";
-
-    
-    fn unitless_value(&self) -> CSSFloat {
-        match *self {
-            Self::Em(v)
-            | Self::Ex(v)
-            | Self::Rex(v)
-            | Self::Ch(v)
-            | Self::Rch(v)
-            | Self::Cap(v)
-            | Self::Rcap(v)
-            | Self::Ic(v)
-            | Self::Ric(v)
-            | Self::Rem(v)
-            | Self::Lh(v)
-            | Self::Rlh(v) => v,
-        }
-    }
-
-    
-    fn unit(&self) -> &'static str {
-        match *self {
-            Self::Em(_) => Self::EM,
-            Self::Ex(_) => Self::EX,
-            Self::Rex(_) => Self::REX,
-            Self::Ch(_) => Self::CH,
-            Self::Rch(_) => Self::RCH,
-            Self::Cap(_) => Self::CAP,
-            Self::Rcap(_) => Self::RCAP,
-            Self::Ic(_) => Self::IC,
-            Self::Ric(_) => Self::RIC,
-            Self::Rem(_) => Self::REM,
-            Self::Lh(_) => Self::LH,
-            Self::Rlh(_) => Self::RLH,
-        }
-    }
-
-    fn try_op<O>(&self, other: &Self, op: O) -> Result<Self, ()>
-    where
-        O: Fn(f32, f32) -> f32,
-    {
-        use self::FontRelativeLength::*;
-
-        if std::mem::discriminant(self) != std::mem::discriminant(other) {
-            return Err(());
-        }
-
-        Ok(match (self, other) {
-            (&Em(one), &Em(other)) => Em(op(one, other)),
-            (&Ex(one), &Ex(other)) => Ex(op(one, other)),
-            (&Rex(one), &Rex(other)) => Rex(op(one, other)),
-            (&Ch(one), &Ch(other)) => Ch(op(one, other)),
-            (&Rch(one), &Rch(other)) => Rch(op(one, other)),
-            (&Cap(one), &Cap(other)) => Cap(op(one, other)),
-            (&Rcap(one), &Rcap(other)) => Rcap(op(one, other)),
-            (&Ic(one), &Ic(other)) => Ic(op(one, other)),
-            (&Ric(one), &Ric(other)) => Ric(op(one, other)),
-            (&Rem(one), &Rem(other)) => Rem(op(one, other)),
-            (&Lh(one), &Lh(other)) => Lh(op(one, other)),
-            (&Rlh(one), &Rlh(other)) => Rlh(op(one, other)),
-            
-            
-            _ => unsafe {
-                match *self {
-                    Em(..) | Rem(..) | Ex(..) | Rex(..) | Ch(..) | Rch(..) | Cap(..) | Rcap(..)
-                    | Ic(..) | Ric(..) | Lh(..) | Rlh(..) => {},
-                }
-                debug_unreachable!("Forgot to handle unit in try_op()")
-            },
-        })
-    }
-
-    fn map(&self, mut op: impl FnMut(f32) -> f32) -> Self {
-        match self {
-            Self::Em(x) => Self::Em(op(*x)),
-            Self::Ex(x) => Self::Ex(op(*x)),
-            Self::Rex(x) => Self::Rex(op(*x)),
-            Self::Ch(x) => Self::Ch(op(*x)),
-            Self::Rch(x) => Self::Rch(op(*x)),
-            Self::Cap(x) => Self::Cap(op(*x)),
-            Self::Rcap(x) => Self::Rcap(op(*x)),
-            Self::Ic(x) => Self::Ic(op(*x)),
-            Self::Ric(x) => Self::Ric(op(*x)),
-            Self::Rem(x) => Self::Rem(op(*x)),
-            Self::Lh(x) => Self::Lh(op(*x)),
-            Self::Rlh(x) => Self::Rlh(op(*x)),
-        }
-    }
-
-    
-    pub fn to_computed_value(
-        &self,
-        context: &Context,
-        base_size: FontBaseSize,
-        line_height_base: LineHeightBase,
-    ) -> computed::Length {
-        let (reference_size, length) =
-            self.reference_font_size_and_length(context, base_size, line_height_base);
-        (reference_size * length).finite()
-    }
-
-    
-    #[cfg(feature = "gecko")]
-    pub fn to_computed_pixel_length_with_font_metrics(
-        &self,
-        get_font_metrics: impl Fn() -> GeckoFontMetrics,
-    ) -> Result<CSSFloat, ()> {
-        let metrics = get_font_metrics();
-        Ok(match *self {
-            Self::Em(v) => v * metrics.mComputedEmSize.px(),
-            Self::Ex(v) => v * metrics.mXSize.px(),
-            Self::Ch(v) => v * metrics.mChSize.px(),
-            Self::Cap(v) => v * metrics.mCapHeight.px(),
-            Self::Ic(v) => v * metrics.mIcWidth.px(),
-            
-            
-            Self::Lh(_)
-            | Self::Rlh(_)
-            | Self::Rem(_)
-            | Self::Rex(_)
-            | Self::Rch(_)
-            | Self::Rcap(_)
-            | Self::Ric(_) => return Err(()),
-        })
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    fn reference_font_size_and_length(
-        &self,
-        context: &Context,
-        base_size: FontBaseSize,
-        line_height_base: LineHeightBase,
-    ) -> (computed::Length, CSSFloat) {
-        fn query_font_metrics(
-            context: &Context,
-            base_size: FontBaseSize,
-            orientation: FontMetricsOrientation,
-            flags: QueryFontMetricsFlags,
-        ) -> FontMetrics {
-            context.query_font_metrics(base_size, orientation, flags)
-        }
-
-        fn ex_size(
-            context: &Context,
-            base_size: FontBaseSize,
-            reference_font_size: &FontSize,
-        ) -> computed::Length {
-            
-            let metrics = query_font_metrics(
-                context,
-                base_size,
-                FontMetricsOrientation::Horizontal,
-                QueryFontMetricsFlags::empty(),
-            );
-            metrics.x_height_or_default(reference_font_size.used_size())
-        }
-
-        fn ch_size(
-            context: &Context,
-            base_size: FontBaseSize,
-            reference_font_size: &FontSize,
-        ) -> computed::Length {
-            
-            
-            
-            
-            
-            
-            
-            let metrics = query_font_metrics(
-                context,
-                base_size,
-                FontMetricsOrientation::MatchContextPreferHorizontal,
-                QueryFontMetricsFlags::NEEDS_CH,
-            );
-            metrics.zero_advance_measure_or_default(
-                reference_font_size.used_size(),
-                context.style().writing_mode.is_upright(),
-            )
-        }
-
-        fn cap_size(context: &Context, base_size: FontBaseSize) -> computed::Length {
-            let metrics = query_font_metrics(
-                context,
-                base_size,
-                FontMetricsOrientation::Horizontal,
-                QueryFontMetricsFlags::empty(),
-            );
-            metrics.cap_height_or_default()
-        }
-
-        fn ic_size(
-            context: &Context,
-            base_size: FontBaseSize,
-            reference_font_size: &FontSize,
-        ) -> computed::Length {
-            let metrics = query_font_metrics(
-                context,
-                base_size,
-                FontMetricsOrientation::MatchContextPreferVertical,
-                QueryFontMetricsFlags::NEEDS_IC,
-            );
-            metrics.ic_width_or_default(reference_font_size.used_size())
-        }
-
-        let reference_font_size = base_size.resolve(context);
-        match *self {
-            
-            Self::Em(length) => {
-                if context.for_non_inherited_property && base_size == FontBaseSize::CurrentStyle {
-                    context
-                        .rule_cache_conditions
-                        .borrow_mut()
-                        .set_font_size_dependency(reference_font_size.computed_size);
-                }
-
-                (reference_font_size.computed_size(), length)
-            },
-            Self::Lh(length) => {
-                
-                
-                
-                
-                
-                let reference_size = if context.in_media_query {
-                    context
-                        .device()
-                        .calc_line_height(
-                            &context.default_style().get_font(),
-                            context.style().writing_mode,
-                            None,
-                        )
-                        .0
-                } else {
-                    let line_height = context.builder.calc_line_height(
-                        context.device(),
-                        line_height_base,
-                        context.style().writing_mode,
-                    );
-                    if context.for_non_inherited_property
-                        && line_height_base == LineHeightBase::CurrentStyle
-                    {
-                        context
-                            .rule_cache_conditions
-                            .borrow_mut()
-                            .set_line_height_dependency(line_height)
-                    }
-                    line_height.0
-                };
-                (reference_size, length)
-            },
-            Self::Ex(length) => (ex_size(context, base_size, &reference_font_size), length),
-            Self::Ch(length) => (ch_size(context, base_size, &reference_font_size), length),
-            Self::Cap(length) => (cap_size(context, base_size), length),
-            Self::Ic(length) => (ic_size(context, base_size, &reference_font_size), length),
-
-            
-            Self::Rex(length) => {
-                let reference_size = if context.builder.is_root_element || context.in_media_query {
-                    ex_size(context, base_size, &reference_font_size)
-                } else {
-                    context
-                        .device()
-                        .root_font_metrics_ex()
-                        .zoom(context.builder.effective_zoom)
-                };
-                (reference_size, length)
-            },
-            Self::Rch(length) => {
-                let reference_size = if context.builder.is_root_element || context.in_media_query {
-                    ch_size(context, base_size, &reference_font_size)
-                } else {
-                    context
-                        .device()
-                        .root_font_metrics_ch()
-                        .zoom(context.builder.effective_zoom)
-                };
-                (reference_size, length)
-            },
-            Self::Rcap(length) => {
-                let reference_size = if context.builder.is_root_element || context.in_media_query {
-                    cap_size(context, base_size)
-                } else {
-                    context
-                        .device()
-                        .root_font_metrics_cap()
-                        .zoom(context.builder.effective_zoom)
-                };
-                (reference_size, length)
-            },
-            Self::Ric(length) => {
-                let reference_size = if context.builder.is_root_element || context.in_media_query {
-                    ic_size(context, base_size, &reference_font_size)
-                } else {
-                    context
-                        .device()
-                        .root_font_metrics_ic()
-                        .zoom(context.builder.effective_zoom)
-                };
-                (reference_size, length)
-            },
-            Self::Rem(length) => {
-                
-                
-                
-                
-                
-                
-                let reference_size = if context.builder.is_root_element || context.in_media_query {
-                    reference_font_size.computed_size()
-                } else {
-                    context
-                        .device()
-                        .root_font_size()
-                        .zoom(context.builder.effective_zoom)
-                };
-                (reference_size, length)
-            },
-            Self::Rlh(length) => {
-                
-                
-                
-                
-                
-                let reference_size = if context.builder.is_root_element {
-                    context
-                        .builder
-                        .calc_line_height(
-                            context.device(),
-                            line_height_base,
-                            context.style().writing_mode,
-                        )
-                        .0
-                } else if context.in_media_query {
-                    context
-                        .device()
-                        .calc_line_height(
-                            &context.default_style().get_font(),
-                            context.style().writing_mode,
-                            None,
-                        )
-                        .0
-                } else {
-                    context.device().root_line_height()
-                };
-                let reference_size = reference_size.zoom(context.builder.effective_zoom);
-                (reference_size, length)
             },
         }
     }
@@ -548,229 +371,537 @@ enum ViewportUnit {
 
 
 
-#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToCss, ToShmem)]
-#[repr(u8)]
-pub enum ViewportPercentageLength {
-    
-    #[css(dimension)]
-    Vw(CSSFloat),
-    
-    #[css(dimension)]
-    Svw(CSSFloat),
-    
-    #[css(dimension)]
-    Lvw(CSSFloat),
-    
-    #[css(dimension)]
-    Dvw(CSSFloat),
-    
-    #[css(dimension)]
-    Vh(CSSFloat),
-    
-    #[css(dimension)]
-    Svh(CSSFloat),
-    
-    #[css(dimension)]
-    Lvh(CSSFloat),
-    
-    #[css(dimension)]
-    Dvh(CSSFloat),
-    
-    #[css(dimension)]
-    Vmin(CSSFloat),
-    
-    #[css(dimension)]
-    Svmin(CSSFloat),
-    
-    #[css(dimension)]
-    Lvmin(CSSFloat),
-    
-    #[css(dimension)]
-    Dvmin(CSSFloat),
-    
-    #[css(dimension)]
-    Vmax(CSSFloat),
-    
-    #[css(dimension)]
-    Svmax(CSSFloat),
-    
-    #[css(dimension)]
-    Lvmax(CSSFloat),
-    
-    #[css(dimension)]
-    Dvmax(CSSFloat),
-    
-    #[css(dimension)]
-    Vb(CSSFloat),
-    
-    #[css(dimension)]
-    Svb(CSSFloat),
-    
-    #[css(dimension)]
-    Lvb(CSSFloat),
-    
-    #[css(dimension)]
-    Dvb(CSSFloat),
-    
-    #[css(dimension)]
-    Vi(CSSFloat),
-    
-    #[css(dimension)]
-    Svi(CSSFloat),
-    
-    #[css(dimension)]
-    Lvi(CSSFloat),
-    
-    #[css(dimension)]
-    Dvi(CSSFloat),
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToShmem)]
+#[repr(C)]
+pub struct NoCalcLength {
+    unit: LengthUnit,
+    value: CSSFloat,
 }
 
-impl ViewportPercentageLength {
+impl NoCalcLength {
     
-    fn unitless_value(&self) -> CSSFloat {
-        self.unpack().2
+    pub const EM: &'static str = "em";
+    
+    pub const EX: &'static str = "ex";
+    
+    pub const REX: &'static str = "rex";
+    
+    pub const CH: &'static str = "ch";
+    
+    pub const RCH: &'static str = "rch";
+    
+    pub const CAP: &'static str = "cap";
+    
+    pub const RCAP: &'static str = "rcap";
+    
+    pub const IC: &'static str = "ic";
+    
+    pub const RIC: &'static str = "ric";
+    
+    pub const REM: &'static str = "rem";
+    
+    pub const LH: &'static str = "lh";
+    
+    pub const RLH: &'static str = "rlh";
+
+    
+    #[inline]
+    pub fn new(unit: LengthUnit, value: CSSFloat) -> Self {
+        Self { unit, value }
     }
 
     
-    fn unit(&self) -> &'static str {
-        match *self {
-            Self::Vw(_) => "vw",
-            Self::Lvw(_) => "lvw",
-            Self::Svw(_) => "svw",
-            Self::Dvw(_) => "dvw",
-            Self::Vh(_) => "vh",
-            Self::Svh(_) => "svh",
-            Self::Lvh(_) => "lvh",
-            Self::Dvh(_) => "dvh",
-            Self::Vmin(_) => "vmin",
-            Self::Svmin(_) => "svmin",
-            Self::Lvmin(_) => "lvmin",
-            Self::Dvmin(_) => "dvmin",
-            Self::Vmax(_) => "vmax",
-            Self::Svmax(_) => "svmax",
-            Self::Lvmax(_) => "lvmax",
-            Self::Dvmax(_) => "dvmax",
-            Self::Vb(_) => "vb",
-            Self::Svb(_) => "svb",
-            Self::Lvb(_) => "lvb",
-            Self::Dvb(_) => "dvb",
-            Self::Vi(_) => "vi",
-            Self::Svi(_) => "svi",
-            Self::Lvi(_) => "lvi",
-            Self::Dvi(_) => "dvi",
+    #[inline]
+    pub fn length_unit(&self) -> LengthUnit {
+        self.unit
+    }
+
+    
+    #[inline]
+    pub fn unitless_value(&self) -> CSSFloat {
+        self.value
+    }
+
+    
+    #[inline]
+    pub fn unit(&self) -> &'static str {
+        self.unit.as_str()
+    }
+
+    
+    pub fn canonical_unit(&self) -> Option<&'static str> {
+        if self.unit.is_absolute() {
+            Some("px")
+        } else {
+            None
         }
     }
 
-    fn unpack(&self) -> (ViewportVariant, ViewportUnit, CSSFloat) {
-        match *self {
-            Self::Vw(v) => (ViewportVariant::UADefault, ViewportUnit::Vw, v),
-            Self::Svw(v) => (ViewportVariant::Small, ViewportUnit::Vw, v),
-            Self::Lvw(v) => (ViewportVariant::Large, ViewportUnit::Vw, v),
-            Self::Dvw(v) => (ViewportVariant::Dynamic, ViewportUnit::Vw, v),
-            Self::Vh(v) => (ViewportVariant::UADefault, ViewportUnit::Vh, v),
-            Self::Svh(v) => (ViewportVariant::Small, ViewportUnit::Vh, v),
-            Self::Lvh(v) => (ViewportVariant::Large, ViewportUnit::Vh, v),
-            Self::Dvh(v) => (ViewportVariant::Dynamic, ViewportUnit::Vh, v),
-            Self::Vmin(v) => (ViewportVariant::UADefault, ViewportUnit::Vmin, v),
-            Self::Svmin(v) => (ViewportVariant::Small, ViewportUnit::Vmin, v),
-            Self::Lvmin(v) => (ViewportVariant::Large, ViewportUnit::Vmin, v),
-            Self::Dvmin(v) => (ViewportVariant::Dynamic, ViewportUnit::Vmin, v),
-            Self::Vmax(v) => (ViewportVariant::UADefault, ViewportUnit::Vmax, v),
-            Self::Svmax(v) => (ViewportVariant::Small, ViewportUnit::Vmax, v),
-            Self::Lvmax(v) => (ViewportVariant::Large, ViewportUnit::Vmax, v),
-            Self::Dvmax(v) => (ViewportVariant::Dynamic, ViewportUnit::Vmax, v),
-            Self::Vb(v) => (ViewportVariant::UADefault, ViewportUnit::Vb, v),
-            Self::Svb(v) => (ViewportVariant::Small, ViewportUnit::Vb, v),
-            Self::Lvb(v) => (ViewportVariant::Large, ViewportUnit::Vb, v),
-            Self::Dvb(v) => (ViewportVariant::Dynamic, ViewportUnit::Vb, v),
-            Self::Vi(v) => (ViewportVariant::UADefault, ViewportUnit::Vi, v),
-            Self::Svi(v) => (ViewportVariant::Small, ViewportUnit::Vi, v),
-            Self::Lvi(v) => (ViewportVariant::Large, ViewportUnit::Vi, v),
-            Self::Dvi(v) => (ViewportVariant::Dynamic, ViewportUnit::Vi, v),
-        }
+    
+    pub fn to(&self, unit: &str) -> Result<Self, ()> {
+        let px = self.to_px_if_absolute().ok_or(())?;
+        let (target, divisor) = match_ignore_ascii_case! { unit,
+            "px" => (LengthUnit::Px, 1.0),
+            "in" => (LengthUnit::In, PX_PER_IN),
+            "cm" => (LengthUnit::Cm, PX_PER_CM),
+            "mm" => (LengthUnit::Mm, PX_PER_MM),
+            "q" => (LengthUnit::Q, PX_PER_Q),
+            "pt" => (LengthUnit::Pt, PX_PER_PT),
+            "pc" => (LengthUnit::Pc, PX_PER_PC),
+             _ => return Err(()),
+        };
+        Ok(Self::new(target, px / divisor))
     }
 
-    fn try_op<O>(&self, other: &Self, op: O) -> Result<Self, ()>
+    
+    pub fn is_negative(&self) -> bool {
+        self.value.is_sign_negative()
+    }
+
+    
+    pub fn is_zero(&self) -> bool {
+        self.value == 0.0
+    }
+
+    
+    pub fn is_infinite(&self) -> bool {
+        self.value.is_infinite()
+    }
+
+    
+    pub fn is_nan(&self) -> bool {
+        self.value.is_nan()
+    }
+
+    
+    
+    
+    
+    pub fn should_zoom_text(&self) -> bool {
+        !self.unit.is_font_relative() && self.unit != LengthUnit::ServoCharacterWidth
+    }
+
+    
+    
+    pub(crate) fn sort_key(&self) -> crate::values::generics::calc::SortKey {
+        self.unit.sort_key()
+    }
+
+    
+    pub fn parse_dimension_with_flags(
+        parsing_mode: ParsingMode,
+        in_page_rule: bool,
+        value: CSSFloat,
+        unit: &str,
+    ) -> Result<Self, ()> {
+        let allows_computational_dependence = parsing_mode.allows_computational_dependence();
+
+        let length_unit = match_ignore_ascii_case! { unit,
+            "px" => LengthUnit::Px,
+            "in" => LengthUnit::In,
+            "cm" => LengthUnit::Cm,
+            "mm" => LengthUnit::Mm,
+            "q" => LengthUnit::Q,
+            "pt" => LengthUnit::Pt,
+            "pc" => LengthUnit::Pc,
+            // font-relative
+            "em" if allows_computational_dependence => LengthUnit::Em,
+            "ex" if allows_computational_dependence => LengthUnit::Ex,
+            "rex" if allows_computational_dependence => LengthUnit::Rex,
+            "ch" if allows_computational_dependence => LengthUnit::Ch,
+            "rch" if allows_computational_dependence => LengthUnit::Rch,
+            "cap" if allows_computational_dependence => LengthUnit::Cap,
+            "rcap" if allows_computational_dependence => LengthUnit::Rcap,
+            "ic" if allows_computational_dependence => LengthUnit::Ic,
+            "ric" if allows_computational_dependence => LengthUnit::Ric,
+            "rem" if allows_computational_dependence => LengthUnit::Rem,
+            "lh" if allows_computational_dependence => LengthUnit::Lh,
+            "rlh" if allows_computational_dependence => LengthUnit::Rlh,
+            // viewport percentages
+            "vw" if !in_page_rule => LengthUnit::Vw,
+            "svw" if !in_page_rule => LengthUnit::Svw,
+            "lvw" if !in_page_rule => LengthUnit::Lvw,
+            "dvw" if !in_page_rule => LengthUnit::Dvw,
+            "vh" if !in_page_rule => LengthUnit::Vh,
+            "svh" if !in_page_rule => LengthUnit::Svh,
+            "lvh" if !in_page_rule => LengthUnit::Lvh,
+            "dvh" if !in_page_rule => LengthUnit::Dvh,
+            "vmin" if !in_page_rule => LengthUnit::Vmin,
+            "svmin" if !in_page_rule => LengthUnit::Svmin,
+            "lvmin" if !in_page_rule => LengthUnit::Lvmin,
+            "dvmin" if !in_page_rule => LengthUnit::Dvmin,
+            "vmax" if !in_page_rule => LengthUnit::Vmax,
+            "svmax" if !in_page_rule => LengthUnit::Svmax,
+            "lvmax" if !in_page_rule => LengthUnit::Lvmax,
+            "dvmax" if !in_page_rule => LengthUnit::Dvmax,
+            "vb" if !in_page_rule => LengthUnit::Vb,
+            "svb" if !in_page_rule => LengthUnit::Svb,
+            "lvb" if !in_page_rule => LengthUnit::Lvb,
+            "dvb" if !in_page_rule => LengthUnit::Dvb,
+            "vi" if !in_page_rule => LengthUnit::Vi,
+            "svi" if !in_page_rule => LengthUnit::Svi,
+            "lvi" if !in_page_rule => LengthUnit::Lvi,
+            "dvi" if !in_page_rule => LengthUnit::Dvi,
+            // Container query lengths. Inherit the limitation from viewport units since
+            // we may fall back to them.
+            "cqw" if !in_page_rule && cfg!(feature = "gecko") => LengthUnit::Cqw,
+            "cqh" if !in_page_rule && cfg!(feature = "gecko") => LengthUnit::Cqh,
+            "cqi" if !in_page_rule && cfg!(feature = "gecko") => LengthUnit::Cqi,
+            "cqb" if !in_page_rule && cfg!(feature = "gecko") => LengthUnit::Cqb,
+            "cqmin" if !in_page_rule && cfg!(feature = "gecko") => LengthUnit::Cqmin,
+            "cqmax" if !in_page_rule && cfg!(feature = "gecko") => LengthUnit::Cqmax,
+            _ => return Err(()),
+        };
+        Ok(Self::new(length_unit, value))
+    }
+
+    
+    pub fn parse_dimension_with_context(
+        context: &ParserContext,
+        value: CSSFloat,
+        unit: &str,
+    ) -> Result<Self, ()> {
+        Self::parse_dimension_with_flags(context.parsing_mode, context.in_page_rule(), value, unit)
+    }
+
+    pub(crate) fn try_op<O>(&self, other: &Self, op: O) -> Result<Self, ()>
     where
         O: Fn(f32, f32) -> f32,
     {
-        use self::ViewportPercentageLength::*;
-
-        if std::mem::discriminant(self) != std::mem::discriminant(other) {
+        
+        if let (Some(a), Some(b)) = (self.to_px_if_absolute(), other.to_px_if_absolute()) {
+            return Ok(Self::new(LengthUnit::Px, op(a, b)));
+        }
+        if self.unit != other.unit {
             return Err(());
         }
+        Ok(Self::new(self.unit, op(self.value, other.value)))
+    }
 
-        Ok(match (self, other) {
-            (&Vw(one), &Vw(other)) => Vw(op(one, other)),
-            (&Svw(one), &Svw(other)) => Svw(op(one, other)),
-            (&Lvw(one), &Lvw(other)) => Lvw(op(one, other)),
-            (&Dvw(one), &Dvw(other)) => Dvw(op(one, other)),
-            (&Vh(one), &Vh(other)) => Vh(op(one, other)),
-            (&Svh(one), &Svh(other)) => Svh(op(one, other)),
-            (&Lvh(one), &Lvh(other)) => Lvh(op(one, other)),
-            (&Dvh(one), &Dvh(other)) => Dvh(op(one, other)),
-            (&Vmin(one), &Vmin(other)) => Vmin(op(one, other)),
-            (&Svmin(one), &Svmin(other)) => Svmin(op(one, other)),
-            (&Lvmin(one), &Lvmin(other)) => Lvmin(op(one, other)),
-            (&Dvmin(one), &Dvmin(other)) => Dvmin(op(one, other)),
-            (&Vmax(one), &Vmax(other)) => Vmax(op(one, other)),
-            (&Svmax(one), &Svmax(other)) => Svmax(op(one, other)),
-            (&Lvmax(one), &Lvmax(other)) => Lvmax(op(one, other)),
-            (&Dvmax(one), &Dvmax(other)) => Dvmax(op(one, other)),
-            (&Vb(one), &Vb(other)) => Vb(op(one, other)),
-            (&Svb(one), &Svb(other)) => Svb(op(one, other)),
-            (&Lvb(one), &Lvb(other)) => Lvb(op(one, other)),
-            (&Dvb(one), &Dvb(other)) => Dvb(op(one, other)),
-            (&Vi(one), &Vi(other)) => Vi(op(one, other)),
-            (&Svi(one), &Svi(other)) => Svi(op(one, other)),
-            (&Lvi(one), &Lvi(other)) => Lvi(op(one, other)),
-            (&Dvi(one), &Dvi(other)) => Dvi(op(one, other)),
+    pub(crate) fn map(&self, mut op: impl FnMut(f32) -> f32) -> Self {
+        
+        if let Some(px) = self.to_px_if_absolute() {
+            return Self::new(LengthUnit::Px, op(px));
+        }
+        Self::new(self.unit, op(self.value))
+    }
+
+    
+    #[inline]
+    pub fn to_computed_pixel_length_without_context(&self) -> Result<CSSFloat, ()> {
+        self.to_px_if_absolute().ok_or(())
+    }
+
+    
+    
+    #[cfg(feature = "gecko")]
+    #[inline]
+    pub fn to_computed_pixel_length_with_font_metrics(
+        &self,
+        get_font_metrics: Option<impl Fn() -> GeckoFontMetrics>,
+    ) -> Result<CSSFloat, ()> {
+        if let Some(px) = self.to_px_if_absolute() {
+            return Ok(CSSPixelLength::new(px).finite().px());
+        }
+        if !self.unit.is_font_relative() {
+            return Err(());
+        }
+        let getter = match get_font_metrics {
+            Some(g) => g,
+            None => return Err(()),
+        };
+        let metrics = getter();
+        Ok(match self.unit {
+            LengthUnit::Em => self.value * metrics.mComputedEmSize.px(),
+            LengthUnit::Ex => self.value * metrics.mXSize.px(),
+            LengthUnit::Ch => self.value * metrics.mChSize.px(),
+            LengthUnit::Cap => self.value * metrics.mCapHeight.px(),
+            LengthUnit::Ic => self.value * metrics.mIcWidth.px(),
             
             
-            _ => unsafe {
-                match *self {
-                    Vw(..) | Svw(..) | Lvw(..) | Dvw(..) | Vh(..) | Svh(..) | Lvh(..) | Dvh(..)
-                    | Vmin(..) | Svmin(..) | Lvmin(..) | Dvmin(..) | Vmax(..) | Svmax(..)
-                    | Lvmax(..) | Dvmax(..) | Vb(..) | Svb(..) | Lvb(..) | Dvb(..) | Vi(..)
-                    | Svi(..) | Lvi(..) | Dvi(..) => {},
-                }
-                debug_unreachable!("Forgot to handle unit in try_op()")
-            },
+            _ => return Err(()),
         })
     }
 
-    fn map(&self, mut op: impl FnMut(f32) -> f32) -> Self {
-        match self {
-            Self::Vw(x) => Self::Vw(op(*x)),
-            Self::Svw(x) => Self::Svw(op(*x)),
-            Self::Lvw(x) => Self::Lvw(op(*x)),
-            Self::Dvw(x) => Self::Dvw(op(*x)),
-            Self::Vh(x) => Self::Vh(op(*x)),
-            Self::Svh(x) => Self::Svh(op(*x)),
-            Self::Lvh(x) => Self::Lvh(op(*x)),
-            Self::Dvh(x) => Self::Dvh(op(*x)),
-            Self::Vmin(x) => Self::Vmin(op(*x)),
-            Self::Svmin(x) => Self::Svmin(op(*x)),
-            Self::Lvmin(x) => Self::Lvmin(op(*x)),
-            Self::Dvmin(x) => Self::Dvmin(op(*x)),
-            Self::Vmax(x) => Self::Vmax(op(*x)),
-            Self::Svmax(x) => Self::Svmax(op(*x)),
-            Self::Lvmax(x) => Self::Lvmax(op(*x)),
-            Self::Dvmax(x) => Self::Dvmax(op(*x)),
-            Self::Vb(x) => Self::Vb(op(*x)),
-            Self::Svb(x) => Self::Svb(op(*x)),
-            Self::Lvb(x) => Self::Lvb(op(*x)),
-            Self::Dvb(x) => Self::Dvb(op(*x)),
-            Self::Vi(x) => Self::Vi(op(*x)),
-            Self::Svi(x) => Self::Svi(op(*x)),
-            Self::Lvi(x) => Self::Lvi(op(*x)),
-            Self::Dvi(x) => Self::Dvi(op(*x)),
+    
+    #[inline]
+    pub fn from_px(px_value: CSSFloat) -> NoCalcLength {
+        Self::new(LengthUnit::Px, px_value)
+    }
+
+    
+    #[inline]
+    pub fn to_px_if_absolute(&self) -> Option<CSSFloat> {
+        let factor = match self.unit {
+            LengthUnit::Px => 1.0,
+            LengthUnit::In => PX_PER_IN,
+            LengthUnit::Cm => PX_PER_CM,
+            LengthUnit::Mm => PX_PER_MM,
+            LengthUnit::Q => PX_PER_Q,
+            LengthUnit::Pt => PX_PER_PT,
+            LengthUnit::Pc => PX_PER_PC,
+            _ => return None,
+        };
+        Some(self.value * factor)
+    }
+
+    
+    #[inline]
+    pub fn from_em(value: CSSFloat) -> Self {
+        Self::new(LengthUnit::Em, value)
+    }
+
+    
+    #[inline]
+    pub fn from_servo_character_width(value: i32) -> Self {
+        Self::new(LengthUnit::ServoCharacterWidth, value as CSSFloat)
+    }
+
+    
+    
+    fn font_relative_to_computed_value(
+        &self,
+        context: &Context,
+        base_size: FontBaseSize,
+        line_height_base: LineHeightBase,
+    ) -> computed::Length {
+        let (reference_size, length) =
+            self.reference_font_size_and_length(context, base_size, line_height_base);
+        (reference_size * length).finite()
+    }
+
+    fn reference_font_size_and_length(
+        &self,
+        context: &Context,
+        base_size: FontBaseSize,
+        line_height_base: LineHeightBase,
+    ) -> (computed::Length, CSSFloat) {
+        fn query_font_metrics(
+            context: &Context,
+            base_size: FontBaseSize,
+            orientation: FontMetricsOrientation,
+            flags: QueryFontMetricsFlags,
+        ) -> FontMetrics {
+            context.query_font_metrics(base_size, orientation, flags)
+        }
+
+        fn ex_size(
+            context: &Context,
+            base_size: FontBaseSize,
+            reference_font_size: &FontSize,
+        ) -> computed::Length {
+            let metrics = query_font_metrics(
+                context,
+                base_size,
+                FontMetricsOrientation::Horizontal,
+                QueryFontMetricsFlags::empty(),
+            );
+            metrics.x_height_or_default(reference_font_size.used_size())
+        }
+
+        fn ch_size(
+            context: &Context,
+            base_size: FontBaseSize,
+            reference_font_size: &FontSize,
+        ) -> computed::Length {
+            let metrics = query_font_metrics(
+                context,
+                base_size,
+                FontMetricsOrientation::MatchContextPreferHorizontal,
+                QueryFontMetricsFlags::NEEDS_CH,
+            );
+            metrics.zero_advance_measure_or_default(
+                reference_font_size.used_size(),
+                context.style().writing_mode.is_upright(),
+            )
+        }
+
+        fn cap_size(context: &Context, base_size: FontBaseSize) -> computed::Length {
+            let metrics = query_font_metrics(
+                context,
+                base_size,
+                FontMetricsOrientation::Horizontal,
+                QueryFontMetricsFlags::empty(),
+            );
+            metrics.cap_height_or_default()
+        }
+
+        fn ic_size(
+            context: &Context,
+            base_size: FontBaseSize,
+            reference_font_size: &FontSize,
+        ) -> computed::Length {
+            let metrics = query_font_metrics(
+                context,
+                base_size,
+                FontMetricsOrientation::MatchContextPreferVertical,
+                QueryFontMetricsFlags::NEEDS_IC,
+            );
+            metrics.ic_width_or_default(reference_font_size.used_size())
+        }
+
+        let reference_font_size = base_size.resolve(context);
+        let length = self.value;
+        match self.unit {
+            LengthUnit::Em => {
+                if context.for_non_inherited_property && base_size == FontBaseSize::CurrentStyle {
+                    context
+                        .rule_cache_conditions
+                        .borrow_mut()
+                        .set_font_size_dependency(reference_font_size.computed_size);
+                }
+
+                (reference_font_size.computed_size(), length)
+            },
+            LengthUnit::Lh => {
+                let reference_size = if context.in_media_query {
+                    context
+                        .device()
+                        .calc_line_height(
+                            &context.default_style().get_font(),
+                            context.style().writing_mode,
+                            None,
+                        )
+                        .0
+                } else {
+                    let line_height = context.builder.calc_line_height(
+                        context.device(),
+                        line_height_base,
+                        context.style().writing_mode,
+                    );
+                    if context.for_non_inherited_property
+                        && line_height_base == LineHeightBase::CurrentStyle
+                    {
+                        context
+                            .rule_cache_conditions
+                            .borrow_mut()
+                            .set_line_height_dependency(line_height)
+                    }
+                    line_height.0
+                };
+                (reference_size, length)
+            },
+            LengthUnit::Ex => (ex_size(context, base_size, &reference_font_size), length),
+            LengthUnit::Ch => (ch_size(context, base_size, &reference_font_size), length),
+            LengthUnit::Cap => (cap_size(context, base_size), length),
+            LengthUnit::Ic => (ic_size(context, base_size, &reference_font_size), length),
+            LengthUnit::Rex => {
+                let reference_size = if context.builder.is_root_element || context.in_media_query {
+                    ex_size(context, base_size, &reference_font_size)
+                } else {
+                    context
+                        .device()
+                        .root_font_metrics_ex()
+                        .zoom(context.builder.effective_zoom)
+                };
+                (reference_size, length)
+            },
+            LengthUnit::Rch => {
+                let reference_size = if context.builder.is_root_element || context.in_media_query {
+                    ch_size(context, base_size, &reference_font_size)
+                } else {
+                    context
+                        .device()
+                        .root_font_metrics_ch()
+                        .zoom(context.builder.effective_zoom)
+                };
+                (reference_size, length)
+            },
+            LengthUnit::Rcap => {
+                let reference_size = if context.builder.is_root_element || context.in_media_query {
+                    cap_size(context, base_size)
+                } else {
+                    context
+                        .device()
+                        .root_font_metrics_cap()
+                        .zoom(context.builder.effective_zoom)
+                };
+                (reference_size, length)
+            },
+            LengthUnit::Ric => {
+                let reference_size = if context.builder.is_root_element || context.in_media_query {
+                    ic_size(context, base_size, &reference_font_size)
+                } else {
+                    context
+                        .device()
+                        .root_font_metrics_ic()
+                        .zoom(context.builder.effective_zoom)
+                };
+                (reference_size, length)
+            },
+            LengthUnit::Rem => {
+                let reference_size = if context.builder.is_root_element || context.in_media_query {
+                    reference_font_size.computed_size()
+                } else {
+                    context
+                        .device()
+                        .root_font_size()
+                        .zoom(context.builder.effective_zoom)
+                };
+                (reference_size, length)
+            },
+            LengthUnit::Rlh => {
+                let reference_size = if context.builder.is_root_element {
+                    context
+                        .builder
+                        .calc_line_height(
+                            context.device(),
+                            line_height_base,
+                            context.style().writing_mode,
+                        )
+                        .0
+                } else if context.in_media_query {
+                    context
+                        .device()
+                        .calc_line_height(
+                            &context.default_style().get_font(),
+                            context.style().writing_mode,
+                            None,
+                        )
+                        .0
+                } else {
+                    context.device().root_line_height()
+                };
+                let reference_size = reference_size.zoom(context.builder.effective_zoom);
+                (reference_size, length)
+            },
+            _ => unreachable!("reference_font_size_and_length: not a font-relative unit"),
         }
     }
 
     
-    pub fn to_computed_value(&self, context: &Context) -> CSSPixelLength {
-        let (variant, unit, factor) = self.unpack();
+    
+    fn viewport_percentage_to_computed_value(&self, context: &Context) -> CSSPixelLength {
+        let (variant, unit) = match self.unit {
+            LengthUnit::Vw => (ViewportVariant::UADefault, ViewportUnit::Vw),
+            LengthUnit::Svw => (ViewportVariant::Small, ViewportUnit::Vw),
+            LengthUnit::Lvw => (ViewportVariant::Large, ViewportUnit::Vw),
+            LengthUnit::Dvw => (ViewportVariant::Dynamic, ViewportUnit::Vw),
+            LengthUnit::Vh => (ViewportVariant::UADefault, ViewportUnit::Vh),
+            LengthUnit::Svh => (ViewportVariant::Small, ViewportUnit::Vh),
+            LengthUnit::Lvh => (ViewportVariant::Large, ViewportUnit::Vh),
+            LengthUnit::Dvh => (ViewportVariant::Dynamic, ViewportUnit::Vh),
+            LengthUnit::Vmin => (ViewportVariant::UADefault, ViewportUnit::Vmin),
+            LengthUnit::Svmin => (ViewportVariant::Small, ViewportUnit::Vmin),
+            LengthUnit::Lvmin => (ViewportVariant::Large, ViewportUnit::Vmin),
+            LengthUnit::Dvmin => (ViewportVariant::Dynamic, ViewportUnit::Vmin),
+            LengthUnit::Vmax => (ViewportVariant::UADefault, ViewportUnit::Vmax),
+            LengthUnit::Svmax => (ViewportVariant::Small, ViewportUnit::Vmax),
+            LengthUnit::Lvmax => (ViewportVariant::Large, ViewportUnit::Vmax),
+            LengthUnit::Dvmax => (ViewportVariant::Dynamic, ViewportUnit::Vmax),
+            LengthUnit::Vb => (ViewportVariant::UADefault, ViewportUnit::Vb),
+            LengthUnit::Svb => (ViewportVariant::Small, ViewportUnit::Vb),
+            LengthUnit::Lvb => (ViewportVariant::Large, ViewportUnit::Vb),
+            LengthUnit::Dvb => (ViewportVariant::Dynamic, ViewportUnit::Vb),
+            LengthUnit::Vi => (ViewportVariant::UADefault, ViewportUnit::Vi),
+            LengthUnit::Svi => (ViewportVariant::Small, ViewportUnit::Vi),
+            LengthUnit::Lvi => (ViewportVariant::Large, ViewportUnit::Vi),
+            LengthUnit::Dvi => (ViewportVariant::Dynamic, ViewportUnit::Vi),
+            _ => {
+                unreachable!("viewport_percentage_to_computed_value: not a viewport-relative unit")
+            },
+        };
+        let factor = self.value;
         let size = context.viewport_size_for_viewport_unit_resolution(variant);
         let length: app_units::Au = match unit {
             ViewportUnit::Vw => size.width,
@@ -789,252 +920,16 @@ impl ViewportPercentageLength {
                 }
             },
         };
-
-        
         let length = context.builder.effective_zoom.zoom(length.0 as f32);
 
-        
-        
-        
-        
         let trunc_scaled =
             ((length as f64 * factor as f64 / 100.).trunc() / AU_PER_PX as f64) as f32;
         CSSPixelLength::new(crate::values::normalize(trunc_scaled))
     }
-}
-
-
-#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToCss, ToShmem)]
-#[repr(C)]
-pub struct CharacterWidth(pub i32);
-
-impl CharacterWidth {
-    
-    pub fn to_computed_value(&self, reference_font_size: computed::Length) -> computed::Length {
-        
-        
-        
-        
-        let average_advance = reference_font_size * 0.5;
-        let max_advance = reference_font_size;
-        (average_advance * (self.0 as CSSFloat - 1.0) + max_advance).finite()
-    }
-}
-
-
-#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToCss, ToShmem)]
-#[repr(u8)]
-pub enum AbsoluteLength {
-    
-    #[css(dimension)]
-    Px(CSSFloat),
-    
-    #[css(dimension)]
-    In(CSSFloat),
-    
-    #[css(dimension)]
-    Cm(CSSFloat),
-    
-    #[css(dimension)]
-    Mm(CSSFloat),
-    
-    #[css(dimension)]
-    Q(CSSFloat),
-    
-    #[css(dimension)]
-    Pt(CSSFloat),
-    
-    #[css(dimension)]
-    Pc(CSSFloat),
-}
-
-impl AbsoluteLength {
-    
-    fn unitless_value(&self) -> CSSFloat {
-        match *self {
-            Self::Px(v)
-            | Self::In(v)
-            | Self::Cm(v)
-            | Self::Mm(v)
-            | Self::Q(v)
-            | Self::Pt(v)
-            | Self::Pc(v) => v,
-        }
-    }
 
     
-    fn unit(&self) -> &'static str {
-        match *self {
-            Self::Px(_) => "px",
-            Self::In(_) => "in",
-            Self::Cm(_) => "cm",
-            Self::Mm(_) => "mm",
-            Self::Q(_) => "q",
-            Self::Pt(_) => "pt",
-            Self::Pc(_) => "pc",
-        }
-    }
-
     
-    fn canonical_unit(&self) -> Option<&'static str> {
-        Some("px")
-    }
-
-    
-    fn to(&self, unit: &str) -> Result<Self, ()> {
-        let px = self.to_px();
-
-        Ok(match_ignore_ascii_case! { unit,
-            "px" => Self::Px(px),
-            "in" => Self::In(px / PX_PER_IN),
-            "cm" => Self::Cm(px / PX_PER_CM),
-            "mm" => Self::Mm(px / PX_PER_MM),
-            "q" => Self::Q(px / PX_PER_Q),
-            "pt" => Self::Pt(px / PX_PER_PT),
-            "pc" => Self::Pc(px / PX_PER_PC),
-             _ => return Err(()),
-        })
-    }
-
-    
-    #[inline]
-    pub fn to_px(&self) -> CSSFloat {
-        match *self {
-            Self::Px(value) => value,
-            Self::In(value) => value * PX_PER_IN,
-            Self::Cm(value) => value * PX_PER_CM,
-            Self::Mm(value) => value * PX_PER_MM,
-            Self::Q(value) => value * PX_PER_Q,
-            Self::Pt(value) => value * PX_PER_PT,
-            Self::Pc(value) => value * PX_PER_PC,
-        }
-    }
-
-    fn try_op<O>(&self, other: &Self, op: O) -> Result<Self, ()>
-    where
-        O: Fn(f32, f32) -> f32,
-    {
-        Ok(Self::Px(op(self.to_px(), other.to_px())))
-    }
-
-    fn map(&self, mut op: impl FnMut(f32) -> f32) -> Self {
-        Self::Px(op(self.to_px()))
-    }
-}
-
-impl ToComputedValue for AbsoluteLength {
-    type ComputedValue = CSSPixelLength;
-
-    fn to_computed_value(&self, context: &Context) -> Self::ComputedValue {
-        CSSPixelLength::new(self.to_px())
-            .zoom(context.builder.effective_zoom)
-            .finite()
-    }
-
-    fn from_computed_value(computed: &Self::ComputedValue) -> Self {
-        Self::Px(computed.px())
-    }
-}
-
-impl PartialOrd for AbsoluteLength {
-    fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> {
-        self.to_px().partial_cmp(&other.to_px())
-    }
-}
-
-
-
-
-#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToCss, ToShmem)]
-#[repr(u8)]
-pub enum ContainerRelativeLength {
-    
-    #[css(dimension)]
-    Cqw(CSSFloat),
-    
-    #[css(dimension)]
-    Cqh(CSSFloat),
-    
-    #[css(dimension)]
-    Cqi(CSSFloat),
-    
-    #[css(dimension)]
-    Cqb(CSSFloat),
-    
-    #[css(dimension)]
-    Cqmin(CSSFloat),
-    
-    #[css(dimension)]
-    Cqmax(CSSFloat),
-}
-
-impl ContainerRelativeLength {
-    fn unitless_value(&self) -> CSSFloat {
-        match *self {
-            Self::Cqw(v)
-            | Self::Cqh(v)
-            | Self::Cqi(v)
-            | Self::Cqb(v)
-            | Self::Cqmin(v)
-            | Self::Cqmax(v) => v,
-        }
-    }
-
-    
-    fn unit(&self) -> &'static str {
-        match *self {
-            Self::Cqw(_) => "cqw",
-            Self::Cqh(_) => "cqh",
-            Self::Cqi(_) => "cqi",
-            Self::Cqb(_) => "cqb",
-            Self::Cqmin(_) => "cqmin",
-            Self::Cqmax(_) => "cqmax",
-        }
-    }
-
-    pub(crate) fn try_op<O>(&self, other: &Self, op: O) -> Result<Self, ()>
-    where
-        O: Fn(f32, f32) -> f32,
-    {
-        use self::ContainerRelativeLength::*;
-
-        if std::mem::discriminant(self) != std::mem::discriminant(other) {
-            return Err(());
-        }
-
-        Ok(match (self, other) {
-            (&Cqw(one), &Cqw(other)) => Cqw(op(one, other)),
-            (&Cqh(one), &Cqh(other)) => Cqh(op(one, other)),
-            (&Cqi(one), &Cqi(other)) => Cqi(op(one, other)),
-            (&Cqb(one), &Cqb(other)) => Cqb(op(one, other)),
-            (&Cqmin(one), &Cqmin(other)) => Cqmin(op(one, other)),
-            (&Cqmax(one), &Cqmax(other)) => Cqmax(op(one, other)),
-
-            
-            
-            
-            _ => unsafe {
-                match *self {
-                    Cqw(..) | Cqh(..) | Cqi(..) | Cqb(..) | Cqmin(..) | Cqmax(..) => {},
-                }
-                debug_unreachable!("Forgot to handle unit in try_op()")
-            },
-        })
-    }
-
-    pub(crate) fn map(&self, mut op: impl FnMut(f32) -> f32) -> Self {
-        match self {
-            Self::Cqw(x) => Self::Cqw(op(*x)),
-            Self::Cqh(x) => Self::Cqh(op(*x)),
-            Self::Cqi(x) => Self::Cqi(op(*x)),
-            Self::Cqb(x) => Self::Cqb(op(*x)),
-            Self::Cqmin(x) => Self::Cqmin(op(*x)),
-            Self::Cqmax(x) => Self::Cqmax(op(*x)),
-        }
-    }
-
-    
-    pub fn to_computed_value(&self, context: &Context) -> CSSPixelLength {
+    fn container_relative_to_computed_value(&self, context: &Context) -> CSSPixelLength {
         if context.for_non_inherited_property {
             context.rule_cache_conditions.borrow_mut().set_uncacheable();
         }
@@ -1042,359 +937,86 @@ impl ContainerRelativeLength {
             .builder
             .add_flags(ComputedValueFlags::USES_CONTAINER_UNITS);
 
-        
-        
-        
         let size = context.get_container_size_query();
-        let (factor, container_length) = match *self {
-            Self::Cqw(v) => (v, size.get_container_width(context)),
-            Self::Cqh(v) => (v, size.get_container_height(context)),
-            Self::Cqi(v) => (v, size.get_container_inline_size(context)),
-            Self::Cqb(v) => (v, size.get_container_block_size(context)),
-            Self::Cqmin(v) => (
-                v,
-                cmp::min(
-                    size.get_container_inline_size(context),
-                    size.get_container_block_size(context),
-                ),
+        let factor = self.value;
+        let container_length = match self.unit {
+            LengthUnit::Cqw => size.get_container_width(context),
+            LengthUnit::Cqh => size.get_container_height(context),
+            LengthUnit::Cqi => size.get_container_inline_size(context),
+            LengthUnit::Cqb => size.get_container_block_size(context),
+            LengthUnit::Cqmin => cmp::min(
+                size.get_container_inline_size(context),
+                size.get_container_block_size(context),
             ),
-            Self::Cqmax(v) => (
-                v,
-                cmp::max(
-                    size.get_container_inline_size(context),
-                    size.get_container_block_size(context),
-                ),
+            LengthUnit::Cqmax => cmp::max(
+                size.get_container_inline_size(context),
+                size.get_container_block_size(context),
             ),
+            _ => {
+                unreachable!("container_relative_to_computed_value: not a container-relative unit")
+            },
         };
         CSSPixelLength::new((container_length.to_f64_px() * factor as f64 / 100.0) as f32).finite()
     }
-}
-
-
-
-
-#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToShmem)]
-#[repr(u8)]
-pub enum NoCalcLength {
-    
-    
-    
-    Absolute(AbsoluteLength),
 
     
-    
-    
-    FontRelative(FontRelativeLength),
-
-    
-    
-    
-    ViewportPercentage(ViewportPercentageLength),
-
-    
-    
-    
-    ContainerRelative(ContainerRelativeLength),
-    
-    
-    
-    
-    ServoCharacterWidth(CharacterWidth),
-}
-
-impl NoCalcLength {
-    
-    pub fn unitless_value(&self) -> CSSFloat {
-        match *self {
-            Self::Absolute(v) => v.unitless_value(),
-            Self::FontRelative(v) => v.unitless_value(),
-            Self::ViewportPercentage(v) => v.unitless_value(),
-            Self::ContainerRelative(v) => v.unitless_value(),
-            Self::ServoCharacterWidth(c) => c.0 as f32,
-        }
-    }
-
-    
-    pub fn unit(&self) -> &'static str {
-        match *self {
-            Self::Absolute(v) => v.unit(),
-            Self::FontRelative(v) => v.unit(),
-            Self::ViewportPercentage(v) => v.unit(),
-            Self::ContainerRelative(v) => v.unit(),
-            Self::ServoCharacterWidth(_) => "",
-        }
-    }
-
-    
-    pub fn canonical_unit(&self) -> Option<&'static str> {
-        match *self {
-            Self::Absolute(v) => v.canonical_unit(),
-            _ => None,
-        }
-    }
-
-    
-    pub fn to(&self, unit: &str) -> Result<Self, ()> {
-        match self {
-            Self::Absolute(v) => Ok(Self::Absolute(v.to(unit)?)),
-            _ => Err(()),
-        }
-    }
-
-    
-    pub fn is_negative(&self) -> bool {
-        self.unitless_value().is_sign_negative()
-    }
-
-    
-    pub fn is_zero(&self) -> bool {
-        self.unitless_value() == 0.0
-    }
-
-    
-    pub fn is_infinite(&self) -> bool {
-        self.unitless_value().is_infinite()
-    }
-
-    
-    pub fn is_nan(&self) -> bool {
-        self.unitless_value().is_nan()
-    }
-
-    
-    
-    
-    
-    pub fn should_zoom_text(&self) -> bool {
-        match *self {
-            Self::Absolute(..) | Self::ViewportPercentage(..) | Self::ContainerRelative(..) => true,
-            Self::ServoCharacterWidth(..) | Self::FontRelative(..) => false,
-        }
-    }
-
-    
-    pub fn parse_dimension_with_flags(
-        parsing_mode: ParsingMode,
-        in_page_rule: bool,
-        value: CSSFloat,
-        unit: &str,
-    ) -> Result<Self, ()> {
-        let allows_computational_dependence = parsing_mode.allows_computational_dependence();
-
-        Ok(match_ignore_ascii_case! { unit,
-            "px" => Self::Absolute(AbsoluteLength::Px(value)),
-            "in" => Self::Absolute(AbsoluteLength::In(value)),
-            "cm" => Self::Absolute(AbsoluteLength::Cm(value)),
-            "mm" => Self::Absolute(AbsoluteLength::Mm(value)),
-            "q" => Self::Absolute(AbsoluteLength::Q(value)),
-            "pt" => Self::Absolute(AbsoluteLength::Pt(value)),
-            "pc" => Self::Absolute(AbsoluteLength::Pc(value)),
-            // font-relative
-            "em" if allows_computational_dependence => Self::FontRelative(FontRelativeLength::Em(value)),
-            "ex" if allows_computational_dependence => Self::FontRelative(FontRelativeLength::Ex(value)),
-            "rex" if allows_computational_dependence => Self::FontRelative(FontRelativeLength::Rex(value)),
-            "ch" if allows_computational_dependence => Self::FontRelative(FontRelativeLength::Ch(value)),
-            "rch" if allows_computational_dependence => Self::FontRelative(FontRelativeLength::Rch(value)),
-            "cap" if allows_computational_dependence => Self::FontRelative(FontRelativeLength::Cap(value)),
-            "rcap" if allows_computational_dependence => Self::FontRelative(FontRelativeLength::Rcap(value)),
-            "ic" if allows_computational_dependence => Self::FontRelative(FontRelativeLength::Ic(value)),
-            "ric" if allows_computational_dependence => Self::FontRelative(FontRelativeLength::Ric(value)),
-            "rem" if allows_computational_dependence => Self::FontRelative(FontRelativeLength::Rem(value)),
-            "lh" if allows_computational_dependence => Self::FontRelative(FontRelativeLength::Lh(value)),
-            "rlh" if allows_computational_dependence => Self::FontRelative(FontRelativeLength::Rlh(value)),
-            // viewport percentages
-            "vw" if !in_page_rule => {
-                Self::ViewportPercentage(ViewportPercentageLength::Vw(value))
-            },
-            "svw" if !in_page_rule => {
-                Self::ViewportPercentage(ViewportPercentageLength::Svw(value))
-            },
-            "lvw" if !in_page_rule => {
-                Self::ViewportPercentage(ViewportPercentageLength::Lvw(value))
-            },
-            "dvw" if !in_page_rule => {
-                Self::ViewportPercentage(ViewportPercentageLength::Dvw(value))
-            },
-            "vh" if !in_page_rule => {
-                Self::ViewportPercentage(ViewportPercentageLength::Vh(value))
-            },
-            "svh" if !in_page_rule => {
-                Self::ViewportPercentage(ViewportPercentageLength::Svh(value))
-            },
-            "lvh" if !in_page_rule => {
-                Self::ViewportPercentage(ViewportPercentageLength::Lvh(value))
-            },
-            "dvh" if !in_page_rule => {
-                Self::ViewportPercentage(ViewportPercentageLength::Dvh(value))
-            },
-            "vmin" if !in_page_rule => {
-                Self::ViewportPercentage(ViewportPercentageLength::Vmin(value))
-            },
-            "svmin" if !in_page_rule => {
-                Self::ViewportPercentage(ViewportPercentageLength::Svmin(value))
-            },
-            "lvmin" if !in_page_rule => {
-                Self::ViewportPercentage(ViewportPercentageLength::Lvmin(value))
-            },
-            "dvmin" if !in_page_rule => {
-                Self::ViewportPercentage(ViewportPercentageLength::Dvmin(value))
-            },
-            "vmax" if !in_page_rule => {
-                Self::ViewportPercentage(ViewportPercentageLength::Vmax(value))
-            },
-            "svmax" if !in_page_rule => {
-                Self::ViewportPercentage(ViewportPercentageLength::Svmax(value))
-            },
-            "lvmax" if !in_page_rule => {
-                Self::ViewportPercentage(ViewportPercentageLength::Lvmax(value))
-            },
-            "dvmax" if !in_page_rule => {
-                Self::ViewportPercentage(ViewportPercentageLength::Dvmax(value))
-            },
-            "vb" if !in_page_rule => {
-                Self::ViewportPercentage(ViewportPercentageLength::Vb(value))
-            },
-            "svb" if !in_page_rule => {
-                Self::ViewportPercentage(ViewportPercentageLength::Svb(value))
-            },
-            "lvb" if !in_page_rule => {
-                Self::ViewportPercentage(ViewportPercentageLength::Lvb(value))
-            },
-            "dvb" if !in_page_rule => {
-                Self::ViewportPercentage(ViewportPercentageLength::Dvb(value))
-            },
-            "vi" if !in_page_rule => {
-                Self::ViewportPercentage(ViewportPercentageLength::Vi(value))
-            },
-            "svi" if !in_page_rule => {
-                Self::ViewportPercentage(ViewportPercentageLength::Svi(value))
-            },
-            "lvi" if !in_page_rule => {
-                Self::ViewportPercentage(ViewportPercentageLength::Lvi(value))
-            },
-            "dvi" if !in_page_rule => {
-                Self::ViewportPercentage(ViewportPercentageLength::Dvi(value))
-            },
-            // Container query lengths. Inherit the limitation from viewport units since
-            // we may fall back to them.
-            "cqw" if !in_page_rule && cfg!(feature = "gecko") => {
-                Self::ContainerRelative(ContainerRelativeLength::Cqw(value))
-            },
-            "cqh" if !in_page_rule && cfg!(feature = "gecko") => {
-                Self::ContainerRelative(ContainerRelativeLength::Cqh(value))
-            },
-            "cqi" if !in_page_rule && cfg!(feature = "gecko") => {
-                Self::ContainerRelative(ContainerRelativeLength::Cqi(value))
-            },
-            "cqb" if !in_page_rule && cfg!(feature = "gecko") => {
-                Self::ContainerRelative(ContainerRelativeLength::Cqb(value))
-            },
-            "cqmin" if !in_page_rule && cfg!(feature = "gecko") => {
-                Self::ContainerRelative(ContainerRelativeLength::Cqmin(value))
-            },
-            "cqmax" if !in_page_rule && cfg!(feature = "gecko") => {
-                Self::ContainerRelative(ContainerRelativeLength::Cqmax(value))
-            },
-            _ => return Err(()),
-        })
-    }
-
-    
-    pub fn parse_dimension_with_context(
-        context: &ParserContext,
-        value: CSSFloat,
-        unit: &str,
-    ) -> Result<Self, ()> {
-        Self::parse_dimension_with_flags(context.parsing_mode, context.in_page_rule(), value, unit)
-    }
-
-    pub(crate) fn try_op<O>(&self, other: &Self, op: O) -> Result<Self, ()>
-    where
-        O: Fn(f32, f32) -> f32,
-    {
-        use self::NoCalcLength::*;
-
-        if std::mem::discriminant(self) != std::mem::discriminant(other) {
-            return Err(());
-        }
-
-        Ok(match (self, other) {
-            (&Absolute(ref one), &Absolute(ref other)) => Absolute(one.try_op(other, op)?),
-            (&FontRelative(ref one), &FontRelative(ref other)) => {
-                FontRelative(one.try_op(other, op)?)
-            },
-            (&ViewportPercentage(ref one), &ViewportPercentage(ref other)) => {
-                ViewportPercentage(one.try_op(other, op)?)
-            },
-            (&ContainerRelative(ref one), &ContainerRelative(ref other)) => {
-                ContainerRelative(one.try_op(other, op)?)
-            },
-            (&ServoCharacterWidth(ref one), &ServoCharacterWidth(ref other)) => {
-                ServoCharacterWidth(CharacterWidth(op(one.0 as f32, other.0 as f32) as i32))
-            },
-            
-            
-            _ => unsafe {
-                match *self {
-                    Absolute(..)
-                    | FontRelative(..)
-                    | ViewportPercentage(..)
-                    | ContainerRelative(..)
-                    | ServoCharacterWidth(..) => {},
-                }
-                debug_unreachable!("Forgot to handle unit in try_op()")
-            },
-        })
-    }
-
-    pub(crate) fn map(&self, mut op: impl FnMut(f32) -> f32) -> Self {
-        use self::NoCalcLength::*;
-
-        match self {
-            Absolute(ref one) => Absolute(one.map(op)),
-            FontRelative(ref one) => FontRelative(one.map(op)),
-            ViewportPercentage(ref one) => ViewportPercentage(one.map(op)),
-            ContainerRelative(ref one) => ContainerRelative(one.map(op)),
-            ServoCharacterWidth(ref one) => {
-                ServoCharacterWidth(CharacterWidth(op(one.0 as f32) as i32))
-            },
-        }
-    }
-
-    
-    #[inline]
-    pub fn to_computed_pixel_length_without_context(&self) -> Result<CSSFloat, ()> {
-        match *self {
-            Self::Absolute(len) => Ok(CSSPixelLength::new(len.to_px()).finite().px()),
-            _ => Err(()),
-        }
-    }
-
-    
-    
-    #[cfg(feature = "gecko")]
-    #[inline]
-    pub fn to_computed_pixel_length_with_font_metrics(
+    fn servo_character_width_to_computed_value(
         &self,
-        get_font_metrics: Option<impl Fn() -> GeckoFontMetrics>,
-    ) -> Result<CSSFloat, ()> {
-        match *self {
-            Self::Absolute(len) => Ok(CSSPixelLength::new(len.to_px()).finite().px()),
-            Self::FontRelative(fr) => {
-                if let Some(getter) = get_font_metrics {
-                    fr.to_computed_pixel_length_with_font_metrics(getter)
-                } else {
-                    Err(())
-                }
-            },
-            _ => Err(()),
-        }
+        reference_font_size: computed::Length,
+    ) -> computed::Length {
+        debug_assert_eq!(self.unit, LengthUnit::ServoCharacterWidth);
+        let cols = self.value as i32 as CSSFloat;
+        
+        
+        let average_advance = reference_font_size * 0.5;
+        let max_advance = reference_font_size;
+        (average_advance * (cols - 1.0) + max_advance).finite()
     }
 
     
+    pub fn to_computed_value_with_base_size(
+        &self,
+        context: &Context,
+        base_size: FontBaseSize,
+        line_height_base: LineHeightBase,
+    ) -> CSSPixelLength {
+        if let Some(px) = self.to_px_if_absolute() {
+            return CSSPixelLength::new(px)
+                .zoom(context.builder.effective_zoom)
+                .finite();
+        }
+        let unit = self.length_unit();
+        if unit.is_font_relative() {
+            return self.font_relative_to_computed_value(context, base_size, line_height_base);
+        }
+        if unit.is_viewport_percentage() {
+            return self.viewport_percentage_to_computed_value(context);
+        }
+        if unit.is_container_relative() {
+            return self.container_relative_to_computed_value(context);
+        }
+        debug_assert_eq!(unit, LengthUnit::ServoCharacterWidth);
+        self.servo_character_width_to_computed_value(
+            context.style().get_font().clone_font_size().computed_size(),
+        )
+    }
+}
+
+impl ToComputedValue for NoCalcLength {
+    type ComputedValue = computed::Length;
+
     #[inline]
-    pub fn from_px(px_value: CSSFloat) -> NoCalcLength {
-        NoCalcLength::Absolute(AbsoluteLength::Px(px_value))
+    fn to_computed_value(&self, context: &Context) -> Self::ComputedValue {
+        self.to_computed_value_with_base_size(
+            context,
+            FontBaseSize::CurrentStyle,
+            LineHeightBase::CurrentStyle,
+        )
+    }
+
+    #[inline]
+    fn from_computed_value(computed: &Self::ComputedValue) -> Self {
+        Self::from_px(computed.px())
     }
 }
 
@@ -1428,41 +1050,20 @@ impl SpecifiedValueInfo for NoCalcLength {}
 
 impl PartialOrd for NoCalcLength {
     fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> {
-        use self::NoCalcLength::*;
-
-        if std::mem::discriminant(self) != std::mem::discriminant(other) {
+        
+        if let (Some(a), Some(b)) = (self.to_px_if_absolute(), other.to_px_if_absolute()) {
+            return a.partial_cmp(&b);
+        }
+        if self.unit != other.unit {
             return None;
         }
-
-        match (self, other) {
-            (&Absolute(ref one), &Absolute(ref other)) => one.to_px().partial_cmp(&other.to_px()),
-            (&FontRelative(ref one), &FontRelative(ref other)) => one.partial_cmp(other),
-            (&ViewportPercentage(ref one), &ViewportPercentage(ref other)) => {
-                one.partial_cmp(other)
-            },
-            (&ContainerRelative(ref one), &ContainerRelative(ref other)) => one.partial_cmp(other),
-            (&ServoCharacterWidth(ref one), &ServoCharacterWidth(ref other)) => {
-                one.0.partial_cmp(&other.0)
-            },
-            
-            
-            _ => unsafe {
-                match *self {
-                    Absolute(..)
-                    | FontRelative(..)
-                    | ViewportPercentage(..)
-                    | ContainerRelative(..)
-                    | ServoCharacterWidth(..) => {},
-                }
-                debug_unreachable!("Forgot an arm in partial_cmp?")
-            },
-        }
+        self.value.partial_cmp(&other.value)
     }
 }
 
 impl Zero for NoCalcLength {
     fn zero() -> Self {
-        NoCalcLength::Absolute(AbsoluteLength::Px(0.))
+        Self::from_px(0.)
     }
 
     fn is_zero(&self) -> bool {
@@ -1491,117 +1092,6 @@ impl From<NoCalcLength> for Length {
     }
 }
 
-impl PartialOrd for FontRelativeLength {
-    fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> {
-        use self::FontRelativeLength::*;
-
-        if std::mem::discriminant(self) != std::mem::discriminant(other) {
-            return None;
-        }
-
-        match (self, other) {
-            (&Em(ref one), &Em(ref other)) => one.partial_cmp(other),
-            (&Ex(ref one), &Ex(ref other)) => one.partial_cmp(other),
-            (&Rex(ref one), &Rex(ref other)) => one.partial_cmp(other),
-            (&Ch(ref one), &Ch(ref other)) => one.partial_cmp(other),
-            (&Rch(ref one), &Rch(ref other)) => one.partial_cmp(other),
-            (&Cap(ref one), &Cap(ref other)) => one.partial_cmp(other),
-            (&Rcap(ref one), &Rcap(ref other)) => one.partial_cmp(other),
-            (&Ic(ref one), &Ic(ref other)) => one.partial_cmp(other),
-            (&Ric(ref one), &Ric(ref other)) => one.partial_cmp(other),
-            (&Rem(ref one), &Rem(ref other)) => one.partial_cmp(other),
-            (&Lh(ref one), &Lh(ref other)) => one.partial_cmp(other),
-            (&Rlh(ref one), &Rlh(ref other)) => one.partial_cmp(other),
-            
-            
-            _ => unsafe {
-                match *self {
-                    Em(..) | Ex(..) | Rex(..) | Ch(..) | Rch(..) | Cap(..) | Rcap(..) | Ic(..)
-                    | Ric(..) | Rem(..) | Lh(..) | Rlh(..) => {},
-                }
-                debug_unreachable!("Forgot an arm in partial_cmp?")
-            },
-        }
-    }
-}
-
-impl PartialOrd for ContainerRelativeLength {
-    fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> {
-        use self::ContainerRelativeLength::*;
-
-        if std::mem::discriminant(self) != std::mem::discriminant(other) {
-            return None;
-        }
-
-        match (self, other) {
-            (&Cqw(ref one), &Cqw(ref other)) => one.partial_cmp(other),
-            (&Cqh(ref one), &Cqh(ref other)) => one.partial_cmp(other),
-            (&Cqi(ref one), &Cqi(ref other)) => one.partial_cmp(other),
-            (&Cqb(ref one), &Cqb(ref other)) => one.partial_cmp(other),
-            (&Cqmin(ref one), &Cqmin(ref other)) => one.partial_cmp(other),
-            (&Cqmax(ref one), &Cqmax(ref other)) => one.partial_cmp(other),
-
-            
-            
-            
-            _ => unsafe {
-                match *self {
-                    Cqw(..) | Cqh(..) | Cqi(..) | Cqb(..) | Cqmin(..) | Cqmax(..) => {},
-                }
-                debug_unreachable!("Forgot to handle unit in partial_cmp()")
-            },
-        }
-    }
-}
-
-impl PartialOrd for ViewportPercentageLength {
-    fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> {
-        use self::ViewportPercentageLength::*;
-
-        if std::mem::discriminant(self) != std::mem::discriminant(other) {
-            return None;
-        }
-
-        match (self, other) {
-            (&Vw(ref one), &Vw(ref other)) => one.partial_cmp(other),
-            (&Svw(ref one), &Svw(ref other)) => one.partial_cmp(other),
-            (&Lvw(ref one), &Lvw(ref other)) => one.partial_cmp(other),
-            (&Dvw(ref one), &Dvw(ref other)) => one.partial_cmp(other),
-            (&Vh(ref one), &Vh(ref other)) => one.partial_cmp(other),
-            (&Svh(ref one), &Svh(ref other)) => one.partial_cmp(other),
-            (&Lvh(ref one), &Lvh(ref other)) => one.partial_cmp(other),
-            (&Dvh(ref one), &Dvh(ref other)) => one.partial_cmp(other),
-            (&Vmin(ref one), &Vmin(ref other)) => one.partial_cmp(other),
-            (&Svmin(ref one), &Svmin(ref other)) => one.partial_cmp(other),
-            (&Lvmin(ref one), &Lvmin(ref other)) => one.partial_cmp(other),
-            (&Dvmin(ref one), &Dvmin(ref other)) => one.partial_cmp(other),
-            (&Vmax(ref one), &Vmax(ref other)) => one.partial_cmp(other),
-            (&Svmax(ref one), &Svmax(ref other)) => one.partial_cmp(other),
-            (&Lvmax(ref one), &Lvmax(ref other)) => one.partial_cmp(other),
-            (&Dvmax(ref one), &Dvmax(ref other)) => one.partial_cmp(other),
-            (&Vb(ref one), &Vb(ref other)) => one.partial_cmp(other),
-            (&Svb(ref one), &Svb(ref other)) => one.partial_cmp(other),
-            (&Lvb(ref one), &Lvb(ref other)) => one.partial_cmp(other),
-            (&Dvb(ref one), &Dvb(ref other)) => one.partial_cmp(other),
-            (&Vi(ref one), &Vi(ref other)) => one.partial_cmp(other),
-            (&Svi(ref one), &Svi(ref other)) => one.partial_cmp(other),
-            (&Lvi(ref one), &Lvi(ref other)) => one.partial_cmp(other),
-            (&Dvi(ref one), &Dvi(ref other)) => one.partial_cmp(other),
-            
-            
-            _ => unsafe {
-                match *self {
-                    Vw(..) | Svw(..) | Lvw(..) | Dvw(..) | Vh(..) | Svh(..) | Lvh(..) | Dvh(..)
-                    | Vmin(..) | Svmin(..) | Lvmin(..) | Dvmin(..) | Vmax(..) | Svmax(..)
-                    | Lvmax(..) | Dvmax(..) | Vb(..) | Svb(..) | Lvb(..) | Dvb(..) | Vi(..)
-                    | Svi(..) | Lvi(..) | Dvi(..) => {},
-                }
-                debug_unreachable!("Forgot an arm in partial_cmp?")
-            },
-        }
-    }
-}
-
 impl Length {
     #[inline]
     fn parse_internal<'i, 't>(
@@ -1627,9 +1117,7 @@ impl Length {
                 {
                     return Err(location.new_custom_error(StyleParseErrorKind::UnspecifiedError));
                 }
-                Ok(Length::NoCalc(NoCalcLength::Absolute(AbsoluteLength::Px(
-                    value,
-                ))))
+                Ok(Length::NoCalc(NoCalcLength::from_px(value)))
             },
             Token::Function(ref name) => {
                 let function = CalcNode::math_function(context, name, location)?;

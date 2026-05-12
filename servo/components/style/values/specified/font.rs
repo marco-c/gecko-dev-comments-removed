@@ -15,11 +15,10 @@ use crate::values::generics::font::{
     self as generics, FeatureTagValue, FontSettings, FontTag, GenericLineHeight, VariationValue,
 };
 use crate::values::generics::NonNegative;
-use crate::values::specified::length::{FontBaseSize, LineHeightBase, PX_PER_PT};
+use crate::values::specified::length::{FontBaseSize, LengthUnit, LineHeightBase, PX_PER_PT};
 use crate::values::specified::{AllowQuirks, Angle, Integer, LengthPercentage};
 use crate::values::specified::{
-    FontRelativeLength, NoCalcLength, NonNegativeLengthPercentage, NonNegativeNumber,
-    NonNegativePercentage, Number,
+    NoCalcLength, NonNegativeLengthPercentage, NonNegativeNumber, NonNegativePercentage, Number,
 };
 use crate::values::{serialize_atom_identifier, CustomIdent, SelectorParseErrorKind};
 use crate::Atom;
@@ -946,85 +945,80 @@ impl FontSize {
                 .compose(factor)
         };
         let mut info = KeywordInfo::none();
-        let size = match *self {
-            FontSize::Length(LengthPercentage::Length(ref l)) => {
-                if let NoCalcLength::FontRelative(ref value) = *l {
-                    if let FontRelativeLength::Em(em) = *value {
+        let size =
+            match *self {
+                FontSize::Length(LengthPercentage::Length(ref l)) => {
+                    if l.length_unit() == LengthUnit::Em {
                         
                         
-                        info = compose_keyword(em);
+                        info = compose_keyword(l.unitless_value());
                     }
-                }
-                let result =
-                    l.to_computed_value_with_base_size(context, base_size, line_height_base);
-                if l.should_zoom_text() {
-                    context.maybe_zoom_text(result)
-                } else {
-                    result
-                }
-            },
-            FontSize::Length(LengthPercentage::Percentage(pc)) => {
-                
-                
-                info = compose_keyword(pc.get());
-                (base_size.resolve(context).computed_size() * pc.get()).normalized()
-            },
-            FontSize::Length(LengthPercentage::Calc(ref calc)) => {
-                let calc = calc.to_computed_value_zoomed(context, base_size, line_height_base);
-                calc.resolve(base_size.resolve(context).computed_size())
-            },
-            FontSize::Keyword(i) => {
-                if i.kw.is_math() {
-                    
-                    info = compose_keyword(1.);
+                    let result =
+                        l.to_computed_value_with_base_size(context, base_size, line_height_base);
+                    if l.should_zoom_text() {
+                        context.maybe_zoom_text(result)
+                    } else {
+                        result
+                    }
+                },
+                FontSize::Length(LengthPercentage::Percentage(pc)) => {
                     
                     
-                    info.kw = i.kw;
-                    FontRelativeLength::Em(1.).to_computed_value(
+                    info = compose_keyword(pc.get());
+                    (base_size.resolve(context).computed_size() * pc.get()).normalized()
+                },
+                FontSize::Length(LengthPercentage::Calc(ref calc)) => {
+                    let calc = calc.to_computed_value_zoomed(context, base_size, line_height_base);
+                    calc.resolve(base_size.resolve(context).computed_size())
+                },
+                FontSize::Keyword(i) => {
+                    if i.kw.is_math() {
+                        
+                        info = compose_keyword(1.);
+                        
+                        
+                        info.kw = i.kw;
+                        NoCalcLength::from_em(1.).to_computed_value_with_base_size(
+                            context,
+                            base_size,
+                            line_height_base,
+                        )
+                    } else {
+                        
+                        info = i;
+                        i.to_computed_value(context).clamp_to_non_negative()
+                    }
+                },
+                FontSize::Smaller => {
+                    info = compose_keyword(1. / LARGER_FONT_SIZE_RATIO);
+                    NoCalcLength::from_em(1. / LARGER_FONT_SIZE_RATIO)
+                        .to_computed_value_with_base_size(context, base_size, line_height_base)
+                },
+                FontSize::Larger => {
+                    info = compose_keyword(LARGER_FONT_SIZE_RATIO);
+                    NoCalcLength::from_em(LARGER_FONT_SIZE_RATIO).to_computed_value_with_base_size(
                         context,
                         base_size,
                         line_height_base,
                     )
-                } else {
-                    
-                    info = i;
-                    i.to_computed_value(context).clamp_to_non_negative()
-                }
-            },
-            FontSize::Smaller => {
-                info = compose_keyword(1. / LARGER_FONT_SIZE_RATIO);
-                FontRelativeLength::Em(1. / LARGER_FONT_SIZE_RATIO).to_computed_value(
-                    context,
-                    base_size,
-                    line_height_base,
-                )
-            },
-            FontSize::Larger => {
-                info = compose_keyword(LARGER_FONT_SIZE_RATIO);
-                FontRelativeLength::Em(LARGER_FONT_SIZE_RATIO).to_computed_value(
-                    context,
-                    base_size,
-                    line_height_base,
-                )
-            },
-
-            FontSize::System(_) => {
-                #[cfg(feature = "servo")]
-                {
-                    unreachable!()
-                }
-                #[cfg(feature = "gecko")]
-                {
-                    context
-                        .cached_system_font
-                        .as_ref()
-                        .unwrap()
-                        .font_size
-                        .computed_size()
-                        .zoom(context.builder.effective_zoom)
-                }
-            },
-        };
+                },
+                FontSize::System(_) => {
+                    #[cfg(feature = "servo")]
+                    {
+                        unreachable!()
+                    }
+                    #[cfg(feature = "gecko")]
+                    {
+                        context
+                            .cached_system_font
+                            .as_ref()
+                            .unwrap()
+                            .font_size
+                            .computed_size()
+                            .zoom(context.builder.effective_zoom)
+                    }
+                },
+            };
         computed::FontSize {
             computed_size: NonNegative(size),
             used_size: NonNegative(size),
@@ -1980,8 +1974,8 @@ impl ToComputedValue for LineHeight {
             },
             GenericLineHeight::Length(ref non_negative_lp) => {
                 let result = match non_negative_lp.0 {
-                    LengthPercentage::Length(NoCalcLength::Absolute(ref abs)) => {
-                        context.maybe_zoom_text(abs.to_computed_value(context))
+                    LengthPercentage::Length(ref length) if length.length_unit().is_absolute() => {
+                        context.maybe_zoom_text(length.to_computed_value(context))
                     },
                     LengthPercentage::Length(ref length) => {
                         
@@ -1994,8 +1988,8 @@ impl ToComputedValue for LineHeight {
                             LineHeightBase::InheritedStyle,
                         )
                     },
-                    LengthPercentage::Percentage(ref p) => FontRelativeLength::Em(p.get())
-                        .to_computed_value(
+                    LengthPercentage::Percentage(ref p) => NoCalcLength::from_em(p.get())
+                        .to_computed_value_with_base_size(
                             context,
                             FontBaseSize::CurrentStyle,
                             LineHeightBase::InheritedStyle,
