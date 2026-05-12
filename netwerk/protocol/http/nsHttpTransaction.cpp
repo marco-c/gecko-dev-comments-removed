@@ -1461,10 +1461,17 @@ void nsHttpTransaction::Close(nsresult reason) {
   
   
   
+  
+  
+  
+  
+  
+  
   const bool echConfigUsed =
       nsHttpHandler::EchConfigEnabled(mConnInfo->IsHttp3()) &&
       !mConnInfo->GetEchConfig().IsEmpty();
   if (shouldRestartTransactionForHTTPSRR && !echConfigUsed &&
+      !(mCaps & NS_HTTP_DISALLOW_HTTP3) &&
       ShouldRestartOnResumptionError(reason)) {
     shouldRestartTransactionForHTTPSRR = false;
     mDontRetryWithDirectRoute = true;
