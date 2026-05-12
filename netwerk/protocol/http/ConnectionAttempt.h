@@ -40,14 +40,16 @@ class ConnectionAttempt : public nsSupportsWeakReference {
 
   virtual nsresult Init(ConnectionEntry* ent) = 0;
   
-  
-  
-  
-  virtual void Abandon(bool aReenqueueTransaction = false) = 0;
+  virtual void Abandon() = 0;
   virtual double Duration(TimeStamp epoch) = 0;
   bool AcceptsTransaction(nsHttpTransaction* trans) const;
   virtual bool Claim(nsHttpTransaction* newTransaction = nullptr) = 0;
-  void Unclaim();
+  
+  
+  
+  
+  
+  virtual void Unclaim();
   virtual void OnTimeout() = 0;
   virtual void PrintDiagnostics(nsCString& log) = 0;
   virtual DnsAndConnectSocket* ToDnsAndConnectSocket() { return nullptr; }

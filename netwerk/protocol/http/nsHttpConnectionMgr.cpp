@@ -2407,19 +2407,9 @@ void nsHttpConnectionMgr::OnMsgCancelTransaction(int32_t reason,
   
   
   
-  
-  
-  
-  RefPtr<nsAHttpTransaction> proxyTrans;
-  if (nsAHttpTransaction* proxy = trans->HappyEyeballsProxy()) {
-    proxy->Cancel(closeCode);
-    proxyTrans = proxy;
-  }
-
-  nsAHttpTransaction* transToClose = proxyTrans ? proxyTrans.get() : trans;
   RefPtr<nsAHttpConnection> conn(trans->Connection());
   if (conn && !trans->IsDone()) {
-    conn->CloseTransaction(transToClose, closeCode);
+    conn->CloseTransaction(trans, closeCode);
   } else {
     ConnectionEntry* ent = nullptr;
     if (trans->ConnectionInfo()) {
@@ -2432,7 +2422,7 @@ void nsHttpConnectionMgr::OnMsgCancelTransaction(int32_t reason,
            trans));
     }
 
-    transToClose->Close(closeCode);
+    trans->Close(closeCode);
 
     
     

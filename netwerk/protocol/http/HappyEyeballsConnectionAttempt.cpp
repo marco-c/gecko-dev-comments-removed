@@ -169,10 +169,6 @@ nsresult HappyEyeballsConnectionAttempt::ProcessConnectionResult(
 
   
   if (PossibleZeroRTTRetryError(aStatus)) {
-    if (mProxyTransaction) {
-      mProxyTransaction->Detach();
-      mProxyTransaction = nullptr;
-    }
     RefPtr<ConnectionEntry> entry(mEntry);
     RefPtr<HappyEyeballsConnectionAttempt> self(this);
     if (entry) {
@@ -186,10 +182,6 @@ nsresult HappyEyeballsConnectionAttempt::ProcessConnectionResult(
 
   
   if (aStatus == NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED) {
-    if (mProxyTransaction) {
-      mProxyTransaction->Detach();
-      mProxyTransaction = nullptr;
-    }
     if (mTransaction) {
       mTransaction->Close(aStatus);
     }
@@ -550,13 +542,13 @@ void HappyEyeballsConnectionAttempt::HandleTCPConnectionResult(
   }
 
   if (mDone) {
-    MOZ_ASSERT(mHttpTransEstablisherId.isNothing());
     establisher->Close(NS_BASE_STREAM_CLOSED);
     ProcessConnectionResult(addr, NS_BASE_STREAM_CLOSED, aId);
     return;
   }
 
   mOutputConn = aResult.unwrap();
+  mOutputTrans = establisher->Transaction();
   mOutputConnId = aId;
   mAddrFamily = addr.raw.family;
   
@@ -565,41 +557,19 @@ void HappyEyeballsConnectionAttempt::HandleTCPConnectionResult(
   ProcessConnectionResult(addr, NS_OK, aId);
 }
 
-void HappyEyeballsConnectionAttempt::MaybePassHttpTransToEstablisher(
-    ConnectionEstablisher* aEstablisher, uint64_t aId) {
-  if (!mFirstAttempt) {
-    return;
+already_AddRefed<HappyEyeballsTransaction>
+HappyEyeballsConnectionAttempt::CreateAttemptTransaction(
+    nsHttpConnectionInfo* aInfo) {
+  nsCOMPtr<nsIInterfaceRequestor> callbacks;
+  if (mTransaction) {
+    mTransaction->GetSecurityCallbacks(getter_AddRefs(callbacks));
   }
-  mFirstAttempt = false;
-
-  if (mSpeculative) {
-    return;
-  }
-
-  nsHttpTransaction* trans = mTransaction->QueryHttpTransaction();
-  if (!trans) {
-    return;
-  }
-
-  RefPtr<ConnectionEntry> entry(mEntry);
-  if (!entry) {
-    return;
-  }
-
-  RefPtr<PendingTransactionInfo> pendingInfo =
-      gHttpHandler->ConnMgr()->FindTransactionHelper(true, entry, mTransaction);
-  if (!pendingInfo) {
-    return;
-  }
-
-  LOG(
-      ("Passing proxy transaction to establisher for first attempt, "
-       "trans=%p id=%" PRIu64,
-       trans, aId));
-  mProxyTransaction = new HappyEyeballsTransaction(trans);
-  trans->SetHappyEyeballsProxy(mProxyTransaction);
-  aEstablisher->SetProxyTransaction(mProxyTransaction);
-  mHttpTransEstablisherId = Some(aId);
+  RefPtr<HappyEyeballsTransaction> trans = new HappyEyeballsTransaction(
+      aInfo, callbacks, mCaps,
+      [self = RefPtr{this}](nsITransport* t, nsresult s, int64_t p) {
+        self->MaybeSendTransportStatus(s, t, p);
+      });
+  return trans.forget();
 }
 
 nsresult HappyEyeballsConnectionAttempt::EstablishTCPConnection(
@@ -631,7 +601,8 @@ nsresult HappyEyeballsConnectionAttempt::EstablishTCPConnection(
         return self->CheckLNA(aTransport);
       });
 
-  MaybePassHttpTransToEstablisher(establisher, aId);
+  RefPtr<HappyEyeballsTransaction> attempt = CreateAttemptTransaction(info);
+  establisher->SetTransaction(attempt);
 
   auto callback = [self = RefPtr{this}, establisher,
                    aId](Result<RefPtr<HttpConnectionBase>, nsresult> aResult) {
@@ -667,7 +638,8 @@ nsresult HappyEyeballsConnectionAttempt::EstablishUDPConnection(
         self->MaybeSendTransportStatus(status, trans, progress);
       });
 
-  MaybePassHttpTransToEstablisher(establisher, aId);
+  RefPtr<HappyEyeballsTransaction> attempt = CreateAttemptTransaction(info);
+  establisher->SetTransaction(attempt);
 
   auto callback = [self = RefPtr{this}, establisher,
                    aId](Result<RefPtr<HttpConnectionBase>, nsresult> aResult) {
@@ -702,13 +674,13 @@ void HappyEyeballsConnectionAttempt::HandleUDPConnectionResult(
   }
 
   if (mDone) {
-    MOZ_ASSERT(mHttpTransEstablisherId.isNothing());
     establisher->Close(NS_BASE_STREAM_CLOSED);
     ProcessConnectionResult(addr, NS_BASE_STREAM_CLOSED, aId);
     return;
   }
 
   mOutputConn = aResult.unwrap();
+  mOutputTrans = establisher->Transaction();
   mOutputConnId = aId;
   mAddrFamily = addr.raw.family;
   
@@ -733,12 +705,6 @@ void HappyEyeballsConnectionAttempt::CloseHttpTransaction(
     happy_eyeballs::FailureReason aReason) {
   LOG(("HappyEyeballsConnectionAttempt::CloseHttpTransaction %p reason=%d",
        this, static_cast<uint32_t>(aReason)));
-  mHttpTransEstablisherId.reset();
-
-  if (mProxyTransaction) {
-    mProxyTransaction->Detach();
-    mProxyTransaction = nullptr;
-  }
 
   nsresult reason = NS_ERROR_ABORT;
   switch (aReason) {
@@ -755,50 +721,13 @@ void HappyEyeballsConnectionAttempt::CloseHttpTransaction(
       MOZ_ASSERT_UNREACHABLE("Unknown FailureReason");
       break;
   }
-  mTransaction->Close(reason);
+  if (mTransaction) {
+    mTransaction->Close(reason);
+  }
 }
 
-void HappyEyeballsConnectionAttempt::Abandon(bool aReenqueueTransaction) {
-  LOG(("HappyEyeballsConnectionAttempt::Abandon %p aReenqueueTransaction=%d",
-       this, aReenqueueTransaction));
-
-  if (mProxyTransaction) {
-    if (aReenqueueTransaction && mEntry) {
-      
-      
-      
-      nsHttpTransaction* trans =
-          mTransaction ? mTransaction->QueryHttpTransaction() : nullptr;
-      if (trans && !trans->IsDone() && !trans->Connected()) {
-        LOG(("  requeuing claimed transaction %p, detaching proxy %p", trans,
-             mProxyTransaction.get()));
-        mProxyTransaction->Detach();
-        RefPtr<PendingTransactionInfo> pendingTransInfo =
-            new PendingTransactionInfo(trans);
-        mEntry->InsertTransaction(pendingTransInfo);
-      }
-    } else {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      mProxyTransaction->Detach();
-      mProxyTransaction = nullptr;
-      if (nsHttpTransaction* trans =
-              mTransaction ? mTransaction->QueryHttpTransaction() : nullptr) {
-        trans->Close(NS_ERROR_ABORT);
-      }
-    }
-  }
+void HappyEyeballsConnectionAttempt::Abandon() {
+  LOG(("HappyEyeballsConnectionAttempt::Abandon %p", this));
 
   mDone = true;
 
@@ -956,54 +885,19 @@ void HappyEyeballsConnectionAttempt::OnSucceeded() {
     mOutputConn->SetDnsBootstrapTimings(mDomainLookupStart, mDomainLookupEnd);
   }
 
-  bool transactionAlreadyOnConn = false;
-  if (mHttpTransEstablisherId) {
-    if (*mHttpTransEstablisherId == mOutputConnId) {
-      
-      
-      LOG(("  proxy transaction on winning conn id=%" PRIu64, mOutputConnId));
-      mHttpTransEstablisherId.reset();
-      transactionAlreadyOnConn = true;
-      mProxyTransaction = nullptr;
-    } else {
-      LOG(("  proxy transaction on losing conn id=%" PRIu64 " winner=%" PRIu64
-           " detached=%d",
-           *mHttpTransEstablisherId, mOutputConnId,
-           mProxyTransaction ? mProxyTransaction->IsDetached() : -1));
-      mHttpTransEstablisherId.reset();
-      if (mProxyTransaction) {
-        bool needsRequeue = false;
-        if (!mProxyTransaction->IsDetached()) {
-          nsHttpTransaction* trans = mTransaction->QueryHttpTransaction();
-          if (trans && trans->Connected()) {
-            
-            
-            LOG(("  losing conn already connected, letting it serve trans"));
-          } else {
-            mProxyTransaction->Detach();
-            needsRequeue = true;
-          }
-        } else {
-          
-          
-          
-          needsRequeue = true;
-        }
-        mProxyTransaction = nullptr;
-        if (needsRequeue) {
-          nsHttpTransaction* trans = mTransaction->QueryHttpTransaction();
-          if (trans && !trans->IsDone() && !trans->Connected()) {
-            trans->SetConnection(nullptr);
-            RefPtr<PendingTransactionInfo> pendingTransInfo =
-                new PendingTransactionInfo(trans);
-            entry->InsertTransaction(pendingTransInfo);
-          }
-        }
-      }
+  
+  
+  
+  
+  
+  if (mOutputTrans && mTransaction) {
+    if (nsHttpTransaction* realTxn = mTransaction->QueryHttpTransaction()) {
+      TimingStruct timings = mOutputTrans->Timings();
+      timings.transactionPending = realTxn->GetPendingTime();
+      realTxn->BootstrapTimings(timings);
     }
-  } else {
-    LOG(("  no proxy transaction"));
   }
+  mOutputTrans = nullptr;
 
   RefPtr<nsHttpConnection> connTCP = do_QueryObject(mOutputConn);
   if (connTCP) {
@@ -1015,10 +909,10 @@ void HappyEyeballsConnectionAttempt::OnSucceeded() {
         trans->RemoveAltSvcUsedHeader();
       }
     }
-    ProcessTCPConn(connTCP, entry, transactionAlreadyOnConn);
+    ProcessTCPConn(connTCP, entry,  false);
   } else {
     RefPtr<HttpConnectionUDP> connUDP = do_QueryObject(mOutputConn);
-    ProcessUDPConn(connUDP, entry, transactionAlreadyOnConn);
+    ProcessUDPConn(connUDP, entry,  false);
   }
 
   mOutputConn = nullptr;
@@ -1151,9 +1045,10 @@ nsresult HappyEyeballsConnectionAttempt::OnARecord(nsIDNSRecord* aRecord,
   nsCOMPtr<nsIDNSAddrRecord> addrRecord = do_QueryInterface(aRecord);
   if (addrRecord) {
     mDnsMetadata.Fill(addrRecord);
-    if (mTransaction) {
+    if (mTransaction && !mTRRInfoForwarded) {
       mTransaction->SetTRRInfo(mDnsMetadata.mEffectiveTRRMode,
                                mDnsMetadata.mTrrSkipReason);
+      mTRRInfoForwarded = true;
     }
   }
 
@@ -1265,6 +1160,20 @@ nsresult HappyEyeballsConnectionAttempt::OnHTTPSRecord(nsIDNSRecord* aRecord,
     return ProcessHappyEyeballsOutput();
   }
 
+  bool httpsIsTRR = false;
+  (void)httpsRecord->IsTRR(&httpsIsTRR);
+  if (httpsIsTRR) {
+    mDnsMetadata.mIsTRR = true;
+    mDnsMetadata.mEffectiveTRRMode =
+        static_cast<nsIRequest::TRRMode>(StaticPrefs::network_trr_mode());
+    mDnsMetadata.mTrrSkipReason = nsITRRSkipReason::TRR_OK;
+    if (mTransaction && !mTRRInfoForwarded) {
+      mTransaction->SetTRRInfo(mDnsMetadata.mEffectiveTRRMode,
+                               mDnsMetadata.mTrrSkipReason);
+      mTRRInfoForwarded = true;
+    }
+  }
+
   nsTArray<RefPtr<nsISVCBRecord>> svcbRecords;
   
   (void)httpsRecord->GetRecords(svcbRecords);
@@ -1370,8 +1279,7 @@ void HappyEyeballsConnectionAttempt::SetupTimer(uint64_t aTimeout) {
     return;
   }
 
-  LOG3(("HappyEyeballsConnectionAttempt::SetupTimer to %" PRIu64
-        "ms [this=%p].",
+  LOG(("HappyEyeballsConnectionAttempt::SetupTimer to %" PRIu64 "ms [this=%p].",
         aTimeout, this));
 
   if (!mTimer) {

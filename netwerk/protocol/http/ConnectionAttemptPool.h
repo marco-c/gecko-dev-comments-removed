@@ -28,7 +28,7 @@ class ConnectionAttemptPool final {
       PendingTransactionInfo* pendingTransInfo);
   size_t Length() const { return mAttempts.Length(); }
   void RemoveConnectionAttempt(ConnectionAttempt* attempt, bool abandon);
-  void CloseAllConnectionAttempts(bool aReenqueueTransaction = false);
+  void CloseAllConnectionAttempts();
   
   
   uint32_t UnconnectedConnectionAttempts() const;
