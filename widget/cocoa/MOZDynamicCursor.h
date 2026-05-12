@@ -31,6 +31,12 @@
           widgetScaleFactor:(CGFloat)aWidgetScaleFactor
                 forceUpdate:(bool)aForceUpdate;
 
+
+
+
+
+- (void)reassertCurrentCursor;
+
 + (MOZDynamicCursor*)sharedInstance;
 @end
 

@@ -314,6 +314,19 @@ static constexpr nsCursor kCustomCursor = eCursorCount;
   [mCurrentCursor set];
 }
 
+- (void)reassertCurrentCursor {
+  
+  
+  
+  
+  if (mCurrentCursorType == eCursor_none) {
+    [NSCursor unhide];
+    [NSCursor hide];
+  } else {
+    [mCurrentCursor set];
+  }
+}
+
 - (void)dealloc {
   [mCurrentCursor release];
   [mCursors release];

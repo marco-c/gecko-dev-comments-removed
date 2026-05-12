@@ -5997,6 +5997,13 @@ void nsCocoaWindow::CocoaWindowDidEnterFullscreen(bool aFullscreen) {
   
   
   
+  
+  
+  [MOZDynamicCursor.sharedInstance reassertCurrentCursor];
+
+  
+  
+  
   bool receivedExpectedFullscreen = false;
   if (mUpdateFullscreenOnResize.isSome()) {
     bool expectingFullscreen =
