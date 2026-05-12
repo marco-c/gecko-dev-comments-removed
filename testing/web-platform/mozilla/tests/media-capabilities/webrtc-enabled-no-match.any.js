@@ -3,6 +3,7 @@
 
 
 
+
 promise_test(t => {
   return promise_rejects_js(t, TypeError, navigator.mediaCapabilities.decodingInfo({
     type: 'webrtc',
@@ -14,7 +15,7 @@ promise_test(t => {
       framerate: 30,
     },
   }));
-}, "decodingInfo rejects with TypeError for webrtc type when disabled");
+}, "decodingInfo rejects with TypeError for webrtc type when host is not in webrtc.enabled.allowlist");
 
 promise_test(t => {
   return promise_rejects_js(t, TypeError, navigator.mediaCapabilities.encodingInfo({
@@ -27,4 +28,4 @@ promise_test(t => {
       framerate: 30,
     },
   }));
-}, "encodingInfo rejects with TypeError for webrtc type when disabled");
+}, "encodingInfo rejects with TypeError for webrtc type when host is not in webrtc.enabled.allowlist");

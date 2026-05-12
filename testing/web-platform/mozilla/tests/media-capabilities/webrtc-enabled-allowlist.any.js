@@ -1,0 +1,31 @@
+
+
+
+
+
+
+promise_test(() => {
+  return navigator.mediaCapabilities.decodingInfo({
+    type: 'webrtc',
+    video: {
+      contentType: 'video/VP9',
+      width: 640,
+      height: 480,
+      bitrate: 1000000,
+      framerate: 30,
+    },
+  });
+}, "decodingInfo resolves for webrtc type when host is in webrtc.enabled.allowlist");
+
+promise_test(() => {
+  return navigator.mediaCapabilities.encodingInfo({
+    type: 'webrtc',
+    video: {
+      contentType: 'video/VP9',
+      width: 640,
+      height: 480,
+      bitrate: 1000000,
+      framerate: 30,
+    },
+  });
+}, "encodingInfo resolves for webrtc type when host is in webrtc.enabled.allowlist");

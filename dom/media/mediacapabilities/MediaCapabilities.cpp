@@ -65,10 +65,13 @@ static mediacaps::BehaviorConfig GetBehaviorConfig(nsIGlobalObject* aParent) {
   
   auto legacyAllowlist =
       StaticPrefs::media_mediacapabilities_legacy_allowlist();
+  auto webrtcAllowlist =
+      StaticPrefs::media_mediacapabilities_webrtc_enabled_allowlist();
   return {
       .mLegacy = StaticPrefs::media_mediacapabilities_legacy_enabled() ||
                  media::HostnameInValue(*legacyAllowlist, host),
-      .mWebRTCEnabled = StaticPrefs::media_mediacapabilities_webrtc_enabled(),
+      .mWebRTCEnabled = StaticPrefs::media_mediacapabilities_webrtc_enabled() ||
+                        media::HostnameInValue(*webrtcAllowlist, host),
   };
 }
 }  
