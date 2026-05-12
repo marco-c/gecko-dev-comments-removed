@@ -253,6 +253,8 @@ static const char* WorkerKindName(WorkerKind aWorkerKind) {
 
 static IsolationBehavior IsolationBehaviorForURI(nsIURI* aURI, bool aIsSubframe,
                                                  bool aForChannelCreationURI) {
+  MOZ_ASSERT(NS_IsMainThread());
+
   nsAutoCString scheme;
   MOZ_ALWAYS_SUCCEEDS(aURI->GetScheme(scheme));
 
@@ -1232,12 +1234,6 @@ bool ValidatePrincipalCouldPotentiallyBeLoadedBy(
 
   
   
-  if (aPrincipal->SchemeIs("resource")) {
-    return true;
-  }
-
-  
-  
   if (aPrincipal->GetIsExpandedPrincipal()) {
     if (!aOptions.contains(ValidatePrincipalOptions::AllowExpanded)) {
       return false;
@@ -1258,8 +1254,25 @@ bool ValidatePrincipalCouldPotentiallyBeLoadedBy(
   }
 
   
+  MOZ_ASSERT(aPrincipal->GetIsContentPrincipal());
+  nsAutoCString originNoSuffix;
+  MOZ_ALWAYS_SUCCEEDS(aPrincipal->GetOriginNoSuffix(originNoSuffix));
+
   
-  if (aPrincipal->SchemeIs("file")) {
+  
+  
+  nsAutoCString originScheme;
+  MOZ_ALWAYS_SUCCEEDS(net_ExtractURLScheme(originNoSuffix, originScheme));
+
+  
+  
+  if (originScheme == "resource"_ns) {
+    return true;
+  }
+
+  
+  
+  if (originScheme == "file"_ns) {
     
     if (!StaticPrefs::browser_tabs_remote_separateFileUriProcess()) {
       return true;
@@ -1267,25 +1280,48 @@ bool ValidatePrincipalCouldPotentiallyBeLoadedBy(
     return aRemoteType == FILE_REMOTE_TYPE;
   }
 
-  if (aPrincipal->SchemeIs("about")) {
-    uint32_t flags = 0;
-    nsresult rv = aPrincipal->GetAboutModuleFlags(&flags);
-    
-    
-    
-    if (NS_FAILED(rv)) {
+  if (originScheme == "about"_ns) {
+    nsCOMPtr<nsIURI> aboutURI;
+    if (NS_FAILED(NS_NewURI(getter_AddRefs(aboutURI), originNoSuffix))) {
+      MOZ_DIAGNOSTIC_ASSERT(false, "The originNoSuffix isn't a valid URI?");
       return false;
+    }
+    MOZ_ASSERT(aboutURI->SchemeIs("about"));
+
+    
+    
+    if (!NS_IsMainThread()) {
+      return true;
     }
 
     
-    if (!(flags & (nsIAboutModule::URI_CAN_LOAD_IN_CHILD |
-                   nsIAboutModule::URI_MUST_LOAD_IN_CHILD))) {
-      return false;
+    
+    switch (IsolationBehaviorForURI(aboutURI,  false,
+                                     true)) {
+      case IsolationBehavior::Parent:
+        return false;
+      case IsolationBehavior::Anywhere:
+        return true;
+      case IsolationBehavior::AboutReader:
+        
+        
+        
+        return true;
+      case IsolationBehavior::Extension:
+        return aRemoteType == EXTENSION_REMOTE_TYPE;
+      case IsolationBehavior::PrivilegedAbout:
+        return aRemoteType == PRIVILEGEDABOUT_REMOTE_TYPE;
+      case IsolationBehavior::ForceWebRemoteType:
+        return aRemoteType == WEB_REMOTE_TYPE;
+      case IsolationBehavior::WebContent:
+      case IsolationBehavior::Error:
+        
+        
+        return true;
+      default:
+        MOZ_CRASH("Unexpected IsolationBehaviorForURI for about: URI");
+        return false;
     }
-    if (flags & nsIAboutModule::URI_MUST_LOAD_IN_EXTENSION_PROCESS) {
-      return aRemoteType == EXTENSION_REMOTE_TYPE;
-    }
-    return true;
   }
 
   
@@ -1293,7 +1329,7 @@ bool ValidatePrincipalCouldPotentiallyBeLoadedBy(
   
   
   
-  if (aPrincipal->SchemeIs("moz-extension")) {
+  if (originScheme == "moz-extension"_ns) {
     return true;
   }
 
@@ -1320,10 +1356,16 @@ bool ValidatePrincipalCouldPotentiallyBeLoadedBy(
   nsDependentCSubstring typeOriginNoSuffix(typeOrigin, 0, suffixIdx);
 
   
+  if (typeOriginNoSuffix == originNoSuffix) {
+    return true;
+  }
+
+  
   
   
   nsAutoCString siteOriginNoSuffix;
   if (NS_FAILED(aPrincipal->GetSiteOriginNoSuffix(siteOriginNoSuffix))) {
+    MOZ_ASSERT_UNREACHABLE("Failed when not late in shutdown?");
     return false;
   }
   return siteOriginNoSuffix == typeOriginNoSuffix;
