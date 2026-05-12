@@ -131,9 +131,9 @@ function initXulFrameLoaderCreatedCounter(aXulFrameLoaderCreatedListenerInfo) {
 
 
 
-function getExpectedRemoteTypes(gFissionBrowser, numPagesOpen) {
+function getExpectedRemoteTypes(isolateEverything, numPagesOpen) {
   var remoteTypes;
-  if (gFissionBrowser) {
+  if (isolateEverything) {
     remoteTypes = [
       "webIsolated=https://example.com",
       "webIsolated=https://example.com^userContextId=1",
@@ -147,7 +147,18 @@ function getExpectedRemoteTypes(gFissionBrowser, numPagesOpen) {
       "webIsolated=https://example.org^privateBrowsingId=1",
     ];
   } else {
-    remoteTypes = Array(numPagesOpen * 2).fill("web"); 
+    remoteTypes = [
+      "web",
+      "web=^userContextId=1",
+      "web=^userContextId=2",
+      "web=^userContextId=3",
+      "web=^privateBrowsingId=1",
+      "web",
+      "web=^userContextId=1",
+      "web=^userContextId=2",
+      "web=^userContextId=3",
+      "web=^privateBrowsingId=1",
+    ];
   }
   remoteTypes = remoteTypes.concat(Array(numPagesOpen * 2).fill(null)); 
   return remoteTypes;

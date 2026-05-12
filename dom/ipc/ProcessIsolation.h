@@ -30,6 +30,13 @@ constexpr nsLiteralCString kHighValueIsLoggedInPermission =
 
 
 
+
+
+nsCString SharedWebRemoteType(const OriginAttributes& aAttrs,
+                              bool aDisableJit = false);
+
+
+
 struct NavigationIsolationOptions {
   nsCString mRemoteType;
   bool mReplaceBrowsingContext = false;

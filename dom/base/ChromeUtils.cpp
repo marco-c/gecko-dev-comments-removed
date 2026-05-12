@@ -2989,7 +2989,7 @@ void ChromeUtils::PredictRemoteTypeForURI(
 
   nsCString preferredRemoteType = aOptions.mPreferredRemoteType.WasPassed()
                                       ? aOptions.mPreferredRemoteType.Value()
-                                      : DEFAULT_REMOTE_TYPE;
+                                      : SharedWebRemoteType(attrs);
 
   
   
