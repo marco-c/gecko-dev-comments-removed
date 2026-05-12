@@ -405,16 +405,27 @@ void TCPConnectionEstablisher::Close(nsresult aReason) {
 
   mHandle = nullptr;
   if (mResultConn) {
-    LOG(("TCPConnectionEstablisher::Close closing connection %p",
-         mResultConn.get()));
     
     
     
     
-    
-    
-    
-    mResultConn->CloseTransaction(mResultConn->Transaction(), aReason);
+    bool adopted = mTransaction && mTransaction->IsAdopted();
+    if (adopted) {
+      LOG(("TCPConnectionEstablisher::Close %p adopted conn %p DontReuse", this,
+           mResultConn.get()));
+      mResultConn->DontReuse();
+    } else {
+      LOG(("TCPConnectionEstablisher::Close closing connection %p",
+           mResultConn.get()));
+      
+      
+      
+      
+      
+      
+      
+      mResultConn->CloseTransaction(mResultConn->Transaction(), aReason);
+    }
     mResultConn = nullptr;
   }
 
@@ -682,11 +693,22 @@ void UDPConnectionEstablisher::Close(nsresult aReason) {
 
   mHandle = nullptr;
   if (mResultConn) {
-    LOG(("UDPConnectionEstablisher::Close closing connection %p",
-         mResultConn.get()));
     
-    mResultConn->SetDontExclude();
-    mResultConn->Close(aReason);
+    
+    
+    
+    bool adopted = mTransaction && mTransaction->IsAdopted();
+    if (adopted) {
+      LOG(("UDPConnectionEstablisher::Close %p adopted conn %p DontReuse", this,
+           mResultConn.get()));
+      mResultConn->DontReuse();
+    } else {
+      LOG(("UDPConnectionEstablisher::Close closing connection %p",
+           mResultConn.get()));
+      
+      mResultConn->SetDontExclude();
+      mResultConn->Close(aReason);
+    }
     mResultConn = nullptr;
   }
 

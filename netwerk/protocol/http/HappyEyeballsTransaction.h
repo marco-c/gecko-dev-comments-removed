@@ -7,10 +7,33 @@
 
 #include <functional>
 
+#include "mozilla/Maybe.h"
 #include "SpeculativeTransaction.h"
+#include "ZeroRttHandle.h"
 
 namespace mozilla {
 namespace net {
+
+class HappyEyeballsConnectionAttempt;
+class nsHttpTransaction;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -32,24 +55,121 @@ class HappyEyeballsTransaction final : public SpeculativeTransaction {
 
   HappyEyeballsTransaction(nsHttpConnectionInfo* aConnInfo,
                            nsIInterfaceRequestor* aCallbacks, uint32_t aCaps,
-                           StatusForwarder&& aStatusForwarder);
+                           StatusForwarder&& aStatusForwarder,
+                           ZeroRttHandle* aZeroRttHandle);
 
-  
-  
-  
-  
-  
   void SetConnectedCallback(std::function<void(nsresult)>&& aCallback) {
     mCloseCallback = std::move(aCallback);
   }
 
+  
+  
+  
+  
+  
+  
+  void Adopt(nsHttpTransaction* aRealTxn);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  enum class State : uint8_t {
+    Racing,
+    Adopted,
+    Closed,
+  };
+  State GetState() const { return mState; }
+
+  
+  
+  bool IsAdopted() const { return !!mRealTxn; }
+
+  
+  
+  
+  
+  
+  
+  
   void OnTransportStatus(nsITransport* aTransport, nsresult aStatus,
                          int64_t aProgress) override;
+  nsresult ReadSegments(nsAHttpSegmentReader* aReader, uint32_t aCount,
+                        uint32_t* aCountRead) override;
+  
+  
+  nsresult WriteSegments(nsAHttpSegmentWriter* aWriter, uint32_t aCount,
+                         uint32_t* aCountWritten) override;
+  void Close(nsresult aReason) override;
+  nsHttpTransaction* QueryHttpTransaction() override;
+
+  
+  
+  
+  
+  nsHttpRequestHead* RequestHead() override;
+
+  
+  
+  nsresult FetchHTTPSRR() override;
+  nsresult OnHTTPSRRAvailable(nsIDNSHTTPSSVCRecord* aHTTPSSVCRecord,
+                              nsISVCBRecord* aHighestPriorityRecord,
+                              const nsACString& aCname) override;
+
+  
+  
+  bool Do0RTT() override { return mZeroRttHandle->Do0RTT(this); }
+  nsresult Finish0RTT(bool aRestart, bool aAlpnChanged) override {
+    return mZeroRttHandle->Finish0RTT(this, aRestart, aAlpnChanged);
+  }
+
+  
+  
+  
+  Maybe<uint64_t>& Request0RttStreamOffset() {
+    return m0RttRequestStreamOffset;
+  }
+  const Maybe<uint64_t>& Request0RttStreamOffset() const {
+    return m0RttRequestStreamOffset;
+  }
+  bool Entered0RTT() const { return m0RttRequestStreamOffset.isSome(); }
 
  private:
-  ~HappyEyeballsTransaction() override = default;
+  ~HappyEyeballsTransaction() override;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  void Transition(State aNext, nsHttpTransaction* aRealTxn = nullptr,
+                  nsresult aReason = NS_OK);
 
   StatusForwarder mStatusForwarder;
+  RefPtr<ZeroRttHandle> mZeroRttHandle;
+
+  
+  
+  
+  
+  RefPtr<nsHttpTransaction> mRealTxn;
+
+  
+  
+  Maybe<uint64_t> m0RttRequestStreamOffset;
+
+  State mState = State::Racing;
 };
 
 }  

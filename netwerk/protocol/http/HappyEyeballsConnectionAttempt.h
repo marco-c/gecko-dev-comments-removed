@@ -48,11 +48,16 @@ class DnsRequestInfo final {
   nsCOMPtr<nsICancelable> mRequest;
 };
 
+#define NS_HAPPYEYEBALLSCONNECTIONATTEMPT_IID \
+  {0x3d2e8a41, 0x9c5b, 0x4f6e, {0xa1, 0x02, 0x2b, 0x7c, 0x8e, 0x4d, 0x6f, 0x90}}
+
 class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
                                              public nsIDNSListener,
                                              public nsITimerCallback,
                                              public nsINamed {
  public:
+  NS_INLINE_DECL_STATIC_IID(NS_HAPPYEYEBALLSCONNECTIONATTEMPT_IID)
+
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_NSIDNSLISTENER
   NS_DECL_NSITIMERCALLBACK
@@ -73,6 +78,19 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
   
   void Unclaim() override {}
   uint32_t UnconnectedUDPConnsLength() const override;
+
+  
+  nsHttpTransaction* RealHttpTransaction() const {
+    return mTransaction ? mTransaction->QueryHttpTransaction() : nullptr;
+  }
+
+  
+  
+  
+  
+  
+  
+  void AdoptWinner(HappyEyeballsTransaction* aWinner);
 
  private:
   ~HappyEyeballsConnectionAttempt();
@@ -151,6 +169,10 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
   nsresult mLastConnectionError = NS_OK;
   nsresult mLastDnsError = NS_OK;
   nsTHashSet<uint32_t> mSentTransportStatuses;
+
+  
+  
+  RefPtr<ZeroRttHandle> mZeroRttHandle;
 
   DnsMetadata mDnsMetadata;
   bool mTRRInfoForwarded = false;

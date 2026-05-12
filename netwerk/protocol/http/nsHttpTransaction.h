@@ -171,12 +171,50 @@ class nsHttpTransaction final : public nsAHttpTransaction,
 
   bool Connected() const { return mConnected; }
 
-  void SetHappyEyeballsProxy(nsAHttpTransaction* aProxy) {
-    mHappyEyeballsProxy = aProxy;
+  
+  
+  
+  
+  nsIInputStream* RequestStream() const { return mRequestStream; }
+
+  
+  
+  
+  
+  
+  
+  
+  void MarkEarlyDataSent() {
+    if (mEarlyDataDisposition == EARLY_NONE) {
+      mEarlyDataDisposition = EARLY_SENT;
+    }
   }
-  nsAHttpTransaction* HappyEyeballsProxy() const {
-    return mHappyEyeballsProxy.get();
-  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  void FinishAdopted0RTT(bool aRestart);
+
   uint64_t BrowserId() override { return mBrowserId; }
 
   void SetHttpTrailers(nsCString& aTrailers);
@@ -646,7 +684,6 @@ class nsHttpTransaction final : public nsAHttpTransaction,
       MOZ_GUARDED_BY(mLock);
 
   nsAutoCString mUrl;
-  RefPtr<nsAHttpTransaction> mHappyEyeballsProxy;
 };
 
 }  

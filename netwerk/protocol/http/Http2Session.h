@@ -89,6 +89,11 @@ class Http2Session final : public ASpdySession,
 
   [[nodiscard]] bool AddStream(nsAHttpTransaction*, int32_t,
                                nsIInterfaceRequestor*) override;
+
+  
+  
+  
+  void SwapTransaction(nsAHttpTransaction* aOld, nsAHttpTransaction* aNew);
   bool CanReuse() override { return !mShouldGoAway && !mClosed; }
   bool RoomForMoreStreams() override;
   enum SpdyVersion SpdyVersion() override;

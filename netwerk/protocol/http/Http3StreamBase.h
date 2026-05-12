@@ -46,6 +46,11 @@ class Http3StreamBase : public SupportsWeakPtr, public ARefBase {
   virtual void Close(nsresult aResult) = 0;
 
   nsAHttpTransaction* Transaction() { return mTransaction; }
+  
+  
+  
+  
+  void SetTransaction(nsAHttpTransaction* aTrans) { mTransaction = aTrans; }
 
   
   virtual bool Do0RTT() { return false; }

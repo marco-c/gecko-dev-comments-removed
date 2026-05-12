@@ -3217,8 +3217,8 @@ bool nsHttpTransaction::Do0RTT(bool aCanSendEarlyData) {
 
 nsresult nsHttpTransaction::Finish0RTT(bool aRestart,
                                        bool aAlpnChanged ) {
-  LOG(("nsHttpTransaction::Finish0RTT %p %d %d\n", this, aRestart,
-       aAlpnChanged));
+  LOG(("nsHttpTransaction::Finish0RTT %p aRestart=%d aAlpnChanged=%d\n", this,
+       aRestart, aAlpnChanged));
   MOZ_ASSERT(m0RTTInProgress);
   m0RTTInProgress = false;
 
@@ -3246,6 +3246,30 @@ nsresult nsHttpTransaction::Finish0RTT(bool aRestart,
     MaybeRefreshSecurityInfo();
   }
   return NS_OK;
+}
+
+void nsHttpTransaction::FinishAdopted0RTT(bool aRestart) {
+  LOG(("nsHttpTransaction::FinishAdopted0RTT %p restart=%d\n", this, aRestart));
+  mEarlyDataWasAvailable = true;
+  if (!aRestart) {
+    
+    
+    
+    
+    
+    if (mEarlyDataDisposition == EARLY_SENT) {
+      mEarlyDataDisposition = EARLY_ACCEPTED;
+    }
+  } else {
+    mDoNotTryEarlyData = true;
+    
+    
+    
+    nsCOMPtr<nsISeekableStream> seekable = do_QueryInterface(mRequestStream);
+    if (seekable) {
+      (void)seekable->Seek(nsISeekableStream::NS_SEEK_SET, 0);
+    }
+  }
 }
 
 void nsHttpTransaction::Refused0RTT() {

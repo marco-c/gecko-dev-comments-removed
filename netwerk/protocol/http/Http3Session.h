@@ -202,6 +202,15 @@ class Http3Session final : public Http3SessionBase,
   bool AddStream(nsAHttpTransaction* aHttpTransaction, int32_t aPriority,
                  nsIInterfaceRequestor* aCallbacks);
 
+  
+  
+  
+  
+  
+  
+  
+  void SwapTransaction(nsAHttpTransaction* aOld, nsAHttpTransaction* aNew);
+
   bool CanReuse();
 
   

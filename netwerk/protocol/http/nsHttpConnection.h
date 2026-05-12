@@ -201,6 +201,13 @@ class nsHttpConnection final : public HttpConnectionBase,
                               HttpConnectionBase** aHttpConnection,
                               bool aIsExtendedCONNECT = false) override;
 
+  
+  
+  
+  
+  
+  void SwapTransaction(nsAHttpTransaction* aOld, nsAHttpTransaction* aNew);
+
  private:
   void SetTunnelSetupDone() override;
   nsresult SetupProxyConnectStream() override;

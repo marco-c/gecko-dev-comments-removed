@@ -27,6 +27,12 @@ class Http2Stream : public Http2StreamBase {
   nsIRequestContext* RequestContext() override {
     return mTransaction ? mTransaction->RequestContext() : nullptr;
   }
+  
+  
+  
+  
+  
+  void SetTransaction(nsAHttpTransaction* aTrans) { mTransaction = aTrans; }
 
  protected:
   ~Http2Stream();
@@ -36,6 +42,8 @@ class Http2Stream : public Http2StreamBase {
                            uint8_t& firstFrameFlags) override;
 
  private:
+  
+  
   
   
   
