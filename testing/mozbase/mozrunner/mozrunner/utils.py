@@ -102,10 +102,11 @@ def test_environment(
     env.setdefault("MOZ_DISABLE_NONLOCAL_CONNECTIONS", "1")
 
     
-    env.setdefault("MOZ_LOG", "signaling:3,mtransport:4,DataChannel:3,jsep:4")
-    env.setdefault("R_LOG_LEVEL", "6")
-    env.setdefault("R_LOG_DESTINATION", "stderr")
-    env.setdefault("R_LOG_VERBOSE", "1")
+    if "MOZ_UPLOAD_DIR" in os.environ:
+        env.setdefault("MOZ_LOG", "signaling:3,mtransport:4,DataChannel:3,jsep:4")
+        env.setdefault("R_LOG_LEVEL", "6")
+        env.setdefault("R_LOG_DESTINATION", "stderr")
+        env.setdefault("R_LOG_VERBOSE", "1")
 
     
     env.setdefault("NSS_MAX_MP_PBE_ITERATION_COUNT", "10")
