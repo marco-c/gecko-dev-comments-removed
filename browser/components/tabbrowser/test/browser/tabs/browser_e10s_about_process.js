@@ -126,37 +126,12 @@ add_task(async function test_remote() {
   });
 });
 
-add_task(async function test_privileged_remote_true() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.tabs.remote.separatePrivilegedContentProcess", true]],
-  });
-
-  
-  
-  
+add_task(async function test_privileged_remote() {
   test_url_for_process_types({
     url: "about:" + CANPRIVILEGEDREMOTE.path,
     chromeResult: false,
     webContentResult: false,
     privilegedAboutContentResult: true,
-    privilegedMozillaContentResult: false,
-    extensionProcessResult: false,
-  });
-});
-
-add_task(async function test_privileged_remote_false() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.tabs.remote.separatePrivilegedContentProcess", false]],
-  });
-
-  
-  
-  
-  test_url_for_process_types({
-    url: "about:" + CANPRIVILEGEDREMOTE.path,
-    chromeResult: false,
-    webContentResult: true,
-    privilegedAboutContentResult: false,
     privilegedMozillaContentResult: false,
     extensionProcessResult: false,
   });
