@@ -1042,12 +1042,13 @@ nsresult nsFocusManager::ContentRemoved(Document* aDocument,
       
       return NS_OK;
     }
-    if (!nsContentUtils::ContentIsFlattenedTreeDescendantOf(
-            previousFocusedElementPtr, focusWithinElement)) {
-      return NS_OK;
-    }
     
     
+  }
+
+  if (!nsContentUtils::ContentIsHostIncludingDescendantOf(
+          previousFocusedElementPtr, focusWithinElement)) {
+    return NS_OK;
   }
 
   RefPtr previousFocusedElement = previousFocusedElementPtr;
