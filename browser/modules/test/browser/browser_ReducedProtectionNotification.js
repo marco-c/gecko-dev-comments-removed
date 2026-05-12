@@ -147,7 +147,7 @@ add_task(async function test_button_disables_tp_and_reloads() {
 
   info("Clicking the reload button on the infobar");
   let reloadPromise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
-  let button = notification.buttonContainer.querySelector("button");
+  let button = notification.buttonContainer.querySelector("button:last-child");
   button.click();
   await reloadPromise;
 
@@ -245,7 +245,7 @@ add_task(async function test_button_disables_all_tracker_prefs() {
   ok(notification, "Infobar appeared");
 
   let reloadPromise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
-  notification.buttonContainer.querySelector("button").click();
+  notification.buttonContainer.querySelector("button:last-child").click();
   await reloadPromise;
 
   let scopedPrefs = tab.linkedBrowser.browsingContext.scopedPrefs;
@@ -390,4 +390,147 @@ add_task(async function test_no_infobar_on_meta_refresh() {
   ok(!notification, "No infobar after a meta refresh");
 
   BrowserTestUtils.removeTab(tab);
+});
+
+
+add_task(async function test_telemetry_banner_shown() {
+  Services.fog.testResetFOG();
+
+  let blockingPromise = waitForContentBlockingEvent(pbWindow.gBrowser);
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    pbWindow.gBrowser,
+    TRACKING_PAGE
+  );
+  await blockingPromise;
+
+  let loadedPromise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
+  pbWindow.gBrowser.reloadWithFlags(Ci.nsIWebNavigation.LOAD_FLAGS_NONE);
+  await loadedPromise;
+
+  await TestUtils.waitForCondition(
+    () => getNotification(tab.linkedBrowser),
+    "Waiting for notification to appear"
+  );
+
+  Assert.equal(
+    Glean.privacyReducedPageProtection.bannerShown.testGetValue(),
+    1,
+    "banner_shown counter incremented once when the infobar appeared"
+  );
+
+  BrowserTestUtils.removeTab(tab);
+});
+
+
+add_task(async function test_telemetry_reload_clicked() {
+  Services.fog.testResetFOG();
+
+  let blockingPromise = waitForContentBlockingEvent(pbWindow.gBrowser);
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    pbWindow.gBrowser,
+    TRACKING_PAGE
+  );
+  await blockingPromise;
+
+  let loadedPromise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
+  pbWindow.gBrowser.reloadWithFlags(Ci.nsIWebNavigation.LOAD_FLAGS_NONE);
+  await loadedPromise;
+
+  let notification = await TestUtils.waitForCondition(
+    () => getNotification(tab.linkedBrowser),
+    "Waiting for notification to appear"
+  );
+
+  let reloadPromise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
+  notification.buttonContainer.querySelector("button:last-child").click();
+  await reloadPromise;
+
+  Assert.equal(
+    Glean.privacyReducedPageProtection.reloadClicked.testGetValue(),
+    1,
+    "reload_clicked counter incremented once when the reload button was clicked"
+  );
+
+  BrowserTestUtils.removeTab(tab);
+});
+
+
+add_task(async function test_telemetry_disable_clicked() {
+  Services.fog.testResetFOG();
+
+  let blockingPromise = waitForContentBlockingEvent(pbWindow.gBrowser);
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    pbWindow.gBrowser,
+    TRACKING_PAGE
+  );
+  await blockingPromise;
+
+  let loadedPromise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
+  pbWindow.gBrowser.reloadWithFlags(Ci.nsIWebNavigation.LOAD_FLAGS_NONE);
+  await loadedPromise;
+
+  let notification = await TestUtils.waitForCondition(
+    () => getNotification(tab.linkedBrowser),
+    "Waiting for notification to appear"
+  );
+
+  notification.buttonContainer.querySelector("button:first-child").click();
+
+  Assert.equal(
+    Glean.privacyReducedPageProtection.disableClicked.testGetValue(),
+    1,
+    "disable_clicked counter incremented once when 'Don't show again' was clicked"
+  );
+
+  BrowserTestUtils.removeTab(tab);
+  
+  Services.prefs.setBoolPref(
+    "privacy.reducePageProtection.infobar.enabled.pbmode",
+    true
+  );
+});
+
+
+add_task(async function test_dont_show_again_disables_pref() {
+  let blockingPromise = waitForContentBlockingEvent(pbWindow.gBrowser);
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    pbWindow.gBrowser,
+    TRACKING_PAGE
+  );
+  await blockingPromise;
+
+  let loadedPromise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
+  pbWindow.gBrowser.reloadWithFlags(Ci.nsIWebNavigation.LOAD_FLAGS_NONE);
+  await loadedPromise;
+
+  let notification = await TestUtils.waitForCondition(
+    () => getNotification(tab.linkedBrowser),
+    "Waiting for reduced protection notification"
+  );
+  ok(notification, "Infobar appeared");
+
+  let dontShowAgainButton =
+    notification.buttonContainer.querySelector("button:first-child");
+  ok(dontShowAgainButton, "Don't show again button is present");
+  is(
+    dontShowAgainButton.dataset.l10nId,
+    "reduced-protection-infobar-never-show-button",
+    "First button is 'Don't show again'"
+  );
+
+  dontShowAgainButton.click();
+
+  ok(
+    !Services.prefs.getBoolPref(
+      "privacy.reducePageProtection.infobar.enabled.pbmode"
+    ),
+    "Feature pref is disabled after clicking Don't show again"
+  );
+
+  BrowserTestUtils.removeTab(tab);
+  
+  Services.prefs.setBoolPref(
+    "privacy.reducePageProtection.infobar.enabled.pbmode",
+    true
+  );
 });

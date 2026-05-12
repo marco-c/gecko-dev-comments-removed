@@ -140,11 +140,6 @@ export const ReducedProtectionNotification = {
       return;
     }
 
-    const doc = tabbrowser.ownerDocument;
-    const [buttonLabel] = await doc.l10n.formatValues([
-      { id: "reduced-protection-infobar-reload-button" },
-    ]);
-
     await notificationBox.appendNotification(
       NOTIFICATION_VALUE,
       {
@@ -153,8 +148,16 @@ export const ReducedProtectionNotification = {
       },
       [
         {
-          label: buttonLabel,
+          "l10n-id": "reduced-protection-infobar-never-show-button",
           callback: () => {
+            Glean.privacyReducedPageProtection.disableClicked.add(1);
+            Services.prefs.setBoolPref(PREF, false);
+          },
+        },
+        {
+          "l10n-id": "reduced-protection-infobar-reload-button",
+          callback: () => {
+            Glean.privacyReducedPageProtection.reloadClicked.add(1);
             const scopedPrefs = aBrowser.browsingContext.scopedPrefs;
             if (scopedPrefs) {
               const bc = aBrowser.browsingContext;
@@ -177,6 +180,8 @@ export const ReducedProtectionNotification = {
         },
       ]
     );
+
+    Glean.privacyReducedPageProtection.bannerShown.add(1);
 
     if (!this._shownHosts.has(aBrowser)) {
       this._shownHosts.set(aBrowser, new Set());
