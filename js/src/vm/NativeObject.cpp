@@ -1222,6 +1222,17 @@ static MOZ_ALWAYS_INLINE bool CallAddPropertyHook(JSContext* cx,
                                                   HandleId id,
                                                   HandleValue value) {
   
+  if (obj->is<ArrayObject>()) {
+    ArrayObject* arr = &obj->as<ArrayObject>();
+    uint32_t length = arr->length();
+    uint32_t index;
+    if (IdIsIndex(id, &index) && index >= length) {
+      arr->setLength(cx, index + 1);
+    }
+    return true;
+  }
+
+  
   if (!PreserveAnyUnpreservedWrapper(cx, obj)) {
     return false;
   }
