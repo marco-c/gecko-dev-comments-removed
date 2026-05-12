@@ -16952,10 +16952,6 @@ bool Document::ApplyFullscreen(UniquePtr<FullscreenRequest> aRequest) {
 
   
   
-  PointerLockManager::Unlock("Document::ApplyFullscreen");
-
-  
-  
   
   SetFullscreenElement(*elem);
   
