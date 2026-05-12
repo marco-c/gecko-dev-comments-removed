@@ -19,13 +19,6 @@ use style_traits::values::specified::AllowedNumericType;
 
 
 
-pub const MIN_GRID_LINE: i32 = -10000;
-
-pub const MAX_GRID_LINE: i32 = 10000;
-
-
-
-
 #[derive(
     Clone,
     Debug,
@@ -45,12 +38,6 @@ pub struct GenericGridLine<Integer> {
     
     
     pub ident: CustomIdent,
-    
-    
-    
-    
-    
-    
     
     pub line_num: Integer,
     
@@ -186,10 +173,7 @@ impl Parse for GridLine<specified::Integer> {
                     return Err(location.new_custom_error(StyleParseErrorKind::UnspecifiedError));
                 }
 
-                line_num = Some(match i.get() {
-                    Some(v) => specified::Integer::new(v.min(MAX_GRID_LINE).max(MIN_GRID_LINE)),
-                    None => i,
-                });
+                line_num = Some(i);
             } else if let Ok(name) = input.try_parse(|i| CustomIdent::parse(i, &["auto"])) {
                 if val_before_span || ident.is_some() {
                     return Err(location.new_custom_error(StyleParseErrorKind::UnspecifiedError));
@@ -471,10 +455,7 @@ impl Parse for RepeatCount<specified::Integer> {
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
-        if let Ok(mut i) = input.try_parse(|i| specified::Integer::parse_positive(context, i)) {
-            if matches!(i.get(), Some(v) if v > MAX_GRID_LINE) {
-                i = specified::Integer::new(MAX_GRID_LINE);
-            }
+        if let Ok(i) = input.try_parse(|i| specified::Integer::parse_positive(context, i)) {
             return Ok(RepeatCount::Number(i));
         }
         try_match_ident_ignore_ascii_case! { input,
