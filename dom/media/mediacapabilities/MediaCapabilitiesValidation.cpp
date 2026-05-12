@@ -133,8 +133,6 @@ ValidationResult CheckMIMETypeSupport(
 
 
 
-
-
 static ValidationResult CheckMIMETypeValidity(
     const MediaExtendedMIMEType& aMime, const AVType& aAVType,
     const MediaType& aMediaType) {
@@ -189,7 +187,8 @@ static ValidationResult CheckMIMETypeValidity(
   
   
   const size_t numParams = aMime.GetParameterCount();
-  if (IsSingleCodecType(aMime) && numParams != 0) {
+  if (IsSingleCodecType(aMime) && numParams != 0 &&
+      !IsMediaTypeWebRTC(aMediaType)) {
     ValidationResult err = Err(ValidationError::SingleCodecHasParams);
     LOG(
         ("[Invalid MIME Validity #2, %s] Rejecting '%s' (single codec type "
