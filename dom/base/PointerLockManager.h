@@ -6,6 +6,7 @@
 #define mozilla_PointerLockManager_h
 
 #include "mozilla/AlreadyAddRefed.h"
+#include "mozilla/RefPtr.h"
 #include "nsIWeakReferenceUtils.h"
 #include "nsThreadUtils.h"
 
@@ -18,11 +19,17 @@ class BrowserParent;
 enum class CallerType : uint32_t;
 class Document;
 class Element;
+class Promise;
 }  
 
 class PointerLockManager final {
  public:
-  static void RequestLock(dom::Element* aElement, dom::CallerType aCallerType);
+  
+  
+  
+  
+  static void RequestLock(dom::Element* aElement, dom::CallerType aCallerType,
+                          dom::Promise* aPromise);
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   static void Unlock(const char* aReason, dom::Document* aDoc = nullptr);
@@ -52,13 +59,18 @@ class PointerLockManager final {
  private:
   class PointerLockRequest final : public Runnable {
    public:
-    PointerLockRequest(dom::Element* aElement, bool aUserInputOrChromeCaller);
+    PointerLockRequest(dom::Element* aElement, bool aUserInputOrChromeCaller,
+                       dom::Promise* aPromise);
     MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHOD Run() final;
 
    private:
     nsWeakPtr mElement;
     nsWeakPtr mDocument;
     bool mUserInputOrChromeCaller;
+    
+    
+    
+    RefPtr<dom::Promise> mPromise;
   };
 
   static void ChangePointerLockedElement(dom::Element* aElement,
