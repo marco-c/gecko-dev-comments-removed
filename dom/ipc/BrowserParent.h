@@ -802,8 +802,6 @@ class BrowserParent final : public PBrowserParent,
 
   void UnlockNativePointer();
 
-  void UpdateNativePointerLockCenter(nsIWidget* aWidget);
-
  private:
   
   
