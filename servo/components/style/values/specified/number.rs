@@ -371,7 +371,6 @@ impl Parse for GreaterThanOrEqualToOneNumber {
 
 
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, ToCss, ToShmem, ToTyped)]
-#[typed(todo_derive_fields)]
 pub enum Integer {
     
     NoCalc(CSSInteger),
