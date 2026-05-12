@@ -31,8 +31,7 @@ std::ostream& operator<<(std::ostream& aStream, PseudoStyleType aType) {
 
 
 Maybe<PseudoStyleRequest> PseudoStyleRequest::Parse(
-    const nsAString& aPseudoElement, URLExtraData* aURLExtraData,
-    bool aIgnoreEnabledState) {
+    const nsAString& aPseudoElement, bool aIgnoreEnabledState) {
   PseudoStyleRequest result;
 
   
@@ -41,8 +40,8 @@ Maybe<PseudoStyleRequest> PseudoStyleRequest::Parse(
   }
 
   
-  if (!Servo_ParsePseudoElement(&aPseudoElement, aURLExtraData,
-                                aIgnoreEnabledState, &result)) {
+  if (!Servo_ParsePseudoElement(&aPseudoElement, aIgnoreEnabledState,
+                                &result)) {
     return Nothing();
   }
 

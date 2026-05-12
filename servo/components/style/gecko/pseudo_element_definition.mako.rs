@@ -102,21 +102,6 @@ impl PseudoElement {
     }
 
     
-    
-    
-    
-    pub fn disabled_domains(&self) -> Option<nsstring::nsCString> {
-        match *self {
-        % for pseudo in PSEUDOS:
-        % if pseudo.is_pseudo_element() and pseudo.disabled_domains_pref:
-            ${pseudo_element_variant(pseudo)} => Some(pref!("${pseudo.disabled_domains_pref}")),
-        % endif
-        % endfor
-            _ => None,
-        }
-    }
-
-    
     #[inline]
     pub fn from_pseudo_type(type_: PseudoStyleType, functional_pseudo_parameter: Option<AtomIdent>) -> Option<Self> {
         match type_ {
@@ -146,16 +131,16 @@ impl PseudoElement {
         }
     }
 
-    
+    /// Construct a `PseudoStyleType`.
     #[inline]
     pub fn pseudo_type(&self) -> PseudoStyleType {
-        
+        // SAFETY: PseudoStyleType has the same variants as PseudoElement
         unsafe { std::mem::transmute::<u8, PseudoStyleType>(self.discriminant()) }
     }
 
-    
-    
-    
+    /// Returns the relevant PseudoStyleType, and an atom as an argument, if any.
+    /// FIXME: we probably have to return the arguments of -moz-tree. However, they are multiple
+    /// names, so we skip them for now (until we really need them).
     #[inline]
     pub fn pseudo_type_and_argument(&self) -> (PseudoStyleType, Option<&Atom>) {
         let ty = self.pseudo_type();

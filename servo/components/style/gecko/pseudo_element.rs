@@ -459,22 +459,8 @@ impl PseudoElement {
     }
 
     
-    
-    
-    fn is_pseudo_disabled_for_url(&self, url_data: &crate::stylesheets::UrlExtraData) -> bool {
-        let Some(list) = self.disabled_domains() else {
-            return false;
-        };
-        if list.is_empty() {
-            return false;
-        }
-        unsafe { crate::gecko_bindings::bindings::Gecko_IsURIInList(url_data.ptr(), &*list) }
-    }
-
-    
-    pub fn enabled_in_content(&self, url_data: &crate::stylesheets::UrlExtraData) -> bool {
+    pub fn enabled_in_content(&self) -> bool {
         Self::type_enabled_in_content(self.pseudo_type())
-            && !self.is_pseudo_disabled_for_url(url_data)
     }
 
     
