@@ -56,6 +56,11 @@
 #include "nsTextNode.h"
 #include "nsUnicharUtils.h"
 
+
+#ifdef small
+#  undef small
+#endif
+
 namespace mozilla {
 
 using namespace dom;

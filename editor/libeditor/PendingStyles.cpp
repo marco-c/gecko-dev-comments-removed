@@ -27,6 +27,11 @@
 #include "nsString.h"
 #include "nsTArray.h"
 
+
+#ifdef small
+#  undef small
+#endif
+
 namespace mozilla {
 
 using namespace dom;
