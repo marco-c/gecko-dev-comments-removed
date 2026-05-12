@@ -716,28 +716,18 @@ pub enum AlignmentBaseline {
     
     TextBottom,
     
-    
-    #[css(skip)]
     Alphabetic,
     
-    
-    #[css(skip)]
     Ideographic,
     
     
     
     Middle,
     
-    
-    #[css(skip)]
     Central,
     
-    
-    #[css(skip)]
     Mathematical,
     
-    
-    #[css(skip)]
     Hanging,
     
     TextTop,
