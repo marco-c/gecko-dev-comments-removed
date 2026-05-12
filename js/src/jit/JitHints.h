@@ -8,11 +8,15 @@
 #include "mozilla/BloomFilter.h"
 #include "mozilla/HashTable.h"
 #include "mozilla/LinkedList.h"
+#include "jit/ICState.h"
 #include "jit/JitOptions.h"
 #include "vm/BytecodeLocation.h"
 #include "vm/JSScript.h"
 
 namespace js::jit {
+
+class ICFallbackStub;
+class ICScript;
 
 
 
@@ -32,6 +36,8 @@ class JitHintsMap {
   using ScriptKey = HashNumber;
   ScriptKey getScriptKey(JSScript* script) const;
 
+  static constexpr uint32_t ICModeHintMaxEntries = 128;
+
   
 
 
@@ -50,7 +56,13 @@ class JitHintsMap {
 
 
 
+
+
+
+
   class IonHint : public mozilla::LinkedListElement<IonHint> {
+    friend class JitHintsMap;
+
     ScriptKey key_ = 0;
 
     
@@ -62,8 +74,18 @@ class JitHintsMap {
     
     Vector<uint32_t, 0, SystemAllocPolicy> monomorphicInlineOffsets;
 
+    
+    static_assert(ICModeHintMaxEntries % 32 == 0);
+    uint32_t icModeHints_[ICModeHintMaxEntries / 32];
+    uint32_t numICModeHints_ = 0;
+
+    void resetICHints() {
+      memset(icModeHints_, 0, sizeof(icModeHints_));
+      numICModeHints_ = 0;
+    }
+
    public:
-    explicit IonHint(ScriptKey key) { key_ = key; }
+    explicit IonHint(ScriptKey key) : key_(key) { resetICHints(); }
 
     void setThreshold(uint32_t threshold) { threshold_ = threshold; }
 
@@ -98,6 +120,19 @@ class JitHintsMap {
       return monomorphicInlineOffsets.append(newOffset);
     }
 
+    bool hasICModeHints() const { return numICModeHints_ > 0; }
+    uint32_t numICModeHints() const { return numICModeHints_; }
+
+    bool isMegamorphicHint(uint32_t index) const {
+      MOZ_ASSERT(index < numICModeHints_);
+      return (icModeHints_[index / 32] >> (index % 32)) & 1;
+    }
+
+    void setMegamorphicHint(uint32_t index) {
+      MOZ_ASSERT(index < ICModeHintMaxEntries);
+      icModeHints_[index / 32] |= 1u << (index % 32);
+    }
+
     ScriptKey key() {
       MOZ_ASSERT(key_ != 0, "Should have valid key.");
       return key_;
@@ -109,7 +144,7 @@ class JitHintsMap {
               js::SystemAllocPolicy>;
   using IonHintPriorityQueue = mozilla::LinkedList<IonHint>;
 
-  static constexpr uint32_t InvalidationThresholdIncrement = 500;
+  static constexpr uint32_t InvalidationThresholdIncrement = 200;
   static constexpr uint32_t IonHintMaxEntries = 5000;
   static constexpr uint32_t MonomorphicInlineMaxEntries = 16;
 
@@ -163,6 +198,9 @@ class JitHintsMap {
 
   bool addMonomorphicInlineLocation(JSScript* script, BytecodeLocation loc);
   bool hasMonomorphicInlineHintAtOffset(JSScript* script, uint32_t offset);
+
+  bool shouldTransitionMegamorphic(JSScript* script, ICScript* icScript,
+                                   ICFallbackStub* stub);
 
   void recordInvalidation(JSScript* script);
 };
