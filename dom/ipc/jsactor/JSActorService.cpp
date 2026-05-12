@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include "mozilla/dom/JSActorService.h"
 
 #include "mozilla/ArrayAlgorithm.h"
@@ -344,6 +341,14 @@ bool JSActorProtocol::RemoteTypePrefixMatches(const nsACString& aRemoteType) {
   }
 
   nsDependentCSubstring remoteTypePrefix(RemoteTypePrefix(aRemoteType));
+
+  
+  
+  MOZ_ASSERT(!StringBeginsWith(remoteTypePrefix, "parent"_ns));
+  if (aRemoteType == NOT_REMOTE_TYPE) {
+    remoteTypePrefix.AssignLiteral("parent");
+  }
+
   for (auto& remoteType : mRemoteTypes) {
     
     if (StringBeginsWith(remoteTypePrefix, remoteType)) {
