@@ -688,7 +688,9 @@ void JSScript::resetScriptCounts() {
 void ScriptSourceObject::finalize(JS::GCContext* gcx, JSObject* obj) {
   MOZ_ASSERT(gcx->onMainThread());
   ScriptSourceObject* sso = &obj->as<ScriptSourceObject>();
-  sso->source()->Release();
+  if (sso->hasSource()) {
+    sso->source()->Release();
+  }
 
   
   sso->setPrivate(gcx->runtime(), UndefinedValue());
@@ -737,6 +739,18 @@ ScriptSourceObject* ScriptSourceObject::create(JSContext* cx,
   return obj;
 }
 
+
+ScriptSourceObject* ScriptSourceObject::createForWasmModule(JSContext* cx) {
+  ScriptSourceObject* obj =
+      NewObjectWithGivenProto<ScriptSourceObject>(cx, nullptr);
+  if (!obj) {
+    return nullptr;
+  }
+
+  
+  return obj;
+}
+
 [[nodiscard]] static bool MaybeValidateFilename(
     JSContext* cx, Handle<ScriptSourceObject*> sso,
     const JS::InstantiateOptions& options) {
@@ -773,6 +787,7 @@ bool ScriptSourceObject::initFromOptions(
       source->getReservedSlot(ELEMENT_PROPERTY_SLOT).isMagic(JS_GENERIC_MAGIC));
   MOZ_ASSERT(source->getReservedSlot(INTRODUCTION_SCRIPT_SLOT)
                  .isMagic(JS_GENERIC_MAGIC));
+  MOZ_ASSERT(source->hasSource());
 
   if (!MaybeValidateFilename(cx, source, options)) {
     return false;
@@ -1144,6 +1159,21 @@ void ScriptSource::performDelayedConvertToCompressedSource(
                                   pending.uncompressedLength);
 
   g->pendingCompressed.destroy();
+}
+
+ScriptSource::GenericReader::GenericReader(ScriptSource* source)
+    : PinnedUnitsBase(source) {
+  MOZ_ASSERT(source->hasSourceText());
+
+  addReader();
+}
+
+ScriptSource::GenericReader::~GenericReader() {
+  if (source_->hasSourceType<Utf8Unit>()) {
+    removeReader<Utf8Unit>();
+  } else {
+    removeReader<char16_t>();
+  }
 }
 
 void ScriptSource::PinnedUnitsBase::addReader() {
@@ -3355,6 +3385,7 @@ BaseScript::BaseScript(uint8_t* stubEntry, JSFunction* function,
   MOZ_ASSERT(extent_.toStringStart <= extent_.sourceStart);
   MOZ_ASSERT(extent_.sourceStart <= extent_.sourceEnd);
   MOZ_ASSERT(extent_.sourceEnd <= extent_.toStringEnd);
+  MOZ_ASSERT(sourceObject->hasSource());
 }
 
 
