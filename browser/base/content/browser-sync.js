@@ -2113,6 +2113,7 @@ var gSync = {
       tab: "tabContextMenu",
       page: "pageContextMenu",
       link: "pageContextMenu",
+      toolbar: "sendTabToolbar",
     };
 
     
@@ -2125,7 +2126,11 @@ var gSync = {
     const category = categoryMap[contextType];
     const method = methodMap[eventType];
 
-    if (!category || !method) {
+    if (
+      !category ||
+      !method ||
+      (category == "sendTabToolbar" && method == "sendTabExposed")
+    ) {
       this.log.error(
         `Invalid telemetry parameters: eventType=${eventType}, contextType=${contextType}`
       );
@@ -3020,6 +3025,32 @@ var gSync = {
 
   openLink(url) {
     switchToTabHavingURI(url, true, { replaceQueryString: true });
+  },
+
+  sendTabToolbarButtonShouldBeEnabled(uri) {
+    this.init();
+
+    if (!this.FXA_ENABLED) {
+      
+      
+      return false;
+    }
+
+    if (this.sendTabConfiguredAndLoading) {
+      
+      return false;
+    }
+
+    return !!BrowserUtils.getShareableURL(uri);
+  },
+
+  async populateSendTabToolbarButton(menuPopup) {
+    this.populateSendTabToDevicesMenu(
+      menuPopup,
+      menuPopup.documentGlobal.gBrowser.currentURI,
+      menuPopup.documentGlobal.gBrowser.contentTitle,
+      { contextMenuType: "toolbar" }
+    );
   },
 
   QueryInterface: ChromeUtils.generateQI([
