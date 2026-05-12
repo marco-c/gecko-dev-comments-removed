@@ -18,6 +18,10 @@ function waitForLoginCountToReach(browser, loginCount) {
 }
 
 add_setup(async function () {
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["signon.rustMirror.enabled", false]],
+  });
   await addLogin(TEST_LOGIN1);
 
   
@@ -28,6 +32,7 @@ add_setup(async function () {
   registerCleanupFunction(async () => {
     await Services.logins.removeAllUserFacingLoginsAsync();
     LoginTestUtils.primaryPassword.disable();
+    await SpecialPowers.popPrefEnv();
   });
 });
 
