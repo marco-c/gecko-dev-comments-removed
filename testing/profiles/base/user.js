@@ -22,3 +22,7 @@ user_pref("app.update.disabledForTesting", true);
 
 
 user_pref("browser.startup.couldRestoreSession.count", -1);
+
+
+
+user_pref("extensions.formautofill.addresses.telemetry.mlenabled", false);
