@@ -153,7 +153,6 @@ class ChunkBase {
 
 struct ArenaChunkInfo {
  private:
-  friend class ArenaChunk;
   friend class ChunkPool;
   ArenaChunk* next = nullptr;
   ArenaChunk* prev = nullptr;
@@ -167,9 +166,6 @@ struct ArenaChunkInfo {
 
   
   bool isCurrentChunk = false;
-
-  
-  JS::Zone* zone = nullptr;
 };
 
 
@@ -409,7 +405,8 @@ const size_t ChunkStoreBufferOffset = offsetof(ChunkBase, storeBuffer);
 const size_t ChunkMarkBitmapOffset = offsetof(ArenaChunkBase, markBits);
 
 
-const size_t ArenaHeaderSize = 2 * sizeof(uint32_t) + 1 * sizeof(uintptr_t) +
+const size_t ArenaZoneOffset = 2 * sizeof(uint32_t);
+const size_t ArenaHeaderSize = ArenaZoneOffset + 2 * sizeof(uintptr_t) +
                                sizeof(size_t) + sizeof(uintptr_t);
 
 
@@ -665,9 +662,9 @@ static MOZ_ALWAYS_INLINE ArenaChunkBase* GetCellChunkBase(
 static MOZ_ALWAYS_INLINE JS::Zone* GetTenuredGCThingZone(const void* ptr) {
   
   
-  ChunkBase* chunk = GetGCAddressChunkBase(ptr);
-  MOZ_ASSERT(chunk->kind == ChunkKind::TenuredArenas);
-  return static_cast<ArenaChunkBase*>(chunk)->info.zone;
+  MOZ_ASSERT(ptr);
+  const uintptr_t zone_addr = (uintptr_t(ptr) & ~ArenaMask) | ArenaZoneOffset;
+  return *reinterpret_cast<JS::Zone**>(zone_addr);
 }
 
 static MOZ_ALWAYS_INLINE bool TenuredCellIsMarkedBlack(

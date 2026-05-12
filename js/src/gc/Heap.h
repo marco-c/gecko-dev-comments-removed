@@ -163,6 +163,13 @@ class alignas(ArenaSize) Arena {
 
   AllocKind allocKind;
 
+  
+
+
+
+
+  JS::Zone* zone_;
+
  public:
   
 
@@ -221,9 +228,9 @@ class alignas(ArenaSize) Arena {
   uint8_t data[ArenaSize - ArenaHeaderSize];
 
   
-  void init(GCRuntime* gc, AllocKind kind);
+  void init(GCRuntime* gc, JS::Zone* zone, AllocKind kind);
 
-  inline JS::Zone* zone() const;
+  JS::Zone* zone() const { return zone_; }
 
   
   
@@ -539,8 +546,6 @@ class ArenaChunk : public ArenaChunkBase {
 
   
   void mergePendingFreeArenas(GCRuntime* gc, const AutoLockGC& lock);
-
-  ArenaChunk* next() const { return info.next; }
 
 #ifdef DEBUG
   void verify() const;

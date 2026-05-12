@@ -12,7 +12,6 @@
 
 #include "gc/ArenaList.h"
 #include "gc/AtomMarking.h"
-#include "gc/ChunkPool.h"
 #include "gc/GCContext.h"
 #include "gc/GCMarker.h"
 #include "gc/GCParallelTask.h"
@@ -76,6 +75,72 @@ struct SweepAction {
   virtual bool shouldSkip() { return false; }
 };
 
+class ChunkPool {
+  ArenaChunk* head_;
+  size_t count_;
+
+ public:
+  ChunkPool() : head_(nullptr), count_(0) {}
+  ChunkPool(const ChunkPool& other) = delete;
+  ChunkPool(ChunkPool&& other) { *this = std::move(other); }
+
+  ~ChunkPool() {
+    MOZ_ASSERT(!head_);
+    MOZ_ASSERT(count_ == 0);
+  }
+
+  ChunkPool& operator=(const ChunkPool& other) = delete;
+  ChunkPool& operator=(ChunkPool&& other) {
+    head_ = other.head_;
+    other.head_ = nullptr;
+    count_ = other.count_;
+    other.count_ = 0;
+    return *this;
+  }
+
+  bool empty() const { return !head_; }
+  size_t count() const { return count_; }
+
+  ArenaChunk* head() {
+    MOZ_ASSERT(head_);
+    return head_;
+  }
+  ArenaChunk* pop();
+  void push(ArenaChunk* chunk);
+  ArenaChunk* remove(ArenaChunk* chunk);
+
+  void sort();
+
+  
+  bool contains(ArenaChunk* chunk) const;
+
+ private:
+  ArenaChunk* mergeSort(ArenaChunk* list, size_t count);
+  bool isSorted() const;
+
+#ifdef DEBUG
+ public:
+  bool verify() const;
+  void verifyChunks() const;
+#endif
+
+ public:
+  
+  
+  class Iter {
+   public:
+    explicit Iter(ChunkPool& pool) : current_(pool.head_) {}
+    bool done() const { return !current_; }
+    void next();
+    ArenaChunk* get() const { return current_; }
+    operator ArenaChunk*() const { return get(); }
+    ArenaChunk* operator->() const { return get(); }
+
+   private:
+    ArenaChunk* current_;
+  };
+};
+
 class BackgroundMarkTask : public GCParallelTask {
  public:
   explicit BackgroundMarkTask(GCRuntime* gc);
@@ -96,10 +161,13 @@ class BackgroundMarkTask : public GCParallelTask {
 class BackgroundUnmarkTask : public GCParallelTask {
  public:
   explicit BackgroundUnmarkTask(GCRuntime* gc);
+  void initZones();
   void run(AutoLockHelperThreadState& lock) override;
 
  private:
   void unmark();
+
+  ZoneVector zones;
 };
 
 class BackgroundSweepTask : public GCParallelTask {
@@ -559,36 +627,42 @@ class GCRuntime {
   double computeHeapGrowthFactor(size_t lastBytes);
   size_t computeTriggerBytes(double growthFactor, size_t lastBytes);
 
+  ChunkPool& fullChunks(const AutoLockGC& lock) { return fullChunks_.ref(); }
+  ChunkPool& availableChunks(const AutoLockGC& lock) {
+    return availableChunks_.ref();
+  }
   ChunkPool& emptyChunks(const AutoLockGC& lock) { return emptyChunks_.ref(); }
+  const ChunkPool& fullChunks(const AutoLockGC& lock) const {
+    return fullChunks_.ref();
+  }
+  const ChunkPool& availableChunks(const AutoLockGC& lock) const {
+    return availableChunks_.ref();
+  }
   const ChunkPool& emptyChunks(const AutoLockGC& lock) const {
     return emptyChunks_.ref();
+  }
+  using NonEmptyChunksIter = ChainedIterator<ChunkPool::Iter, 2>;
+  NonEmptyChunksIter allNonEmptyChunks(const AutoLockGC& lock) {
+    clearCurrentChunk(lock);
+    return NonEmptyChunksIter(availableChunks(lock), fullChunks(lock));
   }
   uint32_t minEmptyChunkCount(const AutoLockGC& lock) const {
     return minEmptyChunkCount_;
   }
-
-  void setCurrentChunk(JS::Zone* zone, ArenaChunk* chunk,
-                       const AutoLockGC& lock);
-  void clearCurrentChunk(JS::Zone* zone, const AutoLockGC& lock);
-
-  
-  
-  template <typename F>
-  void forEachNonEmptyChunk(const AutoLockGC& lock, F&& func);
-
+  void setCurrentChunk(ArenaChunk* chunk, const AutoLockGC& lock);
+  void clearCurrentChunk(const AutoLockGC& lock);
 #ifdef DEBUG
+  bool isCurrentChunk(ArenaChunk* chunk) const {
+    return chunk == currentChunk_;
+  }
   void verifyAllChunks();
 #endif
 
   
-  ArenaChunk* getOrAllocChunk(JS::Zone* zone, StallAndRetry stallAndRetry,
-                              AutoLockGCBgAlloc& lock);
   ArenaChunk* getOrAllocChunk(StallAndRetry stallAndRetry,
                               AutoLockGCBgAlloc& lock);
 
   void recycleChunk(ArenaChunk* chunk, const AutoLockGC& lock);
-  ArenaChunk* pickChunk(JS::Zone* zone, StallAndRetry stallAndRetry,
-                        AutoLockGCBgAlloc& lock);
 
 #ifdef JS_GC_ZEAL
   void startVerifyPreBarriers();
@@ -740,6 +814,7 @@ class GCRuntime {
 
   
   friend class ArenaLists;
+  ArenaChunk* pickChunk(StallAndRetry stallAndRetry, AutoLockGCBgAlloc& lock);
   Arena* allocateArena(ArenaChunk* chunk, Zone* zone, AllocKind kind,
                        ShouldCheckThresholds checkThresholds);
 
@@ -1122,6 +1197,26 @@ class GCRuntime {
   
   GCLockData<ChunkPool> emptyChunks_;
 
+  
+  
+  
+  
+  
+  
+  GCLockData<ChunkPool> availableChunks_;
+
+  
+  
+  GCLockData<ChunkPool> fullChunks_;
+
+  
+  
+  
+  MainThreadData<ArenaChunk*> currentChunk_;
+
+  
+  
+  GCLockData<ChunkArenaBitmap> pendingFreeCommittedArenas;
   friend class ArenaChunk;
 
   

@@ -23,7 +23,6 @@
 #include "gc/ArenaList.h"
 #include "gc/Barrier.h"
 #include "gc/BufferAllocator.h"
-#include "gc/ChunkPool.h"
 #include "gc/FinalizationObservers.h"
 #include "gc/FindSCCs.h"
 #include "gc/GCMarker.h"
@@ -44,7 +43,6 @@
 
 namespace js {
 
-class AutoLockGC;
 class DebugScriptMap;
 class RegExpZone;
 class WeakRefObject;
@@ -402,37 +400,6 @@ namespace JS {
 class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
  public:
   js::gc::ArenaLists arenas;
-
-  
-  
-  
-  
-  js::GCLockData<js::gc::ChunkPool> availableChunks_;
-
-  
-  
-  js::GCLockData<js::gc::ChunkPool> fullChunks_;
-
-  
-  
-  js::MainThreadOrGCTaskData<js::gc::ArenaChunk*> currentChunk_;
-
-  
-  
-  js::GCLockData<js::gc::ChunkArenaBitmap> pendingFreeCommittedArenas;
-
-  js::gc::ChunkPool& fullChunks(const js::AutoLockGC& lock) {
-    return fullChunks_.ref();
-  }
-  js::gc::ChunkPool& availableChunks(const js::AutoLockGC& lock) {
-    return availableChunks_.ref();
-  }
-  const js::gc::ChunkPool& fullChunks(const js::AutoLockGC& lock) const {
-    return fullChunks_.ref();
-  }
-  const js::gc::ChunkPool& availableChunks(const js::AutoLockGC& lock) const {
-    return availableChunks_.ref();
-  }
 
   js::gc::BufferAllocator bufferAllocator;
 
