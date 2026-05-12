@@ -839,11 +839,6 @@ nsIContentHandle* nsHtml5TreeBuilder::createAndInsertFosterParentedElement(
   return child;
 }
 
-void nsHtml5TreeBuilder::optionElementPopped(nsIContentHandle* aOption) {
-  
-  
-}
-
 void nsHtml5TreeBuilder::detachFromParent(nsIContentHandle* aElement) {
   MOZ_ASSERT(aElement, "Null element");
 
