@@ -5,13 +5,14 @@
 
 
 
+use crate::derives::*;
 use crate::parser::{Parse, ParserContext};
 use crate::values::specified;
 use crate::values::{CSSFloat, CustomIdent};
 use crate::{One, Zero};
 use cssparser::Parser;
 use std::fmt::{self, Write};
-use std::{cmp, usize};
+use std::usize;
 use style_traits::{CssWriter, ParseError, StyleParseErrorKind, ToCss};
 
 
@@ -37,6 +38,7 @@ pub const MAX_GRID_LINE: i32 = 10000;
     ToTyped,
 )]
 #[repr(C)]
+#[typed(todo_derive_fields)]
 pub struct GenericGridLine<Integer> {
     
     
@@ -147,10 +149,13 @@ impl Parse for GridLine<specified::Integer> {
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
-        let mut grid_line = Self::auto();
         if input.try_parse(|i| i.expect_ident_matching("auto")).is_ok() {
-            return Ok(grid_line);
+            return Ok(Self::auto());
         }
+
+        let mut is_span = false;
+        let mut line_num: Option<specified::Integer> = None;
+        let mut ident: Option<CustomIdent> = None;
 
         
         
@@ -162,36 +167,47 @@ impl Parse for GridLine<specified::Integer> {
             
             let location = input.current_source_location();
             if input.try_parse(|i| i.expect_ident_matching("span")).is_ok() {
-                if grid_line.is_span {
+                if is_span {
                     return Err(location.new_custom_error(StyleParseErrorKind::UnspecifiedError));
                 }
 
-                if !grid_line.line_num.is_zero() || grid_line.ident.0 != atom!("") {
+                if line_num.is_some() || ident.is_some() {
                     val_before_span = true;
                 }
 
-                grid_line.is_span = true;
+                is_span = true;
             } else if let Ok(i) = input.try_parse(|i| specified::Integer::parse(context, i)) {
-                
-                let value = i.value();
-                if value == 0 || val_before_span || !grid_line.line_num.is_zero() {
+                if val_before_span || line_num.is_some() {
                     return Err(location.new_custom_error(StyleParseErrorKind::UnspecifiedError));
                 }
 
-                grid_line.line_num = specified::Integer::new(cmp::max(
-                    MIN_GRID_LINE,
-                    cmp::min(value, MAX_GRID_LINE),
-                ));
+                if matches!(i.get(), Some(0)) {
+                    return Err(location.new_custom_error(StyleParseErrorKind::UnspecifiedError));
+                }
+
+                line_num = Some(match i.get() {
+                    Some(v) => specified::Integer::new(v.min(MAX_GRID_LINE).max(MIN_GRID_LINE)),
+                    None => i,
+                });
             } else if let Ok(name) = input.try_parse(|i| CustomIdent::parse(i, &["auto"])) {
-                if val_before_span || grid_line.ident.0 != atom!("") {
+                if val_before_span || ident.is_some() {
                     return Err(location.new_custom_error(StyleParseErrorKind::UnspecifiedError));
                 }
                 
                 
-                grid_line.ident = name;
+                ident = Some(name);
             } else {
                 break;
             }
+        }
+
+        let mut grid_line = Self::auto();
+        grid_line.is_span = is_span;
+        if let Some(line_num) = line_num {
+            grid_line.line_num = line_num
+        }
+        if let Some(ident) = ident {
+            grid_line.ident = ident
         }
 
         if grid_line.is_auto() {
@@ -200,7 +216,7 @@ impl Parse for GridLine<specified::Integer> {
 
         if grid_line.is_span {
             if !grid_line.line_num.is_zero() {
-                if grid_line.line_num.value() <= 0 {
+                if matches!(grid_line.line_num.get(), Some(v) if v <= 0) {
                     
                     return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError));
                 }
@@ -388,6 +404,7 @@ impl<L: ToCss> ToCss for TrackSize<L> {
     ToTyped,
 )]
 #[repr(transparent)]
+#[typed(todo_derive_fields)]
 pub struct GenericImplicitGridTracks<T>(
     #[css(if_empty = "auto", iterable)] pub crate::OwnedSlice<T>,
 );
@@ -463,7 +480,7 @@ impl Parse for RepeatCount<specified::Integer> {
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
         if let Ok(mut i) = input.try_parse(|i| specified::Integer::parse_positive(context, i)) {
-            if i.value() > MAX_GRID_LINE {
+            if matches!(i.get(), Some(v) if v > MAX_GRID_LINE) {
                 i = specified::Integer::new(MAX_GRID_LINE);
             }
             return Ok(RepeatCount::Number(i));
@@ -832,6 +849,7 @@ impl<I: ToCss> ToCss for LineNameList<I> {
 )]
 #[value_info(other_values = "subgrid")]
 #[repr(C, u8)]
+#[typed(todo_derive_fields)]
 pub enum GenericGridTemplateComponent<L, I> {
     
     None,

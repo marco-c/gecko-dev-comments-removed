@@ -10,12 +10,14 @@ use super::{
     parsing::{rcs_enabled, ChannelKeyword},
     AbsoluteColor,
 };
+use crate::derives::*;
 use crate::{
     parser::ParserContext,
     values::{
         animated::ToAnimatedValue,
         generics::calc::{CalcUnits, GenericCalcNode},
         specified::calc::{AllowParse, Leaf},
+        specified::number::NoCalcNumber,
     },
 };
 use cssparser::{color::OPAQUE, Parser, Token};
@@ -126,7 +128,7 @@ impl<ValueType: ColorComponentType> ColorComponent<ValueType> {
                             Some(origin_color) => {
                                 let value = origin_color
                                     .get_component_by_channel_keyword(*channel_keyword)?;
-                                Leaf::Number(value.unwrap_or(0.0))
+                                Leaf::Number(NoCalcNumber::new(value.unwrap_or(0.0)))
                             },
                             None => return Err(()),
                         },

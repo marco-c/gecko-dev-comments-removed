@@ -267,7 +267,6 @@ impl FontWeight {
     ToTyped,
 )]
 #[cfg_attr(feature = "servo", derive(Serialize, Deserialize))]
-#[typed_value(derive_fields)]
 
 pub struct FontSize {
     
@@ -357,6 +356,7 @@ impl ToResolvedValue for FontSize {
 #[cfg_attr(feature = "servo", derive(Hash, Serialize, Deserialize))]
 
 #[repr(C)]
+#[typed(todo_derive_fields)]
 pub struct FontFamily {
     
     pub families: FontFamilyList,
@@ -868,7 +868,7 @@ impl ToComputedValue for specified::FontSizeAdjust {
             }};
         }
 
-        match *self {
+        match self {
             Self::None => FontSizeAdjust::None,
             Self::ExHeight(val) => {
                 resolve!(
@@ -1010,6 +1010,7 @@ where
 )]
 #[repr(C)]
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
+#[typed(todo_derive_fields)]
 #[value_info(other_values = "normal")]
 pub struct FontLanguageOverride(pub u32);
 
@@ -1088,7 +1089,7 @@ impl ToComputedValue for specified::MathDepth {
         use crate::properties::longhands::math_style::SpecifiedValue as MathStyleValue;
         use std::{cmp, i8};
 
-        let int = match *self {
+        let int = match self {
             specified::MathDepth::AutoAdd => {
                 let parent = cx.builder.get_parent_font().clone_math_depth() as i32;
                 let style = cx.builder.get_parent_font().clone_math_style();
@@ -1163,6 +1164,7 @@ pub type FontStyleFixedPoint = FixedPoint<i16, FONT_STYLE_FRACTION_BITS>;
 )]
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 #[repr(C)]
+#[typed(todo_derive_fields)]
 pub struct FontStyle(FontStyleFixedPoint);
 
 impl FontStyle {

@@ -4,6 +4,7 @@
 
 
 
+use crate::derives::*;
 use crate::parser::{Parse, ParserContext};
 use crate::values::computed::{Context, LengthPercentage as ComputedLengthPercentage};
 use crate::values::computed::{Percentage as ComputedPercentage, ToComputedValue};
@@ -16,7 +17,7 @@ use crate::values::specified::{
     self, AllowQuirks, Angle, Integer, Length, LengthPercentage, Number, NumberOrPercentage,
 };
 use crate::Zero;
-use cssparser::Parser;
+use cssparser::{match_ignore_ascii_case, Parser};
 use style_traits::{ParseError, StyleParseErrorKind};
 
 pub use crate::values::generics::transform::TransformStyle;
@@ -234,7 +235,7 @@ impl Transform {
                                 let sy = NumberOrPercentage::parse(context, input)?.to_number();
                                 Ok(generic::TransformOperation::Scale(sx, sy))
                             } else {
-                                Ok(generic::TransformOperation::Scale(sx, sx))
+                                Ok(generic::TransformOperation::Scale(sx.clone(), sx))
                             }
                         },
                         "scalex" => {
@@ -552,6 +553,6 @@ impl Parse for Scale {
         }
 
         
-        Ok(generic::Scale::Scale(sx, sx, Number::new(1.0)))
+        Ok(generic::Scale::Scale(sx.clone(), sx, Number::new(1.0)))
     }
 }

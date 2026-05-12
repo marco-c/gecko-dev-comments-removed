@@ -352,9 +352,9 @@ fn sort_range<T: PartialOrd>(a: T, b: T) -> (T, T) {
 
 impl FontWeightRange {
     
-    pub fn compute(&self) -> ComputedFontWeightRange {
-        let (min, max) = sort_range(self.0.compute().value(), self.1.compute().value());
-        ComputedFontWeightRange(min, max)
+    pub fn compute(&self) -> Option<ComputedFontWeightRange> {
+        let (min, max) = sort_range(self.0.compute()?.value(), self.1.compute()?.value());
+        Some(ComputedFontWeightRange(min, max))
     }
 }
 

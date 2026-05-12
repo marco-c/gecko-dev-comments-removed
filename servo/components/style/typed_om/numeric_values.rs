@@ -5,7 +5,7 @@
 
 
 use crate::derives::*;
-use crate::values::specified::{NoCalcLength, Number, Percentage, Time};
+use crate::values::specified::{NoCalcLength, NoCalcNumber, Percentage, Time};
 use crate::values::CSSFloat;
 use cssparser::match_ignore_ascii_case;
 use style_traits::ParsingMode;
@@ -13,7 +13,6 @@ use style_traits::ParsingMode;
 
 #[derive(Clone, ToTyped)]
 #[repr(u8)]
-#[typed_value(derive_fields)]
 pub enum NoCalcNumeric {
     
     
@@ -28,7 +27,7 @@ pub enum NoCalcNumeric {
     
     
     
-    Number(Number),
+    Number(NoCalcNumber),
 
     
     
@@ -104,7 +103,7 @@ impl NoCalcNumeric {
         }
 
         match_ignore_ascii_case! { unit,
-            "number" => Ok(NoCalcNumeric::Number(Number::new(value))),
+            "number" => Ok(NoCalcNumeric::Number(NoCalcNumber::new(value))),
             "percent" => Ok(NoCalcNumeric::Percentage(Percentage::new(value))),
             _ => Err(()),
         }
