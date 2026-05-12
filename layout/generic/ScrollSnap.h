@@ -88,10 +88,6 @@ struct ScrollSnapUtils {
                                const nsRect& aScrolledRect);
 
   
-  static nsAutoCString StringifySnapTarget(
-      const ScrollSnapInfo::SnapTarget& aSnapTarget);
-
-  
   
   template <typename T>
   static nsAutoCString StringifySnapTargetList(
@@ -105,9 +101,9 @@ struct ScrollSnapUtils {
       }
       first = false;
       if constexpr (std::is_pointer_v<std::remove_cvref_t<decltype(target)>>) {
-        string.Append(StringifySnapTarget(*target));
+        string.Append(ToString(*target).c_str());
       } else {
-        string.Append(StringifySnapTarget(target));
+        string.Append(ToString(target).c_str());
       }
     }
     string.AppendPrintf(" ]");
