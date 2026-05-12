@@ -73,26 +73,22 @@ void WaylandVsyncSource::Init() {
   
   
   
-  mWaylandSurface->SetVSyncCallbackHandlerLocked(
+  mWaylandSurface->SetFrameCallbackLocked(
       surfaceLock,
-      [this, self = RefPtr{this}](wl_callback* aCallback, uint32_t aTime,
-                                  bool aEmulated) -> void {
+      [this, self = RefPtr{this}](wl_callback* aCallback,
+                                  uint32_t aTime) -> void {
         {
           MutexAutoLock lock(mMutex);
           if (!mVsyncSourceEnabled || !mVsyncEnabled || !mWaylandSurface) {
             return;
           }
-
-          
-          
-          if (mLastTimeEmulated == aEmulated && mLastTime == aTime) {
+          if (aTime && mLastFrameTime == aTime) {
             return;
           }
-          mLastTimeEmulated = aEmulated;
-          mLastTime = aTime;
+          mLastFrameTime = aTime;
         }
-        LOG("WaylandVsyncSource frame callback, routed %d time %d emulated %d",
-            !aCallback, aTime, aEmulated);
+        LOG("WaylandVsyncSource frame callback, routed %d time %d", !aCallback,
+            aTime);
 
         VisibleWindowCallback(aTime);
 
@@ -103,12 +99,6 @@ void WaylandVsyncSource::Init() {
         SetHiddenWindowVSync();
       },
        true);
-
-  
-  mWaylandSurface->SetVSyncEmulateCheckLocked(
-      surfaceLock, [surface = RefPtr{mWaylandSurface}]() -> bool {
-        return !surface->IsMapped() || !surface->HasBufferAttached();
-      });
 }
 
 WaylandVsyncSource::WaylandVsyncSource(nsWindow* aWindow)
@@ -158,7 +148,7 @@ void WaylandVsyncSource::SetVSyncEventsStateLocked(
     MozClearHandleID(mHiddenWindowTimerID, g_source_remove);
   }
   WaylandSurfaceLock lock(mWaylandSurface);
-  mWaylandSurface->SetVSyncCallbackStateLocked(lock, aEnabled);
+  mWaylandSurface->SetFrameCallbackStateLocked(lock, aEnabled);
 }
 
 void WaylandVsyncSource::EnableVsync() {
@@ -357,14 +347,6 @@ void WaylandVsyncSource::Shutdown() {
   MutexAutoLock lock(mMutex);
 
   LOG("WaylandVsyncSource::Shutdown fps %f\n", GetFPS(mVsyncRate));
-
-  {
-    
-    WaylandSurfaceLock surfaceLock(mWaylandSurface);
-    mWaylandSurface->ClearVSyncCallbackHandlerLocked(surfaceLock);
-    mWaylandSurface->SetVSyncEmulateCheckLocked(surfaceLock, nullptr,
-                                                 true);
-  }
 
   mWaylandSurface = nullptr;
   mWindow = nullptr;

@@ -162,29 +162,13 @@ void NativeLayerRootWayland::Init() {
 
   
   
-  mRootSurface->SetVSyncCallbackStateHandlerLocked(
+  mRootSurface->SetFrameCallbackStateHandlerLocked(
       lock, [this, self = RefPtr{this}](bool aState) -> void {
-        LOGVERBOSE("VSyncCallbackStateHandler()");
-        
+        LOGVERBOSE("FrameCallbackStateHandler()");
         mRootSurface->AssertCurrentThreadOwnsMutex();
         for (RefPtr<NativeLayerWayland>& layer : mSublayers) {
           layer->SetFrameCallbackState(aState);
         }
-      });
-
-  
-  mRootSurface->SetVSyncEmulateCheckLocked(
-      lock, [this, self = RefPtr{this}]() -> bool {
-        
-        mRootSurface->AssertCurrentThreadOwnsMutex();
-        bool isVisible = false;
-        for (RefPtr<NativeLayerWayland>& layer : mSublayers) {
-          if ((isVisible = layer->IsVisible())) {
-            break;
-          }
-        }
-        LOGVERBOSE("Emulate VSync [%d]", !isVisible);
-        return !isVisible;
       });
 
   
@@ -533,8 +517,6 @@ bool NativeLayerRootWayland::CommitToScreen() {
 
   if (!mRootSurface->IsMapped()) {
     
-    
-    
     LOG("NativeLayerRootWayland::CommitToScreen() root surface is not mapped");
     return false;
   }
@@ -620,10 +602,7 @@ bool NativeLayerRootWayland::CommitToScreen() {
 
 
 
-void NativeLayerRootWayland::VSyncCallbackHandler(uint32_t aTime,
-                                                  bool aEmulated) {
-  MOZ_DIAGNOSTIC_ASSERT(!aEmulated,
-                        "VSyncCallbackHandler() is supposed to be HW only");
+void NativeLayerRootWayland::FrameCallbackHandler(uint32_t aTime) {
   {
     
     
@@ -633,18 +612,15 @@ void NativeLayerRootWayland::VSyncCallbackHandler(uint32_t aTime,
 
   if (aTime <= mLastFrameCallbackTime) {
     LOGVERBOSE(
-        "NativeLayerRootWayland::VSyncCallbackHandler() ignoring redundant "
+        "NativeLayerRootWayland::FrameCallbackHandler() ignoring redundant "
         "callback %d",
         aTime);
     return;
   }
   mLastFrameCallbackTime = aTime;
 
-  LOGVERBOSE(
-      "NativeLayerRootWayland::VSyncCallbackHandler() time %d emulated [%d]",
-      aTime, aEmulated);
-  mRootSurface->VSyncCallbackHandler(nullptr, aTime,
-                                      aEmulated,
+  LOGVERBOSE("NativeLayerRootWayland::FrameCallbackHandler() time %d", aTime);
+  mRootSurface->FrameCallbackHandler(nullptr, aTime,
                                       true);
 }
 
@@ -708,10 +684,6 @@ NativeLayerWayland::~NativeLayerWayland() {
 }
 
 bool NativeLayerWayland::IsMapped() { return mSurface->IsMapped(); }
-
-bool NativeLayerWayland::IsVisible() {
-  return mSurface->IsMapped() && mSurface->HasBufferAttached();
-}
 
 void NativeLayerWayland::SetSurfaceIsFlipped(bool aIsFlipped) {
   WaylandSurfaceLock lock(mSurface);
@@ -978,16 +950,14 @@ bool NativeLayerWayland::Map(WaylandSurfaceLock* aParentWaylandSurfaceLock) {
   
   
   
-  mSurface->SetVSyncCallbackHandlerLocked(
+  mSurface->SetFrameCallbackLocked(
       surfaceLock,
-      [this, self = RefPtr{this}](wl_callback* aCallback, uint32_t aTime,
-                                  bool aEmulated) -> void {
-        LOGVERBOSE(
-            "NativeLayerWayland::VSyncCallbackHandler() time %d emulated %d",
-            aTime, aEmulated);
-        MOZ_DIAGNOSTIC_ASSERT(!aEmulated);
-        mRootLayer->VSyncCallbackHandler(aTime, aEmulated);
-      });
+      [this, self = RefPtr{this}](wl_callback* aCallback,
+                                  uint32_t aTime) -> void {
+        LOGVERBOSE("NativeLayerWayland::FrameCallbackHandler() time %d", aTime);
+        mRootLayer->FrameCallbackHandler(aTime);
+      },
+       true);
 
   if (mIsHDR) {
     gfx::YUVColorSpace yuvColorSpace = gfx::YUVColorSpace::BT709;
@@ -1025,7 +995,7 @@ bool NativeLayerWayland::Map(WaylandSurfaceLock* aParentWaylandSurfaceLock) {
 void NativeLayerWayland::SetFrameCallbackState(bool aState) {
   LOGVERBOSE("NativeLayerWayland::SetFrameCallbackState() %d", aState);
   WaylandSurfaceLock lock(mSurface);
-  mSurface->SetVSyncCallbackStateLocked(lock, aState);
+  mSurface->SetFrameCallbackStateLocked(lock, aState);
 }
 
 void NativeLayerWayland::MainThreadMap() {
@@ -1056,7 +1026,7 @@ void NativeLayerWayland::Unmap() {
   mSurface->UnmapLocked(surfaceLock);
   
   
-  mSurface->ClearVSyncCallbackHandlerLocked(surfaceLock);
+  mSurface->ClearFrameCallbackHandlerLocked(surfaceLock);
   mState.mMutatedStackingOrder = true;
   mState.mMutatedVisibility = true;
   mState.mIsRendered = false;
