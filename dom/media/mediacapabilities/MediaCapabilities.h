@@ -38,6 +38,7 @@ namespace mediacaps {
 
 struct BehaviorConfig {
   bool mLegacy = false;
+  bool mWebRTCEnabled = true;
 };
 }  
 namespace dom {
