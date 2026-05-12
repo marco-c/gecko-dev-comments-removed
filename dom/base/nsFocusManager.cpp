@@ -4374,6 +4374,35 @@ static nsIContent* GetTopLevelScopeOwner(nsIContent* aContent) {
   return topLevelScopeOwner;
 }
 
+static Maybe<nsresult> MaybeDelegateToRemoteFrame(nsIContent* aContent,
+                                                  bool aNavigateByKey,
+                                                  bool aForward,
+                                                  bool aForDocumentNavigation) {
+  
+  
+  
+  
+  
+  if (BrowserParent* remote = BrowserParent::GetFrom(aContent)) {
+    if (aNavigateByKey) {
+      remote->NavigateByKey(aForward, aForDocumentNavigation);
+      return Some(NS_SUCCESS_DOM_NO_OPERATION);
+    }
+    return Some(NS_OK);
+  }
+
+  
+  if (auto* bbc = BrowserBridgeChild::GetFrom(aContent)) {
+    if (aNavigateByKey) {
+      bbc->NavigateByKey(aForward, aForDocumentNavigation);
+      return Some(NS_SUCCESS_DOM_NO_OPERATION);
+    }
+    return Some(NS_OK);
+  }
+
+  return Nothing();
+}
+
 nsresult nsFocusManager::GetNextTabbableContent(
     PresShell* aPresShell, nsIContent* aRootContent,
     nsIContent* aOriginalStartContent, nsIContent* aStartContent, bool aForward,
@@ -4400,6 +4429,11 @@ nsresult nsFocusManager::GetNextTabbableContent(
         aIgnoreTabIndex, aForDocumentNavigation, aNavigateByKey,
         true , aReachedToEndForDocumentNavigation);
     if (contentToFocus) {
+      if (auto rv =
+              MaybeDelegateToRemoteFrame(contentToFocus, aNavigateByKey,
+                                         aForward, aForDocumentNavigation)) {
+        return *rv;
+      }
       NS_ADDREF(*aResultContent = contentToFocus);
       return NS_OK;
     }
@@ -4413,6 +4447,11 @@ nsresult nsFocusManager::GetNextTabbableContent(
         &aCurrentTabIndex, &aIgnoreTabIndex, aForDocumentNavigation,
         aNavigateByKey, aReachedToEndForDocumentNavigation);
     if (contentToFocus) {
+      if (auto rv =
+              MaybeDelegateToRemoteFrame(contentToFocus, aNavigateByKey,
+                                         aForward, aForDocumentNavigation)) {
+        return *rv;
+      }
       NS_ADDREF(*aResultContent = contentToFocus);
       return NS_OK;
     }
@@ -4459,6 +4498,11 @@ nsresult nsFocusManager::GetNextTabbableContent(
               aForDocumentNavigation, aNavigateByKey, true ,
               aReachedToEndForDocumentNavigation);
           if (contentToFocus) {
+            if (auto rv = MaybeDelegateToRemoteFrame(contentToFocus,
+                                                     aNavigateByKey, aForward,
+                                                     aForDocumentNavigation)) {
+              return *rv;
+            }
             NS_ADDREF(*aResultContent = contentToFocus);
             return NS_OK;
           }
@@ -4591,6 +4635,11 @@ nsresult nsFocusManager::GetNextTabbableContent(
               aIgnoreTabIndex, aForDocumentNavigation, aNavigateByKey,
               true , aReachedToEndForDocumentNavigation);
           if (contentToFocus) {
+            if (auto rv = MaybeDelegateToRemoteFrame(contentToFocus,
+                                                     aNavigateByKey, aForward,
+                                                     aForDocumentNavigation)) {
+              return *rv;
+            }
             NS_ADDREF(*aResultContent = contentToFocus);
             return NS_OK;
           }
@@ -4653,26 +4702,10 @@ nsresult nsFocusManager::GetNextTabbableContent(
             return NS_OK;
           }
 
-          
-          
-          
-          
-          
-          if (BrowserParent* remote = BrowserParent::GetFrom(currentContent)) {
-            if (aNavigateByKey) {
-              remote->NavigateByKey(aForward, aForDocumentNavigation);
-              return NS_SUCCESS_DOM_NO_OPERATION;
-            }
-            return NS_OK;
-          }
-
-          
-          if (auto* bbc = BrowserBridgeChild::GetFrom(currentContent)) {
-            if (aNavigateByKey) {
-              bbc->NavigateByKey(aForward, aForDocumentNavigation);
-              return NS_SUCCESS_DOM_NO_OPERATION;
-            }
-            return NS_OK;
+          if (auto rv = MaybeDelegateToRemoteFrame(currentContent,
+                                                   aNavigateByKey, aForward,
+                                                   aForDocumentNavigation)) {
+            return *rv;
           }
 
           
