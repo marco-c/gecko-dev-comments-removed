@@ -12,6 +12,8 @@
 
 namespace mozilla {
 
+struct URLExtraData;
+
 
 
 
@@ -60,7 +62,8 @@ struct PseudoStyleRequest {
   
   
   static mozilla::Maybe<PseudoStyleRequest> Parse(
-      const nsAString& aPseudoElement, bool aIgnoreEnabledState = false);
+      const nsAString& aPseudoElement, URLExtraData* aURLExtraData,
+      bool aIgnoreEnabledState = false);
 };
 
 class PseudoStyleRequestHashKey : public PLDHashEntryHdr {

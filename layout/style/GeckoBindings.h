@@ -460,6 +460,12 @@ void Gecko_nsIReferrerInfo_Debug(nsIReferrerInfo* aReferrerInfo,
 NS_DECL_THREADSAFE_FFI_REFCOUNTING(mozilla::URLExtraData, URLExtraData);
 NS_DECL_THREADSAFE_FFI_REFCOUNTING(nsIReferrerInfo, nsIReferrerInfo);
 
+
+
+
+bool Gecko_IsURIInList(const mozilla::URLExtraData* aData,
+                       const nsACString* aList);
+
 void Gecko_FillAllImageLayers(nsStyleImageLayers* layers, uint32_t max_len);
 
 void Gecko_LoadData_Drop(mozilla::StyleLoadData*);
