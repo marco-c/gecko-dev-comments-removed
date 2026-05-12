@@ -9,6 +9,9 @@ const MIMEService = Cc["@mozilla.org/mime;1"].getService(Ci.nsIMIMEService);
 
 
 add_task(async function applicationXmlHandleInternally() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.settings-redesign.enabled", false]],
+  });
   const mimeInfo = MIMEService.getFromTypeAndExtension(
     "application/xml",
     "xml"
