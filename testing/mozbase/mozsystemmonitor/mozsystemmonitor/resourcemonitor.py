@@ -65,7 +65,32 @@ _ASSERTION_RE = re.compile(
 
 
 
-_CONSOLE_RE = re.compile(r"^console\.(?P<method>[a-zA-Z]+): (?P<message>.*)$")
+
+
+
+
+
+
+
+
+
+_CONSOLE_RE = re.compile(r"^console\.(?P<method>[a-zA-Z]+):(?: (?P<message>.*))?$")
+
+
+
+
+_MULTILINE_CONSOLE_METHODS = frozenset({"debug", "error", "dir", "dirxml"})
+
+
+_CONSOLE_MESSAGE_RE = re.compile(r"^  Message: (?P<message>.*)$")
+_CONSOLE_STACK_HEADER_RE = re.compile(r"^  Stack:\s*$")
+
+
+
+
+_CONSOLE_JS_FRAME_RE = re.compile(
+    r"^\s*(?P<func>[^@]*)@(?P<file>.+):(?P<line>\d+):(?P<col>\d+)\s*$"
+)
 
 
 
@@ -469,6 +494,18 @@ class SystemResourceMonitor:
         
         
         self._pending_console_trace = None
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        self._pending_multiline_console = None
 
         self._running = False
         self._stopped = False
@@ -606,6 +643,7 @@ class SystemResourceMonitor:
 
         self._flush_leak_logs()
         self._flush_pending_console_trace()
+        self._flush_pending_multiline_console()
 
         if self._stream_file:
             self._stream_file.close()
@@ -970,6 +1008,13 @@ class SystemResourceMonitor:
                 return True
             self._flush_pending_console_trace()
 
+        
+        
+        
+        if self._pending_multiline_console is not None:
+            if self._handle_multiline_console_line(line):
+                return True
+
         if m := _DOCSHELL_RE.match(line):
             return self._handle_leak_log(
                 m,
@@ -1038,14 +1083,45 @@ class SystemResourceMonitor:
             return True
 
         if m := _CONSOLE_RE.match(line):
-            marker_data = {
-                "type": "console",
-                "message": m["message"],
-            }
+            method = m["method"]
+            message = m["message"] or ""
+            name = "console." + method
+            
+            
+            
+            
+            
+            
+            
+            if method in _MULTILINE_CONSOLE_METHODS:
+                if not message:
+                    marker_data = {"type": "console", "message": ""}
+                    if test_name:
+                        marker_data["test"] = test_name
+                    self._pending_multiline_console = (
+                        name,
+                        timestamp,
+                        marker_data,
+                        "await_message",
+                        None,
+                    )
+                    return True
+                if message.endswith(":"):
+                    marker_data = {"type": "console", "message": message}
+                    if test_name:
+                        marker_data["test"] = test_name
+                    self._pending_multiline_console = (
+                        name,
+                        timestamp,
+                        marker_data,
+                        "speculative",
+                        message,
+                    )
+                    return True
+            marker_data = {"type": "console", "message": message}
             if test_name:
                 marker_data["test"] = test_name
-            name = "console." + m["method"]
-            if m["method"] == "trace":
+            if method == "trace":
                 marker_data["stack"] = []
                 self._pending_console_trace = (name, timestamp, marker_data)
             else:
@@ -1054,12 +1130,75 @@ class SystemResourceMonitor:
 
         return False
 
+    def _handle_multiline_console_line(self, line):
+        """Attach a body line to the pending multi-line console.* marker.
+
+        Returns True if the line was consumed; False if it broke the expected
+        sequence (in which case the pending marker is flushed and the caller
+        should continue parsing the line through the regular patterns).
+        """
+        name, timestamp, marker_data, phase, prefix_body = (
+            self._pending_multiline_console
+        )
+        if phase in ("await_message", "speculative"):
+            if m := _CONSOLE_MESSAGE_RE.match(line):
+                
+                
+                
+                marker_data["message"] = (
+                    f"{prefix_body} {m['message']}" if prefix_body else m["message"]
+                )
+                self._pending_multiline_console = (
+                    name,
+                    timestamp,
+                    marker_data,
+                    "await_stack",
+                    prefix_body,
+                )
+                return True
+        elif phase == "await_stack":
+            if _CONSOLE_STACK_HEADER_RE.match(line):
+                marker_data["stack"] = []
+                self._pending_multiline_console = (
+                    name,
+                    timestamp,
+                    marker_data,
+                    "frames",
+                    prefix_body,
+                )
+                return True
+        elif phase == "frames":
+            if m := _CONSOLE_JS_FRAME_RE.match(line):
+                marker_data["stack"].append({
+                    "file": m["file"],
+                    "line": int(m["line"]),
+                    "column": int(m["col"]),
+                    "function": m["func"],
+                    "is_js": True,
+                })
+                return True
+        self._flush_pending_multiline_console()
+        return False
+
     def _flush_pending_console_trace(self):
         """Emit a deferred console.trace marker once its stack is collected."""
         if self._pending_console_trace is None:
             return
         name, timestamp, marker_data = self._pending_console_trace
         self._pending_console_trace = None
+        self._add_event(name, timestamp, marker_data)
+
+    def _flush_pending_multiline_console(self):
+        """Emit a deferred multi-line console.<method> marker.
+
+        For "speculative" pending markers the body turned out to be a regular
+        single-line message ending in ":" rather than a multi-line header, so
+        marker_data["message"] still holds the original line as captured.
+        """
+        if self._pending_multiline_console is None:
+            return
+        name, timestamp, marker_data, _, _ = self._pending_multiline_console
+        self._pending_multiline_console = None
         self._add_event(name, timestamp, marker_data)
 
     def _handle_leak_log(self, m, timestamp, test_name, kind, key):
