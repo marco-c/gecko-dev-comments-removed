@@ -281,4 +281,5 @@ nsresult CopySysProcInfoToDOM(const ProcInfo& source, T* dest) {
 }
 
 }  
+
 #endif  
