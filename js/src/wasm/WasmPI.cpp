@@ -215,6 +215,7 @@ class SuspendingFunctionModuleFactory {
                      const SharedTypeContext& foreignTypes,
                      ValTypeVector&& params, ValTypeVector&& results) {
     FeatureOptions options;
+    
     options.isBuiltinModule = true;
 
     SharedCompileArgs compileArgs = CompileArgs::buildAndReport(
@@ -849,6 +850,7 @@ class PromisingFunctionModuleFactory {
     size_t paramsSize = params.length();
 
     FeatureOptions options;
+    
     options.isBuiltinModule = true;
 
     SharedCompileArgs compileArgs = CompileArgs::buildAndReport(

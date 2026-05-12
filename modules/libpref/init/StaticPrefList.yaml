@@ -9636,7 +9636,7 @@
 
 -   name: javascript.options.wasm_js_promise_integration
     type: bool
-    value: false
+    value: @IS_NIGHTLY_BUILD@
     mirror: always
     set_spidermonkey_pref: always
 
@@ -11921,7 +11921,7 @@
 # fails to be created.
 - name: media.eme.video.prefer-platform-decoder
   type: RelaxedAtomicBool
-  value: false
+  value: true
   mirror: always
 
 - name: media.eme.chromium-api.video-shmems
