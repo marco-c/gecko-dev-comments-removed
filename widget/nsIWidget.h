@@ -1909,6 +1909,11 @@ class nsIWidget : public nsSupportsWeakReference {
     return LayoutDeviceIntSize();
   }
 
+  enum class NativePointerLockMode : uint8_t {
+    Regular,
+    Unadjusted,
+  };
+
   
 
 
@@ -1916,8 +1921,22 @@ class nsIWidget : public nsSupportsWeakReference {
 
   virtual void SetNativePointerLockCenter(
       const LayoutDeviceIntPoint& aLockCenter) {}
-  virtual void LockNativePointer() {}
+  virtual void LockNativePointer(NativePointerLockMode aNativePointerLockMode) {
+  }
   virtual void UnlockNativePointer() {}
+
+  
+
+
+
+
+  virtual void SetNativePointerLockMode(
+      NativePointerLockMode aNativePointerLockMode) {}
+
+  
+
+
+  virtual bool SupportsUnadjustedMovement() { return false; }
 
   
 
