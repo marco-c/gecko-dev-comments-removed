@@ -237,6 +237,19 @@ where
             
             NonTSPseudoClass::CustomState(ref state) => return self.has_custom_state(&state.0),
 
+            
+            
+            #[cfg(feature = "gecko")]
+            NonTSPseudoClass::Paused | NonTSPseudoClass::Playing => {
+                let state = self
+                    .snapshot()
+                    .and_then(|s| s.state())
+                    .unwrap_or_else(|| self.element.state());
+                return self.element.is_html_media_element()
+                    && (*pseudo_class == NonTSPseudoClass::Paused)
+                        == state.intersects(ElementState::PAUSED);
+            },
+
             _ => {},
         }
 

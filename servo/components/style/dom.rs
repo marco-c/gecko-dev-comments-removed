@@ -487,6 +487,11 @@ pub trait TElement:
     }
 
     
+    fn is_html_media_element(&self) -> bool {
+        false
+    }
+
+    
     
     
     
