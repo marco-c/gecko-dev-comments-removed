@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_ProcessIsolation_h
 #define mozilla_dom_ProcessIsolation_h
 
@@ -76,6 +74,20 @@ struct WorkerIsolationOptions {
 Result<WorkerIsolationOptions, nsresult> IsolationOptionsForWorker(
     nsIPrincipal* aPrincipal, WorkerKind aWorkerKind,
     const nsACString& aCurrentRemoteType, bool aUseRemoteSubframes);
+
+
+
+
+
+
+
+
+
+
+
+Result<nsCString, nsresult> PredictRemoteTypeForURI(
+    nsIURI* aURI, const OriginAttributes& aOriginAttributes,
+    const nsACString& aPreferredRemoteType, bool aUseRemoteSubframes);
 
 
 

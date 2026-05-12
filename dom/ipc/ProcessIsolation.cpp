@@ -27,12 +27,17 @@
 #include "mozilla/dom/WindowGlobalParent.h"
 #include "mozilla/extensions/WebExtensionPolicy.h"
 #include "nsAboutProtocolUtils.h"
+#include "nsCExternalHandlerService.h"
 #include "nsDocShell.h"
 #include "nsError.h"
+#include "nsEscape.h"
 #include "nsIChromeRegistry.h"
 #include "nsIEnterprisePolicies.h"
+#include "nsIExternalProtocolHandler.h"
+#include "nsIExternalProtocolService.h"
 #include "nsIHttpChannel.h"
 #include "nsIHttpChannelInternal.h"
+#include "nsIMIMEInfo.h"
 #include "nsIProtocolHandler.h"
 #include "nsIXULRuntime.h"
 #include "nsNetUtil.h"
@@ -369,7 +374,6 @@ static IsolationBehavior IsolationBehaviorForURI(nsIURI* aURI, bool aIsSubframe,
           browser_tabs_remote_separatePrivilegedMozillaWebContentProcess()) {
     nsAutoCString host;
     if (NS_SUCCEEDED(aURI->GetAsciiHost(host))) {
-      
       for (const auto& separatedDomain : sSeparatedMozillaDomains) {
         
         
@@ -407,13 +411,12 @@ static nsAutoCString OriginString(nsIPrincipal* aPrincipal) {
 
 
 
-static nsAutoCString OriginSuffixForRemoteType(nsIPrincipal* aPrincipal,
+static nsAutoCString OriginSuffixForRemoteType(OriginAttributes aAttrs,
                                                bool aDisableJit) {
   nsAutoCString originSuffix;
-  OriginAttributes attrs = aPrincipal->OriginAttributesRef();
-  attrs.StripAttributes(OriginAttributes::STRIP_FIRST_PARTY_DOMAIN |
-                        OriginAttributes::STRIP_PARITION_KEY);
-  attrs.CreateSuffix(originSuffix);
+  aAttrs.StripAttributes(OriginAttributes::STRIP_FIRST_PARTY_DOMAIN |
+                         OriginAttributes::STRIP_PARITION_KEY);
+  aAttrs.CreateSuffix(originSuffix);
 
   if (aDisableJit) {
     if (originSuffix.IsEmpty()) {
@@ -430,8 +433,7 @@ static nsAutoCString OriginSuffixForRemoteType(nsIPrincipal* aPrincipal,
 
 
 
-static already_AddRefed<BasePrincipal> GetAboutReaderURLPrincipal(
-    nsIURI* aURI, const OriginAttributes& aAttrs) {
+static already_AddRefed<nsIURI> GetAboutReaderURL(nsIURI* aURI) {
 #ifdef DEBUG
   MOZ_ASSERT(aURI->SchemeIs("about"));
   nsAutoCString path;
@@ -448,8 +450,16 @@ static already_AddRefed<BasePrincipal> GetAboutReaderURLPrincipal(
   if (URLParams::Extract(query, "url"_ns, readerSpec)) {
     nsCOMPtr<nsIURI> readerUri;
     if (NS_SUCCEEDED(NS_NewURI(getter_AddRefs(readerUri), readerSpec))) {
-      return BasePrincipal::CreateContentPrincipal(readerUri, aAttrs);
+      return readerUri.forget();
     }
+  }
+  return nullptr;
+}
+
+static already_AddRefed<BasePrincipal> GetAboutReaderURLPrincipal(
+    nsIURI* aURI, const OriginAttributes& aAttrs) {
+  if (nsCOMPtr<nsIURI> readerUri = GetAboutReaderURL(aURI)) {
+    return BasePrincipal::CreateContentPrincipal(readerUri, aAttrs);
   }
   return nullptr;
 }
@@ -926,8 +936,8 @@ Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
   }
 
   bool isJitAllowed = AllowJITForSiteOrigin(siteOriginNoSuffix, aParentWindow);
-  nsAutoCString originSuffix =
-      OriginSuffixForRemoteType(resultOrPrecursor, !isJitAllowed);
+  nsAutoCString originSuffix = OriginSuffixForRemoteType(
+      resultOrPrecursor->OriginAttributesRef(), !isJitAllowed);
 
   WebProcessType webProcessType = WebProcessType::Web;
   if (ShouldIsolateSite(resultOrPrecursor, aTopBC->UseRemoteSubframes())) {
@@ -1085,9 +1095,8 @@ Result<WorkerIsolationOptions, nsresult> IsolationOptionsForWorker(
     MOZ_TRY(resultOrPrecursor->GetSiteOriginNoSuffix(siteOriginNoSuffix));
 
     bool isJitAllowed = AllowJITForSiteOrigin(siteOriginNoSuffix, nullptr);
-
-    nsAutoCString originSuffix =
-        OriginSuffixForRemoteType(resultOrPrecursor, !isJitAllowed);
+    nsAutoCString originSuffix = OriginSuffixForRemoteType(
+        resultOrPrecursor->OriginAttributesRef(), !isJitAllowed);
 
     nsCString prefix = aWorkerKind == WorkerKindService
                            ? SERVICEWORKER_REMOTE_TYPE
@@ -1105,6 +1114,216 @@ Result<WorkerIsolationOptions, nsresult> IsolationOptionsForWorker(
              WorkerKindName(aWorkerKind)));
   }
   return options;
+}
+
+
+
+
+
+
+
+
+
+
+static already_AddRefed<nsIURI> MaybeResolveWebAppHandler(nsIURI* aURI) {
+  MOZ_ASSERT(XRE_IsParentProcess());
+
+  nsCOMPtr<nsIIOService> ioSvc = do_GetIOService();
+  NS_ENSURE_TRUE(ioSvc, nullptr);
+  nsCOMPtr<nsIExternalProtocolService> extProtService =
+      do_GetService(NS_EXTERNALPROTOCOLSERVICE_CONTRACTID);
+  NS_ENSURE_TRUE(extProtService, nullptr);
+
+  
+  
+  
+
+  nsAutoCString scheme;
+  nsresult rv = aURI->GetScheme(scheme);
+  NS_ENSURE_SUCCESS(rv, nullptr);
+
+  
+  
+
+  nsCOMPtr<nsIProtocolHandler> handler;
+  rv = ioSvc->GetProtocolHandler(scheme.get(), getter_AddRefs(handler));
+  NS_ENSURE_SUCCESS(rv, nullptr);
+
+  nsCOMPtr<nsIExternalProtocolHandler> extHandler = do_QueryInterface(handler);
+  if (!extHandler) {
+    return nullptr;
+  }
+
+  
+  
+  
+  nsCOMPtr<nsIHandlerInfo> handlerInfo;
+  rv = extProtService->GetProtocolHandlerInfo(scheme,
+                                              getter_AddRefs(handlerInfo));
+  if (NS_FAILED(rv) || !handlerInfo) {
+    return nullptr;
+  }
+
+  
+  
+  
+  bool alwaysAskBeforeHandling = false;
+  rv = handlerInfo->GetAlwaysAskBeforeHandling(&alwaysAskBeforeHandling);
+  if (NS_FAILED(rv) || alwaysAskBeforeHandling) {
+    return nullptr;
+  }
+
+  nsCOMPtr<nsIHandlerApp> handlerApp;
+  rv = handlerInfo->GetPreferredApplicationHandler(getter_AddRefs(handlerApp));
+  if (NS_FAILED(rv) || !handlerApp) {
+    return nullptr;
+  }
+
+  nsCOMPtr<nsIWebHandlerApp> webHandlerApp = do_QueryInterface(handlerApp);
+  if (!webHandlerApp) {
+    return nullptr;
+  }
+
+  
+  
+  nsAutoCString uriTemplate;
+  rv = webHandlerApp->GetUriTemplate(uriTemplate);
+  NS_ENSURE_SUCCESS(rv, nullptr);
+
+  nsAutoCString spec;
+  rv = aURI->GetSpec(spec);
+  NS_ENSURE_SUCCESS(rv, nullptr);
+
+  nsAutoCString escapedSpec;
+  bool success = NS_Escape(spec, escapedSpec, url_XAlphas);
+  NS_ENSURE_TRUE(success, nullptr);
+
+  uriTemplate.ReplaceSubstring("%s"_ns, escapedSpec);
+
+  nsCOMPtr<nsIURI> newURI;
+  rv = NS_NewURI(getter_AddRefs(newURI), uriTemplate);
+  NS_ENSURE_SUCCESS(rv, nullptr);
+
+  return newURI.forget();
+}
+
+Result<nsCString, nsresult> PredictRemoteTypeForURI(
+    nsIURI* aURI, const OriginAttributes& aOriginAttributes,
+    const nsACString& aPreferredRemoteType, bool aUseRemoteSubframes) {
+  MOZ_LOG(gProcessIsolationLog, LogLevel::Verbose,
+          ("PredictRemoteTypeForURI uri:%s, preferred:%s, oa:%s, "
+           "useRemoteSubframes:%d",
+           aURI->GetSpecOrDefault().get(),
+           PromiseFlatCString(aPreferredRemoteType).get(),
+           OriginSuffixForRemoteType(aOriginAttributes, false).get(),
+           aUseRemoteSubframes));
+
+  IsolationBehavior behavior = IsolationBehaviorForURI(
+      aURI,  false,  true);
+  MOZ_LOG(gProcessIsolationLog, LogLevel::Verbose,
+          ("Base Isolation Behavior: %s", IsolationBehaviorName(behavior)));
+
+  
+  
+  
+  nsCOMPtr<nsIURI> uri = aURI;
+  if (nsCOMPtr<nsIURI> webAppHandlerURI = MaybeResolveWebAppHandler(uri)) {
+    uri = webAppHandlerURI;
+    behavior = IsolationBehaviorForURI(uri,  false,
+                                        true);
+    MOZ_LOG(gProcessIsolationLog, LogLevel::Verbose,
+            ("Resolved WebAppHandler uri:%s isolationBehavior:%s",
+             uri->GetSpecOrDefault().get(), IsolationBehaviorName(behavior)));
+  }
+
+  
+  
+  if (uri->SchemeIs("javascript") ||
+      (uri->SchemeIs("about") && NS_IsContentAccessibleAboutURI(uri))) {
+    behavior = IsolationBehavior::Anywhere;
+  }
+
+  
+  nsCOMPtr<nsIPrincipal> principal =
+      BasePrincipal::CreateContentPrincipal(uri, aOriginAttributes);
+  if (behavior == IsolationBehavior::AboutReader) {
+    if (nsCOMPtr<nsIPrincipal> readerURIPrincipal =
+            GetAboutReaderURLPrincipal(uri, aOriginAttributes)) {
+      MOZ_LOG(gProcessIsolationLog, LogLevel::Verbose,
+              ("using about:reader's url origin %s",
+               OriginString(readerURIPrincipal).get()));
+      principal = readerURIPrincipal;
+    }
+    behavior = IsolationBehavior::WebContent;
+  }
+
+  
+  
+  if (behavior == IsolationBehavior::WebContent) {
+    if (principal->IsSystemPrincipal()) {
+      
+      
+      MOZ_ASSERT(uri->SchemeIs("blob"),
+                 "unexpected non-blob URI with system principal");
+      behavior = IsolationBehavior::ForceWebRemoteType;
+    } else if (nsCOMPtr<nsIURI> principalURI = principal->GetURI()) {
+      behavior = IsolationBehaviorForURI(principalURI,  false,
+                                          false);
+    }
+  }
+
+  MOZ_LOG(gProcessIsolationLog, LogLevel::Debug,
+          ("Predicting IsolationBehavior %s for %s (principal %s)",
+           IsolationBehaviorName(behavior), uri->GetSpecOrDefault().get(),
+           OriginString(principal).get()));
+
+  
+  if (behavior != IsolationBehavior::WebContent) {
+    nsCString remoteType = MOZ_TRY(
+        SpecialBehaviorRemoteType(behavior, aPreferredRemoteType, nullptr));
+
+    MOZ_LOG(gProcessIsolationLog, LogLevel::Debug,
+            ("Predicting specific remote type (%s) due to a special case "
+             "isolation behavior %s",
+             remoteType.get(), IsolationBehaviorName(behavior)));
+    return remoteType;
+  }
+
+  
+  
+  nsAutoCString siteOriginNoSuffix;
+  MOZ_TRY(principal->GetSiteOriginNoSuffix(siteOriginNoSuffix));
+
+  bool isJitAllowed = AllowJITForSiteOrigin(siteOriginNoSuffix, nullptr);
+  nsAutoCString originSuffix = OriginSuffixForRemoteType(
+      principal->OriginAttributesRef(), !isJitAllowed);
+
+  
+  
+  if (StringBeginsWith(aPreferredRemoteType,
+                       WITH_COOP_COEP_REMOTE_TYPE_PREFIX)) {
+    nsCString coopCoepRemoteType =
+        WITH_COOP_COEP_REMOTE_TYPE "="_ns + siteOriginNoSuffix + originSuffix;
+    if (coopCoepRemoteType == aPreferredRemoteType) {
+      MOZ_LOG(gProcessIsolationLog, LogLevel::Verbose,
+              ("Predicting preferred COOP+COEP remote type (%s) due to "
+               "compatible site-origin %s",
+               coopCoepRemoteType.get(), OriginString(principal).get()));
+      return coopCoepRemoteType;
+    }
+  }
+
+  nsCString remoteType;
+  if (ShouldIsolateSite(principal, aUseRemoteSubframes)) {
+    remoteType =
+        FISSION_WEB_REMOTE_TYPE "="_ns + siteOriginNoSuffix + originSuffix;
+  } else {
+    remoteType = WEB_REMOTE_TYPE;
+  }
+
+  MOZ_LOG(gProcessIsolationLog, LogLevel::Verbose,
+          ("Predicting web remote type (%s)", remoteType.get()));
+  return remoteType;
 }
 
 void AddHighValuePermission(nsIPrincipal* aResultPrincipal,
