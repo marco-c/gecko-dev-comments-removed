@@ -438,38 +438,35 @@ class SimpleTimerBasedRefreshDriverTimer : public RefreshDriverTimer {
 class VsyncRefreshDriverTimer : public RefreshDriverTimer {
  public:
   
-  static RefPtr<VsyncRefreshDriverTimer>
+  static already_AddRefed<VsyncRefreshDriverTimer>
   CreateForParentProcessWithGlobalVsync() {
     MOZ_RELEASE_ASSERT(XRE_IsParentProcess());
     MOZ_RELEASE_ASSERT(NS_IsMainThread());
     RefPtr<VsyncDispatcher> vsyncDispatcher =
         gfxPlatform::GetPlatform()->GetGlobalVsyncDispatcher();
-    RefPtr<VsyncRefreshDriverTimer> timer =
-        new VsyncRefreshDriverTimer(std::move(vsyncDispatcher), nullptr);
-    return timer.forget();
+    return do_AddRef(
+        new VsyncRefreshDriverTimer(std::move(vsyncDispatcher), nullptr));
   }
 
   
   
   
-  static RefPtr<VsyncRefreshDriverTimer>
+  static already_AddRefed<VsyncRefreshDriverTimer>
   CreateForParentProcessWithLocalVsyncDispatcher(
       RefPtr<VsyncDispatcher>&& aVsyncDispatcher) {
     MOZ_RELEASE_ASSERT(XRE_IsParentProcess());
     MOZ_RELEASE_ASSERT(NS_IsMainThread());
-    RefPtr<VsyncRefreshDriverTimer> timer =
-        new VsyncRefreshDriverTimer(std::move(aVsyncDispatcher), nullptr);
-    return timer.forget();
+    return do_AddRef(
+        new VsyncRefreshDriverTimer(std::move(aVsyncDispatcher), nullptr));
   }
 
   
-  static RefPtr<VsyncRefreshDriverTimer> CreateForContentProcess(
+  static already_AddRefed<VsyncRefreshDriverTimer> CreateForContentProcess(
       RefPtr<VsyncMainChild>&& aVsyncChild) {
     MOZ_RELEASE_ASSERT(XRE_IsContentProcess());
     MOZ_RELEASE_ASSERT(NS_IsMainThread());
-    RefPtr<VsyncRefreshDriverTimer> timer =
-        new VsyncRefreshDriverTimer(nullptr, std::move(aVsyncChild));
-    return timer.forget();
+    return do_AddRef(
+        new VsyncRefreshDriverTimer(nullptr, std::move(aVsyncChild)));
   }
 
   TimeDuration GetTimerRate() override {
