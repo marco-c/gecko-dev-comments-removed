@@ -8,6 +8,7 @@
 #include <cmath>
 
 #include "AOMDecoder.h"
+#include "MediaCapabilities.h"
 #include "MediaInfo.h"
 #include "MediaMIMETypes.h"
 #include "VPXDecoder.h"
@@ -15,7 +16,6 @@
 #include "mozilla/ErrorResult.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Result.h"
-#include "mozilla/StaticPrefs_media.h"
 #include "mozilla/Variant.h"
 #include "mozilla/dom/MediaCapabilitiesBinding.h"
 #include "mozilla/dom/Promise.h"
@@ -68,7 +68,8 @@ ValidationResult CheckMIMETypeSupport(
     const MediaExtendedMIMEType& aMime,
     const MediaType& aEncodingOrDecodingType,
     const Maybe<dom::ColorGamut>& aColorGamut,
-    const Maybe<dom::TransferFunction>& aTransferFunction) {
+    const Maybe<dom::TransferFunction>& aTransferFunction,
+    const BehaviorConfig& aBehavior) {
   
   
   
@@ -86,8 +87,7 @@ ValidationResult CheckMIMETypeSupport(
   
   
   
-  if ((aColorGamut || aTransferFunction) &&
-      StaticPrefs::media_mediacapabilities_color_space_validation_enabled()) {
+  if ((aColorGamut || aTransferFunction) && !aBehavior.mLegacy) {
     
     MOZ_ASSERT_IF(aMime.Type().HasAudioMajorType(), !aColorGamut);
     MOZ_ASSERT_IF(aMime.Type().HasAudioMajorType(), !aTransferFunction);
@@ -255,7 +255,8 @@ ValidationResult IsValidAudioConfiguration(const AudioConfiguration& aConfig,
 
 template <typename CodingType>
 ValidationResult IsValidVideoConfiguration(const VideoConfiguration& aConfig,
-                                           const CodingType& aType) {
+                                           const CodingType& aType,
+                                           const BehaviorConfig& aBehavior) {
   static_assert(std::is_same_v<std::decay_t<CodingType>, MediaEncodingType> ||
                     std::is_same_v<CodingType, MediaDecodingType>,
                 "tType must be MediaEncodingType or MediaDecodingType");
@@ -326,9 +327,7 @@ ValidationResult IsValidVideoConfiguration(const VideoConfiguration& aConfig,
     
     
     if (aConfig.mScalabilityMode.WasPassed() &&
-        aType != MediaEncodingType::Webrtc &&
-        StaticPrefs::
-            media_mediacapabilities_scalability_mode_validation_enabled()) {
+        aType != MediaEncodingType::Webrtc && !aBehavior.mLegacy) {
       ValidationResult err = Err(ValidationError::InapplicableMember);
       LOG(
           ("[Invalid VideoConfiguration (Scalability Mode, %s) #2] Rejecting "
@@ -338,8 +337,7 @@ ValidationResult IsValidVideoConfiguration(const VideoConfiguration& aConfig,
       return err;
     }
     
-    if (aConfig.mColorGamut.WasPassed() &&
-        StaticPrefs::media_mediacapabilities_color_space_validation_enabled()) {
+    if (aConfig.mColorGamut.WasPassed() && !aBehavior.mLegacy) {
       ValidationResult err = Err(ValidationError::InapplicableMember);
       LOG(("[Invalid VideoConfiguration (Color Gamut, %s) #2] Rejecting '%s'\n",
            EnumValueToString(err.unwrapErr()),
@@ -347,8 +345,7 @@ ValidationResult IsValidVideoConfiguration(const VideoConfiguration& aConfig,
       return err;
     }
     
-    if (aConfig.mTransferFunction.WasPassed() &&
-        StaticPrefs::media_mediacapabilities_color_space_validation_enabled()) {
+    if (aConfig.mTransferFunction.WasPassed() && !aBehavior.mLegacy) {
       ValidationResult err = Err(ValidationError::InapplicableMember);
       LOG(
           ("[Invalid VideoConfiguration (Transfer Function, %s) #2] Rejecting "
@@ -379,24 +376,26 @@ ValidationResult IsValidVideoConfiguration(const VideoConfiguration& aConfig,
 }
 
 template ValidationResult IsValidVideoConfiguration<MediaEncodingType>(
-    const VideoConfiguration&, const MediaEncodingType&);
+    const VideoConfiguration&, const MediaEncodingType&, const BehaviorConfig&);
 template ValidationResult IsValidVideoConfiguration<MediaDecodingType>(
-    const VideoConfiguration&, const MediaDecodingType&);
+    const VideoConfiguration&, const MediaDecodingType&, const BehaviorConfig&);
 
 ValidationResult IsValidVideoConfiguration(const VideoConfiguration& aConfig,
-                                           const MediaType& aType) {
+                                           const MediaType& aType,
+                                           const BehaviorConfig& aBehavior) {
   return aType.match(
       [&](const MediaEncodingType& t) {
-        return IsValidVideoConfiguration(aConfig, t);
+        return IsValidVideoConfiguration(aConfig, t, aBehavior);
       },
       [&](const MediaDecodingType& t) {
-        return IsValidVideoConfiguration(aConfig, t);
+        return IsValidVideoConfiguration(aConfig, t, aBehavior);
       });
 }
 
 
 ValidationResult IsValidMediaConfiguration(const MediaConfiguration& aConfig,
-                                           const MediaType& aType) {
+                                           const MediaType& aType,
+                                           const BehaviorConfig& aBehavior) {
   
   if (!aConfig.mVideo.WasPassed() && !aConfig.mAudio.WasPassed()) {
     ValidationResult err = Err(ValidationError::MissingType);
@@ -419,7 +418,8 @@ ValidationResult IsValidMediaConfiguration(const MediaConfiguration& aConfig,
 
   
   if (aConfig.mVideo.WasPassed()) {
-    auto rv = IsValidVideoConfiguration(aConfig.mVideo.Value(), aType);
+    auto rv =
+        IsValidVideoConfiguration(aConfig.mVideo.Value(), aType, aBehavior);
     if (rv.isErr()) {
       LOG(("[Invalid Media Configuration (Invalid Video, %s) #3] '%s'",
            EnumValueToString(rv.unwrapErr()),
@@ -432,18 +432,22 @@ ValidationResult IsValidMediaConfiguration(const MediaConfiguration& aConfig,
 
 
 ValidationResult IsValidMediaEncodingConfiguration(
-    const MediaEncodingConfiguration& aConfig) {
-  return IsValidMediaConfiguration(aConfig, AsVariant(aConfig.mType));
+    const MediaEncodingConfiguration& aConfig,
+    const BehaviorConfig& aBehavior) {
+  return IsValidMediaConfiguration(aConfig, AsVariant(aConfig.mType),
+                                   aBehavior);
 }
 
 
 ValidationResult IsValidMediaDecodingConfiguration(
-    const MediaDecodingConfiguration& aConfig) {
+    const MediaDecodingConfiguration& aConfig,
+    const BehaviorConfig& aBehavior) {
   
   
 
   
-  auto base = IsValidMediaConfiguration(aConfig, AsVariant(aConfig.mType));
+  auto base =
+      IsValidMediaConfiguration(aConfig, AsVariant(aConfig.mType), aBehavior);
   if (base.isErr()) {
     LOG(
         ("[Invalid MediaDecodingConfiguration (Invalid MediaConfiguration, %s) "
