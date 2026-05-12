@@ -116,7 +116,7 @@ class RangeProducerView final : public webgl::ProducerView<RangeProducerView> {
     mDestItr += padToAlign;
 
     MOZ_ASSERT(byteSize <= Remaining());
-    if (MOZ_LIKELY(byteSize)) {
+    if (byteSize) [[likely]] {
       memcpy(mDestItr.get(), src.begin().get(), byteSize);
     }
     mDestItr += byteSize;
@@ -262,10 +262,7 @@ class MethodDispatcher {
 };
 
 struct WebGLMethodInfo {
-  enum Flags : uint8_t {
-    
-    LOCK_IN_PROCESS = 1 << 0,
-  };
+  enum Flags : uint8_t {};
 
   size_t id = 0;
   uint8_t flags = 0;

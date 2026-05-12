@@ -185,7 +185,6 @@ class ContextGenerationInfo final {
 
 
 
-
 struct NotLostData final : public SupportsWeakPtr, RefCounted<NotLostData> {
   MOZ_DECLARE_REFCOUNTED_TYPENAME(NotLostData)
 
@@ -193,7 +192,6 @@ struct NotLostData final : public SupportsWeakPtr, RefCounted<NotLostData> {
   webgl::InitContextResult info;
 
   RefPtr<mozilla::dom::WebGLChild> outOfProcess;
-  std::unique_ptr<HostWebGLContext> inProcess;
 
   webgl::ContextGenerationInfo state;
   std::array<RefPtr<ClientWebGLExtensionBase>,
@@ -240,7 +238,9 @@ class ObjectJS {
   
   bool ValidateUsable(const ClientWebGLContext& context,
                       const char* const argName) const {
-    if (MOZ_LIKELY(IsUsable(context))) return true;
+    if (IsUsable(context)) [[likely]] {
+      return true;
+    }
     WarnInvalidUse(context, argName);
     return false;
   }
@@ -1121,7 +1121,9 @@ class ClientWebGLContext final : public nsICanvasRenderingContextInternal,
   mutable bool mAutoFlushPending = false;
 
   void AutoEnqueueFlush() const {
-    if (MOZ_LIKELY(mAutoFlushPending)) return;
+    if (mAutoFlushPending) [[likely]] {
+      return;
+    }
     mAutoFlushPending = true;
 
     const auto DeferredFlush = [weak =
@@ -2348,7 +2350,6 @@ class ClientWebGLContext final : public nsICanvasRenderingContextInternal,
   
   
  protected:
-  
   
   template <typename MethodType, MethodType method, typename... CallerArgs>
   void Run(const CallerArgs&... args) const {

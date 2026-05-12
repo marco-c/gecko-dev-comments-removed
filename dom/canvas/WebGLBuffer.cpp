@@ -2,7 +2,6 @@
 
 
 
-
 #include "WebGLBuffer.h"
 
 #include "GLContext.h"
@@ -63,7 +62,9 @@ static bool ValidateBufferUsageEnum(WebGLContext* webgl, GLenum usage) {
     case LOCAL_GL_STATIC_READ:
     case LOCAL_GL_STREAM_COPY:
     case LOCAL_GL_STREAM_READ:
-      if (MOZ_LIKELY(webgl->IsWebGL2())) return true;
+      if (webgl->IsWebGL2()) [[likely]] {
+        return true;
+      }
       break;
 
     default:
