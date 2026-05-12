@@ -496,7 +496,17 @@ void HappyEyeballsConnectionAttempt::DNSLookup(
     nsIDNSService::DNSFlags flags = aFlags.unwrap();
     switch (aType) {
       case happy_eyeballs::DnsRecordType::Https: {
-        if (mCaps & NS_HTTP_DISALLOW_HTTPS_RR) {
+        
+        
+        
+        
+        
+        
+        
+        
+        if (!mConnInfo->FirstHopSSL() ||
+            (!StaticPrefs::network_dns_force_use_https_rr() &&
+             (mCaps & NS_HTTP_DISALLOW_HTTPS_RR))) {
           rv = NS_ERROR_NOT_AVAILABLE;
         } else {
           nsCOMPtr<nsIDNSAdditionalInfo> info;
@@ -1360,7 +1370,7 @@ void HappyEyeballsConnectionAttempt::SetupTimer(uint64_t aTimeout) {
   }
 
   LOG(("HappyEyeballsConnectionAttempt::SetupTimer to %" PRIu64 "ms [this=%p].",
-        aTimeout, this));
+       aTimeout, this));
 
   if (!mTimer) {
     
