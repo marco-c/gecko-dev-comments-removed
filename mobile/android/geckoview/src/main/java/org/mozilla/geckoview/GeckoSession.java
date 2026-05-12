@@ -3593,8 +3593,9 @@ public class GeckoSession {
       
       
       
-      getSelectionActionDelegate()
-          .onHideAction(this, GeckoSession.SelectionActionDelegate.HIDE_REASON_NO_SELECTION);
+      final SelectionActionDelegate oldDelegate = getSelectionActionDelegate();
+      oldDelegate.onHideAction(this, GeckoSession.SelectionActionDelegate.HIDE_REASON_NO_SELECTION);
+      oldDelegate.onDismissClipboardPermissionRequest(this);
     }
     mSelectionActionDelegate.setDelegate(delegate, this);
   }
