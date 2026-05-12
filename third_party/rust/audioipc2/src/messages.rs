@@ -219,7 +219,7 @@ pub struct RegisterDeviceCollectionChanged {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum ServerMessage {
-    ClientConnect(u32),
+    ClientConnect,
     ClientDisconnect,
 
     ContextGetBackendId,
