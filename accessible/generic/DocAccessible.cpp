@@ -3161,6 +3161,14 @@ void DocAccessible::ShutdownChildrenInSubtree(LocalAccessible* aAccessible) {
 }
 
 bool DocAccessible::IsLoadEventTarget() const {
+  if (XRE_IsParentProcess() && !ParentDocument()) {
+    
+    
+    
+    
+    
+    return false;
+  }
   return mDocumentNode->GetBrowsingContext()->IsContent();
 }
 
