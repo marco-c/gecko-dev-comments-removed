@@ -803,12 +803,26 @@ var gMainPane = {
     });
 
     setEventListener("chooseLanguage", "command", gMainPane.showLanguages);
+    
+    setEventListener(
+      "fxtranslateButton",
+      "command",
+      gMainPane.showTranslationExceptions
+    );
 
     document
       .getElementById("migrationWizardDialog")
       .addEventListener("MigrationWizard:Close", function (e) {
         e.currentTarget.close();
       });
+
+    
+    
+    const fxtranslationsDisabledPrefName = "extensions.translations.disabled";
+    if (!Services.prefs.getBoolPref(fxtranslationsDisabledPrefName, true)) {
+      let fxtranslationRow = document.getElementById("fxtranslationsBox");
+      fxtranslationRow.hidden = false;
+    }
 
     
 
@@ -1658,6 +1672,17 @@ var gMainPane = {
       });
       checkbox.hidden = false;
     }
+  },
+
+  
+
+
+
+  
+  showTranslationExceptions() {
+    gSubDialog.open(
+      "chrome://browser/content/preferences/dialogs/translationExceptions.xhtml"
+    );
   },
 
   showTranslationsSettings() {
