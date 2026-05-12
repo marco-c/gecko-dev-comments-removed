@@ -303,54 +303,55 @@ impl JxlApiDecoder {
             };
             let result = self.inner.process(data, bufs);
 
-            match result {
-                Err(e) => {
-                    return Err(e.into());
+            let need_more = match result {
+                Err(e) => return Err(e.into()),
+                Ok(ProcessingResult::Complete { .. }) => false,
+                Ok(ProcessingResult::NeedsMoreInput { .. }) => true,
+            };
+
+            
+            
+            
+            if self.metadata_only {
+                if let Some(basic_info) = self.inner.basic_info() {
+                    if basic_info.animation.is_none() {
+                        return Ok(true);
+                    }
                 }
-                Ok(r) => match r {
-                    ProcessingResult::Complete { .. } => {
-                        
-                        
-                        
-                        if self.metadata_only {
-                            if let Some(basic_info) = self.inner.basic_info() {
-                                if basic_info.animation.is_none() {
-                                    return Ok(true);
-                                }
-                            }
-                        }
-
-                        if !self.pixel_format_set && self.inner.basic_info().is_some() {
-                            self.set_pixel_format();
-                            debug_assert!(self.pixel_format_set);
-                            
-                            continue;
-                        }
-
-                        
-                        let frame_header = self.inner.frame_header();
-                        if let Some(frame_header) = frame_header {
-                            self.frame_duration = frame_header.duration.or(Some(0.0));
-                            self.frame_ready = true;
-                            
-                            debug_assert!(
-                                !has_output_buffer,
-                                "frame_header present with output buffer"
-                            );
-                            return Ok(true);
-                        } else if self.frame_ready {
-                            
-                            self.frame_ready = false;
-                            return Ok(true);
-                        }
-                        
-                        return Ok(false);
-                    }
-                    ProcessingResult::NeedsMoreInput { .. } => {
-                        return Ok(false);
-                    }
-                },
             }
+
+            
+            
+            
+            
+            if !self.pixel_format_set && self.inner.basic_info().is_some() {
+                debug_assert!(self.inner.embedded_color_profile().is_some());
+                self.set_pixel_format();
+                debug_assert!(self.pixel_format_set);
+                debug_assert!(self.inner.current_pixel_format().is_some());
+                if !need_more {
+                    
+                    
+                    continue;
+                }
+            }
+
+            if need_more {
+                return Ok(false);
+            }
+
+            let frame_header = self.inner.frame_header();
+            if let Some(frame_header) = frame_header {
+                self.frame_duration = frame_header.duration.or(Some(0.0));
+                self.frame_ready = true;
+                return Ok(true);
+            } else if self.frame_ready {
+                
+                self.frame_ready = false;
+                return Ok(true);
+            }
+            
+            return Ok(false);
         }
     }
 }

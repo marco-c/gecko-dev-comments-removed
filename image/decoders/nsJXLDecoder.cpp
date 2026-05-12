@@ -64,7 +64,7 @@ LexerResult nsJXLDecoder::DoDecode(SourceBufferIterator& aIterator,
         
         
         
-        if (!HasAnimation() && !mPixelBuffer.empty() && mCurrentPipe) {
+        if (!HasAnimation() && !mPixelBuffer.empty()) {
           FlushPartialFrame();
         }
       }
@@ -205,77 +205,97 @@ nsJXLDecoder::ProcessResult nsJXLDecoder::ProcessAvailableData(
   while (true) {
     JxlDecoderStatus status = ProcessInput(aData, aLength);
 
-    switch (status) {
-      case JxlDecoderStatus::Error:
-        return ProcessResult::Error;
+    if (status == JxlDecoderStatus::Error) {
+      return ProcessResult::Error;
+    }
 
-      case JxlDecoderStatus::NeedMoreData:
-        return ProcessResult::NeedMoreData;
-
-      case JxlDecoderStatus::Ok: {
-        if (mDecoderState == DecoderState::Initial) {
-          JxlBasicInfo basicInfo = jxl_decoder_get_basic_info(mDecoder.get());
-          if (!basicInfo.valid) {
-            if (*aLength == 0) {
-              return ProcessResult::NeedMoreData;
-            }
-            continue;
-          }
-
-          if (basicInfo.width > INT32_MAX || basicInfo.height > INT32_MAX) {
-            return ProcessResult::Error;
-          }
-
-          PostSize(basicInfo.width, basicInfo.height);
-          if (basicInfo.has_alpha) {
-            PostHasTransparency();
-          }
-
-          if (!basicInfo.is_animated) {
-            PostFrameCount(1);
-            if (IsMetadataDecode()) {
-              return ProcessResult::Complete;
-            }
-          }
-
-          mDecoderState = DecoderState::HaveBasicInfo;
+    
+    
+    
+    
+    
+    
+    if (mDecoderState == DecoderState::Initial) {
+      JxlBasicInfo basicInfo = jxl_decoder_get_basic_info(mDecoder.get());
+      if (basicInfo.valid) {
+        if (basicInfo.width > INT32_MAX || basicInfo.height > INT32_MAX) {
+          return ProcessResult::Error;
         }
 
-        if (mDecoderState == DecoderState::HaveBasicInfo) {
-          if (jxl_decoder_is_frame_ready(mDecoder.get()) && !HasAnimation()) {
-            JxlBasicInfo basicInfo = jxl_decoder_get_basic_info(mDecoder.get());
-            if (basicInfo.is_animated) {
-              JxlFrameInfo frameInfo =
-                  jxl_decoder_get_frame_info(mDecoder.get());
-              PostIsAnimated(
-                  FrameTimeout::FromRawMilliseconds(frameInfo.duration_ms));
-              
-              
-              PostLoopCount(
-                  (basicInfo.num_loops == 0 || basicInfo.num_loops > INT32_MAX)
-                      ? -1
-                      : static_cast<int32_t>(basicInfo.num_loops - 1));
-              if (IsMetadataDecode()) {
-                return ProcessResult::Complete;
-              }
-            }
-          }
+        PostSize(basicInfo.width, basicInfo.height);
+        if (basicInfo.has_alpha) {
+          PostHasTransparency();
         }
 
-        switch (HandleFrameOutput()) {
-          case FrameOutputResult::BufferAllocated:
-          case FrameOutputResult::NoOutput:
-            continue;
-          case FrameOutputResult::FrameAdvanced:
-            return ProcessResult::YieldOutput;
-          case FrameOutputResult::DecodeComplete:
+        if (!basicInfo.is_animated) {
+          PostFrameCount(1);
+          if (IsMetadataDecode()) {
             return ProcessResult::Complete;
-          case FrameOutputResult::Error:
-            return ProcessResult::Error;
+          }
         }
-        MOZ_CRASH("Unhandled FrameOutputResult");
+
+        mDecoderState = DecoderState::HaveBasicInfo;
+
+        
+        
+        
+        
+        
+        
+        
+        
+        if (!basicInfo.is_animated) {
+          if (NS_FAILED(AllocateFrameBuffers())) {
+            return ProcessResult::Error;
+          }
+        }
+      } else if (status == JxlDecoderStatus::Ok) {
+        
+        
+        if (*aLength == 0) {
+          return ProcessResult::NeedMoreData;
+        }
+        continue;
       }
     }
+
+    if (status == JxlDecoderStatus::NeedMoreData) {
+      return ProcessResult::NeedMoreData;
+    }
+
+    MOZ_ASSERT(status == JxlDecoderStatus::Ok);
+    if (mDecoderState == DecoderState::HaveBasicInfo) {
+      if (jxl_decoder_is_frame_ready(mDecoder.get()) && !HasAnimation()) {
+        JxlBasicInfo basicInfo = jxl_decoder_get_basic_info(mDecoder.get());
+        if (basicInfo.is_animated) {
+          JxlFrameInfo frameInfo = jxl_decoder_get_frame_info(mDecoder.get());
+          PostIsAnimated(
+              FrameTimeout::FromRawMilliseconds(frameInfo.duration_ms));
+          
+          
+          PostLoopCount(
+              (basicInfo.num_loops == 0 || basicInfo.num_loops > INT32_MAX)
+                  ? -1
+                  : static_cast<int32_t>(basicInfo.num_loops - 1));
+          if (IsMetadataDecode()) {
+            return ProcessResult::Complete;
+          }
+        }
+      }
+    }
+
+    switch (HandleFrameOutput()) {
+      case FrameOutputResult::BufferAllocated:
+      case FrameOutputResult::NoOutput:
+        continue;
+      case FrameOutputResult::FrameAdvanced:
+        return ProcessResult::YieldOutput;
+      case FrameOutputResult::DecodeComplete:
+        return ProcessResult::Complete;
+      case FrameOutputResult::Error:
+        return ProcessResult::Error;
+    }
+    MOZ_CRASH("Unhandled FrameOutputResult");
   }
 }
 
@@ -331,7 +351,10 @@ nsJXLDecoder::FrameOutputResult nsJXLDecoder::HandleFrameOutput() {
   bool frameNeedsBuffer = jxl_decoder_is_frame_ready(mDecoder.get());
 
   if (frameNeedsBuffer && mPixelBuffer.empty()) {
-    return BeginFrame();
+    if (NS_FAILED(AllocateFrameBuffers())) {
+      return FrameOutputResult::Error;
+    }
+    return FrameOutputResult::BufferAllocated;
   }
 
   if (!frameNeedsBuffer && !mPixelBuffer.empty()) {
@@ -369,7 +392,7 @@ nsJXLDecoder::PixelFormat nsJXLDecoder::DetectPixelFormat(
                                                  : PixelFormat::Rgba8;
 }
 
-nsJXLDecoder::FrameOutputResult nsJXLDecoder::BeginFrame() {
+nsresult nsJXLDecoder::AllocateFrameBuffers() {
   MOZ_ASSERT(HasSize());
   OrientedIntSize size = Size();
   JxlBasicInfo basicInfo = jxl_decoder_get_basic_info(mDecoder.get());
@@ -388,15 +411,15 @@ nsJXLDecoder::FrameOutputResult nsJXLDecoder::BeginFrame() {
       CheckedInt<size_t>(size.width) * size.height * BytesPerPixel();
   if (!bufferSize.isValid() || !mPixelBuffer.resize(bufferSize.value())) {
     MOZ_LOG(sJXLLog, LogLevel::Error,
-            ("[this=%p] nsJXLDecoder::BeginFrame -- "
+            ("[this=%p] nsJXLDecoder::AllocateFrameBuffers -- "
              "failed to allocate pixel buffer\n",
              this));
-    return FrameOutputResult::Error;
+    return NS_ERROR_FAILURE;
   }
 
   if (mPixelFormat.value() == PixelFormat::Cmyk8 &&
       !mKBuffer.resize(size.width * size.height)) {
-    return FrameOutputResult::Error;
+    return NS_ERROR_FAILURE;
   }
 
   
@@ -405,25 +428,39 @@ nsJXLDecoder::FrameOutputResult nsJXLDecoder::BeginFrame() {
   if (mPixelFormat.value() != PixelFormat::Rgba8) {
     CheckedInt<size_t> rowBufSize = CheckedInt<size_t>(size.width) * 4;
     if (!rowBufSize.isValid() || !mU8RowBuf.resize(rowBufSize.value())) {
-      return FrameOutputResult::Error;
+      return NS_ERROR_FAILURE;
     }
-  }
-
-  Maybe<AnimationParams> animParams;
-  if (HasAnimation()) {
-    JxlFrameInfo frameInfo = jxl_decoder_get_frame_info(mDecoder.get());
-    if (!frameInfo.frame_duration_valid) {
-      return FrameOutputResult::Error;
-    }
-    animParams.emplace(FullFrame().ToUnknownRect(),
-                       FrameTimeout::FromRawMilliseconds(frameInfo.duration_ms),
-                       mFrameIndex, BlendMethod::SOURCE, DisposalMethod::KEEP);
   }
 
   
   
   if (mFrameIndex == 0 && GetCMSOutputProfile() && mCMSMode != CMSMode::Off) {
     BuildCMSTransform();
+  }
+
+  return NS_OK;
+}
+
+nsresult nsJXLDecoder::EnsureSurfacePipe() {
+  if (mCurrentPipe) {
+    return NS_OK;
+  }
+
+  MOZ_ASSERT(HasSize());
+  OrientedIntSize size = Size();
+  JxlBasicInfo basicInfo = jxl_decoder_get_basic_info(mDecoder.get());
+  MOZ_ASSERT(basicInfo.valid);
+
+  Maybe<AnimationParams> animParams;
+  if (HasAnimation()) {
+    JxlFrameInfo frameInfo = jxl_decoder_get_frame_info(mDecoder.get());
+    MOZ_ASSERT(frameInfo.frame_duration_valid);
+    if (!frameInfo.frame_duration_valid) {
+      return NS_ERROR_FAILURE;
+    }
+    animParams.emplace(FullFrame().ToUnknownRect(),
+                       FrameTimeout::FromRawMilliseconds(frameInfo.duration_ms),
+                       mFrameIndex, BlendMethod::SOURCE, DisposalMethod::KEEP);
   }
 
   
@@ -462,10 +499,10 @@ nsJXLDecoder::FrameOutputResult nsJXLDecoder::BeginFrame() {
       this, size, OutputSize(), FullFrame(), inFormat, outFormat, animParams,
       pipeTransform, pipeFlags);
   if (!mCurrentPipe) {
-    return FrameOutputResult::Error;
+    return NS_ERROR_FAILURE;
   }
 
-  return FrameOutputResult::BufferAllocated;
+  return NS_OK;
 }
 
 void nsJXLDecoder::BuildCMSTransform() {
@@ -628,7 +665,11 @@ bool nsJXLDecoder::WritePixelRowsToPipe() {
 nsresult nsJXLDecoder::FinishFrame() {
   MOZ_ASSERT(HasSize());
   MOZ_ASSERT(mDecoder);
-  MOZ_ASSERT(mCurrentPipe);
+
+  nsresult rv = EnsureSurfacePipe();
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
 
   JxlBasicInfo basicInfo = jxl_decoder_get_basic_info(mDecoder.get());
 
@@ -655,13 +696,23 @@ nsresult nsJXLDecoder::FinishFrame() {
 
 void nsJXLDecoder::FlushPartialFrame() {
   MOZ_ASSERT(!mPixelBuffer.empty());
-  MOZ_ASSERT(mCurrentPipe);
 
   JxlDecoderStatus status = jxl_decoder_flush_pixels(
       mDecoder.get(), mPixelBuffer.begin(), mPixelBuffer.length(),
       mKBuffer.empty() ? nullptr : mKBuffer.begin(), mKBuffer.length());
   if (status != JxlDecoderStatus::Ok) {
     
+    return;
+  }
+
+  
+  
+  
+  if (NS_FAILED(EnsureSurfacePipe())) {
+    MOZ_LOG(sJXLLog, LogLevel::Error,
+            ("[this=%p] nsJXLDecoder::FlushPartialFrame -- "
+             "EnsureSurfacePipe failed\n",
+             this));
     return;
   }
 

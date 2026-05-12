@@ -74,7 +74,16 @@ class nsJXLDecoder final : public Decoder {
 
   static PixelFormat DetectPixelFormat(JxlApiDecoder* aDecoder,
                                        const JxlBasicInfo& aBasicInfo);
-  FrameOutputResult BeginFrame();
+  
+  
+  
+  
+  nsresult AllocateFrameBuffers();
+  
+  
+  
+  
+  nsresult EnsureSurfacePipe();
   void BuildCMSTransform();
   nsresult FinishFrame();
   void FlushPartialFrame();
