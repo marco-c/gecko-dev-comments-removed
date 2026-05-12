@@ -31,6 +31,10 @@ enum class OverflowAreaUnionFlags : uint8_t {
   
   
   AsIfScrolled = 1 << 0,
+  
+  
+  
+  ChildIsAbsPos = 1 << 1,
 };
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(OverflowAreaUnionFlags)
 

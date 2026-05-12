@@ -2424,20 +2424,24 @@ bool nsContainerFrame::ShouldAvoidBreakInside(
 void nsContainerFrame::ConsiderChildOverflow(OverflowAreas& aOverflowAreas,
                                              nsIFrame* aChildFrame,
                                              OverflowAreaUnionFlags aFlags) {
-  if (StyleDisplay()->IsContainLayout() && SupportsContainLayoutAndPaint() &&
-      !(aFlags & OverflowAreaUnionFlags::AsIfScrolled)) {
-    
-    
-    
-    
-    
-    
-    const OverflowAreas childOverflows(aChildFrame->InkOverflowRect(),
-                                       nsRect());
-    aOverflowAreas.UnionWith(childOverflows + aChildFrame->GetPosition());
+  const OverflowAreas childOverflows = [&]() -> OverflowAreas {
+    if (StyleDisplay()->IsContainLayout() && SupportsContainLayoutAndPaint() &&
+        !(aFlags & OverflowAreaUnionFlags::AsIfScrolled)) {
+      
+      
+      
+      
+      
+      
+      return OverflowAreas(aChildFrame->InkOverflowRect(), nsRect()) +
+             aChildFrame->GetPosition();
+    }
+    return aChildFrame->GetActualAndNormalOverflowAreasRelativeToParent();
+  }();
+  if (aFlags & OverflowAreaUnionFlags::ChildIsAbsPos) {
+    aOverflowAreas.UnionWithAbsoluteOverflowAreas(childOverflows);
   } else {
-    aOverflowAreas.UnionWith(
-        aChildFrame->GetActualAndNormalOverflowAreasRelativeToParent());
+    aOverflowAreas.UnionWith(childOverflows);
   }
 }
 
