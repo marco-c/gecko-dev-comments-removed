@@ -764,35 +764,3 @@ bool Watchtower::watchFreezeOrSealSlow(JSContext* cx, Handle<NativeObject*> obj,
 
   return true;
 }
-
-
-bool Watchtower::watchObjectSwapSlow(JSContext* cx, HandleObject a,
-                                     HandleObject b) {
-  MOZ_ASSERT(watchesObjectSwap(a, b));
-
-  
-  
-  
-  if (!WatchProtoChangeImpl(cx, a)) {
-    return false;
-  }
-  if (!WatchProtoChangeImpl(cx, b)) {
-    return false;
-  }
-
-  if (a->hasObjectFuse()) {
-    if (auto* objFuse = cx->zone()->objectFuses.get(a.as<NativeObject>())) {
-      objFuse->handleObjectSwap(cx);
-    }
-  }
-  if (b->hasObjectFuse()) {
-    if (auto* objFuse = cx->zone()->objectFuses.get(b.as<NativeObject>())) {
-      objFuse->handleObjectSwap(cx);
-    }
-  }
-
-  
-  
-
-  return true;
-}

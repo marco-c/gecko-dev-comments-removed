@@ -961,10 +961,6 @@ void JSObject::swap(JSContext* cx, HandleObject a, HandleObject b,
   
   gc::AutoSuppressGC nogc(cx);
 
-  if (!Watchtower::watchObjectSwap(cx, a, b)) {
-    oomUnsafe.crash("watchObjectSwap");
-  }
-
   
   gc::StoreBuffer& storeBuffer = cx->runtime()->gc.storeBuffer();
   if (a->isTenured()) {
