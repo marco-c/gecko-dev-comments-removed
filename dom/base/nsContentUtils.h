@@ -1057,13 +1057,6 @@ class nsContentUtils {
 
   static bool IsCustomElementName(nsAtom* aName, uint32_t aNameSpaceID);
 
-  
-
-
-
-  static bool IsValidShadowHostName(nsAtom* aName,
-                                    uint32_t aNameSpaceID = kNameSpaceID_XHTML);
-
   static nsresult CheckQName(const nsAString& aQualifiedName,
                              bool aNamespaceAware = true,
                              const char16_t** aColon = nullptr);

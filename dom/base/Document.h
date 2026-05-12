@@ -237,7 +237,6 @@ class DocumentType;
 class DOMImplementation;
 class DOMIntersectionObserver;
 class DOMStringList;
-class EditContext;
 class Event;
 class EventListener;
 struct FailedCertSecurityInfo;
@@ -1572,10 +1571,6 @@ class Document : public nsINode,
 
 
   void TearingDownEditor();
-
-  EditContext* GetActiveEditContext() const { return mActiveEditContext; }
-  
-  MOZ_CAN_RUN_SCRIPT void UpdateTextEditContext();
 
   void SetKeyPressEventModel(uint16_t aKeyPressEventModel);
 
@@ -4341,9 +4336,6 @@ class Document : public nsINode,
 
   void AppendAutoFocusCandidateToTopDocument(Element* aAutoFocusCandidate);
 
-  
-  EditContext* DetermineActiveEditContext() const;
-
  public:
   void SetSHEntryHasUserInteraction(bool aHasInteraction);
 
@@ -5631,10 +5623,6 @@ class Document : public nsINode,
   WeakPtr<Document> mFullscreenRoot;
 
   RefPtr<DOMImplementation> mDOMImplementation;
-
-  
-  
-  RefPtr<EditContext> mActiveEditContext;
 
   RefPtr<ContentList> mImageMaps;
 
