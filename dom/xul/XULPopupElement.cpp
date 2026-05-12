@@ -82,11 +82,6 @@ void XULPopupElement::OpenPopup(Element* aAnchorElement,
 void XULPopupElement::OpenPopupAtScreen(int32_t aXPos, int32_t aYPos,
                                         bool aIsContextMenu,
                                         Event* aTriggerEvent) {
-  if (NodeInfo()->NameAtom() == nsGkAtoms::panel) {
-    
-    
-    SetAttr(kNameSpaceID_None, nsGkAtoms::nonnative, u"true"_ns, true);
-  }
   nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
   if (pm) {
     pm->ShowPopupAtScreen(this, aXPos, aYPos, aIsContextMenu, aTriggerEvent);
@@ -100,11 +95,6 @@ void XULPopupElement::OpenPopupAtScreenRect(const nsAString& aPosition,
                                             bool aAttributesOverride,
                                             Event* aTriggerEvent) {
   nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
-  if (NodeInfo()->NameAtom() == nsGkAtoms::panel) {
-    
-    
-    SetAttr(kNameSpaceID_None, nsGkAtoms::nonnative, u"true"_ns, true);
-  }
   if (pm) {
     pm->ShowPopupAtScreenRect(
         this, aPosition, nsIntRect(aXPos, aYPos, aWidth, aHeight),
