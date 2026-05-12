@@ -4,6 +4,8 @@
 
 #include "sandboxTarget.h"
 
+#include "mozilla/CpuInfo.h"
+#include "mozilla/SandboxSettings.h"
 #include "sandbox/win/src/sandbox.h"
 
 namespace mozilla {
@@ -21,6 +23,18 @@ void SandboxTarget::StartSandbox() {
     mTargetServices->LowerToken();
     NotifyStartObservers();
   }
+}
+
+void SandboxTarget::LowerContentSandbox() {
+  if (GetEffectiveContentSandboxLevel() > 7) {
+    
+    ::LoadLibraryW(L"freebl3.dll");
+    ::LoadLibraryW(L"softokn3.dll");
+    
+    (void)GetCpuFrequencyMHz();
+  }
+
+  StartSandbox();
 }
 
 void SandboxTarget::NotifyStartObservers() {

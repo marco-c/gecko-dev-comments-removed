@@ -51,6 +51,11 @@ class SandboxTarget {
 
 
   void StartSandbox();
+  
+
+
+
+  void LowerContentSandbox();
 
  protected:
   SandboxTarget() : mTargetServices(nullptr) {}
