@@ -1,0 +1,13 @@
+
+
+
+
+
+
+'use strict';
+
+promise_test(async (t) => {
+  await ensureLanguageModel();
+  const model = await createLanguageModel();
+  assert_regexp_match(await model.prompt(undefined), /undefined/);
+}, 'LanguageModel.prompt() allows undefined input');

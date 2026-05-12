@@ -1,0 +1,17 @@
+
+
+
+
+
+
+'use strict';
+
+promise_test(async t => {
+  await ensureLanguageModel();
+  const session = await createLanguageModel();
+  const response = await session.prompt('hello', {
+    responseConstraint: kValidResponseSchema,
+    omitResponseConstraintInput: true
+  });
+  testResponseJsonSchema(response, t);
+}, 'Prompt should omit response schema from input.');

@@ -1,0 +1,15 @@
+
+
+
+
+
+
+'use strict';
+
+promise_test(async t => {
+  await ensureLanguageModel();
+  const session = await createLanguageModel();
+  const response =
+      await session.prompt('hello', {responseConstraint: kValidResponseSchema});
+  testResponseJsonSchema(response, t);
+}, 'Prompt should work when a valid response json schema is provided.');

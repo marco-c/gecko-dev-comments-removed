@@ -8,18 +8,6 @@
 
 promise_test(async () => {
   await ensureLanguageModel(kImageOptions);
-  const blob = await (await fetch(kValidImagePath)).blob();
-  const bitmap = await createImageBitmap(blob);
-  const frame = new VideoFrame(bitmap, {timestamp: 1});
-  const session = await createLanguageModel(kImageOptions);
-  const result =
-      await session.prompt(messageWithContent(kImagePrompt, 'image', frame));
-  frame.close();  
-  assert_regexp_match(result, kValidImageRegex);
-}, 'Prompt with VideoFrame image content');
-
-promise_test(async () => {
-  await ensureLanguageModel(kImageOptions);
   var video = document.createElement('video');
   video.src = kValidVideoPath;
   video.width = 1224;

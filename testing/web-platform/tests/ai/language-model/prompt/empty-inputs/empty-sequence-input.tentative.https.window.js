@@ -1,0 +1,14 @@
+
+
+
+
+
+
+'use strict';
+
+promise_test(async (t) => {
+  await ensureLanguageModel();
+  const model = await createLanguageModel();
+  assert_equals(
+      typeof await model.prompt([{role: 'user', content: []}]), 'string');
+}, 'LanguageModel.prompt() allows empty message sequence input');
