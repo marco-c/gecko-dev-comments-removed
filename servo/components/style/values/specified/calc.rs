@@ -189,6 +189,27 @@ impl CalcNumeric {
     }
 
     
+    pub fn resolve(
+        &self,
+        context: &computed::Context,
+        leaf_to_f32: impl FnOnce(Result<Leaf, ()>) -> f32,
+    ) -> f32 {
+        let result = self.node.resolve_map(|leaf| {
+            Ok(match leaf {
+                
+                Leaf::Length(length) => Leaf::Length(NoCalcLength::from_px(
+                    length.to_computed_value(context).px(),
+                )),
+                
+                _ => leaf.clone(),
+            })
+        });
+        crate::values::normalize(self.clamping_mode.clamp(leaf_to_f32(result)))
+            .min(f32::MAX)
+            .max(f32::MIN)
+    }
+
+    
     pub fn as_number(&self) -> Option<NoCalcNumber> {
         match self.node.resolve() {
             Ok(Leaf::Number(n)) => Some(n),
@@ -1525,18 +1546,5 @@ impl CalcNode {
         )?
         .into_resolution()
         .map_err(|()| input.new_custom_error(StyleParseErrorKind::UnspecifiedError))
-    }
-
-    
-    
-    pub fn with_computed_context(&self, context: &computed::Context) -> Self {
-        self.map_leaves(|leaf| match leaf {
-            
-            Leaf::Length(length) => Leaf::Length(NoCalcLength::from_px(
-                length.to_computed_value(context).px(),
-            )),
-            
-            _ => leaf.clone(),
-        })
     }
 }
