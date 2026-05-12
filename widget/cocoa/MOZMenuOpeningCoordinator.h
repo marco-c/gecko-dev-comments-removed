@@ -33,6 +33,7 @@ class Runnable;
                    atScreenPosition:(NSPoint)aPosition
                             forView:(NSView*)aView
                      withAppearance:(NSAppearance*)aAppearance
+                       withFontSize:(CGFloat)aFontSize
                       asContextMenu:(BOOL)aIsContextMenu
                      asAnchoredMenu:(BOOL)aIsAnchoredMenu
                          anchorRect:(NSRect)aAnchorRect

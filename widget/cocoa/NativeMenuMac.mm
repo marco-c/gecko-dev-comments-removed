@@ -27,6 +27,8 @@
 #include "nsIFrame.h"
 #include "nsPresContext.h"
 #include "nsDeviceContext.h"
+#include "nsMenuPopupFrame.h"
+#include "nsComputedDOMStyle.h"
 
 namespace mozilla {
 
@@ -243,11 +245,10 @@ static NSAppearance* NativeAppearanceForContent(nsIContent* aContent) {
 }
 
 void NativeMenuMac::ShowMenuAnchored(nsIFrame* aClickedFrame,
-                                     const CSSIntRect& aRect,
-                                     const nsAString& aPosition) {
+                                     const nsMenuPopupFrame* aPopupFrame) {
+  const int8_t position = aPopupFrame->GetAlignmentPosition();
   
-  const bool pullsDown =
-      !aPosition.Equals(u"overlap"_ns) && !aPosition.Equals(u"selection"_ns);
+  const bool pullsDown = position < POPUPPOSITION_OVERLAP;
 
   mMenu->SetIsAnchoredPopUp(!pullsDown);
   mMenu->SetIsAnchoredPullDown(pullsDown);
@@ -261,7 +262,8 @@ void NativeMenuMac::ShowMenuAnchored(nsIFrame* aClickedFrame,
       pc->CSSToDevPixelScale() / pc->DeviceContext()->GetDesktopToDeviceScale();
 
   
-  const DesktopRect desktopRect = aRect * cssToDesktopScale;
+  const DesktopRect desktopRect =
+      aPopupFrame->GetScreenAnchorRect() * cssToDesktopScale;
   NSPoint windowPoint = NSMakePoint(
       desktopRect.x - window.frame.origin.x,
       nsCocoaUtils::FlippedScreenY(desktopRect.y) - window.frame.origin.y);
@@ -276,26 +278,32 @@ void NativeMenuMac::ShowMenuAnchored(nsIFrame* aClickedFrame,
 
   
   
+  
   NSRectEdge edge;
-  if (StringBeginsWith(aPosition, u"topcenter bottom"_ns) ||
-      StringBeginsWith(aPosition, u"topleft bottom"_ns) ||
-      StringBeginsWith(aPosition, u"topright bottom"_ns) ||
-      StringBeginsWith(aPosition, u"before"_ns)) {
-    edge = NSRectEdgeMinY;
-  } else if ((StringEndsWith(aPosition, u"right"_ns) &&
-              (StringBeginsWith(aPosition, u"left"_ns) ||
-               StringBeginsWith(aPosition, u"topleft"_ns) ||
-               StringBeginsWith(aPosition, u"bottomleft"_ns))) ||
-             StringBeginsWith(aPosition, u"start"_ns)) {
-    edge = NSRectEdgeMinX;
-  } else if ((StringEndsWith(aPosition, u"left"_ns) &&
-              (StringBeginsWith(aPosition, u"right"_ns) ||
-               StringBeginsWith(aPosition, u"topright"_ns) ||
-               StringBeginsWith(aPosition, u"bottomright"_ns))) ||
-             StringBeginsWith(aPosition, u"end"_ns)) {
-    edge = NSRectEdgeMaxX;
-  } else {
-    edge = NSRectEdgeMaxY;
+  switch (position) {
+    case POPUPPOSITION_BEFORESTART:
+    case POPUPPOSITION_BEFOREEND:
+      edge = NSRectEdgeMaxY;
+      break;
+    case POPUPPOSITION_STARTBEFORE:
+    case POPUPPOSITION_STARTAFTER:
+      edge = NSRectEdgeMinX;
+      break;
+    case POPUPPOSITION_ENDBEFORE:
+    case POPUPPOSITION_ENDAFTER:
+      edge = NSRectEdgeMaxX;
+      break;
+    default:
+      edge = NSRectEdgeMinY;
+  }
+
+  
+  
+  
+  CGFloat fontSize = 0.f;
+  if (!pullsDown) {
+    fontSize = aPopupFrame->PresContext()->GetFullZoom() *
+               aPopupFrame->StyleFont()->mSize.ToCSSPixels();
   }
 
   
@@ -306,6 +314,7 @@ void NativeMenuMac::ShowMenuAnchored(nsIFrame* aClickedFrame,
             atScreenPosition:buttonRect.origin  
                      forView:view
               withAppearance:appearance
+                withFontSize:fontSize
                asContextMenu:false  
               asAnchoredMenu:true
                   anchorRect:buttonRect
@@ -336,6 +345,7 @@ void NativeMenuMac::ShowMenuAtPosition(nsIFrame* aClickedFrame,
             atScreenPosition:locationOnScreen
                      forView:view
               withAppearance:appearance
+                withFontSize:0.f  
                asContextMenu:aIsContextMenu
               asAnchoredMenu:false
                   anchorRect:NSMakeRect(0, 0, 0, 0)  

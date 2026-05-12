@@ -10,6 +10,7 @@
 
 class nsIURI;
 class nsIFrame;
+class nsMenuPopupFrame;
 class nsPresContext;
 
 namespace mozilla {
@@ -41,8 +42,7 @@ class NativeMenu {
   
   
   virtual void ShowMenuAnchored(nsIFrame* aClickedFrame,
-                                const CSSIntRect& aRect,
-                                const nsAString& aPosition) = 0;
+                                const nsMenuPopupFrame* aPopupFrame) = 0;
 
   
   
