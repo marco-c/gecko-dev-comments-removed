@@ -30,7 +30,6 @@ pub type InitialLetter = GenericInitialLetter<Number, Integer>;
 
 
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped)]
-#[typed_value(derive_fields)]
 pub enum Spacing {
     
     Normal,
@@ -57,7 +56,6 @@ impl Parse for Spacing {
 #[derive(
     Clone, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped,
 )]
-#[typed_value(derive_fields)]
 pub struct LetterSpacing(pub Spacing);
 
 impl ToComputedValue for LetterSpacing {
@@ -119,6 +117,7 @@ impl ToComputedValue for WordSpacing {
     ToTyped,
 )]
 #[repr(C, u8)]
+#[typed(todo_derive_fields)]
 pub enum HyphenateCharacter {
     
     Auto,
@@ -207,6 +206,7 @@ pub enum TextOverflowSide {
     ToTyped,
 )]
 #[repr(C)]
+#[typed(todo_derive_fields)]
 
 
 
@@ -556,12 +556,12 @@ pub enum TextAlignKeyword {
     ToShmem,
     ToTyped,
 )]
+#[typed(todo_derive_fields)]
 pub enum TextAlign {
     
     Keyword(TextAlignKeyword),
     
     
-    #[cfg(feature = "gecko")]
     MatchParent,
     
     
@@ -586,7 +586,6 @@ impl ToComputedValue for TextAlign {
     fn to_computed_value(&self, _context: &Context) -> Self::ComputedValue {
         match *self {
             TextAlign::Keyword(key) => key,
-            #[cfg(feature = "gecko")]
             TextAlign::MatchParent => {
                 
                 
@@ -642,6 +641,7 @@ fn fill_mode_is_default_and_shape_exists(
 
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped)]
 #[allow(missing_docs)]
+#[typed(todo_derive_fields)]
 pub enum TextEmphasisStyle {
     
     Keyword {
