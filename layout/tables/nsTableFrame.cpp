@@ -4127,7 +4127,7 @@ bool nsTableFrame::BCRecalcNeeded(ComputedStyle* aOldComputedStyle,
     
     
     
-    nsCOMPtr<nsIRunnable> evt = new nsDelayedCalcBCBorders(this);
+    nsCOMPtr<nsIRunnable> evt = MakeAndAddRef<nsDelayedCalcBCBorders>(this);
     nsresult rv = GetContent()->OwnerDoc()->Dispatch(evt.forget());
     return NS_SUCCEEDED(rv);
   }
