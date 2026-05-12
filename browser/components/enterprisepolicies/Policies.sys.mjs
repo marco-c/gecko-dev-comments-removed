@@ -907,7 +907,9 @@ export var Policies = {
         return;
       }
       if (param == 3) {
-        // allows access, leave pref value at default
+        // allow access to serial ports, but don't lock the
+        // pref so it can be manually disabled
+        PoliciesUtils.setDefaultPref("dom.webserial.enabled", true, false);
       } else if (param == 2) {
         // do not allow access to serial ports
         setAndLockPref("dom.webserial.enabled", false);
@@ -947,14 +949,25 @@ export var Policies = {
         // don't do anything.
         return;
       }
+      if (!param) {
+        // Ensure PDF.js is not blocked by the pref (no UI exists for this pref).
+        Services.prefs.clearUserPref("pdfjs.disabled");
+        // Only set handleInternally once per policy value; don't override the
+        // user's handler choice on every subsequent startup.
+        runOncePerModification("disableBuiltinPDFViewer", "false", () => {
+          let pdfMIMEInfo = lazy.gMIMEService.getFromTypeAndExtension(
+            "application/pdf",
+            "pdf"
+          );
+          processMIMEInfo({ action: "handleInternally" }, pdfMIMEInfo);
+        });
+        return;
+      }
       let pdfMIMEInfo = lazy.gMIMEService.getFromTypeAndExtension(
         "application/pdf",
         "pdf"
       );
-      let mimeInfo = {
-        action: param ? "useSystemDefault" : "handleInternally",
-      };
-      processMIMEInfo(mimeInfo, pdfMIMEInfo);
+      processMIMEInfo({ action: "useSystemDefault" }, pdfMIMEInfo);
     },
   },
 
