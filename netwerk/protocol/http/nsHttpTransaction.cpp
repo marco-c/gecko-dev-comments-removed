@@ -1341,9 +1341,13 @@ bool nsHttpTransaction::ShouldRestartOnResumptionError(nsresult reason) {
       ("nsHttpTransaction::ShouldRestartOnResumptionError [this=%p, "
        "mResumptionAttempted=%d error=%" PRIx32 "]\n",
        this, mResumptionAttempted, static_cast<uint32_t>(reason)));
+  
+  
+  
   return StaticPrefs::network_http_early_data_disable_on_error() &&
          mResumptionAttempted &&
-         NS_ERROR_GET_MODULE(reason) == NS_ERROR_MODULE_SECURITY;
+         (NS_ERROR_GET_MODULE(reason) == NS_ERROR_MODULE_SECURITY ||
+          reason == NS_ERROR_NET_RESET);
 }
 
 static void MaybeRemoveSSLToken(nsITransportSecurityInfo* aSecurityInfo) {
@@ -1453,7 +1457,14 @@ void nsHttpTransaction::Close(nsresult reason) {
   
   
   
-  if (shouldRestartTransactionForHTTPSRR &&
+  
+  
+  
+  
+  const bool echConfigUsed =
+      nsHttpHandler::EchConfigEnabled(mConnInfo->IsHttp3()) &&
+      !mConnInfo->GetEchConfig().IsEmpty();
+  if (shouldRestartTransactionForHTTPSRR && !echConfigUsed &&
       ShouldRestartOnResumptionError(reason)) {
     shouldRestartTransactionForHTTPSRR = false;
     mDontRetryWithDirectRoute = true;
