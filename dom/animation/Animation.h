@@ -110,13 +110,7 @@ class Animation : public DOMEventTargetHelper,
   virtual void SetEffect(AnimationEffect* aEffect);
   void SetEffectNoUpdate(AnimationEffect* aEffect);
 
-  
-  
-  already_AddRefed<AnimationTimeline> GetTimelineFromJS() const {
-    return mTimeline && mTimeline->IsViewTimeline() ? nullptr
-                                                    : do_AddRef(mTimeline);
-  }
-  void SetTimelineFromJS(AnimationTimeline* aTimeline) {
+  void SetTimeline(AnimationTimeline* aTimeline) {
     
     const auto prevTimelineName = GetTimelineName();
     SetTimeline(aTimeline, nullptr);
