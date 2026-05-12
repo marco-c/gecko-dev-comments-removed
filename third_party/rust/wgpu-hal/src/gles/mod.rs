@@ -115,6 +115,7 @@ pub use self::wgl::{Instance, Surface};
 
 use alloc::{boxed::Box, string::String, string::ToString as _, sync::Arc, vec::Vec};
 use core::{
+    cell::Cell,
     fmt,
     ops::Range,
     sync::atomic::{AtomicU32, AtomicU8},
@@ -344,6 +345,9 @@ pub struct Buffer {
     size: wgt::BufferAddress,
     
     map_flags: u32,
+    
+    
+    mapped: Cell<bool>,
     data: Option<Arc<MaybeMutex<Vec<u8>>>>,
     offset_of_current_mapping: Arc<MaybeMutex<wgt::BufferAddress>>,
 }
@@ -607,8 +611,14 @@ impl crate::DynBindGroup for BindGroup {}
 type ShaderId = u32;
 
 #[derive(Debug)]
+pub enum ShaderModuleSource {
+    Naga(crate::NagaShader),
+    Passthrough { source: String },
+}
+
+#[derive(Debug)]
 pub struct ShaderModule {
-    source: crate::NagaShader,
+    source: ShaderModuleSource,
     label: Option<String>,
     id: ShaderId,
 }
@@ -723,7 +733,7 @@ type ProgramCache = FastHashMap<ProgramCacheKey, Result<Arc<PipelineInner>, crat
 pub struct RenderPipeline {
     inner: Arc<PipelineInner>,
     primitive: wgt::PrimitiveState,
-    vertex_buffers: Box<[VertexBufferDesc]>,
+    vertex_buffers: Box<[Option<VertexBufferDesc>]>,
     vertex_attributes: Box<[AttributeDesc]>,
     color_targets: Box<[ColorTargetDesc]>,
     depth: Option<DepthState>,

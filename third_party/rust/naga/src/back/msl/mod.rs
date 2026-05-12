@@ -75,9 +75,11 @@ use alloc::{
 };
 use core::fmt::{Error as FmtError, Write};
 
-use crate::{arena::Handle, ir, proc::index, valid::ModuleInfo};
+use crate::{arena::Handle, back::TaskDispatchLimits, ir, proc::index, valid::ModuleInfo};
 
 mod keywords;
+mod mesh_shader;
+mod ray;
 pub mod sampler;
 mod writer;
 
@@ -178,6 +180,7 @@ enum ResolvedBinding {
         interpolation: Option<ResolvedInterpolation>,
     },
     Resource(BindTarget),
+    Payload,
 }
 
 #[derive(Copy, Clone)]
@@ -189,6 +192,7 @@ enum ResolvedInterpolation {
     SamplePerspective,
     SampleNoPerspective,
     Flat,
+    PerVertex,
 }
 
 
@@ -217,10 +221,10 @@ pub enum Error {
     UnsupportedAttribute(String),
     #[error("function '{0}' is not supported for target MSL version")]
     UnsupportedFunction(String),
-    #[error("can not use writeable storage buffers in fragment stage prior to MSL 1.2")]
-    UnsupportedWriteableStorageBuffer,
-    #[error("can not use writeable storage textures in {0:?} stage prior to MSL 1.2")]
-    UnsupportedWriteableStorageTexture(ir::ShaderStage),
+    #[error("can not use writable storage buffers in fragment stage prior to MSL 1.2")]
+    UnsupportedWritableStorageBuffer,
+    #[error("can not use writable storage textures in {0:?} stage prior to MSL 1.2")]
+    UnsupportedWritableStorageTexture(ir::ShaderStage),
     #[error("can not use read-write storage textures prior to MSL 1.2")]
     UnsupportedRWStorageTexture,
     #[error("array of '{0}' is not supported for target MSL version")]
@@ -239,6 +243,10 @@ pub enum Error {
     ResolveArraySizeError(#[from] crate::proc::ResolveArraySizeError),
     #[error("entry point with stage {0:?} and name '{1}' not found")]
     EntryPointNotFound(ir::ShaderStage, String),
+    #[error("Cannot use mesh shader syntax prior to MSL 3.0")]
+    UnsupportedMeshShader,
+    #[error("Per vertex fragment inputs are not supported prior to MSL 4.0")]
+    PerVertexNotSupported,
 }
 
 #[derive(Clone, Debug, PartialEq, thiserror::Error)]
@@ -278,6 +286,9 @@ enum LocationMode {
     FragmentOutput,
 
     
+    MeshOutput,
+
+    
     Uniform,
 }
 
@@ -303,6 +314,11 @@ pub struct Options {
     
     
     pub force_loop_bounding: bool,
+    
+    
+    pub task_dispatch_limits: Option<TaskDispatchLimits>,
+    
+    pub mesh_shader_primitive_indices_clamp: bool,
 }
 
 impl Default for Options {
@@ -316,6 +332,8 @@ impl Default for Options {
             bounds_check_policies: index::BoundsCheckPolicies::default(),
             zero_initialize_workgroup_memory: true,
             force_loop_bounding: true,
+            task_dispatch_limits: None,
+            mesh_shader_primitive_indices_clamp: true,
         }
     }
 }
@@ -553,7 +571,7 @@ impl Options {
                 interpolation,
                 sampling,
                 blend_src,
-                per_primitive: _,
+                per_primitive,
             } => match mode {
                 LocationMode::VertexInput => Ok(ResolvedBinding::Attribute(location)),
                 LocationMode::FragmentOutput => {
@@ -565,7 +583,9 @@ impl Options {
                         blend_src,
                     })
                 }
-                LocationMode::VertexOutput | LocationMode::FragmentInput => {
+                LocationMode::VertexOutput
+                | LocationMode::FragmentInput
+                | LocationMode::MeshOutput => {
                     Ok(ResolvedBinding::User {
                         prefix: if self.spirv_cross_compatibility {
                             "locn"
@@ -579,7 +599,11 @@ impl Options {
                             
                             let interpolation = interpolation.unwrap();
                             let sampling = sampling.unwrap_or(crate::Sampling::Center);
-                            Some(ResolvedInterpolation::from_binding(interpolation, sampling))
+                            Some(ResolvedInterpolation::from_binding(
+                                interpolation,
+                                sampling,
+                                per_primitive,
+                            ))
                         },
                     })
                 }
@@ -719,6 +743,8 @@ impl ResolvedBinding {
                     Bi::CullPrimitive => "primitive_culled",
                     
                     Bi::PointIndex | Bi::LineIndices | Bi::TriangleIndices => unimplemented!(),
+                    
+                    
                     Bi::MeshTaskSize
                     | Bi::VertexCount
                     | Bi::PrimitiveCount
@@ -773,6 +799,7 @@ impl ResolvedBinding {
                     return Err(Error::UnimplementedBindTarget(target.clone()));
                 }
             }
+            Self::Payload => write!(out, "payload")?,
         }
         write!(out, "]]")?;
         Ok(())
@@ -780,9 +807,17 @@ impl ResolvedBinding {
 }
 
 impl ResolvedInterpolation {
-    const fn from_binding(interpolation: crate::Interpolation, sampling: crate::Sampling) -> Self {
+    const fn from_binding(
+        interpolation: crate::Interpolation,
+        sampling: crate::Sampling,
+        per_primitive: bool,
+    ) -> Self {
         use crate::Interpolation as I;
         use crate::Sampling as S;
+
+        if per_primitive {
+            return Self::Flat;
+        }
 
         match (interpolation, sampling) {
             (I::Perspective, S::Center) => Self::CenterPerspective,
@@ -792,6 +827,7 @@ impl ResolvedInterpolation {
             (I::Linear, S::Centroid) => Self::CentroidNoPerspective,
             (I::Linear, S::Sample) => Self::SampleNoPerspective,
             (I::Flat, _) => Self::Flat,
+            (I::PerVertex, S::Center) => Self::PerVertex,
             _ => unreachable!(),
         }
     }
@@ -805,11 +841,29 @@ impl ResolvedInterpolation {
             Self::SamplePerspective => "sample_perspective",
             Self::SampleNoPerspective => "sample_no_perspective",
             Self::Flat => "flat",
+            Self::PerVertex => unreachable!(),
         };
         out.write_str(identifier)?;
         Ok(())
     }
 }
+
+struct EntryPointArgument {
+    ty_name: String,
+    name: String,
+    binding: String,
+    init: Option<Handle<crate::Expression>>,
+}
+
+
+type BackendResult = Result<(), Error>;
+
+const NAMESPACE: &str = "metal";
+
+
+
+
+const WRAPPED_ARRAY_FIELD: &str = "inner";
 
 
 
@@ -861,17 +915,18 @@ pub fn supported_capabilities() -> crate::valid::Capabilities {
         | Caps::TEXTURE_INT64_ATOMIC
         
         | Caps::SHADER_FLOAT16
+        | Caps::SHADER_INT16
         | Caps::TEXTURE_EXTERNAL
         | Caps::SHADER_FLOAT16_IN_FLOAT32
         | Caps::SHADER_BARYCENTRICS
-        
-        
+        | Caps::MESH_SHADER
+        | Caps::MESH_SHADER_POINT_TOPOLOGY
         | Caps::TEXTURE_AND_SAMPLER_BINDING_ARRAY_NON_UNIFORM_INDEXING
         
         | Caps::STORAGE_TEXTURE_BINDING_ARRAY_NON_UNIFORM_INDEXING
         | Caps::STORAGE_BUFFER_BINDING_ARRAY_NON_UNIFORM_INDEXING
         | Caps::COOPERATIVE_MATRIX
-        
+        | Caps::PER_VERTEX
         
         
         

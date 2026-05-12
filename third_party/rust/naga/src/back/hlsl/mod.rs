@@ -811,6 +811,7 @@ pub fn supported_capabilities() -> crate::valid::Capabilities {
         | Caps::TEXTURE_INT64_ATOMIC
         
         | Caps::SHADER_FLOAT16
+        | Caps::SHADER_INT16
         | Caps::TEXTURE_EXTERNAL
         | Caps::SHADER_FLOAT16_IN_FLOAT32
         | Caps::SHADER_BARYCENTRICS
@@ -821,7 +822,7 @@ pub fn supported_capabilities() -> crate::valid::Capabilities {
         | Caps::STORAGE_TEXTURE_BINDING_ARRAY_NON_UNIFORM_INDEXING
         | Caps::STORAGE_BUFFER_BINDING_ARRAY_NON_UNIFORM_INDEXING
         
-        
+        | Caps::PER_VERTEX
         
         
         

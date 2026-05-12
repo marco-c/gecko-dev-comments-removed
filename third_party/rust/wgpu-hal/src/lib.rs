@@ -350,9 +350,13 @@ pub struct DropGuard {
 #[cfg(all(any(gles, vulkan), any(native, Emscripten)))]
 impl DropGuard {
     fn from_option(callback: Option<DropCallback>) -> Option<Self> {
-        callback.map(|callback| Self {
+        callback.map(Self::new)
+    }
+
+    fn new(callback: DropCallback) -> Self {
+        Self {
             callback: Some(callback),
-        })
+        }
     }
 }
 
@@ -1245,11 +1249,45 @@ pub trait Queue: WasmNotSendSync {
         surface_textures: &[&<Self::A as Api>::SurfaceTexture],
         signal_fence: (&mut <Self::A as Api>::Fence, FenceValue),
     ) -> Result<(), DeviceError>;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     unsafe fn present(
         &self,
         surface: &<Self::A as Api>::Surface,
         texture: <Self::A as Api>::SurfaceTexture,
     ) -> Result<(), SurfaceError>;
+    
+    
+    
+    
+    
+    
+    
+    
+    unsafe fn wait_for_idle(&self) -> Result<(), DeviceError>;
     unsafe fn get_timestamp_period(&self) -> f32;
 }
 
@@ -1689,8 +1727,8 @@ pub trait CommandEncoder: WasmNotSendSync + fmt::Debug {
 
     unsafe fn set_compute_pipeline(&mut self, pipeline: &<Self::A as Api>::ComputePipeline);
 
-    unsafe fn dispatch(&mut self, count: [u32; 3]);
-    unsafe fn dispatch_indirect(
+    unsafe fn dispatch_workgroups(&mut self, count: [u32; 3]);
+    unsafe fn dispatch_workgroups_indirect(
         &mut self,
         buffer: &<Self::A as Api>::Buffer,
         offset: wgt::BufferAddress,
@@ -1931,7 +1969,7 @@ pub struct Alignments {
     pub uniform_bounds_check_alignment: wgt::BufferSize,
 
     
-    pub raw_tlas_instance_size: usize,
+    pub raw_tlas_instance_size: u32,
 
     
     pub ray_tracing_scratch_buffer_alignment: u32,
@@ -2361,24 +2399,21 @@ pub enum ShaderInput<'a> {
     Naga(NagaShader),
     MetalLib {
         file: &'a [u8],
-        num_workgroups: (u32, u32, u32),
+        num_workgroups: hashbrown::HashMap<String, (u32, u32, u32)>,
     },
     Msl {
         shader: &'a str,
-        num_workgroups: (u32, u32, u32),
+        num_workgroups: hashbrown::HashMap<String, (u32, u32, u32)>,
     },
     SpirV(&'a [u32]),
     Dxil {
         shader: &'a [u8],
-        num_workgroups: (u32, u32, u32),
     },
     Hlsl {
         shader: &'a str,
-        num_workgroups: (u32, u32, u32),
     },
     Glsl {
         shader: &'a str,
-        num_workgroups: (u32, u32, u32),
     },
 }
 
@@ -2464,7 +2499,7 @@ pub struct VertexBufferLayout<'a> {
 pub enum VertexProcessor<'a, M: DynShaderModule + ?Sized> {
     Standard {
         
-        vertex_buffers: &'a [VertexBufferLayout<'a>],
+        vertex_buffers: &'a [Option<VertexBufferLayout<'a>>],
         
         vertex_stage: ProgrammableStage<'a, M>,
     },

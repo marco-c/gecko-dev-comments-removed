@@ -345,7 +345,7 @@ const UPLEVEL: Bucket = Bucket {
         .union(Features::RG11B10UFLOAT_RENDERABLE)
         .union(Features::BGRA8UNORM_STORAGE)
         .union(Features::FLOAT32_FILTERABLE)
-        
+        .union(Features::FLOAT32_BLENDABLE)
         
         .union(Features::DUAL_SOURCE_BLENDING)
         
@@ -376,7 +376,6 @@ const BUCKET_M1: Bucket = Bucket {
         .union(Features::TEXTURE_COMPRESSION_ASTC_SLICED_3D)
         .union(Features::TEXTURE_COMPRESSION_ETC2)
         .union(Features::SHADER_F16)
-        .union(Features::FLOAT32_BLENDABLE)
         .union(Features::CLIP_DISTANCES),
 };
 
@@ -389,7 +388,7 @@ const BUCKET_A2: Bucket = Bucket {
         max_sampled_textures_per_shader_stage: 48,
         max_storage_buffer_binding_size: 1 << 30, 
         max_storage_buffers_per_shader_stage: 16,
-        max_vertex_attributes: 32,
+        max_vertex_attributes: 30,
         ..UPLEVEL.limits
     },
     info: BucketedAdapterInfo {
@@ -427,7 +426,7 @@ const BUCKET_N1: Bucket = Bucket {
         max_sampled_textures_per_shader_stage: 48,
         max_storage_buffer_binding_size: 1 << 30, 
         max_storage_buffers_per_shader_stage: 16,
-        max_vertex_attributes: 32,
+        max_vertex_attributes: 30,
         ..UPLEVEL.limits
     },
     info: BucketedAdapterInfo {
@@ -446,7 +445,7 @@ const BUCKET_A1: Bucket = Bucket {
         max_sampled_textures_per_shader_stage: 48,
         max_storage_buffer_binding_size: 1 << 30, 
         max_storage_buffers_per_shader_stage: 16,
-        max_vertex_attributes: 32,
+        max_vertex_attributes: 30,
         ..UPLEVEL.limits
     },
     info: BucketedAdapterInfo {
@@ -466,7 +465,7 @@ const BUCKET_NO_F16: Bucket = Bucket {
         max_sampled_textures_per_shader_stage: 48,
         max_storage_buffer_binding_size: 1 << 30, 
         max_storage_buffers_per_shader_stage: 16,
-        max_vertex_attributes: 32,
+        max_vertex_attributes: 30,
         ..UPLEVEL.limits
     },
     info: BucketedAdapterInfo {
@@ -504,7 +503,7 @@ const BUCKET_WARP: Bucket = Bucket {
         max_color_attachment_bytes_per_sample: 128,
         max_sampled_textures_per_shader_stage: 48,
         max_storage_buffers_per_shader_stage: 16,
-        max_vertex_attributes: 32,
+        max_vertex_attributes: 30,
         ..UPLEVEL.limits
     },
     info: BucketedAdapterInfo {

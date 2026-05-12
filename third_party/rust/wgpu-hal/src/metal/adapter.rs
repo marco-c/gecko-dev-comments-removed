@@ -1,3 +1,4 @@
+use objc2::rc::autoreleasepool;
 use objc2::runtime::{AnyObject, ProtocolObject, Sel};
 use objc2::{available, sel};
 use objc2_foundation::{NSOperatingSystemVersion, NSProcessInfo};
@@ -76,54 +77,57 @@ impl crate::Adapter for super::Adapter {
     unsafe fn open(
         &self,
         features: wgt::Features,
-        _limits: &wgt::Limits,
+        limits: &wgt::Limits,
         _memory_hints: &wgt::MemoryHints,
     ) -> Result<crate::OpenDevice<super::Api>, crate::DeviceError> {
-        let queue = self
-            .shared
-            .device
-            .newCommandQueueWithMaxCommandBufferCount(MAX_COMMAND_BUFFERS)
-            .unwrap();
+        autoreleasepool(|_| {
+            let queue = self
+                .shared
+                .device
+                .newCommandQueueWithMaxCommandBufferCount(MAX_COMMAND_BUFFERS)
+                .unwrap();
 
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        let timestamp_period = if self.shared.device.name().to_string().starts_with("Intel") {
-            83.333
-        } else {
             
-            1.0
-        };
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            let timestamp_period = if self.shared.device.name().to_string().starts_with("Intel") {
+                83.333
+            } else {
+                
+                1.0
+            };
 
-        Ok(crate::OpenDevice {
-            device: super::Device {
-                shared: Arc::clone(&self.shared),
-                features,
-                counters: Default::default(),
-            },
-            queue: super::Queue {
-                shared: Arc::new(QueueShared {
-                    raw: queue,
-                    command_buffer_created_not_submitted: atomic::AtomicUsize::new(0),
-                }),
-                timestamp_period,
-            },
+            Ok(crate::OpenDevice {
+                device: super::Device {
+                    shared: Arc::clone(&self.shared),
+                    features,
+                    counters: Default::default(),
+                    limits: limits.clone(),
+                },
+                queue: super::Queue {
+                    shared: Arc::new(QueueShared {
+                        raw: queue,
+                        command_buffer_created_not_submitted: atomic::AtomicUsize::new(0),
+                    }),
+                    timestamp_period,
+                },
+            })
         })
     }
 
@@ -668,7 +672,9 @@ impl super::CapabilitiesQuery {
                     
                 && !is_virtual;
 
-        let msl_version = if available!(macos = 15.0, ios = 18.0, tvos = 18.0, visionos = 2.0) {
+        let msl_version = if available!(macos = 26.0, ios = 26.0, tvos = 26.0, visionos = 26.0) {
+            MTLLanguageVersion::Version4_0
+        } else if available!(macos = 15.0, ios = 18.0, tvos = 18.0, visionos = 2.0) {
             MTLLanguageVersion::Version3_2
         } else if available!(macos = 14.0, ios = 17.0, tvos = 17.0, visionos = 1.0) {
             MTLLanguageVersion::Version3_1
@@ -919,14 +925,36 @@ impl super::CapabilitiesQuery {
             
             
             
-            max_inter_stage_shader_variables: if (family_check
-                && device.supportsFamily(MTLGPUFamily::Apple4))
-                || device.supportsFeatureSet(MTLFeatureSet::macOS_GPUFamily1_v1)
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            max_inter_stage_shader_variables: if family_check
+                && device.supportsFamily(MTLGPUFamily::Apple4)
             {
                 31 
+            } else if device.supportsFeatureSet(MTLFeatureSet::macOS_GPUFamily1_v1) {
+                30 
             } else {
                 15 
             },
+            
+            
+            
             
             
             
@@ -1034,6 +1062,10 @@ impl super::CapabilitiesQuery {
                     && (device.supportsFamily(MTLGPUFamily::Apple7)
                         || device.supportsFamily(MTLGPUFamily::Mac2)))
                 || (available!(macos = 10.15, ios = 14.0, tvos = 16.0, visionos = 1.0)
+                    && device_class_responds_to(
+                        device,
+                        sel!(supportsShaderBarycentricCoordinates),
+                    )
                     && device.supportsShaderBarycentricCoordinates()),
             
             
@@ -1062,7 +1094,26 @@ impl super::CapabilitiesQuery {
             },
             
             mesh_shaders,
-            max_mesh_task_workgroup_count: if mesh_shaders { 1024 } else { 0 },
+            max_task_workgroup_count: if mesh_shaders
+                && (metal4 || device.supportsFamily(MTLGPUFamily::Apple2))
+            {
+                u32::MAX
+            } else if mesh_shaders {
+                1024
+            } else {
+                0
+            },
+            max_mesh_workgroup_count: if mesh_shaders
+                && device.supportsFamily(MTLGPUFamily::Apple10)
+            {
+                2u32.pow(22)
+            } else if mesh_shaders && device.supportsFamily(MTLGPUFamily::Apple9) {
+                2u32.pow(20)
+            } else if mesh_shaders {
+                1024
+            } else {
+                0
+            },
             max_task_payload_size: if mesh_shaders { 16384 - 32 } else { 0 },
             supports_cooperative_matrix: family_check
                 && (device.supportsFamily(MTLGPUFamily::Apple7)
@@ -1081,6 +1132,15 @@ impl super::CapabilitiesQuery {
             } else {
                 false
             },
+            shader_per_vertex: family_check && device.supportsFamily(MTLGPUFamily::Apple10),
+
+            
+            supports_multisample_array: available!(
+                macos = 10.14,
+                ios = 14.0,
+                tvos = 16.0,
+                visionos = 1.0
+            ),
         }
     }
 
@@ -1096,6 +1156,7 @@ impl super::CapabilitiesQuery {
             | F::CLEAR_TEXTURE
             | F::TEXTURE_FORMAT_16BIT_NORM
             | F::SHADER_F16
+            | F::SHADER_I16
             | F::DEPTH32FLOAT_STENCIL8
             | F::BGRA8UNORM_STORAGE
             | F::PASSTHROUGH_SHADERS
@@ -1189,11 +1250,20 @@ impl super::CapabilitiesQuery {
             self.shader_barycentrics && self.msl_version >= MTLLanguageVersion::Version2_2,
         );
 
+        features.set(F::SHADER_PER_VERTEX, self.shader_per_vertex);
+
         if self.supports_simd_scoped_operations {
             features.insert(F::SUBGROUP | F::SUBGROUP_BARRIER);
         }
 
-        features.set(F::EXPERIMENTAL_MESH_SHADER, self.mesh_shaders);
+        features.set(
+            F::EXPERIMENTAL_MESH_SHADER | F::EXPERIMENTAL_MESH_SHADER_POINTS,
+            self.mesh_shaders,
+        );
+        features.set(
+            F::EXPERIMENTAL_MESH_SHADER_MULTIVIEW,
+            self.supported_vertex_amplification_factor > 1 && self.mesh_shaders,
+        );
 
         
         features.set(
@@ -1206,6 +1276,8 @@ impl super::CapabilitiesQuery {
         }
 
         features.set(F::EXPERIMENTAL_RAY_QUERY, self.supports_raytracing);
+
+        features.set(F::MULTISAMPLE_ARRAY, self.supports_multisample_array);
 
         features
     }
@@ -1238,6 +1310,11 @@ impl super::CapabilitiesQuery {
             .flags
             .set(wgt::DownlevelFlags::ANISOTROPIC_FILTERING, true);
 
+        downlevel.flags.set(
+            wgt::DownlevelFlags::MSL2_1,
+            self.msl_version >= MTLLanguageVersion::Version2_1,
+        );
+
         let limits = crate::auxil::adjust_raw_limits(wgt::Limits {
             
             
@@ -1248,7 +1325,9 @@ impl super::CapabilitiesQuery {
             max_texture_dimension_3d: self.max_texture_3d_size as u32,
             max_texture_array_layers: self.max_texture_layers as u32,
             
-            max_bind_groups: 8,
+            max_bind_groups: u32::MAX,
+            
+            max_bind_groups_plus_vertex_buffers: u32::MAX,
             
             max_bindings_per_bind_group: u32::MAX,
             
@@ -1313,8 +1392,10 @@ impl super::CapabilitiesQuery {
             },
 
             
-            max_task_mesh_workgroup_total_count: self.max_mesh_task_workgroup_count,
-            max_task_mesh_workgroups_per_dimension: self.max_mesh_task_workgroup_count,
+            max_task_workgroup_total_count: self.max_task_workgroup_count,
+            max_task_workgroups_per_dimension: self.max_task_workgroup_count,
+            max_mesh_workgroup_total_count: self.max_mesh_workgroup_count,
+            max_mesh_workgroups_per_dimension: self.max_mesh_workgroup_count,
             max_task_invocations_per_workgroup: if self.mesh_shaders { 1024 } else { 0 },
             max_task_invocations_per_dimension: if self.mesh_shaders { 1024 } else { 0 },
             max_mesh_invocations_per_workgroup: if self.mesh_shaders { 1024 } else { 0 },
@@ -1336,8 +1417,10 @@ impl super::CapabilitiesQuery {
                 
                 
                 uniform_bounds_check_alignment: wgt::BufferSize::new(1).unwrap(),
-                raw_tlas_instance_size: size_of::<MTLIndirectAccelerationStructureInstanceDescriptor>(
-                ),
+                raw_tlas_instance_size: u32::try_from(size_of::<
+                    MTLIndirectAccelerationStructureInstanceDescriptor,
+                >())
+                .unwrap(),
                 ray_tracing_scratch_buffer_alignment: 1,
             },
             downlevel,

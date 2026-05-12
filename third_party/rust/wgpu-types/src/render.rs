@@ -192,6 +192,20 @@ impl BlendState {
         color: BlendComponent::OVER,
         alpha: BlendComponent::OVER,
     };
+
+    
+    pub const ADDITIVE: Self = Self {
+        color: BlendComponent {
+            src_factor: BlendFactor::One,
+            dst_factor: BlendFactor::One,
+            operation: BlendOperation::Add,
+        },
+        alpha: BlendComponent {
+            src_factor: BlendFactor::One,
+            dst_factor: BlendFactor::One,
+            operation: BlendOperation::Add,
+        },
+    };
 }
 
 
@@ -456,7 +470,7 @@ pub enum IndexFormat {
 
 impl IndexFormat {
     
-    pub fn byte_size(&self) -> usize {
+    pub fn byte_size(&self) -> u32 {
         match self {
             IndexFormat::Uint16 => 2,
             IndexFormat::Uint32 => 4,
@@ -725,7 +739,8 @@ pub enum LoadOp<V> {
     
     
     
-    DontCare(#[cfg_attr(feature = "serde", serde(skip))] LoadOpDontCare) = 2,
+    #[cfg_attr(feature = "serde", serde(skip))] 
+    DontCare(LoadOpDontCare) = 2,
 }
 
 impl<V> LoadOp<V> {

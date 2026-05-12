@@ -238,6 +238,15 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
             if min_ref_count <= expr_info.ref_count {
                 self.need_bake_expressions.insert(exp_handle);
             }
+            if let Expression::Load { pointer } = *expr {
+                if info[pointer]
+                    .ty
+                    .inner_with(&module.types)
+                    .is_atomic_pointer(&module.types)
+                {
+                    self.need_bake_expressions.insert(exp_handle);
+                }
+            }
 
             if let Expression::Math { fun, arg, arg1, .. } = *expr {
                 match fun {
@@ -919,6 +928,23 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                     ep_input.arg_name,
                     // When writing SubgroupId, we always guarantee that local_invocation_index_name is written
                     ep_input.local_invocation_index_name.as_ref().unwrap()
+                )?;
+            }
+            Some(crate::Binding::Location {
+                interpolation: Some(crate::Interpolation::PerVertex),
+                ..
+            }) => {
+                if self.options.shader_model < ShaderModel::V6_1 {
+                    return Err(Error::ShaderModelTooLow(
+                        "per_vertex fragment inputs".to_string(),
+                        ShaderModel::V6_1,
+                    ));
+                }
+                write!(
+                    self.out,
+                    "{{ GetAttributeAtVertex({0}.{1}, 0), GetAttributeAtVertex({0}.{1}, 1), GetAttributeAtVertex({0}.{1}, 2) }}",
+                    ep_input.arg_name,
+                    fake_member.name,
                 )?;
             }
             _ => {
@@ -2305,7 +2331,33 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
             }
             Statement::Store { pointer, value } => {
                 let ty_inner = func_ctx.resolve_type(pointer, &module.types);
-                if let Some(crate::AddressSpace::Storage { .. }) = ty_inner.pointer_space() {
+                if ty_inner.is_atomic_pointer(&module.types) {
+                    let pointer_space = ty_inner.pointer_space().unwrap();
+                    let dummy = self.namer.call("dummy");
+                    write!(self.out, "{level}{{ ")?;
+                    if let TypeInner::Pointer { base, .. } = *ty_inner {
+                        self.write_value_type(module, &module.types[base].inner)?;
+                    }
+                    write!(self.out, " {dummy} = 0; ")?;
+                    match pointer_space {
+                        crate::AddressSpace::WorkGroup => {
+                            write!(self.out, "InterlockedExchange(")?;
+                            self.write_expr(module, pointer, func_ctx)?;
+                        }
+                        crate::AddressSpace::Storage { .. } => {
+                            let var_handle = self.fill_access_chain(module, pointer, func_ctx)?;
+                            let var_name = &self.names[&NameKey::GlobalVariable(var_handle)];
+                            write!(self.out, "{var_name}.InterlockedExchange(")?;
+                            let chain = mem::take(&mut self.temp_access_chain);
+                            self.write_storage_address(module, &chain, func_ctx)?;
+                            self.temp_access_chain = chain;
+                        }
+                        _ => unreachable!(),
+                    }
+                    write!(self.out, ", ")?;
+                    self.write_expr(module, value, func_ctx)?;
+                    writeln!(self.out, ", {dummy}); }}")?;
+                } else if let Some(crate::AddressSpace::Storage { .. }) = ty_inner.pointer_space() {
                     let var_handle = self.fill_access_chain(module, pointer, func_ctx)?;
                     self.write_storage_store(
                         module,
@@ -3016,6 +3068,8 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
             crate::Literal::F64(value) => write!(self.out, "{value:?}L")?,
             crate::Literal::F32(value) => write!(self.out, "{value:?}")?,
             crate::Literal::F16(value) => write!(self.out, "{value:?}h")?,
+            crate::Literal::U16(value) => write!(self.out, "uint16_t({value})")?,
+            crate::Literal::I16(value) => write!(self.out, "int16_t({value})")?,
             crate::Literal::U32(value) => write!(self.out, "{value}u")?,
             
             
@@ -3811,6 +3865,7 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                 if inner.scalar_kind() == Some(ScalarKind::Float)
                     && (kind == ScalarKind::Sint || kind == ScalarKind::Uint)
                     && convert.is_some()
+                    && matches!(convert, Some(4) | Some(8))
                 {
                     
                     
@@ -3864,6 +3919,24 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                         None => {
                             if inner.scalar_width() == Some(8) {
                                 false
+                            } else if inner.scalar_width() == Some(2) {
+                                
+                                
+                                let dst_scalar = Scalar { kind, width: 2 };
+                                match *inner {
+                                    TypeInner::Vector { size, .. } => {
+                                        write!(
+                                            self.out,
+                                            "{}{}(",
+                                            dst_scalar.to_hlsl_str()?,
+                                            common::vector_size_str(size)
+                                        )?;
+                                    }
+                                    _ => {
+                                        write!(self.out, "{}(", dst_scalar.to_hlsl_str()?)?;
+                                    }
+                                };
+                                true
                             } else {
                                 write!(self.out, "{}(", kind.to_hlsl_cast(),)?;
                                 true
@@ -4677,10 +4750,36 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
         name: String,
         
         
-        named: Handle<crate::Expression>,
-        ctx: &back::FunctionCtx,
+        expr: Handle<crate::Expression>,
+        func_ctx: &back::FunctionCtx,
     ) -> BackendResult {
-        match ctx.info[named].ty {
+        if let crate::Expression::Load { pointer } = func_ctx.expressions[expr] {
+            let ty_inner = func_ctx.resolve_type(pointer, &module.types);
+            if ty_inner.is_atomic_pointer(&module.types) {
+                let pointer_space = ty_inner.pointer_space().unwrap();
+                self.write_value_type(module, func_ctx.info[handle].ty.inner_with(&module.types))?;
+                write!(self.out, " {name}; ")?;
+                match pointer_space {
+                    crate::AddressSpace::WorkGroup => {
+                        write!(self.out, "InterlockedOr(")?;
+                        self.write_expr(module, pointer, func_ctx)?;
+                    }
+                    crate::AddressSpace::Storage { .. } => {
+                        let var_handle = self.fill_access_chain(module, pointer, func_ctx)?;
+                        let var_name = &self.names[&NameKey::GlobalVariable(var_handle)];
+                        write!(self.out, "{var_name}.InterlockedOr(")?;
+                        let chain = mem::take(&mut self.temp_access_chain);
+                        self.write_storage_address(module, &chain, func_ctx)?;
+                        self.temp_access_chain = chain;
+                    }
+                    _ => unreachable!(),
+                }
+                writeln!(self.out, ", 0, {name});")?;
+                self.named_expressions.insert(expr, name);
+                return Ok(());
+            }
+        }
+        match func_ctx.info[expr].ty {
             proc::TypeResolution::Handle(ty_handle) => match module.types[ty_handle].inner {
                 TypeInner::Struct { .. } => {
                     let ty_name = &self.names[&NameKey::Type(ty_handle)];
@@ -4695,7 +4794,7 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
             }
         }
 
-        let resolved = ctx.resolve_type(named, &module.types);
+        let resolved = func_ctx.resolve_type(expr, &module.types);
 
         write!(self.out, " {name}")?;
         
@@ -4703,9 +4802,9 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
             self.write_array_size(module, base, size)?;
         }
         write!(self.out, " = ")?;
-        self.write_expr(module, handle, ctx)?;
+        self.write_expr(module, handle, func_ctx)?;
         writeln!(self.out, ";")?;
-        self.named_expressions.insert(named, name);
+        self.named_expressions.insert(expr, name);
 
         Ok(())
     }

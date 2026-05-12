@@ -22,6 +22,7 @@ macro_rules! with_limits {
         $macro_name!(max_texture_dimension_3d, Ordering::Less);
         $macro_name!(max_texture_array_layers, Ordering::Less);
         $macro_name!(max_bind_groups, Ordering::Less);
+        $macro_name!(max_bind_groups_plus_vertex_buffers, Ordering::Less);
         $macro_name!(max_bindings_per_bind_group, Ordering::Less);
         $macro_name!(
             max_dynamic_uniform_buffers_per_pipeline_layout,
@@ -67,8 +68,10 @@ macro_rules! with_limits {
         $macro_name!(max_immediate_size, Ordering::Less);
         $macro_name!(max_non_sampler_bindings, Ordering::Less);
 
-        $macro_name!(max_task_mesh_workgroup_total_count, Ordering::Less);
-        $macro_name!(max_task_mesh_workgroups_per_dimension, Ordering::Less);
+        $macro_name!(max_task_workgroup_total_count, Ordering::Less);
+        $macro_name!(max_task_workgroups_per_dimension, Ordering::Less);
+        $macro_name!(max_mesh_workgroup_total_count, Ordering::Less);
+        $macro_name!(max_mesh_workgroups_per_dimension, Ordering::Less);
         $macro_name!(max_task_invocations_per_workgroup, Ordering::Less);
         $macro_name!(max_task_invocations_per_dimension, Ordering::Less);
         $macro_name!(max_mesh_invocations_per_workgroup, Ordering::Less);
@@ -144,6 +147,9 @@ pub struct Limits {
     pub max_texture_array_layers: u32,
     
     pub max_bind_groups: u32,
+    
+    
+    pub max_bind_groups_plus_vertex_buffers: u32,
     
     pub max_bindings_per_bind_group: u32,
     
@@ -256,10 +262,18 @@ pub struct Limits {
 
     
     
-    pub max_task_mesh_workgroup_total_count: u32,
+    pub max_task_workgroup_total_count: u32,
     
     
-    pub max_task_mesh_workgroups_per_dimension: u32,
+    pub max_task_workgroups_per_dimension: u32,
+    
+    
+    
+    pub max_mesh_workgroup_total_count: u32,
+    
+    
+    
+    pub max_mesh_workgroups_per_dimension: u32,
     
     
     pub max_task_invocations_per_workgroup: u32,
@@ -374,6 +388,9 @@ impl Limits {
     
     
     
+    
+    
+    
     #[must_use]
     pub const fn defaults() -> Self {
         Self {
@@ -382,6 +399,7 @@ impl Limits {
             max_texture_dimension_3d: 2048,
             max_texture_array_layers: 256,
             max_bind_groups: 4,
+            max_bind_groups_plus_vertex_buffers: 24,
             max_bindings_per_bind_group: 1000,
             max_dynamic_uniform_buffers_per_pipeline_layout: 8,
             max_dynamic_storage_buffers_per_pipeline_layout: 4,
@@ -413,8 +431,10 @@ impl Limits {
             max_immediate_size: 0,
             max_non_sampler_bindings: 1_000_000,
 
-            max_task_mesh_workgroup_total_count: 0,
-            max_task_mesh_workgroups_per_dimension: 0,
+            max_task_workgroup_total_count: 0,
+            max_task_workgroups_per_dimension: 0,
+            max_mesh_workgroup_total_count: 0,
+            max_mesh_workgroups_per_dimension: 0,
             max_task_invocations_per_workgroup: 0,
             max_task_invocations_per_dimension: 0,
             max_mesh_invocations_per_workgroup: 0,
@@ -434,6 +454,9 @@ impl Limits {
         }
     }
 
+    
+    
+    
     
     
     
@@ -575,6 +598,9 @@ impl Limits {
     
     
     
+    
+    
+    
     #[must_use]
     pub const fn downlevel_webgl2_defaults() -> Self {
         Self {
@@ -619,6 +645,7 @@ impl Limits {
             max_texture_dimension_3d: ALLOC_MAX_U32,
             max_texture_array_layers: ALLOC_MAX_U32,
             max_bind_groups: ALLOC_MAX_U32,
+            max_bind_groups_plus_vertex_buffers: ALLOC_MAX_U32,
             max_bindings_per_bind_group: ALLOC_MAX_U32,
             max_dynamic_uniform_buffers_per_pipeline_layout: ALLOC_MAX_U32,
             max_dynamic_storage_buffers_per_pipeline_layout: ALLOC_MAX_U32,
@@ -650,8 +677,10 @@ impl Limits {
             max_immediate_size: ALLOC_MAX_U32,
             max_non_sampler_bindings: ALLOC_MAX_U32,
 
-            max_task_mesh_workgroup_total_count: ALLOC_MAX_U32,
-            max_task_mesh_workgroups_per_dimension: ALLOC_MAX_U32,
+            max_task_workgroup_total_count: ALLOC_MAX_U32,
+            max_task_workgroups_per_dimension: ALLOC_MAX_U32,
+            max_mesh_workgroup_total_count: ALLOC_MAX_U32,
+            max_mesh_workgroups_per_dimension: ALLOC_MAX_U32,
             max_task_invocations_per_workgroup: ALLOC_MAX_U32,
             max_task_invocations_per_dimension: ALLOC_MAX_U32,
             max_mesh_invocations_per_workgroup: ALLOC_MAX_U32,
@@ -705,7 +734,8 @@ impl Limits {
             max_blas_geometry_count: (1 << 24) - 1, 
             max_tlas_instance_count: (1 << 24) - 1, 
             max_blas_primitive_count: 1 << 28,      
-            max_acceleration_structures_per_shader_stage: 16, 
+            
+            max_acceleration_structures_per_shader_stage: 1,
             ..self
         }
     }
@@ -732,9 +762,16 @@ impl Limits {
     pub const fn using_recommended_minimum_mesh_shader_values(self) -> Self {
         Self {
             
-            max_task_mesh_workgroup_total_count: 1024,
             
-            max_task_mesh_workgroups_per_dimension: 256,
+            
+            
+            
+            max_task_workgroup_total_count: 2u32.pow(22),
+            max_task_workgroups_per_dimension: 65535,
+            
+            
+            max_mesh_workgroup_total_count: 1024,
+            max_mesh_workgroups_per_dimension: 1024,
             
             max_task_invocations_per_workgroup: 128,
             max_task_invocations_per_dimension: 64,
@@ -1042,6 +1079,9 @@ bitflags::bitflags! {
         ///
         /// Not supported by Vulkan on Mesa when [`Features::SHADER_F16`] is absent.
         const SHADER_F16_IN_F32 = 1 << 23;
+
+        /// Supports features introduced in MSL 2.1.
+        const MSL2_1 = 1 << 24;
     }
 }
 
