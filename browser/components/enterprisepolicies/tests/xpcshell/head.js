@@ -4,8 +4,6 @@
 
 "use strict";
 
-const lazy = {};
-
 const { Preferences } = ChromeUtils.importESModule(
   "resource://gre/modules/Preferences.sys.mjs"
 );
@@ -24,12 +22,12 @@ const { FileTestUtils } = ChromeUtils.importESModule(
 const { PermissionTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/PermissionTestUtils.sys.mjs"
 );
-ChromeUtils.defineESModuleGetters(lazy, {
-  SearchTestUtils: "resource://testing-common/SearchTestUtils.sys.mjs",
-});
 const { EnterprisePolicyTesting } = ChromeUtils.importESModule(
   "resource://testing-common/EnterprisePolicyTesting.sys.mjs"
 );
+const { setupPolicyEngineWithJson, setupPolicyEngineWithJsonForSearch } =
+  EnterprisePolicyTesting;
+EnterprisePolicyTesting.pathResolver = path => do_get_file(path).path;
 const { ExtensionTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/ExtensionXPCShellUtils.sys.mjs"
 );
@@ -48,45 +46,6 @@ let policies = Cc["@mozilla.org/enterprisepolicies;1"].getService(
 policies.observe(null, "policies-startup", null);
 
 SearchSettings.SETTINGS_INVALIDATION_DELAY = 100;
-
-async function setupPolicyEngineWithJson(json, customSchema) {
-  if (typeof json != "object") {
-    let filePath = do_get_file(json ? json : "non-existing-file.json").path;
-    return EnterprisePolicyTesting.setupPolicyEngineWithJson(
-      filePath,
-      customSchema
-    );
-  }
-  return EnterprisePolicyTesting.setupPolicyEngineWithJson(json, customSchema);
-}
-
-
-
-
-
-
-
-
-
-
-
-async function setupPolicyEngineWithJsonWithSearch(json, customSchema) {
-  SearchService.reset();
-  if (typeof json != "object") {
-    let filePath = do_get_file(json ? json : "non-existing-file.json").path;
-    await EnterprisePolicyTesting.setupPolicyEngineWithJson(
-      filePath,
-      customSchema
-    );
-  } else {
-    await EnterprisePolicyTesting.setupPolicyEngineWithJson(json, customSchema);
-  }
-  let settingsWritten = lazy.SearchTestUtils.promiseSearchNotification(
-    "write-settings-to-disk-complete"
-  );
-  await SearchService.init();
-  await settingsWritten;
-}
 
 function checkLockedPref(prefName, prefValue) {
   equal(
