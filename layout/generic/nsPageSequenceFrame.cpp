@@ -80,12 +80,6 @@ inline void SanityCheckPagesPerSheetInfo() {
 #endif
 }
 
-static void MarkPrincipalChildrenDirty(nsIFrame* aFrame) {
-  for (nsIFrame* childFrame : aFrame->PrincipalChildList()) {
-    childFrame->MarkSubtreeDirty();
-  }
-}
-
 const nsPagesPerSheetInfo& nsPagesPerSheetInfo::LookupInfo(int32_t aPPS) {
   SanityCheckPagesPerSheetInfo();
 
@@ -323,7 +317,7 @@ void nsPageSequenceFrame::Reflow(nsPresContext* aPresContext,
   if (shouldDoMeasuringReflow) {
     if (!HasAnyStateBits(NS_FRAME_FIRST_REFLOW)) {
       
-      MarkPrincipalChildrenDirty(this);
+      MarkPrincipalChildrenDirty();
     }
 
     for (nsIFrame* kidFrame : mFrames) {
@@ -367,7 +361,7 @@ void nsPageSequenceFrame::Reflow(nsPresContext* aPresContext,
     }
 
     
-    MarkPrincipalChildrenDirty(this);
+    MarkPrincipalChildrenDirty();
   }
 
   nsIntMargin unwriteableTwips =
