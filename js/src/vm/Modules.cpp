@@ -31,8 +31,10 @@
 #include "vm/JSContext.h"               
 #include "vm/JSObject.h"                
 #include "vm/JSONParser.h"              
+#include "vm/JSScript.h"                
 #include "vm/List.h"                    
 #include "vm/Runtime.h"                 
+#include "wasm/WasmCompile.h"
 
 #include "builtin/HandlerFunction-inl.h"  
 #include "vm/JSAtomUtils-inl.h"           
@@ -305,6 +307,7 @@ JS_PUBLIC_API JSObject* JS::CreateDefaultExportSyntheticModule(
   return moduleObject;
 }
 
+
 JS_PUBLIC_API JSObject* JS::CompileWasmModule(
     JSContext* cx, const ReadOnlyCompileOptions& options,
     js::Vector<uint8_t, 0, js::MallocAllocPolicy>& srcBuf) {
@@ -316,6 +319,49 @@ JS_PUBLIC_API JSObject* JS::CompileWasmModule(
                            "Compilation of wasm modules not implemented.");
 
   return nullptr;
+}
+
+
+JS_PUBLIC_API JSObject* JS::CompileWasmModuleAsSource(
+    JSContext* cx, const ReadOnlyCompileOptions& options,
+    js::Vector<uint8_t, 0, js::MallocAllocPolicy>& srcBuf) {
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+  MOZ_ASSERT(!cx->zone()->isAtomsZone());
+  AssertHeapIsIdle();
+  CHECK_THREAD(cx);
+
+  wasm::BytecodeSource source(srcBuf.begin(), srcBuf.length());
+  RootedObject wasmModuleObject(cx);
+  if (!wasm::CompileForESM(cx, options, source, &wasmModuleObject)) {
+    return nullptr;
+  }
+
+  Rooted<ModuleObject*> moduleObject(cx, ModuleObject::create(cx));
+  if (!moduleObject) {
+    return nullptr;
+  }
+
+  moduleObject->initModuleSourceSlot(wasmModuleObject);
+
+  Rooted<ScriptSourceObject*> sso(cx,
+                                  ScriptSourceObject::createForWasmModule(cx));
+  if (!sso) {
+    return nullptr;
+  }
+  moduleObject->initScriptSourceObject(sso);
+
+  if (!ModuleObject::createWasmEnvironment(cx, moduleObject)) {
+    return nullptr;
+  }
+
+  return moduleObject;
+#else
+  JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
+                           JSMSG_WASM_COMPILE_ERROR,
+                           "Compilation of wasm modules not enabled.");
+
+  return nullptr;
+#endif
 }
 
 JS_PUBLIC_API void JS::SetModulePrivate(JSObject* module, const Value& value) {
