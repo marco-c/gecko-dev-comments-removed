@@ -697,6 +697,14 @@ def target_tasks_custom_car_perf_testing(full_task_graph, parameters, graph_conf
                     return False
                 
                 
+                if "windows" in platform and "benchmark" in try_name:
+                    if not any(
+                        x in try_name
+                        for x in ["speedometer3", "jetstream3", "motionmark"]
+                    ):
+                        return False
+                
+                
                 if "jetstream2" in try_name:
                     
                     if "m-car" in try_name and "1500" in platform:
@@ -780,6 +788,14 @@ def target_tasks_general_perf_testing(full_task_graph, parameters, graph_config)
                 if "chrome" in try_name:
                     if "tp6" in try_name and "essential" not in try_name:
                         return False
+                    
+                    
+                    if "windows" in platform and "benchmark" in try_name:
+                        if not any(
+                            x in try_name
+                            for x in ["speedometer3", "jetstream3", "motionmark"]
+                        ):
+                            return False
                     return True
                 
                 if "custom-car" in try_name:
@@ -791,6 +807,14 @@ def target_tasks_general_perf_testing(full_task_graph, parameters, graph_config)
                 if "linux" in platform:
                     if "speedometer3" in try_name:
                         return True
+                
+                
+                if "windows" in platform and "benchmark" in try_name:
+                    if not any(
+                        x in try_name
+                        for x in ["speedometer3", "jetstream3", "motionmark"]
+                    ):
+                        return False
                 if "safari" and "benchmark" in try_name:
                     if "jetstream2" in try_name and "safari" in try_name:
                         return False
