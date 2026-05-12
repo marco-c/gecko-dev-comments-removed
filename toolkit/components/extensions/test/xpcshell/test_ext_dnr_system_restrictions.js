@@ -1,9 +1,5 @@
 "use strict";
 
-const { AboutPage } = ChromeUtils.importESModule(
-  "resource://testing-common/AboutPages.sys.mjs"
-);
-
 const server = createHttpServer({ hosts: ["example.com", "restricted"] });
 server.registerPathHandler("/", (req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -207,15 +203,7 @@ add_task(
   
   
   { pref_set: [["security.allow_parent_unrestricted_js_loads", true]] },
-  
   async function non_system_request_with_disallowed_scheme() {
-    const page = new AboutPage(
-      "test-dnr-page",
-      "chrome://branding/content/icon16.png",
-      Ci.nsIAboutModule.URI_SAFE_FOR_UNTRUSTED_CONTENT
-    );
-    page.register();
-
     let extension = await startDNRExtension();
     Assert.equal(
       await (await fetch("http://example.com/")).text(),
@@ -227,9 +215,8 @@ add_task(
     
     
     
-    let contentPage = await ExtensionTestUtils.loadContentPage(
-      "about:test-dnr-page?blockme"
-    );
+    let contentPage =
+      await ExtensionTestUtils.loadContentPage("about:logo?blockme");
     await contentPage.spawn([], async () => {
       const { document } = content;
       
@@ -238,16 +225,56 @@ add_task(
       
       Assert.ok(
         document.nodePrincipal.isContentPrincipal,
-        "about:test-dnr-page has content principal (not system or NullPrincipal))"
+        "about:logo has content principal (not system or NullPrincipal))"
       );
-      Assert.equal(document.URL, "about:test-dnr-page?blockme", "Same URL");
+      Assert.equal(document.URL, "about:logo?blockme", "Same URL");
       Assert.equal(
         await (await content.fetch("http://example.com/")).text(),
         "response from server",
-        "fetch() at about:test-dnr-page not blocked by DNR"
+        "fetch() at about:logo not blocked by DNR"
       );
     });
     await contentPage.close();
+    await extension.unload();
+  }
+);
+
+add_task(
+  { pref_set: [["extensions.dnr.feedback", true]] },
+  async function testMatchOutcome_non_system_request_with_disallowed_scheme() {
+    let extension = ExtensionTestUtils.loadExtension({
+      async background() {
+        await browser.declarativeNetRequest.updateSessionRules({
+          addRules: [{ id: 1, condition: {}, action: { type: "block" } }],
+        });
+        const type = "other"; 
+
+        browser.test.assertDeepEq(
+          { matchedRules: [] },
+          await browser.declarativeNetRequest.testMatchOutcome({
+            url: "about:logo",
+            type,
+          }),
+          "testMatchOutcome ignores url with disallowed schema"
+        );
+        browser.test.assertDeepEq(
+          { matchedRules: [] },
+          await browser.declarativeNetRequest.testMatchOutcome({
+            url: "http://example.com/",
+            initiator: "about:logo",
+            type,
+          }),
+          "testMatchOutcome ignores initiator with disallowed schema"
+        );
+        browser.test.sendMessage("done");
+      },
+      manifest: {
+        manifest_version: 3,
+        permissions: ["declarativeNetRequest", "declarativeNetRequestFeedback"],
+      },
+    });
+    await extension.startup();
+    await extension.awaitMessage("done");
     await extension.unload();
   }
 );

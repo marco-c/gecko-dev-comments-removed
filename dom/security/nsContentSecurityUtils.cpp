@@ -1804,6 +1804,8 @@ void nsContentSecurityUtils::AssertAboutPageHasCSP(Document* aDocument) {
       
       "about:sync-log"_ns,
       
+      "about:logo"_ns,
+      
       
       
       "about:sync"_ns,
