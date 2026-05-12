@@ -241,8 +241,7 @@ impl MallocSizeOf for PingUploadManager {
 
         let mut n = shallow_size
             + self.directory_manager.size_of(ops)
-            
-            + unsafe { ops.malloc_size_of(self.processed_pending_pings.as_ptr()) }
+            + mem::size_of::<AtomicBool>() 
             + self.cached_pings.read().unwrap().size_of(ops)
             + self.rate_limiter.as_ref().map(|rl| {
                 let lock = rl.read().unwrap();
