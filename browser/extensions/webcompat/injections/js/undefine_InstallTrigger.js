@@ -1,0 +1,10 @@
+
+
+
+
+"use strict";
+
+if (typeof window.InstallTrigger !== "undefined") {
+  delete window.InstallTrigger;
+  window.__webcompat = (window.__webcompat ?? new Set()).add("InstallTrigger");
+}

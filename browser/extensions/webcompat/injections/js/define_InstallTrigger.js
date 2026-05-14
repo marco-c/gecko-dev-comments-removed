@@ -1,0 +1,11 @@
+
+
+
+
+"use strict";
+
+if (!window.InstallTrigger) {
+  window.InstallTrigger =
+    "This property has been shimmed for Web Compatibility reasons.";
+  window.__webcompat = (window.__webcompat ?? new Set()).add("InstallTrigger");
+}
