@@ -94,8 +94,9 @@ struct Keyframe {
   
   
   Maybe<OffsetType> mOffset;
-  static constexpr double kComputedOffsetNotSet = -1.0;
-  double mComputedOffset = kComputedOffsetNotSet;
+  
+  
+  double mComputedOffset = std::numeric_limits<double>::quiet_NaN();
   Maybe<StyleComputedTimingFunction> mTimingFunction;  
                                                        
   dom::CompositeOperationOrAuto mComposite =

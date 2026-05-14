@@ -302,7 +302,7 @@ void KeyframeUtils::ComputeMissingKeyframeOffsets(
 
     
     
-    keyframe.mComputedOffset = Keyframe::kComputedOffsetNotSet;
+    keyframe.mComputedOffset = std::numeric_limits<double>::quiet_NaN();
   }
 
   
@@ -333,13 +333,12 @@ nsTArray<AnimationProperty> KeyframeUtils::GetAnimationPropertiesFromKeyframes(
   for (size_t i = 0; i < len; ++i) {
     const Keyframe& frame = aKeyframes[i];
     if (frame.mOffset && frame.mOffset->IsTimelineRangeOffset() &&
-        frame.mComputedOffset == Keyframe::kComputedOffsetNotSet) {
+        std::isnan(frame.mComputedOffset)) {
       
       continue;
     }
     for (auto& value : computedValues[i]) {
-      MOZ_ASSERT(frame.mComputedOffset != Keyframe::kComputedOffsetNotSet,
-                 "Invalid computed offset");
+      MOZ_ASSERT(!std::isnan(frame.mComputedOffset), "Invalid computed offset");
       KeyframeValueEntry* entry = entries.AppendElement();
       entry->mOffset = frame.mComputedOffset;
       entry->mProperty = value.mProperty;
