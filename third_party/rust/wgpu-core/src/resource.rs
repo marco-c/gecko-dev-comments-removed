@@ -593,7 +593,45 @@ impl Buffer {
 
     
     
+    
     pub fn map_async(
+        self: &Arc<Self>,
+        offset: wgt::BufferAddress,
+        size: Option<wgt::BufferAddress>,
+        op: BufferMapOperation,
+    ) -> Result<SubmissionIndex, BufferAccessError> {
+        self.try_map_async(offset, size, op)
+            .map_err(|(mut operation, err)| {
+                if let Some(callback) = operation.callback.take() {
+                    callback(Err(err.clone()));
+                }
+                err
+            })
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn try_map_async(
         self: &Arc<Self>,
         offset: wgt::BufferAddress,
         size: Option<wgt::BufferAddress>,
@@ -654,30 +692,60 @@ impl Buffer {
             return Err((op, e.into()));
         }
 
-        {
+        let submit_index = {
             let snatch_guard = device.snatchable_lock.read();
             if let Err(e) = self.check_destroyed(&snatch_guard) {
                 return Err((op, e.into()));
             }
-        }
 
-        {
-            let map_state = &mut *self.map_state.lock();
-            *map_state = match *map_state {
-                BufferMapState::Init { .. } | BufferMapState::Active { .. } => {
-                    return Err((op, BufferAccessError::AlreadyMapped));
-                }
-                BufferMapState::Waiting(_) => {
-                    return Err((op, BufferAccessError::MapAlreadyPending));
-                }
-                BufferMapState::Idle => BufferMapState::Waiting(BufferPendingMapping {
-                    range: offset..end_offset,
-                    op,
-                    _parent_buffer: self.clone(),
-                }),
-            };
-        }
+            {
+                let map_state = &mut *self.map_state.lock();
+                *map_state = match *map_state {
+                    BufferMapState::Init { .. } | BufferMapState::Active { .. } => {
+                        return Err((op, BufferAccessError::AlreadyMapped));
+                    }
+                    BufferMapState::Waiting(_) => {
+                        return Err((op, BufferAccessError::MapAlreadyPending));
+                    }
+                    BufferMapState::Idle => BufferMapState::Waiting(BufferPendingMapping {
+                        range: offset..end_offset,
+                        op,
+                        _parent_buffer: self.clone(),
+                    }),
+                };
+            }
 
+            if let Some(queue) = device.get_queue().as_ref() {
+                match queue.flush_writes_for_buffer(self, snatch_guard) {
+                    Err(err) => {
+                        let state = mem::replace(&mut *self.map_state.lock(), BufferMapState::Idle);
+                        let BufferMapState::Waiting(BufferPendingMapping { op, .. }) = state else {
+                            unreachable!();
+                        };
+                        return Err((op, err));
+                    }
+                    Ok(()) => {
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        Some(queue.lock_life().map(self).unwrap_or(0))
+                    }
+                }
+            } else {
+                None
+            }
+        };
+
+        
+        
+        
+        
+        
         
         
         device
@@ -686,18 +754,17 @@ impl Buffer {
             .buffers
             .set_single(self, internal_use);
 
-        let submit_index = if let Some(queue) = device.get_queue() {
-            queue.lock_life().map(self).unwrap_or(0) 
+        if let Some(index) = submit_index {
+            Ok(index)
         } else {
+            
             
             let (mut operation, status) = self.map(&device.snatchable_lock.read()).unwrap();
             if let Some(callback) = operation.callback.take() {
                 callback(status);
             }
-            0
-        };
-
-        Ok(submit_index)
+            Ok(0)
+        }
     }
 
     pub fn get_mapped_range(
@@ -781,6 +848,7 @@ impl Buffer {
         }
     }
     
+    
     #[must_use]
     pub(crate) fn map(&self, snatch_guard: &SnatchGuard) -> Option<BufferMapPendingClosure> {
         
@@ -848,7 +916,8 @@ impl Buffer {
         let device = &self.device;
         let snatch_guard = device.snatchable_lock.read();
         let raw_buf = self.try_raw(&snatch_guard)?;
-        match mem::replace(&mut *self.map_state.lock(), BufferMapState::Idle) {
+        let map_state = mem::replace(&mut *self.map_state.lock(), BufferMapState::Idle);
+        match map_state {
             BufferMapState::Init { staging_buffer } => {
                 #[cfg(feature = "trace")]
                 if let Some(ref mut trace) = *device.trace.lock() {
@@ -980,17 +1049,22 @@ impl Buffer {
             })
         };
 
-        if let Some(queue) = device.get_queue() {
+        let Some(queue) = device.get_queue() else {
+            return;
+        };
+
+        {
             let mut pending_writes = queue.pending_writes.lock();
             if pending_writes.contains_buffer(self) {
                 pending_writes.consume_temp(temp);
-            } else {
-                let mut life_lock = queue.lock_life();
-                let last_submit_index = life_lock.get_buffer_latest_submission_index(self);
-                if let Some(last_submit_index) = last_submit_index {
-                    life_lock.schedule_resource_destruction(temp, last_submit_index);
-                }
+                return;
             }
+        }
+
+        let mut life_lock = queue.lock_life();
+        let last_submit_index = life_lock.get_buffer_latest_submission_index(self);
+        if let Some(last_submit_index) = last_submit_index {
+            life_lock.schedule_resource_destruction(temp, last_submit_index);
         }
     }
 }
@@ -1477,17 +1551,22 @@ impl Texture {
             })
         };
 
-        if let Some(queue) = device.get_queue() {
+        let Some(queue) = device.get_queue() else {
+            return;
+        };
+
+        {
             let mut pending_writes = queue.pending_writes.lock();
             if pending_writes.contains_texture(self) {
                 pending_writes.consume_temp(temp);
-            } else {
-                let mut life_lock = queue.lock_life();
-                let last_submit_index = life_lock.get_texture_latest_submission_index(self);
-                if let Some(last_submit_index) = last_submit_index {
-                    life_lock.schedule_resource_destruction(temp, last_submit_index);
-                }
+                return;
             }
+        }
+
+        let mut life_lock = queue.lock_life();
+        let last_submit_index = life_lock.get_texture_latest_submission_index(self);
+        if let Some(last_submit_index) = last_submit_index {
+            life_lock.schedule_resource_destruction(temp, last_submit_index);
         }
     }
 }

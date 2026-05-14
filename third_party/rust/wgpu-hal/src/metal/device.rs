@@ -29,6 +29,14 @@ use crate::{auxil::map_naga_stage, TlasInstance};
 
 type DeviceResult<T> = Result<T, crate::DeviceError>;
 
+
+
+
+
+
+
+const IS_WATCHOS_ILP32: bool = cfg!(target_pointer_width = "32");
+
 struct CompiledShader {
     library: Retained<ProtocolObject<dyn MTLLibrary>>,
     function: Retained<ProtocolObject<dyn MTLFunction>>,
@@ -521,6 +529,14 @@ impl crate::Device for super::Device {
                 && self.shared.private_caps.supports_memoryless_storage
             {
                 MTLStorageMode::Memoryless
+            } else if IS_WATCHOS_ILP32 {
+                
+                
+                
+                
+                
+                
+                MTLStorageMode::Shared
             } else {
                 MTLStorageMode::Private
             };
@@ -1272,8 +1288,11 @@ impl crate::Device for super::Device {
             }
 
             
-            let supports_mutability =
-                available!(macos = 10.13, ios = 11.0, tvos = 11.0, visionos = 1.0);
+            
+            
+            
+            let supports_mutability = !IS_WATCHOS_ILP32
+                && available!(macos = 10.13, ios = 11.0, tvos = 11.0, visionos = 1.0);
 
             let (primitive_class, raw_primitive_type) =
                 conv::map_primitive_topology(desc.primitive.topology);
@@ -1397,7 +1416,10 @@ impl crate::Device for super::Device {
                                     .max()
                                     .unwrap_or(0);
                                 unsafe {
-                                    buffer_desc.setStride(wgt::math::align_to(stride as _, 4))
+                                    buffer_desc.setStride(wgt::math::align_to(
+                                        NSUInteger::try_from(stride).unwrap(),
+                                        4,
+                                    ))
                                 };
                                 buffer_desc.setStepFunction(MTLVertexStepFunction::Constant);
                                 unsafe { buffer_desc.setStepRate(0) };
@@ -1858,7 +1880,7 @@ impl crate::Device for super::Device {
         self.counters.fences.add(1);
         
         let shared_event = if available!(macos = 10.14, ios = 12.0, tvos = 12.0, visionos = 1.0) {
-            Some(self.shared.device.newSharedEvent().unwrap())
+            self.shared.device.newSharedEvent() 
         } else {
             None
         };
