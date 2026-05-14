@@ -414,53 +414,25 @@ namespace detail {
 
 
 
-
-
-
-
-
-
-
-
-struct ProxyReservedSlots {
-  JS::Value slots[1];
-
-  void init(size_t nreserved) {
-    for (size_t i = 0; i < nreserved; i++) {
-      slots[i] = JS::UndefinedValue();
-    }
-  }
-
-  ProxyReservedSlots(const ProxyReservedSlots&) = delete;
-  void operator=(const ProxyReservedSlots&) = delete;
-};
-
 struct ProxyValueArray {
   JS::Value expandoSlot;
   JS::Value privateSlot;
-  ProxyReservedSlots reservedSlots;
+  JS::Value reservedSlots[1];
 
   void init(size_t nreserved) {
     expandoSlot = JS::ObjectOrNullValue(nullptr);
     privateSlot = JS::UndefinedValue();
-    reservedSlots.init(nreserved);
+    for (size_t i = 0; i < nreserved; i++) {
+      reservedSlots[i] = JS::UndefinedValue();
+    }
   }
 
-  static MOZ_ALWAYS_INLINE ProxyValueArray* fromReservedSlots(
-      ProxyReservedSlots* slots) {
-    uintptr_t p = reinterpret_cast<uintptr_t>(slots);
-    return reinterpret_cast<ProxyValueArray*>(p - offsetOfReservedSlots());
-  }
   static constexpr size_t offsetOfReservedSlots() {
     return offsetof(ProxyValueArray, reservedSlots);
   }
-
   static size_t allocCount(size_t nreserved) {
     static_assert(offsetOfReservedSlots() % sizeof(JS::Value) == 0);
     return offsetOfReservedSlots() / sizeof(JS::Value) + nreserved;
-  }
-  static size_t sizeOf(size_t nreserved) {
-    return allocCount(nreserved) * sizeof(JS::Value);
   }
 
   ProxyValueArray(const ProxyValueArray&) = delete;
@@ -470,17 +442,13 @@ struct ProxyValueArray {
 
 
 
-
-
-
-
-
 struct ProxyDataLayout {
-  ProxyReservedSlots* reservedSlots;
+  uintptr_t padding_;
   const BaseProxyHandler* handler;
 
   MOZ_ALWAYS_INLINE ProxyValueArray* values() const {
-    return ProxyValueArray::fromReservedSlots(reservedSlots);
+    return reinterpret_cast<ProxyValueArray*>(
+        reinterpret_cast<uintptr_t>(this) + sizeof(ProxyDataLayout));
   }
 };
 
@@ -508,7 +476,7 @@ inline void SetProxyReservedSlotUnchecked(JSObject* obj, size_t n,
                                           const JS::Value& extra) {
   MOZ_ASSERT(n < JSCLASS_RESERVED_SLOTS(JS::GetClass(obj)));
 
-  JS::Value* vp = &GetProxyDataLayout(obj)->reservedSlots->slots[n];
+  JS::Value* vp = &GetProxyDataLayout(obj)->values()->reservedSlots[n];
 
   
   if (vp->isGCThing() || extra.isGCThing()) {
@@ -538,7 +506,7 @@ inline JSObject* GetProxyTargetObject(const JSObject* obj) {
 
 inline const JS::Value& GetProxyReservedSlot(const JSObject* obj, size_t n) {
   MOZ_ASSERT(n < JSCLASS_RESERVED_SLOTS(JS::GetClass(obj)));
-  return detail::GetProxyDataLayout(obj)->reservedSlots->slots[n];
+  return detail::GetProxyDataLayout(obj)->values()->reservedSlots[n];
 }
 
 inline void SetProxyReservedSlot(JSObject* obj, size_t n,
