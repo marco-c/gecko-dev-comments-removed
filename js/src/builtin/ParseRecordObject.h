@@ -27,7 +27,7 @@ class ParseRecordObject : public NativeObject {
   
   
   JSONParseNode* getParseNode() const {
-    const Value& slot = getSlot(ParseNodeSlot);
+    const Value& slot = getReservedSlot(ParseNodeSlot);
     return slot.isUndefined() ? nullptr : slot.toString();
   }
 
@@ -39,9 +39,11 @@ class ParseRecordObject : public NativeObject {
 
   
   
-  const Value& getValue() const { return getSlot(ValueSlot); }
+  const Value& getValue() const { return getReservedSlot(ValueSlot); }
 
-  void setValue(JS::Handle<JS::Value> value) { setSlot(ValueSlot, value); }
+  void setValue(JS::Handle<JS::Value> value) {
+    setReservedSlot(ValueSlot, value);
+  }
 
   bool hasValue() const { return !getValue().isUndefined(); }
 
