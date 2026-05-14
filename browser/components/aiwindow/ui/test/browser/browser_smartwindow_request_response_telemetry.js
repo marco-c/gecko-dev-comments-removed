@@ -140,6 +140,11 @@ describe("SmartWindowRequestResponseTelemetry", () => {
           "request_id" in responseEvents[0].extra,
           "model_response: request_id exists"
         );
+        Assert.equal(
+          responseEvents[0].extra.request_id,
+          requestEvents[0].extra.request_id,
+          "model_request and model_response share the same request_id"
+        );
         Assert.ok(
           "error" in responseEvents[0].extra,
           "model_response: error attribute exists"
@@ -244,6 +249,16 @@ describe("SmartWindowRequestResponseTelemetry", () => {
           4,
           "Turn 2 model_response message_seq is 4"
         );
+        Assert.equal(
+          modelResponses[0].extra.request_id,
+          modelRequests[0].extra.request_id,
+          "Turn 1 model_request and model_response share the same request_id"
+        );
+        Assert.equal(
+          modelResponses[1].extra.request_id,
+          modelRequests[1].extra.request_id,
+          "Turn 2 model_request and model_response share the same request_id"
+        );
         Assert.greater(
           Number(modelResponses[0].extra.latency),
           0,
@@ -275,7 +290,7 @@ describe("SmartWindowRequestResponseTelemetry", () => {
         );
         for (const call of chatBuildCalls) {
           Assert.equal(
-            call.args[2],
+            call.args[1],
             chatId,
             "Every chat engine build receives conversationId as flowId"
           );
@@ -358,7 +373,7 @@ describe("SmartWindowRequestResponseTelemetry", () => {
           "At least two chat engine builds"
         );
 
-        const flowIds = new Set(chatBuilds.map(call => call.args[2]));
+        const flowIds = new Set(chatBuilds.map(call => call.args[1]));
         Assert.ok(
           flowIds.has(chatIdA),
           "Engine build for conversation A used chatIdA as flowId"
