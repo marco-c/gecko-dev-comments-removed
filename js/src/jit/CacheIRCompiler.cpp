@@ -2492,9 +2492,8 @@ bool CacheIRCompiler::emitLoadScriptedProxyHandler(ObjOperandId resultId,
     return false;
   }
 
-  masm.loadPtr(Address(obj, ProxyObject::offsetOfReservedSlots()), output);
-  Address handlerAddr(output, js::detail::ProxyReservedSlots::offsetOfSlot(
-                                  ScriptedProxyHandler::HANDLER_EXTRA));
+  Address handlerAddr(obj, ProxyObject::offsetOfReservedSlot(
+                               ScriptedProxyHandler::HANDLER_EXTRA));
   masm.fallibleUnboxObject(handlerAddr, output, failure->label());
 
   return true;
@@ -3134,10 +3133,7 @@ bool CacheIRCompiler::emitLoadWrapperTarget(ObjOperandId objId,
     return false;
   }
 
-  masm.loadPtr(Address(obj, ProxyObject::offsetOfReservedSlots()), reg);
-
-  Address targetAddr(reg,
-                     js::detail::ProxyReservedSlots::offsetOfPrivateSlot());
+  Address targetAddr(obj, ProxyObject::offsetOfPrivateSlot());
   if (fallible) {
     masm.fallibleUnboxObject(targetAddr, reg, failure->label());
   } else {
@@ -3166,11 +3162,7 @@ bool CacheIRCompiler::emitLoadDOMExpandoValue(ObjOperandId objId,
   Register obj = allocator.useRegister(masm, objId);
   ValueOperand val = allocator.defineValueRegister(masm, resultId);
 
-  masm.loadPtr(Address(obj, ProxyObject::offsetOfReservedSlots()),
-               val.scratchReg());
-  masm.loadValue(Address(val.scratchReg(),
-                         js::detail::ProxyReservedSlots::offsetOfPrivateSlot()),
-                 val);
+  masm.loadValue(Address(obj, ProxyObject::offsetOfPrivateSlot()), val);
   return true;
 }
 
@@ -3181,10 +3173,7 @@ bool CacheIRCompiler::emitLoadDOMExpandoValueIgnoreGeneration(
   ValueOperand output = allocator.defineValueRegister(masm, resultId);
 
   
-  Register scratch = output.scratchReg();
-  masm.loadPtr(Address(obj, ProxyObject::offsetOfReservedSlots()), scratch);
-  Address expandoAddr(scratch,
-                      js::detail::ProxyReservedSlots::offsetOfPrivateSlot());
+  Address expandoAddr(obj, ProxyObject::offsetOfPrivateSlot());
 
 #ifdef DEBUG
   
@@ -3195,6 +3184,7 @@ bool CacheIRCompiler::emitLoadDOMExpandoValueIgnoreGeneration(
 #endif
 
   
+  Register scratch = output.scratchReg();
   masm.loadPrivate(expandoAddr, scratch);
 
   
@@ -5402,21 +5392,21 @@ bool CacheIRCompiler::emitGuardXrayExpandoShapeAndDefaultProto(
     return false;
   }
 
-  masm.loadPtr(Address(obj, ProxyObject::offsetOfReservedSlots()), scratch);
-  Address holderAddress(scratch,
-                        sizeof(Value) * GetXrayJitInfo()->xrayHolderSlot);
+  
+  Address holderAddress(
+      obj, ProxyObject::offsetOfReservedSlot(GetXrayJitInfo()->xrayHolderSlot));
+  masm.fallibleUnboxObject(holderAddress, scratch, failure->label());
+
+  
   Address expandoAddress(scratch, NativeObject::getFixedSlotOffset(
                                       GetXrayJitInfo()->holderExpandoSlot));
-
-  masm.fallibleUnboxObject(holderAddress, scratch, failure->label());
   masm.fallibleUnboxObject(expandoAddress, scratch, failure->label());
 
   
-  masm.loadPtr(Address(scratch, ProxyObject::offsetOfReservedSlots()), scratch);
-  masm.unboxObject(
-      Address(scratch, js::detail::ProxyReservedSlots::offsetOfPrivateSlot()),
-      scratch);
+  masm.unboxObject(Address(scratch, ProxyObject::offsetOfPrivateSlot()),
+                   scratch);
 
+  
   emitLoadStubField(shapeWrapper, scratch2);
   LoadShapeWrapperContents(masm, scratch2, scratch2, failure->label());
   masm.branchTestObjShape(Assembler::NotEqual, scratch, scratch2, scratch3,
@@ -5441,17 +5431,18 @@ bool CacheIRCompiler::emitGuardXrayNoExpando(ObjOperandId objId) {
     return false;
   }
 
-  masm.loadPtr(Address(obj, ProxyObject::offsetOfReservedSlots()), scratch);
-  Address holderAddress(scratch,
-                        sizeof(Value) * GetXrayJitInfo()->xrayHolderSlot);
-  Address expandoAddress(scratch, NativeObject::getFixedSlotOffset(
-                                      GetXrayJitInfo()->holderExpandoSlot));
-
+  
+  Address holderAddress(
+      obj, ProxyObject::offsetOfReservedSlot(GetXrayJitInfo()->xrayHolderSlot));
   Label done;
   masm.fallibleUnboxObject(holderAddress, scratch, &done);
-  masm.branchTestObject(Assembler::Equal, expandoAddress, failure->label());
-  masm.bind(&done);
 
+  
+  Address expandoAddress(scratch, NativeObject::getFixedSlotOffset(
+                                      GetXrayJitInfo()->holderExpandoSlot));
+  masm.branchTestObject(Assembler::Equal, expandoAddress, failure->label());
+
+  masm.bind(&done);
   return true;
 }
 

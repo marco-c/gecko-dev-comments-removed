@@ -1888,9 +1888,7 @@ bool BaselineCacheIRCompiler::emitLoadDOMExpandoValueGuardGeneration(
     return false;
   }
 
-  masm.loadPtr(Address(obj, ProxyObject::offsetOfReservedSlots()), scratch);
-  Address expandoAddr(scratch,
-                      js::detail::ProxyReservedSlots::offsetOfPrivateSlot());
+  Address expandoAddr(obj, ProxyObject::offsetOfPrivateSlot());
 
   
   
