@@ -2,21 +2,27 @@
 
 
 
-"use strict";
-
-add_task(function test_longPath_throwsUnrecognized() {
+function run_test() {
   
+  var longLeafName = new Array(256).join("T");
+
   
   var tempFile = Services.dirsvc.get("TmpD", Ci.nsIFile);
-  var longComponent = "T".repeat(255);
-  for (let i = 0; i < 20; i++) {
-    tempFile.append(longComponent);
-  }
+  tempFile.append(longLeafName);
   tempFile.append("test.txt");
 
-  Assert.throws(
-    () => tempFile.createUnique(Ci.nsIFile.NORMAL_FILE_TYPE, 0o600),
-    /NS_ERROR_FILE_UNRECOGNIZED_PATH/,
-    "Creating an item whose path exceeds the maximum should throw"
-  );
-});
+  try {
+    tempFile.createUnique(Ci.nsIFile.NORMAL_FILE_TYPE, 0o600);
+    do_throw("Creating an item in a folder with a very long name should throw");
+  } catch (e) {
+    if (
+      !(
+        e instanceof Ci.nsIException &&
+        e.result == Cr.NS_ERROR_FILE_UNRECOGNIZED_PATH
+      )
+    ) {
+      throw e;
+    }
+    
+  }
+}
