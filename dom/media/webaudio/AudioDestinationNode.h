@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef AudioDestinationNode_h_
 #define AudioDestinationNode_h_
 
@@ -84,6 +82,13 @@ class AudioDestinationNode final : public AudioNode,
   void CreateAndStartAudioChannelAgent();
   void DestroyAudioChannelAgentIfExists();
   RefPtr<AudioChannelAgent> mAudioChannelAgent;
+
+  
+  
+  
+  class MediaSharedKeysListener;
+  
+  RefPtr<MediaSharedKeysListener> mSharedKeysListener;
 
   
   
