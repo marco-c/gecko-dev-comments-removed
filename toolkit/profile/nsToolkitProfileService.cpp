@@ -2,7 +2,6 @@
 
 
 
-
 #include "mozilla/ErrorResult.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/HelperMacros.h"
@@ -1261,6 +1260,12 @@ nsToolkitProfileService::SetStartWithLastProfile(bool aValue) {
 NS_IMETHODIMP
 nsToolkitProfileService::GetStartWithLastProfile(bool* aResult) {
   *aResult = mStartWithLast;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsToolkitProfileService::GetIsFirstRun(bool* aResult) {
+  *aResult = mIsFirstRun;
   return NS_OK;
 }
 
