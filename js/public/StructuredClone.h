@@ -2,13 +2,12 @@
 
 
 
-
-
 #ifndef js_StructuredClone_h
 #define js_StructuredClone_h
 
 #include "mozilla/Attributes.h"
 #include "mozilla/BufferList.h"
+#include "mozilla/CheckedInt.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/StringBuffer.h"
 
@@ -782,8 +781,29 @@ JS_PUBLIC_API bool JS_ReadDouble(JSStructuredCloneReader* r, double* v);
 JS_PUBLIC_API bool JS_ReadTypedArray(JSStructuredCloneReader* r,
                                      JS::MutableHandleValue vp);
 
-JS_PUBLIC_API bool JS_WriteUint32Pair(JSStructuredCloneWriter* w, uint32_t tag,
-                                      uint32_t data);
+
+
+
+
+
+
+
+JS_PUBLIC_API bool JS_WriteUint32PairUnchecked(JSStructuredCloneWriter* w,
+                                               uint32_t tag, uint32_t data);
+
+
+
+
+
+
+JS_PUBLIC_API inline bool JS_WriteUint32Pair(JSStructuredCloneWriter* w,
+                                             mozilla::CheckedUint32 tag,
+                                             mozilla::CheckedUint32 data) {
+  if (!tag.isValid() || !data.isValid()) [[unlikely]] {
+    return false;
+  }
+  return JS_WriteUint32PairUnchecked(w, tag.value(), data.value());
+}
 
 JS_PUBLIC_API bool JS_WriteBytes(JSStructuredCloneWriter* w, const void* p,
                                  size_t len);
