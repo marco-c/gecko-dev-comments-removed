@@ -411,16 +411,23 @@ bool nsBlockReflowContext::PlaceBlock(const ReflowInput& aReflowInput,
   
   
   
+  const nscoord fragmentBStart = mBCoord - backupContainingBlockAdvance;
   if (!empty && !aForceFit &&
       mSpace.BSize(mWritingMode) != NS_UNCONSTRAINEDSIZE) {
     const nscoord bSize = mMetrics.BSize(mWritingMode);
-    const nscoord bEnd = mBCoord - backupContainingBlockAdvance + bSize;
+    const nscoord bEnd = fragmentBStart + bSize;
     if (bEnd > mSpace.BEnd(mWritingMode)) {
       
       mFrame->DidReflow(mPresContext, &aReflowInput);
       return false;
     }
-    if (bSize == 0 && aReflowStatus.IsIncomplete()) {
+    if (bSize == 0 && aReflowStatus.IsIncomplete() &&
+        fragmentBStart == mSpace.BStart(mWritingMode) &&
+        !mFrame->HasAbsolutelyPositionedChildren()) {
+      
+      
+      
+      
       
       
       
@@ -432,8 +439,7 @@ bool nsBlockReflowContext::PlaceBlock(const ReflowInput& aReflowInput,
     }
   }
 
-  aLine->SetBounds(mWritingMode, mICoord,
-                   mBCoord - backupContainingBlockAdvance,
+  aLine->SetBounds(mWritingMode, mICoord, fragmentBStart,
                    mMetrics.ISize(mWritingMode), mMetrics.BSize(mWritingMode),
                    mContainerSize);
 
