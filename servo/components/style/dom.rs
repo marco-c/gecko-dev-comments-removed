@@ -817,9 +817,7 @@ pub trait TElement:
     
     
     
-    
-    
-    fn rule_hash_target(&self) -> Self {
+    fn ultimate_originating_element(&self) -> Self {
         let mut cur = *self;
         while cur.is_pseudo_element() {
             cur = cur
@@ -846,7 +844,7 @@ pub trait TElement:
     {
         use crate::rule_collector::containing_shadow_ignoring_svg_use;
 
-        let target = self.rule_hash_target();
+        let target = self.ultimate_originating_element();
         let matches_user_and_content_rules = target.matches_user_and_content_rules();
         let mut doc_rules_apply = matches_user_and_content_rules;
 
