@@ -2194,7 +2194,7 @@ std::optional<color::ColorProfileDesc> GLBlitHelper::ToColorProfileDesc(
 
 
 template <class... Ts>
-struct overloaded : Ts... {
+struct MOZ_EMPTY_BASES overloaded : Ts... {
   using Ts::operator()...;
 };
 
