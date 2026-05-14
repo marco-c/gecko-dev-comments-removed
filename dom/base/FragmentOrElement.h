@@ -32,7 +32,7 @@ class nsDOMStringMap;
 class nsIURI;
 
 namespace mozilla {
-class DeclarationBlock;
+struct StyleLockedDeclarationBlock;
 enum class ContentRelevancyReason;
 using ContentRelevancy = EnumSet<ContentRelevancyReason, uint8_t>;
 class ElementAnimationData;
@@ -176,7 +176,7 @@ class FragmentOrElement : public nsIContent {
     
 
 
-    RefPtr<DeclarationBlock> mSMILOverrideStyleDeclaration;
+    RefPtr<mozilla::StyleLockedDeclarationBlock> mSMILOverrideStyleDeclaration;
 
     
 

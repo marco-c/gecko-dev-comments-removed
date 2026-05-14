@@ -14,13 +14,8 @@
 #include "mozilla/dom/Element.h"
 #include "nsString.h"
 
-namespace mozilla {
-class DeclarationBlock;
-struct MutationClosureData;
-
-namespace dom {
+namespace mozilla::dom {
 class StylePropertyMap;
-}
 }  
 
 
@@ -45,7 +40,7 @@ class nsStyledElement : public nsStyledElementBase {
   virtual void InlineStyleDeclarationWillChange(
       mozilla::MutationClosureData& aData) override;
   virtual nsresult SetInlineStyleDeclaration(
-      mozilla::DeclarationBlock& aDeclaration,
+      mozilla::StyleLockedDeclarationBlock&,
       mozilla::MutationClosureData& aData) override;
   virtual nsresult BindToTree(BindContext& aContext, nsINode& aParent) override;
 

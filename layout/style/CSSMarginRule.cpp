@@ -4,7 +4,6 @@
 
 #include "mozilla/dom/CSSMarginRule.h"
 
-#include "mozilla/DeclarationBlock.h"
 #include "mozilla/ServoBindings.h"
 #include "mozilla/dom/CSSMarginRuleBinding.h"
 
@@ -13,8 +12,8 @@ namespace mozilla::dom {
 
 
 CSSMarginRuleDeclaration::CSSMarginRuleDeclaration(
-    already_AddRefed<StyleLockedDeclarationBlock> aDecls)
-    : mDecls(new DeclarationBlock(std::move(aDecls))) {}
+    already_AddRefed<Block> aDecls)
+    : mDecls(aDecls) {}
 
 CSSMarginRuleDeclaration::~CSSMarginRuleDeclaration() = default;
 
@@ -43,8 +42,9 @@ nsISupports* CSSMarginRuleDeclaration::GetParentObject() const {
   return Rule()->GetParentObject();
 }
 
-DeclarationBlock* CSSMarginRuleDeclaration::GetOrCreateCSSDeclaration(
-    Operation aOperation, DeclarationBlock** aCreated) {
+StyleLockedDeclarationBlock*
+CSSMarginRuleDeclaration::GetOrCreateCSSDeclaration(Operation aOperation,
+                                                    Block** aCreated) {
   if (aOperation != Operation::Read) {
     if (StyleSheet* sheet = Rule()->GetStyleSheet()) {
       sheet->WillDirty();
@@ -54,21 +54,19 @@ DeclarationBlock* CSSMarginRuleDeclaration::GetOrCreateCSSDeclaration(
 }
 
 void CSSMarginRuleDeclaration::SetRawAfterClone(
-    RefPtr<StyleLockedDeclarationBlock> aDeclarationBlock) {
-  mDecls = new DeclarationBlock(aDeclarationBlock.forget());
+    RefPtr<Block> aDeclarationBlock) {
+  mDecls = std::move(aDeclarationBlock);
 }
 
 nsresult CSSMarginRuleDeclaration::SetCSSDeclaration(
-    DeclarationBlock* aDecl, MutationClosureData* aClosureData) {
+    Block* aDecl, MutationClosureData* aClosureData) {
   MOZ_ASSERT(aDecl, "must be non-null");
   if (aDecl != mDecls) {
-    RefPtr<DeclarationBlock> decls = aDecl;
     
     
     
-    mDecls = std::move(decls);
+    mDecls = aDecl;
   }
-
   return NS_OK;
 }
 

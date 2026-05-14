@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef DOM_SMIL_SMILCSSVALUETYPE_H_
 #define DOM_SMIL_SMILCSSVALUETYPE_H_
 
@@ -15,7 +13,7 @@
 
 namespace mozilla {
 struct AnimationValue;
-class DeclarationBlock;
+struct StyleLockedDeclarationBlock;
 namespace dom {
 class Element;
 }  
@@ -96,7 +94,7 @@ class SMILCSSValueType : public SMILType {
 
 
   static bool SetPropertyValues(NonCustomCSSPropertyId, const SMILValue&,
-                                mozilla::DeclarationBlock&);
+                                mozilla::StyleLockedDeclarationBlock&);
 
   
 

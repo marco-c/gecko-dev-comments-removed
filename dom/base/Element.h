@@ -450,7 +450,7 @@ class Element : public FragmentOrElement {
   
 
 
-  DeclarationBlock* GetInlineStyleDeclaration() const;
+  StyleLockedDeclarationBlock* GetInlineStyleDeclaration() const;
 
   
 
@@ -475,21 +475,21 @@ class Element : public FragmentOrElement {
   
 
 
-  virtual nsresult SetInlineStyleDeclaration(DeclarationBlock& aDeclaration,
+  virtual nsresult SetInlineStyleDeclaration(StyleLockedDeclarationBlock&,
                                              MutationClosureData& aData);
 
   
 
 
 
-  DeclarationBlock* GetSMILOverrideStyleDeclaration();
+  StyleLockedDeclarationBlock* GetSMILOverrideStyleDeclaration();
 
   
 
 
 
 
-  void SetSMILOverrideStyleDeclaration(DeclarationBlock&);
+  void SetSMILOverrideStyleDeclaration(StyleLockedDeclarationBlock&);
 
   
 

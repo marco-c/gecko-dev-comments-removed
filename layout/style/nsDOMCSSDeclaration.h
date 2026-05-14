@@ -27,7 +27,7 @@ enum class AttrModType : uint8_t;
 namespace mozilla {
 struct CSSPropertyId;
 enum class StyleCssRuleType : uint8_t;
-class DeclarationBlock;
+struct StyleLockedDeclarationBlock;
 struct DeclarationBlockMutationClosure;
 namespace css {
 class Loader;
@@ -52,6 +52,9 @@ struct MutationClosureData {
 
 class nsDOMCSSDeclaration : public nsICSSDeclaration {
  public:
+  using Block = mozilla::StyleLockedDeclarationBlock;
+  static already_AddRefed<Block> EnsureBlockMutable(Block*);
+
   
   
   NS_IMETHOD QueryInterface(REFNSIID aIID, void** aInstancePtr) override;
@@ -145,12 +148,11 @@ class nsDOMCSSDeclaration : public nsICSSDeclaration {
 
   
   
-  virtual mozilla::DeclarationBlock* GetOrCreateCSSDeclaration(
-      Operation aOperation, mozilla::DeclarationBlock** aCreated) = 0;
+  virtual Block* GetOrCreateCSSDeclaration(Operation aOperation,
+                                           Block** aCreated) = 0;
 
   virtual nsresult SetCSSDeclaration(
-      mozilla::DeclarationBlock* aDecl,
-      mozilla::MutationClosureData* aClosureData) = 0;
+      Block* aDecl, mozilla::MutationClosureData* aClosureData) = 0;
   
   
   

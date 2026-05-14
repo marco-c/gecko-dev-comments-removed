@@ -114,9 +114,9 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
   
   
   
-  mozilla::DeclarationBlock* GetOrCreateCSSDeclaration(
-      Operation aOperation, mozilla::DeclarationBlock** aCreated) final;
-  virtual nsresult SetCSSDeclaration(mozilla::DeclarationBlock*,
+  Block* GetOrCreateCSSDeclaration(Operation aOperation,
+                                   Block** aCreated) final;
+  virtual nsresult SetCSSDeclaration(Block*,
                                      mozilla::MutationClosureData*) override;
   virtual mozilla::dom::Document* DocToUpdate() final;
 
@@ -382,6 +382,8 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
   friend struct ComputedStyleMap;
   friend AnchorPosResolutionParams AnchorPosResolutionParams::From(
       const nsComputedDOMStyle*);
+
+  bool HasLonghandProperty(const nsACString& aMaybeCustomPropertyName) final;
 };
 
 already_AddRefed<nsComputedDOMStyle> NS_NewComputedDOMStyle(
