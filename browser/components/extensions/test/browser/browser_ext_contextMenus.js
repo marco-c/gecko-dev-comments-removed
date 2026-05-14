@@ -7,15 +7,6 @@ Services.scriptloader.loadSubScript(
 
 
 
-add_setup(async function () {
-  
-  
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [["sidebar.updatedBookmarks.enabled", false]],
-  });
-});
-
 const PAGE =
   "http://mochi.test:8888/browser/browser/components/extensions/test/browser/context.html";
 
