@@ -49,7 +49,7 @@ private const val WARN_OPEN_ALL_SIZE = 15
  * @param reportResultGlobally Invoked when an error occurs that needs to be reported even if the
  * feature goes out of scope.
  * @param importResults Provides the [Flow] of [ImporterResult]s produced by the bookmarks import
- * dialog. The middleware subscribes on [Init] and dispatches [SnackbarAction.ImportFailed] when a
+ * dialog. The middleware subscribes on [Init] and dispatches [ImportAction.ImportFailed] when a
  * [ImporterResult.Failure] is emitted.
  * @param lifecycleScope lifecycle bound CoroutineScope scope used to cancel jobs when leaving bookmarks.
  */
@@ -97,8 +97,12 @@ internal class BookmarksMiddleware(
                 store.tryDispatchLoadFor(BookmarkRoot.Mobile.id)
                 importResults()
                     .onEach { result ->
-                        if (result is ImporterResult.Failure) {
-                            store.dispatch(ImportAction.ImportFailed)
+                        when (result) {
+                            ImporterResult.Canceled -> Unit
+                            ImporterResult.Failure -> store.dispatch(ImportAction.ImportFailed)
+                            is ImporterResult.Success -> store.dispatch(
+                                action = ImportAction.ImportSucceeded(result.importCount),
+                            )
                         }
                     }
                     .launchIn(lifecycleScope)
@@ -377,7 +381,7 @@ internal class BookmarksMiddleware(
                     }
                 }
             }
-            ImportAction.ImportFileClicked -> {
+            is ImportAction.ImportFileClicked -> {
                 navigateToImportDialog()
             }
             ImportAction.ImportFailed -> {
@@ -412,6 +416,8 @@ internal class BookmarksMiddleware(
             SnackbarAction.Dismissed,
             SnackbarAction.ImportFailed,
             -> Unit
+
+            is ImportAction.ImportSucceeded -> store.tryDispatchLoadFor(BookmarkRoot.Mobile.id)
         }
     }
 
