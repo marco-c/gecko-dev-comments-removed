@@ -6,10 +6,6 @@
 
 
 add_task(async function test_siteDataSize_srd() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.settings-redesign.enabled", true]],
-  });
-
   let updatedPromise = promiseSiteDataManagerSitesUpdated();
   await openPreferencesViaOpenPreferencesAPI("privacy", { leaveOpen: true });
   await updatedPromise;
