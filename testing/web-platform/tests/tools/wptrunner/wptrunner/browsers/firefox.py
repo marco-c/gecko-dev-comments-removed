@@ -816,7 +816,6 @@ class ProfileCreator:
         
         
         env = os.environ.copy()
-        certutil_dir = os.path.dirname(self.binary or self.certutil_binary)
         if mozinfo.isMac:
             env_var = "DYLD_LIBRARY_PATH"
         elif mozinfo.isLinux:
@@ -824,8 +823,18 @@ class ProfileCreator:
         else:
             env_var = "PATH"
 
-        env[env_var] = (os.path.pathsep.join([certutil_dir, env[env_var]])
-                        if env_var in env else certutil_dir)
+        
+        
+        
+        
+        dirs = []
+        if self.certutil_binary is not None:
+            dirs.append(os.path.dirname(self.certutil_binary))
+        if self.binary is not None:
+            dirs.append(os.path.dirname(self.binary))
+        lib_path = os.path.pathsep.join(dirs)
+        env[env_var] = (os.path.pathsep.join([lib_path, env[env_var]])
+                        if env_var in env else lib_path)
 
         def certutil(*args):
             cmd = [self.certutil_binary] + list(args)
