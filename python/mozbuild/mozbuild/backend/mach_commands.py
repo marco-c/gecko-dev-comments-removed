@@ -536,7 +536,12 @@ def setup_clangd_rust_in_vscode(command_context):
     clangd_cfg = {
         "CompileFlags": {
             "CompilationDatabase": clangd_cc_path,
-        }
+        },
+        "Completion": {
+            
+            
+            "HeaderInsertion": "Never",
+        },
     }
 
     with open(".clangd", "w") as file:
@@ -551,14 +556,6 @@ def setup_clangd_rust_in_vscode(command_context):
             "0",
             "--completion-style",
             "detailed",
-            "--background-index",
-            "--all-scopes-completion",
-            "--log",
-            "info",
-            "--pch-storage",
-            "disk",
-            "--clang-tidy",
-            "--header-insertion=never",
         ],
     }
 
