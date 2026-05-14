@@ -2894,8 +2894,8 @@ struct LenientThisPolicyMixin {
 
 
 
-struct MOZ_EMPTY_BASES LenientThisPolicy : public MaybeGlobalThisPolicy,
-                                           public LenientThisPolicyMixin {
+struct LenientThisPolicy : public MaybeGlobalThisPolicy,
+                           public LenientThisPolicyMixin {
   
 
   
@@ -3011,7 +3011,7 @@ struct MaybeCrossOriginObjectThisPolicy : public MaybeGlobalThisPolicy {
 
 
 
-struct MOZ_EMPTY_BASES MaybeCrossOriginObjectLenientThisPolicy
+struct MaybeCrossOriginObjectLenientThisPolicy
     : public MaybeCrossOriginObjectThisPolicy,
       public LenientThisPolicyMixin {
   
