@@ -21,7 +21,9 @@ namespace js {
 
 namespace wasm {
 class Instance;
-}
+struct StackTarget;
+struct Handlers;
+}  
 
 namespace jit {
 
@@ -32,6 +34,129 @@ class JitActivation;
 class JitFrameLayout;
 struct SafepointSlotEntry;
 struct VMFunctionData;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -179,6 +304,10 @@ struct ResumeFromException {
   uint8_t* target;
   ExceptionResumeKind kind;
   wasm::Instance* instance;
+#ifdef ENABLE_WASM_JSPI
+  const wasm::StackTarget* stackTarget;
+  const wasm::Handlers* baseHandlers;
+#endif
 
   
   
@@ -202,6 +331,14 @@ struct ResumeFromException {
   static size_t offsetOfInstance() {
     return offsetof(ResumeFromException, instance);
   }
+#ifdef ENABLE_WASM_JSPI
+  static size_t offsetOfStackTarget() {
+    return offsetof(ResumeFromException, stackTarget);
+  }
+  static size_t offsetOfBaseHandlers() {
+    return offsetof(ResumeFromException, baseHandlers);
+  }
+#endif
   static size_t offsetOfException() {
     return offsetof(ResumeFromException, exception);
   }
