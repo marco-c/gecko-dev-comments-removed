@@ -460,10 +460,38 @@ nsresult TRRServiceChannel::BeginConnect() {
 
   
   
+  if (proxyInfo && mConnectionInfo->UsingConnect()) {
+    const nsCString& pa = proxyInfo->ProxyAuthorizationHeader();
+    if (!pa.IsEmpty()) {
+      DebugOnly<nsresult> rvSet =
+          mRequestHead.SetHeader(nsHttp::Proxy_Authorization, pa);
+      MOZ_ASSERT(NS_SUCCEEDED(rvSet));
+    }
+  }
+
+  
+  
   if (gHttpHandler->IsHttp2Excluded(mConnectionInfo)) {
     StoreAllowSpdy(0);
     mCaps |= NS_HTTP_DISALLOW_SPDY;
     mConnectionInfo->SetNoSpdy(true);
+  }
+
+  auto canUseHappyEyeballs = [&]() {
+    if (!StaticPrefs::network_http_happy_eyeballs_enabled()) {
+      return false;
+    }
+    if (mProxyInfo || mConnectionInfo->ProxyInfo()) {
+      return false;
+    }
+    return true;
+  };
+
+  if (canUseHappyEyeballs()) {
+    LOG(("%p NS_HTTP_USE_HAPPY_EYEBALLS ", this));
+    mCaps |= NS_HTTP_USE_HAPPY_EYEBALLS;
+    mCaps &= ~NS_HTTP_FORCE_WAIT_HTTP_RR;
+    mConnectionInfo->SetHappyEyeballsEnabled(true);
   }
 
   
