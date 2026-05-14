@@ -239,7 +239,6 @@ TEST_F(WebRTCCodecInfoTest, CaseInsensitiveMimeTypes) {
 }
 
 
-#if !defined(XP_MACOSX)
 TEST_F(WebRTCCodecInfoTest, H264HWBlockedByWebRTCPref) {
   const ScopedPrefSetter h264Pref("media.webrtc.hw.h264.enabled", false);
   const auto codecInfo = WebrtcCodecInfo::Create();
@@ -251,7 +250,6 @@ TEST_F(WebRTCCodecInfoTest, H264HWBlockedByWebRTCPref) {
   
   TestAudioDecodeEncodeSWHW(codecInfo.get());
 }
-#endif
 
 
 TEST_F(WebRTCCodecInfoTest, AV1BlockedByWebRTCPref) {
