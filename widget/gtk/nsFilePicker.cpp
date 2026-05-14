@@ -52,6 +52,14 @@ using mozilla::dom::Promise;
 
 static nsIFile* sPrevDisplayDirectory = nullptr;
 
+
+
+
+
+
+
+static const gint kFilePickerAccept = 0;
+
 void nsFilePicker::Shutdown() { NS_IF_RELEASE(sPrevDisplayDirectory); }
 
 #ifdef MOZ_ENABLE_DBUS
@@ -690,7 +698,7 @@ void nsFilePicker::OpenNonPortal() {
 
   GtkFileChooser* file_chooser = GTK_FILE_CHOOSER(gtk_file_chooser_dialog_new(
       title.get(), parent_widget, action, g_dgettext("gtk30", "_Cancel"),
-      GTK_RESPONSE_CANCEL, accept_button, GTK_RESPONSE_ACCEPT, nullptr));
+      GTK_RESPONSE_CANCEL, accept_button, kFilePickerAccept, nullptr));
 
   
   
@@ -764,11 +772,6 @@ void nsFilePicker::OpenNonPortal() {
       }
       gtk_file_chooser_set_current_folder(file_chooser, directory.get());
     }
-  }
-
-  if (GTK_IS_DIALOG(file_chooser)) {
-    gtk_dialog_set_default_response(GTK_DIALOG(file_chooser),
-                                    GTK_RESPONSE_ACCEPT);
   }
 
   size_t count = mFilters.Length();
@@ -875,7 +878,8 @@ void nsFilePicker::DoneNonPortal(GtkWidget* file_chooser, gint response) {
   nsIFilePicker::ResultCode result;
   switch (response) {
     case GTK_RESPONSE_OK:
-    case GTK_RESPONSE_ACCEPT:
+    case GTK_RESPONSE_ACCEPT:  
+    case kFilePickerAccept:
       ReadValuesFromNonPortalFileChooser(GTK_FILE_CHOOSER(file_chooser));
       result = nsIFilePicker::returnOK;
       break;
