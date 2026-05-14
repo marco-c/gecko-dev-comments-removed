@@ -959,6 +959,7 @@ impl PictureInstance {
         
         
         ancestor_spatial_node_index: SpatialNodeIndex,
+        visibility_spatial_node_index: SpatialNodeIndex,
         original_local_rect: LayoutRect,
         combined_local_clip_rect: &LayoutRect,
         dirty_rect: VisRect,
@@ -1004,15 +1005,27 @@ impl PictureInstance {
             }
             CoordinateSpaceMapping::ScaleOffset(_) |
             CoordinateSpaceMapping::Transform(_) => {
-                let prim_to_world = spatial_tree
-                    .get_world_transform(prim_spatial_node_index)
-                    .into_transform()
-                    .cast()
-                    .to_untyped();
-                let world_bounds = dirty_rect.cast().to_rect().to_untyped();
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                let map_ancestor_to_vis = SpaceMapper::<LayoutPixel, VisPixel>::new_with_target(
+                    visibility_spatial_node_index,
+                    ancestor_spatial_node_index,
+                    VisRect::max_rect(),
+                    spatial_tree,
+                );
+                let ancestor_dirty_rect = map_ancestor_to_vis.unmap(&dirty_rect);
+
+                let ancestor_bounds = ancestor_dirty_rect.map(|r| r.cast().to_rect().to_untyped());
 
                 let mut clipper = Clipper::<PlaneSplitAnchor>::new();
-                let planes = match Clipper::<PlaneSplitAnchor>::frustum_planes(&prim_to_world, Some(world_bounds)) {
+                let planes = match Clipper::<PlaneSplitAnchor>::frustum_planes(&ancestor_matrix, ancestor_bounds) {
                     Ok(p) => p,
                     Err(_) => return false,
                 };
