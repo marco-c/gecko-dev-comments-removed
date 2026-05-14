@@ -10,30 +10,3 @@
 
 
 
-
-
-
-
-
-
-
-
-declare namespace Temporal {
-  type Instant = any;
-}
-
-declare var Temporal: {
-  Duration: any;
-  Instant: any;
-  Now: any;
-  PlainDate: any;
-  PlainDateTime: any;
-  PlainMonthDay: any;
-  PlainTime: any;
-  PlainYearMonth: any;
-  ZonedDateTime: any;
-};
-
-interface Date {
-  toTemporalInstant(): Temporal.Instant;
-}
