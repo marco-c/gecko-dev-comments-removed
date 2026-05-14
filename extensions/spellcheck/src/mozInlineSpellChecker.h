@@ -170,7 +170,7 @@ class mozInlineSpellChecker final : public nsIInlineSpellChecker,
   
   
   nsCOMPtr<nsINode> mCurrentSelectionAnchorNode;
-  uint32_t mCurrentSelectionOffset;
+  uint32_t mCurrentSelectionOffset = 0;
 
   
   
