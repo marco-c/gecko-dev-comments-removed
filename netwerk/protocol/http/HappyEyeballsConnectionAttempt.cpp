@@ -178,6 +178,13 @@ nsresult HappyEyeballsConnectionAttempt::ProcessConnectionResult(
       entry->RemoveConnectionAttempt(this, true);
     }
     if (mTransaction) {
+      
+      
+      if (nsHttpTransaction* trans = mTransaction->QueryHttpTransaction()) {
+        if (entry) {
+          entry->RemoveTransFromPendingQ(trans);
+        }
+      }
       mTransaction->Close(aStatus);
     }
     return NS_OK;
@@ -1034,10 +1041,25 @@ void HappyEyeballsConnectionAttempt::OnSucceeded() {
   
   
   
+  bool restartedFallback0Rtt = false;
   if (mZeroRttHandle && mZeroRttHandle->AnyStarted() &&
       (!mZeroRttHandle->Winner() || !mZeroRttHandle->Winner()->IsAdopted())) {
     if (nsHttpTransaction* realTxn = mTransaction->QueryHttpTransaction()) {
       realTxn->FinishAdopted0RTT(true);
+      
+      
+      
+      
+      
+      RefPtr<PendingTransactionInfo> existing;
+      if (entry) {
+        existing = gHttpHandler->ConnMgr()->FindTransactionHelper(
+            false, entry, realTxn);
+      }
+      if (!existing) {
+        gHttpHandler->ConnMgr()->AddTransaction(realTxn, realTxn->Priority());
+      }
+      restartedFallback0Rtt = true;
     }
   }
 
@@ -1045,8 +1067,12 @@ void HappyEyeballsConnectionAttempt::OnSucceeded() {
   
   
   
-  bool alreadyOnConn = mZeroRttHandle && mZeroRttHandle->Winner() &&
-                       mZeroRttHandle->Winner()->IsAdopted();
+  
+  
+  
+  bool alreadyOnConn = (mZeroRttHandle && mZeroRttHandle->Winner() &&
+                        mZeroRttHandle->Winner()->IsAdopted()) ||
+                       restartedFallback0Rtt;
   RefPtr<nsHttpConnection> connTCP = do_QueryObject(mOutputConn);
   if (connTCP) {
     
