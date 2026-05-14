@@ -24,14 +24,11 @@
 
 
 
-#include "jstypes.h"
-
-#ifdef JS_SIMULATOR_ARM64
-
 #include "jit/arm64/vixl/Debugger-vixl.h"
 
 #include "mozilla/Vector.h"
 
+#include "jstypes.h"
 #include "js/AllocPolicy.h"
 
 namespace vixl {
@@ -1531,5 +1528,3 @@ bool InvalidCommand::Run(Debugger* debugger) {
 }
 
 }  
-
-#endif  
