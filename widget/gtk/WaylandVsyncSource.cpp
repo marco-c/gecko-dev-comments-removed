@@ -73,22 +73,26 @@ void WaylandVsyncSource::Init() {
   
   
   
-  mWaylandSurface->SetVSyncCallbackLocked(
+  mWaylandSurface->SetVSyncCallbackHandlerLocked(
       surfaceLock,
-      [this, self = RefPtr{this}](wl_callback* aCallback,
-                                  uint32_t aTime) -> void {
+      [this, self = RefPtr{this}](wl_callback* aCallback, uint32_t aTime,
+                                  bool aEmulated) -> void {
         {
           MutexAutoLock lock(mMutex);
           if (!mVsyncSourceEnabled || !mVsyncEnabled || !mWaylandSurface) {
             return;
           }
-          if (aTime && mLastFrameTime == aTime) {
+
+          
+          
+          if (mLastTimeEmulated == aEmulated && mLastTime == aTime) {
             return;
           }
-          mLastFrameTime = aTime;
+          mLastTimeEmulated = aEmulated;
+          mLastTime = aTime;
         }
-        LOG("WaylandVsyncSource frame callback, routed %d time %d", !aCallback,
-            aTime);
+        LOG("WaylandVsyncSource frame callback, routed %d time %d emulated %d",
+            !aCallback, aTime, aEmulated);
 
         VisibleWindowCallback(aTime);
 
