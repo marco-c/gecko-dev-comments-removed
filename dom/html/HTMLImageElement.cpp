@@ -23,6 +23,7 @@
 #include "nsGenericHTMLElement.h"
 #include "nsGkAtoms.h"
 #include "nsIMutationObserver.h"
+#include "nsIURIWithSizeOf.h"
 #include "nsImageFrame.h"
 #include "nsNodeInfoManager.h"
 #include "nsPresContext.h"
@@ -1226,7 +1227,8 @@ void HTMLImageElement::AddSizeOfExcludingThis(nsWindowSizes& aSizes,
   
   
   if (mSrcURI) {
-    *aNodeSize += mSrcURI->SizeOfIncludingThis(aSizes.mState.mMallocSizeOf);
+    *aNodeSize += SizeOfIncludingThisIfURIWithSizeOf(
+        mSrcURI, aSizes.mState.mMallocSizeOf);
   }
 }
 

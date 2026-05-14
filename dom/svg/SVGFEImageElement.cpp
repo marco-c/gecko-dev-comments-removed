@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/SVGFEImageElement.h"
 
 #include "imgIContainer.h"
@@ -17,6 +15,7 @@
 #include "mozilla/dom/UserActivation.h"
 #include "mozilla/gfx/2D.h"
 #include "nsContentUtils.h"
+#include "nsIURIWithSizeOf.h"
 #include "nsLayoutUtils.h"
 #include "nsNetUtil.h"
 
@@ -438,7 +437,8 @@ void SVGFEImageElement::AddSizeOfExcludingThis(nsWindowSizes& aSizes,
   
   
   if (mSrcURI) {
-    *aNodeSize += mSrcURI->SizeOfIncludingThis(aSizes.mState.mMallocSizeOf);
+    *aNodeSize += SizeOfIncludingThisIfURIWithSizeOf(
+        mSrcURI, aSizes.mState.mMallocSizeOf);
   }
 }
 

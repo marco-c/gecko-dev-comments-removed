@@ -65,7 +65,7 @@ class nsNestedAboutURI final : public nsSimpleNestedURI {
   
   virtual already_AddRefed<nsSimpleURI> StartClone() override;
   NS_IMETHOD Mutate(nsIURIMutator** _retval) override;
-  NS_IMETHOD_(void) Serialize(ipc::URIParams& aParams) override;
+  virtual void Serialize(ipc::URIParams& aParams) override;
 
   
   NS_IMETHOD Read(nsIObjectInputStream* aStream) override;

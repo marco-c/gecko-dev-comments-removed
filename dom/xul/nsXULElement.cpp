@@ -103,6 +103,7 @@
 #include "nsIScriptContext.h"
 #include "nsISupportsUtils.h"
 #include "nsIURI.h"
+#include "nsIURIWithSizeOf.h"
 #include "nsIXPConnect.h"
 #include "nsMenuPopupFrame.h"
 #include "nsNodeInfoManager.h"
@@ -1974,7 +1975,8 @@ void nsXULPrototypeScript::AddSizeOfExcludingThis(nsWindowSizes& aSizes,
   
   
   if (mSrcURI) {
-    *aNodeSize += mSrcURI->SizeOfIncludingThis(aSizes.mState.mMallocSizeOf);
+    *aNodeSize += SizeOfIncludingThisIfURIWithSizeOf(
+        mSrcURI, aSizes.mState.mMallocSizeOf);
   }
 }
 

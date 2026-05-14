@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/SVGImageElement.h"
 
 #include "SVGGeometryProperty.h"
@@ -16,6 +14,7 @@
 #include "mozilla/gfx/2D.h"
 #include "nsCOMPtr.h"
 #include "nsContentUtils.h"
+#include "nsIURIWithSizeOf.h"
 #include "nsNetUtil.h"
 
 NS_IMPL_NS_NEW_SVG_ELEMENT(Image)
@@ -345,7 +344,8 @@ void SVGImageElement::AddSizeOfExcludingThis(nsWindowSizes& aSizes,
   
   
   if (mSrcURI) {
-    *aNodeSize += mSrcURI->SizeOfIncludingThis(aSizes.mState.mMallocSizeOf);
+    *aNodeSize += SizeOfIncludingThisIfURIWithSizeOf(
+        mSrcURI, aSizes.mState.mMallocSizeOf);
   }
 }
 

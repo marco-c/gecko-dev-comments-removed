@@ -69,7 +69,7 @@ class nsJSURI final : public mozilla::net::nsSimpleURI {
   
   virtual already_AddRefed<mozilla::net::nsSimpleURI> StartClone() override;
   NS_IMETHOD Mutate(nsIURIMutator** _retval) override;
-  NS_IMETHOD_(void) Serialize(mozilla::ipc::URIParams& aParams) override;
+  virtual void Serialize(mozilla::ipc::URIParams& aParams) override;
 
   
   NS_IMETHOD Read(nsIObjectInputStream* aStream) override;

@@ -14,6 +14,7 @@
 #include "nsAttrValueInlines.h"
 #include "nsGkAtoms.h"
 #include "nsIURIMutator.h"
+#include "nsIURIWithSizeOf.h"
 #include "nsLayoutUtils.h"
 #include "nsString.h"
 
@@ -441,7 +442,7 @@ size_t Link::SizeOfExcludingThis(mozilla::SizeOfState& aState) const {
   
   
   if (mCachedURI) {
-    n += mCachedURI->SizeOfIncludingThis(aState.mMallocSizeOf);
+    n += SizeOfIncludingThisIfURIWithSizeOf(mCachedURI, aState.mMallocSizeOf);
   }
 
   

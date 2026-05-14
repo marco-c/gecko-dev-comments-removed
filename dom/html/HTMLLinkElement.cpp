@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/HTMLLinkElement.h"
 
 #include "DecoderDoctorDiagnostics.h"
@@ -34,6 +32,7 @@
 #include "nsIContentPolicy.h"
 #include "nsINode.h"
 #include "nsIPrefetchService.h"
+#include "nsIURIWithSizeOf.h"
 #include "nsMimeTypes.h"
 #include "nsPIDOMWindow.h"
 #include "nsReadableUtils.h"
@@ -413,7 +412,8 @@ void HTMLLinkElement::AddSizeOfExcludingThis(nsWindowSizes& aSizes,
   
   
   if (mCachedURI) {
-    *aNodeSize += mCachedURI->SizeOfIncludingThis(aSizes.mState.mMallocSizeOf);
+    *aNodeSize += SizeOfIncludingThisIfURIWithSizeOf(
+        mCachedURI, aSizes.mState.mMallocSizeOf);
   }
 }
 
