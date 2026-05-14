@@ -6,6 +6,25 @@ const { DOMFullscreenTestUtils } = ChromeUtils.importESModule(
 );
 DOMFullscreenTestUtils.init(this, window);
 
+
+const KEYBOARD_LOCK_LONGPRESS_TIME = 100;
+
+async function synthesizeLongPressEsc(browser) {
+  EventUtils.synthesizeKey(
+    "KEY_Escape",
+    { type: "keydown" },
+    browser.documentGlobal
+  );
+  
+  
+  await new Promise(r => setTimeout(r, KEYBOARD_LOCK_LONGPRESS_TIME + 50));
+  EventUtils.synthesizeKey(
+    "KEY_Escape",
+    { type: "keyup" },
+    browser.documentGlobal
+  );
+}
+
 async function testExpectFullScreenExit(
   browser,
   leaveFS,
