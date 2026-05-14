@@ -75,6 +75,23 @@ bool ZeroRttHandle::Do0RTT(HappyEyeballsTransaction* aCaller,
     return false;
   }
 
+  
+  
+  
+  
+  
+  
+  if (!mAny0RttStarted) {
+    RefPtr<HappyEyeballsConnectionAttempt> attempt = do_QueryReferent(mHet);
+    if (!attempt || !attempt->LockInRealTxnFromPendingQueue()) {
+      LOG(
+          ("ZeroRttHandle::Do0RTT %p caller=%p declining — real txn "
+           "already dispatched elsewhere",
+           this, aCaller));
+      return false;
+    }
+  }
+
   LOG(("ZeroRttHandle::Do0RTT %p caller=%p accepted, offset=0", this, aCaller));
   aCaller->Request0RttStreamOffset() = Some(uint64_t(0));
   
@@ -173,6 +190,10 @@ nsresult ZeroRttHandle::Finish0RTT(HappyEyeballsTransaction* aCaller,
 
   nsHttpTransaction* realTxn = ResolveRealTxn(mHet);
   if (!realTxn) {
+    LOG(("ZeroRttHandle::Finish0RTT %p real txn gone; closing caller=%p", this,
+         aCaller));
+    Cleanup();
+    aCaller->Close(NS_ERROR_ABORT);
     return NS_OK;
   }
 

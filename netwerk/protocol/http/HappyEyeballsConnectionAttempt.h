@@ -92,6 +92,15 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
   
   void AdoptWinner(HappyEyeballsTransaction* aWinner);
 
+  
+  
+  
+  
+  
+  
+  
+  bool LockInRealTxnFromPendingQueue();
+
  private:
   ~HappyEyeballsConnectionAttempt();
 
