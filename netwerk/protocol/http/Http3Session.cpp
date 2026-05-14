@@ -331,6 +331,12 @@ void Http3Session::Shutdown() {
                                                                      mError);
   LOG(("Http3Session::Shutdown %p allowToRetryWithDifferentIPFamily=%d", this,
        allowToRetryWithDifferentIPFamily));
+  
+  
+  
+  if (mBeforeConnectedError && mHad0RttStream) {
+    mDontExclude = true;
+  }
   if ((mBeforeConnectedError ||
        (mError == NS_ERROR_NET_HTTP3_PROTOCOL_ERROR)) &&
       !isNSSError && !isEchRetry && !mConnInfo->GetWebTransport() &&
@@ -1582,6 +1588,7 @@ nsresult Http3Session::TryActivating(
       }
       return NS_BASE_STREAM_WOULD_BLOCK;
     }
+    mHad0RttStream = true;
   }
 
   nsresult rv = NS_OK;

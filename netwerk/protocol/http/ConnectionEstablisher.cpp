@@ -410,15 +410,13 @@ void TCPConnectionEstablisher::Close(nsresult aReason) {
     
     
     bool adopted = mTransaction && mTransaction->IsAdopted();
+    mResultConn->DontReuse();
     if (adopted) {
       LOG(("TCPConnectionEstablisher::Close %p adopted conn %p DontReuse", this,
            mResultConn.get()));
-      mResultConn->DontReuse();
     } else {
       LOG(("TCPConnectionEstablisher::Close closing connection %p",
            mResultConn.get()));
-      
-      
       
       
       

@@ -492,6 +492,11 @@ class Http3Session final : public Http3SessionBase,
   
   
   
+  
+  bool mHad0RttStream = false;
+  
+  
+  
   nsIUDPSocket* mSocket;
   uint32_t mTrrStreams = 0;
   bool mIsInTunnel = false;

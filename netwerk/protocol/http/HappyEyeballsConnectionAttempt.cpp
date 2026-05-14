@@ -171,48 +171,75 @@ nsresult HappyEyeballsConnectionAttempt::ProcessConnectionResult(
        this, aAddr.ToString().get(), aId, static_cast<uint32_t>(aStatus)));
 
   
+  
+  RefPtr<HappyEyeballsConnectionAttempt> self(this);
   RefPtr<ConnectionEntry> entry(mEntry);
-  if (PossibleZeroRTTRetryError(aStatus)) {
-    RefPtr<HappyEyeballsConnectionAttempt> self(this);
-    if (entry) {
-      entry->RemoveConnectionAttempt(this, true);
-    }
-    if (mTransaction) {
-      
-      
-      if (nsHttpTransaction* trans = mTransaction->QueryHttpTransaction()) {
-        if (entry) {
-          entry->RemoveTransFromPendingQ(trans);
-        }
-      }
-      mTransaction->Close(aStatus);
-    }
-    return NS_OK;
-  }
 
   
-  if (aStatus == NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED) {
-    
-    
-    
-    
-    
+  
+  
+  auto closeTransaction = [&](nsresult aCloseReason) {
     if (mTransaction) {
       if (nsHttpTransaction* trans = mTransaction->QueryHttpTransaction()) {
         if (entry) {
           entry->RemoveTransFromPendingQ(trans);
         }
       }
-      mTransaction->Close(aStatus);
+      mTransaction->Close(aCloseReason);
     }
+  };
+
+  
+  
+  
+  auto terminateWithError = [&](nsresult aCloseReason) {
+    closeTransaction(aCloseReason);
     Abandon();
     if (entry) {
       entry->RemoveConnectionAttempt(this, false);
     }
+  };
+
+  if (PossibleZeroRTTRetryError(aStatus)) {
+    if (entry) {
+      entry->RemoveConnectionAttempt(this, true);
+    }
+    closeTransaction(aStatus);
     return NS_OK;
   }
 
   
+  
+  
+  
+  
+  if (aStatus == NS_ERROR_NET_RESET && mZeroRttHandle &&
+      mZeroRttHandle->AnyStarted()) {
+    if (entry) {
+      entry->RemoveConnectionAttempt(this, true);
+    }
+    if (mTransaction) {
+      if (nsHttpTransaction* trans = mTransaction->QueryHttpTransaction()) {
+        
+        
+        trans->FinishAdopted0RTT( true);
+        
+        
+        
+        trans->DoNotRemoveAltSvc();
+      }
+    }
+    closeTransaction(NS_ERROR_NET_RESET);
+    return NS_OK;
+  }
+
+  
+  
+  if (aStatus == NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED) {
+    terminateWithError(aStatus);
+    return NS_OK;
+  }
+
   
   
   
@@ -222,22 +249,9 @@ nsresult HappyEyeballsConnectionAttempt::ProcessConnectionResult(
     if (!mozilla::psm::IsNSSErrorCode(prCode)) {
       
       
-      
       closeReason = ErrorAccordingToNSPR(prCode);
     }
-    RefPtr<ConnectionEntry> entry(mEntry);
-    if (mTransaction) {
-      if (nsHttpTransaction* trans = mTransaction->QueryHttpTransaction()) {
-        if (entry) {
-          entry->RemoveTransFromPendingQ(trans);
-        }
-      }
-      mTransaction->Close(closeReason);
-    }
-    Abandon();
-    if (entry) {
-      entry->RemoveConnectionAttempt(this, false);
-    }
+    terminateWithError(closeReason);
     return NS_OK;
   }
 
@@ -584,6 +598,28 @@ void HappyEyeballsConnectionAttempt::DNSLookup(
                              }));
 }
 
+void HappyEyeballsConnectionAttempt::MaybeForward0RTTSecurityInfo(
+    ConnectionEstablisher* aEstablisher) {
+  if (!mZeroRttHandle || !mZeroRttHandle->AnyStarted()) {
+    return;
+  }
+  RefPtr<HttpConnectionBase> conn = aEstablisher->ResultConn();
+  if (!conn) {
+    return;
+  }
+  nsCOMPtr<nsITLSSocketControl> tlsCtrl;
+  conn->GetTLSSocketControl(getter_AddRefs(tlsCtrl));
+  nsCOMPtr<nsITransportSecurityInfo> secInfo;
+  if (tlsCtrl) {
+    tlsCtrl->GetSecurityInfo(getter_AddRefs(secInfo));
+  }
+  if (secInfo && mTransaction) {
+    if (nsHttpTransaction* trans = mTransaction->QueryHttpTransaction()) {
+      trans->SetSecurityInfo(secInfo);
+    }
+  }
+}
+
 void HappyEyeballsConnectionAttempt::HandleTCPConnectionResult(
     Result<RefPtr<HttpConnectionBase>, nsresult> aResult,
     TCPConnectionEstablisher* aEstablisher, uint64_t aId) {
@@ -597,6 +633,7 @@ void HappyEyeballsConnectionAttempt::HandleTCPConnectionResult(
        this, addr.ToString().get(), addr.raw.family, aId));
 
   if (aResult.isErr()) {
+    MaybeForward0RTTSecurityInfo(establisher);
     establisher->Close(aResult.unwrapErr());
     ProcessConnectionResult(addr, aResult.unwrapErr(), aId);
     return;
@@ -800,6 +837,7 @@ void HappyEyeballsConnectionAttempt::HandleUDPConnectionResult(
        this, addr.ToString().get(), addr.raw.family, aId));
 
   if (aResult.isErr()) {
+    MaybeForward0RTTSecurityInfo(establisher);
     establisher->Close(aResult.unwrapErr());
     ProcessConnectionResult(addr, aResult.unwrapErr(), aId);
     return;
