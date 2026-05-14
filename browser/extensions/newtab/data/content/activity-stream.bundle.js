@@ -17651,6 +17651,27 @@ const WIDGET_SIDEBAR_COMPONENTS = {
   weather: WeatherSidebarWidget
 };
 ;
+function WidgetWrapper_extends() { return WidgetWrapper_extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, WidgetWrapper_extends.apply(null, arguments); }
+
+
+
+
+
+
+
+
+function WidgetWrapper({
+  className,
+  children,
+  ...rest
+}) {
+  const merged = ["widget-wrapper", "col-4", className].filter(Boolean).join(" ");
+  return external_React_default().createElement("div", WidgetWrapper_extends({}, rest, {
+    className: merged
+  }), children);
+}
+;
+
 
 
 
@@ -18041,13 +18062,20 @@ function Widgets() {
   }, widgetOrder.map(id => {
     if (novaEnabled) {
       const Component = WIDGET_ROW_COMPONENTS[id];
-      return Component && widgetEnabledMap[id] ? external_React_default().createElement(Component, {
+      if (!Component || !widgetEnabledMap[id]) {
+        return null;
+      }
+      const entry = WIDGET_REGISTRY.find(w => w.id === id);
+      const size = entry ? resolveWidgetSize(entry, prefs) : null;
+      return external_React_default().createElement(WidgetWrapper, {
         key: id,
+        className: size ? `${size}-widget` : ""
+      }, external_React_default().createElement(Component, {
         dispatch: dispatch,
         handleUserInteraction: handleUserInteraction,
         isMaximized: isMaximized,
         widgetsMayBeMaximized: widgetsMayBeMaximized
-      }) : null;
+      }));
     }
     
     return external_React_default().createElement((external_React_default()).Fragment, {
