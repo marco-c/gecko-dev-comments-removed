@@ -297,6 +297,21 @@ class ScriptLoadRequest : public nsISupports,
   const ScriptFetchInfo* FetchInfo() const { return mFetchInfo; }
   ScriptFetchInfo* FetchInfo() { return mFetchInfo; }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool IsRetrievedFromMemoryCache() const {
+    return mIsRetrievedFromMemoryCache;
+  }
+
  public:
   
 
@@ -341,6 +356,8 @@ class ScriptLoadRequest : public nsISupports,
   };
   CachingPlan mDiskCachingPlan : 2;
   CachingPlan mMemoryCachingPlan : 2;
+
+  bool mIsRetrievedFromMemoryCache : 1;
 
   CacheExpirationTime mExpirationTime = CacheExpirationTime::Never();
 
