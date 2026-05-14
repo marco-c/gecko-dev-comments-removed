@@ -26,17 +26,12 @@ class Rule;
 
 class DeclarationBlock final {
   DeclarationBlock(const DeclarationBlock& aCopy)
-      : mRaw(Servo_DeclarationBlock_Clone(aCopy.mRaw).Consume()),
-        mImmutable(false) {
-    mContainer.mRaw = 0;
-  }
+      : mRaw(Servo_DeclarationBlock_Clone(aCopy.mRaw).Consume()) {}
 
  public:
   explicit DeclarationBlock(
       already_AddRefed<const StyleLockedDeclarationBlock> aRaw)
-      : mRaw(aRaw), mImmutable(false) {
-    mContainer.mRaw = 0;
-  }
+      : mRaw(aRaw) {}
 
   DeclarationBlock()
       : DeclarationBlock(Servo_DeclarationBlock_CreateEmpty().Consume()) {}
@@ -50,27 +45,25 @@ class DeclarationBlock final {
   
 
 
-  bool IsMutable() const { return !mImmutable; }
+  bool IsMutable() const { return !IsImmutable(); }
 
   
 
 
   void AssertMutable() const {
     MOZ_ASSERT(IsMutable(), "someone forgot to call EnsureMutable");
-    MOZ_ASSERT(!OwnerIsReadOnly(), "User Agent sheets shouldn't be modified");
   }
 
   
 
 
-  void SetImmutable() { mImmutable = true; }
+  void SetImmutable() { Servo_DeclarationBlock_SetImmutable(mRaw.get()); }
 
   
 
 
   already_AddRefed<DeclarationBlock> EnsureMutable() {
-    MOZ_ASSERT(!OwnerIsReadOnly());
-    if (!IsMutable() || InnerMayBeInRuleTree()) {
+    if (IsImmutable()) {
       return Clone();
     }
     return do_AddRef(this);
@@ -80,40 +73,17 @@ class DeclarationBlock final {
   
   
   
-  bool InnerMayBeInRuleTree() const {
-    return Servo_DeclarationBlock_MayBeInRuleTree(mRaw.get());
-  }
-
-  void SetOwningRule(css::Rule* aRule) {
-    MOZ_ASSERT(!mContainer.mOwningRule || !aRule,
-               "should never overwrite one rule with another");
-    mContainer.mOwningRule = aRule;
-  }
-
-  css::Rule* GetOwningRule() const {
-    if (mContainer.mRaw & 0x1) {
-      return nullptr;
-    }
-    return mContainer.mOwningRule;
+  bool IsImmutable() const {
+    return Servo_DeclarationBlock_IsImmutable(mRaw.get());
   }
 
   void SetAttributeStyles(AttributeStyles* aAttributeStyles) {
-    MOZ_ASSERT(!mContainer.mAttributeStyles || !aAttributeStyles,
+    MOZ_ASSERT(!mAttributeStyles || !aAttributeStyles,
                "should never overwrite one sheet with another");
-    mContainer.mAttributeStyles = aAttributeStyles;
-    if (aAttributeStyles) {
-      mContainer.mRaw |= uintptr_t(1);
-    }
+    mAttributeStyles = aAttributeStyles;
   }
 
-  AttributeStyles* GetAttributeStyles() const {
-    if (!(mContainer.mRaw & 0x1)) {
-      return nullptr;
-    }
-    auto c = mContainer;
-    c.mRaw &= ~uintptr_t(1);
-    return c.mAttributeStyles;
-  }
+  AttributeStyles* GetAttributeStyles() const { return mAttributeStyles; }
 
   bool IsReadOnly() const;
 
@@ -191,29 +161,11 @@ class DeclarationBlock final {
  private:
   ~DeclarationBlock() = default;
 
-  bool OwnerIsReadOnly() const;
-
-  union {
-    
-    
-    
-
-    uintptr_t mRaw;
-
-    
-    css::Rule* mOwningRule;
-
-    
-    
-    AttributeStyles* mAttributeStyles;
-  } mContainer;
+  
+  
+  AttributeStyles* mAttributeStyles = nullptr;
 
   RefPtr<const StyleLockedDeclarationBlock> mRaw;
-
-  
-  
-  
-  bool mImmutable;
 };
 
 }  

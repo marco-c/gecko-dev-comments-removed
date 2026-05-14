@@ -231,7 +231,7 @@ impl<'a> Iterator for PropertyDeclarationIdSetIterator<'a> {
 
 
 #[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[derive(ToShmem, Default)]
+#[derive(Default)]
 pub struct PropertyDeclarationBlock {
     
     
@@ -245,7 +245,26 @@ pub struct PropertyDeclarationBlock {
     property_ids: PropertyDeclarationIdSet,
 
     
-    pub may_be_in_rule_tree: AtomicBool,
+    
+    
+    pub immutable: AtomicBool,
+}
+
+impl to_shmem::ToShmem for PropertyDeclarationBlock {
+    fn to_shmem(&self, builder: &mut to_shmem::SharedMemoryBuilder) -> to_shmem::Result<Self> {
+        use std::mem::ManuallyDrop;
+        let declarations = self.declarations.to_shmem(builder)?;
+        let declarations_importance = self.declarations_importance.to_shmem(builder)?;
+        let property_ids = self.property_ids.to_shmem(builder)?;
+        let immutable = AtomicBool::new(true);
+
+        Ok(ManuallyDrop::new(Self {
+            declarations: ManuallyDrop::into_inner(declarations),
+            declarations_importance: ManuallyDrop::into_inner(declarations_importance),
+            property_ids: ManuallyDrop::into_inner(property_ids),
+            immutable,
+        }))
+    }
 }
 
 impl Clone for PropertyDeclarationBlock {
@@ -254,7 +273,7 @@ impl Clone for PropertyDeclarationBlock {
             declarations: self.declarations.clone(),
             declarations_importance: self.declarations_importance.clone(),
             property_ids: self.property_ids.clone(),
-            may_be_in_rule_tree: AtomicBool::new(false),
+            immutable: AtomicBool::new(false),
         }
     }
 }
@@ -407,7 +426,7 @@ impl PropertyDeclarationBlock {
             declarations: ThinVec::new(),
             declarations_importance: SmallBitVec::new(),
             property_ids: PropertyDeclarationIdSet::default(),
-            may_be_in_rule_tree: AtomicBool::new(false),
+            immutable: AtomicBool::new(false),
         }
     }
 
@@ -421,7 +440,7 @@ impl PropertyDeclarationBlock {
             declarations,
             declarations_importance: SmallBitVec::from_elem(1, importance.important()),
             property_ids,
-            may_be_in_rule_tree: AtomicBool::new(false),
+            immutable: AtomicBool::new(false),
         }
     }
 
@@ -1048,7 +1067,7 @@ impl PropertyDeclarationBlock {
             declarations,
             property_ids,
             declarations_importance: SmallBitVec::from_elem(len, false),
-            may_be_in_rule_tree: AtomicBool::new(false),
+            immutable: AtomicBool::new(false),
         }
     }
 
