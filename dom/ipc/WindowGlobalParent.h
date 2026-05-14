@@ -199,6 +199,21 @@ class WindowGlobalParent final : public WindowContext,
 
   ContentBlockingLog* GetContentBlockingLog() { return &mContentBlockingLog; }
 
+  
+  
+  
+  
+  
+  void MaybeReportContentBlockingLog();
+
+  
+  
+  
+  static void FlushAllContentBlockingLogs(const GlobalObject& aGlobal) {
+    FlushAllContentBlockingLogs();
+  }
+  static void FlushAllContentBlockingLogs();
+
   nsIDOMProcessParent* GetDomProcess();
 
   nsICookieJarSettings* CookieJarSettings() { return mCookieJarSettings; }

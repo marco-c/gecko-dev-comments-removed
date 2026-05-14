@@ -1679,22 +1679,21 @@ void WindowGlobalParent::ActorDestroy(ActorDestroyReason aWhy) {
   
   
   
+  
+  MaybeReportContentBlockingLog();
   if (!IsInProcess()) {
     RefPtr<BrowserParent> browserParent =
         static_cast<BrowserParent*>(Manager());
     if (browserParent) {
       nsCOMPtr<nsILoadContext> loadContext = browserParent->GetLoadContext();
       if (loadContext && !loadContext->UsePrivateBrowsing() &&
-          BrowsingContext()->IsTopContent()) {
-        GetContentBlockingLog()->ReportLog();
-
-        if (mDocumentURI && net::SchemeIsHttpOrHttps(mDocumentURI)) {
-          GetContentBlockingLog()->ReportCanvasFingerprintingLog(
-              DocumentPrincipal());
-          GetContentBlockingLog()->ReportFontFingerprintingLog(
-              DocumentPrincipal());
-          GetContentBlockingLog()->ReportEmailTrackingLog(DocumentPrincipal());
-        }
+          BrowsingContext()->IsTopContent() && mDocumentURI &&
+          net::SchemeIsHttpOrHttps(mDocumentURI)) {
+        GetContentBlockingLog()->ReportCanvasFingerprintingLog(
+            DocumentPrincipal());
+        GetContentBlockingLog()->ReportFontFingerprintingLog(
+            DocumentPrincipal());
+        GetContentBlockingLog()->ReportEmailTrackingLog(DocumentPrincipal());
       }
     }
   }
@@ -1716,6 +1715,56 @@ void WindowGlobalParent::ActorDestroy(ActorDestroyReason aWhy) {
 }
 
 WindowGlobalParent::~WindowGlobalParent() = default;
+
+void WindowGlobalParent::MaybeReportContentBlockingLog() {
+  MOZ_ASSERT(XRE_IsParentProcess());
+  MOZ_ASSERT(NS_IsMainThread());
+
+  
+  
+  if (IsInProcess()) {
+    return;
+  }
+  RefPtr<BrowserParent> browserParent = static_cast<BrowserParent*>(Manager());
+  if (!browserParent) {
+    return;
+  }
+  nsCOMPtr<nsILoadContext> loadContext = browserParent->GetLoadContext();
+  if (!loadContext || loadContext->UsePrivateBrowsing()) {
+    return;
+  }
+  if (!BrowsingContext()->IsTopContent()) {
+    return;
+  }
+
+  GetContentBlockingLog()->ReportLog();
+}
+
+
+void WindowGlobalParent::FlushAllContentBlockingLogs() {
+  MOZ_ASSERT(XRE_IsParentProcess());
+  MOZ_ASSERT(NS_IsMainThread());
+
+  nsTArray<RefPtr<BrowsingContextGroup>> groups;
+  BrowsingContextGroup::GetAllGroups(groups);
+
+  for (const auto& group : groups) {
+    for (const auto& bc : group->Toplevels()) {
+      if (!bc) {
+        continue;
+      }
+      RefPtr<CanonicalBrowsingContext> canonical = bc->Canonical();
+      if (!canonical) {
+        continue;
+      }
+      RefPtr<WindowGlobalParent> wgp = canonical->GetCurrentWindowGlobal();
+      if (!wgp) {
+        continue;
+      }
+      wgp->MaybeReportContentBlockingLog();
+    }
+  }
+}
 
 JSObject* WindowGlobalParent::WrapObject(JSContext* aCx,
                                          JS::Handle<JSObject*> aGivenProto) {

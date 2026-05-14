@@ -195,13 +195,26 @@ void ContentBlockingLog::ReportLog() {
     return;
   }
 
+  
+  
+  
+  
+  nsAutoCString payload = Stringify( true);
+
+  
+  
+  if (payload.EqualsLiteral("{}")) {
+    return;
+  }
+
   nsCOMPtr<nsITrackingDBService> trackingDBService =
       do_GetService("@mozilla.org/tracking-db-service;1");
   if (NS_WARN_IF(!trackingDBService)) {
     return;
   }
 
-  trackingDBService->RecordContentBlockingLog(Stringify());
+  trackingDBService->RecordContentBlockingLog(payload);
+  MarkAsReported();
 }
 
 void ContentBlockingLog::ReportCanvasFingerprintingLog(

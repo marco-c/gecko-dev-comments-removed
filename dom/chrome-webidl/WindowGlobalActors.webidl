@@ -142,6 +142,13 @@ interface WindowGlobalParent : WindowContext {
 
   static WindowGlobalParent? getByInnerWindowId(unsigned long long innerWindowId);
 
+  // Flush each live top-level WindowGlobalParent's in-memory ContentBlockingLog
+  // to the tracking database. Used by TrackingDBService to force ingestion of
+  // pending events from long-lived tabs before a read query. Applies the same
+  // gates as the existing on-destruction flush (out-of-process, non-private,
+  // top-level content).
+  static undefined flushAllContentBlockingLogs();
+
   /**
    * Get or create the JSWindowActor with the given name.
    *
@@ -179,6 +186,8 @@ interface WindowGlobalParent : WindowContext {
   // has active peer connections.  If this is called for a non-top-level
   // context, it always returns false.
   boolean hasActivePeerConnections();
+
+  undefined updateFullscreenKeyboardLockStatus(FullscreenKeyboardLock status);
 };
 
 [Exposed=Window, ChromeOnly]
