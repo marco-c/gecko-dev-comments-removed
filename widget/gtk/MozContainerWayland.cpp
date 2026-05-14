@@ -252,6 +252,10 @@ static bool moz_container_wayland_ensure_surface(MozContainer* container,
   surface->CommitLocked(lock);
 
   moz_container_wayland_invalidate(container);
+
+  
+  surface->RunMapCallbackLocked(lock);
+
   return true;
 }
 

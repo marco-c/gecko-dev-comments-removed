@@ -132,10 +132,18 @@ class WaylandSurface final {
   
   
   
+  void SetMapCallbackLocked(
+      const WaylandSurfaceLock& aProofOfLock,
+      const std::function<void(WaylandSurfaceLock& aProofOfLock)>& aMapCB);
+  void ClearMapCallbackLocked(const WaylandSurfaceLock& aProofOfLock);
+  void RunMapCallbackLocked(WaylandSurfaceLock& aProofOfLock);
+
+  
+  
+  
   void SetUnmapCallbackLocked(const WaylandSurfaceLock& aProofOfLock,
                               const std::function<void(void)>& aUnmapCB);
   void ClearUnmapCallbackLocked(const WaylandSurfaceLock& aProofOfLock);
-
   void RunUnmapCallback();
 
   
@@ -346,6 +354,7 @@ class WaylandSurface final {
   mozilla::Atomic<bool, mozilla::Relaxed> mIsPendingGdkCleanup{false};
 
   std::function<void(void)> mGdkCommitCallback;
+  std::function<void(WaylandSurfaceLock& aProofOfLock)> mMapCallback;
   std::function<void(void)> mUnmapCallback;
 
   DesktopIntSize mSize;
