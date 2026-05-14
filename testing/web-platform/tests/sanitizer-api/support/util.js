@@ -1,5 +1,19 @@
+const XHTML_NS = "http://www.w3.org/1999/xhtml";
+
+
+const NON_REPLACEABLE_ELEMENTS = [
+  "html", 
+  { name: "html", namespace: XHTML_NS },
+  { name: "svg", namespace: "http://www.w3.org/2000/svg" },
+  { name: "math", namespace: "http://www.w3.org/1998/Math/MathML" },
+];
+
 function is_same_sanitizer_name(a, b) {
   return a.name === b.name && a.namespace === b.namespace;
+}
+
+function is_same_sanitizer_target(a, b) {
+  return a.target === b.target;
 }
 
 function is_data_attribute(attribute) {
@@ -14,6 +28,22 @@ function has_duplicates(list) {
   for (let i = 0; i < list.length; i++) {
     for (let j = i + 1; j < list.length; j++) {
       if (is_same_sanitizer_name(list[i], list[j])) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+function has_duplicate_targets(list) {
+  if (!list) {
+    return false;
+  }
+
+  for (let i = 0; i < list.length; i++) {
+    for (let j = i + 1; j < list.length; j++) {
+      if (is_same_sanitizer_target(list[i], list[j])) {
         return true;
       }
     }
@@ -68,6 +98,18 @@ function assert_config_is_valid(config) {
 
   
   assert_true(
+    "processingInstructions" in config || "removeProcessingInstructions" in config,
+    'Assert: Either config["processingInstructions"] exists or config["removeProcessingInstructions"] exists.',
+  );
+
+  
+  assert_false(
+    "processingInstructions" in config && "removeProcessingInstructions" in config,
+    'If config["processingInstructions"] exists and config["removeProcessingInstructions"] exists, then return false.',
+  );
+
+  
+  assert_true(
     "attributes" in config || "removeAttributes" in config,
     'Assert: Either config["attributes"] exists or config["removeAttributes"] exists.',
   );
@@ -93,6 +135,16 @@ function assert_config_is_valid(config) {
   
   if (config.replaceWithChildrenElements) {
     assert_false(has_duplicates(config.replaceWithChildrenElements), 'If config["replaceWithChildrenElements"] exists and has duplicates, then return false.');
+  }
+
+  
+  if ("processingInstructions" in config) {
+    
+    assert_false(has_duplicate_targets(config.processingInstructions), 'If config["processingInstructions"] has duplicate targets, then return false.')
+  } else {
+    
+    
+    assert_false(has_duplicate_targets(config.removeProcessingInstructions), 'If config["removeProcessingInstructions"] has duplicate targets, then return false.')
   }
 
   
@@ -217,6 +269,8 @@ function assert_config(config, expected) {
   const PROPERTIES = [
     "attributes",
     "removeAttributes",
+    "processingInstructions",
+    "removeProcessingInstructions",
     "elements",
     "removeElements",
     "replaceWithChildrenElements",
@@ -268,6 +322,39 @@ function assert_config(config, expected) {
   assert_attrs("attributes", config, expected);
   assert_attrs("removeAttributes", config, expected);
 
+  function assert_pis(key, config, expected, prefix = "config") {
+    if (!(key in expected)) {
+      return;
+    }
+
+    if (expected[key] === undefined) {
+      assert_false(key in config, `Unexpected '${key}' in ${prefix}`);
+      return;
+    }
+
+    assert_true(key in config, `Missing '${key}' from ${prefix}`);
+    assert_equals(config[key]?.length, expected[key].length, `${prefix}.${key}.length`);
+    for (let i = 0; i < expected[key].length; i++) {
+      let processingInstructions = expected[key][i];
+      if (typeof processingInstructions === "string") {
+        assert_object_equals(
+          config[key][i],
+          { target: processingInstructions },
+          `${prefix}.${key}[${i}] should match`,
+        );
+      } else {
+        assert_object_equals(
+          config[key][i],
+          processingInstructions,
+          `${prefix}.${key}[${i}] should match`,
+        );
+      }
+    }
+  }
+
+  assert_pis("processingInstructions", config, expected);
+  assert_pis("removeProcessingInstructions", config, expected);
+
   function assert_elems(key) {
     if (!(key in expected)) {
       return;
@@ -280,8 +367,6 @@ function assert_config(config, expected) {
 
     assert_true(key in config, `Missing '${key}' from config`);
     assert_equals(config[key]?.length, expected[key].length, `${key}.length`);
-
-    const XHTML_NS = "http://www.w3.org/1999/xhtml";
 
     for (let i = 0; i < expected[key].length; i++) {
       let element = expected[key][i];
