@@ -13,6 +13,14 @@ var testPage3 =
 
 var fm = Services.focus;
 
+add_setup(async function () {
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["sidebar.updatedBookmarks.enabled", false]],
+  });
+});
+
 async function expectFocusOnF6(
   backward,
   expectedDocument,
@@ -266,12 +274,20 @@ add_task(async function () {
     true,
     "back focus with sidebar open content"
   );
+
+  
+  
+  let expectedSidebarFocusElement = Services.prefs.getBoolPref("sidebar.revamp")
+    ? sidebar.contentDocument
+        .getElementById("sidebar-panel-close")
+        .shadowRoot.querySelector("#main-button")
+    : sidebar.contentDocument
+        .getElementById("search-box")
+        .shadowRoot.querySelector("input");
   await expectFocusOnF6(
     true,
     "bookmarksPanel",
-    sidebar.contentDocument
-      .getElementById("search-box")
-      .shadowRoot.querySelector("input"),
+    expectedSidebarFocusElement,
     false,
     "back focus with sidebar open sidebar"
   );
