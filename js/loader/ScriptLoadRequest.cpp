@@ -202,11 +202,9 @@ void ScriptLoadRequest::SetCacheEntry(LoadedScript* aLoadedScript,
       mState = State::Ready;
       break;
     case ScriptKind::eModule:
-      
-      
       MOZ_ASSERT(aLoadedScript->IsModuleScript());
 
-      mLoadedScript = ModuleScript::FromCache(*aLoadedScript, mFetchInfo);
+      mLoadedScript = aLoadedScript;
 
       
       
@@ -238,7 +236,7 @@ void ScriptLoadRequest::NoCacheEntryFound(
       mLoadedScript = new ImportMapScript(aURI);
       break;
     case ScriptKind::eModule:
-      mLoadedScript = new ModuleScript(aURI, mFetchInfo);
+      mLoadedScript = new LoadedModuleScript(aURI);
       break;
     case ScriptKind::eEvent:
       MOZ_ASSERT_UNREACHABLE("eEvent is only for ScriptFetchInfo");
