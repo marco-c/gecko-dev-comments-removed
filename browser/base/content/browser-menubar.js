@@ -2,7 +2,6 @@
 
 
 
-
 document.addEventListener(
   "DOMContentLoaded",
   () => {
@@ -105,6 +104,17 @@ document.addEventListener(
           break;
         case "helpPolicySupport":
           openTrustedLinkIn(Services.policies.getSupportMenu().URL.href, "tab");
+          break;
+
+        
+        case "menu_setAsDefault":
+          if (AppConstants.platform == "macosx") {
+            Glean.browserApplicationmenu.setAsDefault.record();
+            ShellService.setAsDefault().catch(async _ => {
+              
+              
+            });
+          }
           break;
       }
     });
