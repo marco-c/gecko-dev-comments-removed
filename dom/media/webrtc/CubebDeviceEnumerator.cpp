@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "CubebDeviceEnumerator.h"
 
 #include <algorithm>
@@ -29,7 +27,7 @@ static StaticRefPtr<CubebDeviceEnumerator> sInstance;
 static StaticMutex sInstanceMutex MOZ_UNANNOTATED;
 
 
-CubebDeviceEnumerator* CubebDeviceEnumerator::GetInstance() {
+already_AddRefed<CubebDeviceEnumerator> CubebDeviceEnumerator::GetInstance() {
   StaticMutexAutoLock lock(sInstanceMutex);
   if (!sInstance) {
     sInstance = new CubebDeviceEnumerator();
@@ -48,7 +46,7 @@ CubebDeviceEnumerator* CubebDeviceEnumerator::GetInstance() {
     }();
     (void)clearOnShutdownSetup;
   }
-  return sInstance.get();
+  return do_AddRef(sInstance);
 }
 
 CubebDeviceEnumerator::CubebDeviceEnumerator()

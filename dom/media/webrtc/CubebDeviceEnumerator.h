@@ -24,7 +24,7 @@ class CubebDeviceEnumerator final {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(CubebDeviceEnumerator)
 
-  static CubebDeviceEnumerator* GetInstance();
+  static already_AddRefed<CubebDeviceEnumerator> GetInstance();
   static void Shutdown();
   using AudioDeviceSet = media::Refcountable<nsTArray<RefPtr<AudioDeviceInfo>>>;
   
