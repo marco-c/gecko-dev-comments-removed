@@ -6,9 +6,40 @@
 let { TelemetryTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/TelemetryTestUtils.sys.mjs"
 );
+
 const { MockFilePicker } = SpecialPowers;
 
+
+
+
+
+
+
+
+
+
+async function assertTelemetry(id, count, message) {
+  if (SpecialPowers.getBoolPref("browser.settings-redesign.enabled", false)) {
+    await Services.fog.testFlushAllChildren();
+    Assert.equal(
+      Glean.browserUiInteraction.preferencesPaneDownloads[id].testGetValue(),
+      count,
+      message
+    );
+  } else {
+    TelemetryTestUtils.assertKeyedScalar(
+      TelemetryTestUtils.getProcessScalars("parent", true, false),
+      "browser.ui.interaction.preferences_paneGeneral",
+      id,
+      count
+    );
+  }
+}
+
 add_task(async function testSelectDownloadDir() {
+  await Services.fog.testFlushAllChildren();
+  Services.fog.testResetFOG();
+
   
   const tempDirPath = await IOUtils.createUniqueDirectory(
     PathUtils.tempDir,
@@ -25,11 +56,7 @@ add_task(async function testSelectDownloadDir() {
       ["browser.download.dir", downloadsDirPath],
     ],
   });
-
-  
-  await openPreferencesViaOpenPreferencesAPI("general", {
-    leaveOpen: true,
-  });
+  await openDownloadsOrPreferencesPane();
 
   let win = gBrowser.selectedBrowser.contentWindow;
   let doc = gBrowser.contentDocument;
@@ -105,11 +132,10 @@ add_task(async function testSelectDownloadDir() {
   );
 
   
-  TelemetryTestUtils.assertKeyedScalar(
-    TelemetryTestUtils.getProcessScalars("parent", true, false),
-    "browser.ui.interaction.preferences_paneGeneral",
+  await assertTelemetry(
     "chooseFolder",
-    1
+    1,
+    "chooseFolder interaction should be recorded once"
   );
 
   
@@ -126,11 +152,10 @@ add_task(async function testSelectDownloadDir() {
   );
 
   
-  TelemetryTestUtils.assertKeyedScalar(
-    TelemetryTestUtils.getProcessScalars("parent", true, true),
-    "browser.ui.interaction.preferences_paneGeneral",
+  await assertTelemetry(
     "chooseFolder",
-    2
+    2,
+    "chooseFolder interaction should be recorded twice"
   );
 
   

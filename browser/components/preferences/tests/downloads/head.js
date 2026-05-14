@@ -5,3 +5,21 @@ Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/browser/components/preferences/tests/head.js",
   this
 );
+
+
+
+
+
+
+
+
+
+async function openDownloadsOrPreferencesPane() {
+  let expectedPane = SpecialPowers.getBoolPref(
+    "browser.settings-redesign.enabled",
+    false
+  )
+    ? "downloads"
+    : "general";
+  await openPreferencesViaOpenPreferencesAPI(expectedPane, { leaveOpen: true });
+}
