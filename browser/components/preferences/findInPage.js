@@ -275,7 +275,6 @@ var gSearchResultsPane = {
     let srHeader = document.getElementById("header-searchResults");
     let noResultsEl = document.getElementById("no-results-message");
     if (this.query) {
-      
       await gotoPref("paneSearchResults");
       srHeader.hidden = false;
 
@@ -302,6 +301,14 @@ var gSearchResultsPane = {
           child.classList.add("visually-hidden");
           child.hidden = false;
         }
+        
+        if (child.localName === "setting-pane") {
+          for (let group of child.querySelectorAll("setting-group")) {
+            if (group.hidden || group.hasAttribute("data-hidden-from-search")) {
+              group.classList.add("visually-hidden");
+            }
+          }
+        }
       }
 
       let ts = performance.now();
@@ -320,6 +327,46 @@ var gSearchResultsPane = {
           if (query !== this.query) {
             return;
           }
+        }
+
+        
+        
+        
+        
+        if (child.localName === "setting-pane") {
+          let groupSelector = "setting-group:not([data-hidden-from-search])";
+          if (subQuery) {
+            groupSelector += ":not(.visually-hidden)";
+          }
+          let groups = child.querySelectorAll(groupSelector);
+          if (!groups.length) {
+            if (await this.searchWithinNode(child, this.query)) {
+              child.classList.remove("visually-hidden");
+              child.onSearchPane = true;
+              resultsFound = true;
+            } else {
+              child.classList.add("visually-hidden");
+            }
+            continue;
+          }
+          let anyGroupMatched = false;
+          for (let group of groups) {
+            let matched = await this.searchWithinNode(group, this.query);
+            if (matched) {
+              group.classList.remove("visually-hidden");
+              anyGroupMatched = true;
+            } else {
+              group.classList.add("visually-hidden");
+            }
+          }
+          if (anyGroupMatched) {
+            child.classList.remove("visually-hidden");
+            child.onSearchPane = true;
+            resultsFound = true;
+          } else {
+            child.classList.add("visually-hidden");
+          }
+          continue;
         }
 
         if (
@@ -370,6 +417,8 @@ var gSearchResultsPane = {
     } else {
       noResultsEl.hidden = true;
       document.getElementById("sorry-message-query").textContent = "";
+      
+      
       
       await gotoPref("paneGeneral");
       srHeader.hidden = true;
@@ -497,7 +546,7 @@ var gSearchResultsPane = {
       
       if (
         keywordsResult &&
-        (nodeObject instanceof HTMLElement ||
+        (HTMLElement.isInstance(nodeObject) ||
           nodeObject.localName === "button" ||
           nodeObject.localName == "menulist")
       ) {
