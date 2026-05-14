@@ -316,7 +316,7 @@ UiaTextRange::Clone(__RPC__deref_out_opt ITextRangeProvider** aRetVal) {
   if (!range) {
     return CO_E_OBJNOTCONNECTED;
   }
-  RefPtr uiaRange = new UiaTextRange(range);
+  auto uiaRange = MakeRefPtr<UiaTextRange>(range);
   uiaRange.forget(aRetVal);
   return S_OK;
 }
@@ -416,7 +416,7 @@ UiaTextRange::FindAttribute(TEXTATTRIBUTEID aAttributeId, VARIANT aVal,
       } else if (matchingRangeStart) {
         
         
-        RefPtr uiaRange = new UiaTextRange(
+        auto uiaRange = MakeRefPtr<UiaTextRange>(
             TextLeafRange{matchingRangeStart.value(), startPoint});
         uiaRange.forget(aRetVal);
         return S_OK;
@@ -430,7 +430,7 @@ UiaTextRange::FindAttribute(TEXTATTRIBUTEID aAttributeId, VARIANT aVal,
     if (matchingRangeStart) {
       
       
-      RefPtr uiaRange = new UiaTextRange(
+      auto uiaRange = MakeRefPtr<UiaTextRange>(
           TextLeafRange{matchingRangeStart.value(), range.End()});
       uiaRange.forget(aRetVal);
       return S_OK;
@@ -449,8 +449,8 @@ UiaTextRange::FindAttribute(TEXTATTRIBUTEID aAttributeId, VARIANT aVal,
       } else if (matchingRangeEnd) {
         
         
-        RefPtr uiaRange =
-            new UiaTextRange(TextLeafRange{endPoint, matchingRangeEnd.value()});
+        auto uiaRange =
+          MakeRefPtr<UiaTextRange>(TextLeafRange{endPoint, matchingRangeEnd.value()});
         uiaRange.forget(aRetVal);
         return S_OK;
       }
@@ -463,7 +463,7 @@ UiaTextRange::FindAttribute(TEXTATTRIBUTEID aAttributeId, VARIANT aVal,
     if (matchingRangeEnd) {
       
       
-      RefPtr uiaRange = new UiaTextRange(
+      auto uiaRange = MakeRefPtr<UiaTextRange>(
           TextLeafRange{range.Start(), matchingRangeEnd.value()});
       uiaRange.forget(aRetVal);
       return S_OK;
@@ -564,7 +564,7 @@ UiaTextRange::FindText(__RPC__in BSTR aText, BOOL aBackward, BOOL aIgnoreCase,
   const TextLeafPoint rangeEnd{foundTextEnd, offsetFromEndAccStart};
 
   TextLeafRange resultRange{rangeStart, rangeEnd};
-  RefPtr uiaRange = new UiaTextRange(resultRange);
+  auto uiaRange = MakeRefPtr<UiaTextRange>(resultRange);
   uiaRange.forget(aRetVal);
   return S_OK;
 }
