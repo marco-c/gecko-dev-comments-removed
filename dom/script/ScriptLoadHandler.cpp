@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ScriptLoadHandler.h"
 
 #include <stdlib.h>
@@ -134,6 +132,7 @@ ScriptLoadHandler::ScriptLoadHandler(
       mSRIDataVerifier(std::move(aSRIDataVerifier)),
       mSRIStatus(NS_OK) {
   MOZ_ASSERT(aRequest->IsUnknownDataType());
+  MOZ_ASSERT(!aRequest->IsRetrievedFromMemoryCache());
   MOZ_ASSERT(aRequest->IsFetching());
 }
 
@@ -352,6 +351,7 @@ nsresult ScriptLoadHandler::MaybeDecodeSRI(uint32_t* sriLength) {
 
 nsresult ScriptLoadHandler::EnsureKnownDataType(nsIChannel* aChannel) {
   MOZ_ASSERT(mRequest->IsUnknownDataType());
+  MOZ_ASSERT(!mRequest->IsRetrievedFromMemoryCache());
   MOZ_ASSERT(mRequest->IsFetching());
 
 #ifdef NIGHTLY_BUILD
