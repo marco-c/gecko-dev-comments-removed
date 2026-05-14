@@ -153,6 +153,7 @@ class ChunkBase {
 
 struct ArenaChunkInfo {
  private:
+  friend class ArenaChunk;
   friend class ChunkPool;
   ArenaChunk* next = nullptr;
   ArenaChunk* prev = nullptr;

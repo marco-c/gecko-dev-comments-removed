@@ -2928,14 +2928,16 @@ bool GCRuntime::prepareZonesForCollection(bool* isFullOut) {
   for (ZonesIter zone(this, WithAtoms); !zone.done(); zone.next()) {
     
     bool shouldCollect = ShouldCollectZone(zone, sliceReason);
-    if (shouldCollect) {
-      any = true;
-      zone->changeGCState(this, Zone::NoGC, Zone::Prepare);
-    } else {
+    zone->setWasCollected(shouldCollect);
+    if (!shouldCollect) {
       *isFullOut = false;
+      continue;
     }
 
-    zone->setWasCollected(shouldCollect);
+    any = true;
+    zone->changeGCState(this, Zone::NoGC, Zone::Prepare);
+    zone->arenas.clearFreeLists();
+    zone->arenas.moveArenasToCollectingLists();
   }
 
   
@@ -3065,7 +3067,6 @@ bool GCRuntime::beginPreparePhase(AutoGCSession& session) {
 
 
 
-  unmarkTask.initZones();
   if (useBackgroundThreads) {
     unmarkTask.start();
   } else {
@@ -3089,44 +3090,80 @@ bool GCRuntime::beginPreparePhase(AutoGCSession& session) {
 BackgroundUnmarkTask::BackgroundUnmarkTask(GCRuntime* gc)
     : GCParallelTask(gc, gcstats::PhaseKind::UNMARK) {}
 
-void BackgroundUnmarkTask::initZones() {
-  MOZ_ASSERT(isIdle());
-  MOZ_ASSERT(zones.empty());
-  MOZ_ASSERT(!isCancelled());
-
-  
-  
-  AutoEnterOOMUnsafeRegion oomUnsafe;
-  for (GCZonesIter zone(gc); !zone.done(); zone.next()) {
-    if (!zones.append(zone.get())) {
-      oomUnsafe.crash("BackgroundUnmarkTask::initZones");
-    }
-
-    zone->arenas.clearFreeLists();
-    zone->arenas.moveArenasToCollectingLists();
-  }
-}
-
 void BackgroundUnmarkTask::run(AutoLockHelperThreadState& lock) {
   {
     AutoUnlockHelperThreadState unlock(lock);
     unmark();
-    zones.clear();
   }
 
   gc->maybeRequestGCAfterBackgroundTask(lock);
 }
 
 void BackgroundUnmarkTask::unmark() {
-  for (Zone* zone : zones) {
-    for (auto kind : AllAllocKinds()) {
-      ArenaList& arenas = zone->arenas.collectingArenaList(kind);
-      for (auto arena = arenas.iter(); !arena.done(); arena.next()) {
-        arena->unmarkAll();
-        if (isCancelled()) {
-          return;
-        }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  MOZ_ASSERT(gc->state() == gc::State::Prepare);
+  MOZ_ASSERT(!gc->isBackgroundSweeping());
+
+  AutoLockGC lock(gc);
+  for (size_t i = 0; i < gc->zones().length(); i++) {
+    Zone* zone = gc->zones()[i];  
+    if (!zone->wasGCStarted()) {
+      continue;
+    }
+    MOZ_ASSERT(zone->isGCPreparing());
+
+    
+    
+    
+    
+    
+    
+    ArenaChunk* chunk = zone->availableChunks(lock).maybeHead();
+    while (chunk) {
+      {
+        AutoUnlockGC unlock(lock);
+        chunk->markBits.clear();
       }
+      
+      
+      if (chunk->info.isCurrentChunk || !chunk->hasAvailableArenas()) {
+        chunk = zone->availableChunks(lock).maybeHead();
+      } else {
+        chunk = chunk->next();
+      }
+    }
+
+    
+    chunk = zone->currentChunk_;
+    if (chunk) {
+      chunk->markBits.clear();
+    }
+
+    
+    
+    
+    
+    
+    chunk = zone->fullChunks(lock).maybeHead();
+    while (chunk) {
+      {
+        AutoUnlockGC unlock(lock);
+        chunk->markBits.clear();
+      }
+      
+      MOZ_ASSERT(!chunk->info.isCurrentChunk);
+      MOZ_ASSERT(!chunk->hasAvailableArenas());
+      chunk = chunk->next();
     }
   }
 }

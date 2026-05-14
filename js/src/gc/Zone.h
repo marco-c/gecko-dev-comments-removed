@@ -415,7 +415,7 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
 
   
   
-  js::MainThreadData<js::gc::ArenaChunk*> currentChunk_;
+  js::MainThreadOrGCTaskData<js::gc::ArenaChunk*> currentChunk_;
 
   
   
