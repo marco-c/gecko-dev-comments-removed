@@ -140,9 +140,6 @@ const intptr_t kDoubleAlignment = 8;
 const intptr_t kDoubleAlignmentMask = kDoubleAlignment - 1;
 
 
-const int kNumFPURegisters = 32;
-
-
 
 using sreg_t = int64_t;
 using reg_t = uint64_t;
