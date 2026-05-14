@@ -1,7 +1,7 @@
-use super::ETag;
-use util::EntityTagRange;
-use HeaderValue;
+use http::HeaderValue;
 
+use super::ETag;
+use crate::util::EntityTagRange;
 
 
 

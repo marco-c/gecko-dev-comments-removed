@@ -1,5 +1,3 @@
-use std::convert::TryFrom;
-
 use bytes::Bytes;
 
 
@@ -42,7 +40,7 @@ impl ReasonPhrase {
     }
 
     
-    pub fn from_static(reason: &'static [u8]) -> Self {
+    pub const fn from_static(reason: &'static [u8]) -> Self {
         
         if find_invalid_byte(reason).is_some() {
             panic!("invalid byte in static reason phrase");
@@ -54,7 +52,9 @@ impl ReasonPhrase {
     
     
     
-    pub unsafe fn from_bytes_unchecked(reason: Bytes) -> Self {
+    
+    #[cfg(feature = "client")]
+    pub(crate) fn from_bytes_unchecked(reason: Bytes) -> Self {
         Self(reason)
     }
 }
@@ -107,9 +107,9 @@ impl TryFrom<Bytes> for ReasonPhrase {
     }
 }
 
-impl Into<Bytes> for ReasonPhrase {
-    fn into(self) -> Bytes {
-        self.0
+impl From<ReasonPhrase> for Bytes {
+    fn from(reason: ReasonPhrase) -> Self {
+        reason.0
     }
 }
 
@@ -147,7 +147,7 @@ const fn is_valid_byte(b: u8) -> bool {
     
     
     
-    #[allow(unused_comparisons)]
+    #[allow(unused_comparisons, clippy::absurd_extreme_comparisons)]
     const fn is_obs_text(b: u8) -> bool {
         0x80 <= b && b <= 0xFF
     }
@@ -174,26 +174,26 @@ mod tests {
 
     #[test]
     fn basic_valid() {
-        const PHRASE: &'static [u8] = b"OK";
+        const PHRASE: &[u8] = b"OK";
         assert_eq!(ReasonPhrase::from_static(PHRASE).as_bytes(), PHRASE);
         assert_eq!(ReasonPhrase::try_from(PHRASE).unwrap().as_bytes(), PHRASE);
     }
 
     #[test]
     fn empty_valid() {
-        const PHRASE: &'static [u8] = b"";
+        const PHRASE: &[u8] = b"";
         assert_eq!(ReasonPhrase::from_static(PHRASE).as_bytes(), PHRASE);
         assert_eq!(ReasonPhrase::try_from(PHRASE).unwrap().as_bytes(), PHRASE);
     }
 
     #[test]
     fn obs_text_valid() {
-        const PHRASE: &'static [u8] = b"hyp\xe9r";
+        const PHRASE: &[u8] = b"hyp\xe9r";
         assert_eq!(ReasonPhrase::from_static(PHRASE).as_bytes(), PHRASE);
         assert_eq!(ReasonPhrase::try_from(PHRASE).unwrap().as_bytes(), PHRASE);
     }
 
-    const NEWLINE_PHRASE: &'static [u8] = b"hyp\ner";
+    const NEWLINE_PHRASE: &[u8] = b"hyp\ner";
 
     #[test]
     #[should_panic]
@@ -206,7 +206,7 @@ mod tests {
         assert!(ReasonPhrase::try_from(NEWLINE_PHRASE).is_err());
     }
 
-    const CR_PHRASE: &'static [u8] = b"hyp\rer";
+    const CR_PHRASE: &[u8] = b"hyp\rer";
 
     #[test]
     #[should_panic]

@@ -1,9 +1,13 @@
 #![cfg_attr(loom, allow(unused_imports))]
 
 use crate::runtime::handle::Handle;
-use crate::runtime::{blocking, driver, Callback, HistogramBuilder, Runtime, TaskCallback};
+use crate::runtime::{
+    blocking, driver, Callback, HistogramBuilder, Runtime, TaskCallback, TimerFlavor,
+};
 #[cfg(tokio_unstable)]
-use crate::runtime::{metrics::HistogramConfiguration, LocalOptions, LocalRuntime, TaskMeta};
+use crate::runtime::{metrics::HistogramConfiguration, TaskMeta};
+
+use crate::runtime::{LocalOptions, LocalRuntime};
 use crate::util::rand::{RngSeed, RngSeedGenerator};
 
 use crate::runtime::blocking::BlockingPool;
@@ -45,9 +49,15 @@ use std::time::Duration;
 
 
 
+
+
+
 pub struct Builder {
     
     kind: Kind,
+
+    
+    name: Option<String>,
 
     
     enable_io: bool,
@@ -130,6 +140,12 @@ pub struct Builder {
 
     #[cfg(tokio_unstable)]
     pub(super) unhandled_panic: UnhandledPanic,
+
+    timer_flavor: TimerFlavor,
+
+    
+    
+    enable_eager_driver_handoff: bool,
 }
 
 cfg_unstable! {
@@ -152,6 +168,8 @@ cfg_unstable! {
         /// # Examples
         ///
         /// ```
+        /// # #[cfg(not(target_family = "wasm"))]
+        /// # {
         /// use tokio::runtime::{self, UnhandledPanic};
         ///
         /// # pub fn main() {
@@ -173,6 +191,7 @@ cfg_unstable! {
         ///     // The second task completes normally
         ///     assert!(task2.await.is_ok());
         /// })
+        /// # }
         /// # }
         /// ```
         ///
@@ -231,6 +250,8 @@ impl Builder {
     
     
     
+    
+    
     pub fn new_current_thread() -> Builder {
         #[cfg(loom)]
         const EVENT_INTERVAL: u32 = 4;
@@ -260,6 +281,9 @@ impl Builder {
             kind,
 
             
+            name: None,
+
+            
             enable_io: false,
             nevents: 1024,
 
@@ -276,7 +300,7 @@ impl Builder {
             max_blocking_threads: 512,
 
             
-            thread_name: std::sync::Arc::new(|| "tokio-runtime-worker".into()),
+            thread_name: std::sync::Arc::new(|| "tokio-rt-worker".into()),
 
             
             thread_stack_size: None,
@@ -312,9 +336,17 @@ impl Builder {
             metrics_poll_count_histogram: HistogramBuilder::default(),
 
             disable_lifo_slot: false,
+
+            timer_flavor: TimerFlavor::Traditional,
+
+            
+            enable_eager_driver_handoff: false,
         }
     }
 
+    
+    
+    
     
     
     
@@ -338,12 +370,94 @@ impl Builder {
             all(unix, feature = "signal")
         ))]
         self.enable_io();
+
+        #[cfg(all(
+            tokio_unstable,
+            feature = "io-uring",
+            feature = "rt",
+            feature = "fs",
+            target_os = "linux",
+        ))]
+        self.enable_io_uring();
+
         #[cfg(feature = "time")]
         self.enable_time();
 
         self
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(all(tokio_unstable, feature = "time", feature = "rt-multi-thread"))]
+    #[cfg_attr(
+        docsrs,
+        doc(cfg(all(tokio_unstable, feature = "time", feature = "rt-multi-thread")))
+    )]
+    pub fn enable_alt_timer(&mut self) -> &mut Self {
+        self.enable_time();
+        self.timer_flavor = TimerFlavor::Alternative;
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(all(tokio_unstable, feature = "rt-multi-thread"))]
+    #[cfg_attr(docsrs, doc(cfg(all(tokio_unstable, feature = "rt-multi-thread"))))]
+    pub fn enable_eager_driver_handoff(&mut self) -> &mut Self {
+        self.enable_eager_driver_handoff = true;
+        self
+    }
+
+    
+    
+    
     
     
     
@@ -464,12 +578,46 @@ impl Builder {
     
     
     
+    
+    
+    
     pub fn thread_name(&mut self, val: impl Into<String>) -> &mut Self {
         let val = val.into();
         self.thread_name = std::sync::Arc::new(move || val.clone());
         self
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[track_caller]
+    pub fn name(&mut self, val: impl Into<String>) -> &mut Self {
+        let val = val.into();
+        assert!(!val.trim().is_empty(), "runtime name shouldn't be empty");
+        self.name = Some(val);
+        self
+    }
+
+    
+    
+    
     
     
     
@@ -516,11 +664,17 @@ impl Builder {
     
     
     
+    
+    
+    
     pub fn thread_stack_size(&mut self, val: usize) -> &mut Self {
         self.thread_stack_size = Some(val);
         self
     }
 
+    
+    
+    
     
     
     
@@ -547,6 +701,9 @@ impl Builder {
         self
     }
 
+    
+    
+    
     
     
     
@@ -641,6 +798,9 @@ impl Builder {
     
     
     
+    
+    
+    
     #[cfg(not(loom))]
     pub fn on_thread_park<F>(&mut self, f: F) -> &mut Self
     where
@@ -650,6 +810,9 @@ impl Builder {
         self
     }
 
+    
+    
+    
     
     
     
@@ -769,6 +932,9 @@ impl Builder {
     
     
     
+    
+    
+    
     #[cfg(tokio_unstable)]
     #[cfg_attr(docsrs, doc(cfg(tokio_unstable)))]
     pub fn on_before_task_poll<F>(&mut self, f: F) -> &mut Self
@@ -779,6 +945,9 @@ impl Builder {
         self
     }
 
+    
+    
+    
     
     
     
@@ -887,6 +1056,9 @@ impl Builder {
     
     
     
+    
+    
+    
     pub fn build(&mut self) -> io::Result<Runtime> {
         match &self.kind {
             Kind::CurrentThread => self.build_current_thread_runtime(),
@@ -916,13 +1088,14 @@ impl Builder {
     
     
     
+    
+    
     #[allow(unused_variables, unreachable_patterns)]
-    #[cfg(tokio_unstable)]
-    #[cfg_attr(docsrs, doc(cfg(tokio_unstable)))]
-    pub fn build_local(&mut self, options: &LocalOptions) -> io::Result<LocalRuntime> {
+    pub fn build_local(&mut self, options: LocalOptions) -> io::Result<LocalRuntime> {
         match &self.kind {
             Kind::CurrentThread => self.build_current_thread_local_runtime(),
-            _ => panic!("Only current_thread is supported when building a local runtime"),
+            #[cfg(feature = "rt-multi-thread")]
+            Kind::MultiThread => panic!("multi_thread is not supported for LocalRuntime"),
         }
     }
 
@@ -937,9 +1110,13 @@ impl Builder {
             enable_time: self.enable_time,
             start_paused: self.start_paused,
             nevents: self.nevents,
+            timer_flavor: self.timer_flavor,
         }
     }
 
+    
+    
+    
     
     
     
@@ -961,6 +1138,11 @@ impl Builder {
         self
     }
 
+    
+    
+    
+    
+    
     
     
     
@@ -1026,7 +1208,16 @@ impl Builder {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    #[track_caller]
     pub fn event_interval(&mut self, val: u32) -> &mut Self {
+        assert!(val > 0, "event_interval must be greater than 0");
         self.event_interval = val;
         self
     }
@@ -1129,12 +1320,15 @@ impl Builder {
         /// # Examples
         ///
         /// ```
+        /// # #[cfg(not(target_family = "wasm"))]
+        /// # {
         /// use tokio::runtime;
         ///
         /// let rt = runtime::Builder::new_multi_thread()
         ///     .disable_lifo_slot()
         ///     .build()
         ///     .unwrap();
+        /// # }
         /// ```
         ///
         /// [tokio-rs/tokio-metrics]: https://github.com/tokio-rs/tokio-metrics
@@ -1199,6 +1393,8 @@ impl Builder {
         /// # Examples
         ///
         /// ```
+        /// # #[cfg(not(target_family = "wasm"))]
+        /// # {
         /// use tokio::runtime;
         ///
         /// let rt = runtime::Builder::new_multi_thread()
@@ -1211,6 +1407,7 @@ impl Builder {
         /// # assert_eq!(m.poll_time_histogram_num_buckets(), 10);
         /// # assert_eq!(m.poll_time_histogram_bucket_range(0), us(0)..us(100));
         /// # assert_eq!(m.poll_time_histogram_bucket_range(1), us(100)..us(200));
+        /// # }
         /// ```
         ///
         /// [`Handle::metrics()`]: crate::runtime::Handle::metrics
@@ -1254,6 +1451,9 @@ impl Builder {
         
         
         
+        
+        
+        
         #[deprecated(note = "use `metrics_poll_time_histogram_configuration`")]
         pub fn metrics_poll_count_histogram_scale(&mut self, histogram_scale: crate::runtime::HistogramScale) -> &mut Self {
             self.metrics_poll_count_histogram.legacy_mut(|b|b.scale = histogram_scale);
@@ -1269,6 +1469,8 @@ impl Builder {
         /// # Examples
         /// Configure a [`LogHistogram`] with [default configuration]:
         /// ```
+        /// # #[cfg(not(target_family = "wasm"))]
+        /// # {
         /// use tokio::runtime;
         /// use tokio::runtime::{HistogramConfiguration, LogHistogram};
         ///
@@ -1279,10 +1481,13 @@ impl Builder {
         ///     )
         ///     .build()
         ///     .unwrap();
+        /// # }
         /// ```
         ///
         /// Configure a linear histogram with 100 buckets, each 10μs wide
         /// ```
+        /// # #[cfg(not(target_family = "wasm"))]
+        /// # {
         /// use tokio::runtime;
         /// use std::time::Duration;
         /// use tokio::runtime::HistogramConfiguration;
@@ -1294,6 +1499,7 @@ impl Builder {
         ///     )
         ///     .build()
         ///     .unwrap();
+        /// # }
         /// ```
         ///
         /// Configure a [`LogHistogram`] with the following settings:
@@ -1301,6 +1507,8 @@ impl Builder {
         /// - Max error of 0.1
         /// - No more than 1024 buckets
         /// ```
+        /// # #[cfg(not(target_family = "wasm"))]
+        /// # {
         /// use std::time::Duration;
         /// use tokio::runtime;
         /// use tokio::runtime::{HistogramConfiguration, LogHistogram};
@@ -1318,6 +1526,7 @@ impl Builder {
         ///     )
         ///     .build()
         ///     .unwrap();
+        /// # }
         /// ```
         ///
         /// When migrating from the legacy histogram ([`HistogramScale::Log`]) and wanting
@@ -1377,6 +1586,9 @@ impl Builder {
         
         
         
+        
+        
+        
         #[deprecated(note = "use `metrics_poll_time_histogram_configuration`")]
         pub fn metrics_poll_count_histogram_resolution(&mut self, resolution: Duration) -> &mut Self {
             assert!(resolution > Duration::from_secs(0));
@@ -1411,6 +1623,9 @@ impl Builder {
         
         
         
+        
+        
+        
         #[deprecated(note = "use `metrics_poll_time_histogram_configuration`")]
         pub fn metrics_poll_count_histogram_buckets(&mut self, buckets: usize) -> &mut Self {
             self.metrics_poll_count_histogram.legacy_mut(|b|b.num_buckets = buckets);
@@ -1431,7 +1646,6 @@ impl Builder {
         ))
     }
 
-    #[cfg(tokio_unstable)]
     fn build_current_thread_local_runtime(&mut self) -> io::Result<LocalRuntime> {
         use crate::runtime::local_runtime::LocalRuntimeScheduler;
 
@@ -1454,7 +1668,9 @@ impl Builder {
         use crate::runtime::scheduler;
         use crate::runtime::Config;
 
-        let (driver, driver_handle) = driver::Driver::new(self.get_cfg())?;
+        let mut cfg = self.get_cfg();
+        cfg.timer_flavor = TimerFlavor::Traditional;
+        let (driver, driver_handle) = driver::Driver::new(cfg)?;
 
         
         let blocking_pool = blocking::create_blocking_pool(self, self.max_blocking_threads);
@@ -1487,10 +1703,15 @@ impl Builder {
                 #[cfg(tokio_unstable)]
                 unhandled_panic: self.unhandled_panic.clone(),
                 disable_lifo_slot: self.disable_lifo_slot,
+                
+                
+                
+                enable_eager_driver_handoff: false,
                 seed_generator: seed_generator_1,
                 metrics_poll_count_histogram: self.metrics_poll_count_histogram_builder(),
             },
             local_tid,
+            self.name.clone(),
         );
 
         let handle = Handle {
@@ -1561,15 +1782,43 @@ cfg_time! {
         /// # Examples
         ///
         /// ```
+        /// # #[cfg(not(target_family = "wasm"))]
+        /// # {
         /// use tokio::runtime;
         ///
         /// let rt = runtime::Builder::new_multi_thread()
         ///     .enable_time()
         ///     .build()
         ///     .unwrap();
+        /// # }
         /// ```
         pub fn enable_time(&mut self) -> &mut Self {
             self.enable_time = true;
+            self
+        }
+    }
+}
+
+cfg_io_uring! {
+    impl Builder {
+        /// Enables the tokio's io_uring driver.
+        ///
+        /// Doing this enables using io_uring operations on the runtime.
+        ///
+        /// # Examples
+        ///
+        /// ```
+        
+        
+        
+        
+        
+        
+        
+        #[cfg_attr(docsrs, doc(cfg(feature = "io-uring")))]
+        pub fn enable_io_uring(&mut self) -> &mut Self {
+            // Currently, the uring flag is equivalent to `enable_io`.
+            self.enable_io = true;
             self
         }
     }
@@ -1640,9 +1889,12 @@ cfg_rt_multi_thread! {
                     #[cfg(tokio_unstable)]
                     unhandled_panic: self.unhandled_panic.clone(),
                     disable_lifo_slot: self.disable_lifo_slot,
+                    enable_eager_driver_handoff: self.enable_eager_driver_handoff,
                     seed_generator: seed_generator_1,
                     metrics_poll_count_histogram: self.metrics_poll_count_histogram_builder(),
                 },
+                self.timer_flavor,
+                self.name.clone(),
             );
 
             let handle = Handle { inner: scheduler::Handle::MultiThread(handle) };
@@ -1658,7 +1910,13 @@ cfg_rt_multi_thread! {
 
 impl fmt::Debug for Builder {
     fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fmt.debug_struct("Builder")
+        let mut debug = fmt.debug_struct("Builder");
+
+        if let Some(name) = &self.name {
+            debug.field("name", name);
+        }
+
+        debug
             .field("worker_threads", &self.worker_threads)
             .field("max_blocking_threads", &self.max_blocking_threads)
             .field(
@@ -1670,6 +1928,15 @@ impl fmt::Debug for Builder {
             .field("before_stop", &self.before_stop.as_ref().map(|_| "..."))
             .field("before_park", &self.before_park.as_ref().map(|_| "..."))
             .field("after_unpark", &self.after_unpark.as_ref().map(|_| "..."))
-            .finish()
+            .field(
+                "enable_eager_driver_handoff",
+                &self.enable_eager_driver_handoff,
+            );
+
+        if self.name.is_none() {
+            debug.finish_non_exhaustive()
+        } else {
+            debug.finish()
+        }
     }
 }

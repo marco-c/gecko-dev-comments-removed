@@ -18,6 +18,10 @@ fn since_start() -> Duration {
     START_TIME.get_or_init(Instant::now).elapsed()
 }
 
+
+
+
+
 pub fn init(level_filter: Option<log::LevelFilter>) {
     static INIT_ONCE: Once = Once::new();
 
@@ -49,6 +53,10 @@ pub fn init(level_filter: Option<log::LevelFilter>) {
     });
 }
 
+
+
+
+
 #[macro_export]
 #[clippy::format_args]
 macro_rules! qerror {
@@ -58,6 +66,11 @@ macro_rules! qerror {
         ::log::error!($($arg)*);
     } );
 }
+
+
+
+
+
 #[macro_export]
 #[clippy::format_args]
 macro_rules! qwarn {
@@ -67,6 +80,11 @@ macro_rules! qwarn {
         ::log::warn!($($arg)*);
     } );
 }
+
+
+
+
+
 #[macro_export]
 #[clippy::format_args]
 macro_rules! qinfo {
@@ -76,6 +94,11 @@ macro_rules! qinfo {
         ::log::info!($($arg)*);
     } );
 }
+
+
+
+
+
 #[macro_export]
 #[clippy::format_args]
 macro_rules! qdebug {
@@ -85,6 +108,11 @@ macro_rules! qdebug {
         ::log::debug!($($arg)*);
     } );
 }
+
+
+
+
+
 #[macro_export]
 #[clippy::format_args]
 macro_rules! qtrace {

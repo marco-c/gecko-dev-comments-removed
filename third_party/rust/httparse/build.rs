@@ -1,40 +1,36 @@
 use std::env;
-
-
+use std::ffi::OsString;
+use std::process::Command;
 
 fn main() {
     
     
+    let rustc = env::var_os("RUSTC").unwrap_or(OsString::from("rustc"));
+    let output = Command::new(rustc)
+        .arg("--version")
+        .output()
+        .expect("failed to check 'rustc --version'")
+        .stdout;
+
+    let raw_version = String::from_utf8(output)
+        .expect("rustc version output should be utf-8");
     
+    let version = match Version::parse(&raw_version) {
+        Ok(version) => version,
+        Err(err) => {
+            println!("cargo:warning=failed to parse `rustc --version`: {}", err);
+            return;
+        }
+    };
 
-
-
-
-
-
-
-
-
-
-
-    enable_new_features();
+    enable_new_features(version);
 }
 
-fn enable_new_features() {
-    
-
-
-
-
-
-
-
-
-
-    enable_simd();
+fn enable_new_features(version: Version) {
+    enable_simd(version);
 }
 
-fn enable_simd() {
+fn enable_simd(version: Version) {
     if env::var_os("CARGO_FEATURE_STD").is_none() {
         println!("cargo:warning=building for no_std disables httparse SIMD");
         return;
@@ -48,6 +44,11 @@ fn enable_simd() {
     if var_is(env_disable, "1") {
         println!("cargo:warning=detected {} environment variable, disabling SIMD", env_disable);
         return;
+    }
+
+    
+    if version >= Version(1, 59, 0) {
+        println!("cargo:rustc-cfg=httparse_simd_neon_intrinsics");
     }
 
     println!("cargo:rustc-cfg=httparse_simd");
@@ -83,79 +84,46 @@ fn enable_simd() {
             return
         },
     };
-
-    let mut saw_sse42 = false;
-    let mut saw_avx2 = false;
-
-    for feature in feature_list.split(',') {
-        let feature = feature.trim();
-        if !saw_sse42 && feature == "sse4.2" {
-            saw_sse42 = true;
-            println!("cargo:rustc-cfg=httparse_simd_target_feature_sse42");
-        }
-
-        if !saw_avx2 && feature == "avx2" {
-            saw_avx2 = true;
-            println!("cargo:rustc-cfg=httparse_simd_target_feature_avx2");
-        }
+    
+    let features = feature_list.split(',').map(|s| s.trim());
+    if features.clone().any(|f| f == "sse4.2") {
+        println!("cargo:rustc-cfg=httparse_simd_target_feature_sse42");
+    }
+    if features.clone().any(|f| f == "avx2") {
+        println!("cargo:rustc-cfg=httparse_simd_target_feature_avx2");
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
+struct Version (u32, u32, u32);
 
+impl Version {
+    fn parse(s: &str) -> Result<Version, String> {
+        if !s.starts_with("rustc ") {
+            return Err(format!("unrecognized version string: {}", s));
+        }
+        let s = s.trim_start_matches("rustc ");
+        
+        let mut iter = s
+            .split('.')
+            .take(3)
+            .map(|s| match s.find(|c: char| !c.is_ascii_digit()) {
+                Some(end) => &s[..end],
+                None => s,
+            })
+            .map(|s| s.parse::<u32>().map_err(|e| e.to_string()));
+    
+        if iter.clone().count() != 3 {
+            return Err(format!("not enough version parts: {:?}", s));
+        }
+        
+        let major = iter.next().unwrap()?;
+        let minor = iter.next().unwrap()?;
+        let patch = iter.next().unwrap()?;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        Ok(Version(major, minor, patch))
+    }
+}
 
 fn var_is(key: &str, val: &str) -> bool {
     match env::var(key) {

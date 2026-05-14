@@ -15,6 +15,9 @@ mod conv;
 
 #[cfg(windows)]
 pub(crate) mod fd {
+    
+    
+    
     pub use crate::maybe_polyfill::os::windows::io::{
         AsRawSocket, AsSocket, BorrowedSocket as BorrowedFd, FromRawSocket, IntoRawSocket,
         OwnedSocket as OwnedFd, RawSocket as RawFd,
@@ -79,20 +82,18 @@ pub(crate) mod fd {
     
     pub trait AsFd {
         
-        fn as_fd(&self) -> BorrowedFd;
+        fn as_fd(&self) -> BorrowedFd<'_>;
     }
     impl<T: AsSocket> AsFd for T {
         #[inline]
-        fn as_fd(&self) -> BorrowedFd {
+        fn as_fd(&self) -> BorrowedFd<'_> {
             self.as_socket()
         }
     }
 }
 #[cfg(not(windows))]
 pub(crate) mod fd {
-    pub use crate::maybe_polyfill::os::fd::{
-        AsFd, AsRawFd, BorrowedFd, FromRawFd, IntoRawFd, OwnedFd, RawFd,
-    };
+    pub use crate::maybe_polyfill::os::fd::*;
     #[allow(unused_imports)]
     pub(crate) use RawFd as LibcFd;
 }
@@ -108,19 +109,22 @@ pub(crate) mod event;
 #[cfg(feature = "fs")]
 pub(crate) mod fs;
 pub(crate) mod io;
-#[cfg(linux_kernel)]
+#[cfg(all(linux_kernel, not(target_os = "android")))]
 #[cfg(feature = "io_uring")]
 pub(crate) mod io_uring;
-#[cfg(not(any(windows, target_os = "espidf", target_os = "vita", target_os = "wasi")))]
+#[cfg(not(any(
+    windows,
+    target_os = "espidf",
+    target_os = "horizon",
+    target_os = "vita",
+    target_os = "wasi"
+)))]
 #[cfg(feature = "mm")]
 pub(crate) mod mm;
 #[cfg(linux_kernel)]
 #[cfg(feature = "mount")]
 pub(crate) mod mount;
-#[cfg(linux_kernel)]
-#[cfg(all(feature = "fs", not(feature = "mount")))]
-pub(crate) mod mount; 
-#[cfg(not(any(target_os = "redox", target_os = "wasi")))]
+#[cfg(not(target_os = "wasi"))]
 #[cfg(feature = "net")]
 pub(crate) mod net;
 #[cfg(not(any(windows, target_os = "espidf")))]
@@ -148,7 +152,7 @@ pub(crate) mod rand;
 #[cfg(not(target_os = "wasi"))]
 #[cfg(feature = "system")]
 pub(crate) mod system;
-#[cfg(not(any(windows, target_os = "vita")))]
+#[cfg(not(any(windows, target_os = "horizon", target_os = "vita")))]
 #[cfg(feature = "termios")]
 pub(crate) mod termios;
 #[cfg(not(windows))]
@@ -178,7 +182,7 @@ pub(crate) fn if_glibc_is_less_than_2_25() -> bool {
 }
 
 
-#[cfg(any(feature = "procfs", feature = "process", feature = "runtime"))]
+#[cfg(any(feature = "process", feature = "runtime"))]
 #[cfg(not(any(windows, target_os = "wasi")))]
 pub(crate) mod pid;
 #[cfg(any(feature = "process", feature = "thread"))]
@@ -188,6 +192,7 @@ pub(crate) mod prctl;
     windows,
     target_os = "android",
     target_os = "espidf",
+    target_os = "horizon",
     target_os = "vita",
     target_os = "wasi"
 )))]

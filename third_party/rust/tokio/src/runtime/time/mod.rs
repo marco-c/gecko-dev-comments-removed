@@ -18,6 +18,9 @@ pub(crate) use source::TimeSource;
 
 mod wheel;
 
+#[cfg(all(tokio_unstable, feature = "rt-multi-thread"))]
+use super::time_alt;
+
 use crate::loom::sync::atomic::{AtomicBool, Ordering};
 use crate::loom::sync::Mutex;
 use crate::runtime::driver::{self, IoHandle, IoStack};
@@ -89,22 +92,38 @@ pub(crate) struct Driver {
     park: IoStack,
 }
 
+enum Inner {
+    Traditional {
+        
+        state: Mutex<InnerState>,
 
-struct Inner {
-    
-    pub(super) state: Mutex<InnerState>,
+        
+        is_shutdown: AtomicBool,
 
-    
-    pub(super) is_shutdown: AtomicBool,
+        
+        
+        
+        
+        
+        
+        #[cfg(feature = "test-util")]
+        did_wake: AtomicBool,
+    },
 
-    
-    
-    
-    
-    
-    
-    #[cfg(feature = "test-util")]
-    did_wake: AtomicBool,
+    #[cfg(all(tokio_unstable, feature = "rt-multi-thread"))]
+    Alternative {
+        
+        is_shutdown: AtomicBool,
+
+        
+        
+        
+        
+        
+        
+        #[cfg(feature = "test-util")]
+        did_wake: AtomicBool,
+    },
 }
 
 
@@ -128,7 +147,7 @@ impl Driver {
 
         let handle = Handle {
             time_source,
-            inner: Inner {
+            inner: Inner::Traditional {
                 state: Mutex::new(InnerState {
                     next_wake: None,
                     wheel: wheel::Wheel::new(),
@@ -143,6 +162,20 @@ impl Driver {
         let driver = Driver { park };
 
         (driver, handle)
+    }
+
+    #[cfg(all(tokio_unstable, feature = "rt-multi-thread"))]
+    pub(crate) fn new_alt(clock: &Clock) -> Handle {
+        let time_source = TimeSource::new(clock);
+
+        Handle {
+            time_source,
+            inner: Inner::Alternative {
+                is_shutdown: AtomicBool::new(false),
+                #[cfg(feature = "test-util")]
+                did_wake: AtomicBool::new(false),
+            },
+        }
     }
 
     pub(crate) fn park(&mut self, handle: &driver::Handle) {
@@ -160,7 +193,15 @@ impl Driver {
             return;
         }
 
-        handle.inner.is_shutdown.store(true, Ordering::SeqCst);
+        match &handle.inner {
+            Inner::Traditional { is_shutdown, .. } => {
+                is_shutdown.store(true, Ordering::SeqCst);
+            }
+            #[cfg(all(tokio_unstable, feature = "rt-multi-thread"))]
+            Inner::Alternative { is_shutdown, .. } => {
+                is_shutdown.store(true, Ordering::SeqCst);
+            }
+        }
 
         
 
@@ -171,7 +212,7 @@ impl Driver {
 
     fn park_internal(&mut self, rt_handle: &driver::Handle, limit: Option<Duration>) {
         let handle = rt_handle.time();
-        let mut lock = handle.inner.state.lock();
+        let mut lock = handle.inner.lock();
 
         assert!(!handle.is_shutdown());
 
@@ -246,7 +287,6 @@ impl Driver {
 }
 
 impl Handle {
-    
     pub(self) fn process(&self, clock: &Clock) {
         let now = self.time_source().now(clock);
 
@@ -294,6 +334,37 @@ impl Handle {
         drop(lock);
 
         waker_list.wake_all();
+    }
+
+    #[cfg(all(tokio_unstable, feature = "rt-multi-thread"))]
+    pub(crate) fn process_at_time_alt(
+        &self,
+        wheel: &mut time_alt::Wheel,
+        mut now: u64,
+        wake_queue: &mut time_alt::WakeQueue,
+    ) {
+        if now < wheel.elapsed() {
+            
+            
+            
+            
+            
+            
+            now = wheel.elapsed();
+        }
+
+        wheel.take_expired(now, wake_queue);
+    }
+
+    #[cfg(all(tokio_unstable, feature = "rt-multi-thread"))]
+    pub(crate) fn shutdown_alt(&self, wheel: &mut time_alt::Wheel) {
+        
+        
+        
+        let max_tick = u64::MAX;
+        let mut wake_queue = time_alt::WakeQueue::new();
+        self.process_at_time_alt(wheel, max_tick, &mut wake_queue);
+        wake_queue.wake_all();
     }
 
     
@@ -380,8 +451,12 @@ impl Handle {
     }
 
     cfg_test_util! {
-        fn did_wake(&self) -> bool {
-            self.inner.did_wake.swap(false, Ordering::SeqCst)
+        pub(super) fn did_wake(&self) -> bool {
+            match &self.inner {
+                Inner::Traditional { did_wake, .. } => did_wake.swap(false, Ordering::SeqCst),
+                #[cfg(all(tokio_unstable, feature = "rt-multi-thread"))]
+                Inner::Alternative { did_wake, .. } => did_wake.swap(false, Ordering::SeqCst),
+            }
         }
     }
 }
@@ -391,12 +466,20 @@ impl Handle {
 impl Inner {
     
     pub(super) fn lock(&self) -> crate::loom::sync::MutexGuard<'_, InnerState> {
-        self.state.lock()
+        match self {
+            Inner::Traditional { state, .. } => state.lock(),
+            #[cfg(all(tokio_unstable, feature = "rt-multi-thread"))]
+            Inner::Alternative { .. } => unreachable!("unreachable in alternative timer"),
+        }
     }
 
     
     pub(super) fn is_shutdown(&self) -> bool {
-        self.is_shutdown.load(Ordering::SeqCst)
+        match self {
+            Inner::Traditional { is_shutdown, .. } => is_shutdown.load(Ordering::SeqCst),
+            #[cfg(all(tokio_unstable, feature = "rt-multi-thread"))]
+            Inner::Alternative { is_shutdown, .. } => is_shutdown.load(Ordering::SeqCst),
+        }
     }
 }
 

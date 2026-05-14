@@ -51,4 +51,9 @@ pub(crate) struct Config {
     #[cfg(tokio_unstable)]
     
     pub(crate) unhandled_panic: crate::runtime::UnhandledPanic,
+
+    
+    
+    
+    pub(crate) enable_eager_driver_handoff: bool,
 }

@@ -21,35 +21,10 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-pub use tower_service::Service;
-
 mod http;
-mod make;
-#[cfg(all(any(feature = "http1", feature = "http2"), feature = "client"))]
-mod oneshot;
+mod service;
 mod util;
 
-pub(super) use self::http::HttpService;
-#[cfg(all(any(feature = "http1", feature = "http2"), feature = "client"))]
-pub(super) use self::make::MakeConnection;
-#[cfg(all(any(feature = "http1", feature = "http2"), feature = "server"))]
-pub(super) use self::make::MakeServiceRef;
-#[cfg(all(any(feature = "http1", feature = "http2"), feature = "client"))]
-pub(super) use self::oneshot::{oneshot, Oneshot};
-
-pub use self::make::make_service_fn;
+pub use self::http::HttpService;
+pub use self::service::Service;
 pub use self::util::service_fn;

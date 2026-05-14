@@ -16,9 +16,6 @@ use std::task::{Context, Poll};
 #[path = "windows/sys.rs"]
 mod imp;
 
-#[cfg(windows)]
-pub(crate) use self::imp::{OsExtraData, OsStorage};
-
 
 #[cfg(not(windows))]
 #[path = "windows/stub.rs"]
@@ -92,8 +89,10 @@ impl CtrlC {
     
     
     
+    
     pub async fn recv(&mut self) -> Option<()> {
-        self.inner.recv().await
+        self.inner.recv().await;
+        Some(())
     }
 
     
@@ -124,8 +123,9 @@ impl CtrlC {
     
     
     
+    
     pub fn poll_recv(&mut self, cx: &mut Context<'_>) -> Poll<Option<()>> {
-        self.inner.poll_recv(cx)
+        self.inner.poll_recv(cx).map(Some)
     }
 }
 
@@ -168,8 +168,10 @@ impl CtrlBreak {
     
     
     
+    
     pub async fn recv(&mut self) -> Option<()> {
-        self.inner.recv().await
+        self.inner.recv().await;
+        Some(())
     }
 
     
@@ -200,8 +202,9 @@ impl CtrlBreak {
     
     
     
+    
     pub fn poll_recv(&mut self, cx: &mut Context<'_>) -> Poll<Option<()>> {
-        self.inner.poll_recv(cx)
+        self.inner.poll_recv(cx).map(Some)
     }
 }
 
@@ -294,8 +297,10 @@ impl CtrlClose {
     
     
     
+    
     pub async fn recv(&mut self) -> Option<()> {
-        self.inner.recv().await
+        self.inner.recv().await;
+        Some(())
     }
 
     
@@ -326,8 +331,9 @@ impl CtrlClose {
     
     
     
+    
     pub fn poll_recv(&mut self, cx: &mut Context<'_>) -> Poll<Option<()>> {
-        self.inner.poll_recv(cx)
+        self.inner.poll_recv(cx).map(Some)
     }
 }
 
@@ -391,8 +397,10 @@ impl CtrlShutdown {
     
     
     
+    
     pub async fn recv(&mut self) -> Option<()> {
-        self.inner.recv().await
+        self.inner.recv().await;
+        Some(())
     }
 
     
@@ -423,8 +431,9 @@ impl CtrlShutdown {
     
     
     
+    
     pub fn poll_recv(&mut self, cx: &mut Context<'_>) -> Poll<Option<()>> {
-        self.inner.poll_recv(cx)
+        self.inner.poll_recv(cx).map(Some)
     }
 }
 
@@ -488,8 +497,10 @@ impl CtrlLogoff {
     
     
     
+    
     pub async fn recv(&mut self) -> Option<()> {
-        self.inner.recv().await
+        self.inner.recv().await;
+        Some(())
     }
 
     
@@ -520,7 +531,8 @@ impl CtrlLogoff {
     
     
     
+    
     pub fn poll_recv(&mut self, cx: &mut Context<'_>) -> Poll<Option<()>> {
-        self.inner.poll_recv(cx)
+        self.inner.poll_recv(cx).map(Some)
     }
 }

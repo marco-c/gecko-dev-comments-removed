@@ -39,14 +39,8 @@ pub(crate) mod rand {
 
     pub(crate) fn seed() -> u64 {
         let rand_state = RandomState::new();
-
-        let mut hasher = rand_state.build_hasher();
-
         
-        COUNTER.fetch_add(1, Relaxed).hash(&mut hasher);
-
-        
-        hasher.finish()
+        rand_state.hash_one(COUNTER.fetch_add(1, Relaxed))
     }
 }
 
@@ -57,6 +51,7 @@ pub(crate) mod sync {
     
     
 
+    
     #[cfg(all(feature = "parking_lot", not(miri)))]
     #[allow(unused_imports)]
     pub(crate) use crate::loom::std::parking_lot::{
@@ -76,7 +71,7 @@ pub(crate) mod sync {
     pub(crate) mod atomic {
         pub(crate) use crate::loom::std::atomic_u16::AtomicU16;
         pub(crate) use crate::loom::std::atomic_u32::AtomicU32;
-        pub(crate) use crate::loom::std::atomic_u64::{AtomicU64, StaticAtomicU64};
+        pub(crate) use crate::loom::std::atomic_u64::AtomicU64;
         pub(crate) use crate::loom::std::atomic_usize::AtomicUsize;
 
         pub(crate) use std::sync::atomic::{fence, AtomicBool, AtomicPtr, AtomicU8, Ordering};

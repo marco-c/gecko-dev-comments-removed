@@ -111,6 +111,57 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 use crate::sync::notify::Notify;
 use crate::task::coop::cooperative;
 
@@ -666,6 +717,24 @@ impl<T> Receiver<T> {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn has_changed(&self) -> Result<bool, error::RecvError> {
         
         let state = self.shared.state.load();
@@ -701,6 +770,9 @@ impl<T> Receiver<T> {
         self.version = current_version;
     }
 
+    
+    
+    
     
     
     

@@ -4,22 +4,50 @@
 
 
 #[cfg(not(all(unix, feature = "libc")))]
-pub(crate) fn memchr(needle: u8, haystack: &[u8]) -> Option<usize> {
+fn memchr_inner(needle: u8, haystack: &[u8]) -> Option<usize> {
     haystack.iter().position(|val| needle == *val)
 }
 
 #[cfg(all(unix, feature = "libc"))]
-pub(crate) fn memchr(needle: u8, haystack: &[u8]) -> Option<usize> {
+fn memchr_inner(needle: u8, haystack: &[u8]) -> Option<usize> {
     let start = haystack.as_ptr();
 
     
-    let ptr = unsafe { libc::memchr(start.cast(), needle as _, haystack.len()) };
+    let ptr = (unsafe { libc::memchr(start.cast(), needle as _, haystack.len()) })
+        .cast::<u8>()
+        .cast_const();
 
     if ptr.is_null() {
         None
     } else {
-        Some(ptr as usize - start as usize)
+        
+        
+        
+        
+        
+        
+        unsafe {
+            
+            Some(usize::try_from(ptr.offset_from(start)).unwrap_unchecked())
+        }
     }
+}
+
+pub(crate) fn memchr(needle: u8, haystack: &[u8]) -> Option<usize> {
+    let index = memchr_inner(needle, haystack)?;
+
+    
+    
+    
+    
+    
+    unsafe {
+        if haystack.get(..=index).is_none() {
+            std::hint::unreachable_unchecked()
+        }
+    }
+
+    Some(index)
 }
 
 #[cfg(test)]

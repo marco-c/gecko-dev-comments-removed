@@ -320,7 +320,8 @@ impl AtomicWaker {
                 let waker = unsafe { self.waker.with_mut(|t| (*t).take()) };
 
                 
-                self.state.fetch_and(!WAKING, Release);
+                let old_state = self.state.swap(WAITING, Release);
+                debug_assert!(old_state == WAKING);
 
                 waker
             }

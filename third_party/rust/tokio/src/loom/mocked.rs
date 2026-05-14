@@ -58,13 +58,6 @@ pub(crate) mod sync {
     }
 
     pub(crate) use loom::sync::*;
-
-    pub(crate) mod atomic {
-        pub(crate) use loom::sync::atomic::*;
-
-        
-        pub(crate) type StaticAtomicU64 = std::sync::atomic::AtomicU64;
-    }
 }
 
 pub(crate) mod rand {

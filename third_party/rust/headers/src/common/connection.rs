@@ -1,9 +1,9 @@
 use std::iter::FromIterator;
 
-use self::sealed::AsConnectionOption;
-use util::FlatCsv;
-use {HeaderName, HeaderValue};
+use http::{HeaderName, HeaderValue};
 
+use self::sealed::AsConnectionOption;
+use crate::util::FlatCsv;
 
 
 
@@ -84,13 +84,9 @@ impl Connection {
     
     
     
-    
     pub fn contains(&self, name: impl AsConnectionOption) -> bool {
         let s = name.as_connection_option();
-        self.0
-            .iter()
-            .find(|&opt| opt.eq_ignore_ascii_case(s))
-            .is_some()
+        self.0.iter().any(|opt| opt.eq_ignore_ascii_case(s))
     }
 }
 
@@ -105,32 +101,34 @@ impl FromIterator<HeaderName> for Connection {
 }
 
 mod sealed {
+    use http::HeaderName;
+
     pub trait AsConnectionOption: Sealed {
         fn as_connection_option(&self) -> &str;
     }
     pub trait Sealed {}
 
-    impl<'a> AsConnectionOption for &'a str {
+    impl AsConnectionOption for &str {
         fn as_connection_option(&self) -> &str {
-            *self
+            self
         }
     }
 
-    impl<'a> Sealed for &'a str {}
+    impl Sealed for &str {}
 
-    impl<'a> AsConnectionOption for &'a ::HeaderName {
-        fn as_connection_option(&self) -> &str {
-            self.as_ref()
-        }
-    }
-
-    impl<'a> Sealed for &'a ::HeaderName {}
-
-    impl AsConnectionOption for ::HeaderName {
+    impl AsConnectionOption for &HeaderName {
         fn as_connection_option(&self) -> &str {
             self.as_ref()
         }
     }
 
-    impl Sealed for ::HeaderName {}
+    impl Sealed for &HeaderName {}
+
+    impl AsConnectionOption for HeaderName {
+        fn as_connection_option(&self) -> &str {
+            self.as_ref()
+        }
+    }
+
+    impl Sealed for HeaderName {}
 }

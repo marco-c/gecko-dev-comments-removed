@@ -6,6 +6,7 @@ use std::path::Path;
 
 
 
+#[derive(Clone)]
 pub struct SocketAddr(pub(super) std::os::unix::net::SocketAddr);
 
 impl SocketAddr {
@@ -25,6 +26,24 @@ impl SocketAddr {
     
     pub fn as_pathname(&self) -> Option<&Path> {
         self.0.as_pathname()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg_attr(docsrs, doc(cfg(any(target_os = "linux", target_os = "android"))))]
+    pub fn as_abstract_name(&self) -> Option<&[u8]> {
+        #[cfg(target_os = "android")]
+        use std::os::android::net::SocketAddrExt;
+        #[cfg(target_os = "linux")]
+        use std::os::linux::net::SocketAddrExt;
+
+        self.0.as_abstract_name()
     }
 }
 

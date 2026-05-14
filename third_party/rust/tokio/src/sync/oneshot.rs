@@ -318,6 +318,13 @@ pub struct Sender<T> {
 
 
 
+
+
+
+
+
+
+
 #[derive(Debug)]
 pub struct Receiver<T> {
     inner: Option<Arc<Inner<T>>>,
@@ -404,31 +411,51 @@ struct Inner<T> {
 struct Task(UnsafeCell<MaybeUninit<Waker>>);
 
 impl Task {
+    
+    
+    
+    
     unsafe fn will_wake(&self, cx: &mut Context<'_>) -> bool {
-        self.with_task(|w| w.will_wake(cx.waker()))
+        unsafe { self.with_task(|w| w.will_wake(cx.waker())) }
     }
 
+    
+    
+    
+    
     unsafe fn with_task<F, R>(&self, f: F) -> R
     where
         F: FnOnce(&Waker) -> R,
     {
         self.0.with(|ptr| {
-            let waker: *const Waker = (*ptr).as_ptr();
-            f(&*waker)
+            let waker: *const Waker = unsafe { (*ptr).as_ptr() };
+            f(unsafe { &*waker })
         })
     }
 
+    
+    
+    
+    
     unsafe fn drop_task(&self) {
         self.0.with_mut(|ptr| {
-            let ptr: *mut Waker = (*ptr).as_mut_ptr();
-            ptr.drop_in_place();
+            let ptr: *mut Waker = unsafe { (*ptr).as_mut_ptr() };
+            unsafe {
+                ptr.drop_in_place();
+            }
         });
     }
 
+    
+    
+    
+    
     unsafe fn set_task(&self, cx: &mut Context<'_>) {
         self.0.with_mut(|ptr| {
-            let ptr: *mut Waker = (*ptr).as_mut_ptr();
-            ptr.write(cx.waker().clone());
+            let ptr: *mut Waker = unsafe { (*ptr).as_mut_ptr() };
+            unsafe {
+                ptr.write(cx.waker().clone());
+            }
         });
     }
 }
@@ -1204,6 +1231,9 @@ impl<T> Receiver<T> {
     
     
     
+    
+    
+    
     #[track_caller]
     #[cfg(feature = "sync")]
     #[cfg_attr(docsrs, doc(alias = "recv_blocking"))]
@@ -1361,6 +1391,19 @@ impl<T> Inner<T> {
             }
         }
 
+        if prev.is_rx_task_set() && !prev.is_complete() {
+            State::unset_rx_task(&self.state);
+            
+            
+            
+            
+            
+            
+            
+            
+            unsafe { self.rx_task.drop_task() };
+        }
+
         prev
     }
 
@@ -1374,7 +1417,7 @@ impl<T> Inner<T> {
     
     
     unsafe fn consume_value(&self) -> Option<T> {
-        self.value.with_mut(|ptr| (*ptr).take())
+        self.value.with_mut(|ptr| unsafe { (*ptr).take() })
     }
 
     
@@ -1387,7 +1430,7 @@ impl<T> Inner<T> {
     
     
     unsafe fn has_value(&self) -> bool {
-        self.value.with(|ptr| (*ptr).is_some())
+        self.value.with(|ptr| unsafe { (*ptr).is_some() })
     }
 }
 

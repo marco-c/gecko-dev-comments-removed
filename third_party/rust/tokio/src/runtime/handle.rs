@@ -1,4 +1,3 @@
-#[cfg(tokio_unstable)]
 use crate::runtime;
 use crate::runtime::{context, scheduler, RuntimeFlavor, RuntimeMetrics};
 
@@ -38,6 +37,9 @@ pub struct EnterGuard<'a> {
 }
 
 impl Handle {
+    
+    
+    
     
     
     
@@ -135,6 +137,9 @@ impl Handle {
     
     
     
+    
+    
+    
     #[track_caller]
     pub fn current() -> Self {
         Handle {
@@ -184,6 +189,10 @@ impl Handle {
     
     
     
+    
+    
+    
+    
     #[track_caller]
     pub fn spawn<F>(&self, future: F) -> JoinHandle<F::Output>
     where
@@ -198,6 +207,10 @@ impl Handle {
         }
     }
 
+    
+    
+    
+    
     
     
     
@@ -296,6 +309,35 @@ impl Handle {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[track_caller]
     pub fn block_on<F: Future>(&self, future: F) -> F::Output {
         let fut_size = mem::size_of::<F>();
@@ -310,7 +352,7 @@ impl Handle {
     fn block_on_inner<F: Future>(&self, future: F, _meta: SpawnMeta<'_>) -> F::Output {
         #[cfg(all(
             tokio_unstable,
-            tokio_taskdump,
+            feature = "taskdump",
             feature = "rt",
             target_os = "linux",
             any(target_arch = "aarch64", target_arch = "x86", target_arch = "x86_64")
@@ -329,7 +371,7 @@ impl Handle {
     }
 
     #[track_caller]
-    pub(crate) fn spawn_named<F>(&self, future: F, _meta: SpawnMeta<'_>) -> JoinHandle<F::Output>
+    pub(crate) fn spawn_named<F>(&self, future: F, meta: SpawnMeta<'_>) -> JoinHandle<F::Output>
     where
         F: Future + Send + 'static,
         F::Output: Send + 'static,
@@ -337,23 +379,27 @@ impl Handle {
         let id = crate::runtime::task::Id::next();
         #[cfg(all(
             tokio_unstable,
-            tokio_taskdump,
+            feature = "taskdump",
             feature = "rt",
             target_os = "linux",
             any(target_arch = "aarch64", target_arch = "x86", target_arch = "x86_64")
         ))]
         let future = super::task::trace::Trace::root(future);
         #[cfg(all(tokio_unstable, feature = "tracing"))]
-        let future = crate::util::trace::task(future, "task", _meta, id.as_u64());
-        self.inner.spawn(future, id)
+        let future = crate::util::trace::task(future, "task", meta, id.as_u64());
+        self.inner.spawn(future, id, meta.spawned_at)
     }
 
     #[track_caller]
     #[allow(dead_code)]
+    
+    
+    
+    
     pub(crate) unsafe fn spawn_local_named<F>(
         &self,
         future: F,
-        _meta: SpawnMeta<'_>,
+        meta: SpawnMeta<'_>,
     ) -> JoinHandle<F::Output>
     where
         F: Future + 'static,
@@ -362,17 +408,20 @@ impl Handle {
         let id = crate::runtime::task::Id::next();
         #[cfg(all(
             tokio_unstable,
-            tokio_taskdump,
+            feature = "taskdump",
             feature = "rt",
             target_os = "linux",
             any(target_arch = "aarch64", target_arch = "x86", target_arch = "x86_64")
         ))]
         let future = super::task::trace::Trace::root(future);
         #[cfg(all(tokio_unstable, feature = "tracing"))]
-        let future = crate::util::trace::task(future, "task", _meta, id.as_u64());
-        self.inner.spawn_local(future, id)
+        let future = crate::util::trace::task(future, "task", meta, id.as_u64());
+        unsafe { self.inner.spawn_local(future, id, meta.spawned_at) }
     }
 
+    
+    
+    
     
     
     
@@ -402,33 +451,47 @@ impl Handle {
         }
     }
 
-    cfg_unstable! {
-        /// Returns the [`Id`] of the current `Runtime`.
-        ///
-        /// # Examples
-        ///
-        /// ```
-        /// use tokio::runtime::Handle;
-        ///
-        /// #[tokio::main(flavor = "current_thread")]
-        /// async fn main() {
-        ///   println!("Current runtime id: {}", Handle::current().id());
-        /// }
-        /// ```
-        ///
-        /// **Note**: This is an [unstable API][unstable]. The public API of this type
-        /// may break in 1.x releases. See [the documentation on unstable
-        /// features][unstable] for details.
-        ///
-        /// [unstable]: crate#unstable-features
-        /// [`Id`]: struct@crate::runtime::Id
-        pub fn id(&self) -> runtime::Id {
-            let owned_id = match &self.inner {
-                scheduler::Handle::CurrentThread(handle) => handle.owned_id(),
-                #[cfg(feature = "rt-multi-thread")]
-                scheduler::Handle::MultiThread(handle) => handle.owned_id(),
-            };
-            owned_id.into()
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn id(&self) -> runtime::Id {
+        let owned_id = match &self.inner {
+            scheduler::Handle::CurrentThread(handle) => handle.owned_id(),
+            #[cfg(feature = "rt-multi-thread")]
+            scheduler::Handle::MultiThread(handle) => handle.owned_id(),
+        };
+        runtime::Id::new(owned_id)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn name(&self) -> Option<&str> {
+        match &self.inner {
+            scheduler::Handle::CurrentThread(handle) => handle.name(),
+            #[cfg(feature = "rt-multi-thread")]
+            scheduler::Handle::MultiThread(handle) => handle.name(),
         }
     }
 
@@ -514,19 +577,19 @@ cfg_taskdump! {
         /// ## Unstable Features
         ///
         /// This functionality is **unstable**, and requires both the
-        /// `tokio_unstable` and `tokio_taskdump` `cfg` flags to be set.
+        /// `--cfg tokio_unstable` and cargo feature `taskdump` to be set.
         ///
         /// You can do this by setting the `RUSTFLAGS` environment variable
         /// before invoking `cargo`; e.g.:
         /// ```bash
-        /// RUSTFLAGS="--cfg tokio_unstable --cfg tokio_taskdump" cargo run --example dump
+        /// RUSTFLAGS="--cfg tokio_unstable" cargo run --example dump
         /// ```
         ///
         /// Or by [configuring][cargo-config] `rustflags` in
         /// `.cargo/config.toml`:
         /// ```text
         /// [build]
-        /// rustflags = ["--cfg", "tokio_unstable", "--cfg", "tokio_taskdump"]
+        /// rustflags = ["--cfg", "tokio_unstable"]
         /// ```
         ///
         /// [cargo-config]:
@@ -546,7 +609,7 @@ cfg_taskdump! {
         ///
         /// ## Performance
         ///
-        /// Although enabling the `tokio_taskdump` feature imposes virtually no
+        /// Although enabling the `taskdump` feature imposes virtually no
         /// additional runtime overhead, actually calling `Handle::dump` is
         /// expensive. The runtime must synchronize and pause its workers, then
         /// re-poll every task in a special tracing mode. Avoid requesting dumps

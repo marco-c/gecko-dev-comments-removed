@@ -4,8 +4,8 @@ use std::fmt;
 use std::io;
 use std::net::SocketAddr;
 
-#[cfg(unix)]
-use std::os::unix::io::{AsFd, AsRawFd, BorrowedFd, FromRawFd, IntoRawFd, RawFd};
+#[cfg(not(windows))]
+use std::os::fd::{AsFd, AsRawFd, BorrowedFd, FromRawFd, IntoRawFd, RawFd};
 use std::time::Duration;
 
 cfg_windows! {
@@ -15,6 +15,9 @@ cfg_windows! {
 cfg_net! {
     /// A TCP socket that has not yet been converted to a `TcpStream` or
     /// `TcpListener`.
+    
+    
+    
     
     
     
@@ -167,7 +170,8 @@ impl TcpSocket {
             target_os = "illumos",
             target_os = "linux",
             target_os = "netbsd",
-            target_os = "openbsd"
+            target_os = "openbsd",
+            target_os = "wasi",
         ))]
         let ty = ty.nonblocking();
         let inner = socket2::Socket::new(domain, ty, Some(socket2::Protocol::TCP))?;
@@ -179,7 +183,8 @@ impl TcpSocket {
             target_os = "illumos",
             target_os = "linux",
             target_os = "netbsd",
-            target_os = "openbsd"
+            target_os = "openbsd",
+            target_os = "wasi",
         )))]
         inner.set_nonblocking(true)?;
         Ok(TcpSocket { inner })
@@ -276,10 +281,20 @@ impl TcpSocket {
     
     
     
-    #[cfg(all(unix, not(target_os = "solaris"), not(target_os = "illumos")))]
+    #[cfg(all(
+        unix,
+        not(target_os = "solaris"),
+        not(target_os = "illumos"),
+        not(target_os = "cygwin"),
+    ))]
     #[cfg_attr(
         docsrs,
-        doc(cfg(all(unix, not(target_os = "solaris"), not(target_os = "illumos"))))
+        doc(cfg(all(
+            unix,
+            not(target_os = "solaris"),
+            not(target_os = "illumos"),
+            not(target_os = "cygwin"),
+        )))
     )]
     pub fn set_reuseport(&self, reuseport: bool) -> io::Result<()> {
         self.inner.set_reuse_port(reuseport)
@@ -311,10 +326,20 @@ impl TcpSocket {
     
     
     
-    #[cfg(all(unix, not(target_os = "solaris"), not(target_os = "illumos")))]
+    #[cfg(all(
+        unix,
+        not(target_os = "solaris"),
+        not(target_os = "illumos"),
+        not(target_os = "cygwin"),
+    ))]
     #[cfg_attr(
         docsrs,
-        doc(cfg(all(unix, not(target_os = "solaris"), not(target_os = "illumos"))))
+        doc(cfg(all(
+            unix,
+            not(target_os = "solaris"),
+            not(target_os = "illumos"),
+            not(target_os = "cygwin"),
+        )))
     )]
     pub fn reuseport(&self) -> io::Result<bool> {
         self.inner.reuse_port()
@@ -396,10 +421,45 @@ impl TcpSocket {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[deprecated = "`SO_LINGER` causes the socket to block the thread on drop"]
     pub fn set_linger(&self, dur: Option<Duration>) -> io::Result<()> {
         self.inner.set_linger(dur)
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn set_zero_linger(&self) -> io::Result<()> {
+        self.inner.set_linger(Some(Duration::ZERO))
+    }
+
+    
     
     
     
@@ -430,7 +490,7 @@ impl TcpSocket {
     
     
     pub fn set_nodelay(&self, nodelay: bool) -> io::Result<()> {
-        self.inner.set_nodelay(nodelay)
+        self.inner.set_tcp_nodelay(nodelay)
     }
 
     
@@ -452,7 +512,42 @@ impl TcpSocket {
     
     
     pub fn nodelay(&self) -> io::Result<bool> {
-        self.inner.nodelay()
+        self.inner.tcp_nodelay()
+    }
+
+    
+    
+    
+    
+    
+    
+    #[cfg(any(
+        target_os = "android",
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "fuchsia",
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "netbsd",
+        target_os = "openbsd",
+        target_os = "cygwin",
+    ))]
+    #[cfg_attr(
+        docsrs,
+        doc(cfg(any(
+            target_os = "android",
+            target_os = "dragonfly",
+            target_os = "freebsd",
+            target_os = "fuchsia",
+            target_os = "linux",
+            target_os = "macos",
+            target_os = "netbsd",
+            target_os = "openbsd",
+            target_os = "cygwin",
+        )))
+    )]
+    pub fn tclass_v6(&self) -> io::Result<u32> {
+        self.inner.tclass_v6()
     }
 
     
@@ -464,12 +559,48 @@ impl TcpSocket {
     
     
     
+    #[cfg(any(
+        target_os = "android",
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "fuchsia",
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "netbsd",
+        target_os = "openbsd",
+        target_os = "cygwin",
+    ))]
+    #[cfg_attr(
+        docsrs,
+        doc(cfg(any(
+            target_os = "android",
+            target_os = "dragonfly",
+            target_os = "freebsd",
+            target_os = "fuchsia",
+            target_os = "linux",
+            target_os = "macos",
+            target_os = "netbsd",
+            target_os = "openbsd",
+            target_os = "cygwin",
+        )))
+    )]
+    pub fn set_tclass_v6(&self, tclass: u32) -> io::Result<()> {
+        self.inner.set_tclass_v6(tclass)
+    }
+
+    
+    
+    
+    
+    
+    
     #[cfg(not(any(
         target_os = "fuchsia",
         target_os = "redox",
         target_os = "solaris",
         target_os = "illumos",
-        target_os = "haiku"
+        target_os = "haiku",
+        target_os = "wasi",
     )))]
     #[cfg_attr(
         docsrs,
@@ -478,13 +609,47 @@ impl TcpSocket {
             target_os = "redox",
             target_os = "solaris",
             target_os = "illumos",
-            target_os = "haiku"
+            target_os = "haiku",
+            target_os = "wasi",
+        ))))
+    )]
+    pub fn tos_v4(&self) -> io::Result<u32> {
+        self.inner.tos_v4()
+    }
+
+    
+    
+    
+    #[deprecated(
+        note = "`tos` related methods have been renamed `tos_v4` since they are IPv4-specific."
+    )]
+    #[doc(hidden)]
+    #[cfg(not(any(
+        target_os = "fuchsia",
+        target_os = "redox",
+        target_os = "solaris",
+        target_os = "illumos",
+        target_os = "haiku",
+        target_os = "wasi",
+    )))]
+    #[cfg_attr(
+        docsrs,
+        doc(cfg(not(any(
+            target_os = "fuchsia",
+            target_os = "redox",
+            target_os = "solaris",
+            target_os = "illumos",
+            target_os = "haiku",
+            target_os = "wasi",
         ))))
     )]
     pub fn tos(&self) -> io::Result<u32> {
-        self.inner.tos()
+        self.tos_v4()
     }
 
+    
+    
+    
     
     
     
@@ -498,7 +663,8 @@ impl TcpSocket {
         target_os = "redox",
         target_os = "solaris",
         target_os = "illumos",
-        target_os = "haiku"
+        target_os = "haiku",
+        target_os = "wasi",
     )))]
     #[cfg_attr(
         docsrs,
@@ -507,11 +673,42 @@ impl TcpSocket {
             target_os = "redox",
             target_os = "solaris",
             target_os = "illumos",
-            target_os = "haiku"
+            target_os = "haiku",
+            target_os = "wasi",
+        ))))
+    )]
+    pub fn set_tos_v4(&self, tos: u32) -> io::Result<()> {
+        self.inner.set_tos_v4(tos)
+    }
+
+    
+    
+    
+    #[deprecated(
+        note = "`tos` related methods have been renamed `tos_v4` since they are IPv4-specific."
+    )]
+    #[doc(hidden)]
+    #[cfg(not(any(
+        target_os = "fuchsia",
+        target_os = "redox",
+        target_os = "solaris",
+        target_os = "illumos",
+        target_os = "haiku",
+        target_os = "wasi",
+    )))]
+    #[cfg_attr(
+        docsrs,
+        doc(cfg(not(any(
+            target_os = "fuchsia",
+            target_os = "redox",
+            target_os = "solaris",
+            target_os = "illumos",
+            target_os = "haiku",
+            target_os = "wasi",
         ))))
     )]
     pub fn set_tos(&self, tos: u32) -> io::Result<()> {
-        self.inner.set_tos(tos)
+        self.set_tos_v4(tos)
     }
 
     
@@ -639,7 +836,7 @@ impl TcpSocket {
     
     pub async fn connect(self, addr: SocketAddr) -> io::Result<TcpStream> {
         if let Err(err) = self.inner.connect(&addr.into()) {
-            #[cfg(unix)]
+            #[cfg(not(windows))]
             if err.raw_os_error() != Some(libc::EINPROGRESS) {
                 return Err(err);
             }
@@ -648,9 +845,9 @@ impl TcpSocket {
                 return Err(err);
             }
         }
-        #[cfg(unix)]
+        #[cfg(not(windows))]
         let mio = {
-            use std::os::unix::io::{FromRawFd, IntoRawFd};
+            use std::os::fd::{FromRawFd, IntoRawFd};
 
             let raw_fd = self.inner.into_raw_fd();
             unsafe { mio::net::TcpStream::from_raw_fd(raw_fd) }
@@ -704,9 +901,9 @@ impl TcpSocket {
     
     pub fn listen(self, backlog: u32) -> io::Result<TcpListener> {
         self.inner.listen(backlog as i32)?;
-        #[cfg(unix)]
+        #[cfg(not(windows))]
         let mio = {
-            use std::os::unix::io::{FromRawFd, IntoRawFd};
+            use std::os::fd::{FromRawFd, IntoRawFd};
 
             let raw_fd = self.inner.into_raw_fd();
             unsafe { mio::net::TcpListener::from_raw_fd(raw_fd) }
@@ -758,9 +955,9 @@ impl TcpSocket {
     
     
     pub fn from_std_stream(std_stream: std::net::TcpStream) -> TcpSocket {
-        #[cfg(unix)]
+        #[cfg(not(windows))]
         {
-            use std::os::unix::io::{FromRawFd, IntoRawFd};
+            use std::os::fd::{FromRawFd, IntoRawFd};
 
             let raw_fd = std_stream.into_raw_fd();
             unsafe { TcpSocket::from_raw_fd(raw_fd) }
@@ -794,8 +991,8 @@ impl fmt::Debug for TcpSocket {
 
 
 
-#[cfg(unix)]
-cfg_unix! {
+#[cfg(any(unix, target_os = "wasi"))]
+cfg_unix_or_wasi! {
     impl AsRawFd for TcpSocket {
         fn as_raw_fd(&self) -> RawFd {
             self.inner.as_raw_fd()
@@ -816,7 +1013,9 @@ cfg_unix! {
         /// The caller is responsible for ensuring that the socket is in
         /// non-blocking mode.
         unsafe fn from_raw_fd(fd: RawFd) -> TcpSocket {
-            let inner = socket2::Socket::from_raw_fd(fd);
+            // Safety: exactly the same safety requirements as the
+            // `FromRawFd::from_raw_fd` trait method.
+            let inner = unsafe { socket2::Socket::from_raw_fd(fd) };
             TcpSocket { inner }
         }
     }
@@ -855,7 +1054,7 @@ cfg_windows! {
         /// The caller is responsible for ensuring that the socket is in
         /// non-blocking mode.
         unsafe fn from_raw_socket(socket: RawSocket) -> TcpSocket {
-            let inner = socket2::Socket::from_raw_socket(socket);
+            let inner = unsafe { socket2::Socket::from_raw_socket(socket) };
             TcpSocket { inner }
         }
     }

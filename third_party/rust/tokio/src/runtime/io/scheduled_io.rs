@@ -417,7 +417,7 @@ unsafe impl linked_list::Link for Waiter {
     }
 
     unsafe fn pointers(target: NonNull<Waiter>) -> NonNull<linked_list::Pointers<Waiter>> {
-        Waiter::addr_of_pointers(target)
+        unsafe { Waiter::addr_of_pointers(target) }
     }
 }
 
@@ -429,9 +429,16 @@ impl Future for Readiness<'_> {
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         use std::sync::atomic::Ordering::SeqCst;
 
-        let (scheduled_io, state, waiter) = unsafe {
-            let me = self.get_unchecked_mut();
-            (&me.scheduled_io, &mut me.state, &me.waiter)
+        let (scheduled_io, state, waiter) = {
+            
+            
+            
+            
+            
+            
+            
+            let me = unsafe { self.get_unchecked_mut() };
+            (me.scheduled_io, &mut me.state, &me.waiter)
         };
 
         loop {
@@ -483,9 +490,12 @@ impl Future for Readiness<'_> {
                     
 
                     
-                    unsafe {
-                        (*waiter.get()).waker = Some(cx.waker().clone());
-                    }
+                    
+                    
+                    
+                    let waker = unsafe { &mut (*waiter.get()).waker };
+                    let old = waker.replace(cx.waker().clone());
+                    debug_assert!(old.is_none(), "waker should be None at the first poll");
 
                     
                     
@@ -503,6 +513,8 @@ impl Future for Readiness<'_> {
 
                     let waiters = scheduled_io.waiters.lock();
 
+                    
+                    
                     
                     let w = unsafe { &mut *waiter.get() };
 
@@ -523,9 +535,6 @@ impl Future for Readiness<'_> {
                     drop(waiters);
                 }
                 State::Done => {
-                    
-                    let w = unsafe { &mut *waiter.get() };
-
                     let curr = scheduled_io.readiness.load(Acquire);
                     let is_shutdown = SHUTDOWN.unpack(curr) != 0;
 
@@ -536,7 +545,14 @@ impl Future for Readiness<'_> {
 
                     
                     
-                    let ready = Ready::from_usize(READINESS.unpack(curr)).intersection(w.interest);
+                    
+                    
+                    
+                    
+                    let interest = unsafe { (*waiter.get()).interest };
+                    
+                    
+                    let ready = Ready::from_usize(READINESS.unpack(curr)).intersection(interest);
 
                     return Poll::Ready(ReadyEvent {
                         tick,

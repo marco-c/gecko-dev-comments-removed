@@ -1,4 +1,4 @@
-use util::{FlatCsv, SemiColon};
+use crate::util::{FlatCsv, SemiColon};
 
 
 
@@ -22,7 +22,6 @@ derive_header! {
 }
 
 impl Cookie {
-    
     
     
     

@@ -163,9 +163,15 @@ impl<T> Block<T> {
         }
 
         
-        let value = self.values[offset].with(|ptr| ptr::read(ptr));
+        
+        
+        
+        
+        
+        let value = self.values[offset].with(|ptr| unsafe { ptr::read(ptr) });
 
-        Some(Read::Value(value.assume_init()))
+        
+        Some(Read::Value(unsafe { value.assume_init() }))
     }
 
     
@@ -197,7 +203,10 @@ impl<T> Block<T> {
         let slot_offset = offset(slot_index);
 
         self.values[slot_offset].with_mut(|ptr| {
-            ptr::write(ptr, MaybeUninit::new(value));
+            
+            unsafe {
+                ptr::write(ptr, MaybeUninit::new(value));
+            }
         });
 
         
@@ -209,11 +218,6 @@ impl<T> Block<T> {
     
     pub(crate) unsafe fn tx_close(&self) {
         self.header.ready_slots.fetch_or(TX_CLOSED, Release);
-    }
-
-    pub(crate) unsafe fn is_closed(&self) -> bool {
-        let ready_bits = self.header.ready_slots.load(Acquire);
-        is_tx_closed(ready_bits)
     }
 
     
@@ -246,7 +250,11 @@ impl<T> Block<T> {
         
         self.header
             .observed_tail_position
-            .with_mut(|ptr| *ptr = tail_position);
+            
+            
+            
+            
+            .with_mut(|ptr| unsafe { *ptr = tail_position });
 
         
         
@@ -316,7 +324,9 @@ impl<T> Block<T> {
         success: Ordering,
         failure: Ordering,
     ) -> Result<(), NonNull<Block<T>>> {
-        block.as_mut().header.start_index = self.header.start_index.wrapping_add(BLOCK_CAP);
+        
+        unsafe { block.as_mut() }.header.start_index =
+            self.header.start_index.wrapping_add(BLOCK_CAP);
 
         let next_ptr = self
             .header
@@ -428,8 +438,9 @@ impl<T> Values<T> {
         if_loom! {
             let p = _value.as_ptr() as *mut UnsafeCell<MaybeUninit<T>>;
             for i in 0..BLOCK_CAP {
-                p.add(i)
-                    .write(UnsafeCell::new(MaybeUninit::uninit()));
+                unsafe {
+                    p.add(i).write(UnsafeCell::new(MaybeUninit::uninit()));
+                }
             }
         }
     }

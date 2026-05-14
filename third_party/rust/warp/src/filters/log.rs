@@ -1,7 +1,6 @@
 
 
 use std::fmt;
-use std::net::SocketAddr;
 use std::time::{Duration, Instant};
 
 use http::{header, StatusCode};
@@ -36,8 +35,7 @@ pub fn log(name: &'static str) -> Log<impl Fn(Info<'_>) + Copy> {
         
         log::info!(
             target: name,
-            "{} \"{} {} {:?}\" {} \"{}\" \"{}\" {:?}",
-            OptFmt(info.route.remote_addr()),
+            "\"{} {} {:?}\" {} \"{}\" \"{}\" {:?}",
             info.method(),
             info.path(),
             info.route.version(),
@@ -109,11 +107,6 @@ where
 }
 
 impl<'a> Info<'a> {
-    
-    pub fn remote_addr(&self) -> Option<SocketAddr> {
-        self.route.remote_addr()
-    }
-
     
     pub fn method(&self) -> &http::Method {
         self.route.method()

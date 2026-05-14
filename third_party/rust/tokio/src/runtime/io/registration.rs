@@ -118,7 +118,7 @@ impl Registration {
 
     
     
-    #[cfg(not(target_os = "wasi"))]
+    #[cfg(not(all(target_os = "wasi", target_env = "p1")))]
     pub(crate) fn poll_read_io<R>(
         &self,
         cx: &mut Context<'_>,

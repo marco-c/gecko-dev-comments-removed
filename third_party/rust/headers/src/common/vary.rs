@@ -1,7 +1,6 @@
-use util::FlatCsv;
+use http::{HeaderName, HeaderValue};
 
-use HeaderValue;
-
+use crate::util::FlatCsv;
 
 
 
@@ -51,6 +50,12 @@ impl Vary {
     
     pub fn iter_strs(&self) -> impl Iterator<Item = &str> {
         self.0.iter()
+    }
+}
+
+impl From<HeaderName> for Vary {
+    fn from(name: HeaderName) -> Self {
+        Vary(HeaderValue::from(name).into())
     }
 }
 

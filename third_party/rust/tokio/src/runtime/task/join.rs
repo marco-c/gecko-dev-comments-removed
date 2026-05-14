@@ -1,4 +1,4 @@
-use crate::runtime::task::{Header, RawTask};
+use crate::runtime::task::{AbortHandle, Header, RawTask};
 
 use std::fmt;
 use std::future::Future;
@@ -14,6 +14,13 @@ cfg_rt! {
     /// for a Tokio task rather than a thread. Note that the background task
     /// associated with this `JoinHandle` started running immediately when you
     /// called spawn, even if you have not yet awaited the `JoinHandle`.
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -297,9 +304,9 @@ impl<T> JoinHandle<T> {
     
     
     #[must_use = "abort handles do nothing unless `.abort` is called"]
-    pub fn abort_handle(&self) -> super::AbortHandle {
+    pub fn abort_handle(&self) -> AbortHandle {
         self.raw.ref_inc();
-        super::AbortHandle::new(self.raw)
+        AbortHandle::new(self.raw)
     }
 
     
@@ -336,8 +343,7 @@ impl<T> Future for JoinHandle<T> {
         
         
         unsafe {
-            self.raw
-                .try_read_output(&mut ret as *mut _ as *mut (), cx.waker());
+            self.raw.try_read_output(&mut ret, cx.waker());
         }
 
         if ret.is_ready() {

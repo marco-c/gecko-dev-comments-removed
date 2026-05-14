@@ -1,4 +1,4 @@
-use std::ffi::c_void;
+use std::ffi::{c_int, c_void};
 use std::future::Future;
 use std::pin::Pin;
 use std::ptr;
@@ -9,7 +9,6 @@ use std::sync::{
 use std::task::{Context, Poll};
 
 use futures_util::stream::{FuturesUnordered, Stream};
-use libc::c_int;
 
 use super::error::hyper_code;
 use super::UserDataPointer;
@@ -26,6 +25,28 @@ pub const HYPER_POLL_READY: c_int = 0;
 pub const HYPER_POLL_PENDING: c_int = 1;
 
 pub const HYPER_POLL_ERROR: c_int = 3;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 pub struct hyper_executor {
@@ -55,6 +76,40 @@ pub(crate) struct WeakExec(Weak<hyper_executor>);
 struct ExecWaker(AtomicBool);
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 pub struct hyper_task {
     future: BoxFuture<BoxAny>,
     output: Option<BoxAny>,
@@ -66,7 +121,34 @@ struct TaskFuture {
 }
 
 
+
+
+
+
+
 pub struct hyper_context<'a>(Context<'a>);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 pub struct hyper_waker {
@@ -126,27 +208,35 @@ impl hyper_executor {
         let mut cx = Context::from_waker(&waker);
 
         loop {
-            match Pin::new(&mut *self.driver.lock().unwrap()).poll_next(&mut cx) {
-                Poll::Ready(val) => return val,
-                Poll::Pending => {
-                    
-                    
-                    if self.drain_queue() {
-                        continue;
-                    }
-
-                    
-                    
-                    if self.is_woken.0.swap(false, Ordering::SeqCst) {
-                        continue;
-                    }
-
-                    return None;
-                }
+            {
+                
+                
+                let mut driver = self.driver.lock().unwrap();
+                match Pin::new(&mut *driver).poll_next(&mut cx) {
+                    Poll::Ready(val) => return val,
+                    Poll::Pending => {}
+                };
             }
+
+            
+            
+            
+            if self.drain_queue() {
+                continue;
+            }
+
+            
+            
+            if self.is_woken.0.swap(false, Ordering::SeqCst) {
+                continue;
+            }
+
+            return None;
         }
     }
 
+    
+    
     fn drain_queue(&self) -> bool {
         let mut queue = self.spawn_queue.lock().unwrap();
         if queue.is_empty() {
@@ -177,8 +267,12 @@ impl WeakExec {
     }
 }
 
-impl crate::rt::Executor<BoxFuture<()>> for WeakExec {
-    fn execute(&self, fut: BoxFuture<()>) {
+impl<F> crate::rt::Executor<F> for WeakExec
+where
+    F: Future + Send + 'static,
+    F::Output: Send + Sync + AsTaskType,
+{
+    fn execute(&self, fut: F) {
         if let Some(exec) = self.0.upgrade() {
             exec.spawn(hyper_task::boxed(fut));
         }
@@ -187,6 +281,9 @@ impl crate::rt::Executor<BoxFuture<()>> for WeakExec {
 
 ffi_fn! {
     /// Creates a new task executor.
+    ///
+    /// To avoid a memory leak, the executor must eventually be consumed by
+    /// `hyper_executor_free`.
     fn hyper_executor_new() -> *const hyper_executor {
         Arc::into_raw(hyper_executor::new())
     } ?= ptr::null()
@@ -194,6 +291,8 @@ ffi_fn! {
 
 ffi_fn! {
     /// Frees an executor and any incomplete tasks still part of it.
+    ///
+    /// This should be used for any executor once it is no longer needed.
     fn hyper_executor_free(exec: *const hyper_executor) {
         drop(non_null!(Arc::from_raw(exec) ?= ()));
     }
@@ -202,8 +301,14 @@ ffi_fn! {
 ffi_fn! {
     /// Push a task onto the executor.
     ///
-    /// The executor takes ownership of the task, it should not be accessed
-    /// again unless returned back to the user with `hyper_executor_poll`.
+    /// The executor takes ownership of the task, which must not be accessed
+    /// again.
+    ///
+    /// Ownership of the task will eventually be returned to the user from
+    /// `hyper_executor_poll`.
+    ///
+    /// To distinguish multiple tasks running on the same executor, use
+    /// hyper_task_set_userdata.
     fn hyper_executor_push(exec: *const hyper_executor, task: *mut hyper_task) -> hyper_code {
         let exec = non_null!(&*exec ?= hyper_code::HYPERE_INVALID_ARG);
         let task = non_null!(Box::from_raw(task) ?= hyper_code::HYPERE_INVALID_ARG);
@@ -213,10 +318,14 @@ ffi_fn! {
 }
 
 ffi_fn! {
-    /// Polls the executor, trying to make progress on any tasks that have notified
-    /// that they are ready again.
+    /// Polls the executor, trying to make progress on any tasks that can do so.
     ///
-    /// If ready, returns a task from the executor that has completed.
+    /// If any task from the executor is ready, returns one of them. The way
+    /// tasks signal being finished is internal to Hyper. The order in which tasks
+    /// are returned is not guaranteed. Use userdata to distinguish between tasks.
+    ///
+    /// To avoid a memory leak, the task must eventually be consumed by
+    /// `hyper_task_free`.
     ///
     /// If there are no ready tasks, this returns `NULL`.
     fn hyper_executor_poll(exec: *const hyper_executor) -> *mut hyper_task {
@@ -268,6 +377,10 @@ impl Future for TaskFuture {
 
 ffi_fn! {
     /// Free a task.
+    ///
+    /// This should only be used if the task isn't consumed by
+    /// `hyper_clientconn_handshake` or taken ownership of by
+    /// `hyper_executor_push`.
     fn hyper_task_free(task: *mut hyper_task) {
         drop(non_null!(Box::from_raw(task) ?= ()));
     }
@@ -280,6 +393,11 @@ ffi_fn! {
     /// this task.
     ///
     /// Use `hyper_task_type` to determine the type of the `void *` return value.
+    ///
+    /// To avoid a memory leak, a non-empty return value must eventually be
+    /// consumed by a function appropriate for its type, one of
+    /// `hyper_error_free`, `hyper_clientconn_free`, `hyper_response_free`, or
+    /// `hyper_buf_free`.
     fn hyper_task_value(task: *mut hyper_task) -> *mut c_void {
         let task = non_null!(&mut *task ?= ptr::null_mut());
 
@@ -311,6 +429,9 @@ ffi_fn! {
     ///
     /// This value will be passed to task callbacks, and can be checked later
     /// with `hyper_task_userdata`.
+    ///
+    /// This is useful for telling apart tasks for different requests that are
+    /// running on the same executor.
     fn hyper_task_set_userdata(task: *mut hyper_task, userdata: *mut c_void) {
         if task.is_null() {
             return;
@@ -384,7 +505,16 @@ impl hyper_context<'_> {
 }
 
 ffi_fn! {
-    /// Copies a waker out of the task context.
+    /// Creates a waker associated with the task context.
+    ///
+    /// The waker can be used to inform the task's executor that the task is
+    /// ready to make progress (using `hyper_waker_wake`).
+    ///
+    /// Typically this only needs to be called once, but it can be called
+    /// multiple times, returning a new waker each time.
+    ///
+    /// To avoid a memory leak, the waker must eventually be consumed by
+    /// `hyper_waker_free` or `hyper_waker_wake`.
     fn hyper_context_waker(cx: *mut hyper_context<'_>) -> *mut hyper_waker {
         let waker = non_null!(&mut *cx ?= ptr::null_mut()).0.waker().clone();
         Box::into_raw(Box::new(hyper_waker { waker }))
@@ -394,7 +524,10 @@ ffi_fn! {
 
 
 ffi_fn! {
-    /// Free a waker that hasn't been woken.
+    /// Free a waker.
+    ///
+    /// This should only be used if the request isn't consumed by
+    /// `hyper_waker_wake`.
     fn hyper_waker_free(waker: *mut hyper_waker) {
         drop(non_null!(Box::from_raw(waker) ?= ()));
     }
@@ -402,6 +535,11 @@ ffi_fn! {
 
 ffi_fn! {
     /// Wake up the task associated with a waker.
+    ///
+    /// This does not do work towards associated task. Instead, it signals
+    /// to the task's executor that the task is ready to make progress. The
+    /// application is responsible for calling hyper_executor_poll, which
+    /// will in turn do work on all tasks that are ready to make progress.
     ///
     /// NOTE: This consumes the waker. You should not use or free the waker afterwards.
     fn hyper_waker_wake(waker: *mut hyper_waker) {

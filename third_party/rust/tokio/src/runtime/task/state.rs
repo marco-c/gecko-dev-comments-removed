@@ -252,9 +252,15 @@ impl State {
     
     pub(super) fn transition_to_notified_by_ref(&self) -> TransitionToNotifiedByRef {
         self.fetch_update_action(|mut snapshot| {
-            if snapshot.is_complete() || snapshot.is_notified() {
+            if snapshot.is_complete() {
                 
                 (TransitionToNotifiedByRef::DoNothing, None)
+            } else if snapshot.is_notified() {
+                
+                
+                
+                
+                (TransitionToNotifiedByRef::DoNothing, Some(snapshot))
             } else if snapshot.is_running() {
                 
                 
@@ -278,7 +284,7 @@ impl State {
     
     #[cfg(all(
         tokio_unstable,
-        tokio_taskdump,
+        feature = "taskdump",
         feature = "rt",
         target_os = "linux",
         any(target_arch = "aarch64", target_arch = "x86", target_arch = "x86_64")

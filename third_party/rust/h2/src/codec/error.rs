@@ -49,6 +49,9 @@ pub enum UserError {
 
     
     PeerDisabledServerPush,
+
+    
+    InvalidInformationalStatusCode,
 }
 
 
@@ -97,6 +100,7 @@ impl fmt::Display for UserError {
             SendPingWhilePending => "send_ping before received previous pong",
             SendSettingsWhilePending => "sending SETTINGS before received previous ACK",
             PeerDisabledServerPush => "sending PUSH_PROMISE to peer who disabled server push",
+            InvalidInformationalStatusCode => "invalid informational status code",
         })
     }
 }
