@@ -122,15 +122,14 @@ export class BackupUIParent extends JSWindowActorParent {
    *   Returns either a success object, a file details object, or null.
    */
   async receiveMessage(message) {
-    let currentWindowGlobal = this.browsingContext.currentWindowGlobal;
+    let windowGlobal = this.manager;
     // The backup spotlights can be embedded in less privileged content pages, so let's
     // make sure that any messages from content are coming from the privileged
     // about content process type
     if (
-      !currentWindowGlobal ||
-      (!currentWindowGlobal.isInProcess &&
-        this.browsingContext.currentRemoteType !=
-          lazy.E10SUtils.PRIVILEGEDABOUT_REMOTE_TYPE)
+      !windowGlobal ||
+      (!windowGlobal.isInProcess &&
+        windowGlobal.remoteType != lazy.E10SUtils.PRIVILEGEDABOUT_REMOTE_TYPE)
     ) {
       lazy.logConsole.debug(
         "BackupUIParent: received message from the wrong content process type."
@@ -219,11 +218,17 @@ export class BackupUIParent extends JSWindowActorParent {
          * TODO: (Bug 1905156) display a localized version of error in the restore dialog.
          */
       }
+    } else if (message.name == "FindBackupsInWellKnownLocations") {
+      let { source } = message.data;
+      await this.#bs.findBackupsInWellKnownLocations({
+        validateFile: true,
+        source,
+      });
     } else if (message.name == "RestoreFromBackupChooseFile") {
       const window = this.browsingContext.topChromeWindow;
       this.#bs.filePickerForRestore(window);
     } else if (message.name == "RestoreFromBackupFile") {
-      let { backupFile, backupPassword, restoreType } = message.data;
+      let { backupFile, backupPassword, restoreType, source } = message.data;
       try {
         await this.#bs.recoverFromBackupArchive(
           backupFile,
@@ -231,7 +236,8 @@ export class BackupUIParent extends JSWindowActorParent {
           true /* shouldLaunchOrQuit */,
           undefined,
           undefined,
-          restoreType === "replace" /* replaceCurrentProfile */
+          restoreType === "replace" /* replaceCurrentProfile */,
+          source
         );
       } catch (e) {
         lazy.logConsole.error(`Failed to restore file: ${backupFile}`, e);
