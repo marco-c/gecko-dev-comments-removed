@@ -285,6 +285,14 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
   
   void recoverFromOutOfMemory();
 
+  
+  
+  
+  void recoverFromResourceExhaustion() {
+    MOZ_ASSERT(isThrowingOutOfMemory() || isThrowingOverRecursed());
+    clearPendingException();
+  }
+
   void reportAllocOverflow();
 
   
