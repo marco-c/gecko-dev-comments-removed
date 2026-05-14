@@ -235,7 +235,9 @@ SharedSurface_ANGLEShareHandle::ToSurfaceDescriptor() {
   return Some(layers::SurfaceDescriptorD3D10(
       mSharedHandle,  Nothing(),
        0, format, mDesc.size, mDesc.colorSpace,
-      gfx::ColorRange::FULL, !!mKeyedMutex, mFencesHolderId));
+      gfx::ColorRange::FULL, mDesc.transferFunction,
+       Nothing(), !!mKeyedMutex,
+      mFencesHolderId));
 }
 
 
