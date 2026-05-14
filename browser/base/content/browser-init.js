@@ -2,10 +2,6 @@
 
 
 
-const { CustomKeys } = ChromeUtils.importESModule(
-  "moz-src:///browser/components/customkeys/CustomKeys.sys.mjs"
-);
-
 var gSerialDeviceObserver = {
   _activePortCounts: new WeakMap(),
 
@@ -328,13 +324,6 @@ var gBrowserInit = {
 
     window.addEventListener("AppCommand", HandleAppCommandEvent, true);
 
-    
-    
-    
-    
-    CaptivePortalWatcher.init();
-    ZoomUI.init(window);
-
     if (!gMultiProcessBrowser) {
       
       gBrowser.tabpanels.addEventListener("click", contentAreaClick, {
@@ -347,11 +336,15 @@ var gBrowserInit = {
     gBrowser.addProgressListener(window.XULBrowserWindow);
     gBrowser.addTabsProgressListener(window.TabsProgressListener);
 
-    SidebarController.init();
-
     
     
-    DownloadsButton.init();
+    BrowserUtils.callModulesFromCategory(
+      {
+        categoryName: "browser-window-load-before-sessionstore-init",
+        jsGlobal: globalThis,
+      },
+      window
+    );
 
     
     
@@ -367,20 +360,10 @@ var gBrowserInit = {
       gURLBar.readOnly = true;
     }
 
-    
-    gUIDensity.init();
-    Win10TabletModeUpdater.init();
-    CombinedStopReload.ensureInitialized();
-    
-    if (PrivateBrowsingUtils.isWindowPrivate(window)) {
-      PrivateBrowsingUI.init(window);
-    }
-    TaskbarTabsChrome.init(window);
-    BrowserPageActions.init();
-    if (gToolbarKeyNavEnabled) {
-      ToolbarKeyboardNavigator.init();
-    }
-    CustomKeys.initWindow(window);
+    BrowserUtils.callModulesFromCategory(
+      { categoryName: "browser-window-load", jsGlobal: globalThis },
+      window
+    );
 
     
     gRemoteControl.updateVisualCue();
@@ -1178,8 +1161,6 @@ var gBrowserInit = {
   },
 
   onUnload() {
-    gUIDensity.uninit();
-
     BrowserUtils.callModulesFromCategory(
       { categoryName: "browser-window-unload-begin", jsGlobal: globalThis },
       window
@@ -1191,11 +1172,6 @@ var gBrowserInit = {
     if (!this._loadHandled) {
       return;
     }
-
-    
-    
-
-    CombinedStopReload.uninit();
 
     gGestureSupport.init(false);
 
@@ -1215,19 +1191,6 @@ var gBrowserInit = {
     PlacesToolbarHelper.uninit();
 
     BookmarkingUI.uninit();
-
-    Win10TabletModeUpdater.uninit();
-
-    CaptivePortalWatcher.uninit();
-
-    SidebarController.uninit();
-
-    DownloadsButton.uninit();
-
-    if (gToolbarKeyNavEnabled) {
-      ToolbarKeyboardNavigator.uninit();
-    }
-    CustomKeys.uninitWindow(window);
 
     
     ChromeUtils.importESModule(
