@@ -350,7 +350,7 @@ async function simulateExtensionStartup(trySetDefault) {
   if (trySetDefault) {
     await SearchService.maybeSetAndOverrideDefault(extensionData);
   } else {
-    await SearchService.addEnginesFromExtension(extensionData);
+    await SearchService.addEngineFromExtension(extensionData);
   }
 }
 
