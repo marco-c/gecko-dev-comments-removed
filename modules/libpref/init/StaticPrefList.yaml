@@ -16467,7 +16467,7 @@
 
 - name: network.http.happy_eyeballs_enabled
   type: RelaxedAtomicBool
-  value: false
+  value: @IS_NIGHTLY_BUILD@
   mirror: always
 
 # The time to wait after receiving the first DNS response before moving on
@@ -18026,12 +18026,6 @@
   # Whether \Device\KsecDD is closed in content process. We are closing this
   # using a pref to give users a work-around if they have issues.
 -   name: security.sandbox.content.close-ksecdd-handle
-    type: RelaxedAtomicBool
-    value: true
-    mirror: always
-
-  # Whether MITIGATION_EXTENSION_POINT_DISABLE is used for the GPU sandbox.
--   name: security.sandbox.gpu.extension-point-disable
     type: RelaxedAtomicBool
     value: true
     mirror: always
