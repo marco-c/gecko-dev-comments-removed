@@ -4,8 +4,6 @@
 #ifndef jit_riscv64_extension_Extension_riscv_a_h_
 #define jit_riscv64_extension_Extension_riscv_a_h_
 
-#include <stdint.h>
-
 #include "jit/riscv64/extension/base-assembler-riscv.h"
 #include "jit/riscv64/Register-riscv64.h"
 namespace js {
@@ -25,7 +23,6 @@ class AssemblerRISCVA : public AssemblerRiscvBase {
   void amominu_w(bool aq, bool rl, Register rd, Register rs1, Register rs2);
   void amomaxu_w(bool aq, bool rl, Register rd, Register rs1, Register rs2);
 
-#ifdef JS_CODEGEN_RISCV64
   
   void lr_d(bool aq, bool rl, Register rd, Register rs1);
   void sc_d(bool aq, bool rl, Register rd, Register rs1, Register rs2);
@@ -38,7 +35,6 @@ class AssemblerRISCVA : public AssemblerRiscvBase {
   void amomax_d(bool aq, bool rl, Register rd, Register rs1, Register rs2);
   void amominu_d(bool aq, bool rl, Register rd, Register rs1, Register rs2);
   void amomaxu_d(bool aq, bool rl, Register rd, Register rs1, Register rs2);
-#endif
 };
 }  
 }  
