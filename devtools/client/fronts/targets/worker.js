@@ -32,7 +32,21 @@ class WorkerTargetFront extends TargetMixin(
   
   
   get name() {
-    return this._name || this._url.split("/").pop();
+    if (this._name) {
+      return this._name;
+    }
+
+    if (this._url) {
+      if (URL.canParse(this._url)) {
+        return this._url.split("/").pop();
+      }
+
+      
+      return this._url;
+    }
+
+    
+    return "(worker)";
   }
 
   form(json) {
