@@ -21,6 +21,8 @@ ChromeUtils.defineESModuleGetters(this, {
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
 });
 
+const STATIC_MENUITEM_COUNT = 7;
+
 var gEditItemOverlay = {
   
   
@@ -544,12 +546,18 @@ var gEditItemOverlay = {
   async _initFolderMenuList(aSelectedFolderGuid) {
     
     var menupopup = this._folderMenuList.menupopup;
-    while (menupopup.children.length > 6) {
+    while (menupopup.children.length > STATIC_MENUITEM_COUNT) {
       menupopup.removeChild(menupopup.lastElementChild);
     }
 
     
+    let mobileItem = this._element("mobileRootItem");
+    mobileItem.hidden = true;
+
+    
     if (!this._staticFoldersListBuilt) {
+      mobileItem.label = PlacesUtils.getString("MobileBookmarksFolderTitle");
+      mobileItem.folderGuid = PlacesUtils.bookmarks.mobileGuid;
       let unfiledItem = this._element("unfiledRootItem");
       unfiledItem.label = PlacesUtils.getString("OtherBookmarksFolderTitle");
       unfiledItem.folderGuid = PlacesUtils.bookmarks.unfiledGuid;
@@ -609,7 +617,8 @@ var gEditItemOverlay = {
     this._folderMenuListListenerAdded = true;
 
     
-    this._element("foldersSeparator").hidden = menupopup.children.length <= 6;
+    this._element("foldersSeparator").hidden =
+      menupopup.children.length <= STATIC_MENUITEM_COUNT;
     this._folderMenuList.disabled = this.readOnly;
   },
 
@@ -906,11 +915,14 @@ var gEditItemOverlay = {
       item => item.folderGuid === aFolderGuid
     );
     if (menuItem !== undefined) {
+      menuItem.hidden = false;
       return menuItem;
     }
 
-    
-    if (menupopup.children.length == 4 + PlacesUIUtils.maxRecentFolders) {
+    if (
+      menupopup.children.length ==
+      STATIC_MENUITEM_COUNT + PlacesUIUtils.maxRecentFolders
+    ) {
       menupopup.removeChild(menupopup.lastElementChild);
     }
 

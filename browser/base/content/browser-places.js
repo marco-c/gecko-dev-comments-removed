@@ -323,7 +323,11 @@ var StarUI = {
     }
 
     
-    if (didChangeFolder) {
+    
+    if (
+      didChangeFolder &&
+      selectedFolderGuid !== PlacesUtils.bookmarks.mobileGuid
+    ) {
       Services.prefs.setCharPref(
         "browser.bookmarks.defaultLocation",
         selectedFolderGuid
