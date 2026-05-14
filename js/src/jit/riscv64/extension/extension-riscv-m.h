@@ -20,14 +20,13 @@ class AssemblerRISCVM : public AssemblerRiscvBase {
   void divu(Register rd, Register rs1, Register rs2);
   void rem(Register rd, Register rs1, Register rs2);
   void remu(Register rd, Register rs1, Register rs2);
-#ifdef JS_CODEGEN_RISCV64
+
   
   void mulw(Register rd, Register rs1, Register rs2);
   void divw(Register rd, Register rs1, Register rs2);
   void divuw(Register rd, Register rs1, Register rs2);
   void remw(Register rd, Register rs1, Register rs2);
   void remuw(Register rd, Register rs1, Register rs2);
-#endif
 };
 }  
 }  
