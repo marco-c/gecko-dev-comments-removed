@@ -24,12 +24,15 @@
 
 
 
+#include "jstypes.h"
+
+#ifdef JS_SIMULATOR_ARM64
+
 #include "jit/arm64/vixl/Simulator-vixl.h"
 
 #include <cmath>
 #include <string.h>
 
-#include "jstypes.h"
 #include "jit/AtomicOperations.h"
 
 namespace vixl {
@@ -4493,3 +4496,5 @@ void Simulator::DoPrintf(const Instruction* instr) {
 }
 
 }  
+
+#endif  

@@ -20,9 +20,9 @@
 #endif
 
 #include "jit/arm/Assembler-arm.h"
+#include "jit/arm/Simulator-arm.h"
 #include "jit/FlushICache.h"  
 #include "jit/RegisterSets.h"
-#include "jit/Simulator.h"
 
 #if !defined(__linux__) || defined(ANDROID) || defined(JS_SIMULATOR_ARM)
 
