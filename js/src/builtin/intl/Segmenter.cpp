@@ -45,16 +45,7 @@ using namespace js;
 using namespace js::intl;
 
 const JSClassOps SegmenterObject::classOps_ = {
-    nullptr,                    
-    nullptr,                    
-    nullptr,                    
-    nullptr,                    
-    nullptr,                    
-    nullptr,                    
-    SegmenterObject::finalize,  
-    nullptr,                    
-    nullptr,                    
-    nullptr,                    
+    .finalize = SegmenterObject::finalize,
 };
 
 const JSClass SegmenterObject::class_ = {
@@ -211,16 +202,7 @@ static bool Segmenter(JSContext* cx, unsigned argc, Value* vp) {
 }
 
 const JSClassOps SegmentsObject::classOps_ = {
-    nullptr,                   
-    nullptr,                   
-    nullptr,                   
-    nullptr,                   
-    nullptr,                   
-    nullptr,                   
-    SegmentsObject::finalize,  
-    nullptr,                   
-    nullptr,                   
-    nullptr,                   
+    .finalize = SegmentsObject::finalize,
 };
 
 const JSClass SegmentsObject::class_ = {
@@ -253,16 +235,7 @@ bool GlobalObject::initSegmentsProto(JSContext* cx,
 }
 
 const JSClassOps SegmentIteratorObject::classOps_ = {
-    nullptr,                          
-    nullptr,                          
-    nullptr,                          
-    nullptr,                          
-    nullptr,                          
-    nullptr,                          
-    SegmentIteratorObject::finalize,  
-    nullptr,                          
-    nullptr,                          
-    nullptr,                          
+    .finalize = SegmentIteratorObject::finalize,
 };
 
 const JSClass SegmentIteratorObject::class_ = {

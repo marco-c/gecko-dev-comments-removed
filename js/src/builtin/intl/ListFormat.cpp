@@ -32,16 +32,7 @@ using namespace js;
 using namespace js::intl;
 
 const JSClassOps ListFormatObject::classOps_ = {
-    nullptr,                     
-    nullptr,                     
-    nullptr,                     
-    nullptr,                     
-    nullptr,                     
-    nullptr,                     
-    ListFormatObject::finalize,  
-    nullptr,                     
-    nullptr,                     
-    nullptr,                     
+    .finalize = ListFormatObject::finalize,
 };
 const JSClass ListFormatObject::class_ = {
     "Intl.ListFormat",

@@ -5461,16 +5461,7 @@ static bool array_proto_finish(JSContext* cx, JS::HandleObject ctor,
 }
 
 static const JSClassOps ArrayObjectClassOps = {
-    array_addProperty,  
-    nullptr,            
-    nullptr,            
-    nullptr,            
-    nullptr,            
-    nullptr,            
-    nullptr,            
-    nullptr,            
-    nullptr,            
-    nullptr,            
+    .addProperty = array_addProperty,
 };
 
 static const ClassSpec ArrayObjectClassSpec = {

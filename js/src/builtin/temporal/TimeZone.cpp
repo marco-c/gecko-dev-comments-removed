@@ -1192,16 +1192,7 @@ void js::temporal::TimeZoneObject::finalize(JS::GCContext* gcx, JSObject* obj) {
 }
 
 const JSClassOps TimeZoneObject::classOps_ = {
-    nullptr,                   
-    nullptr,                   
-    nullptr,                   
-    nullptr,                   
-    nullptr,                   
-    nullptr,                   
-    TimeZoneObject::finalize,  
-    nullptr,                   
-    nullptr,                   
-    nullptr,                   
+    .finalize = TimeZoneObject::finalize,
 };
 
 const JSClass TimeZoneObject::class_ = {

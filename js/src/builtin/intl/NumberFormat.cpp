@@ -55,16 +55,7 @@ using namespace js;
 using namespace js::intl;
 
 const JSClassOps NumberFormatObject::classOps_ = {
-    nullptr,                       
-    nullptr,                       
-    nullptr,                       
-    nullptr,                       
-    nullptr,                       
-    nullptr,                       
-    NumberFormatObject::finalize,  
-    nullptr,                       
-    nullptr,                       
-    nullptr,                       
+    .finalize = NumberFormatObject::finalize,
 };
 
 const JSClass NumberFormatObject::class_ = {

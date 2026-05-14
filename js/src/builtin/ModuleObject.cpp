@@ -995,16 +995,8 @@ Maybe<uint32_t> CyclicModuleFields::maybePendingAsyncDependencies() const {
 
 
  const JSClassOps ModuleObject::classOps_ = {
-    nullptr,                 
-    nullptr,                 
-    nullptr,                 
-    nullptr,                 
-    nullptr,                 
-    nullptr,                 
-    ModuleObject::finalize,  
-    nullptr,                 
-    nullptr,                 
-    ModuleObject::trace,     
+    .finalize = ModuleObject::finalize,
+    .trace = ModuleObject::trace,
 };
 
  const JSClass ModuleObject::class_ = {
@@ -1651,16 +1643,8 @@ static_assert(GraphLoadingStateRecordObject::StateSlot == 0);
 
 
 const JSClassOps GraphLoadingStateRecordObject::classOps_ = {
-    nullptr,                                  
-    nullptr,                                  
-    nullptr,                                  
-    nullptr,                                  
-    nullptr,                                  
-    nullptr,                                  
-    GraphLoadingStateRecordObject::finalize,  
-    nullptr,                                  
-    nullptr,                                  
-    GraphLoadingStateRecordObject::trace,     
+    .finalize = GraphLoadingStateRecordObject::finalize,
+    .trace = GraphLoadingStateRecordObject::trace,
 };
 
 

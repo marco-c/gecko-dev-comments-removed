@@ -109,16 +109,7 @@ static const JSPropertySpec durationFormat_properties[] = {
 static bool DurationFormat(JSContext* cx, unsigned argc, Value* vp);
 
 const JSClassOps DurationFormatObject::classOps_ = {
-    nullptr,                         
-    nullptr,                         
-    nullptr,                         
-    nullptr,                         
-    nullptr,                         
-    nullptr,                         
-    DurationFormatObject::finalize,  
-    nullptr,                         
-    nullptr,                         
-    nullptr,                         
+    .finalize = DurationFormatObject::finalize,
 };
 
 const ClassSpec DurationFormatObject::classSpec_ = {

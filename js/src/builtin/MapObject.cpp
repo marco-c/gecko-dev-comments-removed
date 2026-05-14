@@ -127,16 +127,7 @@ bool HashableValue::equals(const HashableValue& other) const {
 namespace {} 
 
 static const JSClassOps MapIteratorObjectClassOps = {
-    nullptr,                      
-    nullptr,                      
-    nullptr,                      
-    nullptr,                      
-    nullptr,                      
-    nullptr,                      
-    MapIteratorObject::finalize,  
-    nullptr,                      
-    nullptr,                      
-    nullptr,                      
+    .finalize = MapIteratorObject::finalize,
 };
 
 static const ClassExtension MapIteratorObjectClassExtension = {
@@ -328,16 +319,7 @@ static_assert(sizeof(MapObject::Table::Entry) ==
               sizeof(MapObject::PreBarrieredTable::Entry));
 
 const JSClassOps MapObject::classOps_ = {
-    nullptr,  
-    nullptr,  
-    nullptr,  
-    nullptr,  
-    nullptr,  
-    nullptr,  
-    nullptr,  
-    nullptr,  
-    nullptr,  
-    trace,    
+    .trace = trace,
 };
 
 const ClassSpec MapObject::classSpec_ = {
@@ -1044,16 +1026,7 @@ void MapObject::clear(JSContext* cx) {
 
 
 static const JSClassOps SetIteratorObjectClassOps = {
-    nullptr,                      
-    nullptr,                      
-    nullptr,                      
-    nullptr,                      
-    nullptr,                      
-    nullptr,                      
-    SetIteratorObject::finalize,  
-    nullptr,                      
-    nullptr,                      
-    nullptr,                      
+    .finalize = SetIteratorObject::finalize,
 };
 
 static const ClassExtension SetIteratorObjectClassExtension = {
@@ -1201,16 +1174,7 @@ JSObject* SetIteratorObject::createResult(JSContext* cx) {
 
 
 const JSClassOps SetObject::classOps_ = {
-    nullptr,  
-    nullptr,  
-    nullptr,  
-    nullptr,  
-    nullptr,  
-    nullptr,  
-    nullptr,  
-    nullptr,  
-    nullptr,  
-    trace,    
+    .trace = trace,
 };
 
 const ClassSpec SetObject::classSpec_ = {

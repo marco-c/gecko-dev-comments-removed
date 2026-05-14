@@ -1093,16 +1093,7 @@ bool DataViewObject::byteOffsetGetter(JSContext* cx, unsigned argc, Value* vp) {
 }
 
 static const JSClassOps DataViewObjectClassOps = {
-    nullptr,                       
-    nullptr,                       
-    nullptr,                       
-    nullptr,                       
-    nullptr,                       
-    nullptr,                       
-    nullptr,                       
-    nullptr,                       
-    nullptr,                       
-    ArrayBufferViewObject::trace,  
+    .trace = ArrayBufferViewObject::trace,
 };
 
 static JSObject* CreateDataViewPrototype(JSContext* cx, JSProtoKey key) {

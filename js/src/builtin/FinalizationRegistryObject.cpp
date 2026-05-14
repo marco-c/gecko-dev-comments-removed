@@ -25,16 +25,7 @@ using namespace js;
 
 
 const JSClassOps FinalizationRecordObject::classOps_ = {
-    nullptr,   
-    nullptr,   
-    nullptr,   
-    nullptr,   
-    nullptr,   
-    nullptr,   
-    finalize,  
-    nullptr,   
-    nullptr,   
-    nullptr,   
+    .finalize = finalize,
 };
 
 const JSClass FinalizationRecordObject::class_ = {
@@ -155,16 +146,8 @@ const JSClass FinalizationRegistryObject::protoClass_ = {
 };
 
 const JSClassOps FinalizationRegistryObject::classOps_ = {
-    nullptr,                               
-    nullptr,                               
-    nullptr,                               
-    nullptr,                               
-    nullptr,                               
-    nullptr,                               
-    FinalizationRegistryObject::finalize,  
-    nullptr,                               
-    nullptr,                               
-    FinalizationRegistryObject::trace,     
+    .finalize = FinalizationRegistryObject::finalize,
+    .trace = FinalizationRegistryObject::trace,
 };
 
 const ClassSpec FinalizationRegistryObject::classSpec_ = {
@@ -637,16 +620,8 @@ const JSClass FinalizationQueueObject::class_ = {
 };
 
 const JSClassOps FinalizationQueueObject::classOps_ = {
-    nullptr,                            
-    nullptr,                            
-    nullptr,                            
-    nullptr,                            
-    nullptr,                            
-    nullptr,                            
-    FinalizationQueueObject::finalize,  
-    nullptr,                            
-    nullptr,                            
-    FinalizationQueueObject::trace,     
+    .finalize = FinalizationQueueObject::finalize,
+    .trace = FinalizationQueueObject::trace,
 };
 
 
@@ -672,8 +647,8 @@ FinalizationQueueObject* FinalizationQueueObject::create(
   
   
   
-  Rooted<JSObject*> hostDefinedData(cx);
-  if (!GetObjectFromHostDefinedData(cx, &hostDefinedData)) {
+  Rooted<JSObject*> incumbentGlobalRepresentative(cx);
+  if (!GetIncumbentGlobalRepresentative(cx, &incumbentGlobalRepresentative)) {
     return nullptr;
   }
 
@@ -684,8 +659,8 @@ FinalizationQueueObject* FinalizationQueueObject::create(
   }
 
   queue->initReservedSlot(CleanupCallbackSlot, ObjectValue(*cleanupCallback));
-  queue->initReservedSlot(HostDefinedDataSlot,
-                          JS::ObjectOrNullValue(hostDefinedData));
+  queue->initReservedSlot(IncumbentGlobalRepresentative,
+                          JS::ObjectOrNullValue(incumbentGlobalRepresentative));
   InitReservedSlot(queue, RecordsToBeCleanedUpSlot,
                    recordsToBeCleanedUp.release(),
                    MemoryUse::FinalizationRegistryRecordVector);
@@ -745,8 +720,8 @@ inline JSObject* FinalizationQueueObject::cleanupCallback() const {
   return &value.toObject();
 }
 
-JSObject* FinalizationQueueObject::getHostDefinedData() const {
-  Value value = getReservedSlot(HostDefinedDataSlot);
+JSObject* FinalizationQueueObject::getIncumbentGlobalRepresentative() const {
+  Value value = getReservedSlot(IncumbentGlobalRepresentative);
   if (value.isUndefined()) {
     return nullptr;
   }

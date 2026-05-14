@@ -30,16 +30,7 @@ using namespace js;
 using namespace js::intl;
 
 const JSClassOps PluralRulesObject::classOps_ = {
-    nullptr,                      
-    nullptr,                      
-    nullptr,                      
-    nullptr,                      
-    nullptr,                      
-    nullptr,                      
-    PluralRulesObject::finalize,  
-    nullptr,                      
-    nullptr,                      
-    nullptr,                      
+    .finalize = PluralRulesObject::finalize,
 };
 
 const JSClass PluralRulesObject::class_ = {

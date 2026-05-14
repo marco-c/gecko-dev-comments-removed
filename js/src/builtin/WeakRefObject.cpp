@@ -136,16 +136,8 @@ void WeakRefObject::finalize(JS::GCContext* gcx, JSObject* obj) {
 }
 
 const JSClassOps WeakRefObject::classOps_ = {
-    nullptr,   
-    nullptr,   
-    nullptr,   
-    nullptr,   
-    nullptr,   
-    nullptr,   
-    finalize,  
-    nullptr,   
-    nullptr,   
-    trace,     
+    .finalize = finalize,
+    .trace = trace,
 };
 
 const ClassSpec WeakRefObject::classSpec_ = {

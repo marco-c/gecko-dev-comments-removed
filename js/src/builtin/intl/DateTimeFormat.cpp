@@ -64,16 +64,7 @@ using namespace js::temporal;
 using JS::ClippedTime;
 
 const JSClassOps DateTimeFormatObject::classOps_ = {
-    nullptr,                         
-    nullptr,                         
-    nullptr,                         
-    nullptr,                         
-    nullptr,                         
-    nullptr,                         
-    DateTimeFormatObject::finalize,  
-    nullptr,                         
-    nullptr,                         
-    nullptr,                         
+    .finalize = DateTimeFormatObject::finalize,
 };
 
 const JSClass DateTimeFormatObject::class_ = {

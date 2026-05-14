@@ -3736,16 +3736,7 @@ static bool NewObjectWithAddPropertyHook(JSContext* cx, unsigned argc,
   };
 
   static const JSClassOps classOps = {
-      addPropHook,  
-      nullptr,      
-      nullptr,      
-      nullptr,      
-      nullptr,      
-      nullptr,      
-      nullptr,      
-      nullptr,      
-      nullptr,      
-      nullptr,      
+      .addProperty = addPropHook,
   };
   static const JSClass cls = {
       "ObjectWithAddPropHook",
@@ -3845,16 +3836,8 @@ static bool NewObjectWithCallHook(JSContext* cx, unsigned argc, Value* vp) {
   };
 
   static const JSClassOps classOps = {
-      nullptr,        
-      nullptr,        
-      nullptr,        
-      nullptr,        
-      nullptr,        
-      nullptr,        
-      nullptr,        
-      callHook,       
-      constructHook,  
-      nullptr,        
+      .call = callHook,
+      .construct = constructHook,
   };
   static const JSClass cls = {
       "ObjectWithCallHook",
@@ -5104,16 +5087,7 @@ static void finalize_counter_finalize(JS::GCContext* gcx, JSObject* obj) {
 }
 
 static const JSClassOps FinalizeCounterClassOps = {
-    nullptr,                    
-    nullptr,                    
-    nullptr,                    
-    nullptr,                    
-    nullptr,                    
-    nullptr,                    
-    finalize_counter_finalize,  
-    nullptr,                    
-    nullptr,                    
-    nullptr,                    
+    .finalize = finalize_counter_finalize,
 };
 
 static const JSClass FinalizeCounterClass = {
@@ -5982,16 +5956,7 @@ class CloneBufferObject : public NativeObject {
 };
 
 static const JSClassOps CloneBufferObjectClassOps = {
-    nullptr,                      
-    nullptr,                      
-    nullptr,                      
-    nullptr,                      
-    nullptr,                      
-    nullptr,                      
-    CloneBufferObject::Finalize,  
-    nullptr,                      
-    nullptr,                      
-    nullptr,                      
+    .finalize = CloneBufferObject::Finalize,
 };
 
 const JSClass CloneBufferObject::class_ = {
@@ -6756,16 +6721,8 @@ class ShapeSnapshotObject : public NativeObject {
 };
 
  const JSClassOps ShapeSnapshotObject::classOps_ = {
-    nullptr,                        
-    nullptr,                        
-    nullptr,                        
-    nullptr,                        
-    nullptr,                        
-    nullptr,                        
-    ShapeSnapshotObject::finalize,  
-    nullptr,                        
-    nullptr,                        
-    ShapeSnapshotObject::trace,     
+    .finalize = ShapeSnapshotObject::finalize,
+    .trace = ShapeSnapshotObject::trace,
 };
 
  const JSClass ShapeSnapshotObject::class_ = {
