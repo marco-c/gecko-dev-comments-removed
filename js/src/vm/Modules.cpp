@@ -113,6 +113,21 @@ JS_PUBLIC_API bool JS::FinishLoadingImportedModule(
   MOZ_ASSERT(result);
   Rooted<ModuleObject*> module(cx, &result->as<ModuleObject>());
 
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+  
+  
+  
+  
+  
+  if (moduleRequest->as<ModuleRequestObject>().phase() ==
+          ImportPhase::Evaluation &&
+      module->moduleSource()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_WASM_ESM_EVAL_NOT_SUPPORTED);
+    return FinishLoadingImportedModuleFailedWithPendingException(cx, payload);
+  }
+#endif
+
   if (referrer && referrer->isModule()) {
     
 
@@ -2820,7 +2835,7 @@ static bool TryStartDynamicModuleImport(JSContext* cx, HandleScript script,
     
     
     moduleRequest = ModuleRequestObject::create(
-        cx, specifierAtom, JS::ModuleType::JavaScript, phase);
+        cx, specifierAtom, JS::ModuleType::JavaScriptOrWasm, phase);
   } else
 #endif
   {
