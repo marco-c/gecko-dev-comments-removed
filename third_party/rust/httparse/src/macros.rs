@@ -31,18 +31,9 @@ macro_rules! complete {
 }
 
 macro_rules! byte_map {
-    ($($p:pat)|+) => {{
-        const fn make_map() -> [bool; 256] {
-            let mut ret = [false; 256];
-            let mut i = 0;
-            while i < 256 {
-                ret[i] = matches!(i as u8, $($p)|+);
-                i += 1;
-            }
-            ret
-        }
-        make_map()
-    }}
+    ($($flag:expr,)*) => ([
+        $($flag != 0,)*
+    ])
 }
 
 macro_rules! space {

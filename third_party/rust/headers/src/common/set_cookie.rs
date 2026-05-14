@@ -1,7 +1,3 @@
-use http::{HeaderName, HeaderValue};
-
-use crate::{Error, Header};
-
 
 
 
@@ -56,24 +52,24 @@ use crate::{Error, Header};
 
 
 #[derive(Clone, Debug)]
-pub struct SetCookie(Vec<HeaderValue>);
+pub struct SetCookie(Vec<::HeaderValue>);
 
-impl Header for SetCookie {
-    fn name() -> &'static HeaderName {
+impl ::Header for SetCookie {
+    fn name() -> &'static ::HeaderName {
         &::http::header::SET_COOKIE
     }
 
-    fn decode<'i, I: Iterator<Item = &'i HeaderValue>>(values: &mut I) -> Result<Self, Error> {
+    fn decode<'i, I: Iterator<Item = &'i ::HeaderValue>>(values: &mut I) -> Result<Self, ::Error> {
         let vec = values.cloned().collect::<Vec<_>>();
 
         if !vec.is_empty() {
             Ok(SetCookie(vec))
         } else {
-            Err(Error::invalid())
+            Err(::Error::invalid())
         }
     }
 
-    fn encode<E: Extend<HeaderValue>>(&self, values: &mut E) {
+    fn encode<E: Extend<::HeaderValue>>(&self, values: &mut E) {
         values.extend(self.0.iter().cloned());
     }
 }
@@ -94,8 +90,8 @@ mod tests {
     #[test]
     fn encode() {
         let set_cookie = SetCookie(vec![
-            HeaderValue::from_static("foo=bar"),
-            HeaderValue::from_static("baz=quux"),
+            ::HeaderValue::from_static("foo=bar"),
+            ::HeaderValue::from_static("baz=quux"),
         ]);
 
         let headers = test_encode(set_cookie);

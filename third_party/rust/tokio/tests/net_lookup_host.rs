@@ -1,11 +1,4 @@
-
-#![cfg(all(
-    feature = "net",
-    feature = "macros",
-    feature = "rt",
-    feature = "io-util",
-    not(all(target_os = "wasi", target_env = "p1")),
-))]
+#![cfg(all(feature = "full", not(target_os = "wasi")))] 
 
 use tokio::net;
 use tokio_test::assert_ok;
@@ -29,13 +22,6 @@ async fn lookup_str_socket_addr() {
     assert_eq!(vec![addr], actual);
 }
 
-
-
-
-#[cfg_attr(
-    target_os = "wasi",
-    ignore = "net::lookup_host requires multithreading, which WASI does not yet support"
-)]
 #[tokio::test]
 #[cfg_attr(miri, ignore)] 
 async fn resolve_dns() -> io::Result<()> {

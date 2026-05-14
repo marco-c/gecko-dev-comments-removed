@@ -1,9 +1,9 @@
-use std::any::{type_name, Any, TypeId};
+use std::any::{Any, TypeId};
 use std::collections::HashMap;
 use std::fmt;
 use std::hash::{BuildHasherDefault, Hasher};
 
-type AnyMap = HashMap<TypeId, Box<dyn AnyClone + Send + Sync>, BuildHasherDefault<IdHasher>>;
+type AnyMap = HashMap<TypeId, Box<dyn Any + Send + Sync>, BuildHasherDefault<IdHasher>>;
 
 
 
@@ -31,7 +31,7 @@ impl Hasher for IdHasher {
 
 
 
-#[derive(Clone, Default)]
+#[derive(Default)]
 pub struct Extensions {
     
     
@@ -59,11 +59,16 @@ impl Extensions {
     
     
     
-    pub fn insert<T: Clone + Send + Sync + 'static>(&mut self, val: T) -> Option<T> {
+    pub fn insert<T: Send + Sync + 'static>(&mut self, val: T) -> Option<T> {
         self.map
-            .get_or_insert_with(Box::default)
+            .get_or_insert_with(|| Box::new(HashMap::default()))
             .insert(TypeId::of::<T>(), Box::new(val))
-            .and_then(|boxed| boxed.into_any().downcast().ok().map(|boxed| *boxed))
+            .and_then(|boxed| {
+                (boxed as Box<dyn Any + 'static>)
+                    .downcast()
+                    .ok()
+                    .map(|boxed| *boxed)
+            })
     }
 
     
@@ -82,7 +87,7 @@ impl Extensions {
         self.map
             .as_ref()
             .and_then(|map| map.get(&TypeId::of::<T>()))
-            .and_then(|boxed| (**boxed).as_any().downcast_ref())
+            .and_then(|boxed| (&**boxed as &(dyn Any + 'static)).downcast_ref())
     }
 
     
@@ -101,63 +106,7 @@ impl Extensions {
         self.map
             .as_mut()
             .and_then(|map| map.get_mut(&TypeId::of::<T>()))
-            .and_then(|boxed| (**boxed).as_any_mut().downcast_mut())
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn get_or_insert<T: Clone + Send + Sync + 'static>(&mut self, value: T) -> &mut T {
-        self.get_or_insert_with(|| value)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn get_or_insert_with<T: Clone + Send + Sync + 'static, F: FnOnce() -> T>(
-        &mut self,
-        f: F,
-    ) -> &mut T {
-        let out = self
-            .map
-            .get_or_insert_with(Box::default)
-            .entry(TypeId::of::<T>())
-            .or_insert_with(|| Box::new(f()));
-        (**out).as_any_mut().downcast_mut().unwrap()
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn get_or_insert_default<T: Default + Clone + Send + Sync + 'static>(&mut self) -> &mut T {
-        self.get_or_insert_with(T::default)
+            .and_then(|boxed| (&mut **boxed as &mut (dyn Any + 'static)).downcast_mut())
     }
 
     
@@ -177,7 +126,12 @@ impl Extensions {
         self.map
             .as_mut()
             .and_then(|map| map.remove(&TypeId::of::<T>()))
-            .and_then(|boxed| boxed.into_any().downcast().ok().map(|boxed| *boxed))
+            .and_then(|boxed| {
+                (boxed as Box<dyn Any + 'static>)
+                    .downcast()
+                    .ok()
+                    .map(|boxed| *boxed)
+            })
     }
 
     
@@ -212,7 +166,9 @@ impl Extensions {
     
     #[inline]
     pub fn is_empty(&self) -> bool {
-        self.map.as_ref().map_or(true, |map| map.is_empty())
+        self.map
+            .as_ref()
+            .map_or(true, |map| map.is_empty())
     }
 
     
@@ -228,7 +184,9 @@ impl Extensions {
     
     #[inline]
     pub fn len(&self) -> usize {
-        self.map.as_ref().map_or(0, |map| map.len())
+        self.map
+            .as_ref()
+            .map_or(0, |map| map.len())
     }
 
     
@@ -267,67 +225,16 @@ impl Extensions {
 
 impl fmt::Debug for Extensions {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        struct TypeName(&'static str);
-        impl fmt::Debug for TypeName {
-            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-                f.write_str(self.0)
-            }
-        }
-
-        let mut set = f.debug_set();
-        if let Some(map) = &self.map {
-            set.entries(
-                map.values()
-                    .map(|any_clone| TypeName(any_clone.as_ref().type_name())),
-            );
-        }
-        set.finish()
-    }
-}
-
-trait AnyClone: Any {
-    fn clone_box(&self) -> Box<dyn AnyClone + Send + Sync>;
-    fn as_any(&self) -> &dyn Any;
-    fn as_any_mut(&mut self) -> &mut dyn Any;
-    fn into_any(self: Box<Self>) -> Box<dyn Any>;
-    fn type_name(&self) -> &'static str;
-}
-
-impl<T: Clone + Send + Sync + 'static> AnyClone for T {
-    fn clone_box(&self) -> Box<dyn AnyClone + Send + Sync> {
-        Box::new(self.clone())
-    }
-
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn as_any_mut(&mut self) -> &mut dyn Any {
-        self
-    }
-
-    fn into_any(self: Box<Self>) -> Box<dyn Any> {
-        self
-    }
-
-    fn type_name(&self) -> &'static str {
-        type_name::<T>()
-    }
-}
-
-impl Clone for Box<dyn AnyClone + Send + Sync> {
-    fn clone(&self) -> Self {
-        (**self).clone_box()
+        f.debug_struct("Extensions").finish()
     }
 }
 
 #[test]
 fn test_extensions() {
-    #[derive(Clone, Debug, PartialEq)]
+    #[derive(Debug, PartialEq)]
     struct MyType(i32);
 
     let mut extensions = Extensions::new();
-    assert_eq!(format!("{extensions:?}"), "{}");
 
     extensions.insert(5i32);
     extensions.insert(MyType(10));
@@ -335,23 +242,8 @@ fn test_extensions() {
     assert_eq!(extensions.get(), Some(&5i32));
     assert_eq!(extensions.get_mut(), Some(&mut 5i32));
 
-    let dbg = format!("{extensions:?}");
-    
-    assert!(
-        (dbg == "{http::extensions::test_extensions::MyType, i32}")
-            || (dbg == "{i32, http::extensions::test_extensions::MyType}"),
-        "{}",
-        dbg
-    );
-
-    let ext2 = extensions.clone();
-
     assert_eq!(extensions.remove::<i32>(), Some(5i32));
     assert!(extensions.get::<i32>().is_none());
-
-    
-    assert_eq!(ext2.get(), Some(&5i32));
-    assert_eq!(ext2.get(), Some(&MyType(10)));
 
     assert_eq!(extensions.get::<bool>(), None);
     assert_eq!(extensions.get(), Some(&MyType(10)));

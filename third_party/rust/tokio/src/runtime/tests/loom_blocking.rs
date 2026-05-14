@@ -1,7 +1,6 @@
 use crate::runtime::{self, Runtime};
 
 use std::sync::Arc;
-use std::time::Duration;
 
 #[test]
 fn blocking_shutdown() {
@@ -76,6 +75,7 @@ fn spawn_mandatory_blocking_should_run_even_when_shutting_down_from_other_thread
 
 #[test]
 fn spawn_blocking_when_paused() {
+    use std::time::Duration;
     loom::model(|| {
         let rt = crate::runtime::Builder::new_current_thread()
             .enable_time()
@@ -91,44 +91,6 @@ fn spawn_blocking_when_paused() {
             b.await.expect("blocking task should finish");
         }))
         .expect("timeout should not trigger");
-    });
-}
-
-#[test]
-
-fn spawn_blocking_then_shutdown() {
-    loom::model(|| {
-        let rt = crate::runtime::Builder::new_current_thread()
-            .max_blocking_threads(1)
-            .thread_keep_alive(Duration::from_secs(7200)) 
-            .build()
-            .unwrap();
-        let rt_hdl = rt.handle().clone();
-
-        
-        
-        let jh0 = rt_hdl.spawn_blocking(|| {});
-        loom::future::block_on(jh0).unwrap();
-
-        
-        
-        
-
-        
-        
-        let jh3 = rt_hdl.spawn_blocking(|| {});
-
-        
-        drop(rt);
-
-        
-        
-        
-        
-        
-        
-        
-        let _ = loom::future::block_on(jh3);
     });
 }
 

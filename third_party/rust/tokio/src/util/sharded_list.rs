@@ -28,7 +28,6 @@ pub(crate) struct ShardedList<L, T> {
 pub(crate) unsafe trait ShardedListItem: Link {
     
     
-    
     unsafe fn get_shard_id(target: NonNull<Self::Target>) -> usize;
 }
 
@@ -80,7 +79,7 @@ impl<L: ShardedListItem> ShardedList<L, L::Target> {
     
     
     pub(crate) unsafe fn remove(&self, node: NonNull<L::Target>) -> Option<L::Handle> {
-        let id = unsafe { L::get_shard_id(node) };
+        let id = L::get_shard_id(node);
         let mut lock = self.shard_inner(id);
         
         
@@ -107,12 +106,10 @@ impl<L: ShardedListItem> ShardedList<L, L::Target> {
         self.count.load(Ordering::Relaxed)
     }
 
-    cfg_unstable_metrics! {
-        cfg_64bit_metrics! {
-            /// Gets the total number of elements added to this list.
-            pub(crate) fn added(&self) -> u64 {
-                self.added.load(Ordering::Relaxed)
-            }
+    cfg_64bit_metrics! {
+        /// Gets the total number of elements added to this list.
+        pub(crate) fn added(&self) -> u64 {
+            self.added.load(Ordering::Relaxed)
         }
     }
 

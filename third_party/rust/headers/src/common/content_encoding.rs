@@ -1,8 +1,6 @@
-use http::HeaderValue;
-
 use self::sealed::AsCoding;
-use crate::util::FlatCsv;
-
+use util::FlatCsv;
+use HeaderValue;
 
 
 
@@ -49,17 +47,6 @@ impl ContentEncoding {
     }
 
     
-    #[inline]
-    pub fn brotli() -> ContentEncoding {
-        ContentEncoding(HeaderValue::from_static("br").into())
-    }
-
-    
-    #[inline]
-    pub fn zstd() -> ContentEncoding {
-        ContentEncoding(HeaderValue::from_static("zstd").into())
-    }
-
     
     
     
@@ -78,7 +65,7 @@ impl ContentEncoding {
     
     pub fn contains(&self, coding: impl AsCoding) -> bool {
         let s = coding.as_coding();
-        self.0.iter().any(|opt| opt == s)
+        self.0.iter().find(|&opt| opt == s).is_some()
     }
 }
 
@@ -89,11 +76,11 @@ mod sealed {
         fn as_coding(&self) -> &str;
     }
 
-    impl AsCoding for &str {}
+    impl<'a> AsCoding for &'a str {}
 
-    impl Sealed for &str {
+    impl<'a> Sealed for &'a str {
         fn as_coding(&self) -> &str {
-            self
+            *self
         }
     }
 }

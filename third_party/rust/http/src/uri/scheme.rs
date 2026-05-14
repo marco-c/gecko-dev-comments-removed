@@ -132,7 +132,7 @@ impl PartialEq for Scheme {
         match (&self.inner, &other.inner) {
             (&Standard(Http), &Standard(Http)) => true,
             (&Standard(Https), &Standard(Https)) => true,
-            (Other(a), Other(b)) => a.eq_ignore_ascii_case(b),
+            (&Other(ref a), &Other(ref b)) => a.eq_ignore_ascii_case(b),
             (&None, _) | (_, &None) => unreachable!(),
             _ => false,
         }
@@ -185,7 +185,10 @@ impl Hash for Scheme {
 
 impl<T> Scheme2<T> {
     pub(super) fn is_none(&self) -> bool {
-        matches!(*self, Scheme2::None)
+        match *self {
+            Scheme2::None => true,
+            _ => false,
+        }
     }
 }
 
@@ -201,7 +204,6 @@ const MAX_SCHEME_LEN: usize = 64;
 
 
 
-#[rustfmt::skip]
 const SCHEME_CHARS: [u8; 256] = [
     
         0,     0,     0,     0,     0,     0,     0,     0,     0,     0, 
@@ -349,10 +351,10 @@ mod test {
 
     #[test]
     fn invalid_scheme_is_error() {
-        Scheme::try_from("my_funky_scheme").expect_err("Unexpectedly valid Scheme");
+        Scheme::try_from("my_funky_scheme").expect_err("Unexpectly valid Scheme");
 
         
-        Scheme::try_from([0xC0].as_ref()).expect_err("Unexpectedly valid Scheme");
+        Scheme::try_from([0xC0].as_ref()).expect_err("Unexpectly valid Scheme");
     }
 
     fn scheme(s: &str) -> Scheme {

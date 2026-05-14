@@ -10,46 +10,6 @@ use tokio::sync::oneshot;
 use tokio::task::{spawn_local, JoinHandle, LocalSet};
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #[derive(Clone)]
 pub struct LocalPoolHandle {
     pool: Arc<LocalPool>,
@@ -61,8 +21,6 @@ impl LocalPoolHandle {
     
     
     
-    
-    #[track_caller]
     pub fn new(pool_size: usize) -> LocalPoolHandle {
         assert!(pool_size > 0);
 
@@ -75,25 +33,6 @@ impl LocalPoolHandle {
         LocalPoolHandle { pool }
     }
 
-    
-    #[inline]
-    pub fn num_threads(&self) -> usize {
-        self.pool.workers.len()
-    }
-
-    
-    
-    pub fn get_task_loads_for_each_worker(&self) -> Vec<usize> {
-        self.pool
-            .workers
-            .iter()
-            .map(|worker| worker.task_count.load(Ordering::SeqCst))
-            .collect::<Vec<_>>()
-    }
-
-    
-    
-    
     
     
     
@@ -130,64 +69,7 @@ impl LocalPoolHandle {
         Fut: Future + 'static,
         Fut::Output: Send + 'static,
     {
-        self.pool
-            .spawn_pinned(create_task, WorkerChoice::LeastBurdened)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[track_caller]
-    pub fn spawn_pinned_by_idx<F, Fut>(&self, create_task: F, idx: usize) -> JoinHandle<Fut::Output>
-    where
-        F: FnOnce() -> Fut,
-        F: Send + 'static,
-        Fut: Future + 'static,
-        Fut::Output: Send + 'static,
-    {
-        self.pool
-            .spawn_pinned(create_task, WorkerChoice::ByIdx(idx))
+        self.pool.spawn_pinned(create_task)
     }
 }
 
@@ -197,23 +79,13 @@ impl Debug for LocalPoolHandle {
     }
 }
 
-enum WorkerChoice {
-    LeastBurdened,
-    ByIdx(usize),
-}
-
 struct LocalPool {
-    workers: Box<[LocalWorkerHandle]>,
+    workers: Vec<LocalWorkerHandle>,
 }
 
 impl LocalPool {
     
-    #[track_caller]
-    fn spawn_pinned<F, Fut>(
-        &self,
-        create_task: F,
-        worker_choice: WorkerChoice,
-    ) -> JoinHandle<Fut::Output>
+    fn spawn_pinned<F, Fut>(&self, create_task: F) -> JoinHandle<Fut::Output>
     where
         F: FnOnce() -> Fut,
         F: Send + 'static,
@@ -221,10 +93,8 @@ impl LocalPool {
         Fut::Output: Send + 'static,
     {
         let (sender, receiver) = oneshot::channel();
-        let (worker, job_guard) = match worker_choice {
-            WorkerChoice::LeastBurdened => self.find_and_incr_least_burdened_worker(),
-            WorkerChoice::ByIdx(idx) => self.find_worker_by_idx(idx),
-        };
+
+        let (worker, job_guard) = self.find_and_incr_least_burdened_worker();
         let worker_spawner = worker.spawner.clone();
 
         
@@ -258,7 +128,7 @@ impl LocalPool {
             
             if let Err(e) = worker_spawner.send(spawn_task) {
                 
-                panic!("Failed to send job to worker: {e}");
+                panic!("Failed to send job to worker: {}", e);
             }
 
             
@@ -269,7 +139,7 @@ impl LocalPool {
                     
                     
                     
-                    panic!("Worker failed to send join handle: {e}");
+                    panic!("Worker failed to send join handle: {}", e);
                 }
             };
 
@@ -293,12 +163,12 @@ impl LocalPool {
                         
                         
                         
-                        panic!("spawn_pinned task was canceled: {e}");
+                        panic!("spawn_pinned task was canceled: {}", e);
                     } else {
                         
                         
                         
-                        panic!("spawn_pinned task failed: {e}");
+                        panic!("spawn_pinned task failed: {}", e);
                     }
                 }
             }
@@ -335,14 +205,6 @@ impl LocalPool {
                 return (worker, JobCountGuard(Arc::clone(&worker.task_count)));
             }
         }
-    }
-
-    #[track_caller]
-    fn find_worker_by_idx(&self, idx: usize) -> (&LocalWorkerHandle, JobCountGuard) {
-        let worker = &self.workers[idx];
-        worker.task_count.fetch_add(1, Ordering::SeqCst);
-
-        (worker, JobCountGuard(Arc::clone(&worker.task_count)))
     }
 }
 

@@ -1,6 +1,5 @@
 use std::env::var;
-use std::io::Write as _;
-use std::path::PathBuf;
+use std::io::Write;
 
 
 const ASM_PATH: &str = "src/backend/linux_raw/arch";
@@ -35,10 +34,6 @@ fn main() {
     
     
     let cfg_use_libc = var("CARGO_CFG_RUSTIX_USE_LIBC").is_ok();
-
-    
-    
-    let cfg_no_linux_raw = var("CARGO_CFG_RUSTIX_NO_LINUX_RAW").is_ok();
 
     
     let rustc_dep_of_std = var("CARGO_FEATURE_RUSTC_DEP_OF_STD").is_ok();
@@ -76,7 +71,6 @@ fn main() {
         use_feature_or_nothing("core_ffi_c");
         use_feature_or_nothing("alloc_c_string");
         use_feature_or_nothing("alloc_ffi");
-        use_feature_or_nothing("error_in_core");
     }
 
     
@@ -85,18 +79,8 @@ fn main() {
     }
 
     
-    if has_lower_upper_exp_for_non_zero() {
-        use_feature("lower_upper_exp_for_non_zero");
-    }
-
-    if can_compile("#[diagnostic::on_unimplemented()] trait Foo {}") {
-        use_feature("rustc_diagnostics")
-    }
-
-    
     if os == "wasi" {
         use_feature_or_nothing("wasi_ext");
-        use_feature_or_nothing("wasip2");
     }
 
     
@@ -111,21 +95,13 @@ fn main() {
         || !inline_asm_name_present
         || is_unsupported_abi
         || miri
-        || ((arch == "powerpc"
-            || arch == "powerpc64"
-            || arch == "s390x"
-            || arch.starts_with("mips"))
+        || ((arch == "powerpc64" || arch == "s390x" || arch.starts_with("mips"))
             && !rustix_use_experimental_asm);
     if libc {
-        if (os == "linux" || os == "android") && !cfg_no_linux_raw {
-            use_feature("linux_raw_dep");
-        }
-
         
         use_feature("libc");
     } else {
         
-        use_feature("linux_raw_dep");
         use_feature("linux_raw");
         if rustix_use_experimental_asm {
             use_feature("asm_experimental_arch");
@@ -171,14 +147,14 @@ fn main() {
     
     if libc
         && (arch == "arm"
-            || arch == "powerpc"
             || arch == "mips"
             || arch == "sparc"
             || arch == "x86"
+            || (arch == "wasm32" && os == "emscripten")
             || (arch == "aarch64" && os == "linux" && abi == Ok("ilp32".to_string())))
         && (apple
             || os == "android"
-            || (os == "freebsd" && arch == "x86")
+            || os == "emscripten"
             || os == "haiku"
             || env == "gnu"
             || (env == "musl" && arch == "x86")
@@ -205,12 +181,6 @@ fn use_static_assertions() -> bool {
 fn use_thumb_mode() -> bool {
     
     !can_compile("pub unsafe fn f() { core::arch::asm!(\"udf #16\", in(\"r7\") 0); }")
-}
-
-fn has_lower_upper_exp_for_non_zero() -> bool {
-    
-    
-    can_compile("fn a(x: &core::num::NonZeroI32, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result { core::fmt::LowerExp::fmt(x, f) }")
 }
 
 fn use_feature_or_nothing(feature: &str) {
@@ -254,14 +224,12 @@ fn can_compile<T: AsRef<str>>(test: T) -> bool {
         std::process::Command::new(rustc)
     };
 
-    let out_dir = var("OUT_DIR").unwrap();
-    let out_file = PathBuf::from(out_dir).join("rustix_test_can_compile");
     cmd.arg("--crate-type=rlib") 
         .arg("--emit=metadata") 
         .arg("--target")
         .arg(target)
         .arg("-o")
-        .arg(out_file)
+        .arg("-")
         .stdout(Stdio::null()); 
 
     

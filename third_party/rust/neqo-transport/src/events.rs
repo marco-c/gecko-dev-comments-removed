@@ -6,7 +6,7 @@
 
 
 
-use std::{cell::RefCell, collections::VecDeque, num::NonZeroU64, rc::Rc};
+use std::{cell::RefCell, collections::VecDeque, rc::Rc};
 
 use neqo_common::event::Provider as EventProvider;
 use neqo_crypto::ResumptionToken;
@@ -15,7 +15,6 @@ use crate::{
     AppError, Stats,
     connection::State,
     quic_datagrams::DatagramTracking,
-    scone::Bitrate,
     stream_id::{StreamId, StreamType},
 };
 
@@ -79,9 +78,6 @@ pub enum ConnectionEvent {
         outcome: OutgoingDatagramOutcome,
     },
     IncomingDatagramDropped,
-    
-    
-    SconeUpdated(Option<NonZeroU64>),
 }
 
 #[derive(Debug, Default, Clone)]
@@ -168,11 +164,6 @@ impl ConnectionEvents {
     pub fn recv_stream_complete(&self, stream_id: StreamId) {
         
         self.remove(|evt| matches!(evt, ConnectionEvent::RecvStreamReadable { stream_id: x } if *x == stream_id.as_u64()));
-    }
-
-    pub fn scone_updated(&self, scone: Bitrate) {
-        self.remove(|evt| matches!(evt, ConnectionEvent::SconeUpdated(_)));
-        self.insert(ConnectionEvent::SconeUpdated(Option::from(scone)));
     }
 
     

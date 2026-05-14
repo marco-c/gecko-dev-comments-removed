@@ -275,16 +275,6 @@ impl<T: Clone + 'static> LocalKey<T> {
     pub fn get(&'static self) -> T {
         self.with(|v| v.clone())
     }
-
-    
-    
-    
-    
-    
-    
-    pub fn try_get(&'static self) -> Result<T, AccessError> {
-        self.try_with(|v| v.clone())
-    }
 }
 
 impl<T: 'static> fmt::Debug for LocalKey<T> {

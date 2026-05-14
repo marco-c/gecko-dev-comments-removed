@@ -3,28 +3,23 @@
 use std::error::Error as StdError;
 use std::fmt;
 use std::future::Future;
+use std::marker::Unpin;
 use std::pin::Pin;
-use std::sync::Arc;
 use std::task::{Context, Poll};
 use std::time::Duration;
 
-use crate::rt::{Read, Write};
-use futures_core::ready;
 use pin_project_lite::pin_project;
+use tokio::io::{AsyncRead, AsyncWrite};
 
-use crate::body::{Body, Incoming as IncomingBody};
+use crate::body::{Body as IncomingBody, HttpBody as Body};
+use crate::common::exec::ConnStreamExec;
 use crate::proto;
-use crate::rt::bounds::Http2ServerConnExec;
 use crate::service::HttpService;
-use crate::{common::time::Time, rt::Timer};
 
 pin_project! {
-    /// A [`Future`](core::future::Future) representing an HTTP/2 connection, bound to a
-    /// [`Service`](crate::service::Service), returned from
-    /// [`Builder::serve_connection`](struct.Builder.html#method.serve_connection).
+    /// A future binding an HTTP/2 connection with a Service.
     ///
-    /// To drive HTTP on this connection this future **must be polled**, typically with
-    /// `.await`. If it isn't polled, no progress will be made on this connection.
+    /// Polling this future will drive HTTP forward.
     #[must_use = "futures do nothing unless polled"]
     pub struct Connection<T, S, E>
     where
@@ -35,13 +30,9 @@ pin_project! {
 }
 
 
-
-
-
 #[derive(Clone, Debug)]
 pub struct Builder<E> {
     exec: E,
-    timer: Time,
     h2_builder: proto::h2::server::Config,
 }
 
@@ -60,10 +51,10 @@ impl<I, B, S, E> Connection<I, S, E>
 where
     S: HttpService<IncomingBody, ResBody = B>,
     S::Error: Into<Box<dyn StdError + Send + Sync>>,
-    I: Read + Write + Unpin,
+    I: AsyncRead + AsyncWrite + Unpin,
     B: Body + 'static,
     B::Error: Into<Box<dyn StdError + Send + Sync>>,
-    E: Http2ServerConnExec<S::Future, B>,
+    E: ConnStreamExec<S::Future, B>,
 {
     
     
@@ -84,10 +75,10 @@ impl<I, B, S, E> Future for Connection<I, S, E>
 where
     S: HttpService<IncomingBody, ResBody = B>,
     S::Error: Into<Box<dyn StdError + Send + Sync>>,
-    I: Read + Write + Unpin,
+    I: AsyncRead + AsyncWrite + Unpin + 'static,
     B: Body + 'static,
     B::Error: Into<Box<dyn StdError + Send + Sync>>,
-    E: Http2ServerConnExec<S::Future, B>,
+    E: ConnStreamExec<S::Future, B>,
 {
     type Output = crate::Result<()>;
 
@@ -109,41 +100,11 @@ impl<E> Builder<E> {
     
     
     
-    
-    
-    
     pub fn new(exec: E) -> Self {
         Self {
-            exec,
-            timer: Time::Empty,
+            exec: exec,
             h2_builder: Default::default(),
         }
-    }
-
-    
-    
-    
-    
-    
-    
-    pub fn max_pending_accept_reset_streams(&mut self, max: impl Into<Option<usize>>) -> &mut Self {
-        self.h2_builder.max_pending_accept_reset_streams = max.into();
-        self
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    #[cfg(feature = "http2")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "http2")))]
-    pub fn max_local_error_reset_streams(&mut self, max: impl Into<Option<usize>>) -> &mut Self {
-        self.h2_builder.max_local_error_reset_streams = max.into();
-        self
     }
 
     
@@ -209,9 +170,6 @@ impl<E> Builder<E> {
     
     
     
-    
-    
-    
     pub fn max_concurrent_streams(&mut self, max: impl Into<Option<u32>>) -> &mut Self {
         self.h2_builder.max_concurrent_streams = max.into();
         self
@@ -223,11 +181,28 @@ impl<E> Builder<E> {
     
     
     
+    pub fn max_pending_accept_reset_streams(&mut self, max: impl Into<Option<usize>>) -> &mut Self {
+        self.h2_builder.max_pending_accept_reset_streams = max.into();
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn keep_alive_interval(&mut self, interval: impl Into<Option<Duration>>) -> &mut Self {
         self.h2_builder.keep_alive_interval = interval.into();
         self
     }
 
+    
+    
+    
     
     
     
@@ -247,7 +222,7 @@ impl<E> Builder<E> {
     
     
     pub fn max_send_buf_size(&mut self, max: usize) -> &mut Self {
-        assert!(max <= u32::MAX as usize);
+        assert!(max <= std::u32::MAX as usize);
         self.h2_builder.max_send_buffer_size = max;
         self
     }
@@ -269,23 +244,13 @@ impl<E> Builder<E> {
     }
 
     
-    pub fn timer<M>(&mut self, timer: M) -> &mut Self
-    where
-        M: Timer + Send + Sync + 'static,
-    {
-        self.timer = Time::Timer(Arc::new(timer));
-        self
-    }
-
     
     
     
     
     
-    pub fn auto_date_header(&mut self, enabled: bool) -> &mut Self {
-        self.h2_builder.date_header = enabled;
-        self
-    }
+    
+    
 
     
     
@@ -297,16 +262,10 @@ impl<E> Builder<E> {
         S::Error: Into<Box<dyn StdError + Send + Sync>>,
         Bd: Body + 'static,
         Bd::Error: Into<Box<dyn StdError + Send + Sync>>,
-        I: Read + Write + Unpin,
-        E: Http2ServerConnExec<S::Future, Bd>,
+        I: AsyncRead + AsyncWrite + Unpin,
+        E: ConnStreamExec<S::Future, Bd>,
     {
-        let proto = proto::h2::Server::new(
-            io,
-            service,
-            &self.h2_builder,
-            self.exec.clone(),
-            self.timer.clone(),
-        );
+        let proto = proto::h2::Server::new(io, service, &self.h2_builder, self.exec.clone());
         Connection { conn: proto }
     }
 }

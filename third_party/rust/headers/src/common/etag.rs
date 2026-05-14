@@ -1,6 +1,5 @@
 use std::str::FromStr;
-
-use crate::util::EntityTag;
+use util::EntityTag;
 
 
 
@@ -55,7 +54,7 @@ impl FromStr for ETag {
 
         EntityTag::from_owned(val)
             .map(ETag)
-            .ok_or(InvalidETag { _inner: () })
+            .ok_or_else(|| InvalidETag { _inner: () })
     }
 }
 

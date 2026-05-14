@@ -1,153 +1,425 @@
+#[cfg(feature = "tls")]
+use crate::tls::TlsConfigBuilder;
+use std::convert::Infallible;
+use std::error::Error as StdError;
 use std::future::Future;
 use std::net::SocketAddr;
 #[cfg(feature = "tls")]
 use std::path::Path;
 
-use futures_util::TryFuture;
+use futures_util::{future, FutureExt, TryFuture, TryStream, TryStreamExt};
+use hyper::server::conn::AddrIncoming;
+use hyper::service::{make_service_fn, service_fn};
+use hyper::Server as HyperServer;
+use tokio::io::{AsyncRead, AsyncWrite};
+use tracing::Instrument;
 
 use crate::filter::Filter;
 use crate::reject::IsReject;
 use crate::reply::Reply;
-#[cfg(feature = "tls")]
-use crate::tls::TlsConfigBuilder;
+use crate::transport::Transport;
 
 
-pub fn serve<F>(filter: F) -> Server<F, accept::LazyTcp, run::Standard>
+pub fn serve<F>(filter: F) -> Server<F>
 where
     F: Filter + Clone + Send + Sync + 'static,
     F::Extract: Reply,
     F::Error: IsReject,
 {
     Server {
-        acceptor: accept::LazyTcp,
         pipeline: false,
         filter,
-        runner: run::Standard,
     }
 }
 
 
-
-
-
-
-
-
-
-
-
 #[derive(Debug)]
-pub struct Server<F, A, R> {
-    acceptor: A,
-    filter: F,
+pub struct Server<F> {
     pipeline: bool,
-    runner: R,
+    filter: F,
 }
 
 
 
-impl<F, R> Server<F, accept::LazyTcp, R>
+
+#[cfg(feature = "tls")]
+pub struct TlsServer<F> {
+    server: Server<F>,
+    tls: TlsConfigBuilder,
+}
+
+
+
+macro_rules! into_service {
+    ($into:expr) => {{
+        let inner = crate::service($into);
+        make_service_fn(move |transport| {
+            let inner = inner.clone();
+            let remote_addr = Transport::remote_addr(transport);
+            future::ok::<_, Infallible>(service_fn(move |req| {
+                inner.call_with_addr(req, remote_addr)
+            }))
+        })
+    }};
+}
+
+macro_rules! addr_incoming {
+    ($addr:expr) => {{
+        let mut incoming = AddrIncoming::bind($addr)?;
+        incoming.set_nodelay(true);
+        let addr = incoming.local_addr();
+        (addr, incoming)
+    }};
+}
+
+macro_rules! bind_inner {
+    ($this:ident, $addr:expr) => {{
+        let service = into_service!($this.filter);
+        let (addr, incoming) = addr_incoming!($addr);
+        let srv = HyperServer::builder(incoming)
+            .http1_pipeline_flush($this.pipeline)
+            .serve(service);
+        Ok::<_, hyper::Error>((addr, srv))
+    }};
+
+    (tls: $this:ident, $addr:expr) => {{
+        let service = into_service!($this.server.filter);
+        let (addr, incoming) = addr_incoming!($addr);
+        let tls = $this.tls.build()?;
+        let srv = HyperServer::builder(crate::tls::TlsAcceptor::new(tls, incoming))
+            .http1_pipeline_flush($this.server.pipeline)
+            .serve(service);
+        Ok::<_, Box<dyn std::error::Error + Send + Sync>>((addr, srv))
+    }};
+}
+
+macro_rules! bind {
+    ($this:ident, $addr:expr) => {{
+        let addr = $addr.into();
+        (|addr| bind_inner!($this, addr))(&addr).unwrap_or_else(|e| {
+            panic!("error binding to {}: {}", addr, e);
+        })
+    }};
+
+    (tls: $this:ident, $addr:expr) => {{
+        let addr = $addr.into();
+        (|addr| bind_inner!(tls: $this, addr))(&addr).unwrap_or_else(|e| {
+            panic!("error binding to {}: {}", addr, e);
+        })
+    }};
+}
+
+macro_rules! try_bind {
+    ($this:ident, $addr:expr) => {{
+        (|addr| bind_inner!($this, addr))($addr)
+    }};
+
+    (tls: $this:ident, $addr:expr) => {{
+        (|addr| bind_inner!(tls: $this, addr))($addr)
+    }};
+}
+
+
+
+impl<F> Server<F>
 where
     F: Filter + Clone + Send + Sync + 'static,
     <F::Future as TryFuture>::Ok: Reply,
     <F::Future as TryFuture>::Error: IsReject,
-    R: run::Run,
 {
-    
-    
     
     
     
     
     
     pub async fn run(self, addr: impl Into<SocketAddr>) {
-        self.bind(addr).await.run().await;
+        let (addr, fut) = self.bind_ephemeral(addr);
+        let span = tracing::info_span!("Server::run", ?addr);
+        tracing::info!(parent: &span, "listening on http://{}", addr);
+
+        fut.instrument(span).await;
     }
 
     
     
     
     
-    
-    
-    
-    pub async fn bind(self, addr: impl Into<SocketAddr>) -> Server<F, tokio::net::TcpListener, R> {
-        let addr = addr.into();
-        let acceptor = tokio::net::TcpListener::bind(addr)
-            .await
-            .expect("failed to bind to address");
-
-        self.incoming(acceptor)
-    }
-
-    
-    pub fn incoming<A>(self, acceptor: A) -> Server<F, A, R> {
-        Server {
-            acceptor,
-            filter: self.filter,
-            pipeline: self.pipeline,
-            runner: self.runner,
-        }
-    }
-
-    
-}
-
-impl<F, A, R> Server<F, A, R>
-where
-    F: Filter + Clone + Send + Sync + 'static,
-    <F::Future as TryFuture>::Ok: Reply,
-    <F::Future as TryFuture>::Error: IsReject,
-    A: accept::Accept,
-    R: run::Run,
-{
-    #[cfg(feature = "tls")]
-    pub fn tls(self) -> Server<F, accept::Tls<A>, R> {}
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn graceful<Fut>(self, shutdown_signal: Fut) -> Server<F, A, run::Graceful<Fut>>
+    pub async fn run_incoming<I>(self, incoming: I)
     where
-        Fut: Future<Output = ()> + Send + 'static,
+        I: TryStream + Send,
+        I::Ok: AsyncRead + AsyncWrite + Send + 'static + Unpin,
+        I::Error: Into<Box<dyn StdError + Send + Sync>>,
     {
-        Server {
-            acceptor: self.acceptor,
-            filter: self.filter,
-            pipeline: self.pipeline,
-            runner: run::Graceful(shutdown_signal),
+        self.run_incoming2(incoming.map_ok(crate::transport::LiftIo).into_stream())
+            .instrument(tracing::info_span!("Server::run_incoming"))
+            .await;
+    }
+
+    async fn run_incoming2<I>(self, incoming: I)
+    where
+        I: TryStream + Send,
+        I::Ok: Transport + Send + 'static + Unpin,
+        I::Error: Into<Box<dyn StdError + Send + Sync>>,
+    {
+        let fut = self.serve_incoming2(incoming);
+
+        tracing::info!("listening with custom incoming");
+
+        fut.await;
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn bind(self, addr: impl Into<SocketAddr> + 'static) -> impl Future<Output = ()> + 'static {
+        let (_, fut) = self.bind_ephemeral(addr);
+        fut
+    }
+
+    
+    
+    
+    
+    
+    pub async fn try_bind(self, addr: impl Into<SocketAddr>) {
+        let addr = addr.into();
+        let srv = match try_bind!(self, &addr) {
+            Ok((_, srv)) => srv,
+            Err(err) => {
+                tracing::error!("error binding to {}: {}", addr, err);
+                return;
+            }
+        };
+
+        srv.map(|result| {
+            if let Err(err) = result {
+                tracing::error!("server error: {}", err)
+            }
+        })
+        .await;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn bind_ephemeral(
+        self,
+        addr: impl Into<SocketAddr>,
+    ) -> (SocketAddr, impl Future<Output = ()> + 'static) {
+        let (addr, srv) = bind!(self, addr);
+        let srv = srv.map(|result| {
+            if let Err(err) = result {
+                tracing::error!("server error: {}", err)
+            }
+        });
+
+        (addr, srv)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    pub fn try_bind_ephemeral(
+        self,
+        addr: impl Into<SocketAddr>,
+    ) -> Result<(SocketAddr, impl Future<Output = ()> + 'static), crate::Error> {
+        let addr = addr.into();
+        let (addr, srv) = try_bind!(self, &addr).map_err(crate::Error::new)?;
+        let srv = srv.map(|result| {
+            if let Err(err) = result {
+                tracing::error!("server error: {}", err)
+            }
+        });
+
+        Ok((addr, srv))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn bind_with_graceful_shutdown(
+        self,
+        addr: impl Into<SocketAddr> + 'static,
+        signal: impl Future<Output = ()> + Send + 'static,
+    ) -> (SocketAddr, impl Future<Output = ()> + 'static) {
+        let (addr, srv) = bind!(self, addr);
+        let fut = srv.with_graceful_shutdown(signal).map(|result| {
+            if let Err(err) = result {
+                tracing::error!("server error: {}", err)
+            }
+        });
+        (addr, fut)
+    }
+
+    
+    
+    
+    
+    pub fn try_bind_with_graceful_shutdown(
+        self,
+        addr: impl Into<SocketAddr> + 'static,
+        signal: impl Future<Output = ()> + Send + 'static,
+    ) -> Result<(SocketAddr, impl Future<Output = ()> + 'static), crate::Error> {
+        let addr = addr.into();
+        let (addr, srv) = try_bind!(self, &addr).map_err(crate::Error::new)?;
+        let srv = srv.with_graceful_shutdown(signal).map(|result| {
+            if let Err(err) = result {
+                tracing::error!("server error: {}", err)
+            }
+        });
+
+        Ok((addr, srv))
+    }
+
+    
+    
+    
+    
+    
+    pub fn serve_incoming<I>(self, incoming: I) -> impl Future<Output = ()>
+    where
+        I: TryStream + Send,
+        I::Ok: AsyncRead + AsyncWrite + Send + 'static + Unpin,
+        I::Error: Into<Box<dyn StdError + Send + Sync>>,
+    {
+        let incoming = incoming.map_ok(crate::transport::LiftIo);
+        self.serve_incoming2(incoming)
+            .instrument(tracing::info_span!("Server::serve_incoming"))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn serve_incoming_with_graceful_shutdown<I>(
+        self,
+        incoming: I,
+        signal: impl Future<Output = ()> + Send + 'static,
+    ) -> impl Future<Output = ()>
+    where
+        I: TryStream + Send,
+        I::Ok: AsyncRead + AsyncWrite + Send + 'static + Unpin,
+        I::Error: Into<Box<dyn StdError + Send + Sync>>,
+    {
+        let incoming = incoming.map_ok(crate::transport::LiftIo);
+        let service = into_service!(self.filter);
+        let pipeline = self.pipeline;
+
+        async move {
+            let srv =
+                HyperServer::builder(hyper::server::accept::from_stream(incoming.into_stream()))
+                    .http1_pipeline_flush(pipeline)
+                    .serve(service)
+                    .with_graceful_shutdown(signal)
+                    .await;
+
+            if let Err(err) = srv {
+                tracing::error!("server error: {}", err);
+            }
+        }
+        .instrument(tracing::info_span!(
+            "Server::serve_incoming_with_graceful_shutdown"
+        ))
+    }
+
+    async fn serve_incoming2<I>(self, incoming: I)
+    where
+        I: TryStream + Send,
+        I::Ok: Transport + Send + 'static + Unpin,
+        I::Error: Into<Box<dyn StdError + Send + Sync>>,
+    {
+        let service = into_service!(self.filter);
+
+        let srv = HyperServer::builder(hyper::server::accept::from_stream(incoming.into_stream()))
+            .http1_pipeline_flush(self.pipeline)
+            .serve(service)
+            .await;
+
+        if let Err(err) = srv {
+            tracing::error!("server error: {}", err);
         }
     }
 
     
-    pub async fn run(self) {
-        R::run(self).await;
+    
+    
+    #[doc(hidden)]
+    pub fn unstable_pipeline(mut self) -> Self {
+        self.pipeline = true;
+        self
+    }
+
+    
+    
+    
+    #[cfg(feature = "tls")]
+    pub fn tls(self) -> TlsServer<F> {
+        TlsServer {
+            server: self,
+            tls: TlsConfigBuilder::new(),
+        }
     }
 }
 
 
 
 #[cfg(feature = "tls")]
-impl<F, A, R> Server<F, accept::Tls<A>, R>
+impl<F> TlsServer<F>
 where
     F: Filter + Clone + Send + Sync + 'static,
     <F::Future as TryFuture>::Ok: Reply,
     <F::Future as TryFuture>::Error: IsReject,
-    A: accept::Accept,
-    R: run::Run,
 {
     
 
@@ -230,204 +502,117 @@ where
     where
         Func: FnOnce(TlsConfigBuilder) -> TlsConfigBuilder,
     {
+        let TlsServer { server, tls } = self;
         let tls = func(tls);
-    }
-}
-
-mod accept {
-    pub trait Accept {
-        type IO: hyper::rt::Read + hyper::rt::Write + Send + Unpin + 'static;
-        type AcceptError: std::fmt::Debug;
-        type Accepting: super::Future<Output = Result<Self::IO, Self::AcceptError>> + Send + 'static;
-        #[allow(async_fn_in_trait)]
-        async fn accept(&mut self) -> Result<Self::Accepting, std::io::Error>;
-    }
-
-    #[derive(Debug)]
-    pub struct LazyTcp;
-
-    impl Accept for tokio::net::TcpListener {
-        type IO = hyper_util::rt::TokioIo<tokio::net::TcpStream>;
-        type AcceptError = std::convert::Infallible;
-        type Accepting = std::future::Ready<Result<Self::IO, Self::AcceptError>>;
-        async fn accept(&mut self) -> Result<Self::Accepting, std::io::Error> {
-            let (io, _addr) = <tokio::net::TcpListener>::accept(self).await?;
-            Ok(std::future::ready(Ok(hyper_util::rt::TokioIo::new(io))))
-        }
-    }
-
-    #[cfg(unix)]
-    impl Accept for tokio::net::UnixListener {
-        type IO = hyper_util::rt::TokioIo<tokio::net::UnixStream>;
-        type AcceptError = std::convert::Infallible;
-        type Accepting = std::future::Ready<Result<Self::IO, Self::AcceptError>>;
-        async fn accept(&mut self) -> Result<Self::Accepting, std::io::Error> {
-            let (io, _addr) = <tokio::net::UnixListener>::accept(self).await?;
-            Ok(std::future::ready(Ok(hyper_util::rt::TokioIo::new(io))))
-        }
-    }
-
-    #[cfg(feature = "tls")]
-    #[derive(Debug)]
-    pub struct Tls<A>(pub(super) A);
-
-    #[cfg(feature = "tls")]
-    impl<A: Accept> Accept for Tls<A> {
-        type IO = hyper_util::rt::TokioIo<tokio::net::TcpStream>;
-        type AcceptError = std::convert::Infallible;
-        type Accepting = std::future::Ready<Result<Self::IO, Self::AcceptError>>;
-        async fn accept(&mut self) -> Result<Self::Accepting, std::io::Error> {
-            let (io, _addr) = self.0.accept().await?;
-            Ok(std::future::ready(Ok(hyper_util::rt::TokioIo::new(io))))
-        }
-    }
-}
-
-mod run {
-    pub trait Run {
-        #[allow(async_fn_in_trait)]
-        async fn run<F, A>(server: super::Server<F, A, Self>)
-        where
-            F: super::Filter + Clone + Send + Sync + 'static,
-            <F::Future as super::TryFuture>::Ok: super::Reply,
-            <F::Future as super::TryFuture>::Error: super::IsReject,
-            A: super::accept::Accept,
-            Self: Sized;
-    }
-
-    #[derive(Debug)]
-    pub struct Standard;
-
-    impl Run for Standard {
-        async fn run<F, A>(mut server: super::Server<F, A, Self>)
-        where
-            F: super::Filter + Clone + Send + Sync + 'static,
-            <F::Future as super::TryFuture>::Ok: super::Reply,
-            <F::Future as super::TryFuture>::Error: super::IsReject,
-            A: super::accept::Accept,
-            Self: Sized,
-        {
-            let pipeline = server.pipeline;
-            loop {
-                let accepting = match server.acceptor.accept().await {
-                    Ok(fut) => fut,
-                    Err(err) => {
-                        handle_accept_error(err).await;
-                        continue;
-                    }
-                };
-                let svc = crate::service(server.filter.clone());
-                let svc = hyper_util::service::TowerToHyperService::new(svc);
-                tokio::spawn(async move {
-                    let io = match accepting.await {
-                        Ok(io) => io,
-                        Err(err) => {
-                            tracing::debug!("server accept error: {:?}", err);
-                            return;
-                        }
-                    };
-                    if let Err(err) = hyper_util::server::conn::auto::Builder::new(
-                        hyper_util::rt::TokioExecutor::new(),
-                    )
-                    .http1()
-                    .pipeline_flush(pipeline)
-                    .serve_connection_with_upgrades(io, svc)
-                    .await
-                    {
-                        tracing::error!("server connection error: {:?}", err)
-                    }
-                });
-            }
-        }
-    }
-
-    #[derive(Debug)]
-    pub struct Graceful<Fut>(pub(super) Fut);
-
-    impl<Fut> Run for Graceful<Fut>
-    where
-        Fut: super::Future<Output = ()> + Send + 'static,
-    {
-        async fn run<F, A>(mut server: super::Server<F, A, Self>)
-        where
-            F: super::Filter + Clone + Send + Sync + 'static,
-            <F::Future as super::TryFuture>::Ok: super::Reply,
-            <F::Future as super::TryFuture>::Error: super::IsReject,
-            A: super::accept::Accept,
-            Self: Sized,
-        {
-            use futures_util::future;
-
-            let pipeline = server.pipeline;
-            let graceful_util = hyper_util::server::graceful::GracefulShutdown::new();
-            let mut shutdown_signal = std::pin::pin!(server.runner.0);
-            loop {
-                let accept = std::pin::pin!(server.acceptor.accept());
-                let accepting = match future::select(accept, &mut shutdown_signal).await {
-                    future::Either::Left((Ok(fut), _)) => fut,
-                    future::Either::Left((Err(err), _)) => {
-                        handle_accept_error(err).await;
-                        continue;
-                    }
-                    future::Either::Right(((), _)) => {
-                        tracing::debug!("shutdown signal received, starting graceful shutdown");
-                        break;
-                    }
-                };
-                let svc = crate::service(server.filter.clone());
-                let svc = hyper_util::service::TowerToHyperService::new(svc);
-                let watcher = graceful_util.watcher();
-                tokio::spawn(async move {
-                    let io = match accepting.await {
-                        Ok(io) => io,
-                        Err(err) => {
-                            tracing::debug!("server accepting error: {:?}", err);
-                            return;
-                        }
-                    };
-                    let mut hyper = hyper_util::server::conn::auto::Builder::new(
-                        hyper_util::rt::TokioExecutor::new(),
-                    );
-                    hyper.http1().pipeline_flush(pipeline);
-                    let conn = hyper.serve_connection_with_upgrades(io, svc);
-                    let conn = watcher.watch(conn);
-                    if let Err(err) = conn.await {
-                        tracing::error!("server connection error: {:?}", err)
-                    }
-                });
-            }
-
-            drop(server.acceptor); 
-            graceful_util.shutdown().await;
-        }
+        TlsServer { server, tls }
     }
 
     
-    async fn handle_accept_error(e: std::io::Error) {
-        if is_connection_error(&e) {
-            return;
-        }
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        tracing::error!("accept error: {:?}", e);
-        tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+
+    
+    
+    
+    pub async fn run(self, addr: impl Into<SocketAddr>) {
+        let (addr, fut) = self.bind_ephemeral(addr);
+        let span = tracing::info_span!("TlsServer::run", %addr);
+        tracing::info!(parent: &span, "listening on https://{}", addr);
+
+        fut.instrument(span).await;
     }
 
-    fn is_connection_error(e: &std::io::Error) -> bool {
-        
-        
-        matches!(
-            e.kind(),
-            std::io::ErrorKind::ConnectionRefused
-                | std::io::ErrorKind::ConnectionAborted
-                | std::io::ErrorKind::ConnectionReset
-        )
+    
+    
+    
+    
+    
+    
+    
+    
+    pub async fn bind(self, addr: impl Into<SocketAddr>) {
+        let (_, fut) = self.bind_ephemeral(addr);
+        fut.await;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn bind_ephemeral(
+        self,
+        addr: impl Into<SocketAddr>,
+    ) -> (SocketAddr, impl Future<Output = ()> + 'static) {
+        let (addr, srv) = bind!(tls: self, addr);
+        let srv = srv.map(|result| {
+            if let Err(err) = result {
+                tracing::error!("server error: {}", err)
+            }
+        });
+
+        (addr, srv)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn bind_with_graceful_shutdown(
+        self,
+        addr: impl Into<SocketAddr> + 'static,
+        signal: impl Future<Output = ()> + Send + 'static,
+    ) -> (SocketAddr, impl Future<Output = ()> + 'static) {
+        let (addr, srv) = bind!(tls: self, addr);
+
+        let fut = srv.with_graceful_shutdown(signal).map(|result| {
+            if let Err(err) = result {
+                tracing::error!("server error: {}", err)
+            }
+        });
+        (addr, fut)
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn try_bind_with_graceful_shutdown(
+        self,
+        addr: impl Into<SocketAddr> + 'static,
+        signal: impl Future<Output = ()> + Send + 'static,
+    ) -> Result<(SocketAddr, impl Future<Output = ()> + 'static), crate::Error> {
+        let addr = addr.into();
+        let (addr, srv) = try_bind!(tls: self, &addr).map_err(crate::Error::new)?;
+        let srv = srv.with_graceful_shutdown(signal).map(|result| {
+            if let Err(err) = result {
+                tracing::error!("server error: {}", err)
+            }
+        });
+
+        Ok((addr, srv))
+    }
+}
+
+#[cfg(feature = "tls")]
+impl<F> ::std::fmt::Debug for TlsServer<F>
+where
+    F: ::std::fmt::Debug,
+{
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.debug_struct("TlsServer")
+            .field("server", &self.server)
+            .finish()
     }
 }

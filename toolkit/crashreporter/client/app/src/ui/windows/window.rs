@@ -51,17 +51,17 @@ pub trait CustomWindowClass: WindowClass {
 
     
     fn background() -> HBRUSH {
-        (Gdi::COLOR_3DFACE + 1) as usize as HBRUSH
+        (Gdi::COLOR_3DFACE + 1) as HBRUSH
     }
 
     
     fn cursor() -> HCURSOR {
-        unsafe { win::LoadCursorW(std::ptr::null_mut(), win::IDC_ARROW) }
+        unsafe { win::LoadCursorW(0, win::IDC_ARROW) }
     }
 
     
     fn icon() -> HICON {
-        std::ptr::null_mut()
+        0
     }
 
     
@@ -89,10 +89,10 @@ pub trait CustomWindowClass: WindowClass {
                 
                 
                 let icon = W::icon();
-                if !icon.is_null() {
+                if icon != 0 {
                     
-                    win::SendMessageW(hwnd, win::WM_SETICON, win::ICON_SMALL as _, icon as _);
-                    win::SendMessageW(hwnd, win::WM_SETICON, win::ICON_BIG as _, icon as _);
+                    win::SendMessageW(hwnd, win::WM_SETICON, win::ICON_SMALL as _, icon);
+                    win::SendMessageW(hwnd, win::WM_SETICON, win::ICON_BIG as _, icon);
                 }
             }
 
@@ -250,13 +250,13 @@ impl<'a, W> WindowBuilder<'a, W> {
                 self.y,
                 self.width,
                 self.height,
-                self.parent.unwrap_or(std::ptr::null_mut()),
-                self.child_id as usize as _,
+                self.parent.unwrap_or_default(),
+                self.child_id as _,
                 self.module,
                 self.data.to_ptr() as _,
             )
         };
-        assert!(!handle.is_null());
+        assert!(handle != 0);
 
         Window {
             handle,

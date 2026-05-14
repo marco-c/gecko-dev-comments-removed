@@ -92,8 +92,6 @@ use crate::{event, sys, Interest, Registry, Token};
 
 
 
-
-
 pub struct UdpSocket {
     inner: IoSource<net::UdpSocket>,
 }
@@ -358,8 +356,6 @@ impl UdpSocket {
     
     
     
-    
-    
     pub fn set_broadcast(&self, on: bool) -> io::Result<()> {
         self.inner.set_broadcast(on)
     }
@@ -375,8 +371,6 @@ impl UdpSocket {
     
     #[cfg_attr(feature = "os-poll", doc = "```")]
     #[cfg_attr(not(feature = "os-poll"), doc = "```ignore")]
-    
-    
     
     
     

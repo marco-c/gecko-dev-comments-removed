@@ -62,14 +62,8 @@ use crate::{event, Interest, Registry, Token};
 
 
 
-
-
-
 #[cfg_attr(all(feature = "os-poll", feature = "os-ext"), doc = "```")]
 #[cfg_attr(not(all(feature = "os-poll", feature = "os-ext")), doc = "```ignore")]
-
-
-
 
 
 

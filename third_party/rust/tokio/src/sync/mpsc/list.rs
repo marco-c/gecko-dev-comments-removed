@@ -35,13 +35,7 @@ pub(crate) enum TryPopResult<T> {
     
     Ok(T),
     
-    
-    
-    
-    
     Empty,
-    
-    
     
     Closed,
     
@@ -184,13 +178,6 @@ impl<T> Tx<T> {
         }
     }
 
-    
-    
-    
-    
-    
-    
-    
     pub(crate) unsafe fn reclaim_block(&self, mut block: NonNull<Block<T>>) {
         
         
@@ -199,14 +186,11 @@ impl<T> Tx<T> {
         
         
         
-        
-        
-        unsafe {
-            block.as_mut().reclaim();
-        }
+        block.as_mut().reclaim();
 
         let mut reused = false;
 
+        
         
         
         
@@ -215,12 +199,11 @@ impl<T> Tx<T> {
         
         debug_assert!(!curr_ptr.is_null());
 
-        
-        let mut curr = unsafe { NonNull::new_unchecked(curr_ptr) };
+        let mut curr = NonNull::new_unchecked(curr_ptr);
 
         
         for _ in 0..3 {
-            match unsafe { curr.as_ref().try_push(&mut block, AcqRel, Acquire) } {
+            match curr.as_ref().try_push(&mut block, AcqRel, Acquire) {
                 Ok(()) => {
                     reused = true;
                     break;
@@ -232,11 +215,16 @@ impl<T> Tx<T> {
         }
 
         if !reused {
-            
-            
-            
-            
-            let _ = unsafe { Box::from_raw(block.as_ptr()) };
+            let _ = Box::from_raw(block.as_ptr());
+        }
+    }
+
+    pub(crate) fn is_closed(&self) -> bool {
+        let tail = self.block_tail.load(Acquire);
+
+        unsafe {
+            let tail_block = &*tail;
+            tail_block.is_closed()
         }
     }
 }
@@ -262,58 +250,11 @@ impl<T> Rx<T> {
         self.len(tx) == 0
     }
 
-    
-    
-    
-    
-    fn is_maybe_closed(&self, tx: &Tx<T>, slot_index: usize) -> bool {
-        let start_index = block::start_index(slot_index);
-
-        let tail = tx.block_tail.load(Acquire);
-        
-        
-        let tail_ref = unsafe { &*tail };
-        if tail_ref.is_at_index(start_index) {
-            return !tail_ref.has_value(slot_index);
-        }
-
-        
-        
-        
-        
-        let mut block_ptr = Some(self.head);
-
-        while let Some(block) = block_ptr {
-            
-            
-            let block_ref = unsafe { block.as_ref() };
-            if block_ref.is_at_index(start_index) {
-                return !block_ref.has_value(slot_index);
-            }
-            block_ptr = block_ref.load_next(Acquire);
-        }
-        true
-    }
-
     pub(crate) fn len(&self, tx: &Tx<T>) -> usize {
+        
+        
         let tail_position = tx.tail_position.load(Acquire);
-        let mut len = tail_position.wrapping_sub(self.index);
-        debug_assert!(0 <= len as isize);
-        if len == 0 {
-            return 0;
-        }
-        
-        
-        
-        
-        
-        
-        
-        
-        if self.is_maybe_closed(tx, tail_position.wrapping_sub(1)) {
-            len -= 1;
-        }
-        len
+        tail_position - self.index - (tx.is_closed() as usize)
     }
 
     
@@ -440,8 +381,8 @@ impl<T> Rx<T> {
         }
 
         while let Some(block) = cur {
-            cur = unsafe { block.as_ref() }.load_next(Relaxed);
-            drop(unsafe { Box::from_raw(block.as_ptr()) });
+            cur = block.as_ref().load_next(Relaxed);
+            drop(Box::from_raw(block.as_ptr()));
         }
     }
 }

@@ -410,12 +410,12 @@ impl RecvStream {
 
     
     pub async fn data(&mut self) -> Option<Result<Bytes, crate::Error>> {
-        crate::poll_fn(move |cx| self.poll_data(cx)).await
+        futures_util::future::poll_fn(move |cx| self.poll_data(cx)).await
     }
 
     
     pub async fn trailers(&mut self) -> Result<Option<HeaderMap>, crate::Error> {
-        crate::poll_fn(move |cx| self.poll_trailers(cx)).await
+        futures_util::future::poll_fn(move |cx| self.poll_trailers(cx)).await
     }
 
     
@@ -549,7 +549,7 @@ impl PingPong {
     
     pub async fn ping(&mut self, ping: Ping) -> Result<Pong, crate::Error> {
         self.send_ping(ping)?;
-        crate::poll_fn(|cx| self.poll_pong(cx)).await
+        futures_util::future::poll_fn(|cx| self.poll_pong(cx)).await
     }
 
     #[doc(hidden)]

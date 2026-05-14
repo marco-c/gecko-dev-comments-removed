@@ -379,12 +379,7 @@ impl Spawner {
         let fut =
             blocking_task::<F, BlockingTask<F>>(BlockingTask::new(func), spawn_meta, id.as_u64());
 
-        let (task, handle) = task::unowned(
-            fut,
-            BlockingSchedule::new(rt),
-            id,
-            task::SpawnLocation::capture(),
-        );
+        let (task, handle) = task::unowned(fut, BlockingSchedule::new(rt), id);
 
         let spawned = self.spawn_task(Task::new(task, is_mandatory), rt);
         (handle, spawned)
@@ -507,8 +502,6 @@ impl Inner {
 
         let mut shared = self.shared.lock();
         let mut join_on_thread = None;
-        
-        let mut is_counted_idle;
 
         'main: loop {
             
@@ -522,8 +515,6 @@ impl Inner {
 
             
             self.metrics.inc_num_idle_threads();
-            
-            is_counted_idle = true;
 
             while !shared.shutdown {
                 let lock_result = self.condvar.wait_timeout(shared, self.keep_alive).unwrap();
@@ -536,9 +527,6 @@ impl Inner {
                     
                     
                     shared.num_notify -= 1;
-                    
-                    
-                    is_counted_idle = false;
                     break;
                 }
 
@@ -568,6 +556,12 @@ impl Inner {
                     shared = self.shared.lock();
                 }
 
+                
+                
+                
+                self.metrics.inc_num_idle_threads();
+                
+                
                 break;
             }
         }
@@ -576,16 +570,13 @@ impl Inner {
         self.metrics.dec_num_threads();
 
         
-        if is_counted_idle {
-            
-            
-            
-            let prev_idle = self.metrics.dec_num_idle_threads();
-            assert_ne!(
-                prev_idle, 0,
-                "`num_idle_threads` underflowed on thread exit"
-            );
-        }
+        
+        
+        let prev_idle = self.metrics.dec_num_idle_threads();
+        assert!(
+            prev_idle >= self.metrics.num_idle_threads(),
+            "num_idle_threads underflowed on thread exit"
+        );
 
         if shared.shutdown && self.metrics.num_threads() == 0 {
             self.condvar.notify_one();

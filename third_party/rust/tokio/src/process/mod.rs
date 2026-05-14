@@ -750,7 +750,7 @@ impl Command {
     where
         F: FnMut() -> io::Result<()> + Send + Sync + 'static,
     {
-        unsafe { self.std.pre_exec(f) };
+        self.std.pre_exec(f);
         self
     }
 
@@ -933,7 +933,7 @@ impl Command {
     #[inline]
     pub fn spawn_with(
         &mut self,
-        with: impl FnOnce(&mut StdCommand) -> io::Result<StdChild>,
+        with: impl Fn(&mut StdCommand) -> io::Result<StdChild>,
     ) -> io::Result<Child> {
         
         let child = with(&mut self.std)?;

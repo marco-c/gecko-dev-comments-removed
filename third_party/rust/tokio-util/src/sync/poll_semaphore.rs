@@ -1,8 +1,8 @@
-use futures_core::Stream;
+use futures_core::{ready, Stream};
 use std::fmt;
 use std::pin::Pin;
 use std::sync::Arc;
-use std::task::{ready, Context, Poll};
+use std::task::{Context, Poll};
 use tokio::sync::{AcquireError, OwnedSemaphorePermit, Semaphore, TryAcquireError};
 
 use super::ReusableBoxFuture;
@@ -12,10 +12,7 @@ use super::ReusableBoxFuture;
 
 pub struct PollSemaphore {
     semaphore: Arc<Semaphore>,
-    permit_fut: Option<(
-        u32, 
-        ReusableBoxFuture<'static, Result<OwnedSemaphorePermit, AcquireError>>,
-    )>,
+    permit_fut: Option<ReusableBoxFuture<'static, Result<OwnedSemaphorePermit, AcquireError>>>,
 }
 
 impl PollSemaphore {
@@ -29,7 +26,7 @@ impl PollSemaphore {
 
     
     pub fn close(&self) {
-        self.semaphore.close();
+        self.semaphore.close()
     }
 
     
@@ -56,57 +53,25 @@ impl PollSemaphore {
     
     
     pub fn poll_acquire(&mut self, cx: &mut Context<'_>) -> Poll<Option<OwnedSemaphorePermit>> {
-        self.poll_acquire_many(cx, 1)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn poll_acquire_many(
-        &mut self,
-        cx: &mut Context<'_>,
-        permits: u32,
-    ) -> Poll<Option<OwnedSemaphorePermit>> {
         let permit_future = match self.permit_fut.as_mut() {
-            Some((prev_permits, fut)) if *prev_permits == permits => fut,
-            Some((old_permits, fut_box)) => {
-                
-                
-                let fut = Arc::clone(&self.semaphore).acquire_many_owned(permits);
-                fut_box.set(fut);
-                *old_permits = permits;
-                fut_box
-            }
+            Some(fut) => fut,
             None => {
                 
-                match Arc::clone(&self.semaphore).try_acquire_many_owned(permits) {
+                match Arc::clone(&self.semaphore).try_acquire_owned() {
                     Ok(permit) => return Poll::Ready(Some(permit)),
                     Err(TryAcquireError::Closed) => return Poll::Ready(None),
                     Err(TryAcquireError::NoPermits) => {}
                 }
 
-                let next_fut = Arc::clone(&self.semaphore).acquire_many_owned(permits);
-                &mut self
-                    .permit_fut
-                    .get_or_insert((permits, ReusableBoxFuture::new(next_fut)))
-                    .1
+                let next_fut = Arc::clone(&self.semaphore).acquire_owned();
+                self.permit_fut
+                    .get_or_insert(ReusableBoxFuture::new(next_fut))
             }
         };
 
         let result = ready!(permit_future.poll(cx));
 
-        
-        let next_fut = Arc::clone(&self.semaphore).acquire_many_owned(permits);
+        let next_fut = Arc::clone(&self.semaphore).acquire_owned();
         permit_future.set(next_fut);
 
         match result {
@@ -166,6 +131,6 @@ impl fmt::Debug for PollSemaphore {
 
 impl AsRef<Semaphore> for PollSemaphore {
     fn as_ref(&self) -> &Semaphore {
-        &self.semaphore
+        &*self.semaphore
     }
 }

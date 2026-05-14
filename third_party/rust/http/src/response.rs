@@ -62,7 +62,7 @@
 
 
 use std::any::Any;
-use std::convert::TryInto;
+use std::convert::TryFrom;
 use std::fmt;
 
 use crate::header::{HeaderMap, HeaderName, HeaderValue};
@@ -170,7 +170,12 @@ use crate::{Extensions, Result};
 
 
 
-#[derive(Clone)]
+
+
+
+
+
+
 pub struct Response<T> {
     head: Parts,
     body: T,
@@ -180,7 +185,6 @@ pub struct Response<T> {
 
 
 
-#[derive(Clone)]
 pub struct Parts {
     
     pub status: StatusCode,
@@ -247,7 +251,7 @@ impl<T> Response<T> {
     pub fn new(body: T) -> Response<T> {
         Response {
             head: Parts::new(),
-            body,
+            body: body,
         }
     }
 
@@ -268,7 +272,10 @@ impl<T> Response<T> {
     
     #[inline]
     pub fn from_parts(parts: Parts, body: T) -> Response<T> {
-        Response { head: parts, body }
+        Response {
+            head: parts,
+            body: body,
+        }
     }
 
     
@@ -551,17 +558,23 @@ impl Builder {
     
     
     
+    
+    
+    
     pub fn status<T>(self, status: T) -> Builder
     where
-        T: TryInto<StatusCode>,
-        <T as TryInto<StatusCode>>::Error: Into<crate::Error>,
+        StatusCode: TryFrom<T>,
+        <StatusCode as TryFrom<T>>::Error: Into<crate::Error>,
     {
         self.and_then(move |mut head| {
-            head.status = status.try_into().map_err(Into::into)?;
+            head.status = TryFrom::try_from(status).map_err(Into::into)?;
             Ok(head)
         })
     }
 
+    
+    
+    
     
     
     
@@ -604,15 +617,15 @@ impl Builder {
     
     pub fn header<K, V>(self, key: K, value: V) -> Builder
     where
-        K: TryInto<HeaderName>,
-        <K as TryInto<HeaderName>>::Error: Into<crate::Error>,
-        V: TryInto<HeaderValue>,
-        <V as TryInto<HeaderValue>>::Error: Into<crate::Error>,
+        HeaderName: TryFrom<K>,
+        <HeaderName as TryFrom<K>>::Error: Into<crate::Error>,
+        HeaderValue: TryFrom<V>,
+        <HeaderValue as TryFrom<V>>::Error: Into<crate::Error>,
     {
         self.and_then(move |mut head| {
-            let name = key.try_into().map_err(Into::into)?;
-            let value = value.try_into().map_err(Into::into)?;
-            head.headers.try_append(name, value)?;
+            let name = <HeaderName as TryFrom<K>>::try_from(key).map_err(Into::into)?;
+            let value = <HeaderValue as TryFrom<V>>::try_from(value).map_err(Into::into)?;
+            head.headers.append(name, value);
             Ok(head)
         })
     }
@@ -677,7 +690,7 @@ impl Builder {
     
     pub fn extension<T>(self, extension: T) -> Builder
     where
-        T: Clone + Any + Send + Sync + 'static,
+        T: Any + Send + Sync + 'static,
     {
         self.and_then(move |mut head| {
             head.extensions.insert(extension);
@@ -741,14 +754,19 @@ impl Builder {
     
     
     pub fn body<T>(self, body: T) -> Result<Response<T>> {
-        self.inner.map(move |head| Response { head, body })
+        self.inner.map(move |head| {
+            Response {
+                head,
+                body,
+            }
+        })
     }
 
     
 
     fn and_then<F>(self, func: F) -> Self
     where
-        F: FnOnce(Parts) -> Result<Parts>,
+        F: FnOnce(Parts) -> Result<Parts>
     {
         Builder {
             inner: self.inner.and_then(func),

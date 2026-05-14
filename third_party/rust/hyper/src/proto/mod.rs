@@ -17,7 +17,6 @@ cfg_feature! {
 pub(crate) mod h2;
 
 
-#[cfg(feature = "http1")]
 #[derive(Debug, Default)]
 pub(crate) struct MessageHead<S> {
     
@@ -60,7 +59,6 @@ pub(crate) enum Dispatched {
     Upgrade(crate::upgrade::Pending),
 }
 
-#[cfg(all(feature = "client", feature = "http1"))]
 impl MessageHead<http::StatusCode> {
     fn into_response<B>(self, body: B) -> http::Response<B> {
         let mut res = http::Response::new(body);

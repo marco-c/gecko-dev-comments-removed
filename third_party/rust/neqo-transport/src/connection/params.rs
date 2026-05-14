@@ -154,9 +154,6 @@ pub struct ConnectionParameters {
     randomize_first_pn: bool,
     
     scone: bool,
-    
-    
-    spurious_recovery: bool,
 }
 
 impl Default for ConnectionParameters {
@@ -192,7 +189,6 @@ impl Default for ConnectionParameters {
             mlkem: true,
             randomize_first_pn: true,
             scone: false,
-            spurious_recovery: true,
         }
     }
 }
@@ -532,17 +528,6 @@ impl ConnectionParameters {
         self
     }
 
-    #[must_use]
-    pub const fn spurious_recovery_enabled(&self) -> bool {
-        self.spurious_recovery
-    }
-
-    #[must_use]
-    pub const fn spurious_recovery(mut self, spurious_recovery: bool) -> Self {
-        self.spurious_recovery = spurious_recovery;
-        self
-    }
-
     
     
     
@@ -651,16 +636,5 @@ mod tests {
         
         assert!(!ConnectionParameters::default().scone_enabled());
         assert!(ConnectionParameters::default().scone(true).scone_enabled());
-    }
-
-    #[test]
-    fn spurious_recovery_enabled() {
-        
-        assert!(ConnectionParameters::default().spurious_recovery_enabled());
-        assert!(
-            !ConnectionParameters::default()
-                .spurious_recovery(false)
-                .spurious_recovery_enabled()
-        );
     }
 }

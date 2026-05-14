@@ -1,12 +1,5 @@
 
 
-
-
-
-
-
-
-
 pub const SELFMAG: usize = 4;
 pub const ELFMAG: [u8; SELFMAG] = [0x7f, b'E', b'L', b'F'];
 pub const EI_CLASS: usize = 4;
@@ -53,7 +46,6 @@ pub const DT_REL: usize = 17;
 pub const DT_RELSZ: usize = 18;
 pub const DT_RELENT: usize = 19;
 pub const DT_SYMENT: usize = 11;
-pub const DT_GNU_HASH: usize = 0x6fff_fef5;
 pub const DT_VERSYM: usize = 0x6fff_fff0;
 pub const DT_VERDEF: usize = 0x6fff_fffc;
 pub const STB_WEAK: u8 = 2;
@@ -68,12 +60,8 @@ pub const STV_DEFAULT: u8 = 0;
 pub const EM_CURRENT: u16 = 40; 
 #[cfg(target_arch = "x86")]
 pub const EM_CURRENT: u16 = 3; 
-#[cfg(target_arch = "powerpc")]
-pub const EM_CURRENT: u16 = 20; 
 #[cfg(target_arch = "powerpc64")]
 pub const EM_CURRENT: u16 = 21; 
-#[cfg(target_arch = "s390x")]
-pub const EM_CURRENT: u16 = 22; 
 #[cfg(any(
     target_arch = "mips",
     target_arch = "mips32r6",

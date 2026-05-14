@@ -512,8 +512,6 @@ impl<T: ?Sized> Mutex<T> {
     
     
     
-    
-    
     #[track_caller]
     #[cfg(feature = "sync")]
     #[cfg_attr(docsrs, doc(alias = "lock_blocking"))]
@@ -521,8 +519,6 @@ impl<T: ?Sized> Mutex<T> {
         crate::future::block_on(self.lock())
     }
 
-    
-    
     
     
     
@@ -720,7 +716,10 @@ impl<T: ?Sized> Mutex<T> {
     
     
     pub fn get_mut(&mut self) -> &mut T {
-        self.c.get_mut()
+        unsafe {
+            
+            &mut *self.c.get()
+        }
     }
 
     

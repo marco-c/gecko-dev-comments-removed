@@ -55,17 +55,9 @@ impl<T: 'static> Shared<T> {
 
         
         
-        
-        
-        unsafe {
-            self.push_batch_inner(shared, first, prev, counter);
-        }
+        self.push_batch_inner(shared, first, prev, counter);
     }
 
-    
-    
-    
-    
     
     
     
@@ -90,8 +82,7 @@ impl<T: 'static> Shared<T> {
             let mut curr = Some(batch_head);
 
             while let Some(task) = curr {
-                
-                curr = unsafe { task.get_queue_next() };
+                curr = task.get_queue_next();
 
                 let _ = unsafe { task::Notified::<T>::from_raw(task) };
             }
@@ -115,7 +106,7 @@ impl<T: 'static> Shared<T> {
         
         
         
-        let len = unsafe { self.len.unsync_load() };
+        let len = self.len.unsync_load();
 
         self.len.store(len + num, Release);
     }

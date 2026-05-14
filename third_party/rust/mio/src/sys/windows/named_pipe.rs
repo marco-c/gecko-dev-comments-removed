@@ -92,14 +92,6 @@ struct Inner {
     pool: Mutex<BufferPool>,
 }
 
-
-
-unsafe impl Send for Inner {}
-
-
-
-unsafe impl Sync for Inner {}
-
 impl Inner {
     
     

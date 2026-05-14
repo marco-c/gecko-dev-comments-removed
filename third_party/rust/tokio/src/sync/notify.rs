@@ -17,7 +17,6 @@ use std::panic::{RefUnwindSafe, UnwindSafe};
 use std::pin::Pin;
 use std::ptr::NonNull;
 use std::sync::atomic::Ordering::{self, Acquire, Relaxed, Release, SeqCst};
-use std::sync::Arc;
 use std::task::{Context, Poll, Waker};
 
 type WaitList = LinkedList<Waiter, <Waiter as linked_list::Link>::Target>;
@@ -398,38 +397,6 @@ pub struct Notified<'a> {
 unsafe impl<'a> Send for Notified<'a> {}
 unsafe impl<'a> Sync for Notified<'a> {}
 
-
-
-
-
-#[derive(Debug)]
-#[must_use = "futures do nothing unless you `.await` or poll them"]
-pub struct OwnedNotified {
-    
-    notify: Arc<Notify>,
-
-    
-    state: State,
-
-    
-    notify_waiters_calls: usize,
-
-    
-    waiter: Waiter,
-}
-
-unsafe impl Sync for OwnedNotified {}
-
-
-
-
-struct NotifiedProject<'a> {
-    notify: &'a Notify,
-    state: &'a mut State,
-    notify_waiters_calls: &'a usize,
-    waiter: &'a Waiter,
-}
-
 #[derive(Debug)]
 enum State {
     Init,
@@ -609,53 +576,6 @@ impl Notify {
     
     
     
-    
-    pub fn notified_owned(self: Arc<Self>) -> OwnedNotified {
-        
-        
-        let state = self.state.load(SeqCst);
-        OwnedNotified {
-            notify: self,
-            state: State::Init,
-            notify_waiters_calls: get_num_notify_waiters_calls(state),
-            waiter: Waiter::new(),
-        }
-    }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     #[cfg_attr(docsrs, doc(alias = "notify"))]
     pub fn notify_one(&self) {
         self.notify_with_strategy(NotifyOneStrategy::Fifo);
@@ -741,14 +661,12 @@ impl Notify {
     
     
     pub fn notify_waiters(&self) {
-        self.lock_waiter_list().notify_waiters();
-    }
+        let mut waiters = self.waiters.lock();
 
-    fn inner_notify_waiters<'a>(
-        &'a self,
-        curr: usize,
-        mut waiters: crate::loom::sync::MutexGuard<'a, LinkedList<Waiter, Waiter>>,
-    ) {
+        
+        
+        let curr = self.state.load(SeqCst);
+
         if matches!(get_state(curr), EMPTY | NOTIFIED) {
             
             
@@ -815,20 +733,6 @@ impl Notify {
         drop(waiters);
 
         wakers.wake_all();
-    }
-
-    pub(crate) fn lock_waiter_list(&self) -> NotifyGuard<'_> {
-        let guarded_waiters = self.waiters.lock();
-
-        
-        
-        let current_state = self.state.load(SeqCst);
-
-        NotifyGuard {
-            guarded_notify: self,
-            guarded_waiters,
-            current_state,
-        }
     }
 }
 
@@ -1007,7 +911,9 @@ impl Notified<'_> {
         self.poll_notified(None).is_ready()
     }
 
-    fn project(self: Pin<&mut Self>) -> NotifiedProject<'_> {
+    
+    
+    fn project(self: Pin<&mut Self>) -> (&Notify, &mut State, &usize, &Waiter) {
         unsafe {
             
 
@@ -1016,115 +922,22 @@ impl Notified<'_> {
             is_unpin::<usize>();
 
             let me = self.get_unchecked_mut();
-            NotifiedProject {
-                notify: me.notify,
-                state: &mut me.state,
-                notify_waiters_calls: &me.notify_waiters_calls,
-                waiter: &me.waiter,
-            }
+            (
+                me.notify,
+                &mut me.state,
+                &me.notify_waiters_calls,
+                &me.waiter,
+            )
         }
     }
 
     fn poll_notified(self: Pin<&mut Self>, waker: Option<&Waker>) -> Poll<()> {
-        self.project().poll_notified(waker)
-    }
-}
-
-impl Future for Notified<'_> {
-    type Output = ();
-
-    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<()> {
-        self.poll_notified(Some(cx.waker()))
-    }
-}
-
-impl Drop for Notified<'_> {
-    fn drop(&mut self) {
-        
-        unsafe { Pin::new_unchecked(self) }
-            .project()
-            .drop_notified();
-    }
-}
-
-
-
-impl OwnedNotified {
-    
-    
-    
-    
-    
-    
-    pub fn enable(self: Pin<&mut Self>) -> bool {
-        self.poll_notified(None).is_ready()
-    }
-
-    
-    
-    fn project(self: Pin<&mut Self>) -> NotifiedProject<'_> {
-        unsafe {
-            
-
-            is_unpin::<&Notify>();
-            is_unpin::<State>();
-            is_unpin::<usize>();
-
-            let me = self.get_unchecked_mut();
-            NotifiedProject {
-                notify: &me.notify,
-                state: &mut me.state,
-                notify_waiters_calls: &me.notify_waiters_calls,
-                waiter: &me.waiter,
-            }
-        }
-    }
-
-    fn poll_notified(self: Pin<&mut Self>, waker: Option<&Waker>) -> Poll<()> {
-        self.project().poll_notified(waker)
-    }
-}
-
-impl Future for OwnedNotified {
-    type Output = ();
-
-    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<()> {
-        self.poll_notified(Some(cx.waker()))
-    }
-}
-
-impl Drop for OwnedNotified {
-    fn drop(&mut self) {
-        
-        unsafe { Pin::new_unchecked(self) }
-            .project()
-            .drop_notified();
-    }
-}
-
-
-
-impl NotifiedProject<'_> {
-    fn poll_notified(self, waker: Option<&Waker>) -> Poll<()> {
-        let NotifiedProject {
-            notify,
-            state,
-            notify_waiters_calls,
-            waiter,
-        } = self;
+        let (notify, state, notify_waiters_calls, waiter) = self.project();
 
         'outer_loop: loop {
             match *state {
                 State::Init => {
                     let curr = notify.state.load(SeqCst);
-
-                    
-                    
-                    
-                    if get_num_notify_waiters_calls(curr) != *notify_waiters_calls {
-                        *state = State::Done;
-                        continue 'outer_loop;
-                    }
 
                     
                     let res = notify.state.compare_exchange(
@@ -1226,7 +1039,7 @@ impl NotifiedProject<'_> {
                     return Poll::Pending;
                 }
                 State::Waiting => {
-                    #[cfg(feature = "taskdump")]
+                    #[cfg(tokio_taskdump)]
                     if let Some(waker) = waker {
                         let mut ctx = Context::from_waker(waker);
                         std::task::ready!(crate::trace::trace_leaf(&mut ctx));
@@ -1296,7 +1109,7 @@ impl NotifiedProject<'_> {
                                         None => true,
                                     };
                                     if should_update {
-                                        old_waker = (*v).replace(waker.clone());
+                                        old_waker = std::mem::replace(&mut *v, Some(waker.clone()));
                                     }
                                 }
                             });
@@ -1320,7 +1133,7 @@ impl NotifiedProject<'_> {
                     drop(old_waker);
                 }
                 State::Done => {
-                    #[cfg(feature = "taskdump")]
+                    #[cfg(tokio_taskdump)]
                     if let Some(waker) = waker {
                         let mut ctx = Context::from_waker(waker);
                         std::task::ready!(crate::trace::trace_leaf(&mut ctx));
@@ -1330,14 +1143,20 @@ impl NotifiedProject<'_> {
             }
         }
     }
+}
 
-    fn drop_notified(self) {
-        let NotifiedProject {
-            notify,
-            state,
-            waiter,
-            ..
-        } = self;
+impl Future for Notified<'_> {
+    type Output = ();
+
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<()> {
+        self.poll_notified(Some(cx.waker()))
+    }
+}
+
+impl Drop for Notified<'_> {
+    fn drop(&mut self) {
+        
+        let (notify, state, _, waiter) = unsafe { Pin::new_unchecked(self).project() };
 
         
         
@@ -1393,25 +1212,8 @@ unsafe impl linked_list::Link for Waiter {
     }
 
     unsafe fn pointers(target: NonNull<Waiter>) -> NonNull<linked_list::Pointers<Waiter>> {
-        unsafe { Waiter::addr_of_pointers(target) }
+        Waiter::addr_of_pointers(target)
     }
 }
 
 fn is_unpin<T: Unpin>() {}
-
-
-
-
-
-pub(crate) struct NotifyGuard<'a> {
-    guarded_notify: &'a Notify,
-    guarded_waiters: crate::loom::sync::MutexGuard<'a, WaitList>,
-    current_state: usize,
-}
-
-impl NotifyGuard<'_> {
-    pub(crate) fn notify_waiters(self) {
-        self.guarded_notify
-            .inner_notify_waiters(self.current_state, self.guarded_waiters);
-    }
-}

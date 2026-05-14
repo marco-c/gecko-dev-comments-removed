@@ -148,6 +148,7 @@ use std::future::Future;
 use std::pin::Pin;
 use std::task::{Context, Poll};
 use std::time::Duration;
+use std::usize;
 use tokio::io::{AsyncRead, AsyncWrite, AsyncWriteExt};
 use tracing::Instrument;
 
@@ -310,8 +311,6 @@ pub struct Builder {
     
     reset_stream_duration: Duration,
 
-    
-    
     
     
     
@@ -546,16 +545,6 @@ where
     
     pub fn is_extended_connect_protocol_enabled(&self) -> bool {
         self.inner.is_extended_connect_protocol_enabled()
-    }
-
-    
-    pub fn current_max_send_streams(&self) -> usize {
-        self.inner.current_max_send_streams()
-    }
-
-    
-    pub fn current_max_recv_streams(&self) -> usize {
-        self.inner.current_max_recv_streams()
     }
 }
 
@@ -895,11 +884,6 @@ impl Builder {
     
     
     
-    
-    
-    
-    
-    
     pub fn initial_max_send_streams(&mut self, initial: usize) -> &mut Self {
         self.initial_max_send_streams = initial;
         self
@@ -1069,7 +1053,7 @@ impl Builder {
     
     
     pub fn max_send_buffer_size(&mut self, max: usize) -> &mut Self {
-        assert!(max <= u32::MAX as usize);
+        assert!(max <= std::u32::MAX as usize);
         self.max_send_buffer_size = max;
         self
     }
@@ -1437,18 +1421,7 @@ where
 
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         self.inner.maybe_close_connection_if_no_streams();
-        let had_streams_or_refs = self.inner.has_streams_or_other_references();
-        let result = self.inner.poll(cx).map_err(Into::into);
-        
-        
-        if result.is_pending()
-            && had_streams_or_refs
-            && !self.inner.has_streams_or_other_references()
-        {
-            tracing::trace!("last stream closed during poll, wake again");
-            cx.waker().wake_by_ref();
-        }
-        result
+        self.inner.poll(cx).map_err(Into::into)
     }
 }
 
@@ -1485,22 +1458,6 @@ impl ResponseFuture {
     pub fn stream_id(&self) -> crate::StreamId {
         crate::StreamId::from_internal(self.inner.stream_id())
     }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn poll_informational(
-        &mut self,
-        cx: &mut Context<'_>,
-    ) -> Poll<Option<Result<Response<()>, crate::Error>>> {
-        self.inner.poll_informational(cx).map_err(Into::into)
-    }
-
     
     
     
@@ -1523,7 +1480,7 @@ impl ResponseFuture {
 impl PushPromises {
     
     pub async fn push_promise(&mut self) -> Option<Result<PushPromise, crate::Error>> {
-        crate::poll_fn(move |cx| self.poll_push_promise(cx)).await
+        futures_util::future::poll_fn(move |cx| self.poll_push_promise(cx)).await
     }
 
     #[doc(hidden)]

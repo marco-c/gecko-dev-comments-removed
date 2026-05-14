@@ -1,16 +1,25 @@
 use std::convert::Infallible;
 use std::future::Future;
+use std::net::SocketAddr;
 use std::pin::Pin;
 use std::task::{Context, Poll};
 
 use futures_util::future::TryFuture;
+use hyper::service::Service;
 use pin_project::pin_project;
-use tower_service::Service;
 
 use crate::reject::IsReject;
 use crate::reply::{Reply, Response};
 use crate::route::{self, Route};
 use crate::{Filter, Request};
+
+
+
+
+
+
+
+
 
 
 
@@ -61,22 +70,24 @@ where
     <F::Future as TryFuture>::Error: IsReject,
 {
     #[inline]
-    pub(crate) fn call_route(&self, req: Request) -> FilteredFuture<F::Future> {
+    pub(crate) fn call_with_addr(
+        &self,
+        req: Request,
+        remote_addr: Option<SocketAddr>,
+    ) -> FilteredFuture<F::Future> {
         debug_assert!(!route::is_set(), "nested route::set calls");
 
-        let route = Route::new(req);
+        let route = Route::new(req, remote_addr);
         let fut = route::set(&route, || self.filter.filter(super::Internal));
         FilteredFuture { future: fut, route }
     }
 }
 
-impl<F, B> Service<http::Request<B>> for FilteredService<F>
+impl<F> Service<Request> for FilteredService<F>
 where
     F: Filter,
     <F::Future as TryFuture>::Ok: Reply,
     <F::Future as TryFuture>::Error: IsReject,
-    B: http_body::Body + Send + Sync + 'static,
-    B::Error: Into<Box<dyn std::error::Error + Send + Sync>>,
 {
     type Response = Response;
     type Error = Infallible;
@@ -87,9 +98,8 @@ where
     }
 
     #[inline]
-    fn call(&mut self, req: http::Request<B>) -> Self::Future {
-        let req = req.map(crate::bodyt::Body::wrap);
-        self.call_route(req)
+    fn call(&mut self, req: Request) -> Self::Future {
+        self.call_with_addr(req, None)
     }
 }
 

@@ -22,9 +22,6 @@ pub(crate) trait Stack: Default {
     
     fn pop(&mut self, store: &mut Self::Store) -> Option<Self::Owned>;
 
-    
-    fn peek(&self) -> Option<Self::Owned>;
-
     fn remove(&mut self, item: &Self::Borrowed, store: &mut Self::Store);
 
     fn when(item: &Self::Borrowed, store: &Self::Store) -> u64;

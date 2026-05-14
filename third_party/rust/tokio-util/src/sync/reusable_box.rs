@@ -1,17 +1,17 @@
 use std::alloc::Layout;
-use std::fmt;
-use std::future::{self, Future};
-use std::mem::{self, ManuallyDrop};
+use std::future::Future;
+use std::panic::AssertUnwindSafe;
 use std::pin::Pin;
-use std::ptr;
+use std::ptr::{self, NonNull};
 use std::task::{Context, Poll};
+use std::{fmt, panic};
 
 
 
 
 
 pub struct ReusableBoxFuture<'a, T> {
-    boxed: Pin<Box<dyn Future<Output = T> + Send + 'a>>,
+    boxed: NonNull<dyn Future<Output = T> + Send + 'a>,
 }
 
 impl<'a, T> ReusableBoxFuture<'a, T> {
@@ -20,9 +20,11 @@ impl<'a, T> ReusableBoxFuture<'a, T> {
     where
         F: Future<Output = T> + Send + 'a,
     {
-        Self {
-            boxed: Box::pin(future),
-        }
+        let boxed: Box<dyn Future<Output = T> + Send + 'a> = Box::new(future);
+
+        let boxed = NonNull::from(Box::leak(boxed));
+
+        Self { boxed }
     }
 
     
@@ -48,28 +50,61 @@ impl<'a, T> ReusableBoxFuture<'a, T> {
         F: Future<Output = T> + Send + 'a,
     {
         
-        
-        
-        
-        #[inline(always)]
-        fn real_try_set<'a, F>(
-            this: &mut ReusableBoxFuture<'a, F::Output>,
-            future: F,
-        ) -> Result<(), F>
-        where
-            F: Future + Send + 'a,
-        {
-            
-            let boxed = mem::replace(&mut this.boxed, Box::pin(future::pending()));
-            reuse_pin_box(boxed, future, |boxed| this.boxed = Pin::from(boxed))
-        }
+        let self_layout = {
+            let dyn_future: &(dyn Future<Output = T> + Send) = unsafe { self.boxed.as_ref() };
+            Layout::for_value(dyn_future)
+        };
 
-        real_try_set(self, future)
+        if Layout::new::<F>() == self_layout {
+            
+            unsafe {
+                self.set_same_layout(future);
+            }
+
+            Ok(())
+        } else {
+            Err(future)
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    unsafe fn set_same_layout<F>(&mut self, future: F)
+    where
+        F: Future<Output = T> + Send + 'a,
+    {
+        
+        let result = panic::catch_unwind(AssertUnwindSafe(|| {
+            ptr::drop_in_place(self.boxed.as_ptr());
+        }));
+
+        
+        
+        let self_ptr: *mut F = self.boxed.as_ptr() as *mut F;
+        ptr::write(self_ptr, future);
+
+        
+        
+        self.boxed = NonNull::new_unchecked(self_ptr);
+
+        
+        match result {
+            Ok(()) => {}
+            Err(payload) => {
+                panic::resume_unwind(payload);
+            }
+        }
     }
 
     
     pub fn get_pin(&mut self) -> Pin<&mut (dyn Future<Output = T> + Send)> {
-        self.boxed.as_mut()
+        
+        
+        unsafe { Pin::new_unchecked(self.boxed.as_mut()) }
     }
 
     
@@ -88,70 +123,26 @@ impl<T> Future for ReusableBoxFuture<'_, T> {
 }
 
 
+unsafe impl<T> Send for ReusableBoxFuture<'_, T> {}
+
+
 
 
 unsafe impl<T> Sync for ReusableBoxFuture<'_, T> {}
 
+
+impl<T> Unpin for ReusableBoxFuture<'_, T> {}
+
+impl<T> Drop for ReusableBoxFuture<'_, T> {
+    fn drop(&mut self) {
+        unsafe {
+            drop(Box::from_raw(self.boxed.as_ptr()));
+        }
+    }
+}
+
 impl<T> fmt::Debug for ReusableBoxFuture<'_, T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("ReusableBoxFuture").finish()
-    }
-}
-
-fn reuse_pin_box<T: ?Sized, U, O, F>(boxed: Pin<Box<T>>, new_value: U, callback: F) -> Result<O, U>
-where
-    F: FnOnce(Box<U>) -> O,
-{
-    let layout = Layout::for_value::<T>(&*boxed);
-    if layout != Layout::new::<U>() {
-        return Err(new_value);
-    }
-
-    
-    
-    let raw: *mut T = Box::into_raw(unsafe { Pin::into_inner_unchecked(boxed) });
-
-    
-    
-    let guard = CallOnDrop::new(|| {
-        let raw: *mut U = raw.cast::<U>();
-        unsafe { raw.write(new_value) };
-
-        
-        
-        
-        
-        let boxed = unsafe { Box::from_raw(raw) };
-
-        callback(boxed)
-    });
-
-    
-    unsafe { ptr::drop_in_place(raw) };
-
-    
-    Ok(guard.call())
-}
-
-struct CallOnDrop<O, F: FnOnce() -> O> {
-    f: ManuallyDrop<F>,
-}
-
-impl<O, F: FnOnce() -> O> CallOnDrop<O, F> {
-    fn new(f: F) -> Self {
-        let f = ManuallyDrop::new(f);
-        Self { f }
-    }
-    fn call(self) -> O {
-        let mut this = ManuallyDrop::new(self);
-        let f = unsafe { ManuallyDrop::take(&mut this.f) };
-        f()
-    }
-}
-
-impl<O, F: FnOnce() -> O> Drop for CallOnDrop<O, F> {
-    fn drop(&mut self) {
-        let f = unsafe { ManuallyDrop::take(&mut self.f) };
-        f();
     }
 }

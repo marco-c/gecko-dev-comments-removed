@@ -1,0 +1,12 @@
+
+
+
+
+
+
+
+
+pub trait Executor<Fut> {
+    
+    fn execute(&self, fut: Fut);
+}

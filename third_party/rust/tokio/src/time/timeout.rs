@@ -142,31 +142,16 @@ where
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[track_caller]
 pub fn timeout_at<F>(deadline: Instant, future: F) -> Timeout<F::IntoFuture>
 where
     F: IntoFuture,
 {
     let delay = sleep_until(deadline);
-    Timeout::new_with_delay(future.into_future(), delay)
+
+    Timeout {
+        value: future.into_future(),
+        delay,
+    }
 }
 
 pin_project! {
@@ -218,32 +203,26 @@ where
             return Poll::Ready(Ok(v));
         }
 
-        poll_delay(had_budget_before, me.delay, cx).map(Err)
-    }
-}
+        let has_budget_now = coop::has_budget_remaining();
 
+        let delay = me.delay;
 
+        let poll_delay = || -> Poll<Self::Output> {
+            match delay.poll(cx) {
+                Poll::Ready(()) => Poll::Ready(Err(Elapsed::new())),
+                Poll::Pending => Poll::Pending,
+            }
+        };
 
-fn poll_delay(
-    had_budget_before: bool,
-    delay: Pin<&mut Sleep>,
-    cx: &mut task::Context<'_>,
-) -> Poll<Elapsed> {
-    let delay_poll = || match delay.poll(cx) {
-        Poll::Ready(()) => Poll::Ready(Elapsed::new()),
-        Poll::Pending => Poll::Pending,
-    };
-
-    let has_budget_now = coop::has_budget_remaining();
-
-    if let (true, false) = (had_budget_before, has_budget_now) {
-        
-        
-        
-        
-        
-        coop::with_unconstrained(delay_poll)
-    } else {
-        delay_poll()
+        if let (true, false) = (had_budget_before, has_budget_now) {
+            
+            
+            
+            
+            
+            coop::with_unconstrained(poll_delay)
+        } else {
+            poll_delay()
+        }
     }
 }

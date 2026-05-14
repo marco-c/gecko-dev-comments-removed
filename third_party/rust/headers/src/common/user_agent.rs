@@ -1,7 +1,8 @@
 use std::fmt;
 use std::str::FromStr;
 
-use crate::util::HeaderValueString;
+use util::HeaderValueString;
+
 
 
 
@@ -52,7 +53,7 @@ impl UserAgent {
     
     
     
-    pub const fn from_static(src: &'static str) -> UserAgent {
+    pub fn from_static(src: &'static str) -> UserAgent {
         UserAgent(HeaderValueString::from_static(src))
     }
 

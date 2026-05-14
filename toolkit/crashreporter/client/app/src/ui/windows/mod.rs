@@ -57,7 +57,7 @@ macro_rules! success {
     };
     ( pointer $e:expr ) => {{
         let ptr = $e;
-        assert!(!ptr.is_null());
+        assert_ne!(ptr, 0);
         ptr
     }};
 }
@@ -154,7 +154,7 @@ impl UI {
 
         
         let mut msg = unsafe { std::mem::zeroed::<win::MSG>() };
-        while unsafe { win::GetMessageW(&mut msg, std::ptr::null_mut(), 0, 0) } > 0 {
+        while unsafe { win::GetMessageW(&mut msg, 0, 0, 0) } > 0 {
             if let Some(f) = get_invoke(&msg) {
                 f();
                 continue;
@@ -170,8 +170,7 @@ impl UI {
         }
 
         
-        while unsafe { win::PeekMessageW(&mut msg, std::ptr::null_mut(), 0, 0, win::PM_REMOVE) } > 0
-        {
+        while unsafe { win::PeekMessageW(&mut msg, 0, 0, 0, win::PM_REMOVE) } > 0 {
             if let Some(f) = get_invoke(&msg) {
                 drop(f);
             }
@@ -292,15 +291,10 @@ impl window::WindowClass for AppWindow {
 
 impl CustomWindowClass for AppWindow {
     fn icon() -> win::HICON {
-        
-        struct SendSyncIcon(win::HICON);
-        unsafe impl Send for SendSyncIcon {}
-        unsafe impl Sync for SendSyncIcon {}
-
-        static ICON: Lazy<SendSyncIcon> = Lazy::new(|| unsafe {
+        static ICON: Lazy<win::HICON> = Lazy::new(|| unsafe {
             
             
-            SendSyncIcon(win::CreateIconFromResource(
+            win::CreateIconFromResource(
                 
                 
                 super::icon::PNG_DATA.as_ptr(),
@@ -309,10 +303,10 @@ impl CustomWindowClass for AppWindow {
                 
                 
                 0x00030000,
-            ))
+            )
         });
 
-        ICON.0
+        *ICON
     }
 
     fn message(
@@ -422,7 +416,7 @@ impl CustomWindowClass for AppWindow {
                 };
                 return Some(0);
             }
-            win::WM_GETFONT => return Some(me.renderer.font() as _),
+            win::WM_GETFONT => return Some(me.renderer.font()),
             win::WM_COMMAND => {
                 let child = lparam as HWND;
                 let windows = me.renderer.windows.borrow();

@@ -59,13 +59,11 @@
 use crate::loom::sync::{Arc, Mutex};
 use crate::runtime;
 use crate::runtime::scheduler::multi_thread::{
-    idle, park, queue, Counters, Handle, Idle, Overflow, Parker, Stats, TraceStatus, Unparker,
+    idle, queue, Counters, Handle, Idle, Overflow, Parker, Stats, TraceStatus, Unparker,
 };
 use crate::runtime::scheduler::{inject, Defer, Lock};
-use crate::runtime::task::OwnedTasks;
-use crate::runtime::{
-    blocking, driver, scheduler, task, Config, SchedulerMetrics, TimerFlavor, WorkerMetrics,
-};
+use crate::runtime::task::{OwnedTasks, TaskHarnessScheduleHooks};
+use crate::runtime::{blocking, driver, scheduler, task, Config, SchedulerMetrics, WorkerMetrics};
 use crate::runtime::{context, TaskHooks};
 use crate::task::coop;
 use crate::util::atomic_cell::AtomicCell;
@@ -85,15 +83,6 @@ cfg_taskdump! {
 cfg_not_taskdump! {
     mod taskdump_mock;
 }
-
-#[cfg(all(tokio_unstable, feature = "time"))]
-use crate::loom::sync::atomic::AtomicBool;
-
-#[cfg(all(tokio_unstable, feature = "time"))]
-use crate::runtime::time_alt;
-
-#[cfg(all(tokio_unstable, feature = "time"))]
-use crate::runtime::scheduler::util;
 
 
 pub(super) struct Worker {
@@ -126,9 +115,6 @@ struct Core {
     
     run_queue: queue::Local<Arc<Handle>>,
 
-    #[cfg(all(tokio_unstable, feature = "time"))]
-    time_context: time_alt::LocalContext,
-
     
     
     is_searching: bool,
@@ -138,15 +124,6 @@ struct Core {
 
     
     is_traced: bool,
-
-    
-    
-    had_driver: park::HadDriver,
-
-    
-    
-    
-    enable_eager_driver_handoff: bool,
 
     
     
@@ -216,12 +193,6 @@ pub(crate) struct Synced {
 
     
     pub(crate) inject: inject::Synced,
-
-    #[cfg(all(tokio_unstable, feature = "time"))]
-    
-    
-    
-    inject_timers: Vec<time_alt::EntryHandle>,
 }
 
 
@@ -255,6 +226,9 @@ pub(crate) struct Launch(Vec<Arc<Worker>>);
 type RunResult = Result<Box<Core>, ()>;
 
 
+type Task = task::Task<Arc<Handle>>;
+
+
 type Notified = task::Notified<Arc<Handle>>;
 
 
@@ -263,7 +237,6 @@ type Notified = task::Notified<Arc<Handle>>;
 
 const MAX_LIFO_POLLS_PER_TICK: usize = 3;
 
-#[allow(clippy::too_many_arguments)]
 pub(super) fn create(
     size: usize,
     park: Parker,
@@ -271,8 +244,6 @@ pub(super) fn create(
     blocking_spawner: blocking::Spawner,
     seed_generator: RngSeedGenerator,
     config: Config,
-    timer_flavor: TimerFlavor,
-    name: Option<String>,
 ) -> (Arc<Handle>, Launch) {
     let mut cores = Vec::with_capacity(size);
     let mut remotes = Vec::with_capacity(size);
@@ -292,13 +263,9 @@ pub(super) fn create(
             lifo_slot: None,
             lifo_enabled: !config.disable_lifo_slot,
             run_queue,
-            #[cfg(all(tokio_unstable, feature = "time"))]
-            time_context: time_alt::LocalContext::new(),
             is_searching: false,
             is_shutdown: false,
             is_traced: false,
-            enable_eager_driver_handoff: config.enable_eager_driver_handoff,
-            had_driver: park::HadDriver::No,
             park: Some(park),
             global_queue_interval: stats.tuned_global_queue_interval(&config),
             stats,
@@ -314,7 +281,6 @@ pub(super) fn create(
 
     let remotes_len = remotes.len();
     let handle = Arc::new(Handle {
-        name,
         task_hooks: TaskHooks::from_config(&config),
         shared: Shared {
             remotes: remotes.into_boxed_slice(),
@@ -324,8 +290,6 @@ pub(super) fn create(
             synced: Mutex::new(Synced {
                 idle: idle_synced,
                 inject: inject_synced,
-                #[cfg(all(tokio_unstable, feature = "time"))]
-                inject_timers: Vec::new(),
             }),
             shutdown_cores: Mutex::new(vec![]),
             trace_status: TraceStatus::new(remotes_len),
@@ -337,9 +301,6 @@ pub(super) fn create(
         driver: driver_handle,
         blocking_spawner,
         seed_generator,
-        timer_flavor,
-        #[cfg(all(tokio_unstable, feature = "time"))]
-        is_shutdown: AtomicBool::new(false),
     });
 
     let mut launch = Launch(vec![]);
@@ -437,10 +398,6 @@ where
         }
 
         let cx = maybe_cx.expect("no .is_some() == false cases above should lead here");
-
-        
-        
-        cx.defer.wake();
 
         
         let mut core = match cx.core.borrow_mut().take() {
@@ -598,26 +555,11 @@ impl Context {
             } else {
                 
                 core = if !self.defer.is_empty() {
-                    self.park_yield(core)
+                    self.park_timeout(core, Some(Duration::from_millis(0)))
                 } else {
                     self.park(core)
                 };
                 core.stats.start_processing_scheduled_tasks();
-            }
-        }
-
-        #[cfg(all(tokio_unstable, feature = "time"))]
-        {
-            match self.worker.handle.timer_flavor {
-                TimerFlavor::Traditional => {}
-                TimerFlavor::Alternative => {
-                    util::time_alt::shutdown_local_timers(
-                        &mut core.time_context.wheel,
-                        &mut core.time_context.canc_rx,
-                        self.worker.handle.take_remote_timers(),
-                        &self.worker.handle.driver,
-                    );
-                }
             }
         }
 
@@ -629,36 +571,13 @@ impl Context {
 
     fn run_task(&self, task: Notified, mut core: Box<Core>) -> RunResult {
         #[cfg(tokio_unstable)]
-        let task_meta = task.task_meta();
+        let task_id = task.task_id();
 
         let task = self.worker.handle.shared.owned.assert_owner(task);
 
         
         
-        let notified_parked_worker = core.transition_from_searching(&self.worker);
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        if cfg!(tokio_unstable)
-            && core.enable_eager_driver_handoff
-            && core.had_driver == park::HadDriver::Yes
-            && !notified_parked_worker
-        
-        {
-            core.had_driver = park::HadDriver::No;
-            self.worker.handle.notify_parked_local();
-        }
+        core.transition_from_searching(&self.worker);
 
         self.assert_lifo_enabled_is_correct(&core);
 
@@ -676,15 +595,12 @@ impl Context {
             
             
             #[cfg(tokio_unstable)]
-            self.worker
-                .handle
-                .task_hooks
-                .poll_start_callback(&task_meta);
+            self.worker.handle.task_hooks.poll_start_callback(task_id);
 
             task.run();
 
             #[cfg(tokio_unstable)]
-            self.worker.handle.task_hooks.poll_stop_callback(&task_meta);
+            self.worker.handle.task_hooks.poll_stop_callback(task_id);
 
             let mut lifo_polls = 0;
 
@@ -750,18 +666,15 @@ impl Context {
                 let task = self.worker.handle.shared.owned.assert_owner(task);
 
                 #[cfg(tokio_unstable)]
-                let task_meta = task.task_meta();
+                let task_id = task.task_id();
 
                 #[cfg(tokio_unstable)]
-                self.worker
-                    .handle
-                    .task_hooks
-                    .poll_start_callback(&task_meta);
+                self.worker.handle.task_hooks.poll_start_callback(task_id);
 
                 task.run();
 
                 #[cfg(tokio_unstable)]
-                self.worker.handle.task_hooks.poll_stop_callback(&task_meta);
+                self.worker.handle.task_hooks.poll_stop_callback(task_id);
             }
         })
     }
@@ -785,7 +698,7 @@ impl Context {
 
             
             
-            core = self.park_yield(core);
+            core = self.park_timeout(core, Some(Duration::from_millis(0)));
 
             
             core.maintenance(&self.worker);
@@ -818,7 +731,7 @@ impl Context {
                 core.stats
                     .submit(&self.worker.handle.shared.worker_metrics[self.worker.index]);
 
-                core = self.park_internal(core, None);
+                core = self.park_timeout(core, None);
 
                 core.stats.unparked();
 
@@ -837,70 +750,34 @@ impl Context {
         core
     }
 
-    fn park_yield(&self, core: Box<Core>) -> Box<Core> {
-        self.park_internal(core, Some(Duration::from_millis(0)))
-    }
-
-    fn park_internal(&self, mut core: Box<Core>, duration: Option<Duration>) -> Box<Core> {
+    fn park_timeout(&self, mut core: Box<Core>, duration: Option<Duration>) -> Box<Core> {
         self.assert_lifo_enabled_is_correct(&core);
 
         
         let mut park = core.park.take().expect("park missing");
+
         
         *self.core.borrow_mut() = Some(core);
 
-        #[cfg(feature = "time")]
-        let (duration, auto_advance_duration) = match self.worker.handle.timer_flavor {
-            TimerFlavor::Traditional => (duration, None::<Duration>),
-            #[cfg(tokio_unstable)]
-            TimerFlavor::Alternative => {
-                
-                
-                
-                
-                let MaintainLocalTimer {
-                    park_duration: duration,
-                    auto_advance_duration,
-                } = self.maintain_local_timers_before_parking(duration);
-                (duration, auto_advance_duration)
-            }
-        };
-
         
-        let had_driver = if let Some(timeout) = duration {
-            park.park_timeout(&self.worker.handle.driver, timeout)
+        if let Some(timeout) = duration {
+            park.park_timeout(&self.worker.handle.driver, timeout);
         } else {
-            park.park(&self.worker.handle.driver)
-        };
+            park.park(&self.worker.handle.driver);
+        }
 
         self.defer.wake();
-
-        #[cfg(feature = "time")]
-        match self.worker.handle.timer_flavor {
-            TimerFlavor::Traditional => {
-                
-                let _ = auto_advance_duration;
-            }
-            #[cfg(tokio_unstable)]
-            TimerFlavor::Alternative => {
-                
-                
-                
-                
-                self.maintain_local_timers_after_parking(auto_advance_duration);
-            }
-        }
 
         
         core = self.core.borrow_mut().take().expect("core missing");
 
         
         core.park = Some(park);
-        core.had_driver = had_driver;
 
         if core.should_notify_others() {
             self.worker.handle.notify_parked_local();
         }
+
         core
     }
 
@@ -912,143 +789,6 @@ impl Context {
         } else {
             self.defer.defer(waker);
         }
-    }
-
-    #[cfg(all(tokio_unstable, feature = "time"))]
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn maintain_local_timers_before_parking(
-        &self,
-        park_duration: Option<Duration>,
-    ) -> MaintainLocalTimer {
-        let handle = &self.worker.handle;
-        let mut wake_queue = time_alt::WakeQueue::new();
-
-        let (should_yield, next_timer) = with_current(|maybe_cx| {
-            let cx = maybe_cx.expect("function should be called when core is present");
-            assert_eq!(
-                Arc::as_ptr(&cx.worker.handle),
-                Arc::as_ptr(&self.worker.handle),
-                "function should be called on the exact same worker"
-            );
-
-            let mut maybe_core = cx.core.borrow_mut();
-            let core = maybe_core.as_mut().expect("core missing");
-            let time_cx = &mut core.time_context;
-
-            util::time_alt::process_registration_queue(
-                &mut time_cx.registration_queue,
-                &mut time_cx.wheel,
-                &time_cx.canc_tx,
-                &mut wake_queue,
-            );
-            util::time_alt::insert_inject_timers(
-                &mut time_cx.wheel,
-                &time_cx.canc_tx,
-                handle.take_remote_timers(),
-                &mut wake_queue,
-            );
-            util::time_alt::remove_cancelled_timers(&mut time_cx.wheel, &mut time_cx.canc_rx);
-            let should_yield = !wake_queue.is_empty();
-
-            let next_timer = util::time_alt::next_expiration_time(&time_cx.wheel, &handle.driver);
-
-            (should_yield, next_timer)
-        });
-
-        wake_queue.wake_all();
-
-        if should_yield {
-            MaintainLocalTimer {
-                park_duration: Some(Duration::from_millis(0)),
-                auto_advance_duration: None,
-            }
-        } else {
-            
-            let dur = util::time_alt::min_duration(park_duration, next_timer);
-            if util::time_alt::pre_auto_advance(&handle.driver, dur) {
-                MaintainLocalTimer {
-                    park_duration: Some(Duration::ZERO),
-                    auto_advance_duration: dur,
-                }
-            } else {
-                MaintainLocalTimer {
-                    park_duration: dur,
-                    auto_advance_duration: None,
-                }
-            }
-        }
-    }
-
-    #[cfg(all(tokio_unstable, feature = "time"))]
-    
-    
-    
-    
-    fn maintain_local_timers_after_parking(&self, auto_advance_duration: Option<Duration>) {
-        let handle = &self.worker.handle;
-        let mut wake_queue = time_alt::WakeQueue::new();
-
-        with_current(|maybe_cx| {
-            let cx = maybe_cx.expect("function should be called when core is present");
-            assert_eq!(
-                Arc::as_ptr(&cx.worker.handle),
-                Arc::as_ptr(&self.worker.handle),
-                "function should be called on the exact same worker"
-            );
-
-            let mut maybe_core = cx.core.borrow_mut();
-            let core = maybe_core.as_mut().expect("core missing");
-            let time_cx = &mut core.time_context;
-
-            util::time_alt::post_auto_advance(&handle.driver, auto_advance_duration);
-            util::time_alt::process_expired_timers(
-                &mut time_cx.wheel,
-                &handle.driver,
-                &mut wake_queue,
-            );
-        });
-
-        wake_queue.wake_all();
-    }
-
-    #[cfg(all(tokio_unstable, feature = "time"))]
-    fn with_core<F, R>(&self, f: F) -> R
-    where
-        F: FnOnce(Option<&mut Core>) -> R,
-    {
-        match self.core.borrow_mut().as_mut() {
-            Some(core) => f(Some(core)),
-            None => f(None),
-        }
-    }
-
-    #[cfg(all(tokio_unstable, feature = "time"))]
-    pub(crate) fn with_time_temp_local_context<F, R>(&self, f: F) -> R
-    where
-        F: FnOnce(Option<time_alt::TempLocalContext<'_>>) -> R,
-    {
-        self.with_core(|maybe_core| match maybe_core {
-            Some(core) if core.is_shutdown => f(Some(time_alt::TempLocalContext::new_shutdown())),
-            Some(core) => f(Some(time_alt::TempLocalContext::new_running(
-                &mut core.time_context,
-            ))),
-            None => f(None),
-        })
-    }
-
-    #[cfg(tokio_unstable)]
-    pub(crate) fn worker_index(&self) -> usize {
-        self.worker.index
     }
 }
 
@@ -1079,27 +819,12 @@ impl Core {
                 return None;
             }
 
+            
+            
+            
+            
             let cap = usize::min(
-                
-                
-                
-                
-                
-                
-                
-                
                 self.run_queue.remaining_slots(),
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
                 self.run_queue.max_capacity() / 2,
             );
 
@@ -1176,13 +901,13 @@ impl Core {
         self.is_searching
     }
 
-    fn transition_from_searching(&mut self, worker: &Worker) -> bool {
+    fn transition_from_searching(&mut self, worker: &Worker) {
         if !self.is_searching {
-            return false;
+            return;
         }
 
         self.is_searching = false;
-        worker.handle.transition_worker_from_searching()
+        worker.handle.transition_worker_from_searching();
     }
 
     fn has_tasks(&self) -> bool {
@@ -1323,6 +1048,27 @@ impl Worker {
     }
 }
 
+
+impl task::Schedule for Arc<Handle> {
+    fn release(&self, task: &Task) -> Option<Task> {
+        self.shared.owned.remove(task)
+    }
+
+    fn schedule(&self, task: Notified) {
+        self.schedule_task(task, false);
+    }
+
+    fn hooks(&self) -> TaskHarnessScheduleHooks {
+        TaskHarnessScheduleHooks {
+            task_terminate_callback: self.task_hooks.task_terminate_callback.clone(),
+        }
+    }
+
+    fn yield_now(&self, task: Notified) {
+        self.schedule_task(task, true);
+    }
+}
+
 impl Handle {
     pub(super) fn schedule_task(&self, task: Notified, is_yield: bool) {
         with_current(|maybe_cx| {
@@ -1343,7 +1089,6 @@ impl Handle {
         });
     }
 
-    
     pub(super) fn schedule_option_task_without_yield(&self, task: Option<Notified>) {
         if let Some(task) = task {
             self.schedule_task(task, false);
@@ -1404,27 +1149,6 @@ impl Handle {
         }
     }
 
-    #[cfg(all(tokio_unstable, feature = "time"))]
-    pub(crate) fn push_remote_timer(&self, hdl: time_alt::EntryHandle) {
-        assert_eq!(self.timer_flavor, TimerFlavor::Alternative);
-        {
-            let mut synced = self.shared.synced.lock();
-            synced.inject_timers.push(hdl);
-        }
-        self.notify_parked_remote();
-    }
-
-    #[cfg(all(tokio_unstable, feature = "time"))]
-    pub(crate) fn take_remote_timers(&self) -> Vec<time_alt::EntryHandle> {
-        assert_eq!(self.timer_flavor, TimerFlavor::Alternative);
-        
-        
-        match self.shared.synced.try_lock() {
-            Some(mut synced) => std::mem::take(&mut synced.inject_timers),
-            None => Vec::new(),
-        }
-    }
-
     pub(super) fn close(&self) {
         if self
             .shared
@@ -1435,18 +1159,12 @@ impl Handle {
         }
     }
 
-    
-    
-    
-    fn notify_parked_local(&self) -> bool {
+    fn notify_parked_local(&self) {
         super::counters::inc_num_inc_notify_local();
 
         if let Some(index) = self.shared.idle.worker_to_notify(&self.shared) {
             super::counters::inc_num_unparks_local();
             self.shared.remotes[index].unpark.unpark(&self.driver);
-            true
-        } else {
-            false
         }
     }
 
@@ -1475,14 +1193,11 @@ impl Handle {
         }
     }
 
-    
-    fn transition_worker_from_searching(&self) -> bool {
+    fn transition_worker_from_searching(&self) {
         if self.shared.idle.transition_worker_from_searching() {
             
             
-            self.notify_parked_local()
-        } else {
-            false
+            self.notify_parked_local();
         }
     }
 
@@ -1550,13 +1265,6 @@ impl<'a> Lock<inject::Synced> for &'a Handle {
             lock: self.shared.synced.lock(),
         }
     }
-}
-
-#[cfg(all(tokio_unstable, feature = "time"))]
-
-struct MaintainLocalTimer {
-    park_duration: Option<Duration>,
-    auto_advance_duration: Option<Duration>,
 }
 
 #[track_caller]

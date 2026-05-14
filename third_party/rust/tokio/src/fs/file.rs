@@ -30,11 +30,6 @@ use crate::blocking::{spawn_blocking, spawn_mandatory_blocking};
 #[cfg(not(test))]
 use std::fs::File as StdFile;
 
-cfg_io_uring! {
-    #[cfg(not(test))]
-    use crate::spawn;
-}
-
 
 
 
@@ -155,7 +150,10 @@ impl File {
     
     
     pub async fn open(path: impl AsRef<Path>) -> io::Result<File> {
-        Self::options().read(true).open(path).await
+        let path = path.as_ref().to_owned();
+        let std = asyncify(|| StdFile::open(path)).await?;
+
+        Ok(File::from_std(std))
     }
 
     
@@ -190,12 +188,9 @@ impl File {
     
     
     pub async fn create(path: impl AsRef<Path>) -> io::Result<File> {
-        Self::options()
-            .write(true)
-            .create(true)
-            .truncate(true)
-            .open(path)
-            .await
+        let path = path.as_ref().to_owned();
+        let std_file = asyncify(move || StdFile::create(path)).await?;
+        Ok(File::from_std(std_file))
     }
 
     
@@ -470,9 +465,7 @@ impl File {
         self.inner.lock().await.complete_inflight().await;
         let std = self.std.clone();
         let std_file = asyncify(move || std.try_clone()).await?;
-        let mut file = File::from_std(std_file);
-        file.set_max_buf_size(self.max_buf_size);
-        Ok(file)
+        Ok(File::from_std(std_file))
     }
 
     
@@ -514,7 +507,6 @@ impl File {
     
     
     
-    #[allow(clippy::result_large_err)]
     pub fn try_into_std(mut self) -> Result<StdFile, Self> {
         match Arc::try_unwrap(self.std) {
             Ok(file) => Ok(file),
@@ -586,11 +578,6 @@ impl File {
     pub fn set_max_buf_size(&mut self, max_buf_size: usize) {
         self.max_buf_size = max_buf_size;
     }
-
-    
-    pub fn max_buf_size(&self) -> usize {
-        self.max_buf_size
-    }
 }
 
 impl AsyncRead for File {
@@ -618,7 +605,13 @@ impl AsyncRead for File {
                     let std = me.std.clone();
 
                     let max_buf_size = cmp::min(dst.remaining(), me.max_buf_size);
-                    inner.state = State::Busy(Inner::poll_read_inner(std, buf, max_buf_size)?);
+                    inner.state = State::Busy(spawn_blocking(move || {
+                        
+                        
+                        
+                        let res = unsafe { buf.read_from(&mut &*std, max_buf_size) };
+                        (Operation::Read(res), buf)
+                    }));
                 }
                 State::Busy(ref mut rx) => {
                     let (op, mut buf) = ready!(Pin::new(rx).poll(cx))?;
@@ -916,9 +909,7 @@ impl std::os::unix::io::AsFd for File {
 #[cfg(unix)]
 impl std::os::unix::io::FromRawFd for File {
     unsafe fn from_raw_fd(fd: std::os::unix::io::RawFd) -> Self {
-        
-        
-        unsafe { StdFile::from_raw_fd(fd).into() }
+        StdFile::from_raw_fd(fd).into()
     }
 }
 
@@ -943,133 +934,12 @@ cfg_windows! {
 
     impl FromRawHandle for File {
         unsafe fn from_raw_handle(handle: RawHandle) -> Self {
-            // Safety: exactly the same safety contract as
-            // `FromRawHandle::from_raw_handle`.
-            unsafe { StdFile::from_raw_handle(handle).into() }
+            StdFile::from_raw_handle(handle).into()
         }
     }
 }
 
 impl Inner {
-    fn poll_read_inner(
-        std: Arc<StdFile>,
-        buf: Buf,
-        max_buf_size: usize,
-    ) -> io::Result<JoinHandle<(Operation, Buf)>> {
-        
-        
-        
-        #[cfg(all(
-            not(test),
-            tokio_unstable,
-            feature = "io-uring",
-            feature = "rt",
-            feature = "fs",
-            target_os = "linux",
-        ))]
-        {
-            if let Ok(handle) = crate::runtime::Handle::try_current() {
-                let driver_handle = handle.inner.driver().io();
-
-                if driver_handle.is_uring_ready(io_uring::opcode::Read::CODE) {
-                    
-                    let fd: crate::io::uring::utils::ArcFd = std;
-                    return Ok(spawn(Self::uring_read(fd, buf, max_buf_size)));
-                }
-
-                if !driver_handle.is_uring_probed() {
-                    
-                    
-                    return Ok(spawn(Self::lazy_init_read(std, buf, max_buf_size)));
-                }
-                
-            }
-        }
-
-        
-        let join = Self::spawn_blocking_read(buf, std, max_buf_size);
-        Ok(join)
-    }
-
-    
-    #[cfg(all(
-        not(test),
-        tokio_unstable,
-        feature = "io-uring",
-        feature = "rt",
-        feature = "fs",
-        target_os = "linux",
-    ))]
-    async fn uring_read(
-        mut fd: crate::io::uring::utils::ArcFd,
-        mut buf: Buf,
-        max_buf_size: usize,
-    ) -> (Operation, Buf) {
-        use crate::runtime::driver::op::Op;
-
-        loop {
-            let (res, r_fd, r_buf) =
-                
-                Op::read_at(fd, buf, max_buf_size, u64::MAX).await;
-            match res {
-                Err(e) if e.kind() == io::ErrorKind::Interrupted => {
-                    buf = r_buf;
-                    fd = r_fd;
-                    continue;
-                }
-                Err(e) => break (Operation::Read(Err(e)), r_buf),
-                Ok(n) => break (Operation::Read(Ok(n as usize)), r_buf),
-            }
-        }
-    }
-
-    
-    
-    
-    #[cfg(all(
-        not(test),
-        tokio_unstable,
-        feature = "io-uring",
-        feature = "rt",
-        feature = "fs",
-        target_os = "linux",
-    ))]
-    async fn lazy_init_read(std: Arc<StdFile>, buf: Buf, max_buf_size: usize) -> (Operation, Buf) {
-        let handle = crate::runtime::Handle::current();
-        let driver_handle = handle.inner.driver().io();
-        if driver_handle
-            .check_and_init(io_uring::opcode::Read::CODE)
-            .await
-            .unwrap_or(false)
-        {
-            let fd: crate::io::uring::utils::ArcFd = std;
-            Self::uring_read(fd, buf, max_buf_size).await
-        } else {
-            match Self::spawn_blocking_read(buf, std, max_buf_size).await {
-                Ok(result) => result,
-                Err(e) => (
-                    Operation::Read(Err(io::Error::new(io::ErrorKind::Other, e))),
-                    Buf::with_capacity(0),
-                ),
-            }
-        }
-    }
-
-    fn spawn_blocking_read(
-        buf: Buf,
-        std: Arc<StdFile>,
-        max_buf_size: usize,
-    ) -> JoinHandle<(Operation, Buf)> {
-        spawn_blocking(move || {
-            let mut buf = buf;
-            
-            
-            
-            let res = unsafe { buf.read_from(&mut &*std, max_buf_size) };
-            (Operation::Read(res), buf)
-        })
-    }
-
     async fn complete_inflight(&mut self) {
         use std::future::poll_fn;
 

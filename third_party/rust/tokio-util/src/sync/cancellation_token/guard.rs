@@ -2,8 +2,6 @@ use crate::sync::CancellationToken;
 
 
 
-
-
 #[derive(Debug)]
 pub struct DropGuard {
     pub(super) inner: Option<CancellationToken>,

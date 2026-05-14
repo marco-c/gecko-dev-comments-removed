@@ -177,7 +177,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(miri, ignore)] 
+    #[cfg_attr(miri, ignore)]
     fn test_splitter() {
         let data = str::repeat("█", DEFAULT_MAX_BUF_SIZE);
         let mut wr = super::SplitByUtf8BoundaryIfWindows::new(TextMockWriter);
@@ -191,7 +191,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(miri, ignore)] 
+    #[cfg_attr(miri, ignore)]
     fn test_pseudo_text() {
         
         

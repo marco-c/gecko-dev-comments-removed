@@ -84,6 +84,7 @@ const MAX_READS: u32 = 10;
 
 
 
+
 pub struct RwLock<T: ?Sized> {
     #[cfg(all(tokio_unstable, feature = "tracing"))]
     resource_span: tracing::Span,
@@ -271,7 +272,6 @@ impl<T: ?Sized> RwLock<T> {
     where
         T: Sized,
     {
-        assert_ne!(max_reads, 0, "a RwLock may not be created with 0 readers");
         assert!(
             max_reads <= MAX_READS,
             "a RwLock may not be created with more than {MAX_READS} readers"
@@ -367,16 +367,11 @@ impl<T: ?Sized> RwLock<T> {
     
     
     
-    
-    
-    
-    
     #[cfg(not(all(loom, test)))]
     pub const fn const_with_max_readers(value: T, max_reads: u32) -> RwLock<T>
     where
         T: Sized,
     {
-        assert!(max_reads != 0, "a RwLock may not be created with 0 readers");
         assert!(max_reads <= MAX_READS);
 
         RwLock {
@@ -474,9 +469,6 @@ impl<T: ?Sized> RwLock<T> {
         guard
     }
 
-    
-    
-    
     
     
     
@@ -779,7 +771,6 @@ impl<T: ?Sized> RwLock<T> {
     
     pub async fn write(&self) -> RwLockWriteGuard<'_, T> {
         let acquire_fut = async {
-            debug_assert_ne!(self.mr, 0);
             self.s.acquire(self.mr as usize).await.unwrap_or_else(|_| {
                 
                 
@@ -820,9 +811,6 @@ impl<T: ?Sized> RwLock<T> {
         guard
     }
 
-    
-    
-    
     
     
     
@@ -918,7 +906,6 @@ impl<T: ?Sized> RwLock<T> {
         let resource_span = self.resource_span.clone();
 
         let acquire_fut = async {
-            debug_assert_ne!(self.mr, 0);
             self.s.acquire(self.mr as usize).await.unwrap_or_else(|_| {
                 
                 
@@ -983,7 +970,6 @@ impl<T: ?Sized> RwLock<T> {
     
     
     pub fn try_write(&self) -> Result<RwLockWriteGuard<'_, T>, TryLockError> {
-        debug_assert_ne!(self.mr, 0);
         match self.s.try_acquire(self.mr as usize) {
             Ok(permit) => permit,
             Err(TryAcquireError::NoPermits) => return Err(TryLockError(())),
@@ -1042,7 +1028,6 @@ impl<T: ?Sized> RwLock<T> {
     
     
     pub fn try_write_owned(self: Arc<Self>) -> Result<OwnedRwLockWriteGuard<T>, TryLockError> {
-        debug_assert_ne!(self.mr, 0);
         match self.s.try_acquire(self.mr as usize) {
             Ok(permit) => permit,
             Err(TryAcquireError::NoPermits) => return Err(TryLockError(())),
@@ -1088,7 +1073,10 @@ impl<T: ?Sized> RwLock<T> {
     
     
     pub fn get_mut(&mut self) -> &mut T {
-        self.c.get_mut()
+        unsafe {
+            
+            &mut *self.c.get()
+        }
     }
 
     
@@ -1106,7 +1094,7 @@ impl<T> From<T> for RwLock<T> {
     }
 }
 
-impl<T> Default for RwLock<T>
+impl<T: ?Sized> Default for RwLock<T>
 where
     T: Default,
 {

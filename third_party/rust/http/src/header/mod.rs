@@ -36,20 +36,52 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 mod map;
 mod name;
 mod value;
 
 pub use self::map::{
     AsHeaderName, Drain, Entry, GetAll, HeaderMap, IntoHeaderName, IntoIter, Iter, IterMut, Keys,
-    MaxSizeReached, OccupiedEntry, VacantEntry, ValueDrain, ValueIter, ValueIterMut, Values,
-    ValuesMut,
+    OccupiedEntry, VacantEntry, ValueDrain, ValueIter, ValueIterMut, Values, ValuesMut,
 };
 pub use self::name::{HeaderName, InvalidHeaderName};
 pub use self::value::{HeaderValue, InvalidHeaderValue, ToStrError};
 
 
-#[rustfmt::skip]
 pub use self::name::{
     ACCEPT,
     ACCEPT_CHARSET,

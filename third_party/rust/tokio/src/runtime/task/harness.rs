@@ -4,7 +4,6 @@ use crate::runtime::task::state::{Snapshot, State};
 use crate::runtime::task::waker::waker_ref;
 use crate::runtime::task::{Id, JoinError, Notified, RawTask, Schedule, Task};
 
-#[cfg(tokio_unstable)]
 use crate::runtime::TaskMeta;
 use std::any::Any;
 use std::mem;
@@ -368,12 +367,10 @@ where
         
         
         
-        #[cfg(tokio_unstable)]
         if let Some(f) = self.trailer().hooks.task_terminate_callback.as_ref() {
             let _ = panic::catch_unwind(panic::AssertUnwindSafe(|| {
                 f(&TaskMeta {
                     id: self.core().task_id,
-                    spawned_at: self.core().spawned_at.into(),
                     _phantom: Default::default(),
                 })
             }));

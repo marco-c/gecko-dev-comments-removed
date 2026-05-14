@@ -57,9 +57,6 @@ impl JoinError {
     
     
     
-    
-    
-    
     pub fn is_panic(&self) -> bool {
         matches!(&self.repr, Repr::Panic(_))
     }

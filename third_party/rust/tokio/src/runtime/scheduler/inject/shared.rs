@@ -38,7 +38,7 @@ impl<T: 'static> Shared<T> {
     }
 
     
-    #[cfg(any(feature = "taskdump", feature = "rt-multi-thread"))]
+    #[cfg(any(tokio_taskdump, feature = "rt-multi-thread"))]
     pub(crate) fn is_closed(&self, synced: &Synced) -> bool {
         synced.is_closed
     }
@@ -71,7 +71,7 @@ impl<T: 'static> Shared<T> {
         }
 
         
-        let len = unsafe { self.len.unsync_load() };
+        let len = self.len.unsync_load();
         let task = task.into_raw();
 
         
@@ -95,7 +95,7 @@ impl<T: 'static> Shared<T> {
     
     
     pub(crate) unsafe fn pop(&self, synced: &mut Synced) -> Option<task::Notified<T>> {
-        unsafe { self.pop_n(synced, 1).next() }
+        self.pop_n(synced, 1).next()
     }
 
     
@@ -110,7 +110,7 @@ impl<T: 'static> Shared<T> {
 
         
         
-        let len = unsafe { self.len.unsync_load() };
+        let len = self.len.unsync_load();
         let n = cmp::min(n, len);
 
         

@@ -5,13 +5,6 @@
 
 
 
-#![allow(unsafe_op_in_unsafe_fn)]
-
-
-
-
-
-
 
 use core::cell::UnsafeCell;
 use core::fmt;
@@ -63,8 +56,6 @@ pub(crate) unsafe trait Link {
     
     unsafe fn from_raw(ptr: NonNull<Self::Target>) -> Self::Handle;
 
-    
-    
     
     
     

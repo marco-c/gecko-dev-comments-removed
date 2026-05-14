@@ -29,7 +29,7 @@
 
 
 mod addr;
-cfg_not_wasip1! {
+cfg_not_wasi! {
     #[cfg(feature = "net")]
     pub(crate) use addr::to_socket_addrs;
 }
@@ -42,7 +42,7 @@ cfg_net! {
     pub mod tcp;
     pub use tcp::listener::TcpListener;
     pub use tcp::stream::TcpStream;
-    cfg_not_wasip1! {
+    cfg_not_wasi! {
         pub use tcp::socket::TcpSocket;
 
         mod udp;

@@ -32,7 +32,7 @@ pub(crate) fn try_enter_blocking_region() -> Option<BlockingRegionGuard> {
 
 
 pub(crate) fn disallow_block_in_place() -> DisallowBlockInPlaceGuard {
-    let reset = CONTEXT.try_with(|c| {
+    let reset = CONTEXT.with(|c| {
         if let EnterRuntime::Entered {
             allow_block_in_place: true,
         } = c.runtime.get()
@@ -46,7 +46,7 @@ pub(crate) fn disallow_block_in_place() -> DisallowBlockInPlaceGuard {
         }
     });
 
-    DisallowBlockInPlaceGuard(reset.unwrap_or(false))
+    DisallowBlockInPlaceGuard(reset)
 }
 
 impl BlockingRegionGuard {

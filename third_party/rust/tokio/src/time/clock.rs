@@ -126,37 +126,6 @@ cfg_test_util! {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     #[track_caller]
     pub fn pause() {
         with_clock(|maybe_clock| {
@@ -214,51 +183,10 @@ cfg_test_util! {
     /// `advance`. However if they don't, the runtime will poll the task again
     /// shortly.
     ///
-    /// # When to use `sleep` instead
-    ///
-    /// **Important:** `advance` is designed for testing scenarios where you want to
-    /// instantly jump forward in time. However, it has limitations that make it
-    /// unsuitable for certain use cases:
-    ///
-    /// - **Forcing timeouts:** If you want to reliably trigger a timeout, prefer
-    ///   using [`sleep`] with auto-advance rather than `advance`. The `advance`
-    ///   function jumps time forward but doesn't guarantee that all timers will be
-    ///   processed before your code continues.
-    ///
-    /// - **Simulating freezes:** If you're trying to simulate a scenario where the
-    ///   program freezes and then resumes, the batch behavior of `advance` may not
-    ///   produce the expected results. All timers that expire during the advance
-    ///   complete simultaneously.
-    ///
-    /// For most testing scenarios where you want to wait for a duration to pass
-    /// and have all timers fire in order, use [`sleep`] instead:
-    ///
-    /// ```ignore
-    /// use tokio::time::{self, Duration};
-    ///
-    /// #[tokio::test(start_paused = true)]
-    /// async fn test_timeout_reliable() {
-    ///     // Use sleep with auto-advance for reliable timeout testing
-    ///     time::sleep(Duration::from_secs(5)).await;
-    ///     // All timers that were scheduled to fire within 5 seconds
-    ///     // have now been processed in order
-    /// }
-    /// ```
-    ///
     /// # Panics
     ///
-    /// Panics if any of the following conditions are met:
-    ///
-    /// - The clock is not frozen, which means that you must
-    ///   call [`pause`] before calling this method.
-    /// - If called outside of the Tokio runtime.
-    /// - If the input `duration` is too large (such as [`Duration::MAX`])
-    ///   to be safely added to the current time without causing an overflow.
-    ///
-    /// # Caveats
-    ///
-    /// Using a very large `duration` is not recommended,
-    /// as it may cause panicking due to overflow.
+    /// Panics if time is not frozen or if called from outside of the Tokio
+    /// runtime.
     ///
     /// # Auto-advance
     ///
@@ -323,6 +251,7 @@ cfg_test_util! {
             let mut inner = self.inner.lock();
 
             if !inner.enable_pausing {
+                drop(inner); // avoid poisoning the lock
                 return Err("`time::pause()` requires the `current_thread` Tokio runtime. \
                         This is the default Runtime used by `#[tokio::test].");
             }

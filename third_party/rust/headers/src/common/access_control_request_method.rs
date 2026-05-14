@@ -1,6 +1,6 @@
-use http::{HeaderName, HeaderValue, Method};
+use http::Method;
+use {Header, HeaderName, HeaderValue};
 
-use crate::{Error, Header};
 
 
 
@@ -33,15 +33,15 @@ impl Header for AccessControlRequestMethod {
         &::http::header::ACCESS_CONTROL_REQUEST_METHOD
     }
 
-    fn decode<'i, I: Iterator<Item = &'i HeaderValue>>(values: &mut I) -> Result<Self, Error> {
+    fn decode<'i, I: Iterator<Item = &'i HeaderValue>>(values: &mut I) -> Result<Self, ::Error> {
         values
             .next()
             .and_then(|value| Method::from_bytes(value.as_bytes()).ok())
             .map(AccessControlRequestMethod)
-            .ok_or_else(Error::invalid)
+            .ok_or_else(::Error::invalid)
     }
 
-    fn encode<E: Extend<HeaderValue>>(&self, values: &mut E) {
+    fn encode<E: Extend<::HeaderValue>>(&self, values: &mut E) {
         
         let s = match self.0 {
             Method::GET => "GET",

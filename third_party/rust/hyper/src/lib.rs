@@ -2,41 +2,10 @@
 #![deny(missing_debug_implementations)]
 #![cfg_attr(test, deny(rust_2018_idioms))]
 #![cfg_attr(all(test, feature = "full"), deny(unreachable_pub))]
-#![cfg_attr(all(test, feature = "full"), deny(warnings))]
+
+
 #![cfg_attr(all(test, feature = "nightly"), feature(test))]
 #![cfg_attr(docsrs, feature(doc_cfg))]
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -96,19 +65,19 @@ pub use http;
 #[cfg(all(test, feature = "nightly"))]
 extern crate test;
 
-#[doc(no_inline)]
-pub use http::{header, HeaderMap, Method, Request, Response, StatusCode, Uri, Version};
+pub use crate::http::{header, Method, Request, Response, StatusCode, Uri, Version};
 
+#[doc(no_inline)]
+pub use crate::http::HeaderMap;
+
+pub use crate::body::Body;
 pub use crate::error::{Error, Result};
 
 #[macro_use]
 mod cfg;
-
 #[macro_use]
-mod trace;
-
-pub mod body;
 mod common;
+pub mod body;
 mod error;
 pub mod ext;
 #[cfg(test)]
@@ -118,7 +87,6 @@ pub mod service;
 pub mod upgrade;
 
 #[cfg(feature = "ffi")]
-#[cfg_attr(docsrs, doc(cfg(all(feature = "ffi", hyper_unstable_ffi))))]
 pub mod ffi;
 
 cfg_proto! {
@@ -130,10 +98,15 @@ cfg_feature! {
     #![feature = "client"]
 
     pub mod client;
+    #[cfg(any(feature = "http1", feature = "http2"))]
+    #[doc(no_inline)]
+    pub use crate::client::Client;
 }
 
 cfg_feature! {
     #![feature = "server"]
 
     pub mod server;
+    #[doc(no_inline)]
+    pub use crate::server::Server;
 }

@@ -100,56 +100,6 @@ macro_rules! doc {
         
         
         
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
         #[macro_export]
         #[cfg_attr(docsrs, doc(cfg(feature = "macros")))]
         $try_join
@@ -158,16 +108,12 @@ macro_rules! doc {
 
 #[cfg(doc)]
 doc! {macro_rules! try_join {
-    ($(biased;)? $($future:expr),*) => { unimplemented!() }
+    ($($future:expr),*) => { unimplemented!() }
 }}
 
 #[cfg(not(doc))]
 doc! {macro_rules! try_join {
     (@ {
-        // Type of rotator that controls which inner future to start with
-        // when polling our output future.
-        rotator_select=$rotator_select:ty;
-
         // One `_` for each branch in the `try_join!` macro. This is not used once
         // normalization is complete.
         ( $($count:tt)* )
@@ -179,13 +125,16 @@ doc! {macro_rules! try_join {
         $( ( $($skip:tt)* ) $e:expr, )*
 
     }) => {{
+        use $crate::macros::support::{maybe_done, poll_fn, Future, Pin};
+        use $crate::macros::support::Poll::{Ready, Pending};
+
         // Safety: nothing must be moved out of `futures`. This is to satisfy
         // the requirement of `Pin::new_unchecked` called below.
         //
         // We can't use the `pin!` macro for this because `futures` is a tuple
         // and the standard library provides no way to pin-project to the fields
         // of a tuple.
-        let mut futures = ( $( $crate::macros::support::maybe_done($e), )* );
+        let mut futures = ( $( maybe_done($e), )* );
 
         // This assignment makes sure that the `poll_fn` closure only has a
         // reference to the futures, instead of taking ownership of them. This
@@ -193,19 +142,25 @@ doc! {macro_rules! try_join {
         // <https://internals.rust-lang.org/t/surprising-soundness-trouble-around-pollfn/17484>
         let mut futures = &mut futures;
 
-        // Each time the future created by poll_fn is polled, if not using biased mode,
-        // a different future is polled first to ensure every future passed to try_join!
-        // can make progress even if one of the futures consumes the whole budget.
-        let mut rotator = <$rotator_select as $crate::macros::support::RotatorSelect>::Rotator::<{$($total)*}>::default();
+        // Each time the future created by poll_fn is polled, a different future will be polled first
+        // to ensure every future passed to join! gets a chance to make progress even if
+        // one of the futures consumes the whole budget.
+        //
+        // This is number of futures that will be skipped in the first loop
+        // iteration the next time.
+        let mut skip_next_time: u32 = 0;
 
-        $crate::macros::support::poll_fn(move |cx| {
+        poll_fn(move |cx| {
             const COUNT: u32 = $($total)*;
 
             let mut is_pending = false;
+
             let mut to_run = COUNT;
 
-            // The number of futures that will be skipped in the first loop iteration.
-            let mut skip = rotator.num_skip();
+            // The number of futures that will be skipped in the first loop iteration
+            let mut skip = skip_next_time;
+
+            skip_next_time = if skip + 1 == COUNT { 0 } else { skip + 1 };
 
             // This loop runs twice and the first `skip` futures
             // are not polled in the first iteration.
@@ -223,13 +178,13 @@ doc! {macro_rules! try_join {
 
                     // Safety: future is stored on the stack above
                     // and never moved.
-                    let mut fut = unsafe { $crate::macros::support::Pin::new_unchecked(fut) };
+                    let mut fut = unsafe { Pin::new_unchecked(fut) };
 
                     // Try polling
-                    if $crate::macros::support::Future::poll(fut.as_mut(), cx).is_pending() {
+                    if fut.as_mut().poll(cx).is_pending() {
                         is_pending = true;
                     } else if fut.as_mut().output_mut().expect("expected completed future").is_err() {
-                        return $crate::macros::support::Poll::Ready($crate::macros::support::Result::Err(fut.take_output().expect("expected completed future").err().unwrap()))
+                        return Ready(Err(fut.take_output().expect("expected completed future").err().unwrap()))
                     }
                 } else {
                     // Future skipped, one less future to skip in the next iteration
@@ -239,15 +194,15 @@ doc! {macro_rules! try_join {
             }
 
             if is_pending {
-                $crate::macros::support::Poll::Pending
+                Pending
             } else {
-                $crate::macros::support::Poll::Ready($crate::macros::support::Result::Ok(($({
+                Ready(Ok(($({
                     // Extract the future for this branch from the tuple.
                     let ( $($skip,)* fut, .. ) = &mut futures;
 
                     // Safety: future is stored on the stack above
                     // and never moved.
-                    let mut fut = unsafe { $crate::macros::support::Pin::new_unchecked(fut) };
+                    let mut fut = unsafe { Pin::new_unchecked(fut) };
 
                     fut
                         .take_output()
@@ -261,20 +216,15 @@ doc! {macro_rules! try_join {
 
     // ===== Normalize =====
 
-    (@ { rotator_select=$rotator_select:ty;  ( $($s:tt)* ) ( $($n:tt)* ) $($t:tt)* } $e:expr, $($r:tt)* ) => {
-      $crate::try_join!(@{ rotator_select=$rotator_select; ($($s)* _) ($($n)* + 1) $($t)* ($($s)*) $e, } $($r)*)
+    (@ { ( $($s:tt)* ) ( $($n:tt)* ) $($t:tt)* } $e:expr, $($r:tt)* ) => {
+      $crate::try_join!(@{ ($($s)* _) ($($n)* + 1) $($t)* ($($s)*) $e, } $($r)*)
     };
 
     // ===== Entry point =====
-    ( biased; $($e:expr),+ $(,)?) => {
-        $crate::try_join!(@{ rotator_select=$crate::macros::support::SelectBiased;  () (0) } $($e,)*)
-    };
 
     ( $($e:expr),+ $(,)?) => {
-        $crate::try_join!(@{ rotator_select=$crate::macros::support::SelectNormal; () (0) } $($e,)*)
+        $crate::try_join!(@{ () (0) } $($e,)*)
     };
-
-    (biased;) => { async { Ok(()) }.await };
 
     () => { async { Ok(()) }.await }
 }}

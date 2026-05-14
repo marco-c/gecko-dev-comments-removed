@@ -6,6 +6,7 @@
 
 use crate::time::wheel::{self, Wheel};
 
+use futures_core::ready;
 use tokio::time::{sleep_until, Duration, Instant, Sleep};
 
 use core::ops::{Index, IndexMut};
@@ -18,11 +19,7 @@ use std::fmt::Debug;
 use std::future::Future;
 use std::marker::PhantomData;
 use std::pin::Pin;
-use std::task::{self, ready, Poll, Waker};
-
-
-
-
+use std::task::{self, Poll, Waker};
 
 
 
@@ -278,7 +275,7 @@ impl<T> SlabStorage<T> {
     fn remap_key(&self, key: &Key) -> Option<KeyInternal> {
         let key_map = &self.key_map;
         if self.compact_called {
-            key_map.get(key).copied()
+            key_map.get(&*key).copied()
         } else {
             Some((*key).into())
         }
@@ -534,7 +531,6 @@ impl<T> DelayQueue<T> {
     
     
     
-    #[track_caller]
     pub fn insert_at(&mut self, value: T, when: Instant) -> Key {
         assert!(self.slab.len() < MAX_ENTRIES, "max entries exceeded");
 
@@ -653,12 +649,10 @@ impl<T> DelayQueue<T> {
     
     
     
-    #[track_caller]
     pub fn insert(&mut self, value: T, timeout: Duration) -> Key {
         self.insert_at(value, Instant::now() + timeout)
     }
 
-    #[track_caller]
     fn insert_idx(&mut self, when: u64, key: Key) {
         use self::wheel::{InsertError, Stack};
 
@@ -670,7 +664,7 @@ impl<T> DelayQueue<T> {
                 
                 self.expired.push(key, &mut self.slab);
             }
-            Err((_, err)) => panic!("invalid deadline; err={err:?}"),
+            Err((_, err)) => panic!("invalid deadline; err={:?}", err),
         }
     }
 
@@ -680,40 +674,6 @@ impl<T> DelayQueue<T> {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[track_caller]
-    pub fn deadline(&self, key: &Key) -> Instant {
-        self.start + Duration::from_millis(self.slab[*key].when)
-    }
-
-    
-    
-    
-    
-    
-    
-    #[track_caller]
     fn remove_key(&mut self, key: &Key) {
         use crate::time::wheel::Stack;
 
@@ -753,7 +713,6 @@ impl<T> DelayQueue<T> {
     
     
     
-    #[track_caller]
     pub fn remove(&mut self, key: &Key) -> Expired<T> {
         let prev_deadline = self.next_deadline();
 
@@ -766,12 +725,6 @@ impl<T> DelayQueue<T> {
                 (None, _) => self.delay = None,
                 (Some(deadline), Some(delay)) => delay.as_mut().reset(deadline),
                 (Some(deadline), None) => self.delay = Some(Box::pin(sleep_until(deadline))),
-            }
-        }
-
-        if self.slab.is_empty() {
-            if let Some(waker) = self.waker.take() {
-                waker.wake();
             }
         }
 
@@ -811,49 +764,11 @@ impl<T> DelayQueue<T> {
     
     
     
-    pub fn try_remove(&mut self, key: &Key) -> Option<Expired<T>> {
-        if self.slab.contains(key) {
-            Some(self.remove(key))
-        } else {
-            None
-        }
-    }
-
     
     
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[track_caller]
     pub fn reset_at(&mut self, key: &Key, when: Instant) {
         self.remove_key(key);
 
@@ -917,44 +832,7 @@ impl<T> DelayQueue<T> {
     }
 
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn peek(&self) -> Option<Key> {
-        use self::wheel::Stack;
-
-        self.expired.peek().or_else(|| self.wheel.peek())
-    }
-
-    
-    
-    
-    fn next_deadline(&self) -> Option<Instant> {
+    fn next_deadline(&mut self) -> Option<Instant> {
         self.wheel
             .poll_at()
             .map(|poll_at| self.start + Duration::from_millis(poll_at))
@@ -995,7 +873,6 @@ impl<T> DelayQueue<T> {
     
     
     
-    #[track_caller]
     pub fn reset(&mut self, key: &Key, timeout: Duration) {
         self.reset_at(key, Instant::now() + timeout);
     }
@@ -1101,12 +978,7 @@ impl<T> DelayQueue<T> {
     
     
     
-    #[track_caller]
     pub fn reserve(&mut self, additional: usize) {
-        assert!(
-            self.slab.capacity() + additional <= MAX_ENTRIES,
-            "max queue capacity exceeded"
-        );
         self.slab.reserve(additional);
     }
 
@@ -1245,11 +1117,6 @@ impl<T> wheel::Stack for Stack<T> {
         }
     }
 
-    fn peek(&self) -> Option<Self::Owned> {
-        self.head
-    }
-
-    #[track_caller]
     fn remove(&mut self, item: &Self::Borrowed, store: &mut Self::Store) {
         let key = *item;
         assert!(store.contains(item));

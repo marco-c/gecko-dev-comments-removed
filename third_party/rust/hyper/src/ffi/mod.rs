@@ -62,21 +62,20 @@ pub use self::io::*;
 pub use self::task::*;
 
 
-pub const HYPER_ITER_CONTINUE: std::ffi::c_int = 0;
+pub const HYPER_ITER_CONTINUE: libc::c_int = 0;
 
 #[allow(unused)]
-pub const HYPER_ITER_BREAK: std::ffi::c_int = 1;
+pub const HYPER_ITER_BREAK: libc::c_int = 1;
 
 
-pub const HYPER_HTTP_VERSION_NONE: std::ffi::c_int = 0;
+pub const HYPER_HTTP_VERSION_NONE: libc::c_int = 0;
 
-pub const HYPER_HTTP_VERSION_1_0: std::ffi::c_int = 10;
+pub const HYPER_HTTP_VERSION_1_0: libc::c_int = 10;
 
-pub const HYPER_HTTP_VERSION_1_1: std::ffi::c_int = 11;
+pub const HYPER_HTTP_VERSION_1_1: libc::c_int = 11;
 
-pub const HYPER_HTTP_VERSION_2: std::ffi::c_int = 20;
+pub const HYPER_HTTP_VERSION_2: libc::c_int = 20;
 
-#[derive(Clone)]
 struct UserDataPointer(*mut std::ffi::c_void);
 
 
@@ -87,13 +86,9 @@ unsafe impl Sync for UserDataPointer {}
 /// cbindgen:ignore
 static VERSION_CSTR: &str = concat!(env!("CARGO_PKG_VERSION"), "\0");
 
-
-
-type size_t = usize;
-
 ffi_fn! {
     /// Returns a static ASCII (null terminated) string of the hyper version.
-    fn hyper_version() -> *const std::ffi::c_char {
+    fn hyper_version() -> *const libc::c_char {
         VERSION_CSTR.as_ptr() as _
     } ?= std::ptr::null()
 }

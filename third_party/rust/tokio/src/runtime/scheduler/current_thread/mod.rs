@@ -3,7 +3,7 @@ use crate::loom::sync::Arc;
 use crate::runtime::driver::{self, Driver};
 use crate::runtime::scheduler::{self, Defer, Inject};
 use crate::runtime::task::{
-    self, JoinHandle, OwnedTasks, Schedule, SpawnLocation, Task, TaskHarnessScheduleHooks,
+    self, JoinHandle, OwnedTasks, Schedule, Task, TaskHarnessScheduleHooks,
 };
 use crate::runtime::{
     blocking, context, Config, MetricsBatch, SchedulerMetrics, TaskHooks, TaskMeta, WorkerMetrics,
@@ -15,7 +15,7 @@ use crate::util::{waker_ref, RngSeedGenerator, Wake, WakerRef};
 use std::cell::RefCell;
 use std::collections::VecDeque;
 use std::future::{poll_fn, Future};
-use std::sync::atomic::Ordering::{AcqRel, Acquire, Release};
+use std::sync::atomic::Ordering::{AcqRel, Release};
 use std::task::Poll::{Pending, Ready};
 use std::task::Waker;
 use std::thread::ThreadId;
@@ -34,9 +34,6 @@ pub(crate) struct CurrentThread {
 
 
 pub(crate) struct Handle {
-    
-    name: Option<String>,
-
     
     shared: Shared,
 
@@ -135,7 +132,6 @@ impl CurrentThread {
         seed_generator: RngSeedGenerator,
         config: Config,
         local_tid: Option<ThreadId>,
-        name: Option<String>,
     ) -> (CurrentThread, Arc<Handle>) {
         let worker_metrics = WorkerMetrics::from_config(&config);
         worker_metrics.set_thread_id(thread::current().id());
@@ -146,7 +142,6 @@ impl CurrentThread {
             .unwrap_or(DEFAULT_GLOBAL_QUEUE_INTERVAL);
 
         let handle = Arc::new(Handle {
-            name,
             task_hooks: TaskHooks {
                 task_spawn_callback: config.before_spawn.clone(),
                 task_terminate_callback: config.after_termination.clone(),
@@ -355,7 +350,7 @@ impl Core {
     }
 }
 
-#[cfg(feature = "taskdump")]
+#[cfg(tokio_taskdump)]
 fn wake_deferred_tasks_and_free(context: &Context) {
     let wakers = context.defer.take_deferred();
     for waker in wakers {
@@ -387,12 +382,17 @@ impl Context {
 
         
         
-        if !self.has_pending_work(&core) {
+        if core.tasks.is_empty() {
             
             core.metrics.about_to_park();
             core.submit_metrics(handle);
 
-            core = self.park_internal(core, handle, &mut driver, None);
+            let (c, ()) = self.enter(core, || {
+                driver.park(&handle.driver);
+                self.defer.wake();
+            });
+
+            core = c;
 
             core.metrics.unparked();
             core.submit_metrics(handle);
@@ -413,31 +413,12 @@ impl Context {
 
         core.submit_metrics(handle);
 
-        core = self.park_internal(core, handle, &mut driver, Some(Duration::from_millis(0)));
-
-        core.driver = Some(driver);
-        core
-    }
-
-    fn has_pending_work(&self, core: &Core) -> bool {
-        !core.tasks.is_empty() || !self.defer.is_empty() || self.handle.shared.woken.load(Acquire)
-    }
-
-    fn park_internal(
-        &self,
-        core: Box<Core>,
-        handle: &Handle,
-        driver: &mut Driver,
-        duration: Option<Duration>,
-    ) -> Box<Core> {
-        let (core, ()) = self.enter(core, || {
-            match duration {
-                Some(dur) => driver.park_timeout(&handle.driver, dur),
-                None => driver.park(&handle.driver),
-            }
+        let (mut core, ()) = self.enter(core, || {
+            driver.park_timeout(&handle.driver, Duration::from_millis(0));
             self.defer.wake();
         });
 
+        core.driver = Some(driver);
         core
     }
 
@@ -464,22 +445,19 @@ impl Context {
 
 impl Handle {
     
-    #[track_caller]
     pub(crate) fn spawn<F>(
         me: &Arc<Self>,
         future: F,
         id: crate::runtime::task::Id,
-        spawned_at: SpawnLocation,
     ) -> JoinHandle<F::Output>
     where
         F: crate::future::Future + Send + 'static,
         F::Output: Send + 'static,
     {
-        let (handle, notified) = me.shared.owned.bind(future, me.clone(), id, spawned_at);
+        let (handle, notified) = me.shared.owned.bind(future, me.clone(), id);
 
         me.task_hooks.spawn(&TaskMeta {
             id,
-            spawned_at,
             _phantom: Default::default(),
         });
 
@@ -496,28 +474,19 @@ impl Handle {
     
     
     
-    
-    #[track_caller]
     pub(crate) unsafe fn spawn_local<F>(
         me: &Arc<Self>,
         future: F,
         id: crate::runtime::task::Id,
-        spawned_at: SpawnLocation,
     ) -> JoinHandle<F::Output>
     where
         F: crate::future::Future + 'static,
         F::Output: 'static,
     {
-        
-        let (handle, notified) = unsafe {
-            me.shared
-                .owned
-                .bind_local(future, me.clone(), id, spawned_at)
-        };
+        let (handle, notified) = me.shared.owned.bind_local(future, me.clone(), id);
 
         me.task_hooks.spawn(&TaskMeta {
             id,
-            spawned_at,
             _phantom: Default::default(),
         });
 
@@ -531,7 +500,7 @@ impl Handle {
     
     #[cfg(all(
         tokio_unstable,
-        feature = "taskdump",
+        tokio_taskdump,
         target_os = "linux",
         any(target_arch = "aarch64", target_arch = "x86", target_arch = "x86_64")
     ))]
@@ -638,15 +607,13 @@ cfg_unstable_metrics! {
     }
 }
 
-use std::num::NonZeroU64;
+cfg_unstable! {
+    use std::num::NonZeroU64;
 
-impl Handle {
-    pub(crate) fn owned_id(&self) -> NonZeroU64 {
-        self.shared.owned.id
-    }
-
-    pub(crate) fn name(&self) -> Option<&str> {
-        self.name.as_deref()
+    impl Handle {
+        pub(crate) fn owned_id(&self) -> NonZeroU64 {
+            self.shared.owned.id
+        }
     }
 }
 
@@ -733,20 +700,8 @@ impl Wake for Handle {
 
     
     fn wake_by_ref(arc_self: &Arc<Self>) {
-        let already_woken = arc_self.shared.woken.swap(true, Release);
-
-        if !already_woken {
-            use scheduler::Context::CurrentThread;
-
-            
-            
-            context::with_scheduler(|maybe_cx| match maybe_cx {
-                Some(CurrentThread(cx)) if Arc::ptr_eq(arc_self, &cx.handle) => {}
-                _ => {
-                    arc_self.driver.unpark();
-                }
-            });
-        }
+        arc_self.shared.woken.store(true, Release);
+        arc_self.driver.unpark();
     }
 }
 
@@ -800,7 +755,7 @@ impl CoreGuard<'_> {
                         None => {
                             core.metrics.end_processing_scheduled_tasks();
 
-                            core = if context.has_pending_work(&core) {
+                            core = if !context.defer.is_empty() {
                                 context.park_yield(core, handle)
                             } else {
                                 context.park(core, handle)
@@ -816,16 +771,16 @@ impl CoreGuard<'_> {
                     let task = context.handle.shared.owned.assert_owner(task);
 
                     #[cfg(tokio_unstable)]
-                    let task_meta = task.task_meta();
+                    let task_id = task.task_id();
 
                     let (c, ()) = context.run_task(core, || {
                         #[cfg(tokio_unstable)]
-                        context.handle.task_hooks.poll_start_callback(&task_meta);
+                        context.handle.task_hooks.poll_start_callback(task_id);
 
                         task.run();
 
                         #[cfg(tokio_unstable)]
-                        context.handle.task_hooks.poll_stop_callback(&task_meta);
+                        context.handle.task_hooks.poll_stop_callback(task_id);
                     });
 
                     core = c;

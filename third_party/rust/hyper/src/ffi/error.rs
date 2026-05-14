@@ -1,13 +1,4 @@
-use crate::ffi::size_t;
-
-
-
-
-
-
-
-
-
+use libc::size_t;
 
 
 pub struct hyper_error(crate::Error);
@@ -66,8 +57,6 @@ impl hyper_error {
 
 ffi_fn! {
     /// Frees a `hyper_error`.
-    ///
-    /// This should be used for any error once it is no longer needed.
     fn hyper_error_free(err: *mut hyper_error) {
         drop(non_null!(Box::from_raw(err) ?= ()));
     }

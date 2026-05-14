@@ -109,12 +109,12 @@ fn write_hits_backpressure() {
     const ITER: usize = 2 * 1024;
 
     let mut mock = mock! {
-        // Block the `ITER*2`th write
+        // Block the `ITER`th write
         Err(io::Error::new(io::ErrorKind::WouldBlock, "not ready")),
         Ok(b"".to_vec()),
     };
 
-    for i in 0..=ITER * 2 {
+    for i in 0..=ITER {
         let mut b = BytesMut::with_capacity(4);
         b.put_u32(i as u32);
 
@@ -134,14 +134,13 @@ fn write_hits_backpressure() {
         mock.calls.push_back(Ok(b[..].to_vec()));
     }
     
-    assert_eq!(mock.calls.len(), 10);
+    assert_eq!(mock.calls.len(), 6);
 
     let mut task = task::spawn(());
     let mut framed = FramedWrite::new(mock, U32Encoder);
-    framed.set_backpressure_boundary(ITER * 8);
     task.enter(|cx, _| {
         
-        for i in 0..ITER * 2 {
+        for i in 0..ITER {
             assert!(assert_ready!(pin!(framed).poll_ready(cx)).is_ok());
             assert!(pin!(framed).start_send(i as u32).is_ok());
         }
@@ -155,7 +154,7 @@ fn write_hits_backpressure() {
         assert!(assert_ready!(pin!(framed).poll_ready(cx)).is_ok());
 
         
-        assert!(pin!(framed).start_send((ITER * 2) as u32).is_ok());
+        assert!(pin!(framed).start_send(ITER as u32).is_ok());
 
         
         assert!(assert_ready!(pin!(framed).poll_flush(cx)).is_ok());
@@ -180,7 +179,7 @@ impl Write for Mock {
                 Ok(data.len())
             }
             Some(Err(e)) => Err(e),
-            None => panic!("unexpected write; {src:?}"),
+            None => panic!("unexpected write; {:?}", src),
         }
     }
 

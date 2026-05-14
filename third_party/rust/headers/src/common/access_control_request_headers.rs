@@ -1,8 +1,8 @@
 use std::iter::FromIterator;
 
-use http::{HeaderName, HeaderValue};
+use util::FlatCsv;
+use {HeaderName, HeaderValue};
 
-use crate::util::FlatCsv;
 
 
 
@@ -43,7 +43,7 @@ derive_header! {
 
 impl AccessControlRequestHeaders {
     
-    pub fn iter(&self) -> impl Iterator<Item = HeaderName> + '_ {
+    pub fn iter<'a>(&'a self) -> impl Iterator<Item = HeaderName> + 'a {
         self.0.iter().filter_map(|s| s.parse().ok())
     }
 }

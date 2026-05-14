@@ -10,6 +10,8 @@
 
 use tracing::Span;
 
+use std::net::SocketAddr;
+
 use http::header;
 
 use crate::filter::{Filter, WrapSealed};
@@ -50,6 +52,10 @@ pub fn request() -> Trace<impl Fn(Info<'_>) -> Span + Clone> {
         );
 
         
+        if let Some(remote_addr) = info.remote_addr() {
+            span.record("remote.addr", &display(remote_addr));
+        }
+
         if let Some(referer) = info.referer() {
             span.record("referer", &display(referer));
         }
@@ -151,6 +157,11 @@ where
 }
 
 impl<'a> Info<'a> {
+    
+    pub fn remote_addr(&self) -> Option<SocketAddr> {
+        self.route.remote_addr()
+    }
+
     
     pub fn method(&self) -> &http::Method {
         self.route.method()

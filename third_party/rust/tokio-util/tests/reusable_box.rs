@@ -1,22 +1,9 @@
 use futures::future::FutureExt;
 use std::alloc::Layout;
 use std::future::Future;
-use std::marker::PhantomPinned;
 use std::pin::Pin;
-use std::rc::Rc;
 use std::task::{Context, Poll};
 use tokio_util::sync::ReusableBoxFuture;
-
-#[test]
-
-#[allow(clippy::extra_unused_lifetimes)]
-fn traits<'a>() {
-    fn assert_traits<T: Send + Sync + Unpin>() {}
-    
-    assert_traits::<ReusableBoxFuture<'a, PhantomPinned>>();
-    
-    assert_traits::<ReusableBoxFuture<'a, Rc<()>>>();
-}
 
 #[test]
 fn test_different_futures() {

@@ -1,262 +1,5 @@
-use std::io::{BufRead, Read, Seek, Write};
-use tokio::io::{
-    AsyncBufRead, AsyncBufReadExt, AsyncRead, AsyncReadExt, AsyncSeek, AsyncSeekExt, AsyncWrite,
-    AsyncWriteExt,
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+use std::io::{Read, Write};
+use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 
 
 
@@ -264,28 +7,6 @@ use tokio::io::{
 pub struct SyncIoBridge<T> {
     src: T,
     rt: tokio::runtime::Handle,
-}
-
-impl<T: AsyncBufRead + Unpin> BufRead for SyncIoBridge<T> {
-    fn fill_buf(&mut self) -> std::io::Result<&[u8]> {
-        let src = &mut self.src;
-        self.rt.block_on(AsyncBufReadExt::fill_buf(src))
-    }
-
-    fn consume(&mut self, amt: usize) {
-        let src = &mut self.src;
-        AsyncBufReadExt::consume(src, amt)
-    }
-
-    fn read_until(&mut self, byte: u8, buf: &mut Vec<u8>) -> std::io::Result<usize> {
-        let src = &mut self.src;
-        self.rt
-            .block_on(AsyncBufReadExt::read_until(src, byte, buf))
-    }
-    fn read_line(&mut self, buf: &mut String) -> std::io::Result<usize> {
-        let src = &mut self.src;
-        self.rt.block_on(AsyncBufReadExt::read_line(src, buf))
-    }
 }
 
 impl<T: AsyncRead + Unpin> Read for SyncIoBridge<T> {
@@ -334,13 +55,6 @@ impl<T: AsyncWrite + Unpin> Write for SyncIoBridge<T> {
     }
 }
 
-impl<T: AsyncSeek + Unpin> Seek for SyncIoBridge<T> {
-    fn seek(&mut self, pos: std::io::SeekFrom) -> std::io::Result<u64> {
-        let src = &mut self.src;
-        self.rt.block_on(AsyncSeekExt::seek(src, pos))
-    }
-}
-
 
 
 impl<T: AsyncWrite> SyncIoBridge<T> {
@@ -349,21 +63,6 @@ impl<T: AsyncWrite> SyncIoBridge<T> {
     
     pub fn is_write_vectored(&self) -> bool {
         self.src.is_write_vectored()
-    }
-}
-
-impl<T: AsyncWrite + Unpin> SyncIoBridge<T> {
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn shutdown(&mut self) -> std::io::Result<()> {
-        let src = &mut self.src;
-        self.rt.block_on(src.shutdown())
     }
 }
 
@@ -389,7 +88,6 @@ impl<T: Unpin> SyncIoBridge<T> {
     
     
     
-    #[track_caller]
     pub fn new(src: T) -> Self {
         Self::new_with_handle(src, tokio::runtime::Handle::current())
     }
@@ -401,22 +99,5 @@ impl<T: Unpin> SyncIoBridge<T> {
     
     pub fn new_with_handle(src: T, rt: tokio::runtime::Handle) -> Self {
         Self { src, rt }
-    }
-
-    
-    pub fn into_inner(self) -> T {
-        self.src
-    }
-}
-
-impl<T> AsMut<T> for SyncIoBridge<T> {
-    fn as_mut(&mut self) -> &mut T {
-        &mut self.src
-    }
-}
-
-impl<T> AsRef<T> for SyncIoBridge<T> {
-    fn as_ref(&self) -> &T {
-        &self.src
     }
 }

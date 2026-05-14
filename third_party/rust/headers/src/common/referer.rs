@@ -1,7 +1,7 @@
-use std::fmt;
 use std::str::FromStr;
 
-use crate::util::HeaderValueString;
+use http::header::HeaderValue;
+
 
 
 
@@ -30,7 +30,7 @@ use crate::util::HeaderValueString;
 
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Referer(HeaderValueString);
+pub struct Referer(HeaderValue);
 
 derive_header! {
     Referer(_),
@@ -43,8 +43,8 @@ impl Referer {
     
     
     
-    pub const fn from_static(s: &'static str) -> Referer {
-        Referer(HeaderValueString::from_static(s))
+    pub fn from_static(s: &'static str) -> Referer {
+        Referer(HeaderValue::from_static(s))
     }
 }
 
@@ -53,14 +53,8 @@ error_type!(InvalidReferer);
 impl FromStr for Referer {
     type Err = InvalidReferer;
     fn from_str(src: &str) -> Result<Self, Self::Err> {
-        HeaderValueString::from_str(src)
+        HeaderValue::from_str(src)
             .map(Referer)
             .map_err(|_| InvalidReferer { _inner: () })
-    }
-}
-
-impl fmt::Display for Referer {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        fmt::Display::fmt(&self.0, f)
     }
 }

@@ -2,6 +2,7 @@
 #![cfg(all(feature = "full", not(target_os = "wasi"), not(miri)))] 
                                                                    
 
+use std::time::Duration;
 use tokio::io::{self, AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::oneshot::channel;
@@ -49,7 +50,7 @@ async fn shutdown_after_tcp_reset() {
 
     let (stream, _) = assert_ok!(srv.accept().await);
     
-    stream.set_zero_linger().unwrap();
+    stream.set_linger(Some(Duration::new(0, 0))).unwrap();
     connected_rx.await.unwrap();
 
     drop(stream);

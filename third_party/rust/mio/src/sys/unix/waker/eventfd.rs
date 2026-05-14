@@ -67,17 +67,6 @@ impl Waker {
         let _ = self.reset();
     }
 
-    #[allow(dead_code)] 
-    pub(crate) fn fd(&self) -> Option<RawFd> {
-        Some(self.as_raw_fd())
-    }
-
-    
-    #[allow(dead_code)] 
-    pub(crate) fn woken(&self) -> bool {
-        false
-    }
-
     
     #[allow(clippy::unused_io_amount)] 
     fn reset(&self) -> io::Result<()> {

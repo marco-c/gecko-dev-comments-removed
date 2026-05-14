@@ -107,19 +107,12 @@ pub(crate) fn local<T: 'static>() -> (Steal<T>, Local<T>) {
 impl<T> Local<T> {
     
     pub(crate) fn len(&self) -> usize {
-        let (_, head) = unpack(self.inner.head.load(Acquire));
-        
-        let tail = unsafe { self.inner.tail.unsync_load() };
-        len(head, tail)
+        self.inner.len() as usize
     }
 
     
     pub(crate) fn remaining_slots(&self) -> usize {
-        let (steal, _) = unpack(self.inner.head.load(Acquire));
-        
-        let tail = unsafe { self.inner.tail.unsync_load() };
-
-        LOCAL_QUEUE_CAPACITY - len(steal, tail)
+        self.inner.remaining_slots()
     }
 
     pub(crate) fn max_capacity(&self) -> usize {
@@ -131,7 +124,7 @@ impl<T> Local<T> {
     
     
     pub(crate) fn has_tasks(&self) -> bool {
-        self.len() != 0
+        !self.inner.is_empty()
     }
 
     
@@ -274,6 +267,8 @@ impl<T> Local<T> {
             "queue is not full; tail = {tail}; head = {head}"
         );
 
+        let prev = pack(head, head);
+
         
         
         
@@ -287,7 +282,15 @@ impl<T> Local<T> {
         if self
             .inner
             .head
-            .compare_exchange_weak(pack(head, head), pack(tail, tail), Release, Relaxed)
+            .compare_exchange(
+                prev,
+                pack(
+                    head.wrapping_add(NUM_TASKS_TAKEN),
+                    head.wrapping_add(NUM_TASKS_TAKEN),
+                ),
+                Release,
+                Relaxed,
+            )
             .is_err()
         {
             
@@ -295,29 +298,6 @@ impl<T> Local<T> {
             
             return Err(task);
         }
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        self.inner
-            .tail
-            .store(tail.wrapping_add(NUM_TASKS_TAKEN), Release);
 
         
         struct BatchTaskIter<'a, T: 'static> {
@@ -350,7 +330,7 @@ impl<T> Local<T> {
         
         let batch_iter = BatchTaskIter {
             buffer: &self.inner.buffer,
-            head: head.wrapping_add(NUM_TASKS_TAKEN) as UnsignedLong,
+            head: head as UnsignedLong,
             i: 0,
         };
         overflow.push_batch(batch_iter.chain(std::iter::once(task)));
@@ -391,7 +371,7 @@ impl<T> Local<T> {
             let res = self
                 .inner
                 .head
-                .compare_exchange_weak(head, next, AcqRel, Acquire);
+                .compare_exchange(head, next, AcqRel, Acquire);
 
             match res {
                 Ok(_) => break real as usize & MASK,
@@ -404,17 +384,8 @@ impl<T> Local<T> {
 }
 
 impl<T> Steal<T> {
-    
-    pub(crate) fn len(&self) -> usize {
-        let (_, head) = unpack(self.0.head.load(Acquire));
-        let tail = self.0.tail.load(Acquire);
-        len(head, tail)
-    }
-
-    
-    
     pub(crate) fn is_empty(&self) -> bool {
-        self.len() == 0
+        self.0.is_empty()
     }
 
     
@@ -507,7 +478,7 @@ impl<T> Steal<T> {
             let res = self
                 .0
                 .head
-                .compare_exchange_weak(prev_packed, next_packed, AcqRel, Acquire);
+                .compare_exchange(prev_packed, next_packed, AcqRel, Acquire);
 
             match res {
                 Ok(_) => break n,
@@ -556,12 +527,26 @@ impl<T> Steal<T> {
             let res = self
                 .0
                 .head
-                .compare_exchange_weak(prev_packed, next_packed, AcqRel, Acquire);
+                .compare_exchange(prev_packed, next_packed, AcqRel, Acquire);
 
             match res {
                 Ok(_) => return n,
-                Err(actual) => prev_packed = actual,
+                Err(actual) => {
+                    let (actual_steal, actual_real) = unpack(actual);
+
+                    assert_ne!(actual_steal, actual_real);
+
+                    prev_packed = actual;
+                }
             }
+        }
+    }
+}
+
+cfg_unstable_metrics! {
+    impl<T> Steal<T> {
+        pub(crate) fn len(&self) -> usize {
+            self.0.len() as _
         }
     }
 }
@@ -580,10 +565,24 @@ impl<T> Drop for Local<T> {
     }
 }
 
+impl<T> Inner<T> {
+    fn remaining_slots(&self) -> usize {
+        let (steal, _) = unpack(self.head.load(Acquire));
+        let tail = self.tail.load(Acquire);
 
+        LOCAL_QUEUE_CAPACITY - (tail.wrapping_sub(steal) as usize)
+    }
 
-fn len(head: UnsignedShort, tail: UnsignedShort) -> usize {
-    tail.wrapping_sub(head) as usize
+    fn len(&self) -> UnsignedShort {
+        let (_, head) = unpack(self.head.load(Acquire));
+        let tail = self.tail.load(Acquire);
+
+        tail.wrapping_sub(head)
+    }
+
+    fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
 }
 
 

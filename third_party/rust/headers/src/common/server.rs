@@ -1,7 +1,8 @@
 use std::fmt;
 use std::str::FromStr;
 
-use crate::util::HeaderValueString;
+use util::HeaderValueString;
+
 
 
 
@@ -43,7 +44,7 @@ impl Server {
     
     
     
-    pub const fn from_static(s: &'static str) -> Server {
+    pub fn from_static(s: &'static str) -> Server {
         Server(HeaderValueString::from_static(s))
     }
 

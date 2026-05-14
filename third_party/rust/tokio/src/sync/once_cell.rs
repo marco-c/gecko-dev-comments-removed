@@ -244,16 +244,12 @@ impl<T> OnceCell<T> {
 
     
     unsafe fn get_unchecked(&self) -> &T {
-        unsafe { &*self.value.with(|ptr| (*ptr).as_ptr()) }
+        &*self.value.with(|ptr| (*ptr).as_ptr())
     }
 
     
     unsafe fn get_unchecked_mut(&mut self) -> &mut T {
-        
-        
-        
-        
-        unsafe { &mut *self.value.with_mut(|ptr| (*ptr).as_mut_ptr()) }
+        &mut *self.value.with_mut(|ptr| (*ptr).as_mut_ptr())
     }
 
     fn set_value(&self, value: T, permit: SemaphorePermit<'_>) -> &T {

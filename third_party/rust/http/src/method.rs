@@ -15,12 +15,13 @@
 
 
 
-use self::extension::{AllocatedExtension, InlineExtension};
 use self::Inner::*;
+use self::extension::{InlineExtension, AllocatedExtension};
 
-use std::convert::TryFrom;
+use std::convert::AsRef;
 use std::error::Error;
 use std::str::FromStr;
+use std::convert::TryFrom;
 use std::{fmt, str};
 
 
@@ -65,6 +66,7 @@ enum Inner {
     
     ExtensionAllocated(AllocatedExtension),
 }
+
 
 impl Method {
     
@@ -123,7 +125,7 @@ impl Method {
                 _ => Method::extension_inline(src),
             },
             _ => {
-                if src.len() <= InlineExtension::MAX {
+                if src.len() < InlineExtension::MAX {
                     Method::extension_inline(src)
                 } else {
                     let allocated = AllocatedExtension::new(src)?;
@@ -146,7 +148,10 @@ impl Method {
     
     
     pub fn is_safe(&self) -> bool {
-        matches!(self.0, Get | Head | Options | Trace)
+        match self.0 {
+            Get | Head | Options | Trace => true,
+            _ => false,
+        }
     }
 
     
@@ -334,7 +339,7 @@ mod extension {
             let InlineExtension(ref data, len) = self;
             
             
-            unsafe { str::from_utf8_unchecked(&data[..*len as usize]) }
+            unsafe {str::from_utf8_unchecked(&data[..*len as usize])}
         }
     }
 
@@ -352,7 +357,7 @@ mod extension {
         pub fn as_str(&self) -> &str {
             
             
-            unsafe { str::from_utf8_unchecked(&self.0) }
+            unsafe {str::from_utf8_unchecked(&self.0)}
         }
     }
 
@@ -371,13 +376,12 @@ mod extension {
     
     
     
-    #[rustfmt::skip]
     const METHOD_CHARS: [u8; 256] = [
         
         b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', 
         b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', 
         b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', 
-        b'\0', b'\0', b'\0',  b'!', b'\0',  b'#',  b'$',  b'%',  b'&', b'\'', 
+        b'\0', b'\0', b'\0',  b'!', b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', 
         b'\0', b'\0',  b'*',  b'+', b'\0',  b'-',  b'.', b'\0',  b'0',  b'1', 
          b'2',  b'3',  b'4',  b'5',  b'6',  b'7',  b'8',  b'9', b'\0', b'\0', 
         b'\0', b'\0', b'\0', b'\0', b'\0',  b'A',  b'B',  b'C',  b'D',  b'E', 
@@ -459,42 +463,11 @@ mod test {
     }
 
     #[test]
-    fn test_extension_method() {
+    fn test_extention_method() {
         assert_eq!(Method::from_str("WOW").unwrap(), "WOW");
         assert_eq!(Method::from_str("wOw!!").unwrap(), "wOw!!");
 
         let long_method = "This_is_a_very_long_method.It_is_valid_but_unlikely.";
-        assert_eq!(Method::from_str(long_method).unwrap(), long_method);
-
-        let longest_inline_method = [b'A'; InlineExtension::MAX];
-        assert_eq!(
-            Method::from_bytes(&longest_inline_method).unwrap(),
-            Method(ExtensionInline(
-                InlineExtension::new(&longest_inline_method).unwrap()
-            ))
-        );
-        let shortest_allocated_method = [b'A'; InlineExtension::MAX + 1];
-        assert_eq!(
-            Method::from_bytes(&shortest_allocated_method).unwrap(),
-            Method(ExtensionAllocated(
-                AllocatedExtension::new(&shortest_allocated_method).unwrap()
-            ))
-        );
-    }
-
-    #[test]
-    fn test_extension_method_chars() {
-        const VALID_METHOD_CHARS: &str =
-            "!#$%&'*+-.^_`|~0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-
-        for c in VALID_METHOD_CHARS.chars() {
-            let c = c.to_string();
-
-            assert_eq!(
-                Method::from_str(&c).unwrap(),
-                c.as_str(),
-                "testing {c} is a valid method character"
-            );
-        }
+        assert_eq!(Method::from_str(&long_method).unwrap(), long_method);
     }
 }

@@ -1,6 +1,4 @@
-use http::HeaderValue;
-
-use crate::util::FlatCsv;
+use util::FlatCsv;
 
 
 
@@ -38,6 +36,6 @@ derive_header! {
 impl Te {
     
     pub fn trailers() -> Self {
-        Te(HeaderValue::from_static("trailers").into())
+        Te(::HeaderValue::from_static("trailers").into())
     }
 }

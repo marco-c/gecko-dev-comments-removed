@@ -1,9 +1,5 @@
 #![cfg_attr(not(feature = "std"), no_std)]
-#![deny(
-    missing_docs,
-    clippy::missing_safety_doc,
-    clippy::undocumented_unsafe_blocks
-)]
+#![deny(missing_docs)]
 #![cfg_attr(test, deny(warnings))]
 
 
@@ -25,8 +21,8 @@
 
 
 
-use core::{fmt, mem, result, str};
-use core::mem::MaybeUninit;
+use core::{fmt, result, str};
+use core::mem::{self, MaybeUninit};
 
 use crate::iter::Bytes;
 
@@ -34,16 +30,6 @@ mod iter;
 #[macro_use] mod macros;
 mod simd;
 
-#[doc(hidden)]
-
-
-pub mod _benchable {
-    pub use super::parse_uri;
-    pub use super::parse_version;
-    pub use super::parse_method;
-    pub use super::iter::Bytes;
-}
-
 
 
 
@@ -55,45 +41,92 @@ pub mod _benchable {
 
 
 #[inline]
-fn is_method_token(b: u8) -> bool {
-    match b {
-        
-        b'A'..=b'Z' => true,
-        _ => TOKEN_MAP[b as usize],
-    }
+fn is_token(b: u8) -> bool {
+    b > 0x1F && b < 0x7F
 }
 
 
 
 
-static URI_MAP: [bool; 256] = byte_map!(
-    b'!'..=0x7e | 0x80..=0xFF
-);
+static URI_MAP: [bool; 256] = byte_map![
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//  \0                            \n
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//  commands
+    0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+//  \w !  "  #  $  %  &  '  (  )  *  +  ,  -  .  /
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1,
+//  0  1  2  3  4  5  6  7  8  9  :  ;  <  =  >  ?
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+//  @  A  B  C  D  E  F  G  H  I  J  K  L  M  N  O
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+//  P  Q  R  S  T  U  V  W  X  Y  Z  [  \  ]  ^  _
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+//  `  a  b  c  d  e  f  g  h  i  j  k  l  m  n  o
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0,
+//  p  q  r  s  t  u  v  w  x  y  z  {  |  }  ~  del
+//   ====== Extended ASCII (aka. obs-text) ======
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+];
 
 #[inline]
-pub(crate) fn is_uri_token(b: u8) -> bool {
+fn is_uri_token(b: u8) -> bool {
     URI_MAP[b as usize]
 }
 
-static TOKEN_MAP: [bool; 256] = byte_map!(
-    b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' |
-    b'!' | b'#' | b'$' | b'%' | b'&' | b'\'' |  b'*' | b'+' |
-    b'-' | b'.' | b'^' | b'_' | b'`' | b'|' | b'~'
-);
+static HEADER_NAME_MAP: [bool; 256] = byte_map![
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 0,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0,
+    0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+];
 
 #[inline]
-pub(crate) fn is_header_name_token(b: u8) -> bool {
-    TOKEN_MAP[b as usize]
+fn is_header_name_token(b: u8) -> bool {
+    HEADER_NAME_MAP[b as usize]
 }
 
-
-static HEADER_VALUE_MAP: [bool; 256] = byte_map!(
-    b'\t' | b' '..=0x7e | 0x80..=0xFF
-);
+static HEADER_VALUE_MAP: [bool; 256] = byte_map![
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+];
 
 
 #[inline]
-pub(crate) fn is_header_value_token(b: u8) -> bool {
+fn is_header_value_token(b: u8) -> bool {
     HEADER_VALUE_MAP[b as usize]
 }
 
@@ -212,9 +245,7 @@ pub struct ParserConfig {
     allow_obsolete_multiline_headers_in_responses: bool,
     allow_multiple_spaces_in_request_line_delimiters: bool,
     allow_multiple_spaces_in_response_status_delimiters: bool,
-    allow_space_before_first_header_name: bool,
     ignore_invalid_headers_in_responses: bool,
-    ignore_invalid_headers_in_requests: bool,
 }
 
 impl ParserConfig {
@@ -311,42 +342,9 @@ impl ParserConfig {
     }
 
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn allow_space_before_first_header_name(&mut self, value: bool) -> &mut Self {
-        self.allow_space_before_first_header_name = value;
-        self
-    }
-
-    
-    pub fn space_before_first_header_name_are_allowed(&self) -> bool {
-        self.allow_space_before_first_header_name
-    }
-
-    
-    pub fn parse_request<'buf>(
+    pub fn parse_request<'headers, 'buf>(
         &self,
-        request: &mut Request<'_, 'buf>,
+        request: &mut Request<'headers, 'buf>,
         buf: &'buf [u8],
     ) -> Result<usize> {
         request.parse_with_config(buf, self)
@@ -401,18 +399,9 @@ impl ParserConfig {
     }
 
     
-    pub fn ignore_invalid_headers_in_requests(
-        &mut self,
-        value: bool,
-    ) -> &mut Self {
-        self.ignore_invalid_headers_in_requests = value;
-        self
-    }
-
-    
-    pub fn parse_response<'buf>(
+    pub fn parse_response<'headers, 'buf>(
         &self,
-        response: &mut Response<'_, 'buf>,
+        response: &mut Response<'headers, 'buf>,
         buf: &'buf [u8],
     ) -> Result<usize> {
         response.parse_with_config(buf, self)
@@ -487,7 +476,23 @@ impl<'h, 'b> Request<'h, 'b> {
         let orig_len = buf.len();
         let mut bytes = Bytes::new(buf);
         complete!(skip_empty_lines(&mut bytes));
-        let method = complete!(parse_method(&mut bytes));
+        const GET: [u8; 4] = *b"GET ";
+        const POST: [u8; 4] = *b"POST";
+        let method = match bytes.peek_n::<[u8; 4]>(4) {
+            Some(GET) => {
+                unsafe {
+                    bytes.advance_and_commit(4);
+                }
+                "GET"
+            }
+            Some(POST) if bytes.peek_ahead(4) == Some(b' ') => {
+                unsafe {
+                    bytes.advance_and_commit(5);
+                }
+                "POST"
+            }
+            _ => complete!(parse_token(&mut bytes)),
+        };
         self.method = Some(method);
         if config.allow_multiple_spaces_in_request_line_delimiters {
             complete!(skip_spaces(&mut bytes));
@@ -503,12 +508,7 @@ impl<'h, 'b> Request<'h, 'b> {
         let headers_len = complete!(parse_headers_iter_uninit(
             &mut headers,
             &mut bytes,
-            &HeaderParserConfig {
-                allow_spaces_after_header_name: false,
-                allow_obsolete_multiline_headers: false,
-                allow_space_before_first_header_name: config.allow_space_before_first_header_name,
-                ignore_invalid_headers: config.ignore_invalid_headers_in_requests
-            },
+            &ParserConfig::default(),
         ));
         
         self.headers = unsafe { assume_init_slice(headers) };
@@ -529,7 +529,7 @@ impl<'h, 'b> Request<'h, 'b> {
     }
 
     fn parse_with_config(&mut self, buf: &'b [u8], config: &ParserConfig) -> Result<usize> {
-        let headers = mem::take(&mut self.headers);
+        let headers = mem::replace(&mut self.headers, &mut []);
 
         
         unsafe {
@@ -563,18 +563,16 @@ fn skip_empty_lines(bytes: &mut Bytes<'_>) -> Result<()> {
                 
                 unsafe { bytes.bump() };
                 expect!(bytes.next() == b'\n' => Err(Error::NewLine));
-            }
+            },
             Some(b'\n') => {
                 
-                unsafe {
-                    bytes.bump();
-                }
-            }
+                unsafe { bytes.bump(); }
+            },
             Some(..) => {
                 bytes.slice();
                 return Ok(Status::Complete(()));
-            }
-            None => return Ok(Status::Partial),
+            },
+            None => return Ok(Status::Partial)
         }
     }
 }
@@ -632,10 +630,8 @@ impl<'h, 'b> Response<'h, 'b> {
     }
 
     fn parse_with_config(&mut self, buf: &'b [u8], config: &ParserConfig) -> Result<usize> {
-        let headers = mem::take(&mut self.headers);
+        let headers = mem::replace(&mut self.headers, &mut []);
 
-        
-        
         unsafe {
             let headers: *mut [Header<'_>] = headers;
             let headers = headers as *mut [MaybeUninit<Header<'_>>];
@@ -701,12 +697,7 @@ impl<'h, 'b> Response<'h, 'b> {
         let headers_len = complete!(parse_headers_iter_uninit(
             &mut headers,
             &mut bytes,
-            &HeaderParserConfig {
-                allow_spaces_after_header_name: config.allow_spaces_after_header_name_in_responses,
-                allow_obsolete_multiline_headers: config.allow_obsolete_multiline_headers_in_responses,
-                allow_space_before_first_header_name: config.allow_space_before_first_header_name,
-                ignore_invalid_headers: config.ignore_invalid_headers_in_responses
-            }
+            config
         ));
         
         self.headers = unsafe { assume_init_slice(headers) };
@@ -728,7 +719,7 @@ pub struct Header<'a> {
     pub value: &'a [u8],
 }
 
-impl fmt::Debug for Header<'_> {
+impl<'a> fmt::Debug for Header<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut f = f.debug_struct("Header");
         f.field("name", &self.name);
@@ -752,27 +743,14 @@ impl fmt::Debug for Header<'_> {
 pub const EMPTY_HEADER: Header<'static> = Header { name: "", value: b"" };
 
 #[inline]
-#[doc(hidden)]
-#[allow(missing_docs)]
-
-pub fn parse_version(bytes: &mut Bytes) -> Result<u8> {
+fn parse_version(bytes: &mut Bytes<'_>) -> Result<u8> {
     if let Some(eight) = bytes.peek_n::<[u8; 8]>(8) {
-        
-        let h10: u64 = u64::from_ne_bytes(*b"HTTP/1.0");
-        let h11: u64 = u64::from_ne_bytes(*b"HTTP/1.1");
-        
-        unsafe {
-            bytes.advance(8);
+        unsafe { bytes.advance(8); }
+        return match &eight {
+            b"HTTP/1.0" => Ok(Status::Complete(0)),
+            b"HTTP/1.1" => Ok(Status::Complete(1)),
+            _ => Err(Error::Version),
         }
-        let block = u64::from_ne_bytes(eight);
-        
-        return if block == h10 {
-            Ok(Status::Complete(0))
-        } else if block == h11 {
-            Ok(Status::Complete(1))
-        } else {
-            Err(Error::Version)
-        };
     }
 
     
@@ -787,39 +765,6 @@ pub fn parse_version(bytes: &mut Bytes) -> Result<u8> {
     expect!(bytes.next() == b'1' => Err(Error::Version));
     expect!(bytes.next() == b'.' => Err(Error::Version));
     Ok(Status::Partial)
-}
-
-#[inline]
-#[doc(hidden)]
-#[allow(missing_docs)]
-
-pub fn parse_method<'a>(bytes: &mut Bytes<'a>) -> Result<&'a str> {
-    const GET: [u8; 4] = *b"GET ";
-    const POST: [u8; 4] = *b"POST";
-    match bytes.peek_n::<[u8; 4]>(4) {
-        Some(GET) => {
-            
-            let method = unsafe {
-                bytes.advance(4); 
-                str::from_utf8_unchecked(bytes.slice_skip(1)) 
-            };
-            Ok(Status::Complete(method))
-        }
-        
-        
-        
-        
-        
-        Some(POST) if unsafe { bytes.peek_ahead(4) } == Some(b' ') => {
-            
-            let method = unsafe {
-                bytes.advance(5); 
-                str::from_utf8_unchecked(bytes.slice_skip(1)) 
-            };
-            Ok(Status::Complete(method))
-        }
-        _ => parse_token(bytes),
-    }
 }
 
 
@@ -842,39 +787,27 @@ fn parse_reason<'a>(bytes: &mut Bytes<'a>) -> Result<&'a str> {
         let b = next!(bytes);
         if b == b'\r' {
             expect!(bytes.next() == b'\n' => Err(Error::Status));
-            return Ok(Status::Complete(
-                
-                
-                
-                
-                
-                unsafe {
-                    let bytes = bytes.slice_skip(2);
-                    if !seen_obs_text {
-                        
-                        str::from_utf8_unchecked(bytes)
-                    } else {
-                        
-                        ""
-                    }
-                },
-            ));
+            return Ok(Status::Complete(unsafe {
+                let bytes = bytes.slice_skip(2);
+                if !seen_obs_text {
+                    
+                    str::from_utf8_unchecked(bytes)
+                } else {
+                    
+                    ""
+                }
+            }));
         } else if b == b'\n' {
-            return Ok(Status::Complete(
-                
-                
-                
-                unsafe {
-                    let bytes = bytes.slice_skip(1);
-                    if !seen_obs_text {
-                        
-                        str::from_utf8_unchecked(bytes)
-                    } else {
-                        
-                        ""
-                    }
-                },
-            ));
+            return Ok(Status::Complete(unsafe {
+                let bytes = bytes.slice_skip(1);
+                if !seen_obs_text {
+                    
+                    str::from_utf8_unchecked(bytes)
+                } else {
+                    
+                    ""
+                }
+            }));
         } else if !(b == 0x09 || b == b' ' || (0x21..=0x7E).contains(&b) || b >= 0x80) {
             return Err(Error::Status);
         } else if b >= 0x80 {
@@ -886,7 +819,7 @@ fn parse_reason<'a>(bytes: &mut Bytes<'a>) -> Result<&'a str> {
 #[inline]
 fn parse_token<'a>(bytes: &mut Bytes<'a>) -> Result<&'a str> {
     let b = next!(bytes);
-    if !is_method_token(b) {
+    if !is_token(b) {
         
         return Err(Error::Token);
     }
@@ -894,40 +827,39 @@ fn parse_token<'a>(bytes: &mut Bytes<'a>) -> Result<&'a str> {
     loop {
         let b = next!(bytes);
         if b == b' ' {
-            return Ok(Status::Complete(
+            return Ok(Status::Complete(unsafe {
                 
-                unsafe { str::from_utf8_unchecked(bytes.slice_skip(1)) },
-            ));
-        } else if !is_method_token(b) {
+                str::from_utf8_unchecked(bytes.slice_skip(1))
+            }));
+        } else if !is_token(b) {
             return Err(Error::Token);
         }
     }
 }
 
 #[inline]
-#[doc(hidden)]
-#[allow(missing_docs)]
-
-pub fn parse_uri<'a>(bytes: &mut Bytes<'a>) -> Result<&'a str> {
-    let start = bytes.pos();
-    simd::match_uri_vectored(bytes);
-    let end = bytes.pos();
-
-    if next!(bytes) == b' ' {
+fn parse_uri<'a>(bytes: &mut Bytes<'a>) -> Result<&'a str> {
+    let b = next!(bytes);
+    if !is_uri_token(b) {
         
-        if end == start {
+        return Err(Error::Token);
+    }
+
+    simd::match_uri_vectored(bytes);
+
+    loop {
+        let b = next!(bytes);
+        if b == b' ' {
+            return Ok(Status::Complete(unsafe {
+                
+                str::from_utf8_unchecked(bytes.slice_skip(1))
+            }));
+        } else if !is_uri_token(b) {
             return Err(Error::Token);
         }
-
-        
-        match str::from_utf8(unsafe { bytes.slice_skip(1) }) {
-            Ok(uri) => Ok(Status::Complete(uri)),
-            Err(_) => Err(Error::Token),
-        }
-    } else {
-        Err(Error::Token)
     }
 }
+
 
 #[inline]
 fn parse_code(bytes: &mut Bytes<'_>) -> Result<u16> {
@@ -963,15 +895,15 @@ pub fn parse_headers<'b: 'h, 'h>(
     mut dst: &'h mut [Header<'b>],
 ) -> Result<(usize, &'h [Header<'b>])> {
     let mut iter = Bytes::new(src);
-    let pos = complete!(parse_headers_iter(&mut dst, &mut iter, &HeaderParserConfig::default()));
+    let pos = complete!(parse_headers_iter(&mut dst, &mut iter, &ParserConfig::default()));
     Ok(Status::Complete((pos, dst)))
 }
 
 #[inline]
-fn parse_headers_iter<'a>(
+fn parse_headers_iter<'a, 'b>(
     headers: &mut &mut [Header<'a>],
-    bytes: &mut Bytes<'a>,
-    config: &HeaderParserConfig,
+    bytes: &'b mut Bytes<'a>,
+    config: &ParserConfig,
 ) -> Result<usize> {
     parse_headers_iter_uninit(
         
@@ -992,13 +924,6 @@ unsafe fn assume_init_slice<T>(s: &mut [MaybeUninit<T>]) -> &mut [T] {
     &mut *s
 }
 
-#[derive(Clone, Debug, Default)]
-struct HeaderParserConfig {
-    allow_spaces_after_header_name: bool,
-    allow_obsolete_multiline_headers: bool,
-    allow_space_before_first_header_name: bool,
-    ignore_invalid_headers: bool,
-}
 
 
 
@@ -1008,11 +933,10 @@ struct HeaderParserConfig {
 
 
 
-
-fn parse_headers_iter_uninit<'a>(
+fn parse_headers_iter_uninit<'a, 'b>(
     headers: &mut &mut [MaybeUninit<Header<'a>>],
-    bytes: &mut Bytes<'a>,
-    config: &HeaderParserConfig
+    bytes: &'b mut Bytes<'a>,
+    config: &ParserConfig,
 ) -> Result<usize> {
 
     
@@ -1024,9 +948,9 @@ fn parse_headers_iter_uninit<'a>(
         num_headers: usize,
     }
 
-    impl Drop for ShrinkOnDrop<'_, '_, '_> {
+    impl<'r1, 'r2, 'a> Drop for ShrinkOnDrop<'r1, 'r2, 'a> {
         fn drop(&mut self) {
-            let headers = mem::take(self.headers);
+            let headers = mem::replace(self.headers, &mut []);
 
             
             let headers = unsafe { headers.get_unchecked_mut(..self.num_headers) };
@@ -1039,15 +963,14 @@ fn parse_headers_iter_uninit<'a>(
         headers,
         num_headers: 0,
     };
-    
-    let start = bytes.as_ref().as_ptr() as usize;
+    let mut count: usize = 0;
     let mut result = Err(Error::TooManyHeaders);
 
     let mut iter = autoshrink.headers.iter_mut();
 
     macro_rules! maybe_continue_after_obsolete_line_folding {
         ($bytes:ident, $label:lifetime) => {
-            if config.allow_obsolete_multiline_headers {
+            if config.allow_obsolete_multiline_headers_in_responses {
                 match $bytes.peek() {
                     None => {
                         // Next byte may be a space, in which case that header
@@ -1076,7 +999,7 @@ fn parse_headers_iter_uninit<'a>(
         
         macro_rules! handle_invalid_char {
             ($bytes:ident, $b:ident, $err:ident) => {
-                if !config.ignore_invalid_headers {
+                if !config.ignore_invalid_headers_in_responses {
                     return Err(Error::$err);
                 }
 
@@ -1096,6 +1019,7 @@ fn parse_headers_iter_uninit<'a>(
                     b = next!($bytes);
                 }
 
+                count += $bytes.pos();
                 $bytes.slice();
 
                 continue 'headers;
@@ -1106,56 +1030,40 @@ fn parse_headers_iter_uninit<'a>(
         let b = next!(bytes);
         if b == b'\r' {
             expect!(bytes.next() == b'\n' => Err(Error::NewLine));
-            let end = bytes.as_ref().as_ptr() as usize;
-            result = Ok(Status::Complete(end - start));
+            result = Ok(Status::Complete(count + bytes.pos()));
             break;
         }
         if b == b'\n' {
-            let end = bytes.as_ref().as_ptr() as usize;
-            result = Ok(Status::Complete(end - start));
+            result = Ok(Status::Complete(count + bytes.pos()));
             break;
         }
         if !is_header_name_token(b) {
-            if config.allow_space_before_first_header_name
-                && autoshrink.num_headers == 0
-                && (b == b' ' || b == b'\t')
-            {
-                
-                while let Some(peek) = bytes.peek() {
-                    if peek == b' ' || peek == b'\t' {
-                        next!(bytes);
-                    } else {
-                        break;
-                    }
-                }
-                bytes.slice();
-                continue 'headers;
-            } else {
-                handle_invalid_char!(bytes, b, HeaderName);
-            }
+            handle_invalid_char!(bytes, b, HeaderName);
         }
 
-        #[allow(clippy::never_loop)]
         
         let header_name: &str = 'name: loop {
-            simd::match_header_name_vectored(bytes);
             let mut b = next!(bytes);
 
-            
-            let bslice = unsafe { bytes.slice_skip(1) };
-            
-            
-            let name = unsafe { str::from_utf8_unchecked(bslice) };
+            if is_header_name_token(b) {
+                continue 'name;
+            }
+
+            count += bytes.pos();
+            let name = unsafe {
+                str::from_utf8_unchecked(bytes.slice_skip(1))
+            };
 
             if b == b':' {
                 break 'name name;
             }
 
-            if config.allow_spaces_after_header_name {
+            if config.allow_spaces_after_header_name_in_responses {
                 while b == b' ' || b == b'\t' {
                     b = next!(bytes);
 
                     if b == b':' {
+                        count += bytes.pos();
                         bytes.slice();
                         break 'name name;
                     }
@@ -1167,12 +1075,12 @@ fn parse_headers_iter_uninit<'a>(
 
         let mut b;
 
-        #[allow(clippy::never_loop)]
         let value_slice = 'value: loop {
             
             'whitespace_after_colon: loop {
                 b = next!(bytes);
                 if b == b' ' || b == b'\t' {
+                    count += bytes.pos();
                     bytes.slice();
                     continue 'whitespace_after_colon;
                 }
@@ -1188,6 +1096,7 @@ fn parse_headers_iter_uninit<'a>(
 
                 maybe_continue_after_obsolete_line_folding!(bytes, 'whitespace_after_colon);
 
+                count += bytes.pos();
                 let whitespace_slice = bytes.slice();
 
                 
@@ -1199,7 +1108,37 @@ fn parse_headers_iter_uninit<'a>(
                 
 
                 simd::match_header_value_vectored(bytes);
-                let b = next!(bytes);
+
+                'value_line: loop {
+                    if let Some(bytes8) = bytes.peek_n::<[u8; 8]>(8) {
+                        macro_rules! check {
+                            ($bytes:ident, $i:literal) => ({
+                                b = $bytes[$i];
+                                if !is_header_value_token(b) {
+                                    unsafe { bytes.advance($i + 1); }
+                                    break 'value_line;
+                                }
+                            });
+                        }
+
+                        check!(bytes8, 0);
+                        check!(bytes8, 1);
+                        check!(bytes8, 2);
+                        check!(bytes8, 3);
+                        check!(bytes8, 4);
+                        check!(bytes8, 5);
+                        check!(bytes8, 6);
+                        check!(bytes8, 7);
+                        unsafe { bytes.advance(8); }
+
+                        continue 'value_line;
+                    }
+
+                    b = next!(bytes);
+                    if !is_header_value_token(b) {
+                        break 'value_line;
+                    }
+                }
 
                 
                 let skip = if b == b'\r' {
@@ -1213,6 +1152,7 @@ fn parse_headers_iter_uninit<'a>(
 
                 maybe_continue_after_obsolete_line_folding!(bytes, 'value_lines);
 
+                count += bytes.pos();
                 
                 unsafe {
                     break 'value bytes.slice_skip(skip);
@@ -1276,13 +1216,6 @@ pub fn parse_chunk_size(buf: &[u8])
                     return Err(InvalidChunkSize);
                 }
                 count += 1;
-                if cfg!(debug_assertions) && size > (u64::MAX / RADIX) {
-                    
-                    
-                    
-                    
-                    return Err(InvalidChunkSize);
-                }
                 size *= RADIX;
                 size += (b - b'0') as u64;
             },
@@ -1291,9 +1224,6 @@ pub fn parse_chunk_size(buf: &[u8])
                     return Err(InvalidChunkSize);
                 }
                 count += 1;
-                if cfg!(debug_assertions) && size > (u64::MAX / RADIX) {
-                    return Err(InvalidChunkSize);
-                }
                 size *= RADIX;
                 size += (b + 10 - b'a') as u64;
             }
@@ -1302,9 +1232,6 @@ pub fn parse_chunk_size(buf: &[u8])
                     return Err(InvalidChunkSize);
                 }
                 count += 1;
-                if cfg!(debug_assertions) && size > (u64::MAX / RADIX) {
-                    return Err(InvalidChunkSize);
-                }
                 size *= RADIX;
                 size += (b + 10 - b'A') as u64;
             }
@@ -1340,7 +1267,7 @@ pub fn parse_chunk_size(buf: &[u8])
 
 #[cfg(test)]
 mod tests {
-    use super::{Error, Request, Response, Status, EMPTY_HEADER, parse_chunk_size};
+    use super::{Request, Response, Status, EMPTY_HEADER, parse_chunk_size};
 
     const NUM_OF_HEADERS: usize = 4;
 
@@ -1470,20 +1397,6 @@ mod tests {
     }
 
     req! {
-        // test the avx2 parsing
-        test_request_header_no_space_after_colon,
-        b"GET / HTTP/1.1\r\nUser-Agent:omg-no-space1234567890some1234567890agent1234567890\r\n\r\n",
-        |req| {
-            assert_eq!(req.method.unwrap(), "GET");
-            assert_eq!(req.path.unwrap(), "/");
-            assert_eq!(req.version.unwrap(), 1);
-            assert_eq!(req.headers.len(), 1);
-            assert_eq!(req.headers[0].name, "User-Agent");
-            assert_eq!(req.headers[0].value, &b"omg-no-space1234567890some1234567890agent1234567890"[..]);
-        }
-    }
-
-    req! {
         test_request_headers_max,
         b"GET / HTTP/1.1\r\nA: A\r\nB: B\r\nC: C\r\nD: D\r\n\r\n",
         |req| {
@@ -1506,34 +1419,6 @@ mod tests {
         }
     }
 
-    
-    req! {
-        test_request_one_byte_method,
-        b"G", Ok(Status::Partial),
-        |_req| {}
-    }
-
-    
-    req! {
-        test_request_partial_method,
-        b"GE", Ok(Status::Partial),
-        |_req| {}
-    }
-
-    
-    req! {
-        test_request_method_no_delimiter,
-        b"GET", Ok(Status::Partial),
-        |_req| {}
-    }
-
-    
-    
-    req! {
-        test_request_method_only,
-        b"GET ", Ok(Status::Partial),
-        |_req| {}
-    }
 
     req! {
         test_request_partial,
@@ -1544,18 +1429,6 @@ mod tests {
     req! {
         test_request_partial_version,
         b"GET / HTTP/1.", Ok(Status::Partial),
-        |_req| {}
-    }
-
-    req! {
-        test_request_method_path_no_delimiter,
-        b"GET /", Ok(Status::Partial),
-        |_req| {}
-    }
-
-    req! {
-        test_request_method_path_only,
-        b"GET / ", Ok(Status::Partial),
         |_req| {}
     }
 
@@ -1793,24 +1666,6 @@ mod tests {
         }
     }
 
-    
-    #[test]
-    fn partial_permutations() {
-        let req_str = "GET / HTTP/1.1\r\n\r\n";
-        let mut headers = [EMPTY_HEADER; NUM_OF_HEADERS];
-        let mut req = Request::new(&mut headers[..]);
-        for i in 0..req_str.len() {
-            let status = req.parse(req_str[..i].as_bytes());
-            assert_eq!(
-                status,
-                Ok(Status::Partial),
-                "partial request line should return partial. \
-                 Portion which failed: '{seg}' (below {i})",
-                seg = &req_str[..i]
-            );
-        }
-    }
-
     static RESPONSE_WITH_WHITESPACE_BETWEEN_HEADER_NAME_AND_COLON: &[u8] =
         b"HTTP/1.1 200 OK\r\nAccess-Control-Allow-Credentials : true\r\nBread: baguette\r\n\r\n";
 
@@ -1843,7 +1698,7 @@ mod tests {
     }
 
     #[test]
-    fn test_ignore_header_line_with_whitespaces_after_header_name_in_response() {
+    fn test_ignore_header_line_with_whitespaces_after_header_name() {
         let mut headers = [EMPTY_HEADER; 2];
         let mut response = Response::new(&mut headers[..]);
         let result = crate::ParserConfig::default()
@@ -1869,17 +1724,6 @@ mod tests {
         let result = request.parse(REQUEST_WITH_WHITESPACE_BETWEEN_HEADER_NAME_AND_COLON);
 
         assert_eq!(result, Err(crate::Error::HeaderName));
-    }
-
-    #[test]
-    fn test_ignore_header_line_with_whitespaces_after_header_name_in_request() {
-        let mut headers = [EMPTY_HEADER; 2];
-        let mut request = Request::new(&mut headers[..]);
-        let result = crate::ParserConfig::default()
-            .ignore_invalid_headers_in_requests(true)
-            .parse_request(&mut request, REQUEST_WITH_WHITESPACE_BETWEEN_HEADER_NAME_AND_COLON);
-
-        assert_eq!(result, Ok(Status::Complete(36)));
     }
 
     static RESPONSE_WITH_OBSOLETE_LINE_FOLDING_AT_START: &[u8] =
@@ -2010,7 +1854,7 @@ mod tests {
         assert_eq!(parse_chunk_size(b"567f8a\rfoo"), Err(crate::InvalidChunkSize));
         assert_eq!(parse_chunk_size(b"567f8a\rfoo"), Err(crate::InvalidChunkSize));
         assert_eq!(parse_chunk_size(b"567xf8a\r\n"), Err(crate::InvalidChunkSize));
-        assert_eq!(parse_chunk_size(b"ffffffffffffffff\r\n"), Ok(Status::Complete((18, u64::MAX))));
+        assert_eq!(parse_chunk_size(b"ffffffffffffffff\r\n"), Ok(Status::Complete((18, std::u64::MAX))));
         assert_eq!(parse_chunk_size(b"1ffffffffffffffff\r\n"), Err(crate::InvalidChunkSize));
         assert_eq!(parse_chunk_size(b"Affffffffffffffff\r\n"), Err(crate::InvalidChunkSize));
         assert_eq!(parse_chunk_size(b"fffffffffffffffff\r\n"), Err(crate::InvalidChunkSize));
@@ -2118,7 +1962,7 @@ mod tests {
         assert_eq!(result, Err(crate::Error::Token));
     }
 
-    static REQUEST_WITH_MULTIPLE_SPACES_AND_BAD_PATH: &[u8] = b"GET   /foo ohno HTTP/1.1\r\n\r\n";
+    static REQUEST_WITH_MULTIPLE_SPACES_AND_BAD_PATH: &[u8] = b"GET   /foo>ohno HTTP/1.1\r\n\r\n";
 
     #[test]
     fn test_request_with_multiple_spaces_and_bad_path() {
@@ -2127,123 +1971,7 @@ mod tests {
         let result = crate::ParserConfig::default()
             .allow_multiple_spaces_in_request_line_delimiters(true)
             .parse_request(&mut request, REQUEST_WITH_MULTIPLE_SPACES_AND_BAD_PATH);
-        assert_eq!(result, Err(crate::Error::Version));
-    }
-
-    
-    
-    
-    static REQUEST_WITH_DEL_IN_PATH: &[u8] = b"GET   /foo\x7Fohno HTTP/1.1\r\n\r\n";
-
-    #[test]
-    fn test_request_with_del_in_path() {
-        let mut headers = [EMPTY_HEADER; NUM_OF_HEADERS];
-        let mut request = Request::new(&mut headers[..]);
-        let result = crate::ParserConfig::default()
-            .allow_multiple_spaces_in_request_line_delimiters(true)
-            .parse_request(&mut request, crate::tests::REQUEST_WITH_DEL_IN_PATH);
         assert_eq!(result, Err(crate::Error::Token));
-    }
-
-    #[test]
-    #[cfg_attr(miri, ignore)] 
-    fn test_all_utf8_char_in_paths() {
-        
-        for i in 128..256 {
-            for j in 128..256 {
-                let mut headers = [EMPTY_HEADER; NUM_OF_HEADERS];
-                let mut request = Request::new(&mut headers[..]);
-                let bytes = [i as u8, j as u8];
-
-                match core::str::from_utf8(&bytes) {
-                    Ok(s) => {
-                        let first_line = format!("GET /{} HTTP/1.1\r\n\r\n", s);
-                        let result = crate::ParserConfig::default()
-                            .allow_multiple_spaces_in_request_line_delimiters(true)
-                            .parse_request(&mut request, first_line.as_bytes());
-
-                        assert_eq!(result, Ok(Status::Complete(20)), "failed for utf8 char i: {}, j: {}", i, j);
-                    },
-                    Err(_) => {
-                        let mut first_line = b"GET /".to_vec();
-                        first_line.extend(&bytes);
-                        first_line.extend(b" HTTP/1.1\r\n\r\n");
-
-                        let result = crate::ParserConfig::default()
-                            .allow_multiple_spaces_in_request_line_delimiters(true)
-                            .parse_request(&mut request, first_line.as_slice());
-
-                        assert_eq!(result, Err(crate::Error::Token), "failed for utf8 char i: {}, j: {}", i, j);
-                    },
-                };
-
-                
-                if i < 0xe0 {
-                    continue;
-                }
-
-                for k in 128..256 {
-                    let mut headers = [EMPTY_HEADER; NUM_OF_HEADERS];
-                    let mut request = Request::new(&mut headers[..]);
-                    let bytes = [i as u8, j as u8, k as u8];
-
-                    match core::str::from_utf8(&bytes) {
-                        Ok(s) => {
-                            let first_line = format!("GET /{} HTTP/1.1\r\n\r\n", s);
-                            let result = crate::ParserConfig::default()
-                                .allow_multiple_spaces_in_request_line_delimiters(true)
-                                .parse_request(&mut request, first_line.as_bytes());
-
-                            assert_eq!(result, Ok(Status::Complete(21)), "failed for utf8 char i: {}, j: {}, k: {}", i, j, k);
-                        },
-                        Err(_) => {
-                            let mut first_line = b"GET /".to_vec();
-                            first_line.extend(&bytes);
-                            first_line.extend(b" HTTP/1.1\r\n\r\n");
-
-                            let result = crate::ParserConfig::default()
-                                .allow_multiple_spaces_in_request_line_delimiters(true)
-                                .parse_request(&mut request, first_line.as_slice());
-
-                            assert_eq!(result, Err(crate::Error::Token), "failed for utf8 char i: {}, j: {}, k: {}", i, j, k);
-                        },
-                    };
-
-                    
-                    if i < 0xf0 {
-                        continue;
-                    }
-
-                    for l in 128..256 {
-                        let mut headers = [EMPTY_HEADER; NUM_OF_HEADERS];
-                        let mut request = Request::new(&mut headers[..]);
-                        let bytes = [i as u8, j as u8, k as u8, l as u8];
-
-                        match core::str::from_utf8(&bytes) {
-                            Ok(s) => {
-                                let first_line = format!("GET /{} HTTP/1.1\r\n\r\n", s);
-                                let result = crate::ParserConfig::default()
-                                    .allow_multiple_spaces_in_request_line_delimiters(true)
-                                    .parse_request(&mut request, first_line.as_bytes());
-
-                                assert_eq!(result, Ok(Status::Complete(22)), "failed for utf8 char i: {}, j: {}, k: {}, l: {}", i, j, k, l);
-                            },
-                            Err(_) => {
-                                let mut first_line = b"GET /".to_vec();
-                                first_line.extend(&bytes);
-                                first_line.extend(b" HTTP/1.1\r\n\r\n");
-
-                                let result = crate::ParserConfig::default()
-                                    .allow_multiple_spaces_in_request_line_delimiters(true)
-                                    .parse_request(&mut request, first_line.as_slice());
-
-                                assert_eq!(result, Err(crate::Error::Token), "failed for utf8 char i: {}, j: {}, k: {}, l: {}", i, j, k, l);
-                            },
-                        };
-                    }
-                }
-            }
-        }
     }
 
     static RESPONSE_WITH_SPACES_IN_CODE: &[u8] = b"HTTP/1.1 99 200 OK\r\n\r\n";
@@ -2282,24 +2010,6 @@ mod tests {
         assert_eq!(response.headers.len(), 1);
         assert_eq!(response.headers[0].name, "Bread");
         assert_eq!(response.headers[0].value, &b"baguette"[..]);
-    }
-
-    #[test]
-    fn test_request_with_empty_header_name() {
-        const RESPONSE: &[u8] =
-            b"GET / HTTP/1.1\r\n: hello\r\nBread: baguette\r\n\r\n";
-
-        let mut headers = [EMPTY_HEADER; 2];
-        let mut request = Request::new(&mut headers[..]);
-
-        let result = crate::ParserConfig::default()
-            .parse_request(&mut request, RESPONSE);
-        assert_eq!(result, Err(crate::Error::HeaderName));
-
-        let result = crate::ParserConfig::default()
-            .ignore_invalid_headers_in_requests(true)
-            .parse_request(&mut request, RESPONSE);
-        assert_eq!(result, Ok(Status::Complete(44)));
     }
 
     #[test]
@@ -2349,25 +2059,7 @@ mod tests {
     }
 
     #[test]
-    fn test_request_with_invalid_char_between_header_name_and_colon() {
-        const REQUEST: &[u8] =
-            b"GET / HTTP/1.1\r\nAccess-Control-Allow-Credentials\xFF  : true\r\nBread: baguette\r\n\r\n";
-
-        let mut headers = [EMPTY_HEADER; 2];
-        let mut request = Request::new(&mut headers[..]);
-
-        let result = crate::ParserConfig::default()
-            .parse_request(&mut request, REQUEST);
-        assert_eq!(result, Err(crate::Error::HeaderName));
-
-        let result = crate::ParserConfig::default()
-            .ignore_invalid_headers_in_requests(true)
-            .parse_request(&mut request, REQUEST);
-        assert_eq!(result, Ok(Status::Complete(78)));
-    }
-
-    #[test]
-    fn test_ignore_header_line_with_missing_colon_in_response() {
+    fn test_ignore_header_line_with_missing_colon() {
         const RESPONSE: &[u8] =
             b"HTTP/1.1 200 OK\r\nAccess-Control-Allow-Credentials\r\nBread: baguette\r\n\r\n";
 
@@ -2392,25 +2084,7 @@ mod tests {
     }
 
     #[test]
-    fn test_ignore_header_line_with_missing_colon_in_request() {
-        const REQUEST: &[u8] =
-            b"GET / HTTP/1.1\r\nAccess-Control-Allow-Credentials\r\nBread: baguette\r\n\r\n";
-
-        let mut headers = [EMPTY_HEADER; 2];
-        let mut request = Request::new(&mut headers[..]);
-
-        let result = crate::ParserConfig::default()
-            .parse_request(&mut request, REQUEST);
-        assert_eq!(result, Err(crate::Error::HeaderName));
-
-        let result = crate::ParserConfig::default()
-            .ignore_invalid_headers_in_requests(true)
-            .parse_request(&mut request, REQUEST);
-        assert_eq!(result, Ok(Status::Complete(69)));
-    }
-
-    #[test]
-    fn test_response_header_with_missing_colon_with_folding() {
+    fn test_header_with_missing_colon_with_folding() {
         const RESPONSE: &[u8] =
             b"HTTP/1.1 200 OK\r\nAccess-Control-Allow-Credentials   \r\n hello\r\nBread: baguette\r\n\r\n";
 
@@ -2437,25 +2111,7 @@ mod tests {
     }
 
     #[test]
-    fn test_request_header_with_missing_colon_with_folding() {
-        const REQUEST: &[u8] =
-            b"GET / HTTP/1.1\r\nAccess-Control-Allow-Credentials   \r\n hello\r\nBread: baguette\r\n\r\n";
-
-        let mut headers = [EMPTY_HEADER; 2];
-        let mut request = Request::new(&mut headers[..]);
-
-        let result = crate::ParserConfig::default()
-            .parse_request(&mut request, REQUEST);
-        assert_eq!(result, Err(crate::Error::HeaderName));
-
-        let result = crate::ParserConfig::default()
-            .ignore_invalid_headers_in_requests(true)
-            .parse_request(&mut request, REQUEST);
-        assert_eq!(result, Ok(Status::Complete(80)));
-    }
-
-    #[test]
-    fn test_response_header_with_nul_in_header_name() {
+    fn test_header_with_nul_in_header_name() {
         const RESPONSE: &[u8] =
             b"HTTP/1.1 200 OK\r\nAccess-Control-Allow-Cred\0entials: hello\r\nBread: baguette\r\n\r\n";
 
@@ -2469,24 +2125,6 @@ mod tests {
         let result = crate::ParserConfig::default()
             .ignore_invalid_headers_in_responses(true)
             .parse_response(&mut response, RESPONSE);
-        assert_eq!(result, Err(crate::Error::HeaderName));
-    }
-
-    #[test]
-    fn test_request_header_with_nul_in_header_name() {
-        const REQUEST: &[u8] =
-            b"GET / HTTP/1.1\r\nAccess-Control-Allow-Cred\0entials: hello\r\nBread: baguette\r\n\r\n";
-
-        let mut headers = [EMPTY_HEADER; 2];
-        let mut request = Request::new(&mut headers[..]);
-
-        let result = crate::ParserConfig::default()
-            .parse_request(&mut request, REQUEST);
-        assert_eq!(result, Err(crate::Error::HeaderName));
-
-        let result = crate::ParserConfig::default()
-            .ignore_invalid_headers_in_requests(true)
-            .parse_request(&mut request, REQUEST);
         assert_eq!(result, Err(crate::Error::HeaderName));
     }
 
@@ -2505,21 +2143,6 @@ mod tests {
         let result = crate::ParserConfig::default()
             .ignore_invalid_headers_in_responses(true)
             .parse_response(&mut response, RESPONSE);
-        assert_eq!(result, Err(crate::Error::HeaderName));
-
-        const REQUEST: &[u8] =
-            b"GET / HTTP/1.1\r\nAccess-Control-Allow-Cred\rentials: hello\r\nBread: baguette\r\n\r\n";
-
-        let mut headers = [EMPTY_HEADER; 2];
-        let mut request = Request::new(&mut headers[..]);
-
-        let result = crate::ParserConfig::default()
-            .parse_request(&mut request, REQUEST);
-        assert_eq!(result, Err(crate::Error::HeaderName));
-
-        let result = crate::ParserConfig::default()
-            .ignore_invalid_headers_in_requests(true)
-            .parse_request(&mut request, REQUEST);
         assert_eq!(result, Err(crate::Error::HeaderName));
     }
 
@@ -2541,17 +2164,6 @@ mod tests {
             .ignore_invalid_headers_in_responses(true)
             .parse_response(&mut response, RESPONSE);
         assert_eq!(result, Err(crate::Error::HeaderName));
-
-        const REQUEST: &[u8] =
-            b"GET / HTTP/1.1\r\nAccess-Control-Allow-Credentials   \0: hello\r\nBread: baguette\r\n\r\n";
-
-        let mut headers = [EMPTY_HEADER; 2];
-        let mut request = Request::new(&mut headers[..]);
-
-        let result = crate::ParserConfig::default()
-            .ignore_invalid_headers_in_requests(true)
-            .parse_request(&mut request, REQUEST);
-        assert_eq!(result, Err(crate::Error::HeaderName));
     }
 
     #[test]
@@ -2569,21 +2181,6 @@ mod tests {
         let result = crate::ParserConfig::default()
             .ignore_invalid_headers_in_responses(true)
             .parse_response(&mut response, RESPONSE);
-        assert_eq!(result, Err(crate::Error::HeaderValue));
-
-        const REQUEST: &[u8] =
-            b"GET / HTTP/1.1\r\nAccess-Control-Allow-Credentials: hell\0o\r\nBread: baguette\r\n\r\n";
-
-        let mut headers = [EMPTY_HEADER; 2];
-        let mut request = Request::new(&mut headers[..]);
-
-        let result = crate::ParserConfig::default()
-            .parse_request(&mut request, REQUEST);
-        assert_eq!(result, Err(crate::Error::HeaderValue));
-
-        let result = crate::ParserConfig::default()
-            .ignore_invalid_headers_in_requests(true)
-            .parse_request(&mut request, REQUEST);
         assert_eq!(result, Err(crate::Error::HeaderValue));
     }
 
@@ -2610,28 +2207,6 @@ mod tests {
         assert_eq!(response.headers.len(), 1);
         assert_eq!(response.headers[0].name, "Bread");
         assert_eq!(response.headers[0].value, &b"baguette"[..]);
-
-        const REQUEST: &[u8] =
-            b"GET / HTTP/1.1\r\nAccess-Control-Allow-Credentials: hell\x01o\r\nBread: baguette\r\n\r\n";
-
-        let mut headers = [EMPTY_HEADER; 2];
-        let mut request = Request::new(&mut headers[..]);
-
-        let result = crate::ParserConfig::default()
-            .parse_request(&mut request, REQUEST);
-        assert_eq!(result, Err(crate::Error::HeaderValue));
-
-        let result = crate::ParserConfig::default()
-            .ignore_invalid_headers_in_requests(true)
-            .parse_request(&mut request, REQUEST);
-        assert_eq!(result, Ok(Status::Complete(77)));
-
-        assert_eq!(request.version.unwrap(), 1);
-        assert_eq!(request.method.unwrap(), "GET");
-        assert_eq!(request.path.unwrap(), "/");
-        assert_eq!(request.headers.len(), 1);
-        assert_eq!(request.headers[0].name, "Bread");
-        assert_eq!(request.headers[0].value, &b"baguette"[..]);
     }
 
     #[test]
@@ -2657,142 +2232,5 @@ mod tests {
         assert_eq!(response.headers.len(), 1);
         assert_eq!(response.headers[0].name, "Bread");
         assert_eq!(response.headers[0].value, &b"baguette"[..]);
-
-        const REQUEST: &[u8] =
-            b"GET / HTTP/1.1\r\nAccess-Control-Allow-Credentials: hell\x01o  \n world!\r\nBread: baguette\r\n\r\n";
-
-        let mut headers = [EMPTY_HEADER; 2];
-        let mut request = Request::new(&mut headers[..]);
-
-        let result = crate::ParserConfig::default()
-            .parse_request(&mut request, REQUEST);
-        assert_eq!(result, Err(crate::Error::HeaderValue));
-
-        let result = crate::ParserConfig::default()
-            .ignore_invalid_headers_in_requests(true)
-            .parse_request(&mut request, REQUEST);
-        assert_eq!(result, Ok(Status::Complete(87)));
-
-        assert_eq!(request.version.unwrap(), 1);
-        assert_eq!(request.method.unwrap(), "GET");
-        assert_eq!(request.path.unwrap(), "/");
-        assert_eq!(request.headers.len(), 1);
-        assert_eq!(request.headers[0].name, "Bread");
-        assert_eq!(request.headers[0].value, &b"baguette"[..]);
-    }
-
-    #[test]
-    fn test_method_within_buffer() {
-        const REQUEST: &[u8] = b"GET / HTTP/1.1\r\n\r\n";
-
-        let mut headers = [EMPTY_HEADER; 0];
-        let mut request = Request::new(&mut headers[..]);
-
-        crate::ParserConfig::default()
-            .parse_request(&mut request, REQUEST)
-            .unwrap();
-
-        
-        let buf_end = unsafe { REQUEST.as_ptr().add(REQUEST.len()) };
-        
-        let method = request.method.unwrap();
-        assert!(REQUEST.as_ptr() <= method.as_ptr());
-        assert!(method.as_ptr() <= buf_end);
-    }
-
-     static RESPONSE_WITH_SPACE_BEFORE_FIRST_HEADER: &[u8] =
-        b"HTTP/1.1 200 OK\r\n Space-Before-Header: hello there\r\n\r\n";
-
-    #[test]
-    fn test_forbid_response_with_space_before_first_header() {
-        let mut headers = [EMPTY_HEADER; 1];
-        let mut response = Response::new(&mut headers[..]);
-        let result = response.parse(RESPONSE_WITH_SPACE_BEFORE_FIRST_HEADER);
-
-        assert_eq!(result, Err(crate::Error::HeaderName));
-    }
-
-    #[test]
-    fn test_allow_response_response_with_space_before_first_header() {
-        let mut headers = [EMPTY_HEADER; 1];
-        let mut response = Response::new(&mut headers[..]);
-        let result = crate::ParserConfig::default()
-            .allow_space_before_first_header_name(true)
-            .parse_response(&mut response, RESPONSE_WITH_SPACE_BEFORE_FIRST_HEADER);
-
-        assert_eq!(
-            result,
-            Ok(Status::Complete(
-                RESPONSE_WITH_SPACE_BEFORE_FIRST_HEADER.len()
-            ))
-        );
-        assert_eq!(response.version.unwrap(), 1);
-        assert_eq!(response.code.unwrap(), 200);
-        assert_eq!(response.reason.unwrap(), "OK");
-        assert_eq!(response.headers.len(), 1);
-        assert_eq!(response.headers[0].name, "Space-Before-Header");
-        assert_eq!(response.headers[0].value, &b"hello there"[..]);
-    }
-
-    #[test]
-    fn test_no_space_after_colon() {
-        let mut headers = [EMPTY_HEADER; 1];
-        let mut response = Response::new(&mut headers[..]);
-        let result = crate::ParserConfig::default()
-            .parse_response(&mut response, b"HTTP/1.1 200 OK\r\nfoo:bar\r\n\r\n");
-
-        assert_eq!(result, Ok(Status::Complete(28)));
-        assert_eq!(response.version.unwrap(), 1);
-        assert_eq!(response.code.unwrap(), 200);
-        assert_eq!(response.reason.unwrap(), "OK");
-        assert_eq!(response.headers.len(), 1);
-        assert_eq!(response.headers[0].name, "foo");
-        assert_eq!(response.headers[0].value, &b"bar"[..]);
-    }
-
-    #[test]
-    fn test_request_with_leading_space() {
-        let mut headers = [EMPTY_HEADER; 1];
-        let mut request = Request::new(&mut headers[..]);
-        let result = crate::ParserConfig::default()
-            .parse_request(&mut request, b" GET / HTTP/1.1\r\nfoo:bar\r\n\r\n");
-
-        assert_eq!(result, Err(Error::Token));
-    }
-
-    #[test]
-    fn test_request_with_invalid_method() {
-        let mut headers = [EMPTY_HEADER; 1];
-        let mut request = Request::new(&mut headers[..]);
-        let result = crate::ParserConfig::default()
-            .parse_request(&mut request, b"P()ST / HTTP/1.1\r\nfoo:bar\r\n\r\n");
-
-        assert_eq!(result, Err(Error::Token));
-    }
-
-    #[test]
-    fn test_utf8_in_path_ok() {
-        let mut headers = [EMPTY_HEADER; 1];
-        let mut request = Request::new(&mut headers[..]);
-
-        let result = crate::ParserConfig::default().parse_request(&mut request, b"GET /test?post=I\xE2\x80\x99msorryIforkedyou HTTP/1.1\r\nHost: example.org\r\n\r\n");
-
-        assert_eq!(result, Ok(Status::Complete(67)));
-        assert_eq!(request.version.unwrap(), 1);
-        assert_eq!(request.method.unwrap(), "GET");
-        assert_eq!(request.path.unwrap(), "/test?post=I’msorryIforkedyou");
-        assert_eq!(request.headers.len(), 1);
-        assert_eq!(request.headers[0].name, "Host");
-        assert_eq!(request.headers[0].value, &b"example.org"[..]);
-    }
-
-    #[test]
-    fn test_bad_utf8_in_path() {
-        let mut headers = [EMPTY_HEADER; 1];
-        let mut request = Request::new(&mut headers[..]);
-
-        let result = crate::ParserConfig::default().parse_request(&mut request, b"GET /test?post=I\xE2msorryIforkedyou HTTP/1.1\r\nHost: example.org\r\n\r\n");
-
-        assert_eq!(result, Err(crate::Error::Token));
     }
 }

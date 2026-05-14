@@ -29,6 +29,7 @@ use std::time::Duration;
 
 
 #[derive(Debug)]
+#[cfg_attr(docsrs, doc(cfg(tokio_unstable)))]
 pub struct LocalRuntime {
     
     scheduler: LocalRuntimeScheduler,
@@ -91,7 +92,7 @@ impl LocalRuntime {
     pub fn new() -> std::io::Result<LocalRuntime> {
         Builder::new_current_thread()
             .enable_all()
-            .build_local(Default::default())
+            .build_local(&Default::default())
     }
 
     
@@ -231,7 +232,7 @@ impl LocalRuntime {
     fn block_on_inner<F: Future>(&self, future: F, _meta: SpawnMeta<'_>) -> F::Output {
         #[cfg(all(
             tokio_unstable,
-            feature = "taskdump",
+            tokio_taskdump,
             feature = "rt",
             target_os = "linux",
             any(target_arch = "aarch64", target_arch = "x86", target_arch = "x86_64")
@@ -330,9 +331,6 @@ impl LocalRuntime {
     
     
     
-    
-    
-    
     pub fn shutdown_timeout(mut self, duration: Duration) {
         
         self.handle.inner.shutdown();
@@ -378,6 +376,7 @@ impl LocalRuntime {
     }
 }
 
+#[allow(clippy::single_match)] 
 impl Drop for LocalRuntime {
     fn drop(&mut self) {
         if let LocalRuntimeScheduler::CurrentThread(current_thread) = &mut self.scheduler {

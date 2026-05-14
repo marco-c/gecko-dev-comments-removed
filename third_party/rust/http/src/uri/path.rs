@@ -8,29 +8,19 @@ use super::{ErrorKind, InvalidUri};
 use crate::byte_str::ByteStr;
 
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum PathAndQueryError {
-    InvalidPathChar,
-    InvalidQueryChar,
-    FragmentNotAllowed,
-}
-
-
 #[derive(Clone)]
 pub struct PathAndQuery {
     pub(super) data: ByteStr,
     pub(super) query: u16,
 }
 
-const NONE: u16 = u16::MAX;
+const NONE: u16 = ::std::u16::MAX;
 
 impl PathAndQuery {
     
     pub(super) fn from_shared(mut src: Bytes) -> Result<Self, InvalidUri> {
         let mut query = NONE;
         let mut fragment = None;
-
-        let mut is_maybe_not_utf8 = false;
 
         
         {
@@ -53,19 +43,13 @@ impl PathAndQuery {
                     
                     
                     
-                    #[rustfmt::skip]
                     0x21 |
                     0x24..=0x3B |
                     0x3D |
                     0x40..=0x5F |
                     0x61..=0x7A |
                     0x7C |
-                    0x7E => {}
-
-                    
-                    0x7F..=0xFF => {
-                        is_maybe_not_utf8 = true;
-                    }
+                    0x7E => {},
 
                     
                     
@@ -76,9 +60,8 @@ impl PathAndQuery {
                     
                     
                     
-                    #[rustfmt::skip]
                     b'"' |
-                    b'{' | b'}' => {}
+                    b'{' | b'}' => {},
 
                     _ => return Err(ErrorKind::InvalidUriChar.into()),
                 }
@@ -93,15 +76,10 @@ impl PathAndQuery {
                         
                         
                         
-                        #[rustfmt::skip]
                         0x21 |
                         0x24..=0x3B |
                         0x3D |
-                        0x3F..=0x7E => {}
-
-                        0x7F..=0xFF => {
-                            is_maybe_not_utf8 = true;
-                        }
+                        0x3F..=0x7E => {},
 
                         b'#' => {
                             fragment = Some(i);
@@ -118,13 +96,10 @@ impl PathAndQuery {
             src.truncate(i);
         }
 
-        let data = if is_maybe_not_utf8 {
-            ByteStr::from_utf8(src).map_err(|_| ErrorKind::InvalidUriChar)?
-        } else {
-            unsafe { ByteStr::from_utf8_unchecked(src) }
-        };
-
-        Ok(PathAndQuery { data, query })
+        Ok(PathAndQuery {
+            data: unsafe { ByteStr::from_utf8_unchecked(src) },
+            query: query,
+        })
     }
 
     
@@ -146,14 +121,10 @@ impl PathAndQuery {
     
     
     #[inline]
-    pub const fn from_static(src: &'static str) -> Self {
-        match validate_path_and_query_bytes(src.as_bytes()) {
-            Ok(query) => PathAndQuery {
-                data: ByteStr::from_static(src),
-                query,
-            },
-            Err(_) => panic!("static str is not valid path"),
-        }
+    pub fn from_static(src: &'static str) -> Self {
+        let src = Bytes::from_static(src.as_bytes());
+
+        PathAndQuery::from_shared(src).unwrap()
     }
 
     
@@ -320,7 +291,7 @@ impl<'a> TryFrom<&'a str> for PathAndQuery {
     }
 }
 
-impl TryFrom<Vec<u8>> for PathAndQuery {
+impl<'a> TryFrom<Vec<u8>> for PathAndQuery {
     type Error = InvalidUri;
     #[inline]
     fn try_from(vec: Vec<u8>) -> Result<Self, Self::Error> {
@@ -479,66 +450,6 @@ impl PartialOrd<PathAndQuery> for String {
     }
 }
 
-
-
-const fn validate_path_and_query_bytes(bytes: &[u8]) -> Result<u16, PathAndQueryError> {
-    let mut query: u16 = NONE;
-    let mut i: usize = 0;
-
-    
-    while i < bytes.len() {
-        let b = bytes[i];
-        if b == b'?' {
-            query = i as u16;
-            i += 1;
-            break;
-        } else if b == b'#' {
-            return Err(PathAndQueryError::FragmentNotAllowed);
-        } else {
-            let allowed = b == 0x21
-                || (b >= 0x24 && b <= 0x3B)
-                || b == 0x3D
-                || (b >= 0x40 && b <= 0x5F)
-                || (b >= 0x61 && b <= 0x7A)
-                || b == 0x7C
-                || b == 0x7E
-                || b == b'"'
-                || b == b'{'
-                || b == b'}'
-                || (b >= 0x7F);
-
-            if !allowed {
-                return Err(PathAndQueryError::InvalidPathChar);
-            }
-        }
-        i += 1;
-    }
-
-    
-    if query != NONE {
-        while i < bytes.len() {
-            let b = bytes[i];
-            if b == b'#' {
-                return Err(PathAndQueryError::FragmentNotAllowed);
-            }
-
-            let allowed = b == 0x21
-                || (b >= 0x24 && b <= 0x3B)
-                || b == 0x3D
-                || (b >= 0x3F && b <= 0x7E)
-                || (b >= 0x7F);
-
-            if !allowed {
-                return Err(PathAndQueryError::InvalidQueryChar);
-            }
-
-            i += 1;
-        }
-    }
-
-    Ok(query)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -643,31 +554,8 @@ mod tests {
     }
 
     #[test]
-    fn allow_utf8_in_path() {
-        assert_eq!("/🍕", pq("/🍕").path());
-    }
-
-    #[test]
-    fn allow_utf8_in_query() {
-        assert_eq!(Some("pizza=🍕"), pq("/test?pizza=🍕").query());
-    }
-
-    #[test]
-    fn rejects_invalid_utf8_in_path() {
-        PathAndQuery::try_from(&[b'/', 0xFF][..]).expect_err("reject invalid utf8");
-    }
-
-    #[test]
-    fn rejects_invalid_utf8_in_query() {
-        PathAndQuery::try_from(&[b'/', b'a', b'?', 0xFF][..]).expect_err("reject invalid utf8");
-    }
-
-    #[test]
     fn json_is_fine() {
-        assert_eq!(
-            r#"/{"bread":"baguette"}"#,
-            pq(r#"/{"bread":"baguette"}"#).path()
-        );
+        assert_eq!(r#"/{"bread":"baguette"}"#, pq(r#"/{"bread":"baguette"}"#).path());
     }
 
     fn pq(s: &str) -> PathAndQuery {

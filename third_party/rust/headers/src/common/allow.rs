@@ -1,8 +1,9 @@
 use std::iter::FromIterator;
 
-use http::{HeaderValue, Method};
+use http::Method;
 
-use crate::util::FlatCsv;
+use util::FlatCsv;
+
 
 
 
@@ -43,7 +44,7 @@ derive_header! {
 
 impl Allow {
     
-    pub fn iter(&self) -> impl Iterator<Item = Method> + '_ {
+    pub fn iter<'a>(&'a self) -> impl Iterator<Item = Method> + 'a {
         self.0.iter().filter_map(|s| s.parse().ok())
     }
 }
@@ -58,7 +59,7 @@ impl FromIterator<Method> for Allow {
             .map(|method| {
                 method
                     .as_str()
-                    .parse::<HeaderValue>()
+                    .parse::<::HeaderValue>()
                     .expect("Method is a valid HeaderValue")
             })
             .collect();

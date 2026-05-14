@@ -1,9 +1,7 @@
 use std::fmt;
 
-use http::HeaderValue;
-
 use super::{FlatCsv, IterExt};
-use crate::Error;
+use HeaderValue;
 
 
 
@@ -180,14 +178,14 @@ impl<T: fmt::Debug> fmt::Debug for EntityTag<T> {
 }
 
 impl super::TryFromValues for EntityTag {
-    fn try_from_values<'i, I>(values: &mut I) -> Result<Self, Error>
+    fn try_from_values<'i, I>(values: &mut I) -> Result<Self, ::Error>
     where
         I: Iterator<Item = &'i HeaderValue>,
     {
         values
             .just_one()
             .and_then(EntityTag::from_val)
-            .ok_or_else(Error::invalid)
+            .ok_or_else(::Error::invalid)
     }
 }
 
@@ -215,7 +213,7 @@ fn check_slice_validity(slice: &[u8]) -> bool {
         
         
         debug_assert!(
-            (b'\x21'..=b'\x7e').contains(&c) | (c >= b'\x80'),
+            (c >= b'\x21' && c <= b'\x7e') | (c >= b'\x80'),
             "EntityTag expects HeaderValue to have check for control characters"
         );
         c != b'"'
@@ -248,7 +246,7 @@ impl EntityTagRange {
 }
 
 impl super::TryFromValues for EntityTagRange {
-    fn try_from_values<'i, I>(values: &mut I) -> Result<Self, Error>
+    fn try_from_values<'i, I>(values: &mut I) -> Result<Self, ::Error>
     where
         I: Iterator<Item = &'i HeaderValue>,
     {

@@ -151,45 +151,47 @@ fn with_locked_node_and_parent<F, Ret>(node: &Arc<TreeNode>, func: F) -> Ret
 where
     F: FnOnce(MutexGuard<'_, Inner>, Option<MutexGuard<'_, Inner>>) -> Ret,
 {
-    use std::sync::TryLockError;
+    let mut potential_parent = {
+        let locked_node = node.inner.lock().unwrap();
+        match locked_node.parent.clone() {
+            Some(parent) => parent,
+            
+            
+            None => return func(locked_node, None),
+        }
+    };
 
-    let mut locked_node = node.inner.lock().unwrap();
-
-    
-    
     loop {
         
-        let potential_parent = match locked_node.parent.as_ref() {
-            Some(potential_parent) => potential_parent.clone(),
-            None => return func(locked_node, None),
-        };
-
         
-        let locked_parent = match potential_parent.inner.try_lock() {
-            Ok(locked_parent) => locked_parent,
-            Err(TryLockError::WouldBlock) => {
-                drop(locked_node);
-                
-                
-                
-                
-                
-                let locked_parent = potential_parent.inner.lock().unwrap();
-                locked_node = node.inner.lock().unwrap();
-                locked_parent
-            }
+        
+        
+        
+        let locked_parent = potential_parent.inner.lock().unwrap();
+        let locked_node = node.inner.lock().unwrap();
+
+        let actual_parent = match locked_node.parent.clone() {
+            Some(parent) => parent,
             
-            #[allow(clippy::unnecessary_literal_unwrap)]
-            Err(TryLockError::Poisoned(err)) => Err(err).unwrap(),
+            
+            None => {
+                
+                drop(locked_parent);
+                return func(locked_node, None);
+            }
         };
 
         
-        
-        if let Some(actual_parent) = locked_node.parent.as_ref() {
-            if Arc::ptr_eq(actual_parent, &potential_parent) {
-                return func(locked_node, Some(locked_parent));
-            }
+        if Arc::ptr_eq(&actual_parent, &potential_parent) {
+            return func(locked_node, Some(locked_parent));
         }
+
+        
+        
+        drop(locked_node);
+        drop(locked_parent);
+
+        potential_parent = actual_parent;
     }
 }
 
@@ -206,7 +208,7 @@ fn move_children_to_parent(node: &mut Inner, parent: &mut Inner) {
     for child in std::mem::take(&mut node.children) {
         {
             let mut child_locked = child.inner.lock().unwrap();
-            child_locked.parent.clone_from(&node.parent);
+            child_locked.parent = node.parent.clone();
             child_locked.parent_idx = parent.children.len();
         }
         parent.children.push(child);
@@ -241,7 +243,11 @@ fn remove_child(parent: &mut Inner, mut node: MutexGuard<'_, Inner>) {
 
     let len = parent.children.len();
     if 4 * len <= parent.children.capacity() {
-        parent.children.shrink_to(2 * len);
+        
+        
+        
+        let old_children = std::mem::replace(&mut parent.children, Vec::with_capacity(2 * len));
+        parent.children.extend(old_children);
     }
 }
 

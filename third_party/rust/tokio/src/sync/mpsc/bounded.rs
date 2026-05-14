@@ -152,9 +152,6 @@ pub struct Receiver<T> {
 
 
 
-
-
-
 #[track_caller]
 pub fn channel<T>(buffer: usize) -> (Sender<T>, Receiver<T>) {
     assert!(buffer > 0, "mpsc bounded channel requires buffer > 0");
@@ -365,9 +362,6 @@ impl<T> Receiver<T> {
         self.chan.try_recv()
     }
 
-    
-    
-    
     
     
     
@@ -1004,9 +998,6 @@ impl<T> Sender<T> {
         Ok(())
     }
 
-    
-    
-    
     
     
     
@@ -1853,74 +1844,35 @@ impl<T> OwnedPermit<T> {
     
     
     pub fn release(mut self) -> Sender<T> {
+        use chan::Semaphore;
+
         let chan = self.chan.take().unwrap_or_else(|| {
             unreachable!("OwnedPermit channel is only taken when the permit is moved")
         });
 
         
-        drop(Permit { chan: &chan });
+        chan.semaphore().add_permit();
         Sender { chan }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn same_channel(&self, other: &Self) -> bool {
-        self.chan
-            .as_ref()
-            .zip(other.chan.as_ref())
-            .is_some_and(|(a, b)| a.same_channel(b))
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn same_channel_as_sender(&self, sender: &Sender<T>) -> bool {
-        self.chan
-            .as_ref()
-            .is_some_and(|chan| chan.same_channel(&sender.chan))
     }
 }
 
 impl<T> Drop for OwnedPermit<T> {
     fn drop(&mut self) {
+        use chan::Semaphore;
+
         
         if let Some(chan) = self.chan.take() {
+            let semaphore = chan.semaphore();
+
             
-            drop(Permit { chan: &chan });
+            semaphore.add_permit();
+
+            
+            
+            
+            if semaphore.is_closed() && semaphore.is_idle() {
+                chan.wake_rx();
+            }
         }
 
         

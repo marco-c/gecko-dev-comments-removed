@@ -62,17 +62,6 @@ impl Waker {
         self.empty();
     }
 
-    #[allow(dead_code)] 
-    pub(crate) fn fd(&self) -> Option<RawFd> {
-        Some(self.as_raw_fd())
-    }
-
-    
-    #[allow(dead_code)] 
-    pub(crate) fn woken(&self) -> bool {
-        false
-    }
-
     
     
     fn empty(&self) {

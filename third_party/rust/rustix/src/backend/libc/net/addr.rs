@@ -1,20 +1,16 @@
 
 
 use crate::backend::c;
-use crate::net::AddressFamily;
 #[cfg(unix)]
 use {
     crate::ffi::CStr,
     crate::io,
-    crate::net::addr::SocketAddrLen,
     crate::path,
     core::cmp::Ordering,
     core::fmt,
     core::hash::{Hash, Hasher},
     core::slice,
 };
-#[cfg(all(unix, feature = "alloc"))]
-use {crate::ffi::CString, alloc::borrow::Cow, alloc::vec::Vec};
 
 
 #[cfg(unix)]
@@ -37,12 +33,9 @@ impl SocketAddrUnix {
     #[inline]
     fn _new(path: &CStr) -> io::Result<Self> {
         let mut unix = Self::init();
-        let mut bytes = path.to_bytes_with_nul();
+        let bytes = path.to_bytes_with_nul();
         if bytes.len() > unix.sun_path.len() {
-            bytes = path.to_bytes(); 
-            if bytes.len() > unix.sun_path.len() {
-                return Err(io::Errno::NAMETOOLONG);
-            }
+            return Err(io::Errno::NAMETOOLONG);
         }
         for (i, b) in bytes.iter().enumerate() {
             unix.sun_path[i] = *b as c::c_char;
@@ -81,33 +74,12 @@ impl SocketAddrUnix {
         })
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[cfg(linux_kernel)]
-    #[inline]
-    pub fn new_unnamed() -> Self {
-        Self {
-            unix: Self::init(),
-            #[cfg(not(any(bsd, target_os = "haiku")))]
-            len: offsetof_sun_path() as c::socklen_t,
-        }
-    }
-
     const fn init() -> c::sockaddr_un {
         c::sockaddr_un {
             #[cfg(any(
                 bsd,
                 target_os = "aix",
                 target_os = "haiku",
-                target_os = "horizon",
                 target_os = "nto",
                 target_os = "hurd",
             ))]
@@ -115,15 +87,9 @@ impl SocketAddrUnix {
             #[cfg(target_os = "vita")]
             ss_len: 0,
             sun_family: c::AF_UNIX as _,
-            #[cfg(any(bsd, target_os = "horizon", target_os = "nto"))]
+            #[cfg(any(bsd, target_os = "nto"))]
             sun_path: [0; 104],
-            #[cfg(not(any(
-                bsd,
-                target_os = "aix",
-                target_os = "haiku",
-                target_os = "horizon",
-                target_os = "nto"
-            )))]
+            #[cfg(not(any(bsd, target_os = "aix", target_os = "haiku", target_os = "nto")))]
             sun_path: [0; 108],
             #[cfg(target_os = "haiku")]
             sun_path: [0; 126],
@@ -134,52 +100,19 @@ impl SocketAddrUnix {
 
     
     #[inline]
-    #[cfg(feature = "alloc")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
-    pub fn path(&self) -> Option<Cow<'_, CStr>> {
-        let bytes = self.bytes()?;
-        if !bytes.is_empty() && bytes[0] != 0 {
-            if self.unix.sun_path.len() == bytes.len() {
-                
-                unsafe { Self::path_with_termination(bytes) }
-            } else {
-                
-                
-                Some(unsafe { CStr::from_bytes_with_nul_unchecked(bytes) }.into())
-            }
-        } else {
-            None
-        }
-    }
-
-    
-    
-    
-    #[cfg(feature = "alloc")]
-    #[cold]
-    unsafe fn path_with_termination(bytes: &[u8]) -> Option<Cow<'_, CStr>> {
-        let mut owned = Vec::with_capacity(bytes.len() + 1);
-        owned.extend_from_slice(bytes);
-        owned.push(b'\0');
-        
-        
-        Some(Cow::Owned(
-            CString::from_vec_with_nul_unchecked(owned).into(),
-        ))
-    }
-
-    
-    
-    #[inline]
-    pub fn path_bytes(&self) -> Option<&[u8]> {
-        let bytes = self.bytes()?;
-        if !bytes.is_empty() && bytes[0] != 0 {
-            if self.unix.sun_path.len() == self.len() - offsetof_sun_path() {
-                
-                Some(bytes)
-            } else {
-                
-                Some(&bytes[..bytes.len() - 1])
+    pub fn path(&self) -> Option<&CStr> {
+        let len = self.len();
+        if len != 0 && self.unix.sun_path[0] != 0 {
+            let end = len as usize - offsetof_sun_path();
+            let bytes = &self.unix.sun_path[..end];
+            
+            
+            
+            unsafe {
+                Some(CStr::from_bytes_with_nul_unchecked(slice::from_raw_parts(
+                    bytes.as_ptr().cast(),
+                    bytes.len(),
+                )))
             }
         } else {
             None
@@ -190,47 +123,32 @@ impl SocketAddrUnix {
     #[cfg(linux_kernel)]
     #[inline]
     pub fn abstract_name(&self) -> Option<&[u8]> {
-        if let [0, bytes @ ..] = self.bytes()? {
-            Some(bytes)
+        let len = self.len();
+        if len != 0 && self.unix.sun_path[0] == 0 {
+            let end = len as usize - offsetof_sun_path();
+            let bytes = &self.unix.sun_path[1..end];
+            
+            unsafe { Some(slice::from_raw_parts(bytes.as_ptr().cast(), bytes.len())) }
         } else {
             None
         }
     }
 
-    
-    #[cfg(linux_kernel)]
     #[inline]
-    pub fn is_unnamed(&self) -> bool {
-        self.bytes() == Some(&[])
-    }
-
-    #[inline]
-    pub(crate) fn addr_len(&self) -> SocketAddrLen {
+    pub(crate) fn addr_len(&self) -> c::socklen_t {
         #[cfg(not(any(bsd, target_os = "haiku")))]
         {
-            bitcast!(self.len)
+            self.len
         }
         #[cfg(any(bsd, target_os = "haiku"))]
         {
-            bitcast!(c::socklen_t::from(self.unix.sun_len))
+            c::socklen_t::from(self.unix.sun_len)
         }
     }
 
     #[inline]
     pub(crate) fn len(&self) -> usize {
         self.addr_len() as usize
-    }
-
-    #[inline]
-    fn bytes(&self) -> Option<&[u8]> {
-        let len = self.len();
-        if len != 0 {
-            let bytes = &self.unix.sun_path[..len - offsetof_sun_path()];
-            
-            Some(unsafe { slice::from_raw_parts(bytes.as_ptr().cast(), bytes.len()) })
-        } else {
-            None
-        }
     }
 }
 
@@ -277,63 +195,21 @@ impl Hash for SocketAddrUnix {
 #[cfg(unix)]
 impl fmt::Debug for SocketAddrUnix {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        #[cfg(feature = "alloc")]
         if let Some(path) = self.path() {
-            return path.fmt(f);
-        }
-        if let Some(bytes) = self.path_bytes() {
-            if let Ok(s) = core::str::from_utf8(bytes) {
-                return s.fmt(f);
+            path.fmt(f)
+        } else {
+            #[cfg(linux_kernel)]
+            if let Some(name) = self.abstract_name() {
+                return name.fmt(f);
             }
-            return bytes.fmt(f);
-        }
-        #[cfg(linux_kernel)]
-        if let Some(name) = self.abstract_name() {
-            return name.fmt(f);
-        }
-        "(unnamed)".fmt(f)
-    }
-}
 
-
-
-
-
-#[repr(transparent)]
-#[derive(Copy, Clone)]
-#[doc(alias = "sockaddr_storage")]
-pub struct SocketAddrStorage(c::sockaddr_storage);
-
-impl SocketAddrStorage {
-    
-    
-    pub fn zeroed() -> Self {
-        assert_eq!(c::AF_UNSPEC, 0);
-        
-        unsafe { core::mem::zeroed() }
-    }
-
-    
-    pub fn family(&self) -> AddressFamily {
-        
-        unsafe {
-            AddressFamily::from_raw(crate::backend::net::read_sockaddr::read_sa_family(
-                crate::utils::as_ptr(&self.0).cast::<c::sockaddr>(),
-            ))
-        }
-    }
-
-    
-    
-    pub fn clear_family(&mut self) {
-        
-        unsafe {
-            crate::backend::net::read_sockaddr::initialize_family_to_unspec(
-                crate::utils::as_mut_ptr(&mut self.0).cast::<c::sockaddr>(),
-            )
+            "(unnamed)".fmt(f)
         }
     }
 }
+
+
+pub type SocketAddrStorage = c::sockaddr_storage;
 
 
 #[cfg(not(windows))]
@@ -344,7 +220,6 @@ pub(crate) fn offsetof_sun_path() -> usize {
             bsd,
             target_os = "aix",
             target_os = "haiku",
-            target_os = "horizon",
             target_os = "hurd",
             target_os = "nto",
         ))]
@@ -371,15 +246,9 @@ pub(crate) fn offsetof_sun_path() -> usize {
             target_os = "vita"
         )))]
         sun_family: 0_u16,
-        #[cfg(any(bsd, target_os = "horizon", target_os = "nto"))]
+        #[cfg(any(bsd, target_os = "nto"))]
         sun_path: [0; 104],
-        #[cfg(not(any(
-            bsd,
-            target_os = "aix",
-            target_os = "haiku",
-            target_os = "horizon",
-            target_os = "nto"
-        )))]
+        #[cfg(not(any(bsd, target_os = "aix", target_os = "haiku", target_os = "nto")))]
         sun_path: [0; 108],
         #[cfg(target_os = "haiku")]
         sun_path: [0; 126],

@@ -7,7 +7,7 @@ use bytes::{BufMut, BytesMut};
 
 
 struct Decoder {
-    state: u8,
+    state: usize,
     maybe_eos: bool,
 }
 
@@ -76,7 +76,7 @@ impl Decoder {
     
     fn decode4(&mut self, input: u8) -> Result<Option<u8>, DecoderError> {
         
-        let (next, byte, flags) = DECODE_TABLE[self.state as usize][input as usize];
+        let (next, byte, flags) = DECODE_TABLE[self.state][input as usize];
 
         if flags & ERROR == ERROR {
             

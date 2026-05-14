@@ -3,11 +3,9 @@ use crate::runtime::blocking::BlockingPool;
 use crate::runtime::scheduler::CurrentThread;
 use crate::runtime::{context, EnterGuard, Handle};
 use crate::task::JoinHandle;
-use crate::util::error::RUNTIME_SHUTTING_DOWN_ERROR;
 use crate::util::trace::SpawnMeta;
 
 use std::future::Future;
-use std::io;
 use std::mem;
 use std::time::Duration;
 
@@ -195,17 +193,10 @@ impl Runtime {
     
     
     
-    
-    
-    
     pub fn handle(&self) -> &Handle {
         &self.handle
     }
 
-    
-    
-    
-    
     
     
     
@@ -251,9 +242,6 @@ impl Runtime {
         }
     }
 
-    
-    
-    
     
     
     
@@ -333,9 +321,6 @@ impl Runtime {
     
     
     
-    
-    
-    
     #[track_caller]
     pub fn block_on<F: Future>(&self, future: F) -> F::Output {
         let fut_size = mem::size_of::<F>();
@@ -350,7 +335,7 @@ impl Runtime {
     fn block_on_inner<F: Future>(&self, future: F, _meta: SpawnMeta<'_>) -> F::Output {
         #[cfg(all(
             tokio_unstable,
-            feature = "taskdump",
+            tokio_taskdump,
             feature = "rt",
             target_os = "linux",
             any(target_arch = "aarch64", target_arch = "x86", target_arch = "x86_64")
@@ -374,9 +359,6 @@ impl Runtime {
         }
     }
 
-    
-    
-    
     
     
     
@@ -444,17 +426,12 @@ impl Runtime {
     
     
     
-    
-    
     pub fn shutdown_timeout(mut self, duration: Duration) {
         
         self.handle.inner.shutdown();
         self.blocking_pool.shutdown(Some(duration));
     }
 
-    
-    
-    
     
     
     
@@ -494,6 +471,7 @@ impl Runtime {
     }
 }
 
+#[allow(clippy::single_match)] 
 impl Drop for Runtime {
     fn drop(&mut self) {
         match &mut self.scheduler {
@@ -516,70 +494,3 @@ impl Drop for Runtime {
 impl std::panic::UnwindSafe for Runtime {}
 
 impl std::panic::RefUnwindSafe for Runtime {}
-
-fn display_eq(d: impl std::fmt::Display, s: &str) -> bool {
-    use std::fmt::Write;
-
-    struct FormatEq<'r> {
-        remainder: &'r str,
-        unequal: bool,
-    }
-
-    impl<'r> Write for FormatEq<'r> {
-        fn write_str(&mut self, s: &str) -> std::fmt::Result {
-            if !self.unequal {
-                if let Some(new_remainder) = self.remainder.strip_prefix(s) {
-                    self.remainder = new_remainder;
-                } else {
-                    self.unequal = true;
-                }
-            }
-            Ok(())
-        }
-    }
-
-    let mut fmt_eq = FormatEq {
-        remainder: s,
-        unequal: false,
-    };
-    let _ = write!(fmt_eq, "{d}");
-    fmt_eq.remainder.is_empty() && !fmt_eq.unequal
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-pub fn is_rt_shutdown_err(err: &io::Error) -> bool {
-    if let Some(inner) = err.get_ref() {
-        err.kind() == io::ErrorKind::Other
-            && inner.source().is_none()
-            && display_eq(inner, RUNTIME_SHUTTING_DOWN_ERROR)
-    } else {
-        false
-    }
-}

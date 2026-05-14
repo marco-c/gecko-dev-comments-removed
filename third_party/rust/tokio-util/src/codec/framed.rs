@@ -20,28 +20,20 @@ pin_project! {
     /// You can create a `Framed` instance by using the [`Decoder::framed`] adapter, or
     /// by using the `new` function seen below.
     ///
-    /// # Cancellation safety
-    ///
-    /// * [`futures_util::sink::SinkExt::send`]: if send is used as the event in a
-    /// `tokio::select!` statement and some other branch completes first, then it is
-    /// guaranteed that the message was not sent, but the message itself is lost.
-    /// * [`tokio_stream::StreamExt::next`]: This method is cancel safe. The returned
-    /// future only holds onto a reference to the underlying stream, so dropping it will
-    /// never lose a value.
-    ///
     /// [`Stream`]: futures_core::Stream
     /// [`Sink`]: futures_sink::Sink
     /// [`AsyncRead`]: tokio::io::AsyncRead
     /// [`Decoder::framed`]: crate::codec::Decoder::framed()
-    /// [`futures_util::sink::SinkExt::send`]: futures_util::sink::SinkExt::send
-    /// [`tokio_stream::StreamExt::next`]: https://docs.rs/tokio-stream/latest/tokio_stream/trait.StreamExt.html#method.next
     pub struct Framed<T, U> {
         #[pin]
         inner: FramedImpl<T, U, RWFrames>
     }
 }
 
-impl<T, U> Framed<T, U> {
+impl<T, U> Framed<T, U>
+where
+    T: AsyncRead + AsyncWrite,
+{
     
     
     
@@ -116,15 +108,14 @@ impl<T, U> Framed<T, U> {
                         buffer: BytesMut::with_capacity(capacity),
                         has_errored: false,
                     },
-                    write: WriteFrame {
-                        buffer: BytesMut::with_capacity(capacity),
-                        backpressure_boundary: capacity,
-                    },
+                    write: WriteFrame::default(),
                 },
             },
         }
     }
+}
 
+impl<T, U> Framed<T, U> {
     
     
     
@@ -263,16 +254,6 @@ impl<T, U> Framed<T, U> {
     }
 
     
-    pub fn backpressure_boundary(&self) -> usize {
-        self.inner.state.write.backpressure_boundary
-    }
-
-    
-    pub fn set_backpressure_boundary(&mut self, boundary: usize) {
-        self.inner.state.write.backpressure_boundary = boundary;
-    }
-
-    
     
     
     
@@ -372,7 +353,7 @@ pub struct FramedParts<T, U> {
 
     
     
-    pub(crate) _priv: (),
+    _priv: (),
 }
 
 impl<T, U> FramedParts<T, U> {

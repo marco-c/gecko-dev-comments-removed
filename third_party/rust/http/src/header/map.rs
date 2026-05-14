@@ -1,5 +1,5 @@
-use std::collections::hash_map::RandomState;
 use std::collections::HashMap;
+use std::collections::hash_map::RandomState;
 use std::convert::TryFrom;
 use std::hash::{BuildHasher, Hash, Hasher};
 use std::iter::{FromIterator, FusedIterator};
@@ -8,47 +8,11 @@ use std::{fmt, mem, ops, ptr, vec};
 
 use crate::Error;
 
-use super::name::{HdrName, HeaderName, InvalidHeaderName};
 use super::HeaderValue;
+use super::name::{HdrName, HeaderName, InvalidHeaderName};
 
 pub use self::as_header_name::AsHeaderName;
 pub use self::into_header_name::IntoHeaderName;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -118,9 +82,7 @@ pub struct HeaderMap<T = HeaderValue> {
 
 #[derive(Debug)]
 pub struct Iter<'a, T> {
-    map: &'a HeaderMap<T>,
-    entry: usize,
-    cursor: Option<Cursor>,
+    inner: IterMut<'a, T>,
 }
 
 
@@ -247,11 +209,6 @@ pub struct ValueDrain<'a, T> {
     first: Option<T>,
     next: Option<::std::vec::IntoIter<T>>,
     lt: PhantomData<&'a mut HeaderMap<T>>,
-}
-
-
-pub struct MaxSizeReached {
-    _priv: (),
 }
 
 
@@ -481,21 +438,8 @@ impl HeaderMap {
     
     
     
-    #[inline]
     pub fn new() -> Self {
-        Self::default()
-    }
-}
-
-impl<T> Default for HeaderMap<T> {
-    fn default() -> Self {
-        HeaderMap {
-            mask: 0,
-            indices: Box::new([]), 
-            entries: Vec::new(),
-            extra_values: Vec::new(),
-            danger: Danger::Green,
-        }
+        HeaderMap::with_capacity(0)
     }
 }
 
@@ -518,57 +462,27 @@ impl<T> HeaderMap<T> {
     
     
     
-    
-    
-    
-    
     pub fn with_capacity(capacity: usize) -> HeaderMap<T> {
-        Self::try_with_capacity(capacity).expect("size overflows MAX_SIZE")
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn try_with_capacity(capacity: usize) -> Result<HeaderMap<T>, MaxSizeReached> {
         if capacity == 0 {
-            Ok(Self::default())
-        } else {
-            let raw_cap = to_raw_capacity(capacity)?;
-            let raw_cap = match raw_cap.checked_next_power_of_two() {
-                Some(c) => c,
-                None => return Err(MaxSizeReached { _priv: () }),
-            };
-            if raw_cap > MAX_SIZE {
-                return Err(MaxSizeReached { _priv: () });
-            }
-            debug_assert!(raw_cap > 0);
-
-            Ok(HeaderMap {
-                mask: (raw_cap - 1) as Size,
-                indices: vec![Pos::none(); raw_cap].into_boxed_slice(),
-                entries: Vec::with_capacity(usable_capacity(raw_cap)),
+            HeaderMap {
+                mask: 0,
+                indices: Box::new([]), 
+                entries: Vec::new(),
                 extra_values: Vec::new(),
                 danger: Danger::Green,
-            })
+            }
+        } else {
+            let raw_cap = to_raw_capacity(capacity).next_power_of_two();
+            assert!(raw_cap <= MAX_SIZE, "requested capacity too large");
+            debug_assert!(raw_cap > 0);
+
+            HeaderMap {
+                mask: (raw_cap - 1) as Size,
+                indices: vec![Pos::none(); raw_cap].into_boxed_slice(),
+                entries: Vec::with_capacity(raw_cap),
+                extra_values: Vec::new(),
+                danger: Danger::Green,
+            }
         }
     }
 
@@ -715,62 +629,27 @@ impl<T> HeaderMap<T> {
     
     
     pub fn reserve(&mut self, additional: usize) {
-        self.try_reserve(additional)
-            .expect("size overflows MAX_SIZE")
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn try_reserve(&mut self, additional: usize) -> Result<(), MaxSizeReached> {
         
         
         let cap = self
             .entries
             .len()
             .checked_add(additional)
-            .ok_or_else(MaxSizeReached::new)?;
+            .expect("reserve overflow");
 
-        let raw_cap = to_raw_capacity(cap)?;
+        if cap > self.indices.len() {
+            let cap = cap.next_power_of_two();
+            assert!(cap <= MAX_SIZE, "header map reserve over max capacity");
+            assert!(cap != 0, "header map reserve overflowed");
 
-        if raw_cap > self.indices.len() {
-            let raw_cap = raw_cap
-                .checked_next_power_of_two()
-                .ok_or_else(MaxSizeReached::new)?;
-            if raw_cap > MAX_SIZE {
-                return Err(MaxSizeReached::new());
-            }
-
-            if self.entries.is_empty() {
-                self.mask = raw_cap as Size - 1;
-                self.indices = vec![Pos::none(); raw_cap].into_boxed_slice();
-                self.entries = Vec::with_capacity(usable_capacity(raw_cap));
+            if self.entries.len() == 0 {
+                self.mask = cap as Size - 1;
+                self.indices = vec![Pos::none(); cap].into_boxed_slice();
+                self.entries = Vec::with_capacity(usable_capacity(cap));
             } else {
-                self.try_grow(raw_cap)?;
+                self.grow(cap);
             }
         }
-
-        Ok(())
     }
 
     
@@ -922,9 +801,12 @@ impl<T> HeaderMap<T> {
     
     pub fn iter(&self) -> Iter<'_, T> {
         Iter {
-            map: self,
-            entry: 0,
-            cursor: self.entries.first().map(|_| Cursor::Head),
+            inner: IterMut {
+                map: self as *const _ as *mut _,
+                entry: 0,
+                cursor: self.entries.first().map(|_| Cursor::Head),
+                lt: PhantomData,
+            },
         }
     }
 
@@ -1079,9 +961,7 @@ impl<T> HeaderMap<T> {
         let entries = &mut self.entries[..] as *mut _;
         let extra_values = &mut self.extra_values as *mut _;
         let len = self.entries.len();
-        unsafe {
-            self.entries.set_len(0);
-        }
+        unsafe { self.entries.set_len(0); }
 
         Drain {
             idx: 0,
@@ -1112,7 +992,7 @@ impl<T> HeaderMap<T> {
         } else {
             ValueIter {
                 map: self,
-                index: usize::MAX,
+                index: ::std::usize::MAX,
                 front: None,
                 back: None,
             }
@@ -1161,22 +1041,13 @@ impl<T> HeaderMap<T> {
     
     
     
-    
-    
-    
-    
     pub fn entry<K>(&mut self, key: K) -> Entry<'_, T>
     where
         K: IntoHeaderName,
     {
-        key.try_entry(self).expect("size overflows MAX_SIZE")
+        key.entry(self)
     }
 
-    
-    
-    
-    
-    
     
     
     
@@ -1190,26 +1061,18 @@ impl<T> HeaderMap<T> {
     where
         K: AsHeaderName,
     {
-        key.try_entry(self).map_err(|err| match err {
-            as_header_name::TryEntryError::InvalidHeaderName(e) => e,
-            as_header_name::TryEntryError::MaxSizeReached(_e) => {
-                
-                
-                
-                InvalidHeaderName::new()
-            }
-        })
+        key.try_entry(self)
     }
 
-    fn try_entry2<K>(&mut self, key: K) -> Result<Entry<'_, T>, MaxSizeReached>
+    fn entry2<K>(&mut self, key: K) -> Entry<'_, T>
     where
         K: Hash + Into<HeaderName>,
         HeaderName: PartialEq<K>,
     {
         
-        self.try_reserve_one()?;
+        self.reserve_one();
 
-        Ok(insert_phase_one!(
+        insert_phase_one!(
             self,
             key,
             probe,
@@ -1218,30 +1081,26 @@ impl<T> HeaderMap<T> {
             danger,
             Entry::Vacant(VacantEntry {
                 map: self,
-                hash,
+                hash: hash,
                 key: key.into(),
-                probe,
-                danger,
+                probe: probe,
+                danger: danger,
             }),
             Entry::Occupied(OccupiedEntry {
                 map: self,
                 index: pos,
-                probe,
+                probe: probe,
             }),
             Entry::Vacant(VacantEntry {
                 map: self,
-                hash,
+                hash: hash,
                 key: key.into(),
-                probe,
-                danger,
+                probe: probe,
+                danger: danger,
             })
-        ))
+        )
     }
 
-    
-    
-    
-    
     
     
     
@@ -1273,56 +1132,18 @@ impl<T> HeaderMap<T> {
     where
         K: IntoHeaderName,
     {
-        self.try_insert(key, val).expect("size overflows MAX_SIZE")
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn try_insert<K>(&mut self, key: K, val: T) -> Result<Option<T>, MaxSizeReached>
-    where
-        K: IntoHeaderName,
-    {
-        key.try_insert(self, val)
+        key.insert(self, val)
     }
 
     #[inline]
-    fn try_insert2<K>(&mut self, key: K, value: T) -> Result<Option<T>, MaxSizeReached>
+    fn insert2<K>(&mut self, key: K, value: T) -> Option<T>
     where
         K: Hash + Into<HeaderName>,
         HeaderName: PartialEq<K>,
     {
-        self.try_reserve_one()?;
+        self.reserve_one();
 
-        Ok(insert_phase_one!(
+        insert_phase_one!(
             self,
             key,
             probe,
@@ -1331,9 +1152,9 @@ impl<T> HeaderMap<T> {
             danger,
             // Vacant
             {
-                let _ = danger; // Make lint happy
+                drop(danger); // Make lint happy
                 let index = self.entries.len();
-                self.try_insert_entry(hash, key.into(), value)?;
+                self.insert_entry(hash, key.into(), value);
                 self.indices[probe] = Pos::new(index, hash);
                 None
             },
@@ -1341,10 +1162,10 @@ impl<T> HeaderMap<T> {
             Some(self.insert_occupied(pos, value)),
             // Robinhood
             {
-                self.try_insert_phase_two(key.into(), value, hash, probe, danger)?;
+                self.insert_phase_two(key.into(), value, hash, probe, danger);
                 None
             }
-        ))
+        )
     }
 
     
@@ -1372,12 +1193,14 @@ impl<T> HeaderMap<T> {
         let raw_links = self.raw_links();
         let extra_values = &mut self.extra_values;
 
-        let next =
-            links.map(|l| drain_all_extra_values(raw_links, extra_values, l.next).into_iter());
+        let next = links.map(|l| {
+            drain_all_extra_values(raw_links, extra_values, l.next)
+                .into_iter()
+        });
 
         ValueDrain {
             first: Some(old),
-            next,
+            next: next,
             lt: PhantomData,
         }
     }
@@ -1408,64 +1231,22 @@ impl<T> HeaderMap<T> {
     
     
     
-    
-    
-    
-    
     pub fn append<K>(&mut self, key: K, value: T) -> bool
     where
         K: IntoHeaderName,
     {
-        self.try_append(key, value)
-            .expect("size overflows MAX_SIZE")
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn try_append<K>(&mut self, key: K, value: T) -> Result<bool, MaxSizeReached>
-    where
-        K: IntoHeaderName,
-    {
-        key.try_append(self, value)
+        key.append(self, value)
     }
 
     #[inline]
-    fn try_append2<K>(&mut self, key: K, value: T) -> Result<bool, MaxSizeReached>
+    fn append2<K>(&mut self, key: K, value: T) -> bool
     where
         K: Hash + Into<HeaderName>,
         HeaderName: PartialEq<K>,
     {
-        self.try_reserve_one()?;
+        self.reserve_one();
 
-        Ok(insert_phase_one!(
+        insert_phase_one!(
             self,
             key,
             probe,
@@ -1474,9 +1255,9 @@ impl<T> HeaderMap<T> {
             danger,
             // Vacant
             {
-                let _ = danger;
+                drop(danger);
                 let index = self.entries.len();
-                self.try_insert_entry(hash, key.into(), value)?;
+                self.insert_entry(hash, key.into(), value);
                 self.indices[probe] = Pos::new(index, hash);
                 false
             },
@@ -1487,17 +1268,17 @@ impl<T> HeaderMap<T> {
             },
             // Robinhood
             {
-                self.try_insert_phase_two(key.into(), value, hash, probe, danger)?;
+                self.insert_phase_two(key.into(), value, hash, probe, danger);
 
                 false
             }
-        ))
+        )
     }
 
     #[inline]
-    fn find<K>(&self, key: &K) -> Option<(usize, usize)>
+    fn find<K: ?Sized>(&self, key: &K) -> Option<(usize, usize)>
     where
-        K: Hash + Into<HeaderName> + ?Sized,
+        K: Hash + Into<HeaderName>,
         HeaderName: PartialEq<K>,
     {
         if self.entries.is_empty() {
@@ -1527,26 +1308,26 @@ impl<T> HeaderMap<T> {
 
     
     #[inline]
-    fn try_insert_phase_two(
+    fn insert_phase_two(
         &mut self,
         key: HeaderName,
         value: T,
         hash: HashValue,
         probe: usize,
         danger: bool,
-    ) -> Result<usize, MaxSizeReached> {
+    ) -> usize {
         
         let index = self.entries.len();
-        self.try_insert_entry(hash, key, value)?;
+        self.insert_entry(hash, key, value);
 
         let num_displaced = do_insert_phase_two(&mut self.indices, probe, Pos::new(index, hash));
 
         if danger || num_displaced >= DISPLACEMENT_THRESHOLD {
             
-            self.danger.set_yellow();
+            self.danger.to_yellow();
         }
 
-        Ok(index)
+        index
     }
 
     
@@ -1625,7 +1406,7 @@ impl<T> HeaderMap<T> {
 
         
         
-        if !self.entries.is_empty() {
+        if self.entries.len() > 0 {
             let mut last_probe = probe;
             let mut probe = probe + 1;
 
@@ -1668,24 +1449,15 @@ impl<T> HeaderMap<T> {
     }
 
     #[inline]
-    fn try_insert_entry(
-        &mut self,
-        hash: HashValue,
-        key: HeaderName,
-        value: T,
-    ) -> Result<(), MaxSizeReached> {
-        if self.entries.len() >= MAX_SIZE {
-            return Err(MaxSizeReached::new());
-        }
+    fn insert_entry(&mut self, hash: HashValue, key: HeaderName, value: T) {
+        assert!(self.entries.len() < MAX_SIZE, "header map at capacity");
 
         self.entries.push(Bucket {
-            hash,
-            key,
-            value,
+            hash: hash,
+            key: key,
+            value: value,
             links: None,
         });
-
-        Ok(())
     }
 
     fn rebuild(&mut self) {
@@ -1735,7 +1507,7 @@ impl<T> HeaderMap<T> {
         }
     }
 
-    fn try_reserve_one(&mut self) -> Result<(), MaxSizeReached> {
+    fn reserve_one(&mut self) {
         let len = self.entries.len();
 
         if self.danger.is_yellow() {
@@ -1743,15 +1515,15 @@ impl<T> HeaderMap<T> {
 
             if load_factor >= LOAD_FACTOR_THRESHOLD {
                 
-                self.danger.set_green();
+                self.danger.to_green();
 
                 
                 let new_cap = self.indices.len() * 2;
 
                 
-                self.try_grow(new_cap)?;
+                self.grow(new_cap);
             } else {
-                self.danger.set_red();
+                self.danger.to_red();
 
                 
                 for index in self.indices.iter_mut() {
@@ -1768,18 +1540,16 @@ impl<T> HeaderMap<T> {
                 self.entries = Vec::with_capacity(usable_capacity(new_raw_cap));
             } else {
                 let raw_cap = self.indices.len();
-                self.try_grow(raw_cap << 1)?;
+                self.grow(raw_cap << 1);
             }
         }
-
-        Ok(())
     }
 
     #[inline]
-    fn try_grow(&mut self, new_raw_cap: usize) -> Result<(), MaxSizeReached> {
-        if new_raw_cap > MAX_SIZE {
-            return Err(MaxSizeReached::new());
-        }
+    fn grow(&mut self, new_raw_cap: usize) {
+        assert!(new_raw_cap <= MAX_SIZE, "requested capacity too large");
+        
+        
 
         
         let mut first_ideal = 0;
@@ -1812,7 +1582,6 @@ impl<T> HeaderMap<T> {
         
         let more = self.capacity() - self.entries.len();
         self.entries.reserve_exact(more);
-        Ok(())
     }
 
     #[inline]
@@ -1826,8 +1595,9 @@ impl<T> HeaderMap<T> {
 fn remove_extra_value<T>(
     mut raw_links: RawLinks<T>,
     extra_values: &mut Vec<ExtraValue<T>>,
-    idx: usize,
-) -> ExtraValue<T> {
+    idx: usize)
+    -> ExtraValue<T>
+{
     let prev;
     let next;
 
@@ -1848,7 +1618,8 @@ fn remove_extra_value<T>(
         (Link::Entry(prev), Link::Extra(next)) => {
             debug_assert!(raw_links[prev].is_some());
 
-            raw_links[prev].as_mut().unwrap().next = next;
+            raw_links[prev].as_mut().unwrap()
+                .next = next;
 
             debug_assert!(extra_values.len() > next);
             extra_values[next].prev = Link::Entry(prev);
@@ -1856,7 +1627,8 @@ fn remove_extra_value<T>(
         (Link::Extra(prev), Link::Entry(next)) => {
             debug_assert!(raw_links[next].is_some());
 
-            raw_links[next].as_mut().unwrap().tail = prev;
+            raw_links[next].as_mut().unwrap()
+                .tail = prev;
 
             debug_assert!(extra_values.len() > prev);
             extra_values[prev].next = Link::Entry(next);
@@ -1944,8 +1716,9 @@ fn remove_extra_value<T>(
 fn drain_all_extra_values<T>(
     raw_links: RawLinks<T>,
     extra_values: &mut Vec<ExtraValue<T>>,
-    mut head: usize,
-) -> Vec<T> {
+    mut head: usize)
+    -> Vec<T>
+{
     let mut vec = Vec::new();
     loop {
         let extra = remove_extra_value(raw_links, extra_values, head);
@@ -2066,18 +1839,18 @@ impl<T> FromIterator<(HeaderName, T)> for HeaderMap<T> {
 
 
 
-impl<'a, K, V, S, T> TryFrom<&'a HashMap<K, V, S>> for HeaderMap<T>
-where
-    K: Eq + Hash,
-    HeaderName: TryFrom<&'a K>,
-    <HeaderName as TryFrom<&'a K>>::Error: Into<crate::Error>,
-    T: TryFrom<&'a V>,
-    T::Error: Into<crate::Error>,
+impl<'a, K, V, T> TryFrom<&'a HashMap<K, V>> for HeaderMap<T>
+    where
+        K: Eq + Hash,
+        HeaderName: TryFrom<&'a K>,
+        <HeaderName as TryFrom<&'a K>>::Error: Into<crate::Error>,
+        T: TryFrom<&'a V>,
+        T::Error: Into<crate::Error>,
 {
     type Error = Error;
 
-    fn try_from(c: &'a HashMap<K, V, S>) -> Result<Self, Self::Error> {
-        c.iter()
+    fn try_from(c: &'a HashMap<K, V>) -> Result<Self, Self::Error> {
+        c.into_iter()
             .map(|(k, v)| -> crate::Result<(HeaderName, T)> {
                 let name = TryFrom::try_from(k).map_err(Into::into)?;
                 let value = TryFrom::try_from(v).map_err(Into::into)?;
@@ -2129,19 +1902,6 @@ impl<T> Extend<(Option<HeaderName>, T)> for HeaderMap<T> {
 
         
         
-        
-        
-        
-        let reserve = if self.is_empty() {
-            iter.size_hint().0
-        } else {
-            (iter.size_hint().0 + 1) / 2
-        };
-
-        self.reserve(reserve);
-
-        
-        
         let (mut key, mut val) = match iter.next() {
             Some((Some(key), val)) => (key, val),
             Some((None, _)) => panic!("expected a header name, but got None"),
@@ -2149,7 +1909,7 @@ impl<T> Extend<(Option<HeaderName>, T)> for HeaderMap<T> {
         };
 
         'outer: loop {
-            let mut entry = match self.try_entry2(key).expect("size overflows MAX_SIZE") {
+            let mut entry = match self.entry2(key) {
                 Entry::Occupied(mut e) => {
                     
                     
@@ -2221,7 +1981,13 @@ impl<T: fmt::Debug> fmt::Debug for HeaderMap<T> {
     }
 }
 
-impl<K, T> ops::Index<K> for HeaderMap<T>
+impl<T> Default for HeaderMap<T> {
+    fn default() -> Self {
+        HeaderMap::with_capacity(0)
+    }
+}
+
+impl<'a, K, T> ops::Index<K> for HeaderMap<T>
 where
     K: AsHeaderName,
 {
@@ -2271,7 +2037,7 @@ fn append_value<T>(
         Some(links) => {
             let idx = extra.len();
             extra.push(ExtraValue {
-                value,
+                value: value,
                 prev: Link::Extra(links.tail),
                 next: Link::Entry(entry_idx),
             });
@@ -2283,7 +2049,7 @@ fn append_value<T>(
         None => {
             let idx = extra.len();
             extra.push(ExtraValue {
-                value,
+                value: value,
                 prev: Link::Entry(entry_idx),
                 next: Link::Entry(entry_idx),
             });
@@ -2302,47 +2068,13 @@ impl<'a, T> Iterator for Iter<'a, T> {
     type Item = (&'a HeaderName, &'a T);
 
     fn next(&mut self) -> Option<Self::Item> {
-        use self::Cursor::*;
-
-        if self.cursor.is_none() {
-            if (self.entry + 1) >= self.map.entries.len() {
-                return None;
-            }
-
-            self.entry += 1;
-            self.cursor = Some(Cursor::Head);
-        }
-
-        let entry = &self.map.entries[self.entry];
-
-        match self.cursor.unwrap() {
-            Head => {
-                self.cursor = entry.links.map(|l| Values(l.next));
-                Some((&entry.key, &entry.value))
-            }
-            Values(idx) => {
-                let extra = &self.map.extra_values[idx];
-
-                match extra.next {
-                    Link::Entry(_) => self.cursor = None,
-                    Link::Extra(i) => self.cursor = Some(Values(i)),
-                }
-
-                Some((&entry.key, &extra.value))
-            }
-        }
+        self.inner
+            .next_unsafe()
+            .map(|(key, ptr)| (key, unsafe { &*ptr }))
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        let map = self.map;
-        debug_assert!(map.entries.len() >= self.entry);
-
-        let lower = map.entries.len() - self.entry;
-        
-        
-        
-        
-        (lower, None)
+        self.inner.size_hint()
     }
 }
 
@@ -2366,22 +2098,22 @@ impl<'a, T> IterMut<'a, T> {
             self.cursor = Some(Cursor::Head);
         }
 
-        let entry = &mut unsafe { &mut *self.map }.entries[self.entry];
+        let entry = unsafe { &(*self.map).entries[self.entry] };
 
         match self.cursor.unwrap() {
             Head => {
                 self.cursor = entry.links.map(|l| Values(l.next));
-                Some((&entry.key, &mut entry.value as *mut _))
+                Some((&entry.key, &entry.value as *const _ as *mut _))
             }
             Values(idx) => {
-                let extra = &mut unsafe { &mut (*self.map) }.extra_values[idx];
+                let extra = unsafe { &(*self.map).extra_values[idx] };
 
                 match extra.next {
                     Link::Entry(_) => self.cursor = None,
                     Link::Extra(i) => self.cursor = Some(Values(i)),
                 }
 
-                Some((&entry.key, &mut extra.value as *mut _))
+                Some((&entry.key, &extra.value as *const _ as *mut _))
             }
         }
     }
@@ -2424,18 +2156,6 @@ impl<'a, T> Iterator for Keys<'a, T> {
 
     fn size_hint(&self) -> (usize, Option<usize>) {
         self.inner.size_hint()
-    }
-
-    fn nth(&mut self, n: usize) -> Option<Self::Item> {
-        self.inner.nth(n).map(|b| &b.key)
-    }
-
-    fn count(self) -> usize {
-        self.inner.count()
-    }
-
-    fn last(self) -> Option<Self::Item> {
-        self.inner.last().map(|b| &b.key)
     }
 }
 
@@ -2484,7 +2204,9 @@ impl<'a, T> Iterator for Drain<'a, T> {
             
 
             let raw_links = RawLinks(self.entries);
-            let extra = unsafe { remove_extra_value(raw_links, &mut *self.extra_values, next) };
+            let extra = unsafe {
+                remove_extra_value(raw_links, &mut *self.extra_values, next)
+            };
 
             match extra.next {
                 Link::Extra(idx) => self.next = Some(idx),
@@ -2566,52 +2288,12 @@ impl<'a, T> Entry<'a, T> {
     
     
     
-    
-    
-    
-    
     pub fn or_insert(self, default: T) -> &'a mut T {
-        self.or_try_insert(default)
-            .expect("size overflows MAX_SIZE")
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn or_try_insert(self, default: T) -> Result<&'a mut T, MaxSizeReached> {
         use self::Entry::*;
 
         match self {
-            Occupied(e) => Ok(e.into_mut()),
-            Vacant(e) => e.try_insert(default),
+            Occupied(e) => e.into_mut(),
+            Vacant(e) => e.insert(default),
         }
     }
 
@@ -2649,58 +2331,12 @@ impl<'a, T> Entry<'a, T> {
     
     
     
-    
-    
     pub fn or_insert_with<F: FnOnce() -> T>(self, default: F) -> &'a mut T {
-        self.or_try_insert_with(default)
-            .expect("size overflows MAX_SIZE")
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn or_try_insert_with<F: FnOnce() -> T>(
-        self,
-        default: F,
-    ) -> Result<&'a mut T, MaxSizeReached> {
         use self::Entry::*;
 
         match self {
-            Occupied(e) => Ok(e.into_mut()),
-            Vacant(e) => e.try_insert(default()),
+            Occupied(e) => e.into_mut(),
+            Vacant(e) => e.insert(default()),
         }
     }
 
@@ -2775,33 +2411,12 @@ impl<'a, T> VacantEntry<'a, T> {
     
     
     pub fn insert(self, value: T) -> &'a mut T {
-        self.try_insert(value).expect("size overflows MAX_SIZE")
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn try_insert(self, value: T) -> Result<&'a mut T, MaxSizeReached> {
         
         let index =
             self.map
-                .try_insert_phase_two(self.key, value, self.hash, self.probe, self.danger)?;
+                .insert_phase_two(self.key, value.into(), self.hash, self.probe, self.danger);
 
-        Ok(&mut self.map.entries[index].value)
+        &mut self.map.entries[index].value
     }
 
     
@@ -2823,39 +2438,16 @@ impl<'a, T> VacantEntry<'a, T> {
     
     
     pub fn insert_entry(self, value: T) -> OccupiedEntry<'a, T> {
-        self.try_insert_entry(value)
-            .expect("size overflows MAX_SIZE")
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn try_insert_entry(self, value: T) -> Result<OccupiedEntry<'a, T>, MaxSizeReached> {
         
         let index =
             self.map
-                .try_insert_phase_two(self.key, value, self.hash, self.probe, self.danger)?;
+                .insert_phase_two(self.key, value.into(), self.hash, self.probe, self.danger);
 
-        Ok(OccupiedEntry {
+        OccupiedEntry {
             map: self.map,
-            index,
+            index: index,
             probe: self.probe,
-        })
+        }
     }
 }
 
@@ -3014,7 +2606,7 @@ impl<'a, T: 'a> Iterator for ValueIterMut<'a, T> {
     fn next(&mut self) -> Option<Self::Item> {
         use self::Cursor::*;
 
-        let entry = &mut unsafe { &mut *self.map }.entries[self.index];
+        let entry = unsafe { &mut (*self.map).entries[self.index] };
 
         match self.front {
             Some(Head) => {
@@ -3034,7 +2626,7 @@ impl<'a, T: 'a> Iterator for ValueIterMut<'a, T> {
                 Some(&mut entry.value)
             }
             Some(Values(idx)) => {
-                let extra = &mut unsafe { &mut *self.map }.extra_values[idx];
+                let extra = unsafe { &mut (*self.map).extra_values[idx] };
 
                 if self.front == self.back {
                     self.front = None;
@@ -3057,7 +2649,7 @@ impl<'a, T: 'a> DoubleEndedIterator for ValueIterMut<'a, T> {
     fn next_back(&mut self) -> Option<Self::Item> {
         use self::Cursor::*;
 
-        let entry = &mut unsafe { &mut *self.map }.entries[self.index];
+        let entry = unsafe { &mut (*self.map).entries[self.index] };
 
         match self.back {
             Some(Head) => {
@@ -3066,7 +2658,7 @@ impl<'a, T: 'a> DoubleEndedIterator for ValueIterMut<'a, T> {
                 Some(&mut entry.value)
             }
             Some(Values(idx)) => {
-                let extra = &mut unsafe { &mut *self.map }.extra_values[idx];
+                let extra = unsafe { &mut (*self.map).extra_values[idx] };
 
                 if self.front == self.back {
                     self.front = None;
@@ -3259,7 +2851,7 @@ impl<'a, T> OccupiedEntry<'a, T> {
     
     
     pub fn insert(&mut self, value: T) -> T {
-        self.map.insert_occupied(self.index, value)
+        self.map.insert_occupied(self.index, value.into())
     }
 
     
@@ -3285,7 +2877,7 @@ impl<'a, T> OccupiedEntry<'a, T> {
     
     
     pub fn insert_mult(&mut self, value: T) -> ValueDrain<'_, T> {
-        self.map.insert_occupied_mult(self.index, value)
+        self.map.insert_occupied_mult(self.index, value.into())
     }
 
     
@@ -3312,7 +2904,7 @@ impl<'a, T> OccupiedEntry<'a, T> {
     pub fn append(&mut self, value: T) {
         let idx = self.index;
         let entry = &mut self.map.entries[idx];
-        append_value(idx, entry, &mut self.map.extra_values, value);
+        append_value(idx, entry, &mut self.map.extra_values, value.into());
     }
 
     
@@ -3377,9 +2969,10 @@ impl<'a, T> OccupiedEntry<'a, T> {
         let raw_links = self.map.raw_links();
         let extra_values = &mut self.map.extra_values;
 
-        let next = self.map.entries[self.index]
-            .links
-            .map(|l| drain_all_extra_values(raw_links, extra_values, l.next).into_iter());
+        let next = self.map.entries[self.index].links.map(|l| {
+            drain_all_extra_values(raw_links, extra_values, l.next)
+                .into_iter()
+        });
 
         let entry = self.map.remove_found(self.probe, self.index);
 
@@ -3490,12 +3083,12 @@ impl<'a, T> Iterator for ValueDrain<'a, T> {
             
             (&Some(_), &None) => (1, Some(1)),
             
-            (&Some(_), Some(extras)) => {
+            (&Some(_), &Some(ref extras)) => {
                 let (l, u) = extras.size_hint();
                 (l + 1, u.map(|u| u + 1))
-            }
+            },
             
-            (&None, Some(extras)) => extras.size_hint(),
+            (&None, &Some(ref extras)) => extras.size_hint(),
             
             (&None, &None) => (0, Some(0)),
         }
@@ -3506,7 +3099,7 @@ impl<'a, T> FusedIterator for ValueDrain<'a, T> {}
 
 impl<'a, T> Drop for ValueDrain<'a, T> {
     fn drop(&mut self) {
-        for _ in self.by_ref() {}
+        while let Some(_) = self.next() {}
     }
 }
 
@@ -3527,13 +3120,17 @@ impl<T> ops::Index<usize> for RawLinks<T> {
     type Output = Option<Links>;
 
     fn index(&self, idx: usize) -> &Self::Output {
-        unsafe { &(*self.0)[idx].links }
+        unsafe {
+            &(*self.0)[idx].links
+        }
     }
 }
 
 impl<T> ops::IndexMut<usize> for RawLinks<T> {
     fn index_mut(&mut self, idx: usize) -> &mut Self::Output {
-        unsafe { &mut (*self.0)[idx].links }
+        unsafe {
+            &mut (*self.0)[idx].links
+        }
     }
 }
 
@@ -3545,7 +3142,7 @@ impl Pos {
         debug_assert!(index < MAX_SIZE);
         Pos {
             index: index as Size,
-            hash,
+            hash: hash,
         }
     }
 
@@ -3579,53 +3176,38 @@ impl Pos {
 
 impl Danger {
     fn is_red(&self) -> bool {
-        matches!(*self, Danger::Red(_))
+        match *self {
+            Danger::Red(_) => true,
+            _ => false,
+        }
     }
 
-    fn set_red(&mut self) {
+    fn to_red(&mut self) {
         debug_assert!(self.is_yellow());
         *self = Danger::Red(RandomState::new());
     }
 
     fn is_yellow(&self) -> bool {
-        matches!(*self, Danger::Yellow)
-    }
-
-    fn set_yellow(&mut self) {
-        if let Danger::Green = *self {
-            *self = Danger::Yellow;
+        match *self {
+            Danger::Yellow => true,
+            _ => false,
         }
     }
 
-    fn set_green(&mut self) {
+    fn to_yellow(&mut self) {
+        match *self {
+            Danger::Green => {
+                *self = Danger::Yellow;
+            }
+            _ => {}
+        }
+    }
+
+    fn to_green(&mut self) {
         debug_assert!(self.is_yellow());
         *self = Danger::Green;
     }
 }
-
-
-
-impl MaxSizeReached {
-    fn new() -> Self {
-        MaxSizeReached { _priv: () }
-    }
-}
-
-impl fmt::Debug for MaxSizeReached {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("MaxSizeReached")
-            
-            .finish()
-    }
-}
-
-impl fmt::Display for MaxSizeReached {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str("max size reached")
-    }
-}
-
-impl std::error::Error for MaxSizeReached {}
 
 
 
@@ -3635,8 +3217,8 @@ fn usable_capacity(cap: usize) -> usize {
 }
 
 #[inline]
-fn to_raw_capacity(n: usize) -> Result<usize, MaxSizeReached> {
-    n.checked_add(n / 3).ok_or_else(MaxSizeReached::new)
+fn to_raw_capacity(n: usize) -> usize {
+    n + n / 3
 }
 
 #[inline]
@@ -3650,10 +3232,12 @@ fn probe_distance(mask: Size, hash: HashValue, current: usize) -> usize {
     current.wrapping_sub(desired_pos(mask, hash)) & mask as usize
 }
 
-fn hash_elem_using<K>(danger: &Danger, k: &K) -> HashValue
+fn hash_elem_using<K: ?Sized>(danger: &Danger, k: &K) -> HashValue
 where
-    K: Hash + ?Sized,
+    K: Hash,
 {
+    use fnv::FnvHasher;
+
     const MASK: u64 = (MAX_SIZE as u64) - 1;
 
     let hash = match *danger {
@@ -3665,39 +3249,13 @@ where
         }
         
         _ => {
-            let mut h = FnvHasher::new();
+            let mut h = FnvHasher::default();
             k.hash(&mut h);
             h.finish()
         }
     };
 
     HashValue((hash & MASK) as u16)
-}
-
-struct FnvHasher(u64);
-
-impl FnvHasher {
-    #[inline]
-    fn new() -> Self {
-        FnvHasher(0xcbf29ce484222325)
-    }
-}
-
-impl std::hash::Hasher for FnvHasher {
-    #[inline]
-    fn finish(&self) -> u64 {
-        self.0
-    }
-
-    #[inline]
-    fn write(&mut self, bytes: &[u8]) {
-        let mut hash = self.0;
-        for &b in bytes {
-            hash = hash ^ (b as u64);
-            hash = hash.wrapping_mul(0x100000001b3);
-        }
-        self.0 = hash;
-    }
 }
 
 
@@ -3707,7 +3265,7 @@ impl std::hash::Hasher for FnvHasher {
 
 
 mod into_header_name {
-    use super::{Entry, HdrName, HeaderMap, HeaderName, MaxSizeReached};
+    use super::{Entry, HdrName, HeaderMap, HeaderName};
 
     
     
@@ -3723,36 +3281,31 @@ mod into_header_name {
     
     pub trait Sealed {
         #[doc(hidden)]
-        fn try_insert<T>(self, map: &mut HeaderMap<T>, val: T)
-            -> Result<Option<T>, MaxSizeReached>;
+        fn insert<T>(self, map: &mut HeaderMap<T>, val: T) -> Option<T>;
 
         #[doc(hidden)]
-        fn try_append<T>(self, map: &mut HeaderMap<T>, val: T) -> Result<bool, MaxSizeReached>;
+        fn append<T>(self, map: &mut HeaderMap<T>, val: T) -> bool;
 
         #[doc(hidden)]
-        fn try_entry<T>(self, map: &mut HeaderMap<T>) -> Result<Entry<'_, T>, MaxSizeReached>;
+        fn entry<T>(self, map: &mut HeaderMap<T>) -> Entry<'_, T>;
     }
 
     
 
     impl Sealed for HeaderName {
         #[inline]
-        fn try_insert<T>(
-            self,
-            map: &mut HeaderMap<T>,
-            val: T,
-        ) -> Result<Option<T>, MaxSizeReached> {
-            map.try_insert2(self, val)
+        fn insert<T>(self, map: &mut HeaderMap<T>, val: T) -> Option<T> {
+            map.insert2(self, val)
         }
 
         #[inline]
-        fn try_append<T>(self, map: &mut HeaderMap<T>, val: T) -> Result<bool, MaxSizeReached> {
-            map.try_append2(self, val)
+        fn append<T>(self, map: &mut HeaderMap<T>, val: T) -> bool {
+            map.append2(self, val)
         }
 
         #[inline]
-        fn try_entry<T>(self, map: &mut HeaderMap<T>) -> Result<Entry<'_, T>, MaxSizeReached> {
-            map.try_entry2(self)
+        fn entry<T>(self, map: &mut HeaderMap<T>) -> Entry<'_, T> {
+            map.entry2(self)
         }
     }
 
@@ -3760,21 +3313,17 @@ mod into_header_name {
 
     impl<'a> Sealed for &'a HeaderName {
         #[inline]
-        fn try_insert<T>(
-            self,
-            map: &mut HeaderMap<T>,
-            val: T,
-        ) -> Result<Option<T>, MaxSizeReached> {
-            map.try_insert2(self, val)
+        fn insert<T>(self, map: &mut HeaderMap<T>, val: T) -> Option<T> {
+            map.insert2(self, val)
         }
         #[inline]
-        fn try_append<T>(self, map: &mut HeaderMap<T>, val: T) -> Result<bool, MaxSizeReached> {
-            map.try_append2(self, val)
+        fn append<T>(self, map: &mut HeaderMap<T>, val: T) -> bool {
+            map.append2(self, val)
         }
 
         #[inline]
-        fn try_entry<T>(self, map: &mut HeaderMap<T>) -> Result<Entry<'_, T>, MaxSizeReached> {
-            map.try_entry2(self)
+        fn entry<T>(self, map: &mut HeaderMap<T>) -> Entry<'_, T> {
+            map.entry2(self)
         }
     }
 
@@ -3782,21 +3331,17 @@ mod into_header_name {
 
     impl Sealed for &'static str {
         #[inline]
-        fn try_insert<T>(
-            self,
-            map: &mut HeaderMap<T>,
-            val: T,
-        ) -> Result<Option<T>, MaxSizeReached> {
-            HdrName::from_static(self, move |hdr| map.try_insert2(hdr, val))
+        fn insert<T>(self, map: &mut HeaderMap<T>, val: T) -> Option<T> {
+            HdrName::from_static(self, move |hdr| map.insert2(hdr, val))
         }
         #[inline]
-        fn try_append<T>(self, map: &mut HeaderMap<T>, val: T) -> Result<bool, MaxSizeReached> {
-            HdrName::from_static(self, move |hdr| map.try_append2(hdr, val))
+        fn append<T>(self, map: &mut HeaderMap<T>, val: T) -> bool {
+            HdrName::from_static(self, move |hdr| map.append2(hdr, val))
         }
 
         #[inline]
-        fn try_entry<T>(self, map: &mut HeaderMap<T>) -> Result<Entry<'_, T>, MaxSizeReached> {
-            HdrName::from_static(self, move |hdr| map.try_entry2(hdr))
+        fn entry<T>(self, map: &mut HeaderMap<T>) -> Entry<'_, T> {
+            HdrName::from_static(self, move |hdr| map.entry2(hdr))
         }
     }
 
@@ -3804,30 +3349,11 @@ mod into_header_name {
 }
 
 mod as_header_name {
-    use super::{Entry, HdrName, HeaderMap, HeaderName, InvalidHeaderName, MaxSizeReached};
+    use super::{Entry, HdrName, HeaderMap, HeaderName, InvalidHeaderName};
 
     
     
     pub trait AsHeaderName: Sealed {}
-
-    
-    #[allow(missing_debug_implementations)]
-    pub enum TryEntryError {
-        InvalidHeaderName(InvalidHeaderName),
-        MaxSizeReached(MaxSizeReached),
-    }
-
-    impl From<InvalidHeaderName> for TryEntryError {
-        fn from(e: InvalidHeaderName) -> TryEntryError {
-            TryEntryError::InvalidHeaderName(e)
-        }
-    }
-
-    impl From<MaxSizeReached> for TryEntryError {
-        fn from(e: MaxSizeReached) -> TryEntryError {
-            TryEntryError::MaxSizeReached(e)
-        }
-    }
 
     
     
@@ -3839,7 +3365,7 @@ mod as_header_name {
     
     pub trait Sealed {
         #[doc(hidden)]
-        fn try_entry<T>(self, map: &mut HeaderMap<T>) -> Result<Entry<'_, T>, TryEntryError>;
+        fn try_entry<T>(self, map: &mut HeaderMap<T>) -> Result<Entry<'_, T>, InvalidHeaderName>;
 
         #[doc(hidden)]
         fn find<T>(&self, map: &HeaderMap<T>) -> Option<(usize, usize)>;
@@ -3852,8 +3378,8 @@ mod as_header_name {
 
     impl Sealed for HeaderName {
         #[inline]
-        fn try_entry<T>(self, map: &mut HeaderMap<T>) -> Result<Entry<'_, T>, TryEntryError> {
-            Ok(map.try_entry2(self)?)
+        fn try_entry<T>(self, map: &mut HeaderMap<T>) -> Result<Entry<'_, T>, InvalidHeaderName> {
+            Ok(map.entry2(self))
         }
 
         #[inline]
@@ -3870,8 +3396,8 @@ mod as_header_name {
 
     impl<'a> Sealed for &'a HeaderName {
         #[inline]
-        fn try_entry<T>(self, map: &mut HeaderMap<T>) -> Result<Entry<'_, T>, TryEntryError> {
-            Ok(map.try_entry2(self)?)
+        fn try_entry<T>(self, map: &mut HeaderMap<T>) -> Result<Entry<'_, T>, InvalidHeaderName> {
+            Ok(map.entry2(self))
         }
 
         #[inline]
@@ -3880,7 +3406,7 @@ mod as_header_name {
         }
 
         fn as_str(&self) -> &str {
-            <HeaderName>::as_str(self)
+            <HeaderName>::as_str(*self)
         }
     }
 
@@ -3888,10 +3414,8 @@ mod as_header_name {
 
     impl<'a> Sealed for &'a str {
         #[inline]
-        fn try_entry<T>(self, map: &mut HeaderMap<T>) -> Result<Entry<'_, T>, TryEntryError> {
-            Ok(HdrName::from_bytes(self.as_bytes(), move |hdr| {
-                map.try_entry2(hdr)
-            })??)
+        fn try_entry<T>(self, map: &mut HeaderMap<T>) -> Result<Entry<'_, T>, InvalidHeaderName> {
+            HdrName::from_bytes(self.as_bytes(), move |hdr| map.entry2(hdr))
         }
 
         #[inline]
@@ -3908,7 +3432,7 @@ mod as_header_name {
 
     impl Sealed for String {
         #[inline]
-        fn try_entry<T>(self, map: &mut HeaderMap<T>) -> Result<Entry<'_, T>, TryEntryError> {
+        fn try_entry<T>(self, map: &mut HeaderMap<T>) -> Result<Entry<'_, T>, InvalidHeaderName> {
             self.as_str().try_entry(map)
         }
 
@@ -3926,7 +3450,7 @@ mod as_header_name {
 
     impl<'a> Sealed for &'a String {
         #[inline]
-        fn try_entry<T>(self, map: &mut HeaderMap<T>) -> Result<Entry<'_, T>, TryEntryError> {
+        fn try_entry<T>(self, map: &mut HeaderMap<T>) -> Result<Entry<'_, T>, InvalidHeaderName> {
             self.as_str().try_entry(map)
         }
 
@@ -3936,7 +3460,7 @@ mod as_header_name {
         }
 
         fn as_str(&self) -> &str {
-            self
+            *self
         }
     }
 
@@ -3966,7 +3490,7 @@ fn test_bounds() {
 #[test]
 fn skip_duplicates_during_key_iteration() {
     let mut map = HeaderMap::new();
-    map.try_append("a", HeaderValue::from_static("a")).unwrap();
-    map.try_append("a", HeaderValue::from_static("b")).unwrap();
+    map.append("a", HeaderValue::from_static("a"));
+    map.append("a", HeaderValue::from_static("b"));
     assert_eq!(map.keys().count(), map.keys_len());
 }

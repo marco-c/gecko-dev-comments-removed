@@ -3,7 +3,7 @@
 
 
 use crate::logging;
-use http::Method;
+use hyper::Method;
 use serde_json::Value;
 use webdriver::command::{WebDriverCommand, WebDriverExtensionCommand};
 use webdriver::error::WebDriverResult;

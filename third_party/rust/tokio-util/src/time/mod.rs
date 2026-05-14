@@ -14,10 +14,6 @@ mod wheel;
 
 pub mod delay_queue;
 
-
-#[doc(inline)]
-pub use crate::future::FutureExt;
-
 #[doc(inline)]
 pub use delay_queue::DelayQueue;
 
