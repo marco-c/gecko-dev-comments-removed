@@ -11,6 +11,7 @@ add_setup(async function () {
 
 async function cancelPanel(helper) {
   let exitObserved = TestUtils.topicObserved("screenshots-exit");
+  await SimpleTest.promiseFocus(helper.browser.documentGlobal);
   EventUtils.synthesizeKey("KEY_Escape");
   await helper.waitForPanelClosed();
   await exitObserved;
@@ -33,7 +34,6 @@ function assertPanelWithinRect(panel, refRect) {
 }
 
 add_task(async function test_buttonsPanelWithSplitView() {
-  const helper = new ScreenshotsHelper(gBrowser.selectedBrowser);
   let buttonsPanel;
 
   const tab1 = await addTabAndLoadBrowser();
@@ -41,26 +41,35 @@ add_task(async function test_buttonsPanelWithSplitView() {
   const tab3 = await addTabAndLoadBrowser();
   await BrowserTestUtils.switchTab(gBrowser, tab1);
 
+  const helper1 = new ScreenshotsHelper(tab1.linkedBrowser);
+  const helper2 = new ScreenshotsHelper(tab2.linkedBrowser);
+  const helper3 = new ScreenshotsHelper(tab3.linkedBrowser);
+
   const tabToTabPanels = new WeakMap();
   for (let tab of [tab1, tab2, tab3]) {
     tabToTabPanels.set(tab, document.getElementById(tab.linkedPanel));
   }
 
   gBrowser.addTabSplitView([tab1, tab2]);
-  helper.triggerUIFromToolbar();
-  buttonsPanel = await helper.waitForPanel();
+  helper1.triggerUIFromToolbar();
+  await helper1.waitForOverlay();
+  buttonsPanel = helper1.panel;
 
   
   assertPanelWithinRect(
     buttonsPanel,
     tabToTabPanels.get(tab1).getBoundingClientRect()
   );
-  await cancelPanel(helper);
+  info("Waiting for cancelPanel");
+  await cancelPanel(helper1);
+  info("/Waiting for cancelPanel");
 
   
   await BrowserTestUtils.switchTab(gBrowser, tab2);
-  helper.triggerUIFromToolbar();
-  buttonsPanel = await helper.waitForPanel();
+  helper2.triggerUIFromToolbar();
+  info("Waiting for panel on tab2");
+  await helper2.waitForOverlay();
+  buttonsPanel = helper2.panel;
 
   
   assertPanelWithinRect(
@@ -70,21 +79,95 @@ add_task(async function test_buttonsPanelWithSplitView() {
 
   
   
+  
+  let exitObserved = TestUtils.topicObserved("screenshots-exit");
   const tab2closed = BrowserTestUtils.waitForTabClosing(tab2);
   BrowserTestUtils.removeTab(tab2);
   await tab2closed;
+  await exitObserved;
+
+  
+  
+  
+  
+  BrowserTestUtils.removeTab(tab1);
 
   await BrowserTestUtils.switchTab(gBrowser, tab3);
-  helper.triggerUIFromToolbar();
-  buttonsPanel = await helper.waitForPanel();
+
+  
+  
+  helper3.triggerUIFromToolbar();
+  await helper3.waitForOverlay();
+  buttonsPanel = helper3.panel;
+  ok(
+    BrowserTestUtils.isVisible(buttonsPanel),
+    "Screenshots panel can be opened after the other splitview tab was closed"
+  );
 
   
   assertPanelWithinRect(
     buttonsPanel,
     tabToTabPanels.get(tab3).getBoundingClientRect()
   );
-  await cancelPanel(helper);
+  await cancelPanel(helper3);
 
-  BrowserTestUtils.removeTab(tab1);
   BrowserTestUtils.removeTab(tab3);
+});
+
+add_task(async function test_cancelSelectionClosesInitialSibling() {
+  const tab1 = await addTabAndLoadBrowser();
+  const tab2 = await addTabAndLoadBrowser();
+  await BrowserTestUtils.switchTab(gBrowser, tab1);
+
+  gBrowser.addTabSplitView([tab1, tab2]);
+
+  const helper1 = new ScreenshotsHelper(tab1.linkedBrowser);
+  const helper2 = new ScreenshotsHelper(tab2.linkedBrowser);
+
+  
+  helper1.triggerUIFromToolbar();
+  await helper1.waitForOverlay();
+  await helper1.dragOverlay(10, 10, 300, 300);
+  await helper1.assertStateChange("selected");
+
+  
+  await BrowserTestUtils.switchTab(gBrowser, tab2);
+  helper2.triggerUIFromToolbar();
+  await helper2.waitForOverlay();
+  await BrowserTestUtils.waitForCondition(
+    async () => await helper2.isOverlayInitialized(),
+    "Right browser overlay should be initialized"
+  );
+
+  
+  
+  await helper1.assertStateChange("selected");
+  ok(
+    await helper1.isOverlayInitialized(),
+    "Left browser overlay should still be visible "
+  );
+
+  
+  
+  
+  let exitObserved = TestUtils.topicObserved("screenshots-exit");
+  await helper1.clickCancelButton();
+
+  
+  
+  if (gBrowser.selectedTab !== tab1) {
+    await BrowserTestUtils.switchTab(gBrowser, tab1);
+  }
+  await helper1.assertStateChange("crosshairs");
+  Assert.equal(gBrowser.selectedTab, tab1, "tab1 selected");
+
+  info("Waiting for exitObserved");
+  await exitObserved;
+  info("exitObserved, Waiting for tab2 to be not initialized");
+  await BrowserTestUtils.waitForCondition(
+    async () => !(await helper2.isOverlayInitialized()),
+    "Right browser overlay should be closed after left browser cancelled its selection"
+  );
+  gBrowser.removeTab(tab1);
+  gBrowser.removeTab(tab2);
 });
