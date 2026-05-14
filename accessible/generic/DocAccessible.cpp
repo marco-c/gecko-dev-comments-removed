@@ -516,7 +516,8 @@ void DocAccessible::Init() {
 #endif
 
   
-  mNotificationController = new NotificationController(this, mPresShell);
+  mNotificationController =
+      MakeRefPtr<NotificationController>(this, mPresShell);
 
   
   
@@ -1095,8 +1096,8 @@ void DocAccessible::ElementStateChanged(dom::Document* aDocument,
     FireDelayedEvent(event);
     if (accessible == this || aElement->IsHTMLElement(nsGkAtoms::article)) {
       
-      event =
-          new AccStateChangeEvent(accessible, states::READONLY, !isEditable);
+      event = MakeRefPtr<AccStateChangeEvent>(accessible, states::READONLY,
+                                              !isEditable);
       FireDelayedEvent(event);
     }
 
@@ -1187,10 +1188,10 @@ void DocAccessible::ElementStateChanged(dom::Document* aDocument,
     auto event =
         MakeRefPtr<AccStateChangeEvent>(accessible, states::UNAVAILABLE);
     FireDelayedEvent(event);
-    event = new AccStateChangeEvent(accessible, states::ENABLED);
+    event = MakeRefPtr<AccStateChangeEvent>(accessible, states::ENABLED);
     FireDelayedEvent(event);
     
-    event = new AccStateChangeEvent(accessible, states::FOCUSABLE);
+    event = MakeRefPtr<AccStateChangeEvent>(accessible, states::FOCUSABLE);
     FireDelayedEvent(event);
   }
 
