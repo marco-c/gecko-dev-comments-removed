@@ -5,7 +5,7 @@ from .base import get_timeout_multiplier
 from .chrome import ChromeBrowser  
 from .chrome import browser_kwargs as browser_kwargs  
 from .chrome import executor_kwargs as chrome_executor_kwargs
-from ..executors.base import WdspecExecutor  
+from ..executors.base import PytestExecutor  
 from ..executors.executorchrome import (  
     ChromeDriverCrashTestExecutor,
     ChromeDriverPrintRefTestExecutor,
@@ -21,8 +21,9 @@ __wptrunner__ = {"product": "headless_shell",
                      "crashtest": "ChromeDriverCrashTestExecutor",
                      "print-reftest": "ChromeDriverPrintRefTestExecutor",
                      "reftest": "ChromeDriverRefTestExecutor",
+                     "test262": "ChromeDriverTestharnessExecutor",
                      "testharness": "ChromeDriverTestharnessExecutor",
-                     "wdspec": "WdspecExecutor",
+                     "wdspec": "PytestExecutor",
                  },
                  "browser_kwargs": "browser_kwargs",
                  "executor_kwargs": "executor_kwargs",

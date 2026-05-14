@@ -4,7 +4,7 @@ from .base import require_arg
 from .base import get_timeout_multiplier   
 from .chrome import ChromeBrowser
 from ..executors import executor_kwargs as base_executor_kwargs
-from ..executors.base import WdspecExecutor  
+from ..executors.base import PytestExecutor  
 from ..executors.executorselenium import (SeleniumTestharnessExecutor,  
                                           SeleniumRefTestExecutor)  
 
@@ -14,7 +14,8 @@ __wptrunner__ = {"product": "opera",
                  "browser": "OperaBrowser",
                  "executor": {"testharness": "SeleniumTestharnessExecutor",
                               "reftest": "SeleniumRefTestExecutor",
-                              "wdspec": "WdspecExecutor"},
+                              "wdspec": "PytestExecutor",
+                              "test262": "SeleniumTestharnessExecutor"},
                  "browser_kwargs": "browser_kwargs",
                  "executor_kwargs": "executor_kwargs",
                  "env_extras": "env_extras",

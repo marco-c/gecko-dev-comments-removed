@@ -6,7 +6,7 @@ from .base import (NullBrowser,
                    maybe_add_args)
 from .webkit import WebKitBrowser
 from ..executors import executor_kwargs as base_executor_kwargs
-from ..executors.base import WdspecExecutor  
+from ..executors.base import PytestExecutor  
 from ..executors.executorwebdriver import (WebDriverTestharnessExecutor,  
                                            WebDriverRefTestExecutor,  
                                            WebDriverCrashtestExecutor)  
@@ -17,8 +17,9 @@ __wptrunner__ = {"product": "wpewebkit_minibrowser",
                  "browser_kwargs": "browser_kwargs",
                  "executor": {"testharness": "WebDriverTestharnessExecutor",
                               "reftest": "WebDriverRefTestExecutor",
-                              "wdspec": "WdspecExecutor",
-                              "crashtest": "WebDriverCrashtestExecutor"},
+                              "wdspec": "PytestExecutor",
+                              "crashtest": "WebDriverCrashtestExecutor",
+                              "test262": "WebDriverTestharnessExecutor"},
                  "executor_kwargs": "executor_kwargs",
                  "env_extras": "env_extras",
                  "env_options": "env_options",

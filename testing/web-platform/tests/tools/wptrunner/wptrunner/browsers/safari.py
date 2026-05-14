@@ -11,7 +11,7 @@ import psutil
 from .base import WebDriverBrowser, require_arg
 from .base import get_timeout_multiplier   
 from ..executors import executor_kwargs as base_executor_kwargs
-from ..executors.base import WdspecExecutor  
+from ..executors.base import PytestExecutor  
 from ..executors.executorwebdriver import (WebDriverTestharnessExecutor,  
                                            WebDriverRefTestExecutor,  
                                            WebDriverCrashtestExecutor)  
@@ -22,7 +22,7 @@ __wptrunner__ = {"product": "safari",
                  "browser": "SafariBrowser",
                  "executor": {"testharness": "WebDriverTestharnessExecutor",
                               "reftest": "WebDriverRefTestExecutor",
-                              "wdspec": "WdspecExecutor",
+                              "wdspec": "PytestExecutor",
                               "crashtest": "WebDriverCrashtestExecutor",
                               "test262": "WebDriverTestharnessExecutor"},
                  "browser_kwargs": "browser_kwargs",

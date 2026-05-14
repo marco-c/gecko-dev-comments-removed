@@ -4,7 +4,7 @@ from .base import get_timeout_multiplier
 from .base import cmd_arg
 from .chrome import executor_kwargs as chrome_executor_kwargs
 from ..executors.executorwebdriver import WebDriverCrashtestExecutor  
-from ..executors.base import WdspecExecutor  
+from ..executors.base import PytestExecutor  
 from ..executors.executoredge import (  
     EdgeDriverPrintRefTestExecutor,
     EdgeDriverRefTestExecutor,
@@ -18,9 +18,11 @@ __wptrunner__ = {"product": "edge",
                  "executor": {"testharness": "EdgeDriverTestharnessExecutor",
                               "reftest": "EdgeDriverRefTestExecutor",
                               "print-reftest": "EdgeDriverPrintRefTestExecutor",
-                              "wdspec": "WdspecExecutor",
+                              "wdspec": "PytestExecutor",
+                              "aamtest": "PytestExecutor",
                               "crashtest": "WebDriverCrashtestExecutor",
                               "test262": "EdgeDriverTestharnessExecutor"},
+
                  "browser_kwargs": "browser_kwargs",
                  "executor_kwargs": "executor_kwargs",
                  "env_extras": "env_extras",

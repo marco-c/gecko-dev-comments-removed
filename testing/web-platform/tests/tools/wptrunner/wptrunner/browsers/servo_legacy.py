@@ -5,7 +5,7 @@ import os
 from .base import ExecutorBrowser, NullBrowser, WebDriverBrowser, require_arg
 from .base import get_timeout_multiplier   
 from ..executors import executor_kwargs as base_executor_kwargs
-from ..executors.base import WdspecExecutor  
+from ..executors.base import PytestExecutor  
 from ..executors.executorservolegacy import (ServoLegacyCrashtestExecutor,  
                                        ServoLegacyTestharnessExecutor,  
                                        ServoLegacyRefTestExecutor)  
@@ -22,7 +22,7 @@ __wptrunner__ = {
         "crashtest": "ServoLegacyCrashtestExecutor",
         "testharness": "ServoLegacyTestharnessExecutor",
         "reftest": "ServoLegacyRefTestExecutor",
-        "wdspec": "WdspecExecutor",
+        "wdspec": "PytestExecutor",
     },
     "browser_kwargs": "browser_kwargs",
     "executor_kwargs": "executor_kwargs",
