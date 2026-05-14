@@ -293,6 +293,14 @@ pref("browser.shell.checkDefaultPDF.silencedByUser", false);
 
 pref("browser.shell.setDefaultGuidanceNotifications", true);
 pref("browser.shell.focusSetDefaultBrowserButton", false);
+
+
+
+pref("browser.shell.setDefaultPDFHandler.useOpenWith", true);
+
+
+
+pref("browser.shell.setDefaultPDFHandler.attemptWaitTimeMs", 30000);
 #endif
 
 
