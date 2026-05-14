@@ -68,18 +68,36 @@ class nsAnimationManager final
   
   
   
+  
   template <class IterType>
   static bool FindMatchingKeyframe(
-      IterType&& aIter, double aOffset,
+      IterType&& aIter, const mozilla::Keyframe::OffsetType& aOffset,
       const mozilla::StyleComputedTimingFunction& aTimingFunctionToMatch,
       mozilla::dom::CompositeOperationOrAuto aCompositionToMatch,
       size_t& aIndex) {
     aIndex = 0;
     for (mozilla::Keyframe& keyframe : aIter) {
-      
-      
-      if (keyframe.mOffset->mPercentage != aOffset) {
-        break;
+      if (keyframe.mOffset.value() != aOffset) {
+        
+        
+        
+        
+        if (aOffset.IsPercentageOffset()) {
+          break;
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        if (keyframe.mOffset->IsPercentageOffset()) {
+          break;
+        }
+        ++aIndex;
+        continue;
       }
 
       const bool matches = [&] {

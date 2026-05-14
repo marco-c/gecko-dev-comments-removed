@@ -414,6 +414,16 @@ mozilla::Keyframe* Gecko_GetOrCreateKeyframeAtStart(
 
 
 
+mozilla::Keyframe* Gecko_GetOrCreateKeyframeWithRangeName(
+    nsTArray<mozilla::Keyframe>* aKeyframes,
+    const mozilla::StyleTimelineRangeName aRangeName, float aOffset,
+    const mozilla::StyleComputedTimingFunction* aTimingFunction,
+    const mozilla::dom::CompositeOperationOrAuto aComposition,
+    size_t* aMatchedIdx);
+
+
+
+
 
 
 mozilla::Keyframe* Gecko_GetOrCreateInitialKeyframe(
