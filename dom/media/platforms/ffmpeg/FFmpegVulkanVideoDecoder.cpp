@@ -37,6 +37,10 @@
 #    include "mozilla/StaticPrefs_media.h"
 #    ifdef __linux__
 #      include <sys/sysmacros.h>
+#    elif defined(XP_SOLARIS) || defined(__sun)
+#      include <sys/mkdev.h>  
+#    elif defined(XP_FREEBSD) || defined(XP_OPENBSD) || defined(XP_NETBSD)
+#      include <sys/types.h>  
 #    endif
 #  endif  
 #endif    
