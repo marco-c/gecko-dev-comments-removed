@@ -2198,7 +2198,11 @@ pref("sidebar.expandOnHover", true);
 pref("sidebar.old-sidebar.has-used", false);
 pref("sidebar.new-sidebar.has-used", false);
 pref("sidebar.history.sortOption", "date");
+#ifdef NIGHTLY_BUILD
+pref("sidebar.updatedBookmarks.enabled", true);
+#else
 pref("sidebar.updatedBookmarks.enabled", false);
+#endif
 
 pref("sidebar.notification.badge.aichat", false);
 
@@ -3066,6 +3070,8 @@ pref("devtools.eyedropper.zoom", 6);
 pref("devtools.markup.collapseAttributes", true);
 
 pref("devtools.markup.collapseAttributeLength", 120);
+
+pref("devtools.markup.showComments", true);
 
 pref("devtools.markup.beautifyOnCopy", false);
 
