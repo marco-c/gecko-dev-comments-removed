@@ -112,7 +112,7 @@ class ScriptLoadRequest : public nsISupports,
     
     
     
-    MOZ_ASSERT(!OnceCachedStencil());
+    MOZ_ASSERT(!IsRetrievedFromMemoryCache());
     return mExpirationTime;
   }
 

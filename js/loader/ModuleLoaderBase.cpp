@@ -559,14 +559,10 @@ nsresult ModuleLoaderBase::StartOrRestartModuleLoad(ModuleLoadRequest* aRequest,
   MOZ_ASSERT(aRequest->mLoader == this);
   MOZ_ASSERT(aRequest->IsFetching());
 
-  
-  
-  
-  bool onceCachedStencil = aRequest->OnceCachedStencil();
+  MOZ_ASSERT_IF(aRequest->IsRetrievedFromMemoryCache(),
+                aRestart == RestartRequest::No);
 
-  MOZ_ASSERT_IF(onceCachedStencil, aRestart == RestartRequest::No);
-
-  if (!onceCachedStencil) {
+  if (!aRequest->IsRetrievedFromMemoryCache()) {
     aRequest->SetUnknownDataType();
   }
 
@@ -601,7 +597,7 @@ nsresult ModuleLoaderBase::StartOrRestartModuleLoad(ModuleLoadRequest* aRequest,
   rv = StartFetch(aRequest);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  if (onceCachedStencil) {
+  if (aRequest->IsRetrievedFromMemoryCache()) {
     MOZ_ASSERT(
         IsModuleFetched(ModuleMapKey(aRequest->URI(), aRequest->mModuleType)));
     return NS_OK;
