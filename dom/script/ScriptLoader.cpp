@@ -647,7 +647,7 @@ void ScriptLoader::RunScriptWhenSafe(ScriptLoadRequest* aRequest) {
 }
 
 nsresult ScriptLoader::RestartLoad(ScriptLoadRequest* aRequest) {
-  aRequest->DropSRIOrSRIAndSerializedStencil();
+  aRequest->getLoadedScript()->DropSRIOrSRIAndSerializedStencil();
   TRACE_FOR_TEST(aRequest, "load:fallback");
 
   
@@ -2659,15 +2659,21 @@ nsresult ScriptLoader::ProcessRequest(ScriptLoadRequest* aRequest) {
     aRequest->GetScriptLoadContext()->MaybeCancelOffThreadScript();
   }
 
-  if (aRequest->IsTextSource()) {
-    
-    
-    aRequest->ClearScriptText();
-  } else if (aRequest->IsSerializedStencil()) {
-    
-    
-    
-    aRequest->DropSRIOrSRIAndSerializedStencil();
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (aRequest->getLoadedScript()->IsTextSource()) {
+    aRequest->getLoadedScript()->ClearScriptText();
+  } else if (aRequest->getLoadedScript()->IsSerializedStencil()) {
+    MOZ_ASSERT(!aRequest->HasStencil());
+    aRequest->getLoadedScript()->DropSRIOrSRIAndSerializedStencil();
   }
 
   return rv;
@@ -3850,6 +3856,8 @@ void ScriptLoader::RegisterForDiskCache(ScriptLoadRequest* aRequest) {
              "Web extension scripts are not compatible with the disk cache");
 
   LoadedScript* loadedScript = aRequest->getLoadedScript();
+  MOZ_ASSERT(loadedScript->IsTextSource(),
+             "Serialized stencil case shouldn't be saved again");
   loadedScript->ConvertToCachedStencil(
       aRequest->GetStencil(), aRequest->ReferrerPolicy(), aRequest->BaseURL());
   mDiskCacheQueue.AppendElement(loadedScript);
