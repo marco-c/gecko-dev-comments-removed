@@ -641,11 +641,11 @@ ArrayBufferView ArrayBufferView::fromObject(JSObject* unwrapped) {
                                             bool* isSharedMemory,          \
                                             ExternalType** data) {         \
     MOZ_ASSERT(JS::TypedArray<JS::Scalar::Name>::fromObject(unwrapped));   \
-    const JS::Value& lenSlot =                                             \
-        JS::GetReservedSlot(unwrapped, detail::TypedArrayLengthSlot);      \
+    const JS::Value& lenSlot = JS::GetNativeObjectReservedSlot(            \
+        unwrapped, detail::TypedArrayLengthSlot);                          \
     *length = size_t(lenSlot.toPrivate());                                 \
     *isSharedMemory = JS_GetTypedArraySharedness(unwrapped);               \
-    *data = JS::GetMaybePtrFromReservedSlot<ExternalType>(                 \
+    *data = JS::GetMaybePtrFromNativeObjectReservedSlot<ExternalType>(     \
         unwrapped, detail::TypedArrayDataSlot);                            \
   }                                                                        \
                                                                            \

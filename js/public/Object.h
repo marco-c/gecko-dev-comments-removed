@@ -14,7 +14,8 @@
 
 #include "jstypes.h"  
 
-#include "js/Class.h"       
+#include "js/Class.h"  
+#include "js/Proxy.h"  
 #include "js/Realm.h"       
 #include "js/RootingAPI.h"  
 #include "js/Value.h"       
@@ -41,11 +42,6 @@ extern JS_PUBLIC_API bool GetBuiltinClass(JSContext* cx, Handle<JSObject*> obj,
                                           js::ESClass* cls);
 
 
-inline const JSClass* GetClass(const JSObject* obj) {
-  return reinterpret_cast<const shadow::Object*>(obj)->shape->base->clasp;
-}
-
-
 
 
 
@@ -57,21 +53,10 @@ static MOZ_ALWAYS_INLINE Compartment* GetCompartment(JSObject* obj) {
   return GetCompartmentForRealm(realm);
 }
 
-
-
-
-
-
-
-inline const Value& GetReservedSlot(const JSObject* obj, size_t slot) {
-  MOZ_ASSERT(slot < JSCLASS_RESERVED_SLOTS(GetClass(obj)));
-  return reinterpret_cast<const shadow::Object*>(obj)->slotRef(slot);
-}
-
 namespace detail {
 
-extern JS_PUBLIC_API void SetReservedSlotWithBarrier(JSObject* obj, size_t slot,
-                                                     const Value& value);
+extern JS_PUBLIC_API void SetNativeObjectReservedSlotWithBarrier(
+    JSObject* obj, size_t slot, const Value& value);
 
 }  
 
@@ -81,14 +66,56 @@ extern JS_PUBLIC_API void SetReservedSlotWithBarrier(JSObject* obj, size_t slot,
 
 
 
+inline const Value& GetNativeObjectReservedSlot(const JSObject* obj,
+                                                size_t slot) {
+  MOZ_ASSERT(GetClass(obj)->isNativeObject());
+  MOZ_ASSERT(slot < JSCLASS_RESERVED_SLOTS(GetClass(obj)));
+  auto* nobj = reinterpret_cast<const shadow::NativeObject*>(obj);
+  return nobj->reservedSlotRef(slot);
+}
+
+
+
+
+
+
+
+inline void SetNativeObjectReservedSlot(JSObject* obj, size_t slot,
+                                        const Value& value) {
+  MOZ_ASSERT(GetClass(obj)->isNativeObject());
+  MOZ_ASSERT(slot < JSCLASS_RESERVED_SLOTS(GetClass(obj)));
+  auto* nobj = reinterpret_cast<shadow::NativeObject*>(obj);
+  if (nobj->reservedSlotRef(slot).isGCThing() || value.isGCThing()) {
+    detail::SetNativeObjectReservedSlotWithBarrier(obj, slot, value);
+  } else {
+    nobj->reservedSlotRef(slot) = value;
+  }
+}
+
+
+
+
+
+
+
+inline const Value& GetReservedSlot(const JSObject* obj, size_t slot) {
+  if (js::IsProxy(obj)) {
+    return js::GetProxyReservedSlot(obj, slot);
+  }
+  return GetNativeObjectReservedSlot(obj, slot);
+}
+
+
+
+
+
+
 
 inline void SetReservedSlot(JSObject* obj, size_t slot, const Value& value) {
-  MOZ_ASSERT(slot < JSCLASS_RESERVED_SLOTS(GetClass(obj)));
-  auto* sobj = reinterpret_cast<shadow::Object*>(obj);
-  if (sobj->slotRef(slot).isGCThing() || value.isGCThing()) {
-    detail::SetReservedSlotWithBarrier(obj, slot, value);
+  if (js::IsProxy(obj)) {
+    js::SetProxyReservedSlot(obj, slot, value);
   } else {
-    sobj->slotRef(slot) = value;
+    SetNativeObjectReservedSlot(obj, slot, value);
   }
 }
 
@@ -100,6 +127,16 @@ inline void SetReservedSlot(JSObject* obj, size_t slot, const Value& value) {
 template <typename T>
 inline T* GetMaybePtrFromReservedSlot(JSObject* obj, size_t slot) {
   Value v = GetReservedSlot(obj, slot);
+  return v.isUndefined() ? nullptr : static_cast<T*>(v.toPrivate());
+}
+
+
+
+
+
+template <typename T>
+inline T* GetMaybePtrFromNativeObjectReservedSlot(JSObject* obj, size_t slot) {
+  Value v = GetNativeObjectReservedSlot(obj, slot);
   return v.isUndefined() ? nullptr : static_cast<T*>(v.toPrivate());
 }
 

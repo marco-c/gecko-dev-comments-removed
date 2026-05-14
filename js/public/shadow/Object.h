@@ -6,10 +6,10 @@
 
 
 
-
-
 #ifndef js_shadow_Object_h
 #define js_shadow_Object_h
+
+#include "mozilla/Assertions.h"  
 
 #include <stddef.h>  
 
@@ -32,23 +32,27 @@ inline size_t NumObjectFixedSlots(Shape* shape) {
 
 
 
-
-
 struct Object {
   shadow::Shape* shape;
+
+  static constexpr size_t MAX_FIXED_SLOTS = 16;
+};
+
+
+
+
+struct NativeObject : public Object {
 #ifndef JS_64BIT
   uint32_t padding_;
 #endif
   Value* slots;
   void* _1;
 
-  static constexpr size_t MAX_FIXED_SLOTS = 16;
-
   size_t numFixedSlots() const { return NumObjectFixedSlots(shape); }
 
   Value* fixedSlots() const {
     auto address = reinterpret_cast<uintptr_t>(this);
-    return reinterpret_cast<JS::Value*>(address + sizeof(shadow::Object));
+    return reinterpret_cast<JS::Value*>(address + sizeof(NativeObject));
   }
 
   Value& slotRef(size_t slot) const {
@@ -58,9 +62,26 @@ struct Object {
     }
     return slots[slot - nfixed];
   }
+
+  
+  
+  
+  
+  MOZ_ALWAYS_INLINE Value& reservedSlotRef(size_t slot) const {
+    MOZ_ASSERT((slot < numFixedSlots()) == (slot < MAX_FIXED_SLOTS));
+    if (slot < MAX_FIXED_SLOTS) {
+      return fixedSlots()[slot];
+    }
+    return slots[slot - MAX_FIXED_SLOTS];
+  }
 };
 
 }  
+
+
+inline const JSClass* GetClass(const JSObject* obj) {
+  return reinterpret_cast<const shadow::Object*>(obj)->shape->base->clasp;
+}
 
 }  
 

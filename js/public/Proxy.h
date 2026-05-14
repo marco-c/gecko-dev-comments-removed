@@ -14,7 +14,6 @@
 #include "js/Class.h"
 #include "js/HeapAPI.h"        
 #include "js/Id.h"             
-#include "js/Object.h"         
 #include "js/RootingAPI.h"     
 #include "js/shadow/Object.h"  
 #include "js/TypeDecls.h"  
