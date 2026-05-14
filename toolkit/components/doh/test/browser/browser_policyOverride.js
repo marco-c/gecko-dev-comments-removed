@@ -41,24 +41,22 @@ add_task(async function testPolicyOverride() {
     true,
     "Pref set to suppress CFR."
   );
-  ensureNoTRRSelectionTelemetry();
+  await ensureNoTRRSelectionTelemetry();
   await ensureNoTRRModeChange(undefined);
-  ensureNoHeuristicsTelemetry();
+  await ensureNoHeuristicsTelemetry();
 
-  checkScalars(
+  await assertGleanValues([
     [
-      [
-        "networking.doh_heuristics_result",
-        { value: Heuristics.Telemetry.enterprisePresent },
-      ],
-      
-    ].concat(falseExpectations([]))
-  );
+      Glean.networking.dohHeuristicsResult,
+      Heuristics.Telemetry.enterprisePresent,
+    ],
+    ...allHeuristicsFalseExpectations(),
+  ]);
 
   
   simulateNetworkChange();
   await ensureNoTRRModeChange(undefined);
-  ensureNoHeuristicsTelemetry();
+  await ensureNoHeuristicsTelemetry();
 
   
   await EnterprisePolicyTesting.setupPolicyEngineWithJson({

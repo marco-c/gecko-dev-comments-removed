@@ -69,7 +69,7 @@ add_task(async function testCleanFlow() {
 
   
   await restartDoHController();
-  ensureNoTRRSelectionTelemetry();
+  await ensureNoTRRSelectionTelemetry();
   
   await ensureTRRMode(0);
   await checkHeuristicsTelemetry("disable_doh", "startup");
@@ -89,7 +89,7 @@ add_task(async function testCleanFlow() {
   
   Services.prefs.setBoolPref(prefs.CLEAR_ON_SHUTDOWN_PREF, false);
   await restartDoHController();
-  ensureNoTRRSelectionTelemetry();
+  await ensureNoTRRSelectionTelemetry();
   await ensureNoTRRModeChange(2);
   await checkHeuristicsTelemetry("enable_doh", "startup");
   Services.prefs.setBoolPref(prefs.CLEAR_ON_SHUTDOWN_PREF, true);

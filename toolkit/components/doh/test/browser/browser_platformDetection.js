@@ -48,12 +48,11 @@ add_task(async function testPlatformIndications() {
   );
   await checkHeuristicsTelemetry("enable_doh", "startup");
 
-  checkScalars([
-    ["networking.doh_heuristics_attempts", { value: 1 }],
-    ["networking.doh_heuristics_pass_count", { value: 1 }],
-    ["networking.doh_heuristics_result", { value: Heuristics.Telemetry.pass }],
-    
-    falseExpectations([]),
+  await assertGleanValues([
+    [Glean.networking.dohHeuristicsAttempts, 1],
+    [Glean.networking.dohHeuristicsPassCount, 1],
+    [Glean.networking.dohHeuristicsResult, Heuristics.Telemetry.pass],
+    ...allHeuristicsFalseExpectations(),
   ]);
 
   await ensureTRRMode(2);
@@ -63,68 +62,58 @@ add_task(async function testPlatformIndications() {
   simulateNetworkChange();
   await ensureTRRMode(0);
   await checkHeuristicsTelemetry("disable_doh", "netchange");
-  checkScalars(
-    [
-      ["networking.doh_heuristics_attempts", { value: 2 }],
-      ["networking.doh_heuristics_pass_count", { value: 1 }],
-      ["networking.doh_heuristics_result", { value: Heuristics.Telemetry.vpn }],
-      ["networking.doh_heuristic_ever_tripped", { value: true, key: "vpn" }],
-    ].concat(falseExpectations(["vpn"]))
-  );
+  await assertGleanValues([
+    [Glean.networking.dohHeuristicsAttempts, 2],
+    [Glean.networking.dohHeuristicsPassCount, 1],
+    [Glean.networking.dohHeuristicsResult, Heuristics.Telemetry.vpn],
+    [Glean.networking.dohHeuristicEverTripped.vpn, true],
+    ...allHeuristicsFalseExpectations(["vpn"]),
+  ]);
 
   mockedLinkService.platformDNSIndications =
     Ci.nsINetworkLinkService.PROXY_DETECTED;
   simulateNetworkChange();
   await ensureNoTRRModeChange(0);
   await checkHeuristicsTelemetry("disable_doh", "netchange");
-  checkScalars(
-    [
-      ["networking.doh_heuristics_attempts", { value: 3 }],
-      ["networking.doh_heuristics_pass_count", { value: 1 }],
-      [
-        "networking.doh_heuristics_result",
-        { value: Heuristics.Telemetry.proxy },
-      ],
-      ["networking.doh_heuristic_ever_tripped", { value: true, key: "vpn" }], 
-      ["networking.doh_heuristic_ever_tripped", { value: true, key: "proxy" }],
-    ].concat(falseExpectations(["vpn", "proxy"]))
-  );
+  await assertGleanValues([
+    [Glean.networking.dohHeuristicsAttempts, 3],
+    [Glean.networking.dohHeuristicsPassCount, 1],
+    [Glean.networking.dohHeuristicsResult, Heuristics.Telemetry.proxy],
+    
+    [Glean.networking.dohHeuristicEverTripped.vpn, true],
+    [Glean.networking.dohHeuristicEverTripped.proxy, true],
+    ...allHeuristicsFalseExpectations(["vpn", "proxy"]),
+  ]);
 
   mockedLinkService.platformDNSIndications =
     Ci.nsINetworkLinkService.NRPT_DETECTED;
   simulateNetworkChange();
   await ensureNoTRRModeChange(0);
   await checkHeuristicsTelemetry("disable_doh", "netchange");
-  checkScalars(
-    [
-      ["networking.doh_heuristics_attempts", { value: 4 }],
-      ["networking.doh_heuristics_pass_count", { value: 1 }],
-      [
-        "networking.doh_heuristics_result",
-        { value: Heuristics.Telemetry.nrpt },
-      ],
-      ["networking.doh_heuristic_ever_tripped", { value: true, key: "vpn" }], 
-      ["networking.doh_heuristic_ever_tripped", { value: true, key: "proxy" }], 
-      ["networking.doh_heuristic_ever_tripped", { value: true, key: "nrpt" }],
-    ].concat(falseExpectations(["vpn", "proxy", "nrpt"]))
-  );
+  await assertGleanValues([
+    [Glean.networking.dohHeuristicsAttempts, 4],
+    [Glean.networking.dohHeuristicsPassCount, 1],
+    [Glean.networking.dohHeuristicsResult, Heuristics.Telemetry.nrpt],
+    
+    [Glean.networking.dohHeuristicEverTripped.vpn, true],
+    [Glean.networking.dohHeuristicEverTripped.proxy, true],
+    [Glean.networking.dohHeuristicEverTripped.nrpt, true],
+    ...allHeuristicsFalseExpectations(["vpn", "proxy", "nrpt"]),
+  ]);
 
   mockedLinkService.platformDNSIndications =
     Ci.nsINetworkLinkService.NONE_DETECTED;
   simulateNetworkChange();
   await ensureTRRMode(2);
   await checkHeuristicsTelemetry("enable_doh", "netchange");
-  checkScalars(
-    [
-      ["networking.doh_heuristics_attempts", { value: 5 }],
-      ["networking.doh_heuristics_pass_count", { value: 2 }],
-      [
-        "networking.doh_heuristics_result",
-        { value: Heuristics.Telemetry.pass },
-      ],
-      ["networking.doh_heuristic_ever_tripped", { value: true, key: "vpn" }], 
-      ["networking.doh_heuristic_ever_tripped", { value: true, key: "proxy" }], 
-      ["networking.doh_heuristic_ever_tripped", { value: true, key: "nrpt" }], 
-    ].concat(falseExpectations(["vpn", "proxy", "nrpt"]))
-  );
+  await assertGleanValues([
+    [Glean.networking.dohHeuristicsAttempts, 5],
+    [Glean.networking.dohHeuristicsPassCount, 2],
+    [Glean.networking.dohHeuristicsResult, Heuristics.Telemetry.pass],
+    
+    [Glean.networking.dohHeuristicEverTripped.vpn, true],
+    [Glean.networking.dohHeuristicEverTripped.proxy, true],
+    [Glean.networking.dohHeuristicEverTripped.nrpt, true],
+    ...allHeuristicsFalseExpectations(["vpn", "proxy", "nrpt"]),
+  ]);
 });

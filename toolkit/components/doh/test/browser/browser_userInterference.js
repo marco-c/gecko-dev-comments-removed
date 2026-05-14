@@ -58,7 +58,7 @@ add_task(async function testUserInterference() {
   
   simulateNetworkChange();
   await ensureNoTRRModeChange(undefined);
-  ensureNoHeuristicsTelemetry();
+  await ensureNoHeuristicsTelemetry();
 
   is(
     Services.prefs.getBoolPref(prefs.DISABLED_PREF),
@@ -73,16 +73,16 @@ add_task(async function testUserInterference() {
   
   simulateNetworkChange();
   await ensureNoTRRModeChange(undefined);
-  ensureNoHeuristicsTelemetry();
+  await ensureNoHeuristicsTelemetry();
 
   
   await restartDoHController();
   await ensureNoTRRModeChange(undefined);
-  ensureNoTRRSelectionTelemetry();
-  ensureNoHeuristicsTelemetry();
+  await ensureNoTRRSelectionTelemetry();
+  await ensureNoHeuristicsTelemetry();
 
   
   simulateNetworkChange();
   await ensureNoTRRModeChange(undefined);
-  ensureNoHeuristicsTelemetry();
+  await ensureNoHeuristicsTelemetry();
 });

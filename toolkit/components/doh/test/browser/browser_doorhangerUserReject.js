@@ -32,12 +32,11 @@ add_task(async function testDoorhangerUserReject() {
   await ensureTRRMode(2);
   await checkHeuristicsTelemetry("enable_doh", "startup");
 
-  checkScalars([
-    ["networking.doh_heuristics_attempts", { value: 1 }],
-    ["networking.doh_heuristics_pass_count", { value: 1 }],
-    ["networking.doh_heuristics_result", { value: Heuristics.Telemetry.pass }],
-    
-    falseExpectations([]),
+  await assertGleanValues([
+    [Glean.networking.dohHeuristicsAttempts, 1],
+    [Glean.networking.dohHeuristicsPassCount, 1],
+    [Glean.networking.dohHeuristicsResult, Heuristics.Telemetry.pass],
+    ...allHeuristicsFalseExpectations(),
   ]);
 
   prefPromise = TestUtils.waitForPrefChange(
@@ -61,37 +60,33 @@ add_task(async function testDoorhangerUserReject() {
   BrowserTestUtils.removeTab(tab);
 
   await ensureTRRMode(undefined);
-  ensureNoHeuristicsTelemetry();
+  await ensureNoHeuristicsTelemetry();
   ok(
     !Services.prefs.prefHasUserValue(prefs.BREADCRUMB_PREF),
     "Breadcrumb cleared."
   );
 
-  checkScalars([
-    ["networking.doh_heuristics_attempts", { value: 1 }],
-    ["networking.doh_heuristics_pass_count", { value: 1 }],
-    [
-      "networking.doh_heuristics_result",
-      { value: Heuristics.Telemetry.optOut },
-    ],
-    
-    falseExpectations([]),
+  await assertGleanValues([
+    [Glean.networking.dohHeuristicsAttempts, 1],
+    [Glean.networking.dohHeuristicsPassCount, 1],
+    [Glean.networking.dohHeuristicsResult, Heuristics.Telemetry.optOut],
+    ...allHeuristicsFalseExpectations(),
   ]);
 
   
   simulateNetworkChange();
   await ensureNoTRRModeChange(undefined);
-  ensureNoHeuristicsTelemetry();
+  await ensureNoHeuristicsTelemetry();
 
   
   await restartDoHController();
-  ensureNoTRRSelectionTelemetry();
+  await ensureNoTRRSelectionTelemetry();
   await ensureNoTRRModeChange(undefined);
-  ensureNoHeuristicsTelemetry();
+  await ensureNoHeuristicsTelemetry();
 
   
   setFailingHeuristics();
   simulateNetworkChange();
   await ensureNoTRRModeChange(undefined);
-  ensureNoHeuristicsTelemetry();
+  await ensureNoHeuristicsTelemetry();
 });
