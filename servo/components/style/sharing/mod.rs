@@ -783,9 +783,19 @@ impl<E: TElement> StyleSharingCache<E> {
 
         
         
-        if target.element.containing_shadow() != candidate.element.containing_shadow() {
-            trace!("Miss: Different containing shadow roots");
-            return None;
+        let target_shadow = target.element.containing_shadow();
+        let candidate_shadow = candidate.element.containing_shadow();
+        if target_shadow != candidate_shadow {
+            match (
+                target_shadow.and_then(|s| s.style_data()),
+                candidate_shadow.and_then(|s| s.style_data()),
+            ) {
+                (Some(td), Some(cd)) if std::ptr::eq(td, cd) => {},
+                _ => {
+                    trace!("Miss: Different containing shadow roots");
+                    return None;
+                },
+            }
         }
 
         
@@ -923,23 +933,6 @@ impl<E: TElement> StyleSharingCache<E> {
             if style.visited_rules() != inputs.visited_rules.as_ref() {
                 return None;
             }
-            let target_depends_on_style_queries = inputs
-                .flags
-                .contains(ComputedValueFlags::DEPENDS_ON_CONTAINER_STYLE_QUERY);
-            let candidate_depends_on_style_queries = style
-                .flags
-                .contains(ComputedValueFlags::DEPENDS_ON_CONTAINER_STYLE_QUERY);
-
-            if target_depends_on_style_queries && !candidate_depends_on_style_queries {
-                
-                
-                
-                
-                
-                
-                
-                return None;
-            }
             
             
             
@@ -967,6 +960,35 @@ impl<E: TElement> StyleSharingCache<E> {
             
             if target.is_link() || candidate.element.is_link() {
                 return None;
+            }
+
+            let target_depends_on_style_queries = inputs
+                .flags
+                .contains(ComputedValueFlags::DEPENDS_ON_CONTAINER_STYLE_QUERY);
+            let candidate_depends_on_style_queries = style
+                .flags
+                .contains(ComputedValueFlags::DEPENDS_ON_CONTAINER_STYLE_QUERY);
+
+            if target_depends_on_style_queries != candidate_depends_on_style_queries {
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                let mut new_flags = inputs.flags | style.flags;
+                new_flags.set(
+                    ComputedValueFlags::DEPENDS_ON_CONTAINER_STYLE_QUERY,
+                    target_depends_on_style_queries,
+                );
+
+                return Some(PrimaryStyle {
+                    style: data.clone_style_with_flags(new_flags),
+                    reused_via_rule_node: true,
+                });
             }
 
             Some(data.share_primary_style())
