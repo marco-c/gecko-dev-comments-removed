@@ -1036,6 +1036,7 @@ void NativeLayerWayland::Unmap() {
   mSurface->UnmapLocked(surfaceLock);
   
   
+  
   mSurface->ClearVSyncCallbackHandlerLocked(surfaceLock);
   mState.mMutatedStackingOrder = true;
   mState.mMutatedVisibility = true;
