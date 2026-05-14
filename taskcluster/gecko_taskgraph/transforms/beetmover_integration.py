@@ -89,8 +89,13 @@ def make_task_worker(config, jobs):
     for job in jobs:
         locale = job["attributes"].get("locale")
         platform = job["attributes"]["build_platform"]
+        release_properties = craft_release_properties(config, job)
+        if platform.startswith("android"):
+            
+            
+            release_properties["app-name"] = "fenix"
         job["worker"] = {
-            "release-properties": craft_release_properties(config, job),
+            "release-properties": release_properties,
             "upstream-artifacts": generate_beetmover_upstream_artifacts(
                 config, job, platform, locale
             ),
