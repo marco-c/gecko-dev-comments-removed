@@ -3566,6 +3566,8 @@ pref("browser.ipProtection.added", false);
 
 pref("browser.ipProtection.hasUpgraded", false);
 
+pref("browser.ipProtection.upgradeNotAvailable", false);
+
 pref("browser.ipProtection.bandwidth.enabled", true);
 
 pref("browser.ipProtection.bandwidth.maxInGb", 50);
