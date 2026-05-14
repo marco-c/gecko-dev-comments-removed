@@ -433,8 +433,8 @@ struct AnchorPositioningUtils {
                                      const nsIFrame* aContainingBlock);
 
   
-  static dom::ShadowRoot* GetShadowRootForTreeScope(
-      const nsIContent& aContent, const StyleCascadeLevel& aTreeScope);
+  static const dom::ShadowRoot* GetShadowRootForTreeScope(
+      const dom::Element& aElement, const StyleCascadeLevel& aTreeScope);
 };
 
 }  
