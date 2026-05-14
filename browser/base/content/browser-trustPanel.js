@@ -5,6 +5,7 @@
 
 
 ChromeUtils.defineESModuleGetters(this, {
+  BreachAlertStorage: "resource://gre/modules/BreachAlertStore.sys.mjs",
   BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
   ContentBlockingAllowList:
     "resource://gre/modules/ContentBlockingAllowList.sys.mjs",
@@ -128,6 +129,7 @@ class TrustPanel {
 
 
   #clearFxaOauthClientCache = false;
+  #breachAlertStoragePromise = null;
 
   
 
@@ -175,6 +177,18 @@ class TrustPanel {
 
     
     Services.obs.addObserver(this, "fxaccounts:onlogout");
+
+    customElements.whenDefined("breach-alert-panel").then(() => {
+      const breachAlertElement = document.getElementById(
+        "trustpanel-breach-alert-section"
+      );
+      if (breachAlertElement) {
+        breachAlertElement.addEventListener(
+          "dismissBreachAlert",
+          this.dismissBreachAlert.bind(this)
+        );
+      }
+    });
   }
 
   uninit() {
@@ -347,8 +361,9 @@ class TrustPanel {
       position: "bottomleft topleft",
     });
 
+    const applicableBreaches = await this.#getApplicableBreaches(this.#host);
     Glean.trustpanel.opened.record({
-      breach_status: await this.#breachedStatus(),
+      breach_status: await this.#breachedStatus(applicableBreaches),
     });
   }
 
@@ -452,11 +467,16 @@ class TrustPanel {
     const breachAlertGraphicSection = document.getElementById(
       "trustpanel-breach-alert-section"
     );
-    const breachStatus = await this.#breachedStatus();
+
+    const applicableBreaches = await this.#getApplicableBreaches(this.#host);
+    const breachStatus = await this.#breachedStatus(applicableBreaches);
     if (breachStatus !== "disabled" && breachStatus !== "not-breached") {
       graphicSection.hidden = true;
       breachAlertGraphicSection.hidden = false;
       breachAlertGraphicSection.breachStatus = breachStatus;
+      breachAlertGraphicSection.breachNames = applicableBreaches.map(
+        breach => breach.Name
+      );
     } else {
       graphicSection.hidden = false;
       breachAlertGraphicSection.hidden = true;
@@ -589,7 +609,7 @@ class TrustPanel {
     return this.#trackingProtectionEnabled ? "enabled" : "disabled";
   }
 
-  async #breachedStatus() {
+  async #breachedStatus(breaches) {
     if (!UrlbarPrefs.get("trustPanel.breachAlerts")) {
       return "disabled";
     }
@@ -605,8 +625,7 @@ class TrustPanel {
     
     
     
-    const breach = await this.#getBreachForSite(this.#host);
-    if (breach) {
+    if (breaches.length) {
       return "breached";
     }
 
@@ -1653,6 +1672,18 @@ class TrustPanel {
     }
   }
 
+  async #getBreachAlertStorage() {
+    if (this.#breachAlertStoragePromise === null) {
+      const initializeStorage = async () => {
+        const storage = new BreachAlertStorage();
+        await storage.initialize();
+        return storage;
+      };
+      this.#breachAlertStoragePromise = initializeStorage();
+    }
+    return this.#breachAlertStoragePromise;
+  }
+
   async #getBreachedWebsites() {
     const REMOTE_SETTINGS_COLLECTION = "fxmonitor-breaches";
 
@@ -1663,18 +1694,6 @@ class TrustPanel {
       console.error("Could not get breach data from Remote Settings:", ex);
       return [];
     }
-  }
-
-  async #getBreachForSite(site) {
-    const breaches = await this.#getBreachedWebsites();
-
-    if (!site || !breaches.length) {
-      return null;
-    }
-
-    return breaches.find(breach => {
-      return breach.Domain && Services.eTLD.hasRootDomain(site, breach.Domain);
-    });
   }
 
   
@@ -1709,6 +1728,71 @@ class TrustPanel {
     this.#breachesPromise = null;
     this.#breaches = [];
   }
+
+  async #getApplicableBreaches(site) {
+    const breaches = await this.#getBreachedWebsites();
+
+    if (!site || !breaches.length) {
+      return [];
+    }
+
+    
+    const breachesForSite = breaches.filter(breach => {
+      return breach.Domain && Services.eTLD.hasRootDomain(site, breach.Domain);
+    });
+
+    
+    const recentBreaches = breachesForSite.filter(isRecentBreach);
+
+    
+    
+    const breachAlertStorage = await this.#getBreachAlertStorage();
+    const dismissedBreachNames = (
+      await breachAlertStorage.getBreachAlertDismissals(
+        recentBreaches.map(breach => breach.Name)
+      )
+    ).map(breachDismissal => breachDismissal.breachName);
+    const undismissedBreaches = recentBreaches.filter(
+      recentBreach => !dismissedBreachNames.includes(recentBreach.Name)
+    );
+
+    return undismissedBreaches;
+  }
+
+  async dismissBreachAlert(event) {
+    const breachNames = event.detail.breachNames;
+    if (!breachNames) {
+      return;
+    }
+
+    try {
+      const timeDismissed = Date.now();
+      const dismissals = breachNames.map(breachName => ({
+        breachName,
+        timeDismissed,
+      }));
+      const breachAlertStorage = await this.#getBreachAlertStorage();
+      await breachAlertStorage.setBreachAlertDismissals(dismissals);
+    } catch (ex) {
+      console.error("Failed to store breach dismissal:", ex);
+    }
+    this.#updateMainView();
+  }
+}
+
+
+
+
+
+function isRecentBreach(breach) {
+  const currentDate = Temporal.Now.plainDateISO();
+  
+  
+  const breachedDate = Temporal.PlainDate.from(breach.BreachDate);
+
+  const oneYearAgo = currentDate.subtract({ years: 1 });
+  
+  return Temporal.PlainDate.compare(breachedDate, oneYearAgo) !== -1;
 }
 
 var gTrustPanelHandler = new TrustPanel();
