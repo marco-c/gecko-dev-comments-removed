@@ -35,7 +35,7 @@ def upload_symbols(zip_file, token_file):
         print("'faketoken` detected, not pushing anything", file=sys.stdout)
         sys.exit(0)
 
-    for i, _ in enumerate(redo.retrier(attempts=MAX_RETRIES), start=1):
+    for i, _ in enumerate(redo.retrier(attempts=MAX_RETRIES, sleeptime=60, sleepscale=1), start=1):
         print("Attempt %d of %d..." % (i, MAX_RETRIES))
         try:
             if zip_file.startswith("http"):
@@ -48,8 +48,7 @@ def upload_symbols(zip_file, token_file):
                 allow_redirects=False,
                 
                 
-                
-                timeout=(10, 300),
+                timeout=(10, 600),
                 **zip_arg,
             )
             

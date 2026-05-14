@@ -314,7 +314,9 @@ def upload_symbols(zip_path):
 
     log.info(f'Uploading symbol file "{zip_path}" to "{url}"')
 
-    for i, _ in enumerate(redo.retrier(attempts=MAX_RETRIES), start=1):
+    for i, _ in enumerate(
+        redo.retrier(attempts=MAX_RETRIES, sleeptime=60, sleepscale=1), start=1
+    ):
         log.info("Attempt %d of %d..." % (i, MAX_RETRIES))
         try:
             if zip_path.startswith("http"):
@@ -327,8 +329,7 @@ def upload_symbols(zip_path):
                 allow_redirects=False,
                 
                 
-                
-                timeout=(300, 300),
+                timeout=(10, 600),
                 **zip_arg,
             )
             
