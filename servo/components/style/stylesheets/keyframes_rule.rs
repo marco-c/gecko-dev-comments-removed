@@ -19,6 +19,7 @@ use crate::shared_lock::{DeepCloneWithLock, SharedRwLock, SharedRwLockReadGuard}
 use crate::shared_lock::{Locked, ToCssWithGuard};
 use crate::stylesheets::rule_parser::VendorPrefix;
 use crate::stylesheets::{CssRuleType, StylesheetContents};
+use crate::values::specified::animation::TimelineRangeName;
 use crate::values::{serialize_percentage, KeyframesName};
 use cssparser::{
     parse_one_rule, AtRuleParser, DeclarationParser, Parser, ParserInput, ParserState,
@@ -148,26 +149,73 @@ impl KeyframePercentage {
 
 
 
-#[derive(Clone, Debug, Eq, PartialEq, ToCss, ToShmem)]
-#[css(comma)]
-pub struct KeyframeSelectors(#[css(iterable)] Vec<KeyframePercentage>);
 
-impl KeyframeSelectors {
+
+#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, ToCss, ToShmem)]
+pub struct KeyframeSelector {
     
-    #[inline]
-    pub fn percentages(&self) -> &[KeyframePercentage] {
-        &self.0
+    
+    
+    pub range_name: TimelineRangeName,
+    
+    
+    pub percentage: KeyframePercentage,
+}
+
+impl KeyframeSelector {
+    
+    fn from_percentage(percentage: KeyframePercentage) -> Self {
+        KeyframeSelector {
+            range_name: TimelineRangeName::None,
+            percentage,
+        }
     }
 
     
+    pub fn parse<'i, 't>(input: &mut Parser<'i, 't>) -> Result<Self, ParseError<'i>> {
+        
+        if let Ok(percentage) = input.try_parse(KeyframePercentage::parse) {
+            return Ok(Self {
+                range_name: TimelineRangeName::None,
+                percentage,
+            });
+        }
+
+        
+        if !static_prefs::pref!("layout.css.scroll-driven-animations.enabled") {
+            let location = input.current_source_location();
+            return Err(location.new_custom_error(StyleParseErrorKind::UnspecifiedError));
+        }
+
+        
+        
+        Ok(Self {
+            range_name: TimelineRangeName::parse(input)?,
+            percentage: KeyframePercentage::new(input.expect_percentage()?),
+        })
+    }
+}
+
+
+#[derive(Clone, Debug, Eq, PartialEq, ToCss, ToShmem)]
+#[css(comma)]
+pub struct KeyframeSelectors(#[css(iterable)] Vec<KeyframeSelector>);
+
+impl KeyframeSelectors {
+    
     pub fn new_for_unit_testing(percentages: Vec<KeyframePercentage>) -> KeyframeSelectors {
-        KeyframeSelectors(percentages)
+        KeyframeSelectors(
+            percentages
+                .into_iter()
+                .map(KeyframeSelector::from_percentage)
+                .collect(),
+        )
     }
 
     
     pub fn parse<'i, 't>(input: &mut Parser<'i, 't>) -> Result<Self, ParseError<'i>> {
         input
-            .parse_comma_separated(KeyframePercentage::parse)
+            .parse_comma_separated(KeyframeSelector::parse)
             .map(KeyframeSelectors)
     }
 }
@@ -266,7 +314,7 @@ pub enum KeyframesStepValue {
 #[derive(Clone, Debug, MallocSizeOf)]
 pub struct KeyframesStep {
     
-    pub start_percentage: KeyframePercentage,
+    pub start_offset: KeyframeSelector,
     
     
     pub value: KeyframesStepValue,
@@ -285,7 +333,7 @@ pub struct KeyframesStep {
 impl KeyframesStep {
     #[inline]
     fn new(
-        start_percentage: KeyframePercentage,
+        start_offset: KeyframeSelector,
         value: KeyframesStepValue,
         guard: &SharedRwLockReadGuard,
     ) -> Self {
@@ -310,7 +358,7 @@ impl KeyframesStep {
         }
 
         KeyframesStep {
-            start_percentage,
+            start_offset,
             value,
             declared_timing_function,
             declared_composition,
@@ -396,6 +444,14 @@ pub struct KeyframesAnimation {
     
     pub steps: Vec<KeyframesStep>,
     
+    
+    
+    
+    
+    
+    
+    pub steps_with_range_name: Vec<KeyframesStep>,
+    
     pub properties_changed: PropertyDeclarationIdSet,
     
     pub vendor_prefix: Option<VendorPrefix>,
@@ -452,6 +508,7 @@ impl KeyframesAnimation {
     ) -> Self {
         let mut result = KeyframesAnimation {
             steps: vec![],
+            steps_with_range_name: vec![],
             properties_changed: PropertyDeclarationIdSet::default(),
             vendor_prefix,
         };
@@ -465,42 +522,62 @@ impl KeyframesAnimation {
             return result;
         }
 
+        
+        let mut steps = vec![];
+
         for keyframe in keyframes {
             let keyframe = keyframe.read_with(&guard);
-            for percentage in keyframe.selector.0.iter() {
-                result.steps.push(KeyframesStep::new(
-                    *percentage,
+            for selector in keyframe.selector.0.iter() {
+                let step = KeyframesStep::new(
+                    *selector,
                     KeyframesStepValue::Declarations {
                         block: keyframe.block.clone(),
                     },
                     guard,
-                ));
+                );
+
+                if !selector.range_name.is_none() {
+                    result.steps_with_range_name.push(step);
+                } else {
+                    steps.push(step);
+                }
             }
         }
 
         
-        result.steps.sort_by_key(|step| step.start_percentage);
+        
+        
+        steps.sort_by_key(|step| step.start_offset.percentage);
 
         
-        if result.steps[0].start_percentage.0 != 0. {
-            result.steps.insert(
+        
+        
+        
+        
+        
+        
+        
+        
+        if steps.is_empty() || steps[0].start_offset.percentage.0 != 0. {
+            steps.insert(
                 0,
                 KeyframesStep::new(
-                    KeyframePercentage::new(0.),
+                    KeyframeSelector::from_percentage(KeyframePercentage::new(0.)),
                     KeyframesStepValue::ComputedValues,
                     guard,
                 ),
             );
         }
 
-        if result.steps.last().unwrap().start_percentage.0 != 1. {
-            result.steps.push(KeyframesStep::new(
-                KeyframePercentage::new(1.),
+        if steps.last().unwrap().start_offset.percentage.0 != 1. {
+            steps.push(KeyframesStep::new(
+                KeyframeSelector::from_percentage(KeyframePercentage::new(1.)),
                 KeyframesStepValue::ComputedValues,
                 guard,
             ));
         }
 
+        result.steps = steps;
         result
     }
 }

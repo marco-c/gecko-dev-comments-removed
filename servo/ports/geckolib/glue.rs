@@ -7602,9 +7602,12 @@ pub unsafe extern "C" fn Servo_StyleSet_GetKeyframesForName(
     
     
     for step in animation.steps.iter().rev() {
-        if step.start_percentage.0 != current_offset {
+        
+        debug_assert!(step.start_offset.range_name.is_none());
+
+        if step.start_offset.percentage.0 != current_offset {
             properties_set_at_current_offset.clear();
-            current_offset = step.start_percentage.0;
+            current_offset = step.start_offset.percentage.0;
         }
 
         
@@ -7626,7 +7629,7 @@ pub unsafe extern "C" fn Servo_StyleSet_GetKeyframesForName(
         
         let keyframe = &mut *bindings::Gecko_GetOrCreateKeyframeAtStart(
             keyframes,
-            step.start_percentage.0 as f32,
+            step.start_offset.percentage.0 as f32,
             &timing_function,
             composition,
         );
