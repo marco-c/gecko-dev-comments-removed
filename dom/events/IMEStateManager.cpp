@@ -547,9 +547,6 @@ void IMEStateManager::OnUpdateHTMLEditorRootElement(HTMLEditor& aHTMLEditor,
       
       !sFocusedPresContext || !sTextInputHandlingWidget ||
       
-      
-      sFocusedElement ||
-      
       sFocusedPresContext != aHTMLEditor.GetPresContext() ||
       
       
@@ -562,6 +559,10 @@ void IMEStateManager::OnUpdateHTMLEditorRootElement(HTMLEditor& aHTMLEditor,
   }
 
   OwningNonNull<nsPresContext> presContext = *sFocusedPresContext;
+  if (sFocusedElement && presContext->Document()->IsInDesignMode()) {
+    sFocusedElement = presContext->Document()->GetRootElement();
+  }
+  RefPtr<Element> focusedElement = sFocusedElement;
 
   DestroyIMEContentObserver();
 
@@ -581,7 +582,7 @@ void IMEStateManager::OnUpdateHTMLEditorRootElement(HTMLEditor& aHTMLEditor,
   }
 
   MOZ_ASSERT(aNewRootElement);
-  const IMEState newState = GetNewIMEState(*presContext, nullptr);
+  const IMEState newState = GetNewIMEState(*presContext, focusedElement);
   
   
   
@@ -597,15 +598,17 @@ void IMEStateManager::OnUpdateHTMLEditorRootElement(HTMLEditor& aHTMLEditor,
   InputContext::Origin origin =
       BrowserParent::GetFocused() ? InputContext::ORIGIN_CONTENT : sOrigin;
   OwningNonNull<nsIWidget> textInputHandlingWidget = *sTextInputHandlingWidget;
-  SetIMEState(newState, presContext, nullptr, textInputHandlingWidget, action,
-              origin);
+  SetIMEState(newState, presContext, focusedElement, textInputHandlingWidget,
+              action, origin);
   
   
-  if (sFocusedElement || sActiveIMEContentObserver) {
+  if (sFocusedPresContext != presContext || sFocusedElement != focusedElement ||
+      sActiveIMEContentObserver) {
     MOZ_LOG(sISMLog, LogLevel::Warning,
             ("OnUpdateHTMLEditorRootElement(), WARNING: Somebody update focus "
-             "during setting IME state, sFocusedElement=%s, "
-             "sActiveIMEContentObserver=0x%p",
+             "during setting IME state, sFocusedPresContext=0x%p, "
+             "sFocusedElement=%s, sActiveIMEContentObserver=0x%p",
+             sFocusedPresContext.get(),
              ToString(RefPtr<Element>(sFocusedElement)).c_str(),
              sActiveIMEContentObserver.get()));
     return;
@@ -613,8 +616,8 @@ void IMEStateManager::OnUpdateHTMLEditorRootElement(HTMLEditor& aHTMLEditor,
 
   if (IsIMEObserverNeeded(newState)) {
     MOZ_ASSERT(sFocusedPresContext == presContext);
-    MOZ_ASSERT(!sFocusedElement);
-    CreateIMEContentObserver(aHTMLEditor, nullptr);
+    MOZ_ASSERT(sFocusedElement == focusedElement);
+    CreateIMEContentObserver(aHTMLEditor, focusedElement);
   }
 }
 
