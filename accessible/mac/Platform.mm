@@ -124,6 +124,30 @@ void PlatformFocusEvent(Accessible* aTarget) {
   }
 }
 
+void PlatformFocusedAccLocationChanged(Accessible* aFocusedAcc) {
+  
+  
+  
+  
+  mozAccessible* nativeFocused = GetNativeFromGeckoAccessible(aFocusedAcc);
+  if (nativeFocused) {
+    int focusType = aFocusedAcc->IsEditableRoot()
+                        ? kUAZoomFocusTypeInsertionPoint
+                        : kUAZoomFocusTypeOther;
+    [nativeFocused maybeFireUAZoomChangeFocusEvent:focusType];
+  }
+}
+
+bool PlatformShouldTrackFocusedAccLocation() {
+  
+  
+  
+  
+  
+  return UAZoomEnabled() ||
+         (xpc::IsInAutomation() && DomainsAreActive(CacheDomain::Bounds));
+}
+
 void PlatformCaretMoveEvent(Accessible* aTarget, int32_t aOffset,
                             bool aIsSelectionCollapsed, int32_t aGranularity,
                             bool aFromUser) {

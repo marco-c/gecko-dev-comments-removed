@@ -5,6 +5,7 @@
 
 
 #import <Accessibility/Accessibility.h>
+#import <ApplicationServices/ApplicationServices.h>
 
 #import "mozAccessible.h"
 #include "MOXAccessibleBase.h"
@@ -664,8 +665,17 @@ static bool ProvidesTitle(const Accessible* aAccessible, nsString& aName) {
 
   if (docAcc) nativeWindow = static_cast<NSWindow*>(docAcc->GetNativeWindow());
 
-  MOZ_ASSERT(nativeWindow || gfxPlatform::IsHeadless(),
-             "Couldn't get native window");
+  
+  
+  
+  
+  if (NS_WARN_IF(!nativeWindow && !gfxPlatform::IsHeadless() &&
+                 GetAccService())) {
+    
+    
+    return nil;
+  }
+
   return nativeWindow;
 
   NS_OBJC_END_TRY_BLOCK_RETURN(nil);
@@ -1098,16 +1108,81 @@ static bool ProvidesTitle(const Accessible* aAccessible, nsString& aName) {
 
   return relations;
 }
+- (void)maybeFireUAZoomChangeFocusEvent:(int)focusType {
+  if (!mGeckoAccessible) {
+    return;
+  }
+
+  auto bounds = mGeckoAccessible->Bounds();
+  if (bounds.IsEmpty()) {
+    if (auto parent = mGeckoAccessible->Parent()) {
+      auto parentBounds = parent->Bounds();
+      bounds.width = parentBounds.width;
+      bounds.height = parentBounds.height;
+    }
+    
+    
+    bounds.width = MAX(bounds.width, 1.0);
+    bounds.height = MAX(bounds.height, 1.0);
+  }
+
+  NSRect objectRect = utils::GetCocoaScreenRectForAcc(
+      self, bounds,  false);
+
+  NSRect highlightRect = NSZeroRect;
+  if (auto* htb = mGeckoAccessible->AsHyperTextBase()) {
+    auto caretRect = htb->GetCaretRect().first;
+    highlightRect = utils::GetCocoaScreenRectForAcc(
+        self, caretRect,  false);
+  }
+
+  NSValue* objValue = [NSValue valueWithRect:objectRect];
+  NSMutableDictionary* info =
+      [[@{@"AXRect" : objValue, @"AXFocusType" : @(focusType)} mutableCopy]
+          autorelease];
+
+  if (focusType == kUAZoomFocusTypeInsertionPoint) {
+    info[@"AXHighlightRect"] = [NSValue valueWithRect:highlightRect];
+  }
+
+  
+  
+  
+  
+  
+  xpcAccessibleMacEvent::FireEvent(self, @"MozUAZoomChangeFocus", info);
+
+  
+  
+  if (UAZoomEnabled()) {
+    UAZoomChangeFocus(
+        &objectRect,
+        focusType == kUAZoomFocusTypeInsertionPoint ? &highlightRect : NULL,
+        focusType);
+  }
+}
 
 - (void)handleAccessibleEvent:(uint32_t)eventType {
   switch (eventType) {
     case nsIAccessibleEvent::EVENT_ALERT:
       [self maybePostA11yUtilNotification];
       break;
-    case nsIAccessibleEvent::EVENT_FOCUS:
+    case nsIAccessibleEvent::EVENT_FOCUS: {
       [self moxPostNotification:
                 NSAccessibilityFocusedUIElementChangedNotification];
+
+      
+      if (PlatformShouldTrackFocusedAccLocation()) {
+        if (mGeckoAccessible->IsEditableRoot()) {
+          
+          
+          [self maybeFireUAZoomChangeFocusEvent:kUAZoomFocusTypeInsertionPoint];
+        } else {
+          [self maybeFireUAZoomChangeFocusEvent:kUAZoomFocusTypeOther];
+        }
+      }
       break;
+    }
     case nsIAccessibleEvent::EVENT_MENUPOPUP_START:
       [self moxPostNotification:@"AXMenuOpened"];
       break;
@@ -1140,6 +1215,11 @@ static bool ProvidesTitle(const Accessible* aAccessible, nsString& aName) {
                  withUserInfo:userInfo];
       [self moxPostNotification:NSAccessibilitySelectedTextChangedNotification
                    withUserInfo:userInfo];
+
+      
+      if (PlatformShouldTrackFocusedAccLocation()) {
+        [self maybeFireUAZoomChangeFocusEvent:kUAZoomFocusTypeInsertionPoint];
+      }
       break;
     }
     case nsIAccessibleEvent::EVENT_LIVE_REGION_ADDED:
