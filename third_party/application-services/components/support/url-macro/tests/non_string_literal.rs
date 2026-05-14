@@ -1,0 +1,9 @@
+
+
+
+
+use url_macro::url;
+
+fn main() {
+    let _ = url!(42);
+}

@@ -45,12 +45,35 @@ impl FirefoxAccount {
     
     
     
+    
+    
+    
+    
     #[handle_error(Error)]
     pub fn get_access_token(&self, scope: &str, use_cache: bool) -> ApiResult<AccessTokenInfo> {
         self.internal
             .lock()
             .get_access_token(scope, use_cache)?
             .try_into()
+    }
+
+    
+    
+    
+    
+    pub fn get_signed_in_user_for_web_channel(&self) -> Option<String> {
+        self.internal.lock().get_signed_in_user_for_web_channel()
+    }
+
+    
+    
+    
+    
+    #[handle_error(Error)]
+    pub fn handle_web_channel_password_change(&self, json_payload: String) -> ApiResult<()> {
+        self.internal
+            .lock()
+            .handle_web_channel_password_change(&json_payload)
     }
 
     

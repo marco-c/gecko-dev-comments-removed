@@ -231,19 +231,6 @@ impl StateManager {
         self.flow_store.clear();
     }
 
-    
-    
-    
-    
-    
-    pub fn on_begin_oauth(&mut self) {
-        self.persisted_state.refresh_token = None;
-        self.persisted_state.scoped_keys = HashMap::new();
-        self.persisted_state.commands_data = HashMap::new();
-        self.persisted_state.access_token_cache = HashMap::new();
-        self.persisted_state.session_token = None;
-    }
-
     pub fn get_auth_state(&self) -> FxaRustAuthState {
         if self.persisted_state.refresh_token.is_some() {
             FxaRustAuthState::Connected
@@ -268,6 +255,12 @@ impl StateManager {
     
     pub fn update_refresh_token(&mut self, token: RefreshToken) {
         self.persisted_state.refresh_token = Some(token);
+        self.persisted_state.access_token_cache.clear();
+    }
+
+    
+    pub fn clear_refresh_token(&mut self) {
+        self.persisted_state.refresh_token = None;
         self.persisted_state.access_token_cache.clear();
     }
 

@@ -52,8 +52,14 @@ impl FirefoxAccount {
     
     
     
-    pub fn set_user_data(&self, user_data: UserData) {
-        self.internal.lock().set_user_data(user_data)
+    
+    
+    
+    
+    
+    #[handle_error(Error)]
+    pub fn handle_web_channel_login(&self, json_payload: String) -> ApiResult<()> {
+        self.internal.lock().handle_web_channel_login(&json_payload)
     }
 
     
@@ -84,9 +90,12 @@ impl FirefoxAccount {
         
         scopes: &[T],
         entrypoint: &str,
+        service: &str,
     ) -> ApiResult<String> {
         let scopes = scopes.iter().map(T::as_ref).collect::<Vec<_>>();
-        self.internal.lock().begin_oauth_flow(&scopes, entrypoint)
+        self.internal
+            .lock()
+            .begin_oauth_flow(service, &scopes, entrypoint)
     }
 
     
@@ -129,12 +138,13 @@ impl FirefoxAccount {
         pairing_url: &str,
         scopes: &[String],
         entrypoint: &str,
+        service: &str,
     ) -> ApiResult<String> {
         
         let scopes = scopes.iter().map(String::as_str).collect::<Vec<_>>();
         self.internal
             .lock()
-            .begin_pairing_flow(pairing_url, &scopes, entrypoint)
+            .begin_pairing_flow(pairing_url, service, &scopes, entrypoint)
     }
 
     
@@ -220,7 +230,7 @@ pub struct AuthorizationInfo {
 
 
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum FxaRustAuthState {
     Disconnected,
     Connected,
@@ -237,12 +247,26 @@ pub enum FxaState {
     
     Disconnected,
     
-    Authenticating { oauth_url: String },
+    
+    Authenticating {
+        oauth_url: String,
+        initial_state: FxaRustAuthState,
+    },
     
     Connected,
     
     
     AuthIssues,
+}
+
+impl From<FxaRustAuthState> for FxaState {
+    fn from(value: FxaRustAuthState) -> Self {
+        match value {
+            FxaRustAuthState::Connected => FxaState::Connected,
+            FxaRustAuthState::Disconnected => FxaState::Disconnected,
+            FxaRustAuthState::AuthIssues => FxaState::AuthIssues,
+        }
+    }
 }
 
 
@@ -261,6 +285,7 @@ pub enum FxaEvent {
     
     
     BeginOAuthFlow {
+        service: String,
         scopes: Vec<String>,
         entrypoint: String,
     },
@@ -274,6 +299,7 @@ pub enum FxaEvent {
     
     BeginPairingFlow {
         pairing_url: String,
+        service: String,
         scopes: Vec<String>,
         entrypoint: String,
     },
@@ -315,13 +341,4 @@ pub enum FxaEvent {
     
     
     CallGetProfile,
-}
-
-
-#[derive(Debug, Clone)]
-pub struct UserData {
-    pub(crate) session_token: String,
-    pub(crate) uid: String,
-    pub(crate) email: String,
-    pub(crate) verified: bool,
 }
