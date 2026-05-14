@@ -315,14 +315,6 @@ class AbstractModuleSourceObject : public NativeObject {
  public:
   static const JSClass class_;
 };
-
-
-class ModuleSourceObject : public NativeObject {
- public:
-  static const JSClass class_;
-  static bool isInstance(HandleValue value);
-  [[nodiscard]] static ModuleSourceObject* create(JSContext* cx);
-};
 #endif
 
 

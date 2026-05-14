@@ -25,6 +25,7 @@
 #include "vm/PlainObject.h"    
 #include "vm/PromiseObject.h"  
 #include "vm/SharedStencil.h"  
+#include "wasm/WasmJS.h"       
 
 #include "gc/GCContext-inl.h"
 #include "vm/EnvironmentObject-inl.h"  
@@ -788,16 +789,20 @@ static bool AbstractModuleSource_toStringTagGetter(JSContext* cx, unsigned argc,
   
   
   
-  if (!obj->is<ModuleSourceObject>()) {
+  
+  if (!obj->is<WasmModuleObject>()) {
+    
     args.rval().setUndefined();
     return true;
   }
 
-  MOZ_ASSERT(
-      JS::Prefs::experimental_source_phase_imports_test262_module_source());
-
   
-  JSAtom* name = cx->names().Module;
+  
+  JSAtom* name = Atomize(cx, WasmModuleObject::class_.name,
+                         strlen(WasmModuleObject::class_.name));
+  if (!name) {
+    return false;
+  }
 
   
   
@@ -836,28 +841,6 @@ static const ClassSpec AbstractModuleSourceObjectClassSpec = {
     JS_NULL_CLASS_OPS,
     &AbstractModuleSourceObjectClassSpec,
 };
-
-
-
-
- const JSClass ModuleSourceObject::class_ = {
-    "ModuleSource",
-};
-
-
-bool ModuleSourceObject::isInstance(HandleValue value) {
-  return value.isObject() && value.toObject().is<ModuleSourceObject>();
-}
-
-
-ModuleSourceObject* ModuleSourceObject::create(JSContext* cx) {
-  RootedObject proto(
-      cx, GlobalObject::getOrCreatePrototype(cx, JSProto_AbstractModuleSource));
-  if (!proto) {
-    return nullptr;
-  }
-  return NewObjectWithGivenProto<ModuleSourceObject>(cx, proto);
-}
 #endif
 
 
