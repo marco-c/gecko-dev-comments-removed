@@ -3578,8 +3578,6 @@ pref("browser.ipProtection.bandwidthWarningDismissedThreshold", "");
 
 pref("browser.ipProtection.locationButtonBadgeDismissed", false);
 
-pref("browser.ipProtection.fxa.useActivateFlow", true);
-
 
 pref("about.glean.redesign.enabled", false);
 
