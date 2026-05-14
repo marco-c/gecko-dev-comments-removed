@@ -787,6 +787,17 @@ function search(aQuery, aAttribute) {
       element.hidden = true;
     }
     element.classList.remove("visually-hidden");
+
+    
+    
+    
+    
+    if (element.localName === "setting-pane") {
+       (element).onSearchPane = false;
+      for (let group of element.querySelectorAll("setting-group")) {
+        group.classList.remove("visually-hidden");
+      }
+    }
   }
 }
 
