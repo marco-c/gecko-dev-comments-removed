@@ -40,6 +40,7 @@ struct LayerState {
   
   
   bool mMutatedFrontBuffer : 1;
+
   
   bool mRenderedLastCycle : 1;
 
@@ -127,6 +128,8 @@ class NativeLayerRootWayland final : public NativeLayerRoot {
   bool IsEmptyLocked(const widget::WaylandSurfaceLock& aProofOfLock);
   void ClearLayersLocked(const widget::WaylandSurfaceLock& aProofOfLock);
 
+  bool CommitToScreenLocked(widget::WaylandSurfaceLock& aLock);
+
 #ifdef MOZ_LOGGING
   void LogStatsLocked(const widget::WaylandSurfaceLock& aProofOfLock);
 #endif
@@ -182,6 +185,8 @@ class NativeLayerRootWayland final : public NativeLayerRoot {
   bool mRootAllLayersRendered = false;
   bool mMainThreadUpdateQueued = false;
   bool mIsFullscreen = false;
+  
+  bool mMissingRootCommit = false;
 };
 
 class NativeLayerWayland : public NativeLayer {
@@ -226,7 +231,7 @@ class NativeLayerWayland : public NativeLayer {
   
   bool IsMapped();
   bool IsVisible();
-  bool Map(widget::WaylandSurfaceLock* aParentWaylandSurfaceLock);
+  bool Map(widget::WaylandSurfaceLock& aParentWaylandSurfaceLock);
   void Unmap();
 
   void UpdateOnMainThread();
