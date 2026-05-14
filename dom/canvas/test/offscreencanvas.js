@@ -211,8 +211,10 @@
       ok(canvas, "Canvas successfully transfered to worker");
       ok(canvas.getContext, "Canvas has getContext");
 
-      ok(canvas.width == 64, "OffscreenCanvas width should be 64");
-      ok(canvas.height == 64, "OffscreenCanvas height should be 64");
+      if (test != "webgl_todataurl_stride") {
+        ok(canvas.width == 64, "OffscreenCanvas width should be 64");
+        ok(canvas.height == 64, "OffscreenCanvas height should be 64");
+      }
     }
 
     var draw;
@@ -267,6 +269,22 @@
       canvas.toBlob().then(function (blob) {
         sendBlob(blob);
       });
+    }
+    
+    
+    
+    
+    
+    else if (test == "webgl_todataurl_stride") {
+      var gl = canvas.getContext("webgl", { alpha: true });
+      if (!gl) {
+        ok(false, "WebGL with alpha:true is unavailable");
+        finish();
+        return;
+      }
+      gl.clearColor(0, 1, 0, 1);
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      finish();
     }
     
     
