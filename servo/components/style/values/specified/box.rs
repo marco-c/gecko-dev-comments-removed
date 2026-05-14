@@ -1079,7 +1079,7 @@ pub enum OverflowAnchor {
 )]
 #[css(comma)]
 #[repr(C)]
-#[typed(todo_derive_fields)]
+#[typed(no_multiple_values)]
 
 
 
