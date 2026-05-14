@@ -944,6 +944,12 @@ bool js::ObjectMayBeSwapped(const JSObject* obj) {
 
 void JSObject::swap(JSContext* cx, HandleObject a, HandleObject b,
                     AutoEnterOOMUnsafeRegion& oomUnsafe) {
+  
+  
+  MOZ_RELEASE_ASSERT(JSCLASS_RESERVED_SLOTS(a->getClass()) ==
+                     js::SwappableProxyReservedSlots);
+  MOZ_RELEASE_ASSERT(JSCLASS_RESERVED_SLOTS(b->getClass()) ==
+                     js::SwappableProxyReservedSlots);
   MOZ_RELEASE_ASSERT(a->allocKind() == b->allocKind());
 
   MOZ_RELEASE_ASSERT(a->compartment() == b->compartment());

@@ -908,8 +908,13 @@ static JSObject* NewGlobalObject(
 
 
 
+
+
+
+
 const JSClass ShellWindowProxyClass =
-    PROXY_CLASS_DEF("ShellWindowProxy", JSCLASS_HAS_RESERVED_SLOTS(1));
+    PROXY_CLASS_DEF("ShellWindowProxy",
+                    JSCLASS_HAS_RESERVED_SLOTS(SwappableProxyReservedSlots));
 
 JSObject* NewShellWindowProxy(JSContext* cx, JS::HandleObject global) {
   MOZ_ASSERT(global->is<GlobalObject>());
@@ -9043,7 +9048,8 @@ static constexpr uint32_t DOM_OBJECT_SLOT2 = 1;
 static const JSClass* GetDomClass();
 
 static const JSClass TransplantableProxyObjectClass =
-    PROXY_CLASS_DEF("TransplantableProxyObject", JSCLASS_HAS_RESERVED_SLOTS(1));
+    PROXY_CLASS_DEF("TransplantableProxyObject",
+                    JSCLASS_HAS_RESERVED_SLOTS(SwappableProxyReservedSlots));
 
 
 

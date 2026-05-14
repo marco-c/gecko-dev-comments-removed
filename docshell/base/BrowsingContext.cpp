@@ -2137,12 +2137,9 @@ class RemoteLocationProxy
 
 static const RemoteLocationProxy sSingleton;
 
-
-
-
 template <>
-const JSClass RemoteLocationProxy::Base::sClass =
-    PROXY_CLASS_DEF("Proxy", JSCLASS_HAS_RESERVED_SLOTS(2));
+const JSClass RemoteLocationProxy::Base::sClass = PROXY_CLASS_DEF(
+    "Proxy", JSCLASS_HAS_RESERVED_SLOTS(js::SwappableProxyReservedSlots));
 
 void BrowsingContext::Location(JSContext* aCx,
                                JS::MutableHandle<JSObject*> aLocation,

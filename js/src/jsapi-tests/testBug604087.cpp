@@ -5,8 +5,6 @@
 
 
 
-
-
 #include "js/friend/WindowProxy.h"  
 #include "js/GlobalObject.h"        
 #include "js/Wrapper.h"
@@ -16,7 +14,7 @@
 #include "vm/ProxyObject.h"
 
 const JSClass OuterWrapperClass = PROXY_CLASS_DEF(
-    "Proxy", JSCLASS_HAS_RESERVED_SLOTS(1) );
+    "Proxy", JSCLASS_HAS_RESERVED_SLOTS(js::SwappableProxyReservedSlots));
 
 static JSObject* wrap(JSContext* cx, JS::HandleObject toWrap,
                       JS::HandleObject target) {

@@ -393,6 +393,10 @@ class JS_PUBLIC_API NurseryAllocableProxyHandler : public BaseProxyHandler {
 
 extern JS_PUBLIC_DATA const JSClass ProxyClass;
 
+
+
+constexpr size_t SwappableProxyReservedSlots = 2;
+
 inline bool IsProxy(const JSObject* obj) {
   return reinterpret_cast<const JS::shadow::Object*>(obj)->shape->isProxy();
 }
