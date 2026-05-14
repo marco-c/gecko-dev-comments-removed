@@ -14,6 +14,10 @@
 
 
 
+
+
+
+
 const contexts = {
   'document': {
     description: 'the main thread',
@@ -50,6 +54,12 @@ const contentions = {
     description: 'on navigator.locks.request()',
     funcBeforeBackNavigation: (name) => {
         return navigator.locks.request(name, () => {});
+    },
+  },
+  'request-if-available': {
+    description: 'on navigator.locks.request() with ifAvailable: true',
+    funcBeforeBackNavigation: (name) => {
+        return navigator.locks.request(name, { ifAvailable: true }, () => {});
     },
   },
   'query': {
