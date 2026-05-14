@@ -2094,7 +2094,8 @@ pref("browser.aboutwelcome.screens", "");
 
 
 
-#if defined(XP_MACOSX)
+
+#if defined(XP_MACOSX) || defined(XP_WIN)
   pref("browser.aboutwelcome.experimentsGate.enabled", true);
 #endif
 
