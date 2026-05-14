@@ -74,11 +74,11 @@ class SSLTokensCache : public nsIMemoryReporter,
   static nsresult RemoveAll(const nsACString& aKey);
   static void Clear();
   static void RemoveByHostAndOAPattern(
-      const nsACString& aHost,
-      const mozilla::OriginAttributesPattern& aPattern);
+      const nsACString& aHost, const mozilla::OriginAttributesPattern& aPattern)
+      MOZ_EXCLUDES(sLock);
   static void RemoveBySiteAndOAPattern(
-      const nsACString& aSite,
-      const mozilla::OriginAttributesPattern& aPattern);
+      const nsACString& aSite, const mozilla::OriginAttributesPattern& aPattern)
+      MOZ_EXCLUDES(sLock);
 
   
   static nsTArray<uint8_t> SerializeForIPC();
@@ -103,19 +103,12 @@ class SSLTokensCache : public nsIMemoryReporter,
   nsresult RemoveLocked(const nsACString& aKey, uint64_t aId)
       MOZ_REQUIRES(sLock);
   nsresult RemoveAllLocked(const nsACString& aKey) MOZ_REQUIRES(sLock);
-  
-  
   nsresult GetLocked(const nsACString& aKey, nsTArray<uint8_t>& aToken,
-                     SessionCacheInfo& aResult, uint64_t* aTokenId,
-                     nsTArray<uint64_t>& aRemovedIds) MOZ_REQUIRES(sLock);
+                     SessionCacheInfo& aResult, uint64_t* aTokenId)
+      MOZ_REQUIRES(sLock);
 
-  
-  
-  
-  void EvictIfNecessary(nsTArray<uint64_t>& aEvictedIds) MOZ_REQUIRES(sLock);
+  void EvictIfNecessary() MOZ_REQUIRES(sLock);
   void LogStats() MOZ_REQUIRES(sLock);
-  
-  
   void ClearCacheLocked() MOZ_REQUIRES(sLock);
   
   
@@ -138,7 +131,7 @@ class SSLTokensCache : public nsIMemoryReporter,
   TimeStamp mLoadStartTime MOZ_GUARDED_BY(sLock);
   
   uint32_t mLoadGeneration MOZ_GUARDED_BY(sLock){0};
-  void DoWrite(bool aSynchronous);
+  void DoWrite(bool aSynchronous) MOZ_EXCLUDES(sLock);
   void RemoveShutdownBlocker();
   nsCOMPtr<nsIAsyncShutdownClient> mShutdownBarrier MOZ_GUARDED_BY(sLock);
   static void OnLoadCompleteNotify(uint32_t aCount);
@@ -160,22 +153,18 @@ class SSLTokensCache : public nsIMemoryReporter,
   static OriginAttributes OAFromPeerId(const nsACString& aPeerId);
   static void RemoveByMatchAndOAPattern(
       const nsACString& aValue, const nsACString& aSeparatedValue,
-      const mozilla::OriginAttributesPattern& aPattern);
+      const mozilla::OriginAttributesPattern& aPattern) MOZ_EXCLUDES(sLock);
 
   
-  template <typename Pred>
-  nsTArray<uint64_t> RemoveMatchingLocked(Pred&& aPredicate)
+  
+  
+  
+  nsTArray<SslTokensPersistedRecord> CollectSnapshotLocked() const
       MOZ_REQUIRES(sLock);
-  
-  nsTArray<uint64_t> CollectValidIdsLocked() const MOZ_REQUIRES(sLock);
-  
-  
-  static void SyncRustShadow(nsTArray<uint64_t>&& aRemainingIds)
-      MOZ_EXCLUDES(sLock);
-  
+  static nsTArray<uint8_t> SerializeSnapshotLocked() MOZ_REQUIRES(sLock);
   
   template <typename Pred>
-  static void RemoveMatchingAndSync(Pred&& aPredicate) MOZ_EXCLUDES(sLock);
+  void RemoveMatchingLocked(Pred&& aPredicate) MOZ_REQUIRES(sLock);
   
   static void PutFromPersistedCallback(void*,
                                        const SslTokensPersistedRecord* aRec);
@@ -218,12 +207,7 @@ class SSLTokensCache : public nsIMemoryReporter,
   };
 
   void OnRecordDestroyed(TokenCacheRecord* aRec) MOZ_REQUIRES(sLock);
-  
-  
-  
-  
-  uint64_t InsertRecordLocked(UniquePtr<TokenCacheRecord> aRec,
-                              nsTArray<uint64_t>& aEvictedIds)
+  uint64_t InsertRecordLocked(UniquePtr<TokenCacheRecord> aRec)
       MOZ_REQUIRES(sLock);
 
   nsClassHashtable<nsCStringHashKey, TokenCacheEntry> mTokenCacheRecords
