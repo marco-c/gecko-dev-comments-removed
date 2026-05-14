@@ -5,8 +5,8 @@
 #include "jit/loong64/Architecture-loong64.h"
 
 #include "jit/FlushICache.h"  
-#include "jit/loong64/Simulator-loong64.h"
 #include "jit/RegisterSets.h"
+#include "jit/Simulator.h"
 
 namespace js {
 namespace jit {

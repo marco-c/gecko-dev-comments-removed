@@ -2,16 +2,12 @@
 
 
 
-
-
 #include "jit/riscv64/Architecture-riscv64.h"
 
 #include "jit/FlushICache.h"  
 #include "jit/RegisterSets.h"
 #include "jit/riscv64/Assembler-riscv64.h"
-#if defined(JS_SIMULATOR)
-#  include "jit/riscv64/Simulator-riscv64.h"
-#endif
+#include "jit/Simulator.h"
 
 namespace js {
 namespace jit {
