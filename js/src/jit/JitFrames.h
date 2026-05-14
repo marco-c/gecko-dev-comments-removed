@@ -229,6 +229,8 @@ struct VMFunctionData;
 
 
 
+
+
 class FrameDescriptor {
  public:
   static const uint32_t TypeBits = 4;
