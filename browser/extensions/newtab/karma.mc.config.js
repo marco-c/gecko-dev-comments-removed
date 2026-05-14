@@ -340,7 +340,7 @@ module.exports = function (config) {
               branches: 0,
             },
             
-            "content-src/components/Widgets/WidgetsRegistry.mjs": {
+            "common/WidgetsRegistry.mjs": {
               statements: 0,
               lines: 0,
               functions: 0,
