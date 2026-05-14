@@ -246,7 +246,19 @@ class LoadedScript final : public nsISupports {
   void ConvertToCachedStencil(JS::Stencil* aStencil,
                               mozilla::dom::ReferrerPolicy aReferrerPolicy,
                               nsIURI* aBaseURL) {
-    MOZ_ASSERT(IsTextSource() || IsSerializedStencil());
+    if (IsTextSource()) {
+      
+      
+      ClearScriptText();
+    } else {
+      
+      
+      
+      
+      MOZ_ASSERT(IsSerializedStencil());
+      MOZ_ASSERT(!JS::StencilIsBorrowed(aStencil));
+      DropSRIOrSRIAndSerializedStencil();
+    }
     SetUnknownDataType();
     mDataType = DataType::eCachedStencil;
     mCachedStencil = aStencil;
