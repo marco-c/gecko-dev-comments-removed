@@ -22,15 +22,16 @@
 
 #include <stdint.h>  
 
-#include "gc/Barrier.h"        
-#include "gc/ZoneAllocator.h"  
-#include "js/AllocPolicy.h"    
-#include "js/Class.h"          
-#include "js/GCHashTable.h"    
-#include "js/GCVector.h"       
-#include "js/PropertySpec.h"   
-#include "js/RootingAPI.h"     
-#include "js/SweepingAPI.h"    
+#include "gc/Barrier.h"         
+#include "gc/ZoneAllocator.h"   
+#include "js/AllocPolicy.h"     
+#include "js/Class.h"           
+#include "js/CompileOptions.h"  
+#include "js/GCHashTable.h"     
+#include "js/GCVector.h"        
+#include "js/PropertySpec.h"    
+#include "js/RootingAPI.h"      
+#include "js/SweepingAPI.h"     
 #include "js/TypeDecls.h"  
 #include "js/Vector.h"  
 #include "js/WasmFeatures.h"
@@ -98,6 +99,13 @@ struct ImportValues;
                                      MutableHandleObject module);
 
 bool IsSharedWasmMemoryObject(JSObject* obj);
+
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+[[nodiscard]] bool CompileForESM(JSContext* cx,
+                                 const JS::ReadOnlyCompileOptions& options,
+                                 const BytecodeSource& source,
+                                 MutableHandleObject moduleObj);
+#endif
 
 }  
 
