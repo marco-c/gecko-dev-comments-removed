@@ -401,16 +401,8 @@ void WasmArrayObject::fillVal(const Val& val, uint32_t itemIndex,
 }
 
 static const JSClassOps WasmArrayObjectClassOps = {
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    WasmGcObject::obj_newEnumerate,
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    WasmArrayObject::obj_trace,
+    .newEnumerate = WasmGcObject::obj_newEnumerate,
+    .trace = WasmArrayObject::obj_trace,
 };
 static const ClassExtension WasmArrayObjectClassExt = {
     WasmArrayObject::obj_moved, 
@@ -579,16 +571,8 @@ void WasmStructObject::storeVal(const Val& val, uint32_t fieldIndex) {
 }
 
 static const JSClassOps WasmStructObjectOutlineClassOps = {
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    WasmGcObject::obj_newEnumerate,
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    WasmStructObject::obj_trace,
+    .newEnumerate = WasmGcObject::obj_newEnumerate,
+    .trace = WasmStructObject::obj_trace,
 };
 static const ClassExtension WasmStructObjectOutlineClassExt = {
     WasmStructObject::obj_moved, 
@@ -606,16 +590,8 @@ const JSClass WasmStructObject::classOutline_ = {
 
 
 static const JSClassOps WasmStructObjectInlineClassOps = {
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    WasmGcObject::obj_newEnumerate,
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    WasmStructObject::obj_trace,
+    .newEnumerate = WasmGcObject::obj_newEnumerate,
+    .trace = WasmStructObject::obj_trace,
 };
 static const ClassExtension WasmStructObjectInlineClassExt = {
     nullptr, 

@@ -1443,16 +1443,8 @@ void PropertyIteratorObject::finalize(JS::GCContext* gcx, JSObject* obj) {
 }
 
 const JSClassOps PropertyIteratorObject::classOps_ = {
-    nullptr,   
-    nullptr,   
-    nullptr,   
-    nullptr,   
-    nullptr,   
-    nullptr,   
-    finalize,  
-    nullptr,   
-    nullptr,   
-    trace,     
+    .finalize = finalize,
+    .trace = trace,
 };
 
 const JSClass PropertyIteratorObject::class_ = {

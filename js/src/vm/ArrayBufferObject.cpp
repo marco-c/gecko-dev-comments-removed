@@ -307,16 +307,7 @@ void js::UnmapBufferMemory(wasm::AddressType t, void* base, size_t mappedSize,
 
 
 static const JSClassOps ArrayBufferObjectClassOps = {
-    nullptr,                      
-    nullptr,                      
-    nullptr,                      
-    nullptr,                      
-    nullptr,                      
-    nullptr,                      
-    ArrayBufferObject::finalize,  
-    nullptr,                      
-    nullptr,                      
-    nullptr,                      
+    .finalize = ArrayBufferObject::finalize,
 };
 
 static const JSFunctionSpec arraybuffer_functions[] = {

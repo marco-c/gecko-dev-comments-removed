@@ -44,16 +44,7 @@ static bool Declare(JSContext* cx, unsigned argc, Value* vp);
 
 
 static const JSClassOps sLibraryClassOps = {
-    nullptr,            
-    nullptr,            
-    nullptr,            
-    nullptr,            
-    nullptr,            
-    nullptr,            
-    Library::Finalize,  
-    nullptr,            
-    nullptr,            
-    nullptr,            
+    .finalize = Library::Finalize,
 };
 
 static const JSClass sLibraryClass = {

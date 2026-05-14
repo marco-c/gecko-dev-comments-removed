@@ -47,16 +47,7 @@ using mozilla::Nothing;
 using mozilla::Some;
 
 const JSClassOps DebuggerEnvironment::classOps_ = {
-    nullptr,                               
-    nullptr,                               
-    nullptr,                               
-    nullptr,                               
-    nullptr,                               
-    nullptr,                               
-    nullptr,                               
-    nullptr,                               
-    nullptr,                               
-    CallTraceMethod<DebuggerEnvironment>,  
+    .trace = CallTraceMethod<DebuggerEnvironment>,
 };
 
 const JSClass DebuggerEnvironment::class_ = {

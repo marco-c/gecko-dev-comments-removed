@@ -699,16 +699,7 @@ void ScriptSourceObject::finalize(JS::GCContext* gcx, JSObject* obj) {
 }
 
 static const JSClassOps ScriptSourceObjectClassOps = {
-    nullptr,                       
-    nullptr,                       
-    nullptr,                       
-    nullptr,                       
-    nullptr,                       
-    nullptr,                       
-    ScriptSourceObject::finalize,  
-    nullptr,                       
-    nullptr,                       
-    nullptr,                       
+    .finalize = ScriptSourceObject::finalize,
 };
 
 const JSClass ScriptSourceObject::class_ = {

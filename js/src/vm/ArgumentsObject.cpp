@@ -1125,16 +1125,11 @@ size_t ArgumentsObject::sizeOfData() const {
 
 
 const JSClassOps MappedArgumentsObject::classOps_ = {
-    nullptr,                               
-    ArgumentsObject::obj_delProperty,      
-    MappedArgumentsObject::obj_enumerate,  
-    nullptr,                               
-    MappedArgumentsObject::obj_resolve,    
-    ArgumentsObject::obj_mayResolve,       
-    nullptr,                               
-    nullptr,                               
-    nullptr,                               
-    ArgumentsObject::trace,                
+    .delProperty = ArgumentsObject::obj_delProperty,
+    .enumerate = MappedArgumentsObject::obj_enumerate,
+    .resolve = MappedArgumentsObject::obj_resolve,
+    .mayResolve = ArgumentsObject::obj_mayResolve,
+    .trace = ArgumentsObject::trace,
 };
 
 const js::ClassExtension MappedArgumentsObject::classExt_ = {
@@ -1169,16 +1164,11 @@ const JSClass MappedArgumentsObject::class_ = {
 
 
 const JSClassOps UnmappedArgumentsObject::classOps_ = {
-    nullptr,                                 
-    ArgumentsObject::obj_delProperty,        
-    UnmappedArgumentsObject::obj_enumerate,  
-    nullptr,                                 
-    UnmappedArgumentsObject::obj_resolve,    
-    ArgumentsObject::obj_mayResolve,         
-    nullptr,                                 
-    nullptr,                                 
-    nullptr,                                 
-    ArgumentsObject::trace,                  
+    .delProperty = ArgumentsObject::obj_delProperty,
+    .enumerate = UnmappedArgumentsObject::obj_enumerate,
+    .resolve = UnmappedArgumentsObject::obj_resolve,
+    .mayResolve = ArgumentsObject::obj_mayResolve,
+    .trace = ArgumentsObject::trace,
 };
 
 const js::ClassExtension UnmappedArgumentsObject::classExt_ = {

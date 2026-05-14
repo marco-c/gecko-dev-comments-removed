@@ -23,16 +23,7 @@
 using namespace js;
 
  const JSClassOps StencilObject::classOps_ = {
-    nullptr,                  
-    nullptr,                  
-    nullptr,                  
-    nullptr,                  
-    nullptr,                  
-    nullptr,                  
-    StencilObject::finalize,  
-    nullptr,                  
-    nullptr,                  
-    nullptr,                  
+    .finalize = StencilObject::finalize,
 };
 
  const JSClass StencilObject::class_ = {
@@ -72,16 +63,7 @@ JS::Stencil* StencilObject::stencil() const {
 }
 
  const JSClassOps StencilXDRBufferObject::classOps_ = {
-    nullptr,                           
-    nullptr,                           
-    nullptr,                           
-    nullptr,                           
-    nullptr,                           
-    nullptr,                           
-    StencilXDRBufferObject::finalize,  
-    nullptr,                           
-    nullptr,                           
-    nullptr,                           
+    .finalize = StencilXDRBufferObject::finalize,
 };
 
  const JSClass StencilXDRBufferObject::class_ = {

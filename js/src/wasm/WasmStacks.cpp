@@ -754,16 +754,8 @@ const JSClass ContObject::class_ = {
 };
 
 const JSClassOps ContObject::classOps_ = {
-    nullptr,   
-    nullptr,   
-    nullptr,   
-    nullptr,   
-    nullptr,   
-    nullptr,   
-    finalize,  
-    nullptr,   
-    nullptr,   
-    trace,     
+    .finalize = finalize,
+    .trace = trace,
 };
 
 const ClassExtension ContObject::classExt_ = {};

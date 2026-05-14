@@ -47,16 +47,8 @@ const JSClass DebugScriptObject::class_ = {
 };
 
 const JSClassOps DebugScriptObject::classOps_ = {
-    nullptr,                      
-    nullptr,                      
-    nullptr,                      
-    nullptr,                      
-    nullptr,                      
-    nullptr,                      
-    DebugScriptObject::finalize,  
-    nullptr,                      
-    nullptr,                      
-    DebugScriptObject::trace,     
+    .finalize = DebugScriptObject::finalize,
+    .trace = DebugScriptObject::trace,
 };
 
 

@@ -6195,42 +6195,16 @@ bool TypedArrayObject::getElements(JSContext* cx,
 
 
 static const JSClassOps TypedArrayClassOps = {
-    nullptr,                                
-    nullptr,                                
-    nullptr,                                
-    nullptr,                                
-    nullptr,                                
-    nullptr,                                
-    FixedLengthTypedArrayObject::finalize,  
-    nullptr,                                
-    nullptr,                                
-    ArrayBufferViewObject::trace,           
+    .finalize = FixedLengthTypedArrayObject::finalize,
+    .trace = ArrayBufferViewObject::trace,
 };
 
 static const JSClassOps ResizableTypedArrayClassOps = {
-    nullptr,                       
-    nullptr,                       
-    nullptr,                       
-    nullptr,                       
-    nullptr,                       
-    nullptr,                       
-    nullptr,                       
-    nullptr,                       
-    nullptr,                       
-    ArrayBufferViewObject::trace,  
+    .trace = ArrayBufferViewObject::trace,
 };
 
 static const JSClassOps ImmutableTypedArrayClassOps = {
-    nullptr,                       
-    nullptr,                       
-    nullptr,                       
-    nullptr,                       
-    nullptr,                       
-    nullptr,                       
-    nullptr,                       
-    nullptr,                       
-    nullptr,                       
-    ArrayBufferViewObject::trace,  
+    .trace = ArrayBufferViewObject::trace,
 };
 
 static const ClassExtension TypedArrayClassExtension = {

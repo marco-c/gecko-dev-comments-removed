@@ -4188,16 +4188,7 @@ bool DebuggerWeakMap<UnbarrieredKey, Wrapper,
 }
 
 const JSClassOps DebuggerInstanceObject::classOps_ = {
-    nullptr,                
-    nullptr,                
-    nullptr,                
-    nullptr,                
-    nullptr,                
-    nullptr,                
-    nullptr,                
-    nullptr,                
-    nullptr,                
-    Debugger::traceObject,  
+    .trace = Debugger::traceObject,
 };
 
 const JSClass DebuggerInstanceObject::class_ = {

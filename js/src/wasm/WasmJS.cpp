@@ -1295,16 +1295,7 @@ static JSObject* TagTypeToObject(JSContext* cx,
 
 
 const JSClassOps WasmModuleObject::classOps_ = {
-    nullptr,                     
-    nullptr,                     
-    nullptr,                     
-    nullptr,                     
-    nullptr,                     
-    nullptr,                     
-    WasmModuleObject::finalize,  
-    nullptr,                     
-    nullptr,                     
-    nullptr,                     
+    .finalize = WasmModuleObject::finalize,
 };
 
 const JSClass WasmModuleObject::class_ = {
@@ -2016,16 +2007,8 @@ const Module& WasmModuleObject::module() const {
 
 
 const JSClassOps WasmInstanceObject::classOps_ = {
-    nullptr,                       
-    nullptr,                       
-    nullptr,                       
-    nullptr,                       
-    nullptr,                       
-    nullptr,                       
-    WasmInstanceObject::finalize,  
-    nullptr,                       
-    nullptr,                       
-    WasmInstanceObject::trace,     
+    .finalize = WasmInstanceObject::finalize,
+    .trace = WasmInstanceObject::trace,
 };
 
 const JSClass WasmInstanceObject::class_ = {
@@ -2385,16 +2368,7 @@ WasmFunctionScope* WasmInstanceObject::getFunctionScope(
 
 
 const JSClassOps WasmMemoryObject::classOps_ = {
-    nullptr,                     
-    nullptr,                     
-    nullptr,                     
-    nullptr,                     
-    nullptr,                     
-    nullptr,                     
-    WasmMemoryObject::finalize,  
-    nullptr,                     
-    nullptr,                     
-    nullptr,                     
+    .finalize = WasmMemoryObject::finalize,
 };
 
 const JSClass WasmMemoryObject::class_ = {
@@ -3064,16 +3038,8 @@ bool js::wasm::IsSharedWasmMemoryObject(JSObject* obj) {
 
 
 const JSClassOps WasmTableObject::classOps_ = {
-    nullptr,                    
-    nullptr,                    
-    nullptr,                    
-    nullptr,                    
-    nullptr,                    
-    nullptr,                    
-    WasmTableObject::finalize,  
-    nullptr,                    
-    nullptr,                    
-    WasmTableObject::trace,     
+    .finalize = WasmTableObject::finalize,
+    .trace = WasmTableObject::trace,
 };
 
 const JSClass WasmTableObject::class_ = {
@@ -3495,16 +3461,8 @@ bool WasmTableObject::fillRange(JSContext* cx, uint32_t index, uint32_t length,
 
 
 const JSClassOps WasmGlobalObject::classOps_ = {
-    nullptr,                     
-    nullptr,                     
-    nullptr,                     
-    nullptr,                     
-    nullptr,                     
-    nullptr,                     
-    WasmGlobalObject::finalize,  
-    nullptr,                     
-    nullptr,                     
-    WasmGlobalObject::trace,     
+    .finalize = WasmGlobalObject::finalize,
+    .trace = WasmGlobalObject::trace,
 };
 
 const JSClass WasmGlobalObject::class_ = {
@@ -3787,16 +3745,7 @@ bool WasmGlobalObject::type(JSContext* cx, unsigned argc, Value* vp) {
 
 
 const JSClassOps WasmTagObject::classOps_ = {
-    nullptr,                  
-    nullptr,                  
-    nullptr,                  
-    nullptr,                  
-    nullptr,                  
-    nullptr,                  
-    WasmTagObject::finalize,  
-    nullptr,                  
-    nullptr,                  
-    nullptr,                  
+    .finalize = WasmTagObject::finalize,
 };
 
 const JSClass WasmTagObject::class_ = {
@@ -3962,16 +3911,8 @@ const wasm::ValTypeVector& WasmTagObject::valueTypes() const {
 
 
 const JSClassOps WasmExceptionObject::classOps_ = {
-    nullptr,                        
-    nullptr,                        
-    nullptr,                        
-    nullptr,                        
-    nullptr,                        
-    nullptr,                        
-    WasmExceptionObject::finalize,  
-    nullptr,                        
-    nullptr,                        
-    WasmExceptionObject::trace,     
+    .finalize = WasmExceptionObject::finalize,
+    .trace = WasmExceptionObject::trace,
 };
 
 const JSClass WasmExceptionObject::class_ = {
@@ -5482,16 +5423,7 @@ class ResolveResponseClosure : public NativeObject {
 };
 
 const JSClassOps ResolveResponseClosure::classOps_ = {
-    nullptr,                           
-    nullptr,                           
-    nullptr,                           
-    nullptr,                           
-    nullptr,                           
-    nullptr,                           
-    ResolveResponseClosure::finalize,  
-    nullptr,                           
-    nullptr,                           
-    nullptr,                           
+    .finalize = ResolveResponseClosure::finalize,
 };
 
 const JSClass ResolveResponseClosure::class_ = {

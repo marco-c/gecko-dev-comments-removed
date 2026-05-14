@@ -1882,16 +1882,10 @@ JS_PUBLIC_API void JS_GlobalObjectTraceHook(JSTracer* trc, JSObject* global) {
 }
 
 const JSClassOps JS::DefaultGlobalClassOps = {
-    nullptr,                         
-    nullptr,                         
-    nullptr,                         
-    JS_NewEnumerateStandardClasses,  
-    JS_ResolveStandardClass,         
-    JS_MayResolveStandardClass,      
-    nullptr,                         
-    nullptr,                         
-    nullptr,                         
-    JS_GlobalObjectTraceHook,        
+    .newEnumerate = JS_NewEnumerateStandardClasses,
+    .resolve = JS_ResolveStandardClass,
+    .mayResolve = JS_MayResolveStandardClass,
+    .trace = JS_GlobalObjectTraceHook,
 };
 
 JS_PUBLIC_API void JS_FireOnNewGlobalObject(JSContext* cx,

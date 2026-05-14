@@ -22,16 +22,7 @@ static void ObjectWithUntypedStashedPointerFinalize(JS::GCContext*,
 }
 
 static const JSClassOps classOps = {
-    nullptr,  
-    nullptr,  
-    nullptr,  
-    nullptr,  
-    nullptr,  
-    nullptr,  
-    ObjectWithUntypedStashedPointerFinalize,
-    nullptr,  
-    nullptr,  
-    nullptr,  
+    .finalize = ObjectWithUntypedStashedPointerFinalize,
 };
 
 static const JSClass DataOnlyClass = {

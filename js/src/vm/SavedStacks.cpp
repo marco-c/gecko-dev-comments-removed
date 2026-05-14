@@ -372,16 +372,7 @@ bool SavedFrame::finishSavedFrameInit(JSContext* cx, HandleObject ctor,
 }
 
 static const JSClassOps SavedFrameClassOps = {
-    nullptr,               
-    nullptr,               
-    nullptr,               
-    nullptr,               
-    nullptr,               
-    nullptr,               
-    SavedFrame::finalize,  
-    nullptr,               
-    nullptr,               
-    nullptr,               
+    .finalize = SavedFrame::finalize,
 };
 
 const ClassSpec SavedFrame::classSpec_ = {

@@ -502,16 +502,8 @@ bool BoundFunctionObject::initTemplateSlotsForSpecializedBind(
 }
 
 static const JSClassOps classOps = {
-    nullptr,                         
-    nullptr,                         
-    nullptr,                         
-    nullptr,                         
-    nullptr,                         
-    nullptr,                         
-    nullptr,                         
-    BoundFunctionObject::call,       
-    BoundFunctionObject::construct,  
-    nullptr,                         
+    .call = BoundFunctionObject::call,
+    .construct = BoundFunctionObject::construct,
 };
 
 static const ObjectOps objOps = {

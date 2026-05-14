@@ -456,16 +456,8 @@ static const JSClass sCABIClass = {
 
 
 static const JSClassOps sCTypeProtoClassOps = {
-    nullptr,            
-    nullptr,            
-    nullptr,            
-    nullptr,            
-    nullptr,            
-    nullptr,            
-    nullptr,            
-    ConstructAbstract,  
-    ConstructAbstract,  
-    nullptr,            
+    .call = ConstructAbstract,
+    .construct = ConstructAbstract,
 };
 static const JSClass sCTypeProtoClass = {
     "CType",
@@ -481,16 +473,10 @@ static const JSClass sCDataProtoClass = {
 };
 
 static const JSClassOps sCTypeClassOps = {
-    nullptr,               
-    nullptr,               
-    nullptr,               
-    nullptr,               
-    nullptr,               
-    nullptr,               
-    CType::Finalize,       
-    CType::ConstructData,  
-    CType::ConstructData,  
-    CType::Trace,          
+    .finalize = CType::Finalize,
+    .call = CType::ConstructData,
+    .construct = CType::ConstructData,
+    .trace = CType::Trace,
 };
 static const JSClass sCTypeClass = {
     "CType",
@@ -499,16 +485,9 @@ static const JSClass sCTypeClass = {
 };
 
 static const JSClassOps sCDataClassOps = {
-    nullptr,             
-    nullptr,             
-    nullptr,             
-    nullptr,             
-    nullptr,             
-    nullptr,             
-    CData::Finalize,     
-    FunctionType::Call,  
-    FunctionType::Call,  
-    nullptr,             
+    .finalize = CData::Finalize,
+    .call = FunctionType::Call,
+    .construct = FunctionType::Call,
 };
 static const JSClass sCDataClass = {
     "CData",
@@ -517,16 +496,8 @@ static const JSClass sCDataClass = {
 };
 
 static const JSClassOps sCClosureClassOps = {
-    nullptr,             
-    nullptr,             
-    nullptr,             
-    nullptr,             
-    nullptr,             
-    nullptr,             
-    CClosure::Finalize,  
-    nullptr,             
-    nullptr,             
-    CClosure::Trace,     
+    .finalize = CClosure::Finalize,
+    .trace = CClosure::Trace,
 };
 static const JSClass sCClosureClass = {
     "CClosure",
@@ -549,16 +520,7 @@ static const JSClass sCDataFinalizerProtoClass = {
 
 
 static const JSClassOps sCDataFinalizerClassOps = {
-    nullptr,                   
-    nullptr,                   
-    nullptr,                   
-    nullptr,                   
-    nullptr,                   
-    nullptr,                   
-    CDataFinalizer::Finalize,  
-    nullptr,                   
-    nullptr,                   
-    nullptr,                   
+    .finalize = CDataFinalizer::Finalize,
 };
 static const JSClass sCDataFinalizerClass = {
     "CDataFinalizer",
@@ -753,16 +715,7 @@ static const JSClass sUInt64ProtoClass = {
 };
 
 static const JSClassOps sInt64ClassOps = {
-    nullptr,              
-    nullptr,              
-    nullptr,              
-    nullptr,              
-    nullptr,              
-    nullptr,              
-    Int64Base::Finalize,  
-    nullptr,              
-    nullptr,              
-    nullptr,              
+    .finalize = Int64Base::Finalize,
 };
 
 static const JSClass sInt64Class = {

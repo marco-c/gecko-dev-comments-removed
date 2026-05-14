@@ -365,16 +365,7 @@ const ObjectOps ModuleEnvironmentObject::objectOps_ = {
 };
 
 const JSClassOps ModuleEnvironmentObject::classOps_ = {
-    nullptr,                                
-    nullptr,                                
-    nullptr,                                
-    ModuleEnvironmentObject::newEnumerate,  
-    nullptr,                                
-    nullptr,                                
-    nullptr,                                
-    nullptr,                                
-    nullptr,                                
-    nullptr,                                
+    .newEnumerate = ModuleEnvironmentObject::newEnumerate,
 };
 
 const JSClass ModuleEnvironmentObject::class_ = {

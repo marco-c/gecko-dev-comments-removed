@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "shell/OSObject.h"
 
 #include "mozilla/ScopeExit.h"
@@ -704,16 +702,7 @@ class FileObject : public NativeObject {
 };
 
 static const JSClassOps FileObjectClassOps = {
-    nullptr,               
-    nullptr,               
-    nullptr,               
-    nullptr,               
-    nullptr,               
-    nullptr,               
-    FileObject::finalize,  
-    nullptr,               
-    nullptr,               
-    nullptr,               
+    .finalize = FileObject::finalize,
 };
 
 const JSClass FileObject::class_ = {

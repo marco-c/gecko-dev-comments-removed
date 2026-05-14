@@ -1168,16 +1168,10 @@ static const JSFunctionSpec function_methods[] = {
 };
 
 static const JSClassOps JSFunctionClassOps = {
-    nullptr,         
-    nullptr,         
-    fun_enumerate,   
-    nullptr,         
-    fun_resolve,     
-    fun_mayResolve,  
-    nullptr,         
-    nullptr,         
-    nullptr,         
-    fun_trace,       
+    .enumerate = fun_enumerate,
+    .resolve = fun_resolve,
+    .mayResolve = fun_mayResolve,
+    .trace = fun_trace,
 };
 
 static const ClassSpec JSFunctionClassSpec = {

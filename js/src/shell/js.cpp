@@ -2399,16 +2399,7 @@ class UserBufferObject : public NativeObject {
 };
 
 const JSClassOps UserBufferObject::classOps_ = {
-    nullptr,                     
-    nullptr,                     
-    nullptr,                     
-    nullptr,                     
-    nullptr,                     
-    nullptr,                     
-    UserBufferObject::finalize,  
-    nullptr,                     
-    nullptr,                     
-    nullptr,                     
+    .finalize = UserBufferObject::finalize,
 };
 
 const JSClass UserBufferObject::class_ = {
@@ -4471,16 +4462,9 @@ static bool sandbox_resolve(JSContext* cx, HandleObject obj, HandleId id,
 }
 
 static const JSClassOps sandbox_classOps = {
-    nullptr,                   
-    nullptr,                   
-    nullptr,                   
-    sandbox_enumerate,         
-    sandbox_resolve,           
-    nullptr,                   
-    nullptr,                   
-    nullptr,                   
-    nullptr,                   
-    JS_GlobalObjectTraceHook,  
+    .newEnumerate = sandbox_enumerate,
+    .resolve = sandbox_resolve,
+    .trace = JS_GlobalObjectTraceHook,
 };
 
 static const JSClass sandbox_class = {
@@ -5841,16 +5825,7 @@ class XDRBufferObject : public NativeObject {
 };
 
  const JSClassOps XDRBufferObject::classOps_ = {
-    nullptr,                    
-    nullptr,                    
-    nullptr,                    
-    nullptr,                    
-    nullptr,                    
-    nullptr,                    
-    XDRBufferObject::finalize,  
-    nullptr,                    
-    nullptr,                    
-    nullptr,                    
+    .finalize = XDRBufferObject::finalize,
 };
 
  const JSClass XDRBufferObject::class_ = {
@@ -7710,16 +7685,7 @@ static bool CreateIsHTMLDDA(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
   static const JSClassOps classOps = {
-      nullptr,         
-      nullptr,         
-      nullptr,         
-      nullptr,         
-      nullptr,         
-      nullptr,         
-      nullptr,         
-      IsHTMLDDA_Call,  
-      nullptr,         
-      nullptr,         
+      .call = IsHTMLDDA_Call,
   };
 
   static const JSClass cls = {
@@ -8518,16 +8484,7 @@ class StreamCacheEntryObject : public NativeObject {
 };
 
 const JSClassOps StreamCacheEntryObject::classOps_ = {
-    nullptr,                           
-    nullptr,                           
-    nullptr,                           
-    nullptr,                           
-    nullptr,                           
-    nullptr,                           
-    StreamCacheEntryObject::finalize,  
-    nullptr,                           
-    nullptr,                           
-    nullptr,                           
+    .finalize = StreamCacheEntryObject::finalize,
 };
 
 const JSClass StreamCacheEntryObject::class_ = {
@@ -9561,16 +9518,8 @@ static bool SideEffectfulResolveObject_resolve(JSContext* cx, HandleObject obj,
 }
 
 static const JSClassOps SideEffectfulResolveObject_classOps = {
-    nullptr,                               
-    nullptr,                               
-    nullptr,                               
-    SideEffectfulResolveObject_enumerate,  
-    SideEffectfulResolveObject_resolve,    
-    nullptr,                               
-    nullptr,                               
-    nullptr,                               
-    nullptr,                               
-    nullptr,
+    .newEnumerate = SideEffectfulResolveObject_enumerate,
+    .resolve = SideEffectfulResolveObject_resolve,
 };
 
 static const JSClass SideEffectfulResolveObject_class = {
@@ -11318,16 +11267,10 @@ static bool global_mayResolve(const JSAtomState& names, jsid id,
 }
 
 static const JSClassOps global_classOps = {
-    nullptr,                   
-    nullptr,                   
-    nullptr,                   
-    global_enumerate,          
-    global_resolve,            
-    global_mayResolve,         
-    nullptr,                   
-    nullptr,                   
-    nullptr,                   
-    JS_GlobalObjectTraceHook,  
+    .newEnumerate = global_enumerate,
+    .resolve = global_resolve,
+    .mayResolve = global_mayResolve,
+    .trace = JS_GlobalObjectTraceHook,
 };
 
 static constexpr uint32_t DOM_PROTOTYPE_SLOT = JSCLASS_GLOBAL_SLOT_COUNT;
@@ -11579,16 +11522,7 @@ static void FakeDOMObject_finalize(JS::GCContext* gcx, JSObject* obj) {
 }
 
 static const JSClassOps FakeDOMObjectClassOps = {
-    nullptr,  
-    nullptr,  
-    nullptr,  
-    nullptr,  
-    nullptr,  
-    nullptr,  
-    FakeDOMObject_finalize,
-    nullptr,  
-    nullptr,  
-    nullptr,
+    .finalize = FakeDOMObject_finalize,
 };
 
 static const JSClass dom_class = {

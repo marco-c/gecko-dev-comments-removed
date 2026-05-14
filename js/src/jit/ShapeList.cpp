@@ -18,16 +18,7 @@ const JSClass ShapeListObject::class_ = {
 };
 
 const JSClassOps ShapeListObject::classOps_ = {
-    nullptr,                 
-    nullptr,                 
-    nullptr,                 
-    nullptr,                 
-    nullptr,                 
-    nullptr,                 
-    nullptr,                 
-    nullptr,                 
-    nullptr,                 
-    ShapeListObject::trace,  
+    .trace = ShapeListObject::trace,
 };
 
  ShapeListObject* ShapeListObject::create(JSContext* cx) {
@@ -100,16 +91,7 @@ const JSClass ShapeListWithOffsetsObject::class_ = {
 };
 
 const JSClassOps ShapeListWithOffsetsObject::classOps_ = {
-    nullptr,                            
-    nullptr,                            
-    nullptr,                            
-    nullptr,                            
-    nullptr,                            
-    nullptr,                            
-    nullptr,                            
-    nullptr,                            
-    nullptr,                            
-    ShapeListWithOffsetsObject::trace,  
+    .trace = ShapeListWithOffsetsObject::trace,
 };
 
  ShapeListWithOffsetsObject* ShapeListWithOffsetsObject::create(
