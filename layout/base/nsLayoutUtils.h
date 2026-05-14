@@ -297,6 +297,12 @@ class nsLayoutUtils {
   static mozilla::dom::Element* GetBackdropPseudo(const nsIContent* aContent);
   static nsIFrame* GetBackdropFrame(const nsIContent* aContent);
 
+  
+
+
+  static void AppendGeneratedContentPseudos(
+      const mozilla::dom::Element* aElement, nsTArray<nsIContent*>& aPseudos);
+
 #ifdef ACCESSIBILITY
   
 

@@ -357,6 +357,12 @@ class RestyleManager {
   
 
 
+
+  void MaybeRecascadeForAttrFunction(Element* aElement, nsAtom* aAttribute);
+
+  
+
+
   void RestyleSiblingsForNthOf(dom::Element* aChild,
                                NodeSelectorFlags aParentFlags);
 
