@@ -374,20 +374,20 @@ void ContentMediaController::HandleMediaKey(
       PauseOrStopMedia();
       return;
     case MediaControlKey::Play:
-    case MediaControlKey::Stop:
     case MediaControlKey::Seekto:
     case MediaControlKey::Seekforward:
     case MediaControlKey::Seekbackward:
-      
-      
-      
       for (auto& receiver : Reversed(mControllableReceivers)) {
         receiver->HandleMediaKey(aKey, aParams);
       }
       return;
+    case MediaControlKey::Stop:
     case MediaControlKey::Setvolume:
     case MediaControlKey::Mute:
     case MediaControlKey::Unmute:
+      
+      
+      
       for (auto& receiver : Reversed(mControllableReceivers)) {
         receiver->HandleMediaKey(aKey, aParams);
       }

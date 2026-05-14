@@ -230,9 +230,14 @@ bool MediaController::ShouldPropagateActionToAllContexts(
 
 void MediaController::UpdateMediaControlActionToContentMediaIfNeeded(
     const MediaControlAction& aAction) {
+  if (mShutdown) {
+    return;
+  }
   
   
-  if (!mIsActive || mShutdown) {
+  
+  
+  if (!mIsActive && aAction.mKey != Some(MediaControlKey::Stop)) {
     return;
   }
 

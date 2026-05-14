@@ -40,13 +40,18 @@ class FakeContentReceiver final : public ContentMediaControlKeyReceiver {
 #define FAKE_BC_ID 0
 
 
-static const MediaControlKey kControlKeys[] = {
-    MediaControlKey::Play, MediaControlKey::Pause, MediaControlKey::Stop,
-    MediaControlKey::Seekforward, MediaControlKey::Seekbackward};
 
 
-static const MediaControlKey kNonControlKeys[] = {
-    MediaControlKey::Setvolume, MediaControlKey::Mute, MediaControlKey::Unmute};
+static const MediaControlKey kControlOnlyKeys[] = {
+    MediaControlKey::Play, MediaControlKey::Pause, MediaControlKey::Seekforward,
+    MediaControlKey::Seekbackward};
+
+
+
+
+static const MediaControlKey kSharedKeys[] = {
+    MediaControlKey::Stop, MediaControlKey::Setvolume, MediaControlKey::Mute,
+    MediaControlKey::Unmute};
 
 
 static const MediaControlKey kAllKeys[] = {
@@ -79,18 +84,18 @@ TEST(ContentMediaController, OnlyGetUncontrolKeys)
   RefPtr<FakeContentReceiver> receiver = new FakeContentReceiver();
   controller->AddReceiver(receiver, ControlType::eUncontrollable);
 
-  for (MediaControlKey key : kControlKeys) {
+  for (MediaControlKey key : kControlOnlyKeys) {
     receiver->ClearKeys();
     controller->HandleMediaKey(key);
     EXPECT_FALSE(receiver->HasReceivedKey(key))
-        << "Uncontrollable receiver must not get control key";
+        << "Uncontrollable receiver must not get control-only key";
   }
 
-  for (MediaControlKey key : kNonControlKeys) {
+  for (MediaControlKey key : kSharedKeys) {
     receiver->ClearKeys();
     controller->HandleMediaKey(key);
     EXPECT_TRUE(receiver->HasReceivedKey(key))
-        << "Uncontrollable receiver should get non-control key";
+        << "Uncontrollable receiver should get shared key";
   }
 
   controller->RemoveReceiver(receiver, ControlType::eUncontrollable);
