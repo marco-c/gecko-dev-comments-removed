@@ -412,15 +412,11 @@ namespace detail {
 
 
 
-
-
 struct ProxyValueArray {
-  JS::Value expandoSlot;
   JS::Value privateSlot;
   JS::Value reservedSlots[1];
 
   void init(size_t nreserved) {
-    expandoSlot = JS::ObjectOrNullValue(nullptr);
     privateSlot = JS::UndefinedValue();
     for (size_t i = 0; i < nreserved; i++) {
       reservedSlots[i] = JS::UndefinedValue();
@@ -442,13 +438,23 @@ struct ProxyValueArray {
 
 
 
+
 struct ProxyDataLayout {
-  uintptr_t padding_;
   const BaseProxyHandler* handler;
+
+  
+  
+  JSObject* expando;
 
   MOZ_ALWAYS_INLINE ProxyValueArray* values() const {
     return reinterpret_cast<ProxyValueArray*>(
         reinterpret_cast<uintptr_t>(this) + sizeof(ProxyDataLayout));
+  }
+
+  void init(const BaseProxyHandler* handlerArg, size_t nreserved) {
+    handler = handlerArg;
+    expando = nullptr;
+    values()->init(nreserved);
   }
 };
 
@@ -496,8 +502,8 @@ inline const JS::Value& GetProxyPrivate(const JSObject* obj) {
   return detail::GetProxyDataLayout(obj)->values()->privateSlot;
 }
 
-inline const JS::Value& GetProxyExpando(const JSObject* obj) {
-  return detail::GetProxyDataLayout(obj)->values()->expandoSlot;
+inline JSObject* GetProxyExpando(const JSObject* obj) {
+  return detail::GetProxyDataLayout(obj)->expando;
 }
 
 inline JSObject* GetProxyTargetObject(const JSObject* obj) {

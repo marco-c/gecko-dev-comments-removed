@@ -37,7 +37,7 @@ static bool ProxySetOnExpando(JSContext* cx, HandleObject proxy, HandleId id,
   MOZ_ASSERT(id.isPrivateName());
 
   
-  RootedObject expando(cx, proxy->as<ProxyObject>().expando().toObjectOrNull());
+  RootedObject expando(cx, proxy->as<ProxyObject>().expando());
 
   
   
@@ -67,7 +67,7 @@ static bool ProxySetOnExpando(JSContext* cx, HandleObject proxy, HandleId id,
 static bool ProxyGetOwnPropertyDescriptorFromExpando(
     JSContext* cx, HandleObject proxy, HandleId id,
     MutableHandle<mozilla::Maybe<PropertyDescriptor>> desc) {
-  RootedObject expando(cx, proxy->as<ProxyObject>().expando().toObjectOrNull());
+  RootedObject expando(cx, proxy->as<ProxyObject>().expando());
 
   if (!expando) {
     return true;
@@ -80,7 +80,7 @@ static bool ProxyGetOnExpando(JSContext* cx, HandleObject proxy,
                               HandleValue receiver, HandleId id,
                               MutableHandleValue vp) {
   
-  RootedObject expando(cx, proxy->as<ProxyObject>().expando().toObjectOrNull());
+  RootedObject expando(cx, proxy->as<ProxyObject>().expando());
 
   
   
@@ -120,7 +120,7 @@ static bool ProxyGetOnExpando(JSContext* cx, HandleObject proxy,
 static bool ProxyHasOnExpando(JSContext* cx, HandleObject proxy, HandleId id,
                               bool* bp) {
   
-  RootedObject expando(cx, proxy->as<ProxyObject>().expando().toObjectOrNull());
+  RootedObject expando(cx, proxy->as<ProxyObject>().expando());
 
   
   if (!expando) {
@@ -137,7 +137,7 @@ static bool ProxyDefineOnExpando(JSContext* cx, HandleObject proxy, HandleId id,
   MOZ_ASSERT(id.isPrivateName());
 
   
-  RootedObject expando(cx, proxy->as<ProxyObject>().expando().toObjectOrNull());
+  RootedObject expando(cx, proxy->as<ProxyObject>().expando());
 
   if (!expando) {
     expando = NewPlainObjectWithProto(cx, nullptr);
@@ -885,7 +885,7 @@ static inline void CheckProxyIsInCCWMap(ProxyObject* proxy) {
 void ProxyObject::trace(JSTracer* trc, JSObject* obj) {
   ProxyObject* proxy = &obj->as<ProxyObject>();
 
-  TraceEdge(trc, proxy->slotOfExpando(), "expando");
+  TraceEdge(trc, proxy->expandoPtr(), "expando");
 
 #ifdef DEBUG
   JSContext* cx = TlsContext.get();
