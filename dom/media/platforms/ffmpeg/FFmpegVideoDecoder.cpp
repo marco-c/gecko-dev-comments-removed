@@ -1353,6 +1353,11 @@ void FFmpegVideoDecoder<LIBAV_VER>::InitHWCodecContext(ContextType aType) {
   mCodecContext->width = mInfo.mImage.width;
   mCodecContext->height = mInfo.mImage.height;
   mCodecContext->thread_count = 1;
+  
+  
+  
+  
+  mCodecContext->max_pixels = MAX_VIDEO_WIDTH * MAX_VIDEO_HEIGHT;
 
   switch (aType) {
     case ContextType::V4L2:

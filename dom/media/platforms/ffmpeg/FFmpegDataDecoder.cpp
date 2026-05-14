@@ -2,8 +2,6 @@
 
 
 
-
-
 #include <string.h>
 
 #include "libavcodec/avcodec.h"
@@ -215,6 +213,16 @@ MediaResult FFmpegDataDecoder<LIBAV_VER>::InitDecoder(AVCodec* aCodec,
   mCodecContext->opaque = this;
 
   InitCodecContext();
+  
+  
+  
+  
+  
+#if LIBAVCODEC_VERSION_MAJOR >= 58
+  if (mCodecContext->codec_type == AVMEDIA_TYPE_VIDEO) {
+    mCodecContext->max_pixels = MAX_VIDEO_WIDTH * MAX_VIDEO_HEIGHT;
+  }
+#endif
   MediaResult ret = AllocateExtraData();
   if (NS_FAILED(ret)) {
     FFMPEG_LOG("  couldn't allocate ffmpeg extra data for codec %s",
