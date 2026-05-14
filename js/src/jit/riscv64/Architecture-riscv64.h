@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef jit_riscv64_Architecture_riscv64_h
 #define jit_riscv64_Architecture_riscv64_h
 
@@ -511,11 +509,6 @@ inline bool hasMultiAlias() { return false; }
 
 static constexpr uint32_t ShadowStackSpace = 0;
 static const uint32_t JumpImmediateRange = INT32_MAX;
-
-#ifdef JS_NUNBOX32
-static const int32_t NUNBOX32_TYPE_OFFSET = 4;
-static const int32_t NUNBOX32_PAYLOAD_OFFSET = 0;
-#endif
 
 static const uint32_t SpillSlotSize =
     std::max(sizeof(Registers::RegisterContent),
