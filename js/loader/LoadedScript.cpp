@@ -267,27 +267,6 @@ bool LoadedScript::IsSRIMetadataReusableBy(
 
 
 
-ClassicScript::ClassicScript(nsIURI* aURI)
-    : LoadedScript(ScriptKind::eClassic, aURI) {}
-
-
-
-
-
-ImportMapScript::ImportMapScript(nsIURI* aURI)
-    : LoadedScript(ScriptKind::eImportMap, aURI) {}
-
-
-
-
-
-LoadedModuleScript::LoadedModuleScript(nsIURI* aURI)
-    : LoadedScript(ScriptKind::eModule, aURI) {}
-
-
-
-
-
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(ModuleScript)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END

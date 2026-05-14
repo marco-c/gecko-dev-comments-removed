@@ -220,28 +220,10 @@ void ScriptLoadRequest::NoCacheEntryFound(
     mozilla::dom::ReferrerPolicy aReferrerPolicy,
     ScriptFetchOptions* aFetchOptions, nsIURI* aURI) {
   MOZ_ASSERT(IsCheckingCache());
+  MOZ_ASSERT(mKind != ScriptKind::eEvent, "eEvent is only for ScriptFetchInfo");
 
   mFetchInfo = new ScriptFetchInfo(mKind, aReferrerPolicy, aFetchOptions, aURI);
-
-  
-  
-  
-  
-  
-  switch (mKind) {
-    case ScriptKind::eClassic:
-      mLoadedScript = new ClassicScript(aURI);
-      break;
-    case ScriptKind::eImportMap:
-      mLoadedScript = new ImportMapScript(aURI);
-      break;
-    case ScriptKind::eModule:
-      mLoadedScript = new LoadedModuleScript(aURI);
-      break;
-    case ScriptKind::eEvent:
-      MOZ_ASSERT_UNREACHABLE("eEvent is only for ScriptFetchInfo");
-      break;
-  }
+  mLoadedScript = new LoadedScript(mKind, aURI);
   mState = State::Fetching;
 }
 

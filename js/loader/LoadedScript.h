@@ -130,16 +130,11 @@ class ScriptFetchInfo : public nsISupports {
 
 
 
-class LoadedScript : public nsISupports {
- protected:
-  LoadedScript(ScriptKind aKind, nsIURI* aURI);
-
-  template <typename T, typename... Args>
-  friend RefPtr<T> mozilla::MakeRefPtr(Args&&... aArgs);
-
-  virtual ~LoadedScript() = default;
+class LoadedScript final : public nsISupports {
+  ~LoadedScript() = default;
 
  public:
+  LoadedScript(ScriptKind aKind, nsIURI* aURI);
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
  public:
@@ -157,8 +152,6 @@ class LoadedScript : public nsISupports {
   bool IsClassicScript() const { return mKind == ScriptKind::eClassic; }
   bool IsModuleScript() const { return mKind == ScriptKind::eModule; }
   bool IsImportMapScript() const { return mKind == ScriptKind::eImportMap; }
-
-  inline ClassicScript* AsClassicScript();
 
   nsIURI* GetURI() const { return mURI; }
 
@@ -696,32 +689,6 @@ class LoadedScriptDelegate {
   }
 };
 
-class ClassicScript final : public LoadedScript {
-  ~ClassicScript() = default;
-
- private:
-  
-  explicit ClassicScript(nsIURI* aURI);
-
-  friend class ScriptLoadRequest;
-};
-
-class ImportMapScript final : public LoadedScript {
-  ~ImportMapScript() = default;
-
- public:
-  explicit ImportMapScript(nsIURI* aURI);
-};
-
-class LoadedModuleScript final : public LoadedScript {
-  ~LoadedModuleScript() = default;
-
- private:
-  explicit LoadedModuleScript(nsIURI* aURI);
-
-  friend class ScriptLoadRequest;
-};
-
 
 
 class ModuleScript final : public nsISupports {
@@ -775,11 +742,6 @@ class ModuleScript final : public nsISupports {
   ResolvedModuleSet* GetPreloadedResolvedSet();
   void ReleasePreloadedResolvedSet() { mPreloadedResolvedSet = nullptr; }
 };
-
-ClassicScript* LoadedScript::AsClassicScript() {
-  MOZ_ASSERT(!IsModuleScript());
-  return static_cast<ClassicScript*>(this);
-}
 
 }  
 
