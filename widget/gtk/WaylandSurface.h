@@ -40,46 +40,30 @@ class WaylandSurface final {
   void SetLoggingWidget(void* aWidget) { mLoggingWidget = aWidget; }
 #endif
 
-  
-  void VSyncCallbackHandler(struct wl_callback* aCallback, uint32_t aTime,
-                            bool aEmulated, bool aRoutedFromChildSurface);
+  void FrameCallbackHandler(struct wl_callback* aCallback, uint32_t aTime,
+                            bool aRoutedFromChildSurface);
 
   
   
   
   
   
-  
-  
-  
-  
-  
-  
-  void SetVSyncCallbackHandlerLocked(
+  void SetFrameCallbackLocked(
       const WaylandSurfaceLock& aProofOfLock,
-      const std::function<void(wl_callback*, uint32_t, bool)>&
-          aVSyncCallbackHandler,
-      bool aEmulateVSyncCallback = false);
+      const std::function<void(wl_callback*, uint32_t)>& aFrameCallbackHandler,
+      bool aEmulateFrameCallback = false);
 
   
   
   
-  void ClearVSyncCallbackHandlerLocked(const WaylandSurfaceLock& aProofOfLock);
+  void ClearFrameCallbackHandlerLocked(const WaylandSurfaceLock& aProofOfLock);
 
   
-  void SetVSyncCallbackStateLocked(const WaylandSurfaceLock& aProofOfLock,
+  void SetFrameCallbackStateLocked(const WaylandSurfaceLock& aProofOfLock,
                                    bool aEnabled);
-  
-  
-  void SetVSyncCallbackStateHandlerLocked(
+  void SetFrameCallbackStateHandlerLocked(
       const WaylandSurfaceLock& aProofOfLock,
-      const std::function<void(bool)>& aVSyncCallbackStateHandler);
-
-  
-  
-  void SetVSyncEmulateCheckLocked(
-      const WaylandSurfaceLock& aProofOfLock,
-      const std::function<bool(void)>& aVSyncEmulateCheck, bool aForce = false);
+      const std::function<void(bool)>& aFrameCallbackStateHandler);
 
   wl_egl_window* GetEGLWindow(DesktopIntSize aSize);
   bool HasEGLWindow() const { return !!mEGLWindow; }
@@ -195,9 +179,6 @@ class WaylandSurface final {
   void SetOpaqueLocked(const WaylandSurfaceLock& aProofOfLock);
   void ClearOpaqueRegionLocked(const WaylandSurfaceLock& aProofOfLock);
   void OpaqueCallbackHandler();
-
-  void ClearOpaqueCallbackLocked(const WaylandSurfaceLock& aProofOfLock);
-  void SetOpaqueCallbackLocked(const WaylandSurfaceLock& aProofOfLock);
 
   bool DisableUserInputLocked(const WaylandSurfaceLock& aProofOfLock);
   void InvalidateRegionLocked(const WaylandSurfaceLock& aProofOfLock,
@@ -318,12 +299,10 @@ class WaylandSurface final {
   
   void ReleaseAllWaylandTransactionsLocked(WaylandSurfaceLock& aSurfaceLock);
 
-  void SetVSyncCallbackLocked(const WaylandSurfaceLock& aProofOfLock);
-  void ClearVSyncCallbackLocked(const WaylandSurfaceLock& aProofOfLock);
-  bool HasEmulatedVSyncCallbackLocked(
+  void RequestFrameCallbackLocked(const WaylandSurfaceLock& aProofOfLock);
+  void ClearFrameCallbackLocked(const WaylandSurfaceLock& aProofOfLock);
+  bool HasEmulatedFrameCallbackLocked(
       const WaylandSurfaceLock& aProofOfLock) const;
-  bool IsEmulatedVSyncEnabledLocked(const WaylandSurfaceLock& aProofOfLock);
-  void RequestEmulatedVSyncLocked(const WaylandSurfaceLock& aProofOfLock);
 
   void ClearScaleLocked(const WaylandSurfaceLock& aProofOfLock);
 
@@ -409,23 +388,20 @@ class WaylandSurface final {
   wl_callback* mVisibleFrameCallback = nullptr;
 
   
-  struct VSyncCallback {
-    std::function<void(wl_callback*, uint32_t, bool)> mCb = nullptr;
+  wl_callback* mFrameCallback = nullptr;
+
+  struct FrameCallback {
+    std::function<void(wl_callback*, uint32_t)> mCb = nullptr;
     bool mEmulated = false;
     bool IsSet() const { return !!mCb; }
   };
-  VSyncCallback mVSyncCallbackHandler;
 
-  wl_callback* mVSyncFrameCallback = nullptr;
-
-  bool mVSyncCallbackEnabled = true;
-  std::function<void(bool)> mVSyncCallbackStateHandler = nullptr;
-  std::function<bool(void)> mVSyncEmulateCheck = nullptr;
-
-  guint mEmulatedVSyncCallbackTimerID = 0;
-  constexpr static int sEmulatedVSyncCallbackTimeoutMs = (int)(1000.0 / 60.0);
+  bool mFrameCallbackEnabled = true;
+  std::function<void(bool)> mFrameCallbackStateHandler = nullptr;
 
   
+  FrameCallback mFrameCallbackHandler;
+
   wl_region* mPendingOpaqueRegion = nullptr;
   wl_callback* mOpaqueRegionFrameCallback = nullptr;
 
@@ -442,6 +418,8 @@ class WaylandSurface final {
                                                      struct wl_surface*);
   static void (*sGdkWaylandWindowRemoveCallbackSurface)(GdkWindow*,
                                                         struct wl_surface*);
+  guint mEmulatedFrameCallbackTimerID = 0;
+  constexpr static int sEmulatedFrameCallbackTimeoutMs = (int)(1000.0 / 60.0);
 
   
   
