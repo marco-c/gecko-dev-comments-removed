@@ -60,6 +60,16 @@ add_task(async function test_scrolling_and_overflowing_attribute() {
         chatContentWrapper.hasAttribute("overflowing"),
         "chat-content-wrapper should have the overflowing attribute"
       );
+
+      
+      
+      
+      
+      Assert.equal(
+        chatContentWrapper.getAttribute("tabindex"),
+        "-1",
+        "chat-content-wrapper must opt out of scrollable-region tab focus"
+      );
     });
 
     await BrowserTestUtils.closeWindow(win);
