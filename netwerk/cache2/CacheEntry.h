@@ -58,6 +58,9 @@ class CacheEntry final : public nsIRunnable,
              bool aPin);
 
   void AsyncOpen(nsICacheEntryOpenCallback* aCallback, uint32_t aFlags);
+#ifdef NS_FREE_PERMANENT_DATA
+  void ClearCallbacks();
+#endif
 
   CacheEntryHandle* NewHandle();
   
@@ -329,7 +332,7 @@ class CacheEntry final : public nsIRunnable,
   ::mozilla::ThreadSafeAutoRefCnt mHandlesCount MOZ_GUARDED_BY(mLock);
 
   nsTArray<Callback> mCallbacks MOZ_GUARDED_BY(mLock);
-  nsCOMPtr<nsICacheEntryDoomCallback> mDoomCallback;
+  nsCOMPtr<nsICacheEntryDoomCallback> mDoomCallback MOZ_GUARDED_BY(mLock);
 
   
   
@@ -428,9 +431,9 @@ class CacheEntry final : public nsIRunnable,
       return flags;
     }
     bool Set(uint32_t aFlags) {
-      if (mFlags & aFlags) return false;
+      bool needsDispatch = !mFlags;
       mFlags |= aFlags;
-      return true;
+      return needsDispatch;
     }
 
    private:
