@@ -275,7 +275,6 @@ var gSearchResultsPane = {
     let srHeader = document.getElementById("header-searchResults");
     let noResultsEl = document.getElementById("no-results-message");
     if (this.query) {
-      
       await gotoPref("paneSearchResults");
       srHeader.hidden = false;
 
@@ -302,6 +301,14 @@ var gSearchResultsPane = {
           child.classList.add("visually-hidden");
           child.hidden = false;
         }
+        
+        if (child.localName === "setting-pane") {
+          for (let group of child.querySelectorAll("setting-group")) {
+            if (group.hidden || group.hasAttribute("data-hidden-from-search")) {
+              group.classList.add("visually-hidden");
+            }
+          }
+        }
       }
 
       let ts = performance.now();
@@ -320,6 +327,49 @@ var gSearchResultsPane = {
           if (query !== this.query) {
             return;
           }
+        }
+
+        
+        
+        
+        
+        
+        if (child.localName === "setting-pane") {
+          let groupSelector =
+            "setting-group:not([data-hidden-from-search]):not([hidden]):not([data-hidden-by-setting-group])";
+          if (subQuery) {
+            groupSelector += ":not(.visually-hidden)";
+          }
+          let groups = child.querySelectorAll(groupSelector);
+          let anyGroupMatched = false;
+          for (let group of groups) {
+            let matched = await this.searchWithinNode(group, this.query);
+            if (matched) {
+              group.classList.remove("visually-hidden");
+              anyGroupMatched = true;
+            } else {
+              group.classList.add("visually-hidden");
+            }
+          }
+          let paneMatched = anyGroupMatched;
+          if (!paneMatched) {
+            paneMatched = await this.searchWithinNode(child, this.query);
+            if (paneMatched) {
+              
+              
+              for (let group of groups) {
+                group.classList.remove("visually-hidden");
+              }
+            }
+          }
+          if (paneMatched) {
+            child.classList.remove("visually-hidden");
+            child.onSearchPane = true;
+            resultsFound = true;
+          } else {
+            child.classList.add("visually-hidden");
+          }
+          continue;
         }
 
         if (
@@ -371,7 +421,11 @@ var gSearchResultsPane = {
       noResultsEl.hidden = true;
       document.getElementById("sorry-message-query").textContent = "";
       
-      await gotoPref("paneGeneral");
+      let redesignEnabled = Services.prefs.getBoolPref(
+        "browser.settings-redesign.enabled"
+      );
+      let defaultPane = redesignEnabled ? "paneSync" : "paneGeneral";
+      await gotoPref(defaultPane);
       srHeader.hidden = true;
 
       
@@ -497,7 +551,7 @@ var gSearchResultsPane = {
       
       if (
         keywordsResult &&
-        (nodeObject instanceof HTMLElement ||
+        (HTMLElement.isInstance(nodeObject) ||
           nodeObject.localName === "button" ||
           nodeObject.localName == "menulist")
       ) {

@@ -76,7 +76,10 @@ add_task(async function testRemoteLocalesNotFetchedUntilLanguagesPaneShown() {
   
   
   await paneInitialized;
-  let preferredLanguage = getSettingControl("browserLanguagePreferred", win);
+  let preferredLanguage = await settingControlRenders(
+    "browserLanguagePreferred",
+    win
+  );
   await BrowserTestUtils.waitForMutationCondition(
     preferredLanguage,
     { childList: true, subtree: true },
