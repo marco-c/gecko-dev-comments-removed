@@ -50,24 +50,36 @@ class PendingTransactionQueue {
       uint32_t maxCount = 0);
 
   
-  size_t PendingQueueLength() const;
+  inline size_t PendingQueueLength() const {
+    MOZ_ASSERT(mPendingQueueLength == ComputePendingQueueLength());
+    return mPendingQueueLength;
+  }
+
   size_t PendingQueueLengthForWindow(uint64_t windowId) const;
 
-  
-  
-  
-  bool PendingQueueIsEmpty() const;
+  inline bool PendingQueueIsEmpty() const {
+    MOZ_ASSERT(mPendingQueueLength == ComputePendingQueueLength());
+    return mPendingQueueLength == 0;
+  }
 
   
   void RemoveEmptyPendingQ();
 
+  
+  
+  void OnPendingTransactionRemovedFromTable();
+
   void PrintDiagnostics(nsCString& log);
 
-  size_t UrgentStartQueueLength();
+  inline size_t UrgentStartQueueLength() const {
+    return mUrgentStartQ.Length();
+  }
 
   
   
-  bool UrgentStartQueueIsEmpty() const;
+  inline bool UrgentStartQueueIsEmpty() const {
+    return mUrgentStartQ.IsEmpty();
+  }
 
   void PrintPendingQ();
 
@@ -78,6 +90,10 @@ class PendingTransactionQueue {
   ~PendingTransactionQueue() = default;
 
  private:
+#ifdef DEBUG
+  size_t ComputePendingQueueLength() const;
+#endif
+
   void InsertTransactionNormal(PendingTransactionInfo* info,
                                bool aInsertAsFirstForTheSamePriority = false);
 
@@ -92,6 +108,10 @@ class PendingTransactionQueue {
   
   nsClassHashtable<nsUint64HashKey, nsTArray<RefPtr<PendingTransactionInfo>>>
       mPendingTransactionTable;
+
+  
+  
+  size_t mPendingQueueLength{0};
 };
 
 }  

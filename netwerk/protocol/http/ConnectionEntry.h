@@ -221,6 +221,12 @@ class ConnectionEntry : public SupportsWeakPtr {
 
   bool RemoveTransFromPendingQ(nsHttpTransaction* aTrans);
 
+  
+  
+  void OnPendingTransactionRemovedFromTable() {
+    mPendingQ.OnPendingTransactionRemovedFromTable();
+  }
+
   void MaybeUpdateEchConfig(nsHttpConnectionInfo* aConnInfo);
 
   bool AllowToRetryDifferentIPFamilyForHttp3(nsresult aError);
