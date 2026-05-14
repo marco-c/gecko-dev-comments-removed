@@ -4,22 +4,78 @@
 
 #include "mozilla/gfx/PrintTargetCG.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/WidgetUtils.h"
+#include "mozilla/dom/Promise.h"
 
 #include "nsPrintDialogX.h"
 #include "nsIPrintSettings.h"
 #include "nsIPrintSettingsService.h"
 #include "nsPrintSettingsX.h"
 #include "nsCOMPtr.h"
+#include "nsIGlobalObject.h"
+#include "nsIWidget.h"
+#include "nsPIDOMWindow.h"
 #include "nsQueryObject.h"
 #include "nsServiceManagerUtils.h"
 #include "nsIStringBundle.h"
 #include "nsCRT.h"
+#include "nsThreadUtils.h"
+#include "xpcpublic.h"
 
 #import <Cocoa/Cocoa.h>
 #include "nsObjCExceptions.h"
 
 using namespace mozilla;
+using namespace mozilla::dom;
 using mozilla::gfx::PrintTarget;
+using mozilla::widget::WidgetUtils;
+
+
+
+
+
+
+@interface MozPrintPanelDidEndAdapter : NSObject {
+  void (^mHandler)(NSInteger);
+}
+- (instancetype)initWithHandler:(void (^)(NSInteger))aHandler;
+- (void)didEnd:(id)aPanel
+     returnCode:(NSInteger)aReturnCode
+    contextInfo:(void*)aContextInfo;
+@end
+
+@implementation MozPrintPanelDidEndAdapter
+- (instancetype)initWithHandler:(void (^)(NSInteger))aHandler {
+  if ((self = [super init])) {
+    mHandler = [aHandler copy];
+  }
+  return self;
+}
+- (void)dealloc {
+  [mHandler release];
+  [super dealloc];
+}
+- (void)didEnd:(id)aPanel
+     returnCode:(NSInteger)aReturnCode
+    contextInfo:(void*)aContextInfo {
+  if (mHandler) {
+    mHandler(aReturnCode);
+  }
+  [self release];
+}
+@end
+
+static NSWindow* GetParentWindow(mozIDOMWindowProxy* aParent) {
+  if (!aParent) {
+    return nil;
+  }
+  nsCOMPtr<nsIWidget> widget =
+      WidgetUtils::DOMWindowToWidget(nsPIDOMWindowOuter::From(aParent));
+  if (!widget) {
+    return nil;
+  }
+  return (NSWindow*)widget->GetNativeData(NS_NATIVE_WINDOW);
+}
 
 NS_IMPL_ISUPPORTS(nsPrintDialogServiceX, nsIPrintDialogService)
 
@@ -73,10 +129,27 @@ nsPrintDialogServiceX::Init() { return NS_OK; }
 NS_IMETHODIMP
 nsPrintDialogServiceX::ShowPrintDialog(mozIDOMWindowProxy* aParent,
                                        bool aHaveSelection,
-                                       nsIPrintSettings* aSettings) {
+                                       nsIPrintSettings* aSettings,
+                                       JSContext* aCx, Promise** aPromise) {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
-  MOZ_ASSERT(aSettings, "aSettings must not be null");
+  MOZ_ASSERT(NS_IsMainThread());
+  NS_ENSURE_ARG(aParent);
+  NS_ENSURE_ARG(aSettings);
+  NS_ENSURE_ARG(aCx);
+  NS_ENSURE_ARG(aPromise);
+
+  ErrorResult rvErr;
+  nsCOMPtr<nsIGlobalObject> global = xpc::CurrentNativeGlobal(aCx);
+  RefPtr<Promise> promise = Promise::Create(global, rvErr);
+  if (NS_WARN_IF(rvErr.Failed())) {
+    return rvErr.StealNSResult();
+  }
+
+  NSWindow* parentWindow = GetParentWindow(aParent);
+  if (!parentWindow) {
+    return NS_ERROR_FAILURE;
+  }
 
   RefPtr<nsPrintSettingsX> settingsX(do_QueryObject(aSettings));
   if (!settingsX) {
@@ -132,47 +205,58 @@ nsPrintDialogServiceX::ShowPrintDialog(mozIDOMWindowProxy* aParent,
   [panel addAccessoryController:viewController];
   [viewController release];
 
-  
-  if (!nsCocoaUtils::PrepareForNativeAppModalDialog()) {
-    return NS_ERROR_FAILURE;
-  }
-  int button = [panel runModal];
-  nsCocoaUtils::CleanUpAfterNativeAppModalDialog();
+  RefPtr<nsIPrintSettings> settings = aSettings;
+  RefPtr<nsPrintSettingsX> settingsXRef = settingsX;
+  RefPtr<Promise> promiseForBlock = promise;
 
-  
-  
-  
-  NSPrintInfo* result = [[NSPrintOperation currentOperation] printInfo];
-  if (!result) {
-    return NS_ERROR_FAILURE;
-  }
+  MozPrintPanelDidEndAdapter* adapter =
+      [[MozPrintPanelDidEndAdapter alloc] initWithHandler:^(NSInteger button) {
+        NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
+        
+        
+        
+        NSPrintInfo* result = [[NSPrintOperation currentOperation] printInfo];
+        [NSPrintOperation setCurrentOperation:nil];
+        [tmpView release];
 
-  [NSPrintOperation setCurrentOperation:nil];
-  [tmpView release];
+        if (button != NSModalResponseOK || !result) {
+          promiseForBlock->MaybeReject(NS_ERROR_ABORT);
+          return;
+        }
 
-  if (button != NSModalResponseOK) {
-    return NS_ERROR_ABORT;
-  }
+        
+        
+        
+        
+        NSMutableDictionary* dict = [result dictionary];
+        auto pagesAcross = [[dict objectForKey:@"NSPagesAcross"] intValue];
+        auto pagesDown = [[dict objectForKey:@"NSPagesDown"] intValue];
+        [dict setObject:[NSNumber numberWithUnsignedInt:1]
+                 forKey:@"NSPagesAcross"];
+        [dict setObject:[NSNumber numberWithUnsignedInt:1]
+                 forKey:@"NSPagesDown"];
+        settings->SetNumPagesPerSheet(pagesAcross * pagesDown);
 
-  
-  
-  
-  NSMutableDictionary* dict = [result dictionary];
-  auto pagesAcross = [[dict objectForKey:@"NSPagesAcross"] intValue];
-  auto pagesDown = [[dict objectForKey:@"NSPagesDown"] intValue];
-  [dict setObject:[NSNumber numberWithUnsignedInt:1] forKey:@"NSPagesAcross"];
-  [dict setObject:[NSNumber numberWithUnsignedInt:1] forKey:@"NSPagesDown"];
-  aSettings->SetNumPagesPerSheet(pagesAcross * pagesDown);
+        [viewController exportSettings];
 
-  
-  [viewController exportSettings];
+        
+        
+        
+        
+        
+        settingsXRef->SetFromPrintInfo(result,  true);
 
-  
-  
-  
-  
-  settingsX->SetFromPrintInfo(result,  true);
+        promiseForBlock->MaybeResolveWithUndefined();
+        NS_OBJC_END_TRY_IGNORE_BLOCK;
+      }];
 
+  [panel beginSheetWithPrintInfo:printInfo
+                  modalForWindow:parentWindow
+                        delegate:adapter
+                  didEndSelector:@selector(didEnd:returnCode:contextInfo:)
+                     contextInfo:nullptr];
+
+  promise.forget(aPromise);
   return NS_OK;
 
   NS_OBJC_END_TRY_BLOCK_RETURN(NS_ERROR_FAILURE);
@@ -180,12 +264,27 @@ nsPrintDialogServiceX::ShowPrintDialog(mozIDOMWindowProxy* aParent,
 
 NS_IMETHODIMP
 nsPrintDialogServiceX::ShowPageSetupDialog(mozIDOMWindowProxy* aParent,
-                                           nsIPrintSettings* aNSSettings) {
+                                           nsIPrintSettings* aNSSettings,
+                                           JSContext* aCx, Promise** aPromise) {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
-  MOZ_ASSERT(aParent, "aParent must not be null");
-  MOZ_ASSERT(aNSSettings, "aSettings must not be null");
-  NS_ENSURE_TRUE(aNSSettings, NS_ERROR_FAILURE);
+  MOZ_ASSERT(NS_IsMainThread());
+  NS_ENSURE_ARG(aParent);
+  NS_ENSURE_ARG(aNSSettings);
+  NS_ENSURE_ARG(aCx);
+  NS_ENSURE_ARG(aPromise);
+
+  ErrorResult rvErr;
+  nsCOMPtr<nsIGlobalObject> global = xpc::CurrentNativeGlobal(aCx);
+  RefPtr<Promise> promise = Promise::Create(global, rvErr);
+  if (NS_WARN_IF(rvErr.Failed())) {
+    return rvErr.StealNSResult();
+  }
+
+  NSWindow* parentWindow = GetParentWindow(aParent);
+  if (!parentWindow) {
+    return NS_ERROR_FAILURE;
+  }
 
   RefPtr<nsPrintSettingsX> settingsX(do_QueryObject(aNSSettings));
   if (!settingsX) {
@@ -200,27 +299,45 @@ nsPrintDialogServiceX::ShowPageSetupDialog(mozIDOMWindowProxy* aParent,
   [printInfo autorelease];
 
   NSPageLayout* pageLayout = [NSPageLayout pageLayout];
-  nsCocoaUtils::PrepareForNativeAppModalDialog();
-  int button = [pageLayout runModalWithPrintInfo:printInfo];
-  nsCocoaUtils::CleanUpAfterNativeAppModalDialog();
 
-  if (button == NSModalResponseOK) {
-    
-    
-    
-    settingsX->SetFromPrintInfo(printInfo,  false);
-    nsCOMPtr<nsIPrintSettingsService> printSettingsService =
-        do_GetService("@mozilla.org/gfx/printsettings-service;1");
-    if (printSettingsService &&
-        Preferences::GetBool("print.save_print_settings", false)) {
-      uint32_t flags = nsIPrintSettings::kInitSavePaperSize |
-                       nsIPrintSettings::kInitSaveOrientation |
-                       nsIPrintSettings::kInitSaveScaling;
-      printSettingsService->MaybeSavePrintSettingsToPrefs(aNSSettings, flags);
-    }
-    return NS_OK;
-  }
-  return NS_ERROR_ABORT;
+  nsCOMPtr<nsIPrintSettings> settings = aNSSettings;
+  RefPtr<nsPrintSettingsX> settingsXRef = settingsX;
+  RefPtr<Promise> promiseForBlock = promise;
+
+  MozPrintPanelDidEndAdapter* adapter =
+      [[MozPrintPanelDidEndAdapter alloc] initWithHandler:^(NSInteger button) {
+        NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
+        if (button != NSModalResponseOK) {
+          promiseForBlock->MaybeReject(NS_ERROR_ABORT);
+          return;
+        }
+        
+        
+        
+        
+        settingsXRef->SetFromPrintInfo(printInfo,
+                                        false);
+        nsCOMPtr<nsIPrintSettingsService> printSettingsService =
+            do_GetService("@mozilla.org/gfx/printsettings-service;1");
+        if (printSettingsService &&
+            Preferences::GetBool("print.save_print_settings", false)) {
+          uint32_t flags = nsIPrintSettings::kInitSavePaperSize |
+                           nsIPrintSettings::kInitSaveOrientation |
+                           nsIPrintSettings::kInitSaveScaling;
+          printSettingsService->MaybeSavePrintSettingsToPrefs(settings, flags);
+        }
+        promiseForBlock->MaybeResolveWithUndefined();
+        NS_OBJC_END_TRY_IGNORE_BLOCK;
+      }];
+
+  [pageLayout beginSheetWithPrintInfo:printInfo
+                       modalForWindow:parentWindow
+                             delegate:adapter
+                       didEndSelector:@selector(didEnd:returnCode:contextInfo:)
+                          contextInfo:nullptr];
+
+  promise.forget(aPromise);
+  return NS_OK;
 
   NS_OBJC_END_TRY_BLOCK_RETURN(NS_ERROR_FAILURE);
 }
@@ -460,8 +577,8 @@ static const char sHeaderFooterTags[][4] = {"", "&T", "&U", "&D", "&P", "&PT"};
   [self addLabel:"pageHeadersTitleMac" withFrame:NSMakeRect(0, 44, 151, 22)];
   [self addLabel:"pageFootersTitleMac" withFrame:NSMakeRect(0, 0, 151, 22)];
   [self addCenteredLabel:"left" withFrame:NSMakeRect(156, 22, 100, 22)];
-  [self addCenteredLabel:"center" withFrame:NSMakeRect(256, 22, 100, 22)];
-  [self addCenteredLabel:"right" withFrame:NSMakeRect(356, 22, 100, 22)];
+  [self addCenteredLabel:"center" withFrame:NSMakeRect(262, 22, 100, 22)];
+  [self addCenteredLabel:"right" withFrame:NSMakeRect(368, 22, 100, 22)];
 
   
   nsString sel;
@@ -474,13 +591,13 @@ static const char sHeaderFooterTags[][4] = {"", "&T", "&U", "&D", "&P", "&PT"};
 
   mSettings->GetHeaderStrCenter(sel);
   mHeaderCenterList =
-      [self headerFooterItemListWithFrame:NSMakeRect(256, 44, 100, 22)
+      [self headerFooterItemListWithFrame:NSMakeRect(262, 44, 100, 22)
                              selectedItem:sel];
   [self addSubview:mHeaderCenterList];
 
   mSettings->GetHeaderStrRight(sel);
   mHeaderRightList =
-      [self headerFooterItemListWithFrame:NSMakeRect(356, 44, 100, 22)
+      [self headerFooterItemListWithFrame:NSMakeRect(368, 44, 100, 22)
                              selectedItem:sel];
   [self addSubview:mHeaderRightList];
 
@@ -492,13 +609,13 @@ static const char sHeaderFooterTags[][4] = {"", "&T", "&U", "&D", "&P", "&PT"};
 
   mSettings->GetFooterStrCenter(sel);
   mFooterCenterList =
-      [self headerFooterItemListWithFrame:NSMakeRect(256, 0, 100, 22)
+      [self headerFooterItemListWithFrame:NSMakeRect(262, 0, 100, 22)
                              selectedItem:sel];
   [self addSubview:mFooterCenterList];
 
   mSettings->GetFooterStrRight(sel);
   mFooterRightList =
-      [self headerFooterItemListWithFrame:NSMakeRect(356, 0, 100, 22)
+      [self headerFooterItemListWithFrame:NSMakeRect(368, 0, 100, 22)
                              selectedItem:sel];
   [self addSubview:mFooterRightList];
 }

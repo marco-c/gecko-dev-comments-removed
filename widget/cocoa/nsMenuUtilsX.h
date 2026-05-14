@@ -22,8 +22,7 @@ void DispatchCommandTo(nsIContent* aTargetContent,
 NSString* GetTruncatedCocoaLabel(const nsString& itemLabel);
 uint8_t GeckoModifiersForNodeAttribute(const nsString& modifiersAttribute);
 unsigned int MacModifiersForGeckoModifiers(uint8_t geckoModifiers);
-nsMenuBarX* GetHiddenWindowMenuBar();   
-NSMenuItem* GetStandardEditMenuItem();  
+nsMenuBarX* GetHiddenWindowMenuBar();  
 bool NodeIsHiddenOrCollapsed(nsIContent* aContent);
 NSAttributedString* AttributedStringForContent(nsIContent* aContent,
                                                NSString* aLabel);

@@ -250,14 +250,6 @@ class nsCocoaUtils {
   static BOOL ShouldRestoreStateDueToLaunchAtLogin();
 
   
-
-
-
-
-  static bool PrepareForNativeAppModalDialog();
-  static void CleanUpAfterNativeAppModalDialog();
-
-  
   
 
   
