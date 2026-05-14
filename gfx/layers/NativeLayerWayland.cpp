@@ -165,10 +165,26 @@ void NativeLayerRootWayland::Init() {
   mRootSurface->SetVSyncCallbackStateHandlerLocked(
       lock, [this, self = RefPtr{this}](bool aState) -> void {
         LOGVERBOSE("VSyncCallbackStateHandler()");
+        
         mRootSurface->AssertCurrentThreadOwnsMutex();
         for (RefPtr<NativeLayerWayland>& layer : mSublayers) {
           layer->SetFrameCallbackState(aState);
         }
+      });
+
+  
+  mRootSurface->SetVSyncEmulateCheckLocked(
+      lock, [this, self = RefPtr{this}]() -> bool {
+        
+        mRootSurface->AssertCurrentThreadOwnsMutex();
+        bool isVisible = false;
+        for (RefPtr<NativeLayerWayland>& layer : mSublayers) {
+          if ((isVisible = layer->IsVisible())) {
+            break;
+          }
+        }
+        LOGVERBOSE("Emulate VSync [%d]", !isVisible);
+        return !isVisible;
       });
 
   
@@ -693,6 +709,10 @@ NativeLayerWayland::~NativeLayerWayland() {
 
 bool NativeLayerWayland::IsMapped() { return mSurface->IsMapped(); }
 
+bool NativeLayerWayland::IsVisible() {
+  return mSurface->IsMapped() && mSurface->HasBufferAttached();
+}
+
 void NativeLayerWayland::SetSurfaceIsFlipped(bool aIsFlipped) {
   WaylandSurfaceLock lock(mSurface);
   if (aIsFlipped != mSurfaceIsFlipped) {
@@ -1034,7 +1054,6 @@ void NativeLayerWayland::Unmap() {
   LOG("NativeLayerWayland::Unmap()");
 
   mSurface->UnmapLocked(surfaceLock);
-  
   
   
   mSurface->ClearVSyncCallbackHandlerLocked(surfaceLock);
