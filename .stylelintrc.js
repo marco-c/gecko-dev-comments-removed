@@ -273,12 +273,6 @@ module.exports = {
     
     
     "csstools/use-logical": null,
-    
-    
-    
-    
-    "media-query-no-invalid": null,
-    "stylelint-plugin-mozilla/media-query-no-invalid": true,
     "stylelint-plugin-mozilla/no-base-design-tokens": true,
     "stylelint-plugin-mozilla/use-design-tokens": true,
   },
@@ -288,13 +282,6 @@ module.exports = {
       files: "*.scss",
       customSyntax: "postcss-scss",
       extends: "stylelint-config-recommended-scss",
-      rules: {
-        
-        
-        
-        
-        "stylelint-plugin-mozilla/media-query-no-invalid": null,
-      },
     },
     {
       files: [
