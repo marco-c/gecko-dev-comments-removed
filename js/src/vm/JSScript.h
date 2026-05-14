@@ -1134,6 +1134,8 @@ class ScriptSourceObject : public NativeObject {
 
   static ScriptSourceObject* create(JSContext* cx, ScriptSource* source);
 
+  static ScriptSourceObject* createForWasmModule(JSContext* cx);
+
   
   
   static bool initFromOptions(JSContext* cx,
@@ -1146,6 +1148,7 @@ class ScriptSourceObject : public NativeObject {
 
   bool hasSource() const { return !getReservedSlot(SOURCE_SLOT).isUndefined(); }
   ScriptSource* source() const {
+    MOZ_RELEASE_ASSERT(hasSource());
     return static_cast<ScriptSource*>(getReservedSlot(SOURCE_SLOT).toPrivate());
   }
 
