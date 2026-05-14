@@ -10,38 +10,29 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
-import mozilla.components.compose.base.button.IconButton
 import mozilla.components.compose.base.theme.success
 import org.mozilla.fenix.R
-import org.mozilla.fenix.compose.LinkText
-import org.mozilla.fenix.compose.LinkTextState
 import org.mozilla.fenix.compose.StatusBadge
 import org.mozilla.fenix.home.sports.Match
 import org.mozilla.fenix.home.sports.MatchStatus
 import org.mozilla.fenix.home.sports.Team
 import org.mozilla.fenix.home.sports.TournamentRound
 import org.mozilla.fenix.theme.FirefoxTheme
-import mozilla.components.ui.icons.R as iconsR
 
 @Composable
 internal fun SportCardHeader(
     match: Match,
     round: TournamentRound,
-    onViewMatchDetails: () -> Unit,
-    onMenuClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val groupOrRound = match.home.group ?: roundDisplayName(round)
@@ -58,31 +49,11 @@ internal fun SportCardHeader(
             color = MaterialTheme.colorScheme.onSurface,
         )
 
-        Spacer(modifier = Modifier.width(FirefoxTheme.layout.space.static100))
-
-        Text(
-            text = "·",
-            style = FirefoxTheme.typography.body2,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-
-        Spacer(modifier = Modifier.width(FirefoxTheme.layout.space.static100))
-
-        LinkText(
-            text = stringResource(id = R.string.sports_widget_view_match_details),
-            linkTextStates = listOf(
-                LinkTextState(
-                    text = stringResource(id = R.string.sports_widget_view_match_details),
-                    url = "",
-                    onClick = { onViewMatchDetails() },
-                ),
-            ),
-            style = FirefoxTheme.typography.body2,
-            linkTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            linkTextDecoration = TextDecoration.Underline,
-        )
-
         if (match.matchStatus.isLive()) {
+            Spacer(modifier = Modifier.width(FirefoxTheme.layout.space.static100))
+
+            LiveBadge()
+        } else {
             Spacer(modifier = Modifier.width(FirefoxTheme.layout.space.static100))
 
             Text(
@@ -93,18 +64,10 @@ internal fun SportCardHeader(
 
             Spacer(modifier = Modifier.width(FirefoxTheme.layout.space.static100))
 
-            LiveBadge()
-        }
-
-        Spacer(Modifier.weight(1f))
-
-        IconButton(
-            onClick = onMenuClick,
-            contentDescription = null,
-        ) {
-            Icon(
-                painter = painterResource(iconsR.drawable.mozac_ic_ellipsis_vertical_24),
-                contentDescription = null,
+            Text(
+                text = match.date,
+                style = FirefoxTheme.typography.body2,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
@@ -122,6 +85,7 @@ private fun MatchStatus.isLive(): Boolean = when (this) {
     is MatchStatus.Live,
     is MatchStatus.Penalties,
         -> true
+
     else -> false
 }
 
@@ -201,8 +165,6 @@ private fun SportCardHeaderPreview(
                     matchStatus = state.status,
                 ),
                 round = state.round,
-                onViewMatchDetails = {},
-                onMenuClick = {},
             )
         }
     }
