@@ -100,45 +100,7 @@ void HostReleaseScriptFetchInfo(const Value& aPrivate) {
 
 
 
-
-
-
-
-NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(LoadedScript)
-  NS_INTERFACE_MAP_ENTRY(nsISupports)
-NS_INTERFACE_MAP_END
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-NS_IMPL_CYCLE_COLLECTION_CLASS(LoadedScript)
-NS_IMPL_CYCLE_COLLECTION_UNLINK_0(LoadedScript)
-NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INTERNAL(LoadedScript)
-  if (MOZ_UNLIKELY(cb.WantDebugInfo())) {
-    char name[512];
-    nsAutoCString spec;
-    if (tmp->mURI) {
-      spec = tmp->mURI->GetSpecOrDefault();
-    }
-    SprintfLiteral(name, "LoadedScript %s", spec.get());
-    cb.DescribeRefCountedNode(tmp->mRefCnt.get(), name);
-  } else {
-    NS_IMPL_CYCLE_COLLECTION_DESCRIBE(LoadedScript, tmp->mRefCnt.get())
-  }
-NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
-
-NS_IMPL_CYCLE_COLLECTING_ADDREF(LoadedScript)
-NS_IMPL_CYCLE_COLLECTING_RELEASE(LoadedScript)
+NS_IMPL_ISUPPORTS(LoadedScript, nsISupports)
 
 LoadedScript::LoadedScript(ScriptKind aKind, nsIURI* aURI)
     : mDataType(DataType::eUnknown),
