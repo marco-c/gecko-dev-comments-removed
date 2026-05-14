@@ -3146,17 +3146,20 @@ struct AssertNonGrayTracer final : public JS::CallbackTracer {
 };
 #endif
 
+template <uint32_t markingOptions>
 class js::gc::UnmarkGrayTracer final : public JS::CallbackTracer {
+  using BarrierTracer = MarkingTracerT<markingOptions>;
+
  public:
   
   
-  explicit UnmarkGrayTracer(GCMarker* marker)
-      : JS::CallbackTracer(marker->runtime(), JS::TracerKind::UnmarkGray,
+  explicit UnmarkGrayTracer(BarrierTracer* barrierTracer)
+      : JS::CallbackTracer(barrierTracer->runtime(), JS::TracerKind::UnmarkGray,
                            JS::WeakMapTraceAction::Skip),
         unmarkedAny(false),
         oom(false),
-        marker(marker),
-        stack(marker->unmarkGrayStack) {}
+        barrierTracer(barrierTracer),
+        stack(barrierTracer->gcMarker()->unmarkGrayStack) {}
 
   void unmark(JS::GCCellPtr cell);
 
@@ -3169,7 +3172,7 @@ class js::gc::UnmarkGrayTracer final : public JS::CallbackTracer {
  private:
   
   
-  GCMarker* marker;
+  BarrierTracer* barrierTracer;
 
   
   Zone* sourceZone;
@@ -3180,7 +3183,8 @@ class js::gc::UnmarkGrayTracer final : public JS::CallbackTracer {
   void onChild(JS::GCCellPtr thing, const char* name) override;
 };
 
-void UnmarkGrayTracer::onChild(JS::GCCellPtr thing, const char* name) {
+template <uint32_t opts>
+void UnmarkGrayTracer<opts>::onChild(JS::GCCellPtr thing, const char* name) {
   Cell* cell = thing.asCell();
 
   
@@ -3224,7 +3228,20 @@ void UnmarkGrayTracer::onChild(JS::GCCellPtr thing, const char* name) {
     
     
     
-    TraceEdgeForBarrier(marker, &tenured, thing.kind());
+
+    GCMarker* marker = barrierTracer->gcMarker();
+#ifdef DEBUG
+    MOZ_ASSERT(marker->markColor() == MarkColor::Black);
+    AutoSetThreadIsMarking threadIsMarking;
+#endif  
+
+    AutoClearTracingSource acts(marker);
+
+    ApplyGCThingTyped(thing, [&](auto* thing) {
+      MOZ_ASSERT(ShouldMark(MarkColor::Black, thing));
+      CheckTracedThing(barrierTracer, thing);
+      barrierTracer->markAndTraverse(thing);
+    });
   } else if (tenured.isMarkedGray()) {
     
     
@@ -3237,7 +3254,8 @@ void UnmarkGrayTracer::onChild(JS::GCCellPtr thing, const char* name) {
   unmarkedAny = true;
 }
 
-void UnmarkGrayTracer::unmark(JS::GCCellPtr cell) {
+template <uint32_t opts>
+void UnmarkGrayTracer<opts>::unmark(JS::GCCellPtr cell) {
   MOZ_ASSERT(stack.empty());
 
   
@@ -3263,9 +3281,11 @@ void UnmarkGrayTracer::unmark(JS::GCCellPtr cell) {
 
 bool js::gc::UnmarkGrayGCThingUnchecked(GCMarker* marker, JS::GCCellPtr thing) {
   MOZ_ASSERT(thing);
-  UnmarkGrayTracer unmarker(marker);
-  unmarker.unmark(thing);
-  return unmarker.unmarkedAny;
+  return marker->matchTracer([thing](auto& trc) {
+    UnmarkGrayTracer unmarker(&trc);
+    unmarker.unmark(thing);
+    return unmarker.unmarkedAny;
+  });
 }
 
 JS_PUBLIC_API bool JS::UnmarkGrayGCThingRecursively(JS::GCCellPtr thing) {

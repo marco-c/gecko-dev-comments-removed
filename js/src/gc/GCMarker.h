@@ -49,6 +49,7 @@ class AutoUpdateMarkStackRanges;
 class Cell;
 class MarkStackIter;
 class ParallelMarkTask;
+template <uint32_t markingOptions>
 class UnmarkGrayTracer;
 
 
@@ -678,6 +679,7 @@ class GCMarker {
 #endif
 
   Vector<JS::GCCellPtr, 0, SystemAllocPolicy> unmarkGrayStack;
+  template <uint32_t markingOptions>
   friend class gc::UnmarkGrayTracer;
 
   
