@@ -44,7 +44,7 @@ TEST(storage_spinningSynchronousClose, CloseOnAsync)
   do_check_success(stmt->Finalize());
 
   
-  RefPtr<CompletionRunnable> event = new CompletionRunnable();
+  auto event = MakeRefPtr<CompletionRunnable>();
   NS_DispatchToMainThread(event, NS_DISPATCH_NORMAL);
   do_check_false(NS_SUCCEEDED(db->Close()));
   do_check_true(event->mDone);
@@ -63,7 +63,7 @@ TEST(storage_spinningSynchronousClose, spinningSynchronousCloseOnAsync)
   do_check_success(stmt->Finalize());
 
   
-  RefPtr<CompletionRunnable> event = new CompletionRunnable();
+  auto event = MakeRefPtr<CompletionRunnable>();
   NS_DispatchToMainThread(event, NS_DISPATCH_NORMAL);
   do_check_success(db->SpinningSynchronousClose());
   do_check_true(event->mDone);
