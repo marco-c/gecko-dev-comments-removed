@@ -4064,8 +4064,16 @@ var MousePosTracker = {
       return;
     }
 
-    this._x = event.screenX - window.mozInnerScreenX;
-    this._y = event.screenY - window.mozInnerScreenY;
+    
+    
+    
+    const sourceWin = event.target.documentGlobal;
+    const scale =
+      sourceWin !== window
+        ? sourceWin.devicePixelRatio / window.devicePixelRatio
+        : 1;
+    this._x = event.screenX * scale - window.mozInnerScreenX;
+    this._y = event.screenY * scale - window.mozInnerScreenY;
 
     this._listeners.forEach(listener => {
       try {
