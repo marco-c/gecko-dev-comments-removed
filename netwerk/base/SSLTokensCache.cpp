@@ -300,13 +300,11 @@ nsresult SSLTokensCache::Init() {
     
     
     
+    
     nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
     if (obs) {
       obs->AddObserver(gInstance, "application-background", false);
       obs->AddObserver(gInstance, "idle-daily", false);
-      if (XRE_IsParentProcess()) {
-        obs->AddObserver(gInstance, "profile-after-change", false);
-      }
     }
 
     if (!XRE_IsParentProcess()) {
@@ -326,6 +324,24 @@ nsresult SSLTokensCache::Init() {
                                  getter_AddRefs(writeQueue));
     gInstance->mWriteTaskQueue = writeQueue;
 
+    
+    
+    
+    
+    
+    nsCOMPtr<nsIAsyncShutdownService> svc =
+        components::AsyncShutdown::Service();
+    if (svc) {
+      nsCOMPtr<nsIAsyncShutdownClient> client;
+      svc->GetProfileBeforeChange(getter_AddRefs(client));
+      if (client) {
+        
+        gInstance->mShutdownBarrier = client;
+        client->AddBlocker(gInstance, NS_LITERAL_STRING_FROM_CSTRING(__FILE__),
+                           __LINE__, u""_ns);
+      }
+    }
+
     gInstance->mLoadStartTime = TimeStamp::Now();
     loadGen = gInstance->mLoadGeneration;
 
@@ -334,7 +350,19 @@ nsresult SSLTokensCache::Init() {
     backgroundLoadPath = NS_ConvertUTF16toUTF8(widePath);
   }  
 
-  DispatchLoad(std::move(backgroundLoadPath), loadGen);
+  NS_DispatchBackgroundTask(
+      NS_NewRunnableFunction("SSLTokensCache::LoadPersisted",
+                             [path = std::move(backgroundLoadPath), loadGen]() {
+                               nsAutoLowPriorityIO lowPriorityIO;
+
+                               SSLTokensCache::LoadCtx ctx{loadGen};
+                               ssl_tokens_cache_read(
+                                   &path, PR_Now(),
+                                   SSLTokensCache::LoadCallback, &ctx);
+                               SSLTokensCache::OnLoadCompleteNotify(ctx.count);
+                             }),
+      NS_DISPATCH_EVENT_MAY_BLOCK);
+
   return NS_OK;
 }
 
@@ -379,9 +407,9 @@ nsresult SSLTokensCache::Shutdown() {
   if (obs && instance) {
     obs->RemoveObserver(instance, "application-background");
     obs->RemoveObserver(instance, "idle-daily");
-    if (XRE_IsParentProcess()) {
-      obs->RemoveObserver(instance, "profile-after-change");
-    }
+  }
+  if (instance) {
+    instance->RemoveShutdownBlocker();
   }
   return NS_OK;
 }
@@ -972,20 +1000,6 @@ void SSLTokensCache::DoWrite(bool aSynchronous) {
 }
 
 
-void SSLTokensCache::DispatchLoad(nsCString aPath, uint32_t aLoadGen) {
-  NS_DispatchBackgroundTask(
-      NS_NewRunnableFunction("SSLTokensCache::LoadPersisted",
-                             [path = std::move(aPath), aLoadGen]() {
-                               nsAutoLowPriorityIO lowPriorityIO;
-                               LoadCtx ctx{aLoadGen};
-                               ssl_tokens_cache_read(&path, PR_Now(),
-                                                     LoadCallback, &ctx);
-                               OnLoadCompleteNotify(ctx.count);
-                             }),
-      NS_DISPATCH_EVENT_MAY_BLOCK);
-}
-
-
 void SSLTokensCache::OnLoadCompleteNotify(uint32_t aCount) {
   mozilla::glean::network::ssl_token_cache_persistence_records_loaded.Add(
       AssertedCast<int32_t>(aCount));
@@ -1208,53 +1222,7 @@ SSLTokensCache::Observe(nsISupports* aSubject, const char* aTopic,
                         const char16_t* aData) {
   if (!strcmp(aTopic, "application-background") ||
       !strcmp(aTopic, "idle-daily")) {
-    LOG(("SSLTokensCache::Observe [topic=%s]", aTopic));
     DoWrite(false);
-  } else if (!strcmp(aTopic, "profile-after-change")) {
-    MOZ_ASSERT(XRE_IsParentProcess());
-    LOG(("SSLTokensCache::Observe [topic=profile-after-change]"));
-    nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
-    if (!obs) {
-      return NS_OK;
-    }
-    obs->RemoveObserver(this, "profile-after-change");
-
-    
-    
-    nsCString loadPath;
-    uint32_t loadGen = 0;
-    {
-      StaticMutexAutoLock lock(sLock);
-      if (gInstance && !gInstance->mBackingFile) {
-        nsCOMPtr<nsIFile> profileDir;
-        if (NS_SUCCEEDED(NS_GetSpecialDirectory(NS_APP_USER_PROFILE_50_DIR,
-                                                getter_AddRefs(profileDir)))) {
-          profileDir->Clone(getter_AddRefs(gInstance->mBackingFile));
-          gInstance->mBackingFile->AppendNative("ssl_tokens_cache.bin"_ns);
-          if (!gInstance->mWriteTaskQueue) {
-            nsCOMPtr<nsISerialEventTarget> writeQueue;
-            NS_CreateBackgroundTaskQueue("SslTokensCachePersist",
-                                         getter_AddRefs(writeQueue));
-            gInstance->mWriteTaskQueue = writeQueue;
-          }
-          gInstance->mLoadStartTime = TimeStamp::Now();
-          loadGen = gInstance->mLoadGeneration;
-          nsAutoString widePath;
-          gInstance->mBackingFile->GetPath(widePath);
-          loadPath = NS_ConvertUTF16toUTF8(widePath);
-        }
-      }
-    }
-    if (!loadPath.IsEmpty()) {
-      DispatchLoad(std::move(loadPath), loadGen);
-    }
-
-    
-    
-    NS_DispatchToCurrentThreadQueue(
-        NewRunnableMethod("SSLTokensCache::RegisterShutdownBlocker", this,
-                          &SSLTokensCache::RegisterShutdownBlocker),
-        EventQueuePriority::Idle);
   }
   return NS_OK;
 }
@@ -1263,8 +1231,6 @@ SSLTokensCache::Observe(nsISupports* aSubject, const char* aTopic,
 
 NS_IMETHODIMP
 SSLTokensCache::BlockShutdown(nsIAsyncShutdownClient* ) {
-  LOG(("SSLTokensCache::BlockShutdown"));
-
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(XRE_IsParentProcess());
   nsCOMPtr<nsISerialEventTarget> taskQueue;
@@ -1280,39 +1246,57 @@ SSLTokensCache::BlockShutdown(nsIAsyncShutdownClient* ) {
   
   
   RefPtr<SSLTokensCache> self = this;
-  auto writeAndRelease = [taskQueue, self](mozilla::ipc::ByteBuf aBuf) {
-    InvokeAsync(
-        taskQueue.get(), __func__,
-        [self, buf = std::move(aBuf)]() {
-          if (buf.mLen > 0) {
-            SSLTokensCache::DeserializeFromIPC(Span(buf.mData, buf.mLen));
-          }
-          self->DoWrite(true);
-          return GenericPromise::CreateAndResolve(true, __func__);
-        })
-        ->Then(
-            GetMainThreadSerialEventTarget(), __func__,
-            [self](bool) { self->RemoveShutdownBlocker(); },
-            [self](nsresult) { self->RemoveShutdownBlocker(); });
+  auto doWriteAndRelease = [taskQueue, self]() {
+    InvokeAsync(taskQueue.get(), "SSLTokensCache::BlockShutdown::DoWrite",
+                [self]() {
+                  self->DoWrite(true);
+                  NS_DispatchToMainThread(NS_NewRunnableFunction(
+                      "SSLTokensCache::RemoveShutdownBlocker",
+                      [self]() { self->RemoveShutdownBlocker(); }));
+                  return GenericPromise::CreateAndResolve(true, __func__);
+                });
   };
 
   
   
   RefPtr<SocketProcessParent> socketParent =
       SocketProcessParent::GetSingleton();
-  if (!socketParent || !socketParent->CanSend()) {
-    writeAndRelease(mozilla::ipc::ByteBuf{});
+  if (socketParent && socketParent->CanSend()) {
+    socketParent->SendFlushSSLTokensCache()->Then(
+        GetMainThreadSerialEventTarget(), __func__,
+        [doWriteAndRelease](mozilla::ipc::ByteBuf&& aBuf) {
+          
+          
+          if (aBuf.mLen == 0) {
+            doWriteAndRelease();
+            return;
+          }
+          
+          
+          
+          
+          
+          
+          nsresult rv = NS_DispatchBackgroundTask(NS_NewRunnableFunction(
+              "SSLTokensCache::DeserializeFromFlush",
+              [doWriteAndRelease, buf = std::move(aBuf)]() {
+                SSLTokensCache::DeserializeFromIPC(Span(buf.mData, buf.mLen));
+                NS_DispatchToMainThread(NS_NewRunnableFunction(
+                    "SSLTokensCache::DoWriteAfterFlush",
+                    [doWriteAndRelease]() { doWriteAndRelease(); }));
+              }));
+          if (NS_FAILED(rv)) {
+            doWriteAndRelease();
+          }
+        },
+        [doWriteAndRelease](mozilla::ipc::ResponseRejectReason) {
+          
+          doWriteAndRelease();
+        });
     return NS_OK;
   }
 
-  socketParent->SendFlushSSLTokensCache()->Then(
-      GetMainThreadSerialEventTarget(), __func__,
-      [writeAndRelease](mozilla::ipc::ByteBuf&& aBuf) {
-        writeAndRelease(std::move(aBuf));
-      },
-      [writeAndRelease](mozilla::ipc::ResponseRejectReason) {
-        writeAndRelease(mozilla::ipc::ByteBuf{});
-      });
+  doWriteAndRelease();
   return NS_OK;
 }
 
@@ -1326,34 +1310,6 @@ NS_IMETHODIMP
 SSLTokensCache::GetState(nsIPropertyBag** aState) {
   *aState = nullptr;
   return NS_OK;
-}
-
-void SSLTokensCache::RegisterShutdownBlocker() {
-  MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(XRE_IsParentProcess());
-  {
-    
-    StaticMutexAutoLock lock(sLock);
-    if (!gInstance || !gInstance->mWriteTaskQueue) {
-      return;
-    }
-  }
-  nsCOMPtr<nsIAsyncShutdownService> svc = components::AsyncShutdown::Service();
-  if (!svc) {
-    return;
-  }
-  nsCOMPtr<nsIAsyncShutdownClient> client;
-  svc->GetProfileBeforeChange(getter_AddRefs(client));
-  if (!client) {
-    return;
-  }
-  {
-    StaticMutexAutoLock lock(sLock);
-    mShutdownBarrier = client;
-  }
-  LOG(("SSLTokensCache::RegisterShutdownBlocker"));
-  client->AddBlocker(this, NS_LITERAL_STRING_FROM_CSTRING(__FILE__), __LINE__,
-                     u""_ns);
 }
 
 void SSLTokensCache::RemoveShutdownBlocker() {
