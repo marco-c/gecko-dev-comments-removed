@@ -804,7 +804,7 @@ class ProfileCreator:
         
         
         env = os.environ.copy()
-        certutil_dir = os.path.dirname(self.binary or self.certutil_binary)
+        certutil_dir = os.path.dirname(self.certutil_binary or self.binary)
         if mozinfo.isMac:
             env_var = "DYLD_LIBRARY_PATH"
         elif mozinfo.isLinux:
