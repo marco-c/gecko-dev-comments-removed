@@ -66,6 +66,20 @@ nsresult MathMLElement::BindToTree(BindContext& aContext, nsINode& aParent) {
   Link::BindToTree(aContext);
 
   
+  
+  if (!aContext.IsMove() && HasFlag(NODE_HAS_NONCE_AND_HEADER_CSP) &&
+      IsInComposedDoc() && OwnerDoc()->GetBrowsingContext()) {
+    nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
+        "MathMLElement::ResetNonce::Runnable",
+        [self = RefPtr<MathMLElement>(this)]() {
+          nsAutoString nonce;
+          self->GetNonce(nonce);
+          self->SetAttr(kNameSpaceID_None, nsGkAtoms::nonce, u""_ns, true);
+          self->SetNonce(nonce);
+        }));
+  }
+
+  
   if (Document* doc = aContext.GetComposedDoc()) {
     doc->SetUseCounter(eUseCounter_custom_MathMLUsed);
   }
@@ -642,6 +656,20 @@ nsresult MathMLElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
 
 NS_IMPL_ELEMENT_CLONE(MathMLElement)
 
+nsresult MathMLElement::CopyInnerTo(mozilla::dom::Element* aDest) {
+  nsresult rv = Element::CopyInnerTo(aDest);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  auto* dest = static_cast<MathMLElement*>(aDest);
+
+  
+  if (auto* nonce = static_cast<nsString*>(GetProperty(nsGkAtoms::nonce))) {
+    dest->SetNonce(*nonce);
+  }
+
+  return NS_OK;
+}
+
 void MathMLElement::SetIncrementScriptLevel(bool aIncrementScriptLevel,
                                             bool aNotify) {
   NS_ASSERTION(aNotify, "We always notify!");
@@ -754,6 +782,20 @@ void MathMLElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
                  "Expected string or atom value for script body");
       SetEventHandler(GetEventNameForAttr(aName),
                       nsAttrValueOrString(aValue).String());
+    }
+  }
+
+  
+  
+  
+  if (nsGkAtoms::nonce == aName && kNameSpaceID_None == aNameSpaceID) {
+    if (aValue) {
+      SetNonce(nsAttrValueOrString(aValue).String());
+      if (OwnerDoc()->GetHasCSPDeliveredThroughHeader()) {
+        SetFlags(NODE_HAS_NONCE_AND_HEADER_CSP);
+      }
+    } else {
+      RemoveNonce();
     }
   }
 
