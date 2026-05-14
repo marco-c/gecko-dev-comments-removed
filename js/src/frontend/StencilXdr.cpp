@@ -1116,6 +1116,14 @@ XDRResult StencilXDR::codeSourceData(XDRState<mode>* const xdr,
     Missing,
   };
 
+  
+  
+  
+  mozilla::Maybe<ScriptSource::GenericReader> reader;
+  if (mode == XDR_ENCODE) {
+    reader.emplace(ss);
+  }
+
   DataType tag;
   {
     

@@ -1163,12 +1163,21 @@ void ScriptSource::performDelayedConvertToCompressedSource(
 
 ScriptSource::GenericReader::GenericReader(ScriptSource* source)
     : PinnedUnitsBase(source) {
-  MOZ_ASSERT(source->hasSourceText());
-
   addReader();
 }
 
 ScriptSource::GenericReader::~GenericReader() {
+  if (!source_->hasSourceText()) {
+    
+    
+    
+    auto guard = source_->readers_.lock();
+    MOZ_ASSERT(guard->pendingCompressed.empty());
+    MOZ_ASSERT(guard->count > 0);
+    guard->count--;
+    return;
+  }
+
   if (source_->hasSourceType<Utf8Unit>()) {
     removeReader<Utf8Unit>();
   } else {
