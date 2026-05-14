@@ -2,14 +2,13 @@
 
 
 
-
-
 #include "FileReaderSync.h"
 
 #include "js/ArrayBuffer.h"  
 #include "js/RootingAPI.h"   
 #include "js/Utility.h"  
 #include "mozilla/Base64.h"
+#include "mozilla/CheckedInt.h"
 #include "mozilla/Encoding.h"
 #include "mozilla/dom/File.h"
 #include "mozilla/dom/FileReaderSyncBinding.h"
@@ -51,13 +50,15 @@ void FileReaderSync::ReadAsArrayBuffer(JSContext* aCx,
                                        Blob& aBlob,
                                        JS::MutableHandle<JSObject*> aRetval,
                                        ErrorResult& aRv) {
-  uint64_t blobSize = aBlob.GetSize(aRv);
-  if (NS_WARN_IF(aRv.Failed())) {
+  
+  
+  CheckedInt<uint32_t> blobSize = aBlob.GetSize(aRv);
+  if (NS_WARN_IF(aRv.Failed() || !blobSize.isValid())) {
     return;
   }
 
-  UniquePtr<char[], JS::FreePolicy> bufferData(
-      js_pod_arena_malloc<char>(js::ArrayBufferContentsArena, blobSize));
+  UniquePtr<char[], JS::FreePolicy> bufferData(js_pod_arena_malloc<char>(
+      js::ArrayBufferContentsArena, blobSize.value()));
   if (!bufferData) {
     aRv.Throw(NS_ERROR_OUT_OF_MEMORY);
     return;
@@ -70,7 +71,7 @@ void FileReaderSync::ReadAsArrayBuffer(JSContext* aCx,
   }
 
   uint32_t numRead;
-  aRv = SyncRead(stream, bufferData.get(), blobSize, &numRead);
+  aRv = SyncRead(stream, bufferData.get(), blobSize.value(), &numRead);
   if (NS_WARN_IF(aRv.Failed())) {
     return;
   }
@@ -81,8 +82,8 @@ void FileReaderSync::ReadAsArrayBuffer(JSContext* aCx,
     return;
   }
 
-  JSObject* arrayBuffer =
-      JS::NewArrayBufferWithContents(aCx, blobSize, std::move(bufferData));
+  JSObject* arrayBuffer = JS::NewArrayBufferWithContents(aCx, blobSize.value(),
+                                                         std::move(bufferData));
   if (!arrayBuffer) {
     aRv.Throw(NS_ERROR_OUT_OF_MEMORY);
     return;

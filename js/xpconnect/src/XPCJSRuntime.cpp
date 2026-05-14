@@ -3003,7 +3003,7 @@ static nsresult ReadSourceFromFilename(JSContext* cx, const char* filename,
   
   
   
-  JS::UniqueChars buf(js_pod_malloc<char>(rawLen));
+  JS::UniqueChars buf(js_pod_malloc<char>(static_cast<size_t>(rawLen)));
   if (!buf) {
     return NS_ERROR_OUT_OF_MEMORY;
   }
