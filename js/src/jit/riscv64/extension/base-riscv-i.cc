@@ -18,8 +18,13 @@ void AssemblerRISCVI::auipc(Register rd, int32_t imm20) {
 
 
 
-void AssemblerRISCVI::jal(Register rd, int32_t imm21) {
+CodeOffset AssemblerRISCVI::jal(Register rd, int32_t imm21) {
   GenInstrJ(JAL, rd, imm21);
+  
+  
+  CodeOffset retAddr = CodeOffset(currentOffset());
+  addi(zero, zero, 0);
+  return retAddr;
 }
 
 BufferOffset AssemblerRISCVI::jalr(Register rd, Register rs1, int16_t imm12) {
@@ -30,26 +35,44 @@ BufferOffset AssemblerRISCVI::jalr(Register rd, Register rs1, int16_t imm12) {
 
 void AssemblerRISCVI::beq(Register rs1, Register rs2, int16_t imm13) {
   GenInstrBranchCC_rri(0b000, rs1, rs2, imm13);
+  
+  
+  addi(zero, zero, 0);
 }
 
 void AssemblerRISCVI::bne(Register rs1, Register rs2, int16_t imm13) {
   GenInstrBranchCC_rri(0b001, rs1, rs2, imm13);
+  
+  
+  addi(zero, zero, 0);
 }
 
 void AssemblerRISCVI::blt(Register rs1, Register rs2, int16_t imm13) {
   GenInstrBranchCC_rri(0b100, rs1, rs2, imm13);
+  
+  
+  addi(zero, zero, 0);
 }
 
 void AssemblerRISCVI::bge(Register rs1, Register rs2, int16_t imm13) {
   GenInstrBranchCC_rri(0b101, rs1, rs2, imm13);
+  
+  
+  addi(zero, zero, 0);
 }
 
 void AssemblerRISCVI::bltu(Register rs1, Register rs2, int16_t imm13) {
   GenInstrBranchCC_rri(0b110, rs1, rs2, imm13);
+  
+  
+  addi(zero, zero, 0);
 }
 
 void AssemblerRISCVI::bgeu(Register rs1, Register rs2, int16_t imm13) {
   GenInstrBranchCC_rri(0b111, rs1, rs2, imm13);
+  
+  
+  addi(zero, zero, 0);
 }
 
 
@@ -259,8 +282,6 @@ bool AssemblerRISCVI::IsLw(Instr instr) {
 int AssemblerRISCVI::LoadOffset(Instr instr) {
 #if JS_CODEGEN_RISCV64
   MOZ_ASSERT(IsLd(instr));
-#elif V8_TARGET_ARCH_RISCV32
-  MOZ_ASSERT(IsLw(instr));
 #endif
   int32_t imm12 = static_cast<int32_t>(instr & kImm12Mask) >> 20;
   return imm12;
