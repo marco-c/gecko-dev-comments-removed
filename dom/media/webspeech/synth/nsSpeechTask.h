@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_nsSpeechTask_h
 #define mozilla_dom_nsSpeechTask_h
 
@@ -20,6 +18,7 @@ namespace dom {
 
 class SpeechSynthesisUtterance;
 class SpeechSynthesis;
+class MediaSharedKeysListener;
 
 class nsSpeechTask : public nsISpeechTask,
                      public nsIAudioChannelAgentCallback,
@@ -112,6 +111,11 @@ class nsSpeechTask : public nsISpeechTask,
   nsCOMPtr<nsISpeechTaskCallback> mCallback;
 
   RefPtr<mozilla::dom::AudioChannelAgent> mAudioChannelAgent;
+
+  
+  
+  
+  RefPtr<MediaSharedKeysListener> mSharedKeysListener;
 
   RefPtr<SpeechSynthesis> mSpeechSynthesis;
 
