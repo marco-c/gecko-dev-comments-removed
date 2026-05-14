@@ -220,7 +220,9 @@ static void GetKeyframeListFromPropertyIndexedKeyframe(
     JSContext* aCx, dom::Document* aDocument, JS::Handle<JS::Value> aValue,
     nsTArray<Keyframe>& aResult, ErrorResult& aRv);
 
-static void DistributeRange(const Range<Keyframe>& aRange);
+static void DistributeRange(const Range<Keyframe*>& aRange);
+
+static void DoComputeMissingKeyframeOffsets(nsTArray<Keyframe*>& aKeyframes);
 
 
 
@@ -271,43 +273,40 @@ nsTArray<Keyframe> KeyframeUtils::GetKeyframesFromObject(
 
 void KeyframeUtils::ComputeMissingKeyframeOffsets(
     nsTArray<Keyframe>& aKeyframes) {
-  
-  
-
   if (aKeyframes.IsEmpty()) {
     return;
   }
 
   
   
-  if (aKeyframes.Length() > 1) {
-    Keyframe& firstElement = aKeyframes[0];
-    firstElement.mComputedOffset =
-        firstElement.mOffset ? firstElement.mOffset->mPercentage : 0.0;
+  
+  
+  
+  
+  nsTArray<Keyframe*> keyframesWithDoubleOrNullOffsets;
+
+  
+  
+  for (Keyframe& keyframe : aKeyframes) {
+    const auto& offset = keyframe.mOffset;
+    if (!offset) {
+      keyframesWithDoubleOrNullOffsets.AppendElement(&keyframe);
+      continue;
+    }
+
+    if (offset->IsPercentageOffset()) {
+      keyframesWithDoubleOrNullOffsets.AppendElement(&keyframe);
+      keyframe.mComputedOffset = offset->mPercentage;
+      continue;
+    }
+
     
-  } else {
-    Keyframe& lastElement = aKeyframes.LastElement();
-    lastElement.mComputedOffset =
-        lastElement.mOffset ? lastElement.mOffset->mPercentage : 1.0;
+    
+    keyframe.mComputedOffset = Keyframe::kComputedOffsetNotSet;
   }
 
   
-  const Keyframe* const last = &aKeyframes.LastElement();
-  const RangedPtr<Keyframe> begin(aKeyframes.Elements(), aKeyframes.Length());
-  RangedPtr<Keyframe> keyframeA = begin;
-  while (keyframeA != last) {
-    
-    RangedPtr<Keyframe> keyframeB = keyframeA + 1;
-    while (keyframeB->mOffset.isNothing() && keyframeB != last) {
-      ++keyframeB;
-    }
-    keyframeB->mComputedOffset =
-        keyframeB->mOffset ? keyframeB->mOffset->mPercentage : 1.0;
-
-    
-    DistributeRange(Range<Keyframe>(keyframeA, keyframeB + 1));
-    keyframeA = keyframeB;
-  }
+  DoComputeMissingKeyframeOffsets(keyframesWithDoubleOrNullOffsets);
 }
 
 
@@ -720,7 +719,7 @@ static bool HasValidOffsets(const nsTArray<Keyframe>& aKeyframes) {
       
       
       
-      MOZ_ASSERT(!keyframe.mOffset->IsTimelineRangeOffset());
+      MOZ_ASSERT(keyframe.mOffset->IsPercentageOffset());
       double thisOffset = keyframe.mOffset->mPercentage;
       if (thisOffset < offset || thisOffset > 1.0f) {
         return false;
@@ -1195,15 +1194,69 @@ static void GetKeyframeListFromPropertyIndexedKeyframe(
 
 
 
-static void DistributeRange(const Range<Keyframe>& aRange) {
-  const Range<Keyframe> rangeToAdjust =
-      Range<Keyframe>(aRange.begin() + 1, aRange.end() - 1);
+static void DistributeRange(const Range<Keyframe*>& aRange) {
+  const Range<Keyframe*> rangeToAdjust =
+      Range<Keyframe*>(aRange.begin() + 1, aRange.end() - 1);
   const size_t n = aRange.length() - 1;
-  const double startOffset = aRange[0].mComputedOffset;
-  const double diffOffset = aRange[n].mComputedOffset - startOffset;
+  const double startOffset = aRange[0]->mComputedOffset;
+  const double diffOffset = aRange[n]->mComputedOffset - startOffset;
   for (auto iter = rangeToAdjust.begin(); iter != rangeToAdjust.end(); ++iter) {
     size_t index = iter - aRange.begin();
-    iter->mComputedOffset = startOffset + double(index) / n * diffOffset;
+    (*iter)->mComputedOffset = startOffset + double(index) / n * diffOffset;
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+static void DoComputeMissingKeyframeOffsets(nsTArray<Keyframe*>& aKeyframes) {
+  if (aKeyframes.IsEmpty()) {
+    return;
+  }
+
+  
+  
+  if (aKeyframes.Length() > 1) {
+    Keyframe& firstElement = *aKeyframes[0];
+    MOZ_ASSERT(!firstElement.mOffset ||
+               firstElement.mOffset->IsPercentageOffset());
+    firstElement.mComputedOffset =
+        firstElement.mOffset ? firstElement.mOffset->mPercentage : 0.0;
+    
+  } else {
+    Keyframe& lastElement = *aKeyframes.LastElement();
+    MOZ_ASSERT(!lastElement.mOffset ||
+               lastElement.mOffset->IsPercentageOffset());
+    lastElement.mComputedOffset =
+        lastElement.mOffset ? lastElement.mOffset->mPercentage : 1.0;
+  }
+
+  
+  const Keyframe* const last = aKeyframes.LastElement();
+  const RangedPtr<Keyframe*> begin(aKeyframes.Elements(), aKeyframes.Length());
+  RangedPtr<Keyframe*> keyframeA = begin;
+  while (*keyframeA != last) {
+    
+    RangedPtr<Keyframe*> keyframeB = keyframeA + 1;
+    while ((*keyframeB)->mOffset.isNothing() && *keyframeB != last) {
+      ++keyframeB;
+    }
+
+    MOZ_ASSERT(!(*keyframeB)->mOffset ||
+               (*keyframeB)->mOffset->IsPercentageOffset());
+    (*keyframeB)->mComputedOffset =
+        (*keyframeB)->mOffset ? (*keyframeB)->mOffset->mPercentage : 1.0;
+
+    
+    DistributeRange(Range<Keyframe*>(keyframeA, keyframeB + 1));
+    keyframeA = keyframeB;
   }
 }
 
