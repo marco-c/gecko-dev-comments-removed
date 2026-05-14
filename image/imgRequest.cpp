@@ -906,7 +906,7 @@ static NewPartResult PrepareForNewPart(nsIRequest* aRequest,
   
   if (aIsMultipart) {
     
-    RefPtr<ProgressTracker> progressTracker = new ProgressTracker();
+    auto progressTracker = MakeRefPtr<ProgressTracker>();
     RefPtr<image::Image> partImage = image::ImageFactory::CreateImage(
         aRequest, progressTracker, result.mContentType, aURI,
          true, aInnerWindowId);

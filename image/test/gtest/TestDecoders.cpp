@@ -110,8 +110,8 @@ void WithBadBufferDecode(const ImageTestCase& aTestCase,
       decoderType, sourceBuffer, aOutputSize, DecoderFlags::FIRST_FRAME_ONLY,
       aTestCase.mSurfaceFlags);
   ASSERT_TRUE(decoder != nullptr);
-  RefPtr<IDecodingTask> task =
-      new AnonymousDecodingTask(WrapNotNull(decoder),  false);
+  auto task = MakeRefPtr<AnonymousDecodingTask>(WrapNotNull(decoder),
+                                                 false);
 
   
   task->Run();
@@ -214,8 +214,8 @@ void WithSingleChunkDecode(const ImageTestCase& aTestCase,
       decoderType, sourceBuffer, aOutputSize, decoderFlags,
       aTestCase.mSurfaceFlags);
   ASSERT_TRUE(decoder != nullptr);
-  RefPtr<MonitorAnonymousDecodingTask> task = new MonitorAnonymousDecodingTask(
-      WrapNotNull(decoder),  false);
+  auto task = MakeRefPtr<MonitorAnonymousDecodingTask>(WrapNotNull(decoder),
+                                                        false);
 
   if (aUseDecodePool) {
     DecodePool::Singleton()->AsyncRun(task.get());
@@ -258,8 +258,8 @@ void WithDelayedChunkDecode(const ImageTestCase& aTestCase,
       decoderType, sourceBuffer, aOutputSize, DecoderFlags::FIRST_FRAME_ONLY,
       aTestCase.mSurfaceFlags);
   ASSERT_TRUE(decoder != nullptr);
-  RefPtr<IDecodingTask> task =
-      new AnonymousDecodingTask(WrapNotNull(decoder),  true);
+  auto task = MakeRefPtr<AnonymousDecodingTask>(WrapNotNull(decoder),
+                                                 true);
 
   
   
@@ -305,8 +305,8 @@ static void WithMultiChunkDecode(const ImageTestCase& aTestCase,
       decoderType, sourceBuffer, Nothing(), decoderFlags,
       aTestCase.mSurfaceFlags);
   ASSERT_TRUE(decoder != nullptr);
-  RefPtr<IDecodingTask> task =
-      new AnonymousDecodingTask(WrapNotNull(decoder),  true);
+  auto task = MakeRefPtr<AnonymousDecodingTask>(WrapNotNull(decoder),
+                                                 true);
 
   
   
@@ -525,9 +525,9 @@ static void WithSingleChunkAnimationDecode(const ImageTestCase& aTestCase,
   
   SurfaceKey surfaceKey = RasterSurfaceKey(aTestCase.mOutputSize, surfaceFlags,
                                            PlaybackType::eAnimated);
-  RefPtr<AnimationSurfaceProvider> provider = new AnimationSurfaceProvider(
-      rasterImage, surfaceKey, WrapNotNull(decoder),
-       0);
+  auto provider = MakeRefPtr<AnimationSurfaceProvider>(rasterImage, surfaceKey,
+                                                       WrapNotNull(decoder),
+                                                        0);
 
   
   provider->Run();
@@ -1220,8 +1220,8 @@ TEST_F(ImageDecoders, LongAnimatedJXL_IncrementalFrameCountUpdates) {
                                                      decoderFlags);
   ASSERT_TRUE(decoder != nullptr);
 
-  RefPtr<IDecodingTask> task =
-      new AnonymousDecodingTask(WrapNotNull(decoder),  true);
+  auto task = MakeRefPtr<AnonymousDecodingTask>(WrapNotNull(decoder),
+                                                 true);
   task->Run();
 
   

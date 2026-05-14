@@ -306,7 +306,7 @@ nsresult SVGDocumentWrapper::SetupViewer(nsIRequest* aRequest,
   
   
   
-  RefPtr<nsDOMNavigationTiming> timing = new nsDOMNavigationTiming(nullptr);
+  auto timing = MakeRefPtr<nsDOMNavigationTiming>(nullptr);
   timing->NotifyNavigationStart(
       nsDOMNavigationTiming::DocShellState::eInactive);
   viewer->SetNavigationTiming(timing);
