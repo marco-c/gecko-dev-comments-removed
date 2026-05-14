@@ -840,24 +840,34 @@ void gfxShapedText::SetMissingGlyph(uint32_t aIndex, uint32_t aChar,
 }
 
 bool gfxShapedText::FilterIfIgnorable(uint32_t aIndex, uint32_t aCh) {
-  if (IsIgnorable(aCh)) {
-    
-    
-    
-    
-    
-    auto* charGlyphs = GetCharacterGlyphs();
-    if (GetGenCategory(aCh) == nsUGenCategory::kLetter &&
-        aIndex + 1 < GetLength() && !charGlyphs[aIndex + 1].IsClusterStart()) {
+  if (!IsIgnorable(aCh)) {
+    return false;
+  }
+  
+  
+  
+  
+  
+  auto* charGlyphs = GetCharacterGlyphs();
+  auto category = GetGeneralCategory(aCh);
+  if (category == HB_UNICODE_GENERAL_CATEGORY_OTHER_LETTER &&
+      aIndex + 1 < GetLength() && !charGlyphs[aIndex + 1].IsClusterStart()) {
+    return false;
+  }
+  CompressedGlyph& g = charGlyphs[aIndex];
+  
+  
+  
+  if (category == HB_UNICODE_GENERAL_CATEGORY_FORMAT) {
+    if (!g.IsSimpleGlyph() ||
+        (g.GetSimpleGlyph() != 0 && g.GetSimpleAdvance() > 0)) {
       return false;
     }
-    
-    
-    CompressedGlyph& g = charGlyphs[aIndex];
-    g.SetComplex(g.IsClusterStart(), g.IsLigatureGroupStart()).SetMissing();
-    return true;
   }
-  return false;
+  
+  
+  g.SetComplex(g.IsClusterStart(), g.IsLigatureGroupStart()).SetMissing();
+  return true;
 }
 
 void gfxShapedText::ApplyTrackingToClusters(gfxFloat aTrackingAdjustment,
