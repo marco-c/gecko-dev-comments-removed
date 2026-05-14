@@ -45,7 +45,21 @@ nsISupports* AnimationEffect::GetParentObject() const {
 
 
 bool AnimationEffect::IsCurrent() const {
-  if (!mAnimation || mAnimation->PlayState() == AnimationPlayState::Finished) {
+  if (!mAnimation) {
+    return false;
+  }
+
+  
+  
+  
+  
+  const AnimationTimeline* timeline = mAnimation->GetTimeline();
+  if (timeline && !timeline->IsMonotonicallyIncreasing() &&
+      mAnimation->PlayState() != AnimationPlayState::Idle) {
+    return true;
+  }
+
+  if (mAnimation->PlayState() == AnimationPlayState::Finished) {
     return false;
   }
 
