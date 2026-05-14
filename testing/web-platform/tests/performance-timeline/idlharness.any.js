@@ -10,10 +10,6 @@ idl_test(
   ['performance-timeline'],
   ['hr-time', 'dom'],
   async idl_array => {
-    if (self.GLOBAL.isShadowRealm()) {
-      return;
-    }
-
     idl_array.add_objects({
       Performance: ['performance'],
       PerformanceObserver: ['observer'],

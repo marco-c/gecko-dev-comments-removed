@@ -11,10 +11,6 @@ idl_test(
   ['user-timing'],
   ['hr-time', 'performance-timeline', 'dom'],
   idl_array => {
-    if (self.GLOBAL.isShadowRealm()) {
-      return;
-    }
-
     try {
       performance.mark('test');
       performance.measure('test');
