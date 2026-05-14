@@ -11,7 +11,6 @@ import androidx.test.core.app.ApplicationProvider
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -22,6 +21,8 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows
 import org.robolectric.shadows.ShadowToast
 import java.io.File
+import kotlin.test.assertIs
+import kotlin.test.assertNotNull
 
 @RunWith(RobolectricTestRunner::class)
 class LensCameraActivityTest {
@@ -80,7 +81,7 @@ class LensCameraActivityTest {
         val fragment = activity.supportFragmentManager
             .findFragmentById(R.id.lens_fragment_container_view)
         assertNotNull(fragment)
-        assertTrue(fragment is LensCameraFragment)
+        assertIs<LensCameraFragment>(fragment)
     }
 
     @Test
@@ -111,6 +112,6 @@ class LensCameraActivityTest {
         val fragment = activity.supportFragmentManager
             .findFragmentById(R.id.lens_fragment_container_view)
         assertNotNull(fragment)
-        assertTrue(fragment is LensCameraFragment)
+        assertIs<LensCameraFragment>(fragment)
     }
 }
