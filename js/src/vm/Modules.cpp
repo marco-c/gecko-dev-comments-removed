@@ -1388,7 +1388,7 @@ static bool ModuleInitializeEnvironment(JSContext* cx,
       
       
       
-      ModuleSourceObject* moduleSourceObject = importedModule->moduleSource();
+      JSObject* moduleSourceObject = importedModule->moduleSource();
 
       
       
@@ -2962,7 +2962,7 @@ bool ContinueDynamicImport(JSContext* cx, Handle<JSScript*> referrer,
   
   if (phase == ImportPhase::Source) {
     
-    ModuleSourceObject* moduleSource = module->moduleSource();
+    JSObject* moduleSource = module->moduleSource();
 
     
     if (!moduleSource) {
