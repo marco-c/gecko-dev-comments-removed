@@ -57,16 +57,9 @@ static bool IID_MayResolve(const JSAtomState& names, jsid id,
                            JSObject* maybeObj);
 
 static const JSClassOps sIID_ClassOps = {
-    nullptr,           
-    nullptr,           
-    nullptr,           
-    IID_NewEnumerate,  
-    IID_Resolve,       
-    IID_MayResolve,    
-    nullptr,           
-    nullptr,           
-    nullptr,           
-    nullptr,           
+    .newEnumerate = IID_NewEnumerate,
+    .resolve = IID_Resolve,
+    .mayResolve = IID_MayResolve,
 };
 
 

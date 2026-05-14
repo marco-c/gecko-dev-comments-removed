@@ -647,16 +647,12 @@ static bool XPC_WN_NoHelper_Resolve(JSContext* cx, HandleObject obj,
 }
 
 static const JSClassOps XPC_WN_NoHelper_JSClassOps = {
-    XPC_WN_OnlyIWrite_AddPropertyStub,  
-    XPC_WN_CannotDeletePropertyStub,    
-    XPC_WN_Shared_Enumerate,            
-    nullptr,                            
-    XPC_WN_NoHelper_Resolve,            
-    nullptr,                            
-    XPC_WN_NoHelper_Finalize,           
-    nullptr,                            
-    nullptr,                            
-    XPCWrappedNative::Trace,            
+    .addProperty = XPC_WN_OnlyIWrite_AddPropertyStub,
+    .delProperty = XPC_WN_CannotDeletePropertyStub,
+    .enumerate = XPC_WN_Shared_Enumerate,
+    .resolve = XPC_WN_NoHelper_Resolve,
+    .finalize = XPC_WN_NoHelper_Finalize,
+    .trace = XPCWrappedNative::Trace,
 };
 
 const js::ClassExtension XPC_WN_JSClassExtension = {
@@ -1122,16 +1118,11 @@ static bool XPC_WN_Proto_Resolve(JSContext* cx, HandleObject obj, HandleId id,
 }
 
 static const JSClassOps XPC_WN_Proto_JSClassOps = {
-    XPC_WN_OnlyIWrite_Proto_AddPropertyStub,  
-    XPC_WN_CannotDeletePropertyStub,          
-    XPC_WN_Proto_Enumerate,                   
-    nullptr,                                  
-    XPC_WN_Proto_Resolve,                     
-    nullptr,                                  
-    XPC_WN_Proto_Finalize,                    
-    nullptr,                                  
-    nullptr,                                  
-    nullptr,                                  
+    .addProperty = XPC_WN_OnlyIWrite_Proto_AddPropertyStub,
+    .delProperty = XPC_WN_CannotDeletePropertyStub,
+    .enumerate = XPC_WN_Proto_Enumerate,
+    .resolve = XPC_WN_Proto_Resolve,
+    .finalize = XPC_WN_Proto_Finalize,
 };
 
 static const js::ClassExtension XPC_WN_Proto_ClassExtension = {
@@ -1210,16 +1201,11 @@ static size_t XPC_WN_TearOff_ObjectMoved(JSObject* obj, JSObject* old) {
 }
 
 static const JSClassOps XPC_WN_Tearoff_JSClassOps = {
-    XPC_WN_OnlyIWrite_AddPropertyStub,  
-    XPC_WN_CannotDeletePropertyStub,    
-    XPC_WN_TearOff_Enumerate,           
-    nullptr,                            
-    XPC_WN_TearOff_Resolve,             
-    nullptr,                            
-    XPC_WN_TearOff_Finalize,            
-    nullptr,                            
-    nullptr,                            
-    nullptr,                            
+    .addProperty = XPC_WN_OnlyIWrite_AddPropertyStub,
+    .delProperty = XPC_WN_CannotDeletePropertyStub,
+    .enumerate = XPC_WN_TearOff_Enumerate,
+    .resolve = XPC_WN_TearOff_Resolve,
+    .finalize = XPC_WN_TearOff_Finalize,
 };
 
 static const js::ClassExtension XPC_WN_Tearoff_JSClassExtension = {

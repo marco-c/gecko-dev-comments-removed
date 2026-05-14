@@ -1690,13 +1690,9 @@ static constexpr uint32_t HistogramObjectSlotCount =
 
 void internal_JSHistogram_finalize(JS::GCContext*, JSObject*);
 
-static const JSClassOps sJSHistogramClassOps = {nullptr, 
-                                                nullptr, 
-                                                nullptr, 
-                                                nullptr, 
-                                                nullptr, 
-                                                nullptr, 
-                                                internal_JSHistogram_finalize};
+static const JSClassOps sJSHistogramClassOps = {
+    .finalize = internal_JSHistogram_finalize,
+};
 
 static const JSClass sJSHistogramClass = {
     "JSHistogram", 
@@ -1940,13 +1936,8 @@ namespace {
 void internal_JSKeyedHistogram_finalize(JS::GCContext*, JSObject*);
 
 static const JSClassOps sJSKeyedHistogramClassOps = {
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    internal_JSKeyedHistogram_finalize};
+    .finalize = internal_JSKeyedHistogram_finalize,
+};
 
 static const JSClass sJSKeyedHistogramClass = {
     "JSKeyedHistogram", 

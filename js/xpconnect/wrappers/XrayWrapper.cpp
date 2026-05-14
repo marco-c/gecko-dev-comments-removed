@@ -1237,16 +1237,7 @@ void ExpandoObjectFinalize(JS::GCContext* gcx, JSObject* obj) {
 }
 
 const JSClassOps XrayExpandoObjectClassOps = {
-    nullptr,                
-    nullptr,                
-    nullptr,                
-    nullptr,                
-    nullptr,                
-    nullptr,                
-    ExpandoObjectFinalize,  
-    nullptr,                
-    nullptr,                
-    nullptr,                
+    .finalize = ExpandoObjectFinalize,
 };
 
 bool XrayTraits::expandoObjectMatchesConsumer(JSContext* cx,

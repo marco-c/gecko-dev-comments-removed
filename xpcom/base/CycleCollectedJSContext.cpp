@@ -185,10 +185,7 @@ void FinalizeSchedulingStateWrapper(JS::GCContext* aGCX, JSObject* aObjSelf) {
 }
 
 static const JSClassOps sSchedulingStateWrapper = {
-    nullptr ,     nullptr ,
-    nullptr ,       nullptr ,
-    nullptr ,         nullptr ,
-    FinalizeSchedulingStateWrapper 
+    .finalize = FinalizeSchedulingStateWrapper,
 };
 
 static const JSClass sSchedulingStateClass = {

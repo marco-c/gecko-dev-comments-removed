@@ -3489,16 +3489,8 @@ class ReflectedHTMLAttributeSlots : public Array<JS::Heap<JS::Value>, Count>,
   }
 
   static constexpr JSClassOps sXrayExpandoObjectClassOps = {
-      nullptr, 
-      nullptr, 
-      nullptr, 
-      nullptr, 
-      nullptr, 
-      nullptr, 
-      XrayExpandoObjectFinalize,
-      nullptr, 
-      nullptr, 
-      XrayExpandoObjectTrace,
+      .finalize = XrayExpandoObjectFinalize,
+      .trace = XrayExpandoObjectTrace,
   };
 
  private:
