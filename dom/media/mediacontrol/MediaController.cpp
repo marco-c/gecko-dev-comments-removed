@@ -380,6 +380,7 @@ void MediaController::NotifyMediaAudibleChanged(uint64_t aBrowsingContextId,
     return;
   }
   UpdateActivatedStateIfNeeded();
+  DispatchAsyncEvent(u"audiblechange"_ns);
 
   
   
@@ -588,7 +589,11 @@ void MediaController::DispatchAsyncEvent(already_AddRefed<Event> aEvent) {
   MOZ_ASSERT(event);
   nsAutoString eventType;
   event->GetType(eventType);
-  if (!mIsActive && !eventType.EqualsLiteral("deactivated")) {
+  
+  
+  
+  if (!mIsActive && !eventType.EqualsLiteral("deactivated") &&
+      !eventType.EqualsLiteral("audiblechange")) {
     LOG("Only 'deactivated' can be dispatched on a deactivated controller, not "
         "'%s'",
         NS_ConvertUTF16toUTF8(eventType).get());
