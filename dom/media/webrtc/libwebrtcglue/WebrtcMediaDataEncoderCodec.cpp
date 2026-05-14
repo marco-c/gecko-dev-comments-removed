@@ -469,9 +469,11 @@ int32_t WebrtcMediaDataEncoder::Encode(
   
   
   
+  AutoTArray<PendingFrame, 1> oldFrames;
   {
     MutexAutoLock lock(mPendingMutex);
     while (mPendingFrames.Length() >= kMaxFramesInFlight) {
+      oldFrames.AppendElement(mPendingFrames[0]);
       mPendingFrames.RemoveElementAt(0);
     }
     MOZ_ASSERT(mPendingFrames.IsEmpty() ||
@@ -479,16 +481,28 @@ int32_t WebrtcMediaDataEncoder::Encode(
     mPendingFrames.AppendElement(PendingFrame{
         .mTime = data->mTime, .mRtpTimestamp = aInputFrame.rtp_timestamp()});
   }
+  if (!oldFrames.IsEmpty()) {
+    MutexAutoLock lock(mCallbackMutex);
+    if (mCallback) {
+      for (auto& frame : oldFrames) {
+        
+        
+        mCallback->OnFrameDropped(frame.mRtpTimestamp, 0,
+                                  false);
+      }
+    }
+  }
 
   mEncoder->Encode(data)->Then(
       mTaskQueue, __func__,
-      [self = RefPtr<WebrtcMediaDataEncoder>(this), this,
+      [self = RefPtr(this), this,
        displaySize](MediaDataEncoder::EncodedData aFrames) {
         LOG_V("Received encoded frame, nums %zu width %d height %d",
               aFrames.Length(), displaySize.width, displaySize.height);
         for (auto& frame : aFrames) {
           const TimeUnit& frameTime = frame->mTime;
           Maybe<PendingFrame> matched;
+          AutoTArray<uint32_t, 4> droppedRtps;
           {
             MutexAutoLock lock(mPendingMutex);
             
@@ -505,45 +519,68 @@ int32_t WebrtcMediaDataEncoder::Encode(
                 ++numToRemove;
                 break;
               }
+              droppedRtps.AppendElement(pendingFrame.mRtpTimestamp);
               ++numToRemove;
             }
             mPendingFrames.RemoveElementsAt(0, numToRemove);
           }
 
-          if (matched.isNothing()) {
-            continue;
-          }
-
           webrtc::EncodedImage image;
-          image.SetEncodedData(
-              webrtc::EncodedImageBuffer::Create(frame->Data(), frame->Size()));
-          image._encodedWidth = displaySize.width;
-          image._encodedHeight = displaySize.height;
-          image.SetRtpTimestamp(matched->mRtpTimestamp);
-          image.capture_time_ms_ =
-              webrtc::Timestamp::Micros(matched->mTime.ToMicroseconds()).ms();
-          image._frameType = frame->mKeyframe
-                                 ? webrtc::VideoFrameType::kVideoFrameKey
-                                 : webrtc::VideoFrameType::kVideoFrameDelta;
-          GetVPXQp(mCodecSpecific.codecType, image);
-          UpdateCodecSpecificInfo(mCodecSpecific, displaySize, frame->mKeyframe);
+          if (matched.isSome()) {
+            image.SetEncodedData(webrtc::EncodedImageBuffer::Create(
+                frame->Data(), frame->Size()));
+            image._encodedWidth = displaySize.width;
+            image._encodedHeight = displaySize.height;
+            image.SetRtpTimestamp(matched->mRtpTimestamp);
+            image.capture_time_ms_ =
+                webrtc::Timestamp::Micros(matched->mTime.ToMicroseconds()).ms();
+            image._frameType = frame->mKeyframe
+                                   ? webrtc::VideoFrameType::kVideoFrameKey
+                                   : webrtc::VideoFrameType::kVideoFrameDelta;
+            GetVPXQp(mCodecSpecific.codecType, image);
+            UpdateCodecSpecificInfo(mCodecSpecific, displaySize,
+                                    frame->mKeyframe);
+          }
 
           MutexAutoLock lock(mCallbackMutex);
           if (!mCallback) {
             return;
           }
-          LOG_V("Send encoded image");
-          mCallback->OnEncodedImage(image, &mCodecSpecific);
-          mBitrateAdjuster.Update(image.size());
+          for (uint32_t rtp : droppedRtps) {
+            
+            
+            mCallback->OnFrameDropped(rtp, 0,
+                                      false);
+          }
+          if (matched.isSome()) {
+            LOG_V("Send encoded image");
+            mCallback->OnEncodedImage(image, &mCodecSpecific);
+            mBitrateAdjuster.Update(image.size());
+          }
         }
       },
-      [self = RefPtr<WebrtcMediaDataEncoder>(this)](const MediaResult& aError) {
+      [self = RefPtr(this), this](const MediaResult& aError) {
+        
+        
+        AutoTArray<uint32_t, kMaxFramesInFlight> droppedTimestamps;
         {
-          MutexAutoLock lock(self->mPendingMutex);
-          self->mPendingFrames.Clear();
+          MutexAutoLock lock(mPendingMutex);
+          droppedTimestamps.SetCapacity(mPendingFrames.Length());
+          for (const auto& pendingFrame : mPendingFrames) {
+            droppedTimestamps.AppendElement(pendingFrame.mRtpTimestamp);
+          }
+          mPendingFrames.Clear();
         }
-        MutexAutoLock lock(self->mCallbackMutex);
-        self->mError = aError;
+        MutexAutoLock lock(mCallbackMutex);
+        if (mCallback) {
+          for (uint32_t ts : droppedTimestamps) {
+            
+            
+            mCallback->OnFrameDropped(ts, 0,
+                                      false);
+          }
+        }
+        mError = aError;
       });
   return WEBRTC_VIDEO_CODEC_OK;
 }
