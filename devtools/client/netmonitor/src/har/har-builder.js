@@ -83,8 +83,10 @@ class HarBuilder {
     this.buildPages(harLog.log);
 
     
-    for (const request of this.#items) {
-      const entry = await this.buildEntry(harLog.log, request);
+    const entries = await Promise.all(
+      this.#items.map(request => this.buildEntry(harLog.log, request))
+    );
+    for (const entry of entries) {
       if (entry) {
         harLog.log.entries.push(entry);
       }
