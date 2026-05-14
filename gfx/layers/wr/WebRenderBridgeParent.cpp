@@ -1417,13 +1417,30 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvSetDisplayList(
         CompositionPayload{CompositionPayloadType::eContentPaint, aFwdTime});
   }
 
+  
+  
+  
+  
+  
+  
+  
+  const bool ackSynthetically =
+      validTransaction && !IsRootWebRenderBridgeParent() && !aRenderOffscreen &&
+      [this] {
+        RefPtr<WebRenderBridgeParent> root = GetRootWebRenderBridgeParent();
+        return root && !root->HasReceivedDisplayList();
+      }();
+
+  nsTArray<CompositionPayload> heldPayloads =
+      ackSynthetically ? nsTArray<CompositionPayload>{} : std::move(aPayloads);
   HoldPendingTransactionId(wrEpoch, aTransactionId, aContainsSVGGroup, aVsyncId,
                            aVsyncStartTime, aRefreshStartTime, aTxnStartTime,
                            aTxnURL, aFwdTime, mIsFirstPaint,
-                           std::move(aPayloads));
+                           std::move(heldPayloads),
+                            !ackSynthetically);
   mIsFirstPaint = false;
 
-  if (!validTransaction) {
+  if (!validTransaction || ackSynthetically) {
     
     
     if (CompositorBridgeParent* cbp = GetRootCompositorBridgeParent()) {
@@ -1554,26 +1571,39 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvEmptyTransaction(
   
   
   
-  
-  
-  
-  bool sendDidComposite =
-      !scheduleAnyComposite && mPendingTransactionIds.empty();
+  const bool ackSynthetically = !IsRootWebRenderBridgeParent() && [this] {
+    RefPtr<WebRenderBridgeParent> root = GetRootWebRenderBridgeParent();
+    return root && !root->HasReceivedDisplayList();
+  }();
 
   
   
+  
+  
+  
+  
+  
+  bool sendDidComposite = ackSynthetically || (!scheduleAnyComposite &&
+                                               mPendingTransactionIds.empty());
+
+  
+  
+  nsTArray<CompositionPayload> heldPayloads =
+      ackSynthetically ? nsTArray<CompositionPayload>{} : std::move(aPayloads);
   HoldPendingTransactionId(mWrEpoch, aTransactionId, false, aVsyncId,
                            aVsyncStartTime, aRefreshStartTime, aTxnStartTime,
                            aTxnURL, aFwdTime,
-                            false, std::move(aPayloads),
-                            scheduleAnyComposite);
+                            false, std::move(heldPayloads),
+                           
+                           scheduleAnyComposite && !ackSynthetically);
 
-  if (scheduleAnyComposite) {
+  if (scheduleAnyComposite && !ackSynthetically) {
     ScheduleGenerateFrame(renderReasons);
   } else if (sendDidComposite) {
     
     
-    MOZ_ASSERT(mPendingTransactionIds.size() == 1);
+    
+    MOZ_ASSERT(ackSynthetically || mPendingTransactionIds.size() == 1);
     if (CompositorBridgeParent* cbp = GetRootCompositorBridgeParent()) {
       TimeStamp now = TimeStamp::Now();
       cbp->NotifyPipelineRendered(mPipelineId, mWrEpoch, VsyncId(), now, now,

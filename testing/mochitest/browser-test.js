@@ -716,12 +716,6 @@ Tester.prototype = {
   },
 
   async ensureVsyncDisabled() {
-    
-    
-    if (Services.env.get("MOZ_HEADLESS")) {
-      return;
-    }
-
     try {
       await this.TestUtils.waitForCondition(
         () => !ChromeUtils.vsyncEnabled(),
