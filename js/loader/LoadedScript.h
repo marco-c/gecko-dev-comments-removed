@@ -189,6 +189,19 @@ class LoadedScript final : public nsISupports {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     eCachedStencil,
 
     
