@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include "js/Object.h"              
 #include "js/PropertyAndElement.h"  
 #include "jsapi-tests/tests.h"
@@ -15,16 +12,7 @@
 
 BEGIN_TEST(testResolveRecursion) {
   static const JSClassOps my_resolve_classOps = {
-      nullptr,     
-      nullptr,     
-      nullptr,     
-      nullptr,     
-      my_resolve,  
-      nullptr,     
-      nullptr,     
-      nullptr,     
-      nullptr,     
-      nullptr,     
+      .resolve = my_resolve,
   };
 
   static const JSClass my_resolve_class = {
@@ -158,16 +146,8 @@ BEGIN_TEST(testResolveRecursion_InitStandardClasses) {
 
 const JSClass* getGlobalClass() override {
   static const JSClassOps myGlobalClassOps = {
-      nullptr,                   
-      nullptr,                   
-      nullptr,                   
-      nullptr,                   
-      my_resolve,                
-      nullptr,                   
-      nullptr,                   
-      nullptr,                   
-      nullptr,                   
-      JS_GlobalObjectTraceHook,  
+      .resolve = my_resolve,
+      .trace = JS_GlobalObjectTraceHook,
   };
 
   static const JSClass myGlobalClass = {

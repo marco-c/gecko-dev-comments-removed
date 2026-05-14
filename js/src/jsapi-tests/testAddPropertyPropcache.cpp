@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include "js/Array.h"               
 #include "js/PropertyAndElement.h"  
 #include "jsapi-tests/tests.h"
@@ -18,16 +15,7 @@ static bool AddProperty(JSContext* cx, JS::HandleObject obj, JS::HandleId id,
 }
 
 static const JSClassOps AddPropertyClassOps = {
-    AddProperty,  
-    nullptr,      
-    nullptr,      
-    nullptr,      
-    nullptr,      
-    nullptr,      
-    nullptr,      
-    nullptr,      
-    nullptr,      
-    nullptr,      
+    .addProperty = AddProperty,
 };
 
 static const JSClass AddPropertyClass = {"AddPropertyTester", 0,

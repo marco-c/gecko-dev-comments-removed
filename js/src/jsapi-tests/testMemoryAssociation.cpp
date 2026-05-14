@@ -53,16 +53,7 @@ static void BackgroundFinalizedClass_finalize(JS::GCContext*, JSObject* obj) {
 }
 
 static const JSClassOps BackgroundFinalizedClassOps = {
-    nullptr,  
-    nullptr,  
-    nullptr,  
-    nullptr,  
-    nullptr,  
-    nullptr,  
-    &BackgroundFinalizedClass_finalize,
-    nullptr,  
-    nullptr,  
-    nullptr,  
+    .finalize = &BackgroundFinalizedClass_finalize,
 };
 
 static const JSClass BackgroundFinalizedClass = {"BackgroundFinalizedClass",

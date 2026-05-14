@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include "js/PropertyAndElement.h"  
 #include "jsapi-tests/tests.h"
 
@@ -17,16 +14,7 @@ static bool CounterAdd(JSContext* cx, JS::HandleObject obj, JS::HandleId id,
 }
 
 static const JSClassOps CounterClassOps = {
-    CounterAdd,  
-    nullptr,     
-    nullptr,     
-    nullptr,     
-    nullptr,     
-    nullptr,     
-    nullptr,     
-    nullptr,     
-    nullptr,     
-    nullptr,     
+    .addProperty = CounterAdd,
 };
 
 static const JSClass CounterClass = {

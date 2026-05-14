@@ -32,16 +32,7 @@ class TestObserverListElement : public ObserverListObject {
 };
 
 const JSClassOps TestObserverListElement::classOps_ = {
-    nullptr,   
-    nullptr,   
-    nullptr,   
-    nullptr,   
-    nullptr,   
-    nullptr,   
-    Finalize,  
-    nullptr,   
-    nullptr,   
-    nullptr,   
+    .finalize = Finalize,
 };
 
 const JSClass TestObserverListElement::class_ = {

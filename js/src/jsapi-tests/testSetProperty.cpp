@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include "js/Object.h"              
 #include "js/PropertyAndElement.h"  
 #include "jsapi-tests/tests.h"
@@ -33,16 +30,7 @@ BEGIN_TEST(testSetProperty_InheritedGlobalSetter) {
 
 const JSClass* getGlobalClass(void) override {
   static const JSClassOps noResolveGlobalClassOps = {
-      nullptr,                   
-      nullptr,                   
-      nullptr,                   
-      nullptr,                   
-      nullptr,                   
-      nullptr,                   
-      nullptr,                   
-      nullptr,                   
-      nullptr,                   
-      JS_GlobalObjectTraceHook,  
+      .trace = JS_GlobalObjectTraceHook,
   };
 
   static const JSClass noResolveGlobalClass = {

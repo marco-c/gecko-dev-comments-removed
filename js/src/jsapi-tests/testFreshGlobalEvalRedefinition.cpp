@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include "mozilla/Utf8.h"  
 
 #include "js/CompilationAndEvaluation.h"  
@@ -21,16 +18,9 @@ static bool GlobalResolve(JSContext* cx, JS::HandleObject obj, JS::HandleId id,
 
 BEGIN_TEST(testRedefineGlobalEval) {
   static const JSClassOps clsOps = {
-      nullptr,                         
-      nullptr,                         
-      nullptr,                         
-      JS_NewEnumerateStandardClasses,  
-      GlobalResolve,                   
-      nullptr,                         
-      nullptr,                         
-      nullptr,                         
-      nullptr,                         
-      JS_GlobalObjectTraceHook,        
+      .newEnumerate = JS_NewEnumerateStandardClasses,
+      .resolve = GlobalResolve,
+      .trace = JS_GlobalObjectTraceHook,
   };
 
   static const JSClass cls = {

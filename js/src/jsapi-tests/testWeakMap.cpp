@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include "gc/Zone.h"
 #include "js/Array.h"               
 #include "js/Exception.h"           
@@ -270,16 +267,7 @@ JSObject* newCCW(JS::HandleObject sourceZone, JS::HandleObject destZone) {
 
 JSObject* newDelegate() {
   static const JSClassOps delegateClassOps = {
-      nullptr,                   
-      nullptr,                   
-      nullptr,                   
-      nullptr,                   
-      nullptr,                   
-      nullptr,                   
-      nullptr,                   
-      nullptr,                   
-      nullptr,                   
-      JS_GlobalObjectTraceHook,  
+      .trace = JS_GlobalObjectTraceHook,
   };
 
   static const js::ClassExtension delegateClassExtension = {
