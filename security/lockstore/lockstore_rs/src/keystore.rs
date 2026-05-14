@@ -3,8 +3,9 @@
 
 
 use crate::crypto::{self, CipherSuite, DEFAULT_CIPHER_SUITE};
+use crate::pbkdf2;
 use crate::utils;
-use crate::{LockstoreError, SecurityLevel, KEK_REF_PREFIX};
+use crate::{KekType, LockstoreError, KEK_REF_PREFIX, KEK_REF_PRP};
 
 use kvstore::{Database, GetOptions, Key, Store, StorePath};
 use nss_rs::aead::Aead;
@@ -12,14 +13,21 @@ use nss_rs::p11;
 use nss_rs::SymKey;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
+use std::time::{Duration, Instant};
+use zeroize::Zeroize;
+
+
+
 
 const DB_NAME: &str = "lockstore.keys";
 const DEK_PREFIX: &str = "lockstore::dek::";
+const PRP_PARAMS_KEY: &str = "lockstore::prp::params";
+const PRP_VERIFIER_PLAINTEXT: &[u8] = b"lockstore-prp-verifier";
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct WrappedDek {
-    security_level: SecurityLevel,
+    kek_type: KekType,
     kek_ref: String,
     wrapped_dek: Vec<u8>,
 }
@@ -32,10 +40,43 @@ struct DekMetadata {
     extractable: bool,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct PrimaryPasswordParams {
+    salt: Vec<u8>,
+    iterations: u32,
+    verifier: Vec<u8>,
+    cipher_suite: CipherSuite,
+}
+
+
+
+struct CachedKek {
+    kek: Vec<u8>,
+    expires_at: Instant,
+}
+
+impl Drop for CachedKek {
+    fn drop(&mut self) {
+        self.kek.zeroize();
+    }
+}
+
 #[derive(Clone)]
 pub struct LockstoreKeystore {
     store: Arc<Store>,
     in_memory: bool,
+    prp_cache: Arc<Mutex<Option<CachedKek>>>,
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    dek_ops_lock: Arc<Mutex<()>>,
 }
 
 impl LockstoreKeystore {
@@ -45,6 +86,8 @@ impl LockstoreKeystore {
         Ok(Self {
             store,
             in_memory: false,
+            prp_cache: Arc::new(Mutex::new(None)),
+            dek_ops_lock: Arc::new(Mutex::new(())),
         })
     }
 
@@ -54,6 +97,8 @@ impl LockstoreKeystore {
         Ok(Self {
             store,
             in_memory: true,
+            prp_cache: Arc::new(Mutex::new(None)),
+            dek_ops_lock: Arc::new(Mutex::new(())),
         })
     }
 
@@ -73,7 +118,14 @@ impl LockstoreKeystore {
         extractable: bool,
         cipher_suite: CipherSuite,
     ) -> Result<(), LockstoreError> {
-        let security_level = SecurityLevel::from_kek_ref(kek_ref)?;
+        let kek_type = KekType::from_kek_ref(kek_ref)?;
+
+        
+        
+        let _guard = self
+            .dek_ops_lock
+            .lock()
+            .map_err(|_| LockstoreError::InvalidConfiguration("dek_ops_lock poisoned".into()))?;
 
         let dek_key = format!("{}{}", DEK_PREFIX, collection_name);
         let db = Database::new(&self.store, DB_NAME);
@@ -93,7 +145,7 @@ impl LockstoreKeystore {
 
         let metadata = DekMetadata {
             wrapped_deks: vec![WrappedDek {
-                security_level,
+                kek_type,
                 kek_ref: kek_ref.to_string(),
                 wrapped_dek: wrapped,
             }],
@@ -149,13 +201,57 @@ impl LockstoreKeystore {
         Ok((dek, cipher_suite))
     }
 
+    
+    
+    
+    pub fn encrypt(
+        &self,
+        collection: &str,
+        kek_ref: &str,
+        plaintext: &[u8],
+    ) -> Result<Vec<u8>, LockstoreError> {
+        let (dek, cipher_suite, _) = self.get_dek_internal(collection, kek_ref)?;
+        crypto::encrypt_with_key(plaintext, &dek, cipher_suite)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    pub fn decrypt(
+        &self,
+        collection: &str,
+        kek_ref: &str,
+        ciphertext: &[u8],
+    ) -> Result<Vec<u8>, LockstoreError> {
+        let (dek, expected_suite, _) = self.get_dek_internal(collection, kek_ref)?;
+        let blob_suite = crypto::cipher_suite_of_blob(ciphertext)?;
+        if blob_suite != expected_suite {
+            return Err(LockstoreError::Decryption(format!(
+                "cipher-suite mismatch: blob {} but DEK was created with {}",
+                blob_suite.as_str(),
+                expected_suite.as_str()
+            )));
+        }
+        crypto::decrypt_with_key(ciphertext, &dek)
+    }
+
     pub fn add_kek(
         &self,
         collection_name: &str,
         source_kek_ref: &str,
         new_kek_ref: &str,
     ) -> Result<(), LockstoreError> {
-        let new_security_level = SecurityLevel::from_kek_ref(new_kek_ref)?;
+        let new_kek_type = KekType::from_kek_ref(new_kek_ref)?;
+
+        let _guard = self
+            .dek_ops_lock
+            .lock()
+            .map_err(|_| LockstoreError::InvalidConfiguration("dek_ops_lock poisoned".into()))?;
+
         let mut metadata = self.load_metadata(collection_name)?;
 
         if metadata
@@ -187,7 +283,7 @@ impl LockstoreKeystore {
         let new_wrapped = crypto::encrypt_with_symkey(&dek, &new_kek, metadata.cipher_suite)?;
 
         metadata.wrapped_deks.push(WrappedDek {
-            security_level: new_security_level,
+            kek_type: new_kek_type,
             kek_ref: new_kek_ref.to_string(),
             wrapped_dek: new_wrapped,
         });
@@ -196,6 +292,11 @@ impl LockstoreKeystore {
     }
 
     pub fn remove_kek(&self, collection_name: &str, kek_ref: &str) -> Result<(), LockstoreError> {
+        let _guard = self
+            .dek_ops_lock
+            .lock()
+            .map_err(|_| LockstoreError::InvalidConfiguration("dek_ops_lock poisoned".into()))?;
+
         let mut metadata = self.load_metadata(collection_name)?;
 
         if metadata.wrapped_deks.len() <= 1 {
@@ -225,6 +326,11 @@ impl LockstoreKeystore {
     }
 
     pub fn delete_dek(&self, collection_name: &str) -> Result<(), LockstoreError> {
+        let _guard = self
+            .dek_ops_lock
+            .lock()
+            .map_err(|_| LockstoreError::InvalidConfiguration("dek_ops_lock poisoned".into()))?;
+
         let dek_key = format!("{}{}", DEK_PREFIX, collection_name);
         let db = Database::new(&self.store, DB_NAME);
         let key = Key::from(dek_key.as_str());
@@ -274,10 +380,212 @@ impl LockstoreKeystore {
     }
 
     pub fn close(self) {
+        self.lock_prp();
         if self.in_memory {
             let _ = crypto::zeroize(&self.store, DB_NAME, "lockstore::kek::local");
         }
         self.store.close();
+    }
+
+    
+    
+    
+
+    
+    pub fn has_prp(&self) -> bool {
+        self.load_prp_params().ok().flatten().is_some()
+    }
+
+    
+    pub fn is_prp_unlocked(&self) -> bool {
+        let mut guard = self.prp_cache.lock().unwrap();
+        match guard.as_ref() {
+            Some(cached) if cached.expires_at > Instant::now() => true,
+            Some(_) => {
+                *guard = None;
+                false
+            }
+            None => false,
+        }
+    }
+
+    
+    
+    pub fn lock_prp(&self) {
+        let mut guard = self.prp_cache.lock().unwrap();
+        *guard = None;
+    }
+
+    
+    
+    pub fn unlock_prp(&self, password: &[u8], timeout: Duration) -> Result<(), LockstoreError> {
+        let params = self
+            .load_prp_params()?
+            .ok_or(LockstoreError::NotInitialized)?;
+
+        let mut kek = pbkdf2::derive_kek(
+            password,
+            &params.salt,
+            params.iterations,
+            params.cipher_suite.key_size(),
+        )?;
+
+        match crypto::decrypt_with_key(&params.verifier, &kek) {
+            Ok(plaintext) if plaintext == PRP_VERIFIER_PLAINTEXT => {}
+            Ok(_) | Err(_) => {
+                kek.zeroize();
+                return Err(LockstoreError::WrongPassword);
+            }
+        }
+
+        let mut guard = self.prp_cache.lock().unwrap();
+        *guard = Some(CachedKek {
+            kek,
+            expires_at: Instant::now() + timeout,
+        });
+
+        Ok(())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn set_prp(&self, old: Option<&[u8]>, new: &[u8]) -> Result<(), LockstoreError> {
+        self.set_prp_inner(old, new, pbkdf2::PBKDF2_ITERATIONS)
+    }
+
+    
+    
+    
+    
+    
+    pub fn set_prp_test_only(&self, old: Option<&[u8]>, new: &[u8]) -> Result<(), LockstoreError> {
+        self.set_prp_inner(old, new, 1)
+    }
+
+    
+    
+    
+    fn set_prp_inner(
+        &self,
+        old: Option<&[u8]>,
+        new: &[u8],
+        iterations: u32,
+    ) -> Result<(), LockstoreError> {
+        if new.is_empty() {
+            return Err(LockstoreError::InvalidConfiguration(
+                "new primary password must not be empty".to_string(),
+            ));
+        }
+
+        let _guard = self
+            .dek_ops_lock
+            .lock()
+            .map_err(|_| LockstoreError::InvalidConfiguration("dek_ops_lock poisoned".into()))?;
+
+        let existing = self.load_prp_params()?;
+        if existing.is_some() != old.is_some() {
+            return Err(LockstoreError::InvalidConfiguration(
+                "Primary password state does not match: 'old' must be provided iff \
+                 already initialized"
+                    .to_string(),
+            ));
+        }
+
+        let cipher_suite = existing
+            .as_ref()
+            .map(|p| p.cipher_suite)
+            .unwrap_or(DEFAULT_CIPHER_SUITE);
+
+        let new_salt = crypto::generate_random_bytes(pbkdf2::PBKDF2_SALT_SIZE);
+        let new_kek = pbkdf2::derive_kek(new, &new_salt, iterations, cipher_suite.key_size())?;
+
+        if let (Some(params), Some(old_bytes)) = (existing.as_ref(), old) {
+            let old_kek = pbkdf2::derive_kek(
+                old_bytes,
+                &params.salt,
+                params.iterations,
+                params.cipher_suite.key_size(),
+            )?;
+            match crypto::decrypt_with_key(&params.verifier, &old_kek) {
+                Ok(plaintext) if plaintext == PRP_VERIFIER_PLAINTEXT => {}
+                _ => return Err(LockstoreError::WrongPassword),
+            }
+            self.rewrap_prp_deks(&old_kek, &new_kek, cipher_suite)?;
+        }
+
+        let verifier = crypto::encrypt_with_key(PRP_VERIFIER_PLAINTEXT, &new_kek, cipher_suite)?;
+        self.save_prp_params(&PrimaryPasswordParams {
+            salt: new_salt,
+            iterations,
+            verifier,
+            cipher_suite,
+        })?;
+        self.lock_prp();
+        Ok(())
+    }
+
+    fn rewrap_prp_deks(
+        &self,
+        old_kek: &[u8],
+        new_kek: &[u8],
+        cipher_suite: CipherSuite,
+    ) -> Result<(), LockstoreError> {
+        let collections = self.list_collections()?;
+        for collection in collections {
+            let mut metadata = match self.load_metadata(&collection) {
+                Ok(m) => m,
+                Err(LockstoreError::NotFound(_)) => continue,
+                Err(e) => return Err(e),
+            };
+            let mut changed = false;
+            for entry in metadata.wrapped_deks.iter_mut() {
+                if entry.kek_ref != KEK_REF_PRP {
+                    continue;
+                }
+                let dek = crypto::decrypt_with_key(&entry.wrapped_dek, old_kek)?;
+                entry.wrapped_dek = crypto::encrypt_with_key(&dek, new_kek, cipher_suite)?;
+                changed = true;
+            }
+            if changed {
+                self.save_metadata(&collection, &metadata)?;
+            }
+        }
+        Ok(())
+    }
+
+    fn load_prp_params(&self) -> Result<Option<PrimaryPasswordParams>, LockstoreError> {
+        let db = Database::new(&self.store, DB_NAME);
+        let key = Key::from(PRP_PARAMS_KEY);
+        let value = db.get(&key, &GetOptions::default())?;
+        match value {
+            None => Ok(None),
+            Some(v) => {
+                let bytes = utils::value_to_bytes(&v)?;
+                let params: PrimaryPasswordParams = serde_json::from_slice(&bytes)?;
+                Ok(Some(params))
+            }
+        }
+    }
+
+    fn save_prp_params(&self, params: &PrimaryPasswordParams) -> Result<(), LockstoreError> {
+        let db = Database::new(&self.store, DB_NAME);
+        let key = Key::from(PRP_PARAMS_KEY);
+        let bytes = serde_json::to_vec(params)?;
+        let value = utils::bytes_to_value(&bytes)?;
+        db.put(&[(key, Some(value))])?;
+        Ok(())
     }
 
     
@@ -289,20 +597,36 @@ impl LockstoreKeystore {
         cipher_suite: CipherSuite,
         kek_ref: &str,
     ) -> Result<SymKey, LockstoreError> {
-        let security_level = SecurityLevel::from_kek_ref(kek_ref)?;
-        match security_level {
-            SecurityLevel::LocalKey => {
+        let kek_type = KekType::from_kek_ref(kek_ref)?;
+        match kek_type {
+            KekType::LocalKey => {
                 let kek_bytes = self.get_kek_local(cipher_suite, kek_ref)?;
                 Aead::import_key(cipher_suite.to_nss_algorithm(), &kek_bytes)
                     .map_err(|e| LockstoreError::Encryption(e.to_string()))
             }
-            SecurityLevel::Pkcs11Token => self.get_kek_from_token(cipher_suite, kek_ref),
+            KekType::Pkcs11Token => self.get_kek_from_token(cipher_suite, kek_ref),
+            KekType::PrimaryPassword => self.get_kek_prp(cipher_suite),
             #[cfg(test)]
-            SecurityLevel::TestLevel => {
+            KekType::Test => {
                 let kek_bytes = self.get_kek_local(cipher_suite, kek_ref)?;
                 Aead::import_key(cipher_suite.to_nss_algorithm(), &kek_bytes)
                     .map_err(|e| LockstoreError::Encryption(e.to_string()))
             }
+        }
+    }
+
+    fn get_kek_prp(&self, cipher_suite: CipherSuite) -> Result<SymKey, LockstoreError> {
+        let mut guard = self.prp_cache.lock().unwrap();
+        match guard.as_ref() {
+            Some(cached) if cached.expires_at > Instant::now() => {
+                Aead::import_key(cipher_suite.to_nss_algorithm(), &cached.kek)
+                    .map_err(|e| LockstoreError::Encryption(e.to_string()))
+            }
+            Some(_) => {
+                *guard = None;
+                Err(LockstoreError::Locked)
+            }
+            None => Err(LockstoreError::Locked),
         }
     }
 

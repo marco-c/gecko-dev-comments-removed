@@ -5,12 +5,15 @@
 pub use lockstore_rs::LockstoreDatastore;
 use lockstore_rs::{LockstoreError, LockstoreKeystore, KEYSTORE_FILENAME};
 use nserror::{
-    nsresult, NS_ERROR_ABORT, NS_ERROR_FAILURE, NS_ERROR_INVALID_ARG, NS_ERROR_NOT_AVAILABLE, NS_OK,
+    nsresult, NS_ERROR_ABORT, NS_ERROR_FAILURE, NS_ERROR_INVALID_ARG, NS_ERROR_NOT_AVAILABLE,
+    NS_ERROR_NOT_INITIALIZED, NS_OK,
 };
 use nsstring::{nsACString, nsCString};
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::time::Duration;
 use thin_vec::ThinVec;
+use zeroize::Zeroize;
 
 
 
@@ -33,9 +36,16 @@ fn error_to_nsresult(err: LockstoreError) -> nsresult {
         LockstoreError::NotExtractable(_) => NS_ERROR_NOT_AVAILABLE,
         LockstoreError::AuthenticationCancelled => NS_ERROR_ABORT,
         LockstoreError::InvalidKekRef(_) => NS_ERROR_INVALID_ARG,
+        LockstoreError::Locked => NS_ERROR_NOT_AVAILABLE,
+        LockstoreError::WrongPassword => NS_ERROR_ABORT,
+        LockstoreError::NotInitialized => NS_ERROR_NOT_INITIALIZED,
         _ => NS_ERROR_FAILURE,
     }
 }
+
+
+
+
 
 
 
@@ -190,13 +200,209 @@ pub extern "C" fn lockstore_keystore_remove_kek(
     }
 }
 
+
+
+
+
+
+
+#[no_mangle]
+pub unsafe extern "C" fn lockstore_keystore_encrypt(
+    handle: &LockstoreKeystoreHandle,
+    collection: &nsACString,
+    kek_ref: &nsACString,
+    plaintext_ptr: *const u8,
+    plaintext_len: usize,
+    ret_ciphertext: &mut ThinVec<u8>,
+) -> nsresult {
+    if collection.is_empty() || kek_ref.is_empty() {
+        return NS_ERROR_INVALID_ARG;
+    }
+    if plaintext_ptr.is_null() || plaintext_len == 0 {
+        return NS_ERROR_INVALID_ARG;
+    }
+    let coll_str = collection.to_utf8();
+    let kek_ref_str = kek_ref.to_utf8();
+    
+    
+    let plaintext = unsafe { std::slice::from_raw_parts(plaintext_ptr, plaintext_len) };
+    match handle.keystore.encrypt(&coll_str, &kek_ref_str, plaintext) {
+        Ok(bytes) => {
+            *ret_ciphertext = bytes.into();
+            NS_OK
+        }
+        Err(e) => error_to_nsresult(e),
+    }
+}
+
+
+
+
+
+
+#[no_mangle]
+pub unsafe extern "C" fn lockstore_keystore_decrypt(
+    handle: &LockstoreKeystoreHandle,
+    collection: &nsACString,
+    kek_ref: &nsACString,
+    ciphertext_ptr: *const u8,
+    ciphertext_len: usize,
+    ret_plaintext: &mut ThinVec<u8>,
+) -> nsresult {
+    if collection.is_empty() || kek_ref.is_empty() {
+        return NS_ERROR_INVALID_ARG;
+    }
+    if ciphertext_ptr.is_null() || ciphertext_len == 0 {
+        return NS_ERROR_INVALID_ARG;
+    }
+    let coll_str = collection.to_utf8();
+    let kek_ref_str = kek_ref.to_utf8();
+    
+    
+    let ciphertext = unsafe { std::slice::from_raw_parts(ciphertext_ptr, ciphertext_len) };
+    match handle.keystore.decrypt(&coll_str, &kek_ref_str, ciphertext) {
+        Ok(bytes) => {
+            *ret_plaintext = bytes.into();
+            NS_OK
+        }
+        Err(e) => error_to_nsresult(e),
+    }
+}
+
+
+
+
+
+
 #[no_mangle]
 pub unsafe extern "C" fn lockstore_keystore_close(
     handle: *mut LockstoreKeystoreHandle,
 ) -> nsresult {
-    let _ = Box::from_raw(handle);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if let Some(boxed) = unsafe { handle.as_mut() } {
+        boxed.keystore.lock_prp();
+    }
+    
+    let _ = unsafe { Box::from_raw(handle) };
     NS_OK
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[no_mangle]
+pub unsafe extern "C" fn lockstore_keystore_set_prp(
+    handle: &LockstoreKeystoreHandle,
+    old_ptr: *mut u8,
+    old_len: usize,
+    new_ptr: *mut u8,
+    new_len: usize,
+) -> nsresult {
+    if new_ptr.is_null() {
+        return NS_ERROR_INVALID_ARG;
+    }
+    
+    
+    
+    let new_slice = unsafe { std::slice::from_raw_parts_mut(new_ptr, new_len) };
+    let mut old_slice = if old_ptr.is_null() {
+        None
+    } else {
+        
+        Some(unsafe { std::slice::from_raw_parts_mut(old_ptr, old_len) })
+    };
+
+    let result = handle.keystore.set_prp(old_slice.as_deref(), &*new_slice);
+
+    
+    
+    
+    new_slice.zeroize();
+    if let Some(ref mut old) = old_slice {
+        old.zeroize();
+    }
+
+    match result {
+        Ok(()) => NS_OK,
+        Err(e) => error_to_nsresult(e),
+    }
+}
+
+
+
+
+
+#[no_mangle]
+pub unsafe extern "C" fn lockstore_keystore_unlock_prp(
+    handle: &LockstoreKeystoreHandle,
+    pw_ptr: *mut u8,
+    pw_len: usize,
+    timeout_ms: u32,
+) -> nsresult {
+    if pw_ptr.is_null() {
+        return NS_ERROR_INVALID_ARG;
+    }
+    
+    
+    let pw = unsafe { std::slice::from_raw_parts_mut(pw_ptr, pw_len) };
+
+    let result = handle
+        .keystore
+        .unlock_prp(&*pw, Duration::from_millis(timeout_ms as u64));
+
+    pw.zeroize();
+
+    match result {
+        Ok(()) => NS_OK,
+        Err(e) => error_to_nsresult(e),
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn lockstore_keystore_lock_prp(handle: &LockstoreKeystoreHandle) -> nsresult {
+    handle.keystore.lock_prp();
+    NS_OK
+}
+
+#[no_mangle]
+pub extern "C" fn lockstore_keystore_is_prp_unlocked(
+    handle: &LockstoreKeystoreHandle,
+    out_unlocked: &mut bool,
+) -> nsresult {
+    *out_unlocked = handle.keystore.is_prp_unlocked();
+    NS_OK
+}
+
+#[no_mangle]
+pub extern "C" fn lockstore_keystore_has_prp(
+    handle: &LockstoreKeystoreHandle,
+    out_has: &mut bool,
+) -> nsresult {
+    *out_has = handle.keystore.has_prp();
+    NS_OK
+}
+
+
+
+
 
 
 
@@ -231,6 +437,10 @@ pub unsafe extern "C" fn lockstore_datastore_open(
     NS_OK
 }
 
+
+
+
+
 #[no_mangle]
 pub unsafe extern "C" fn lockstore_datastore_put(
     handle: &LockstoreDatastore,
@@ -248,7 +458,9 @@ pub unsafe extern "C" fn lockstore_datastore_put(
         return NS_ERROR_INVALID_ARG;
     }
 
-    let data_slice = std::slice::from_raw_parts(data_ptr, data_len);
+    
+    
+    let data_slice = unsafe { std::slice::from_raw_parts(data_ptr, data_len) };
     let entry_str = entry_name.to_utf8();
 
     match handle.put(&entry_str, data_slice) {
@@ -314,8 +526,14 @@ pub extern "C" fn lockstore_datastore_keys(
     }
 }
 
+
+
+
+
 #[no_mangle]
 pub unsafe extern "C" fn lockstore_datastore_close(handle: *mut LockstoreDatastore) -> nsresult {
-    Box::from_raw(handle).close();
+    
+    
+    unsafe { Box::from_raw(handle).close() };
     NS_OK
 }
