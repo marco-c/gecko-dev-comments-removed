@@ -100,8 +100,7 @@ class DatabaseTester : public DatabaseLocker {
 
     
     
-    rv = stmt->Finalize();
-    do_check_eq(rv, NS_ERROR_FILE_IS_LOCKED);
+    stmt->Finalize();
     mConnection = nullptr;
 
     Notify(TEST_DONE);
