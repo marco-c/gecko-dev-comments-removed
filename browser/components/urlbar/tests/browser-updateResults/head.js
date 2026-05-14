@@ -387,8 +387,8 @@ async function doSuggestedIndexTest({ search1, search2, duringUpdate }) {
 
   
   
-  
-  
+  await new Promise(r => requestAnimationFrame(r));
+
   
   
   
@@ -396,7 +396,7 @@ async function doSuggestedIndexTest({ search1, search2, duringUpdate }) {
   
   
   let mutationPromise = new Promise(resolve => {
-    let lastMutationTime = ChromeUtils.now();
+    let lastMutationTime = null;
     let observer = new MutationObserver(() => {
       info("Observed mutation");
       lastMutationTime = ChromeUtils.now();
@@ -410,7 +410,10 @@ async function doSuggestedIndexTest({ search1, search2, duringUpdate }) {
 
     let interval = setInterval(
       () => {
-        if (MUTATION_SETTLE_TIME_MS < ChromeUtils.now() - lastMutationTime) {
+        if (
+          lastMutationTime !== null &&
+          MUTATION_SETTLE_TIME_MS < ChromeUtils.now() - lastMutationTime
+        ) {
           info("No further mutations observed, stopping");
           clearInterval(interval);
           observer.disconnect();
