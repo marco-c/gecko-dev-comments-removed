@@ -71,7 +71,9 @@ class KeyframeUtils {
 
 
 
-  static void DistributeKeyframes(nsTArray<Keyframe>& aKeyframes);
+
+
+  static void ComputeMissingKeyframeOffsets(nsTArray<Keyframe>& aKeframes);
 
   
 

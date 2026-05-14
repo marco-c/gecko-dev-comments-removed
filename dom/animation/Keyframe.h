@@ -66,7 +66,30 @@ struct Keyframe {
   Keyframe& operator=(const Keyframe& aOther) = default;
   Keyframe& operator=(Keyframe&& aOther) = default;
 
-  Maybe<double> mOffset;
+  struct OffsetType {
+    
+    
+    
+    StyleTimelineRangeName mRangeName = StyleTimelineRangeName::None;
+    double mPercentage = 0.0;
+
+    static OffsetType PercentageOffset(const double aPercentage) {
+      return {StyleTimelineRangeName::None, aPercentage};
+    }
+
+    bool IsTimelineRangeOffset() const {
+      MOZ_ASSERT(mRangeName != StyleTimelineRangeName::Normal);
+      return mRangeName != StyleTimelineRangeName::None;
+    }
+
+    bool operator==(const OffsetType& aOther) const {
+      return mRangeName == aOther.mRangeName &&
+             mPercentage == aOther.mPercentage;
+    }
+  };
+  
+  
+  Maybe<OffsetType> mOffset;
   static constexpr double kComputedOffsetNotSet = -1.0;
   double mComputedOffset = kComputedOffsetNotSet;
   Maybe<StyleComputedTimingFunction> mTimingFunction;  

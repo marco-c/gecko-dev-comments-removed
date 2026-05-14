@@ -253,7 +253,7 @@ void KeyframeEffect::SetKeyframes(nsTArray<Keyframe>&& aKeyframes,
   }
 
   mKeyframes = std::move(aKeyframes);
-  KeyframeUtils::DistributeKeyframes(mKeyframes);
+  KeyframeUtils::ComputeMissingKeyframeOffsets(mKeyframes);
 
   if (mAnimation && mAnimation->IsRelevant()) {
     MutationObservers::NotifyAnimationChanged(mAnimation);
@@ -1259,11 +1259,23 @@ void KeyframeEffect::GetKeyframes(JSContext* aCx, nsTArray<JSObject*>& aResult,
     
     BaseComputedKeyframe keyframeDict;
     if (keyframe.mOffset) {
-      keyframeDict.mOffset.SetValue(keyframe.mOffset.value());
+      
+      if (!keyframe.mOffset->IsTimelineRangeOffset()) {
+        keyframeDict.mOffset.SetValue(keyframe.mOffset->mPercentage);
+      }
     }
-    MOZ_ASSERT(keyframe.mComputedOffset != Keyframe::kComputedOffsetNotSet,
-               "Invalid computed offset");
-    keyframeDict.mComputedOffset.Construct(keyframe.mComputedOffset);
+    if (keyframe.mComputedOffset == Keyframe::kComputedOffsetNotSet) {
+      MOZ_ASSERT(keyframe.mOffset && keyframe.mOffset->IsTimelineRangeOffset(),
+                 "Invalid computed offset");
+      
+      
+      
+      
+      keyframeDict.mComputedOffset.Construct(
+          std::numeric_limits<double>::quiet_NaN());
+    } else {
+      keyframeDict.mComputedOffset.Construct(keyframe.mComputedOffset);
+    }
     if (keyframe.mTimingFunction) {
       keyframeDict.mEasing.Truncate();
       keyframe.mTimingFunction.ref().AppendToString(keyframeDict.mEasing);
