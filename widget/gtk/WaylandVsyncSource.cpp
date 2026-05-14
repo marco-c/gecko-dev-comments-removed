@@ -73,7 +73,7 @@ void WaylandVsyncSource::Init() {
   
   
   
-  mWaylandSurface->SetFrameCallbackLocked(
+  mWaylandSurface->SetVSyncCallbackLocked(
       surfaceLock,
       [this, self = RefPtr{this}](wl_callback* aCallback,
                                   uint32_t aTime) -> void {
@@ -148,7 +148,7 @@ void WaylandVsyncSource::SetVSyncEventsStateLocked(
     MozClearHandleID(mHiddenWindowTimerID, g_source_remove);
   }
   WaylandSurfaceLock lock(mWaylandSurface);
-  mWaylandSurface->SetFrameCallbackStateLocked(lock, aEnabled);
+  mWaylandSurface->SetVSyncCallbackStateLocked(lock, aEnabled);
 }
 
 void WaylandVsyncSource::EnableVsync() {
