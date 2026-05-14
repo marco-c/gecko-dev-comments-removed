@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef FFmpegDataDecoder_h_
 #define FFmpegDataDecoder_h_
 
@@ -64,6 +62,7 @@ class FFmpegDataDecoder<LIBAV_VER>
   MediaResult InitSWDecoder(AVDictionary** aOptions);
   MediaResult InitDecoder(AVCodec* aCodec, AVDictionary** aOptions);
   MediaResult AllocateExtraData();
+  MediaResult AssignCodecContextExtraData(const MediaByteBuffer* aBuffer);
   MediaResult DoDecode(MediaRawData* aSample, bool* aGotFrame,
                        DecodedData& aResults);
 
