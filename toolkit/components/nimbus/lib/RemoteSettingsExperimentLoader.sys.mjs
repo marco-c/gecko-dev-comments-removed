@@ -391,6 +391,8 @@ export class RemoteSettingsExperimentLoader {
 
     await this.withUpdateLock(() => this.#updateImpl(trigger, options));
 
+    Services.prefs.setBoolPref("nimbus.firstUpdateComplete", true);
+
     this._hasUpdatedOnce = true;
     this._updating = false;
     this._updatingDeferred.resolve();
@@ -860,9 +862,9 @@ export class RemoteSettingsExperimentLoader {
    * and vice versa.
    */
   async onEnabledPrefChange() {
-    if (lazy.ExperimentAPI.enabled) {
+    if (!this._enabled && lazy.ExperimentAPI.enabled) {
       await this.enable();
-    } else {
+    } else if (this._enabled && !lazy.ExperimentAPI.enabled) {
       this.disable();
     }
   }
