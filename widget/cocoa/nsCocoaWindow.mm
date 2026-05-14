@@ -4020,6 +4020,36 @@ static NSURL* GetPasteLocation(NSPasteboard* aPasteboard, bool aUseFallback) {
       [aPasteboard setString:[pasteboardOutputDict valueForKey:aType]
                      forType:aType];
     } else if ([aType
+                   isEqualToString:
+                       [UTIHelper
+                           stringFromPboardType:
+                               (NSString*)kPasteboardTypeFilePromiseContent]]) {
+      
+      
+      
+      
+      nsCOMPtr<nsISupports> mimeDataWrapper;
+      if (NS_SUCCEEDED(currentTransferable->GetTransferData(
+              kImageRequestMime, getter_AddRefs(mimeDataWrapper)))) {
+        nsCOMPtr<nsISupportsString> mimeStr =
+            do_QueryInterface(mimeDataWrapper);
+        if (mimeStr) {
+          nsAutoString mimeType;
+          mimeStr->GetData(mimeType);
+          if (!mimeType.IsEmpty()) {
+            NSString* nsMimeType = nsCocoaUtils::ToNSString(mimeType);
+            CFStringRef uti = UTTypeCreatePreferredIdentifierForTag(
+                kUTTagClassMIMEType, (CFStringRef)nsMimeType, nullptr);
+            if (uti) {
+              [aPasteboard setData:[(NSString*)uti
+                                       dataUsingEncoding:NSUTF8StringEncoding]
+                           forType:aType];
+              CFRelease(uti);
+            }
+          }
+        }
+      }
+    } else if ([aType
                    isEqualToString:[UTIHelper stringFromPboardType:
                                                   (NSString*)kUTTypeFileURL]] ||
                [aType isEqualToString:
@@ -4091,23 +4121,30 @@ static NSURL* GetPasteLocation(NSPasteboard* aPasteboard, bool aUseFallback) {
           continue;
         }
 
+        
+        
+        
+        
+        
+        nsCOMPtr<nsIFile> file = do_QueryInterface(fileDataPrimitive);
+        if (!file) {
+          continue;
+        }
+        nsAutoCString finalPath;
+        file->GetNativePath(finalPath);
+        NSString* filePath =
+            [NSString stringWithUTF8String:(const char*)finalPath.get()];
+        NSString* fileURLString =
+            [[NSURL fileURLWithPath:filePath] absoluteString];
         if ([aType
                 isEqualToString:[UTIHelper
                                     stringFromPboardType:(NSString*)
                                                              kUTTypeFileURL]]) {
-          
-          
-          nsCOMPtr<nsIFile> file = do_QueryInterface(fileDataPrimitive);
-          if (!file) {
-            continue;
-          }
-          nsAutoCString finalPath;
-          file->GetNativePath(finalPath);
-          NSString* filePath =
-              [NSString stringWithUTF8String:(const char*)finalPath.get()];
+          [aPasteboard setString:fileURLString forType:aType];
+        } else {
           [aPasteboard
-              setString:[[NSURL fileURLWithPath:filePath] absoluteString]
-                forType:aType];
+              setData:[fileURLString dataUsingEncoding:NSUTF8StringEncoding]
+              forType:aType];
         }
       }
     } else if ([aType
