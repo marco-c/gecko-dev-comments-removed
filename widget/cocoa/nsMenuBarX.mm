@@ -30,6 +30,7 @@
 #include "mozilla/Components.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/glean/WidgetCocoaMetrics.h"
+#include "mozilla/browser/NimbusFeatures.h"
 
 using namespace mozilla;
 using mozilla::dom::Element;
@@ -585,14 +586,23 @@ void nsMenuBarX::ApplicationMenuOpened() {
   }
 
   
-  bool isDefaultBrowser = false;
-  nsCOMPtr<nsIShellService> shell(do_GetService(NS_SHELLSERVICE_CONTRACTID));
-  if (!shell) {
-    NS_WARNING("Couldn't get ShellService to check default browser state");
+  if (NimbusFeatures::GetBool("macAppMenuSetAsDefault"_ns, "shown"_ns, false)) {
+    bool isDefaultBrowser = false;
+
+    nsCOMPtr<nsIShellService> shell(do_GetService(NS_SHELLSERVICE_CONTRACTID));
+    if (!shell) {
+      NS_WARNING("Couldn't get ShellService to check default browser state");
+    } else {
+      
+      shell->IsDefaultBrowser(false, &isDefaultBrowser);
+    }
+
+    [[mApplicationMenuDelegate setAsDefaultMenuItem]
+        setHidden:isDefaultBrowser];
   } else {
-    shell->IsDefaultBrowser(false, &isDefaultBrowser);
+    
+    [[mApplicationMenuDelegate setAsDefaultMenuItem] setHidden:true];
   }
-  [[mApplicationMenuDelegate setAsDefaultMenuItem] setHidden:isDefaultBrowser];
 }
 
 bool nsMenuBarX::PerformKeyEquivalent(NSEvent* aEvent) {
