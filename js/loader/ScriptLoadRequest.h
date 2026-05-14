@@ -312,6 +312,30 @@ class ScriptLoadRequest : public nsISupports,
     return mIsRetrievedFromMemoryCache;
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool IsFetchedAsTextSource() const {
+    MOZ_ASSERT(!IsRetrievedFromMemoryCache());
+    MOZ_ASSERT(!getLoadedScript()->IsCachedStencil());
+    MOZ_ASSERT(!getLoadedScript()->IsInvalidatedCachedStencil());
+    return getLoadedScript()->IsTextSource();
+  }
+  bool IsRetrievedAsSerializedStencil() const {
+    MOZ_ASSERT(!IsRetrievedFromMemoryCache());
+    MOZ_ASSERT(!getLoadedScript()->IsCachedStencil());
+    MOZ_ASSERT(!getLoadedScript()->IsInvalidatedCachedStencil());
+    return getLoadedScript()->IsSerializedStencil();
+  }
+
  public:
   
 
