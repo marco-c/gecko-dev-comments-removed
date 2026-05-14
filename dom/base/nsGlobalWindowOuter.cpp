@@ -3295,12 +3295,6 @@ already_AddRefed<BrowsingContext> nsGlobalWindowOuter::GetContentInternal(
     return do_AddRef(primaryContent->GetBrowsingContext());
   }
 
-  
-  
-  if (mDoc && aCallerType != CallerType::System) {
-    mDoc->WarnOnceAbout(DeprecatedOperations::eWindowContentUntrusted);
-  }
-
   MOZ_ASSERT(mBrowsingContext->IsContent());
   return do_AddRef(mBrowsingContext->Top());
 }
