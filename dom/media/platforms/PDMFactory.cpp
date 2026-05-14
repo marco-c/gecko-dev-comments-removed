@@ -564,19 +564,7 @@ void PDMFactory::CreateRddPDMs() {
 #ifdef MOZ_FFMPEG
   if (StaticPrefs::media_ffmpeg_enabled() &&
       StaticPrefs::media_rdd_ffmpeg_enabled() &&
-      !StartupPDM(
-          FFmpegRuntimeLinker::CreateDecoder(),
-  
-  
-  
-  
-  
-#  ifdef MOZ_WIDGET_GTK
-          StaticPrefs::media_hardware_video_decoding_vulkan_enabled_AtStartup()
-#  else
-          false
-#  endif
-              )) {
+      !StartupPDM(FFmpegRuntimeLinker::CreateDecoder())) {
     mFailureFlags += GetFailureFlagBasedOnFFmpegStatus(
         FFmpegRuntimeLinker::LinkStatusCode());
   }
