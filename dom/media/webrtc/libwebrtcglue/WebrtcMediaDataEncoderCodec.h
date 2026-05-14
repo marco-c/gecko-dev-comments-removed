@@ -67,6 +67,24 @@ class WebrtcMediaDataEncoder : public RefCountedWebrtcVideoEncoder {
       nullptr;
   MediaResult mError MOZ_GUARDED_BY(mCallbackMutex) = NS_OK;
 
+  
+  
+  
+  struct PendingFrame {
+    media::TimeUnit mTime;
+    uint32_t mRtpTimestamp = 0;
+  };
+  
+  
+  
+  static constexpr size_t kMaxFramesInFlight = 15;
+  Mutex mPendingMutex;
+  
+  
+  
+  AutoTArray<PendingFrame, kMaxFramesInFlight> mPendingFrames
+      MOZ_GUARDED_BY(mPendingMutex);
+
   VideoInfo mInfo;
   webrtc::CodecParameterMap mFormatParams;
   webrtc::CodecSpecificInfo mCodecSpecific;
