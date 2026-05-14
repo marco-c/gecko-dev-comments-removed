@@ -726,9 +726,14 @@ nsresult nsHttpHandler::AddAcceptAndDictionaryHeaders(
                   return rv;
                 }
               }
+              nsAutoCStringN<64> dictEncodings;
+              {
+                MutexAutoLock lock(self->mAcceptEncodingLock);
+                dictEncodings = self->mDictionaryAcceptEncodings;
+              }
               return aRequest->SetHeader(
-                  nsHttp::Accept_Encoding, self->mDictionaryAcceptEncodings,
-                  false, nsHttpHeaderArray::eVarietyRequestOverride);
+                  nsHttp::Accept_Encoding, dictEncodings, false,
+                  nsHttpHeaderArray::eVarietyRequestOverride);
             }  
             return NS_OK;
           });
@@ -804,13 +809,17 @@ nsresult nsHttpHandler::AddStandardRequestHeaders(
     if (NS_FAILED(rv)) return rv;
   }
 
-  if (aIsHTTPS) {
-    rv = request->SetHeader(nsHttp::Accept_Encoding, mHttpsAcceptEncodings,
-                            false, nsHttpHeaderArray::eVarietyRequestDefault);
-  } else {
-    rv = request->SetHeader(nsHttp::Accept_Encoding, mHttpAcceptEncodings,
-                            false, nsHttpHeaderArray::eVarietyRequestDefault);
+  nsAutoCStringN<64> acceptEncodings;
+  {
+    MutexAutoLock lock(mAcceptEncodingLock);
+    if (aIsHTTPS) {
+      acceptEncodings = mHttpsAcceptEncodings;
+    } else {
+      acceptEncodings = mHttpAcceptEncodings;
+    }
   }
+  rv = request->SetHeader(nsHttp::Accept_Encoding, acceptEncodings, false,
+                          nsHttpHeaderArray::eVarietyRequestDefault);
   return NS_OK;
 }
 
@@ -838,14 +847,17 @@ bool nsHttpHandler::IsAcceptableEncoding(const char* enc, bool isSecure) {
   
   
   bool rv;
-  if (isSecure) {
-    
-    
-    rv = nsHttp::FindToken(mDictionaryAcceptEncodings.get(), enc,
-                           HTTP_LWS ",") != nullptr;
-  } else {
-    rv = nsHttp::FindToken(mHttpAcceptEncodings.get(), enc, HTTP_LWS ",") !=
-         nullptr;
+  {
+    MutexAutoLock lock(mAcceptEncodingLock);
+    if (isSecure) {
+      
+      
+      rv = nsHttp::FindToken(mDictionaryAcceptEncodings.get(), enc,
+                             HTTP_LWS ",") != nullptr;
+    } else {
+      rv = nsHttp::FindToken(mHttpAcceptEncodings.get(), enc, HTTP_LWS ",") !=
+           nullptr;
+    }
   }
   
   
@@ -999,6 +1011,7 @@ const nsCString& nsHttpHandler::UserAgent(bool aShouldResistFingerprinting) {
     return mSpoofedUserAgent;
   }
 
+  MutexAutoLock lock(mUserAgentLock);
   if (!mUserAgentOverride.IsVoid()) {
     LOG(("using general.useragent.override : %s\n", mUserAgentOverride.get()));
     return mUserAgentOverride;
@@ -1093,6 +1106,7 @@ void nsHttpHandler::InitUserAgentComponents() {
   
   
   if (XRE_IsSocketProcess()) {
+    MutexAutoLock lock(mUserAgentLock);
     mUserAgentIsDirty = true;
     return;
   }
@@ -1207,7 +1221,10 @@ void nsHttpHandler::InitUserAgentComponents() {
   mOscpu.AssignLiteral("Linux x86_64");
 #endif
 
-  mUserAgentIsDirty = true;
+  {
+    MutexAutoLock lock(mUserAgentLock);
+    mUserAgentIsDirty = true;
+  }
 }
 
 #ifdef XP_MACOSX
@@ -1299,11 +1316,13 @@ void nsHttpHandler::PrefsChanged(const char* pref) {
   if (PREF_CHANGED(UA_PREF("compatMode.firefox"))) {
     rv = Preferences::GetBool(UA_PREF("compatMode.firefox"), &cVar);
     mCompatFirefoxEnabled = (NS_SUCCEEDED(rv) && cVar);
+    MutexAutoLock lock(mUserAgentLock);
     mUserAgentIsDirty = true;
   }
 
   
   if (PREF_CHANGED(UA_PREF("override"))) {
+    MutexAutoLock lock(mUserAgentLock);
     Preferences::GetCString(UA_PREF("override"), mUserAgentOverride);
     mUserAgentIsDirty = true;
   }
@@ -1323,7 +1342,10 @@ void nsHttpHandler::PrefsChanged(const char* pref) {
     } else {
       mDeviceModelId.Truncate();
     }
-    mUserAgentIsDirty = true;
+    {
+      MutexAutoLock lock(mUserAgentLock);
+      mUserAgentIsDirty = true;
+    }
   }
 #endif
 
@@ -2113,6 +2135,7 @@ nsresult nsHttpHandler::SetAcceptLanguages() {
 
 nsresult nsHttpHandler::SetAcceptEncodings(const char* aAcceptEncodings,
                                            bool isSecure, bool isDictionary) {
+  MutexAutoLock lock(mAcceptEncodingLock);
   if (isDictionary) {
     mDictionaryAcceptEncodings = aAcceptEncodings;
   } else if (isSecure) {
