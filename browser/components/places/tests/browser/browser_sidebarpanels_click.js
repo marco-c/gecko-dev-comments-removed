@@ -130,7 +130,7 @@ async function testPlacesPanel(testInfo) {
 
           let promiseAlert = promiseAlertDialogObserved();
 
-          synthesizeClickOnSelectedTreeCell(tree);
+          await synthesizeClickOnSelectedTreeCell(tree);
           
           
           

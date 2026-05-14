@@ -29,8 +29,10 @@ add_task(async function () {
     let node = library.ContentTree.view.view.nodeForTreeIndex(i);
     is(node.bookmarkGuid, bm.guid, "Found the expected bookmark");
     
+    library.ContentTree.view.focus();
+    
     library.ContentTree.view.selectNode(node);
-    synthesizeClickOnSelectedTreeCell(library.ContentTree.view);
+    await synthesizeClickOnSelectedTreeCell(library.ContentTree.view);
 
     is(
       library.document.getElementById("editBMPanel_keywordField").value,

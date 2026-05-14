@@ -46,15 +46,15 @@ add_task(async function test_open_multiple_bookmarks() {
     );
 
     
-    synthesizeClickOnSelectedTreeCell(tree, { button: 1 });
+    await synthesizeClickOnSelectedTreeCell(tree, { button: 1 });
 
     
-    synthesizeClickOnSelectedTreeCell(tree, { button: 0 });
+    await synthesizeClickOnSelectedTreeCell(tree, { button: 0 });
     tree.selectItems([bookmarks[0].guid]);
 
     is(tree.selectedNode.title, "Mozilla", "The first bookmark is selected");
 
-    synthesizeClickOnSelectedTreeCell(tree, { button: 0 });
+    await synthesizeClickOnSelectedTreeCell(tree, { button: 0 });
 
     TelemetryTestUtils.assertKeyedScalar(
       TelemetryTestUtils.getProcessScalars("parent", true),
@@ -65,7 +65,7 @@ add_task(async function test_open_multiple_bookmarks() {
 
     let newWinOpened = BrowserTestUtils.waitForNewWindow();
     
-    synthesizeClickOnSelectedTreeCell(tree, {
+    await synthesizeClickOnSelectedTreeCell(tree, {
       button: 2,
       type: "contextmenu",
     });
@@ -114,7 +114,7 @@ add_task(async function test_bookmarks_search() {
     
     tree.selectNode(tree.view.nodeForTreeIndex(0));
 
-    synthesizeClickOnSelectedTreeCell(tree, { button: 0 });
+    await synthesizeClickOnSelectedTreeCell(tree, { button: 0 });
     info("First link was selected and then clicked on");
 
     TelemetryTestUtils.assertKeyedScalar(

@@ -905,6 +905,11 @@ class PlacesViewBase {
 
 
 class PlacesToolbar extends PlacesViewBase {
+  
+  #pendingVisibilityRetry = false;
+  
+  #updatingNodesVisibility = false;
+
   constructor(placesUrl, rootElt, viewElt) {
     let timerId = Glean.bookmarksToolbar.init.start();
     super(placesUrl, rootElt, viewElt);
@@ -978,8 +983,6 @@ class PlacesToolbar extends PlacesViewBase {
     this._dragRoot = BookmarkingUI.toolbar.contains(this._viewElt)
       ? BookmarkingUI.toolbar
       : this._viewElt;
-
-    this._updatingNodesVisibility = false;
   }
 
   _cbEvents = [
@@ -1331,35 +1334,53 @@ class PlacesToolbar extends PlacesViewBase {
   }
 
   async _updateNodesVisibilityTimerCallback() {
-    if (this._updatingNodesVisibility || window.closed || !this._isAlive) {
+    if (this.#updatingNodesVisibility || window.closed || !this._isAlive) {
       return;
     }
-    this._updatingNodesVisibility = true;
+    this.#updatingNodesVisibility = true;
 
     let dwu = window.windowUtils;
 
-    let visibleCount = await window.promiseDocumentFlushed(() => {
-      let scrollRect = dwu.getBoundsWithoutFlushing(this._rootElt);
-      let count = 0;
-      for (let child of this._rootElt.children) {
-        let childRect = dwu.getBoundsWithoutFlushing(child);
-        let overflowed = this.isRTL
-          ? childRect.left < scrollRect.left
-          : childRect.right > scrollRect.right;
-        if (overflowed) {
-          
-          break;
+    let { visibleCount, scrollWidth } = await window.promiseDocumentFlushed(
+      () => {
+        let scrollRect = dwu.getBoundsWithoutFlushing(this._rootElt);
+        let count = 0;
+        for (let child of this._rootElt.children) {
+          let childRect = dwu.getBoundsWithoutFlushing(child);
+          let overflowed = this.isRTL
+            ? childRect.left < scrollRect.left
+            : childRect.right > scrollRect.right;
+          if (overflowed) {
+            
+            break;
+          }
+          count++;
         }
-        count++;
+        return { visibleCount: count, scrollWidth: scrollRect.width };
       }
-      return count;
-    });
+    );
 
-    this._updatingNodesVisibility = false;
+    this.#updatingNodesVisibility = false;
     if (!this._isAlive) {
       return;
     }
 
+    if (!scrollWidth) {
+      
+      
+      
+      if (!this.#pendingVisibilityRetry) {
+        this.#pendingVisibilityRetry = true;
+        window.requestAnimationFrame(() => {
+          if (this._isAlive) {
+            this.updateNodesVisibility();
+          }
+        });
+      }
+      return;
+    }
+
+    this.#pendingVisibilityRetry = false;
     window.requestAnimationFrame(() => {
       if (!this._isAlive) {
         return;
