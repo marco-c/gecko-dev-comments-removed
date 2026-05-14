@@ -1,5 +1,3 @@
-
-
 "use strict";
 
 Services.scriptloader.loadSubScript(
@@ -7,6 +5,15 @@ Services.scriptloader.loadSubScript(
   this
 );
 
+
+add_setup(async function () {
+  
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["sidebar.updatedBookmarks.enabled", false]],
+  });
+});
 
 function bookmarkContextMenuExtension() {
   return ExtensionTestUtils.loadExtension({
