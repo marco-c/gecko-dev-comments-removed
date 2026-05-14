@@ -1599,6 +1599,7 @@ class TrustPanel {
   }
 
   onPopupShown() {
+    PopupNotifications.suppressWhileOpen(this.#popup);
     
     
     if (this.#openingReason == "embedPlaceholderButton") {
