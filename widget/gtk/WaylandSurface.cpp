@@ -219,7 +219,8 @@ void WaylandSurface::SetVSyncCallbackLocked(
   
   
   if (HasEmulatedVSyncCallbackLocked(aProofOfLock) &&
-      !mEmulatedVSyncCallbackTimerID && (!mBufferAttached || !mIsMapped)) {
+      !mEmulatedVSyncCallbackTimerID && mVSyncEmulateCheck &&
+      mVSyncEmulateCheck()) {
     LOGVERBOSE(
         "WaylandSurface::SetVSyncCallbackLocked() emulated, schedule "
         "next check");
@@ -316,6 +317,19 @@ void WaylandSurface::SetVSyncCallbackStateHandlerLocked(
   LOGVERBOSE("WaylandSurface::SetVSyncCallbackStateHandlerLocked()");
   MOZ_DIAGNOSTIC_ASSERT(&aProofOfLock == mSurfaceLock);
   mVSyncCallbackStateHandler = aVSyncCallbackStateHandler;
+}
+
+void WaylandSurface::SetVSyncEmulateCheckLocked(
+    const WaylandSurfaceLock& aProofOfLock,
+    const std::function<bool(void)>& aVSyncEmulateCheck, bool aForce) {
+  LOGVERBOSE("WaylandSurface::SetVSyncEmulateCheckLocked()");
+  MOZ_DIAGNOSTIC_ASSERT(&aProofOfLock == mSurfaceLock);
+  if (!mVSyncEmulateCheck || aForce) {
+    mVSyncEmulateCheck = aVSyncEmulateCheck;
+  }
+  if (!mVSyncEmulateCheck) {
+    MozClearHandleID(mEmulatedVSyncCallbackTimerID, g_source_remove);
+  }
 }
 
 bool WaylandSurface::CreateViewportLocked(
