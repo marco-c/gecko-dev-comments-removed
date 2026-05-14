@@ -208,7 +208,6 @@ class imgMemoryReporter final : public nsIMemoryReporter {
   void UnregisterLoader(imgLoader* aLoader) {
     mKnownLoaders.RemoveElement(aLoader);
   }
-  void UnregisterAllLoaders() { mKnownLoaders.Clear(); }
 
  private:
   nsTArray<imgLoader*> mKnownLoaders;
@@ -1243,7 +1242,7 @@ void imgCacheExpirationTracker::NotifyExpired(imgCacheEntry* entry) {
 
 double imgLoader::sCacheTimeWeight;
 uint32_t imgLoader::sCacheMaxSize;
-StaticRefPtr<imgMemoryReporter> imgLoader::sMemReporter;
+imgMemoryReporter* imgLoader::sMemReporter;
 
 NS_IMPL_ISUPPORTS(imgLoader, imgILoader, nsIContentSniffer, imgICache,
                   nsISupportsWeakReference, nsIObserver)
@@ -1282,6 +1281,7 @@ imgLoader* imgLoader::PrivateBrowsingLoader() {
 imgLoader::imgLoader()
     : mUncachedImagesMutex("imgLoader::UncachedImages"),
       mRespectPrivacy(false) {
+  sMemReporter->AddRef();
   sMemReporter->RegisterLoader(this);
 }
 
@@ -1295,16 +1295,8 @@ imgLoader::~imgLoader() {
       req->ClearLoader();
     }
   }
-
-  
-  
-  
-  
-  
-  
-  if (sMemReporter) {
-    sMemReporter->UnregisterLoader(this);
-  }
+  sMemReporter->UnregisterLoader(this);
+  sMemReporter->Release();
 }
 
 void imgLoader::VerifyCacheSizes() {
@@ -1330,7 +1322,7 @@ void imgLoader::GlobalInit() {
   int32_t cachesize = StaticPrefs::image_cache_size_AtStartup();
   sCacheMaxSize = cachesize > 0 ? cachesize : 0;
 
-  sMemReporter = MakeRefPtr<imgMemoryReporter>();
+  sMemReporter = new imgMemoryReporter();
   RegisterStrongAsyncMemoryReporter(do_AddRef(sMemReporter));
   RegisterImagesContentUsedUncompressedDistinguishedAmount(
       imgMemoryReporter::ImagesContentUsedUncompressedDistinguishedAmount);
@@ -1338,14 +1330,7 @@ void imgLoader::GlobalInit() {
 
 void imgLoader::ShutdownMemoryReporter() {
   UnregisterImagesContentUsedUncompressedDistinguishedAmount();
-  if (sMemReporter) {
-    UnregisterStrongMemoryReporter(sMemReporter);
-    
-    
-    
-    sMemReporter->UnregisterAllLoaders();
-    sMemReporter = nullptr;
-  }
+  UnregisterStrongMemoryReporter(sMemReporter);
 }
 
 nsresult imgLoader::InitCache() {
