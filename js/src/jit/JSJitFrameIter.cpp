@@ -43,8 +43,6 @@ JSJitFrameIter::JSJitFrameIter(const JitActivation* activation, uint8_t* fp,
   
   if (unwinding) {
     MOZ_ASSERT(fp == activation->jsExitFP());
-  } else {
-    MOZ_ASSERT(fp > activation->jsOrWasmExitFP());
   }
   MOZ_ASSERT(!TlsContext.get()->inUnsafeCallWithABI);
 }

@@ -370,6 +370,11 @@ void JSRuntime::addSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf,
 
   rtSizes->wasmRuntime +=
       wasmInstances.lock()->sizeOfExcludingThis(mallocSizeOf);
+
+#ifdef ENABLE_WASM_JSPI
+  rtSizes->wasmContStacks +=
+      mainContextFromAnyThread()->wasm().contStacks().sizeOfNonHeap();
+#endif
 }
 
 static bool InvokeInterruptCallbacks(JSContext* cx) {
@@ -555,11 +560,31 @@ SharedScriptDataTableHolder& JSRuntime::scriptDataTableHolder() {
   return scriptDataTableHolder_;
 }
 
-bool JSRuntime::getHostDefinedData(JSContext* cx,
-                                   JS::MutableHandle<JSObject*> data) const {
+bool JSRuntime::getHostDefinedData(
+    JSContext* cx, JS::MutableHandle<JSObject*> incumbentGlobal,
+    JS::MutableHandle<JSObject*> optionalHostDefinedData) const {
   MOZ_ASSERT(cx->jobQueue);
 
-  return cx->jobQueue->getHostDefinedData(cx, data);
+  if (!cx->jobQueue->getHostDefinedData(cx, incumbentGlobal,
+                                        optionalHostDefinedData)) {
+    return false;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  MOZ_ASSERT_IF(incumbentGlobal, incumbentGlobal->is<GlobalObject>());
+
+  
+  
+  cx->check(optionalHostDefinedData);
+  return true;
 }
 
 JS_PUBLIC_API JSObject*

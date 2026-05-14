@@ -1257,14 +1257,6 @@ static const unsigned MaxHandlers = 16;
 static const unsigned MaxFrameSize = 512 * 1024;
 
 
-static const size_t ContJitStackSize = 0x100000;
-
-
-
-
-static const size_t ContRedZoneSize = 0x8000;
-
-
 
 static const unsigned MaxVarU32DecodedBytes = 5;
 
