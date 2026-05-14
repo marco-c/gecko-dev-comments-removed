@@ -51,7 +51,11 @@ static RefPtr<nsIContent> GetMenuChildContent(
       });
 }
 
+
+
+
 static bool gConstructingMenu = false;
+
 static bool gMenuMethodsSwizzled = false;
 
 
