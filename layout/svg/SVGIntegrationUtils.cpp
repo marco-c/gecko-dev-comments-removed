@@ -1219,8 +1219,8 @@ already_AddRefed<gfxDrawable> SVGIntegrationUtils::DrawableFromPaintServer(
 
   
   
-  RefPtr<gfxDrawingCallback> cb =
-      new PaintFrameCallback(aFrame, aPaintServerSize, aRenderSize, aFlags);
+  auto cb = MakeRefPtr<PaintFrameCallback>(aFrame, aPaintServerSize,
+                                           aRenderSize, aFlags);
   return MakeAndAddRef<gfxCallbackDrawable>(cb, aRenderSize);
 }
 

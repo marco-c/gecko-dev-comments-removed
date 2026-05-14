@@ -2253,9 +2253,9 @@ ImgDrawResult nsImageFrame::DisplayAltFeedbackWithoutLayer(
 
   
   if (!inner.IsEmpty()) {
-    RefPtr<TextDrawTarget> textDrawer =
-        new TextDrawTarget(aBuilder, aResources, aSc, aManager, aItem, inner,
-                            true);
+    auto textDrawer = MakeRefPtr<TextDrawTarget>(
+        aBuilder, aResources, aSc, aManager, aItem, inner,
+         true);
     MOZ_ASSERT(textDrawer->IsValid());
     if (textDrawer->IsValid()) {
       gfxContext captureCtx(textDrawer);

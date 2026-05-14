@@ -243,8 +243,8 @@ bool nsDisplayTextOverflowMarker::CreateWebRenderCommands(
   }
 
   
-  RefPtr<TextDrawTarget> textDrawer =
-      new TextDrawTarget(aBuilder, aResources, aSc, aManager, this, bounds);
+  auto textDrawer = MakeRefPtr<TextDrawTarget>(aBuilder, aResources, aSc,
+                                               aManager, this, bounds);
   MOZ_ASSERT(textDrawer->IsValid());
   if (!textDrawer->IsValid()) {
     return false;
