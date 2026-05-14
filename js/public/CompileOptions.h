@@ -234,8 +234,6 @@ class JS_PUBLIC_API PrefableCompileOptions {
 #endif
 
 #ifdef ENABLE_SOURCE_PHASE_IMPORTS
-  
-  
   bool sourcePhaseImports_ : 1;
 #endif
 
