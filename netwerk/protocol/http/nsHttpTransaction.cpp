@@ -670,7 +670,31 @@ void nsHttpTransaction::OnTransportStatus(nsITransport* transport,
       SetConnectEnd(TimeStamp::Now(), false);
     } else if (status == NS_NET_STATUS_SENDING_TO) {
       
-      SetRequestStart(TimeStamp::Now(), true);
+      
+      
+      
+      
+      
+      
+      if (!m0RTTInProgress) {
+        SetRequestStart(TimeStamp::Now(), true);
+      }
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  if (status == NS_NET_STATUS_TLS_HANDSHAKE_ENDED) {
+    MutexAutoLock lock(mLock);
+    if (!mTimings.requestStart.IsNull() && !mTimings.connectEnd.IsNull() &&
+        mTimings.requestStart < mTimings.connectEnd) {
+      mTimings.requestStart = mTimings.connectEnd;
     }
   }
 
@@ -2955,7 +2979,25 @@ TimingStruct nsHttpTransaction::Timings() {
 
 void nsHttpTransaction::BootstrapTimings(TimingStruct times) {
   mozilla::MutexAutoLock lock(mLock);
+  TimeStamp savedRequestStart = mTimings.requestStart;
   mTimings = times;
+  if (!savedRequestStart.IsNull() && mTimings.requestStart.IsNull()) {
+    mTimings.requestStart = savedRequestStart;
+  }
+
+  
+  
+  
+  if (!mTimings.connectStart.IsNull() && !mTimings.domainLookupEnd.IsNull() &&
+      mTimings.connectStart < mTimings.domainLookupEnd) {
+    mTimings.connectStart = mTimings.domainLookupEnd;
+  }
+  
+  
+  if (!mTimings.requestStart.IsNull() && !mTimings.connectEnd.IsNull() &&
+      mTimings.requestStart < mTimings.connectEnd) {
+    mTimings.requestStart = mTimings.connectEnd;
+  }
 }
 
 void nsHttpTransaction::SetDomainLookupStart(mozilla::TimeStamp timeStamp,
@@ -3261,6 +3303,16 @@ nsresult nsHttpTransaction::Finish0RTT(bool aRestart,
     
     
     mEarlyDataDisposition = EARLY_ACCEPTED;
+
+    
+    
+    
+    
+    MutexAutoLock lock(mLock);
+    if (mTimings.requestStart.IsNull()) {
+      mTimings.requestStart =
+          mTimings.connectEnd.IsNull() ? TimeStamp::Now() : mTimings.connectEnd;
+    }
   }
   if (aRestart) {
     
@@ -3292,6 +3344,17 @@ void nsHttpTransaction::FinishAdopted0RTT(bool aRestart) {
     
     if (mEarlyDataDisposition == EARLY_SENT) {
       mEarlyDataDisposition = EARLY_ACCEPTED;
+
+      
+      
+      
+      
+      MutexAutoLock lock(mLock);
+      if (mTimings.requestStart.IsNull()) {
+        mTimings.requestStart = mTimings.connectEnd.IsNull()
+                                    ? TimeStamp::Now()
+                                    : mTimings.connectEnd;
+      }
     }
   } else {
     mDoNotTryEarlyData = true;
