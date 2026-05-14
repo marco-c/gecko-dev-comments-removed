@@ -2837,15 +2837,7 @@ nsEventStatus AsyncPanZoomController::OnPanBegin(
   if (!UsingStatefulAxisLock()) {
     SetState(PANNING);
   } else {
-    float dx = aEvent.mPanDisplacement.x, dy = aEvent.mPanDisplacement.y;
-
-    if (dx != 0.0f || dy != 0.0f) {
-      double angle = atan2(dy, dx);  
-      angle = fabs(angle);           
-      HandlePanning(angle);
-    } else {
-      SetState(PANNING);
-    }
+    HandlePanning(aEvent.mLocalPanDisplacement);
   }
 
   
@@ -3592,7 +3584,8 @@ void AsyncPanZoomController::SetVelocityVector(
   mY.SetVelocity(aVelocityVector.y);
 }
 
-void AsyncPanZoomController::HandlePanningWithTouchAction(double aAngle) {
+void AsyncPanZoomController::HandlePanningWithTouchAction(
+    const ParentLayerPoint& aVector) {
   
   
   MOZ_ASSERT(GetCurrentTouchBlock());
@@ -3605,19 +3598,17 @@ void AsyncPanZoomController::HandlePanningWithTouchAction(double aAngle) {
       !mY.IsAxisLocked() && overscrollHandoffChain->CanScrollInDirection(
                                 this, ScrollDirection::eVertical);
   if (GetCurrentTouchBlock()->TouchActionAllowsPanningXY()) {
-    if (canScrollHorizontal && canScrollVertical) {
-      if (apz::IsCloseToHorizontal(aAngle,
-                                   StaticPrefs::apz_axis_lock_lock_angle())) {
-        mY.SetAxisLocked(true);
-        SetState(PANNING_LOCKED_X);
-      } else if (apz::IsCloseToVertical(
-                     aAngle, StaticPrefs::apz_axis_lock_lock_angle())) {
-        mX.SetAxisLocked(true);
-        SetState(PANNING_LOCKED_Y);
-      } else {
-        SetState(PANNING);
-      }
-    } else if (canScrollHorizontal || canScrollVertical) {
+    if (canScrollVertical &&
+        apz::IsCloseToHorizontal(aVector,
+                                 StaticPrefs::apz_axis_lock_lock_angle())) {
+      mY.SetAxisLocked(true);
+      SetState(PANNING_LOCKED_X);
+    } else if (canScrollHorizontal &&
+               apz::IsCloseToVertical(
+                   aVector, StaticPrefs::apz_axis_lock_lock_angle())) {
+      mX.SetAxisLocked(true);
+      SetState(PANNING_LOCKED_Y);
+    } else if (canScrollVertical || canScrollHorizontal) {
       SetState(PANNING);
     } else {
       SetState(NOTHING);
@@ -3626,7 +3617,7 @@ void AsyncPanZoomController::HandlePanningWithTouchAction(double aAngle) {
     
     
     if (apz::IsCloseToHorizontal(
-            aAngle, StaticPrefs::apz_axis_lock_direct_pan_angle())) {
+            aVector, StaticPrefs::apz_axis_lock_direct_pan_angle())) {
       mY.SetAxisLocked(true);
       SetState(PANNING_LOCKED_X);
       mPanDirRestricted = true;
@@ -3636,7 +3627,7 @@ void AsyncPanZoomController::HandlePanningWithTouchAction(double aAngle) {
       SetState(NOTHING);
     }
   } else if (GetCurrentTouchBlock()->TouchActionAllowsPanningY()) {
-    if (apz::IsCloseToVertical(aAngle,
+    if (apz::IsCloseToVertical(aVector,
                                StaticPrefs::apz_axis_lock_direct_pan_angle())) {
       mX.SetAxisLocked(true);
       SetState(PANNING_LOCKED_Y);
@@ -3656,7 +3647,7 @@ void AsyncPanZoomController::HandlePanningWithTouchAction(double aAngle) {
   }
 }
 
-void AsyncPanZoomController::HandlePanning(double aAngle) {
+void AsyncPanZoomController::HandlePanning(const ParentLayerPoint& aVector) {
   RecursiveMutexAutoLock lock(mRecursiveMutex);
   MOZ_ASSERT(GetCurrentInputBlock());
   RefPtr<const OverscrollHandoffChain> overscrollHandoffChain =
@@ -3673,12 +3664,12 @@ void AsyncPanZoomController::HandlePanning(double aAngle) {
   if (!canScrollHorizontal || !canScrollVertical) {
     SetState(PANNING);
   } else if (apz::IsCloseToHorizontal(
-                 aAngle, StaticPrefs::apz_axis_lock_lock_angle())) {
+                 aVector, StaticPrefs::apz_axis_lock_lock_angle())) {
     mY.SetAxisLocked(true);
     if (canScrollHorizontal) {
       SetState(PANNING_LOCKED_X);
     }
-  } else if (apz::IsCloseToVertical(aAngle,
+  } else if (apz::IsCloseToVertical(aVector,
                                     StaticPrefs::apz_axis_lock_lock_angle())) {
     mX.SetAxisLocked(true);
     if (canScrollVertical) {
@@ -3698,9 +3689,6 @@ void AsyncPanZoomController::HandlePanningUpdate(
     ParentLayerPoint vector =
         ToParentLayerCoordinates(aPanDistance, mStartTouch);
 
-    float angle = atan2f(vector.y, vector.x);  
-    angle = fabsf(angle);                      
-
     float breakThreshold =
         StaticPrefs::apz_axis_lock_breakout_threshold() * GetDPI();
 
@@ -3709,12 +3697,12 @@ void AsyncPanZoomController::HandlePanningUpdate(
       switch (mState) {
         case PANNING_LOCKED_X:
           if (!apz::IsCloseToHorizontal(
-                  angle, StaticPrefs::apz_axis_lock_breakout_angle())) {
+                  vector, StaticPrefs::apz_axis_lock_breakout_angle())) {
             mY.SetAxisLocked(false);
             
             
             if (apz::IsCloseToVertical(
-                    angle, StaticPrefs::apz_axis_lock_lock_angle()) &&
+                    vector, StaticPrefs::apz_axis_lock_lock_angle()) &&
                 GetAxisLockMode() != AxisLockMode::BREAKABLE) {
               mX.SetAxisLocked(true);
               SetState(PANNING_LOCKED_Y);
@@ -3726,12 +3714,12 @@ void AsyncPanZoomController::HandlePanningUpdate(
 
         case PANNING_LOCKED_Y:
           if (!apz::IsCloseToVertical(
-                  angle, StaticPrefs::apz_axis_lock_breakout_angle())) {
+                  vector, StaticPrefs::apz_axis_lock_breakout_angle())) {
             mX.SetAxisLocked(false);
             
             
             if (apz::IsCloseToHorizontal(
-                    angle, StaticPrefs::apz_axis_lock_lock_angle()) &&
+                    vector, StaticPrefs::apz_axis_lock_lock_angle()) &&
                 GetAxisLockMode() != AxisLockMode::BREAKABLE) {
               mY.SetAxisLocked(true);
               SetState(PANNING_LOCKED_X);
@@ -3745,7 +3733,7 @@ void AsyncPanZoomController::HandlePanningUpdate(
           
           
           if (GetAxisLockMode() != AxisLockMode::BREAKABLE) {
-            HandlePanning(angle);
+            HandlePanning(vector);
           }
           break;
 
@@ -3818,11 +3806,9 @@ nsEventStatus AsyncPanZoomController::StartPanning(
     const ExternalPoint& aStartPoint, const TimeStamp& aEventTime) {
   ParentLayerPoint vector =
       ToParentLayerCoordinates(PanVector(aStartPoint), mStartTouch);
-  double angle = atan2(vector.y, vector.x);  
-  angle = fabs(angle);                       
 
   RecursiveMutexAutoLock lock(mRecursiveMutex);
-  HandlePanningWithTouchAction(angle);
+  HandlePanningWithTouchAction(vector);
 
   if (IsInPanningState()) {
     mTouchStartRestingTimeBeforePan = aEventTime - mTouchStartTime;
@@ -4282,6 +4268,9 @@ void AsyncPanZoomController::SmoothScrollTo(
   
   
   if (ConvertDestinationToDelta(aDestination.mPosition) == ParentLayerPoint()) {
+    RecursiveMutexAutoLock lock(mRecursiveMutex);
+    mLastSnapTargetIds = std::move(aDestination.mTargetIds);
+    RequestContentRepaint();  
     return;
   }
 
@@ -5876,6 +5865,7 @@ void AsyncPanZoomController::NotifyMainThreadTransaction(
     mScrollMetadata.SetOverscrollBehavior(
         aScrollMetadata.GetOverscrollBehavior());
     mScrollMetadata.SetOverflow(aScrollMetadata.GetOverflow());
+    mScrollMetadata.SetWritingMode(aScrollMetadata.GetWritingMode());
   }
 
   bool instantScrollMayTriggerTransform = false;
@@ -7037,13 +7027,11 @@ void AsyncPanZoomController::ScrollSnapNear(const CSSPoint& aDestination,
                                             ScrollSnapFlags aSnapFlags) {
   if (Maybe<CSSSnapDestination> snapDestination = FindSnapPointNear(
           aDestination, ScrollUnit::DEVICE_PIXELS, aSnapFlags)) {
-    if (snapDestination->mPosition != Metrics().GetVisualScrollOffset()) {
-      APZC_LOG("%p smooth scrolling to snap point %s\n", this,
-               ToString(snapDestination->mPosition).c_str());
-      SmoothScrollTo(std::move(*snapDestination), ScrollTriggeredByScript::No,
-                     ScrollAnimationKind::SmoothMsd, ViewportType::Visual,
-                     ScrollOrigin::NotSpecified, GetFrameTime().Time());
-    }
+    APZC_LOG("%p smooth scrolling to snap point %s\n", this,
+             ToString(snapDestination->mPosition).c_str());
+    SmoothScrollTo(std::move(*snapDestination), ScrollTriggeredByScript::No,
+                   ScrollAnimationKind::SmoothMsd, ViewportType::Visual,
+                   ScrollOrigin::NotSpecified, GetFrameTime().Time());
   }
 }
 
