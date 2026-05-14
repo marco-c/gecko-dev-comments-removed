@@ -154,10 +154,10 @@ void SelectionManager::ProcessTextSelChangeEvent(AccEvent* aEvent) {
     
     
     TextLeafPoint caret = TextLeafPoint::GetCaret(caretCntr);
-    RefPtr<AccCaretMoveEvent> caretMoveEvent =
-        new AccCaretMoveEvent(caretCntr, mCaretOffset, selection->IsCollapsed(),
-                              caret.mIsEndOfLineInsertionPoint,
-                              event->GetGranularity(), aEvent->FromUserInput());
+    auto caretMoveEvent = MakeRefPtr<AccCaretMoveEvent>(
+        caretCntr, mCaretOffset, selection->IsCollapsed(),
+        caret.mIsEndOfLineInsertionPoint, event->GetGranularity(),
+        aEvent->FromUserInput());
     nsEventShell::FireEvent(caretMoveEvent);
   }
 }
@@ -182,7 +182,7 @@ SelectionManager::NotifySelectionChanged(dom::Document* aDocument,
     
     
     
-    RefPtr<SelData> selData = new SelData(aSelection, aReason, aAmount);
+    auto selData = MakeRefPtr<SelData>(aSelection, aReason, aAmount);
     document->HandleNotification<SelectionManager, SelData>(
         this, &SelectionManager::ProcessSelectionChanged, selData);
   }
@@ -218,7 +218,7 @@ void SelectionManager::ProcessSelectionChanged(SelData* aSelData) {
   }
 
   if (selection->GetType() == SelectionType::eNormal) {
-    RefPtr<AccEvent> event = new AccTextSelChangeEvent(
+    auto event = MakeRefPtr<AccTextSelChangeEvent>(
         text, selection, aSelData->mReason, aSelData->mGranularity);
     text->Document()->FireDelayedEvent(event);
   }
