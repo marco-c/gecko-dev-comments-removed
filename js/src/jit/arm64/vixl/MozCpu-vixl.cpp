@@ -25,9 +25,7 @@
 
 
 #include "jit/arm64/vixl/Cpu-vixl.h"
-#if defined(JS_SIMULATOR_ARM64)
-#  include "jit/arm64/vixl/Simulator-vixl.h"
-#endif
+#include "jit/arm64/vixl/Simulator-vixl.h"
 #include "jit/arm64/vixl/Utils-vixl.h"
 #include "util/WindowsWrapper.h"
 
