@@ -517,6 +517,8 @@ bool NativeLayerRootWayland::CommitToScreen() {
 
   if (!mRootSurface->IsMapped()) {
     
+    
+    
     LOG("NativeLayerRootWayland::CommitToScreen() root surface is not mapped");
     return false;
   }
@@ -602,7 +604,10 @@ bool NativeLayerRootWayland::CommitToScreen() {
 
 
 
-void NativeLayerRootWayland::FrameCallbackHandler(uint32_t aTime) {
+void NativeLayerRootWayland::VSyncCallbackHandler(uint32_t aTime,
+                                                  bool aEmulated) {
+  MOZ_DIAGNOSTIC_ASSERT(!aEmulated,
+                        "VSyncCallbackHandler() is supposed to be HW only");
   {
     
     
@@ -612,15 +617,18 @@ void NativeLayerRootWayland::FrameCallbackHandler(uint32_t aTime) {
 
   if (aTime <= mLastFrameCallbackTime) {
     LOGVERBOSE(
-        "NativeLayerRootWayland::FrameCallbackHandler() ignoring redundant "
+        "NativeLayerRootWayland::VSyncCallbackHandler() ignoring redundant "
         "callback %d",
         aTime);
     return;
   }
   mLastFrameCallbackTime = aTime;
 
-  LOGVERBOSE("NativeLayerRootWayland::FrameCallbackHandler() time %d", aTime);
+  LOGVERBOSE(
+      "NativeLayerRootWayland::VSyncCallbackHandler() time %d emulated [%d]",
+      aTime, aEmulated);
   mRootSurface->VSyncCallbackHandler(nullptr, aTime,
+                                      aEmulated,
                                       true);
 }
 
@@ -950,14 +958,16 @@ bool NativeLayerWayland::Map(WaylandSurfaceLock* aParentWaylandSurfaceLock) {
   
   
   
-  mSurface->SetVSyncCallbackLocked(
+  mSurface->SetVSyncCallbackHandlerLocked(
       surfaceLock,
-      [this, self = RefPtr{this}](wl_callback* aCallback,
-                                  uint32_t aTime) -> void {
-        LOGVERBOSE("NativeLayerWayland::FrameCallbackHandler() time %d", aTime);
-        mRootLayer->FrameCallbackHandler(aTime);
-      },
-       true);
+      [this, self = RefPtr{this}](wl_callback* aCallback, uint32_t aTime,
+                                  bool aEmulated) -> void {
+        LOGVERBOSE(
+            "NativeLayerWayland::VSyncCallbackHandler() time %d emulated %d",
+            aTime, aEmulated);
+        MOZ_DIAGNOSTIC_ASSERT(!aEmulated);
+        mRootLayer->VSyncCallbackHandler(aTime, aEmulated);
+      });
 
   if (mIsHDR) {
     gfx::YUVColorSpace yuvColorSpace = gfx::YUVColorSpace::BT709;
