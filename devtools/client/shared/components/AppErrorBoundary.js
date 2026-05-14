@@ -100,6 +100,23 @@ class AppErrorBoundary extends Component {
                     .split("\n")
                     .map((part, idx) => p({ key: `strace${idx}` }, part))
                 : null;
+
+              
+              
+              
+              
+              
+              
+              
+              const contentProcessStack = info[obj].contentProcessStack;
+              const contentProcessTraceParts = contentProcessStack
+                ? contentProcessStack
+                    .split("\n")
+                    .map((part, idx) =>
+                      p({ key: `contentProcessStrace${idx}` }, part)
+                    )
+                : null;
+
               return div(
                 { className: "stack-trace-section" },
                 h3(
@@ -112,7 +129,11 @@ class AppErrorBoundary extends Component {
                   JSON.stringify({ ...info[obj], stack: undefined }, null, 2)
                 ),
                 stack ? h3({}, "Server stack") : null,
-                traceParts
+                traceParts,
+                contentProcessStack
+                  ? h3({}, "Server content process stack")
+                  : null,
+                contentProcessTraceParts
               );
             }
           }
@@ -232,6 +253,7 @@ class AppErrorBoundary extends Component {
         packet_target: serverPacket.from,
         packet_type: clientPacket.type,
         server_stack: serverPacket.stack || "",
+        server_content_process_stack: serverPacket.contentProcessStack || "",
         stack: error.stack || "",
       },
       "devtoolsMain.toolboxServerError",
@@ -263,8 +285,11 @@ class AppErrorBoundary extends Component {
 
     if (serverPacket) {
       
-      msg += `## Server Packet:\n\`\`\`\n${JSON.stringify({ ...serverPacket, stack: undefined }, null, 2)}\n\`\`\`\n\n`;
+      msg += `## Server Packet:\n\`\`\`\n${JSON.stringify({ ...serverPacket, stack: undefined, contentProcessStack: undefined }, null, 2)}\n\`\`\`\n\n`;
       msg += `## Server Stack:\n\`\`\`\n${serverPacket.stack}\n\`\`\`\n\n`;
+      if (serverPacket.contentProcessStack) {
+        msg += `## Server Content Process Stack:\n\`\`\`\n${serverPacket.contentProcessStack}\n\`\`\`\n\n`;
+      }
     }
 
     msg += `## Stacktrace: \n\`\`\`\n${this.state.errorStack}\n\`\`\``;

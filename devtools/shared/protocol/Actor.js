@@ -149,6 +149,10 @@ class Actor extends Pool {
         error == "out of memory"
           ? ChromeUtils.getLastOOMStackTrace()
           : error.stack,
+      
+      
+      contentProcessStack:
+        typeof error == "object" ? error.contentProcessStack : undefined,
     });
   }
 
