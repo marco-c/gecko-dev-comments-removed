@@ -28,7 +28,6 @@
 #include "mozilla/psm/IPCClientCertsChild.h"
 #include "mozilla/psm/mozilla_abridged_certs_generated.h"
 #include "mozilla/psm/PIPCClientCertsChild.h"
-#include "mozilla/psm/EnabledSignatureSchemes.h"
 #include "mozpkix/pkixnss.h"
 #include "mozpkix/pkixtypes.h"
 #include "mozpkix/pkixutil.h"
@@ -1294,12 +1293,22 @@ static PRFileDesc* nsSSLIOLayerImportFD(PRFileDesc* fd,
   return sslSock;
 }
 
+
+
 static const SSLSignatureScheme sEnabledSignatureSchemes[] = {
-#define SCHEME(NAME, _) NAME,
-
-    FOR_EACH_ENABLED_SIGNATURE_SCHEME(SCHEME)
-
-#undef SCHEME
+    ssl_sig_ecdsa_secp256r1_sha256,
+    ssl_sig_ecdsa_secp384r1_sha384,
+    ssl_sig_ecdsa_secp521r1_sha512,
+    ssl_sig_rsa_pss_sha256,
+    ssl_sig_rsa_pss_sha384,
+    ssl_sig_rsa_pss_sha512,
+    ssl_sig_rsa_pkcs1_sha256,
+    ssl_sig_rsa_pkcs1_sha384,
+    ssl_sig_rsa_pkcs1_sha512,
+#if !defined(EARLY_BETA_OR_EARLIER)
+    ssl_sig_ecdsa_sha1,
+#endif
+    ssl_sig_rsa_pkcs1_sha1,
 };
 
 enum CertificateCompressionAlgorithms {
@@ -1655,6 +1664,12 @@ static nsresult nsSSLIOLayerSetOptions(PRFileDesc* fd, bool forSTARTTLS,
     }
   }
 
+  
+  
+  
+  
+  
+  
   if (SECSuccess !=
       SSL_SignatureSchemePrefSet(fd, sEnabledSignatureSchemes,
                                  std::size(sEnabledSignatureSchemes))) {
