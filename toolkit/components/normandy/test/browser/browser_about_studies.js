@@ -95,9 +95,18 @@ decorate_task(
     await loadPromise;
 
     const location = gBrowser.currentURI.spec;
+    
+    
+    
+    const expectedLocation = Services.prefs.getBoolPref(
+      "browser.settings-redesign.enabled",
+      false
+    )
+      ? "about:preferences#permissionsData"
+      : "about:preferences#privacy";
     is(
       location,
-      "about:preferences#privacy",
+      expectedLocation,
       "Clicking Update Preferences opens the privacy section of the new about:preferences."
     );
 
