@@ -170,7 +170,7 @@ add_task(async function subpaneContentsWithOneProfile() {
 add_task(async function copyProfile() {
   
   await initGroupDatabase();
-  await SelectableProfileService.createNewProfile(false);
+  await SelectableProfileService.createNewProfile(false, null, "tests");
 
   await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
     leaveOpen: true,

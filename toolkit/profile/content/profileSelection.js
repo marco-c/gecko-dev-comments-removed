@@ -3,7 +3,6 @@
 
 
 
-
 const { AppConstants } = ChromeUtils.importESModule(
   "resource://gre/modules/AppConstants.sys.mjs"
 );
@@ -259,7 +258,8 @@ function CreateProfileWizard() {
     "",
     "centerscreen,chrome,modal,titlebar",
     gProfileService,
-    { CreateProfile }
+    { CreateProfile },
+    "profile-manager"
   );
 }
 

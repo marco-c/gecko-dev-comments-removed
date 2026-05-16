@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 
 const { ASRouterTargeting } = ChromeUtils.importESModule(
@@ -109,7 +107,8 @@ async function do_readTargeting(content, beforeNextSubmitCallback) {
 
   let profile = profileService.createUniqueProfile(
     file,
-    "test_default_profile"
+    "test_default_profile",
+    "tests"
   );
 
   let targetingSnapshot = profile.rootDir.clone();

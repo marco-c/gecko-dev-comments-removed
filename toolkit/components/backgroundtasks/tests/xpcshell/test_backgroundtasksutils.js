@@ -22,7 +22,8 @@ add_task(async function test_withProfileLock() {
   profilePath.append(`test_withProfileLock`);
   let profile = profileService.createUniqueProfile(
     profilePath,
-    "test_withProfileLock"
+    "test_withProfileLock",
+    "tests"
   );
 
   await BackgroundTasksUtils.withProfileLock(async lock => {
@@ -53,7 +54,8 @@ add_task(async function test_readPreferences() {
   profilePath.append(`test_readPreferences`);
   let profile = profileService.createUniqueProfile(
     profilePath,
-    "test_readPreferences"
+    "test_readPreferences",
+    "tests"
   );
 
   
@@ -110,7 +112,8 @@ add_task(async function test_readTelemetryClientID() {
   profilePath.append(`test_readTelemetryClientID`);
   let profile = profileService.createUniqueProfile(
     profilePath,
-    "test_readTelemetryClientID"
+    "test_readTelemetryClientID",
+    "tests"
   );
 
   
@@ -152,7 +155,8 @@ add_task(
     profilePath.append(`test_readFirefoxMessagingSystemTargetingSnapshot`);
     let profile = profileService.createUniqueProfile(
       profilePath,
-      "test_readFirefoxMessagingSystemTargetingSnapshot"
+      "test_readFirefoxMessagingSystemTargetingSnapshot",
+      "tests"
     );
 
     
