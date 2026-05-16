@@ -8,10 +8,10 @@
 
 use crate::bloom::StyleBloom;
 use crate::context::SharedStyleContext;
-use crate::dom::TElement;
+use crate::dom::{TElement, TShadowRoot};
+use crate::properties::ComputedValues;
 use crate::sharing::{StyleSharingCandidate, StyleSharingTarget};
 use selectors::matching::SelectorCaches;
-use crate::properties::ComputedValues;
 
 
 
@@ -231,5 +231,24 @@ where
     match candidate_id {
         Some(id) => stylist.may_have_rules_for_id(id, candidate),
         None => false,
+    }
+}
+
+
+#[inline]
+pub fn shadow_root_style_data_equals<S>(l: Option<S>, r: Option<S>) -> bool
+where
+    S: TShadowRoot,
+{
+    if l == r {
+        return true;
+    }
+    match (
+        l.and_then(|s| s.style_data()),
+        r.and_then(|s| s.style_data()),
+    ) {
+        (Some(l), Some(r)) => std::ptr::eq(l, r),
+        (None, None) => true,
+        _ => false,
     }
 }
