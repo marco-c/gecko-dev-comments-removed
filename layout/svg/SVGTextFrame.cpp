@@ -50,6 +50,7 @@
 #include "nsLayoutUtils.h"
 #include "nsStyleStructInlines.h"
 #include "nsTArray.h"
+#include "nsTHashSet.h"
 #include "nsTextFrame.h"
 
 using namespace mozilla::dom;
@@ -1473,12 +1474,8 @@ class MOZ_STACK_CLASS TextFrameIterator {
 
   explicit TextFrameIterator(SVGTextFrame* aRoot,
                              const nsIFrame* aSubtree = nullptr)
-      : mRootFrame(aRoot),
-        mSubtree(aSubtree),
-        mCurrentFrame(aRoot),
-        mSubtreePosition(mSubtree ? SubtreePosition::Before
-                                  : SubtreePosition::Within) {
-    Init();
+      : mRootFrame(aRoot), mCurrentFrame(aRoot) {
+    Init(aSubtree);
   }
 
   
@@ -1486,14 +1483,10 @@ class MOZ_STACK_CLASS TextFrameIterator {
 
 
   TextFrameIterator(SVGTextFrame* aRoot, nsIContent* aSubtree)
-      : mRootFrame(aRoot),
-        mSubtree(aRoot && aSubtree && aSubtree != aRoot->GetContent()
-                     ? aSubtree->GetPrimaryFrame()
-                     : nullptr),
-        mCurrentFrame(aRoot),
-        mSubtreePosition(mSubtree ? SubtreePosition::Before
-                                  : SubtreePosition::Within) {
-    Init();
+      : mRootFrame(aRoot), mCurrentFrame(aRoot) {
+    Init(aRoot && aSubtree && aSubtree != aRoot->GetContent()
+             ? aSubtree->GetPrimaryFrame()
+             : nullptr);
   }
 
   
@@ -1563,7 +1556,12 @@ class MOZ_STACK_CLASS TextFrameIterator {
   
 
 
-  void Init() {
+  void Init(const nsIFrame* aSubtree) {
+    for (const nsIFrame* f = aSubtree; f; f = f->GetNextContinuation()) {
+      mSubtreeRoot.Insert(f);
+    }
+    mSubtreePosition =
+        aSubtree ? SubtreePosition::Before : SubtreePosition::Within;
     if (!mRootFrame) {
       return;
     }
@@ -1592,7 +1590,8 @@ class MOZ_STACK_CLASS TextFrameIterator {
   
 
 
-  const nsIFrame* const mSubtree;
+
+  nsTHashSet<const nsIFrame*> mSubtreeRoot;
 
   
 
@@ -1654,7 +1653,8 @@ nsTextFrame* TextFrameIterator::GetNext() {
         
         PushBaseline(next);
         mCurrentFrame = next;
-        if (mCurrentFrame == mSubtree) {
+        if (mSubtreeRoot.Contains(mCurrentFrame)) {
+          
           
           mSubtreePosition = SubtreePosition::Within;
         }
@@ -1674,7 +1674,7 @@ nsTextFrame* TextFrameIterator::GetNext() {
           }
           
           PopBaseline();
-          if (mCurrentFrame == mSubtree) {
+          if (mSubtreeRoot.Contains(mCurrentFrame)) {
             
             mSubtreePosition = SubtreePosition::After;
           }
@@ -1689,13 +1689,14 @@ nsTextFrame* TextFrameIterator::GetNext() {
             
             PushBaseline(next);
             mCurrentFrame = next;
-            if (mCurrentFrame == mSubtree) {
+            if (mSubtreeRoot.Contains(mCurrentFrame)) {
+              
               
               mSubtreePosition = SubtreePosition::Within;
             }
             break;
           }
-          if (mCurrentFrame == mSubtree) {
+          if (mSubtreeRoot.Contains(mCurrentFrame)) {
             
             
             mSubtreePosition = SubtreePosition::After;
@@ -3896,7 +3897,7 @@ already_AddRefed<DOMSVGPoint> SVGTextFrame::GetStartPositionOfChar(
   UpdateGlyphPositioning();
 
   CharIterator it(this, CharIterator::CharacterFilter::Addressable, aContent);
-  if (!it.AdvanceToSubtree() || !it.Next(aCharNum)) {
+  if (!it.AdvanceToSubtree() || !it.Next(aCharNum) || it.IsAfterSubtree()) {
     aRv.ThrowIndexSizeError("Character index out of range");
     return nullptr;
   }
@@ -3980,7 +3981,7 @@ already_AddRefed<DOMSVGPoint> SVGTextFrame::GetEndPositionOfChar(
   UpdateGlyphPositioning();
 
   CharIterator it(this, CharIterator::CharacterFilter::Addressable, aContent);
-  if (!it.AdvanceToSubtree() || !it.Next(aCharNum)) {
+  if (!it.AdvanceToSubtree() || !it.Next(aCharNum) || it.IsAfterSubtree()) {
     aRv.ThrowIndexSizeError("Character index out of range");
     return nullptr;
   }
@@ -4026,7 +4027,7 @@ already_AddRefed<SVGRect> SVGTextFrame::GetExtentOfChar(nsIContent* aContent,
 
   
   CharIterator it(this, CharIterator::CharacterFilter::Addressable, aContent);
-  if (!it.AdvanceToSubtree() || !it.Next(aCharNum)) {
+  if (!it.AdvanceToSubtree() || !it.Next(aCharNum) || it.IsAfterSubtree()) {
     aRv.ThrowIndexSizeError("Character index out of range");
     return nullptr;
   }
@@ -4094,7 +4095,7 @@ float SVGTextFrame::GetRotationOfChar(nsIContent* aContent, uint32_t aCharNum,
   UpdateGlyphPositioning();
 
   CharIterator it(this, CharIterator::CharacterFilter::Addressable, aContent);
-  if (!it.AdvanceToSubtree() || !it.Next(aCharNum)) {
+  if (!it.AdvanceToSubtree() || !it.Next(aCharNum) || it.IsAfterSubtree()) {
     aRv.ThrowIndexSizeError("Character index out of range");
     return 0;
   }
