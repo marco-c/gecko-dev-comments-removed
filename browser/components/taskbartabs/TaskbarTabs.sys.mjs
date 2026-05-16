@@ -1,5 +1,4 @@
-/* vim: se cin sw=2 ts=2 et filetype=javascript :
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -68,17 +67,19 @@ export const TaskbarTabs = new (class {
    * Finds an existing Taskbar Tab that matches aUrl within aUserContextId. If
    * one does not exist, it is created.
    *
-   * Additionally, this will register the Taskbar Tab with the system and (on
-   * Windows) request to pin the shortcut.
+   * Additionally, this will register the Taskbar Tab with the system and
+   * request to create/pin the shortcut as applicable.
    *
    * @param {nsIURL} aUrl - The URL to create a Taskbar Tab for.
    * @param {number} aUserContextId - The container to create the Taskbar Tab
    * in.
    * @param {object} aDetails - Additional parameters for the Taskbar Tab. See
    * TaskbarTabsRegistry.findOrCreateTaskbarTab for other members.
-   * @param {nsIURL} [aDetails.createdForUrl] - The page that the Taskbar Tab
+   * @param {nsIURL} [aDetails.creatingForUrl] - The page that the Taskbar Tab
    * was created on. This allows getting the favicon of that page if there
    * isn't a better option.
+   * @param {DOMWindow?} [aDetails.window] - The window to associate any UI
+   * with, if applicable.
    */
   async findOrCreateTaskbarTab(aUrl, aUserContextId, aDetails = {}) {
     // The result of #findOrCreateTaskbarTab sometimes contains additional
@@ -89,10 +90,20 @@ export const TaskbarTabs = new (class {
       aUserContextId,
       aDetails
     );
+
+    if (result.created) {
+      // Don't wait for the pinning to complete.
+      TaskbarTabsPin.pinTaskbarTab(
+        result.taskbarTab,
+        this.#registry,
+        result.icon,
+        { window: aDetails.window ?? null }
+      );
+    }
+
     return {
       created: result.created,
       taskbarTab: result.taskbarTab,
-      window: result.window,
     };
   }
 
@@ -108,14 +119,10 @@ export const TaskbarTabs = new (class {
     if (result.created) {
       this.#updateMetrics();
 
-      let icon = await fetchIconForTaskbarTab(
+      result.icon = await fetchIconForTaskbarTab(
         result.taskbarTab,
         aDetails.creatingForUrl
       );
-      result.icon = icon;
-
-      // Don't wait for the pinning to complete.
-      TaskbarTabsPin.pinTaskbarTab(result.taskbarTab, this.#registry, icon);
     } else {
       result.icon = await loadSavedTaskbarTabIcon(result.taskbarTab.id);
     }
@@ -126,6 +133,11 @@ export const TaskbarTabs = new (class {
   async findTaskbarTab(...args) {
     await this.#ready;
     return this.#registry.findTaskbarTab(...args);
+  }
+
+  async countTaskbarTabs() {
+    await this.#ready;
+    return this.#registry.countTaskbarTabs();
   }
 
   /**
@@ -151,7 +163,7 @@ export const TaskbarTabs = new (class {
       }),
     ]);
 
-    let { taskbarTab, icon } = await this.#findOrCreateTaskbarTab(
+    let { taskbarTab, icon, created } = await this.#findOrCreateTaskbarTab(
       url,
       userContextId,
       {
@@ -166,6 +178,13 @@ export const TaskbarTabs = new (class {
       aTab,
       icon
     );
+
+    if (created) {
+      // Don't wait for pinning to complete. (This is separate so we can call
+      // it with the newly-created window.)
+      TaskbarTabsPin.pinTaskbarTab(taskbarTab, this.#registry, icon, win);
+    }
+
     return {
       window: win,
       taskbarTab,
