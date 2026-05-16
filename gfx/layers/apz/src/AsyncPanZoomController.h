@@ -637,6 +637,19 @@ class AsyncPanZoomController {
 
   bool FuzzyGreater(ParentLayerCoord aCoord1, ParentLayerCoord aCoord2) const;
 
+  
+
+
+
+
+
+
+
+
+
+  template <typename T>
+  ParentLayerPoint GetScrollWheelDelta(ScrollWheelInput&, T, T, T, T) = delete;
+
  private:
   
   
@@ -730,19 +743,6 @@ class AsyncPanZoomController {
                                        double aDeltaX, double aDeltaY,
                                        double aMultiplierX,
                                        double aMultiplierY) const;
-
-  
-
-
-
-
-
-
-
-
-
-  template <typename T>
-  ParentLayerPoint GetScrollWheelDelta(ScrollWheelInput&, T, T, T, T) = delete;
 
   
 
@@ -920,12 +920,12 @@ class AsyncPanZoomController {
 
 
 
-  void HandlePanningWithTouchAction(double angle);
+  void HandlePanningWithTouchAction(const ParentLayerPoint& aVector);
 
   
 
 
-  void HandlePanning(double angle);
+  void HandlePanning(const ParentLayerPoint& aVector);
 
   
 
@@ -2002,17 +2002,15 @@ class AsyncPanZoomController {
   
   
   
-  
-  
   Maybe<CSSSnapDestination> MaybeAdjustDeltaForScrollSnapping(
       ScrollUnit aUnit, ScrollSnapFlags aSnapFlags, ParentLayerPoint& aDelta,
-      CSSPoint& aStartPosition);
+      const CSSPoint& aStartPosition);
 
   
   
   Maybe<CSSSnapDestination> MaybeAdjustDeltaForScrollSnappingOnWheelInput(
       const ScrollWheelInput& aEvent, ParentLayerPoint& aDelta,
-      CSSPoint& aStartPosition);
+      const CSSPoint& aStartPosition);
 
   Maybe<CSSSnapDestination> MaybeAdjustDestinationForScrollSnapping(
       const KeyboardInput& aEvent, CSSPoint& aDestination,
