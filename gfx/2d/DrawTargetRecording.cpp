@@ -4,7 +4,6 @@
 
 #include "DrawTargetRecording.h"
 #include "DrawTargetSkia.h"
-#include "InlineTranslator.h"
 #include "PathRecording.h"
 #include <stdio.h>
 
@@ -70,7 +69,7 @@ static bool EnsureSurfaceStoredRecording(DrawEventRecorderPrivate* aRecorder,
   return true;
 }
 
-class SourceSurfaceRecording final : public SourceSurface {
+class SourceSurfaceRecording : public SourceSurface {
  public:
   MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(SourceSurfaceRecording, override)
 
@@ -541,69 +540,12 @@ void DrawTargetRecording::DrawSurface(SourceSurface* aSurface,
     return;
   }
 
-  
-
   MarkChanged();
 
   EnsureSurfaceStoredRecording(mRecorder, aSurface, "DrawSurface");
 
   RecordEventSelf(
       RecordedDrawSurface(aSurface, aDest, aSource, aSurfOptions, aOptions));
-}
-
-bool DrawTargetRecording::TryToReplaySurface(SourceSurface* aSurface,
-                                             const Rect& aDest,
-                                             const Rect& aSource) {
-  if (aSurface->GetType() != SurfaceType::RECORDING) {
-    return false;
-  }
-  auto* recordingSurface = static_cast<SourceSurfaceRecording*>(aSurface);
-  if (recordingSurface->mRecorder == mRecorder) {
-    return false;
-  }
-  if (!recordingSurface->mRecorder ||
-      recordingSurface->mRecorder->GetRecorderType() != RecorderType::MEMORY) {
-    return false;
-  }
-  if (aSource.IsEmpty() || aDest.IsEmpty()) {
-    return true;
-  }
-
-  auto* memRecorder =
-      static_cast<DrawEventRecorderMemory*>(recordingSurface->mRecorder.get());
-  if (!memRecorder->mOutputStream.mValid || !memRecorder->mOutputStream.mData) {
-    return true;
-  }
-
-  MarkChanged();
-
-  
-  
-  
-  
-  Matrix mapping;
-  mapping.PreTranslate(aDest.X(), aDest.Y());
-  mapping.PreScale(aDest.Width() / aSource.Width(),
-                   aDest.Height() / aSource.Height());
-  mapping.PreTranslate(-aSource.X(), -aSource.Y());
-
-  Matrix savedTransform = GetTransform();
-
-  PushClipRect(aDest);
-
-  InlineTranslator translator(this);
-  
-  
-  
-  
-  
-  translator.SetReferenceDrawTargetTransform(mapping * savedTransform);
-  translator.TranslateRecording(memRecorder->mOutputStream.mData,
-                                memRecorder->mOutputStream.mLength);
-
-  PopClip();
-  SetTransform(savedTransform);
-  return true;
 }
 
 void DrawTargetRecording::DrawSurfaceDescriptor(

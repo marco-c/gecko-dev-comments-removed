@@ -1536,15 +1536,6 @@ class DrawTarget : public external::AtomicRefCounted<DrawTarget> {
 
 
 
-  virtual bool TryToReplaySurface(SourceSurface* aSurface, const Rect& aDest,
-                                  const Rect& aSource) {
-    return false;
-  }
-
-  
-
-
-
 
 
 
