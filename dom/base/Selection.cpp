@@ -3949,6 +3949,12 @@ void Selection::NotifySelectionListeners() {
     presShell->ScheduleContentRelevancyUpdate(ContentRelevancyReason::Selected);
   }
 
+  if (mSelectionType == SelectionType::eNormal && RangeCount()) {
+    
+    
+    doc->SetFocusNavigationStartingPoint(nullptr);
+  }
+
   RefPtr<nsFrameSelection> frameSelection = mFrameSelection;
 
   

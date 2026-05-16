@@ -3636,6 +3636,14 @@ class Document : public nsINode,
   HTMLCollection* Anchors();
   TimeStamp LastFocusTime() const;
   void SetLastFocusTime(const TimeStamp& aFocusTime);
+
+  void SetFocusNavigationStartingPoint(nsIContent* aContent,
+                                       bool aWillBeRemoved = false);
+  nsIContent* GetFocusNavigationStartingPoint() const {
+    return mFocusNavigationStartingPoint;
+  }
+  bool WasFocusedElementRemoved() const { return mWasFocusedElementRemoved; }
+
   
   bool MozSyntheticDocument() const { return IsSyntheticDocument(); }
   Element* GetCurrentScript();
@@ -4961,6 +4969,12 @@ class Document : public nsINode,
 
   
   
+  
+  
+  RefPtr<nsIContent> mFocusNavigationStartingPoint;
+
+  
+  
   TimeStamp mLastFocusTime;
 
   
@@ -5300,6 +5314,11 @@ class Document : public nsINode,
 
   
   const bool mAutoSizesEnabled : 1;
+
+  
+  
+  
+  bool mWasFocusedElementRemoved : 1;
 
   
   

@@ -388,7 +388,7 @@ void NavigateEvent::PotentiallyResetFocus() {
   }
 
   
-  Document* document = window->GetExtantDoc();
+  RefPtr<Document> document = window->GetExtantDoc();
 
   
   if (NS_WARN_IF(!document)) {
@@ -432,6 +432,8 @@ void NavigateEvent::PotentiallyResetFocus() {
         focusManager->ClearFocus(focusedWindow);
       }
     }
+    
+    document->SetFocusNavigationStartingPoint(nullptr);
   }
 }
 

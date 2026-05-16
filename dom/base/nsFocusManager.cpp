@@ -983,6 +983,25 @@ nsresult nsFocusManager::ContentRemoved(Document* aDocument,
   MOZ_ASSERT(aDocument);
   MOZ_ASSERT(aContent);
 
+  if (auto* startingPoint = aDocument->GetFocusNavigationStartingPoint()) {
+    bool isFlatTreeAncestor = false;
+    for (nsIContent* ancestor :
+         startingPoint->InclusiveFlatTreeAncestorsOfType<nsIContent>()) {
+      if (ancestor == aContent) {
+        isFlatTreeAncestor = true;
+        break;
+      }
+    }
+    
+    
+    
+    
+    if (isFlatTreeAncestor &&
+        (!aInfo.mNewParent || aDocument->WasFocusedElementRemoved())) {
+      aDocument->SetFocusNavigationStartingPoint(aContent, true);
+    }
+  }
+
   if (aInfo.mNewParent) {
     
     return NS_OK;
@@ -1054,25 +1073,6 @@ nsresult nsFocusManager::ContentRemoved(Document* aDocument,
   RefPtr previousFocusedElement = previousFocusedElementPtr;
   RefPtr window = windowPtr;
 
-  
-  
-  
-  
-  
-  
-  
-  if (!detachingShadow &&
-      !previousFocusedElement->IsInNativeAnonymousSubtree()) {
-    if (RefPtr selection = window->GetSelection()) {
-      
-      selection->SetAncestorLimiter(nullptr);
-      DebugOnly<nsresult> rv =
-          selection->CollapseInLimiter(previousFocusedElement, 0);
-      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                           "Selection::CollapseInLimiter failed.");
-    }
-  }
-
   RefPtr<Element> newFocusedElement =
       detachingShadow && focusWithinElement->IsHTMLElement(nsGkAtoms::input)
           ? focusWithinElement
@@ -1141,6 +1141,9 @@ nsresult nsFocusManager::ContentRemoved(Document* aDocument,
   }
 
   if (!newFocusedElement) {
+    
+    
+    aDocument->SetFocusNavigationStartingPoint(aContent, true);
     NotifyFocusStateChange(previousFocusedElement, nullptr, 0,
                             false, false);
   } else {
@@ -2519,6 +2522,9 @@ bool nsFocusManager::BlurImpl(BrowsingContext* aBrowsingContextToClear,
   bool sendBlurEvent =
       element && element->IsInComposedDoc() && !IsNonFocusableRoot(element);
   if (element) {
+    
+    
+    element->OwnerDoc()->SetFocusNavigationStartingPoint(element);
     if (sendBlurEvent) {
       NotifyFocusStateChange(element, aElementToFocus, 0, false, false);
     }
@@ -2940,6 +2946,12 @@ void nsFocusManager::Focus(
     RefPtr<Element> focusedElement = mFocusedElement;
     UpdateCaret(aFocusChanged && !(aFlags & FLAG_BYMOUSE), aIsNewDocument,
                 focusedElement);
+  }
+
+  if (mFocusedElement) {
+    
+    
+    mFocusedElement->OwnerDoc()->SetFocusNavigationStartingPoint(nullptr);
   }
 }
 
@@ -3484,6 +3496,23 @@ void nsFocusManager::GetSelectionLocation(Document* aDocument,
   NS_IF_ADDREF(*aEndContent = end);
 }
 
+
+
+static nsIContent* GetFlatTreeNextNonDescendant(nsIContent& aContent) {
+  nsIContent* content = &aContent;
+  for (nsIContent* parent = aContent.GetFlattenedTreeParent(); parent;
+       content = parent, parent = content->GetFlattenedTreeParent()) {
+    FlattenedChildIterator iterator(parent);
+    if (NS_WARN_IF(!iterator.Seek(content))) {
+      return nullptr;
+    }
+    if (auto* sibling = iterator.GetNextChild()) {
+      return sibling;
+    }
+  }
+  return nullptr;
+}
+
 nsresult nsFocusManager::DetermineElementToMoveFocus(
     nsPIDOMWindowOuter* aWindow, nsIContent* aStartContent, int32_t aType,
     bool aNoParentTraversal, bool aNavigateByKey, nsIContent** aNextContent) {
@@ -3646,9 +3675,30 @@ nsresult nsFocusManager::DetermineElementToMoveFocus(
       
       nsCOMPtr<nsIDocShell> docShell = aWindow->GetDocShell();
       if (docShell && docShell->ItemType() != nsIDocShellTreeItem::typeChrome) {
+        startContent = doc->GetFocusNavigationStartingPoint();
+        bool considerStartContent = true;
+        if (aType != MOVEFOCUS_CARET && !forDocumentNavigation &&
+            startContent) {
+          if (doc->WasFocusedElementRemoved()) {
+            startContent = GetFlatTreeNextNonDescendant(*startContent);
+            considerStartContent = forward;
+          } else {
+            considerStartContent = false;
+          }
+        }
         nsCOMPtr<nsIContent> endSelectionContent;
-        GetSelectionLocation(doc, presShell, getter_AddRefs(startContent),
-                             getter_AddRefs(endSelectionContent));
+        if (!startContent) {
+          GetSelectionLocation(doc, presShell, getter_AddRefs(startContent),
+                               getter_AddRefs(endSelectionContent));
+        }
+        
+        
+        if (considerStartContent && startContent && startContent->IsElement() &&
+            startContent->GetPrimaryFrame() &&
+            startContent->GetPrimaryFrame()->IsFocusable().IsTabbable()) {
+          NS_ADDREF(*aNextContent = startContent);
+          return NS_OK;
+        }
         
         if (startContent == rootElement) {
           startContent = nullptr;
@@ -3670,27 +3720,6 @@ nsresult nsFocusManager::DetermineElementToMoveFocus(
           
           
           ignoreTabIndex = true;
-          
-          
-          if (startContent->IsElement() && startContent->GetPrimaryFrame() &&
-              startContent->GetPrimaryFrame()->IsFocusable().IsTabbable()) {
-            startContent =
-                forward ? (startContent->GetPreviousSibling()
-                               ? startContent->GetPreviousSibling()
-                               
-                               
-                               
-                               
-                               : startContent->GetParent())
-                        
-                        
-                        : startContent->GetNextNonChildNode();
-            
-            
-            if (startContent == rootElement) {
-              startContent = nullptr;
-            }
-          }
         }
       }
 
