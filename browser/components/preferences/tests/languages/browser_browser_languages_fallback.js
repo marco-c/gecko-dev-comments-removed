@@ -67,6 +67,9 @@ add_task(async function testFallbackHiddenWhenPreferredIsDefault() {
       ["intl.multilingual.enabled", true],
       ["intl.multilingual.downloadEnabled", false],
       ["extensions.langpacks.signatures.required", false],
+      
+      
+      ["intl.locale.requested", Services.locale.defaultLocale],
     ],
   });
 
