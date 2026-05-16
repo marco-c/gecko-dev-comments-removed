@@ -99,9 +99,41 @@ nsMenuItemX::nsMenuItemX(nsMenuX* aParent, const nsString& aLabel,
     
     
     
+    
+    
+    
+    SEL standardEditSelector = nil;
     if (mContent->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::id,
-                                           u"menu_copy"_ns, eCaseMatters)) {
-      mNativeMenuItem.action = @selector(copy:);
+                                           u"menu_undo"_ns, eCaseMatters)) {
+      standardEditSelector = @selector(undo:);
+    } else if (mContent->AsElement()->AttrValueIs(
+                   kNameSpaceID_None, nsGkAtoms::id, u"menu_redo"_ns,
+                   eCaseMatters)) {
+      standardEditSelector = @selector(redo:);
+    } else if (mContent->AsElement()->AttrValueIs(kNameSpaceID_None,
+                                                  nsGkAtoms::id, u"menu_cut"_ns,
+                                                  eCaseMatters)) {
+      standardEditSelector = @selector(cut:);
+    } else if (mContent->AsElement()->AttrValueIs(
+                   kNameSpaceID_None, nsGkAtoms::id, u"menu_copy"_ns,
+                   eCaseMatters)) {
+      standardEditSelector = @selector(copy:);
+    } else if (mContent->AsElement()->AttrValueIs(
+                   kNameSpaceID_None, nsGkAtoms::id, u"menu_paste"_ns,
+                   eCaseMatters)) {
+      standardEditSelector = @selector(paste:);
+    } else if (mContent->AsElement()->AttrValueIs(
+                   kNameSpaceID_None, nsGkAtoms::id, u"menu_delete"_ns,
+                   eCaseMatters)) {
+      standardEditSelector = @selector(delete:);
+    } else if (mContent->AsElement()->AttrValueIs(
+                   kNameSpaceID_None, nsGkAtoms::id, u"menu_selectAll"_ns,
+                   eCaseMatters)) {
+      standardEditSelector = @selector(selectAll:);
+    }
+
+    if (standardEditSelector) {
+      mNativeMenuItem.action = standardEditSelector;
     } else {
       mNativeMenuItem.action = @selector(menuItemHit:);
       mNativeMenuItem.target = nsMenuBarX::sNativeEventTarget;
