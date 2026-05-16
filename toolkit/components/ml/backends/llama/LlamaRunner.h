@@ -110,6 +110,8 @@ class LlamaGenerateTask final : public mozilla::CancelableRunnable {
   
   RefPtr<LlamaGenerateTaskPromise> GetMessage();
 
+  bool IsActive() const;
+
  private:
   
   
@@ -210,6 +212,8 @@ class LlamaStreamSource final : public UnderlyingSourceAlgorithmsWrapper,
 
   void DisconnectFromOwner() override;
 
+  bool IsActive() const;
+
  private:
   ~LlamaStreamSource();
 
@@ -271,6 +275,9 @@ class LlamaRunner final : public nsISupports, public nsWrapperCache {
                                JS::Handle<JSObject*> aGivenProto) override;
 
   
+
+
+
 
 
 
