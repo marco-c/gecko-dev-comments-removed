@@ -271,6 +271,33 @@ OriginAttributes SSLTokensCache::OAFromPeerId(const nsACString& aPeerId) {
 }
 
 
+nsCString SSLTokensCache::SetupPersistenceLocked(uint32_t& aLoadGen) {
+  sLock.AssertCurrentThreadOwns();
+  MOZ_ASSERT(gInstance);
+  MOZ_ASSERT(!gInstance->mBackingFile);
+
+  nsCOMPtr<nsIFile> profileDir;
+  if (NS_FAILED(NS_GetSpecialDirectory(NS_APP_USER_PROFILE_50_DIR,
+                                       getter_AddRefs(profileDir)))) {
+    return ""_ns;
+  }
+  profileDir->Clone(getter_AddRefs(gInstance->mBackingFile));
+  gInstance->mBackingFile->AppendNative("ssl_tokens_cache.bin"_ns);
+
+  nsCOMPtr<nsISerialEventTarget> writeQueue;
+  NS_CreateBackgroundTaskQueue("SslTokensCachePersist",
+                               getter_AddRefs(writeQueue));
+  gInstance->mWriteTaskQueue = writeQueue;
+
+  gInstance->mLoadStartTime = TimeStamp::Now();
+  aLoadGen = gInstance->mLoadGeneration;
+
+  nsAutoString widePath;
+  gInstance->mBackingFile->GetPath(widePath);
+  return NS_ConvertUTF16toUTF8(widePath);
+}
+
+
 nsresult SSLTokensCache::Init() {
   MOZ_ASSERT(NS_IsMainThread());
   nsCString backgroundLoadPath;
@@ -313,25 +340,7 @@ nsresult SSLTokensCache::Init() {
       return NS_OK;
     }
 
-    nsCOMPtr<nsIFile> profileDir;
-    if (NS_FAILED(NS_GetSpecialDirectory(NS_APP_USER_PROFILE_50_DIR,
-                                         getter_AddRefs(profileDir)))) {
-      return NS_OK;
-    }
-    profileDir->Clone(getter_AddRefs(gInstance->mBackingFile));
-    gInstance->mBackingFile->AppendNative("ssl_tokens_cache.bin"_ns);
-
-    nsCOMPtr<nsISerialEventTarget> writeQueue;
-    NS_CreateBackgroundTaskQueue("SslTokensCachePersist",
-                                 getter_AddRefs(writeQueue));
-    gInstance->mWriteTaskQueue = writeQueue;
-
-    gInstance->mLoadStartTime = TimeStamp::Now();
-    loadGen = gInstance->mLoadGeneration;
-
-    nsAutoString widePath;
-    gInstance->mBackingFile->GetPath(widePath);
-    backgroundLoadPath = NS_ConvertUTF16toUTF8(widePath);
+    backgroundLoadPath = SetupPersistenceLocked(loadGen);
   }  
 
   DispatchLoad(std::move(backgroundLoadPath), loadGen);
@@ -342,6 +351,7 @@ nsresult SSLTokensCache::Init() {
 nsresult SSLTokensCache::Shutdown() {
   RefPtr<SSLTokensCache> instance;
   nsCOMPtr<nsIObserverService> obs;
+  bool blockerRegistered = false;
   {
     StaticMutexAutoLock lock(sLock);
 
@@ -352,26 +362,17 @@ nsresult SSLTokensCache::Shutdown() {
     UnregisterWeakMemoryReporter(gInstance);
     instance = gInstance;
     obs = mozilla::services::GetObserverService();
-    
-    
+    blockerRegistered = gInstance->mShutdownBarrier != nullptr;
   }
 
+  
+  
+  
+  
+  if (!blockerRegistered) {
 #ifdef ENABLE_TESTS
-  
-  
-  
-  
-  
-  
-  if ([&] {
-        StaticMutexAutoLock lock(sLock);
-        return !instance->mWriteTaskQueue;
-      }()) {
     instance->DoWrite(true);
-  }
 #endif
-
-  {
     StaticMutexAutoLock lock(sLock);
     gInstance = nullptr;
   }
@@ -973,6 +974,9 @@ void SSLTokensCache::DoWrite(bool aSynchronous) {
 
 
 void SSLTokensCache::DispatchLoad(nsCString aPath, uint32_t aLoadGen) {
+  if (aPath.IsEmpty()) {
+    return;
+  }
   NS_DispatchBackgroundTask(
       NS_NewRunnableFunction("SSLTokensCache::LoadPersisted",
                              [path = std::move(aPath), aLoadGen]() {
@@ -1226,35 +1230,11 @@ SSLTokensCache::Observe(nsISupports* aSubject, const char* aTopic,
     {
       StaticMutexAutoLock lock(sLock);
       if (gInstance && !gInstance->mBackingFile) {
-        nsCOMPtr<nsIFile> profileDir;
-        if (NS_SUCCEEDED(NS_GetSpecialDirectory(NS_APP_USER_PROFILE_50_DIR,
-                                                getter_AddRefs(profileDir)))) {
-          profileDir->Clone(getter_AddRefs(gInstance->mBackingFile));
-          gInstance->mBackingFile->AppendNative("ssl_tokens_cache.bin"_ns);
-          if (!gInstance->mWriteTaskQueue) {
-            nsCOMPtr<nsISerialEventTarget> writeQueue;
-            NS_CreateBackgroundTaskQueue("SslTokensCachePersist",
-                                         getter_AddRefs(writeQueue));
-            gInstance->mWriteTaskQueue = writeQueue;
-          }
-          gInstance->mLoadStartTime = TimeStamp::Now();
-          loadGen = gInstance->mLoadGeneration;
-          nsAutoString widePath;
-          gInstance->mBackingFile->GetPath(widePath);
-          loadPath = NS_ConvertUTF16toUTF8(widePath);
-        }
+        loadPath = SetupPersistenceLocked(loadGen);
       }
     }
-    if (!loadPath.IsEmpty()) {
-      DispatchLoad(std::move(loadPath), loadGen);
-    }
-
-    
-    
-    NS_DispatchToCurrentThreadQueue(
-        NewRunnableMethod("SSLTokensCache::RegisterShutdownBlocker", this,
-                          &SSLTokensCache::RegisterShutdownBlocker),
-        EventQueuePriority::Idle);
+    DispatchLoad(std::move(loadPath), loadGen);
+    RegisterShutdownBlocker();
   }
   return NS_OK;
 }
@@ -1338,6 +1318,8 @@ void SSLTokensCache::RegisterShutdownBlocker() {
       return;
     }
   }
+  
+  
   nsCOMPtr<nsIAsyncShutdownService> svc = components::AsyncShutdown::Service();
   if (!svc) {
     return;
@@ -1361,6 +1343,9 @@ void SSLTokensCache::RemoveShutdownBlocker() {
   {
     StaticMutexAutoLock lock(sLock);
     barrier = std::move(mShutdownBarrier);
+    
+    
+    gInstance = nullptr;
   }
   if (barrier) {
     barrier->RemoveBlocker(this);

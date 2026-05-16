@@ -132,9 +132,15 @@ class SSLTokensCache : public nsIMemoryReporter,
   
   uint32_t mLoadGeneration MOZ_GUARDED_BY(sLock){0};
   void DoWrite(bool aSynchronous) MOZ_EXCLUDES(sLock);
-  void RegisterShutdownBlocker();
-  void RemoveShutdownBlocker();
+  void RegisterShutdownBlocker() MOZ_EXCLUDES(sLock);
+  void RemoveShutdownBlocker() MOZ_EXCLUDES(sLock);
   nsCOMPtr<nsIAsyncShutdownClient> mShutdownBarrier MOZ_GUARDED_BY(sLock);
+  
+  
+  
+  
+  static nsCString SetupPersistenceLocked(uint32_t& aLoadGen)
+      MOZ_REQUIRES(sLock);
   static void DispatchLoad(nsCString aPath, uint32_t aLoadGen);
   static void OnLoadCompleteNotify(uint32_t aCount);
   

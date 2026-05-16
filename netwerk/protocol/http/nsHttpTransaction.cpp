@@ -1977,7 +1977,9 @@ nsresult nsHttpTransaction::Restart() {
   nsCOMPtr<nsISeekableStream> seekable = do_QueryInterface(mRequestStream);
   if (seekable) seekable->Seek(nsISeekableStream::NS_SEEK_SET, 0);
 
-  if (mDoNotTryEarlyData) {
+  
+  
+  if (mDoNotTryEarlyData || mResumptionAttempted) {
     MutexAutoLock lock(mLock);
     MaybeRemoveSSLToken(mSecurityInfo);
   }

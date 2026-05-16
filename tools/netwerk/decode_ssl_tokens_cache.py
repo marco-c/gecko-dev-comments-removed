@@ -47,7 +47,9 @@ class _Color:
     cyan: str = ""
 
     @classmethod
-    def enabled(cls) -> "_Color":
+    def from_bool(cls, on: bool) -> "_Color":
+        if not on:
+            return cls()
         return cls(
             reset="\033[0m",
             bold="\033[1m",
@@ -79,6 +81,7 @@ class Record:
     succeeded_cert_chain: list[bytes] | None
     handshake_certs: list[bytes] | None
     built_in_root: bool | None
+    size: int = 0
 
 
 class Reader:
@@ -139,13 +142,14 @@ class Reader:
         raise DecodeError(f"invalid Option discriminant {tag}")
 
     def record(self) -> Record:
+        start = self._buf.tell()
         self.u64()  
         key = self.bytes_vec().decode("utf-8", errors="replace")
         prtime = self.i64()
         expires = datetime.datetime.fromtimestamp(
             prtime / 1e6, tz=datetime.timezone.utc
         )
-        return Record(
+        rec = Record(
             key=key,
             expires=expires,
             token=self.bytes_vec(),
@@ -157,6 +161,8 @@ class Reader:
             handshake_certs=self.option(self.vec_of_bytes),
             built_in_root=self.option(self.read_bool),
         )
+        rec.size = self._buf.tell() - start
+        return rec
 
     def records(self) -> list[Record]:
         return [self.record() for _ in range(self.u64())]
@@ -198,7 +204,7 @@ def hexdump(data: bytes, indent: str = "  ") -> None:
 def print_record(idx: int, rec: Record, verbose: int, now: datetime.datetime) -> None:
     expired = f" {C.red}{C.bold}[EXPIRED]{C.reset}" if rec.expires < now else ""
 
-    print(f"[{idx}] {C.bold}{rec.key}{C.reset}")
+    print(f"[{idx}] {C.bold}{rec.key}{C.reset}  {C.dim}{rec.size:,} bytes{C.reset}")
     print(_row("expires", rec.expires.strftime("%Y-%m-%d %H:%M:%S UTC") + expired))
     print(_row("token", f"{len(rec.token)} bytes"))
     if verbose >= 2:
@@ -277,8 +283,9 @@ def main() -> None:
     args = parser.parse_args()
 
     global C  
-    color_enabled = (args.color or sys.stdout.isatty()) and "NO_COLOR" not in os.environ
-    C = _Color.enabled() if color_enabled else _Color()
+    C = _Color.from_bool(
+        (args.color or sys.stdout.isatty()) and "NO_COLOR" not in os.environ
+    )
 
     try:
         decode(args.file, args.verbose)
