@@ -27,6 +27,7 @@
 #include "mozilla/dom/KeyframeEffect.h"  
 #include "mozilla/dom/KeyframeEffectBinding.h"
 #include "mozilla/dom/Nullable.h"
+#include "mozilla/dom/ViewTimeline.h"
 #include "nsCSSPropertyIDSet.h"
 #include "nsCSSProps.h"
 #include "nsClassHashtable.h"
@@ -224,6 +225,9 @@ static void DistributeRange(const Range<Keyframe*>& aRange);
 
 static void DoComputeMissingKeyframeOffsets(nsTArray<Keyframe*>& aKeyframes);
 
+static double GetComputedOffset(const Keyframe::OffsetType& aOffset,
+                                const dom::AnimationTimeline* aTimeline);
+
 
 
 
@@ -272,7 +276,7 @@ nsTArray<Keyframe> KeyframeUtils::GetKeyframesFromObject(
 
 
 void KeyframeUtils::ComputeMissingKeyframeOffsets(
-    nsTArray<Keyframe>& aKeyframes) {
+    nsTArray<Keyframe>& aKeyframes, const dom::AnimationTimeline* aTimeline) {
   if (aKeyframes.IsEmpty()) {
     return;
   }
@@ -300,9 +304,7 @@ void KeyframeUtils::ComputeMissingKeyframeOffsets(
       continue;
     }
 
-    
-    
-    keyframe.mComputedOffset = std::numeric_limits<double>::quiet_NaN();
+    keyframe.mComputedOffset = GetComputedOffset(*offset, aTimeline);
   }
 
   
@@ -1260,6 +1262,33 @@ static void DoComputeMissingKeyframeOffsets(nsTArray<Keyframe*>& aKeyframes) {
     DistributeRange(Range<Keyframe*>(keyframeA, keyframeB + 1));
     keyframeA = keyframeB;
   }
+}
+
+
+
+
+
+
+
+
+static double GetComputedOffset(const Keyframe::OffsetType& aOffset,
+                                const dom::AnimationTimeline* aTimeline) {
+  MOZ_ASSERT(aOffset.mRangeName != StyleTimelineRangeName::None &&
+             aOffset.mRangeName != StyleTimelineRangeName::Normal,
+             "This is only for keyframe selector with timeline range name");
+
+  if (!aTimeline || !aTimeline->IsViewTimeline()) {
+    return std::numeric_limits<double>::quiet_NaN();
+  }
+
+  const dom::ViewTimeline* vt = aTimeline->AsViewTimeline();
+  const auto result =
+      vt->MapKeyframeOffsetToOffset(aOffset.mRangeName, aOffset.mPercentage);
+
+  
+  
+
+  return result ? result.value() : std::numeric_limits<double>::quiet_NaN();
 }
 
 }  

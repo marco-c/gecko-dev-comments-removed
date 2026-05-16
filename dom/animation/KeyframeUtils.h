@@ -25,6 +25,7 @@ struct PropertyStyleAnimationValuePair;
 struct PseudoStyleRequest;
 
 namespace dom {
+class AnimationTimeline;
 class Document;
 class Element;
 }  
@@ -73,7 +74,8 @@ class KeyframeUtils {
 
 
 
-  static void ComputeMissingKeyframeOffsets(nsTArray<Keyframe>& aKeframes);
+  static void ComputeMissingKeyframeOffsets(
+      nsTArray<Keyframe>& aKeframes, const dom::AnimationTimeline* aTimeline);
 
   
 
