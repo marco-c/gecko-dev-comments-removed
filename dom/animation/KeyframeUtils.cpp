@@ -335,6 +335,7 @@ nsTArray<AnimationProperty> KeyframeUtils::GetAnimationPropertiesFromKeyframes(
     if (frame.mOffset && frame.mOffset->IsTimelineRangeOffset() &&
         std::isnan(frame.mComputedOffset)) {
       
+      
       continue;
     }
     for (auto& value : computedValues[i]) {
@@ -798,8 +799,8 @@ static void AppendFinalSegment(AnimationProperty* aAnimationProperty,
 
 static AnimationProperty* HandleMissingInitialKeyframe(
     nsTArray<AnimationProperty>& aResult, const KeyframeValueEntry& aEntry) {
-  MOZ_ASSERT(aEntry.mOffset != 0.0f,
-             "The offset of the entry should not be 0.0");
+  MOZ_ASSERT(aEntry.mOffset > 0.0f,
+             "The offset of the entry should be larger than 0.0");
 
   AnimationProperty* result = aResult.AppendElement();
   result->mProperty = aEntry.mProperty;
@@ -812,8 +813,8 @@ static AnimationProperty* HandleMissingInitialKeyframe(
 static void HandleMissingFinalKeyframe(
     nsTArray<AnimationProperty>& aResult, const KeyframeValueEntry& aEntry,
     AnimationProperty* aCurrentAnimationProperty) {
-  MOZ_ASSERT(aEntry.mOffset != 1.0f,
-             "The offset of the entry should not be 1.0");
+  MOZ_ASSERT(aEntry.mOffset < 1.0f,
+             "The offset of the entry should be smaller than 1.0");
 
   
   
@@ -824,7 +825,7 @@ static void HandleMissingFinalKeyframe(
 
     
     
-    if (aEntry.mOffset != 0.0f) {
+    if (aEntry.mOffset > 0.0f) {
       AppendInitialSegment(aCurrentAnimationProperty, aEntry);
     }
   }
@@ -879,9 +880,9 @@ static void BuildSegmentsFromValueEntries(
     
     
     if (i + 1 == n) {
-      if (aEntries[i].mOffset != 1.0f) {
+      if (aEntries[i].mOffset < 1.0f) {
         HandleMissingFinalKeyframe(aResult, aEntries[i], animationProperty);
-      } else if (aEntries[i].mOffset == 1.0f && !animationProperty) {
+      } else if (aEntries[i].mOffset >= 1.0f && !animationProperty) {
         
         
         
@@ -896,7 +897,7 @@ static void BuildSegmentsFromValueEntries(
         "Each entry should specify a valid property");
 
     
-    if (aEntries[i].mProperty != lastProperty && aEntries[i].mOffset != 0.0f) {
+    if (aEntries[i].mProperty != lastProperty && aEntries[i].mOffset > 0.0f) {
       
       
       
@@ -915,6 +916,7 @@ static void BuildSegmentsFromValueEntries(
     
     
     
+    
     if (aEntries[i].mProperty == aEntries[i + 1].mProperty &&
         aEntries[i].mOffset == aEntries[i + 1].mOffset &&
         aEntries[i].mOffset != 1.0f && aEntries[i].mOffset != 0.0f) {
@@ -924,7 +926,7 @@ static void BuildSegmentsFromValueEntries(
 
     
     if (aEntries[i].mProperty != aEntries[i + 1].mProperty &&
-        aEntries[i].mOffset != 1.0f) {
+        aEntries[i].mOffset < 1.0f) {
       HandleMissingFinalKeyframe(aResult, aEntries[i], animationProperty);
       
       animationProperty = nullptr;
@@ -932,6 +934,7 @@ static void BuildSegmentsFromValueEntries(
       continue;
     }
 
+    
     
     
     
@@ -968,7 +971,7 @@ static void BuildSegmentsFromValueEntries(
     
     
     if (aEntries[i].mProperty != lastProperty) {
-      MOZ_ASSERT(aEntries[i].mOffset == 0.0f);
+      MOZ_ASSERT(aEntries[i].mOffset <= 0.0f);
       MOZ_ASSERT(!animationProperty);
       animationProperty = aResult.AppendElement();
       animationProperty->mProperty = aEntries[i].mProperty;
