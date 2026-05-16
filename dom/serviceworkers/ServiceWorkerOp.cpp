@@ -1683,21 +1683,16 @@ void FetchEventOp::ResolvedCallback(JSContext* aCx,
 
   autoCancel.Reset();
 
-  
-  
-  
-  
-  
-  ir->SnapshotUnfilteredHeaders();
-
-  mHandled->MaybeResolveWithUndefined();
-
   ChildToParentSynthesizeResponseArgs synthesizeResponseArgs;
   synthesizeResponseArgs.closure() = mRespondWithClosure.ref();
   synthesizeResponseArgs.timeStamps() =
       FetchEventTimeStamps(mFetchHandlerStart, mFetchHandlerFinish);
   ir->ToChildToParentInternalResponse(
       &synthesizeResponseArgs.internalResponse());
+
+  
+  
+  mHandled->MaybeResolveWithUndefined();
 
   mRespondWithPromiseHolder.Resolve(
       FetchEventRespondWithResult(
