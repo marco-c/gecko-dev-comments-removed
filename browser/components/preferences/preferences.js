@@ -730,7 +730,24 @@ async function gotoPref(
   
   gLastCategory.category = category;
   gLastCategory.subcategory = subcategory;
-  categories.currentView = item ? item.getAttribute("view") : category;
+
+  
+  
+  let currentView = item ? item.getAttribute("view") : category;
+
+  try {
+    let paneLookupId = internalPrefCategoryNameToFriendlyName(currentView);
+    let parentPanes = SettingPaneManager.getWithParents(paneLookupId);
+    if (parentPanes.length > 1) {
+      
+      let rootParent = parentPanes[0];
+      currentView = friendlyPrefCategoryNameToInternalName(rootParent.id);
+    }
+  } catch (ex) {
+    
+  }
+
+  categories.currentView = currentView;
   window.history.replaceState(category, document.title);
 
   let categoryInfo = gCategoryInits.get(category);
