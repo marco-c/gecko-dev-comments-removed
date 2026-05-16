@@ -13,7 +13,7 @@ from functools import cache
 import mozpack.path as mozpath
 from manifestparser import TestManifest, combine_fields
 from mozbuild.base import MozbuildObject
-from mozbuild.testing import REFTEST_FLAVORS, TEST_MANIFESTS
+from mozbuild.testing import REFTEST_FLAVORS, TEST_MANIFESTS, install_test_files
 from mozpack.files import FileFinder
 
 here = os.path.abspath(os.path.dirname(__file__))
@@ -564,6 +564,17 @@ class BuildBackendLoader(TestLoader):
             from mozbuild.gen_test_backend import gen_test_backend
 
             gen_test_backend()
+            
+            
+            harness_manifest = mozpath.join(
+                self.topobjdir, "_build_manifests", "install", "_tests"
+            )
+            if os.path.isfile(harness_manifest):
+                install_test_files(
+                    mozpath.normpath(self.topsrcdir),
+                    self.topobjdir,
+                    "_tests",
+                )
 
         all_tests = os.path.join(self.topobjdir, "all-tests.pkl")
         test_defaults = os.path.join(self.topobjdir, "test-defaults.pkl")
@@ -635,9 +646,29 @@ class TestManifestLoader(TestLoader):
         manifest = reftest.ReftestManifest(finder=self.finder)
         manifest.load(mpath)
 
+        manifests_with_tests = set()
         for test in sorted(manifest.tests, key=lambda x: x.get("path")):
             test["manifest_relpath"] = test["manifest"][len(self.topsrcdir) + 1 :]
+            manifests_with_tests.add(test["manifest"])
             yield test
+
+        
+        
+        
+        
+        for manifest_path in sorted(manifest.manifests - {manifest.path}):
+            if manifest_path not in manifests_with_tests:
+                relpath = manifest_path[len(self.topsrcdir) + 1 :]
+                yield {
+                    "path": manifest_path,
+                    "here": os.path.dirname(manifest_path),
+                    "manifest": manifest_path,
+                    "manifest_relpath": relpath,
+                    "name": os.path.basename(manifest_path),
+                    "head": "",
+                    "support-files": "",
+                    "subsuite": "",
+                }
 
     def __call__(self):
         for path, name, key, value in self.reader.find_variables_from_ast(
