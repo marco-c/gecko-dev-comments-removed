@@ -961,100 +961,65 @@ add_task(async function preferences() {
     ? "sync-pane-loaded"
     : "privacy-pane-loaded";
   let finalPrefPaneLoaded = TestUtils.topicObserved(finalPaneEvent, () => true);
-  
-  
-  
-  
-  const srdEnabled = Services.prefs.getBoolPref(
-    "browser.settings-redesign.enabled"
-  );
-  await BrowserTestUtils.withNewTab(
-    srdEnabled ? "about:preferences#home" : "about:preferences",
-    async () => {
-      await finalPrefPaneLoaded;
+  await BrowserTestUtils.withNewTab("about:preferences", async () => {
+    await finalPrefPaneLoaded;
 
-      resetGleanEvents();
+    resetGleanEvents();
 
-      await BrowserTestUtils.synthesizeMouseAtCenter(
-        
-        srdEnabled
-          ? "[data-category='paneHome'] #browserRestoreSession"
-          : "#browserRestoreSession",
-        {},
-        gBrowser.selectedBrowser.browsingContext
-      );
-      await BrowserTestUtils.synthesizeMouseAtCenter(
-        "#category-search",
-        {},
-        gBrowser.selectedBrowser.browsingContext
-      );
+    await BrowserTestUtils.synthesizeMouseAtCenter(
+      "#browserRestoreSession",
+      {},
+      gBrowser.selectedBrowser.browsingContext
+    );
 
-      await BrowserTestUtils.synthesizeMouseAtCenter(
-        "#category-privacy",
-        {},
-        gBrowser.selectedBrowser.browsingContext
-      );
+    await BrowserTestUtils.synthesizeMouseAtCenter(
+      "#category-search",
+      {},
+      gBrowser.selectedBrowser.browsingContext
+    );
 
-      
-      
-      
-      const privacyClickId = srdEnabled
-        ? "etpStatusAdvancedButton"
-        : "contentBlockingLearnMore";
-      await BrowserTestUtils.waitForCondition(
-        () =>
-          gBrowser.selectedBrowser.contentDocument.getElementById(
-            privacyClickId
-          ),
-        `${privacyClickId} is rendered`
-      );
+    await BrowserTestUtils.synthesizeMouseAtCenter(
+      "#category-privacy",
+      {},
+      gBrowser.selectedBrowser.browsingContext
+    );
+    await BrowserTestUtils.waitForCondition(() =>
+      gBrowser.selectedBrowser.contentDocument.getElementById(
+        "contentBlockingLearnMore"
+      )
+    );
 
-      let openedTabPromise;
-      if (!srdEnabled) {
-        
-        
-        openedTabPromise = BrowserTestUtils.waitForNewTab(gBrowser);
-      }
-      gBrowser.selectedBrowser.contentDocument
-        .getElementById(privacyClickId)
-        .scrollIntoView();
-      await BrowserTestUtils.synthesizeMouseAtCenter(
-        `#${privacyClickId}`,
-        {},
-        gBrowser.selectedBrowser.browsingContext
-      );
-      if (openedTabPromise) {
-        await openedTabPromise;
-        gBrowser.removeCurrentTab();
-      }
+    const onLearnMoreOpened = BrowserTestUtils.waitForNewTab(gBrowser);
+    gBrowser.selectedBrowser.contentDocument
+      .getElementById("contentBlockingLearnMore")
+      .scrollIntoView();
+    await BrowserTestUtils.synthesizeMouseAtCenter(
+      "#contentBlockingLearnMore",
+      {},
+      gBrowser.selectedBrowser.browsingContext
+    );
+    await onLearnMoreOpened;
+    gBrowser.removeCurrentTab();
 
-      let events = Glean.browserUsage.interaction
-        .testGetValue()
-        .map(e => [e.extra.source, e.extra.widget_id]);
-      Assert.deepEqual(
-        [
-          [
-            srdEnabled ? "preferences_paneHome" : "preferences_paneGeneral",
-            "browserRestoreSession",
-          ],
-          [
-            "preferences_panePrivacy",
-            srdEnabled ? "etpStatusAdvancedButton" : "contentBlockingLearnMore",
-          ],
-        ],
-        events
-      );
-      assertInteractionData({
-        [srdEnabled ? "preferencesPaneHome" : "preferencesPaneGeneral"]: {
-          browserRestoreSession: 1,
-        },
-        preferencesPanePrivacy: {
-          [srdEnabled ? "etpStatusAdvancedButton" : "contentBlockingLearnMore"]:
-            1,
-        },
-      });
-    }
-  );
+    let events = Glean.browserUsage.interaction
+      .testGetValue()
+      .map(e => [e.extra.source, e.extra.widget_id]);
+    Assert.deepEqual(
+      [
+        ["preferences_paneGeneral", "browserRestoreSession"],
+        ["preferences_panePrivacy", "contentBlockingLearnMore"],
+      ],
+      events
+    );
+    assertInteractionData({
+      preferencesPaneGeneral: {
+        browserRestoreSession: 1,
+      },
+      preferencesPanePrivacy: {
+        contentBlockingLearnMore: 1,
+      },
+    });
+  });
 });
 
 

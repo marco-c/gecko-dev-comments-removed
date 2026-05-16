@@ -137,16 +137,9 @@ add_task(async function () {
   await aboutPrefPromise;
   let aboutPrefTab = win.gBrowser.selectedTab;
   let prefDoc = win.gBrowser.selectedBrowser.contentDocument;
-  
-  
-  
-  let siteDataGroup;
-  await TestUtils.waitForCondition(() => {
-    siteDataGroup = prefDoc.querySelector(
-      'setting-group:is([groupid="cookiesAndSiteData"], [groupid="cookiesAndSiteData2"]):not([hidden])'
-    );
-    return siteDataGroup && BrowserTestUtils.isVisible(siteDataGroup);
-  }, "siteDataGroup should be visible on the privacy pane");
+  let siteDataGroup = prefDoc.querySelector(
+    'setting-group:is([groupid="cookiesAndSiteData"], [groupid="cookiesAndSiteData2"])'
+  );
   is_element_visible(
     siteDataGroup,
     "Should open to the siteDataGroup section in about:preferences"
