@@ -1719,7 +1719,12 @@ def target_tasks_os_integration(full_task_graph, parameters, graph_config):
 
     labels = []
     for label, task in full_task_graph.tasks.items():
-        if task.kind not in TEST_KINDS + ("source-test", "perftest", "startup-test"):
+        if task.kind not in TEST_KINDS + (
+            "source-test",
+            "perftest",
+            "startup-test",
+            "snap-upstream-test",
+        ):
             continue
 
         
@@ -1734,6 +1739,12 @@ def target_tasks_os_integration(full_task_graph, parameters, graph_config):
                 task.attributes.get("build_platform") == "macosx64"
                 or "android-hw" in label
             ):
+                continue
+
+            
+            
+            
+            if task.kind == "snap-upstream-test" and "-local" in label:
                 continue
 
             
