@@ -238,28 +238,131 @@ add_task(async function test_toggleOn() {
   assertSingleTelemetryEvent("toggleOff");
 });
 
+add_task(async function test_schedulerToggleSource() {
+  
+  
+  
+  
+  let bs = BackupService.init();
+  registerCleanupFunction(() => BackupService.uninit());
+
+  let backupDir = PathUtils.join(PathUtils.tempDir, "schedulerSource_dest");
+  Services.prefs.setStringPref(BACKUP_DIR_PREF_NAME, backupDir);
+
+  
+  if (bs.state.scheduledBackupsEnabled) {
+    bs.onUpdateScheduledBackups(false);
+  }
+  Services.prefs.clearUserPref("browser.backup.scheduled.enabled");
+
+  sinon.stub(bs, "classifyLocationForTelemetry").callsFake(() => "documents");
+
+  
+  
+  Services.fog.testResetFOG();
+  bs.setScheduledBackups(true, "ENABLE_MESSAGE_ID");
+  Assert.equal(
+    Glean.browserBackup.schedulerToggleSource.testGetValue(),
+    "ENABLE_MESSAGE_ID",
+    "Source argument propagated to scheduler_toggle_source on enable."
+  );
+
+  
+  
+  Services.fog.testResetFOG();
+  bs.setScheduledBackups(false, "DISABLE_MESSAGE_ID");
+  Assert.equal(
+    Glean.browserBackup.schedulerToggleSource.testGetValue(),
+    "DISABLE_MESSAGE_ID",
+    "Source argument propagated to scheduler_toggle_source on disable."
+  );
+
+  
+  Services.fog.testResetFOG();
+  bs.setScheduledBackups(true);
+  Assert.equal(
+    Glean.browserBackup.schedulerToggleSource.testGetValue(),
+    "unknown",
+    "scheduler_toggle_source defaults to 'unknown' when no source given on enable."
+  );
+
+  
+  Services.fog.testResetFOG();
+  bs.setScheduledBackups(false);
+  Assert.equal(
+    Glean.browserBackup.schedulerToggleSource.testGetValue(),
+    "unknown",
+    "scheduler_toggle_source defaults to 'unknown' when no source given on disable."
+  );
+
+  
+  Services.fog.testResetFOG();
+  bs.setScheduledBackups(true, "");
+  Assert.equal(
+    Glean.browserBackup.schedulerToggleSource.testGetValue(),
+    "unknown",
+    "Empty source falls back to 'unknown'."
+  );
+
+  
+  
+  Services.fog.testResetFOG();
+  bs.setScheduledBackups(false);
+  Services.fog.testResetFOG();
+  bs.setScheduledBackups(true, "FIRST_MESSAGE");
+  Assert.equal(
+    Glean.browserBackup.schedulerToggleSource.testGetValue(),
+    "FIRST_MESSAGE",
+    "First enable was credited to FIRST_MESSAGE."
+  );
+  
+  
+  Services.fog.testResetFOG();
+  bs.onUpdateScheduledBackups(false);
+  Services.fog.testResetFOG();
+  bs.onUpdateScheduledBackups(true);
+  Assert.equal(
+    Glean.browserBackup.schedulerToggleSource.testGetValue(),
+    "unknown",
+    "Stashed source is consumed once; subsequent toggles default to 'unknown'."
+  );
+
+  
+  bs.setScheduledBackups(false);
+  Services.prefs.clearUserPref("browser.backup.scheduled.enabled");
+});
+
 add_task(async function test_classifyLocationForTelemetry() {
+  
+  
+  
   let bs = new BackupService();
   for (const prop of Object.keys(kKnownMappings)) {
     let file = Services.dirsvc.get(prop, Ci.nsIFile);
+
+    
     Assert.equal(
       bs.classifyLocationForTelemetry(file.path),
       "other",
-      `'${file.path}' was correctly classified.`
+      `'${file.path}' (known dir itself) was correctly classified as other.`
     );
 
+    
+    
     file.append("child");
     Assert.equal(
       bs.classifyLocationForTelemetry(file.path),
-      kKnownMappings[prop],
-      `'${file.path}' was correctly classified.`
+      "other",
+      `'${file.path}' (one level deep) was correctly classified as other.`
     );
 
-    file = file.parent.parent;
+    
+    
+    file.append("grandchild");
     Assert.equal(
       bs.classifyLocationForTelemetry(file.path),
-      "other",
-      `'${file.path}' was correctly classified.`
+      kKnownMappings[prop],
+      `'${file.path}' (two levels deep) was correctly classified.`
     );
   }
 

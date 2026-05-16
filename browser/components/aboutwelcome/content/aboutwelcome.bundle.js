@@ -162,7 +162,7 @@ __webpack_require__.r(__webpack_exports__);
  var _MultiStageProtonScreen__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(6);
  var _LanguageSwitcher__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(7);
  var _SubmenuButton__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(12);
- var _lib_addUtmParams_mjs__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(29);
+ var _lib_addUtmParams_mjs__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(30);
 
 
 
@@ -794,9 +794,10 @@ class WelcomeScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCo
     const value = event.currentTarget.value ?? event.currentTarget.getAttribute("value");
     const source = event.source || value;
     let action = providedAction || this.resolveActionFromContent(value, event, props);
+    let actionResult;
     if (!action) {
       console.error("Failed to resolve action");
-      return;
+      return actionResult;
     }
 
     
@@ -813,7 +814,6 @@ class WelcomeScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCo
     if (action.collectTextInput && Object.values(props.textInputs).length) {
       this.setTextInputActions(action);
     }
-    let actionResult;
     if (["OPEN_URL", "SHOW_FIREFOX_ACCOUNTS"].includes(action.type)) {
       this.handleOpenURL(action, props.flowParams, props.UTMTerm);
     } else if (action.type === "INSTALL_ADDON_FROM_URL") {
@@ -878,6 +878,7 @@ class WelcomeScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCo
     if (shouldDoBehavior(action.dismiss)) {
       window.AWFinish();
     }
+    return actionResult;
   }
   setMultiSelectActions(action) {
     let {
@@ -2620,7 +2621,9 @@ __webpack_require__.r(__webpack_exports__);
  var _ConfirmationChecklist__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(27);
  var _lib_multistage_utils_mjs__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(3);
  var _EmbeddedBackupRestore__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(28);
+ var _PinnableSitesList__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(29);
 function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
+
 
 
 
@@ -2902,13 +2905,19 @@ const ContentTiles = props => {
     }), tile.type === "fx_backup_file_path" && react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_EmbeddedFxBackupOptIn__WEBPACK_IMPORTED_MODULE_8__.EmbeddedFxBackupOptIn, {
       handleAction: props.handleAction,
       isEncryptedBackup: content.isEncryptedBackup,
-      options: tile.options
+      options: tile.options,
+      messageId: props.messageId
     }), tile.type === "fx_backup_password" && react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_EmbeddedFxBackupOptIn__WEBPACK_IMPORTED_MODULE_8__.EmbeddedFxBackupOptIn, {
       handleAction: props.handleAction,
       isEncryptedBackup: content.isEncryptedBackup,
-      options: tile.options
+      options: tile.options,
+      messageId: props.messageId
     }), tile.type === "confirmation-checklist" && tile.data && react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_ConfirmationChecklist__WEBPACK_IMPORTED_MODULE_11__.ConfirmationChecklist, {
       content: tile.data,
+      handleAction: props.handleAction
+    }), tile.type === "pinnable_sites" && tile.data && react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_PinnableSitesList__WEBPACK_IMPORTED_MODULE_14__.PinnableSitesList, {
+      tile: tile,
+      messageId: props.messageId,
       handleAction: props.handleAction
     })) : null);
   };
@@ -3876,7 +3885,8 @@ __webpack_require__.r(__webpack_exports__);
 const EmbeddedFxBackupOptIn = ({
   handleAction,
   isEncryptedBackup,
-  options
+  options,
+  messageId
 }) => {
   const backupRef = (0,react__WEBPACK_IMPORTED_MODULE_0__.useRef)(null);
   const {
@@ -3945,6 +3955,7 @@ const EmbeddedFxBackupOptIn = ({
 
   return react__WEBPACK_IMPORTED_MODULE_0___default().createElement("turn-on-scheduled-backups", {
     ref: backupRef,
+    source: messageId,
     "hide-headers": "",
     "hide-password-input": !isEncryptedBackup || hide_password_input ? "" : undefined,
     "hide-secondary-button": !isEncryptedBackup || hide_secondary_button ? "" : undefined,
@@ -4328,6 +4339,107 @@ const EmbeddedBackupRestore = ({
     "aria-busy": recoveryInProgress || undefined,
     onClick: handleAction
   })))) : null);
+};
+
+ }),
+
+ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, {
+   PinnableSitesList: () => ( PinnableSitesList)
+ });
+ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
+ var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
+ var _MSLocalized__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5);
+ var _lib_multistage_utils_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(3);
+
+
+
+
+
+
+
+
+
+const IDLE = "idle";
+const PENDING = "pending";
+const PINNED = "pinned";
+const PinnableSitesList = ({
+  tile,
+  messageId,
+  handleAction
+}) => {
+  const items = tile?.data;
+  const pinButtonLabel = tile?.pinButtonLabel;
+  const [itemStates, setItemStates] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(() => Object.fromEntries((items ?? []).map(item => [item.id, IDLE])));
+  if (!items?.length) {
+    return null;
+  }
+  const setItemState = (id, state) => setItemStates(prev => ({
+    ...prev,
+    [id]: state
+  }));
+  const handlePin = async (event, item) => {
+    setItemState(item.id, PENDING);
+    _lib_multistage_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.MultiStageUtils.sendActionTelemetry(messageId, item.id, "CLICK_BUTTON");
+    const result = await handleAction(event, {
+      type: "PIN_TASKBAR_TAB",
+      needsAwait: true,
+      data: {
+        url: item.url,
+        name: item.name,
+        iconUrl: item.iconUrl
+      }
+    });
+    let pinResultLabel;
+    if (result === true) {
+      pinResultLabel = "success";
+    } else if (result === null) {
+      pinResultLabel = "already_pinned";
+    } else {
+      pinResultLabel = "failure";
+    }
+    _lib_multistage_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.MultiStageUtils.sendActionTelemetry(messageId, item.id, "PIN_SITE", {
+      result: pinResultLabel
+    });
+
+    
+    setItemState(item.id, result === false ? IDLE : PINNED);
+  };
+  return react__WEBPACK_IMPORTED_MODULE_0___default().createElement("ul", {
+    className: "pinnable-sites-list"
+  }, items.map(item => {
+    const nameId = `pinnable-site-name-${item.id}`;
+    const state = itemStates[item.id] ?? IDLE;
+    const isPendingOrPinned = state === PENDING || state === PINNED;
+    return react__WEBPACK_IMPORTED_MODULE_0___default().createElement("li", {
+      key: item.id,
+      className: "pinnable-sites-item"
+    }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("img", {
+      className: "pinnable-sites-icon",
+      src: item.iconUrl,
+      alt: ""
+    }), react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+      className: "pinnable-sites-text"
+    }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
+      text: item.title ?? item.name
+    }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("span", {
+      id: nameId,
+      className: "pinnable-sites-name"
+    })), item.description && react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
+      text: item.description
+    }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("span", {
+      className: "pinnable-sites-description"
+    }))), react__WEBPACK_IMPORTED_MODULE_0___default().createElement("button", {
+      className: "pinnable-sites-pin-button primary",
+      disabled: isPendingOrPinned,
+      onClick: e => handlePin(e, item),
+      "aria-describedby": nameId
+    }, pinButtonLabel && react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
+      text: pinButtonLabel
+    }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("span", null))));
+  }));
 };
 
  }),
