@@ -347,7 +347,7 @@ settings-tabs-drag-to-create-tab-groups =
     .label = Drag tabs together to create tab groups
 
 browser-layout-header2 =
-    .label = Browser Layout
+    .label = Browser layout
 
 browser-layout-horizontal-tabs2 =
     .label = Horizontal tabs
@@ -1128,6 +1128,12 @@ home-prefs-choose-wallpaper-link2 =
 # the features in settings.
 home-prefs-firefox-home-disabled-notice =
     .message = To use these features, set new tabs or new windows to { -firefox-home-brand-name }.
+
+# Dropdown option shown when an extension replaces the contents of new windows or tabs.
+# Variables:
+#   $extension (string) - Name of the extension
+home-prefs-homepage-extension-option =
+    .label = Extension ({ $extension })
 
 # Variables:
 #   $num (number) - Number of rows displayed
@@ -2470,6 +2476,9 @@ related-settings-accessibility-link =
 
 related-settings-home-link =
     .label = Customize { -firefox-home-brand-name }
+
+related-settings-tabs-browsing-link =
+    .label = Customize browser layout
 
 ## Accessibility page
 
