@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "CoreLocationLocationProvider.h"
 #include "GeolocationPosition.h"
 #include "MLSFallback.h"
@@ -94,12 +92,6 @@ static void LogLocationPermissionState() {
 
   LogLocationPermissionState();
 
-  if ([aError code] == kCLErrorLocationUnknown) {
-    
-    
-    return;
-  }
-
   NSString* message = [@"Failed to acquire position: "
       stringByAppendingString:[aError localizedDescription]];
 
@@ -111,10 +103,20 @@ static void LogLocationPermissionState() {
   errorCodeStr.AppendInt(static_cast<int32_t>([aError code]));
   glean::geolocation::macos_error_code.Get(errorCodeStr).Add();
 
+  if ([aError code] == kCLErrorLocationUnknown) {
+    
+    
+    
+    
+    
+    
+    mProvider->CreateMLSFallbackProvider();
+  }
+
   
   
   
-  mProvider->CreateMLSFallbackProvider();
+  
 }
 
 - (void)locationManager:(CLLocationManager*)aManager
