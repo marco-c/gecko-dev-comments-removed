@@ -2,10 +2,8 @@
 
 
 
-
-
-#ifndef SDPPREF_H_
-#define SDPPREF_H_
+#ifndef DOM_MEDIA_WEBRTC_SDP_SDPPREF_H_
+#define DOM_MEDIA_WEBRTC_SDP_SDPPREF_H_
 
 #include <string>
 #include <unordered_map>
