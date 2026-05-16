@@ -6,7 +6,6 @@
 #define mozilla_a11y_AccTypes_h
 
 #include "mozilla/DefineEnum.h"
-#include "mozilla/TypedEnumBits.h"
 
 namespace mozilla {
 namespace a11y {
@@ -15,7 +14,7 @@ namespace a11y {
 
 
 
-MOZ_DEFINE_ENUM_WITH_BASE(AccType, uint8_t,
+MOZ_DEFINE_ENUM(AccType,
   
 
 
@@ -94,9 +93,7 @@ enum AccGenericType {
   eAllGenericTypes = (eLastAccGenericType << 1) - 1
 };
 
-MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(AccGenericType)
-
 }  
 }  
 
-#endif
+#endif  
