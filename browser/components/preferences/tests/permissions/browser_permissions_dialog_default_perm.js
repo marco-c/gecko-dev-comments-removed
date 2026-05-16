@@ -77,7 +77,7 @@ add_setup(async function () {
 
 
 add_task(async function removeAll() {
-  await openPreferencesViaOpenPreferencesAPI("privacy", { leaveOpen: true });
+  await openPermissionsPane({ leaveOpen: true });
   await openPermissionsDialog();
 
   let doc = sitePermissionsDialog.document;
