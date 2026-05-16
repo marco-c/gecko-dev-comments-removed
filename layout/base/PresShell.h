@@ -658,25 +658,18 @@ class PresShell final : public nsStubDocumentObserver,
   
 
 
-
-  already_AddRefed<nsCaret> GetActiveCaret() const;
-
-  
-
-
-  already_AddRefed<nsCaret> GetOriginalCaret() const;
+  already_AddRefed<nsCaret> GetCaret() const;
 
   
 
 
-
-  void SetActiveCaret(nsCaret* aNewCaret);
+  void SetCaret(nsCaret* aNewCaret);
 
   
 
 
 
-  void RestoreOriginalCaret();
+  void RestoreCaret();
 
   dom::Selection* GetCurrentSelection(SelectionType aSelectionType);
 
