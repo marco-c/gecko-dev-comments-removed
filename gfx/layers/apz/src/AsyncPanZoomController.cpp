@@ -7082,10 +7082,12 @@ void AsyncPanZoomController::ScrollSnapToDestination() {
         ToString(Metrics().GetVisualScrollOffset()).c_str(),
         ToString(snapDestination->mPosition).c_str());
 
-    
-    
-    
-    SetDelayedTransformEnd(false);
+    if (snapDestination->mPosition != startPosition) {
+      
+      
+      
+      SetDelayedTransformEnd(false);
+    }
 
     SmoothScrollTo(std::move(*snapDestination), ScrollTriggeredByScript::No,
                    ScrollAnimationKind::SmoothMsd, ViewportType::Visual,
