@@ -17,6 +17,9 @@ const kBaseUri = Services.io.newURI("https://example.com");
 const kInnerUri = Services.io.newURI("https://example.com/somewhere/else");
 
 let gFaviconUri;
+let gBigFaviconUri;
+let gFaviconHttpUri;
+let gBigFaviconHttpUri;
 let gFaviconImg;
 
 add_setup(async function setup() {
@@ -35,7 +38,16 @@ add_setup(async function setup() {
   registerCleanupFunction(() => sandbox.restore());
 
   gFaviconUri = Services.io.newURI(
-    "chrome://mochitests/content/browser/browser/components/taskbartabs/test/browser/favicon-normal16.png"
+    "chrome://mochitests/content/browser/browser/components/taskbartabs/test/browser/favicon-normal32.png"
+  );
+  gBigFaviconUri = Services.io.newURI(
+    "chrome://mochitests/content/browser/browser/components/taskbartabs/test/browser/favicon-big64.png"
+  );
+  gFaviconHttpUri = Services.io.newURI(
+    "https://example.com/browser/browser/components/taskbartabs/test/browser/favicon-normal32.png"
+  );
+  gBigFaviconHttpUri = Services.io.newURI(
+    "https://example.com/browser/browser/components/taskbartabs/test/browser/favicon-big64.png"
   );
   gFaviconImg = await TaskbarTabsUtils._imageFromLocalURI(gFaviconUri);
 });
@@ -88,9 +100,100 @@ add_task(async function test_faviconOnOtherPage() {
 
   await checkTaskbarTabIcon(gFaviconImg, {
     uri: kInnerUri,
-    startPath: "/",
+    manifest: {
+      start_url: "/",
+    },
   });
   ok(checkedInnerLast, "The inner URL should be checked last");
+
+  sandbox.restore();
+});
+
+add_task(async function test_manifestIcon_lone() {
+  let sandbox = sinon.createSandbox();
+  sandbox.stub(TaskbarTabsUtils, "getFaviconUri").resolves(null);
+
+  await checkTaskbarTabIcon(gFaviconImg, {
+    uri: kBaseUri,
+    manifest: {
+      icons: [
+        {
+          
+          
+          
+          src: gFaviconHttpUri.spec,
+        },
+      ],
+    },
+  });
+
+  sandbox.restore();
+});
+
+add_task(async function test_manifestIcon_sized() {
+  let sandbox = sinon.createSandbox();
+  sandbox.stub(TaskbarTabsUtils, "getFaviconUri").resolves(null);
+
+  await checkTaskbarTabIcon(gFaviconImg, {
+    uri: kBaseUri,
+    manifest: {
+      icons: [
+        {
+          
+          
+          
+          src: gFaviconHttpUri.spec,
+          sizes: "1x1 2x2 3x3 250x250",
+        },
+      ],
+    },
+  });
+
+  sandbox.restore();
+});
+
+add_task(async function test_manifestIcon_selectsBestSize() {
+  let sandbox = sinon.createSandbox();
+  sandbox.stub(TaskbarTabsUtils, "getFaviconUri").resolves(null);
+
+  await checkTaskbarTabIcon(gFaviconImg, {
+    uri: kBaseUri,
+    manifest: {
+      icons: [
+        {
+          src: gBigFaviconHttpUri.spec,
+          sizes: "255x255 257x257",
+        },
+        {
+          src: gFaviconHttpUri.spec,
+          sizes: "256x256",
+        },
+      ],
+    },
+  });
+
+  sandbox.restore();
+});
+
+add_task(async function test_manifestIcon_overridesFavicon() {
+  let sandbox = sinon.createSandbox();
+  sandbox.stub(TaskbarTabsUtils, "getFaviconUri").resolves(gBigFaviconUri);
+
+  await checkTaskbarTabIcon(gFaviconImg, {
+    uri: kBaseUri,
+    manifest: {
+      icons: [
+        {
+          src: gBigFaviconHttpUri.spec,
+          sizes: "255x255 257x257",
+        },
+        {
+          src: gFaviconHttpUri.spec,
+          sizes: "256x256",
+        },
+      ],
+    },
+  });
 
   sandbox.restore();
 });
@@ -153,7 +256,7 @@ add_task(async function test_replaceTabWithWindowLoadsSavedIcon() {
 
 async function checkTaskbarTabIcon(
   aImage,
-  { uri = kBaseUri, startPath = null } = {}
+  { uri = kBaseUri, manifest = null } = {}
 ) {
   const sandbox = sinon.createSandbox();
 
@@ -174,7 +277,7 @@ async function checkTaskbarTabIcon(
   Assert.strictEqual(tt, null, "No Taskbar Tab exists under url");
 
   
-  await openAndMoveIntoTaskbarTab(uri, startPath);
+  await openAndMoveIntoTaskbarTab(uri, manifest);
   await pendingPin;
   tt = await TaskbarTabs.findTaskbarTab(uri, 0);
   Assert.notEqual(tt, null, "A new Taskbar Tab was created");
@@ -210,7 +313,7 @@ async function checkTaskbarTabIcon(
 
   
   
-  await openAndMoveIntoTaskbarTab(uri, startPath);
+  await openAndMoveIntoTaskbarTab(uri, manifest);
   await pendingPin;
   tt = await TaskbarTabs.findTaskbarTab(uri, 0);
   Assert.equal(tt?.id, priorId, "The Taskbar Tab was reused");
@@ -244,11 +347,12 @@ async function checkTaskbarTabIcon(
 
 
 
-async function openAndMoveIntoTaskbarTab(aUri, aStartPath) {
+async function openAndMoveIntoTaskbarTab(aUri, aManifest) {
   await BrowserTestUtils.withNewTab(aUri.spec, async browser => {
-    await SpecialPowers.spawn(browser, [aStartPath], async path => {
-      if (path !== null) {
-        content.document.body.innerHTML = `<link rel="manifest" href='data:application/json,{"start_url": "${path}"}'>`;
+    let json = aManifest ? JSON.stringify(aManifest) : null;
+    await SpecialPowers.spawn(browser, [json], async manifest => {
+      if (manifest !== null) {
+        content.document.body.innerHTML = `<link rel="manifest" href='data:application/json,${manifest}'>`;
       }
     });
 
