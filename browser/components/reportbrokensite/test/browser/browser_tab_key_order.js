@@ -7,10 +7,8 @@
 
 add_common_setup();
 
-requestLongerTimeout(2);
-
-async function ensureTabOrder(order, win = window) {
-  const config = { window: win };
+async function ensureTabOrder(rbs, order, expectBackButton = true) {
+  let foundBackAlready = false;
   for (let matches of order) {
     
     if (!Array.isArray(matches)) {
@@ -18,7 +16,15 @@ async function ensureTabOrder(order, win = window) {
     }
     let matchesLeft = matches.length;
     while (matchesLeft--) {
-      const target = await pressKeyAndGetFocus("VK_TAB", config);
+      const target = await rbs.pressKeyAndGetFocus("VK_TAB");
+      if (target.matches(".subviewbutton-back") && !foundBackAlready) {
+        if (!expectBackButton) {
+          throw new Error("Found an unexpected back button");
+        }
+        foundBackAlready = true;
+        matchesLeft++;
+        continue;
+      }
       let foundMatch = false;
       for (const [i, selector] of matches.entries()) {
         foundMatch = selector && target.matches(selector);
@@ -29,130 +35,163 @@ async function ensureTabOrder(order, win = window) {
       }
       ok(
         foundMatch,
-        `Expected [${matches}] next, got id=${target.id}, class=${target.className}, ${target}`
+        `Expected [${matches}] next, got ${target.nodeName}(id=${target.id}, class=${target.className})`
       );
       if (!foundMatch) {
         return false;
       }
     }
   }
+  if (!foundBackAlready && expectBackButton) {
+    const target = await rbs.pressKeyAndGetFocus("VK_TAB");
+    ok(target.matches(".subviewbutton-back"), "Ended on the back button");
+  }
   return true;
 }
 
-async function ensureExpectedTabOrderMainPanel(
-  expectBackButton,
-  expectReason,
-  expectSendMoreInfo
-) {
-  const { activeElement } = window.document;
-  is(
-    activeElement?.id,
-    "report-broken-site-popup-url",
-    "URL is already focused"
+async function checkMainPanel(rbs, { expectBackButton }) {
+  return ensureTabOrder(
+    rbs,
+    [
+      "url-input",
+      [
+        "account",
+        "adblocker",
+        "checkout",
+        "content",
+        "deceptive",
+        "load",
+        "media",
+        "notsupported",
+        "other",
+        "slow",
+      ].map(reason => `#report-broken-site-popup-reason-${reason}`),
+      "#report-broken-site-popup-learn-more-link",
+    ],
+    expectBackButton
   );
-  const order = [];
-  if (expectReason) {
-    order.push("#report-broken-site-popup-reason");
-  }
-  order.push("#report-broken-site-popup-description");
-  order.push("#report-broken-site-popup-blocked-trackers-checkbox");
-  if (expectSendMoreInfo) {
-    order.push("#report-broken-site-popup-send-more-info-link");
-  }
-  order.push("#report-broken-site-popup-preview-button");
-  
-  
-  order.push([
-    "#report-broken-site-popup-cancel-button",
-    "#report-broken-site-popup-send-button",
-  ]);
-  if (expectBackButton) {
-    order.push(".subviewbutton-back");
-  }
-  order.push("#report-broken-site-popup-learn-more-link");
-  order.push("#report-broken-site-popup-url"); 
-  return ensureTabOrder(order);
 }
 
-async function ensureExpectedTabOrderPreviewPanel(rbs) {
-  
-  const numSummaryElements = rbs.previewView.querySelectorAll("summary").length;
+function maybe(test, val) {
+  return test ? [val] : [];
+}
 
-  const order = [
-    ".subviewbutton-back",
-    ...Array(numSummaryElements).fill("summary"),
+async function checkDetailsPanel(
+  rbs,
+  {
+    expectSendMoreInfo,
+    expectScreenshotToggle,
+    expectBlockedTrackersToggle,
+  } = {}
+) {
+  return ensureTabOrder(rbs, [
+    "url-input",
+    "#report-broken-site-popup-description",
+    ...maybe(
+      expectBlockedTrackersToggle,
+      "#report-broken-site-popup-blocked-trackers-toggle"
+    ),
+    ...maybe(
+      expectScreenshotToggle,
+      "#report-broken-site-popup-screenshot-toggle"
+    ),
+    ...maybe(
+      expectSendMoreInfo,
+      "#report-broken-site-popup-send-more-info-button"
+    ),
+    "#report-broken-site-popup-preview-button",
+    
+    
+    [
+      "#report-broken-site-popup-details-cancel-button",
+      "#report-broken-site-popup-send-button",
+    ],
+  ]);
+}
+
+async function checkPreviewPanel(rbs, { expectedSummaries }) {
+  return ensureTabOrder(rbs, [
+    ".preview-basic summary",
+    ...expectedSummaries.map(name => `.preview-${name} summary`),
     [
       
       
       "#report-broken-site-popup-preview-cancel-button",
       "#report-broken-site-popup-preview-send-button",
     ],
-  ];
-
-  return ensureTabOrder(order);
+  ]);
 }
 
-async function testTabOrder(menu) {
-  ensureReasonDisabled();
-  ensureSendMoreInfoDisabled();
+async function testTabOrder(menu, expectBlockedTrackersToggle = false) {
+  
+  enableScreenshots();
 
-  const { showsBackButton } = menu;
+  const rbs = await menu.openReportBrokenSite();
 
-  let rbs = await menu.openReportBrokenSite();
-  await ensureExpectedTabOrderMainPanel(showsBackButton, false, false);
-  await rbs.close();
+  
+  const expectedSummaries = Object.keys(await rbs.reportData());
 
-  ensureSendMoreInfoEnabled();
-  rbs = await menu.openReportBrokenSite();
-  await ensureExpectedTabOrderMainPanel(showsBackButton, false, true);
-  await rbs.close();
+  const expectBackButton = menu.showsBackButton;
+  await checkMainPanel(rbs, { expectBackButton });
 
-  ensureReasonOptional();
-  rbs = await menu.openReportBrokenSite();
-  await ensureExpectedTabOrderMainPanel(showsBackButton, true, true);
-  await rbs.close();
+  
+  await rbs.clickReason("load");
+  enableSendMoreInfo();
+  await isVisible(rbs.screenshotToggle);
+  await isVisible(rbs.sendMoreInfoButton);
+  await checkDetailsPanel(rbs, {
+    expectSendMoreInfo: true,
+    expectScreenshotToggle: true,
+    expectBlockedTrackersToggle,
+  });
 
-  ensureReasonRequired();
-  rbs = await menu.openReportBrokenSite();
-  await ensureExpectedTabOrderMainPanel(showsBackButton, true, true);
-  await rbs.close();
-  rbs = await menu.openReportBrokenSite();
-  rbs.chooseReason("slow");
-  await ensureExpectedTabOrderMainPanel(showsBackButton, true, true);
-  await rbs.clickCancel();
+  
+  
+  rbs.screenshot = undefined;
+  disableSendMoreInfo();
+  await isNotVisible(rbs.screenshotToggle);
+  await isNotVisible(rbs.sendMoreInfoButton);
+  await checkDetailsPanel(rbs, {
+    expectSendMoreInfo: false,
+    expectScreenshotToggle: false,
+    expectBlockedTrackersToggle,
+  });
+  await rbs.clickPreview();
+  await checkPreviewPanel(rbs, {
+    expectedSummaries,
+  });
 
-  ensureSendMoreInfoDisabled();
-  rbs = await menu.openReportBrokenSite();
-  await ensureExpectedTabOrderMainPanel(showsBackButton, true, false);
-  await rbs.close();
-  rbs = await menu.openReportBrokenSite();
-  rbs.chooseReason("slow");
-  await ensureExpectedTabOrderMainPanel(showsBackButton, true, false);
-  await rbs.clickCancel();
-
-  ensureReasonOptional();
-  rbs = await menu.openReportBrokenSite();
-  await ensureExpectedTabOrderMainPanel(showsBackButton, true, false);
-  await rbs.close();
-
-  ensureReasonDisabled();
-  rbs = await menu.openReportBrokenSite();
-  await ensureExpectedTabOrderMainPanel(showsBackButton, false, false);
-
-  await tabTo("#report-broken-site-popup-preview-button");
-  await pressKeyAndAwait(rbs.awaitPreviewViewOpened(), "KEY_Enter");
-  await ensureExpectedTabOrderPreviewPanel(rbs);
+  
+  await rbs.clickBack();
+  rbs.screenshot = "data:";
+  disableScreenshots();
+  await isNotVisible(rbs.screenshotToggle);
+  await checkDetailsPanel(rbs, {
+    expectSendMoreInfo: false,
+    expectScreenshotToggle: false,
+    expectBlockedTrackersToggle,
+  });
+  await rbs.clickPreview();
+  await checkPreviewPanel(rbs, {
+    expectedSummaries,
+  });
 
   await rbs.close();
 }
 
 add_task(async function testTabOrdering() {
   ensureReportBrokenSitePreffedOn();
-  ensureSendMoreInfoEnabled();
 
-  await BrowserTestUtils.withNewTab(REPORTABLE_PAGE_URL, async function () {
+  await withNewTab(REPORTABLE_PAGE_URL, async () => {
     await testTabOrder(AppMenu());
     await testTabOrder(ProtectionsPanel());
     await testTabOrder(HelpMenu());
+  });
+
+  
+  await withNewTab(REPORTABLE_PAGE_URL3, async win => {
+    await testTabOrder(AppMenu(win), true);
+    await testTabOrder(ProtectionsPanel(win), true);
+    await testTabOrder(HelpMenu(win), true);
   });
 });

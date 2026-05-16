@@ -35,6 +35,7 @@ async function reformatExpectedWebCompatInfo(tab, overrides) {
   const { antitracking, languages, useragentString } = tabInfo;
 
   const addons = overrides.addons || [];
+  const category = overrides.category || "";
   const experiments = overrides.experiments || [];
   const atOverrides = overrides.antitracking;
   const blockList = atOverrides?.blockList ?? antitracking.blockList;
@@ -67,6 +68,7 @@ async function reformatExpectedWebCompatInfo(tab, overrides) {
 
   const reformatted = {
     blockList,
+    category,
     details: {
       additionalData: {
         browserInfo: {
@@ -191,14 +193,20 @@ async function reformatExpectedWebCompatInfo(tab, overrides) {
 
 async function testSendMoreInfo(tab, menu, expectedOverrides = {}) {
   const url = expectedOverrides.url ?? menu.win.gBrowser.currentURI.spec;
+  const reason = expectedOverrides.reason || "load";
   const description = expectedOverrides.description ?? "";
 
-  let rbs = await menu.openAndPrefillReportBrokenSite(url, description);
+  let rbs = await menu.openReportBrokenSiteToDetailsPanel({
+    url,
+    reason,
+    description,
+  });
 
   const receivedData = await rbs.clickSendMoreInfo();
   await checkWebcompatComPayload(
     tab,
     url,
+    reason,
     description,
     expectedOverrides,
     receivedData
@@ -206,27 +214,30 @@ async function testSendMoreInfo(tab, menu, expectedOverrides = {}) {
 
   
   rbs = await menu.openReportBrokenSite();
-  rbs.isMainViewResetToCurrentTab();
+  rbs.isProperlyReset();
   rbs.close();
 }
 
 async function testWebcompatComFallback(tab, menu) {
+  ViewState.get(menu.win.document).reset();
   const url = menu.win.gBrowser.currentURI.spec;
   const receivedData =
     await menu.clickReportBrokenSiteAndAwaitWebCompatTabData();
-  await checkWebcompatComPayload(tab, url, "", {}, receivedData);
+  await checkWebcompatComPayload(tab, url, "", "", {}, receivedData);
   menu.close();
 }
 
 async function checkWebcompatComPayload(
   tab,
   url,
+  reason,
   description,
   expectedOverrides,
   receivedData
 ) {
   const expected = await reformatExpectedWebCompatInfo(tab, expectedOverrides);
-  expected.url = url;
+  expected.url = URL.parse(url).href;
+  expected.category = reason;
   expected.description = description;
 
   

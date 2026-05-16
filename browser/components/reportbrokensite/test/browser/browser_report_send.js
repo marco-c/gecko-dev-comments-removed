@@ -19,61 +19,61 @@ add_common_setup();
 requestLongerTimeout(10);
 
 async function testCancel(menu, url, description) {
-  let rbs = await menu.openAndPrefillReportBrokenSite(url, description);
+  let rbs = await menu.openReportBrokenSiteToDetailsPanel({ url, description });
   await rbs.clickCancel();
   ok(!rbs.opened, "clicking Cancel closes Report Broken Site");
 
   
   rbs = await menu.openReportBrokenSite();
-  rbs.isMainViewResetToCurrentTab();
+  rbs.isProperlyReset();
   rbs.close();
 }
 
 add_task(async function testSendButton() {
   ensureReportBrokenSitePreffedOn();
-  ensureReasonOptional();
+  enableScreenshots();
 
-  const tab1 = await openTab(REPORTABLE_PAGE_URL);
+  await withNewTab(REPORTABLE_PAGE_URL, async (_, tab1) => {
+    await withNewTab(REPORTABLE_PAGE_URL, async (__, tab2) => {
+      
+      await testSend(tab1, AppMenu(), {
+        toggleOffScreenshot: true,
+      });
 
-  await testSend(tab1, AppMenu());
+      
+      await testSend(tab2, ProtectionsPanel(), {
+        url: "https://test.org/test/#fake",
+        breakageCategory: "media",
+        description: "test description",
+      });
 
-  const tab2 = await openTab(REPORTABLE_PAGE_URL);
-
-  await testSend(tab2, ProtectionsPanel(), {
-    url: "https://test.org/test/#fake",
-    breakageCategory: "media",
-    description: "test description",
+      
+      await testSend(tab1, AppMenu());
+    });
   });
-
-  closeTab(tab1);
-  closeTab(tab2);
 });
 
 add_task(async function testCancelButton() {
   ensureReportBrokenSitePreffedOn();
 
-  const tab1 = await openTab(REPORTABLE_PAGE_URL);
+  await withNewTab(REPORTABLE_PAGE_URL, async () => {
+    await testCancel(AppMenu());
+    await testCancel(ProtectionsPanel());
+    await testCancel(HelpMenu());
 
-  await testCancel(AppMenu());
-  await testCancel(ProtectionsPanel());
-  await testCancel(HelpMenu());
+    await withNewTab(REPORTABLE_PAGE_URL, async () => {
+      await testCancel(AppMenu());
+      await testCancel(ProtectionsPanel());
+      await testCancel(HelpMenu());
 
-  const tab2 = await openTab(REPORTABLE_PAGE_URL);
-
-  await testCancel(AppMenu());
-  await testCancel(ProtectionsPanel());
-  await testCancel(HelpMenu());
-
-  const win2 = await BrowserTestUtils.openNewBrowserWindow();
-  const tab3 = await openTab(REPORTABLE_PAGE_URL2, win2);
-
-  await testCancel(AppMenu(win2));
-  await testCancel(ProtectionsPanel(win2));
-  await testCancel(HelpMenu(win2));
-
-  closeTab(tab3);
-  await BrowserTestUtils.closeWindow(win2);
-
-  closeTab(tab1);
-  closeTab(tab2);
+      await withNewTab(
+        { url: REPORTABLE_PAGE_URL2, window: null },
+        async win2 => {
+          await testCancel(AppMenu(win2));
+          await testCancel(ProtectionsPanel(win2));
+          await testCancel(HelpMenu(win2));
+        }
+      );
+    });
+  });
 });

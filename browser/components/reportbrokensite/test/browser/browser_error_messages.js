@@ -10,55 +10,91 @@
 
 add_common_setup();
 
-add_task(async function test() {
+add_task(async function test_invalid_user_inputs() {
   ensureReportBrokenSitePreffedOn();
-  ensureReasonRequired();
 
-  await BrowserTestUtils.withNewTab(REPORTABLE_PAGE_URL, async function () {
+  await withNewTab(REPORTABLE_PAGE_URL, async () => {
     for (const menu of [AppMenu(), ProtectionsPanel(), HelpMenu()]) {
       const rbs = await menu.openReportBrokenSite();
-      const { sendButton, URLInput } = rbs;
 
-      rbs.isURLInvalidMessageHidden();
-      rbs.isReasonNeededMessageHidden();
+      
+      await isNotVisible(
+        rbs.urlComponent.errorMessage,
+        "no URL error message by default"
+      );
 
+      let test = "empty URL";
       rbs.setURL("");
-      window.document.activeElement.blur();
-      rbs.isURLInvalidMessageShown();
-      rbs.isReasonNeededMessageHidden();
+      await isVisible(rbs.urlComponent.errorMessage, test);
+      await isDisabled(rbs.progressionButtons, test);
 
+      test = "valid URL";
       rbs.setURL("https://asdf");
-      window.document.activeElement.blur();
-      rbs.isURLInvalidMessageHidden();
-      rbs.isReasonNeededMessageHidden();
+      await isNotVisible(rbs.urlComponent.errorMessage, test);
+      await isNotDisabled(rbs.progressionButtons, test);
 
+      test = "invalid URL";
       rbs.setURL("http:/ /asdf");
-      window.document.activeElement.blur();
-      rbs.isURLInvalidMessageShown();
-      rbs.isReasonNeededMessageHidden();
+      await isVisible(rbs.urlComponent.errorMessage, test);
+      await isDisabled(rbs.progressionButtons, test);
 
+      test = "back to valid URL";
       rbs.setURL("https://asdf");
-      const selectPromise = BrowserTestUtils.waitForSelectPopupShown(window);
-      EventUtils.synthesizeMouseAtCenter(sendButton, {}, window);
-      await selectPromise;
-      rbs.isURLInvalidMessageHidden();
-      rbs.isReasonNeededMessageShown();
-      await rbs.dismissDropdownPopup();
+      await isNotVisible(rbs.urlComponent.errorMessage, test);
+      await isNotDisabled(rbs.progressionButtons, test);
 
-      rbs.chooseReason("slow");
-      rbs.isURLInvalidMessageHidden();
-      rbs.isReasonNeededMessageHidden();
+      await rbs.clickReason("load");
 
+      
+      test = "empty URL";
       rbs.setURL("");
-      rbs.chooseReason("choose");
-      window.ownerGlobal.document.activeElement?.blur();
-      const focusPromise = BrowserTestUtils.waitForEvent(URLInput, "focus");
-      EventUtils.synthesizeMouseAtCenter(sendButton, {}, window);
-      await focusPromise;
-      rbs.isURLInvalidMessageShown();
-      rbs.isReasonNeededMessageShown();
+      await isNotVisible(rbs.descriptionInvalidMessage, test);
+      await isDisabled(rbs.progressionButtons, test);
 
-      rbs.clickCancel();
+      
+      test = "all-whitespace comment";
+      rbs.setDescription("            ");
+      await isVisible(rbs.urlComponent.errorMessage, test);
+      await isVisible(rbs.descriptionInvalidMessage, test);
+      await isDisabled(rbs.progressionButtons, test);
+
+      test = "still all-whitespace comment";
+      rbs.setURL("https://asdf");
+      await isNotVisible(rbs.urlComponent.errorMessage, test);
+      await isVisible(rbs.descriptionInvalidMessage, test);
+      await isDisabled(rbs.progressionButtons, test);
+
+      test = "comment too short";
+      
+      rbs.setDescription("   ___");
+      await isNotVisible(rbs.urlComponent.errorMessage, test);
+      await isVisible(rbs.descriptionInvalidMessage, test);
+      await isDisabled(rbs.progressionButtons, test);
+
+      
+      test = "valid URL and comment";
+      rbs.setDescription("    ____________");
+      await isNotVisible(rbs.urlComponent.errorMessage, test);
+      await isNotVisible(rbs.descriptionInvalidMessage, test);
+      await isNotDisabled(rbs.progressionButtons, test);
+
+      test = "empty but required comment";
+      await rbs.clickBack("");
+      await rbs.clickReason("other");
+
+      
+      rbs.setDescription("");
+      await isNotVisible(rbs.urlComponent.errorMessage, test);
+      await isVisible(rbs.descriptionInvalidMessage, test);
+      await isDisabled(rbs.progressionButtons, test);
+
+      test = "valid comment";
+      rbs.setDescription("    ____________");
+      await isNotVisible(rbs.urlComponent.errorMessage, test);
+      await isNotVisible(rbs.descriptionInvalidMessage, test);
+      await isNotDisabled(rbs.progressionButtons, test);
+
+      await rbs.clickCancel();
     }
   });
 });
