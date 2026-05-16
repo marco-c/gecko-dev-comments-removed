@@ -28,9 +28,31 @@ class nsINIParser {
 
 
 
-  nsresult Init(nsIFile* aFile);
 
-  nsresult InitFromString(const nsCString& aStr);
+
+
+
+
+
+
+
+  nsresult Init(nsIFile* aFile, bool* aContainedErrors = nullptr);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  nsresult InitFromString(const nsCString& aStr,
+                          bool* aContainedErrors = nullptr);
 
   
 
