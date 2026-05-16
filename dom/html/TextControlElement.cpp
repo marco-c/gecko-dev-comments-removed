@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 #include "TextControlElement.h"
 
@@ -32,12 +32,12 @@ static RefPtr<Element> MakeAnonElement(Document& aDoc,
   RefPtr<Element> element = aDoc.CreateHTMLElement(aTag);
   element->SetPseudoElementType(aPseudoType);
   if (aPseudoType == PseudoStyleType::MozTextControlEditingRoot) {
-    // Make our root node editable
+    
     element->SetFlags(NODE_IS_EDITABLE);
   } else {
-    // The text control's accessible takes care of the placeholder etc for us,
-    // all our pseudo-elements other than the root should not show up in the
-    // a11y tree.
+    
+    
+    
     element->SetAttr(kNameSpaceID_None, nsGkAtoms::aria_hidden, u"true"_ns,
                      false);
   }
@@ -100,25 +100,25 @@ void TextControlElement::SetPreviewValue(const nsAString& aValue) {
     text->SetData(aValue, IgnoreErrors());
     return;
   }
-  // Preview goes after the root or placeholder.
+  
   RefPtr prevSibling = FindShadowPseudo(PseudoStyleType::Placeholder);
   if (!prevSibling) {
     prevSibling = FindShadowPseudo(PseudoStyleType::MozTextControlEditingRoot);
   }
   if (NS_WARN_IF(!prevSibling)) {
-    // This can happen if we get called on e.g. a datetimebox or so.
+    
     return;
   }
   RefPtr preview = MakePlaceholderOrPreview(
       *OwnerDoc(), PseudoStyleType::MozTextControlPreview, aValue);
   sr->InsertChildBefore(preview, prevSibling->GetNextSibling(),
-                        /* aNotify = */ true, IgnoreErrors());
+                         true, IgnoreErrors());
 }
 
 static void ProcessPlaceholder(nsAString& aValue, bool aTextArea) {
-  if (aTextArea) {  //  <textarea>s preserve newlines...
+  if (aTextArea) {  
     nsContentUtils::PlatformToDOMLineBreaks(aValue);
-  } else {  // ...<input>s don't
+  } else {  
     nsContentUtils::RemoveNewlines(aValue);
   }
 }
@@ -130,8 +130,8 @@ void TextControlElement::UpdatePlaceholder(const nsAttrValue* aOldValue,
     return;
   }
   if (!IsSingleLineTextControlOrTextArea()) {
-    // We may still have a shadow tree for other input types like
-    // <input type=date>
+    
+    
     return;
   }
   if (aOldValue) {
@@ -160,13 +160,13 @@ void TextControlElement::UpdatePlaceholder(const nsAttrValue* aOldValue,
   ProcessPlaceholder(value, IsTextArea());
   RefPtr ph = MakePlaceholderOrPreview(*OwnerDoc(),
                                        PseudoStyleType::Placeholder, value);
-  // Placeholder goes after editing root.
+  
   RefPtr editingRoot =
       FindShadowPseudo(PseudoStyleType::MozTextControlEditingRoot);
   if (NS_WARN_IF(!editingRoot)) {
     return;
   }
-  sr->InsertChildBefore(ph, editingRoot->GetNextSibling(), /* aNotify = */ true,
+  sr->InsertChildBefore(ph, editingRoot->GetNextSibling(),  true,
                         IgnoreErrors());
 }
 
@@ -184,9 +184,9 @@ already_AddRefed<Element> TextControlElement::CreateButton() const {
       }
       break;
     case FormControlType::InputSearch: {
-      // Bug 1936648: Until we're absolutely sure we've solved the
-      // accessibility issues around the clear search button, we're only
-      // enabling the clear button in chrome contexts. See also Bug 1655503
+      
+      
+      
       if (StaticPrefs::layout_forms_input_type_search_enabled() ||
           doc.ChromeRulesEnabled()) {
         RefPtr button = MakeAnonElement(
@@ -218,7 +218,7 @@ already_AddRefed<Element> TextControlElement::CreateButton() const {
 void TextControlElement::UpdateTextEditorShadowTree() {
   Element* root = GetTextEditorRoot();
   if (!root) {
-    // We might not have created the shadow tree yet.
+    
     return;
   }
   auto* text = Text::FromNodeOrNull(root->GetFirstChild());
@@ -301,7 +301,7 @@ void TextControlElement::UpdateValueDisplay(bool aNotify) {
   if (NS_WARN_IF(!textContent)) {
     return;
   }
-  // Get the current value of the textfield from the content.
+  
   nsAutoString value;
   GetTextEditorValue(value);
   textContent->SetText(value, aNotify);
@@ -318,7 +318,7 @@ void TextControlElement::ScrollSelectionIntoViewAsync(
     return;
   }
 
-  // Scroll the selection into view (see bug 231389).
+  
   const auto flags = aScrollAncestors == ScrollAncestors::Yes
                          ? ScrollFlags::None
                          : ScrollFlags::ScrollFirstAncestorOnly;
@@ -341,17 +341,17 @@ void TextControlElement::ShowSelection() {
   if (!ps) {
     return;
   }
-  RefPtr<nsCaret> caret = ps->GetCaret();
+  RefPtr<nsCaret> caret = ps->GetOriginalCaret();
   if (!caret) {
     return;
   }
 
-  // Tell the caret to use our selection
+  
   caret->SetSelection(ourSel);
 
-  // mutual-exclusion: the selection is either controlled by the document or by
-  // the text input/area. Clear any selection in the document since the focus is
-  // now on our independent selection.
+  
+  
+  
 
   RefPtr<Selection> docSel =
       ps->GetSelection(nsISelectionController::SELECTION_NORMAL);
@@ -366,8 +366,8 @@ void TextControlElement::ShowSelection() {
     return;
   }
 
-  // If the focus moved to a text control during text selection by pointer
-  // device, stop extending the selection.
+  
+  
   if (RefPtr<nsFrameSelection> frameSelection = ps->FrameSelection()) {
     frameSelection->SetDragState(false);
   }
@@ -399,13 +399,13 @@ void TextControlElement::OnFocus(const WidgetEvent& aFocusEvent) {
 
   ShowSelection();
 
-  // See if we should select the contents of the textbox. This happens
-  // for text and password fields when the field was focused by the
-  // keyboard or a navigation, the platform allows it, and it wasn't
-  // just because we raised a window.
-  //
-  // While it'd usually make sense, we don't do this for JS callers
-  // because it causes some compat issues, see bug 1712724 for example.
+  
+  
+  
+  
+  
+  
+  
   nsFocusManager* fm = nsFocusManager::GetFocusManager();
   if (!IsTextArea() && !aFocusEvent.AsFocusEvent()->mFromRaise &&
       SelectTextFieldOnFocus()) {
@@ -433,4 +433,4 @@ void TextControlElement::SelectAll() {
   }
 }
 
-}  // namespace mozilla
+}  

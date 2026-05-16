@@ -3344,7 +3344,7 @@ nsresult nsFocusManager::SetCaretVisible(PresShell* aPresShell, bool aVisible,
   
   
   
-  RefPtr<nsCaret> caret = aPresShell->GetCaret();
+  RefPtr<nsCaret> caret = aPresShell->GetOriginalCaret();
   if (!caret) {
     return NS_OK;
   }

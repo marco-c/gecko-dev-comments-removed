@@ -817,7 +817,7 @@ bool TextOverflow::CanHaveOverflowMarkers(nsBlockFrame* aBlockFrame,
   }
 
   
-  RefPtr<nsCaret> caret = aBlockFrame->PresShell()->GetCaret();
+  RefPtr<nsCaret> caret = aBlockFrame->PresShell()->GetActiveCaret();
   if (caret && caret->IsVisible()) {
     RefPtr<dom::Selection> domSelection = caret->GetSelection();
     if (domSelection) {
