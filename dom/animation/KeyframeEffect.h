@@ -259,6 +259,7 @@ class KeyframeEffect : public AnimationEffect {
   
   
   
+  
   void UpdateProperties(const ComputedStyle* aStyle,
                         const AnimationTimeline* aTimeline = nullptr);
 
@@ -384,7 +385,8 @@ class KeyframeEffect : public AnimationEffect {
   
   
   
-  nsTArray<AnimationProperty> BuildProperties(const ComputedStyle* aStyle);
+  nsTArray<AnimationProperty> BuildProperties(
+      const ComputedStyle* aStyle, const AnimationTimeline* aTimeline);
 
   
   void UpdateTarget(Element* aElement,
@@ -435,10 +437,9 @@ class KeyframeEffect : public AnimationEffect {
 
   
   nsTArray<Keyframe> mKeyframes;
-
   
   
-  bool mKeyframesUseTimelineRangeOffset = false;
+  KeyframesOffsetHasAny mKeyframesOffsetInfo;
 
   
   nsTArray<AnimationProperty> mProperties;

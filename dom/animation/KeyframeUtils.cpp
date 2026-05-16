@@ -272,10 +272,10 @@ nsTArray<Keyframe> KeyframeUtils::GetKeyframesFromObject(
 }
 
 
-bool KeyframeUtils::ComputeMissingKeyframeOffsets(
+KeyframesOffsetHasAny KeyframeUtils::ComputeMissingKeyframeOffsets(
     nsTArray<Keyframe>& aKeyframes, const dom::AnimationTimeline* aTimeline) {
   if (aKeyframes.IsEmpty()) {
-    return false;
+    return {false, false};
   }
 
   
@@ -287,39 +287,43 @@ bool KeyframeUtils::ComputeMissingKeyframeOffsets(
   nsTArray<Keyframe*> keyframesWithDoubleOrNullOffsets;
 
   bool hasTimelineRangeOffset = false;
+  bool hasNullOrPercentageOffset = false;
 
   
   
   for (Keyframe& keyframe : aKeyframes) {
     const auto& offset = keyframe.mOffset;
     if (!offset) {
+      hasNullOrPercentageOffset = true;
       keyframesWithDoubleOrNullOffsets.AppendElement(&keyframe);
       continue;
     }
 
     if (offset->IsPercentageOffset()) {
+      if (!keyframe.mIsGenerated) {
+        hasNullOrPercentageOffset = true;
+      }
       keyframesWithDoubleOrNullOffsets.AppendElement(&keyframe);
       keyframe.mComputedOffset = offset->mPercentage;
       continue;
     }
 
     hasTimelineRangeOffset = true;
-    keyframe.mComputedOffset =
-        GetComputedOffset(offset->mRangeName, offset->mPercentage, aTimeline);
+    keyframe.mComputedOffset = GetComputedOffset(offset.ref(), aTimeline);
   }
 
   
   DoComputeMissingKeyframeOffsets(keyframesWithDoubleOrNullOffsets);
 
-  return hasTimelineRangeOffset;
+  return {hasTimelineRangeOffset, hasNullOrPercentageOffset};
 }
 
 
 double KeyframeUtils::GetComputedOffset(
-    const StyleTimelineRangeName aRangeName, const double aPercentage,
+    const Keyframe::OffsetType& aOffset,
     const dom::AnimationTimeline* aTimeline) {
-  MOZ_ASSERT(aRangeName != StyleTimelineRangeName::None &&
-                 aRangeName != StyleTimelineRangeName::Normal,
+  MOZ_ASSERT(aOffset.mRangeName != StyleTimelineRangeName::None &&
+                 aOffset.mRangeName != StyleTimelineRangeName::Normal,
              "This is only for keyframe selector with timeline range name");
 
   if (!aTimeline || !aTimeline->IsViewTimeline()) {
@@ -327,7 +331,8 @@ double KeyframeUtils::GetComputedOffset(
   }
 
   const dom::ViewTimeline* vt = aTimeline->AsViewTimeline();
-  const auto result = vt->MapKeyframeOffsetToOffset(aRangeName, aPercentage);
+  const auto result =
+      vt->MapKeyframeOffsetToOffset(aOffset.mRangeName, aOffset.mPercentage);
 
   
   
@@ -339,7 +344,9 @@ double KeyframeUtils::GetComputedOffset(
 nsTArray<AnimationProperty> KeyframeUtils::GetAnimationPropertiesFromKeyframes(
     const nsTArray<Keyframe>& aKeyframes, dom::Element* aElement,
     const PseudoStyleRequest& aPseudoRequest, const ComputedStyle* aStyle,
-    dom::CompositeOperation aEffectComposite) {
+    dom::CompositeOperation aEffectComposite,
+    const dom::AnimationTimeline* aTimeline,
+    const KeyframesOffsetHasAny& aOffsetHasAny) {
   nsTArray<AnimationProperty> result;
 
   const nsTArray<ComputedKeyframeValues> computedValues =
@@ -353,11 +360,27 @@ nsTArray<AnimationProperty> KeyframeUtils::GetAnimationPropertiesFromKeyframes(
   MOZ_ASSERT(aKeyframes.Length() == computedValues.Length(),
              "Array length mismatch");
 
+  
+  
+  
+  
+  const auto& generatedKeyframesStatus =
+      CheckSkippableGeneratedKeyframes(aKeyframes, aTimeline, aOffsetHasAny);
+
   nsTArray<KeyframeValueEntry> entries(aKeyframes.Length());
 
   const size_t len = aKeyframes.Length();
   for (size_t i = 0; i < len; ++i) {
     const Keyframe& frame = aKeyframes[i];
+    
+    if (generatedKeyframesStatus.ShouldSkip(frame)) {
+      
+      
+      
+      
+      continue;
+    }
+
     if (frame.IsRangedKeyframe() && std::isnan(frame.mComputedOffset)) {
       
       
@@ -392,6 +415,47 @@ bool KeyframeUtils::IsAnimatableProperty(const CSSPropertyId& aProperty) {
     return false;
   }
   return Servo_Property_IsAnimatable(&aProperty);
+}
+
+
+KeyframeUtils::GeneratedKeyframesStatus
+KeyframeUtils::CheckSkippableGeneratedKeyframes(
+    const nsTArray<Keyframe>& aKeyframes,
+    const dom::AnimationTimeline* aTimeline,
+    const KeyframesOffsetHasAny& aOffsetHasAny) {
+  if (!aTimeline || !aTimeline->IsViewTimeline()) {
+    
+    
+    
+    return {!aOffsetHasAny.mNonRangeOffset, !aOffsetHasAny.mNonRangeOffset};
+  }
+
+  
+  if (!aOffsetHasAny.mRangeOffset) {
+    return {false, false};
+  }
+
+  bool skipInitial = false;
+  bool skipFinal = false;
+  for (const auto& keyframe : aKeyframes) {
+    
+    
+    if (!keyframe.IsRangedKeyframe() || std::isnan(keyframe.mComputedOffset)) {
+      continue;
+    }
+
+    
+    
+    
+    
+    
+    if (keyframe.mComputedOffset <= 0.0) {
+      skipInitial = true;
+    } else if (keyframe.mComputedOffset >= 1.0) {
+      skipFinal = true;
+    }
+  }
+  return {skipInitial, skipFinal};
 }
 
 

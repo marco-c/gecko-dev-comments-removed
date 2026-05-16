@@ -43,6 +43,16 @@ struct PropertyValuePair {
 };
 
 
+struct KeyframesOffsetHasAny {
+  
+  
+  bool mRangeOffset = false;
+  
+  
+  bool mNonRangeOffset = false;
+};
+
+
 
 
 
@@ -113,6 +123,10 @@ struct Keyframe {
   dom::CompositeOperationOrAuto mComposite =
       dom::CompositeOperationOrAuto::Auto;
   CopyableTArray<PropertyValuePair> mPropertyValues;
+
+  
+  
+  bool mIsGenerated = false;
 };
 
 }  

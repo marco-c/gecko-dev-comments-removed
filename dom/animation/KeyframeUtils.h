@@ -7,6 +7,7 @@
 
 #include "NonCustomCSSPropertyId.h"
 #include "js/RootingAPI.h"                 
+#include "mozilla/Keyframe.h"              
 #include "mozilla/KeyframeEffectParams.h"  
 #include "nsTArrayForwardDeclare.h"        
 
@@ -19,7 +20,6 @@ class ComputedStyle;
 struct CSSPropertyId;
 
 class ErrorResult;
-struct Keyframe;
 struct PropertyStyleAnimationValuePair;
 struct PseudoStyleRequest;
 
@@ -78,7 +78,8 @@ class KeyframeUtils {
 
 
 
-  static bool ComputeMissingKeyframeOffsets(
+
+  static KeyframesOffsetHasAny ComputeMissingKeyframeOffsets(
       nsTArray<Keyframe>& aKeframes, const dom::AnimationTimeline* aTimeline);
 
   
@@ -89,9 +90,7 @@ class KeyframeUtils {
 
 
 
-
-  static double GetComputedOffset(const StyleTimelineRangeName aRangeName,
-                                  const double aPercentage,
+  static double GetComputedOffset(const Keyframe::OffsetType& aOffset,
                                   const dom::AnimationTimeline* aTimeline);
 
   
@@ -109,10 +108,15 @@ class KeyframeUtils {
 
 
 
+
+
+
   static nsTArray<AnimationProperty> GetAnimationPropertiesFromKeyframes(
       const nsTArray<Keyframe>& aKeyframes, dom::Element* aElement,
       const PseudoStyleRequest& aPseudoRequest, const ComputedStyle* aStyle,
-      dom::CompositeOperation aEffectComposite);
+      dom::CompositeOperation aEffectComposite,
+      const dom::AnimationTimeline* aTimeline,
+      const KeyframesOffsetHasAny& aOffsetHasAny);
 
   
 
@@ -124,6 +128,30 @@ class KeyframeUtils {
 
 
   static bool IsAnimatableProperty(const CSSPropertyId& aProperty);
+
+  
+
+
+
+
+
+
+
+
+
+  struct GeneratedKeyframesStatus {
+    bool mSkipGeneratedInitial = false;
+    bool mSkipGeneratedFinal = false;
+    bool ShouldSkip(const Keyframe& aKeyframe) const {
+      return aKeyframe.mIsGenerated &&
+             ((aKeyframe.mComputedOffset == 0.0 && mSkipGeneratedInitial) ||
+              (aKeyframe.mComputedOffset == 1.0 && mSkipGeneratedFinal));
+    }
+  };
+  static GeneratedKeyframesStatus CheckSkippableGeneratedKeyframes(
+      const nsTArray<Keyframe>& aKeyframes,
+      const dom::AnimationTimeline* aTimeline,
+      const KeyframesOffsetHasAny& aOffsetHasAny);
 };
 
 }  
