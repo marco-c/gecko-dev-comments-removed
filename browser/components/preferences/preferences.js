@@ -20,6 +20,18 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 "use strict";
 
 var { AppConstants } = ChromeUtils.importESModule(
@@ -752,13 +764,16 @@ async function gotoPref(
   });
 
   document.dispatchEvent(
-    new CustomEvent("paneshown", {
-      bubbles: true,
-      cancelable: true,
-      detail: {
-        category,
-      },
-    })
+     (
+      new CustomEvent("paneshown", {
+        bubbles: true,
+        cancelable: true,
+        detail: {
+          category,
+          subcategory,
+        },
+      })
+    )
   );
 }
 
