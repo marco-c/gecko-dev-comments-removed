@@ -7,6 +7,7 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/Types.h"
+#include "nscore.h"
 
 
 
@@ -124,12 +125,24 @@ CollectSingleStepData(CallbackToRun aCallbackToRun,
     return WindowsDiagnosticsError::InternalFailure;
   }
 
-  EnableTrapFlag();
-  aCallbackToRun();
-  DisableTrapFlag();
+  auto result = WindowsDiagnosticsError::None;
+  MOZ_SEH_TRY {
+    EnableTrapFlag();
+    aCallbackToRun();
+    DisableTrapFlag();
+  }
+  MOZ_SEH_EXCEPT(::GetExceptionCode() == EXCEPTION_SINGLE_STEP
+                     ? EXCEPTION_EXECUTE_HANDLER
+                     : EXCEPTION_CONTINUE_SEARCH) {
+    
+    
+    
+    result = WindowsDiagnosticsError::InternalFailure;
+  }
+
   ::RemoveVectoredExceptionHandler(veh);
 
-  return WindowsDiagnosticsError::None;
+  return result;
 }
 
 
