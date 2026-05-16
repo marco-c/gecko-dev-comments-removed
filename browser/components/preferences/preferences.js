@@ -199,6 +199,13 @@ var SettingGroupManager = ChromeUtils.importESModule(
   }
 ).SettingGroupManager;
 
+let resolveLegacyCategory = ChromeUtils.importESModule(
+  "chrome://browser/content/preferences/config/LegacyPaneMappings.mjs",
+  {
+    global: "current",
+  }
+).resolveLegacyCategory;
+
 
 
 
@@ -643,10 +650,21 @@ async function gotoPref(
   let breakIndex = category.indexOf("-");
   
   
-  let subcategory = breakIndex != -1 && category.substring(breakIndex + 1);
+  let subcategory =
+    breakIndex != -1 ? category.substring(breakIndex + 1) : null;
   if (subcategory) {
     category = category.substring(0, breakIndex);
   }
+
+  
+  
+  
+  if (Services.prefs.getBoolPref("browser.settings-redesign.enabled")) {
+    let resolved = resolveLegacyCategory(category, subcategory);
+    category = resolved.category;
+    subcategory = resolved.subcategory;
+  }
+
   category = friendlyPrefCategoryNameToInternalName(category);
   if (category != "paneSearchResults") {
     gSearchResultsPane.query = null;
