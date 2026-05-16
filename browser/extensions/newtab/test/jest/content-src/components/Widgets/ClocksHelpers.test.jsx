@@ -219,7 +219,7 @@ describe("getClockFormDerivedState", () => {
     ).toMatchObject({
       canAddSelectedClock: true,
       resolvedClockTimeZone: "America/New_York",
-      showLocationDropdown: false,
+      showLocationDropdown: true,
     });
   });
 
@@ -235,6 +235,23 @@ describe("getClockFormDerivedState", () => {
     ).toMatchObject({
       canAddSelectedClock: false,
       filteredTimeZones: ["Australia/Sydney"],
+      resolvedClockTimeZone: "",
+      showLocationDropdown: true,
+    });
+  });
+
+  it("keeps the dropdown open with no filtered results for an unmatched query", () => {
+    expect(
+      getClockFormDerivedState({
+        canAddClock: true,
+        clockSearchQuery: "zzz",
+        clockSelectedTimeZone: "",
+        isEditingClock: false,
+        supportedTimeZones,
+      })
+    ).toMatchObject({
+      canAddSelectedClock: false,
+      filteredTimeZones: [],
       resolvedClockTimeZone: "",
       showLocationDropdown: true,
     });
