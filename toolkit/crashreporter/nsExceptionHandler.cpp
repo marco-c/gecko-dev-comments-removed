@@ -1374,7 +1374,8 @@ static void WriteAnnotationsForMainProcessCrash(PlatformWriter& pw,
   
   {
     NSID_TrimBracketsASCII uuidString(nsID::GenerateUUID());
-    writer.Write(Annotation::CrashID, uuidString.Data(), uuidString.Length());
+    writer.Write(Annotation::CrashEventID, uuidString.Data(),
+                 uuidString.Length());
   }
 
   if (inactiveStateStart) {
