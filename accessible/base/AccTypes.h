@@ -6,6 +6,7 @@
 #define mozilla_a11y_AccTypes_h
 
 #include "mozilla/DefineEnum.h"
+#include "mozilla/TypedEnumBits.h"
 
 namespace mozilla {
 namespace a11y {
@@ -14,7 +15,7 @@ namespace a11y {
 
 
 
-MOZ_DEFINE_ENUM(AccType,
+MOZ_DEFINE_ENUM_WITH_BASE(AccType, uint8_t,
   
 
 
@@ -70,7 +71,7 @@ MOZ_DEFINE_ENUM(AccType,
 
 
 
-enum AccGenericType {
+enum AccGenericType : int32_t {
   eAlert = 1 << 0,
   eAutoCompletePopup = 1 << 1,
   eButton = 1 << 2,
@@ -92,6 +93,8 @@ enum AccGenericType {
   eLastAccGenericType = eDPub,
   eAllGenericTypes = (eLastAccGenericType << 1) - 1
 };
+
+MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(AccGenericType)
 
 }  
 }  
