@@ -5,3 +5,7 @@ Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/browser/components/preferences/tests/head.js",
   this
 );
+
+
+
+const DEFAULT_PANE = SRD_PREF_VALUE ? "paneSync" : "paneGeneral";
