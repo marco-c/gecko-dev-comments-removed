@@ -225,9 +225,6 @@ static void DistributeRange(const Range<Keyframe*>& aRange);
 
 static void DoComputeMissingKeyframeOffsets(nsTArray<Keyframe*>& aKeyframes);
 
-static double GetComputedOffset(const Keyframe::OffsetType& aOffset,
-                                const dom::AnimationTimeline* aTimeline);
-
 
 
 
@@ -275,10 +272,10 @@ nsTArray<Keyframe> KeyframeUtils::GetKeyframesFromObject(
 }
 
 
-void KeyframeUtils::ComputeMissingKeyframeOffsets(
+bool KeyframeUtils::ComputeMissingKeyframeOffsets(
     nsTArray<Keyframe>& aKeyframes, const dom::AnimationTimeline* aTimeline) {
   if (aKeyframes.IsEmpty()) {
-    return;
+    return false;
   }
 
   
@@ -288,6 +285,8 @@ void KeyframeUtils::ComputeMissingKeyframeOffsets(
   
   
   nsTArray<Keyframe*> keyframesWithDoubleOrNullOffsets;
+
+  bool hasTimelineRangeOffset = false;
 
   
   
@@ -304,11 +303,36 @@ void KeyframeUtils::ComputeMissingKeyframeOffsets(
       continue;
     }
 
-    keyframe.mComputedOffset = GetComputedOffset(*offset, aTimeline);
+    hasTimelineRangeOffset = true;
+    keyframe.mComputedOffset =
+        GetComputedOffset(offset->mRangeName, offset->mPercentage, aTimeline);
   }
 
   
   DoComputeMissingKeyframeOffsets(keyframesWithDoubleOrNullOffsets);
+
+  return hasTimelineRangeOffset;
+}
+
+
+double KeyframeUtils::GetComputedOffset(
+    const StyleTimelineRangeName aRangeName, const double aPercentage,
+    const dom::AnimationTimeline* aTimeline) {
+  MOZ_ASSERT(aRangeName != StyleTimelineRangeName::None &&
+                 aRangeName != StyleTimelineRangeName::Normal,
+             "This is only for keyframe selector with timeline range name");
+
+  if (!aTimeline || !aTimeline->IsViewTimeline()) {
+    return std::numeric_limits<double>::quiet_NaN();
+  }
+
+  const dom::ViewTimeline* vt = aTimeline->AsViewTimeline();
+  const auto result = vt->MapKeyframeOffsetToOffset(aRangeName, aPercentage);
+
+  
+  
+
+  return result ? result.value() : std::numeric_limits<double>::quiet_NaN();
 }
 
 
@@ -334,8 +358,7 @@ nsTArray<AnimationProperty> KeyframeUtils::GetAnimationPropertiesFromKeyframes(
   const size_t len = aKeyframes.Length();
   for (size_t i = 0; i < len; ++i) {
     const Keyframe& frame = aKeyframes[i];
-    if (frame.mOffset && frame.mOffset->IsTimelineRangeOffset() &&
-        std::isnan(frame.mComputedOffset)) {
+    if (frame.IsRangedKeyframe() && std::isnan(frame.mComputedOffset)) {
       
       
       continue;
@@ -1262,33 +1285,6 @@ static void DoComputeMissingKeyframeOffsets(nsTArray<Keyframe*>& aKeyframes) {
     DistributeRange(Range<Keyframe*>(keyframeA, keyframeB + 1));
     keyframeA = keyframeB;
   }
-}
-
-
-
-
-
-
-
-
-static double GetComputedOffset(const Keyframe::OffsetType& aOffset,
-                                const dom::AnimationTimeline* aTimeline) {
-  MOZ_ASSERT(aOffset.mRangeName != StyleTimelineRangeName::None &&
-             aOffset.mRangeName != StyleTimelineRangeName::Normal,
-             "This is only for keyframe selector with timeline range name");
-
-  if (!aTimeline || !aTimeline->IsViewTimeline()) {
-    return std::numeric_limits<double>::quiet_NaN();
-  }
-
-  const dom::ViewTimeline* vt = aTimeline->AsViewTimeline();
-  const auto result =
-      vt->MapKeyframeOffsetToOffset(aOffset.mRangeName, aOffset.mPercentage);
-
-  
-  
-
-  return result ? result.value() : std::numeric_limits<double>::quiet_NaN();
 }
 
 }  

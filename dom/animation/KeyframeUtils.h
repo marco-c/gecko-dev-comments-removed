@@ -18,11 +18,13 @@ struct AnimationProperty;
 class ComputedStyle;
 struct CSSPropertyId;
 
-enum class PseudoStyleType : uint8_t;
 class ErrorResult;
 struct Keyframe;
 struct PropertyStyleAnimationValuePair;
 struct PseudoStyleRequest;
+
+enum class PseudoStyleType : uint8_t;
+enum class StyleTimelineRangeName : uint8_t;
 
 namespace dom {
 class AnimationTimeline;
@@ -74,8 +76,23 @@ class KeyframeUtils {
 
 
 
-  static void ComputeMissingKeyframeOffsets(
+
+
+  static bool ComputeMissingKeyframeOffsets(
       nsTArray<Keyframe>& aKeframes, const dom::AnimationTimeline* aTimeline);
+
+  
+
+
+
+
+
+
+
+
+  static double GetComputedOffset(const StyleTimelineRangeName aRangeName,
+                                  const double aPercentage,
+                                  const dom::AnimationTimeline* aTimeline);
 
   
 

@@ -66,6 +66,17 @@ struct Keyframe {
   Keyframe& operator=(const Keyframe& aOther) = default;
   Keyframe& operator=(Keyframe&& aOther) = default;
 
+  static bool ComputedOffsetsAreDifferent(const double aFirst,
+                                          const double aSecond) {
+    
+    
+    return aFirst != aSecond && !(std::isnan(aFirst) && std::isnan(aSecond));
+  }
+
+  bool IsRangedKeyframe() const {
+    return mOffset && mOffset->IsTimelineRangeOffset();
+  }
+
   struct OffsetType {
     
     

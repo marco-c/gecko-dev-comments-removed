@@ -357,8 +357,10 @@ void Animation::SetTimelineNoUpdate(AnimationTimeline* aTimeline,
   mTimeline = aTimeline;
   mTimelineName = aTimelineName;
   
+  
   if (mEffect) {
     mEffect->UpdateNormalizedTiming();
+    MaybeUpdateKeyframeComputedOffsets();
   }
 
   
@@ -455,6 +457,7 @@ void Animation::SetTimelineRangeNoUpdate(AnimationRange&& aRange) {
 
   if (mEffect) {
     mEffect->UpdateNormalizedTiming();
+    MaybeUpdateKeyframeComputedOffsets();
   }
 }
 
@@ -2015,6 +2018,14 @@ void Animation::UpdateNormalizedTimingForTimelineDataChange() {
   }
 
   mEffect->UpdateNormalizedTiming();
+}
+
+void Animation::MaybeUpdateKeyframeComputedOffsets() {
+  if (!mEffect || !mEffect->AsKeyframeEffect()) {
+    return;
+  }
+
+  mEffect->AsKeyframeEffect()->MaybeUpdateKeyframeComputedOffsets(mTimeline);
 }
 
 StickyTimeDuration Animation::EffectEnd() const {

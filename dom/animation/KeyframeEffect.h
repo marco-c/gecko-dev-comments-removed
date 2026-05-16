@@ -370,6 +370,8 @@ class KeyframeEffect : public AnimationEffect {
 
   double AnimationsPlayBackRateMultiplier() const;
 
+  void MaybeUpdateKeyframeComputedOffsets(const AnimationTimeline* aTimelne);
+
  protected:
   ~KeyframeEffect() override = default;
 
@@ -433,6 +435,10 @@ class KeyframeEffect : public AnimationEffect {
 
   
   nsTArray<Keyframe> mKeyframes;
+
+  
+  
+  bool mKeyframesUseTimelineRangeOffset = false;
 
   
   nsTArray<AnimationProperty> mProperties;
