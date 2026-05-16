@@ -16,7 +16,7 @@ use cssparser::{match_ignore_ascii_case, Parser, Token};
 use std::f32::consts::PI;
 use std::fmt::{self, Write};
 use std::ops::Neg;
-use style_traits::{CssWriter, ParseError, SpecifiedValueInfo, ToCss};
+use style_traits::{CssWriter, ParseError, SpecifiedValueInfo, ToCss, ToTyped};
 
 
 const DEG_PER_RAD: f32 = 180.0 / PI;
@@ -96,6 +96,8 @@ impl ToCss for NoCalcAngle {
     }
 }
 
+impl ToTyped for NoCalcAngle {}
+
 impl SpecifiedValueInfo for NoCalcAngle {}
 
 impl NoCalcAngle {
@@ -142,6 +144,12 @@ impl NoCalcAngle {
 
     
     #[inline]
+    pub fn unitless_value(&self) -> CSSFloat {
+        self.value
+    }
+
+    
+    #[inline]
     pub fn unit(&self) -> &'static str {
         self.unit.as_str()
     }
@@ -162,12 +170,6 @@ impl NoCalcAngle {
             AngleUnit::Rad => DEG_PER_RAD,
         };
         Ok(Self::new(unit, degrees / divisor))
-    }
-
-    
-    #[inline]
-    pub fn unitless_value(&self) -> CSSFloat {
-        self.value
     }
 
     
