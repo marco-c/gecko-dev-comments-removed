@@ -254,6 +254,16 @@ STDMETHODIMP TSFEmptyTextStore::GetSelection(ULONG ulIndex, ULONG ulCount,
   }
 
   
+
+  
+  
+  
+  if (TSFStaticSink::IsSogouActive()) {
+    *pSelection = TSFUtils::SelectionACPCollapsedAtStart();
+    *pcFetched = 1;
+    return S_OK;
+  }
+
   *pSelection = TSFUtils::EmptySelectionACP();
   *pcFetched = 0;
   return TS_E_NOSELECTION;

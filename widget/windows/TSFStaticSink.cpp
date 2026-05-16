@@ -183,6 +183,10 @@ bool TSFStaticSink::IsATOKActiveInternal() {
          mActiveTIPKeyboardDescription.EqualsLiteral("ATOK");
 }
 
+bool TSFStaticSink::IsSogouActive() {
+  return IsSimplifiedChinese() && ActiveTIP() == TextInputProcessorID::Sogou;
+}
+
 void TSFStaticSink::ComputeActiveTextInputProcessor() {
   if (mActiveTIP != TextInputProcessorID::NotComputed) {
     return;
@@ -453,6 +457,15 @@ TextInputProcessorID TSFStaticSink::ComputeActiveTIPAsSimplifiedChinese() {
       {0xBA, 0x1D, 0x86, 0x67, 0x24, 0x6F, 0xDF, 0x8E}};
   if (mActiveTIPGUID == kMicrosoftWubiGUID) {
     return TextInputProcessorID::MicrosoftWubi;
+  }
+  
+  static constexpr GUID kSogouGUID = {
+      0xe7ea138f,
+      0x69f8,
+      0x11d7,
+      {0xa6, 0xea, 0x00, 0x06, 0x5b, 0x84, 0x43, 0x11}};
+  if (mActiveTIPGUID == kSogouGUID) {
+    return TextInputProcessorID::Sogou;
   }
   
   

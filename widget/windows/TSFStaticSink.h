@@ -100,15 +100,16 @@ class TSFStaticSink final : public ITfInputProcessorProfileActivationSink {
 
   static bool GetActiveTIPNameForTelemetry(nsAString& aName);
 
-  static bool IsMSChangJieOrMSQuickActive();
-  static bool IsMSPinyinOrMSWubiActive();
-  static bool IsMSJapaneseIMEActive();
-  static bool IsGoogleJapaneseInputActive();
-  static bool IsATOKActive();
+  [[nodiscard]] static bool IsMSChangJieOrMSQuickActive();
+  [[nodiscard]] static bool IsMSPinyinOrMSWubiActive();
+  [[nodiscard]] static bool IsMSJapaneseIMEActive();
+  [[nodiscard]] static bool IsGoogleJapaneseInputActive();
+  [[nodiscard]] static bool IsATOKActive();
+  [[nodiscard]] static bool IsSogouActive();
 
   
   
-  static bool IsATOKReferringNativeCaretActive();
+  [[nodiscard]] static bool IsATOKReferringNativeCaretActive();
 
  private:
   static void EnsureInstance() {
