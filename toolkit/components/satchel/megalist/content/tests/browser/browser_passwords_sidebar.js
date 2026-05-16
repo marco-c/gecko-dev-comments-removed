@@ -294,15 +294,10 @@ async function waitForMigrationWizard() {
     window,
     "MigrationWizard:Ready"
   );
-  
-  
-  const expectedUri = Services.prefs.getBoolPref(
-    "browser.settings-redesign.enabled",
-    false
-  )
-    ? "about:preferences#sync"
-    : "about:preferences#general";
-  await BrowserTestUtils.waitForLocationChange(gBrowser, expectedUri);
+  await BrowserTestUtils.waitForLocationChange(
+    gBrowser,
+    "about:preferences#general"
+  );
   return wizardReadyPromise;
 }
 

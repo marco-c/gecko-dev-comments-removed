@@ -2,15 +2,7 @@
 
 var notificationURL =
   "https://example.org/browser/browser/base/content/test/alerts/file_dom_notifications.html";
-
-
-
-var expectedURL = Services.prefs.getBoolPref(
-  "browser.settings-redesign.enabled",
-  false
-)
-  ? "about:preferences#permissionsData"
-  : "about:preferences#privacy";
+var expectedURL = "about:preferences#privacy";
 
 add_task(async function test_settingsOpen_observer() {
   info(
