@@ -389,7 +389,10 @@ add_task(async function clickLabel() {
     
     
     info("Clicking row label at index 1");
+    
+    AccessibilityUtils.setEnv({ labelRule: false });
     click(result1.element.row, { y: -2 });
+    AccessibilityUtils.resetEnv();
     
     await new Promise(r => setTimeout(r, 500));
     Assert.ok(UrlbarTestUtils.isPopupOpen(window), "View remains open");
@@ -635,7 +638,7 @@ async function checkLabels(resultCount, labelsByIndex) {
     if (labelsByIndex.hasOwnProperty(i)) {
       Assert.equal(
         before.content,
-        "attr(label)",
+        `"${labelsByIndex[i]}"`,
         `::before.content is correct at index ${i}`
       );
       Assert.equal(
