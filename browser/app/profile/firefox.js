@@ -444,6 +444,8 @@ pref("browser.urlbar.deduplication.thresholdDays", 0);
 pref("browser.urlbar.scotchBonnet.enableOverride", true);
 
 pref("browser.urlbar.trustPanel.featureGate", true);
+pref("browser.urlbar.trustPanel.breachAlerts.featureGate", false);
+pref("browser.urlbar.trustPanel.breachAlerts", false);
 
 
 pref("browser.urlbar.unifiedSearchButton.always", false);
@@ -3384,7 +3386,7 @@ pref("first-startup.category-tasks-enabled", true);
   pref("browser.menu.share_url.allow", false);
 #endif
 
-#if defined(XP_MACOSX) && defined(NIGHTLY_BUILD)
+#ifdef NIGHTLY_BUILD
 pref("browser.shareqrcode.enabled", true);
 #else
 pref("browser.shareqrcode.enabled", false);
