@@ -64,9 +64,6 @@ var gExceptionPaths = [
   "resource://gre/localization/en-US/toolkit/formautofill",
 
   
-  "resource://search-extensions/",
-
-  
   "resource://gre/modules/services-automation/",
 
   
