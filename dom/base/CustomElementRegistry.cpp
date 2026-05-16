@@ -713,14 +713,14 @@ void CustomElementRegistry::EnqueueLifecycleCallback(
   }
 
   
-  if (aType == ElementCallbackType::eAttributeChanged) {
-    
-    
-    
-    if (!definition->mObservedAttributes.Contains(aArgs.mName)) {
-      return;
-    }
-  }
+  
+  
+  
+  
+  MOZ_ASSERT(aType != ElementCallbackType::eAttributeChanged ||
+                 definition->IsInObservedAttributeList(aArgs.mName),
+             "Caller must check IsInObservedAttributeList for "
+             "eAttributeChanged");
 
   
   
