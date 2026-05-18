@@ -2,8 +2,6 @@
 
 
 
-
-
 var gRemovePasswordDialog = {
   _token: null,
   _okButton: null,
@@ -15,10 +13,9 @@ var gRemovePasswordDialog = {
     this._password = document.getElementById("password");
     this._password.addEventListener("input", () => this.validateInput());
 
-    var pk11db = Cc["@mozilla.org/security/pk11tokendb;1"].getService(
-      Ci.nsIPK11TokenDB
+    this._token = Cc["@mozilla.org/security/internalkeytoken;1"].createInstance(
+      Ci.nsIPKCS11Token
     );
-    this._token = pk11db.getInternalKeyToken();
 
     
     

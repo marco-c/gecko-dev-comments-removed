@@ -14,9 +14,9 @@
 
 
 function resetPrimaryPassword() {
-  let token = Cc["@mozilla.org/security/pk11tokendb;1"]
-    .getService(Ci.nsIPK11TokenDB)
-    .getInternalKeyToken();
+  let token = Cc["@mozilla.org/security/internalkeytoken;1"].createInstance(
+    Ci.nsIPKCS11Token
+  );
   token.reset();
   token.initPassword("");
 }
@@ -48,7 +48,10 @@ add_task(async function test_logins_decrypt_failure() {
   );
 
   
-  Assert.equal(Services.logins.countLogins("", "", ""), logins.length);
+  Assert.equal(
+    await Services.logins.countLoginsAsync("", "", ""),
+    logins.length
+  );
 
   
   await Services.logins.addLogins(logins);
@@ -58,7 +61,10 @@ add_task(async function test_logins_decrypt_failure() {
     logins.length,
     "getAllLogins length"
   );
-  Assert.equal(Services.logins.countLogins("", "", ""), logins.length * 2);
+  Assert.equal(
+    await Services.logins.countLoginsAsync("", "", ""),
+    logins.length * 2
+  );
 
   
   Assert.equal(
@@ -78,12 +84,15 @@ add_task(async function test_logins_decrypt_failure() {
     await Services.logins.removeLoginAsync(loginInfo);
   }
   Assert.equal((await Services.logins.getAllLogins()).length, 0);
-  Assert.equal(Services.logins.countLogins("", "", ""), logins.length);
+  Assert.equal(
+    await Services.logins.countLoginsAsync("", "", ""),
+    logins.length
+  );
 
   
   await Services.logins.removeAllUserFacingLoginsAsync();
   Assert.equal((await Services.logins.getAllLogins()).length, 0);
-  Assert.equal(Services.logins.countLogins("", "", ""), 0);
+  Assert.equal(await Services.logins.countLoginsAsync("", "", ""), 0);
 });
 
 

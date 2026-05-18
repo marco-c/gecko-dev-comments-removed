@@ -449,10 +449,9 @@ async function toggleFIPS() {
     
     
 
-    var tokendb = Cc["@mozilla.org/security/pk11tokendb;1"].getService(
-      Ci.nsIPK11TokenDB
-    );
-    var internal_token = tokendb.getInternalKeyToken(); 
+    var internal_token = Cc[
+      "@mozilla.org/security/internalkeytoken;1"
+    ].createInstance(Ci.nsIPKCS11Token);
     if (!internal_token.hasPassword) {
       
       doPrompt("fips-nonempty-primary-password-required");
