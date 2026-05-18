@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_ContentEventHandler_h_
 #define mozilla_ContentEventHandler_h_
 
@@ -27,8 +25,6 @@ namespace mozilla {
 namespace dom {
 class Element;
 }  
-
-enum LineBreakType { LINE_BREAK_TYPE_NATIVE, LINE_BREAK_TYPE_XP };
 
 
 
@@ -343,14 +339,10 @@ class MOZ_STACK_CLASS ContentEventHandler {
 
 
 
-
-
-
   static nsresult GetFlatTextLengthInRange(
       const RawNodePosition& aStartPosition,
       const RawNodePosition& aEndPosition, const Element* aRootElement,
-      uint32_t* aLength, LineBreakType aLineBreakType,
-      bool aIsRemovingNode = false);
+      uint32_t* aLength, bool aIsRemovingNode = false);
 
   
   
@@ -374,42 +366,36 @@ class MOZ_STACK_CLASS ContentEventHandler {
  protected:
   
   static uint32_t GetTextLength(const dom::Text& aTextNode,
-                                LineBreakType aLineBreakType,
                                 uint32_t aMaxLength = UINT32_MAX);
   
   
   static uint32_t GetTextLengthInRange(const dom::Text& aTextNode,
                                        uint32_t aXPStartOffset,
-                                       uint32_t aXPEndOffset,
-                                       LineBreakType aLineBreakType);
+                                       uint32_t aXPEndOffset);
   
   
   
   
   
-  nsresult GenerateFlatTextContent(const Element* aElement, nsString& aString,
-                                   LineBreakType aLineBreakType);
+  nsresult GenerateFlatTextContent(const Element* aElement, nsString& aString);
   
   template <typename NodeType, typename RangeBoundaryType>
   nsresult GenerateFlatTextContent(
       const SimpleRangeBase<NodeType, RangeBoundaryType>& aSimpleRange,
-      nsString& aString, LineBreakType aLineBreakType);
+      nsString& aString);
   
   
   
   template <typename SimpleRangeType>
   nsresult GetStartOffset(const SimpleRangeType& aSimpleRange,
-                          uint32_t* aOffset, LineBreakType aLineBreakType);
+                          uint32_t* aOffset);
   
   
   
   static bool ShouldBreakLineBefore(const nsIContent& aContent,
                                     const Element* aRootElement);
   
-  static inline uint32_t GetBRLength(LineBreakType aLineBreakType);
-  static LineBreakType GetLineBreakType(WidgetQueryContentEvent* aEvent);
-  static LineBreakType GetLineBreakType(WidgetSelectionEvent* aEvent);
-  static LineBreakType GetLineBreakType(bool aUseNativeLineBreak);
+  constexpr static uint32_t kBRLength = 1;
   
   nsIContent* GetFocusedContent();
   
@@ -460,22 +446,19 @@ class MOZ_STACK_CLASS ContentEventHandler {
   Result<DOMRangeAndAdjustedOffsetInFlattenedTextBase<RangeType, TextNodeType>,
          nsresult>
   ConvertFlatTextOffsetToDOMRangeBase(uint32_t aOffset, uint32_t aLength,
-                                      LineBreakType aLineBreakType,
                                       bool aExpandToClusterBoundaries);
   MOZ_ALWAYS_INLINE Result<DOMRangeAndAdjustedOffsetInFlattenedText, nsresult>
   ConvertFlatTextOffsetToDOMRange(uint32_t aOffset, uint32_t aLength,
-                                  LineBreakType aLineBreakType,
                                   bool aExpandToClusterBoundaries) {
     return ConvertFlatTextOffsetToDOMRangeBase<SimpleRange, RefPtr<dom::Text>>(
-        aOffset, aLength, aLineBreakType, aExpandToClusterBoundaries);
+        aOffset, aLength, aExpandToClusterBoundaries);
   }
   MOZ_ALWAYS_INLINE
   Result<UnsafeDOMRangeAndAdjustedOffsetInFlattenedText, nsresult>
   ConvertFlatTextOffsetToUnsafeDOMRange(uint32_t aOffset, uint32_t aLength,
-                                        LineBreakType aLineBreakType,
                                         bool aExpandToClusterBoundaries) {
     return ConvertFlatTextOffsetToDOMRangeBase<UnsafeSimpleRange, dom::Text*>(
-        aOffset, aLength, aLineBreakType, aExpandToClusterBoundaries);
+        aOffset, aLength, aExpandToClusterBoundaries);
   }
 
   
@@ -495,12 +478,10 @@ class MOZ_STACK_CLASS ContentEventHandler {
   using FontRangeArray = nsTArray<mozilla::FontRange>;
   static void AppendFontRanges(FontRangeArray& aFontRanges,
                                const dom::Text& aTextNode, uint32_t aBaseOffset,
-                               uint32_t aXPStartOffset, uint32_t aXPEndOffset,
-                               LineBreakType aLineBreakType);
+                               uint32_t aXPStartOffset, uint32_t aXPEndOffset);
   nsresult GenerateFlatFontRanges(const UnsafeSimpleRange& aSimpleRange,
                                   FontRangeArray& aFontRanges,
-                                  uint32_t& aLength,
-                                  LineBreakType aLineBreakType);
+                                  uint32_t& aLength);
   nsresult QueryTextRectByRange(const SimpleRange& aSimpleRange,
                                 LayoutDeviceIntRect& aRect,
                                 WritingMode& aWritingMode);
