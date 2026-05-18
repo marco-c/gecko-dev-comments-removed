@@ -31,6 +31,18 @@ void AnimationTimelinesController::WillRefresh() {
   }
 }
 
+bool AnimationTimelinesController::UpdateStaleTimelines() {
+  
+  
+  
+  bool needsFlush = false;
+  for (ScrollTimeline* tl :
+       ToTArray<AutoTArray<RefPtr<ScrollTimeline>, 1>>(mScrollTimelines)) {
+    needsFlush |= tl->UpdateIfStale();
+  }
+  return needsFlush;
+}
+
 void AnimationTimelinesController::UpdateLastRefreshDriverTime() {
   for (DocumentTimeline* timeline : mDocumentTimelines) {
     timeline->UpdateLastRefreshDriverTime();

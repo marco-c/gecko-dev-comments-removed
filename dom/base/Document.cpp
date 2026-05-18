@@ -19273,6 +19273,17 @@ void Document::DetermineProximityToViewportAndNotifyResizeObservers() {
   
   
   
+  if (mTimelinesController.UpdateStaleTimelines()) {
+    FlushPendingNotifications(ctf);
+  }
+
+  
+  
+  
+  
+  
+  
+  
   
   const bool fixedUpFocus = ps->FixUpFocus();
   if (fixedUpFocus) {

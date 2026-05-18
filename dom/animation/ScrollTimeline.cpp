@@ -210,6 +210,28 @@ void ScrollTimeline::WillRefresh() {
   Tick(dummyState);
 }
 
+bool ScrollTimeline::UpdateIfStale() {
+  
+  
+  
+  
+  if (MOZ_LIKELY(!UpdateCachedCurrentTime())) {
+    return false;
+  }
+
+  if (mAnimations.IsEmpty()) {
+    return false;
+  }
+
+  
+  
+  
+  for (const auto& animation : mAnimations) {
+    animation->PostUpdate();
+  }
+  return true;
+}
+
 bool ScrollTimeline::SourceMatches(
     const Element* aElement, const PseudoStyleRequest& aPseudoRequest) const {
   if (mScrollerInfo.IsAnonymous()) {
