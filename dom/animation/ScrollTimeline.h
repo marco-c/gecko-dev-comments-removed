@@ -271,7 +271,8 @@ class ScrollTimeline : public AnimationTimeline,
   void NotifyAnimationContentVisibilityChanged(Animation* aAnimation,
                                                bool aIsVisible) override;
 
-  virtual void UpdateCachedCurrentTime();
+  
+  virtual bool UpdateCachedCurrentTime();
 
   virtual std::pair<double, double> IntervalForAttachmentRange(
       const AnimationRange& aStyleRange) const;
@@ -319,6 +320,10 @@ class ScrollTimeline : public AnimationTimeline,
     
     nscoord mPosition = 0;
     nscoord mMaxScrollOffset = 0;
+    bool operator==(const CurrentTimeData& aOther) const {
+      return mPosition == aOther.mPosition &&
+             mMaxScrollOffset == aOther.mMaxScrollOffset;
+    }
   };
 
  private:

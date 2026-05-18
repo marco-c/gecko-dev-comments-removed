@@ -123,7 +123,7 @@ static std::pair<nscoord, nscoord> ComputeInsets(
   return {startInset, endInset};
 }
 
-void ViewTimeline::UpdateCachedCurrentTime() {
+bool ViewTimeline::UpdateCachedCurrentTime() {
   const auto prevCachedCurrentTime = std::move(mCachedCurrentTime);
 
   mCachedCurrentTime.reset();
@@ -131,14 +131,14 @@ void ViewTimeline::UpdateCachedCurrentTime() {
   const auto state = GetState();
   
   if (const auto* e = state.mSource.mElement; !e || !e->GetPrimaryFrame()) {
-    return;
+    return prevCachedCurrentTime.isSome();
   }
 
   
   const ScrollContainerFrame* scrollContainerFrame =
       state.GetScrollContainerFrame();
   if (!scrollContainerFrame) {
-    return;
+    return prevCachedCurrentTime.isSome();
   }
 
   
@@ -146,7 +146,7 @@ void ViewTimeline::UpdateCachedCurrentTime() {
   const auto orientation = state.Axis();
   if (!scrollContainerFrame->GetAvailableScrollingDirections().contains(
           orientation)) {
-    return;
+    return prevCachedCurrentTime.isSome();
   }
 
   
@@ -163,7 +163,7 @@ void ViewTimeline::UpdateCachedCurrentTime() {
     
     
     
-    return;
+    return prevCachedCurrentTime.isSome();
   }
 
   
@@ -220,6 +220,7 @@ void ViewTimeline::UpdateCachedCurrentTime() {
       prevCachedCurrentTime->IsChanged(*mCachedCurrentTime)) {
     TimelineDataDidChange();
   }
+  return mCachedCurrentTime != prevCachedCurrentTime;
 }
 
 
