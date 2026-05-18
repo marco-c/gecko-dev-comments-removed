@@ -50,6 +50,94 @@ struct PrimaryPasswordParams {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub struct ConnectionHandle<'a> {
+    keystore: &'a LockstoreKeystore,
+    
+    
+    
+    _guard: std::sync::MutexGuard<'a, ()>,
+}
+
+impl<'a> ConnectionHandle<'a> {
+    
+    
+    pub fn list_collections(&self) -> Result<Vec<String>, LockstoreError> {
+        use kvstore::DatabaseError;
+
+        let reader = self.keystore.store.reader()?;
+        let db_name = DB_NAME.to_string();
+
+        let collections = reader
+            .read(|conn| {
+                let mut stmt = conn
+                    .prepare(
+                        "SELECT data.key FROM data
+                         JOIN dbs ON data.db_id = dbs.id
+                         WHERE dbs.name = ?1
+                         AND data.key LIKE ?2
+                         ORDER BY data.key",
+                    )
+                    .map_err(DatabaseError::from)?;
+
+                let dek_pattern = format!("{}%", DEK_PREFIX);
+                let names: Result<Vec<String>, _> = stmt
+                    .query_map([&db_name, &dek_pattern], |row| {
+                        let key: String = row.get(0)?;
+                        Ok(key.strip_prefix(DEK_PREFIX).unwrap_or(&key).to_string())
+                    })
+                    .map_err(DatabaseError::from)?
+                    .collect();
+
+                names.map_err(DatabaseError::from)
+            })
+            .map_err(LockstoreError::Database)?;
+
+        Ok(collections)
+    }
+
+    fn load_metadata(&self, collection_name: &str) -> Result<DekMetadata, LockstoreError> {
+        let dek_key = format!("{}{}", DEK_PREFIX, collection_name);
+        let db = Database::new(&self.keystore.store, DB_NAME);
+        let key = Key::from(dek_key.as_str());
+
+        let metadata_value = db.get(&key, &GetOptions::default())?.ok_or_else(|| {
+            LockstoreError::NotFound(format!("DEK not found for collection: {}", collection_name))
+        })?;
+
+        let metadata_bytes = utils::value_to_bytes(&metadata_value)?;
+        Ok(serde_json::from_slice(&metadata_bytes)?)
+    }
+
+    fn save_metadata(
+        &self,
+        collection_name: &str,
+        metadata: &DekMetadata,
+    ) -> Result<(), LockstoreError> {
+        let dek_key = format!("{}{}", DEK_PREFIX, collection_name);
+        let db = Database::new(&self.keystore.store, DB_NAME);
+        let key = Key::from(dek_key.as_str());
+        let metadata_bytes = serde_json::to_vec(metadata)?;
+        let value = utils::bytes_to_value(&metadata_bytes)?;
+        db.put(&[(key, Some(value))])?;
+        Ok(())
+    }
+}
+
+
+
 struct CachedKek {
     kek: Vec<u8>,
     expires_at: Instant,
@@ -75,8 +163,7 @@ pub struct LockstoreKeystore {
     
     
     
-    
-    dek_ops_lock: Arc<Mutex<()>>,
+    connection_lock: Arc<Mutex<()>>,
 }
 
 impl LockstoreKeystore {
@@ -87,7 +174,7 @@ impl LockstoreKeystore {
             store,
             in_memory: false,
             prp_cache: Arc::new(Mutex::new(None)),
-            dek_ops_lock: Arc::new(Mutex::new(())),
+            connection_lock: Arc::new(Mutex::new(())),
         })
     }
 
@@ -98,7 +185,7 @@ impl LockstoreKeystore {
             store,
             in_memory: true,
             prp_cache: Arc::new(Mutex::new(None)),
-            dek_ops_lock: Arc::new(Mutex::new(())),
+            connection_lock: Arc::new(Mutex::new(())),
         })
     }
 
@@ -122,10 +209,7 @@ impl LockstoreKeystore {
 
         
         
-        let _guard = self
-            .dek_ops_lock
-            .lock()
-            .map_err(|_| LockstoreError::InvalidConfiguration("dek_ops_lock poisoned".into()))?;
+        let conn = self.acquire_connection()?;
 
         let dek_key = format!("{}{}", DEK_PREFIX, collection_name);
         let db = Database::new(&self.store, DB_NAME);
@@ -153,7 +237,7 @@ impl LockstoreKeystore {
             extractable,
         };
 
-        self.save_metadata(collection_name, &metadata)
+        conn.save_metadata(collection_name, &metadata)
     }
 
     pub(crate) fn get_dek_internal(
@@ -161,7 +245,8 @@ impl LockstoreKeystore {
         collection_name: &str,
         kek_ref: &str,
     ) -> Result<(Vec<u8>, CipherSuite, bool), LockstoreError> {
-        let metadata = self.load_metadata(collection_name)?;
+        let conn = self.acquire_connection()?;
+        let metadata = conn.load_metadata(collection_name)?;
 
         let entry = metadata
             .wrapped_deks
@@ -181,7 +266,8 @@ impl LockstoreKeystore {
     }
 
     pub fn is_dek_extractable(&self, collection_name: &str) -> Result<bool, LockstoreError> {
-        let metadata = self.load_metadata(collection_name)?;
+        let conn = self.acquire_connection()?;
+        let metadata = conn.load_metadata(collection_name)?;
         Ok(metadata.extractable)
     }
 
@@ -247,12 +333,8 @@ impl LockstoreKeystore {
     ) -> Result<(), LockstoreError> {
         let new_kek_type = KekType::from_kek_ref(new_kek_ref)?;
 
-        let _guard = self
-            .dek_ops_lock
-            .lock()
-            .map_err(|_| LockstoreError::InvalidConfiguration("dek_ops_lock poisoned".into()))?;
-
-        let mut metadata = self.load_metadata(collection_name)?;
+        let conn = self.acquire_connection()?;
+        let mut metadata = conn.load_metadata(collection_name)?;
 
         if metadata
             .wrapped_deks
@@ -288,16 +370,12 @@ impl LockstoreKeystore {
             wrapped_dek: new_wrapped,
         });
 
-        self.save_metadata(collection_name, &metadata)
+        conn.save_metadata(collection_name, &metadata)
     }
 
     pub fn remove_kek(&self, collection_name: &str, kek_ref: &str) -> Result<(), LockstoreError> {
-        let _guard = self
-            .dek_ops_lock
-            .lock()
-            .map_err(|_| LockstoreError::InvalidConfiguration("dek_ops_lock poisoned".into()))?;
-
-        let mut metadata = self.load_metadata(collection_name)?;
+        let conn = self.acquire_connection()?;
+        let mut metadata = conn.load_metadata(collection_name)?;
 
         if metadata.wrapped_deks.len() <= 1 {
             return Err(LockstoreError::InvalidConfiguration(format!(
@@ -322,14 +400,11 @@ impl LockstoreKeystore {
 
         metadata.wrapped_deks.retain(|w| w.kek_ref != kek_ref);
 
-        self.save_metadata(collection_name, &metadata)
+        conn.save_metadata(collection_name, &metadata)
     }
 
     pub fn delete_dek(&self, collection_name: &str) -> Result<(), LockstoreError> {
-        let _guard = self
-            .dek_ops_lock
-            .lock()
-            .map_err(|_| LockstoreError::InvalidConfiguration("dek_ops_lock poisoned".into()))?;
+        let _conn = self.acquire_connection()?;
 
         let dek_key = format!("{}{}", DEK_PREFIX, collection_name);
         let db = Database::new(&self.store, DB_NAME);
@@ -345,38 +420,30 @@ impl LockstoreKeystore {
         crypto::secure_delete(&self.store, DB_NAME, &dek_key)
     }
 
+    
+    
+    
+    
+    
+    
+    pub fn acquire_connection(&self) -> Result<ConnectionHandle<'_>, LockstoreError> {
+        let guard = self
+            .connection_lock
+            .lock()
+            .map_err(|_| LockstoreError::InvalidConfiguration("connection_lock poisoned".into()))?;
+        Ok(ConnectionHandle {
+            keystore: self,
+            _guard: guard,
+        })
+    }
+
+    
+    
+    
+    
+    
     pub fn list_collections(&self) -> Result<Vec<String>, LockstoreError> {
-        use kvstore::DatabaseError;
-
-        let reader = self.store.reader()?;
-        let db_name = DB_NAME.to_string();
-
-        let collections = reader
-            .read(|conn| {
-                let mut stmt = conn
-                    .prepare(
-                        "SELECT data.key FROM data
-                         JOIN dbs ON data.db_id = dbs.id
-                         WHERE dbs.name = ?1
-                         AND data.key LIKE ?2
-                         ORDER BY data.key",
-                    )
-                    .map_err(DatabaseError::from)?;
-
-                let dek_pattern = format!("{}%", DEK_PREFIX);
-                let collection_strings: Result<Vec<String>, _> = stmt
-                    .query_map([&db_name, &dek_pattern], |row| {
-                        let key: String = row.get(0)?;
-                        Ok(key.strip_prefix(DEK_PREFIX).unwrap_or(&key).to_string())
-                    })
-                    .map_err(DatabaseError::from)?
-                    .collect();
-
-                collection_strings.map_err(DatabaseError::from)
-            })
-            .map_err(LockstoreError::Database)?;
-
-        Ok(collections)
+        self.acquire_connection()?.list_collections()
     }
 
     pub fn close(self) {
@@ -489,10 +556,7 @@ impl LockstoreKeystore {
             ));
         }
 
-        let _guard = self
-            .dek_ops_lock
-            .lock()
-            .map_err(|_| LockstoreError::InvalidConfiguration("dek_ops_lock poisoned".into()))?;
+        let conn = self.acquire_connection()?;
 
         let existing = self.load_prp_params()?;
         if existing.is_some() != old.is_some() {
@@ -522,7 +586,7 @@ impl LockstoreKeystore {
                 Ok(plaintext) if plaintext == PRP_VERIFIER_PLAINTEXT => {}
                 _ => return Err(LockstoreError::WrongPassword),
             }
-            self.rewrap_prp_deks(&old_kek, &new_kek, cipher_suite)?;
+            self.rewrap_prp_deks(&conn, &old_kek, &new_kek, cipher_suite)?;
         }
 
         let verifier = crypto::encrypt_with_key(PRP_VERIFIER_PLAINTEXT, &new_kek, cipher_suite)?;
@@ -538,13 +602,14 @@ impl LockstoreKeystore {
 
     fn rewrap_prp_deks(
         &self,
+        conn: &ConnectionHandle<'_>,
         old_kek: &[u8],
         new_kek: &[u8],
         cipher_suite: CipherSuite,
     ) -> Result<(), LockstoreError> {
-        let collections = self.list_collections()?;
-        for collection in collections {
-            let mut metadata = match self.load_metadata(&collection) {
+        let collections = conn.list_collections()?;
+        for collection_name in collections {
+            let mut metadata = match conn.load_metadata(&collection_name) {
                 Ok(m) => m,
                 Err(LockstoreError::NotFound(_)) => continue,
                 Err(e) => return Err(e),
@@ -559,7 +624,7 @@ impl LockstoreKeystore {
                 changed = true;
             }
             if changed {
-                self.save_metadata(&collection, &metadata)?;
+                conn.save_metadata(&collection_name, &metadata)?;
             }
         }
         Ok(())
@@ -708,31 +773,4 @@ impl LockstoreKeystore {
     
     
     
-
-    fn load_metadata(&self, collection_name: &str) -> Result<DekMetadata, LockstoreError> {
-        let dek_key = format!("{}{}", DEK_PREFIX, collection_name);
-        let db = Database::new(&self.store, DB_NAME);
-        let key = Key::from(dek_key.as_str());
-
-        let metadata_value = db.get(&key, &GetOptions::default())?.ok_or_else(|| {
-            LockstoreError::NotFound(format!("DEK not found for collection: {}", collection_name))
-        })?;
-
-        let metadata_bytes = utils::value_to_bytes(&metadata_value)?;
-        Ok(serde_json::from_slice(&metadata_bytes)?)
-    }
-
-    fn save_metadata(
-        &self,
-        collection_name: &str,
-        metadata: &DekMetadata,
-    ) -> Result<(), LockstoreError> {
-        let dek_key = format!("{}{}", DEK_PREFIX, collection_name);
-        let db = Database::new(&self.store, DB_NAME);
-        let key = Key::from(dek_key.as_str());
-        let metadata_bytes = serde_json::to_vec(metadata)?;
-        let value = utils::bytes_to_value(&metadata_bytes)?;
-        db.put(&[(key, Some(value))])?;
-        Ok(())
-    }
 }
