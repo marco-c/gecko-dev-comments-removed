@@ -127,6 +127,10 @@ pub extern "C" fn lockstore_keystore_get_dek(
     }
 }
 
+
+
+
+
 #[no_mangle]
 pub extern "C" fn lockstore_keystore_delete_dek(
     handle: &LockstoreKeystoreHandle,
