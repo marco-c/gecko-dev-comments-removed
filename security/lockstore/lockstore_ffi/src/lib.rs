@@ -300,12 +300,16 @@ pub unsafe extern "C" fn lockstore_keystore_close(
     
     
     if let Some(boxed) = unsafe { handle.as_mut() } {
-        boxed.keystore.lock_prp();
+        boxed.keystore.lock();
     }
     
     let _ = unsafe { Box::from_raw(handle) };
     NS_OK
 }
+
+
+
+
 
 
 
@@ -347,24 +351,48 @@ pub extern "C" fn lockstore_keystore_set_prp(
     }
 }
 
+#[no_mangle]
+pub extern "C" fn lockstore_keystore_has_prp(
+    handle: &LockstoreKeystoreHandle,
+    out_has: &mut bool,
+) -> nsresult {
+    *out_has = handle.keystore.has_prp();
+    NS_OK
+}
+
+
+
+
+
+
+
+
+
+
+
 
 
 
 
 #[no_mangle]
-pub extern "C" fn lockstore_keystore_unlock_prp(
+pub extern "C" fn lockstore_keystore_unlock_kek(
     handle: &LockstoreKeystoreHandle,
-    pw: &nsACString,
+    kek_ref: &nsACString,
+    secret: &nsACString,
     timeout_ms: u32,
 ) -> nsresult {
-    if pw.is_empty() {
+    if kek_ref.is_empty() {
         return NS_ERROR_INVALID_ARG;
     }
-    let mut pw_buf: Vec<u8> = pw[..].to_vec();
-    let result = handle
-        .keystore
-        .unlock_prp(&pw_buf, Duration::from_millis(timeout_ms as u64));
-    pw_buf.zeroize();
+    let mut secret_buf: Vec<u8> = secret[..].to_vec();
+    let kek_ref_str = kek_ref.to_utf8();
+    let result = handle.keystore.unlock_kek(
+        &kek_ref_str,
+        &secret_buf,
+        Duration::from_millis(timeout_ms as u64),
+    );
+    secret_buf.zeroize();
+
     match result {
         Ok(()) => NS_OK,
         Err(e) => error_to_nsresult(e),
@@ -372,26 +400,38 @@ pub extern "C" fn lockstore_keystore_unlock_prp(
 }
 
 #[no_mangle]
-pub extern "C" fn lockstore_keystore_lock_prp(handle: &LockstoreKeystoreHandle) -> nsresult {
-    handle.keystore.lock_prp();
+pub extern "C" fn lockstore_keystore_lock_kek(
+    handle: &LockstoreKeystoreHandle,
+    kek_ref: &nsACString,
+) -> nsresult {
+    if kek_ref.is_empty() {
+        return NS_ERROR_INVALID_ARG;
+    }
+    let kek_ref_str = kek_ref.to_utf8();
+    handle.keystore.lock_kek(&kek_ref_str);
     NS_OK
 }
 
 #[no_mangle]
-pub extern "C" fn lockstore_keystore_is_prp_unlocked(
+pub extern "C" fn lockstore_keystore_is_kek_unlocked(
     handle: &LockstoreKeystoreHandle,
+    kek_ref: &nsACString,
     out_unlocked: &mut bool,
 ) -> nsresult {
-    *out_unlocked = handle.keystore.is_prp_unlocked();
+    if kek_ref.is_empty() {
+        return NS_ERROR_INVALID_ARG;
+    }
+    let kek_ref_str = kek_ref.to_utf8();
+    *out_unlocked = handle.keystore.is_kek_unlocked(&kek_ref_str);
     NS_OK
 }
 
+
+
+
 #[no_mangle]
-pub extern "C" fn lockstore_keystore_has_prp(
-    handle: &LockstoreKeystoreHandle,
-    out_has: &mut bool,
-) -> nsresult {
-    *out_has = handle.keystore.has_prp();
+pub extern "C" fn lockstore_keystore_lock(handle: &LockstoreKeystoreHandle) -> nsresult {
+    handle.keystore.lock();
     NS_OK
 }
 

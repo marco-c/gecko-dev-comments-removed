@@ -12,6 +12,7 @@ use nss_rs::aead::Aead;
 use nss_rs::p11;
 use nss_rs::SymKey;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
@@ -158,6 +159,11 @@ pub struct LockstoreKeystore {
     
     
     
+    pkcs11_auth_cache: Arc<Mutex<HashMap<String, Instant>>>,
+    
+    
+    
+    
     
     
     
@@ -174,6 +180,7 @@ impl LockstoreKeystore {
             store,
             in_memory: false,
             prp_cache: Arc::new(Mutex::new(None)),
+            pkcs11_auth_cache: Arc::new(Mutex::new(HashMap::new())),
             connection_lock: Arc::new(Mutex::new(())),
         })
     }
@@ -185,6 +192,7 @@ impl LockstoreKeystore {
             store,
             in_memory: true,
             prp_cache: Arc::new(Mutex::new(None)),
+            pkcs11_auth_cache: Arc::new(Mutex::new(HashMap::new())),
             connection_lock: Arc::new(Mutex::new(())),
         })
     }
@@ -447,7 +455,7 @@ impl LockstoreKeystore {
     }
 
     pub fn close(self) {
-        self.lock_prp();
+        self.lock();
         if self.in_memory {
             let _ = crypto::zeroize(&self.store, DB_NAME, "lockstore::kek::local");
         }
@@ -457,14 +465,100 @@ impl LockstoreKeystore {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
+    
+    
     
     pub fn has_prp(&self) -> bool {
         self.load_prp_params().ok().flatten().is_some()
     }
 
     
-    pub fn is_prp_unlocked(&self) -> bool {
+    
+    pub fn is_kek_unlocked(&self, kek_ref: &str) -> bool {
+        let level = match KekType::from_kek_ref(kek_ref) {
+            Ok(l) => l,
+            Err(_) => return false,
+        };
+        match level {
+            KekType::LocalKey => true,
+            KekType::PrimaryPassword => self.is_prp_unlocked_impl(),
+            KekType::Pkcs11Token => self.is_pkcs11_unlocked_impl(kek_ref),
+            #[cfg(test)]
+            KekType::Test => true,
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn lock_kek(&self, kek_ref: &str) {
+        let level = match KekType::from_kek_ref(kek_ref) {
+            Ok(l) => l,
+            Err(_) => return,
+        };
+        match level {
+            KekType::LocalKey => {}
+            KekType::PrimaryPassword => self.lock_prp_impl(),
+            KekType::Pkcs11Token => {
+                self.pkcs11_auth_cache.lock().unwrap().remove(kek_ref);
+            }
+            #[cfg(test)]
+            KekType::Test => {}
+        }
+    }
+
+    
+    
+    
+    
+    pub fn lock(&self) {
+        self.lock_prp_impl();
+        self.pkcs11_auth_cache.lock().unwrap().clear();
+    }
+
+    
+    
+    
+    
+    pub fn unlock_kek(
+        &self,
+        kek_ref: &str,
+        secret: &[u8],
+        timeout: Duration,
+    ) -> Result<(), LockstoreError> {
+        let level = KekType::from_kek_ref(kek_ref)?;
+        match level {
+            KekType::LocalKey => Ok(()),
+            KekType::PrimaryPassword => self.unlock_prp_impl(secret, timeout),
+            KekType::Pkcs11Token => self.unlock_pkcs11_impl(kek_ref, timeout),
+            #[cfg(test)]
+            KekType::Test => Ok(()),
+        }
+    }
+
+    
+    
+    
+
+    fn is_prp_unlocked_impl(&self) -> bool {
         let mut guard = self.prp_cache.lock().unwrap();
         match guard.as_ref() {
             Some(cached) if cached.expires_at > Instant::now() => true,
@@ -476,16 +570,12 @@ impl LockstoreKeystore {
         }
     }
 
-    
-    
-    pub fn lock_prp(&self) {
+    fn lock_prp_impl(&self) {
         let mut guard = self.prp_cache.lock().unwrap();
         *guard = None;
     }
 
-    
-    
-    pub fn unlock_prp(&self, password: &[u8], timeout: Duration) -> Result<(), LockstoreError> {
+    fn unlock_prp_impl(&self, password: &[u8], timeout: Duration) -> Result<(), LockstoreError> {
         let params = self
             .load_prp_params()?
             .ok_or(LockstoreError::NotInitialized)?;
@@ -511,6 +601,38 @@ impl LockstoreKeystore {
             expires_at: Instant::now() + timeout,
         });
 
+        Ok(())
+    }
+
+    
+    
+    
+
+    fn is_pkcs11_unlocked_impl(&self, kek_ref: &str) -> bool {
+        let mut guard = self.pkcs11_auth_cache.lock().unwrap();
+        match guard.get(kek_ref) {
+            Some(&expires_at) if expires_at > Instant::now() => true,
+            Some(_) => {
+                guard.remove(kek_ref);
+                false
+            }
+            None => false,
+        }
+    }
+
+    fn unlock_pkcs11_impl(&self, kek_ref: &str, timeout: Duration) -> Result<(), LockstoreError> {
+        let pkcs11_uri_str = kek_ref.strip_prefix(KEK_REF_PREFIX).ok_or_else(|| {
+            LockstoreError::InvalidKekRef(format!("Invalid kek_ref format: {}", kek_ref))
+        })?;
+        let uri = nss_rs::pk11_utils::parse(pkcs11_uri_str).map_err(|_| {
+            LockstoreError::InvalidKekRef(format!("Invalid PKCS#11 URI: {}", kek_ref))
+        })?;
+        let slot = self.resolve_pkcs11_slot(&uri)?;
+        slot.authenticate()
+            .map_err(|_| LockstoreError::AuthenticationCancelled)?;
+
+        let mut guard = self.pkcs11_auth_cache.lock().unwrap();
+        guard.insert(kek_ref.to_string(), Instant::now() + timeout);
         Ok(())
     }
 
@@ -596,7 +718,7 @@ impl LockstoreKeystore {
             verifier,
             cipher_suite,
         })?;
-        self.lock_prp();
+        self.lock_prp_impl();
         Ok(())
     }
 
@@ -720,6 +842,22 @@ impl LockstoreKeystore {
         cipher_suite: CipherSuite,
         kek_ref: &str,
     ) -> Result<SymKey, LockstoreError> {
+        
+        
+        
+        
+        {
+            let mut guard = self.pkcs11_auth_cache.lock().unwrap();
+            match guard.get(kek_ref) {
+                Some(&expires_at) if expires_at > Instant::now() => {}
+                Some(_) => {
+                    guard.remove(kek_ref);
+                    return Err(LockstoreError::Locked);
+                }
+                None => return Err(LockstoreError::Locked),
+            }
+        }
+
         let pkcs11_uri_str = kek_ref.strip_prefix(KEK_REF_PREFIX).ok_or_else(|| {
             LockstoreError::InvalidKekRef(format!("Invalid kek_ref format: {}", kek_ref))
         })?;
@@ -727,9 +865,6 @@ impl LockstoreKeystore {
             LockstoreError::InvalidKekRef(format!("Invalid PKCS#11 URI: {}", kek_ref))
         })?;
         let slot = self.resolve_pkcs11_slot(&uri)?;
-
-        slot.authenticate()
-            .map_err(|_| LockstoreError::AuthenticationCancelled)?;
 
         if let Some(existing) = slot.find_key_by_nickname(kek_ref) {
             return Ok(existing);
