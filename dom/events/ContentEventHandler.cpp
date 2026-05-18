@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ContentEventHandler.h"
 
 #include <algorithm>
@@ -50,10 +48,6 @@
 #if defined(small)
 #  undef small
 #endif  
-
-#if defined(XP_WIN) && 0
-#  define TRANSLATE_NEW_LINES
-#endif
 
 namespace mozilla {
 
@@ -602,12 +596,6 @@ static bool IsPaddingBR(const nsIContent& aContent) {
   return aContent.IsHTMLElement(nsGkAtoms::br) && !IsContentBR(aContent);
 }
 
-static void ConvertToNativeNewlines(nsString& aString) {
-#if defined(TRANSLATE_NEW_LINES)
-  aString.ReplaceSubstring(u"\n"_ns, u"\r\n"_ns);
-#endif
-}
-
 static void AppendString(nsString& aString, const Text& aTextNode) {
   const uint32_t oldXPLength = aString.Length();
   aTextNode.DataBuffer().AppendTo(aString);
@@ -624,73 +612,6 @@ static void AppendSubString(nsString& aString, const Text& aTextNode,
     TextEditor::MaskString(aString, aTextNode, oldXPLength, aXPOffset);
   }
 }
-
-#if defined(TRANSLATE_NEW_LINES)
-template <typename StringType>
-static uint32_t CountNewlinesInXPLength(const StringType& aString) {
-  uint32_t count = 0;
-  const auto* end = aString.EndReading();
-  for (const auto* iter = aString.BeginReading(); iter < end; ++iter) {
-    if (*iter == '\n') {
-      count++;
-    }
-  }
-  return count;
-}
-
-static uint32_t CountNewlinesInXPLength(const Text& aTextNode,
-                                        uint32_t aXPLength) {
-  const CharacterDataBuffer& characterDataBuffer = aTextNode.DataBuffer();
-  
-  MOZ_ASSERT(
-      aXPLength == UINT32_MAX || aXPLength <= characterDataBuffer.GetLength(),
-      "aXPLength is out-of-bounds");
-  const uint32_t length = std::min(aXPLength, characterDataBuffer.GetLength());
-  if (!length) {
-    return 0;
-  }
-  if (characterDataBuffer.Is2b()) {
-    nsDependentSubstring str(characterDataBuffer.Get2b(), length);
-    return CountNewlinesInXPLength(str);
-  }
-  nsDependentCSubstring str(characterDataBuffer.Get1b(), length);
-  return CountNewlinesInXPLength(str);
-}
-
-template <typename StringType>
-static uint32_t CountNewlinesInNativeLength(const StringType& aString,
-                                            uint32_t aNativeLength) {
-  MOZ_ASSERT(
-      (aNativeLength == UINT32_MAX || aNativeLength <= aString.Length() * 2),
-      "aNativeLength is unexpected value");
-  uint32_t count = 0;
-  uint32_t nativeOffset = 0;
-  const auto* end = aString.EndReading();
-  for (const auto* iter = aString.BeginReading();
-       iter < end && nativeOffset < aNativeLength; ++iter, ++nativeOffset) {
-    if (*iter == '\n') {
-      count++;
-      nativeOffset++;
-    }
-  }
-  return count;
-}
-
-static uint32_t CountNewlinesInNativeLength(const Text& aTextNode,
-                                            uint32_t aNativeLength) {
-  const CharacterDataBuffer& characterDataBuffer = aTextNode.DataBuffer();
-  const uint32_t xpLength = characterDataBuffer.GetLength();
-  if (!xpLength) {
-    return 0;
-  }
-  if (characterDataBuffer.Is2b()) {
-    nsDependentSubstring str(characterDataBuffer.Get2b(), xpLength);
-    return CountNewlinesInNativeLength(str, aNativeLength);
-  }
-  nsDependentCSubstring str(characterDataBuffer.Get1b(), xpLength);
-  return CountNewlinesInNativeLength(str, aNativeLength);
-}
-#endif
 
 
 uint32_t ContentEventHandler::GetNativeTextLength(const Text& aTextNode,
@@ -713,62 +634,25 @@ uint32_t ContentEventHandler::GetNativeTextLength(const Text& aTextNode,
 
 
 uint32_t ContentEventHandler::GetBRLength(LineBreakType aLineBreakType) {
-#if defined(TRANSLATE_NEW_LINES)
-  
-  return (aLineBreakType == LINE_BREAK_TYPE_NATIVE) ? 2 : 1;
-#else
   return 1;
-#endif
 }
 
 
 uint32_t ContentEventHandler::GetTextLength(const Text& aTextNode,
                                             LineBreakType aLineBreakType,
                                             uint32_t aMaxLength) {
-  const uint32_t textLengthDifference =
-#if defined(TRANSLATE_NEW_LINES)
-      
-      
-      
-      (aLineBreakType == LINE_BREAK_TYPE_NATIVE)
-          ? CountNewlinesInXPLength(aTextNode, aMaxLength)
-          : 0;
-#else
-      
-      0;
-#endif
-
-  const uint32_t length =
-      std::min(aTextNode.DataBuffer().GetLength(), aMaxLength);
-  return length + textLengthDifference;
+  return std::min(aTextNode.DataBuffer().GetLength(), aMaxLength);
 }
 
 static uint32_t ConvertToXPOffset(const Text& aTextNode,
                                   uint32_t aNativeOffset) {
-#if defined(TRANSLATE_NEW_LINES)
-  
-  
-  
-  return aNativeOffset - CountNewlinesInNativeLength(aTextNode, aNativeOffset);
-#else
   
   return aNativeOffset;
-#endif
 }
 
 
 uint32_t ContentEventHandler::GetNativeTextLength(const nsAString& aText) {
-  const uint32_t textLengthDifference =
-#if defined(TRANSLATE_NEW_LINES)
-      
-      
-      
-      CountNewlinesInXPLength(aText);
-#else
-      
-      0;
-#endif
-  return aText.Length() + textLengthDifference;
+  return aText.Length();
 }
 
 
@@ -884,7 +768,6 @@ nsresult ContentEventHandler::GenerateFlatTextContent(
   if (startNode == endNode && startNode->IsText()) {
     AppendSubString(aString, *startNode->AsText(), aSimpleRange.StartOffset(),
                     aSimpleRange.EndOffset() - aSimpleRange.StartOffset());
-    ConvertToNativeNewlines(aString);
     return NS_OK;
   }
 
@@ -915,9 +798,6 @@ nsresult ContentEventHandler::GenerateFlatTextContent(
     } else if (ShouldBreakLineBefore(*node->AsContent(), mRootElement)) {
       aString.Append(char16_t('\n'));
     }
-  }
-  if (aLineBreakType == LINE_BREAK_TYPE_NATIVE) {
-    ConvertToNativeNewlines(aString);
   }
   return NS_OK;
 }
