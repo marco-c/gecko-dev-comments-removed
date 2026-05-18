@@ -294,6 +294,8 @@ fn unknown_kek_ref_reports_locked() {
         .unlock_kek("lockstore::kek::bogus", b"x", Duration::from_secs(1))
         .unwrap_err();
     assert!(matches!(err, LockstoreError::InvalidKekRef(_)));
+    
+    ks.lock_kek("lockstore::kek::bogus");
 }
 
 #[test]

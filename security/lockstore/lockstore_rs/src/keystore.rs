@@ -479,6 +479,11 @@ impl LockstoreKeystore {
     
     
     
+    
+    
+    
+    
+    
 
     
     
@@ -507,8 +512,6 @@ impl LockstoreKeystore {
     
     
     
-    
-    
     pub fn lock_kek(&self, kek_ref: &str) {
         let level = match KekType::from_kek_ref(kek_ref) {
             Ok(l) => l,
@@ -519,6 +522,16 @@ impl LockstoreKeystore {
             KekType::PrimaryPassword => self.lock_prp_impl(),
             KekType::Pkcs11Token => {
                 self.pkcs11_auth_cache.lock().unwrap().remove(kek_ref);
+                
+                
+                
+                if let Some(uri_str) = kek_ref.strip_prefix(KEK_REF_PREFIX) {
+                    if let Ok(uri) = nss_rs::pk11_utils::parse(uri_str) {
+                        if let Ok(slot) = self.resolve_pkcs11_slot(&uri) {
+                            let _ = slot.logout();
+                        }
+                    }
+                }
             }
             #[cfg(test)]
             KekType::Test => {}
@@ -548,7 +561,7 @@ impl LockstoreKeystore {
         match level {
             KekType::LocalKey => Ok(()),
             KekType::PrimaryPassword => self.unlock_prp_impl(secret, timeout),
-            KekType::Pkcs11Token => self.unlock_pkcs11_impl(kek_ref, timeout),
+            KekType::Pkcs11Token => self.unlock_pkcs11_impl(kek_ref, secret, timeout),
             #[cfg(test)]
             KekType::Test => Ok(()),
         }
@@ -620,7 +633,12 @@ impl LockstoreKeystore {
         }
     }
 
-    fn unlock_pkcs11_impl(&self, kek_ref: &str, timeout: Duration) -> Result<(), LockstoreError> {
+    fn unlock_pkcs11_impl(
+        &self,
+        kek_ref: &str,
+        secret: &[u8],
+        timeout: Duration,
+    ) -> Result<(), LockstoreError> {
         let pkcs11_uri_str = kek_ref.strip_prefix(KEK_REF_PREFIX).ok_or_else(|| {
             LockstoreError::InvalidKekRef(format!("Invalid kek_ref format: {}", kek_ref))
         })?;
@@ -628,8 +646,29 @@ impl LockstoreKeystore {
             LockstoreError::InvalidKekRef(format!("Invalid PKCS#11 URI: {}", kek_ref))
         })?;
         let slot = self.resolve_pkcs11_slot(&uri)?;
-        slot.authenticate()
-            .map_err(|_| LockstoreError::AuthenticationCancelled)?;
+
+        if !secret.is_empty() {
+            
+            
+            
+            
+            
+            let pin_str =
+                std::str::from_utf8(secret).map_err(|_| LockstoreError::AuthenticationFailed)?;
+            match slot.check_user_password(pin_str) {
+                Ok(()) => {}
+                Err(nss_rs::Error::Nss { name, .. }) if name == "PR_WOULD_BLOCK_ERROR" => {
+                    return Err(LockstoreError::WrongPassword);
+                }
+                Err(_) => return Err(LockstoreError::AuthenticationFailed),
+            }
+        } else {
+            
+            
+            
+            slot.authenticate()
+                .map_err(|_| LockstoreError::AuthenticationCancelled)?;
+        }
 
         let mut guard = self.pkcs11_auth_cache.lock().unwrap();
         guard.insert(kek_ref.to_string(), Instant::now() + timeout);
