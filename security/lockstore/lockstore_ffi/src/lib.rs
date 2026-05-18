@@ -206,6 +206,7 @@ pub extern "C" fn lockstore_keystore_remove_kek(
 
 
 
+
 #[no_mangle]
 pub unsafe extern "C" fn lockstore_keystore_encrypt(
     handle: &LockstoreKeystoreHandle,
@@ -218,7 +219,14 @@ pub unsafe extern "C" fn lockstore_keystore_encrypt(
     if collection.is_empty() || kek_ref.is_empty() {
         return NS_ERROR_INVALID_ARG;
     }
-    if plaintext_ptr.is_null() || plaintext_len == 0 {
+    
+    
+    
+    
+    if plaintext_len == 0 {
+        return NS_ERROR_INVALID_ARG;
+    }
+    if plaintext_ptr.is_null() {
         return NS_ERROR_INVALID_ARG;
     }
     let coll_str = collection.to_utf8();
@@ -252,7 +260,10 @@ pub unsafe extern "C" fn lockstore_keystore_decrypt(
     if collection.is_empty() || kek_ref.is_empty() {
         return NS_ERROR_INVALID_ARG;
     }
-    if ciphertext_ptr.is_null() || ciphertext_len == 0 {
+    if ciphertext_len == 0 {
+        return NS_ERROR_INVALID_ARG;
+    }
+    if ciphertext_ptr.is_null() {
         return NS_ERROR_INVALID_ARG;
     }
     let coll_str = collection.to_utf8();
@@ -305,39 +316,29 @@ pub unsafe extern "C" fn lockstore_keystore_close(
 
 
 
-
-
-
 #[no_mangle]
-pub unsafe extern "C" fn lockstore_keystore_set_prp(
+pub extern "C" fn lockstore_keystore_set_prp(
     handle: &LockstoreKeystoreHandle,
-    old_ptr: *mut u8,
-    old_len: usize,
-    new_ptr: *mut u8,
-    new_len: usize,
+    old: &nsACString,
+    new: &nsACString,
 ) -> nsresult {
-    if new_ptr.is_null() {
+    if new.is_empty() {
         return NS_ERROR_INVALID_ARG;
     }
     
     
-    
-    let new_slice = unsafe { std::slice::from_raw_parts_mut(new_ptr, new_len) };
-    let mut old_slice = if old_ptr.is_null() {
+    let mut new_buf: Vec<u8> = new[..].to_vec();
+    let mut old_buf: Option<Vec<u8>> = if old.is_empty() {
         None
     } else {
-        
-        Some(unsafe { std::slice::from_raw_parts_mut(old_ptr, old_len) })
+        Some(old[..].to_vec())
     };
 
-    let result = handle.keystore.set_prp(old_slice.as_deref(), &*new_slice);
+    let result = handle.keystore.set_prp(old_buf.as_deref(), &new_buf);
 
-    
-    
-    
-    new_slice.zeroize();
-    if let Some(ref mut old) = old_slice {
-        old.zeroize();
+    new_buf.zeroize();
+    if let Some(ref mut o) = old_buf {
+        o.zeroize();
     }
 
     match result {
@@ -351,25 +352,19 @@ pub unsafe extern "C" fn lockstore_keystore_set_prp(
 
 
 #[no_mangle]
-pub unsafe extern "C" fn lockstore_keystore_unlock_prp(
+pub extern "C" fn lockstore_keystore_unlock_prp(
     handle: &LockstoreKeystoreHandle,
-    pw_ptr: *mut u8,
-    pw_len: usize,
+    pw: &nsACString,
     timeout_ms: u32,
 ) -> nsresult {
-    if pw_ptr.is_null() {
+    if pw.is_empty() {
         return NS_ERROR_INVALID_ARG;
     }
-    
-    
-    let pw = unsafe { std::slice::from_raw_parts_mut(pw_ptr, pw_len) };
-
+    let mut pw_buf: Vec<u8> = pw[..].to_vec();
     let result = handle
         .keystore
-        .unlock_prp(&*pw, Duration::from_millis(timeout_ms as u64));
-
-    pw.zeroize();
-
+        .unlock_prp(&pw_buf, Duration::from_millis(timeout_ms as u64));
+    pw_buf.zeroize();
     match result {
         Ok(()) => NS_OK,
         Err(e) => error_to_nsresult(e),
