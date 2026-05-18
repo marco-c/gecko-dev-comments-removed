@@ -5,25 +5,34 @@
 
 add_task(async function test_ServerErrors() {
   await withContentSharingMockServer(async server => {
-    const share = {
-      type: "tabs",
-      title: "1 Tabs",
-      links: [{ url: "https://example.com", title: "Example" }],
-    };
+    let shareResult = new ShareResult({
+      share: {
+        type: "tabs",
+        title: "1 Tabs",
+        links: [{ url: "https://example.com", title: "Example" }],
+      },
+    });
 
-    let result = await ContentSharingUtils.createShareableLink(share);
+    shareResult = await ContentSharingUtils.createShareableLink(shareResult);
 
-    Assert.equal(result.url, server.mockShareURL, "Got share url");
+    Assert.equal(shareResult.url, server.mockShareURL, "Got share url");
 
     
     server.reset();
     server.mockResponseStatus = 503;
     server.mockResponse = {};
 
-    result = await ContentSharingUtils.createShareableLink(share);
+    shareResult = new ShareResult({
+      share: {
+        type: "tabs",
+        title: "1 Tabs",
+        links: [{ url: "https://example.com", title: "Example" }],
+      },
+    });
+    shareResult = await ContentSharingUtils.createShareableLink(shareResult);
     Assert.strictEqual(
-      result.url,
-      undefined,
+      shareResult.url,
+      null,
       "The server never returned a valid response"
     );
 
@@ -34,7 +43,14 @@ add_task(async function test_ServerErrors() {
     server.mockResponseStatus = 401;
     server.mockResponse = {};
 
-    await ContentSharingUtils.createShareableLink(share);
+    shareResult = new ShareResult({
+      share: {
+        type: "tabs",
+        title: "1 Tabs",
+        links: [{ url: "https://example.com", title: "Example" }],
+      },
+    });
+    await ContentSharingUtils.createShareableLink(shareResult);
     Assert.equal(server.requests.length, 1, "Server received one request");
 
     
@@ -42,15 +58,22 @@ add_task(async function test_ServerErrors() {
     server.mockResponseStatus = 503;
     server.mockResponse = {};
 
-    let promise = ContentSharingUtils.createShareableLink(share);
+    shareResult = new ShareResult({
+      share: {
+        type: "tabs",
+        title: "1 Tabs",
+        links: [{ url: "https://example.com", title: "Example" }],
+      },
+    });
+    let promise = ContentSharingUtils.createShareableLink(shareResult);
     
     await new Promise(r => setTimeout(r, 100));
 
     server.mockResponseStatus = 201;
     server.mockResponse = { url: server.mockShareURL };
 
-    result = await promise;
-    Assert.equal(result.url, server.mockShareURL, "Got share url");
+    shareResult = await promise;
+    Assert.equal(shareResult.url, server.mockShareURL, "Got share url");
     Assert.greater(
       server.requests.length,
       1,
