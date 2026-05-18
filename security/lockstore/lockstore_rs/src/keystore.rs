@@ -2,6 +2,39 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 use crate::crypto::{self, CipherSuite, DEFAULT_CIPHER_SUITE};
 use crate::pbkdf2;
 use crate::utils;
@@ -65,7 +98,7 @@ struct PrimaryPasswordParams {
 
 
 pub struct ConnectionHandle<'a> {
-    keystore: &'a LockstoreKeystore,
+    keystore: &'a Keystore,
     
     
     
@@ -151,7 +184,7 @@ impl Drop for CachedKek {
 }
 
 #[derive(Clone)]
-pub struct LockstoreKeystore {
+pub struct Keystore {
     store: Arc<Store>,
     in_memory: bool,
     prp_cache: Arc<Mutex<Option<CachedKek>>>,
@@ -172,8 +205,14 @@ pub struct LockstoreKeystore {
     connection_lock: Arc<Mutex<()>>,
 }
 
-impl LockstoreKeystore {
-    pub fn new(path: PathBuf) -> Result<Self, LockstoreError> {
+impl Keystore {
+    
+    
+    
+    
+    
+    
+    fn new_on_disk(path: PathBuf) -> Result<Self, LockstoreError> {
         let store = Arc::new(Store::new(StorePath::OnDisk(path)));
         nss_rs::init().map_err(|e| LockstoreError::NssInitialization(e.to_string()))?;
         Ok(Self {
@@ -183,6 +222,55 @@ impl LockstoreKeystore {
             pkcs11_auth_cache: Arc::new(Mutex::new(HashMap::new())),
             connection_lock: Arc::new(Mutex::new(())),
         })
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn get(path: PathBuf) -> Result<Arc<Self>, LockstoreError> {
+        let map = SHARED_KEYSTORES.get_or_init(|| Mutex::new(HashMap::new()));
+        
+        
+        
+        let mut guard = map
+            .lock()
+            .map_err(|_| LockstoreError::LockingFailure("SHARED_KEYSTORES poisoned".into()))?;
+        if let Some(weak) = guard.get(&path) {
+            if let Some(arc) = weak.upgrade() {
+                return Ok(arc);
+            }
+            
+            
+        }
+        let ks = Arc::new(Self::new_on_disk(path.clone())?);
+        guard.insert(path, Arc::downgrade(&ks));
+        Ok(ks)
     }
 
     pub fn new_in_memory() -> Result<Self, LockstoreError> {
@@ -438,7 +526,7 @@ impl LockstoreKeystore {
         let guard = self
             .connection_lock
             .lock()
-            .map_err(|_| LockstoreError::InvalidConfiguration("connection_lock poisoned".into()))?;
+            .map_err(|_| LockstoreError::LockingFailure("connection_lock poisoned".into()))?;
         Ok(ConnectionHandle {
             keystore: self,
             _guard: guard,
@@ -454,7 +542,34 @@ impl LockstoreKeystore {
         self.acquire_connection()?.list_collections()
     }
 
-    pub fn close(self) {
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn list_collection_keks(
+        &self,
+        collection_name: &str,
+    ) -> Result<Vec<String>, LockstoreError> {
+        let conn = self.acquire_connection()?;
+        let metadata = conn.load_metadata(collection_name)?;
+        Ok(metadata
+            .wrapped_deks
+            .iter()
+            .map(|w| w.kek_ref.clone())
+            .collect())
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn close(&self) {
         self.lock();
         if self.in_memory {
             let _ = crypto::zeroize(&self.store, DB_NAME, "lockstore::kek::local");
@@ -948,3 +1063,30 @@ impl LockstoreKeystore {
     
     
 }
+
+impl Drop for Keystore {
+    
+    
+    
+    
+    fn drop(&mut self) {
+        self.lock();
+        if self.in_memory {
+            let _ = crypto::zeroize(&self.store, DB_NAME, "lockstore::kek::local");
+        }
+        self.store.close();
+    }
+}
+
+
+
+
+
+use std::sync::{OnceLock, Weak};
+
+
+
+
+
+
+static SHARED_KEYSTORES: OnceLock<Mutex<HashMap<PathBuf, Weak<Keystore>>>> = OnceLock::new();

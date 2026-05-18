@@ -7,7 +7,7 @@
 
 
 
-use lockstore_rs::{LockstoreError, LockstoreKeystore};
+use lockstore_rs::{Keystore, LockstoreError};
 use std::time::Duration;
 
 #[test]
@@ -15,7 +15,7 @@ fn pkcs11_malformed_uri_rejected() {
     
     
     
-    let ks = LockstoreKeystore::new_in_memory().expect("new");
+    let ks = Keystore::new_in_memory().expect("new");
     let err = ks
         .unlock_kek(
             "lockstore::kek::pkcs11:not-a-valid-uri",
