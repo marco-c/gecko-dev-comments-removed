@@ -1094,6 +1094,15 @@ fn parse_declaration_value_block<'i, 't>(
                                     .try_parse(|input| ParsedNamespace::parse(namespaces, input))
                                 {
                                     namespace = ns;
+                                    let prev = input.state();
+                                    let next = match *input.next_including_whitespace()? {
+                                        Token::Ident(_) => Ok(()),
+                                        ref t => Err(prev
+                                            .source_location()
+                                            .new_unexpected_token_error(t.clone())),
+                                    };
+                                    input.reset(&prev);
+                                    next?;
                                 }
                             }
                         }
@@ -1632,46 +1641,32 @@ impl<'a, 'b: 'a> CustomPropertiesBuilder<'a, 'b> {
         }
 
         let existing_value = self.substitution_functions.get_var(registration, &name);
-        let existing_value = match existing_value {
-            None => {
-                if matches!(
-                    value,
-                    CustomDeclarationValue::CSSWideKeyword(CSSWideKeyword::Initial)
-                ) {
-                    debug_assert!(registration.inherits(), "Should've been handled earlier");
-                    
-                    
-                    
-                    if registration.initial_value.is_none() {
-                        return false;
-                    }
+        let Some(existing_value) = existing_value else {
+            if matches!(
+                value,
+                CustomDeclarationValue::CSSWideKeyword(CSSWideKeyword::Initial)
+            ) {
+                debug_assert!(registration.inherits(), "Should've been handled earlier");
+                
+                
+                
+                if registration.initial_value.is_none() {
+                    return false;
                 }
-                return true;
-            },
-            Some(v) => v,
+            }
+            return true;
         };
-        let computed_value = match value {
+        match value {
             CustomDeclarationValue::Unparsed(value) => {
                 
                 
                 if let Some(existing_value) = existing_value.as_universal() {
                     return existing_value != value;
                 }
-                if !registration.is_universal() {
-                    compute_value(
-                        &value.css,
-                        &value.url_data,
-                        registration,
-                        self.computed_context,
-                        AttrTaint::default(),
-                    )
-                    .ok()
-                } else {
-                    None
-                }
             },
-            CustomDeclarationValue::Parsed(value) => {
-                Some(value.to_computed_value(&self.computed_context))
+            CustomDeclarationValue::Parsed(..) => {
+                
+                
             },
             CustomDeclarationValue::CSSWideKeyword(kw) => {
                 match kw {
@@ -1709,13 +1704,8 @@ impl<'a, 'b: 'a> CustomPropertiesBuilder<'a, 'b> {
                     | CSSWideKeyword::RevertLayer
                     | CSSWideKeyword::RevertRule => {},
                 }
-                None
             },
         };
-
-        if let Some(value) = computed_value {
-            return existing_value.v != value.v;
-        }
 
         true
     }
