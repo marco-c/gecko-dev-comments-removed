@@ -199,7 +199,8 @@ class CustomElementReactionsStack {
   
   
   
-  typedef AutoTArray<RefPtr<Element>, 3> ElementQueue;
+  static constexpr size_t kElementQueueInlineSize = 3;
+  typedef AutoTArray<RefPtr<Element>, kElementQueueInlineSize> ElementQueue;
 
   
 
@@ -286,6 +287,11 @@ class CustomElementReactionsStack {
 
   
   AutoTArray<UniquePtr<ElementQueue>, 8> mReactionsStack;
+  
+  
+  
+  
+  UniquePtr<ElementQueue> mCachedElementQueue;
   ElementQueue mBackupQueue;
   
   bool mIsBackupQueueProcessing;

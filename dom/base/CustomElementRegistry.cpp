@@ -1648,7 +1648,13 @@ void CustomElementReactionsStack::CreateAndPushElementQueue() {
   MOZ_ASSERT(!mIsElementQueuePushedForCurrentRecursionDepth);
 
   
-  mReactionsStack.AppendElement(MakeUnique<ElementQueue>());
+  
+  if (mCachedElementQueue) {
+    MOZ_ASSERT(mCachedElementQueue->IsEmpty());
+    mReactionsStack.AppendElement(std::move(mCachedElementQueue));
+  } else {
+    mReactionsStack.AppendElement(MakeUnique<ElementQueue>());
+  }
   mIsElementQueuePushedForCurrentRecursionDepth = true;
 }
 
@@ -1682,7 +1688,14 @@ void CustomElementReactionsStack::PopAndInvokeElementQueue() {
       lastIndex == mReactionsStack.Length() - 1,
       "reactions created by InvokeReactions() should be consumed and removed");
 
+  UniquePtr<ElementQueue> popped = std::move(mReactionsStack.LastElement());
   mReactionsStack.RemoveLastElement();
+  
+  
+  if (!mCachedElementQueue && popped->Capacity() == kElementQueueInlineSize) {
+    popped->ClearAndRetainStorage();
+    mCachedElementQueue = std::move(popped);
+  }
   mIsElementQueuePushedForCurrentRecursionDepth = false;
 }
 
