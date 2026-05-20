@@ -923,6 +923,31 @@ void HappyEyeballsConnectionAttempt::Abandon() {
   }
   mTimer = nullptr;
 
+  
+  
+  
+  
+  
+  
+  
+  if (mTransaction && mZeroRttHandle->AnyStarted() &&
+      !mZeroRttHandle->HadWinner()) {
+    if (nsHttpTransaction* realTxn = mTransaction->QueryHttpTransaction()) {
+      if (!realTxn->Closed()) {
+        realTxn->FinishAdopted0RTT(true);
+        RefPtr<ConnectionEntry> entry(mEntry);
+        RefPtr<PendingTransactionInfo> existing;
+        if (entry) {
+          existing = gHttpHandler->ConnMgr()->FindTransactionHelper(
+              false, entry, realTxn);
+        }
+        if (!existing) {
+          gHttpHandler->ConnMgr()->AddTransaction(realTxn, realTxn->Priority());
+        }
+      }
+    }
+    mTransaction = nullptr;
+  }
 
   mZeroRttHandle->Cleanup();
 
@@ -998,7 +1023,9 @@ void HappyEyeballsConnectionAttempt::ProcessUDPConn(
     if (aTransactionAlreadyOnConn) {
       
       
-      nsHttpTransaction* trans = mTransaction->QueryHttpTransaction();
+      
+      nsHttpTransaction* trans =
+          mTransaction ? mTransaction->QueryHttpTransaction() : nullptr;
       if (trans) {
         TimingStruct timings;
         timings.domainLookupStart = mDomainLookupStart;
@@ -1076,9 +1103,11 @@ void HappyEyeballsConnectionAttempt::OnSucceeded() {
   
   
   bool restartedFallback0Rtt = false;
+  nsHttpTransaction* trans =
+      mTransaction ? mTransaction->QueryHttpTransaction() : nullptr;
   if (mZeroRttHandle->AnyStarted() && !mZeroRttHandle->HadWinner()) {
-    if (nsHttpTransaction* realTxn = mTransaction->QueryHttpTransaction()) {
-      realTxn->FinishAdopted0RTT(true);
+    if (trans) {
+      trans->FinishAdopted0RTT(true);
       
       
       
@@ -1087,12 +1116,13 @@ void HappyEyeballsConnectionAttempt::OnSucceeded() {
       RefPtr<PendingTransactionInfo> existing;
       if (entry) {
         existing = gHttpHandler->ConnMgr()->FindTransactionHelper(
-            false, entry, realTxn);
+            false, entry, trans);
       }
       if (!existing) {
-        gHttpHandler->ConnMgr()->AddTransaction(realTxn, realTxn->Priority());
+        gHttpHandler->ConnMgr()->AddTransaction(trans, trans->Priority());
       }
       restartedFallback0Rtt = true;
+      mTransaction = nullptr;
     }
   }
 
@@ -1110,7 +1140,7 @@ void HappyEyeballsConnectionAttempt::OnSucceeded() {
     
     
     if (!mConnInfo->GetRoutedHost().IsEmpty()) {
-      if (nsHttpTransaction* trans = mTransaction->QueryHttpTransaction()) {
+      if (trans) {
         trans->RemoveAltSvcUsedHeader();
       }
     }
