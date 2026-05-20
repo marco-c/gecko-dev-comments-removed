@@ -540,6 +540,17 @@ ABIArg ABIArgGenerator::next(MIRType type) {
     case MIRType::Float32:
     case MIRType::Double: {
       if (floatRegIndex_ == NumFloatArgRegs) {
+        
+        
+        
+        
+        
+        
+        if (kind_ == ABIKind::System && intRegIndex_ != NumIntArgRegs) {
+          current_ = ABIArg(Register::FromCode(intRegIndex_ + a0.encoding()));
+          intRegIndex_++;
+          break;
+        }
         current_ = ABIArg(stackOffset_);
         stackOffset_ += sizeof(double);
         break;
