@@ -412,7 +412,6 @@ enum OffsetSize : uint32_t {
 };
 
 
-
 enum ImmBranchRangeType {
   CondBranchRangeType,    
   UncondBranchRangeType,  
