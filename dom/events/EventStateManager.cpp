@@ -4083,11 +4083,11 @@ nsresult EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
       
       if (nsEventStatus_eConsumeNoDefault != *aStatus &&
           !aEvent->DefaultPrevented()) {
-        nsCOMPtr<nsIContent> newFocus;
+        RefPtr<Element> newFocus;
         bool suppressBlur = false;
         if (mCurrentTarget) {
-          
-          newFocus = mCurrentTarget->GetExplicitEventTargetContent(aEvent);
+          newFocus = Element::FromNodeOrNull(
+              mCurrentTarget->GetEventTargetContent(aEvent));
           activeContent = mCurrentTarget->GetContent();
 
           
@@ -4128,10 +4128,10 @@ nsresult EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
         if (newFocus && !newFocus->IsEditable()) {
           Document* doc = newFocus->GetComposedDoc();
           if (doc && newFocus == doc->GetRootElement()) {
-            nsIContent* bodyContent =
+            Element* bodyElement =
                 nsLayoutUtils::GetEditableRootContentByContentEditable(doc);
-            if (bodyContent && bodyContent->GetPrimaryFrame()) {
-              newFocus = bodyContent;
+            if (bodyElement && bodyElement->GetPrimaryFrame()) {
+              newFocus = bodyElement;
             }
           }
         }
@@ -4140,11 +4140,7 @@ nsresult EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
         
         
         
-        for (; newFocus; newFocus = newFocus->GetFlattenedTreeParent()) {
-          if (!newFocus->IsElement()) {
-            continue;
-          }
-
+        for (; newFocus; newFocus = newFocus->GetFlattenedTreeParentElement()) {
           nsIFrame* frame = newFocus->GetPrimaryFrame();
           if (!frame) {
             continue;
@@ -4172,8 +4168,6 @@ nsresult EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
           }
         }
 
-        MOZ_ASSERT_IF(newFocus, newFocus->IsElement());
-
         if (RefPtr<nsFocusManager> fm = nsFocusManager::GetFocusManager()) {
           
           
@@ -4195,7 +4189,7 @@ nsresult EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
                 MouseEvent_Binding::MOZ_SOURCE_TOUCH) {
               flags |= nsIFocusManager::FLAG_BYTOUCH;
             }
-            fm->SetFocus(MOZ_KnownLive(newFocus->AsElement()), flags);
+            fm->SetFocus(newFocus, flags);
           } else if (!suppressBlur) {
             
             
