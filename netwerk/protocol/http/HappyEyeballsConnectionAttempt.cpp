@@ -62,7 +62,8 @@ NS_INTERFACE_MAP_END
 HappyEyeballsConnectionAttempt::HappyEyeballsConnectionAttempt(
     nsHttpConnectionInfo* ci, nsAHttpTransaction* trans, uint32_t caps,
     bool speculative, bool urgentStart)
-    : ConnectionAttempt(ci, trans, caps, speculative, urgentStart) {
+    : ConnectionAttempt(ci, trans, caps, speculative, urgentStart),
+      mZeroRttHandle(new ZeroRttHandle(this)) {
   LOG(("HappyEyeballsConnectionAttempt ctor %p", this));
   if (mConnInfo->GetRoutedHost().IsEmpty()) {
     mHost = mConnInfo->GetOrigin();
@@ -213,8 +214,7 @@ nsresult HappyEyeballsConnectionAttempt::ProcessConnectionResult(
   
   
   
-  if (aStatus == NS_ERROR_NET_RESET && mZeroRttHandle &&
-      mZeroRttHandle->AnyStarted()) {
+  if (aStatus == NS_ERROR_NET_RESET && mZeroRttHandle->AnyStarted()) {
     if (entry) {
       entry->RemoveConnectionAttempt(this, true);
     }
@@ -600,7 +600,7 @@ void HappyEyeballsConnectionAttempt::DNSLookup(
 
 void HappyEyeballsConnectionAttempt::MaybeForward0RTTSecurityInfo(
     ConnectionEstablisher* aEstablisher) {
-  if (!mZeroRttHandle || !mZeroRttHandle->AnyStarted()) {
+  if (!mZeroRttHandle->AnyStarted()) {
     return;
   }
   RefPtr<HttpConnectionBase> conn = aEstablisher->ResultConn();
@@ -715,9 +715,6 @@ HappyEyeballsConnectionAttempt::CreateAttemptTransaction(
   nsCOMPtr<nsIInterfaceRequestor> callbacks;
   if (mTransaction) {
     mTransaction->GetSecurityCallbacks(getter_AddRefs(callbacks));
-  }
-  if (!mZeroRttHandle) {
-    mZeroRttHandle = new ZeroRttHandle(this);
   }
   RefPtr<HappyEyeballsTransaction> trans = new HappyEyeballsTransaction(
       aInfo, callbacks, mCaps,
@@ -926,9 +923,8 @@ void HappyEyeballsConnectionAttempt::Abandon() {
   }
   mTimer = nullptr;
 
-  if (mZeroRttHandle) {
-    mZeroRttHandle->Cleanup();
-  }
+
+  mZeroRttHandle->Cleanup();
 
   mEntry = nullptr;
 }
@@ -1080,8 +1076,7 @@ void HappyEyeballsConnectionAttempt::OnSucceeded() {
   
   
   bool restartedFallback0Rtt = false;
-  if (mZeroRttHandle && mZeroRttHandle->AnyStarted() &&
-      (!mZeroRttHandle->Winner() || !mZeroRttHandle->Winner()->IsAdopted())) {
+  if (mZeroRttHandle->AnyStarted() && !mZeroRttHandle->HadWinner()) {
     if (nsHttpTransaction* realTxn = mTransaction->QueryHttpTransaction()) {
       realTxn->FinishAdopted0RTT(true);
       
@@ -1108,9 +1103,7 @@ void HappyEyeballsConnectionAttempt::OnSucceeded() {
   
   
   
-  bool alreadyOnConn = (mZeroRttHandle && mZeroRttHandle->Winner() &&
-                        mZeroRttHandle->Winner()->IsAdopted()) ||
-                       restartedFallback0Rtt;
+  bool alreadyOnConn = mZeroRttHandle->HadWinner() || restartedFallback0Rtt;
   RefPtr<nsHttpConnection> connTCP = do_QueryObject(mOutputConn);
   if (connTCP) {
     

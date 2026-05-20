@@ -16,7 +16,6 @@ namespace mozilla::net {
 class HappyEyeballsConnectionAttempt;
 class HappyEyeballsTransaction;
 class nsAHttpSegmentReader;
-class nsAHttpSegmentWriter;
 class nsHttpTransaction;
 
 
@@ -93,26 +92,13 @@ class ZeroRttHandle {
   
   
   
-  
-  
-  bool Accepted() const { return mWinner && !mRejected; }
-
-  
-  
-  
-  mozilla::Maybe<uint64_t> WinnerOffset() const;
-
-  
-  
-  
-  HappyEyeballsTransaction* Winner() const { return mWinner; }
-
-  
-  
-  
-  
-  
   bool AnyStarted() const { return mAny0RttStarted; }
+
+  
+  
+  
+  
+  bool HadWinner() const { return mHadWinner; }
 
   
   
@@ -125,6 +111,10 @@ class ZeroRttHandle {
 
   void Cleanup();
 
+ private:
+  ~ZeroRttHandle() = default;
+
+  
   
   
   
@@ -143,10 +133,6 @@ class ZeroRttHandle {
     WinnerDeclared,
     CleanedUp,
   };
-  State GetState() const { return mState; }
-
- private:
-  ~ZeroRttHandle() = default;
 
   
   
@@ -167,7 +153,9 @@ class ZeroRttHandle {
 
   
   
-  HappyEyeballsTransaction* mWinner = nullptr;
+  RefPtr<HappyEyeballsTransaction> mWinner;
+
+  bool mHadWinner = false;
 
   
   bool mAny0RttStarted = false;

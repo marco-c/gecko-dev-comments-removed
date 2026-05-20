@@ -188,6 +188,12 @@ void HappyEyeballsTransaction::Transition(State aNext,
       }
 
       SetConnection(nullptr);
+      
+      
+      
+      
+      
+      mZeroRttHandle = nullptr;
       break;
     }
 

@@ -135,10 +135,12 @@ class HappyEyeballsTransaction final : public SpeculativeTransaction {
   
   
   bool Do0RTT(bool aCanSendEarlyData) override {
-    return mZeroRttHandle->Do0RTT(this, aCanSendEarlyData);
+    return mZeroRttHandle && mZeroRttHandle->Do0RTT(this, aCanSendEarlyData);
   }
   nsresult Finish0RTT(bool aRestart, bool aAlpnChanged) override {
-    return mZeroRttHandle->Finish0RTT(this, aRestart, aAlpnChanged);
+    return mZeroRttHandle
+               ? mZeroRttHandle->Finish0RTT(this, aRestart, aAlpnChanged)
+               : NS_OK;
   }
 
   
