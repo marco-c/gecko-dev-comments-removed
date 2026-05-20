@@ -1,12 +1,10 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 FINAL_LIBRARY = "js"
 
-
+# Includes should be relative to parent path
 LOCAL_INCLUDES += ["!..", ".."]
 
 include("../js-compileflags.mozbuild")
@@ -235,11 +233,11 @@ elif CONFIG["JS_CODEGEN_RISCV64"]:
         "riscv64/Architecture-riscv64.cpp",
         "riscv64/Assembler-riscv64.cpp",
         "riscv64/AssemblerMatInt.cpp",
+        "riscv64/base/base-assembler-riscv.cc",
+        "riscv64/base/base-riscv-i.cc",
         "riscv64/CodeGenerator-riscv64.cpp",
         "riscv64/constant/Base-constant-riscv.cpp",
         "riscv64/disasm/Disasm-riscv64.cpp",
-        "riscv64/extension/base-assembler-riscv.cc",
-        "riscv64/extension/base-riscv-i.cc",
         "riscv64/extension/extension-riscv-a.cc",
         "riscv64/extension/extension-riscv-b.cc",
         "riscv64/extension/extension-riscv-c.cc",
@@ -263,14 +261,14 @@ elif CONFIG["JS_CODEGEN_WASM32"]:
         "wasm32/Trampoline-wasm32.cpp",
     ]
 
-
+# Generate jit/ABIFunctionTypeGenerated.h from jit/ABIFunctionType.yaml
 GeneratedFile(
     "ABIFunctionTypeGenerated.h",
     script="GenerateABIFunctionType.py",
     inputs=["ABIFunctionType.yaml"],
 )
 
-
+# Generate jit/MIROpsGenerated.h from jit/MIROps.yaml
 GeneratedFile(
     "MIROpsGenerated.h",
     script="GenerateMIRFiles.py",
@@ -278,8 +276,8 @@ GeneratedFile(
     inputs=["MIROps.yaml"],
 )
 
-
-
+# Generate jit/LIROpsGenerated.h from jit/LIR.h, jit/shared/LIR-shared.h, and
+# platform-specific LIR files.
 GeneratedFile(
     "LIROpsGenerated.h",
     script="GenerateLIRFiles.py",
@@ -287,7 +285,7 @@ GeneratedFile(
     inputs=["LIROps.yaml", "MIROps.yaml"],
 )
 
-
+# Generate jit/CacheIROpsGenerated.h from jit/CacheIROps.yaml
 GeneratedFile(
     "CacheIROpsGenerated.h",
     script="GenerateCacheIRFiles.py",
@@ -308,7 +306,7 @@ if CONFIG["ENABLE_JS_AOT_ICS"]:
         script="GenerateCacheIRFiles.py",
         entry_point="generate_aot_ics_header",
         inputs=["../ics/"],
-        force=True,  
+        force=True,  # depends on list of files in js/src/ics/; always rebuild
     )
 
 if CONFIG["FUZZING_INTERFACES"] or CONFIG["FUZZING_JS_FUZZILLI"]:

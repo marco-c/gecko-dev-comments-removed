@@ -1,14 +1,16 @@
 
 
 
-#ifndef jit_riscv64_extension_Base_riscv_i_h_
-#define jit_riscv64_extension_Base_riscv_i_h_
+#ifndef jit_riscv64_base_Base_riscv_i_h_
+#define jit_riscv64_base_Base_riscv_i_h_
+
 #include "mozilla/Assertions.h"
 
 #include <stdint.h>
 
+#include "jit/riscv64/base/base-assembler-riscv.h"
 #include "jit/riscv64/constant/Constant-riscv64.h"
-#include "jit/riscv64/extension/base-assembler-riscv.h"
+
 namespace js {
 namespace jit {
 

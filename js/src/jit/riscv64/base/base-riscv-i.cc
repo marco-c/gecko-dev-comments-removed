@@ -1,10 +1,12 @@
 
 
 
-#include "jit/riscv64/extension/base-riscv-i.h"
+
+#include "jit/riscv64/base/base-riscv-i.h"
 #include "jit/riscv64/constant/Constant-riscv64.h"
 #include "jit/riscv64/Assembler-riscv64.h"
 #include "jit/riscv64/Architecture-riscv64.h"
+
 namespace js {
 namespace jit {
 

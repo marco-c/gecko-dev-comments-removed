@@ -32,7 +32,7 @@
 
 
 
-#include "jit/riscv64/extension/base-assembler-riscv.h"
+#include "jit/riscv64/base/base-assembler-riscv.h"
 #include "jit/riscv64/Architecture-riscv64.h"
 
 namespace js {

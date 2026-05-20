@@ -32,8 +32,8 @@
 
 
 
-#ifndef jit_riscv64_extension_Base_assembler_riscv_h
-#define jit_riscv64_extension_Base_assembler_riscv_h
+#ifndef jit_riscv64_base_Base_assembler_riscv_h
+#define jit_riscv64_base_Base_assembler_riscv_h
 
 #include <stdio.h>
 
