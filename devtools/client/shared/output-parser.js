@@ -413,7 +413,7 @@ class OutputParser {
           break;
 
         case "ParenthesisBlock":
-          this.#createStackEntry({ isParenthesis: true, text: tokenText });
+          this.#createStackEntry({ text: tokenText });
           this.#appendTextNode(tokenText, token);
           break;
 
@@ -517,8 +517,6 @@ class OutputParser {
       
       
       isColorTakingFunction: null,
-      
-      isParenthesis: null,
       
       
       text: "",
@@ -631,11 +629,16 @@ class OutputParser {
       
       lastStackEntry.text += text;
 
-      
-      lastStackEntry.nestedFunctions = [
-        stackEntry.lowerCaseFunctionName,
-        ...stackEntry.nestedFunctions,
-      ];
+      if (stackEntry.lowerCaseFunctionName) {
+        
+        lastStackEntry.nestedFunctions = [
+          stackEntry.lowerCaseFunctionName,
+          ...stackEntry.nestedFunctions,
+        ];
+      } else {
+        
+        lastStackEntry.nestedFunctions = Array.from(stackEntry.nestedFunctions);
+      }
 
       const compoundEntryToken = {
         
