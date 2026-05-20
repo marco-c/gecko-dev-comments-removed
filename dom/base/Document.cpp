@@ -14865,11 +14865,9 @@ already_AddRefed<nsRange> Document::CaretRangeFromPoint(int32_t aX,
   return range.forget();
 }
 
-bool Document::IsPotentiallyScrollableImpl(HTMLBodyElement* aBody,
-                                           Flush aFlush) {
-  if (aFlush == Flush::Yes) {
-    FlushPendingNotifications(FlushType::Frames);
-  }
+bool Document::IsPotentiallyScrollable(HTMLBodyElement* aBody) {
+  
+  FlushPendingNotifications(FlushType::Frames);
 
   
   
@@ -14894,28 +14892,18 @@ bool Document::IsPotentiallyScrollableImpl(HTMLBodyElement* aBody,
   return !bodyFrame->StyleDisplay()->OverflowIsVisibleInBothAxis();
 }
 
-Element* Document::GetScrollingElementImpl(Flush aFlush) {
-  
-  if (GetCompatibilityMode() != eCompatibility_NavQuirks) {
-    return GetRootElement();
-  }
-  RefPtr<HTMLBodyElement> body = GetBodyElement();
-  if (body && !IsPotentiallyScrollableImpl(body, aFlush)) {
-    return body;
-  }
-  return nullptr;
-}
-
-bool Document::IsPotentiallyScrollable(HTMLBodyElement* aBody) {
-  return IsPotentiallyScrollableImpl(aBody, Flush::Yes);
-}
-
 Element* Document::GetScrollingElement() {
-  return GetScrollingElementImpl(Flush::Yes);
-}
+  
+  if (GetCompatibilityMode() == eCompatibility_NavQuirks) {
+    RefPtr<HTMLBodyElement> body = GetBodyElement();
+    if (body && !IsPotentiallyScrollable(body)) {
+      return body;
+    }
 
-Element* Document::GetScrollingElementNoFlush() {
-  return GetScrollingElementImpl(Flush::No);
+    return nullptr;
+  }
+
+  return GetRootElement();
 }
 
 bool Document::IsScrollingElement(Element* aElement) {
