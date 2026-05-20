@@ -17,7 +17,7 @@ Services.scriptloader.loadSubScript(
 
 loadScripts(
   { name: "common.js", dir: MOCHITESTS_DIR },
-  { name: "promisified-events.js", dir: MOCHITESTS_DIR },
+  { name: "events.js", dir: MOCHITESTS_DIR },
   { name: "relations.js", dir: MOCHITESTS_DIR }
 );
 
