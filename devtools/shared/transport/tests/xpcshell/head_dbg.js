@@ -17,12 +17,6 @@ const { NetUtil } = ChromeUtils.importESModule(
 );
 
 
-
-
-
-
-
-
 Services.prefs.setBoolPref("devtools.debugger.remote-enabled", true);
 
 const {

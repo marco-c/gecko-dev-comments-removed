@@ -10,13 +10,13 @@ const {
 } = require("resource://devtools/shared/commands/commands-factory.js");
 
 
-Services.prefs.setBoolPref("devtools.debugger.log", true);
+Services.prefs.setIntPref("logging.devtools_rdp", 5);
 var gReduceTimePrecision = Services.prefs.getBoolPref(
   "privacy.reduceTimerPrecision"
 );
 Services.prefs.setBoolPref("privacy.reduceTimerPrecision", false);
 SimpleTest.registerCleanupFunction(function () {
-  Services.prefs.clearUserPref("devtools.debugger.log");
+  Services.prefs.clearUserPref("logging.devtools_rdp");
   Services.prefs.setBoolPref(
     "privacy.reduceTimerPrecision",
     gReduceTimePrecision
@@ -24,7 +24,7 @@ SimpleTest.registerCleanupFunction(function () {
 });
 
 async function getTargetForSelectedTab() {
-  const browserWindow = Services.wm.getMostRecentWindow("navigator:browser");
+  const browserWindow = Services.wm.getMostRecentBrowserWindow();
   const commands = await CommandsFactory.forTab(
     browserWindow.gBrowser.selectedTab
   );

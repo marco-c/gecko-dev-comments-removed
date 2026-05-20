@@ -25,12 +25,6 @@ loader.lazyRequireGetter(
 );
 
 
-
-
-
-
-
-
 Services.prefs.setBoolPref("devtools.debugger.remote-enabled", true);
 
 

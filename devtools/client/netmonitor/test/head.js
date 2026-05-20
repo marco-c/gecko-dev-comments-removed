@@ -177,10 +177,6 @@ const SETTINGS_MENU_ITEMS = {
 
 waitForExplicitFinish();
 
-const gEnableLogging = Services.prefs.getBoolPref("devtools.debugger.log");
-
-Services.prefs.setBoolPref("devtools.debugger.log", false);
-
 
 
 
@@ -1415,23 +1411,6 @@ async function hideContextMenu(popup) {
 
 async function selectContextMenuItem(monitor, id) {
   return selectNetmonitorContextMenuItem(monitor, id);
-}
-
-
-
-
-
-async function waitForDOMIfNeeded(target, selector, expectedLength = 1) {
-  return new Promise(resolve => {
-    const elements = target.querySelectorAll(selector);
-    if (elements.length == expectedLength) {
-      resolve(elements);
-    } else {
-      waitForDOM(target, selector, expectedLength).then(elems => {
-        resolve(elems);
-      });
-    }
-  });
 }
 
 

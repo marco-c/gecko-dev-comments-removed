@@ -30,9 +30,6 @@ const { NetUtil } = ChromeUtils.importESModule(
 );
 
 
-
-Services.prefs.setBoolPref("devtools.debugger.log", false);
-
 Services.prefs.setBoolPref("devtools.debugger.remote-enabled", true);
 
 const makeDebugger = require("resource://devtools/server/actors/utils/make-debugger.js");
