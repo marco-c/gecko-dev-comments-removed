@@ -685,9 +685,19 @@ nsresult nsCocoaWindow::ActivateNativeMenuItemAt(const nsAString& indexString) {
       [NSApp mainMenu], locationString, true);
   
   
-  if (item && ![item hasSubmenu]) {
+  
+  
+  if (item && ![item hasSubmenu] && !item.hidden) {
     NSMenu* parent = [item menu];
-    if (parent) {
+    bool hasHiddenAncestor = false;
+    for (NSMenu* m = parent; m && m.supermenu; m = m.supermenu) {
+      NSInteger idx = [m.supermenu indexOfItemWithSubmenu:m];
+      if (idx != -1 && [m.supermenu itemAtIndex:idx].hidden) {
+        hasHiddenAncestor = true;
+        break;
+      }
+    }
+    if (parent && !hasHiddenAncestor) {
       
       
       mozilla::AutoRestore<bool> autoRestore(
@@ -4655,10 +4665,18 @@ void ChildViewMouseTracker::OnDestroyWindow(NSWindow* aWindow) {
 
 void ChildViewMouseTracker::MouseEnteredWindow(NSEvent* aEvent) {
   NSWindow* window = aEvent.window;
-  if (!window.ignoresMouseEvents) {
-    sWindowUnderMouse = window;
-    ReEvaluateMouseEnterState(aEvent);
+  if (window.ignoresMouseEvents) {
+    return;
   }
+  
+  
+  
+  
+  if (!window.isOnActiveSpace) {
+    return;
+  }
+  sWindowUnderMouse = window;
+  ReEvaluateMouseEnterState(aEvent);
 }
 
 void ChildViewMouseTracker::MouseExitedWindow(NSEvent* aEvent) {
@@ -7763,6 +7781,13 @@ LayoutDeviceIntPoint nsCocoaWindow::GetNativeLockedPoint() {
   }
   mGeckoWindow->FinishCurrentTransitionIfMatching(
       nsCocoaWindow::TransitionType::Deminiaturize);
+
+  
+  
+  
+  
+  
+  [self sendToplevelActivateEvents];
 }
 
 - (BOOL)windowShouldZoom:(NSWindow*)window toFrame:(NSRect)proposedFrame {

@@ -114,9 +114,6 @@ class nsMenuX final : public nsMenuParentX,
   mozilla::Maybe<MenuChild> GetItemAt(uint32_t aPos);
   uint32_t GetItemCount();
 
-  mozilla::Maybe<MenuChild> GetVisibleItemAt(uint32_t aPos);
-  nsresult GetVisibleItemCount(uint32_t& aCount);
-
   mozilla::Maybe<MenuChild> GetItemForElement(
       mozilla::dom::Element* aMenuChildElement);
 
@@ -159,10 +156,7 @@ class nsMenuX final : public nsMenuParentX,
 
   
   
-  
-  
-  void OnHighlightedItemChanged(
-      const mozilla::Maybe<uint32_t>& aNewHighlightedIndex);
+  void OnHighlightedItemChanged(NSMenuItem* aNewHighlightedItem);
 
   
   
@@ -226,14 +220,6 @@ class nsMenuX final : public nsMenuParentX,
   size_t FindInsertionIndex(const MenuChild& aChild);
 
   
-  
-  
-  
-  
-  
-  NSInteger CalculateNativeInsertionPoint(const MenuChild& aChild);
-
-  
   MOZ_CAN_RUN_SCRIPT void MenuOpenedAsync();
 
   
@@ -254,6 +240,7 @@ class nsMenuX final : public nsMenuParentX,
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void FlushMenuClosedRunnable();
 
+  bool HasVisibleNativeItems();
   
   
   void InsertPlaceholderIfNeeded();
@@ -266,7 +253,6 @@ class nsMenuX final : public nsMenuParentX,
   nsTArray<MenuChild> mMenuChildren;
 
   nsString mLabel;
-  uint32_t mVisibleItemsCount = 0;                     
   nsMenuParentX* mParent = nullptr;                    
   nsMenuGroupOwnerX* mMenuGroupOwner = nullptr;        
   nsMenuItemIconX::Listener* mIconListener = nullptr;  
@@ -298,9 +284,7 @@ class nsMenuX final : public nsMenuParentX,
   
   NSMenuItem* mNativeMenuItem = nil;  
 
-  
-  
-  mozilla::Maybe<uint32_t> mHighlightedItemIndex;
+  NSMenuItem* mHighlightedItem = nil;  
 
   size_t mNestingDepth = 0;
 
@@ -326,6 +310,7 @@ class nsMenuX final : public nsMenuParentX,
   
   
   bool mIsPullDownPlaceholderPresent = false;
+  bool mIsEmptyMenuPlaceholderPresent = false;
 
   
   
