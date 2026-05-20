@@ -475,14 +475,15 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   
   
   
-  js::UniquePtr<js::ScriptCountsMap> scriptCountsMap;
-  js::UniquePtr<js::ScriptLCovMap> scriptLCovMap;
+  js::UniquePtr<JS::WeakCache<js::ScriptCountsMap>> scriptCountsMap;
+  js::UniquePtr<JS::WeakCache<js::ScriptLCovMap>> scriptLCovMap;
   js::MainThreadData<js::DebugScriptMap*> debugScriptMap;
 #ifdef MOZ_VTUNE
-  js::UniquePtr<js::ScriptVTuneIdMap> scriptVTuneIdMap;
+  js::UniquePtr<JS::WeakCache<js::ScriptVTuneIdMap>> scriptVTuneIdMap;
 #endif
 #ifdef JS_CACHEIR_SPEW
-  js::UniquePtr<js::ScriptFinalWarmUpCountMap> scriptFinalWarmUpCountMap;
+  js::UniquePtr<JS::WeakCache<js::ScriptFinalWarmUpCountMap>>
+      scriptFinalWarmUpCountMap;
 #endif
 
   js::UniquePtr<JS::WeakCache<js::ProfileStringMap>> profilerStrings;
@@ -813,6 +814,8 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   void sweepCompartments(JS::GCContext* gcx, bool keepAtleastOne,
                          bool destroyingRuntime);
 
+  void maybeWriteCoverageAndSpew();
+
   
   
   void sweepWeakMaps(JSTracer* trc);
@@ -882,8 +885,6 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
 
   void prepareForMovingGC();
   void fixupAfterMovingGC();
-
-  void fixupScriptMapsAfterMovingGC(JSTracer* trc);
 
   void setNurseryAllocFlags(bool allocObjects, bool allocStrings,
                             bool allocBigInts, bool allocGetterSetters);

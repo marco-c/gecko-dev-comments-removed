@@ -160,14 +160,6 @@ class ScriptCounts {
 
 
 
-
-
-
-
-
-
-
-
 using UniqueScriptCounts = js::UniquePtr<ScriptCounts>;
 using ScriptCountsMap =
     GCRekeyableHashMap<HeapPtr<BaseScript*>, UniqueScriptCounts,

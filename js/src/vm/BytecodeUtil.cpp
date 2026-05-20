@@ -29,6 +29,7 @@
 #include "js/experimental/PCCountProfiling.h"  
 #include "js/friend/DumpFunctions.h"           
 #include "js/friend/ErrorMessages.h"           
+#include "js/friend/StackLimits.h"             
 #include "js/Printer.h"
 #include "js/Printf.h"
 #include "js/Symbol.h"
@@ -1662,6 +1663,13 @@ bool ExpressionDecompiler::decompilePCForStackOperand(jsbytecode* pc, int i) {
 bool ExpressionDecompiler::decompilePC(jsbytecode* pc, uint8_t defIndex) {
   MOZ_ASSERT(script->containsPC(pc));
 
+  
+  
+  AutoCheckRecursionLimit recursion(cx);
+  if (!recursion.checkDontReport(cx)) {
+    return write("(intermediate value)");
+  }
+
   JSOp op = (JSOp)*pc;
 
   if (const char* token = CodeToken[uint8_t(op)]) {
@@ -2969,7 +2977,7 @@ static bool GenerateLcovInfo(JSContext* cx, JS::Realm* realm,
       continue;
     }
 
-    if (!coverage::CollectScriptCoverage(script, false)) {
+    if (!coverage::CollectScriptCoverage(script)) {
       ReportOutOfMemory(cx);
       return false;
     }

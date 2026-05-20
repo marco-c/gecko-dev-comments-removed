@@ -783,7 +783,6 @@ void GCRuntime::updateZonePointersToRelocatedCells(Zone* zone) {
   MovingTracer trc(rt);
 
   zone->fixupAfterMovingGC();
-  zone->fixupScriptMapsAfterMovingGC(&trc);
 
   
   for (CompartmentsInZoneIter comp(zone); !comp.done(); comp.next()) {

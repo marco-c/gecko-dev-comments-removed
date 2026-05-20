@@ -310,7 +310,7 @@ static bool addScriptToFinalWarmUpCountMap(JSContext* cx, HandleScript script) {
   
   JS::Zone* zone = script->zone();
   if (!zone->scriptFinalWarmUpCountMap) {
-    auto map = MakeUnique<ScriptFinalWarmUpCountMap>();
+    auto map = MakeUnique<JS::WeakCache<ScriptFinalWarmUpCountMap>>(zone);
     if (!map) {
       return false;
     }
@@ -326,7 +326,7 @@ static bool addScriptToFinalWarmUpCountMap(JSContext* cx, HandleScript script) {
     return false;
   }
 
-  if (!zone->scriptFinalWarmUpCountMap->put(
+  if (!zone->scriptFinalWarmUpCountMap->get().put(
           script, std::make_tuple(uint32_t(0), std::move(sfilename)))) {
     ReportOutOfMemory(cx);
     return false;
