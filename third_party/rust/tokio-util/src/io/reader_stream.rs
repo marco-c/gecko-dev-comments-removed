@@ -60,6 +60,11 @@ impl<R: AsyncRead> ReaderStream<R> {
     
     
     
+    
+    
+    
+    
+    
     pub fn new(reader: R) -> Self {
         ReaderStream {
             reader: Some(reader),

@@ -63,13 +63,13 @@ use crate::sync::AtomicWaker;
 use crate::time::Instant;
 use crate::util::linked_list;
 
-use std::cell::UnsafeCell as StdUnsafeCell;
+use pin_project_lite::pin_project;
 use std::task::{Context, Poll, Waker};
 use std::{marker::PhantomPinned, pin::Pin, ptr::NonNull};
 
 type TimerResult = Result<(), crate::time::error::Error>;
 
-const STATE_DEREGISTERED: u64 = u64::MAX;
+pub(in crate::runtime::time) const STATE_DEREGISTERED: u64 = u64::MAX;
 const STATE_PENDING_FIRE: u64 = STATE_DEREGISTERED - 1;
 const STATE_MIN_VALUE: u64 = STATE_PENDING_FIRE;
 
@@ -273,34 +273,40 @@ impl StateCell {
     
     
     pub(super) fn might_be_registered(&self) -> bool {
-        self.state.load(Ordering::Relaxed) != u64::MAX
+        self.state.load(Ordering::Relaxed) != STATE_DEREGISTERED
     }
 }
 
+pin_project! {
+    // A timer entry.
+    //
+    // This is the handle to a timer that is controlled by the requester of the
+    // timer. As this participates in intrusive data structures, it must be pinned
+    // before polling.
+    #[derive(Debug)]
+    pub(crate) struct TimerEntry {
+        // Arc reference to the runtime handle. We can only free the driver after
+        // deregistering everything from their respective timer wheels.
+        driver: scheduler::Handle,
+        // Shared inner structure; this is part of an intrusive linked list, and
+        // therefore other references can exist to it while mutable references to
+        // Entry exist.
+        //
+        // This is manipulated only under the inner mutex.
+        #[pin]
+        inner: Option<TimerShared>,
+        // Deadline for the timer. This is used to register on the first
+        // poll, as we can't register prior to being pinned.
+        deadline: Instant,
+        // Whether the deadline has been registered.
+        registered: bool,
+    }
 
-
-
-
-
-#[derive(Debug)]
-pub(crate) struct TimerEntry {
-    
-    
-    driver: scheduler::Handle,
-    
-    
-    
-    
-    
-    
-    inner: StdUnsafeCell<Option<TimerShared>>,
-    
-    
-    deadline: Instant,
-    
-    registered: bool,
-    
-    _m: std::marker::PhantomPinned,
+    impl PinnedDrop for TimerEntry {
+        fn drop(this: Pin<&mut Self>) {
+            this.cancel();
+        }
+    }
 }
 
 unsafe impl Send for TimerEntry {}
@@ -337,7 +343,13 @@ pub(crate) struct TimerShared {
     
     
     
-    cached_when: AtomicU64,
+    
+    
+    
+    
+    
+    
+    registered_when: AtomicU64,
 
     
     
@@ -353,7 +365,10 @@ unsafe impl Sync for TimerShared {}
 impl std::fmt::Debug for TimerShared {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("TimerShared")
-            .field("cached_when", &self.cached_when.load(Ordering::Relaxed))
+            .field(
+                "registered_when",
+                &self.registered_when.load(Ordering::Relaxed),
+            )
             .field("state", &self.state)
             .finish()
     }
@@ -370,7 +385,7 @@ generate_addr_of_methods! {
 impl TimerShared {
     pub(super) fn new() -> Self {
         Self {
-            cached_when: AtomicU64::new(0),
+            registered_when: AtomicU64::new(0),
             pointers: linked_list::Pointers::new(),
             state: StateCell::default(),
             _p: PhantomPinned,
@@ -378,9 +393,9 @@ impl TimerShared {
     }
 
     
-    pub(super) fn cached_when(&self) -> u64 {
+    pub(super) fn registered_when(&self) -> u64 {
         
-        self.cached_when.load(Ordering::Relaxed)
+        self.registered_when.load(Ordering::Relaxed)
     }
 
     
@@ -391,7 +406,7 @@ impl TimerShared {
     pub(super) unsafe fn sync_when(&self) -> u64 {
         let true_when = self.true_when();
 
-        self.cached_when.store(true_when, Ordering::Relaxed);
+        self.registered_when.store(true_when, Ordering::Relaxed);
 
         true_when
     }
@@ -400,8 +415,8 @@ impl TimerShared {
     
     
     
-    unsafe fn set_cached_when(&self, when: u64) {
-        self.cached_when.store(when, Ordering::Relaxed);
+    unsafe fn set_registered_when(&self, when: u64) {
+        self.registered_when.store(when, Ordering::Relaxed);
     }
 
     
@@ -416,7 +431,7 @@ impl TimerShared {
     
     pub(super) unsafe fn set_expiration(&self, t: u64) {
         self.state.set_expiration(t);
-        self.cached_when.store(t, Ordering::Relaxed);
+        self.registered_when.store(t, Ordering::Relaxed);
     }
 
     
@@ -456,7 +471,7 @@ unsafe impl linked_list::Link for TimerShared {
     unsafe fn pointers(
         target: NonNull<Self::Target>,
     ) -> NonNull<linked_list::Pointers<Self::Target>> {
-        TimerShared::addr_of_pointers(target)
+        unsafe { TimerShared::addr_of_pointers(target) }
     }
 }
 
@@ -470,26 +485,21 @@ impl TimerEntry {
 
         Self {
             driver: handle,
-            inner: StdUnsafeCell::new(None),
+            inner: None,
             deadline,
             registered: false,
-            _m: std::marker::PhantomPinned,
         }
     }
 
-    fn is_inner_init(&self) -> bool {
-        unsafe { &*self.inner.get() }.is_some()
+    fn inner(&self) -> Option<&TimerShared> {
+        self.inner.as_ref()
     }
 
-    
-    fn inner(&self) -> &TimerShared {
-        let inner = unsafe { &*self.inner.get() };
-        if inner.is_none() {
-            unsafe {
-                *self.inner.get() = Some(TimerShared::new());
-            }
+    fn init_inner(self: Pin<&mut Self>) {
+        match self.inner {
+            Some(_) => {}
+            None => self.project().inner.set(Some(TimerShared::new())),
         }
-        return inner.as_ref().unwrap();
     }
 
     pub(crate) fn deadline(&self) -> Instant {
@@ -497,15 +507,42 @@ impl TimerEntry {
     }
 
     pub(crate) fn is_elapsed(&self) -> bool {
-        self.is_inner_init() && !self.inner().state.might_be_registered() && self.registered
+        let Some(inner) = self.inner() else {
+            return false;
+        };
+
+        
+        let deregistered = !inner.might_be_registered();
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        deregistered && self.registered
     }
 
     
     pub(crate) fn cancel(self: Pin<&mut Self>) {
         
-        if !self.is_inner_init() {
+        let Some(inner) = self.inner() else {
             return;
-        }
+        };
+
         
         
         
@@ -528,24 +565,32 @@ impl TimerEntry {
         
         
         
-        unsafe { self.driver().clear_entry(NonNull::from(self.inner())) };
+        unsafe { self.driver().clear_entry(NonNull::from(inner)) };
     }
 
     pub(crate) fn reset(mut self: Pin<&mut Self>, new_time: Instant, reregister: bool) {
-        let this = unsafe { self.as_mut().get_unchecked_mut() };
-        this.deadline = new_time;
-        this.registered = reregister;
+        let this = self.as_mut().project();
+        *this.deadline = new_time;
+        *this.registered = reregister;
 
         let tick = self.driver().time_source().deadline_to_tick(new_time);
+        let inner = match self.inner() {
+            Some(inner) => inner,
+            None => {
+                self.as_mut().init_inner();
+                self.inner()
+                    .expect("inner should already be initialized by `this.init_inner()`")
+            }
+        };
 
-        if self.inner().extend_expiration(tick).is_ok() {
+        if inner.extend_expiration(tick).is_ok() {
             return;
         }
 
         if reregister {
             unsafe {
                 self.driver()
-                    .reregister(&self.driver.driver().io, tick, self.inner().into());
+                    .reregister(&self.driver.driver().io, tick, inner.into());
             }
         }
     }
@@ -565,7 +610,10 @@ impl TimerEntry {
             self.as_mut().reset(deadline, true);
         }
 
-        self.inner().state.poll(cx.waker())
+        let inner = self
+            .inner()
+            .expect("inner should already be initialized by `self.reset()`");
+        inner.state.poll(cx.waker())
     }
 
     pub(crate) fn driver(&self) -> &super::Handle {
@@ -579,8 +627,8 @@ impl TimerEntry {
 }
 
 impl TimerHandle {
-    pub(super) unsafe fn cached_when(&self) -> u64 {
-        unsafe { self.inner.as_ref().cached_when() }
+    pub(super) unsafe fn registered_when(&self) -> u64 {
+        unsafe { self.inner.as_ref().registered_when() }
     }
 
     pub(super) unsafe fn sync_when(&self) -> u64 {
@@ -596,7 +644,9 @@ impl TimerHandle {
     
     
     pub(super) unsafe fn set_expiration(&self, tick: u64) {
-        self.inner.as_ref().set_expiration(tick);
+        unsafe {
+            self.inner.as_ref().set_expiration(tick);
+        }
     }
 
     
@@ -609,14 +659,18 @@ impl TimerHandle {
     
     
     pub(super) unsafe fn mark_pending(&self, not_after: u64) -> Result<(), u64> {
-        match self.inner.as_ref().state.mark_pending(not_after) {
+        match unsafe { self.inner.as_ref().state.mark_pending(not_after) } {
             Ok(()) => {
                 
-                self.inner.as_ref().set_cached_when(u64::MAX);
+                unsafe {
+                    self.inner.as_ref().set_registered_when(STATE_DEREGISTERED);
+                }
                 Ok(())
             }
             Err(tick) => {
-                self.inner.as_ref().set_cached_when(tick);
+                unsafe {
+                    self.inner.as_ref().set_registered_when(tick);
+                }
                 Err(tick)
             }
         }
@@ -634,12 +688,6 @@ impl TimerHandle {
     
     
     pub(super) unsafe fn fire(self, completed_state: TimerResult) -> Option<Waker> {
-        self.inner.as_ref().state.fire(completed_state)
-    }
-}
-
-impl Drop for TimerEntry {
-    fn drop(&mut self) {
-        unsafe { Pin::new_unchecked(self) }.as_mut().cancel();
+        unsafe { self.inner.as_ref().state.fire(completed_state) }
     }
 }

@@ -1,4 +1,9 @@
-use crate::{backend, io, path};
+
+
+#![allow(unsafe_code)]
+
+use crate::buffer::Buffer;
+use crate::{backend, ffi, io, path};
 use backend::c;
 use backend::fd::AsFd;
 use bitflags::bitflags;
@@ -8,7 +13,7 @@ bitflags! {
     
     #[repr(transparent)]
     #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
-    pub struct XattrFlags: c::c_uint {
+    pub struct XattrFlags: ffi::c_uint {
         /// `XATTR_CREATE`
         const CREATE = c::XATTR_CREATE as c::c_uint;
 
@@ -27,14 +32,24 @@ bitflags! {
 
 
 
+
+
+
+
+
 #[inline]
-pub fn getxattr<P: path::Arg, Name: path::Arg>(
+pub fn getxattr<P: path::Arg, Name: path::Arg, Buf: Buffer<u8>>(
     path: P,
     name: Name,
-    value: &mut [u8],
-) -> io::Result<usize> {
+    mut value: Buf,
+) -> io::Result<Buf::Output> {
     path.into_with_c_str(|path| {
-        name.into_with_c_str(|name| backend::fs::syscalls::getxattr(path, name, value))
+        name.into_with_c_str(|name| {
+            
+            let len = unsafe { backend::fs::syscalls::getxattr(path, name, value.parts_mut())? };
+            
+            unsafe { Ok(value.assume_init(len)) }
+        })
     })
 }
 
@@ -47,13 +62,18 @@ pub fn getxattr<P: path::Arg, Name: path::Arg>(
 
 
 #[inline]
-pub fn lgetxattr<P: path::Arg, Name: path::Arg>(
+pub fn lgetxattr<P: path::Arg, Name: path::Arg, Buf: Buffer<u8>>(
     path: P,
     name: Name,
-    value: &mut [u8],
-) -> io::Result<usize> {
+    mut value: Buf,
+) -> io::Result<Buf::Output> {
     path.into_with_c_str(|path| {
-        name.into_with_c_str(|name| backend::fs::syscalls::lgetxattr(path, name, value))
+        name.into_with_c_str(|name| {
+            
+            let len = unsafe { backend::fs::syscalls::lgetxattr(path, name, value.parts_mut())? };
+            
+            unsafe { Ok(value.assume_init(len)) }
+        })
     })
 }
 
@@ -64,14 +84,23 @@ pub fn lgetxattr<P: path::Arg, Name: path::Arg>(
 
 
 
+
+
 #[inline]
-pub fn fgetxattr<Fd: AsFd, Name: path::Arg>(
+pub fn fgetxattr<Fd: AsFd, Name: path::Arg, Buf: Buffer<u8>>(
     fd: Fd,
     name: Name,
-    value: &mut [u8],
-) -> io::Result<usize> {
-    name.into_with_c_str(|name| backend::fs::syscalls::fgetxattr(fd.as_fd(), name, value))
+    mut value: Buf,
+) -> io::Result<Buf::Output> {
+    name.into_with_c_str(|name| {
+        
+        let len = unsafe { backend::fs::syscalls::fgetxattr(fd.as_fd(), name, value.parts_mut())? };
+        
+        unsafe { Ok(value.assume_init(len)) }
+    })
 }
+
+
 
 
 
@@ -119,6 +148,8 @@ pub fn lsetxattr<P: path::Arg, Name: path::Arg>(
 
 
 
+
+
 #[inline]
 pub fn fsetxattr<Fd: AsFd, Name: path::Arg>(
     fd: Fd,
@@ -136,9 +167,15 @@ pub fn fsetxattr<Fd: AsFd, Name: path::Arg>(
 
 
 
+
 #[inline]
-pub fn listxattr<P: path::Arg>(path: P, list: &mut [c::c_char]) -> io::Result<usize> {
-    path.into_with_c_str(|path| backend::fs::syscalls::listxattr(path, list))
+pub fn listxattr<P: path::Arg, Buf: Buffer<u8>>(path: P, mut list: Buf) -> io::Result<Buf::Output> {
+    path.into_with_c_str(|path| {
+        
+        let len = unsafe { backend::fs::syscalls::listxattr(path, list.parts_mut())? };
+        
+        unsafe { Ok(list.assume_init(len)) }
+    })
 }
 
 
@@ -149,9 +186,19 @@ pub fn listxattr<P: path::Arg>(path: P, list: &mut [c::c_char]) -> io::Result<us
 
 
 #[inline]
-pub fn llistxattr<P: path::Arg>(path: P, list: &mut [c::c_char]) -> io::Result<usize> {
-    path.into_with_c_str(|path| backend::fs::syscalls::llistxattr(path, list))
+pub fn llistxattr<P: path::Arg, Buf: Buffer<u8>>(
+    path: P,
+    mut list: Buf,
+) -> io::Result<Buf::Output> {
+    path.into_with_c_str(|path| {
+        
+        let len = unsafe { backend::fs::syscalls::llistxattr(path, list.parts_mut())? };
+        
+        unsafe { Ok(list.assume_init(len)) }
+    })
 }
+
+
 
 
 
@@ -161,9 +208,14 @@ pub fn llistxattr<P: path::Arg>(path: P, list: &mut [c::c_char]) -> io::Result<u
 
 
 #[inline]
-pub fn flistxattr<Fd: AsFd>(fd: Fd, list: &mut [c::c_char]) -> io::Result<usize> {
-    backend::fs::syscalls::flistxattr(fd.as_fd(), list)
+pub fn flistxattr<Fd: AsFd, Buf: Buffer<u8>>(fd: Fd, mut list: Buf) -> io::Result<Buf::Output> {
+    
+    let len = unsafe { backend::fs::syscalls::flistxattr(fd.as_fd(), list.parts_mut())? };
+    
+    unsafe { Ok(list.assume_init(len)) }
 }
+
+
 
 
 
@@ -189,6 +241,8 @@ pub fn lremovexattr<P: path::Arg, Name: path::Arg>(path: P, name: Name) -> io::R
         name.into_with_c_str(|name| backend::fs::syscalls::lremovexattr(path, name))
     })
 }
+
+
 
 
 

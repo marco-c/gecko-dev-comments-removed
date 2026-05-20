@@ -8,7 +8,13 @@
 
 
 
-#[cfg(not(any(target_os = "espidf", target_os = "haiku", target_os = "wasi")))]
+
+#[cfg(not(any(
+    target_os = "cygwin",
+    target_os = "espidf",
+    target_os = "haiku",
+    target_os = "wasi",
+)))]
 mod ioctl;
 #[cfg(not(target_os = "wasi"))]
 mod tc;
@@ -17,7 +23,12 @@ mod tty;
 #[cfg(not(any(target_os = "espidf", target_os = "wasi")))]
 mod types;
 
-#[cfg(not(any(target_os = "espidf", target_os = "haiku", target_os = "wasi")))]
+#[cfg(not(any(
+    target_os = "cygwin",
+    target_os = "espidf",
+    target_os = "haiku",
+    target_os = "wasi",
+)))]
 pub use ioctl::*;
 #[cfg(not(target_os = "wasi"))]
 pub use tc::*;

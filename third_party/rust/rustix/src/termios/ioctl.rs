@@ -18,13 +18,21 @@ use backend::c;
 
 
 
-#[cfg(not(any(windows, target_os = "redox", target_os = "wasi")))]
+
+
+
+#[cfg(not(any(
+    windows,
+    target_os = "horizon",
+    target_os = "redox",
+    target_os = "wasi"
+)))]
 #[inline]
 #[doc(alias = "TIOCEXCL")]
 pub fn ioctl_tiocexcl<Fd: AsFd>(fd: Fd) -> io::Result<()> {
     
     unsafe {
-        let ctl = ioctl::NoArg::<ioctl::BadOpcode<{ c::TIOCEXCL as _ }>>::new();
+        let ctl = ioctl::NoArg::<{ c::TIOCEXCL as _ }>::new();
         ioctl::ioctl(fd, ctl)
     }
 }
@@ -41,13 +49,18 @@ pub fn ioctl_tiocexcl<Fd: AsFd>(fd: Fd) -> io::Result<()> {
 
 
 
-#[cfg(not(any(windows, target_os = "redox", target_os = "wasi")))]
+#[cfg(not(any(
+    windows,
+    target_os = "horizon",
+    target_os = "redox",
+    target_os = "wasi"
+)))]
 #[inline]
 #[doc(alias = "TIOCNXCL")]
 pub fn ioctl_tiocnxcl<Fd: AsFd>(fd: Fd) -> io::Result<()> {
     
     unsafe {
-        let ctl = ioctl::NoArg::<ioctl::BadOpcode<{ c::TIOCNXCL as _ }>>::new();
+        let ctl = ioctl::NoArg::<{ c::TIOCNXCL as _ }>::new();
         ioctl::ioctl(fd, ctl)
     }
 }

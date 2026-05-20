@@ -41,7 +41,7 @@ pub enum SeekFrom {
     
     
     #[cfg(any(apple, freebsdlike, linux_kernel, solarish))]
-    Data(i64),
+    Data(u64),
 
     
     
@@ -49,5 +49,5 @@ pub enum SeekFrom {
     
     
     #[cfg(any(apple, freebsdlike, linux_kernel, solarish))]
-    Hole(i64),
+    Hole(u64),
 }

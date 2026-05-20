@@ -2,20 +2,28 @@
 
 #![allow(unsafe_code)]
 
+#[cfg(target_os = "linux")]
+use crate::backend::net::msghdr::noaddr_msghdr;
 use crate::backend::{self, c};
 use crate::fd::{AsFd, BorrowedFd, OwnedFd};
 use crate::io::{self, IoSlice, IoSliceMut};
+use crate::net::addr::SocketAddrArg;
 #[cfg(linux_kernel)]
 use crate::net::UCred;
-
 use core::iter::FusedIterator;
 use core::marker::PhantomData;
-use core::mem::{align_of, size_of, size_of_val, take};
+use core::mem::{align_of, size_of, size_of_val, take, MaybeUninit};
 #[cfg(linux_kernel)]
 use core::ptr::addr_of;
 use core::{ptr, slice};
 
-use super::{RecvFlags, SendFlags, SocketAddrAny, SocketAddrV4, SocketAddrV6};
+use super::{RecvFlags, ReturnFlags, SendFlags, SocketAddrAny};
+
+
+
+
+
+
 
 
 
@@ -58,6 +66,11 @@ macro_rules! cmsg_space {
             $len * ::core::mem::size_of::<$crate::net::UCred>(),
         )
     };
+    (TxTime($len:expr)) => {
+        $crate::net::__cmsg_space(
+            $len * ::core::mem::size_of::<::core::primitive::u64>(),
+        )
+    };
 
     
     ($firstid:ident($firstex:expr), $($restid:ident($restex:expr)),*) => {{
@@ -86,12 +99,17 @@ macro_rules! cmsg_aligned_space {
             $len * ::core::mem::size_of::<$crate::net::UCred>(),
         )
     };
+    (TxTime($len:expr)) => {
+        $crate::net::__cmsg_aligned_space(
+            $len * ::core::mem::size_of::<::core::primitive::u64>(),
+        )
+    };
 
     
     ($firstid:ident($firstex:expr), $($restid:ident($restex:expr)),*) => {{
-        let sum = cmsg_aligned_space!($firstid($firstex));
+        let sum = $crate::cmsg_aligned_space!($firstid($firstex));
         $(
-            let sum = sum + cmsg_aligned_space!($restid($restex));
+            let sum = sum + $crate::cmsg_aligned_space!($restid($restex));
         )*
         sum
     }};
@@ -121,7 +139,6 @@ pub const fn __cmsg_aligned_space(len: usize) -> usize {
 }
 
 
-
 #[non_exhaustive]
 pub enum SendAncillaryMessage<'slice, 'fd> {
     
@@ -131,9 +148,17 @@ pub enum SendAncillaryMessage<'slice, 'fd> {
     #[cfg(linux_kernel)]
     #[doc(alias = "SCM_CREDENTIAL")]
     ScmCredentials(UCred),
+    
+    
+    
+    
+    #[cfg(target_os = "linux")]
+    #[doc(alias = "SCM_TXTIME")]
+    TxTime(u64),
 }
 
 impl SendAncillaryMessage<'_, '_> {
+    
     
     
     
@@ -142,6 +167,8 @@ impl SendAncillaryMessage<'_, '_> {
             Self::ScmRights(slice) => cmsg_space!(ScmRights(slice.len())),
             #[cfg(linux_kernel)]
             Self::ScmCredentials(_) => cmsg_space!(ScmCredentials(1)),
+            #[cfg(target_os = "linux")]
+            Self::TxTime(_) => cmsg_space!(TxTime(1)),
         }
     }
 }
@@ -166,7 +193,7 @@ pub enum RecvAncillaryMessage<'a> {
 
 pub struct SendAncillaryBuffer<'buf, 'slice, 'fd> {
     
-    buffer: &'buf mut [u8],
+    buffer: &'buf mut [MaybeUninit<u8>],
 
     
     length: usize,
@@ -175,8 +202,8 @@ pub struct SendAncillaryBuffer<'buf, 'slice, 'fd> {
     _phantom: PhantomData<&'slice [BorrowedFd<'fd>]>,
 }
 
-impl<'buf> From<&'buf mut [u8]> for SendAncillaryBuffer<'buf, '_, '_> {
-    fn from(buffer: &'buf mut [u8]) -> Self {
+impl<'buf> From<&'buf mut [MaybeUninit<u8>]> for SendAncillaryBuffer<'buf, '_, '_> {
+    fn from(buffer: &'buf mut [MaybeUninit<u8>]) -> Self {
         Self::new(buffer)
     }
 }
@@ -231,8 +258,11 @@ impl<'buf, 'slice, 'fd> SendAncillaryBuffer<'buf, 'slice, 'fd> {
     
     
     
+    
+    
+    
     #[inline]
-    pub fn new(buffer: &'buf mut [u8]) -> Self {
+    pub fn new(buffer: &'buf mut [MaybeUninit<u8>]) -> Self {
         Self {
             buffer: align_for_cmsghdr(buffer),
             length: 0,
@@ -250,7 +280,7 @@ impl<'buf, 'slice, 'fd> SendAncillaryBuffer<'buf, 'slice, 'fd> {
             return core::ptr::null_mut();
         }
 
-        self.buffer.as_mut_ptr()
+        self.buffer.as_mut_ptr().cast()
     }
 
     
@@ -280,6 +310,13 @@ impl<'buf, 'slice, 'fd> SendAncillaryBuffer<'buf, 'slice, 'fd> {
                 };
                 self.push_ancillary(ucred_bytes, c::SOL_SOCKET as _, c::SCM_CREDENTIALS as _)
             }
+            #[cfg(target_os = "linux")]
+            SendAncillaryMessage::TxTime(tx_time) => {
+                let tx_time_bytes = unsafe {
+                    slice::from_raw_parts(addr_of!(tx_time).cast::<u8>(), size_of_val(&tx_time))
+                };
+                self.push_ancillary(tx_time_bytes, c::SOL_SOCKET as _, c::SO_TXTIME as _)
+            }
         }
     }
 
@@ -303,7 +340,7 @@ impl<'buf, 'slice, 'fd> SendAncillaryBuffer<'buf, 'slice, 'fd> {
         let buffer = leap!(self.buffer.get_mut(..new_length));
 
         
-        buffer[self.length..new_length].fill(0);
+        buffer[self.length..new_length].fill(MaybeUninit::new(0));
         self.length = new_length;
 
         
@@ -317,7 +354,7 @@ impl<'buf, 'slice, 'fd> SendAncillaryBuffer<'buf, 'slice, 'fd> {
         
         unsafe {
             let payload = c::CMSG_DATA(last_header);
-            ptr::copy_nonoverlapping(source.as_ptr(), payload, source_len as _);
+            ptr::copy_nonoverlapping(source.as_ptr(), payload, source_len as usize);
         }
 
         true
@@ -341,7 +378,7 @@ impl<'slice, 'fd> Extend<SendAncillaryMessage<'slice, 'fd>>
 #[derive(Default)]
 pub struct RecvAncillaryBuffer<'buf> {
     
-    buffer: &'buf mut [u8],
+    buffer: &'buf mut [MaybeUninit<u8>],
 
     
     read: usize,
@@ -350,8 +387,8 @@ pub struct RecvAncillaryBuffer<'buf> {
     length: usize,
 }
 
-impl<'buf> From<&'buf mut [u8]> for RecvAncillaryBuffer<'buf> {
-    fn from(buffer: &'buf mut [u8]) -> Self {
+impl<'buf> From<&'buf mut [MaybeUninit<u8>]> for RecvAncillaryBuffer<'buf> {
+    fn from(buffer: &'buf mut [MaybeUninit<u8>]) -> Self {
         Self::new(buffer)
     }
 }
@@ -396,8 +433,11 @@ impl<'buf> RecvAncillaryBuffer<'buf> {
     
     
     
+    
+    
+    
     #[inline]
-    pub fn new(buffer: &'buf mut [u8]) -> Self {
+    pub fn new(buffer: &'buf mut [MaybeUninit<u8>]) -> Self {
         Self {
             buffer: align_for_cmsghdr(buffer),
             read: 0,
@@ -415,7 +455,7 @@ impl<'buf> RecvAncillaryBuffer<'buf> {
             return core::ptr::null_mut();
         }
 
-        self.buffer.as_mut_ptr()
+        self.buffer.as_mut_ptr().cast()
     }
 
     
@@ -456,7 +496,7 @@ impl Drop for RecvAncillaryBuffer<'_> {
 
 
 #[inline]
-fn align_for_cmsghdr(buffer: &mut [u8]) -> &mut [u8] {
+fn align_for_cmsghdr(buffer: &mut [MaybeUninit<u8>]) -> &mut [MaybeUninit<u8>] {
     
     
     if buffer.is_empty() {
@@ -593,6 +633,58 @@ impl FusedIterator for AncillaryDrain<'_> {}
 
 
 
+#[cfg(target_os = "linux")]
+#[repr(transparent)]
+pub struct MMsgHdr<'a> {
+    raw: c::mmsghdr,
+    _phantom: PhantomData<&'a mut ()>,
+}
+
+#[cfg(target_os = "linux")]
+impl<'a> MMsgHdr<'a> {
+    
+    pub fn new(iov: &'a [IoSlice<'_>], control: &'a mut SendAncillaryBuffer<'_, '_, '_>) -> Self {
+        Self::wrap(noaddr_msghdr(iov, control))
+    }
+
+    
+    
+    
+    
+    pub fn new_with_addr(
+        addr: &'a SocketAddrAny,
+        iov: &'a [IoSlice<'_>],
+        control: &'a mut SendAncillaryBuffer<'_, '_, '_>,
+    ) -> Self {
+        
+        
+        
+        
+        let mut msghdr = noaddr_msghdr(iov, control);
+        msghdr.msg_name = addr.as_ptr() as _;
+        msghdr.msg_namelen = bitcast!(addr.addr_len());
+
+        Self::wrap(msghdr)
+    }
+
+    fn wrap(msg_hdr: c::msghdr) -> Self {
+        Self {
+            raw: c::mmsghdr {
+                msg_hdr,
+                msg_len: 0,
+            },
+            _phantom: PhantomData,
+        }
+    }
+
+    
+    
+    pub fn bytes_sent(&self) -> usize {
+        self.raw.msg_len as usize
+    }
+}
+
+
 
 
 
@@ -617,8 +709,8 @@ impl FusedIterator for AncillaryDrain<'_> {}
 
 
 #[inline]
-pub fn sendmsg(
-    socket: impl AsFd,
+pub fn sendmsg<Fd: AsFd>(
+    socket: Fd,
     iov: &[IoSlice<'_>],
     control: &mut SendAncillaryBuffer<'_, '_, '_>,
     flags: SendFlags,
@@ -647,78 +739,14 @@ pub fn sendmsg(
 
 
 #[inline]
-pub fn sendmsg_v4(
-    socket: impl AsFd,
-    addr: &SocketAddrV4,
+pub fn sendmsg_addr<Fd: AsFd>(
+    socket: Fd,
+    addr: &impl SocketAddrArg,
     iov: &[IoSlice<'_>],
     control: &mut SendAncillaryBuffer<'_, '_, '_>,
     flags: SendFlags,
 ) -> io::Result<usize> {
-    backend::net::syscalls::sendmsg_v4(socket.as_fd(), addr, iov, control, flags)
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[inline]
-pub fn sendmsg_v6(
-    socket: impl AsFd,
-    addr: &SocketAddrV6,
-    iov: &[IoSlice<'_>],
-    control: &mut SendAncillaryBuffer<'_, '_, '_>,
-    flags: SendFlags,
-) -> io::Result<usize> {
-    backend::net::syscalls::sendmsg_v6(socket.as_fd(), addr, iov, control, flags)
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[inline]
-#[cfg(unix)]
-pub fn sendmsg_unix(
-    socket: impl AsFd,
-    addr: &super::SocketAddrUnix,
-    iov: &[IoSlice<'_>],
-    control: &mut SendAncillaryBuffer<'_, '_, '_>,
-    flags: SendFlags,
-) -> io::Result<usize> {
-    backend::net::syscalls::sendmsg_unix(socket.as_fd(), addr, iov, control, flags)
+    backend::net::syscalls::sendmsg_addr(socket.as_fd(), addr, iov, control, flags)
 }
 
 
@@ -729,14 +757,12 @@ pub fn sendmsg_unix(
 
 #[inline]
 #[cfg(target_os = "linux")]
-pub fn sendmsg_xdp(
-    socket: impl AsFd,
-    addr: &super::SocketAddrXdp,
-    iov: &[IoSlice<'_>],
-    control: &mut SendAncillaryBuffer<'_, '_, '_>,
+pub fn sendmmsg<Fd: AsFd>(
+    socket: Fd,
+    msgs: &mut [MMsgHdr<'_>],
     flags: SendFlags,
 ) -> io::Result<usize> {
-    backend::net::syscalls::sendmsg_xdp(socket.as_fd(), addr, iov, control, flags)
+    backend::net::syscalls::sendmmsg(socket.as_fd(), msgs, flags)
 }
 
 
@@ -760,69 +786,27 @@ pub fn sendmsg_xdp(
 
 
 #[inline]
-pub fn sendmsg_any(
-    socket: impl AsFd,
-    addr: Option<&SocketAddrAny>,
-    iov: &[IoSlice<'_>],
-    control: &mut SendAncillaryBuffer<'_, '_, '_>,
-    flags: SendFlags,
-) -> io::Result<usize> {
-    match addr {
-        None => backend::net::syscalls::sendmsg(socket.as_fd(), iov, control, flags),
-        Some(SocketAddrAny::V4(addr)) => {
-            backend::net::syscalls::sendmsg_v4(socket.as_fd(), addr, iov, control, flags)
-        }
-        Some(SocketAddrAny::V6(addr)) => {
-            backend::net::syscalls::sendmsg_v6(socket.as_fd(), addr, iov, control, flags)
-        }
-        #[cfg(unix)]
-        Some(SocketAddrAny::Unix(addr)) => {
-            backend::net::syscalls::sendmsg_unix(socket.as_fd(), addr, iov, control, flags)
-        }
-        #[cfg(target_os = "linux")]
-        Some(SocketAddrAny::Xdp(addr)) => {
-            backend::net::syscalls::sendmsg_xdp(socket.as_fd(), addr, iov, control, flags)
-        }
-    }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[inline]
-pub fn recvmsg(
-    socket: impl AsFd,
+pub fn recvmsg<Fd: AsFd>(
+    socket: Fd,
     iov: &mut [IoSliceMut<'_>],
     control: &mut RecvAncillaryBuffer<'_>,
     flags: RecvFlags,
-) -> io::Result<RecvMsgReturn> {
+) -> io::Result<RecvMsg> {
     backend::net::syscalls::recvmsg(socket.as_fd(), iov, control, flags)
 }
 
 
-pub struct RecvMsgReturn {
+#[derive(Debug, Clone)]
+pub struct RecvMsg {
+    
+    
+    
+    
     
     pub bytes: usize,
 
     
-    pub flags: RecvFlags,
+    pub flags: ReturnFlags,
 
     
     pub address: Option<SocketAddrAny>,
@@ -927,6 +911,7 @@ mod messages {
     use crate::backend::net::msghdr;
     use core::iter::FusedIterator;
     use core::marker::PhantomData;
+    use core::mem::MaybeUninit;
     use core::ptr::NonNull;
 
     
@@ -940,18 +925,19 @@ mod messages {
         header: Option<NonNull<c::cmsghdr>>,
 
         
-        _buffer: PhantomData<&'buf mut [u8]>,
+        _buffer: PhantomData<&'buf mut [MaybeUninit<u8>]>,
     }
+
+    pub(super) trait AllowedMsgBufType {}
+    impl AllowedMsgBufType for u8 {}
+    impl AllowedMsgBufType for MaybeUninit<u8> {}
 
     impl<'buf> Messages<'buf> {
         
-        pub(super) fn new(buf: &'buf mut [u8]) -> Self {
-            let msghdr = {
-                let mut h = msghdr::zero_msghdr();
-                h.msg_control = buf.as_mut_ptr().cast();
-                h.msg_controllen = buf.len().try_into().unwrap();
-                h
-            };
+        pub(super) fn new(buf: &'buf mut [impl AllowedMsgBufType]) -> Self {
+            let mut msghdr = msghdr::zero_msghdr();
+            msghdr.msg_control = buf.as_mut_ptr().cast();
+            msghdr.msg_controllen = buf.len().try_into().expect("buffer too large for msghdr");
 
             
             let header = NonNull::new(unsafe { c::CMSG_FIRSTHDR(&msghdr) });
@@ -998,4 +984,43 @@ mod messages {
     }
 
     impl FusedIterator for Messages<'_> {}
+}
+
+#[cfg(test)]
+mod tests {
+    #[no_implicit_prelude]
+    mod hygiene {
+        #[allow(unused_macros)]
+        #[test]
+        fn macro_hygiene() {
+            
+            
+            #[allow(dead_code, non_camel_case_types)]
+            struct u64([u8]);
+
+            
+            
+            macro_rules! cmsg_space {
+                ($($tt:tt)*) => {{
+                    let v: usize = ::core::panic!("Wrong cmsg_space! macro called");
+                    v
+                }};
+            }
+            macro_rules! cmsg_aligned_space {
+                ($($tt:tt)*) => {{
+                    let v: usize = ::core::panic!("Wrong cmsg_aligned_space! macro called");
+                    v
+                }};
+            }
+
+            crate::cmsg_space!(ScmRights(1));
+            crate::cmsg_space!(TxTime(1));
+            #[cfg(linux_kernel)]
+            {
+                crate::cmsg_space!(ScmCredentials(1));
+                crate::cmsg_space!(ScmRights(1), ScmCredentials(1), TxTime(1));
+                crate::cmsg_aligned_space!(ScmRights(1), ScmCredentials(1), TxTime(1));
+            }
+        }
+    }
 }

@@ -1,0 +1,16 @@
+use crate::backend;
+
+
+
+
+
+
+
+
+
+
+
+#[inline]
+pub fn sched_yield() {
+    backend::thread::syscalls::sched_yield()
+}

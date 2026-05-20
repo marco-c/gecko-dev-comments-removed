@@ -112,6 +112,8 @@
 
 
 
+
+
 pub(super) mod block;
 
 mod bounded;
@@ -135,10 +137,10 @@ pub mod error;
 
 
 #[cfg(all(target_pointer_width = "64", not(loom)))]
-const BLOCK_CAP: usize = 32;
+pub(crate) const BLOCK_CAP: usize = 32;
 
 #[cfg(all(not(target_pointer_width = "64"), not(loom)))]
-const BLOCK_CAP: usize = 16;
+pub(crate) const BLOCK_CAP: usize = 16;
 
 #[cfg(loom)]
-const BLOCK_CAP: usize = 2;
+pub(crate) const BLOCK_CAP: usize = 2;

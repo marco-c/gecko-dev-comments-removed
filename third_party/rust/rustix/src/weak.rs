@@ -44,7 +44,7 @@ const INVALID: *mut c_void = 1 as *mut c_void;
 macro_rules! weak {
     ($vis:vis fn $name:ident($($t:ty),*) -> $ret:ty) => (
         #[allow(non_upper_case_globals)]
-        $vis static $name: $crate::weak::Weak<unsafe extern fn($($t),*) -> $ret> =
+        $vis static $name: $crate::weak::Weak<unsafe extern "C" fn($($t),*) -> $ret> =
             $crate::weak::Weak::new(concat!(stringify!($name), '\0'));
     )
 }
@@ -74,6 +74,7 @@ impl<F> Weak<F> {
                 NULL => None,
                 addr => {
                     let func = mem::transmute_copy::<*mut c_void, F>(&addr);
+                    
                     
                     
                     
@@ -145,8 +146,8 @@ unsafe fn fetch(name: &str) -> *mut c_void {
 
 #[cfg(not(linux_kernel))]
 macro_rules! syscall {
-    (fn $name:ident($($arg_name:ident: $t:ty),*) via $_sys_name:ident -> $ret:ty) => (
-        unsafe fn $name($($arg_name: $t),*) -> $ret {
+    ($vis:vis fn $name:ident($($arg_name:ident: $t:ty),*) via $_sys_name:ident -> $ret:ty) => (
+        $vis unsafe fn $name($($arg_name: $t),*) -> $ret {
             weak! { fn $name($($t),*) -> $ret }
 
             if let Some(fun) = $name.get() {
@@ -161,8 +162,8 @@ macro_rules! syscall {
 
 #[cfg(linux_kernel)]
 macro_rules! syscall {
-    (fn $name:ident($($arg_name:ident: $t:ty),*) via $sys_name:ident -> $ret:ty) => (
-        unsafe fn $name($($arg_name:$t),*) -> $ret {
+    ($vis:vis fn $name:ident($($arg_name:ident: $t:ty),*) via $sys_name:ident -> $ret:ty) => (
+        $vis unsafe fn $name($($arg_name:$t),*) -> $ret {
             // This looks like a hack, but `concat_idents` only accepts idents
             // (not paths).
             use libc::*;

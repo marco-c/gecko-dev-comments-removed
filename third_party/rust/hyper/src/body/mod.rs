@@ -15,53 +15,36 @@
 
 
 
+
+
+
+
 pub use bytes::{Buf, Bytes};
-pub use http_body::Body as HttpBody;
+pub use http_body::Body;
+pub use http_body::Frame;
 pub use http_body::SizeHint;
 
-#[cfg_attr(feature = "deprecated", allow(deprecated))]
-pub use self::aggregate::aggregate;
-pub use self::body::{Body, Sender};
+pub use self::incoming::Incoming;
+
+#[cfg(all(any(feature = "client", feature = "server"), feature = "http1"))]
+pub(crate) use self::incoming::Sender;
+#[cfg(all(
+    any(feature = "http1", feature = "http2"),
+    any(feature = "client", feature = "server")
+))]
 pub(crate) use self::length::DecodedLength;
-#[cfg_attr(feature = "deprecated", allow(deprecated))]
-pub use self::to_bytes::to_bytes;
 
-mod aggregate;
-mod body;
+mod incoming;
+#[cfg(all(
+    any(feature = "http1", feature = "http2"),
+    any(feature = "client", feature = "server")
+))]
 mod length;
-mod to_bytes;
-
-
-
-
-#[cfg(feature = "http1")]
-pub(crate) fn take_full_data<T: HttpBody + 'static>(body: &mut T) -> Option<T::Data> {
-    use std::any::{Any, TypeId};
-
-    
-    if TypeId::of::<T>() == TypeId::of::<Body>() {
-        let mut full = (body as &mut dyn Any)
-            .downcast_mut::<Body>()
-            .expect("must be Body")
-            .take_full_data();
-        
-        
-        
-        
-        
-        (&mut full as &mut dyn Any)
-            .downcast_mut::<Option<T::Data>>()
-            .expect("must be T::Data")
-            .take()
-    } else {
-        None
-    }
-}
 
 fn _assert_send_sync() {
     fn _assert_send<T: Send>() {}
     fn _assert_sync<T: Sync>() {}
 
-    _assert_send::<Body>();
-    _assert_sync::<Body>();
+    _assert_send::<Incoming>();
+    _assert_sync::<Incoming>();
 }

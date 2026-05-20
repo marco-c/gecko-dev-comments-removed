@@ -35,7 +35,7 @@ impl<T> RcCell<T> {
         
         
         
-        self.inner.with_mut(|ptr| f(&mut *ptr))
+        self.inner.with_mut(|ptr| f(unsafe { &mut *ptr }))
     }
 
     pub(crate) fn get(&self) -> Option<Rc<T>> {

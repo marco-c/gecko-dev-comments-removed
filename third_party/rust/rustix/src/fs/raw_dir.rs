@@ -1,14 +1,17 @@
 
 
-use core::fmt;
-use core::mem::{align_of, MaybeUninit};
-use linux_raw_sys::general::linux_dirent64;
-
 use crate::backend::fs::syscalls::getdents_uninit;
 use crate::fd::AsFd;
 use crate::ffi::CStr;
 use crate::fs::FileType;
 use crate::io;
+use core::fmt;
+use core::mem::{align_of, MaybeUninit};
+
+#[cfg(not(linux_raw_dep))]
+use libc::dirent64 as linux_dirent64;
+#[cfg(linux_raw_dep)]
+use linux_raw_sys::general::linux_dirent64;
 
 
 
@@ -235,3 +238,17 @@ impl<'buf, Fd: AsFd> RawDir<'buf, Fd> {
         self.offset >= self.initialized
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+fn _doctest() {}

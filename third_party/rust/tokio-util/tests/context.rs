@@ -1,4 +1,5 @@
 #![cfg(feature = "rt")]
+#![cfg(not(target_os = "wasi"))] 
 #![warn(rust_2018_idioms)]
 
 use tokio::runtime::Builder;
@@ -20,5 +21,5 @@ fn tokio_context_with_another_runtime() {
 
     
     
-    let _ = rt1.block_on(rt2.wrap(async move { sleep(Duration::from_millis(2)).await }));
+    rt1.block_on(rt2.wrap(async move { sleep(Duration::from_millis(2)).await }));
 }

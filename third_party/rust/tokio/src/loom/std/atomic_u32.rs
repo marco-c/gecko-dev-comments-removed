@@ -26,7 +26,7 @@ impl AtomicU32 {
     
     
     pub(crate) unsafe fn unsync_load(&self) -> u32 {
-        core::ptr::read(self.inner.get() as *const u32)
+        unsafe { core::ptr::read(self.inner.get() as *const u32) }
     }
 }
 

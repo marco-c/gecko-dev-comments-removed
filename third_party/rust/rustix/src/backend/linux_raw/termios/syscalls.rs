@@ -8,16 +8,17 @@
 use crate::backend::c;
 use crate::backend::conv::{by_ref, c_uint, ret};
 use crate::fd::BorrowedFd;
+#[cfg(feature = "alloc")]
+use crate::ffi::CStr;
 use crate::io;
 use crate::pid::Pid;
-#[cfg(all(feature = "alloc", feature = "procfs"))]
-use crate::procfs;
 use crate::termios::{
     speed, Action, ControlModes, InputModes, LocalModes, OptionalActions, OutputModes,
     QueueSelector, SpecialCodeIndex, Termios, Winsize,
 };
-#[cfg(all(feature = "alloc", feature = "procfs"))]
-use crate::{ffi::CStr, fs::FileType, path::DecInt};
+#[cfg(feature = "alloc")]
+#[cfg(feature = "fs")]
+use crate::{fs::FileType, path::DecInt};
 use core::mem::MaybeUninit;
 
 #[inline]
@@ -366,7 +367,8 @@ pub(crate) fn isatty(fd: BorrowedFd<'_>) -> bool {
     tcgetwinsize(fd).is_ok()
 }
 
-#[cfg(all(feature = "alloc", feature = "procfs"))]
+#[cfg(feature = "alloc")]
+#[cfg(feature = "fs")]
 pub(crate) fn ttyname(fd: BorrowedFd<'_>, buf: &mut [MaybeUninit<u8>]) -> io::Result<usize> {
     let fd_stat = crate::backend::fs::syscalls::fstat(fd)?;
 
@@ -379,30 +381,38 @@ pub(crate) fn ttyname(fd: BorrowedFd<'_>, buf: &mut [MaybeUninit<u8>]) -> io::Re
     tcgetwinsize(fd)?;
 
     
-    let proc_self_fd = procfs::proc_self_fd()?;
+    let mut proc_self_fd_buf: [u8; 25] = *b"/proc/self/fd/\0\0\0\0\0\0\0\0\0\0\0";
+    let dec_int = DecInt::from_fd(fd);
+    let bytes_with_nul = dec_int.as_bytes_with_nul();
+    proc_self_fd_buf[b"/proc/self/fd/".len()..][..bytes_with_nul.len()]
+        .copy_from_slice(bytes_with_nul);
 
     
-    let r = crate::backend::fs::syscalls::readlinkat(
-        proc_self_fd,
-        DecInt::from_fd(fd).as_c_str(),
-        buf,
-    )?;
+    let proc_self_fd_path = unsafe { CStr::from_ptr(proc_self_fd_buf.as_ptr().cast()) };
 
-    
-    
-    
-    if r == buf.len() {
-        return Err(io::Errno::RANGE);
-    }
+    let ptr = buf.as_mut_ptr();
+    let len = {
+        
+        let (init, uninit) = crate::fs::readlinkat_raw(crate::fs::CWD, proc_self_fd_path, buf)?;
 
-    
-    
-    buf[r].write(b'\0');
+        
+        
+        
+        if uninit.is_empty() {
+            return Err(io::Errno::RANGE);
+        }
+
+        
+        
+        uninit[0].write(b'\0');
+
+        init.len()
+    };
 
     
     {
         
-        let path = unsafe { CStr::from_ptr(buf.as_ptr().cast()) };
+        let path = unsafe { CStr::from_ptr(ptr.cast()) };
 
         let path_stat = crate::backend::fs::syscalls::stat(path)?;
         if path_stat.st_dev != fd_stat.st_dev || path_stat.st_ino != fd_stat.st_ino {
@@ -410,5 +420,6 @@ pub(crate) fn ttyname(fd: BorrowedFd<'_>, buf: &mut [MaybeUninit<u8>]) -> io::Re
         }
     }
 
-    Ok(r)
+    
+    Ok(len)
 }

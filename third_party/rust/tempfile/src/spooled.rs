@@ -1,6 +1,11 @@
 use crate::file::tempfile;
+use crate::tempfile_in;
 use std::fs::File;
 use std::io::{self, Cursor, Read, Seek, SeekFrom, Write};
+use std::path::{Path, PathBuf};
+
+
+
 
 
 #[derive(Debug)]
@@ -16,8 +21,16 @@ pub enum SpooledData {
 #[derive(Debug)]
 pub struct SpooledTempFile {
     max_size: usize,
+    dir: Option<PathBuf>,
     inner: SpooledData,
 }
+
+
+
+
+
+
+
 
 
 
@@ -55,11 +68,46 @@ pub fn spooled_tempfile(max_size: usize) -> SpooledTempFile {
     SpooledTempFile::new(max_size)
 }
 
+
+
+
+
+
+
+
+#[inline]
+pub fn spooled_tempfile_in<P: AsRef<Path>>(max_size: usize, dir: P) -> SpooledTempFile {
+    SpooledTempFile::new_in(max_size, dir)
+}
+
+
+fn cursor_to_tempfile(cursor: &Cursor<Vec<u8>>, p: &Option<PathBuf>) -> io::Result<File> {
+    let mut file = match p {
+        Some(p) => tempfile_in(p)?,
+        None => tempfile()?,
+    };
+    file.write_all(cursor.get_ref())?;
+    file.seek(SeekFrom::Start(cursor.position()))?;
+    Ok(file)
+}
+
 impl SpooledTempFile {
+    
     #[must_use]
     pub fn new(max_size: usize) -> SpooledTempFile {
         SpooledTempFile {
             max_size,
+            dir: None,
+            inner: SpooledData::InMemory(Cursor::new(Vec::new())),
+        }
+    }
+
+    
+    #[must_use]
+    pub fn new_in<P: AsRef<Path>>(max_size: usize, dir: P) -> SpooledTempFile {
+        SpooledTempFile {
+            max_size,
+            dir: Some(dir.as_ref().to_owned()),
             inner: SpooledData::InMemory(Cursor::new(Vec::new())),
         }
     }
@@ -76,17 +124,13 @@ impl SpooledTempFile {
     
     
     pub fn roll(&mut self) -> io::Result<()> {
-        if !self.is_rolled() {
-            let mut file = tempfile()?;
-            if let SpooledData::InMemory(cursor) = &mut self.inner {
-                file.write_all(cursor.get_ref())?;
-                file.seek(SeekFrom::Start(cursor.position()))?;
-            }
-            self.inner = SpooledData::OnDisk(file);
+        if let SpooledData::InMemory(cursor) = &mut self.inner {
+            self.inner = SpooledData::OnDisk(cursor_to_tempfile(cursor, &self.dir)?);
         }
         Ok(())
     }
 
+    
     pub fn set_len(&mut self, size: u64) -> Result<(), io::Error> {
         if size > self.max_size as u64 {
             self.roll()?; 
@@ -104,6 +148,14 @@ impl SpooledTempFile {
     #[must_use]
     pub fn into_inner(self) -> SpooledData {
         self.inner
+    }
+
+    
+    pub fn into_file(self) -> io::Result<File> {
+        match self.inner {
+            SpooledData::InMemory(cursor) => cursor_to_tempfile(&cursor, &self.dir),
+            SpooledData::OnDisk(file) => Ok(file),
+        }
     }
 }
 

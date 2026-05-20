@@ -1,5 +1,7 @@
-use HeaderValue;
+use http::HeaderValue;
 
+use crate::util::TryFromValues;
+use crate::Error;
 
 
 
@@ -77,8 +79,8 @@ impl ReferrerPolicy {
         ReferrerPolicy(Policy::StrictOriginWhenCrossOrigin);
 }
 
-impl ::util::TryFromValues for Policy {
-    fn try_from_values<'i, I>(values: &mut I) -> Result<Self, ::Error>
+impl TryFromValues for Policy {
+    fn try_from_values<'i, I>(values: &mut I) -> Result<Self, Error>
     where
         I: Iterator<Item = &'i HeaderValue>,
     {
@@ -99,7 +101,7 @@ impl ::util::TryFromValues for Policy {
             });
         }
 
-        known.ok_or_else(::Error::invalid)
+        known.ok_or_else(Error::invalid)
     }
 }
 

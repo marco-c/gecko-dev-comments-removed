@@ -1,45 +1,47 @@
 
 
-use super::{Ioctl, IoctlOutput, Opcode, RawOpcode};
+use super::{Ioctl, IoctlOutput, Opcode};
 
 use crate::backend::c;
 use crate::io::Result;
 
-use core::marker::PhantomData;
 use core::ptr::addr_of_mut;
 use core::{fmt, mem};
 
 
-pub struct NoArg<Opcode> {
-    
-    _opcode: PhantomData<Opcode>,
-}
 
-impl<Opcode: CompileTimeOpcode> fmt::Debug for NoArg<Opcode> {
+
+
+
+
+pub struct NoArg<const OPCODE: Opcode> {}
+
+impl<const OPCODE: Opcode> fmt::Debug for NoArg<OPCODE> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_tuple("NoArg").field(&Opcode::OPCODE).finish()
+        f.debug_tuple("NoArg").field(&OPCODE).finish()
     }
 }
 
-impl<Opcode: CompileTimeOpcode> NoArg<Opcode> {
+impl<const OPCODE: Opcode> NoArg<OPCODE> {
     
     
     
     
     
     #[inline]
-    pub unsafe fn new() -> Self {
-        Self {
-            _opcode: PhantomData,
-        }
+    pub const unsafe fn new() -> Self {
+        Self {}
     }
 }
 
-unsafe impl<Opcode: CompileTimeOpcode> Ioctl for NoArg<Opcode> {
+unsafe impl<const OPCODE: Opcode> Ioctl for NoArg<OPCODE> {
     type Output = ();
 
     const IS_MUTATING: bool = false;
-    const OPCODE: self::Opcode = Opcode::OPCODE;
+
+    fn opcode(&self) -> self::Opcode {
+        OPCODE
+    }
 
     fn as_ptr(&mut self) -> *mut c::c_void {
         core::ptr::null_mut()
@@ -54,21 +56,23 @@ unsafe impl<Opcode: CompileTimeOpcode> Ioctl for NoArg<Opcode> {
 
 
 
-pub struct Getter<Opcode, Output> {
+
+
+
+
+
+pub struct Getter<const OPCODE: Opcode, Output> {
     
     output: mem::MaybeUninit<Output>,
-
-    
-    _opcode: PhantomData<Opcode>,
 }
 
-impl<Opcode: CompileTimeOpcode, Output> fmt::Debug for Getter<Opcode, Output> {
+impl<const OPCODE: Opcode, Output> fmt::Debug for Getter<OPCODE, Output> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_tuple("Getter").field(&Opcode::OPCODE).finish()
+        f.debug_tuple("Getter").field(&OPCODE).finish()
     }
 }
 
-impl<Opcode: CompileTimeOpcode, Output> Getter<Opcode, Output> {
+impl<const OPCODE: Opcode, Output> Getter<OPCODE, Output> {
     
     
     
@@ -77,19 +81,21 @@ impl<Opcode: CompileTimeOpcode, Output> Getter<Opcode, Output> {
     
     
     #[inline]
-    pub unsafe fn new() -> Self {
+    pub const unsafe fn new() -> Self {
         Self {
             output: mem::MaybeUninit::uninit(),
-            _opcode: PhantomData,
         }
     }
 }
 
-unsafe impl<Opcode: CompileTimeOpcode, Output> Ioctl for Getter<Opcode, Output> {
+unsafe impl<const OPCODE: Opcode, Output> Ioctl for Getter<OPCODE, Output> {
     type Output = Output;
 
     const IS_MUTATING: bool = true;
-    const OPCODE: self::Opcode = Opcode::OPCODE;
+
+    fn opcode(&self) -> self::Opcode {
+        OPCODE
+    }
 
     fn as_ptr(&mut self) -> *mut c::c_void {
         self.output.as_mut_ptr().cast()
@@ -104,24 +110,26 @@ unsafe impl<Opcode: CompileTimeOpcode, Output> Ioctl for Getter<Opcode, Output> 
 
 
 
-pub struct Setter<Opcode, Input> {
+
+
+
+
+
+pub struct Setter<const OPCODE: Opcode, Input> {
     
     input: Input,
-
-    
-    _opcode: PhantomData<Opcode>,
 }
 
-impl<Opcode: CompileTimeOpcode, Input: fmt::Debug> fmt::Debug for Setter<Opcode, Input> {
+impl<const OPCODE: Opcode, Input: fmt::Debug> fmt::Debug for Setter<OPCODE, Input> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_tuple("Setter")
-            .field(&Opcode::OPCODE)
+            .field(&OPCODE)
             .field(&self.input)
             .finish()
     }
 }
 
-impl<Opcode: CompileTimeOpcode, Input> Setter<Opcode, Input> {
+impl<const OPCODE: Opcode, Input> Setter<OPCODE, Input> {
     
     
     
@@ -130,19 +138,19 @@ impl<Opcode: CompileTimeOpcode, Input> Setter<Opcode, Input> {
     
     
     #[inline]
-    pub unsafe fn new(input: Input) -> Self {
-        Self {
-            input,
-            _opcode: PhantomData,
-        }
+    pub const unsafe fn new(input: Input) -> Self {
+        Self { input }
     }
 }
 
-unsafe impl<Opcode: CompileTimeOpcode, Input> Ioctl for Setter<Opcode, Input> {
+unsafe impl<const OPCODE: Opcode, Input> Ioctl for Setter<OPCODE, Input> {
     type Output = ();
 
     const IS_MUTATING: bool = false;
-    const OPCODE: self::Opcode = Opcode::OPCODE;
+
+    fn opcode(&self) -> self::Opcode {
+        OPCODE
+    }
 
     fn as_ptr(&mut self) -> *mut c::c_void {
         addr_of_mut!(self.input).cast::<c::c_void>()
@@ -157,15 +165,17 @@ unsafe impl<Opcode: CompileTimeOpcode, Input> Ioctl for Setter<Opcode, Input> {
 
 
 
-pub struct Updater<'a, Opcode, Value> {
+
+
+
+
+
+pub struct Updater<'a, const OPCODE: Opcode, Value> {
     
     value: &'a mut Value,
-
-    
-    _opcode: PhantomData<Opcode>,
 }
 
-impl<'a, Opcode: CompileTimeOpcode, Value> Updater<'a, Opcode, Value> {
+impl<'a, const OPCODE: Opcode, Value> Updater<'a, OPCODE, Value> {
     
     
     
@@ -175,18 +185,18 @@ impl<'a, Opcode: CompileTimeOpcode, Value> Updater<'a, Opcode, Value> {
     
     #[inline]
     pub unsafe fn new(value: &'a mut Value) -> Self {
-        Self {
-            value,
-            _opcode: PhantomData,
-        }
+        Self { value }
     }
 }
 
-unsafe impl<'a, Opcode: CompileTimeOpcode, T> Ioctl for Updater<'a, Opcode, T> {
+unsafe impl<'a, const OPCODE: Opcode, T> Ioctl for Updater<'a, OPCODE, T> {
     type Output = ();
 
     const IS_MUTATING: bool = true;
-    const OPCODE: self::Opcode = Opcode::OPCODE;
+
+    fn opcode(&self) -> self::Opcode {
+        OPCODE
+    }
 
     fn as_ptr(&mut self) -> *mut c::c_void {
         (self.value as *mut T).cast()
@@ -198,15 +208,19 @@ unsafe impl<'a, Opcode: CompileTimeOpcode, T> Ioctl for Updater<'a, Opcode, T> {
 }
 
 
-pub struct IntegerSetter<Opcode> {
-    
-    value: usize,
 
+
+
+
+
+pub struct IntegerSetter<const OPCODE: Opcode> {
     
-    _opcode: PhantomData<Opcode>,
+    
+    
+    value: *mut c::c_void,
 }
 
-impl<Opcode: CompileTimeOpcode> IntegerSetter<Opcode> {
+impl<const OPCODE: Opcode> IntegerSetter<OPCODE> {
     
     
     
@@ -215,23 +229,34 @@ impl<Opcode: CompileTimeOpcode> IntegerSetter<Opcode> {
     
     
     #[inline]
-    pub unsafe fn new(value: usize) -> Self {
-        Self {
-            value,
-            _opcode: PhantomData,
-        }
+    pub const unsafe fn new_usize(value: usize) -> Self {
+        Self { value: value as _ }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub const unsafe fn new_pointer(value: *mut c::c_void) -> Self {
+        Self { value }
     }
 }
 
-unsafe impl<Opcode: CompileTimeOpcode> Ioctl for IntegerSetter<Opcode> {
+unsafe impl<const OPCODE: Opcode> Ioctl for IntegerSetter<OPCODE> {
     type Output = ();
 
     const IS_MUTATING: bool = false;
-    const OPCODE: self::Opcode = Opcode::OPCODE;
+
+    fn opcode(&self) -> self::Opcode {
+        OPCODE
+    }
 
     fn as_ptr(&mut self) -> *mut c::c_void {
-        
-        self.value as *mut c::c_void
+        self.value
     }
 
     unsafe fn output_from_ptr(
@@ -240,62 +265,4 @@ unsafe impl<Opcode: CompileTimeOpcode> Ioctl for IntegerSetter<Opcode> {
     ) -> Result<Self::Output> {
         Ok(())
     }
-}
-
-
-pub trait CompileTimeOpcode {
-    
-    const OPCODE: Opcode;
-}
-
-
-pub struct BadOpcode<const OPCODE: RawOpcode>;
-
-impl<const OPCODE: RawOpcode> CompileTimeOpcode for BadOpcode<OPCODE> {
-    const OPCODE: Opcode = Opcode::old(OPCODE);
-}
-
-
-
-
-#[cfg(any(linux_kernel, bsd))]
-pub struct ReadOpcode<const GROUP: u8, const NUM: u8, Data>(Data);
-
-#[cfg(any(linux_kernel, bsd))]
-impl<const GROUP: u8, const NUM: u8, Data> CompileTimeOpcode for ReadOpcode<GROUP, NUM, Data> {
-    const OPCODE: Opcode = Opcode::read::<Data>(GROUP, NUM);
-}
-
-
-
-
-#[cfg(any(linux_kernel, bsd))]
-pub struct WriteOpcode<const GROUP: u8, const NUM: u8, Data>(Data);
-
-#[cfg(any(linux_kernel, bsd))]
-impl<const GROUP: u8, const NUM: u8, Data> CompileTimeOpcode for WriteOpcode<GROUP, NUM, Data> {
-    const OPCODE: Opcode = Opcode::write::<Data>(GROUP, NUM);
-}
-
-
-
-
-#[cfg(any(linux_kernel, bsd))]
-pub struct ReadWriteOpcode<const GROUP: u8, const NUM: u8, Data>(Data);
-
-#[cfg(any(linux_kernel, bsd))]
-impl<const GROUP: u8, const NUM: u8, Data> CompileTimeOpcode for ReadWriteOpcode<GROUP, NUM, Data> {
-    const OPCODE: Opcode = Opcode::read_write::<Data>(GROUP, NUM);
-}
-
-
-
-
-
-#[cfg(any(linux_kernel, bsd))]
-pub struct NoneOpcode<const GROUP: u8, const NUM: u8, Data>(Data);
-
-#[cfg(any(linux_kernel, bsd))]
-impl<const GROUP: u8, const NUM: u8, Data> CompileTimeOpcode for NoneOpcode<GROUP, NUM, Data> {
-    const OPCODE: Opcode = Opcode::none::<Data>(GROUP, NUM);
 }

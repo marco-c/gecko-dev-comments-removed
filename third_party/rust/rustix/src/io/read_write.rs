@@ -2,16 +2,15 @@
 
 #![allow(unsafe_code)]
 
-use crate::buffer::split_init;
+use crate::buffer::Buffer;
 use crate::{backend, io};
 use backend::fd::AsFd;
-use core::mem::MaybeUninit;
 
 
 #[cfg(not(windows))]
 pub use crate::maybe_polyfill::io::{IoSlice, IoSliceMut};
 
-#[cfg(linux_kernel)]
+#[cfg(all(linux_kernel, not(target_os = "android")))]
 pub use backend::io::types::ReadWriteFlags;
 
 
@@ -36,31 +35,12 @@ pub use backend::io::types::ReadWriteFlags;
 
 
 
-
-
-
 #[inline]
-pub fn read<Fd: AsFd>(fd: Fd, buf: &mut [u8]) -> io::Result<usize> {
-    unsafe { backend::io::syscalls::read(fd.as_fd(), buf.as_mut_ptr(), buf.len()) }
-}
-
-
-
-
-
-
-#[inline]
-pub fn read_uninit<Fd: AsFd>(
-    fd: Fd,
-    buf: &mut [MaybeUninit<u8>],
-) -> io::Result<(&mut [u8], &mut [MaybeUninit<u8>])> {
+pub fn read<Fd: AsFd, Buf: Buffer<u8>>(fd: Fd, mut buf: Buf) -> io::Result<Buf::Output> {
     
-    let length = unsafe {
-        backend::io::syscalls::read(fd.as_fd(), buf.as_mut_ptr().cast::<u8>(), buf.len())
-    };
-
+    let len = unsafe { backend::io::syscalls::read(fd.as_fd(), buf.parts_mut())? };
     
-    Ok(unsafe { split_init(buf, length?) })
+    unsafe { Ok(buf.assume_init(len)) }
 }
 
 
@@ -112,29 +92,17 @@ pub fn write<Fd: AsFd>(fd: Fd, buf: &[u8]) -> io::Result<usize> {
 
 
 
-
-
-
+#[cfg(not(windows))]
 #[inline]
-pub fn pread<Fd: AsFd>(fd: Fd, buf: &mut [u8], offset: u64) -> io::Result<usize> {
-    unsafe { backend::io::syscalls::pread(fd.as_fd(), buf.as_mut_ptr(), buf.len(), offset) }
-}
-
-
-
-
-
-
-#[inline]
-pub fn pread_uninit<Fd: AsFd>(
+pub fn pread<Fd: AsFd, Buf: Buffer<u8>>(
     fd: Fd,
-    buf: &mut [MaybeUninit<u8>],
+    mut buf: Buf,
     offset: u64,
-) -> io::Result<(&mut [u8], &mut [MaybeUninit<u8>])> {
-    let length = unsafe {
-        backend::io::syscalls::pread(fd.as_fd(), buf.as_mut_ptr().cast::<u8>(), buf.len(), offset)
-    };
-    Ok(unsafe { split_init(buf, length?) })
+) -> io::Result<Buf::Output> {
+    
+    let len = unsafe { backend::io::syscalls::pread(fd.as_fd(), buf.parts_mut(), offset)? };
+    
+    unsafe { Ok(buf.assume_init(len)) }
 }
 
 
@@ -163,6 +131,7 @@ pub fn pread_uninit<Fd: AsFd>(
 
 
 
+#[cfg(not(windows))]
 #[inline]
 pub fn pwrite<Fd: AsFd>(fd: Fd, buf: &[u8], offset: u64) -> io::Result<usize> {
     backend::io::syscalls::pwrite(fd.as_fd(), buf, offset)
@@ -190,7 +159,7 @@ pub fn pwrite<Fd: AsFd>(fd: Fd, buf: &[u8], offset: u64) -> io::Result<usize> {
 
 
 
-#[cfg(not(any(target_os = "espidf", target_os = "horizon")))]
+#[cfg(not(any(windows, target_os = "espidf", target_os = "horizon")))]
 #[inline]
 pub fn readv<Fd: AsFd>(fd: Fd, bufs: &mut [IoSliceMut<'_>]) -> io::Result<usize> {
     backend::io::syscalls::readv(fd.as_fd(), bufs)
@@ -218,7 +187,7 @@ pub fn readv<Fd: AsFd>(fd: Fd, bufs: &mut [IoSliceMut<'_>]) -> io::Result<usize>
 
 
 
-#[cfg(not(any(target_os = "espidf", target_os = "horizon")))]
+#[cfg(not(any(windows, target_os = "espidf", target_os = "horizon")))]
 #[inline]
 pub fn writev<Fd: AsFd>(fd: Fd, bufs: &[IoSlice<'_>]) -> io::Result<usize> {
     backend::io::syscalls::writev(fd.as_fd(), bufs)
@@ -244,13 +213,15 @@ pub fn writev<Fd: AsFd>(fd: Fd, bufs: &[IoSlice<'_>]) -> io::Result<usize> {
 
 
 #[cfg(not(any(
+    windows,
+    target_os = "cygwin",
     target_os = "espidf",
     target_os = "haiku",
     target_os = "horizon",
     target_os = "nto",
     target_os = "redox",
     target_os = "solaris",
-    target_os = "vita"
+    target_os = "vita",
 )))]
 #[inline]
 pub fn preadv<Fd: AsFd>(fd: Fd, bufs: &mut [IoSliceMut<'_>], offset: u64) -> io::Result<usize> {
@@ -281,13 +252,15 @@ pub fn preadv<Fd: AsFd>(fd: Fd, bufs: &mut [IoSliceMut<'_>], offset: u64) -> io:
 
 
 #[cfg(not(any(
+    windows,
+    target_os = "cygwin",
     target_os = "espidf",
     target_os = "haiku",
     target_os = "horizon",
     target_os = "nto",
     target_os = "redox",
     target_os = "solaris",
-    target_os = "vita"
+    target_os = "vita",
 )))]
 #[inline]
 pub fn pwritev<Fd: AsFd>(fd: Fd, bufs: &[IoSlice<'_>], offset: u64) -> io::Result<usize> {
@@ -304,7 +277,7 @@ pub fn pwritev<Fd: AsFd>(fd: Fd, bufs: &[IoSlice<'_>], offset: u64) -> io::Resul
 
 
 
-#[cfg(linux_kernel)]
+#[cfg(all(linux_kernel, not(target_os = "android")))]
 #[inline]
 pub fn preadv2<Fd: AsFd>(
     fd: Fd,
@@ -325,7 +298,7 @@ pub fn preadv2<Fd: AsFd>(
 
 
 
-#[cfg(linux_kernel)]
+#[cfg(all(linux_kernel, not(target_os = "android")))]
 #[inline]
 pub fn pwritev2<Fd: AsFd>(
     fd: Fd,

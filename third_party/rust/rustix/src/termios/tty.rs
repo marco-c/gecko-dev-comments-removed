@@ -1,13 +1,14 @@
 
 
 use crate::backend;
-use backend::fd::AsFd;
-#[cfg(all(feature = "alloc", feature = "procfs"))]
+#[cfg(feature = "alloc")]
+#[cfg(feature = "fs")]
 #[cfg(not(any(target_os = "fuchsia", target_os = "wasi")))]
-use {
-    crate::ffi::CString, crate::io, crate::path::SMALL_PATH_BUFFER_SIZE, alloc::vec::Vec,
-    backend::fd::BorrowedFd,
-};
+use crate::path::SMALL_PATH_BUFFER_SIZE;
+use backend::fd::AsFd;
+#[cfg(feature = "alloc")]
+#[cfg(not(any(target_os = "fuchsia", target_os = "wasi")))]
+use {crate::ffi::CString, crate::io, alloc::vec::Vec, backend::fd::BorrowedFd};
 
 
 
@@ -32,24 +33,29 @@ pub fn isatty<Fd: AsFd>(fd: Fd) -> bool {
 
 
 
+
+
 #[cfg(not(any(target_os = "fuchsia", target_os = "wasi")))]
-#[cfg(all(feature = "alloc", feature = "procfs"))]
-#[cfg_attr(docsrs, doc(cfg(feature = "procfs")))]
+#[cfg(feature = "alloc")]
+#[cfg(feature = "fs")]
 #[doc(alias = "ttyname_r")]
+#[cfg_attr(docsrs, doc(cfg(feature = "fs")))]
+#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 #[inline]
-pub fn ttyname<Fd: AsFd, B: Into<Vec<u8>>>(dirfd: Fd, reuse: B) -> io::Result<CString> {
-    _ttyname(dirfd.as_fd(), reuse.into())
+pub fn ttyname<Fd: AsFd, B: Into<Vec<u8>>>(fd: Fd, reuse: B) -> io::Result<CString> {
+    _ttyname(fd.as_fd(), reuse.into())
 }
 
 #[cfg(not(any(target_os = "fuchsia", target_os = "wasi")))]
-#[cfg(all(feature = "alloc", feature = "procfs"))]
+#[cfg(feature = "alloc")]
+#[cfg(feature = "fs")]
 #[allow(unsafe_code)]
-fn _ttyname(dirfd: BorrowedFd<'_>, mut buffer: Vec<u8>) -> io::Result<CString> {
+fn _ttyname(fd: BorrowedFd<'_>, mut buffer: Vec<u8>) -> io::Result<CString> {
     buffer.clear();
     buffer.reserve(SMALL_PATH_BUFFER_SIZE);
 
     loop {
-        match backend::termios::syscalls::ttyname(dirfd, buffer.spare_capacity_mut()) {
+        match backend::termios::syscalls::ttyname(fd, buffer.spare_capacity_mut()) {
             Err(io::Errno::RANGE) => {
                 
                 

@@ -1,7 +1,9 @@
 use std::fmt;
 
-use mime::{self, Mime};
+use http::{HeaderName, HeaderValue};
+use mime::Mime;
 
+use crate::{Error, Header};
 
 
 
@@ -94,20 +96,20 @@ impl ContentType {
     }
 }
 
-impl ::Header for ContentType {
-    fn name() -> &'static ::HeaderName {
+impl Header for ContentType {
+    fn name() -> &'static HeaderName {
         &::http::header::CONTENT_TYPE
     }
 
-    fn decode<'i, I: Iterator<Item = &'i ::HeaderValue>>(values: &mut I) -> Result<Self, ::Error> {
+    fn decode<'i, I: Iterator<Item = &'i HeaderValue>>(values: &mut I) -> Result<Self, Error> {
         values
             .next()
             .and_then(|v| v.to_str().ok()?.parse().ok())
             .map(ContentType)
-            .ok_or_else(::Error::invalid)
+            .ok_or_else(Error::invalid)
     }
 
-    fn encode<E: Extend<::HeaderValue>>(&self, values: &mut E) {
+    fn encode<E: Extend<HeaderValue>>(&self, values: &mut E) {
         let value = self
             .0
             .as_ref()
@@ -136,12 +138,12 @@ impl fmt::Display for ContentType {
 }
 
 impl std::str::FromStr for ContentType {
-    type Err = ::Error;
+    type Err = Error;
 
     fn from_str(s: &str) -> Result<ContentType, Self::Err> {
         s.parse::<Mime>()
             .map(|m| m.into())
-            .map_err(|_| ::Error::invalid())
+            .map_err(|_| Error::invalid())
     }
 }
 

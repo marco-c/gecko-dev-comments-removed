@@ -63,8 +63,6 @@ fn single_timer() {
         let clock = handle.inner.driver().clock();
 
         
-        
-        
         time.process_at_time(time.time_source().now(clock) + 2_000_000_000);
 
         jh.join().unwrap();
@@ -170,7 +168,6 @@ fn reset_future() {
 
         let handle = handle.inner.driver().time();
 
-        
         handle.process_at_time(
             handle
                 .time_source()

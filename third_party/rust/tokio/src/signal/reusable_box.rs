@@ -81,18 +81,21 @@ impl<T> ReusableBoxFuture<T> {
         F: Future<Output = T> + Send + 'static,
     {
         
-        let result = panic::catch_unwind(AssertUnwindSafe(|| {
+        let result = panic::catch_unwind(AssertUnwindSafe(|| unsafe {
             ptr::drop_in_place(self.boxed.as_ptr());
         }));
 
         
         
         let self_ptr: *mut F = self.boxed.as_ptr() as *mut F;
-        ptr::write(self_ptr, future);
+        
+        unsafe {
+            ptr::write(self_ptr, future);
+        }
 
         
         
-        self.boxed = NonNull::new_unchecked(self_ptr);
+        self.boxed = unsafe { NonNull::new_unchecked(self_ptr) };
 
         
         match result {

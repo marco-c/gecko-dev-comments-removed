@@ -1,16 +1,44 @@
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 use crate::backend::c;
 use crate::backend::event::syscalls;
+use crate::buffer::Buffer;
 use crate::fd::{AsFd, AsRawFd, OwnedFd};
-use crate::io;
+use crate::timespec::Timespec;
+use crate::{ffi, io};
 
-use super::PollFlags;
-
-use core::time::Duration;
+pub use super::PollFlags;
 
 
 #[repr(transparent)]
+#[doc(alias = "port_event")]
 pub struct Event(pub(crate) c::port_event);
 
 impl Event {
@@ -25,7 +53,7 @@ impl Event {
     }
 
     
-    pub fn userdata(&self) -> *mut c::c_void {
+    pub fn userdata(&self) -> *mut ffi::c_void {
         self.0.portev_user
     }
 }
@@ -38,7 +66,8 @@ impl Event {
 
 
 
-pub fn port_create() -> io::Result<OwnedFd> {
+#[doc(alias = "port_create")]
+pub fn create() -> io::Result<OwnedFd> {
     syscalls::port_create()
 }
 
@@ -57,11 +86,12 @@ pub fn port_create() -> io::Result<OwnedFd> {
 
 
 
-pub unsafe fn port_associate_fd(
-    port: impl AsFd,
-    object: impl AsRawFd,
+#[doc(alias = "port_associate")]
+pub unsafe fn associate_fd<Fd: AsFd, RawFd: AsRawFd>(
+    port: Fd,
+    object: RawFd,
     events: PollFlags,
-    userdata: *mut c::c_void,
+    userdata: *mut ffi::c_void,
 ) -> io::Result<()> {
     syscalls::port_associate(
         port.as_fd(),
@@ -86,7 +116,8 @@ pub unsafe fn port_associate_fd(
 
 
 
-pub unsafe fn port_dissociate_fd(port: impl AsFd, object: impl AsRawFd) -> io::Result<()> {
+#[doc(alias = "port_dissociate")]
+pub unsafe fn dissociate_fd<Fd: AsFd, RawFd: AsRawFd>(port: Fd, object: RawFd) -> io::Result<()> {
     syscalls::port_dissociate(port.as_fd(), c::PORT_SOURCE_FD, object.as_raw_fd() as _)
 }
 
@@ -98,13 +129,12 @@ pub unsafe fn port_dissociate_fd(port: impl AsFd, object: impl AsRawFd) -> io::R
 
 
 
-pub fn port_get(port: impl AsFd, timeout: Option<Duration>) -> io::Result<Event> {
-    let mut timeout = timeout.map(|timeout| c::timespec {
-        tv_sec: timeout.as_secs().try_into().unwrap(),
-        tv_nsec: timeout.subsec_nanos() as _,
-    });
 
-    syscalls::port_get(port.as_fd(), timeout.as_mut())
+
+
+#[doc(alias = "port_get")]
+pub fn get<Fd: AsFd>(port: Fd, timeout: Option<&Timespec>) -> io::Result<Event> {
+    syscalls::port_get(port.as_fd(), timeout)
 }
 
 
@@ -116,26 +146,25 @@ pub fn port_get(port: impl AsFd, timeout: Option<Duration>) -> io::Result<Event>
 
 
 
-#[cfg(feature = "alloc")]
-pub fn port_getn(
-    port: impl AsFd,
-    events: &mut Vec<Event>,
-    min_events: usize,
-    timeout: Option<Duration>,
-) -> io::Result<()> {
-    events.clear();
 
-    let mut timeout = timeout.map(|timeout| c::timespec {
-        tv_sec: timeout.as_secs().try_into().unwrap(),
-        tv_nsec: timeout.subsec_nanos() as _,
-    });
 
-    syscalls::port_getn(
-        port.as_fd(),
-        timeout.as_mut(),
-        events,
-        min_events.try_into().unwrap(),
-    )
+
+
+
+
+
+#[doc(alias = "port_getn")]
+pub fn getn<Fd: AsFd, Buf: Buffer<Event>>(
+    port: Fd,
+    mut events: Buf,
+    min_events: u32,
+    timeout: Option<&Timespec>,
+) -> io::Result<Buf::Output> {
+    
+    let nevents =
+        unsafe { syscalls::port_getn(port.as_fd(), events.parts_mut(), min_events, timeout)? };
+    
+    unsafe { Ok(events.assume_init(nevents)) }
 }
 
 
@@ -146,6 +175,23 @@ pub fn port_getn(
 
 
 
-pub fn port_send(port: impl AsFd, events: i32, userdata: *mut c::c_void) -> io::Result<()> {
+
+
+
+#[doc(alias = "port_getn")]
+pub fn getn_query<Fd: AsFd>(port: Fd) -> io::Result<u32> {
+    syscalls::port_getn_query(port.as_fd())
+}
+
+
+
+
+
+
+
+
+
+#[doc(alias = "port_send")]
+pub fn send<Fd: AsFd>(port: Fd, events: i32, userdata: *mut ffi::c_void) -> io::Result<()> {
     syscalls::port_send(port.as_fd(), events, userdata.cast())
 }

@@ -17,18 +17,20 @@
 
 
 
-
-
 #[macro_use]
 mod cfg;
 
 mod loom;
 
 cfg_codec! {
+    #[macro_use]
+    mod tracing;
+
     pub mod codec;
 }
 
 cfg_net! {
+    #[cfg(not(target_arch = "wasm32"))]
     pub mod udp;
     pub mod net;
 }
@@ -43,8 +45,10 @@ cfg_io! {
 
 cfg_rt! {
     pub mod context;
-    pub mod task;
 }
+
+#[cfg(feature = "rt")]
+pub mod task;
 
 cfg_time! {
     pub mod time;
@@ -54,148 +58,8 @@ pub mod sync;
 
 pub mod either;
 
-#[cfg(any(feature = "io", feature = "codec"))]
-mod util {
-    use tokio::io::{AsyncRead, AsyncWrite, ReadBuf};
+pub use bytes;
 
-    use bytes::{Buf, BufMut};
-    use futures_core::ready;
-    use std::io::{self, IoSlice};
-    use std::mem::MaybeUninit;
-    use std::pin::Pin;
-    use std::task::{Context, Poll};
+mod util;
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[cfg_attr(not(feature = "io"), allow(unreachable_pub))]
-    pub fn poll_read_buf<T: AsyncRead, B: BufMut>(
-        io: Pin<&mut T>,
-        cx: &mut Context<'_>,
-        buf: &mut B,
-    ) -> Poll<io::Result<usize>> {
-        if !buf.has_remaining_mut() {
-            return Poll::Ready(Ok(0));
-        }
-
-        let n = {
-            let dst = buf.chunk_mut();
-            let dst = unsafe { &mut *(dst as *mut _ as *mut [MaybeUninit<u8>]) };
-            let mut buf = ReadBuf::uninit(dst);
-            let ptr = buf.filled().as_ptr();
-            ready!(io.poll_read(cx, &mut buf)?);
-
-            
-            assert_eq!(ptr, buf.filled().as_ptr());
-            buf.filled().len()
-        };
-
-        
-        
-        unsafe {
-            buf.advance_mut(n);
-        }
-
-        Poll::Ready(Ok(n))
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[cfg_attr(not(feature = "io"), allow(unreachable_pub))]
-    pub fn poll_write_buf<T: AsyncWrite, B: Buf>(
-        io: Pin<&mut T>,
-        cx: &mut Context<'_>,
-        buf: &mut B,
-    ) -> Poll<io::Result<usize>> {
-        const MAX_BUFS: usize = 64;
-
-        if !buf.has_remaining() {
-            return Poll::Ready(Ok(0));
-        }
-
-        let n = if io.is_write_vectored() {
-            let mut slices = [IoSlice::new(&[]); MAX_BUFS];
-            let cnt = buf.chunks_vectored(&mut slices);
-            ready!(io.poll_write_vectored(cx, &slices[..cnt]))?
-        } else {
-            ready!(io.poll_write(cx, buf.chunk()))?
-        };
-
-        buf.advance(n);
-
-        Poll::Ready(Ok(n))
-    }
-}
+pub mod future;

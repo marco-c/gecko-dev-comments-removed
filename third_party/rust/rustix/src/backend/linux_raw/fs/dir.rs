@@ -7,7 +7,7 @@ use crate::io;
 #[cfg(feature = "process")]
 use crate::process::fchdir;
 use crate::utils::as_ptr;
-use alloc::borrow::ToOwned;
+use alloc::borrow::ToOwned as _;
 use alloc::vec::Vec;
 use core::fmt;
 use core::mem::size_of;
@@ -52,6 +52,22 @@ impl Dir {
 
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    #[doc(alias = "dirfd")]
+    pub fn fd<'a>(&'a self) -> io::Result<BorrowedFd<'a>> {
+        Ok(self.fd.as_fd())
+    }
+
+    
+    
     #[inline]
     pub fn read_from<Fd: AsFd>(fd: Fd) -> io::Result<Self> {
         Self::_read_from(fd.as_fd())
@@ -80,7 +96,37 @@ impl Dir {
     }
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(target_pointer_width = "64")]
+    #[cfg_attr(docsrs, doc(cfg(target_pointer_width = "64")))]
+    #[doc(alias = "seekdir")]
+    #[inline]
+    pub fn seek(&mut self, offset: i64) -> io::Result<()> {
+        self.any_errors = false;
+        self.rewind = false;
+        self.pos = self.buf.len();
+        match io::retry_on_intr(|| {
+            crate::backend::fs::syscalls::_seek(self.fd.as_fd(), offset, SEEK_SET)
+        }) {
+            Ok(_) => Ok(()),
+            Err(err) => {
+                self.any_errors = true;
+                Err(err)
+            }
+        }
+    }
+
+    
     pub fn read(&mut self) -> Option<io::Result<DirEntry>> {
+        
         
         if self.any_errors {
             return None;
@@ -112,6 +158,7 @@ impl Dir {
         let offsetof_d_reclen = (as_ptr(&z.d_reclen) as usize) - base;
         let offsetof_d_name = (as_ptr(&z.d_name) as usize) - base;
         let offsetof_d_ino = (as_ptr(&z.d_ino) as usize) - base;
+        let offsetof_d_off = (as_ptr(&z.d_off) as usize) - base;
         let offsetof_d_type = (as_ptr(&z.d_type) as usize) - base;
 
         
@@ -157,12 +204,24 @@ impl Dir {
             self.buf[pos + offsetof_d_ino + 7],
         ]);
 
+        
+        let d_off = i64::from_ne_bytes([
+            self.buf[pos + offsetof_d_off],
+            self.buf[pos + offsetof_d_off + 1],
+            self.buf[pos + offsetof_d_off + 2],
+            self.buf[pos + offsetof_d_off + 3],
+            self.buf[pos + offsetof_d_off + 4],
+            self.buf[pos + offsetof_d_off + 5],
+            self.buf[pos + offsetof_d_off + 6],
+            self.buf[pos + offsetof_d_off + 7],
+        ]);
+
         let d_type = self.buf[pos + offsetof_d_type];
 
         
         let _ = linux_dirent64 {
             d_ino,
-            d_off: 0,
+            d_off,
             d_type,
             d_reclen,
             d_name: Default::default(),
@@ -170,6 +229,7 @@ impl Dir {
 
         Some(Ok(DirEntry {
             d_ino,
+            d_off,
             d_type,
             name,
         }))
@@ -261,6 +321,7 @@ impl fmt::Debug for Dir {
 pub struct DirEntry {
     d_ino: u64,
     d_type: u8,
+    d_off: i64,
     name: CString,
 }
 
@@ -269,6 +330,14 @@ impl DirEntry {
     #[inline]
     pub fn file_name(&self) -> &CStr {
         &self.name
+    }
+
+    
+    
+    
+    #[inline]
+    pub fn offset(&self) -> i64 {
+        self.d_off
     }
 
     
@@ -284,32 +353,37 @@ impl DirEntry {
     }
 }
 
-#[test]
-fn dir_iterator_handles_io_errors() {
-    
-    let tmp = tempfile::tempdir().unwrap();
-    let fd = crate::fs::openat(
-        crate::fs::CWD,
-        tmp.path(),
-        crate::fs::OFlags::RDONLY | crate::fs::OFlags::CLOEXEC,
-        crate::fs::Mode::empty(),
-    )
-    .unwrap();
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-    let file_fd = crate::fs::openat(
-        &fd,
-        tmp.path().join("test.txt"),
-        crate::fs::OFlags::WRONLY | crate::fs::OFlags::CREATE,
-        crate::fs::Mode::RWXU,
-    )
-    .unwrap();
+    #[test]
+    fn dir_iterator_handles_io_errors() {
+        
+        let tmp = tempfile::tempdir().unwrap();
+        let fd = crate::fs::openat(
+            crate::fs::CWD,
+            tmp.path(),
+            crate::fs::OFlags::RDONLY | crate::fs::OFlags::CLOEXEC,
+            crate::fs::Mode::empty(),
+        )
+        .unwrap();
 
-    let mut dir = Dir::read_from(&fd).unwrap();
+        let file_fd = crate::fs::openat(
+            &fd,
+            tmp.path().join("test.txt"),
+            crate::fs::OFlags::WRONLY | crate::fs::OFlags::CREATE,
+            crate::fs::Mode::RWXU,
+        )
+        .unwrap();
 
-    
-    
-    crate::io::dup2(&file_fd, &mut dir.fd).unwrap();
+        let mut dir = Dir::read_from(&fd).unwrap();
 
-    assert!(matches!(dir.next(), Some(Err(_))));
-    assert!(dir.next().is_none());
+        
+        
+        crate::io::dup2(&file_fd, &mut dir.fd).unwrap();
+
+        assert!(matches!(dir.next(), Some(Err(_))));
+        assert!(dir.next().is_none());
+    }
 }

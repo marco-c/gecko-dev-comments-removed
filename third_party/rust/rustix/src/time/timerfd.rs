@@ -1,7 +1,31 @@
 use crate::fd::{AsFd, OwnedFd};
+use crate::timespec::Timespec;
 use crate::{backend, io};
 
-pub use backend::time::types::{Itimerspec, TimerfdClockId, TimerfdFlags, TimerfdTimerFlags};
+pub use backend::time::types::{TimerfdClockId, TimerfdFlags, TimerfdTimerFlags};
+
+
+
+
+
+
+#[derive(Debug, Clone)]
+pub struct Itimerspec {
+    
+    pub it_interval: Timespec,
+    
+    pub it_value: Timespec,
+}
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -20,6 +44,12 @@ pub fn timerfd_create(clockid: TimerfdClockId, flags: TimerfdFlags) -> io::Resul
 
 
 
+
+
+
+
+
+
 #[inline]
 pub fn timerfd_settime<Fd: AsFd>(
     fd: Fd,
@@ -28,6 +58,12 @@ pub fn timerfd_settime<Fd: AsFd>(
 ) -> io::Result<Itimerspec> {
     backend::time::syscalls::timerfd_settime(fd.as_fd(), flags, new_value)
 }
+
+
+
+
+
+
 
 
 

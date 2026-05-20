@@ -39,7 +39,12 @@ pub fn tcgetattr<Fd: AsFd>(fd: Fd) -> io::Result<Termios> {
 
 
 
-#[cfg(not(any(windows, target_os = "espidf", target_os = "wasi")))]
+#[cfg(not(any(
+    windows,
+    target_os = "horizon",
+    target_os = "espidf",
+    target_os = "wasi"
+)))]
 #[inline]
 #[doc(alias = "TIOCGWINSZ")]
 pub fn tcgetwinsize<Fd: AsFd>(fd: Fd) -> io::Result<Winsize> {
@@ -212,7 +217,7 @@ pub fn tcgetsid<Fd: AsFd>(fd: Fd) -> io::Result<Pid> {
 
 
 
-#[cfg(not(target_os = "espidf"))]
+#[cfg(not(any(target_os = "espidf", target_os = "horizon")))]
 #[inline]
 #[doc(alias = "TIOCSWINSZ")]
 pub fn tcsetwinsize<Fd: AsFd>(fd: Fd, winsize: Winsize) -> io::Result<()> {

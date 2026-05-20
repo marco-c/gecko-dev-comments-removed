@@ -24,12 +24,10 @@ use crate::{backend, io};
 use {crate::ffi::CString, alloc::vec::Vec};
 
 #[cfg(target_os = "linux")]
-use crate::{fd::FromRawFd, ioctl};
+use crate::{fd::FromRawFd as _, ioctl};
 
 bitflags::bitflags! {
     /// `O_*` flags for use with [`openpt`] and [`ioctl_tiocgptpeer`].
-    ///
-    /// [`ioctl_tiocgptpeer`]: https://docs.rs/rustix/*/x86_64-unknown-linux-gnu/rustix/pty/fn.ioctl_tiocgptpeer.html
     #[repr(transparent)]
     #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
     pub struct OpenptFlags: u32 {
@@ -37,7 +35,7 @@ bitflags::bitflags! {
         const RDWR = c::O_RDWR as c::c_uint;
 
         /// `O_NOCTTY`
-        #[cfg(not(any(target_os = "espidf", target_os = "l4re", target_os = "redox", target_os = "vita")))]
+        #[cfg(not(any(target_os = "espidf", target_os = "horizon", target_os = "l4re", target_os = "redox", target_os = "vita")))]
         const NOCTTY = c::O_NOCTTY as c::c_uint;
 
         /// `O_CLOEXEC`
@@ -119,6 +117,8 @@ pub fn openpt(flags: OpenptFlags) -> io::Result<OwnedFd> {
 
 
 
+
+
 #[cfg(all(
     feature = "alloc",
     any(
@@ -131,6 +131,7 @@ pub fn openpt(flags: OpenptFlags) -> io::Result<OwnedFd> {
 ))]
 #[inline]
 #[doc(alias = "ptsname_r")]
+#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 pub fn ptsname<Fd: AsFd, B: Into<Vec<u8>>>(fd: Fd, reuse: B) -> io::Result<CString> {
     backend::pty::syscalls::ptsname(fd.as_fd(), reuse.into())
 }
@@ -204,7 +205,10 @@ unsafe impl ioctl::Ioctl for Tiocgptpeer {
     type Output = OwnedFd;
 
     const IS_MUTATING: bool = false;
-    const OPCODE: ioctl::Opcode = ioctl::Opcode::old(c::TIOCGPTPEER as ioctl::RawOpcode);
+
+    fn opcode(&self) -> ioctl::Opcode {
+        c::TIOCGPTPEER as ioctl::Opcode
+    }
 
     fn as_ptr(&mut self) -> *mut c::c_void {
         self.0.bits() as *mut c::c_void

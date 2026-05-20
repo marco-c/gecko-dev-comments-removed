@@ -6,6 +6,8 @@
 
 
 
+#![allow(clippy::needless_lifetimes)]
+
 
 
 
@@ -59,11 +61,11 @@
 #![doc(test(attr(deny(warnings))))]
 
 use std::fmt;
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "redox", target_os = "wasi")))]
 use std::io::IoSlice;
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "redox", target_os = "wasi")))]
 use std::marker::PhantomData;
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "redox", target_os = "wasi")))]
 use std::mem;
 use std::mem::MaybeUninit;
 use std::net::SocketAddr;
@@ -107,7 +109,7 @@ macro_rules! from {
     ($from: ty, $for: ty) => {
         impl From<$from> for $for {
             fn from(socket: $from) -> $for {
-                #[cfg(unix)]
+                #[cfg(any(unix, all(target_os = "wasi", not(target_env = "p1"))))]
                 unsafe {
                     <$for>::from_raw_fd(socket.into_raw_fd())
                 }
@@ -174,27 +176,34 @@ mod sockaddr;
 mod socket;
 mod sockref;
 
-#[cfg_attr(unix, path = "sys/unix.rs")]
+#[cfg_attr(
+    any(unix, all(target_os = "wasi", not(target_env = "p1"))),
+    path = "sys/unix.rs"
+)]
 #[cfg_attr(windows, path = "sys/windows.rs")]
 mod sys;
 
-#[cfg(not(any(windows, unix)))]
+#[cfg(not(any(windows, unix, all(target_os = "wasi", not(target_env = "p1")))))]
 compile_error!("Socket2 doesn't support the compile target");
 
 use sys::c_int;
 
-pub use sockaddr::SockAddr;
-pub use socket::Socket;
-pub use sockref::SockRef;
-
+pub use sockaddr::{sa_family_t, socklen_t, SockAddr, SockAddrStorage};
 #[cfg(not(any(
     target_os = "haiku",
     target_os = "illumos",
     target_os = "netbsd",
     target_os = "redox",
     target_os = "solaris",
+    target_os = "wasi",
 )))]
 pub use socket::InterfaceIndexOrAddress;
+pub use socket::Socket;
+pub use sockref::SockRef;
+#[cfg(all(feature = "all", target_os = "linux"))]
+pub use sys::CcidEndpoints;
+#[cfg(all(feature = "all", any(target_os = "linux", target_os = "android")))]
+pub use sys::SockFilter;
 
 
 
@@ -216,6 +225,7 @@ impl Domain {
     pub const IPV6: Domain = Domain(sys::AF_INET6);
 
     
+    #[cfg(not(target_os = "wasi"))]
     pub const UNIX: Domain = Domain(sys::AF_UNIX);
 
     
@@ -266,20 +276,17 @@ impl Type {
     
     
     #[cfg(all(feature = "all", target_os = "linux"))]
-    #[cfg_attr(docsrs, doc(cfg(all(feature = "all", target_os = "linux"))))]
     pub const DCCP: Type = Type(sys::SOCK_DCCP);
 
     
-    #[cfg(all(feature = "all", not(target_os = "espidf")))]
-    #[cfg_attr(docsrs, doc(cfg(all(feature = "all", not(target_os = "espidf")))))]
+    #[cfg(all(feature = "all", not(any(target_os = "espidf", target_os = "wasi"))))]
     pub const SEQPACKET: Type = Type(sys::SOCK_SEQPACKET);
 
     
-    #[cfg(all(feature = "all", not(any(target_os = "redox", target_os = "espidf"))))]
-    #[cfg_attr(
-        docsrs,
-        doc(cfg(all(feature = "all", not(any(target_os = "redox", target_os = "espidf")))))
-    )]
+    #[cfg(all(
+        feature = "all",
+        not(any(target_os = "redox", target_os = "espidf", target_os = "wasi"))
+    ))]
     pub const RAW: Type = Type(sys::SOCK_RAW);
 }
 
@@ -307,9 +314,11 @@ pub struct Protocol(c_int);
 
 impl Protocol {
     
+    #[cfg(not(target_os = "wasi"))]
     pub const ICMPV4: Protocol = Protocol(sys::IPPROTO_ICMP);
 
     
+    #[cfg(not(target_os = "wasi"))]
     pub const ICMPV6: Protocol = Protocol(sys::IPPROTO_ICMPV6);
 
     
@@ -324,7 +333,6 @@ impl Protocol {
 
     
     #[cfg(all(feature = "all", target_os = "linux"))]
-    #[cfg_attr(docsrs, doc(cfg(all(feature = "all", target_os = "linux"))))]
     pub const DCCP: Protocol = Protocol(sys::IPPROTO_DCCP);
 
     
@@ -363,12 +371,11 @@ impl From<Protocol> for c_int {
 
 
 
-#[cfg(not(target_os = "redox"))]
-#[cfg_attr(docsrs, doc(cfg(not(target_os = "redox"))))]
+#[cfg(not(any(target_os = "redox", target_os = "wasi")))]
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub struct RecvFlags(c_int);
 
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "redox", target_os = "wasi")))]
 impl RecvFlags {
     
     
@@ -444,7 +451,6 @@ pub struct TcpKeepalive {
         target_os = "openbsd",
         target_os = "redox",
         target_os = "solaris",
-        target_os = "windows",
         target_os = "nto",
         target_os = "espidf",
         target_os = "vita",
@@ -455,6 +461,7 @@ pub struct TcpKeepalive {
 
 impl TcpKeepalive {
     
+    #[allow(clippy::new_without_default)]
     pub const fn new() -> TcpKeepalive {
         TcpKeepalive {
             time: None,
@@ -472,7 +479,6 @@ impl TcpKeepalive {
                 target_os = "openbsd",
                 target_os = "redox",
                 target_os = "solaris",
-                target_os = "windows",
                 target_os = "nto",
                 target_os = "espidf",
                 target_os = "vita",
@@ -514,30 +520,16 @@ impl TcpKeepalive {
         target_os = "fuchsia",
         target_os = "illumos",
         target_os = "ios",
+        target_os = "visionos",
         target_os = "linux",
         target_os = "macos",
         target_os = "netbsd",
         target_os = "tvos",
         target_os = "watchos",
         target_os = "windows",
+        target_os = "cygwin",
+        all(target_os = "wasi", not(target_env = "p1")),
     ))]
-    #[cfg_attr(
-        docsrs,
-        doc(cfg(any(
-            target_os = "android",
-            target_os = "dragonfly",
-            target_os = "freebsd",
-            target_os = "fuchsia",
-            target_os = "illumos",
-            target_os = "ios",
-            target_os = "linux",
-            target_os = "macos",
-            target_os = "netbsd",
-            target_os = "tvos",
-            target_os = "watchos",
-            target_os = "windows",
-        )))
-    )]
     pub const fn with_interval(self, interval: Duration) -> Self {
         Self {
             interval: Some(interval),
@@ -558,32 +550,17 @@ impl TcpKeepalive {
             target_os = "fuchsia",
             target_os = "illumos",
             target_os = "ios",
+            target_os = "visionos",
             target_os = "linux",
             target_os = "macos",
             target_os = "netbsd",
             target_os = "tvos",
             target_os = "watchos",
+            target_os = "cygwin",
+            target_os = "windows",
+            all(target_os = "wasi", not(target_env = "p1")),
         )
     ))]
-    #[cfg_attr(
-        docsrs,
-        doc(cfg(all(
-            feature = "all",
-            any(
-                target_os = "android",
-                target_os = "dragonfly",
-                target_os = "freebsd",
-                target_os = "fuchsia",
-                target_os = "illumos",
-                target_os = "ios",
-                target_os = "linux",
-                target_os = "macos",
-                target_os = "netbsd",
-                target_os = "tvos",
-                target_os = "watchos",
-            )
-        )))
-    )]
     pub const fn with_retries(self, retries: u32) -> Self {
         Self {
             retries: Some(retries),
@@ -596,14 +573,15 @@ impl TcpKeepalive {
 
 
 
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "redox", target_os = "wasi")))]
+#[repr(transparent)]
 pub struct MsgHdr<'addr, 'bufs, 'control> {
     inner: sys::msghdr,
     #[allow(clippy::type_complexity)]
     _lifetimes: PhantomData<(&'addr SockAddr, &'bufs IoSlice<'bufs>, &'control [u8])>,
 }
 
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "redox", target_os = "wasi")))]
 impl<'addr, 'bufs, 'control> MsgHdr<'addr, 'bufs, 'control> {
     
     #[allow(clippy::new_without_default)]
@@ -653,7 +631,7 @@ impl<'addr, 'bufs, 'control> MsgHdr<'addr, 'bufs, 'control> {
     }
 }
 
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "redox", target_os = "wasi")))]
 impl<'name, 'bufs, 'control> fmt::Debug for MsgHdr<'name, 'bufs, 'control> {
     fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
         "MsgHdr".fmt(fmt)
@@ -664,7 +642,8 @@ impl<'name, 'bufs, 'control> fmt::Debug for MsgHdr<'name, 'bufs, 'control> {
 
 
 
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "redox", target_os = "wasi")))]
+#[repr(transparent)]
 pub struct MsgHdrMut<'addr, 'bufs, 'control> {
     inner: sys::msghdr,
     #[allow(clippy::type_complexity)]
@@ -675,7 +654,7 @@ pub struct MsgHdrMut<'addr, 'bufs, 'control> {
     )>,
 }
 
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "redox", target_os = "wasi")))]
 impl<'addr, 'bufs, 'control> MsgHdrMut<'addr, 'bufs, 'control> {
     
     #[allow(clippy::new_without_default)]
@@ -730,7 +709,7 @@ impl<'addr, 'bufs, 'control> MsgHdrMut<'addr, 'bufs, 'control> {
     }
 }
 
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "redox", target_os = "wasi")))]
 impl<'name, 'bufs, 'control> fmt::Debug for MsgHdrMut<'name, 'bufs, 'control> {
     fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
         "MsgHdrMut".fmt(fmt)

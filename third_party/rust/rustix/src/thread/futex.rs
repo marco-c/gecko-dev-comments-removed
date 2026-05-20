@@ -22,21 +22,24 @@
 
 
 
+
+
 #![allow(unsafe_code)]
 
+use core::ffi::c_void;
 use core::num::NonZeroU32;
 use core::ptr;
 use core::sync::atomic::AtomicU32;
 
 use crate::backend::thread::futex::Operation;
 use crate::backend::thread::syscalls::{futex_timeout, futex_val2};
-use crate::fd::{FromRawFd, OwnedFd, RawFd};
-use crate::utils::option_as_ptr;
+use crate::fd::{FromRawFd as _, OwnedFd, RawFd};
 use crate::{backend, io};
 
+pub use crate::clockid::ClockId;
 pub use crate::timespec::{Nsecs, Secs, Timespec};
 
-pub use backend::thread::futex::{Flags, OWNER_DIED, WAITERS};
+pub use backend::thread::futex::{Flags, WaitFlags, OWNER_DIED, WAITERS};
 
 
 
@@ -54,20 +57,11 @@ pub fn wait(
     uaddr: &AtomicU32,
     flags: Flags,
     val: u32,
-    timeout: Option<Timespec>,
+    timeout: Option<&Timespec>,
 ) -> io::Result<()> {
     
     unsafe {
-        futex_timeout(
-            uaddr,
-            Operation::Wait,
-            flags,
-            val,
-            option_as_ptr(timeout.as_ref()),
-            ptr::null(),
-            0,
-        )
-        .map(|val| {
+        futex_timeout(uaddr, Operation::Wait, flags, val, timeout, ptr::null(), 0).map(|val| {
             debug_assert_eq!(
                 val, 0,
                 "The return value should always equal zero, if the call is successful"
@@ -255,19 +249,10 @@ pub fn wake_op(
 
 
 #[inline]
-pub fn lock_pi(uaddr: &AtomicU32, flags: Flags, timeout: Option<Timespec>) -> io::Result<()> {
+pub fn lock_pi(uaddr: &AtomicU32, flags: Flags, timeout: Option<&Timespec>) -> io::Result<()> {
     
     unsafe {
-        futex_timeout(
-            uaddr,
-            Operation::LockPi,
-            flags,
-            0,
-            option_as_ptr(timeout.as_ref()),
-            ptr::null(),
-            0,
-        )
-        .map(|val| {
+        futex_timeout(uaddr, Operation::LockPi, flags, 0, timeout, ptr::null(), 0).map(|val| {
             debug_assert_eq!(
                 val, 0,
                 "The return value should always equal zero, if the call is successful"
@@ -335,7 +320,7 @@ pub fn wait_bitset(
     uaddr: &AtomicU32,
     flags: Flags,
     val: u32,
-    timeout: Option<Timespec>,
+    timeout: Option<&Timespec>,
     val3: NonZeroU32,
 ) -> io::Result<()> {
     
@@ -345,7 +330,7 @@ pub fn wait_bitset(
             Operation::WaitBitset,
             flags,
             val,
-            option_as_ptr(timeout.as_ref()),
+            timeout,
             ptr::null(),
             val3.get(),
         )
@@ -406,7 +391,7 @@ pub fn wait_requeue_pi(
     uaddr: &AtomicU32,
     flags: Flags,
     val: u32,
-    timeout: Option<Timespec>,
+    timeout: Option<&Timespec>,
     uaddr2: &AtomicU32,
 ) -> io::Result<()> {
     
@@ -416,7 +401,7 @@ pub fn wait_requeue_pi(
             Operation::WaitRequeuePi,
             flags,
             val,
-            option_as_ptr(timeout.as_ref()),
+            timeout,
             uaddr2,
             0,
         )
@@ -464,23 +449,152 @@ pub fn cmp_requeue_pi(
 
 
 #[inline]
-pub fn lock_pi2(uaddr: &AtomicU32, flags: Flags, timeout: Option<Timespec>) -> io::Result<()> {
+pub fn lock_pi2(uaddr: &AtomicU32, flags: Flags, timeout: Option<&Timespec>) -> io::Result<()> {
     
     unsafe {
-        futex_timeout(
-            uaddr,
-            Operation::LockPi2,
-            flags,
-            0,
-            option_as_ptr(timeout.as_ref()),
-            ptr::null(),
-            0,
-        )
-        .map(|val| {
+        futex_timeout(uaddr, Operation::LockPi2, flags, 0, timeout, ptr::null(), 0).map(|val| {
             debug_assert_eq!(
                 val, 0,
                 "The return value should always equal zero, if the call is successful"
             );
         })
+    }
+}
+
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+#[non_exhaustive]
+pub struct WaitPtr {
+    #[cfg(all(target_pointer_width = "32", target_endian = "big"))]
+    #[doc(hidden)]
+    pub __pad32: u32,
+    #[cfg(all(target_pointer_width = "16", target_endian = "big"))]
+    #[doc(hidden)]
+    pub __pad16: u16,
+
+    
+    pub ptr: *mut c_void,
+
+    #[cfg(all(target_pointer_width = "16", target_endian = "little"))]
+    #[doc(hidden)]
+    pub __pad16: u16,
+    #[cfg(all(target_pointer_width = "32", target_endian = "little"))]
+    #[doc(hidden)]
+    pub __pad32: u32,
+}
+
+impl WaitPtr {
+    
+    #[inline]
+    pub const fn new(ptr: *mut c_void) -> Self {
+        Self {
+            ptr,
+
+            #[cfg(target_pointer_width = "16")]
+            __pad16: 0,
+            #[cfg(any(target_pointer_width = "16", target_pointer_width = "32"))]
+            __pad32: 0,
+        }
+    }
+}
+
+impl Default for WaitPtr {
+    #[inline]
+    fn default() -> Self {
+        Self::new(ptr::null_mut())
+    }
+}
+
+impl From<*mut c_void> for WaitPtr {
+    #[inline]
+    fn from(ptr: *mut c_void) -> Self {
+        Self::new(ptr)
+    }
+}
+
+impl core::fmt::Debug for WaitPtr {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        self.ptr.fmt(f)
+    }
+}
+
+
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+#[non_exhaustive]
+pub struct Wait {
+    
+    pub val: u64,
+    
+    pub uaddr: WaitPtr,
+    
+    pub flags: WaitFlags,
+
+    
+    pub(crate) __reserved: u32,
+}
+
+impl Wait {
+    
+    #[inline]
+    pub const fn new() -> Self {
+        Self {
+            val: 0,
+            uaddr: WaitPtr::new(ptr::null_mut()),
+            flags: WaitFlags::empty(),
+            __reserved: 0,
+        }
+    }
+}
+
+impl Default for Wait {
+    #[inline]
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+
+
+
+
+
+
+
+
+
+#[inline]
+pub fn waitv(
+    waiters: &[Wait],
+    flags: WaitvFlags,
+    timeout: Option<&Timespec>,
+    clockid: ClockId,
+) -> io::Result<usize> {
+    backend::thread::syscalls::futex_waitv(waiters, flags, timeout, clockid)
+}
+
+bitflags::bitflags! {
+    /// Flags for use with the flags argument in [`waitv`].
+    ///
+    /// At this time, no flags are defined.
+    #[repr(transparent)]
+    #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
+    pub struct WaitvFlags: u32 {
+        /// <https://docs.rs/bitflags/*/bitflags/#externally-defined-flags>
+        const _ = !0;
+    }
+}
+
+#[cfg(linux_raw)]
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_layouts() {
+        use crate::backend::c;
+
+        check_renamed_struct!(Wait, futex_waitv, val, uaddr, flags, __reserved);
     }
 }

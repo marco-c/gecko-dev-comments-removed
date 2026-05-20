@@ -1,10 +1,120 @@
 
 
-use futures_core::ready;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 use pin_project_lite::pin_project;
 use std::io;
 use std::pin::Pin;
-use std::task::{Context, Poll};
+use std::task::{ready, Context, Poll};
 
 pin_project! {
     /// A compatibility layer that allows conversion between the
@@ -227,12 +337,14 @@ impl<T: tokio::io::AsyncSeek> futures_io::AsyncSeek for Compat<T> {
         pos: io::SeekFrom,
     ) -> Poll<io::Result<u64>> {
         if self.seek_pos != Some(pos) {
+            
+            ready!(self.as_mut().project().inner.poll_complete(cx))?;
             self.as_mut().project().inner.start_seek(pos)?;
             *self.as_mut().project().seek_pos = Some(pos);
         }
         let res = ready!(self.as_mut().project().inner.poll_complete(cx));
         *self.as_mut().project().seek_pos = None;
-        Poll::Ready(res.map(|p| p as u64))
+        Poll::Ready(res)
     }
 }
 
@@ -255,7 +367,7 @@ impl<T: futures_io::AsyncSeek> tokio::io::AsyncSeek for Compat<T> {
         };
         let res = ready!(self.as_mut().project().inner.poll_seek(cx, pos));
         *self.as_mut().project().seek_pos = None;
-        Poll::Ready(res.map(|p| p as u64))
+        Poll::Ready(res)
     }
 }
 

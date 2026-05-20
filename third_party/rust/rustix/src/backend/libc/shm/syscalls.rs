@@ -4,10 +4,9 @@ use crate::backend::c;
 use crate::backend::conv::{c_str, ret, ret_owned_fd};
 use crate::fd::OwnedFd;
 use crate::fs::Mode;
-use crate::io;
-use crate::shm::ShmOFlags;
+use crate::{io, shm};
 
-pub(crate) fn shm_open(name: &CStr, oflags: ShmOFlags, mode: Mode) -> io::Result<OwnedFd> {
+pub(crate) fn shm_open(name: &CStr, oflags: shm::OFlags, mode: Mode) -> io::Result<OwnedFd> {
     
     
     #[cfg(apple)]

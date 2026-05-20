@@ -11,58 +11,12 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[cfg(feature = "tcp")]
-pub use self::connect::HttpConnector;
-
-pub mod connect;
-#[cfg(all(test, feature = "runtime"))]
+#[cfg(test)]
 mod tests;
 
 cfg_feature! {
     #![any(feature = "http1", feature = "http2")]
 
-    pub use self::client::{Builder, Client, ResponseFuture};
-
-    mod client;
     pub mod conn;
     pub(super) mod dispatch;
-    mod pool;
-    pub mod service;
 }

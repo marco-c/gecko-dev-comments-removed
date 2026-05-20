@@ -39,86 +39,10 @@ const LEVEL_MULT: usize = 64;
 
 impl<T: Stack> Level<T> {
     pub(crate) fn new(level: usize) -> Level<T> {
-        
-        
-        
-        macro_rules! s {
-            () => {
-                T::default()
-            };
-        }
-
         Level {
             level,
             occupied: 0,
-            slot: [
-                
-                
-                s!(),
-                s!(),
-                s!(),
-                s!(),
-                s!(),
-                s!(),
-                s!(),
-                s!(),
-                s!(),
-                s!(),
-                s!(),
-                s!(),
-                s!(),
-                s!(),
-                s!(),
-                s!(),
-                s!(),
-                s!(),
-                s!(),
-                s!(),
-                s!(),
-                s!(),
-                s!(),
-                s!(),
-                s!(),
-                s!(),
-                s!(),
-                s!(),
-                s!(),
-                s!(),
-                s!(),
-                s!(),
-                s!(),
-                s!(),
-                s!(),
-                s!(),
-                s!(),
-                s!(),
-                s!(),
-                s!(),
-                s!(),
-                s!(),
-                s!(),
-                s!(),
-                s!(),
-                s!(),
-                s!(),
-                s!(),
-                s!(),
-                s!(),
-                s!(),
-                s!(),
-                s!(),
-                s!(),
-                s!(),
-                s!(),
-                s!(),
-                s!(),
-                s!(),
-                s!(),
-                s!(),
-                s!(),
-                s!(),
-                s!(),
-            ],
+            slot: std::array::from_fn(|_| T::default()),
         }
     }
 
@@ -127,10 +51,7 @@ impl<T: Stack> Level<T> {
     pub(crate) fn next_expiration(&self, now: u64) -> Option<Expiration> {
         
         
-        let slot = match self.next_occupied_slot(now) {
-            Some(slot) => slot,
-            None => return None,
-        };
+        let slot = self.next_occupied_slot(now)?;
 
         
         
@@ -140,11 +61,31 @@ impl<T: Stack> Level<T> {
 
         
         let level_start = now - (now % level_range);
-        let deadline = level_start + slot as u64 * slot_range;
+        let mut deadline = level_start + slot as u64 * slot_range;
+        if deadline < now {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            debug_assert_eq!(self.level, super::NUM_LEVELS - 1);
 
+            deadline += level_range;
+        }
         debug_assert!(
             deadline >= now,
-            "deadline={}; now={}; level={}; slot={}; occupied={:b}",
+            "deadline={:016X}; now={:016X}; level={}; slot={}; occupied={:b}",
             deadline,
             now,
             self.level,
@@ -206,6 +147,10 @@ impl<T: Stack> Level<T> {
 
         ret
     }
+
+    pub(crate) fn peek_entry_slot(&self, slot: usize) -> Option<T::Owned> {
+        self.slot[slot].peek()
+    }
 }
 
 impl<T> fmt::Debug for Level<T> {
@@ -246,7 +191,7 @@ mod test {
         for level in 1..5 {
             for pos in level..64 {
                 let a = pos * 64_usize.pow(level as u32);
-                assert_eq!(pos as usize, slot_for(a as u64, level));
+                assert_eq!(pos, slot_for(a as u64, level));
             }
         }
     }

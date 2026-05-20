@@ -1,10 +1,17 @@
 use std::env;
 use std::path::{Path, PathBuf};
 
+#[cfg(doc)]
+use crate::{tempdir_in, tempfile_in, Builder};
+
 
 use once_cell::sync::OnceCell as OnceLock;
 
 static DEFAULT_TEMPDIR: OnceLock<PathBuf> = OnceLock::new();
+
+
+
+
 
 
 

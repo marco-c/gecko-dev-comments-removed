@@ -30,6 +30,11 @@ use core::mem::forget;
 
 
 
+
+
+
+
+
 #[derive(Copy, Clone)]
 #[repr(transparent)]
 #[cfg_attr(rustc_attrs, rustc_layout_scalar_valid_range_start(0))]
@@ -43,6 +48,8 @@ pub struct BorrowedFd<'fd> {
     fd: RawFd,
     _phantom: PhantomData<&'fd OwnedFd>,
 }
+
+
 
 
 
@@ -107,7 +114,7 @@ impl OwnedFd {
         
         
         #[cfg(target_os = "espidf")]
-        let fd = crate::io::fcntl_dupfd(self)?;
+        let fd = crate::io::fcntl_dupfd(self, 0)?;
 
         Ok(fd.into())
     }

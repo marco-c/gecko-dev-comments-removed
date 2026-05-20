@@ -1,32 +1,37 @@
 
 
 
-#[cfg(not(fix_y2038))]
+#![allow(dead_code)]
+
+use core::num::TryFromIntError;
+use core::ops::{Add, AddAssign, Neg, Sub, SubAssign};
+use core::time::Duration;
+
 use crate::backend::c;
-
-
+#[allow(unused)]
+use crate::ffi;
 #[cfg(not(fix_y2038))]
-pub type Timespec = c::timespec;
+use core::ptr::null;
 
 
-#[cfg(fix_y2038)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(C)]
 pub struct Timespec {
     
     pub tv_sec: Secs,
 
     
+    
+    
+    
+    
+    
+    
+    
     pub tv_nsec: Nsecs,
 }
 
 
-#[cfg(not(fix_y2038))]
-#[allow(deprecated)]
-pub type Secs = c::time_t;
-
-
-#[cfg(fix_y2038)]
 pub type Secs = i64;
 
 
@@ -43,7 +48,219 @@ pub type Nsecs = i64;
     libc,
     not(all(target_arch = "x86_64", target_pointer_width = "32"))
 ))]
-pub type Nsecs = c::c_long;
+pub type Nsecs = ffi::c_long;
+
+impl Timespec {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub const fn checked_add(self, rhs: Self) -> Option<Self> {
+        if let Some(mut tv_sec) = self.tv_sec.checked_add(rhs.tv_sec) {
+            let mut tv_nsec = self.tv_nsec + rhs.tv_nsec;
+            if tv_nsec >= 1_000_000_000 {
+                tv_nsec -= 1_000_000_000;
+                if let Some(carried_sec) = tv_sec.checked_add(1) {
+                    tv_sec = carried_sec;
+                } else {
+                    return None;
+                }
+            }
+            Some(Self { tv_sec, tv_nsec })
+        } else {
+            None
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub const fn checked_sub(self, rhs: Self) -> Option<Self> {
+        if let Some(mut tv_sec) = self.tv_sec.checked_sub(rhs.tv_sec) {
+            let mut tv_nsec = self.tv_nsec - rhs.tv_nsec;
+            if tv_nsec < 0 {
+                tv_nsec += 1_000_000_000;
+                if let Some(borrowed_sec) = tv_sec.checked_sub(1) {
+                    tv_sec = borrowed_sec;
+                } else {
+                    return None;
+                }
+            }
+            Some(Self { tv_sec, tv_nsec })
+        } else {
+            None
+        }
+    }
+
+    
+    pub(crate) fn as_c_int_millis(&self) -> Option<c::c_int> {
+        let secs = self.tv_sec;
+        if secs < 0 {
+            return None;
+        }
+        secs.checked_mul(1000)
+            .and_then(|millis| {
+                
+                
+                millis.checked_add((i64::from(self.tv_nsec) + 999_999) / 1_000_000)
+            })
+            .and_then(|millis| c::c_int::try_from(millis).ok())
+    }
+}
+
+impl TryFrom<Timespec> for Duration {
+    type Error = TryFromIntError;
+
+    fn try_from(ts: Timespec) -> Result<Self, Self::Error> {
+        Ok(Self::new(ts.tv_sec.try_into()?, ts.tv_nsec as _))
+    }
+}
+
+impl TryFrom<Duration> for Timespec {
+    type Error = TryFromIntError;
+
+    fn try_from(dur: Duration) -> Result<Self, Self::Error> {
+        Ok(Self {
+            tv_sec: dur.as_secs().try_into()?,
+            tv_nsec: dur.subsec_nanos() as _,
+        })
+    }
+}
+
+impl Add for Timespec {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self {
+        self.checked_add(rhs)
+            .expect("overflow when adding timespecs")
+    }
+}
+
+impl AddAssign for Timespec {
+    fn add_assign(&mut self, rhs: Self) {
+        *self = *self + rhs;
+    }
+}
+
+impl Sub for Timespec {
+    type Output = Self;
+
+    fn sub(self, rhs: Self) -> Self {
+        self.checked_sub(rhs)
+            .expect("overflow when subtracting timespecs")
+    }
+}
+
+impl SubAssign for Timespec {
+    fn sub_assign(&mut self, rhs: Self) {
+        *self = *self - rhs;
+    }
+}
+
+impl Neg for Timespec {
+    type Output = Self;
+
+    fn neg(self) -> Self {
+        Self::default() - self
+    }
+}
 
 
 
@@ -86,30 +303,126 @@ impl From<Timespec> for LibcTimespec {
     }
 }
 
-#[test]
-fn test_sizes() {
-    assert_eq_size!(Secs, u64);
-    const_assert!(core::mem::size_of::<Timespec>() >= core::mem::size_of::<(u64, u32)>());
-    const_assert!(core::mem::size_of::<Nsecs>() >= 4);
+#[cfg(not(fix_y2038))]
+pub(crate) fn as_libc_timespec_ptr(timespec: &Timespec) -> *const c::timespec {
+    #[cfg(test)]
+    {
+        assert_eq_size!(Timespec, c::timespec);
+    }
+    crate::utils::as_ptr(timespec).cast::<c::timespec>()
+}
 
-    let mut t = Timespec {
-        tv_sec: 0,
-        tv_nsec: 0,
-    };
+#[cfg(not(fix_y2038))]
+pub(crate) fn as_libc_timespec_mut_ptr(
+    timespec: &mut core::mem::MaybeUninit<Timespec>,
+) -> *mut c::timespec {
+    #[cfg(test)]
+    {
+        assert_eq_size!(Timespec, c::timespec);
+    }
+    timespec.as_mut_ptr().cast::<c::timespec>()
+}
 
-    
-    t.tv_nsec = 999_999_999_u32 as _;
-    assert_eq!(t.tv_nsec as u64, 999_999_999_u64);
-
-    
-    t.tv_sec = 0x1_0000_0000_u64 as _;
-    assert_eq!(t.tv_sec as u64, 0x1_0000_0000_u64);
+#[cfg(not(fix_y2038))]
+pub(crate) fn option_as_libc_timespec_ptr(timespec: Option<&Timespec>) -> *const c::timespec {
+    match timespec {
+        None => null(),
+        Some(timespec) => as_libc_timespec_ptr(timespec),
+    }
 }
 
 
-#[cfg(fix_y2038)]
-#[test]
-#[allow(deprecated)]
-fn test_fix_y2038() {
-    assert_eq_size!(libc::time_t, u32);
+
+
+
+
+#[cfg(apple)]
+#[inline]
+pub(crate) fn fix_negative_nsecs(
+    mut secs: c::time_t,
+    mut nsecs: c::c_long,
+) -> (c::time_t, c::c_long) {
+    #[cold]
+    fn adjust(secs: &mut c::time_t, nsecs: c::c_long) -> c::c_long {
+        assert!(nsecs >= -1_000_000_000);
+        assert!(*secs < 0);
+        assert!(*secs > c::time_t::MIN);
+        *secs -= 1;
+        nsecs + 1_000_000_000
+    }
+
+    if nsecs < 0 {
+        nsecs = adjust(&mut secs, nsecs);
+    }
+    (secs, nsecs)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[cfg(apple)]
+    #[test]
+    fn test_negative_timestamps() {
+        let mut secs = -59;
+        let mut nsecs = -900_000_000;
+        (secs, nsecs) = fix_negative_nsecs(secs, nsecs);
+        assert_eq!(secs, -60);
+        assert_eq!(nsecs, 100_000_000);
+        (secs, nsecs) = fix_negative_nsecs(secs, nsecs);
+        assert_eq!(secs, -60);
+        assert_eq!(nsecs, 100_000_000);
+    }
+
+    #[test]
+    fn test_sizes() {
+        assert_eq_size!(Secs, u64);
+        const_assert!(core::mem::size_of::<Timespec>() >= core::mem::size_of::<(u64, u32)>());
+        const_assert!(core::mem::size_of::<Nsecs>() >= 4);
+
+        let mut t = Timespec {
+            tv_sec: 0,
+            tv_nsec: 0,
+        };
+
+        
+        t.tv_nsec = 999_999_999_u32 as _;
+        assert_eq!(t.tv_nsec as u64, 999_999_999_u64);
+
+        
+        t.tv_sec = 0x1_0000_0000_u64 as _;
+        assert_eq!(t.tv_sec as u64, 0x1_0000_0000_u64);
+    }
+
+    
+    #[cfg(fix_y2038)]
+    #[test]
+    #[allow(deprecated)]
+    fn test_fix_y2038() {
+        assert_eq_size!(libc::time_t, u32);
+    }
+
+    
+    #[cfg(not(fix_y2038))]
+    #[test]
+    fn timespec_layouts() {
+        use crate::backend::c;
+        check_renamed_struct!(Timespec, timespec, tv_sec, tv_nsec);
+    }
+
+    
+    #[cfg(linux_raw_dep)]
+    #[test]
+    fn test_against_kernel_timespec() {
+        assert_eq_size!(Timespec, linux_raw_sys::general::__kernel_timespec);
+        assert_eq_align!(Timespec, linux_raw_sys::general::__kernel_timespec);
+        assert_eq!(
+            memoffset::span_of!(Timespec, tv_sec),
+            memoffset::span_of!(linux_raw_sys::general::__kernel_timespec, tv_sec)
+        );
+        assert_eq!(
+            memoffset::span_of!(Timespec, tv_nsec),
+            memoffset::span_of!(linux_raw_sys::general::__kernel_timespec, tv_nsec)
+        );
+    }
 }

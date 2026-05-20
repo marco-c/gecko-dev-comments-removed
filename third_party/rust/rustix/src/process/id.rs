@@ -10,36 +10,15 @@
 use crate::{backend, io};
 #[cfg(feature = "alloc")]
 use alloc::vec::Vec;
-#[cfg(linux_kernel)]
-use backend::process::types::RawCpuid;
 
 pub use crate::pid::{Pid, RawPid};
 pub use crate::ugid::{Gid, RawGid, RawUid, Uid};
 
 
-#[cfg(linux_kernel)]
-#[repr(transparent)]
-#[derive(Copy, Clone, Eq, PartialEq, Debug, Hash)]
-pub struct Cpuid(RawCpuid);
 
-#[cfg(linux_kernel)]
-impl Cpuid {
-    
-    
-    
-    
-    
-    #[inline]
-    pub const unsafe fn from_raw(raw: RawCpuid) -> Self {
-        Self(raw)
-    }
 
-    
-    #[inline]
-    pub const fn as_raw(self) -> RawCpuid {
-        self.0
-    }
-}
+
+
 
 
 
@@ -63,11 +42,23 @@ pub fn getuid() -> Uid {
 
 
 
+
+
+
+
+
+
 #[inline]
 #[must_use]
 pub fn geteuid() -> Uid {
     backend::ugid::syscalls::geteuid()
 }
+
+
+
+
+
+
 
 
 
@@ -91,11 +82,23 @@ pub fn getgid() -> Gid {
 
 
 
+
+
+
+
+
+
 #[inline]
 #[must_use]
 pub fn getegid() -> Gid {
     backend::ugid::syscalls::getegid()
 }
+
+
+
+
+
+
 
 
 
@@ -119,11 +122,27 @@ pub fn getpid() -> Pid {
 
 
 
+
+
+
+
+
+
+
+
+
+
 #[inline]
 #[must_use]
 pub fn getppid() -> Option<Pid> {
     backend::process::syscalls::getppid()
 }
+
+
+
+
+
+
 
 
 
@@ -146,10 +165,22 @@ pub fn getpgid(pid: Option<Pid>) -> io::Result<Pid> {
 
 
 
+
+
+
+
+
+
 #[inline]
 pub fn setpgid(pid: Option<Pid>, pgid: Option<Pid>) -> io::Result<()> {
     backend::process::syscalls::setpgid(pid, pgid)
 }
+
+
+
+
+
+
 
 
 
@@ -173,11 +204,23 @@ pub fn getpgrp() -> Pid {
 
 
 
+
+
+
+
+
+
 #[cfg(not(target_os = "redox"))]
 #[inline]
 pub fn getsid(pid: Option<Pid>) -> io::Result<Pid> {
     backend::process::syscalls::getsid(pid)
 }
+
+
+
+
+
+
 
 
 
@@ -200,7 +243,12 @@ pub fn setsid() -> io::Result<Pid> {
 
 
 
+
+
+
+
 #[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 pub fn getgroups() -> io::Result<Vec<Gid>> {
     
     

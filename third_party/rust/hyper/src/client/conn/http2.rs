@@ -1,23 +1,24 @@
 
 
-use std::error::Error as StdError;
+use std::error::Error;
 use std::fmt;
 use std::future::Future;
 use std::marker::PhantomData;
-use std::marker::Unpin;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::task::{Context, Poll};
 use std::time::Duration;
 
+use crate::rt::{Read, Write};
+use futures_core::ready;
 use http::{Request, Response};
-use tokio::io::{AsyncRead, AsyncWrite};
 
-use super::super::dispatch;
-use crate::body::{Body as IncomingBody, HttpBody as Body};
-use crate::common::exec::{BoxSendFuture, Exec};
+use super::super::dispatch::{self, TrySendError};
+use crate::body::{Body, Incoming as IncomingBody};
+use crate::common::time::Time;
 use crate::proto;
-use crate::rt::Executor;
+use crate::rt::bounds::Http2ClientConnExec;
+use crate::rt::Timer;
 
 
 pub struct SendRequest<B> {
@@ -36,21 +37,29 @@ impl<B> Clone for SendRequest<B> {
 
 
 
+
+
 #[must_use = "futures do nothing unless polled"]
-pub struct Connection<T, B>
+pub struct Connection<T, B, E>
 where
-    T: AsyncRead + AsyncWrite + Send + 'static,
+    T: Read + Write + Unpin,
     B: Body + 'static,
+    E: Http2ClientConnExec<B, T> + Unpin,
+    B::Error: Into<Box<dyn Error + Send + Sync>>,
 {
-    inner: (PhantomData<T>, proto::h2::ClientTask<B>),
+    inner: (PhantomData<T>, proto::h2::ClientTask<B, E, T>),
 }
 
 
 
 
+
+
+
 #[derive(Clone, Debug)]
-pub struct Builder {
-    pub(super) exec: Exec,
+pub struct Builder<Ex> {
+    pub(super) exec: Ex,
+    pub(super) timer: Time,
     h2_builder: proto::h2::client::Config,
 }
 
@@ -58,13 +67,16 @@ pub struct Builder {
 
 
 
-pub async fn handshake<E, T, B>(exec: E, io: T) -> crate::Result<(SendRequest<B>, Connection<T, B>)>
+pub async fn handshake<E, T, B>(
+    exec: E,
+    io: T,
+) -> crate::Result<(SendRequest<B>, Connection<T, B, E>)>
 where
-    E: Executor<BoxSendFuture> + Send + Sync + 'static,
-    T: AsyncRead + AsyncWrite + Unpin + Send + 'static,
+    T: Read + Write + Unpin,
     B: Body + 'static,
     B::Data: Send,
-    B::Error: Into<Box<dyn StdError + Send + Sync>>,
+    B::Error: Into<Box<dyn Error + Send + Sync>>,
+    E: Http2ClientConnExec<B, T> + Unpin + Clone,
 {
     Builder::new(exec).handshake(io).await
 }
@@ -87,25 +99,22 @@ impl<B> SendRequest<B> {
     
     
     pub async fn ready(&mut self) -> crate::Result<()> {
-        futures_util::future::poll_fn(|cx| self.poll_ready(cx)).await
+        crate::common::future::poll_fn(|cx| self.poll_ready(cx)).await
     }
 
     
+    
+    
+    
+    
+    
+    
+    pub fn is_ready(&self) -> bool {
+        self.dispatch.is_ready()
+    }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-    pub(super) fn is_closed(&self) -> bool {
+    
+    pub fn is_closed(&self) -> bool {
         self.dispatch.is_closed()
     }
 }
@@ -114,14 +123,6 @@ impl<B> SendRequest<B>
 where
     B: Body + 'static,
 {
-    
-    
-    
-    
-    
-    
-    
-    
     
     
     
@@ -145,7 +146,7 @@ where
                     Err(_canceled) => panic!("dispatch dropped without returning error"),
                 },
                 Err(_req) => {
-                    tracing::debug!("connection was not ready");
+                    debug!("connection was not ready");
 
                     Err(crate::Error::new_canceled().with("connection was not ready"))
                 }
@@ -154,32 +155,37 @@ where
     }
 
     
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    
+    
+    
+    
+    
+    
+    
+    pub fn try_send_request(
+        &mut self,
+        req: Request<B>,
+    ) -> impl Future<Output = Result<Response<IncomingBody>, TrySendError<Request<B>>>> {
+        let sent = self.dispatch.try_send(req);
+        async move {
+            match sent {
+                Ok(rx) => match rx.await {
+                    Ok(Ok(res)) => Ok(res),
+                    Ok(Err(err)) => Err(err),
+                    
+                    Err(_) => panic!("dispatch dropped without returning error"),
+                },
+                Err(req) => {
+                    debug!("connection was not ready");
+                    let error = crate::Error::new_canceled().with("connection was not ready");
+                    Err(TrySendError {
+                        error,
+                        message: Some(req),
+                    })
+                }
+            }
+        }
+    }
 }
 
 impl<B> fmt::Debug for SendRequest<B> {
@@ -190,12 +196,13 @@ impl<B> fmt::Debug for SendRequest<B> {
 
 
 
-impl<T, B> Connection<T, B>
+impl<T, B, E> Connection<T, B, E>
 where
-    T: AsyncRead + AsyncWrite + Unpin + Send + 'static,
-    B: Body + Unpin + Send + 'static,
+    T: Read + Write + Unpin + 'static,
+    B: Body + Unpin + 'static,
     B::Data: Send,
-    B::Error: Into<Box<dyn StdError + Send + Sync>>,
+    B::Error: Into<Box<dyn Error + Send + Sync>>,
+    E: Http2ClientConnExec<B, T> + Unpin,
 {
     
     
@@ -209,24 +216,48 @@ where
     pub fn is_extended_connect_protocol_enabled(&self) -> bool {
         self.inner.1.is_extended_connect_protocol_enabled()
     }
+
+    
+    
+    
+    
+    
+    
+    pub fn current_max_send_streams(&self) -> usize {
+        self.inner.1.current_max_send_streams()
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn current_max_recv_streams(&self) -> usize {
+        self.inner.1.current_max_recv_streams()
+    }
 }
 
-impl<T, B> fmt::Debug for Connection<T, B>
+impl<T, B, E> fmt::Debug for Connection<T, B, E>
 where
-    T: AsyncRead + AsyncWrite + fmt::Debug + Send + 'static,
+    T: Read + Write + fmt::Debug + 'static + Unpin,
     B: Body + 'static,
+    E: Http2ClientConnExec<B, T> + Unpin,
+    B::Error: Into<Box<dyn Error + Send + Sync>>,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Connection").finish()
     }
 }
 
-impl<T, B> Future for Connection<T, B>
+impl<T, B, E> Future for Connection<T, B, E>
 where
-    T: AsyncRead + AsyncWrite + Unpin + Send + 'static,
-    B: Body + Send + 'static,
+    T: Read + Write + Unpin + 'static,
+    B: Body + 'static + Unpin,
     B::Data: Send,
-    B::Error: Into<Box<dyn StdError + Send + Sync>>,
+    E: Unpin,
+    B::Error: Into<Box<dyn Error + Send + Sync>>,
+    E: Http2ClientConnExec<B, T> + Unpin,
 {
     type Output = crate::Result<()>;
 
@@ -241,26 +272,26 @@ where
 
 
 
-impl Builder {
+impl<Ex> Builder<Ex>
+where
+    Ex: Clone,
+{
     
     #[inline]
-    pub fn new<E>(exec: E) -> Builder
-    where
-        E: Executor<BoxSendFuture> + Send + Sync + 'static,
-    {
-        use std::sync::Arc;
+    pub fn new(exec: Ex) -> Builder<Ex> {
         Builder {
-            exec: Exec::Executor(Arc::new(exec)),
+            exec,
+            timer: Time::Empty,
             h2_builder: Default::default(),
         }
     }
 
     
-    pub fn executor<E>(&mut self, exec: E) -> &mut Builder
+    pub fn timer<M>(&mut self, timer: M) -> &mut Builder<Ex>
     where
-        E: Executor<BoxSendFuture> + Send + Sync + 'static,
+        M: Timer + Send + Sync + 'static,
     {
-        self.exec = Exec::Executor(Arc::new(exec));
+        self.timer = Time::Timer(Arc::new(timer));
         self
     }
 
@@ -298,6 +329,23 @@ impl Builder {
     
     
     
+    
+    
+    
+    
+    
+    pub fn initial_max_send_streams(&mut self, initial: impl Into<Option<usize>>) -> &mut Self {
+        if let Some(initial) = initial.into() {
+            self.h2_builder.initial_max_send_streams = initial;
+        }
+        self
+    }
+
+    
+    
+    
+    
+    
     pub fn adaptive_window(&mut self, enabled: bool) -> &mut Self {
         use proto::h2::SPEC_WINDOW_SIZE;
 
@@ -312,12 +360,16 @@ impl Builder {
     
     
     
-    
-    
     pub fn max_frame_size(&mut self, sz: impl Into<Option<u32>>) -> &mut Self {
-        if let Some(sz) = sz.into() {
-            self.h2_builder.max_frame_size = sz;
-        }
+        self.h2_builder.max_frame_size = sz.into();
+        self
+    }
+
+    
+    
+    
+    pub fn max_header_list_size(&mut self, max: u32) -> &mut Self {
+        self.h2_builder.max_header_list_size = max;
         self
     }
 
@@ -327,7 +379,46 @@ impl Builder {
     
     
     
-    #[cfg(feature = "runtime")]
+    
+    pub fn header_table_size(&mut self, size: impl Into<Option<u32>>) -> &mut Self {
+        self.h2_builder.header_table_size = size.into();
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn max_concurrent_streams(&mut self, max: impl Into<Option<u32>>) -> &mut Self {
+        self.h2_builder.max_concurrent_streams = max.into();
+        self
+    }
+
+    
+    
+    
+    
+    
+    
     pub fn keep_alive_interval(&mut self, interval: impl Into<Option<Duration>>) -> &mut Self {
         self.h2_builder.keep_alive_interval = interval.into();
         self
@@ -339,7 +430,6 @@ impl Builder {
     
     
     
-    #[cfg(feature = "runtime")]
     pub fn keep_alive_timeout(&mut self, timeout: Duration) -> &mut Self {
         self.h2_builder.keep_alive_timeout = timeout;
         self
@@ -353,7 +443,6 @@ impl Builder {
     
     
     
-    #[cfg(feature = "runtime")]
     pub fn keep_alive_while_idle(&mut self, enabled: bool) -> &mut Self {
         self.h2_builder.keep_alive_while_idle = enabled;
         self
@@ -380,8 +469,30 @@ impl Builder {
     
     
     pub fn max_send_buf_size(&mut self, max: usize) -> &mut Self {
-        assert!(max <= std::u32::MAX as usize);
+        assert!(max <= u32::MAX as usize);
         self.h2_builder.max_send_buffer_size = max;
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn max_pending_accept_reset_streams(&mut self, max: impl Into<Option<usize>>) -> &mut Self {
+        self.h2_builder.max_pending_accept_reset_streams = max.into();
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn max_local_error_reset_streams(&mut self, max: impl Into<Option<usize>>) -> &mut Self {
+        self.h2_builder.max_local_error_reset_streams = max.into();
         self
     }
 
@@ -393,20 +504,22 @@ impl Builder {
     pub fn handshake<T, B>(
         &self,
         io: T,
-    ) -> impl Future<Output = crate::Result<(SendRequest<B>, Connection<T, B>)>>
+    ) -> impl Future<Output = crate::Result<(SendRequest<B>, Connection<T, B, Ex>)>>
     where
-        T: AsyncRead + AsyncWrite + Unpin + Send + 'static,
+        T: Read + Write + Unpin,
         B: Body + 'static,
         B::Data: Send,
-        B::Error: Into<Box<dyn StdError + Send + Sync>>,
+        B::Error: Into<Box<dyn Error + Send + Sync>>,
+        Ex: Http2ClientConnExec<B, T> + Unpin,
     {
         let opts = self.clone();
 
         async move {
-            tracing::trace!("client handshake HTTP/1");
+            trace!("client handshake HTTP/2");
 
             let (tx, rx) = dispatch::channel();
-            let h2 = proto::h2::client::handshake(io, rx, &opts.h2_builder, opts.exec).await?;
+            let h2 = proto::h2::client::handshake(io, rx, &opts.h2_builder, opts.exec, opts.timer)
+                .await?;
             Ok((
                 SendRequest {
                     dispatch: tx.unbound(),
@@ -415,6 +528,184 @@ impl Builder {
                     inner: (PhantomData, h2),
                 },
             ))
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+
+    #[tokio::test]
+    #[ignore] 
+    async fn send_sync_executor_of_non_send_futures() {
+        #[derive(Clone)]
+        struct LocalTokioExecutor;
+
+        impl<F> crate::rt::Executor<F> for LocalTokioExecutor
+        where
+            F: std::future::Future + 'static, 
+        {
+            fn execute(&self, fut: F) {
+                
+                tokio::task::spawn_local(fut);
+            }
+        }
+
+        #[allow(unused)]
+        async fn run(io: impl crate::rt::Read + crate::rt::Write + Unpin + 'static) {
+            let (_sender, conn) = crate::client::conn::http2::handshake::<
+                _,
+                _,
+                http_body_util::Empty<bytes::Bytes>,
+            >(LocalTokioExecutor, io)
+            .await
+            .unwrap();
+
+            tokio::task::spawn_local(async move {
+                conn.await.unwrap();
+            });
+        }
+    }
+
+    #[tokio::test]
+    #[ignore] 
+    async fn not_send_not_sync_executor_of_not_send_futures() {
+        #[derive(Clone)]
+        struct LocalTokioExecutor {
+            _x: std::marker::PhantomData<std::rc::Rc<()>>,
+        }
+
+        impl<F> crate::rt::Executor<F> for LocalTokioExecutor
+        where
+            F: std::future::Future + 'static, 
+        {
+            fn execute(&self, fut: F) {
+                
+                tokio::task::spawn_local(fut);
+            }
+        }
+
+        #[allow(unused)]
+        async fn run(io: impl crate::rt::Read + crate::rt::Write + Unpin + 'static) {
+            let (_sender, conn) =
+                crate::client::conn::http2::handshake::<_, _, http_body_util::Empty<bytes::Bytes>>(
+                    LocalTokioExecutor {
+                        _x: Default::default(),
+                    },
+                    io,
+                )
+                .await
+                .unwrap();
+
+            tokio::task::spawn_local(async move {
+                conn.await.unwrap();
+            });
+        }
+    }
+
+    #[tokio::test]
+    #[ignore] 
+    async fn send_not_sync_executor_of_not_send_futures() {
+        #[derive(Clone)]
+        struct LocalTokioExecutor {
+            _x: std::marker::PhantomData<std::cell::Cell<()>>,
+        }
+
+        impl<F> crate::rt::Executor<F> for LocalTokioExecutor
+        where
+            F: std::future::Future + 'static, 
+        {
+            fn execute(&self, fut: F) {
+                
+                tokio::task::spawn_local(fut);
+            }
+        }
+
+        #[allow(unused)]
+        async fn run(io: impl crate::rt::Read + crate::rt::Write + Unpin + 'static) {
+            let (_sender, conn) =
+                crate::client::conn::http2::handshake::<_, _, http_body_util::Empty<bytes::Bytes>>(
+                    LocalTokioExecutor {
+                        _x: Default::default(),
+                    },
+                    io,
+                )
+                .await
+                .unwrap();
+
+            tokio::task::spawn_local(async move {
+                conn.await.unwrap();
+            });
+        }
+    }
+
+    #[tokio::test]
+    #[ignore] 
+    async fn send_sync_executor_of_send_futures() {
+        #[derive(Clone)]
+        struct TokioExecutor;
+
+        impl<F> crate::rt::Executor<F> for TokioExecutor
+        where
+            F: std::future::Future + 'static + Send,
+            F::Output: Send + 'static,
+        {
+            fn execute(&self, fut: F) {
+                tokio::task::spawn(fut);
+            }
+        }
+
+        #[allow(unused)]
+        async fn run(io: impl crate::rt::Read + crate::rt::Write + Send + Unpin + 'static) {
+            let (_sender, conn) = crate::client::conn::http2::handshake::<
+                _,
+                _,
+                http_body_util::Empty<bytes::Bytes>,
+            >(TokioExecutor, io)
+            .await
+            .unwrap();
+
+            tokio::task::spawn(async move {
+                conn.await.unwrap();
+            });
+        }
+    }
+
+    #[tokio::test]
+    #[ignore] 
+    async fn send_not_sync_executor_of_send_futures() {
+        #[derive(Clone)]
+        struct TokioExecutor {
+            
+            _x: std::marker::PhantomData<std::cell::Cell<()>>,
+        }
+
+        impl<F> crate::rt::Executor<F> for TokioExecutor
+        where
+            F: std::future::Future + 'static + Send,
+            F::Output: Send + 'static,
+        {
+            fn execute(&self, fut: F) {
+                tokio::task::spawn(fut);
+            }
+        }
+
+        #[allow(unused)]
+        async fn run(io: impl crate::rt::Read + crate::rt::Write + Send + Unpin + 'static) {
+            let (_sender, conn) =
+                crate::client::conn::http2::handshake::<_, _, http_body_util::Empty<bytes::Bytes>>(
+                    TokioExecutor {
+                        _x: Default::default(),
+                    },
+                    io,
+                )
+                .await
+                .unwrap();
+
+            tokio::task::spawn_local(async move {
+                
+                conn.await.unwrap();
+            });
         }
     }
 }

@@ -66,6 +66,7 @@ pub(super) enum Event {
     Headers(peer::PollMessage),
     Data(Bytes),
     Trailers(HeaderMap),
+    InformationalHeaders(peer::PollMessage),
 }
 
 #[derive(Debug)]
@@ -93,7 +94,7 @@ impl Recv {
         flow.assign_capacity(DEFAULT_INITIAL_WINDOW_SIZE).unwrap();
 
         Recv {
-            init_window_sz: config.local_init_window_sz,
+            init_window_sz: DEFAULT_INITIAL_WINDOW_SIZE,
             flow,
             in_flight_data: 0 as WindowSize,
             next_stream_id: Ok(next_stream_id.into()),
@@ -185,6 +186,18 @@ impl Recv {
                 };
 
                 stream.content_length = ContentLength::Remaining(content_length);
+                
+                
+                if frame.is_end_stream()
+                    && content_length > 0
+                    && frame
+                        .pseudo()
+                        .status
+                        .map_or(true, |status| status != 204 && status != 304)
+                {
+                    proto_err!(stream: "recv_headers with END_STREAM: content-length is not zero; stream={:?};", stream.id);
+                    return Err(Error::library_reset(stream.id, Reason::PROTOCOL_ERROR).into());
+                }
             }
         }
 
@@ -252,6 +265,21 @@ impl Recv {
                 
                 self.pending_accept.push(stream);
             }
+        } else {
+            
+            
+            let message = counts
+                .peer()
+                .convert_poll_message(pseudo, fields, stream_id)?;
+
+            tracing::trace!("Received informational response: stream_id={:?}", stream_id);
+
+            
+            
+            stream
+                .pending_recv
+                .push_back(&mut self.buffer, Event::InformationalHeaders(message));
+            stream.notify_recv();
         }
 
         Ok(())
@@ -296,7 +324,7 @@ impl Recv {
             let is_open = stream.state.ensure_recv_open()?;
 
             if is_open {
-                stream.recv_task = Some(cx.waker().clone());
+                stream.push_task = Some(cx.waker().clone());
                 Poll::Pending
             } else {
                 Poll::Ready(None)
@@ -313,22 +341,61 @@ impl Recv {
         use super::peer::PollMessage::*;
 
         
-        
-        match stream.pending_recv.pop_front(&mut self.buffer) {
-            Some(Event::Headers(Client(response))) => Poll::Ready(Ok(response)),
-            Some(_) => panic!("poll_response called after response returned"),
-            None => {
-                if !stream.state.ensure_recv_open()? {
-                    proto_err!(stream: "poll_response: stream={:?} is not opened;",  stream.id);
-                    return Poll::Ready(Err(Error::library_reset(
-                        stream.id,
-                        Reason::PROTOCOL_ERROR,
-                    )));
+        loop {
+            match stream.pending_recv.pop_front(&mut self.buffer) {
+                Some(Event::Headers(Client(response))) => return Poll::Ready(Ok(response)),
+                Some(Event::InformationalHeaders(_)) => {
+                    tracing::trace!("Skipping informational response in poll_response - should be consumed via poll_informational; stream_id={:?}", stream.id);
+                    continue;
                 }
+                Some(_) => panic!("poll_response called after response returned"),
+                None => {
+                    if !stream.state.ensure_recv_open()? {
+                        proto_err!(stream: "poll_response: stream={:?} is not opened;",  stream.id);
+                        return Poll::Ready(Err(Error::library_reset(
+                            stream.id,
+                            Reason::PROTOCOL_ERROR,
+                        )));
+                    }
 
-                stream.recv_task = Some(cx.waker().clone());
-                Poll::Pending
+                    stream.recv_task = Some(cx.waker().clone());
+                    return Poll::Pending;
+                }
             }
+        }
+    }
+
+    
+    pub fn poll_informational(
+        &mut self,
+        cx: &Context,
+        stream: &mut store::Ptr,
+    ) -> Poll<Option<Result<Response<()>, proto::Error>>> {
+        use super::peer::PollMessage::*;
+
+        
+        
+        if let Some(event) = stream.pending_recv.pop_front(&mut self.buffer) {
+            match event {
+                Event::InformationalHeaders(Client(response)) => {
+                    
+                    return Poll::Ready(Some(Ok(response)));
+                }
+                other => {
+                    
+                    stream.pending_recv.push_front(&mut self.buffer, other);
+                }
+            }
+        }
+
+        
+        if stream.state.ensure_recv_open()? {
+            
+            stream.recv_task = Some(cx.waker().clone());
+            Poll::Pending
+        } else {
+            
+            Poll::Ready(None)
         }
     }
 
@@ -557,7 +624,7 @@ impl Recv {
     }
 
     pub fn is_end_stream(&self, stream: &store::Ptr) -> bool {
-        if !stream.state.is_recv_closed() {
+        if !stream.state.is_recv_end_stream() {
             return false;
         }
 
@@ -565,7 +632,8 @@ impl Recv {
     }
 
     pub fn recv_data(&mut self, frame: frame::Data, stream: &mut store::Ptr) -> Result<(), Error> {
-        let sz = frame.payload().len();
+        
+        let sz = frame.flow_controlled_len();
 
         
         
@@ -616,6 +684,7 @@ impl Recv {
             return Err(Error::library_reset(stream.id, Reason::FLOW_CONTROL_ERROR));
         }
 
+        
         if stream.dec_content_length(frame.payload().len()).is_err() {
             proto_err!(stream:
                 "recv_data: content-length overflow; stream={:?}; len={:?}",
@@ -659,6 +728,18 @@ impl Recv {
 
         
         stream.in_flight_recv_data += sz;
+
+        
+        if let Some(padded_len) = frame.padded_len() {
+            tracing::trace!(
+                "recv_data; auto-releasing padded length of {:?} for {:?}",
+                padded_len,
+                stream.id,
+            );
+            let _res = self.release_capacity(padded_len.into(), stream, &mut None);
+            
+            debug_assert!(_res.is_ok());
+        }
 
         let event = Event::Data(frame.into_payload());
 
@@ -722,13 +803,13 @@ impl Recv {
             
             
             tracing::debug!(
-                "stream error REFUSED_STREAM -- recv_push_promise: \
+                "stream error PROTOCOL_ERROR -- recv_push_promise: \
                  headers frame is over size; promised_id={:?};",
                 frame.promised_id(),
             );
             return Err(Error::library_reset(
                 frame.promised_id(),
-                Reason::REFUSED_STREAM,
+                Reason::PROTOCOL_ERROR,
             ));
         }
 
@@ -760,6 +841,7 @@ impl Recv {
             .pending_recv
             .push_back(&mut self.buffer, Event::Headers(Server(req)));
         stream.notify_recv();
+        stream.notify_push();
         Ok(())
     }
 
@@ -814,6 +896,7 @@ impl Recv {
 
         stream.notify_send();
         stream.notify_recv();
+        stream.notify_push();
 
         Ok(())
     }
@@ -826,6 +909,7 @@ impl Recv {
         
         stream.notify_send();
         stream.notify_recv();
+        stream.notify_push();
     }
 
     pub fn go_away(&mut self, last_processed_id: StreamId) {
@@ -837,6 +921,7 @@ impl Recv {
         stream.state.recv_eof();
         stream.notify_send();
         stream.notify_recv();
+        stream.notify_push();
     }
 
     pub(super) fn clear_recv_buffer(&mut self, stream: &mut Stream) {
@@ -896,11 +981,15 @@ impl Recv {
             return;
         }
 
-        tracing::trace!("enqueue_reset_expiration; {:?}", stream.id);
-
         if counts.can_inc_num_reset_streams() {
             counts.inc_num_reset_streams();
+            tracing::trace!("enqueue_reset_expiration; added {:?}", stream.id);
             self.pending_reset_expired.push(stream);
+        } else {
+            tracing::trace!(
+                "enqueue_reset_expiration; dropped {:?}, over max_concurrent_reset_streams",
+                stream.id
+            );
         }
     }
 

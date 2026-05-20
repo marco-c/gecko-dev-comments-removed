@@ -14,24 +14,24 @@
 
 #![allow(unsafe_code)]
 
-use crate::backend::c;
 use crate::fd::{AsFd, BorrowedFd};
+use crate::ffi as c;
 use crate::io::Result;
 
-#[cfg(any(linux_kernel, bsd))]
+#[cfg(any(linux_kernel, bsd, target_os = "redox"))]
 use core::mem;
 
 pub use patterns::*;
 
 mod patterns;
 
-#[cfg(linux_kernel)]
+#[cfg(any(linux_kernel, target_os = "redox"))]
 mod linux;
 
 #[cfg(bsd)]
 mod bsd;
 
-#[cfg(linux_kernel)]
+#[cfg(any(linux_kernel, target_os = "redox"))]
 use linux as platform;
 
 #[cfg(bsd)]
@@ -82,10 +82,15 @@ use bsd as platform;
 
 
 
+
+
+
+
+
 #[inline]
 pub unsafe fn ioctl<F: AsFd, I: Ioctl>(fd: F, mut ioctl: I) -> Result<I::Output> {
     let fd = fd.as_fd();
-    let request = I::OPCODE.raw();
+    let request = ioctl.opcode();
     let arg = ioctl.as_ptr();
 
     
@@ -101,17 +106,13 @@ pub unsafe fn ioctl<F: AsFd, I: Ioctl>(fd: F, mut ioctl: I) -> Result<I::Output>
     I::output_from_ptr(output, arg)
 }
 
-unsafe fn _ioctl(
-    fd: BorrowedFd<'_>,
-    request: RawOpcode,
-    arg: *mut c::c_void,
-) -> Result<IoctlOutput> {
+unsafe fn _ioctl(fd: BorrowedFd<'_>, request: Opcode, arg: *mut c::c_void) -> Result<IoctlOutput> {
     crate::backend::io::syscalls::ioctl(fd, request, arg)
 }
 
 unsafe fn _ioctl_readonly(
     fd: BorrowedFd<'_>,
-    request: RawOpcode,
+    request: Opcode,
     arg: *mut c::c_void,
 ) -> Result<IoctlOutput> {
     crate::backend::io::syscalls::ioctl_readonly(fd, request, arg)
@@ -154,12 +155,6 @@ pub unsafe trait Ioctl {
     
     
     
-    const OPCODE: Opcode;
-
-    
-    
-    
-    
     
     
     
@@ -168,6 +163,12 @@ pub unsafe trait Ioctl {
     
     
     const IS_MUTATING: bool;
+
+    
+    
+    
+    
+    fn opcode(&self) -> Opcode;
 
     
     
@@ -189,92 +190,76 @@ pub unsafe trait Ioctl {
 }
 
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct Opcode {
-    
-    raw: RawOpcode,
-}
 
-impl Opcode {
-    
-    
-    
-    
-    
-    #[inline]
-    pub const fn old(raw: RawOpcode) -> Self {
-        Self { raw }
-    }
+
+
+
+
+
+
+
+#[cfg(any(linux_kernel, bsd, target_os = "redox"))]
+pub mod opcode {
+    use super::*;
 
     
     
     
-    #[cfg(any(linux_kernel, bsd))]
+    #[doc(alias = "_IOC")]
     #[inline]
     pub const fn from_components(
         direction: Direction,
         group: u8,
         number: u8,
         data_size: usize,
-    ) -> Self {
-        assert!(
-            data_size <= RawOpcode::MAX as usize,
-            "data size is too large"
-        );
+    ) -> Opcode {
+        assert!(data_size <= Opcode::MAX as usize, "data size is too large");
 
-        Self::old(platform::compose_opcode(
+        platform::compose_opcode(
             direction,
-            group as RawOpcode,
-            number as RawOpcode,
-            data_size as RawOpcode,
-        ))
+            group as Opcode,
+            number as Opcode,
+            data_size as Opcode,
+        )
+    }
+
+    
+    
+    
+    #[doc(alias = "_IO")]
+    #[inline]
+    pub const fn none(group: u8, number: u8) -> Opcode {
+        from_components(Direction::None, group, number, 0)
     }
 
     
     
     
     
-    
-    #[cfg(any(linux_kernel, bsd))]
+    #[doc(alias = "_IOR")]
     #[inline]
-    pub const fn none<T>(group: u8, number: u8) -> Self {
-        Self::from_components(Direction::None, group, number, mem::size_of::<T>())
+    pub const fn read<T>(group: u8, number: u8) -> Opcode {
+        from_components(Direction::Read, group, number, mem::size_of::<T>())
     }
 
     
     
     
     
-    #[cfg(any(linux_kernel, bsd))]
+    #[doc(alias = "_IOW")]
     #[inline]
-    pub const fn read<T>(group: u8, number: u8) -> Self {
-        Self::from_components(Direction::Read, group, number, mem::size_of::<T>())
+    pub const fn write<T>(group: u8, number: u8) -> Opcode {
+        from_components(Direction::Write, group, number, mem::size_of::<T>())
     }
 
     
     
     
     
-    #[cfg(any(linux_kernel, bsd))]
+    #[doc(alias = "_IOWR")]
     #[inline]
-    pub const fn write<T>(group: u8, number: u8) -> Self {
-        Self::from_components(Direction::Write, group, number, mem::size_of::<T>())
-    }
-
-    
-    
-    
-    
-    #[cfg(any(linux_kernel, bsd))]
-    #[inline]
-    pub const fn read_write<T>(group: u8, number: u8) -> Self {
-        Self::from_components(Direction::ReadWrite, group, number, mem::size_of::<T>())
-    }
-
-    
-    #[inline]
-    pub fn raw(self) -> RawOpcode {
-        self.raw
+    pub const fn read_write<T>(group: u8, number: u8) -> Opcode {
+        from_components(Direction::ReadWrite, group, number, mem::size_of::<T>())
     }
 }
 
@@ -301,11 +286,11 @@ pub enum Direction {
 pub type IoctlOutput = c::c_int;
 
 
-pub type RawOpcode = _RawOpcode;
+pub type Opcode = _Opcode;
 
 
 #[cfg(linux_raw)]
-type _RawOpcode = c::c_uint;
+type _Opcode = c::c_uint;
 
 
 #[cfg(all(
@@ -313,7 +298,7 @@ type _RawOpcode = c::c_uint;
     target_os = "linux",
     any(target_env = "gnu", target_env = "uclibc")
 ))]
-type _RawOpcode = c::c_ulong;
+type _Opcode = c::c_ulong;
 
 
 #[cfg(all(
@@ -322,11 +307,11 @@ type _RawOpcode = c::c_ulong;
     not(target_env = "gnu"),
     not(target_env = "uclibc")
 ))]
-type _RawOpcode = c::c_int;
+type _Opcode = c::c_int;
 
 
 #[cfg(all(not(linux_raw), target_os = "android"))]
-type _RawOpcode = c::c_int;
+type _Opcode = c::c_int;
 
 
 #[cfg(any(
@@ -337,23 +322,55 @@ type _RawOpcode = c::c_int;
     target_os = "hurd",
     target_os = "vita"
 ))]
-type _RawOpcode = c::c_ulong;
+type _Opcode = c::c_ulong;
 
 
 #[cfg(any(
     solarish,
     target_os = "aix",
+    target_os = "cygwin",
     target_os = "fuchsia",
     target_os = "emscripten",
+    target_os = "nto",
     target_os = "wasi",
-    target_os = "nto"
 ))]
-type _RawOpcode = c::c_int;
+type _Opcode = c::c_int;
 
 
 #[cfg(target_os = "espidf")]
-type _RawOpcode = c::c_uint;
+type _Opcode = c::c_uint;
 
 
 #[cfg(windows)]
-type _RawOpcode = i32;
+type _Opcode = i32;
+
+#[cfg(linux_raw_dep)]
+#[cfg(not(any(target_arch = "sparc", target_arch = "sparc64")))]
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_opcode_funcs() {
+        
+        assert_eq!(
+            linux_raw_sys::ioctl::TUNGETDEVNETNS as Opcode,
+            opcode::none(b'T', 227)
+        );
+        
+        assert_eq!(
+            linux_raw_sys::ioctl::FS_IOC_GETVERSION as Opcode,
+            opcode::read::<c::c_long>(b'v', 1)
+        );
+        
+        assert_eq!(
+            linux_raw_sys::ioctl::TUNSETNOCSUM as Opcode,
+            opcode::write::<c::c_int>(b'T', 200)
+        );
+        
+        assert_eq!(
+            linux_raw_sys::ioctl::FIFREEZE as Opcode,
+            opcode::read_write::<c::c_int>(b'X', 119)
+        );
+    }
+}

@@ -1,8 +1,3 @@
-#![doc(html_root_url = "https://docs.rs/http/0.2.9")]
-
-
-
-
 
 
 
@@ -160,6 +155,10 @@
 
 #![deny(warnings, missing_docs, missing_debug_implementations)]
 
+
+#[cfg(not(feature = "std"))]
+compile_error!("`std` feature currently required, support for `no_std` may be added later");
+
 #[cfg(test)]
 #[macro_use]
 extern crate doc_comment;
@@ -193,19 +192,19 @@ pub use crate::status::StatusCode;
 pub use crate::uri::Uri;
 pub use crate::version::Version;
 
-fn _assert_types() {
-    fn assert_send<T: Send>() {}
-    fn assert_sync<T: Sync>() {}
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-    assert_send::<Request<()>>();
-    assert_send::<Response<()>>();
+    fn assert_send_sync<T: Send + Sync>() {}
 
-    assert_sync::<Request<()>>();
-    assert_sync::<Response<()>>();
-}
+    #[test]
+    fn request_satisfies_send_sync() {
+        assert_send_sync::<Request<()>>();
+    }
 
-mod sealed {
-    
-    
-    pub trait Sealed {}
+    #[test]
+    fn response_satisfies_send_sync() {
+        assert_send_sync::<Response<()>>();
+    }
 }

@@ -44,7 +44,7 @@ enum State<T> {
 pub struct PollSender<T> {
     sender: Option<Sender<T>>,
     state: State<T>,
-    acquire: ReusableBoxFuture<'static, Result<OwnedPermit<T>, PollSendError<T>>>,
+    acquire: PollSenderFuture<T>,
 }
 
 
@@ -64,13 +64,56 @@ async fn make_acquire_future<T>(
     }
 }
 
-impl<T: Send + 'static> PollSender<T> {
+type InnerFuture<'a, T> = ReusableBoxFuture<'a, Result<OwnedPermit<T>, PollSendError<T>>>;
+
+#[derive(Debug)]
+
+struct PollSenderFuture<T>(InnerFuture<'static, T>);
+
+impl<T> PollSenderFuture<T> {
+    
+    fn empty() -> Self {
+        
+        
+        Self(ReusableBoxFuture::new(async { unreachable!() }))
+    }
+}
+
+impl<T: Send> PollSenderFuture<T> {
+    
+    fn new() -> Self {
+        let v = InnerFuture::new(make_acquire_future(None));
+        
+        Self(unsafe { mem::transmute::<InnerFuture<'_, T>, InnerFuture<'static, T>>(v) })
+    }
+
+    
+    fn poll(&mut self, cx: &mut Context<'_>) -> Poll<Result<OwnedPermit<T>, PollSendError<T>>> {
+        self.0.poll(cx)
+    }
+
+    
+    fn set(&mut self, sender: Option<Sender<T>>) {
+        let inner: *mut InnerFuture<'static, T> = &mut self.0;
+        let inner: *mut InnerFuture<'_, T> = inner.cast();
+        
+        
+        
+        
+        
+        
+        let inner = unsafe { &mut *inner };
+        inner.set(make_acquire_future(sender));
+    }
+}
+
+impl<T: Send> PollSender<T> {
     
     pub fn new(sender: Sender<T>) -> Self {
         Self {
             sender: Some(sender.clone()),
             state: State::Idle(sender),
-            acquire: ReusableBoxFuture::new(make_acquire_future(None)),
+            acquire: PollSenderFuture::new(),
         }
     }
 
@@ -97,7 +140,7 @@ impl<T: Send + 'static> PollSender<T> {
                 State::Idle(sender) => {
                     
                     
-                    self.acquire.set(make_acquire_future(Some(sender)));
+                    self.acquire.set(Some(sender));
                     (None, State::Acquiring)
                 }
                 State::Acquiring => match self.acquire.poll(cx) {
@@ -136,6 +179,7 @@ impl<T: Send + 'static> PollSender<T> {
     
     
     
+    #[track_caller]
     pub fn send_item(&mut self, value: T) -> Result<(), PollSendError<T>> {
         let (result, next_state) = match self.take_state() {
             State::Idle(_) | State::Acquiring => {
@@ -193,7 +237,7 @@ impl<T: Send + 'static> PollSender<T> {
         match self.state {
             State::Idle(_) => self.state = State::Closed,
             State::Acquiring => {
-                self.acquire.set(make_acquire_future(None));
+                self.acquire.set(None);
                 self.state = State::Closed;
             }
             _ => {}
@@ -214,7 +258,7 @@ impl<T: Send + 'static> PollSender<T> {
             
             State::Acquiring => {
                 
-                self.acquire.set(make_acquire_future(None));
+                self.acquire.set(None);
 
                 
                 
@@ -254,14 +298,12 @@ impl<T> Clone for PollSender<T> {
         Self {
             sender,
             state,
-            
-            
-            acquire: ReusableBoxFuture::new(async { unreachable!() }),
+            acquire: PollSenderFuture::empty(),
         }
     }
 }
 
-impl<T: Send + 'static> Sink<T> for PollSender<T> {
+impl<T: Send> Sink<T> for PollSender<T> {
     type Error = PollSendError<T>;
 
     fn poll_ready(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {

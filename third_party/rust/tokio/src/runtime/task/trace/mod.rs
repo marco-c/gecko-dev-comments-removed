@@ -10,10 +10,11 @@ use std::ffi::c_void;
 use std::fmt;
 use std::future::Future;
 use std::pin::Pin;
-use std::ptr::{self, NonNull};
+use std::ptr::NonNull;
 use std::task::{self, Poll};
 
 mod symbol;
+mod trace_impl;
 mod tree;
 
 use symbol::Symbol;
@@ -29,8 +30,12 @@ pub(crate) struct Context {
     
     
     active_frame: Cell<Option<NonNull<Frame>>>,
+
     
-    collector: Cell<Option<Trace>>,
+    
+    
+    #[allow(clippy::type_complexity)]
+    trace_leaf_fn: Cell<Option<NonNull<dyn FnMut(&TraceMeta)>>>,
 }
 
 
@@ -38,6 +43,8 @@ struct Frame {
     
     inner_addr: *const c_void,
 
+    
+    
     
     parent: Option<NonNull<Frame>>,
 }
@@ -72,7 +79,7 @@ impl Context {
     pub(crate) const fn new() -> Self {
         Context {
             active_frame: Cell::new(None),
-            collector: Cell::new(None),
+            trace_leaf_fn: Cell::new(None),
         }
     }
 
@@ -82,36 +89,164 @@ impl Context {
     where
         F: FnOnce(&Self) -> R,
     {
-        crate::runtime::context::with_trace(f)
+        unsafe { crate::runtime::context::with_trace(f) }
     }
 
+    
+    
     unsafe fn with_current_frame<F, R>(f: F) -> R
     where
         F: FnOnce(&Cell<Option<NonNull<Frame>>>) -> R,
     {
-        Self::try_with_current(|context| f(&context.active_frame)).expect(FAIL_NO_THREAD_LOCAL)
+        unsafe {
+            Self::try_with_current(|context| f(&context.active_frame)).expect(FAIL_NO_THREAD_LOCAL)
+        }
     }
 
-    fn with_current_collector<F, R>(f: F) -> R
-    where
-        F: FnOnce(&Cell<Option<Trace>>) -> R,
-    {
-        
+    fn current_frame_addr() -> Option<*const c_void> {
         
         unsafe {
-            Self::try_with_current(|context| f(&context.collector)).expect(FAIL_NO_THREAD_LOCAL)
+            Context::try_with_current(|ctx| {
+                ctx.active_frame
+                    .get()
+                    .map(|frame| frame.as_ref().inner_addr)
+            })
+            .flatten()
         }
     }
 
     
-    pub(crate) fn is_tracing() -> bool {
-        Self::with_current_collector(|maybe_collector| {
-            let collector = maybe_collector.take();
-            let result = collector.is_some();
-            maybe_collector.set(collector);
-            result
-        })
+    fn try_with_current_trace_leaf_fn<F, R>(f: F) -> Option<R>
+    where
+        F: for<'a> FnOnce(&'a mut dyn FnMut(&TraceMeta)) -> R,
+    {
+        let mut ret = None;
+
+        let inner = |context: &Context| {
+            if let Some(mut trace_leaf_fn) = context.trace_leaf_fn.replace(None) {
+                let _restore = defer(move || {
+                    context.trace_leaf_fn.set(Some(trace_leaf_fn));
+                });
+
+                
+                
+                
+                
+                ret = Some(f(unsafe { trace_leaf_fn.as_mut() }));
+            }
+        };
+
+        
+        
+        unsafe { Self::try_with_current(inner) };
+
+        ret
     }
+
+    
+    pub(crate) fn is_tracing() -> bool {
+        
+        
+        unsafe { Self::try_with_current(|ctx| ctx.trace_leaf_fn.get().is_some()).unwrap_or(false) }
+    }
+}
+
+
+#[non_exhaustive]
+#[derive(Debug)]
+pub struct TraceMeta {
+    
+    
+    
+    
+    pub root_addr: Option<*const c_void>,
+
+    
+    
+    
+    
+    pub trace_leaf_addr: *const c_void,
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub fn trace_with<FN, FT, R>(f: FN, mut trace_leaf: FT) -> R
+where
+    FN: FnOnce() -> R,
+    FT: FnMut(&TraceMeta),
+{
+    let trace_leaf_dyn = (&mut trace_leaf) as &mut (dyn FnMut(&TraceMeta) + '_);
+    
+    
+    let trace_leaf_dyn = unsafe {
+        std::mem::transmute::<
+            *mut (dyn FnMut(&TraceMeta) + '_),
+            *mut (dyn FnMut(&TraceMeta) + 'static),
+        >(trace_leaf_dyn)
+    };
+    
+    let trace_leaf_dyn = unsafe { NonNull::new_unchecked(trace_leaf_dyn) };
+
+    let mut old_trace_leaf_fn = None;
+
+    
+    
+    
+    
+    
+    unsafe {
+        Context::try_with_current(|ctx| {
+            old_trace_leaf_fn = ctx.trace_leaf_fn.replace(Some(trace_leaf_dyn));
+        })
+    };
+
+    let _restore = defer(move || {
+        
+        
+        
+        
+        unsafe {
+            Context::try_with_current(|ctx| {
+                ctx.trace_leaf_fn.set(old_trace_leaf_fn);
+            })
+        };
+    });
+
+    f()
 }
 
 impl Trace {
@@ -122,16 +257,15 @@ impl Trace {
     where
         F: FnOnce() -> R,
     {
-        let collector = Trace { backtraces: vec![] };
+        trace_impl::capture(f)
+    }
 
-        let previous = Context::with_current_collector(|current| current.replace(Some(collector)));
+    pub(crate) fn empty() -> Self {
+        Self { backtraces: vec![] }
+    }
 
-        let result = f();
-
-        let collector =
-            Context::with_current_collector(|current| current.replace(previous)).unwrap();
-
-        (result, collector)
+    fn push_backtrace(&mut self, bt: Vec<BacktraceFrame>) {
+        self.backtraces.push(bt);
     }
 
     
@@ -156,44 +290,15 @@ impl Trace {
 
 #[inline(never)]
 pub(crate) fn trace_leaf(cx: &mut task::Context<'_>) -> Poll<()> {
-    
-    let did_trace = unsafe {
-        Context::try_with_current(|context_cell| {
-            if let Some(mut collector) = context_cell.collector.take() {
-                let mut frames = vec![];
-                let mut above_leaf = false;
+    let root_addr = Context::current_frame_addr();
 
-                if let Some(active_frame) = context_cell.active_frame.get() {
-                    let active_frame = active_frame.as_ref();
+    let ret = Context::try_with_current_trace_leaf_fn(|leaf_fn| {
+        let meta = TraceMeta {
+            root_addr,
+            trace_leaf_addr: trace_leaf as *const c_void,
+        };
+        leaf_fn(&meta);
 
-                    backtrace::trace(|frame| {
-                        let below_root = !ptr::eq(frame.symbol_address(), active_frame.inner_addr);
-
-                        
-                        
-                        if above_leaf && below_root {
-                            frames.push(frame.to_owned().into());
-                        }
-
-                        if ptr::eq(frame.symbol_address(), trace_leaf as *const _) {
-                            above_leaf = true;
-                        }
-
-                        
-                        below_root
-                    });
-                }
-                collector.backtraces.push(frames);
-                context_cell.collector.set(Some(collector));
-                true
-            } else {
-                false
-            }
-        })
-        .unwrap_or(false)
-    };
-
-    if did_trace {
         
         
         context::with_scheduler(|scheduler| {
@@ -205,10 +310,11 @@ pub(crate) fn trace_leaf(cx: &mut task::Context<'_>) -> Poll<()> {
                 }
             }
         });
+    });
 
-        Poll::Pending
-    } else {
-        Poll::Ready(())
+    match ret {
+        Some(()) => Poll::Pending,
+        None => Poll::Ready(()),
     }
 }
 
@@ -313,7 +419,8 @@ cfg_rt_multi_thread! {
 
         // clear the injection queue
         let mut synced = synced.lock();
-        while let Some(notified) = injection.pop(&mut synced.inject) {
+        // Safety: exactly the same safety requirements as `trace_multi_thread` function.
+        while let Some(notified) = unsafe { injection.pop(&mut synced.inject) } {
             dequeued.push(notified);
         }
 

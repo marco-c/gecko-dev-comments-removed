@@ -36,12 +36,6 @@ use std::task::{Context, Poll};
 
 
 
-
-
-
-
-
-
 pub trait AsyncWrite {
     
     
@@ -59,7 +53,7 @@ pub trait AsyncWrite {
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
         buf: &[u8],
-    ) -> Poll<Result<usize, io::Error>>;
+    ) -> Poll<io::Result<usize>>;
 
     
     
@@ -70,7 +64,7 @@ pub trait AsyncWrite {
     
     
     
-    fn poll_flush(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), io::Error>>;
+    fn poll_flush(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>>;
 
     
     
@@ -130,7 +124,7 @@ pub trait AsyncWrite {
     
     
     
-    fn poll_shutdown(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), io::Error>>;
+    fn poll_shutdown(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>>;
 
     
     
@@ -159,7 +153,7 @@ pub trait AsyncWrite {
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
         bufs: &[IoSlice<'_>],
-    ) -> Poll<Result<usize, io::Error>> {
+    ) -> Poll<io::Result<usize>> {
         let buf = bufs
             .iter()
             .find(|b| !b.is_empty())

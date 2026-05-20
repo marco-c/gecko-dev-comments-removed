@@ -2,8 +2,8 @@ use std::fmt;
 use std::marker::PhantomData;
 use std::mem::ManuallyDrop;
 use std::ops::Deref;
-#[cfg(unix)]
-use std::os::unix::io::{AsFd, AsRawFd, FromRawFd};
+#[cfg(any(unix, all(target_os = "wasi", not(target_env = "p1"))))]
+use std::os::fd::{AsFd, AsRawFd, FromRawFd};
 #[cfg(windows)]
 use std::os::windows::io::{AsRawSocket, AsSocket, FromRawSocket};
 
@@ -77,8 +77,7 @@ impl<'s> Deref for SockRef<'s> {
 }
 
 
-#[cfg(unix)]
-#[cfg_attr(docsrs, doc(cfg(unix)))]
+#[cfg(any(unix, all(target_os = "wasi", not(target_env = "p1"))))]
 impl<'s, S> From<&'s S> for SockRef<'s>
 where
     S: AsFd,
@@ -96,7 +95,6 @@ where
 
 
 #[cfg(windows)]
-#[cfg_attr(docsrs, doc(cfg(windows)))]
 impl<'s, S> From<&'s S> for SockRef<'s>
 where
     S: AsSocket,

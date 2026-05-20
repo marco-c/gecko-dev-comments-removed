@@ -1,6 +1,7 @@
 
 
 use crate::backend::c;
+use crate::ffi;
 use bitflags::bitflags;
 
 
@@ -22,15 +23,20 @@ impl SocketType {
     pub const DGRAM: Self = Self(c::SOCK_DGRAM as _);
 
     
-    #[cfg(not(target_os = "espidf"))]
+    #[cfg(not(any(target_os = "espidf", target_os = "horizon")))]
     pub const SEQPACKET: Self = Self(c::SOCK_SEQPACKET as _);
 
     
-    #[cfg(not(target_os = "espidf"))]
+    #[cfg(not(any(target_os = "espidf", target_os = "horizon")))]
     pub const RAW: Self = Self(c::SOCK_RAW as _);
 
     
-    #[cfg(not(any(target_os = "espidf", target_os = "haiku")))]
+    #[cfg(not(any(
+        target_os = "espidf",
+        target_os = "haiku",
+        target_os = "horizon",
+        target_os = "redox"
+    )))]
     pub const RDM: Self = Self(c::SOCK_RDM as _);
 
     
@@ -47,7 +53,7 @@ impl SocketType {
 }
 
 
-pub type RawAddressFamily = c::sa_family_t;
+pub type RawAddressFamily = crate::ffi::c_ushort;
 
 
 
@@ -89,10 +95,13 @@ impl AddressFamily {
         solarish,
         windows,
         target_os = "aix",
+        target_os = "cygwin",
         target_os = "espidf",
         target_os = "haiku",
+        target_os = "horizon",
         target_os = "hurd",
         target_os = "nto",
+        target_os = "redox",
         target_os = "vita",
     )))]
     pub const NETLINK: Self = Self(c::AF_NETLINK as _);
@@ -105,22 +114,33 @@ impl AddressFamily {
         solarish,
         windows,
         target_os = "aix",
+        target_os = "cygwin",
         target_os = "espidf",
         target_os = "haiku",
+        target_os = "horizon",
         target_os = "hurd",
         target_os = "nto",
+        target_os = "redox",
         target_os = "vita",
     )))]
     pub const AX25: Self = Self(c::AF_AX25 as _);
     
     #[cfg(not(any(
         target_os = "aix",
+        target_os = "cygwin",
         target_os = "espidf",
+        target_os = "horizon",
+        target_os = "redox",
         target_os = "vita",
     )))]
     pub const IPX: Self = Self(c::AF_IPX as _);
     
-    #[cfg(not(any(target_os = "espidf", target_os = "vita")))]
+    #[cfg(not(any(
+        target_os = "espidf",
+        target_os = "horizon",
+        target_os = "redox",
+        target_os = "vita"
+    )))]
     pub const APPLETALK: Self = Self(c::AF_APPLETALK as _);
     
     #[cfg(not(any(
@@ -128,10 +148,13 @@ impl AddressFamily {
         solarish,
         windows,
         target_os = "aix",
+        target_os = "cygwin",
         target_os = "espidf",
         target_os = "haiku",
+        target_os = "horizon",
         target_os = "hurd",
         target_os = "nto",
+        target_os = "redox",
         target_os = "vita",
     )))]
     pub const NETROM: Self = Self(c::AF_NETROM as _);
@@ -141,10 +164,13 @@ impl AddressFamily {
         solarish,
         windows,
         target_os = "aix",
+        target_os = "cygwin",
         target_os = "espidf",
         target_os = "haiku",
+        target_os = "horizon",
         target_os = "hurd",
         target_os = "nto",
+        target_os = "redox",
         target_os = "vita",
     )))]
     pub const BRIDGE: Self = Self(c::AF_BRIDGE as _);
@@ -154,10 +180,13 @@ impl AddressFamily {
         solarish,
         windows,
         target_os = "aix",
+        target_os = "cygwin",
         target_os = "espidf",
         target_os = "haiku",
+        target_os = "horizon",
         target_os = "hurd",
         target_os = "nto",
+        target_os = "redox",
         target_os = "vita",
     )))]
     pub const ATMPVC: Self = Self(c::AF_ATMPVC as _);
@@ -166,10 +195,13 @@ impl AddressFamily {
         bsd,
         windows,
         target_os = "aix",
+        target_os = "cygwin",
         target_os = "espidf",
         target_os = "haiku",
+        target_os = "horizon",
         target_os = "hurd",
         target_os = "nto",
+        target_os = "redox",
         target_os = "vita",
     )))]
     pub const X25: Self = Self(c::AF_X25 as _);
@@ -179,15 +211,24 @@ impl AddressFamily {
         solarish,
         windows,
         target_os = "aix",
+        target_os = "cygwin",
         target_os = "espidf",
         target_os = "haiku",
+        target_os = "horizon",
         target_os = "hurd",
         target_os = "nto",
+        target_os = "redox",
         target_os = "vita",
     )))]
     pub const ROSE: Self = Self(c::AF_ROSE as _);
     
-    #[cfg(not(any(target_os = "espidf", target_os = "haiku", target_os = "vita")))]
+    #[cfg(not(any(
+        target_os = "espidf",
+        target_os = "haiku",
+        target_os = "horizon",
+        target_os = "redox",
+        target_os = "vita"
+    )))]
     pub const DECnet: Self = Self(c::AF_DECnet as _);
     
     #[cfg(not(any(
@@ -195,10 +236,13 @@ impl AddressFamily {
         solarish,
         windows,
         target_os = "aix",
+        target_os = "cygwin",
         target_os = "espidf",
         target_os = "haiku",
+        target_os = "horizon",
         target_os = "hurd",
         target_os = "nto",
+        target_os = "redox",
         target_os = "vita",
     )))]
     pub const NETBEUI: Self = Self(c::AF_NETBEUI as _);
@@ -208,10 +252,13 @@ impl AddressFamily {
         solarish,
         windows,
         target_os = "aix",
+        target_os = "cygwin",
         target_os = "espidf",
         target_os = "haiku",
+        target_os = "horizon",
         target_os = "hurd",
         target_os = "nto",
+        target_os = "redox",
         target_os = "vita",
     )))]
     pub const SECURITY: Self = Self(c::AF_SECURITY as _);
@@ -220,10 +267,13 @@ impl AddressFamily {
         bsd,
         windows,
         target_os = "aix",
+        target_os = "cygwin",
         target_os = "espidf",
         target_os = "haiku",
+        target_os = "horizon",
         target_os = "hurd",
         target_os = "nto",
+        target_os = "redox",
         target_os = "vita",
     )))]
     pub const KEY: Self = Self(c::AF_KEY as _);
@@ -237,10 +287,13 @@ impl AddressFamily {
         bsd,
         windows,
         target_os = "aix",
+        target_os = "cygwin",
         target_os = "espidf",
         target_os = "haiku",
+        target_os = "horizon",
         target_os = "hurd",
         target_os = "nto",
+        target_os = "redox",
         target_os = "vita",
     )))]
     pub const PACKET: Self = Self(c::AF_PACKET as _);
@@ -250,10 +303,13 @@ impl AddressFamily {
         solarish,
         windows,
         target_os = "aix",
+        target_os = "cygwin",
         target_os = "espidf",
         target_os = "haiku",
+        target_os = "horizon",
         target_os = "hurd",
         target_os = "nto",
+        target_os = "redox",
         target_os = "vita",
     )))]
     pub const ASH: Self = Self(c::AF_ASH as _);
@@ -263,10 +319,13 @@ impl AddressFamily {
         solarish,
         windows,
         target_os = "aix",
+        target_os = "cygwin",
         target_os = "espidf",
         target_os = "haiku",
+        target_os = "horizon",
         target_os = "hurd",
         target_os = "nto",
+        target_os = "redox",
         target_os = "vita",
     )))]
     pub const ECONET: Self = Self(c::AF_ECONET as _);
@@ -276,10 +335,13 @@ impl AddressFamily {
         solarish,
         windows,
         target_os = "aix",
+        target_os = "cygwin",
         target_os = "espidf",
         target_os = "haiku",
+        target_os = "horizon",
         target_os = "hurd",
         target_os = "nto",
+        target_os = "redox",
         target_os = "vita",
     )))]
     pub const ATMSVC: Self = Self(c::AF_ATMSVC as _);
@@ -289,25 +351,37 @@ impl AddressFamily {
         solarish,
         windows,
         target_os = "aix",
+        target_os = "cygwin",
         target_os = "espidf",
         target_os = "haiku",
+        target_os = "horizon",
         target_os = "hurd",
         target_os = "nto",
+        target_os = "redox",
         target_os = "vita",
     )))]
     pub const RDS: Self = Self(c::AF_RDS as _);
     
-    #[cfg(not(any(target_os = "espidf", target_os = "haiku", target_os = "vita")))]
+    #[cfg(not(any(
+        target_os = "espidf",
+        target_os = "haiku",
+        target_os = "horizon",
+        target_os = "redox",
+        target_os = "vita"
+    )))]
     pub const SNA: Self = Self(c::AF_SNA as _);
     
     #[cfg(not(any(
         bsd,
         solarish,
         target_os = "aix",
+        target_os = "cygwin",
         target_os = "espidf",
         target_os = "haiku",
+        target_os = "horizon",
         target_os = "hurd",
         target_os = "nto",
+        target_os = "redox",
         target_os = "vita",
     )))]
     pub const IRDA: Self = Self(c::AF_IRDA as _);
@@ -317,10 +391,13 @@ impl AddressFamily {
         solarish,
         windows,
         target_os = "aix",
+        target_os = "cygwin",
         target_os = "espidf",
         target_os = "haiku",
+        target_os = "horizon",
         target_os = "hurd",
         target_os = "nto",
+        target_os = "redox",
         target_os = "vita",
     )))]
     pub const PPPOX: Self = Self(c::AF_PPPOX as _);
@@ -330,10 +407,13 @@ impl AddressFamily {
         solarish,
         windows,
         target_os = "aix",
+        target_os = "cygwin",
         target_os = "espidf",
         target_os = "haiku",
+        target_os = "horizon",
         target_os = "hurd",
         target_os = "nto",
+        target_os = "redox",
         target_os = "vita",
     )))]
     pub const WANPIPE: Self = Self(c::AF_WANPIPE as _);
@@ -343,10 +423,13 @@ impl AddressFamily {
         solarish,
         windows,
         target_os = "aix",
+        target_os = "cygwin",
         target_os = "espidf",
         target_os = "haiku",
+        target_os = "horizon",
         target_os = "hurd",
         target_os = "nto",
+        target_os = "redox",
         target_os = "vita",
     )))]
     pub const LLC: Self = Self(c::AF_LLC as _);
@@ -356,10 +439,13 @@ impl AddressFamily {
         solarish,
         windows,
         target_os = "aix",
+        target_os = "cygwin",
         target_os = "espidf",
         target_os = "haiku",
+        target_os = "horizon",
         target_os = "hurd",
         target_os = "nto",
+        target_os = "redox",
         target_os = "vita",
     )))]
     pub const CAN: Self = Self(c::AF_CAN as _);
@@ -369,10 +455,13 @@ impl AddressFamily {
         solarish,
         windows,
         target_os = "aix",
+        target_os = "cygwin",
         target_os = "espidf",
         target_os = "haiku",
+        target_os = "horizon",
         target_os = "hurd",
         target_os = "nto",
+        target_os = "redox",
         target_os = "vita",
     )))]
     pub const TIPC: Self = Self(c::AF_TIPC as _);
@@ -382,8 +471,11 @@ impl AddressFamily {
         solarish,
         windows,
         target_os = "aix",
+        target_os = "cygwin",
         target_os = "espidf",
+        target_os = "horizon",
         target_os = "hurd",
+        target_os = "redox",
         target_os = "vita",
     )))]
     pub const BLUETOOTH: Self = Self(c::AF_BLUETOOTH as _);
@@ -393,10 +485,13 @@ impl AddressFamily {
         solarish,
         windows,
         target_os = "aix",
+        target_os = "cygwin",
         target_os = "espidf",
         target_os = "haiku",
+        target_os = "horizon",
         target_os = "hurd",
         target_os = "nto",
+        target_os = "redox",
         target_os = "vita",
     )))]
     pub const IUCV: Self = Self(c::AF_IUCV as _);
@@ -406,10 +501,13 @@ impl AddressFamily {
         solarish,
         windows,
         target_os = "aix",
+        target_os = "cygwin",
         target_os = "espidf",
         target_os = "haiku",
+        target_os = "horizon",
         target_os = "hurd",
         target_os = "nto",
+        target_os = "redox",
         target_os = "vita",
     )))]
     pub const RXRPC: Self = Self(c::AF_RXRPC as _);
@@ -418,9 +516,12 @@ impl AddressFamily {
         solarish,
         windows,
         target_os = "aix",
+        target_os = "cygwin",
         target_os = "espidf",
         target_os = "haiku",
+        target_os = "horizon",
         target_os = "hurd",
+        target_os = "redox",
         target_os = "vita",
     )))]
     pub const ISDN: Self = Self(c::AF_ISDN as _);
@@ -430,10 +531,13 @@ impl AddressFamily {
         solarish,
         windows,
         target_os = "aix",
+        target_os = "cygwin",
         target_os = "espidf",
         target_os = "haiku",
+        target_os = "horizon",
         target_os = "hurd",
         target_os = "nto",
+        target_os = "redox",
         target_os = "vita",
     )))]
     pub const PHONET: Self = Self(c::AF_PHONET as _);
@@ -443,10 +547,13 @@ impl AddressFamily {
         solarish,
         windows,
         target_os = "aix",
+        target_os = "cygwin",
         target_os = "espidf",
         target_os = "haiku",
+        target_os = "horizon",
         target_os = "hurd",
         target_os = "nto",
+        target_os = "redox",
         target_os = "vita",
     )))]
     pub const IEEE802154: Self = Self(c::AF_IEEE802154 as _);
@@ -481,13 +588,26 @@ impl AddressFamily {
     #[cfg(any(bsd, solarish, target_os = "aix", target_os = "nto"))]
     pub const DATAKIT: Self = Self(c::AF_DATAKIT as _);
     
-    #[cfg(any(bsd, solarish, target_os = "aix", target_os = "haiku", target_os = "nto"))]
+    #[cfg(any(
+        bsd,
+        solarish,
+        target_os = "aix",
+        target_os = "haiku",
+        target_os = "nto"
+    ))]
     pub const DLI: Self = Self(c::AF_DLI as _);
     
     #[cfg(any(bsd, target_os = "nto"))]
     pub const E164: Self = Self(c::AF_E164 as _);
     
-    #[cfg(any(apple, freebsdlike, solarish, target_os = "aix", target_os = "nto", target_os = "openbsd"))]
+    #[cfg(any(
+        apple,
+        freebsdlike,
+        solarish,
+        target_os = "aix",
+        target_os = "nto",
+        target_os = "openbsd"
+    ))]
     pub const ECMA: Self = Self(c::AF_ECMA as _);
     
     #[cfg(target_os = "openbsd")]
@@ -529,10 +649,21 @@ impl AddressFamily {
     #[cfg(any(bsd, solarish, target_os = "aix", target_os = "nto"))]
     pub const LAT: Self = Self(c::AF_LAT as _);
     
-    #[cfg(any(bsd, solarish, target_os = "aix", target_os = "haiku", target_os = "nto"))]
+    #[cfg(any(
+        bsd,
+        solarish,
+        target_os = "aix",
+        target_os = "haiku",
+        target_os = "nto"
+    ))]
     pub const LINK: Self = Self(c::AF_LINK as _);
     
-    #[cfg(any(netbsdlike, target_os = "dragonfly", target_os = "emscripten", target_os = "fuchsia"))]
+    #[cfg(any(
+        netbsdlike,
+        target_os = "dragonfly",
+        target_os = "emscripten",
+        target_os = "fuchsia"
+    ))]
     pub const MPLS: Self = Self(c::AF_MPLS as _);
     
     #[cfg(any(bsd, target_os = "nto"))]
@@ -541,7 +672,7 @@ impl AddressFamily {
     #[cfg(solarish)]
     pub const NBS: Self = Self(c::AF_NBS as _);
     
-    #[cfg(solarish)]
+    #[cfg(target_os = "illumos")]
     pub const NCA: Self = Self(c::AF_NCA as _);
     
     #[cfg(target_os = "aix")]
@@ -589,7 +720,15 @@ impl AddressFamily {
     #[cfg(target_os = "aix")]
     pub const RIF: Self = Self(c::AF_RIF as _);
     
-    #[cfg(any(bsd, solarish, target_os = "android", target_os = "emscripten", target_os = "fuchsia", target_os = "haiku", target_os = "nto"))]
+    #[cfg(any(
+        bsd,
+        solarish,
+        target_os = "android",
+        target_os = "emscripten",
+        target_os = "fuchsia",
+        target_os = "haiku",
+        target_os = "nto"
+    ))]
     pub const ROUTE: Self = Self(c::AF_ROUTE as _);
     
     #[cfg(target_os = "freebsd")]
@@ -613,7 +752,7 @@ impl AddressFamily {
     #[cfg(apple)]
     pub const UTUN: Self = Self(c::AF_UTUN as _);
     
-    #[cfg(any(apple, target_os = "emscripten", target_os = "fuchsia"))]
+    #[cfg(any(apple, linux_kernel, target_os = "emscripten", target_os = "fuchsia"))]
     pub const VSOCK: Self = Self(c::AF_VSOCK as _);
     
     #[cfg(target_os = "linux")]
@@ -674,6 +813,7 @@ pub mod ipproto {
         solarish,
         target_os = "espidf",
         target_os = "haiku",
+        target_os = "horizon",
         target_os = "vita"
     )))]
     pub const IGMP: Protocol = Protocol(new_raw_protocol(c::IPPROTO_IGMP as _));
@@ -683,6 +823,8 @@ pub mod ipproto {
         windows,
         target_os = "espidf",
         target_os = "haiku",
+        target_os = "horizon",
+        target_os = "redox",
         target_os = "vita"
     )))]
     pub const IPIP: Protocol = Protocol(new_raw_protocol(c::IPPROTO_IPIP as _));
@@ -693,6 +835,8 @@ pub mod ipproto {
         solarish,
         target_os = "espidf",
         target_os = "haiku",
+        target_os = "horizon",
+        target_os = "redox",
         target_os = "vita"
     )))]
     pub const EGP: Protocol = Protocol(new_raw_protocol(c::IPPROTO_EGP as _));
@@ -701,6 +845,7 @@ pub mod ipproto {
         solarish,
         target_os = "espidf",
         target_os = "haiku",
+        target_os = "horizon",
         target_os = "vita"
     )))]
     pub const PUP: Protocol = Protocol(new_raw_protocol(c::IPPROTO_PUP as _));
@@ -711,6 +856,7 @@ pub mod ipproto {
         solarish,
         target_os = "espidf",
         target_os = "haiku",
+        target_os = "horizon",
         target_os = "vita"
     )))]
     pub const IDP: Protocol = Protocol(new_raw_protocol(c::IPPROTO_IDP as _));
@@ -718,9 +864,12 @@ pub mod ipproto {
     #[cfg(not(any(
         solarish,
         windows,
+        target_os = "cygwin",
         target_os = "espidf",
         target_os = "haiku",
-        target_os = "vita"
+        target_os = "horizon",
+        target_os = "redox",
+        target_os = "vita",
     )))]
     pub const TP: Protocol = Protocol(new_raw_protocol(c::IPPROTO_TP as _));
     
@@ -729,11 +878,14 @@ pub mod ipproto {
         solarish,
         windows,
         target_os = "aix",
+        target_os = "cygwin",
         target_os = "dragonfly",
         target_os = "espidf",
         target_os = "haiku",
+        target_os = "horizon",
         target_os = "nto",
         target_os = "openbsd",
+        target_os = "redox",
         target_os = "vita",
     )))]
     pub const DCCP: Protocol = Protocol(new_raw_protocol(c::IPPROTO_DCCP as _));
@@ -743,18 +895,24 @@ pub mod ipproto {
     #[cfg(not(any(
         solarish,
         windows,
+        target_os = "cygwin",
         target_os = "espidf",
         target_os = "haiku",
-        target_os = "vita"
+        target_os = "horizon",
+        target_os = "redox",
+        target_os = "vita",
     )))]
     pub const RSVP: Protocol = Protocol(new_raw_protocol(c::IPPROTO_RSVP as _));
     
     #[cfg(not(any(
         solarish,
         windows,
+        target_os = "cygwin",
         target_os = "espidf",
         target_os = "haiku",
-        target_os = "vita"
+        target_os = "horizon",
+        target_os = "redox",
+        target_os = "vita",
     )))]
     pub const GRE: Protocol = Protocol(new_raw_protocol(c::IPPROTO_GRE as _));
     
@@ -762,6 +920,8 @@ pub mod ipproto {
         solarish,
         target_os = "espidf",
         target_os = "haiku",
+        target_os = "horizon",
+        target_os = "redox",
         target_os = "vita"
     )))]
     pub const ESP: Protocol = Protocol(new_raw_protocol(c::IPPROTO_ESP as _));
@@ -770,6 +930,8 @@ pub mod ipproto {
         solarish,
         target_os = "espidf",
         target_os = "haiku",
+        target_os = "horizon",
+        target_os = "redox",
         target_os = "vita"
     )))]
     pub const AH: Protocol = Protocol(new_raw_protocol(c::IPPROTO_AH as _));
@@ -779,9 +941,12 @@ pub mod ipproto {
         netbsdlike,
         windows,
         target_os = "aix",
+        target_os = "cygwin",
         target_os = "espidf",
         target_os = "haiku",
+        target_os = "horizon",
         target_os = "nto",
+        target_os = "redox",
         target_os = "vita",
     )))]
     pub const MTP: Protocol = Protocol(new_raw_protocol(c::IPPROTO_MTP as _));
@@ -791,9 +956,12 @@ pub mod ipproto {
         solarish,
         windows,
         target_os = "aix",
+        target_os = "cygwin",
         target_os = "espidf",
         target_os = "haiku",
+        target_os = "horizon",
         target_os = "nto",
+        target_os = "redox",
         target_os = "vita",
     )))]
     pub const BEETPH: Protocol = Protocol(new_raw_protocol(c::IPPROTO_BEETPH as _));
@@ -802,8 +970,11 @@ pub mod ipproto {
         solarish,
         windows,
         target_os = "aix",
+        target_os = "cygwin",
         target_os = "espidf",
         target_os = "haiku",
+        target_os = "horizon",
+        target_os = "redox",
         target_os = "vita",
     )))]
     pub const ENCAP: Protocol = Protocol(new_raw_protocol(c::IPPROTO_ENCAP as _));
@@ -811,9 +982,12 @@ pub mod ipproto {
     #[cfg(not(any(
         solarish,
         target_os = "aix",
+        target_os = "cygwin",
         target_os = "espidf",
         target_os = "haiku",
-        target_os = "vita"
+        target_os = "horizon",
+        target_os = "redox",
+        target_os = "vita",
     )))]
     pub const PIM: Protocol = Protocol(new_raw_protocol(c::IPPROTO_PIM as _));
     
@@ -822,19 +996,25 @@ pub mod ipproto {
         solarish,
         windows,
         target_os = "aix",
+        target_os = "cygwin",
         target_os = "espidf",
         target_os = "haiku",
+        target_os = "horizon",
         target_os = "nto",
+        target_os = "redox",
         target_os = "vita",
     )))]
     pub const COMP: Protocol = Protocol(new_raw_protocol(c::IPPROTO_COMP as _));
     
     #[cfg(not(any(
         solarish,
+        target_os = "cygwin",
         target_os = "dragonfly",
         target_os = "espidf",
         target_os = "haiku",
+        target_os = "horizon",
         target_os = "openbsd",
+        target_os = "redox",
         target_os = "vita",
     )))]
     pub const SCTP: Protocol = Protocol(new_raw_protocol(c::IPPROTO_SCTP as _));
@@ -845,10 +1025,13 @@ pub mod ipproto {
         solarish,
         windows,
         target_os = "aix",
+        target_os = "cygwin",
         target_os = "dragonfly",
         target_os = "espidf",
         target_os = "haiku",
+        target_os = "horizon",
         target_os = "nto",
+        target_os = "redox",
         target_os = "vita",
     )))]
     pub const UDPLITE: Protocol = Protocol(new_raw_protocol(c::IPPROTO_UDPLITE as _));
@@ -858,11 +1041,14 @@ pub mod ipproto {
         solarish,
         windows,
         target_os = "aix",
+        target_os = "cygwin",
         target_os = "dragonfly",
         target_os = "espidf",
         target_os = "haiku",
+        target_os = "horizon",
         target_os = "netbsd",
         target_os = "nto",
+        target_os = "redox",
         target_os = "vita",
     )))]
     pub const MPLS: Protocol = Protocol(new_raw_protocol(c::IPPROTO_MPLS as _));
@@ -870,7 +1056,7 @@ pub mod ipproto {
     #[cfg(linux_kernel)]
     pub const ETHERNET: Protocol = Protocol(new_raw_protocol(c::IPPROTO_ETHERNET as _));
     
-    #[cfg(not(any(target_os = "espidf", target_os = "vita")))]
+    #[cfg(not(any(target_os = "espidf", target_os = "horizon", target_os = "vita")))]
     pub const RAW: Protocol = Protocol(new_raw_protocol(c::IPPROTO_RAW as _));
     
     #[cfg(not(any(
@@ -878,11 +1064,14 @@ pub mod ipproto {
         solarish,
         windows,
         target_os = "aix",
+        target_os = "cygwin",
         target_os = "emscripten",
         target_os = "espidf",
         target_os = "fuchsia",
         target_os = "haiku",
+        target_os = "horizon",
         target_os = "nto",
+        target_os = "redox",
         target_os = "vita",
     )))]
     pub const MPTCP: Protocol = Protocol(new_raw_protocol(c::IPPROTO_MPTCP as _));
@@ -891,6 +1080,8 @@ pub mod ipproto {
         solarish,
         target_os = "espidf",
         target_os = "haiku",
+        target_os = "horizon",
+        target_os = "redox",
         target_os = "vita"
     )))]
     pub const FRAGMENT: Protocol = Protocol(new_raw_protocol(c::IPPROTO_FRAGMENT as _));
@@ -902,10 +1093,13 @@ pub mod ipproto {
         netbsdlike,
         solarish,
         windows,
+        target_os = "cygwin",
         target_os = "dragonfly",
         target_os = "espidf",
         target_os = "haiku",
+        target_os = "horizon",
         target_os = "nto",
+        target_os = "redox",
         target_os = "vita",
     )))]
     pub const MH: Protocol = Protocol(new_raw_protocol(c::IPPROTO_MH as _));
@@ -914,6 +1108,8 @@ pub mod ipproto {
         solarish,
         target_os = "espidf",
         target_os = "haiku",
+        target_os = "horizon",
+        target_os = "redox",
         target_os = "vita"
     )))]
     pub const ROUTING: Protocol = Protocol(new_raw_protocol(c::IPPROTO_ROUTING as _));
@@ -944,6 +1140,12 @@ pub mod netlink {
     use {
         super::{new_raw_protocol, Protocol},
         crate::backend::c,
+        crate::backend::net::read_sockaddr::read_sockaddr_netlink,
+        crate::net::{
+            addr::{call_with_sockaddr, SocketAddrArg, SocketAddrLen, SocketAddrOpaque},
+            SocketAddrAny,
+        },
+        core::mem,
     };
 
     
@@ -1013,46 +1215,88 @@ pub mod netlink {
     
     #[cfg(linux_kernel)]
     pub const INET_DIAG: Protocol = Protocol(new_raw_protocol(c::NETLINK_INET_DIAG as _));
+
     
-    #[cfg(linux_kernel)]
-    pub const ADD_MEMBERSHIP: Protocol = Protocol(new_raw_protocol(c::NETLINK_ADD_MEMBERSHIP as _));
     
-    #[cfg(linux_kernel)]
-    pub const DROP_MEMBERSHIP: Protocol =
-        Protocol(new_raw_protocol(c::NETLINK_DROP_MEMBERSHIP as _));
     
-    #[cfg(linux_kernel)]
-    pub const PKTINFO: Protocol = Protocol(new_raw_protocol(c::NETLINK_PKTINFO as _));
     
-    #[cfg(linux_kernel)]
-    pub const BROADCAST_ERROR: Protocol =
-        Protocol(new_raw_protocol(c::NETLINK_BROADCAST_ERROR as _));
     
+    #[derive(Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Hash, Debug)]
     #[cfg(linux_kernel)]
-    pub const NO_ENOBUFS: Protocol = Protocol(new_raw_protocol(c::NETLINK_NO_ENOBUFS as _));
+    pub struct SocketAddrNetlink {
+        
+        pid: u32,
+
+        
+        groups: u32,
+    }
+
+    #[cfg(linux_kernel)]
+    impl SocketAddrNetlink {
+        
+        #[inline]
+        pub const fn new(pid: u32, groups: u32) -> Self {
+            Self { pid, groups }
+        }
+
+        
+        #[inline]
+        pub const fn pid(&self) -> u32 {
+            self.pid
+        }
+
+        
+        #[inline]
+        pub fn set_pid(&mut self, pid: u32) {
+            self.pid = pid;
+        }
+
+        
+        #[inline]
+        pub const fn groups(&self) -> u32 {
+            self.groups
+        }
+
+        
+        #[inline]
+        pub fn set_groups(&mut self, groups: u32) {
+            self.groups = groups;
+        }
+    }
+
+    #[cfg(linux_kernel)]
+    #[allow(unsafe_code)]
     
-    #[cfg(linux_kernel)]
-    pub const RX_RING: Protocol = Protocol(new_raw_protocol(c::NETLINK_RX_RING as _));
     
+    unsafe impl SocketAddrArg for SocketAddrNetlink {
+        unsafe fn with_sockaddr<R>(
+            &self,
+            f: impl FnOnce(*const SocketAddrOpaque, SocketAddrLen) -> R,
+        ) -> R {
+            let mut addr: c::sockaddr_nl = mem::zeroed();
+            addr.nl_family = c::AF_NETLINK as _;
+            addr.nl_pid = self.pid;
+            addr.nl_groups = self.groups;
+            call_with_sockaddr(&addr, f)
+        }
+    }
+
     #[cfg(linux_kernel)]
-    pub const TX_RING: Protocol = Protocol(new_raw_protocol(c::NETLINK_TX_RING as _));
-    
+    impl From<SocketAddrNetlink> for SocketAddrAny {
+        #[inline]
+        fn from(from: SocketAddrNetlink) -> Self {
+            from.as_any()
+        }
+    }
+
     #[cfg(linux_kernel)]
-    pub const LISTEN_ALL_NSID: Protocol =
-        Protocol(new_raw_protocol(c::NETLINK_LISTEN_ALL_NSID as _));
-    
-    #[cfg(linux_kernel)]
-    pub const LIST_MEMBERSHIPS: Protocol =
-        Protocol(new_raw_protocol(c::NETLINK_LIST_MEMBERSHIPS as _));
-    
-    #[cfg(linux_kernel)]
-    pub const CAP_ACK: Protocol = Protocol(new_raw_protocol(c::NETLINK_CAP_ACK as _));
-    
-    #[cfg(linux_kernel)]
-    pub const EXT_ACK: Protocol = Protocol(new_raw_protocol(c::NETLINK_EXT_ACK as _));
-    
-    #[cfg(linux_kernel)]
-    pub const GET_STRICT_CHK: Protocol = Protocol(new_raw_protocol(c::NETLINK_GET_STRICT_CHK as _));
+    impl TryFrom<SocketAddrAny> for SocketAddrNetlink {
+        type Error = crate::io::Errno;
+
+        fn try_from(addr: SocketAddrAny) -> Result<Self, Self::Error> {
+            read_sockaddr_netlink(&addr)
+        }
+    }
 }
 
 
@@ -1077,10 +1321,10 @@ pub mod eth {
     #[cfg(linux_kernel)]
     pub const PUPAT: Protocol = Protocol(new_raw_protocol((c::ETH_P_PUPAT as u16).to_be() as u32));
     
-    #[cfg(linux_kernel)]
+    #[cfg(linux_raw_dep)]
     pub const TSN: Protocol = Protocol(new_raw_protocol((c::ETH_P_TSN as u16).to_be() as u32));
     
-    #[cfg(linux_kernel)]
+    #[cfg(linux_raw_dep)]
     pub const ERSPAN2: Protocol =
         Protocol(new_raw_protocol((c::ETH_P_ERSPAN2 as u16).to_be() as u32));
     
@@ -1151,7 +1395,7 @@ pub mod eth {
     pub const P_8021Q: Protocol =
         Protocol(new_raw_protocol((c::ETH_P_8021Q as u16).to_be() as u32));
     
-    #[cfg(linux_kernel)]
+    #[cfg(linux_raw_dep)]
     pub const ERSPAN: Protocol =
         Protocol(new_raw_protocol((c::ETH_P_ERSPAN as u16).to_be() as u32));
     
@@ -1201,18 +1445,18 @@ pub mod eth {
     #[cfg(linux_kernel)]
     pub const PAE: Protocol = Protocol(new_raw_protocol((c::ETH_P_PAE as u16).to_be() as u32));
     
-    #[cfg(linux_kernel)]
+    #[cfg(linux_raw_dep)]
     pub const PROFINET: Protocol =
         Protocol(new_raw_protocol((c::ETH_P_PROFINET as u16).to_be() as u32));
     
-    #[cfg(linux_kernel)]
+    #[cfg(linux_raw_dep)]
     pub const REALTEK: Protocol =
         Protocol(new_raw_protocol((c::ETH_P_REALTEK as u16).to_be() as u32));
     
     #[cfg(linux_kernel)]
     pub const AOE: Protocol = Protocol(new_raw_protocol((c::ETH_P_AOE as u16).to_be() as u32));
     
-    #[cfg(linux_kernel)]
+    #[cfg(linux_raw_dep)]
     pub const ETHERCAT: Protocol =
         Protocol(new_raw_protocol((c::ETH_P_ETHERCAT as u16).to_be() as u32));
     
@@ -1224,17 +1468,17 @@ pub mod eth {
     pub const P_802_EX1: Protocol =
         Protocol(new_raw_protocol((c::ETH_P_802_EX1 as u16).to_be() as u32));
     
-    #[cfg(linux_kernel)]
+    #[cfg(linux_raw_dep)]
     pub const PREAUTH: Protocol =
         Protocol(new_raw_protocol((c::ETH_P_PREAUTH as u16).to_be() as u32));
     
     #[cfg(linux_kernel)]
     pub const TIPC: Protocol = Protocol(new_raw_protocol((c::ETH_P_TIPC as u16).to_be() as u32));
     
-    #[cfg(linux_kernel)]
+    #[cfg(linux_raw_dep)]
     pub const LLDP: Protocol = Protocol(new_raw_protocol((c::ETH_P_LLDP as u16).to_be() as u32));
     
-    #[cfg(linux_kernel)]
+    #[cfg(linux_raw_dep)]
     pub const MRP: Protocol = Protocol(new_raw_protocol((c::ETH_P_MRP as u16).to_be() as u32));
     
     #[cfg(linux_kernel)]
@@ -1251,19 +1495,19 @@ pub mod eth {
     #[cfg(linux_kernel)]
     pub const P_1588: Protocol = Protocol(new_raw_protocol((c::ETH_P_1588 as u16).to_be() as u32));
     
-    #[cfg(linux_kernel)]
+    #[cfg(linux_raw_dep)]
     pub const NCSI: Protocol = Protocol(new_raw_protocol((c::ETH_P_NCSI as u16).to_be() as u32));
     
     #[cfg(linux_kernel)]
     pub const PRP: Protocol = Protocol(new_raw_protocol((c::ETH_P_PRP as u16).to_be() as u32));
     
-    #[cfg(linux_kernel)]
+    #[cfg(linux_raw_dep)]
     pub const CFM: Protocol = Protocol(new_raw_protocol((c::ETH_P_CFM as u16).to_be() as u32));
     
     #[cfg(linux_kernel)]
     pub const FCOE: Protocol = Protocol(new_raw_protocol((c::ETH_P_FCOE as u16).to_be() as u32));
     
-    #[cfg(linux_kernel)]
+    #[cfg(linux_raw_dep)]
     pub const IBOE: Protocol = Protocol(new_raw_protocol((c::ETH_P_IBOE as u16).to_be() as u32));
     
     #[cfg(linux_kernel)]
@@ -1276,10 +1520,10 @@ pub mod eth {
     pub const P_80221: Protocol =
         Protocol(new_raw_protocol((c::ETH_P_80221 as u16).to_be() as u32));
     
-    #[cfg(linux_kernel)]
+    #[cfg(linux_raw_dep)]
     pub const HSR: Protocol = Protocol(new_raw_protocol((c::ETH_P_HSR as u16).to_be() as u32));
     
-    #[cfg(linux_kernel)]
+    #[cfg(linux_raw_dep)]
     pub const NSH: Protocol = Protocol(new_raw_protocol((c::ETH_P_NSH as u16).to_be() as u32));
     
     #[cfg(linux_kernel)]
@@ -1298,15 +1542,15 @@ pub mod eth {
     #[cfg(linux_kernel)]
     pub const EDSA: Protocol = Protocol(new_raw_protocol((c::ETH_P_EDSA as u16).to_be() as u32));
     
-    #[cfg(linux_kernel)]
+    #[cfg(linux_raw_dep)]
     pub const DSA_8021Q: Protocol =
         Protocol(new_raw_protocol((c::ETH_P_DSA_8021Q as u16).to_be() as u32));
     
-    #[cfg(linux_kernel)]
+    #[cfg(linux_raw_dep)]
     pub const DSA_A5PSW: Protocol =
         Protocol(new_raw_protocol((c::ETH_P_DSA_A5PSW as u16).to_be() as u32));
     
-    #[cfg(linux_kernel)]
+    #[cfg(linux_raw_dep)]
     pub const IFE: Protocol = Protocol(new_raw_protocol((c::ETH_P_IFE as u16).to_be() as u32));
     
     #[cfg(linux_kernel)]
@@ -1324,7 +1568,7 @@ pub mod eth {
     #[cfg(linux_kernel)]
     pub const AX25: Protocol = Protocol(new_raw_protocol((c::ETH_P_AX25 as u16).to_be() as u32));
     
-    #[cfg(linux_kernel)]
+    #[cfg(linux_raw_dep)]
     pub const ALL: Protocol = Protocol(new_raw_protocol((c::ETH_P_ALL as u16).to_be() as u32));
     
     #[cfg(linux_kernel)]
@@ -1349,13 +1593,13 @@ pub mod eth {
     pub const LOCALTALK: Protocol =
         Protocol(new_raw_protocol((c::ETH_P_LOCALTALK as u16).to_be() as u32));
     
-    #[cfg(linux_kernel)]
+    #[cfg(linux_raw_dep)]
     pub const CAN: Protocol = Protocol(new_raw_protocol((c::ETH_P_CAN as u16).to_be() as u32));
     
     #[cfg(linux_kernel)]
     pub const CANFD: Protocol = Protocol(new_raw_protocol((c::ETH_P_CANFD as u16).to_be() as u32));
     
-    #[cfg(linux_kernel)]
+    #[cfg(linux_raw_dep)]
     pub const CANXL: Protocol = Protocol(new_raw_protocol((c::ETH_P_CANXL as u16).to_be() as u32));
     
     #[cfg(linux_kernel)]
@@ -1388,7 +1632,7 @@ pub mod eth {
     pub const ARCNET: Protocol =
         Protocol(new_raw_protocol((c::ETH_P_ARCNET as u16).to_be() as u32));
     
-    #[cfg(linux_kernel)]
+    #[cfg(linux_raw_dep)]
     pub const DSA: Protocol = Protocol(new_raw_protocol((c::ETH_P_DSA as u16).to_be() as u32));
     
     #[cfg(linux_kernel)]
@@ -1406,13 +1650,13 @@ pub mod eth {
     #[cfg(linux_kernel)]
     pub const CAIF: Protocol = Protocol(new_raw_protocol((c::ETH_P_CAIF as u16).to_be() as u32));
     
-    #[cfg(linux_kernel)]
+    #[cfg(linux_raw_dep)]
     pub const XDSA: Protocol = Protocol(new_raw_protocol((c::ETH_P_XDSA as u16).to_be() as u32));
     
-    #[cfg(linux_kernel)]
+    #[cfg(linux_raw_dep)]
     pub const MAP: Protocol = Protocol(new_raw_protocol((c::ETH_P_MAP as u16).to_be() as u32));
     
-    #[cfg(linux_kernel)]
+    #[cfg(linux_raw_dep)]
     pub const MCTP: Protocol = Protocol(new_raw_protocol((c::ETH_P_MCTP as u16).to_be() as u32));
 }
 
@@ -1442,7 +1686,7 @@ pub enum Shutdown {
     
     Write = c::SHUT_WR as _,
     
-    ReadWrite = c::SHUT_RDWR as _,
+    Both = c::SHUT_RDWR as _,
 }
 
 bitflags! {
@@ -1454,7 +1698,7 @@ bitflags! {
     /// [`acceptfrom_with`]: crate::net::acceptfrom_with
     #[repr(transparent)]
     #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
-    pub struct SocketFlags: c::c_uint {
+    pub struct SocketFlags: ffi::c_uint {
         /// `SOCK_NONBLOCK`
         #[cfg(not(any(
             apple,
@@ -1462,6 +1706,7 @@ bitflags! {
             target_os = "aix",
             target_os = "espidf",
             target_os = "haiku",
+            target_os = "horizon",
             target_os = "nto",
             target_os = "vita",
         )))]
@@ -1477,9 +1722,29 @@ bitflags! {
     }
 }
 
+#[cfg(all(target_os = "linux", feature = "time"))]
+bitflags! {
+    /// Flags for use with [`set_txtime`].
+    ///
+    /// [`set_txtime`]: crate::net::sockopt::set_txtime
+    #[repr(transparent)]
+    #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
+    pub struct TxTimeFlags: u32 {
+        /// `SOF_TXTIME_DEADLINE_MODE`
+        const DEADLINE_MODE = bitcast!(c::SOF_TXTIME_DEADLINE_MODE);
+        /// `SOF_TXTIME_REPORT_ERRORS`
+        const REPORT_ERRORS = bitcast!(c::SOF_TXTIME_REPORT_ERRORS);
+    }
+}
+
 
 #[cfg(target_os = "linux")]
 pub mod xdp {
+    use crate::backend::net::read_sockaddr::read_sockaddr_xdp;
+    use crate::fd::{AsRawFd, BorrowedFd};
+    use crate::net::addr::{call_with_sockaddr, SocketAddrArg, SocketAddrLen, SocketAddrOpaque};
+    use crate::net::SocketAddrAny;
+
     use super::{bitflags, c};
 
     bitflags! {
@@ -1496,11 +1761,12 @@ pub mod xdp {
 
     
     
+    
     bitflags! {
         /// `XDP_*` constants for use in [`SocketAddrXdp`].
         #[repr(transparent)]
         #[derive(Copy, Clone, PartialEq, PartialOrd, Eq, Ord, Hash, Debug)]
-        pub struct SockaddrXdpFlags: u16 {
+        pub struct SocketAddrXdpFlags: u16 {
             /// `XDP_SHARED_UMEM`
             const XDP_SHARED_UMEM = bitcast!(c::XDP_SHARED_UMEM as u16);
             /// `XDP_COPY`
@@ -1541,44 +1807,39 @@ pub mod xdp {
     
     
     
+    
+    
+    
     #[derive(Clone, PartialEq, PartialOrd, Eq, Ord, Hash, Debug)]
     pub struct SocketAddrXdp {
         
-        sxdp_flags: SockaddrXdpFlags,
+        sxdp_flags: SocketAddrXdpFlags,
         
         sxdp_ifindex: u32,
         
         sxdp_queue_id: u32,
-        
-        sxdp_shared_umem_fd: u32,
     }
 
     impl SocketAddrXdp {
         
         #[inline]
-        pub fn new(
-            flags: SockaddrXdpFlags,
-            interface_index: u32,
-            queue_id: u32,
-            share_umem_fd: u32,
-        ) -> Self {
+        pub const fn new(flags: SocketAddrXdpFlags, interface_index: u32, queue_id: u32) -> Self {
             Self {
                 sxdp_flags: flags,
                 sxdp_ifindex: interface_index,
                 sxdp_queue_id: queue_id,
-                sxdp_shared_umem_fd: share_umem_fd,
             }
         }
 
         
         #[inline]
-        pub fn flags(&self) -> SockaddrXdpFlags {
+        pub fn flags(&self) -> SocketAddrXdpFlags {
             self.sxdp_flags
         }
 
         
         #[inline]
-        pub fn set_flags(&mut self, flags: SockaddrXdpFlags) {
+        pub fn set_flags(&mut self, flags: SocketAddrXdpFlags) {
             self.sxdp_flags = flags;
         }
 
@@ -1605,17 +1866,73 @@ pub mod xdp {
         pub fn set_queue_id(&mut self, queue_id: u32) {
             self.sxdp_queue_id = queue_id;
         }
+    }
 
-        
-        #[inline]
-        pub fn shared_umem_fd(&self) -> u32 {
-            self.sxdp_shared_umem_fd
+    #[allow(unsafe_code)]
+    
+    
+    unsafe impl SocketAddrArg for SocketAddrXdp {
+        unsafe fn with_sockaddr<R>(
+            &self,
+            f: impl FnOnce(*const SocketAddrOpaque, SocketAddrLen) -> R,
+        ) -> R {
+            let addr = c::sockaddr_xdp {
+                sxdp_family: c::AF_XDP as _,
+                sxdp_flags: self.flags().bits(),
+                sxdp_ifindex: self.interface_index(),
+                sxdp_queue_id: self.queue_id(),
+                sxdp_shared_umem_fd: !0,
+            };
+
+            call_with_sockaddr(&addr, f)
         }
+    }
 
-        
+    impl From<SocketAddrXdp> for SocketAddrAny {
         #[inline]
-        pub fn set_shared_umem_fd(&mut self, shared_umem_fd: u32) {
-            self.sxdp_shared_umem_fd = shared_umem_fd;
+        fn from(from: SocketAddrXdp) -> Self {
+            from.as_any()
+        }
+    }
+
+    impl TryFrom<SocketAddrAny> for SocketAddrXdp {
+        type Error = crate::io::Errno;
+
+        fn try_from(addr: SocketAddrAny) -> Result<Self, Self::Error> {
+            read_sockaddr_xdp(&addr)
+        }
+    }
+
+    
+    
+    
+    
+    
+    #[derive(Debug)]
+    pub struct SocketAddrXdpWithSharedUmem<'a> {
+        
+        pub addr: SocketAddrXdp,
+        
+        pub shared_umem_fd: BorrowedFd<'a>,
+    }
+
+    #[allow(unsafe_code)]
+    
+    
+    unsafe impl<'a> SocketAddrArg for SocketAddrXdpWithSharedUmem<'a> {
+        unsafe fn with_sockaddr<R>(
+            &self,
+            f: impl FnOnce(*const SocketAddrOpaque, SocketAddrLen) -> R,
+        ) -> R {
+            let addr = c::sockaddr_xdp {
+                sxdp_family: c::AF_XDP as _,
+                sxdp_flags: self.addr.flags().bits(),
+                sxdp_ifindex: self.addr.interface_index(),
+                sxdp_queue_id: self.addr.queue_id(),
+                sxdp_shared_umem_fd: self.shared_umem_fd.as_raw_fd() as u32,
+            };
+
+            call_with_sockaddr(&addr, f)
         }
     }
 
@@ -1674,6 +1991,10 @@ pub mod xdp {
         
         
         pub flags: XdpUmemRegFlags,
+        
+        
+        
+        pub tx_metadata_len: u32,
     }
 
     
@@ -1731,11 +2052,11 @@ pub mod xdp {
 
     #[cfg(target_os = "linux")]
     bitflags! {
-        #[repr(transparent)]
-        #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
         /// `XDP_*` constants for use in [`XdpDesc`].
         ///
         /// Requires kernel version 6.6.
+        #[repr(transparent)]
+        #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
         pub struct XdpDescOptions: u32 {
             /// `XDP_PKT_CONTD`
             const XDP_PKT_CONTD = bitcast!(c::XDP_PKT_CONTD);
@@ -1779,40 +2100,48 @@ pub struct UCred {
     pub gid: crate::ugid::Gid,
 }
 
-#[test]
-fn test_sizes() {
-    use crate::backend::c;
-    use c::c_int;
-    use core::mem::transmute;
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-    
-    
-    assert_eq_size!(RawProtocol, c_int);
-    assert_eq_size!(Protocol, c_int);
-    assert_eq_size!(Option<RawProtocol>, c_int);
-    assert_eq_size!(Option<Protocol>, c_int);
-    assert_eq_size!(RawSocketType, c_int);
-    assert_eq_size!(SocketType, c_int);
-    assert_eq_size!(SocketFlags, c_int);
+    #[test]
+    fn test_sizes() {
+        #[cfg(target_os = "linux")]
+        use crate::backend::c;
+        use crate::ffi::c_int;
+        use crate::net::addr::SocketAddrStorage;
+        use core::mem::transmute;
 
-    
-    
-    #[allow(unsafe_code)]
-    unsafe {
-        let t: Option<Protocol> = None;
-        assert_eq!(0_u32, transmute::<Option<Protocol>, u32>(t));
+        
+        
+        assert_eq_size!(RawProtocol, c_int);
+        assert_eq_size!(Protocol, c_int);
+        assert_eq_size!(Option<RawProtocol>, c_int);
+        assert_eq_size!(Option<Protocol>, c_int);
+        assert_eq_size!(RawSocketType, c_int);
+        assert_eq_size!(SocketType, c_int);
+        assert_eq_size!(SocketFlags, c_int);
+        assert_eq_size!(SocketAddrStorage, c::sockaddr_storage);
 
-        let t: Option<Protocol> = Some(Protocol::from_raw(RawProtocol::new(4567).unwrap()));
-        assert_eq!(4567_u32, transmute::<Option<Protocol>, u32>(t));
+        
+        
+        #[allow(unsafe_code)]
+        unsafe {
+            let t: Option<Protocol> = None;
+            assert_eq!(0_u32, transmute::<Option<Protocol>, u32>(t));
+
+            let t: Option<Protocol> = Some(Protocol::from_raw(RawProtocol::new(4567).unwrap()));
+            assert_eq!(4567_u32, transmute::<Option<Protocol>, u32>(t));
+        }
+
+        #[cfg(linux_kernel)]
+        assert_eq_size!(UCred, libc::ucred);
+
+        #[cfg(target_os = "linux")]
+        assert_eq_size!(super::xdp::XdpUmemReg, c::xdp_umem_reg);
+        #[cfg(target_os = "linux")]
+        assert_eq_size!(super::xdp::XdpOptions, c::xdp_options);
+        #[cfg(target_os = "linux")]
+        assert_eq_size!(super::xdp::XdpDesc, c::xdp_desc);
     }
-
-    #[cfg(linux_kernel)]
-    assert_eq_size!(UCred, libc::ucred);
-
-    #[cfg(target_os = "linux")]
-    assert_eq_size!(super::xdp::XdpUmemReg, c::xdp_umem_reg);
-    #[cfg(target_os = "linux")]
-    assert_eq_size!(super::xdp::XdpOptions, c::xdp_options);
-    #[cfg(target_os = "linux")]
-    assert_eq_size!(super::xdp::XdpDesc, c::xdp_desc);
 }

@@ -2,6 +2,8 @@
 use mockall::mock;
 
 use crate::sync::oneshot;
+#[cfg(all(test, unix))]
+use std::os::fd::{AsRawFd, FromRawFd, OwnedFd};
 use std::{
     cell::RefCell,
     collections::VecDeque,
@@ -56,6 +58,13 @@ mock! {
 
 impl Read for MockFile {
     fn read(&mut self, dst: &mut [u8]) -> io::Result<usize> {
+        
+        
+        
+        
+        
+        
+        dst.fill(0);
         self.inner_read(dst)
     }
 }
@@ -86,6 +95,14 @@ impl Write for &'_ MockFile {
 
     fn flush(&mut self) -> io::Result<()> {
         self.inner_flush()
+    }
+}
+
+#[cfg(all(test, unix))]
+impl From<MockFile> for OwnedFd {
+    #[inline]
+    fn from(file: MockFile) -> OwnedFd {
+        unsafe { OwnedFd::from_raw_fd(file.as_raw_fd()) }
     }
 }
 

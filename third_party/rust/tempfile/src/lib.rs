@@ -176,6 +176,9 @@
 
 
 
+
+
+
 #![doc(
     html_logo_url = "https://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png",
     html_favicon_url = "https://www.rust-lang.org/favicon.ico",
@@ -185,13 +188,6 @@
 #![deny(rust_2018_idioms)]
 #![allow(clippy::redundant_field_names)]
 
-
-#![cfg_attr(
-    all(feature = "nightly", target_os = "wasi", target_env = "p2"),
-    feature(wasip2)
-)]
-#![cfg_attr(all(feature = "nightly", target_os = "wasi"), feature(wasi_ext))]
-
 #[cfg(doctest)]
 doc_comment::doctest!("../README.md");
 
@@ -199,7 +195,7 @@ const NUM_RETRIES: u32 = 65536;
 const NUM_RAND_CHARS: usize = 6;
 
 use std::ffi::OsStr;
-use std::fs::OpenOptions;
+use std::fs::{OpenOptions, Permissions};
 use std::io;
 use std::path::Path;
 
@@ -215,7 +211,7 @@ pub use crate::dir::{tempdir, tempdir_in, TempDir};
 pub use crate::file::{
     tempfile, tempfile_in, NamedTempFile, PathPersistError, PersistError, TempPath,
 };
-pub use crate::spooled::{spooled_tempfile, SpooledData, SpooledTempFile};
+pub use crate::spooled::{spooled_tempfile, spooled_tempfile_in, SpooledData, SpooledTempFile};
 
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -224,8 +220,8 @@ pub struct Builder<'a, 'b> {
     prefix: &'a OsStr,
     suffix: &'b OsStr,
     append: bool,
-    permissions: Option<std::fs::Permissions>,
-    keep: bool,
+    permissions: Option<Permissions>,
+    disable_cleanup: bool,
 }
 
 impl Default for Builder<'_, '_> {
@@ -236,7 +232,7 @@ impl Default for Builder<'_, '_> {
             suffix: OsStr::new(""),
             append: false,
             permissions: None,
-            keep: false,
+            disable_cleanup: false,
         }
     }
 }
@@ -457,7 +453,11 @@ impl<'a, 'b> Builder<'a, 'b> {
     
     
     
-    pub fn permissions(&mut self, permissions: std::fs::Permissions) -> &mut Self {
+    
+    
+    
+    
+    pub fn permissions(&mut self, permissions: Permissions) -> &mut Self {
         self.permissions = Some(permissions);
         self
     }
@@ -478,9 +478,24 @@ impl<'a, 'b> Builder<'a, 'b> {
     
     
     
-    pub fn keep(&mut self, keep: bool) -> &mut Self {
-        self.keep = keep;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn disable_cleanup(&mut self, disable_cleanup: bool) -> &mut Self {
+        self.disable_cleanup = disable_cleanup;
         self
+    }
+
+    
+    #[deprecated = "Use Builder::disable_cleanup"]
+    pub fn keep(&mut self, keep: bool) -> &mut Self {
+        self.disable_cleanup(keep)
     }
 
     
@@ -548,7 +563,7 @@ impl<'a, 'b> Builder<'a, 'b> {
                     path,
                     OpenOptions::new().append(self.append),
                     self.permissions.as_ref(),
-                    self.keep,
+                    self.disable_cleanup,
                 )
             },
         )
@@ -604,17 +619,13 @@ impl<'a, 'b> Builder<'a, 'b> {
     
     
     pub fn tempdir_in<P: AsRef<Path>>(&self, dir: P) -> io::Result<TempDir> {
-        let storage;
-        let mut dir = dir.as_ref();
-        if !dir.is_absolute() {
-            let cur_dir = std::env::current_dir()?;
-            storage = cur_dir.join(dir);
-            dir = &storage;
-        }
-
-        util::create_helper(dir, self.prefix, self.suffix, self.random_len, |path| {
-            dir::create(path, self.permissions.as_ref(), self.keep)
-        })
+        util::create_helper(
+            dir.as_ref(),
+            self.prefix,
+            self.suffix,
+            self.random_len,
+            |path| dir::create(path, self.permissions.as_ref(), self.disable_cleanup),
+        )
     }
 
     
@@ -738,7 +749,7 @@ impl<'a, 'b> Builder<'a, 'b> {
             move |path| {
                 Ok(NamedTempFile::from_parts(
                     f(&path)?,
-                    TempPath::new(path, self.keep),
+                    TempPath::new(path, self.disable_cleanup),
                 ))
             },
         )

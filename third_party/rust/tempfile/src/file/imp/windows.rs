@@ -46,13 +46,17 @@ pub fn create(dir: &Path) -> io::Result<File> {
         OsStr::new(""),
         crate::NUM_RAND_CHARS,
         |path| {
-            OpenOptions::new()
+            let f = OpenOptions::new()
                 .create_new(true)
                 .read(true)
                 .write(true)
                 .share_mode(0)
                 .custom_flags(FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_DELETE_ON_CLOSE)
-                .open(path)
+                .open(path)?;
+            
+            
+            
+            Ok(f)
         },
     )
 }

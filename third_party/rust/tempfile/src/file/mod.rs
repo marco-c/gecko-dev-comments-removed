@@ -5,10 +5,10 @@ use std::fs::{self, File, OpenOptions};
 use std::io::{self, Read, Seek, SeekFrom, Write};
 use std::mem;
 use std::ops::Deref;
-#[cfg(unix)]
-use std::os::unix::io::{AsFd, AsRawFd, BorrowedFd, RawFd};
 #[cfg(target_os = "wasi")]
-use std::os::wasi::io::{AsFd, AsRawFd, BorrowedFd, RawFd};
+use std::os::fd::{AsFd, AsRawFd, BorrowedFd, RawFd};
+#[cfg(unix)] 
+use std::os::unix::io::{AsFd, AsRawFd, BorrowedFd, RawFd};
 #[cfg(windows)]
 use std::os::windows::io::{AsHandle, AsRawHandle, BorrowedHandle, RawHandle};
 use std::path::{Path, PathBuf};
@@ -126,9 +126,10 @@ impl error::Error for PathPersistError {
 
 
 
+
 pub struct TempPath {
     path: Box<Path>,
-    keep: bool,
+    disable_cleanup: bool,
 }
 
 impl TempPath {
@@ -298,12 +299,13 @@ impl TempPath {
     pub fn keep(mut self) -> Result<PathBuf, PathPersistError> {
         match imp::keep(&self.path) {
             Ok(_) => {
-                
-                
-                
-                let path = mem::replace(&mut self.path, PathBuf::new().into_boxed_path());
-                mem::forget(self);
-                Ok(path.into())
+                self.disable_cleanup(true);
+                Ok(mem::replace(
+                    &mut self.path,
+                    
+                    PathBuf::new().into_boxed_path(),
+                )
+                .into_path_buf())
             }
             Err(e) => Err(PathPersistError {
                 error: e,
@@ -318,17 +320,75 @@ impl TempPath {
     
     
     
+    
+    pub fn disable_cleanup(&mut self, disable_cleanup: bool) {
+        self.disable_cleanup = disable_cleanup
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[deprecated = "use TempPath::try_from_path"]
     pub fn from_path(path: impl Into<PathBuf>) -> Self {
+        let mut path = path.into();
+        
+        
+        
+        
+        if path != Path::new("") && !path.is_absolute() {
+            if let Ok(cur_dir) = std::env::current_dir() {
+                path = cur_dir.join(path);
+            }
+        }
         Self {
-            path: path.into().into_boxed_path(),
-            keep: false,
+            path: path.into_boxed_path(),
+            disable_cleanup: false,
         }
     }
 
-    pub(crate) fn new(path: PathBuf, keep: bool) -> Self {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn try_from_path(path: impl Into<PathBuf>) -> io::Result<Self> {
+        let mut path = path.into();
+        if !path.is_absolute() {
+            if path == Path::new("") {
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidInput,
+                    "cannot construct a TempPath from an empty path",
+                ));
+            }
+            let mut cwd = std::env::current_dir()?;
+            cwd.push(path);
+            path = cwd;
+        };
+
+        Ok(Self {
+            path: path.into_boxed_path(),
+            disable_cleanup: false,
+        })
+    }
+
+    pub(crate) fn new(path: PathBuf, disable_cleanup: bool) -> Self {
         Self {
             path: path.into_boxed_path(),
-            keep,
+            disable_cleanup,
         }
     }
 }
@@ -341,7 +401,7 @@ impl fmt::Debug for TempPath {
 
 impl Drop for TempPath {
     fn drop(&mut self) {
-        if !self.keep {
+        if !self.disable_cleanup {
             let _ = fs::remove_file(&self.path);
         }
     }
@@ -366,21 +426,6 @@ impl AsRef<OsStr> for TempPath {
         self.path.as_os_str()
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -765,6 +810,14 @@ impl<F> NamedTempFile<F> {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn persist_noclobber<P: AsRef<Path>>(self, new_path: P) -> Result<F, PersistError<F>> {
         let NamedTempFile { path, file } = self;
         match path.persist_noclobber(new_path) {
@@ -801,7 +854,6 @@ impl<F> NamedTempFile<F> {
     
     
     
-    
     pub fn keep(self) -> Result<(F, PathBuf), PersistError<F>> {
         let (file, path) = (self.file, self.path);
         match path.keep() {
@@ -814,6 +866,17 @@ impl<F> NamedTempFile<F> {
     }
 
     
+    
+    
+    
+    
+    
+    
+    pub fn disable_cleanup(&mut self, disable_cleanup: bool) {
+        self.path.disable_cleanup(disable_cleanup)
+    }
+
+    
     pub fn as_file(&self) -> &F {
         &self.file
     }
@@ -823,6 +886,8 @@ impl<F> NamedTempFile<F> {
         &mut self.file
     }
 
+    
+    
     
     
     
@@ -1043,22 +1108,17 @@ impl<F: AsRawHandle> AsRawHandle for NamedTempFile<F> {
 }
 
 pub(crate) fn create_named(
-    mut path: PathBuf,
+    path: PathBuf,
     open_options: &mut OpenOptions,
     permissions: Option<&std::fs::Permissions>,
     keep: bool,
 ) -> io::Result<NamedTempFile> {
-    
-    
-    if !path.is_absolute() {
-        path = std::env::current_dir()?.join(path)
-    }
     imp::create_named(&path, open_options, permissions)
         .with_err_path(|| path.clone())
         .map(|file| NamedTempFile {
             path: TempPath {
                 path: path.into_boxed_path(),
-                keep,
+                disable_cleanup: keep,
             },
             file,
         })

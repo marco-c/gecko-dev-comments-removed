@@ -9,6 +9,19 @@ use super::{ErrorKind, InvalidUri, Port, URI_CHARS};
 use crate::byte_str::ByteStr;
 
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum AuthorityError {
+    Empty,
+    InvalidUriChar,
+    InvalidAuthority,
+    TooManyColons,
+    MismatchedBrackets,
+    InvalidBracketUsage,
+    EmptyAfterAt,
+    InvalidPercent,
+}
+
+
 #[derive(Clone)]
 pub struct Authority {
     pub(super) data: ByteStr,
@@ -45,9 +58,14 @@ impl Authority {
     
     
     
-    pub fn from_static(src: &'static str) -> Self {
-        Authority::from_shared(Bytes::from_static(src.as_bytes()))
-            .expect("static str is not valid authority")
+    #[inline]
+    pub const fn from_static(src: &'static str) -> Self {
+        match validate_authority_bytes(src.as_bytes()) {
+            Ok(_) => Authority {
+                data: ByteStr::from_static(src),
+            },
+            Err(_) => panic!("static str is not valid authority"),
+        }
     }
 
     
@@ -69,91 +87,19 @@ impl Authority {
     
     
     pub(super) fn parse(s: &[u8]) -> Result<usize, InvalidUri> {
-        let mut colon_cnt = 0;
-        let mut start_bracket = false;
-        let mut end_bracket = false;
-        let mut has_percent = false;
-        let mut end = s.len();
-        let mut at_sign_pos = None;
-
-        
-        
-        
-        
-        for (i, &b) in s.iter().enumerate() {
-            match URI_CHARS[b as usize] {
-                b'/' | b'?' | b'#' => {
-                    end = i;
-                    break;
-                }
-                b':' => {
-                    colon_cnt += 1;
-                }
-                b'[' => {
-                    if has_percent || start_bracket {
-                        
-                        return Err(ErrorKind::InvalidAuthority.into());
-                    }
-                    start_bracket = true;
-                }
-                b']' => {
-                    if end_bracket {
-                        return Err(ErrorKind::InvalidAuthority.into());
-                    }
-                    end_bracket = true;
-
-                    
-                    colon_cnt = 0;
-                    has_percent = false;
-                }
-                b'@' => {
-                    at_sign_pos = Some(i);
-
-                    
-                    
-                    colon_cnt = 0;
-                    has_percent = false;
-                }
-                0 if b == b'%' => {
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    has_percent = true;
-                }
-                0 => {
-                    return Err(ErrorKind::InvalidUriChar.into());
-                }
-                _ => {}
+        validate_authority_bytes(s).map_err(|e| {
+            match e {
+                AuthorityError::Empty => ErrorKind::Empty,
+                AuthorityError::InvalidUriChar => ErrorKind::InvalidUriChar,
+                AuthorityError::InvalidAuthority
+                | AuthorityError::MismatchedBrackets
+                | AuthorityError::InvalidBracketUsage
+                | AuthorityError::EmptyAfterAt
+                | AuthorityError::InvalidPercent
+                | AuthorityError::TooManyColons => ErrorKind::InvalidAuthority,
             }
-        }
-
-        if start_bracket ^ end_bracket {
-            return Err(ErrorKind::InvalidAuthority.into());
-        }
-
-        if colon_cnt > 1 {
-            
-            return Err(ErrorKind::InvalidAuthority.into());
-        }
-
-        if end > 0 && at_sign_pos == Some(end - 1) {
-            
-            return Err(ErrorKind::InvalidAuthority.into());
-        }
-
-        if has_percent {
-            
-            return Err(ErrorKind::InvalidAuthority.into());
-        }
-
-        Ok(end)
+            .into()
+        })
     }
 
     
@@ -234,7 +180,7 @@ impl Authority {
     pub fn port(&self) -> Option<Port<&str>> {
         let bytes = self.as_str();
         bytes
-            .rfind(":")
+            .rfind(':')
             .and_then(|i| Port::from_str(&bytes[i + 1..]).ok())
     }
 
@@ -249,7 +195,7 @@ impl Authority {
     
     
     pub fn port_u16(&self) -> Option<u16> {
-        self.port().and_then(|p| Some(p.as_u16()))
+        self.port().map(|p| p.as_u16())
     }
 
     
@@ -430,7 +376,7 @@ impl<'a> TryFrom<&'a [u8]> for Authority {
 
         
         
-        create_authority(s, |s| Bytes::copy_from_slice(s))
+        create_authority(s, Bytes::copy_from_slice)
     }
 }
 
@@ -482,7 +428,7 @@ impl fmt::Display for Authority {
 
 fn host(auth: &str) -> &str {
     let host_port = auth
-        .rsplitn(2, '@')
+        .rsplit('@')
         .next()
         .expect("split always has at least 1 item");
 
@@ -522,6 +468,105 @@ where
         
         data: unsafe { ByteStr::from_utf8_unchecked(bytes) },
     })
+}
+
+
+
+const fn validate_authority_bytes(s: &[u8]) -> Result<usize, AuthorityError> {
+    if s.is_empty() {
+        return Err(AuthorityError::Empty);
+    }
+
+    let mut colon_cnt: u32 = 0;
+    let mut start_bracket = false;
+    let mut end_bracket = false;
+    let mut has_percent = false;
+    let mut end = s.len();
+    let mut at_sign_pos: usize = s.len();
+    const MAX_COLONS: u32 = 8; 
+
+    let mut i = 0;
+    
+    
+    
+    
+    while i < s.len() {
+        let b = s[i];
+        let ch = URI_CHARS[b as usize];
+
+        if ch == b'/' || ch == b'?' || ch == b'#' {
+            end = i;
+            break;
+        }
+
+        if ch == 0 {
+            if b == b'%' {
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                has_percent = true;
+            } else {
+                return Err(AuthorityError::InvalidUriChar);
+            }
+        } else if ch == b':' {
+            if colon_cnt >= MAX_COLONS {
+                return Err(AuthorityError::TooManyColons);
+            }
+            colon_cnt += 1;
+        } else if ch == b'[' {
+            if has_percent || start_bracket {
+                
+                return Err(AuthorityError::InvalidBracketUsage);
+            }
+            start_bracket = true;
+        } else if ch == b']' {
+            if !start_bracket || end_bracket {
+                return Err(AuthorityError::InvalidBracketUsage);
+            }
+            end_bracket = true;
+
+            
+            colon_cnt = 0;
+            has_percent = false;
+        } else if ch == b'@' {
+            at_sign_pos = i;
+
+            
+            
+            colon_cnt = 0;
+            has_percent = false;
+        }
+
+        i += 1;
+    }
+
+    if start_bracket != end_bracket {
+        return Err(AuthorityError::MismatchedBrackets);
+    }
+
+    if colon_cnt > 1 {
+        
+        return Err(AuthorityError::InvalidAuthority);
+    }
+
+    if end > 0 && at_sign_pos == end - 1 {
+        
+        return Err(AuthorityError::EmptyAfterAt);
+    }
+
+    if has_percent {
+        
+        return Err(AuthorityError::InvalidPercent);
+    }
+
+    Ok(end)
 }
 
 #[cfg(test)]
@@ -645,6 +690,12 @@ mod tests {
     }
 
     #[test]
+    fn reject_obviously_invalid_ipv6_address() {
+        let err = Authority::parse_non_empty(b"[0:1:2:3:4:5:6:7:8:9:10:11:12:13:14]").unwrap_err();
+        assert_eq!(err.0, ErrorKind::InvalidAuthority);
+    }
+
+    #[test]
     fn rejects_percent_outside_ipv6_address() {
         let err = Authority::parse_non_empty(b"1234%20[fe80::1:2:3:4]").unwrap_err();
         assert_eq!(err.0, ErrorKind::InvalidAuthority);
@@ -658,14 +709,17 @@ mod tests {
         let err = Authority::try_from([0xc0u8].as_ref()).unwrap_err();
         assert_eq!(err.0, ErrorKind::InvalidUriChar);
 
-        let err = Authority::from_shared(Bytes::from_static([0xc0u8].as_ref()))
-            .unwrap_err();
+        let err = Authority::from_shared(Bytes::from_static([0xc0u8].as_ref())).unwrap_err();
         assert_eq!(err.0, ErrorKind::InvalidUriChar);
     }
 
     #[test]
     fn rejects_invalid_use_of_brackets() {
         let err = Authority::parse_non_empty(b"[]@[").unwrap_err();
+        assert_eq!(err.0, ErrorKind::InvalidAuthority);
+
+        
+        let err = Authority::parse_non_empty(b"]o[").unwrap_err();
         assert_eq!(err.0, ErrorKind::InvalidAuthority);
     }
 }

@@ -21,6 +21,8 @@ use crate::ffi::CStr;
 
 
 #[inline]
+#[doc(alias = "PAGESIZE")]
+#[doc(alias = "PAGE_SIZE")]
 #[doc(alias = "_SC_PAGESIZE")]
 #[doc(alias = "_SC_PAGE_SIZE")]
 #[doc(alias = "getpagesize")]
@@ -36,7 +38,7 @@ pub fn page_size() -> usize {
 
 
 
-#[cfg(not(any(target_os = "vita", target_os = "wasi")))]
+#[cfg(not(any(target_os = "horizon", target_os = "vita", target_os = "wasi")))]
 #[inline]
 #[doc(alias = "_SC_CLK_TCK")]
 pub fn clock_ticks_per_second() -> u64 {

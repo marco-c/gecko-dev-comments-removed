@@ -43,6 +43,12 @@ pub trait AsyncSeek {
     
     
     
+    
+    
+    
+    
+    
+    
     fn poll_complete(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<u64>>;
 }
 

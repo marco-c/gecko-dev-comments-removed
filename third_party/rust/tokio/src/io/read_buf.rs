@@ -283,7 +283,9 @@ unsafe impl<'a> bytes::BufMut for ReadBuf<'a> {
 
     
     unsafe fn advance_mut(&mut self, cnt: usize) {
-        self.assume_init(cnt);
+        unsafe {
+            self.assume_init(cnt);
+        }
         self.advance(cnt);
     }
 
@@ -311,16 +313,32 @@ impl fmt::Debug for ReadBuf<'_> {
     }
 }
 
+
+
+
+
 unsafe fn slice_to_uninit_mut(slice: &mut [u8]) -> &mut [MaybeUninit<u8>] {
-    &mut *(slice as *mut [u8] as *mut [MaybeUninit<u8>])
+    
+    
+    unsafe { &mut *(slice as *mut [u8] as *mut [MaybeUninit<u8>]) }
 }
+
+
+
 
 
 unsafe fn slice_assume_init(slice: &[MaybeUninit<u8>]) -> &[u8] {
-    &*(slice as *const [MaybeUninit<u8>] as *const [u8])
+    
+    
+    unsafe { &*(slice as *const [MaybeUninit<u8>] as *const [u8]) }
 }
 
 
+
+
+
 unsafe fn slice_assume_init_mut(slice: &mut [MaybeUninit<u8>]) -> &mut [u8] {
-    &mut *(slice as *mut [MaybeUninit<u8>] as *mut [u8])
+    
+    
+    unsafe { &mut *(slice as *mut [MaybeUninit<u8>] as *mut [u8]) }
 }

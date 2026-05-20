@@ -37,6 +37,8 @@ pin_project! {
     /// them. It then uses the context of the runtime with the timer enabled to
     /// execute a [`sleep`] future on the runtime with timing disabled.
     /// ```
+    /// # #[cfg(not(target_family = "wasm"))]
+    /// # {
     /// use tokio::time::{sleep, Duration};
     /// use tokio_util::context::RuntimeExt;
     ///
@@ -56,6 +58,7 @@ pin_project! {
     ///
     /// // Execute the future on rt2.
     /// rt2.block_on(fut);
+    /// # }
     /// ```
     ///
     /// [`Handle`]: struct@tokio::runtime::Handle
@@ -74,6 +77,9 @@ pin_project! {
 }
 
 impl<F> TokioContext<F> {
+    
+    
+    
     
     
     
@@ -143,6 +149,9 @@ impl<F: Future> Future for TokioContext<F> {
 
 
 pub trait RuntimeExt {
+    
+    
+    
     
     
     

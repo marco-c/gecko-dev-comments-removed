@@ -6,8 +6,6 @@
 
 
 
-
-
 use std::ffi::OsStr;
 use std::fs::remove_dir_all;
 use std::mem;
@@ -182,7 +180,7 @@ pub fn tempdir_in<P: AsRef<Path>>(dir: P) -> io::Result<TempDir> {
 
 pub struct TempDir {
     path: Box<Path>,
-    keep: bool,
+    disable_cleanup: bool,
 }
 
 impl TempDir {
@@ -383,6 +381,16 @@ impl TempDir {
     }
 
     
+    #[must_use]
+    #[deprecated = "use TempDir::keep()"]
+    pub fn into_path(self) -> PathBuf {
+        self.keep()
+    }
+
+    
+    
+    
+    
     
     
     
@@ -407,13 +415,19 @@ impl TempDir {
     
     
     #[must_use]
-    pub fn into_path(self) -> PathBuf {
-        
-        let mut this = mem::ManuallyDrop::new(self);
+    pub fn keep(mut self) -> PathBuf {
+        self.disable_cleanup(true);
+        mem::replace(&mut self.path, PathBuf::new().into_boxed_path()).into()
+    }
 
-        
-        
-        mem::replace(&mut this.path, PathBuf::new().into_boxed_path()).into()
+    
+    
+    
+    
+    
+    
+    pub fn disable_cleanup(&mut self, disable_cleanup: bool) {
+        self.disable_cleanup = disable_cleanup
     }
 
     
@@ -483,7 +497,7 @@ impl fmt::Debug for TempDir {
 
 impl Drop for TempDir {
     fn drop(&mut self) {
-        if !self.keep {
+        if !self.disable_cleanup {
             let _ = remove_dir_all(self.path());
         }
     }
@@ -492,9 +506,9 @@ impl Drop for TempDir {
 pub(crate) fn create(
     path: PathBuf,
     permissions: Option<&std::fs::Permissions>,
-    keep: bool,
+    disable_cleanup: bool,
 ) -> io::Result<TempDir> {
-    imp::create(path, permissions, keep)
+    imp::create(path, permissions, disable_cleanup)
 }
 
 mod imp;

@@ -502,6 +502,8 @@ const MAX_RECEIVERS: usize = usize::MAX >> 2;
 
 
 
+
+
 #[track_caller]
 pub fn channel<T: Clone>(capacity: usize) -> (Sender<T>, Receiver<T>) {
     
@@ -564,7 +566,7 @@ impl<T> Sender<T> {
             tail: Mutex::new(Tail {
                 pos: 0,
                 rx_cnt: receiver_count,
-                closed: false,
+                closed: receiver_count == 0,
                 waiters: LinkedList::new(),
             }),
             num_tx: AtomicUsize::new(1),
@@ -1271,10 +1273,7 @@ impl<T> Receiver<T> {
                                 match (*ptr).waker {
                                     Some(ref w) if w.will_wake(waker) => {}
                                     _ => {
-                                        old_waker = std::mem::replace(
-                                            &mut (*ptr).waker,
-                                            Some(waker.clone()),
-                                        );
+                                        old_waker = (*ptr).waker.replace(waker.clone());
                                     }
                                 }
 
@@ -1538,6 +1537,9 @@ impl<T: Clone> Receiver<T> {
     
     
     
+    
+    
+    
     pub fn blocking_recv(&mut self) -> Result<T, RecvError> {
         crate::future::block_on(self.recv())
     }
@@ -1676,7 +1678,7 @@ unsafe impl linked_list::Link for Waiter {
     }
 
     unsafe fn pointers(target: NonNull<Waiter>) -> NonNull<linked_list::Pointers<Waiter>> {
-        Waiter::addr_of_pointers(target)
+        unsafe { Waiter::addr_of_pointers(target) }
     }
 }
 

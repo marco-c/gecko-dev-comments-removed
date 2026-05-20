@@ -1,9 +1,5 @@
 
 
-#![cfg_attr(all(target_os = "wasi", target_env = "p2"), feature(wasip2))]
-
-
-
 
 
 
@@ -108,6 +104,7 @@
 #![cfg_attr(all(wasi_ext, target_os = "wasi", feature = "std"), feature(wasi_ext))]
 #![cfg_attr(core_ffi_c, feature(core_ffi_c))]
 #![cfg_attr(core_c_str, feature(core_c_str))]
+#![cfg_attr(error_in_core, feature(error_in_core))]
 #![cfg_attr(all(feature = "alloc", alloc_c_string), feature(alloc_c_string))]
 #![cfg_attr(all(feature = "alloc", alloc_ffi), feature(alloc_ffi))]
 #![cfg_attr(not(feature = "std"), no_std)]
@@ -124,6 +121,14 @@
 
 #![allow(clippy::useless_conversion)]
 
+#![allow(clippy::needless_lifetimes)]
+
+
+#![allow(unknown_lints)]
+
+
+#![allow(unnecessary_transmutes)]
+
 
 
 #![cfg_attr(
@@ -131,7 +136,18 @@
     allow(unused_imports)
 )]
 
-#[cfg(all(feature = "rustc-dep-of-std", feature = "alloc"))]
+
+#![cfg_attr(
+    all(
+        target_os = "wasi",
+        target_env = "p2",
+        any(feature = "fs", feature = "mount", feature = "net"),
+        wasip2,
+    ),
+    feature(wasip2)
+)]
+
+#[cfg(all(feature = "alloc", feature = "rustc-dep-of-std"))]
 extern crate rustc_std_workspace_alloc as alloc;
 
 #[cfg(all(feature = "alloc", not(feature = "rustc-dep-of-std")))]
@@ -147,8 +163,7 @@ extern crate static_assertions;
 #[allow(unused_imports)]
 mod static_assertions;
 
-
-mod buffer;
+pub mod buffer;
 #[cfg(not(windows))]
 #[macro_use]
 pub(crate) mod cstr;
@@ -163,6 +178,8 @@ pub(crate) mod maybe_polyfill;
 pub(crate) mod check_types;
 #[macro_use]
 pub(crate) mod bitcast;
+#[cfg(sanitize_memory)]
+pub(crate) mod msan;
 
 
 
@@ -179,23 +196,23 @@ mod weak;
 
 #[cfg_attr(libc, path = "backend/libc/mod.rs")]
 #[cfg_attr(linux_raw, path = "backend/linux_raw/mod.rs")]
-#[cfg_attr(wasi, path = "backend/wasi/mod.rs")]
 mod backend;
 
 
 
 
 
+
+
+
+
+
+
+
+
+
 pub mod fd {
-    use super::backend;
-
-    
-    
-    
-    #[cfg(windows)]
-    pub use backend::fd::{AsRawSocket, AsSocket, FromRawSocket, IntoRawSocket};
-
-    pub use backend::fd::{AsFd, AsRawFd, BorrowedFd, FromRawFd, IntoRawFd, OwnedFd, RawFd};
+    pub use super::backend::fd::*;
 }
 
 
@@ -208,12 +225,18 @@ pub mod ffi;
 #[cfg_attr(docsrs, doc(cfg(feature = "fs")))]
 pub mod fs;
 pub mod io;
-#[cfg(linux_kernel)]
+#[cfg(all(linux_kernel, not(target_os = "android")))]
 #[cfg(feature = "io_uring")]
 #[cfg_attr(docsrs, doc(cfg(feature = "io_uring")))]
 pub mod io_uring;
 pub mod ioctl;
-#[cfg(not(any(windows, target_os = "espidf", target_os = "vita", target_os = "wasi")))]
+#[cfg(not(any(
+    windows,
+    target_os = "espidf",
+    target_os = "horizon",
+    target_os = "vita",
+    target_os = "wasi"
+)))]
 #[cfg(feature = "mm")]
 #[cfg_attr(docsrs, doc(cfg(feature = "mm")))]
 pub mod mm;
@@ -221,7 +244,7 @@ pub mod mm;
 #[cfg(feature = "mount")]
 #[cfg_attr(docsrs, doc(cfg(feature = "mount")))]
 pub mod mount;
-#[cfg(not(any(target_os = "redox", target_os = "wasi")))]
+#[cfg(not(target_os = "wasi"))]
 #[cfg(feature = "net")]
 #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
 pub mod net;
@@ -244,10 +267,6 @@ pub mod pipe;
 #[cfg(feature = "process")]
 #[cfg_attr(docsrs, doc(cfg(feature = "process")))]
 pub mod process;
-#[cfg(feature = "procfs")]
-#[cfg(linux_kernel)]
-#[cfg_attr(docsrs, doc(cfg(feature = "procfs")))]
-pub mod procfs;
 #[cfg(not(windows))]
 #[cfg(not(target_os = "wasi"))]
 #[cfg(feature = "pty")]
@@ -261,6 +280,7 @@ pub mod rand;
     windows,
     target_os = "android",
     target_os = "espidf",
+    target_os = "horizon",
     target_os = "vita",
     target_os = "wasi"
 )))]
@@ -275,7 +295,7 @@ pub mod stdio;
 #[cfg(not(any(windows, target_os = "wasi")))]
 #[cfg_attr(docsrs, doc(cfg(feature = "system")))]
 pub mod system;
-#[cfg(not(any(windows, target_os = "vita")))]
+#[cfg(not(any(windows, target_os = "horizon", target_os = "vita")))]
 #[cfg(feature = "termios")]
 #[cfg_attr(docsrs, doc(cfg(feature = "termios")))]
 pub mod termios;
@@ -298,12 +318,6 @@ pub mod runtime;
 
 
 
-#[cfg(linux_kernel)]
-#[cfg(all(feature = "fs", not(feature = "mount")))]
-pub(crate) mod mount;
-
-
-
 #[cfg(not(windows))]
 #[cfg(not(feature = "fs"))]
 #[cfg(all(
@@ -312,8 +326,8 @@ pub(crate) mod mount;
     not(feature = "use-explicitly-provided-auxv"),
     any(
         feature = "param",
-        feature = "process",
         feature = "runtime",
+        feature = "thread",
         feature = "time",
         target_arch = "x86",
     )
@@ -330,8 +344,8 @@ pub(crate) mod fs;
     not(feature = "use-explicitly-provided-auxv"),
     any(
         feature = "param",
-        feature = "process",
         feature = "runtime",
+        feature = "thread",
         feature = "time",
         target_arch = "x86",
     )
@@ -340,11 +354,13 @@ pub(crate) mod path;
 
 
 #[cfg(not(any(windows, target_os = "espidf")))]
-#[cfg(any(feature = "thread", feature = "time", target_arch = "x86"))]
+#[cfg(any(feature = "thread", feature = "time"))]
 mod clockid;
+#[cfg(linux_kernel)]
+#[cfg(any(feature = "io_uring", feature = "runtime"))]
+mod kernel_sigset;
 #[cfg(not(any(windows, target_os = "wasi")))]
 #[cfg(any(
-    feature = "procfs",
     feature = "process",
     feature = "runtime",
     feature = "termios",
@@ -357,10 +373,16 @@ mod pid;
 #[cfg(linux_kernel)]
 mod prctl;
 #[cfg(not(any(windows, target_os = "espidf", target_os = "wasi")))]
-#[cfg(any(feature = "process", feature = "runtime", all(bsd, feature = "event")))]
+#[cfg(any(
+    feature = "io_uring",
+    feature = "process",
+    feature = "runtime",
+    all(bsd, feature = "event")
+))]
 mod signal;
 #[cfg(any(
     feature = "fs",
+    feature = "event",
     feature = "process",
     feature = "runtime",
     feature = "thread",
@@ -399,3 +421,7 @@ mod timespec;
     all(linux_kernel, feature = "net")
 ))]
 mod ugid;
+
+#[cfg(doc)]
+#[cfg_attr(docsrs, doc(cfg(doc)))]
+pub mod not_implemented;

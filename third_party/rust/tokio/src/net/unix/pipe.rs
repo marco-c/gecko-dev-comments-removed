@@ -120,7 +120,7 @@ pub fn pipe() -> io::Result<(Sender, Receiver)> {
 
 #[derive(Clone, Debug)]
 pub struct OpenOptions {
-    #[cfg(target_os = "linux")]
+    #[cfg(any(target_os = "linux", target_os = "android"))]
     read_write: bool,
     unchecked: bool,
 }
@@ -131,7 +131,7 @@ impl OpenOptions {
     
     pub fn new() -> OpenOptions {
         OpenOptions {
-            #[cfg(target_os = "linux")]
+            #[cfg(any(target_os = "linux", target_os = "android"))]
             read_write: false,
             unchecked: false,
         }
@@ -168,8 +168,8 @@ impl OpenOptions {
     
     
     
-    #[cfg(target_os = "linux")]
-    #[cfg_attr(docsrs, doc(cfg(target_os = "linux")))]
+    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg_attr(docsrs, doc(cfg(any(target_os = "linux", target_os = "android"))))]
     pub fn read_write(&mut self, value: bool) -> &mut Self {
         self.read_write = value;
         self
@@ -264,7 +264,7 @@ impl OpenOptions {
             .write(pipe_end == PipeEnd::Sender)
             .custom_flags(libc::O_NONBLOCK);
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         if self.read_write {
             options.read(true).write(true);
         }
@@ -650,6 +650,16 @@ impl Sender {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn try_write(&self, buf: &[u8]) -> io::Result<usize> {
         self.io
             .registration()
@@ -716,10 +726,52 @@ impl Sender {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn try_write_vectored(&self, buf: &[io::IoSlice<'_>]) -> io::Result<usize> {
         self.io
             .registration()
             .try_io(Interest::WRITABLE, || (&*self.io).write_vectored(buf))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn try_io<R>(&self, f: impl FnOnce() -> io::Result<R>) -> io::Result<R> {
+        self.io
+            .registration()
+            .try_io(Interest::WRITABLE, || self.io.try_io(f))
     }
 
     
@@ -1157,6 +1209,16 @@ impl Receiver {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn try_read(&self, buf: &mut [u8]) -> io::Result<usize> {
         self.io
             .registration()
@@ -1231,10 +1293,52 @@ impl Receiver {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn try_read_vectored(&self, bufs: &mut [io::IoSliceMut<'_>]) -> io::Result<usize> {
         self.io
             .registration()
             .try_io(Interest::READABLE, || (&*self.io).read_vectored(bufs))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn try_io<R>(&self, f: impl FnOnce() -> io::Result<R>) -> io::Result<R> {
+        self.io
+            .registration()
+            .try_io(Interest::READABLE, || self.io.try_io(f))
     }
 
     cfg_io_util! {
@@ -1257,6 +1361,14 @@ impl Receiver {
         /// number of bytes read. `Ok(0)` indicates the pipe's writing end is
         /// closed and will no longer write data. If the pipe is not ready to read
         /// data `Err(io::ErrorKind::WouldBlock)` is returned.
+        ///
+        /// # Notes
+        ///
+        /// To avoid unnecessary syscalls, this will only attempt the read
+        /// operation if the OS has informed Tokio that this pipe has become
+        /// readable. Because of this, `try_read_buf()` may fail with a
+        /// [`WouldBlock`] error if Tokio has not yet heard from the OS that
+        /// this pipe has become readable.
         ///
         /// # Examples
         ///
@@ -1294,6 +1406,8 @@ impl Receiver {
         ///     Ok(())
         /// }
         /// ```
+        ///
+        /// [`WouldBlock`]: std::io::ErrorKind::WouldBlock
         pub fn try_read_buf<B: BufMut>(&self, buf: &mut B) -> io::Result<usize> {
             self.io.registration().try_io(Interest::READABLE, || {
                 use std::io::Read;

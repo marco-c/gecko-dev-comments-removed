@@ -5,12 +5,10 @@ mod level;
 pub(crate) use self::level::Expiration;
 use self::level::Level;
 
-use std::{array, ptr::NonNull};
+use std::ptr::NonNull;
 
+use super::entry::STATE_DEREGISTERED;
 use super::EntryList;
-
-
-
 
 
 
@@ -52,9 +50,13 @@ pub(super) const MAX_DURATION: u64 = (1 << (6 * NUM_LEVELS)) - 1;
 impl Wheel {
     
     pub(crate) fn new() -> Wheel {
+        let mut levels = Vec::with_capacity(NUM_LEVELS);
+        for i in 0..NUM_LEVELS {
+            levels.push(Level::new(i));
+        }
         Wheel {
             elapsed: 0,
-            levels: Box::new(array::from_fn(Level::new)),
+            levels: levels.into_boxed_slice().try_into().unwrap(),
             pending: EntryList::new(),
         }
     }
@@ -90,7 +92,7 @@ impl Wheel {
         &mut self,
         item: TimerHandle,
     ) -> Result<u64, (TimerHandle, InsertError)> {
-        let when = item.sync_when();
+        let when = unsafe { item.sync_when() };
 
         if when <= self.elapsed {
             return Err((item, InsertError::Elapsed));
@@ -116,8 +118,8 @@ impl Wheel {
     
     pub(crate) unsafe fn remove(&mut self, item: NonNull<TimerShared>) {
         unsafe {
-            let when = item.as_ref().cached_when();
-            if when == u64::MAX {
+            let when = item.as_ref().registered_when();
+            if when == STATE_DEREGISTERED {
                 self.pending.remove(item);
             } else {
                 debug_assert!(
@@ -230,7 +232,7 @@ impl Wheel {
 
         while let Some(item) = entries.pop_back() {
             if expiration.level == 0 {
-                debug_assert_eq!(unsafe { item.cached_when() }, expiration.deadline);
+                debug_assert_eq!(unsafe { item.registered_when() }, expiration.deadline);
             }
 
             

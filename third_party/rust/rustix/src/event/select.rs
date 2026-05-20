@@ -7,14 +7,12 @@
 
 #[cfg(any(linux_like, target_os = "wasi"))]
 use crate::backend::c;
+use crate::event::Timespec;
 use crate::fd::RawFd;
 use crate::{backend, io};
 #[cfg(any(windows, target_os = "wasi"))]
-use core::mem::{align_of, size_of};
-#[cfg(any(windows, target_os = "wasi"))]
-use core::slice;
-
-pub use crate::timespec::{Nsecs, Secs, Timespec};
+use core::mem::align_of;
+use core::mem::size_of;
 
 
 
@@ -32,12 +30,9 @@ struct FD_SET {
 use windows_sys::Win32::Networking::WinSock::FD_SET;
 
 
-#[cfg(any(
-    windows,
-    all(
-        target_pointer_width = "64",
-        any(target_os = "freebsd", target_os = "dragonfly")
-    )
+#[cfg(all(
+    target_pointer_width = "64",
+    any(windows, target_os = "freebsd", target_os = "dragonfly")
 ))]
 #[repr(transparent)]
 #[derive(Copy, Clone, Default)]
@@ -52,11 +47,10 @@ pub struct FdSetElement(pub(crate) c::c_ulong);
 
 #[cfg(not(any(
     linux_like,
-    windows,
     target_os = "wasi",
     all(
         target_pointer_width = "64",
-        any(target_os = "freebsd", target_os = "dragonfly")
+        any(windows, target_os = "freebsd", target_os = "dragonfly")
     )
 )))]
 #[repr(transparent)]
@@ -118,6 +112,9 @@ pub struct FdSetElement(pub(crate) usize);
 
 
 
+
+
+
 pub unsafe fn select(
     nfds: i32,
     readfds: Option<&mut [FdSetElement]>,
@@ -129,7 +126,7 @@ pub unsafe fn select(
 }
 
 #[cfg(not(any(windows, target_os = "wasi")))]
-const BITS: usize = core::mem::size_of::<FdSetElement>() * 8;
+const BITS: usize = size_of::<FdSetElement>() * 8;
 
 
 #[doc(alias = "FD_SET")]
@@ -145,12 +142,10 @@ pub fn fd_set_insert(fds: &mut [FdSetElement], fd: RawFd) {
     {
         let set = unsafe { &mut *fds.as_mut_ptr().cast::<FD_SET>() };
         let fd_count = set.fd_count;
-        let fd_array = unsafe { slice::from_raw_parts(set.fd_array.as_ptr(), fd_count as usize) };
+        let fd_array = &set.fd_array[..fd_count as usize];
 
-        if !fd_array.iter().any(|p| *p as RawFd == fd) {
-            let fd_array = unsafe {
-                slice::from_raw_parts_mut(set.fd_array.as_mut_ptr(), fd_count as usize + 1)
-            };
+        if !fd_array.contains(&(fd as _)) {
+            let fd_array = &mut set.fd_array[..fd_count as usize + 1];
             set.fd_count = fd_count + 1;
             fd_array[fd_count as usize] = fd as _;
         }
@@ -171,7 +166,7 @@ pub fn fd_set_remove(fds: &mut [FdSetElement], fd: RawFd) {
     {
         let set = unsafe { &mut *fds.as_mut_ptr().cast::<FD_SET>() };
         let fd_count = set.fd_count;
-        let fd_array = unsafe { slice::from_raw_parts(set.fd_array.as_ptr(), fd_count as usize) };
+        let fd_array = &set.fd_array[..fd_count as usize];
 
         if let Some(pos) = fd_array.iter().position(|p| *p as RawFd == fd) {
             set.fd_count = fd_count - 1;
@@ -179,7 +174,6 @@ pub fn fd_set_remove(fds: &mut [FdSetElement], fd: RawFd) {
         }
     }
 }
-
 
 
 #[inline]
@@ -198,7 +192,7 @@ pub fn fd_set_bound(fds: &[FdSetElement]) -> RawFd {
     {
         let set = unsafe { &*fds.as_ptr().cast::<FD_SET>() };
         let fd_count = set.fd_count;
-        let fd_array = unsafe { slice::from_raw_parts(set.fd_array.as_ptr(), fd_count as usize) };
+        let fd_array = &set.fd_array[..fd_count as usize];
         let mut max = 0;
         for fd in fd_array {
             if *fd >= max {
@@ -234,9 +228,21 @@ pub fn fd_set_num_elements(set_count: usize, nfds: RawFd) -> usize {
 #[inline]
 pub(crate) fn fd_set_num_elements_for_fd_array(set_count: usize) -> usize {
     
+    core::cmp::max(
+        fd_set_num_elements_for_fd_array_raw(set_count),
+        div_ceil(size_of::<FD_SET>(), size_of::<FdSetElement>()),
+    )
+}
+
+
+
+#[cfg(any(windows, target_os = "wasi"))]
+#[inline]
+fn fd_set_num_elements_for_fd_array_raw(set_count: usize) -> usize {
+    
     
     div_ceil(
-        align_of::<FD_SET>() + set_count * size_of::<RawFd>(),
+        core::cmp::max(align_of::<FD_SET>(), align_of::<RawFd>()) + set_count * size_of::<RawFd>(),
         size_of::<FdSetElement>(),
     )
 }
@@ -323,7 +329,7 @@ impl<'a> Iterator for FdSetIter<'a> {
 
         let set = unsafe { &*self.fds.as_ptr().cast::<FD_SET>() };
         let fd_count = set.fd_count;
-        let fd_array = unsafe { slice::from_raw_parts(set.fd_array.as_ptr(), fd_count as usize) };
+        let fd_array = &set.fd_array[..fd_count as usize];
 
         if current == fd_count as usize {
             return None;
@@ -335,7 +341,7 @@ impl<'a> Iterator for FdSetIter<'a> {
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use super::*;
     use core::mem::{align_of, size_of};
 
@@ -348,9 +354,21 @@ mod test {
         
         
         assert_eq!(
+            fd_set_num_elements_for_fd_array_raw(
+                memoffset::span_of!(FD_SET, fd_array).len() / size_of::<RawFd>()
+            ) * size_of::<FdSetElement>(),
+            size_of::<FD_SET>()
+        );
+        assert_eq!(
             fd_set_num_elements_for_fd_array(
                 memoffset::span_of!(FD_SET, fd_array).len() / size_of::<RawFd>()
             ) * size_of::<FdSetElement>(),
+            size_of::<FD_SET>()
+        );
+
+        
+        assert_eq!(
+            fd_set_num_elements_for_fd_array(0) * size_of::<FdSetElement>(),
             size_of::<FD_SET>()
         );
     }

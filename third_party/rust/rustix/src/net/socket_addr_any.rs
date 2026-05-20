@@ -1,48 +1,270 @@
 
 
-
-
-
-
-
-
-
 #![allow(unsafe_code)]
 
-#[cfg(target_os = "linux")]
-use crate::net::xdp::SocketAddrXdp;
+use crate::backend::c;
+use crate::backend::net::read_sockaddr;
+use crate::io::Errno;
+use crate::net::addr::{SocketAddrArg, SocketAddrLen, SocketAddrOpaque, SocketAddrStorage};
 #[cfg(unix)]
 use crate::net::SocketAddrUnix;
 use crate::net::{AddressFamily, SocketAddr, SocketAddrV4, SocketAddrV6};
-use crate::{backend, io};
-#[cfg(feature = "std")]
 use core::fmt;
+use core::mem::{size_of, MaybeUninit};
+use core::num::NonZeroU32;
 
-pub use backend::net::addr::SocketAddrStorage;
 
 
-#[derive(Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]
-#[doc(alias = "sockaddr")]
-#[non_exhaustive]
-pub enum SocketAddrAny {
+
+
+
+pub(crate) struct SocketAddrBuf {
+    pub(crate) len: c::socklen_t,
+    pub(crate) storage: MaybeUninit<SocketAddrStorage>,
+}
+
+impl SocketAddrBuf {
+    #[inline]
+    pub(crate) const fn new() -> Self {
+        Self {
+            len: size_of::<SocketAddrStorage>() as c::socklen_t,
+            storage: MaybeUninit::<SocketAddrStorage>::uninit(),
+        }
+    }
+
     
-    V4(SocketAddrV4),
     
-    V6(SocketAddrV6),
     
-    #[cfg(unix)]
-    Unix(SocketAddrUnix),
     
-    #[cfg(target_os = "linux")]
-    Xdp(SocketAddrXdp),
+    
+    
+    #[inline]
+    pub(crate) unsafe fn into_any(self) -> SocketAddrAny {
+        SocketAddrAny::new(self.storage, bitcast!(self.len))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub(crate) unsafe fn into_any_option(self) -> Option<SocketAddrAny> {
+        let len = bitcast!(self.len);
+        if read_sockaddr::sockaddr_nonempty(self.storage.as_ptr().cast(), len) {
+            Some(SocketAddrAny::new(self.storage, len))
+        } else {
+            None
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+#[derive(Clone)]
+#[doc(alias = "sockaddr_storage")]
+pub struct SocketAddrAny {
+    
+    
+    
+    
+    pub(crate) len: NonZeroU32,
+    pub(crate) storage: MaybeUninit<SocketAddrStorage>,
+}
+
+impl SocketAddrAny {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub const unsafe fn new(storage: MaybeUninit<SocketAddrStorage>, len: SocketAddrLen) -> Self {
+        assert!(len as usize >= size_of::<read_sockaddr::sockaddr_header>());
+        assert!(len as usize <= size_of::<SocketAddrStorage>());
+        let len = NonZeroU32::new_unchecked(len);
+        Self { storage, len }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub unsafe fn read(ptr: *const SocketAddrStorage, len: SocketAddrLen) -> Self {
+        assert!(len as usize >= size_of::<read_sockaddr::sockaddr_header>());
+        assert!(len as usize <= size_of::<SocketAddrStorage>());
+        let mut storage = MaybeUninit::<SocketAddrStorage>::uninit();
+        core::ptr::copy_nonoverlapping(
+            ptr.cast::<u8>(),
+            storage.as_mut_ptr().cast::<u8>(),
+            len as usize,
+        );
+        let len = NonZeroU32::new_unchecked(len);
+        Self { storage, len }
+    }
+
+    
+    #[inline]
+    fn bytes(&self) -> &[u8] {
+        let len = self.len.get() as usize;
+        unsafe { core::slice::from_raw_parts(self.storage.as_ptr().cast(), len) }
+    }
+
+    
+    #[inline]
+    pub fn address_family(&self) -> AddressFamily {
+        
+        
+        unsafe {
+            AddressFamily::from_raw(crate::backend::net::read_sockaddr::read_sa_family(
+                self.storage.as_ptr().cast(),
+            ))
+        }
+    }
+
+    
+    #[inline]
+    pub fn as_ptr(&self) -> *const SocketAddrStorage {
+        self.storage.as_ptr()
+    }
+
+    
+    #[inline]
+    pub fn as_mut_ptr(&mut self) -> *mut SocketAddrStorage {
+        self.storage.as_mut_ptr()
+    }
+
+    
+    #[inline]
+    pub fn addr_len(&self) -> SocketAddrLen {
+        self.len.get()
+    }
+}
+
+impl PartialEq<Self> for SocketAddrAny {
+    fn eq(&self, other: &Self) -> bool {
+        self.bytes() == other.bytes()
+    }
+}
+
+impl Eq for SocketAddrAny {}
+
+
+#[allow(clippy::non_canonical_partial_ord_impl)]
+impl PartialOrd<Self> for SocketAddrAny {
+    fn partial_cmp(&self, other: &Self) -> Option<core::cmp::Ordering> {
+        self.bytes().partial_cmp(other.bytes())
+    }
+}
+
+impl Ord for SocketAddrAny {
+    fn cmp(&self, other: &Self) -> core::cmp::Ordering {
+        self.bytes().cmp(other.bytes())
+    }
+}
+
+impl core::hash::Hash for SocketAddrAny {
+    fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
+        self.bytes().hash(state)
+    }
+}
+
+impl fmt::Debug for SocketAddrAny {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self.address_family() {
+            AddressFamily::INET => {
+                if let Ok(addr) = SocketAddrV4::try_from(self.clone()) {
+                    return addr.fmt(f);
+                }
+            }
+            AddressFamily::INET6 => {
+                if let Ok(addr) = SocketAddrV6::try_from(self.clone()) {
+                    return addr.fmt(f);
+                }
+            }
+            #[cfg(unix)]
+            AddressFamily::UNIX => {
+                if let Ok(addr) = SocketAddrUnix::try_from(self.clone()) {
+                    return addr.fmt(f);
+                }
+            }
+            #[cfg(target_os = "linux")]
+            AddressFamily::XDP => {
+                if let Ok(addr) = crate::net::xdp::SocketAddrXdp::try_from(self.clone()) {
+                    return addr.fmt(f);
+                }
+            }
+            #[cfg(linux_kernel)]
+            AddressFamily::NETLINK => {
+                if let Ok(addr) = crate::net::netlink::SocketAddrNetlink::try_from(self.clone()) {
+                    return addr.fmt(f);
+                }
+            }
+            _ => {}
+        }
+
+        f.debug_struct("SocketAddrAny")
+            .field("address_family", &self.address_family())
+            .field("namelen", &self.addr_len())
+            .finish()
+    }
+}
+
+
+unsafe impl SocketAddrArg for SocketAddrAny {
+    unsafe fn with_sockaddr<R>(
+        &self,
+        f: impl FnOnce(*const SocketAddrOpaque, SocketAddrLen) -> R,
+    ) -> R {
+        f(self.as_ptr().cast(), self.addr_len())
+    }
 }
 
 impl From<SocketAddr> for SocketAddrAny {
     #[inline]
     fn from(from: SocketAddr) -> Self {
-        match from {
-            SocketAddr::V4(v4) => Self::V4(v4),
-            SocketAddr::V6(v6) => Self::V6(v6),
+        from.as_any()
+    }
+}
+
+impl TryFrom<SocketAddrAny> for SocketAddr {
+    type Error = Errno;
+
+    
+    
+    
+    
+    #[inline]
+    fn try_from(value: SocketAddrAny) -> Result<Self, Self::Error> {
+        match value.address_family() {
+            AddressFamily::INET => read_sockaddr::read_sockaddr_v4(&value).map(SocketAddr::V4),
+            AddressFamily::INET6 => read_sockaddr::read_sockaddr_v6(&value).map(SocketAddr::V6),
+            _ => Err(Errno::AFNOSUPPORT),
         }
     }
 }
@@ -50,14 +272,38 @@ impl From<SocketAddr> for SocketAddrAny {
 impl From<SocketAddrV4> for SocketAddrAny {
     #[inline]
     fn from(from: SocketAddrV4) -> Self {
-        Self::V4(from)
+        from.as_any()
+    }
+}
+
+impl TryFrom<SocketAddrAny> for SocketAddrV4 {
+    type Error = Errno;
+
+    
+    
+    
+    #[inline]
+    fn try_from(value: SocketAddrAny) -> Result<Self, Self::Error> {
+        read_sockaddr::read_sockaddr_v4(&value)
     }
 }
 
 impl From<SocketAddrV6> for SocketAddrAny {
     #[inline]
     fn from(from: SocketAddrV6) -> Self {
-        Self::V6(from)
+        from.as_any()
+    }
+}
+
+impl TryFrom<SocketAddrAny> for SocketAddrV6 {
+    type Error = Errno;
+
+    
+    
+    
+    #[inline]
+    fn try_from(value: SocketAddrAny) -> Result<Self, Self::Error> {
+        read_sockaddr::read_sockaddr_v6(&value)
     }
 }
 
@@ -65,58 +311,34 @@ impl From<SocketAddrV6> for SocketAddrAny {
 impl From<SocketAddrUnix> for SocketAddrAny {
     #[inline]
     fn from(from: SocketAddrUnix) -> Self {
-        Self::Unix(from)
+        from.as_any()
     }
 }
 
-impl SocketAddrAny {
+#[cfg(unix)]
+impl TryFrom<SocketAddrAny> for SocketAddrUnix {
+    type Error = Errno;
+
+    
+    
     
     #[inline]
-    pub const fn address_family(&self) -> AddressFamily {
-        match self {
-            Self::V4(_) => AddressFamily::INET,
-            Self::V6(_) => AddressFamily::INET6,
-            #[cfg(unix)]
-            Self::Unix(_) => AddressFamily::UNIX,
-            #[cfg(target_os = "linux")]
-            Self::Xdp(_) => AddressFamily::XDP,
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    pub unsafe fn write(&self, storage: *mut SocketAddrStorage) -> usize {
-        backend::net::write_sockaddr::write_sockaddr(self, storage)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    pub unsafe fn read(storage: *const SocketAddrStorage, len: usize) -> io::Result<Self> {
-        backend::net::read_sockaddr::read_sockaddr(storage, len)
+    fn try_from(value: SocketAddrAny) -> Result<Self, Self::Error> {
+        read_sockaddr::read_sockaddr_unix(&value)
     }
 }
 
-#[cfg(feature = "std")]
-impl fmt::Debug for SocketAddrAny {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::V4(v4) => v4.fmt(f),
-            Self::V6(v6) => v6.fmt(f),
-            #[cfg(unix)]
-            Self::Unix(unix) => unix.fmt(f),
-            #[cfg(target_os = "linux")]
-            Self::Xdp(xdp) => xdp.fmt(f),
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn any_read() {
+        let localhost = std::net::Ipv6Addr::LOCALHOST;
+        let addr = SocketAddrAny::from(SocketAddrV6::new(localhost, 7, 8, 9));
+        unsafe {
+            let same = SocketAddrAny::read(addr.as_ptr(), addr.addr_len());
+            assert_eq!(addr, same);
         }
     }
 }

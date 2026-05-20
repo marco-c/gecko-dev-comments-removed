@@ -1,4 +1,3 @@
-#![allow(unknown_lints, unexpected_cfgs)]
 #![allow(clippy::needless_doctest_main)]
 #![warn(
     missing_debug_implementations,
@@ -13,15 +12,74 @@
 
 
 
-
-
-#[allow(unused_extern_crates)]
-extern crate proc_macro;
-
 mod entry;
 mod select;
 
 use proc_macro::TokenStream;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -318,6 +376,29 @@ pub fn main(args: TokenStream, item: TokenStream) -> TokenStream {
 pub fn main_rt(args: TokenStream, item: TokenStream) -> TokenStream {
     entry::main(args.into(), item.into(), false).into()
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

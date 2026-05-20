@@ -10,11 +10,14 @@
     rust_2018_idioms,
     unreachable_pub
 )]
-#![deny(unused_must_use)]
+#![deny(unused_must_use, unsafe_op_in_unsafe_fn)]
 #![doc(test(
     no_crate_inject,
     attr(deny(warnings, rust_2018_idioms), allow(dead_code, unused_variables))
 ))]
+
+
+#![cfg_attr(docsrs, doc(auto_cfg(hide(loom))))]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![cfg_attr(docsrs, allow(unused_attributes))]
 #![cfg_attr(loom, allow(dead_code, unreachable_pub))]
@@ -474,11 +477,14 @@ compile_error! {
 ))]
 compile_error!("Only features sync,macros,io-util,rt,time are supported on wasm.");
 
-#[cfg(all(not(tokio_unstable), tokio_taskdump))]
-compile_error!("The `tokio_taskdump` feature requires `--cfg tokio_unstable`.");
+#[cfg(all(not(tokio_unstable), feature = "io-uring"))]
+compile_error!("The `io-uring` feature requires `--cfg tokio_unstable`.");
+
+#[cfg(all(not(tokio_unstable), feature = "taskdump"))]
+compile_error!("The `taskdump` feature requires `--cfg tokio_unstable`.");
 
 #[cfg(all(
-    tokio_taskdump,
+    feature = "taskdump",
     not(doc),
     not(all(
         target_os = "linux",
@@ -486,7 +492,7 @@ compile_error!("The `tokio_taskdump` feature requires `--cfg tokio_unstable`.");
     ))
 ))]
 compile_error!(
-    "The `tokio_taskdump` feature is only currently supported on \
+    "The `taskdump` feature is only currently supported on \
 linux, on `aarch64`, `x86` and `x86_64`."
 );
 
@@ -546,6 +552,11 @@ cfg_not_sync! {
     mod sync;
 }
 
+
+
+
+
+#[cfg_attr(docsrs, doc(cfg(feature = "rt")))]
 pub mod task;
 cfg_rt! {
     pub use task::spawn;
@@ -556,10 +567,6 @@ cfg_time! {
 }
 
 mod trace {
-    use std::future::Future;
-    use std::pin::Pin;
-    use std::task::{Context, Poll};
-
     cfg_taskdump! {
         pub(crate) use crate::runtime::task::trace::trace_leaf;
     }
@@ -573,19 +580,8 @@ mod trace {
     }
 
     #[cfg_attr(not(feature = "sync"), allow(dead_code))]
-    pub(crate) fn async_trace_leaf() -> impl Future<Output = ()> {
-        struct Trace;
-
-        impl Future for Trace {
-            type Output = ();
-
-            #[inline(always)]
-            fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<()> {
-                trace_leaf(cx)
-            }
-        }
-
-        Trace
+    pub(crate) async fn async_trace_leaf() {
+        std::future::poll_fn(trace_leaf).await
     }
 }
 

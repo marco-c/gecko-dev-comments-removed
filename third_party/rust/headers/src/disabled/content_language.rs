@@ -29,7 +29,6 @@ use util::FlatCsv;
 
 
 
-
 #[derive(Clone, Debug, PartialEq, Header)]
 pub struct ContentLanguage(FlatCsv);
 

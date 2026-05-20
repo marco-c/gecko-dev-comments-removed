@@ -43,7 +43,13 @@ impl ByteStr {
             }
         }
         
-        ByteStr { bytes: bytes }
+        ByteStr { bytes }
+    }
+
+    pub(crate) fn from_utf8(bytes: Bytes) -> Result<ByteStr, std::str::Utf8Error> {
+        str::from_utf8(&bytes)?;
+        
+        Ok(ByteStr { bytes })
     }
 }
 

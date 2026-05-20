@@ -4,13 +4,14 @@
 use crate::fs::Mode;
 #[cfg(not(target_os = "wasi"))]
 use crate::fs::{Gid, Uid};
-use crate::fs::{OFlags, SeekFrom, Timespec};
+use crate::fs::{SeekFrom, Timespec};
 use crate::{backend, io};
-use backend::fd::{AsFd, BorrowedFd};
+use backend::fd::AsFd;
 #[cfg(not(any(
     netbsdlike,
     target_os = "dragonfly",
     target_os = "espidf",
+    target_os = "horizon",
     target_os = "nto",
     target_os = "redox",
     target_os = "vita",
@@ -18,6 +19,7 @@ use backend::fd::{AsFd, BorrowedFd};
 use backend::fs::types::FallocateFlags;
 #[cfg(not(any(
     target_os = "espidf",
+    target_os = "horizon",
     target_os = "solaris",
     target_os = "vita",
     target_os = "wasi"
@@ -30,6 +32,7 @@ use backend::fs::types::Stat;
     solarish,
     target_os = "espidf",
     target_os = "haiku",
+    target_os = "horizon",
     target_os = "netbsd",
     target_os = "nto",
     target_os = "redox",
@@ -37,9 +40,8 @@ use backend::fs::types::Stat;
     target_os = "wasi",
 )))]
 use backend::fs::types::StatFs;
-#[cfg(not(any(target_os = "haiku", target_os = "redox", target_os = "wasi")))]
+#[cfg(not(target_os = "wasi"))]
 use backend::fs::types::StatVfs;
-use core::fmt;
 
 
 
@@ -48,24 +50,13 @@ use core::fmt;
 
 
 #[repr(C)]
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Timestamps {
     
     pub last_access: Timespec,
 
     
     pub last_modification: Timespec,
-}
-
-impl fmt::Debug for Timestamps {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Timestamps")
-            .field("last_access.tv_sec", &self.last_access.tv_sec)
-            .field("last_access.tv_nsec", &self.last_access.tv_nsec)
-            .field("last_modification.tv_sec", &self.last_modification.tv_sec)
-            .field("last_modification.tv_nsec", &self.last_modification.tv_nsec)
-            .finish()
-    }
 }
 
 
@@ -115,6 +106,7 @@ pub fn seek<Fd: AsFd>(fd: Fd, pos: SeekFrom) -> io::Result<u64> {
 pub fn tell<Fd: AsFd>(fd: Fd) -> io::Result<u64> {
     backend::fs::syscalls::tell(fd.as_fd())
 }
+
 
 
 
@@ -178,6 +170,7 @@ pub fn fstat<Fd: AsFd>(fd: Fd) -> io::Result<Stat> {
     solarish,
     target_os = "espidf",
     target_os = "haiku",
+    target_os = "horizon",
     target_os = "netbsd",
     target_os = "nto",
     target_os = "redox",
@@ -203,7 +196,7 @@ pub fn fstatfs<Fd: AsFd>(fd: Fd) -> io::Result<StatFs> {
 
 
 
-#[cfg(not(any(target_os = "haiku", target_os = "redox", target_os = "wasi")))]
+#[cfg(not(target_os = "wasi"))]
 #[inline]
 pub fn fstatvfs<Fd: AsFd>(fd: Fd) -> io::Result<StatVfs> {
     backend::fs::syscalls::fstatvfs(fd.as_fd())
@@ -217,7 +210,7 @@ pub fn fstatvfs<Fd: AsFd>(fd: Fd) -> io::Result<StatVfs> {
 
 
 
-#[cfg(not(any(target_os = "espidf", target_os = "vita")))]
+#[cfg(not(any(target_os = "espidf", target_os = "horizon", target_os = "vita")))]
 #[inline]
 pub fn futimens<Fd: AsFd>(fd: Fd, times: &Timestamps) -> io::Result<()> {
     backend::fs::syscalls::futimens(fd.as_fd(), times)
@@ -242,6 +235,7 @@ pub fn futimens<Fd: AsFd>(fd: Fd, times: &Timestamps) -> io::Result<()> {
     netbsdlike,
     target_os = "dragonfly",
     target_os = "espidf",
+    target_os = "horizon",
     target_os = "nto",
     target_os = "redox",
     target_os = "vita",
@@ -250,36 +244,6 @@ pub fn futimens<Fd: AsFd>(fd: Fd, times: &Timestamps) -> io::Result<()> {
 #[doc(alias = "posix_fallocate")]
 pub fn fallocate<Fd: AsFd>(fd: Fd, mode: FallocateFlags, offset: u64, len: u64) -> io::Result<()> {
     backend::fs::syscalls::fallocate(fd.as_fd(), mode, offset, len)
-}
-
-
-
-
-
-
-
-#[inline]
-pub fn is_file_read_write<Fd: AsFd>(fd: Fd) -> io::Result<(bool, bool)> {
-    _is_file_read_write(fd.as_fd())
-}
-
-pub(crate) fn _is_file_read_write(fd: BorrowedFd<'_>) -> io::Result<(bool, bool)> {
-    let mode = backend::fs::syscalls::fcntl_getfl(fd)?;
-
-    
-    #[cfg(any(linux_kernel, target_os = "emscripten", target_os = "fuchsia"))]
-    if mode.contains(OFlags::PATH) {
-        return Ok((false, false));
-    }
-
-    
-    
-    match mode & OFlags::RWMODE {
-        OFlags::RDONLY => Ok((true, false)),
-        OFlags::RDWR => Ok((true, true)),
-        OFlags::WRONLY => Ok((false, true)),
-        _ => unreachable!(),
-    }
 }
 
 
@@ -314,6 +278,7 @@ pub fn fsync<Fd: AsFd>(fd: Fd) -> io::Result<()> {
     target_os = "dragonfly",
     target_os = "espidf",
     target_os = "haiku",
+    target_os = "horizon",
     target_os = "redox",
     target_os = "vita",
 )))]
@@ -343,6 +308,7 @@ pub fn ftruncate<Fd: AsFd>(fd: Fd, length: u64) -> io::Result<()> {
 
 #[cfg(not(any(
     target_os = "espidf",
+    target_os = "horizon",
     target_os = "solaris",
     target_os = "vita",
     target_os = "wasi"

@@ -9,9 +9,10 @@ use mio::Token;
 use std::fmt;
 use std::io;
 use std::ops::{Deref, DerefMut};
-use std::os::unix::io::AsRawFd;
-use std::os::unix::prelude::RawFd;
+use std::os::fd::{AsFd, BorrowedFd};
+use std::os::unix::io::{AsRawFd, RawFd};
 use std::task::{ready, Context, Poll};
+
 
 
 
@@ -19,7 +20,25 @@ use std::task::{ready, Context, Poll};
 
 pub trait AioSource {
     
-    fn register(&mut self, kq: RawFd, token: usize);
+    
+    
+    
+    
+    
+    #[deprecated(since = "1.52.0", note = "use register_borrowed instead")]
+    fn register(&mut self, _kq: RawFd, _token: usize) {
+        
+        
+        unimplemented!("Use AioSource::register_borrowed instead")
+    }
+
+    
+    fn register_borrowed(&mut self, kq: BorrowedFd<'_>, token: usize) {
+        
+        
+        #[allow(deprecated)]
+        self.register(kq.as_raw_fd(), token)
+    }
 
     
     fn deregister(&mut self);
@@ -37,7 +56,8 @@ impl<T: AioSource> Source for MioSource<T> {
         interests: mio::Interest,
     ) -> io::Result<()> {
         assert!(interests.is_aio() || interests.is_lio());
-        self.0.register(registry.as_raw_fd(), usize::from(token));
+        self.0
+            .register_borrowed(registry.as_fd(), usize::from(token));
         Ok(())
     }
 
@@ -53,7 +73,8 @@ impl<T: AioSource> Source for MioSource<T> {
         interests: mio::Interest,
     ) -> io::Result<()> {
         assert!(interests.is_aio() || interests.is_lio());
-        self.0.register(registry.as_raw_fd(), usize::from(token));
+        self.0
+            .register_borrowed(registry.as_fd(), usize::from(token));
         Ok(())
     }
 }

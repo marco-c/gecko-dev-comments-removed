@@ -16,17 +16,19 @@ use core::sync::atomic::AtomicU8;
 
 use bitflags::bitflags;
 
-use crate::backend::c::{c_int, c_uint, c_void};
 use crate::backend::prctl::syscalls;
-use crate::ffi::CStr;
 #[cfg(feature = "alloc")]
 use crate::ffi::CString;
+use crate::ffi::{c_int, c_uint, c_void, CStr};
 use crate::io;
+use crate::io::Errno;
 use crate::pid::Pid;
-use crate::prctl::{
-    prctl_1arg, prctl_2args, prctl_3args, prctl_get_at_arg2_optional, PointerAuthenticationKeys,
-};
+#[cfg(linux_raw_dep)]
+use crate::prctl::PointerAuthenticationKeys;
+use crate::prctl::{prctl_1arg, prctl_2args, prctl_3args, prctl_get_at_arg2_optional};
 use crate::utils::as_ptr;
+
+use super::CapabilitySet;
 
 
 
@@ -73,6 +75,7 @@ const PR_GET_NAME: c_int = 16;
 
 #[inline]
 #[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 pub fn name() -> io::Result<CString> {
     let mut buffer = [0_u8; 16];
     unsafe { prctl_2args(PR_GET_NAME, buffer.as_mut_ptr().cast())? };
@@ -101,7 +104,7 @@ pub fn set_name(name: &CStr) -> io::Result<()> {
 
 
 
-
+const PR_GET_SECCOMP: c_int = 21;
 
 const SECCOMP_MODE_DISABLED: i32 = 0;
 const SECCOMP_MODE_STRICT: i32 = 1;
@@ -152,11 +155,10 @@ impl TryFrom<i32> for SecureComputingMode {
 
 
 
-
-
-
-
-
+#[inline]
+pub fn secure_computing_mode() -> io::Result<SecureComputingMode> {
+    unsafe { prctl_1arg(PR_GET_SECCOMP) }.and_then(TryInto::try_into)
+}
 
 const PR_SET_SECCOMP: c_int = 22;
 
@@ -179,8 +181,10 @@ pub fn set_secure_computing_mode(mode: SecureComputingMode) -> io::Result<()> {
 const PR_CAPBSET_READ: c_int = 23;
 
 
+#[deprecated(since = "1.1.0", note = "Use CapabilitySet with a single bit instead")]
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 #[repr(u32)]
+#[non_exhaustive]
 pub enum Capability {
     
     
@@ -383,6 +387,75 @@ pub enum Capability {
     CheckpointRestore = linux_raw_sys::general::CAP_CHECKPOINT_RESTORE,
 }
 
+mod private {
+    pub trait Sealed {}
+    pub struct Token;
+
+    #[allow(deprecated)]
+    impl Sealed for crate::thread::Capability {}
+    impl Sealed for crate::thread::CapabilitySet {}
+}
+
+
+
+pub trait CompatCapability: private::Sealed + Copy {
+    #[doc(hidden)]
+    fn as_capability_set(self, _: private::Token) -> CapabilitySet;
+}
+#[allow(deprecated)]
+impl CompatCapability for Capability {
+    fn as_capability_set(self, _: private::Token) -> CapabilitySet {
+        match self {
+            Self::ChangeOwnership => CapabilitySet::CHOWN,
+            Self::DACOverride => CapabilitySet::DAC_OVERRIDE,
+            Self::DACReadSearch => CapabilitySet::DAC_READ_SEARCH,
+            Self::FileOwner => CapabilitySet::FOWNER,
+            Self::FileSetID => CapabilitySet::FSETID,
+            Self::Kill => CapabilitySet::KILL,
+            Self::SetGroupID => CapabilitySet::SETGID,
+            Self::SetUserID => CapabilitySet::SETUID,
+            Self::SetPermittedCapabilities => CapabilitySet::SETPCAP,
+            Self::LinuxImmutable => CapabilitySet::LINUX_IMMUTABLE,
+            Self::NetBindService => CapabilitySet::NET_BIND_SERVICE,
+            Self::NetBroadcast => CapabilitySet::NET_BROADCAST,
+            Self::NetAdmin => CapabilitySet::NET_ADMIN,
+            Self::NetRaw => CapabilitySet::NET_RAW,
+            Self::IPCLock => CapabilitySet::IPC_LOCK,
+            Self::IPCOwner => CapabilitySet::IPC_OWNER,
+            Self::SystemModule => CapabilitySet::SYS_MODULE,
+            Self::SystemRawIO => CapabilitySet::SYS_RAWIO,
+            Self::SystemChangeRoot => CapabilitySet::SYS_CHROOT,
+            Self::SystemProcessTrace => CapabilitySet::SYS_PTRACE,
+            Self::SystemProcessAccounting => CapabilitySet::SYS_PACCT,
+            Self::SystemAdmin => CapabilitySet::SYS_ADMIN,
+            Self::SystemBoot => CapabilitySet::SYS_BOOT,
+            Self::SystemNice => CapabilitySet::SYS_NICE,
+            Self::SystemResource => CapabilitySet::SYS_RESOURCE,
+            Self::SystemTime => CapabilitySet::SYS_TIME,
+            Self::SystemTTYConfig => CapabilitySet::SYS_TTY_CONFIG,
+            Self::MakeNode => CapabilitySet::MKNOD,
+            Self::Lease => CapabilitySet::LEASE,
+            Self::AuditWrite => CapabilitySet::AUDIT_WRITE,
+            Self::AuditControl => CapabilitySet::AUDIT_CONTROL,
+            Self::SetFileCapabilities => CapabilitySet::SETFCAP,
+            Self::MACOverride => CapabilitySet::MAC_OVERRIDE,
+            Self::MACAdmin => CapabilitySet::MAC_ADMIN,
+            Self::SystemLog => CapabilitySet::SYSLOG,
+            Self::WakeAlarm => CapabilitySet::WAKE_ALARM,
+            Self::BlockSuspend => CapabilitySet::BLOCK_SUSPEND,
+            Self::AuditRead => CapabilitySet::AUDIT_READ,
+            Self::PerformanceMonitoring => CapabilitySet::PERFMON,
+            Self::BerkeleyPacketFilters => CapabilitySet::BPF,
+            Self::CheckpointRestore => CapabilitySet::CHECKPOINT_RESTORE,
+        }
+    }
+}
+impl CompatCapability for CapabilitySet {
+    fn as_capability_set(self, _: private::Token) -> CapabilitySet {
+        self
+    }
+}
+
 
 
 
@@ -391,8 +464,15 @@ pub enum Capability {
 
 
 #[inline]
-pub fn capability_is_in_bounding_set(capability: Capability) -> io::Result<bool> {
-    unsafe { prctl_2args(PR_CAPBSET_READ, capability as usize as *mut _) }.map(|r| r != 0)
+pub fn capability_is_in_bounding_set(capability: impl CompatCapability) -> io::Result<bool> {
+    let capset = capability.as_capability_set(private::Token).bits();
+    if capset.count_ones() != 1 {
+        return Err(Errno::INVAL);
+    }
+    let cap = capset.trailing_zeros();
+
+    
+    unsafe { prctl_2args(PR_CAPBSET_READ, cap as usize as *mut _) }.map(|r| r != 0)
 }
 
 const PR_CAPBSET_DROP: c_int = 24;
@@ -406,8 +486,15 @@ const PR_CAPBSET_DROP: c_int = 24;
 
 
 #[inline]
-pub fn remove_capability_from_bounding_set(capability: Capability) -> io::Result<()> {
-    unsafe { prctl_2args(PR_CAPBSET_DROP, capability as usize as *mut _) }.map(|_r| ())
+pub fn remove_capability_from_bounding_set(capability: impl CompatCapability) -> io::Result<()> {
+    let capset = capability.as_capability_set(private::Token).bits();
+    if capset.count_ones() != 1 {
+        return Err(Errno::INVAL);
+    }
+    let cap = capset.trailing_zeros();
+
+    
+    unsafe { prctl_2args(PR_CAPBSET_DROP, cap as usize as *mut _) }.map(|_r| ())
 }
 
 
@@ -417,13 +504,13 @@ pub fn remove_capability_from_bounding_set(capability: Capability) -> io::Result
 const PR_GET_SECUREBITS: c_int = 27;
 
 bitflags! {
-    /// `SECBIT_*`.
+    /// `SECBIT_*`
     #[repr(transparent)]
     #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
     pub struct CapabilitiesSecureBits: u32 {
         /// If this bit is set, then the kernel does not grant capabilities
         /// when a `set-user-ID-root` program is executed, or when a process
-        /// with an effective or real UID of 0 calls `execve`.
+        /// with an effective or real UID of [`Uid::ROOT`] calls `execve`.
         const NO_ROOT = 1_u32 << 0;
         /// Set [`NO_ROOT`] irreversibly.
         ///
@@ -608,9 +695,22 @@ const PR_CAP_AMBIENT_IS_SET: usize = 1;
 
 
 #[inline]
-pub fn capability_is_in_ambient_set(capability: Capability) -> io::Result<bool> {
-    let cap = capability as usize as *mut _;
-    unsafe { prctl_3args(PR_CAP_AMBIENT, PR_CAP_AMBIENT_IS_SET as *mut _, cap) }.map(|r| r != 0)
+pub fn capability_is_in_ambient_set(capability: impl CompatCapability) -> io::Result<bool> {
+    let capset = capability.as_capability_set(private::Token).bits();
+    if capset.count_ones() != 1 {
+        return Err(Errno::INVAL);
+    }
+    let cap = capset.trailing_zeros();
+
+    unsafe {
+        prctl_3args(
+            PR_CAP_AMBIENT,
+            PR_CAP_AMBIENT_IS_SET as *mut _,
+            
+            cap as usize as *mut _,
+        )
+    }
+    .map(|r| r != 0)
 }
 
 const PR_CAP_AMBIENT_CLEAR_ALL: usize = 4;
@@ -636,15 +736,30 @@ const PR_CAP_AMBIENT_LOWER: usize = 3;
 
 
 #[inline]
-pub fn configure_capability_in_ambient_set(capability: Capability, enable: bool) -> io::Result<()> {
+pub fn configure_capability_in_ambient_set(
+    capability: impl CompatCapability,
+    enable: bool,
+) -> io::Result<()> {
     let sub_operation = if enable {
         PR_CAP_AMBIENT_RAISE
     } else {
         PR_CAP_AMBIENT_LOWER
     };
-    let cap = capability as usize as *mut _;
+    let capset = capability.as_capability_set(private::Token).bits();
+    if capset.count_ones() != 1 {
+        return Err(Errno::INVAL);
+    }
+    let cap = capset.trailing_zeros();
 
-    unsafe { prctl_3args(PR_CAP_AMBIENT, sub_operation as *mut _, cap) }.map(|_r| ())
+    unsafe {
+        prctl_3args(
+            PR_CAP_AMBIENT,
+            sub_operation as *mut _,
+            
+            cap as usize as *mut _,
+        )
+    }
+    .map(|_r| ())
 }
 
 
@@ -736,6 +851,7 @@ const PR_PAC_RESET_KEYS: c_int = 54;
 
 
 #[inline]
+#[cfg(linux_raw_dep)]
 pub unsafe fn reset_pointer_authentication_keys(
     keys: Option<PointerAuthenticationKeys>,
 ) -> io::Result<()> {

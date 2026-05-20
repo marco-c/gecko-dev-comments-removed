@@ -6,16 +6,22 @@
 
 #![allow(unsafe_code)]
 
-use crate::backend::fd::{AsFd, AsRawFd};
+use crate::backend::fd::{AsFd, AsRawFd as _};
 use crate::ffi::CStr;
-use core::fmt::Write;
-use itoa::{Buffer, Integer};
+use core::fmt;
+use core::hint::unreachable_unchecked;
+use core::mem::{self, MaybeUninit};
+use core::num::{NonZeroU8, NonZeroUsize};
 #[cfg(all(feature = "std", unix))]
 use std::os::unix::ffi::OsStrExt;
-#[cfg(all(feature = "std", target_os = "wasi"))]
+#[cfg(all(
+    feature = "std",
+    target_os = "wasi",
+    any(not(target_env = "p2"), wasip2)
+))]
 use std::os::wasi::ffi::OsStrExt;
 #[cfg(feature = "std")]
-use {core::fmt, std::ffi::OsStr, std::path::Path};
+use {std::ffi::OsStr, std::path::Path};
 
 
 
@@ -36,23 +42,159 @@ use {core::fmt, std::ffi::OsStr, std::path::Path};
 
 #[derive(Clone)]
 pub struct DecInt {
-    
-    
-    buf: [u8; 20 + 1],
-    len: usize,
+    buf: [MaybeUninit<u8>; BUF_LEN],
+    len: NonZeroU8,
 }
+
+
+const BUF_LEN: usize = U64_MAX_STR_LEN + 1;
+
+
+const U64_MAX_STR_LEN: usize = "18446744073709551615".len();
+
+
+#[allow(dead_code)]
+const I64_MAX_STR_LEN: usize = "-9223372036854775808".len();
+
+const _: () = assert!(U64_MAX_STR_LEN == I64_MAX_STR_LEN);
+
+mod private {
+    pub trait Sealed: Copy {
+        type Unsigned: super::Integer;
+
+        fn as_unsigned(self) -> (bool, Self::Unsigned);
+        fn eq_zero(self) -> bool;
+        fn div_mod_10(&mut self) -> u8;
+    }
+
+    macro_rules! impl_unsigned {
+        ($($ty:ty)+) => { $(
+            impl Sealed for $ty {
+                type Unsigned = $ty;
+
+                #[inline]
+                fn as_unsigned(self) -> (bool, $ty) {
+                    (false, self)
+                }
+
+                #[inline]
+                fn eq_zero(self) -> bool {
+                    self == 0
+                }
+
+                #[inline]
+                fn div_mod_10(&mut self) -> u8 {
+                    let result = (*self % 10) as u8;
+                    *self /= 10;
+                    result
+                }
+            }
+        )+ }
+    }
+
+    macro_rules! impl_signed {
+        ($($signed:ty : $unsigned:ty)+) => { $(
+            impl Sealed for $signed {
+                type Unsigned = $unsigned;
+
+                #[inline]
+                fn as_unsigned(self) -> (bool, $unsigned) {
+                    if self >= 0 {
+                        (false, self as $unsigned)
+                    } else {
+                        (true, !(self as $unsigned) + 1)
+                    }
+                }
+
+                #[inline]
+                fn eq_zero(self) -> bool {
+                    unimplemented!()
+                }
+
+                #[inline]
+                fn div_mod_10(&mut self) -> u8 {
+                    unimplemented!()
+                }
+            }
+        )+ }
+    }
+
+    impl_unsigned!(u8 u16 u32 u64);
+    impl_signed!(i8:u8 i16:u16 i32:u32 i64:u64);
+
+    #[cfg(any(
+        target_pointer_width = "16",
+        target_pointer_width = "32",
+        target_pointer_width = "64"
+    ))]
+    const _: () = {
+        impl_unsigned!(usize);
+        impl_signed!(isize:usize);
+    };
+}
+
+
+pub trait Integer: private::Sealed {}
+
+impl Integer for i8 {}
+impl Integer for i16 {}
+impl Integer for i32 {}
+impl Integer for i64 {}
+impl Integer for u8 {}
+impl Integer for u16 {}
+impl Integer for u32 {}
+impl Integer for u64 {}
+
+#[cfg(any(
+    target_pointer_width = "16",
+    target_pointer_width = "32",
+    target_pointer_width = "64"
+))]
+const _: () = {
+    impl Integer for isize {}
+    impl Integer for usize {}
+};
 
 impl DecInt {
     
-    #[inline]
     pub fn new<Int: Integer>(i: Int) -> Self {
-        let mut me = DecIntWriter(Self {
-            buf: [0; 20 + 1],
-            len: 0,
-        });
-        let mut buf = Buffer::new();
-        me.write_str(buf.format(i)).unwrap();
-        me.0
+        use private::Sealed as _;
+
+        let (is_neg, mut i) = i.as_unsigned();
+        let mut len = 1;
+        let mut buf = [MaybeUninit::uninit(); BUF_LEN];
+        buf[BUF_LEN - 1] = MaybeUninit::new(b'\0');
+
+        
+        
+        
+        loop {
+            len += 1;
+            if len > BUF_LEN {
+                
+                
+                unsafe { unreachable_unchecked() };
+            }
+            buf[BUF_LEN - len] = MaybeUninit::new(b'0' + i.div_mod_10());
+            if i.eq_zero() {
+                break;
+            }
+        }
+
+        if is_neg {
+            len += 1;
+            if len > BUF_LEN {
+                
+                
+                unsafe { unreachable_unchecked() };
+            }
+            buf[BUF_LEN - len] = MaybeUninit::new(b'-');
+        }
+
+        Self {
+            buf,
+            len: NonZeroU8::new(len as u8).unwrap(),
+        }
     }
 
     
@@ -72,7 +214,7 @@ impl DecInt {
     
     #[inline]
     pub fn as_c_str(&self) -> &CStr {
-        let bytes_with_nul = &self.buf[..=self.len];
+        let bytes_with_nul = self.as_bytes_with_nul();
         debug_assert!(CStr::from_bytes_with_nul(bytes_with_nul).is_ok());
 
         
@@ -82,39 +224,36 @@ impl DecInt {
 
     
     #[inline]
-    pub fn as_bytes(&self) -> &[u8] {
-        &self.buf[..self.len]
-    }
-}
-
-
-
-struct DecIntWriter(DecInt);
-
-impl core::fmt::Write for DecIntWriter {
-    #[inline]
-    fn write_str(&mut self, s: &str) -> core::fmt::Result {
-        match self.0.buf.get_mut(self.0.len..self.0.len + s.len()) {
-            Some(slice) => {
-                slice.copy_from_slice(s.as_bytes());
-                self.0.len += s.len();
-                Ok(())
-            }
-            None => Err(core::fmt::Error),
+    pub fn as_bytes_with_nul(&self) -> &[u8] {
+        let len = NonZeroUsize::from(self.len).get();
+        if len > BUF_LEN {
+            
+            
+            unsafe { unreachable_unchecked() };
         }
+        let init = &self.buf[(self.buf.len() - len)..];
+        
+        unsafe { mem::transmute::<&[MaybeUninit<u8>], &[u8]>(init) }
+    }
+
+    
+    #[inline]
+    pub fn as_bytes(&self) -> &[u8] {
+        let bytes = self.as_bytes_with_nul();
+        &bytes[..bytes.len() - 1]
     }
 }
 
 #[cfg(feature = "std")]
+#[cfg(any(not(target_os = "wasi"), not(target_env = "p2"), wasip2))]
 impl AsRef<Path> for DecInt {
     #[inline]
     fn as_ref(&self) -> &Path {
-        let as_os_str: &OsStr = OsStrExt::from_bytes(&self.buf[..self.len]);
+        let as_os_str: &OsStr = OsStrExt::from_bytes(self.as_bytes());
         Path::new(as_os_str)
     }
 }
 
-#[cfg(feature = "std")]
 impl fmt::Debug for DecInt {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.as_str().fmt(f)

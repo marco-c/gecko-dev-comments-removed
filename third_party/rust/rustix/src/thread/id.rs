@@ -1,7 +1,49 @@
+
+
+
+
+
+
+
+#![allow(unsafe_code)]
 use crate::{backend, io};
+#[cfg(linux_kernel)]
+use backend::thread::types::RawCpuid;
 
 pub use crate::pid::{Pid, RawPid};
 pub use crate::ugid::{Gid, RawGid, RawUid, Uid};
+
+
+#[cfg(linux_kernel)]
+#[repr(transparent)]
+#[derive(Copy, Clone, Eq, PartialEq, Debug, Hash)]
+pub struct Cpuid(RawCpuid);
+
+#[cfg(linux_kernel)]
+impl Cpuid {
+    
+    
+    
+    
+    
+    #[inline]
+    pub const unsafe fn from_raw(raw: RawCpuid) -> Self {
+        Self(raw)
+    }
+
+    
+    #[inline]
+    pub const fn as_raw(self) -> RawCpuid {
+        self.0
+    }
+}
+
+
+
+
+
+
+
 
 
 
@@ -61,9 +103,15 @@ pub fn set_thread_uid(uid: Uid) -> io::Result<()> {
 
 
 
+
 #[inline]
-pub fn set_thread_res_uid(ruid: Uid, euid: Uid, suid: Uid) -> io::Result<()> {
-    backend::thread::syscalls::setresuid_thread(ruid, euid, suid)
+pub fn set_thread_res_uid<R, E, S>(ruid: R, euid: E, suid: S) -> io::Result<()>
+where
+    R: Into<Option<Uid>>,
+    E: Into<Option<Uid>>,
+    S: Into<Option<Uid>>,
+{
+    backend::thread::syscalls::setresuid_thread(ruid.into(), euid.into(), suid.into())
 }
 
 
@@ -109,9 +157,15 @@ pub fn set_thread_gid(gid: Gid) -> io::Result<()> {
 
 
 
+
 #[inline]
-pub fn set_thread_res_gid(rgid: Gid, egid: Gid, sgid: Gid) -> io::Result<()> {
-    backend::thread::syscalls::setresgid_thread(rgid, egid, sgid)
+pub fn set_thread_res_gid<R, E, S>(rgid: R, egid: E, sgid: S) -> io::Result<()>
+where
+    R: Into<Option<Gid>>,
+    E: Into<Option<Gid>>,
+    S: Into<Option<Gid>>,
+{
+    backend::thread::syscalls::setresgid_thread(rgid.into(), egid.into(), sgid.into())
 }
 
 

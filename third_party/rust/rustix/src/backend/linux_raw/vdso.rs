@@ -10,6 +10,10 @@
 
 
 
+
+
+
+
 #![allow(unsafe_code)]
 
 use super::c;
@@ -20,6 +24,11 @@ use core::mem::size_of;
 use core::ptr::{null, null_mut};
 use linux_raw_sys::elf::*;
 
+#[cfg(target_arch = "s390x")]
+type ElfHashEntry = u64;
+#[cfg(not(target_arch = "s390x"))]
+type ElfHashEntry = u32;
+
 pub(super) struct Vdso {
     
     load_addr: *const Elf_Ehdr,
@@ -29,15 +38,18 @@ pub(super) struct Vdso {
     
     symtab: *const Elf_Sym,
     symstrings: *const u8,
-    bucket: *const u32,
-    chain: *const u32,
-    nbucket: u32,
+    gnu_hash: *const u32,
+    bucket: *const ElfHashEntry,
+    chain: *const ElfHashEntry,
+    nbucket: ElfHashEntry,
     
 
     
     versym: *const u16,
     verdef: *const Elf_Verdef,
 }
+
+
 
 
 fn elf_hash(name: &CStr) -> u32 {
@@ -49,6 +61,16 @@ fn elf_hash(name: &CStr) -> u32 {
             h ^= g >> 24;
         }
         h &= !g;
+    }
+    h
+}
+
+fn gnu_hash(name: &CStr) -> u32 {
+    let mut h: u32 = 5381;
+    for s in name.to_bytes() {
+        h = h
+            .wrapping_add(h.wrapping_mul(32))
+            .wrapping_add(u32::from(*s));
     }
     h
 }
@@ -73,6 +95,7 @@ fn init_from_sysinfo_ehdr() -> Option<Vdso> {
             pv_offset: 0,
             symtab: null(),
             symstrings: null(),
+            gnu_hash: null(),
             bucket: null(),
             chain: null(),
             nbucket: 0,
@@ -91,11 +114,6 @@ fn init_from_sysinfo_ehdr() -> Option<Vdso> {
         let mut found_vaddr = false;
         for i in 0..hdr.e_phnum {
             let phdr = &*pt.add(i as usize);
-            if phdr.p_flags & PF_W != 0 {
-                
-                
-                return None;
-            }
             if phdr.p_type == PT_LOAD && !found_vaddr {
                 
                 
@@ -129,7 +147,7 @@ fn init_from_sysinfo_ehdr() -> Option<Vdso> {
         }
 
         
-        let mut hash: *const u32 = null();
+        let mut hash: *const ElfHashEntry = null();
         vdso.symstrings = null();
         vdso.symtab = null();
         vdso.versym = null();
@@ -152,8 +170,15 @@ fn init_from_sysinfo_ehdr() -> Option<Vdso> {
                             .as_ptr();
                 }
                 DT_HASH => {
-                    hash = check_raw_pointer::<u32>(vdso.addr_from_elf(d.d_un.d_ptr)? as *mut _)?
-                        .as_ptr();
+                    hash = check_raw_pointer::<ElfHashEntry>(
+                        vdso.addr_from_elf(d.d_un.d_ptr)? as *mut _
+                    )?
+                    .as_ptr();
+                }
+                DT_GNU_HASH => {
+                    vdso.gnu_hash =
+                        check_raw_pointer::<u32>(vdso.addr_from_elf(d.d_un.d_ptr)? as *mut _)?
+                            .as_ptr()
                 }
                 DT_VERSYM => {
                     vdso.versym =
@@ -178,16 +203,34 @@ fn init_from_sysinfo_ehdr() -> Option<Vdso> {
         }
         
         
+        
+        if vdso.symstrings.is_null()
+            || vdso.symtab.is_null()
+            || (hash.is_null() && vdso.gnu_hash.is_null())
+        {
+            return None; 
+        }
 
         if vdso.verdef.is_null() {
             vdso.versym = null();
         }
 
         
-        vdso.nbucket = *hash.add(0);
-        
-        vdso.bucket = hash.add(2);
-        vdso.chain = hash.add(vdso.nbucket as usize + 2);
+        if !vdso.gnu_hash.is_null() {
+            vdso.nbucket = ElfHashEntry::from(*vdso.gnu_hash);
+            
+            
+            vdso.bucket = vdso
+                .gnu_hash
+                .add(4)
+                .add(size_of::<c::size_t>() / 4 * *vdso.gnu_hash.add(2) as usize)
+                .cast();
+        } else {
+            vdso.nbucket = *hash.add(0);
+            
+            vdso.bucket = hash.add(2);
+            vdso.chain = hash.add(vdso.nbucket as usize + 2);
+        }
 
         
         Some(vdso)
@@ -254,44 +297,109 @@ impl Vdso {
     }
 
     
+    
+    
+    
+    
+    unsafe fn check_sym(
+        &self,
+        sym: &Elf_Sym,
+        i: ElfHashEntry,
+        name: &CStr,
+        version: &CStr,
+        ver_hash: u32,
+    ) -> bool {
+        
+        
+        
+        
+        
+        
+        
+        if ELF_ST_TYPE(sym.st_info) != STT_FUNC && ELF_ST_TYPE(sym.st_info) != STT_NOTYPE {
+            return false;
+        }
+        if ELF_ST_BIND(sym.st_info) != STB_GLOBAL && ELF_ST_BIND(sym.st_info) != STB_WEAK {
+            return false;
+        }
+        if name != CStr::from_ptr(self.symstrings.add(sym.st_name as usize).cast()) {
+            return false;
+        }
+
+        
+        if !self.versym.is_null()
+            && !self.match_version(*self.versym.add(i as usize), version, ver_hash)
+        {
+            return false;
+        }
+
+        true
+    }
+
+    
     pub(super) fn sym(&self, version: &CStr, name: &CStr) -> *mut c::c_void {
         let ver_hash = elf_hash(version);
-        let name_hash = elf_hash(name);
 
         
         unsafe {
-            let mut chain = *self.bucket.add((name_hash % self.nbucket) as usize);
-
-            while chain != STN_UNDEF {
-                let sym = &*self.symtab.add(chain as usize);
+            if !self.gnu_hash.is_null() {
+                let mut h1: u32 = gnu_hash(name);
 
                 
                 
                 
                 
-                
-                if (ELF_ST_TYPE(sym.st_info) != STT_FUNC &&
-                        ELF_ST_TYPE(sym.st_info) != STT_NOTYPE)
-                    || (ELF_ST_BIND(sym.st_info) != STB_GLOBAL
-                        && ELF_ST_BIND(sym.st_info) != STB_WEAK)
-                    || sym.st_shndx == SHN_UNDEF
-                    || sym.st_shndx == SHN_ABS
-                    || ELF_ST_VISIBILITY(sym.st_other) != STV_DEFAULT
-                    || (name != CStr::from_ptr(self.symstrings.add(sym.st_name as usize).cast()))
-                    
-                    || (!self.versym.is_null()
-                        && !self.match_version(*self.versym.add(chain as usize), version, ver_hash))
-                {
-                    chain = *self.chain.add(chain as usize);
-                    continue;
+                let mut i = *self
+                    .bucket
+                    .cast::<u32>()
+                    .add((ElfHashEntry::from(h1) % self.nbucket) as usize);
+                if i == 0 {
+                    return null_mut();
                 }
-
-                let sum = self.addr_from_elf(sym.st_value).unwrap();
-                assert!(
-                    sum as usize >= self.load_addr as usize
-                        && sum as usize <= self.load_end as usize
-                );
-                return sum as *mut c::c_void;
+                h1 |= 1;
+                
+                
+                let mut hashval = self
+                    .bucket
+                    .cast::<u32>()
+                    .add(self.nbucket as usize)
+                    .add((i - *self.gnu_hash.add(1)) as usize);
+                loop {
+                    let sym: &Elf_Sym = &*self.symtab.add(i as usize);
+                    let h2 = *hashval;
+                    hashval = hashval.add(1);
+                    if h1 == (h2 | 1)
+                        && self.check_sym(sym, ElfHashEntry::from(i), name, version, ver_hash)
+                    {
+                        let sum = self.addr_from_elf(sym.st_value).unwrap();
+                        assert!(
+                            sum as usize >= self.load_addr as usize
+                                && sum as usize <= self.load_end as usize
+                        );
+                        return sum as *mut c::c_void;
+                    }
+                    if (h2 & 1) != 0 {
+                        break;
+                    }
+                    i += 1;
+                }
+            } else {
+                let mut i = *self
+                    .bucket
+                    .add((ElfHashEntry::from(elf_hash(name)) % self.nbucket) as usize);
+                while i != 0 {
+                    let sym: &Elf_Sym = &*self.symtab.add(i as usize);
+                    if sym.st_shndx != SHN_UNDEF && self.check_sym(sym, i, name, version, ver_hash)
+                    {
+                        let sum = self.addr_from_elf(sym.st_value).unwrap();
+                        assert!(
+                            sum as usize >= self.load_addr as usize
+                                && sum as usize <= self.load_end as usize
+                        );
+                        return sum as *mut c::c_void;
+                    }
+                    i = *self.chain.add(i as usize);
+                }
             }
         }
 
@@ -309,5 +417,129 @@ impl Vdso {
     
     unsafe fn addr_from_elf(&self, elf_addr: usize) -> Option<*const c_void> {
         self.base_plus(elf_addr.wrapping_add(self.pv_offset))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    
+    #[cfg(linux_raw)]
+    #[test]
+    #[cfg_attr(any(target_arch = "mips", target_arch = "mips64"), ignore)]
+    #[allow(unused_variables)]
+    fn test_vdso() {
+        let vdso = Vdso::new().unwrap();
+        assert!(!vdso.symtab.is_null());
+        assert!(!vdso.symstrings.is_null());
+
+        {
+            #[cfg(target_arch = "x86_64")]
+            let ptr = vdso.sym(cstr!("LINUX_2.6"), cstr!("__vdso_clock_gettime"));
+            #[cfg(target_arch = "arm")]
+            let ptr = vdso.sym(cstr!("LINUX_2.6"), cstr!("__vdso_clock_gettime64"));
+            #[cfg(target_arch = "aarch64")]
+            let ptr = vdso.sym(cstr!("LINUX_2.6.39"), cstr!("__kernel_clock_gettime"));
+            #[cfg(target_arch = "x86")]
+            let ptr = vdso.sym(cstr!("LINUX_2.6"), cstr!("__vdso_clock_gettime64"));
+            #[cfg(target_arch = "riscv64")]
+            let ptr = vdso.sym(cstr!("LINUX_4.15"), cstr!("__vdso_clock_gettime"));
+            #[cfg(target_arch = "powerpc")]
+            let _ptr = vdso.sym(cstr!("LINUX_5.11"), cstr!("__kernel_clock_gettime64"));
+            #[cfg(target_arch = "powerpc64")]
+            let ptr = vdso.sym(cstr!("LINUX_2.6.15"), cstr!("__kernel_clock_gettime"));
+            #[cfg(target_arch = "s390x")]
+            let ptr = vdso.sym(cstr!("LINUX_2.6.29"), cstr!("__kernel_clock_gettime"));
+            #[cfg(any(target_arch = "mips", target_arch = "mips32r6"))]
+            let ptr = vdso.sym(cstr!("LINUX_2.6"), cstr!("__vdso_clock_gettime64"));
+            #[cfg(any(target_arch = "mips64", target_arch = "mips64r6"))]
+            let ptr = vdso.sym(cstr!("LINUX_2.6"), cstr!("__vdso_clock_gettime"));
+
+            
+            
+            
+            
+            #[cfg(not(any(target_arch = "powerpc", target_arch = "x86")))]
+            assert!(!ptr.is_null());
+        }
+
+        {
+            #[cfg(target_arch = "x86_64")]
+            let ptr = vdso.sym(cstr!("LINUX_2.6"), cstr!("__vdso_clock_getres"));
+            #[cfg(target_arch = "arm")]
+            let ptr = vdso.sym(cstr!("LINUX_2.6"), cstr!("__vdso_clock_getres"));
+            #[cfg(target_arch = "aarch64")]
+            let ptr = vdso.sym(cstr!("LINUX_2.6.39"), cstr!("__kernel_clock_getres"));
+            #[cfg(target_arch = "x86")]
+            let ptr = vdso.sym(cstr!("LINUX_2.6"), cstr!("__vdso_clock_getres"));
+            #[cfg(target_arch = "riscv64")]
+            let ptr = vdso.sym(cstr!("LINUX_4.15"), cstr!("__vdso_clock_getres"));
+            #[cfg(any(target_arch = "powerpc", target_arch = "powerpc64"))]
+            let ptr = vdso.sym(cstr!("LINUX_2.6.15"), cstr!("__kernel_clock_getres"));
+            #[cfg(target_arch = "s390x")]
+            let ptr = vdso.sym(cstr!("LINUX_2.6.29"), cstr!("__kernel_clock_getres"));
+            #[cfg(any(target_arch = "mips", target_arch = "mips32r6"))]
+            let ptr = vdso.sym(cstr!("LINUX_2.6"), cstr!("__vdso_clock_getres"));
+            #[cfg(any(target_arch = "mips64", target_arch = "mips64r6"))]
+            let ptr = vdso.sym(cstr!("LINUX_2.6"), cstr!("__vdso_clock_getres"));
+
+            
+            #[cfg(not(target_arch = "x86"))]
+            assert!(!ptr.is_null());
+        }
+
+        {
+            #[cfg(target_arch = "x86_64")]
+            let ptr = vdso.sym(cstr!("LINUX_2.6"), cstr!("__vdso_gettimeofday"));
+            #[cfg(target_arch = "arm")]
+            let ptr = vdso.sym(cstr!("LINUX_2.6"), cstr!("__vdso_gettimeofday"));
+            #[cfg(target_arch = "aarch64")]
+            let ptr = vdso.sym(cstr!("LINUX_2.6.39"), cstr!("__kernel_gettimeofday"));
+            #[cfg(target_arch = "x86")]
+            let ptr = vdso.sym(cstr!("LINUX_2.6"), cstr!("__vdso_gettimeofday"));
+            #[cfg(target_arch = "riscv64")]
+            let ptr = vdso.sym(cstr!("LINUX_4.15"), cstr!("__vdso_gettimeofday"));
+            #[cfg(any(target_arch = "powerpc", target_arch = "powerpc64"))]
+            let ptr = vdso.sym(cstr!("LINUX_2.6.15"), cstr!("__kernel_gettimeofday"));
+            #[cfg(target_arch = "s390x")]
+            let ptr = vdso.sym(cstr!("LINUX_2.6.29"), cstr!("__kernel_gettimeofday"));
+            #[cfg(any(target_arch = "mips", target_arch = "mips32r6"))]
+            let ptr = vdso.sym(cstr!("LINUX_2.6"), cstr!("__vdso_gettimeofday"));
+            #[cfg(any(target_arch = "mips64", target_arch = "mips64r6"))]
+            let ptr = vdso.sym(cstr!("LINUX_2.6"), cstr!("__vdso_gettimeofday"));
+
+            
+            #[cfg(not(target_arch = "x86"))]
+            assert!(!ptr.is_null());
+        }
+
+        #[cfg(any(
+            target_arch = "x86_64",
+            target_arch = "x86",
+            target_arch = "riscv64",
+            target_arch = "powerpc",
+            target_arch = "powerpc64",
+            target_arch = "s390x",
+        ))]
+        {
+            #[cfg(target_arch = "x86_64")]
+            let ptr = vdso.sym(cstr!("LINUX_2.6"), cstr!("__vdso_getcpu"));
+            #[cfg(target_arch = "x86")]
+            let ptr = vdso.sym(cstr!("LINUX_2.6"), cstr!("__vdso_getcpu"));
+            #[cfg(target_arch = "riscv64")]
+            let ptr = vdso.sym(cstr!("LINUX_4.15"), cstr!("__vdso_getcpu"));
+            #[cfg(target_arch = "powerpc")]
+            let ptr = vdso.sym(cstr!("LINUX_2.6.15"), cstr!("__kernel_getcpu"));
+            #[cfg(target_arch = "powerpc64")]
+            let ptr = vdso.sym(cstr!("LINUX_2.6.15"), cstr!("__kernel_getcpu"));
+            #[cfg(target_arch = "s390x")]
+            let ptr = vdso.sym(cstr!("LINUX_2.6.29"), cstr!("__kernel_getcpu"));
+
+            
+            
+            #[cfg(not(any(target_arch = "powerpc", target_arch = "x86")))]
+            assert!(!ptr.is_null());
+        }
     }
 }

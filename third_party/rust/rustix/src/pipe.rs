@@ -1,9 +1,5 @@
 
 
-
-
-
-
 #![allow(unsafe_code)]
 
 use crate::fd::OwnedFd;
@@ -40,12 +36,15 @@ pub use backend::pipe::types::{IoSliceRaw, SpliceFlags};
     windows,
     target_os = "espidf",
     target_os = "haiku",
+    target_os = "horizon",
     target_os = "hurd",
     target_os = "redox",
     target_os = "vita",
     target_os = "wasi",
 )))]
 pub const PIPE_BUF: usize = c::PIPE_BUF;
+
+
 
 
 
@@ -96,11 +95,14 @@ pub fn pipe() -> io::Result<(OwnedFd, OwnedFd)> {
 
 
 
+
+
 #[cfg(not(any(
     apple,
     target_os = "aix",
     target_os = "espidf",
     target_os = "haiku",
+    target_os = "horizon",
     target_os = "nto"
 )))]
 #[inline]
@@ -213,12 +215,8 @@ pub fn fcntl_getpipe_size<Fd: AsFd>(fd: Fd) -> io::Result<usize> {
 
 
 
-
-
-
-
 #[cfg(linux_kernel)]
 #[inline]
-pub fn fcntl_setpipe_size<Fd: AsFd>(fd: Fd, size: usize) -> io::Result<()> {
+pub fn fcntl_setpipe_size<Fd: AsFd>(fd: Fd, size: usize) -> io::Result<usize> {
     backend::pipe::syscalls::fcntl_setpipe_size(fd.as_fd(), size)
 }

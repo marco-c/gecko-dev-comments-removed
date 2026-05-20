@@ -32,24 +32,23 @@
 
 
 
-
 use std::borrow::Cow;
 use std::convert::TryFrom;
 
-use crate::generic::{Either, One};
 use http::header::{HeaderName, HeaderValue, CONTENT_TYPE};
 use http::StatusCode;
-use hyper::Body;
 use serde::Serialize;
 
 
 pub(crate) use self::sealed::Reply_;
 use self::sealed::{BoxedReply, Internal};
+use crate::bodyt::Body;
 #[doc(hidden)]
 pub use crate::filters::reply as with;
+use crate::generic::{Either, One};
 
 
-pub type Response = ::http::Response<Body>;
+pub type Response = ::http::Response<crate::bodyt::Body>;
 
 
 
@@ -153,7 +152,7 @@ impl Reply for Json {
 
 pub fn html<T>(body: T) -> Html<T>
 where
-    Body: From<T>,
+    crate::bodyt::Body: From<T>,
     T: Send,
 {
     Html { body }
@@ -167,7 +166,7 @@ pub struct Html<T> {
 
 impl<T> Reply for Html<T>
 where
-    Body: From<T>,
+    crate::bodyt::Body: From<T>,
     T: Send,
 {
     #[inline]
@@ -380,7 +379,7 @@ impl<T: Reply> Reply for WithHeader<T> {
 
 impl<T: Send> Reply for ::http::Response<T>
 where
-    Body: From<T>,
+    crate::bodyt::Body: From<T>,
 {
     #[inline]
     fn into_response(self) -> Response {
@@ -473,7 +472,7 @@ impl Reply for &'static [u8] {
                 CONTENT_TYPE,
                 HeaderValue::from_static("application/octet-stream"),
             )
-            .body(Body::from(self))
+            .body(Body::from(bytes::Bytes::from_static(self)))
             .unwrap()
     }
 }

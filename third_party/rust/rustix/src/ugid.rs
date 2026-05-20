@@ -1,15 +1,14 @@
 
 
-#![allow(unsafe_code)]
+use core::fmt;
 
 use crate::backend::c;
+use crate::ffi;
 
 
-#[cfg(not(target_os = "wasi"))]
-pub type RawGid = c::gid_t;
+pub type RawGid = ffi::c_uint;
 
-#[cfg(not(target_os = "wasi"))]
-pub type RawUid = c::uid_t;
+pub type RawUid = ffi::c_uint;
 
 
 #[repr(transparent)]
@@ -28,10 +27,17 @@ impl Uid {
     
     
     
+    #[inline]
+    pub fn from_raw(raw: RawUid) -> Self {
+        debug_assert_ne!(raw, !0);
+        Self(raw)
+    }
+
+    
     
     
     #[inline]
-    pub const unsafe fn from_raw(raw: RawUid) -> Self {
+    pub const fn from_raw_unchecked(raw: RawUid) -> Self {
         Self(raw)
     }
 
@@ -55,10 +61,17 @@ impl Gid {
     
     
     
+    #[inline]
+    pub fn from_raw(raw: RawGid) -> Self {
+        debug_assert_ne!(raw, !0);
+        Self(raw)
+    }
+
+    
     
     
     #[inline]
-    pub const unsafe fn from_raw(raw: RawGid) -> Self {
+    pub const fn from_raw_unchecked(raw: RawGid) -> Self {
         Self(raw)
     }
 
@@ -75,9 +88,84 @@ impl Gid {
     }
 }
 
+impl fmt::Display for Uid {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+impl fmt::Binary for Uid {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+impl fmt::Octal for Uid {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+impl fmt::LowerHex for Uid {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+impl fmt::UpperHex for Uid {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+impl fmt::LowerExp for Uid {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+impl fmt::UpperExp for Uid {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
+impl fmt::Display for Gid {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+impl fmt::Binary for Gid {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+impl fmt::Octal for Gid {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+impl fmt::LowerHex for Gid {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+impl fmt::UpperHex for Gid {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+impl fmt::LowerExp for Gid {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+impl fmt::UpperExp for Gid {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
 
 
-pub(crate) fn translate_fchown_args(owner: Option<Uid>, group: Option<Gid>) -> (RawUid, RawGid) {
+
+pub(crate) fn translate_fchown_args(
+    owner: Option<Uid>,
+    group: Option<Gid>,
+) -> (c::uid_t, c::gid_t) {
     let ow = match owner {
         Some(o) => o.as_raw(),
         None => !0,
@@ -88,11 +176,18 @@ pub(crate) fn translate_fchown_args(owner: Option<Uid>, group: Option<Gid>) -> (
         None => !0,
     };
 
-    (ow, gr)
+    (ow as c::uid_t, gr as c::gid_t)
 }
 
-#[test]
-fn test_sizes() {
-    assert_eq_size!(RawUid, u32);
-    assert_eq_size!(RawGid, u32);
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_sizes() {
+        assert_eq_size!(RawUid, u32);
+        assert_eq_size!(RawGid, u32);
+        assert_eq_size!(RawUid, libc::uid_t);
+        assert_eq_size!(RawGid, libc::gid_t);
+    }
 }

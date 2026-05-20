@@ -69,21 +69,21 @@
 
 
 
+
 #![allow(unsafe_code)]
 #![allow(unused_qualifications)]
 
 use super::epoll;
-#[cfg(feature = "alloc")]
-use crate::backend::c;
 pub use crate::backend::event::epoll::*;
 use crate::backend::event::syscalls;
+use crate::buffer::Buffer;
 use crate::fd::{AsFd, OwnedFd};
 use crate::io;
-#[cfg(feature = "alloc")]
-use alloc::vec::Vec;
+use crate::timespec::Timespec;
 use core::ffi::c_void;
 use core::hash::{Hash, Hasher};
-use core::slice;
+
+
 
 
 
@@ -117,11 +117,13 @@ pub fn create(flags: epoll::CreateFlags) -> io::Result<OwnedFd> {
 
 
 
+
+
 #[doc(alias = "epoll_ctl")]
 #[inline]
-pub fn add(
-    epoll: impl AsFd,
-    source: impl AsFd,
+pub fn add<EpollFd: AsFd, SourceFd: AsFd>(
+    epoll: EpollFd,
+    source: SourceFd,
     data: epoll::EventData,
     event_flags: epoll::EventFlags,
 ) -> io::Result<()> {
@@ -146,11 +148,13 @@ pub fn add(
 
 
 
+
+
 #[doc(alias = "epoll_ctl")]
 #[inline]
-pub fn modify(
-    epoll: impl AsFd,
-    source: impl AsFd,
+pub fn modify<EpollFd: AsFd, SourceFd: AsFd>(
+    epoll: EpollFd,
+    source: SourceFd,
     data: epoll::EventData,
     event_flags: epoll::EventFlags,
 ) -> io::Result<()> {
@@ -173,9 +177,11 @@ pub fn modify(
 
 
 
+
+
 #[doc(alias = "epoll_ctl")]
 #[inline]
-pub fn delete(epoll: impl AsFd, source: impl AsFd) -> io::Result<()> {
+pub fn delete<EpollFd: AsFd, SourceFd: AsFd>(epoll: EpollFd, source: SourceFd) -> io::Result<()> {
     syscalls::epoll_del(epoll.as_fd(), source.as_fd())
 }
 
@@ -189,45 +195,24 @@ pub fn delete(epoll: impl AsFd, source: impl AsFd) -> io::Result<()> {
 
 
 
-#[cfg(feature = "alloc")]
-#[cfg_attr(docsrs, doc(cfg(feature = "alloc"), alias = "epoll_wait"))]
+
+
+
+
+
+
+
+#[doc(alias = "epoll_wait")]
 #[inline]
-pub fn wait(epoll: impl AsFd, event_list: &mut EventVec, timeout: c::c_int) -> io::Result<()> {
+pub fn wait<EpollFd: AsFd, Buf: Buffer<Event>>(
+    epoll: EpollFd,
+    mut event_list: Buf,
+    timeout: Option<&Timespec>,
+) -> io::Result<Buf::Output> {
     
+    let nfds = unsafe { syscalls::epoll_wait(epoll.as_fd(), event_list.parts_mut(), timeout)? };
     
-    unsafe {
-        event_list.events.clear();
-        let nfds = syscalls::epoll_wait(
-            epoll.as_fd(),
-            event_list.events.spare_capacity_mut(),
-            timeout,
-        )?;
-        event_list.events.set_len(nfds);
-    }
-
-    Ok(())
-}
-
-
-pub struct Iter<'a> {
-    
-    
-    
-    iter: core::iter::Copied<slice::Iter<'a, Event>>,
-}
-
-impl<'a> Iterator for Iter<'a> {
-    type Item = epoll::Event;
-
-    #[inline]
-    fn next(&mut self) -> Option<Self::Item> {
-        self.iter.next()
-    }
-
-    #[inline]
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        self.iter.size_hint()
-    }
+    unsafe { Ok(event_list.assume_init(nfds)) }
 }
 
 
@@ -247,6 +232,10 @@ impl<'a> Iterator for Iter<'a> {
         )
     ),
     repr(packed)
+)]
+#[cfg_attr(
+    all(solarish, any(target_arch = "x86", target_arch = "x86_64")),
+    repr(packed(4))
 )]
 #[derive(Copy, Clone, Eq, PartialEq, Hash)]
 pub struct Event {
@@ -341,107 +330,13 @@ struct SixtyFourBitPointer {
     _padding: u32,
 }
 
-
-#[cfg(feature = "alloc")]
-pub struct EventVec {
-    events: Vec<Event>,
-}
-
-#[cfg(feature = "alloc")]
-impl EventVec {
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub unsafe fn from_raw_parts(ptr: *mut Event, len: usize, capacity: usize) -> Self {
-        Self {
-            events: Vec::from_raw_parts(ptr, len, capacity),
-        }
-    }
-
-    
-    
-    #[inline]
-    pub fn with_capacity(capacity: usize) -> Self {
-        Self {
-            events: Vec::with_capacity(capacity),
-        }
-    }
-
-    
-    #[inline]
-    pub fn capacity(&self) -> usize {
-        self.events.capacity()
-    }
-
-    
-    #[inline]
-    pub fn reserve(&mut self, additional: usize) {
-        self.events.reserve(additional);
-    }
-
-    
-    #[inline]
-    pub fn reserve_exact(&mut self, additional: usize) {
-        self.events.reserve_exact(additional);
-    }
-
-    
-    #[inline]
-    pub fn clear(&mut self) {
-        self.events.clear();
-    }
-
-    
-    #[inline]
-    pub fn shrink_to_fit(&mut self) {
-        self.events.shrink_to_fit();
-    }
-
-    
-    #[inline]
-    pub fn iter(&self) -> Iter<'_> {
-        Iter {
-            iter: self.events.iter().copied(),
-        }
-    }
-
-    
-    
-    #[inline]
-    pub fn len(&mut self) -> usize {
-        self.events.len()
-    }
-
-    
-    #[inline]
-    pub fn is_empty(&mut self) -> bool {
-        self.events.is_empty()
-    }
-}
-
-#[cfg(feature = "alloc")]
-impl<'a> IntoIterator for &'a EventVec {
-    type IntoIter = Iter<'a>;
-    type Item = epoll::Event;
-
-    #[inline]
-    fn into_iter(self) -> Self::IntoIter {
-        self.iter()
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::backend::c;
 
     #[test]
     fn test_epoll_layouts() {
-        check_renamed_type!(Event, epoll_event);
         check_renamed_type!(Event, epoll_event);
         check_renamed_struct_renamed_field!(Event, epoll_event, flags, events);
         #[cfg(libc)]

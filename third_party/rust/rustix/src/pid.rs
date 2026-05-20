@@ -2,11 +2,12 @@
 
 #![allow(unsafe_code)]
 
-use crate::backend::c;
-use core::num::NonZeroI32;
+use core::{fmt, num::NonZeroI32};
 
 
-pub type RawPid = c::pid_t;
+pub type RawPid = i32;
+
+
 
 
 
@@ -35,16 +36,21 @@ impl Pid {
     
     
     
+    
+    
+    
     #[inline]
     pub const fn from_raw(raw: RawPid) -> Option<Self> {
-        if raw > 0 {
-            
-            unsafe { Some(Self::from_raw_unchecked(raw)) }
-        } else {
-            None
+        debug_assert!(raw >= 0);
+        match NonZeroI32::new(raw) {
+            Some(non_zero) => Some(Self(non_zero)),
+            None => None,
         }
     }
 
+    
+    
+    
     
     
     
@@ -73,9 +79,20 @@ impl Pid {
     }
 
     
+    
+    
     #[inline]
-    pub fn as_raw(pid: Option<Self>) -> RawPid {
-        pid.map_or(0, |pid| pid.0.get())
+    pub const fn as_raw_pid(self) -> RawPid {
+        self.0.get()
+    }
+
+    
+    #[inline]
+    pub const fn as_raw(pid: Option<Self>) -> RawPid {
+        match pid {
+            Some(pid) => pid.0.get(),
+            None => 0,
+        }
     }
 
     
@@ -85,20 +102,81 @@ impl Pid {
     }
 }
 
-#[test]
-fn test_sizes() {
-    use core::mem::transmute;
+impl fmt::Display for Pid {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+impl fmt::Binary for Pid {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+impl fmt::Octal for Pid {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+impl fmt::LowerHex for Pid {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+impl fmt::UpperHex for Pid {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+#[cfg(lower_upper_exp_for_non_zero)]
+impl fmt::LowerExp for Pid {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+#[cfg(lower_upper_exp_for_non_zero)]
+impl fmt::UpperExp for Pid {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
 
-    assert_eq_size!(RawPid, NonZeroI32);
-    assert_eq_size!(RawPid, Pid);
-    assert_eq_size!(RawPid, Option<Pid>);
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-    
-    
-    const_assert_eq!(0 as RawPid, unsafe {
-        transmute::<Option<Pid>, RawPid>(None)
-    });
-    const_assert_eq!(4567 as RawPid, unsafe {
-        transmute::<Option<Pid>, RawPid>(Some(Pid::from_raw_unchecked(4567)))
-    });
+    #[test]
+    fn test_sizes() {
+        use core::mem::transmute;
+
+        assert_eq_size!(RawPid, NonZeroI32);
+        assert_eq_size!(RawPid, Pid);
+        assert_eq_size!(RawPid, Option<Pid>);
+
+        
+        
+        const_assert_eq!(0 as RawPid, unsafe {
+            transmute::<Option<Pid>, RawPid>(None)
+        });
+        const_assert_eq!(4567 as RawPid, unsafe {
+            transmute::<Option<Pid>, RawPid>(Some(Pid::from_raw_unchecked(4567)))
+        });
+    }
+
+    #[test]
+    fn test_ctors() {
+        use std::num::NonZeroI32;
+        assert!(Pid::from_raw(0).is_none());
+        assert_eq!(
+            Pid::from_raw(77).unwrap().as_raw_nonzero(),
+            NonZeroI32::new(77).unwrap()
+        );
+        assert_eq!(Pid::from_raw(77).unwrap().as_raw_pid(), 77);
+        assert_eq!(Pid::as_raw(Pid::from_raw(77)), 77);
+    }
+
+    #[test]
+    fn test_specials() {
+        assert!(Pid::from_raw(1).unwrap().is_init());
+        assert_eq!(Pid::from_raw(1).unwrap(), Pid::INIT);
+    }
 }

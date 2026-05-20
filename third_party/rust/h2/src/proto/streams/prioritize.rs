@@ -186,13 +186,7 @@ impl Prioritize {
 
             
             
-            
-            
-            
-            
-            if !stream.is_pending_open {
-                self.try_assign_capacity(stream);
-            }
+            self.try_assign_capacity(stream);
         }
 
         if frame.is_end_stream() {
@@ -348,12 +342,17 @@ impl Prioritize {
     
     pub fn reclaim_reserved_capacity(&mut self, stream: &mut store::Ptr, counts: &mut Counts) {
         
-        if stream.requested_send_capacity as usize > stream.buffered_send_data {
-            let reserved = stream.requested_send_capacity - stream.buffered_send_data as WindowSize;
+        if stream.send_flow.available().as_size() as usize > stream.buffered_send_data {
+            let reserved =
+                stream.send_flow.available().as_size() - stream.buffered_send_data as WindowSize;
 
             
-            let _res = stream.send_flow.claim_capacity(reserved);
-            debug_assert!(_res.is_ok());
+            
+            stream
+                .send_flow
+                .claim_capacity(reserved)
+                .expect("window size should be greater than reserved");
+
             self.assign_connection_capacity(reserved, stream, counts);
         }
     }
@@ -409,6 +408,12 @@ impl Prioritize {
 
     
     fn try_assign_capacity(&mut self, stream: &mut store::Ptr) {
+        
+        
+        if stream.is_pending_open {
+            return;
+        }
+
         let total_requested = stream.requested_send_capacity;
 
         
@@ -680,8 +685,11 @@ impl Prioritize {
     }
 
     pub fn clear_pending_send(&mut self, store: &mut Store, counts: &mut Counts) {
-        while let Some(stream) = self.pending_send.pop(store) {
+        while let Some(mut stream) = self.pending_send.pop(store) {
             let is_pending_reset = stream.is_pending_reset_expiration();
+            if let Some(reason) = stream.state.get_scheduled_reset() {
+                stream.set_reset(reason, Initiator::Library);
+            }
             counts.transition_after(stream, is_pending_reset);
         }
     }
@@ -839,10 +847,7 @@ impl Prioritize {
                         }),
                         None => {
                             if let Some(reason) = stream.state.get_scheduled_reset() {
-                                let stream_id = stream.id;
-                                stream
-                                    .state
-                                    .set_reset(stream_id, reason, Initiator::Library);
+                                stream.set_reset(reason, Initiator::Library);
 
                                 let frame = frame::Reset::new(stream.id, reason);
                                 Frame::Reset(frame)

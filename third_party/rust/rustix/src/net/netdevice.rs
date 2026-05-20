@@ -19,7 +19,7 @@
 use crate::fd::AsFd;
 use crate::io;
 #[cfg(feature = "alloc")]
-use alloc::string::String;
+use alloc::{borrow::ToOwned, string::String};
 
 
 
@@ -33,9 +33,11 @@ use alloc::string::String;
 
 #[inline]
 #[doc(alias = "SIOCGIFINDEX")]
-pub fn name_to_index(fd: impl AsFd, if_name: &str) -> io::Result<u32> {
-    crate::backend::net::netdevice::name_to_index(fd, if_name)
+pub fn name_to_index<Fd: AsFd>(fd: Fd, if_name: &str) -> io::Result<u32> {
+    crate::backend::net::netdevice::name_to_index(fd.as_fd(), if_name)
 }
+
+
 
 
 
@@ -50,13 +52,87 @@ pub fn name_to_index(fd: impl AsFd, if_name: &str) -> io::Result<u32> {
 #[inline]
 #[doc(alias = "SIOCGIFNAME")]
 #[cfg(feature = "alloc")]
-pub fn index_to_name(fd: impl AsFd, index: u32) -> io::Result<String> {
-    crate::backend::net::netdevice::index_to_name(fd, index)
+#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
+pub fn index_to_name<Fd: AsFd>(fd: Fd, index: u32) -> io::Result<String> {
+    let (len, ifrn_name) = crate::backend::net::netdevice::index_to_name(fd.as_fd(), index)?;
+
+    core::str::from_utf8(&ifrn_name[..len])
+        .map_err(|_| io::Errno::ILSEQ)
+        .map(ToOwned::to_owned)
+}
+
+
+
+
+
+
+
+
+
+
+
+#[inline]
+#[doc(alias = "SIOCGIFNAME")]
+pub fn index_to_name_inlined<Fd: AsFd>(fd: Fd, index: u32) -> io::Result<InlinedName> {
+    let (len, ifrn_name) = crate::backend::net::netdevice::index_to_name(fd.as_fd(), index)?;
+
+    
+    core::str::from_utf8(&ifrn_name[..len])
+        .map_err(|_| io::Errno::ILSEQ)
+        .map(|_| InlinedName {
+            len,
+            name: ifrn_name,
+        })
+}
+
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+pub struct InlinedName {
+    len: usize,
+    name: [u8; 16],
+}
+
+impl InlinedName {
+    
+    pub fn as_str(&self) -> &str {
+        self.as_ref()
+    }
+
+    
+    pub fn as_bytes(&self) -> &[u8] {
+        self.as_ref()
+    }
+}
+
+impl AsRef<[u8]> for InlinedName {
+    fn as_ref(&self) -> &[u8] {
+        &self.name[..self.len]
+    }
+}
+
+impl AsRef<str> for InlinedName {
+    fn as_ref(&self) -> &str {
+        
+        core::str::from_utf8(&self.name[..self.len]).unwrap()
+    }
+}
+
+impl core::borrow::Borrow<str> for InlinedName {
+    fn borrow(&self) -> &str {
+        self.as_ref()
+    }
+}
+
+impl core::fmt::Display for InlinedName {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        self.as_str().fmt(f)
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::backend::net::netdevice::{index_to_name, name_to_index};
+    use super::{index_to_name, index_to_name_inlined, name_to_index};
+    use crate::fd::AsFd;
     use crate::net::{AddressFamily, SocketFlags, SocketType};
 
     #[test]
@@ -76,7 +152,32 @@ mod tests {
             .0
             .parse::<u32>()
             .unwrap();
-        assert_eq!(Ok(loopback_index), name_to_index(fd, "lo"));
+        assert_eq!(Ok(loopback_index), name_to_index(fd.as_fd(), "lo"));
+    }
+
+    #[test]
+    fn test_index_to_name_inlined() {
+        let fd = crate::net::socket_with(
+            AddressFamily::INET,
+            SocketType::DGRAM,
+            SocketFlags::CLOEXEC,
+            None,
+        )
+        .unwrap();
+
+        let loopback_index = std::fs::read_to_string("/sys/class/net/lo/ifindex")
+            .unwrap()
+            .as_str()
+            .split_at(1)
+            .0
+            .parse::<u32>()
+            .unwrap();
+        assert_eq!(
+            "lo",
+            index_to_name_inlined(fd.as_fd(), loopback_index)
+                .unwrap()
+                .as_str(),
+        );
     }
 
     #[test]
@@ -97,6 +198,9 @@ mod tests {
             .0
             .parse::<u32>()
             .unwrap();
-        assert_eq!(Ok("lo".to_owned()), index_to_name(fd, loopback_index));
+        assert_eq!(
+            Ok("lo".to_owned()),
+            index_to_name(fd.as_fd(), loopback_index)
+        );
     }
 }

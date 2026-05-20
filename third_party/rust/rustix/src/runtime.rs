@@ -33,47 +33,157 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
 #![allow(unsafe_code)]
 
-use crate::backend;
-#[cfg(linux_raw)]
 use crate::ffi::CStr;
-#[cfg(linux_raw)]
 #[cfg(feature = "fs")]
 use crate::fs::AtFlags;
-#[cfg(linux_raw)]
-use crate::io;
-#[cfg(linux_raw)]
 use crate::pid::Pid;
-#[cfg(linux_raw)]
+use crate::{backend, io};
 #[cfg(feature = "fs")]
 use backend::fd::AsFd;
-#[cfg(linux_raw)]
 use core::ffi::c_void;
 
-#[cfg(linux_raw)]
+pub use crate::kernel_sigset::KernelSigSet;
 pub use crate::signal::Signal;
 
 
-#[cfg(linux_raw)]
-pub type Sigaction = linux_raw_sys::general::kernel_sigaction;
 
 
-#[cfg(linux_raw)]
-pub type Stack = linux_raw_sys::general::stack_t;
 
 
-#[cfg(linux_raw)]
-pub type Sigset = linux_raw_sys::general::kernel_sigset_t;
+#[allow(missing_docs)]
+#[derive(Debug, Default, Clone)]
+#[repr(C)]
+pub struct KernelSigaction {
+    pub sa_handler_kernel: KernelSighandler,
+    pub sa_flags: KernelSigactionFlags,
+    #[cfg(not(any(
+        target_arch = "csky",
+        target_arch = "loongarch64",
+        target_arch = "mips",
+        target_arch = "mips32r6",
+        target_arch = "mips64",
+        target_arch = "mips64r6",
+        target_arch = "riscv32",
+        target_arch = "riscv64"
+    )))]
+    pub sa_restorer: KernelSigrestore,
+    pub sa_mask: KernelSigSet,
+}
+
+bitflags::bitflags! {
+    /// Flags for use with [`KernelSigaction`].
+    ///
+    /// This type does not have the same layout as `sa_flags` field in
+    /// `libc::sigaction`, however the flags have the same values as their
+    /// libc counterparts.
+    #[repr(transparent)]
+    #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug, Default)]
+    pub struct KernelSigactionFlags: crate::ffi::c_ulong {
+        /// `SA_NOCLDSTOP`
+        const NOCLDSTOP = linux_raw_sys::general::SA_NOCLDSTOP as _;
+
+        /// `SA_NOCLDWAIT` (since Linux 2.6)
+        const NOCLDWAIT = linux_raw_sys::general::SA_NOCLDWAIT as _;
+
+        /// `SA_NODEFER`
+        const NODEFER = linux_raw_sys::general::SA_NODEFER as _;
+
+        /// `SA_ONSTACK`
+        const ONSTACK = linux_raw_sys::general::SA_ONSTACK as _;
+
+        /// `SA_RESETHAND`
+        const RESETHAND = linux_raw_sys::general::SA_RESETHAND as _;
+
+        /// `SA_RESTART`
+        const RESTART = linux_raw_sys::general::SA_RESTART as _;
+
+        /// `SA_RESTORER`
+        #[cfg(not(any(
+            target_arch = "csky",
+            target_arch = "loongarch64",
+            target_arch = "mips",
+            target_arch = "mips32r6",
+            target_arch = "mips64",
+            target_arch = "mips64r6",
+            target_arch = "riscv32",
+            target_arch = "riscv64"
+        )))]
+        const RESTORER = linux_raw_sys::general::SA_RESTORER as _;
+
+        /// `SA_SIGINFO` (since Linux 2.2)
+        const SIGINFO = linux_raw_sys::general::SA_SIGINFO as _;
+
+        /// `SA_UNSUPPORTED` (since Linux 5.11)
+        const UNSUPPORTED = linux_raw_sys::general::SA_UNSUPPORTED as _;
+
+        /// `SA_EXPOSE_TAGBITS` (since Linux 5.11)
+        const EXPOSE_TAGBITS = linux_raw_sys::general::SA_EXPOSE_TAGBITS as _;
+
+        /// <https://docs.rs/bitflags/*/bitflags/#externally-defined-flags>
+        const _ = !0;
+    }
+}
 
 
-#[cfg(linux_raw)]
-pub type Siginfo = linux_raw_sys::general::siginfo_t;
+
+
+pub type KernelSigrestore = Option<unsafe extern "C" fn()>;
+
+
+
+
+pub type KernelSighandler = Option<unsafe extern "C" fn(arg1: crate::ffi::c_int)>;
+
+
+
+
+
+
+
+#[doc(alias = "SIG_IGN")]
+#[must_use]
+pub const fn kernel_sig_ign() -> KernelSighandler {
+    linux_raw_sys::signal_macros::sig_ign()
+}
+
+
+
+
+
+#[doc(alias = "SIG_DFL")]
+pub const KERNEL_SIG_DFL: KernelSighandler = linux_raw_sys::signal_macros::SIG_DFL;
+
+
+
+
+
+
+
+pub use linux_raw_sys::general::stack_t as Stack;
+
+
+
+
+
+
+
+pub use linux_raw_sys::general::siginfo_t as Siginfo;
 
 pub use crate::timespec::{Nsecs, Secs, Timespec};
 
 
-#[cfg(linux_raw)]
 #[repr(u32)]
 pub enum How {
     
@@ -121,7 +231,6 @@ pub unsafe fn set_tid_address(data: *mut c_void) -> Pid {
     backend::runtime::syscalls::tls::set_tid_address(data)
 }
 
-#[cfg(linux_raw)]
 #[cfg(target_arch = "x86")]
 pub use backend::runtime::tls::UserDesc;
 
@@ -151,8 +260,7 @@ pub unsafe fn exit_thread(status: i32) -> ! {
 
 
 
-#[doc(alias = "_exit")]
-#[doc(alias = "_Exit")]
+#[doc(alias = "_exit", alias = "_Exit")]
 #[inline]
 pub fn exit_group(status: i32) -> ! {
     backend::runtime::syscalls::exit_group(status)
@@ -177,17 +285,6 @@ pub const EXIT_SUCCESS: i32 = backend::c::EXIT_SUCCESS;
 
 
 pub const EXIT_FAILURE: i32 = backend::c::EXIT_FAILURE;
-
-
-
-
-
-
-
-#[inline]
-pub fn startup_tls_info() -> StartupTlsInfo {
-    backend::runtime::tls::startup_tls_info()
-}
 
 
 
@@ -235,8 +332,6 @@ pub fn random() -> *const [u8; 16] {
     backend::param::auxv::random()
 }
 
-#[cfg(linux_raw)]
-pub use backend::runtime::tls::StartupTlsInfo;
 
 
 
@@ -321,8 +416,8 @@ pub use backend::runtime::tls::StartupTlsInfo;
 
 
 
-pub unsafe fn fork() -> io::Result<Fork> {
-    backend::runtime::syscalls::fork()
+pub unsafe fn kernel_fork() -> io::Result<Fork> {
+    backend::runtime::syscalls::kernel_fork()
 }
 
 
@@ -335,8 +430,12 @@ pub enum Fork {
 
     
     
-    Parent(Pid),
+    ParentOf(Pid),
 }
+
+
+
+
 
 
 
@@ -353,6 +452,7 @@ pub enum Fork {
 #[inline]
 #[cfg(feature = "fs")]
 #[cfg_attr(docsrs, doc(cfg(feature = "fs")))]
+#[must_use]
 pub unsafe fn execveat<Fd: AsFd>(
     dirfd: Fd,
     path: &CStr,
@@ -375,7 +475,12 @@ pub unsafe fn execveat<Fd: AsFd>(
 
 
 
+
+
+
+
 #[inline]
+#[must_use]
 pub unsafe fn execve(path: &CStr, argv: *const *const u8, envp: *const *const u8) -> io::Errno {
     backend::runtime::syscalls::execve(path, argv, envp)
 }
@@ -395,9 +500,31 @@ pub unsafe fn execve(path: &CStr, argv: *const *const u8, envp: *const *const u8
 
 
 #[inline]
-pub unsafe fn sigaction(signal: Signal, new: Option<Sigaction>) -> io::Result<Sigaction> {
-    backend::runtime::syscalls::sigaction(signal, new)
+pub unsafe fn kernel_sigaction(
+    signal: Signal,
+    new: Option<KernelSigaction>,
+) -> io::Result<KernelSigaction> {
+    backend::runtime::syscalls::kernel_sigaction(signal, new)
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -413,9 +540,14 @@ pub unsafe fn sigaction(signal: Signal, new: Option<Sigaction>) -> io::Result<Si
 
 
 #[inline]
-pub unsafe fn sigaltstack(new: Option<Stack>) -> io::Result<Stack> {
-    backend::runtime::syscalls::sigaltstack(new)
+pub unsafe fn kernel_sigaltstack(new: Option<Stack>) -> io::Result<Stack> {
+    backend::runtime::syscalls::kernel_sigaltstack(new)
 }
+
+
+
+
+
 
 
 
@@ -448,37 +580,22 @@ pub unsafe fn tkill(tid: Pid, sig: Signal) -> io::Result<()> {
 
 
 
+
+
+
+
+
+
+
+
+
+
 #[inline]
 #[doc(alias = "pthread_sigmask")]
 #[doc(alias = "rt_sigprocmask")]
-pub unsafe fn sigprocmask(how: How, set: Option<&Sigset>) -> io::Result<Sigset> {
-    backend::runtime::syscalls::sigprocmask(how, set)
+pub unsafe fn kernel_sigprocmask(how: How, set: Option<&KernelSigSet>) -> io::Result<KernelSigSet> {
+    backend::runtime::syscalls::kernel_sigprocmask(how, set)
 }
-
-
-
-
-
-
-
-#[inline]
-pub fn sigpending() -> Sigset {
-    backend::runtime::syscalls::sigpending()
-}
-
-
-
-
-
-
-
-#[inline]
-pub fn sigsuspend(set: &Sigset) -> io::Result<()> {
-    backend::runtime::syscalls::sigsuspend(set)
-}
-
-
-
 
 
 
@@ -490,12 +607,9 @@ pub fn sigsuspend(set: &Sigset) -> io::Result<()> {
 
 
 #[inline]
-pub unsafe fn sigwait(set: &Sigset) -> io::Result<Signal> {
-    backend::runtime::syscalls::sigwait(set)
+pub fn kernel_sigpending() -> KernelSigSet {
+    backend::runtime::syscalls::kernel_sigpending()
 }
-
-
-
 
 
 
@@ -507,9 +621,19 @@ pub unsafe fn sigwait(set: &Sigset) -> io::Result<Signal> {
 
 
 #[inline]
-pub unsafe fn sigwaitinfo(set: &Sigset) -> io::Result<Siginfo> {
-    backend::runtime::syscalls::sigwaitinfo(set)
+pub fn kernel_sigsuspend(set: &KernelSigSet) -> io::Result<()> {
+    backend::runtime::syscalls::kernel_sigsuspend(set)
 }
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -524,8 +648,8 @@ pub unsafe fn sigwaitinfo(set: &Sigset) -> io::Result<Siginfo> {
 
 
 #[inline]
-pub unsafe fn sigtimedwait(set: &Sigset, timeout: Option<Timespec>) -> io::Result<Siginfo> {
-    backend::runtime::syscalls::sigtimedwait(set, timeout)
+pub unsafe fn kernel_sigwait(set: &KernelSigSet) -> io::Result<Signal> {
+    backend::runtime::syscalls::kernel_sigwait(set)
 }
 
 
@@ -542,13 +666,63 @@ pub unsafe fn sigtimedwait(set: &Sigset, timeout: Option<Timespec>) -> io::Resul
 
 
 
-#[cfg(any(
-    linux_raw,
-    any(
-        all(target_os = "android", target_pointer_width = "64"),
-        target_os = "linux",
-    )
-))]
+
+
+
+
+
+
+
+
+#[inline]
+pub unsafe fn kernel_sigwaitinfo(set: &KernelSigSet) -> io::Result<Siginfo> {
+    backend::runtime::syscalls::kernel_sigwaitinfo(set)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[inline]
+pub unsafe fn kernel_sigtimedwait(
+    set: &KernelSigSet,
+    timeout: Option<&Timespec>,
+) -> io::Result<Siginfo> {
+    backend::runtime::syscalls::kernel_sigtimedwait(set, timeout)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[inline]
 pub fn linux_secure() -> bool {
     backend::param::auxv::linux_secure()
@@ -561,10 +735,10 @@ pub fn linux_secure() -> bool {
 
 
 
-#[cfg(linux_raw)]
+
 #[inline]
-pub unsafe fn brk(addr: *mut c_void) -> io::Result<*mut c_void> {
-    backend::runtime::syscalls::brk(addr)
+pub unsafe fn kernel_brk(addr: *mut c_void) -> io::Result<*mut c_void> {
+    backend::runtime::syscalls::kernel_brk(addr)
 }
 
 
@@ -572,16 +746,16 @@ pub unsafe fn brk(addr: *mut c_void) -> io::Result<*mut c_void> {
 
 
 
-#[cfg(linux_raw)]
-pub const SIGRTMIN: u32 = linux_raw_sys::general::SIGRTMIN;
+
+pub const KERNEL_SIGRTMIN: i32 = linux_raw_sys::general::SIGRTMIN as i32;
 
 
 
 
 
 
-#[cfg(linux_raw)]
-pub const SIGRTMAX: u32 = {
+
+pub const KERNEL_SIGRTMAX: i32 = {
     
     #[cfg(not(any(
         target_arch = "arm",
@@ -590,9 +764,22 @@ pub const SIGRTMAX: u32 = {
         target_arch = "x86_64",
     )))]
     {
-        linux_raw_sys::general::SIGRTMAX
+        linux_raw_sys::general::SIGRTMAX as i32
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     #[cfg(any(
         target_arch = "arm",
@@ -601,6 +788,138 @@ pub const SIGRTMAX: u32 = {
         target_arch = "x86_64",
     ))]
     {
-        linux_raw_sys::general::_NSIG - 1
+        linux_raw_sys::general::_NSIG as i32
     }
 };
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_assumptions() {
+        assert!(libc::SIGSYS < KERNEL_SIGRTMIN);
+        assert!(KERNEL_SIGRTMIN <= libc::SIGRTMIN());
+
+        
+        assert!(libc::SIGRTMIN() + 8 <= KERNEL_SIGRTMAX);
+
+        
+        
+        assert!(KERNEL_SIGRTMIN + 8 + 3 <= KERNEL_SIGRTMAX);
+
+        assert!(KERNEL_SIGRTMAX <= libc::SIGRTMAX());
+        assert!(libc::SIGRTMAX() as u32 <= linux_raw_sys::general::_NSIG);
+
+        assert!(KERNEL_SIGRTMAX as usize - 1 < core::mem::size_of::<KernelSigSet>() * 8);
+    }
+
+    #[test]
+    fn test_layouts_matching_libc() {
+        use linux_raw_sys::general::siginfo__bindgen_ty_1__bindgen_ty_1;
+
+        
+        
+        
+        
+        assert_eq_size!(Siginfo, libc::siginfo_t);
+        assert_eq_align!(Siginfo, libc::siginfo_t);
+        assert_eq!(
+            memoffset::span_of!(Siginfo, ..),
+            memoffset::span_of!(Siginfo, __bindgen_anon_1)
+        );
+        assert_eq!(
+            memoffset::span_of!(siginfo__bindgen_ty_1__bindgen_ty_1, si_signo),
+            memoffset::span_of!(libc::siginfo_t, si_signo)
+        );
+        assert_eq!(
+            memoffset::span_of!(siginfo__bindgen_ty_1__bindgen_ty_1, si_errno),
+            memoffset::span_of!(libc::siginfo_t, si_errno)
+        );
+        assert_eq!(
+            memoffset::span_of!(siginfo__bindgen_ty_1__bindgen_ty_1, si_code),
+            memoffset::span_of!(libc::siginfo_t, si_code)
+        );
+
+        
+        assert_eq_size!(Stack, libc::stack_t);
+        assert_eq_align!(Stack, libc::stack_t);
+        assert_eq!(
+            memoffset::span_of!(Stack, ss_sp),
+            memoffset::span_of!(libc::stack_t, ss_sp)
+        );
+        assert_eq!(
+            memoffset::span_of!(Stack, ss_flags),
+            memoffset::span_of!(libc::stack_t, ss_flags)
+        );
+        assert_eq!(
+            memoffset::span_of!(Stack, ss_size),
+            memoffset::span_of!(libc::stack_t, ss_size)
+        );
+    }
+
+    #[test]
+    fn test_layouts_matching_kernel() {
+        use linux_raw_sys::general as c;
+
+        
+        
+        #[cfg(not(any(
+            target_arch = "csky",
+            target_arch = "loongarch64",
+            target_arch = "mips",
+            target_arch = "mips32r6",
+            target_arch = "mips64",
+            target_arch = "mips64r6",
+            target_arch = "riscv32",
+            target_arch = "riscv64"
+        )))]
+        check_renamed_struct!(
+            KernelSigaction,
+            kernel_sigaction,
+            sa_handler_kernel,
+            sa_flags,
+            sa_restorer,
+            sa_mask
+        );
+        
+        #[cfg(any(
+            target_arch = "csky",
+            target_arch = "loongarch64",
+            target_arch = "mips",
+            target_arch = "mips32r6",
+            target_arch = "mips64",
+            target_arch = "mips64r6",
+            target_arch = "riscv32",
+            target_arch = "riscv64"
+        ))]
+        check_renamed_struct!(
+            KernelSigaction,
+            kernel_sigaction,
+            sa_handler_kernel,
+            sa_flags,
+            sa_mask
+        );
+        assert_eq_size!(KernelSigactionFlags, crate::ffi::c_ulong);
+        assert_eq_align!(KernelSigactionFlags, crate::ffi::c_ulong);
+        check_renamed_type!(KernelSigrestore, __sigrestore_t);
+        check_renamed_type!(KernelSighandler, __kernel_sighandler_t);
+
+        assert_eq!(
+            libc::SA_NOCLDSTOP,
+            KernelSigactionFlags::NOCLDSTOP.bits() as _
+        );
+        assert_eq!(
+            libc::SA_NOCLDWAIT,
+            KernelSigactionFlags::NOCLDWAIT.bits() as _
+        );
+        assert_eq!(libc::SA_NODEFER, KernelSigactionFlags::NODEFER.bits() as _);
+        assert_eq!(libc::SA_ONSTACK, KernelSigactionFlags::ONSTACK.bits() as _);
+        assert_eq!(
+            libc::SA_RESETHAND,
+            KernelSigactionFlags::RESETHAND.bits() as _
+        );
+        assert_eq!(libc::SA_RESTART, KernelSigactionFlags::RESTART.bits() as _);
+        assert_eq!(libc::SA_SIGINFO, KernelSigactionFlags::SIGINFO.bits() as _);
+    }
+}

@@ -1,64 +1,163 @@
 use bytes::Buf;
 use futures_core::stream::Stream;
-use pin_project_lite::pin_project;
+use futures_sink::Sink;
 use std::io;
 use std::pin::Pin;
 use std::task::{Context, Poll};
 use tokio::io::{AsyncBufRead, AsyncRead, ReadBuf};
 
-pin_project! {
-    /// Convert a [`Stream`] of byte chunks into an [`AsyncRead`].
-    ///
-    /// This type performs the inverse operation of [`ReaderStream`].
-    ///
-    /// # Example
-    ///
-    /// ```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Debug)]
+pub struct StreamReader<S, B> {
     
+    inner: S,
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[derive(Debug)]
-    pub struct StreamReader<S, B> {
-        #[pin]
-        inner: S,
-        chunk: Option<B>,
-    }
+    chunk: Option<B>,
 }
 
 impl<S, B, E> StreamReader<S, B>
@@ -199,5 +298,49 @@ where
                 .expect("No chunk present")
                 .advance(amt);
         }
+    }
+}
+
+
+
+
+
+
+impl<S: Unpin, B> Unpin for StreamReader<S, B> {}
+
+struct StreamReaderProject<'a, S, B> {
+    inner: Pin<&'a mut S>,
+    chunk: &'a mut Option<B>,
+}
+
+impl<S, B> StreamReader<S, B> {
+    #[inline]
+    fn project(self: Pin<&mut Self>) -> StreamReaderProject<'_, S, B> {
+        
+        
+        let me = unsafe { Pin::into_inner_unchecked(self) };
+        StreamReaderProject {
+            inner: unsafe { Pin::new_unchecked(&mut me.inner) },
+            chunk: &mut me.chunk,
+        }
+    }
+}
+
+impl<S: Sink<T, Error = E>, B, E, T> Sink<T> for StreamReader<S, B> {
+    type Error = E;
+    fn poll_ready(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+        self.project().inner.poll_ready(cx)
+    }
+
+    fn start_send(self: Pin<&mut Self>, item: T) -> Result<(), Self::Error> {
+        self.project().inner.start_send(item)
+    }
+
+    fn poll_flush(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+        self.project().inner.poll_flush(cx)
+    }
+
+    fn poll_close(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+        self.project().inner.poll_close(cx)
     }
 }

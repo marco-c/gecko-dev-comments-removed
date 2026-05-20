@@ -1,5 +1,5 @@
 use std::fmt;
-use std::num::{NonZeroU32, NonZeroU64};
+use std::num::NonZeroU64;
 
 
 
@@ -26,22 +26,12 @@ use std::num::{NonZeroU32, NonZeroU64};
 
 
 
-
-
-
-#[cfg_attr(not(tokio_unstable), allow(unreachable_pub))]
 #[derive(Clone, Copy, Debug, Hash, Eq, PartialEq)]
 pub struct Id(NonZeroU64);
 
-impl From<NonZeroU64> for Id {
-    fn from(value: NonZeroU64) -> Self {
-        Id(value)
-    }
-}
-
-impl From<NonZeroU32> for Id {
-    fn from(value: NonZeroU32) -> Self {
-        Id(value.into())
+impl Id {
+    pub(crate) fn new(integer: impl Into<NonZeroU64>) -> Self {
+        Self(integer.into())
     }
 }
 

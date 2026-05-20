@@ -34,9 +34,9 @@ impl MapFlags {
     
     #[cfg(linux_kernel)]
     pub const fn hugetlb_with_size_log2(huge_page_size_log2: u32) -> Option<Self> {
-        use linux_raw_sys::general::{MAP_HUGETLB, MAP_HUGE_SHIFT};
+        use crate::backend::c;
         if 16 <= huge_page_size_log2 && huge_page_size_log2 <= 63 {
-            let bits = MAP_HUGETLB | (huge_page_size_log2 << MAP_HUGE_SHIFT);
+            let bits = bitcast!(c::MAP_HUGETLB) | (huge_page_size_log2 << c::MAP_HUGE_SHIFT);
             Self::from_bits(bits)
         } else {
             None
@@ -272,6 +272,8 @@ pub unsafe fn mremap_fixed(
 pub unsafe fn mprotect(ptr: *mut c_void, len: usize, flags: MprotectFlags) -> io::Result<()> {
     backend::mm::syscalls::mprotect(ptr, len, flags)
 }
+
+
 
 
 

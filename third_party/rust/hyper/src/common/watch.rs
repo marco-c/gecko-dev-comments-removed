@@ -4,7 +4,7 @@
 
 
 
-use futures_util::task::AtomicWaker;
+use atomic_waker::AtomicWaker;
 use std::sync::{
     atomic::{AtomicUsize, Ordering},
     Arc,

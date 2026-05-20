@@ -413,7 +413,7 @@ where
     pub async fn accept(
         &mut self,
     ) -> Option<Result<(Request<RecvStream>, SendResponse<B>), crate::Error>> {
-        futures_util::future::poll_fn(move |cx| self.poll_accept(cx)).await
+        crate::poll_fn(move |cx| self.poll_accept(cx)).await
     }
 
     #[doc(hidden)]
@@ -514,12 +514,6 @@ where
         self.connection.poll(cx).map_err(Into::into)
     }
 
-    #[doc(hidden)]
-    #[deprecated(note = "renamed to poll_closed")]
-    pub fn poll_close(&mut self, cx: &mut Context) -> Poll<Result<(), crate::Error>> {
-        self.poll_closed(cx)
-    }
-
     
     
     
@@ -557,6 +551,11 @@ where
     
     pub fn ping_pong(&mut self) -> Option<PingPong> {
         self.connection.take_user_pings().map(PingPong::new)
+    }
+
+    
+    pub fn has_streams(&self) -> bool {
+        self.connection.has_streams()
     }
 
     
@@ -969,7 +968,7 @@ impl Builder {
     
     
     pub fn max_send_buffer_size(&mut self, max: usize) -> &mut Self {
-        assert!(max <= std::u32::MAX as usize);
+        assert!(max <= u32::MAX as usize);
         self.max_send_buffer_size = max;
         self
     }
@@ -1103,6 +1102,109 @@ impl Default for Builder {
 
 
 impl<B: Buf> SendResponse<B> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn send_informational(&mut self, response: Response<()>) -> Result<(), crate::Error> {
+        let stream_id = self.inner.stream_id();
+        let status = response.status();
+
+        tracing::trace!(
+            "send_informational called with status: {} on stream: {:?}",
+            status,
+            stream_id
+        );
+
+        
+        if !response.status().is_informational() {
+            tracing::trace!(
+                "invalid informational status code: {} on stream: {:?}",
+                status,
+                stream_id
+            );
+            return Err(crate::Error::from(
+                UserError::InvalidInformationalStatusCode,
+            ));
+        }
+
+        tracing::trace!(
+            "converting informational response to HEADERS frame without END_STREAM flag for stream: {:?}",
+            stream_id
+        );
+
+        let frame = Peer::convert_send_message(
+            stream_id, response, false, 
+        );
+
+        tracing::trace!(
+            "sending interim informational headers frame for stream: {:?}",
+            stream_id
+        );
+
+        
+        
+        let result = self
+            .inner
+            .send_informational_headers(frame)
+            .map_err(Into::into);
+
+        match &result {
+            Ok(()) => tracing::trace!(
+                "Successfully sent informational headers for stream: {:?}",
+                stream_id
+            ),
+            Err(e) => tracing::trace!(
+                "Failed to send informational headers for stream: {:?}: {:?}",
+                stream_id,
+                e
+            ),
+        }
+
+        result
+    }
+
     
     
     

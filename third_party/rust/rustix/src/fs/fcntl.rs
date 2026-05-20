@@ -7,6 +7,7 @@
     target_os = "emscripten",
     target_os = "espidf",
     target_os = "fuchsia",
+    target_os = "horizon",
     target_os = "redox",
     target_os = "vita",
     target_os = "wasi"
@@ -15,13 +16,6 @@ use crate::fs::FlockOperation;
 use crate::{backend, io};
 use backend::fd::AsFd;
 use backend::fs::types::OFlags;
-
-
-
-
-#[cfg(not(any(target_os = "espidf", target_os = "wasi")))]
-pub use crate::io::fcntl_dupfd_cloexec;
-pub use crate::io::{fcntl_getfd, fcntl_setfd};
 
 
 
@@ -100,6 +94,7 @@ pub fn fcntl_add_seals<Fd: AsFd>(fd: Fd, seals: SealFlags) -> io::Result<()> {
     target_os = "emscripten",
     target_os = "espidf",
     target_os = "fuchsia",
+    target_os = "horizon",
     target_os = "redox",
     target_os = "vita",
     target_os = "wasi"

@@ -50,6 +50,16 @@ use crate::util::IdleNotifiedSet;
 
 
 
+
+
+
+
+
+
+
+
+
+
 #[cfg_attr(docsrs, doc(cfg(feature = "rt")))]
 pub struct JoinSet<T> {
     inner: IdleNotifiedSet<JoinHandle<T>>,
@@ -171,6 +181,7 @@ impl<T: 'static> JoinSet<T> {
     
     
     
+    
     #[track_caller]
     pub fn spawn_local<F>(&mut self, task: F) -> AbortHandle
     where
@@ -200,6 +211,9 @@ impl<T: 'static> JoinSet<T> {
         self.insert(local_set.spawn_local(task))
     }
 
+    
+    
+    
     
     
     
@@ -637,6 +651,51 @@ where
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+impl<T, F> std::iter::Extend<F> for JoinSet<T>
+where
+    F: Future<Output = T>,
+    F: Send + 'static,
+    T: Send + 'static,
+{
+    fn extend<I>(&mut self, iter: I)
+    where
+        I: IntoIterator<Item = F>,
+    {
+        iter.into_iter().for_each(|task| {
+            self.spawn(task);
+        });
+    }
+}
+
+
+
 #[cfg(all(tokio_unstable, feature = "tracing"))]
 #[cfg_attr(docsrs, doc(cfg(all(tokio_unstable, feature = "tracing"))))]
 impl<'a, T: 'static> Builder<'a, T> {
@@ -734,6 +793,7 @@ impl<'a, T: 'static> Builder<'a, T> {
             .insert(self.builder.spawn_blocking_on(f, handle)?))
     }
 
+    
     
     
     

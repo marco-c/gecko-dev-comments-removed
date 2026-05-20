@@ -1,3 +1,4 @@
+use crate::event::Timespec;
 use crate::{backend, io};
 
 pub use backend::event::poll_fd::{PollFd, PollFlags};
@@ -31,7 +32,16 @@ pub use backend::event::poll_fd::{PollFd, PollFlags};
 
 
 
+
+
+
+
+
+
+
+
+
 #[inline]
-pub fn poll(fds: &mut [PollFd<'_>], timeout: i32) -> io::Result<usize> {
+pub fn poll(fds: &mut [PollFd<'_>], timeout: Option<&Timespec>) -> io::Result<usize> {
     backend::event::syscalls::poll(fds, timeout)
 }

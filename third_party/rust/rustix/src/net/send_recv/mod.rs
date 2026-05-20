@@ -2,34 +2,28 @@
 
 #![allow(unsafe_code)]
 
-use crate::buffer::split_init;
-#[cfg(target_os = "linux")]
-use crate::net::xdp::SocketAddrXdp;
-#[cfg(unix)]
-use crate::net::SocketAddrUnix;
-use crate::net::{SocketAddr, SocketAddrAny, SocketAddrV4, SocketAddrV6};
+use crate::buffer::Buffer;
+use crate::net::addr::SocketAddrArg;
+use crate::net::SocketAddrAny;
 use crate::{backend, io};
-use backend::fd::{AsFd, BorrowedFd};
+use backend::fd::AsFd;
 use core::cmp::min;
-use core::mem::MaybeUninit;
 
-pub use backend::net::send_recv::{RecvFlags, SendFlags};
+pub use backend::net::send_recv::{RecvFlags, ReturnFlags, SendFlags};
 
 #[cfg(not(any(
     windows,
     target_os = "espidf",
-    target_os = "redox",
-    target_os = "vita",
-    target_os = "wasi"
+    target_os = "horizon",
+    target_os = "vita"
 )))]
 mod msg;
 
 #[cfg(not(any(
     windows,
     target_os = "espidf",
-    target_os = "redox",
-    target_os = "vita",
-    target_os = "wasi"
+    target_os = "horizon",
+    target_os = "vita"
 )))]
 pub use msg::*;
 
@@ -62,34 +56,22 @@ pub use msg::*;
 
 
 
-#[inline]
-pub fn recv<Fd: AsFd>(fd: Fd, buf: &mut [u8], flags: RecvFlags) -> io::Result<usize> {
-    unsafe { backend::net::syscalls::recv(fd.as_fd(), buf.as_mut_ptr(), buf.len(), flags) }
-}
-
-
-
-
-
-
-
-
-
-
 
 #[inline]
-pub fn recv_uninit<Fd: AsFd>(
+#[allow(clippy::type_complexity)]
+pub fn recv<Fd: AsFd, Buf: Buffer<u8>>(
     fd: Fd,
-    buf: &mut [MaybeUninit<u8>],
+    mut buf: Buf,
     flags: RecvFlags,
-) -> io::Result<(&mut [u8], &mut [MaybeUninit<u8>])> {
-    let length = unsafe {
-        backend::net::syscalls::recv(fd.as_fd(), buf.as_mut_ptr().cast::<u8>(), buf.len(), flags)?
-    };
-
+) -> io::Result<(Buf::Output, usize)> {
+    let (ptr, len) = buf.parts_mut();
+    
+    let recv_len = unsafe { backend::net::syscalls::recv(fd.as_fd(), (ptr, len), flags)? };
     
     
-    Ok(unsafe { split_init(buf, min(length, buf.len())) })
+    let min_len = min(len, recv_len);
+    
+    unsafe { Ok((buf.assume_init(min_len), recv_len)) }
 }
 
 
@@ -153,46 +135,22 @@ pub fn send<Fd: AsFd>(fd: Fd, buf: &[u8], flags: SendFlags) -> io::Result<usize>
 
 
 
+
 #[inline]
-pub fn recvfrom<Fd: AsFd>(
+pub fn recvfrom<Fd: AsFd, Buf: Buffer<u8>>(
     fd: Fd,
-    buf: &mut [u8],
+    mut buf: Buf,
     flags: RecvFlags,
-) -> io::Result<(usize, Option<SocketAddrAny>)> {
-    unsafe { backend::net::syscalls::recvfrom(fd.as_fd(), buf.as_mut_ptr(), buf.len(), flags) }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-#[allow(clippy::type_complexity)]
-#[inline]
-pub fn recvfrom_uninit<Fd: AsFd>(
-    fd: Fd,
-    buf: &mut [MaybeUninit<u8>],
-    flags: RecvFlags,
-) -> io::Result<(&mut [u8], &mut [MaybeUninit<u8>], Option<SocketAddrAny>)> {
-    let (length, addr) = unsafe {
-        backend::net::syscalls::recvfrom(
-            fd.as_fd(),
-            buf.as_mut_ptr().cast::<u8>(),
-            buf.len(),
-            flags,
-        )?
-    };
-
+) -> io::Result<(Buf::Output, usize, Option<SocketAddrAny>)> {
+    let (ptr, len) = buf.parts_mut();
+    
+    let (recv_len, addr) =
+        unsafe { backend::net::syscalls::recvfrom(fd.as_fd(), (ptr, len), flags)? };
     
     
-    let (init, uninit) = unsafe { split_init(buf, min(length, buf.len())) };
-    Ok((init, uninit, addr))
+    let min_len = min(len, recv_len);
+    
+    unsafe { Ok((buf.assume_init(min_len), recv_len, addr)) }
 }
 
 
@@ -226,205 +184,7 @@ pub fn sendto<Fd: AsFd>(
     fd: Fd,
     buf: &[u8],
     flags: SendFlags,
-    addr: &SocketAddr,
+    addr: &impl SocketAddrArg,
 ) -> io::Result<usize> {
-    _sendto(fd.as_fd(), buf, flags, addr)
-}
-
-fn _sendto(
-    fd: BorrowedFd<'_>,
-    buf: &[u8],
-    flags: SendFlags,
-    addr: &SocketAddr,
-) -> io::Result<usize> {
-    match addr {
-        SocketAddr::V4(v4) => backend::net::syscalls::sendto_v4(fd, buf, flags, v4),
-        SocketAddr::V6(v6) => backend::net::syscalls::sendto_v6(fd, buf, flags, v6),
-    }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-pub fn sendto_any<Fd: AsFd>(
-    fd: Fd,
-    buf: &[u8],
-    flags: SendFlags,
-    addr: &SocketAddrAny,
-) -> io::Result<usize> {
-    _sendto_any(fd.as_fd(), buf, flags, addr)
-}
-
-fn _sendto_any(
-    fd: BorrowedFd<'_>,
-    buf: &[u8],
-    flags: SendFlags,
-    addr: &SocketAddrAny,
-) -> io::Result<usize> {
-    match addr {
-        SocketAddrAny::V4(v4) => backend::net::syscalls::sendto_v4(fd, buf, flags, v4),
-        SocketAddrAny::V6(v6) => backend::net::syscalls::sendto_v6(fd, buf, flags, v6),
-        #[cfg(unix)]
-        SocketAddrAny::Unix(unix) => backend::net::syscalls::sendto_unix(fd, buf, flags, unix),
-        #[cfg(target_os = "linux")]
-        SocketAddrAny::Xdp(xdp) => backend::net::syscalls::sendto_xdp(fd, buf, flags, xdp),
-    }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[inline]
-#[doc(alias = "sendto")]
-pub fn sendto_v4<Fd: AsFd>(
-    fd: Fd,
-    buf: &[u8],
-    flags: SendFlags,
-    addr: &SocketAddrV4,
-) -> io::Result<usize> {
-    backend::net::syscalls::sendto_v4(fd.as_fd(), buf, flags, addr)
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[inline]
-#[doc(alias = "sendto")]
-pub fn sendto_v6<Fd: AsFd>(
-    fd: Fd,
-    buf: &[u8],
-    flags: SendFlags,
-    addr: &SocketAddrV6,
-) -> io::Result<usize> {
-    backend::net::syscalls::sendto_v6(fd.as_fd(), buf, flags, addr)
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[cfg(unix)]
-#[inline]
-#[doc(alias = "sendto")]
-pub fn sendto_unix<Fd: AsFd>(
-    fd: Fd,
-    buf: &[u8],
-    flags: SendFlags,
-    addr: &SocketAddrUnix,
-) -> io::Result<usize> {
-    backend::net::syscalls::sendto_unix(fd.as_fd(), buf, flags, addr)
-}
-
-
-
-
-
-
-
-
-#[cfg(target_os = "linux")]
-#[inline]
-#[doc(alias = "sendto")]
-pub fn sendto_xdp<Fd: AsFd>(
-    fd: Fd,
-    buf: &[u8],
-    flags: SendFlags,
-    addr: &SocketAddrXdp,
-) -> io::Result<usize> {
-    backend::net::syscalls::sendto_xdp(fd.as_fd(), buf, flags, addr)
+    backend::net::syscalls::sendto(fd.as_fd(), buf, flags, addr)
 }

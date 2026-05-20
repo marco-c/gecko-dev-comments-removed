@@ -10,6 +10,11 @@ use std::{
 
 #[test]
 fn test_basic() {
+    
+    
+    #[cfg(target_os = "wasi")]
+    let _ = tempfile::env::override_temp_dir(std::path::Path::new("/tmp"));
+
     let mut tmpfile = tempfile::tempfile().unwrap();
     write!(tmpfile, "abcde").unwrap();
     tmpfile.seek(SeekFrom::Start(0)).unwrap();
@@ -20,6 +25,11 @@ fn test_basic() {
 
 #[test]
 fn test_cleanup() {
+    
+    
+    #[cfg(target_os = "wasi")]
+    let _ = tempfile::env::override_temp_dir(std::path::Path::new("/tmp"));
+
     let tmpdir = tempfile::tempdir().unwrap();
     {
         let mut tmpfile = tempfile::tempfile_in(&tmpdir).unwrap();

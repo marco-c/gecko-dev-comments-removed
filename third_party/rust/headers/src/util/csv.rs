@@ -1,9 +1,13 @@
 use std::fmt;
 
+use http::HeaderValue;
 
-pub(crate) fn from_comma_delimited<'i, I, T, E>(values: &mut I) -> Result<E, ::Error>
+use crate::Error;
+
+
+pub(crate) fn from_comma_delimited<'i, I, T, E>(values: &mut I) -> Result<E, Error>
 where
-    I: Iterator<Item = &'i ::HeaderValue>,
+    I: Iterator<Item = &'i HeaderValue>,
     T: ::std::str::FromStr,
     E: ::std::iter::FromIterator<T>,
 {
@@ -16,7 +20,7 @@ where
                         "" => None,
                         y => Some(y),
                     })
-                    .map(|x| x.parse().map_err(|_| ::Error::invalid()))
+                    .map(|x| x.parse().map_err(|_| Error::invalid()))
             })
         })
         .collect()

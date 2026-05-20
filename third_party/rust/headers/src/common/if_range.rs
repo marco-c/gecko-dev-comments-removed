@@ -1,9 +1,10 @@
 use std::time::SystemTime;
 
-use super::{ETag, LastModified};
-use util::{EntityTag, HttpDate};
-use HeaderValue;
+use http::HeaderValue;
 
+use super::{ETag, LastModified};
+use crate::util::{EntityTag, HttpDate, TryFromValues};
+use crate::Error;
 
 
 
@@ -79,8 +80,8 @@ enum IfRange_ {
     Date(HttpDate),
 }
 
-impl ::util::TryFromValues for IfRange_ {
-    fn try_from_values<'i, I>(values: &mut I) -> Result<Self, ::Error>
+impl TryFromValues for IfRange_ {
+    fn try_from_values<'i, I>(values: &mut I) -> Result<Self, Error>
     where
         I: Iterator<Item = &'i HeaderValue>,
     {
@@ -94,7 +95,7 @@ impl ::util::TryFromValues for IfRange_ {
                 let date = HttpDate::from_val(val)?;
                 Some(IfRange_::Date(date))
             })
-            .ok_or_else(::Error::invalid)
+            .ok_or_else(Error::invalid)
     }
 }
 

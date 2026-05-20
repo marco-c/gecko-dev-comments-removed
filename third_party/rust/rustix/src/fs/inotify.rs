@@ -47,19 +47,9 @@ use crate::backend::fs::syscalls;
 use crate::fd::{AsFd, OwnedFd};
 use crate::ffi::CStr;
 use crate::io;
-use crate::io::{read_uninit, Errno};
+use crate::io::{read, Errno};
 use core::mem::{align_of, size_of, MaybeUninit};
 use linux_raw_sys::general::inotify_event;
-
-#[deprecated(note = "Use `inotify::add_watch`.")]
-#[doc(hidden)]
-pub use add_watch as inotify_add_watch;
-#[deprecated(note = "Use `inotify::init`.")]
-#[doc(hidden)]
-pub use init as inotify_init;
-#[deprecated(note = "Use `inotify::remove_watch`.")]
-#[doc(hidden)]
-pub use remove_watch as inotify_remove_watch;
 
 
 
@@ -81,8 +71,8 @@ pub fn init(flags: inotify::CreateFlags) -> io::Result<OwnedFd> {
 
 #[doc(alias = "inotify_add_watch")]
 #[inline]
-pub fn add_watch<P: crate::path::Arg>(
-    inot: impl AsFd,
+pub fn add_watch<P: crate::path::Arg, Fd: AsFd>(
+    inot: Fd,
     path: P,
     flags: inotify::WatchFlags,
 ) -> io::Result<i32> {
@@ -95,7 +85,7 @@ pub fn add_watch<P: crate::path::Arg>(
 
 #[doc(alias = "inotify_rm_watch")]
 #[inline]
-pub fn remove_watch(inot: impl AsFd, wd: i32) -> io::Result<()> {
+pub fn remove_watch<Fd: AsFd>(inot: Fd, wd: i32) -> io::Result<()> {
     syscalls::inotify_rm_watch(inot.as_fd(), wd)
 }
 
@@ -132,15 +122,16 @@ impl<'buf, Fd: AsFd> Reader<'buf, Fd> {
 }
 
 
+#[doc(alias = "inotify_event")]
 #[derive(Debug)]
-pub struct InotifyEvent<'a> {
+pub struct Event<'a> {
     wd: i32,
     events: ReadFlags,
     cookie: u32,
     file_name: Option<&'a CStr>,
 }
 
-impl<'a> InotifyEvent<'a> {
+impl<'a> Event<'a> {
     
     #[inline]
     pub fn wd(&self) -> i32 {
@@ -182,9 +173,9 @@ impl<'buf, Fd: AsFd> Reader<'buf, Fd> {
     
     #[allow(unsafe_code)]
     #[allow(clippy::should_implement_trait)]
-    pub fn next(&mut self) -> io::Result<InotifyEvent<'_>> {
+    pub fn next(&mut self) -> io::Result<Event<'_>> {
         if self.is_buffer_empty() {
-            match read_uninit(self.fd.as_fd(), self.buf).map(|(init, _)| init.len()) {
+            match read(self.fd.as_fd(), &mut *self.buf).map(|(init, _)| init.len()) {
                 Ok(0) => return Err(Errno::INVAL),
                 Ok(bytes_read) => {
                     self.initialized = bytes_read;
@@ -205,7 +196,7 @@ impl<'buf, Fd: AsFd> Reader<'buf, Fd> {
 
         self.offset += size_of::<inotify_event>() + usize::try_from(event.len).unwrap();
 
-        Ok(InotifyEvent {
+        Ok(Event {
             wd: event.wd,
             events: ReadFlags::from_bits_retain(event.mask),
             cookie: event.cookie,

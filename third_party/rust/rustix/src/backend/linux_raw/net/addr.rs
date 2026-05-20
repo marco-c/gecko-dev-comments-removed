@@ -8,10 +8,14 @@
 
 use crate::backend::c;
 use crate::ffi::CStr;
+use crate::net::addr::SocketAddrLen;
+use crate::net::AddressFamily;
 use crate::{io, path};
 use core::cmp::Ordering;
 use core::hash::{Hash, Hasher};
 use core::{fmt, slice};
+#[cfg(feature = "alloc")]
+use {crate::ffi::CString, alloc::borrow::Cow, alloc::vec::Vec};
 
 
 #[derive(Clone)]
@@ -31,12 +35,15 @@ impl SocketAddrUnix {
     #[inline]
     fn _new(path: &CStr) -> io::Result<Self> {
         let mut unix = Self::init();
-        let bytes = path.to_bytes_with_nul();
+        let mut bytes = path.to_bytes_with_nul();
         if bytes.len() > unix.sun_path.len() {
-            return Err(io::Errno::NAMETOOLONG);
+            bytes = path.to_bytes(); 
+            if bytes.len() > unix.sun_path.len() {
+                return Err(io::Errno::NAMETOOLONG);
+            }
         }
         for (i, b) in bytes.iter().enumerate() {
-            unix.sun_path[i] = *b as _;
+            unix.sun_path[i] = bitcast!(*b);
         }
         let len = offsetof_sun_path() + bytes.len();
         let len = len.try_into().unwrap();
@@ -62,6 +69,24 @@ impl SocketAddrUnix {
         }
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn new_unnamed() -> Self {
+        Self {
+            unix: Self::init(),
+            len: offsetof_sun_path() as SocketAddrLen,
+        }
+    }
+
     const fn init() -> c::sockaddr_un {
         c::sockaddr_un {
             sun_family: c::AF_UNIX as _,
@@ -71,18 +96,53 @@ impl SocketAddrUnix {
 
     
     #[inline]
-    pub fn path(&self) -> Option<&CStr> {
-        let len = self.len();
-        if len != 0 && self.unix.sun_path[0] as u8 != b'\0' {
-            let end = len as usize - offsetof_sun_path();
-            let bytes = &self.unix.sun_path[..end];
+    #[cfg(feature = "alloc")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
+    pub fn path(&self) -> Option<Cow<'_, CStr>> {
+        let bytes = self.bytes()?;
+        if !bytes.is_empty() && bytes[0] != 0 {
+            if self.unix.sun_path.len() == bytes.len() {
+                
+                unsafe { Self::path_with_termination(bytes) }
+            } else {
+                
+                
+                Some(unsafe { CStr::from_bytes_with_nul_unchecked(bytes) }.into())
+            }
+        } else {
+            None
+        }
+    }
 
-            
-            let bytes = unsafe { slice::from_raw_parts(bytes.as_ptr().cast::<u8>(), bytes.len()) };
+    
+    
+    
+    #[cfg(feature = "alloc")]
+    #[cold]
+    unsafe fn path_with_termination(bytes: &[u8]) -> Option<Cow<'_, CStr>> {
+        let mut owned = Vec::with_capacity(bytes.len() + 1);
+        owned.extend_from_slice(bytes);
+        owned.push(b'\0');
+        
+        
+        Some(Cow::Owned(
+            CString::from_vec_with_nul_unchecked(owned).into(),
+        ))
+    }
 
-            
-            
-            unsafe { Some(CStr::from_bytes_with_nul_unchecked(bytes)) }
+    
+    
+    #[inline]
+    pub fn path_bytes(&self) -> Option<&[u8]> {
+        let bytes = self.bytes()?;
+        if !bytes.is_empty() && bytes[0] != 0 {
+            if self.unix.sun_path.len() == self.len() - offsetof_sun_path() {
+                
+                Some(bytes)
+            } else {
+                
+                Some(&bytes[..bytes.len() - 1])
+            }
         } else {
             None
         }
@@ -91,28 +151,39 @@ impl SocketAddrUnix {
     
     #[inline]
     pub fn abstract_name(&self) -> Option<&[u8]> {
-        let len = self.len();
-        if len != 0 && self.unix.sun_path[0] as u8 == b'\0' {
-            let end = len as usize - offsetof_sun_path();
-            let bytes = &self.unix.sun_path[1..end];
-
-            
-            let bytes = unsafe { slice::from_raw_parts(bytes.as_ptr().cast::<u8>(), bytes.len()) };
-
+        if let [0, bytes @ ..] = self.bytes()? {
             Some(bytes)
         } else {
             None
         }
     }
 
+    
     #[inline]
-    pub(crate) fn addr_len(&self) -> c::socklen_t {
-        self.len
+    pub fn is_unnamed(&self) -> bool {
+        self.bytes() == Some(&[])
+    }
+
+    #[inline]
+    pub(crate) fn addr_len(&self) -> SocketAddrLen {
+        bitcast!(self.len)
     }
 
     #[inline]
     pub(crate) fn len(&self) -> usize {
         self.addr_len() as usize
+    }
+
+    #[inline]
+    fn bytes(&self) -> Option<&[u8]> {
+        let len = self.len();
+        if len != 0 {
+            let bytes = &self.unix.sun_path[..len - offsetof_sun_path()];
+            
+            Some(unsafe { slice::from_raw_parts(bytes.as_ptr().cast(), bytes.len()) })
+        } else {
+            None
+        }
     }
 }
 
@@ -153,18 +224,70 @@ impl Hash for SocketAddrUnix {
 
 impl fmt::Debug for SocketAddrUnix {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        #[cfg(feature = "alloc")]
         if let Some(path) = self.path() {
-            path.fmt(f)
-        } else if let Some(name) = self.abstract_name() {
-            name.fmt(f)
-        } else {
-            "(unnamed)".fmt(f)
+            return path.fmt(f);
         }
+        if let Some(bytes) = self.path_bytes() {
+            if let Ok(s) = core::str::from_utf8(bytes) {
+                return s.fmt(f);
+            }
+            return bytes.fmt(f);
+        }
+        if let Some(name) = self.abstract_name() {
+            return name.fmt(f);
+        }
+        "(unnamed)".fmt(f)
     }
 }
 
 
-pub type SocketAddrStorage = c::sockaddr;
+
+
+
+#[repr(transparent)]
+#[derive(Copy, Clone)]
+#[doc(alias = "sockaddr_storage")]
+pub struct SocketAddrStorage(c::sockaddr_storage);
+
+
+
+
+unsafe impl Send for SocketAddrStorage {}
+
+
+unsafe impl Sync for SocketAddrStorage {}
+
+impl SocketAddrStorage {
+    
+    
+    pub fn zeroed() -> Self {
+        assert_eq!(c::AF_UNSPEC, 0);
+        
+        unsafe { core::mem::zeroed() }
+    }
+
+    
+    pub fn family(&self) -> AddressFamily {
+        
+        unsafe {
+            AddressFamily::from_raw(crate::backend::net::read_sockaddr::read_sa_family(
+                crate::utils::as_ptr(&self.0).cast::<c::sockaddr>(),
+            ))
+        }
+    }
+
+    
+    
+    pub fn clear_family(&mut self) {
+        
+        unsafe {
+            crate::backend::net::read_sockaddr::initialize_family_to_unspec(
+                crate::utils::as_mut_ptr(&mut self.0).cast::<c::sockaddr>(),
+            )
+        }
+    }
+}
 
 
 #[inline]

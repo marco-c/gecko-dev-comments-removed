@@ -20,21 +20,16 @@ use core::ptr::{null_mut, read_unaligned, NonNull};
 use core::sync::atomic::AtomicU8;
 use core::sync::atomic::Ordering::Relaxed;
 use core::sync::atomic::{AtomicPtr, AtomicUsize};
-use linux_raw_sys::elf::*;
-use linux_raw_sys::general::{
-    AT_BASE, AT_CLKTCK, AT_EXECFN, AT_HWCAP, AT_HWCAP2, AT_MINSIGSTKSZ, AT_NULL, AT_PAGESZ,
-    AT_SYSINFO_EHDR,
+use linux_raw_sys::auxvec::{
+    AT_CLKTCK, AT_EXECFN, AT_HWCAP, AT_HWCAP2, AT_MINSIGSTKSZ, AT_NULL, AT_PAGESZ, AT_SYSINFO_EHDR,
 };
 #[cfg(feature = "runtime")]
-use linux_raw_sys::general::{
+use linux_raw_sys::auxvec::{
     AT_EGID, AT_ENTRY, AT_EUID, AT_GID, AT_PHDR, AT_PHENT, AT_PHNUM, AT_RANDOM, AT_SECURE, AT_UID,
 };
+use linux_raw_sys::elf::*;
 #[cfg(feature = "alloc")]
 use {alloc::borrow::Cow, alloc::vec};
-
-
-#[cfg(target_arch = "s390x")]
-const EM_CURRENT: u16 = 22; 
 
 #[cfg(feature = "param")]
 #[inline]
@@ -213,6 +208,8 @@ const PR_GET_AUXV: c::c_int = 0x4155_5856;
 
 
 
+
+
 #[cold]
 fn pr_get_auxv_static(buffer: &mut [u8; 512]) -> Result<&mut [u8], crate::io::Result<usize>> {
     let len = unsafe {
@@ -237,6 +234,8 @@ fn pr_get_auxv_static(buffer: &mut [u8; 512]) -> Result<&mut [u8], crate::io::Re
 
 
 
+
+
 #[cfg(feature = "alloc")]
 #[cold]
 fn pr_get_auxv_dynamic(buffer: &mut [u8; 512]) -> crate::io::Result<Cow<'_, [u8]>> {
@@ -248,7 +247,7 @@ fn pr_get_auxv_dynamic(buffer: &mut [u8; 512]) -> crate::io::Result<Cow<'_, [u8]
     };
 
     
-    let mut buffer = vec![0u8; len];
+    let mut buffer = vec![0_u8; len];
     let len = unsafe {
         ret_usize(syscall_always_asm!(
             __NR_prctl,
@@ -282,7 +281,8 @@ fn maybe_init_auxv() {
 
 #[cold]
 fn init_auxv_impl() -> Result<(), ()> {
-    let mut buffer = [0u8; 512];
+    
+    let mut buffer = [0_u8; 512];
 
     
     
@@ -400,13 +400,12 @@ unsafe fn init_from_aux_iter(aux_iter: impl Iterator<Item = Elf_auxv_t>) -> Opti
             AT_HWCAP2 => hwcap2 = a_val as usize,
             AT_MINSIGSTKSZ => minsigstksz = a_val as usize,
             AT_EXECFN => execfn = check_raw_pointer::<c::c_char>(a_val as *mut _)?.as_ptr(),
-            AT_SYSINFO_EHDR => sysinfo_ehdr = check_elf_base(a_val as *mut _)?.as_ptr(),
 
-            AT_BASE => {
-                
-                
-                if !a_val.is_null() {
-                    let _ = check_elf_base(a_val.cast())?;
+            
+            
+            AT_SYSINFO_EHDR => {
+                if let Some(value) = check_elf_base(a_val as *mut _) {
+                    sysinfo_ehdr = value.as_ptr();
                 }
             }
 
@@ -448,7 +447,6 @@ unsafe fn init_from_aux_iter(aux_iter: impl Iterator<Item = Elf_auxv_t>) -> Opti
     }
 
     
-    
     PAGE_SIZE.store(pagesz, Relaxed);
     CLOCK_TICKS_PER_SECOND.store(clktck, Relaxed);
     HWCAP.store(hwcap, Relaxed);
@@ -486,10 +484,7 @@ unsafe fn check_elf_base(base: *const Elf_Ehdr) -> Option<NonNull<Elf_Ehdr>> {
         return None;
     }
 
-    let hdr = match check_raw_pointer::<Elf_Ehdr>(base as *mut _) {
-        Some(hdr) => hdr,
-        None => return None,
-    };
+    let hdr = check_raw_pointer::<Elf_Ehdr>(base as *mut _)?;
 
     let hdr = hdr.as_ref();
     if hdr.e_ident[..SELFMAG] != ELFMAG {
@@ -573,7 +568,7 @@ impl Iterator for AuxFile {
         let mut buf = [0_u8; size_of::<Self::Item>()];
         let mut slice = &mut buf[..];
         while !slice.is_empty() {
-            match crate::io::read(&self.0, slice) {
+            match crate::io::read(&self.0, &mut *slice) {
                 Ok(0) => panic!("unexpected end of auxv file"),
                 Ok(n) => slice = &mut slice[n..],
                 Err(crate::io::Errno::INTR) => continue,

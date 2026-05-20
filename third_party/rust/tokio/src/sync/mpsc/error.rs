@@ -24,7 +24,6 @@ impl<T> Error for SendError<T> {}
 
 
 
-
 #[derive(PartialEq, Eq, Clone, Copy)]
 pub enum TrySendError<T> {
     
@@ -122,7 +121,7 @@ cfg_time! {
     // ===== SendTimeoutError =====
 
     #[derive(PartialEq, Eq, Clone, Copy)]
-    /// Error returned by [`Sender::send_timeout`](super::Sender::send_timeout)].
+    /// Error returned by [`Sender::send_timeout`](super::Sender::send_timeout).
     pub enum SendTimeoutError<T> {
         /// The data could not be sent on the channel because the channel is
         /// full, and the timeout to send has elapsed.

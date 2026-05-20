@@ -372,6 +372,28 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 use crate::codec::{Decoder, Encoder, Framed, FramedRead, FramedWrite};
 
 use tokio::io::{AsyncRead, AsyncWrite};
@@ -380,6 +402,10 @@ use bytes::{Buf, BufMut, Bytes, BytesMut};
 use std::error::Error as StdError;
 use std::io::{self, Cursor};
 use std::{cmp, fmt, mem};
+
+
+
+
 
 
 
@@ -522,15 +548,11 @@ impl LengthDelimitedCodec {
             }
         };
 
-        let num_skip = self.builder.get_num_skip();
-
-        if num_skip > 0 {
-            src.advance(num_skip);
-        }
+        src.advance(self.builder.get_num_skip());
 
         
         
-        src.reserve(n);
+        src.reserve(n.saturating_sub(src.len()));
 
         Ok(Some(n))
     }
@@ -568,7 +590,7 @@ impl Decoder for LengthDelimitedCodec {
                 self.state = DecodeState::Head;
 
                 
-                src.reserve(self.builder.num_head_bytes());
+                src.reserve(self.builder.num_head_bytes().saturating_sub(src.len()));
 
                 Ok(Some(data))
             }
@@ -639,7 +661,6 @@ mod builder {
     impl LengthFieldType for u64 {}
 
     #[cfg(any(
-        target_pointer_width = "8",
         target_pointer_width = "16",
         target_pointer_width = "32",
         target_pointer_width = "64",
@@ -939,8 +960,12 @@ impl Builder {
     
     
     pub fn new_codec(&self) -> LengthDelimitedCodec {
+        let mut builder = *self;
+
+        builder.adjust_max_frame_len();
+
         LengthDelimitedCodec {
-            builder: *self,
+            builder,
             state: DecodeState::Head,
         }
     }
@@ -1021,6 +1046,20 @@ impl Builder {
     fn get_num_skip(&self) -> usize {
         self.num_skip
             .unwrap_or(self.length_field_offset + self.length_field_len)
+    }
+
+    fn adjust_max_frame_len(&mut self) {
+        
+        let max_number = match 1u64.checked_shl((8 * self.length_field_len) as u32) {
+            Some(shl) => shl - 1,
+            None => u64::MAX,
+        };
+
+        let max_allowed_len = max_number.saturating_add_signed(self.length_adjustment as i64);
+
+        if self.max_frame_len as u64 > max_allowed_len {
+            self.max_frame_len = usize::try_from(max_allowed_len).unwrap_or(usize::MAX);
+        }
     }
 }
 

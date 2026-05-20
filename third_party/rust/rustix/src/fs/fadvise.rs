@@ -1,6 +1,11 @@
 use crate::{backend, io};
 use backend::fd::AsFd;
 use backend::fs::types::Advice;
+use core::num::NonZeroU64;
+
+
+
+
 
 
 
@@ -13,6 +18,11 @@ use backend::fs::types::Advice;
 
 #[inline]
 #[doc(alias = "posix_fadvise")]
-pub fn fadvise<Fd: AsFd>(fd: Fd, offset: u64, len: u64, advice: Advice) -> io::Result<()> {
+pub fn fadvise<Fd: AsFd>(
+    fd: Fd,
+    offset: u64,
+    len: Option<NonZeroU64>,
+    advice: Advice,
+) -> io::Result<()> {
     backend::fs::syscalls::fadvise(fd.as_fd(), offset, len, advice)
 }

@@ -1,13 +1,9 @@
 
 
-
-
-
-
 #![allow(unsafe_code)]
 
 use crate::backend;
-#[cfg(linux_kernel)]
+#[cfg(target_os = "linux")]
 use crate::backend::c;
 use crate::ffi::CStr;
 #[cfg(not(any(target_os = "espidf", target_os = "emscripten", target_os = "vita")))]
@@ -20,7 +16,7 @@ pub use backend::system::types::Sysinfo;
 #[cfg(linux_kernel)]
 use crate::fd::AsFd;
 #[cfg(linux_kernel)]
-use c::c_int;
+use crate::ffi::c_int;
 
 
 
@@ -159,6 +155,7 @@ pub fn sysinfo() -> Sysinfo {
 #[cfg(not(any(
     target_os = "emscripten",
     target_os = "espidf",
+    target_os = "horizon",
     target_os = "redox",
     target_os = "vita",
     target_os = "wasi"
@@ -169,11 +166,38 @@ pub fn sethostname(name: &[u8]) -> io::Result<()> {
 }
 
 
+
+
+
+
+
+
+
+#[cfg(not(any(
+    target_os = "cygwin",
+    target_os = "emscripten",
+    target_os = "espidf",
+    target_os = "haiku",
+    target_os = "horizon",
+    target_os = "illumos",
+    target_os = "redox",
+    target_os = "solaris",
+    target_os = "vita",
+    target_os = "wasi",
+)))]
+#[inline]
+pub fn setdomainname(name: &[u8]) -> io::Result<()> {
+    backend::system::syscalls::setdomainname(name)
+}
+
+
 #[cfg(target_os = "linux")]
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 #[repr(i32)]
 #[non_exhaustive]
 pub enum RebootCommand {
+    
+    
     
     
     
@@ -258,4 +282,36 @@ pub fn finit_module<Fd: AsFd>(fd: Fd, param_values: &CStr, flags: c_int) -> io::
 #[cfg(linux_kernel)]
 pub fn delete_module(name: &CStr, flags: c_int) -> io::Result<()> {
     backend::system::syscalls::delete_module(name, flags)
+}
+
+#[cfg(test)]
+mod tests {
+    #[allow(unused_imports)]
+    use super::*;
+    #[allow(unused_imports)]
+    use crate::backend::c;
+
+    #[cfg(linux_kernel)]
+    #[test]
+    fn test_sysinfo_layouts() {
+        
+        
+        
+        assert_eq!(
+            core::mem::align_of::<Sysinfo>(),
+            core::mem::align_of::<c::sysinfo>()
+        );
+        check_renamed_struct_field!(Sysinfo, sysinfo, uptime);
+        check_renamed_struct_field!(Sysinfo, sysinfo, loads);
+        check_renamed_struct_field!(Sysinfo, sysinfo, totalram);
+        check_renamed_struct_field!(Sysinfo, sysinfo, freeram);
+        check_renamed_struct_field!(Sysinfo, sysinfo, sharedram);
+        check_renamed_struct_field!(Sysinfo, sysinfo, bufferram);
+        check_renamed_struct_field!(Sysinfo, sysinfo, totalswap);
+        check_renamed_struct_field!(Sysinfo, sysinfo, freeswap);
+        check_renamed_struct_field!(Sysinfo, sysinfo, procs);
+        check_renamed_struct_field!(Sysinfo, sysinfo, totalhigh);
+        check_renamed_struct_field!(Sysinfo, sysinfo, freehigh);
+        check_renamed_struct_field!(Sysinfo, sysinfo, mem_unit);
+    }
 }

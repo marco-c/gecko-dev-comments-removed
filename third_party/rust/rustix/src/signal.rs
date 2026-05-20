@@ -1,4 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+#![allow(unsafe_code)]
+
 use crate::backend::c;
+use core::fmt;
+use core::num::NonZeroI32;
 
 
 
@@ -6,50 +21,78 @@ use crate::backend::c;
 
 
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
-#[repr(i32)]
-pub enum Signal {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[doc(alias = "SIGRTMIN")]
+#[doc(alias = "SIGRTMAX")]
+#[derive(Copy, Clone, Eq, PartialEq)]
+#[repr(transparent)]
+pub struct Signal(NonZeroI32);
+
+
+#[rustfmt::skip]
+impl Signal {
     
-    Hup = c::SIGHUP,
+    pub const HUP: Self = Self(unsafe { NonZeroI32::new_unchecked(c::SIGHUP) });
     
-    Int = c::SIGINT,
+    pub const INT: Self = Self(unsafe { NonZeroI32::new_unchecked(c::SIGINT) });
     
-    Quit = c::SIGQUIT,
+    pub const QUIT: Self = Self(unsafe { NonZeroI32::new_unchecked(c::SIGQUIT) });
     
-    Ill = c::SIGILL,
+    pub const ILL: Self = Self(unsafe { NonZeroI32::new_unchecked(c::SIGILL) });
     
-    Trap = c::SIGTRAP,
+    pub const TRAP: Self = Self(unsafe { NonZeroI32::new_unchecked(c::SIGTRAP) });
     
-    #[doc(alias = "Iot")]
-    #[doc(alias = "Abrt")]
-    Abort = c::SIGABRT,
+    #[doc(alias = "IOT")]
+    #[doc(alias = "ABRT")]
+    pub const ABORT: Self = Self(unsafe { NonZeroI32::new_unchecked(c::SIGABRT) });
     
-    Bus = c::SIGBUS,
+    pub const BUS: Self = Self(unsafe { NonZeroI32::new_unchecked(c::SIGBUS) });
     
-    Fpe = c::SIGFPE,
+    pub const FPE: Self = Self(unsafe { NonZeroI32::new_unchecked(c::SIGFPE) });
     
-    Kill = c::SIGKILL,
+    pub const KILL: Self = Self(unsafe { NonZeroI32::new_unchecked(c::SIGKILL) });
     
     #[cfg(not(target_os = "vita"))]
-    Usr1 = c::SIGUSR1,
+    pub const USR1: Self = Self(unsafe { NonZeroI32::new_unchecked(c::SIGUSR1) });
     
-    Segv = c::SIGSEGV,
+    pub const SEGV: Self = Self(unsafe { NonZeroI32::new_unchecked(c::SIGSEGV) });
     
     #[cfg(not(target_os = "vita"))]
-    Usr2 = c::SIGUSR2,
+    pub const USR2: Self = Self(unsafe { NonZeroI32::new_unchecked(c::SIGUSR2) });
     
-    Pipe = c::SIGPIPE,
+    pub const PIPE: Self = Self(unsafe { NonZeroI32::new_unchecked(c::SIGPIPE) });
     
-    #[doc(alias = "Alrm")]
-    Alarm = c::SIGALRM,
+    #[doc(alias = "ALRM")]
+    pub const ALARM: Self = Self(unsafe { NonZeroI32::new_unchecked(c::SIGALRM) });
     
-    Term = c::SIGTERM,
+    pub const TERM: Self = Self(unsafe { NonZeroI32::new_unchecked(c::SIGTERM) });
     
     #[cfg(not(any(
         bsd,
         solarish,
         target_os = "aix",
+        target_os = "cygwin",
         target_os = "haiku",
+        target_os = "horizon",
         target_os = "hurd",
         target_os = "nto",
         target_os = "vita",
@@ -63,58 +106,64 @@ pub enum Signal {
                 target_arch = "sparc",
                 target_arch = "sparc64"
             ),
-        )
+        ),
     )))]
-    Stkflt = c::SIGSTKFLT,
+    pub const STKFLT: Self = Self(unsafe { NonZeroI32::new_unchecked(c::SIGSTKFLT) });
     
     #[cfg(not(target_os = "vita"))]
-    #[doc(alias = "Chld")]
-    Child = c::SIGCHLD,
+    #[doc(alias = "CHLD")]
+    pub const CHILD: Self = Self(unsafe { NonZeroI32::new_unchecked(c::SIGCHLD) });
     
     #[cfg(not(target_os = "vita"))]
-    Cont = c::SIGCONT,
+    pub const CONT: Self = Self(unsafe { NonZeroI32::new_unchecked(c::SIGCONT) });
     
     #[cfg(not(target_os = "vita"))]
-    Stop = c::SIGSTOP,
+    pub const STOP: Self = Self(unsafe { NonZeroI32::new_unchecked(c::SIGSTOP) });
     
     #[cfg(not(target_os = "vita"))]
-    Tstp = c::SIGTSTP,
+    pub const TSTP: Self = Self(unsafe { NonZeroI32::new_unchecked(c::SIGTSTP) });
     
     #[cfg(not(target_os = "vita"))]
-    Ttin = c::SIGTTIN,
+    pub const TTIN: Self = Self(unsafe { NonZeroI32::new_unchecked(c::SIGTTIN) });
     
     #[cfg(not(target_os = "vita"))]
-    Ttou = c::SIGTTOU,
+    pub const TTOU: Self = Self(unsafe { NonZeroI32::new_unchecked(c::SIGTTOU) });
     
     #[cfg(not(target_os = "vita"))]
-    Urg = c::SIGURG,
+    pub const URG: Self = Self(unsafe { NonZeroI32::new_unchecked(c::SIGURG) });
     
     #[cfg(not(target_os = "vita"))]
-    Xcpu = c::SIGXCPU,
+    pub const XCPU: Self = Self(unsafe { NonZeroI32::new_unchecked(c::SIGXCPU) });
     
     #[cfg(not(target_os = "vita"))]
-    Xfsz = c::SIGXFSZ,
+    pub const XFSZ: Self = Self(unsafe { NonZeroI32::new_unchecked(c::SIGXFSZ) });
     
     #[cfg(not(target_os = "vita"))]
-    #[doc(alias = "Vtalrm")]
-    Vtalarm = c::SIGVTALRM,
+    #[doc(alias = "VTALRM")]
+    pub const VTALARM: Self = Self(unsafe { NonZeroI32::new_unchecked(c::SIGVTALRM) });
     
     #[cfg(not(target_os = "vita"))]
-    Prof = c::SIGPROF,
+    pub const PROF: Self = Self(unsafe { NonZeroI32::new_unchecked(c::SIGPROF) });
     
     #[cfg(not(target_os = "vita"))]
-    Winch = c::SIGWINCH,
+    pub const WINCH: Self = Self(unsafe { NonZeroI32::new_unchecked(c::SIGWINCH) });
     
-    #[doc(alias = "Poll")]
+    #[doc(alias = "POLL")]
     #[cfg(not(any(target_os = "haiku", target_os = "vita")))]
-    Io = c::SIGIO,
+    pub const IO: Self = Self(unsafe { NonZeroI32::new_unchecked(c::SIGIO) });
     
-    #[cfg(not(any(bsd, target_os = "haiku", target_os = "hurd", target_os = "vita")))]
-    #[doc(alias = "Pwr")]
-    Power = c::SIGPWR,
+    #[cfg(not(any(
+        bsd,
+        target_os = "haiku",
+        target_os = "horizon",
+        target_os = "hurd",
+        target_os = "vita"
+    )))]
+    #[doc(alias = "PWR")]
+    pub const POWER: Self = Self(unsafe { NonZeroI32::new_unchecked(c::SIGPWR) });
     
-    #[doc(alias = "Unused")]
-    Sys = c::SIGSYS,
+    #[doc(alias = "UNUSED")]
+    pub const SYS: Self = Self(unsafe { NonZeroI32::new_unchecked(c::SIGSYS) });
     
     #[cfg(any(
         bsd,
@@ -133,45 +182,138 @@ pub enum Signal {
             )
         )
     ))]
-    Emt = c::SIGEMT,
+    pub const EMT: Self = Self(unsafe { NonZeroI32::new_unchecked(c::SIGEMT) });
     
     #[cfg(bsd)]
-    Info = c::SIGINFO,
+    pub const INFO: Self = Self(unsafe { NonZeroI32::new_unchecked(c::SIGINFO) });
     
     #[cfg(target_os = "freebsd")]
-    #[doc(alias = "Lwp")]
-    Thr = c::SIGTHR,
+    #[doc(alias = "LWP")]
+    pub const THR: Self = Self(unsafe { NonZeroI32::new_unchecked(c::SIGTHR) });
     
     #[cfg(target_os = "freebsd")]
-    Librt = c::SIGLIBRT,
+    pub const LIBRT: Self = Self(unsafe { NonZeroI32::new_unchecked(c::SIGLIBRT) });
 }
 
 impl Signal {
     
-    pub fn from_raw(sig: c::c_int) -> Option<Self> {
-        match sig {
-            c::SIGHUP => Some(Self::Hup),
-            c::SIGINT => Some(Self::Int),
-            c::SIGQUIT => Some(Self::Quit),
-            c::SIGILL => Some(Self::Ill),
-            c::SIGTRAP => Some(Self::Trap),
-            c::SIGABRT => Some(Self::Abort),
-            c::SIGBUS => Some(Self::Bus),
-            c::SIGFPE => Some(Self::Fpe),
-            c::SIGKILL => Some(Self::Kill),
+    
+    
+    #[inline]
+    pub const fn as_raw(self) -> i32 {
+        self.0.get()
+    }
+
+    
+    #[inline]
+    pub const fn as_raw_nonzero(self) -> NonZeroI32 {
+        self.0
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub const unsafe fn from_raw_unchecked(sig: i32) -> Self {
+        Self::from_raw_nonzero_unchecked(NonZeroI32::new_unchecked(sig))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub const unsafe fn from_raw_nonzero_unchecked(sig: NonZeroI32) -> Self {
+        Self(sig)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub const fn from_named_raw(sig: i32) -> Option<Self> {
+        if let Some(sig) = NonZeroI32::new(sig) {
+            Self::from_named_raw_nonzero(sig)
+        } else {
+            None
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub const fn from_named_raw_nonzero(sig: NonZeroI32) -> Option<Self> {
+        match sig.get() {
+            c::SIGHUP => Some(Self::HUP),
+            c::SIGINT => Some(Self::INT),
+            c::SIGQUIT => Some(Self::QUIT),
+            c::SIGILL => Some(Self::ILL),
+            c::SIGTRAP => Some(Self::TRAP),
+            c::SIGABRT => Some(Self::ABORT),
+            c::SIGBUS => Some(Self::BUS),
+            c::SIGFPE => Some(Self::FPE),
+            c::SIGKILL => Some(Self::KILL),
             #[cfg(not(target_os = "vita"))]
-            c::SIGUSR1 => Some(Self::Usr1),
-            c::SIGSEGV => Some(Self::Segv),
+            c::SIGUSR1 => Some(Self::USR1),
+            c::SIGSEGV => Some(Self::SEGV),
             #[cfg(not(target_os = "vita"))]
-            c::SIGUSR2 => Some(Self::Usr2),
-            c::SIGPIPE => Some(Self::Pipe),
-            c::SIGALRM => Some(Self::Alarm),
-            c::SIGTERM => Some(Self::Term),
+            c::SIGUSR2 => Some(Self::USR2),
+            c::SIGPIPE => Some(Self::PIPE),
+            c::SIGALRM => Some(Self::ALARM),
+            c::SIGTERM => Some(Self::TERM),
             #[cfg(not(any(
                 bsd,
                 solarish,
                 target_os = "aix",
+                target_os = "cygwin",
                 target_os = "haiku",
+                target_os = "horizon",
                 target_os = "hurd",
                 target_os = "nto",
                 target_os = "vita",
@@ -187,36 +329,42 @@ impl Signal {
                     ),
                 )
             )))]
-            c::SIGSTKFLT => Some(Self::Stkflt),
+            c::SIGSTKFLT => Some(Self::STKFLT),
             #[cfg(not(target_os = "vita"))]
-            c::SIGCHLD => Some(Self::Child),
+            c::SIGCHLD => Some(Self::CHILD),
             #[cfg(not(target_os = "vita"))]
-            c::SIGCONT => Some(Self::Cont),
+            c::SIGCONT => Some(Self::CONT),
             #[cfg(not(target_os = "vita"))]
-            c::SIGSTOP => Some(Self::Stop),
+            c::SIGSTOP => Some(Self::STOP),
             #[cfg(not(target_os = "vita"))]
-            c::SIGTSTP => Some(Self::Tstp),
+            c::SIGTSTP => Some(Self::TSTP),
             #[cfg(not(target_os = "vita"))]
-            c::SIGTTIN => Some(Self::Ttin),
+            c::SIGTTIN => Some(Self::TTIN),
             #[cfg(not(target_os = "vita"))]
-            c::SIGTTOU => Some(Self::Ttou),
+            c::SIGTTOU => Some(Self::TTOU),
             #[cfg(not(target_os = "vita"))]
-            c::SIGURG => Some(Self::Urg),
+            c::SIGURG => Some(Self::URG),
             #[cfg(not(target_os = "vita"))]
-            c::SIGXCPU => Some(Self::Xcpu),
+            c::SIGXCPU => Some(Self::XCPU),
             #[cfg(not(target_os = "vita"))]
-            c::SIGXFSZ => Some(Self::Xfsz),
+            c::SIGXFSZ => Some(Self::XFSZ),
             #[cfg(not(target_os = "vita"))]
-            c::SIGVTALRM => Some(Self::Vtalarm),
+            c::SIGVTALRM => Some(Self::VTALARM),
             #[cfg(not(target_os = "vita"))]
-            c::SIGPROF => Some(Self::Prof),
+            c::SIGPROF => Some(Self::PROF),
             #[cfg(not(target_os = "vita"))]
-            c::SIGWINCH => Some(Self::Winch),
+            c::SIGWINCH => Some(Self::WINCH),
             #[cfg(not(any(target_os = "haiku", target_os = "vita")))]
-            c::SIGIO => Some(Self::Io),
-            #[cfg(not(any(bsd, target_os = "haiku", target_os = "hurd", target_os = "vita")))]
-            c::SIGPWR => Some(Self::Power),
-            c::SIGSYS => Some(Self::Sys),
+            c::SIGIO => Some(Self::IO),
+            #[cfg(not(any(
+                bsd,
+                target_os = "haiku",
+                target_os = "horizon",
+                target_os = "hurd",
+                target_os = "vita"
+            )))]
+            c::SIGPWR => Some(Self::POWER),
+            c::SIGSYS => Some(Self::SYS),
             #[cfg(any(
                 bsd,
                 solarish,
@@ -234,19 +382,158 @@ impl Signal {
                     )
                 )
             ))]
-            c::SIGEMT => Some(Self::Emt),
+            c::SIGEMT => Some(Self::EMT),
             #[cfg(bsd)]
-            c::SIGINFO => Some(Self::Info),
+            c::SIGINFO => Some(Self::INFO),
             #[cfg(target_os = "freebsd")]
-            c::SIGTHR => Some(Self::Thr),
+            c::SIGTHR => Some(Self::THR),
             #[cfg(target_os = "freebsd")]
-            c::SIGLIBRT => Some(Self::Librt),
+            c::SIGLIBRT => Some(Self::LIBRT),
+
             _ => None,
         }
     }
 }
 
-#[test]
-fn test_sizes() {
-    assert_eq_size!(Signal, c::c_int);
+impl fmt::Debug for Signal {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match *self {
+            Self::HUP => "Signal::HUP".fmt(f),
+            Self::INT => "Signal::INT".fmt(f),
+            Self::QUIT => "Signal::QUIT".fmt(f),
+            Self::ILL => "Signal::ILL".fmt(f),
+            Self::TRAP => "Signal::TRAP".fmt(f),
+            Self::ABORT => "Signal::ABORT".fmt(f),
+            Self::BUS => "Signal::BUS".fmt(f),
+            Self::FPE => "Signal::FPE".fmt(f),
+            Self::KILL => "Signal::KILL".fmt(f),
+            #[cfg(not(target_os = "vita"))]
+            Self::USR1 => "Signal::USR1".fmt(f),
+            Self::SEGV => "Signal::SEGV".fmt(f),
+            #[cfg(not(target_os = "vita"))]
+            Self::USR2 => "Signal::USR2".fmt(f),
+            Self::PIPE => "Signal::PIPE".fmt(f),
+            Self::ALARM => "Signal::ALARM".fmt(f),
+            Self::TERM => "Signal::TERM".fmt(f),
+            #[cfg(not(any(
+                bsd,
+                solarish,
+                target_os = "aix",
+                target_os = "cygwin",
+                target_os = "haiku",
+                target_os = "horizon",
+                target_os = "hurd",
+                target_os = "nto",
+                target_os = "vita",
+                all(
+                    linux_kernel,
+                    any(
+                        target_arch = "mips",
+                        target_arch = "mips32r6",
+                        target_arch = "mips64",
+                        target_arch = "mips64r6",
+                        target_arch = "sparc",
+                        target_arch = "sparc64"
+                    ),
+                ),
+            )))]
+            Self::STKFLT => "Signal::STKFLT".fmt(f),
+            #[cfg(not(target_os = "vita"))]
+            Self::CHILD => "Signal::CHILD".fmt(f),
+            #[cfg(not(target_os = "vita"))]
+            Self::CONT => "Signal::CONT".fmt(f),
+            #[cfg(not(target_os = "vita"))]
+            Self::STOP => "Signal::STOP".fmt(f),
+            #[cfg(not(target_os = "vita"))]
+            Self::TSTP => "Signal::TSTP".fmt(f),
+            #[cfg(not(target_os = "vita"))]
+            Self::TTIN => "Signal::TTIN".fmt(f),
+            #[cfg(not(target_os = "vita"))]
+            Self::TTOU => "Signal::TTOU".fmt(f),
+            #[cfg(not(target_os = "vita"))]
+            Self::URG => "Signal::URG".fmt(f),
+            #[cfg(not(target_os = "vita"))]
+            Self::XCPU => "Signal::XCPU".fmt(f),
+            #[cfg(not(target_os = "vita"))]
+            Self::XFSZ => "Signal::XFSZ".fmt(f),
+            #[cfg(not(target_os = "vita"))]
+            Self::VTALARM => "Signal::VTALARM".fmt(f),
+            #[cfg(not(target_os = "vita"))]
+            Self::PROF => "Signal::PROF".fmt(f),
+            #[cfg(not(target_os = "vita"))]
+            Self::WINCH => "Signal::WINCH".fmt(f),
+            #[cfg(not(any(target_os = "haiku", target_os = "vita")))]
+            Self::IO => "Signal::IO".fmt(f),
+            #[cfg(not(any(
+                bsd,
+                target_os = "haiku",
+                target_os = "horizon",
+                target_os = "hurd",
+                target_os = "vita"
+            )))]
+            Self::POWER => "Signal::POWER".fmt(f),
+            Self::SYS => "Signal::SYS".fmt(f),
+            #[cfg(any(
+                bsd,
+                solarish,
+                target_os = "aix",
+                target_os = "hermit",
+                all(
+                    linux_kernel,
+                    any(
+                        target_arch = "mips",
+                        target_arch = "mips32r6",
+                        target_arch = "mips64",
+                        target_arch = "mips64r6",
+                        target_arch = "sparc",
+                        target_arch = "sparc64"
+                    )
+                )
+            ))]
+            Self::EMT => "Signal::EMT".fmt(f),
+            #[cfg(bsd)]
+            Self::INFO => "Signal::INFO".fmt(f),
+            #[cfg(target_os = "freebsd")]
+            Self::THR => "Signal::THR".fmt(f),
+            #[cfg(target_os = "freebsd")]
+            Self::LIBRT => "Signal::LIBRT".fmt(f),
+
+            n => {
+                "Signal::from_raw(".fmt(f)?;
+                n.as_raw().fmt(f)?;
+                ")".fmt(f)
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_basics() {
+        assert_eq!(Signal::HUP.as_raw(), libc::SIGHUP);
+        unsafe {
+            assert_eq!(Signal::from_raw_unchecked(libc::SIGHUP), Signal::HUP);
+            assert_eq!(
+                Signal::from_raw_nonzero_unchecked(NonZeroI32::new(libc::SIGHUP).unwrap()),
+                Signal::HUP
+            );
+        }
+    }
+
+    #[test]
+    fn test_named() {
+        assert_eq!(Signal::from_named_raw(-1), None);
+        assert_eq!(Signal::from_named_raw(0), None);
+        assert_eq!(Signal::from_named_raw(c::SIGHUP), Some(Signal::HUP));
+        assert_eq!(Signal::from_named_raw(c::SIGSEGV), Some(Signal::SEGV));
+        assert_eq!(Signal::from_named_raw(c::SIGSYS), Some(Signal::SYS));
+        #[cfg(any(linux_like, solarish, target_os = "hurd"))]
+        {
+            assert_eq!(Signal::from_named_raw(libc::SIGRTMIN()), None);
+            assert_eq!(Signal::from_named_raw(libc::SIGRTMAX()), None);
+        }
+    }
 }
