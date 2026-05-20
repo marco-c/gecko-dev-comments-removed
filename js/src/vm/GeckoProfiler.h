@@ -114,19 +114,12 @@ class BaseScript;
 class GeckoProfilerThread;
 class ScriptSource;
 
-
-
-
-using ProfileStringMap = HashMap<BaseScript*, JS::UniqueChars,
-                                 DefaultHasher<BaseScript*>, SystemAllocPolicy>;
-
 using ProfilerScriptSourceSet =
     HashSet<RefPtr<ScriptSource>, PointerHasher<ScriptSource*>,
             SystemAllocPolicy>;
 
 class GeckoProfilerRuntime {
   JSRuntime* rt;
-  MainThreadData<ProfileStringMap> strings_;
   RWExclusiveData<ProfilerScriptSourceSet> scriptSources_;
   bool slowAssertions;
   uint32_t enabled_;
@@ -158,8 +151,6 @@ class GeckoProfilerRuntime {
   static JS::UniqueChars allocProfileString(JSContext* cx, BaseScript* script);
   const char* profileString(JSContext* cx, BaseScript* script);
 
-  void onScriptFinalized(BaseScript* script);
-
   void markEvent(
       const char* event, const char* details,
       JS::ProfilingCategoryPair jsPair = JS::ProfilingCategoryPair::JS);
@@ -178,8 +169,6 @@ class GeckoProfilerRuntime {
   void markTerminatingFlow(
       const char* markerName, uint64_t flowId,
       JS::ProfilingCategoryPair jsPair = JS::ProfilingCategoryPair::JS);
-
-  ProfileStringMap& strings() { return strings_.ref(); }
 
   
   size_t stringsCount();
@@ -200,16 +189,7 @@ class GeckoProfilerRuntime {
   size_t scriptSourcesCount() { return scriptSources_.readLock()->count(); }
 
   const uint32_t* addressOfEnabled() const { return &enabled_; }
-
-  void fixupStringsMapAfterMovingGC();
-#ifdef JSGC_HASH_TABLE_CHECKS
-  void checkStringsMapAfterMovingGC();
-#endif
 };
-
-inline size_t GeckoProfilerRuntime::stringsCount() { return strings().count(); }
-
-inline void GeckoProfilerRuntime::stringsReset() { strings().clear(); }
 
 
 

@@ -178,34 +178,31 @@ void GeckoProfilerRuntime::enable(bool enabled) {
 
 const char* GeckoProfilerRuntime::profileString(JSContext* cx,
                                                 BaseScript* script) {
-  ProfileStringMap::AddPtr s = strings().lookupForAdd(script);
+  JS::Zone* zone = script->zone();
+  if (!zone->profilerStrings) {
+    auto map = cx->make_unique<JS::WeakCache<ProfileStringMap>>(zone);
+    if (!map) {
+      return nullptr;
+    }
+    zone->profilerStrings = std::move(map);
+  }
 
-  if (!s) {
+  ProfileStringMap& map = zone->profilerStrings->get();
+  ProfileStringMap::AddPtr ptr = map.lookupForAdd(script);
+
+  if (!ptr) {
     UniqueChars str = allocProfileString(cx, script);
     if (!str) {
       return nullptr;
     }
     MOZ_ASSERT(script->hasBytecode());
-    if (!strings().add(s, script, std::move(str))) {
+    if (!map.add(ptr, script, std::move(str))) {
       ReportOutOfMemory(cx);
       return nullptr;
     }
   }
 
-  return s->value().get();
-}
-
-void GeckoProfilerRuntime::onScriptFinalized(BaseScript* script) {
-  
-
-
-
-
-
-
-  if (ProfileStringMap::Ptr entry = strings().lookup(script)) {
-    strings().remove(entry);
-  }
+  return ptr->value().get();
 }
 
 void GeckoProfilerRuntime::markEvent(const char* event, const char* details,
@@ -430,25 +427,23 @@ void GeckoProfilerThread::trace(JSTracer* trc) {
   }
 }
 
-void GeckoProfilerRuntime::fixupStringsMapAfterMovingGC() {
-  for (auto iter = strings().modIter(); !iter.done(); iter.next()) {
-    BaseScript* script = iter.get().key();
-    if (IsForwarded(script)) {
-      script = Forwarded(script);
-      iter.rekey(script);
+size_t GeckoProfilerRuntime::stringsCount() {
+  size_t count = 0;
+  for (AllZonesIter zone(rt); !zone.done(); zone.next()) {
+    if (zone->profilerStrings) {
+      count += zone->profilerStrings->get().count();
+    }
+  }
+  return count;
+}
+
+void GeckoProfilerRuntime::stringsReset() {
+  for (AllZonesIter zone(rt); !zone.done(); zone.next()) {
+    if (zone->profilerStrings) {
+      zone->profilerStrings->get().clear();
     }
   }
 }
-
-#ifdef JSGC_HASH_TABLE_CHECKS
-void GeckoProfilerRuntime::checkStringsMapAfterMovingGC() {
-  CheckTableAfterMovingGC(strings(), [](const auto& entry) {
-    BaseScript* script = entry.key();
-    CheckGCThingAfterMovingGC(script);
-    return script;
-  });
-}
-#endif
 
 
 js::ProfilerJSSources GeckoProfilerRuntime::getProfilerScriptSources(

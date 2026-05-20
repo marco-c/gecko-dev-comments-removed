@@ -192,6 +192,12 @@ using ScriptFinalWarmUpCountMap =
                        DefaultHasher<HeapPtr<BaseScript*>>, SystemAllocPolicy>;
 #endif
 
+
+
+using ProfileStringMap =
+    GCRekeyableHashMap<HeapPtr<BaseScript*>, JS::UniqueChars,
+                       DefaultHasher<HeapPtr<BaseScript*>>, SystemAllocPolicy>;
+
 struct ScriptSourceChunk {
   ScriptSource* ss = nullptr;
   uint32_t chunk = 0;

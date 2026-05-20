@@ -5837,7 +5837,6 @@ void GCRuntime::checkHashTablesAfterMovingGC() {
 
 
 
-  rt->geckoProfiler().checkStringsMapAfterMovingGC();
   for (ZonesIter zone(this, SkipAtoms); !zone.done(); zone.next()) {
     zone->checkUniqueIdTableAfterMovingGC();
     zone->shapeZone().checkTablesAfterMovingGC(zone);
