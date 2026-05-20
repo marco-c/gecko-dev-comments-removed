@@ -333,9 +333,6 @@ function waitForStateChange(id, state, isEnabled, isExtra = false) {
 
 
 
-
-
-
 function selectAllTextAndFocus(id) {
   const elem = getNode(id);
   if (elem.editor) {
