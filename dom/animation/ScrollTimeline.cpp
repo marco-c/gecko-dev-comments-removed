@@ -91,6 +91,18 @@ already_AddRefed<ScrollTimeline> ScrollTimeline::Constructor(
 
 Element* ScrollTimeline::GetSource() const { return SourceElement(); }
 
+ScrollTimeline::State ScrollTimeline::GetState() const {
+  const auto source = mScrollerInfo.Source();
+  
+  
+  
+  const bool isRoot =
+      source.mElement &&
+      source.mElement->OwnerDoc()->GetScrollingElementNoFlush() ==
+          source.mElement;
+  return State{source, mAxis, isRoot};
+}
+
 dom::ScrollAxis ScrollTimeline::GetScrollAxis() const {
   switch (mAxis) {
     case StyleScrollAxis::Block:
@@ -291,6 +303,8 @@ const ScrollContainerFrame* ScrollTimeline::State::GetScrollContainerFrame()
   }
 
   if (mIsRoot) {
+    
+    
     if (const PresShell* presShell = e->OwnerDoc()->GetPresShell()) {
       return presShell->GetRootScrollContainerFrame();
     }
