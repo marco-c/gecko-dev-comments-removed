@@ -48,6 +48,25 @@ loader.lazyRequireGetter(
   true
 );
 
+const logger = console.createInstance({
+  prefix: "devtools_rdp",
+  maxLogLevel: "Warn",
+});
+
+
+
+
+const SEND_MOZ_LOG_STRING = {
+  toSource() {
+    return "\x1b[2m->\x1b[0m";
+  },
+};
+const RECEIVE_MOZ_LOG_STRING = {
+  toSource() {
+    return "\x1b[2m<-\x1b[0m";
+  },
+};
+
 
 
 
@@ -414,6 +433,10 @@ class DevToolsClient extends EventEmitter {
     this.expectReply(actor, request);
 
     if (request.format === "json") {
+      
+      
+      logger.log(SEND_MOZ_LOG_STRING, request.request);
+
       this._transport.send(request.request);
       return;
     }
@@ -486,6 +509,8 @@ class DevToolsClient extends EventEmitter {
 
 
   onPacket(packet) {
+    logger.log(RECEIVE_MOZ_LOG_STRING, packet);
+
     if (!packet.from) {
       DevToolsUtils.reportException(
         "onPacket",

@@ -11,9 +11,7 @@ const TEST_URL = "data:text/html,new-tab";
 
 add_task(async () => {
   
-  await pushPref("devtools.debugger.log", true);
-  
-  await pushPref("devtools.debugger.log.verbose", true);
+  await pushPref("logging.devtools_rdp", 3);
 
   
   DevToolsServer.init();

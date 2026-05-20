@@ -13,6 +13,20 @@ var {
   callFunctionWithAsyncStack,
 } = require("resource://devtools/shared/platform/stack.js");
 
+const logger = console.createInstance({
+  prefix: "devtools_rdp",
+  maxLogLevel: "Warn",
+});
+
+
+
+
+const SEND_MOZ_LOG_STRING = {
+  toSource() {
+    return "\x1b[2m->\x1b[0m";
+  },
+};
+
 
 
 
@@ -294,6 +308,11 @@ class Front extends Pool {
       if (!packet.to) {
         packet.to = this.actorID;
       }
+
+      
+      
+      logger.log(SEND_MOZ_LOG_STRING, packet);
+
       this.conn._transport.send(packet);
     } else {
       if (!packet.actor) {
