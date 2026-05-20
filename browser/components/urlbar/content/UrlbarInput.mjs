@@ -190,6 +190,10 @@ ${
     return document.importNode(UrlbarInput.#fragment, true);
   }
 
+  static get observedAttributes() {
+    return ["focused", "open"];
+  }
+
   /**
    * @type {DocumentFragment=}
    *
@@ -407,6 +411,29 @@ ${
     // The engine name is not known yet, but update placeholder anyway to
     // reflect value of keyword.enabled or set the searchbar placeholder.
     this._setPlaceholder(null);
+  }
+
+  attributeChangedCallback(attribute, _oldValue, _newValue) {
+    if (attribute != "focused" && attribute != "open") {
+      return;
+    }
+
+    if (!Services.prefs.getBoolPref("browser.nova.enabled", false)) {
+      if (attribute == "open") {
+        if (this.view.isOpen && this.view.visibleRowCount) {
+          this.startLayoutExtend();
+        } else {
+          this.endLayoutExtend();
+        }
+      }
+      return;
+    }
+
+    if (this.focused || (this.view.isOpen && this.view.visibleRowCount)) {
+      this.startLayoutExtend();
+    } else {
+      this.endLayoutExtend();
+    }
   }
 
   connectedCallback() {
@@ -1982,23 +2009,27 @@ ${
         result.type == lazy.UrlbarUtils.RESULT_TYPE.URL
       ) {
         let isOrigin = lazy.UrlbarUtils.isOriginUrl(url);
-        if (isOrigin) {
-          lazy.UrlbarUtils.clearOriginAutofillBlock(url)
-            .then(wasBlocked => {
-              if (wasBlocked) {
-                Glean.urlbarAutofill.reintegration.origin.add(1);
-              }
-            })
-            .catch(console.error);
-        } else {
-          lazy.UrlbarUtils.clearOriginPageAutofillBlock(url)
-            .then(wasBlocked => {
-              if (wasBlocked) {
-                Glean.urlbarAutofill.reintegration.url.add(1);
-              }
-            })
-            .catch(console.error);
-        }
+        let clear = isOrigin
+          ? lazy.UrlbarUtils.clearOriginAutofillBlock(url)
+          : lazy.UrlbarUtils.clearOriginPageAutofillBlock(url);
+        clear
+          .then(wasBlocked => {
+            if (!wasBlocked) {
+              return;
+            }
+            let level = isOrigin ? "origin" : "url";
+            Glean.urlbarAutofill.reintegration[level].add(1);
+
+            // For backspace-induced blocks, record the unblock delay: fast
+            // unblocks suggest the original block was accidental.
+            let entry = lazy.UrlbarUtils.getBackspaceBlock(url);
+            if (entry?.level === level) {
+              Glean.urlbarAutofill.reintegrationAfterBackspace[
+                level
+              ].accumulateSingleSample(Date.now() - entry.blockedAt);
+            }
+          })
+          .catch(console.error);
       }
     }
 
@@ -2919,20 +2950,24 @@ ${
       // already expanded.
       return;
     }
-    if (!this.view.isOpen) {
+
+    if (
+      !this.view.isOpen &&
+      !Services.prefs.getBoolPref("browser.nova.enabled", false)
+    ) {
       return;
     }
 
     this.#updateTextboxPosition();
 
-    this.setAttribute("breakout-extend", "true");
+    this.toggleAttribute("breakout-extend", true);
 
     // Enable the animation only after the first extend call to ensure it
     // doesn't run when opening a new window.
     if (!this.hasAttribute("breakout-extend-animate")) {
       this.window.promiseDocumentFlushed(() => {
         this.window.requestAnimationFrame(() => {
-          this.setAttribute("breakout-extend-animate", "true");
+          this.toggleAttribute("breakout-extend-animate", true);
         });
       });
     }
@@ -2942,11 +2977,18 @@ ${
     // If reduce motion is enabled, we want to collapse the Urlbar here so the
     // user sees only sees two states: not expanded, and expanded with the view
     // open.
-    if (!this.hasAttribute("breakout-extend") || this.view.isOpen) {
+    if (!this.hasAttribute("breakout-extend")) {
       return;
     }
 
-    this.removeAttribute("breakout-extend");
+    if (
+      this.view.isOpen &&
+      !Services.prefs.getBoolPref("browser.nova.enabled", false)
+    ) {
+      return;
+    }
+
+    this.toggleAttribute("breakout-extend", false);
     this.#updateTextboxPosition();
   }
 
@@ -3248,10 +3290,14 @@ ${
   }
 
   #updateTextboxPosition() {
-    if (!this.view.isOpen) {
+    if (
+      !this.view.isOpen &&
+      !Services.prefs.getBoolPref("browser.nova.enabled", false)
+    ) {
       this.style.top = "";
       return;
     }
+
     this.style.top = px(
       this.parentNode.getBoxQuads({
         ignoreTransforms: true,
@@ -5453,6 +5499,7 @@ ${
               lazy.UrlbarUtils.blockAutofill(url, blockUntil).catch(
                 console.error
               );
+              lazy.UrlbarUtils.trackBackspaceBlock(url);
             }
           }
           this._autofillBackspaceState = null;
