@@ -82,6 +82,10 @@ use synstructure::{BindingInfo, Structure};
 
 
 
+
+
+
+
 pub fn derive(mut input: DeriveInput) -> TokenStream {
     
     
@@ -274,7 +278,6 @@ fn derive_variant_arm(
 
 
 
-
 fn derive_variant_fields_expr(
     bindings: &[BindingInfo],
     where_clause: &mut Option<WhereClause>,
@@ -411,8 +414,24 @@ fn derive_single_field_expr(
         }
     };
 
-    let skip_if = field_attrs.skip_if;
-    let contextual_skip_if = field_attrs.contextual_skip_if;
+    let typed_has_skip = field_attrs.skip_if.is_some() || field_attrs.contextual_skip_if.is_some();
+
+    let skip_if = field_attrs.skip_if.or_else(|| {
+        if typed_has_skip {
+            None
+        } else {
+            css_field_attrs.skip_if
+        }
+    });
+
+    let contextual_skip_if = field_attrs.contextual_skip_if.or_else(|| {
+        if typed_has_skip {
+            None
+        } else {
+            css_field_attrs.contextual_skip_if
+        }
+    });
+
     assert!(
         skip_if.is_none() || contextual_skip_if.is_none(),
         "Field should not have both skip_if and contextual_skip_if"
