@@ -306,6 +306,7 @@ var SidebarController = {
   _localesObserverAdded: false,
   _mainResizeObserverAdded: false,
   _aiWindowObserverAdded: false,
+  _windowRestoredObserverAdded: false,
   _mainResizeObserver: null,
   _ongoingAnimations: [],
 
@@ -316,6 +317,22 @@ var SidebarController = {
 
   _initDeferred: Promise.withResolvers(),
 
+  _initialUIStateUpdated: false,
+
+  
+
+
+
+
+
+
+  _sessionRestoreStateReceived: false,
+
+  markSessionRestoreStateReceived() {
+    this._sessionRestoreStateReceived = true;
+  },
+
+  
   get promiseInitialized() {
     return this._initDeferred.promise;
   },
@@ -548,25 +565,10 @@ var SidebarController = {
       Services.obs.addObserver(this, "ai-window-state-changed");
       this._aiWindowObserverAdded = true;
     }
-
-    requestIdleCallback(() => {
-      const windowPrivacyMatches =
-        !window.opener || this.windowPrivacyMatches(window.opener, window);
-      
-      
-      
-      
-      if (
-        !this.uiStateInitialized &&
-        !this.inSingleTabWindow &&
-        !window.opener &&
-        (this.sidebarRevampEnabled || windowPrivacyMatches)
-      ) {
-        const backupState = this.SidebarManager.getBackupState();
-        this.updateUIState(backupState);
-      }
-    });
-    this._initDeferred.resolve();
+    if (!this._windowRestoredObserverAdded) {
+      Services.obs.addObserver(this, "sessionstore-single-window-restored");
+      this._windowRestoredObserverAdded = true;
+    }
   },
 
   uninit() {
@@ -596,8 +598,10 @@ var SidebarController = {
     Services.obs.removeObserver(this, "intl:app-locales-changed");
     Services.obs.removeObserver(this, "tabstrip-orientation-change");
     Services.obs.removeObserver(this, "ai-window-state-changed");
+    Services.obs.removeObserver(this, "sessionstore-single-window-restored");
     delete this._tabstripOrientationObserverAdded;
     delete this._aiWindowObserverAdded;
+    delete this._windowRestoredObserverAdded;
 
     CustomizableUI.removeListener(this);
 
@@ -658,10 +662,7 @@ var SidebarController = {
 
 
 
-  async updateUIState(state) {
-    if (!state) {
-      return;
-    }
+  async updateUIState(state = {}) {
     const isValidSidebar = !state.command || this.sidebars.has(state.command);
     if (!isValidSidebar) {
       state.command = "";
@@ -678,7 +679,6 @@ var SidebarController = {
       
       delete state.hidden;
     }
-    await this.promiseInitialized;
     await this.waitUntilStable(); 
     await this._state.loadCurrentState(state);
     await this.waitUntilStable(); 
@@ -686,7 +686,7 @@ var SidebarController = {
     if (this.sidebarRevampVisibility === "expand-on-hover") {
       await this.toggleExpandOnHover(true);
     }
-    this.uiStateInitialized = true;
+    this._initialUIStateUpdated = true;
   },
 
   
@@ -715,6 +715,14 @@ var SidebarController = {
         }
         if (this.revampComponentsLoaded) {
           this.sidebarMain.requestUpdate();
+        }
+        break;
+      }
+      case "sessionstore-single-window-restored": {
+        
+        
+        if (subject == window) {
+          this._initDeferred.resolve();
         }
         break;
       }
@@ -929,30 +937,23 @@ var SidebarController = {
 
 
 
-  async adoptFromWindow(sourceWindow) {
+  getAdoptedStateFromWindow(sourceWindow) {
     
     
     
     let sourceController = sourceWindow.SidebarController;
     if (!sourceController || !sourceController._box) {
       
-      return false;
+      return null;
     }
 
-    
-    if (this.inSingleTabWindow && this.sidebarRevampEnabled) {
-      document.getElementById("sidebar-main").hidden = true;
-      return false;
-    }
     
     
     
     const sourceState = sourceController.inPopup
       ? null
       : sourceController._state?.getProperties();
-    await this.updateUIState(sourceState);
-
-    return true;
+    return sourceState;
   },
 
   windowPrivacyMatches(w1, w2) {
@@ -968,6 +969,7 @@ var SidebarController = {
   async startDelayedLoad() {
     if (this.inSingleTabWindow) {
       this._state.launcherVisible = false;
+      this._initDeferred.resolve();
       return;
     }
 
@@ -982,39 +984,59 @@ var SidebarController = {
         (!this.sidebarRevampEnabled &&
           !this.windowPrivacyMatches(sourceWindow, window))
       ) {
+        this._initDeferred.resolve();
         return;
       }
       
-      if (await this.adoptFromWindow(sourceWindow)) {
-        this.uiStateInitialized = true;
+      let stateToApply = this.getAdoptedStateFromWindow(sourceWindow);
+      if (stateToApply) {
+        await this.updateUIState(stateToApply);
+        this._initDeferred.resolve();
         return;
       }
     }
 
     
-    let wasOpen = this._box.getAttribute("checked");
-    if (!wasOpen) {
+    
+    
+    if (this._sessionRestoreStateReceived) {
       return;
     }
 
-    let commandID = this._state.command;
-    if (commandID && this.sidebars.has(commandID)) {
-      this.showInitially(commandID);
-    } else {
-      this._box.removeAttribute("checked");
-      
-      
-      
-      this._state.command = "";
-      
-      
-      
-      
-      
-      
-      this.lastOpenedId = commandID;
+    
+    
+    if (this._initialUIStateUpdated) {
+      this._initDeferred.resolve();
+      return;
     }
-    this.uiStateInitialized = true;
+
+    
+    const backupState = this.SidebarManager.getBackupState();
+
+    
+    let wasOpen = this._box.getAttribute("checked");
+    if (wasOpen) {
+      let commandID = this._state.command;
+
+      if (wasOpen && commandID && this.sidebars.has(commandID)) {
+        this.showInitially(commandID);
+      } else {
+        this._box.removeAttribute("checked");
+        
+        
+        
+        this._state.command = "";
+        
+        
+        
+        
+        
+        
+        this.lastOpenedId = commandID;
+      }
+    }
+    await this.updateUIState(backupState);
+    this._initDeferred.resolve();
   },
 
   
