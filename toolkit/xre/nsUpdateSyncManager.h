@@ -8,6 +8,7 @@
 #include "mozilla/AlreadyAddRefed.h"
 #include "nsIObserver.h"
 #include "nsIUpdateService.h"
+#include "nsString.h"
 #include "MultiInstanceLock.h"
 
 
@@ -42,6 +43,7 @@ class nsUpdateSyncManager final : public nsIUpdateSyncManager,
   void ReleaseLock();
 
   mozilla::MultiInstLockHandle mLock = MULTI_INSTANCE_LOCK_HANDLE_ERROR;
+  nsCString mLockFilePath;
 };
 
 #endif  
