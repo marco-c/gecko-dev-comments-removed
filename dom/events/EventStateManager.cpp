@@ -6051,10 +6051,8 @@ void EventStateManager::GenerateDragDropEnterExit(nsPresContext* aPresContext,
     case eDragExit: {
       
       if (sLastDragOverFrame) {
-        
         nsCOMPtr<nsIContent> lastContent =
-            sLastDragOverFrame->GetExplicitEventTargetContent(aDragEvent);
-
+            sLastDragOverFrame->GetEventTargetContent(aDragEvent);
         RefPtr<nsPresContext> lastDragOverFramePresContext =
             sLastDragOverFrame->PresContext();
         FireDragEnterOrExit(lastDragOverFramePresContext, aDragEvent, eDragExit,
