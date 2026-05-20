@@ -3762,6 +3762,10 @@ class Document : public nsINode,
   
   
   
+  Element* GetScrollingElementNoFlush();
+  
+  
+  
   
   bool IsScrollingElement(Element* aElement);
 
@@ -4821,6 +4825,12 @@ class Document : public nsINode,
 
   
   bool IsPotentiallyScrollable(HTMLBodyElement* aBody);
+
+  
+  
+  enum class Flush : bool { No, Yes };
+  Element* GetScrollingElementImpl(Flush);
+  bool IsPotentiallyScrollableImpl(HTMLBodyElement* aBody, Flush);
 
   void MaybeAllowStorageForOpenerAfterUserInteraction();
 
