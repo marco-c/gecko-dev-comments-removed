@@ -14,6 +14,8 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CornerBasedShape
+import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
@@ -36,6 +38,8 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -64,46 +68,63 @@ import org.mozilla.fenix.theme.FirefoxTheme
 import mozilla.components.ui.icons.R as iconsR
 
 // Rounded corner shape used by all tab items
-val TabContentCardShape = RoundedCornerShape(16.dp)
+val tabContentCardShape: CornerBasedShape
+    @Composable
+    get() = MaterialTheme.shapes.large
 
 // The corner radius of a tab card's top outer edge
-val TAB_CARD_TOP_CORNER_RADIUS = 4.dp
+val tabCardTopCornerRadius: CornerSize
+    @Composable
+    get() = MaterialTheme.shapes.extraSmall.topStart
 
 // The corner radius of a tab card's bottom outer edge
-val TAB_CARD_BOTTOM_CORNER_RADIUS = 12.dp
+val tabCardBottomCornerRadius: CornerSize
+    @Composable
+    get() = MaterialTheme.shapes.medium.bottomStart
 
 // Rounded shape used for tab thumbnails
-val ThumbnailShape = RoundedCornerShape(
-    topStart = TAB_CARD_TOP_CORNER_RADIUS,
-    topEnd = TAB_CARD_TOP_CORNER_RADIUS,
-    bottomStart = TAB_CARD_BOTTOM_CORNER_RADIUS,
-    bottomEnd = TAB_CARD_BOTTOM_CORNER_RADIUS,
-)
+val thumbnailShape: Shape
+    @Composable
+    get() = RoundedCornerShape(
+        topStart = tabCardTopCornerRadius,
+        topEnd = tabCardTopCornerRadius,
+        bottomStart = tabCardBottomCornerRadius,
+        bottomEnd = tabCardBottomCornerRadius,
+    )
 
 // The touch target size of a tab's header icon
 val TabHeaderIconTouchTargetSize = 40.dp
 
-val TabListFirstItemShape = RoundedCornerShape(
-    topStart = AcornCorners.medium,
-    topEnd = AcornCorners.medium,
-)
+val TabListFirstItemShape: Shape
+    @Composable
+    get() = MaterialTheme.shapes.extraSmall.copy(
+        bottomStart = CornerSize(0.dp),
+        bottomEnd = CornerSize(0.dp),
+    )
 
-val TabListLastItemShape = RoundedCornerShape(
-    bottomStart = AcornCorners.medium,
-    bottomEnd = AcornCorners.medium,
-)
+val TabListLastItemShape: Shape
+    @Composable
+    get() = MaterialTheme.shapes.medium.copy(
+        topStart = CornerSize(0.dp),
+        topEnd = CornerSize(0.dp),
+    )
 
-val TabListSingleItemShape = RoundedCornerShape(AcornCorners.medium)
-val TabListBorderMiddleItemShape = RoundedCornerShape(0.dp)
+val TabListSingleItemShape: Shape
+    @Composable
+    get() = MaterialTheme.shapes.medium
+
+val TabListBorderMiddleItemShape: Shape
+    @Composable
+    get() = RectangleShape
 
 /**
  * Shape information for a tab item displayed in a list.
  *
- * @property borderShape The outer shape to apply to the item's border.
+ * @property borderShape: The [Shape] representing the item's border.
  * @property clipTabToFit Whether the item content should be clipped to [borderShape].
  */
 data class TabListShapeInfo(
-    val borderShape: RoundedCornerShape,
+    val borderShape: Shape,
     val clipTabToFit: Boolean,
 )
 
@@ -278,7 +299,7 @@ const val LOREM_IPSUM = "Lorem ipsum dolor sit amet, consectetur adipiscing elit
 @Composable
 @ReadOnlyComposable
 fun tabItemConditionalBorder(selectionState: TabsTrayItemSelectionState): BorderStroke? {
-    return if (selectionState.isFocused) {
+    return if (selectionState.isFocused && selectionState.focusEnabled) {
         tabItemBorderFocused()
     } else {
         null
@@ -298,13 +319,13 @@ fun tabItemBorderFocused(): BorderStroke {
  * Applies tab list item styling, provided the shape information.
  *
  * @param tabShapeInfo The list item shape and clipping behavior.
- * @param tab The tab item.
+ * @param selectionState the selection state of the item in the tabstray.
  */
 // todo (Bug 2032255): add a border on hovered when drag and drop for tab groups is added
 @Composable
 fun Modifier.tabListItemShapeStyling(
     tabShapeInfo: TabListShapeInfo,
-    tab: TabsTrayItem,
+    selectionState: TabsTrayItemSelectionState,
 ): Modifier {
     return this
         .thenConditional(
@@ -316,7 +337,7 @@ fun Modifier.tabListItemShapeStyling(
                 border = tabItemBorderFocused(),
                 shape = tabShapeInfo.borderShape,
             ),
-            { tab.isFocused },
+            { selectionState.isFocused && selectionState.focusEnabled },
         )
 }
 
@@ -333,12 +354,24 @@ fun tabGridItemContainerColor(selectionState: TabsTrayItemSelectionState): Color
 }
 
 /**
+ * Object holding alpha values for tab items
+ */
+object Alpha {
+    const val TAB_ITEM_GRID_DRAGGED = 0.7f
+    const val TAB_ITEM_NO_INTERACTION = 1f
+}
+
+/**
  * Animates the tab item's alpha value to be slightly transparent when it is dragged.
  */
 @Composable
 private fun tabItemAnimatedAlpha(interactionState: TabItemInteractionState): State<Float> {
     return animateFloatAsState(
-        targetValue = if (interactionState.isDragged) { 0.7f } else { 1f },
+        targetValue = if (interactionState.isDragged) {
+            Alpha.TAB_ITEM_GRID_DRAGGED
+        } else {
+            Alpha.TAB_ITEM_NO_INTERACTION
+        },
     )
 }
 
@@ -365,30 +398,32 @@ fun Modifier.tabItemInteractionAnimation(interactionState: TabItemInteractionSta
     val backdropColor = MaterialTheme.colorScheme.secondaryContainer
     val backdropBorder = MaterialTheme.colorScheme.tertiary
     val borderSize = FirefoxTheme.layout.border.thick
-    val cornerSize = FirefoxTheme.layout.corner.xLarge
+    val cornerSize = AcornCorners.large
 
     return this
         .thenConditional(
-            Modifier.drawBehind({
-                // A Stroke rect is centered on the shape edge, which will spill outside the drawing area
-                // To make the border match other tabs, we must inset by half the stroke width, and adjust the size
-                val inset = borderSize.toPx() / 2
-                val shapeOffset = Offset(x = inset, y = inset)
-                val shapeSize = Size(this.size.width - shapeOffset.x * 2, this.size.height - shapeOffset.y * 2)
-                drawRoundRect(
-                    color = backdropColor,
-                    topLeft = shapeOffset,
-                    size = shapeSize,
-                    cornerRadius = CornerRadius(cornerSize.toPx()),
-                )
-                drawRoundRect(
-                    color = backdropBorder,
-                    topLeft = shapeOffset,
-                    size = shapeSize,
-                    cornerRadius = CornerRadius(cornerSize.toPx()),
-                    style = Stroke(width = borderSize.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round),
-                )
-            }),
+            Modifier.drawBehind(
+                {
+                    // A Stroke rect is centered on the shape edge, which will spill outside the drawing area
+                    // To make the border match other tabs, we must inset by half the stroke width, and adjust the size
+                    val inset = borderSize.toPx() / 2
+                    val shapeOffset = Offset(x = inset, y = inset)
+                    val shapeSize = Size(this.size.width - shapeOffset.x * 2, this.size.height - shapeOffset.y * 2)
+                    drawRoundRect(
+                        color = backdropColor,
+                        topLeft = shapeOffset,
+                        size = shapeSize,
+                        cornerRadius = CornerRadius(cornerSize.toPx()),
+                    )
+                    drawRoundRect(
+                        color = backdropBorder,
+                        topLeft = shapeOffset,
+                        size = shapeSize,
+                        cornerRadius = CornerRadius(cornerSize.toPx()),
+                        style = Stroke(width = borderSize.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round),
+                    )
+                },
+            ),
             { interactionState.isHoveredByItem },
         )
         .graphicsLayer(alpha = tabItemAlpha, scaleX = tabItemScale, scaleY = tabItemScale)
