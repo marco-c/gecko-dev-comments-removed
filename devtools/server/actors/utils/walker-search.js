@@ -285,7 +285,7 @@ class WalkerSearch {
     }
 
     
-    if (!CSS.supports(`selector(${query})`)) {
+    if (!this.walker.targetActor.window.CSS.supports(`selector(${query})`)) {
       return;
     }
 
