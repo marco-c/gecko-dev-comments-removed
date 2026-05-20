@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef nsContentSecurityUtils_h_
 #define nsContentSecurityUtils_h_
 
@@ -98,7 +96,6 @@ class nsContentSecurityUtils {
 #endif
 
   static bool ValidateScriptFilename(JSContext* cx, const char* aFilename);
-  static nsresult GetVeryFirstUnexpectedScriptFilename(nsACString& aFilename);
 
   
   static void LogMessageToConsole(nsIHttpChannel* aChannel, const char* aMsg);
