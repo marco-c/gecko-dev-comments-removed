@@ -727,7 +727,7 @@ class MacroAssemblerRiscv64Compat : public MacroAssemblerRiscv64 {
 
   static size_t ToggledCallSize(uint8_t* code) {
     
-    return 7 * sizeof(uint32_t);
+    return 7 * kInstrSize;
   }
 
   CodeOffset pushWithPatch(ImmWord imm) {
