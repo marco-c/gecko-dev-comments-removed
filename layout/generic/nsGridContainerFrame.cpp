@@ -103,7 +103,7 @@ inline const StyleTrackBreadth& StyleTrackSize::GetMin() const {
   static const StyleTrackBreadth kAuto = StyleTrackBreadth::Auto();
   if (IsBreadth()) {
     
-    return AsBreadth().IsFr() ? kAuto : AsBreadth();
+    return AsBreadth().IsFlex() ? kAuto : AsBreadth();
   }
   if (IsMinmax()) {
     return AsMinmax()._0;
@@ -545,7 +545,7 @@ TrackSize::StateBits nsGridContainerFrame::TrackSize::Initialize(
       mState |= eMaxContentMinSizing;
       break;
     default:
-      MOZ_ASSERT(!min.IsFr(), "<flex> min-sizing is invalid as a track size");
+      MOZ_ASSERT(!min.IsFlex(), "<flex> min-sizing is invalid as a track size");
       mBase = ::ResolveToDefiniteSize(min, aPercentageBasis);
   }
   switch (maxSizeTag) {
@@ -559,7 +559,7 @@ TrackSize::StateBits nsGridContainerFrame::TrackSize::Initialize(
                                               : eMaxContentMaxSizing;
       mLimit = NS_UNCONSTRAINEDSIZE;
       break;
-    case Tag::Fr:
+    case Tag::Flex:
       mState |= eFlexMaxSizing;
       mLimit = NS_UNCONSTRAINEDSIZE;
       break;
@@ -7400,7 +7400,7 @@ float nsGridContainerFrame::Tracks::FindFrUnitSize(
   for (auto i : aRange.Range()) {
     const TrackSize& sz = mSizes[i];
     if (sz.mState & TrackSize::eFlexMaxSizing) {
-      flexFactorSum += aFunctions.MaxSizingFor(i).AsFr();
+      flexFactorSum += aFunctions.MaxSizingFor(i).AsFlex()._0;
     } else {
       leftOverSpace -= sz.mBase;
       if (leftOverSpace <= 0) {
@@ -7421,7 +7421,7 @@ float nsGridContainerFrame::Tracks::FindFrUnitSize(
       if (track == kAutoLine) {
         continue;  
       }
-      float flexFactor = aFunctions.MaxSizingFor(track).AsFr();
+      float flexFactor = aFunctions.MaxSizingFor(track).AsFlex()._0;
       const nscoord base = mSizes[track].mBase;
       if (flexFactor * hypotheticalFrSize < base) {
         
@@ -7455,7 +7455,7 @@ float nsGridContainerFrame::Tracks::FindUsedFlexFraction(
   
   float fr = 0.0f;
   for (uint32_t track : aFlexTracks) {
-    float flexFactor = aFunctions.MaxSizingFor(track).AsFr();
+    float flexFactor = aFunctions.MaxSizingFor(track).AsFlex()._0;
     float possiblyDividedBaseSize = (flexFactor > 1.0f)
                                         ? mSizes[track].mBase / flexFactor
                                         : mSizes[track].mBase;
@@ -7528,7 +7528,7 @@ void nsGridContainerFrame::Tracks::StretchFlexibleTracks(
                                     aAvailableSize);
     if (fr != 0.0f) {
       for (uint32_t i : flexTracks) {
-        float flexFactor = aFunctions.MaxSizingFor(i).AsFr();
+        float flexFactor = aFunctions.MaxSizingFor(i).AsFlex()._0;
         nscoord flexLength = NSToCoordRound(flexFactor * fr);
         nscoord& base = mSizes[i].mBase;
         if (flexLength > base) {
@@ -10850,7 +10850,7 @@ nscoord nsGridContainerFrame::TrackPlan::DistributeToFlexTrackSizes(
   for (uint32_t track : aGrowableTracks) {
     MOZ_ASSERT(aTracks.mSizes[track].mState & TrackSize::eFlexMaxSizing,
                "Only flex-sized tracks should be growable during step 4");
-    totalFr += aFunctions.MaxSizingFor(track).AsFr();
+    totalFr += aFunctions.MaxSizingFor(track).AsFlex()._0;
   }
   MOZ_ASSERT(totalFr >= 0.0, "flex fractions must be non-negative.");
 
@@ -10865,7 +10865,7 @@ nscoord nsGridContainerFrame::TrackPlan::DistributeToFlexTrackSizes(
     if (sz.IsFrozen()) {
       continue;
     }
-    const double trackFr = aFunctions.MaxSizingFor(track).AsFr();
+    const double trackFr = aFunctions.MaxSizingFor(track).AsFlex()._0;
     nscoord size = NSToCoordRoundWithClamp(frSize * trackFr);
     
     

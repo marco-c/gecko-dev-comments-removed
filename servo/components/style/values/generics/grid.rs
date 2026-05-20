@@ -213,6 +213,35 @@ impl Parse for GridLine<specified::Integer> {
 
 
 
+#[derive(
+    Animate,
+    Clone,
+    Copy,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToAnimatedValue,
+    ToComputedValue,
+    ToResolvedValue,
+    ToShmem,
+)]
+#[repr(C)]
+pub struct Flex(pub CSSFloat);
+
+impl ToCss for Flex {
+    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
+    where
+        W: Write,
+    {
+        self.0.to_css(dest)?;
+        dest.write_str("fr")
+    }
+}
+
+
+
+
 
 #[derive(
     Animate,
@@ -232,8 +261,7 @@ pub enum GenericTrackBreadth<L> {
     
     Breadth(L),
     
-    #[css(dimension)]
-    Fr(CSSFloat),
+    Flex(Flex),
     
     Auto,
     
@@ -321,7 +349,7 @@ impl<L> TrackSize<L> {
                 }
 
                 match *breadth_1 {
-                    TrackBreadth::Fr(_) => false, 
+                    TrackBreadth::Flex(_) => false, 
                     _ => breadth_2.is_fixed(),
                 }
             },
@@ -347,7 +375,7 @@ impl<L: ToCss> ToCss for TrackSize<L> {
                 
                 
                 if let TrackBreadth::Auto = *min {
-                    if let TrackBreadth::Fr(_) = *max {
+                    if let TrackBreadth::Flex(_) = *max {
                         return max.to_css(dest);
                     }
                 }
