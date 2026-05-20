@@ -561,6 +561,7 @@ void RiscvDebugger::Debug() {
       
       EmbeddedVector<char, 256> buffer;
 
+      using byte = uint8_t;
       byte* cur = nullptr;
       byte* end = nullptr;
 
