@@ -8,15 +8,8 @@
 
 
 class ConditionTest extends ConditionBase {
-  #ret;
-
-  constructor(factory, desc) {
-    super(factory, desc);
-    this.#ret = desc.ret;
-  }
-
   check() {
-    return this.#ret;
+    return this.desc.ret;
   }
 }
 

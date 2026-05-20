@@ -8,10 +8,6 @@
 
 
 class ConditionUrl extends ConditionBase {
-  constructor(factory, desc) {
-    super(factory, desc);
-  }
-
   check() {
     try {
       const pattern = new RegExp(String(this.desc?.pattern ?? ""));
