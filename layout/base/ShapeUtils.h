@@ -29,11 +29,10 @@ struct ShapeUtils final {
   
   
   
-  
-  static nscoord ComputeOrthogonalDistanceTo(const StyleShapeRadius& aType,
-                                             const nscoord aCenter,
-                                             const nscoord aPosMin,
-                                             const nscoord aPosMax);
+  static nscoord ComputeShapeRadius(const StyleShapeRadius& aType,
+                                    const nscoord aCenter,
+                                    const nscoord aPosMin,
+                                    const nscoord aPosMax);
 
   
   
