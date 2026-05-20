@@ -265,8 +265,17 @@ void EmitPerfettoTrackEvent(const mozilla::ProfilerString8View& aName,
   
   std::function<void(perfetto::EventContext)> annotateTrackEvent =
       [&](perfetto::EventContext ctx) {};
-  if constexpr (mozilla::MarkerHasPayloadFields<MarkerType>::value) {
+  if constexpr (mozilla::MarkerHasTranslator<MarkerType>::value) {
+    
+    
+  } else if constexpr (mozilla::MarkerHasPayloadFields<MarkerType>::value) {
     annotateTrackEvent = [&](perfetto::EventContext ctx) {
+      static_assert(
+          sizeof...(PayloadArguments) ==
+              std::extent_v<decltype(MarkerType::PayloadFields)>,
+          "Number and type of fields must be equal to number and type of "
+          "payload arguments. If this is not the case a "
+          "TranslateMarkerInputToSchema function must be defined.");
       size_t i = 0;
       auto processArgument = [&](const auto& payloadArg) {
         AddDebugAnnotation(ctx, MarkerType::PayloadFields[i++].Key, payloadArg);
