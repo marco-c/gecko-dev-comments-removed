@@ -5,7 +5,6 @@
 #include "Animation.h"
 
 #include "AnimationUtils.h"
-#include "ScrollTimelineAnimationTracker.h"
 #include "mozAutoDocUpdate.h"
 #include "mozilla/AnimationEventDispatcher.h"
 #include "mozilla/AnimationTarget.h"
@@ -418,16 +417,6 @@ void Animation::SetTimelineNoUpdate(AnimationTimeline* aTimeline,
           TimeDuration(EffectEnd().MultDouble(previousProgress.Value())));
     }
   }
-  if (fromFiniteTimeline && !aTimeline && mTimelineName) {
-    
-    
-    Document* doc = GetRenderedDocument();
-    auto* tracker = doc ? doc->GetScrollTimelineAnimationTracker() : nullptr;
-    if (tracker) {
-      tracker->RemovePending(*this);
-    }
-  }
-
   
   
   if (!mStartTime.IsNull()) {
@@ -1688,12 +1677,6 @@ void Animation::PlayNoUpdate(ErrorResult& aRv, LimitBehavior aLimitBehavior) {
   mPendingState = PendingState::PlayPending;
   mPendingReadyTime = {};
   if (Document* doc = GetRenderedDocument()) {
-    if (HasFiniteTimeline()) {
-      
-      
-      
-      doc->GetOrCreateScrollTimelineAnimationTracker()->AddPending(*this);
-    }
     mPendingReadyTime = EnsurePaintIsScheduled(*doc);
   }
 
@@ -1769,9 +1752,6 @@ void Animation::Pause(ErrorResult& aRv) {
   mPendingState = PendingState::PausePending;
   mPendingReadyTime = {};
   if (Document* doc = GetRenderedDocument()) {
-    if (HasFiniteTimeline()) {
-      doc->GetOrCreateScrollTimelineAnimationTracker()->AddPending(*this);
-    }
     mPendingReadyTime = EnsurePaintIsScheduled(*doc);
   }
 
@@ -1948,17 +1928,6 @@ void Animation::PostUpdate() {
 
 void Animation::CancelPendingTasks() {
   mPendingState = PendingState::NotPending;
-
-  
-  
-  
-  
-  if (Document* doc = GetRenderedDocument()) {
-    if (auto* tracker = doc->GetScrollTimelineAnimationTracker()) {
-      
-      tracker->RemovePending(*this);
-    }
-  }
 }
 
 

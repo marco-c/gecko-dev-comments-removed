@@ -198,7 +198,6 @@ struct LangGroupFontPrefs;
 class PendingFullscreenEvent;
 class PermissionDelegateHandler;
 class PresShell;
-class ScrollTimelineAnimationTracker;
 class ServoStyleSet;
 enum class StyleOrigin : uint8_t;
 class SMILAnimationController;
@@ -2941,19 +2940,6 @@ class Document : public nsINode,
   SMILAnimationController* GetAnimationController();
 
   
-  
-  
-  
-  ScrollTimelineAnimationTracker* GetScrollTimelineAnimationTracker() {
-    return mScrollTimelineAnimationTracker;
-  }
-
-  
-  
-  
-  ScrollTimelineAnimationTracker* GetOrCreateScrollTimelineAnimationTracker();
-
-  
 
 
 
@@ -5667,10 +5653,6 @@ class Document : public nsINode,
   AnimationTimelinesController mTimelinesController;
 
   RefPtr<dom::ScriptLoader> mScriptLoader;
-
-  
-  
-  RefPtr<ScrollTimelineAnimationTracker> mScrollTimelineAnimationTracker;
 
   
   
