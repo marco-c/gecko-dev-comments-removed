@@ -31,7 +31,6 @@
 #include "mozilla/SVGObserverUtils.h"
 #include "mozilla/SVGOuterSVGFrame.h"
 #include "mozilla/SVGUtils.h"
-#include "mozilla/dom/DOMPointBinding.h"
 #include "mozilla/dom/SVGGeometryElement.h"
 #include "mozilla/dom/SVGRect.h"
 #include "mozilla/dom/SVGTextContentElementBinding.h"
@@ -3484,6 +3483,10 @@ SVGBBox SVGTextFrame::GetBBoxContribution(const Matrix& aToBBoxUserspace,
         TextRenderedRunFlagsForBBoxContribution(run, aFlags);
     gfxMatrix m = ThebesMatrix(aToBBoxUserspace);
     SVGBBox bboxForRun = run.GetUserSpaceRect(presContext, flags, &m);
+    if (aFlags.contains(SVGBBoxFlag::DisregardCSSZoom)) {
+      bboxForRun.Scale(1 / run.mFrame->Style()->EffectiveZoom().ToFloat());
+    }
+
     bbox.UnionEdges(bboxForRun);
   }
 
@@ -3847,7 +3850,7 @@ float SVGTextFrame::GetSubStringLengthSlowFallback(nsIContent* aContent,
 
 
 int32_t SVGTextFrame::GetCharNumAtPosition(nsIContent* aContent,
-                                           const DOMPointInit& aPoint) {
+                                           const gfx::Point& aPoint) {
   nsIFrame* kid = PrincipalChildList().FirstChild();
   if (kid->IsSubtreeDirty()) {
     
@@ -3859,7 +3862,7 @@ int32_t SVGTextFrame::GetCharNumAtPosition(nsIContent* aContent,
 
   nsPresContext* context = PresContext();
 
-  gfxPoint p(aPoint.mX, aPoint.mY);
+  gfxPoint p = ThebesPoint(aPoint);
 
   int32_t result = -1;
 
