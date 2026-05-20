@@ -7,23 +7,13 @@
 
 
 
-class ConditionOr extends ConditionBase {
-  #conditions;
-
+class ConditionOr extends ConditionBaseWithSub {
   constructor(factory, desc) {
-    super(factory, desc);
-
-    this.#conditions = desc.conditions.map(c => factory.create(c));
-  }
-
-  async init() {
-    for (const c of this.#conditions) {
-      await c.init();
-    }
+    super(factory, desc, desc.conditions);
   }
 
   check() {
-    for (const c of this.#conditions) {
+    for (const c of this.conditions) {
       if (c.check()) {
         return true;
       }
