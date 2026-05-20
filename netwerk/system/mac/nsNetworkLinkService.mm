@@ -160,7 +160,14 @@ void nsNetworkLinkService::GetDnsSuffixListInternal() {
       LOG(("DNS search domain from [%s]\n", res.dnsrch[i]));
       result.AppendElement(nsCString(res.dnsrch[i]));
     }
-    res_nclose(&res);
+    
+    
+    
+    
+    
+    
+    
+    res_ndestroy(&res);
   }
 
   MutexAutoLock lock(mMutex);
