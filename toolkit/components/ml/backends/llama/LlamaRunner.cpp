@@ -634,10 +634,20 @@ class MetadataCallback final : public nsIFileMetadataCallback {
   NS_DECL_THREADSAFE_ISUPPORTS
   explicit MetadataCallback(LlamaRunner* aRunner) : mRunner(aRunner) {}
   NS_IMETHOD OnFileMetadataReady(nsIAsyncFileMetadata* aObject) override {
-    mRunner->OnMetadataReceived();
+    
+    
+    if (RefPtr<LlamaRunner> runner = mRunner.get()) {
+      runner->OnMetadataReceived();
+    }
     return NS_OK;
   }
-  LlamaRunner* mRunner = nullptr;
+  
+  
+  
+  
+  
+  
+  WeakPtr<LlamaRunner> mRunner;
 
  private:
   virtual ~MetadataCallback() = default;
