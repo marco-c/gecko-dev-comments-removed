@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 6.0.96
- * pdfjsBuild = cd4fd7563
+ * pdfjsVersion = 6.0.135
+ * pdfjsBuild = 00af75905
  */
 /******/ // The require scope
 /******/ var __webpack_require__ = {};
@@ -958,7 +958,6 @@ const {
   getRGB,
   getRGBA,
   getUuid,
-  getXfaPageViewport,
   GlobalWorkerOptions,
   ImageKind,
   InvalidPDFException,
@@ -5155,8 +5154,11 @@ class PDFDocumentProperties {
       info,
       metadata,
       contentLength
-    }, pdfPage] = await Promise.all([this.pdfDocument.getMetadata(), this.pdfDocument.getPage(currentPageNumber)]);
-    const [fileName, fileSize, title, creationDate, modificationDate, pageSize, isLinearized] = await Promise.all([this._fileNameLookup(), this.#parseFileSize(contentLength), this._titleLookup(), this.#parseDate(metadata?.get("xmp:createdate"), info.CreationDate), this.#parseDate(metadata?.get("xmp:modifydate"), info.ModDate), this.#parsePageSize(getPageSizeInches(pdfPage), pagesRotation), this.#parseLinearization(info.IsLinearized)]);
+    }, pdfPage] = await Promise.all([this.pdfDocument.getMetadata(), this.pdfDocument.getPage(currentPageNumber).catch(reason => {
+      console.error(`PDFDocumentProperties - unable to get page ${currentPageNumber}.`, reason);
+      return null;
+    })]);
+    const [fileName, fileSize, title, creationDate, modificationDate, pageSize, isLinearized] = await Promise.all([this._fileNameLookup(), this.#parseFileSize(contentLength), this._titleLookup(), this.#parseDate(metadata?.get("xmp:createdate"), info.CreationDate), this.#parseDate(metadata?.get("xmp:modifydate"), info.ModDate), this.#parsePageSize(pdfPage, pagesRotation), this.#parseLinearization(info.IsLinearized)]);
     this.#fieldData = Object.freeze({
       fileName,
       fileSize,
@@ -5226,10 +5228,11 @@ class PDFDocumentProperties {
       b
     }) : undefined;
   }
-  async #parsePageSize(pageSizeInches, pagesRotation) {
-    if (!pageSizeInches) {
+  async #parsePageSize(pdfPage, pagesRotation) {
+    if (!pdfPage) {
       return undefined;
     }
+    let pageSizeInches = getPageSizeInches(pdfPage);
     if (pagesRotation % 180 !== 0) {
       pageSizeInches = {
         width: pageSizeInches.height,
@@ -7690,7 +7693,7 @@ function getXfaHtmlForPrinting(printContainer, pdfDocument) {
       linkService,
       xfaHtml: xfaPage
     });
-    const viewport = getXfaPageViewport(xfaPage, {
+    const viewport = XfaLayer.getPageViewport(xfaPage, {
       scale
     });
     builder.render({
@@ -12917,7 +12920,7 @@ class PDFViewer {
   #savedPageViews = null;
   #deletedPageNumbers = null;
   constructor(options) {
-    const viewerVersion = "6.0.96";
+    const viewerVersion = "6.0.135";
     if (version !== viewerVersion) {
       throw new Error(`The API version "${version}" does not match the Viewer version "${viewerVersion}".`);
     }
