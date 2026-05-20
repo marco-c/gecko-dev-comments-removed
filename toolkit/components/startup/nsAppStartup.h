@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsAppStartup_h_
 #define nsAppStartup_h_
 
@@ -10,7 +9,7 @@
 #include "nsIWindowCreator.h"
 #include "nsIObserver.h"
 #include "nsWeakReference.h"
-
+#include "mozilla/HangAnnotations.h"
 #include "nsIAppShell.h"
 
 #if defined(XP_WIN)
@@ -25,7 +24,8 @@
 class nsAppStartup final : public nsIAppStartup,
                            public nsIWindowCreator,
                            public nsIObserver,
-                           public nsSupportsWeakReference {
+                           public nsSupportsWeakReference,
+                           public mozilla::BackgroundHangAnnotator {
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIAPPSTARTUP
@@ -35,8 +35,10 @@ class nsAppStartup final : public nsIAppStartup,
   nsAppStartup();
   nsresult Init();
 
+  void AnnotateHang(mozilla::BackgroundHangAnnotations& aAnnotations) override;
+
  private:
-  ~nsAppStartup() = default;
+  ~nsAppStartup();
 
   void CloseAllWindows();
 
@@ -44,16 +46,17 @@ class nsAppStartup final : public nsIAppStartup,
 
   nsCOMPtr<nsIAppShell> mAppShell;
 
-  int32_t mConsiderQuitStopper;     
-  bool mRunning;                    
-  bool mShuttingDown;               
-  bool mStartingUp;                 
-  bool mAttemptingQuit;             
-  bool mIsSafeModeNecessary;        
-  bool mStartupCrashTrackingEnded;  
-                                    
-  bool mWasSilentlyStarted;         
-
+  int32_t mConsiderQuitStopper;  
+  bool mRunning;                 
+  bool mShuttingDown;            
+  bool mStartingUp;              
+  bool mAttemptingQuit;          
+  bool mIsSafeModeNecessary;     
+  
+  
+  
+  bool mStartupCrashAndHangTrackingEnded;
+  bool mWasSilentlyStarted;  
 #if defined(XP_WIN)
   
   bool mAllowWindowless;
