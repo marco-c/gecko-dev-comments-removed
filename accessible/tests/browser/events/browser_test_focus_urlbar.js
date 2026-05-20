@@ -22,21 +22,8 @@ ChromeUtils.defineESModuleGetters(this, {
 });
 
 function isEventForAutocompleteItem(event) {
-  return event.accessible.role == ROLE_COMBOBOX_OPTION;
-}
-
-function isEventForButton(event) {
-  return event.accessible.role == ROLE_PUSHBUTTON;
-}
-
-function isEventForOneOffEngine(event) {
-  let parent = event.accessible.parent;
-  return (
-    event.accessible.role == ROLE_PUSHBUTTON &&
-    parent &&
-    parent.role == ROLE_GROUPING &&
-    parent.name
-  );
+  
+  return event.accessible.role == ROLE_OPTION;
 }
 
 function isEventForMenuPopup(event) {
@@ -49,9 +36,9 @@ function isEventForMenuItem(event) {
 
 function isEventForResultButton(event) {
   let parent = event.accessible.parent;
+  
   return (
-    event.accessible.role == ROLE_PUSHBUTTON &&
-    parent?.role == ROLE_COMBOBOX_LIST
+    event.accessible.role == ROLE_PUSHBUTTON && parent?.role == ROLE_LISTBOX
   );
 }
 
@@ -85,10 +72,6 @@ class TipTestProvider extends UrlbarProvider {
 
 
 async function runTests() {
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.scotchBonnet.enableOverride", false]],
-  });
   registerCleanupFunction(async function () {
     await UrlbarTestUtils.promisePopupClose(window);
     await PlacesUtils.history.clear();
@@ -108,9 +91,10 @@ async function runTests() {
   
   await UrlbarTestUtils.promisePopupClose(window);
 
+  
   let focused = waitForEvent(
     EVENT_FOCUS,
-    event => event.accessible.role == ROLE_ENTRY
+    event => event.accessible.role == ROLE_EDITCOMBOBOX
   );
   gURLBar.focus();
   let event = await focused;
@@ -211,12 +195,6 @@ async function runTests() {
   event = await focused;
   testStates(event.accessible, STATE_FOCUSED);
 
-  info("Ensuring autocomplete focus on arrow up for search settings button");
-  focused = waitForEvent(EVENT_FOCUS, isEventForButton);
-  EventUtils.synthesizeKey("KEY_ArrowUp");
-  event = await focused;
-  testStates(event.accessible, STATE_FOCUSED);
-
   info("Ensuring text box focus when text is typed");
   focused = waitForEvent(EVENT_FOCUS, textBox);
   EventUtils.sendString("z");
@@ -249,18 +227,6 @@ async function runTests() {
   while (UrlbarTestUtils.getSelectedRowIndex(window) != resultCount - 1) {
     EventUtils.synthesizeKey("KEY_ArrowDown");
   }
-
-  info("Ensuring one-off search button focus on arrow down");
-  focused = waitForEvent(EVENT_FOCUS, isEventForOneOffEngine);
-  EventUtils.synthesizeKey("KEY_ArrowDown");
-  event = await focused;
-  testStates(event.accessible, STATE_FOCUSED);
-
-  info("Ensuring autocomplete focus on arrow up");
-  focused = waitForEvent(EVENT_FOCUS, isEventForAutocompleteItem);
-  EventUtils.synthesizeKey("KEY_ArrowUp");
-  event = await focused;
-  testStates(event.accessible, STATE_FOCUSED);
 
   info("Ensuring text box focus on text selection");
   focused = waitForEvent(EVENT_FOCUS, textBox);
@@ -379,9 +345,10 @@ async function runTipTests() {
     providersManager.unregisterProvider(provider);
   });
 
+  
   let focused = waitForEvent(
     EVENT_FOCUS,
-    event => event.accessible.role == ROLE_ENTRY
+    event => event.accessible.role == ROLE_EDITCOMBOBOX
   );
   gURLBar.focus();
   let event = await focused;
