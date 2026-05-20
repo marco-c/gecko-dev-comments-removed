@@ -298,23 +298,12 @@ fn derive_variant_fields_expr(
 
     
     if !css_field_attrs.iterable && iter.peek().is_none() {
-        
-        
-        
-        let ty = &first.ast().ty;
-        cg::add_predicate(where_clause, parse_quote!(#ty: style_traits::ToTyped));
+        let expr = derive_single_field_expr(first, css_field_attrs, field_attrs, where_clause);
 
-        let mut expr = quote! { style_traits::ToTyped::to_typed(#first, dest) };
-
-        if let Some(condition) = field_attrs.skip_if {
-            expr = quote! {
-                if !#condition(#first) {
-                    #expr
-                }
-            }
-        }
-
-        return expr;
+        return quote! {{
+            #expr
+            Ok(())
+        }};
     }
 
     
