@@ -45,16 +45,34 @@ JS_PUBLIC_API size_t MemoryReportingSundriesThreshold() { return 8 * 1024; }
 
 
 HashNumber InefficientNonFlatteningStringHashPolicy::hash(const Lookup& l) {
+  
+  
+  
+  constexpr size_t kHashCharBudget = 128;
+
+  size_t len = l->length();
+  HashNumber h = mozilla::HashGeneric(len);
+  size_t toHash = std::min(len, kHashCharBudget);
+
   if (l->isLinear()) {
-    return HashStringChars(&l->asLinear());
+    JS::AutoCheckCannotGC nogc;
+    JSLinearString& linear = l->asLinear();
+    if (linear.hasLatin1Chars()) {
+      h = mozilla::AddToHash(
+          h, mozilla::HashString(linear.latin1Chars(nogc), toHash));
+    } else {
+      h = mozilla::AddToHash(
+          h, mozilla::HashString(linear.twoByteChars(nogc), toHash));
+    }
+    return h;
   }
 
   
-  uint32_t hash = 0;
-  if (!l->asRope().hash(&hash)) {
+  uint32_t ropeHash = 0;
+  if (!l->asRope().hashPrefix(kHashCharBudget, &ropeHash)) {
     MOZ_CRASH("oom");
   }
-  return hash;
+  return mozilla::AddToHash(h, ropeHash);
 }
 
 template <typename Char1, typename Char2>

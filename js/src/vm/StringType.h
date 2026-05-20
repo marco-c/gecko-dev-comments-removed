@@ -875,6 +875,11 @@ class JSRope : public JSString {
 
   
   
+  
+  [[nodiscard]] bool hashPrefix(size_t budget, uint32_t* outHash) const;
+
+  
+  
   bool isBeingFlattened() const {
     return StringFlags::isBeingFlattened(flags());
   }
