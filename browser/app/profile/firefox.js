@@ -3620,4 +3620,4 @@ pref("browser.contentsharing.enabled", false);
 pref("browser.contentsharing.newBadge.enabled", true);
 
 
-pref("distribution.mozillaonline.ignore", false);
+pref("distribution.mozillaonline.ignore", true);
