@@ -1,0 +1,7 @@
+"use strict";
+
+self.onmessage = ({ data }) => {
+  
+  new Int32Array(data.buffer)[1] = 200;
+  self.postMessage(data);
+};
