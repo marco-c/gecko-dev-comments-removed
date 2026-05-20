@@ -53,6 +53,12 @@ class ListObject : public NativeObject {
 
 
 
+  [[nodiscard]] inline bool append(JSContext* cx, Value v1, Value v2);
+
+  
+
+
+
 
   inline JS::Value popFirst(JSContext* cx);
 
