@@ -336,11 +336,6 @@ void js::gc::GCRuntime::traceRuntimeCommon(JSTracer* trc,
          zone.next()) {
       zone->traceRootsInMajorGC(trc);
     }
-
-    
-    if (rt->hasJitRuntime() && rt->jitRuntime()->hasInterpreterEntryMap()) {
-      rt->jitRuntime()->getInterpreterEntryMap()->traceTrampolineCode(trc);
-    }
   }
 
   
@@ -432,9 +427,6 @@ void js::gc::GCRuntime::finishRoots() {
 #ifdef JS_GC_ZEAL
   clearSelectedForMarking();
 #endif
-
-  
-  ClearInterpreterEntryMap(rt);
 
   
   

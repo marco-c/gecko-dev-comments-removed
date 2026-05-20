@@ -33,7 +33,7 @@ JitCode* Linker::newCode(JSContext* cx, CodeKind kind) {
   
   bytesNeeded = AlignBytes(bytesNeeded, ExecutableAllocatorAlignment);
 
-  JitZone* jitZone = cx->zone()->getJitZone(cx);
+  JitZone* jitZone = cx->zone()->getOrCreateJitZone(cx);
   if (!jitZone) {
     
     return nullptr;

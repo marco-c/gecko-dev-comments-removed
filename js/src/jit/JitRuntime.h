@@ -19,7 +19,6 @@
 #include "jit/BaselineICList.h"
 #include "jit/BaselineJIT.h"
 #include "jit/CalleeToken.h"
-#include "jit/InterpreterEntryTrampoline.h"
 #include "jit/IonCompileTask.h"
 #include "jit/IonTypes.h"
 #include "jit/JitCode.h"
@@ -194,10 +193,6 @@ class JitRuntime {
 
   
   MainThreadData<JitHintsMap*> jitHintsMap_{nullptr};
-
-  
-  
-  MainThreadData<EntryTrampolineMap*> interpreterEntryMap_{nullptr};
 
 #ifdef DEBUG
   
@@ -452,15 +447,6 @@ class JitRuntime {
   JitHintsMap* getJitHintsMap() {
     MOZ_ASSERT(hasJitHintsMap());
     return jitHintsMap_;
-  }
-
-  bool hasInterpreterEntryMap() const {
-    return interpreterEntryMap_ != nullptr;
-  }
-
-  EntryTrampolineMap* getInterpreterEntryMap() {
-    MOZ_ASSERT(hasInterpreterEntryMap());
-    return interpreterEntryMap_;
   }
 
   bool isProfilerInstrumentationEnabled(JSRuntime* rt) {

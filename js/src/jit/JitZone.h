@@ -18,6 +18,7 @@
 
 #include "gc/Barrier.h"
 #include "gc/Marking.h"
+#include "gc/WeakMap.h"
 #include "jit/CacheIRAOT.h"
 #include "jit/ExecutableAllocator.h"
 #include "jit/ICStubSpace.h"
@@ -37,12 +38,27 @@ struct CodeSizes;
 }
 
 namespace js {
+
+class BaseScript;
+
 namespace jit {
 
 enum class CacheKind : uint8_t;
 class CacheIRStubInfo;
 class JitCode;
 class JitScript;
+
+
+
+
+
+
+
+
+
+
+
+using EntryTrampolineMap = WeakMap<BaseScript*, JitCode*, ZoneAllocPolicy>;
 
 enum class ICStubEngine : uint8_t {
   
@@ -147,6 +163,10 @@ class JitZone {
   
   Stubs<WeakHeapPtr<JitCode*>> stubs_;
 
+  
+  
+  js::UniquePtr<EntryTrampolineMap> interpreterEntryMap;
+
   mozilla::Maybe<IonCompilationId> currentCompilationId_;
   bool keepJitScripts_ = false;
 
@@ -172,6 +192,7 @@ class JitZone {
   ~JitZone() {
     MOZ_ASSERT(jitScripts_.isEmpty());
     MOZ_ASSERT(!keepJitScripts_);
+    MOZ_ASSERT_IF(interpreterEntryMap, interpreterEntryMap->empty());
   }
 
   void traceWeak(JSTracer* trc, Zone* zone);
@@ -297,6 +318,9 @@ class JitZone {
 
   void traceWeak(JSTracer* trc, JS::Realm* realm);
 
+  void traceScriptTableRoots(JSTracer* trc);
+  void finishScriptTableRoots();
+
   void discardStubs() {
     for (WeakHeapPtr<JitCode*>& stubRef : stubs_) {
       stubRef = nullptr;
@@ -342,6 +366,11 @@ class JitZone {
     }
     return stubs_[kind];
   }
+
+  EntryTrampolineMap* maybeInterpreterEntryMap() {
+    return interpreterEntryMap.get();
+  }
+  EntryTrampolineMap* getOrCreateInterpreterEntryMap(JS::Zone* zone);
 
   static constexpr size_t offsetOfStringConcatStub() {
     return offsetof(JitZone, stubs_) +

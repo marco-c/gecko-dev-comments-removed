@@ -1227,6 +1227,8 @@ void GCRuntime::restoreSharedAtomsZone() {
   
   
 
+  MOZ_ASSERT(!allocTask.wasStarted());
+
   if (!sharedAtomsZone_) {
     return;
   }
@@ -5836,9 +5838,6 @@ void GCRuntime::checkHashTablesAfterMovingGC() {
 
 
   rt->geckoProfiler().checkStringsMapAfterMovingGC();
-  if (rt->hasJitRuntime() && rt->jitRuntime()->hasInterpreterEntryMap()) {
-    rt->jitRuntime()->getInterpreterEntryMap()->checkScriptsAfterMovingGC();
-  }
   for (ZonesIter zone(this, SkipAtoms); !zone.done(); zone.next()) {
     zone->checkUniqueIdTableAfterMovingGC();
     zone->shapeZone().checkTablesAfterMovingGC(zone);
