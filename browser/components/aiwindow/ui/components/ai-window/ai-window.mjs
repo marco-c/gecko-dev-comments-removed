@@ -24,6 +24,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/aiwindow/ui/modules/AIWindow.sys.mjs",
   EMPTY_SMARTBAR_INPUT_STATE:
     "moz-src:///browser/components/aiwindow/ui/modules/AIWindowTabStatesManager.sys.mjs",
+  FeedbackModal:
+    "moz-src:///browser/components/aiwindow/ui/modules/FeedbackModal.sys.mjs",
   ChatConversation:
     "moz-src:///browser/components/aiwindow/ui/modules/ChatConversation.sys.mjs",
   MEMORIES_FLAG_SOURCE:
@@ -1472,6 +1474,8 @@ export class AIWindow extends MozLitElement {
       return;
     }
 
+    const startTime = ChromeUtils.now();
+
     const firstUserMessage = this.#conversation.messages.find(
       m => m.role === lazy.MESSAGE_ROLE.USER
     );
@@ -1492,6 +1496,12 @@ export class AIWindow extends MozLitElement {
     this.#conversation.title = title;
     document.title = title;
     this.#updateConversation();
+
+    ChromeUtils.addProfilerMarker(
+      "SmartWindow",
+      { startTime },
+      "Title generation"
+    );
   }
 
   #updateTabFavicon() {
@@ -1566,13 +1576,18 @@ export class AIWindow extends MozLitElement {
     const { signal } = this.#abortController;
     this.isGenerating = true;
 
-    const requestStart = Date.now();
+    const requestStart = ChromeUtils.now();
     let firstTokenTime = null;
     const onUpdate = (_e, message) => {
       if (message.role !== lazy.MESSAGE_ROLE.ASSISTANT) {
         return;
       }
-      firstTokenTime = Date.now();
+      firstTokenTime = ChromeUtils.now();
+      ChromeUtils.addProfilerMarker(
+        "SmartWindow",
+        { startTime: requestStart },
+        "Time to first token (TTFT)"
+      );
       conversation?.off("chat-conversation:message-update", onUpdate);
     };
     conversation.on("chat-conversation:message-update", onUpdate);
@@ -1607,6 +1622,12 @@ export class AIWindow extends MozLitElement {
         mode: this.mode,
         signal,
       });
+
+      ChromeUtils.addProfilerMarker(
+        "SmartWindow",
+        { startTime: requestStart },
+        "Total turnaround time"
+      );
 
       this.#sendModelResponseTelemetryEvent(
         null,
@@ -1659,8 +1680,10 @@ export class AIWindow extends MozLitElement {
   };
 
   #getModelRequestLatencyAndDuration(requestStart, firstTokenTime) {
-    const duration = Date.now() - requestStart;
-    const latency = firstTokenTime ? firstTokenTime - requestStart : 0;
+    const duration = Math.round(ChromeUtils.now() - requestStart);
+    const latency = firstTokenTime
+      ? Math.round(firstTokenTime - requestStart)
+      : 0;
     return { duration, latency };
   }
 
@@ -2153,11 +2176,24 @@ export class AIWindow extends MozLitElement {
       case "open-memories-learn-more":
         this.#openMemoriesLearnMore();
         break;
+
+      case "thumbs-up":
+      case "thumbs-down":
+        this.#openFeedbackModal(action);
+        break;
     }
   }
 
   handleToolUIUpdate(data) {
     lazy.ToolUI.handleUpdate(data, this.#conversation);
+  }
+
+  #openFeedbackModal(type) {
+    const browser = this.#topChromeWindow?.gBrowser?.selectedBrowser;
+    if (!browser) {
+      return;
+    }
+    lazy.FeedbackModal.open(browser, type);
   }
 
   #openMemoriesSettings() {
