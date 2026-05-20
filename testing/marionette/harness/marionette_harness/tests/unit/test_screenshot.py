@@ -1,6 +1,6 @@
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import base64
 import hashlib
@@ -32,6 +32,11 @@ box = inline(
 input = inline("<body><input id='text-input'></input></body>")
 long = inline("<body style='height: 300vh'><p style='margin-top: 100vh'>foo</p></body>")
 short = inline("<body style='height: 10vh'></body>")
+partially_visible = inline(
+    "<body style='height: 300vh'>"
+    "<div id='abs' style='position:absolute;margin-top:200px;width:20px;height:100vh;background:green'></div>"
+    "</body>"
+)
 svg = inline(
     """
     <svg xmlns="http://www.w3.org/2000/svg" height="20" width="20">
@@ -49,8 +54,8 @@ class ScreenCaptureTestCase(MarionetteTestCase):
 
         self._device_pixel_ratio = None
 
-        
-        
+        # Ensure that each screenshot test runs on a blank page to avoid left
+        # over elements or focus which could interfer with taking screenshots
         self.marionette.navigate("about:blank")
 
     @property
@@ -102,7 +107,7 @@ class ScreenCaptureTestCase(MarionetteTestCase):
         screenshot_hash1 = self.marionette.screenshot(element=element, format="hash")
         screenshot_hash2 = self.marionette.screenshot(element=element, format="hash")
 
-        
+        # Valid data should have been returned
         self.assert_png(image_base64)
         self.assert_png(image_binary1)
         self.assertEqual(image_base64, image_binary1)
@@ -111,12 +116,12 @@ class ScreenCaptureTestCase(MarionetteTestCase):
             hashlib.sha256(screenshot_base64.encode("utf-8")).hexdigest(),
         )
 
-        
+        # Different formats produce different data
         self.assertNotEqual(screenshot_base64, image_binary1)
         self.assertNotEqual(screenshot_base64, screenshot_hash1)
         self.assertNotEqual(image_binary1, screenshot_hash1)
 
-        
+        # A second capture should be identical
         self.assertEqual(image_base64, image_default)
         self.assertEqual(image_binary1, image_binary2)
         self.assertEqual(screenshot_hash1, screenshot_hash2)
@@ -249,7 +254,7 @@ class TestScreenCaptureContent(WindowManagerMixin, ScreenCaptureTestCase):
     def test_formats(self):
         self.marionette.navigate(box)
 
-        
+        # Use a smaller region to speed up the test
         element = self.marionette.find_element(By.TAG_NAME, "div")
         self.assert_formats(element=element)
 
@@ -281,8 +286,8 @@ class TestScreenCaptureContent(WindowManagerMixin, ScreenCaptureTestCase):
         self.assertNotEqual(before, self.page_y_offset)
 
     def test_scroll_off(self):
-        self.marionette.navigate(long)
-        el = self.marionette.find_element(By.TAG_NAME, "p")
+        self.marionette.navigate(partially_visible)
+        el = self.marionette.find_element(By.ID, "abs")
         before = self.page_y_offset
         self.marionette.screenshot(element=el, format="hash", scroll=False)
         self.assertEqual(before, self.page_y_offset)
