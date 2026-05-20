@@ -258,6 +258,11 @@ LocalAccessible* HTMLLabelIterator::Next() {
   
   
   
+  if (mAcc->IsDoc()) {
+    
+    
+    return nullptr;
+  }
   LocalAccessible* walkUp = mAcc->LocalParent();
   while (walkUp && !walkUp->IsDoc()) {
     nsIContent* walkUpEl = walkUp->GetContent();
