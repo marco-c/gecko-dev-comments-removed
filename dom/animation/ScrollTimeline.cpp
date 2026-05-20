@@ -91,18 +91,6 @@ already_AddRefed<ScrollTimeline> ScrollTimeline::Constructor(
 
 Element* ScrollTimeline::GetSource() const { return SourceElement(); }
 
-ScrollTimeline::State ScrollTimeline::GetState() const {
-  const auto source = mScrollerInfo.Source();
-  
-  
-  
-  const bool isRoot =
-      source.mElement &&
-      source.mElement->OwnerDoc()->GetScrollingElementNoFlush() ==
-          source.mElement;
-  return State{source, mAxis, isRoot};
-}
-
 dom::ScrollAxis ScrollTimeline::GetScrollAxis() const {
   switch (mAxis) {
     case StyleScrollAxis::Block:
@@ -144,8 +132,7 @@ ScrollTimeline::FindNearestScroller(Element* aSubject,
     return {nullptr, PseudoStyleRequest{}};
   }
   Element* curr = subject->GetFlattenedTreeParentElement();
-  
-  Element* root = subject->OwnerDoc()->GetScrollingElementNoFlush();
+  Element* root = subject->OwnerDoc()->GetDocumentElement();
   while (curr && curr != root) {
     const ComputedStyle* style = Servo_Element_GetMaybeOutOfDateStyle(curr);
     MOZ_ASSERT(style, "The ancestor should be styled.");
@@ -303,8 +290,6 @@ const ScrollContainerFrame* ScrollTimeline::State::GetScrollContainerFrame()
   }
 
   if (mIsRoot) {
-    
-    
     if (const PresShell* presShell = e->OwnerDoc()->GetPresShell()) {
       return presShell->GetRootScrollContainerFrame();
     }
@@ -472,7 +457,7 @@ NonOwningAnimationTarget ScrollTimeline::ScrollerInfo::Source() const {
   
   
   
-  return {mSourceOrTarget.mElement->OwnerDoc()->GetScrollingElementNoFlush(),
+  return {mSourceOrTarget.mElement->OwnerDoc()->GetDocumentElement(),
           PseudoStyleRequest{}};
 }
 
