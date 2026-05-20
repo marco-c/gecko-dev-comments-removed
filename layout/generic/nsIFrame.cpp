@@ -11693,6 +11693,13 @@ StyleAlignmentBaseline nsIFrame::AlignmentBaseline() const {
     return ConvertSVGDominantBaselineToAlignmentBaseline(dominantBaseline);
   }
 
+  if (IsTableCellFrame()) {
+    
+    
+    
+    return StyleAlignmentBaseline::Baseline;
+  }
+
   if (StyleDisplay()->mAlignmentBaseline == StyleAlignmentBaseline::Baseline) {
     
     
