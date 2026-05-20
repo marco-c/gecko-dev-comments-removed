@@ -99,6 +99,17 @@ class TabBase {
       resetScrollPosition = !!options?.resetScrollPosition;
     }
 
+    
+    
+    
+    let parentRect = this.browser.getBoundingClientRect();
+
+    
+    
+    if (!parentRect.width && !parentRect.height) {
+      throw new ExtensionError("Cannot capture invisible tab");
+    }
+
     let wgp = this.browsingContext.currentWindowGlobal;
     let image = await wgp.drawSnapshot(
       rect,
