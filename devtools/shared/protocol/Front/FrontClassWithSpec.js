@@ -10,6 +10,21 @@ var {
 } = require("resource://devtools/shared/protocol/types.js");
 var { Front } = require("resource://devtools/shared/protocol/Front.js");
 
+const logger = console.createInstance({
+  prefix: "devtools_rdp",
+  maxLogLevel: "Warn",
+});
+
+
+
+
+const SEND_MOZ_LOG_SYMBOL = {
+  toSource() {
+    return " \x1b[2m->\x1b[0m ";
+  },
+};
+let colorCounter = 0;
+
 
 
 
@@ -44,6 +59,10 @@ var generateRequestMethods = function (actorSpec, frontProto) {
       }
       if (spec.oneway) {
         
+        
+        logger.log(SEND_MOZ_LOG_SYMBOL, packet);
+
+        
         this.send(packet);
         return undefined;
       }
@@ -53,6 +72,24 @@ var generateRequestMethods = function (actorSpec, frontProto) {
 
       
       const clientBulkCallback = isSendingBulkData ? args.at(-1) : null;
+
+      
+      
+      
+      let color;
+      if (logger.shouldLog("Log")) {
+        color = 1 + (colorCounter % 15);
+        colorCounter++;
+        logger.log(
+          {
+            toSource() {
+              return `\x1b[38;5;${color}m->\x1b[0m`;
+            },
+          },
+          
+          { ...packet, to: this.actorID }
+        );
+      }
 
       return this.request(packet, {
         bulk: isSendingBulkData,
@@ -65,6 +102,16 @@ var generateRequestMethods = function (actorSpec, frontProto) {
         const isReceivingBulkData = spec.response.template === BULK_RESPONSE;
         if (isReceivingBulkData) {
           return response;
+        }
+        if (logger.shouldLog("Log")) {
+          logger.log(
+            {
+              toSource() {
+                return `\x1b[38;5;${color}m<-\x1b[0m`;
+              },
+            },
+            response
+          );
         }
 
         let ret;
