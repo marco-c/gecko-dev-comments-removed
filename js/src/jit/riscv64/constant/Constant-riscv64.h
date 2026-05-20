@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef jit_riscv64_constant_Constant_riscv64_h
 #define jit_riscv64_constant_Constant_riscv64_h
 
@@ -21,10 +19,6 @@
 
 namespace js {
 namespace jit {
-
-
-
-const int ReasonableBufferSize = 256;
 
 
 
@@ -57,7 +51,6 @@ static_assert(kCJalOffsetBits == kOffset12);
 static_assert(kCBranchOffsetBits == kOffset9);
 static_assert(kJumpOffsetBits == kOffset21);
 static_assert(kBranchOffsetBits == kOffset13);
-
 
 }  
 }  

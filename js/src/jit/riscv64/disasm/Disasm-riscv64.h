@@ -2,21 +2,23 @@
 
 
 
-
-
-
 #ifndef jit_riscv64_disasm_Disasm_riscv64_h
 #define jit_riscv64_disasm_Disasm_riscv64_h
 
 #include <stdio.h>
 
+#include "jit/riscv64/base/Vector.h"
 #include "jit/riscv64/constant/Constant-riscv64.h"
-#include "jit/riscv64/constant/util-riscv64.h"
+
 namespace js {
 namespace jit {
 namespace disasm {
 
 typedef unsigned char byte;
+
+
+
+constexpr int ReasonableBufferSize = 256;
 
 
 
