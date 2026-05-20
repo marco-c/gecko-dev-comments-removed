@@ -1314,6 +1314,10 @@ this.AccessibilityUtils = (function () {
         
         
         
+        a11yWarn(
+          "handleEvent() was unable to perform a11y checks on hidden node",
+          { DOMNode: composedTarget }
+        );
         return;
       }
       this.assertCanBeClicked(composedTarget);
