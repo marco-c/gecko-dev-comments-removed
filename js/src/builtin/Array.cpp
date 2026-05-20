@@ -4409,17 +4409,59 @@ static bool SearchElementDense(JSContext* cx, HandleValue val, Iter iterator,
   
   if (val.isNumber()) {
     double dval = val.toNumber();
-    
-    
-    if (Kind == SearchKind::Includes && std::isnan(dval)) {
-      auto cmp = [](JSContext*, const Value& element, bool* equal) {
-        *equal = (element.isDouble() && std::isnan(element.toDouble()));
+    if (std::isnan(dval)) {
+      
+      
+      if (Kind == SearchKind::Includes) {
+        auto cmp = [](JSContext*, const Value& element, bool* equal) {
+          *equal = (element.isDouble() && std::isnan(element.toDouble()));
+          return true;
+        };
+        return iterator(cx, cmp, rval);
+      }
+
+      
+      
+      
+      auto cmp = [](JSContext*, const Value&, bool* equal) {
+        *equal = false;
         return true;
       };
       return iterator(cx, cmp, rval);
     }
-    auto cmp = [dval](JSContext*, const Value& element, bool* equal) {
-      *equal = (element.isNumber() && element.toNumber() == dval);
+
+    if (dval == 0.0) {
+      
+      
+      auto cmp = [](JSContext*, const Value& element, bool* equal) {
+        *equal = Int32Value(0).asRawBits() == element.asRawBits() ||
+                 DoubleValue(0.0).asRawBits() == element.asRawBits() ||
+                 DoubleValue(-0.0).asRawBits() == element.asRawBits();
+        return true;
+      };
+      return iterator(cx, cmp, rval);
+    }
+
+    int32_t ival;
+    if (mozilla::NumberIsInt32(dval, &ival)) {
+      
+      
+      uint64_t int32Bits = Int32Value(ival).asRawBits();
+      uint64_t doubleBits = DoubleValue(dval).asRawBits();
+      auto cmp = [int32Bits, doubleBits](JSContext*, const Value& element,
+                                         bool* equal) {
+        *equal = int32Bits == element.asRawBits() ||
+                 doubleBits == element.asRawBits();
+        return true;
+      };
+      return iterator(cx, cmp, rval);
+    }
+
+    
+    
+    uint64_t doubleBits = DoubleValue(dval).asRawBits();
+    auto cmp = [doubleBits](JSContext*, const Value& element, bool* equal) {
+      *equal = doubleBits == element.asRawBits();
       return true;
     };
     return iterator(cx, cmp, rval);
