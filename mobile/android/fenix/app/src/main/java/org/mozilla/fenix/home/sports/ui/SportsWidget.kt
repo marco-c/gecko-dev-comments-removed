@@ -22,12 +22,12 @@ import org.mozilla.fenix.components.appstate.sports.SportsWidgetState
 import org.mozilla.fenix.home.sports.CountrySelectorSource
 import org.mozilla.fenix.home.sports.LiveMatchRefreshSource
 import org.mozilla.fenix.home.sports.Team
+import org.mozilla.fenix.home.sports.WORLD_CUP_KICKOFF_UTC
 import org.mozilla.fenix.home.sports.regionGrouping
 import org.mozilla.fenix.home.ui.horizontalMargin
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.home.sports.MatchCard as MatchCardState
 
-private const val WORLD_CUP_KICKOFF_DATE = "2026-06-11T00:00:00Z"
 private const val WIDE_LAYOUT_WIDTH_FRACTION = 0.7f
 private const val FULL_WIDTH_FRACTION = 1f
 private val SportsWidgetTopSpacing = 44.dp
@@ -78,7 +78,7 @@ fun SportsWidget(
     when {
         sportsWidgetState.isCountdownShown -> {
             CountdownPromoCard(
-                dateInUtc = WORLD_CUP_KICKOFF_DATE,
+                dateInUtc = WORLD_CUP_KICKOFF_UTC,
                 actionButtonLabelResId = R.string.sports_widget_view_schedule,
                 onClick = onViewSchedule,
                 onDismiss = onCountdownWidgetDismiss,
@@ -134,35 +134,47 @@ private fun sportsCardPages(
     onFollowTeam: (CountrySelectorSource) -> Unit,
     onRefresh: (LiveMatchRefreshSource) -> Unit,
     onMatchClicked: (String, String) -> Unit,
-): List<@Composable () -> Unit> = buildList {
+): List<@Composable (pageNumber: Int, pageCount: Int) -> Unit> = buildList {
     if (isFollowTeamsCardShown) {
         if (isOneWeekToWorldCup) {
-            add {
+            add { pageNumber, pageCount ->
                 CountdownPromoCard(
-                    dateInUtc = WORLD_CUP_KICKOFF_DATE,
+                    dateInUtc = WORLD_CUP_KICKOFF_UTC,
                     actionButtonLabelResId = R.string.sports_widget_country_selector_title,
                     onClick = { onFollowTeam(CountrySelectorSource.COUNTDOWN_CARD_FOLLOW_TEAM_BUTTON) },
                     onDismiss = null,
+                    pageNumber = pageNumber,
+                    pageCount = pageCount,
                 )
             }
         } else {
-            add {
-                FollowTeamPromoCard(onFollowTeam = onFollowTeam)
+            add { pageNumber, pageCount ->
+                FollowTeamPromoCard(
+                    onFollowTeam = onFollowTeam,
+                    pageNumber = pageNumber,
+                    pageCount = pageCount,
+                )
             }
         }
     } else if (selectedTeam != null && matchCardStates.isEmpty()) {
-        add {
-            FollowingPromoCard(team = selectedTeam)
+        add { pageNumber, pageCount ->
+            FollowingPromoCard(
+                team = selectedTeam,
+                pageNumber = pageNumber,
+                pageCount = pageCount,
+            )
         }
     }
 
     matchCardStates.forEach { matchCardState ->
-        add {
+        add { pageNumber, pageCount ->
             MatchCard(
                 state = matchCardState,
                 isTeamSelected = selectedTeam != null,
                 onRefresh = onRefresh,
                 onMatchClicked = onMatchClicked,
+                pageNumber = pageNumber,
+                pageCount = pageCount,
             )
         }
     }
