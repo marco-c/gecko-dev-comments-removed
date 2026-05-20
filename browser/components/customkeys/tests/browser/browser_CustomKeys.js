@@ -3,6 +3,10 @@
 
 "use strict";
 
+const { CustomKeys } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/customkeys/CustomKeys.sys.mjs"
+);
+
 
 
 

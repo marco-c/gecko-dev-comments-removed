@@ -3158,7 +3158,7 @@ function updateToggleControlLabel(control) {
 
 
 
-const Win10TabletModeUpdater = {
+var Win10TabletModeUpdater = {
   init() {
     if (AppConstants.platform == "win") {
       this.update(WindowsUIUtils.inWin10TabletMode);
