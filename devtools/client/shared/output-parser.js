@@ -57,6 +57,8 @@ const COLOR_TAKING_FUNCTIONS = new Set([
   "oklab",
   "oklch",
   "rgb",
+  
+  "image",
 ]);
 
 const BASIC_SHAPE_FUNCTIONS = new Set([
