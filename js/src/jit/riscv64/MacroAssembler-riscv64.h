@@ -5,8 +5,6 @@
 
 
 
-
-
 #ifndef jit_riscv64_MacroAssembler_riscv64_h
 #define jit_riscv64_MacroAssembler_riscv64_h
 
@@ -121,9 +119,7 @@ class MacroAssemblerRiscv64 : public Assembler {
   int32_t GetOffset(int32_t offset, Label* L, OffsetSize bits);
 
   inline void GenPCRelativeJump(Register rd, int32_t imm32) {
-    MOZ_ASSERT(is_int32(imm32 + 0x800));
-    int32_t Hi20 = ((imm32 + 0x800) >> 12);
-    int32_t Lo12 = imm32 << 20 >> 20;
+    auto [Hi20, Lo12] = ToHigh20Low12(imm32);
     auipc(rd, Hi20);  
     jr(rd, Lo12);     
   }
