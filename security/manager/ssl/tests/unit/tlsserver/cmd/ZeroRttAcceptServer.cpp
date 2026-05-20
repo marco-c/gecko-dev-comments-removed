@@ -361,6 +361,14 @@ void HandleH2Session(Connection& conn) {
   }
 
   
+  
+  
+  
+  
+  
+  (void)SSL_SendSessionTicket(conn.mSocket, nullptr, 0);
+
+  
   static const uint8_t kServerSettings[] = {
       0x00, 0x00, 0x00,       
       0x04,                   
@@ -526,6 +534,7 @@ void HandleHttpConnection(PRFileDesc* aSocket,
   
   
   (void)SSL_ForceHandshake(sslSocket);
+
   SSLNextProtoState state = SSL_NEXT_PROTO_NO_SUPPORT;
   uint8_t protoBuf[32] = {0};
   unsigned int protoLen = 0;
