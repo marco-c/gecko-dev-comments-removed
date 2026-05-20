@@ -73,10 +73,7 @@ class nsFrameManager {
 
 
 
-
   void CaptureFrameState(nsIFrame* aFrame, nsILayoutHistoryState* aState);
-
-  void RestoreFrameState(nsIFrame* aFrame, nsILayoutHistoryState* aState);
 
   
 

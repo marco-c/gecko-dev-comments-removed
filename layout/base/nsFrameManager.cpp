@@ -188,13 +188,13 @@ void nsFrameManager::CaptureFrameState(nsIFrame* aFrame,
   }
 }
 
-
-
-
 void nsFrameManager::RestoreFrameStateFor(nsIFrame* aFrame,
                                           nsILayoutHistoryState* aState) {
-  if (!aFrame || !aState) {
-    NS_WARNING("null frame or state");
+  MOZ_ASSERT(aFrame);
+  MOZ_ASSERT(aState);
+
+  if (!aState->HasStates()) {
+    
     return;
   }
 
@@ -234,21 +234,6 @@ void nsFrameManager::RestoreFrameStateFor(nsIFrame* aFrame,
 
   
   aState->RemoveState(stateKey);
-}
-
-void nsFrameManager::RestoreFrameState(nsIFrame* aFrame,
-                                       nsILayoutHistoryState* aState) {
-  MOZ_ASSERT(nullptr != aFrame && nullptr != aState,
-             "null parameters passed in");
-
-  RestoreFrameStateFor(aFrame, aState);
-
-  
-  for (const auto& childList : aFrame->ChildLists()) {
-    for (nsIFrame* child : childList.mList) {
-      RestoreFrameState(child, aState);
-    }
-  }
 }
 
 void nsFrameManager::AddSizeOfIncludingThis(nsWindowSizes& aSizes) const {
