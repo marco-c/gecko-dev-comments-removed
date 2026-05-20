@@ -685,19 +685,9 @@ nsresult nsCocoaWindow::ActivateNativeMenuItemAt(const nsAString& indexString) {
       [NSApp mainMenu], locationString, true);
   
   
-  
-  
-  if (item && ![item hasSubmenu] && !item.hidden) {
+  if (item && ![item hasSubmenu]) {
     NSMenu* parent = [item menu];
-    bool hasHiddenAncestor = false;
-    for (NSMenu* m = parent; m && m.supermenu; m = m.supermenu) {
-      NSInteger idx = [m.supermenu indexOfItemWithSubmenu:m];
-      if (idx != -1 && [m.supermenu itemAtIndex:idx].hidden) {
-        hasHiddenAncestor = true;
-        break;
-      }
-    }
-    if (parent && !hasHiddenAncestor) {
+    if (parent) {
       
       
       mozilla::AutoRestore<bool> autoRestore(
@@ -5219,13 +5209,6 @@ void nsCocoaWindow::Destroy() {
   mOnDestroyCalled = true;
 
   nsCOMPtr<nsIWidget> kungFuDeathGrip(this);
-
-  
-  
-  
-  
-  
-  mMenuBar = nullptr;
 
   
   if (mModal) {
