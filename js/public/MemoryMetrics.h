@@ -751,6 +751,11 @@ struct ZoneStats {
   js::Vector<NotableStringInfo, 0, js::SystemAllocPolicy> notableStrings;
   bool isTotals = true;
 
+  
+  
+  bool stringsDeduplicationTruncated = false;
+  size_t stringsTotalCount = 0;
+
 #undef FOR_EACH_SIZE
 };
 
