@@ -199,8 +199,18 @@ struct AddDebugAnnotationImpl<Flow> {
 #  define ADD_DEBUG_STRING_ANNOTATION(type, getter) \
     ADD_DEBUG_STRING_ANNOTATION_IMPL(, type, type&, getter)
 
-ADD_DEBUG_STRING_ANNOTATION(mozilla::ProfilerString8View,
-                            aValue.StringView().data())
+
+
+template <>
+struct AddDebugAnnotationImpl<mozilla::ProfilerString8View> {
+  static void call(perfetto::EventContext& ctx, const char* const aKey,
+                   const mozilla::ProfilerString8View& aValue) {
+    auto* arg = ctx.event()->add_debug_annotations();
+    arg->set_name(aKey);
+    auto sv = aValue.StringView();
+    arg->set_string_value(sv.data(), sv.length());
+  }
+};
 ADD_DEBUG_STRING_ANNOTATION_IMPL(size_t N, nsAutoCStringN<N>,
                                  nsAutoCStringN<N>&, aValue.get())
 ADD_DEBUG_STRING_ANNOTATION(nsCString, aValue.get())
@@ -250,7 +260,8 @@ void EmitPerfettoTrackEvent(const mozilla::ProfilerString8View& aName,
     phase = aOptions.Timing().MarkerPhase();
   }
 
-  const char* nameStr = aName.StringView().data();
+  auto nameSv = aName.StringView();
+  const char* nameStr = nameSv.data();
   if (!nameStr) {
     return;
   }
@@ -259,7 +270,7 @@ void EmitPerfettoTrackEvent(const mozilla::ProfilerString8View& aName,
   const char* categoryName =
       ProfilerCategoryNames[static_cast<uint32_t>(aCategory.GetCategory())];
   perfetto::DynamicCategory category{categoryName};
-  perfetto::DynamicString name{nameStr};
+  perfetto::DynamicString name{nameStr, nameSv.length()};
 
   
   
@@ -286,7 +297,7 @@ void EmitPerfettoTrackEvent(const mozilla::ProfilerString8View& aName,
 
   
   mozilla::HashNumber hash =
-      mozilla::HashStringKnownLength(nameStr, aName.StringView().length());
+      mozilla::HashStringKnownLength(nameStr, nameSv.length());
 
   switch (phase) {
     case mozilla::MarkerTiming::Phase::Interval: {
