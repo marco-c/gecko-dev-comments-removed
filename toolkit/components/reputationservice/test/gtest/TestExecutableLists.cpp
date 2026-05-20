@@ -275,6 +275,7 @@ static const char* const kTestFileExtensions[] = {
     ".wim",       
     ".workflow",  
     ".ws",        
+    ".wsb",       
     ".wsc",       
     ".wsf",       
     ".wsh",       

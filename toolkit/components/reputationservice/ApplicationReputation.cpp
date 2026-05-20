@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "ApplicationReputation.h"
 #include "chrome/common/safe_browsing/csd.pb.h"
 
@@ -506,6 +504,7 @@ const char* const ApplicationReputationService::kBinaryFileExtensions[] = {
     ".workflow",  
     
     
+    ".wsb",  
     
     
     
