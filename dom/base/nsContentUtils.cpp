@@ -4508,8 +4508,7 @@ bool nsContentUtils::IsValidShadowHostName(nsAtom* aName,
          aName == nsGkAtoms::h5 || aName == nsGkAtoms::h6 ||
          aName == nsGkAtoms::header || aName == nsGkAtoms::main ||
          aName == nsGkAtoms::nav || aName == nsGkAtoms::p ||
-         aName == nsGkAtoms::section || aName == nsGkAtoms::search ||
-         aName == nsGkAtoms::span;
+         aName == nsGkAtoms::section || aName == nsGkAtoms::span;
 }
 
 
@@ -11401,14 +11400,15 @@ nsresult nsContentUtils::NewXULOrHTMLElement(
              "Can only create XUL or XHTML elements.");
 
   nsAtom* name = nodeInfo->NameAtom();
-  int32_t tag = eHTMLTag_unknown;
   bool isCustomElementName = false;
-  if (nodeInfo->NamespaceEquals(kNameSpaceID_XHTML)) {
-    tag = nsHTMLTags::CaseSensitiveAtomTagToId(name);
+  const Maybe<const nsHTMLTag>& tag = nodeInfo->HTMLTag();
+  if (tag.isSome()) {
+    MOZ_ASSERT(nodeInfo->NamespaceEquals(kNameSpaceID_XHTML));
     isCustomElementName =
-        (tag == eHTMLTag_userdefined &&
+        (*tag == eHTMLTag_userdefined &&
          nsContentUtils::IsCustomElementName(name, kNameSpaceID_XHTML));
-  } else {  
+  } else {
+    MOZ_ASSERT(nodeInfo->NamespaceEquals(kNameSpaceID_XUL));
     if (aIsAtom) {
       
       
@@ -11499,7 +11499,7 @@ nsresult nsContentUtils::NewXULOrHTMLElement(
       
       if (nodeInfo->NamespaceEquals(kNameSpaceID_XHTML)) {
         *aResult =
-            CreateHTMLElement(tag, nodeInfo.forget(), aFromParser).take();
+            CreateHTMLElement(*tag, nodeInfo.forget(), aFromParser).take();
       } else {
         NS_IF_ADDREF(*aResult = nsXULElement::Construct(nodeInfo.forget()));
       }
@@ -11578,7 +11578,7 @@ nsresult nsContentUtils::NewXULOrHTMLElement(
       NS_IF_ADDREF(*aResult =
                        NS_NewHTMLElement(nodeInfo.forget(), aFromParser));
     } else {
-      *aResult = CreateHTMLElement(tag, nodeInfo.forget(), aFromParser).take();
+      *aResult = CreateHTMLElement(*tag, nodeInfo.forget(), aFromParser).take();
     }
   } else {
     NS_IF_ADDREF(*aResult = nsXULElement::Construct(nodeInfo.forget()));

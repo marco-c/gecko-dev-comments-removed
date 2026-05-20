@@ -419,7 +419,7 @@ static bool IsHTMLBlockElementByDefault(const nsIContent& aContent) {
   }
   if (aContent.IsHTMLElement(nsGkAtoms::br)) {  
     MOZ_ASSERT(!nsHTMLElement::IsBlock(
-        nsHTMLTags::CaseSensitiveAtomTagToId(nsGkAtoms::br)));
+        aContent.NodeInfo()->HTMLTag().valueOr(eHTMLTag_userdefined)));
     return false;
   }
   
@@ -432,7 +432,7 @@ static bool IsHTMLBlockElementByDefault(const nsIContent& aContent) {
   }
 
   return nsHTMLElement::IsBlock(
-      nsHTMLTags::CaseSensitiveAtomTagToId(aContent.NodeInfo()->NameAtom()));
+      aContent.NodeInfo()->HTMLTag().valueOr(eHTMLTag_userdefined));
 }
 
 bool HTMLEditUtils::IsBlockElement(const nsIContent& aContent,
