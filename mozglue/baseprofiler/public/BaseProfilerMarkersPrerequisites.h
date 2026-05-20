@@ -1164,6 +1164,14 @@ using PayloadFieldsTuple = decltype(PayloadFieldsTupleHelper<T>(
 }  
 
 
+template <typename T, typename = void>
+struct MarkerHasPayloadFields : std::false_type {};
+template <typename T>
+struct MarkerHasPayloadFields<
+    T, std::void_t<decltype(T::PayloadFields),
+                   decltype(std::size(T::PayloadFields))>> : std::true_type {};
+
+
 
 
 

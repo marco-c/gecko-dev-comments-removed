@@ -104,12 +104,6 @@ struct TraceTimestampTraits<mozilla::TimeStamp> {
 PERFETTO_DEFINE_CATEGORIES(perfetto::Category("task"),
                            perfetto::Category("usertiming"));
 
-template <typename T, typename = void>
-struct MarkerHasPayloadFields : std::false_type {};
-template <typename T>
-struct MarkerHasPayloadFields<T, std::void_t<decltype(T::PayloadFields)>>
-    : std::true_type {};
-
 using MS = mozilla::MarkerSchema;
 
 
@@ -271,7 +265,7 @@ void EmitPerfettoTrackEvent(const mozilla::ProfilerString8View& aName,
   
   std::function<void(perfetto::EventContext)> annotateTrackEvent =
       [&](perfetto::EventContext ctx) {};
-  if constexpr (MarkerHasPayloadFields<MarkerType>::value) {
+  if constexpr (mozilla::MarkerHasPayloadFields<MarkerType>::value) {
     annotateTrackEvent = [&](perfetto::EventContext ctx) {
       size_t i = 0;
       auto processArgument = [&](const auto& payloadArg) {
