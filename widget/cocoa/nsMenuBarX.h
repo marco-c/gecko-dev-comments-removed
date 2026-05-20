@@ -137,6 +137,18 @@ class nsMenuBarX : public nsMenuParentX,
                                       NativeMenuItemTarget* aTarget);
   void CreateApplicationMenu(nsMenuX* aMenu);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  NSInteger CalculateNativeInsertionPoint(nsMenuX* aChild);
+
   RefPtr<nsIContent> mContent;
   RefPtr<nsMenuGroupOwnerX> mMenuGroupOwner;
   nsTArray<RefPtr<nsMenuX>> mMenuArray;
