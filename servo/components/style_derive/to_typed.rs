@@ -86,6 +86,9 @@ use synstructure::{BindingInfo, Structure};
 
 
 
+
+
+
 pub fn derive(mut input: DeriveInput) -> TokenStream {
     
     
@@ -400,6 +403,20 @@ fn derive_single_field_expr(
                 for item in #field.iter() {
                     style_traits::ToTyped::to_typed(&item, dest)?;
                 }
+            }
+        }
+    } else if css_field_attrs.represents_keyword {
+        let ident = field
+            .ast()
+            .ident
+            .as_ref()
+            .expect("Unnamed field with represents_keyword?");
+        let ident = cg::to_css_identifier(&ident.to_string()).replace("_", "-");
+        quote! {
+            if *#field {
+                dest.push(style_traits::TypedValue::Keyword(
+                    style_traits::KeywordValue(style_traits::CssString::from(#ident)),
+                ));
             }
         }
     } else {
