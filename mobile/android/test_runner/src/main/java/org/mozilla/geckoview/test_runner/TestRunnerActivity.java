@@ -239,7 +239,22 @@ public class TestRunnerActivity extends Activity {
           if (details.active == Boolean.TRUE) {
             webExtensionController().setTabActive(mOwnedSessions.peek(), false);
           }
-          final GeckoSession newSession = createSession(settings, details.active == Boolean.TRUE);
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          final GeckoSession newSession =
+              details.active == Boolean.TRUE
+                  ? createBackgroundSession(settings,  true)
+                  : createSession(settings,  false);
           return GeckoResult.fromValue(newSession);
         }
       };
@@ -381,6 +396,11 @@ public class TestRunnerActivity extends Activity {
   }
 
   
+
+
+
+
+
 
 
 
