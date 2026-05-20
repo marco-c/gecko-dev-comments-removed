@@ -117,6 +117,15 @@ enum EventClassID : uint8_t {
 
 const char* ToChar(EventClassID aEventClassID);
 
+
+
+
+
+
+
+[[nodiscard]] bool IsValidMessageForIPC(EventMessage aMessage,
+                                        EventClassID aClassID);
+
 typedef uint16_t Modifiers;
 
 #define NS_DEFINE_KEYNAME(aCPPName, aDOMKeyName) KEY_NAME_INDEX_##aCPPName,

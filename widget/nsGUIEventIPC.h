@@ -83,7 +83,9 @@ struct ParamTraits<mozilla::WidgetEvent> {
             ToChar(aExpectedEventClassID), ToChar(aResult->mClass),
             ToChar(aResult->mMessage))
             .c_str());
-    if (aResult->mClass == aExpectedEventClassID) [[likely]] {
+    if (aResult->mClass == aExpectedEventClassID &&
+        mozilla::IsValidMessageForIPC(aResult->mMessage, aExpectedEventClassID))
+        [[likely]] {
       return true;
     }
     
