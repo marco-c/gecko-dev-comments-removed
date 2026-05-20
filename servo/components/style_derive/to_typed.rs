@@ -77,6 +77,11 @@ use synstructure::{BindingInfo, Structure};
 
 
 
+
+
+
+
+
 pub fn derive(mut input: DeriveInput) -> TokenStream {
     
     
@@ -269,6 +274,7 @@ fn derive_variant_arm(
 
 
 
+
 fn derive_variant_fields_expr(
     bindings: &[BindingInfo],
     where_clause: &mut Option<WhereClause>,
@@ -298,7 +304,8 @@ fn derive_variant_fields_expr(
 
     
     if !css_field_attrs.iterable && iter.peek().is_none() {
-        let expr = derive_single_field_expr(first, css_field_attrs, field_attrs, where_clause);
+        let expr =
+            derive_single_field_expr(first, css_field_attrs, field_attrs, where_clause, bindings);
 
         return quote! {{
             #expr
@@ -308,10 +315,17 @@ fn derive_variant_fields_expr(
 
     
     
-    let mut expr = derive_single_field_expr(first, css_field_attrs, field_attrs, where_clause);
+    let mut expr =
+        derive_single_field_expr(first, css_field_attrs, field_attrs, where_clause, bindings);
     for (binding, css_field_attrs, field_attrs) in iter {
-        derive_single_field_expr(binding, css_field_attrs, field_attrs, where_clause)
-            .to_tokens(&mut expr)
+        derive_single_field_expr(
+            binding,
+            css_field_attrs,
+            field_attrs,
+            where_clause,
+            bindings,
+        )
+        .to_tokens(&mut expr)
     }
 
     quote! {{
@@ -341,11 +355,13 @@ fn derive_variant_fields_expr(
 
 
 
+
 fn derive_single_field_expr(
     field: &BindingInfo,
     css_field_attrs: CssFieldAttrs,
     field_attrs: TypedFieldAttrs,
     where_clause: &mut Option<WhereClause>,
+    bindings: &[BindingInfo],
 ) -> TokenStream {
     let mut expr = if css_field_attrs.iterable {
         
@@ -395,9 +411,24 @@ fn derive_single_field_expr(
         }
     };
 
-    if let Some(condition) = field_attrs.skip_if {
+    let skip_if = field_attrs.skip_if;
+    let contextual_skip_if = field_attrs.contextual_skip_if;
+    assert!(
+        skip_if.is_none() || contextual_skip_if.is_none(),
+        "Field should not have both skip_if and contextual_skip_if"
+    );
+
+    if let Some(condition) = skip_if {
         expr = quote! {
             if !#condition(#field) {
+                #expr
+            }
+        }
+    }
+
+    if let Some(condition) = contextual_skip_if {
+        expr = quote! {
+            if !#condition(#(#bindings), *) {
                 #expr
             }
         }
@@ -529,4 +560,11 @@ pub struct TypedFieldAttrs {
     
     
     pub skip_if: Option<Path>,
+
+    
+    
+    
+    
+    
+    pub contextual_skip_if: Option<Path>,
 }
