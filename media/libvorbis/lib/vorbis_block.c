@@ -392,9 +392,18 @@ float **vorbis_analysis_buffer(vorbis_dsp_state *v, int vals){
   private_state *b=v->backend_state;
 
   
-  if(b->header)_ogg_free(b->header);b->header=NULL;
-  if(b->header1)_ogg_free(b->header1);b->header1=NULL;
-  if(b->header2)_ogg_free(b->header2);b->header2=NULL;
+  if(b->header) {
+    _ogg_free(b->header);
+    b->header=NULL;
+  }
+  if(b->header1) {
+    _ogg_free(b->header1);
+    b->header1=NULL;
+  }
+  if(b->header2) {
+    _ogg_free(b->header2);
+    b->header2=NULL;
+  }
 
   
 
