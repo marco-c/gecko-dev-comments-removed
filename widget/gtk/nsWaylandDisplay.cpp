@@ -14,13 +14,15 @@
 #include "mozilla/StaticPrefs_general.h"
 #include "mozilla/Sprintf.h"
 #include "WidgetUtilsGtk.h"
-#include "mozilla/widget/xx-pip-v1-client-protocol.h"
 #include "nsGtkKeyUtils.h"
 #include "nsGtkUtils.h"
 #include "nsLayoutUtils.h"
 #include "nsWindow.h"
 #include "wayland-proxy.h"
 #include "ScreenHelperGTK.h"
+#include "nsIAppStartup.h"
+#include "nsServiceManagerUtils.h"
+#include "nsThreadUtils.h"
 
 #include <dlfcn.h>
 
@@ -822,6 +824,10 @@ static void global_registry_handler(void* data, wl_registry* registry,
     auto* manager = WaylandRegistryBind<wp_fractional_scale_manager_v1>(
         registry, id, &wp_fractional_scale_manager_v1_interface, 1);
     display->SetFractionalScaleManager(manager);
+  } else if (iface.EqualsLiteral("xx_fractional_scale_manager_v2")) {
+    auto* manager = WaylandRegistryBind<xx_fractional_scale_manager_v2>(
+        registry, id, &xx_fractional_scale_manager_v2_interface, 1);
+    display->SetFractionalScaleManagerV2(manager);
   } else if (iface.EqualsLiteral("gtk_primary_selection_device_manager") ||
              iface.EqualsLiteral("zwp_primary_selection_device_manager_v1")) {
     display->EnablePrimarySelection();
@@ -863,6 +869,8 @@ static void global_registry_handler(void* data, wl_registry* registry,
       auto* fixes = WaylandRegistryBind<wl_fixes>(
           registry, id, sWlFixesInterface, MIN(version, 2));
       display->SetFixes(fixes);
+    } else {
+      LOG("wl_fixes_interface is missing!");
     }
   }
 }
@@ -1087,6 +1095,13 @@ MOZ_NEVER_INLINE static void WlLogHandler_XdgSurfaceBufferMismatch(
                           WaylandProxy::GetState());
 }
 
+
+
+
+
+static std::atomic<clock_t> sStillAttachedTime{0};
+static char sStillAttachedMessage[128];
+
 static void WlLogHandler(const char* format, va_list args) {
   char error[1000];
   VsprintfLiteral(error, format, args);
@@ -1098,7 +1113,15 @@ static void WlLogHandler(const char* format, va_list args) {
   
   
   
+  
+  
   if (strstr(error, "still attached")) {
+    
+    
+    
+    sStillAttachedMessage[sizeof(sStillAttachedMessage) - 1] = '\0';
+    SprintfLiteral(sStillAttachedMessage, "%s", error);
+    sStillAttachedTime.store(clock(), std::memory_order_release);
     return;
   }
 
@@ -1172,13 +1195,41 @@ static void WlLogHandler(const char* format, va_list args) {
                           WaylandProxy::GetState());
 }
 
-void WlCompositorCrashHandler() {
-  gfxCriticalNote << "Wayland protocol error: Compositor ("
+void WlCompositorUnavailableHandler() {
+  gfxCriticalNote << "Wayland compositor unavailable ("
                   << GetDesktopEnvironmentIdentifier().get()
-                  << ") crashed, proxy: " << WaylandProxy::GetState();
-  MOZ_CRASH_UNSAFE_PRINTF("Compositor crashed (%s) proxy: %s",
-                          GetDesktopEnvironmentIdentifier().get(),
+                  << "), proxy: " << WaylandProxy::GetState()
+                  << " - scheduling graceful shutdown";
+  
+  
+  NS_DispatchToMainThread(
+      NS_NewRunnableFunction("WlCompositorUnavailableHandler", []() {
+        nsCOMPtr<nsIAppStartup> appStartup =
+            do_GetService("@mozilla.org/toolkit/app-startup;1");
+        if (appStartup) {
+          bool userAllowedQuit = true;
+          appStartup->Quit(nsIAppStartup::eForceQuit, 0, &userAllowedQuit);
+        }
+      }));
+}
+
+MOZ_NEVER_INLINE static void WlLogHandler_StillAttachedDisconnect(
+    const char* error) {
+  MOZ_CRASH_UNSAFE_PRINTF("(%s) %s Proxy: %s",
+                          GetDesktopEnvironmentIdentifier().get(), error,
                           WaylandProxy::GetState());
+}
+
+void WlCompositorSilentDisconnectHandler(clock_t aFailureTime) {
+  clock_t t = sStillAttachedTime.load(std::memory_order_acquire);
+  if (t <= aFailureTime) {
+    return;  
+  }
+  nsCString reason(sStillAttachedMessage);
+  NS_DispatchToMainThread(NS_NewRunnableFunction(
+      "WlCompositorSilentDisconnectHandler", [reason = std::move(reason)]() {
+        WlLogHandler_StillAttachedDisconnect(reason.get());
+      }));
 }
 
 nsWaylandDisplay::nsWaylandDisplay(wl_display* aDisplay)
