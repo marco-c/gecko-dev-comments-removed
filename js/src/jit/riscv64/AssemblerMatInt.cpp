@@ -9,12 +9,10 @@
 
 
 
-
-
-
 #include <bit>
 
 #include "jit/riscv64/Assembler-riscv64.h"
+#include "jit/riscv64/base/Integer.h"
 
 namespace js {
 namespace jit {
