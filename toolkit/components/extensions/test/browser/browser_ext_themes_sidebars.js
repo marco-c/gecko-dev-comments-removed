@@ -10,15 +10,6 @@ const { SidebarTestUtils } = ChromeUtils.importESModule(
 SidebarTestUtils.init(this);
 SidebarTestUtils.restoreStateAtCleanup(window);
 
-add_setup(async () => {
-  
-  
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [["sidebar.updatedBookmarks.enabled", false]],
-  });
-});
-
 registerCleanupFunction(() => {
   Services.prefs.clearUserPref(
     "browser.toolbarbuttons.introduced.sidebar-button"
