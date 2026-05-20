@@ -263,6 +263,10 @@ function test_load_shelllink() {
   
   dump("*** test_load_shelllink\n");
   let file = do_get_file("data/system_root.lnk", false);
+  
+  
+  
+  file.normalize();
   var chan = new_file_channel(file);
 
   
