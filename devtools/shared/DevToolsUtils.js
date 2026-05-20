@@ -432,18 +432,6 @@ exports.dumpn = function (str) {
 
 
 
-exports.dumpv = function (msg) {
-  if (flags.wantVerbose) {
-    exports.dumpn(msg);
-  }
-};
-
-
-
-
-
-
-
 
 
 
@@ -944,7 +932,6 @@ function errorOnFlag(exports, name) {
 
 errorOnFlag(exports, "testing");
 errorOnFlag(exports, "wantLogging");
-errorOnFlag(exports, "wantVerbose");
 
 
 
@@ -1010,7 +997,7 @@ exports.makeDebuggeeIterator = makeDebuggeeIterator;
 
 
 function getTopWindow(win) {
-  return win.windowRoot ? win.windowRoot.ownerGlobal : win.top;
+  return win.windowRoot ? win.windowRoot.window : win.top;
 }
 
 exports.getTopWindow = getTopWindow;

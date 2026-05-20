@@ -59,11 +59,4 @@ makePrefTrackedFlag(exports, "wantLogging", "devtools.debugger.log");
 
 
 
-makePrefTrackedFlag(exports, "wantVerbose", "devtools.debugger.log.verbose");
-
-
-
-
-
-
 makePrefTrackedFlag(exports, "testing", "devtools.testing");
