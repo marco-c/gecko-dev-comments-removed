@@ -24,6 +24,7 @@
 #include "mozilla/dom/NameSpaceConstants.h"
 #include "nsAtom.h"
 #include "nsCycleCollectionParticipant.h"
+#include "nsHTMLTags.h"
 #include "nsHashKeys.h"
 #include "nsString.h"
 
@@ -73,6 +74,13 @@ class NodeInfo final {
 
 
   const nsString& LocalName() const { return mLocalName; }
+
+  
+
+
+  const mozilla::Maybe<const nsHTMLTag>& HTMLTag() const {
+    return mInner.HTMLTag();
+  }
 
   
 
@@ -265,6 +273,8 @@ class NodeInfo final {
       return mHash.value();
     }
 
+    const mozilla::Maybe<const nsHTMLTag>& HTMLTag() const;
+
     nsAtom* const MOZ_OWNING_REF mName;
     nsAtom* MOZ_OWNING_REF mPrefix;
     int32_t mNamespaceID;
@@ -272,6 +282,7 @@ class NodeInfo final {
     const nsAString* const mNameString;
     nsAtom* MOZ_OWNING_REF mExtraName;  
     mutable mozilla::Maybe<const uint32_t> mHash;
+    mutable mozilla::Maybe<const nsHTMLTag> mHTMLTag;
   };
 
   

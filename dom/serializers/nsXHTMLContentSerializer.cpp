@@ -541,6 +541,7 @@ bool nsXHTMLContentSerializer::LineBreakBeforeOpen(int32_t aNamespaceID,
     return true;
   }
 
+  
   return nsHTMLElement::IsBlock(nsHTMLTags::CaseSensitiveAtomTagToId(aName));
 }
 
@@ -596,6 +597,7 @@ bool nsXHTMLContentSerializer::LineBreakAfterClose(int32_t aNamespaceID,
     return true;
   }
 
+  
   return nsHTMLElement::IsBlock(nsHTMLTags::CaseSensitiveAtomTagToId(aName));
 }
 

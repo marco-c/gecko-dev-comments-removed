@@ -960,10 +960,8 @@ static bool ElementNeedsSeparateEndTag(Element* aElement,
   
   
   
-  nsAtom* localName = aElement->NodeInfo()->NameAtom();
-  bool isHTMLContainer = nsHTMLElement::IsContainer(
-      nsHTMLTags::CaseSensitiveAtomTagToId(localName));
-  return isHTMLContainer;
+  return nsHTMLElement::IsContainer(
+      aElement->NodeInfo()->HTMLTag().valueOr(eHTMLTag_userdefined));
 }
 
 bool nsXMLContentSerializer::AppendEndOfElementStart(Element* aElement,
