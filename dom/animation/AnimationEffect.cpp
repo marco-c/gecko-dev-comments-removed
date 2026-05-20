@@ -323,13 +323,14 @@ void AnimationEffect::GetComputedTimingAsDict(
   GetEffectTimingDictionary(SpecifiedTiming(), aRetVal);
 
   
+  
   double playbackRate = mAnimation ? mAnimation->PlaybackRateInternal() : 1;
   const Nullable<TimeDuration> currentTime = GetLocalTime();
   const auto progressTimelinePosition =
       mAnimation ? mAnimation->AtProgressTimelineBoundary()
                  : Animation::ProgressTimelinePosition::NotBoundary;
   ComputedTiming computedTiming = GetComputedTimingAt(
-      currentTime, SpecifiedTiming(), playbackRate, progressTimelinePosition);
+      currentTime, NormalizedTiming(), playbackRate, progressTimelinePosition);
 
   aRetVal.mDuration.SetAsUnrestrictedDouble() =
       computedTiming.mDuration.ToMilliseconds();
