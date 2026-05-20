@@ -402,11 +402,21 @@ void Animation::SetTimelineNoUpdate(AnimationTimeline* aTimeline,
       case AnimationPlayState::Idle:
         break;
     }
-  } else if (fromFiniteTimeline && !previousProgress.IsNull()) {
+  } else if (fromFiniteTimeline) {
     
     
-    SetCurrentTimeNoUpdate(
-        TimeDuration(EffectEnd().MultDouble(previousProgress.Value())));
+    
+    
+    
+    
+    
+    mAutoAlignStartTime = false;
+    if (!previousProgress.IsNull()) {
+      
+      
+      SetCurrentTimeNoUpdate(
+          TimeDuration(EffectEnd().MultDouble(previousProgress.Value())));
+    }
   }
   if (fromFiniteTimeline && !aTimeline && mTimelineName) {
     
@@ -1088,7 +1098,10 @@ void Animation::Tick(AnimationTimeline::TickState& aTickState) {
   AutoAlignStartTime();
 
   if (Pending()) {
-    if (!mPendingReadyTime.IsNull()) {
+    if (!mPendingReadyTime.IsNull() || HasFiniteTimeline()) {
+      
+      
+      
       TryTriggerNow();
     } else if (MOZ_LIKELY(mTimeline)) {
       
@@ -1129,10 +1142,9 @@ bool Animation::TryTriggerNow() {
   }
   
   
-  auto currentTime =
-      mPendingReadyTime.IsNull() || !mTimeline->IsMonotonicallyIncreasing()
-          ? mTimeline->GetCurrentTimeAsDuration()
-          : mTimeline->ToTimelineTime(mPendingReadyTime);
+  auto currentTime = (mPendingReadyTime.IsNull() || HasFiniteTimeline())
+                         ? mTimeline->GetCurrentTimeAsDuration()
+                         : mTimeline->ToTimelineTime(mPendingReadyTime);
   mPendingReadyTime = {};
   if (NS_WARN_IF(currentTime.IsNull())) {
     return false;
@@ -2206,6 +2218,11 @@ void Animation::AutoAlignStartTime() {
 
   MOZ_ASSERT(!mTimeline->IsMonotonicallyIncreasing(),
              "We shouldn't come here for monotonically increasing timeline");
+  
+  
+  if (mTimeline->IsMonotonicallyIncreasing()) {
+    return;
+  }
 
   
   const AnimationPlayState playState = PlayState();
