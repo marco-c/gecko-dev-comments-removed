@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsISystemProxySettings.h"
 #include "mozilla/Components.h"
 #include "nsString.h"
@@ -109,6 +108,13 @@ nsresult nsUnixSystemProxySettings::GetProxyForURI(const nsACString& aSpec,
 NS_IMETHODIMP
 nsUnixSystemProxySettings::GetSystemWPADSetting(bool* aSystemWPADSetting) {
   *aSystemWPADSetting = false;
+  return NS_OK;
+}
+
+
+NS_IMETHODIMP
+nsUnixSystemProxySettings::GetSystemProxyDirect(bool* aResult) {
+  *aResult = false;
   return NS_OK;
 }
 
