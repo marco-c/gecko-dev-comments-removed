@@ -7,16 +7,25 @@
 
 
 
-class ConditionNot extends ConditionBaseWithSub {
+class ConditionNot extends ConditionBase {
+  #condition;
+
   constructor(factory, desc) {
-    super(factory, desc, desc.condition ? [desc.condition] : []);
+    super(factory, desc);
+    this.#condition = desc?.condition ? factory.create(desc.condition) : null;
+  }
+
+  async init() {
+    if (this.#condition) {
+      await this.#condition.init();
+    }
   }
 
   check() {
-    if (!this.conditions.length) {
+    if (!this.#condition) {
       return true;
     }
-    return !this.conditions[0].check();
+    return !this.#condition.check();
   }
 }
 
