@@ -884,45 +884,44 @@ void nsTableCellMap::SetBCBorderEdge(LogicalSide aSide, nsCellMap& aCellMap,
   BCCellData* cellData;
   int32_t lastIndex, xIndex, yIndex;
   int32_t xPos = aColIndex;
-  int32_t yPos = aRowIndex;
   int32_t rgYPos = aRowIndex - aCellMapStart;
   bool changed;
 
   switch (aSide) {
     case LogicalSide::BEnd:
       rgYPos++;
-      yPos++;
       [[fallthrough]];
     case LogicalSide::BStart:
       lastIndex = xPos + aLength - 1;
       for (xIndex = xPos; xIndex <= lastIndex; xIndex++) {
         changed = aChanged && (xIndex == xPos);
         BCData* bcData = nullptr;
-        cellData = (BCCellData*)aCellMap.GetDataAt(rgYPos, xIndex);
-        if (!cellData) {
-          int32_t numRgRows = aCellMap.GetRowCount();
-          if (yPos < numRgRows) {  
+        if (rgYPos < aCellMap.GetRowCount()) {
+          cellData = (BCCellData*)aCellMap.GetDataAt(rgYPos, xIndex);
+          if (!cellData) {  
             TableArea damageArea;
             cellData = (BCCellData*)aCellMap.AppendCell(*this, nullptr, rgYPos,
                                                         false, 0, damageArea);
             if (!cellData) ABORT0();
-          } else {
-            NS_ASSERTION(aSide == LogicalSide::BEnd, "program error");
-            
-            nsCellMap* cellMap = aCellMap.GetNextSibling();
-            while (cellMap && (0 == cellMap->GetRowCount())) {
-              cellMap = cellMap->GetNextSibling();
+          }
+        } else {
+          
+          
+          
+          NS_ASSERTION(aSide == LogicalSide::BEnd, "program error");
+          nsCellMap* cellMap = aCellMap.GetNextSibling();
+          while (cellMap && (0 == cellMap->GetRowCount())) {
+            cellMap = cellMap->GetNextSibling();
+          }
+          if (cellMap) {
+            cellData = (BCCellData*)cellMap->GetDataAt(0, xIndex);
+            if (!cellData) {  
+              TableArea damageArea;
+              cellData = (BCCellData*)cellMap->AppendCell(*this, nullptr, 0,
+                                                          false, 0, damageArea);
             }
-            if (cellMap) {
-              cellData = (BCCellData*)cellMap->GetDataAt(0, xIndex);
-              if (!cellData) {  
-                TableArea damageArea;
-                cellData = (BCCellData*)cellMap->AppendCell(
-                    *this, nullptr, 0, false, 0, damageArea);
-              }
-            } else {  
-              bcData = GetBEndMostBorder(xIndex);
-            }
+          } else {  
+            bcData = GetBEndMostBorder(xIndex);
           }
         }
         if (!bcData && cellData) {
@@ -1000,31 +999,30 @@ void nsTableCellMap::SetBCBorderCorner(LogicalCorner aCorner,
     
     NS_ASSERTION(!aIsBEndIEnd, "should be handled before");
     bcData = GetIEndMostBorder(yPos);
-  } else {
+  } else if (rgYPos < aCellMap.GetRowCount()) {
+    
+    
     cellData = (BCCellData*)aCellMap.GetDataAt(rgYPos, xPos);
-    if (!cellData) {
-      int32_t numRgRows = aCellMap.GetRowCount();
-      if (yPos < numRgRows) {  
+    if (!cellData) {  
+      TableArea damageArea;
+      cellData = (BCCellData*)aCellMap.AppendCell(*this, nullptr, rgYPos, false,
+                                                  0, damageArea);
+    }
+  } else {
+    
+    nsCellMap* cellMap = aCellMap.GetNextSibling();
+    while (cellMap && (0 == cellMap->GetRowCount())) {
+      cellMap = cellMap->GetNextSibling();
+    }
+    if (cellMap) {
+      cellData = (BCCellData*)cellMap->GetDataAt(0, xPos);
+      if (!cellData) {  
         TableArea damageArea;
-        cellData = (BCCellData*)aCellMap.AppendCell(*this, nullptr, rgYPos,
-                                                    false, 0, damageArea);
-      } else {
-        
-        nsCellMap* cellMap = aCellMap.GetNextSibling();
-        while (cellMap && (0 == cellMap->GetRowCount())) {
-          cellMap = cellMap->GetNextSibling();
-        }
-        if (cellMap) {
-          cellData = (BCCellData*)cellMap->GetDataAt(0, xPos);
-          if (!cellData) {  
-            TableArea damageArea;
-            cellData = (BCCellData*)cellMap->AppendCell(*this, nullptr, 0,
-                                                        false, 0, damageArea);
-          }
-        } else {  
-          bcData = GetBEndMostBorder(xPos);
-        }
+        cellData = (BCCellData*)cellMap->AppendCell(*this, nullptr, 0, false, 0,
+                                                    damageArea);
       }
+    } else {  
+      bcData = GetBEndMostBorder(xPos);
     }
   }
   if (!bcData && cellData) {
@@ -1832,7 +1830,9 @@ int32_t nsCellMap::GetEffectiveColSpan(const nsTableCellMap& aMap,
       break;
     }
   }
-  return colSpan;
+
+  
+  return std::clamp(colSpan, 1, MAX_COLSPAN);
 }
 
 int32_t nsCellMap::GetRowSpanForNewCell(nsTableCellFrame* aCellFrameToAdd,
@@ -1843,7 +1843,7 @@ int32_t nsCellMap::GetRowSpanForNewCell(nsTableCellFrame* aCellFrameToAdd,
   if (0 == rowSpan) {
     
     
-    rowSpan = std::max(2, mContentRowCount - aRowIndex);
+    rowSpan = std::clamp(mContentRowCount - aRowIndex, 2, MAX_ROWSPAN);
     aIsZeroRowSpan = true;
   }
   return rowSpan;
@@ -1897,7 +1897,9 @@ int32_t nsCellMap::GetRowSpan(int32_t aRowIndex, int32_t aColIndex,
       break;
     }
   }
-  return rowSpan;
+
+  
+  return std::clamp(rowSpan, 1, MAX_ROWSPAN);
 }
 
 void nsCellMap::ShrinkWithoutCell(nsTableCellMap& aMap,
