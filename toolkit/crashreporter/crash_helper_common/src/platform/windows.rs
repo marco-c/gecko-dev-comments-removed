@@ -160,7 +160,7 @@ fn cancel_overlapped_io(handle: BorrowedHandle, overlapped: &OVERLAPPED) -> bool
         return false;
     }
 
-    if overlapped.hEvent == 0 {
+    if overlapped.hEvent.is_null() {
         
         return true;
     }
@@ -424,7 +424,7 @@ impl OverlappedOperation {
         
         
         Ok(Box::new(OVERLAPPED {
-            hEvent: event.as_raw_handle() as HANDLE | 1,
+            hEvent: (event.as_raw_handle() as usize | 1) as HANDLE,
             ..unsafe { zeroed() }
         }))
     }
@@ -472,7 +472,7 @@ impl Drop for OverlappedOperation {
         let overlapped = self.overlapped.take();
         let buffer = self.buffer.take();
         if let Some(overlapped) = overlapped {
-            if overlapped.hEvent == 0 {
+            if overlapped.hEvent.is_null() {
                 return; 
             }
 
