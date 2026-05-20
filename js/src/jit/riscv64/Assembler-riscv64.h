@@ -1,40 +1,40 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+// Copyright (c) 1994-2006 Sun Microsystems Inc.
+// All Rights Reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// - Redistributions of source code must retain the above copyright notice,
+// this list of conditions and the following disclaimer.
+//
+// - Redistribution in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// - Neither the name of Sun Microsystems or the names of contributors may
+// be used to endorse or promote products derived from this software without
+// specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+// IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+// THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// The original source code covered by the above license above has been
+// modified significantly by Google Inc.
+// Copyright 2021 the V8 project authors. All rights reserved.
 
 #ifndef jit_riscv64_Assembler_riscv64_h
 #define jit_riscv64_Assembler_riscv64_h
@@ -116,8 +116,8 @@ static constexpr uint32_t JitStackValueAlignment =
     JitStackAlignment / sizeof(Value);
 static const uint32_t WasmStackAlignment = 16;
 static const uint32_t WasmTrapInstructionLength = 2 * sizeof(uint32_t);
-
-
+// See comments in wasm::GenerateFunctionPrologue.  The difference between these
+// is the size of the largest callable prologue on the platform.
 static constexpr uint32_t WasmCheckedCallEntryOffset = 0u;
 static constexpr uint32_t WasmCheckedTailEntryOffset = 20u;
 
@@ -169,14 +169,14 @@ class Assembler : public AssemblerShared,
   Buffer m_buffer;
   bool isFinished = false;
 
-  
+  // Return the Instruction at a given byte offset.
   Instruction* getInstructionAt(BufferOffset offset) {
     return m_buffer.getInst(offset);
   }
 
   struct RelativePatch {
-    
-    
+    // the offset within the code buffer where the value is loaded that
+    // we want to fix-up
     BufferOffset offset;
     void* target;
     RelocationKind kind;
@@ -211,7 +211,7 @@ class Assembler : public AssemblerShared,
 #ifdef JS_JITSPEW
         printer(nullptr),
 #endif
-        m_buffer( GetPoolMaxOffset(),  0),
+        m_buffer(/*poolMaxOffset*/ GetPoolMaxOffset(), /*nopFill*/ 0),
         isFinished(false) {
   }
   static uint32_t NopFill;
@@ -233,23 +233,23 @@ class Assembler : public AssemblerShared,
   }
   void leaveNoPool() { m_buffer.leaveNoPool(); }
   bool swapBuffer(wasm::Bytes& bytes);
-  
+  // Size of the instruction stream, in bytes.
   size_t size() const;
-  
+  // Size of the data table, in bytes.
   size_t bytesNeeded() const;
-  
+  // Size of the jump relocation table, in bytes.
   size_t jumpRelocationTableBytes() const;
   size_t dataRelocationTableBytes() const;
   void copyJumpRelocationTable(uint8_t* dest);
   void copyDataRelocationTable(uint8_t* dest);
-  
-  
+  // Copy the assembly code to the given buffer, and perform any pending
+  // relocations relying on the target address.
   void executableCopy(uint8_t* buffer);
-  
-  
+  // API for speaking with the IonAssemblerBufferWithConstantPools generate an
+  // initial placeholder instruction that we want to later fix up.
   static void InsertIndexIntoTag(uint8_t* load, uint32_t index);
   static void PatchConstantPoolLoad(void* loadAddr, void* constPoolAddr);
-  
+  // We're not tracking short-range branches for ARM for now.
   static void PatchShortRangeBranchToVeneer(Buffer*, unsigned rangeIdx,
                                             BufferOffset deadline,
                                             BufferOffset veneer);
@@ -257,15 +257,15 @@ class Assembler : public AssemblerShared,
     uint32_t data;
 
     struct Header {
-      
-      
+      // The size should take into account the pool header.
+      // The size is in units of Instruction (4bytes), not byte.
       union {
         struct {
           uint32_t size : 15;
 
-          
-          
-          
+          // "Natural" guards are part of the normal instruction stream,
+          // while "non-natural" guards are inserted for the sole purpose
+          // of skipping around a pool.
           uint32_t isNatural : 1;
           uint32_t ONES : 16;
         };
@@ -305,8 +305,8 @@ class Assembler : public AssemblerShared,
                              BufferOffset dest);
   void processCodeLabels(uint8_t* rawCode);
   BufferOffset nextOffset() { return m_buffer.nextOffset(); }
-  
-  
+  // Get the buffer offset of the next inserted instruction. This may flush
+  // constant pools.
   BufferOffset nextInstrOffset(unsigned numInsts, unsigned numNewDeadlines) {
     return m_buffer.nextInstrOffset(numInsts, numNewDeadlines);
   }
@@ -327,8 +327,8 @@ class Assembler : public AssemblerShared,
 
 #ifdef JS_JITSPEW
   MOZ_COLD void spewVA(const char* fmt, va_list va) MOZ_FORMAT_PRINTF(2, 0) {
-    
-    
+    // Buffer to hold the formatted string. Note that this may contain
+    // '%' characters, so do not pass it directly to printf functions.
     char buf[200];
 
     int i = VsprintfLiteral(buf, fmt, va);
@@ -363,8 +363,8 @@ class Assembler : public AssemblerShared,
   };
 
   enum DoubleCondition {
-    
-    
+    // These conditions will only evaluate to true if the comparison is ordered
+    // - i.e. neither operand is NaN.
     DoubleOrdered,
     DoubleEqual,
     DoubleNotEqual,
@@ -372,7 +372,7 @@ class Assembler : public AssemblerShared,
     DoubleGreaterThanOrEqual,
     DoubleLessThan,
     DoubleLessThanOrEqual,
-    
+    // If either operand is NaN, these conditions always evaluate to true.
     DoubleUnordered,
     DoubleEqualOrUnordered,
     DoubleNotEqualOrUnordered,
@@ -386,7 +386,7 @@ class Assembler : public AssemblerShared,
   void flushBuffer() {}
 #ifdef JS_DISASM_RISCV64
   static int disassembleInstr(Instr instr, bool enable_spew = false);
-#endif 
+#endif /* JS_DISASM_RISCV64 */
   int jumpChainTargetAt(BufferOffset pos, bool is_internal);
   static int jumpChainTargetAt(Instruction* instruction, BufferOffset pos,
                                bool is_internal,
@@ -395,14 +395,14 @@ class Assembler : public AssemblerShared,
   uint32_t jumpChainUseNextLink(Label* label, bool is_internal);
   static uint64_t jumpChainTargetAddressAt(Instruction* pos);
   static void jumpChainSetTargetValueAt(Instruction* pc, uint64_t target);
-  
+  // Returns true if the target was successfully assembled and spewed.
   bool jumpChainPutTargetAt(BufferOffset pos, BufferOffset target_pos,
                             bool trampoline = false);
   int32_t branchOffsetHelper(Label* L, OffsetSize bits);
   int32_t branchLongOffsetHelper(Label* L);
 
-  
-  
+  // Determines if Label is bound and near enough so that branch instruction
+  // can be used to reach it, instead of jump instruction.
   bool isNear(Label* L);
   bool isNear(Label* L, OffsetSize bits);
   bool is_near_branch(Label* L);
@@ -455,7 +455,7 @@ class Assembler : public AssemblerShared,
         "\t]\n",
         inst, offset.getOffset());
     inst->SetInstructionBits(instr);
-#endif 
+#endif /* JS_DISASM_RISCV64 */
   }
 
   static Condition InvertCondition(Condition);
@@ -476,18 +476,18 @@ class Assembler : public AssemblerShared,
     Instruction* inst = Instruction::At(start.raw());
     uint8_t* dest = toCall.raw();
 
-    
-    
-    
-    
-    
-    
+    // Overwrite whatever instruction used to be here with a call.
+    // Always use long jump for two reasons:
+    // - Jump has to be the same size because of PatchWrite_NearCallSize.
+    // - Return address has to be at the end of replaced block.
+    // Short jump wouldn't be more efficient.
+    // WriteLoad64Instructions will emit 6 instrs to load a addr.
     Assembler::WriteLoad64Instructions(inst, SavedScratchRegister,
                                        (uint64_t)dest);
     Instr jalr_ = JALR | (ra.code() << kRdShift) | (0x0 << kFunct3Shift) |
                   (SavedScratchRegister.code() << kRs1Shift) |
                   (0x0 << kImm12Shift);
-    *reinterpret_cast<Instr*>(inst + 6 * kInstrSize) = jalr_;
+    (inst + 6 * kInstrSize)->SetInstructionBits(jalr_);
   }
   static void WriteLoad64Instructions(Instruction* inst0, Register reg,
                                       uint64_t value);
@@ -504,7 +504,7 @@ class Assembler : public AssemblerShared,
   static void ToggleCall(CodeLocationLabel inst_, bool enable);
 
   static void Bind(uint8_t* rawCode, const CodeLabel& label);
-  
+  // label operations
   void bind(Label* label, BufferOffset boff = BufferOffset());
   void bind(CodeLabel* label) { label->target()->bind(currentOffset()); }
   uint32_t currentOffset() { return nextOffset().getOffset(); }
@@ -542,11 +542,11 @@ class Assembler : public AssemblerShared,
     return &scratch_register_list_;
   }
 
-  
-  
+  // As opposed to x86/x64 version, the data relocation has to be executed
+  // before to recover the pointer, and not after.
   void writeDataRelocation(ImmGCPtr ptr) {
-    
-    
+    // Raw GC pointer relocations and Value relocations both end up in
+    // TraceOneDataRelocation.
     if (ptr.value) {
       if (gc::IsInsideNursery(ptr.value)) {
         embedsNurseryPointers_ = true;
@@ -566,7 +566,7 @@ class Assembler : public AssemblerShared,
 #endif
   }
 
-  
+  // Assembler Pseudo Instructions (Tables 25.2, 25.3, RISC-V Unprivileged ISA)
   void break_(uint32_t code, bool break_as_stop = false);
   void nop();
   void RV_li(Register rd, int64_t imm);
@@ -577,10 +577,10 @@ class Assembler : public AssemblerShared,
   void RecursiveLi(Register rd, int64_t imm);
   static int RecursiveLiCount(int64_t imm);
   static int RecursiveLiImplCount(int64_t imm);
-  
+  // Returns the number of instructions required to load the immediate
   static int li_estimate(int64_t imm, bool is_get_temp_reg = false);
-  
-  
+  // Loads an immediate, always using 8 instructions, regardless of the value,
+  // so that it can be modified later.
   void li_constant(Register rd, int64_t imm);
   void li_ptr(Register rd, int64_t imm);
 
@@ -630,10 +630,10 @@ class ABIArgGenerator : public ABIArgGeneratorShared {
   ABIArg current_;
 };
 
-
-
-
-
+// Note that nested uses of these are allowed, but the inner calls must imply
+// an area of code which exists only inside the area of code implied by the
+// outermost call.  Otherwise AssemblerBufferWithConstantPools::enterNoPool
+// will assert.
 class BlockTrampolinePoolScope {
  public:
   explicit BlockTrampolinePoolScope(Assembler* assem, size_t margin,
@@ -671,7 +671,7 @@ class UseScratchRegisterScope {
   GeneralRegisterSet old_available_;
 };
 
-
+// Class Operand represents a shifter operand in data processing instructions.
 class Operand {
   enum Tag { REG, FREG, MEM, IMM };
 
@@ -733,7 +733,7 @@ class Operand {
       uint32_t rm_;
       int32_t offset_;
     };
-    int64_t value_;  
+    int64_t value_;  // valid if tag == IMM
   };
 };
 
@@ -755,23 +755,23 @@ static inline bool GetFloatArgReg(uint32_t usedFloatArgs, FloatRegister* out) {
   return false;
 }
 
-
-
-
-
-
+// Get a register in which we plan to put a quantity that will be used as an
+// integer argument. This differs from GetIntArgReg in that if we have no more
+// actual argument registers to use we will fall back on using whatever
+// CallTempReg* don't overlap the argument registers, and only fail once those
+// run out too.
 static inline bool GetTempRegForIntArg(uint32_t usedIntArgs,
                                        uint32_t usedFloatArgs, Register* out) {
-  
-  
+  // NOTE: We can't properly determine which regs are used if there are
+  // float arguments. If this is needed, we will have to guess.
   MOZ_ASSERT(usedFloatArgs == 0);
 
   if (GetIntArgReg(usedIntArgs, out)) {
     return true;
   }
-  
-  
-  
+  // Unfortunately, we have to assume things about the point at which
+  // GetIntArgReg returns false, because we need to know how many registers it
+  // can allocate.
   usedIntArgs -= NumIntArgRegs;
   if (usedIntArgs >= NumCallTempNonArgRegs) {
     return false;
@@ -780,6 +780,6 @@ static inline bool GetTempRegForIntArg(uint32_t usedIntArgs,
   return true;
 }
 
-}  
-}  
-#endif 
+}  // namespace jit
+}  // namespace js
+#endif /* jit_riscv64_Assembler_riscv64_h */
