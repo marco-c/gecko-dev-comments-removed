@@ -12616,8 +12616,7 @@ void PresShell::EventHandler::EventTargetData::
 void PresShell::EventHandler::EventTargetData::SetContentForEventFromFrame(
     WidgetGUIEvent* aGUIEvent) {
   MOZ_ASSERT(mFrame);
-  
-  mContent = mFrame->GetExplicitEventTargetContent(aGUIEvent);
+  mContent = mFrame->GetEventTargetContent(aGUIEvent);
   AssertIfEventTargetContentAndFrameContentMismatch(aGUIEvent);
 }
 
@@ -12635,8 +12634,7 @@ void PresShell::EventHandler::EventTargetData::
 
   
   if (aGUIEvent) {
-    
-    MOZ_ASSERT(mContent == mFrame->GetExplicitEventTargetContent(aGUIEvent));
+    MOZ_ASSERT(mContent == mFrame->GetEventTargetContent(aGUIEvent));
     return;
   }
   
