@@ -324,10 +324,6 @@ pub struct PrimitiveCluster {
     
     bounding_rect: LayoutRect,
     
-    
-    
-    pub opaque_rect: LayoutRect,
-    
     pub prim_range: Range<usize>,
     
     pub flags: ClusterFlags,
@@ -342,7 +338,6 @@ impl PrimitiveCluster {
     ) -> Self {
         PrimitiveCluster {
             bounding_rect: LayoutRect::zero(),
-            opaque_rect: LayoutRect::zero(),
             spatial_node_index,
             flags,
             prim_range: first_instance_index..first_instance_index
