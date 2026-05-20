@@ -6722,6 +6722,12 @@ nsIContent* PresShell::GetExplicitEventTargetContent(
   return content;
 }
 
+nsIContent* PresShell::GetEventTargetContent(
+    const WidgetEvent* aEvent ) {
+  return nsContentUtils::GetEventTargetContent(
+      GetExplicitEventTargetContent(aEvent), aEvent);
+}
+
 void PresShell::PushCurrentEventInfo(const EventTargetInfo& aInfo) {
   if (mCurrentEventTarget.IsSet()) {
     

@@ -741,6 +741,13 @@ class PresShell final : public nsStubDocumentObserver,
   
 
 
+
+
+  nsIContent* GetEventTargetContent(const WidgetEvent* = nullptr);
+
+  
+
+
   nsresult CaptureHistoryState(nsILayoutHistoryState** aLayoutHistoryState);
 
   
