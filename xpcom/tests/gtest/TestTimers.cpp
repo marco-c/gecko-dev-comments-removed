@@ -284,9 +284,10 @@ class FindExpirationTimeState final {
  public:
   
   
-  const uint32_t kTimerOffset = 10 * 1000;
   
-  const uint32_t kTimerInterval = 5 * 1000;
+  const uint32_t kTimerOffset = 1000;
+  
+  const uint32_t kTimerInterval = 250;
   
   const uint32_t kNumTimers = 20;
 
