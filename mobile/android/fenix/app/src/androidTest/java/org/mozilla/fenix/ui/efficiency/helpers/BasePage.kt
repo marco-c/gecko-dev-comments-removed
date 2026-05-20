@@ -6,9 +6,12 @@ package org.mozilla.fenix.ui.efficiency.helpers
 
 import android.util.Log
 import androidx.compose.ui.test.SemanticsNodeInteraction
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.hasAnySibling
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onFirst
@@ -25,6 +28,7 @@ import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.action.ViewActions.pressImeActionButton
 import androidx.test.espresso.action.ViewActions.typeText
 import androidx.test.espresso.assertion.ViewAssertions.matches
+import androidx.test.espresso.matcher.ViewMatchers.hasSibling
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.isNotSelected
 import androidx.test.espresso.matcher.ViewMatchers.isSelected
@@ -114,6 +118,7 @@ abstract class BasePage(
                     is NavigationStep.OpenNotificationsTray -> mozOpenNotificationsTray()
                     is NavigationStep.EnterText -> mozEnterText(url, step.selector)
                     is NavigationStep.PressEnter -> mozPressEnter(step.selector)
+                    is NavigationStep.PressBack -> mDevice.pressBack()
                 }
             }
 
@@ -525,6 +530,38 @@ abstract class BasePage(
             is SemanticsNodeInteraction -> {
                 try {
                     element.assertExists(); element.assertIsNotSelected(); true
+                } catch (_: AssertionError) {
+                    false
+                }
+            }
+            else -> false
+        }
+    }
+
+    fun mozVerifyElementHasSiblingWithText(selector: Selector, siblingText: String, applyPreconditions: Boolean = true): Boolean {
+        val element = mozGetElement(selector, applyPreconditions = applyPreconditions)
+
+        return when (element) {
+            is ViewInteraction -> {
+                try {
+                    element.check(matches(hasSibling(withText(siblingText))))
+                    true
+                } catch (_: Exception) {
+                    false
+                }
+            }
+            is UiObject -> {
+                try {
+                    val sibling = element.getFromParent(UiSelector().text(siblingText))
+                    sibling.exists()
+                } catch (_: Exception) {
+                    false
+                }
+            }
+            is SemanticsNodeInteraction -> {
+                try {
+                    element.assert(hasAnySibling(hasText(siblingText)))
+                    true
                 } catch (_: AssertionError) {
                     false
                 }
