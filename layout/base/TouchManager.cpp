@@ -116,33 +116,36 @@ nsIFrame* TouchManager::SetupTarget(WidgetTouchEvent* aEvent,
     return aFrame;
   }
 
+  Document* doc = aFrame->PresShell()->GetDocument();
+  const bool renderBlocked =
+      doc && doc->RenderingSuppressedForViewTransitions();
+
   nsIFrame* target = aFrame;
   for (int32_t i = aEvent->mTouches.Length(); i;) {
     --i;
     dom::Touch* touch = aEvent->mTouches[i];
 
     int32_t id = touch->Identifier();
-    if (!TouchManager::HasCapturedTouch(id)) {
-      
-      RelativeTo relativeTo{aFrame};
-      nsPoint eventPoint = nsLayoutUtils::GetEventCoordinatesRelativeTo(
-          aEvent, touch->mRefPoint, relativeTo);
-      target = FindFrameTargetedByInputEvent(aEvent, relativeTo, eventPoint);
-      if (target) {
-        nsIContent* targetContent = target->GetContentForEvent(aEvent);
-        touch->SetTouchTarget(targetContent
-                                  ? targetContent->GetAsElementOrParentElement()
-                                  : nullptr);
-      } else {
-        aEvent->mTouches.RemoveElementAt(i);
-      }
-    } else {
+    if (TouchManager::HasCapturedTouch(id)) {
       
       
       touch->mChanged = false;
       RefPtr<dom::Touch> oldTouch = TouchManager::GetCapturedTouch(id);
       if (oldTouch) {
         touch->SetTouchTarget(oldTouch->mOriginalTarget);
+      }
+    } else if (MOZ_UNLIKELY(renderBlocked)) {
+      touch->SetTouchTarget(doc->GetRootElement());
+    } else {
+      
+      RelativeTo relativeTo{aFrame};
+      nsPoint eventPoint = nsLayoutUtils::GetEventCoordinatesRelativeTo(
+          aEvent, touch->mRefPoint, relativeTo);
+      target = FindFrameTargetedByInputEvent(aEvent, relativeTo, eventPoint);
+      if (target) {
+        touch->SetTouchTarget(target->GetEventTargetContent(aEvent));
+      } else {
+        aEvent->mTouches.RemoveElementAt(i);
       }
     }
   }
@@ -228,10 +231,7 @@ nsIFrame* TouchManager::SuppressInvalidPointsAndGetTargetedFrame(
         touch->mIsTouchEventSuppressed = true;
       } else {
         targetFrame = newTargetFrame;
-        nsIContent* newTargetContent = targetFrame->GetContentForEvent(aEvent);
-        touch->SetTouchTarget(
-            newTargetContent ? newTargetContent->GetAsElementOrParentElement()
-                             : nullptr);
+        touch->SetTouchTarget(targetFrame->GetEventTargetContent(aEvent));
       }
     }
     if (targetFrame) {

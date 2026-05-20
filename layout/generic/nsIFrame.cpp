@@ -4661,10 +4661,15 @@ void nsIFrame::MarkAbsoluteFramesForDisplayList(
   }
 }
 
-nsIContent* nsIFrame::GetContentForEvent(const WidgetEvent* aEvent) const {
+nsIContent* nsIFrame::GetExplicitEventTargetContent(
+    const WidgetEvent* aEvent ) const {
+  
   if (!IsGeneratedContentFrame()) {
     return GetContent();
   }
+  
+  
+  
   const nsIFrame* generatedRoot = this;
   while (true) {
     auto* parent = nsLayoutUtils::GetParentOrPlaceholderFor(generatedRoot);
@@ -4675,6 +4680,18 @@ nsIContent* nsIFrame::GetContentForEvent(const WidgetEvent* aEvent) const {
   }
   
   return generatedRoot->GetContent()->GetParent();
+}
+
+nsIContent* nsIFrame::GetEventTargetContent(
+    const mozilla::WidgetEvent* aEvent ) const {
+  nsIContent* const content = GetExplicitEventTargetContent(aEvent);
+  if (!content || content->IsElement() || !aEvent ||
+      !IsForbiddenDispatchingToNonElementContent(aEvent->mMessage)) {
+    return content;
+  }
+  Element* const ancestorElement =
+      content->GetInclusiveFlattenedTreeAncestorElement();
+  return ancestorElement ? ancestorElement : content;
 }
 
 void nsIFrame::FireDOMEvent(const nsAString& aDOMEventName,

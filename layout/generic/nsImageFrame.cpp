@@ -2810,8 +2810,9 @@ bool nsImageFrame::IsLeafDynamic() const {
   return !shadow;
 }
 
-nsIContent* nsImageFrame::GetContentForEvent(const WidgetEvent* aEvent) const {
-  if (mImageMap) {
+nsIContent* nsImageFrame::GetExplicitEventTargetContent(
+    const WidgetEvent* aEvent ) const {
+  if (mImageMap && aEvent) {
     
     
     nsIContent* capturingContent = aEvent->HasMouseEventMessage()
@@ -2826,7 +2827,7 @@ nsIContent* nsImageFrame::GetContentForEvent(const WidgetEvent* aEvent) const {
       return area;
     }
   }
-  return nsIFrame::GetContentForEvent(aEvent);
+  return nsIFrame::GetExplicitEventTargetContent(aEvent);
 }
 
 

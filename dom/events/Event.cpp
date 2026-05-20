@@ -108,7 +108,7 @@ void Event::InitPresContextData(nsPresContext* aPresContext) {
   mPresContext = aPresContext;
   
   {
-    nsIContent* content = GetTargetFromFrame();
+    nsIContent* content = GetExplicitTargetFromFrame();
     if (content && !content->IsInNativeAnonymousSubtree()) {
       mExplicitOriginalTarget = content;
     } else {
@@ -320,7 +320,7 @@ void Event::ComposedPath(nsTArray<RefPtr<EventTarget>>& aPath) {
 
 
 
-nsIContent* Event::GetTargetFromFrame() {
+nsIContent* Event::GetExplicitTargetFromFrame() {
   if (!mPresContext) {
     return nullptr;
   }
@@ -332,7 +332,7 @@ nsIContent* Event::GetTargetFromFrame() {
   }
 
   
-  return targetFrame->GetContentForEvent(mEvent);
+  return targetFrame->GetExplicitEventTargetContent(mEvent);
 }
 
 EventTarget* Event::GetExplicitOriginalTarget() const {
