@@ -241,12 +241,6 @@ var allowlist = [
 
   
   
-  
-  
-  { file: "chrome://global/skin/icons/experiments.svg" },
-
-  
-  
   {
     file: "chrome://browser/locale/taskbar.properties",
     platforms: ["linux", "macosx"],
