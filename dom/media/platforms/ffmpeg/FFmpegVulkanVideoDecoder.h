@@ -17,7 +17,7 @@ struct FFmpegVulkanVideoDecoder {
   static constexpr int kNumBuffers = 32;
 
   
-  VkDevice mDevice = nullptr;
+  VkDevice mDevice = VK_NULL_HANDLE;
   uint32_t mQueueFamilyIndex = 0;
   uint32_t mCopyQueueCount = 0;
   bool mCopyQueueIsDedicatedTransfer = false;
