@@ -2652,9 +2652,7 @@ pub extern "C" fn Servo_DeclarationBlock_IsImmutable(
 }
 
 #[no_mangle]
-pub extern "C" fn Servo_DeclarationBlock_SetImmutable(
-    declarations: &LockedDeclarationBlock,
-) {
+pub extern "C" fn Servo_DeclarationBlock_SetImmutable(declarations: &LockedDeclarationBlock) {
     use std::sync::atomic::Ordering;
     
     
