@@ -679,6 +679,10 @@ var gSync = {
     ).addEventListener("mouseover", this);
     PanelMultiView.getViewNode(
       document,
+      "PanelUI-fxa-menu-sendtab-sign-in-button"
+    ).addEventListener("click", this);
+    PanelMultiView.getViewNode(
+      document,
       "PanelUI-fxa-menu-sendtab-enable-sync-button"
     ).addEventListener("click", this);
     PanelMultiView.getViewNode(
@@ -876,6 +880,9 @@ var gSync = {
       case "PanelUI-fxa-menu-vpn-button":
         this.openVPNLink(button);
         break;
+      case "PanelUI-fxa-menu-sendtab-sign-in-button":
+        this.signInToSync(button);
+        break;
       case "PanelUI-fxa-menu-sendtab-enable-sync-button":
         this.enableSync();
         break;
@@ -1004,18 +1011,9 @@ var gSync = {
 
   showSendToDeviceViewFromFxaMenu(anchor) {
     (async () => {
-      const entryPoint =
-        this._getEntryPointForElement(anchor) === "fxa_app_menu"
-          ? "send-tab-app-menu"
-          : "send-tab-account-menu";
-
       switch (true) {
         case this.isSignedIn === false:
-          var url = await FxAccounts.config.promiseConnectAccountURI(
-            entryPoint,
-            {}
-          );
-          switchToTabHavingURI(url, true, {});
+          PanelUI.showSubView("PanelUI-fxa-menu-sendtab-sign-in", anchor);
           return;
         case this.isSignedInWithSyncDisabled:
           PanelUI.showSubView("PanelUI-fxa-menu-sendtab-enable-sync", anchor);
@@ -1151,7 +1149,6 @@ var gSync = {
       }
 
       sendTabButton.setAttribute("data-l10n-id", "fxa-menu-send-to-mobile");
-      sendTabButton.classList.remove("subviewbutton-nav");
 
       
       
@@ -1188,7 +1185,6 @@ var gSync = {
     } else {
       sendTabButton.setAttribute("data-l10n-id", "fxa-menu-send-to-device");
     }
-    sendTabButton.classList.add("subviewbutton-nav");
 
     if (anchor.getAttribute("open") == "true") {
       PanelUI.hide();
@@ -1866,7 +1862,11 @@ var gSync = {
 
     const state = UIState.get();
     if (this.isSignedInWithSyncDisabled) {
-      this._appendSignedInSyncDisabled(fragment, createDeviceNodeFn);
+      this._appendSignedInSyncDisabled(
+        fragment,
+        createDeviceNodeFn,
+        contextMenuType
+      );
     } else if (state.status == UIState.STATUS_SIGNED_IN) {
       const targets = this.getSendTabTargets();
       if (targets.length) {
@@ -2143,10 +2143,21 @@ var gSync = {
     Glean[category][method].record(extraParams);
   },
 
-  _appendSignedInSyncDisabled(fragment, createDeviceNodeFn) {
-    const enableSyncLabel = this.fluentStrings.formatValueSync(
-      "main-context-menu-send-to-mobile-enable-sync2"
-    );
+  _appendSignedInSyncDisabled(fragment, createDeviceNodeFn, contextMenuType) {
+    let enableSyncLabel;
+    if (contextMenuType == "link") {
+      enableSyncLabel = this.fluentStrings.formatValueSync(
+        "main-context-menu-send-to-mobile-enable-sync-from-link"
+      );
+    } else if (contextMenuType == "page") {
+      enableSyncLabel = this.fluentStrings.formatValueSync(
+        "main-context-menu-send-to-mobile-enable-sync-from-page"
+      );
+    } else {
+      enableSyncLabel = this.fluentStrings.formatValueSync(
+        "main-context-menu-send-to-mobile-enable-sync3"
+      );
+    }
 
     const enableSyncMenuItem = createDeviceNodeFn(null, enableSyncLabel, null);
     enableSyncMenuItem.setAttribute("label", enableSyncLabel);
@@ -2167,11 +2178,26 @@ var gSync = {
       tab: "send-tab-tab-context-menu",
     }[contextMenuType];
 
-    const [connectPhoneLabel, deviceMissingLabel] =
-      this.fluentStrings.formatValuesSync([
-        "main-context-menu-send-to-mobile-connect-phone2",
-        "main-context-menu-send-to-mobile-device-missing2",
-      ]);
+    let connectPhoneLabel, deviceMissingLabel;
+    if (contextMenuType == "link") {
+      [connectPhoneLabel, deviceMissingLabel] =
+        this.fluentStrings.formatValuesSync([
+          "main-context-menu-send-to-mobile-connect-phone-from-link",
+          "main-context-menu-send-to-mobile-device-missing2",
+        ]);
+    } else if (contextMenuType == "page") {
+      [connectPhoneLabel, deviceMissingLabel] =
+        this.fluentStrings.formatValuesSync([
+          "main-context-menu-send-to-mobile-connect-phone-from-page",
+          "main-context-menu-send-to-mobile-device-missing2",
+        ]);
+    } else {
+      [connectPhoneLabel, deviceMissingLabel] =
+        this.fluentStrings.formatValuesSync([
+          "main-context-menu-send-to-mobile-connect-phone3",
+          "main-context-menu-send-to-mobile-device-missing2",
+        ]);
+    }
 
     const connectPhoneMenuItem = createDeviceNodeFn(
       null,
@@ -2248,15 +2274,34 @@ var gSync = {
   },
 
   _appendSendTabSignedOut(fragment, createDeviceNodeFn, contextMenuType) {
-    const signInLabel = this.fluentStrings.formatValueSync(
-      "main-context-menu-send-to-mobile-sign-in"
-    );
+    let entryPoint = {
+      toolbar: "send-tab-toolbar-icon",
+      link: "send-tab-link-context-menu",
+      page: "send-tab-page-context-menu",
+      tab: "send-tab-tab-context-menu",
+    }[contextMenuType];
+
+    let signInLabel;
+    if (contextMenuType == "link") {
+      signInLabel = this.fluentStrings.formatValueSync(
+        "main-context-menu-send-to-mobile-sign-in-from-link"
+      );
+    } else if (contextMenuType == "page") {
+      signInLabel = this.fluentStrings.formatValueSync(
+        "main-context-menu-send-to-mobile-sign-in-from-page"
+      );
+    } else {
+      signInLabel = this.fluentStrings.formatValueSync(
+        "main-context-menu-send-to-mobile-sign-in"
+      );
+    }
+
     const signInMenuItem = createDeviceNodeFn(null, signInLabel, null);
     signInMenuItem.setAttribute("label", signInLabel);
     signInMenuItem.classList.add("sync-menuitem");
     signInMenuItem.addEventListener(
       "command",
-      async () => await this.openSignInAgainPage(contextMenuType),
+      async () => await this.openSignInAgainPage(entryPoint),
       true
     );
     fragment.appendChild(signInMenuItem);
@@ -2681,6 +2726,15 @@ var gSync = {
       
       this.openPrefs(entryPoint);
     }
+  },
+
+  async signInToSync(sourceElement) {
+    const entryPoint =
+      this._getEntryPointForElement(sourceElement) === "fxa_app_menu"
+        ? "send-tab-app-menu"
+        : "send-tab-account-menu";
+    var url = await FxAccounts.config.promiseConnectAccountURI(entryPoint, {});
+    switchToTabHavingURI(url, true, {});
   },
 
   enableSync() {
