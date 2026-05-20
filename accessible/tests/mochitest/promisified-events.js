@@ -344,3 +344,26 @@ function selectAllTextAndFocus(id) {
 
   elem.focus();
 }
+
+
+
+
+
+
+async function waitForImageMapInContent(aImageMapID) {
+  const reorder = waitForEvent(EVENT_REORDER, aImageMapID);
+  const imageMapNode = getNode(aImageMapID);
+  const imageMapAcc = getAccessible(aImageMapID);
+  if (imageMapAcc.firstChild) {
+    return;
+  }
+  synthesizeMouse(
+    imageMapNode,
+    10,
+    10,
+    { type: "mousemove" },
+    imageMapNode.documentGlobal
+  );
+
+  await reorder;
+}
