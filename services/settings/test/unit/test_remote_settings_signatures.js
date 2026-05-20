@@ -3,6 +3,7 @@
 
 const PREF_SETTINGS_SERVER = "services.settings.server";
 const SIGNER_NAME = "onecrl.content-signature.mozilla.org";
+const TELEMETRY_COMPONENT = "remotesettings";
 
 const CERT_DIR = "test_remote_settings_signatures/";
 const CHAIN_FILES = ["collection_signing_ee.pem", "collection_signing_int.pem"];
@@ -385,10 +386,10 @@ add_task(async function test_check_synchronization_with_signatures() {
   
   registerHandlers(emptyCollectionResponses);
 
-  
-  Services.telemetry.snapshotEvents(Ci.nsITelemetry.DATASET_ALL_CHANNELS, true);
-  Services.fog.testResetFOG();
-  enableUptakeMetric();
+  let startSnapshot = getUptakeTelemetrySnapshot(
+    TELEMETRY_COMPONENT,
+    TELEMETRY_SOURCE
+  );
 
   
   
@@ -396,18 +397,17 @@ add_task(async function test_check_synchronization_with_signatures() {
 
   equal((await client.get()).length, 0);
 
-  assertTelemetryEvents([
-    {
-      value: UptakeTelemetry.STATUS.SYNC_START,
-      source: TELEMETRY_SOURCE,
-      trigger: "manual",
-    },
-    {
-      value: UptakeTelemetry.STATUS.SUCCESS,
-      source: TELEMETRY_SOURCE,
-      trigger: "manual",
-    },
-  ]);
+  let endSnapshot = getUptakeTelemetrySnapshot(
+    TELEMETRY_COMPONENT,
+    TELEMETRY_SOURCE
+  );
+
+  
+  let expectedIncrements = {
+    [UptakeTelemetry.STATUS.SYNC_START]: 1,
+    [UptakeTelemetry.STATUS.SUCCESS]: 1,
+  };
+  checkUptakeTelemetry(startSnapshot, endSnapshot, expectedIncrements);
 
   
   
@@ -591,9 +591,11 @@ add_task(async function test_check_synchronization_with_signatures() {
   };
 
   registerHandlers(badSigGoodSigResponses);
-  Services.telemetry.snapshotEvents(Ci.nsITelemetry.DATASET_ALL_CHANNELS, true);
-  Services.fog.testResetFOG();
-  enableUptakeMetric();
+
+  startSnapshot = getUptakeTelemetrySnapshot(
+    TELEMETRY_COMPONENT,
+    TELEMETRY_SOURCE
+  );
 
   let syncEventSent = false;
   client.on("sync", () => {
@@ -604,6 +606,11 @@ add_task(async function test_check_synchronization_with_signatures() {
 
   equal((await client.get()).length, 2);
 
+  endSnapshot = getUptakeTelemetrySnapshot(
+    TELEMETRY_COMPONENT,
+    TELEMETRY_SOURCE
+  );
+
   
   
   equal(syncEventSent, false);
@@ -611,18 +618,11 @@ add_task(async function test_check_synchronization_with_signatures() {
   
   
   
-  assertTelemetryEvents([
-    {
-      value: UptakeTelemetry.STATUS.SYNC_START,
-      source: TELEMETRY_SOURCE,
-      trigger: "manual",
-    },
-    {
-      value: UptakeTelemetry.STATUS.SIGNATURE_ERROR,
-      source: TELEMETRY_SOURCE,
-      trigger: "manual",
-    },
-  ]);
+  expectedIncrements = {
+    [UptakeTelemetry.STATUS.SYNC_START]: -2,
+    [UptakeTelemetry.STATUS.SIGNATURE_ERROR]: 1,
+  };
+  checkUptakeTelemetry(startSnapshot, endSnapshot, expectedIncrements);
 
   
   
@@ -723,27 +723,43 @@ add_task(async function test_check_synchronization_with_signatures() {
   });
 
   
-  Services.telemetry.snapshotEvents(Ci.nsITelemetry.DATASET_ALL_CHANNELS, true);
-  Services.fog.testResetFOG();
-  enableUptakeMetric();
+  TelemetryTestUtils.assertEvents([], {}, { process: "dummy" });
+
+  const TELEMETRY_EVENTS_FILTERS = {
+    category: "uptake.remotecontent.result",
+    method: "uptake",
+  };
 
   
   await client.maybeSync(5000);
 
   
-  assertTelemetryEvents([
-    {
-      value: UptakeTelemetry.STATUS.SYNC_START,
-      source: client.identifier,
-      trigger: "manual",
-    },
-    {
-      value: UptakeTelemetry.STATUS.CORRUPTION_ERROR,
-      source: client.identifier,
-      trigger: "manual",
-      duration: d => parseInt(d) > 0,
-    },
-  ]);
+  TelemetryTestUtils.assertEvents(
+    [
+      [
+        "uptake.remotecontent.result",
+        "uptake",
+        "remotesettings",
+        UptakeTelemetry.STATUS.SYNC_START,
+        {
+          source: client.identifier,
+          trigger: "manual",
+        },
+      ],
+      [
+        "uptake.remotecontent.result",
+        "uptake",
+        "remotesettings",
+        UptakeTelemetry.STATUS.CORRUPTION_ERROR,
+        {
+          source: client.identifier,
+          duration: v => v > 0,
+          trigger: "manual",
+        },
+      ],
+    ],
+    TELEMETRY_EVENTS_FILTERS
+  );
 
   
   
@@ -815,11 +831,10 @@ add_task(async function test_check_synchronization_with_signatures() {
     ],
   };
 
-  
-  Services.telemetry.snapshotEvents(Ci.nsITelemetry.DATASET_ALL_CHANNELS, true);
-  Services.fog.testResetFOG();
-  enableUptakeMetric();
-
+  startSnapshot = getUptakeTelemetrySnapshot(
+    TELEMETRY_COMPONENT,
+    TELEMETRY_SOURCE
+  );
   registerHandlers(allBadSigResponses);
   await Assert.rejects(
     client.maybeSync(6000),
@@ -828,18 +843,15 @@ add_task(async function test_check_synchronization_with_signatures() {
   );
 
   
-  assertTelemetryEvents([
-    {
-      value: UptakeTelemetry.STATUS.SYNC_START,
-      source: TELEMETRY_SOURCE,
-      trigger: "manual",
-    },
-    {
-      value: UptakeTelemetry.STATUS.SIGNATURE_RETRY_ERROR,
-      source: TELEMETRY_SOURCE,
-      trigger: "manual",
-    },
-  ]);
+  endSnapshot = getUptakeTelemetrySnapshot(
+    TELEMETRY_COMPONENT,
+    TELEMETRY_SOURCE
+  );
+  expectedIncrements = {
+    [UptakeTelemetry.STATUS.SYNC_START]: 1,
+    [UptakeTelemetry.STATUS.SIGNATURE_RETRY_ERROR]: 1,
+  };
+  checkUptakeTelemetry(startSnapshot, endSnapshot, expectedIncrements);
 
   
   
