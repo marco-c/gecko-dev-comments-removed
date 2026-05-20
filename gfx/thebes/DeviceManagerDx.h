@@ -94,7 +94,7 @@ class DeviceManagerDx final {
 
   
   
-  bool GetOutputFromMonitor(HMONITOR monitor, RefPtr<IDXGIOutput>* aOutOutput);
+  bool GetOutputFromMonitor(HMONITOR aMonitor, RefPtr<IDXGIOutput>* aOutOutput);
 
   void PostUpdateMonitorInfo();
   void UpdateMonitorInfo();
