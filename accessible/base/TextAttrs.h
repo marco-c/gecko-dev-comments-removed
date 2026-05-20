@@ -124,12 +124,12 @@ class TextAttrsMgr {
     
     
     MOZ_INIT_OUTSIDE_CTOR T mNativeValue;
-    MOZ_INIT_OUTSIDE_CTOR bool mIsDefined;
+    MOZ_INIT_OUTSIDE_CTOR bool mIsDefined = false;
 
     
     
     MOZ_INIT_OUTSIDE_CTOR T mRootNativeValue;
-    MOZ_INIT_OUTSIDE_CTOR bool mIsRootDefined;
+    MOZ_INIT_OUTSIDE_CTOR bool mIsRootDefined = false;
   };
 
   
