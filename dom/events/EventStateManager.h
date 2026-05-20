@@ -274,6 +274,7 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
 
   nsIFrame* GetEventTarget();
   nsIContent* GetExplicitEventTargetContent(const WidgetEvent* = nullptr);
+  nsIContent* GetEventTargetContent(const WidgetEvent* = nullptr);
 
   
   static bool ManagesState(ElementState aState) {
