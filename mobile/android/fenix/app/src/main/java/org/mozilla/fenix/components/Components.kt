@@ -58,6 +58,7 @@ import org.mozilla.fenix.components.appstate.setup.checklist.SetupChecklistState
 import org.mozilla.fenix.components.appstate.setup.checklist.getSetupChecklistCollection
 import org.mozilla.fenix.components.appstate.sports.SportsWidgetState
 import org.mozilla.fenix.components.ipprotection.IPProtection
+import org.mozilla.fenix.components.lens.GoogleLensAIControlFeature
 import org.mozilla.fenix.components.llm.Llm
 import org.mozilla.fenix.components.llm.ext.accessTokenProvider
 import org.mozilla.fenix.components.metrics.MetricsMiddleware
@@ -81,6 +82,8 @@ import org.mozilla.fenix.home.middleware.HomeTelemetryMiddleware
 import org.mozilla.fenix.home.setup.store.DefaultSetupChecklistRepository
 import org.mozilla.fenix.home.setup.store.SetupChecklistPreferencesMiddleware
 import org.mozilla.fenix.home.setup.store.SetupChecklistTelemetryMiddleware
+import org.mozilla.fenix.home.sports.SportsWidgetMiddleware
+import org.mozilla.fenix.home.sports.WorldCupMatchesRepository
 import org.mozilla.fenix.ipprotection.IPProtectionManager
 import org.mozilla.fenix.ipprotection.store.DefaultIPProtectionPromptRepository
 import org.mozilla.fenix.messaging.state.MessagingMiddleware
@@ -362,6 +365,7 @@ class Components(private val context: Context) {
                     settings.migrateLastReviewPromptTimePrefIfNeeded(nimbus.events)
                 },
                 AppVisualCompletenessMiddleware(performance.visualCompletenessQueue),
+                SportsWidgetMiddleware(sportsRepository = WorldCupMatchesRepository()),
             ),
         ).also {
             it.dispatch(AppAction.SetupChecklistAction.Init)
@@ -388,6 +392,7 @@ class Components(private val context: Context) {
         isVisible = settings.showHomepageSportsWidget,
         isFeatureEnabled = settings.enableHomepageSportsWidget,
         isCountdownWidgetVisible = settings.showHomepageCountdownWidget,
+        forceOneWeekToWorldCup = settings.forceOneWeekToWorldCup,
     )
 
     val fxSuggest by lazyMonitored { FxSuggest(context, remoteSettingsService.value, analytics.crashReporter) }
@@ -485,6 +490,9 @@ class Components(private val context: Context) {
                     onUpdateWidget = { VoiceSearchAIControlFeature.updateWidget(context) },
                 ),
             )
+            if (settings.googleLensIntegrationEnabled) {
+                it.register(GoogleLensAIControlFeature(settings = context.settings()))
+            }
         }
     }
 
