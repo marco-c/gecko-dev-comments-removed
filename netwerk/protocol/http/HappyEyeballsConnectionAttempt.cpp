@@ -949,6 +949,11 @@ void HappyEyeballsConnectionAttempt::Abandon() {
     mTransaction = nullptr;
   }
 
+  MOZ_DIAGNOSTIC_ASSERT(!mZeroRttHandle->AnyStarted() ||
+                            mZeroRttHandle->HadWinner() || !mTransaction,
+                        "transaction not re-queued and not "
+                        "adopted");
+
   mZeroRttHandle->Cleanup();
 
   mEntry = nullptr;
@@ -1106,6 +1111,12 @@ void HappyEyeballsConnectionAttempt::OnSucceeded() {
   nsHttpTransaction* trans =
       mTransaction ? mTransaction->QueryHttpTransaction() : nullptr;
   if (mZeroRttHandle->AnyStarted() && !mZeroRttHandle->HadWinner()) {
+    
+    
+    
+    MOZ_ASSERT(trans,
+               "AnyStarted implies a live real transaction; "
+               "QueryHttpTransaction() should not be null");
     if (trans) {
       trans->FinishAdopted0RTT(true);
       
@@ -1125,6 +1136,11 @@ void HappyEyeballsConnectionAttempt::OnSucceeded() {
       mTransaction = nullptr;
     }
   }
+
+  MOZ_DIAGNOSTIC_ASSERT(
+      !mZeroRttHandle->AnyStarted() || mZeroRttHandle->HadWinner() ||
+          !mTransaction,
+      "OnSucceeded: 0-RTT transaction not re-queued and not adopted");
 
   
   
