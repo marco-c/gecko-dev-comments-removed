@@ -480,15 +480,21 @@ already_AddRefed<ComputedStyle> ServoStyleSet::ResolvePseudoElementStyle(
       return nullptr;
     }
     if (cacheable) {
-      
-      
-      
-      
-      
-      
-      
       const bool shouldCache = [&] {
+        if (style->HasAttrReferences()) {
+          
+          
+          return false;
+        }
         if (style->UsesViewportUnits()) {
+          
+          
+          
+          
+          
+          
+          
+          
           if (const auto* primaryFrame =
                   aOriginatingElement.GetPrimaryFrame()) {
             if (primaryFrame->Style() != aParentStyle) {
