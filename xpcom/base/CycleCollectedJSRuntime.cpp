@@ -385,25 +385,37 @@ JSZoneParticipant::TraverseNative(void* aPtr,
   return NS_OK;
 }
 
-struct TraversalTracer : public JS::CallbackTracer {
+struct TraversalTracer : public js::GenericTracerImpl<TraversalTracer> {
   TraversalTracer(JSRuntime* aRt, nsCycleCollectionTraversalCallback& aCb)
-      : JS::CallbackTracer(aRt, JS::TracerKind::Callback,
-                           JS::TraceOptions(JS::WeakMapTraceAction::Skip,
-                                            JS::WeakEdgeTraceAction::Trace)),
+      : js::GenericTracerImpl<TraversalTracer>(
+            aRt, JS::TracerKind::Callback,
+            JS::TraceOptions(JS::WeakMapTraceAction::Skip,
+                             JS::WeakEdgeTraceAction::Trace)),
         mCb(aCb) {}
-  void onChild(JS::GCCellPtr aThing, const char* name) override;
   nsCycleCollectionTraversalCallback& mCb;
+
+ private:
+  template <typename T>
+  void onEdge(T** aThingPtr, const char* aName);
+  friend class js::GenericTracerImpl<TraversalTracer>;
 };
 
-void TraversalTracer::onChild(JS::GCCellPtr aThing, const char* name) {
+template <typename T>
+void TraversalTracer::onEdge(T** aThingPtr, const char* aName) {
   
-  
-  if (aThing.is<JSString>()) {
+  if constexpr (std::is_same_v<T, JSString>) {
     return;
   }
 
   
-  if (!JS::GCThingIsMarkedGrayInCC(aThing) && !mCb.WantAllTraces()) {
+  T* thing = *aThingPtr;
+  if (!thing) {
+    return;
+  }
+
+  
+  if (!JS::GCThingIsMarkedGrayInCC(js::gc::ToCell(thing)) &&
+      !mCb.WantAllTraces()) {
     return;
   }
 
@@ -414,25 +426,25 @@ void TraversalTracer::onChild(JS::GCCellPtr aThing, const char* name) {
 
 
 
-  if (JS::IsCCTraceKind(aThing.kind())) {
+  if constexpr (JS::IsCCTraceKind(JS::MapTypeToTraceKind<T>::kind)) {
     if (MOZ_UNLIKELY(mCb.WantDebugInfo())) {
       char buffer[200];
-      context().getEdgeName(name, buffer, sizeof(buffer));
+      context().getEdgeName(aName, buffer, sizeof(buffer));
       mCb.NoteNextEdgeName(buffer);
     }
-    mCb.NoteJSChild(aThing);
+    mCb.NoteJSChild(JS::GCCellPtr(thing));
     return;
   }
 
   
   JS::AutoClearTracingContext actc(this);
 
-  if (aThing.is<js::Shape>()) {
+  if constexpr (std::is_same_v<T, js::Shape>) {
     
     
-    JS_TraceShapeCycleCollectorChildren(this, aThing);
+    JS_TraceShapeCycleCollectorChildren(this, thing);
   } else {
-    JS::TraceChildren(this, aThing);
+    JS::TraceChildren(this, JS::GCCellPtr(thing));
   }
 }
 

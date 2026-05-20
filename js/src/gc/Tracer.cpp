@@ -92,7 +92,7 @@ void js::gc::TraceIncomingCCWs(JSTracer* trc,
 
 
 
-void gc::TraceCycleCollectorChildren(JS::CallbackTracer* trc, Shape* shape) {
+void gc::TraceCycleCollectorChildren(JSTracer* trc, Shape* shape) {
   shape->base()->traceChildren(trc);
 
   

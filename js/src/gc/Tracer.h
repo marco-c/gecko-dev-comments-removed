@@ -369,7 +369,7 @@ namespace gc {
 
 
 
-void TraceCycleCollectorChildren(JS::CallbackTracer* trc, Shape* shape);
+void TraceCycleCollectorChildren(JSTracer* trc, Shape* shape);
 
 
 

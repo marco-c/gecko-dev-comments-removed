@@ -759,6 +759,15 @@ MOZ_ALWAYS_INLINE bool InCollectedNurseryRegion(const JSObject* obj) {
   return InCollectedNurseryRegion(reinterpret_cast<const Cell*>(obj));
 }
 
+
+
+#define EXPAND_TO_CELL(_1, type, _2, _3)        \
+  MOZ_ALWAYS_INLINE Cell* ToCell(type* thing) { \
+    return reinterpret_cast<Cell*>(thing);      \
+  }
+JS_FOR_EACH_TRACEKIND(EXPAND_TO_CELL)
+#undef EXPAND_TO_CELL
+
 MOZ_ALWAYS_INLINE bool IsCellPointerValid(const void* ptr) {
   auto addr = uintptr_t(ptr);
   if (addr < ChunkSize || addr % CellAlignBytes != 0) {
@@ -821,8 +830,7 @@ static MOZ_ALWAYS_INLINE bool GCThingIsMarkedGray(GCCellPtr thing) {
 
 
 
-static MOZ_ALWAYS_INLINE bool GCThingIsMarkedGrayInCC(GCCellPtr thing) {
-  js::gc::Cell* cell = thing.asCell();
+static MOZ_ALWAYS_INLINE bool GCThingIsMarkedGrayInCC(js::gc::Cell* cell) {
   if (IsInsideNursery(cell)) {
     return false;
   }
@@ -830,6 +838,9 @@ static MOZ_ALWAYS_INLINE bool GCThingIsMarkedGrayInCC(GCCellPtr thing) {
   auto* tenuredCell = reinterpret_cast<js::gc::TenuredCell*>(cell);
   MOZ_ASSERT(js::gc::detail::CanCheckGrayBits(tenuredCell));
   return js::gc::detail::TenuredCellIsMarkedGray(tenuredCell);
+}
+static MOZ_ALWAYS_INLINE bool GCThingIsMarkedGrayInCC(GCCellPtr thing) {
+  return GCThingIsMarkedGrayInCC(thing.asCell());
 }
 
 extern JS_PUBLIC_API JS::TraceKind GCThingTraceKind(void* thing);
