@@ -657,7 +657,8 @@ bool ContentEventHandler::ShouldBreakLineBefore(const nsIContent& aContent,
     return false;
   }
 
-  switch (aContent.NodeInfo()->HTMLTag().valueOr(eHTMLTag_unknown)) {
+  switch (
+      nsHTMLTags::CaseSensitiveAtomTagToId(aContent.NodeInfo()->NameAtom())) {
     case eHTMLTag_br:
       
       
