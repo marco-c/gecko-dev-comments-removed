@@ -946,7 +946,17 @@ var gEditItemOverlay = {
       this._folderMenuList.selectedItem = item;
       
       
-      setTimeout(() => this.toggleFolderTreeVisibility(), 100);
+      
+      
+      
+      
+      if (this._folderMenuList.menupopup.state == "hiding") {
+        this._folderMenuList.menupopup.addEventListener(
+          "popuphidden",
+          () => this.toggleFolderTreeVisibility(),
+          { once: true }
+        );
+      }
       return;
     }
 
