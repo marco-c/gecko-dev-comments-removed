@@ -3244,6 +3244,18 @@ static gfx::IntPoint GetIntegerDeltaForEvent(NSEvent* aEvent) {
 #endif
 
   nsAutoRetainCocoaObject kungFuDeathGrip(self);
+
+  
+  
+  
+  if ([theEvent keyCode] == kVK_ANSI_F &&
+      ([theEvent modifierFlags] &
+       NSEventModifierFlagDeviceIndependentFlagsMask) ==
+          NSEventModifierFlagFunction) {
+    [[self window] toggleFullScreen:nil];
+    return;
+  }
+
   if (mGeckoChild) {
     if (mTextInputHandler) {
       sUniqueKeyEventId++;
