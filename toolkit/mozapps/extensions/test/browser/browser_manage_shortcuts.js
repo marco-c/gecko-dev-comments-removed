@@ -18,9 +18,10 @@ async function loadShortcutsView() {
   
   
   let win = await loadInitialView("theme");
+  let categoryUtils = new CategoryUtilities(win);
 
   is(
-    AboutAddonsTestUtils.getSidebarSelectedViewId(win),
+    categoryUtils.getSelectedViewId(),
     "addons://list/theme",
     "The theme category is selected"
   );
@@ -35,7 +36,7 @@ async function loadShortcutsView() {
   await loaded;
 
   is(
-    AboutAddonsTestUtils.getSidebarSelectedViewId(win),
+    categoryUtils.getSelectedViewId(),
     "addons://list/extension",
     "The extension category is now selected"
   );
