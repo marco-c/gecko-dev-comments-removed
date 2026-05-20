@@ -1151,15 +1151,11 @@ nsresult PointerEventHandler::DispatchPointerEventWithTarget(
   AutoWeakFrame targetWeakFrame(aTargetWeakFrame);
   nsCOMPtr<nsIContent> targetContent = aTargetContent;
   if (targetWeakFrame) {
-    
     MOZ_ASSERT_IF(
         targetContent,
-        targetContent ==
-            targetWeakFrame->GetExplicitEventTargetContent(aPointerEvent));
+        targetContent == targetWeakFrame->GetEventTargetContent(aPointerEvent));
     if (!targetContent) {
-      
-      targetContent =
-          targetWeakFrame->GetExplicitEventTargetContent(aPointerEvent);
+      targetContent = targetWeakFrame->GetEventTargetContent(aPointerEvent);
       if (NS_WARN_IF(!targetContent)) {
         return NS_ERROR_FAILURE;
       }
