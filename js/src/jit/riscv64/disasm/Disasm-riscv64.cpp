@@ -51,7 +51,7 @@ class Decoder {
 
   
   
-  int InstructionDecode(uint8_t* instruction);
+  int InstructionDecode(Instruction* instr);
 
   static bool IsConstantPoolAt(uint8_t* instr_ptr);
   static int ConstantPoolSizeAt(uint8_t* instr_ptr);
@@ -2126,8 +2126,7 @@ int Decoder::ConstantPoolSizeAt(uint8_t* instr_ptr) {
 }
 
 
-int Decoder::InstructionDecode(uint8_t* instruction) {
-  Instruction* instr = Instruction::At(instruction);
+int Decoder::InstructionDecode(Instruction* instr) {
   
   out_buffer_pos_ += SNPrintF(out_buffer_ + out_buffer_pos_, "%08x       ",
                               instr->InstructionBits());
@@ -2235,10 +2234,9 @@ Disassembler::Disassembler(const NameConverter& converter)
 
 Disassembler::~Disassembler() {}
 
-int Disassembler::InstructionDecode(V8Vector<char> buffer,
-                                    uint8_t* instruction) {
+int Disassembler::InstructionDecode(V8Vector<char> buffer, Instruction* instr) {
   Decoder d(converter_, buffer);
-  return d.InstructionDecode(instruction);
+  return d.InstructionDecode(instr);
 }
 
 int Disassembler::ConstantPoolSizeAt(uint8_t* instruction) {
@@ -2252,7 +2250,7 @@ void Disassembler::Disassemble(FILE* f, uint8_t* begin, uint8_t* end) {
     EmbeddedVector<char, ReasonableBufferSize> buffer;
     buffer[0] = '\0';
     uint8_t* prev_pc = pc;
-    pc += d.InstructionDecode(buffer, pc);
+    pc += d.InstructionDecode(buffer, Instruction::At(pc));
     fprintf(f, "%p    %08x      %s\n", prev_pc,
             *reinterpret_cast<int32_t*>(prev_pc), buffer.start());
   }

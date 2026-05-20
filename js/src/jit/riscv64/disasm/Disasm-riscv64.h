@@ -48,7 +48,10 @@ class Disassembler {
 
   
   
-  int InstructionDecode(V8Vector<char> buffer, uint8_t* instruction);
+  int InstructionDecode(V8Vector<char> buffer, Instruction* instr);
+  int InstructionDecode(V8Vector<char> buffer, uint8_t* instruction) {
+    return InstructionDecode(buffer, Instruction::At(instruction));
+  }
 
   
   

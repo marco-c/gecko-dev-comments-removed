@@ -1755,7 +1755,7 @@ void Simulator::InstructionDecode(const SimInstruction& instr) {
     disasm::NameConverter converter;
     disasm::Disassembler dasm(converter);
     
-    dasm.InstructionDecode(buffer, reinterpret_cast<byte*>(instr.instr()));
+    dasm.InstructionDecode(buffer, instr.instr());
   }
 
   instr_ = instr.instr();
