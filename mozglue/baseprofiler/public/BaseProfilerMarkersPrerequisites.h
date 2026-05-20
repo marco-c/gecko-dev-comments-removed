@@ -1172,6 +1172,14 @@ struct MarkerHasPayloadFields<
                    decltype(std::size(T::PayloadFields))>> : std::true_type {};
 
 
+template <typename T, typename = void>
+struct MarkerHasTranslator : std::false_type {};
+template <typename T>
+struct MarkerHasTranslator<
+    T, std::void_t<decltype(T::TranslateMarkerInputToSchema)>>
+    : std::true_type {};
+
+
 
 
 

@@ -19,14 +19,6 @@ struct MarkerSupportsETW : std::false_type {};
 template <typename T>
 struct MarkerSupportsETW<T, std::void_t<decltype(T::Name)>> : std::true_type {};
 
-
-template <typename T, typename = void>
-struct MarkerHasTranslator : std::false_type {};
-template <typename T>
-struct MarkerHasTranslator<
-    T, std::void_t<decltype(T::TranslateMarkerInputToSchema)>>
-    : std::true_type {};
-
 }  
 
 #if defined(XP_WIN) && !defined(RUST_BINDGEN) && !defined(__MINGW32__)
@@ -364,7 +356,7 @@ static inline void EmitETWMarker(const mozilla::ProfilerString8View& aName,
     }
 
     if constexpr (mozilla::MarkerHasPayloadFields<MarkerType>::value) {
-      if constexpr (MarkerHasTranslator<MarkerType>::value) {
+      if constexpr (mozilla::MarkerHasTranslator<MarkerType>::value) {
         
         
         
@@ -431,7 +423,7 @@ static inline void EmitETWMarker(const mozilla::ProfilerString8View& aName,
   
   
   if constexpr (mozilla::MarkerHasPayloadFields<MarkerType>::value) {
-    if constexpr (MarkerHasTranslator<MarkerType>::value) {
+    if constexpr (mozilla::MarkerHasTranslator<MarkerType>::value) {
       
       
       MarkerType::TranslateMarkerInputToSchema(nullptr, aPayloadArguments...);
