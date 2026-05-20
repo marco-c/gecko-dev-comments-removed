@@ -736,14 +736,7 @@ class PresShell final : public nsStubDocumentObserver,
   
 
 
-  nsIContent* GetExplicitEventTargetContent(const WidgetEvent* = nullptr);
-
-  
-
-
-
-
-  nsIContent* GetEventTargetContent(const WidgetEvent* = nullptr);
+  already_AddRefed<nsIContent> GetEventTargetContent(WidgetEvent* aEvent);
 
   
 

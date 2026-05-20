@@ -2379,56 +2379,7 @@ class nsIFrame : public nsQueryFrame {
   bool ShouldHandleSelectionMovementEvents();
 
  public:
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  virtual nsIContent* GetExplicitEventTargetContent(
-      const mozilla::WidgetEvent* = nullptr) const;
-
-  
-
-
-
-
-
-
-
-
-  nsIContent* GetExplicitEventTargetContent(
-      const mozilla::WidgetEvent& aEvent) const {
-    return GetExplicitEventTargetContent(&aEvent);
-  }
-
-  
-
-
-
-
-
-
-  nsIContent* GetEventTargetContent(
-      const mozilla::WidgetEvent* = nullptr) const;
-
-  
-
-
-
-
-
-
-  nsIContent* GetEventTargetContent(const mozilla::WidgetEvent& aEvent) const {
-    return GetEventTargetContent(&aEvent);
-  }
+  virtual nsIContent* GetContentForEvent(const mozilla::WidgetEvent*) const;
 
   
   

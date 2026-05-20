@@ -273,8 +273,7 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
   void ClearFrameRefs(nsIFrame* aFrame);
 
   nsIFrame* GetEventTarget();
-  nsIContent* GetExplicitEventTargetContent(const WidgetEvent* = nullptr);
-  nsIContent* GetEventTargetContent(const WidgetEvent* = nullptr);
+  already_AddRefed<nsIContent> GetEventTargetContent(WidgetEvent* aEvent);
 
   
   static bool ManagesState(ElementState aState) {
@@ -603,7 +602,7 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void NotifyMouseOut(WidgetMouseEvent* aMouseEvent,
                                                   nsIContent* aMovingInto);
   MOZ_CAN_RUN_SCRIPT void GenerateDragDropEnterExit(
-      nsPresContext* aPresContext, WidgetDragEvent& aDragEvent);
+      nsPresContext* aPresContext, WidgetDragEvent* aDragEvent);
 
   
 
@@ -621,7 +620,7 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
 
 
   MOZ_CAN_RUN_SCRIPT void FireDragEnterOrExit(nsPresContext* aPresContext,
-                                              const WidgetDragEvent& aDragEvent,
+                                              WidgetDragEvent* aDragEvent,
                                               EventMessage aMessage,
                                               nsIContent* aRelatedTarget,
                                               nsIContent* aTargetContent,
@@ -1176,33 +1175,21 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
                           nsIFrame* targetFrame);
 
   
-
-
-
-
   void BeginTrackingDragGesture(nsPresContext* aPresContext,
-                                WidgetMouseEvent& aMouseDownOrTouchDragEvent,
-                                nsIFrame* aMouseDownOrTouchDragFrame);
+                                WidgetMouseEvent* aDownEvent,
+                                nsIFrame* aDownFrame);
 
-  void SetGestureDownPoint(const WidgetGUIEvent& aEvent);
+  void SetGestureDownPoint(WidgetGUIEvent* aEvent);
 
-  [[nodiscard]] LayoutDeviceIntPoint GetEventRefPoint(
-      const WidgetEvent& aEvent) const;
+  LayoutDeviceIntPoint GetEventRefPoint(WidgetEvent* aEvent) const;
 
   friend class mozilla::dom::BrowserParent;
   void BeginTrackingRemoteDragGesture(nsIContent* aContent,
                                       dom::RemoteDragStartData* aDragStartData);
 
-  
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT void GenerateDragGesture(
-      nsPresContext* aPresContext,
-      WidgetInputEvent& aMouseOrTouchOrPointerEvent);
+  MOZ_CAN_RUN_SCRIPT
+  void GenerateDragGesture(nsPresContext* aPresContext,
+                           WidgetInputEvent* aEvent);
 
   
 
@@ -1313,8 +1300,7 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
   void RemoveNodeFromChainIfNeeded(ElementState aState,
                                    nsIContent* aContentRemoved, bool aNotify);
 
-  [[nodiscard]] bool IsEventOutsideDragThreshold(
-      const WidgetInputEvent& aEvent) const;
+  bool IsEventOutsideDragThreshold(WidgetInputEvent* aEvent) const;
 
   static inline void DoStateChange(dom::Element* aElement, ElementState aState,
                                    bool aAddState);

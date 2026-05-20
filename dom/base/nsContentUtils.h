@@ -1593,14 +1593,6 @@ class nsContentUtils {
 
 
 
-  [[nodiscard]] static nsIContent* GetEventTargetContent(
-      nsIContent* aExplicitEventTargetContent,
-      const mozilla::WidgetEvent* aEvent);
-
-  
-
-
-
 
 
 
