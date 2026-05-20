@@ -37,7 +37,6 @@ use style_traits::{CssWriter, ToCss};
     ToTyped,
 )]
 #[repr(u8)]
-#[typed_value(derive_fields)]
 pub enum ShapeGeometryBox {
     
     
@@ -122,7 +121,6 @@ impl Default for ShapeBox {
 )]
 #[animation(no_bound(U))]
 #[repr(u8)]
-#[typed_value(derive_fields)]
 pub enum GenericClipPath<BasicShape, U> {
     #[animation(error)]
     None,
@@ -130,9 +128,9 @@ pub enum GenericClipPath<BasicShape, U> {
     
     
     
-    #[typed_value(todo)]
+    #[typed(todo)]
     Url(U),
-    #[typed_value(skip)]
+    #[typed(skip)]
     Shape(
         #[animation(field_bound)] Box<BasicShape>,
         #[css(skip_if = "is_default_box_for_clip_path")] ShapeGeometryBox,
@@ -162,6 +160,7 @@ pub use self::GenericClipPath as ClipPath;
 )]
 #[animation(no_bound(I))]
 #[repr(u8)]
+#[typed(todo_derive_fields)]
 pub enum GenericShapeOutside<BasicShape, I> {
     #[animation(error)]
     None,
@@ -337,6 +336,10 @@ pub enum GenericShapeRadius<LengthPercentage> {
     ClosestSide,
     #[animation(error)]
     FarthestSide,
+    #[animation(error)]
+    FarthestCorner,
+    #[animation(error)]
+    ClosestCorner,
 }
 
 pub use self::GenericShapeRadius as ShapeRadius;
