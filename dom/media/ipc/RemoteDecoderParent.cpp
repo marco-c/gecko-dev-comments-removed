@@ -36,20 +36,10 @@ RemoteDecoderParent::RemoteDecoderParent(
       mManagerThread(aManagerThread) {
   MOZ_COUNT_CTOR(RemoteDecoderParent);
   MOZ_ASSERT(OnManagerThread());
-  
-  
-  
-  
-  mIPDLSelfRef = this;
 }
 
 RemoteDecoderParent::~RemoteDecoderParent() {
   MOZ_COUNT_DTOR(RemoteDecoderParent);
-}
-
-void RemoteDecoderParent::Destroy() {
-  MOZ_ASSERT(OnManagerThread());
-  mIPDLSelfRef = nullptr;
 }
 
 mozilla::ipc::IPCResult RemoteDecoderParent::RecvInit(

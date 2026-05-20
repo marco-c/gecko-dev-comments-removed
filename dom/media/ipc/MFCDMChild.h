@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef DOM_MEDIA_IPC_MFCDMCHILD_H_
 #define DOM_MEDIA_IPC_MFCDMCHILD_H_
@@ -15,13 +15,13 @@ namespace mozilla {
 
 class WMFCDMProxyCallback;
 
-
-
-
-
+/**
+ * MFCDMChild is a content process proxy to MFCDMParent and the actual CDM
+ * running in utility process.
+ */
 class MFCDMChild final : public PMFCDMChild {
  public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MFCDMChild);
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MFCDMChild, final);
 
   explicit MFCDMChild(const nsAString& aKeySystem);
 
@@ -80,7 +80,7 @@ class MFCDMChild final : public PMFCDMChild {
   uint64_t Id() const { return mId; }
   const nsString& KeySystem() const { return mKeySystem; }
 
-  void IPDLActorDestroyed();
+  void ActorDestroy(ActorDestroyReason aWhy) override;
 
   void EnsureRemote();
   void Shutdown();
@@ -98,23 +98,22 @@ class MFCDMChild final : public PMFCDMChild {
   const nsString mKeySystem;
 
   const nsCOMPtr<nsISerialEventTarget> mManagerThread;
-  RefPtr<MFCDMChild> mIPDLSelfRef;
 
   using RemotePromise = GenericNonExclusivePromise;
   RefPtr<RemotePromise> mRemotePromise;
   MozPromiseHolder<RemotePromise> mRemotePromiseHolder;
   MozPromiseRequestHolder<RemotePromise> mRemoteRequest;
-  
-  
+  // Before EnsureRemote(): NS_ERROR_NOT_INITIALIZED; After EnsureRemote():
+  // NS_OK or some error code.
   Atomic<nsresult> mState;
 
   MozPromiseHolder<CapabilitiesPromise> mCapabilitiesPromiseHolder;
 
   Atomic<bool> mShutdown;
 
-  
-  
-  
+  // This represents an unique Id to indentify the CDM in the remote process.
+  // 0(zero) means the CDM is not yet initialized.
+  // Modified on the manager thread, and read on other threads.
   Atomic<uint64_t> mId;
   MozPromiseHolder<InitPromise> mInitPromiseHolder;
   using InitIPDLPromise = MozPromise<mozilla::MFCDMInitResult,
@@ -145,10 +144,10 @@ class MFCDMChild final : public PMFCDMChild {
   std::unordered_map<uint32_t, MozPromiseHolder<GenericPromise>>
       mPendingGenericPromises MOZ_GUARDED_BY(mMutex);
 
-  
+  // This should only be used on the manager thread.
   RefPtr<WMFCDMProxyCallback> mProxyCallback;
 };
 
-}  
+}  // namespace mozilla
 
-#endif  
+#endif  // DOM_MEDIA_IPC_MFCDMCHILD_H_

@@ -112,7 +112,6 @@ MediaResult RemoteVideoDecoderChild::InitIPDL(
       
       
       
-      
       return NS_OK;
     }
 
@@ -138,11 +137,14 @@ MediaResult RemoteVideoDecoderChild::InitIPDL(
     }
   }
 
-  mIPDLSelfRef = this;
   VideoDecoderInfoIPDL decoderInfo(aVideoInfo, aFramerate);
-  MOZ_ALWAYS_TRUE(manager->SendPRemoteDecoderConstructor(
-      this, decoderInfo, aOptions, aIdentifier, aMediaEngineId, aTrackingId,
-      cdm));
+  if (!manager->SendPRemoteDecoderConstructor(this, decoderInfo, aOptions,
+                                              aIdentifier, aMediaEngineId,
+                                              aTrackingId, cdm)) {
+    return MediaResult(
+        NS_ERROR_DOM_MEDIA_FATAL_ERR,
+        RESULT_DETAIL("RemoteMediaManager unable to construct."));
+  }
 
   return NS_OK;
 }
