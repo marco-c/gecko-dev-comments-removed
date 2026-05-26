@@ -967,17 +967,9 @@ void JSObject::swap(JSContext* cx, HandleObject a, HandleObject b,
   
   gc::AutoSuppressGC nogc(cx);
 
-  
-  gc::StoreBuffer& storeBuffer = cx->runtime()->gc.storeBuffer();
-  if (a->isTenured()) {
-    storeBuffer.putWholeCell(a);
-  }
-  if (b->isTenured()) {
-    storeBuffer.putWholeCell(b);
-  }
   if (a->isTenured() || b->isTenured()) {
     if (a->zone()->wasGCStarted()) {
-      storeBuffer.setMayHavePointersToDeadCells();
+      cx->runtime()->gc.storeBuffer().setMayHavePointersToDeadCells();
     }
   }
 
@@ -994,8 +986,6 @@ void JSObject::swap(JSContext* cx, HandleObject a, HandleObject b,
     MOZ_RELEASE_ASSERT(a->staticPrototype() != b);
   }
 
-  Zone* zone = a->zone();
-
 #ifdef DEBUG
   
   
@@ -1007,15 +997,35 @@ void JSObject::swap(JSContext* cx, HandleObject a, HandleObject b,
   (void)gc::MaybeGetUniqueId(b, &bid);
 #endif
 
-  
-  
-  size_t size = gc::Arena::thingSize(a->allocKind());
-  char tmp[sizeof(JSObject_Slots16)];
-  MOZ_ASSERT(size <= sizeof(tmp));
+  ProxyObject& proxyA = a->as<ProxyObject>();
+  ProxyObject& proxyB = b->as<ProxyObject>();
 
-  js_memcpy(tmp, a, size);
-  js_memcpy(a, b, size);
-  js_memcpy(b, tmp, size);
+  
+  Shape* shapeA = a->shape();
+  a->setShapeForProxySwap(b->shape());
+  b->setShapeForProxySwap(shapeA);
+
+  
+  const BaseProxyHandler* handlerA = proxyA.handler();
+  proxyA.setHandler(proxyB.handler());
+  proxyB.setHandler(handlerA);
+
+  
+  JSObject* expandoA = proxyA.expando();
+  proxyA.setExpando(proxyB.expando());
+  proxyB.setExpando(expandoA);
+
+  
+  Value privateA = GetProxyPrivate(a);
+  SetProxyPrivate(a, GetProxyPrivate(b));
+  SetProxyPrivate(b, privateA);
+
+  
+  for (size_t i = 0; i < SwappableProxyReservedSlots; i++) {
+    Value slotA = GetProxyReservedSlot(a, i);
+    SetProxyReservedSlot(a, i, GetProxyReservedSlot(b, i));
+    SetProxyReservedSlot(b, i, slotA);
+  }
 
   MOZ_ASSERT_IF(aid, gc::GetUniqueIdInfallible(a) == aid);
   MOZ_ASSERT_IF(bid, gc::GetUniqueIdInfallible(b) == bid);
@@ -1031,21 +1041,6 @@ void JSObject::swap(JSContext* cx, HandleObject a, HandleObject b,
       oomUnsafe.crash("setIsUsedAsPrototype");
     }
   }
-
-  
-
-
-
-
-
-
-
-  PreWriteBarrier(zone, a.get(), [](JSTracer* trc, JSObject* obj) {
-    obj->traceChildren(trc);
-  });
-  PreWriteBarrier(zone, b.get(), [](JSTracer* trc, JSObject* obj) {
-    obj->traceChildren(trc);
-  });
 
   NotifyGCPostSwap(a, b, r);
 }

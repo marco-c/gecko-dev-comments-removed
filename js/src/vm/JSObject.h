@@ -155,6 +155,15 @@ class JSObject
     setHeaderPtr(shape);
   }
 
+  
+  
+  void setShapeForProxySwap(js::Shape* newShape) {
+    MOZ_ASSERT(shape()->isProxy());
+    MOZ_ASSERT(newShape->isProxy());
+    MOZ_RELEASE_ASSERT(compartment() == newShape->compartment());
+    setHeaderPtr(newShape);
+  }
+
   static bool setFlags(JSContext* cx, JS::HandleObject obj,
                        js::ObjectFlags flags);
 
