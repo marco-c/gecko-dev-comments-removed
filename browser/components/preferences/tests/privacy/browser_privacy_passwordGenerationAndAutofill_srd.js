@@ -1,7 +1,4 @@
-
-
-
-add_task(async function initialState() {
+add_task(async function initialStateNew() {
   
   const prefTests = [
     {
@@ -50,15 +47,17 @@ add_task(async function initialState() {
     await BrowserTestUtils.withNewTab(
       {
         gBrowser,
-        url: "about:preferences#privacy",
+        url: "about:preferences#passwordsAutofill",
       },
       async function (browser) {
         let doc = browser.contentDocument;
-        let generatePasswordsCheckbox = doc.getElementById("generatePasswords");
-        let autofillFormsCheckbox = doc.getElementById(
-          "passwordAutofillCheckbox"
-        );
-        doc.getElementById("passwordSettings").scrollIntoView();
+        let generatePasswordsCheckbox = doc
+          .getElementById("suggestStrongPasswords")
+          .shadowRoot.querySelector("input");
+        let autofillFormsCheckbox = doc
+          .getElementById("fillUsernameAndPasswords")
+          .shadowRoot.querySelector("input");
+        doc.getElementById("passwordsGroup").scrollIntoView();
 
         info("initialState, assert on expected state:" + test.expected);
         switch (test.expected) {
@@ -111,7 +110,7 @@ add_task(async function initialState() {
   }
 });
 
-add_task(async function toggleGenerationEnabled() {
+add_task(async function toggleGenerationEnabledNew() {
   
   SpecialPowers.pushPrefEnv({
     set: [
@@ -124,11 +123,11 @@ add_task(async function toggleGenerationEnabled() {
   await BrowserTestUtils.withNewTab(
     {
       gBrowser,
-      url: "about:preferences#privacy",
+      url: "about:preferences#passwordsAutofill",
     },
     async function (browser) {
       let doc = browser.contentDocument;
-      let checkbox = doc.getElementById("generatePasswords");
+      let checkbox = doc.getElementById("suggestStrongPasswords");
 
       info("waiting for the browser to have focus");
       await SimpleTest.promiseFocus(browser);
@@ -154,7 +153,7 @@ add_task(async function toggleGenerationEnabled() {
   await SpecialPowers.popPrefEnv();
 });
 
-add_task(async function toggleRememberSignon() {
+add_task(async function toggleRememberSignonNew() {
   
   SpecialPowers.pushPrefEnv({
     set: [
@@ -167,12 +166,14 @@ add_task(async function toggleRememberSignon() {
   await BrowserTestUtils.withNewTab(
     {
       gBrowser,
-      url: "about:preferences#privacy",
+      url: "about:preferences#passwordsAutofill",
     },
     async function (browser) {
       let doc = browser.contentDocument;
       let checkbox = doc.getElementById("savePasswords");
-      let generationCheckbox = doc.getElementById("generatePasswords");
+      let generationCheckbox = doc
+        .getElementById("suggestStrongPasswords")
+        .shadowRoot.querySelector("input");
 
       ok(
         !generationCheckbox.disabled,
@@ -183,16 +184,16 @@ add_task(async function toggleRememberSignon() {
       await SimpleTest.promiseFocus(browser);
       let prefChanged = TestUtils.waitForPrefChange("signon.rememberSignons");
 
-      
-      
-      checkbox.focus();
-      is(doc.activeElement, checkbox, "checkbox is focused");
-      EventUtils.synthesizeKey(" ");
+      checkbox.click();
 
       info("waiting for pref to change");
       await prefChanged;
       ok(!checkbox.checked, "#savePasswords checkbox is un-checked");
-      ok(generationCheckbox.disabled, "generation checkbox becomes disabled");
+      await BrowserTestUtils.waitForCondition(
+        () => generationCheckbox.disabled,
+        "generation checkbox becomes disabled",
+        200
+      );
     }
   );
   await SpecialPowers.popPrefEnv();
