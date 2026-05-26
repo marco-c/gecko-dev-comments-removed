@@ -5,6 +5,7 @@
 
 
 use crate::derives::*;
+use crate::typed_om::{KeywordValue, ToTyped, TypedValue};
 use crate::values::computed::length::{Length, LengthPercentage};
 use crate::values::generics::text::{
     GenericHyphenateLimitChars, GenericInitialLetter, GenericTextDecorationInset,
@@ -16,7 +17,7 @@ use crate::values::specified::text::{TextEmphasisFillMode, TextEmphasisShapeKeyw
 use crate::values::{CSSFloat, CSSInteger};
 use crate::Zero;
 use std::fmt::{self, Write};
-use style_traits::{CssString, CssWriter, KeywordValue, ToCss, ToTyped, TypedValue};
+use style_traits::{CssString, CssWriter, ToCss};
 use thin_vec::ThinVec;
 
 pub use crate::values::specified::text::{
@@ -103,7 +104,6 @@ impl ToTyped for LetterSpacing {
     
     
     
-    
     fn to_typed(&self, dest: &mut ThinVec<TypedValue>) -> Result<(), ()> {
         if !self.0.has_percentage() && self.0.is_zero() {
             dest.push(TypedValue::Keyword(KeywordValue(CssString::from("normal"))));
@@ -128,6 +128,7 @@ impl WordSpacing {
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, ToCss, ToResolvedValue, ToTyped)]
 #[allow(missing_docs)]
 #[repr(C, u8)]
+#[typed(todo_derive_fields)]
 pub enum TextEmphasisStyle {
     
     Keyword {

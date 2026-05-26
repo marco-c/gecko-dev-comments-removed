@@ -7,6 +7,7 @@
 
 use crate::derives::*;
 use crate::parser::{Parse, ParserContext};
+use crate::typed_om::{NumericValue, ToTyped, TypedValue, UnitValue};
 use crate::values::specified;
 use crate::values::{CSSFloat, CustomIdent};
 use crate::{One, Zero};
@@ -14,7 +15,8 @@ use cssparser::Parser;
 use std::fmt::{self, Write};
 use std::usize;
 use style_traits::values::specified::AllowedNumericType;
-use style_traits::{CssWriter, ParseError, StyleParseErrorKind, ToCss};
+use style_traits::{CssString, CssWriter, ParseError, StyleParseErrorKind, ToCss};
+use thin_vec::ThinVec;
 
 
 
@@ -239,6 +241,18 @@ impl ToCss for Flex {
     }
 }
 
+impl ToTyped for Flex {
+    fn to_typed(&self, dest: &mut ThinVec<TypedValue>) -> Result<(), ()> {
+        let value = self.0;
+        let unit = CssString::from("fr");
+        dest.push(TypedValue::Numeric(NumericValue::Unit(UnitValue {
+            value,
+            unit,
+        })));
+        Ok(())
+    }
+}
+
 
 
 
@@ -255,6 +269,7 @@ impl ToCss for Flex {
     ToCss,
     ToResolvedValue,
     ToShmem,
+    ToTyped,
 )]
 #[repr(C, u8)]
 pub enum GenericTrackBreadth<L> {
@@ -395,6 +410,15 @@ impl<L: ToCss> ToCss for TrackSize<L> {
     }
 }
 
+impl<L: ToTyped> ToTyped for TrackSize<L> {
+    fn to_typed(&self, dest: &mut ThinVec<TypedValue>) -> Result<(), ()> {
+        match *self {
+            TrackSize::Breadth(ref breadth) => breadth.to_typed(dest),
+            _ => Err(()),
+        }
+    }
+}
+
 
 
 
@@ -412,7 +436,6 @@ impl<L: ToCss> ToCss for TrackSize<L> {
     ToTyped,
 )]
 #[repr(transparent)]
-#[typed(todo_derive_fields)]
 pub struct GenericImplicitGridTracks<T>(
     #[css(if_empty = "auto", iterable)] pub crate::OwnedSlice<T>,
 );
@@ -573,12 +596,14 @@ impl<L: ToCss, I: ToCss> ToCss for TrackRepeat<L, I> {
     ToCss,
     ToResolvedValue,
     ToShmem,
+    ToTyped,
 )]
 #[repr(C, u8)]
 pub enum GenericTrackListValue<LengthPercentage, Integer> {
     
     TrackSize(#[animation(field_bound)] GenericTrackSize<LengthPercentage>),
     
+    #[typed(skip)]
     TrackRepeat(#[animation(field_bound)] GenericTrackRepeat<LengthPercentage, Integer>),
 }
 
@@ -684,6 +709,24 @@ impl<L: ToCss, I: ToCss> ToCss for TrackList<L, I> {
         }
 
         Ok(())
+    }
+}
+
+impl<L: ToTyped, I: ToTyped> ToTyped for TrackList<L, I> {
+    
+    
+    
+    
+    fn to_typed(&self, dest: &mut ThinVec<TypedValue>) -> Result<(), ()> {
+        if self.values.len() != 1 {
+            return Err(());
+        }
+
+        if self.line_names.iter().any(|names| !names.is_empty()) {
+            return Err(());
+        }
+
+        self.values[0].to_typed(dest)
     }
 }
 
@@ -854,7 +897,6 @@ impl<I: ToCss> ToCss for LineNameList<I> {
 )]
 #[value_info(other_values = "subgrid")]
 #[repr(C, u8)]
-#[typed(todo_derive_fields)]
 pub enum GenericGridTemplateComponent<L, I> {
     
     None,
@@ -869,9 +911,11 @@ pub enum GenericGridTemplateComponent<L, I> {
     
     
     #[animation(error)]
+    #[typed(skip)]
     Subgrid(Box<GenericLineNameList<I>>),
     
     
+    #[typed(skip)]
     Masonry,
 }
 
