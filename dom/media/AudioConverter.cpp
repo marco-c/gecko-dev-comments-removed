@@ -10,6 +10,7 @@
 #include <cmath>
 
 #include "mozilla/CheckedInt.h"
+#include "nsFmtString.h"
 
 
 
@@ -189,7 +190,12 @@ size_t AudioConverter::DownmixAudio(void* aOut, const void* aIn,
     return aFrames;
   }
 
-  if (!mIn.Layout().IsValid() || !mOut.Layout().IsValid()) {
+  
+  
+  if (!mIn.Layout().IsValid() || !mOut.Layout().IsValid() || inChannels > 8) {
+    NS_WARNING(nsFmtCString("Dumb remixing: {} channels in, {} channels out",
+                            inChannels, outChannels)
+                   .get());
     
     if (mIn.Format() == AudioConfig::FORMAT_FLT) {
       dumbUpDownMix(static_cast<float*>(aOut), outChannels,
@@ -245,6 +251,7 @@ size_t AudioConverter::DownmixAudio(void* aOut, const void* aIn,
            {0.3366f, 0.1943f},
            {0.1943f, 0.3366f}},
       };
+      MOZ_DIAGNOSTIC_ASSERT(inChannels < std::size(dmatrix) + 3);
       
       const float* in = static_cast<const float*>(aIn);
       float* out = static_cast<float*>(aOut);
@@ -294,6 +301,7 @@ size_t AudioConverter::DownmixAudio(void* aOut, const void* aIn,
            {3184, 5514},
            {5514, 3184},
            {3184, 5514}}};
+      MOZ_DIAGNOSTIC_ASSERT(inChannels < std::size(dmatrix) + 3);
       
       const int16_t* in = static_cast<const int16_t*>(aIn);
       int16_t* out = static_cast<int16_t*>(aOut);
