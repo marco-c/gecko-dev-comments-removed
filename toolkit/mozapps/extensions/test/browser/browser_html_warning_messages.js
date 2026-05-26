@@ -302,6 +302,11 @@ add_task(async function testIncompatible() {
 });
 
 add_task(async function testUnsignedEnabled() {
+  await SpecialPowers.pushPrefEnv({
+    
+    
+    set: [["extensions.ui.disableUnsignedWarnings", false]],
+  });
   const id = "unsigned-allowed@mochi.test";
   const name = "Unsigned";
   gProvider.createAddons([
@@ -317,11 +322,17 @@ add_task(async function testUnsignedEnabled() {
     text: { id: "details-notification-unsigned2", args: { name } },
     type: "warning",
   });
+  await SpecialPowers.popPrefEnv();
 });
 
 add_task(async function testUnsignedLangpackEnabled() {
   await SpecialPowers.pushPrefEnv({
-    set: [["extensions.langpacks.signatures.required", false]],
+    set: [
+      ["extensions.langpacks.signatures.required", false],
+      
+      
+      ["extensions.ui.disableUnsignedWarnings", false],
+    ],
   });
 
   const id = "unsigned-allowed-langpack@mochi.test";
