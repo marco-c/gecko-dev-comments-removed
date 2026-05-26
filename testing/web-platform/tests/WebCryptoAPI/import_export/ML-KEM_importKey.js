@@ -3,14 +3,14 @@ var subtle = crypto.subtle;
 function runTests(algorithmName) {
   var algorithm = { name: algorithmName };
   var data = keyData[algorithmName];
-  
-
-  
+  var jwkData = {
+    jwk: { kty: data.jwk.kty, alg: data.jwk.alg, pub: data.jwk.pub },
+  };
 
   [true, false].forEach(function (extractable) {
     
     allValidUsages(data.publicUsages, true).forEach(function (usages) {
-      ['spki',  'raw-public'].forEach(function (format) {
+      ['spki', 'jwk', 'raw-public'].forEach(function (format) {
         if (format === 'jwk') {
           
           testFormat(
@@ -36,7 +36,7 @@ function runTests(algorithmName) {
 
     
     allValidUsages(data.privateUsages).forEach(function (usages) {
-      ['pkcs8',  'raw-seed'].forEach(function (format) {
+      ['pkcs8', 'jwk', 'raw-seed'].forEach(function (format) {
         testFormat(format, algorithm, data, algorithmName, usages, extractable);
       });
     });
@@ -107,44 +107,6 @@ function testFormat(format, algorithm, keyData, keySize, usages, extractable) {
 
 
 
-function equalBuffers(a, b) {
-  if (a.byteLength !== b.byteLength) {
-    return false;
-  }
-
-  var aBytes = new Uint8Array(a);
-  var bBytes = new Uint8Array(b);
-
-  for (var i = 0; i < a.byteLength; i++) {
-    if (aBytes[i] !== bBytes[i]) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-
-
-
-function equalJwk(expected, got) {
-  var fields = Object.keys(expected);
-  var fieldName;
-
-  for (var i = 0; i < fields.length; i++) {
-    fieldName = fields[i];
-    if (!(fieldName in got)) {
-      return false;
-    }
-    if (expected[fieldName] !== got[fieldName]) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-
 function parameterString(format, data, algorithm, extractable, usages) {
   if ('byteLength' in data) {
     data = 'buffer(' + data.byteLength.toString() + ')';
@@ -165,58 +127,4 @@ function parameterString(format, data, algorithm, extractable, usages) {
     ')';
 
   return result;
-}
-
-
-function objectToString(obj) {
-  var keyValuePairs = [];
-
-  if (Array.isArray(obj)) {
-    return (
-      '[' +
-      obj
-        .map(function (elem) {
-          return objectToString(elem);
-        })
-        .join(', ') +
-      ']'
-    );
-  } else if (typeof obj === 'object') {
-    Object.keys(obj)
-      .sort()
-      .forEach(function (keyName) {
-        keyValuePairs.push(keyName + ': ' + objectToString(obj[keyName]));
-      });
-    return '{' + keyValuePairs.join(', ') + '}';
-  } else if (typeof obj === 'undefined') {
-    return 'undefined';
-  } else {
-    return obj.toString();
-  }
-
-  var keyValuePairs = [];
-
-  Object.keys(obj)
-    .sort()
-    .forEach(function (keyName) {
-      var value = obj[keyName];
-      if (typeof value === 'object') {
-        value = objectToString(value);
-      } else if (typeof value === 'array') {
-        value =
-          '[' +
-          value
-            .map(function (elem) {
-              return objectToString(elem);
-            })
-            .join(', ') +
-          ']';
-      } else {
-        value = value.toString();
-      }
-
-      keyValuePairs.push(keyName + ': ' + value);
-    });
-
-  return '{' + keyValuePairs.join(', ') + '}';
 }
