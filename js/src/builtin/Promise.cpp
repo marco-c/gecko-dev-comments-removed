@@ -48,8 +48,6 @@ static double MillisecondsSinceStartup() {
   return (now - mozilla::TimeStamp::FirstTimeStamp()).ToMilliseconds();
 }
 
-constexpr auto HostDefinedDataIsOptimizedOut = nullptr;
-
 enum ResolutionMode { ResolveMode, RejectMode };
 
 
@@ -725,12 +723,12 @@ class MicroTaskEntry : public NativeObject {
  protected:
   enum Slots {
     
-    Promise = 0,      
-    HostDefinedData,  
+    Promise = 0,                    
+    IncumbentGlobalRepresentative,  
+    OptionalHostDefinedData,
 
     
     AllocationStack,
-    HostDefinedGlobalRepresentative,
     SlotCount,
   };
 
@@ -743,12 +741,20 @@ class MicroTaskEntry : public NativeObject {
     initFixedSlot(Slots::Promise, ObjectOrNullValue(obj));
   }
 
-  Value getHostDefinedData() const {
-    return getFixedSlot(Slots::HostDefinedData);
+  Value getIncumbentGlobalRepresentative() const {
+    return getFixedSlot(Slots::IncumbentGlobalRepresentative);
   }
 
-  void initHostDefinedData(const Value& val) {
-    initFixedSlot(Slots::HostDefinedData, val);
+  void initIncumbentGlobalRepresentative(const Value& val) {
+    initFixedSlot(Slots::IncumbentGlobalRepresentative, val);
+  }
+
+  Value getOptionalHostDefinedData() const {
+    return getFixedSlot(Slots::OptionalHostDefinedData);
+  }
+
+  void initOptionalHostDefinedData(const Value& val) {
+    initFixedSlot(Slots::OptionalHostDefinedData, val);
   }
 
   JSObject* allocationStack() const {
@@ -761,21 +767,6 @@ class MicroTaskEntry : public NativeObject {
 
   void setAllocationStack(JSObject* stack) {
     setFixedSlot(Slots::AllocationStack, ObjectOrNullValue(stack));
-  }
-
-  JSObject* hostDefinedGlobalRepresentative() const {
-    Value v = getFixedSlot(Slots::HostDefinedGlobalRepresentative);
-    return v.isObjectOrNull() ? v.toObjectOrNull() : nullptr;
-  }
-
-  void initHostDefinedGlobalRepresentative(JSObject* global) {
-    initFixedSlot(Slots::HostDefinedGlobalRepresentative,
-                  ObjectOrNullValue(global));
-  }
-
-  void setHostDefinedGlobalRepresentative(JSObject* global) {
-    setFixedSlot(Slots::HostDefinedGlobalRepresentative,
-                 ObjectOrNullValue(global));
   }
 };
 
@@ -873,7 +864,9 @@ class PromiseReactionRecord : public MicroTaskEntry {
 
     
     
-    HostDefinedData = MicroTaskEntry::Slots::HostDefinedData,
+    IncumbentGlobalRepresentative =
+        MicroTaskEntry::Slots::IncumbentGlobalRepresentative,
+    OptionalHostDefinedData = MicroTaskEntry::Slots::OptionalHostDefinedData,
 
     
     
@@ -1138,7 +1131,10 @@ const JSClass ThenableJob::class_ = {
 
 ThenableJob* NewThenableJob(JSContext* cx, ThenableJob::TargetFunction target,
                             HandleObject promise, HandleValue thenable,
-                            HandleObject then, HandleObject hostDefinedData) {
+                            HandleObject then,
+                            HandleObject incumbentGlobalRepresentative,
+                            HandleObject optionalHostDefinedData) {
+  cx->check(optionalHostDefinedData);
   
   
   RootedObject stack(
@@ -1147,20 +1143,18 @@ ThenableJob* NewThenableJob(JSContext* cx, ThenableJob::TargetFunction target,
     return nullptr;
   }
 
-  
-  RootedObject hostDefined(cx, hostDefinedData);
-  if (!cx->compartment()->wrap(cx, &hostDefined)) {
-    return nullptr;
-  }
   auto* job = NewBuiltinClassInstance<ThenableJob>(cx);
   if (!job) {
     return nullptr;
   }
+
   job->initPromise(promise);
   job->initThen(then);
   job->initThenable(thenable);
   job->initTargetFunction(target);
-  job->initHostDefinedData(ObjectOrNullValue(hostDefined));
+  job->initIncumbentGlobalRepresentative(
+      ObjectOrNullValue(incumbentGlobalRepresentative));
+  job->initOptionalHostDefinedData(ObjectOrNullValue(optionalHostDefinedData));
   job->initAllocationStack(stack);
 
   return job;
@@ -1645,16 +1639,16 @@ static bool EnqueueJob(JSContext* cx, JS::JSMicroTask* job) {
   }
 
   
-  Rooted<JS::JSMicroTask*> rootedJob(cx, job);
-
-  
-  if (MOZ_UNLIKELY(!cx->runtime()->isMainRuntime() &&
-                   cx->jobQueue->useDebugQueue(cx->global()))) {
-    return cx->microTaskQueues->enqueueDebugMicroTask(cx,
-                                                      ObjectValue(*rootedJob));
+  if (MOZ_UNLIKELY(!cx->runtime()->isMainRuntime())) {
+    
+    Rooted<JS::JSMicroTask*> rootedJob(cx, job);
+    if (MOZ_UNLIKELY(cx->jobQueue->useDebugQueue(cx->global()))) {
+      return cx->microTaskQueues->enqueueDebugMicroTask(
+          cx, ObjectValue(*rootedJob));
+    }
   }
-  return cx->microTaskQueues->enqueueRegularMicroTask(cx,
-                                                      ObjectValue(*rootedJob));
+
+  return cx->microTaskQueues->enqueueRegularMicroTask(cx, ObjectValue(*job));
 }
 
 
@@ -1847,27 +1841,6 @@ static bool EnqueueJob(JSContext* cx, JS::JSMicroTask* job) {
       return false;
     }
     reaction->setAllocationStack(stack);
-
-    if (!reaction->getHostDefinedData().isObject()) {
-      
-      
-      RootedField<JSObject*, 8> hostGlobal(roots);
-      if (!cx->jobQueue->getHostDefinedGlobal(cx, &hostGlobal)) {
-        return false;
-      }
-
-      if (hostGlobal) {
-        MOZ_ASSERT(hostGlobal->is<GlobalObject>());
-        
-        
-        hostGlobal = &hostGlobal->as<GlobalObject>().getObjectPrototype();
-      }
-
-      if (!cx->compartment()->wrap(cx, &hostGlobal)) {
-        return false;
-      }
-      reaction->setHostDefinedGlobalRepresentative(hostGlobal);
-    }
 
     if (!cx->compartment()->wrap(cx, &globalRepresentative)) {
       return false;
@@ -2769,9 +2742,8 @@ static bool PromiseResolveBuiltinThenableJob(JSContext* cx,
     JSContext* cx, HandleValue promiseToResolve_, HandleValue thenable_,
     HandleValue thenVal) {
   
-  RootedTuple<Value, Value, JSObject*, JSObject*, JSObject*, JSObject*,
-              JSFunction*>
-      roots(cx);
+  RootedTuple<Value, Value, JSObject*, JSObject*, JSObject*, JSObject*> roots(
+      cx);
   RootedField<Value, 0> promiseToResolve(roots, promiseToResolve_);
   RootedField<Value, 1> thenable(roots, thenable_);
 
@@ -2817,33 +2789,19 @@ static bool PromiseResolveBuiltinThenableJob(JSContext* cx,
   RootedField<JSObject*, 3> promise(roots, &promiseToResolve.toObject());
 
   RootedField<JSObject*, 4> hostDefinedGlobalRepresentative(roots);
-  {
-    RootedField<JSObject*, 5> hostDefinedGlobal(roots);
-    if (!cx->jobQueue->getHostDefinedGlobal(cx, &hostDefinedGlobal)) {
-      return false;
-    }
 
-    MOZ_ASSERT_IF(hostDefinedGlobal, hostDefinedGlobal->is<GlobalObject>());
-    if (hostDefinedGlobal) {
-      hostDefinedGlobalRepresentative =
-          &hostDefinedGlobal->as<GlobalObject>().getObjectPrototype();
-    }
-  }
-
-  
-  if (!cx->compartment()->wrap(cx, &hostDefinedGlobalRepresentative)) {
+  if (!GetIncumbentGlobalRepresentative(cx, &hostDefinedGlobalRepresentative)) {
     return false;
   }
-
-  ThenableJob* thenableJob =
-      NewThenableJob(cx, ThenableJob::PromiseResolveThenableJob, promise,
-                     thenable, then, HostDefinedDataIsOptimizedOut);
+  RootedField<JSObject*, 5> optionalHostDefinedDataIsOptimizedOut(roots,
+                                                                  nullptr);
+  ThenableJob* thenableJob = NewThenableJob(
+      cx, ThenableJob::PromiseResolveThenableJob, promise, thenable, then,
+      hostDefinedGlobalRepresentative, optionalHostDefinedDataIsOptimizedOut);
   if (!thenableJob) {
     return false;
   }
 
-  thenableJob->initHostDefinedGlobalRepresentative(
-      hostDefinedGlobalRepresentative);
   return EnqueueJob(cx, thenableJob);
 }
 
@@ -2869,15 +2827,20 @@ static bool PromiseResolveBuiltinThenableJob(JSContext* cx,
   
   
   
-  Rooted<JSObject*> hostDefinedData(cx);
-  if (!cx->runtime()->getHostDefinedData(cx, &hostDefinedData)) {
+
+  RootedTuple<JSObject*, JSObject*, Value> roots(cx);
+  RootedField<JSObject*, 0> incumbentGlobalRepresentative(roots);
+  RootedField<JSObject*, 1> optionalHostDefinedData(roots);
+  if (!GetObjectFromHostDefinedData(cx, &incumbentGlobalRepresentative,
+                                    &optionalHostDefinedData)) {
     return false;
   }
 
-  RootedValue thenableValue(cx, ObjectValue(*thenable));
+  RootedField<Value, 2> thenableValue(roots, ObjectValue(*thenable));
   ThenableJob* thenableJob =
       NewThenableJob(cx, ThenableJob::PromiseResolveBuiltinThenableJob,
-                     promiseToResolve, thenableValue, nullptr, hostDefinedData);
+                     promiseToResolve, thenableValue, nullptr,
+                     incumbentGlobalRepresentative, optionalHostDefinedData);
   if (!thenableJob) {
     return false;
   }
@@ -6128,9 +6091,24 @@ static PromiseReactionRecord* NewReactionRecord(
   
   MOZ_ASSERT(onFulfilled.isNull() == onRejected.isNull());
 
-  RootedObject hostDefinedData(cx);
+  RootedObject incumbentGlobalRepresentative(cx, nullptr);
+  RootedObject optionalHostDefinedData(cx);
+
+  
+  
+  
+  
+  
+  
   if (hostDefinedDataObjectOption == HostDefinedDataObjectOption::Allocate) {
-    if (!GetObjectFromHostDefinedData(cx, &hostDefinedData)) {
+    
+    if (!GetObjectFromHostDefinedData(cx, &incumbentGlobalRepresentative,
+                                      &optionalHostDefinedData)) {
+      return nullptr;
+    }
+  } else {
+    
+    if (!GetIncumbentGlobalRepresentative(cx, &incumbentGlobalRepresentative)) {
       return nullptr;
     }
   }
@@ -6142,7 +6120,7 @@ static PromiseReactionRecord* NewReactionRecord(
   }
   cx->check(resultCapability.promise(), onFulfilled, onRejected,
             resultCapability.resolve(), resultCapability.reject(),
-            hostDefinedData);
+            incumbentGlobalRepresentative, optionalHostDefinedData);
 
   
   
@@ -6164,8 +6142,10 @@ static PromiseReactionRecord* NewReactionRecord(
                           ObjectOrNullValue(resultCapability.resolve()));
   reaction->initFixedSlot(PromiseReactionRecord::Reject,
                           ObjectOrNullValue(resultCapability.reject()));
-  reaction->initFixedSlot(PromiseReactionRecord::HostDefinedData,
-                          ObjectOrNullValue(hostDefinedData));
+  reaction->initFixedSlot(PromiseReactionRecord::IncumbentGlobalRepresentative,
+                          ObjectOrNullValue(incumbentGlobalRepresentative));
+  reaction->initFixedSlot(PromiseReactionRecord::OptionalHostDefinedData,
+                          ObjectOrNullValue(optionalHostDefinedData));
 
   return reaction;
 }
@@ -7828,9 +7808,16 @@ void PromiseReactionRecord::dumpOwnFields(js::JSONPrinter& json) const {
     json.endStringProperty();
   }
 
-  {
-    js::GenericPrinter& out = json.beginStringProperty("hostDefinedData");
-    getFixedSlot(HostDefinedData).dumpStringContent(out);
+  if (!getFixedSlot(IncumbentGlobalRepresentative).isUndefined()) {
+    js::GenericPrinter& out =
+        json.beginStringProperty("incumbentGlobalRepresentative");
+    getFixedSlot(IncumbentGlobalRepresentative).dumpStringContent(out);
+    json.endStringProperty();
+  }
+  if (!getFixedSlot(OptionalHostDefinedData).isUndefined()) {
+    js::GenericPrinter& out =
+        json.beginStringProperty("optionalHostDefinedData");
+    getFixedSlot(OptionalHostDefinedData).dumpStringContent(out);
     json.endStringProperty();
   }
 
@@ -8221,37 +8208,6 @@ inline bool JSObject::is<MicroTaskEntry>() const {
   return is<ThenableJob>() || is<PromiseReactionRecord>();
 }
 
-JS_PUBLIC_API bool JS::MaybeGetHostDefinedDataFromJSMicroTask(
-    JS::JSMicroTask* entry, MutableHandleObject out) {
-  out.set(nullptr);
-  JSObject* task = CheckedUnwrapStatic(entry);
-  if (!task) {
-    return false;
-  }
-  if (JS_IsDeadWrapper(task)) {
-    return false;
-  }
-
-  MOZ_ASSERT(task->is<MicroTaskEntry>());
-  JSObject* maybeHostDefined =
-      task->as<MicroTaskEntry>().getHostDefinedData().toObjectOrNull();
-
-  if (!maybeHostDefined) {
-    return true;
-  }
-
-  if (JS_IsDeadWrapper(maybeHostDefined)) {
-    return false;
-  }
-
-  JSObject* unwrapped = CheckedUnwrapStatic(maybeHostDefined);
-  if (!unwrapped) {
-    return false;
-  }
-  out.set(unwrapped);
-  return true;
-}
-
 JS_PUBLIC_API bool JS::MaybeGetAllocationSiteFromJSMicroTask(
     JS::JSMicroTask* entry, MutableHandleObject out) {
   JSObject* task = UncheckedUnwrap(entry);
@@ -8277,28 +8233,45 @@ JS_PUBLIC_API bool JS::MaybeGetAllocationSiteFromJSMicroTask(
   return true;
 }
 
-JS_PUBLIC_API JSObject* JS::MaybeGetHostDefinedGlobalFromJSMicroTask(
-    JSMicroTask* entry) {
-  JSObject* task = UncheckedUnwrap(entry);
+JS_PUBLIC_API bool JS::MaybeGetHostDefinedDataFromJSMicroTask(
+    JS::JSMicroTask* entry, MutableHandleObject incumbentGlobal,
+    MutableHandleObject optionalHostDefinedData) {
+  incumbentGlobal.set(nullptr);
+  optionalHostDefinedData.set(nullptr);
+  JSObject* task = CheckedUnwrapStatic(entry);
+  if (!task) {
+    return false;
+  }
   if (JS_IsDeadWrapper(task)) {
-    return nullptr;
+    return false;
   }
 
   MOZ_ASSERT(task->is<MicroTaskEntry>());
+  JSObject* maybeIncumbentGlobalRepresentative =
+      task->as<MicroTaskEntry>()
+          .getIncumbentGlobalRepresentative()
+          .toObjectOrNull();
+  JSObject* maybeOptionalHostDefinedData =
+      task->as<MicroTaskEntry>().getOptionalHostDefinedData().toObjectOrNull();
 
-  JSObject* maybeWrappedHostDefinedRepresentative =
-      task->as<MicroTaskEntry>().hostDefinedGlobalRepresentative();
-
-  if (maybeWrappedHostDefinedRepresentative) {
-    JSObject* unwrapped =
-        UncheckedUnwrap(maybeWrappedHostDefinedRepresentative);
-    if (JS_IsDeadWrapper(unwrapped)) {
-      return nullptr;
-    }
-    return &unwrapped->nonCCWGlobal();
+  if (!maybeIncumbentGlobalRepresentative) {
+    
+    MOZ_RELEASE_ASSERT(!maybeOptionalHostDefinedData);
+    return true;
   }
 
-  return nullptr;
+  JSObject* unwrappedIncumbentGlobalRepresentative =
+      CheckedUnwrapStatic(maybeIncumbentGlobalRepresentative);
+  if (!unwrappedIncumbentGlobalRepresentative) {
+    return false;
+  }
+  if (JS_IsDeadWrapper(unwrappedIncumbentGlobalRepresentative)) {
+    return false;
+  }
+
+  incumbentGlobal.set(&unwrappedIncumbentGlobalRepresentative->nonCCWGlobal());
+  optionalHostDefinedData.set(maybeOptionalHostDefinedData);
+  return true;
 }
 
 JS_PUBLIC_API JSObject* JS::GetExecutionGlobalFromJSMicroTask(
