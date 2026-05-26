@@ -214,7 +214,9 @@ function Spinner(props, context) {
       const { items, isInfiniteScroll } = this.state;
 
       
-      let itemsView = new Array(viewportTopOffset).fill({}).concat(items);
+      let itemsView = new Array(viewportTopOffset)
+        .fill({ hidden: true })
+        .concat(items);
 
       if (items.length >= viewportSize && isInfiniteScroll) {
         
@@ -301,7 +303,14 @@ function Spinner(props, context) {
       items.forEach((item, index) => {
         elements[index].textContent =
           item.value != undefined ? getDisplayString(item.value) : "";
-        elements[index].className = item.enabled ? "" : "disabled";
+        const classList = [];
+        if (!item.enabled) {
+          classList.push("disabled");
+        }
+        if (item.hidden) {
+          classList.push("hidden");
+        }
+        elements[index].className = classList.join(" ");
       });
     },
 
