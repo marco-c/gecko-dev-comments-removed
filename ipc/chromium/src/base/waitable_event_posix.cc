@@ -264,6 +264,11 @@ size_t WaitableEvent::WaitMany(WaitableEvent** raw_waitables,
       raw_waitables[i]->kernel_->Dequeue(&sw, &sw);
       raw_waitables[i]->kernel_->lock_.Unlock();
     } else {
+      
+      
+      
+      raw_waitables[i]->kernel_->lock_.Lock();
+      raw_waitables[i]->kernel_->lock_.Unlock();
       signaled_index = i;
     }
   }
