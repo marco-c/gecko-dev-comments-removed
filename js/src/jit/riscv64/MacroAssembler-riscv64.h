@@ -411,15 +411,10 @@ class MacroAssemblerRiscv64 : public Assembler {
     fmv_x_d(dest, src);
     srli(dest, dest, 32);
   }
+
   
   
-  void ExtractBits(Register rt, Register rs, uint16_t pos, uint16_t size,
-                   bool sign_extend = false);
-  void ExtractBits(Register dest, Register source, Register pos, int size,
-                   bool sign_extend = false) {
-    sra(dest, source, pos);
-    ExtractBits(dest, dest, 0, size, sign_extend);
-  }
+  void ExtractBits(Register rd, Register rs, uint16_t pos, uint16_t size);
 
   template <typename F_TYPE>
   void RoundHelper(FPURegister dst, FPURegister src, FPURegister fpu_scratch,
