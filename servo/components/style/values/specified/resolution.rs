@@ -89,6 +89,12 @@ impl NoCalcResolution {
     }
 
     
+    #[inline]
+    pub fn resolution_unit(&self) -> ResolutionUnit {
+        self.unit
+    }
+
+    
     pub fn parse_dimension(value: CSSFloat, unit: &str) -> Result<Self, ()> {
         let unit = match_ignore_ascii_case! { &unit,
             "dpi" => ResolutionUnit::Dpi,

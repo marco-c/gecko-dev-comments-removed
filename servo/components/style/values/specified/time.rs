@@ -63,6 +63,12 @@ impl NoCalcTime {
 
     
     #[inline]
+    pub fn time_unit(&self) -> TimeUnit {
+        self.unit
+    }
+
+    
+    #[inline]
     pub fn unit(&self) -> &'static str {
         match self.unit {
             TimeUnit::Second => "s",

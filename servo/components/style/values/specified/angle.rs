@@ -156,6 +156,12 @@ impl NoCalcAngle {
 
     
     #[inline]
+    pub fn angle_unit(&self) -> AngleUnit {
+        self.unit
+    }
+
+    
+    #[inline]
     pub fn unitless_value(&self) -> CSSFloat {
         self.value
     }
