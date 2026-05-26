@@ -131,6 +131,12 @@ impl DerefMut for LinearGradientTemplate {
 
 
 
+
+
+
+
+
+
 pub fn optimize_linear_gradient(
     prim_rect: &mut LayoutRect,
     tile_size: &mut LayoutSize,
@@ -138,33 +144,23 @@ pub fn optimize_linear_gradient(
     clip_rect: &LayoutRect,
     start: &mut LayoutPoint,
     end: &mut LayoutPoint,
-    extend_mode: ExtendMode,
-    stops: &mut [GradientStopKey],
-    enable_dithering: bool,
-    
-    callback: &mut dyn FnMut(&LayoutRect, LayoutPoint, LayoutPoint, &[GradientStopKey], EdgeMask)
-) -> bool {
-    
-    
-
+) {
     simplify_repeated_primitive(&tile_size, &mut tile_spacing, prim_rect);
 
     let vertical = start.x.approx_eq(&end.x);
     let horizontal = start.y.approx_eq(&end.y);
 
-    let mut horizontally_tiled = prim_rect.width() > tile_size.width;
-    let mut vertically_tiled = prim_rect.height() > tile_size.height;
+    let horizontally_tiled = prim_rect.width() > tile_size.width;
+    let vertically_tiled = prim_rect.height() > tile_size.height;
 
     
     
     if vertically_tiled && horizontal && tile_spacing.height == 0.0 {
         tile_size.height = prim_rect.height();
-        vertically_tiled = false;
     }
 
     if horizontally_tiled && vertical && tile_spacing.width == 0.0 {
         tile_size.width = prim_rect.width();
-        horizontally_tiled = false;
     }
 
     let offset = apply_gradient_local_clip(
@@ -181,14 +177,27 @@ pub fn optimize_linear_gradient(
 
     *start += offset;
     *end += offset;
+}
 
-    
-    
-    
 
+
+
+pub fn linear_gradient_decomposes(
+    prim_rect: &LayoutRect,
+    tile_size: LayoutSize,
+    tile_spacing: LayoutSize,
+    start: LayoutPoint,
+    end: LayoutPoint,
+    extend_mode: ExtendMode,
+    stops: &[GradientStop],
+    enable_dithering: bool,
+) -> bool {
     if extend_mode != ExtendMode::Clamp || stops.is_empty() {
         return false;
     }
+
+    let vertical = start.x.approx_eq(&end.x);
+    let horizontal = start.y.approx_eq(&end.y);
 
     if !vertical && !horizontal {
         return false;
@@ -198,50 +207,79 @@ pub fn optimize_linear_gradient(
         return false;
     }
 
-    if !tile_spacing.is_empty() || vertically_tiled || horizontally_tiled {
+    if !tile_spacing.is_empty() {
         return false;
     }
 
-    
+    let horizontally_tiled = prim_rect.width() > tile_size.width;
+    let vertically_tiled = prim_rect.height() > tile_size.height;
+    if vertically_tiled || horizontally_tiled {
+        return false;
+    }
+
     if !enable_dithering &&
         ((horizontal && tile_size.width < 256.0)
         || (vertical && tile_size.height < 256.0)) {
         return false;
     }
 
-    
+    true
+}
+
+
+
+
+
+
+
+
+pub fn decompose_axis_aligned_gradient(
+    prim_rect: &LayoutRect,
+    tile_size: LayoutSize,
+    start: LayoutPoint,
+    end: LayoutPoint,
+    stops: &[GradientStop],
+    clip_rect: &LayoutRect,
+    mut callback: impl FnMut(&LayoutRect, LayoutPoint, LayoutPoint, [GradientStop; 2], EdgeMask),
+) {
+    debug_assert!(!stops.is_empty());
+
+    let vertical = start.x.approx_eq(&end.x);
 
     
     
-    
-    
-
     let adjust_rect = &mut |rect: &mut LayoutRect| {
         if vertical {
             swap(&mut rect.min.x, &mut rect.min.y);
             swap(&mut rect.max.x, &mut rect.max.y);
         }
     };
-
     let adjust_size = &mut |size: &mut LayoutSize| {
         if vertical { swap(&mut size.width, &mut size.height); }
     };
-
     let adjust_point = &mut |p: &mut LayoutPoint| {
         if vertical { swap(&mut p.x, &mut p.y); }
     };
 
     let clip_rect = match clip_rect.intersection(prim_rect) {
         Some(clip) => clip,
-        None => {
-            return false;
-        }
+        None => return,
     };
 
-    adjust_rect(prim_rect);
-    adjust_point(start);
-    adjust_point(end);
-    adjust_size(tile_size);
+    let mut prim_rect = *prim_rect;
+    let mut start = start;
+    let mut end = end;
+    let mut tile_size = tile_size;
+
+    adjust_rect(&mut prim_rect);
+    adjust_point(&mut start);
+    adjust_point(&mut end);
+    adjust_size(&mut tile_size);
+
+    
+    
+    
+    
 
     let length = (end.x - start.x).abs();
 
@@ -249,21 +287,22 @@ pub fn optimize_linear_gradient(
     
     
     
-
-    let reverse_stops = start.x > end.x;
-
     
+    
+    
+    let reverse_stops = start.x > end.x;
     if reverse_stops {
-        stops.reverse();
-        swap(start, end);
+        swap(&mut start, &mut end);
     }
 
-    
-    
-    let mut prev = *stops.first().unwrap();
-    let mut last = *stops.last().unwrap();
+    let (first_stop, last_stop) = if reverse_stops {
+        (*stops.last().unwrap(), *stops.first().unwrap())
+    } else {
+        (*stops.first().unwrap(), *stops.last().unwrap())
+    };
 
-    
+    let mut prev = first_stop;
+    let mut last = last_stop;
     prev.offset = -start.x / length;
     last.offset = (tile_size.width - start.x) / length;
     if reverse_stops {
@@ -275,30 +314,40 @@ pub fn optimize_linear_gradient(
         (
             EdgeMask::LEFT | EdgeMask::RIGHT,
             EdgeMask::TOP,
-            EdgeMask::BOTTOM
+            EdgeMask::BOTTOM,
         )
     } else {
         (
             EdgeMask::TOP | EdgeMask::BOTTOM,
             EdgeMask::LEFT,
-            EdgeMask::RIGHT
+            EdgeMask::RIGHT,
         )
     };
 
     let mut is_first = true;
     let last_offset = last.offset;
-    for stop in stops.iter().chain((&[last]).iter()) {
+
+    
+    
+    let stops_iter: Box<dyn Iterator<Item = &GradientStop>> = if reverse_stops {
+        Box::new(stops.iter().rev())
+    } else {
+        Box::new(stops.iter())
+    };
+
+    for stop in stops_iter.chain(std::iter::once(&last)) {
         let prev_stop = prev;
         prev = *stop;
 
-        if prev_stop.color.a == 0 && stop.color.a == 0 {
+        if prev_stop.color.a == 0.0 && stop.color.a == 0.0 {
             continue;
         }
-
 
         let prev_offset = if reverse_stops { 1.0 - prev_stop.offset } else { prev_stop.offset };
         let offset = if reverse_stops { 1.0 - stop.offset } else { stop.offset };
 
+        
+        
         
         let segment_start = start.x + prev_offset * length;
         let segment_end = start.x + offset * length;
@@ -308,29 +357,25 @@ pub fn optimize_linear_gradient(
             continue;
         }
 
-        let mut segment_rect = *prim_rect;
+        let mut segment_rect = prim_rect;
         segment_rect.min.x += segment_start;
         segment_rect.max.x = segment_rect.min.x + segment_length;
 
-        let mut start = point2(0.0, 0.0);
-        let mut end = point2(segment_length, 0.0);
+        let mut seg_start = point2(0.0, 0.0);
+        let mut seg_end = point2(segment_length, 0.0);
 
-        adjust_point(&mut start);
-        adjust_point(&mut end);
+        adjust_point(&mut seg_start);
+        adjust_point(&mut seg_end);
         adjust_rect(&mut segment_rect);
 
         let origin_before_clip = segment_rect.min;
         segment_rect = match segment_rect.intersection(&clip_rect) {
             Some(rect) => rect,
-            None => {
-                continue;
-            }
+            None => continue,
         };
-        let offset = segment_rect.min - origin_before_clip;
-
-        
-        start -= offset;
-        end -= offset;
+        let clip_offset = segment_rect.min - origin_before_clip;
+        seg_start -= clip_offset;
+        seg_end -= clip_offset;
 
         let mut edge_flags = side_edges;
         if is_first {
@@ -343,17 +388,15 @@ pub fn optimize_linear_gradient(
 
         callback(
             &segment_rect,
-            start,
-            end,
-            &[
-                GradientStopKey { offset: 0.0, .. prev_stop },
-                GradientStopKey { offset: 1.0, .. *stop },
+            seg_start,
+            seg_end,
+            [
+                GradientStop { offset: 0.0, color: prev_stop.color },
+                GradientStop { offset: 1.0, color: stop.color },
             ],
             edge_flags,
         );
     }
-
-    true
 }
 
 impl From<LinearGradientKey> for LinearGradientTemplate {

@@ -6,11 +6,15 @@
 
 
 
-use api::{BoxShadowClipMode, ColorF, DebugFlags};
+use api::{BoxShadowClipMode, ColorF, DebugFlags, ExtendMode, GradientStop};
 use api::ClipMode;
 use crate::util::clamp_to_scale_factor;
 use crate::box_shadow::{BoxShadowCacheKey, BLUR_SAMPLE_SCALE};
 use crate::pattern::box_shadow::BoxShadowPatternData;
+use crate::pattern::gradient::linear_gradient_pattern;
+use crate::pattern::{Pattern, PatternBuilder, PatternBuilderContext, PatternBuilderState};
+use crate::prim_store::gradient::{decompose_axis_aligned_gradient, linear_gradient_decomposes};
+use crate::segment::EdgeMask;
 use api::units::*;
 use euclid::Scale;
 use smallvec::SmallVec;
@@ -936,7 +940,7 @@ fn prepare_interned_prim_for_render(
         }
         PrimitiveKind::LinearGradient { data_handle, .. } => {
             profile_scope!("LinearGradient");
-            let prim_data = &mut data_stores.linear_grad[*data_handle];
+            let prim_data = &data_stores.linear_grad[*data_handle];
             let prim_rect = prim_instance.prim_rect;
             let stretch_size = LayoutSize::new(
                 prim_data.stretch_ratio.width * prim_rect.size().width,
@@ -960,6 +964,73 @@ fn prepare_interned_prim_for_render(
                     &data_stores.clip,
                     frame_state,
                     scratch,
+                );
+                return;
+            }
+
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            let (effective_start, effective_end) = if prim_data.reverse_stops {
+                (prim_data.end_point, prim_data.start_point)
+            } else {
+                (prim_data.start_point, prim_data.end_point)
+            };
+            if linear_gradient_decomposes(
+                &prim_rect,
+                stretch_size,
+                prim_data.tile_spacing,
+                effective_start,
+                effective_end,
+                prim_data.extend_mode,
+                &prim_data.stops,
+                frame_context.fb_config.enable_dithering,
+            ) {
+                decompose_axis_aligned_gradient(
+                    &prim_rect,
+                    stretch_size,
+                    effective_start,
+                    effective_end,
+                    &prim_data.stops,
+                    &prim_info.clip_chain.local_clip_rect,
+                    |seg_rect, seg_start, seg_end, seg_stops, edge_aa_mask| {
+                        let pattern = LinearGradientSegmentPattern {
+                            start: seg_start,
+                            end: seg_end,
+                            stops: seg_stops,
+                        };
+                        quad::prepare_quad(
+                            &pattern,
+                            seg_rect,
+                            &prim_info.clip_chain.local_clip_rect,
+                            EdgeMask::empty(),
+                            edge_aa_mask,
+                            prim_instance_index,
+                            &None,
+                            &prim_info.clip_chain,
+                            quad_transform,
+                            frame_context,
+                            pic_context,
+                            targets,
+                            &data_stores.clip,
+                            frame_state,
+                            scratch,
+                        );
+                    },
                 );
                 return;
             }
@@ -1943,5 +2014,35 @@ impl CompositorSurfaceKind {
             CompositorSurfaceKind::Underlay | CompositorSurfaceKind::Overlay => false,
             CompositorSurfaceKind::Blit => true,
         }
+    }
+}
+
+
+
+
+
+struct LinearGradientSegmentPattern {
+    start: LayoutPoint,
+    end: LayoutPoint,
+    stops: [GradientStop; 2],
+}
+
+impl PatternBuilder for LinearGradientSegmentPattern {
+    fn build(
+        &self,
+        _sub_rect: Option<DeviceRect>,
+        offset: LayoutVector2D,
+        ctx: &PatternBuilderContext,
+        state: &mut PatternBuilderState,
+    ) -> Pattern {
+        let prim_offset = offset + ctx.prim_origin.to_vector();
+        linear_gradient_pattern(
+            self.start + prim_offset,
+            self.end + prim_offset,
+            ExtendMode::Clamp,
+            &self.stops,
+            ctx.fb_config.is_software,
+            state.frame_gpu_data,
+        )
     }
 }
