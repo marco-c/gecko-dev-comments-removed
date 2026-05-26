@@ -529,16 +529,14 @@ class Assembler : public AssemblerShared,
     return &scratch_register_list_;
   }
 
-  
-  
-  void writeDataRelocation(ImmGCPtr ptr) {
+  void writeDataRelocation(ImmGCPtr ptr, BufferOffset offset) {
     
     
     if (ptr.value) {
       if (gc::IsInsideNursery(ptr.value)) {
         embedsNurseryPointers_ = true;
       }
-      dataRelocations_.writeUnsigned(nextOffset().getOffset());
+      dataRelocations_.writeUnsigned(offset.getOffset());
     }
   }
 
