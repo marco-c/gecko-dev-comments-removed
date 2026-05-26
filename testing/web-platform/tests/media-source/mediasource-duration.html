@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-
+<!-- Copyright © 2016 Chromium authors and World Wide Web Consortium, (Massachusetts Institute of Technology, ERCIM, Keio University, Beihang). -->
 <html>
     <head>
         <title>MediaSource.duration &amp; HTMLMediaElement.duration test cases.</title>
@@ -368,7 +368,6 @@
           mediasource_testafterdataloaded(function(test, mediaElement, mediaSource, segmentInfo, sourceBuffer, mediaData)
           {
               assert_greater_than(segmentInfo.duration, 2, 'Sufficient test media duration');
-              mediaElement.play();
               sourceBuffer.appendBuffer(mediaData);
               test.expectEvent(sourceBuffer, 'updateend', 'Media data appended to the SourceBuffer');
               test.waitForExpectedEvents(function()
