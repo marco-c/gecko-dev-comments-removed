@@ -1354,8 +1354,10 @@ class gfxShapedWord final : public gfxShapedText {
 
   gfxFontShaper::RoundingFlags GetRounding() const { return mRounding; }
 
-  void ResetAge() { mAgeCounter = 0; }
-  uint32_t IncrementAge() { return ++mAgeCounter; }
+  void ResetAge() { mAgeCounter.store(0, std::memory_order_relaxed); }
+  uint32_t IncrementAge() {
+    return mAgeCounter.fetch_add(1, std::memory_order_relaxed) + 1;
+  }
 
   
   static uint32_t HashMix(uint32_t aHash, char16_t aCh) {
@@ -2172,7 +2174,10 @@ class gfxFont {
     uint32_t mLength;
     ShapedTextFlags mFlags;
     Script mScript;
-    RefPtr<nsAtom> mLanguage;
+    
+    
+    
+    nsAtom* mLanguage;
     int32_t mAppUnitsPerDevUnit;
     PLDHashNumber mHashKey;
     bool mTextIs8Bit;
