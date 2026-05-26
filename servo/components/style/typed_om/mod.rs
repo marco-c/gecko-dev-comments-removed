@@ -245,6 +245,30 @@ pub struct RotateComponent {
 
 
 
+
+
+
+
+#[derive(Clone, Debug)]
+#[repr(C)]
+pub struct ScaleComponent {
+    
+    pub x: NumericValue,
+
+    
+    pub y: NumericValue,
+
+    
+    pub z: NumericValue,
+
+    
+    pub is_2d: bool,
+}
+
+
+
+
+
 #[derive(Clone, Debug)]
 #[repr(C)]
 pub enum TransformComponent {
@@ -257,6 +281,11 @@ pub enum TransformComponent {
     
     
     Rotate(RotateComponent),
+
+    
+    
+    
+    Scale(ScaleComponent),
 }
 
 
