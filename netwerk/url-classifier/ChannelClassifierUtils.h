@@ -12,6 +12,12 @@ class nsIChannel;
 namespace mozilla {
 namespace net {
 
+enum class ChannelBlockDecision {
+  Blocked,
+  Replaced,
+  Allowed,
+};
+
 class ChannelClassifierUtils final {
  public:
   static nsresult SetBlockedContent(nsIChannel* aChannel, nsresult aErrorCode,
@@ -30,10 +36,11 @@ class ChannelClassifierUtils final {
 
   
   
+  
   static nsresult MaybeBlockChannel(
       nsIChannel* aChannel, const nsACString& aFeatureName,
       const nsACString& aList, nsresult aErrorCode, uint32_t aReplacedEvent,
-      uint32_t aAllowedEvent, bool* aShouldContinue);
+      uint32_t aAllowedEvent, ChannelBlockDecision* aOutDecision);
 
   
   static bool IsClassifierBlockingErrorCode(nsresult aError);
