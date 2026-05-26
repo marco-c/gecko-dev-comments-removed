@@ -9,7 +9,6 @@ const DEFAULT_HOMEPAGE_URL = "about:home";
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["browser.settings-redesign.enabled", true],
       ["identity.fxaccounts.account.device.name", ""],
       
       

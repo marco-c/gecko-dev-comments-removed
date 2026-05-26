@@ -10,7 +10,6 @@ const SHORTCUTS_ROWS_PREF = "browser.newtabpage.activity-stream.topSitesRows";
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["browser.settings-redesign.enabled", true],
       
       
       ["identity.fxaccounts.account.device.name", ""],

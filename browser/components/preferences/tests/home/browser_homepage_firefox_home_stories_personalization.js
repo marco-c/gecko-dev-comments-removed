@@ -20,7 +20,6 @@ const SECTIONS_CUSTOMIZE_MENU_PANEL_ENABLED_PREF =
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["browser.settings-redesign.enabled", true],
       
       
       ["identity.fxaccounts.account.device.name", ""],

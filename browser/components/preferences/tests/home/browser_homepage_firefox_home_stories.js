@@ -12,7 +12,6 @@ const STORIES_PREF =
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["browser.settings-redesign.enabled", true],
       
       
       ["identity.fxaccounts.account.device.name", ""],
