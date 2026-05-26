@@ -505,7 +505,7 @@ fn tweak_when_ignoring_colors(
             
             
             
-            if color.honored_in_forced_colors_mode( true) {
+            if color.honored_in_forced_colors_mode(context,  true) {
                 return;
             }
             
@@ -524,7 +524,7 @@ fn tweak_when_ignoring_colors(
             
             if color
                 .0
-                .honored_in_forced_colors_mode( true)
+                .honored_in_forced_colors_mode(context,  true)
             {
                 return;
             }
@@ -572,7 +572,9 @@ fn tweak_when_ignoring_colors(
             
             
             if let Some(color) = declaration.color_value() {
-                if color.honored_in_forced_colors_mode( false) {
+                if color
+                    .honored_in_forced_colors_mode(context,  false)
+                {
                     return;
                 }
             }

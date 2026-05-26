@@ -178,16 +178,9 @@ impl CalcNumeric {
         context: &computed::Context,
         leaf_to_f32: impl FnOnce(Result<Leaf, ()>) -> f32,
     ) -> f32 {
-        let result = self.node.resolve_map(|leaf| {
-            Ok(match leaf {
-                
-                Leaf::Length(length) => Leaf::Length(NoCalcLength::from_px(
-                    length.to_computed_value(context).px(),
-                )),
-                
-                _ => leaf.clone(),
-            })
-        });
+        let result = self
+            .node
+            .resolve_computed(Some(context), |leaf| Ok(leaf.clone()));
         self.clamping_mode.clamp(leaf_to_f32(result))
     }
 
@@ -1221,6 +1214,30 @@ impl CalcNode {
         F: FnOnce() -> Result<CSSFloat, ()>,
     {
         closure().map_err(|()| input.new_custom_error(StyleParseErrorKind::UnspecifiedError))
+    }
+
+    
+    
+    
+    
+    pub fn resolve_computed<F>(
+        &self,
+        context: Option<&computed::Context>,
+        leaf_to_output_fn: F,
+    ) -> Result<Leaf, ()>
+    where
+        F: Fn(&Leaf) -> Result<Leaf, ()>,
+    {
+        
+        self.resolve_map(|leaf| {
+            Ok(match leaf {
+                Leaf::Length(length) => Leaf::Length(NoCalcLength::from_px(match context {
+                    Some(ctx) => length.to_computed_value(ctx).px(),
+                    None => length.to_computed_pixel_length_without_context()?,
+                })),
+                _ => leaf_to_output_fn(leaf)?,
+            })
+        })
     }
 
     

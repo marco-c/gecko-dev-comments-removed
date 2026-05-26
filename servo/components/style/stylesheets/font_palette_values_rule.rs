@@ -56,7 +56,7 @@ impl Parse for FontPaletteOverrideColor {
         
         
         
-        if color.resolve_to_absolute().is_ok() {
+        if color.resolve_to_absolute(None).is_ok() {
             
             
             return Ok(FontPaletteOverrideColor { index, color });
@@ -217,7 +217,7 @@ impl FontPaletteValuesRule {
             for c in &self.override_colors {
                 
                 
-                let absolute = c.color.resolve_to_absolute().unwrap();
+                let absolute = c.color.resolve_to_absolute(None).unwrap();
                 
                 let index = c.index.0.resolve().unwrap();
                 unsafe {
