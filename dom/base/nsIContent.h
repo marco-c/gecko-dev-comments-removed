@@ -587,13 +587,6 @@ class nsIContent : public nsINode {
 
   void GetEventTargetParent(mozilla::EventChainPreVisitor& aVisitor) override;
 
-  
-
-
-
-
-  void UpdateHeadingElementsOffsetChange();
-
   bool IsPurple() const { return mRefCnt.IsPurple(); }
 
   void RemovePurple() { mRefCnt.RemovePurple(); }

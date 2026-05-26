@@ -502,11 +502,6 @@ class Accessible {
   virtual void DOMNodeClass(nsString& aClass) const = 0;
 
   
-
-
-  virtual int32_t HeadingLevel() const = 0;
-
-  
   
 
   
