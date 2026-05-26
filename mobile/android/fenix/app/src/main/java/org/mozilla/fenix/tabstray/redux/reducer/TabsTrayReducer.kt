@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.tabstray.redux.reducer
 
+import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.tabstray.navigation.TabManagerNavDestination
 import org.mozilla.fenix.tabstray.redux.action.TabGroupAction
 import org.mozilla.fenix.tabstray.redux.action.TabSearchAction
@@ -27,6 +28,7 @@ internal object TabsTrayReducer {
 
             // Selection Mode Actions
             is TabsTrayAction.EnterSelectMode,
+            is TabsTrayAction.SelectAllNormalTabs,
             is TabsTrayAction.ExitSelectMode,
             is TabsTrayAction.AddSelectTab,
             is TabsTrayAction.RemoveSelectTab,
@@ -65,6 +67,11 @@ internal object TabsTrayReducer {
             is TabsTrayAction.UpdatePbmLockStatus ->
                 state.copy(privateBrowsing = state.privateBrowsing.copy(isLocked = action.isLocked))
 
+            // Drag actions
+            is TabsTrayAction.TabDragStart,
+            is TabsTrayAction.TabDragCancel,
+                -> handleTabDragActions(state = state, action = action)
+
             is TabsTrayAction.TabAutoCloseDialogShown,
             is TabsTrayAction.ShareAllNormalTabs,
             is TabsTrayAction.ShareAllPrivateTabs,
@@ -83,6 +90,31 @@ internal object TabsTrayReducer {
         return newState
     }
 
+    private fun handleTabDragActions(state: TabsTrayState, action: TabsTrayAction): TabsTrayState {
+        return when (action) {
+            is TabsTrayAction.TabDragStart ->
+                state.copy(
+                    normalTabsState = state.normalTabsState.copy(
+                        itemFocusIndicatorEnabled = false,
+                    ),
+                    mode = if (state.mode is TabsTrayState.Mode.Select && !action.preserveSelectMode) {
+                        TabsTrayState.Mode.Normal
+                    } else {
+                        state.mode
+                    },
+                )
+
+            is TabsTrayAction.TabDragCancel ->
+                state.copy(
+                    normalTabsState = state.normalTabsState.copy(
+                        itemFocusIndicatorEnabled = true,
+                    ),
+                )
+
+            else -> state
+        }
+    }
+
     private fun handleSelectionModeActions(state: TabsTrayState, action: TabsTrayAction): TabsTrayState {
         return when (action) {
             is TabsTrayAction.EnterSelectMode ->
@@ -93,6 +125,28 @@ internal object TabsTrayReducer {
                     ),
                 )
 
+            is TabsTrayAction.SelectAllNormalTabs -> {
+                val selectedTabGroups = HashSet<TabsTrayItem.TabGroup>()
+                val selectedTabs = HashSet<TabsTrayItem.Tab>()
+
+                state.normalTabsState.items.forEach { item ->
+                    when (item) {
+                        is TabsTrayItem.Tab -> selectedTabs.add(item)
+                        is TabsTrayItem.TabGroup -> {
+                            selectedTabGroups.add(item)
+                            selectedTabs.addAll(item.tabs)
+                        }
+                    }
+                }
+
+                state.copy(
+                    mode = TabsTrayState.Mode.Select(
+                        selectedTabs = selectedTabs,
+                        selectedTabGroups = selectedTabGroups,
+                    ),
+                )
+            }
+
             is TabsTrayAction.ExitSelectMode ->
                 state.copy(mode = TabsTrayState.Mode.Normal)
 
@@ -102,6 +156,7 @@ internal object TabsTrayReducer {
                     selectedTabGroups = state.mode.selectedTabGroups,
                 ),
             )
+
             is TabsTrayAction.RemoveSelectTab -> {
                 val selectedTabs = state.mode.selectedTabs - action.tab
                 state.copy(

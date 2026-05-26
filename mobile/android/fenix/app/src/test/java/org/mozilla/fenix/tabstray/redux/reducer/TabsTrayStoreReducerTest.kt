@@ -9,7 +9,6 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.mozilla.fenix.tabstray.data.TabStorageUpdate
-import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.tabstray.data.createTab
 import org.mozilla.fenix.tabstray.data.createTabGroup
 import org.mozilla.fenix.tabstray.navigation.TabManagerNavDestination
@@ -17,7 +16,6 @@ import org.mozilla.fenix.tabstray.redux.action.TabsTrayAction
 import org.mozilla.fenix.tabstray.redux.state.TabSearchState
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState.Mode
-import org.mozilla.fenix.tabstray.redux.store.TabsTrayStore
 import org.mozilla.fenix.tabstray.syncedtabs.SyncedTabsListItem
 import org.mozilla.fenix.tabstray.syncedtabs.generateFakeTab
 import org.mozilla.fenix.tabstray.syncedtabs.getFakeSyncedTabList
@@ -553,6 +551,76 @@ class TabsTrayStoreReducerTest {
     }
 
     @Test
+    fun `WHEN SelectAllTabs THEN all tabs and tab groups (including tabs within groups) are selected`() {
+        val tab1 = createTab(url = "https://mozilla.org/1", id = "tab-1")
+        val tab2 = createTab(url = "https://mozilla.org/2", id = "tab-2")
+        val tabInGroup1 = createTab(url = "https://mozilla.org/group1-1", id = "tab-g1-1")
+        val tabInGroup2 = createTab(url = "https://mozilla.org/group1-2", id = "tab-g1-2")
+        val group = createTabGroup(id = "group-1", tabs = mutableListOf(tabInGroup1, tabInGroup2))
+
+        val initialState = TabsTrayState(
+            normalTabsState = TabsTrayState.NormalTabsState(
+                items = listOf(tab1, group, tab2),
+            ),
+        )
+
+        val resultState = TabsTrayReducer.reduce(
+            state = initialState,
+            action = TabsTrayAction.SelectAllNormalTabs,
+        )
+
+        val expectedMode = Mode.Select(
+            selectedTabs = setOf(tab1, tab2, tabInGroup1, tabInGroup2),
+            selectedTabGroups = setOf(group),
+        )
+
+        assertEquals(expectedMode, resultState.mode)
+    }
+
+    @Test
+    fun `WHEN SelectAllTabs with no groups THEN all individual tabs are selected`() {
+        val tab1 = createTab(url = "https://mozilla.org/1", id = "tab-1")
+        val tab2 = createTab(url = "https://mozilla.org/2", id = "tab-2")
+
+        val initialState = TabsTrayState(
+            normalTabsState = TabsTrayState.NormalTabsState(
+                items = listOf(tab1, tab2),
+            ),
+        )
+
+        val resultState = TabsTrayReducer.reduce(
+            state = initialState,
+            action = TabsTrayAction.SelectAllNormalTabs,
+        )
+
+        val expectedMode = Mode.Select(
+            selectedTabs = setOf(tab1, tab2),
+            selectedTabGroups = emptySet(),
+        )
+
+        assertEquals(expectedMode, resultState.mode)
+    }
+
+    @Test
+    fun `WHEN SelectAllTabs with empty tray THEN selection is empty`() {
+        val initialState = TabsTrayState(
+            normalTabsState = TabsTrayState.NormalTabsState(items = emptyList()),
+        )
+
+        val resultState = TabsTrayReducer.reduce(
+            state = initialState,
+            action = TabsTrayAction.SelectAllNormalTabs,
+        )
+
+        val expectedMode = Mode.Select(
+            selectedTabs = emptySet(),
+            selectedTabGroups = emptySet(),
+        )
+
+        assertEquals(expectedMode, resultState.mode)
+    }
+
+    @Test
     fun `WHEN ReorderTabsTrayItem is invoked THEN the state is not updated`() {
         val initialState = TabsTrayState()
         val resultState = TabsTrayReducer.reduce(
@@ -564,5 +632,95 @@ class TabsTrayStoreReducerTest {
             ),
         )
         assertEquals(TabsTrayState(), resultState)
+    }
+
+    @Test
+    fun `WHEN tab drag is started THEN the focus state is disabled for normal tabs`() {
+        val initialState = TabsTrayState()
+        val resultState = TabsTrayReducer.reduce(
+            state = initialState,
+            action = TabsTrayAction.TabDragStart(
+                preserveSelectMode = true,
+            ),
+        )
+        assertFalse(resultState.normalTabsState.itemFocusIndicatorEnabled)
+    }
+
+    @Test
+    fun `WHEN tab drag is cancelled THEN the focus state is re-enabled for normal tabs`() {
+        val initialState = TabsTrayState(
+            normalTabsState = TabsTrayState.NormalTabsState(itemFocusIndicatorEnabled = false),
+        )
+        val resultState = TabsTrayReducer.reduce(
+            state = initialState,
+            action = TabsTrayAction.TabDragCancel,
+        )
+        assertTrue(resultState.normalTabsState.itemFocusIndicatorEnabled)
+    }
+
+    @Test
+    fun `WHEN tab drag is started GIVEN preserveSelectMode is false GIVEN mode is Select THEN the mode is set to Normal`() {
+        val initialState = TabsTrayState(
+            mode = TabsTrayState.Mode.Select(
+                selectedTabs = setOf(
+                    createTab("www.mozilla.org"),
+                    createTab("www.example.com"),
+                ),
+            ),
+        )
+        val resultState = TabsTrayReducer.reduce(
+            state = initialState,
+            action = TabsTrayAction.TabDragStart(
+                preserveSelectMode = false,
+            ),
+        )
+        assertEquals(resultState.mode, TabsTrayState.Mode.Normal)
+    }
+
+    @Test
+    fun `WHEN tab drag is started GIVEN preserveSelectMode is true GIVEN mode is Select THEN the mode is unchanged`() {
+        val initialState = TabsTrayState(
+            mode = TabsTrayState.Mode.Select(
+                selectedTabs = setOf(
+                    createTab("www.mozilla.org"),
+                    createTab("www.example.com"),
+                ),
+            ),
+        )
+        val resultState = TabsTrayReducer.reduce(
+            state = initialState,
+            action = TabsTrayAction.TabDragStart(
+                preserveSelectMode = true,
+            ),
+        )
+        assertEquals(resultState.mode, initialState.mode)
+    }
+
+    @Test
+    fun `WHEN tab drag is started GIVEN preserveSelectMode is true GIVEN mode is Normal THEN the mode is unchanged`() {
+        val initialState = TabsTrayState(mode = TabsTrayState.Mode.Normal)
+
+        val resultState = TabsTrayReducer.reduce(
+            state = initialState,
+            action = TabsTrayAction.TabDragStart(
+                preserveSelectMode = true,
+            ),
+        )
+
+        assertEquals(initialState.mode, resultState.mode)
+    }
+
+    @Test
+    fun `WHEN tab drag is started GIVEN preserveSelectMode is false GIVEN mode is Normal THEN the mode is unchanged`() {
+        val initialState = TabsTrayState(mode = TabsTrayState.Mode.Normal)
+
+        val resultState = TabsTrayReducer.reduce(
+            state = initialState,
+            action = TabsTrayAction.TabDragStart(
+                preserveSelectMode = false,
+            ),
+        )
+
+        assertEquals(initialState.mode, resultState.mode)
     }
 }
