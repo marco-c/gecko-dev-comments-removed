@@ -88,8 +88,6 @@ void RVFlags::Init() {
 
 bool Assembler::FLAG_riscv_debug = false;
 
-void Assembler::nop() { addi(ToRegister(0), ToRegister(0), 0); }
-
 
 size_t Assembler::size() const { return m_buffer.size(); }
 
