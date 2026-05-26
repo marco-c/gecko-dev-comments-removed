@@ -21,7 +21,10 @@ SOURCES += [
     "sqlite-vec/sqlite-vec.c",
 ]
 
-if CONFIG["TARGET_CPU"] == "aarch64":
+
+
+
+if CONFIG["TARGET_CPU"] == "aarch64" and CONFIG["CC_TYPE"] != "gcc":
     DEFINES["SQLITE_VEC_ENABLE_NEON"] = 1
 
 
