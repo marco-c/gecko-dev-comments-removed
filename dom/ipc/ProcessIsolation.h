@@ -30,13 +30,6 @@ constexpr nsLiteralCString kHighValueIsLoggedInPermission =
 
 
 
-
-
-nsCString SharedWebRemoteType(const OriginAttributes& aAttrs,
-                              bool aDisableJit = false);
-
-
-
 struct NavigationIsolationOptions {
   nsCString mRemoteType;
   bool mReplaceBrowsingContext = false;
@@ -81,20 +74,6 @@ struct WorkerIsolationOptions {
 Result<WorkerIsolationOptions, nsresult> IsolationOptionsForWorker(
     nsIPrincipal* aPrincipal, WorkerKind aWorkerKind,
     const nsACString& aCurrentRemoteType, bool aUseRemoteSubframes);
-
-
-
-
-
-
-
-
-
-
-
-Result<nsCString, nsresult> PredictRemoteTypeForURI(
-    nsIURI* aURI, const OriginAttributes& aOriginAttributes,
-    const nsACString& aPreferredRemoteType, bool aUseRemoteSubframes);
 
 
 

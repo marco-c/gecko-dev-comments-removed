@@ -40,6 +40,8 @@ class nsChromeRegistry : public nsIToolkitChromeRegistry,
   
   NS_IMETHOD AllowScriptsForPackage(nsIURI* url, bool* _retval) override;
   NS_IMETHOD AllowContentToAccess(nsIURI* url, bool* _retval) override;
+  NS_IMETHOD CanLoadURLRemotely(nsIURI* url, bool* _retval) override;
+  NS_IMETHOD MustLoadURLRemotely(nsIURI* url, bool* _retval) override;
 
   NS_IMETHOD ConvertChromeURL(nsIURI* aChromeURI, nsIURI** aResult) override;
 
@@ -116,6 +118,12 @@ class nsChromeRegistry : public nsIToolkitChromeRegistry,
 
     
     CONTENT_ACCESSIBLE = 1 << 2,
+
+    
+    REMOTE_ALLOWED = 1 << 3,
+
+    
+    REMOTE_REQUIRED = 1 << 4,
   };
 
   bool mInitialized;

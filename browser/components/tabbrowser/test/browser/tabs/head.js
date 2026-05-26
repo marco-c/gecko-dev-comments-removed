@@ -366,51 +366,192 @@ function test_url_for_process_types({
   privilegedMozillaContentResult,
   extensionProcessResult,
 }) {
-  const PROCESSES = [
-    [E10SUtils.NOT_REMOTE, chromeResult, "chrome process"],
-    [E10SUtils.WEB_REMOTE_TYPE, webContentResult, "web content process"],
-    [
-      E10SUtils.PRIVILEGEDABOUT_REMOTE_TYPE,
-      privilegedAboutContentResult,
-      "privileged about content process",
-    ],
-    [
-      E10SUtils.PRIVILEGEDMOZILLA_REMOTE_TYPE,
-      privilegedMozillaContentResult,
-      "privileged mozilla content process",
-    ],
-    [
-      E10SUtils.EXTENSION_REMOTE_TYPE,
-      extensionProcessResult,
-      "extension process",
-    ],
-  ];
-  const EXTRAS = [
-    ["", "URL"],
-    ["#foo", "URL with ref"],
-    ["?foo", "URL with query"],
-    ["?foo#bar", "URL with query and ref"],
-  ];
+  const CHROME_PROCESS = E10SUtils.NOT_REMOTE;
+  const WEB_CONTENT_PROCESS = E10SUtils.WEB_REMOTE_TYPE;
+  const PRIVILEGEDABOUT_CONTENT_PROCESS = E10SUtils.PRIVILEGEDABOUT_REMOTE_TYPE;
+  const PRIVILEGEDMOZILLA_CONTENT_PROCESS =
+    E10SUtils.PRIVILEGEDMOZILLA_REMOTE_TYPE;
+  const EXTENSION_PROCESS = E10SUtils.EXTENSION_REMOTE_TYPE;
 
-  for (let [extra, extraDesc] of EXTRAS) {
-    for (let [remoteType, canLoad, remoteTypeDesc] of PROCESSES) {
-      let description = `Check ${extraDesc} in ${remoteTypeDesc}.`;
+  is(
+    E10SUtils.canLoadURIInRemoteType(url,  false, CHROME_PROCESS),
+    chromeResult,
+    "Check URL in chrome process."
+  );
+  is(
+    E10SUtils.canLoadURIInRemoteType(
+      url,
+       false,
+      WEB_CONTENT_PROCESS
+    ),
+    webContentResult,
+    "Check URL in web content process."
+  );
+  is(
+    E10SUtils.canLoadURIInRemoteType(
+      url,
+       false,
+      PRIVILEGEDABOUT_CONTENT_PROCESS
+    ),
+    privilegedAboutContentResult,
+    "Check URL in privileged about content process."
+  );
+  is(
+    E10SUtils.canLoadURIInRemoteType(
+      url,
+       false,
+      PRIVILEGEDMOZILLA_CONTENT_PROCESS
+    ),
+    privilegedMozillaContentResult,
+    "Check URL in privileged mozilla content process."
+  );
+  is(
+    E10SUtils.canLoadURIInRemoteType(
+      url,
+       false,
+      EXTENSION_PROCESS
+    ),
+    extensionProcessResult,
+    "Check URL in extension process."
+  );
 
-      
-      
-      
-      
-      let prediction = ChromeUtils.predictRemoteTypeForURI(url + extra, {
-        useRemoteSubframes: false,
-        preferredRemoteType: remoteType,
-      });
-      if (canLoad) {
-        is(prediction, remoteType, description);
-      } else {
-        isnot(prediction, remoteType, description);
-      }
-    }
-  }
+  is(
+    E10SUtils.canLoadURIInRemoteType(
+      url + "#foo",
+       false,
+      CHROME_PROCESS
+    ),
+    chromeResult,
+    "Check URL with ref in chrome process."
+  );
+  is(
+    E10SUtils.canLoadURIInRemoteType(
+      url + "#foo",
+       false,
+      WEB_CONTENT_PROCESS
+    ),
+    webContentResult,
+    "Check URL with ref in web content process."
+  );
+  is(
+    E10SUtils.canLoadURIInRemoteType(
+      url + "#foo",
+       false,
+      PRIVILEGEDABOUT_CONTENT_PROCESS
+    ),
+    privilegedAboutContentResult,
+    "Check URL with ref in privileged about content process."
+  );
+  is(
+    E10SUtils.canLoadURIInRemoteType(
+      url + "#foo",
+       false,
+      PRIVILEGEDMOZILLA_CONTENT_PROCESS
+    ),
+    privilegedMozillaContentResult,
+    "Check URL with ref in privileged mozilla content process."
+  );
+  is(
+    E10SUtils.canLoadURIInRemoteType(
+      url + "#foo",
+       false,
+      EXTENSION_PROCESS
+    ),
+    extensionProcessResult,
+    "Check URL with ref in extension process."
+  );
+
+  is(
+    E10SUtils.canLoadURIInRemoteType(
+      url + "?foo",
+       false,
+      CHROME_PROCESS
+    ),
+    chromeResult,
+    "Check URL with query in chrome process."
+  );
+  is(
+    E10SUtils.canLoadURIInRemoteType(
+      url + "?foo",
+       false,
+      WEB_CONTENT_PROCESS
+    ),
+    webContentResult,
+    "Check URL with query in web content process."
+  );
+  is(
+    E10SUtils.canLoadURIInRemoteType(
+      url + "?foo",
+       false,
+      PRIVILEGEDABOUT_CONTENT_PROCESS
+    ),
+    privilegedAboutContentResult,
+    "Check URL with query in privileged about content process."
+  );
+  is(
+    E10SUtils.canLoadURIInRemoteType(
+      url + "?foo",
+       false,
+      PRIVILEGEDMOZILLA_CONTENT_PROCESS
+    ),
+    privilegedMozillaContentResult,
+    "Check URL with query in privileged mozilla content process."
+  );
+  is(
+    E10SUtils.canLoadURIInRemoteType(
+      url + "?foo",
+       false,
+      EXTENSION_PROCESS
+    ),
+    extensionProcessResult,
+    "Check URL with query in extension process."
+  );
+
+  is(
+    E10SUtils.canLoadURIInRemoteType(
+      url + "?foo#bar",
+       false,
+      CHROME_PROCESS
+    ),
+    chromeResult,
+    "Check URL with query and ref in chrome process."
+  );
+  is(
+    E10SUtils.canLoadURIInRemoteType(
+      url + "?foo#bar",
+       false,
+      WEB_CONTENT_PROCESS
+    ),
+    webContentResult,
+    "Check URL with query and ref in web content process."
+  );
+  is(
+    E10SUtils.canLoadURIInRemoteType(
+      url + "?foo#bar",
+       false,
+      PRIVILEGEDABOUT_CONTENT_PROCESS
+    ),
+    privilegedAboutContentResult,
+    "Check URL with query and ref in privileged about content process."
+  );
+  is(
+    E10SUtils.canLoadURIInRemoteType(
+      url + "?foo#bar",
+       false,
+      PRIVILEGEDMOZILLA_CONTENT_PROCESS
+    ),
+    privilegedMozillaContentResult,
+    "Check URL with query and ref in privileged mozilla content process."
+  );
+  is(
+    E10SUtils.canLoadURIInRemoteType(
+      url + "?foo#bar",
+       false,
+      EXTENSION_PROCESS
+    ),
+    extensionProcessResult,
+    "Check URL with query and ref in extension process."
+  );
 }
 
 

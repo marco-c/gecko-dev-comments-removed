@@ -432,7 +432,7 @@ already_AddRefed<nsFrameLoader> nsFrameLoader::Create(
         !remoteType.IsEmpty()) {
       CopyUTF16toUTF8(remoteType, fl->mRemoteType);
     } else {
-      fl->mRemoteType = SharedWebRemoteType(context->OriginAttributesRef());
+      fl->mRemoteType = DEFAULT_REMOTE_TYPE;
     }
   }
   return fl.forget();
