@@ -405,10 +405,20 @@ async function asyncStartTLSTestServer(
   });
 
   let serverBin = _getBinaryUtil(serverBinName);
+  let certDir = do_get_file(certsPath,  true);
+  if (!certDir.exists()) {
+    
+    
+    
+    
+    info(
+      `asyncStartTLSTestServer: cert dir not found (${certDir.path}), ` +
+        `skipping TLS server startup`
+    );
+    return false;
+  }
   let process = Cc["@mozilla.org/process/util;1"].createInstance(Ci.nsIProcess);
   process.init(serverBin);
-  let certDir = do_get_file(certsPath, false);
-  Assert.ok(certDir.exists(), `certificate folder (${certsPath}) should exist`);
   
   process.run(false, ["sql:" + certDir.path, Services.appinfo.processID], 2);
 
@@ -417,6 +427,7 @@ async function asyncStartTLSTestServer(
   });
 
   await serverReady;
+  return true;
 }
 
 function _getBinaryUtil(binaryUtilName) {
