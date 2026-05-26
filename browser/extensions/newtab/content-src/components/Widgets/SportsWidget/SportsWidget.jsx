@@ -9,6 +9,7 @@ import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
 import { useIntersectionObserver } from "../../../lib/utils";
 import { SportsMatchRow } from "./SportsMatchRow";
 import { WIDGET_REGISTRY, resolveWidgetSize } from "common/WidgetsRegistry.mjs";
+import { useLocalizedTeamNames } from "./useLocalizedTeamNames.jsx";
 
 const WIDGET_STATES = {
   INTRO: "sports-intro",
@@ -540,6 +541,7 @@ function SportsWidget({ dispatch, handleUserInteraction }) {
             previous={sportsWidgetData?.data?.matches?.previous ?? []}
             current={sportsWidgetData?.data?.matches?.current ?? []}
             next={sportsWidgetData?.data?.matches?.next ?? []}
+            handleInteraction={handleInteraction}
           />
         )}
         {widgetState === WIDGET_STATES.KEY_DATES && (
@@ -578,20 +580,27 @@ function SportsWidget({ dispatch, handleUserInteraction }) {
 function SportsWidgetFollowTeams({ teams, initialSelectedTeams, onSave }) {
   const [selectedTeams, setSelectedTeams] = useState(initialSelectedTeams);
   const [searchQuery, setSearchQuery] = useState("");
+  const localizedNames = useLocalizedTeamNames(teams);
   const isMaxSelected = selectedTeams.length >= 3;
-
-  const sortedTeams = [...teams].sort((a, b) => a.name.localeCompare(b.name));
-  const filteredTeams = searchQuery
-    ? sortedTeams.filter(team =>
-        team.name.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : sortedTeams;
 
   function handleTeamToggle(teamKey, isChecked) {
     setSelectedTeams(prev =>
       isChecked ? [...prev, teamKey] : prev.filter(key => key !== teamKey)
     );
   }
+
+  const sortedTeams = localizedNames
+    ? [...teams].sort((a, b) =>
+        localizedNames[a.key].localeCompare(localizedNames[b.key])
+      )
+    : [];
+  const filteredTeams = searchQuery
+    ? sortedTeams.filter(team =>
+        localizedNames[team.key]
+          .toLocaleLowerCase()
+          .includes(searchQuery.toLocaleLowerCase())
+      )
+    : sortedTeams;
 
   return (
     <div className="sports-follow-teams">
@@ -601,40 +610,43 @@ function SportsWidgetFollowTeams({ teams, initialSelectedTeams, onSave }) {
         onInput={e => setSearchQuery(e.target.value)}
       />
       <div className="sports-follow-teams-list">
-        {filteredTeams.map(team => {
-          const isSelected = selectedTeams.includes(team.key);
-          const isRowDisabled = !isSelected && isMaxSelected;
-          return (
-            <div
-              key={team.key}
-              className={`sports-follow-teams-row${isRowDisabled ? " is-disabled" : ""}`}
-              onClick={e => {
-                // The checkbox already handles its own toggle; skip here so we don't toggle twice.
-                if (e.target.localName === "moz-checkbox") {
-                  return;
-                }
-                if (isRowDisabled) {
-                  return;
-                }
-                handleTeamToggle(team.key, !isSelected);
-              }}
-            >
-              <moz-checkbox
-                checked={isSelected || undefined}
-                disabled={isRowDisabled ? true : undefined}
-                onChange={e => handleTeamToggle(team.key, e.target.checked)}
-                aria-label={team.name}
-              />
-              <img
-                className="sports-team-flag"
-                src={team.icon_url}
-                alt=""
-                title={team.name}
-              />
-              <span className="sports-team-name">{team.name}</span>
-            </div>
-          );
-        })}
+        {/* Wait until names are localized so users in other locales don't see a flicker of content in English. */}
+        {localizedNames &&
+          filteredTeams.map(team => {
+            const isSelected = selectedTeams.includes(team.key);
+            const isRowDisabled = !isSelected && isMaxSelected;
+            const localizedName = localizedNames[team.key];
+            return (
+              <div
+                key={team.key}
+                className={`sports-follow-teams-row${isRowDisabled ? " is-disabled" : ""}`}
+                onClick={e => {
+                  // The checkbox already handles its own toggle; skip here so we don't toggle twice.
+                  if (e.target.localName === "moz-checkbox") {
+                    return;
+                  }
+                  if (isRowDisabled) {
+                    return;
+                  }
+                  handleTeamToggle(team.key, !isSelected);
+                }}
+              >
+                <moz-checkbox
+                  checked={isSelected || undefined}
+                  disabled={isRowDisabled ? true : undefined}
+                  onChange={e => handleTeamToggle(team.key, e.target.checked)}
+                  aria-label={localizedName}
+                />
+                <img
+                  className="sports-team-flag"
+                  src={team.icon_url}
+                  alt=""
+                  title={localizedName}
+                />
+                <span className="sports-team-name">{localizedName}</span>
+              </div>
+            );
+          })}
       </div>
       <moz-button
         className="sports-done-button"
@@ -654,6 +666,7 @@ function SportsMatchesView({
   previous,
   current,
   next,
+  handleInteraction,
 }) {
   const [showResultsList, setShowResultsList] = useState(false);
   const [showUpcomingList, setShowUpcomingList] = useState(false);
@@ -692,7 +705,12 @@ function SportsMatchesView({
               <li
                 key={`${match.home_team.key}-${match.away_team.key}-${match.date}`}
               >
-                <SportsMatchRow match={match} variant="results" size="list" />
+                <SportsMatchRow
+                  match={match}
+                  variant="results"
+                  size="list"
+                  handleInteraction={handleInteraction}
+                />
               </li>
             ))}
           </ul>
@@ -703,13 +721,15 @@ function SportsMatchesView({
                 match={previous[0]}
                 variant="results"
                 size={size}
+                handleInteraction={handleInteraction}
               />
             </div>
           )
         )}
-        {size === "large" && !!previous.length && (
+        {!!previous.length && (
           <moz-button
             type="secondary"
+            size={size === "medium" ? "small" : undefined}
             data-l10n-id={
               showResultsList
                 ? "newtab-sports-widget-show-less"
@@ -727,7 +747,12 @@ function SportsMatchesView({
           {current[0] && (
             <>
               <div className="match-highlight-view">
-                <SportsMatchRow match={current[0]} variant="now" size={size} />
+                <SportsMatchRow
+                  match={current[0]}
+                  variant="now"
+                  size={size}
+                  handleInteraction={handleInteraction}
+                />
               </div>
               {/* TODO: Add onClick handler + play icon when we start implementing Watch dialog UI */}
               <moz-button
@@ -755,14 +780,24 @@ function SportsMatchesView({
               <li
                 key={`${match.home_team.key}-${match.away_team.key}-${match.date}`}
               >
-                <SportsMatchRow match={match} variant="upcoming" size="list" />
+                <SportsMatchRow
+                  match={match}
+                  variant="upcoming"
+                  size="list"
+                  handleInteraction={handleInteraction}
+                />
               </li>
             ))}
           </ul>
         ) : (
           next[0] && (
             <div className="match-highlight-view">
-              <SportsMatchRow match={next[0]} variant="upcoming" size={size} />
+              <SportsMatchRow
+                match={next[0]}
+                variant="upcoming"
+                size={size}
+                handleInteraction={handleInteraction}
+              />
             </div>
           )
         )}
