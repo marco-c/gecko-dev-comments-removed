@@ -39,6 +39,9 @@ class GeckoInstance:
         "app.normandy.api_url": "",
         
         
+        "apz.axis_lock.mode": 0,
+        
+        
         
         
         
