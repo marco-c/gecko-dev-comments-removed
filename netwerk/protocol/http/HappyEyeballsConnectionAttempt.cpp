@@ -187,6 +187,11 @@ nsresult HappyEyeballsConnectionAttempt::ProcessConnectionResult(
         }
       }
       mTransaction->Close(aCloseReason);
+      
+      
+      
+      
+      mTransaction = nullptr;
     }
   };
 
@@ -356,18 +361,18 @@ nsresult HappyEyeballsConnectionAttempt::ProcessHappyEyeballsOutput() {
         RefPtr<HappyEyeballsConnectionAttempt> self(this);
         RefPtr<ConnectionEntry> entry(mEntry);
 
-        if (nsHttpTransaction* trans = mTransaction->QueryHttpTransaction()) {
-          if (entry) {
+        nsHttpTransaction* trans =
+            mTransaction ? mTransaction->QueryHttpTransaction() : nullptr;
+        if (entry) {
+          if (trans) {
             entry->RemoveTransFromPendingQ(trans);
           }
+          entry->RemoveConnectionAttempt(this, false);
         }
 
         CloseHttpTransaction(event.failed.reason);
 
         Abandon();
-        if (entry) {
-          entry->RemoveConnectionAttempt(this, false);
-        }
         return NS_OK;
       }
 
@@ -1111,29 +1116,35 @@ void HappyEyeballsConnectionAttempt::OnSucceeded() {
   nsHttpTransaction* trans =
       mTransaction ? mTransaction->QueryHttpTransaction() : nullptr;
   if (mZeroRttHandle->AnyStarted() && !mZeroRttHandle->HadWinner()) {
-    
-    
-    
-    MOZ_ASSERT(trans,
-               "AnyStarted implies a live real transaction; "
-               "QueryHttpTransaction() should not be null");
-    if (trans) {
-      trans->FinishAdopted0RTT(true);
+    if (!mTransaction) {
       
       
       
+    } else {
       
       
-      RefPtr<PendingTransactionInfo> existing;
-      if (entry) {
-        existing = gHttpHandler->ConnMgr()->FindTransactionHelper(
-            false, entry, trans);
+      
+      MOZ_ASSERT(trans,
+                 "AnyStarted implies a live real transaction; "
+                 "QueryHttpTransaction() should not be null");
+      if (trans) {
+        trans->FinishAdopted0RTT(true);
+        
+        
+        
+        
+        
+        RefPtr<PendingTransactionInfo> existing;
+        if (entry) {
+          existing = gHttpHandler->ConnMgr()->FindTransactionHelper(
+              false, entry, trans);
+        }
+        if (!existing) {
+          gHttpHandler->ConnMgr()->AddTransaction(trans, trans->Priority());
+        }
+        restartedFallback0Rtt = true;
+        mTransaction = nullptr;
       }
-      if (!existing) {
-        gHttpHandler->ConnMgr()->AddTransaction(trans, trans->Priority());
-      }
-      restartedFallback0Rtt = true;
-      mTransaction = nullptr;
     }
   }
 
