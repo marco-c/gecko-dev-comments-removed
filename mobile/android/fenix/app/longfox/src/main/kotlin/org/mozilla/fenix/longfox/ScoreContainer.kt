@@ -8,7 +8,6 @@ package org.mozilla.fenix.longfox
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,17 +27,17 @@ import androidx.compose.ui.unit.sp
 fun ScoreContainer(score: Int) {
     Box(
         modifier = Modifier
-            .offset(12.dp, 12.dp)
-            .background(Color.Black)
+            .background(LongFoxColors.backgroundColor)
             .padding(8.dp)
         ,
         contentAlignment = Alignment.Center,
     ) {
         Text(
             text = stringResource(R.string.score, score),
+            fontFamily = LongFoxText.zx,
             color = Color.White,
             fontWeight = FontWeight.Bold,
-            fontSize = 28.sp,
+            fontSize = 24.sp,
         )
     }
 }
