@@ -1013,6 +1013,11 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePosition {
   inline mozilla::StyleContentDistribution UsedContentAlignment(
       LogicalAxis aAxis) const;
 
+  bool CanHaveDefaultAnchor() const {
+    return mPositionAnchor.value.IsIdent() || mPositionAnchor.value.IsAuto() ||
+           (mPositionAnchor.value.IsNormal() && !mPositionArea.IsNone());
+  }
+
   Position mObjectPosition;
   StyleRect<mozilla::StyleInset> mOffset;
   StyleSize mWidth;
@@ -2107,6 +2112,24 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleUIReset {
   const mozilla::StyleAnimationRangeEnd& GetAnimationRangeEnd(
       uint32_t aIndex) const {
     return mAnimations[aIndex % mAnimationRangeEndCount].GetRangeEnd();
+  }
+
+  nsAtom* GetScrollTimelineName(uint32_t aIndex) const {
+    return mScrollTimelines[aIndex % mScrollTimelineNameCount].GetName();
+  }
+  mozilla::StyleScrollAxis GetScrollTimelineAxis(uint32_t aIndex) const {
+    return mScrollTimelines[aIndex % mScrollTimelineAxisCount].GetAxis();
+  }
+
+  nsAtom* GetViewTimelineName(uint32_t aIndex) const {
+    return mViewTimelines[aIndex % mViewTimelineNameCount].GetName();
+  }
+  mozilla::StyleScrollAxis GetViewTimelineAxis(uint32_t aIndex) const {
+    return mViewTimelines[aIndex % mViewTimelineAxisCount].GetAxis();
+  }
+  const mozilla::StyleViewTimelineInset& GetViewTimelineInset(
+      uint32_t aIndex) const {
+    return mViewTimelines[aIndex % mViewTimelineInsetCount].GetInset();
   }
 
   mozilla::StyleBoolInteger mMozForceBrokenImageIcon;
