@@ -374,7 +374,11 @@ void nsInlineFrame::Reflow(nsPresContext* aPresContext,
 
   ReflowFrames(aPresContext, aReflowInput, irs, aReflowOutput, aStatus);
 
-  ReflowAbsoluteFrames(aPresContext, aReflowOutput, aReflowInput, aStatus);
+  if (!StaticPrefs::layout_abspos_fragment_aware_inline_cb_enabled()) {
+    
+    
+    ReflowAbsoluteFrames(aPresContext, aReflowOutput, aReflowInput, aStatus);
+  }
 
   
   

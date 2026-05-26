@@ -171,7 +171,11 @@ void nsRubyFrame::Reflow(nsPresContext* aPresContext,
     rbc->UpdateDescendantLeadings(mLeadings);
   }
 
-  ReflowAbsoluteFrames(aPresContext, aDesiredSize, aReflowInput, aStatus);
+  if (!StaticPrefs::layout_abspos_fragment_aware_inline_cb_enabled()) {
+    
+    
+    ReflowAbsoluteFrames(aPresContext, aDesiredSize, aReflowInput, aStatus);
+  }
 }
 
 void nsRubyFrame::ReflowSegment(nsPresContext* aPresContext,

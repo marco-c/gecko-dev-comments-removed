@@ -759,6 +759,47 @@ class nsBlockFrame : public nsContainerFrame {
 
 
 
+
+  void ReflowAbsoluteDescendantsInInlineFrame(nsPresContext* aPresContext,
+                                              const ReflowInput& aReflowInput,
+                                              ReflowOutput& aReflowOutput,
+                                              nsReflowStatus& aStatus);
+
+  
+
+
+
+
+
+
+
+
+
+  mozilla::Maybe<mozilla::OverflowAreas>
+  WalkInlineDescendantsToReflowAbsoluteFrames(nsIFrame* aFrame,
+                                              nsPresContext* aPresContext,
+                                              const ReflowInput& aReflowInput,
+                                              nsReflowStatus& aStatus);
+
+  
+
+
+
+
+
+
+
+
+
+
+  mozilla::Maybe<mozilla::OverflowAreas> ReflowAbsoluteFramesInInlineFrame(
+      nsInlineFrame* aInlineFrame, nsPresContext* aPresContext,
+      const ReflowInput& aReflowInput, nsReflowStatus& aStatus);
+
+  
+
+
+
   mozilla::UsedClear FindTrailingClear();
 
   

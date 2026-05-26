@@ -56,6 +56,7 @@
 #include "nsGkAtoms.h"
 #include "nsHTMLParts.h"
 #include "nsIFrameInlines.h"
+#include "nsInlineFrame.h"
 #include "nsLayoutUtils.h"
 #include "nsLineBox.h"
 #include "nsLineLayout.h"
@@ -1276,6 +1277,187 @@ static bool ClearLineClampEllipsis(nsBlockFrame* aFrame) {
 
 void nsBlockFrame::ClearLineClampEllipsis() { ::ClearLineClampEllipsis(this); }
 
+
+
+
+static nsRect ComputeInlineAbsoluteCBRect(const nsInlineFrame* aInlineFrame) {
+  MOZ_ASSERT(aInlineFrame->IsAbsoluteContainer(),
+             "Why computing the rect if it is not an absolute container?");
+
+  const auto cbwm = aInlineFrame->GetWritingMode();
+
+  
+  
+  
+  
+  
+  
+  
+  
+  const nsSize dummyContainerSize;
+
+  
+  
+  auto BorderBoxRectRelativeToInlineFrame = [&](const nsIFrame* aFrame) {
+    const nsRect physicalRect =
+        aFrame->GetRectRelativeToSelf() + aFrame->GetOffsetTo(aInlineFrame);
+    return LogicalRect(cbwm, physicalRect, dummyContainerSize);
+  };
+
+  const auto* firstCont =
+      nsLayoutUtils::FirstContinuationOrIBSplitSibling(aInlineFrame);
+  const auto* lastCont =
+      nsLayoutUtils::LastContinuationOrIBSplitSibling(aInlineFrame);
+  const LogicalRect firstContRect =
+      BorderBoxRectRelativeToInlineFrame(firstCont);
+  const LogicalRect lastContRect = BorderBoxRectRelativeToInlineFrame(lastCont);
+
+  
+  
+  const nscoord iStart = firstContRect.IStart(cbwm);
+  const nscoord bStart = firstContRect.BStart(cbwm);
+  const nscoord iEnd = lastContRect.IEnd(cbwm);
+  const nscoord bEnd = lastContRect.BEnd(cbwm);
+  LogicalRect cbRect(cbwm, iStart, bStart, iEnd - iStart, bEnd - bStart);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  const LogicalMargin firstBorder = firstCont->GetLogicalUsedBorder(cbwm);
+  const LogicalMargin lastBorder = lastCont->GetLogicalUsedBorder(cbwm);
+  const LogicalMargin cbBorder(cbwm, firstBorder.BStart(cbwm),
+                               lastBorder.IEnd(cbwm), lastBorder.BEnd(cbwm),
+                               firstBorder.IStart(cbwm));
+  cbRect.Deflate(cbwm, cbBorder);
+
+  return cbRect.GetPhysicalRect(cbwm, dummyContainerSize);
+}
+
+void nsBlockFrame::ReflowAbsoluteDescendantsInInlineFrame(
+    nsPresContext* aPresContext, const ReflowInput& aReflowInput,
+    ReflowOutput& aReflowOutput, nsReflowStatus& aStatus) {
+  for (auto& line : Lines()) {
+    if (line.IsBlock()) {
+      
+      
+      continue;
+    }
+
+    
+    
+    OverflowAreas lineAbsposOverflow;
+    for (nsIFrame* kid : line.ChildFrames()) {
+      if (auto kidOverflow = WalkInlineDescendantsToReflowAbsoluteFrames(
+              kid, aPresContext, aReflowInput, aStatus)) {
+        lineAbsposOverflow.UnionWithAbsoluteOverflowAreas(*kidOverflow +
+                                                          kid->GetPosition());
+      }
+    }
+
+    if (lineAbsposOverflow != OverflowAreas()) {
+      
+      
+      
+      OverflowAreas lineOverflow = line.GetOverflowAreas();
+      lineOverflow.UnionWithAbsoluteOverflowAreas(lineAbsposOverflow);
+      line.SetOverflowAreas(lineOverflow);
+
+      
+      aReflowOutput.mOverflowAreas.UnionWithAbsoluteOverflowAreas(
+          lineAbsposOverflow);
+    }
+  }
+}
+
+Maybe<OverflowAreas> nsBlockFrame::WalkInlineDescendantsToReflowAbsoluteFrames(
+    nsIFrame* aFrame, nsPresContext* aPresContext,
+    const ReflowInput& aReflowInput, nsReflowStatus& aStatus) {
+  if (aFrame->IsBlockFrameOrSubclass()) {
+    
+    
+    return Nothing();
+  }
+
+  
+  
+  OverflowAreas absposOverflow;
+
+  
+  
+  
+  for (nsIFrame* kid : aFrame->PrincipalChildList()) {
+    if (auto absposOverflowFromKid =
+            WalkInlineDescendantsToReflowAbsoluteFrames(
+                kid, aPresContext, aReflowInput, aStatus)) {
+      absposOverflow.UnionWithAbsoluteOverflowAreas(*absposOverflowFromKid +
+                                                    kid->GetPosition());
+    }
+  }
+
+  if (nsInlineFrame* inlineFrame = do_QueryFrame(aFrame)) {
+    
+    
+    if (auto absposOverflowFromInlineFrame = ReflowAbsoluteFramesInInlineFrame(
+            inlineFrame, aPresContext, aReflowInput, aStatus)) {
+      absposOverflow.UnionWithAbsoluteOverflowAreas(
+          *absposOverflowFromInlineFrame);
+    }
+  }
+
+  if (absposOverflow == OverflowAreas()) {
+    return Nothing();
+  }
+
+  
+  
+  
+  OverflowAreas frameOverflow = aFrame->GetOverflowAreas();
+  frameOverflow.UnionWithAbsoluteOverflowAreas(absposOverflow);
+  aFrame->FinishAndStoreOverflow(frameOverflow, aFrame->GetSize());
+
+  return Some(absposOverflow);
+}
+
+Maybe<OverflowAreas> nsBlockFrame::ReflowAbsoluteFramesInInlineFrame(
+    nsInlineFrame* aInlineFrame, nsPresContext* aPresContext,
+    const ReflowInput& aReflowInput, nsReflowStatus& aStatus) {
+  auto* absCB = aInlineFrame->GetAbsoluteContainingBlock();
+  if (!absCB || !absCB->PrepareAbsoluteFrames(aInlineFrame)) {
+    return Nothing();
+  }
+
+  
+  
+  MOZ_ASSERT(!aInlineFrame->GetPrevInFlow(),
+             "Only the first inline continuation can have absolute kids!");
+
+  const nsRect cbRect = ComputeInlineAbsoluteCBRect(aInlineFrame);
+  const WritingMode cbwm = aInlineFrame->GetWritingMode();
+
+  
+  
+  const LogicalSize availSize(cbwm, aInlineFrame->ISize(cbwm),
+                              NS_UNCONSTRAINEDSIZE);
+  ReflowInput inlineRI(aPresContext, aReflowInput, aInlineFrame, availSize);
+
+  
+  AbsPosReflowFlags flags{AbsPosReflowFlag::CBWidthChanged,
+                          AbsPosReflowFlag::CBHeightChanged};
+
+  
+  OverflowAreas absposOverflow;
+  nsReflowStatus absposStatus;
+  absCB->Reflow(aInlineFrame, aPresContext, inlineRI, absposStatus, cbRect,
+                flags, &absposOverflow);
+  aStatus.MergeCompletionStatusFrom(absposStatus);
+  return Some(absposOverflow);
+}
+
 void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
                           const ReflowInput& aReflowInput,
                           nsReflowStatus& aStatus) {
@@ -1614,6 +1796,15 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
   aMetrics.mOverflowAreas.UnionWith(trialState.mOcBounds);
   
   aMetrics.mOverflowAreas.UnionWith(trialState.mFcBounds);
+
+  
+  
+  if (StaticPrefs::layout_abspos_fragment_aware_inline_cb_enabled() &&
+      !aReflowInput.WillReflowAgainForClearance() &&
+      !aPresContext->HasPendingInterrupt()) {
+    ReflowAbsoluteDescendantsInInlineFrame(aPresContext, aReflowInput, aMetrics,
+                                           reflowStatus);
+  }
 
   
   
