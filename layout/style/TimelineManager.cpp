@@ -121,22 +121,18 @@ nsTArray<RefPtr<const nsAtom>> TimelineManager::UpdateTimelines(
         return TryDestroyTimeline<ScrollTimeline>(aElement, aPseudoRequest,
                                                   mScrollTimelineNameMap);
       }
-      return DoUpdateTimelines<StyleScrollTimeline, ScrollTimeline>(
+      return DoUpdateTimelines<ScrollTimeline>(
           mPresContext, aElement, aPseudoRequest,
-          aComputedStyle->StyleUIReset()->mScrollTimelines,
-          aComputedStyle->StyleUIReset()->mScrollTimelineNameCount,
-          mScrollTimelineNameMap);
+          aComputedStyle->StyleUIReset(), mScrollTimelineNameMap);
 
     case ProgressTimelineType::View:
       if (shouldDestroyTimelines) {
         return TryDestroyTimeline<ViewTimeline>(aElement, aPseudoRequest,
                                                 mViewTimelineNameMap);
       }
-      return DoUpdateTimelines<StyleViewTimeline, ViewTimeline>(
+      return DoUpdateTimelines<ViewTimeline>(
           mPresContext, aElement, aPseudoRequest,
-          aComputedStyle->StyleUIReset()->mViewTimelines,
-          aComputedStyle->StyleUIReset()->mViewTimelineNameCount,
-          mViewTimelineNameMap);
+          aComputedStyle->StyleUIReset(), mViewTimelineNameMap);
   }
   MOZ_ASSERT_UNREACHABLE("Unhandled timelinetype?");
   return {};
@@ -291,34 +287,89 @@ static already_AddRefed<TimelineType> PopExistingTimeline(
   return aCollection->Extract(aName);
 }
 
-template <typename StyleType, typename TimelineType>
+
+
+
+
+template <typename TimelineType>
+struct TimelineBuilder;
+
+template <>
+struct TimelineBuilder<ScrollTimeline> {
+  static size_t NameCount(const nsStyleUIReset* aUI) {
+    return aUI->mScrollTimelineNameCount;
+  }
+  static nsAtom* Name(const nsStyleUIReset* aUI, size_t aIdx) {
+    return aUI->GetScrollTimelineName(aIdx);
+  }
+  static already_AddRefed<ScrollTimeline> Make(
+      nsPresContext* aPC, Element* aElement, const PseudoStyleRequest& aPseudo,
+      const nsStyleUIReset* aUI, size_t aIdx) {
+    return ScrollTimeline::MakeNamed(aPC->Document(), aElement, aPseudo,
+                                     aUI->GetScrollTimelineAxis(aIdx));
+  }
+  static void Replace(ScrollTimeline* aDest, Element* aElement,
+                      const PseudoStyleRequest& aPseudo, nsAtom* aName,
+                      const nsStyleUIReset* aUI, size_t aIdx) {
+    aDest->ReplacePropertiesWith(aElement, aPseudo, aName,
+                                 aUI->GetScrollTimelineAxis(aIdx));
+  }
+};
+
+template <>
+struct TimelineBuilder<ViewTimeline> {
+  static size_t NameCount(const nsStyleUIReset* aUI) {
+    return aUI->mViewTimelineNameCount;
+  }
+  static nsAtom* Name(const nsStyleUIReset* aUI, size_t aIdx) {
+    return aUI->GetViewTimelineName(aIdx);
+  }
+  static already_AddRefed<ViewTimeline> Make(nsPresContext* aPC,
+                                             Element* aElement,
+                                             const PseudoStyleRequest& aPseudo,
+                                             const nsStyleUIReset* aUI,
+                                             size_t aIdx) {
+    return ViewTimeline::MakeNamed(aPC->Document(), aElement, aPseudo,
+                                   aUI->GetViewTimelineAxis(aIdx),
+                                   aUI->GetViewTimelineInset(aIdx));
+  }
+  static void Replace(ViewTimeline* aDest, Element* aElement,
+                      const PseudoStyleRequest& aPseudo, nsAtom* aName,
+                      const nsStyleUIReset* aUI, size_t aIdx) {
+    aDest->ReplacePropertiesWith(aElement, aPseudo, aName,
+                                 aUI->GetViewTimelineAxis(aIdx),
+                                 aUI->GetViewTimelineInset(aIdx));
+  }
+};
+
+template <typename TimelineType>
 static auto BuildTimelines(nsPresContext* aPresContext, Element* aElement,
                            const PseudoStyleRequest& aPseudoRequest,
-                           const nsStyleAutoArray<StyleType>& aTimelines,
-                           size_t aTimelineCount,
+                           const nsStyleUIReset* aUIReset,
                            TimelineCollection<TimelineType>* aCollection) {
+  using Builder = TimelineBuilder<TimelineType>;
   typename TimelineCollection<TimelineType>::TimelineMap result;
+  const size_t count = Builder::NameCount(aUIReset);
   
   
   
-  for (size_t idx = 0; idx < aTimelineCount; ++idx) {
-    const StyleType& timeline = aTimelines[idx];
-    if (timeline.GetName() == nsGkAtoms::_empty) {
+  for (size_t idx = 0; idx < count; ++idx) {
+    nsAtom* name = Builder::Name(aUIReset, idx);
+    if (name == nsGkAtoms::_empty) {
       continue;
     }
 
-    RefPtr<TimelineType> dest =
-        PopExistingTimeline(timeline.GetName(), aCollection);
+    RefPtr<TimelineType> dest = PopExistingTimeline(name, aCollection);
     if (dest) {
-      dest->ReplacePropertiesWith(aElement, aPseudoRequest, timeline);
+      Builder::Replace(dest, aElement, aPseudoRequest, name, aUIReset, idx);
     } else {
-      dest = TimelineType::MakeNamed(aPresContext->Document(), aElement,
-                                     aPseudoRequest, timeline);
+      dest =
+          Builder::Make(aPresContext, aElement, aPseudoRequest, aUIReset, idx);
     }
     MOZ_ASSERT(dest);
 
     
-    (void)result.InsertOrUpdate(timeline.GetName(), dest);
+    (void)result.InsertOrUpdate(name, dest);
   }
   return result;
 }
@@ -341,24 +392,23 @@ ViewTimelineCollection& EnsureTimelineCollection<ViewTimeline>(
       aElement, aPseudoRequest);
 }
 
-template <typename StyleType, typename TimelineType>
+template <typename TimelineType>
 nsTArray<RefPtr<const nsAtom>> TimelineManager::DoUpdateTimelines(
     nsPresContext* aPresContext, Element* aElement,
-    const PseudoStyleRequest& aPseudoRequest,
-    const nsStyleAutoArray<StyleType>& aStyleTimelines, size_t aTimelineCount,
+    const PseudoStyleRequest& aPseudoRequest, const nsStyleUIReset* aUIReset,
     TimelineNameMap<TimelineType>& aTimelineNameMap) {
+  using Builder = TimelineBuilder<TimelineType>;
   auto* collection =
       TimelineCollection<TimelineType>::Get(aElement, aPseudoRequest);
-  if (!collection && aTimelineCount == 1 &&
-      aStyleTimelines[0].GetName() == nsGkAtoms::_empty) {
+  if (!collection && Builder::NameCount(aUIReset) == 1 &&
+      Builder::Name(aUIReset, 0) == nsGkAtoms::_empty) {
     return {};
   }
 
   
   
-  auto newTimelines = BuildTimelines<StyleType, TimelineType>(
-      aPresContext, aElement, aPseudoRequest, aStyleTimelines, aTimelineCount,
-      collection);
+  auto newTimelines = BuildTimelines<TimelineType>(
+      aPresContext, aElement, aPseudoRequest, aUIReset, collection);
 
   if (newTimelines.IsEmpty()) {
     nsTArray<RefPtr<const nsAtom>> result{
