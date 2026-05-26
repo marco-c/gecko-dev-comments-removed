@@ -1123,22 +1123,12 @@ impl<'a> SceneBuilder<'a> {
             info.transform,
         );
 
-        let pipeline_id = info.id.pipeline_id();
-        let sticky_index = self.spatial_tree.add_sticky_frame(
+        let index = self.spatial_tree.add_sticky_frame(
             parent_node_index,
             sticky_frame_info,
-            pipeline_id,
+            info.id.pipeline_id(),
         );
-        
-        
-        
-        
-        let offset_index = self.spatial_tree.add_offset_frame(
-            sticky_index,
-            LayoutVector2D::zero(),
-            pipeline_id,
-        );
-        self.id_to_index_mapper_stack.last_mut().unwrap().add_spatial_node(info.id, offset_index);
+        self.id_to_index_mapper_stack.last_mut().unwrap().add_spatial_node(info.id, index);
     }
 
     fn build_reference_frame(
@@ -2985,7 +2975,7 @@ impl<'a> SceneBuilder<'a> {
         scroll_offset_generation: APZScrollGeneration,
         has_scroll_linked_effect: HasScrollLinkedEffect,
     ) -> SpatialNodeIndex {
-        let scroll_index = self.spatial_tree.add_scroll_frame(
+        let node_index = self.spatial_tree.add_scroll_frame(
             parent_node_index,
             external_id,
             pipeline_id,
@@ -2996,18 +2986,8 @@ impl<'a> SceneBuilder<'a> {
             scroll_offset_generation,
             has_scroll_linked_effect,
         );
-        
-        
-        
-        
-        
-        let offset_index = self.spatial_tree.add_offset_frame(
-            scroll_index,
-            LayoutVector2D::zero(),
-            pipeline_id,
-        );
-        self.id_to_index_mapper_stack.last_mut().unwrap().add_spatial_node(new_node_id, offset_index);
-        offset_index
+        self.id_to_index_mapper_stack.last_mut().unwrap().add_spatial_node(new_node_id, node_index);
+        node_index
     }
 
     pub fn push_shadow(
