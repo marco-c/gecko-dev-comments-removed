@@ -20,6 +20,7 @@
 #include "mozilla/ErrorNames.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/net/ChannelClassifierUtils.h"
 #include "mozilla/net/UrlClassifierCommon.h"
 #include "mozilla/net/UrlClassifierFeatureFactory.h"
 #include "mozilla/ClearOnShutdown.h"
@@ -414,8 +415,8 @@ nsChannelClassifier::OnClassifyComplete(nsresult aErrorCode,
       
       
       
-      UrlClassifierCommon::SetBlockedContent(mChannel, aErrorCode, aList,
-                                             aProvider, aFullHash);
+      ChannelClassifierUtils::SetBlockedContent(mChannel, aErrorCode, aList,
+                                                aProvider, aFullHash);
 
       if (aErrorCode == NS_ERROR_MALWARE_URI ||
           aErrorCode == NS_ERROR_PHISHING_URI ||

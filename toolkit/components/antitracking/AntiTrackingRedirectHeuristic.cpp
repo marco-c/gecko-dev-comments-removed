@@ -11,7 +11,7 @@
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/net/CookieJarSettings.h"
-#include "mozilla/net/UrlClassifierCommon.h"
+#include "mozilla/net/ChannelClassifierUtils.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/glean/AntitrackingMetrics.h"
 #include "nsContentUtils.h"
@@ -59,7 +59,7 @@ bool ShouldCheckRedirectHeuristicETP(nsIChannel* aOldChannel, nsIURI* aOldURI,
 
   
   
-  if (!net::UrlClassifierCommon::IsTrackingClassificationFlag(
+  if (!net::ChannelClassifierUtils::IsTrackingClassificationFlag(
           oldClassificationFlags, NS_UsePrivateBrowsing(aOldChannel)) &&
       !allowedByPreviousRedirect) {
     
@@ -100,7 +100,7 @@ bool ShouldRedirectHeuristicApplyETP(nsIChannel* aNewChannel, nsIURI* aNewURI) {
   uint32_t newClassificationFlags =
       newClassifiedChannel->GetFirstPartyClassificationFlags();
 
-  if (net::UrlClassifierCommon::IsTrackingClassificationFlag(
+  if (net::ChannelClassifierUtils::IsTrackingClassificationFlag(
           newClassificationFlags, NS_UsePrivateBrowsing(aNewChannel))) {
     
     LOG_SPEC(("Ignoring the redirect to %s because it's not tracking to "
