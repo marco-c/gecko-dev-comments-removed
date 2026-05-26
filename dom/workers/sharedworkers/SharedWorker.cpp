@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "SharedWorker.h"
 
 #include "mozilla/AntiTrackingUtils.h"
@@ -83,6 +81,12 @@ already_AddRefed<SharedWorker> SharedWorker::Constructor(
   nsCOMPtr<nsPIDOMWindowInner> window =
       do_QueryInterface(aGlobal.GetAsSupports());
   MOZ_ASSERT(window);
+
+  if (!window->IsCurrentInnerWindow()) {
+    aRv.ThrowInvalidStateError(
+        "Cannot create worker for a going to be discarded document");
+    return nullptr;
+  }
 
   
   
