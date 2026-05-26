@@ -60,7 +60,7 @@ use crate::frame_builder::FrameBuilderConfig;
 use glyph_rasterizer::{FontInstance, SharedFontResources};
 use crate::hit_test::HitTestingScene;
 use crate::intern::Interner;
-use crate::internal_types::{FastHashMap, LayoutPrimitiveInfo, Filter, PlaneSplitterIndex, PipelineInstanceId};
+use crate::internal_types::{FastHashMap, LayoutPrimitiveInfo, Filter, PlaneSplitterIndex};
 use crate::svg_filter::{FilterGraphNode, FilterGraphOp, FilterGraphPictureReference};
 use crate::picture::{Picture3DContext, PictureCompositeMode, PictureInstance};
 use crate::picture::{BlitReason, OrderedPictureChild, PrimitiveList, SurfaceInfo, PictureFlags};
@@ -88,7 +88,7 @@ use crate::scene::{BuiltScene, Scene, ScenePipeline, SceneStats, StackingContext
 use crate::scene_builder_thread::Interners;
 use crate::space::SpaceSnapper;
 use crate::spatial_node::{
-    ReferenceFrameInfo, StickyFrameInfo, ScrollFrameKind, SpatialNodeUid, SpatialNodeType
+    ReferenceFrameInfo, StickyFrameInfo, ScrollFrameKind, SpatialNodeType
 };
 use crate::tile_cache::TileCacheBuilder;
 use euclid::approxeq::ApproxEq;
@@ -533,9 +533,6 @@ pub struct SceneBuilder<'a> {
     
     prim_instances: Vec<PrimitiveInstance>,
 
-    
-    
-    pipeline_instance_ids: FastHashMap<PipelineId, u32>,
 
     
     
@@ -570,6 +567,10 @@ impl<'a> SceneBuilder<'a> {
         
         let root_pipeline_id = root_pipeline.or(scene.root_pipeline_id).unwrap();
         let root_pipeline = scene.pipelines.get(&root_pipeline_id).unwrap();
+
+        
+        
+        spatial_tree.reset();
         let root_reference_frame_index = spatial_tree.root_reference_frame_index();
 
         
@@ -607,7 +608,6 @@ impl<'a> SceneBuilder<'a> {
             snapshot_pictures: Vec::new(),
             next_plane_splitter_index: 0,
             prim_instances: mem::take(&mut recycler.prim_instances),
-            pipeline_instance_ids: FastHashMap::default(),
             surfaces: mem::take(&mut recycler.surfaces),
             clip_tree_builder: recycler.clip_tree_builder.take().unwrap_or_else(|| ClipTreeBuilder::new()),
             extra_stacking_context_stack: Vec::new(),
@@ -894,7 +894,6 @@ impl<'a> SceneBuilder<'a> {
         &mut self,
         dl: &BuiltDisplayList,
         pipeline_id: PipelineId,
-        instance_id: PipelineInstanceId,
     ) {
         dl.iter_spatial_tree(|item| {
             match item {
@@ -904,7 +903,6 @@ impl<'a> SceneBuilder<'a> {
                         descriptor,
                         parent_space,
                         pipeline_id,
-                        instance_id,
                     );
                 }
                 SpatialTreeItem::ReferenceFrame(descriptor) => {
@@ -913,7 +911,6 @@ impl<'a> SceneBuilder<'a> {
                         descriptor,
                         parent_space,
                         pipeline_id,
-                        instance_id,
                     );
                 }
                 SpatialTreeItem::StickyFrame(descriptor) => {
@@ -921,7 +918,6 @@ impl<'a> SceneBuilder<'a> {
                     self.build_sticky_frame(
                         descriptor,
                         parent_space,
-                        instance_id,
                     );
                 }
                 SpatialTreeItem::Invalid => {
@@ -953,16 +949,12 @@ impl<'a> SceneBuilder<'a> {
 
         self.id_to_index_mapper_stack.push(NodeIdToIndexMapper::default());
 
-        let instance_id = self.get_next_instance_id_for_pipeline(root_pipeline_id);
-
         self.push_root(
             root_pipeline_id,
-            instance_id,
         );
         self.build_spatial_tree_for_display_list(
             &root_pipeline.display_list,
             root_pipeline_id,
-            instance_id,
         );
 
         let mut stack = vec![BuildContext {
@@ -1119,7 +1111,6 @@ impl<'a> SceneBuilder<'a> {
         &mut self,
         info: &StickyFrameDescriptor,
         parent_node_index: SpatialNodeIndex,
-        instance_id: PipelineInstanceId,
     ) {
         let external_scroll_offset = self.current_external_scroll_offset(parent_node_index);
 
@@ -1132,14 +1123,22 @@ impl<'a> SceneBuilder<'a> {
             info.transform,
         );
 
-        let index = self.spatial_tree.add_sticky_frame(
+        let pipeline_id = info.id.pipeline_id();
+        let sticky_index = self.spatial_tree.add_sticky_frame(
             parent_node_index,
             sticky_frame_info,
-            info.id.pipeline_id(),
-            info.key,
-            instance_id,
+            pipeline_id,
         );
-        self.id_to_index_mapper_stack.last_mut().unwrap().add_spatial_node(info.id, index);
+        
+        
+        
+        
+        let offset_index = self.spatial_tree.add_offset_frame(
+            sticky_index,
+            LayoutVector2D::zero(),
+            pipeline_id,
+        );
+        self.id_to_index_mapper_stack.last_mut().unwrap().add_spatial_node(info.id, offset_index);
     }
 
     fn build_reference_frame(
@@ -1147,7 +1146,6 @@ impl<'a> SceneBuilder<'a> {
         info: &ReferenceFrameDescriptor,
         parent_space: SpatialNodeIndex,
         pipeline_id: PipelineId,
-        instance_id: PipelineInstanceId,
     ) {
         let transform = match info.reference_frame.transform {
             ReferenceTransformBinding::Static { binding } => binding,
@@ -1220,7 +1218,7 @@ impl<'a> SceneBuilder<'a> {
             transform,
             info.reference_frame.kind,
             (origin + external_scroll_offset).to_vector(),
-            SpatialNodeUid::external(info.reference_frame.key, pipeline_id, instance_id),
+            false,
         );
     }
 
@@ -1229,7 +1227,6 @@ impl<'a> SceneBuilder<'a> {
         info: &ScrollFrameDescriptor,
         parent_node_index: SpatialNodeIndex,
         pipeline_id: PipelineId,
-        instance_id: PipelineInstanceId,
     ) {
         
         
@@ -1248,23 +1245,7 @@ impl<'a> SceneBuilder<'a> {
             info.external_scroll_offset,
             info.scroll_offset_generation,
             info.has_scroll_linked_effect,
-            SpatialNodeUid::external(info.key, pipeline_id, instance_id),
         );
-    }
-
-    
-    fn get_next_instance_id_for_pipeline(
-        &mut self,
-        pipeline_id: PipelineId,
-    ) -> PipelineInstanceId {
-        let next_instance = self.pipeline_instance_ids
-            .entry(pipeline_id)
-            .or_insert(0);
-
-        let instance_id = PipelineInstanceId::new(*next_instance);
-        *next_instance += 1;
-
-        instance_id
     }
 
     fn push_iframe(
@@ -1292,8 +1273,6 @@ impl<'a> SceneBuilder<'a> {
 
         self.clip_tree_builder.push_clip_id(ClipId::root(iframe_pipeline_id));
 
-        let instance_id = self.get_next_instance_id_for_pipeline(iframe_pipeline_id);
-
         self.id_to_index_mapper_stack.push(NodeIdToIndexMapper::default());
 
         let bounds = self.normalize_scroll_offset_and_snap_rect(
@@ -1313,7 +1292,7 @@ impl<'a> SceneBuilder<'a> {
                 paired_with_perspective: false,
             },
             bounds.min.to_vector(),
-            SpatialNodeUid::root_reference_frame(iframe_pipeline_id, instance_id),
+            true,
         );
 
         let iframe_rect = LayoutRect::from_size(bounds.size());
@@ -1332,7 +1311,6 @@ impl<'a> SceneBuilder<'a> {
             LayoutVector2D::zero(),
             APZScrollGeneration::default(),
             HasScrollLinkedEffect::No,
-            SpatialNodeUid::root_scroll_frame(iframe_pipeline_id, instance_id),
         );
 
         
@@ -1347,7 +1325,6 @@ impl<'a> SceneBuilder<'a> {
         self.build_spatial_tree_for_display_list(
             &pipeline.display_list,
             iframe_pipeline_id,
-            instance_id,
         );
 
         Some(pipeline.display_list.iter())
@@ -2821,7 +2798,7 @@ impl<'a> SceneBuilder<'a> {
         source_transform: PropertyBinding<LayoutTransform>,
         kind: ReferenceFrameKind,
         origin_in_parent_reference_frame: LayoutVector2D,
-        uid: SpatialNodeUid,
+        is_pipeline_root: bool,
     ) -> SpatialNodeIndex {
         let index = self.spatial_tree.add_reference_frame(
             parent_index,
@@ -2830,7 +2807,7 @@ impl<'a> SceneBuilder<'a> {
             kind,
             origin_in_parent_reference_frame,
             pipeline_id,
-            uid,
+            is_pipeline_root,
         );
         self.id_to_index_mapper_stack.last_mut().unwrap().add_spatial_node(reference_frame_id, index);
 
@@ -2840,7 +2817,6 @@ impl<'a> SceneBuilder<'a> {
     fn push_root(
         &mut self,
         pipeline_id: PipelineId,
-        instance: PipelineInstanceId,
     ) {
         let spatial_node_index = self.push_reference_frame(
             SpatialId::root_reference_frame(pipeline_id),
@@ -2854,7 +2830,7 @@ impl<'a> SceneBuilder<'a> {
                 paired_with_perspective: false,
             },
             LayoutVector2D::zero(),
-            SpatialNodeUid::root_reference_frame(pipeline_id, instance),
+            true,
         );
 
         let viewport_rect = LayoutRect::max_rect();
@@ -2872,7 +2848,6 @@ impl<'a> SceneBuilder<'a> {
             LayoutVector2D::zero(),
             APZScrollGeneration::default(),
             HasScrollLinkedEffect::No,
-            SpatialNodeUid::root_scroll_frame(pipeline_id, instance),
         );
     }
 
@@ -3009,9 +2984,8 @@ impl<'a> SceneBuilder<'a> {
         external_scroll_offset: LayoutVector2D,
         scroll_offset_generation: APZScrollGeneration,
         has_scroll_linked_effect: HasScrollLinkedEffect,
-        uid: SpatialNodeUid,
     ) -> SpatialNodeIndex {
-        let node_index = self.spatial_tree.add_scroll_frame(
+        let scroll_index = self.spatial_tree.add_scroll_frame(
             parent_node_index,
             external_id,
             pipeline_id,
@@ -3021,10 +2995,19 @@ impl<'a> SceneBuilder<'a> {
             external_scroll_offset,
             scroll_offset_generation,
             has_scroll_linked_effect,
-            uid,
         );
-        self.id_to_index_mapper_stack.last_mut().unwrap().add_spatial_node(new_node_id, node_index);
-        node_index
+        
+        
+        
+        
+        
+        let offset_index = self.spatial_tree.add_offset_frame(
+            scroll_index,
+            LayoutVector2D::zero(),
+            pipeline_id,
+        );
+        self.id_to_index_mapper_stack.last_mut().unwrap().add_spatial_node(new_node_id, offset_index);
+        offset_index
     }
 
     pub fn push_shadow(
@@ -3630,13 +3613,30 @@ impl<'a> SceneBuilder<'a> {
             
             
             
-            let prim_offset = prim_info.rect.min.to_vector() - offset;
+            let dl_prim_origin = prim_info.rect.min.to_vector() - offset;
+
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            let first_glyph_origin = glyph_range
+                .iter()
+                .next()
+                .map(|g| g.point.to_vector())
+                .unwrap_or_else(LayoutVector2D::zero);
+            let run_origin = first_glyph_origin - dl_prim_origin;
             let glyphs = glyph_range
                 .iter()
                 .map(|glyph| {
                     GlyphInstance {
                         index: glyph.index,
-                        point: glyph.point - prim_offset,
+                        point: glyph.point - first_glyph_origin,
                     }
                 })
                 .collect();
@@ -3651,6 +3651,7 @@ impl<'a> SceneBuilder<'a> {
             TextRun {
                 glyphs,
                 font,
+                run_origin,
                 shadow: false,
                 requested_raster_space,
             }
