@@ -110,7 +110,7 @@ uint64_t ApplicationAccessible::NativeState() const { return 0; }
 
 KeyBinding ApplicationAccessible::AccessKey() const { return KeyBinding(); }
 
-void ApplicationAccessible::Init() {
+void ApplicationAccessible::CreateInitialDocs() {
   
   
   
