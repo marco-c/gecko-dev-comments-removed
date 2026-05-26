@@ -1788,6 +1788,9 @@ impl BatchBuilder {
 
                 
                 
+                
+                
+                let prim_cache_address = run_scratch.gpu_address;
                 let prim_data = &ctx.data_stores.text_run[data_handle];
 
                 
@@ -1801,9 +1804,13 @@ impl BatchBuilder {
                 
                 
                 let glyph_keys = &ctx.scratch.frame.glyph_keys[run_scratch.glyph_keys_range];
+                
+                
+                
+                
                 let prim_header = PrimitiveHeader {
                     local_rect: LayoutRect {
-                        min: prim_rect.min,
+                        min: prim_rect.min + prim_data.run_origin_offset,
                         max: run_scratch.snapped_reference_frame_relative_offset.to_point(),
                     },
                     specific_prim_address: prim_cache_address.as_int(),
@@ -2258,7 +2265,7 @@ impl BatchBuilder {
                     );
 
                     let (prim_cache_address, segments) = if prim_info.segment_instance_index == SegmentInstanceIndex::UNUSED {
-                        (prim_cache_address, None)
+                        (image_scratch.gpu_address, None)
                     } else {
                         let segment_instance = &ctx.scratch.frame.segment_instances[prim_info.segment_instance_index];
                         let segments = Some(&ctx.scratch.frame.segments[segment_instance.segments_range]);
