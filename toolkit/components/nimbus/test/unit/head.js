@@ -3,8 +3,6 @@
 
 
 
-
-
 ChromeUtils.defineESModuleGetters(this, {
   ObjectUtils: "resource://gre/modules/ObjectUtils.sys.mjs",
   RegionTestUtils: "resource://testing-common/RegionTestUtils.sys.mjs",
@@ -94,19 +92,4 @@ function removePrefObservers(manager) {
 
 function promiseEnrollmentsUpdated() {
   return TestUtils.topicObserved("nimbus:enrollments-updated");
-}
-
-
-
-
-
-
-
-
-
-function orderByRecipePublishedDate(a, b) {
-  return (
-    new Date(a.recipe.publishedDate ?? 0) -
-    new Date(b.recipe.publishedDate ?? 0)
-  );
 }
