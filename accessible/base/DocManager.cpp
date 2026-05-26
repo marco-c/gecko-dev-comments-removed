@@ -478,6 +478,16 @@ DocAccessible* DocManager::CreateDocOrRootAccessible(Document* aDocument,
                                                      bool aAllowStatic) {
   
   
+  
+  
+  
+  
+  if (!aAllowStatic && nsAccessibilityService::IsOnlyForPdfOutput()) {
+    return nullptr;
+  }
+
+  
+  
   if (!nsCoreUtils::IsDocumentVisibleConsideringInProcessAncestors(aDocument) ||
       aDocument->IsResourceDoc() ||
       (!aAllowStatic && aDocument->IsStaticDocument()) ||
@@ -535,6 +545,13 @@ DocAccessible* DocManager::CreateDocOrRootAccessible(Document* aDocument,
     
     
     
+    
+    
+    
+    
+    const bool shouldAllowNoParent =
+        aAllowStatic && XRE_IsParentProcess() &&
+        nsAccessibilityService::IsOnlyForPdfOutput();
     NS_ASSERTION(
         parentDocAcc ||
             (BasePrincipal::Cast(aDocument->GetPrincipal())->AddonPolicy() &&
@@ -542,9 +559,12 @@ DocAccessible* DocManager::CreateDocOrRootAccessible(Document* aDocument,
              aDocument->GetInProcessParentDocument()->GetDocShell() &&
              aDocument->GetInProcessParentDocument()
                  ->GetDocShell()
-                 ->IsInvisible()),
+                 ->IsInvisible()) ||
+            shouldAllowNoParent,
         "Can't create an accessible for the document!");
-    if (!parentDocAcc) return nullptr;
+    if (!parentDocAcc && !shouldAllowNoParent) {
+      return nullptr;
+    }
   }
 
   
@@ -575,7 +595,7 @@ DocAccessible* DocManager::CreateDocOrRootAccessible(Document* aDocument,
     docAcc->FireDelayedEvent(nsIAccessibleEvent::EVENT_REORDER,
                              ApplicationAcc());
 
-  } else {
+  } else if (parentDocAcc) {
     parentDocAcc->BindChildDocument(docAcc);
   }
 
