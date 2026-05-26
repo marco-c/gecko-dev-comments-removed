@@ -4756,6 +4756,15 @@ bool wasm::DecodeComponent(Decoder& d, MutableComponent c) {
       Decoder& d = sectionDecoder;
 
       switch (sectionID) {
+        case uint8_t(ComponentSectionId::Custom): {
+          if (!d.readBytes(sectionLength)) {
+            return d.fail("expected custom section");
+          }
+
+          
+          
+        } break;
+
         default: {
           return d.failf("unexpected section ID %d", sectionID);
         }
