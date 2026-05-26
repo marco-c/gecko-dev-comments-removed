@@ -132,6 +132,17 @@ def repo(request):
         
         os.environ["JJ_CONFIG"] = ""
 
+    if request.param == "hg":
+        try:
+            subprocess.call(
+                ["hg", "--version"],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+        except OSError:
+            if not os.environ.get("MOZ_AUTOMATION"):
+                pytest.skip("hg unavailable")
+
     vcs = request.param
     
     td = tempfile.TemporaryDirectory(prefix=f"{vcs}-repo")
