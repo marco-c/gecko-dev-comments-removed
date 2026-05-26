@@ -98,7 +98,7 @@ bool SimdAvailable(JSContext* cx);
 
 bool IsPrivilegedContext(JSContext* cx);
 
-#if defined(ENABLE_JIT_SIMD) && defined(DEBUG)
+#if defined(ENABLE_WASM_SIMD) && defined(DEBUG)
 
 void ReportSimdAnalysis(const char* data);
 #endif

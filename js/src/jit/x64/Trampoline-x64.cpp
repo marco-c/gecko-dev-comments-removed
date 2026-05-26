@@ -310,7 +310,7 @@ JitRuntime::getCppEntryRegisters(JitFrameLayout* frameStackAddress) {
 
 
 static void DumpAllRegs(MacroAssembler& masm) {
-#ifdef ENABLE_JIT_SIMD
+#ifdef ENABLE_WASM_SIMD
   masm.PushRegsInMask(AllRegs);
 #else
   

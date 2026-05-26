@@ -4210,7 +4210,7 @@ void MacroAssembler::PushRegsInMask(LiveRegisterSet set) {
   
   
   
-#ifdef ENABLE_JIT_SIMD
+#ifdef ENABLE_WASM_SIMD
 #  error "Needs more careful logic if SIMD is enabled"
 #endif
 
@@ -4254,7 +4254,7 @@ void MacroAssembler::storeRegsInMask(LiveRegisterSet set, Address dest,
   (void)diffG;
 
   
-#ifdef ENABLE_JIT_SIMD
+#ifdef ENABLE_WASM_SIMD
 #  error "Needs more careful logic if SIMD is enabled"
 #endif
 
@@ -4281,7 +4281,7 @@ void MacroAssembler::PopRegsInMaskIgnore(LiveRegisterSet set,
   const int32_t reservedF = diffF;
 
   
-#ifdef ENABLE_JIT_SIMD
+#ifdef ENABLE_WASM_SIMD
 #  error "Needs more careful logic if SIMD is enabled"
 #endif
 
