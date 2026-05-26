@@ -141,12 +141,6 @@ void PlatformPipeLink::Close(nsresult aStatus, bool aInternal) {
     
     
     
-    
-    
-    
-    DWORD transferred = 0;
-    GetOverlappedResult(mHandle.get(), &mIOContext.overlapped, &transferred,
-                        TRUE);
 #else
     
     
