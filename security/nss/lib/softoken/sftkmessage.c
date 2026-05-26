@@ -163,9 +163,12 @@ sftk_MessageCryptInit(CK_SESSION_HANDLE hSession, CK_MECHANISM_PTR pMechanism,
         sftk_FreeSession(session);
         return crv;
     }
-    sftk_SetContextByType(session, contextType, context);
+    crv = sftk_InstallContext(session, contextType, context);
+    if (crv != CKR_OK) {
+        sftk_FreeContext(context);
+    }
     sftk_FreeSession(session);
-    return CKR_OK;
+    return crv;
 }
 
 
@@ -181,6 +184,7 @@ sftk_CryptMessage(CK_SESSION_HANDLE hSession, CK_VOID_PTR pParameter,
                   CK_ULONG ulIntextLen, CK_BYTE_PTR pOuttext,
                   CK_ULONG_PTR pulOuttextLen, SFTKContextType contextType)
 {
+    SFTKSession *session;
     SFTKSessionContext *context;
     unsigned int outlen;
     unsigned int maxout = *pulOuttextLen;
@@ -190,7 +194,9 @@ sftk_CryptMessage(CK_SESSION_HANDLE hSession, CK_VOID_PTR pParameter,
     CHECK_FORK();
 
     
-    crv = sftk_GetContext(hSession, &context, contextType, PR_TRUE, NULL);
+
+
+    crv = sftk_GetContext(hSession, &context, contextType, PR_TRUE, &session);
     if (crv != CKR_OK)
         return crv;
 
@@ -228,12 +234,14 @@ sftk_CryptMessage(CK_SESSION_HANDLE hSession, CK_VOID_PTR pParameter,
 
     if (!pOuttext) {
         *pulOuttextLen = ulIntextLen;
+        sftk_FreeSession(session);
         return CKR_OK;
     }
     rv = (*context->aeadUpdate)(context->cipherInfo, pOuttext, &outlen,
                                 maxout, pIntext, ulIntextLen,
                                 pParameter, ulParameterLen,
                                 pAssociatedData, ulAssociatedDataLen);
+    sftk_FreeSession(session);
 
     if (rv != SECSuccess) {
         if (contextType == SFTK_MESSAGE_ENCRYPT) {
@@ -263,7 +271,7 @@ sftk_MessageCryptFinal(CK_SESSION_HANDLE hSession,
     crv = sftk_GetContext(hSession, &context, contextType, PR_TRUE, &session);
     if (crv != CKR_OK)
         return crv;
-    sftk_TerminateOp(session, contextType, context);
+    sftk_TerminateOp(session, contextType);
     sftk_FreeSession(session);
     return CKR_OK;
 }

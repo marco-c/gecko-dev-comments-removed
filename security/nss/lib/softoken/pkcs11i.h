@@ -89,9 +89,11 @@
 
 
 
-#define LOG2_BUCKETS_PER_SESSION_LOCK 1
-#define BUCKETS_PER_SESSION_LOCK (1 << (LOG2_BUCKETS_PER_SESSION_LOCK))
 
+
+
+#define LOG2_BUCKETS_PER_SESSION_LOCK 0
+#define BUCKETS_PER_SESSION_LOCK (1 << (LOG2_BUCKETS_PER_SESSION_LOCK))
 
 
 typedef struct SFTKAttributeStr SFTKAttribute;
@@ -315,6 +317,7 @@ struct SFTKSessionStr {
     SFTKSession *next;
     SFTKSession *prev;
     CK_SESSION_HANDLE handle;
+    int refCount; 
     PRLock *objectLock;
     int objectIDCount;
     CK_SESSION_INFO info;
@@ -324,7 +327,6 @@ struct SFTKSessionStr {
     SFTKSearchResults *search;
     SFTKSessionContext *enc_context;
     SFTKSessionContext *hash_context;
-    SFTKSessionContext *sign_context;
     PRBool lastOpWasFIPS;
     SFTKObjectList *objects[1];
 };
@@ -596,15 +598,18 @@ struct SFTKItemTemplateStr {
     (element)->prev = NULL;
 
 
-#ifdef NOSPREAD
 
-#define SFTK_SESSION_LOCK(slot, handle) \
-    ((slot)->sessionLock[((handle) >> LOG2_BUCKETS_PER_SESSION_LOCK) & (slot)->sessionLockMask])
-#else
 
+
+
+
+
+
+
+#define SFTK_HEAD_BUCKET_LOCK(slot, bucket) \
+    ((slot)->sessionLock[((bucket) >> LOG2_BUCKETS_PER_SESSION_LOCK) & (slot)->sessionLockMask])
 #define SFTK_SESSION_LOCK(slot, handle) \
-    ((slot)->sessionLock[(handle) & (slot)->sessionLockMask])
-#endif
+    SFTK_HEAD_BUCKET_LOCK(slot, sftk_hash((handle), (slot)->sessHashSize))
 
 
 #define sftk_attr_expand(ap) (ap)->type, (ap)->pValue, (ap)->ulValueLen
@@ -820,7 +825,6 @@ extern CK_SLOT_ID sftk_SlotIDFromSessionHandle(CK_SESSION_HANDLE handle);
 extern SFTKSession *sftk_SessionFromHandle(CK_SESSION_HANDLE handle);
 extern void sftk_FreeSession(SFTKSession *session);
 extern void sftk_ClearSession(SFTKSession *session);
-extern void sftk_DestroySession(SFTKSession *session);
 extern CK_RV sftk_InitSession(SFTKSession *session, SFTKSlot *slot,
                               CK_SLOT_ID slotID, CK_NOTIFY notify,
                               CK_VOID_PTR pApplication, CK_FLAGS flags);
@@ -843,12 +847,14 @@ extern CK_RV sftk_InitGeneric(SFTKSession *session,
                               CK_ATTRIBUTE_TYPE operation);
 void sftk_SetContextByType(SFTKSession *session, SFTKContextType type,
                            SFTKSessionContext *context);
+extern CK_RV sftk_InstallContext(SFTKSession *session, SFTKContextType type,
+                                 SFTKSessionContext *context);
+extern void sftk_UninstallContext(SFTKSession *session, SFTKContextType type);
 extern CK_RV sftk_GetContext(CK_SESSION_HANDLE handle,
                              SFTKSessionContext **contextPtr,
                              SFTKContextType type, PRBool needMulti,
                              SFTKSession **sessionPtr);
-extern void sftk_TerminateOp(SFTKSession *session, SFTKContextType ctype,
-                             SFTKSessionContext *context);
+extern void sftk_TerminateOp(SFTKSession *session, SFTKContextType ctype);
 extern void sftk_FreeContext(SFTKSessionContext *context);
 
 extern NSSLOWKEYPublicKey *sftk_GetPubKey(SFTKObject *object,
