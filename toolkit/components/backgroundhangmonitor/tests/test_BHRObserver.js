@@ -288,11 +288,15 @@ add_task(async function test_BHRObserver() {
 });
 
 
-function captureNextGeckoHang() {
+
+function captureNextGeckoHang(matchFn) {
   return new Promise(resolve => {
     const onThreadHang = subject => {
       let hang = subject.QueryInterface(Ci.nsIHangDetails);
       if (hang.thread !== "Gecko") {
+        return;
+      }
+      if (matchFn && !matchFn(hang)) {
         return;
       }
       Services.obs.removeObserver(onThreadHang, "bhr-thread-hang");
@@ -333,7 +337,11 @@ add_task(async function test_StartupTrackingEnded_annotation() {
   } catch (x) {}
   Services.startup.trackStartupCrashEnd();
 
-  let hangPromise = captureNextGeckoHang();
+  
+  
+  let hangPromise = captureNextGeckoHang(
+    hang => !annotationKeys(hang).has("BeforeStartupCrashAndHangTrackingEnded")
+  );
   induceMainThreadHang();
   let keys = annotationKeys(await hangPromise);
 
