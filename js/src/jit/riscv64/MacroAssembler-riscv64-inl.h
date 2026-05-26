@@ -1359,7 +1359,7 @@ void MacroAssembler::clampIntToUint8(Register reg) {
 
   
   Label skip;
-  ma_branch(&skip, LessThanOrEqual, reg, Operand(255));
+  ma_b(reg, Imm32(255), &skip, LessThanOrEqual, ShortJump);
   {
     ma_li(reg, Imm32(255));
   }
