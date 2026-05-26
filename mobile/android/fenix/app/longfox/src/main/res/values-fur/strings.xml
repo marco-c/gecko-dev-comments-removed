@@ -8,25 +8,25 @@
 
 <resources>
   <!-- %1$d is a placeholder for the score value. -->
-  <string name="score">Score: %1$d</string>
+  <string name="score">Ponts: %1$d</string>
   <!--
     Longfox is the name of an easter egg game available through
     secret settings. Since that's not localized, keep the name unchanged.
   -->
   <string name="longfox">LONGFOX</string>
-  <string name="likes_cookies">🍪 ma placki rady 🍪</string>
-  <string name="tap_to_play">dótkń so, zo byšće hrał!</string>
+  <string name="likes_cookies">🍪 mi plasin i cookies 🍪</string>
+  <string name="tap_to_play">tocje par zuiâ!</string>
   <!--
     %1$d is a placeholder for the current high score. HISCORE is an
     abbreviation for "Highest Score".
   -->
   <string name="hiscore">HISCORE: %1$d</string>
-  <string name="sound_on">🔈 zynk zapinjeny</string>
-  <string name="sound_off">🔇 zynk wupinjeny</string>
+  <string name="sound_on">🔈 sun atîf</string>
+  <string name="sound_off">🔇 sun disativât</string>
   <!-- Back button -->
-  <string name="back">wróćo</string>
+  <string name="back">indaûr</string>
   <!-- Share hiscore action label. hiscore is an abbreviation for "Highest Score" -->
-  <string name="share_hiscore">Najwyši dypkowy staw dźělić</string>
+  <string name="share_hiscore">Condivît ponts</string>
   <!--
     The longest fox is your best game achievement so far (based on your highest score).
     %1$d is a placeholder for the current highest score.
@@ -34,5 +34,5 @@
     %2$s is a placeholder for a string representation of the longest fox and should not be translated.
     Example output: My longest fox is 6! #longfox 🦊🟧🟧🟧🟧🟧🟧
   -->
-  <string name="my_longest_fox_is">Moja najdlěša liška je %1$d! #longfox %2$s</string>
+  <string name="my_longest_fox_is">La mê bolp plui lungje e je %1$d! #longfox %2$s</string>
 </resources>
