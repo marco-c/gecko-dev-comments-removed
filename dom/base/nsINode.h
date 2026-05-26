@@ -268,6 +268,10 @@ ASSERT_NODE_FLAGS_SPACE(NODE_TYPE_SPECIFIC_BITS_OFFSET);
 
 
 
+
+
+
+
 class nsMutationGuard {
  public:
   nsMutationGuard() { mStartingGeneration = sGeneration; }

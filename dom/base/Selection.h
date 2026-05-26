@@ -1316,6 +1316,26 @@ inline std::ostream& operator<<(
   }
 }
 
+
+
+
+
+
+class SelectionChangeGuard {
+ public:
+  SelectionChangeGuard() : mStartingGeneration(sGeneration) {}
+
+  [[nodiscard]] bool Changed(uint32_t aIgnoreCount) const {
+    return (sGeneration - mStartingGeneration) > aIgnoreCount;
+  }
+
+  static void DidChange() { sGeneration++; }
+
+ private:
+  uint64_t mStartingGeneration;
+  static uint64_t sGeneration;
+};
+
 }  
 
 inline nsresult nsISelectionController::ScrollSelectionIntoView(

@@ -72,6 +72,7 @@ class PresShell;
 class TextComposition;
 class TextInputListener;
 class TextServicesDocument;
+struct LimitersAndCaretData;
 namespace dom {
 class AbstractRange;
 class DataTransfer;
@@ -1128,6 +1129,8 @@ class EditorBase : public nsIEditor,
       return *mSelection;
     }
 
+    LimitersAndCaretData SelectionLimitersAndCaretData() const;
+
     Text* GetCachedTextNode() const {
       MOZ_ASSERT(mEditorBase.IsTextEditor());
       return mTextNode;
@@ -1597,6 +1600,7 @@ class EditorBase : public nsIEditor,
                SelectionType::eNormal);
     return mEditActionData->SelectionRef();
   }
+  LimitersAndCaretData SelectionLimitersAndCaretData() const;
 
   
   
