@@ -24,10 +24,9 @@ add_task(async function test_invalid_site_origin() {
     "https://.mozilla.org/this/is/a/test.html"
   );
   const EXPECTED_REMOTE_TYPE = `${E10SUtils.FISSION_WEB_REMOTE_TYPE}=https://.mozilla.org`;
-  let result = E10SUtils.getRemoteTypeForURIObject(INVALID_SITE_ORIGIN_URI, {
-    remoteSubFrames: true,
-    multiProcess: true,
-    preferredRemoteType: E10SUtils.DEFAULT_REMOTE_TYPE,
+  let result = ChromeUtils.predictRemoteTypeForURI(INVALID_SITE_ORIGIN_URI, {
+    useRemoteTabs: true,
+    useRemoteSubframes: true,
   });
   Assert.equal(
     result,
