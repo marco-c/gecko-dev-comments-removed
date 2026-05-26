@@ -439,15 +439,9 @@ var BrowserCommands = {
       
       
       
-      const oa = E10SUtils.predictOriginAttributes({ window });
-      preferredRemoteType = E10SUtils.getRemoteTypeForURI(
-        args.URL,
-        gMultiProcessBrowser,
-        gFissionBrowser,
-        E10SUtils.DEFAULT_REMOTE_TYPE,
-        null,
-        oa
-      );
+      preferredRemoteType = ChromeUtils.predictRemoteTypeForURI(args.URL, {
+        window,
+      });
     }
 
     

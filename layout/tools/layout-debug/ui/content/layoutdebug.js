@@ -648,13 +648,10 @@ function openFile() {
 
 
 function updateBrowserRemotenessByURL(aURL) {
-  let oa = E10SUtils.predictOriginAttributes({ browser: gBrowser });
-  let remoteType = E10SUtils.getRemoteTypeForURIObject(aURL, {
-    multiProcess: gMultiProcessBrowser,
-    remoteSubFrames: gFissionBrowser,
+  let remoteType = ChromeUtils.predictRemoteTypeForURI(aURL, {
+    window,
+    
     preferredRemoteType: gBrowser.remoteType,
-    currentURI: gBrowser.currentURI,
-    originAttributes: oa,
   });
   if (gBrowser.remoteType != remoteType) {
     gDebugger.detachBrowser();
