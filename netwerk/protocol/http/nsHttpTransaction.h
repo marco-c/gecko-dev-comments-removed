@@ -215,6 +215,10 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   
   void FinishAdopted0RTT(bool aRestart);
 
+  
+  
+  void RemoveSSLTokens(nsITransportSecurityInfo* aSecInfo);
+
   uint64_t BrowserId() override { return mBrowserId; }
 
   void SetHttpTrailers(nsCString& aTrailers);

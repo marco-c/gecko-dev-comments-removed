@@ -196,6 +196,43 @@ nsresult ZeroRttHandle::Finish0RTT(HappyEyeballsTransaction* aCaller,
   MOZ_ASSERT(mState == State::Open,
              "Finish0RTT declaring winner on a non-Open handle");
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (aRestart && aAlpnChanged) {
+    bool isH3 = false;
+    if (nsAHttpConnection* conn = aCaller->Connection()) {
+      if (RefPtr<HttpConnectionBase> base = conn->HttpConnection()) {
+        isH3 = base->UsingHttp3();
+      }
+    }
+    if (!isH3) {
+      nsHttpTransaction* realTxn = ResolveRealTxn(mHet);
+      if (realTxn) {
+        realTxn->FinishAdopted0RTT(true);
+      }
+      
+      
+      
+      
+      aCaller->MaybeRemoveSSLTokens();
+      aCaller->Close(NS_ERROR_NET_RESET);
+      return NS_OK;
+    }
+  }
+
   nsHttpTransaction* realTxn = ResolveRealTxn(mHet);
   if (!realTxn) {
     LOG(("ZeroRttHandle::Finish0RTT %p real txn gone; closing caller=%p", this,

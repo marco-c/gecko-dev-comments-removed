@@ -3281,6 +3281,18 @@ void nsHttpTransaction::GetNetworkAddresses(
   aEchConfigUsed = mEchConfigUsed;
 }
 
+void nsHttpTransaction::RemoveSSLTokens(nsITransportSecurityInfo* aSecInfo) {
+  if (!aSecInfo) {
+    return;
+  }
+  
+  
+  
+  nsAutoCString key;
+  aSecInfo->GetPeerId(key);
+  SSLTokensCache::RemoveAll(key);
+}
+
 bool nsHttpTransaction::Do0RTT(bool aCanSendEarlyData) {
   LOG(("nsHttpTransaction::Do0RTT [aCanSendEarlyData=%d]", aCanSendEarlyData));
   mResumptionAttempted = true;

@@ -154,6 +154,10 @@ class HappyEyeballsTransaction final : public SpeculativeTransaction {
   }
   bool Entered0RTT() const { return m0RttRequestStreamOffset.isSome(); }
 
+  
+  
+  void MaybeRemoveSSLTokens();
+
  private:
   ~HappyEyeballsTransaction() override;
 
