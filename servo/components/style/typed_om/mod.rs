@@ -6,6 +6,7 @@
 
 
 
+use crate::{One, Zero};
 use app_units::Au;
 use servo_arc::Arc;
 use style_traits::CssString;
@@ -141,6 +142,72 @@ pub enum NumericValue {
     Sum(MathSum),
 }
 
+impl NumericValue {
+    
+    #[inline]
+    pub fn zero_px() -> Self {
+        Self::Unit(UnitValue {
+            value: 0.0,
+            unit: CssString::from("px"),
+        })
+    }
+}
+
+impl Zero for NumericValue {
+    #[inline]
+    fn zero() -> Self {
+        Self::Unit(UnitValue {
+            value: 0.0,
+            unit: CssString::from("number"),
+        })
+    }
+
+    #[inline]
+    fn is_zero(&self) -> bool {
+        match *self {
+            Self::Unit(ref value) => value.value == 0.0,
+            _ => false,
+        }
+    }
+}
+
+impl One for NumericValue {
+    #[inline]
+    fn one() -> Self {
+        Self::Unit(UnitValue {
+            value: 1.0,
+            unit: CssString::from("number"),
+        })
+    }
+
+    #[inline]
+    fn is_one(&self) -> bool {
+        match *self {
+            Self::Unit(ref value) => value.value == 1.0,
+            _ => false,
+        }
+    }
+}
+
+
+
+
+
+#[derive(Clone, Debug)]
+#[repr(C)]
+pub enum TransformComponent {
+    
+    
+    
+    Placeholder(bool),
+}
+
+
+
+
+
+pub type TransformValue = ThinVec<TransformComponent>;
+
 
 
 
@@ -167,6 +234,11 @@ pub enum TypedValue {
     
     
     Numeric(NumericValue),
+
+    
+    
+    
+    Transform(TransformValue),
 }
 
 
@@ -282,6 +354,17 @@ pub trait ToTyped {
         let mut dest = ThinVec::new();
         self.to_typed(&mut dest).ok()?;
         dest.into_iter().next()
+    }
+
+    
+    
+    
+    
+    fn to_numeric_value(&self) -> Option<NumericValue> {
+        match self.to_typed_value()? {
+            TypedValue::Numeric(value) => Some(value),
+            _ => None,
+        }
     }
 
     

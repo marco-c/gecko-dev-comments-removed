@@ -5,6 +5,7 @@
 
 
 use crate::derives::*;
+use crate::typed_om::{KeywordValue, ToTyped, TransformComponent, TypedValue};
 use crate::values::computed::length::Length as ComputedLength;
 use crate::values::computed::length::LengthPercentage as ComputedLengthPercentage;
 use crate::values::specified::angle::Angle as SpecifiedAngle;
@@ -16,7 +17,8 @@ use crate::{Zero, ZeroNoPercent};
 use euclid::default::{Rect, Transform3D};
 use std::fmt::{self, Write};
 use std::ops::Neg;
-use style_traits::{CssWriter, ToCss};
+use style_traits::{CssString, CssWriter, ToCss};
+use thin_vec::ThinVec;
 
 
 #[allow(missing_docs)]
@@ -317,6 +319,28 @@ where
 
 pub use self::GenericTransformOperation as TransformOperation;
 
+
+pub trait ToTransformComponent {
+    
+    
+    
+    
+    
+    fn to_transform_component(&self, _dest: &mut ThinVec<TransformComponent>) -> Result<(), ()>;
+}
+
+impl<Angle, Number, Length, Integer, LengthPercentage> ToTransformComponent
+    for TransformOperation<Angle, Number, Length, Integer, LengthPercentage>
+where
+    Angle: Zero,
+    Number: PartialEq,
+    LengthPercentage: Zero + ZeroNoPercent,
+{
+    fn to_transform_component(&self, _dest: &mut ThinVec<TransformComponent>) -> Result<(), ()> {
+        Err(())
+    }
+}
+
 #[derive(
     Clone,
     Debug,
@@ -330,14 +354,32 @@ pub use self::GenericTransformOperation as TransformOperation;
     ToCss,
     ToResolvedValue,
     ToShmem,
-    ToTyped,
 )]
 #[repr(C)]
-#[typed(todo_derive_fields)]
 
 pub struct GenericTransform<T>(#[css(if_empty = "none", iterable)] pub crate::OwnedSlice<T>);
 
 pub use self::GenericTransform as Transform;
+
+impl<T: ToTransformComponent> ToTyped for Transform<T> {
+    fn to_typed(&self, dest: &mut ThinVec<TypedValue>) -> Result<(), ()> {
+        if self.0.is_empty() {
+            dest.push(TypedValue::Keyword(KeywordValue(CssString::from("none"))));
+            return Ok(());
+        }
+
+        
+        let mut values = ThinVec::new();
+
+        let ops: &[T] = &self.0;
+        for item in ops {
+            item.to_transform_component(&mut values)?;
+        }
+
+        dest.push(TypedValue::Transform(values));
+        Ok(())
+    }
+}
 
 impl<Angle, Number, Length, Integer, LengthPercentage>
     TransformOperation<Angle, Number, Length, Integer, LengthPercentage>
