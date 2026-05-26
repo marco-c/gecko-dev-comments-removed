@@ -1100,7 +1100,11 @@ class Document : public nsINode,
     
     
     
-    return InitialAboutBlankLoadCompleting() && !IsExpectingEndLoad();
+    
+    
+    bool ret = InitialAboutBlankLoadCompleting() && !IsExpectingEndLoad() &&
+               IsInitialDocument();
+    return ret;
   }
 
   void SetLoadedAsData(bool aLoadedAsData, bool aConsiderForMemoryReporting);
