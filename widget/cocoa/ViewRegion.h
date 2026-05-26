@@ -43,7 +43,7 @@ class ViewRegion {
   
 
 
-  NSView* GetAnyView() { return mViews.Length() > 0 ? mViews[0] : NULL; }
+  NSView* GetAnyView() { return mViews.Length() > 0 ? mViews[0] : nullptr; }
 
  private:
   mozilla::LayoutDeviceIntRegion mRegion;

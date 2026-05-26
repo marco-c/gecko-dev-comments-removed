@@ -24,7 +24,7 @@ auto TextRecognition::DoFindText(gfx::DataSourceSurface& aSurface,
 
   
   
-  CGImageRef imageRef = NULL;
+  CGImageRef imageRef = nullptr;
   nsresult rv = nsCocoaUtils::CreateCGImageFromSurface(&aSurface, &imageRef);
   if (NS_FAILED(rv) || !imageRef) {
     return NativePromise::CreateAndReject("Failed to create CGImage"_ns,

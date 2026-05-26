@@ -677,8 +677,8 @@ void TISInputSourceWrapper::InitByInputSourceID(const CFStringRef aID) {
   if (!aID) return;
   const void* keys[] = {kTISPropertyInputSourceID};
   const void* values[] = {aID};
-  CFDictionaryRef filter =
-      ::CFDictionaryCreate(kCFAllocatorDefault, keys, values, 1, NULL, NULL);
+  CFDictionaryRef filter = ::CFDictionaryCreate(kCFAllocatorDefault, keys,
+                                                values, 1, nullptr, nullptr);
   NS_ASSERTION(filter, "failed to create the filter");
   mInputSourceList = ::TISCreateInputSourceList(filter, true);
   ::CFRelease(filter);
@@ -1743,8 +1743,8 @@ NSUInteger TextInputHandler::sLastModifierState = 0;
 CFArrayRef TextInputHandler::CreateAllKeyboardLayoutList() {
   const void* keys[] = {kTISPropertyInputSourceType};
   const void* values[] = {kTISTypeKeyboardLayout};
-  CFDictionaryRef filter =
-      ::CFDictionaryCreate(kCFAllocatorDefault, keys, values, 1, NULL, NULL);
+  CFDictionaryRef filter = ::CFDictionaryCreate(kCFAllocatorDefault, keys,
+                                                values, 1, nullptr, nullptr);
   NS_ASSERTION(filter, "failed to create the filter");
   CFArrayRef list = ::TISCreateInputSourceList(filter, true);
   ::CFRelease(filter);
@@ -3218,12 +3218,13 @@ void IMEInputHandler::InitStaticMembers() {
   
   
   ::CFNotificationCenterAddObserver(
-      center, NULL, OnCurrentTextInputSourceChange,
-      kTISNotifySelectedKeyboardInputSourceChanged, NULL,
+      center, nullptr, OnCurrentTextInputSourceChange,
+      kTISNotifySelectedKeyboardInputSourceChanged, nullptr,
       CFNotificationSuspensionBehaviorDeliverImmediately);
   
-  OnCurrentTextInputSourceChange(
-      NULL, NULL, kTISNotifySelectedKeyboardInputSourceChanged, NULL, NULL);
+  OnCurrentTextInputSourceChange(nullptr, nullptr,
+                                 kTISNotifySelectedKeyboardInputSourceChanged,
+                                 nullptr, nullptr);
 }
 
 
@@ -3333,8 +3334,8 @@ void IMEInputHandler::FlushPendingMethods(nsITimer* aTimer, void* aClosure) {
 CFArrayRef IMEInputHandler::CreateAllIMEModeList() {
   const void* keys[] = {kTISPropertyInputSourceType};
   const void* values[] = {kTISTypeKeyboardInputMode};
-  CFDictionaryRef filter =
-      ::CFDictionaryCreate(kCFAllocatorDefault, keys, values, 1, NULL, NULL);
+  CFDictionaryRef filter = ::CFDictionaryCreate(kCFAllocatorDefault, keys,
+                                                values, 1, nullptr, nullptr);
   NS_ASSERTION(filter, "failed to create the filter");
   CFArrayRef list = ::TISCreateInputSourceList(filter, true);
   ::CFRelease(filter);

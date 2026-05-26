@@ -38,6 +38,17 @@ const char kShowHiddenFilesPref[] = "filepicker.showHiddenFiles";
 - (void)menuChangedItem:(NSNotification*)aSender;
 @end
 
+@interface MOZSaveFilePickerPopUpObserver : NSObject {
+  NSPopUpButton* mPopUpButton;
+  NSSavePanel* mSavePanel;
+  RefPtr<nsFilePicker> mFilePicker;
+}
+- (void)setPopUpButton:(NSPopUpButton*)aPopUpButton;
+- (void)setSavePanel:(NSSavePanel*)aSavePanel;
+- (void)setFilePicker:(nsFilePicker*)aFilePicker;
+- (void)menuChangedItem:(NSNotification*)aSender;
+@end
+
 NS_IMPL_ISUPPORTS(nsFilePicker, nsIFilePicker)
 
 static void SetShowHiddenFileState(NSSavePanel* panel) {
@@ -244,6 +255,43 @@ static void UpdatePanelFileTypes(NSOpenPanel* aPanel, NSArray* aFilters) {
 }
 @end
 
+@implementation MOZSaveFilePickerPopUpObserver
+- (void)setPopUpButton:(NSPopUpButton*)aPopUpButton {
+  mPopUpButton = aPopUpButton;
+}
+
+- (void)setSavePanel:(NSSavePanel*)aSavePanel {
+  mSavePanel = aSavePanel;
+}
+
+- (void)setFilePicker:(nsFilePicker*)aFilePicker {
+  mFilePicker = aFilePicker;
+}
+
+- (void)menuChangedItem:(NSNotification*)aSender {
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
+  int32_t selectedItem = [mPopUpButton indexOfSelectedItem];
+  if (selectedItem < 0) {
+    return;
+  }
+
+  mFilePicker->SetFilterIndex(selectedItem);
+  NSArray* filterList = mFilePicker->GetFilterList();
+
+  if (filterList && [filterList count] > 0) {
+    NSString* newExtension = [filterList objectAtIndex:0];
+    NSString* currentName = [mSavePanel nameFieldStringValue];
+    NSString* baseName = [currentName stringByDeletingPathExtension];
+    if (baseName.length > 0) {
+      [mSavePanel setNameFieldStringValue:
+                      [baseName stringByAppendingPathExtension:newExtension]];
+    }
+  }
+
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
+}
+@end
+
 void nsFilePicker::PresentOpenPanel(bool aAllowMultiple,
                                     nsIFilePickerShownCallback* aCallback) {
   NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
@@ -414,22 +462,31 @@ void nsFilePicker::PresentSavePanel(nsIFilePickerShownCallback* aCallback) {
   SetDialogTitle(mTitle, thePanel);
 
   
-  if (mFilters.Length()) {
-    NSView* accessoryView = GetAccessoryView();
-    [thePanel setAccessoryView:accessoryView];
-  }
-
-  
   NSString* defaultFilename =
       [NSString stringWithCharacters:reinterpret_cast<const unichar*>(
                                          mDefaultFilename.get())
                               length:mDefaultFilename.Length()];
 
   
-  NSString* extension = defaultFilename.pathExtension;
-  if (extension.length != 0) {
-    thePanel.allowedFileTypes = @[ extension ];
+  MOZSaveFilePickerPopUpObserver* observer = nil;
+  if (mFilters.Length()) {
+    NSView* accessoryView = GetAccessoryView();
+    [thePanel setAccessoryView:accessoryView];
+
+    observer = [[MOZSaveFilePickerPopUpObserver alloc] init];
+    NSPopUpButton* popupButton =
+        [accessoryView viewWithTag:kSaveTypeControlTag];
+    [observer setPopUpButton:popupButton];
+    [observer setSavePanel:thePanel];
+    [observer setFilePicker:this];
+
+    [[NSNotificationCenter defaultCenter]
+        addObserver:observer
+           selector:@selector(menuChangedItem:)
+               name:NSMenuWillSendActionNotification
+             object:[popupButton menu]];
   }
+
   
   thePanel.allowsOtherFileTypes = YES;
 
@@ -446,7 +503,7 @@ void nsFilePicker::PresentSavePanel(nsIFilePickerShownCallback* aCallback) {
     
     CFStringRef type = UTTypeCreatePreferredIdentifierForTag(
         kUTTagClassFilenameExtension, static_cast<CFStringRef>(otherExtension),
-        NULL);
+        nullptr);
     if (type) {
       if (!CFStringHasPrefix(type, CFSTR("dyn."))) {
         
@@ -470,6 +527,11 @@ void nsFilePicker::PresentSavePanel(nsIFilePickerShownCallback* aCallback) {
 
   BeginPanelAsync(thePanel, ^(NSModalResponse result) {
     NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
+    if (observer) {
+      [[NSNotificationCenter defaultCenter] removeObserver:observer];
+      [observer release];
+    }
+
     ResultCode retVal = returnCancel;
     if (result != NSModalResponseCancel) {
       

@@ -43,15 +43,15 @@ GType moz_container_get_type(void) {
   if (!moz_container_type) {
     static GTypeInfo moz_container_info = {
         sizeof(MozContainerClass),                
-        NULL,                                     
-        NULL,                                     
+        nullptr,                                  
+        nullptr,                                  
         (GClassInitFunc)moz_container_class_init, 
-        NULL,                                     
-        NULL,                                     
+        nullptr,                                  
+        nullptr,                                  
         sizeof(MozContainer),                     
         0,                                        
         (GInstanceInitFunc)moz_container_init,    
-        NULL,                                     
+        nullptr,                                  
     };
 
     moz_container_type =
