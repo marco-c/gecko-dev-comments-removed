@@ -113,6 +113,20 @@ TEST(MediaCodecsSupport, GetDecodeMediaCodecsSupported)
   dss = DecodeSupportSet{};
   RV = MCSInfo::GetDecodeMediaCodecsSupported(codec, dss);
   EXPECT_TRUE(RV.size() == 0);
+
+  
+  codec = MediaCodec::AV1;
+  dss = DecodeSupportSet{DecodeSupport::UnsureDueToLackOfExtension};
+  RV = MCSInfo::GetDecodeMediaCodecsSupported(codec, dss);
+  EXPECT_TRUE(RV.contains(MediaCodecsSupport::AV1LackOfExtension));
+  EXPECT_TRUE(RV.size() == 1);
+
+  
+  codec = MediaCodec::HEVC;
+  dss = DecodeSupportSet{DecodeSupport::UnsureDueToLackOfExtension};
+  RV = MCSInfo::GetDecodeMediaCodecsSupported(codec, dss);
+  EXPECT_TRUE(RV.contains(MediaCodecsSupport::HEVCLackOfExtension));
+  EXPECT_TRUE(RV.size() == 1);
 }
 
 
