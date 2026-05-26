@@ -5,17 +5,24 @@
 #include "mozilla/dom/CSSMatrixComponent.h"
 
 #include "mozilla/AlreadyAddRefed.h"
-#include "mozilla/ErrorResult.h"
-#include "mozilla/RefPtr.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/CSSMatrixComponentBinding.h"
+#include "mozilla/dom/DOMMatrix.h"
+#include "nsCOMPtr.h"
 #include "nsString.h"
 
 namespace mozilla::dom {
 
-CSSMatrixComponent::CSSMatrixComponent(nsCOMPtr<nsISupports> aParent)
-    : CSSTransformComponent(std::move(aParent),
-                            TransformComponentType::MatrixComponent) {}
+CSSMatrixComponent::CSSMatrixComponent(nsCOMPtr<nsISupports> aParent,
+                                       bool aIs2D, RefPtr<DOMMatrix> aMatrix)
+    : CSSTransformComponent(std::move(aParent), aIs2D,
+                            TransformComponentType::MatrixComponent),
+      mMatrix(std::move(aMatrix)) {}
+
+NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED_0(CSSMatrixComponent,
+                                               CSSTransformComponent)
+NS_IMPL_CYCLE_COLLECTION_INHERITED(CSSMatrixComponent, CSSTransformComponent,
+                                   mMatrix)
 
 JSObject* CSSMatrixComponent::WrapObject(JSContext* aCx,
                                          JS::Handle<JSObject*> aGivenProto) {
@@ -25,16 +32,29 @@ JSObject* CSSMatrixComponent::WrapObject(JSContext* aCx,
 
 
 
+
+
+
+
 already_AddRefed<CSSMatrixComponent> CSSMatrixComponent::Constructor(
     const GlobalObject& aGlobal, DOMMatrixReadOnly& aMatrix,
     const CSSMatrixComponentOptions& aOptions) {
-  return MakeAndAddRef<CSSMatrixComponent>(aGlobal.GetAsSupports());
+  nsCOMPtr<nsISupports> global = aGlobal.GetAsSupports();
+
+  
+  
+
+  
+  bool is2D =
+      aOptions.mIs2D.WasPassed() ? aOptions.mIs2D.Value() : aMatrix.Is2D();
+
+  auto matrix = MakeRefPtr<DOMMatrix>(global, aMatrix);
+
+  return MakeAndAddRef<CSSMatrixComponent>(std::move(global), is2D,
+                                           std::move(matrix));
 }
 
-DOMMatrix* CSSMatrixComponent::GetMatrix(ErrorResult& aRv) const {
-  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
-  return nullptr;
-}
+DOMMatrix* CSSMatrixComponent::Matrix() const { return mMatrix; }
 
 void CSSMatrixComponent::SetMatrix(DOMMatrix& aArg) {}
 
@@ -42,9 +62,13 @@ void CSSMatrixComponent::SetMatrix(DOMMatrix& aArg) {}
 
 void CSSMatrixComponent::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
                                                nsACString& aDest) const {
-  
-
-  aDest.Append("matrix()"_ns);
+  nsAutoCString dest;
+  IgnoredErrorResult rv;
+  mMatrix->Stringify(mIs2D, dest, rv);
+  if (rv.Failed()) {
+    return;
+  }
+  aDest.Append(dest);
 }
 
 const CSSMatrixComponent& CSSTransformComponent::GetAsCSSMatrixComponent()
