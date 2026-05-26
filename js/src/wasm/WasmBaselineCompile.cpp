@@ -320,7 +320,8 @@ void BaseCompiler::jumpTable(const LabelVector& labels, Label* theTable) {
   
   masm.flush();
 
-#if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_ARM64) || defined(JS_CODEGEN_RISCV64)
+#if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_ARM64) || \
+    defined(JS_CODEGEN_RISCV64)
   
   AutoForbidNops afn(&masm);
 #endif
