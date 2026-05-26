@@ -8,6 +8,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
+import android.net.ConnectivityManager
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -17,22 +18,25 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.VisibleForTesting
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.displayCutoutPadding
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.core.view.updateLayoutParams
+import androidx.core.content.getSystemService
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Observer
@@ -99,13 +103,13 @@ import org.mozilla.fenix.components.toolbar.BottomToolbarContainerView
 import org.mozilla.fenix.components.toolbar.ToolbarPosition
 import org.mozilla.fenix.compose.snackbar.SnackbarState
 import org.mozilla.fenix.databinding.FragmentHomeBinding
-import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.application
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.getBottomToolbarHeight
 import org.mozilla.fenix.ext.getRootView
 import org.mozilla.fenix.ext.getTopToolbarHeight
 import org.mozilla.fenix.ext.hideToolbar
+import org.mozilla.fenix.ext.isOnline
 import org.mozilla.fenix.ext.isToolbarAtBottom
 import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.ext.recordEventInNimbus
@@ -131,6 +135,7 @@ import org.mozilla.fenix.home.sessioncontrol.SessionControlController
 import org.mozilla.fenix.home.sessioncontrol.SessionControlControllerCallback
 import org.mozilla.fenix.home.sessioncontrol.SessionControlInteractor
 import org.mozilla.fenix.home.sports.DefaultSportsController
+import org.mozilla.fenix.home.sports.SportCardErrorState
 import org.mozilla.fenix.home.store.HomeToolbarStoreBuilder
 import org.mozilla.fenix.home.store.HomepageState
 import org.mozilla.fenix.home.termsofuse.DefaultPrivacyNoticeBannerController
@@ -187,7 +192,7 @@ import org.mozilla.fenix.ipprotection.store.Surface as IPProtectionSurface
  * The home screen.
  */
 @Suppress("TooManyFunctions", "LargeClass")
-class HomeFragment : Fragment(), SystemInsetsPaddedFragment {
+class HomeFragment : Fragment() {
     private val args by navArgs<HomeFragmentArgs>()
 
     @VisibleForTesting
@@ -401,7 +406,7 @@ class HomeFragment : Fragment(), SystemInsetsPaddedFragment {
     private fun buildToolbar(activity: HomeActivity): FenixHomeToolbar {
         val toolbarStore by buildToolbarStore(activity)
 
-        if (isEdgeToEdgeBackgroundEnabled() && homepageEdgeToEdgeFeature.get() == null) {
+        if (homepageEdgeToEdgeFeature.get() == null) {
             homepageEdgeToEdgeFeature.set(
                 feature = HomepageEdgeToEdgeFeature(
                     appStore = requireComponents.appStore,
@@ -702,27 +707,30 @@ class HomeFragment : Fragment(), SystemInsetsPaddedFragment {
                             flow().distinctUntilChanged { old, new -> old.mode != new.mode }
                         }.collectAsState(state)
                     }
-                    val isInPortrait by remember {
-                        derivedStateOf {
-                            appState.value.orientation == OrientationMode.Portrait
-                        }
-                    }
                     val keyboardState by keyboardAsState()
                     val privacyNoticeBannerState = privacyNoticeBannerStore.flow().collectAsState(
                         initial = privacyNoticeBannerStore.state,
                     )
 
-                    LaunchedEffect(isInPortrait, keyboardState) {
-                        updateLayoutParams<ViewGroup.MarginLayoutParams> {
-                            topMargin = getTopToolbarHeight()
-                            bottomMargin = getBottomToolbarHeight(
-                                includeNavBarIfEnabled = keyboardState == KeyboardState.Closed &&
-                                    settings.toolbarPosition == ToolbarPosition.BOTTOM,
-                            )
-                        }
+                    val density = LocalDensity.current
+                    val topPadding = with(density) { (getTopToolbarHeight()).toDp() }
+                    val bottomPadding = with(density) {
+                        getBottomToolbarHeight(
+                            includeNavBarIfEnabled = keyboardState == KeyboardState.Closed &&
+                                settings.toolbarPosition == ToolbarPosition.BOTTOM,
+                        ).toDp()
                     }
 
-                    Box(modifier = Modifier.fillMaxSize()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(
+                                top = topPadding,
+                                bottom = bottomPadding,
+                            )
+                            .systemBarsPadding()
+                            .displayCutoutPadding(),
+                    ) {
                         if (!appState.value.mode.isPrivate) {
                             WallpaperBackground(
                                 wallpaper = appState.value.wallpaperState.currentWallpaper,
@@ -985,8 +993,19 @@ class HomeFragment : Fragment(), SystemInsetsPaddedFragment {
         evaluateMessagesForMicrosurvey(components)
 
         val sportsWidgetState = components.appStore.state.sportsWidgetState
-        if (sportsWidgetState.isShown && sportsWidgetState.hasWorldCupStarted) {
-            components.appStore.dispatch(SportsWidgetAction.FetchMatches)
+        if (sportsWidgetState.isShown &&
+            (sportsWidgetState.hasWorldCupStarted || sportsWidgetState.isOneWeekToWorldCup)
+        ) {
+            // Fetches the full tournament schedule. The middleware caches the response
+            // so a later team selection re-derives cards without another network call.
+            // When offline, skip the fetch and surface ConnectionInterrupted so the widget
+            // shows an error card instead of silently rendering empty matches.
+            val action = if (requireContext().getSystemService<ConnectivityManager>()?.isOnline() == true) {
+                SportsWidgetAction.FetchMatches
+            } else {
+                SportsWidgetAction.FetchFailed(SportCardErrorState.ConnectionInterrupted)
+            }
+            components.appStore.dispatch(action)
         }
 
         BiometricAuthenticationManager.biometricAuthenticationNeededInfo.shouldShowAuthenticationPrompt =
@@ -1311,6 +1330,7 @@ class HomeFragment : Fragment(), SystemInsetsPaddedFragment {
                 navController = findNavController(),
                 fenixBrowserUseCases = requireComponents.useCases.fenixBrowserUseCases,
                 browserStore = requireComponents.core.store,
+                connectivityManager = requireContext().getSystemService<ConnectivityManager>(),
             ),
         )
     }
@@ -1352,6 +1372,7 @@ class HomeFragment : Fragment(), SystemInsetsPaddedFragment {
             appStore = requireComponents.appStore,
             navControllerRef = WeakReference(findNavController()),
             viewLifecycleScope = viewLifecycleOwner.lifecycleScope,
+            shareUseCases = requireComponents.useCases.shareUseCases,
             showAddSearchWidgetPrompt = ::showAddSearchWidgetPrompt,
             requestSetDefaultBrowserPrompt = {
                 maybeRequestDefaultBrowserPrompt(
