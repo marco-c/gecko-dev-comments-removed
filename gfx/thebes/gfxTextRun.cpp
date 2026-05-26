@@ -2337,27 +2337,6 @@ already_AddRefed<gfxFont> gfxFontGroup::GetFirstMathFont() {
   return nullptr;
 }
 
-bool gfxFontGroup::IsInvalidChar(uint8_t ch) {
-  return ((ch & 0x7f) < 0x20 || ch == 0x7f);
-}
-
-bool gfxFontGroup::IsInvalidChar(char16_t ch) {
-  
-  if (ch >= ' ' && ch < 0x7f) {
-    return false;
-  }
-  
-  if (ch <= 0x9f) {
-    return true;
-  }
-  
-  
-  return (((ch & 0xFF00) == 0x2000  &&
-           (ch == 0x200B  || ch == 0x2028  ||
-            ch == 0x2029  || ch == 0x2060 )) ||
-          ch == 0xfeff  || IsBidiControl(ch));
-}
-
 already_AddRefed<gfxTextRun> gfxFontGroup::MakeEmptyTextRun(
     const Parameters* aParams, gfx::ShapedTextFlags aFlags,
     nsTextFrameUtils::Flags aFlags2) {
