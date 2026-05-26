@@ -5702,101 +5702,29 @@ nsGenericHTMLElement* Element::GetAssociatedPopover() const {
 }
 
 
-Element* Element::GetTopmostPopoverAncestor(PopoverAttributeState aMode,
-                                            const Element* aInvoker,
+Element* Element::GetTopmostPopoverAncestor(const Element* aInvoker,
                                             bool isPopover) const {
-  const Element* newPopover = this;
-
-  
-  nsTHashMap<nsPtrHashKey<const Element>, size_t> popoverPositions;
-  size_t index = 0;
-
-  
-  for (Element* popover : OwnerDoc()->PopoverListOf(aMode)) {
-    
-    popoverPositions.LookupOrInsert(popover, index++);
-  }
+  AutoTArray<RefPtr<Element>, 16> combinedPopovers;
+  combinedPopovers.AppendElements(
+      OwnerDoc()->PopoverListOf(PopoverAttributeState::Auto));
+  combinedPopovers.AppendElements(
+      OwnerDoc()->PopoverListOf(PopoverAttributeState::Hint));
 
   
   
-  if (isPopover) {
-    popoverPositions.LookupOrInsert(newPopover, index);
-  }
-
-  const auto* newPopoverHTMLEl = nsGenericHTMLElement::FromNode(newPopover);
-  PopoverAttributeState newPopoverAttribute =
-      newPopoverHTMLEl ? newPopoverHTMLEl->GetPopoverAttributeState()
-                       : PopoverAttributeState::None;
-
-  
-  Element* topmostPopoverAncestor = nullptr;
-
-  
-  auto checkAncestor = [&](const Element* candidate) {
-    
-    
-    if (!candidate) {
-      return;
-    }
-
-    
-    bool okNesting = false;
-    
-    Element* candidateAncestor = nullptr;
-
-    
-    while (!okNesting) {
-      
-      
-      candidateAncestor = candidate->GetNearestInclusiveOpenPopover();
-      
-      
-      
-      if (!candidateAncestor || !popoverPositions.Contains(candidateAncestor)) {
-        return;
-      }
-
-      
-      
-
-      
-      
-      
-      auto* candidateHTMLEl = nsGenericHTMLElement::FromNode(candidateAncestor);
-      okNesting =
-          !isPopover || newPopoverAttribute == PopoverAttributeState::Hint ||
-          (candidateHTMLEl && candidateHTMLEl->GetPopoverAttributeState() ==
-                                  PopoverAttributeState::Auto);
-
-      
-      
-      if (!okNesting) {
-        candidate = candidateAncestor->GetFlattenedTreeParentElement();
+  auto lastAncestorIdx = [&](const nsINode* aNode) -> intptr_t {
+    for (intptr_t i = (intptr_t)combinedPopovers.Length() - 1; i >= 0; --i) {
+      if (aNode->IsInclusiveFlatTreeDescendantOf(combinedPopovers[i])) {
+        return i;
       }
     }
-
-    
-    
-    
-    
-    size_t candidatePosition;
-    if (popoverPositions.Get(candidateAncestor, &candidatePosition)) {
-      size_t topmostPosition;
-      if (!topmostPopoverAncestor ||
-          (popoverPositions.Get(topmostPopoverAncestor, &topmostPosition) &&
-           topmostPosition < candidatePosition)) {
-        topmostPopoverAncestor = candidateAncestor;
-      }
-    }
+    return -1;
   };
 
-  
-  checkAncestor(newPopover->GetFlattenedTreeParentElement());
-  
-  checkAncestor(aInvoker);
-
-  
-  return topmostPopoverAncestor;
+  intptr_t popoverAncestorIndex = lastAncestorIdx(this);
+  intptr_t sourceAncestorIndex = aInvoker ? lastAncestorIdx(aInvoker) : -1;
+  intptr_t ancestorIndex = std::max(popoverAncestorIndex, sourceAncestorIndex);
+  return ancestorIndex >= 0 ? combinedPopovers[ancestorIndex].get() : nullptr;
 }
 
 ElementAnimationData& Element::CreateAnimationData() {

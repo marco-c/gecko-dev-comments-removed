@@ -108,6 +108,7 @@
 #include "mozilla/ServoStyleConsts.h"
 #include "mozilla/ServoTypes.h"
 #include "mozilla/SizeOfState.h"
+#include "mozilla/Span.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/StaticAnalysisFunctions.h"
 #include "mozilla/StaticPrefs_apz.h"
@@ -2513,6 +2514,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INTERNAL(Document)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mStyleSheetSetList)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mScriptLoader)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mCustomContentContainer)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPopoverHintStackParent)
 
   DocumentOrShadowRoot::Traverse(tmp, cb);
 
@@ -2690,6 +2692,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(Document)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mViewTransitionUpdateCallbacks)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mReferrerInfo)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mPreloadReferrerInfo)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mPopoverHintStackParent)
 
   if (tmp->mDocGroup && tmp->mDocGroup->GetBrowsingContextGroup()) {
     tmp->mDocGroup->GetBrowsingContextGroup()->RemoveDocument(tmp,
@@ -16198,159 +16201,79 @@ bool Document::TopLayerContains(Element& aElement) const {
 }
 
 
-void Document::CloseEntirePopoverList(PopoverAttributeState aMode,
-                                      bool aFocusPreviousElement,
-                                      bool aFireEvents) {
+void Document::HidePopoverStackUntil(Element* aEndpoint,
+                                     PopoverAttributeState aStackType,
+                                     bool aFocusPreviousElement,
+                                     bool aFireEvents) {
+  MOZ_ASSERT(aStackType == PopoverAttributeState::Auto ||
+             aStackType == PopoverAttributeState::Hint);
+
   
   
-  while (RefPtr popover = GetTopmostPopoverOf(aMode)) {
-    
-    
+  nsTArray<RefPtr<Element>> popoverList = PopoverListOf(aStackType);
+
+  
+  
+  size_t lastHideIndex = 0;
+  if (aEndpoint) {
+    auto idx = popoverList.IndexOf(aEndpoint);
+    if (idx != popoverList.NoIndex) {
+      lastHideIndex = idx + 1;
+    }
+  }
+
+  
+  
+  Span<RefPtr<Element>> toHide = Span(popoverList).Subspan(lastHideIndex);
+  
+  Span<RefPtr<Element>> toRemain(popoverList.Elements(), lastHideIndex);
+
+  
+  
+  for (RefPtr<Element> popover : mozilla::Reversed(toHide)) {
     HidePopover(*popover, aFocusPreviousElement, aFireEvents,
+                 nullptr, IgnoreErrors());
+  }
+
+  
+  
+  nsTArray<RefPtr<Element>> newPopoverList = PopoverListOf(aStackType);
+  
+  
+  for (RefPtr<Element> popover : mozilla::Reversed(newPopoverList)) {
+    
+    if (toRemain.Contains(popover)) {
+      continue;
+    }
+    
+    
+    HidePopover(*popover, aFocusPreviousElement,  false,
                  nullptr, IgnoreErrors());
   }
 }
 
 
-void Document::HideAllPopoversUntil(nsINode& aEndpoint,
-                                    bool aFocusPreviousElement,
-                                    bool aFireEvents) {
-  const auto* endpointHTMLEl = nsGenericHTMLElement::FromNodeOrNull(&aEndpoint);
+void Document::HidePopoversUntil(Element* aEndpoint, bool aFocusPreviousElement,
+                                 bool aFireEvents) {
+  
+  
+  bool endpointIsHint =
+      aEndpoint && IsInPopoverListOf(*aEndpoint, PopoverAttributeState::Hint);
 
   
   
-  if (endpointHTMLEl && !endpointHTMLEl->IsPopoverOpen()) {
-    return;
-  }
-
-  
-  MOZ_ASSERT(aEndpoint.OwnerDoc() == this);
-
-  
-  
-  MOZ_ASSERT(aEndpoint.IsDocument() ||
-             (endpointHTMLEl && endpointHTMLEl->PopoverOpen()));
-
-  
-  
-  
-  
-  MOZ_ASSERT(
-      aEndpoint.IsDocument() ||
-      endpointHTMLEl->IsPopoverOpenedInMode(PopoverAttributeState::Auto) ||
-      endpointHTMLEl->IsPopoverOpenedInMode(PopoverAttributeState::Hint));
-
-  
-  if (&aEndpoint == this) {
-    
-    
-    CloseEntirePopoverList(PopoverAttributeState::Hint, aFocusPreviousElement,
-                           aFireEvents);
-    
-    
-    CloseEntirePopoverList(PopoverAttributeState::Auto, aFocusPreviousElement,
-                           aFireEvents);
-    
-    return;
-  }
-
-  
-  if (PopoverListOf(PopoverAttributeState::Hint).Contains(&aEndpoint)) {
-    
-    MOZ_ASSERT(endpointHTMLEl && endpointHTMLEl->IsPopoverOpenedInMode(
-                                     PopoverAttributeState::Hint));
-    
-    
-    HidePopoverStackUntil(PopoverAttributeState::Hint, aEndpoint,
-                          aFocusPreviousElement, aFireEvents);
-    
-    return;
-  }
-
-  
-  
-  CloseEntirePopoverList(PopoverAttributeState::Hint, aFocusPreviousElement,
-                         aFireEvents);
-
-  
-  
-  if (!PopoverListOf(PopoverAttributeState::Auto).Contains(&aEndpoint)) {
-    return;
-  }
-
-  
-  
-  HidePopoverStackUntil(PopoverAttributeState::Auto, aEndpoint,
+  HidePopoverStackUntil(aEndpoint, PopoverAttributeState::Hint,
                         aFocusPreviousElement, aFireEvents);
-}
-
-
-void Document::HidePopoverStackUntil(PopoverAttributeState aMode,
-                                     nsINode& aEndpoint,
-                                     bool aFocusPreviousElement,
-                                     bool aFireEvents) {
-  auto needRepeatingHide = [&]() {
-    auto autoList = PopoverListOf(aMode);
-    return autoList.Contains(&aEndpoint) &&
-           &aEndpoint != autoList.LastElement();
-  };
 
   
-  bool repeatingHide = false;
-  bool fireEvents = aFireEvents;
+  if (endpointIsHint) {
+    return;
+  }
 
   
-  do {
-    
-    RefPtr<const Element> lastToHide = nullptr;
-    bool foundEndpoint = false;
-    
-    for (const Element* popover : PopoverListOf(aMode)) {
-      
-      
-      if (popover == &aEndpoint) {
-        foundEndpoint = true;
-      } else if (foundEndpoint) {
-        
-        lastToHide = popover;
-        break;
-      }
-    }
-
-    
-    if (!foundEndpoint) {
-      CloseEntirePopoverList(PopoverAttributeState::Auto, aFocusPreviousElement,
-                             fireEvents);
-      return;
-    }
-
-    
-    while (lastToHide && lastToHide->IsPopoverOpen()) {
-      
-      MOZ_ASSERT(!PopoverListOf(aMode).IsEmpty());
-
-      RefPtr topmost = GetTopmostPopoverOf(aMode);
-
-      
-      
-      HidePopover(*topmost, aFocusPreviousElement, fireEvents,
-                   nullptr, IgnoreErrors());
-    }
-
-    
-    
-    MOZ_ASSERT(!repeatingHide ||
-               PopoverListOf(aMode).LastElement() == &aEndpoint);
-
-    
-    
-    repeatingHide = needRepeatingHide();
-    
-    if (repeatingHide) {
-      fireEvents = false;
-    }
-    
-  } while (repeatingHide);
+  
+  HidePopoverStackUntil(aEndpoint, PopoverAttributeState::Auto,
+                        aFocusPreviousElement, aFireEvents);
 }
 
 
@@ -16363,6 +16286,8 @@ void Document::HidePopover(Element& aPopover, bool aFocusPreviousElement,
 
   
   
+  
+  
   if (!popoverHTMLEl->CheckPopoverValidity(PopoverVisibilityState::Showing,
                                            nullptr, aRv)) {
     return;
@@ -16371,27 +16296,42 @@ void Document::HidePopover(Element& aPopover, bool aFocusPreviousElement,
   
 
   
-  bool wasShowingOrHiding =
-      popoverHTMLEl->GetPopoverData()->IsShowingOrHiding();
+  bool nestedHide = popoverHTMLEl->GetPopoverData()->IsPopoverHiding();
 
   
-  popoverHTMLEl->GetPopoverData()->SetIsShowingOrHiding(true);
+  popoverHTMLEl->GetPopoverData()->SetIsPopoverHiding(true);
 
   
-  const bool fireEvents = aFireEvents && !wasShowingOrHiding;
+  const bool fireEvents = aFireEvents && !nestedHide;
+
+  
+  IncrementHidingPopoverNestingCount();
 
   
   auto cleanupHidingFlag = MakeScopeExit([&]() {
     if (auto* popoverData = popoverHTMLEl->GetPopoverData()) {
       
       
-      popoverData->SetIsShowingOrHiding(wasShowingOrHiding);
+      if (!nestedHide) {
+        popoverData->SetIsPopoverHiding(false);
+      }
       
       
       
       popoverData->DestroyCloseWatcher();
     }
+    
+    DecrementHidingPopoverNestingCount();
   });
+
+  
+  
+  bool autoPopoverListContainsElement =
+      IsInPopoverListOf(*popoverHTMLEl, PopoverAttributeState::Auto);
+  
+  
+  bool hintPopoverListContainsElement =
+      IsInPopoverListOf(*popoverHTMLEl, PopoverAttributeState::Hint);
 
   
   if (PopoverData* popoverData = popoverHTMLEl->GetPopoverData();
@@ -16400,23 +16340,38 @@ void Document::HidePopover(Element& aPopover, bool aFocusPreviousElement,
        popoverData->GetOpenedInMode() == PopoverAttributeState::Hint)) {
     
     
-    HideAllPopoversUntil(*popoverHTMLEl, aFocusPreviousElement, fireEvents);
+    
+    if (hintPopoverListContainsElement) {
+      HidePopoverStackUntil(popoverHTMLEl, PopoverAttributeState::Hint,
+                            aFocusPreviousElement, fireEvents);
+    }
+    
+    
+    if (popoverHTMLEl == PopoverHintStackParent()) {
+      HidePopoverStackUntil(nullptr, PopoverAttributeState::Hint,
+                            aFocusPreviousElement, fireEvents);
+    }
+    
+    
+    
+    if (autoPopoverListContainsElement) {
+      HidePopoverStackUntil(popoverHTMLEl, PopoverAttributeState::Auto,
+                            aFocusPreviousElement, fireEvents);
+    }
 
+    
     
     
     if (!popoverHTMLEl->CheckPopoverValidity(PopoverVisibilityState::Showing,
                                              nullptr, aRv)) {
+      
+      
+      
+      
       return;
     }
   }
 
-  
-  
-  auto autoList = PopoverListOf(PopoverAttributeState::Auto);
-  bool autoPopoverListContainsElement =
-      !autoList.IsEmpty() && autoList.LastElement() == popoverHTMLEl;
-
-  
   
   if (fireEvents) {
     
@@ -16429,19 +16384,9 @@ void Document::HidePopover(Element& aPopover, bool aFocusPreviousElement,
 
     
     
-    
-    
-    if (autoPopoverListContainsElement) {
-      auto* topmostAuto = GetTopmostPopoverOf(PopoverAttributeState::Auto);
-      if (!topmostAuto || topmostAuto != popoverHTMLEl) {
-        HideAllPopoversUntil(*popoverHTMLEl, aFocusPreviousElement, false);
-      }
-    }
-
-    
-    
     if (!popoverHTMLEl->CheckPopoverValidity(PopoverVisibilityState::Showing,
                                              nullptr, aRv)) {
+      
       return;
     }
 
@@ -16470,6 +16415,13 @@ void Document::HidePopover(Element& aPopover, bool aFocusPreviousElement,
 
   
   
+  if (popoverHTMLEl == mPopoverHintStackParent ||
+      PopoverListOf(PopoverAttributeState::Hint).IsEmpty()) {
+    SetPopoverHintStackParent(nullptr);
+  }
+
+  
+  
   if (fireEvents) {
     popoverHTMLEl->QueuePopoverEventTask(PopoverVisibilityState::Showing,
                                          aSource);
@@ -16487,18 +16439,34 @@ void Document::HidePopover(Element& aPopover, bool aFocusPreviousElement,
   } else {
     popoverHTMLEl->ForgetPreviouslyFocusedElementAfterHidingPopover();
   }
+
+  
 }
 
-nsTArray<Element*> Document::PopoverListOf(PopoverAttributeState aMode) const {
-  nsTArray<Element*> elements;
+nsTArray<RefPtr<Element>> Document::PopoverListOf(
+    PopoverAttributeState aMode) const {
+  nsTArray<RefPtr<Element>> elements;
   for (const nsWeakPtr& ptr : mTopLayer) {
     if (nsCOMPtr<Element> element = do_QueryReferent(ptr)) {
       if (element && element->IsPopoverOpenedInMode(aMode)) {
-        elements.AppendElement(element);
+        RefPtr<Element> popoverRef(element);
+        elements.AppendElement(popoverRef);
       }
     }
   }
   return elements;
+}
+
+bool Document::IsInPopoverListOf(const Element& aElement,
+                                 PopoverAttributeState aMode) const {
+  for (const nsWeakPtr& ptr : mTopLayer) {
+    if (nsCOMPtr<Element> element = do_QueryReferent(ptr)) {
+      if (element == &aElement && element->IsPopoverOpenedInMode(aMode)) {
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 Element* Document::GetTopmostPopoverOf(PopoverAttributeState aMode) const {
@@ -16519,6 +16487,15 @@ void Document::AddPopoverToTopLayer(Element& aElement) {
 void Document::RemovePopoverFromTopLayer(Element& aElement) {
   MOZ_ASSERT(aElement.GetPopoverData());
   TopLayerPop(aElement);
+}
+
+
+Element* Document::PopoverHintStackParent() const {
+  return mPopoverHintStackParent;
+}
+
+void Document::SetPopoverHintStackParent(Element* aParent) {
+  mPopoverHintStackParent = aParent;
 }
 
 
@@ -16975,20 +16952,10 @@ bool Document::ApplyFullscreen(UniquePtr<FullscreenRequest> aRequest) {
       return false;
   }
 
-  
-  RefPtr<nsINode> hideUntil = elem->GetTopmostPopoverAncestor(
-      PopoverAttributeState::Hint, nullptr, false);
-  if (!hideUntil) {
-    hideUntil = elem->GetTopmostPopoverAncestor(PopoverAttributeState::Auto,
-                                                nullptr, false);
-  }
-
-  if (!hideUntil) {
-    hideUntil = OwnerDoc();
-  }
-
   RefPtr<Document> doc = aRequest->Document();
-  doc->HideAllPopoversUntil(*hideUntil, false, true);
+  
+  RefPtr<Element> hideUntil = elem->GetTopmostPopoverAncestor(nullptr, false);
+  doc->HidePopoversUntil(hideUntil, false, true);
 
   
   

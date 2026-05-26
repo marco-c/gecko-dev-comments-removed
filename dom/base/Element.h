@@ -636,10 +636,7 @@ class Element : public FragmentOrElement {
   nsGenericHTMLElement* GetAssociatedPopover() const;
 
   
-
-
-  Element* GetTopmostPopoverAncestor(PopoverAttributeState aMode,
-                                     const Element* aInvoker,
+  Element* GetTopmostPopoverAncestor(const Element* aInvoker,
                                      bool isPopover) const;
 
   ElementAnimationData* GetAnimationData() const {
