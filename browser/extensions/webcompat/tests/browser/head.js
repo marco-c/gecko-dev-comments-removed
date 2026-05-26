@@ -29,6 +29,18 @@ const SEC_DELAY_PREF = "security.notification_enable_delay";
 const SMARTBLOCK_EMBEDS_ENABLED_PREF =
   "extensions.webcompat.smartblockEmbeds.enabled";
 
+const CONTENT_CLASSIFIER_TESTING_PREF =
+  "privacy.trackingprotection.content.testing";
+const CONTENT_CLASSIFIER_PROTECTION_ENABLED_PREF =
+  "privacy.trackingprotection.content.protection.enabled";
+const CONTENT_CLASSIFIER_PROTECTION_LIST_URLS_PREF =
+  "privacy.trackingprotection.content.protection.test_list_urls";
+const CONTENT_CLASSIFIER_BLOCK_LIST_URL = `${TEST_ROOT}content_classifier_block_list.txt`;
+
+
+const CONTENT_CLASSIFIER_LISTS_LOADED_TOPIC =
+  "test-content-classifier-filter-lists-loaded";
+
 const { UrlClassifierTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/UrlClassifierTestUtils.sys.mjs"
 );
@@ -150,6 +162,23 @@ const WebCompatExtension = new (class WebCompatExtension {
     return this.#run(async function () {
       await content.wrappedJSObject.shims.ready();
     });
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  async settleShimStateChange(_id) {
+    return this.#run(async function (id) {
+      const shim = content.wrappedJSObject.shims.shims.get(id);
+      if (!shim) {
+        return;
+      }
+      await shim._onEnabledStateChanged({ alsoClearResourceCache: true });
+    }, _id);
   }
 
   async getRegisteredContentScriptsFor(_id) {
@@ -401,6 +430,57 @@ async function clickOnPagePlaceholder(tab) {
   return popupShownPromise;
 }
 
+async function enableContentClassifierBlockList(blockListUrl) {
+  let wasEnabled = Services.prefs.getBoolPref(
+    CONTENT_CLASSIFIER_PROTECTION_ENABLED_PREF,
+    false
+  );
+  let currentUrl = Services.prefs.getStringPref(
+    CONTENT_CLASSIFIER_PROTECTION_LIST_URLS_PREF,
+    ""
+  );
+  let needsLoad = !wasEnabled || currentUrl !== blockListUrl;
+  let listsLoaded = needsLoad
+    ? TestUtils.topicObserved(CONTENT_CLASSIFIER_LISTS_LOADED_TOPIC)
+    : null;
+
+  Services.prefs.setBoolPref(CONTENT_CLASSIFIER_TESTING_PREF, true);
+  Services.prefs.setBoolPref(CONTENT_CLASSIFIER_PROTECTION_ENABLED_PREF, true);
+  Services.prefs.setStringPref(
+    CONTENT_CLASSIFIER_PROTECTION_LIST_URLS_PREF,
+    blockListUrl
+  );
+
+  if (listsLoaded) {
+    await listsLoaded;
+  }
+}
+
+function disableContentClassifier() {
+  Services.prefs.clearUserPref(CONTENT_CLASSIFIER_TESTING_PREF);
+  Services.prefs.clearUserPref(CONTENT_CLASSIFIER_PROTECTION_ENABLED_PREF);
+  Services.prefs.clearUserPref(CONTENT_CLASSIFIER_PROTECTION_LIST_URLS_PREF);
+}
+
+
+
+
+
+
+
+
+async function waitForShimEnabledState(shimId, expectedEnabled) {
+  await TestUtils.waitForCondition(
+    async () => {
+      const shims = await WebCompatExtension.availableShims();
+      const shim = shims.find(s => s.id === shimId);
+      return shim?.enabled === expectedEnabled;
+    },
+    `Shim ${shimId} should be ${expectedEnabled ? "enabled" : "disabled"}`
+  );
+  await WebCompatExtension.settleShimStateChange(shimId);
+}
+
 async function generateTestShims() {
   await WebCompatExtension.updateShims([
     {
@@ -494,6 +574,26 @@ async function generateTestShims() {
         "*://itisatracker.org/browser/browser/extensions/webcompat/tests/browser/shims_test_fetch.txt",
       ],
       onlyIfBlockedByETP: true,
+    },
+    {
+      
+      
+      
+      
+      
+      disabled: true,
+      id: "MochitestShimContent",
+      platform: "all",
+      name: "Test shim for content classifier replace path",
+      bug: "mochitest",
+      matches: [
+        {
+          patterns: [
+            "*://itisatracker.org/browser/browser/extensions/webcompat/tests/browser/shims_test_fetch.txt",
+          ],
+          types: ["xmlhttprequest"],
+        },
+      ],
     },
     {
       id: "EmbedTestShim",
