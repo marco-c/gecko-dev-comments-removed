@@ -2911,21 +2911,10 @@ static bool DecodeTypeSection(Decoder& d, CodeMetadata* codeMeta) {
     return false;
   }
 
-  const uint8_t* bytes;
-  if (!d.readBytes(numBytes, &bytes)) {
-    return false;
-  }
-
-  if (!IsUtf8(AsChars(Span(bytes, numBytes)))) {
-    return false;
-  }
-
   UTF8Bytes utf8Bytes;
-  if (!utf8Bytes.resizeUninitialized(numBytes)) {
+  if (!d.readUTF8Bytes(numBytes, &utf8Bytes)) {
     return false;
   }
-  memcpy(utf8Bytes.begin(), bytes, numBytes);
-
   *name = CacheableName(std::move(utf8Bytes));
   return true;
 }
@@ -4724,6 +4713,162 @@ bool wasm::DecodeModuleTail(Decoder& d, CodeMetadata* codeMeta,
 }
 
 #ifdef ENABLE_WASM_COMPONENTS
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[[nodiscard]] static bool DecodeComponentLabel(Decoder& d, const char* thing,
+                                               bool allowUppercase) {
+  while (true) {
+    uint8_t first;
+    if (!d.readFixedU8(&first)) {
+      return d.failf("%s name ended unexpectedly", thing);
+    }
+    bool firstUppercase = 'A' <= first && first <= 'Z';
+    bool firstLowercase = 'a' <= first && first <= 'z';
+
+    if (!(firstUppercase || firstLowercase)) {
+      return d.failf("invalid character in %s name", thing);
+    }
+    if (firstUppercase && !allowUppercase) {
+      return d.failf("%s name had unexpected uppercase letter", thing);
+    }
+
+    uint8_t b;
+    while (d.peekByte(&b)) {
+      if (b == '-') {
+        break;
+      }
+
+      bool letter =
+          firstUppercase ? ('A' <= b && b <= 'Z') : ('a' <= b && b <= 'z');
+      bool digit = '0' <= b && b <= '9';
+      if (!letter && !digit) {
+        
+        
+        return true;
+      }
+
+      MOZ_RELEASE_ASSERT(d.readBytes(1));
+    }
+    if (d.done()) {
+      return true;
+    }
+
+    MOZ_RELEASE_ASSERT(d.readLiteral("-"));
+  }
+}
+
+[[nodiscard]] static bool DecodeComponentName(Decoder& d, const char* thing,
+                                              CacheableName* name,
+                                              bool allowMethods) {
+  uint32_t len;
+  if (!d.readVarU32(&len)) {
+    return d.fail("expected name");
+  }
+  if (len == 0) {
+    return d.failf("%s name cannot be empty", thing);
+  }
+
+  Decoder nameDecoder(d.currentPosition(), d.currentPosition() + len,
+                      d.currentOffset(), d.error(), d.warnings());
+  {
+    Decoder& d = nameDecoder;
+
+    
+    
+    if (d.peekLiteral("url=")) {
+      return d.fail("URL names are not supported");
+    } else if (d.peekLiteral("integrity=")) {
+      return d.fail("hash names are not supported");
+    } else if (d.peekLiteral("unlocked-dep=") || d.peekLiteral("locked-dep=")) {
+      return d.fail("dependency names are not supported");
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    if (allowMethods && d.readLiteral("[constructor]")) {
+      if (!DecodeComponentLabel(d, thing, true)) {
+        return false;
+      }
+    } else if (allowMethods &&
+               (d.readLiteral("[method]") || d.readLiteral("[static]"))) {
+      if (!DecodeComponentLabel(d, thing, true)) {
+        return false;
+      }
+      if (d.done()) {
+        return d.failf("%s name ended unexpectedly", thing);
+      } else if (!d.readLiteral(".")) {
+        return d.failf("invalid character in %s name", thing);
+      }
+      if (!DecodeComponentLabel(d, thing, true)) {
+        return false;
+      }
+    } else {
+      if (!DecodeComponentLabel(d, thing, true)) {
+        return false;
+      }
+    }
+
+    if (!d.done()) {
+      return d.failf("invalid characters in %s name", thing);
+    }
+  }
+
+  UTF8Bytes fullNameBytes;
+  MOZ_RELEASE_ASSERT(d.readUTF8Bytes(len, &fullNameBytes),
+                     "name should have been already validated as UTF-8");
+  *name = CacheableName(std::move(fullNameBytes));
+
+  return true;
+}
 
 bool wasm::DecodeComponent(Decoder& d, MutableComponent c) {
   if (!DecodePreamble(d, EncodingVersionComponent)) {

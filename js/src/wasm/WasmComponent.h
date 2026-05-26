@@ -11,11 +11,44 @@
 
 #  include "js/WasmComponent.h"
 
+#  include "mozilla/HashTable.h"
 #  include "mozilla/RefPtr.h"
+#  include "mozilla/Span.h"
 #  include "wasm/WasmModule.h"
 
 namespace js {
 namespace wasm {
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct StronglyUniqueNameHasher {
+  using Key = mozilla::Span<const char>;
+  using Lookup = mozilla::Span<const char>;
+
+  static HashNumber hash(const Lookup& aLookup);
+  static bool match(const Key& aKey, const Lookup& aLookup);
+};
+
+
+
+class StronglyUniqueNameSet {
+  mozilla::HashSet<mozilla::Span<const char>, StronglyUniqueNameHasher,
+                   SystemAllocPolicy>
+      data_;
+
+ public:
+  [[nodiscard]] bool add(mozilla::Span<const char> name, bool* duplicate);
+};
 
 class Component : public JS::WasmComponent {
   
