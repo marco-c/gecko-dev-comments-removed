@@ -501,6 +501,15 @@ void Sanitizer::CanonicalizeConfiguration(const SanitizerConfig& aConfig,
 }
 
 
+
+static bool IsNonReplaceableElement(const CanonicalElement& aElement) {
+  return aElement ==
+             CanonicalElement(nsGkAtoms::html, nsGkAtoms::nsuri_xhtml) ||
+         aElement == CanonicalElement(nsGkAtoms::svg, nsGkAtoms::nsuri_svg) ||
+         aElement == CanonicalElement(nsGkAtoms::math, nsGkAtoms::nsuri_mathml);
+}
+
+
 void Sanitizer::IsValid(ErrorResult& aRv) {
   
   
@@ -539,13 +548,15 @@ void Sanitizer::IsValid(ErrorResult& aRv) {
   
   if (mReplaceWithChildrenElements) {
     
-    
-    CanonicalElement htmlElement(nsGkAtoms::html, nsGkAtoms::nsuri_xhtml);
-    if (mReplaceWithChildrenElements->Contains(htmlElement)) {
-      aRv.ThrowTypeError(nsFmtCString(
-          "Element {} is not allowed in 'replaceWithChildrenElements'",
-          htmlElement));
-      return;
+    for (const CanonicalElement& element : *mReplaceWithChildrenElements) {
+      
+      
+      if (IsNonReplaceableElement(element)) {
+        aRv.ThrowTypeError(nsFmtCString(
+            "Element {} is not allowed in 'replaceWithChildrenElements'",
+            element));
+        return;
+      }
     }
 
     
@@ -1182,8 +1193,7 @@ bool Sanitizer::ReplaceElementWithChildren(
   CanonicalElement element = CanonicalizeElement(aElement);
 
   
-  
-  if (element == CanonicalElement(nsGkAtoms::html, nsGkAtoms::nsuri_xhtml)) {
+  if (IsNonReplaceableElement(element)) {
     
     return false;
   }
@@ -1573,198 +1583,6 @@ static bool IsUnsafeElement(nsAtom* aLocalName, int32_t aNamespaceID) {
 }
 
 
-template <bool IsDefaultConfig>
-void Sanitizer::SanitizeChildren(nsINode* aNode, bool aSafe) {
-  
-  nsCOMPtr<nsIContent> next = nullptr;
-  for (nsCOMPtr<nsIContent> child = aNode->GetFirstChild(); child;
-       child = next) {
-    next = child->GetNextSibling();
-
-    
-    
-    MOZ_ASSERT(child->IsText() || child->IsComment() || child->IsElement() ||
-               child->NodeType() == nsINode::DOCUMENT_TYPE_NODE);
-
-    
-    if (child->NodeType() == nsINode::DOCUMENT_TYPE_NODE) {
-      continue;
-    }
-
-    
-    if (child->IsText()) {
-      continue;
-    }
-
-    
-    if (child->IsComment()) {
-      
-      
-      if (!mComments) {
-        child->Remove();
-      }
-      continue;
-    }
-
-    
-    MOZ_ASSERT(child->IsElement());
-
-    
-    
-    nsAtom* nameAtom = child->NodeInfo()->NameAtom();
-    int32_t namespaceID = child->NodeInfo()->NamespaceID();
-    
-    Maybe<CanonicalElement> elementName;
-    
-    [[maybe_unused]] StaticAtomSet* elementAttributes = nullptr;
-    if constexpr (!IsDefaultConfig) {
-      elementName.emplace(nameAtom, ToNamespace(namespaceID));
-
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      if (aSafe && IsUnsafeElement(nameAtom, namespaceID)) {
-        child->Remove();
-        continue;
-      }
-
-      
-      
-      
-      if (mReplaceWithChildrenElements &&
-          mReplaceWithChildrenElements->Contains(*elementName)) {
-        
-        
-        
-        nsCOMPtr<nsIContent> parent = child->GetParent();
-        MOZ_DIAGNOSTIC_ASSERT(parent);
-        nsCOMPtr<nsIContent> firstChild = child->GetFirstChild();
-        nsCOMPtr<nsIContent> newChild = firstChild;
-        for (; newChild; newChild = child->GetFirstChild()) {
-          ErrorResult rv;
-          parent->InsertBefore(*newChild, child, rv);
-          if (rv.Failed()) {
-            
-            break;
-          }
-        }
-
-        child->Remove();
-        if (firstChild) {
-          next = firstChild;
-        }
-        continue;
-      }
-
-      
-      
-      if (mRemoveElements) {
-        if (mRemoveElements->Contains(*elementName)) {
-          
-          child->Remove();
-          
-          continue;
-        }
-      }
-
-      
-      
-      if (mElements) {
-        if (!mElements->Contains(*elementName)) {
-          
-          child->Remove();
-          
-          continue;
-        }
-      }
-    } else {
-      
-      
-
-      
-      
-
-      bool found = false;
-      if (nameAtom->IsStatic()) {
-        ElementsWithAttributes* elements = nullptr;
-        if (namespaceID == kNameSpaceID_XHTML) {
-          elements = sDefaultHTMLElements;
-        } else if (namespaceID == kNameSpaceID_MathML) {
-          elements = sDefaultMathMLElements;
-        } else if (namespaceID == kNameSpaceID_SVG) {
-          elements = sDefaultSVGElements;
-        }
-        if (elements) {
-          if (auto lookup = elements->Lookup(nameAtom->AsStatic())) {
-            found = true;
-            
-            
-            elementAttributes = lookup->get();
-          }
-        }
-      }
-      if (!found) {
-        
-        child->Remove();
-        
-        continue;
-      }
-
-      MOZ_ASSERT(!IsUnsafeElement(nameAtom, namespaceID),
-                 "The default config has no unsafe elements");
-    }
-
-    
-    
-    
-    if (auto* templateEl = HTMLTemplateElement::FromNode(child)) {
-      RefPtr<DocumentFragment> frag = templateEl->Content();
-      SanitizeChildren<IsDefaultConfig>(frag, aSafe);
-    }
-
-    
-    
-    if (RefPtr<ShadowRoot> shadow = child->GetShadowRoot()) {
-      SanitizeChildren<IsDefaultConfig>(shadow, aSafe);
-    }
-
-    if constexpr (IsDefaultConfig) {
-      if (CustomElementData* data = child->AsElement()->GetCustomElementData())
-          [[unlikely]] {
-        MOZ_ASSERT(data->GetIs(child->AsElement()),
-                   "Non is= custom elements should have already been removed");
-        (void)data;
-        child->AsElement()->ClearCustomElementData();
-      }
-    }
-
-    
-    if constexpr (!IsDefaultConfig) {
-      SanitizeAttributes(child->AsElement(), *elementName, aSafe);
-    } else {
-      SanitizeDefaultConfigAttributes(child->AsElement(), elementAttributes,
-                                      aSafe);
-    }
-
-    
-    
-    
-    SanitizeChildren<IsDefaultConfig>(child, aSafe);
-  }
-}
-
-static inline bool IsDataAttribute(nsAtom* aName, int32_t aNamespaceID) {
-  return StringBeginsWith(nsDependentAtomString(aName), u"data-"_ns) &&
-         aNamespaceID == kNameSpaceID_None;
-}
-
-
 
 static bool RemoveJavascriptNavigationURLAttribute(Element* aElement,
                                                    nsAtom* aLocalName,
@@ -1838,171 +1656,354 @@ static bool RemoveJavascriptNavigationURLAttribute(Element* aElement,
   return false;
 }
 
-void Sanitizer::SanitizeAttributes(Element* aChild,
-                                   const CanonicalElement& aElementName,
-                                   bool aSafe) {
-  MOZ_ASSERT(!mIsDefaultConfig);
 
+template <bool IsDefaultConfig>
+void Sanitizer::SanitizeChildren(nsINode* aNode, bool aSafe) const {
   
-  
+  nsCOMPtr<nsIContent> next = nullptr;
+  for (nsCOMPtr<nsIContent> child = aNode->GetFirstChild(); child;
+       child = next) {
+    next = child->GetNextSibling();
 
-  
-  
-  
-  
-  
-  const CanonicalElementAttributes* elementAttributes =
-      mElements ? mElements->Lookup(aElementName).DataPtrOrNull() : nullptr;
-
-  
-  int32_t count = int32_t(aChild->GetAttrCount());
-  for (int32_t i = count - 1; i >= 0; --i) {
     
     
-    const nsAttrName* attr = aChild->GetAttrNameAt(i);
-    RefPtr<nsAtom> attrLocalName = attr->LocalName();
-    int32_t attrNs = attr->NamespaceID();
-    CanonicalAttribute attrName(attrLocalName, ToNamespace(attrNs));
+    MOZ_ASSERT(child->IsText() || child->IsComment() || child->IsElement() ||
+               child->NodeType() == nsINode::DOCUMENT_TYPE_NODE);
 
-    bool remove = false;
     
-    
-    if (aSafe && attrNs == kNameSpaceID_None &&
-        nsContentUtils::IsEventAttributeName(
-            attrLocalName, EventNameType_All & ~EventNameType_XUL)) {
-      remove = true;
+    if (child->NodeType() == nsINode::DOCUMENT_TYPE_NODE) {
+      continue;
     }
 
     
-    
-    else if (elementAttributes && elementAttributes->mRemoveAttributes &&
-             elementAttributes->mRemoveAttributes->Contains(attrName)) {
-      
-      remove = true;
+    if (child->IsText()) {
+      continue;
     }
 
     
-    else if (mAttributes) {
+    if (child->IsComment()) {
       
       
-      
-      
-      
-      MOZ_ASSERT(mDataAttributes.isSome(),
-                 "mDataAttributes exists iff mAttributes exists");
-      if (!mAttributes->Contains(attrName) &&
-          !(elementAttributes && elementAttributes->mAttributes &&
-            elementAttributes->mAttributes->Contains(attrName)) &&
-          !(*mDataAttributes && IsDataAttribute(attrLocalName, attrNs))) {
-        
-        remove = true;
+      if (!mComments) {
+        child->Remove();
       }
+      continue;
     }
 
     
-    else {
+    MOZ_ASSERT(child->IsElement());
+
+    
+    
+    nsAtom* nameAtom = child->NodeInfo()->NameAtom();
+    int32_t namespaceID = child->NodeInfo()->NamespaceID();
+    
+    Maybe<CanonicalElement> elementName;
+    std::conditional_t<IsDefaultConfig, StaticAtomSet*,
+                       CanonicalElementAttributes*>
+        elementAttributes = nullptr;
+    if constexpr (!IsDefaultConfig) {
+      elementName.emplace(nameAtom, ToNamespace(namespaceID));
+
       
       
-      if (elementAttributes && elementAttributes->mAttributes &&
-          !elementAttributes->mAttributes->Contains(attrName)) {
-        
-        remove = true;
+      
+      
+      
+      
+      
+      
+      
+      if (aSafe && IsUnsafeElement(nameAtom, namespaceID)) {
+        child->Remove();
+        continue;
       }
 
       
       
-      else if (mRemoveAttributes->Contains(attrName)) {
+      
+      if (mReplaceWithChildrenElements &&
+          mReplaceWithChildrenElements->Contains(*elementName)) {
         
-        remove = true;
+        
+        
+        nsCOMPtr<nsIContent> parent = child->GetParent();
+        MOZ_DIAGNOSTIC_ASSERT(parent);
+        nsCOMPtr<nsIContent> firstChild = child->GetFirstChild();
+        nsCOMPtr<nsIContent> newChild = firstChild;
+        for (; newChild; newChild = child->GetFirstChild()) {
+          ErrorResult rv;
+          parent->InsertBefore(*newChild, child, rv);
+          if (rv.Failed()) {
+            
+            break;
+          }
+        }
+
+        child->Remove();
+        if (firstChild) {
+          next = firstChild;
+        }
+        continue;
+      }
+
+      
+      
+      if (mRemoveElements) {
+        if (mRemoveElements->Contains(*elementName)) {
+          
+          child->Remove();
+          
+          continue;
+        }
+      }
+
+      
+      
+      if (mElements) {
+        elementAttributes = mElements->Lookup(*elementName).DataPtrOrNull();
+        if (!elementAttributes) {
+          
+          child->Remove();
+          
+          continue;
+        }
+      }
+    } else {
+      
+      
+
+      
+      
+
+      bool found = false;
+      if (nameAtom->IsStatic()) {
+        ElementsWithAttributes* elements = nullptr;
+        if (namespaceID == kNameSpaceID_XHTML) {
+          elements = sDefaultHTMLElements;
+        } else if (namespaceID == kNameSpaceID_MathML) {
+          elements = sDefaultMathMLElements;
+        } else if (namespaceID == kNameSpaceID_SVG) {
+          elements = sDefaultSVGElements;
+        }
+        if (elements) {
+          if (auto lookup = elements->Lookup(nameAtom->AsStatic())) {
+            found = true;
+            
+            
+            elementAttributes = lookup->get();
+          }
+        }
+      }
+      if (!found) {
+        
+        child->Remove();
+        
+        continue;
+      }
+
+      MOZ_ASSERT(!IsUnsafeElement(nameAtom, namespaceID),
+                 "The default config has no unsafe elements");
+    }
+
+    
+    
+    
+    if (auto* templateEl = HTMLTemplateElement::FromNode(child)) {
+      RefPtr<DocumentFragment> frag = templateEl->Content();
+      SanitizeChildren<IsDefaultConfig>(frag, aSafe);
+    }
+
+    
+    
+    if (RefPtr<ShadowRoot> shadow = child->GetShadowRoot()) {
+      SanitizeChildren<IsDefaultConfig>(shadow, aSafe);
+    }
+
+    if constexpr (IsDefaultConfig) {
+      if (CustomElementData* data = child->AsElement()->GetCustomElementData())
+          [[unlikely]] {
+        MOZ_ASSERT(data->GetIs(child->AsElement()),
+                   "Non is= custom elements should have already been removed");
+        (void)data;
+        child->AsElement()->ClearCustomElementData();
       }
     }
 
     
-    if (aSafe && !remove) {
-      remove =
-          RemoveJavascriptNavigationURLAttribute(aChild, attrLocalName, attrNs);
+    int32_t attrCount = int32_t(child->AsElement()->GetAttrCount());
+    for (int32_t i = attrCount - 1; i >= 0; --i) {
+      
+      
+      const nsAttrName* attr = child->AsElement()->GetAttrNameAt(i);
+      RefPtr<nsAtom> attrLocalName = attr->LocalName();
+      int32_t attrNs = attr->NamespaceID();
+
+      
+      
+      bool remove =
+          !IsAttributeAllowed(elementAttributes, attrLocalName, attrNs, aSafe);
+
+      
+      if (aSafe && !remove) {
+        remove = RemoveJavascriptNavigationURLAttribute(child->AsElement(),
+                                                        attrLocalName, attrNs);
+      }
+
+      if (remove) {
+        child->AsElement()->UnsetAttr(attrNs, attrLocalName,
+                                       false);
+
+        
+        
+        
+        --attrCount;
+        i = attrCount;  
+                        
+      }
     }
 
-    if (remove) {
-      aChild->UnsetAttr(attr->NamespaceID(), attr->LocalName(), false);
-
-      
-      
-      
-      --count;
-      i = count;  
-    }
+    
+    
+    
+    SanitizeChildren<IsDefaultConfig>(child, aSafe);
   }
 }
 
-void Sanitizer::SanitizeDefaultConfigAttributes(
-    Element* aChild, StaticAtomSet* aElementAttributes, bool aSafe) {
+static inline bool IsDataAttribute(nsAtom* aName, int32_t aNamespaceID) {
+  return StringBeginsWith(nsDependentAtomString(aName), u"data-"_ns) &&
+         aNamespaceID == kNameSpaceID_None;
+}
+
+
+bool Sanitizer::IsAttributeAllowed(StaticAtomSet* aElementAttributes,
+                                   nsAtom* aAttrLocalName, int32_t aAttrNs,
+                                   bool) const {
   MOZ_ASSERT(mIsDefaultConfig);
 
   
   
-
+  
+  
   
 
   
-  int32_t count = int32_t(aChild->GetAttrCount());
-  for (int32_t i = count - 1; i >= 0; --i) {
+  
+  
+
+  
+  
+
+  
+  
+  
+  
+  bool globallyAllowed = aAttrNs == kNameSpaceID_None &&
+                         sDefaultAttributes->Contains(aAttrLocalName);
+
+  
+  
+  
+  bool locallyAllowed = aAttrNs == kNameSpaceID_None && aElementAttributes &&
+                        aElementAttributes->Contains(aAttrLocalName);
+
+  
+  
+  
+  bool isDataAttributeAllowed =
+      *mDataAttributes && IsDataAttribute(aAttrLocalName, aAttrNs);
+
+  
+  
+  if (!globallyAllowed && !locallyAllowed && !isDataAttributeAllowed) {
+    return false;
+  }
+
+  
+  
+
+  
+  
+  MOZ_ASSERT(!nsContentUtils::IsEventAttributeName(
+      aAttrLocalName, EventNameType_All & ~EventNameType_XUL));
+
+  
+  return true;
+}
+
+bool Sanitizer::IsAttributeAllowed(
+    CanonicalElementAttributes* aElementAttributes, nsAtom* aAttrLocalName,
+    int32_t aAttrNs, bool aSafe) const {
+  MOZ_ASSERT(!mIsDefaultConfig);
+
+  
+  
+  
+  
+  
+
+  
+  
+  
+  if (aSafe && aAttrNs == kNameSpaceID_None &&
+      nsContentUtils::IsEventAttributeName(
+          aAttrLocalName, EventNameType_All & ~EventNameType_XUL)) {
+    return false;
+  }
+
+  CanonicalAttribute attrName(aAttrLocalName, ToNamespace(aAttrNs));
+  
+  
+  if (aElementAttributes && aElementAttributes->mRemoveAttributes &&
+      aElementAttributes->mRemoveAttributes->Contains(attrName)) {
+    
+    return false;
+  }
+
+  
+  if (mAttributes) {
     
     
-    const nsAttrName* attr = aChild->GetAttrNameAt(i);
-    RefPtr<nsAtom> attrLocalName = attr->LocalName();
-    int32_t attrNs = attr->NamespaceID();
+    bool globallyAllowed = mAttributes->Contains(attrName);
 
     
     
     
+    bool locallyAllowed = aElementAttributes &&
+                          aElementAttributes->mAttributes &&
+                          aElementAttributes->mAttributes->Contains(attrName);
 
     
     
     
-    
-    
-    
-    bool remove = false;
-    
-    
-    MOZ_ASSERT(mDataAttributes.isSome(),
-               "mDataAttributes always exists in the default config");
-    if (attrNs != kNameSpaceID_None ||
-        (!sDefaultAttributes->Contains(attrLocalName) &&
-         !(aElementAttributes && aElementAttributes->Contains(attrLocalName)) &&
-         !(*mDataAttributes && IsDataAttribute(attrLocalName, attrNs)))) {
-      
-      remove = true;
-    }
+    bool isDataAttributeAllowed =
+        *mDataAttributes && IsDataAttribute(aAttrLocalName, aAttrNs);
 
     
     
-
-    
-    else if (aSafe) {
-      
-      
-      remove =
-          RemoveJavascriptNavigationURLAttribute(aChild, attrLocalName, attrNs);
-    }
-
-    
-    
-    MOZ_ASSERT_IF(!remove,
-                  !nsContentUtils::IsEventAttributeName(
-                      attrLocalName, EventNameType_All & ~EventNameType_XUL));
-
-    if (remove) {
-      aChild->UnsetAttr(attr->NamespaceID(), attr->LocalName(), false);
-
-      
-      
-      
-      --count;
-      i = count;  
+    if (!globallyAllowed && !locallyAllowed && !isDataAttributeAllowed) {
+      return false;
     }
   }
+  
+  else {
+    
+    
+    if (aElementAttributes && aElementAttributes->mAttributes &&
+        !aElementAttributes->mAttributes->Contains(attrName)) {
+      
+      return false;
+    }
+
+    
+    if (mRemoveAttributes->Contains(attrName)) {
+      
+      return false;
+    }
+  }
+
+  
+  return true;
 }
 
 }  
