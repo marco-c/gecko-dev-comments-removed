@@ -4,9 +4,8 @@
 
 #include "base/waitable_event.h"
 
-#include "base/condition_variable.h"
-#include "base/lock.h"
-#include "base/message_loop.h"
+#include "mozilla/Mutex.h"
+#include "mozilla/CondVar.h"
 
 
 
@@ -40,12 +39,12 @@ WaitableEvent::WaitableEvent(bool manual_reset, bool initially_signaled)
 WaitableEvent::~WaitableEvent() = default;
 
 void WaitableEvent::Reset() {
-  AutoLock locked(kernel_->lock_);
+  mozilla::MutexAutoLock locked(kernel_->lock_);
   kernel_->signaled_ = false;
 }
 
 void WaitableEvent::Signal() {
-  AutoLock locked(kernel_->lock_);
+  mozilla::MutexAutoLock locked(kernel_->lock_);
 
   if (kernel_->signaled_) return;
 
@@ -60,7 +59,7 @@ void WaitableEvent::Signal() {
 }
 
 bool WaitableEvent::IsSignaled() {
-  AutoLock locked(kernel_->lock_);
+  mozilla::MutexAutoLock locked(kernel_->lock_);
 
   const bool result = kernel_->signaled_;
   if (result && !kernel_->manual_reset_) kernel_->signaled_ = false;
@@ -76,11 +75,11 @@ bool WaitableEvent::IsSignaled() {
 
 class SyncWaiter : public WaitableEvent::Waiter {
  public:
-  SyncWaiter(ConditionVariable* cv, Lock* lock)
+  SyncWaiter(mozilla::CondVar* cv, mozilla::Mutex* lock)
       : fired_(false), cv_(cv), lock_(lock), signaling_event_(NULL) {}
 
   bool Fire(WaitableEvent* signaling_event) override {
-    AutoLock locked(*lock_);
+    mozilla::MutexAutoLock locked(*lock_);
 
     if (fired_) {
       return false;
@@ -89,7 +88,7 @@ class SyncWaiter : public WaitableEvent::Waiter {
     fired_ = true;
     signaling_event_ = signaling_event;
 
-    cv_->Broadcast();
+    cv_->NotifyAll();
 
     
     return true;
@@ -117,16 +116,20 @@ class SyncWaiter : public WaitableEvent::Waiter {
 
  private:
   bool fired_;
-  ConditionVariable* const cv_;
-  Lock* const lock_;
+  mozilla::CondVar* const cv_;
+  mozilla::Mutex* const lock_;
   WaitableEvent* signaling_event_;  
 };
 
 bool WaitableEvent::TimedWait(const TimeDelta& max_time) {
-  const TimeTicks end_time(TimeTicks::Now() + max_time);
-  const bool finite_time = max_time.ToInternalValue() >= 0;
+  mozilla::Maybe<mozilla::TimeStamp> end_time;
+  if (max_time.ToInternalValue() >= 0) {
+    end_time.emplace(
+        mozilla::TimeStamp::Now() +
+        mozilla::TimeDuration::FromMilliseconds(max_time.InMillisecondsF()));
+  }
 
-  kernel_->lock_.Acquire();
+  kernel_->lock_.Lock();
   if (kernel_->signaled_) {
     if (!kernel_->manual_reset_) {
       
@@ -134,25 +137,25 @@ bool WaitableEvent::TimedWait(const TimeDelta& max_time) {
       kernel_->signaled_ = false;
     }
 
-    kernel_->lock_.Release();
+    kernel_->lock_.Unlock();
     return true;
   }
 
-  Lock lock;
-  lock.Acquire();
-  ConditionVariable cv(&lock);
+  mozilla::Mutex lock("TimedWait");
+  lock.Lock();
+  mozilla::CondVar cv(lock, "TimedWait");
   SyncWaiter sw(&cv, &lock);
 
   Enqueue(&sw);
-  kernel_->lock_.Release();
+  kernel_->lock_.Unlock();
   
   
   
 
   for (;;) {
-    const TimeTicks current_time(TimeTicks::Now());
+    const mozilla::TimeStamp current_time(mozilla::TimeStamp::Now());
 
-    if (sw.fired() || (finite_time && current_time >= end_time)) {
+    if (sw.fired() || (end_time && current_time >= *end_time)) {
       const bool return_value = sw.fired();
 
       
@@ -161,18 +164,18 @@ bool WaitableEvent::TimedWait(const TimeDelta& max_time) {
       
       
       sw.Disable();
-      lock.Release();
+      lock.Unlock();
 
-      kernel_->lock_.Acquire();
+      kernel_->lock_.Lock();
       kernel_->Dequeue(&sw, &sw);
-      kernel_->lock_.Release();
+      kernel_->lock_.Unlock();
 
       return return_value;
     }
 
-    if (finite_time) {
-      const TimeDelta max_wait(end_time - current_time);
-      cv.TimedWait(max_wait);
+    if (end_time) {
+      const mozilla::TimeDuration max_wait(*end_time - current_time);
+      cv.Wait(max_wait);
     } else {
       cv.Wait();
     }
@@ -193,7 +196,9 @@ cmp_fst_addr(const std::pair<WaitableEvent*, unsigned>& a,
 }
 
 
-size_t WaitableEvent::WaitMany(WaitableEvent** raw_waitables, size_t count) {
+
+size_t WaitableEvent::WaitMany(WaitableEvent** raw_waitables,
+                               size_t count) MOZ_NO_THREAD_SAFETY_ANALYSIS {
   DCHECK(count) << "Cannot wait on no events";
 
   
@@ -215,8 +220,8 @@ size_t WaitableEvent::WaitMany(WaitableEvent** raw_waitables, size_t count) {
     DCHECK(waitables[i].first != waitables[i + 1].first);
   }
 
-  Lock lock;
-  ConditionVariable cv(&lock);
+  mozilla::Mutex lock("WaitMany");
+  mozilla::CondVar cv(lock, "WaitMany");
   SyncWaiter sw(&cv, &lock);
 
   const size_t r = EnqueueMany(&waitables[0], count, &sw);
@@ -230,10 +235,10 @@ size_t WaitableEvent::WaitMany(WaitableEvent** raw_waitables, size_t count) {
 
   
   
-  lock.Acquire();
+  lock.Lock();
   
   for (size_t i = 0; i < count; ++i) {
-    waitables[count - (1 + i)].first->kernel_->lock_.Release();
+    waitables[count - (1 + i)].first->kernel_->lock_.Unlock();
   }
 
   for (;;) {
@@ -241,7 +246,7 @@ size_t WaitableEvent::WaitMany(WaitableEvent** raw_waitables, size_t count) {
 
     cv.Wait();
   }
-  lock.Release();
+  lock.Unlock();
 
   
   WaitableEvent* const signaled_event = sw.signaled_event();
@@ -252,12 +257,12 @@ size_t WaitableEvent::WaitMany(WaitableEvent** raw_waitables, size_t count) {
   
   for (size_t i = 0; i < count; ++i) {
     if (raw_waitables[i] != signaled_event) {
-      raw_waitables[i]->kernel_->lock_.Acquire();
+      raw_waitables[i]->kernel_->lock_.Lock();
       
       
       
       raw_waitables[i]->kernel_->Dequeue(&sw, &sw);
-      raw_waitables[i]->kernel_->lock_.Release();
+      raw_waitables[i]->kernel_->lock_.Unlock();
     } else {
       signaled_index = i;
     }
@@ -277,21 +282,23 @@ size_t WaitableEvent::WaitMany(WaitableEvent** raw_waitables, size_t count) {
 
 
 
+
 size_t WaitableEvent::EnqueueMany(std::pair<WaitableEvent*, size_t>* waitables,
-                                  size_t count, Waiter* waiter) {
+                                  size_t count, Waiter* waiter)
+    MOZ_NO_THREAD_SAFETY_ANALYSIS {
   if (!count) return 0;
 
-  waitables[0].first->kernel_->lock_.Acquire();
+  waitables[0].first->kernel_->lock_.Lock();
   if (waitables[0].first->kernel_->signaled_) {
     if (!waitables[0].first->kernel_->manual_reset_)
       waitables[0].first->kernel_->signaled_ = false;
-    waitables[0].first->kernel_->lock_.Release();
+    waitables[0].first->kernel_->lock_.Unlock();
     return count;
   }
 
   const size_t r = EnqueueMany(waitables + 1, count - 1, waiter);
   if (r) {
-    waitables[0].first->kernel_->lock_.Release();
+    waitables[0].first->kernel_->lock_.Unlock();
   } else {
     waitables[0].first->Enqueue(waiter);
   }

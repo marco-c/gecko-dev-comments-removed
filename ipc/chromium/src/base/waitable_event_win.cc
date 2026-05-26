@@ -10,6 +10,8 @@
 #include "base/logging.h"
 #include "base/time.h"
 
+#include "mozilla/ProfilerThreadSleep.h"
+
 namespace base {
 
 WaitableEvent::WaitableEvent(bool manual_reset, bool signaled)
@@ -30,6 +32,8 @@ bool WaitableEvent::IsSignaled() {
 }
 
 bool WaitableEvent::Wait() {
+  AUTO_PROFILER_THREAD_SLEEP;
+
   DWORD result = WaitForSingleObject(handle_, INFINITE);
   
   
@@ -38,6 +42,8 @@ bool WaitableEvent::Wait() {
 }
 
 bool WaitableEvent::TimedWait(const TimeDelta& max_time) {
+  AUTO_PROFILER_THREAD_SLEEP;
+
   DCHECK(max_time >= TimeDelta::FromMicroseconds(0));
   
   
@@ -58,6 +64,8 @@ bool WaitableEvent::TimedWait(const TimeDelta& max_time) {
 
 
 size_t WaitableEvent::WaitMany(WaitableEvent** events, size_t count) {
+  AUTO_PROFILER_THREAD_SLEEP;
+
   HANDLE handles[MAXIMUM_WAIT_OBJECTS];
   CHECK(count <= MAXIMUM_WAIT_OBJECTS)
   << "Can only wait on " << MAXIMUM_WAIT_OBJECTS << " with WaitMany";
