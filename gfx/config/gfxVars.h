@@ -222,6 +222,15 @@ class gfxVars final {
     }
 
     void SetListener(const std::function<void()>& aListener) {
+      
+      
+      
+      
+      
+      
+      MOZ_DIAGNOSTIC_ASSERT(!mListener,
+                            "gfxVar already has a listener; only one "
+                            "consumer is supported per variable.");
       mListener = aListener;
     }
 
