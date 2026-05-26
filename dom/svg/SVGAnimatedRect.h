@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_SVG_SVGANIMATEDRECT_H_
 #define DOM_SVG_SVGANIMATEDRECT_H_
 
@@ -34,9 +32,9 @@ class SVGAnimatedRect final : public nsWrapperCache {
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
 
-  already_AddRefed<SVGRect> GetBaseVal();
+  already_AddRefed<SVGRect> BaseVal();
 
-  already_AddRefed<SVGRect> GetAnimVal();
+  already_AddRefed<SVGRect> AnimVal();
 
  private:
   virtual ~SVGAnimatedRect();

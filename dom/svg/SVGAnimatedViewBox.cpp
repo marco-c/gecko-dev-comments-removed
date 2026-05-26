@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "SVGAnimatedViewBox.h"
 
 #include <utility>
@@ -114,7 +112,7 @@ void SVGAnimatedViewBox::Init() {
   
   
   
-  mBaseVal.none = true;
+  mBaseVal = SVGViewBox();
 
   mAnimVal = nullptr;
 }
@@ -154,11 +152,15 @@ void SVGAnimatedViewBox::SetBaseField(float aValue, SVGElement* aSVGElement,
     aField = aValue;
     return;
   }
-  if (aField == aValue) {
+  
+  
+  
+  if (!mBaseVal.none && aField == aValue) {
     return;
   }
   AutoChangeViewBoxNotifier notifier(this, aSVGElement);
   aField = aValue;
+  mBaseVal.none = false;
 }
 
 void SVGAnimatedViewBox::SetBaseValue(const SVGViewBox& aRect,
@@ -210,19 +212,15 @@ already_AddRefed<SVGAnimatedRect> SVGAnimatedViewBox::ToSVGAnimatedRect(
   return domAnimatedRect.forget();
 }
 
-already_AddRefed<SVGRect> SVGAnimatedViewBox::ToDOMBaseVal(
+MovingNotNull<RefPtr<SVGRect>> SVGAnimatedViewBox::ToDOMBaseVal(
     SVGElement* aSVGElement) {
-  if (!mHasBaseVal || mBaseVal.none) {
-    return nullptr;
-  }
-
   RefPtr<SVGRect> domBaseVal = sBaseSVGViewBoxTearoffTable.GetTearoff(this);
   if (!domBaseVal) {
     domBaseVal = new SVGRect(this, aSVGElement, SVGRect::RectType::BaseValue);
     sBaseSVGViewBoxTearoffTable.AddTearoff(this, domBaseVal);
   }
 
-  return domBaseVal.forget();
+  return WrapMovingNotNull(std::move(domBaseVal));
 }
 
 SVGRect::~SVGRect() {
@@ -238,20 +236,15 @@ SVGRect::~SVGRect() {
   }
 }
 
-already_AddRefed<SVGRect> SVGAnimatedViewBox::ToDOMAnimVal(
+MovingNotNull<RefPtr<SVGRect>> SVGAnimatedViewBox::ToDOMAnimVal(
     SVGElement* aSVGElement) {
-  if ((mAnimVal && mAnimVal->none) ||
-      (!mAnimVal && (!mHasBaseVal || mBaseVal.none))) {
-    return nullptr;
-  }
-
   RefPtr<SVGRect> domAnimVal = sAnimSVGViewBoxTearoffTable.GetTearoff(this);
   if (!domAnimVal) {
     domAnimVal = new SVGRect(this, aSVGElement, SVGRect::RectType::AnimValue);
     sAnimSVGViewBoxTearoffTable.AddTearoff(this, domAnimVal);
   }
 
-  return domAnimVal.forget();
+  return WrapMovingNotNull(std::move(domAnimVal));
 }
 
 std::unique_ptr<SMILAttr> SVGAnimatedViewBox::ToSMILAttr(
