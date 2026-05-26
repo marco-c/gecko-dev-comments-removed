@@ -11,6 +11,7 @@
 #include "mozilla/layers/WebRenderLayerManager.h"
 #include "mozilla/layers/CompositorBridgeChild.h"
 #include "mozilla/layers/CompositorManagerParent.h"
+#include "mozilla/AppShutdown.h"
 #include "mozilla/SchedulerGroup.h"
 #include "mozilla/StaticPrefs_image.h"
 #include "mozilla/PresShell.h"
@@ -67,7 +68,13 @@ SharedSurfacesChild::SharedUserData::~SharedUserData() {
     if (NS_IsMainThread()) {
       SharedSurfacesChild::Unshare(mId, mShared, mKeys);
     } else {
-      MOZ_ASSERT_UNREACHABLE("Shared resources not released!");
+      
+      
+      
+      
+      
+      MOZ_ASSERT(AppShutdown::IsInOrBeyond(ShutdownPhase::XPCOMShutdownThreads),
+                 "Shared resources not released!");
     }
   }
 }
@@ -78,7 +85,10 @@ void SharedSurfacesChild::SharedUserData::Destroy(void* aClosure) {
   RefPtr<SharedUserData> data =
       dont_AddRef(static_cast<SharedUserData*>(aClosure));
   if (data->mShared || !data->mKeys.IsEmpty()) {
-    SchedulerGroup::Dispatch(data.forget());
+    
+    
+    
+    SchedulerGroup::Dispatch(data.forget(), NS_DISPATCH_FALLIBLE);
   }
 }
 
@@ -434,7 +444,10 @@ AnimationImageKeyData& AnimationImageKeyData::operator=(
 AnimationImageKeyData::~AnimationImageKeyData() = default;
 
 SharedSurfacesAnimation::~SharedSurfacesAnimation() {
-  MOZ_ASSERT(mKeys.IsEmpty());
+  
+  
+  MOZ_ASSERT(mKeys.IsEmpty() ||
+             AppShutdown::IsInOrBeyond(ShutdownPhase::XPCOMShutdownThreads));
 }
 
 void SharedSurfacesAnimation::Destroy() {
@@ -442,7 +455,11 @@ void SharedSurfacesAnimation::Destroy() {
     nsCOMPtr<nsIRunnable> task =
         NewRunnableMethod("SharedSurfacesAnimation::Destroy", this,
                           &SharedSurfacesAnimation::Destroy);
-    NS_DispatchToMainThread(task.forget());
+    
+    
+    
+    
+    NS_DispatchToMainThread(task.forget(), NS_DISPATCH_FALLIBLE);
     return;
   }
 
