@@ -41,6 +41,7 @@ const APP_VERSION = "test-app-version";
 const BUILD_ID = "test-build-id";
 const OS_NAME = "test-os-name";
 const OS_VERSION = "test-os-version";
+const OS_BUILD_NUMBER = "test-os-build-number";
 const TELEMETRY_ENABLED = true;
 const LEGACY_CLIENT_ID = "legacy-client-id";
 const PROFILE_NAME = "test-profile-name";
@@ -341,13 +342,15 @@ async function testCreateBackupHelper(sandbox, taskFn) {
     1,
     "Should be a single restore start event after we start restoring a profile"
   );
-  Assert.deepEqual(
-    restoreStartedEvents[0].extra,
-    {
-      restore_id: restoreID,
-      replace: "true",
-    },
-    "Restore start event should have the right data"
+  Assert.equal(
+    restoreStartedEvents[0].extra.restore_id,
+    restoreID,
+    "Restore started event should have the right restore_id"
+  );
+  Assert.equal(
+    restoreStartedEvents[0].extra.replace,
+    "true",
+    "Restore started event should have replace=true"
   );
 
   Assert.equal(
@@ -355,10 +358,10 @@ async function testCreateBackupHelper(sandbox, taskFn) {
     1,
     "Should be a single restore complete event after we start restoring a profile"
   );
-  Assert.deepEqual(
-    restoreCompleteEvents[0].extra,
-    { restore_id: restoreID },
-    "Restore complete event should have the right data"
+  Assert.equal(
+    restoreCompleteEvents[0].extra.restore_id,
+    restoreID,
+    "Restore complete event should have the right restore_id"
   );
 
   
@@ -730,7 +733,10 @@ async function openUniqueFileInFolder(folderpath) {
   await worker.post("open", [testFile]);
 
   await Assert.rejects(
-    IOUtils.remove(folderpath),
+    IOUtils.remove(folderpath, {
+      recursive: true,
+      retryReadonly: true,
+    }),
     /NS_ERROR_FILE_DIR_NOT_EMPTY/,
     "attempt to remove folder threw an exception"
   );
@@ -771,7 +777,7 @@ async function checkBackup(backupService, profilePath, shouldSucceed) {
 
   await Assert.rejects(
     backupService.createBackup({ profilePath }),
-    /Failed to remove/,
+    /Failed to remove \d+? items/,
     "createBackup threw correct exception"
   );
 }
@@ -849,6 +855,11 @@ async function checkBackupWithUnremovableItems(unremovableItemsLimit) {
 
 
 add_task(
+  {
+    
+    
+    skip_if: () => AppConstants.platform !== "win",
+  },
   async function test_createBackup_robustToNonReadonlyFileSystemErrorsAllowOneNonReadonly() {
     await checkBackupWithUnremovableItems(1);
   }
@@ -859,10 +870,71 @@ add_task(
 
 
 add_task(
+  {
+    
+    
+    skip_if: () => AppConstants.platform !== "win",
+  },
   async function test_createBackup_robustToNonReadonlyFileSystemErrors() {
     await checkBackupWithUnremovableItems(0);
   }
 );
+
+
+
+
+
+add_task(async function test_createBackup_deletesStaleStagingItems() {
+  
+  Services.prefs.setIntPref(
+    "browser.backup.max-num-unremovable-staging-items",
+    1
+  );
+  registerCleanupFunction(() =>
+    Services.prefs.clearUserPref(
+      "browser.backup.max-num-unremovable-staging-items"
+    )
+  );
+
+  let sandbox = sinon.createSandbox();
+
+  const TEST_UID = "ThisIsMyTestUID";
+  const TEST_EMAIL = "foxy@mozilla.org";
+
+  sandbox.stub(UIState, "get").returns({
+    status: UIState.STATUS_SIGNED_IN,
+    uid: TEST_UID,
+    email: TEST_EMAIL,
+  });
+  const backupService = new BackupService({});
+
+  let profilePath = await IOUtils.createUniqueDirectory(
+    PathUtils.tempDir,
+    "profileDir"
+  );
+  let snapshotsFolder = PathUtils.join(
+    profilePath,
+    BackupService.PROFILE_FOLDER_NAME,
+    BackupService.SNAPSHOTS_FOLDER_NAME
+  );
+
+  
+  let tempFilename = await IOUtils.createUniqueFile(
+    snapshotsFolder,
+    "deleteme"
+  );
+  try {
+    info(`Performing backup`);
+    await checkBackup(backupService, profilePath, true );
+  } finally {
+    Assert.ok(
+      !(await IOUtils.exists(tempFilename)),
+      "stale staging item was deleted during backup"
+    );
+    await IOUtils.remove(profilePath, { recursive: true });
+    sandbox.restore();
+  }
+});
 
 
 
@@ -1058,6 +1130,7 @@ add_task(async function test_getBackupFileInfo() {
         buildID: BUILD_ID,
         osName: OS_NAME,
         osVersion: OS_VERSION,
+        osBuildNumber: OS_BUILD_NUMBER,
         healthTelemetryEnabled: TELEMETRY_ENABLED,
         legacyClientID: LEGACY_CLIENT_ID,
         profileName: PROFILE_NAME,
@@ -1090,6 +1163,7 @@ add_task(async function test_getBackupFileInfo() {
       buildID: BUILD_ID,
       osName: OS_NAME,
       osVersion: OS_VERSION,
+      osBuildNumber: OS_BUILD_NUMBER,
       healthTelemetryEnabled: TELEMETRY_ENABLED,
       legacyClientID: LEGACY_CLIENT_ID,
       profileName: PROFILE_NAME,
@@ -1155,6 +1229,7 @@ add_task(async function test_getBackupFileInfo_error_handling() {
           buildID: BUILD_ID,
           osName: OS_NAME,
           osVersion: OS_VERSION,
+          osBuildNumber: OS_BUILD_NUMBER,
           healthTelemetryEnabled: TELEMETRY_ENABLED,
           legacyClientID: LEGACY_CLIENT_ID,
           profileName: PROFILE_NAME,
@@ -1180,6 +1255,7 @@ add_task(async function test_getBackupFileInfo_error_handling() {
         buildID: BUILD_ID,
         osName: OS_NAME,
         osVersion: OS_VERSION,
+        osBuildNumber: OS_BUILD_NUMBER,
         healthTelemetryEnabled: TELEMETRY_ENABLED,
         legacyClientID: LEGACY_CLIENT_ID,
         profileName: PROFILE_NAME,
