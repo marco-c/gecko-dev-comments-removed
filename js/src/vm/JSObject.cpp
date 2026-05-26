@@ -938,7 +938,12 @@ bool js::ObjectMayBeSwapped(const JSObject* obj) {
   
   
   
-  return obj->is<ProxyObject>();
+  if (!obj->is<ProxyObject>()) {
+    return false;
+  }
+  const auto* handler = obj->as<ProxyObject>().handler();
+  MOZ_ASSERT_IF(handler->isScripted(), !handler->mayBeSwapped());
+  return handler->mayBeSwapped();
 }
 
 static NativeObject* DefineConstructorAndPrototype(

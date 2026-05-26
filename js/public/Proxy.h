@@ -377,6 +377,10 @@ class JS_PUBLIC_API BaseProxyHandler {
                            ElementAdder* adder) const;
 
   virtual bool isScripted() const { return false; }
+
+  
+  
+  virtual bool mayBeSwapped() const { return false; }
 };
 
 class JS_PUBLIC_API NurseryAllocableProxyHandler : public BaseProxyHandler {

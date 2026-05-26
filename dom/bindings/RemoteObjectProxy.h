@@ -158,6 +158,10 @@ class RemoteObjectProxy : public RemoteObjectProxyBase {
     }
   }
 
+  
+  
+  bool mayBeSwapped() const override { return true; }
+
  protected:
   using RemoteObjectProxyBase::RemoteObjectProxyBase;
 

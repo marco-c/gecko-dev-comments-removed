@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef proxy_DeadObjectProxy_h
 #define proxy_DeadObjectProxy_h
 
@@ -82,6 +80,8 @@ class DeadObjectProxy : public NurseryAllocableProxyHandler {
   virtual bool finalizeInBackground(const JS::Value& priv) const override {
     return priv.toInt32() & DeadObjectProxyIsBackgroundFinalized;
   }
+
+  bool mayBeSwapped() const override { return true; }
 
   static const DeadObjectProxy singleton;
   static const char family;

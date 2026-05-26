@@ -139,6 +139,8 @@ class JS_PUBLIC_API Wrapper : public ForwardingProxyHandler {
 
   virtual bool finalizeInBackground(const JS::Value& priv) const override;
 
+  bool mayBeSwapped() const override { return true; }
+
   
 
 
