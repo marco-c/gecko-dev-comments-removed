@@ -110,3 +110,26 @@ function orderByRecipePublishedDate(a, b) {
     new Date(b.recipe.publishedDate ?? 0)
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function assertOptInSlugs(manager, optIns, message = undefined) {
+  Assert.deepEqual(
+    manager.optIns
+      .map(entry => [entry.recipe.slug, entry.source])
+      .sort((a, b) => a[0].localeCompare(b[0])),
+    optIns.toSorted((a, b) => a[0].localeCompare(b[0])),
+    message
+  );
+}
