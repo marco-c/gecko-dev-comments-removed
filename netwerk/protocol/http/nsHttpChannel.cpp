@@ -3786,8 +3786,8 @@ nsresult nsHttpChannel::ContinueProcessNormal2(nsresult rv) {
   
   
   
-  if (mIsDictionaryCompressed && mDictDecompress && mUsingDictionary &&
-      mShouldSuspendForDictionary && !mDictDecompress->DictionaryReady()) {
+  if (mDictDecompress && mUsingDictionary && mShouldSuspendForDictionary &&
+      !mDictDecompress->DictionaryReady()) {
     LOG_DICTIONARIES(
         ("nsHttpChannel::ContinueProcessNormal2 [this=%p] Suspending before "
          "creating decompressor, waiting for dictionary",
@@ -3805,9 +3805,6 @@ nsresult nsHttpChannel::ContinueProcessNormal2(nsresult rv) {
 }
 
 nsresult nsHttpChannel::ContinueProcessNormal3() {
-  if (mCanceled) {
-    return mStatus;
-  }
   nsresult rv = NS_OK;
 
   
@@ -7270,19 +7267,6 @@ nsresult nsHttpChannel::CancelInternal(nsresult status) {
     
     needAsyncAbort = false;
     (void)AsyncAbort(status);
-  }
-
-  
-  
-  
-  if (mSuspendedForDictionary) {
-    LOG(
-        ("nsHttpChannel::CancelInternal resuming dictionary-suspended channel "
-         "[this=%p]\n",
-         this));
-    mSuspendedForDictionary = false;
-    Resume();
-    return NS_OK;
   }
 
   

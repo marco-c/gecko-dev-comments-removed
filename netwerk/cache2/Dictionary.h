@@ -190,8 +190,7 @@ class DictionaryCacheEntry final : public nsICacheEntryOpenCallback,
   Vector<uint8_t> mDictionaryData;
 
   
-  
-  Atomic<bool, ReleaseAcquire> mDictionaryDataComplete{false};
+  Atomic<bool, Relaxed> mDictionaryDataComplete{false};
 
   
   
