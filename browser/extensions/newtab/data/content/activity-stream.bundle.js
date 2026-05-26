@@ -15541,7 +15541,10 @@ function Weather_Weather({
     })));
   }
   function getArticleClassNames() {
-    return ["weather-widget", "col-4", `${size}-widget`, hasError && "weather-error-state",
+    return ["weather-widget", "col-4", `${size}-widget`,
+    
+    
+    hasError && !showOptInState && "weather-error-state",
     
     
     showOptInState && !searchActive && "weather-opt-in",
@@ -15562,7 +15565,7 @@ function Weather_Weather({
     className: "widget-title-bar"
   }, external_React_default().createElement("div", {
     className: "widget-title"
-  }, !showOptInState && !searchActive && external_React_default().createElement("h3", null, weatherData.locationData.city)), !searchActive && renderContextMenu()), hasError && external_React_default().createElement("div", {
+  }, !showOptInState && !searchActive && external_React_default().createElement("h3", null, weatherData.locationData.city)), !searchActive && renderContextMenu()), hasError && !showOptInState && external_React_default().createElement("div", {
     className: "weather-error",
     ref: errorRef
   }, external_React_default().createElement("span", {
