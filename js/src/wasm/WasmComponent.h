@@ -322,6 +322,49 @@ class StronglyUniqueNameSet {
   [[nodiscard]] bool add(mozilla::Span<const char> name, bool* duplicate);
 };
 
+struct CoreInstanceInstantiateArg {
+  CacheableName name;
+  uint32_t instanceIndex;
+};
+
+using CoreInstanceInstantiateArgVector =
+    mozilla::Vector<CoreInstanceInstantiateArg, 0, SystemAllocPolicy>;
+
+
+
+
+
+
+struct CoreInstanceDescFromModule {
+  
+  uint32_t moduleIndex;
+
+  
+  
+  CoreInstanceInstantiateArgVector args;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct CoreInstanceDescFromInlineExports {
+  SharedModule mod;
+};
+
+
+using CoreInstanceDesc = mozilla::Variant<CoreInstanceDescFromModule,
+                                          CoreInstanceDescFromInlineExports>;
+
 
 class ComponentExternDesc {
   ComponentSort sort_;
@@ -366,6 +409,8 @@ class ComponentImport {
 
 class Component : public JS::WasmComponent {
   using CoreModuleVector = mozilla::Vector<SharedModule, 0, SystemAllocPolicy>;
+  using CoreInstanceVector =
+      mozilla::Vector<CoreInstanceDesc, 0, SystemAllocPolicy>;
   using TypeVector = mozilla::Vector<ComponentDefType, 0, SystemAllocPolicy>;
   using ImportVector = Vector<ComponentImport, 0, SystemAllocPolicy>;
 
@@ -374,8 +419,19 @@ class Component : public JS::WasmComponent {
 
  public:
   CoreModuleVector coreModules;
+  CoreInstanceVector coreInstances;
   TypeVector types;
   ImportVector imports;
+
+  SharedModule moduleForCoreInstance(uint32_t instanceIndex) {
+    CoreInstanceDesc& instance = coreInstances[instanceIndex];
+
+    return instance.match(
+        [&coreModules = this->coreModules](CoreInstanceDescFromModule& desc) {
+          return coreModules[desc.moduleIndex];
+        },
+        [](CoreInstanceDescFromInlineExports& desc) { return desc.mod; });
+  }
 
   size_t gcMallocBytesExcludingCode() const {
     
