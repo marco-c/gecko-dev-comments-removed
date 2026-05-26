@@ -69,13 +69,24 @@ class MacWakeLockListener final : public nsIDOMMozWakeLockListener {
  private:
   ~MacWakeLockListener() {}
 
-  IOPMAssertionID mAssertionNoDisplaySleepID = kIOPMNullAssertionID;
-  IOPMAssertionID mAssertionNoIdleSleepID = kIOPMNullAssertionID;
+  struct TopicAssertion {
+    const CFStringRef type = nullptr;
+    IOPMAssertionID id = kIOPMNullAssertionID;
+  };
+
+  
+  
+  TopicAssertion mScreenAssertion{kIOPMAssertionTypeNoDisplaySleep};
+  TopicAssertion mVideoAssertion{kIOPMAssertionTypeNoDisplaySleep};
+
+  TopicAssertion mAudioAssertion{kIOPMAssertionTypeNoIdleSleep};
+  TopicAssertion mDownloadAssertion{kIOPMAssertionTypeNoIdleSleep};
 
   NS_IMETHOD Callback(const nsAString& aTopic,
                       const nsAString& aState) override {
     if (!aTopic.EqualsASCII("screen") && !aTopic.EqualsASCII("audio-playing") &&
-        !aTopic.EqualsASCII("video-playing")) {
+        !aTopic.EqualsASCII("video-playing") &&
+        !aTopic.EqualsASCII("download-in-progress")) {
       return NS_OK;
     }
 
@@ -86,22 +97,25 @@ class MacWakeLockListener final : public nsIDOMMozWakeLockListener {
       return NS_OK;
     }
 
-    bool shouldKeepDisplayOn =
-        aTopic.EqualsASCII("screen") || aTopic.EqualsASCII("video-playing");
-    CFStringRef assertionType = shouldKeepDisplayOn
-                                    ? kIOPMAssertionTypeNoDisplaySleep
-                                    : kIOPMAssertionTypeNoIdleSleep;
-    IOPMAssertionID& assertionId = shouldKeepDisplayOn
-                                       ? mAssertionNoDisplaySleepID
-                                       : mAssertionNoIdleSleepID;
-    WAKE_LOCK_LOG("topic=%s, state=%s, shouldKeepDisplayOn=%d",
-                  NS_ConvertUTF16toUTF8(aTopic).get(),
-                  NS_ConvertUTF16toUTF8(aState).get(), shouldKeepDisplayOn);
+    
+    
+    
+    TopicAssertion& assertion =
+        aTopic.EqualsASCII("screen")          ? mScreenAssertion
+        : aTopic.EqualsASCII("video-playing") ? mVideoAssertion
+        : aTopic.EqualsASCII("audio-playing") ? mAudioAssertion
+                                              : mDownloadAssertion;
+    WAKE_LOCK_LOG("topic=%s, state=%s", NS_ConvertUTF16toUTF8(aTopic).get(),
+                  NS_ConvertUTF16toUTF8(aState).get());
 
     
     
-    if (aState.EqualsASCII("locked-foreground")) {
-      if (assertionId != kIOPMNullAssertionID) {
+    
+    
+    if (aState.EqualsASCII("locked-foreground") ||
+        (aState.EqualsASCII("locked-background") &&
+         aTopic.EqualsASCII("download-in-progress"))) {
+      if (assertion.id != kIOPMNullAssertionID) {
         WAKE_LOCK_LOG("already has a lock");
         return NS_OK;
       }
@@ -110,7 +124,7 @@ class MacWakeLockListener final : public nsIDOMMozWakeLockListener {
           kCFAllocatorDefault, reinterpret_cast<const UniChar*>(aTopic.Data()),
           aTopic.Length());
       IOReturn success = ::IOPMAssertionCreateWithName(
-          assertionType, kIOPMAssertionLevelOn, cf_topic, &assertionId);
+          assertion.type, kIOPMAssertionLevelOn, cf_topic, &assertion.id);
       CFRelease(cf_topic);
       if (success != kIOReturnSuccess) {
         WAKE_LOCK_LOG("failed to disable screensaver");
@@ -118,13 +132,13 @@ class MacWakeLockListener final : public nsIDOMMozWakeLockListener {
       WAKE_LOCK_LOG("create screensaver");
     } else {
       
-      if (assertionId != kIOPMNullAssertionID) {
-        IOReturn result = ::IOPMAssertionRelease(assertionId);
+      if (assertion.id != kIOPMNullAssertionID) {
+        IOReturn result = ::IOPMAssertionRelease(assertion.id);
         if (result != kIOReturnSuccess) {
           WAKE_LOCK_LOG("failed to release screensaver");
         }
         WAKE_LOCK_LOG("Release screensaver");
-        assertionId = kIOPMNullAssertionID;
+        assertion.id = kIOPMNullAssertionID;
       }
     }
     return NS_OK;
