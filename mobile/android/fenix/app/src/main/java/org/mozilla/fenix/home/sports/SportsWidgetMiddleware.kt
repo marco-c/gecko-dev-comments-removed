@@ -16,9 +16,16 @@ import org.mozilla.fenix.components.appstate.AppState
 /**
  * [Middleware] that handles side effects for [SportsWidgetAction].
  *
- * Reacts to [SportsWidgetAction.FetchMatches] by fetching match data from [sportsRepository]
- * and dispatching the result. Also triggers a fetch automatically when the user selects
- * countries via [SportsWidgetAction.CountriesSelected].
+ * Reacts to [SportsWidgetAction.FetchMatches] by fetching the full tournament
+ * schedule from [sportsRepository] and dispatching the resulting [MatchCard]s.
+ * The raw [TeamMatchesResult] is cached in memory so that a follow-up
+ * [SportsWidgetAction.CountriesSelected] (the user picks/changes a followed
+ * team) can re-derive cards locally without a network round-trip. On cold
+ * cache the selection falls through to a fresh fetch.
+ *
+ * Connectivity is checked at the dispatch sites of [SportsWidgetAction.FetchMatches];
+ * a [SportsWidgetAction.FetchFailed] with [SportCardErrorState.ConnectionInterrupted]
+ * is dispatched instead when the device is offline, and [fetchAndBuild] is not invoked.
  *
  * @param sportsRepository [SportsRepository] used to fetch match data.
  * @param coroutineScope [CoroutineScope] used for async fetch operations.
@@ -28,6 +35,9 @@ class SportsWidgetMiddleware(
     private val coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.IO),
 ) : Middleware<AppState, AppAction> {
 
+    @Volatile
+    private var cachedMatches: TeamMatchesResult? = null
+
     override fun invoke(
         store: Store<AppState, AppAction>,
         next: (AppAction) -> Unit,
@@ -36,22 +46,62 @@ class SportsWidgetMiddleware(
         next(action)
 
         when (action) {
-            is SportsWidgetAction.FetchMatches -> fetchMatches(store)
-            is SportsWidgetAction.CountriesSelected -> fetchMatches(store)
+            is SportsWidgetAction.FetchMatches -> fetchAndBuild(store)
+            is SportsWidgetAction.CountriesSelected -> {
+                val cached = cachedMatches
+                if (cached != null) {
+                    store.dispatch(
+                        SportsWidgetAction.MatchCardStateUpdated(buildCards(cached, action.countryCodes)),
+                    )
+                } else {
+                    fetchAndBuild(store)
+                }
+            }
+            // Debug-tool overrides change which UI state should render. Trigger a fetch so the
+            // pager has data without waiting for the next HomeFragment.onResume.
+            is SportsWidgetAction.OneWeekToWorldCupOverrideUpdated,
+            is SportsWidgetAction.WorldCupStartedOverrideUpdated,
+            -> fetchAndBuild(store)
             else -> Unit
         }
     }
 
-    private fun fetchMatches(store: Store<AppState, AppAction>) {
+    private fun fetchAndBuild(store: Store<AppState, AppAction>) {
         coroutineScope.launch {
-            val countryCodes = store.state.sportsWidgetState.countriesSelected
-            sportsRepository.fetchMatches(countryCodes)
-                .onSuccess { matchCards ->
-                    store.dispatch(SportsWidgetAction.MatchCardStateUpdated(matchCards))
+            sportsRepository.fetchMatches()
+                .onSuccess { result ->
+                    cachedMatches = result
+                    val countryCodes = store.state.sportsWidgetState.countriesSelected
+                    store.dispatch(SportsWidgetAction.MatchCardStateUpdated(buildCards(result, countryCodes)))
                 }
                 .onFailure {
                     store.dispatch(SportsWidgetAction.FetchFailed(SportCardErrorState.LoadFailed))
                 }
         }
+    }
+
+    private fun buildCards(result: TeamMatchesResult, countryCodes: Set<String>): List<MatchCard> =
+        if (countryCodes.isEmpty()) {
+            MatchCardBuilder.buildForNoTeam(result.previous + result.current + result.next)
+        } else {
+            MatchCardBuilder.buildForTeam(filterByTeam(result, countryCodes))
+        }
+
+    private fun filterByTeam(result: TeamMatchesResult, codes: Set<String>): TeamMatchesResult {
+        // The followed team's own matches PLUS the bracket-finishing matches (FINAL and
+        // THIRD_PLACE_PLAYOFF) so the universal celebration card surfaces in the pager
+        // even when the followed team isn't in them.
+        fun List<SportsMatch>.relevantFor(codes: Set<String>): List<SportsMatch> =
+            filter { match ->
+                match.homeTeam.key in codes ||
+                    match.awayTeam.key in codes ||
+                    match.stage == TournamentRound.FINAL ||
+                    match.stage == TournamentRound.THIRD_PLACE_PLAYOFF
+            }
+        return TeamMatchesResult(
+            previous = result.previous.relevantFor(codes),
+            current = result.current.relevantFor(codes),
+            next = result.next.relevantFor(codes),
+        )
     }
 }
