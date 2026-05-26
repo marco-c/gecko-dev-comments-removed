@@ -347,8 +347,8 @@ void HTMLTrackElement::LoadResource(RefPtr<WebVTTListener>&& aWebVTTListener) {
   
   nsCOMPtr<nsIRunnable> runnable = NS_NewRunnableFunction(
       "dom::HTMLTrackElement::LoadResource",
-      [self = RefPtr<HTMLTrackElement>(this), this, uri, secFlags]() {
-        if (!mListener) {
+      [self = RefPtr{this}, this, listener = mListener, uri, secFlags]() {
+        if (mListener != listener) {
           
           return;
         }
