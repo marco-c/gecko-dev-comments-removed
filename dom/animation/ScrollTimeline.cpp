@@ -10,11 +10,8 @@
 #include "mozilla/PresShell.h"
 #include "mozilla/ScrollContainerFrame.h"
 #include "mozilla/ServoStyleConsts.h"
-#include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/dom/Animation.h"
 #include "mozilla/dom/AnimationTimelinesController.h"
-#include "mozilla/dom/CSSNumericValueBinding.h"
-#include "mozilla/dom/CSSUnitValue.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/ElementInlines.h"
@@ -215,29 +212,6 @@ Nullable<TimeDuration> ScrollTimeline::GetCurrentTimeAsDuration() const {
       static_cast<double>(data->mEnd - data->mStart);
   return TimeDuration::FromMilliseconds(progress *
                                         PROGRESS_TIMELINE_DURATION_MILLISEC);
-}
-
-void ScrollTimeline::GetCurrentTime(
-    Nullable<OwningCSSNumberish>& aRetVal) const {
-  if (!StaticPrefs::layout_css_typed_om_enabled()) {
-    
-    
-    AnimationTimeline::GetCurrentTime(aRetVal);
-    return;
-  }
-
-  const auto& data = ComputeTimelineData();
-  if (!data) {
-    aRetVal.SetNull();
-    return;
-  }
-  
-  
-  const double progress =
-      static_cast<double>(std::abs(data->mPosition) - data->mStart) /
-      static_cast<double>(data->mEnd - data->mStart);
-  aRetVal.SetValue().SetAsCSSNumericValue() =
-      MakeRefPtr<CSSUnitValue>(mWindow, progress * 100.0, "percent"_ns);
 }
 
 void ScrollTimeline::WillRefresh() {
