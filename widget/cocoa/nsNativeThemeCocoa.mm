@@ -337,6 +337,17 @@ nsNativeThemeCocoa::~nsNativeThemeCocoa() {
   NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
+
+
+
+
+
+
+
+
+
+#define BITMAP_MAX_AREA 500000
+
 static int GetBackingScaleFactorForRendering(CGContextRef cgContext) {
   CGAffineTransform ctm =
       CGContextGetUserSpaceToDeviceSpaceTransform(cgContext);
@@ -398,78 +409,94 @@ static void DrawCellWithScaling(NSCell* cell, CGContextRef cgContext,
 
   [NSGraphicsContext saveGraphicsState];
 
-  float w = ceil(drawRect.size.width);
-  float h = ceil(drawRect.size.height);
-  NSRect tmpRect = NSMakeRect(kMaxFocusRingWidth, kMaxFocusRingWidth, w, h);
+  
+  if (drawRect.size.width * drawRect.size.height > BITMAP_MAX_AREA) {
+    
+    InflateControlRect(&drawRect, controlSize, marginSet);
 
-  
-  
-  InflateControlRect(&tmpRect, controlSize, marginSet);
+    NSGraphicsContext* savedContext = [NSGraphicsContext currentContext];
+    [NSGraphicsContext
+        setCurrentContext:[NSGraphicsContext
+                              graphicsContextWithCGContext:cgContext
+                                                   flipped:YES]];
 
-  
-  
-  w += kMaxFocusRingWidth * 2.0;
-  h += kMaxFocusRingWidth * 2.0;
+    DrawCellIncludingFocusRing(cell, drawRect, view);
 
-  int backingScaleFactor = GetBackingScaleFactorForRendering(cgContext);
-  CGColorSpaceRef rgb = CGColorSpaceCreateDeviceRGB();
-  CGContextRef ctx = CGBitmapContextCreate(
-      NULL, (int)w * backingScaleFactor, (int)h * backingScaleFactor, 8,
-      (int)w * backingScaleFactor * 4, rgb, kCGImageAlphaPremultipliedFirst);
-  CGColorSpaceRelease(rgb);
+    [NSGraphicsContext setCurrentContext:savedContext];
+  } else {
+    float w = ceil(drawRect.size.width);
+    float h = ceil(drawRect.size.height);
+    NSRect tmpRect = NSMakeRect(kMaxFocusRingWidth, kMaxFocusRingWidth, w, h);
 
-  
-  
-  CGContextScaleCTM(cgContext, 1.0f, -1.0f);
-  CGContextTranslateCTM(cgContext, 0.0f,
-                        -(2.0 * destRect.origin.y + destRect.size.height));
-  if (mirrorHorizontal) {
-    CGContextScaleCTM(cgContext, -1.0f, 1.0f);
-    CGContextTranslateCTM(
-        cgContext, -(2.0 * destRect.origin.x + destRect.size.width), 0.0f);
+    
+    
+    InflateControlRect(&tmpRect, controlSize, marginSet);
+
+    
+    
+    w += kMaxFocusRingWidth * 2.0;
+    h += kMaxFocusRingWidth * 2.0;
+
+    int backingScaleFactor = GetBackingScaleFactorForRendering(cgContext);
+    CGColorSpaceRef rgb = CGColorSpaceCreateDeviceRGB();
+    CGContextRef ctx = CGBitmapContextCreate(
+        NULL, (int)w * backingScaleFactor, (int)h * backingScaleFactor, 8,
+        (int)w * backingScaleFactor * 4, rgb, kCGImageAlphaPremultipliedFirst);
+    CGColorSpaceRelease(rgb);
+
+    
+    
+    CGContextScaleCTM(cgContext, 1.0f, -1.0f);
+    CGContextTranslateCTM(cgContext, 0.0f,
+                          -(2.0 * destRect.origin.y + destRect.size.height));
+    if (mirrorHorizontal) {
+      CGContextScaleCTM(cgContext, -1.0f, 1.0f);
+      CGContextTranslateCTM(
+          cgContext, -(2.0 * destRect.origin.x + destRect.size.width), 0.0f);
+    }
+
+    NSGraphicsContext* savedContext = [NSGraphicsContext currentContext];
+    [NSGraphicsContext
+        setCurrentContext:[NSGraphicsContext graphicsContextWithCGContext:ctx
+                                                                  flipped:YES]];
+
+    CGContextScaleCTM(ctx, backingScaleFactor, backingScaleFactor);
+
+    
+    
+    CGContextSetBaseCTM(ctx, CGAffineTransformMakeScale(backingScaleFactor,
+                                                        backingScaleFactor));
+
+    
+    CGContextScaleCTM(ctx, 1.0f, -1.0f);
+    CGContextTranslateCTM(ctx, 0.0f,
+                          -(2.0 * tmpRect.origin.y + tmpRect.size.height));
+
+    DrawCellIncludingFocusRing(cell, tmpRect, view);
+
+    [NSGraphicsContext setCurrentContext:savedContext];
+
+    CGImageRef img = CGBitmapContextCreateImage(ctx);
+
+    
+    
+    
+    float xscale = destRect.size.width / drawRect.size.width;
+    float yscale = destRect.size.height / drawRect.size.height;
+    float scaledFocusRingX =
+        xscale < 1.0f ? kMaxFocusRingWidth * xscale : kMaxFocusRingWidth;
+    float scaledFocusRingY =
+        yscale < 1.0f ? kMaxFocusRingWidth * yscale : kMaxFocusRingWidth;
+    CGContextDrawImage(cgContext,
+                       CGRectMake(destRect.origin.x - scaledFocusRingX,
+                                  destRect.origin.y - scaledFocusRingY,
+                                  destRect.size.width + scaledFocusRingX * 2,
+                                  destRect.size.height + scaledFocusRingY * 2),
+                       img);
+
+    CGImageRelease(img);
+    CGContextRelease(ctx);
   }
-
-  NSGraphicsContext* savedContext = [NSGraphicsContext currentContext];
-  [NSGraphicsContext
-      setCurrentContext:[NSGraphicsContext graphicsContextWithCGContext:ctx
-                                                                flipped:YES]];
-
-  CGContextScaleCTM(ctx, backingScaleFactor, backingScaleFactor);
-
-  
-  
-  CGContextSetBaseCTM(
-      ctx, CGAffineTransformMakeScale(backingScaleFactor, backingScaleFactor));
-
-  
-  CGContextScaleCTM(ctx, 1.0f, -1.0f);
-  CGContextTranslateCTM(ctx, 0.0f,
-                        -(2.0 * tmpRect.origin.y + tmpRect.size.height));
-
-  DrawCellIncludingFocusRing(cell, tmpRect, view);
-
-  [NSGraphicsContext setCurrentContext:savedContext];
-
-  CGImageRef img = CGBitmapContextCreateImage(ctx);
-
-  
-  
-  
-  float xscale = destRect.size.width / drawRect.size.width;
-  float yscale = destRect.size.height / drawRect.size.height;
-  float scaledFocusRingX =
-      xscale < 1.0f ? kMaxFocusRingWidth * xscale : kMaxFocusRingWidth;
-  float scaledFocusRingY =
-      yscale < 1.0f ? kMaxFocusRingWidth * yscale : kMaxFocusRingWidth;
-  CGContextDrawImage(cgContext,
-                     CGRectMake(destRect.origin.x - scaledFocusRingX,
-                                destRect.origin.y - scaledFocusRingY,
-                                destRect.size.width + scaledFocusRingX * 2,
-                                destRect.size.height + scaledFocusRingY * 2),
-                     img);
-
-  CGImageRelease(img);
-  CGContextRelease(ctx);
 
   [NSGraphicsContext restoreGraphicsState];
 
@@ -970,53 +997,60 @@ static void RenderTransformedHIThemeControl(CGContextRef aCGContext,
   }
 
   
-  int w = ceil(drawRect.size.width) + 2 * kMaxFocusRingWidth;
-  int h = ceil(drawRect.size.height) + 2 * kMaxFocusRingWidth;
-
-  int backingScaleFactor = GetBackingScaleFactorForRendering(aCGContext);
-  CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
-  CGContextRef bitmapctx = CGBitmapContextCreate(
-      NULL, w * backingScaleFactor, h * backingScaleFactor, 8,
-      w * backingScaleFactor * 4, colorSpace, kCGImageAlphaPremultipliedFirst);
-  CGColorSpaceRelease(colorSpace);
-
-  CGContextScaleCTM(bitmapctx, backingScaleFactor, backingScaleFactor);
-  CGContextTranslateCTM(bitmapctx, kMaxFocusRingWidth, kMaxFocusRingWidth);
-
   
-  
-  CGContextSetBaseCTM(bitmapctx, CGAffineTransformMakeScale(
-                                     backingScaleFactor, backingScaleFactor));
+  if (drawDirect || (aRect.size.width * aRect.size.height > BITMAP_MAX_AREA)) {
+    aFunc(aCGContext, drawRect, aData);
+  } else {
+    
+    int w = ceil(drawRect.size.width) + 2 * kMaxFocusRingWidth;
+    int h = ceil(drawRect.size.height) + 2 * kMaxFocusRingWidth;
 
-  
-  
-  CGContextTranslateCTM(bitmapctx, 0.0f, aRect.size.height);
-  CGContextScaleCTM(bitmapctx, 1.0f, -1.0f);
+    int backingScaleFactor = GetBackingScaleFactorForRendering(aCGContext);
+    CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
+    CGContextRef bitmapctx = CGBitmapContextCreate(
+        NULL, w * backingScaleFactor, h * backingScaleFactor, 8,
+        w * backingScaleFactor * 4, colorSpace,
+        kCGImageAlphaPremultipliedFirst);
+    CGColorSpaceRelease(colorSpace);
 
-  aFunc(bitmapctx, drawRect, aData);
+    CGContextScaleCTM(bitmapctx, backingScaleFactor, backingScaleFactor);
+    CGContextTranslateCTM(bitmapctx, kMaxFocusRingWidth, kMaxFocusRingWidth);
 
-  CGImageRef bitmap = CGBitmapContextCreateImage(bitmapctx);
+    
+    
+    CGContextSetBaseCTM(bitmapctx, CGAffineTransformMakeScale(
+                                       backingScaleFactor, backingScaleFactor));
 
-  CGAffineTransform ctm = CGContextGetCTM(aCGContext);
+    
+    
+    CGContextTranslateCTM(bitmapctx, 0.0f, aRect.size.height);
+    CGContextScaleCTM(bitmapctx, 1.0f, -1.0f);
 
-  
-  
-  CGContextTranslateCTM(aCGContext, 0.0f, aRect.size.height);
-  CGContextScaleCTM(aCGContext, 1.0f, -1.0f);
+    aFunc(bitmapctx, drawRect, aData);
 
-  if (mirrorHorizontally) {
-    CGContextTranslateCTM(aCGContext, aRect.size.width, 0);
-    CGContextScaleCTM(aCGContext, -1.0f, 1.0f);
+    CGImageRef bitmap = CGBitmapContextCreateImage(bitmapctx);
+
+    CGAffineTransform ctm = CGContextGetCTM(aCGContext);
+
+    
+    
+    CGContextTranslateCTM(aCGContext, 0.0f, aRect.size.height);
+    CGContextScaleCTM(aCGContext, 1.0f, -1.0f);
+
+    if (mirrorHorizontally) {
+      CGContextTranslateCTM(aCGContext, aRect.size.width, 0);
+      CGContextScaleCTM(aCGContext, -1.0f, 1.0f);
+    }
+
+    NSRect inflatedDrawRect =
+        CGRectMake(-kMaxFocusRingWidth, -kMaxFocusRingWidth, w, h);
+    CGContextDrawImage(aCGContext, inflatedDrawRect, bitmap);
+
+    CGContextSetCTM(aCGContext, ctm);
+
+    CGImageRelease(bitmap);
+    CGContextRelease(bitmapctx);
   }
-
-  NSRect inflatedDrawRect =
-      CGRectMake(-kMaxFocusRingWidth, -kMaxFocusRingWidth, w, h);
-  CGContextDrawImage(aCGContext, inflatedDrawRect, bitmap);
-
-  CGContextSetCTM(aCGContext, ctm);
-
-  CGImageRelease(bitmap);
-  CGContextRelease(bitmapctx);
 
   CGContextSetCTM(aCGContext, savedCTM);
 }
