@@ -428,12 +428,22 @@ class nsAccessibilityService final : public mozilla::a11y::DocManager,
   
 
 
-  bool Init(uint64_t aCacheDomains = kDefaultCacheDomains);
+
+
+
+  bool Init(uint64_t aCacheDomains = kDefaultCacheDomains,
+            uint32_t aConsumer = ePlatformAPI);
 
   
 
 
   void Shutdown();
+
+  
+
+
+
+  void FullInit(uint64_t aCacheDomains, uint32_t aConsumer);
 
   
 

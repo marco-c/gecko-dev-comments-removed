@@ -70,7 +70,7 @@ class AccessibilityActor extends Actor {
 
 
   observe(subject, topic, data) {
-    const enabled = data === "1";
+    const enabled = data !== "0";
     if (enabled && this.enabled) {
       this.emit("init");
     } else if (!enabled && !this.enabled) {

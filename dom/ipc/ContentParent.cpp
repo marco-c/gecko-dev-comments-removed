@@ -1638,7 +1638,10 @@ void ContentParent::Init() {
 #ifdef ACCESSIBILITY
   
   
-  if (GetAccService()) {
+  
+  
+  
+  if (GetAccService() && !nsAccessibilityService::IsOnlyForPdfOutput()) {
     (void)SendActivateA11y(nsAccessibilityService::GetActiveCacheDomains());
   }
 #endif  
@@ -3922,8 +3925,9 @@ ContentParent::Observe(nsISupports* aSubject, const char* aTopic,
     if (*aData == '1') {
       
       
+      MOZ_ASSERT(!nsAccessibilityService::IsOnlyForPdfOutput());
       (void)SendActivateA11y(nsAccessibilityService::GetActiveCacheDomains());
-    } else {
+    } else if (*aData == '0') {
       
       
       (void)SendShutdownA11y();

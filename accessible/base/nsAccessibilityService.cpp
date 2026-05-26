@@ -1647,7 +1647,7 @@ mozilla::Monitor& nsAccessibilityService::GetAndroidMonitor() {
 
 
 
-bool nsAccessibilityService::Init(uint64_t aCacheDomains) {
+bool nsAccessibilityService::Init(uint64_t aCacheDomains, uint32_t aConsumer) {
   AUTO_PROFILER_MARKER_UNTYPED("nsAccessibilityService::Init", A11Y, {});
   
   PerfStats::AutoMetricRecording<
@@ -1697,30 +1697,49 @@ bool nsAccessibilityService::Init(uint64_t aCacheDomains) {
   }
 
   NS_ADDREF(gApplicationAccessible);  
-  gApplicationAccessible->CreateInitialDocs();
-
   CrashReporter::RecordAnnotationCString(
       CrashReporter::Annotation::Accessibility, "Active");
 
-  
-  if (XRE_IsParentProcess()) PlatformInit();
+  if (aConsumer == ePdfOutput) {
+    
+    
+    
+    
+    gCacheDomains = aCacheDomains;
+  } else {
+    FullInit(aCacheDomains, aConsumer);
+  }
 
   
   
+  
+  
+  
+  observerService->NotifyObservers(nullptr, "a11y-init-or-shutdown",
+                                   aConsumer == ePdfOutput ? u"pdf" : u"1");
+
+  return true;
+}
+
+void nsAccessibilityService::FullInit(uint64_t aCacheDomains,
+                                      uint32_t aConsumer) {
+  gApplicationAccessible->CreateInitialDocs();
+  if (XRE_IsParentProcess()) {
+    PlatformInit();
+  }
   if (XRE_IsParentProcess() &&
       StaticPrefs::accessibility_enable_all_cache_domains_AtStartup()) {
+    
+    
+    gCacheDomains = CacheDomain::All;
+  } else if (aConsumer == eXPCOM) {
+    
     gCacheDomains = CacheDomain::All;
   } else {
     
     
     gCacheDomains = ::GetCacheDomainsForKnownClients(aCacheDomains);
   }
-
-  static const char16_t kInitIndicator[] = {'1', 0};
-  observerService->NotifyObservers(nullptr, "a11y-init-or-shutdown",
-                                   kInitIndicator);
-
-  return true;
 }
 
 void nsAccessibilityService::Shutdown() {
@@ -2070,14 +2089,8 @@ nsAccessibilityService* GetOrCreateAccService(uint32_t aNewConsumer,
   }
 
   if (!nsAccessibilityService::gAccessibilityService) {
-    uint64_t cacheDomains = aCacheDomains;
-    if (aNewConsumer == nsAccessibilityService::eXPCOM) {
-      
-      cacheDomains = CacheDomain::All;
-    }
-
     RefPtr<nsAccessibilityService> service = new nsAccessibilityService();
-    if (!service->Init(cacheDomains)) {
+    if (!service->Init(aCacheDomains, aNewConsumer)) {
       service->Shutdown();
       return nullptr;
     }
