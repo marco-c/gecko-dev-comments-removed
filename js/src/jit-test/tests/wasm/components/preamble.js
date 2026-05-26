@@ -53,17 +53,13 @@ assertErrorMessage(() => new WebAssembly.Component(new Uint8Array([
 ])), WebAssembly.CompileError, /unexpected section ID/);
 
 
+assertErrorMessage(() => new WebAssembly.Component(new Uint8Array([
+  0, 0x61, 0x73, 0x6D,
+  0x0d, 0, 1, 0,
 
-
-if (false) {
-  assertErrorMessage(() => new WebAssembly.Component(new Uint8Array([
-    0, 0x61, 0x73, 0x6D,
-    0x0d, 0, 1, 0,
-
-    0x07, 0x04, 
-      0x00,
-    0x00, 0x06, 
-      0x05,
-      0x64, 0x75, 0x6D, 0x6D, 0x79, 
-  ])), WebAssembly.CompileError, /too many bytes in section/);
-}
+  0x07, 0x04, 
+    0x00,
+  0x00, 0x06, 
+    0x05,
+    0x64, 0x75, 0x6D, 0x6D, 0x79, 
+])), WebAssembly.CompileError, /too many bytes in section/);
