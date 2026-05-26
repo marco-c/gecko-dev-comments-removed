@@ -28,6 +28,13 @@ class ChannelClassifierUtils final {
 
   static bool IsAllowListed(nsIChannel* aChannel);
 
+  
+  
+  static nsresult MaybeBlockChannel(
+      nsIChannel* aChannel, const nsACString& aFeatureName,
+      const nsACString& aList, nsresult aErrorCode, uint32_t aReplacedEvent,
+      uint32_t aAllowedEvent, bool* aShouldContinue);
+
   static bool IsPassiveContent(nsIChannel* aChannel);
 
   static bool IsTrackingClassificationFlag(uint32_t aFlag, bool aIsPrivate);
