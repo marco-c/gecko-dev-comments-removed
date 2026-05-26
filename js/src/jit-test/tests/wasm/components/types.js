@@ -457,127 +457,123 @@ wasmFailValidateText(`
 
 
 
+wasmValidateText(`
+(component
+  (import "[constructor]foo" (func))
+)
+`);
 
-if (false) {
-  
-  wasmValidateText(`
-  (component
-    (import "[constructor]foo" (func))
-  )
-  `);
 
-  
-  wasmValidateText(`
-  (component
-    (import "[constructor]my-resource" (func))
-  )
-  `);
+wasmValidateText(`
+(component
+  (import "[constructor]my-resource" (func))
+)
+`);
 
-  
-  wasmFailValidateText(`
-  (component
-    (import "[constructor]foo.bar" (func))
-  )
-  `, /invalid character/);
 
-  
-  wasmValidateText(`
-  (component
-    (import "[method]foo.bar" (func))
-  )
-  `);
+wasmFailValidateText(`
+(component
+  (import "[constructor]foo.bar" (func))
+)
+`, /invalid character/);
 
-  
-  wasmValidateText(`
-  (component
-    (import "[method]my-resource.my-method" (func))
-  )
-  `);
 
-  
-  wasmValidateText(`
-  (component
-    (import "[method]foo.BAR" (func))
-  )
-  `);
+wasmValidateText(`
+(component
+  (import "[method]foo.bar" (func))
+)
+`);
 
-  
-  wasmFailValidateText(`
-  (component
-    (import "[method]foo" (func))
-  )
-  `, /ended unexpectedly/);
 
-  
-  wasmFailValidateText(`
-  (component
-    (import "[method]foo." (func))
-  )
-  `, /ended unexpectedly/);
+wasmValidateText(`
+(component
+  (import "[method]my-resource.my-method" (func))
+)
+`);
 
-  
-  wasmFailValidateText(`
-  (component
-    (import "[method].bar" (func))
-  )
-  `, /invalid character/);
 
-  
-  wasmFailValidateText(`
-  (component
-    (import "[method]foo.bar.baz" (func))
-  )
-  `, /invalid character/);
+wasmValidateText(`
+(component
+  (import "[method]foo.BAR" (func))
+)
+`);
 
-  
-  wasmValidateText(`
-  (component
-    (import "[static]foo.bar" (func))
-  )
-  `);
 
-  
-  wasmValidateText(`
-  (component
-    (import "[static]my-res.my-meth" (func))
-  )
-  `);
+wasmFailValidateText(`
+(component
+  (import "[method]foo" (func))
+)
+`, /ended unexpectedly/);
 
-  
-  wasmFailValidateText(`
-  (component
-    (import "[static]foo" (func))
-  )
-  `, /ended unexpectedly/);
 
-  
-  wasmFailValidateText(`
-  (component
-    (import "[static]foo." (func))
-  )
-  `, /ended unexpectedly/);
+wasmFailValidateText(`
+(component
+  (import "[method]foo." (func))
+)
+`, /ended unexpectedly/);
 
-  
-  wasmFailValidateText(`
-  (component
-    (import "[unknown]foo" (func))
-  )
-  `, /invalid character/);
 
-  
-  wasmFailValidateText(`
-  (component
-    (import "[methodfoo.bar" (func))
-  )
-  `, /invalid character/);
+wasmFailValidateText(`
+(component
+  (import "[method].bar" (func))
+)
+`, /invalid character/);
 
-  
-  wasmFailValidateText(`
-  (component
-    (import "[constructor]0bad" (func))
-  )
-  `, /invalid character/);
-}
+
+wasmFailValidateText(`
+(component
+  (import "[method]foo.bar.baz" (func))
+)
+`, /invalid character/);
+
+
+wasmValidateText(`
+(component
+  (import "[static]foo.bar" (func))
+)
+`);
+
+
+wasmValidateText(`
+(component
+  (import "[static]my-res.my-meth" (func))
+)
+`);
+
+
+wasmFailValidateText(`
+(component
+  (import "[static]foo" (func))
+)
+`, /ended unexpectedly/);
+
+
+wasmFailValidateText(`
+(component
+  (import "[static]foo." (func))
+)
+`, /ended unexpectedly/);
+
+
+wasmFailValidateText(`
+(component
+  (import "[unknown]foo" (func))
+)
+`, /invalid character/);
+
+
+wasmFailValidateText(`
+(component
+  (import "[methodfoo.bar" (func))
+)
+`, /invalid character/);
+
+
+wasmFailValidateText(`
+(component
+  (import "[constructor]0bad" (func))
+)
+`, /invalid character/);
 
 
 
