@@ -6,13 +6,11 @@
 
 use {
     anyhow::Context,
-    crash_helper_common::{crash_annotations::CrashAnnotation, ExtraCrashData},
-    libc::{pid_t, SI_TKILL, SI_USER},
+    libc::pid_t,
     minidump_writer::{
         crash_context::CrashContext,
         minidump_writer::{DirectAuxvDumpInfo as InternalDumpInfo, MinidumpWriterConfig},
     },
-    mozannotation_server::{AnnotationData, CAnnotation},
     std::{
         convert::TryInto,
         ffi::{c_char, CStr, CString},
@@ -40,41 +38,6 @@ pub struct MinidumpWriterContext {
     
     process_id: pid_t,
     blamed_thread: pid_t,
-    
-    siginfo: Option<libc::signalfd_siginfo>,
-}
-
-
-fn gather_extra_annotations(
-    siginfo: &Option<libc::signalfd_siginfo>,
-    crashed_pid: pid_t,
-    annotations: &mut Vec<CAnnotation>,
-) -> anyhow::Result<()> {
-    let Some(siginfo) = siginfo else {
-        return Ok(());
-    };
-
-    
-    if ![SI_USER, SI_TKILL].contains(&siginfo.ssi_code) || siginfo.ssi_pid == crashed_pid as u32 {
-        return Ok(());
-    }
-
-    let path = format!("/proc/{}/comm", siginfo.ssi_pid);
-    let comm = match std::fs::read_to_string(path) {
-        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
-            
-            
-            return Ok(());
-        }
-        Err(e) => return Err(e).context("failed to read comm for extra crash data"),
-        Ok(comm) => comm,
-    };
-    let trimmed = comm.trim();
-    annotations.push(CAnnotation {
-        id: CrashAnnotation::SignalOrigin as u32,
-        data: AnnotationData::String(CString::new(trimmed)?),
-    });
-    Ok(())
 }
 
 
@@ -117,20 +80,18 @@ pub struct DirectAuxvDumpInfo {
 
 
 
-
-
 #[no_mangle]
 pub unsafe extern "C" fn minidump_writer_create(
     dump_path: *const c_char,
     child: pid_t,
     child_blamed_thread: pid_t,
-    extra_data: *mut Option<Box<ExtraCrashData>>,
+    error_msg: *mut *mut c_char,
 ) -> Option<Box<MinidumpWriterContext>> {
-    let mut data = ExtraCrashData::default();
-    let writer = err_to_error_msg(Some(&mut data), || {
+    err_to_error_msg(error_msg, || {
         let dump_path = CStr::from_ptr(dump_path)
             .to_str()
             .context("path not valid UTF-8")?;
+
         let dump_file = std::fs::OpenOptions::new()
             .create(true) 
             .truncate(true) 
@@ -145,13 +106,8 @@ pub unsafe extern "C" fn minidump_writer_create(
             writer_config,
             process_id: child,
             blamed_thread: child_blamed_thread,
-            siginfo: None,
         }))
-    });
-    if !extra_data.is_null() {
-        *extra_data = Some(Box::new(data));
-    }
-    writer
+    })
 }
 
 
@@ -175,7 +131,6 @@ pub extern "C" fn minidump_writer_set_crash_context(
     #[cfg(target_arch = "arm")]
     assert!(float_state.is_none());
 
-    context.siginfo = siginfo.cloned();
     context.writer_config.set_crash_context(CrashContext {
         inner: crash_context::CrashContext {
             context: ucontext.clone(),
@@ -230,23 +185,12 @@ pub extern "C" fn minidump_writer_set_direct_auxv_dump_info(
 
 
 
-
-
 #[no_mangle]
 pub unsafe extern "C" fn minidump_writer_dump(
     mut context: Box<MinidumpWriterContext>,
-    mut extra_data: Option<&mut ExtraCrashData>,
+    error_msg: *mut *mut c_char,
 ) -> bool {
-    if let Some(ref mut extra_data) = extra_data {
-        if let Err(e) = gather_extra_annotations(
-            &context.siginfo,
-            context.process_id,
-            &mut extra_data.annotations,
-        ) {
-            extra_data.error = Some(CString::new(format!("{e:#?}")).unwrap());
-        }
-    }
-    err_to_error_msg(extra_data, || {
+    err_to_error_msg(error_msg, || {
         context
             .writer_config
             .write(&mut context.dump_file)
@@ -263,28 +207,25 @@ pub unsafe extern "C" fn minidump_writer_dump(
 
 
 
-
 #[no_mangle]
-pub unsafe extern "C" fn free_minidump_extra_data(extra_data: *mut ExtraCrashData) {
-    if !extra_data.is_null() {
-        
-        let _extra_data = Box::from_raw(extra_data);
-    }
+pub unsafe extern "C" fn free_minidump_error_msg(error_msg: *mut c_char) {
+    
+    let _error_msg = CString::from_raw(error_msg);
 }
 
 
 
 
 
-unsafe fn err_to_error_msg<F, T>(extra_data: Option<&mut ExtraCrashData>, f: F) -> Option<T>
+unsafe fn err_to_error_msg<F, T>(error_msg: *mut *mut c_char, f: F) -> Option<T>
 where
     F: FnOnce() -> anyhow::Result<T>,
 {
     match f() {
         Ok(t) => Some(t),
         Err(e) => {
-            if let Some(extra_data) = extra_data {
-                extra_data.error = Some(CString::new(format!("{e:#?}")).unwrap());
+            if !error_msg.is_null() {
+                *error_msg = CString::new(format!("{e:#?}")).unwrap().into_raw();
             }
             None
         }
