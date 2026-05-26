@@ -2,7 +2,7 @@
 
 
 
-const { MODEL_FEATURES, openAIEngine, renderPrompt } =
+const { DEFAULT_ENGINE_ID, MODEL_FEATURES, openAIEngine, renderPrompt } =
   ChromeUtils.importESModule(
     "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs"
   );
@@ -69,8 +69,8 @@ add_task(async function test_createOpenAIEngine_with_chat_feature() {
     Assert.equal(opts.baseURL, ENDPOINT, "baseURL should come from pref");
     Assert.equal(
       opts.engineId,
-      "smart-openai",
-      "engineId should be smart-openai"
+      `${DEFAULT_ENGINE_ID}-${MODEL_FEATURES.CHAT}`,
+      "engineId should be derived from the feature name"
     );
     Assert.ok(opts.modelId, "modelId should be set");
     Assert.equal(opts.modelRevision, "main", "modelRevision should be main");
@@ -89,6 +89,60 @@ add_task(async function test_createOpenAIEngine_with_chat_feature() {
     sb.restore();
   }
 });
+
+
+
+
+add_task(
+  async function test_createOpenAIEngine_apiKey_when_custom_endpoint_set() {
+    Services.prefs.setStringPref(PREF_API_KEY, API_KEY);
+    Services.prefs.setStringPref(PREF_ENDPOINT, ENDPOINT);
+    Services.prefs.setStringPref(PREF_MODEL, MODEL);
+
+    const sb = sinon.createSandbox();
+    try {
+      const fakeEngine = { runWithGenerator() {} };
+      const stub = sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
+      await openAIEngine.build(MODEL_FEATURES.CHAT);
+
+      const opts = stub.firstCall.args[0];
+      Assert.equal(
+        opts.apiKey,
+        API_KEY,
+        "apiKey should be returned when custom endpoint is set"
+      );
+    } finally {
+      sb.restore();
+    }
+  }
+);
+
+
+
+
+add_task(
+  async function test_createOpenAIEngine_apiKey_blank_without_custom_endpoint() {
+    Services.prefs.setStringPref(PREF_API_KEY, API_KEY);
+    Services.prefs.clearUserPref(PREF_ENDPOINT);
+    Services.prefs.setStringPref(PREF_MODEL, MODEL);
+
+    const sb = sinon.createSandbox();
+    try {
+      const fakeEngine = { runWithGenerator() {} };
+      const stub = sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
+      await openAIEngine.build(MODEL_FEATURES.CHAT);
+
+      const opts = stub.firstCall.args[0];
+      Assert.equal(
+        opts.apiKey,
+        "",
+        "apiKey should be blank when no custom endpoint is set"
+      );
+    } finally {
+      sb.restore();
+    }
+  }
+);
 
 
 
@@ -112,5 +166,65 @@ This is more content. {testToReplace2}
     promptContent,
     "This is a test prompt.\nreplaced1\n\nThis is more content. replaced2\n\nreplaced3 Here's the last line.",
     "Should render the prompt correctly with provided replacement strings"
+  );
+});
+
+add_task(function test_is429Error() {
+  Assert.equal(openAIEngine.is429Error(null), false, "null is not a 429 error");
+  Assert.equal(
+    openAIEngine.is429Error(undefined),
+    false,
+    "undefined is not a 429 error"
+  );
+  Assert.equal(
+    openAIEngine.is429Error(new Error("boom")),
+    false,
+    "Plain error is not a 429 error"
+  );
+
+  
+  const statusErr = new Error("Request failed");
+  statusErr.status = 429;
+  Assert.equal(
+    openAIEngine.is429Error(statusErr),
+    true,
+    "status === 429 is detected"
+  );
+
+  
+  const budgetErr = new Error("Budget limit exceeded");
+  budgetErr.status = 429;
+  
+  budgetErr.error = 1;
+  Assert.equal(
+    openAIEngine.is429Error(budgetErr),
+    true,
+    "429 with budget code is detected"
+  );
+
+  const rateLimitErr = new Error("Rate limit exceeded");
+  rateLimitErr.status = 429;
+  
+  rateLimitErr.error = 2;
+  Assert.equal(
+    openAIEngine.is429Error(rateLimitErr),
+    true,
+    "429 with QPS rate-limit code is also detected"
+  );
+
+  
+  Assert.equal(
+    openAIEngine.is429Error(new Error("HTTP 429 status code returned")),
+    true,
+    "'429 status code' substring is detected as a fallback"
+  );
+
+  
+  const authErr = new Error("401 status code");
+  authErr.status = 401;
+  Assert.equal(
+    openAIEngine.is429Error(authErr),
+    false,
+    "401 auth errors must NOT match"
   );
 });
