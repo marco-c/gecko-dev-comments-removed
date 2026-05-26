@@ -115,6 +115,16 @@ if (!Services.prefs.getBoolPref("dom.viewTransitions.enabled")) {
   });
 }
 
+if (
+  !Services.prefs.getBoolPref("layout.css.scroll-driven-animations.enabled")
+) {
+  ignoreList.push({
+    sourceName: /smartbar\.css$/i,
+    errorMessage: /Unknown property .*animation-timeline/i,
+    isFromDevTools: false,
+  });
+}
+
 let propNameAllowlist = [
   
   
