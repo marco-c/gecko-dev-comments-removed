@@ -49,7 +49,6 @@ class CompositorWidget;
 
 namespace layers {
 class CompositorBridgeParent;
-class DisplayItemCache;
 class WebRenderBridgeParent;
 class RenderRootStateManager;
 class StackingContextHelper;
@@ -124,7 +123,6 @@ class TransactionBuilder final {
   void SetDisplayList(Epoch aEpoch, wr::WrPipelineId pipeline_id,
                       wr::BuiltDisplayListDescriptor dl_descriptor,
                       wr::Vec<uint8_t>& dl_items_data,
-                      wr::Vec<uint8_t>& dl_cache_data,
                       wr::Vec<uint8_t>& dl_spatial_tree);
 
   void ClearDisplayList(Epoch aEpoch, wr::WrPipelineId aPipeline);
@@ -280,7 +278,6 @@ class WebRenderAPI final {
                 const Range<uint8_t>& aBuffer, bool* aNeedsYFlip);
 
   void ClearAllCaches();
-  void EnableNativeCompositor(bool aEnable);
   void SetBatchingLookback(uint32_t aCount);
   void SetBool(wr::BoolParameter, bool value);
   void SetInt(wr::IntParameter, int32_t value);
@@ -604,14 +601,13 @@ class DisplayListBuilder final {
              const Maybe<usize>& aEnd);
   void DumpSerializedDisplayList();
 
-  void Begin(layers::DisplayItemCache* aCache = nullptr);
+  void Begin();
   void End(wr::BuiltDisplayList& aOutDisplayList);
   void End(layers::DisplayListData& aOutTransaction);
 
   Maybe<wr::WrSpatialId> PushStackingContext(
       const StackingContextParams& aParams, const wr::LayoutRect& aBounds,
-      const wr::RasterSpace& aRasterSpace,
-      wr::SpatialTreeItemKey aSCOriginKey = wr::SpatialTreeItemKey{0, 0});
+      const wr::RasterSpace& aRasterSpace);
   void PopStackingContext(bool aIsReferenceFrame);
 
   wr::WrClipChainId DefineClipChain(Span<const wr::WrClipId> aClips,
@@ -625,27 +621,28 @@ class DisplayListBuilder final {
   wr::WrClipId DefineRectClip(Maybe<wr::WrSpatialId> aSpace,
                               wr::LayoutRect aClipRect);
 
-  wr::WrSpatialId DefineStickyFrame(
-      const ActiveScrolledRoot* aStickyAsr,
-      Maybe<wr::WrSpatialId> aParentSpatialId,
-      const wr::LayoutRect& aContentRect, const float* aTopMargin,
-      const float* aRightMargin, const float* aBottomMargin,
-      const float* aLeftMargin, const StickyOffsetBounds& aVerticalBounds,
-      const StickyOffsetBounds& aHorizontalBounds,
-      const wr::LayoutVector2D& aAppliedOffset, wr::SpatialTreeItemKey aKey,
-      const WrAnimationProperty* aAnimation);
+  wr::WrSpatialId DefineStickyFrame(const ActiveScrolledRoot* aStickyAsr,
+                                    Maybe<wr::WrSpatialId> aParentSpatialId,
+                                    const wr::LayoutRect& aContentRect,
+                                    const float* aTopMargin,
+                                    const float* aRightMargin,
+                                    const float* aBottomMargin,
+                                    const float* aLeftMargin,
+                                    const StickyOffsetBounds& aVerticalBounds,
+                                    const StickyOffsetBounds& aHorizontalBounds,
+                                    const wr::LayoutVector2D& aAppliedOffset,
+                                    const WrAnimationProperty* aAnimation);
 
-  Maybe<wr::WrSpatialId> GetScrollIdForDefinedScrollLayer(
-      layers::ScrollableLayerGuid::ViewID aViewId) const;
-  Maybe<wr::WrSpatialId> GetSpatialIdForDefinedStickyLayer(
+  Maybe<wr::WrSpatialId> GetSpatialIdForDefinedLayer(
       const ActiveScrolledRoot* aASR) const;
+
   wr::WrSpatialId DefineScrollLayer(
+      const ActiveScrolledRoot* aAsr,
       const layers::ScrollableLayerGuid::ViewID& aViewId,
       const Maybe<wr::WrSpatialId>& aParent, const wr::LayoutRect& aContentRect,
       const wr::LayoutRect& aClipRect, const wr::LayoutVector2D& aScrollOffset,
       wr::APZScrollGeneration aScrollOffsetGeneration,
-      wr::HasScrollLinkedEffect aHasScrollLinkedEffect,
-      wr::SpatialTreeItemKey aKey);
+      wr::HasScrollLinkedEffect aHasScrollLinkedEffect);
 
   void PushRect(const wr::LayoutRect& aBounds, const wr::LayoutRect& aClip,
                 bool aIsBackfaceVisible, bool aForceAntiAliasing,
@@ -814,31 +811,6 @@ class DisplayListBuilder final {
 
   void PushDebug(uint32_t aVal);
 
-  
-
-
-
-  void StartGroup(nsPaintedDisplayItem* aItem);
-
-  
-
-
-
-  void CancelGroup(const bool aDiscard = false);
-
-  
-
-
-
-  void FinishGroup();
-
-  
-
-
-
-
-  bool ReuseItem(nsPaintedDisplayItem* aItem);
-
   uint64_t CurrentClipChainId() const {
     return mCurrentSpaceAndClipChain.clip_chain;
   }
@@ -890,8 +862,6 @@ class DisplayListBuilder final {
     mInheritedClipChain = aClipChain;
   }
 
-  layers::DisplayItemCache* GetDisplayItemCache() { return mDisplayItemCache; }
-
   
   
   
@@ -919,14 +889,6 @@ class DisplayListBuilder final {
 
   
   
-  
-  std::unordered_map<layers::ScrollableLayerGuid::ViewID, wr::WrSpatialId>
-      mScrollIds;
-
-  
-  
-  
-  
   std::unordered_map<const ActiveScrolledRoot*, wr::WrSpatialId>
       mASRToSpatialIdMap;
 
@@ -940,8 +902,6 @@ class DisplayListBuilder final {
   wr::PipelineId mPipelineId;
   layers::WebRenderBackend mBackend;
 
-  layers::DisplayItemCache* mDisplayItemCache;
-  Maybe<uint16_t> mCurrentCacheSlot;
   float mInheritedOpacity = 1.0f;
   const DisplayItemClipChain* mInheritedClipChain = nullptr;
 
@@ -976,9 +936,9 @@ class MOZ_RAII SpaceAndClipChainHelper final {
     mBuilder.mCurrentSpaceAndClipChain = mOldSpaceAndClipChain;
   }
 
- private:
   SpaceAndClipChainHelper(const SpaceAndClipChainHelper&) = delete;
 
+ private:
   DisplayListBuilder& mBuilder;
   wr::WrSpaceAndClipChain mOldSpaceAndClipChain;
 };

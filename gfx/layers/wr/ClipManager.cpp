@@ -280,23 +280,17 @@ wr::WrSpaceAndClipChain ClipManager::SwitchItem(nsDisplayListBuilder* aBuilder,
 
 wr::WrSpatialId ClipManager::GetSpatialId(const ActiveScrolledRoot* aASR) {
   for (const ActiveScrolledRoot* asr = aASR; asr; asr = asr->mParent) {
-    Maybe<wr::WrSpatialId> space = Nothing();
-    if (asr->mKind == ActiveScrolledRoot::ASRKind::Sticky) {
-      space = mBuilder->GetSpatialIdForDefinedStickyLayer(asr);
-    } else {
-      space = mBuilder->GetScrollIdForDefinedScrollLayer(asr->GetViewId());
-    }
+    
+    Maybe<wr::WrSpatialId> space = mBuilder->GetSpatialIdForDefinedLayer(asr);
+
     if (space) {
       return *space;
     }
-
-    
-    
-    
   }
+  
+  
 
-  Maybe<wr::WrSpatialId> space = mBuilder->GetScrollIdForDefinedScrollLayer(
-      ScrollableLayerGuid::NULL_SCROLL_ID);
+  Maybe<wr::WrSpatialId> space = mBuilder->GetSpatialIdForDefinedLayer(nullptr);
   MOZ_ASSERT(space.isSome());
   return *space;
 }
@@ -373,7 +367,7 @@ Maybe<wr::WrSpatialId> ClipManager::DefineStickyNode(
   nsIFrame* stickyFrame = aASR->mFrame;
 
   if (Maybe<wr::WrSpatialId> space =
-          mBuilder->GetSpatialIdForDefinedStickyLayer(aASR)) {
+          mBuilder->GetSpatialIdForDefinedLayer(aASR)) {
     return space;
   }
 
@@ -532,11 +526,9 @@ Maybe<wr::WrSpatialId> ClipManager::DefineStickyNode(
   bool needsProp =
       nsDisplayStickyPosition::ShouldGetStickyAnimationId(stickyFrame);
   Maybe<wr::WrAnimationProperty> prop;
-  auto displayItemKey = nsDisplayItem::GetPerFrameKey(
-      0, 0, DisplayItemType::TYPE_STICKY_POSITION);
-  auto spatialKey = wr::SpatialKey(uint64_t(stickyFrame), displayItemKey,
-                                   wr::SpatialKeyKind::Sticky);
   if (needsProp) {
+    auto displayItemKey = nsDisplayItem::GetPerFrameKey(
+        0, 0, DisplayItemType::TYPE_STICKY_POSITION);
     RefPtr<WebRenderAPZAnimationData> animationData =
         mManager->CommandBuilder()
             .CreateOrRecycleWebRenderUserData<WebRenderAPZAnimationData>(
@@ -545,14 +537,13 @@ Maybe<wr::WrSpatialId> ClipManager::DefineStickyNode(
 
     prop.emplace();
     prop->id = animationId;
-    prop->key = spatialKey;
     prop->effect_type = wr::WrAnimationType::Transform;
   }
   wr::WrSpatialId spatialId = mBuilder->DefineStickyFrame(
       aASR, aParentSpatialId, wr::ToLayoutRect(bounds),
       topMargin.ptrOr(nullptr), rightMargin.ptrOr(nullptr),
       bottomMargin.ptrOr(nullptr), leftMargin.ptrOr(nullptr), vBounds, hBounds,
-      applied, spatialKey, prop.ptrOr(nullptr));
+      applied, prop.ptrOr(nullptr));
 
   return Some(spatialId);
 }
@@ -568,8 +559,7 @@ Maybe<wr::WrSpatialId> ClipManager::DefineSpatialNodes(
   ScrollableLayerGuid::ViewID viewId = ScrollableLayerGuid::NULL_SCROLL_ID;
   if (aASR->mKind == ActiveScrolledRoot::ASRKind::Scroll) {
     viewId = aASR->GetViewId();
-    Maybe<wr::WrSpatialId> space =
-        mBuilder->GetScrollIdForDefinedScrollLayer(viewId);
+    Maybe<wr::WrSpatialId> space = mBuilder->GetSpatialIdForDefinedLayer(aASR);
     if (space) {
       
       return space;
@@ -650,13 +640,11 @@ Maybe<wr::WrSpatialId> ClipManager::DefineSpatialNodes(
       presContext->Document()->HasScrollLinkedEffect();
 
   return Some(mBuilder->DefineScrollLayer(
-      viewId, parent, wr::ToLayoutRect(contentRect),
+      aASR, viewId, parent, wr::ToLayoutRect(contentRect),
       wr::ToLayoutRect(clipBounds), wr::ToLayoutVector2D(scrollOffset),
       wr::ToWrAPZScrollGeneration(
           scrollContainerFrame->ScrollGenerationOnApz()),
-      wr::ToWrHasScrollLinkedEffect(hasScrollLinkedEffect),
-      wr::SpatialKey(uint64_t(scrollContainerFrame), 0,
-                     wr::SpatialKeyKind::Scroll)));
+      wr::ToWrHasScrollLinkedEffect(hasScrollLinkedEffect)));
 }
 
 Maybe<wr::WrClipChainId> ClipManager::DefineClipChain(
