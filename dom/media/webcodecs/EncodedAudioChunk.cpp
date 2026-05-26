@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/EncodedAudioChunk.h"
 
 #include <utility>
@@ -18,6 +16,7 @@
 #include "mozilla/dom/StructuredCloneHolder.h"
 #include "mozilla/dom/StructuredCloneTags.h"
 #include "mozilla/dom/WebCodecsUtils.h"
+#include "nsTHashSet.h"
 
 extern mozilla::LazyLogModule gWebCodecsLog;
 using mozilla::media::TimeUnit;
@@ -153,39 +152,116 @@ already_AddRefed<EncodedAudioChunk> EncodedAudioChunk::Constructor(
     return nullptr;
   }
 
-  auto buffer = ProcessTypedArrays(
-      aInit.mData,
-      [&](const Span<uint8_t>& aData,
-          JS::AutoCheckCannotGC&&) -> RefPtr<MediaAlignedByteBuffer> {
-        
-        CheckedUint32 byteLength(aData.Length());
-        if (!byteLength.isValid()) {
-          aRv.Throw(NS_ERROR_INVALID_ARG);
-          return nullptr;
-        }
-        if (aData.Length() == 0) {
-          LOGW("Buffer for constructing EncodedAudioChunk is empty!");
-        }
-        RefPtr<MediaAlignedByteBuffer> buf = MakeRefPtr<MediaAlignedByteBuffer>(
-            aData.Elements(), aData.Length());
-
-        
-        
-        if (!buf || buf->Size() != aData.Length()) {
-          aRv.Throw(NS_ERROR_OUT_OF_MEMORY);
-          return nullptr;
-        }
-        return buf;
-      });
-
-  if (aRv.Failed()) {
-    return nullptr;
+  nsTHashSet<const JSObject*> transferSet;
+  for (const auto& buffer : aInit.mTransfer) {
+    
+    
+    if (transferSet.Contains(buffer.Obj())) {
+      LOGE(
+          "EncodedAudioChunk Constructor -- duplicate transferred ArrayBuffer");
+      aRv.ThrowDataCloneError(
+          "Transfer contains duplicate ArrayBuffer objects");
+      return nullptr;
+    }
+    transferSet.Insert(buffer.Obj());
+  }
+  for (const auto& buffer : aInit.mTransfer) {
+    if (JS::IsDetachedArrayBufferObject(buffer.Obj())) {
+      
+      
+      LOGE("EncodedAudioChunk Constructor -- detached transferred ArrayBuffer");
+      aRv.ThrowDataCloneError("Transfer contains detached ArrayBuffer objects");
+      return nullptr;
+    }
   }
 
-  RefPtr<EncodedAudioChunk> chunk(new EncodedAudioChunk(
-      global, buffer.forget(), aInit.mType, aInit.mTimestamp,
-      OptionalToMaybe(aInit.mDuration)));
-  return chunk.forget();
+  const auto& data = aInit.mData;
+  
+  
+  
+  
+  void* transferData = nullptr;
+  size_t transferOffset = 0;
+  size_t transferLength;
+  if (data.IsArrayBuffer()) {
+    JS::Rooted<JSObject*> transferBuffer(aGlobal.Context(),
+                                         data.GetAsArrayBuffer().Obj());
+    if (transferSet.Contains(transferBuffer)) {
+      transferLength = JS::GetArrayBufferByteLength(transferBuffer);
+      transferData =
+          JS::StealArrayBufferContents(aGlobal.Context(), transferBuffer);
+    }
+  } else if (data.IsArrayBufferView()) {
+    JS::Rooted<JSObject*> transferView(aGlobal.Context(),
+                                       data.GetAsArrayBufferView().Obj());
+    bool isShared;
+    JS::Rooted<JSObject*> transferBuffer(
+        aGlobal.Context(), JS_GetArrayBufferViewBuffer(
+                               aGlobal.Context(), transferView, &isShared));
+    if (transferSet.Contains(transferBuffer)) {
+      transferOffset = JS_GetArrayBufferViewByteOffset(transferView);
+      transferLength = JS_GetArrayBufferViewByteLength(transferView);
+      transferData =
+          JS::StealArrayBufferContents(aGlobal.Context(), transferBuffer);
+    }
+  }
+
+  RefPtr<MediaAlignedByteBuffer> buffer;
+  if (transferData) {
+    
+    CheckedUint32 byteLength(transferLength);
+    if (!byteLength.isValid()) {
+      aRv.Throw(NS_ERROR_INVALID_ARG);
+      return nullptr;
+    }
+    buffer = MakeRefPtr<MediaAlignedByteBuffer>(
+        static_cast<uint8_t*>(transferData), transferOffset, transferLength,
+        true);
+    if (!buffer || buffer->Size() != transferLength) {
+      aRv.Throw(NS_ERROR_OUT_OF_MEMORY);
+      return nullptr;
+    }
+  } else {
+    buffer = ProcessTypedArrays(
+        data,
+        [&](const Span<uint8_t>& aData,
+            JS::AutoCheckCannotGC&&) -> RefPtr<MediaAlignedByteBuffer> {
+          
+          CheckedUint32 byteLength(aData.Length());
+          if (!byteLength.isValid()) {
+            aRv.Throw(NS_ERROR_INVALID_ARG);
+            return nullptr;
+          }
+          if (aData.Length() == 0) {
+            LOGW("Buffer for constructing EncodedAudioChunk is empty!");
+          }
+          RefPtr<MediaAlignedByteBuffer> buf =
+              MakeRefPtr<MediaAlignedByteBuffer>(aData.Elements(),
+                                                 aData.Length());
+
+          
+          
+          if (!buf || buf->Size() != aData.Length()) {
+            aRv.Throw(NS_ERROR_OUT_OF_MEMORY);
+            return nullptr;
+          }
+          return buf;
+        });
+    if (aRv.Failed()) {
+      return nullptr;
+    }
+  }
+
+  
+  
+  for (const auto& buffer : aInit.mTransfer) {
+    JS::Rooted<JSObject*> obj(aGlobal.Context(), buffer.Obj());
+    JS::DetachArrayBuffer(aGlobal.Context(), obj);
+  }
+
+  return MakeAndAddRef<EncodedAudioChunk>(global, buffer.forget(), aInit.mType,
+                                          aInit.mTimestamp,
+                                          OptionalToMaybe(aInit.mDuration));
 }
 
 EncodedAudioChunkType EncodedAudioChunk::Type() const {
