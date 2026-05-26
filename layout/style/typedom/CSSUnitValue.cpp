@@ -24,9 +24,21 @@ CSSUnitValue::CSSUnitValue(nsCOMPtr<nsISupports> aParent, double aValue,
 
 
 RefPtr<CSSUnitValue> CSSUnitValue::Create(nsCOMPtr<nsISupports> aParent,
+                                          double aValue,
+                                          const nsACString& aUnit) {
+  return MakeRefPtr<CSSUnitValue>(std::move(aParent), aValue, aUnit);
+}
+
+
+RefPtr<CSSUnitValue> CSSUnitValue::Create(nsCOMPtr<nsISupports> aParent,
+                                          double aValue) {
+  return Create(std::move(aParent), aValue, "number"_ns);
+}
+
+
+RefPtr<CSSUnitValue> CSSUnitValue::Create(nsCOMPtr<nsISupports> aParent,
                                           const StyleUnitValue& aUnitValue) {
-  return MakeRefPtr<CSSUnitValue>(std::move(aParent), aUnitValue.value,
-                                  aUnitValue.unit);
+  return Create(std::move(aParent), aUnitValue.value, aUnitValue.unit);
 }
 
 JSObject* CSSUnitValue::WrapObject(JSContext* aCx,
@@ -102,6 +114,10 @@ void CSSUnitValue::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
       case eCSSProperty_stroke_width:
       case eCSSProperty_tab_size:
       case eCSSProperty_transition_duration:
+      case eCSSProperty_grid_template_columns:
+      case eCSSProperty_grid_template_rows:
+      case eCSSProperty_grid_auto_columns:
+      case eCSSProperty_grid_auto_rows:
       case eCSSProperty_column_gap:
       case eCSSProperty_row_gap:
       case eCSSProperty_max_block_size:

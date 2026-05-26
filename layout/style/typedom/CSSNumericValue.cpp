@@ -5,7 +5,9 @@
 #include "mozilla/dom/CSSNumericValue.h"
 
 #include "mozilla/AlreadyAddRefed.h"
+#include "mozilla/Assertions.h"
 #include "mozilla/ErrorResult.h"
+#include "mozilla/RefPtr.h"
 #include "mozilla/ServoStyleConsts.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/BindingDeclarations.h"
@@ -23,6 +25,33 @@ CSSNumericValue::CSSNumericValue(nsCOMPtr<nsISupports> aParent,
                                  NumericValueType aNumericValueType)
     : CSSStyleValue(std::move(aParent), StyleValueType::NumericValue),
       mNumericValueType(aNumericValueType) {}
+
+
+
+
+RefPtr<CSSNumericValue> CSSNumericValue::Create(
+    nsCOMPtr<nsISupports> aParent, const CSSNumberish& aNumberish) {
+  if (aNumberish.IsCSSNumericValue()) {
+    return &aNumberish.GetAsCSSNumericValue();
+  }
+
+  MOZ_DIAGNOSTIC_ASSERT(aNumberish.IsDouble());
+  return CSSUnitValue::Create(std::move(aParent), aNumberish.GetAsDouble());
+}
+
+
+
+
+RefPtr<CSSNumericValue> CSSNumericValue::Create(
+    nsCOMPtr<nsISupports> aParent, const OwningCSSNumberish& aOwningNumberish) {
+  if (aOwningNumberish.IsCSSNumericValue()) {
+    return aOwningNumberish.GetAsCSSNumericValue();
+  }
+
+  MOZ_DIAGNOSTIC_ASSERT(aOwningNumberish.IsDouble());
+  return CSSUnitValue::Create(std::move(aParent),
+                              aOwningNumberish.GetAsDouble());
+}
 
 
 RefPtr<CSSNumericValue> CSSNumericValue::Create(
