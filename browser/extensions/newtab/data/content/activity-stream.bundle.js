@@ -6000,7 +6000,9 @@ _PerfService.prototype = {
 
 
   mark: function mark(str) {
-    this._perf.mark(str);
+    if (typeof this._perf.mark === "function") {
+      this._perf.mark(str);
+    }
   },
 
   
@@ -6012,7 +6014,10 @@ _PerfService.prototype = {
 
 
   getEntriesByName: function getEntriesByName(entryName, type) {
-    return this._perf.getEntriesByName(entryName, type);
+    if (typeof this._perf.getEntriesByName === "function") {
+      return this._perf.getEntriesByName(entryName, type);
+    }
+    return [];
   },
 
   
@@ -9028,7 +9033,7 @@ class _TopSiteList extends (external_React_default()).PureComponent {
   _getTopSites() {
     
     let topSites = this.props.TopSites.rows.slice();
-    topSites.length = this.props.TopSitesRows * (this.props.topSitesMaxSitesPerRow ?? TOP_SITES_MAX_SITES_PER_ROW);
+    topSites.length = (this.props.TopSitesRows ?? 0) * (this.props.topSitesMaxSitesPerRow ?? TOP_SITES_MAX_SITES_PER_ROW);
     
     
     const addButtonIndex = topSites.findIndex(site => site?.isAddButton);
