@@ -30,21 +30,6 @@ function assertJitState(url, isAllowed) {
     preferredRemoteType: "web",
   });
 
-  
-  
-  
-  
-  
-  
-  if (remoteType == "web") {
-    Assert.equal(
-      uri.scheme,
-      "data",
-      `We only expect shared remote type for data URIs in this test ${url}`
-    );
-    return;
-  }
-
   Assert.equal(
     isJitDisabledForRemoteType(remoteType),
     !isAllowed,
