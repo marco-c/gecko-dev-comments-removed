@@ -6,21 +6,31 @@
 
 
 
+
+
+
+window.gDisableAccServiceInit = true;
+
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/accessible/tests/browser/shared-head.js",
+  this
+);
+Services.scriptloader.loadSubScript(
+  "chrome://mochitests/content/browser/toolkit/components/printing/tests/head.js",
   this
 );
 loadScripts(
   { name: "common.js", dir: MOCHITESTS_DIR },
   { name: "events.js", dir: MOCHITESTS_DIR }
 );
-Services.scriptloader.loadSubScript(
-  "chrome://mochitests/content/browser/toolkit/components/printing/tests/head.js",
-  this
+const { CommonUtils } = ChromeUtils.importESModule(
+  "chrome://mochitests/content/browser/accessible/tests/browser/Common.sys.mjs"
 );
 const pdfjsLib = ChromeUtils.importESModule("resource://pdf.js/build/pdf.mjs");
 pdfjsLib.GlobalWorkerOptions.workerSrc =
   "resource://pdf.js/build/pdf.worker.mjs";
+
+delete window.gDisableAccServiceInit;
 
 
 
@@ -78,24 +88,156 @@ function simplifyOutlineNode(node) {
   }
 }
 
-function addPdfTest(testName, doc, task, options = {}) {
-  async function pdfTask(browser) {
-    const helper = new PrintHelper(browser);
-    await helper.startPrint();
-    const file = helper.mockFilePicker("accessible_test.pdf");
-    await helper.assertPrintToFile(file, () => {
-      helper.click(helper.get("print-button"));
-    });
-    const data = await IOUtils.read(file.path);
-    const pdf = await pdfjsLib.getDocument({ data }).promise;
-    await task(pdf);
-    file.remove(false);
-    Services.prefs.clearUserPref("print_printer");
+
+
+
+
+
+
+
+
+
+
+
+function addPdfTabTask(task, options = {}) {
+  const {
+    topLevel = true,
+    chrome = false,
+    iframe = false,
+    remoteIframe = false,
+  } = options;
+  const variants = [];
+  if (topLevel) {
+    variants.push({ suffix: "_topLevel" });
   }
-  
-  
-  Object.defineProperty(pdfTask, "name", { value: testName });
-  addAccessibleTask(doc, pdfTask, options);
+  if (chrome) {
+    variants.push({ suffix: "_chrome", chrome: true });
+  }
+  if (iframe) {
+    variants.push({ suffix: "_iframe", iframe: true });
+  }
+  if (remoteIframe) {
+    variants.push({ suffix: "_remoteIframe", remoteIframe: true });
+  }
+  for (const variant of variants) {
+    const wrapped = async function () {
+      const tabOpts = variant.chrome
+        ? { allowInheritPrincipal: true, forceNotRemote: true }
+        : {};
+      
+      
+      
+      gBrowser.selectedTab = BrowserTestUtils.addTab(
+        gBrowser,
+        "about:blank",
+        tabOpts
+      );
+      const tab = gBrowser.selectedTab;
+      const browser = tab.linkedBrowser;
+      registerCleanupFunction(() => {
+        if (tab && !tab.closing && tab.linkedBrowser) {
+          gBrowser.removeTab(tab);
+        }
+      });
+      if (variant.chrome) {
+        await SpecialPowers.pushPrefEnv({
+          set: [["security.allow_unsafe_parent_loads", true]],
+        });
+        
+        browser.removeAttribute("maychangeremoteness");
+      }
+      await task({ tab, browser, variant });
+      gBrowser.removeTab(tab);
+    };
+    
+    
+    Object.defineProperty(wrapped, "name", {
+      value: task.name + variant.suffix,
+    });
+    add_task(wrapped);
+  }
+}
+
+
+
+
+
+async function loadPdfTestDoc(ctx, doc, options = {}) {
+  const url = snippetToURL(doc, {
+    ...options,
+    iframe: ctx.variant.iframe,
+    remoteIframe: ctx.variant.remoteIframe,
+  });
+  const useIframe = ctx.variant.iframe || ctx.variant.remoteIframe;
+
+  const topLoaded = BrowserTestUtils.browserLoaded(ctx.browser);
+  const iframeLoaded = useIframe
+    ? BrowserTestUtils.browserLoaded(
+        ctx.browser,
+         true,
+        u => u != "about:blank" && u != url
+      )
+    : null;
+
+  if (ctx.variant.chrome) {
+    ctx.browser.setAttribute("src", url);
+  } else {
+    BrowserTestUtils.startLoadingURIString(ctx.browser, url);
+  }
+  await topLoaded;
+  if (iframeLoaded) {
+    await iframeLoaded;
+  }
+
+  await SimpleTest.promiseFocus(ctx.browser);
+}
+
+
+
+
+
+async function exportPdf(ctx) {
+  const helper = new PrintHelper(ctx.browser);
+  await helper.startPrint();
+  const file = helper.mockFilePicker("accessible_test.pdf");
+  await helper.assertPrintToFile(file, () => {
+    helper.click(helper.get("print-button"));
+  });
+  const data = await IOUtils.read(file.path);
+  file.remove(false);
+  Services.prefs.clearUserPref("print_printer");
+  return pdfjsLib.getDocument({ data }).promise;
+}
+
+function addPdfTest(testName, doc, task, options = {}) {
+  const body = async ctx => {
+    await loadPdfTestDoc(ctx, doc, options);
+    const pdf = await exportPdf(ctx);
+    await task(pdf);
+  };
+  Object.defineProperty(body, "name", { value: testName });
+  addPdfTabTask(body, options);
+}
+
+
+
+
+
+async function assertPdfStructTree(pdf, pageTrees) {
+  for (let p = 0; p < pageTrees.length; ++p) {
+    const pageNum = p + 1;
+    const page = await pdf.getPage(pageNum);
+    const actualTree = await page.getStructTree();
+    const contentItems = (
+      await page.getTextContent({ includeMarkedContent: true })
+    ).items;
+    simplifyStructTreeNode(actualTree, contentItems);
+    SimpleTest.isDeeply(
+      actualTree,
+      pageTrees[p],
+      `Page ${pageNum} struct tree correct`
+    );
+  }
 }
 
 
@@ -107,23 +249,12 @@ function addPdfTest(testName, doc, task, options = {}) {
 
 
 function addPdfStructTreeTest(testName, doc, pageTrees, options = {}) {
-  async function task(pdf) {
-    for (let p = 0; p < pageTrees.length; ++p) {
-      const pageNum = p + 1;
-      const page = await pdf.getPage(pageNum);
-      const actualTree = await page.getStructTree();
-      const contentItems = (
-        await page.getTextContent({ includeMarkedContent: true })
-      ).items;
-      simplifyStructTreeNode(actualTree, contentItems);
-      SimpleTest.isDeeply(
-        actualTree,
-        pageTrees[p],
-        `Page ${pageNum} struct tree correct`
-      );
-    }
-  }
-  addPdfTest(testName, doc, task, options);
+  addPdfTest(
+    testName,
+    doc,
+    pdf => assertPdfStructTree(pdf, pageTrees),
+    options
+  );
 }
 
 
