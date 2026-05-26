@@ -46,12 +46,11 @@
 
 
 
-
 #ifndef GFX_SCRIPTITEMIZER_H
 #define GFX_SCRIPTITEMIZER_H
 
 #include <stdint.h>
-#include "mozilla/Attributes.h"
+#include "mozilla/Assertions.h"
 #include "mozilla/intl/UnicodeScriptCodes.h"
 
 #define PAREN_STACK_DEPTH 32
@@ -60,31 +59,57 @@ class gfxScriptItemizer {
  public:
   using Script = mozilla::intl::Script;
 
-  gfxScriptItemizer() = default;
+  gfxScriptItemizer(const char16_t* aText, uint32_t aLength)
+      : textPtr(aText), textLength(aLength) {}
   gfxScriptItemizer(const gfxScriptItemizer& aOther) = delete;
   gfxScriptItemizer(gfxScriptItemizer&& aOther) = delete;
-
-  void SetText(const char16_t* aText, uint32_t aLength) {
-    textPtr._2b = aText;
-    textLength = aLength;
-    textIs8bit = false;
-  }
-
-  void SetText(const unsigned char* aText, uint32_t aLength) {
-    textPtr._1b = aText;
-    textLength = aLength;
-    textIs8bit = true;
-  }
 
   struct Run {
     uint32_t mOffset = 0;
     uint32_t mLength = 0;
     Script mScript = Script::COMMON;
-
-    MOZ_IMPLICIT operator bool() const { return mLength > 0; }
   };
 
+  bool Done() const { return scriptLimit >= textLength; }
+
   Run Next();
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static constexpr uint32_t kFirstNonCommonOrLatin = 0x02EA;
+  static inline Script FastGetScriptCode(uint32_t aChar) {
+    MOZ_ASSERT(aChar < kFirstNonCommonOrLatin);
+    
+    
+    return ((aChar & ~0x0020) - 0x0041 <= 0x005A - 0x0041) ||  
+                   (aChar - 0x00C0 <= 0x00D6 - 0x00C0) ||
+                   (aChar - 0x00D8 <= 0x00F6 - 0x00D8) ||
+                   (aChar - 0x00F8 <= 0x02B8 - 0x00F8) ||
+                   ((aChar & ~0x0010) == 0x00AA) ||  
+                   (aChar - 0x02E0 <= 0x02E4 - 0x02E0)
+               ? Script::LATIN
+               : Script::COMMON;
+  }
 
  protected:
   void push(uint32_t endPairChar, Script newScriptCode);
@@ -96,12 +121,8 @@ class gfxScriptItemizer {
     Script scriptCode;
   };
 
-  union {
-    const char16_t* _2b;
-    const unsigned char* _1b;
-  } textPtr;
-  uint32_t textLength;
-  bool textIs8bit;
+  const char16_t* const textPtr;
+  uint32_t const textLength;
 
   uint32_t scriptStart = 0;
   uint32_t scriptLimit = 0;

@@ -46,7 +46,6 @@
 
 
 
-
 #include "gfxScriptItemizer.h"
 #include "mozilla/intl/UnicodeProperties.h"
 #include "nsCharTraits.h"
@@ -122,52 +121,59 @@ static inline bool SameScript(Script runScript, Script currCharScript,
 }
 
 gfxScriptItemizer::Run gfxScriptItemizer::Next() {
-  MOZ_ASSERT(textLength == 0 || (textIs8bit && textPtr._1b) ||
-             (!textIs8bit && textPtr._2b));
-
   
-  if (scriptLimit >= textLength) {
-    return Run{};
-  }
+  MOZ_DIAGNOSTIC_ASSERT(scriptLimit < textLength, "already finished!");
 
   SYNC_FIXUP();
   scriptCode = Script::COMMON;
   Script fallbackScript = Script::UNKNOWN;
 
   for (scriptStart = scriptLimit; scriptLimit < textLength; scriptLimit += 1) {
-    uint32_t ch;
+    const uint32_t startOfChar = scriptLimit;
+    uint32_t ch = textPtr[scriptLimit];
     Script sc;
-    uint32_t startOfChar = scriptLimit;
-
-    ch = textIs8bit ? textPtr._1b[scriptLimit] : textPtr._2b[scriptLimit];
 
     
-    if (NS_IS_HIGH_SURROGATE(ch) && scriptLimit < textLength - 1) {
-      uint32_t low = textPtr._2b[scriptLimit + 1];
-      if (NS_IS_LOW_SURROGATE(low)) {
-        ch = SURROGATE_TO_UCS4(ch, low);
-        scriptLimit += 1;
+    
+    
+    if (ch < kFirstNonCommonOrLatin) {
+      sc = FastGetScriptCode(ch);
+    } else {
+      
+      if (scriptLimit < textLength - 1 &&
+          NS_IS_SURROGATE_PAIR(ch, textPtr[scriptLimit + 1])) {
+        ch = SURROGATE_TO_UCS4(ch, textPtr[++scriptLimit]);
       }
+      sc = UnicodeProperties::GetScriptCode(ch);
     }
 
     
     
     uint8_t gc = HB_UNICODE_GENERAL_CATEGORY_UNASSIGNED;
 
-    sc = UnicodeProperties::GetScriptCode(ch);
     if (sc == Script::COMMON) {
       
-
-
-
-
-
-
-
-
-
-
-      gc = GetGeneralCategory(ch);
+      
+      
+      
+      
+      
+      
+      
+      
+      static constexpr uint32_t kFirstNonLatinOpenOrClose = 0x0F3A;
+      if (ch < kFirstNonLatinOpenOrClose) {
+        
+        
+        
+        if (ch == '(' || ch == '[' || ch == '{') {
+          gc = HB_UNICODE_GENERAL_CATEGORY_OPEN_PUNCTUATION;
+        } else if (ch == ')' || ch == ']' || ch == '}') {
+          gc = HB_UNICODE_GENERAL_CATEGORY_CLOSE_PUNCTUATION;
+        }
+      } else {
+        gc = GetGeneralCategory(ch);
+      }
       if (gc == HB_UNICODE_GENERAL_CATEGORY_OPEN_PUNCTUATION) {
         uint32_t endPairChar = UnicodeProperties::CharMirror(ch);
         if (endPairChar != ch) {
@@ -215,20 +221,15 @@ gfxScriptItemizer::Run gfxScriptItemizer::Next() {
       }
 
       
-
-
-
+      
       if (gc == HB_UNICODE_GENERAL_CATEGORY_CLOSE_PUNCTUATION &&
           UnicodeProperties::IsMirrored(ch)) {
         pop();
       }
     } else {
       
-
-
-
+      
       scriptLimit = startOfChar;
-
       break;
     }
   }
