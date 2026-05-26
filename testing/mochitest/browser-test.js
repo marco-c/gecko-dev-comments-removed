@@ -1332,6 +1332,17 @@ Tester.prototype = {
         return;
       }
 
+      
+      
+      
+      
+      
+      
+      
+      
+      Cu.forceShrinkingGC();
+      Cu.forceCC();
+
       if (this.repeat > 0) {
         --this.repeat;
         if (this.currentTestIndex < 0) {
