@@ -302,12 +302,7 @@ TalosPowersService.prototype = {
       let feed = await pollForFeed();
       await feed._contile.refresh();
       await feed.refresh({ broadcast: true });
-      
-      
-      
-      if (AboutHomeStartupCache.initted) {
-        await AboutHomeStartupCache.cacheNow();
-      }
+      await AboutHomeStartupCache.cacheNow();
     }
 
     await SessionStore.promiseAllWindowsRestored;
