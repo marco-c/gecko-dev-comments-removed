@@ -619,12 +619,14 @@ bool nsCoreUtils::CanCreateAccessibleWithoutFrame(nsIContent* aContent) {
   
   
   
+  
   for (nsIContent* c :
        element->InclusiveFlatTreeAncestorsOfType<nsIContent>()) {
     if (nsIFrame* f = c->GetPrimaryFrame()) {
       if (f->HidesContent(nsIFrame::IncludeContentVisibility::Hidden) ||
           f->IsHiddenByContentVisibilityOnAnyAncestor(
-              nsIFrame::IncludeContentVisibility::Hidden)) {
+              nsIFrame::IncludeContentVisibility::Hidden) ||
+          !f->StyleVisibility()->IsVisible() || f->StyleUI()->IsInert()) {
         return false;
       }
       break;
