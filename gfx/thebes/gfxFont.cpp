@@ -4433,14 +4433,6 @@ gfxFloat gfxFont::GetBaseline(const Baseline& aBaseline,
   if (std::isnan(value)) {
     
     
-    
-    hb_font_t* hbFont = GetHarfBuzzShaper()->GetHBFont();
-    hb_direction_t hbDir = aOrientation == nsFontMetrics::eHorizontal
-                               ? HB_DIRECTION_LTR
-                               : HB_DIRECTION_TTB;
-
-    
-    
     const Metrics& horizMetrics = GetMetrics(nsFontMetrics::eHorizontal);
     if (aOrientation == nsFontMetrics::eVertical &&
         horizMetrics.maxHeight != 0) {
@@ -4450,10 +4442,28 @@ gfxFloat gfxFont::GetBaseline(const Baseline& aBaseline,
       value = SynthesizeVerticalMetricFromHorizontalMetric(
           horizMetrics, vertMetrics, horizBaseline);
     } else {
+      
+      
+      
+      hb_font_t* hbFont;
+      bool createdFont = false;
+      if (gfxHarfBuzzShaper* shaper = GetHarfBuzzShaper()) {
+        hbFont = shaper->GetHBFont();
+      } else {
+        NS_WARNING("failed to get shaper, font extents may be inaccurate");
+        hbFont = gfxHarfBuzzShaper::CreateHBFont(this);
+        createdFont = true;
+      }
+      hb_direction_t hbDir = aOrientation == nsFontMetrics::eHorizontal
+                                 ? HB_DIRECTION_LTR
+                                 : HB_DIRECTION_TTB;
       hb_position_t position;
       hb_ot_layout_get_baseline_with_fallback(
           hbFont, tag, hbDir, HB_OT_TAG_DEFAULT_SCRIPT,
           HB_OT_TAG_DEFAULT_LANGUAGE, &position);
+      if (createdFont) {
+        hb_font_destroy(hbFont);
+      }
       value = position / 65536.0;
     }
 
