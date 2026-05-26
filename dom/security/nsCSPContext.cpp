@@ -1467,25 +1467,12 @@ void nsCSPContext::HandleInternalPageViolation(
     const CSPViolationData& aCSPViolationData,
     const SecurityPolicyViolationEventInit& aInit,
     const nsAString& aViolatedDirectiveNameAndValue) {
-  nsCOMPtr<nsIURI> selfURI = mSelfURI;
-  if (!selfURI) {
-    return;
-  }
-  if (nsContentUtils::IsPDFJS(mLoadingPrincipal)) {
-    
-    
-    
-    
-    mLoadingPrincipal->GetURI(getter_AddRefs(selfURI));
-    if (!selfURI) {
-      return;
-    }
-  } else if (!selfURI->SchemeIs("chrome")) {
+  if (!mSelfURI || !mSelfURI->SchemeIs("chrome")) {
     return;
   }
 
   nsAutoCString selfURISpec;
-  selfURI->GetSpec(selfURISpec);
+  mSelfURI->GetSpec(selfURISpec);
 
   glean::security::CspViolationInternalPageExtra extra;
   extra.directive = Some(NS_ConvertUTF16toUTF8(aInit.mEffectiveDirective));
