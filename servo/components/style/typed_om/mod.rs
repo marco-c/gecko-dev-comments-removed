@@ -193,13 +193,37 @@ impl One for NumericValue {
 
 
 
+
+
+
+
+#[derive(Clone, Debug)]
+#[repr(C)]
+pub struct TranslateComponent {
+    
+    pub x: NumericValue,
+
+    
+    pub y: NumericValue,
+
+    
+    pub z: NumericValue,
+
+    
+    pub is_2d: bool,
+}
+
+
+
+
+
 #[derive(Clone, Debug)]
 #[repr(C)]
 pub enum TransformComponent {
     
     
     
-    Placeholder(bool),
+    Translate(TranslateComponent),
 }
 
 
