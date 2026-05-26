@@ -448,6 +448,13 @@ class nsAccessibilityService final : public mozilla::a11y::DocManager,
   
 
 
+
+
+  void PromoteFromPdfOutput(uint64_t aCacheDomains, uint32_t aConsumer);
+
+  
+
+
   already_AddRefed<LocalAccessible> CreateAccessibleByFrameType(
       nsIFrame* aFrame, nsIContent* aContent, LocalAccessible* aContext);
 

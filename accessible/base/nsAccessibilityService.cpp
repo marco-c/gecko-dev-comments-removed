@@ -1742,6 +1742,22 @@ void nsAccessibilityService::FullInit(uint64_t aCacheDomains,
   }
 }
 
+void nsAccessibilityService::PromoteFromPdfOutput(uint64_t aCacheDomains,
+                                                  uint32_t aConsumer) {
+  
+  
+  
+  
+  
+  FullInit(aCacheDomains, aConsumer);
+
+  nsCOMPtr<nsIObserverService> observerService =
+      mozilla::services::GetObserverService();
+  if (observerService) {
+    observerService->NotifyObservers(nullptr, "a11y-init-or-shutdown", u"1");
+  }
+}
+
 void nsAccessibilityService::Shutdown() {
   
   
@@ -2098,7 +2114,15 @@ nsAccessibilityService* GetOrCreateAccService(uint32_t aNewConsumer,
 
   MOZ_ASSERT(nsAccessibilityService::gAccessibilityService,
              "LocalAccessible service is not initialized.");
+  
+  
+  bool wasOnlyForPdfOutput = nsAccessibilityService::IsOnlyForPdfOutput();
   nsAccessibilityService::gAccessibilityService->SetConsumers(aNewConsumer);
+  if (wasOnlyForPdfOutput &&
+      aNewConsumer != nsAccessibilityService::ePdfOutput) {
+    nsAccessibilityService::gAccessibilityService->PromoteFromPdfOutput(
+        aCacheDomains, aNewConsumer);
+  }
   return nsAccessibilityService::gAccessibilityService;
 }
 
