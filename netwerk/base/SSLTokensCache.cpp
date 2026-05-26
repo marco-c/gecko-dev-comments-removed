@@ -320,20 +320,21 @@ nsresult SSLTokensCache::Init() {
 
     RegisterWeakMemoryReporter(gInstance);
 
+    
+    
+    nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
+    if (obs && XRE_IsParentProcess()) {
+      obs->AddObserver(gInstance, "profile-after-change", false);
+    }
+
     if (!StaticPrefs::network_ssl_tokens_cache_persistence()) {
       return NS_OK;
     }
 
-    
-    
-    
-    nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
     if (obs) {
       obs->AddObserver(gInstance, "application-background", false);
       obs->AddObserver(gInstance, "idle-daily", false);
-      if (XRE_IsParentProcess()) {
-        obs->AddObserver(gInstance, "profile-after-change", false);
-      }
+      gInstance->mWriteObserversRegistered = true;
     }
 
     if (!XRE_IsParentProcess()) {
@@ -378,8 +379,15 @@ nsresult SSLTokensCache::Shutdown() {
   }
 
   if (obs && instance) {
-    obs->RemoveObserver(instance, "application-background");
-    obs->RemoveObserver(instance, "idle-daily");
+    bool hadWriteObservers;
+    {
+      StaticMutexAutoLock lock(sLock);
+      hadWriteObservers = instance->mWriteObserversRegistered;
+    }
+    if (hadWriteObservers) {
+      obs->RemoveObserver(instance, "application-background");
+      obs->RemoveObserver(instance, "idle-daily");
+    }
     if (XRE_IsParentProcess()) {
       obs->RemoveObserver(instance, "profile-after-change");
     }
@@ -1225,16 +1233,38 @@ SSLTokensCache::Observe(nsISupports* aSubject, const char* aTopic,
 
     
     
+    bool wantPersistence = StaticPrefs::network_ssl_tokens_cache_persistence();
+    bool addObservers = false;
+    bool removeObservers = false;
     nsCString loadPath;
     uint32_t loadGen = 0;
     {
       StaticMutexAutoLock lock(sLock);
-      if (gInstance && !gInstance->mBackingFile) {
-        loadPath = SetupPersistenceLocked(loadGen);
+      if (gInstance) {
+        bool wasRegistered = gInstance->mWriteObserversRegistered;
+        gInstance->mWriteObserversRegistered = wantPersistence;
+        addObservers = wantPersistence && !wasRegistered;
+        removeObservers = !wantPersistence && wasRegistered;
+        if (wantPersistence && !gInstance->mBackingFile) {
+          loadPath = SetupPersistenceLocked(loadGen);
+        }
+        if (!wantPersistence) {
+          gInstance->mBackingFile = nullptr;
+          gInstance->mWriteTaskQueue = nullptr;
+        }
       }
     }
-    DispatchLoad(std::move(loadPath), loadGen);
-    RegisterShutdownBlocker();
+    if (addObservers) {
+      obs->AddObserver(this, "application-background", false);
+      obs->AddObserver(this, "idle-daily", false);
+    } else if (removeObservers) {
+      obs->RemoveObserver(this, "application-background");
+      obs->RemoveObserver(this, "idle-daily");
+    }
+    if (wantPersistence) {
+      DispatchLoad(std::move(loadPath), loadGen);
+      RegisterShutdownBlocker();
+    }
   }
   return NS_OK;
 }
