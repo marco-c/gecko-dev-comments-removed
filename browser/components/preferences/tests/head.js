@@ -187,6 +187,10 @@ async function evaluateSearchResults(
       continue;
     }
     if (child.localName == "setting-group") {
+      
+      if (child.hasAttribute("data-srd-migrated")) {
+        continue;
+      }
       if (searchResults.includes(child.groupId)) {
         is_element_visible(
           child,
