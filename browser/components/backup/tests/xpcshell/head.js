@@ -8,6 +8,7 @@ ChromeUtils.defineESModuleGetters(this, {
   BackupService: "resource:///modules/backup/BackupService.sys.mjs",
   BackupResource: "resource:///modules/backup/BackupResource.sys.mjs",
   MeasurementUtils: "resource:///modules/backup/MeasurementUtils.sys.mjs",
+  TelemetryTestUtils: "resource://testing-common/TelemetryTestUtils.sys.mjs",
   Sqlite: "resource://gre/modules/Sqlite.sys.mjs",
   sinon: "resource://testing-common/Sinon.sys.mjs",
   OSKeyStoreTestUtils: "resource://testing-common/OSKeyStoreTestUtils.sys.mjs",
@@ -386,6 +387,21 @@ function assertUint8ArraysSimilarity(uint8ArrayA, uint8ArrayB, expectSimilar) {
   }
 }
 
+
+
+
+
+
+
+
+
+
+function countHistogramMeasurements(histogram) {
+  const snapshot = histogram.snapshot();
+  const countsPerBucket = Object.values(snapshot.values);
+  return countsPerBucket.reduce((sum, count) => sum + count, 0);
+}
+
 function setupProfile() {
   
   Services.fog.initializeFOG();
@@ -430,6 +446,28 @@ function setupProfile() {
   );
 
   return createdProfile.value;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function assertHistogramMeasurementQuantity(
+  histogram,
+  expected,
+  message = "Should have taken a specific number of measurements in the histogram"
+) {
+  const totalCount = countHistogramMeasurements(histogram);
+  Assert.equal(totalCount, expected, message);
 }
 
 
