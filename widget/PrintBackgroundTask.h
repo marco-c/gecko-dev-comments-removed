@@ -8,7 +8,6 @@
 #include "mozilla/dom/Promise.h"
 #include "mozilla/ErrorResult.h"
 
-#include <tuple>
 #include <utility>
 
 
@@ -46,12 +45,8 @@ void SpawnPrintBackgroundTask(
           "SpawnPrintBackgroundTask",
           [holder = std::move(holder), promiseHolder = std::move(promiseHolder),
            backgroundTask = aBackgroundTask,
-           aArgs = std::make_tuple(std::forward<Args>(aArgs)...)] {
-            Result result = std::apply(
-                [&](auto&&... args) {
-                  return (holder->get()->*backgroundTask)(args...);
-                },
-                std::move(aArgs));
+           ... args = std::forward<Args>(aArgs)] {
+            Result result = (holder->get()->*backgroundTask)(args...);
             NS_DispatchToMainThread(NS_NewRunnableFunction(
                 "SpawnPrintBackgroundTaskResolution",
                 [holder = std::move(holder),
