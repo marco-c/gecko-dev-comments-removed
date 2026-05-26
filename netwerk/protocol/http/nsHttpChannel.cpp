@@ -5125,6 +5125,25 @@ nsHttpChannel::OnCacheEntryCheck(nsICacheEntry* entry, uint32_t* aResult) {
                                                  mCachedResponseHead.get());
   NS_ENSURE_SUCCESS(rv, rv);
 
+  
+  
+  
+  
+  
+  {
+    nsAutoCString cachedEncoding;
+    (void)mCachedResponseHead->GetHeader(nsHttp::Content_Encoding,
+                                         cachedEncoding);
+    if (cachedEncoding.LowerCaseFindASCII("dcb") != -1 ||
+        cachedEncoding.LowerCaseFindASCII("dcz") != -1) {
+      LOG(("Dooming stale cache entry with dcb/dcz Content-Encoding [%s]\n",
+           mSpec.get()));
+      entry->AsyncDoom(nullptr);
+      *aResult = ENTRY_NOT_WANTED;
+      return NS_OK;
+    }
+  }
+
   bool isCachedRedirect = WillRedirect(*mCachedResponseHead);
 
   
