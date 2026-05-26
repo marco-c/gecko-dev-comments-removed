@@ -1093,16 +1093,6 @@ class nsPresContext : public nsISupports,
     }
   }
 
-  
-  
-  
-  
-  
-  
-  bool FragmentainerAwarePositioningEnabled() const {
-    return mFragmentainerAwarePositioningEnabled;
-  }
-
  protected:
   void DoUpdateHiddenByContentVisibilityForAnimations();
   friend class nsRunnableMethod<nsPresContext>;
@@ -1425,11 +1415,6 @@ class nsPresContext : public nsISupports,
   unsigned mNeedsToUpdateHiddenByContentVisibilityForAnimations : 1;
 
   unsigned mUserInputEventsAllowed : 1;
-
-  
-  
-  
-  bool mFragmentainerAwarePositioningEnabled : 1 = false;
 
 #ifdef DEBUG
   unsigned mInitialized : 1;

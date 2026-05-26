@@ -1348,14 +1348,6 @@ static nscoord BSizeFromPhysicalSize(const nsSize& aSize,
 
 nsRect AnchorPositioningUtils::ReassembleAnchorRect(
     const nsIFrame* aAnchor, const nsIFrame* aContainingBlock) {
-  if (!aAnchor->PresContext()->FragmentainerAwarePositioningEnabled()) {
-    
-    
-    
-    
-    return nsLayoutUtils::GetCombinedFragmentRects(aAnchor, nullptr).mRect +
-           aAnchor->GetOffsetToIgnoringScrolling(aContainingBlock);
-  }
   aContainingBlock = GetMatchingContainingBlock(aAnchor, aContainingBlock);
   if (!aContainingBlock) {
     MOZ_ASSERT_UNREACHABLE("No matching containing block?");

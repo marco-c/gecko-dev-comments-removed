@@ -1231,9 +1231,6 @@ void nsColumnSetFrame::Reflow(nsPresContext* aPresContext,
       aReflowInput, aReflowInput.ComputedISize() == NS_UNCONSTRAINEDSIZE);
 
   const bool shouldDoMeasuringReflow = [&]() {
-    if (!aPresContext->FragmentainerAwarePositioningEnabled()) {
-      return false;
-    }
     if (isNestedMulticol) {
       
       
