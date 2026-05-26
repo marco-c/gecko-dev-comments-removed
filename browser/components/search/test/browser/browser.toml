@@ -50,11 +50,6 @@ support-files = [
   "contentSearchSuggestions.xml",
   "testEngine_chromeicon.xml",
 ]
-skipif =[
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && asan", # Bug 2009494
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && opt", # Bug 2009494
-  "os == 'win' && os_version == '11.26100'", # Bug 2009494
-]
 
 ["browser_contentSearchUI_default.js"]
 
@@ -65,6 +60,8 @@ skip-if = [
   "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && debug", # Bug 1937944
   "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && debug", # Bug 1937944
 ]
+
+["browser_contextmenu_privateWindow.js"]
 
 ["browser_contextmenu_whereToOpenLink.js"]
 
