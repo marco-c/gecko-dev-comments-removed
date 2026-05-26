@@ -5998,6 +5998,10 @@ JS_PUBLIC_API void js::gc::detail::AssertCellIsNotGray(const Cell* cell) {
     return;
   }
 
+  if (CurrentThreadIsTouchingGrayThings()) {
+    return;
+  }
+
   
   
   MOZ_ASSERT(!JS::RuntimeHeapIsCycleCollecting());
