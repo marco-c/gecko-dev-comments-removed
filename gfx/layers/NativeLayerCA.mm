@@ -1210,9 +1210,9 @@ void NativeLayerCA::DumpLayer(std::ostream& aOutputStream) {
   if (surface) {
     
     
-    RefPtr<MacIOSurface> surf = new MacIOSurface(surface,  true,
-                                                 gfx::YUVColorSpace::Identity,
-                                                 gfx::TransferFunction::SRGB);
+    RefPtr<MacIOSurface> surf = new MacIOSurface(
+        surface, gfx::YUVColorSpace::Identity, gfx::TransferFunction::SRGB,
+        MacIOSurface::AllowAlpha::Yes);
     if (surf->Lock(true)) {
       SurfaceFormat format = surf->GetFormat();
       if (format == SurfaceFormat::B8G8R8A8 ||
@@ -1280,9 +1280,11 @@ void NativeLayerCA::SetSurfaceToPresent(CFTypeRefPtr<IOSurfaceRef> aSurfaceRef,
   
   if (mSurfaceToPresent) {
     auto pixelFormat = IOSurfaceGetPixelFormat(mSurfaceToPresent.get());
-    bool hasAlpha = !mIsOpaque;
+    MacIOSurface::AllowAlpha allowAlpha = mIsOpaque
+                                              ? MacIOSurface::AllowAlpha::No
+                                              : MacIOSurface::AllowAlpha::Yes;
     auto surfaceFormat =
-        MacIOSurface::SurfaceFormatForPixelFormat(pixelFormat, hasAlpha);
+        MacIOSurface::SurfaceFormatForPixelFormat(pixelFormat, allowAlpha);
     mTextureHostIsVideo = gfx::Info(surfaceFormat)->isYuv;
   } else {
     mTextureHostIsVideo = false;

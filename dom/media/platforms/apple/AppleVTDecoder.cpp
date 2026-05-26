@@ -549,13 +549,9 @@ void AppleVTDecoder::OutputFrame(CVPixelBufferRef aImage,
             CVPixelBufferGetIOSurface(aImage));
     MOZ_ASSERT(surface, "Decoder didn't return an IOSurface backed buffer");
 
-    
-    
-    
-    bool hasAlpha = true;
-
-    RefPtr<MacIOSurface> macSurface = new MacIOSurface(
-        std::move(surface), hasAlpha, mColorSpace, mTransferFunction);
+    RefPtr<MacIOSurface> macSurface =
+        new MacIOSurface(std::move(surface), mColorSpace, mTransferFunction,
+                         MacIOSurface::AllowAlpha::Yes);
     macSurface->SetYUVColorSpace(mColorSpace);
     macSurface->mColorPrimaries = mColorPrimaries;
 

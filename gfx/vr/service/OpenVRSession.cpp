@@ -1280,7 +1280,9 @@ bool OpenVRSession::SubmitFrame(const VRLayerTextureHandle& aTextureHandle,
   
   
   
-  RefPtr<MacIOSurface> surf = MacIOSurface::LookupSurface(aTextureHandle);
+  RefPtr<MacIOSurface> surf = MacIOSurface::LookupSurface(
+      aTextureHandle, gfx::YUVColorSpace::Identity, gfx::TransferFunction::SRGB,
+      MacIOSurface::AllowAlpha::No);
   if (!surf) {
     NS_WARNING("OpenVRSession::SubmitFrame failed to get a MacIOSurface");
     return false;
