@@ -4,19 +4,30 @@
 
 #include "mozilla/dom/CSSPerspective.h"
 
+#include "TypedOMUtils.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/BindingDeclarations.h"
-#include "mozilla/dom/CSSPerspectiveBinding.h"
+#include "mozilla/dom/CSSKeywordValue.h"
+#include "mozilla/dom/CSSKeywordValueBinding.h"
+#include "mozilla/dom/CSSNumericValue.h"
+#include "nsCOMPtr.h"
 #include "nsReadableUtils.h"
 #include "nsString.h"
 
 namespace mozilla::dom {
 
-CSSPerspective::CSSPerspective(nsCOMPtr<nsISupports> aParent)
-    : CSSTransformComponent(std::move(aParent),
-                            TransformComponentType::Perspective) {}
+CSSPerspective::CSSPerspective(nsCOMPtr<nsISupports> aParent, bool aIs2D,
+                               OwningCSSPerspectiveValue aLength)
+    : CSSTransformComponent(std::move(aParent), aIs2D,
+                            TransformComponentType::Perspective),
+      mLength(std::move(aLength)) {}
+
+NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED_0(CSSPerspective,
+                                               CSSTransformComponent)
+NS_IMPL_CYCLE_COLLECTION_INHERITED(CSSPerspective, CSSTransformComponent,
+                                   mLength)
 
 JSObject* CSSPerspective::WrapObject(JSContext* aCx,
                                      JS::Handle<JSObject*> aGivenProto) {
@@ -26,14 +37,34 @@ JSObject* CSSPerspective::WrapObject(JSContext* aCx,
 
 
 
+
+
+
+
 already_AddRefed<CSSPerspective> CSSPerspective::Constructor(
     const GlobalObject& aGlobal, const CSSPerspectiveValue& aLength,
     ErrorResult& aRv) {
-  return MakeAndAddRef<CSSPerspective>(aGlobal.GetAsSupports());
+  nsCOMPtr<nsISupports> global = aGlobal.GetAsSupports();
+
+  OwningCSSPerspectiveValue length;
+
+  
+  if (aLength.IsCSSNumericValue()) {
+    length.SetAsCSSNumericValue() = aLength.GetAsCSSNumericValue();
+  } else {
+    CSSKeywordish keywordish;
+    ToCSSKeywordish(aLength, keywordish);
+
+    length.SetAsCSSKeywordValue() = CSSKeywordValue::Create(global, keywordish);
+  }
+
+  
+  return MakeAndAddRef<CSSPerspective>(std::move(global),  false,
+                                       std::move(length));
 }
 
 void CSSPerspective::GetLength(OwningCSSPerspectiveValue& aRetVal) const {
-  aRetVal.SetAsUTF8String() = EmptyCString();
+  aRetVal = mLength;
 }
 
 void CSSPerspective::SetLength(const CSSPerspectiveValue& aArg,
@@ -45,9 +76,16 @@ void CSSPerspective::SetLength(const CSSPerspectiveValue& aArg,
 
 void CSSPerspective::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
                                            nsACString& aDest) const {
-  
+  aDest.Append("perspective("_ns);
 
-  aDest.Append("perspective()"_ns);
+  if (mLength.IsCSSNumericValue()) {
+    mLength.GetAsCSSNumericValue()->ToCssTextWithProperty(aPropertyId, aDest);
+  } else {
+    MOZ_DIAGNOSTIC_ASSERT(mLength.IsCSSKeywordValue());
+    mLength.GetAsCSSKeywordValue()->ToCssTextWithProperty(aPropertyId, aDest);
+  }
+
+  aDest.Append(")"_ns);
 }
 
 const CSSPerspective& CSSTransformComponent::GetAsCSSPerspective() const {
