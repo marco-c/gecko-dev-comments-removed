@@ -14,6 +14,7 @@ ChromeUtils.defineESModuleGetters(this, {
   UrlbarResult: "moz-src:///browser/components/urlbar/UrlbarResult.sys.mjs",
   UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
   UrlbarView: "moz-src:///browser/components/urlbar/UrlbarView.sys.mjs",
+  sinon: "resource://testing-common/Sinon.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(this, "UrlbarTestUtils", () => {
@@ -23,10 +24,6 @@ ChromeUtils.defineLazyGetter(this, "UrlbarTestUtils", () => {
   module.init(this);
   return module;
 });
-
-
-
-const MUTATION_SETTLE_TIME_MS = 500;
 
 const MAX_RESULTS = 10;
 
@@ -387,42 +384,16 @@ async function doSuggestedIndexTest({ search1, search2, duringUpdate }) {
 
   
   
-  await new Promise(r => requestAnimationFrame(r));
-
-  
-  
-  
-  
-  
-  
-  let mutationPromise = new Promise(resolve => {
-    let lastMutationTime = null;
-    let observer = new MutationObserver(() => {
-      info("Observed mutation");
-      lastMutationTime = ChromeUtils.now();
+  let { promise: viewUpdatePromise, resolve: viewUpdateResolve } =
+    Promise.withResolvers();
+  let stub = sinon
+    .stub(gURLBar.view, "onQueryResults")
+    .callsFake(queryContext => {
+      stub.restore();
+      gURLBar.view.onQueryResults(queryContext);
+      viewUpdateResolve();
     });
-    observer.observe(UrlbarTestUtils.getResultsContainer(window), {
-      attributes: true,
-      characterData: true,
-      childList: true,
-      subtree: true,
-    });
-
-    let interval = setInterval(
-      () => {
-        if (
-          lastMutationTime !== null &&
-          MUTATION_SETTLE_TIME_MS < ChromeUtils.now() - lastMutationTime
-        ) {
-          info("No further mutations observed, stopping");
-          clearInterval(interval);
-          observer.disconnect();
-          resolve();
-        }
-      },
-      Math.ceil(MUTATION_SETTLE_TIME_MS / 10)
-    );
-  });
+  registerCleanupFunction(() => stub.restore());
 
   
   let resolveQuery;
@@ -435,8 +406,8 @@ async function doSuggestedIndexTest({ search1, search2, duringUpdate }) {
   });
 
   
-  info("Waiting for mutations to settle");
-  await mutationPromise;
+  info("Waiting for view update");
+  await viewUpdatePromise;
 
   
   
