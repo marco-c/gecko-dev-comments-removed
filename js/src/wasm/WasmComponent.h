@@ -322,6 +322,71 @@ class StronglyUniqueNameSet {
   [[nodiscard]] bool add(mozilla::Span<const char> name, bool* duplicate);
 };
 
+
+
+
+
+
+
+
+
+class ComponentAlias {
+  
+  
+  uint32_t instanceIndex_;
+
+  
+  uint32_t innerIndex_;
+
+  
+  bool isOuter_;
+
+  
+  bool isCoreInstance_;
+
+  
+  ComponentSort sort_;
+
+  explicit ComponentAlias(uint32_t instanceIdx, uint32_t innerIdx,
+                          ComponentSort sort, bool isOuter, bool isCoreInstance)
+      : instanceIndex_(instanceIdx),
+        innerIndex_(innerIdx),
+        isOuter_(isOuter),
+        isCoreInstance_(isCoreInstance),
+        sort_(sort) {}
+
+ public:
+  static ComponentAlias fromExport(uint32_t instanceIdx, uint32_t innerIdx,
+                                   ComponentSort sort) {
+    MOZ_ASSERT(!ComponentSortIsCoreSort(sort));
+    return ComponentAlias(instanceIdx, innerIdx, sort, false,
+                          false);
+  }
+  static ComponentAlias fromCoreExport(uint32_t instanceIdx, uint32_t innerIdx,
+                                       ComponentSort sort) {
+    MOZ_ASSERT(ComponentSortIsCoreSort(sort));
+    return ComponentAlias(instanceIdx, innerIdx, sort, false,
+                          true);
+  }
+  static ComponentAlias outer(uint32_t count, uint32_t index,
+                              ComponentSort sort) {
+    MOZ_ASSERT(!ComponentSortIsCoreSort(sort));
+    return ComponentAlias(count, index, sort, true,
+                          false);
+  }
+
+  bool isExport() const { return !isOuter_ && !isCoreInstance_; }
+  bool isCoreExport() const { return !isOuter_ && isCoreInstance_; }
+  bool isOuter() const {
+    MOZ_ASSERT(!isCoreInstance_);
+    return isOuter_;
+  }
+
+  ComponentSort sort() const { return sort_; }
+  uint32_t instanceIndex() const { return instanceIndex_; }
+  uint32_t itemIndex() const { return innerIndex_; }
+};
+
 struct CoreInstanceInstantiateArg {
   CacheableName name;
   uint32_t instanceIndex;
@@ -413,6 +478,7 @@ class Component : public JS::WasmComponent {
       mozilla::Vector<CoreInstanceDesc, 0, SystemAllocPolicy>;
   using TypeVector = mozilla::Vector<ComponentDefType, 0, SystemAllocPolicy>;
   using ImportVector = Vector<ComponentImport, 0, SystemAllocPolicy>;
+  using AliasVector = Vector<ComponentAlias, 0, SystemAllocPolicy>;
 
   
   JSObject* createObject(JSContext* cx) const override;
@@ -422,6 +488,19 @@ class Component : public JS::WasmComponent {
   CoreInstanceVector coreInstances;
   TypeVector types;
   ImportVector imports;
+
+  AliasVector
+      coreFuncs;  
+  AliasVector coreTables;
+  AliasVector coreMemories;
+  AliasVector coreGlobals;
+  AliasVector coreTags;
+
+  const FuncType& typeForCoreFunc(uint32_t coreFuncIndex) {
+    const ComponentAlias& alias = coreFuncs[coreFuncIndex];
+    SharedModule mod = moduleForCoreInstance(alias.instanceIndex());
+    return mod->codeMeta().getFuncType(alias.itemIndex());
+  }
 
   SharedModule moduleForCoreInstance(uint32_t instanceIndex) {
     CoreInstanceDesc& instance = coreInstances[instanceIndex];

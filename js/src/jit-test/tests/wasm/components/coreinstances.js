@@ -115,17 +115,13 @@ if (false) {
 
 
 
-
-
-if (false) {
-  wasmFailValidateText(`
-  (component
-    (core module
-      (func (export "f"))
-    )
-    (core instance (instantiate 0))
-    (alias core export 0 "f" (core func))
-    (core instance (export "f" (func 0)))
+wasmFailValidateText(`
+(component
+  (core module
+    (func (export "f"))
   )
-  `, /inline exports are not yet supported/);
-}
+  (core instance (instantiate 0))
+  (alias core export 0 "f" (core func))
+  (core instance (export "f" (func 0)))
+)
+`, /inline exports are not yet supported/);
