@@ -68,38 +68,38 @@
 
 
 
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <ctype.h>
+#include <cstdlib>
+#include <cstring>
+#include <cstdio>
+#include <cctype>
 
 #include "affentry.hxx"
 #include "csutil.hxx"
 
 AffEntry::~AffEntry() {
   if (opts & aeLONGCOND)
-    free(c.l.conds2);
+    delete[] c.l.conds2;
   if (morphcode && !(opts & aeALIASM))
-    free(morphcode);
+    delete[] morphcode;
   if (contclass && !(opts & aeALIASF))
-    free(contclass);
+    delete[] contclass;
 }
 
 PfxEntry::PfxEntry(AffixMgr* pmgr)
     
-    : pmyMgr(pmgr),
-      next(NULL),
-      nexteq(NULL),
-      nextne(NULL),
-      flgnxt(NULL) {
-}
+    : pmyMgr(pmgr)
+    , next(nullptr)
+    , nexteq(nullptr)
+    , nextne(nullptr)
+    , flgnxt(nullptr) {}
 
 
 std::string PfxEntry::add(const char* word, size_t len) {
   std::string result;
   if ((len > strip.size() || (len == 0 && pmyMgr->get_fullstrip())) &&
       (len >= numconds) && test_condition(word) &&
-      (!strip.size() || (strncmp(word, strip.c_str(), strip.size()) == 0))) {
+      (strip.empty() ||
+      (len >= strip.size() && strncmp(word, strip.c_str(), strip.size()) == 0))) {
     
     result.assign(appnd);
     result.append(word + strip.size());
@@ -116,20 +116,21 @@ inline char* PfxEntry::nextchar(char* p) {
         return c.l.conds2;
       
     } else if (p == c.conds + MAXCONDLEN)
-      return NULL;
-    return *p ? p : NULL;
+      return nullptr;
+    return *p ? p : nullptr;
   }
-  return NULL;
+  return nullptr;
 }
 
-inline int PfxEntry::test_condition(const char* st) {
-  const char* pos = NULL;  
+inline int PfxEntry::test_condition(const std::string& s) {
+  size_t st = 0;
+  size_t pos = std::string::npos;  
   bool neg = false;        
   bool ingroup = false;    
   if (numconds == 0)
     return 1;
   char* p = c.conds;
-  while (1) {
+  while (true) {
     switch (*p) {
       case '\0':
         return 1;
@@ -148,53 +149,56 @@ inline int PfxEntry::test_condition(const char* st) {
       case ']': {
         if (bool(neg) == bool(ingroup))
           return 0;
-        pos = NULL;
+        pos = std::string::npos;
         p = nextchar(p);
         
-        if (!ingroup && *st)
-          for (st++; (opts & aeUTF8) && (*st & 0xc0) == 0x80; st++)
-            ;
-        if (*st == '\0' && p)
+        if (!ingroup && st < s.size()) {
+          ++st;
+          while ((opts & aeUTF8) && st < s.size() && (s[st] & 0xc0) == 0x80)
+            ++st;
+        }
+        if (st == s.size() && p)
           return 0;  
         break;
       }
       case '.':
-        if (!pos) {  
+        if (pos == std::string::npos) {  
           p = nextchar(p);
           
-          for (st++; (opts & aeUTF8) && (*st & 0xc0) == 0x80; st++)
-            ;
-          if (*st == '\0' && p)
+          ++st;
+          while ((opts & aeUTF8) && st < s.size() && (s[st] & 0xc0) == 0x80)
+            ++st;
+          if (st == s.size() && p)
             return 0;  
           break;
         }
       
       default: {
-        if (*st == *p) {
-          st++;
+        if (st < s.size() && s[st] == *p) {
+          ++st;
           p = nextchar(p);
-          if ((opts & aeUTF8) && (*(st - 1) & 0x80)) {  
+          if ((opts & aeUTF8) && (s[st - 1] & 0x80)) {  
             while (p && (*p & 0xc0) == 0x80) {          
-              if (*p != *st) {
-                if (!pos)
+              if (st >= s.size() || *p != s[st]) {
+                if (pos == std::string::npos)
                   return 0;
                 st = pos;
                 break;
               }
               p = nextchar(p);
-              st++;
+              ++st;
             }
-            if (pos && st != pos) {
+            if (pos != std::string::npos && st != pos) {
               ingroup = true;
-              while (p && *p != ']' && ((p = nextchar(p)) != NULL)) {
+              while (p && *p != ']' && ((p = nextchar(p)) != nullptr)) {
               }
             }
-          } else if (pos) {
+          } else if (pos != std::string::npos) {
             ingroup = true;
-            while (p && *p != ']' && ((p = nextchar(p)) != NULL)) {
+            while (p && *p != ']' && ((p = nextchar(p)) != nullptr)) {
             }
           }
-        } else if (pos) {  
+        } else if (pos != std::string::npos) {  
           p = nextchar(p);
         } else
           return 0;
@@ -206,7 +210,8 @@ inline int PfxEntry::test_condition(const char* st) {
 }
 
 
-struct hentry* PfxEntry::checkword(const char* word,
+struct hentry* PfxEntry::checkword(const std::string& word,
+                                   int start,
                                    int len,
                                    char in_compound,
                                    const FLAG needflag) {
@@ -224,7 +229,7 @@ struct hentry* PfxEntry::checkword(const char* word,
     
 
     std::string tmpword(strip);
-    tmpword.append(word + appnd.size(), tmpl);
+    tmpword.append(word, start + appnd.size(), tmpl);
 
     
     
@@ -234,9 +239,9 @@ struct hentry* PfxEntry::checkword(const char* word,
     
     
 
-    if (test_condition(tmpword.c_str())) {
+    if (test_condition(tmpword)) {
       tmpl += strip.size();
-      if ((he = pmyMgr->lookup(tmpword.c_str())) != NULL) {
+      if ((he = pmyMgr->lookup(tmpword.c_str(), tmpword.size())) != nullptr) {
         do {
           if (TESTAFF(he->astr, aflag, he->alen) &&
               
@@ -255,18 +260,19 @@ struct hentry* PfxEntry::checkword(const char* word,
 
       
       if ((opts & aeXPRODUCT)) {
-        he = pmyMgr->suffix_check(tmpword.c_str(), tmpl, aeXPRODUCT, this,
+        he = pmyMgr->suffix_check(tmpword, 0, tmpl, aeXPRODUCT, this,
                                   FLAG_NULL, needflag, in_compound);
         if (he)
           return he;
       }
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 
-struct hentry* PfxEntry::check_twosfx(const char* word,
+struct hentry* PfxEntry::check_twosfx(const std::string& word,
+                                      int start,
                                       int len,
                                       char in_compound,
                                       const FLAG needflag) {
@@ -283,7 +289,7 @@ struct hentry* PfxEntry::check_twosfx(const char* word,
     
 
     std::string tmpword(strip);
-    tmpword.append(word + appnd.size());
+    tmpword.append(word, start + appnd.size(), tmpl);
 
     
     
@@ -293,7 +299,7 @@ struct hentry* PfxEntry::check_twosfx(const char* word,
     
     
 
-    if (test_condition(tmpword.c_str())) {
+    if (test_condition(tmpword)) {
       tmpl += strip.size();
 
       
@@ -302,18 +308,19 @@ struct hentry* PfxEntry::check_twosfx(const char* word,
 
       if ((opts & aeXPRODUCT) && (in_compound != IN_CPD_BEGIN)) {
         
-        struct hentry* he = pmyMgr->suffix_check_twosfx(tmpword.c_str(), tmpl, aeXPRODUCT, this,
+        struct hentry* he = pmyMgr->suffix_check_twosfx(tmpword, 0, tmpl, aeXPRODUCT, this,
                                                         needflag);
         if (he)
           return he;
       }
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 
-std::string PfxEntry::check_twosfx_morph(const char* word,
+std::string PfxEntry::check_twosfx_morph(const std::string& word,
+                                         int start,
                                          int len,
                                          char in_compound,
                                          const FLAG needflag) {
@@ -330,7 +337,7 @@ std::string PfxEntry::check_twosfx_morph(const char* word,
     
 
     std::string tmpword(strip);
-    tmpword.append(word + appnd.size());
+    tmpword.append(word, start + appnd.size(), tmpl);
 
     
     
@@ -340,7 +347,7 @@ std::string PfxEntry::check_twosfx_morph(const char* word,
     
     
 
-    if (test_condition(tmpword.c_str())) {
+    if (test_condition(tmpword)) {
       tmpl += strip.size();
 
       
@@ -348,7 +355,7 @@ std::string PfxEntry::check_twosfx_morph(const char* word,
       
 
       if ((opts & aeXPRODUCT) && (in_compound != IN_CPD_BEGIN)) {
-        result = pmyMgr->suffix_check_twosfx_morph(tmpword.c_str(), tmpl,
+        result = pmyMgr->suffix_check_twosfx_morph(tmpword, 0, tmpl,
                                                    aeXPRODUCT,
                                                    this, needflag);
       }
@@ -358,7 +365,8 @@ std::string PfxEntry::check_twosfx_morph(const char* word,
 }
 
 
-std::string PfxEntry::check_morph(const char* word,
+std::string PfxEntry::check_morph(const std::string& word,
+                                  int start,
                                   int len,
                                   char in_compound,
                                   const FLAG needflag) {
@@ -377,7 +385,7 @@ std::string PfxEntry::check_morph(const char* word,
     
 
     std::string tmpword(strip);
-    tmpword.append(word + appnd.size());
+    tmpword.append(word, start + appnd.size(), tmpl);
 
     
     
@@ -387,10 +395,10 @@ std::string PfxEntry::check_morph(const char* word,
     
     
 
-    if (test_condition(tmpword.c_str())) {
+    if (test_condition(tmpword)) {
       tmpl += strip.size();
       struct hentry* he;  
-      if ((he = pmyMgr->lookup(tmpword.c_str())) != NULL) {
+      if ((he = pmyMgr->lookup(tmpword.c_str(), tmpword.size())) != nullptr) {
         do {
           if (TESTAFF(he->astr, aflag, he->alen) &&
               
@@ -414,11 +422,10 @@ std::string PfxEntry::check_morph(const char* word,
               result.append(HENTRY_DATA2(he));
             } else {
               
-              char* flag = pmyMgr->encode_flag(getFlag());
+              std::string flag = pmyMgr->encode_flag(getFlag());
               result.push_back(MSEP_FLD);
               result.append(MORPH_FLAG);
               result.append(flag);
-              free(flag);
             }
             result.push_back(MSEP_REC);
           }
@@ -431,7 +438,7 @@ std::string PfxEntry::check_morph(const char* word,
       
 
       if ((opts & aeXPRODUCT) && (in_compound != IN_CPD_BEGIN)) {
-        std::string st = pmyMgr->suffix_check_morph(tmpword.c_str(), tmpl, aeXPRODUCT, this,
+        std::string st = pmyMgr->suffix_check_morph(tmpword, 0, tmpl, aeXPRODUCT, this,
                                                     FLAG_NULL, needflag);
         if (!st.empty()) {
           result.append(st);
@@ -445,15 +452,13 @@ std::string PfxEntry::check_morph(const char* word,
 
 SfxEntry::SfxEntry(AffixMgr* pmgr)
     : pmyMgr(pmgr)  
-      ,
-      next(NULL),
-      nexteq(NULL),
-      nextne(NULL),
-      flgnxt(NULL),
-      l_morph(NULL),
-      r_morph(NULL),
-      eq_morph(NULL) {
-}
+    , next(nullptr)
+    , nexteq(nullptr)
+    , nextne(nullptr)
+    , flgnxt(nullptr)
+    , l_morph(nullptr)
+    , r_morph(nullptr)
+    , eq_morph(nullptr) {}
 
 
 std::string SfxEntry::add(const char* word, size_t len) {
@@ -461,9 +466,9 @@ std::string SfxEntry::add(const char* word, size_t len) {
   
   if ((len > strip.size() || (len == 0 && pmyMgr->get_fullstrip())) &&
       (len >= numconds) && test_condition(word + len, word) &&
-      (!strip.size() ||
-       (strcmp(word + len - strip.size(), strip.c_str()) == 0))) {
-    result.assign(word);
+      (strip.empty() ||
+       (len >= strip.size() && strcmp(word + len - strip.size(), strip.c_str()) == 0))) {
+    result.assign(word, len);
     
     result.replace(len - strip.size(), std::string::npos, appnd);
   }
@@ -479,14 +484,14 @@ inline char* SfxEntry::nextchar(char* p) {
         return c.l.conds2;
       
     } else if (p == c.conds + MAXCONDLEN)
-      return NULL;
-    return *p ? p : NULL;
+      return nullptr;
+    return *p ? p : nullptr;
   }
-  return NULL;
+  return nullptr;
 }
 
 inline int SfxEntry::test_condition(const char* st, const char* beg) {
-  const char* pos = NULL;  
+  const char* pos = nullptr;  
   bool neg = false;        
   bool ingroup = false;    
   if (numconds == 0)
@@ -494,7 +499,7 @@ inline int SfxEntry::test_condition(const char* st, const char* beg) {
   char* p = c.conds;
   st--;
   int i = 1;
-  while (1) {
+  while (true) {
     switch (*p) {
       case '\0':
         return 1;
@@ -516,7 +521,7 @@ inline int SfxEntry::test_condition(const char* st, const char* beg) {
             ;
           st--;
         }
-        pos = NULL;
+        pos = nullptr;
         neg = false;
         ingroup = false;
         p = nextchar(p);
@@ -573,7 +578,7 @@ inline int SfxEntry::test_condition(const char* st, const char* beg) {
               else if (i == numconds)
                 return 1;
               ingroup = true;
-              while (p && *p != ']' && ((p = nextchar(p)) != NULL)) {
+              while (p && *p != ']' && ((p = nextchar(p)) != nullptr)) {
               }
               st--;
             }
@@ -585,7 +590,7 @@ inline int SfxEntry::test_condition(const char* st, const char* beg) {
             else if (i == numconds)
               return 1;
             ingroup = true;
-            while (p && *p != ']' && ((p = nextchar(p)) != NULL)) {
+            while (p && *p != ']' && ((p = nextchar(p)) != nullptr)) {
             }
             
             st--;
@@ -608,7 +613,8 @@ inline int SfxEntry::test_condition(const char* st, const char* beg) {
 }
 
 
-struct hentry* SfxEntry::checkword(const char* word,
+struct hentry* SfxEntry::checkword(const std::string& word,
+                                   int start,
                                    int len,
                                    int optflags,
                                    PfxEntry* ppfx,
@@ -622,7 +628,7 @@ struct hentry* SfxEntry::checkword(const char* word,
   
 
   if (((optflags & aeXPRODUCT) != 0) && ((opts & aeXPRODUCT) == 0))
-    return NULL;
+    return nullptr;
 
   
   
@@ -639,8 +645,8 @@ struct hentry* SfxEntry::checkword(const char* word,
     
     
 
-    std::string tmpstring(word, tmpl);
-    if (strip.size()) {
+    std::string tmpstring(word, start, tmpl);
+    if (!strip.empty()) {
       tmpstring.append(strip);
     }
 
@@ -657,9 +663,9 @@ struct hentry* SfxEntry::checkword(const char* word,
 
     if (test_condition(endword, tmpword)) {
 #ifdef SZOSZABLYA_POSSIBLE_ROOTS
-      fprintf(stdout, "%s %s %c\n", word, tmpword, aflag);
+      fprintf(stdout, "%s %s %c\n", word.c_str() + start, tmpword, aflag);
 #endif
-      if ((he = pmyMgr->lookup(tmpword)) != NULL) {
+      if ((he = pmyMgr->lookup(tmpstring.c_str(), tmpstring.size())) != nullptr) {
         do {
           
           if ((TESTAFF(he->astr, aflag, he->alen) ||
@@ -685,11 +691,12 @@ struct hentry* SfxEntry::checkword(const char* word,
       }
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 
-struct hentry* SfxEntry::check_twosfx(const char* word,
+struct hentry* SfxEntry::check_twosfx(const std::string& word,
+                                      int start,
                                       int len,
                                       int optflags,
                                       PfxEntry* ppfx,
@@ -700,7 +707,7 @@ struct hentry* SfxEntry::check_twosfx(const char* word,
   
 
   if ((optflags & aeXPRODUCT) != 0 && (opts & aeXPRODUCT) == 0)
-    return NULL;
+    return nullptr;
 
   
   
@@ -715,7 +722,7 @@ struct hentry* SfxEntry::check_twosfx(const char* word,
     
     
 
-    std::string tmpword(word);
+    std::string tmpword(word, start);
     tmpword.resize(tmpl);
     tmpword.append(strip);
     tmpl += strip.size();
@@ -735,24 +742,23 @@ struct hentry* SfxEntry::check_twosfx(const char* word,
       if (ppfx) {
         
         if ((contclass) && TESTAFF(contclass, ep->getFlag(), contclasslen))
-          he = pmyMgr->suffix_check(tmpword.c_str(), tmpl, 0, NULL,
-                                    (FLAG)aflag, needflag, IN_CPD_NOT);
+          he = pmyMgr->suffix_check(tmpword, 0, tmpl, 0, nullptr, (FLAG)aflag, needflag, IN_CPD_NOT);
         else
-          he = pmyMgr->suffix_check(tmpword.c_str(), tmpl, optflags, ppfx,
+          he = pmyMgr->suffix_check(tmpword, 0, tmpl, optflags, ppfx,
                                     (FLAG)aflag, needflag, IN_CPD_NOT);
       } else {
-        he = pmyMgr->suffix_check(tmpword.c_str(), tmpl, 0, NULL,
-                                  (FLAG)aflag, needflag, IN_CPD_NOT);
+        he = pmyMgr->suffix_check(tmpword, 0, tmpl, 0, nullptr, (FLAG)aflag, needflag, IN_CPD_NOT);
       }
       if (he)
         return he;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 
-std::string SfxEntry::check_twosfx_morph(const char* word,
+std::string SfxEntry::check_twosfx_morph(const std::string& word,
+                                         int start,
                                          int len,
                                          int optflags,
                                          PfxEntry* ppfx,
@@ -780,7 +786,7 @@ std::string SfxEntry::check_twosfx_morph(const char* word,
     
     
 
-    std::string tmpword(word);
+    std::string tmpword(word, start);
     tmpword.resize(tmpl);
     tmpword.append(strip);
     tmpl += strip.size();
@@ -799,8 +805,7 @@ std::string SfxEntry::check_twosfx_morph(const char* word,
       if (ppfx) {
         
         if ((contclass) && TESTAFF(contclass, ep->getFlag(), contclasslen)) {
-          std::string st = pmyMgr->suffix_check_morph(tmpword.c_str(), tmpl, 0, NULL, aflag,
-                                                      needflag);
+          std::string st = pmyMgr->suffix_check_morph(tmpword, 0, tmpl, 0, nullptr, aflag, needflag);
           if (!st.empty()) {
             if (ppfx->getMorph()) {
               result.append(ppfx->getMorph());
@@ -810,7 +815,7 @@ std::string SfxEntry::check_twosfx_morph(const char* word,
             mychomp(result);
           }
         } else {
-          std::string st = pmyMgr->suffix_check_morph(tmpword.c_str(), tmpl, optflags, ppfx, aflag,
+          std::string st = pmyMgr->suffix_check_morph(tmpword, 0, tmpl, optflags, ppfx, aflag,
                                                       needflag);
           if (!st.empty()) {
             result.append(st);
@@ -818,7 +823,7 @@ std::string SfxEntry::check_twosfx_morph(const char* word,
           }
         }
       } else {
-        std::string st = pmyMgr->suffix_check_morph(tmpword.c_str(), tmpl, 0, NULL, aflag, needflag);
+        std::string st = pmyMgr->suffix_check_morph(tmpword, 0, tmpl, 0, nullptr, aflag, needflag);
         if (!st.empty()) {
           result.append(st);
           mychomp(result);
@@ -855,7 +860,7 @@ struct hentry* SfxEntry::get_next_homonym(struct hentry* he,
           ((contclass) && TESTAFF(contclass, needflag, contclasslen)))))
       return he;
   }
-  return NULL;
+  return nullptr;
 }
 
 void SfxEntry::initReverseWord() {
@@ -868,12 +873,12 @@ void SfxEntry::initReverseWord() {
 Appendix:  Understanding Affix Code
 
 
-An affix is either a  prefix or a suffix attached to root words to make 
+An affix is either a  prefix or a suffix attached to root words to make
 other words.
 
 Basically a Prefix or a Suffix is set of AffEntry objects
-which store information about the prefix or suffix along 
-with supporting routines to check if a word has a particular 
+which store information about the prefix or suffix along
+with supporting routines to check if a word has a particular
 prefix or suffix or a combination.
 
 The structure affentry is defined as follows:
@@ -889,10 +894,10 @@ struct affentry
 };
 
 
-Here is a suffix borrowed from the en_US.aff file.  This file 
+Here is a suffix borrowed from the en_US.aff file.  This file
 is whitespace delimited.
 
-SFX D Y 4 
+SFX D Y 4
 SFX D   0     e          d
 SFX D   y     ied        [^aeiou]y
 SFX D   0     ed         [^ey]
@@ -910,7 +915,7 @@ Field
 4     4   - indicates that sequence of 4 affentry structures are needed to
                properly store the affix information
 
-The remaining lines describe the unique information for the 4 SfxEntry 
+The remaining lines describe the unique information for the 4 SfxEntry
 objects that make up this affix.  Each line can be interpreted
 as follows: (note fields 1 and 2 are as a check against line 1 info)
 
@@ -925,57 +930,57 @@ Field
                     can be applied
 
 Field 5 is interesting.  Since this is a suffix, field 5 tells us that
-there are 2 conditions that must be met.  The first condition is that 
-the next to the last character in the word must *NOT* be any of the 
+there are 2 conditions that must be met.  The first condition is that
+the next to the last character in the word must *NOT* be any of the
 following "a", "e", "i", "o" or "u".  The second condition is that
 the last character of the word must end in "y".
 
-So how can we encode this information concisely and be able to 
+So how can we encode this information concisely and be able to
 test for both conditions in a fast manner?  The answer is found
-but studying the wonderful ispell code of Geoff Kuenning, et.al. 
+but studying the wonderful ispell code of Geoff Kuenning, et.al.
 (now available under a normal BSD license).
 
 If we set up a conds array of 256 bytes indexed (0 to 255) and access it
 using a character (cast to an unsigned char) of a string, we have 8 bits
 of information we can store about that character.  Specifically we
-could use each bit to say if that character is allowed in any of the 
+could use each bit to say if that character is allowed in any of the
 last (or first for prefixes) 8 characters of the word.
 
-Basically, each character at one end of the word (up to the number 
-of conditions) is used to index into the conds array and the resulting 
-value found there says whether the that character is valid for a 
-specific character position in the word.  
+Basically, each character at one end of the word (up to the number
+of conditions) is used to index into the conds array and the resulting
+value found there says whether the that character is valid for a
+specific character position in the word.
 
-For prefixes, it does this by setting bit 0 if that char is valid 
-in the first position, bit 1 if valid in the second position, and so on. 
+For prefixes, it does this by setting bit 0 if that char is valid
+in the first position, bit 1 if valid in the second position, and so on.
 
 If a bit is not set, then that char is not valid for that postion in the
 word.
 
-If working with suffixes bit 0 is used for the character closest 
-to the front, bit 1 for the next character towards the end, ..., 
-with bit numconds-1 representing the last char at the end of the string. 
+If working with suffixes bit 0 is used for the character closest
+to the front, bit 1 for the next character towards the end, ...,
+with bit numconds-1 representing the last char at the end of the string.
 
-Note: since entries in the conds[] are 8 bits, only 8 conditions 
+Note: since entries in the conds[] are 8 bits, only 8 conditions
 (read that only 8 character positions) can be examined at one
 end of a word (the beginning for prefixes and the end for suffixes.
 
-So to make this clearer, lets encode the conds array values for the 
+So to make this clearer, lets encode the conds array values for the
 first two affentries for the suffix D described earlier.
 
 
-  For the first affentry:    
+  For the first affentry:
      numconds = 1             (only examine the last character)
 
      conds['e'] =  (1 << 0)   (the word must end in an E)
      all others are all 0
 
   For the second affentry:
-     numconds = 2             (only examine the last two characters)     
+     numconds = 2             (only examine the last two characters)
 
      conds[X] = conds[X] | (1 << 0)     (aeiou are not allowed)
          where X is all characters *but* a, e, i, o, or u
-         
+
 
      conds['y'] = (1 << 1)     (the last char must be a y)
      all other bits for all other entries in the conds array are zero
