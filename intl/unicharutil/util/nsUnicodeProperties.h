@@ -7,6 +7,7 @@
 
 #include "mozilla/intl/UnicodeProperties.h"
 
+#include "mozilla/Assertions.h"
 #include "mozilla/Span.h"
 #include "nsBidiUtils.h"
 #include "nsUGenCategory.h"
@@ -116,6 +117,29 @@ inline bool IsDefaultIgnorable(uint32_t aCh) {
 }
 
 inline EmojiPresentation GetEmojiPresentation(uint32_t aCh) {
+  
+  
+  
+  
+  
+  
+  if ((aCh & ~0x1fff) == 0) {
+    if (!((aCh - '0' <= '9' - '0') || aCh == '#' || aCh == '*' ||
+          aCh == 0x00A9 || aCh == 0x00AE)) {
+      MOZ_ASSERT(!intl::UnicodeProperties::HasBinaryProperty(
+          aCh, intl::UnicodeProperties::BinaryProperty::Emoji));
+      return TextOnly;
+    }
+  }
+
+  
+  
+  if (aCh - 0x3300 < 0x1F000 - 0x3300) {
+    MOZ_ASSERT(!intl::UnicodeProperties::HasBinaryProperty(
+        aCh, intl::UnicodeProperties::BinaryProperty::Emoji));
+    return TextOnly;
+  }
+
   if (!intl::UnicodeProperties::HasBinaryProperty(
           aCh, intl::UnicodeProperties::BinaryProperty::Emoji)) {
     return TextOnly;
