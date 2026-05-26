@@ -9,7 +9,6 @@
 
 
 
-
 _profileInitialized = true;
 
 add_task(async function () {

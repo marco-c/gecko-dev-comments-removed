@@ -55,9 +55,6 @@ add_setup(async () => {
   
   fakeBytes = new Uint8Array(SIZE_IN_BYTES);
 
-  
-  
-  
   let gen = seededRandomNumberGenerator();
   for (let i = 0; i < SIZE_IN_BYTES; ++i) {
     fakeBytes.set(gen.next().value, i);
@@ -196,9 +193,6 @@ add_task(async function test_createArchive_multiple_of_six_test() {
   const MULTIPLE_OF_SIX_SIZE_IN_BYTES = 6 * 500;
   let multipleOfSixBytes = new Uint8Array(MULTIPLE_OF_SIX_SIZE_IN_BYTES);
 
-  
-  
-  
   let gen = seededRandomNumberGenerator();
   for (let i = 0; i < MULTIPLE_OF_SIX_SIZE_IN_BYTES; ++i) {
     multipleOfSixBytes.set(gen.next().value, i);
@@ -259,9 +253,6 @@ add_task(async function test_createArchive_encrypted_truncated() {
   const MULTIPLE_OF_MAX_CHUNK_SIZE =
     2 * ArchiveUtils.ARCHIVE_CHUNK_MAX_BYTES_SIZE;
   let multipleOfMaxChunkSizeBytes = new Uint8Array(MULTIPLE_OF_MAX_CHUNK_SIZE);
-  
-  
-  
   let gen = seededRandomNumberGenerator();
   for (let i = 0; i < MULTIPLE_OF_MAX_CHUNK_SIZE; ++i) {
     multipleOfMaxChunkSizeBytes.set(gen.next().value, i);
