@@ -4791,57 +4791,47 @@ nsresult nsIFrame::GetDataForTableSelection(
   bool foundCell = false;
   bool foundTable = false;
 
-  
   const Element* const independentSelectionLimiter =
       aFrameSelection->GetIndependentSelectionRootElement();
 
-  
-  
   if (independentSelectionLimiter &&
       !independentSelectionLimiter->Contains(GetContent())) {
+    
     return NS_OK;
   }
 
-  
-  
-  
-  
-
-  while (frame) {
+  for (; frame; frame = frame->GetParent()) {
     
-    nsITableCellLayout* cellElement = do_QueryFrame(frame);
-    if (cellElement) {
+    if (static_cast<nsITableCellLayout*>(do_QueryFrame(frame))) {
       foundCell = true;
       
       
       break;
-    } else {
+    }
+    if (frame->IsTableWrapperFrame()) {
       
       
       
-      nsTableWrapperFrame* tableFrame = do_QueryFrame(frame);
-      if (tableFrame) {
-        foundTable = true;
-        
-        
-        break;
-      } else {
-        frame = frame->GetParent();
-        
-        if (frame && frame->GetContent() == independentSelectionLimiter) {
-          break;
-        }
-      }
+      
+      
+      foundTable = true;
+      break;
     }
   }
-  
+
   if (!foundCell && !foundTable) {
+    
     return NS_OK;
   }
 
   nsIContent* tableOrCellContent = frame->GetContent();
   if (!tableOrCellContent) {
-    return NS_ERROR_FAILURE;
+    return NS_OK;
+  }
+
+  if (independentSelectionLimiter &&
+      !independentSelectionLimiter->Contains(tableOrCellContent)) {
+    return NS_OK;
   }
 
   nsCOMPtr<nsIContent> parentContent = tableOrCellContent->GetParent();
