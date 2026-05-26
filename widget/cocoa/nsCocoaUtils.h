@@ -518,6 +518,11 @@ class nsCocoaUtils {
       nsITransferable* aTransferable, const nsCString& aFlavor,
       NSPasteboardItem* aItem);
 
+  
+
+
+  static NSRectEdge PopupPositionToNSRectEdge(int8_t aPosition);
+
  private:
   
 

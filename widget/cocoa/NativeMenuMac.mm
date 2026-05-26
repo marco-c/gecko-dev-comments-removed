@@ -275,27 +275,7 @@ void NativeMenuMac::ShowMenuAnchored(nsIFrame* aClickedFrame,
 
   NSAppearance* appearance = NativeAppearanceForContent(mMenu->Content());
   NSMenu* menu = mMenu->NativeNSMenu();
-
-  
-  
-  
-  NSRectEdge edge;
-  switch (position) {
-    case POPUPPOSITION_BEFORESTART:
-    case POPUPPOSITION_BEFOREEND:
-      edge = NSRectEdgeMaxY;
-      break;
-    case POPUPPOSITION_STARTBEFORE:
-    case POPUPPOSITION_STARTAFTER:
-      edge = NSRectEdgeMinX;
-      break;
-    case POPUPPOSITION_ENDBEFORE:
-    case POPUPPOSITION_ENDAFTER:
-      edge = NSRectEdgeMaxX;
-      break;
-    default:
-      edge = NSRectEdgeMinY;
-  }
+  NSRectEdge edge = nsCocoaUtils::PopupPositionToNSRectEdge(position);
 
   
   
