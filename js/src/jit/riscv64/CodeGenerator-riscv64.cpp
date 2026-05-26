@@ -223,8 +223,10 @@ void CodeGeneratorRiscv64::visitOutOfLineTableSwitch(
   masm.haltingAlign(sizeof(void*));
   masm.bind(ool->jumpLabel());
   masm.addCodeLabel(*ool->jumpLabel());
-  BlockTrampolinePoolScope block_trampoline_pool(
-      &masm, mir->numCases() * sizeof(uint64_t));
+
+  
+  AutoForbidPoolsAndNops afp(&masm, mir->numCases() * 2);
+
   for (size_t i = 0; i < mir->numCases(); i++) {
     LBlock* caseblock = skipTrivialBlocks(mir->getCase(i))->lir();
     Label* caseheader = caseblock->label();

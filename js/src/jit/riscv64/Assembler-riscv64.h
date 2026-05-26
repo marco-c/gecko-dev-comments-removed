@@ -228,10 +228,15 @@ class Assembler : public AssemblerShared,
     MOZ_ASSERT(!isFinished);
     isFinished = true;
   }
+
   void enterNoPool(size_t maxInst, size_t maxNewDeadlines = 0) {
     m_buffer.enterNoPool(maxInst, maxNewDeadlines);
   }
   void leaveNoPool() { m_buffer.leaveNoPool(); }
+
+  void enterNoNops() { m_buffer.enterNoNops(); }
+  void leaveNoNops() { m_buffer.leaveNoNops(); }
+
   bool swapBuffer(wasm::Bytes& bytes);
   
   size_t size() const;
@@ -304,12 +309,17 @@ class Assembler : public AssemblerShared,
   static void WritePoolGuard(BufferOffset branch, Instruction* inst,
                              BufferOffset dest);
   void processCodeLabels(uint8_t* rawCode);
-  BufferOffset nextOffset() { return m_buffer.nextOffset(); }
+
+  
+  
+  BufferOffset nextOffset() const { return m_buffer.nextOffset(); }
+
   
   
   BufferOffset nextInstrOffset(unsigned numInsts, unsigned numNewDeadlines) {
     return m_buffer.nextInstrOffset(numInsts, numNewDeadlines);
   }
+
   void comment(const char* msg) { spew("; %s", msg); }
 
 #ifdef JS_JITSPEW
@@ -606,26 +616,6 @@ class ABIArgGenerator : public ABIArgGeneratorShared {
   ABIArg current_;
 };
 
-
-
-
-
-class BlockTrampolinePoolScope {
- public:
-  explicit BlockTrampolinePoolScope(Assembler* assem, size_t margin,
-                                    size_t maxBranches = 0)
-      : assem_(assem) {
-    assem_->enterNoPool(margin, maxBranches);
-  }
-  ~BlockTrampolinePoolScope() { assem_->leaveNoPool(); }
-
- private:
-  Assembler* assem_;
-  BlockTrampolinePoolScope() = delete;
-  BlockTrampolinePoolScope(const BlockTrampolinePoolScope&) = delete;
-  BlockTrampolinePoolScope& operator=(const BlockTrampolinePoolScope&) = delete;
-};
-
 class UseScratchRegisterScope {
  public:
   explicit UseScratchRegisterScope(Assembler& assembler);
@@ -718,6 +708,35 @@ static inline bool GetTempRegForIntArg(uint32_t usedIntArgs,
   *out = CallTempNonArgRegs[usedIntArgs];
   return true;
 }
+
+
+
+class AutoForbidNops {
+ protected:
+  Assembler* asm_;
+
+ public:
+  explicit AutoForbidNops(Assembler* asm_) : asm_(asm_) { asm_->enterNoNops(); }
+  ~AutoForbidNops() { asm_->leaveNoNops(); }
+
+  AutoForbidNops(const AutoForbidNops&) = delete;
+  AutoForbidNops& operator=(const AutoForbidNops&) = delete;
+};
+
+
+
+
+class AutoForbidPoolsAndNops : public AutoForbidNops {
+ public:
+  explicit AutoForbidPoolsAndNops(Assembler* assem, size_t margin,
+                                  size_t maxBranches = 0)
+      : AutoForbidNops(assem) {
+    asm_->enterNoPool(margin, maxBranches);
+  }
+  ~AutoForbidPoolsAndNops() { asm_->leaveNoPool(); }
+};
+
+using BlockTrampolinePoolScope = AutoForbidPoolsAndNops;
 
 }  
 }  
