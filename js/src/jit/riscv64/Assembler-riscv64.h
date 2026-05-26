@@ -563,10 +563,14 @@ class Assembler : public AssemblerShared,
   static int RecursiveLiImplCount(int64_t imm);
   
   static int li_estimate(int64_t imm, bool is_get_temp_reg = false);
+
   
   
-  void li_constant(Register rd, int64_t imm);
-  void li_ptr(Register rd, int64_t imm);
+  BufferOffset li_constant(Register rd, int64_t imm);
+
+  
+  
+  BufferOffset li_ptr(Register rd, int64_t imm);
 
   void SignExtendByte(Register rd, Register rs) {
     if (HasZbbExtension()) {
