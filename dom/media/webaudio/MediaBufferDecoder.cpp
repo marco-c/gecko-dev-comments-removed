@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "MediaBufferDecoder.h"
 
 #include <speex/speex_resampler.h>
@@ -18,6 +16,7 @@
 #include "MediaDataDemuxer.h"
 #include "MediaQueue.h"
 #include "PDMFactory.h"
+#include "PDMFactorySupport.h"
 #include "VideoUtils.h"
 #include "WebAudioUtils.h"
 #include "js/MemoryFunctions.h"
@@ -259,11 +258,10 @@ void MediaDecodeTask::OnInitDemuxerCompleted() {
       return;
     }
 
-    RefPtr<PDMFactory> platform = new PDMFactory();
     UniquePtr<TrackInfo> audioInfo = mTrackDemuxer->GetInfo();
     
     if (audioInfo && audioInfo->IsValid() &&
-        !platform->SupportsMimeType(audioInfo->mMimeType).isEmpty()) {
+        !PDMFactorySupport::IsTypeSupported(audioInfo->mMimeType).isEmpty()) {
       mMediaInfo.mAudio = *audioInfo->GetAsAudioInfo();
     }
   }

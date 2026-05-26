@@ -8,7 +8,7 @@
 
 #include "AOMDecoder.h"
 #include "MediaContainerType.h"
-#include "PDMFactory.h"
+#include "PDMFactorySupport.h"
 #include "PlatformDecoderModule.h"
 #include "VPXDecoder.h"
 #include "VideoUtils.h"
@@ -96,12 +96,10 @@ bool WebMDecoder::IsSupportedType(const MediaContainerType& aContainerType) {
 
   
   
-  RefPtr<PDMFactory> platform = new PDMFactory();
   for (const auto& track : tracks) {
-    if (!track ||
-        platform
-            ->Supports(SupportDecoderParams(*track), nullptr )
-            .isEmpty()) {
+    if (!track || PDMFactorySupport::IsSupported(SupportDecoderParams(*track),
+                                                 nullptr )
+                      .isEmpty()) {
       return false;
     }
   }

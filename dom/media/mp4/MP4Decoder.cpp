@@ -8,7 +8,7 @@
 #include "H264.h"
 #include "MP4Demuxer.h"
 #include "MediaContainerType.h"
-#include "PDMFactory.h"
+#include "PDMFactorySupport.h"
 #include "PlatformDecoderModule.h"
 #include "VPXDecoder.h"
 #include "VideoUtils.h"
@@ -139,11 +139,10 @@ bool MP4Decoder::IsSupportedType(const MediaContainerType& aType,
 
   if (!tracks.IsEmpty()) {
     
-    RefPtr<PDMFactory> platform = new PDMFactory();
     for (const auto& track : tracks) {
-      if (!track ||
-          platform->Supports(SupportDecoderParams(*track), aDiagnostics)
-              .isEmpty()) {
+      if (!track || PDMFactorySupport::IsSupported(SupportDecoderParams(*track),
+                                                   aDiagnostics)
+                        .isEmpty()) {
         return false;
       }
     }
@@ -174,9 +173,9 @@ bool MP4Decoder::IsSupportedType(const MediaContainerType& aType,
   }
 
   
-  RefPtr<PDMFactory> platform = new PDMFactory();
   for (const auto& track : tracks) {
-    if (track && !platform->Supports(SupportDecoderParams(*track), aDiagnostics)
+    if (track && !PDMFactorySupport::IsSupported(SupportDecoderParams(*track),
+                                                 aDiagnostics)
                       .isEmpty()) {
       return true;
     }

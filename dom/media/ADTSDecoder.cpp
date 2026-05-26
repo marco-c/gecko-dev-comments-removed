@@ -2,19 +2,16 @@
 
 
 
-
-
 #include "ADTSDecoder.h"
 
 #include "MediaContainerType.h"
-#include "PDMFactory.h"
+#include "PDMFactorySupport.h"
 
 namespace mozilla {
 
 
 bool ADTSDecoder::IsEnabled() {
-  RefPtr<PDMFactory> platform = new PDMFactory();
-  return !platform->SupportsMimeType("audio/mp4a-latm"_ns).isEmpty();
+  return !PDMFactorySupport::IsTypeSupported("audio/mp4a-latm"_ns).isEmpty();
 }
 
 

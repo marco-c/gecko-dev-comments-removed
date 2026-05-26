@@ -2,19 +2,16 @@
 
 
 
-
-
 #include "MP3Decoder.h"
 
 #include "MediaContainerType.h"
-#include "PDMFactory.h"
+#include "PDMFactorySupport.h"
 
 namespace mozilla {
 
 
 bool MP3Decoder::IsEnabled() {
-  RefPtr<PDMFactory> platform = new PDMFactory();
-  return !platform->SupportsMimeType("audio/mpeg"_ns).isEmpty();
+  return !PDMFactorySupport::IsTypeSupported("audio/mpeg"_ns).isEmpty();
 }
 
 
