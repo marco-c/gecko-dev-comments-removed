@@ -230,6 +230,8 @@ add_task(async function test_viewable_internally() {
 
 add_task(async function test_jxl_viewable_internally() {
   
+  
+  Services.prefs.setBoolPref("image.jxl.enabled", false);
   Services.prefs.setCharPref(PREF_ENABLED_TYPES, "jxl");
   checkAll(JXL_MIME, "jxl", false);
 
