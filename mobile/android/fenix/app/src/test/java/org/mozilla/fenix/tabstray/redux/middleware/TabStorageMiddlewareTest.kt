@@ -157,13 +157,15 @@ class TabStorageMiddlewareTest {
         }
 
     @Test
-    fun `GIVEN the tab group feature is enabled WHEN the selected tab ID is updated to a normal tab within a tab group THEN update the selected normal tab index and the group's focus state`() =
+    fun `GIVEN the tab group feature is enabled WHEN the selected tab ID is updated to a normal tab within a tab group THEN update the selected normal tab index, the group's initial scroll index, and the group's focus state`() =
         runTest {
             val initialTabId = "1"
             val expectedTabId = "2"
             val initiallySelectedTab = createTab(id = initialTabId, url = "")
             val groupedTab = createTab(id = expectedTabId, url = "")
-            val tabs = listOf(initiallySelectedTab, groupedTab)
+            val otherGroupedTabs = List(size = 10) { createTab("") }
+            val tabs = listOf(initiallySelectedTab) + otherGroupedTabs + groupedTab
+            val transformedGroupTabs = otherGroupedTabs.map { TabsTrayItem.Tab(tab = it) } + TabsTrayItem.Tab(tab = groupedTab, isFocused = true)
             val storedGroup = StoredTabGroup(
                 title = "test group",
                 theme = "Red",
@@ -173,8 +175,9 @@ class TabStorageMiddlewareTest {
                 id = storedGroup.id,
                 title = storedGroup.title,
                 theme = TabGroupTheme.valueOf(storedGroup.theme),
-                tabs = mutableListOf(TabsTrayItem.Tab(tab = groupedTab, isFocused = true)),
+                tabs = transformedGroupTabs.toMutableList(),
                 isFocused = true,
+                initialScrollIndex = transformedGroupTabs.lastIndex,
             )
             val expectedTabList = listOf(
                 TabsTrayItem.Tab(initiallySelectedTab),
@@ -201,7 +204,7 @@ class TabStorageMiddlewareTest {
                 tabGroupsEnabled = true,
                 tabGroupRepository = createRepository(
                     tabGroupFlow = MutableStateFlow(listOf(storedGroup)),
-                    tabGroupAssignmentFlow = MutableStateFlow(mapOf(groupedTab.id to storedGroup.id)),
+                    tabGroupAssignmentFlow = MutableStateFlow(transformedGroupTabs.associate { it.id to storedGroup.id }),
                 ),
                 scope = backgroundScope,
             )
@@ -385,28 +388,45 @@ class TabStorageMiddlewareTest {
     @Test
     fun `WHEN tab groups have updated THEN transform the data and dispatch an update`() = runTest {
         val expectedTab = createTab("test1")
+        val expectedTab2 = createTab("test2")
         val expectedDisplayTab = TabsTrayItem.Tab(expectedTab)
+        val expectedDisplayTab2 = TabsTrayItem.Tab(expectedTab2)
         val initialState = TabData(
-            tabs = listOf(expectedTab),
+            tabs = listOf(expectedTab, expectedTab2),
         )
         val tabGroup = StoredTabGroup(
             title = "title",
             theme = "Red",
             lastModified = 0L,
         )
-        val expectedTabGroup = TabsTrayItem.TabGroup(
-            id = tabGroup.id,
-            title = tabGroup.title,
-            theme = TabGroupTheme.valueOf(tabGroup.theme),
-            tabs = mutableListOf(expectedDisplayTab),
+        val newerTabGroup = StoredTabGroup(
+            title = "title",
+            theme = "Red",
+            lastModified = 10L,
+        )
+        val expectedTabGroups = listOf(
+            TabsTrayItem.TabGroup(
+                id = tabGroup.id,
+                title = tabGroup.title,
+                theme = TabGroupTheme.valueOf(tabGroup.theme),
+                tabs = mutableListOf(expectedDisplayTab),
+                lastModified = tabGroup.lastModified,
+            ),
+            TabsTrayItem.TabGroup(
+                id = newerTabGroup.id,
+                title = newerTabGroup.title,
+                theme = TabGroupTheme.valueOf(newerTabGroup.theme),
+                tabs = mutableListOf(expectedDisplayTab2),
+                lastModified = newerTabGroup.lastModified,
+            ),
         )
         val expectedState = TabsTrayState(
             normalTabsState = TabsTrayState.NormalTabsState(
-                items = listOf(expectedTabGroup),
-                tabCount = 1,
+                items = expectedTabGroups,
+                tabCount = 2,
             ),
             tabGroupState = TabsTrayState.TabGroupState(
-                groups = listOf(expectedTabGroup),
+                groups = expectedTabGroups.sortedByDescending { it.lastModified },
             ),
             config = TabsTrayState.TabsTrayConfig(tabGroupsEnabled = false, tabGroupsDragAndDropEnabled = false),
         )
@@ -423,8 +443,8 @@ class TabStorageMiddlewareTest {
             scope = backgroundScope,
         )
 
-        tabGroupFlow.emit(listOf(tabGroup))
-        tabGroupAssignmentFlow.emit(mapOf(expectedTab.id to tabGroup.id))
+        tabGroupFlow.emit(listOf(tabGroup, newerTabGroup))
+        tabGroupAssignmentFlow.emit(mapOf(expectedTab.id to tabGroup.id, expectedTab2.id to newerTabGroup.id))
 
         runCurrent()
         advanceUntilIdle()
