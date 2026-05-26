@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_SVG_SVGANIMATEDPRESERVEASPECTRATIO_H_
 #define DOM_SVG_SVGANIMATEDPRESERVEASPECTRATIO_H_
 
@@ -19,9 +17,39 @@ namespace mozilla {
 
 class SMILValue;
 
+class SVGAnimatedPreserveAspectRatio;
+
 namespace dom {
-class DOMSVGAnimatedPreserveAspectRatio;
+class DOMSVGPreserveAspectRatio;
 class SVGAnimationElement;
+
+class DOMSVGAnimatedPreserveAspectRatio final : public nsWrapperCache {
+  ~DOMSVGAnimatedPreserveAspectRatio();
+
+  NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(
+      DOMSVGAnimatedPreserveAspectRatio)
+  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_NATIVE_CLASS(
+      DOMSVGAnimatedPreserveAspectRatio)
+
+  DOMSVGAnimatedPreserveAspectRatio(SVGAnimatedPreserveAspectRatio* aVal,
+                                    dom::SVGElement* aSVGElement)
+      : mVal(aVal), mSVGElement(aSVGElement) {}
+
+  
+  dom::SVGElement* GetParentObject() const { return mSVGElement; }
+  virtual JSObject* WrapObject(JSContext* aCx,
+                               JS::Handle<JSObject*> aGivenProto) override;
+
+  
+  already_AddRefed<DOMSVGPreserveAspectRatio> BaseVal();
+  already_AddRefed<DOMSVGPreserveAspectRatio> AnimVal();
+
+ protected:
+  
+  SVGAnimatedPreserveAspectRatio* mVal;
+  RefPtr<dom::SVGElement> mSVGElement;
+};
+
 }  
 
 class SVGAnimatedPreserveAspectRatio final {
@@ -105,35 +133,6 @@ class SVGAnimatedPreserveAspectRatio final {
   };
 };
 
-namespace dom {
-class DOMSVGAnimatedPreserveAspectRatio final : public nsWrapperCache {
-  ~DOMSVGAnimatedPreserveAspectRatio();
-
-  NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(
-      DOMSVGAnimatedPreserveAspectRatio)
-  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_NATIVE_CLASS(
-      DOMSVGAnimatedPreserveAspectRatio)
-
-  DOMSVGAnimatedPreserveAspectRatio(SVGAnimatedPreserveAspectRatio* aVal,
-                                    dom::SVGElement* aSVGElement)
-      : mVal(aVal), mSVGElement(aSVGElement) {}
-
-  
-  dom::SVGElement* GetParentObject() const { return mSVGElement; }
-  virtual JSObject* WrapObject(JSContext* aCx,
-                               JS::Handle<JSObject*> aGivenProto) override;
-
-  
-  already_AddRefed<DOMSVGPreserveAspectRatio> BaseVal();
-  already_AddRefed<DOMSVGPreserveAspectRatio> AnimVal();
-
- protected:
-  
-  SVGAnimatedPreserveAspectRatio* mVal;
-  RefPtr<dom::SVGElement> mSVGElement;
-};
-
-}  
 }  
 
 #endif  
