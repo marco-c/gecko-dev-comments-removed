@@ -85,7 +85,6 @@ class Rule {
     this.inherited = appliedStyle.inherited || null;
     this.pseudoElement = appliedStyle.pseudoElement || "";
     this.keyframes = appliedStyle.keyframes || null;
-    this.userAdded = appliedStyle.rule.userAdded;
 
     this.cssProperties = this.elementStyle.ruleView.cssProperties;
     this.inspector = this.elementStyle.ruleView.inspector;
@@ -96,35 +95,13 @@ class Rule {
     this.textProps = this.#getTextProperties();
     this.textProps = this.textProps.concat(this.#getDisabledProperties());
 
-    this.getUniqueSelector = this.getUniqueSelector.bind(this);
-    this.onStyleRuleFrontUpdated = this.onStyleRuleFrontUpdated.bind(this);
-
-    this.domRule.on("rule-updated", this.onStyleRuleFrontUpdated);
+    this.domRule.on("rule-updated", this.#onStyleRuleFrontUpdated);
   }
 
   destroy() {
-    this.domRule.off("rule-updated", this.onStyleRuleFrontUpdated);
+    this.domRule.off("rule-updated", this.#onStyleRuleFrontUpdated);
     this.compatibilityIssues = null;
     this.destroyed = true;
-  }
-
-  get declarations() {
-    return this.textProps;
-  }
-
-  get selector() {
-    return {
-      getUniqueSelector: this.getUniqueSelector,
-      matchedSelectorIndexes: this.matchedSelectorIndexes,
-      selectors: this.domRule.selectors,
-      selectorsSpecificity: this.domRule.selectorsSpecificity,
-      selectorWarnings: this.domRule.selectors,
-      selectorText: this.keyframes ? this.domRule.keyText : this.selectorText,
-    };
-  }
-
-  get sourceMapURLService() {
-    return this.inspector.toolbox.sourceMapURLService;
   }
 
   get title() {
@@ -196,6 +173,10 @@ class Rule {
     return CssLogic.l10n("rule.sourceElement");
   }
 
+  get selectorsSpecificity() {
+    return this.domRule.selectorsSpecificity;
+  }
+
   
 
 
@@ -257,27 +238,6 @@ class Rule {
 
   getDeclaration(id) {
     return id ? this.textProps.find(textProp => textProp.id === id) : undefined;
-  }
-
-  
-
-
-  async getUniqueSelector() {
-    let selector = "";
-
-    if (this.domRule.selectors) {
-      
-      selector = this.domRule.selectors.join(", ");
-    } else if (this.inherited) {
-      
-      
-      selector = await this.inherited.getUniqueSelector();
-    } else {
-      
-      selector = await this.inspector.selection.nodeFront.getUniqueSelector();
-    }
-
-    return selector;
   }
 
   
@@ -591,7 +551,7 @@ class Rule {
 
 
 
-  onStyleRuleFrontUpdated(front) {
+  #onStyleRuleFrontUpdated = front => {
     
     
     
@@ -600,7 +560,7 @@ class Rule {
     
     
     this.domRule = front;
-  }
+  };
 
   
 
