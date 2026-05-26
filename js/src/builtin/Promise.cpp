@@ -1650,16 +1650,16 @@ static bool EnqueueJob(JSContext* cx, JS::JSMicroTask* job) {
   }
 
   
-  if (MOZ_UNLIKELY(!cx->runtime()->isMainRuntime())) {
-    
-    Rooted<JS::JSMicroTask*> rootedJob(cx, job);
-    if (MOZ_UNLIKELY(cx->jobQueue->useDebugQueue(cx->global()))) {
-      return cx->microTaskQueues->enqueueDebugMicroTask(
-          cx, ObjectValue(*rootedJob));
-    }
-  }
+  Rooted<JS::JSMicroTask*> rootedJob(cx, job);
 
-  return cx->microTaskQueues->enqueueRegularMicroTask(cx, ObjectValue(*job));
+  
+  if (MOZ_UNLIKELY(!cx->runtime()->isMainRuntime() &&
+                   cx->jobQueue->useDebugQueue(cx->global()))) {
+    return cx->microTaskQueues->enqueueDebugMicroTask(cx,
+                                                      ObjectValue(*rootedJob));
+  }
+  return cx->microTaskQueues->enqueueRegularMicroTask(cx,
+                                                      ObjectValue(*rootedJob));
 }
 
 
