@@ -1518,12 +1518,19 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                             if (!(group == FONT && !(attributes.contains(AttributeName.COLOR)
                                     || attributes.contains(AttributeName.FACE) || attributes.contains(AttributeName.SIZE)))) {
                                 errHtmlStartTagInForeignContext(name);
-                                if (!fragment) {
-                                    while (!isSpecialParentInForeign(stack[currentPtr])) {
-                                        popForeign(-1, -1);
-                                    }
+                                
+                                
+                                
+                                while (currentPtr > 0 && !isSpecialParentInForeign(stack[currentPtr])) {
+                                    popForeign(-1, -1);
+                                }
+                                if (currentPtr > 0 || isSpecialParentInForeign(stack[currentPtr])) {
+                                    
                                     continue starttagloop;
-                                } 
+                                }
+                                
+                                
+                                break;
                             }
                             
                         default:
@@ -2150,12 +2157,23 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                                 break starttagloop;
                             case HR:
                                 implicitlyCloseP();
+                                
+                                
+                                
                                 if (findLastInScope("select") != TreeBuilder.NOT_FOUND_ON_STACK) {
+                                    
                                     generateImpliedEndTags();
+                                    
+                                    
+                                    
                                     if (errorHandler != null
                                             && (findLastInScope("option") != TreeBuilder.NOT_FOUND_ON_STACK
-                                            || findLastInScope("optgroup") != TreeBuilder.NOT_FOUND_ON_STACK)) {
-                                        errUnclosedElements(currentPtr, name);
+                                                || findLastInScope("optgroup") != TreeBuilder.NOT_FOUND_ON_STACK)) {
+                                        errUnclosedElementsImplied(
+                                                findLastInScope("option") != TreeBuilder.NOT_FOUND_ON_STACK
+                                                        ? findLastInScope("option")
+                                                        : findLastInScope("optgroup"),
+                                                name);
                                     }
                                 }
                                 appendVoidElementToCurrentMayFoster(
@@ -2171,22 +2189,32 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                                 errImage();
                                 elementName = ElementName.IMG;
                                 continue starttagloop;
+                            case IMG:
+                                reconstructTheActiveFormattingElements();
+                                appendVoidElementToCurrentMayFoster(
+                                        elementName, attributes,
+                                        formPointer);
+                                selfClosing = false;
+                                
+                                voidElement = true;
+                                
+                                attributes = null; 
+                                break starttagloop;
                             case INPUT:
-                                if (fragment && "select" == contextName) {
-                                    errStartTagWithSelectOpen(name);
-                                    break starttagloop;
-                                }
+                                
+                                
+                                
+                                
                                 eltPos = findLastInScope("select");
                                 if (eltPos != TreeBuilder.NOT_FOUND_ON_STACK) {
+                                    
                                     errStartTagWithSelectOpen(name);
+                                    
                                     while (currentPtr >= eltPos) {
                                         pop();
                                     }
-                                    resetTheInsertionMode();
                                     continue starttagloop;
                                 }
-                                
-                            case IMG:
                                 reconstructTheActiveFormattingElements();
                                 appendVoidElementToCurrentMayFoster(
                                         elementName, attributes,
@@ -2237,56 +2265,101 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                                 attributes = null; 
                                 break starttagloop;
                             case SELECT:
+                                
+                                
+                                
+                                
+                                
                                 if (fragment && "select" == contextName) {
+                                    
                                     errStartSelectWhereEndSelectExpected();
                                     break starttagloop;
                                 }
-                                eltPos = findLastInScope("select");
+                                
+                                
+                                eltPos = findLastInScope(name);
                                 if (eltPos != TreeBuilder.NOT_FOUND_ON_STACK) {
+                                    
                                     errStartSelectWhereEndSelectExpected();
+                                    
                                     while (currentPtr >= eltPos) {
                                         pop();
                                     }
                                     break starttagloop;
                                 }
+                                
+                                
                                 reconstructTheActiveFormattingElements();
+                                
                                 appendToCurrentNodeAndPushElementMayFoster(
                                         elementName,
                                         attributes, formPointer);
+                                
                                 framesetOk = false;
                                 attributes = null; 
                                 break starttagloop;
                             case OPTION:
+                                
+                                
+                                
                                 if (findLastInScope("select") != TreeBuilder.NOT_FOUND_ON_STACK) {
+                                    
                                     generateImpliedEndTagsExceptFor("optgroup");
-                                    if (errorHandler != null
-                                        && findLastInScope("option") != TreeBuilder.NOT_FOUND_ON_STACK) {
-                                        errUnclosedElements(findLastInScope("option"), name);
+                                    
+                                    
+                                    if (errorHandler != null) {
+                                        int optionPos = findLastInScope("option");
+                                        if (optionPos != TreeBuilder.NOT_FOUND_ON_STACK) {
+                                            errUnclosedElementsImplied(optionPos, name);
+                                        }
                                     }
                                 } else {
+                                    
+                                    
                                     if (isCurrent("option")) {
                                         pop();
                                     }
                                 }
+                                
                                 reconstructTheActiveFormattingElements();
-                                appendToCurrentNodeAndPushElement(
+                                
+                                appendToCurrentNodeAndPushElementMayFoster(
                                         elementName,
                                         attributes);
                                 attributes = null; 
                                 break starttagloop;
                             case OPTGROUP:
+                                
+                                
+                                
                                 if (findLastInScope("select") != TreeBuilder.NOT_FOUND_ON_STACK) {
+                                    
                                     generateImpliedEndTags();
-                                    if (errorHandler != null
-                                        && (findLastInScope("option") != TreeBuilder.NOT_FOUND_ON_STACK
-                                            || findLastInScope("optgroup") != TreeBuilder.NOT_FOUND_ON_STACK)) {
-                                        errUnclosedElements(currentPtr, name);
+                                    
+                                    
+                                    
+                                    if (errorHandler != null) {
+                                        int optionPos = findLastInScope("option");
+                                        if (optionPos != TreeBuilder.NOT_FOUND_ON_STACK) {
+                                            errUnclosedElementsImplied(optionPos, name);
+                                        } else {
+                                            int optgroupPos = findLastInScope("optgroup");
+                                            if (optgroupPos != TreeBuilder.NOT_FOUND_ON_STACK) {
+                                                errUnclosedElementsImplied(optgroupPos, name);
+                                            }
+                                        }
                                     }
-                                } else if (isCurrent("option")) {
-                                    pop();
+                                } else {
+                                    
+                                    
+                                    if (isCurrent("option")) {
+                                        pop();
+                                    }
                                 }
+                                
                                 reconstructTheActiveFormattingElements();
-                                appendToCurrentNodeAndPushElement(
+                                
+                                appendToCurrentNodeAndPushElementMayFoster(
                                         elementName,
                                         attributes);
                                 attributes = null; 
@@ -2355,14 +2428,18 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                                 attributes = null; 
                                 break starttagloop;
                             case CAPTION:
-                            case COL:
-                            case COLGROUP:
                             case TBODY_OR_THEAD_OR_TFOOT:
                             case TR:
                             case TD_OR_TH:
+                            case COL:
+                            case COLGROUP:
                             case FRAME:
                             case FRAMESET:
                             case HEAD:
+                                
+                                
+                                
+                                
                                 errStrayStartTag(name);
                                 break starttagloop;
                             case OUTPUT:
@@ -3150,6 +3227,11 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                 for (;;) {
                     if (eltPos == 0) {
                         assert fragment: "We can get this close to the root of the stack in foreign content only in the fragment case.";
+                        
+                        
+                        if (group == P || group == BR) {
+                            break; 
+                        }
                         break endtagloop;
                     }
                     if (stack[eltPos].name == name) {
@@ -3443,8 +3525,11 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                         case PRE_OR_LISTING:
                         case FIELDSET:
                         case BUTTON:
-                        case ADDRESS_OR_ARTICLE_OR_ASIDE_OR_DETAILS_OR_DIALOG_OR_DIR_OR_FIGCAPTION_OR_FIGURE_OR_FOOTER_OR_HEADER_OR_HGROUP_OR_MAIN_OR_NAV_OR_SEARCH_OR_SECTION_OR_SUMMARY:
                         case SELECT:
+                        case ADDRESS_OR_ARTICLE_OR_ASIDE_OR_DETAILS_OR_DIALOG_OR_DIR_OR_FIGCAPTION_OR_FIGURE_OR_FOOTER_OR_HEADER_OR_HGROUP_OR_MAIN_OR_NAV_OR_SEARCH_OR_SECTION_OR_SUMMARY:
+                            
+                            
+                            
                             eltPos = findLastInScope(name);
                             if (eltPos == TreeBuilder.NOT_FOUND_ON_STACK) {
                                 errStrayEndTag(name);
@@ -3495,12 +3580,10 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                             eltPos = findLastInButtonScope("p");
                             if (eltPos == TreeBuilder.NOT_FOUND_ON_STACK) {
                                 errNoElementToCloseButEndTagSeen("p");
-                                
                                 if (isInForeign()) {
                                     errHtmlStartTagInForeignContext(name);
                                     
-                                    
-                                    while (currentPtr >= 0 && stack[currentPtr].ns != "http://www.w3.org/1999/xhtml") {
+                                    while (currentPtr > 0 && stack[currentPtr].ns != "http://www.w3.org/1999/xhtml") {
                                         pop();
                                     }
                                 }
@@ -3581,11 +3664,9 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                         case BR:
                             errEndTagBr();
                             if (isInForeign()) {
-                                
                                 errHtmlStartTagInForeignContext(name);
                                 
-                                
-                                while (currentPtr >= 0 && stack[currentPtr].ns != "http://www.w3.org/1999/xhtml") {
+                                while (currentPtr > 0 && stack[currentPtr].ns != "http://www.w3.org/1999/xhtml") {
                                     pop();
                                 }
                             }
@@ -5611,7 +5692,16 @@ public abstract class TreeBuilder<T> implements TokenHandler,
 
     protected abstract void detachFromParent(T element) throws SAXException;
 
+    
+
+
+
+
+
+
+
     protected void optionElementPopped(T option) throws SAXException {
+        
     }
 
     protected abstract boolean hasChildren(T element) throws SAXException;
@@ -6361,10 +6451,6 @@ public abstract class TreeBuilder<T> implements TokenHandler,
         }
     }
 
-    private void errNoSelectInTableScope() throws SAXException {
-        err("No \u201Cselect\u201D in table scope.");
-    }
-
     private void errStartSelectWhereEndSelectExpected() throws SAXException {
         err("\u201Cselect\u201D start tag where end tag expected.");
     }
@@ -6440,14 +6526,6 @@ public abstract class TreeBuilder<T> implements TokenHandler,
 
     private void errEndTagAfterBody() throws SAXException {
         err("Saw an end tag after \u201Cbody\u201D had been closed.");
-    }
-
-    private void errEndTagSeenWithSelectOpen(@Local String name) throws SAXException {
-        if (errorHandler == null) {
-            return;
-        }
-        errNoCheck("\u201C" + name
-                + "\u201D end tag with \u201Cselect\u201D open.");
     }
 
     private void errGarbageInColgroup() throws SAXException {
