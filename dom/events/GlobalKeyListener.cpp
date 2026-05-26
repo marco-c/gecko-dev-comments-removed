@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "GlobalKeyListener.h"
 
 #include <utility>
@@ -19,6 +17,7 @@
 #include "mozilla/ShortcutKeys.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/TextEvents.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/EventBinding.h"
@@ -416,6 +415,18 @@ GlobalKeyListener::WalkHandlersResult GlobalKeyListener::WalkHandlersAndExecute(
   return result;
 }
 
+
+
+static bool KeyboardLockEnabledAndIsReservedKey(ReservedKey aReservedValue,
+                                                dom::EventTarget* aTarget) {
+  if (aReservedValue == ReservedKey_True) {
+    nsINode* node = nsINode::FromEventTarget(aTarget);
+    RefPtr<dom::Document> doc = node->AsDocument();
+    return doc && doc->HasFullscreenKeyboardLockEnabled();
+  }
+  return false;
+}
+
 bool GlobalKeyListener::IsReservedKey(WidgetKeyboardEvent* aKeyEvent,
                                       KeyEventHandler* aHandler) {
   
@@ -429,6 +440,18 @@ bool GlobalKeyListener::IsReservedKey(WidgetKeyboardEvent* aKeyEvent,
   
   if (reserved == ReservedKey_False) {
     return false;
+  }
+
+  
+  
+  
+  
+  if (KeyboardLockEnabledAndIsReservedKey(reserved, mTarget)) {
+    nsCOMPtr<dom::Element> handlerElement = aHandler->GetHandlerElement();
+    nsAutoString command;
+    return handlerElement &&
+           handlerElement->GetAttr(nsGkAtoms::command, command) &&
+           command.EqualsLiteral("View:FullScreen");
   }
 
   if (reserved != ReservedKey_True &&
@@ -627,9 +650,7 @@ bool XULKeySetGlobalKeyListener::IsExecutableElement(
     return false;
   }
 
-  nsAutoString value;
-  aElement->GetAttr(nsGkAtoms::disabled, value);
-  if (value.EqualsLiteral("true")) {
+  if (aElement->GetBoolAttr(nsGkAtoms::disabled)) {
     return false;
   }
 
