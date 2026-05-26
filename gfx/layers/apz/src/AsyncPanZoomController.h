@@ -1945,6 +1945,8 @@ class AsyncPanZoomController {
   
   TimeStamp mTouchStartTime;
   
+  TimeStamp mAutoscrollStartTime;
+  
   
   struct TouchSample {
     ExternalPoint mPosition;
