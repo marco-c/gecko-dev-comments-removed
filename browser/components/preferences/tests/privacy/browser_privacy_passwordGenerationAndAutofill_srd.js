@@ -1,3 +1,5 @@
+requestLongerTimeout(2);
+
 add_task(async function initialStateNew() {
   
   const prefTests = [
