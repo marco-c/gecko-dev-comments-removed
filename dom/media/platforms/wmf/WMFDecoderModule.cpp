@@ -135,6 +135,12 @@ void WMFDecoderModule::Init() {
                                      "%s failed with code 0x%lx",
                                      EnumValueToString(type), hr);
         if (hr == WINCODEC_ERR_COMPONENTNOTFOUND) {
+          
+          
+          
+          
+          
+          MOZ_ASSERT(type == WMFStreamType::AV1 || type == WMFStreamType::HEVC);
           if (type == WMFStreamType::AV1) {
             WmfDecoderModuleMarkerAndLog("No AV1 extension",
                                          "Lacking of AV1 extension");
