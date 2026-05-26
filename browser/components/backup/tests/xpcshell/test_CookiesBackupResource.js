@@ -24,7 +24,17 @@ add_task(async function test_measure() {
   await cookiesBackupResource.measure(tempDir);
 
   let cookiesMeasurement = Glean.browserBackup.cookiesSize.testGetValue();
+  let scalars = TelemetryTestUtils.getProcessScalars("parent", false, false);
 
+  
+  TelemetryTestUtils.assertScalar(
+    scalars,
+    "browser.backup.cookies_size",
+    cookiesMeasurement,
+    "Glean and telemetry measurements for cookies.sqlite should be equal"
+  );
+
+  
   Assert.equal(
     cookiesMeasurement,
     EXPECTED_COOKIES_DB_SIZE,

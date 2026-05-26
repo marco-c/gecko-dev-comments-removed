@@ -56,9 +56,23 @@ add_setup(function setup() {
 
 
 
+
 function assertSingleTelemetryEvent(name) {
   let value = Glean.browserBackup[name].testGetValue();
   Assert.equal(value.length, 1, `${name} Glean event was recorded once.`);
+
+  let snakeName = name.replace(/([A-Z])/g, "_$1").toLowerCase();
+  let legacy = TelemetryTestUtils.getEvents(
+    { category: "browser.backup", method: snakeName, object: "BackupService" },
+    { process: "parent" }
+  );
+  Assert.equal(legacy.length, 1, `${name} legacy event was recorded once.`);
+
+  Assert.deepEqual(
+    legacy[0].extra,
+    value[0].extra,
+    "Legacy telemetry measured the same data as Glean."
+  );
   return value[0].extra;
 }
 
@@ -91,6 +105,7 @@ function assertEventMatches(name, destPath, encrypted) {
 
   return extra;
 }
+
 
 
 
@@ -152,6 +167,7 @@ async function template(name, encrypted, reason) {
   let resolver = Promise.withResolvers();
   locks.request(BackupService.WRITE_BACKUP_LOCK_NAME, () => {
     Services.fog.testResetFOG();
+    Services.telemetry.clearEvents();
 
     let promise = bs.createBackup({ profilePath, reason });
 
@@ -201,19 +217,23 @@ add_task(async function test_toggleOn() {
   });
 
   Services.fog.testResetFOG();
+  Services.telemetry.clearEvents();
   bs.onUpdateScheduledBackups(true);
   assertEventMatches("toggleOn", backupDir, false);
 
   Services.fog.testResetFOG();
+  Services.telemetry.clearEvents();
   bs.onUpdateScheduledBackups(false);
   assertSingleTelemetryEvent("toggleOff");
 
   await bs.enableEncryption(TEST_PASSWORD, profilePath);
   Services.fog.testResetFOG();
+  Services.telemetry.clearEvents();
   bs.onUpdateScheduledBackups(true);
   assertEventMatches("toggleOn", backupDir, true);
 
   Services.fog.testResetFOG();
+  Services.telemetry.clearEvents();
   bs.onUpdateScheduledBackups(false);
   assertSingleTelemetryEvent("toggleOff");
 });
