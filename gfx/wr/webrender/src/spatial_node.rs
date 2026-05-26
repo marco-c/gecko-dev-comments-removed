@@ -5,95 +5,14 @@
 
 use api::{ExternalScrollId, PipelineId, PropertyBinding, PropertyBindingId, ReferenceFrameKind};
 use api::{APZScrollGeneration, HasScrollLinkedEffect, SampledScrollOffset};
-use api::{TransformStyle, StickyOffsetBounds, SpatialTreeItemKey};
+use api::{TransformStyle, StickyOffsetBounds};
 use api::units::*;
-use crate::internal_types::PipelineInstanceId;
 use crate::spatial_tree::{CoordinateSystem, SpatialNodeIndex, TransformUpdateState};
 use crate::spatial_tree::CoordinateSystemId;
 use euclid::{Vector2D, SideOffsets2D};
 use crate::scene::SceneProperties;
 use crate::util::{LayoutFastTransform, MatrixHelpers, ScaleOffset, TransformedRectKind};
 use crate::util::{PointHelpers, VectorHelpers};
-
-
-
-
-
-
-#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-pub enum SpatialNodeUidKind {
-    
-    Root,
-    
-    InternalScrollFrame,
-    
-    InternalReferenceFrame,
-    
-    External {
-        key: SpatialTreeItemKey,
-    },
-}
-
-
-#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-pub struct SpatialNodeUid {
-    
-    pub kind: SpatialNodeUidKind,
-    
-    pub pipeline_id: PipelineId,
-    
-    pub instance_id: PipelineInstanceId,
-}
-
-impl SpatialNodeUid {
-    pub fn root() -> Self {
-        SpatialNodeUid {
-            kind: SpatialNodeUidKind::Root,
-            pipeline_id: PipelineId::dummy(),
-            instance_id: PipelineInstanceId::new(0),
-        }
-    }
-
-    pub fn root_scroll_frame(
-        pipeline_id: PipelineId,
-        instance_id: PipelineInstanceId,
-    ) -> Self {
-        SpatialNodeUid {
-            kind: SpatialNodeUidKind::InternalScrollFrame,
-            pipeline_id,
-            instance_id,
-        }
-    }
-
-    pub fn root_reference_frame(
-        pipeline_id: PipelineId,
-        instance_id: PipelineInstanceId,
-    ) -> Self {
-        SpatialNodeUid {
-            kind: SpatialNodeUidKind::InternalReferenceFrame,
-            pipeline_id,
-            instance_id,
-        }
-    }
-
-    pub fn external(
-        key: SpatialTreeItemKey,
-        pipeline_id: PipelineId,
-        instance_id: PipelineInstanceId,
-    ) -> Self {
-        SpatialNodeUid {
-            kind: SpatialNodeUidKind::External {
-                key,
-            },
-            pipeline_id,
-            instance_id,
-        }
-    }
-}
 
 
 
@@ -125,6 +44,11 @@ pub enum SpatialNodeType {
 
     
     ReferenceFrame(ReferenceFrameInfo),
+
+    
+    
+    
+    OffsetFrame(LayoutVector2D),
 }
 
 
@@ -232,6 +156,21 @@ impl SceneSpatialNode {
             pipeline_id,
             Some(parent_index),
             SpatialNodeType::StickyFrame(sticky_frame_info),
+            is_root_coord_system,
+        )
+    }
+
+    #[allow(dead_code)]
+    pub fn new_offset_frame(
+        parent_index: SpatialNodeIndex,
+        offset: LayoutVector2D,
+        pipeline_id: PipelineId,
+        is_root_coord_system: bool,
+    ) -> Self {
+        Self::new(
+            pipeline_id,
+            Some(parent_index),
+            SpatialNodeType::OffsetFrame(offset),
             is_root_coord_system,
         )
     }
@@ -602,6 +541,16 @@ impl SpatialNode {
 
                 self.coordinate_system_id = state.current_coordinate_system_id;
           }
+            SpatialNodeType::OffsetFrame(offset) => {
+                
+                
+                let accumulated_offset = state.parent_accumulated_scroll_offset + offset;
+                self.viewport_transform = state.coordinate_system_relative_scale_offset
+                    .pre_offset(snap_offset(accumulated_offset, state.coordinate_system_relative_scale_offset.scale).to_untyped());
+                self.content_transform = self.viewport_transform;
+
+                self.coordinate_system_id = state.current_coordinate_system_id;
+            }
         }
 
         
@@ -767,6 +716,9 @@ impl SpatialNode {
                 state.nearest_scrolling_ancestor_viewport =
                     state.nearest_scrolling_ancestor_viewport
                        .translate(translation);
+            }
+            SpatialNodeType::OffsetFrame(offset) => {
+                state.parent_accumulated_scroll_offset += offset;
             }
         }
     }
@@ -989,7 +941,6 @@ fn test_cst_perspective_relative_scroll() {
     let pipeline_id = PipelineId::dummy();
     let ext_scroll_id = ExternalScrollId(1, pipeline_id);
     let transform = LayoutTransform::rotation(0.0, 0.0, 1.0, Angle::degrees(45.0));
-    let pid = PipelineInstanceId::new(0);
 
     let root = cst.add_reference_frame(
         cst.root_reference_frame_index(),
@@ -1002,7 +953,7 @@ fn test_cst_perspective_relative_scroll() {
         },
         LayoutVector2D::zero(),
         pipeline_id,
-        SpatialNodeUid::external(SpatialTreeItemKey::new(0, 0), PipelineId::dummy(), pid),
+        false,
     );
 
     let scroll_frame_1 = cst.add_scroll_frame(
@@ -1015,7 +966,6 @@ fn test_cst_perspective_relative_scroll() {
         LayoutVector2D::zero(),
         APZScrollGeneration::default(),
         HasScrollLinkedEffect::No,
-        SpatialNodeUid::external(SpatialTreeItemKey::new(0, 1), PipelineId::dummy(), pid),
     );
 
     let scroll_frame_2 = cst.add_scroll_frame(
@@ -1028,7 +978,6 @@ fn test_cst_perspective_relative_scroll() {
         LayoutVector2D::new(0.0, 50.0),
         APZScrollGeneration::default(),
         HasScrollLinkedEffect::No,
-        SpatialNodeUid::external(SpatialTreeItemKey::new(0, 3), PipelineId::dummy(), pid),
     );
 
     let ref_frame = cst.add_reference_frame(
@@ -1040,7 +989,7 @@ fn test_cst_perspective_relative_scroll() {
         },
         LayoutVector2D::zero(),
         pipeline_id,
-        SpatialNodeUid::external(SpatialTreeItemKey::new(0, 4), PipelineId::dummy(), pid),
+        false,
     );
 
     let mut st = SpatialTree::new();
@@ -1051,4 +1000,3 @@ fn test_cst_perspective_relative_scroll() {
     let ref_transform = transform.then_translate(LayoutVector3D::new(0.0, -50.0, 0.0));
     assert!(world_transform.approx_eq(&ref_transform));
 }
-
