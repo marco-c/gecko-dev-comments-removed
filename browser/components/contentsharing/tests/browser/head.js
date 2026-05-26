@@ -61,18 +61,7 @@ async function withContentSharingMockServer(task) {
   }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-async function assertContentSharingModal(window, expected, leaveOpen = false) {
+async function assertContentSharingModal(window, expected) {
   Assert.ok(window.gDialogBox.isOpen, "Content sharing modal should be open");
 
   
@@ -158,11 +147,7 @@ async function assertContentSharingModal(window, expected, leaveOpen = false) {
     }
   }
 
-  if (leaveOpen) {
-    return modalEl;
-  }
   window.gDialogBox.dialog.close();
-  return null;
 }
 
 async function createFolderWithBookmarks(
