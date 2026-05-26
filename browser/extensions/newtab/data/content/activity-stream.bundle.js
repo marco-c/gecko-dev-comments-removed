@@ -12442,7 +12442,99 @@ const useWidgetCelebration = widgetRef => {
   };
 };
 ;
+function MoveSubmenu_extends() { return MoveSubmenu_extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, MoveSubmenu_extends.apply(null, arguments); }
+
+
+
+
+
+
+
+
+
+
+
+
+function buildMoveProps(id, order, enabledMap, dispatch) {
+  const visible = order.filter(w => enabledMap?.[w]);
+  const idx = visible.indexOf(id);
+  const swap = delta => () => {
+    const target = visible[idx + delta];
+    if (!target) {
+      return;
+    }
+    const newOrder = [...order];
+    const a = newOrder.indexOf(id);
+    const b = newOrder.indexOf(target);
+    [newOrder[a], newOrder[b]] = [newOrder[b], newOrder[a]];
+    dispatch(actionCreators.SetPref(PREF_WIDGETS_ORDER, newOrder.join(",")));
+  };
+  return {
+    canMoveLeft: visible[idx - 1] !== undefined,
+    canMoveRight: visible[idx + 1] !== undefined,
+    onMoveLeft: swap(-1),
+    onMoveRight: swap(+1)
+  };
+}
+
+
+
+
+
+function MoveSubmenu({
+  widgetId,
+  widgetEnabledMap
+}) {
+  const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
+  const dispatch = (0,external_ReactRedux_namespaceObject.useDispatch)();
+  const ref = (0,external_React_namespaceObject.useRef)(null);
+  const moveProps = buildMoveProps(widgetId, resolveWidgetOrder(prefs), widgetEnabledMap, dispatch);
+  (0,external_React_namespaceObject.useEffect)(() => {
+    const el = ref.current;
+    if (!el) {
+      return undefined;
+    }
+    const listener = e => {
+      const item = e.composedPath().find(n => n.dataset?.moveDir);
+      if (!item) {
+        return;
+      }
+      if (item.dataset.moveDir === "left") {
+        moveProps.onMoveLeft();
+      } else if (item.dataset.moveDir === "right") {
+        moveProps.onMoveRight();
+      }
+    };
+    el.addEventListener("click", listener);
+    return () => el.removeEventListener("click", listener);
+  }, [moveProps]);
+  if (!moveProps.canMoveLeft && !moveProps.canMoveRight) {
+    return null;
+  }
+  const submenuId = `${widgetId}-move-submenu`;
+  return external_React_default().createElement("panel-item", {
+    submenu: submenuId
+  }, external_React_default().createElement("span", {
+    "data-l10n-id": "newtab-widget-menu-move"
+  }), external_React_default().createElement("panel-list", {
+    ref: ref,
+    slot: "submenu",
+    id: submenuId
+  }, external_React_default().createElement("panel-item", MoveSubmenu_extends({
+    "data-l10n-id": "newtab-widget-menu-move-left",
+    "data-move-dir": "left"
+  }, moveProps.canMoveLeft ? {} : {
+    disabled: true
+  })), external_React_default().createElement("panel-item", MoveSubmenu_extends({
+    "data-l10n-id": "newtab-widget-menu-move-right",
+    "data-move-dir": "right"
+  }, moveProps.canMoveRight ? {} : {
+    disabled: true
+  }))));
+}
+;
 function Lists_extends() { return Lists_extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, Lists_extends.apply(null, arguments); }
+
 
 
 
@@ -12552,7 +12644,8 @@ function Lists({
   dispatch,
   handleUserInteraction,
   isMaximized,
-  widgetsMayBeMaximized
+  widgetsMayBeMaximized,
+  widgetEnabledMap
 }) {
   const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
   const {
@@ -13288,7 +13381,10 @@ function Lists({
     checked: widgetSize === size || undefined,
     "data-size": size,
     "data-l10n-id": `newtab-widget-size-${size}`
-  })))), external_React_default().createElement("panel-item", {
+  })))), external_React_default().createElement(MoveSubmenu, {
+    widgetId: "lists",
+    widgetEnabledMap: widgetEnabledMap
+  }), external_React_default().createElement("panel-item", {
     "data-l10n-id": "newtab-widget-menu-hide",
     onClick: () => handleHideLists()
   }), external_React_default().createElement("panel-item", {
@@ -13558,6 +13654,7 @@ function FocusTimer_extends() { return FocusTimer_extends = Object.assign ? Obje
 
 
 
+
 const FOCUS_TIMER_CELEBRATION_GRADIENT_STOPS = [{
   offset: "0%",
   color: "var(--timer-celebration-leading)"
@@ -13685,7 +13782,8 @@ const FocusTimer = ({
   dispatch,
   handleUserInteraction,
   isMaximized,
-  widgetsMayBeMaximized
+  widgetsMayBeMaximized,
+  widgetEnabledMap
 }) => {
   const [timeLeft, setTimeLeft] = (0,external_React_namespaceObject.useState)(0);
   
@@ -14461,7 +14559,10 @@ const FocusTimer = ({
     "data-l10n-id": `newtab-widget-size-${size}`
   }, size === "small" ? {
     disabled: true
-  } : {}))))),
+  } : {}))))), external_React_default().createElement(MoveSubmenu, {
+    widgetId: "focusTimer",
+    widgetEnabledMap: widgetEnabledMap
+  }),
   
   novaEnabled && external_React_default().createElement("hr", null), external_React_default().createElement("panel-item", {
     "data-l10n-id": "newtab-widget-timer-menu-learn-more",
@@ -15228,6 +15329,7 @@ function WeatherForecast({
 
 
 
+
 const Weather_USER_ACTION_TYPES = {
   CHANGE_LOCATION: "change_location",
   DETECT_LOCATION: "detect_location",
@@ -15239,7 +15341,8 @@ const Weather_USER_ACTION_TYPES = {
 };
 function Weather_Weather({
   dispatch,
-  size
+  size,
+  widgetEnabledMap
 }) {
   const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
   const weatherData = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Weather);
@@ -15533,7 +15636,10 @@ function Weather_Weather({
       checked: currentWeatherSize === s || undefined,
       "data-size": s,
       "data-l10n-id": `newtab-widget-size-${s}`
-    })))), external_React_default().createElement("panel-item", {
+    })))), external_React_default().createElement(MoveSubmenu, {
+      widgetId: "weather",
+      widgetEnabledMap: widgetEnabledMap
+    }), external_React_default().createElement("panel-item", {
       "data-l10n-id": "newtab-widget-menu-hide",
       onClick: handleHideWeather
     }), external_React_default().createElement("panel-item", {
@@ -16163,6 +16269,7 @@ function useLocalizedTeamNames(teams) {
 
 
 
+
 const WIDGET_STATES = {
   INTRO: "sports-intro",
   FOLLOW_TEAMS: "sports-follow-state",
@@ -16199,7 +16306,8 @@ const PREF_SPORTS_WIDGET_LIVE_ENABLED = "widgets.sportsWidget.live.enabled";
 const SPORTS_WIDGET_REGISTRY_ENTRY = WIDGET_REGISTRY.find(widget => widget.id === "sportsWidget");
 function SportsWidget_SportsWidget({
   dispatch,
-  handleUserInteraction
+  handleUserInteraction,
+  widgetEnabledMap
 }) {
   const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
   const sportsWidgetData = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.SportsWidget);
@@ -16546,7 +16654,10 @@ function SportsWidget_SportsWidget({
     checked: widgetSize === size || undefined,
     "data-size": size,
     "data-l10n-id": `newtab-widget-size-${size}`
-  })))), external_React_default().createElement("panel-item", {
+  })))), external_React_default().createElement(MoveSubmenu, {
+    widgetId: "sportsWidget",
+    widgetEnabledMap: widgetEnabledMap
+  }), external_React_default().createElement("panel-item", {
     "data-l10n-id": "newtab-widget-menu-hide",
     onClick: handleSportsWidgetHide
   }), external_React_default().createElement("panel-item", {
@@ -17648,6 +17759,7 @@ function EditClocksPanel({
 
 
 
+
 const Clocks_USER_ACTION_TYPES = {
   ADD_CLOCK: "add_clock",
   ADD_NICKNAME: "add_nickname",
@@ -17699,7 +17811,8 @@ function getClockWidgetDisplayState({
 
 function Clocks({
   dispatch,
-  size
+  size,
+  widgetEnabledMap
 }) {
   const clocksZonesPref = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values[PREF_CLOCKS_ZONES]);
   const hourFormatPref = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values[PREF_CLOCKS_HOUR_FORMAT]);
@@ -18049,7 +18162,10 @@ function Clocks({
     checked: currentSize === s,
     "data-size": s,
     "data-l10n-id": `newtab-widget-size-${s}`
-  })))), external_React_default().createElement("panel-item", {
+  })))), external_React_default().createElement(MoveSubmenu, {
+    widgetId: "clocks",
+    widgetEnabledMap: widgetEnabledMap
+  }), external_React_default().createElement("panel-item", {
     "data-l10n-id": "newtab-clock-widget-menu-edit",
     onClick: () => {
       handleShowEditClocks(CLOCK_WIDGET_SOURCE.CONTEXT_MENU);
@@ -18121,13 +18237,15 @@ function Clocks({
 const weatherEntry = WIDGET_REGISTRY.find(w => w.id === "weather");
 const clocksEntry = WIDGET_REGISTRY.find(w => w.id === "clocks");
 function WeatherRowWidget({
-  dispatch
+  dispatch,
+  widgetEnabledMap
 }) {
   const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
   const weatherSize = resolveWidgetSize(weatherEntry, prefs);
   return external_React_default().createElement(Weather_Weather, {
     dispatch: dispatch,
-    size: weatherSize
+    size: weatherSize,
+    widgetEnabledMap: widgetEnabledMap
   });
 }
 function WeatherSidebarWidget({
@@ -18143,13 +18261,15 @@ function WeatherSidebarWidget({
   });
 }
 function ClocksRowWidget({
-  dispatch
+  dispatch,
+  widgetEnabledMap
 }) {
   const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
   const clocksSize = resolveWidgetSize(clocksEntry, prefs);
   return external_React_default().createElement(Clocks, {
     dispatch: dispatch,
-    size: clocksSize
+    size: clocksSize,
+    widgetEnabledMap: widgetEnabledMap
   });
 }
 const WIDGET_ROW_COMPONENTS = {
@@ -18592,7 +18712,8 @@ function Widgets() {
         dispatch: dispatch,
         handleUserInteraction: handleUserInteraction,
         isMaximized: isMaximized,
-        widgetsMayBeMaximized: widgetsMayBeMaximized
+        widgetsMayBeMaximized: widgetsMayBeMaximized,
+        widgetEnabledMap: widgetEnabledMap
       }));
     }
     
