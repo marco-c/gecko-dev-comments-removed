@@ -145,7 +145,7 @@ class Thread : PlatformThread::Delegate {
 
   
   
-  bool thread_was_started() const { return startup_data_ != NULL; }
+  bool thread_was_started() const { return startup_data_ != nullptr; }
 
   
   struct StartupData;

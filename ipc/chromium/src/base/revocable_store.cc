@@ -20,14 +20,14 @@ RevocableStore::RevocableStore() {
 
 RevocableStore::~RevocableStore() {
   
-  owning_reference_->set_store(NULL);
+  owning_reference_->set_store(nullptr);
 }
 
 void RevocableStore::Add(Revocable* item) { DCHECK(!item->revoked()); }
 
 void RevocableStore::RevokeAll() {
   
-  owning_reference_->set_store(NULL);
+  owning_reference_->set_store(nullptr);
 
   
   

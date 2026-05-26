@@ -11,9 +11,10 @@ namespace base {
 
 
 
-static AtExitManager* g_top_manager = NULL;
+static AtExitManager* g_top_manager = nullptr;
 
-AtExitManager::AtExitManager() : lock_("AtExitManager"), next_manager_(NULL) {
+AtExitManager::AtExitManager()
+    : lock_("AtExitManager"), next_manager_(nullptr) {
   DCHECK(!g_top_manager);
   g_top_manager = this;
 }

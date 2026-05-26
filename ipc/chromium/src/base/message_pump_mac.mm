@@ -46,7 +46,7 @@ class MessagePumpScopedAutoreleasePool {
 
 
 MessagePumpCFRunLoopBase::MessagePumpCFRunLoopBase()
-    : delegate_(NULL),
+    : delegate_(nullptr),
       delayed_work_fire_time_(kCFTimeIntervalMax),
       nesting_level_(0),
       run_nesting_level_(0),
@@ -63,7 +63,7 @@ MessagePumpCFRunLoopBase::MessagePumpCFRunLoopBase()
   CFRunLoopTimerContext timer_context = CFRunLoopTimerContext();
   timer_context.info = this;
   delayed_work_timer_ =
-      CFRunLoopTimerCreate(NULL,                
+      CFRunLoopTimerCreate(nullptr,             
                            kCFTimeIntervalMax,  
                            kCFTimeIntervalMax,  
                            0,                   
@@ -74,26 +74,26 @@ MessagePumpCFRunLoopBase::MessagePumpCFRunLoopBase()
   CFRunLoopSourceContext source_context = CFRunLoopSourceContext();
   source_context.info = this;
   source_context.perform = RunWorkSource;
-  work_source_ = CFRunLoopSourceCreate(NULL,  
-                                       1,     
+  work_source_ = CFRunLoopSourceCreate(nullptr,  
+                                       1,        
                                        &source_context);
   CFRunLoopAddSource(run_loop_, work_source_, kCFRunLoopCommonModes);
 
   source_context.perform = RunDelayedWorkSource;
-  delayed_work_source_ = CFRunLoopSourceCreate(NULL,  
-                                               2,     
+  delayed_work_source_ = CFRunLoopSourceCreate(nullptr,  
+                                               2,        
                                                &source_context);
   CFRunLoopAddSource(run_loop_, delayed_work_source_, kCFRunLoopCommonModes);
 
   source_context.perform = RunIdleWorkSource;
-  idle_work_source_ = CFRunLoopSourceCreate(NULL,  
-                                            3,     
+  idle_work_source_ = CFRunLoopSourceCreate(nullptr,  
+                                            3,        
                                             &source_context);
   CFRunLoopAddSource(run_loop_, idle_work_source_, kCFRunLoopCommonModes);
 
   source_context.perform = RunNestingDeferredWorkSource;
-  nesting_deferred_work_source_ = CFRunLoopSourceCreate(NULL,  
-                                                        0,     
+  nesting_deferred_work_source_ = CFRunLoopSourceCreate(nullptr,  
+                                                        0,        
                                                         &source_context);
   CFRunLoopAddSource(run_loop_, nesting_deferred_work_source_,
                      kCFRunLoopCommonModes);
@@ -101,7 +101,7 @@ MessagePumpCFRunLoopBase::MessagePumpCFRunLoopBase()
   CFRunLoopObserverContext observer_context = CFRunLoopObserverContext();
   observer_context.info = this;
   pre_wait_observer_ =
-      CFRunLoopObserverCreate(NULL,  
+      CFRunLoopObserverCreate(nullptr,  
                               kCFRunLoopBeforeWaiting,
                               true,  
                               0,     
@@ -109,7 +109,7 @@ MessagePumpCFRunLoopBase::MessagePumpCFRunLoopBase()
   CFRunLoopAddObserver(run_loop_, pre_wait_observer_, kCFRunLoopCommonModes);
 
   pre_source_observer_ =
-      CFRunLoopObserverCreate(NULL,  
+      CFRunLoopObserverCreate(nullptr,  
                               kCFRunLoopBeforeSources,
                               true,  
                               0,     
@@ -117,7 +117,7 @@ MessagePumpCFRunLoopBase::MessagePumpCFRunLoopBase()
   CFRunLoopAddObserver(run_loop_, pre_source_observer_, kCFRunLoopCommonModes);
 
   enter_exit_observer_ =
-      CFRunLoopObserverCreate(NULL,  
+      CFRunLoopObserverCreate(nullptr,  
                               kCFRunLoopEntry | kCFRunLoopExit,
                               true,  
                               0,     
@@ -613,8 +613,8 @@ void MessagePumpCFRunLoop::EnterExitRunLoop(CFRunLoopActivity activity) {
 MessagePumpNSRunLoop::MessagePumpNSRunLoop() : keep_running_(true) {
   CFRunLoopSourceContext source_context = CFRunLoopSourceContext();
   source_context.perform = NoOp;
-  quit_source_ = CFRunLoopSourceCreate(NULL,  
-                                       0,     
+  quit_source_ = CFRunLoopSourceCreate(nullptr,  
+                                       0,        
                                        &source_context);
   CFRunLoopAddSource(run_loop(), quit_source_, kCFRunLoopCommonModes);
 }
@@ -692,7 +692,7 @@ void MessagePumpNSApplication::Quit() {
                                  modifierFlags:0
                                      timestamp:0
                                   windowNumber:0
-                                       context:NULL
+                                       context:nullptr
                                        subtype:0
                                          data1:0
                                          data2:0]

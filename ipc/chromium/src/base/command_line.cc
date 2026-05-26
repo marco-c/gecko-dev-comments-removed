@@ -15,7 +15,7 @@
 #include "base/string_util.h"
 #include "base/sys_string_conversions.h"
 
-CommandLine* CommandLine::current_process_commandline_ = NULL;
+CommandLine* CommandLine::current_process_commandline_ = nullptr;
 
 
 
@@ -46,7 +46,7 @@ void CommandLine::ParseFromString(const std::wstring& command_line) {
   if (command_line_string_.empty()) return;
 
   int num_args = 0;
-  wchar_t** args = NULL;
+  wchar_t** args = nullptr;
   
   
   mozilla::DynamicallyLinkedFunctionPtr<decltype(&::CommandLineToArgvW)>
@@ -140,8 +140,8 @@ bool CommandLine::IsSwitch(const StringType& parameter_string,
   switch_string->clear();
   switch_value->clear();
 
-  for (size_t i = 0; i < arraysize(kSwitchPrefixes); ++i) {
-    StringType prefix(kSwitchPrefixes[i]);
+  for (auto switchPrefix : kSwitchPrefixes) {
+    StringType prefix(switchPrefix);
     if (parameter_string.find(prefix) != 0) continue;
 
     const size_t switch_start = prefix.length();
@@ -170,7 +170,7 @@ bool CommandLine::IsSwitch(const StringType& parameter_string,
 
 
 void CommandLine::Init(int argc, const char* const* argv) {
-  DCHECK(current_process_commandline_ == NULL);
+  DCHECK(current_process_commandline_ == nullptr);
 #if defined(XP_WIN)
   current_process_commandline_ = new CommandLine;
   current_process_commandline_->ParseFromString(::GetCommandLineW());
@@ -180,9 +180,9 @@ void CommandLine::Init(int argc, const char* const* argv) {
 }
 
 void CommandLine::Terminate() {
-  DCHECK(current_process_commandline_ != NULL);
+  DCHECK(current_process_commandline_ != nullptr);
   delete current_process_commandline_;
-  current_process_commandline_ = NULL;
+  current_process_commandline_ = nullptr;
 }
 
 bool CommandLine::HasSwitch(const std::wstring& switch_string) const {

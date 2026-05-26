@@ -220,7 +220,7 @@ void ChannelPosix::SetOtherPid(base::ProcessId other_pid) {
 bool ChannelPosix::ProcessIncomingMessages() {
   chan_cap_.NoteOnTarget();
 
-  struct msghdr msg = {0};
+  struct msghdr msg = {nullptr};
   struct iovec iov;
 
   msg.msg_iov = &iov;
@@ -264,7 +264,7 @@ bool ChannelPosix::ProcessIncomingMessages() {
     DCHECK(bytes_read);
 
     
-    const int* wire_fds = NULL;
+    const int* wire_fds = nullptr;
     unsigned num_wire_fds = 0;
 
     
@@ -413,7 +413,7 @@ bool ChannelPosix::ProcessIncomingMessages() {
 
       if (m.header()->num_handles) {
         
-        const char* error = NULL;
+        const char* error = nullptr;
         if (m.header()->num_handles > num_fds - fds_i) {
           
           
@@ -531,7 +531,7 @@ bool ChannelPosix::ProcessOutgoingMessages() {
   while (!output_queue_.IsEmpty()) {
     Message* msg = output_queue_.FirstElement().get();
 
-    struct msghdr msgh = {0};
+    struct msghdr msgh = {nullptr};
 
     char cmsgBuf[kControlBufferSize];
 

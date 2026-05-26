@@ -12,7 +12,7 @@ namespace base {
 
 
 void ThreadLocalPlatform::AllocateSlot(SlotType& slot) {
-  int error = pthread_key_create(&slot, NULL);
+  int error = pthread_key_create(&slot, nullptr);
   CHECK(error == 0);
 }
 

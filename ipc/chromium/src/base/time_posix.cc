@@ -66,8 +66,8 @@ Time Time::FromExploded(bool is_local, const Exploded& exploded) {
   timestruct.tm_yday = 0;                     
   timestruct.tm_isdst = -1;                   
 #ifndef XP_SOLARIS
-  timestruct.tm_gmtoff = 0;   
-  timestruct.tm_zone = NULL;  
+  timestruct.tm_gmtoff = 0;      
+  timestruct.tm_zone = nullptr;  
 #endif
 
   time_t seconds;

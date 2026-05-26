@@ -54,7 +54,7 @@ bool PlatformThread::Create(size_t stack_size, Delegate* delegate,
   
   *thread_handle =
       CreateThread(NULL, stack_size, ThreadFunc, delegate, flags, NULL);
-  return *thread_handle != NULL;
+  return *thread_handle != nullptr;
 }
 
 
