@@ -131,6 +131,7 @@
 #include "vm/ObjectOperations-inl.h"  
 #include "vm/Realm-inl.h"             
 #include "vm/Stack-inl.h"             
+#include "wasm/WasmInstance-inl.h"    
 
 namespace js {
 
@@ -5624,6 +5625,9 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery : public Debugger::QueryBase {
     
     for (auto iter = debugger->allDebuggees(); !iter.done(); iter.next()) {
       for (wasm::Instance* instance : iter.get()->realm()->wasm.instances()) {
+        if (instance->codeMeta().isSelfHostedModule()) {
+          continue;
+        }
         consider(instance->object());
         if (oom) {
           ReportOutOfMemory(cx);
@@ -6066,6 +6070,9 @@ class MOZ_STACK_CLASS Debugger::SourceQuery : public Debugger::QueryBase {
     
     for (auto iter = debugger->allDebuggees(); !iter.done(); iter.next()) {
       for (wasm::Instance* instance : iter.get()->realm()->wasm.instances()) {
+        if (instance->codeMeta().isSelfHostedModule()) {
+          continue;
+        }
         consider(instance->object());
         if (oom) {
           ReportOutOfMemory(cx);

@@ -187,21 +187,27 @@ MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(FeatureUsage);
 
 
 
-struct ScriptedCaller {
-  UniqueChars filename;  
-  bool filenameIsURL;
-  uint32_t line;
+enum class ScriptedCallerKind : uint8_t {
+  IntroducedFilename,
+  Url,
+  SelfHosted,
+};
 
-  ScriptedCaller() : filenameIsURL(false), line(0) {}
-  ScriptedCaller(UniqueChars&& filename, bool filenameIsURL, uint32_t line)
-      : filename(std::move(filename)),
-        filenameIsURL(filenameIsURL),
-        line(line) {}
+struct ScriptedCaller {
+  UniqueChars source;  
+  uint32_t line;
+  ScriptedCallerKind kind;
+
+  ScriptedCaller() : line(0), kind(ScriptedCallerKind::IntroducedFilename) {}
+  ScriptedCaller(UniqueChars&& source, ScriptedCallerKind kind, uint32_t line)
+      : source(std::move(source)), line(line), kind(kind) {}
 
   
   
   
   static ScriptedCaller selfHosted(JSContext* cx);
+
+  bool isSelfHosted() const { return kind == ScriptedCallerKind::SelfHosted; }
 };
 
 

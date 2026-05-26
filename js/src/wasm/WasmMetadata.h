@@ -168,6 +168,10 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   
   
   bool isBuiltinModule() const { return features().isBuiltinModule; }
+  
+  
+  
+  bool isSelfHostedModule() const { return scriptedCaller().isSelfHosted(); }
 
 #define WASM_FEATURE(NAME, SHORT_NAME, ...) \
   bool SHORT_NAME##Enabled() const { return features().SHORT_NAME; }

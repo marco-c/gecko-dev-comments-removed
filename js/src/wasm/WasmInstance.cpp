@@ -4302,8 +4302,8 @@ JSString* Instance::createDisplayURL(JSContext* cx) {
   
   
 
-  if (codeMeta().scriptedCaller().filenameIsURL) {
-    const char* filename = codeMeta().scriptedCaller().filename.get();
+  if (codeMeta().scriptedCaller().kind == ScriptedCallerKind::Url) {
+    const char* filename = codeMeta().scriptedCaller().source.get();
     return NewStringCopyUTF8N(cx, JS::UTF8Chars(filename, strlen(filename)));
   }
 
@@ -4317,7 +4317,7 @@ JSString* Instance::createDisplayURL(JSContext* cx) {
     return nullptr;
   }
 
-  if (const char* filename = codeMeta().scriptedCaller().filename.get()) {
+  if (const char* filename = codeMeta().scriptedCaller().source.get()) {
     
     
     JSString* filenamePrefix = EncodeURI(cx, filename, strlen(filename));
