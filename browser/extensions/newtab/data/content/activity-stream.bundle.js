@@ -16556,7 +16556,6 @@ function SportsWidget_SportsWidget({
   const savedWidgetState = sportsWidgetData.widgetState || WIDGET_STATES.INTRO;
   
   const widgetState = tournamentStarted && savedWidgetState === WIDGET_STATES.INTRO ? WIDGET_STATES.MATCHES : savedWidgetState;
-  const displaySize = widgetState === WIDGET_STATES.FOLLOW_TEAMS ? "large" : widgetSize;
   const rawSelectedTeams = sportsWidgetData.selectedTeams;
   const rawTeams = sportsWidgetData?.data?.teams;
   const rawMatches = sportsWidgetData?.data?.matches;
@@ -16612,8 +16611,16 @@ function SportsWidget_SportsWidget({
   
   
   
+  
   const [showResultsList, setShowResultsList] = (0,external_React_namespaceObject.useState)(false);
   const [showUpcomingList, setShowUpcomingList] = (0,external_React_namespaceObject.useState)(false);
+
+  
+  
+  
+  
+  const isMatchesListView = widgetState === WIDGET_STATES.MATCHES && (activeTab === MATCHES_TABS.RESULTS && showResultsList || activeTab === MATCHES_TABS.UPCOMING && showUpcomingList);
+  const displaySize = widgetState === WIDGET_STATES.FOLLOW_TEAMS || isMatchesListView ? "large" : widgetSize;
   const highlightMatch = getHighlightMatch({
     widgetState,
     activeTab,
@@ -16987,7 +16994,8 @@ function SportsWidget_SportsWidget({
     dispatch: dispatch,
     matchesTab: activeTab,
     hasLiveGames: hasLiveGames,
-    size: widgetSize,
+    size: displaySize,
+    widgetSize: widgetSize,
     previous: sortedPrevious,
     current: sortedCurrent,
     next: sortedNext,
@@ -17118,7 +17126,14 @@ function SportsMatchesView({
   dispatch,
   matchesTab,
   hasLiveGames,
+  
+  
+  
   size,
+  
+  
+  
+  widgetSize,
   previous,
   current,
   next,
@@ -17148,7 +17163,7 @@ function SportsMatchesView({
         widget_source: tab,
         user_action: SportsWidget_USER_ACTION_TYPES.TOGGLE_FOLLOWED_ONLY,
         action_value: value,
-        widget_size: size
+        widget_size: widgetSize
       }
     }));
     dispatch(actionCreators.AlsoToMain({
