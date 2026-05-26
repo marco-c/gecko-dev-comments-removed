@@ -501,82 +501,42 @@ class AnimationInspector extends EventEmitter {
     
     
     
-    const hasTargetConfigurationSupport =
-      await this.inspector.commands.targetConfigurationCommand.supports(
-        "animationsPlayBackRateMultiplier"
-      );
-    if (hasTargetConfigurationSupport) {
-      
-      
-      
-      this.setAnimationStateChangedListenerEnabled(false);
-
-      const wasRunning = hasRunningAnimation(animations);
-
-      
-      
-      if (this.animationsFront) {
-        
-        
-        
-        
-        
-        await this.animationsFront.pauseSome(animations);
-      }
-
-      try {
-        await this.inspector.commands.targetConfigurationCommand.updateConfiguration(
-          {
-            animationsPlayBackRateMultiplier: multiplier,
-          }
-        );
-
-        if (wasRunning) {
-          await this.animationsFront.playSome(animations);
-        }
-        this.inspector.store.dispatch(updatePlaybackRateMultiplier(multiplier));
-        animations = await this.refreshAnimationsState(animations);
-      } catch (e) {
-        
-        if (!this.inspector) {
-          console.error(e);
-          return;
-        }
-
-        
-        throw new Error(e);
-      } finally {
-        this.setAnimationStateChangedListenerEnabled(true);
-      }
-
-      if (animations) {
-        await this.fireUpdateAction(animations);
-      }
-
-      this.emitForTests("playbackrate-multiplier-updated");
-
-      return;
-    }
-
-    
-    
-    if (!this.animationsFront) {
-      return;
-    }
-
-    
-    
-    
     this.setAnimationStateChangedListenerEnabled(false);
+
+    const wasRunning = hasRunningAnimation(animations);
+
+    
+    
+    if (this.animationsFront) {
+      
+      
+      
+      
+      
+      await this.animationsFront.pauseSome(animations);
+    }
+
     try {
-      await this.animationsFront.setPlaybackRates(animations, multiplier);
+      await this.inspector.commands.targetConfigurationCommand.updateConfiguration(
+        {
+          animationsPlayBackRateMultiplier: multiplier,
+        }
+      );
+
+      if (wasRunning) {
+        await this.animationsFront.playSome(animations);
+      }
       this.inspector.store.dispatch(updatePlaybackRateMultiplier(multiplier));
       animations = await this.refreshAnimationsState(animations);
     } catch (e) {
       
+      if (!this.inspector) {
+        console.error(e);
+        return;
+      }
+
       
-      console.error(e);
-      return;
+      throw new Error(e);
     } finally {
       this.setAnimationStateChangedListenerEnabled(true);
     }
@@ -584,6 +544,8 @@ class AnimationInspector extends EventEmitter {
     if (animations) {
       await this.fireUpdateAction(animations);
     }
+
+    this.emitForTests("playbackrate-multiplier-updated");
   }
 
   async setAnimationsPlayState(doPlay) {

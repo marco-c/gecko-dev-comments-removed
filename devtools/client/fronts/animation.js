@@ -49,11 +49,7 @@ class AnimationFront extends FrontClassWithSpec(animationSpec) {
       currentTime: this._form.currentTime,
       playState: this._form.playState,
       playbackRate: this._form.playbackRate,
-      playBackRateMultiplier:
-        
-        
-        
-        this._form.playBackRateMultiplier || 1,
+      playBackRateMultiplier: this._form.playBackRateMultiplier,
       name: this._form.name,
       duration: this._form.duration,
       delay: this._form.delay,
