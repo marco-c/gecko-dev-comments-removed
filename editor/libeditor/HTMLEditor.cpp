@@ -662,6 +662,20 @@ NS_IMETHODIMP HTMLEditor::NotifySelectionChanged(Document* aDocument,
     }
   }
 
+  if (mHasFocus) {
+    if (auto focusedElement = GetFocusedElement()) {
+      
+      
+      auto newStateOrError = GetPreferredIMEState();
+      NS_WARNING_ASSERTION(newStateOrError.isOk(),
+                           "EditorBase::GetPreferredIMEState() failed");
+      if (MOZ_LIKELY(newStateOrError.isOk())) {
+        IMEStateManager::UpdateIMEState(newStateOrError.unwrap(),
+                                        focusedElement, *this);
+      }
+    }
+  }
+
   if (mComposerCommandsUpdater) {
     RefPtr<ComposerCommandsUpdater> updater = mComposerCommandsUpdater;
     updater->OnSelectionChange();
@@ -727,11 +741,11 @@ nsresult HTMLEditor::FocusedElementOrDocumentBecomesEditable(
       if (textControlElement &&
           textControlElement->IsSingleLineTextControlOrTextArea()) {
         
+        mHasFocus = false;
         DebugOnly<nsresult> rv = FinalizeSelection();
         NS_WARNING_ASSERTION(
             NS_SUCCEEDED(rv),
             "HTMLEditor::FinalizeSelection() failed, but ignored");
-        mHasFocus = false;
         mIsInDesignMode = false;
       }
       IMEStateManager::UpdateIMEState(newStateOrError.unwrap(), focusedElement,
@@ -791,12 +805,13 @@ nsresult HTMLEditor::OnFocus(const nsINode& aOriginalEventTargetNode) {
     return NS_ERROR_FAILURE;
   }
 
+  mHasFocus = true;
   nsresult rv = EditorBase::OnFocus(aOriginalEventTargetNode);
   if (NS_FAILED(rv)) {
+    mHasFocus = false;
     NS_WARNING("EditorBase::OnFocus() failed");
     return rv;
   }
-  mHasFocus = true;
   mIsInDesignMode = aOriginalEventTargetNode.IsInDesignMode();
   if (StaticPrefs::dom_editcontext_enabled() && EditContext::IsAnyAttached()) {
     
@@ -830,10 +845,10 @@ nsresult HTMLEditor::FocusedElementOrDocumentBecomesNotEditable(
     }
 
     
+    aHTMLEditor->mHasFocus = false;
     nsresult rv = aHTMLEditor->FinalizeSelection();
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                          "HTMLEditor::FinalizeSelection() failed");
-    aHTMLEditor->mHasFocus = false;
     aHTMLEditor->mIsInDesignMode = false;
 
     if (StaticPrefs::dom_editcontext_enabled() &&
@@ -926,11 +941,11 @@ nsresult HTMLEditor::OnBlur(const EventTarget* aEventTarget) {
     return NS_OK;
   }
 
+  mHasFocus = false;
   nsresult rv = FinalizeSelection();
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "EditorBase::FinalizeSelection() failed");
   mIsInDesignMode = false;
-  mHasFocus = false;
   if (StaticPrefs::dom_editcontext_enabled() && EditContext::IsAnyAttached() &&
       eventTargetAsElement) {
     
@@ -7486,7 +7501,24 @@ bool HTMLEditor::IsAcceptableInputEvent(WidgetGUIEvent* aGUIEvent) const {
 
 Result<widget::IMEState, nsresult> HTMLEditor::GetPreferredIMEState() const {
   
-  return IMEState{IsReadonly() ? IMEEnabled::Disabled : IMEEnabled::Enabled,
+  bool enableIME = [&]() {
+    if (IsReadonly()) {
+      return false;
+    }
+    const Selection* selection = GetSelection();
+    if (NS_WARN_IF(!selection)) {
+      return false;
+    }
+    if (selection->RangeCount() == 0) {
+      return true;
+    }
+    
+    
+    const nsRange* range = selection->GetRangeAt(0);
+    return range->IsPositioned() && range->GetStartContainer()->IsEditable() &&
+           range->GetEndContainer()->IsEditable();
+  }();
+  return IMEState{enableIME ? IMEEnabled::Enabled : IMEEnabled::Disabled,
                   IMEState::DONT_CHANGE_OPEN_STATE};
 }
 
