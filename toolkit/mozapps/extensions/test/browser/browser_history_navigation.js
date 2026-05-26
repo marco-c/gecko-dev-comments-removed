@@ -69,10 +69,8 @@ function check_state(canGoBack, canGoForward) {
 }
 
 function is_in_list(aManager, view, canGoBack, canGoForward) {
-  var categoryUtils = new CategoryUtilities(aManager);
-
   is(
-    categoryUtils.getSelectedViewId(),
+    AboutAddonsTestUtils.getSidebarSelectedViewId(aManager),
     view,
     "Should be on the right category"
   );
@@ -86,10 +84,8 @@ function is_in_list(aManager, view, canGoBack, canGoForward) {
 }
 
 function is_in_detail(aManager, view, canGoBack, canGoForward) {
-  var categoryUtils = new CategoryUtilities(aManager);
-
   is(
-    categoryUtils.getSelectedViewId(),
+    AboutAddonsTestUtils.getSidebarSelectedViewId(aManager),
     view,
     "Should be on the right category"
   );
@@ -128,11 +124,11 @@ function wait_for_page_load(browser) {
 
 add_task(async function test_navigate_history() {
   let aManager = await open_manager("addons://list/extension");
-  let categoryUtils = new CategoryUtilities(aManager);
   info("Part 1");
   is_in_list(aManager, "addons://list/extension", false, false);
 
-  EventUtils.synthesizeMouseAtCenter(categoryUtils.get("plugin"), {}, aManager);
+  const pluginBtn = AboutAddonsTestUtils.getCategoryButton(aManager, "plugin");
+  EventUtils.synthesizeMouseAtCenter(pluginBtn, {}, aManager);
 
   aManager = await wait_for_view_load(aManager);
   info("Part 2");
@@ -242,11 +238,11 @@ add_task(async function test_navigate_between_webpage_and_aboutaddons() {
 
 add_task(async function test_keyboard_history_navigation() {
   let aManager = await open_manager("addons://list/extension");
-  let categoryUtils = new CategoryUtilities(aManager);
   info("Part 1");
   is_in_list(aManager, "addons://list/extension", false, false);
 
-  EventUtils.synthesizeMouseAtCenter(categoryUtils.get("plugin"), {}, aManager);
+  const pluginBtn = AboutAddonsTestUtils.getCategoryButton(aManager, "plugin");
+  EventUtils.synthesizeMouseAtCenter(pluginBtn, {}, aManager);
 
   aManager = await wait_for_view_load(aManager);
   info("Part 2");
@@ -299,15 +295,14 @@ add_task(async function test_keyboard_history_navigation() {
 
 add_task(async function test_single_history_entry() {
   let aManager = await open_manager("addons://list/plugin");
-  let categoryUtils = new CategoryUtilities(aManager);
   info("Part 1");
   is_in_list(aManager, "addons://list/plugin", false, false);
 
-  EventUtils.synthesizeMouseAtCenter(
-    categoryUtils.get("extension"),
-    {},
-    aManager
+  const extensionBtn = AboutAddonsTestUtils.getCategoryButton(
+    aManager,
+    "extension"
   );
+  EventUtils.synthesizeMouseAtCenter(extensionBtn, {}, aManager);
 
   aManager = await wait_for_view_load(aManager);
   info("Part 2");
@@ -424,11 +419,11 @@ add_task(async function test_navigate_back_from_website() {
 
 add_task(async function test_refresh_listview_donot_add_history_entries() {
   let aManager = await open_manager("addons://list/extension");
-  let categoryUtils = new CategoryUtilities(aManager);
   info("Part 1");
   is_in_list(aManager, "addons://list/extension", false, false);
 
-  EventUtils.synthesizeMouseAtCenter(categoryUtils.get("plugin"), {}, aManager);
+  const pluginBtn = AboutAddonsTestUtils.getCategoryButton(aManager, "plugin");
+  EventUtils.synthesizeMouseAtCenter(pluginBtn, {}, aManager);
 
   aManager = await wait_for_view_load(aManager);
   info("Part 2");
@@ -551,11 +546,11 @@ add_task(async function test_discopane_first_history_entry() {
   });
 
   let aManager = await open_manager("addons://discover/");
-  let categoryUtils = new CategoryUtilities(aManager);
   info("1");
   is_in_discovery(aManager, false, false);
 
-  EventUtils.synthesizeMouseAtCenter(categoryUtils.get("plugin"), {}, aManager);
+  const pluginBtn = AboutAddonsTestUtils.getCategoryButton(aManager, "plugin");
+  EventUtils.synthesizeMouseAtCenter(pluginBtn, {}, aManager);
 
   aManager = await wait_for_view_load(aManager);
   is_in_list(aManager, "addons://list/plugin", true, false);
@@ -571,19 +566,19 @@ add_task(async function test_discopane_first_history_entry() {
 
 add_task(async function test_discopane_second_history_entry() {
   let aManager = await open_manager("addons://list/plugin");
-  let categoryUtils = new CategoryUtilities(aManager);
   is_in_list(aManager, "addons://list/plugin", false, false);
 
-  EventUtils.synthesizeMouseAtCenter(
-    categoryUtils.get("discover"),
-    {},
-    aManager
+  const discoverBtn = AboutAddonsTestUtils.getCategoryButton(
+    aManager,
+    "discover"
   );
+  EventUtils.synthesizeMouseAtCenter(discoverBtn, {}, aManager);
 
   aManager = await wait_for_view_load(aManager);
   is_in_discovery(aManager, true, false);
 
-  EventUtils.synthesizeMouseAtCenter(categoryUtils.get("plugin"), {}, aManager);
+  const pluginBtn = AboutAddonsTestUtils.getCategoryButton(aManager, "plugin");
+  EventUtils.synthesizeMouseAtCenter(pluginBtn, {}, aManager);
 
   aManager = await wait_for_view_load(aManager);
   is_in_list(aManager, "addons://list/plugin", true, false);
