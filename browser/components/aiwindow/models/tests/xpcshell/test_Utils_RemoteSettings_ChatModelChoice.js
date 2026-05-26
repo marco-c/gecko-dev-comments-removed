@@ -2,10 +2,9 @@
 
 
 
-const { openAIEngine, resolveChatModelChoice, FEATURE_MAJOR_VERSIONS } =
-  ChromeUtils.importESModule(
-    "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs"
-  );
+const { openAIEngine, resolveChatModelChoice } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs"
+);
 
 const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
@@ -18,7 +17,7 @@ add_task(async function test_resolveChatModelChoice_found() {
     const fakeRecords = [
       {
         feature: "chat",
-        version: `${FEATURE_MAJOR_VERSIONS.chat}.1`,
+        version: "4.1",
         model: "qwen3-235b-a22b-instruct-2507-maas",
         model_choice_id: "2",
         owner_name: "Alibaba",
@@ -26,7 +25,7 @@ add_task(async function test_resolveChatModelChoice_found() {
       },
       {
         feature: "chat",
-        version: `${FEATURE_MAJOR_VERSIONS.chat}.1`,
+        version: "4.1",
         model: "gemini-2.5-flash-lite",
         model_choice_id: "1",
         owner_name: "Google",
