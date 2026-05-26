@@ -75,7 +75,10 @@ enum class LaunchStatus {
   Initial,
   DelegateIsSetup,
   CollectingURLs,
-  CollectedURLs
+  CollectedURLs,
+  
+  
+  Running
 };
 
 static LaunchStatus sLaunchStatus = LaunchStatus::Initial;
@@ -159,6 +162,16 @@ void InitializeMacApp() {
 }
 
 nsTArray<nsCString> TakeStartupURLs() { return std::move(StartupURLs()); }
+
+void StartupURLCollectionComplete() {
+  MOZ_ASSERT(sLaunchStatus == LaunchStatus::CollectedURLs,
+             "Expected CollectedURLs state when completing startup URL "
+             "collection");
+  if (sLaunchStatus != LaunchStatus::CollectedURLs) {
+    return;
+  }
+  sLaunchStatus = LaunchStatus::Running;
+}
 
 @implementation MacApplicationDelegate
 
@@ -384,6 +397,7 @@ nsTArray<nsCString> TakeStartupURLs() { return std::move(StartupURLs()); }
   nsTArray<const char*> args([urls count] * 2 + 2);
   
   args.AppendElement(nullptr);
+  bool bufferedURLs = false;
 
   for (NSURL* url in urls) {
     if (!url || !url.scheme ||
@@ -392,8 +406,9 @@ nsTArray<nsCString> TakeStartupURLs() { return std::move(StartupURLs()); }
     }
 
     const char* const urlString = [[url absoluteString] UTF8String];
-    if (sLaunchStatus == LaunchStatus::CollectingURLs) {
+    if (sLaunchStatus != LaunchStatus::Running) {
       StartupURLs().AppendElement(urlString);
+      bufferedURLs = true;
       continue;
     }
 
@@ -403,7 +418,8 @@ nsTArray<nsCString> TakeStartupURLs() { return std::move(StartupURLs()); }
 
   if (args.Length() <= 1) {
     
-    return NO;
+    
+    return bufferedURLs ? YES : NO;
   }
 
   nsCOMPtr<nsICommandLineRunner> cmdLine(new nsCommandLine());
