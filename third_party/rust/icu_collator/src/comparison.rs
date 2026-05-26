@@ -1521,15 +1521,6 @@ impl<'data> CollatorBorrowed<'data> {
                                 right_ce32 = self.root.ce32_for_char(right_c);
                                 right_data = self.root;
                             }
-                            
-
-                            
-                            
-                            
-                            
-                            
-                            
-                            
 
                             
                             
@@ -1562,6 +1553,17 @@ impl<'data> CollatorBorrowed<'data> {
                             {
                                 
                                 
+                                
+                                break;
+                            }
+
+                            if numeric_primary.is_some()
+                                && head_last_ce32.tag_checked() == Some(Tag::Digit)
+                                && ((left_ce32.tag_checked() == Some(Tag::Digit)
+                                    && left_ce32.digit() == 0)
+                                    || (right_ce32.tag_checked() == Some(Tag::Digit)
+                                        && right_ce32.digit() == 0))
+                            {
                                 
                                 break;
                             }
@@ -1643,10 +1645,12 @@ impl<'data> CollatorBorrowed<'data> {
                     if tail_first_ce32.tag_checked() == Some(Tag::Prefix) {
                         continue;
                     }
-                    if self.options.numeric()
+                    if numeric_primary.is_some()
                         && head_last_ce32.tag_checked() == Some(Tag::Digit)
                         && tail_first_ce32.tag_checked() == Some(Tag::Digit)
+                        && tail_first_ce32.digit() == 0
                     {
+                        
                         continue;
                     }
                     
