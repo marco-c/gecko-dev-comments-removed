@@ -475,6 +475,27 @@ async function waitForPaneChange(
 
 
 
+
+async function maybeNavigateToPane(
+  paneName,
+  win = gBrowser.selectedBrowser.contentWindow
+) {
+  const expectId = `pane${paneName[0].toUpperCase()}${paneName.substring(1)}`;
+  if (win.history.state === expectId) {
+    return;
+  }
+  const paneShown = waitForPaneChange(paneName, win);
+  win.location.hash = `#${paneName}`;
+  await paneShown;
+}
+
+
+
+
+
+
+
+
 function getSettingControl(
   settingId,
   win = gBrowser.selectedBrowser.contentWindow

@@ -19,3 +19,33 @@ async function withPrefsPane(pane, testFn) {
     BrowserTestUtils.removeTab(gBrowser.selectedTab);
   }
 }
+
+
+
+
+
+
+
+async function openAiFeaturePanel(doc, win) {
+  const paneLoaded = waitForPaneChange("ai");
+  const categoryButton = doc.getElementById("category-ai-features");
+  categoryButton.scrollIntoView();
+  EventUtils.synthesizeMouseAtCenter(categoryButton, {}, win);
+  await paneLoaded;
+}
+
+
+
+
+
+
+
+
+
+
+
+function srdAwarePane(legacyPane, srdPane) {
+  return Services.prefs.getBoolPref("browser.settings-redesign.enabled")
+    ? srdPane
+    : legacyPane;
+}
