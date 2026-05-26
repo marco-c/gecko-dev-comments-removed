@@ -136,7 +136,6 @@ nsresult HappyEyeballsConnectionAttempt::Init(ConnectionEntry* ent) {
   if (NS_FAILED(rv)) {
     return rv;
   }
-  Transition(State::Connecting);
   return ProcessHappyEyeballsOutput();
 }
 
@@ -165,62 +164,6 @@ static Result<NetAddr, nsresult> ToNetAddr(
   return addr;
 }
 
-HappyEyeballsConnectionAttempt::ConnResultOutcome
-HappyEyeballsConnectionAttempt::ClassifyConnectionResult(
-    nsresult aStatus) const {
-  if (PossibleZeroRTTRetryError(aStatus)) {
-    return ConnResultOutcome::RestartTransaction;
-  }
-  
-  
-  
-  
-  
-  if (aStatus == NS_ERROR_NET_RESET && mZeroRttHandle->AnyStarted()) {
-    return ConnResultOutcome::RestartTransaction;
-  }
-  
-  
-  if (aStatus == NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED) {
-    return ConnResultOutcome::AbortTransaction;
-  }
-  
-  
-  
-  if (NS_ERROR_GET_MODULE(aStatus) == NS_ERROR_MODULE_SECURITY) {
-    return ConnResultOutcome::AbortTransaction;
-  }
-  return ConnResultOutcome::ForwardAndContinue;
-}
-
-void HappyEyeballsConnectionAttempt::CloseRealTransaction(
-    nsresult aCloseReason) {
-  if (!mTransaction) {
-    return;
-  }
-  
-  
-  
-  if (mTransactionAdopted) {
-    LOG(
-        ("HappyEyeballsConnectionAttempt::CloseRealTransaction %p skipping "
-         "Close — real transaction already adopted",
-         this));
-    mTransaction = nullptr;
-    return;
-  }
-  if (nsHttpTransaction* trans = mTransaction->QueryHttpTransaction()) {
-    RefPtr<ConnectionEntry> entry(mEntry);
-    if (entry) {
-      entry->RemoveTransFromPendingQ(trans);
-    }
-  }
-  mTransaction->Close(aCloseReason);
-  
-  
-  mTransaction = nullptr;
-}
-
 nsresult HappyEyeballsConnectionAttempt::ProcessConnectionResult(
     const NetAddr& aAddr, nsresult aStatus, uint64_t aId) {
   LOG(
@@ -228,44 +171,93 @@ nsresult HappyEyeballsConnectionAttempt::ProcessConnectionResult(
        "id=%" PRIu64 " aStatus=%x",
        this, aAddr.ToString().get(), aId, static_cast<uint32_t>(aStatus)));
 
+  
+  
   RefPtr<HappyEyeballsConnectionAttempt> self(this);
+  RefPtr<ConnectionEntry> entry(mEntry);
 
   
-  if (IsTerminal()) {
+  
+  
+  auto closeTransaction = [&](nsresult aCloseReason) {
+    if (mTransaction) {
+      if (nsHttpTransaction* trans = mTransaction->QueryHttpTransaction()) {
+        if (entry) {
+          entry->RemoveTransFromPendingQ(trans);
+        }
+      }
+      mTransaction->Close(aCloseReason);
+      
+      
+      
+      
+      mTransaction = nullptr;
+    }
+  };
+
+  
+  
+  
+  auto terminateWithError = [&](nsresult aCloseReason) {
+    closeTransaction(aCloseReason);
+    Abandon();
+    if (entry) {
+      entry->RemoveConnectionAttempt(this, false);
+    }
+  };
+
+  if (PossibleZeroRTTRetryError(aStatus)) {
+    if (entry) {
+      entry->RemoveConnectionAttempt(this, true);
+    }
+    closeTransaction(aStatus);
     return NS_OK;
   }
 
-  if (mState != State::ProcessingConnectionResult) {
-    Transition(State::ProcessingConnectionResult);
+  
+  
+  
+  
+  
+  if (aStatus == NS_ERROR_NET_RESET && mZeroRttHandle->AnyStarted()) {
+    if (entry) {
+      entry->RemoveConnectionAttempt(this, true);
+    }
+    if (mTransaction) {
+      if (nsHttpTransaction* trans = mTransaction->QueryHttpTransaction()) {
+        
+        
+        trans->FinishAdopted0RTT( true);
+        
+        
+        
+        trans->DoNotRemoveAltSvc();
+      }
+    }
+    closeTransaction(NS_ERROR_NET_RESET);
+    return NS_OK;
   }
 
-  ConnResultOutcome outcome = ClassifyConnectionResult(aStatus);
-  switch (outcome) {
-    case ConnResultOutcome::RestartTransaction: {
-      TransitionPayload payload;
-      payload.mCloseReason = aStatus;
-      Transition(State::RestartTransaction, std::move(payload));
-      return NS_OK;
+  
+  
+  if (aStatus == NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED) {
+    terminateWithError(aStatus);
+    return NS_OK;
+  }
+
+  
+  
+  
+  if (NS_ERROR_GET_MODULE(aStatus) == NS_ERROR_MODULE_SECURITY) {
+    nsresult closeReason = aStatus;
+    PRErrorCode prCode = -static_cast<PRErrorCode>(NS_ERROR_GET_CODE(aStatus));
+    if (!mozilla::psm::IsNSSErrorCode(prCode)) {
+      
+      
+      closeReason = ErrorAccordingToNSPR(prCode);
     }
-    case ConnResultOutcome::AbortTransaction: {
-      nsresult closeReason = aStatus;
-      if (NS_ERROR_GET_MODULE(aStatus) == NS_ERROR_MODULE_SECURITY) {
-        PRErrorCode prCode =
-            -static_cast<PRErrorCode>(NS_ERROR_GET_CODE(aStatus));
-        if (!mozilla::psm::IsNSSErrorCode(prCode)) {
-          
-          
-          
-          closeReason = ErrorAccordingToNSPR(prCode);
-        }
-      }
-      TransitionPayload payload;
-      payload.mCloseReason = closeReason;
-      Transition(State::AbortTransaction, std::move(payload));
-      return NS_OK;
-    }
-    case ConnResultOutcome::ForwardAndContinue:
-      break;
+    terminateWithError(closeReason);
+    return NS_OK;
   }
 
   if (NS_FAILED(aStatus)) {
@@ -277,29 +269,19 @@ nsresult HappyEyeballsConnectionAttempt::ProcessConnectionResult(
   if (NS_FAILED(rv)) {
     LOG(("process_connection_result failed rv=%x", static_cast<uint32_t>(rv)));
   }
-  rv = ProcessHappyEyeballsOutput();
-
-  
-  if (mState == State::ProcessingConnectionResult) {
-    if (mZeroRttHandle->AnyStarted() && !mZeroRttHandle->HadWinner()) {
-      Transition(State::ZeroRttRacing);
-    } else {
-      Transition(State::Connecting);
-    }
-  }
-  return rv;
+  return ProcessHappyEyeballsOutput();
 }
 
 nsresult HappyEyeballsConnectionAttempt::ProcessHappyEyeballsOutput() {
   LOG(("HappyEyeballsConnectionAttempt::ProcessHappyEyeballsOutput %p", this));
 
-  if (IsTerminal()) {
+  if (mDone) {
     return NS_OK;
   }
 
   nsresult rv = NS_OK;
 
-  while (!IsTerminal()) {
+  while (!mDone) {
     happy_eyeballs::Output event{};
     nsTArray<uint8_t> echConfig;
     nsCString dnsHostname;
@@ -368,15 +350,29 @@ nsresult HappyEyeballsConnectionAttempt::ProcessHappyEyeballsOutput() {
 
       case happy_eyeballs::Output::Tag::Succeeded:
         LOG(("happy_eyeballs::Output::Tag::Succeeded"));
-        Transition(State::Succeeded);
+        OnSucceeded();
         return NS_OK;
 
       case happy_eyeballs::Output::Tag::Failed: {
         LOG(("happy_eyeballs::Output::Tag::Failed reason=%d",
              static_cast<uint32_t>(event.failed.reason)));
-        TransitionPayload payload;
-        payload.mFailureReason = Some(event.failed.reason);
-        Transition(State::Failed, std::move(payload));
+        MOZ_ASSERT(!mDone);
+        mDone = true;
+        RefPtr<HappyEyeballsConnectionAttempt> self(this);
+        RefPtr<ConnectionEntry> entry(mEntry);
+
+        nsHttpTransaction* trans =
+            mTransaction ? mTransaction->QueryHttpTransaction() : nullptr;
+        if (entry) {
+          if (trans) {
+            entry->RemoveTransFromPendingQ(trans);
+          }
+          entry->RemoveConnectionAttempt(this, false);
+        }
+
+        CloseHttpTransaction(event.failed.reason);
+
+        Abandon();
         return NS_OK;
       }
 
@@ -648,7 +644,7 @@ void HappyEyeballsConnectionAttempt::HandleTCPConnectionResult(
     return;
   }
 
-  if (IsTerminal()) {
+  if (mDone) {
     establisher->Close(NS_BASE_STREAM_CLOSED);
     ProcessConnectionResult(addr, NS_BASE_STREAM_CLOSED, aId);
     return;
@@ -671,10 +667,10 @@ void HappyEyeballsConnectionAttempt::AdoptWinner(
     return;
   }
 
-  nsHttpTransaction* realTransaction = RealHttpTransaction();
-  if (!realTransaction) {
+  nsHttpTransaction* realTxn = RealHttpTransaction();
+  if (!realTxn) {
     LOG(
-        ("HappyEyeballsConnectionAttempt::AdoptWinner %p no real transaction; "
+        ("HappyEyeballsConnectionAttempt::AdoptWinner %p no real txn; "
          "closing winner=%p",
          this, aWinner));
     aWinner->Close(NS_ERROR_ABORT);
@@ -689,23 +685,19 @@ void HappyEyeballsConnectionAttempt::AdoptWinner(
     if (entry) {
       RefPtr<PendingTransactionInfo> pendingInfo =
           gHttpHandler->ConnMgr()->FindTransactionHelper(
-               false, entry, realTransaction);
-      MOZ_ASSERT(
-          !pendingInfo,
-          "real transaction must have been removed from the pending queue "
-          "by LockInRealTransactionFromPendingQueue");
+               false, entry, realTxn);
+      MOZ_ASSERT(!pendingInfo,
+                 "real txn must have been removed from the pending queue "
+                 "by LockInRealTxnFromPendingQueue");
     }
   }
 #endif
-  aWinner->Adopt(realTransaction);
-  
-  
-  mTransactionAdopted = true;
+  aWinner->Adopt(realTxn);
 }
 
-bool HappyEyeballsConnectionAttempt::LockInRealTransactionFromPendingQueue() {
-  nsHttpTransaction* realTransaction = RealHttpTransaction();
-  if (!realTransaction) {
+bool HappyEyeballsConnectionAttempt::LockInRealTxnFromPendingQueue() {
+  nsHttpTransaction* realTxn = RealHttpTransaction();
+  if (!realTxn) {
     return false;
   }
   RefPtr<ConnectionEntry> entry(mEntry);
@@ -714,11 +706,11 @@ bool HappyEyeballsConnectionAttempt::LockInRealTransactionFromPendingQueue() {
   }
   RefPtr<PendingTransactionInfo> pendingInfo =
       gHttpHandler->ConnMgr()->FindTransactionHelper(
-           true, entry, realTransaction);
+           true, entry, realTxn);
   LOG(
-      ("HappyEyeballsConnectionAttempt::LockInRealTransactionFromPendingQueue "
-       "%p realTransaction=%p removed=%d",
-       this, realTransaction, !!pendingInfo));
+      ("HappyEyeballsConnectionAttempt::LockInRealTxnFromPendingQueue "
+       "%p realTxn=%p removed=%d",
+       this, realTxn, !!pendingInfo));
   return !!pendingInfo;
 }
 
@@ -853,7 +845,7 @@ void HappyEyeballsConnectionAttempt::HandleUDPConnectionResult(
     return;
   }
 
-  if (IsTerminal()) {
+  if (mDone) {
     establisher->Close(NS_BASE_STREAM_CLOSED);
     ProcessConnectionResult(addr, NS_BASE_STREAM_CLOSED, aId);
     return;
@@ -901,19 +893,75 @@ void HappyEyeballsConnectionAttempt::CloseHttpTransaction(
       MOZ_ASSERT_UNREACHABLE("Unknown FailureReason");
       break;
   }
-  
-  
-  CloseRealTransaction(reason);
+  if (mTransaction) {
+    mTransaction->Close(reason);
+  }
 }
 
 void HappyEyeballsConnectionAttempt::Abandon() {
   LOG(("HappyEyeballsConnectionAttempt::Abandon %p", this));
+
+  mDone = true;
+
   
-  
-  if (mState == State::Done) {
-    return;
+  for (auto iter = mDnsRequestTable.Iter(); !iter.Done(); iter.Next()) {
+    iter.Data()->Cancel();
   }
-  Transition(State::Done);
+  mDnsRequestTable.Clear();
+
+  
+  
+  nsTArray<RefPtr<ConnectionEstablisher>> establishers;
+  for (auto iter = mConnectionEstablisherTable.Iter(); !iter.Done();
+       iter.Next()) {
+    establishers.AppendElement(iter.Data());
+  }
+  mConnectionEstablisherTable.Clear();
+
+  
+  for (auto& conn : establishers) {
+    conn->Close(NS_ERROR_ABORT);
+  }
+
+  if (mTimer) {
+    mTimer->Cancel();
+  }
+  mTimer = nullptr;
+
+  
+  
+  
+  
+  
+  
+  
+  if (mTransaction && mZeroRttHandle->AnyStarted() &&
+      !mZeroRttHandle->HadWinner()) {
+    if (nsHttpTransaction* realTxn = mTransaction->QueryHttpTransaction()) {
+      if (!realTxn->Closed()) {
+        realTxn->FinishAdopted0RTT(true);
+        RefPtr<ConnectionEntry> entry(mEntry);
+        RefPtr<PendingTransactionInfo> existing;
+        if (entry) {
+          existing = gHttpHandler->ConnMgr()->FindTransactionHelper(
+              false, entry, realTxn);
+        }
+        if (!existing) {
+          gHttpHandler->ConnMgr()->AddTransaction(realTxn, realTxn->Priority());
+        }
+      }
+    }
+    mTransaction = nullptr;
+  }
+
+  MOZ_DIAGNOSTIC_ASSERT(!mZeroRttHandle->AnyStarted() ||
+                            mZeroRttHandle->HadWinner() || !mTransaction,
+                        "transaction not re-queued and not "
+                        "adopted");
+
+  mZeroRttHandle->Cleanup();
+
+  mEntry = nullptr;
 }
 
 void HappyEyeballsConnectionAttempt::ProcessTCPConn(
@@ -937,14 +985,11 @@ void HappyEyeballsConnectionAttempt::ProcessTCPConn(
         gHttpHandler->ConnMgr()->FindTransactionHelper(true, entry,
                                                        mTransaction);
     if (pendingTransInfo) {
-      MOZ_ASSERT(!mSpeculative, "Speculative HE attempt found mTransaction");
+      MOZ_ASSERT(!mSpeculative, "Speculative Half Open found mTransaction");
       nsresult rv = gHttpHandler->ConnMgr()->DispatchTransaction(
           entry, pendingTransInfo->Transaction(), connTCP);
       if (NS_FAILED(rv)) {
         mTransaction->Close(rv);
-      } else {
-        
-        mTransactionAdopted = true;
       }
     } else if (!isHttp2) {
       
@@ -1011,14 +1056,11 @@ void HappyEyeballsConnectionAttempt::ProcessUDPConn(
                                                        mTransaction);
     nsresult rv = NS_OK;
     if (pendingTransInfo) {
-      MOZ_ASSERT(!mSpeculative, "Speculative HE attempt found mTransaction");
+      MOZ_ASSERT(!mSpeculative, "Speculative Half Open found mTransaction");
       rv = gHttpHandler->ConnMgr()->DispatchTransaction(
           entry, pendingTransInfo->Transaction(), aConn);
       if (NS_FAILED(rv)) {
         mTransaction->Close(rv);
-      } else {
-        
-        mTransactionAdopted = true;
       }
     } else {
       nsHttpTransaction* trans = mTransaction->QueryHttpTransaction();
@@ -1026,9 +1068,6 @@ void HappyEyeballsConnectionAttempt::ProcessUDPConn(
         LOG(("ProcessUDPConn transaction already done, not activating"));
       } else {
         rv = aConn->Activate(mTransaction, mCaps, 0);
-        if (NS_SUCCEEDED(rv)) {
-          mTransactionAdopted = true;
-        }
       }
     }
   }
@@ -1037,9 +1076,11 @@ void HappyEyeballsConnectionAttempt::ProcessUDPConn(
   gHttpHandler->ConnMgr()->ReportHttp3Connection(aConn, entry);
 }
 
-void HappyEyeballsConnectionAttempt::EnterSucceeded() {
-  LOG(("HappyEyeballsConnectionAttempt::EnterSucceeded %p", this));
-  MOZ_ASSERT(mState == State::Succeeded);
+void HappyEyeballsConnectionAttempt::OnSucceeded() {
+  LOG(("HappyEyeballsConnectionAttempt::OnSucceeded %p", this));
+
+  MOZ_ASSERT(!mDone);
+  mDone = true;
 
   RefPtr<HappyEyeballsConnectionAttempt> self(this);
   RefPtr<ConnectionEntry> entry(mEntry);
@@ -1057,16 +1098,14 @@ void HappyEyeballsConnectionAttempt::EnterSucceeded() {
   
   
   if (mOutputTrans && mTransaction) {
-    if (nsHttpTransaction* realTransaction =
-            mTransaction->QueryHttpTransaction()) {
+    if (nsHttpTransaction* realTxn = mTransaction->QueryHttpTransaction()) {
       TimingStruct timings = mOutputTrans->Timings();
-      timings.transactionPending = realTransaction->GetPendingTime();
-      realTransaction->BootstrapTimings(timings);
+      timings.transactionPending = realTxn->GetPendingTime();
+      realTxn->BootstrapTimings(timings);
     }
   }
   mOutputTrans = nullptr;
 
-  
   
   
   
@@ -1095,7 +1134,6 @@ void HappyEyeballsConnectionAttempt::EnterSucceeded() {
         
         
         
-        
         RefPtr<PendingTransactionInfo> existing;
         if (entry) {
           existing = gHttpHandler->ConnMgr()->FindTransactionHelper(
@@ -1113,7 +1151,7 @@ void HappyEyeballsConnectionAttempt::EnterSucceeded() {
   MOZ_DIAGNOSTIC_ASSERT(
       !mZeroRttHandle->AnyStarted() || mZeroRttHandle->HadWinner() ||
           !mTransaction,
-      "EnterSucceeded: 0-RTT transaction not re-queued and not adopted");
+      "OnSucceeded: 0-RTT transaction not re-queued and not adopted");
 
   
   
@@ -1157,245 +1195,10 @@ double HappyEyeballsConnectionAttempt::Duration(TimeStamp epoch) {
 
 void HappyEyeballsConnectionAttempt::OnTimeout() {
   LOG(("HappyEyeballsConnectionAttempt::OnTimeout %p" PRIx32, this));
-  if (IsTerminal()) {
-    return;
-  }
-  Transition(State::TimedOut);
-}
-
-void HappyEyeballsConnectionAttempt::EnterTimedOut() {
-  LOG(("HappyEyeballsConnectionAttempt::EnterTimedOut %p", this));
-  MOZ_ASSERT(mState == State::TimedOut);
-  CloseRealTransaction(NS_ERROR_NET_TIMEOUT);
-  Abandon();
-}
-
-void HappyEyeballsConnectionAttempt::EnterFailed(
-    happy_eyeballs::FailureReason aReason) {
-  LOG(("HappyEyeballsConnectionAttempt::EnterFailed %p reason=%d", this,
-       static_cast<uint32_t>(aReason)));
-  MOZ_ASSERT(mState == State::Failed);
-
-  RefPtr<HappyEyeballsConnectionAttempt> self(this);
-  RefPtr<ConnectionEntry> entry(mEntry);
-
-  nsHttpTransaction* trans =
-      mTransaction ? mTransaction->QueryHttpTransaction() : nullptr;
-  if (entry) {
-    if (trans) {
-      entry->RemoveTransFromPendingQ(trans);
-    }
-    entry->RemoveConnectionAttempt(this, false);
-  }
-
-  CloseHttpTransaction(aReason);
-  Abandon();
-}
-
-void HappyEyeballsConnectionAttempt::EnterRestartTransaction(
-    nsresult aCloseReason) {
-  LOG(("HappyEyeballsConnectionAttempt::EnterRestartTransaction %p reason=%x",
-       this, static_cast<uint32_t>(aCloseReason)));
-  MOZ_ASSERT(mState == State::RestartTransaction);
-
-  RefPtr<HappyEyeballsConnectionAttempt> self(this);
-  RefPtr<ConnectionEntry> entry(mEntry);
-
-  if (entry) {
-    
-    entry->RemoveConnectionAttempt(this, true);
-  }
-
-  
-  
-  
-  
-  
   if (mTransaction) {
-    if (nsHttpTransaction* trans = mTransaction->QueryHttpTransaction()) {
-      trans->DoNotRemoveAltSvc();
-      
-      
-      
-      
-      if (aCloseReason == NS_ERROR_NET_RESET && mZeroRttHandle->AnyStarted()) {
-        trans->FinishAdopted0RTT( true);
-      }
-    }
+    mTransaction->Close(NS_ERROR_NET_TIMEOUT);
   }
-
-  CloseRealTransaction(aCloseReason);
-  
-  
-  if (mState != State::Done) {
-    Abandon();
-  }
-}
-
-void HappyEyeballsConnectionAttempt::EnterAbortTransaction(
-    nsresult aCloseReason) {
-  LOG(
-      ("HappyEyeballsConnectionAttempt::EnterAbortTransaction %p "
-       "reason=%x",
-       this, static_cast<uint32_t>(aCloseReason)));
-  MOZ_ASSERT(mState == State::AbortTransaction);
-
-  RefPtr<HappyEyeballsConnectionAttempt> self(this);
-  RefPtr<ConnectionEntry> entry(mEntry);
-
-  CloseRealTransaction(aCloseReason);
   Abandon();
-  if (entry) {
-    entry->RemoveConnectionAttempt(this, false);
-  }
-}
-
-void HappyEyeballsConnectionAttempt::EnterDone() {
-  LOG(("HappyEyeballsConnectionAttempt::EnterDone %p", this));
-  MOZ_ASSERT(mState == State::Done);
-
-  for (auto iter = mDnsRequestTable.Iter(); !iter.Done(); iter.Next()) {
-    iter.Data()->Cancel();
-  }
-  mDnsRequestTable.Clear();
-
-  
-  nsTArray<RefPtr<ConnectionEstablisher>> establishers;
-  for (auto iter = mConnectionEstablisherTable.Iter(); !iter.Done();
-       iter.Next()) {
-    establishers.AppendElement(iter.Data());
-  }
-  mConnectionEstablisherTable.Clear();
-
-  for (auto& conn : establishers) {
-    conn->Close(NS_ERROR_ABORT);
-  }
-
-  if (mTimer) {
-    mTimer->Cancel();
-  }
-  mTimer = nullptr;
-
-  
-  
-  
-  if (mTransaction && mZeroRttHandle->AnyStarted() &&
-      !mZeroRttHandle->HadWinner()) {
-    if (nsHttpTransaction* realTransaction =
-            mTransaction->QueryHttpTransaction()) {
-      if (!realTransaction->Closed()) {
-        realTransaction->FinishAdopted0RTT(true);
-        RefPtr<ConnectionEntry> entry(mEntry);
-        RefPtr<PendingTransactionInfo> existing;
-        if (entry) {
-          existing = gHttpHandler->ConnMgr()->FindTransactionHelper(
-              false, entry, realTransaction);
-        }
-        if (!existing) {
-          gHttpHandler->ConnMgr()->AddTransaction(realTransaction,
-                                                  realTransaction->Priority());
-        }
-      }
-    }
-    mTransaction = nullptr;
-  }
-
-  MOZ_DIAGNOSTIC_ASSERT(!mZeroRttHandle->AnyStarted() ||
-                            mZeroRttHandle->HadWinner() || !mTransaction,
-                        "transaction not re-queued and not adopted");
-
-  mZeroRttHandle->Cleanup();
-  mEntry = nullptr;
-}
-
-void HappyEyeballsConnectionAttempt::Transition(State aNext) {
-  Transition(aNext, TransitionPayload{});
-}
-
-void HappyEyeballsConnectionAttempt::Transition(State aNext,
-                                                TransitionPayload aPayload) {
-  LOG(("HappyEyeballsConnectionAttempt::Transition %p mState=%d aNext=%d", this,
-       static_cast<int>(mState), static_cast<int>(aNext)));
-
-  
-  if (mState == aNext &&
-      (aNext == State::Connecting || aNext == State::ZeroRttRacing ||
-       aNext == State::ProcessingConnectionResult)) {
-    return;
-  }
-
-  switch (aNext) {
-    case State::Init:
-      MOZ_ASSERT_UNREACHABLE("Init is the initial state");
-      break;
-
-    case State::Connecting:
-      MOZ_ASSERT(
-          mState == State::Init || mState == State::ProcessingConnectionResult,
-          "Connecting entered from Init or "
-          "ProcessingConnectionResult only");
-      mState = State::Connecting;
-      break;
-
-    case State::ZeroRttRacing:
-      MOZ_ASSERT(mState == State::Connecting ||
-                     mState == State::ProcessingConnectionResult,
-                 "ZeroRttRacing entered from Connecting or "
-                 "ProcessingConnectionResult only");
-      mState = State::ZeroRttRacing;
-      break;
-
-    case State::ProcessingConnectionResult:
-      MOZ_ASSERT(mState == State::Connecting || mState == State::ZeroRttRacing,
-                 "ProcessingConnectionResult entered from Connecting or "
-                 "ZeroRttRacing only");
-      mState = State::ProcessingConnectionResult;
-      break;
-
-    case State::Succeeded:
-      MOZ_ASSERT(!IsTerminal(), "Succeeded from a non-terminal state only");
-      mState = State::Succeeded;
-      EnterSucceeded();
-      break;
-
-    case State::Failed:
-      MOZ_ASSERT(!IsTerminal(), "Failed from a non-terminal state only");
-      MOZ_ASSERT(aPayload.mFailureReason.isSome(),
-                 "Failed requires a FailureReason payload");
-      mState = State::Failed;
-      EnterFailed(aPayload.mFailureReason.ref());
-      break;
-
-    case State::RestartTransaction:
-      MOZ_ASSERT(!IsTerminal(),
-                 "RestartTransaction from a non-terminal state only");
-      mState = State::RestartTransaction;
-      EnterRestartTransaction(aPayload.mCloseReason);
-      break;
-
-    case State::AbortTransaction:
-      MOZ_ASSERT(!IsTerminal(),
-                 "AbortTransaction from a non-terminal state only");
-      mState = State::AbortTransaction;
-      EnterAbortTransaction(aPayload.mCloseReason);
-      break;
-
-    case State::TimedOut:
-      MOZ_ASSERT(!IsTerminal(), "TimedOut from a non-terminal state only");
-      mState = State::TimedOut;
-      EnterTimedOut();
-      break;
-
-    case State::Done:
-      
-      
-      if (mState == State::Done) {
-        return;
-      }
-      mState = State::Done;
-      EnterDone();
-      break;
-  }
 }
 
 void HappyEyeballsConnectionAttempt::PrintDiagnostics(nsCString& log) {}

@@ -83,7 +83,7 @@ bool ZeroRttHandle::Do0RTT(HappyEyeballsTransaction* aCaller,
   
   if (!mAny0RttStarted) {
     RefPtr<HappyEyeballsConnectionAttempt> attempt = do_QueryReferent(mHet);
-    if (!attempt || !attempt->LockInRealTransactionFromPendingQueue()) {
+    if (!attempt || !attempt->LockInRealTxnFromPendingQueue()) {
       LOG(
           ("ZeroRttHandle::Do0RTT %p caller=%p declining — real txn "
            "already dispatched elsewhere",

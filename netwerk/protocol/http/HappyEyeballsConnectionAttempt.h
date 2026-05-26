@@ -9,7 +9,6 @@
 #include "nsAHttpConnection.h"
 #include "nsICancelable.h"
 #include "nsIDNSListener.h"
-#include "mozilla/Maybe.h"
 #include "mozilla/Result.h"
 #include "nsTHashSet.h"
 #include "happy_eyeballs_glue/HappyEyeballs.h"
@@ -100,64 +99,10 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
   
   
   
-  bool LockInRealTransactionFromPendingQueue();
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  enum class State : uint8_t {
-    Init,
-    Connecting,
-    ZeroRttRacing,
-    ProcessingConnectionResult,
-    Succeeded,
-    Failed,
-    RestartTransaction,
-    AbortTransaction,
-    TimedOut,
-    Done,
-  };
-
-  
-  enum class ConnResultOutcome : uint8_t {
-    ForwardAndContinue,  
-    RestartTransaction,  
-    AbortTransaction,    
-  };
-
-  
-  struct TransitionPayload {
-    nsresult mCloseReason = NS_OK;
-    Maybe<happy_eyeballs::FailureReason> mFailureReason;
-  };
-
-  bool IsTerminal() const { return mState >= State::Succeeded; }
+  bool LockInRealTxnFromPendingQueue();
 
  private:
   ~HappyEyeballsConnectionAttempt();
-
-  
-  
-  void Transition(State aNext);
-  void Transition(State aNext, TransitionPayload aPayload);
-
-  
-  ConnResultOutcome ClassifyConnectionResult(nsresult aStatus) const;
-
-  
-  
-  
-  void CloseRealTransaction(nsresult aCloseReason);
 
   nsresult CreateHappyEyeballs(ConnectionEntry* ent);
 
@@ -209,14 +154,7 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
   
   void SetupTimer(uint64_t aTimeout);
 
-  
-  void EnterSucceeded();
-  void EnterFailed(happy_eyeballs::FailureReason aReason);
-  void EnterRestartTransaction(nsresult aCloseReason);
-  void EnterAbortTransaction(nsresult aCloseReason);
-  void EnterTimedOut();
-  void EnterDone();
-
+  void OnSucceeded();
   void ProcessTCPConn(nsHttpConnection* aConn, ConnectionEntry* aEntry,
                       bool aTransactionAlreadyOnConn);
   void ProcessUDPConn(HttpConnectionUDP* aConn, ConnectionEntry* aEntry,
@@ -241,7 +179,7 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
 
   nsCOMPtr<nsITimer> mTimer;
   WeakPtr<ConnectionEntry> mEntry;
-  State mState{State::Init};
+  bool mDone = false;
   nsresult mLastConnectionError = NS_OK;
   nsresult mLastDnsError = NS_OK;
   nsTHashSet<uint32_t> mSentTransportStatuses;
@@ -249,12 +187,6 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
   
   
   RefPtr<ZeroRttHandle> mZeroRttHandle;
-
-  
-  
-  
-  
-  bool mTransactionAdopted = false;
 
   DnsMetadata mDnsMetadata;
   bool mTRRInfoForwarded = false;
