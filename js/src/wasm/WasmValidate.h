@@ -144,6 +144,10 @@ using ValidatingOpIter = OpIter<ValidatingPolicy>;
 [[nodiscard]] bool StartsCodeSection(const uint8_t* begin, const uint8_t* end,
                                      BytecodeRange* codeSection);
 
+#ifdef ENABLE_WASM_COMPONENTS
+[[nodiscard]] bool IsComponent(Decoder& d);
+#endif
+
 
 
 
@@ -159,6 +163,10 @@ using ValidatingOpIter = OpIter<ValidatingPolicy>;
 
 [[nodiscard]] bool DecodeModuleTail(Decoder& d, CodeMetadata* codeMeta,
                                     ModuleMetadata* meta);
+
+#ifdef ENABLE_WASM_COMPONENTS
+[[nodiscard]] bool DecodeComponent(Decoder& d, MutableComponent c);
+#endif
 
 
 

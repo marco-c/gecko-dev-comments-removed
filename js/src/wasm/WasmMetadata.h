@@ -26,15 +26,15 @@ using BuiltinModuleFuncIdVector =
 
 enum class NameContext { Standalone, BeforeLocation };
 
-
-
-
-
-
-
-
-
 using ModuleHash = uint8_t[8];
+
+
+
+
+
+
+
+
 
 struct CodeMetadata : public ShareableBase<CodeMetadata> {
   

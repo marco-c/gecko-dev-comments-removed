@@ -18,6 +18,7 @@
 #define wasm_compile_h
 
 #include "vm/Runtime.h"
+#include "wasm/WasmComponent.h"
 #include "wasm/WasmModule.h"
 
 namespace JS {
@@ -29,12 +30,15 @@ namespace wasm {
 
 class Code;
 
+#ifdef ENABLE_WASM_COMPONENTS
+using SharedModuleOrComponent =
+    mozilla::Maybe<mozilla::Variant<SharedModule, SharedComponent>>;
+#endif
 
 
 
 
 uint32_t ObservedCPUFeatures();
-
 
 
 
@@ -45,12 +49,22 @@ double EstimateCompiledCodeSize(Tier tier, size_t bytecodeSize);
 
 
 
-
-SharedModule CompileBuffer(const CompileArgs& args,
+SharedModule CompileModule(const CompileArgs& args,
                            const BytecodeBufferOrSource& bytecode,
                            UniqueChars* error, UniqueCharsVector* warnings,
                            JS::OptimizedEncodingListener* listener = nullptr);
 
+#ifdef ENABLE_WASM_COMPONENTS
+SharedComponent CompileComponent(
+    const CompileArgs& args, const BytecodeBufferOrSource& bytecode,
+    UniqueChars* error, UniqueCharsVector* warnings,
+    JS::OptimizedEncodingListener* listener = nullptr);
+
+SharedModuleOrComponent CompileBuffer(
+    const CompileArgs& args, const BytecodeBufferOrSource& bytecode,
+    UniqueChars* error, UniqueCharsVector* warnings,
+    JS::OptimizedEncodingListener* listener = nullptr);
+#endif
 
 
 bool CompileCompleteTier2(const ShareableBytes* codeSection,
@@ -59,11 +73,9 @@ bool CompileCompleteTier2(const ShareableBytes* codeSection,
                           mozilla::Atomic<bool>* cancelled);
 
 
-
 bool CompilePartialTier2(const Code& code, uint32_t funcIndex,
                          UniqueChars* error, UniqueCharsVector* warnings,
                          mozilla::Atomic<bool>* cancelled);
-
 
 
 

@@ -425,6 +425,7 @@ class Decoder {
   bool fail(size_t errorOffset, const char* msg);
 
   UniqueChars* error() { return error_; }
+  UniqueCharsVector* warnings() { return warnings_; }
 
   void clearError() {
     if (error_) {
@@ -532,15 +533,34 @@ class Decoder {
 
   
 
-  [[nodiscard]] bool readBytes(uint32_t numBytes,
+  [[nodiscard]] bool peekBytes(uint32_t numBytes,
                                const uint8_t** bytes = nullptr) {
     if (bytes) {
       *bytes = cur_;
     }
-    if (bytesRemain() < numBytes) {
+    return bytesRemain() >= numBytes;
+  }
+
+  [[nodiscard]] bool readBytes(uint32_t numBytes,
+                               const uint8_t** bytes = nullptr) {
+    bool result = peekBytes(numBytes, bytes);
+    if (result) {
+      cur_ += numBytes;
+    }
+    return result;
+  }
+
+  [[nodiscard]] bool readBytesSpan(uint32_t numBytes, BytecodeSpan* bytes,
+                                   size_t* offset = nullptr) {
+    size_t offset_ = currentOffset();
+    const uint8_t* data;
+    if (!readBytes(numBytes, &data)) {
       return false;
     }
-    cur_ += numBytes;
+    *bytes = BytecodeSpan(data, numBytes);
+    if (offset) {
+      *offset = offset_;
+    }
     return true;
   }
 
@@ -646,6 +666,10 @@ inline ValType Decoder::uncheckedReadValType(const TypeContext& types) {
     case uint8_t(TypeCode::NullExternRef):
     case uint8_t(TypeCode::ExnRef):
     case uint8_t(TypeCode::NullExnRef):
+#ifdef ENABLE_WASM_JSPI
+    case uint8_t(TypeCode::ContRef):
+    case uint8_t(TypeCode::NullContRef):
+#endif
       return RefType::fromTypeCode(TypeCode(code), true);
     case uint8_t(TypeCode::Ref):
     case uint8_t(TypeCode::NullableRef): {
@@ -698,6 +722,16 @@ inline bool Decoder::readPackedType(const TypeContext& types,
       *type = RefType::fromTypeCode(TypeCode(code), true);
       return true;
     }
+#ifdef ENABLE_WASM_JSPI
+    case uint8_t(TypeCode::ContRef):
+    case uint8_t(TypeCode::NullContRef): {
+      if (!features.stackSwitching) {
+        return fail("stack switching not enabled");
+      }
+      *type = RefType::fromTypeCode(TypeCode(code), true);
+      return true;
+    }
+#endif  
     case uint8_t(TypeCode::Ref):
     case uint8_t(TypeCode::NullableRef): {
       bool nullable = code == uint8_t(TypeCode::NullableRef);
@@ -765,6 +799,16 @@ inline bool Decoder::readHeapType(const TypeContext& types,
         *type = RefType::fromTypeCode(TypeCode(code), nullable);
         return true;
       }
+#ifdef ENABLE_WASM_JSPI
+      case uint8_t(TypeCode::ContRef):
+      case uint8_t(TypeCode::NullContRef): {
+        if (!features.stackSwitching) {
+          return fail("stack switching not enabled");
+        }
+        *type = RefType::fromTypeCode(TypeCode(code), nullable);
+        return true;
+      }
+#endif  
       case uint8_t(TypeCode::AnyRef):
       case uint8_t(TypeCode::I31Ref):
       case uint8_t(TypeCode::EqRef):
