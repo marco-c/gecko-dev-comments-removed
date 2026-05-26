@@ -2388,12 +2388,7 @@ pref("media.videocontrols.picture-in-picture.enable-when-switching-tabs.enabled"
 pref("media.videocontrols.picture-in-picture.auto-close.enabled", true);
 pref("media.videocontrols.picture-in-picture.auto-close.timeoutMs", 1000);
 
-#ifdef NIGHTLY_BUILD
-  pref("media.contextmenu.video-overlay-detection", true);
-#else
-  pref("media.contextmenu.video-overlay-detection", false);
-#endif
-
+pref("media.contextmenu.video-overlay-detection", true);
 
 
 
