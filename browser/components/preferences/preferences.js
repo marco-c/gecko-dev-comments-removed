@@ -467,7 +467,7 @@ function register_module(categoryName, categoryObject) {
       }
       this._initted = true;
       let template = document.getElementById("template-" + categoryName);
-      if (template && !srdSectionPrefs.all) {
+      if (template) {
         
         template.replaceWith(template.content);
 
