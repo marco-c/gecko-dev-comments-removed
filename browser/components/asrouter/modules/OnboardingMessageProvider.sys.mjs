@@ -3204,7 +3204,7 @@ const BASE_MESSAGES = () => [
       id: "smartWindowNewTab",
     },
     targeting:
-      "isAIWindow && previousSessionEnd && !activeNotifications && userPrefs.cfrFeatures && ('browser.smartwindow.chat.interactionCount'|preferenceValue) > 5 && !('browser.smartwindow.isDefaultWindow' | preferenceValue)",
+      "isAIWindow && previousSessionEnd && !activeNotifications && userPrefs.cfrFeatures && ('browser.smartwindow.chat.interactionCount'|preferenceValue) > 2 && !('browser.smartwindow.isDefaultWindow' | preferenceValue)",
     frequency: {
       lifetime: 3,
     },
@@ -3555,13 +3555,6 @@ export const OnboardingMessageProvider = {
         mobileContent.cta_paragraph.text = {
           string_id: "mr2022-onboarding-no-mobile-download-cta-text",
         };
-      }
-      // Update CN specific QRCode url
-      if (lazy.BrowserUtils.isChinaRepack()) {
-        mobileContent.hero_image.url = `${mobileContent.hero_image.url.slice(
-          0,
-          mobileContent.hero_image.url.indexOf(".svg")
-        )}-cn.svg`;
       }
     }
 
