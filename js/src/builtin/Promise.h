@@ -271,6 +271,15 @@ struct PromiseReactionRecordBuilder {
     JS::Handle<JS::Value> reason,
     JS::Handle<SavedFrame*> unwrappedRejectionStack = nullptr);
 
+#ifdef NIGHTLY_BUILD
+
+
+
+[[nodiscard]] bool SafeResolvePromise(JSContext* cx,
+                                      JS::Handle<PromiseObject*> promise,
+                                      JS::Handle<JS::Value> resolution);
+#endif  
+
 [[nodiscard]] bool InternalAsyncGeneratorAwait(
     JSContext* cx, JS::Handle<AsyncGeneratorObject*> generator,
     JS::Handle<JS::Value> value, PromiseHandler onFulfilled,

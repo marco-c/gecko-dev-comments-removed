@@ -51,8 +51,17 @@ class JS_PUBLIC_API JobQueue {
 
 
 
-  virtual bool getHostDefinedData(JSContext* cx,
-                                  JS::MutableHandle<JSObject*> data) const = 0;
+
+
+
+
+
+
+
+
+  virtual bool getHostDefinedData(
+      JSContext* cx, JS::MutableHandle<JSObject*> incumbentGlobal,
+      JS::MutableHandle<JSObject*> optionalHostDefinedData) const = 0;
 
   
 
@@ -469,6 +478,35 @@ extern JS_PUBLIC_API bool ResolvePromise(JSContext* cx,
 extern JS_PUBLIC_API bool RejectPromise(JSContext* cx,
                                         JS::HandleObject promiseObj,
                                         JS::HandleValue rejectionValue);
+
+#ifdef NIGHTLY_BUILD
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+extern JS_PUBLIC_API bool SafeResolve(JSContext* cx,
+                                      JS::HandleObject promiseObj,
+                                      JS::HandleValue resolutionValue);
+#endif  
 
 
 
