@@ -706,6 +706,7 @@ class nsCocoaWindow final : public nsIWidget {
   
   static mozilla::Maybe<NativePointerLockMode> sNativePointerLockMode;
   static LayoutDeviceIntPoint sNativeLockedPoint;
+  static nsCocoaWindow* sNativeLockedWindow;
 };
 
 #endif  

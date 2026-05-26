@@ -4875,6 +4875,8 @@ void nsCocoaWindow::DestroyNativeWindow() {
   MOZ_ASSERT(mWindowMadeHere,
              "We shouldn't be trying to destroy a window we didn't create.");
 
+  UnlockNativePointer();
+
   
   
   
@@ -7538,21 +7540,31 @@ void nsCocoaWindow::LockNativePointer(
     MOZ_ASSERT(*GetNativePointerLockedMode() == aNativePointerLockMode,
                "Should not call LockNativePointer() with a different mode "
                "whenthe pointer is already locked");
+    MOZ_ASSERT(sNativeLockedWindow);
     
     
     
     return;
   }
 
+  MOZ_ASSERT(!sNativeLockedWindow);
+
+  sNativeLockedWindow = this;
   sNativePointerLockMode.emplace(aNativePointerLockMode);
   CGAssociateMouseAndMouseCursorPosition(false);
 }
 
 void nsCocoaWindow::UnlockNativePointer() {
   if (NS_WARN_IF(!GetNativePointerLockedMode())) {
+    MOZ_ASSERT(!sNativeLockedWindow);
+    MOZ_ASSERT(sNativeLockedPoint == LayoutDeviceIntPoint(0, 0));
+    return;
+  }
+  if (sNativeLockedWindow != this) {
     return;
   }
 
+  sNativeLockedWindow = nullptr;
   sNativePointerLockMode.reset();
   CGAssociateMouseAndMouseCursorPosition(true);
   sNativeLockedPoint = LayoutDeviceIntPoint(0, 0);
@@ -7561,6 +7573,11 @@ void nsCocoaWindow::UnlockNativePointer() {
 void nsCocoaWindow::SetNativePointerLockMode(
     NativePointerLockMode aNativePointerLockMode) {
   if (NS_WARN_IF(!GetNativePointerLockedMode())) {
+    MOZ_ASSERT(!sNativeLockedWindow);
+    MOZ_ASSERT(sNativeLockedPoint == LayoutDeviceIntPoint(0, 0));
+    return;
+  }
+  if (NS_WARN_IF(sNativeLockedWindow != this)) {
     return;
   }
   sNativePointerLockMode.ref() = aNativePointerLockMode;
@@ -7573,6 +7590,7 @@ bool nsCocoaWindow::SupportsUnadjustedMovement() {
  Maybe<nsIWidget::NativePointerLockMode>
     nsCocoaWindow::sNativePointerLockMode;
  LayoutDeviceIntPoint nsCocoaWindow::sNativeLockedPoint;
+ nsCocoaWindow* nsCocoaWindow::sNativeLockedWindow = nullptr;
 
 
 const Maybe<nsIWidget::NativePointerLockMode>&
