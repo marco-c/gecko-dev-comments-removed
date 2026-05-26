@@ -738,8 +738,6 @@ class AutoForbidPoolsAndNops : public AutoForbidNops {
   ~AutoForbidPoolsAndNops() { asm_->leaveNoPool(); }
 };
 
-using BlockTrampolinePoolScope = AutoForbidPoolsAndNops;
-
 }  
 }  
 #endif 
