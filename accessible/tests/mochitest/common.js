@@ -106,9 +106,12 @@ const MAX_TRIM_LENGTH = 100;
 
 
 
-var gAccService = Cc["@mozilla.org/accessibilityService;1"].getService(
-  nsIAccessibilityService
-);
+
+var gAccService = window.gDisableAccServiceInit
+  ? null
+  : Cc["@mozilla.org/accessibilityService;1"].getService(
+      nsIAccessibilityService
+    );
 
 
 

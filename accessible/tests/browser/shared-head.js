@@ -19,6 +19,7 @@
 
 
 
+
 const CURRENT_FILE_DIR = "/browser/accessible/tests/browser/";
 
 
@@ -427,12 +428,13 @@ function wrapWithIFrame(doc, options = {}) {
 
 function snippetToURL(doc, options = {}) {
   const { contentDocBodyAttrs = {} } = options;
+  const isIframe = options.iframe || options.remoteIframe;
   const attrs = {
     id: DEFAULT_CONTENT_DOC_BODY_ID,
     ...contentDocBodyAttrs,
   };
 
-  if (gIsIframe) {
+  if (isIframe) {
     doc = wrapWithIFrame(doc, options);
   } else if (options.contentSetup) {
     
@@ -454,7 +456,7 @@ function snippetToURL(doc, options = {}) {
   );
 
   let url = `data:text/html;charset=utf-8,${encodedDoc}`;
-  if (!gIsIframe && options.urlSuffix) {
+  if (!isIframe && options.urlSuffix) {
     url += options.urlSuffix;
   }
   return url;

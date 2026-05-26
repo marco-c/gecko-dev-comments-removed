@@ -2135,7 +2135,11 @@ void MaybeShutdownAccService(uint32_t aFormerConsumer, bool aAsync) {
   }
 
   
-  if (nsCoreUtils::AccEventObserversExist() ||
+  
+  
+  
+  if ((!nsAccessibilityService::IsOnlyForPdfOutput() &&
+       nsCoreUtils::AccEventObserversExist()) ||
       xpcAccessibilityService::IsInUse() || accService->HasXPCDocuments()) {
     
     
