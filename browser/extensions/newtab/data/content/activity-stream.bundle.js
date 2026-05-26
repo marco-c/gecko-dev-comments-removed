@@ -24360,7 +24360,8 @@ class BaseContent extends (external_React_default()).PureComponent {
       const highlightsEnabled = prefs["feeds.section.highlights"];
       const noContentSectionsEnabled = !topSitesEnabled && !pocketEnabled && !highlightsEnabled;
       const isPageEmpty = noContentSectionsEnabled && !prefs.showSearch && !hasAnyEnabledWidget;
-      const logoShouldBeCentered = !pocketEnabled && !hasContentWidgets;
+      const hasManyTopSitesRows = topSitesEnabled && prefs.topSitesRows > 2;
+      const logoShouldBeCentered = !pocketEnabled && !hasContentWidgets && !hasManyTopSitesRows;
       return external_React_default().createElement(BaseContext.Provider, {
         value: baseContextValue
       }, external_React_default().createElement("div", {
