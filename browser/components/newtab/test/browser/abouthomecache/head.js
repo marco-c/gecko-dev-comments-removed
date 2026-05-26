@@ -251,8 +251,9 @@ async function clearCache() {
 
 
 function assertCacheResultScalar(cacheResultScalar) {
+  let parentScalars = Services.telemetry.getSnapshotForScalars("main").parent;
   Assert.equal(
-    Glean.browserStartup.abouthomeCacheResult.testGetValue(),
+    parentScalars["browser.startup.abouthome_cache_result"],
     cacheResultScalar,
     "Expected the right value set to browser.startup.abouthome_cache_result " +
       "scalar."
