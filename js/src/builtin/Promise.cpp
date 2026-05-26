@@ -1640,7 +1640,7 @@ static bool ResolvePromiseFunction(JSContext* cx, unsigned argc, Value* vp) {
 static bool EnqueueJob(JSContext* cx, JS::JSMicroTask* job) {
   MOZ_ASSERT(cx->realm());
   GeckoProfilerRuntime& profiler = cx->runtime()->geckoProfiler();
-  if (profiler.enabled()) {
+  if (MOZ_UNLIKELY(profiler.enabled())) {
     
     uint64_t uid = 0;
     if (JS::GetFlowIdFromJSMicroTask(job, &uid)) {
@@ -1650,14 +1650,17 @@ static bool EnqueueJob(JSContext* cx, JS::JSMicroTask* job) {
   }
 
   
-  Rooted<JS::JSMicroTask*> rootedJob(cx, job);
+  if (MOZ_LIKELY(cx->runtime()->isMainRuntime())) {
+    return cx->microTaskQueues->enqueueRegularMicroTask(cx, ObjectValue(*job));
+  }
 
   
-  if (MOZ_UNLIKELY(!cx->runtime()->isMainRuntime() &&
-                   cx->jobQueue->useDebugQueue(cx->global()))) {
+  Rooted<JS::JSMicroTask*> rootedJob(cx, job);
+  if (MOZ_UNLIKELY(cx->jobQueue->useDebugQueue(cx->global()))) {
     return cx->microTaskQueues->enqueueDebugMicroTask(cx,
                                                       ObjectValue(*rootedJob));
   }
+
   return cx->microTaskQueues->enqueueRegularMicroTask(cx,
                                                       ObjectValue(*rootedJob));
 }
