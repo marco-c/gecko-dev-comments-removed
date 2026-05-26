@@ -5,7 +5,6 @@
 
 
 
-
 DESKTOP_DEFAULT(CanvasRandomization)
 DESKTOP_DEFAULT(EfficientCanvasRandomization)
 DESKTOP_DEFAULT(FontVisibilityLangPack)
@@ -13,6 +12,11 @@ DESKTOP_DEFAULT(JSMathFdlibm)
 DESKTOP_DEFAULT(ScreenAvailToResolution)
 DESKTOP_DEFAULT(NavigatorHWConcurrencyTiered)
 DESKTOP_DEFAULT(MaxTouchPointsCollapse)
+
+#ifdef NIGHTLY_BUILD
+DESKTOP_DEFAULT(DiskStorageLimit)
+ANDROID_DEFAULT(DiskStorageLimit)
+#endif
 
 ANDROID_DEFAULT(CanvasRandomization)
 ANDROID_DEFAULT(EfficientCanvasRandomization)
