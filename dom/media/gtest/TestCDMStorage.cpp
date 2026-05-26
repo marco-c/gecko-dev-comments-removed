@@ -199,6 +199,9 @@ static void SimulatePBModeExit() {
   NS_DispatchAndSpinEventLoopUntilComplete(
       "SimulatePBModeExit"_ns, GetMainThreadSerialEventTarget(),
       MakeAndAddRef<NotifyObserversTask>("last-pb-context-exited"));
+  nsCOMPtr<nsIThread> thread(GetGMPThread());
+  NS_DispatchAndSpinEventLoopUntilComplete(
+      "ClearedPBContext"_ns, thread, NS_NewRunnableFunction(__func__, [] {}));
 }
 
 class TestGetNodeIdCallback : public GetNodeIdCallback {
@@ -1276,8 +1279,6 @@ TEST(GeckoMediaPlugins, MatchBaseDomain_NoMatch)
   TestMatchBaseDomain_NoMatch();
 }
 
-
-#if !(defined(XP_WIN) && (defined(MOZ_ASAN) || defined(MOZ_CODE_COVERAGE)))
 TEST(GeckoMediaPlugins, CDMStorageGetNodeId)
 {
   RefPtr<CDMStorageTest> runner = new CDMStorageTest();
@@ -1338,12 +1339,10 @@ TEST(GeckoMediaPlugins, CDMStorageLongRecordNames)
   runner->DoTest(&CDMStorageTest::TestLongRecordNames);
 }
 
-#  if defined(XP_WIN)
+#if defined(XP_WIN)
 TEST(GeckoMediaPlugins, GMPOutputProtection)
 {
   RefPtr<CDMStorageTest> runner = new CDMStorageTest();
   runner->DoTest(&CDMStorageTest::TestOutputProtection);
 }
-#  endif  
-#endif    
-          
+#endif  

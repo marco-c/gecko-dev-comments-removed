@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "GMPServiceParent.h"
 #include "GMPTestMonitor.h"
 #include "GMPVideoDecoderProxy.h"
@@ -189,8 +187,6 @@ void GMPTestRunner::DoTest(
   monitor.AwaitFinished();
 }
 
-
-#if !(defined(XP_WIN) && (defined(MOZ_ASAN) || defined(MOZ_CODE_COVERAGE)))
 TEST(GeckoMediaPlugins, GMPTestCodec)
 {
   RefPtr<GMPTestRunner> runner = new GMPTestRunner();
@@ -207,5 +203,3 @@ TEST(GeckoMediaPlugins, GMPCrossOrigin)
   runner->DoTest(&GMPTestRunner::RunTestGMPCrossOrigin3);
   runner->DoTest(&GMPTestRunner::RunTestGMPCrossOrigin4);
 }
-#endif  
-        
