@@ -592,7 +592,8 @@ void js::RemapDeadWrapper(JSContext* cx, HandleObject wobj,
     
     
     
-    JSObject::swap(cx, wobj, tobj, oomUnsafe);
+    ProxyObject::swap(cx, wobj.as<ProxyObject>(), tobj.as<ProxyObject>(),
+                      oomUnsafe);
   }
 
   if (!wobj->is<WrapperObject>()) {

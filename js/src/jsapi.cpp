@@ -672,7 +672,8 @@ JS_PUBLIC_API JSObject* JS_TransplantObject(JSContext* cx, HandleObject origobj,
     
     
     AutoRealm ar(cx, origobj);
-    JSObject::swap(cx, origobj, target, oomUnsafe);
+    ProxyObject::swap(cx, origobj.as<ProxyObject>(), target.as<ProxyObject>(),
+                      oomUnsafe);
     newIdentity = origobj;
   } else if (ObjectWrapperMap::Ptr p = destination->lookupWrapper(origobj)) {
     
@@ -686,7 +687,8 @@ JS_PUBLIC_API JSObject* JS_TransplantObject(JSContext* cx, HandleObject origobj,
     NukeCrossCompartmentWrapper(cx, newIdentity);
 
     AutoRealm ar(cx, newIdentity);
-    JSObject::swap(cx, newIdentity, target, oomUnsafe);
+    ProxyObject::swap(cx, newIdentity.as<ProxyObject>(),
+                      target.as<ProxyObject>(), oomUnsafe);
   } else {
     
     newIdentity = target;
@@ -718,7 +720,8 @@ JS_PUBLIC_API JSObject* JS_TransplantObject(JSContext* cx, HandleObject origobj,
       oomUnsafe.crash("JS_TransplantObject");
     }
     MOZ_ASSERT(Wrapper::wrappedObject(newIdentityWrapper) == newIdentity);
-    JSObject::swap(cx, origobj, newIdentityWrapper, oomUnsafe);
+    ProxyObject::swap(cx, origobj.as<ProxyObject>(),
+                      newIdentityWrapper.as<ProxyObject>(), oomUnsafe);
     if (origobj->compartment()->lookupWrapper(newIdentity)) {
       MOZ_ASSERT(origobj->is<CrossCompartmentWrapperObject>());
       if (!origobj->compartment()->putWrapper(cx, newIdentity, origobj)) {
@@ -756,8 +759,8 @@ JS_PUBLIC_API void js::RemapRemoteWindowProxies(
     oomUnsafe.crash("js::RemapRemoteWindowProxies");
   }
 
-  RootedTuple<JSObject*, JSObject*, JSObject*> roots(cx);
-  RootedField<JSObject*, 0> targetCompartmentProxy(roots);
+  RootedTuple<ProxyObject*, JSObject*, JSObject*> roots(cx);
+  RootedField<ProxyObject*> targetCompartmentProxy(roots);
   JS::RootedVector<JSObject*> otherProxies(cx);
 
   
@@ -780,7 +783,7 @@ JS_PUBLIC_API void js::RemapRemoteWindowProxies(
     js::NukeNonCCWProxy(cx, remoteProxy);
 
     if (remoteProxy->compartment() == target->compartment()) {
-      targetCompartmentProxy = remoteProxy;
+      targetCompartmentProxy = &remoteProxy->as<ProxyObject>();
     } else if (!otherProxies.append(remoteProxy)) {
       oomUnsafe.crash("js::RemapRemoteWindowProxies");
     }
@@ -792,7 +795,8 @@ JS_PUBLIC_API void js::RemapRemoteWindowProxies(
   
   if (targetCompartmentProxy) {
     AutoRealm ar(cx, targetCompartmentProxy);
-    JSObject::swap(cx, targetCompartmentProxy, target, oomUnsafe);
+    Rooted<ProxyObject*> targetProxy(cx, &target->as<ProxyObject>());
+    ProxyObject::swap(cx, targetCompartmentProxy, targetProxy, oomUnsafe);
     target.set(targetCompartmentProxy);
   }
 

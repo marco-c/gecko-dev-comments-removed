@@ -86,7 +86,8 @@ BEGIN_TEST(testObjectSwap) {
 
         {
           AutoEnterOOMUnsafeRegion oomUnsafe;
-          JSObject::swap(cx, obj1, obj2, oomUnsafe);
+          ProxyObject::swap(cx, obj1.as<ProxyObject>(), obj2.as<ProxyObject>(),
+                            oomUnsafe);
         }
 
         CHECK(CheckObject(obj1, id2));

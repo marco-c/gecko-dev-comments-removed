@@ -4,6 +4,7 @@
 
 #include "vm/ProxyObject.h"
 
+#include "gc/GC.h"
 #include "gc/GCProbes.h"
 #include "gc/Marking.h"
 #include "gc/Zone.h"
@@ -12,6 +13,7 @@
 #include "vm/Realm.h"
 
 #include "gc/ObjectKind-inl.h"
+#include "gc/StableCellHasher-inl.h"  
 #include "vm/JSContext-inl.h"
 
 using namespace js;
@@ -184,6 +186,109 @@ void ProxyObject::nuke() {
   
   
   
+}
+
+
+
+void ProxyObject::swap(JSContext* cx, Handle<ProxyObject*> a,
+                       Handle<ProxyObject*> b,
+                       AutoEnterOOMUnsafeRegion& oomUnsafe) {
+  
+  
+  MOZ_RELEASE_ASSERT(JSCLASS_RESERVED_SLOTS(a->getClass()) ==
+                     js::SwappableProxyReservedSlots);
+  MOZ_RELEASE_ASSERT(JSCLASS_RESERVED_SLOTS(b->getClass()) ==
+                     js::SwappableProxyReservedSlots);
+  MOZ_RELEASE_ASSERT(a->allocKind() == b->allocKind());
+
+  MOZ_RELEASE_ASSERT(a->compartment() == b->compartment());
+
+  
+  MOZ_RELEASE_ASSERT(cx->compartment() == a->compartment());
+
+  
+  
+  
+  MOZ_RELEASE_ASSERT(js::ObjectMayBeSwapped(a));
+  MOZ_RELEASE_ASSERT(js::ObjectMayBeSwapped(b));
+
+  
+  
+  gc::AutoSuppressGC nogc(cx);
+
+  if (a->isTenured() || b->isTenured()) {
+    if (a->zone()->wasGCStarted()) {
+      cx->runtime()->gc.storeBuffer().setMayHavePointersToDeadCells();
+    }
+  }
+
+  unsigned r = NotifyGCPreSwap(a, b);
+
+  bool aIsUsedAsPrototype = a->isUsedAsPrototype();
+  bool bIsUsedAsPrototype = b->isUsedAsPrototype();
+
+  
+  if (aIsUsedAsPrototype && b->hasStaticPrototype()) {
+    MOZ_RELEASE_ASSERT(b->staticPrototype() != a);
+  }
+  if (bIsUsedAsPrototype && a->hasStaticPrototype()) {
+    MOZ_RELEASE_ASSERT(a->staticPrototype() != b);
+  }
+
+#ifdef DEBUG
+  
+  
+  
+  
+  uint64_t aid = 0;
+  uint64_t bid = 0;
+  (void)gc::MaybeGetUniqueId(a, &aid);
+  (void)gc::MaybeGetUniqueId(b, &bid);
+#endif
+
+  
+  Shape* shapeA = a->shape();
+  a->setShapeForProxySwap(b->shape());
+  b->setShapeForProxySwap(shapeA);
+
+  
+  const BaseProxyHandler* handlerA = a->handler();
+  a->setHandler(b->handler());
+  b->setHandler(handlerA);
+
+  
+  JSObject* expandoA = a->expando();
+  a->setExpando(b->expando());
+  b->setExpando(expandoA);
+
+  
+  Value privateA = GetProxyPrivate(a);
+  SetProxyPrivate(a, GetProxyPrivate(b));
+  SetProxyPrivate(b, privateA);
+
+  
+  for (size_t i = 0; i < SwappableProxyReservedSlots; i++) {
+    Value slotA = GetProxyReservedSlot(a, i);
+    SetProxyReservedSlot(a, i, GetProxyReservedSlot(b, i));
+    SetProxyReservedSlot(b, i, slotA);
+  }
+
+  MOZ_ASSERT_IF(aid, gc::GetUniqueIdInfallible(a) == aid);
+  MOZ_ASSERT_IF(bid, gc::GetUniqueIdInfallible(b) == bid);
+
+  
+  if (aIsUsedAsPrototype) {
+    if (!JSObject::setIsUsedAsPrototype(cx, a)) {
+      oomUnsafe.crash("setIsUsedAsPrototype");
+    }
+  }
+  if (bIsUsedAsPrototype) {
+    if (!JSObject::setIsUsedAsPrototype(cx, b)) {
+      oomUnsafe.crash("setIsUsedAsPrototype");
+    }
+  }
+
+  NotifyGCPostSwap(a, b, r);
 }
 
 JS_PUBLIC_API void js::detail::SetValueInProxy(Value* slot,

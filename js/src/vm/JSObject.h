@@ -494,9 +494,6 @@ class JSObject
                                   js::HandleValue receiver,
                                   JS::ObjectOpResult& result);
 
-  static void swap(JSContext* cx, JS::HandleObject a, JS::HandleObject b,
-                   js::AutoEnterOOMUnsafeRegion& oomUnsafe);
-
   
 
 
