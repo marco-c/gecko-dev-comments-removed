@@ -9,7 +9,7 @@ namespace mozilla::a11y {
 
 
 
-static uint64_t GetCacheDomainSuperset(uint64_t aCacheDomains) {
+uint64_t GetCacheDomainSuperset(uint64_t aCacheDomains) {
   uint64_t allNecessaryDomains = aCacheDomains;
   if (aCacheDomains & CacheDomain::TextOffsetAttributes) {
     allNecessaryDomains |= CacheDomain::Text;
@@ -29,42 +29,6 @@ bool DomainsAreActive(uint64_t aRequiredCacheDomains) {
   const bool allRequiredDomainsAreActive =
       (aRequiredCacheDomains & ~activeCacheDomains) == 0;
   return allRequiredDomainsAreActive;
-}
-
-bool RequestDomainsIfInactive(uint64_t aRequiredCacheDomains) {
-  nsAccessibilityService* accService = GetAccService();
-  if (!accService) {
-    return true;
-  }
-  const uint64_t activeCacheDomains =
-      nsAccessibilityService::GetActiveCacheDomains();
-  const bool isMissingRequiredCacheDomain =
-      (aRequiredCacheDomains & ~activeCacheDomains) != 0;
-  if (isMissingRequiredCacheDomain) {
-    if (!accService->ShouldAllowNewCacheDomains()) {
-      
-      
-      return true;
-    }
-    aRequiredCacheDomains = GetCacheDomainSuperset(aRequiredCacheDomains);
-
-    const uint64_t cacheDomains = aRequiredCacheDomains | activeCacheDomains;
-#if defined(ANDROID)
-    
-    
-    NS_DispatchToMainThread(
-        NS_NewRunnableFunction("a11y::SetCacheDomains", [cacheDomains]() {
-          if (nsAccessibilityService* accService = GetAccService()) {
-            accService->SetCacheDomains(cacheDomains);
-          }
-        }));
-#else
-    accService->SetCacheDomains(cacheDomains);
-#endif
-
-    return true;
-  }
-  return false;
 }
 
 }  

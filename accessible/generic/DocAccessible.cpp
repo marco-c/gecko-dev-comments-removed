@@ -388,6 +388,10 @@ static uint64_t GetCacheDomainsQueueUpdateSuperset(uint64_t aCacheDomains) {
   return aCacheDomains;
 }
 
+uint64_t DocAccessible::EffectiveCacheDomains() const {
+  return nsAccessibilityService::GetActiveCacheDomains();
+}
+
 void DocAccessible::QueueCacheUpdate(LocalAccessible* aAcc, uint64_t aNewDomain,
                                      bool aBypassActiveDomains) {
   if (!mIPCDoc || !HasLoadState(eTreeConstructed)) {
@@ -430,8 +434,7 @@ void DocAccessible::QueueCacheUpdate(LocalAccessible* aAcc, uint64_t aNewDomain,
   const uint64_t newDomains = GetCacheDomainsQueueUpdateSuperset(aNewDomain);
 
   
-  const uint64_t domainsToUpdate =
-      nsAccessibilityService::GetActiveCacheDomains() & newDomains;
+  const uint64_t domainsToUpdate = EffectiveCacheDomains() & newDomains;
 
   
   if (domainsToUpdate == CacheDomain::None) {
@@ -1721,7 +1724,7 @@ void DocAccessible::ProcessQueuedCacheUpdates(uint64_t aInitialDomains) {
   
 
   nsTArray<CacheData> data;
-  for (auto [acc, domain] : mQueuedCacheUpdatesArray) {
+  for (const auto& [acc, domain] : mQueuedCacheUpdatesArray) {
     if (acc && acc->IsInDocument() && !acc->IsDefunct()) {
       RefPtr<AccAttributes> fields = acc->BundleFieldsForCache(
           domain, CacheUpdateType::Update, aInitialDomains);
@@ -1899,8 +1902,7 @@ void DocAccessible::DoInitialUpdate() {
       
       
       
-      SendCache(nsAccessibilityService::GetActiveCacheDomains(),
-                CacheUpdateType::Initial);
+      SendCache(EffectiveCacheDomains(), CacheUpdateType::Initial);
 
       for (auto idx = 0U; idx < mChildren.Length(); idx++) {
         ipcDoc->InsertIntoIpcTree(mChildren.ElementAt(idx), true);

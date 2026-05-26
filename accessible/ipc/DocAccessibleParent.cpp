@@ -3,6 +3,7 @@
 
 
 #include "ARIAMap.h"
+#include "CacheConstants.h"
 #include "CachedTableAccessible.h"
 #include "DocAccessibleParent.h"
 #ifdef MOZ_ENABLE_SKIA_PDF
@@ -69,6 +70,44 @@ DocAccessibleParent::~DocAccessibleParent() {
   LiveDocs().Remove(mActorID);
   MOZ_ASSERT(mChildDocs.Length() == 0);
   MOZ_ASSERT(!ParentDoc());
+}
+
+uint64_t DocAccessibleParent::EffectiveCacheDomains() const {
+  return nsAccessibilityService::GetActiveCacheDomains();
+}
+
+bool DocAccessibleParent::RequestDomainsIfInactive(
+    uint64_t aRequiredCacheDomains) {
+  const uint64_t activeCacheDomains = EffectiveCacheDomains();
+  const bool isMissingRequiredCacheDomain =
+      (aRequiredCacheDomains & ~activeCacheDomains) != 0;
+  if (!isMissingRequiredCacheDomain) {
+    return false;
+  }
+  nsAccessibilityService* accService = GetAccService();
+  if (!accService) {
+    return true;
+  }
+  if (!accService->ShouldAllowNewCacheDomains()) {
+    
+    
+    return true;
+  }
+  aRequiredCacheDomains = GetCacheDomainSuperset(aRequiredCacheDomains);
+  const uint64_t cacheDomains = aRequiredCacheDomains | activeCacheDomains;
+#if defined(ANDROID)
+  
+  
+  NS_DispatchToMainThread(
+      NS_NewRunnableFunction("a11y::SetCacheDomains", [cacheDomains]() {
+        if (nsAccessibilityService* accService = GetAccService()) {
+          accService->SetCacheDomains(cacheDomains);
+        }
+      }));
+#else
+  accService->SetCacheDomains(cacheDomains);
+#endif
+  return true;
 }
 
 already_AddRefed<DocAccessibleParent> DocAccessibleParent::New() {

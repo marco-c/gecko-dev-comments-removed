@@ -3509,8 +3509,7 @@ void LocalAccessible::SendCache(uint64_t aCacheDomain,
   }
 
   
-  const uint64_t domainsToSend =
-      nsAccessibilityService::GetActiveCacheDomains() & aCacheDomain;
+  const uint64_t domainsToSend = mDoc->EffectiveCacheDomains() & aCacheDomain;
 
   
   if (domainsToSend == CacheDomain::None) {

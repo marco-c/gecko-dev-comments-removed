@@ -306,6 +306,28 @@ class DocAccessibleParent : public RemoteAccessible,
 
   size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) override;
 
+  
+
+
+
+  uint64_t EffectiveCacheDomains() const;
+
+  
+
+
+
+  bool DomainsAreActive(uint64_t aRequiredCacheDomains) const {
+    return (aRequiredCacheDomains & ~EffectiveCacheDomains()) == 0;
+  }
+
+  
+
+
+
+
+
+  bool RequestDomainsIfInactive(uint64_t aRequiredCacheDomains);
+
 #ifdef MOZ_ENABLE_SKIA_PDF
   mozilla::ipc::IPCResult RecvPrinting();
 #endif

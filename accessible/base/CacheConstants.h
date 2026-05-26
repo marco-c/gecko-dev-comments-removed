@@ -289,17 +289,20 @@ class CacheKey {
 };
 
 
+
+
+
 bool DomainsAreActive(uint64_t aRequiredCacheDomains);
 
 
 
 
-bool RequestDomainsIfInactive(uint64_t aRequiredCacheDomains);
+uint64_t GetCacheDomainSuperset(uint64_t aCacheDomains);
 
-#define ASSERT_DOMAINS_ACTIVE(aCacheDomains)                                 \
+#define ASSERT_DOMAINS_ACTIVE(aCacheDomains, aAcc)                           \
   MOZ_ASSERT(                                                                \
       (GetAccService() && !GetAccService()->ShouldAllowNewCacheDomains()) || \
-          DomainsAreActive(aCacheDomains),                                   \
+          (aAcc)->Document()->DomainsAreActive(aCacheDomains),               \
       "Required domain(s) are not currently active.")
 
 }  
