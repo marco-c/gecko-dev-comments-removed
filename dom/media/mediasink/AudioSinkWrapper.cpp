@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "AudioSinkWrapper.h"
 
 #include "AudioDeviceInfo.h"
@@ -375,10 +373,8 @@ RefPtr<GenericPromise> AudioSinkWrapper::MaybeAsyncCreateAudioSink(
              "MaybeAsyncCreateAudioSink (Async part: initialization)",
              [self = RefPtr<AudioSinkWrapper>(this),
               audioSink{std::move(audioSink)}, audioDevice = mAudioDevice,
-              this]() mutable {
-               if (!audioSink || !mAsyncInitTaskQueue->IsEmpty()) {
-                 
-                 
+              myDispatchSeq = ++mAsyncDispatchSeq, this]() mutable {
+               if (!audioSink || mAsyncDispatchSeq != myDispatchSeq) {
                  
                  return Promise::CreateAndResolve(nullptr, __func__);
                }

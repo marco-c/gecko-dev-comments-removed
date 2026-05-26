@@ -2,14 +2,13 @@
 
 
 
-
-
 #ifndef AudioSinkWrapper_h_
 #define AudioSinkWrapper_h_
 
 #include "AudioSink.h"
 #include "MediaSink.h"
 #include "mozilla/AbstractThread.h"
+#include "mozilla/Atomics.h"
 #include "mozilla/EventTargetCapability.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/TimeStamp.h"
@@ -163,6 +162,9 @@ class AudioSinkWrapper : public MediaSink {
   TimeStamp mRetrySinkTime;
   
   uint32_t mAsyncCreateCount = 0;
+  
+  
+  mozilla::Atomic<uint32_t> mAsyncDispatchSeq{0};
 };
 
 }  
