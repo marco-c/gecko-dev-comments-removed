@@ -393,11 +393,24 @@ class nsAccessibilityService final : public mozilla::a11y::DocManager,
 
 
 
+
+
+
+
+
   enum ServiceConsumer {
     eXPCOM = 1 << 0,
     eMainProcess = 1 << 1,
     ePlatformAPI = 1 << 2,
+    ePdfOutput = 1 << 3,
   };
+
+  
+
+
+
+
+  static bool IsOnlyForPdfOutput() { return gConsumers == ePdfOutput; }
 
   static uint64_t GetActiveCacheDomains() { return gCacheDomains; }
   bool ShouldAllowNewCacheDomains() { return mShouldAllowNewCacheDomains; }

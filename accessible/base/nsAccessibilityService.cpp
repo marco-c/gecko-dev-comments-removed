@@ -1730,7 +1730,7 @@ void nsAccessibilityService::Shutdown() {
   
 
   MOZ_ASSERT(gConsumers, "Accessibility was shutdown already");
-  UnsetConsumers(eXPCOM | eMainProcess | ePlatformAPI);
+  UnsetConsumers(eXPCOM | eMainProcess | ePlatformAPI | ePdfOutput);
 
   
   nsCOMPtr<nsIObserverService> observerService =
