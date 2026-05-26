@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "jit/x64/Lowering-x64.h"
 
 #include "mozilla/CheckedInt.h"
@@ -376,7 +374,7 @@ void LIRGenerator::visitWasmStore(MWasmStore* ins) {
       valueAlloc = useRegisterAtStart(value);
       break;
     case Scalar::Simd128:
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
       valueAlloc = useRegisterAtStart(value);
       break;
 #else

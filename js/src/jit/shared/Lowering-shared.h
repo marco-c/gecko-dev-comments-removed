@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef jit_shared_Lowering_shared_h
 #define jit_shared_Lowering_shared_h
 
@@ -189,7 +187,7 @@ class LIRGeneratorShared {
   inline LBoxDefinition tempBox();
   inline LDefinition tempFloat32();
   inline LDefinition tempDouble();
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   inline LDefinition tempSimd128();
 #endif
   inline LDefinition tempCopy(MDefinition* input, uint32_t reusedInput);

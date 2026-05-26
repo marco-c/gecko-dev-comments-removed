@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "jit/x86-shared/Architecture-x86-shared.h"
 #if !defined(JS_CODEGEN_X86) && !defined(JS_CODEGEN_X64)
 #  error "Wrong architecture. Only x86 and x64 should build this file!"
@@ -44,7 +42,7 @@ js::jit::FloatRegisterSet js::jit::FloatRegister::ReduceSetForPush(
   SetType bits = s.bits();
 
   
-#ifndef ENABLE_WASM_SIMD
+#ifndef ENABLE_JIT_SIMD
   bits &= Codes::AllPhysMask * Codes::SpreadScalar;
 #endif
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef jit_x86_shared_Lowering_x86_shared_h
 #define jit_x86_shared_Lowering_x86_shared_h
 
@@ -55,7 +53,7 @@ class LIRGeneratorX86Shared : public LIRGeneratorShared {
   void lowerAtomicTypedArrayElementBinop(MAtomicTypedArrayElementBinop* ins,
                                          bool useI386ByteRegisters);
 
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   bool isThreeOpAllowed() { return Assembler::HasAVX(); }
   bool canFoldReduceSimd128AndBranch(wasm::SimdOp op);
   bool canEmitWasmReduceSimd128AtUses(MWasmReduceSimd128* ins);

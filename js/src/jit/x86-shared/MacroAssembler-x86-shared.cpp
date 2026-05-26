@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "jit/x86-shared/MacroAssembler-x86-shared.h"
 
 #include "mozilla/Casting.h"
@@ -312,7 +310,7 @@ void MacroAssemblerX86Shared::minMaxFloat32(FloatRegister first,
   bind(&done);
 }
 
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
 bool MacroAssembler::MustMaskShiftCountSimd128(wasm::SimdOp op, int32_t* mask) {
   switch (op) {
     case wasm::SimdOp::I8x16Shl:

@@ -4,7 +4,6 @@
 
 
 
-
 #ifndef js_Initialization_h
 #define js_Initialization_h
 
@@ -197,7 +196,7 @@ extern JS_PUBLIC_API void JS_ShutDown(void);
 
 extern JS_PUBLIC_API void JS_FrontendOnlyShutDown(void);
 
-#if defined(ENABLE_WASM_SIMD) && \
+#if defined(ENABLE_JIT_SIMD) && \
     (defined(JS_CODEGEN_X64) || defined(JS_CODEGEN_X86))
 namespace JS {
 

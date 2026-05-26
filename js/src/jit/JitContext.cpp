@@ -131,8 +131,10 @@ bool jit::InitializeJit() {
   if (!MacroAssembler::SupportsFloatingPoint()) {
     JitOptions.disableJitBackend = true;
   }
-  JitOptions.supportsUnalignedAccesses =
-      MacroAssembler::SupportsUnalignedAccesses();
+
+  bool supportsUnaligned = MacroAssembler::SupportsUnalignedAccesses();
+  JitOptions.supportsUnalignedAccesses = supportsUnaligned;
+  JitOptions.enable_regexp_unaligned_accesses = supportsUnaligned;
 
   if (HasJitBackend()) {
     if (!InitProcessExecutableMemory()) {
@@ -151,7 +153,7 @@ void jit::ShutdownJit() {
 }
 
 bool jit::JitSupportsWasmSimd() {
-#if defined(ENABLE_WASM_SIMD)
+#if defined(ENABLE_JIT_SIMD)
   return js::jit::MacroAssembler::SupportsWasmSimd();
 #else
   return false;

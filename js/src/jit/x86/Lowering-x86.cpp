@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "jit/x86/Lowering-x86.h"
 
 #include "jit/Lowering.h"
@@ -499,7 +497,7 @@ void LIRGenerator::visitWasmStore(MWasmStore* ins) {
       }
       break;
     case Scalar::Simd128:
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
       valueAlloc = useRegisterAtStart(ins->value());
       break;
 #else

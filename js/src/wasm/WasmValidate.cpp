@@ -1296,7 +1296,7 @@ bool wasm::ValidateOps(ValidatingOpIter& iter, T& dumper,
         break;
       }
 
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
       case uint16_t(Op::SimdPrefix): {
         if (!codeMeta.simdAvailable()) {
           return iter.unrecognizedOpcode(&op);

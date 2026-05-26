@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/Maybe.h"
 
 #include <algorithm>
@@ -214,7 +212,7 @@ AssemblerX86Shared::DoubleCondition AssemblerX86Shared::InvertCondition(
 CPUInfo::SSEVersion CPUInfo::maxSSEVersion = UnknownSSE;
 CPUInfo::SSEVersion CPUInfo::maxEnabledSSEVersion = UnknownSSE;
 bool CPUInfo::avxPresent = false;
-#ifdef ENABLE_WASM_AVX
+#ifdef ENABLE_JIT_AVX
 bool CPUInfo::avxEnabled = true;
 #else
 bool CPUInfo::avxEnabled = false;
