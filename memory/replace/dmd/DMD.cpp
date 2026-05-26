@@ -807,17 +807,17 @@ class LiveBlock {
   void UnreportIfNotReportedOnAlloc() const {
     MOZ_ASSERT(gOptions->IsDarkMatterMode());
     if (!ReportedOnAlloc1() && !ReportedOnAlloc2()) {
-      mReportStackTrace_mReportedOnAlloc[0].Set(nullptr, 0);
-      mReportStackTrace_mReportedOnAlloc[1].Set(nullptr, 0);
+      mReportStackTrace_mReportedOnAlloc[0].Set(nullptr, false);
+      mReportStackTrace_mReportedOnAlloc[1].Set(nullptr, false);
 
     } else if (!ReportedOnAlloc1() && ReportedOnAlloc2()) {
       
       mReportStackTrace_mReportedOnAlloc[0] =
           mReportStackTrace_mReportedOnAlloc[1];
-      mReportStackTrace_mReportedOnAlloc[1].Set(nullptr, 0);
+      mReportStackTrace_mReportedOnAlloc[1].Set(nullptr, false);
 
     } else if (ReportedOnAlloc1() && !ReportedOnAlloc2()) {
-      mReportStackTrace_mReportedOnAlloc[1].Set(nullptr, 0);
+      mReportStackTrace_mReportedOnAlloc[1].Set(nullptr, false);
     }
   }
 

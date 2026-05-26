@@ -521,7 +521,7 @@ void nsXPCWrappedJS::Unlink() {
   } else if (mRoot) {
     
     nsXPCWrappedJS* cur = mRoot;
-    while (1) {
+    while (true) {
       if (cur->mNext == this) {
         cur->mNext = mNext;
         break;

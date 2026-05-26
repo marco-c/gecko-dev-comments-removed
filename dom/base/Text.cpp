@@ -67,7 +67,7 @@ static Text* FirstLogicallyAdjacentTextNode(Text* aNode) {
       return aNode;
     }
     aNode = static_cast<Text*>(sibling);
-  } while (1);  
+  } while (true);  
 }
 
 static Text* LastLogicallyAdjacentTextNode(Text* aNode) {
@@ -78,7 +78,7 @@ static Text* LastLogicallyAdjacentTextNode(Text* aNode) {
     }
 
     aNode = static_cast<Text*>(sibling);
-  } while (1);  
+  } while (true);  
 }
 
 void Text::GetWholeText(nsAString& aWholeText) {

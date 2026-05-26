@@ -656,7 +656,7 @@ nsresult nsMathMLContainerFrame::ReLayoutChildren(nsIFrame* aParentFrame) {
 
   
   nsIFrame* frame = aParentFrame;
-  while (1) {
+  while (true) {
     nsIFrame* parent = frame->GetParent();
     if (!parent || !parent->GetContent()) {
       break;

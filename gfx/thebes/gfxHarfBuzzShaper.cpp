@@ -1710,7 +1710,7 @@ nsresult gfxHarfBuzzShaper::SetGlyphsFromRun(gfxShapedText* aShapedText,
       
       
       
-      while (1) {
+      while (true) {
         gfxTextRun::DetailedGlyph* details = detailedGlyphs.AppendElement();
         details->mGlyphID = ginfo[glyphStart].codepoint;
 
