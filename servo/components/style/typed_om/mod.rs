@@ -304,6 +304,37 @@ pub type SkewYComponent = NumericValue;
 
 #[derive(Clone, Debug)]
 #[repr(C)]
+pub enum PerspectiveValue {
+    
+    
+    
+    Numeric(NumericValue),
+
+    
+    
+    
+    Keyword(KeywordValue),
+}
+
+
+
+
+
+
+
+#[derive(Clone, Debug)]
+#[repr(C)]
+pub struct PerspectiveComponent {
+    
+    pub length: PerspectiveValue,
+}
+
+
+
+
+
+#[derive(Clone, Debug)]
+#[repr(C)]
 pub enum TransformComponent {
     
     
@@ -334,6 +365,11 @@ pub enum TransformComponent {
     
     
     SkewY(SkewYComponent),
+
+    
+    
+    
+    Perspective(PerspectiveComponent),
 }
 
 
