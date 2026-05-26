@@ -133,7 +133,7 @@ size_t nsICODecoder::FirstResourceOffset() const {
 
   
   
-  return ICOHEADERSIZE + mNumIcons * ICODIRENTRYSIZE;
+  return ICOHEADERSIZE + static_cast<size_t>(mNumIcons) * ICODIRENTRYSIZE;
 }
 
 LexerTransition<ICOState> nsICODecoder::ReadDirEntry(const char* aData) {
@@ -166,9 +166,32 @@ LexerTransition<ICOState> nsICODecoder::ReadDirEntry(const char* aData) {
   }
 
   if (mCurrIcon == mNumIcons) {
-    if (mUnsizedDirEntries.IsEmpty()) {
+    
+    
+    
+    
+    bool needsVerification = !mUnsizedDirEntries.IsEmpty();
+    for (size_t i = 0; !needsVerification && i + 1 < mDirEntries.Length();
+         ++i) {
+      for (size_t j = i + 1; j < mDirEntries.Length(); ++j) {
+        if (mDirEntries[i].mSize == mDirEntries[j].mSize) {
+          needsVerification = true;
+          break;
+        }
+      }
+    }
+
+    if (!needsVerification) {
       return Transition::To(ICOState::FINISHED_DIR_ENTRY, 0);
     }
+
+    
+    
+    
+    for (auto& e : mDirEntries) {
+      mUnsizedDirEntries.AppendElement(e);
+    }
+    mDirEntries.Clear();
     return Transition::To(ICOState::ITERATE_UNSIZED_DIR_ENTRY, 0);
   }
 
@@ -218,7 +241,11 @@ LexerTransition<ICOState> nsICODecoder::IterateUnsizedDirEntry() {
 
   
   mDirEntry = &mUnsizedDirEntries[0];
-  size_t offsetToResource = mDirEntry->mImageOffset - FirstResourceOffset();
+  
+  MOZ_ASSERT(static_cast<size_t>(mDirEntry->mImageOffset) >=
+             FirstResourceOffset());
+  size_t offsetToResource =
+      static_cast<size_t>(mDirEntry->mImageOffset) - FirstResourceOffset();
   return Transition::ToUnbuffered(ICOState::FOUND_RESOURCE,
                                   ICOState::SKIP_TO_RESOURCE, offsetToResource);
 }
@@ -313,6 +340,9 @@ LexerTransition<ICOState> nsICODecoder::FinishDirEntry() {
     mDownscaler.emplace(OutputSize().ToUnknownSize());
   }
 
+  
+  MOZ_ASSERT(static_cast<size_t>(mDirEntry->mImageOffset) >=
+             FirstResourceOffset());
   size_t offsetToResource = mDirEntry->mImageOffset - FirstResourceOffset();
   return Transition::ToUnbuffered(ICOState::FOUND_RESOURCE,
                                   ICOState::SKIP_TO_RESOURCE, offsetToResource);
@@ -434,19 +464,26 @@ LexerTransition<ICOState> nsICODecoder::ReadBIH(const char* aData) {
 
   
   
-  uint32_t bmpDataLength = bmpDecoder->GetCompressedImageSize() + 4 * numColors;
-  bool hasANDMask = (BITMAPINFOSIZE + bmpDataLength) < mDirEntry->mBytesInRes;
+  auto bmpDataLength =
+      CheckedInt<uint32_t>(bmpDecoder->GetCompressedImageSize()) +
+      4 * numColors;
+  auto fullBmpLength = bmpDataLength + BITMAPINFOSIZE;
+  if (!bmpDataLength.isValid() || !fullBmpLength.isValid() ||
+      fullBmpLength.value() > mDirEntry->mBytesInRes) {
+    
+    return Transition::TerminateFailure();
+  }
+  bool hasANDMask = fullBmpLength.value() < mDirEntry->mBytesInRes;
   ICOState afterBMPState =
       hasANDMask ? ICOState::PREPARE_FOR_MASK : ICOState::FINISHED_RESOURCE;
 
   
   return Transition::ToUnbuffered(afterBMPState, ICOState::READ_RESOURCE,
-                                  bmpDataLength);
+                                  bmpDataLength.value());
 }
 
 LexerTransition<ICOState> nsICODecoder::PrepareForMask() {
   MOZ_ASSERT(mDirEntry);
-  MOZ_ASSERT(mContainedDecoder->GetDecodeDone());
 
   
   
@@ -454,10 +491,32 @@ LexerTransition<ICOState> nsICODecoder::PrepareForMask() {
     return Transition::TerminateFailure();
   }
 
-  MOZ_ASSERT(mContainedDecoder->GetDecodeDone());
+  if (!mContainedDecoder->GetDecodeDone()) {
+    return Transition::TerminateFailure();
+  }
 
   RefPtr<nsBMPDecoder> bmpDecoder =
       static_cast<nsBMPDecoder*>(mContainedDecoder.get());
+
+  if (!bmpDecoder->GetImageData() || bmpDecoder->GetImageDataLength() == 0) {
+    return Transition::TerminateFailure();
+  }
+  if (mDownscaler) {
+    if (mDownscaler->TargetSize().width < 0 ||
+        mDownscaler->TargetSize().height < 0 ||
+        bmpDecoder->GetImageDataLength() !=
+            static_cast<size_t>(mDownscaler->TargetSize().width *
+                                mDownscaler->TargetSize().height * 4)) {
+      return Transition::TerminateFailure();
+    }
+  } else {
+    if (mDirEntry->mSize.width < 0 || mDirEntry->mSize.height < 0 ||
+        bmpDecoder->GetImageDataLength() !=
+            static_cast<size_t>(mDirEntry->mSize.width *
+                                mDirEntry->mSize.height * 4)) {
+      return Transition::TerminateFailure();
+    }
+  }
 
   uint16_t numColors = GetNumColors();
   MOZ_ASSERT(numColors != uint16_t(-1));
@@ -465,6 +524,7 @@ LexerTransition<ICOState> nsICODecoder::PrepareForMask() {
   
   uint32_t bmpLengthWithHeader =
       BITMAPINFOSIZE + bmpDecoder->GetCompressedImageSize() + 4 * numColors;
+  
   MOZ_ASSERT(bmpLengthWithHeader < mDirEntry->mBytesInRes);
   uint32_t maskLength = mDirEntry->mBytesInRes - bmpLengthWithHeader;
 
@@ -488,9 +548,6 @@ LexerTransition<ICOState> nsICODecoder::PrepareForMask() {
   
   
   if (mDownscaler) {
-    MOZ_ASSERT(bmpDecoder->GetImageDataLength() ==
-               mDownscaler->TargetSize().width *
-                   mDownscaler->TargetSize().height * sizeof(uint32_t));
     mMaskBuffer =
         MakeUniqueFallible<uint8_t[]>(bmpDecoder->GetImageDataLength());
     if (NS_WARN_IF(!mMaskBuffer)) {
@@ -613,13 +670,22 @@ LexerTransition<ICOState> nsICODecoder::FinishResource() {
     return Transition::TerminateFailure();
   }
 
-  MOZ_ASSERT(mContainedDecoder->GetDecodeDone());
+  if (!mContainedDecoder->GetDecodeDone()) {
+    
+    
+    return Transition::TerminateFailure();
+  }
 
+  
+  
+  
   
   
   if (mContainedDecoder->IsMetadataDecode()) {
     if (mContainedDecoder->HasSize()) {
       mDirEntry->mSize = mContainedDecoder->Size();
+    } else {
+      mDirEntry->mSize = OrientedIntSize(0, 0);
     }
     return Transition::To(ICOState::ITERATE_UNSIZED_DIR_ENTRY, 0);
   }
