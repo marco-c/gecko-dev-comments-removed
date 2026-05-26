@@ -7834,7 +7834,7 @@ uint32_t nsWindow::GetMaxTouchPoints() const {
   
   
   if (GdkIsWaylandDisplay()) {
-    static constexpr bool sMaxTouchPoints = 5;
+    static constexpr uint32_t sMaxTouchPoints = 5;
     return WaylandDisplayGet()->GetTouch() ? sMaxTouchPoints : 0;
   }
 #endif
