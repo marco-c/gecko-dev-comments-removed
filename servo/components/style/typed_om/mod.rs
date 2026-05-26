@@ -6,6 +6,8 @@
 
 
 
+use crate::values::generics::transform::GenericMatrix3D;
+use crate::values::CSSFloat;
 use crate::{One, Zero};
 use app_units::Au;
 use servo_arc::Arc;
@@ -333,6 +335,26 @@ pub struct PerspectiveComponent {
 
 
 
+
+
+
+
+
+
+#[derive(Clone, Debug)]
+#[repr(C)]
+pub struct MatrixComponent {
+    
+    pub matrix: GenericMatrix3D<CSSFloat>,
+
+    
+    pub is_2d: bool,
+}
+
+
+
+
+
 #[derive(Clone, Debug)]
 #[repr(C)]
 pub enum TransformComponent {
@@ -370,6 +392,11 @@ pub enum TransformComponent {
     
     
     Perspective(PerspectiveComponent),
+
+    
+    
+    
+    Matrix(MatrixComponent),
 }
 
 
