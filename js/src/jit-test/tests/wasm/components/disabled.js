@@ -1,0 +1,7 @@
+
+
+
+
+
+assertErrorMessage(() => new WebAssembly.Component(), TypeError, /not a constructor/);
+assertEq(WebAssembly.validate(wasmTextToBinary(`(component)`)), false);
