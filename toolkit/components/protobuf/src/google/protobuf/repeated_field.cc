@@ -9,63 +9,68 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#include <google/protobuf/repeated_field.h>
+#include "google/protobuf/repeated_field.h"
 
 #include <algorithm>
+#include <cstddef>
+#include <cstdint>
+#include <string>
 
-#include <google/protobuf/stubs/logging.h>
-#include <google/protobuf/stubs/common.h>
+#include "absl/base/optimization.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
+#include "absl/strings/cord.h"
+#include "google/protobuf/repeated_ptr_field.h"
 
 
-#include <google/protobuf/port_def.inc>
+#include "google/protobuf/port_def.inc"
+
 
 namespace google {
 namespace protobuf {
 
-
-template class PROTOBUF_EXPORT_TEMPLATE_DEFINE RepeatedField<bool>;
-template class PROTOBUF_EXPORT_TEMPLATE_DEFINE RepeatedField<int32_t>;
-template class PROTOBUF_EXPORT_TEMPLATE_DEFINE RepeatedField<uint32_t>;
-template class PROTOBUF_EXPORT_TEMPLATE_DEFINE RepeatedField<int64_t>;
-template class PROTOBUF_EXPORT_TEMPLATE_DEFINE RepeatedField<uint64_t>;
-template class PROTOBUF_EXPORT_TEMPLATE_DEFINE RepeatedField<float>;
-template class PROTOBUF_EXPORT_TEMPLATE_DEFINE RepeatedField<double>;
-template class PROTOBUF_EXPORT_TEMPLATE_DEFINE RepeatedPtrField<std::string>;
-
 namespace internal {
-template class PROTOBUF_EXPORT_TEMPLATE_DEFINE RepeatedIterator<bool>;
-template class PROTOBUF_EXPORT_TEMPLATE_DEFINE RepeatedIterator<int32_t>;
-template class PROTOBUF_EXPORT_TEMPLATE_DEFINE RepeatedIterator<uint32_t>;
-template class PROTOBUF_EXPORT_TEMPLATE_DEFINE RepeatedIterator<int64_t>;
-template class PROTOBUF_EXPORT_TEMPLATE_DEFINE RepeatedIterator<uint64_t>;
-template class PROTOBUF_EXPORT_TEMPLATE_DEFINE RepeatedIterator<float>;
-template class PROTOBUF_EXPORT_TEMPLATE_DEFINE RepeatedIterator<double>;
+
+void LogIndexOutOfBounds(int index, int size) {
+  ABSL_DLOG(FATAL) << "Index " << index << " out of bounds " << size;
+}
+
+[[noreturn]] void LogIndexOutOfBoundsAndAbort(int64_t index, int64_t size,
+                                              BoundsCheckMessageType type) {
+  switch (type) {
+    case BoundsCheckMessageType::kIndex:
+      ABSL_LOG(FATAL) << "Index (" << index
+                      << ") out of bounds of container with size (" << size
+                      << ")";
+      break;
+    case BoundsCheckMessageType::kGe:
+      ABSL_LOG(FATAL) << "Value (" << index
+                      << ") must be greater than or equal to limit (" << size
+                      << ")";
+      break;
+    case BoundsCheckMessageType::kLe:
+      ABSL_LOG(FATAL) << "Value (" << index
+                      << ") must be less than or equal to limit (" << size
+                      << ")";
+      break;
+  }
+  ABSL_UNREACHABLE();
+}
 }  
+
+template <>
+PROTOBUF_EXPORT_TEMPLATE_DEFINE size_t
+RepeatedField<absl::Cord>::SpaceUsedExcludingSelfLong() const {
+  size_t result = size() * sizeof(absl::Cord);
+  for (int i = 0; i < size(); i++) {
+    
+    result += Get(i).size();
+  }
+  return result;
+}
+
 
 }  
 }  
 
-#include <google/protobuf/port_undef.inc>
+#include "google/protobuf/port_undef.inc"

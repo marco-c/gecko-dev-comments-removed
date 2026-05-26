@@ -81,53 +81,33 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef GOOGLE_PROTOBUF_IO_ZERO_COPY_STREAM_H__
 #define GOOGLE_PROTOBUF_IO_ZERO_COPY_STREAM_H__
 
+#include <cstdint>
 
-#include <google/protobuf/stubs/common.h>
+#include "absl/strings/cord.h"
 
 
 
-#include <google/protobuf/port_def.inc>
+#include "google/protobuf/port_def.inc"
 
 namespace google {
 namespace protobuf {
 namespace io {
 
 
-class ZeroCopyInputStream;
-class ZeroCopyOutputStream;
 
-
-
-class PROTOBUF_EXPORT ZeroCopyInputStream {
+class PROTOBUF_EXPORT PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED
+    ZeroCopyInputStream {
  public:
-  ZeroCopyInputStream() {}
-  virtual ~ZeroCopyInputStream() {}
+  ZeroCopyInputStream() = default;
+  virtual ~ZeroCopyInputStream() = default;
+
+  ZeroCopyInputStream(const ZeroCopyInputStream&) = delete;
+  ZeroCopyInputStream& operator=(const ZeroCopyInputStream&) = delete;
+  ZeroCopyInputStream(ZeroCopyInputStream&&) = delete;
+  ZeroCopyInputStream& operator=(ZeroCopyInputStream&&) = delete;
 
   
   
@@ -145,7 +125,87 @@ class PROTOBUF_EXPORT ZeroCopyInputStream {
   
   
   
-  virtual bool Next(const void** data, int* size) = 0;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD virtual bool Next(const void** data,
+                                                        int* size) = 0;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  virtual void BackUp(int count) = 0;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD virtual bool Skip(int count) = 0;
+
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD virtual int64_t ByteCount() const = 0;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD virtual bool ReadCord(absl::Cord* cord,
+                                                            int count);
+
+};
+
+
+
+class PROTOBUF_EXPORT PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED
+    ZeroCopyOutputStream {
+ public:
+  ZeroCopyOutputStream() = default;
+  ZeroCopyOutputStream(const ZeroCopyOutputStream&) = delete;
+  ZeroCopyOutputStream& operator=(const ZeroCopyOutputStream&) = delete;
+  virtual ~ZeroCopyOutputStream() = default;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD virtual bool Next(void** data,
+                                                        int* size) = 0;
 
   
   
@@ -173,25 +233,7 @@ class PROTOBUF_EXPORT ZeroCopyInputStream {
   virtual void BackUp(int count) = 0;
 
   
-  
-  
-  
-  virtual bool Skip(int count) = 0;
-
-  
-  virtual int64_t ByteCount() const = 0;
-
-
- private:
-  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(ZeroCopyInputStream);
-};
-
-
-
-class PROTOBUF_EXPORT ZeroCopyOutputStream {
- public:
-  ZeroCopyOutputStream() {}
-  virtual ~ZeroCopyOutputStream() {}
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD virtual int64_t ByteCount() const = 0;
 
   
   
@@ -200,20 +242,11 @@ class PROTOBUF_EXPORT ZeroCopyOutputStream {
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  virtual bool Next(void** data, int* size) = 0;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD virtual bool WriteAliasedRaw(
+      const void* data, int size);
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD virtual bool AllowsAliasing() const {
+    return false;
+  }
 
   
   
@@ -222,39 +255,15 @@ class PROTOBUF_EXPORT ZeroCopyOutputStream {
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  virtual void BackUp(int count) = 0;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD virtual bool WriteCord(
+      const absl::Cord& cord);
 
-  
-  virtual int64_t ByteCount() const = 0;
-
-  
-  
-  
-  
-  
-  
-  
-  virtual bool WriteAliasedRaw(const void* data, int size);
-  virtual bool AllowsAliasing() const { return false; }
-
-
- private:
-  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(ZeroCopyOutputStream);
 };
 
 }  
 }  
 }  
 
-#include <google/protobuf/port_undef.inc>
+#include "google/protobuf/port_undef.inc"
 
 #endif  

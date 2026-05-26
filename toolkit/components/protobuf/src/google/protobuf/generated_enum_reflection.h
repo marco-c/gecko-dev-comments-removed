@@ -13,45 +13,25 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef GOOGLE_PROTOBUF_GENERATED_ENUM_REFLECTION_H__
 #define GOOGLE_PROTOBUF_GENERATED_ENUM_REFLECTION_H__
 
-
+#include <cstddef>
+#include <iterator>
 #include <string>
+#include <type_traits>
 
-#include <google/protobuf/port.h>
-#include <google/protobuf/stubs/strutil.h>
-#include <google/protobuf/generated_enum_util.h>
+#include "absl/log/absl_check.h"
+#include "absl/strings/string_view.h"
+#include "google/protobuf/generated_enum_util.h"
+#include "google/protobuf/port.h"
 
 #ifdef SWIG
 #error "You cannot SWIG proto headers"
 #endif
 
 
-#include <google/protobuf/port_def.inc>
+#include "google/protobuf/port_def.inc"
 
 namespace google {
 namespace protobuf {
@@ -66,19 +46,23 @@ namespace protobuf {
 
 
 template <typename E>
-const EnumDescriptor* GetEnumDescriptor();
+PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const EnumDescriptor* PROTOBUF_NONNULL
+GetEnumDescriptor();
 
 namespace internal {
 
 
 
 
-PROTOBUF_EXPORT bool ParseNamedEnum(const EnumDescriptor* descriptor,
-                                    ConstStringParam name, int* value);
+PROTOBUF_FUTURE_ADD_EARLY_NODISCARD
+PROTOBUF_EXPORT bool ParseNamedEnum(
+    const EnumDescriptor* PROTOBUF_NONNULL descriptor, absl::string_view name,
+    int* PROTOBUF_NONNULL value);
 
 template <typename EnumType>
-bool ParseNamedEnum(const EnumDescriptor* descriptor, ConstStringParam name,
-                    EnumType* value) {
+PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool ParseNamedEnum(
+    const EnumDescriptor* PROTOBUF_NONNULL descriptor, absl::string_view name,
+    EnumType* PROTOBUF_NONNULL value) {
   int tmp;
   if (!ParseNamedEnum(descriptor, name, &tmp)) return false;
   *value = static_cast<EnumType>(tmp);
@@ -88,13 +72,116 @@ bool ParseNamedEnum(const EnumDescriptor* descriptor, ConstStringParam name,
 
 
 
-PROTOBUF_EXPORT const std::string& NameOfEnum(const EnumDescriptor* descriptor,
-                                              int value);
+PROTOBUF_FUTURE_ADD_EARLY_NODISCARD
+PROTOBUF_EXPORT const std::string& NameOfEnum(
+    const EnumDescriptor* PROTOBUF_NONNULL descriptor, int value);
+
+template <typename Enum>
+class EnumeratedEnumView {
+  
+  
+  
+  using Desc = std::enable_if_t<sizeof(Enum) != 0, EnumDescriptor>;
+
+ public:
+  using value_type = Enum;
+  class iterator {
+   public:
+    using difference_type = ptrdiff_t;
+    using value_type = Enum;
+    using pointer = value_type*;
+    using reference = value_type&;
+    using iterator_category = std::input_iterator_tag;
+
+    iterator() : desc_(nullptr), index_(0) {}
+    iterator(const iterator&) = default;
+    iterator& operator=(const iterator&) = default;
+
+    friend bool operator==(iterator a, iterator b) {
+      ABSL_DCHECK_EQ(a.desc_, b.desc_);
+      return a.index_ == b.index_;
+    }
+    friend bool operator!=(iterator a, iterator b) { return !(a == b); }
+
+    Enum operator*() const {
+      return static_cast<Enum>(desc_->value(index_)->number());
+    }
+    iterator& operator++() {
+      ++index_;
+      return *this;
+    }
+    iterator operator++(int) {
+      auto copy = *this;
+      ++*this;
+      return copy;
+    }
+
+   private:
+    friend EnumeratedEnumView;
+    iterator(const Desc* PROTOBUF_NONNULL desc, int index)
+        : desc_(desc), index_(index) {}
+    const Desc* PROTOBUF_NONNULL desc_;
+    int index_;
+  };
+  using const_iterator = iterator;
+
+  
+  bool empty() const { return false; }
+
+  size_t size() const { return desc_->value_count(); }
+
+  iterator begin() const { return iterator(desc_, 0); }
+  iterator end() const { return iterator(desc_, size()); }
+  iterator cbegin() const { return begin(); }
+  iterator cend() const { return end(); }
+
+ private:
+  const Desc* PROTOBUF_NONNULL desc_ = GetEnumDescriptor<Enum>();
+};
+
+
+[[nodiscard]] PROTOBUF_EXPORT bool AbslParseFlagImpl(absl::string_view text,
+                                                     int& e,
+                                                     const EnumDescriptor& desc,
+                                                     std::string& error);
+[[nodiscard]] PROTOBUF_EXPORT std::string AbslUnparseFlagImpl(
+    int e, const EnumDescriptor& desc);
+
+namespace generated_enum {
+
+
+
+template <typename Enum, typename = EnableIfProtoEnum<Enum, false>>
+bool AbslParseFlag(absl::string_view text, Enum* PROTOBUF_NONNULL e,
+                   std::string* PROTOBUF_NONNULL error) {
+  int value;
+  if (internal::AbslParseFlagImpl(text, value, *GetEnumDescriptor<Enum>(),
+                                  *error)) {
+    *e = static_cast<Enum>(value);
+    return true;
+  }
+  return false;
+}
+
+template <typename Enum, typename = EnableIfProtoEnum<Enum, false>>
+std::string AbslUnparseFlag(Enum e) {
+  return internal::AbslUnparseFlagImpl(e, *GetEnumDescriptor<Enum>());
+}
+}  
+
+}  
+
+
+
+
+template <typename Enum>
+auto EnumerateEnumValues() {
+  return internal::EnumeratedEnumView<Enum>{};
+}
 
 }  
 }  
-}  
 
-#include <google/protobuf/port_undef.inc>
+#include "google/protobuf/port_undef.inc"
 
 #endif  

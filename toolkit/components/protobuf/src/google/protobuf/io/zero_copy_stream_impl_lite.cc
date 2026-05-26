@@ -9,38 +9,29 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#include <google/protobuf/io/zero_copy_stream_impl_lite.h>
+#include "google/protobuf/io/zero_copy_stream_impl_lite.h"
 
 #include <algorithm>
+#include <cassert>
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
 #include <limits>
+#include <string>
+#include <utility>
 
-#include <google/protobuf/stubs/common.h>
-#include <google/protobuf/stubs/logging.h>
-#include <google/protobuf/stubs/casts.h>
-#include <google/protobuf/stubs/stl_util.h>
+#include "absl/base/casts.h"
+#include "absl/log/absl_check.h"
+#include "absl/strings/cord.h"
+#include "absl/strings/cord_buffer.h"
+#include "absl/strings/internal/resize_uninitialized.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/span.h"
+#include "google/protobuf/io/zero_copy_stream.h"
+
+
+
+#include "google/protobuf/port_def.inc"
 
 namespace google {
 namespace protobuf {
@@ -77,16 +68,16 @@ bool ArrayInputStream::Next(const void** data, int* size) {
 }
 
 void ArrayInputStream::BackUp(int count) {
-  GOOGLE_CHECK_GT(last_returned_size_, 0)
+  ABSL_CHECK_GT(last_returned_size_, 0)
       << "BackUp() can only be called after a successful Next().";
-  GOOGLE_CHECK_LE(count, last_returned_size_);
-  GOOGLE_CHECK_GE(count, 0);
+  ABSL_CHECK_LE(count, last_returned_size_);
+  ABSL_CHECK_GE(count, 0);
   position_ -= count;
   last_returned_size_ = 0;  
 }
 
 bool ArrayInputStream::Skip(int count) {
-  GOOGLE_CHECK_GE(count, 0);
+  ABSL_CHECK_GE(count, 0);
   last_returned_size_ = 0;  
   if (count > size_ - position_) {
     position_ = size_;
@@ -124,9 +115,9 @@ bool ArrayOutputStream::Next(void** data, int* size) {
 }
 
 void ArrayOutputStream::BackUp(int count) {
-  GOOGLE_CHECK_LE(count, last_returned_size_)
+  ABSL_CHECK_LE(count, last_returned_size_)
       << "BackUp() can not exceed the size of the last Next() call.";
-  GOOGLE_CHECK_GE(count, 0);
+  ABSL_CHECK_GE(count, 0);
   position_ -= count;
   last_returned_size_ -= count;
 }
@@ -138,7 +129,7 @@ int64_t ArrayOutputStream::ByteCount() const { return position_; }
 StringOutputStream::StringOutputStream(std::string* target) : target_(target) {}
 
 bool StringOutputStream::Next(void** data, int* size) {
-  GOOGLE_CHECK(target_ != NULL);
+  ABSL_CHECK(target_ != nullptr);
   size_t old_size = target_->size();
 
   
@@ -154,7 +145,7 @@ bool StringOutputStream::Next(void** data, int* size) {
   
   new_size = std::min(new_size, old_size + std::numeric_limits<int>::max());
   
-  STLStringResizeUninitialized(
+  absl::strings_internal::STLStringResizeUninitialized(
       target_,
       std::max(new_size,
                kMinimumSize + 0));  
@@ -165,14 +156,14 @@ bool StringOutputStream::Next(void** data, int* size) {
 }
 
 void StringOutputStream::BackUp(int count) {
-  GOOGLE_CHECK_GE(count, 0);
-  GOOGLE_CHECK(target_ != NULL);
-  GOOGLE_CHECK_LE(static_cast<size_t>(count), target_->size());
+  ABSL_CHECK_GE(count, 0);
+  ABSL_CHECK(target_ != nullptr);
+  ABSL_CHECK_LE(static_cast<size_t>(count), target_->size());
   target_->resize(target_->size() - count);
 }
 
 int64_t StringOutputStream::ByteCount() const {
-  GOOGLE_CHECK(target_ != NULL);
+  ABSL_CHECK(target_ != nullptr);
   return target_->size();
 }
 
@@ -183,7 +174,7 @@ int CopyingInputStream::Skip(int count) {
   int skipped = 0;
   while (skipped < count) {
     int bytes = Read(junk, std::min(count - skipped,
-                                    implicit_cast<int>(sizeof(junk))));
+                                    absl::implicit_cast<int>(sizeof(junk))));
     if (bytes <= 0) {
       
       return skipped;
@@ -244,18 +235,18 @@ bool CopyingInputStreamAdaptor::Next(const void** data, int* size) {
 }
 
 void CopyingInputStreamAdaptor::BackUp(int count) {
-  GOOGLE_CHECK(backup_bytes_ == 0 && buffer_.get() != NULL)
+  ABSL_CHECK(backup_bytes_ == 0 && buffer_ != nullptr)
       << " BackUp() can only be called after Next().";
-  GOOGLE_CHECK_LE(count, buffer_used_)
+  ABSL_CHECK_LE(count, buffer_used_)
       << " Can't back up over more bytes than were returned by the last call"
          " to Next().";
-  GOOGLE_CHECK_GE(count, 0) << " Parameter to BackUp() can't be negative.";
+  ABSL_CHECK_GE(count, 0) << " Parameter to BackUp() can't be negative.";
 
   backup_bytes_ = count;
 }
 
 bool CopyingInputStreamAdaptor::Skip(int count) {
-  GOOGLE_CHECK_GE(count, 0);
+  ABSL_CHECK_GE(count, 0);
 
   if (failed_) {
     
@@ -282,13 +273,13 @@ int64_t CopyingInputStreamAdaptor::ByteCount() const {
 }
 
 void CopyingInputStreamAdaptor::AllocateBufferIfNeeded() {
-  if (buffer_.get() == NULL) {
+  if (buffer_ == nullptr) {
     buffer_.reset(new uint8_t[buffer_size_]);
   }
 }
 
 void CopyingInputStreamAdaptor::FreeBuffer() {
-  GOOGLE_CHECK_EQ(backup_bytes_, 0);
+  ABSL_CHECK_EQ(backup_bytes_, 0);
   buffer_used_ = 0;
   buffer_.reset();
 }
@@ -328,13 +319,14 @@ bool CopyingOutputStreamAdaptor::Next(void** data, int* size) {
 
 void CopyingOutputStreamAdaptor::BackUp(int count) {
   if (count == 0) {
-    Flush();
+    
+    (void)Flush();
     return;
   }
-  GOOGLE_CHECK_GE(count, 0);
-  GOOGLE_CHECK_EQ(buffer_used_, buffer_size_)
+  ABSL_CHECK_GE(count, 0);
+  ABSL_CHECK_EQ(buffer_used_, buffer_size_)
       << " BackUp() can only be called after Next().";
-  GOOGLE_CHECK_LE(count, buffer_used_)
+  ABSL_CHECK_LE(count, buffer_used_)
       << " Can't back up over more bytes than were returned by the last call"
          " to Next().";
 
@@ -350,7 +342,7 @@ bool CopyingOutputStreamAdaptor::WriteAliasedRaw(const void* data, int size) {
     if (!Flush() || !copying_stream_->Write(data, size)) {
       return false;
     }
-    GOOGLE_DCHECK_EQ(buffer_used_, 0);
+    ABSL_DCHECK_EQ(buffer_used_, 0);
     position_ += size;
     return true;
   }
@@ -365,7 +357,7 @@ bool CopyingOutputStreamAdaptor::WriteAliasedRaw(const void* data, int size) {
     if (size <= out_size) {
       std::memcpy(out, data, size);
       BackUp(out_size - size);
-      return true;
+      break;
     }
 
     std::memcpy(out, data, out_size);
@@ -375,6 +367,14 @@ bool CopyingOutputStreamAdaptor::WriteAliasedRaw(const void* data, int size) {
   return true;
 }
 
+bool CopyingOutputStreamAdaptor::WriteCord(const absl::Cord& cord) {
+  for (absl::string_view chunk : cord.Chunks()) {
+    if (!WriteAliasedRaw(chunk.data(), chunk.size())) {
+      return false;
+    }
+  }
+  return true;
+}
 
 bool CopyingOutputStreamAdaptor::WriteBuffer() {
   if (failed_) {
@@ -396,7 +396,7 @@ bool CopyingOutputStreamAdaptor::WriteBuffer() {
 }
 
 void CopyingOutputStreamAdaptor::AllocateBufferIfNeeded() {
-  if (buffer_ == NULL) {
+  if (buffer_ == nullptr) {
     buffer_.reset(new uint8_t[buffer_size_]);
   }
 }
@@ -444,7 +444,8 @@ void LimitingInputStream::BackUp(int count) {
 bool LimitingInputStream::Skip(int count) {
   if (count > limit_) {
     if (limit_ < 0) return false;
-    input_->Skip(limit_);
+    
+    (void)input_->Skip(limit_);
     limit_ = 0;
     return false;
   } else {
@@ -462,9 +463,237 @@ int64_t LimitingInputStream::ByteCount() const {
   }
 }
 
+bool LimitingInputStream::ReadCord(absl::Cord* cord, int count) {
+  if (count <= 0) return true;
+  if (count <= limit_) {
+    if (!input_->ReadCord(cord, count)) return false;
+    limit_ -= count;
+    return true;
+  }
+  
+  (void)input_->ReadCord(cord, limit_);
+  limit_ = 0;
+  return false;
+}
 
+
+
+CordInputStream::CordInputStream(const absl::Cord* cord)
+    : it_(cord->char_begin()),
+      length_(cord->size()),
+      bytes_remaining_(length_) {
+  LoadChunkData();
+}
+
+bool CordInputStream::LoadChunkData() {
+  if (bytes_remaining_ != 0) {
+    absl::string_view sv = absl::Cord::ChunkRemaining(it_);
+    data_ = sv.data();
+    size_ = available_ = sv.size();
+    return true;
+  }
+  size_ = available_ = 0;
+  return false;
+}
+
+bool CordInputStream::NextChunk(size_t skip) {
+  
+  if (size_ == 0) return false;
+
+  
+  
+  const size_t distance = size_ - available_ + skip;
+  absl::Cord::Advance(&it_, distance);
+  bytes_remaining_ -= skip;
+
+  return LoadChunkData();
+}
+
+bool CordInputStream::Next(const void** data, int* size) {
+  if (available_ > 0 || NextChunk(0)) {
+    *data = data_ + size_ - available_;
+    *size = available_;
+    bytes_remaining_ -= available_;
+    available_ = 0;
+    return true;
+  }
+  return false;
+}
+
+void CordInputStream::BackUp(int count) {
+  
+  ABSL_CHECK_LE(static_cast<size_t>(count), size_ - available_);
+
+  available_ += count;
+  bytes_remaining_ += count;
+}
+
+bool CordInputStream::Skip(int count) {
+  
+  if (static_cast<size_t>(count) <= available_) {
+    available_ -= count;
+    bytes_remaining_ -= count;
+    return true;
+  }
+
+  
+  if (static_cast<size_t>(count) <= bytes_remaining_) {
+    
+    NextChunk(count);
+    return true;
+  }
+  NextChunk(bytes_remaining_);
+  return false;
+}
+
+int64_t CordInputStream::ByteCount() const {
+  return length_ - bytes_remaining_;
+}
+
+bool CordInputStream::ReadCord(absl::Cord* cord, int count) {
+  
+  const size_t used = size_ - available_;
+  absl::Cord::Advance(&it_, used);
+
+  
+  
+  const size_t n = std::min(static_cast<size_t>(count), bytes_remaining_);
+  cord->Append(absl::Cord::AdvanceAndRead(&it_, n));
+
+  
+  bytes_remaining_ -= n;
+  LoadChunkData();
+
+  return n == static_cast<size_t>(count);
+}
+
+
+CordOutputStream::CordOutputStream(size_t size_hint) : size_hint_(size_hint) {}
+
+CordOutputStream::CordOutputStream(absl::Cord cord, size_t size_hint)
+    : cord_(std::move(cord)),
+      size_hint_(size_hint),
+      state_(cord_.empty() ? State::kEmpty : State::kSteal) {}
+
+CordOutputStream::CordOutputStream(absl::CordBuffer buffer, size_t size_hint)
+    : size_hint_(size_hint),
+      state_(buffer.length() < buffer.capacity() ? State::kPartial
+                                                 : State::kFull),
+      buffer_(std::move(buffer)) {}
+
+CordOutputStream::CordOutputStream(absl::Cord cord, absl::CordBuffer buffer,
+                                   size_t size_hint)
+    : cord_(std::move(cord)),
+      size_hint_(size_hint),
+      state_(buffer.length() < buffer.capacity() ? State::kPartial
+                                                 : State::kFull),
+      buffer_(std::move(buffer)) {}
+
+bool CordOutputStream::Next(void** data, int* size) {
+  
+  
+  
+  
+  
+  
+  
+  
+  static const size_t kMinBlockSize = 128;
+
+  size_t desired_size, max_size;
+  const size_t cord_size = cord_.size() + buffer_.length();
+  if (size_hint_ > cord_size) {
+    
+    
+    
+    desired_size = size_hint_ - cord_size;
+    max_size = desired_size;
+  } else {
+    
+    
+    
+    desired_size = std::max(cord_size, kMinBlockSize);
+    max_size = std::numeric_limits<size_t>::max();
+  }
+
+  switch (state_) {
+    case State::kSteal:
+      
+      assert(buffer_.length() == 0);
+      buffer_ = cord_.GetAppendBuffer(desired_size);
+      break;
+    case State::kPartial:
+      
+      assert(buffer_.length() < buffer_.capacity());
+      break;
+    case State::kFull:
+      assert(buffer_.length() > 0);
+      cord_.Append(std::move(buffer_));
+      [[fallthrough]];
+    case State::kEmpty:
+      assert(buffer_.length() == 0);
+      buffer_ = absl::CordBuffer::CreateWithDefaultLimit(desired_size);
+      break;
+  }
+
+  
+  absl::Span<char> span = buffer_.available();
+  assert(!span.empty());
+  *data = span.data();
+
+  
+  
+  if (span.size() > max_size) {
+    *size = static_cast<int>(max_size);
+    buffer_.IncreaseLengthBy(max_size);
+    state_ = State::kPartial;
+  } else {
+    *size = static_cast<int>(span.size());
+    buffer_.IncreaseLengthBy(span.size());
+    state_ = State::kFull;
+  }
+
+  return true;
+}
+
+void CordOutputStream::BackUp(int count) {
+  
+  assert(0 <= count && count <= ByteCount());
+  if (count == 0) return;
+
+  
+  const int buffer_length = static_cast<int>(buffer_.length());
+  assert(count <= buffer_length);
+  if (count <= buffer_length) {
+    buffer_.SetLength(static_cast<size_t>(buffer_length - count));
+    state_ = State::kPartial;
+  } else {
+    buffer_ = {};
+    cord_.RemoveSuffix(static_cast<size_t>(count));
+    state_ = State::kSteal;
+  }
+}
+
+int64_t CordOutputStream::ByteCount() const {
+  return static_cast<int64_t>(cord_.size() + buffer_.length());
+}
+
+bool CordOutputStream::WriteCord(const absl::Cord& cord) {
+  cord_.Append(std::move(buffer_));
+  cord_.Append(cord);
+  state_ = State::kSteal;  
+  return true;
+}
+
+absl::Cord CordOutputStream::Consume() {
+  cord_.Append(std::move(buffer_));
+  state_ = State::kEmpty;
+  return std::move(cord_);
+}
 
 
 }  
 }  
 }  
+
+#include "google/protobuf/port_undef.inc"

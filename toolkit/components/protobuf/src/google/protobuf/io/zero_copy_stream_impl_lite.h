@@ -18,45 +18,23 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef GOOGLE_PROTOBUF_IO_ZERO_COPY_STREAM_IMPL_LITE_H__
 #define GOOGLE_PROTOBUF_IO_ZERO_COPY_STREAM_IMPL_LITE_H__
 
-
-#include <iosfwd>
+#include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <string>
+#include <utility>
 
-#include <google/protobuf/stubs/callback.h>
-#include <google/protobuf/stubs/common.h>
-#include <google/protobuf/io/zero_copy_stream.h>
-#include <google/protobuf/stubs/stl_util.h>
+#include "absl/base/attributes.h"
+#include "absl/base/macros.h"
+#include "absl/strings/cord.h"
+#include "absl/strings/cord_buffer.h"
+#include "google/protobuf/io/zero_copy_stream.h"
 
 
-
-#include <google/protobuf/port_def.inc>
+#include "google/protobuf/port_def.inc"
 
 namespace google {
 namespace protobuf {
@@ -65,8 +43,7 @@ namespace io {
 
 
 
-class PROTOBUF_EXPORT ArrayInputStream PROTOBUF_FUTURE_FINAL
-    : public ZeroCopyInputStream {
+class PROTOBUF_EXPORT ArrayInputStream final : public ZeroCopyInputStream {
  public:
   
   
@@ -79,10 +56,15 @@ class PROTOBUF_EXPORT ArrayInputStream PROTOBUF_FUTURE_FINAL
   ~ArrayInputStream() override = default;
 
   
-  bool Next(const void** data, int* size) override;
+  ArrayInputStream(const ArrayInputStream&) = delete;
+  ArrayInputStream& operator=(const ArrayInputStream&) = delete;
+
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool Next(const void** data,
+                                                int* size) override;
   void BackUp(int count) override;
-  bool Skip(int count) override;
-  int64_t ByteCount() const override;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool Skip(int count) override;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD int64_t ByteCount() const override;
 
 
  private:
@@ -93,15 +75,12 @@ class PROTOBUF_EXPORT ArrayInputStream PROTOBUF_FUTURE_FINAL
   int position_;
   int last_returned_size_;  
                             
-
-  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(ArrayInputStream);
 };
 
 
 
 
-class PROTOBUF_EXPORT ArrayOutputStream PROTOBUF_FUTURE_FINAL
-    : public ZeroCopyOutputStream {
+class PROTOBUF_EXPORT ArrayOutputStream final : public ZeroCopyOutputStream {
  public:
   
   
@@ -114,9 +93,14 @@ class PROTOBUF_EXPORT ArrayOutputStream PROTOBUF_FUTURE_FINAL
   ~ArrayOutputStream() override = default;
 
   
-  bool Next(void** data, int* size) override;
+  ArrayOutputStream(const ArrayOutputStream&) = delete;
+  ArrayOutputStream& operator=(const ArrayOutputStream&) = delete;
+
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool Next(void** data,
+                                                int* size) override;
   void BackUp(int count) override;
-  int64_t ByteCount() const override;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD int64_t ByteCount() const override;
 
  private:
   uint8_t* const data_;     
@@ -126,15 +110,12 @@ class PROTOBUF_EXPORT ArrayOutputStream PROTOBUF_FUTURE_FINAL
   int position_;
   int last_returned_size_;  
                             
-
-  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(ArrayOutputStream);
 };
 
 
 
 
-class PROTOBUF_EXPORT StringOutputStream PROTOBUF_FUTURE_FINAL
-    : public ZeroCopyOutputStream {
+class PROTOBUF_EXPORT StringOutputStream final : public ZeroCopyOutputStream {
  public:
   
   
@@ -149,16 +130,19 @@ class PROTOBUF_EXPORT StringOutputStream PROTOBUF_FUTURE_FINAL
   ~StringOutputStream() override = default;
 
   
-  bool Next(void** data, int* size) override;
+  StringOutputStream(const StringOutputStream&) = delete;
+  StringOutputStream& operator=(const StringOutputStream&) = delete;
+
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool Next(void** data,
+                                                int* size) override;
   void BackUp(int count) override;
-  int64_t ByteCount() const override;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD int64_t ByteCount() const override;
 
  private:
   static constexpr size_t kMinimumSize = 16;
 
   std::string* target_;
-
-  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(StringOutputStream);
 };
 
 
@@ -180,13 +164,14 @@ class PROTOBUF_EXPORT StringOutputStream PROTOBUF_FUTURE_FINAL
 
 class PROTOBUF_EXPORT CopyingInputStream {
  public:
-  virtual ~CopyingInputStream() {}
+  virtual ~CopyingInputStream() = default;
 
   
   
   
   
-  virtual int Read(void* buffer, int size) = 0;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD virtual int Read(void* buffer,
+                                                       int size) = 0;
 
   
   
@@ -194,7 +179,7 @@ class PROTOBUF_EXPORT CopyingInputStream {
   
   
   
-  virtual int Skip(int count);
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD virtual int Skip(int count);
 };
 
 
@@ -216,14 +201,19 @@ class PROTOBUF_EXPORT CopyingInputStreamAdaptor : public ZeroCopyInputStream {
   ~CopyingInputStreamAdaptor() override;
 
   
+  CopyingInputStreamAdaptor(const CopyingInputStreamAdaptor&) = delete;
+  CopyingInputStreamAdaptor& operator=(const CopyingInputStreamAdaptor&) = delete;
+
+  
   
   void SetOwnsCopyingStream(bool value) { owns_copying_stream_ = value; }
 
   
-  bool Next(const void** data, int* size) override;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool Next(const void** data,
+                                                int* size) override;
   void BackUp(int count) override;
-  bool Skip(int count) override;
-  int64_t ByteCount() const override;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool Skip(int count) override;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD int64_t ByteCount() const override;
 
  private:
   
@@ -255,8 +245,6 @@ class PROTOBUF_EXPORT CopyingInputStreamAdaptor : public ZeroCopyInputStream {
   
   
   int backup_bytes_;
-
-  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(CopyingInputStreamAdaptor);
 };
 
 
@@ -274,11 +262,12 @@ class PROTOBUF_EXPORT CopyingInputStreamAdaptor : public ZeroCopyInputStream {
 
 class PROTOBUF_EXPORT CopyingOutputStream {
  public:
-  virtual ~CopyingOutputStream() {}
+  virtual ~CopyingOutputStream() = default;
 
   
   
-  virtual bool Write(const void* buffer, int size) = 0;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD virtual bool Write(const void* buffer,
+                                                         int size) = 0;
 };
 
 
@@ -299,20 +288,30 @@ class PROTOBUF_EXPORT CopyingOutputStreamAdaptor : public ZeroCopyOutputStream {
   ~CopyingOutputStreamAdaptor() override;
 
   
+  CopyingOutputStreamAdaptor(const CopyingOutputStreamAdaptor&) = delete;
+  CopyingOutputStreamAdaptor& operator=(const CopyingOutputStreamAdaptor&) = delete;
+
   
   
-  bool Flush();
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool Flush();
 
   
   
   void SetOwnsCopyingStream(bool value) { owns_copying_stream_ = value; }
 
   
-  bool Next(void** data, int* size) override;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool Next(void** data,
+                                                int* size) override;
   void BackUp(int count) override;
-  int64_t ByteCount() const override;
-  bool WriteAliasedRaw(const void* data, int size) override;
-  bool AllowsAliasing() const override { return true; }
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD int64_t ByteCount() const override;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool WriteAliasedRaw(const void* data,
+                                                           int size) override;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool AllowsAliasing() const override {
+    return true;
+  }
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool WriteCord(
+      const absl::Cord& cord) override;
 
  private:
   
@@ -342,33 +341,166 @@ class PROTOBUF_EXPORT CopyingOutputStreamAdaptor : public ZeroCopyOutputStream {
   
   
   int buffer_used_;
-
-  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(CopyingOutputStreamAdaptor);
 };
 
 
 
 
 
-class PROTOBUF_EXPORT LimitingInputStream PROTOBUF_FUTURE_FINAL
-    : public ZeroCopyInputStream {
+class PROTOBUF_EXPORT LimitingInputStream final : public ZeroCopyInputStream {
  public:
   LimitingInputStream(ZeroCopyInputStream* input, int64_t limit);
   ~LimitingInputStream() override;
 
   
-  bool Next(const void** data, int* size) override;
+  LimitingInputStream(const LimitingInputStream&) = delete;
+  LimitingInputStream& operator=(const LimitingInputStream&) = delete;
+
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool Next(const void** data,
+                                                int* size) override;
   void BackUp(int count) override;
-  bool Skip(int count) override;
-  int64_t ByteCount() const override;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool Skip(int count) override;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD int64_t ByteCount() const override;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool ReadCord(absl::Cord* cord,
+                                                    int count) override;
 
 
  private:
   ZeroCopyInputStream* input_;
   int64_t limit_;  
   int64_t prior_bytes_read_;  
+};
 
-  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(LimitingInputStream);
+
+
+
+
+
+class PROTOBUF_EXPORT CordInputStream final : public ZeroCopyInputStream {
+ public:
+  
+  
+  
+  
+  
+  explicit CordInputStream(
+      const absl::Cord* cord ABSL_ATTRIBUTE_LIFETIME_BOUND);
+
+
+  
+  CordInputStream(const CordInputStream&) = delete;
+  CordInputStream& operator=(const CordInputStream&) = delete;
+
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool Next(const void** data,
+                                                int* size) override;
+  void BackUp(int count) override;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool Skip(int count) override;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD int64_t ByteCount() const override;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool ReadCord(absl::Cord* cord,
+                                                    int count) override;
+
+
+ private:
+  
+  
+  bool NextChunk(size_t skip);
+
+  
+  
+  
+  bool LoadChunkData();
+
+  absl::Cord::CharIterator it_;
+  size_t length_;
+  size_t bytes_remaining_;
+  const char* data_;
+  size_t size_;
+  size_t available_;
+};
+
+
+
+
+
+
+class PROTOBUF_EXPORT CordOutputStream final : public ZeroCopyOutputStream {
+ public:
+  
+  
+  
+  
+  explicit CordOutputStream(size_t size_hint = 0);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  explicit CordOutputStream(absl::Cord cord, size_t size_hint = 0);
+
+  
+  
+  
+  
+  
+  
+  
+  explicit CordOutputStream(absl::Cord cord, absl::CordBuffer buffer,
+                            size_t size_hint = 0);
+
+  
+  
+  
+  explicit CordOutputStream(absl::CordBuffer buffer, size_t size_hint = 0);
+
+  
+  CordOutputStream(const CordOutputStream&) = delete;
+  CordOutputStream& operator=(const CordOutputStream&) = delete;
+
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool Next(void** data, int* size) final;
+  void BackUp(int count) final;
+  int64_t ByteCount() const final;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool WriteCord(
+      const absl::Cord& cord) final;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  absl::Cord Consume();
+
+ private:
+  
+  
+  
+  
+  enum class State { kEmpty, kFull, kPartial, kSteal };
+
+  absl::Cord cord_;
+  size_t size_hint_;
+  State state_ = State::kEmpty;
+  absl::CordBuffer buffer_;
 };
 
 
@@ -377,21 +509,8 @@ class PROTOBUF_EXPORT LimitingInputStream PROTOBUF_FUTURE_FINAL
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
+PROTOBUF_FUTURE_ADD_EARLY_NODISCARD
 inline char* mutable_string_data(std::string* s) {
-  
-  
   return &(*s)[0];
 }
 
@@ -399,6 +518,7 @@ inline char* mutable_string_data(std::string* s) {
 
 
 
+PROTOBUF_FUTURE_ADD_EARLY_NODISCARD
 inline std::pair<char*, bool> as_string_data(std::string* s) {
   char* p = mutable_string_data(s);
   return std::make_pair(p, true);
@@ -408,6 +528,6 @@ inline std::pair<char*, bool> as_string_data(std::string* s) {
 }  
 }  
 
-#include <google/protobuf/port_undef.inc>
+#include "google/protobuf/port_undef.inc"
 
 #endif  

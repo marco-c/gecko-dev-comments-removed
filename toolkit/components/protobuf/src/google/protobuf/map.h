@@ -11,63 +11,47 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef GOOGLE_PROTOBUF_MAP_H__
 #define GOOGLE_PROTOBUF_MAP_H__
 
-
+#include <algorithm>
+#include <atomic>
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
 #include <functional>
 #include <initializer_list>
 #include <iterator>
 #include <limits>  
-#include <map>
+#include <new>     
 #include <string>
 #include <type_traits>
 #include <utility>
 
-#if defined(__cpp_lib_string_view)
-#include <string_view>
-#endif  
+#include "absl/base/attributes.h"
+#include "absl/base/optimization.h"
+#include "absl/base/prefetch.h"
+#include "absl/container/btree_map.h"
+#include "absl/hash/hash.h"
+#include "absl/log/absl_check.h"
+#include "absl/numeric/bits.h"
+#include "absl/strings/string_view.h"
+#include "google/protobuf/arena.h"
+#include "google/protobuf/field_with_arena.h"
+#include "google/protobuf/generated_enum_util.h"
+#include "google/protobuf/internal_metadata_locator.h"
+#include "google/protobuf/internal_visibility.h"
+#include "google/protobuf/message_lite.h"
+#include "google/protobuf/port.h"
+#include "google/protobuf/wire_format_lite.h"
 
-#if !defined(GOOGLE_PROTOBUF_NO_RDTSC) && defined(__APPLE__)
-#include <mach/mach_time.h>
-#endif
-
-#include <google/protobuf/stubs/common.h>
-#include <google/protobuf/arena.h>
-#include <google/protobuf/generated_enum_util.h>
-#include <google/protobuf/map_type_handler.h>
-#include <google/protobuf/port.h>
-#include <google/protobuf/stubs/hash.h>
 
 #ifdef SWIG
 #error "You cannot SWIG proto headers"
 #endif
 
 
-#include <google/protobuf/port_def.inc>
+#include "google/protobuf/port_def.inc"
 
 namespace google {
 namespace protobuf {
@@ -80,289 +64,1064 @@ class MapIterator;
 template <typename Enum>
 struct is_proto_enum;
 
-namespace internal {
-template <typename Derived, typename Key, typename T,
-          WireFormatLite::FieldType key_wire_type,
-          WireFormatLite::FieldType value_wire_type>
-class MapFieldLite;
+namespace rust {
+struct PtrAndLen;
+}  
 
-template <typename Derived, typename Key, typename T,
-          WireFormatLite::FieldType key_wire_type,
-          WireFormatLite::FieldType value_wire_type>
+namespace internal {
+
+template <typename Key, typename T>
+class MapFieldLite;
+class MapFieldBase;
+
+template <typename Derived, typename Key, typename T>
 class MapField;
+
+struct MapTestPeer;
+struct MapBenchmarkPeer;
 
 template <typename Key, typename T>
 class TypeDefinedMapFieldBase;
-
-class DynamicMapField;
 
 class GeneratedMessageReflection;
 
 
 
+using map_index_t = uint32_t;
 
-template <typename U>
-class MapAllocator {
- public:
-  using value_type = U;
-  using pointer = value_type*;
-  using const_pointer = const value_type*;
-  using reference = value_type&;
-  using const_reference = const value_type&;
-  using size_type = size_t;
-  using difference_type = ptrdiff_t;
 
-  constexpr MapAllocator() : arena_(nullptr) {}
-  explicit constexpr MapAllocator(Arena* arena) : arena_(arena) {}
-  template <typename X>
-  MapAllocator(const MapAllocator<X>& allocator)  
-      : arena_(allocator.arena()) {}
 
-  
-  
-  
-  static_assert(alignof(value_type) <= 8, "");
+template <typename T, typename VoidT = void>
+struct is_internal_map_key_type : std::false_type {};
 
-  pointer allocate(size_type n, const void*  = nullptr) {
-    
-    
-    if (arena_ == nullptr) {
-      return static_cast<pointer>(::operator new(n * sizeof(value_type)));
-    } else {
-      return reinterpret_cast<pointer>(
-          Arena::CreateArray<uint8_t>(arena_, n * sizeof(value_type)));
-    }
-  }
+template <typename T, typename VoidT = void>
+struct is_internal_map_value_type : std::false_type {};
 
-  void deallocate(pointer p, size_type n) {
-    if (arena_ == nullptr) {
-      internal::SizedDelete(p, n * sizeof(value_type));
-    }
-  }
 
-#if !defined(GOOGLE_PROTOBUF_OS_APPLE) && !defined(GOOGLE_PROTOBUF_OS_NACL) && \
-    !defined(GOOGLE_PROTOBUF_OS_EMSCRIPTEN)
-  template <class NodeType, class... Args>
-  void construct(NodeType* p, Args&&... args) {
-    
-    
-    
-    
-    new (const_cast<void*>(static_cast<const void*>(p)))
-        NodeType(std::forward<Args>(args)...);
-  }
 
-  template <class NodeType>
-  void destroy(NodeType* p) {
-    p->~NodeType();
-  }
-#else
-  void construct(pointer p, const_reference t) { new (p) value_type(t); }
-
-  void destroy(pointer p) { p->~value_type(); }
-#endif
-
-  template <typename X>
-  struct rebind {
-    using other = MapAllocator<X>;
-  };
-
-  template <typename X>
-  bool operator==(const MapAllocator<X>& other) const {
-    return arena_ == other.arena_;
-  }
-
-  template <typename X>
-  bool operator!=(const MapAllocator<X>& other) const {
-    return arena_ != other.arena_;
-  }
-
-  
-  size_type max_size() const {
-    
-    return (std::numeric_limits<size_type>::max)();
-  }
-
-  
-  
-  Arena* arena() const { return arena_; }
-
- private:
-  using DestructorSkippable_ = void;
-  Arena* arena_;
+template <typename T, typename = void>
+struct KeyForBaseImpl {
+  using type = T;
 };
-
 template <typename T>
-using KeyForTree =
-    typename std::conditional<std::is_scalar<T>::value, T,
-                              std::reference_wrapper<const T>>::type;
+struct KeyForBaseImpl<T, std::enable_if_t<std::is_integral<T>::value &&
+                                          std::is_signed<T>::value>> {
+  using type = std::make_unsigned_t<T>;
+};
+template <typename T>
+using KeyForBase = typename KeyForBaseImpl<T>::type;
 
 
 
 
 template <typename key_type>
 struct TransparentSupport {
-  using hash = std::hash<key_type>;
-  using less = std::less<key_type>;
-
-  static bool Equals(const key_type& a, const key_type& b) { return a == b; }
+  static_assert(std::is_scalar<key_type>::value,
+                "Should only be used for ints.");
 
   template <typename K>
   using key_arg = key_type;
+
+  using ViewType = key_type;
+
+  static key_type ToView(key_type v) { return v; }
 };
 
-#if defined(__cpp_lib_string_view)
 
 
 
 
 template <>
 struct TransparentSupport<std::string> {
-  static std::string_view ImplicitConvert(std::string_view str) { return str; }
-  
-  
-  
-  
-  template <typename = void>
-  static std::string_view ImplicitConvert(const std::string& str) {
-    return str;
-  }
-
-  struct hash : private std::hash<std::string_view> {
-    using is_transparent = void;
-
-    template <typename T>
-    size_t operator()(const T& str) const {
-      return base()(ImplicitConvert(str));
+  template <typename T>
+  static absl::string_view ImplicitConvert(T&& str) {
+    if constexpr (std::is_convertible<T, absl::string_view>::value) {
+      absl::string_view res = str;
+      return res;
+    } else if constexpr (std::is_convertible<T, const std::string&>::value) {
+      const std::string& ref = str;
+      return ref;
+    } else if constexpr (std::is_convertible<T, const char*>::value) {
+      const char* ref = str;
+      return ref;
+    } else {
+      return {str.data(), str.size()};
     }
-
-   private:
-    const std::hash<std::string_view>& base() const { return *this; }
-  };
-  struct less {
-    using is_transparent = void;
-
-    template <typename T, typename U>
-    bool operator()(const T& t, const U& u) const {
-      return ImplicitConvert(t) < ImplicitConvert(u);
-    }
-  };
-
-  template <typename T, typename U>
-  static bool Equals(const T& t, const U& u) {
-    return ImplicitConvert(t) == ImplicitConvert(u);
   }
 
   template <typename K>
   using key_arg = K;
+
+  using ViewType = absl::string_view;
+  template <typename T>
+  static ViewType ToView(const T& v) {
+    return ImplicitConvert(v);
+  }
 };
-#endif  
 
-template <typename Key>
-using TreeForMap =
-    std::map<KeyForTree<Key>, void*, typename TransparentSupport<Key>::less,
-             MapAllocator<std::pair<const KeyForTree<Key>, void*>>>;
+struct NodeBase {
+  
+  
+  
+  alignas(kMaxMessageAlignment) NodeBase* next;
 
-inline bool TableEntryIsEmpty(void* const* table, size_t b) {
-  return table[b] == nullptr;
-}
-inline bool TableEntryIsNonEmptyList(void* const* table, size_t b) {
-  return table[b] != nullptr && table[b] != table[b ^ 1];
-}
-inline bool TableEntryIsTree(void* const* table, size_t b) {
-  return !TableEntryIsEmpty(table, b) && !TableEntryIsNonEmptyList(table, b);
-}
-inline bool TableEntryIsList(void* const* table, size_t b) {
-  return !TableEntryIsTree(table, b);
-}
-
-
-inline size_t MapValueSpaceUsedExcludingSelfLong(bool) { return 0; }
-inline size_t MapValueSpaceUsedExcludingSelfLong(const std::string& str) {
-  return StringSpaceUsedExcludingSelfLong(str);
-}
-template <typename T,
-          typename = decltype(std::declval<const T&>().SpaceUsedLong())>
-size_t MapValueSpaceUsedExcludingSelfLong(const T& message) {
-  return message.SpaceUsedLong() - sizeof(T);
-}
+  void* GetVoidKey() { return this + 1; }
+  const void* GetVoidKey() const { return this + 1; }
+};
 
 constexpr size_t kGlobalEmptyTableSize = 1;
-PROTOBUF_EXPORT extern void* const kGlobalEmptyTable[kGlobalEmptyTableSize];
+PROTOBUF_EXPORT extern NodeBase* const kGlobalEmptyTable[kGlobalEmptyTableSize];
+
+class UntypedMapBase;
+
+class UntypedMapIterator {
+ public:
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
+
+  
+  
+  
+  bool Equals(const UntypedMapIterator& other) const {
+    return node_ == other.node_;
+  }
+
+  
+  
+  void PlusPlus();
+
+  
+  template <class Iter>
+  static UntypedMapIterator FromTyped(Iter it) {
+    static_assert(
+#if defined(__cpp_lib_is_layout_compatible) && \
+    __cpp_lib_is_layout_compatible >= 201907L
+        std::is_layout_compatible_v<Iter, UntypedMapIterator>,
+#else
+        sizeof(it) == sizeof(UntypedMapIterator),
+#endif
+        "Map iterator must not have extra state that the base class"
+        "does not define.");
+    return static_cast<UntypedMapIterator>(it);
+  }
+
+  template <class Iter>
+  Iter ToTyped() const {
+    return Iter(*this);
+  }
+  NodeBase* node_;
+  const UntypedMapBase* m_;
+  map_index_t bucket_index_;
+};
+
+
+static_assert(
+    std::is_trivially_default_constructible<UntypedMapIterator>::value,
+    "UntypedMapIterator must be trivially default-constructible.");
+static_assert(std::is_trivially_copyable<UntypedMapIterator>::value,
+              "UntypedMapIterator must be trivially copyable.");
+static_assert(std::is_trivially_destructible<UntypedMapIterator>::value,
+              "UntypedMapIterator must be trivially destructible.");
+static_assert(std::is_standard_layout<UntypedMapIterator>::value,
+              "UntypedMapIterator must be standard layout.");
+static_assert(offsetof(UntypedMapIterator, node_) == 0,
+              "node_ must be the first field of UntypedMapIterator.");
+static_assert(sizeof(UntypedMapIterator) ==
+                  sizeof(void*) * 2 +
+                      std::max(sizeof(uint32_t), alignof(void*)),
+              "UntypedMapIterator does not have the expected size for FFI");
+static_assert(
+    alignof(UntypedMapIterator) == std::max(alignof(void*), alignof(uint32_t)),
+    "UntypedMapIterator does not have the expected alignment for FFI");
+
+
+
+
+
+
+class PROTOBUF_EXPORT UntypedMapBase {
+ public:
+  using size_type = size_t;
+
+  
+  
+  enum class TypeKind : uint8_t {
+    kBool,     
+    kU32,      
+    kU64,      
+    kFloat,    
+    kDouble,   
+    kString,   
+    kMessage,  
+  };
+  
+
+  template <typename T>
+  static constexpr TypeKind StaticTypeKind() {
+    if constexpr (std::is_same_v<T, bool>) {
+      return TypeKind::kBool;
+    } else if constexpr (std::is_same_v<T, int32_t> ||
+                         std::is_same_v<T, uint32_t> || std::is_enum_v<T>) {
+      static_assert(sizeof(T) == 4,
+                    "Only enums with the right underlying type are supported.");
+      return TypeKind::kU32;
+    } else if constexpr (std::is_same_v<T, int64_t> ||
+                         std::is_same_v<T, uint64_t>) {
+      return TypeKind::kU64;
+    } else if constexpr (std::is_same_v<T, float>) {
+      return TypeKind::kFloat;
+    } else if constexpr (std::is_same_v<T, double>) {
+      return TypeKind::kDouble;
+    } else if constexpr (std::is_same_v<T, std::string>) {
+      return TypeKind::kString;
+    } else if constexpr (std::is_base_of_v<MessageLite, T>) {
+      return TypeKind::kMessage;
+    } else {
+      static_assert(false && sizeof(T));
+    }
+  }
+
+  struct TypeInfo {
+    
+    uint16_t node_size;
+    
+    uint8_t value_offset;
+    uint8_t key_type : 4;
+    uint8_t value_type : 4;
+
+    TypeKind key_type_kind() const { return static_cast<TypeKind>(key_type); }
+    TypeKind value_type_kind() const {
+      return static_cast<TypeKind>(value_type);
+    }
+  };
+  static_assert(sizeof(TypeInfo) == 4);
+
+  static TypeInfo GetTypeInfoDynamic(
+      TypeKind key_type, TypeKind value_type,
+      const MessageLite* value_prototype_if_message);
+
+  constexpr UntypedMapBase(InternalMetadataOffset offset, TypeInfo type_info)
+      : num_elements_(0),
+        num_buckets_(internal::kGlobalEmptyTableSize),
+        resolver_(offset),
+        type_info_(type_info),
+        table_(const_cast<NodeBase**>(internal::kGlobalEmptyTable)) {}
+  explicit constexpr UntypedMapBase(TypeInfo type_info)
+      : UntypedMapBase(InternalMetadataOffset(), type_info) {}
+
+  UntypedMapBase(const UntypedMapBase&) = delete;
+  UntypedMapBase& operator=(const UntypedMapBase&) = delete;
+
+  template <typename T>
+  T* GetKey(NodeBase* node) const {
+    
+    ABSL_DCHECK_EQ(static_cast<int>(StaticTypeKind<T>()),
+                   static_cast<int>(type_info_.key_type));
+    return reinterpret_cast<T*>(node->GetVoidKey());
+  }
+
+  void* GetVoidValue(NodeBase* node) const {
+    return reinterpret_cast<char*>(node) + type_info_.value_offset;
+  }
+
+  template <typename T>
+  T* GetValue(NodeBase* node) const {
+    
+    ABSL_DCHECK_EQ(static_cast<int>(StaticTypeKind<T>()),
+                   static_cast<int>(type_info_.value_type));
+    return reinterpret_cast<T*>(GetVoidValue(node));
+  }
+
+  void ClearTable(Arena* arena, bool reset) {
+    if (num_buckets_ == internal::kGlobalEmptyTableSize) return;
+    ClearTableImpl(arena, reset);
+  }
+
+  
+  size_t SpaceUsedExcludingSelfLong() const;
+
+  TypeInfo type_info() const { return type_info_; }
+
+#if defined(ABSL_HAVE_THREAD_SANITIZER)
+  
+  void ConstAccess() const {
+    auto t = type_info_;
+    asm volatile("" : "+r"(t));
+  }
+  void MutableAccess() {
+    auto t = type_info_;
+    asm volatile("" : "+r"(t));
+    type_info_ = t;
+  }
+#else
+  void ConstAccess() const {}
+  void MutableAccess() {}
+#endif
+
+ protected:
+  
+  static constexpr map_index_t kMinTableSize = 16 / sizeof(void*);
+  static constexpr map_index_t kMaxTableSize = map_index_t{1} << 31;
+
+ public:
+  Arena* arena() const {
+    return ResolveArena<&UntypedMapBase::resolver_>(this);
+  }
+
+  void InternalSwap(UntypedMapBase* other) {
+    std::swap(num_elements_, other->num_elements_);
+    std::swap(num_buckets_, other->num_buckets_);
+    std::swap(type_info_, other->type_info_);
+    std::swap(table_, other->table_);
+  }
+
+  void UntypedMergeFrom(Arena* arena, const UntypedMapBase& other);
+  void UntypedSwap(Arena* arena, UntypedMapBase& other, Arena* other_arena);
+
+  static size_type max_size() {
+    return std::numeric_limits<map_index_t>::max();
+  }
+  size_type size() const { return num_elements_; }
+  bool empty() const { return size() == 0; }
+  UntypedMapIterator begin() const;
+
+  
+  
+  static UntypedMapIterator EndIterator() { return {nullptr, nullptr, 0}; }
+
+  
+  
+  template <typename F>
+  auto VisitKey(NodeBase* node, F f) const;
+
+  
+  
+  
+  template <typename F>
+  auto VisitValue(NodeBase* node, F f) const;
+
+  
+  template <typename F>
+  void VisitAllNodes(F f) const;
+
+ protected:
+  friend class MapFieldBase;
+  friend class TcParser;
+  friend struct MapTestPeer;
+  friend struct MapBenchmarkPeer;
+  friend class UntypedMapIterator;
+  friend class RustMapHelper;
+
+  
+  
+  template <typename F>
+  auto VisitKeyType(F f) const;
+  template <typename F>
+  auto VisitValueType(F f) const;
+
+  struct NodeAndBucket {
+    NodeBase* node;
+    map_index_t bucket;
+  };
+
+  void ClearTableImpl(Arena* arena, bool reset);
+
+  
+  
+  
+  
+  bool ShouldInsertAfterHead(void* node) {
+#ifdef NDEBUG
+    (void)node;
+    return false;
+#else
+    
+    return absl::HashOf(node, table_) % 13 > 6;
+#endif
+  }
+
+  
+  
+  
+  void InsertOrReplaceNodes(Arena* arena, NodeBase* list, map_index_t count);
+
+  
+  NodeBase* AllocNode(Arena* arena) {
+    return AllocNode(arena, type_info_.node_size);
+  }
+
+  NodeBase* AllocNode(Arena* arena, size_t node_size) {
+    ABSL_DCHECK_EQ(arena, this->arena());
+    return static_cast<NodeBase*>(arena == nullptr
+                                      ? Allocate(node_size)
+                                      : arena->AllocateAligned(node_size));
+  }
+
+  void DeallocNode(NodeBase* node) { DeallocNode(node, type_info_.node_size); }
+
+  void DeallocNode(NodeBase* node, size_t node_size) {
+    ABSL_DCHECK(arena() == nullptr);
+    internal::SizedDelete(node, node_size);
+  }
+
+  void DeleteTable(Arena* arena, NodeBase** table, map_index_t n) {
+    ABSL_DCHECK_EQ(arena, this->arena());
+    if (arena != nullptr) {
+      arena->ReturnArrayMemory(table, n * sizeof(NodeBase*));
+    } else {
+      internal::SizedDelete(table, n * sizeof(NodeBase*));
+    }
+  }
+
+  NodeBase** CreateEmptyTable(Arena* arena, map_index_t n) {
+    ABSL_DCHECK_GE(n, kMinTableSize);
+    ABSL_DCHECK_EQ(n & (n - 1), 0u);
+    ABSL_DCHECK_EQ(arena, this->arena());
+    NodeBase** result =
+        arena == nullptr
+            ? static_cast<NodeBase**>(Allocate(n * sizeof(NodeBase*)))
+            : Arena::CreateArray<NodeBase*>(arena, n);
+    memset(result, 0, n * sizeof(result[0]));
+    return result;
+  }
+
+  void DeleteNode(NodeBase* node);
+  void DeleteList(NodeBase* list);
+
+  map_index_t num_elements_;
+  map_index_t num_buckets_;
+  InternalMetadataResolver resolver_;
+  TypeInfo type_info_;
+  NodeBase** table_;  
+};
+
+template <typename F>
+auto UntypedMapBase::VisitKeyType(F f) const {
+  switch (type_info_.key_type_kind()) {
+    case TypeKind::kBool:
+      return f(std::enable_if<true, bool>{});
+    case TypeKind::kU32:
+      return f(std::enable_if<true, uint32_t>{});
+    case TypeKind::kU64:
+      return f(std::enable_if<true, uint64_t>{});
+    case TypeKind::kString:
+      return f(std::enable_if<true, std::string>{});
+
+    case TypeKind::kFloat:
+    case TypeKind::kDouble:
+    case TypeKind::kMessage:
+    default:
+      Unreachable();
+  }
+}
+
+template <typename F>
+auto UntypedMapBase::VisitValueType(F f) const {
+  switch (type_info_.value_type_kind()) {
+    case TypeKind::kBool:
+      return f(std::enable_if<true, bool>{});
+    case TypeKind::kU32:
+      return f(std::enable_if<true, uint32_t>{});
+    case TypeKind::kU64:
+      return f(std::enable_if<true, uint64_t>{});
+    case TypeKind::kFloat:
+      return f(std::enable_if<true, float>{});
+    case TypeKind::kDouble:
+      return f(std::enable_if<true, double>{});
+    case TypeKind::kString:
+      return f(std::enable_if<true, std::string>{});
+    case TypeKind::kMessage:
+      return f(std::enable_if<true, MessageLite>{});
+
+    default:
+      Unreachable();
+  }
+}
+
+template <typename F>
+void UntypedMapBase::VisitAllNodes(F f) const {
+  VisitKeyType([&](auto key_type) {
+    VisitValueType([&](auto value_type) {
+      for (auto it = begin(); !it.Equals(EndIterator()); it.PlusPlus()) {
+        f(GetKey<typename decltype(key_type)::type>(it.node_),
+          GetValue<typename decltype(value_type)::type>(it.node_));
+      }
+    });
+  });
+}
+
+template <typename F>
+auto UntypedMapBase::VisitKey(NodeBase* node, F f) const {
+  return VisitKeyType([&](auto key_type) {
+    return f(GetKey<typename decltype(key_type)::type>(node));
+  });
+}
+
+template <typename F>
+auto UntypedMapBase::VisitValue(NodeBase* node, F f) const {
+  return VisitValueType([&](auto value_type) {
+    return f(GetValue<typename decltype(value_type)::type>(node));
+  });
+}
+
+inline UntypedMapIterator UntypedMapBase::begin() const {
+  map_index_t bucket_index;
+  NodeBase* node;
+  map_index_t index_of_first_non_null = 0;
+  while (index_of_first_non_null != num_buckets_) {
+    if (table_[index_of_first_non_null] == nullptr) {
+      ++index_of_first_non_null;
+    } else {
+      break;
+    }
+  }
+
+  if (index_of_first_non_null == num_buckets_) {
+    bucket_index = 0;
+    node = nullptr;
+  } else {
+    bucket_index = index_of_first_non_null;
+    node = table_[bucket_index];
+    PROTOBUF_ASSUME(node != nullptr);
+  }
+  return UntypedMapIterator{node, this, bucket_index};
+}
+
+inline void UntypedMapIterator::PlusPlus() {
+  if (node_->next != nullptr) {
+    node_ = node_->next;
+    return;
+  }
+
+  for (map_index_t i = bucket_index_ + 1; i < m_->num_buckets_; ++i) {
+    NodeBase* node = m_->table_[i];
+    if (node == nullptr) continue;
+    node_ = node;
+    bucket_index_ = i;
+    return;
+  }
+
+  node_ = nullptr;
+  bucket_index_ = 0;
+}
+
+
+
+
+class MapFieldBaseForParse {
+ public:
+  const UntypedMapBase& GetMap() const {
+    const void* p = globals_or_payload_.load(std::memory_order_acquire);
+    
+    if (ABSL_PREDICT_FALSE(IsPayload(p))) {
+      sync_map_with_repeated.load(std::memory_order_relaxed)(*this, false);
+    }
+    return GetMapRaw();
+  }
+
+  UntypedMapBase* MutableMap() {
+    const void* p = globals_or_payload_.load(std::memory_order_acquire);
+    
+    if (ABSL_PREDICT_FALSE(IsPayload(p))) {
+      sync_map_with_repeated.load(std::memory_order_relaxed)(*this, true);
+    }
+    return &GetMapRaw();
+  }
+
+ protected:
+  static constexpr size_t MapOffset() { return sizeof(MapFieldBaseForParse); }
+
+  
+  const UntypedMapBase& GetMapRaw() const {
+    return *reinterpret_cast<const UntypedMapBase*>(
+        reinterpret_cast<const char*>(this) + MapOffset());
+  }
+  UntypedMapBase& GetMapRaw() {
+    return *reinterpret_cast<UntypedMapBase*>(reinterpret_cast<char*>(this) +
+                                              MapOffset());
+  }
+
+  
+  
+  
+  using SyncFunc = void (*)(const MapFieldBaseForParse&, bool is_mutable);
+  static std::atomic<SyncFunc> sync_map_with_repeated;
+
+  
+  
+  
+  explicit constexpr MapFieldBaseForParse(const void* globals_as_void)
+      : globals_or_payload_(globals_as_void) {}
+
+  
+  explicit MapFieldBaseForParse(const Message* prototype)
+      : globals_or_payload_(
+            MessageGlobalsBase::FromDefaultInstance(prototype)) {}
+
+  ~MapFieldBaseForParse() = default;
+
+  static constexpr uintptr_t kHasPayloadBit = 1;
+
+  static bool IsPayload(const void* p) {
+    return reinterpret_cast<uintptr_t>(p) & kHasPayloadBit;
+  }
+
+  mutable std::atomic<const void*> globals_or_payload_;
+};
+
+
+template <typename T, std::enable_if_t<std::is_integral<T>::value, int> = 0>
+T ReadKey(const void* ptr) {
+  T out;
+  memcpy(&out, ptr, sizeof(T));
+  return out;
+}
+
+template <typename T, std::enable_if_t<!std::is_integral<T>::value, int> = 0>
+const T& ReadKey(const void* ptr) {
+  return *reinterpret_cast<const T*>(ptr);
+}
+
+template <typename Key>
+struct KeyNode : NodeBase {
+  static constexpr size_t kOffset = sizeof(NodeBase);
+  decltype(auto) key() const { return ReadKey<Key>(GetVoidKey()); }
+};
+
+inline map_index_t Hash(absl::string_view k, void* salt) {
+  
+  return absl::HashOf(k, salt);
+}
+inline map_index_t Hash(uint64_t k, void* salt) {
+  if constexpr (!HasCrc32()) return absl::HashOf(k, salt);
+  uintptr_t salt_int = reinterpret_cast<uintptr_t>(salt);
+  
+  
+  return Crc32(salt_int, absl::rotr(k, salt_int & 0x3f));
+}
+
+
+
+
+
+
+
+
+
+
 
 
 
 template <typename Key>
-PROTOBUF_NOINLINE size_t SpaceUsedInTable(void** table, size_t num_buckets,
-                                          size_t num_elements,
-                                          size_t sizeof_node) {
-  size_t size = 0;
-  
-  size += sizeof(void*) * num_buckets;
-  
-  size += sizeof_node * num_elements;
-  
-  
-  for (size_t b = 0; b < num_buckets; b += 2) {
-    if (internal::TableEntryIsTree(table, b)) {
-      using Tree = TreeForMap<Key>;
-      Tree* tree = static_cast<Tree*>(table[b]);
+class KeyMapBase : public UntypedMapBase {
+  static_assert(!std::is_signed<Key>::value || !std::is_integral<Key>::value,
+                "");
+
+  using TS = TransparentSupport<Key>;
+
+ public:
+  using UntypedMapBase::UntypedMapBase;
+
+ protected:
+  using KeyNode = internal::KeyNode<Key>;
+
+ protected:
+  friend UntypedMapBase;
+  friend class MapFieldBase;
+  friend class TcParser;
+  friend struct MapTestPeer;
+  friend struct MapBenchmarkPeer;
+  friend class RustMapHelper;
+
+  Key* GetKey(NodeBase* node) const {
+    return UntypedMapBase::GetKey<Key>(node);
+  }
+
+  PROTOBUF_NOINLINE size_type EraseImpl(Arena* arena, map_index_t b,
+                                        KeyNode* node, bool do_destroy) {
+    ABSL_DCHECK_EQ(arena, this->arena());
+
+    
+    b &= (num_buckets_ - 1);
+
+    const auto find_prev = [&] {
+      NodeBase** prev = table_ + b;
+      for (; *prev != nullptr && *prev != node; prev = &(*prev)->next) {
+      }
+      return prev;
+    };
+
+    NodeBase** prev = find_prev();
+    if (*prev == nullptr) {
       
       
-      size += tree->size() *
-              (sizeof(typename Tree::value_type) + sizeof(void*) * 4);
+      b = FindHelper(TS::ToView(node->key())).bucket;
+      prev = find_prev();
+    }
+    ABSL_DCHECK_EQ(*prev, node);
+    *prev = (*prev)->next;
+
+    --num_elements_;
+
+    if (arena == nullptr && do_destroy) {
+      DeleteNode(node);
+    }
+
+    
+    return 1;
+  }
+
+  PROTOBUF_NOINLINE size_type EraseImpl(Arena* arena, typename TS::ViewType k) {
+    if (auto result = FindHelper(k); result.node != nullptr) {
+      return EraseImpl(arena, result.bucket, static_cast<KeyNode*>(result.node),
+                       true);
+    }
+    return 0;
+  }
+
+  NodeAndBucket FindHelper(typename TS::ViewType k) const {
+    AssertLoadFactor();
+    map_index_t b = BucketNumber(k);
+    for (auto* node = table_[b]; node != nullptr; node = node->next) {
+      if (TS::ToView(static_cast<KeyNode*>(node)->key()) == k) {
+        return {node, b};
+      }
+    }
+    return {nullptr, b};
+  }
+
+  
+  
+  bool InsertOrReplaceNode(Arena* arena, KeyNode* node) {
+    ABSL_DCHECK_EQ(arena, this->arena());
+
+    bool is_new = true;
+    auto p = this->FindHelper(node->key());
+    map_index_t b = p.bucket;
+    if (ABSL_PREDICT_FALSE(p.node != nullptr)) {
+      EraseImpl(arena, p.bucket, static_cast<KeyNode*>(p.node),
+                true);
+      is_new = false;
+    } else if (ResizeIfLoadIsOutOfRange(arena, num_elements_ + 1)) {
+      b = BucketNumber(node->key());  
+    }
+    InsertUnique(b, node);
+    ++num_elements_;
+    return is_new;
+  }
+
+  
+  
+  void InsertOrReplaceNodes(Arena* arena, KeyNode* list, map_index_t count) {
+    ResizeIfLoadIsOutOfRangeForMultiInsert(arena, num_elements_ + count);
+
+    map_index_t new_size = num_elements_;
+
+    Inserter inserter(this, table_, num_buckets_);
+    NodeBase* list_to_delete = nullptr;
+
+    for (map_index_t i = 0; i < count; ++i) {
+      ABSL_DCHECK_NE(list, nullptr);
+      auto* node_to_insert = list;
+      list = static_cast<KeyNode*>(list->next);
+
+      const map_index_t b = inserter.BucketNumber(node_to_insert);
+      for (NodeBase** node_prev = &table_[b];;
+           node_prev = &(*node_prev)->next) {
+        KeyNode* n = static_cast<KeyNode*>(*node_prev);
+
+        if (n == nullptr) {
+          
+          inserter.InsertUnique(node_to_insert, b);
+          ++new_size;
+          break;
+        }
+
+        if (ABSL_PREDICT_FALSE(n->key() == node_to_insert->key())) {
+          
+          *node_prev = node_to_insert;
+          node_to_insert->next = n->next;
+          
+          n->next = list_to_delete;
+          list_to_delete = n;
+          break;
+        }
+      }
+    }
+
+    num_elements_ = new_size;
+
+    if (ABSL_PREDICT_FALSE(arena == nullptr && list_to_delete != nullptr)) {
+      DeleteList(list_to_delete);
     }
   }
-  return size;
-}
 
-template <typename Map,
-          typename = typename std::enable_if<
-              !std::is_scalar<typename Map::key_type>::value ||
-              !std::is_scalar<typename Map::mapped_type>::value>::type>
-size_t SpaceUsedInValues(const Map* map) {
-  size_t size = 0;
-  for (const auto& v : *map) {
-    size += internal::MapValueSpaceUsedExcludingSelfLong(v.first) +
-            internal::MapValueSpaceUsedExcludingSelfLong(v.second);
+  
+  
+  
+  
+  void InsertUnique(map_index_t b, KeyNode* node) {
+    
+    
+    
+    
+    ABSL_DCHECK(FindHelper(TS::ToView(node->key())).node == nullptr);
+    AssertLoadFactor();
+    auto*& head = table_[b];
+    if (head == nullptr) {
+      head = node;
+      node->next = nullptr;
+    } else if (ShouldInsertAfterHead(node)) {
+      node->next = head->next;
+      head->next = node;
+    } else {
+      node->next = head;
+      head = node;
+    }
   }
-  return size;
+
+  
+  static size_type CalculateHiCutoff(size_type num_buckets) {
+    
+    
+    
+    
+    
+    
+    
+    return num_buckets - num_buckets / 16 * 4 - num_buckets % 2;
+  }
+
+  
+  
+  static size_type CalculateCapacityForSize(size_type size) {
+    ABSL_DCHECK_NE(size, 0u);
+
+    if (size > kMaxTableSize / 2) {
+      return kMaxTableSize;
+    }
+
+    size_t capacity = size_type{1} << (std::numeric_limits<size_type>::digits -
+                                       absl::countl_zero(size - 1));
+
+    if (size > CalculateHiCutoff(capacity)) {
+      capacity *= 2;
+    }
+
+    return std::max<size_type>(capacity, kMinTableSize);
+  }
+
+  void AssertLoadFactor() const {
+    ABSL_DCHECK_LE(num_elements_, CalculateHiCutoff(num_buckets_));
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  bool ResizeIfLoadIsOutOfRange(Arena* arena, size_type new_size) {
+    ABSL_DCHECK_EQ(arena, this->arena());
+
+    const size_type hi_cutoff = CalculateHiCutoff(num_buckets_);
+    const size_type lo_cutoff = hi_cutoff / 4;
+    
+    
+    
+    if (ABSL_PREDICT_FALSE(new_size > hi_cutoff)) {
+      if (num_buckets_ <= max_size() / 2) {
+        Resize(arena, kMinTableSize > kGlobalEmptyTableSize * 2
+                          ? std::max(kMinTableSize, num_buckets_ * 2)
+                          : num_buckets_ * 2);
+        return true;
+      }
+    } else if (ABSL_PREDICT_FALSE(new_size <= lo_cutoff &&
+                                  num_buckets_ > kMinTableSize)) {
+      size_type lg2_of_size_reduction_factor = 1;
+      
+      
+      
+      const size_type hypothetical_size = new_size * 5 / 4 + 1;
+      while ((hypothetical_size << (1 + lg2_of_size_reduction_factor)) <
+             hi_cutoff) {
+        ++lg2_of_size_reduction_factor;
+      }
+      size_type new_num_buckets = std::max<size_type>(
+          kMinTableSize, num_buckets_ >> lg2_of_size_reduction_factor);
+      if (new_num_buckets != num_buckets_) {
+        Resize(arena, new_num_buckets);
+        return true;
+      }
+    }
+    return false;
+  }
+
+  void ResizeIfLoadIsOutOfRangeForMultiInsert(Arena* arena,
+                                              size_type new_size) {
+    if (const map_index_t needed_capacity = CalculateCapacityForSize(new_size);
+        needed_capacity != this->num_buckets_) {
+      Resize(arena, std::max(kMinTableSize, needed_capacity));
+    }
+  }
+
+  
+  
+  
+  PROTOBUF_NOINLINE void MergeIntoEmpty(Arena* arena, NodeBase* head,
+                                        size_t num_nodes) {
+    ABSL_DCHECK_EQ(size(), size_t{0});
+    ABSL_DCHECK_NE(num_nodes, size_t{0});
+    ABSL_DCHECK_EQ(arena, this->arena());
+
+    ResizeIfLoadIsOutOfRangeForMultiInsert(arena, num_nodes);
+    num_elements_ = num_nodes;
+    AssertLoadFactor();
+    Inserter inserter(this, table_, num_buckets_);
+    for (size_t i = 0; i < num_nodes; ++i) {
+      KeyNode* node = static_cast<KeyNode*>(head);
+      ABSL_DCHECK_NE(node, nullptr);
+      head = head->next;
+      absl::PrefetchToLocalCacheNta(head);
+      inserter.InsertUnique(node);
+    }
+  }
+
+  
+  void Resize(Arena* arena, map_index_t new_num_buckets) {
+    ABSL_DCHECK_GE(new_num_buckets, kMinTableSize);
+    ABSL_DCHECK(absl::has_single_bit(new_num_buckets));
+    ABSL_DCHECK_EQ(arena, this->arena());
+
+    if (num_buckets_ == kGlobalEmptyTableSize) {
+      
+      
+      num_buckets_ = new_num_buckets;
+      table_ = CreateEmptyTable(arena, num_buckets_);
+      return;
+    }
+
+    ABSL_DCHECK_GE(new_num_buckets, kMinTableSize);
+    const auto old_table = table_;
+    const map_index_t old_table_size = num_buckets_;
+    num_buckets_ = new_num_buckets;
+    NodeBase** table = table_ = CreateEmptyTable(arena, num_buckets_);
+    Inserter inserter(this, table, new_num_buckets);
+    for (map_index_t i = 0; i < old_table_size; ++i) {
+      for (KeyNode* node = static_cast<KeyNode*>(old_table[i]);
+           node != nullptr;) {
+        auto* next = static_cast<KeyNode*>(node->next);
+        inserter.InsertUnique(node);
+        node = next;
+      }
+    }
+    DeleteTable(arena, old_table, old_table_size);
+    AssertLoadFactor();
+  }
+
+  
+  
+  
+  class Inserter {
+   public:
+    explicit Inserter(KeyMapBase* map, NodeBase** table,
+                      map_index_t num_buckets)
+        : table_(table), mask_(num_buckets - 1), map_(map) {}
+
+    map_index_t BucketNumber(KeyNode* node) const {
+      return Hash(node->key(), table_) & mask_;
+    }
+
+    void InsertUnique(KeyNode* node, map_index_t bucket) {
+      ABSL_DCHECK_EQ(bucket, BucketNumber(node));
+      auto*& head = table_[bucket];
+      if (head != nullptr && map_->ShouldInsertAfterHead(node)) {
+        node->next = head->next;
+        head->next = node;
+      } else {
+        node->next = head;
+        head = node;
+      }
+    }
+
+    void InsertUnique(KeyNode* node) { InsertUnique(node, BucketNumber(node)); }
+
+   private:
+    NodeBase** const table_;
+    const map_index_t mask_;
+    KeyMapBase* const map_;
+  };
+
+  map_index_t BucketNumber(typename TS::ViewType k) const {
+    return Hash(k, table_) & (num_buckets_ - 1);
+  }
+};
+
+template <typename T, typename K>
+bool InitializeMapKey(T*, K&&, Arena*) {
+  return false;
 }
 
-inline size_t SpaceUsedInValues(const void*) { return 0; }
+
+
+
+
+
+class RustMapHelper {
+ public:
+  using NodeAndBucket = UntypedMapBase::NodeAndBucket;
+
+  static NodeBase* AllocNode(UntypedMapBase* m) {
+    return m->AllocNode(m->arena());
+  }
+
+  static void DeleteNode(UntypedMapBase* m, NodeBase* node) {
+    return m->DeleteNode(node);
+  }
+
+  template <typename Map, typename Key>
+  static NodeAndBucket FindHelper(Map* m, Key key) {
+    return m->FindHelper(key);
+  }
+
+  template <typename Map>
+  static bool InsertOrReplaceNode(Map* m, NodeBase* node) {
+    return m->InsertOrReplaceNode(m->arena(),
+                                  static_cast<typename Map::KeyNode*>(node));
+  }
+
+  template <typename Map, typename Key>
+  static bool EraseImpl(Map* m, const Key& key) {
+    return m->EraseImpl(m->arena(), key);
+  }
+
+  static google::protobuf::MessageLite* PlacementNew(const MessageLite* prototype,
+                                           void* mem) {
+    return prototype->GetClassData()->PlacementNew(mem,  nullptr);
+  }
+};
 
 }  
 
 
-
-
 template <typename Key, typename T>
-struct PROTOBUF_ATTRIBUTE_STANDALONE_DEBUG MapPair {
-  using first_type = const Key;
-  using second_type = T;
+using MapPair = std::pair<const Key, T>;
 
-  MapPair(const Key& other_first, const T& other_second)
-      : first(other_first), second(other_second) {}
-  explicit MapPair(const Key& other_first) : first(other_first), second() {}
-  explicit MapPair(Key&& other_first)
-      : first(std::move(other_first)), second() {}
-  MapPair(const MapPair& other) : first(other.first), second(other.second) {}
 
-  ~MapPair() {}
-
-  
-  template <typename T1, typename T2>
-  operator std::pair<T1, T2>() const {  
-    return std::pair<T1, T2>(first, second);
-  }
-
-  const Key first;
-  T second;
-
- private:
-  friend class Arena;
-  friend class Map<Key, T>;
-};
+template <typename Key, typename T, typename Pred>
+size_t erase_if(Map<Key, T>& map, Pred pred) {
+  return map.EraseIfImpl(std::move(pred));
+}
 
 
 
@@ -375,10 +1134,16 @@ struct PROTOBUF_ATTRIBUTE_STANDALONE_DEBUG MapPair {
 
 
 template <typename Key, typename T>
-class Map {
+class PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED Map
+    : private internal::KeyMapBase<internal::KeyForBase<Key>> {
+  using Base = typename Map::KeyMapBase;
+
+  using TS = internal::TransparentSupport<Key>;
+
  public:
   using key_type = Key;
   using mapped_type = T;
+  using init_type = std::pair<Key, T>;
   using value_type = MapPair<Key, T>;
 
   using pointer = value_type*;
@@ -387,14 +1152,18 @@ class Map {
   using const_reference = const value_type&;
 
   using size_type = size_t;
-  using hasher = typename internal::TransparentSupport<Key>::hash;
+  using hasher = absl::Hash<typename TS::ViewType>;
 
-  constexpr Map() : elements_(nullptr) {}
-  explicit Map(Arena* arena) : elements_(arena) {}
+  constexpr Map() : Map(internal::InternalMetadataOffset()) {}
+  Map(const Map& other) : Map(internal::InternalMetadataOffset(), other) {}
 
-  Map(const Map& other) : Map() { insert(other.begin(), other.end()); }
+  Map(internal::InternalVisibility, internal::InternalMetadataOffset offset)
+      : Map(offset) {}
+  Map(internal::InternalVisibility, internal::InternalMetadataOffset offset,
+      const Map& other)
+      : Map(offset, other) {}
 
-  Map(Map&& other) noexcept : Map() {
+  Map(Map&& other) noexcept : Map(internal::InternalMetadataOffset()) {
     if (other.arena() != nullptr) {
       *this = other;
     } else {
@@ -402,7 +1171,7 @@ class Map {
     }
   }
 
-  Map& operator=(Map&& other) noexcept {
+  Map& operator=(Map&& other) noexcept ABSL_ATTRIBUTE_LIFETIME_BOUND {
     if (this != &other) {
       if (arena() != other.arena()) {
         *this = other;
@@ -418,780 +1187,98 @@ class Map {
     insert(first, last);
   }
 
-  ~Map() {}
+  ~Map() {
+    
+    
+    StaticValidityCheck();
+
+    this->AssertLoadFactor();
+    this->ClearTable(this->arena(), false);
+  }
 
  private:
-  using Allocator = internal::MapAllocator<void*>;
+  explicit constexpr Map(internal::InternalMetadataOffset offset)
+      : Base(offset, GetTypeInfo()) {
+    StaticValidityCheck();
+  }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  class InnerMap : private hasher {
-   public:
-    explicit constexpr InnerMap(Arena* arena)
-        : hasher(),
-          num_elements_(0),
-          num_buckets_(internal::kGlobalEmptyTableSize),
-          seed_(0),
-          index_of_first_non_null_(internal::kGlobalEmptyTableSize),
-          table_(const_cast<void**>(internal::kGlobalEmptyTable)),
-          alloc_(arena) {}
+  Map(internal::InternalMetadataOffset offset, const Map& other) : Map(offset) {
+    StaticValidityCheck();
+    CopyFromImpl(arena(), other);
+  }
 
-    ~InnerMap() {
-      if (alloc_.arena() == nullptr &&
-          num_buckets_ != internal::kGlobalEmptyTableSize) {
-        clear();
-        Dealloc<void*>(table_, num_buckets_);
-      }
+  static_assert(!std::is_const<mapped_type>::value &&
+                    !std::is_const<key_type>::value,
+                "We do not support const types.");
+  static_assert(!std::is_volatile<mapped_type>::value &&
+                    !std::is_volatile<key_type>::value,
+                "We do not support volatile types.");
+  static_assert(!std::is_pointer<mapped_type>::value &&
+                    !std::is_pointer<key_type>::value,
+                "We do not support pointer types.");
+  static_assert(!std::is_reference<mapped_type>::value &&
+                    !std::is_reference<key_type>::value,
+                "We do not support reference types.");
+  static constexpr PROTOBUF_ALWAYS_INLINE void StaticValidityCheck() {
+    static_assert(alignof(internal::NodeBase) >= alignof(mapped_type),
+                  "Alignment of mapped type is too high.");
+    static_assert(
+        std::disjunction<internal::is_supported_integral_type<key_type>,
+                         internal::is_supported_string_type<key_type>,
+                         internal::is_internal_map_key_type<key_type>>::value,
+        "We only support integer, string, or designated internal key "
+        "types.");
+    static_assert(std::disjunction<
+                      internal::is_supported_scalar_type<mapped_type>,
+                      is_proto_enum<mapped_type>,
+                      internal::is_supported_message_type<mapped_type>,
+                      internal::is_internal_map_value_type<mapped_type>>::value,
+                  "We only support scalar, Message, and designated internal "
+                  "mapped types.");
+    
+    
+    static_assert(
+        sizeof(Map) == sizeof(internal::UntypedMapBase),
+        "Map must not have any data members beyond what is in UntypedMapBase.");
+
+    
+    if constexpr (std::is_scalar_v<key_type>) {
+      static_assert(sizeof(key_type) <= sizeof(uint64_t),
+                    "Scalar must be <= than uint64_t");
     }
-
-   private:
-    enum { kMinTableSize = 8 };
-
-    
-    struct Node {
-      value_type kv;
-      Node* next;
-    };
-
-    
-    
-    
-    
-    
-    using Tree = internal::TreeForMap<Key>;
-    using TreeIterator = typename Tree::iterator;
-
-    static Node* NodeFromTreeIterator(TreeIterator it) {
-      return static_cast<Node*>(it->second);
+    if constexpr (std::is_scalar_v<mapped_type>) {
+      static_assert(sizeof(mapped_type) <= sizeof(uint64_t),
+                    "Scalar must be <= than uint64_t");
     }
+    static_assert(internal::kMaxMessageAlignment >= sizeof(uint64_t));
+    static_assert(sizeof(Node) - sizeof(internal::NodeBase) >= sizeof(uint64_t),
+                  "We must have at least this bytes for MpMap initialization");
+  }
 
-    
-    template <typename KeyValueType>
-    class iterator_base {
-     public:
-      using reference = KeyValueType&;
-      using pointer = KeyValueType*;
+  template <typename P>
+  struct SameAsElementReference
+      : std::is_same<typename std::remove_cv<
+                         typename std::remove_reference<reference>::type>::type,
+                     typename std::remove_cv<
+                         typename std::remove_reference<P>::type>::type> {};
 
-      
-      
-      
-      
-      
-      
-      
-      iterator_base() : node_(nullptr), m_(nullptr), bucket_index_(0) {}
-
-      explicit iterator_base(const InnerMap* m) : m_(m) {
-        SearchFrom(m->index_of_first_non_null_);
-      }
-
-      
-      
-      
-      template <typename U>
-      explicit iterator_base(const iterator_base<U>& it)
-          : node_(it.node_), m_(it.m_), bucket_index_(it.bucket_index_) {}
-
-      iterator_base(Node* n, const InnerMap* m, size_type index)
-          : node_(n), m_(m), bucket_index_(index) {}
-
-      iterator_base(TreeIterator tree_it, const InnerMap* m, size_type index)
-          : node_(NodeFromTreeIterator(tree_it)), m_(m), bucket_index_(index) {
-        
-        
-        GOOGLE_DCHECK_EQ(bucket_index_ % 2, 0u);
-      }
-
-      
-      
-      void SearchFrom(size_type start_bucket) {
-        GOOGLE_DCHECK(m_->index_of_first_non_null_ == m_->num_buckets_ ||
-               m_->table_[m_->index_of_first_non_null_] != nullptr);
-        node_ = nullptr;
-        for (bucket_index_ = start_bucket; bucket_index_ < m_->num_buckets_;
-             bucket_index_++) {
-          if (m_->TableEntryIsNonEmptyList(bucket_index_)) {
-            node_ = static_cast<Node*>(m_->table_[bucket_index_]);
-            break;
-          } else if (m_->TableEntryIsTree(bucket_index_)) {
-            Tree* tree = static_cast<Tree*>(m_->table_[bucket_index_]);
-            GOOGLE_DCHECK(!tree->empty());
-            node_ = NodeFromTreeIterator(tree->begin());
-            break;
-          }
-        }
-      }
-
-      reference operator*() const { return node_->kv; }
-      pointer operator->() const { return &(operator*()); }
-
-      friend bool operator==(const iterator_base& a, const iterator_base& b) {
-        return a.node_ == b.node_;
-      }
-      friend bool operator!=(const iterator_base& a, const iterator_base& b) {
-        return a.node_ != b.node_;
-      }
-
-      iterator_base& operator++() {
-        if (node_->next == nullptr) {
-          TreeIterator tree_it;
-          const bool is_list = revalidate_if_necessary(&tree_it);
-          if (is_list) {
-            SearchFrom(bucket_index_ + 1);
-          } else {
-            GOOGLE_DCHECK_EQ(bucket_index_ & 1, 0u);
-            Tree* tree = static_cast<Tree*>(m_->table_[bucket_index_]);
-            if (++tree_it == tree->end()) {
-              SearchFrom(bucket_index_ + 2);
-            } else {
-              node_ = NodeFromTreeIterator(tree_it);
-            }
-          }
-        } else {
-          node_ = node_->next;
-        }
-        return *this;
-      }
-
-      iterator_base operator++(int ) {
-        iterator_base tmp = *this;
-        ++*this;
-        return tmp;
-      }
-
-      
-      
-      
-      
-      bool revalidate_if_necessary(TreeIterator* it) {
-        GOOGLE_DCHECK(node_ != nullptr && m_ != nullptr);
-        
-        bucket_index_ &= (m_->num_buckets_ - 1);
-        
-        if (m_->table_[bucket_index_] == static_cast<void*>(node_)) return true;
-        
-        
-        if (m_->TableEntryIsNonEmptyList(bucket_index_)) {
-          Node* l = static_cast<Node*>(m_->table_[bucket_index_]);
-          while ((l = l->next) != nullptr) {
-            if (l == node_) {
-              return true;
-            }
-          }
-        }
-        
-        
-        
-        
-        iterator_base i(m_->find(node_->kv.first, it));
-        bucket_index_ = i.bucket_index_;
-        return m_->TableEntryIsList(bucket_index_);
-      }
-
-      Node* node_;
-      const InnerMap* m_;
-      size_type bucket_index_;
-    };
-
-   public:
-    using iterator = iterator_base<value_type>;
-    using const_iterator = iterator_base<const value_type>;
-
-    Arena* arena() const { return alloc_.arena(); }
-
-    void Swap(InnerMap* other) {
-      std::swap(num_elements_, other->num_elements_);
-      std::swap(num_buckets_, other->num_buckets_);
-      std::swap(seed_, other->seed_);
-      std::swap(index_of_first_non_null_, other->index_of_first_non_null_);
-      std::swap(table_, other->table_);
-      std::swap(alloc_, other->alloc_);
-    }
-
-    iterator begin() { return iterator(this); }
-    iterator end() { return iterator(); }
-    const_iterator begin() const { return const_iterator(this); }
-    const_iterator end() const { return const_iterator(); }
-
-    void clear() {
-      for (size_type b = 0; b < num_buckets_; b++) {
-        if (TableEntryIsNonEmptyList(b)) {
-          Node* node = static_cast<Node*>(table_[b]);
-          table_[b] = nullptr;
-          do {
-            Node* next = node->next;
-            DestroyNode(node);
-            node = next;
-          } while (node != nullptr);
-        } else if (TableEntryIsTree(b)) {
-          Tree* tree = static_cast<Tree*>(table_[b]);
-          GOOGLE_DCHECK(table_[b] == table_[b + 1] && (b & 1) == 0);
-          table_[b] = table_[b + 1] = nullptr;
-          typename Tree::iterator tree_it = tree->begin();
-          do {
-            Node* node = NodeFromTreeIterator(tree_it);
-            typename Tree::iterator next = tree_it;
-            ++next;
-            tree->erase(tree_it);
-            DestroyNode(node);
-            tree_it = next;
-          } while (tree_it != tree->end());
-          DestroyTree(tree);
-          b++;
-        }
-      }
-      num_elements_ = 0;
-      index_of_first_non_null_ = num_buckets_;
-    }
-
-    const hasher& hash_function() const { return *this; }
-
-    static size_type max_size() {
-      return static_cast<size_type>(1) << (sizeof(void**) >= 8 ? 60 : 28);
-    }
-    size_type size() const { return num_elements_; }
-    bool empty() const { return size() == 0; }
-
-    template <typename K>
-    iterator find(const K& k) {
-      return iterator(FindHelper(k).first);
-    }
-
-    template <typename K>
-    const_iterator find(const K& k) const {
-      return FindHelper(k).first;
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    template <typename K, typename... Args>
-    std::pair<iterator, bool> try_emplace(K&& k, Args&&... args) {
-      return ArenaAwareTryEmplace(Arena::is_arena_constructable<mapped_type>(),
-                                  std::forward<K>(k),
-                                  std::forward<Args>(args)...);
-    }
-
-    
-    
-    template <typename K>
-    std::pair<iterator, bool> insert(K&& k) {
-      return try_emplace(std::forward<K>(k));
-    }
-
-    template <typename K>
-    value_type& operator[](K&& k) {
-      return *try_emplace(std::forward<K>(k)).first;
-    }
-
-    void erase(iterator it) {
-      GOOGLE_DCHECK_EQ(it.m_, this);
-      typename Tree::iterator tree_it;
-      const bool is_list = it.revalidate_if_necessary(&tree_it);
-      size_type b = it.bucket_index_;
-      Node* const item = it.node_;
-      if (is_list) {
-        GOOGLE_DCHECK(TableEntryIsNonEmptyList(b));
-        Node* head = static_cast<Node*>(table_[b]);
-        head = EraseFromLinkedList(item, head);
-        table_[b] = static_cast<void*>(head);
-      } else {
-        GOOGLE_DCHECK(TableEntryIsTree(b));
-        Tree* tree = static_cast<Tree*>(table_[b]);
-        tree->erase(tree_it);
-        if (tree->empty()) {
-          
-          
-          b &= ~static_cast<size_type>(1);
-          DestroyTree(tree);
-          table_[b] = table_[b + 1] = nullptr;
-        }
-      }
-      DestroyNode(item);
-      --num_elements_;
-      if (PROTOBUF_PREDICT_FALSE(b == index_of_first_non_null_)) {
-        while (index_of_first_non_null_ < num_buckets_ &&
-               table_[index_of_first_non_null_] == nullptr) {
-          ++index_of_first_non_null_;
-        }
-      }
-    }
-
-    size_t SpaceUsedInternal() const {
-      return internal::SpaceUsedInTable<Key>(table_, num_buckets_,
-                                             num_elements_, sizeof(Node));
-    }
-
-   private:
-    template <typename K, typename... Args>
-    std::pair<iterator, bool> TryEmplaceInternal(K&& k, Args&&... args) {
-      std::pair<const_iterator, size_type> p = FindHelper(k);
-      
-      if (p.first.node_ != nullptr)
-        return std::make_pair(iterator(p.first), false);
-      
-      if (ResizeIfLoadIsOutOfRange(num_elements_ + 1)) {
-        p = FindHelper(k);
-      }
-      const size_type b = p.second;  
-      
-      using TypeToInit = typename std::conditional<
-          std::is_same<typename std::decay<K>::type, key_type>::value, K&&,
-          key_type>::type;
-      Node* node = Alloc<Node>(1);
-      
-      
-      
-      
-      Arena::CreateInArenaStorage(const_cast<Key*>(&node->kv.first),
-                                  alloc_.arena(),
-                                  static_cast<TypeToInit>(std::forward<K>(k)));
-      
-      Arena::CreateInArenaStorage(&node->kv.second, alloc_.arena(),
-                                  std::forward<Args>(args)...);
-
-      iterator result = InsertUnique(b, node);
-      ++num_elements_;
-      return std::make_pair(result, true);
-    }
-
-    
-    
-    
-    template <typename V>
-    static void AssignMapped(std::true_type, mapped_type& mapped, V&& v) {
-      mapped = std::forward<V>(v);
-    }
-    template <typename... Args>
-    static void AssignMapped(std::false_type, mapped_type& mapped,
-                             Args&&... args) {
-      mapped = mapped_type(std::forward<Args>(args)...);
-    }
-
-    
-    
-    
-    template <typename K>
-    std::pair<iterator, bool> ArenaAwareTryEmplace(std::true_type, K&& k) {
-      
-      return TryEmplaceInternal(std::forward<K>(k));
-    }
-    template <typename K, typename... Args>
-    std::pair<iterator, bool> ArenaAwareTryEmplace(std::true_type, K&& k,
-                                                   Args&&... args) {
-      
-      auto p = TryEmplaceInternal(std::forward<K>(k));
-      if (p.second) {
-        AssignMapped(std::is_same<void(typename std::decay<Args>::type...),
-                                  void(mapped_type)>(),
-                     p.first->second, std::forward<Args>(args)...);
-      }
-      return p;
-    }
-    
-    
-    template <typename... Args>
-    std::pair<iterator, bool> ArenaAwareTryEmplace(std::false_type,
-                                                   Args&&... args) {
-      return TryEmplaceInternal(std::forward<Args>(args)...);
-    }
-
-    const_iterator find(const Key& k, TreeIterator* it) const {
-      return FindHelper(k, it).first;
-    }
-    template <typename K>
-    std::pair<const_iterator, size_type> FindHelper(const K& k) const {
-      return FindHelper(k, nullptr);
-    }
-    template <typename K>
-    std::pair<const_iterator, size_type> FindHelper(const K& k,
-                                                    TreeIterator* it) const {
-      size_type b = BucketNumber(k);
-      if (TableEntryIsNonEmptyList(b)) {
-        Node* node = static_cast<Node*>(table_[b]);
-        do {
-          if (internal::TransparentSupport<Key>::Equals(node->kv.first, k)) {
-            return std::make_pair(const_iterator(node, this, b), b);
-          } else {
-            node = node->next;
-          }
-        } while (node != nullptr);
-      } else if (TableEntryIsTree(b)) {
-        GOOGLE_DCHECK_EQ(table_[b], table_[b ^ 1]);
-        b &= ~static_cast<size_t>(1);
-        Tree* tree = static_cast<Tree*>(table_[b]);
-        auto tree_it = tree->find(k);
-        if (tree_it != tree->end()) {
-          if (it != nullptr) *it = tree_it;
-          return std::make_pair(const_iterator(tree_it, this, b), b);
-        }
-      }
-      return std::make_pair(end(), b);
-    }
-
-    
-    
-    
-    
-    iterator InsertUnique(size_type b, Node* node) {
-      GOOGLE_DCHECK(index_of_first_non_null_ == num_buckets_ ||
-             table_[index_of_first_non_null_] != nullptr);
-      
-      
-      
-      
-      iterator result;
-      GOOGLE_DCHECK(find(node->kv.first) == end());
-      if (TableEntryIsEmpty(b)) {
-        result = InsertUniqueInList(b, node);
-      } else if (TableEntryIsNonEmptyList(b)) {
-        if (PROTOBUF_PREDICT_FALSE(TableEntryIsTooLong(b))) {
-          TreeConvert(b);
-          result = InsertUniqueInTree(b, node);
-          GOOGLE_DCHECK_EQ(result.bucket_index_, b & ~static_cast<size_type>(1));
-        } else {
-          
-          
-          return InsertUniqueInList(b, node);
-        }
-      } else {
-        
-        
-        return InsertUniqueInTree(b, node);
-      }
-      
-      index_of_first_non_null_ =
-          (std::min)(index_of_first_non_null_, result.bucket_index_);
-      return result;
-    }
-
-    
-    
-    
-    
-    bool ShouldInsertAfterHead(void* node) {
-#ifdef NDEBUG
-      (void)node;
-      return false;
-#else
-      
-      return (reinterpret_cast<uintptr_t>(node) ^ seed_) % 13 > 6;
-#endif
-    }
-
-    
-    
-    iterator InsertUniqueInList(size_type b, Node* node) {
-      if (table_[b] != nullptr && ShouldInsertAfterHead(node)) {
-        Node* first = static_cast<Node*>(table_[b]);
-        node->next = first->next;
-        first->next = node;
-        return iterator(node, this, b);
-      }
-
-      node->next = static_cast<Node*>(table_[b]);
-      table_[b] = static_cast<void*>(node);
-      return iterator(node, this, b);
-    }
-
-    
-    
-    iterator InsertUniqueInTree(size_type b, Node* node) {
-      GOOGLE_DCHECK_EQ(table_[b], table_[b ^ 1]);
-      
-      node->next = nullptr;
-      return iterator(
-          static_cast<Tree*>(table_[b])->insert({node->kv.first, node}).first,
-          this, b & ~static_cast<size_t>(1));
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    bool ResizeIfLoadIsOutOfRange(size_type new_size) {
-      const size_type kMaxMapLoadTimes16 = 12;  
-      const size_type hi_cutoff = num_buckets_ * kMaxMapLoadTimes16 / 16;
-      const size_type lo_cutoff = hi_cutoff / 4;
-      
-      
-      
-      if (PROTOBUF_PREDICT_FALSE(new_size >= hi_cutoff)) {
-        if (num_buckets_ <= max_size() / 2) {
-          Resize(num_buckets_ * 2);
-          return true;
-        }
-      } else if (PROTOBUF_PREDICT_FALSE(new_size <= lo_cutoff &&
-                                        num_buckets_ > kMinTableSize)) {
-        size_type lg2_of_size_reduction_factor = 1;
-        
-        
-        
-        const size_type hypothetical_size = new_size * 5 / 4 + 1;
-        while ((hypothetical_size << lg2_of_size_reduction_factor) <
-               hi_cutoff) {
-          ++lg2_of_size_reduction_factor;
-        }
-        size_type new_num_buckets = std::max<size_type>(
-            kMinTableSize, num_buckets_ >> lg2_of_size_reduction_factor);
-        if (new_num_buckets != num_buckets_) {
-          Resize(new_num_buckets);
-          return true;
-        }
-      }
-      return false;
-    }
-
-    
-    void Resize(size_t new_num_buckets) {
-      if (num_buckets_ == internal::kGlobalEmptyTableSize) {
-        
-        
-        num_buckets_ = index_of_first_non_null_ = kMinTableSize;
-        table_ = CreateEmptyTable(num_buckets_);
-        seed_ = Seed();
-        return;
-      }
-
-      GOOGLE_DCHECK_GE(new_num_buckets, kMinTableSize);
-      void** const old_table = table_;
-      const size_type old_table_size = num_buckets_;
-      num_buckets_ = new_num_buckets;
-      table_ = CreateEmptyTable(num_buckets_);
-      const size_type start = index_of_first_non_null_;
-      index_of_first_non_null_ = num_buckets_;
-      for (size_type i = start; i < old_table_size; i++) {
-        if (internal::TableEntryIsNonEmptyList(old_table, i)) {
-          TransferList(old_table, i);
-        } else if (internal::TableEntryIsTree(old_table, i)) {
-          TransferTree(old_table, i++);
-        }
-      }
-      Dealloc<void*>(old_table, old_table_size);
-    }
-
-    void TransferList(void* const* table, size_type index) {
-      Node* node = static_cast<Node*>(table[index]);
-      do {
-        Node* next = node->next;
-        InsertUnique(BucketNumber(node->kv.first), node);
-        node = next;
-      } while (node != nullptr);
-    }
-
-    void TransferTree(void* const* table, size_type index) {
-      Tree* tree = static_cast<Tree*>(table[index]);
-      typename Tree::iterator tree_it = tree->begin();
-      do {
-        InsertUnique(BucketNumber(std::cref(tree_it->first).get()),
-                     NodeFromTreeIterator(tree_it));
-      } while (++tree_it != tree->end());
-      DestroyTree(tree);
-    }
-
-    Node* EraseFromLinkedList(Node* item, Node* head) {
-      if (head == item) {
-        return head->next;
-      } else {
-        head->next = EraseFromLinkedList(item, head->next);
-        return head;
-      }
-    }
-
-    bool TableEntryIsEmpty(size_type b) const {
-      return internal::TableEntryIsEmpty(table_, b);
-    }
-    bool TableEntryIsNonEmptyList(size_type b) const {
-      return internal::TableEntryIsNonEmptyList(table_, b);
-    }
-    bool TableEntryIsTree(size_type b) const {
-      return internal::TableEntryIsTree(table_, b);
-    }
-    bool TableEntryIsList(size_type b) const {
-      return internal::TableEntryIsList(table_, b);
-    }
-
-    void TreeConvert(size_type b) {
-      GOOGLE_DCHECK(!TableEntryIsTree(b) && !TableEntryIsTree(b ^ 1));
-      Tree* tree =
-          Arena::Create<Tree>(alloc_.arena(), typename Tree::key_compare(),
-                              typename Tree::allocator_type(alloc_));
-      size_type count = CopyListToTree(b, tree) + CopyListToTree(b ^ 1, tree);
-      GOOGLE_DCHECK_EQ(count, tree->size());
-      table_[b] = table_[b ^ 1] = static_cast<void*>(tree);
-    }
-
-    
-    
-    size_type CopyListToTree(size_type b, Tree* tree) {
-      size_type count = 0;
-      Node* node = static_cast<Node*>(table_[b]);
-      while (node != nullptr) {
-        tree->insert({node->kv.first, node});
-        ++count;
-        Node* next = node->next;
-        node->next = nullptr;
-        node = next;
-      }
-      return count;
-    }
-
-    
-    
-    bool TableEntryIsTooLong(size_type b) {
-      const size_type kMaxLength = 8;
-      size_type count = 0;
-      Node* node = static_cast<Node*>(table_[b]);
-      do {
-        ++count;
-        node = node->next;
-      } while (node != nullptr);
-      
-      GOOGLE_DCHECK_LE(count, kMaxLength);
-      return count >= kMaxLength;
-    }
-
-    template <typename K>
-    size_type BucketNumber(const K& k) const {
-      
-      
-      uint64_t h = hash_function()(k) ^ seed_;
-
-      
-      
-      
-      constexpr uint64_t kPhi = uint64_t{0x9e3779b97f4a7c15};
-      return ((kPhi * h) >> 32) & (num_buckets_ - 1);
-    }
-
-    
-    
-    size_type TableSize(size_type n) {
-      return n < static_cast<size_type>(kMinTableSize)
-                 ? static_cast<size_type>(kMinTableSize)
-                 : n;
-    }
-
-    
-    template <typename U>
-    U* Alloc(size_type n) {
-      using alloc_type = typename Allocator::template rebind<U>::other;
-      return alloc_type(alloc_).allocate(n);
-    }
-
-    
-    template <typename U>
-    void Dealloc(U* t, size_type n) {
-      using alloc_type = typename Allocator::template rebind<U>::other;
-      alloc_type(alloc_).deallocate(t, n);
-    }
-
-    void DestroyNode(Node* node) {
-      if (alloc_.arena() == nullptr) {
-        delete node;
-      }
-    }
-
-    void DestroyTree(Tree* tree) {
-      if (alloc_.arena() == nullptr) {
-        delete tree;
-      }
-    }
-
-    void** CreateEmptyTable(size_type n) {
-      GOOGLE_DCHECK(n >= kMinTableSize);
-      GOOGLE_DCHECK_EQ(n & (n - 1), 0u);
-      void** result = Alloc<void*>(n);
-      memset(result, 0, n * sizeof(result[0]));
-      return result;
-    }
-
-    
-    size_type Seed() const {
-      
-      
-      
-      size_type s = reinterpret_cast<uintptr_t>(this) >> 4;
-#if !defined(GOOGLE_PROTOBUF_NO_RDTSC)
-#if defined(__APPLE__)
-      
-      
-      s += mach_absolute_time();
-#elif defined(__x86_64__) && defined(__GNUC__)
-      uint32_t hi, lo;
-      asm volatile("rdtsc" : "=a"(lo), "=d"(hi));
-      s += ((static_cast<uint64_t>(hi) << 32) | lo);
-#elif defined(__aarch64__) && defined(__GNUC__)
-      
-      
-      
-      uint64_t virtual_timer_value;
-      asm volatile("mrs %0, cntvct_el0" : "=r"(virtual_timer_value));
-      s += virtual_timer_value;
-#endif
-#endif  
-      return s;
-    }
-
-    friend class Arena;
-    using InternalArenaConstructable_ = void;
-    using DestructorSkippable_ = void;
-
-    size_type num_elements_;
-    size_type num_buckets_;
-    size_type seed_;
-    size_type index_of_first_non_null_;
-    void** table_;  
-    Allocator alloc_;
-    GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(InnerMap);
-  };  
+  template <class P>
+  using RequiresInsertable =
+      typename std::enable_if<std::is_convertible<P, init_type>::value ||
+                                  SameAsElementReference<P>::value,
+                              int>::type;
+  template <class P>
+  using RequiresNotInit =
+      typename std::enable_if<!std::is_same<P, init_type>::value, int>::type;
 
   template <typename LookupKey>
-  using key_arg = typename internal::TransparentSupport<
-      key_type>::template key_arg<LookupKey>;
+  using key_arg = typename TS::template key_arg<LookupKey>;
 
  public:
   
-  class const_iterator {
-    using InnerIt = typename InnerMap::const_iterator;
+  class PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED ABSL_ATTRIBUTE_VIEW const_iterator
+      : private internal::UntypedMapIterator {
+    using BaseIt = internal::UntypedMapIterator;
 
    public:
     using iterator_category = std::forward_iterator_tag;
@@ -1200,31 +1287,47 @@ class Map {
     using pointer = const value_type*;
     using reference = const value_type&;
 
-    const_iterator() {}
-    explicit const_iterator(const InnerIt& it) : it_(it) {}
+    const_iterator() : BaseIt{nullptr, nullptr, 0} {}
+    const_iterator(const const_iterator&) = default;
+    const_iterator& operator=(const const_iterator&) = default;
+    explicit const_iterator(BaseIt it) : BaseIt(it) {}
 
-    const_reference operator*() const { return *it_; }
-    const_pointer operator->() const { return &(operator*()); }
+    PROTOBUF_FUTURE_ADD_EARLY_NODISCARD reference operator*() const {
+      return static_cast<Node*>(this->node_)->kv;
+    }
+    PROTOBUF_FUTURE_ADD_EARLY_NODISCARD pointer operator->() const {
+      return &(operator*());
+    }
 
     const_iterator& operator++() {
-      ++it_;
+      this->PlusPlus();
       return *this;
     }
-    const_iterator operator++(int) { return const_iterator(it_++); }
-
-    friend bool operator==(const const_iterator& a, const const_iterator& b) {
-      return a.it_ == b.it_;
+    const_iterator operator++(int) {
+      auto copy = *this;
+      this->PlusPlus();
+      return copy;
     }
-    friend bool operator!=(const const_iterator& a, const const_iterator& b) {
-      return !(a == b);
+
+    PROTOBUF_FUTURE_ADD_EARLY_NODISCARD friend bool operator==(
+        const const_iterator& a, const const_iterator& b) {
+      return a.Equals(b);
+    }
+    PROTOBUF_FUTURE_ADD_EARLY_NODISCARD friend bool operator!=(
+        const const_iterator& a, const const_iterator& b) {
+      return !a.Equals(b);
     }
 
    private:
-    InnerIt it_;
+    using BaseIt::BaseIt;
+    friend class Map;
+    friend class internal::UntypedMapIterator;
+    friend class internal::TypeDefinedMapFieldBase<Key, T>;
   };
 
-  class iterator {
-    using InnerIt = typename InnerMap::iterator;
+  class PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED ABSL_ATTRIBUTE_VIEW iterator
+      : private internal::UntypedMapIterator {
+    using BaseIt = internal::UntypedMapIterator;
 
    public:
     using iterator_category = std::forward_iterator_tag;
@@ -1233,97 +1336,134 @@ class Map {
     using pointer = value_type*;
     using reference = value_type&;
 
-    iterator() {}
-    explicit iterator(const InnerIt& it) : it_(it) {}
+    iterator() : BaseIt{nullptr, nullptr, 0} {}
+    iterator(const iterator&) = default;
+    iterator& operator=(const iterator&) = default;
+    explicit iterator(BaseIt it) : BaseIt(it) {}
 
-    reference operator*() const { return *it_; }
-    pointer operator->() const { return &(operator*()); }
+    PROTOBUF_FUTURE_ADD_EARLY_NODISCARD reference operator*() const {
+      return static_cast<Node*>(this->node_)->kv;
+    }
+    PROTOBUF_FUTURE_ADD_EARLY_NODISCARD pointer operator->() const {
+      return &(operator*());
+    }
 
     iterator& operator++() {
-      ++it_;
+      this->PlusPlus();
       return *this;
     }
-    iterator operator++(int) { return iterator(it_++); }
+    iterator operator++(int) {
+      auto copy = *this;
+      this->PlusPlus();
+      return copy;
+    }
 
     
-    operator const_iterator() const {  
-      return const_iterator(typename InnerMap::const_iterator(it_));
+    PROTOBUF_FUTURE_ADD_EARLY_NODISCARD operator const_iterator()
+        const {  
+      return const_iterator(static_cast<const BaseIt&>(*this));
     }
 
-    friend bool operator==(const iterator& a, const iterator& b) {
-      return a.it_ == b.it_;
+    PROTOBUF_FUTURE_ADD_EARLY_NODISCARD friend bool operator==(
+        const iterator& a, const iterator& b) {
+      return a.Equals(b);
     }
-    friend bool operator!=(const iterator& a, const iterator& b) {
-      return !(a == b);
+    PROTOBUF_FUTURE_ADD_EARLY_NODISCARD friend bool operator!=(
+        const iterator& a, const iterator& b) {
+      return !a.Equals(b);
     }
 
    private:
+    using BaseIt::BaseIt;
     friend class Map;
-
-    InnerIt it_;
   };
 
-  iterator begin() { return iterator(elements_.begin()); }
-  iterator end() { return iterator(elements_.end()); }
-  const_iterator begin() const { return const_iterator(elements_.begin()); }
-  const_iterator end() const { return const_iterator(elements_.end()); }
-  const_iterator cbegin() const { return begin(); }
-  const_iterator cend() const { return end(); }
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD iterator begin()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return iterator(Base::begin());
+  }
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD iterator end()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return iterator();
+  }
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const_iterator
+  begin() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return const_iterator(Base::begin());
+  }
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const_iterator
+  end() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return const_iterator();
+  }
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const_iterator
+  cbegin() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return begin();
+  }
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const_iterator
+  cend() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return end();
+  }
 
-  
-  size_type size() const { return elements_.size(); }
-  bool empty() const { return size() == 0; }
+  using Base::empty;
+  using Base::size;
 
   
   template <typename K = key_type>
-  T& operator[](const key_arg<K>& key) {
-    return elements_[key].second;
+  T& operator[](const key_arg<K>& key) ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return try_emplace(key).first->second;
   }
   template <
       typename K = key_type,
       
       typename = typename std::enable_if<!std::is_integral<K>::value>::type>
-  T& operator[](key_arg<K>&& key) {
-    return elements_[std::forward<K>(key)].second;
+  T& operator[](key_arg<K>&& key) ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return try_emplace(std::forward<key_arg<K>>(key)).first->second;
   }
 
   template <typename K = key_type>
-  const T& at(const key_arg<K>& key) const {
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const T& at(const key_arg<K>& key) const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
     const_iterator it = find(key);
-    GOOGLE_CHECK(it != end()) << "key not found: " << static_cast<Key>(key);
+    ABSL_CHECK(it != end()) << "key not found: " << static_cast<Key>(key);
     return it->second;
   }
 
   template <typename K = key_type>
-  T& at(const key_arg<K>& key) {
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD T& at(const key_arg<K>& key)
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
     iterator it = find(key);
-    GOOGLE_CHECK(it != end()) << "key not found: " << static_cast<Key>(key);
+    ABSL_CHECK(it != end()) << "key not found: " << static_cast<Key>(key);
     return it->second;
   }
 
   
   template <typename K = key_type>
-  size_type count(const key_arg<K>& key) const {
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD size_type
+  count(const key_arg<K>& key) const {
     return find(key) == end() ? 0 : 1;
   }
 
   template <typename K = key_type>
-  const_iterator find(const key_arg<K>& key) const {
-    return const_iterator(elements_.find(key));
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const_iterator
+  find(const key_arg<K>& key) const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return const_cast<Map*>(this)->find(key);
   }
   template <typename K = key_type>
-  iterator find(const key_arg<K>& key) {
-    return iterator(elements_.find(key));
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD iterator find(const key_arg<K>& key)
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    auto res = this->FindHelper(TS::ToView(key));
+    return iterator(internal::UntypedMapIterator{static_cast<Node*>(res.node),
+                                                 this, res.bucket});
   }
 
   template <typename K = key_type>
-  bool contains(const key_arg<K>& key) const {
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool contains(
+      const key_arg<K>& key) const {
     return find(key) != end();
   }
 
   template <typename K = key_type>
-  std::pair<const_iterator, const_iterator> equal_range(
-      const key_arg<K>& key) const {
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD std::pair<const_iterator, const_iterator>
+  equal_range(const key_arg<K>& key) const ABSL_ATTRIBUTE_LIFETIME_BOUND {
     const_iterator it = find(key);
     if (it == end()) {
       return std::pair<const_iterator, const_iterator>(it, it);
@@ -1334,7 +1474,8 @@ class Map {
   }
 
   template <typename K = key_type>
-  std::pair<iterator, iterator> equal_range(const key_arg<K>& key) {
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD std::pair<iterator, iterator> equal_range(
+      const key_arg<K>& key) ABSL_ATTRIBUTE_LIFETIME_BOUND {
     iterator it = find(key);
     if (it == end()) {
       return std::pair<iterator, iterator>(it, it);
@@ -1346,103 +1487,301 @@ class Map {
 
   
   template <typename K, typename... Args>
-  std::pair<iterator, bool> try_emplace(K&& k, Args&&... args) {
-    auto p =
-        elements_.try_emplace(std::forward<K>(k), std::forward<Args>(args)...);
-    return std::pair<iterator, bool>(iterator(p.first), p.second);
+  std::pair<iterator, bool> try_emplace(K&& k, Args&&... args)
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    
+    
+    
+    if constexpr (Arena::is_arena_constructable<mapped_type>::value) {
+      if constexpr (sizeof...(Args) == 0) {
+        
+        return TryEmplaceInternal(std::forward<K>(k));
+      } else {
+        
+        auto p = TryEmplaceInternal(std::forward<K>(k));
+        if (p.second) {
+          if constexpr (std::is_same<void(typename std::decay<Args>::type...),
+                                     void(mapped_type)>::value) {
+            
+            p.first->second = (std::forward<Args>(args), ...);
+          } else {
+            p.first->second = mapped_type(std::forward<Args>(args)...);
+          }
+        }
+        return p;
+      }
+    } else {
+      
+      
+      return TryEmplaceInternal(std::forward<K>(k),
+                                std::forward<Args>(args)...);
+    }
   }
-  std::pair<iterator, bool> insert(const value_type& value) {
-    return try_emplace(value.first, value.second);
+  std::pair<iterator, bool> insert(init_type&& value)
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return try_emplace(std::move(value.first), std::move(value.second));
   }
-  std::pair<iterator, bool> insert(value_type&& value) {
-    return try_emplace(value.first, std::move(value.second));
+  template <typename P, RequiresInsertable<P> = 0>
+  std::pair<iterator, bool> insert(P&& value) ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return try_emplace(std::forward<P>(value).first,
+                       std::forward<P>(value).second);
   }
   template <typename... Args>
-  std::pair<iterator, bool> emplace(Args&&... args) {
-    return insert(value_type(std::forward<Args>(args)...));
+  std::pair<iterator, bool> emplace(Args&&... args)
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    
+    
+    
+    if constexpr (std::is_constructible<init_type, Args...>::value) {
+      return insert(init_type(std::forward<Args>(args)...));
+    } else {
+      return insert(value_type(std::forward<Args>(args)...));
+    }
   }
   template <class InputIt>
   void insert(InputIt first, InputIt last) {
     for (; first != last; ++first) {
-      try_emplace(first->first, first->second);
+      auto&& pair = *first;
+      try_emplace(pair.first, pair.second);
     }
   }
-  void insert(std::initializer_list<value_type> values) {
+  void insert(std::initializer_list<init_type> values) {
+    insert(values.begin(), values.end());
+  }
+  template <typename P, RequiresNotInit<P> = 0,
+            RequiresInsertable<const P&> = 0>
+  void insert(std::initializer_list<P> values) {
     insert(values.begin(), values.end());
   }
 
   
   template <typename K = key_type>
   size_type erase(const key_arg<K>& key) {
-    iterator it = find(key);
-    if (it == end()) {
-      return 0;
-    } else {
-      erase(it);
-      return 1;
-    }
+    return this->EraseImpl(arena(), TS::ToView(key));
   }
-  iterator erase(iterator pos) {
-    iterator i = pos++;
-    elements_.erase(i.it_);
-    return pos;
+
+  iterator erase(iterator pos) ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    auto next = std::next(pos);
+    ABSL_DCHECK_EQ(pos.m_, static_cast<Base*>(this));
+    this->EraseImpl(arena(), pos.bucket_index_, static_cast<Node*>(pos.node_),
+                    true);
+    return next;
   }
+
   void erase(iterator first, iterator last) {
     while (first != last) {
       first = erase(first);
     }
   }
-  void clear() { elements_.clear(); }
+
+  void clear() { this->ClearTable(this->arena(), true); }
 
   
-  Map& operator=(const Map& other) {
+  Map& operator=(const Map& other) ABSL_ATTRIBUTE_LIFETIME_BOUND {
     if (this != &other) {
       clear();
-      insert(other.begin(), other.end());
+      CopyFromImpl(this->arena(), other);
     }
     return *this;
   }
 
   void swap(Map& other) {
-    if (arena() == other.arena()) {
-      InternalSwap(other);
+    Arena* arena = this->arena();
+    if (arena == other.arena()) {
+      this->InternalSwap(&other);
     } else {
-      
-      
-      
-      Map copy = *this;
-      *this = other;
-      other = copy;
+      size_t other_size = other.size();
+      Node* other_copy = this->CloneFromOther(arena, other);
+      other = *this;
+      this->clear();
+      if (other_size != 0) {
+        this->MergeIntoEmpty(arena, other_copy, other_size);
+      }
     }
   }
 
-  void InternalSwap(Map& other) { elements_.Swap(&other.elements_); }
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD hasher hash_function() const {
+    return {};
+  }
 
-  
-  
-  hasher hash_function() const { return elements_.hash_function(); }
-
-  size_t SpaceUsedExcludingSelfLong() const {
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD size_t
+  SpaceUsedExcludingSelfLong() const {
     if (empty()) return 0;
-    return elements_.SpaceUsedInternal() + internal::SpaceUsedInValues(this);
+    return internal::UntypedMapBase::SpaceUsedExcludingSelfLong();
   }
 
  private:
-  Arena* arena() const { return elements_.arena(); }
-  InnerMap elements_;
+  
+  struct Node : Base::KeyNode {
+    using key_type = Key;
+    using mapped_type = T;
+    value_type kv;
+  };
+
+  static constexpr auto GetTypeInfo() {
+    return internal::UntypedMapBase::TypeInfo{
+        sizeof(Node),
+        PROTOBUF_FIELD_OFFSET(Node, kv.second),
+        static_cast<uint8_t>(internal::UntypedMapBase::StaticTypeKind<Key>()),
+        static_cast<uint8_t>(internal::UntypedMapBase::StaticTypeKind<T>()),
+    };
+  }
+
+  void DeleteNode(Arena* arena, Node* node) {
+    ABSL_DCHECK_EQ(arena, this->arena());
+    if (arena == nullptr) {
+      node->kv.first.~key_type();
+      node->kv.second.~mapped_type();
+      this->DeallocNode(node, sizeof(Node));
+    }
+  }
+
+  template <typename K, typename... Args>
+  PROTOBUF_ALWAYS_INLINE Node* CreateNode(Arena* arena, K&& k, Args&&... args) {
+    
+    using TypeToInit = typename std::conditional<
+        std::is_same<typename std::decay<K>::type, key_type>::value, K&&,
+        key_type>::type;
+    ABSL_DCHECK_EQ(arena, this->arena());
+    Node* node = static_cast<Node*>(this->AllocNode(arena, sizeof(Node)));
+
+    
+    
+    
+    
+    if (!internal::InitializeMapKey(const_cast<Key*>(&node->kv.first),
+                                    std::forward<K>(k), arena)) {
+      Arena::CreateInArenaStorage(const_cast<Key*>(&node->kv.first), arena,
+                                  static_cast<TypeToInit>(std::forward<K>(k)));
+    }
+    
+    Arena::CreateInArenaStorage(&node->kv.second, arena,
+                                std::forward<Args>(args)...);
+    return node;
+  }
+
+  
+  
+  PROTOBUF_NOINLINE Node* CloneFromOther(Arena* arena, const Map& other) {
+    ABSL_DCHECK_EQ(arena, this->arena());
+
+    Node* head = nullptr;
+    for (const auto& [key, value] : other) {
+      Node* new_node = CreateNode(arena, key, value);
+      new_node->next = head;
+      head = new_node;
+    }
+    return head;
+  }
+
+  void CopyFromImpl(Arena* arena, const Map& other) {
+    if (other.empty()) return;
+    
+    
+    
+    this->MergeIntoEmpty(arena, CloneFromOther(arena, other), other.size());
+  }
+
+  template <typename K, typename... Args>
+  std::pair<iterator, bool> TryEmplaceInternal(K&& k, Args&&... args) {
+    auto p = this->FindHelper(TS::ToView(k));
+    internal::map_index_t b = p.bucket;
+    
+    if (p.node != nullptr) {
+      return std::make_pair(iterator(internal::UntypedMapIterator{
+                                static_cast<Node*>(p.node), this, p.bucket}),
+                            false);
+    }
+    
+    Arena* arena = this->arena();
+    if (this->ResizeIfLoadIsOutOfRange(arena, this->num_elements_ + 1)) {
+      b = this->BucketNumber(TS::ToView(k));
+    }
+    auto* node =
+        CreateNode(arena, std::forward<K>(k), std::forward<Args>(args)...);
+    this->InsertUnique(b, node);
+    ++this->num_elements_;
+    return std::make_pair(iterator(internal::UntypedMapIterator{node, this, b}),
+                          true);
+  }
+
+  template <typename Pred>
+  size_t EraseIfImpl(Pred pred) {
+    size_t n = 0;
+    auto* arena = this->arena();
+    for (internal::NodeBase **bucket = this->table_,
+                            **end = this->table_ + this->num_buckets_;
+         bucket != end; ++bucket) {
+      for (internal::NodeBase** prev = bucket; *prev != nullptr;) {
+        Node* node = static_cast<Node*>(*prev);
+        if (pred(std::as_const(node->kv))) {
+          *prev = node->next;
+          DeleteNode(arena, node);
+          ++n;
+        } else {
+          prev = &node->next;
+        }
+      }
+    }
+    this->num_elements_ -= n;
+    return n;
+  }
+
+  using Base::arena;
 
   friend class Arena;
+  template <typename, typename>
+  friend class internal::TypeDefinedMapFieldBase;
+
+  template <typename Key_, typename T_, typename Pred>
+  friend size_t google::protobuf::erase_if(Map<Key_, T_>& map, Pred pred);
+
   using InternalArenaConstructable_ = void;
   using DestructorSkippable_ = void;
-  template <typename Derived, typename K, typename V,
-            internal::WireFormatLite::FieldType key_wire_type,
-            internal::WireFormatLite::FieldType value_wire_type>
+
+  friend class internal::FieldWithArena<Map<Key, T>>;
+  template <typename K, typename V>
   friend class internal::MapFieldLite;
+  friend class internal::TcParser;
+  friend struct internal::MapTestPeer;
+  friend struct internal::MapBenchmarkPeer;
+  friend class internal::RustMapHelper;
 };
 
+namespace internal {
+
+template <typename Key, typename T>
+using MapWithArena = FieldWithArena<Map<Key, T>>;
+
+template <typename Key, typename T>
+struct FieldArenaRep<Map<Key, T>> {
+  using Type = MapWithArena<Key, T>;
+
+  static inline Map<Key, T>* Get(Type* arena_rep) {
+    return &arena_rep->field();
+  }
+};
+
+template <typename Key, typename T>
+struct FieldArenaRep<const Map<Key, T>> {
+  using Type = const MapWithArena<Key, T>;
+
+  static inline const Map<Key, T>* Get(Type* arena_rep) {
+    return &arena_rep->field();
+  }
+};
+
+template <typename... T>
+PROTOBUF_NOINLINE void MapMergeFrom(Map<T...>& dest, const Map<T...>& src) {
+  for (const auto& elem : src) {
+    dest[elem.first] = elem.second;
+  }
+}
+}  
+
 }  
 }  
 
-#include <google/protobuf/port_undef.inc>
+#include "google/protobuf/port_undef.inc"
 
 #endif  

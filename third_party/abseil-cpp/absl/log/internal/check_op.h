@@ -402,6 +402,13 @@ ABSL_LOG_INTERNAL_DEFINE_MAKE_CHECK_OP_STRING_EXTERN(const void*);
 
 
 
+
+#pragma GCC diagnostic ignored "-Wsign-compare"
+
+
+
+
+
 #define ABSL_LOG_INTERNAL_CHECK_OP_IMPL(name, op)                          \
   template <typename T1, typename T2>                                      \
   inline constexpr absl::Nullable<const char*> name##Impl(                 \

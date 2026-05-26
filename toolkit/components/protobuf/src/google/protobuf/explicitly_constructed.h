@@ -5,41 +5,16 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef GOOGLE_PROTOBUF_EXPLICITLY_CONSTRUCTED_H__
 #define GOOGLE_PROTOBUF_EXPLICITLY_CONSTRUCTED_H__
 
 #include <stdint.h>
 
+#include <string>
 #include <utility>
 
-#include <google/protobuf/stubs/logging.h>
-#include <google/protobuf/stubs/common.h>
 
-
-#include <google/protobuf/port_def.inc>
+#include "google/protobuf/port_def.inc"
 
 
 namespace google {
@@ -60,7 +35,7 @@ namespace internal {
 
 
 template <typename T, size_t min_align = 1>
-class ExplicitlyConstructed {
+class PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED ExplicitlyConstructed {
  public:
   void DefaultConstruct() { new (&union_) T(); }
 
@@ -71,8 +46,12 @@ class ExplicitlyConstructed {
 
   void Destruct() { get_mutable()->~T(); }
 
-  constexpr const T& get() const { return reinterpret_cast<const T&>(union_); }
-  T* get_mutable() { return reinterpret_cast<T*>(&union_); }
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD constexpr const T& get() const {
+    return reinterpret_cast<const T&>(union_);
+  }
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD T* get_mutable() {
+    return reinterpret_cast<T*>(&union_);
+  }
 
  private:
   union AlignedUnion {
@@ -83,15 +62,10 @@ class ExplicitlyConstructed {
   } union_;
 };
 
-
-
-
-using ExplicitlyConstructedArenaString = ExplicitlyConstructed<std::string, 8>;
-
 }  
 }  
 }  
 
-#include <google/protobuf/port_undef.inc>
+#include "google/protobuf/port_undef.inc"
 
 #endif  

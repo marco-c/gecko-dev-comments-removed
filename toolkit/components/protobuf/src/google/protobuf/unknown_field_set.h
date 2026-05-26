@@ -12,48 +12,32 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef GOOGLE_PROTOBUF_UNKNOWN_FIELD_SET_H__
 #define GOOGLE_PROTOBUF_UNKNOWN_FIELD_SET_H__
 
-
 #include <assert.h>
 
+#include <cstddef>
+#include <cstdint>
 #include <string>
-#include <vector>
+#include <type_traits>
+#include <utility>
 
-#include <google/protobuf/stubs/common.h>
-#include <google/protobuf/stubs/logging.h>
-#include <google/protobuf/io/coded_stream.h>
-#include <google/protobuf/io/zero_copy_stream_impl_lite.h>
-#include <google/protobuf/port.h>
-#include <google/protobuf/message_lite.h>
-#include <google/protobuf/parse_context.h>
+#include "absl/log/absl_check.h"
+#include "absl/strings/cord.h"
+#include "absl/strings/string_view.h"
+#include "google/protobuf/arena.h"
+#include "google/protobuf/internal_visibility.h"
+#include "google/protobuf/io/coded_stream.h"
+#include "google/protobuf/io/zero_copy_stream_impl_lite.h"
+#include "google/protobuf/message_lite.h"
+#include "google/protobuf/metadata_lite.h"
+#include "google/protobuf/parse_context.h"
+#include "google/protobuf/port.h"
+#include "google/protobuf/repeated_field.h"
 
 
-#include <google/protobuf/port_def.inc>
+#include "google/protobuf/port_def.inc"
 
 #ifdef SWIG
 #error "You cannot SWIG proto headers"
@@ -62,14 +46,84 @@
 namespace google {
 namespace protobuf {
 namespace internal {
-class InternalMetadata;           
-class WireFormat;                 
+class InternalMetadata;  
+class WireFormat;        
 class MessageSetFieldSkipperUsingCord;
+
+class UnknownFieldParserHelper;
+struct UnknownFieldSetTestPeer;
 
 }  
 
-class Message;       
-class UnknownField;  
+class Message;  
+
+
+class PROTOBUF_EXPORT UnknownField {
+ public:
+  enum Type {
+    TYPE_VARINT,
+    TYPE_FIXED32,
+    TYPE_FIXED64,
+    TYPE_LENGTH_DELIMITED,
+    TYPE_GROUP
+  };
+
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD inline int number() const;
+
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD inline Type type() const;
+
+  
+  
+
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD inline uint64_t varint() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD inline uint32_t fixed32() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD inline uint64_t fixed64() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD inline absl::string_view
+  length_delimited() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD inline const UnknownFieldSet& group()
+      const;
+
+  inline void set_varint(uint64_t value);
+  inline void set_fixed32(uint32_t value);
+  inline void set_fixed64(uint64_t value);
+  inline void set_length_delimited(absl::string_view value);
+  
+  template <int&...>
+  inline void set_length_delimited(std::string&& value);
+  inline void set_length_delimited(const absl::Cord& value);
+  inline UnknownFieldSet* mutable_group();
+
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD inline size_t GetLengthDelimitedSize()
+      const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD uint8_t*
+  InternalSerializeLengthDelimitedNoTag(uint8_t* target,
+                                        io::EpsCopyOutputStream* stream) const;
+
+ private:
+  friend class UnknownFieldSet;
+
+  
+  void Delete();
+
+  
+  UnknownField DeepCopy(Arena* arena) const;
+
+  
+  
+  inline void SetType(Type type);
+
+  uint32_t number_;
+  uint32_t type_;
+  union {
+    uint64_t varint;
+    uint32_t fixed32;
+    uint64_t fixed64;
+    std::string* string_value;
+    UnknownFieldSet* group;
+  } data_;
+};
 
 
 
@@ -85,7 +139,9 @@ class UnknownField;
 
 class PROTOBUF_EXPORT UnknownFieldSet {
  public:
-  UnknownFieldSet();
+  constexpr UnknownFieldSet();
+  UnknownFieldSet(const UnknownFieldSet&) = delete;
+  UnknownFieldSet& operator=(const UnknownFieldSet&) = delete;
   ~UnknownFieldSet();
 
   
@@ -95,7 +151,7 @@ class PROTOBUF_EXPORT UnknownFieldSet {
   void ClearAndFreeMemory();
 
   
-  inline bool empty() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD inline bool empty() const;
 
   
   void MergeFrom(const UnknownFieldSet& other);
@@ -115,34 +171,42 @@ class PROTOBUF_EXPORT UnknownFieldSet {
   
   
   
-  size_t SpaceUsedExcludingSelfLong() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD size_t SpaceUsedExcludingSelfLong() const;
 
-  int SpaceUsedExcludingSelf() const {
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD int SpaceUsedExcludingSelf() const {
     return internal::ToIntSize(SpaceUsedExcludingSelfLong());
   }
 
   
-  size_t SpaceUsedLong() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD size_t SpaceUsedLong() const;
 
-  int SpaceUsed() const { return internal::ToIntSize(SpaceUsedLong()); }
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD int SpaceUsed() const {
+    return internal::ToIntSize(SpaceUsedLong());
+  }
 
   
-  inline int field_count() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD inline int field_count() const;
   
   
-  inline const UnknownField& field(int index) const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD inline const UnknownField& field(
+      int index) const;
   
   
   
-  inline UnknownField* mutable_field(int index);
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD inline UnknownField* mutable_field(
+      int index);
 
   
 
   void AddVarint(int number, uint64_t value);
   void AddFixed32(int number, uint32_t value);
   void AddFixed64(int number, uint64_t value);
-  void AddLengthDelimited(int number, const std::string& value);
-  std::string* AddLengthDelimited(int number);
+  void AddLengthDelimited(int number, absl::string_view value);
+  
+  template <int&...>
+  void AddLengthDelimited(int number, std::string&& value);
+  void AddLengthDelimited(int number, const absl::Cord& value);
+
   UnknownFieldSet* AddGroup(int number);
 
   
@@ -160,11 +224,16 @@ class PROTOBUF_EXPORT UnknownFieldSet {
   
   
 
-  bool MergeFromCodedStream(io::CodedInputStream* input);
-  bool ParseFromCodedStream(io::CodedInputStream* input);
-  bool ParseFromZeroCopyStream(io::ZeroCopyInputStream* input);
-  bool ParseFromArray(const void* data, int size);
-  inline bool ParseFromString(const std::string& data) {
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool MergeFromCodedStream(
+      io::CodedInputStream* input);
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool ParseFromCodedStream(
+      io::CodedInputStream* input);
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool ParseFromZeroCopyStream(
+      io::ZeroCopyInputStream* input);
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool ParseFromArray(const void* data,
+                                                          int size);
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD inline bool ParseFromString(
+      const absl::string_view data) {
     return ParseFromArray(data.data(), static_cast<int>(data.size()));
   }
 
@@ -172,24 +241,46 @@ class PROTOBUF_EXPORT UnknownFieldSet {
   
   
   template <typename MessageType>
-  bool MergeFromMessage(const MessageType& message);
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool MergeFromMessage(
+      const MessageType& message);
 
   
-  bool SerializeToString(std::string* output) const;
-  bool SerializeToCodedStream(io::CodedOutputStream* output) const;
-  static const UnknownFieldSet& default_instance();
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool SerializeToString(
+      std::string* output) const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool SerializeToCord(
+      absl::Cord* output) const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool SerializeToCodedStream(
+      io::CodedOutputStream* output) const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD static const UnknownFieldSet&
+  default_instance();
+
+  UnknownFieldSet(internal::InternalVisibility, Arena* arena)
+      : UnknownFieldSet(arena) {}
 
  private:
-  
-  friend class UnknownField;
-  
-  
-  void InternalMergeFrom(const UnknownFieldSet& other);
+  friend internal::WireFormat;
+  friend internal::UnknownFieldParserHelper;
+  friend internal::UnknownFieldSetTestPeer;
+
+  std::string* AddLengthDelimited(int number);
+
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+
+  friend class google::protobuf::Arena;
+  explicit UnknownFieldSet(Arena* arena) : fields_(arena) {}
+
+  Arena* arena() { return fields_.GetArena(); }
+
+  const RepeatedField<UnknownField>& fields() const { return fields_.field(); }
+  RepeatedField<UnknownField>& fields() { return fields_.field(); }
+
   void ClearFallback();
+  void SwapSlow(UnknownFieldSet* other);
 
   template <typename MessageType,
-            typename std::enable_if<
-                std::is_base_of<Message, MessageType>::value, int>::type = 0>
+            typename std::enable_if_t<
+                std::is_base_of<Message, MessageType>::value, int> = 0>
   bool InternalMergeFromMessage(const MessageType& message) {
     MergeFrom(message.GetReflection()->GetUnknownFields(message));
     return true;
@@ -208,8 +299,7 @@ class PROTOBUF_EXPORT UnknownFieldSet {
     return MergeFromCodedStream(&coded_stream);
   }
 
-  std::vector<UnknownField> fields_;
-  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(UnknownFieldSet);
+  internal::RepeatedFieldWithArena<UnknownField> fields_;
 };
 
 namespace internal {
@@ -217,9 +307,9 @@ namespace internal {
 inline void WriteVarint(uint32_t num, uint64_t val, UnknownFieldSet* unknown) {
   unknown->AddVarint(num, val);
 }
-inline void WriteLengthDelimited(uint32_t num, StringPiece val,
+inline void WriteLengthDelimited(uint32_t num, absl::string_view val,
                                  UnknownFieldSet* unknown) {
-  unknown->AddLengthDelimited(num)->assign(val.data(), val.size());
+  unknown->AddLengthDelimited(num, val);
 }
 
 PROTOBUF_EXPORT
@@ -232,106 +322,54 @@ const char* UnknownFieldParse(uint64_t tag, UnknownFieldSet* unknown,
 }  
 
 
-class PROTOBUF_EXPORT UnknownField {
- public:
-  enum Type {
-    TYPE_VARINT,
-    TYPE_FIXED32,
-    TYPE_FIXED64,
-    TYPE_LENGTH_DELIMITED,
-    TYPE_GROUP
-  };
-
-  
-  inline int number() const;
-
-  
-  inline Type type() const;
-
-  
-  
-
-  inline uint64_t varint() const;
-  inline uint32_t fixed32() const;
-  inline uint64_t fixed64() const;
-  inline const std::string& length_delimited() const;
-  inline const UnknownFieldSet& group() const;
-
-  inline void set_varint(uint64_t value);
-  inline void set_fixed32(uint32_t value);
-  inline void set_fixed64(uint64_t value);
-  inline void set_length_delimited(const std::string& value);
-  inline std::string* mutable_length_delimited();
-  inline UnknownFieldSet* mutable_group();
-
-  inline size_t GetLengthDelimitedSize() const;
-  uint8_t* InternalSerializeLengthDelimitedNoTag(
-      uint8_t* target, io::EpsCopyOutputStream* stream) const;
 
 
-  
-  void Delete();
+constexpr UnknownFieldSet::UnknownFieldSet() = default;
 
-  
-  void DeepCopy(const UnknownField& other);
+inline UnknownFieldSet::~UnknownFieldSet() {
+  Clear();
+  ABSL_DCHECK_EQ(arena(), nullptr);
+}
 
-  
-  
-  inline void SetType(Type type);
-
-  union LengthDelimited {
-    std::string* string_value;
-  };
-
-  uint32_t number_;
-  uint32_t type_;
-  union {
-    uint64_t varint_;
-    uint32_t fixed32_;
-    uint64_t fixed64_;
-    mutable union LengthDelimited length_delimited_;
-    UnknownFieldSet* group_;
-  } data_;
-};
-
-
-
-
-inline UnknownFieldSet::UnknownFieldSet() {}
-
-inline UnknownFieldSet::~UnknownFieldSet() { Clear(); }
+inline const UnknownFieldSet& UnknownFieldSet::default_instance() {
+  PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT static const UnknownFieldSet
+      instance;
+  return instance;
+}
 
 inline void UnknownFieldSet::ClearAndFreeMemory() { Clear(); }
 
 inline void UnknownFieldSet::Clear() {
-  if (!fields_.empty()) {
+  if (!fields().empty()) {
     ClearFallback();
   }
 }
 
-inline bool UnknownFieldSet::empty() const { return fields_.empty(); }
+inline bool UnknownFieldSet::empty() const { return fields().empty(); }
 
 inline void UnknownFieldSet::Swap(UnknownFieldSet* x) {
-  fields_.swap(x->fields_);
+  if (arena() == x->arena()) {
+    fields().Swap(&x->fields());
+  } else {
+    
+    SwapSlow(x);
+  }
 }
 
 inline int UnknownFieldSet::field_count() const {
-  return static_cast<int>(fields_.size());
+  return static_cast<int>(fields().size());
 }
 inline const UnknownField& UnknownFieldSet::field(int index) const {
-  return (fields_)[static_cast<size_t>(index)];
+  return (fields())[static_cast<size_t>(index)];
 }
 inline UnknownField* UnknownFieldSet::mutable_field(int index) {
-  return &(fields_)[static_cast<size_t>(index)];
+  return &(fields())[static_cast<size_t>(index)];
 }
 
 inline void UnknownFieldSet::AddLengthDelimited(int number,
-                                                const std::string& value) {
-  AddLengthDelimited(number)->assign(value);
+                                                const absl::string_view value) {
+  AddLengthDelimited(number)->assign(value.data(), value.size());
 }
-
-
-
 
 inline int UnknownField::number() const { return static_cast<int>(number_); }
 inline UnknownField::Type UnknownField::type() const {
@@ -340,48 +378,53 @@ inline UnknownField::Type UnknownField::type() const {
 
 inline uint64_t UnknownField::varint() const {
   assert(type() == TYPE_VARINT);
-  return data_.varint_;
+  return data_.varint;
 }
 inline uint32_t UnknownField::fixed32() const {
   assert(type() == TYPE_FIXED32);
-  return data_.fixed32_;
+  return data_.fixed32;
 }
 inline uint64_t UnknownField::fixed64() const {
   assert(type() == TYPE_FIXED64);
-  return data_.fixed64_;
+  return data_.fixed64;
 }
-inline const std::string& UnknownField::length_delimited() const {
+inline absl::string_view UnknownField::length_delimited() const {
   assert(type() == TYPE_LENGTH_DELIMITED);
-  return *data_.length_delimited_.string_value;
+  return *data_.string_value;
 }
 inline const UnknownFieldSet& UnknownField::group() const {
   assert(type() == TYPE_GROUP);
-  return *data_.group_;
+  return *data_.group;
 }
 
 inline void UnknownField::set_varint(uint64_t value) {
   assert(type() == TYPE_VARINT);
-  data_.varint_ = value;
+  data_.varint = value;
 }
 inline void UnknownField::set_fixed32(uint32_t value) {
   assert(type() == TYPE_FIXED32);
-  data_.fixed32_ = value;
+  data_.fixed32 = value;
 }
 inline void UnknownField::set_fixed64(uint64_t value) {
   assert(type() == TYPE_FIXED64);
-  data_.fixed64_ = value;
+  data_.fixed64 = value;
 }
-inline void UnknownField::set_length_delimited(const std::string& value) {
+inline void UnknownField::set_length_delimited(const absl::string_view value) {
   assert(type() == TYPE_LENGTH_DELIMITED);
-  data_.length_delimited_.string_value->assign(value);
+  data_.string_value->assign(value.data(), value.size());
 }
-inline std::string* UnknownField::mutable_length_delimited() {
+template <int&...>
+inline void UnknownField::set_length_delimited(std::string&& value) {
   assert(type() == TYPE_LENGTH_DELIMITED);
-  return data_.length_delimited_.string_value;
+  *data_.string_value = std::move(value);
+}
+inline void UnknownField::set_length_delimited(const absl::Cord& value) {
+  assert(type() == TYPE_LENGTH_DELIMITED);
+  absl::CopyCordToString(value, data_.string_value);
 }
 inline UnknownFieldSet* UnknownField::mutable_group() {
   assert(type() == TYPE_GROUP);
-  return data_.group_;
+  return data_.group;
 }
 template <typename MessageType>
 bool UnknownFieldSet::MergeFromMessage(const MessageType& message) {
@@ -389,19 +432,33 @@ bool UnknownFieldSet::MergeFromMessage(const MessageType& message) {
   return InternalMergeFromMessage(message);
 }
 
-
 inline size_t UnknownField::GetLengthDelimitedSize() const {
-  GOOGLE_DCHECK_EQ(TYPE_LENGTH_DELIMITED, type());
-  return data_.length_delimited_.string_value->size();
+  ABSL_DCHECK_EQ(TYPE_LENGTH_DELIMITED, type());
+  return data_.string_value->size();
 }
 
-inline void UnknownField::SetType(Type type) {
-  type_ = type;
-}
+inline void UnknownField::SetType(Type type) { type_ = type; }
 
+extern template void UnknownFieldSet::AddLengthDelimited(int, std::string&&);
+
+namespace internal {
+
+
+template <>
+struct InternalMetadata::Container<UnknownFieldSet>
+    : public InternalMetadata::ContainerBase {
+  UnknownFieldSet unknown_fields;
+
+  explicit Container(Arena* input_arena)
+      : unknown_fields(InternalVisibility{}, input_arena) {}
+
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+};
+}  
 
 }  
 }  
 
-#include <google/protobuf/port_undef.inc>
+#include "google/protobuf/port_undef.inc"
 #endif  

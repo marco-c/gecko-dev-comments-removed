@@ -9,31 +9,13 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef GOOGLE_PROTOBUF_IO_STRTOD_H__
 #define GOOGLE_PROTOBUF_IO_STRTOD_H__
+
+#include <string>
+
+
+#include "google/protobuf/port_def.inc"
 
 namespace google {
 namespace protobuf {
@@ -41,15 +23,35 @@ namespace io {
 
 
 
-double NoLocaleStrtod(const char* str, char** endptr);
 
 
 
 
-float SafeDoubleToFloat(double value);
+
+
+
+
+
+PROTOBUF_FUTURE_ADD_EARLY_NODISCARD
+PROTOBUF_EXPORT std::string SimpleDtoa(double value);
+PROTOBUF_FUTURE_ADD_EARLY_NODISCARD
+PROTOBUF_EXPORT std::string SimpleFtoa(float value);
+
+
+
+PROTOBUF_FUTURE_ADD_EARLY_NODISCARD
+PROTOBUF_EXPORT double NoLocaleStrtod(const char* str, char** endptr);
+
+
+
+
+PROTOBUF_FUTURE_ADD_EARLY_NODISCARD
+PROTOBUF_EXPORT float SafeDoubleToFloat(double value);
 
 }  
 }  
 }  
+
+#include "google/protobuf/port_undef.inc"
 
 #endif  

@@ -17,48 +17,26 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef GOOGLE_PROTOBUF_IO_GZIP_STREAM_H__
 #define GOOGLE_PROTOBUF_IO_GZIP_STREAM_H__
 
-
-#include <google/protobuf/stubs/common.h>
-#include <google/protobuf/io/zero_copy_stream.h>
-#include <google/protobuf/port.h>
-#include "zlib.h"
+#include "google/protobuf/io/zero_copy_stream.h"
+#include "google/protobuf/port.h"
 
 
-#include <google/protobuf/port_def.inc>
+#include "google/protobuf/port_def.inc"
 
 namespace google {
 namespace protobuf {
+namespace internal {
+struct StreamContext;
+}  
+
 namespace io {
 
 
-class PROTOBUF_EXPORT GzipInputStream PROTOBUF_FUTURE_FINAL
-    : public ZeroCopyInputStream {
+class PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED PROTOBUF_EXPORT
+    GzipInputStream final : public ZeroCopyInputStream {
  public:
   
   enum Format {
@@ -75,24 +53,29 @@ class PROTOBUF_EXPORT GzipInputStream PROTOBUF_FUTURE_FINAL
   
   explicit GzipInputStream(ZeroCopyInputStream* sub_stream,
                            Format format = AUTO, int buffer_size = -1);
-  virtual ~GzipInputStream();
+  GzipInputStream(const GzipInputStream&) = delete;
+  GzipInputStream& operator=(const GzipInputStream&) = delete;
+  ~GzipInputStream() override;
 
   
-  inline const char* ZlibErrorMessage() const { return zcontext_.msg; }
-  inline int ZlibErrorCode() const { return zerror_; }
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const char* ZlibErrorMessage() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD inline int ZlibErrorCode() const {
+    return zerror_;
+  }
 
   
-  bool Next(const void** data, int* size) override;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool Next(const void** data,
+                                                int* size) override;
   void BackUp(int count) override;
-  bool Skip(int count) override;
-  int64_t ByteCount() const override;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool Skip(int count) override;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD int64_t ByteCount() const override;
 
  private:
   Format format_;
 
   ZeroCopyInputStream* sub_stream_;
 
-  z_stream zcontext_;
+  internal::StreamContext* zcontext_;
   int zerror_;
 
   void* output_buffer_;
@@ -102,12 +85,10 @@ class PROTOBUF_EXPORT GzipInputStream PROTOBUF_FUTURE_FINAL
 
   int Inflate(int flush);
   void DoNextOutput(const void** data, int* size);
-
-  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(GzipInputStream);
 };
 
-class PROTOBUF_EXPORT GzipOutputStream PROTOBUF_FUTURE_FINAL
-    : public ZeroCopyOutputStream {
+class PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED PROTOBUF_EXPORT
+    GzipOutputStream final : public ZeroCopyOutputStream {
  public:
   
   enum Format {
@@ -142,37 +123,42 @@ class PROTOBUF_EXPORT GzipOutputStream PROTOBUF_FUTURE_FINAL
 
   
   GzipOutputStream(ZeroCopyOutputStream* sub_stream, const Options& options);
+  GzipOutputStream(const GzipOutputStream&) = delete;
+  GzipOutputStream& operator=(const GzipOutputStream&) = delete;
 
-  virtual ~GzipOutputStream();
-
-  
-  inline const char* ZlibErrorMessage() const { return zcontext_.msg; }
-  inline int ZlibErrorCode() const { return zerror_; }
+  ~GzipOutputStream() override;
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  bool Flush();
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const char* ZlibErrorMessage() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD inline int ZlibErrorCode() const {
+    return zerror_;
+  }
 
   
   
   
   
-  bool Close();
+  
+  
+  
+  
+  
+  
+  
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool Flush();
 
   
-  bool Next(void** data, int* size) override;
+  
+  
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool Close();
+
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool Next(void** data,
+                                                int* size) override;
   void BackUp(int count) override;
-  int64_t ByteCount() const override;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD int64_t ByteCount() const override;
 
  private:
   ZeroCopyOutputStream* sub_stream_;
@@ -180,7 +166,7 @@ class PROTOBUF_EXPORT GzipOutputStream PROTOBUF_FUTURE_FINAL
   void* sub_data_;
   int sub_data_size_;
 
-  z_stream zcontext_;
+  internal::StreamContext* zcontext_;
   int zerror_;
   void* input_buffer_;
   size_t input_buffer_length_;
@@ -192,14 +178,12 @@ class PROTOBUF_EXPORT GzipOutputStream PROTOBUF_FUTURE_FINAL
   
   
   int Deflate(int flush);
-
-  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(GzipOutputStream);
 };
 
 }  
 }  
 }  
 
-#include <google/protobuf/port_undef.inc>
+#include "google/protobuf/port_undef.inc"
 
 #endif  

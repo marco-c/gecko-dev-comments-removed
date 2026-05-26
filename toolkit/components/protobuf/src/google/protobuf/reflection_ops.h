@@ -12,41 +12,18 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef GOOGLE_PROTOBUF_REFLECTION_OPS_H__
 #define GOOGLE_PROTOBUF_REFLECTION_OPS_H__
 
-#include <google/protobuf/stubs/common.h>
-#include <google/protobuf/message.h>
+#include "google/protobuf/message.h"
+#include "google/protobuf/port.h"
 
 #ifdef SWIG
 #error "You cannot SWIG proto headers"
 #endif
 
 
-#include <google/protobuf/port_def.inc>
+#include "google/protobuf/port_def.inc"
 
 namespace google {
 namespace protobuf {
@@ -63,6 +40,8 @@ namespace internal {
 
 class PROTOBUF_EXPORT ReflectionOps {
  public:
+  ReflectionOps() = delete;
+
   static void Copy(const Message& from, Message* to);
   static void Merge(const Message& from, Message* to);
   static void Clear(Message* message);
@@ -77,16 +56,12 @@ class PROTOBUF_EXPORT ReflectionOps {
   static void FindInitializationErrors(const Message& message,
                                        const std::string& prefix,
                                        std::vector<std::string>* errors);
-
- private:
-  
-  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(ReflectionOps);
 };
 
 }  
 }  
 }  
 
-#include <google/protobuf/port_undef.inc>
+#include "google/protobuf/port_undef.inc"
 
 #endif  

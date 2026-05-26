@@ -5,50 +5,35 @@
 
 
 
+#include "google/protobuf/arenastring.h"
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#include <google/protobuf/arenastring.h>
-
+#include <atomic>
+#include <cassert>
 #include <cstddef>
-#include <google/protobuf/stubs/logging.h>
-#include <google/protobuf/stubs/common.h>
-#include <google/protobuf/io/coded_stream.h>
-#include <google/protobuf/stubs/mutex.h>
-#include <google/protobuf/stubs/strutil.h>
-#include <google/protobuf/message_lite.h>
-#include <google/protobuf/parse_context.h>
-#include <google/protobuf/stubs/stl_util.h>
+#include <cstdint>
+#include <cstring>
+#include <string>
+#include <utility>
+
+#include "absl/base/const_init.h"
+#include "absl/base/optimization.h"
+#include "absl/log/absl_check.h"
+#include "absl/strings/string_view.h"
+#include "absl/synchronization/mutex.h"
+#include "google/protobuf/io/coded_stream.h"
+#include "google/protobuf/message_lite.h"
+#include "google/protobuf/parse_context.h"
+#include "google/protobuf/port.h"
 
 
-#include <google/protobuf/port_def.inc>
+#include "google/protobuf/port_def.inc"
 
 
 namespace google {
 namespace protobuf {
 namespace internal {
 
-namespace  {
+namespace {
 
 
 
@@ -66,12 +51,12 @@ constexpr size_t kNewAlign = alignof(std::max_align_t);
 constexpr size_t kStringAlign = alignof(std::string);
 
 static_assert((kStringAlign > kNewAlign ? kStringAlign : kNewAlign) >= 4, "");
-static_assert(alignof(ExplicitlyConstructedArenaString) >= 4, "");
+static_assert(alignof(GlobalEmptyString) >= 4, "");
 
 }  
 
 const std::string& LazyString::Init() const {
-  static WrappedMutex mu{GOOGLE_PROTOBUF_LINKER_INITIALIZED};
+  static absl::Mutex mu{absl::kConstInit};
   mu.Lock();
   const std::string* res = inited_.load(std::memory_order_acquire);
   if (res == nullptr) {
@@ -87,26 +72,17 @@ const std::string& LazyString::Init() const {
 namespace {
 
 
-#if defined(NDEBUG) || !GOOGLE_PROTOBUF_INTERNAL_DONATE_STEAL
 
-class ScopedCheckPtrInvariants {
- public:
-  explicit ScopedCheckPtrInvariants(const TaggedStringPtr*) {}
-};
-
-#endif  
-
-
-inline TaggedStringPtr CreateString(ConstStringParam value) {
+inline TaggedStringPtr CreateString(absl::string_view value) {
   TaggedStringPtr res;
   res.SetAllocated(new std::string(value.data(), value.length()));
   return res;
 }
 
-#if !GOOGLE_PROTOBUF_INTERNAL_DONATE_STEAL
+#ifndef GOOGLE_PROTOBUF_INTERNAL_DONATE_STEAL
 
 
-TaggedStringPtr CreateArenaString(Arena& arena, ConstStringParam s) {
+TaggedStringPtr CreateArenaString(Arena& arena, absl::string_view s) {
   TaggedStringPtr res;
   res.SetMutableArena(Arena::Create<std::string>(&arena, s.data(), s.length()));
   return res;
@@ -116,7 +92,17 @@ TaggedStringPtr CreateArenaString(Arena& arena, ConstStringParam s) {
 
 }  
 
-void ArenaStringPtr::Set(ConstStringParam value, Arena* arena) {
+class ScopedCheckPtrInvariants {
+ public:
+  explicit ScopedCheckPtrInvariants(const TaggedStringPtr*) {}
+};
+
+TaggedStringPtr TaggedStringPtr::ForceCopy(Arena* arena) const {
+  return arena != nullptr ? CreateArenaString(*arena, *Get())
+                          : CreateString(*Get());
+}
+
+void ArenaStringPtr::Set(absl::string_view value, Arena* arena) {
   ScopedCheckPtrInvariants check(&tagged_ptr_);
   if (IsDefault()) {
     
@@ -124,7 +110,44 @@ void ArenaStringPtr::Set(ConstStringParam value, Arena* arena) {
     tagged_ptr_ = arena != nullptr ? CreateArenaString(*arena, value)
                                    : CreateString(value);
   } else {
-    UnsafeMutablePointer()->assign(value.data(), value.length());
+    if (internal::DebugHardenForceCopyDefaultString()) {
+      if (arena == nullptr) {
+        auto* old = tagged_ptr_.GetIfAllocated();
+        tagged_ptr_ = CreateString(value);
+        delete old;
+      } else {
+        auto* old = UnsafeMutablePointer();
+        tagged_ptr_ = CreateArenaString(*arena, value);
+        old->assign("garbagedata");
+      }
+    } else {
+      UnsafeMutablePointer()->assign(value.data(), value.length());
+    }
+  }
+}
+
+template <>
+void ArenaStringPtr::Set(const std::string& value, Arena* arena) {
+  ScopedCheckPtrInvariants check(&tagged_ptr_);
+  if (IsDefault()) {
+    
+    
+    tagged_ptr_ = arena != nullptr ? CreateArenaString(*arena, value)
+                                   : CreateString(value);
+  } else {
+    if (internal::DebugHardenForceCopyDefaultString()) {
+      if (arena == nullptr) {
+        auto* old = tagged_ptr_.GetIfAllocated();
+        tagged_ptr_ = CreateString(value);
+        delete old;
+      } else {
+        auto* old = UnsafeMutablePointer();
+        tagged_ptr_ = CreateArenaString(*arena, value);
+        old->assign("garbagedata");
+      }
+    } else {
+      UnsafeMutablePointer()->assign(value);
+    }
   }
 }
 
@@ -134,6 +157,7 @@ void ArenaStringPtr::Set(std::string&& value, Arena* arena) {
     NewString(arena, std::move(value));
   } else if (IsFixedSizeArena()) {
     std::string* current = tagged_ptr_.Get();
+    UnpoisonMemoryRegion(current, sizeof(*current));
     auto* s = new (current) std::string(std::move(value));
     arena->OwnDestructor(s);
     tagged_ptr_.SetMutableArena(s);
@@ -166,7 +190,7 @@ std::string* ArenaStringPtr::MutableNoCopy(Arena* arena) {
   if (tagged_ptr_.IsMutable()) {
     return tagged_ptr_.Get();
   } else {
-    GOOGLE_DCHECK(IsDefault());
+    ABSL_DCHECK(IsDefault());
     
     return NewString(arena);
   }
@@ -175,7 +199,7 @@ std::string* ArenaStringPtr::MutableNoCopy(Arena* arena) {
 template <typename... Lazy>
 std::string* ArenaStringPtr::MutableSlow(::google::protobuf::Arena* arena,
                                          const Lazy&... lazy_default) {
-  GOOGLE_DCHECK(IsDefault());
+  ABSL_DCHECK(IsDefault());
 
   
   
@@ -216,9 +240,7 @@ void ArenaStringPtr::SetAllocated(std::string* value, Arena* arena) {
   }
 }
 
-void ArenaStringPtr::Destroy() {
-  delete tagged_ptr_.GetIfAllocated();
-}
+void ArenaStringPtr::Destroy() { delete tagged_ptr_.GetIfAllocated(); }
 
 void ArenaStringPtr::ClearToEmpty() {
   ScopedCheckPtrInvariants check(&tagged_ptr_);
@@ -245,11 +267,12 @@ void ArenaStringPtr::ClearToDefault(const LazyString& default_value,
   }
 }
 
+
 const char* EpsCopyInputStream::ReadArenaString(const char* ptr,
                                                 ArenaStringPtr* s,
                                                 Arena* arena) {
   ScopedCheckPtrInvariants check(&s->tagged_ptr_);
-  GOOGLE_DCHECK(arena != nullptr);
+  ABSL_DCHECK(arena != nullptr);
 
   int size = ReadSize(&ptr);
   if (!ptr) return nullptr;
@@ -264,4 +287,4 @@ const char* EpsCopyInputStream::ReadArenaString(const char* ptr,
 }  
 }  
 
-#include <google/protobuf/port_undef.inc>
+#include "google/protobuf/port_undef.inc"

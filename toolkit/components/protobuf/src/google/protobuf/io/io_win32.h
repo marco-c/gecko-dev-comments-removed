@@ -21,29 +21,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef GOOGLE_PROTOBUF_IO_IO_WIN32_H__
 #define GOOGLE_PROTOBUF_IO_IO_WIN32_H__
 
@@ -52,10 +29,10 @@
 #include <functional>
 #include <string>
 
-#include <google/protobuf/port.h>
+#include "google/protobuf/port.h"
 
 
-#include <google/protobuf/port_def.inc>
+#include "google/protobuf/port_def.inc"
 
 
 
@@ -134,7 +111,7 @@ PROTOBUF_EXPORT bool wcs_to_utf8(const wchar_t* input, std::string* out);
 #define STDOUT_FILENO 1
 #endif
 
-#include <google/protobuf/port_undef.inc>
+#include "google/protobuf/port_undef.inc"
 
 #endif  
 

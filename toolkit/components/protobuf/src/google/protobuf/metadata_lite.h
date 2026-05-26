@@ -5,39 +5,18 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef GOOGLE_PROTOBUF_METADATA_LITE_H__
 #define GOOGLE_PROTOBUF_METADATA_LITE_H__
 
 #include <string>
-#include <google/protobuf/stubs/common.h>
-#include <google/protobuf/arena.h>
-#include <google/protobuf/port.h>
+
+#include "absl/base/optimization.h"
+#include "absl/log/absl_check.h"
+#include "google/protobuf/arena.h"
+#include "google/protobuf/port.h"
 
 
-#include <google/protobuf/port_def.inc>
+#include "google/protobuf/port_def.inc"
 
 #ifdef SWIG
 #error "You cannot SWIG proto headers"
@@ -45,6 +24,9 @@
 
 namespace google {
 namespace protobuf {
+
+class UnknownFieldSet;
+
 namespace internal {
 
 
@@ -63,31 +45,17 @@ namespace internal {
 class PROTOBUF_EXPORT InternalMetadata {
  public:
   constexpr InternalMetadata() : ptr_(0) {}
-  explicit InternalMetadata(Arena* arena, bool is_message_owned = false) {
-    SetArena(arena, is_message_owned);
-  }
-
-  void SetArena(Arena* arena, bool is_message_owned) {
-    ptr_ = is_message_owned
-               ? reinterpret_cast<intptr_t>(arena) | kMessageOwnedArenaTagMask
-               : reinterpret_cast<intptr_t>(arena);
-    GOOGLE_DCHECK(!is_message_owned || arena != nullptr);
+  explicit InternalMetadata(Arena* arena) {
+    ptr_ = reinterpret_cast<intptr_t>(arena);
   }
 
   
   
   
   
-  ~InternalMetadata() {
-#if defined(NDEBUG) || defined(_MSC_VER)
-    if (HasMessageOwnedArenaTag()) {
-      delete reinterpret_cast<Arena*>(ptr_ - kMessageOwnedArenaTagMask);
-    }
-#else
-    CheckedDestruct();
-#endif
-  }
-
+  
+  
+  
   template <typename T>
   void Delete() {
     
@@ -96,33 +64,8 @@ class PROTOBUF_EXPORT InternalMetadata {
     }
   }
 
-  
-  
-  
-  
-  
-  
-  
-  template <typename T>
-  Arena* DeleteReturnArena() {
-    if (have_unknown_fields()) {
-      return DeleteOutOfLineHelper<T>();
-    } else {
-      return PtrValue<Arena>();
-    }
-  }
-
-  PROTOBUF_NDEBUG_INLINE Arena* owning_arena() const {
-    return HasMessageOwnedArenaTag() ? nullptr : arena();
-  }
-
-  PROTOBUF_NDEBUG_INLINE Arena* user_arena() const {
-    Arena* a = arena();
-    return a && !a->IsMessageOwned() ? a : nullptr;
-  }
-
   PROTOBUF_NDEBUG_INLINE Arena* arena() const {
-    if (PROTOBUF_PREDICT_FALSE(have_unknown_fields())) {
+    if (ABSL_PREDICT_FALSE(have_unknown_fields())) {
       return PtrValue<ContainerBase>()->arena;
     } else {
       return PtrValue<Arena>();
@@ -140,7 +83,7 @@ class PROTOBUF_EXPORT InternalMetadata {
   template <typename T>
   PROTOBUF_NDEBUG_INLINE const T& unknown_fields(
       const T& (*default_instance)()) const {
-    if (PROTOBUF_PREDICT_FALSE(have_unknown_fields())) {
+    if (ABSL_PREDICT_FALSE(have_unknown_fields())) {
       return PtrValue<Container<T>>()->unknown_fields;
     } else {
       return default_instance();
@@ -149,7 +92,7 @@ class PROTOBUF_EXPORT InternalMetadata {
 
   template <typename T>
   PROTOBUF_NDEBUG_INLINE T* mutable_unknown_fields() {
-    if (PROTOBUF_PREDICT_TRUE(have_unknown_fields())) {
+    if (ABSL_PREDICT_TRUE(have_unknown_fields())) {
       return &PtrValue<Container<T>>()->unknown_fields;
     } else {
       return mutable_unknown_fields_slow<T>();
@@ -169,7 +112,8 @@ class PROTOBUF_EXPORT InternalMetadata {
     }
   }
 
-  PROTOBUF_NDEBUG_INLINE void InternalSwap(InternalMetadata* other) {
+  PROTOBUF_NDEBUG_INLINE void InternalSwap(
+      InternalMetadata* PROTOBUF_RESTRICT other) {
     std::swap(ptr_, other->ptr_);
   }
 
@@ -192,22 +136,29 @@ class PROTOBUF_EXPORT InternalMetadata {
 
   
   static constexpr intptr_t kUnknownFieldsTagMask = 1;
-  static constexpr intptr_t kMessageOwnedArenaTagMask = 2;
-  static constexpr intptr_t kPtrTagMask =
-      kUnknownFieldsTagMask | kMessageOwnedArenaTagMask;
+  static constexpr intptr_t kPtrTagMask = kUnknownFieldsTagMask;
   static constexpr intptr_t kPtrValueMask = ~kPtrTagMask;
 
   
   PROTOBUF_ALWAYS_INLINE bool HasUnknownFieldsTag() const {
     return ptr_ & kUnknownFieldsTagMask;
   }
-  PROTOBUF_ALWAYS_INLINE bool HasMessageOwnedArenaTag() const {
-    return ptr_ & kMessageOwnedArenaTagMask;
-  }
 
   template <typename U>
   U* PtrValue() const {
-    return reinterpret_cast<U*>(ptr_ & kPtrValueMask);
+    if constexpr (std::is_same_v<U, Arena>) {
+      
+      ABSL_DCHECK_EQ(ptr_ & kPtrTagMask, 0);
+      return reinterpret_cast<U*>(ptr_);
+    } else {
+      static_assert(kPtrTagMask == 1);
+      ABSL_DCHECK_EQ(ptr_ & kPtrTagMask, kPtrTagMask);
+      
+      
+      
+      
+      return reinterpret_cast<U*>(ptr_ - kPtrTagMask);
+    }
   }
 
   
@@ -221,30 +172,21 @@ class PROTOBUF_EXPORT InternalMetadata {
   };
 
   template <typename T>
-  PROTOBUF_NOINLINE Arena* DeleteOutOfLineHelper() {
-    if (auto* a = arena()) {
-      
-      
-      
-      intptr_t message_owned_arena_tag = ptr_ & kMessageOwnedArenaTagMask;
-      ptr_ = reinterpret_cast<intptr_t>(a) | message_owned_arena_tag;
-      return a;
-    } else {
-      delete PtrValue<Container<T>>();
-      ptr_ = 0;
-      return nullptr;
-    }
+  PROTOBUF_NOINLINE void DeleteOutOfLineHelper() {
+    delete PtrValue<Container<T>>();
+    
+    
+    ptr_ = 0;
   }
 
   template <typename T>
   PROTOBUF_NOINLINE T* mutable_unknown_fields_slow() {
     Arena* my_arena = arena();
     Container<T>* container = Arena::Create<Container<T>>(my_arena);
-    intptr_t message_owned_arena_tag = ptr_ & kMessageOwnedArenaTagMask;
     
     
     ptr_ = reinterpret_cast<intptr_t>(container);
-    ptr_ |= kUnknownFieldsTagMask | message_owned_arena_tag;
+    ptr_ |= kUnknownFieldsTagMask;
     container->arena = my_arena;
     return &(container->unknown_fields);
   }
@@ -282,6 +224,19 @@ PROTOBUF_EXPORT void InternalMetadata::DoSwap<std::string>(std::string* other);
 
 
 
+extern template PROTOBUF_EXPORT void
+InternalMetadata::DoClear<UnknownFieldSet>();
+extern template PROTOBUF_EXPORT void
+InternalMetadata::DoMergeFrom<UnknownFieldSet>(const UnknownFieldSet& other);
+extern template PROTOBUF_EXPORT void InternalMetadata::DoSwap<UnknownFieldSet>(
+    UnknownFieldSet* other);
+extern template PROTOBUF_EXPORT void
+InternalMetadata::DeleteOutOfLineHelper<UnknownFieldSet>();
+extern template PROTOBUF_EXPORT UnknownFieldSet*
+InternalMetadata::mutable_unknown_fields_slow<UnknownFieldSet>();
+
+
+
 
 
 
@@ -311,6 +266,6 @@ class PROTOBUF_EXPORT LiteUnknownFieldSetter {
 }  
 }  
 
-#include <google/protobuf/port_undef.inc>
+#include "google/protobuf/port_undef.inc"
 
 #endif  

@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+#include "google/protobuf/arena_align.h"
+
+#include <cstddef>
+
+namespace google {
+namespace protobuf {
+namespace internal {
+
+
+constexpr size_t ArenaAlignDefault::align;  
+
+}  
+}  
+}  

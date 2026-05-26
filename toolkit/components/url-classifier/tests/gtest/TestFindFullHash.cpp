@@ -2,7 +2,6 @@
 
 
 
-
 #include "mozilla/Base64.h"
 #include "nsUrlClassifierUtils.h"
 #include "safebrowsing.pb.h"
@@ -201,7 +200,7 @@ TEST(UrlClassifierFindFullHash, ParseRequest)
     PopulateDuration(*perHashCacheDuration, expected.mPerHashCacheDuration);
   }
   std::string s;
-  r.SerializeToString(&s);
+  (void)r.SerializeToString(&s);
 
   uint32_t callbackCount = 0;
   nsCOMPtr<nsIUrlClassifierParseFindFullHashCallback> callback =

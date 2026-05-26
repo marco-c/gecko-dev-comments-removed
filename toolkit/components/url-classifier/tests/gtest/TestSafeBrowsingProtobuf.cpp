@@ -2,7 +2,6 @@
 
 
 
-
 #include "safebrowsing.pb.h"
 
 #include "Common.h"
@@ -20,11 +19,11 @@ TEST(UrlClassifierProtobuf, Empty)
 
   
   std::string s;
-  r.SerializeToString(&s);
+  (void)r.SerializeToString(&s);
 
   
   FetchThreatListUpdatesRequest r2;
-  r2.ParseFromString(s);
+  (void)r2.ParseFromString(s);
 
   ASSERT_EQ(r2.client().client_id(), CLIENT_ID);
 }

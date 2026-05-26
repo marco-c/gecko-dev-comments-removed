@@ -28,62 +28,48 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef GOOGLE_PROTOBUF_DESCRIPTOR_H__
 #define GOOGLE_PROTOBUF_DESCRIPTOR_H__
 
-
 #include <atomic>
-#include <map>
+#include <cstdint>
+#include <iterator>
 #include <memory>
-#include <set>
 #include <string>
+#include <type_traits>
+#include <utility>
 #include <vector>
 
-#include <google/protobuf/stubs/common.h>
-#include <google/protobuf/stubs/logging.h>
-#include <google/protobuf/stubs/mutex.h>
-#include <google/protobuf/stubs/once.h>
-#include <google/protobuf/port.h>
+#include "absl/base/attributes.h"
+#include "absl/base/call_once.h"
+#include "absl/base/macros.h"
+#include "absl/base/optimization.h"
+#include "absl/container/flat_hash_map.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/functional/function_ref.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
+#include "absl/synchronization/mutex.h"
+#include "google/protobuf/descriptor_lite.h"  
+#include "google/protobuf/extension_set.h"
+#include "google/protobuf/port.h"
 
 
-#include <google/protobuf/port_def.inc>
-
-
-#ifdef TYPE_BOOL
-#undef TYPE_BOOL
-#endif  
+#include "google/protobuf/port_def.inc"
 
 #ifdef SWIG
 #define PROTOBUF_EXPORT
+#define PROTOBUF_IGNORE_DEPRECATION_START
+#define PROTOBUF_IGNORE_DEPRECATION_STOP
+#define PROTOBUF_FUTURE_ADD_EARLY_NODISCARD
+#define PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED
 #endif
 
 
 namespace google {
 namespace protobuf {
-
 
 class Descriptor;
 class FieldDescriptor;
@@ -97,6 +83,13 @@ class DescriptorDatabase;
 class DescriptorPool;
 
 
+#ifndef SWIG
+enum Edition : int;
+enum SymbolVisibility : int;
+#else   
+typedef int Edition;
+typedef int SymbolVisibility;
+#endif  
 class DescriptorProto;
 class DescriptorProto_ExtensionRange;
 class FieldDescriptorProto;
@@ -116,7 +109,12 @@ class ServiceOptions;
 class MethodOptions;
 class FileOptions;
 class UninterpretedOption;
+class FeatureSet;
+class FeatureSetDefaults;
 class SourceCodeInfo;
+
+
+class MessageLite;
 
 
 class Message;
@@ -131,16 +129,31 @@ class Symbol;
 class UnknownField;
 
 
+class SymbolChecker;
+
+
 namespace compiler {
+class CodeGenerator;
 class CommandLineInterface;
 namespace cpp {
+class CppGenerator;
 
 class Formatter;
+#ifndef SWIG
+internal::FieldDescriptorLite::CppRepeatedType
+CalculateFieldDescriptorRepeatedType(const FieldDescriptor* field);
+#endif  
+}  
+namespace java {
+class MemoizeProjection;
 }  
 }  
 
 namespace descriptor_unittest {
+class DescriptorPoolMemoizationTest;
 class DescriptorTest;
+class FeaturesTest;
+class ValidationErrorTest;
 }  
 
 
@@ -148,8 +161,12 @@ namespace io {
 class Printer;
 }  
 
+namespace internal {
+class InternalFeatureHelper;
+}  
 
-struct SourceLocation {
+
+struct PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED SourceLocation {
   int start_line;
   int end_line;
   int start_column;
@@ -164,7 +181,7 @@ struct SourceLocation {
 
 
 
-struct DebugStringOptions {
+struct PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED DebugStringOptions {
   
   
   
@@ -198,6 +215,80 @@ namespace internal {
 #define PROTOBUF_INTERNAL_CHECK_CLASS_SIZE(t, expected)
 #endif
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED DescriptorNames {
+ public:
+  
+  DescriptorNames() = default;
+  explicit DescriptorNames(const char* payload) : payload_(payload) {}
+
+  
+  
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD absl::string_view name() const {
+    return get(get_size(0) + 1, get_size(0));
+  }
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD absl::string_view full_name() const {
+    return get(get_size(1) + 1, get_size(1));
+  }
+
+  
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD absl::string_view lowercase_name() const {
+    return get(get_size(2), get_size(3));
+  }
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD absl::string_view camelcase_name() const {
+    return get(get_size(4), get_size(5));
+  }
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD absl::string_view json_name() const {
+    return get(get_size(6), get_size(7));
+  }
+
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD static constexpr size_t
+  AllocationSizeForSimpleNames(size_t full_name_size) {
+    return full_name_size +  1 + 2 * sizeof(uint16_t);
+  }
+
+ private:
+  size_t get_size(int index) const {
+    
+    
+    uint16_t size;
+    memcpy(&size, payload_ + index * sizeof(size), sizeof(size));
+    return size;
+  }
+
+  absl::string_view get(size_t offset, size_t size) const {
+    return absl::string_view(payload_ - offset, size);
+  }
+
+  const char* payload_;
+};
+
 class FlatAllocator;
 
 class PROTOBUF_EXPORT LazyDescriptor {
@@ -220,12 +311,13 @@ class PROTOBUF_EXPORT LazyDescriptor {
   
   
   
-  void SetLazy(StringPiece name, const FileDescriptor* file);
+  void SetLazy(absl::string_view name, const FileDescriptor* file);
 
   
   
   
-  inline const Descriptor* Get(const ServiceDescriptor* service) {
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD inline const Descriptor* Get(
+      const ServiceDescriptor* service) {
     Once(service);
     return descriptor_;
   }
@@ -235,7 +327,7 @@ class PROTOBUF_EXPORT LazyDescriptor {
 
   const Descriptor* descriptor_;
   
-  internal::once_flag* once_;
+  absl::once_flag* once_;
 };
 
 class PROTOBUF_EXPORT SymbolBase {
@@ -251,7 +343,25 @@ class PROTOBUF_EXPORT SymbolBase {
 template <int N>
 class PROTOBUF_EXPORT SymbolBaseN : public SymbolBase {};
 
+PROTOBUF_EXPORT absl::string_view ShortEditionName(Edition edition);
+
+bool IsEnumFullySequential(const EnumDescriptor* enum_desc);
+
+const std::string& DefaultValueStringAsString(const FieldDescriptor* field);
+const std::string& NameOfEnumAsString(const EnumValueDescriptor* descriptor);
+
+struct NameLimits {
+  static constexpr int kPackageName = 511;
+  static constexpr int kReservedName = std::numeric_limits<uint16_t>::max();
+};
+
 }  
+
+
+template <typename Sink>
+void AbslStringify(Sink& sink, Edition edition) {
+  absl::Format(&sink, "%v", internal::ShortEditionName(edition));
+}
 
 
 
@@ -261,33 +371,37 @@ class PROTOBUF_EXPORT SymbolBaseN : public SymbolBase {};
 class PROTOBUF_EXPORT Descriptor : private internal::SymbolBase {
  public:
   typedef DescriptorProto Proto;
+#ifndef SWIG
+  Descriptor(const Descriptor&) = delete;
+  Descriptor& operator=(const Descriptor&) = delete;
+#endif
 
   
-  const std::string& name() const;
-
-  
-  
-  
-  
-  
-  const std::string& full_name() const;
-
-  
-  
-  int index() const;
-
-  
-  const FileDescriptor* file() const;
-
-  
-  
-  const Descriptor* containing_type() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD absl::string_view name() const;
 
   
   
   
   
-  const MessageOptions& options() const;
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD absl::string_view full_name() const;
+
+  
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD int index() const;
+
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const FileDescriptor* file() const;
+
+  
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const Descriptor* containing_type() const;
+
+  
+  
+  
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const MessageOptions& options() const;
 
   
   
@@ -296,16 +410,29 @@ class PROTOBUF_EXPORT Descriptor : private internal::SymbolBase {
 
   
   
-  std::string DebugString() const;
+  
+  
+  void CopyHeadingTo(DescriptorProto* proto) const;
 
   
   
-  std::string DebugStringWithOptions(const DebugStringOptions& options) const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD std::string DebugString() const;
+
+  
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD std::string DebugStringWithOptions(
+      const DebugStringOptions& options) const;
+
+  
+  template <typename Sink>
+  friend void AbslStringify(Sink& sink, const Descriptor& d) {
+    absl::Format(&sink, "%s", d.DebugString());
+  }
 
   
   
   
-  bool is_placeholder() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool is_placeholder() const;
 
   enum WellKnownType {
     WELLKNOWNTYPE_UNSPECIFIED,  
@@ -335,81 +462,99 @@ class PROTOBUF_EXPORT Descriptor : private internal::SymbolBase {
     __WELLKNOWNTYPE__DO_NOT_USE__ADD_DEFAULT_INSTEAD__,
   };
 
-  WellKnownType well_known_type() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD WellKnownType well_known_type() const;
 
   
 
   
-  int field_count() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD int field_count() const;
   
   
-  const FieldDescriptor* field(int index) const;
+  
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const FieldDescriptor* field(
+      int index) const;
 
   
   
-  const FieldDescriptor* FindFieldByNumber(int number) const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const FieldDescriptor* FindFieldByNumber(
+      int number) const;
   
-  const FieldDescriptor* FindFieldByName(ConstStringParam name) const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const FieldDescriptor* FindFieldByName(
+      absl::string_view name) const;
 
   
   
   
-  const FieldDescriptor* FindFieldByLowercaseName(
-      ConstStringParam lowercase_name) const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const FieldDescriptor*
+  FindFieldByLowercaseName(absl::string_view lowercase_name) const;
 
   
   
   
   
-  const FieldDescriptor* FindFieldByCamelcaseName(
-      ConstStringParam camelcase_name) const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const FieldDescriptor*
+  FindFieldByCamelcaseName(absl::string_view camelcase_name) const;
 
   
-  int oneof_decl_count() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD int oneof_decl_count() const;
   
   
   
-  int real_oneof_decl_count() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD int real_oneof_decl_count() const;
   
   
-  const OneofDescriptor* oneof_decl(int index) const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const OneofDescriptor* oneof_decl(
+      int index) const;
+  
+  
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const OneofDescriptor* real_oneof_decl(
+      int index) const;
 
   
-  const OneofDescriptor* FindOneofByName(ConstStringParam name) const;
-
-  
-
-  
-  int nested_type_count() const;
-  
-  
-  const Descriptor* nested_type(int index) const;
-
-  
-  
-  const Descriptor* FindNestedTypeByName(ConstStringParam name) const;
-
-  
-
-  
-  int enum_type_count() const;
-  
-  
-  const EnumDescriptor* enum_type(int index) const;
-
-  
-  
-  const EnumDescriptor* FindEnumTypeByName(ConstStringParam name) const;
-
-  
-  
-  const EnumValueDescriptor* FindEnumValueByName(ConstStringParam name) const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const OneofDescriptor* FindOneofByName(
+      absl::string_view name) const;
 
   
 
   
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD int nested_type_count() const;
   
-  struct ExtensionRange {
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const Descriptor* nested_type(
+      int index) const;
+
+  
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const Descriptor* FindNestedTypeByName(
+      absl::string_view name) const;
+
+  
+
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD int enum_type_count() const;
+  
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const EnumDescriptor* enum_type(
+      int index) const;
+
+  
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const EnumDescriptor* FindEnumTypeByName(
+      absl::string_view name) const;
+
+  
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const EnumValueDescriptor*
+  FindEnumValueByName(absl::string_view name) const;
+
+  
+
+  
+  
+  class PROTOBUF_EXPORT ExtensionRange {
+   public:
     typedef DescriptorProto_ExtensionRange Proto;
 
     typedef ExtensionRangeOptions OptionsType;
@@ -417,114 +562,185 @@ class PROTOBUF_EXPORT Descriptor : private internal::SymbolBase {
     
     void CopyTo(DescriptorProto_ExtensionRange* proto) const;
 
-    int start;  
-    int end;    
+    
+    PROTOBUF_FUTURE_ADD_EARLY_NODISCARD int start_number() const {
+      return start_;
+    }
 
+    
+    PROTOBUF_FUTURE_ADD_EARLY_NODISCARD int end_number() const { return end_; }
+
+    
+    
+    PROTOBUF_FUTURE_ADD_EARLY_NODISCARD int index() const;
+
+    
+    PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const ExtensionRangeOptions& options()
+        const {
+      return *options_;
+    }
+
+    
+    PROTOBUF_FUTURE_ADD_EARLY_NODISCARD absl::string_view name() const {
+      return containing_type_->name();
+    }
+
+    
+    PROTOBUF_FUTURE_ADD_EARLY_NODISCARD absl::string_view full_name() const {
+      return containing_type_->full_name();
+    }
+
+    
+    
+    PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const FileDescriptor* file() const {
+      return containing_type_->file();
+    }
+
+    
+    
+    PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const Descriptor* containing_type()
+        const {
+      return containing_type_;
+    }
+
+   private:
+    int start_;
+    int end_;
     const ExtensionRangeOptions* options_;
+
+   private:
+    const Descriptor* containing_type_;
+    const FeatureSet* proto_features_;
+    const FeatureSet* merged_features_;
+
+    
+    
+    
+    
+    const FeatureSet& features() const { return *merged_features_; }
+    friend class internal::InternalFeatureHelper;
+
+    
+    
+    void GetLocationPath(std::vector<int>* output) const;
+
+    friend class Descriptor;
+    friend class DescriptorPool;
+    friend class DescriptorBuilder;
+    friend class SymbolChecker;
   };
 
   
-  int extension_range_count() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD int extension_range_count() const;
   
   
   
-  const ExtensionRange* extension_range(int index) const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const ExtensionRange* extension_range(
+      int index) const;
 
   
-  bool IsExtensionNumber(int number) const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool IsExtensionNumber(int number) const;
 
   
-  const ExtensionRange* FindExtensionRangeContainingNumber(int number) const;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  int extension_count() const;
-  
-  
-  const FieldDescriptor* extension(int index) const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const ExtensionRange*
+  FindExtensionRangeContainingNumber(int number) const;
 
   
   
-  const FieldDescriptor* FindExtensionByName(ConstStringParam name) const;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD int extension_count() const;
+  
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const FieldDescriptor* extension(
+      int index) const;
 
   
   
-  const FieldDescriptor* FindExtensionByLowercaseName(
-      ConstStringParam name) const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const FieldDescriptor*
+  FindExtensionByName(absl::string_view name) const;
 
   
   
-  const FieldDescriptor* FindExtensionByCamelcaseName(
-      ConstStringParam name) const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const FieldDescriptor*
+  FindExtensionByLowercaseName(absl::string_view name) const;
+
+  
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const FieldDescriptor*
+  FindExtensionByCamelcaseName(absl::string_view name) const;
 
   
 
   
-  struct ReservedRange {
+  struct PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED ReservedRange {
     int start;  
     int end;    
   };
 
   
-  int reserved_range_count() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD int reserved_range_count() const;
   
   
   
-  const ReservedRange* reserved_range(int index) const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const ReservedRange* reserved_range(
+      int index) const;
 
   
-  bool IsReservedNumber(int number) const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool IsReservedNumber(int number) const;
 
   
-  const ReservedRange* FindReservedRangeContainingNumber(int number) const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const ReservedRange*
+  FindReservedRangeContainingNumber(int number) const;
 
   
-  int reserved_name_count() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD int reserved_name_count() const;
 
   
-  const std::string& reserved_name(int index) const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD absl::string_view reserved_name(
+      int index) const;
 
   
-  bool IsReservedName(ConstStringParam name) const;
-
-  
-
-  
-  
-  
-  bool GetSourceLocation(SourceLocation* out_location) const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool IsReservedName(
+      absl::string_view name) const;
 
   
 
   
   
-  const FieldDescriptor* map_key() const;
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool GetSourceLocation(
+      SourceLocation* out_location) const;
+
+  
 
   
   
-  const FieldDescriptor* map_value() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const FieldDescriptor* map_key() const;
+
+  
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const FieldDescriptor* map_value() const;
 
  private:
   friend class Symbol;
@@ -536,6 +752,16 @@ class PROTOBUF_EXPORT Descriptor : private internal::SymbolBase {
   
   friend class io::Printer;
   friend class compiler::cpp::Formatter;
+
+  
+  friend class Reflection;
+
+  
+  
+  
+  
+  const FeatureSet& features() const { return *merged_features_; }
+  friend class internal::InternalFeatureHelper;
 
   
   void CopyJsonNameTo(DescriptorProto* proto) const;
@@ -553,11 +779,16 @@ class PROTOBUF_EXPORT Descriptor : private internal::SymbolBase {
   void GetLocationPath(std::vector<int>* output) const;
 
   
+  SymbolVisibility visibility_keyword() const;
+
+  
   bool is_placeholder_ : 1;
   
   bool is_unqualified_placeholder_ : 1;
   
   uint8_t well_known_type_ : 5;
+  
+  uint8_t visibility_ : 2;
 
   
   
@@ -570,11 +801,12 @@ class PROTOBUF_EXPORT Descriptor : private internal::SymbolBase {
 
   int field_count_;
 
-  
-  const std::string* all_names_;
+  internal::DescriptorNames all_names_;
   const FileDescriptor* file_;
   const Descriptor* containing_type_;
   const MessageOptions* options_;
+  const FeatureSet* proto_features_;
+  const FeatureSet* merged_features_;
 
   
   FieldDescriptor* fields_;
@@ -600,7 +832,7 @@ class PROTOBUF_EXPORT Descriptor : private internal::SymbolBase {
   
 
   
-  Descriptor() {}
+  Descriptor();
   friend class DescriptorBuilder;
   friend class DescriptorPool;
   friend class EnumDescriptor;
@@ -609,10 +841,10 @@ class PROTOBUF_EXPORT Descriptor : private internal::SymbolBase {
   friend class OneofDescriptor;
   friend class MethodDescriptor;
   friend class FileDescriptor;
-  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(Descriptor);
+  friend class SymbolChecker;
 };
 
-PROTOBUF_INTERNAL_CHECK_CLASS_SIZE(Descriptor, 136);
+PROTOBUF_INTERNAL_CHECK_CLASS_SIZE(Descriptor, 160);
 
 
 
@@ -624,70 +856,79 @@ PROTOBUF_INTERNAL_CHECK_CLASS_SIZE(Descriptor, 136);
 
 
 
-class PROTOBUF_EXPORT FieldDescriptor : private internal::SymbolBase {
+class PROTOBUF_EXPORT FieldDescriptor : private internal::SymbolBase,
+                                        public internal::FieldDescriptorLite {
  public:
   typedef FieldDescriptorProto Proto;
 
-  
-  
-  enum Type {
-    TYPE_DOUBLE = 1,    
-    TYPE_FLOAT = 2,     
-    TYPE_INT64 = 3,     
-                        
-                        
-    TYPE_UINT64 = 4,    
-    TYPE_INT32 = 5,     
-                        
-                        
-    TYPE_FIXED64 = 6,   
-    TYPE_FIXED32 = 7,   
-    TYPE_BOOL = 8,      
-    TYPE_STRING = 9,    
-    TYPE_GROUP = 10,    
-    TYPE_MESSAGE = 11,  
-
-    TYPE_BYTES = 12,     
-    TYPE_UINT32 = 13,    
-    TYPE_ENUM = 14,      
-    TYPE_SFIXED32 = 15,  
-    TYPE_SFIXED64 = 16,  
-    TYPE_SINT32 = 17,    
-    TYPE_SINT64 = 18,    
-
-    MAX_TYPE = 18,  
-                    
-  };
+#ifndef SWIG
+  FieldDescriptor(const FieldDescriptor&) = delete;
+  FieldDescriptor& operator=(const FieldDescriptor&) = delete;
+#endif
 
   
   
   
-  enum CppType {
-    CPPTYPE_INT32 = 1,     
-    CPPTYPE_INT64 = 2,     
-    CPPTYPE_UINT32 = 3,    
-    CPPTYPE_UINT64 = 4,    
-    CPPTYPE_DOUBLE = 5,    
-    CPPTYPE_FLOAT = 6,     
-    CPPTYPE_BOOL = 7,      
-    CPPTYPE_ENUM = 8,      
-    CPPTYPE_STRING = 9,    
-    CPPTYPE_MESSAGE = 10,  
-
-    MAX_CPPTYPE = 10,  
-                       
-  };
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   
   
-  enum Label {
-    LABEL_OPTIONAL = 1,  
-    LABEL_REQUIRED = 2,  
-    LABEL_REPEATED = 3,  
+  
+  
+  
+  
+  
 
-    MAX_LABEL = 3,  
-                    
-  };
+  
+  
+  
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
+  
+
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
+  
 
   
   static const int kMaxNumber = (1 << 29) - 1;
@@ -699,12 +940,19 @@ class PROTOBUF_EXPORT FieldDescriptor : private internal::SymbolBase {
   
   static const int kLastReservedNumber = 19999;
 
-  const std::string& name() const;  
-  const std::string& full_name() const;  
-  const std::string& json_name() const;  
-  const FileDescriptor* file() const;  
-  bool is_extension() const;           
-  int number() const;                  
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD absl::string_view name() const;
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD absl::string_view full_name() const;
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD absl::string_view json_name() const;
+
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const FileDescriptor* file()
+      const;  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool is_extension()
+      const;  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD int number()
+      const;  
 
   
   
@@ -712,38 +960,7 @@ class PROTOBUF_EXPORT FieldDescriptor : private internal::SymbolBase {
   
   
   
-  const std::string& lowercase_name() const;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  const std::string& camelcase_name() const;
-
-  Type type() const;                  
-  const char* type_name() const;      
-  CppType cpp_type() const;           
-  const char* cpp_type_name() const;  
-  Label label() const;                
-
-  bool is_required() const;  
-  bool is_optional() const;  
-  bool is_repeated() const;  
-  bool is_packable() const;  
-                             
-  bool is_packed() const;    
-                             
-  bool is_map() const;       
-                             
-
-  
-  
-  bool has_optional_keyword() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD absl::string_view lowercase_name() const;
 
   
   
@@ -752,140 +969,260 @@ class PROTOBUF_EXPORT FieldDescriptor : private internal::SymbolBase {
   
   
   
-  bool has_presence() const;
+  
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD absl::string_view camelcase_name() const;
+
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD Type
+  type() const;  
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD absl::string_view type_name() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD CppType
+  cpp_type() const;  
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD absl::string_view cpp_type_name() const;
+
+#ifndef SWIG
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD CppStringType
+  cpp_string_type() const;  
+#endif
 
   
   
-  int index() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool is_required() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool is_repeated()
+      const;  
 
-  
-  bool has_default_value() const;
-
-  
-  
-  bool has_json_name() const;
-
-  
-  
-  int32_t default_value_int32_t() const;
-  int32_t default_value_int32() const { return default_value_int32_t(); }
-  
-  
-  int64_t default_value_int64_t() const;
-  int64_t default_value_int64() const { return default_value_int64_t(); }
-  
-  
-  uint32_t default_value_uint32_t() const;
-  uint32_t default_value_uint32() const { return default_value_uint32_t(); }
-  
-  
-  uint64_t default_value_uint64_t() const;
-  uint64_t default_value_uint64() const { return default_value_uint64_t(); }
-  
-  
-  float default_value_float() const;
-  
-  
-  double default_value_double() const;
-  
-  
-  bool default_value_bool() const;
-  
-  
-  
-  
-  const EnumValueDescriptor* default_value_enum() const;
-  
-  
-  const std::string& default_value_string() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool is_packable()
+      const;  
+              
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool is_map()
+      const;  
+              
 
   
   
-  const Descriptor* containing_type() const;
-
   
-  
-  const OneofDescriptor* containing_oneof() const;
-
-  
-  
-  const OneofDescriptor* real_containing_oneof() const;
-
-  
-  int index_in_oneof() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool is_packed() const;
 
   
   
   
   
   
-  const Descriptor* extension_scope() const;
+  
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool has_presence() const;
 
   
   
-  const Descriptor* message_type() const;
-  
-  
-  const EnumDescriptor* enum_type() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool requires_utf8_validation() const;
 
   
   
   
   
   
-  const FieldOptions& options() const;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool legacy_enum_field_treated_as_closed()
+      const;
+
+  
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD int index() const;
+
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool has_default_value() const;
+
+  
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool has_json_name() const;
+
+  
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD int32_t default_value_int32_t() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD int32_t default_value_int32() const {
+    return default_value_int32_t();
+  }
+  
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD int64_t default_value_int64_t() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD int64_t default_value_int64() const {
+    return default_value_int64_t();
+  }
+  
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD uint32_t default_value_uint32_t() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD uint32_t default_value_uint32() const {
+    return default_value_uint32_t();
+  }
+  
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD uint64_t default_value_uint64_t() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD uint64_t default_value_uint64() const {
+    return default_value_uint64_t();
+  }
+  
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD float default_value_float() const;
+  
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD double default_value_double() const;
+  
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool default_value_bool() const;
+  
+  
+  
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const EnumValueDescriptor*
+  default_value_enum() const;
+  
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD absl::string_view default_value_string()
+      const;
+
+  
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const Descriptor* containing_type() const;
+
+  
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const OneofDescriptor* containing_oneof()
+      const;
+
+  
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const OneofDescriptor*
+  real_containing_oneof() const;
+
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD int index_in_oneof() const;
+
+  
+  
+  
+  
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const Descriptor* extension_scope() const;
+
+  
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const Descriptor* message_type() const;
+  
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const EnumDescriptor* enum_type() const;
+
+  
+  
+  
+  
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const FieldOptions& options() const;
 
   
   void CopyTo(FieldDescriptorProto* proto) const;
 
   
-  std::string DebugString() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD std::string DebugString() const;
 
   
-  std::string DebugStringWithOptions(const DebugStringOptions& options) const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD std::string DebugStringWithOptions(
+      const DebugStringOptions& options) const;
 
   
-  static CppType TypeToCppType(Type type);
+  template <typename Sink>
+  friend void AbslStringify(Sink& sink, const FieldDescriptor& d) {
+    absl::Format(&sink, "%s", d.DebugString());
+  }
 
   
-  static const char* TypeName(Type type);
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD static CppType TypeToCppType(Type type);
 
   
-  static const char* CppTypeName(CppType cpp_type);
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD static absl::string_view TypeName(
+      Type type);
 
   
-  static inline bool IsTypePackable(Type field_type);
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD static absl::string_view CppTypeName(
+      CppType cpp_type);
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  const std::string& PrintableNameForExtension() const;
-
-  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD static inline bool IsTypePackable(
+      Type field_type);
 
   
   
   
-  bool GetSourceLocation(SourceLocation* out_location) const;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD absl::string_view
+  PrintableNameForExtension() const;
+
+  
+
+  
+  
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool GetSourceLocation(
+      SourceLocation* out_location) const;
 
  private:
   friend class Symbol;
   typedef FieldOptions OptionsType;
 
   
+  
+  
+  
+  friend class descriptor_unittest::FeaturesTest;
+
+  
   friend class io::Printer;
   friend class compiler::cpp::Formatter;
+#ifndef SWIG
+  friend FieldDescriptor::CppRepeatedType
+  compiler::cpp::CalculateFieldDescriptorRepeatedType(
+      const FieldDescriptor* field);
+#endif  
   friend class Reflection;
+  friend class FieldDescriptorLegacy;
+  friend const std::string& internal::DefaultValueStringAsString(
+      const FieldDescriptor* field);
+
+  
+  
+  
+  
+  friend class compiler::cpp::CppGenerator;
+  int legacy_proto_ctype() const { return legacy_proto_ctype_; }
+  bool has_legacy_proto_ctype() const;
+
+  
+  
+  
+  
+  const FeatureSet& features() const { return *merged_features_; }
+  friend class internal::InternalFeatureHelper;
 
   
   void CopyJsonNameTo(FieldDescriptorProto* proto) const;
@@ -909,6 +1246,10 @@ class PROTOBUF_EXPORT FieldDescriptor : private internal::SymbolBase {
   
   bool is_map_message_type() const;
 
+  CppStringType CalculateCppStringType() const;
+
+  CppRepeatedType CalculateCppRepeatedType() const;
+
   bool has_default_value_ : 1;
   bool proto3_optional_ : 1;
   
@@ -916,32 +1257,39 @@ class PROTOBUF_EXPORT FieldDescriptor : private internal::SymbolBase {
   bool has_json_name_ : 1;
   bool is_extension_ : 1;
   bool is_oneof_ : 1;
+  bool is_repeated_ : 1;  
 
   
   uint8_t label_ : 2;
 
   
-  mutable uint8_t type_;
+  uint8_t type_;
 
   
   
+  uint8_t cpp_string_type_ : 3;
+
   
   
+  bool in_real_oneof_ : 1;
+
   
   
+  bool is_map_ : 1;
+
   
-  uint8_t lowercase_name_index_ : 2;
-  uint8_t camelcase_name_index_ : 2;
-  uint8_t json_name_index_ : 3;
+  
+  uint8_t legacy_proto_ctype_ : 2;
+
   
   
   int number_;
-  const std::string* all_names_;
+  internal::DescriptorNames all_names_;
   const FileDescriptor* file_;
 
   
   
-  internal::once_flag* type_once_;
+  absl::once_flag* type_once_;
   static void TypeOnceInit(const FieldDescriptor* to_init);
   void InternalTypeOnceInit() const;
   const Descriptor* containing_type_;
@@ -954,6 +1302,8 @@ class PROTOBUF_EXPORT FieldDescriptor : private internal::SymbolBase {
     mutable const EnumDescriptor* enum_type;
   } type_descriptor_;
   const FieldOptions* options_;
+  const FeatureSet* proto_features_;
+  const FeatureSet* merged_features_;
   
   
   
@@ -981,59 +1331,70 @@ class PROTOBUF_EXPORT FieldDescriptor : private internal::SymbolBase {
   static const char* const kLabelToName[MAX_LABEL + 1];
 
   
-  FieldDescriptor() {}
+  FieldDescriptor();
   friend class DescriptorBuilder;
   friend class FileDescriptor;
   friend class Descriptor;
   friend class OneofDescriptor;
-  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(FieldDescriptor);
 };
 
-PROTOBUF_INTERNAL_CHECK_CLASS_SIZE(FieldDescriptor, 72);
+PROTOBUF_INTERNAL_CHECK_CLASS_SIZE(FieldDescriptor, 88);
 
 
 class PROTOBUF_EXPORT OneofDescriptor : private internal::SymbolBase {
  public:
   typedef OneofDescriptorProto Proto;
 
-  const std::string& name() const;       
-  const std::string& full_name() const;  
+#ifndef SWIG
+  OneofDescriptor(const OneofDescriptor&) = delete;
+  OneofDescriptor& operator=(const OneofDescriptor&) = delete;
+#endif
 
   
-  int index() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD absl::string_view name() const;
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD absl::string_view full_name() const;
 
   
-  
-  bool is_synthetic() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD int index() const;
 
   
-  const FileDescriptor* file() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const FileDescriptor* file() const;
   
-  const Descriptor* containing_type() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const Descriptor* containing_type() const;
 
   
-  int field_count() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD int field_count() const;
   
   
-  const FieldDescriptor* field(int index) const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const FieldDescriptor* field(
+      int index) const;
 
-  const OneofOptions& options() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const OneofOptions& options() const;
 
   
   void CopyTo(OneofDescriptorProto* proto) const;
 
   
-  std::string DebugString() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD std::string DebugString() const;
 
   
-  std::string DebugStringWithOptions(const DebugStringOptions& options) const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD std::string DebugStringWithOptions(
+      const DebugStringOptions& options) const;
+
+  
+  template <typename Sink>
+  friend void AbslStringify(Sink& sink, const OneofDescriptor& d) {
+    absl::Format(&sink, "%s", d.DebugString());
+  }
 
   
 
   
   
   
-  bool GetSourceLocation(SourceLocation* out_location) const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool GetSourceLocation(
+      SourceLocation* out_location) const;
 
  private:
   friend class Symbol;
@@ -1042,6 +1403,18 @@ class PROTOBUF_EXPORT OneofDescriptor : private internal::SymbolBase {
   
   friend class io::Printer;
   friend class compiler::cpp::Formatter;
+  friend class OneofDescriptorLegacy;
+
+  
+  
+  bool is_synthetic() const;
+
+  
+  
+  
+  
+  const FeatureSet& features() const { return *merged_features_; }
+  friend class internal::InternalFeatureHelper;
 
   
   void DebugString(int depth, std::string* contents,
@@ -1053,10 +1426,11 @@ class PROTOBUF_EXPORT OneofDescriptor : private internal::SymbolBase {
 
   int field_count_;
 
-  
-  const std::string* all_names_;
+  internal::DescriptorNames all_names_;
   const Descriptor* containing_type_;
   const OneofOptions* options_;
+  const FeatureSet* proto_features_;
+  const FeatureSet* merged_features_;
   const FieldDescriptor* fields_;
 
   
@@ -1064,13 +1438,14 @@ class PROTOBUF_EXPORT OneofDescriptor : private internal::SymbolBase {
   
 
   
-  OneofDescriptor() {}
+  OneofDescriptor();
   friend class DescriptorBuilder;
   friend class Descriptor;
-  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(OneofDescriptor);
+  friend class FieldDescriptor;
+  friend class Reflection;
 };
 
-PROTOBUF_INTERNAL_CHECK_CLASS_SIZE(OneofDescriptor, 40);
+PROTOBUF_INTERNAL_CHECK_CLASS_SIZE(OneofDescriptor, 56);
 
 
 
@@ -1079,95 +1454,136 @@ class PROTOBUF_EXPORT EnumDescriptor : private internal::SymbolBase {
  public:
   typedef EnumDescriptorProto Proto;
 
-  
-  const std::string& name() const;
+#ifndef SWIG
+  EnumDescriptor(const EnumDescriptor&) = delete;
+  EnumDescriptor& operator=(const EnumDescriptor&) = delete;
+#endif
 
   
-  const std::string& full_name() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD absl::string_view name() const;
 
   
-  int index() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD absl::string_view full_name() const;
 
   
-  const FileDescriptor* file() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD int index() const;
 
   
-  
-  int value_count() const;
-  
-  
-  const EnumValueDescriptor* value(int index) const;
-
-  
-  const EnumValueDescriptor* FindValueByName(ConstStringParam name) const;
-  
-  
-  const EnumValueDescriptor* FindValueByNumber(int number) const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const FileDescriptor* file() const;
 
   
   
-  const Descriptor* containing_type() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD int value_count() const;
+  
+  
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const EnumValueDescriptor* value(
+      int index) const;
+
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const EnumValueDescriptor*
+  FindValueByName(absl::string_view name) const;
+  
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const EnumValueDescriptor*
+  FindValueByNumber(int number) const;
+
+  
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const Descriptor* containing_type() const;
 
   
   
   
   
-  const EnumOptions& options() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const EnumOptions& options() const;
 
   
   void CopyTo(EnumDescriptorProto* proto) const;
 
   
-  std::string DebugString() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD std::string DebugString() const;
 
   
-  std::string DebugStringWithOptions(const DebugStringOptions& options) const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD std::string DebugStringWithOptions(
+      const DebugStringOptions& options) const;
+
+  
+  template <typename Sink>
+  friend void AbslStringify(Sink& sink, const EnumDescriptor& d) {
+    absl::Format(&sink, "%s", d.DebugString());
+  }
 
   
   
   
-  bool is_placeholder() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool is_placeholder() const;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool is_closed() const;
 
   
 
   
-  struct ReservedRange {
+  struct PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED ReservedRange {
     int start;  
     int end;    
   };
 
   
-  int reserved_range_count() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD int reserved_range_count() const;
   
   
   
-  const EnumDescriptor::ReservedRange* reserved_range(int index) const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const EnumDescriptor::ReservedRange*
+  reserved_range(int index) const;
 
   
-  bool IsReservedNumber(int number) const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool IsReservedNumber(int number) const;
 
   
-  const EnumDescriptor::ReservedRange* FindReservedRangeContainingNumber(
-      int number) const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const EnumDescriptor::ReservedRange*
+  FindReservedRangeContainingNumber(int number) const;
 
   
-  int reserved_name_count() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD int reserved_name_count() const;
 
   
-  const std::string& reserved_name(int index) const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD absl::string_view reserved_name(
+      int index) const;
 
   
-  bool IsReservedName(ConstStringParam name) const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool IsReservedName(
+      absl::string_view name) const;
 
   
 
   
   
   
-  bool GetSourceLocation(SourceLocation* out_location) const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool GetSourceLocation(
+      SourceLocation* out_location) const;
 
  private:
   friend class Symbol;
+  friend bool internal::IsEnumFullySequential(const EnumDescriptor* enum_desc);
+  friend class SymbolChecker;
   typedef EnumOptions OptionsType;
 
   
@@ -1176,6 +1592,13 @@ class PROTOBUF_EXPORT EnumDescriptor : private internal::SymbolBase {
 
   
   friend class descriptor_unittest::DescriptorTest;
+
+  
+  
+  
+  
+  const FeatureSet& features() const { return *merged_features_; }
+  friend class internal::InternalFeatureHelper;
 
   
   
@@ -1197,9 +1620,15 @@ class PROTOBUF_EXPORT EnumDescriptor : private internal::SymbolBase {
   void GetLocationPath(std::vector<int>* output) const;
 
   
+  SymbolVisibility visibility_keyword() const;
+
+  
   bool is_placeholder_ : 1;
   
   bool is_unqualified_placeholder_ : 1;
+
+  
+  uint8_t visibility_ : 2;
 
   
   
@@ -1212,11 +1641,12 @@ class PROTOBUF_EXPORT EnumDescriptor : private internal::SymbolBase {
 
   int value_count_;
 
-  
-  const std::string* all_names_;
+  internal::DescriptorNames all_names_;
   const FileDescriptor* file_;
   const Descriptor* containing_type_;
   const EnumOptions* options_;
+  const FeatureSet* proto_features_;
+  const FeatureSet* merged_features_;
   EnumValueDescriptor* values_;
 
   int reserved_range_count_;
@@ -1229,7 +1659,7 @@ class PROTOBUF_EXPORT EnumDescriptor : private internal::SymbolBase {
   
 
   
-  EnumDescriptor() {}
+  EnumDescriptor();
   friend class DescriptorBuilder;
   friend class Descriptor;
   friend class FieldDescriptor;
@@ -1238,10 +1668,9 @@ class PROTOBUF_EXPORT EnumDescriptor : private internal::SymbolBase {
   friend class FileDescriptor;
   friend class DescriptorPool;
   friend class Reflection;
-  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(EnumDescriptor);
 };
 
-PROTOBUF_INTERNAL_CHECK_CLASS_SIZE(EnumDescriptor, 72);
+PROTOBUF_INTERNAL_CHECK_CLASS_SIZE(EnumDescriptor, 88);
 
 
 
@@ -1253,43 +1682,59 @@ class PROTOBUF_EXPORT EnumValueDescriptor : private internal::SymbolBaseN<0>,
  public:
   typedef EnumValueDescriptorProto Proto;
 
-  const std::string& name() const;  
-  int index() const;                
-  int number() const;               
+#ifndef SWIG
+  EnumValueDescriptor(const EnumValueDescriptor&) = delete;
+  EnumValueDescriptor& operator=(const EnumValueDescriptor&) = delete;
+#endif
+
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD absl::string_view name()
+      const;  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD int index()
+      const;  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD int number()
+      const;  
 
   
   
   
   
   
-  const std::string& full_name() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD absl::string_view full_name() const;
 
   
-  const FileDescriptor* file() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const FileDescriptor* file() const;
   
-  const EnumDescriptor* type() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const EnumDescriptor* type() const;
 
   
   
   
   
-  const EnumValueOptions& options() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const EnumValueOptions& options() const;
 
   
   void CopyTo(EnumValueDescriptorProto* proto) const;
 
   
-  std::string DebugString() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD std::string DebugString() const;
 
   
-  std::string DebugStringWithOptions(const DebugStringOptions& options) const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD std::string DebugStringWithOptions(
+      const DebugStringOptions& options) const;
+
+  
+  template <typename Sink>
+  friend void AbslStringify(Sink& sink, const EnumValueDescriptor& d) {
+    absl::Format(&sink, "%s", d.DebugString());
+  }
 
   
 
   
   
   
-  bool GetSourceLocation(SourceLocation* out_location) const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool GetSourceLocation(
+      SourceLocation* out_location) const;
 
  private:
   friend class Symbol;
@@ -1298,6 +1743,15 @@ class PROTOBUF_EXPORT EnumValueDescriptor : private internal::SymbolBaseN<0>,
   
   friend class io::Printer;
   friend class compiler::cpp::Formatter;
+  friend const std::string& internal::NameOfEnumAsString(
+      const EnumValueDescriptor* descriptor);
+
+  
+  
+  
+  
+  const FeatureSet& features() const { return *merged_features_; }
+  friend class internal::InternalFeatureHelper;
 
   
   void DebugString(int depth, std::string* contents,
@@ -1309,24 +1763,27 @@ class PROTOBUF_EXPORT EnumValueDescriptor : private internal::SymbolBaseN<0>,
 
   int number_;
   
+  
+  
   const std::string* all_names_;
   const EnumDescriptor* type_;
   const EnumValueOptions* options_;
+  const FeatureSet* proto_features_;
+  const FeatureSet* merged_features_;
   
   
   
 
   
-  EnumValueDescriptor() {}
+  EnumValueDescriptor();
   friend class DescriptorBuilder;
   friend class EnumDescriptor;
   friend class DescriptorPool;
   friend class FileDescriptorTables;
   friend class Reflection;
-  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(EnumValueDescriptor);
 };
 
-PROTOBUF_INTERNAL_CHECK_CLASS_SIZE(EnumValueDescriptor, 32);
+PROTOBUF_INTERNAL_CHECK_CLASS_SIZE(EnumValueDescriptor, 48);
 
 
 
@@ -1334,46 +1791,61 @@ class PROTOBUF_EXPORT ServiceDescriptor : private internal::SymbolBase {
  public:
   typedef ServiceDescriptorProto Proto;
 
-  
-  const std::string& name() const;
-  
-  const std::string& full_name() const;
-  
-  int index() const;
+#ifndef SWIG
+  ServiceDescriptor(const ServiceDescriptor&) = delete;
+  ServiceDescriptor& operator=(const ServiceDescriptor&) = delete;
+#endif
 
   
-  const FileDescriptor* file() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD absl::string_view name() const;
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD absl::string_view full_name() const;
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD int index() const;
+
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const FileDescriptor* file() const;
 
   
   
   
   
-  const ServiceOptions& options() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const ServiceOptions& options() const;
 
   
-  int method_count() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD int method_count() const;
   
   
-  const MethodDescriptor* method(int index) const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const MethodDescriptor* method(
+      int index) const;
 
   
-  const MethodDescriptor* FindMethodByName(ConstStringParam name) const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const MethodDescriptor* FindMethodByName(
+      absl::string_view name) const;
 
   
   void CopyTo(ServiceDescriptorProto* proto) const;
 
   
-  std::string DebugString() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD std::string DebugString() const;
 
   
-  std::string DebugStringWithOptions(const DebugStringOptions& options) const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD std::string DebugStringWithOptions(
+      const DebugStringOptions& options) const;
+
+  
+  template <typename Sink>
+  friend void AbslStringify(Sink& sink, const ServiceDescriptor& d) {
+    absl::Format(&sink, "%s", d.DebugString());
+  }
 
   
 
   
   
   
-  bool GetSourceLocation(SourceLocation* out_location) const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool GetSourceLocation(
+      SourceLocation* out_location) const;
 
  private:
   friend class Symbol;
@@ -1384,6 +1856,15 @@ class PROTOBUF_EXPORT ServiceDescriptor : private internal::SymbolBase {
   friend class compiler::cpp::Formatter;
 
   
+  
+  
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const FeatureSet& features() const {
+    return *merged_features_;
+  }
+  friend class internal::InternalFeatureHelper;
+
+  
   void DebugString(std::string* contents,
                    const DebugStringOptions& options) const;
 
@@ -1391,10 +1872,11 @@ class PROTOBUF_EXPORT ServiceDescriptor : private internal::SymbolBase {
   
   void GetLocationPath(std::vector<int>* output) const;
 
-  
-  const std::string* all_names_;
+  internal::DescriptorNames all_names_;
   const FileDescriptor* file_;
   const ServiceOptions* options_;
+  const FeatureSet* proto_features_;
+  const FeatureSet* merged_features_;
   MethodDescriptor* methods_;
   int method_count_;
   
@@ -1402,14 +1884,13 @@ class PROTOBUF_EXPORT ServiceDescriptor : private internal::SymbolBase {
   
 
   
-  ServiceDescriptor() {}
+  ServiceDescriptor();
   friend class DescriptorBuilder;
   friend class FileDescriptor;
   friend class MethodDescriptor;
-  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(ServiceDescriptor);
 };
 
-PROTOBUF_INTERNAL_CHECK_CLASS_SIZE(ServiceDescriptor, 48);
+PROTOBUF_INTERNAL_CHECK_CLASS_SIZE(ServiceDescriptor, 64);
 
 
 
@@ -1419,49 +1900,62 @@ class PROTOBUF_EXPORT MethodDescriptor : private internal::SymbolBase {
  public:
   typedef MethodDescriptorProto Proto;
 
-  
-  const std::string& name() const;
-  
-  const std::string& full_name() const;
-  
-  int index() const;
+#ifndef SWIG
+  MethodDescriptor(const MethodDescriptor&) = delete;
+  MethodDescriptor& operator=(const MethodDescriptor&) = delete;
+#endif
 
   
-  const FileDescriptor* file() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD absl::string_view name() const;
   
-  const ServiceDescriptor* service() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD absl::string_view full_name() const;
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD int index() const;
 
   
-  const Descriptor* input_type() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const FileDescriptor* file() const;
   
-  const Descriptor* output_type() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const ServiceDescriptor* service() const;
 
   
-  bool client_streaming() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const Descriptor* input_type() const;
   
-  bool server_streaming() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const Descriptor* output_type() const;
+
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool client_streaming() const;
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool server_streaming() const;
 
   
   
   
   
-  const MethodOptions& options() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const MethodOptions& options() const;
 
   
   void CopyTo(MethodDescriptorProto* proto) const;
 
   
-  std::string DebugString() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD std::string DebugString() const;
 
   
-  std::string DebugStringWithOptions(const DebugStringOptions& options) const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD std::string DebugStringWithOptions(
+      const DebugStringOptions& options) const;
+
+  
+  template <typename Sink>
+  friend void AbslStringify(Sink& sink, const MethodDescriptor& d) {
+    absl::Format(&sink, "%s", d.DebugString());
+  }
 
   
 
   
   
   
-  bool GetSourceLocation(SourceLocation* out_location) const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool GetSourceLocation(
+      SourceLocation* out_location) const;
 
  private:
   friend class Symbol;
@@ -1470,6 +1964,13 @@ class PROTOBUF_EXPORT MethodDescriptor : private internal::SymbolBase {
   
   friend class io::Printer;
   friend class compiler::cpp::Formatter;
+
+  
+  
+  
+  
+  const FeatureSet& features() const { return *merged_features_; }
+  friend class internal::InternalFeatureHelper;
 
   
   void DebugString(int depth, std::string* contents,
@@ -1481,24 +1982,24 @@ class PROTOBUF_EXPORT MethodDescriptor : private internal::SymbolBase {
 
   bool client_streaming_;
   bool server_streaming_;
-  
-  const std::string* all_names_;
+  internal::DescriptorNames all_names_;
   const ServiceDescriptor* service_;
   mutable internal::LazyDescriptor input_type_;
   mutable internal::LazyDescriptor output_type_;
   const MethodOptions* options_;
+  const FeatureSet* proto_features_;
+  const FeatureSet* merged_features_;
   
   
   
 
   
-  MethodDescriptor() {}
+  MethodDescriptor();
   friend class DescriptorBuilder;
   friend class ServiceDescriptor;
-  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(MethodDescriptor);
 };
 
-PROTOBUF_INTERNAL_CHECK_CLASS_SIZE(MethodDescriptor, 64);
+PROTOBUF_INTERNAL_CHECK_CLASS_SIZE(MethodDescriptor, 80);
 
 
 
@@ -1507,102 +2008,120 @@ class PROTOBUF_EXPORT FileDescriptor : private internal::SymbolBase {
  public:
   typedef FileDescriptorProto Proto;
 
-  
-  
-  const std::string& name() const;
-
-  
-  const std::string& package() const;
-
-  
-  
-  const DescriptorPool* pool() const;
-
-  
-  int dependency_count() const;
-  
-  
-  const FileDescriptor* dependency(int index) const;
+#ifndef SWIG
+  FileDescriptor(const FileDescriptor&) = delete;
+  FileDescriptor& operator=(const FileDescriptor&) = delete;
+#endif
 
   
   
-  int public_dependency_count() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD absl::string_view name() const;
+
   
-  
-  
-  const FileDescriptor* public_dependency(int index) const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD absl::string_view package() const;
 
   
   
-  int weak_dependency_count() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const DescriptorPool* pool() const;
+
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD int dependency_count() const;
   
   
-  
-  const FileDescriptor* weak_dependency(int index) const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const FileDescriptor* dependency(
+      int index) const;
 
   
   
-  int message_type_count() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD int public_dependency_count() const;
   
   
-  const Descriptor* message_type(int index) const;
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const FileDescriptor* public_dependency(
+      int index) const;
 
   
   
-  int enum_type_count() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD int weak_dependency_count() const;
   
   
-  const EnumDescriptor* enum_type(int index) const;
-
   
-  int service_count() const;
-  
-  
-  const ServiceDescriptor* service(int index) const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const FileDescriptor* weak_dependency(
+      int index) const;
 
   
   
-  int extension_count() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD int option_dependency_count() const;
   
   
-  const FieldDescriptor* extension(int index) const;
+  
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD absl::string_view option_dependency_name(
+      int index) const;
+
+  
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD int message_type_count() const;
+  
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const Descriptor* message_type(
+      int index) const;
+
+  
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD int enum_type_count() const;
+  
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const EnumDescriptor* enum_type(
+      int index) const;
+
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD int service_count() const;
+  
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const ServiceDescriptor* service(
+      int index) const;
+
+  
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD int extension_count() const;
+  
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const FieldDescriptor* extension(
+      int index) const;
 
   
   
   
   
-  const FileOptions& options() const;
-
-  
-  enum Syntax {
-    SYNTAX_UNKNOWN = 0,
-    SYNTAX_PROTO2 = 2,
-    SYNTAX_PROTO3 = 3,
-  };
-  Syntax syntax() const;
-  static const char* SyntaxName(Syntax syntax);
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const FileOptions& options() const;
 
   
   
-  const Descriptor* FindMessageTypeByName(ConstStringParam name) const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const Descriptor* FindMessageTypeByName(
+      absl::string_view name) const;
   
-  const EnumDescriptor* FindEnumTypeByName(ConstStringParam name) const;
-  
-  
-  const EnumValueDescriptor* FindEnumValueByName(ConstStringParam name) const;
-  
-  const ServiceDescriptor* FindServiceByName(ConstStringParam name) const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const EnumDescriptor* FindEnumTypeByName(
+      absl::string_view name) const;
   
   
-  const FieldDescriptor* FindExtensionByName(ConstStringParam name) const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const EnumValueDescriptor*
+  FindEnumValueByName(absl::string_view name) const;
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const ServiceDescriptor*
+  FindServiceByName(absl::string_view name) const;
   
   
-  const FieldDescriptor* FindExtensionByLowercaseName(
-      ConstStringParam name) const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const FieldDescriptor*
+  FindExtensionByName(absl::string_view name) const;
   
   
-  const FieldDescriptor* FindExtensionByCamelcaseName(
-      ConstStringParam name) const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const FieldDescriptor*
+  FindExtensionByLowercaseName(absl::string_view name) const;
+  
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const FieldDescriptor*
+  FindExtensionByCamelcaseName(absl::string_view name) const;
 
   
   
@@ -1615,32 +2134,45 @@ class PROTOBUF_EXPORT FileDescriptor : private internal::SymbolBase {
   
   
   void CopyJsonNameTo(FileDescriptorProto* proto) const;
+  
+  
+  void CopyHeadingTo(FileDescriptorProto* proto) const;
 
   
-  std::string DebugString() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD std::string DebugString() const;
 
   
-  std::string DebugStringWithOptions(const DebugStringOptions& options) const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD std::string DebugStringWithOptions(
+      const DebugStringOptions& options) const;
+
+  
+  template <typename Sink>
+  friend void AbslStringify(Sink& sink, const FileDescriptor& d) {
+    absl::Format(&sink, "%s", d.DebugString());
+  }
 
   
   
   
-  bool is_placeholder() const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool is_placeholder() const;
 
   
   
-  bool GetSourceLocation(SourceLocation* out_location) const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool GetSourceLocation(
+      SourceLocation* out_location) const;
 
   
   
   
   
   
-  bool GetSourceLocation(const std::vector<int>& path,
-                         SourceLocation* out_location) const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool GetSourceLocation(
+      const std::vector<int>& path, SourceLocation* out_location) const;
 
  private:
   friend class Symbol;
+  friend class SymbolChecker;
+  friend class FileDescriptorLegacy;
   typedef FileOptions OptionsType;
 
   bool is_placeholder_;
@@ -1649,18 +2181,28 @@ class PROTOBUF_EXPORT FileDescriptor : private internal::SymbolBase {
   
   bool finished_building_;
   
-  uint8_t syntax_;
-  
   int extension_count_;
 
   const std::string* name_;
   const std::string* package_;
   const DescriptorPool* pool_;
+  Edition edition_;
+
+  
+  
+  Edition edition() const;
 
   
   
   
-  internal::once_flag* dependencies_once_;
+  
+  const FeatureSet& features() const { return *merged_features_; }
+  friend class internal::InternalFeatureHelper;
+
+  
+  
+  
+  absl::once_flag* dependencies_once_;
   static void DependenciesOnceInit(const FileDescriptor* to_init);
   void InternalDependenciesOnceInit() const;
 
@@ -1668,6 +2210,7 @@ class PROTOBUF_EXPORT FileDescriptor : private internal::SymbolBase {
   int dependency_count_;
   int public_dependency_count_;
   int weak_dependency_count_;
+  int option_dependency_count_;
   int message_type_count_;
   int enum_type_count_;
   int service_count_;
@@ -1675,11 +2218,15 @@ class PROTOBUF_EXPORT FileDescriptor : private internal::SymbolBase {
   mutable const FileDescriptor** dependencies_;
   int* public_dependencies_;
   int* weak_dependencies_;
+  absl::string_view* option_dependencies_;
+
   Descriptor* message_types_;
   EnumDescriptor* enum_types_;
   ServiceDescriptor* services_;
   FieldDescriptor* extensions_;
   const FileOptions* options_;
+  const FeatureSet* proto_features_;
+  const FeatureSet* merged_features_;
 
   const FileDescriptorTables* tables_;
   const SourceCodeInfo* source_code_info_;
@@ -1688,7 +2235,7 @@ class PROTOBUF_EXPORT FileDescriptor : private internal::SymbolBase {
   
   
 
-  FileDescriptor() {}
+  FileDescriptor();
   friend class DescriptorBuilder;
   friend class DescriptorPool;
   friend class Descriptor;
@@ -1699,10 +2246,21 @@ class PROTOBUF_EXPORT FileDescriptor : private internal::SymbolBase {
   friend class EnumValueDescriptor;
   friend class MethodDescriptor;
   friend class ServiceDescriptor;
-  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(FileDescriptor);
 };
 
-PROTOBUF_INTERNAL_CHECK_CLASS_SIZE(FileDescriptor, 144);
+PROTOBUF_INTERNAL_CHECK_CLASS_SIZE(FileDescriptor, 184);
+
+#ifndef SWIG
+enum class ExtDeclEnforcementLevel : uint8_t {
+  
+  kNoEnforcement = 0,
+  
+  
+  kCustomExtensions = 1,
+  
+  kAllExtensions = 2,
+};
+#endif  
 
 
 
@@ -1762,51 +2320,66 @@ class PROTOBUF_EXPORT DescriptorPool {
   explicit DescriptorPool(DescriptorDatabase* fallback_database,
                           ErrorCollector* error_collector = nullptr);
 
+#ifndef SWIG
+  DescriptorPool(const DescriptorPool&) = delete;
+  DescriptorPool& operator=(const DescriptorPool&) = delete;
+#endif
   ~DescriptorPool();
 
   
   
   
-  static const DescriptorPool* generated_pool();
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD static const DescriptorPool*
+  generated_pool();
 
 
   
   
-  const FileDescriptor* FindFileByName(ConstStringParam name) const;
-
-  
-  
-  
-  
-  const FileDescriptor* FindFileContainingSymbol(
-      ConstStringParam symbol_name) const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const FileDescriptor* FindFileByName(
+      absl::string_view name) const;
 
   
   
   
   
-
-  const Descriptor* FindMessageTypeByName(ConstStringParam name) const;
-  const FieldDescriptor* FindFieldByName(ConstStringParam name) const;
-  const FieldDescriptor* FindExtensionByName(ConstStringParam name) const;
-  const OneofDescriptor* FindOneofByName(ConstStringParam name) const;
-  const EnumDescriptor* FindEnumTypeByName(ConstStringParam name) const;
-  const EnumValueDescriptor* FindEnumValueByName(ConstStringParam name) const;
-  const ServiceDescriptor* FindServiceByName(ConstStringParam name) const;
-  const MethodDescriptor* FindMethodByName(ConstStringParam name) const;
-
-  
-  
-  const FieldDescriptor* FindExtensionByNumber(const Descriptor* extendee,
-                                               int number) const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const FileDescriptor*
+  FindFileContainingSymbol(absl::string_view symbol_name) const;
 
   
   
   
   
+
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const Descriptor* FindMessageTypeByName(
+      absl::string_view name) const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const FieldDescriptor* FindFieldByName(
+      absl::string_view name) const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const FieldDescriptor*
+  FindExtensionByName(absl::string_view name) const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const OneofDescriptor* FindOneofByName(
+      absl::string_view name) const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const EnumDescriptor* FindEnumTypeByName(
+      absl::string_view name) const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const EnumValueDescriptor*
+  FindEnumValueByName(absl::string_view name) const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const ServiceDescriptor*
+  FindServiceByName(absl::string_view name) const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const MethodDescriptor* FindMethodByName(
+      absl::string_view name) const;
+
   
-  const FieldDescriptor* FindExtensionByPrintableName(
-      const Descriptor* extendee, ConstStringParam printable_name) const;
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const FieldDescriptor*
+  FindExtensionByNumber(const Descriptor* extendee, int number) const;
+
+  
+  
+  
+  
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const FieldDescriptor*
+  FindExtensionByPrintableName(const Descriptor* extendee,
+                               absl::string_view printable_name) const;
 
   
   
@@ -1824,6 +2397,10 @@ class PROTOBUF_EXPORT DescriptorPool {
   class PROTOBUF_EXPORT ErrorCollector {
    public:
     inline ErrorCollector() {}
+#ifndef SWIG
+    ErrorCollector(const ErrorCollector&) = delete;
+    ErrorCollector& operator=(const ErrorCollector&) = delete;
+#endif
     virtual ~ErrorCollector();
 
     
@@ -1840,33 +2417,42 @@ class PROTOBUF_EXPORT DescriptorPool {
       OPTION_NAME,    
       OPTION_VALUE,   
       IMPORT,         
+      EDITIONS,       
+      SYMBOL,         
       OTHER           
     };
+    PROTOBUF_FUTURE_ADD_EARLY_NODISCARD static absl::string_view
+    ErrorLocationName(ErrorLocation location);
 
     
     
-    virtual void AddError(
-        const std::string& filename,  
-        const std::string& element_name,  
-        const Message* descriptor,  
-        ErrorLocation location,     
-        const std::string& message  
-        ) = 0;
+    
+    
+    
+    
+    
+    
+    virtual void RecordError(absl::string_view filename,
+                             absl::string_view element_name,
+                             const Message* descriptor, ErrorLocation location,
+                             absl::string_view message)
+        = 0;
 
     
     
-    virtual void AddWarning(
-        const std::string& ,      
-                                              
-        const std::string& ,  
-                                              
-        const Message* ,  
-        ErrorLocation ,     
-        const std::string&   
-    ) {}
+    
+    
+    
+    
+    
+    
+    virtual void RecordWarning([[maybe_unused]] absl::string_view filename,
+                               [[maybe_unused]] absl::string_view element_name,
+                               [[maybe_unused]] const Message* descriptor,
+                               [[maybe_unused]] ErrorLocation location,
+                               [[maybe_unused]] absl::string_view message) {
+    }
 
-   private:
-    GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(ErrorCollector);
   };
 
   
@@ -1902,6 +2488,81 @@ class PROTOBUF_EXPORT DescriptorPool {
   
   
   void EnforceWeakDependencies(bool enforce) { enforce_weak_ = enforce; }
+
+  
+  
+  
+  
+  
+  
+  
+  void EnforceNamingStyle(bool enforce) { enforce_naming_style_ = enforce; }
+
+  
+  
+  
+  
+  void EnforceFeatureSupportValidation(bool enforce) {
+    enforce_feature_support_validation_ = enforce;
+  }
+
+  
+  
+  
+  void EnforceSymbolVisibility(bool enforce) {
+    enforce_symbol_visibility_ = enforce;
+  }
+
+  
+  
+  
+  
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD absl::Status SetFeatureSetDefaults(
+      FeatureSetDefaults spec);
+
+  
+  
+  template <typename TypeTraitsT, uint8_t field_type, bool is_packed>
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool ResolvesFeaturesFor(
+      const google::protobuf::internal::ExtensionIdentifier<
+          FeatureSet, TypeTraitsT, field_type, is_packed>& extension) const {
+    return ResolvesFeaturesForImpl(extension.number());
+  }
+
+  
+  
+  
+  
+  void EnforceExtensionDeclarations(google::protobuf::ExtDeclEnforcementLevel enforce) {
+    enforce_extension_declarations_ = enforce;
+  }
+
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool
+  ShouldEnforceDescriptorExtensionDeclarations() const {
+    return enforce_extension_declarations_ ==
+           ExtDeclEnforcementLevel::kAllExtensions;
+  }
+
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool ShouldEnforceExtensionDeclaration(
+      const FieldDescriptor& field) const;
+
+#ifndef SWIG
+  
+  
+  
+  
+  void SetRecursiveBuildDispatcher(
+      absl::AnyInvocable<void(absl::FunctionRef<void()>) const> dispatcher) {
+    if (dispatcher != nullptr) {
+      dispatcher_ = std::make_unique<
+          absl::AnyInvocable<void(absl::FunctionRef<void()>) const>>(
+          std::move(dispatcher));
+    } else {
+      dispatcher_.reset(nullptr);
+    }
+  }
+#endif  
 
   
   
@@ -1944,12 +2605,14 @@ class PROTOBUF_EXPORT DescriptorPool {
   
   
   
-  static DescriptorPool* internal_generated_pool();
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD static DescriptorPool*
+  internal_generated_pool();
 
   
   
   
-  static DescriptorDatabase* internal_generated_database();
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD static DescriptorDatabase*
+  internal_generated_database();
 
   
   
@@ -1979,13 +2642,15 @@ class PROTOBUF_EXPORT DescriptorPool {
   
   
   
-  bool InternalIsFileLoaded(ConstStringParam filename) const;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool InternalIsFileLoaded(
+      absl::string_view filename) const;
 
   
   
-  void AddUnusedImportTrackFile(ConstStringParam file_name,
-                                bool is_error = false);
-  void ClearUnusedImportTrackFiles();
+  
+  void AddDirectInputFile(absl::string_view file_name,
+                          bool unused_import_is_error = false);
+  void ClearDirectInputFiles();
 
  private:
   friend class Descriptor;
@@ -1997,20 +2662,79 @@ class PROTOBUF_EXPORT DescriptorPool {
   friend class FileDescriptor;
   friend class DescriptorBuilder;
   friend class FileDescriptorTables;
+  friend class google::protobuf::descriptor_unittest::DescriptorPoolMemoizationTest;
+  friend class google::protobuf::descriptor_unittest::ValidationErrorTest;
+  friend class ::google::protobuf::compiler::CommandLineInterface;
+  friend class TextFormat;
+  friend Reflection;
+  friend class ::google::protobuf::compiler::java::MemoizeProjection;
+
+  struct MemoBase {
+    virtual ~MemoBase() = default;
+  };
+  template <typename T>
+  struct MemoData : MemoBase {
+    T value;
+  };
+
+  template <typename Desc>
+  static const DescriptorPool* GetPool(const Desc* descriptor) {
+    return descriptor->file()->pool();
+  }
+
+  static const DescriptorPool* GetPool(const FileDescriptor* descriptor) {
+    return descriptor->pool();
+  }
 
   
   
   
-  bool IsSubSymbolOfBuiltType(StringPiece name) const;
+  template <typename Desc, typename Func>
+  static const auto& MemoizeProjection(const Desc* descriptor, Func func) {
+    using ResultT = std::decay_t<decltype(func(descriptor))>;
+    auto* pool = GetPool(descriptor);
+    static_assert(std::is_empty_v<Func> ||
+                  std::is_function_v<std::remove_pointer_t<Func>>);
+    
+    static bool type_key;
+    auto key = std::pair<const void*, const void*>(descriptor, &type_key);
+    {
+      absl::ReaderMutexLock lock(&pool->field_memo_table_mutex_);
+      auto it = pool->field_memo_table_->find(key);
+      if (it != pool->field_memo_table_->end()) {
+        return internal::DownCast<const MemoData<ResultT>&>(*it->second).value;
+      }
+    }
+    auto result = std::make_unique<MemoData<ResultT>>();
+    result->value = func(descriptor);
+    {
+      absl::MutexLock lock(&pool->field_memo_table_mutex_);
+      auto insert_result =
+          pool->field_memo_table_->insert({key, std::move(result)});
+      auto it = insert_result.first;
+      return internal::DownCast<const MemoData<ResultT>&>(*it->second).value;
+    }
+  }
+  
+  
+  
+  bool IsSubSymbolOfBuiltType(absl::string_view name) const;
 
   
   
   
   
-  bool TryFindFileInFallbackDatabase(StringPiece name) const;
-  bool TryFindSymbolInFallbackDatabase(StringPiece name) const;
-  bool TryFindExtensionInFallbackDatabase(const Descriptor* containing_type,
-                                          int field_number) const;
+  
+  
+  
+  class DeferredValidation;
+  bool TryFindFileInFallbackDatabase(
+      absl::string_view name, DeferredValidation& deferred_validation) const;
+  bool TryFindSymbolInFallbackDatabase(
+      absl::string_view name, DeferredValidation& deferred_validation) const;
+  bool TryFindExtensionInFallbackDatabase(
+      const Descriptor* containing_type, int field_number,
+      DeferredValidation& deferred_validation) const;
 
   
   
@@ -2022,20 +2746,21 @@ class PROTOBUF_EXPORT DescriptorPool {
   
   
   const FileDescriptor* BuildFileFromDatabase(
-      const FileDescriptorProto& proto) const;
+      const FileDescriptorProto& proto,
+      DeferredValidation& deferred_validation) const;
 
   
   
   
   
   
-  Symbol CrossLinkOnDemandHelper(StringPiece name,
+  Symbol CrossLinkOnDemandHelper(absl::string_view name,
                                  bool expecting_enum) const;
 
   
-  FileDescriptor* NewPlaceholderFile(StringPiece name) const;
+  FileDescriptor* NewPlaceholderFile(absl::string_view name) const;
   FileDescriptor* NewPlaceholderFileWithMutexHeld(
-      StringPiece name, internal::FlatAllocator& alloc) const;
+      absl::string_view name, internal::FlatAllocator& alloc) const;
 
   enum PlaceholderType {
     PLACEHOLDER_MESSAGE,
@@ -2043,19 +2768,35 @@ class PROTOBUF_EXPORT DescriptorPool {
     PLACEHOLDER_EXTENDABLE_MESSAGE
   };
   
-  Symbol NewPlaceholder(StringPiece name,
+  Symbol NewPlaceholder(absl::string_view name,
                         PlaceholderType placeholder_type) const;
-  Symbol NewPlaceholderWithMutexHeld(StringPiece name,
+  Symbol NewPlaceholderWithMutexHeld(absl::string_view name,
                                      PlaceholderType placeholder_type) const;
+
+#ifndef SWIG
+  mutable absl::Mutex field_memo_table_mutex_;
+  mutable std::unique_ptr<absl::flat_hash_map<
+      std::pair<const void*, const void*>, std::unique_ptr<MemoBase>>>
+      field_memo_table_ ABSL_GUARDED_BY(field_memo_table_mutex_) =
+          std::make_unique<
+              absl::flat_hash_map<std::pair<const void*, const void*>,
+                                  std::unique_ptr<MemoBase>>>();
+#endif  
 
   
   
-  internal::WrappedMutex* mutex_;
+  absl::Mutex* mutex_;
 
   
   DescriptorDatabase* fallback_database_;
   ErrorCollector* default_error_collector_;
   const DescriptorPool* underlay_;
+
+#ifndef SWIG
+  
+  std::unique_ptr<absl::AnyInvocable<void(absl::FunctionRef<void()>) const>>
+      dispatcher_;
+#endif  
 
   
   
@@ -2066,13 +2807,30 @@ class PROTOBUF_EXPORT DescriptorPool {
   bool lazily_build_dependencies_;
   bool allow_unknown_;
   bool enforce_weak_;
+  ExtDeclEnforcementLevel enforce_extension_declarations_;
   bool disallow_enforce_utf8_;
+  bool deprecated_legacy_json_field_conflicts_;
+  bool enforce_naming_style_;
+  bool enforce_feature_support_validation_ = false;
+  bool enforce_symbol_visibility_ = false;
+  mutable bool build_started_ = false;
 
   
   
-  std::map<std::string, bool> unused_import_track_files_;
+  absl::flat_hash_map<std::string, bool> direct_input_files_;
 
-  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(DescriptorPool);
+  
+  
+  std::unique_ptr<FeatureSetDefaults> feature_set_defaults_spec_;
+
+  
+  bool IsReadyForCheckingDescriptorExtDecl(
+      absl::string_view message_name) const;
+
+
+  bool ResolvesFeaturesForImpl(int extension_number) const;
+
+  const FeatureSetDefaults& GetFeatureSetDefaults() const;
 };
 
 
@@ -2084,16 +2842,22 @@ class PROTOBUF_EXPORT DescriptorPool {
 
 
 #define PROTOBUF_DEFINE_STRING_ACCESSOR(CLASS, FIELD) \
-  inline const std::string& CLASS::FIELD() const { return *FIELD##_; }
+  inline absl::string_view CLASS::FIELD() const { return *FIELD##_; }
 
 
-#define PROTOBUF_DEFINE_NAME_ACCESSOR(CLASS)                              \
-  inline const std::string& CLASS::name() const { return all_names_[0]; } \
-  inline const std::string& CLASS::full_name() const { return all_names_[1]; }
+#define PROTOBUF_DEFINE_NAME_ACCESSOR(CLASS)                                 \
+  inline absl::string_view CLASS::name() const { return all_names_.name(); } \
+  inline absl::string_view CLASS::full_name() const {                        \
+    return all_names_.full_name();                                           \
+  }
 
 
 #define PROTOBUF_DEFINE_ARRAY_ACCESSOR(CLASS, FIELD, TYPE) \
-  inline TYPE CLASS::FIELD(int index) const { return FIELD##s_ + index; }
+  inline TYPE CLASS::FIELD(int index) const {              \
+    ABSL_DCHECK_LE(0, index);                              \
+    ABSL_DCHECK_LT(index, FIELD##_count());                \
+    return FIELD##s_ + index;                              \
+  }
 
 #define PROTOBUF_DEFINE_OPTIONS_ACCESSOR(CLASS, TYPE) \
   inline const TYPE& CLASS::options() const { return *options_; }
@@ -2112,6 +2876,10 @@ PROTOBUF_DEFINE_ARRAY_ACCESSOR(Descriptor, field, const FieldDescriptor*)
 PROTOBUF_DEFINE_ARRAY_ACCESSOR(Descriptor, oneof_decl, const OneofDescriptor*)
 PROTOBUF_DEFINE_ARRAY_ACCESSOR(Descriptor, nested_type, const Descriptor*)
 PROTOBUF_DEFINE_ARRAY_ACCESSOR(Descriptor, enum_type, const EnumDescriptor*)
+inline const OneofDescriptor* Descriptor::real_oneof_decl(int index) const {
+  ABSL_DCHECK(index < real_oneof_decl_count());
+  return oneof_decl(index);
+}
 
 PROTOBUF_DEFINE_ACCESSOR(Descriptor, extension_range_count, int)
 PROTOBUF_DEFINE_ACCESSOR(Descriptor, extension_count, int)
@@ -2163,7 +2931,12 @@ PROTOBUF_DEFINE_ARRAY_ACCESSOR(EnumDescriptor, reserved_range,
                                const EnumDescriptor::ReservedRange*)
 PROTOBUF_DEFINE_ACCESSOR(EnumDescriptor, reserved_name_count, int)
 
-PROTOBUF_DEFINE_NAME_ACCESSOR(EnumValueDescriptor)
+inline absl::string_view EnumValueDescriptor::name() const {
+  return all_names_[0];
+}
+inline absl::string_view EnumValueDescriptor::full_name() const {
+  return all_names_[1];
+}
 PROTOBUF_DEFINE_ACCESSOR(EnumValueDescriptor, number, int)
 PROTOBUF_DEFINE_ACCESSOR(EnumValueDescriptor, type, const EnumDescriptor*)
 PROTOBUF_DEFINE_OPTIONS_ACCESSOR(EnumValueDescriptor, EnumValueOptions)
@@ -2187,6 +2960,7 @@ PROTOBUF_DEFINE_ACCESSOR(FileDescriptor, pool, const DescriptorPool*)
 PROTOBUF_DEFINE_ACCESSOR(FileDescriptor, dependency_count, int)
 PROTOBUF_DEFINE_ACCESSOR(FileDescriptor, public_dependency_count, int)
 PROTOBUF_DEFINE_ACCESSOR(FileDescriptor, weak_dependency_count, int)
+PROTOBUF_DEFINE_ACCESSOR(FileDescriptor, option_dependency_count, int)
 PROTOBUF_DEFINE_ACCESSOR(FileDescriptor, message_type_count, int)
 PROTOBUF_DEFINE_ACCESSOR(FileDescriptor, enum_type_count, int)
 PROTOBUF_DEFINE_ACCESSOR(FileDescriptor, service_count, int)
@@ -2219,9 +2993,9 @@ inline bool Descriptor::IsReservedNumber(int number) const {
   return FindReservedRangeContainingNumber(number) != nullptr;
 }
 
-inline bool Descriptor::IsReservedName(ConstStringParam name) const {
+inline bool Descriptor::IsReservedName(absl::string_view name) const {
   for (int i = 0; i < reserved_name_count(); i++) {
-    if (name == static_cast<ConstStringParam>(reserved_name(i))) {
+    if (name == static_cast<absl::string_view>(reserved_name(i))) {
       return true;
     }
   }
@@ -2230,7 +3004,7 @@ inline bool Descriptor::IsReservedName(ConstStringParam name) const {
 
 
 
-inline const std::string& Descriptor::reserved_name(int index) const {
+inline absl::string_view Descriptor::reserved_name(int index) const {
   return *reserved_names_[index];
 }
 
@@ -2238,9 +3012,9 @@ inline bool EnumDescriptor::IsReservedNumber(int number) const {
   return FindReservedRangeContainingNumber(number) != nullptr;
 }
 
-inline bool EnumDescriptor::IsReservedName(ConstStringParam name) const {
+inline bool EnumDescriptor::IsReservedName(absl::string_view name) const {
   for (int i = 0; i < reserved_name_count(); i++) {
-    if (name == static_cast<ConstStringParam>(reserved_name(i))) {
+    if (name == static_cast<absl::string_view>(reserved_name(i))) {
       return true;
     }
   }
@@ -2249,57 +3023,54 @@ inline bool EnumDescriptor::IsReservedName(ConstStringParam name) const {
 
 
 
-inline const std::string& EnumDescriptor::reserved_name(int index) const {
+inline absl::string_view EnumDescriptor::reserved_name(int index) const {
   return *reserved_names_[index];
 }
 
-inline const std::string& FieldDescriptor::lowercase_name() const {
-  return all_names_[lowercase_name_index_];
+inline absl::string_view FieldDescriptor::lowercase_name() const {
+  return all_names_.lowercase_name();
 }
 
-inline const std::string& FieldDescriptor::camelcase_name() const {
-  return all_names_[camelcase_name_index_];
+inline absl::string_view FieldDescriptor::camelcase_name() const {
+  return all_names_.camelcase_name();
 }
 
-inline const std::string& FieldDescriptor::json_name() const {
-  return all_names_[json_name_index_];
+inline absl::string_view FieldDescriptor::json_name() const {
+  return all_names_.json_name();
 }
 
 inline const OneofDescriptor* FieldDescriptor::containing_oneof() const {
-  return is_oneof_ ? scope_.containing_oneof : nullptr;
+  if (is_oneof_) {
+    auto* res = scope_.containing_oneof;
+    PROTOBUF_ASSUME(res != nullptr);
+    return res;
+  }
+  return nullptr;
 }
 
 inline int FieldDescriptor::index_in_oneof() const {
-  GOOGLE_DCHECK(is_oneof_);
+  ABSL_DCHECK(is_oneof_);
   return static_cast<int>(this - scope_.containing_oneof->field(0));
 }
 
 inline const Descriptor* FieldDescriptor::extension_scope() const {
-  GOOGLE_CHECK(is_extension_);
+  ABSL_CHECK(is_extension_);
   return scope_.extension_scope;
 }
 
-inline FieldDescriptor::Label FieldDescriptor::label() const {
-  return static_cast<Label>(label_);
-}
-
 inline FieldDescriptor::Type FieldDescriptor::type() const {
-  if (type_once_) {
-    internal::call_once(*type_once_, &FieldDescriptor::TypeOnceInit, this);
-  }
   return static_cast<Type>(type_);
 }
 
-inline bool FieldDescriptor::is_required() const {
-  return label() == LABEL_REQUIRED;
-}
-
-inline bool FieldDescriptor::is_optional() const {
-  return label() == LABEL_OPTIONAL;
+inline FieldDescriptor::CppStringType FieldDescriptor::cpp_string_type() const {
+  ABSL_DCHECK_EQ(cpp_string_type_,
+                 static_cast<uint8_t>(CalculateCppStringType()));
+  return static_cast<FieldDescriptor::CppStringType>(cpp_string_type_);
 }
 
 inline bool FieldDescriptor::is_repeated() const {
-  return label() == LABEL_REPEATED;
+  ABSL_DCHECK_EQ(is_repeated_, static_cast<Label>(label_) == LABEL_REPEATED);
+  return is_repeated_;
 }
 
 inline bool FieldDescriptor::is_packable() const {
@@ -2307,24 +3078,18 @@ inline bool FieldDescriptor::is_packable() const {
 }
 
 inline bool FieldDescriptor::is_map() const {
-  return type() == TYPE_MESSAGE && is_map_message_type();
-}
-
-inline bool FieldDescriptor::has_optional_keyword() const {
-  return proto3_optional_ ||
-         (file()->syntax() == FileDescriptor::SYNTAX_PROTO2 && is_optional() &&
-          !containing_oneof());
+  ABSL_DCHECK_EQ(is_map_, type() == TYPE_MESSAGE && is_map_message_type());
+  return is_map_;
 }
 
 inline const OneofDescriptor* FieldDescriptor::real_containing_oneof() const {
-  auto* oneof = containing_oneof();
-  return oneof && !oneof->is_synthetic() ? oneof : nullptr;
-}
-
-inline bool FieldDescriptor::has_presence() const {
-  if (is_repeated()) return false;
-  return cpp_type() == CPPTYPE_MESSAGE || containing_oneof() ||
-         file()->syntax() == FileDescriptor::SYNTAX_PROTO2;
+  if (in_real_oneof_) {
+    auto* res = containing_oneof();
+    PROTOBUF_ASSUME(res != nullptr);
+    ABSL_DCHECK(!res->is_synthetic());
+    return res;
+  }
+  return nullptr;
 }
 
 
@@ -2345,6 +3110,10 @@ inline int Descriptor::index() const {
   } else {
     return static_cast<int>(this - containing_type_->nested_types_);
   }
+}
+
+inline int Descriptor::ExtensionRange::index() const {
+  return static_cast<int>(this - containing_type_->extension_ranges_);
 }
 
 inline const FileDescriptor* OneofDescriptor::file() const {
@@ -2387,7 +3156,7 @@ inline int MethodDescriptor::index() const {
   return static_cast<int>(this - service_->methods_);
 }
 
-inline const char* FieldDescriptor::type_name() const {
+inline absl::string_view FieldDescriptor::type_name() const {
   return kTypeToName[type()];
 }
 
@@ -2395,7 +3164,7 @@ inline FieldDescriptor::CppType FieldDescriptor::cpp_type() const {
   return kTypeToCppTypeMap[type()];
 }
 
-inline const char* FieldDescriptor::cpp_type_name() const {
+inline absl::string_view FieldDescriptor::cpp_type_name() const {
   return kCppTypeToName[kTypeToCppTypeMap[type()]];
 }
 
@@ -2403,11 +3172,11 @@ inline FieldDescriptor::CppType FieldDescriptor::TypeToCppType(Type type) {
   return kTypeToCppTypeMap[type];
 }
 
-inline const char* FieldDescriptor::TypeName(Type type) {
+inline absl::string_view FieldDescriptor::TypeName(Type type) {
   return kTypeToName[type];
 }
 
-inline const char* FieldDescriptor::CppTypeName(CppType cpp_type) {
+inline absl::string_view FieldDescriptor::CppTypeName(CppType cpp_type) {
   return kCppTypeToName[cpp_type];
 }
 
@@ -2427,14 +3196,222 @@ inline const FileDescriptor* FileDescriptor::weak_dependency(int index) const {
   return dependency(weak_dependencies_[index]);
 }
 
-inline FileDescriptor::Syntax FileDescriptor::syntax() const {
-  return static_cast<Syntax>(syntax_);
+
+inline SymbolVisibility Descriptor::visibility_keyword() const {
+  return static_cast<SymbolVisibility>(visibility_);
 }
+
+inline SymbolVisibility EnumDescriptor::visibility_keyword() const {
+  return static_cast<SymbolVisibility>(visibility_);
+}
+
+namespace internal {
+
+inline const std::string& DefaultValueStringAsString(
+    const FieldDescriptor* field) {
+  return *field->default_value_string_;
+}
+
+inline const std::string& NameOfEnumAsString(
+    const EnumValueDescriptor* descriptor) {
+  return descriptor->all_names_[0];
+}
+
+inline bool IsEnumFullySequential(const EnumDescriptor* enum_desc) {
+  return enum_desc->sequential_value_limit_ == enum_desc->value_count() - 1;
+}
+
+
+
+
+template <typename T>
+struct FieldRangeImpl;
+
+template <typename T>
+FieldRangeImpl<T> FieldRange(const T* desc) {
+  return {desc};
+}
+
+template <typename T>
+struct PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED FieldRangeImpl {
+  struct Iterator {
+    using iterator_category = std::forward_iterator_tag;
+    using value_type = const FieldDescriptor*;
+    using difference_type = int;
+    using pointer = const FieldDescriptor* const*;
+    using reference = const FieldDescriptor* const&;
+
+    PROTOBUF_FUTURE_ADD_EARLY_NODISCARD value_type operator*() {
+      return descriptor->field(idx);
+    }
+
+    PROTOBUF_FUTURE_ADD_EARLY_NODISCARD friend bool operator==(
+        const Iterator& a, const Iterator& b) {
+      ABSL_DCHECK(a.descriptor == b.descriptor);
+      return a.idx == b.idx;
+    }
+    PROTOBUF_FUTURE_ADD_EARLY_NODISCARD friend bool operator!=(
+        const Iterator& a, const Iterator& b) {
+      return !(a == b);
+    }
+
+    Iterator& operator++() {
+      idx++;
+      return *this;
+    }
+
+    int idx;
+    const T* descriptor;
+  };
+
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD Iterator begin() const {
+    return {0, descriptor};
+  }
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD Iterator end() const {
+    return {descriptor->field_count(), descriptor};
+  }
+
+  const T* descriptor;
+};
+
+
+
+
+
+
+bool ParseNoReflection(absl::string_view from, google::protobuf::MessageLite& to);
+
+
+
+
+namespace cpp {
+
+
+
+constexpr int MaxMessageDeclarationNestingDepth() { return 32; }
+
+
+
+PROTOBUF_EXPORT bool HasPreservingUnknownEnumSemantics(
+    const FieldDescriptor* field);
+
+#ifndef SWIG
+enum class HasbitMode : uint8_t {
+  
+  kNoHasbit,
+  
+  
+  kTrueHasbit,
+  
+  
+  
+  
+  kHintHasbit,
+};
+
+
+
+
+
+
+
+
+
+
+
+PROTOBUF_FUTURE_ADD_EARLY_NODISCARD
+PROTOBUF_EXPORT HasbitMode
+GetFieldHasbitModeWithoutProfile(const FieldDescriptor* field);
+
+
+
+
+
+
+
+PROTOBUF_FUTURE_ADD_EARLY_NODISCARD
+PROTOBUF_EXPORT bool HasHasbitWithoutProfile(const FieldDescriptor* field);
+
+enum class Utf8CheckMode : uint8_t {
+  kStrict = 0,  
+  kNone = 2,    
+};
+PROTOBUF_FUTURE_ADD_EARLY_NODISCARD
+PROTOBUF_EXPORT Utf8CheckMode GetUtf8CheckMode(const FieldDescriptor* field,
+                                               bool is_lite);
+
+
+
+
+
+
+PROTOBUF_FUTURE_ADD_EARLY_NODISCARD
+PROTOBUF_EXPORT bool IsGroupLike(const FieldDescriptor& field);
+
+
+
+
+PROTOBUF_FUTURE_ADD_EARLY_NODISCARD
+PROTOBUF_EXPORT bool IsLazilyInitializedFile(absl::string_view filename);
+
+
+
+
+PROTOBUF_FUTURE_ADD_EARLY_NODISCARD
+PROTOBUF_EXPORT inline bool& IsTrackingEnabledVar() {
+  static PROTOBUF_THREAD_LOCAL bool is_tracking_enabled = true;
+  return is_tracking_enabled;
+}
+PROTOBUF_FUTURE_ADD_EARLY_NODISCARD
+PROTOBUF_EXPORT inline bool IsTrackingEnabled() {
+  return ABSL_PREDICT_TRUE(IsTrackingEnabledVar());
+}
+
+template <typename F>
+auto VisitDescriptorsInFileOrder(const Descriptor* desc, F& f)
+    -> decltype(f(desc)) {
+  for (int i = 0; i < desc->nested_type_count(); i++) {
+    if (auto res = VisitDescriptorsInFileOrder(desc->nested_type(i), f)) {
+      return res;
+    }
+  }
+  if (auto res = f(desc)) return res;
+  return {};
+}
+
+
+
+
+
+
+template <typename F>
+auto VisitDescriptorsInFileOrder(const FileDescriptor* file, F f)
+    -> decltype(f(file->message_type(0))) {
+  for (int i = 0; i < file->message_type_count(); i++) {
+    if (auto res = VisitDescriptorsInFileOrder(file->message_type(i), f)) {
+      return res;
+    }
+  }
+  return {};
+}
+#endif  
+
+
+
+
+
+
+PROTOBUF_FUTURE_ADD_EARLY_NODISCARD
+PROTOBUF_EXPORT bool IsStringFieldWithPrivatizedAccessors(
+    const FieldDescriptor& field);
+
+}  
+}  
 
 }  
 }  
 
 #undef PROTOBUF_INTERNAL_CHECK_CLASS_SIZE
-#include <google/protobuf/port_undef.inc>
+#include "google/protobuf/port_undef.inc"
 
 #endif  

@@ -8,44 +8,25 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#include <google/protobuf/reflection_ops.h>
+#include "google/protobuf/reflection_ops.h"
 
 #include <string>
+#include <utility>
 #include <vector>
 
-#include <google/protobuf/stubs/logging.h>
-#include <google/protobuf/stubs/common.h>
-#include <google/protobuf/descriptor.h>
-#include <google/protobuf/descriptor.pb.h>
-#include <google/protobuf/map_field.h>
-#include <google/protobuf/map_field_inl.h>
-#include <google/protobuf/unknown_field_set.h>
+#include "absl/base/optimization.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
+#include "absl/strings/str_cat.h"
+#include "google/protobuf/descriptor.h"
+#include "google/protobuf/descriptor.pb.h"
+#include "google/protobuf/map_field.h"
+#include "google/protobuf/message_lite.h"
+#include "google/protobuf/port.h"
+#include "google/protobuf/unknown_field_set.h"
 
 
-#include <google/protobuf/port_def.inc>
+#include "google/protobuf/port_def.inc"
 
 namespace google {
 namespace protobuf {
@@ -55,9 +36,9 @@ static const Reflection* GetReflectionOrDie(const Message& m) {
   const Reflection* r = m.GetReflection();
   if (r == nullptr) {
     const Descriptor* d = m.GetDescriptor();
-    const std::string& mtype = d ? d->name() : "unknown";
     
-    GOOGLE_LOG(FATAL) << "Message does not support reflection (type " << mtype << ").";
+    ABSL_LOG(FATAL) << "Message does not support reflection (type "
+                    << (d ? d->name() : "unknown") << ").";
   }
   return r;
 }
@@ -69,10 +50,10 @@ void ReflectionOps::Copy(const Message& from, Message* to) {
 }
 
 void ReflectionOps::Merge(const Message& from, Message* to) {
-  GOOGLE_CHECK_NE(&from, to);
+  ABSL_CHECK_NE(&from, to);
 
   const Descriptor* descriptor = from.GetDescriptor();
-  GOOGLE_CHECK_EQ(to->GetDescriptor(), descriptor)
+  ABSL_CHECK_EQ(to->GetDescriptor(), descriptor)
       << "Tried to merge messages of different types "
       << "(merge " << descriptor->full_name() << " to "
       << to->GetDescriptor()->full_name() << ")";
@@ -85,7 +66,7 @@ void ReflectionOps::Merge(const Message& from, Message* to) {
                           google::protobuf::MessageFactory::generated_factory());
 
   std::vector<const FieldDescriptor*> fields;
-  from_reflection->ListFieldsOmitStripped(from, &fields);
+  from_reflection->ListFields(from, &fields);
   for (const FieldDescriptor* field : fields) {
     if (field->is_repeated()) {
       
@@ -98,7 +79,7 @@ void ReflectionOps::Merge(const Message& from, Message* to) {
             from_reflection->GetMapData(from, field);
         MapFieldBase* to_field = to_reflection->MutableMapData(to, field);
         if (to_field->IsMapValid() && from_field->IsMapValid()) {
-          to_field->MergeFrom(*from_field);
+          to_field->MergeFrom(to->GetArena(), *from_field);
           continue;
         }
       }
@@ -180,7 +161,7 @@ void ReflectionOps::Clear(Message* message) {
   const Reflection* reflection = GetReflectionOrDie(*message);
 
   std::vector<const FieldDescriptor*> fields;
-  reflection->ListFieldsOmitStripped(*message, &fields);
+  reflection->ListFields(*message, &fields);
   for (const FieldDescriptor* field : fields) {
     reflection->ClearField(message, field);
   }
@@ -197,7 +178,7 @@ bool ReflectionOps::IsInitialized(const Message& message, bool check_fields,
   if (const int field_count = descriptor->field_count()) {
     const FieldDescriptor* begin = descriptor->field(0);
     const FieldDescriptor* end = begin + field_count;
-    GOOGLE_DCHECK_EQ(descriptor->field(field_count - 1), end - 1);
+    ABSL_DCHECK_EQ(descriptor->field(field_count - 1), end - 1);
 
     if (check_fields) {
       
@@ -212,15 +193,16 @@ bool ReflectionOps::IsInitialized(const Message& message, bool check_fields,
       for (const FieldDescriptor* field = begin; field != end; ++field) {
         if (field->cpp_type() == FieldDescriptor::CPPTYPE_MESSAGE) {
           const Descriptor* message_type = field->message_type();
-          if (PROTOBUF_PREDICT_FALSE(message_type->options().map_entry())) {
+          if (ABSL_PREDICT_FALSE(message_type->options().map_entry())) {
             if (message_type->field(1)->cpp_type() ==
                 FieldDescriptor::CPPTYPE_MESSAGE) {
               const MapFieldBase* map_field =
                   reflection->GetMapData(message, field);
               if (map_field->IsMapValid()) {
-                MapIterator it(const_cast<Message*>(&message), field);
-                MapIterator end_map(const_cast<Message*>(&message), field);
-                for (map_field->MapBegin(&it), map_field->MapEnd(&end_map);
+                ConstMapIterator it(&message, field);
+                ConstMapIterator end_map(&message, field);
+                for (map_field->ConstMapBegin(&it),
+                     map_field->ConstMapEnd(&end_map);
                      it != end_map; ++it) {
                   if (!it.GetValueRef().GetMessageValue().IsInitialized()) {
                     return false;
@@ -245,9 +227,21 @@ bool ReflectionOps::IsInitialized(const Message& message, bool check_fields,
       }
     }
   }
-  if (check_descendants && reflection->HasExtensionSet(message) &&
-      !reflection->GetExtensionSet(message).IsInitialized()) {
-    return false;
+  if (check_descendants && reflection->HasExtensionSet(message)) {
+    
+    
+    
+    
+    
+    
+    
+    
+    const Message* extendee =
+        MessageFactory::generated_factory()->GetPrototype(descriptor);
+    if (!reflection->GetExtensionSet(message).IsInitialized(message.GetArena(),
+                                                            extendee)) {
+      return false;
+    }
   }
   return true;
 }
@@ -272,7 +266,13 @@ bool ReflectionOps::IsInitialized(const Message& message) {
   std::vector<const FieldDescriptor*> fields;
   
   
-  reflection->ListFieldsOmitStripped(message, &fields);
+  if (descriptor->options().map_entry()) {
+    
+    
+    fields = {descriptor->map_value()};
+  } else {
+    reflection->ListFields(message, &fields);
+  }
   for (const FieldDescriptor* field : fields) {
     if (field->cpp_type() == FieldDescriptor::CPPTYPE_MESSAGE) {
 
@@ -282,9 +282,9 @@ bool ReflectionOps::IsInitialized(const Message& message) {
           const MapFieldBase* map_field =
               reflection->GetMapData(message, field);
           if (map_field->IsMapValid()) {
-            MapIterator iter(const_cast<Message*>(&message), field);
-            MapIterator end(const_cast<Message*>(&message), field);
-            for (map_field->MapBegin(&iter), map_field->MapEnd(&end);
+            ConstMapIterator iter(&message, field);
+            ConstMapIterator end(&message, field);
+            for (map_field->ConstMapBegin(&iter), map_field->ConstMapEnd(&end);
                  iter != end; ++iter) {
               if (!iter.GetValueRef().GetMessageValue().IsInitialized()) {
                 return false;
@@ -325,7 +325,9 @@ static bool IsMapValueMessageTyped(const FieldDescriptor* map_field) {
 void ReflectionOps::DiscardUnknownFields(Message* message) {
   const Reflection* reflection = GetReflectionOrDie(*message);
 
-  reflection->MutableUnknownFields(message)->Clear();
+  if (reflection->GetUnknownFields(*message).field_count() != 0) {
+    reflection->MutableUnknownFields(message)->Clear();
+  }
 
   
   
@@ -337,10 +339,10 @@ void ReflectionOps::DiscardUnknownFields(Message* message) {
       continue;
     }
     
-    if (field->is_map() && IsMapValueMessageTyped(field)) {
-      const MapFieldBase* map_field =
-          reflection->MutableMapData(message, field);
-      if (map_field->IsMapValid()) {
+    const MapFieldBase* map_field =
+        field->is_map() ? reflection->MutableMapData(message, field) : nullptr;
+    if (map_field != nullptr && map_field->IsMapValid()) {
+      if (IsMapValueMessageTyped(field)) {
         MapIterator iter(message, field);
         MapIterator end(message, field);
         for (map_field->MapBegin(&iter), map_field->MapEnd(&end); iter != end;
@@ -366,16 +368,12 @@ static std::string SubMessagePrefix(const std::string& prefix,
                                     const FieldDescriptor* field, int index) {
   std::string result(prefix);
   if (field->is_extension()) {
-    result.append("(");
-    result.append(field->full_name());
-    result.append(")");
+    absl::StrAppend(&result, "(", field->full_name(), ")");
   } else {
-    result.append(field->name());
+    absl::StrAppend(&result, field->name());
   }
   if (index != -1) {
-    result.append("[");
-    result.append(StrCat(index));
-    result.append("]");
+    absl::StrAppend(&result, "[", index, "]");
   }
   result.append(".");
   return result;
@@ -393,7 +391,7 @@ void ReflectionOps::FindInitializationErrors(const Message& message,
     for (int i = 0; i < field_count; i++) {
       if (descriptor->field(i)->is_required()) {
         if (!reflection->HasField(message, descriptor->field(i))) {
-          errors->push_back(prefix + descriptor->field(i)->name());
+          errors->push_back(absl::StrCat(prefix, descriptor->field(i)->name()));
         }
       }
     }
@@ -401,7 +399,7 @@ void ReflectionOps::FindInitializationErrors(const Message& message,
 
   
   std::vector<const FieldDescriptor*> fields;
-  reflection->ListFieldsOmitStripped(message, &fields);
+  reflection->ListFields(message, &fields);
   for (const FieldDescriptor* field : fields) {
     if (field->cpp_type() == FieldDescriptor::CPPTYPE_MESSAGE) {
 
@@ -424,36 +422,35 @@ void ReflectionOps::FindInitializationErrors(const Message& message,
 }
 
 void GenericSwap(Message* lhs, Message* rhs) {
-#ifndef PROTOBUF_FORCE_COPY_IN_SWAP
-  GOOGLE_DCHECK(Arena::InternalGetOwningArena(lhs) !=
-         Arena::InternalGetOwningArena(rhs));
-  GOOGLE_DCHECK(Arena::InternalGetOwningArena(lhs) != nullptr ||
-         Arena::InternalGetOwningArena(rhs) != nullptr);
-#endif  
+  if (!internal::DebugHardenForceCopyInSwap()) {
+    ABSL_DCHECK(lhs->GetArena() != rhs->GetArena());
+    ABSL_DCHECK(lhs->GetArena() != nullptr || rhs->GetArena() != nullptr);
+  }
   
-  Arena* arena = Arena::InternalGetOwningArena(rhs);
+  Arena* arena = rhs->GetArena();
   if (arena == nullptr) {
     std::swap(lhs, rhs);
-    arena = Arena::InternalGetOwningArena(rhs);
+    arena = rhs->GetArena();
   }
 
   
   
-  Message* tmp = rhs->New(arena);
-  tmp->CheckTypeAndMergeFrom(*lhs);
+  const ClassData* class_data = GetClassData(*lhs);
+  Message* tmp = static_cast<Message*>(class_data->New(arena));
+  tmp->MergeFromWithClassData(*lhs, class_data);
   lhs->Clear();
-  lhs->CheckTypeAndMergeFrom(*rhs);
-#ifdef PROTOBUF_FORCE_COPY_IN_SWAP
-  rhs->Clear();
-  rhs->CheckTypeAndMergeFrom(*tmp);
-  if (arena == nullptr) delete tmp;
-#else   
-  rhs->GetReflection()->Swap(tmp, rhs);
-#endif  
+  lhs->MergeFromWithClassData(*rhs, class_data);
+  if (internal::DebugHardenForceCopyInSwap()) {
+    rhs->Clear();
+    rhs->MergeFromWithClassData(*tmp, class_data);
+    if (arena == nullptr) delete tmp;
+  } else {
+    rhs->GetReflection()->Swap(tmp, rhs);
+  }
 }
 
 }  
 }  
 }  
 
-#include <google/protobuf/port_undef.inc>
+#include "google/protobuf/port_undef.inc"

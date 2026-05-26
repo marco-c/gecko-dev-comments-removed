@@ -12,46 +12,29 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef GOOGLE_PROTOBUF_TEXT_FORMAT_H__
 #define GOOGLE_PROTOBUF_TEXT_FORMAT_H__
 
-
-#include <map>
+#include <atomic>
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <vector>
 
-#include <google/protobuf/stubs/common.h>
-#include <google/protobuf/port.h>
-#include <google/protobuf/descriptor.h>
-#include <google/protobuf/message.h>
-#include <google/protobuf/message_lite.h>
+#include "absl/container/flat_hash_map.h"
+#include "absl/container/flat_hash_set.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/cord.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
+#include "google/protobuf/descriptor.h"
+#include "google/protobuf/message.h"
+#include "google/protobuf/message_lite.h"
+#include "google/protobuf/port.h"
 
 
-#include <google/protobuf/port_def.inc>
+
+#include "google/protobuf/port_def.inc"
 
 #ifdef SWIG
 #error "You cannot SWIG proto headers"
@@ -63,11 +46,56 @@ namespace protobuf {
 namespace internal {
 PROTOBUF_EXPORT extern const char kDebugStringSilentMarker[1];
 PROTOBUF_EXPORT extern const char kDebugStringSilentMarkerForDetection[3];
+
+PROTOBUF_EXPORT int64_t GetRedactedFieldCount();
+
+
+
+
+
+enum class PROTOBUF_EXPORT FieldReporterLevel {
+  kNoReport = 0,
+  kPrintMessage = 1,
+  kPrintWithGenerator = 2,
+  kPrintWithStream = 3,
+  kMemberPrintToString = 4,
+  kStaticPrintToString = 5,
+  kAbslStringify = 6,
+  kShortFormat = 7,
+  kUtf8Format = 8,
+  kDebugString = 12,
+  kShortDebugString = 13,
+  kUtf8DebugString = 14,
+  kUnredactedDebugFormatForTest = 15,
+  kUnredactedShortDebugFormatForTest = 16,
+  kUnredactedUtf8DebugFormatForTest = 17
+};
+
 }  
 
 namespace io {
 class ErrorCollector;  
 }
+
+namespace python {
+namespace cmessage {
+class PythonFieldValuePrinter;
+}
+}  
+
+namespace internal {
+
+PROTOBUF_EXPORT enum class Option;
+
+
+
+PROTOBUF_EXPORT std::string StringifyMessage(const Message& message,
+                                             Option option,
+                                             FieldReporterLevel reporter_level);
+
+class UnsetFieldsMetadataTextFormatTestUtil;
+class UnsetFieldsMetadataMessageDifferencerTestUtil;
+}  
 
 
 
@@ -76,25 +104,30 @@ class ErrorCollector;
 
 class PROTOBUF_EXPORT TextFormat {
  public:
+  TextFormat(const TextFormat&) = delete;
+  TextFormat& operator=(const TextFormat&) = delete;
+
   
   
-  static bool Print(const Message& message, io::ZeroCopyOutputStream* output);
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD static bool Print(
+      const Message& message, io::ZeroCopyOutputStream* output);
 
   
   
   
-  static bool PrintUnknownFields(const UnknownFieldSet& unknown_fields,
-                                 io::ZeroCopyOutputStream* output);
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD static bool PrintUnknownFields(
+      const UnknownFieldSet& unknown_fields, io::ZeroCopyOutputStream* output);
 
   
   
   
-  static bool PrintToString(const Message& message, std::string* output);
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD static bool PrintToString(
+      const Message& message, std::string* output);
 
   
   
-  static bool PrintUnknownFieldsToString(const UnknownFieldSet& unknown_fields,
-                                         std::string* output);
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD static bool PrintUnknownFieldsToString(
+      const UnknownFieldSet& unknown_fields, std::string* output);
 
   
   
@@ -104,7 +137,22 @@ class PROTOBUF_EXPORT TextFormat {
                                       const FieldDescriptor* field, int index,
                                       std::string* output);
 
+  
+  
+  class Printer;
+
   class PROTOBUF_EXPORT BaseTextGenerator {
+   private:
+    
+    
+    
+    
+    class MarkerToken {
+     private:
+      explicit MarkerToken() = default;  
+      friend class Printer;
+    };
+
    public:
     virtual ~BaseTextGenerator();
 
@@ -116,12 +164,26 @@ class PROTOBUF_EXPORT TextFormat {
     
     virtual void Print(const char* text, size_t size) = 0;
 
-    void PrintString(const std::string& str) { Print(str.data(), str.size()); }
+    void PrintString(absl::string_view str) { Print(str.data(), str.size()); }
 
     template <size_t n>
     void PrintLiteral(const char (&text)[n]) {
       Print(text, n - 1);  
     }
+
+    
+    virtual void PrintMaybeWithMarker(MarkerToken, absl::string_view text) {
+      Print(text.data(), text.size());
+    }
+
+    
+    virtual void PrintMaybeWithMarker(MarkerToken, absl::string_view text_head,
+                                      absl::string_view text_tail) {
+      Print(text_head.data(), text_head.size());
+      Print(text_tail.data(), text_tail.size());
+    }
+
+    friend class Printer;
   };
 
   
@@ -131,6 +193,8 @@ class PROTOBUF_EXPORT TextFormat {
   class PROTOBUF_EXPORT FastFieldValuePrinter {
    public:
     FastFieldValuePrinter();
+    FastFieldValuePrinter(const FastFieldValuePrinter&) = delete;
+    FastFieldValuePrinter& operator=(const FastFieldValuePrinter&) = delete;
     virtual ~FastFieldValuePrinter();
     virtual void PrintBool(bool val, BaseTextGenerator* generator) const;
     virtual void PrintInt32(int32_t val, BaseTextGenerator* generator) const;
@@ -167,15 +231,14 @@ class PROTOBUF_EXPORT TextFormat {
     virtual void PrintMessageEnd(const Message& message, int field_index,
                                  int field_count, bool single_line_mode,
                                  BaseTextGenerator* generator) const;
-
-   private:
-    GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(FastFieldValuePrinter);
   };
 
   
   class PROTOBUF_EXPORT FieldValuePrinter {
    public:
     FieldValuePrinter();
+    FieldValuePrinter(const FieldValuePrinter&) = delete;
+    FieldValuePrinter& operator=(const FieldValuePrinter&) = delete;
     virtual ~FieldValuePrinter();
     virtual std::string PrintBool(bool val) const;
     virtual std::string PrintInt32(int32_t val) const;
@@ -199,18 +262,16 @@ class PROTOBUF_EXPORT TextFormat {
 
    private:
     FastFieldValuePrinter delegate_;
-    GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(FieldValuePrinter);
   };
 
   class PROTOBUF_EXPORT MessagePrinter {
    public:
-    MessagePrinter() {}
-    virtual ~MessagePrinter() {}
+    MessagePrinter() = default;
+    MessagePrinter(const MessagePrinter&) = delete;
+    MessagePrinter& operator=(const MessagePrinter&) = delete;
+    virtual ~MessagePrinter() = default;
     virtual void Print(const Message& message, bool single_line_mode,
                        BaseTextGenerator* generator) const = 0;
-
-   private:
-    GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(MessagePrinter);
   };
 
   
@@ -222,28 +283,28 @@ class PROTOBUF_EXPORT TextFormat {
     
     
     
-    virtual const FieldDescriptor* FindExtension(Message* message,
-                                                 const std::string& name) const;
+    PROTOBUF_FUTURE_ADD_EARLY_NODISCARD virtual const FieldDescriptor*
+    FindExtension(Message* message, const std::string& name) const;
 
     
     
-    virtual const FieldDescriptor* FindExtensionByNumber(
-        const Descriptor* descriptor, int number) const;
-
-    
-    
-    
-    
-    
-    virtual const Descriptor* FindAnyType(const Message& message,
-                                          const std::string& prefix,
-                                          const std::string& name) const;
+    PROTOBUF_FUTURE_ADD_EARLY_NODISCARD virtual const FieldDescriptor*
+    FindExtensionByNumber(const Descriptor* descriptor, int number) const;
 
     
     
     
-    virtual MessageFactory* FindExtensionFactory(
-        const FieldDescriptor* field) const;
+    
+    
+    PROTOBUF_FUTURE_ADD_EARLY_NODISCARD virtual const Descriptor* FindAnyType(
+        const Message& message, const std::string& prefix,
+        const std::string& name) const;
+
+    
+    
+    
+    PROTOBUF_FUTURE_ADD_EARLY_NODISCARD virtual MessageFactory*
+    FindExtensionFactory(const FieldDescriptor* field) const;
   };
 
   
@@ -253,15 +314,23 @@ class PROTOBUF_EXPORT TextFormat {
     Printer();
 
     
-    bool Print(const Message& message, io::ZeroCopyOutputStream* output) const;
+    PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool Print(
+        const Message& message, io::ZeroCopyOutputStream* output) const;
     
-    bool PrintUnknownFields(const UnknownFieldSet& unknown_fields,
-                            io::ZeroCopyOutputStream* output) const;
     
-    bool PrintToString(const Message& message, std::string* output) const;
+    PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool Print(
+        const Message& message, io::ZeroCopyOutputStream* output,
+        internal::FieldReporterLevel reporter) const;
     
-    bool PrintUnknownFieldsToString(const UnknownFieldSet& unknown_fields,
-                                    std::string* output) const;
+    PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool PrintUnknownFields(
+        const UnknownFieldSet& unknown_fields,
+        io::ZeroCopyOutputStream* output) const;
+    
+    PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool PrintToString(
+        const Message& message, std::string* output) const;
+    
+    PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool PrintUnknownFieldsToString(
+        const UnknownFieldSet& unknown_fields, std::string* output) const;
     
     void PrintFieldValueToString(const Message& message,
                                  const FieldDescriptor* field, int index,
@@ -279,7 +348,9 @@ class PROTOBUF_EXPORT TextFormat {
       single_line_mode_ = single_line_mode;
     }
 
-    bool IsInSingleLineMode() const { return single_line_mode_; }
+    PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool IsInSingleLineMode() const {
+      return single_line_mode_;
+    }
 
     
     void SetUseFieldNumber(bool use_field_number) {
@@ -306,8 +377,8 @@ class PROTOBUF_EXPORT TextFormat {
     
     void SetDefaultFieldValuePrinter(const FastFieldValuePrinter* printer);
 
-    PROTOBUF_DEPRECATED_MSG("Please use FastFieldValuePrinter")
-    void SetDefaultFieldValuePrinter(const FieldValuePrinter* printer);
+    [[deprecated("Please use FastFieldValuePrinter")]] void
+    SetDefaultFieldValuePrinter(const FieldValuePrinter* printer);
 
     
     
@@ -354,16 +425,28 @@ class PROTOBUF_EXPORT TextFormat {
 
     
     
+    void SetReportSensitiveFields(internal::FieldReporterLevel reporter) {
+      if (report_sensitive_fields_ < reporter) {
+        report_sensitive_fields_ = reporter;
+      }
+    }
+
+    
+    void SetRedactDebugString(bool redact) { redact_debug_string_ = redact; }
+
+    
+    
     
     
     
     bool RegisterFieldValuePrinter(const FieldDescriptor* field,
                                    const FastFieldValuePrinter* printer);
 
-    PROTOBUF_DEPRECATED_MSG("Please use FastFieldValuePrinter")
-    bool RegisterFieldValuePrinter(const FieldDescriptor* field,
-                                   const FieldValuePrinter* printer);
+    [[deprecated("Please use FastFieldValuePrinter")]] bool
+    RegisterFieldValuePrinter(const FieldDescriptor* field,
+                              const FieldValuePrinter* printer);
 
+    
     
     
     
@@ -371,17 +454,35 @@ class PROTOBUF_EXPORT TextFormat {
     bool RegisterMessagePrinter(const Descriptor* descriptor,
                                 const MessagePrinter* printer);
 
+    
+    
+    
+    
+    
+    void PrintMessage(const Message& message,
+                      BaseTextGenerator* generator) const;
+
    private:
     friend std::string Message::DebugString() const;
     friend std::string Message::ShortDebugString() const;
     friend std::string Message::Utf8DebugString() const;
+    friend std::string internal::StringifyMessage(
+        const Message& message, internal::Option option,
+        internal::FieldReporterLevel reporter_level);
 
     
     void SetInsertSilentMarker(bool v) { insert_silent_marker_ = v; }
 
     
     
+    void SetRandomizeDebugString(bool randomize) {
+      randomize_debug_string_ = randomize;
+    }
+
+    
+    
     class TextGenerator;
+    using MarkerToken = BaseTextGenerator::MarkerToken;
 
     
     
@@ -391,44 +492,49 @@ class PROTOBUF_EXPORT TextFormat {
     
     class FastFieldValuePrinterUtf8Escaping;
 
-    static const char* const kDoNotParse;
-
     
     
-    void Print(const Message& message, TextGenerator* generator) const;
+    void Print(const Message& message, BaseTextGenerator* generator) const;
 
     
     void PrintField(const Message& message, const Reflection* reflection,
                     const FieldDescriptor* field,
-                    TextGenerator* generator) const;
+                    BaseTextGenerator* generator) const;
 
     
     void PrintShortRepeatedField(const Message& message,
                                  const Reflection* reflection,
                                  const FieldDescriptor* field,
-                                 TextGenerator* generator) const;
+                                 BaseTextGenerator* generator) const;
 
     
     
     void PrintFieldName(const Message& message, int field_index,
                         int field_count, const Reflection* reflection,
                         const FieldDescriptor* field,
-                        TextGenerator* generator) const;
+                        BaseTextGenerator* generator) const;
 
     
     
     void PrintFieldValue(const Message& message, const Reflection* reflection,
                          const FieldDescriptor* field, int index,
-                         TextGenerator* generator) const;
+                         BaseTextGenerator* generator) const;
 
     
     
     
     void PrintUnknownFields(const UnknownFieldSet& unknown_fields,
-                            TextGenerator* generator,
+                            BaseTextGenerator* generator,
                             int recursion_budget) const;
 
-    bool PrintAny(const Message& message, TextGenerator* generator) const;
+    bool PrintAny(const Message& message, BaseTextGenerator* generator) const;
+
+    
+    
+    bool TryRedactFieldValue(const Message& message,
+                             const FieldDescriptor* field,
+                             BaseTextGenerator* generator,
+                             bool insert_value_separator) const;
 
     const FastFieldValuePrinter* GetFieldPrinter(
         const FieldDescriptor* field) const {
@@ -437,25 +543,31 @@ class PROTOBUF_EXPORT TextFormat {
                                           : it->second.get();
     }
 
+    friend class google::protobuf::python::cmessage::PythonFieldValuePrinter;
+    static void HardenedPrintString(absl::string_view src,
+                                    TextFormat::BaseTextGenerator* generator);
+
     int initial_indent_level_;
     bool single_line_mode_;
     bool use_field_number_;
     bool use_short_repeated_primitives_;
     bool insert_silent_marker_;
+    bool redact_debug_string_;
+    bool randomize_debug_string_;
+    internal::FieldReporterLevel report_sensitive_fields_;
     bool hide_unknown_fields_;
     bool print_message_fields_in_index_order_;
     bool expand_any_;
     int64_t truncate_string_field_longer_than_;
 
     std::unique_ptr<const FastFieldValuePrinter> default_field_value_printer_;
-    typedef std::map<const FieldDescriptor*,
-                     std::unique_ptr<const FastFieldValuePrinter>>
-        CustomPrinterMap;
-    CustomPrinterMap custom_printers_;
+    absl::flat_hash_map<const FieldDescriptor*,
+                        std::unique_ptr<const FastFieldValuePrinter>>
+        custom_printers_;
 
-    typedef std::map<const Descriptor*, std::unique_ptr<const MessagePrinter>>
-        CustomMessagePrinterMap;
-    CustomMessagePrinterMap custom_message_printers_;
+    absl::flat_hash_map<const Descriptor*,
+                        std::unique_ptr<const MessagePrinter>>
+        custom_message_printers_;
 
     const Finder* finder_;
   };
@@ -474,25 +586,31 @@ class PROTOBUF_EXPORT TextFormat {
   
   
   
-  static bool Parse(io::ZeroCopyInputStream* input, Message* output);
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD static bool Parse(
+      io::ZeroCopyInputStream* input, Message* output);
   
-  static bool ParseFromString(ConstStringParam input, Message* output);
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD static bool ParseFromString(
+      absl::string_view input, Message* output);
+  
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD static bool ParseFromCord(
+      const absl::Cord& input, Message* output);
 
   
   
-  static bool Merge(io::ZeroCopyInputStream* input, Message* output);
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD static bool Merge(
+      io::ZeroCopyInputStream* input, Message* output);
   
-  static bool MergeFromString(ConstStringParam input, Message* output);
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD static bool MergeFromString(
+      absl::string_view input, Message* output);
 
   
   
   
-  static bool ParseFieldValueFromString(const std::string& input,
-                                        const FieldDescriptor* field,
-                                        Message* message);
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD static bool ParseFieldValueFromString(
+      absl::string_view input, const FieldDescriptor* field, Message* message);
 
   
-  struct ParseLocation {
+  struct PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED ParseLocation {
     int line;
     int column;
 
@@ -503,7 +621,7 @@ class PROTOBUF_EXPORT TextFormat {
 
   
   
-  struct ParseLocationRange {
+  struct PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED ParseLocationRange {
     ParseLocation start;
     ParseLocation end;
     ParseLocationRange() : start(), end() {}
@@ -513,6 +631,35 @@ class PROTOBUF_EXPORT TextFormat {
 
   
   
+  struct PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED FieldLocation {
+    
+    
+    ParseLocationRange full;
+    
+    
+    ParseLocationRange name;
+    
+    
+    
+    
+    
+    
+    std::vector<ParseLocationRange> values;
+  };
+
+  struct PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED RedactionState {
+    bool redact;
+    bool report;
+  };
+
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD static TextFormat::RedactionState
+  GetRedactionState(const FieldDescriptor* field);
+
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD static TextFormat::RedactionState
+  IsOptionSensitive(const Message& opts, const Reflection* reflection,
+                    const FieldDescriptor* option);
+  
+  
   class PROTOBUF_EXPORT ParseInfoTree {
    public:
     ParseInfoTree() = default;
@@ -520,62 +667,85 @@ class PROTOBUF_EXPORT TextFormat {
     ParseInfoTree& operator=(const ParseInfoTree&) = delete;
 
     
+    PROTOBUF_FUTURE_ADD_EARLY_NODISCARD absl::StatusOr<FieldLocation>
+    GetFieldLocation(const FieldDescriptor* field) const;
+
     
-    
-    ParseLocationRange GetLocationRange(const FieldDescriptor* field,
-                                        int index) const;
+    PROTOBUF_FUTURE_ADD_EARLY_NODISCARD absl::StatusOr<FieldLocation>
+    GetFieldLocation(const FieldDescriptor* field, uint32_t index) const;
 
     
     
     
-    ParseLocation GetLocation(const FieldDescriptor* field, int index) const {
-      return GetLocationRange(field, index).start;
-    }
+    
+    [[deprecated("Please use GetFieldLocation()")]]
+    PROTOBUF_FUTURE_ADD_EARLY_NODISCARD ParseLocationRange
+    GetLocationRange(const FieldDescriptor* field, int index) const;
 
     
     
     
-    ParseInfoTree* GetTreeForNested(const FieldDescriptor* field,
-                                    int index) const;
+    
+    [[deprecated("Please use GetFieldLocation()")]]
+    PROTOBUF_FUTURE_ADD_EARLY_NODISCARD ParseLocation
+    GetLocation(const FieldDescriptor* field, int index) const;
+
+    
+    
+    
+    PROTOBUF_FUTURE_ADD_EARLY_NODISCARD ParseInfoTree* GetTreeForNested(
+        const FieldDescriptor* field, int index) const;
 
    private:
     
     friend class TextFormat;
 
     
+    
     void RecordLocation(const FieldDescriptor* field, ParseLocationRange range);
+
+    
+    void RecordNameLocation(const FieldDescriptor* field,
+                            ParseLocationRange range);
+
+    
+    void RecordValueLocation(const FieldDescriptor* field,
+                             ParseLocationRange range);
 
     
     ParseInfoTree* CreateNested(const FieldDescriptor* field);
 
     
-    typedef std::map<const FieldDescriptor*, std::vector<ParseLocationRange>>
-        LocationMap;
-
+    absl::flat_hash_map<const FieldDescriptor*, std::vector<FieldLocation>>
+        locations_;
     
     
-    typedef std::map<const FieldDescriptor*,
-                     std::vector<std::unique_ptr<ParseInfoTree>>>
-        NestedMap;
-
-    LocationMap locations_;
-    NestedMap nested_;
+    absl::flat_hash_map<const FieldDescriptor*,
+                        std::vector<std::unique_ptr<ParseInfoTree>>>
+        nested_;
   };
 
   
   class PROTOBUF_EXPORT Parser {
    public:
     Parser();
-    ~Parser();
+    ~Parser() = default;
 
     
-    bool Parse(io::ZeroCopyInputStream* input, Message* output);
+    PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool Parse(
+        io::ZeroCopyInputStream* input, Message* output);
     
-    bool ParseFromString(ConstStringParam input, Message* output);
+    PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool ParseFromString(
+        absl::string_view input, Message* output);
     
-    bool Merge(io::ZeroCopyInputStream* input, Message* output);
+    PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool ParseFromCord(
+        const absl::Cord& input, Message* output);
     
-    bool MergeFromString(ConstStringParam input, Message* output);
+    PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool Merge(
+        io::ZeroCopyInputStream* input, Message* output);
+    
+    PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool MergeFromString(
+        absl::string_view input, Message* output);
 
     
     
@@ -606,9 +776,8 @@ class PROTOBUF_EXPORT TextFormat {
     }
 
     
-    bool ParseFieldValueFromString(const std::string& input,
-                                   const FieldDescriptor* field,
-                                   Message* output);
+    PROTOBUF_FUTURE_ADD_EARLY_NODISCARD bool ParseFieldValueFromString(
+        absl::string_view input, const FieldDescriptor* field, Message* output);
 
     
     
@@ -635,6 +804,42 @@ class PROTOBUF_EXPORT TextFormat {
     
     void SetRecursionLimit(int limit) { recursion_limit_ = limit; }
 
+    
+    
+    
+    
+    
+    
+    
+    class UnsetFieldsMetadata {
+     public:
+      UnsetFieldsMetadata() = default;
+
+     private:
+      using Id = std::pair<const Message*, const FieldDescriptor*>;
+      
+      static Id GetUnsetFieldId(const Message& message,
+                                const FieldDescriptor& fd);
+
+      
+      absl::flat_hash_set<Id> ids_;
+
+      friend class ::google::protobuf::internal::
+          UnsetFieldsMetadataMessageDifferencerTestUtil;
+      friend class ::google::protobuf::internal::UnsetFieldsMetadataTextFormatTestUtil;
+      friend class ::google::protobuf::util::MessageDifferencer;
+      friend class ::google::protobuf::TextFormat::Parser;
+    };
+
+    
+    
+    
+    
+    
+    void OutputNoOpFields(UnsetFieldsMetadata* no_op_fields) {
+      no_op_fields_ = no_op_fields;
+    }
+
    private:
     
     
@@ -657,6 +862,7 @@ class PROTOBUF_EXPORT TextFormat {
     bool allow_relaxed_whitespace_;
     bool allow_singular_overwrites_;
     int recursion_limit_;
+    UnsetFieldsMetadata* no_op_fields_ = nullptr;
   };
 
 
@@ -668,16 +874,42 @@ class PROTOBUF_EXPORT TextFormat {
   static inline void RecordLocation(ParseInfoTree* info_tree,
                                     const FieldDescriptor* field,
                                     ParseLocationRange location);
+  static inline void RecordNameLocation(ParseInfoTree* info_tree,
+                                        const FieldDescriptor* field,
+                                        ParseLocationRange location);
+  static inline void RecordValueLocation(ParseInfoTree* info_tree,
+                                         const FieldDescriptor* field,
+                                         ParseLocationRange location);
   static inline ParseInfoTree* CreateNested(ParseInfoTree* info_tree,
                                             const FieldDescriptor* field);
-
-  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(TextFormat);
+  
+  
+  template <typename... T>
+  static void OutOfLinePrintString(BaseTextGenerator* generator,
+                                   const T&... values);
 };
+
+namespace internal {
+void PrintTextMarker(TextFormat::BaseTextGenerator* generator, bool redact,
+                     bool randomize, bool single_line_mode);
+}  
 
 inline void TextFormat::RecordLocation(ParseInfoTree* info_tree,
                                        const FieldDescriptor* field,
                                        ParseLocationRange location) {
   info_tree->RecordLocation(field, location);
+}
+
+inline void TextFormat::RecordNameLocation(ParseInfoTree* info_tree,
+                                           const FieldDescriptor* field,
+                                           ParseLocationRange location) {
+  info_tree->RecordNameLocation(field, location);
+}
+
+inline void TextFormat::RecordValueLocation(ParseInfoTree* info_tree,
+                                            const FieldDescriptor* field,
+                                            ParseLocationRange location) {
+  info_tree->RecordValueLocation(field, location);
 }
 
 inline TextFormat::ParseInfoTree* TextFormat::CreateNested(
@@ -688,6 +920,6 @@ inline TextFormat::ParseInfoTree* TextFormat::CreateNested(
 }  
 }  
 
-#include <google/protobuf/port_undef.inc>
+#include "google/protobuf/port_undef.inc"
 
-#endif
+#endif  

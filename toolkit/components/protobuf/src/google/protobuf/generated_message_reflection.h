@@ -12,43 +12,24 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef GOOGLE_PROTOBUF_GENERATED_MESSAGE_REFLECTION_H__
 #define GOOGLE_PROTOBUF_GENERATED_MESSAGE_REFLECTION_H__
 
-#include <google/protobuf/stubs/casts.h>
-#include <google/protobuf/stubs/common.h>
-#include <google/protobuf/stubs/once.h>
-#include <google/protobuf/port.h>
-#include <google/protobuf/descriptor.h>
-#include <google/protobuf/generated_enum_reflection.h>
-#include <google/protobuf/unknown_field_set.h>
+#include <atomic>
+#include <cstddef>
+#include <cstdint>
+#include <string>
+
+#include "absl/base/call_once.h"
+#include "absl/base/optimization.h"
+#include "absl/log/absl_check.h"
+#include "google/protobuf/descriptor.h"
+#include "google/protobuf/generated_enum_reflection.h"
+#include "google/protobuf/has_bits.h"
+#include "google/protobuf/unknown_field_set.h"
 
 
-
-#include <google/protobuf/port_def.inc>
+#include "google/protobuf/port_def.inc"
 
 #ifdef SWIG
 #error "You cannot SWIG proto headers"
@@ -61,6 +42,10 @@ class MapValueRef;
 class MessageLayoutInspector;
 class Message;
 struct Metadata;
+
+namespace io {
+class CodedOutputStream;
+}
 }  
 }  
 
@@ -68,9 +53,21 @@ namespace google {
 namespace protobuf {
 namespace internal {
 class DefaultEmptyOneof;
+struct MessageGlobalsBase;
 
 class ExtensionSet;  
 class WeakFieldMap;  
+
+
+
+
+inline constexpr uint32_t kInvalidFieldOffsetTag = 0x40000000u;
+
+
+inline constexpr uint32_t kSplitFieldOffsetMask = 0x80000000u;
+inline constexpr uint32_t kLazyMask = 0x1u;
+inline constexpr uint32_t kInlinedMask = 0x1u;
+inline constexpr uint32_t kMicroStringMask = 0x2u;
 
 
 
@@ -121,31 +118,21 @@ struct ReflectionSchema {
   uint32_t GetObjectSize() const { return static_cast<uint32_t>(object_size_); }
 
   bool InRealOneof(const FieldDescriptor* field) const {
-    return field->containing_oneof() &&
-           !field->containing_oneof()->is_synthetic();
+    return field->real_containing_oneof() != nullptr;
   }
 
   
-  
-  uint32_t GetFieldOffsetNonOneof(const FieldDescriptor* field) const {
-    GOOGLE_DCHECK(!InRealOneof(field));
-    return OffsetValue(offsets_[field->index()], field->type());
-  }
-
-  
+  template <typename Type = void>
   uint32_t GetFieldOffset(const FieldDescriptor* field) const {
-    if (InRealOneof(field)) {
-      size_t offset =
-          static_cast<size_t>(field->containing_type()->field_count()) +
-          field->containing_oneof()->index();
-      return OffsetValue(offsets_[offset], field->type());
-    } else {
-      return GetFieldOffsetNonOneof(field);
-    }
+    return OffsetValue<Type>(offsets_[field->index()], field->type());
   }
 
   bool IsFieldInlined(const FieldDescriptor* field) const {
     return Inlined(offsets_[field->index()], field->type());
+  }
+
+  bool IsFieldMicroString(const FieldDescriptor* field) const {
+    return IsMicroString(offsets_[field->index()], field->type());
   }
 
   uint32_t GetOneofCaseOffset(const OneofDescriptor* oneof_descriptor) const {
@@ -155,42 +142,24 @@ struct ReflectionSchema {
                sizeof(uint32_t));
   }
 
+  
+  
+  
+  
   bool HasHasbits() const { return has_bits_offset_ != -1; }
 
   
   uint32_t HasBitIndex(const FieldDescriptor* field) const {
-    if (has_bits_offset_ == -1) return static_cast<uint32_t>(-1);
-    GOOGLE_DCHECK(HasHasbits());
+    ABSL_DCHECK(!field->is_extension());
+    if (has_bits_offset_ == -1) return static_cast<uint32_t>(kNoHasbit);
+    ABSL_DCHECK(HasHasbits());
     return has_bit_indices_[field->index()];
   }
 
   
   uint32_t HasBitsOffset() const {
-    GOOGLE_DCHECK(HasHasbits());
+    ABSL_DCHECK(HasHasbits());
     return static_cast<uint32_t>(has_bits_offset_);
-  }
-
-  bool HasInlinedString() const { return inlined_string_donated_offset_ != -1; }
-
-  
-  
-  uint32_t InlinedStringIndex(const FieldDescriptor* field) const {
-    GOOGLE_DCHECK(HasInlinedString());
-    return inlined_string_indices_[field->index()];
-  }
-
-  
-  uint32_t InlinedStringDonatedOffset() const {
-    GOOGLE_DCHECK(HasInlinedString());
-    return static_cast<uint32_t>(inlined_string_donated_offset_);
-  }
-
-  
-  
-  
-  
-  uint32_t GetMetadataOffset() const {
-    return static_cast<uint32_t>(metadata_offset_);
   }
 
   
@@ -198,7 +167,7 @@ struct ReflectionSchema {
 
   
   uint32_t GetExtensionSetOffset() const {
-    GOOGLE_DCHECK(HasExtensionSet());
+    ABSL_DCHECK(HasExtensionSet());
     return static_cast<uint32_t>(extensions_offset_);
   }
 
@@ -214,24 +183,32 @@ struct ReflectionSchema {
   
   const void* GetFieldDefault(const FieldDescriptor* field) const {
     return reinterpret_cast<const uint8_t*>(default_instance_) +
-           OffsetValue(offsets_[field->index()], field->type());
+           OffsetValue<void>(offsets_[field->index()], field->type());
   }
 
   
   bool IsEagerlyVerifiedLazyField(const FieldDescriptor* field) const {
-    GOOGLE_DCHECK_EQ(field->type(), FieldDescriptor::TYPE_MESSAGE);
+    ABSL_DCHECK_EQ(field->type(), FieldDescriptor::TYPE_MESSAGE);
     (void)field;
     return false;
   }
 
-  bool IsFieldStripped(const FieldDescriptor* field) const {
-    (void)field;
-    return false;
+  bool IsSplit() const { return split_offset_ != -1; }
+
+  bool IsSplit(const FieldDescriptor* field) const {
+    return split_offset_ != -1 &&
+           (offsets_[field->index()] & kSplitFieldOffsetMask) != 0;
   }
 
-  bool IsMessageStripped(const Descriptor* descriptor) const {
-    (void)descriptor;
-    return false;
+  
+  uint32_t SplitOffset() const {
+    ABSL_DCHECK(IsSplit());
+    return static_cast<uint32_t>(split_offset_);
+  }
+
+  uint32_t SizeofSplit() const {
+    ABSL_DCHECK(IsSplit());
+    return static_cast<uint32_t>(sizeof_split_);
   }
 
 
@@ -247,33 +224,46 @@ struct ReflectionSchema {
   const uint32_t* offsets_;
   const uint32_t* has_bit_indices_;
   int has_bits_offset_;
-  int metadata_offset_;
   int extensions_offset_;
   int oneof_case_offset_;
   int object_size_;
   int weak_field_map_offset_;
-  const uint32_t* inlined_string_indices_;
-  int inlined_string_donated_offset_;
+  int split_offset_;
+  int sizeof_split_;
 
   
   
+  template <typename Type>
   static uint32_t OffsetValue(uint32_t v, FieldDescriptor::Type type) {
+    if constexpr (!std::is_void_v<Type>) {
+      
+      
+      return v & ~kSplitFieldOffsetMask & ~(alignof(Type) - 1);
+    }
     if (type == FieldDescriptor::TYPE_MESSAGE ||
         type == FieldDescriptor::TYPE_STRING ||
         type == FieldDescriptor::TYPE_BYTES) {
-      return v & 0xFFFFFFFEu;
+      return v & ~kSplitFieldOffsetMask & ~kInlinedMask & ~kLazyMask &
+             ~kMicroStringMask;
     }
-    return v;
+    return v & (~kSplitFieldOffsetMask);
   }
 
   static bool Inlined(uint32_t v, FieldDescriptor::Type type) {
     if (type == FieldDescriptor::TYPE_STRING ||
         type == FieldDescriptor::TYPE_BYTES) {
-      return (v & 1u) != 0u;
+      return (v & kInlinedMask) != 0u;
     } else {
       
       return false;
     }
+  }
+
+  static bool IsMicroString(uint32_t v, FieldDescriptor::Type type) {
+    ABSL_DCHECK(type == FieldDescriptor::TYPE_STRING ||
+                type == FieldDescriptor::TYPE_BYTES)
+        << type;
+    return (v & kMicroStringMask) != 0u;
   }
 };
 
@@ -285,8 +275,6 @@ struct ReflectionSchema {
 
 struct MigrationSchema {
   int32_t offsets_index;
-  int32_t has_bit_indices_index;
-  int32_t inlined_string_indices_index;
   int object_size;
 };
 
@@ -299,41 +287,27 @@ struct PROTOBUF_EXPORT DescriptorTable {
   int size;  
   const char* descriptor;
   const char* filename;
-  once_flag* once;
+  absl::once_flag* once;
   const DescriptorTable* const* deps;
   int num_deps;
   int num_messages;
   const MigrationSchema* schemas;
-  const Message* const* default_instances;
+  const MessageGlobalsBase* const* message_globals;
   const uint32_t* offsets;
   
-  Metadata* file_level_metadata;
   const EnumDescriptor** file_level_enum_descriptors;
   const ServiceDescriptor** file_level_service_descriptors;
 };
 
-enum {
-  
-  
-  
-  kInvalidFieldOffsetTag = 0x40000000u,
-};
 
 
 
 
 
+void PROTOBUF_EXPORT AssignDescriptors(const DescriptorTable* table);
 
-void PROTOBUF_EXPORT AssignDescriptors(const DescriptorTable* table,
-                                       bool eager = false);
-
-
-
-
-
-Metadata PROTOBUF_EXPORT AssignDescriptors(const DescriptorTable* (*table)(),
-                                           internal::once_flag* once,
-                                           const Metadata& metadata);
+void PROTOBUF_EXPORT
+AssignDescriptorsOnceInnerCall(const DescriptorTable* table);
 
 
 PROTOBUF_EXPORT void UnknownFieldSetSerializer(const uint8_t* base,
@@ -341,14 +315,58 @@ PROTOBUF_EXPORT void UnknownFieldSetSerializer(const uint8_t* base,
                                                uint32_t has_offset,
                                                io::CodedOutputStream* output);
 
+PROTOBUF_EXPORT void InitializeFileDescriptorDefaultInstances();
+
+PROTOBUF_EXPORT void AddDescriptors(const DescriptorTable* table);
+
 struct PROTOBUF_EXPORT AddDescriptorsRunner {
   explicit AddDescriptorsRunner(const DescriptorTable* table);
 };
 
+
+
+
+
+const Message* GetPrototypeForWeakDescriptor(const DescriptorTable* table,
+                                             int index, bool force_build);
+
+struct DenseEnumCacheInfo {
+  std::atomic<const std::string**> cache;
+  int min_val;
+  int max_val;
+  const EnumDescriptor* (*descriptor_fn)();
+};
+PROTOBUF_EXPORT const std::string& NameOfDenseEnumSlow(int v,
+                                                       DenseEnumCacheInfo*);
+
+
+
+
+
+
+template <const EnumDescriptor* (*descriptor_fn)(), int min_val, int max_val>
+const std::string& NameOfDenseEnum(int v) {
+  static_assert(max_val - min_val >= 0, "Too many enums between min and max.");
+  static DenseEnumCacheInfo deci = { {}, min_val, max_val,
+                                    descriptor_fn};
+  const std::string** cache = deci.cache.load(std::memory_order_acquire);
+  if (ABSL_PREDICT_TRUE(cache != nullptr)) {
+    if (ABSL_PREDICT_TRUE(v >= min_val && v <= max_val)) {
+      return *cache[v - min_val];
+    }
+  }
+  return NameOfDenseEnumSlow(v, &deci);
+}
+
+
+
+PROTOBUF_EXPORT bool SplitFieldHasExtraIndirection(
+    const FieldDescriptor* field);
+
 }  
 }  
 }  
 
-#include <google/protobuf/port_undef.inc>
+#include "google/protobuf/port_undef.inc"
 
 #endif  

@@ -5,42 +5,25 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef GOOGLE_PROTOBUF_MAP_ENTRY_H__
 #define GOOGLE_PROTOBUF_MAP_ENTRY_H__
 
-#include <google/protobuf/port.h>
-#include <google/protobuf/generated_message_reflection.h>
-#include <google/protobuf/map_entry_lite.h>
-#include <google/protobuf/map_type_handler.h>
-#include <google/protobuf/reflection_ops.h>
-#include <google/protobuf/unknown_field_set.h>
-#include <google/protobuf/wire_format_lite.h>
+#include <cstddef>
+#include <cstdint>
+#include <string>
+#include <type_traits>
+
+#include "google/protobuf/generated_message_reflection.h"
+#include "google/protobuf/has_bits.h"
+#include "google/protobuf/map_type_handler.h"
+#include "google/protobuf/message.h"
+#include "google/protobuf/message_lite.h"
+#include "google/protobuf/parse_context.h"
+#include "google/protobuf/unknown_field_set.h"
+#include "google/protobuf/wire_format_lite.h"
 
 
-#include <google/protobuf/port_def.inc>
+#include "google/protobuf/port_def.inc"
 
 #ifdef SWIG
 #error "You cannot SWIG proto headers"
@@ -48,18 +31,9 @@
 
 namespace google {
 namespace protobuf {
+
 class Arena;
-namespace internal {
-template <typename Derived, typename Key, typename Value,
-          WireFormatLite::FieldType kKeyFieldType,
-          WireFormatLite::FieldType kValueFieldType>
-class MapField;
-}
-}  
-}  
 
-namespace google {
-namespace protobuf {
 namespace internal {
 
 
@@ -88,47 +62,78 @@ namespace internal {
 
 
 
-template <typename Derived, typename Key, typename Value,
-          WireFormatLite::FieldType kKeyFieldType,
+template <typename Key, typename Value, WireFormatLite::FieldType kKeyFieldType,
           WireFormatLite::FieldType kValueFieldType>
-class MapEntry : public MapEntryImpl<Derived, Message, Key, Value,
-                                     kKeyFieldType, kValueFieldType> {
+class PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED MapEntry : public Message {
+  
+  
+  using KeyTypeHandler = MapTypeHandler<kKeyFieldType, Key>;
+  using ValueTypeHandler = MapTypeHandler<kValueFieldType, Value>;
+
+  
+  
+  using KeyOnMemory = typename KeyTypeHandler::TypeOnMemory;
+  using ValueOnMemory = typename ValueTypeHandler::TypeOnMemory;
+
  public:
+#if !defined(PROTOBUF_CUSTOM_VTABLE)
   constexpr MapEntry() {}
-  explicit MapEntry(Arena* arena)
-      : MapEntryImpl<Derived, Message, Key, Value, kKeyFieldType,
-                     kValueFieldType>(arena) {}
-  ~MapEntry() override {
-    Message::_internal_metadata_.template Delete<UnknownFieldSet>();
-  }
-  typedef void InternalArenaConstructable_;
-  typedef void DestructorSkippable_;
+#endif  
+  using Message::Message;
 
-  typedef typename MapEntryImpl<Derived, Message, Key, Value, kKeyFieldType,
-                                kValueFieldType>::KeyTypeHandler KeyTypeHandler;
-  typedef
-      typename MapEntryImpl<Derived, Message, Key, Value, kKeyFieldType,
-                            kValueFieldType>::ValueTypeHandler ValueTypeHandler;
-  size_t SpaceUsedLong() const override {
-    size_t size = sizeof(Derived);
-    size += KeyTypeHandler::SpaceUsedInMapEntryLong(this->key_);
-    size += ValueTypeHandler::SpaceUsedInMapEntryLong(this->value_);
-    return size;
+  MapEntry(const MapEntry&) = delete;
+  MapEntry& operator=(const MapEntry&) = delete;
+
+  ~MapEntry() PROTOBUF_OVERRIDE {
+    
+    
+    
+    
+    static_assert(!std::is_base_of<Message, Value>::value ||
+                      std::is_same<Message, Value>::value,
+                  "");
+
+    if (GetArena() != nullptr) return;
+    SharedDtor(*this);
   }
 
- private:
-  friend class ::PROTOBUF_NAMESPACE_ID::Arena;
-  template <typename C, typename K, typename V,
-            WireFormatLite::FieldType k_wire_type, WireFormatLite::FieldType>
-  friend class internal::MapField;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
 
-  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(MapEntry);
+  struct _Internal;
+
+ protected:
+  friend class google::protobuf::Arena;
+
+  static void SharedDtor(MessageLite& msg) {
+    auto& this_ = static_cast<MapEntry&>(msg);
+    this_._internal_metadata_.template Delete<UnknownFieldSet>();
+    KeyTypeHandler::DeleteNoArena(this_._impl_.key_);
+    ValueTypeHandler::DeleteNoArena(this_._impl_.value_);
+  }
+
+  
+  
+  struct {
+    HasBits<1> _has_bits_{};
+    CachedSize _cached_size_{};
+
+    KeyOnMemory key_{KeyTypeHandler::Constinit()};
+    ValueOnMemory value_{ValueTypeHandler::Constinit()};
+  } _impl_;
+};
+
+template <typename Key, typename Value, WireFormatLite::FieldType kKeyFieldType,
+          WireFormatLite::FieldType kValueFieldType>
+struct MapEntry<Key, Value, kKeyFieldType, kValueFieldType>::_Internal {
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(MapEntry, _impl_._has_bits_);
 };
 
 }  
 }  
 }  
 
-#include <google/protobuf/port_undef.inc>
+#include "google/protobuf/port_undef.inc"
 
 #endif  

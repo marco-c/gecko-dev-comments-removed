@@ -9,46 +9,29 @@
 
 
 
+#include "google/protobuf/wire_format_lite.h"
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#include <google/protobuf/wire_format_lite.h>
-
+#include <cstddef>
+#include <cstdint>
 #include <limits>
-#include <stack>
+#include <new>
 #include <string>
-#include <vector>
+#include <type_traits>
 
-#include <google/protobuf/stubs/logging.h>
-#include <google/protobuf/stubs/common.h>
-#include <google/protobuf/io/coded_stream.h>
-#include <google/protobuf/io/zero_copy_stream.h>
-#include <google/protobuf/io/zero_copy_stream_impl_lite.h>
-#include <google/protobuf/stubs/stringprintf.h>
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
+#include "absl/strings/cord.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
+#include "google/protobuf/io/coded_stream.h"
+#include "google/protobuf/message_lite.h"
+#include "google/protobuf/repeated_field.h"
+#include "utf8_validity.h"
 
 
 
-#include <google/protobuf/port_def.inc>
+#include "google/protobuf/port_def.inc"
 
 namespace google {
 namespace protobuf {
@@ -63,6 +46,14 @@ const int WireFormatLite::kMessageSetTypeIdTag;
 const int WireFormatLite::kMessageSetMessageTag;
 
 #endif
+
+constexpr size_t WireFormatLite::kFixed32Size;
+constexpr size_t WireFormatLite::kFixed64Size;
+constexpr size_t WireFormatLite::kSFixed32Size;
+constexpr size_t WireFormatLite::kSFixed64Size;
+constexpr size_t WireFormatLite::kFloatSize;
+constexpr size_t WireFormatLite::kDoubleSize;
+constexpr size_t WireFormatLite::kBoolSize;
 
 
 const size_t WireFormatLite::kMessageSetItemTagsSize =
@@ -294,31 +285,7 @@ void CodedOutputStreamFieldSkipper::SkipUnknownEnum(int field_number,
   unknown_fields_->WriteVarint64(value);
 }
 
-bool WireFormatLite::ReadPackedEnumPreserveUnknowns(
-    io::CodedInputStream* input, int field_number, bool (*is_valid)(int),
-    io::CodedOutputStream* unknown_fields_stream, RepeatedField<int>* values) {
-  uint32_t length;
-  if (!input->ReadVarint32(&length)) return false;
-  io::CodedInputStream::Limit limit = input->PushLimit(length);
-  while (input->BytesUntilLimit() > 0) {
-    int value;
-    if (!ReadPrimitive<int, WireFormatLite::TYPE_ENUM>(input, &value)) {
-      return false;
-    }
-    if (is_valid == nullptr || is_valid(value)) {
-      values->Add(value);
-    } else {
-      uint32_t tag = WireFormatLite::MakeTag(field_number,
-                                             WireFormatLite::WIRETYPE_VARINT);
-      unknown_fields_stream->WriteVarint32(tag);
-      unknown_fields_stream->WriteVarint32(value);
-    }
-  }
-  input->PopLimit(limit);
-  return true;
-}
-
-#if !defined(PROTOBUF_LITTLE_ENDIAN)
+#if !defined(ABSL_IS_LITTLE_ENDIAN)
 
 namespace {
 void EncodeFixedSizeValue(float v, uint8_t* dest) {
@@ -354,7 +321,7 @@ void EncodeFixedSizeValue(bool v, uint8_t* dest) {
 
 template <typename CType>
 static void WriteArray(const CType* a, int n, io::CodedOutputStream* output) {
-#if defined(PROTOBUF_LITTLE_ENDIAN)
+#if defined(ABSL_IS_LITTLE_ENDIAN)
   output->WriteRaw(reinterpret_cast<const char*>(a), n * sizeof(a[0]));
 #else
   const int kAtATime = 128;
@@ -483,7 +450,7 @@ void WireFormatLite::WriteString(int field_number, const std::string& value,
                                  io::CodedOutputStream* output) {
   
   WriteTag(field_number, WIRETYPE_LENGTH_DELIMITED, output);
-  GOOGLE_CHECK_LE(value.size(), kInt32MaxSize);
+  ABSL_CHECK_LE(value.size(), kInt32MaxSize);
   output->WriteVarint32(value.size());
   output->WriteString(value);
 }
@@ -492,14 +459,14 @@ void WireFormatLite::WriteStringMaybeAliased(int field_number,
                                              io::CodedOutputStream* output) {
   
   WriteTag(field_number, WIRETYPE_LENGTH_DELIMITED, output);
-  GOOGLE_CHECK_LE(value.size(), kInt32MaxSize);
+  ABSL_CHECK_LE(value.size(), kInt32MaxSize);
   output->WriteVarint32(value.size());
   output->WriteRawMaybeAliased(value.data(), value.size());
 }
 void WireFormatLite::WriteBytes(int field_number, const std::string& value,
                                 io::CodedOutputStream* output) {
   WriteTag(field_number, WIRETYPE_LENGTH_DELIMITED, output);
-  GOOGLE_CHECK_LE(value.size(), kInt32MaxSize);
+  ABSL_CHECK_LE(value.size(), kInt32MaxSize);
   output->WriteVarint32(value.size());
   output->WriteString(value);
 }
@@ -507,7 +474,7 @@ void WireFormatLite::WriteBytesMaybeAliased(int field_number,
                                             const std::string& value,
                                             io::CodedOutputStream* output) {
   WriteTag(field_number, WIRETYPE_LENGTH_DELIMITED, output);
-  GOOGLE_CHECK_LE(value.size(), kInt32MaxSize);
+  ABSL_CHECK_LE(value.size(), kInt32MaxSize);
   output->WriteVarint32(value.size());
   output->WriteRawMaybeAliased(value.data(), value.size());
 }
@@ -586,15 +553,8 @@ bool WireFormatLite::ReadBytes(io::CodedInputStream* input,
   return ReadBytesToString(input, value);
 }
 
-bool WireFormatLite::ReadBytes(io::CodedInputStream* input, std::string** p) {
-  if (*p == &GetEmptyStringAlreadyInited()) {
-    *p = new std::string();
-  }
-  return ReadBytesToString(input, *p);
-}
-
-void PrintUTF8ErrorLog(StringPiece message_name,
-                       StringPiece field_name, const char* operation_str,
+void PrintUTF8ErrorLog(absl::string_view message_name,
+                       absl::string_view field_name, const char* operation_str,
                        bool emit_stacktrace) {
   std::string stacktrace;
   (void)emit_stacktrace;  
@@ -602,25 +562,25 @@ void PrintUTF8ErrorLog(StringPiece message_name,
   if (!field_name.empty()) {
     if (!message_name.empty()) {
       quoted_field_name =
-          StrCat(" '", message_name, ".", field_name, "'");
+          absl::StrCat(" '", message_name, ".", field_name, "'");
     } else {
-      quoted_field_name = StrCat(" '", field_name, "'");
+      quoted_field_name = absl::StrCat(" '", field_name, "'");
     }
   }
   std::string error_message =
-      StrCat("String field", quoted_field_name,
+      absl::StrCat("String field", quoted_field_name,
                    " contains invalid UTF-8 data "
                    "when ",
                    operation_str,
                    " a protocol buffer. Use the 'bytes' type if you intend to "
                    "send raw bytes. ",
                    stacktrace);
-  GOOGLE_LOG(ERROR) << error_message;
+  ABSL_LOG(ERROR) << error_message;
 }
 
 bool WireFormatLite::VerifyUtf8String(const char* data, int size, Operation op,
-                                      const char* field_name) {
-  if (!IsStructurallyValidUTF8(data, size)) {
+                                      const absl::string_view field_name) {
+  if (!utf8_range::IsStructurallyValid({data, static_cast<size_t>(size)})) {
     const char* operation_str = nullptr;
     switch (op) {
       case PARSE:
@@ -652,9 +612,18 @@ static size_t VarintSize(const T* data, const int n) {
       "Cannot SignExtended unsigned types");
   static_assert(!(SignExtended && ZigZag),
                 "Cannot SignExtended and ZigZag on the same type");
-  uint32_t sum = n;
+  
+  
+  
+  
+  
+  
+  
+  int vectorN = n & -32;
+  uint32_t sum = vectorN;
   uint32_t msb_sum = 0;
-  for (int i = 0; i < n; i++) {
+  int i = 0;
+  for (; i < vectorN; i++) {
     uint32_t x = data[i];
     if (ZigZag) {
       x = WireFormatLite::ZigZagEncode32(x);
@@ -670,6 +639,21 @@ static size_t VarintSize(const T* data, const int n) {
     if (x > 0x1FFFFF) sum++;
     if (x > 0xFFFFFFF) sum++;
   }
+#ifdef __clang__
+
+
+#pragma clang loop vectorize(disable) unroll(disable) interleave(disable)
+#endif
+  for (; i < n; i++) {
+    uint32_t x = data[i];
+    if (ZigZag) {
+      sum += WireFormatLite::SInt32Size(x);
+    } else if (SignExtended) {
+      sum += WireFormatLite::Int32Size(x);
+    } else {
+      sum += WireFormatLite::UInt32Size(x);
+    }
+  }
   if (SignExtended) sum += msb_sum * 5;
   return sum;
 }
@@ -680,8 +664,10 @@ static size_t VarintSize64(const T* data, const int n) {
   
   static_assert(!ZigZag || !std::is_unsigned<T>::value,
                 "Cannot ZigZag encode unsigned types");
-  uint64_t sum = n;
-  for (int i = 0; i < n; i++) {
+  int vectorN = n & -32;
+  uint64_t sum = vectorN;
+  int i = 0;
+  for (; i < vectorN; i++) {
     uint64_t x = data[i];
     if (ZigZag) {
       x = WireFormatLite::ZigZagEncode64(x);
@@ -697,8 +683,23 @@ static size_t VarintSize64(const T* data, const int n) {
     if (x > 0x1FFFFF) sum++;
     if (x > 0xFFFFFFF) sum++;
   }
+#ifdef __clang__
+
+
+#pragma clang loop vectorize(disable) unroll(disable) interleave(disable)
+#endif
+  for (; i < n; i++) {
+    uint64_t x = data[i];
+    if (ZigZag) {
+      sum += WireFormatLite::SInt64Size(x);
+    } else {
+      sum += WireFormatLite::UInt64Size(x);
+    }
+  }
   return sum;
 }
+
+
 
 
 
@@ -764,10 +765,7 @@ size_t WireFormatLite::EnumSize(const RepeatedField<int>& value) {
 
 
 
-
-
-#define USE_SSE_FOR_64_BIT_INTEGER_ARRAYS 0
-#if USE_SSE_FOR_64_BIT_INTEGER_ARRAYS
+#if defined(__AVX2__) && defined(__clang__)
 size_t WireFormatLite::Int64Size(const RepeatedField<int64_t>& value) {
   return VarintSize64<false>(value.data(), value.size());
 }
@@ -811,8 +809,93 @@ size_t WireFormatLite::SInt64Size(const RepeatedField<int64_t>& value) {
 
 #endif
 
+size_t WireFormatLite::Int32SizeWithPackedTagSize(
+    const RepeatedField<int32_t>& value, size_t tag_size,
+    const internal::CachedSize& cached_size) {
+  if (value.empty()) {
+    cached_size.Set(0);
+    return 0;
+  }
+  size_t res;
+  PROTOBUF_ALWAYS_INLINE_CALL res = Int32Size(value);
+  cached_size.SetNonZero(ToCachedSize(res));
+  return tag_size + res + Int32Size(static_cast<int32_t>(res));
+}
+size_t WireFormatLite::Int64SizeWithPackedTagSize(
+    const RepeatedField<int64_t>& value, size_t tag_size,
+    const internal::CachedSize& cached_size) {
+  if (value.empty()) {
+    cached_size.Set(0);
+    return 0;
+  }
+  size_t res;
+  PROTOBUF_ALWAYS_INLINE_CALL res = Int64Size(value);
+  cached_size.SetNonZero(ToCachedSize(res));
+  return tag_size + res + Int32Size(static_cast<int32_t>(res));
+}
+size_t WireFormatLite::UInt32SizeWithPackedTagSize(
+    const RepeatedField<uint32_t>& value, size_t tag_size,
+    const internal::CachedSize& cached_size) {
+  if (value.empty()) {
+    cached_size.Set(0);
+    return 0;
+  }
+  size_t res;
+  PROTOBUF_ALWAYS_INLINE_CALL res = UInt32Size(value);
+  cached_size.SetNonZero(ToCachedSize(res));
+  return tag_size + res + Int32Size(static_cast<int32_t>(res));
+}
+size_t WireFormatLite::UInt64SizeWithPackedTagSize(
+    const RepeatedField<uint64_t>& value, size_t tag_size,
+    const internal::CachedSize& cached_size) {
+  if (value.empty()) {
+    cached_size.Set(0);
+    return 0;
+  }
+  size_t res;
+  PROTOBUF_ALWAYS_INLINE_CALL res = UInt64Size(value);
+  cached_size.SetNonZero(ToCachedSize(res));
+  return tag_size + res + Int32Size(static_cast<int32_t>(res));
+}
+size_t WireFormatLite::SInt32SizeWithPackedTagSize(
+    const RepeatedField<int32_t>& value, size_t tag_size,
+    const internal::CachedSize& cached_size) {
+  if (value.empty()) {
+    cached_size.Set(0);
+    return 0;
+  }
+  size_t res;
+  PROTOBUF_ALWAYS_INLINE_CALL res = SInt32Size(value);
+  cached_size.SetNonZero(ToCachedSize(res));
+  return tag_size + res + Int32Size(static_cast<int32_t>(res));
+}
+size_t WireFormatLite::SInt64SizeWithPackedTagSize(
+    const RepeatedField<int64_t>& value, size_t tag_size,
+    const internal::CachedSize& cached_size) {
+  if (value.empty()) {
+    cached_size.Set(0);
+    return 0;
+  }
+  size_t res;
+  PROTOBUF_ALWAYS_INLINE_CALL res = SInt64Size(value);
+  cached_size.SetNonZero(ToCachedSize(res));
+  return tag_size + res + Int32Size(static_cast<int32_t>(res));
+}
+size_t WireFormatLite::EnumSizeWithPackedTagSize(
+    const RepeatedField<int>& value, size_t tag_size,
+    const internal::CachedSize& cached_size) {
+  if (value.empty()) {
+    cached_size.Set(0);
+    return 0;
+  }
+  size_t res;
+  PROTOBUF_ALWAYS_INLINE_CALL res = EnumSize(value);
+  cached_size.SetNonZero(ToCachedSize(res));
+  return tag_size + res + Int32Size(static_cast<int32_t>(res));
+}
+
 }  
 }  
 }  
 
-#include <google/protobuf/port_undef.inc>
+#include "google/protobuf/port_undef.inc"

@@ -5,45 +5,28 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef GOOGLE_PROTOBUF_IMPLICIT_WEAK_MESSAGE_H__
 #define GOOGLE_PROTOBUF_IMPLICIT_WEAK_MESSAGE_H__
 
+#include <cstddef>
+#include <cstdint>
 #include <string>
 
-#include <google/protobuf/io/coded_stream.h>
-#include <google/protobuf/arena.h>
-#include <google/protobuf/message_lite.h>
-#include <google/protobuf/repeated_field.h>
+#include "google/protobuf/arena.h"
+#include "google/protobuf/field_with_arena.h"
+#include "google/protobuf/generated_message_tctable_decl.h"
+#include "google/protobuf/internal_visibility.h"
+#include "google/protobuf/io/coded_stream.h"
+#include "google/protobuf/message_lite.h"
+#include "google/protobuf/port.h"
+#include "google/protobuf/repeated_ptr_field.h"
 
 #ifdef SWIG
 #error "You cannot SWIG proto headers"
 #endif
 
 
-#include <google/protobuf/port_def.inc>
+#include "google/protobuf/port_def.inc"
 
 
 
@@ -52,51 +35,52 @@ namespace google {
 namespace protobuf {
 namespace internal {
 
+struct ImplicitWeakMessageDefaultType;
+extern ImplicitWeakMessageDefaultType implicit_weak_message_globals;
 
 
 
-class PROTOBUF_EXPORT ImplicitWeakMessage : public MessageLite {
+
+class PROTOBUF_EXPORT ImplicitWeakMessage final : public MessageLite {
  public:
-  ImplicitWeakMessage() : data_(new std::string) {}
-  explicit constexpr ImplicitWeakMessage(ConstantInitialized)
-      : data_(nullptr) {}
+  ImplicitWeakMessage() : ImplicitWeakMessage(nullptr) {}
+  explicit constexpr ImplicitWeakMessage(ConstantInitialized);
+  ImplicitWeakMessage(const ImplicitWeakMessage&) = delete;
+  ImplicitWeakMessage& operator=(const ImplicitWeakMessage&) = delete;
+
+  
+  ImplicitWeakMessage(internal::InternalVisibility, Arena* arena)
+      : ImplicitWeakMessage(arena) {}
+
+  
   explicit ImplicitWeakMessage(Arena* arena)
-      : MessageLite(arena), data_(new std::string) {}
-
-  ~ImplicitWeakMessage() override {
-    
-    
-    delete data_;
+      : MessageLite(arena,
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+                    class_data_.base()
+#else
+                    MessageGlobalsBase::GetClassData(
+                        &implicit_weak_message_globals)
+#endif  
+                        ),
+        data_(Arena::Create<std::string>(arena)) {
   }
 
-  static const ImplicitWeakMessage* default_instance();
+  ~ImplicitWeakMessage() PROTOBUF_FINAL { delete data_; }
 
-  std::string GetTypeName() const override { return ""; }
+  static const ImplicitWeakMessage& default_instance();
 
-  MessageLite* New(Arena* arena) const override {
-    return Arena::CreateMessage<ImplicitWeakMessage>(arena);
+  const ClassData* GetClassData() const PROTOBUF_FINAL;
+
+  void Clear() PROTOBUF_FINAL { data_->clear(); }
+
+  size_t ByteSizeLong() const PROTOBUF_FINAL {
+    size_t size = data_ == nullptr ? 0 : data_->size();
+    cached_size_.Set(internal::ToCachedSize(size));
+    return size;
   }
 
-  void Clear() override { data_->clear(); }
-
-  bool IsInitialized() const override { return true; }
-
-  void CheckTypeAndMergeFrom(const MessageLite& other) override {
-    const std::string* other_data =
-        static_cast<const ImplicitWeakMessage&>(other).data_;
-    if (other_data != nullptr) {
-      data_->append(*other_data);
-    }
-  }
-
-  const char* _InternalParse(const char* ptr, ParseContext* ctx) final;
-
-  size_t ByteSizeLong() const override {
-    return data_ == nullptr ? 0 : data_->size();
-  }
-
-  uint8_t* _InternalSerialize(uint8_t* target,
-                              io::EpsCopyOutputStream* stream) const final {
+  uint8_t* _InternalSerialize(
+      uint8_t* target, io::EpsCopyOutputStream* stream) const PROTOBUF_FINAL {
     if (data_ == nullptr) {
       return target;
     }
@@ -104,22 +88,47 @@ class PROTOBUF_EXPORT ImplicitWeakMessage : public MessageLite {
                             target);
   }
 
-  int GetCachedSize() const override {
-    return data_ == nullptr ? 0 : static_cast<int>(data_->size());
-  }
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
 
-  typedef void InternalArenaConstructable_;
+  static PROTOBUF_CC const char* ParseImpl(ImplicitWeakMessage* msg,
+                                           const char* ptr, ParseContext* ctx);
+
+  static constexpr auto InternalGenerateClassData_(
+      const MessageLite& prototype, const TcParseTableBase* tc_table = nullptr);
+  static constexpr auto InternalGenerateParseTable_(
+      const ClassData* class_data);
 
  private:
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+  static const TcParseTable<0> table_;
+  static const ClassDataLite class_data_;
+#endif  
+
+  friend ImplicitWeakMessageDefaultType;
+
+  static void MergeImpl(MessageLite&, const MessageLite&);
+
+  static void DestroyImpl(MessageLite& msg) {
+    static_cast<ImplicitWeakMessage&>(msg).~ImplicitWeakMessage();
+  }
+  static size_t ByteSizeLongImpl(const MessageLite& msg) {
+    return static_cast<const ImplicitWeakMessage&>(msg).ByteSizeLong();
+  }
+
+  static uint8_t* _InternalSerializeImpl(const MessageLite& msg,
+                                         uint8_t* target,
+                                         io::EpsCopyOutputStream* stream) {
+    return static_cast<const ImplicitWeakMessage&>(msg)._InternalSerialize(
+        target, stream);
+  }
+
   
   
   
   std::string* data_;
-  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(ImplicitWeakMessage);
+  google::protobuf::internal::CachedSize cached_size_{};
 };
-
-struct ImplicitWeakMessageDefaultType;
-extern ImplicitWeakMessageDefaultType implicit_weak_message_default_instance;
 
 
 template <typename ImplicitWeakType>
@@ -145,25 +154,44 @@ class ImplicitWeakTypeHandler {
   static void Merge(const MessageLite& from, MessageLite* to) {
     to->CheckTypeAndMergeFrom(from);
   }
+  static constexpr bool has_default_instance() { return false; }
 };
 
 }  
 
 template <typename T>
 struct WeakRepeatedPtrField {
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+
   using TypeHandler = internal::ImplicitWeakTypeHandler<T>;
+
   constexpr WeakRepeatedPtrField() : weak() {}
-  explicit WeakRepeatedPtrField(Arena* arena) : weak(arena) {}
-  ~WeakRepeatedPtrField() { weak.template Destroy<TypeHandler>(); }
+  WeakRepeatedPtrField(const WeakRepeatedPtrField& rhs)
+      : WeakRepeatedPtrField(nullptr, rhs) {}
+
+  
+  constexpr WeakRepeatedPtrField(internal::InternalVisibility,
+                                 internal::InternalMetadataOffset offset)
+      : WeakRepeatedPtrField(offset) {}
+  WeakRepeatedPtrField(internal::InternalVisibility,
+                       internal::InternalMetadataOffset offset,
+                       const WeakRepeatedPtrField& rhs)
+      : WeakRepeatedPtrField(offset, rhs) {}
+
+  ~WeakRepeatedPtrField() {
+    if (weak.NeedsDestroy()) {
+      weak.DestroyProtos();
+    }
+  }
 
   typedef internal::RepeatedPtrIterator<MessageLite> iterator;
   typedef internal::RepeatedPtrIterator<const MessageLite> const_iterator;
-  typedef internal::RepeatedPtrOverPtrsIterator<MessageLite*, void*>
-      pointer_iterator;
-  typedef internal::RepeatedPtrOverPtrsIterator<const MessageLite* const,
-                                                const void* const>
+  typedef internal::RepeatedPtrOverPtrsIterator<MessageLite> pointer_iterator;
+  typedef internal::RepeatedPtrOverPtrsIterator<const MessageLite>
       const_pointer_iterator;
 
+  bool empty() const { return base().empty(); }
   iterator begin() { return iterator(base().raw_data()); }
   const_iterator begin() const { return iterator(base().raw_data()); }
   const_iterator cbegin() const { return begin(); }
@@ -174,24 +202,27 @@ struct WeakRepeatedPtrField {
     return pointer_iterator(base().raw_mutable_data());
   }
   const_pointer_iterator pointer_begin() const {
-    return const_pointer_iterator(base().raw_mutable_data());
+    return const_pointer_iterator(base().raw_data());
   }
   pointer_iterator pointer_end() {
     return pointer_iterator(base().raw_mutable_data() + base().size());
   }
   const_pointer_iterator pointer_end() const {
-    return const_pointer_iterator(base().raw_mutable_data() + base().size());
+    return const_pointer_iterator(base().raw_data() + base().size());
   }
 
-  MessageLite* AddWeak(const MessageLite* prototype) {
-    return base().AddWeak(prototype);
-  }
   T* Add() { return weak.Add(); }
   void Clear() { base().template Clear<TypeHandler>(); }
   void MergeFrom(const WeakRepeatedPtrField& other) {
-    base().template MergeFrom<TypeHandler>(other.base());
+    if (other.empty()) return;
+    base().template MergeFrom<MessageLite>(other.base(), base().GetArena());
   }
-  void InternalSwap(WeakRepeatedPtrField* other) {
+  void InternalMergeFromWithArena(internal::InternalVisibility, Arena* arena,
+                                  const WeakRepeatedPtrField& other) {
+    if (other.empty()) return;
+    base().template MergeFrom<MessageLite>(other.base(), arena);
+  }
+  void InternalSwap(WeakRepeatedPtrField* PROTOBUF_RESTRICT other) {
     base().InternalSwap(&other->base());
   }
 
@@ -203,11 +234,33 @@ struct WeakRepeatedPtrField {
   union {
     RepeatedPtrField<T> weak;
   };
+
+  static constexpr size_t InternalGetArenaOffset(
+      internal::InternalVisibility visibility) {
+    return decltype(weak)::InternalGetArenaOffset(visibility);
+  }
+
+ private:
+  constexpr explicit WeakRepeatedPtrField(
+      internal::InternalMetadataOffset offset)
+      : weak(offset) {}
+  WeakRepeatedPtrField(internal::InternalMetadataOffset offset,
+                       const WeakRepeatedPtrField& rhs)
+      : WeakRepeatedPtrField(offset) {
+    MergeFrom(rhs);
+  }
 };
 
+namespace internal {
+
+template <typename T>
+using WeakRepeatedPtrFieldWithArena = FieldWithArena<WeakRepeatedPtrField<T>>;
+
+}  
+
 }  
 }  
 
-#include <google/protobuf/port_undef.inc>
+#include "google/protobuf/port_undef.inc"
 
 #endif  

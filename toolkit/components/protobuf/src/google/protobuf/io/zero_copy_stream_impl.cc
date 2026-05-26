@@ -10,27 +10,7 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#define _POSIX_C_SOURCE 202405L
 
 #ifndef _MSC_VER
 #include <fcntl.h>
@@ -41,13 +21,13 @@
 #include <errno.h>
 
 #include <algorithm>
-#include <iostream>
+#include <istream>
+#include <ostream>
 
-#include <google/protobuf/stubs/common.h>
-#include <google/protobuf/stubs/logging.h>
-#include <google/protobuf/io/io_win32.h>
-#include <google/protobuf/io/zero_copy_stream_impl.h>
-#include <google/protobuf/stubs/stl_util.h>
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
+#include "google/protobuf/io/io_win32.h"
+#include "google/protobuf/io/zero_copy_stream_impl.h"
 
 
 namespace google {
@@ -70,12 +50,19 @@ using google::protobuf::io::win32::write;
 namespace {
 
 
-int close_no_eintr(int fd) {
-  int result;
-  do {
-    result = close(fd);
-  } while (result < 0 && errno == EINTR);
-  return result;
+
+
+
+
+
+
+
+int robust_close(int fd) {
+#if defined(POSIX_CLOSE_RESTART)
+  return posix_close(fd, 0);
+#else
+  return close(fd);
+#endif
 }
 
 }  
@@ -114,19 +101,16 @@ FileInputStream::CopyingFileInputStream::CopyingFileInputStream(
 FileInputStream::CopyingFileInputStream::~CopyingFileInputStream() {
   if (close_on_delete_) {
     if (!Close()) {
-      GOOGLE_LOG(ERROR) << "close() failed: " << strerror(errno_);
+      ABSL_LOG(ERROR) << "close() failed: " << strerror(errno_);
     }
   }
 }
 
 bool FileInputStream::CopyingFileInputStream::Close() {
-  GOOGLE_CHECK(!is_closed_);
+  ABSL_CHECK(!is_closed_);
 
   is_closed_ = true;
-  if (close_no_eintr(file_) != 0) {
-    
-    
-    
+  if (robust_close(file_) != 0) {
     errno_ = errno;
     return false;
   }
@@ -135,7 +119,7 @@ bool FileInputStream::CopyingFileInputStream::Close() {
 }
 
 int FileInputStream::CopyingFileInputStream::Read(void* buffer, int size) {
-  GOOGLE_CHECK(!is_closed_);
+  ABSL_CHECK(!is_closed_);
 
   int result;
   do {
@@ -151,7 +135,7 @@ int FileInputStream::CopyingFileInputStream::Read(void* buffer, int size) {
 }
 
 int FileInputStream::CopyingFileInputStream::Skip(int count) {
-  GOOGLE_CHECK(!is_closed_);
+  ABSL_CHECK(!is_closed_);
 
   if (!previous_seek_failed_ && lseek(file_, count, SEEK_CUR) != (off_t)-1) {
     
@@ -170,8 +154,8 @@ int FileInputStream::CopyingFileInputStream::Skip(int count) {
 
 
 
-FileOutputStream::FileOutputStream(int file_descriptor, int )
-    : CopyingOutputStreamAdaptor(&copying_output_),
+FileOutputStream::FileOutputStream(int file_descriptor, int block_size)
+    : CopyingOutputStreamAdaptor(&copying_output_, block_size),
       copying_output_(file_descriptor) {}
 
 bool FileOutputStream::Close() {
@@ -186,24 +170,21 @@ FileOutputStream::CopyingFileOutputStream::CopyingFileOutputStream(
       is_closed_(false),
       errno_(0) {}
 
-FileOutputStream::~FileOutputStream() { Flush(); }
+FileOutputStream::~FileOutputStream() { (void)Flush(); }
 
 FileOutputStream::CopyingFileOutputStream::~CopyingFileOutputStream() {
   if (close_on_delete_) {
     if (!Close()) {
-      GOOGLE_LOG(ERROR) << "close() failed: " << strerror(errno_);
+      ABSL_LOG(ERROR) << "close() failed: " << strerror(errno_);
     }
   }
 }
 
 bool FileOutputStream::CopyingFileOutputStream::Close() {
-  GOOGLE_CHECK(!is_closed_);
+  ABSL_CHECK(!is_closed_);
 
   is_closed_ = true;
-  if (close_no_eintr(file_) != 0) {
-    
-    
-    
+  if (robust_close(file_) != 0) {
     errno_ = errno;
     return false;
   }
@@ -213,7 +194,7 @@ bool FileOutputStream::CopyingFileOutputStream::Close() {
 
 bool FileOutputStream::CopyingFileOutputStream::Write(const void* buffer,
                                                       int size) {
-  GOOGLE_CHECK(!is_closed_);
+  ABSL_CHECK(!is_closed_);
   int total_written = 0;
 
   const uint8_t* buffer_base = reinterpret_cast<const uint8_t*>(buffer);
@@ -265,7 +246,8 @@ IstreamInputStream::CopyingIstreamInputStream::CopyingIstreamInputStream(
     std::istream* input)
     : input_(input) {}
 
-IstreamInputStream::CopyingIstreamInputStream::~CopyingIstreamInputStream() {}
+IstreamInputStream::CopyingIstreamInputStream::~CopyingIstreamInputStream() =
+    default;
 
 int IstreamInputStream::CopyingIstreamInputStream::Read(void* buffer,
                                                         int size) {
@@ -282,7 +264,7 @@ int IstreamInputStream::CopyingIstreamInputStream::Read(void* buffer,
 OstreamOutputStream::OstreamOutputStream(std::ostream* output, int block_size)
     : copying_output_(output), impl_(&copying_output_, block_size) {}
 
-OstreamOutputStream::~OstreamOutputStream() { impl_.Flush(); }
+OstreamOutputStream::~OstreamOutputStream() { (void)impl_.Flush(); }
 
 bool OstreamOutputStream::Next(void** data, int* size) {
   return impl_.Next(data, size);
@@ -296,8 +278,8 @@ OstreamOutputStream::CopyingOstreamOutputStream::CopyingOstreamOutputStream(
     std::ostream* output)
     : output_(output) {}
 
-OstreamOutputStream::CopyingOstreamOutputStream::~CopyingOstreamOutputStream() {
-}
+OstreamOutputStream::CopyingOstreamOutputStream::~CopyingOstreamOutputStream() =
+    default;
 
 bool OstreamOutputStream::CopyingOstreamOutputStream::Write(const void* buffer,
                                                             int size) {
@@ -330,7 +312,7 @@ void ConcatenatingInputStream::BackUp(int count) {
   if (stream_count_ > 0) {
     streams_[0]->BackUp(count);
   } else {
-    GOOGLE_LOG(DFATAL) << "Can't BackUp() after failed Next().";
+    ABSL_DLOG(FATAL) << "Can't BackUp() after failed Next().";
   }
 }
 
@@ -344,7 +326,7 @@ bool ConcatenatingInputStream::Skip(int count) {
     
     
     int64_t final_byte_count = streams_[0]->ByteCount();
-    GOOGLE_DCHECK_LT(final_byte_count, target_byte_count);
+    ABSL_DCHECK_LT(final_byte_count, target_byte_count);
     count = target_byte_count - final_byte_count;
 
     

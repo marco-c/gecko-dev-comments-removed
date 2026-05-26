@@ -9,40 +9,19 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef GOOGLE_PROTOBUF_GENERATED_MESSAGE_BASES_H__
 #define GOOGLE_PROTOBUF_GENERATED_MESSAGE_BASES_H__
 
-#include <google/protobuf/io/zero_copy_stream_impl.h>
-#include <google/protobuf/arena.h>
-#include <google/protobuf/generated_message_util.h>
-#include <google/protobuf/message.h>
-#include <google/protobuf/parse_context.h>
+#include <cstddef>
+#include <cstdint>
+
+#include "absl/base/attributes.h"
+#include "google/protobuf/arena.h"
+#include "google/protobuf/generated_message_util.h"
+#include "google/protobuf/message.h"
 
 
-#include <google/protobuf/port_def.inc>
+#include "google/protobuf/port_def.inc"
 
 namespace google {
 namespace protobuf {
@@ -52,36 +31,38 @@ namespace internal {
 
 class PROTOBUF_EXPORT ZeroFieldsBase : public Message {
  public:
-  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
-  bool IsInitialized() const final { return true; }
-  size_t ByteSizeLong() const final;
-  int GetCachedSize() const final { return _cached_size_.Get(); }
-  const char* _InternalParse(const char* ptr,
-                             internal::ParseContext* ctx) final;
-  ::uint8_t* _InternalSerialize(::uint8_t* target,
-                                io::EpsCopyOutputStream* stream) const final;
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL { Clear(*this); }
+  size_t ByteSizeLong() const PROTOBUF_FINAL { return ByteSizeLong(*this); }
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target, io::EpsCopyOutputStream* stream) const PROTOBUF_FINAL {
+    return _InternalSerialize(*this, target, stream);
+  }
 
  protected:
-  constexpr ZeroFieldsBase() {}
-  explicit ZeroFieldsBase(Arena* arena, bool is_message_owned)
-      : Message(arena, is_message_owned) {}
-  ZeroFieldsBase(const ZeroFieldsBase&) = delete;
-  ZeroFieldsBase& operator=(const ZeroFieldsBase&) = delete;
-  ~ZeroFieldsBase() override;
+  using Message::Message;
+  ~ZeroFieldsBase() PROTOBUF_OVERRIDE;
 
-  void SetCachedSize(int size) const final { _cached_size_.Set(size); }
-
-  static void MergeImpl(Message& to, const Message& from);
+  static void SharedDtor(MessageLite& msg);
+  static void MergeImpl(MessageLite& to, const MessageLite& from);
   static void CopyImpl(Message& to, const Message& from);
   void InternalSwap(ZeroFieldsBase* other);
+  static void Clear(MessageLite& msg);
+  static size_t ByteSizeLong(const MessageLite& base);
+  static ::uint8_t* _InternalSerialize(const MessageLite& msg,
+                                       ::uint8_t* target,
+                                       io::EpsCopyOutputStream* stream);
 
-  mutable internal::CachedSize _cached_size_;
+  
+  struct {
+    internal::CachedSize _cached_size_;  
+  } _impl_;                              
 };
 
 }  
 }  
 }  
 
-#include <google/protobuf/port_undef.inc>
+#include "google/protobuf/port_undef.inc"
 
-#endif  
+#endif

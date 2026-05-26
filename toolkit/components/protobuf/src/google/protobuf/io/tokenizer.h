@@ -11,41 +11,19 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef GOOGLE_PROTOBUF_IO_TOKENIZER_H__
 #define GOOGLE_PROTOBUF_IO_TOKENIZER_H__
-
 
 #include <string>
 #include <vector>
 
-#include <google/protobuf/stubs/common.h>
-#include <google/protobuf/stubs/logging.h>
+#include "absl/log/absl_log.h"
+#include "absl/strings/charset.h"
+#include "absl/strings/string_view.h"
+#include "google/protobuf/port.h"
 
 
-#include <google/protobuf/port_def.inc>
+#include "google/protobuf/port_def.inc"
 
 namespace google {
 namespace protobuf {
@@ -68,23 +46,25 @@ typedef int ColumnNumber;
 
 class PROTOBUF_EXPORT ErrorCollector {
  public:
-  inline ErrorCollector() {}
+  inline ErrorCollector() = default;
+  ErrorCollector(const ErrorCollector&) = delete;
+  ErrorCollector& operator=(const ErrorCollector&) = delete;
   virtual ~ErrorCollector();
 
   
   
   
-  virtual void AddError(int line, ColumnNumber column,
-                        const std::string& message) = 0;
+  virtual void RecordError(int line, ColumnNumber column,
+                           absl::string_view message)
+      = 0;
 
   
   
   
-  virtual void AddWarning(int , ColumnNumber ,
-                          const std::string& ) {}
+  virtual void RecordWarning(int line, ColumnNumber column,
+                             absl::string_view message) {
+  }
 
- private:
-  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(ErrorCollector);
 };
 
 
@@ -99,38 +79,48 @@ class PROTOBUF_EXPORT Tokenizer {
   
   
   Tokenizer(ZeroCopyInputStream* input, ErrorCollector* error_collector);
+  Tokenizer(const Tokenizer&) = delete;
+  Tokenizer& operator=(const Tokenizer&) = delete;
   ~Tokenizer();
 
   enum TokenType {
     TYPE_START,  
     TYPE_END,    
 
-    TYPE_IDENTIFIER,  
-                      
-                      
-                      
-    TYPE_INTEGER,     
-                      
-                      
-                      
-                      
-                      
-    TYPE_FLOAT,       
-                      
-                      
-    TYPE_STRING,      
-                      
-                      
-    TYPE_SYMBOL,      
-                      
-                      
-    TYPE_WHITESPACE,  
-                      
-                      
-    TYPE_NEWLINE,     
-                      
-                      
-                      
+    
+    
+    
+    TYPE_IDENTIFIER,
+    
+    
+    
+    
+    
+    TYPE_INTEGER,
+    
+    
+    TYPE_FLOAT,
+    
+    
+    
+    TYPE_STRING,
+    
+    
+    TYPE_SYMBOL,
+    
+    
+    
+    TYPE_WHITESPACE,
+    
+    
+    
+    TYPE_NEWLINE,
+    
+    
+    
+    
+    
+    TYPE_URL_CHARS,
   };
 
   
@@ -149,11 +139,11 @@ class PROTOBUF_EXPORT Tokenizer {
 
   
   
-  const Token& current();
+  const Token& current() const;
 
   
   
-  const Token& previous();
+  const Token& previous() const;
 
   
   
@@ -215,6 +205,10 @@ class PROTOBUF_EXPORT Tokenizer {
 
   
   
+  static bool TryParseFloat(const std::string& text, double* result);
+
+  
+  
   
   static void ParseString(const std::string& text, std::string* output);
 
@@ -272,12 +266,22 @@ class PROTOBUF_EXPORT Tokenizer {
   void set_report_newlines(bool report);
 
   
-  static bool IsIdentifier(const std::string& text);
+  
+  
+  
+  
+  
+  
+  
+  
+  bool report_url_chars() const;
+  void set_report_url_chars(bool report);
+
+  
+  static bool IsIdentifier(absl::string_view text);
 
   
  private:
-  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(Tokenizer);
-
   Token current_;   
   Token previous_;  
 
@@ -308,6 +312,7 @@ class PROTOBUF_EXPORT Tokenizer {
   bool allow_multiline_strings_;
   bool report_whitespace_ = false;
   bool report_newlines_ = false;
+  bool report_url_chars_ = false;
 
   
   
@@ -336,11 +341,9 @@ class PROTOBUF_EXPORT Tokenizer {
 
   
   void AddError(const std::string& message) {
-    error_collector_->AddError(line_, column_, message);
+    error_collector_->RecordError(line_, column_, message);
   }
 
-  
-  
   
   
   
@@ -356,6 +359,9 @@ class PROTOBUF_EXPORT Tokenizer {
   
   
   TokenType ConsumeNumber(bool started_with_zero, bool started_with_dot);
+
+  
+  void ConsumeSymbol();
 
   
   void ConsumeLineComment(std::string* content);
@@ -392,40 +398,33 @@ class PROTOBUF_EXPORT Tokenizer {
   
   
   
-  
-  
-  
-  
 
   
   
-  template <typename CharacterClass>
-  inline bool LookingAt();
+  inline bool LookingAt(const absl::CharSet& character_class);
 
   
   
   
-  template <typename CharacterClass>
-  inline bool TryConsumeOne();
+  inline bool TryConsumeOne(const absl::CharSet& character_class);
 
   
   inline bool TryConsume(char c);
 
   
-  template <typename CharacterClass>
-  inline void ConsumeZeroOrMore();
+  inline void ConsumeZeroOrMore(const absl::CharSet& character_class);
 
   
   
   
-  template <typename CharacterClass>
-  inline void ConsumeOneOrMore(const char* error);
+  inline void ConsumeOneOrMore(const absl::CharSet& character_class,
+                               const char* error);
 };
 
 
-inline const Tokenizer::Token& Tokenizer::current() { return current_; }
+inline const Tokenizer::Token& Tokenizer::current() const { return current_; }
 
-inline const Tokenizer::Token& Tokenizer::previous() { return previous_; }
+inline const Tokenizer::Token& Tokenizer::previous() const { return previous_; }
 
 inline void Tokenizer::ParseString(const std::string& text,
                                    std::string* output) {
@@ -437,6 +436,6 @@ inline void Tokenizer::ParseString(const std::string& text,
 }  
 }  
 
-#include <google/protobuf/port_undef.inc>
+#include "google/protobuf/port_undef.inc"
 
 #endif  

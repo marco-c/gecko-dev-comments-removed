@@ -5,37 +5,17 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef GOOGLE_PROTOBUF_FIELD_ACCESS_LISTENER_H__
 #define GOOGLE_PROTOBUF_FIELD_ACCESS_LISTENER_H__
 
 #include <cstddef>
 
-#include <google/protobuf/stubs/common.h>
-#include <google/protobuf/message_lite.h>
+#include "google/protobuf/message_lite.h"
+#include "google/protobuf/port.h"
 
+
+
+#include "google/protobuf/port_def.inc"
 
 namespace google {
 namespace protobuf {
@@ -44,7 +24,7 @@ namespace protobuf {
 
 
 template <typename Proto>
-struct NoOpAccessListener {
+struct PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED NoOpAccessListener {
   
   
   
@@ -57,14 +37,15 @@ struct NoOpAccessListener {
   
   
   
-  explicit NoOpAccessListener(StringPiece (*name_extractor)()) {}
+  explicit NoOpAccessListener(absl::string_view (* )()) {}
   
   
   
-  static void OnSerialize(const MessageLite* msg) {}
-  static void OnDeserialize(const MessageLite* msg) {}
-  static void OnByteSize(const MessageLite* msg) {}
-  static void OnMergeFrom(const MessageLite* to, const MessageLite* from) {}
+  static void OnSerialize(const MessageLite* ) {}
+  static void OnDeserialize(const MessageLite* ) {}
+  static void OnByteSize(const MessageLite* ) {}
+  static void OnMergeFrom(const MessageLite* ,
+                          const MessageLite* ) {}
 
   
   
@@ -86,75 +67,88 @@ struct NoOpAccessListener {
 
   
   template <int kFieldNum>
-  static void OnAdd(const MessageLite* msg, const void* field) {}
+  static void OnAdd(const MessageLite* , const void* ) {}
 
   
   template <int kFieldNum>
-  static void OnAddMutable(const MessageLite* msg, const void* field) {}
+  static void OnAddMutable(const MessageLite* , const void* ) {}
 
   
   template <int kFieldNum>
-  static void OnGet(const MessageLite* msg, const void* field) {}
+  static void OnGet(const MessageLite* , const void* ) {}
 
   
   template <int kFieldNum>
-  static void OnClear(const MessageLite* msg, const void* field) {}
+  static void OnClear(const MessageLite* , const void* ) {}
 
   
   template <int kFieldNum>
-  static void OnHas(const MessageLite* msg, const void* field) {}
+  static void OnHas(const MessageLite* , const void* ) {}
 
   
   template <int kFieldNum>
-  static void OnList(const MessageLite* msg, const void* field) {}
+  static void OnList(const MessageLite* , const void* ) {}
 
   
   template <int kFieldNum>
-  static void OnMutable(const MessageLite* msg, const void* field) {}
+  static void OnMutable(const MessageLite* , const void* ) {}
 
   
   template <int kFieldNum>
-  static void OnMutableList(const MessageLite* msg, const void* field) {}
+  static void OnMutableList(const MessageLite* , const void* ) {
+  }
 
   
   template <int kFieldNum>
-  static void OnRelease(const MessageLite* msg, const void* field) {}
+  static void OnRelease(const MessageLite* , const void* ) {}
 
   
   template <int kFieldNum>
-  static void OnSet(const MessageLite* msg, const void* field) {}
+  static void OnSet(const MessageLite* , const void* ) {}
 
   
   template <int kFieldNum>
-  static void OnSize(const MessageLite* msg, const void* field) {}
+  static void OnSize(const MessageLite* , const void* ) {}
 
-  static void OnHasExtension(const MessageLite* msg, int extension_tag,
-                             const void* field) {}
   
-  static void OnClearExtension(const MessageLite* msg, int extension_tag,
-                               const void* field) {}
-  static void OnExtensionSize(const MessageLite* msg, int extension_tag,
-                              const void* field) {}
-  static void OnGetExtension(const MessageLite* msg, int extension_tag,
-                             const void* field) {}
-  static void OnMutableExtension(const MessageLite* msg, int extension_tag,
-                                 const void* field) {}
-  static void OnSetExtension(const MessageLite* msg, int extension_tag,
-                             const void* field) {}
-  static void OnReleaseExtension(const MessageLite* msg, int extension_tag,
-                                 const void* field) {}
-  static void OnAddExtension(const MessageLite* msg, int extension_tag,
-                             const void* field) {}
-  static void OnAddMutableExtension(const MessageLite* msg, int extension_tag,
-                                    const void* field) {}
-  static void OnListExtension(const MessageLite* msg, int extension_tag,
-                              const void* field) {}
-  static void OnMutableListExtension(const MessageLite* msg, int extension_tag,
-                                     const void* field) {}
+  static void OnUnknownFields(const MessageLite* ) {}
+
+  
+  static void OnMutableUnknownFields(const MessageLite* ) {}
+
+  static void OnHasExtension(const MessageLite* , int ,
+                             const void* ) {}
+  
+  static void OnClearExtension(const MessageLite* ,
+                               int , const void* ) {}
+  static void OnExtensionSize(const MessageLite* , int ,
+                              const void* ) {}
+  static void OnGetExtension(const MessageLite* , int ,
+                             const void* ) {}
+  static void OnMutableExtension(const MessageLite* ,
+                                 int , const void* ) {
+  }
+  static void OnSetExtension(const MessageLite* , int ,
+                             const void* ) {}
+  static void OnReleaseExtension(const MessageLite* ,
+                                 int , const void* ) {
+  }
+  static void OnAddExtension(const MessageLite* , int ,
+                             const void* ) {}
+  static void OnAddMutableExtension(const MessageLite* ,
+                                    int ,
+                                    const void* ) {}
+  static void OnListExtension(const MessageLite* , int ,
+                              const void* ) {}
+  static void OnMutableListExtension(const MessageLite* ,
+                                     int ,
+                                     const void* ) {}
 };
 
 }  
 }  
+
+#include "google/protobuf/port_undef.inc"
 
 #ifndef REPLACE_PROTO_LISTENER_IMPL
 namespace google {

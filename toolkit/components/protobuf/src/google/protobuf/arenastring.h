@@ -5,45 +5,23 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef GOOGLE_PROTOBUF_ARENASTRING_H__
 #define GOOGLE_PROTOBUF_ARENASTRING_H__
 
 #include <algorithm>
+#include <cstdint>
 #include <string>
 #include <type_traits>
 #include <utility>
 
-#include <google/protobuf/stubs/logging.h>
-#include <google/protobuf/stubs/common.h>
-#include <google/protobuf/arena.h>
-#include <google/protobuf/port.h>
-#include <google/protobuf/explicitly_constructed.h>
+#include "absl/log/absl_check.h"
+#include "absl/strings/string_view.h"
+#include "google/protobuf/arena.h"
+#include "google/protobuf/explicitly_constructed.h"
+#include "google/protobuf/port.h"
 
 
-#include <google/protobuf/port_def.inc>
+#include "google/protobuf/port_def.inc"
 
 #ifdef SWIG
 #error "You cannot SWIG proto headers"
@@ -56,10 +34,6 @@ namespace internal {
 class EpsCopyInputStream;
 
 class SwapFieldHelper;
-
-
-PROTOBUF_EXPORT extern ExplicitlyConstructedArenaString
-    fixed_address_empty_string;
 
 
 
@@ -84,7 +58,7 @@ class PROTOBUF_EXPORT LazyString {
   const std::string& get() const {
     
     auto* res = inited_.load(std::memory_order_acquire);
-    if (PROTOBUF_PREDICT_FALSE(res == nullptr)) return Init();
+    if (ABSL_PREDICT_FALSE(res == nullptr)) return Init();
     return *res;
   }
 
@@ -94,14 +68,14 @@ class PROTOBUF_EXPORT LazyString {
   const std::string& Init() const;
 };
 
-class TaggedStringPtr {
+class PROTOBUF_EXPORT TaggedStringPtr {
  public:
   
   
   enum Flags {
-    kArenaBit = 0x1,      
-    kMutableBit = 0x2,    
-    kMask = 0x3           
+    kArenaBit = 0x1,    
+    kMutableBit = 0x2,  
+    kMask = 0x3         
   };
 
   
@@ -129,8 +103,8 @@ class TaggedStringPtr {
   };
 
   TaggedStringPtr() = default;
-  explicit constexpr TaggedStringPtr(ExplicitlyConstructedArenaString* ptr)
-      : ptr_(ptr) {}
+  explicit constexpr TaggedStringPtr(const GlobalEmptyString* ptr)
+      : ptr_(const_cast<void*>(static_cast<const void*>(ptr))) {}
 
   
   
@@ -167,7 +141,7 @@ class TaggedStringPtr {
 
   
   
-  inline std::string *GetIfAllocated() const {
+  inline std::string* GetIfAllocated() const {
     auto allocated = as_int() ^ kAllocated;
     if (allocated & kMask) return nullptr;
 
@@ -193,15 +167,30 @@ class TaggedStringPtr {
   
   
   
-  inline bool IsNull() { return ptr_ == nullptr; }
+  inline bool IsNull() const { return ptr_ == nullptr; }
+
+  
+  
+  TaggedStringPtr Copy(Arena* arena) const;
+
+  
+  
+  
+  TaggedStringPtr Copy(Arena* arena, const LazyString& default_value) const;
 
  private:
   static inline void assert_aligned(const void* p) {
-    GOOGLE_DCHECK_EQ(reinterpret_cast<uintptr_t>(p) & kMask, 0UL);
+    static_assert(kMask <= alignof(void*), "Pointer underaligned for bit mask");
+    static_assert(kMask <= alignof(std::string),
+                  "std::string underaligned for bit mask");
+    ABSL_DCHECK_EQ(reinterpret_cast<uintptr_t>(p) & kMask, 0UL);
   }
 
+  
+  TaggedStringPtr ForceCopy(Arena* arena) const;
+
   inline std::string* TagAs(Type type, std::string* p) {
-    GOOGLE_DCHECK(p != nullptr);
+    ABSL_DCHECK(p != nullptr);
     assert_aligned(p);
     ptr_ = reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(p) | type);
     return p;
@@ -211,8 +200,12 @@ class TaggedStringPtr {
   void* ptr_;
 };
 
-static_assert(std::is_trivial<TaggedStringPtr>::value,
-              "TaggedStringPtr must be trivial");
+static_assert(std::is_trivially_default_constructible<TaggedStringPtr>::value,
+              "TaggedStringPtr must be trivially default-constructible");
+static_assert(std::is_trivially_destructible<TaggedStringPtr>::value,
+              "TaggedStringPtr must be trivially destructible");
+static_assert(std::is_standard_layout<TaggedStringPtr>::value,
+              "TaggedStringPtr must be standard layout");
 
 
 
@@ -234,10 +227,53 @@ static_assert(std::is_trivial<TaggedStringPtr>::value,
 
 
 struct PROTOBUF_EXPORT ArenaStringPtr {
+  
   ArenaStringPtr() = default;
-  constexpr ArenaStringPtr(ExplicitlyConstructedArenaString* default_value,
+
+  
+  constexpr ArenaStringPtr(const GlobalEmptyString* default_value,
                            ConstantInitialized)
       : tagged_ptr_(default_value) {}
+
+  
+  
+  
+  explicit ArenaStringPtr(Arena* arena)
+      : tagged_ptr_(&fixed_address_empty_string) {
+    if (DebugHardenForceCopyDefaultString()) {
+      Set(absl::string_view(""), arena);
+    }
+  }
+
+  
+  
+  
+  
+  ArenaStringPtr(Arena* arena, const LazyString& default_value)
+      : tagged_ptr_(&fixed_address_empty_string) {
+    if (DebugHardenForceCopyDefaultString()) {
+      Set(absl::string_view(default_value.get()), arena);
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  ArenaStringPtr(Arena* arena, const ArenaStringPtr& rhs)
+      : tagged_ptr_(rhs.tagged_ptr_.Copy(arena)) {}
+
+  
+  
+  
+  
+  
+  
+  ArenaStringPtr(Arena* arena, const ArenaStringPtr& rhs,
+                 const LazyString& default_value)
+      : tagged_ptr_(rhs.tagged_ptr_.Copy(arena, default_value)) {}
 
   
   
@@ -259,13 +295,17 @@ struct PROTOBUF_EXPORT ArenaStringPtr {
   
   inline void InitAllocated(std::string* str, Arena* arena);
 
-  void Set(ConstStringParam value, Arena* arena);
+  void Set(absl::string_view value, Arena* arena);
   void Set(std::string&& value, Arena* arena);
+  template <typename... OverloadDisambiguator>
+  void Set(const std::string& value, Arena* arena);
   void Set(const char* s, Arena* arena);
   void Set(const char* s, size_t n, Arena* arena);
 
-  void SetBytes(ConstStringParam value, Arena* arena);
+  void SetBytes(absl::string_view value, Arena* arena);
   void SetBytes(std::string&& value, Arena* arena);
+  template <typename... OverloadDisambiguator>
+  void SetBytes(const std::string& value, Arena* arena);
   void SetBytes(const char* s, Arena* arena);
   void SetBytes(const void* p, size_t n, Arena* arena);
 
@@ -300,7 +340,7 @@ struct PROTOBUF_EXPORT ArenaStringPtr {
   
   
   PROTOBUF_NDEBUG_INLINE const std::string* UnsafeGetPointer() const
-      PROTOBUF_RETURNS_NONNULL {
+      ABSL_ATTRIBUTE_RETURNS_NONNULL {
     return tagged_ptr_.Get();
   }
 
@@ -308,7 +348,7 @@ struct PROTOBUF_EXPORT ArenaStringPtr {
   
   
   
-  PROTOBUF_NODISCARD std::string* Release();
+  [[nodiscard]] std::string* Release();
 
   
   
@@ -336,10 +376,9 @@ struct PROTOBUF_EXPORT ArenaStringPtr {
   
   
   
-  inline PROTOBUF_NDEBUG_INLINE static void InternalSwap(ArenaStringPtr* rhs,
-                                                         Arena* rhs_arena,
-                                                         ArenaStringPtr* lhs,
-                                                         Arena* lhs_arena);
+  PROTOBUF_NDEBUG_INLINE static void InternalSwap(ArenaStringPtr* rhs,
+                                                  ArenaStringPtr* lhs,
+                                                  Arena* arena);
 
   
   
@@ -347,7 +386,7 @@ struct PROTOBUF_EXPORT ArenaStringPtr {
   
   
   
-  std::string* UnsafeMutablePointer() PROTOBUF_RETURNS_NONNULL;
+  std::string* UnsafeMutablePointer() ABSL_ATTRIBUTE_RETURNS_NONNULL;
 
   
   inline bool IsDefault() const { return tagged_ptr_.IsDefault(); }
@@ -370,8 +409,8 @@ struct PROTOBUF_EXPORT ArenaStringPtr {
 
   
   
-  inline PROTOBUF_NDEBUG_INLINE static void UnsafeShallowSwap(
-      ArenaStringPtr* rhs, ArenaStringPtr* lhs) {
+  PROTOBUF_NDEBUG_INLINE static void UnsafeShallowSwap(ArenaStringPtr* rhs,
+                                                       ArenaStringPtr* lhs) {
     std::swap(lhs->tagged_ptr_, rhs->tagged_ptr_);
   }
 
@@ -387,6 +426,27 @@ struct PROTOBUF_EXPORT ArenaStringPtr {
 
   friend class EpsCopyInputStream;
 };
+
+inline TaggedStringPtr TaggedStringPtr::Copy(Arena* arena) const {
+  if (DebugHardenForceCopyDefaultString()) {
+    
+    return IsNull() ? *this : ForceCopy(arena);
+  }
+  return IsDefault() ? *this : ForceCopy(arena);
+}
+
+inline TaggedStringPtr TaggedStringPtr::Copy(
+    Arena* arena, const LazyString& default_value) const {
+  if (DebugHardenForceCopyDefaultString()) {
+    
+    TaggedStringPtr hardened(*this);
+    if (IsDefault()) {
+      hardened.SetDefault(&default_value.get());
+    }
+    return hardened.ForceCopy(arena);
+  }
+  return IsDefault() ? *this : ForceCopy(arena);
+}
 
 inline void ArenaStringPtr::InitDefault() {
   tagged_ptr_ = TaggedStringPtr(&fixed_address_empty_string);
@@ -406,14 +466,24 @@ inline void ArenaStringPtr::InitAllocated(std::string* str, Arena* arena) {
 }
 
 inline void ArenaStringPtr::Set(const char* s, Arena* arena) {
-  Set(ConstStringParam{s}, arena);
+  ABSL_DCHECK(s != nullptr);
+  Set(absl::string_view{s}, arena);
 }
 
 inline void ArenaStringPtr::Set(const char* s, size_t n, Arena* arena) {
-  Set(ConstStringParam{s, n}, arena);
+  Set(absl::string_view{s, n}, arena);
 }
 
-inline void ArenaStringPtr::SetBytes(ConstStringParam value, Arena* arena) {
+inline void ArenaStringPtr::SetBytes(absl::string_view value, Arena* arena) {
+  Set(value, arena);
+}
+
+template <>
+PROTOBUF_EXPORT void ArenaStringPtr::Set(const std::string& value,
+                                         Arena* arena);
+
+template <>
+inline void ArenaStringPtr::SetBytes(const std::string& value, Arena* arena) {
   Set(value, arena);
 }
 
@@ -426,47 +496,42 @@ inline void ArenaStringPtr::SetBytes(const char* s, Arena* arena) {
 }
 
 inline void ArenaStringPtr::SetBytes(const void* p, size_t n, Arena* arena) {
-  Set(ConstStringParam{static_cast<const char*>(p), n}, arena);
+  Set(absl::string_view{static_cast<const char*>(p), n}, arena);
 }
 
-
-inline PROTOBUF_NDEBUG_INLINE void ArenaStringPtr::InternalSwap(  
-    ArenaStringPtr* rhs, Arena* rhs_arena,                        
-    ArenaStringPtr* lhs, Arena* lhs_arena) {
+PROTOBUF_NDEBUG_INLINE void ArenaStringPtr::InternalSwap(ArenaStringPtr* rhs,
+                                                         ArenaStringPtr* lhs,
+                                                         Arena* arena) {
   
-  (void)rhs_arena;
-  (void)lhs_arena;
+  (void)arena;
   std::swap(lhs->tagged_ptr_, rhs->tagged_ptr_);
-#ifdef PROTOBUF_FORCE_COPY_IN_SWAP
-  auto force_realloc = [](ArenaStringPtr* p, Arena* arena) {
-    if (p->IsDefault()) return;
-    std::string* old_value = p->tagged_ptr_.Get();
-    std::string* new_value =
-        p->IsFixedSizeArena()
-            ? Arena::Create<std::string>(arena, *old_value)
-            : Arena::Create<std::string>(arena, std::move(*old_value));
-    if (arena == nullptr) {
-      delete old_value;
-      p->tagged_ptr_.SetAllocated(new_value);
-    } else {
-      p->tagged_ptr_.SetMutableArena(new_value);
+  if (internal::DebugHardenForceCopyInSwap()) {
+    for (auto* p : {lhs, rhs}) {
+      if (p->IsDefault()) continue;
+      std::string* old_value = p->tagged_ptr_.Get();
+      std::string* new_value =
+          p->IsFixedSizeArena()
+              ? Arena::Create<std::string>(arena, *old_value)
+              : Arena::Create<std::string>(arena, std::move(*old_value));
+      if (arena == nullptr) {
+        delete old_value;
+        p->tagged_ptr_.SetAllocated(new_value);
+      } else {
+        p->tagged_ptr_.SetMutableArena(new_value);
+      }
     }
-  };
-  
-  
-  force_realloc(lhs, rhs_arena);
-  force_realloc(rhs, lhs_arena);
-#endif  
+  }
 }
 
 inline void ArenaStringPtr::ClearNonDefaultToEmpty() {
   
+  ABSL_DCHECK(!tagged_ptr_.IsDefault());
   tagged_ptr_.Get()->clear();
 }
 
 inline std::string* ArenaStringPtr::UnsafeMutablePointer() {
-  GOOGLE_DCHECK(tagged_ptr_.IsMutable());
-  GOOGLE_DCHECK(tagged_ptr_.Get() != nullptr);
+  ABSL_DCHECK(tagged_ptr_.IsMutable());
+  ABSL_DCHECK(tagged_ptr_.Get() != nullptr);
   return tagged_ptr_.Get();
 }
 
@@ -475,6 +540,6 @@ inline std::string* ArenaStringPtr::UnsafeMutablePointer() {
 }  
 }  
 
-#include <google/protobuf/port_undef.inc>
+#include "google/protobuf/port_undef.inc"
 
 #endif  

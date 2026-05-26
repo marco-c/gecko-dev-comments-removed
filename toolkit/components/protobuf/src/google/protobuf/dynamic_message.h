@@ -12,50 +12,29 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef GOOGLE_PROTOBUF_DYNAMIC_MESSAGE_H__
 #define GOOGLE_PROTOBUF_DYNAMIC_MESSAGE_H__
 
-
 #include <algorithm>
-#include <memory>
-#include <unordered_map>
+#include <cstddef>
+#include <cstdint>
+#include <string>
 #include <vector>
 
-#include <google/protobuf/stubs/common.h>
-#include <google/protobuf/stubs/mutex.h>
-#include <google/protobuf/message.h>
-#include <google/protobuf/reflection.h>
-#include <google/protobuf/repeated_field.h>
+#include "absl/container/flat_hash_map.h"
+#include "absl/log/absl_log.h"
+#include "absl/synchronization/mutex.h"
+#include "google/protobuf/descriptor.h"
+#include "google/protobuf/message.h"
+#include "google/protobuf/reflection.h"
+#include "google/protobuf/repeated_field.h"
 
 #ifdef SWIG
 #error "You cannot SWIG proto headers"
 #endif
 
 
-#include <google/protobuf/port_def.inc>
+#include "google/protobuf/port_def.inc"
 
 namespace google {
 namespace protobuf {
@@ -63,6 +42,9 @@ namespace protobuf {
 
 class Descriptor;      
 class DescriptorPool;  
+
+
+
 
 
 
@@ -94,7 +76,12 @@ class PROTOBUF_EXPORT DynamicMessageFactory : public MessageFactory {
   
   
   
-  DynamicMessageFactory(const DescriptorPool* pool);
+#ifndef PROTOBUF_FUTURE_BREAKING_CHANGES
+  explicit
+#endif
+      DynamicMessageFactory(const DescriptorPool* PROTOBUF_NONNULL pool);
+  DynamicMessageFactory(const DynamicMessageFactory&) = delete;
+  DynamicMessageFactory& operator=(const DynamicMessageFactory&) = delete;
 
   ~DynamicMessageFactory() override;
 
@@ -125,28 +112,29 @@ class PROTOBUF_EXPORT DynamicMessageFactory : public MessageFactory {
   
   
   
-  const Message* GetPrototype(const Descriptor* type) override;
+  PROTOBUF_FUTURE_ADD_EARLY_NODISCARD const Message* PROTOBUF_NONNULL
+  GetPrototype(const Descriptor* PROTOBUF_NONNULL type) override;
 
  private:
-  const DescriptorPool* pool_;
+  const DescriptorPool* PROTOBUF_NULLABLE pool_;
   bool delegate_to_generated_factory_;
 
   struct TypeInfo;
-  std::unordered_map<const Descriptor*, const TypeInfo*> prototypes_;
-  mutable internal::WrappedMutex prototypes_mutex_;
+  absl::flat_hash_map<const Descriptor*, const TypeInfo*> prototypes_;
+  mutable absl::Mutex prototypes_mutex_;
 
   friend class DynamicMessage;
-  const Message* GetPrototypeNoLock(const Descriptor* type);
-
-  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(DynamicMessageFactory);
+  const Message* PROTOBUF_NONNULL
+  GetPrototypeNoLock(const Descriptor* PROTOBUF_NONNULL type);
 };
 
 
 class PROTOBUF_EXPORT DynamicMapSorter {
  public:
-  static std::vector<const Message*> Sort(const Message& message, int map_size,
-                                          const Reflection* reflection,
-                                          const FieldDescriptor* field) {
+  static std::vector<const Message*> Sort(
+      const Message& message, int map_size,
+      const Reflection* PROTOBUF_NONNULL reflection,
+      const FieldDescriptor* PROTOBUF_NONNULL field) {
     std::vector<const Message*> result;
     result.reserve(map_size);
     RepeatedFieldRef<Message> map_field =
@@ -158,11 +146,11 @@ class PROTOBUF_EXPORT DynamicMapSorter {
     std::stable_sort(result.begin(), result.end(), comparator);
     
 #ifndef NDEBUG
-    for (size_t j = 1; j < static_cast<size_t>(map_size); j++) {
+    for (size_t j = 1; j < static_cast<size_t>(map_size); ++j) {
       if (!comparator(result[j - 1], result[j])) {
-        GOOGLE_LOG(ERROR) << (comparator(result[j], result[j - 1])
-                           ? "internal error in map key sorting"
-                           : "map keys are not unique");
+        ABSL_LOG(ERROR) << (comparator(result[j], result[j - 1])
+                                ? "internal error in map key sorting"
+                                : "map keys are not unique");
       }
     }
 #endif
@@ -172,10 +160,12 @@ class PROTOBUF_EXPORT DynamicMapSorter {
  private:
   class PROTOBUF_EXPORT MapEntryMessageComparator {
    public:
-    explicit MapEntryMessageComparator(const Descriptor* descriptor)
+    explicit MapEntryMessageComparator(
+        const Descriptor* PROTOBUF_NONNULL descriptor)
         : field_(descriptor->field(0)) {}
 
-    bool operator()(const Message* a, const Message* b) {
+    bool operator()(const Message* PROTOBUF_NONNULL a,
+                    const Message* PROTOBUF_NONNULL b) {
       const Reflection* reflection = a->GetReflection();
       switch (field_->cpp_type()) {
         case FieldDescriptor::CPPTYPE_BOOL: {
@@ -209,19 +199,19 @@ class PROTOBUF_EXPORT DynamicMapSorter {
           return first < second;
         }
         default:
-          GOOGLE_LOG(DFATAL) << "Invalid key for map field.";
+          ABSL_DLOG(FATAL) << "Invalid key for map field.";
           return true;
       }
     }
 
    private:
-    const FieldDescriptor* field_;
+    const FieldDescriptor* PROTOBUF_NONNULL field_;
   };
 };
 
 }  
 }  
 
-#include <google/protobuf/port_undef.inc>
+#include "google/protobuf/port_undef.inc"
 
-#endif  
+#endif

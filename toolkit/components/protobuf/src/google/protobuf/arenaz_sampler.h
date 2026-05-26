@@ -5,39 +5,18 @@
 
 
 
+#ifndef GOOGLE_PROTOBUF_ARENAZ_SAMPLER_H__
+#define GOOGLE_PROTOBUF_ARENAZ_SAMPLER_H__
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#ifndef GOOGLE_PROTOBUF_SRC_GOOGLE_PROTOBUF_ARENAZ_SAMPLER_H__
-#define GOOGLE_PROTOBUF_SRC_GOOGLE_PROTOBUF_ARENAZ_SAMPLER_H__
-
+#include <array>
 #include <atomic>
 #include <cstddef>
 #include <cstdint>
+#include <utility>
 
 
 
-#include <google/protobuf/port_def.inc>
+#include "google/protobuf/port_def.inc"
 
 namespace google {
 namespace protobuf {
@@ -45,13 +24,12 @@ namespace internal {
 
 #if defined(PROTOBUF_ARENAZ_SAMPLE)
 struct ThreadSafeArenaStats;
-void RecordResetSlow(ThreadSafeArenaStats* info);
-void RecordAllocateSlow(ThreadSafeArenaStats* info, size_t requested,
+void RecordAllocateSlow(ThreadSafeArenaStats* info, size_t used,
                         size_t allocated, size_t wasted);
 
 
 
-struct ThreadSafeArenaStats
+struct [[nodiscard]] ThreadSafeArenaStats
     : public absl::profiling_internal::Sample<ThreadSafeArenaStats> {
   
   ThreadSafeArenaStats();
@@ -59,17 +37,39 @@ struct ThreadSafeArenaStats
 
   
   
-  void PrepareForSampling() ABSL_EXCLUSIVE_LOCKS_REQUIRED(init_mu);
+  
+  
+  void PrepareForSampling(int64_t stride)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(init_mu);
 
   
   
-  std::atomic<int> num_allocations;
-  std::atomic<int> num_resets;
-  std::atomic<size_t> bytes_requested;
-  std::atomic<size_t> bytes_allocated;
-  std::atomic<size_t> bytes_wasted;
+  struct BlockStats {
+    std::atomic<int> num_allocations;
+    std::atomic<size_t> bytes_allocated;
+    std::atomic<size_t> bytes_used;
+    std::atomic<size_t> bytes_wasted;
+
+    void PrepareForSampling();
+  };
+
   
-  std::atomic<size_t> max_bytes_allocated;
+  
+  
+  
+  
+  
+  static constexpr size_t kBlockHistogramBins = 15;
+  static constexpr size_t kLogMaxSizeForBinZero = 7;
+  static constexpr size_t kMaxSizeForBinZero = (1 << kLogMaxSizeForBinZero);
+  static constexpr size_t kMaxSizeForPenultimateBin =
+      1 << (kLogMaxSizeForBinZero + kBlockHistogramBins - 2);
+  std::array<BlockStats, kBlockHistogramBins> block_histogram;
+
+  
+  std::atomic<size_t> max_block_size;
+  
+  
   
   
   std::atomic<uint64_t> thread_ids;
@@ -82,14 +82,32 @@ struct ThreadSafeArenaStats
   static constexpr int kMaxStackDepth = 64;
   int32_t depth;
   void* stack[kMaxStackDepth];
-  static void RecordAllocateStats(ThreadSafeArenaStats* info, size_t requested,
+  static void RecordAllocateStats(ThreadSafeArenaStats* info, size_t used,
                                   size_t allocated, size_t wasted) {
-    if (PROTOBUF_PREDICT_TRUE(info == nullptr)) return;
-    RecordAllocateSlow(info, requested, allocated, wasted);
+    if (ABSL_PREDICT_TRUE(info == nullptr)) return;
+    RecordAllocateSlow(info, used, allocated, wasted);
   }
+
+  
+  static size_t FindBin(size_t bytes);
+
+  
+  
+  static std::pair<size_t, size_t> MinMaxBlockSizeForBin(size_t bin);
 };
 
-ThreadSafeArenaStats* SampleSlow(int64_t* next_sample);
+struct SamplingState {
+  
+  
+  
+  int64_t next_sample;
+  
+  
+  
+  int64_t sample_stride;
+};
+
+[[nodiscard]] ThreadSafeArenaStats* SampleSlow(SamplingState& sampling_state);
 void UnsampleSlow(ThreadSafeArenaStats* info);
 
 class ThreadSafeArenaStatsHandle {
@@ -99,31 +117,26 @@ class ThreadSafeArenaStatsHandle {
       : info_(info) {}
 
   ~ThreadSafeArenaStatsHandle() {
-    if (PROTOBUF_PREDICT_TRUE(info_ == nullptr)) return;
+    if (ABSL_PREDICT_TRUE(info_ == nullptr)) return;
     UnsampleSlow(info_);
   }
 
   ThreadSafeArenaStatsHandle(ThreadSafeArenaStatsHandle&& other) noexcept
-      : info_(absl::exchange(other.info_, nullptr)) {}
+      : info_(std::exchange(other.info_, nullptr)) {}
 
   ThreadSafeArenaStatsHandle& operator=(
       ThreadSafeArenaStatsHandle&& other) noexcept {
-    if (PROTOBUF_PREDICT_FALSE(info_ != nullptr)) {
+    if (ABSL_PREDICT_FALSE(info_ != nullptr)) {
       UnsampleSlow(info_);
     }
-    info_ = absl::exchange(other.info_, nullptr);
+    info_ = std::exchange(other.info_, nullptr);
     return *this;
-  }
-
-  void RecordReset() {
-    if (PROTOBUF_PREDICT_TRUE(info_ == nullptr)) return;
-    RecordResetSlow(info_);
   }
 
   ThreadSafeArenaStats* MutableStats() { return info_; }
 
   friend void swap(ThreadSafeArenaStatsHandle& lhs,
-                   ThreadSafeArenaStatsHandle& rhs) {
+                   ThreadSafeArenaStatsHandle& rhs) noexcept {
     std::swap(lhs.info_, rhs.info_);
   }
 
@@ -136,27 +149,30 @@ class ThreadSafeArenaStatsHandle {
 using ThreadSafeArenazSampler =
     ::absl::profiling_internal::SampleRecorder<ThreadSafeArenaStats>;
 
-extern PROTOBUF_THREAD_LOCAL int64_t global_next_sample;
+extern PROTOBUF_THREAD_LOCAL SamplingState global_sampling_state;
 
 
 
-inline ThreadSafeArenaStatsHandle Sample() {
-  if (PROTOBUF_PREDICT_TRUE(--global_next_sample > 0)) {
+[[nodiscard]] inline ThreadSafeArenaStatsHandle Sample() {
+  if (ABSL_PREDICT_TRUE(--global_sampling_state.next_sample > 0)) {
     return ThreadSafeArenaStatsHandle(nullptr);
   }
-  return ThreadSafeArenaStatsHandle(SampleSlow(&global_next_sample));
+  return ThreadSafeArenaStatsHandle(SampleSlow(global_sampling_state));
 }
 
 #else
+
+using SamplingState = int64_t;
+
 struct ThreadSafeArenaStats {
   static void RecordAllocateStats(ThreadSafeArenaStats*, size_t ,
                                   size_t , size_t ) {}
 };
 
-ThreadSafeArenaStats* SampleSlow(int64_t* next_sample);
+[[nodiscard]] ThreadSafeArenaStats* SampleSlow(SamplingState& next_sample);
 void UnsampleSlow(ThreadSafeArenaStats* info);
 
-class ThreadSafeArenaStatsHandle {
+class [[nodiscard]] ThreadSafeArenaStatsHandle {
  public:
   explicit ThreadSafeArenaStatsHandle() = default;
   explicit ThreadSafeArenaStatsHandle(ThreadSafeArenaStats*) {}
@@ -179,7 +195,7 @@ class ThreadSafeArenazSampler {
 
 
 
-inline ThreadSafeArenaStatsHandle Sample() {
+[[nodiscard]] inline ThreadSafeArenaStatsHandle Sample() {
   return ThreadSafeArenaStatsHandle(nullptr);
 }
 #endif  
@@ -187,14 +203,29 @@ inline ThreadSafeArenaStatsHandle Sample() {
 
 ThreadSafeArenazSampler& GlobalThreadSafeArenazSampler();
 
+using ThreadSafeArenazConfigListener = void (*)();
+void SetThreadSafeArenazConfigListener(ThreadSafeArenazConfigListener l);
+
 
 void SetThreadSafeArenazEnabled(bool enabled);
+void SetThreadSafeArenazEnabledInternal(bool enabled);
+
+
+[[nodiscard]] bool IsThreadSafeArenazEnabled();
 
 
 void SetThreadSafeArenazSampleParameter(int32_t rate);
+void SetThreadSafeArenazSampleParameterInternal(int32_t rate);
+
+
+[[nodiscard]] int32_t ThreadSafeArenazSampleParameter();
 
 
 void SetThreadSafeArenazMaxSamples(int32_t max);
+void SetThreadSafeArenazMaxSamplesInternal(int32_t max);
+
+
+[[nodiscard]] size_t ThreadSafeArenazMaxSamples();
 
 
 void SetThreadSafeArenazGlobalNextSample(int64_t next_sample);
@@ -203,5 +234,5 @@ void SetThreadSafeArenazGlobalNextSample(int64_t next_sample);
 }  
 }  
 
-#include <google/protobuf/port_undef.inc>
+#include "google/protobuf/port_undef.inc"
 #endif  

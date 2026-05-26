@@ -9,70 +9,92 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#include <google/protobuf/generated_message_util.h>
+#include "google/protobuf/generated_message_util.h"
 
 #include <atomic>
-#include <limits>
-#include <vector>
+#include <climits>
+#include <cstdint>
+#include <memory>
+#include <string>
+#include <type_traits>
 
-#include <google/protobuf/io/coded_stream.h>
-#include <google/protobuf/io/zero_copy_stream_impl_lite.h>
-#include <google/protobuf/arenastring.h>
-#include <google/protobuf/extension_set.h>
-#include <google/protobuf/message_lite.h>
-#include <google/protobuf/metadata_lite.h>
-#include <google/protobuf/repeated_field.h>
-#include <google/protobuf/wire_format_lite.h>
+#include "absl/log/absl_check.h"
+
+#include "google/protobuf/arenastring.h"
+#include "google/protobuf/extension_set.h"
+#include "google/protobuf/io/coded_stream.h"
+#include "google/protobuf/io/zero_copy_stream_impl_lite.h"
+#include "google/protobuf/message_lite.h"
+#include "google/protobuf/metadata_lite.h"
+#include "google/protobuf/port.h"
+#include "google/protobuf/repeated_field.h"
+#include "google/protobuf/wire_format_lite.h"
 
 
-#include <google/protobuf/port_def.inc>
+#include "google/protobuf/port_def.inc"
 
+#ifndef PROTOBUF_PRAGMA_INIT_SEG_DONE
 PROTOBUF_PRAGMA_INIT_SEG
+#define PROTOBUF_PRAGMA_INIT_SEG_DONE
+#endif
 
 
 namespace google {
 namespace protobuf {
 namespace internal {
 
-void DestroyMessage(const void* message) {
-  static_cast<const MessageLite*>(message)->~MessageLite();
-}
 void DestroyString(const void* s) {
   static_cast<const std::string*>(s)->~basic_string();
 }
 
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ExplicitlyConstructedArenaString
-        fixed_address_empty_string{};  
 
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT const EmptyCord empty_cord_;
+
+#if defined(PROTOBUF_DESCRIPTOR_WEAK_MESSAGES_ALLOWED)
+
+
+struct DummyWeakDefault {
+  const MessageGlobalsBase* m;
+  WeakDescriptorDefaultTail tail;
+};
+DummyWeakDefault dummy_weak_default __attribute__((section("pb_defaults"))) = {
+    nullptr, {&dummy_weak_default.m, sizeof(dummy_weak_default)}};
+
+extern "C" {
+
+
+
+
+
+extern const char __start_pb_defaults;
+extern const char __stop_pb_defaults;
+}
+static void InitWeakDefaults() {
+  
+  StrongPointer<DummyWeakDefault*, &dummy_weak_default>();
+  
+  
+  
+  const char* start = &__start_pb_defaults;
+  const char* end = &__stop_pb_defaults;
+  while (start != end) {
+    auto* tail = reinterpret_cast<const WeakDescriptorDefaultTail*>(end) - 1;
+    end -= tail->size;
+    const MessageGlobalsBase* instance =
+        reinterpret_cast<const MessageGlobalsBase*>(end);
+    *tail->target = instance;
+  }
+}
+#else
+void InitWeakDefaults() {}
+#endif
 
 PROTOBUF_CONSTINIT std::atomic<bool> init_protobuf_defaults_state{false};
 static bool InitProtobufDefaultsImpl() {
-  fixed_address_empty_string.DefaultConstruct();
-  OnShutdownDestroyString(fixed_address_empty_string.get_mutable());
+  if (auto* to_destroy = fixed_address_empty_string.Init()) {
+    OnShutdownDestroyString(to_destroy);
+  }
+  InitWeakDefaults();
 
 
   init_protobuf_defaults_state.store(true, std::memory_order_release);
@@ -88,17 +110,6 @@ void InitProtobufDefaultsSlow() {
 
 PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 static std::true_type init_empty_string =
     (InitProtobufDefaultsSlow(), std::true_type{});
-
-size_t StringSpaceUsedExcludingSelfLong(const std::string& str) {
-  const void* start = &str;
-  const void* end = &str + 1;
-  if (start <= str.data() && str.data() < end) {
-    
-    return 0;
-  } else {
-    return str.capacity();
-  }
-}
 
 template <typename T>
 const T& Get(const void* ptr) {
@@ -317,7 +328,7 @@ class AccessorHelper {
 };
 
 void SerializeNotImplemented(int field) {
-  GOOGLE_LOG(FATAL) << "Not implemented field number " << field;
+  ABSL_LOG(FATAL) << "Not implemented field number " << field;
 }
 
 
@@ -375,13 +386,14 @@ MessageLite* DuplicateIfNonNullInternal(MessageLite* message) {
   }
 }
 
-void GenericSwap(MessageLite* m1, MessageLite* m2) {
-  std::unique_ptr<MessageLite> tmp(m1->New());
-  tmp->CheckTypeAndMergeFrom(*m1);
-  m1->Clear();
-  m1->CheckTypeAndMergeFrom(*m2);
-  m2->Clear();
-  m2->CheckTypeAndMergeFrom(*tmp);
+void GenericSwap(MessageLite* lhs, MessageLite* rhs) {
+  const ClassData* class_data = GetClassData(*lhs);
+  std::unique_ptr<MessageLite> tmp(class_data->New(nullptr));
+  tmp->MergeFromWithClassData(*lhs, class_data);
+  lhs->Clear();
+  lhs->MergeFromWithClassData(*rhs, class_data);
+  rhs->Clear();
+  rhs->MergeFromWithClassData(*tmp, class_data);
 }
 
 
@@ -389,9 +401,9 @@ void GenericSwap(MessageLite* m1, MessageLite* m2) {
 MessageLite* GetOwnedMessageInternal(Arena* message_arena,
                                      MessageLite* submessage,
                                      Arena* submessage_arena) {
-  GOOGLE_DCHECK(Arena::InternalGetOwningArena(submessage) == submessage_arena);
-  GOOGLE_DCHECK(message_arena != submessage_arena);
-  GOOGLE_DCHECK_EQ(submessage_arena, nullptr);
+  ABSL_DCHECK(submessage->GetArena() == submessage_arena);
+  ABSL_DCHECK(message_arena != submessage_arena);
+  ABSL_DCHECK_EQ(submessage_arena, nullptr);
   if (message_arena != nullptr && submessage_arena == nullptr) {
     message_arena->Own(submessage);
     return submessage;
@@ -402,8 +414,21 @@ MessageLite* GetOwnedMessageInternal(Arena* message_arena,
   }
 }
 
+internal::ExtensionSet* PrivateAccess::GetExtensionSet(MessageLite* msg) {
+  return const_cast<internal::ExtensionSet*>(
+      GetExtensionSet(static_cast<const MessageLite*>(msg)));
+}
+
+const internal::ExtensionSet* PrivateAccess::GetExtensionSet(
+    const MessageLite* msg) {
+  auto* tc_table = msg->GetTcParseTable();
+  if (tc_table->extension_offset == 0) return nullptr;
+  return reinterpret_cast<const internal::ExtensionSet*>(
+      reinterpret_cast<const char*>(msg) + tc_table->extension_offset);
+}
+
 }  
 }  
 }  
 
-#include <google/protobuf/port_undef.inc>
+#include "google/protobuf/port_undef.inc"
