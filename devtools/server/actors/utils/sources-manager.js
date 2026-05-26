@@ -379,6 +379,7 @@ class SourcesManager extends EventEmitter {
     const win = this._thread.targetActor.window;
     let principal, cacheKey;
     
+    
     if (!isWorker && win instanceof Ci.nsIDOMWindow && win.docShell) {
       const docShell = win.docShell;
       const channel = docShell.currentDocumentChannel;
@@ -397,6 +398,8 @@ class SourcesManager extends EventEmitter {
     let result;
     try {
       result = await fetch(url, {
+        
+        window: !isWorker && win instanceof Ci.nsIDOMWindow ? win : null,
         principal,
         cacheKey,
         loadFromCache,

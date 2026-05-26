@@ -380,7 +380,7 @@ const GARBAGED_PAGE_CONTENT = `<!DOCTYPE html>
       <head>
         <script type="text/javascript" src="/garbaged-script.js"></script>
         <script>
-          console.log("garbaged inline script");
+          console.log("garbaged inline script COUNT");
         </script>
       </head>
     </html>`;
@@ -390,7 +390,9 @@ httpServer.registerPathHandler(
   (request, response) => {
     loadCounts[request.path] = (loadCounts[request.path] || 0) + 1;
     response.setStatusLine(request.httpVersion, 200, "OK");
-    response.write(GARBAGED_PAGE_CONTENT);
+    response.write(
+      GARBAGED_PAGE_CONTENT.replace("COUNT", loadCounts[request.path])
+    );
   }
 );
 
@@ -418,32 +420,62 @@ add_task(async function testGarbageCollectedSourceTextContent() {
     Cu.forceGC();
   });
 
-  const toolbox = await openToolboxForTab(tab, "jsdebugger");
-  const dbg = createDebuggerContext(toolbox);
+  
+  
+  let toolbox = await openToolboxForTab(tab, "jsdebugger");
+  let dbg = createDebuggerContext(toolbox);
   await waitForSources(dbg, "garbaged-collected.html", "garbaged-script.js");
 
   await selectSource(dbg, "garbaged-script.js");
+  is(getEditorContent(dbg), `console.log("garbaged script 1")`);
+
+  await selectSource(dbg, "garbaged-collected.html");
+  is(getEditorContent(dbg), GARBAGED_PAGE_CONTENT.replace("COUNT", 1));
+
+  is(
+    loadCounts["/garbaged-collected.html"],
+    1,
+    "We loaded the html page once as debugger was able to retrieve it from http cache"
+  );
+  is(
+    loadCounts["/garbaged-script.js"],
+    1,
+    "We loaded the garbaged script once as debugger was able to retrieve it from http cache"
+  );
+
+  await gDevTools.closeToolboxForTab(tab);
+
+  await SpecialPowers.spawn(tab.linkedBrowser, [], () => {
+    Cu.forceGC();
+  });
+
   
   
+  Services.cache2.clear();
+
   
-  
-  
-  
+  toolbox = await openToolboxForTab(tab, "jsdebugger");
+  dbg = createDebuggerContext(toolbox);
+  await waitForSources(dbg, "garbaged-collected.html", "garbaged-script.js");
+
+  await selectSource(dbg, "garbaged-script.js");
   is(getEditorContent(dbg), `console.log("garbaged script 2")`);
 
   await selectSource(dbg, "garbaged-collected.html");
-  is(getEditorContent(dbg), GARBAGED_PAGE_CONTENT);
+  is(getEditorContent(dbg), GARBAGED_PAGE_CONTENT.replace("COUNT", 2));
 
   is(
     loadCounts["/garbaged-collected.html"],
     2,
-    "We loaded the html page once as we haven't tried to display it in the debugger (2)"
+    "We loaded the html page a second time because of the debugger doing a request"
   );
   is(
     loadCounts["/garbaged-script.js"],
     2,
-    "We loaded the garbaged script twice as we lost its content"
+    "We loaded the garbaged script a second time as we lost its content from memory and http cache"
   );
+
+  await gDevTools.closeToolboxForTab(tab);
 });
 
 
@@ -481,6 +513,10 @@ add_task(async function testFailingHtmlSource() {
     BASE_URL + "200-then-connection-reset.html",
     "200-then-connection-reset.html"
   );
+
+  
+  
+  Services.cache2.clear();
 
   
   
@@ -530,6 +566,10 @@ add_task(async function testLoadingHtmlSource() {
     BASE_URL + "slow-loading-page.html",
     "slow-loading-page.html"
   );
+
+  
+  
+  Services.cache2.clear();
 
   const onSelected = selectSource(dbg, "slow-loading-page.html");
   await waitFor(
