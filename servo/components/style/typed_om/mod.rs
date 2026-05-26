@@ -269,6 +269,39 @@ pub struct ScaleComponent {
 
 
 
+
+
+
+#[derive(Clone, Debug)]
+#[repr(C)]
+pub struct SkewComponent {
+    
+    pub ax: NumericValue,
+
+    
+    pub ay: NumericValue,
+}
+
+
+
+
+
+
+
+pub type SkewXComponent = NumericValue;
+
+
+
+
+
+
+
+pub type SkewYComponent = NumericValue;
+
+
+
+
+
 #[derive(Clone, Debug)]
 #[repr(C)]
 pub enum TransformComponent {
@@ -286,6 +319,21 @@ pub enum TransformComponent {
     
     
     Scale(ScaleComponent),
+
+    
+    
+    
+    Skew(SkewComponent),
+
+    
+    
+    
+    SkewX(SkewXComponent),
+
+    
+    
+    
+    SkewY(SkewYComponent),
 }
 
 
