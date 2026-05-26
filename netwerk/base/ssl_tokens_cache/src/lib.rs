@@ -123,10 +123,7 @@ impl PersistedRecord {
 type PrTime = i64;
 
 const MAGIC: [u8; 4] = *b"STCF";
-const VERSION: u8 = 3;
-
-
-
+const VERSION: u8 = 2;
 
 
 const HEADER_SIZE: usize = MAGIC.len() + size_of::<u8>();
