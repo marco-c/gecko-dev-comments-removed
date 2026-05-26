@@ -1,0 +1,12 @@
+
+
+
+run_test([
+  {
+    name: 'RSASSA-PKCS1-v1_5',
+    resultType: 'CryptoKeyPair',
+    usages: ['sign', 'verify'],
+    publicFormat: 'spki',
+    privateFormat: 'pkcs8'
+  },
+]);

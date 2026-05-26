@@ -1,0 +1,12 @@
+
+
+
+run_test([
+  {
+    name: 'X448',
+    resultType: 'CryptoKeyPair',
+    usages: ['deriveKey', 'deriveBits'],
+    publicFormat: 'raw',
+    privateFormat: 'pkcs8'
+  },
+]);

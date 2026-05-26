@@ -1,0 +1,11 @@
+
+
+
+run_test([
+  {
+    name: 'HMAC',
+    resultType: 'CryptoKey',
+    usages: ['sign', 'verify'],
+    exportFormat: 'raw'
+  },
+]);

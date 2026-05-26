@@ -1,0 +1,12 @@
+
+
+
+run_test([
+  {
+    name: 'RSA-OAEP',
+    resultType: 'CryptoKeyPair',
+    usages: ['encrypt', 'decrypt', 'wrapKey', 'unwrapKey'],
+    publicFormat: 'spki',
+    privateFormat: 'pkcs8'
+  },
+]);

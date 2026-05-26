@@ -1,0 +1,11 @@
+
+
+
+run_test([
+  {
+    name: 'AES-OCB',
+    resultType: 'CryptoKey',
+    usages: ['encrypt', 'decrypt', 'wrapKey', 'unwrapKey'],
+    exportFormat: 'raw-secret'
+  },
+]);

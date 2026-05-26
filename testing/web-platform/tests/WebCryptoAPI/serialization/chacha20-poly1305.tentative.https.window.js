@@ -1,0 +1,11 @@
+
+
+
+run_test([
+  {
+    name: 'ChaCha20-Poly1305',
+    resultType: 'CryptoKey',
+    usages: ['encrypt', 'decrypt', 'wrapKey', 'unwrapKey'],
+    exportFormat: 'raw-secret'
+  },
+]);

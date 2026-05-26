@@ -1,0 +1,17 @@
+
+
+
+run_test([
+  {
+    name: 'KMAC128',
+    resultType: 'CryptoKey',
+    usages: ['sign', 'verify'],
+    exportFormat: 'raw-secret'
+  },
+  {
+    name: 'KMAC256',
+    resultType: 'CryptoKey',
+    usages: ['sign', 'verify'],
+    exportFormat: 'raw-secret'
+  },
+]);

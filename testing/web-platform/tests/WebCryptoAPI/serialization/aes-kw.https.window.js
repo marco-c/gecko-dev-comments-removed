@@ -1,0 +1,11 @@
+
+
+
+run_test([
+  {
+    name: 'AES-KW',
+    resultType: 'CryptoKey',
+    usages: ['wrapKey', 'unwrapKey'],
+    exportFormat: 'raw'
+  },
+]);
