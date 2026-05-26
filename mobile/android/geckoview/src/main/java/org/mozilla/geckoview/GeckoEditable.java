@@ -1367,6 +1367,8 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
       return;
     }
 
+    boolean syncShadowText = !inBatchMode && mNeedSync;
+
     if (mInBatchMode != inBatchMode) {
       mInBatchMode = inBatchMode;
 
@@ -1384,15 +1386,17 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
                   mText.getShadowText(),
                   SEND_COMPOSITION_NOTIFY_GECKO | SEND_COMPOSITION_KEEP_CURRENT);
             }
-            mFocusedChild.onImeSynchronize();
+            
+            
+            
+            
+            syncShadowText = false;
           } catch (final RemoteException e) {
             Log.e(LOGTAG, "Remote call failed", e);
           }
         }
       }
     }
-
-    mInBatchMode = inBatchMode;
 
     if (!inBatchMode && mFocusedChild != null) {
       
@@ -1412,7 +1416,7 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
       
     }
 
-    if (!inBatchMode && mNeedSync) {
+    if (syncShadowText) {
       icSyncShadowText();
     }
   }
