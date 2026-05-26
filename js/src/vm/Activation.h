@@ -373,7 +373,7 @@ static_assert(
     "should consider figuring out a way to make js::Activation have a "
     "LiveSavedFrameCache* instead of a Rooted<LiveSavedFrameCache>.");
 
-class Activation {
+class MOZ_STACK_CLASS Activation {
  protected:
   JSContext* cx_;
   JS::Compartment* compartment_;
@@ -389,7 +389,7 @@ class Activation {
 
   
   
-  JS::Rooted<LiveSavedFrameCache> frameCache_;
+  LiveSavedFrameCache frameCache_;
 
   
   
@@ -397,7 +397,7 @@ class Activation {
   
   
   
-  JS::Rooted<SavedFrame*> asyncStack_;
+  SavedFrame* asyncStack_;
 
   
   const char* asyncCause_;
@@ -406,11 +406,13 @@ class Activation {
   
   bool asyncCallIsExplicit_;
 
-  enum Kind { Interpreter, Jit };
+  enum Kind : bool { Interpreter, Jit };
   Kind kind_;
 
   inline Activation(JSContext* cx, Kind kind);
   inline ~Activation();
+
+  void traceCommon(JSTracer* trc);
 
  public:
   JSContext* cx() const { return cx_; }
@@ -450,13 +452,13 @@ class Activation {
   bool asyncCallIsExplicit() const { return asyncCallIsExplicit_; }
 
   inline LiveSavedFrameCache* getLiveSavedFrameCache(JSContext* cx);
-  void clearLiveSavedFrameCache() { frameCache_.get().clear(); }
+  void clearLiveSavedFrameCache() { frameCache_.clear(); }
 
   void trace(JSTracer* trc);
 
   Activation(const Activation& other) = delete;
   void operator=(const Activation& other) = delete;
-};
+} JS_HAZ_ROOTED;
 
 
 
