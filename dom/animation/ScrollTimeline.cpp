@@ -91,6 +91,18 @@ already_AddRefed<ScrollTimeline> ScrollTimeline::Constructor(
 
 Element* ScrollTimeline::GetSource() const { return SourceElement(); }
 
+ScrollTimeline::State ScrollTimeline::GetState() const {
+  const auto source = mScrollerInfo.Source();
+  
+  
+  
+  const bool isRoot =
+      source.mElement &&
+      source.mElement->OwnerDoc()->GetScrollingElementNoFlush() ==
+          source.mElement;
+  return State{source, mAxis, isRoot};
+}
+
 dom::ScrollAxis ScrollTimeline::GetScrollAxis() const {
   switch (mAxis) {
     case StyleScrollAxis::Block:
@@ -131,21 +143,35 @@ ScrollTimeline::FindNearestScroller(Element* aSubject,
   if (!subject) {
     return {nullptr, PseudoStyleRequest{}};
   }
-  Element* curr = subject->GetFlattenedTreeParentElement();
-  Element* root = subject->OwnerDoc()->GetDocumentElement();
-  while (curr && curr != root) {
-    const ComputedStyle* style = Servo_Element_GetMaybeOutOfDateStyle(curr);
-    MOZ_ASSERT(style, "The ancestor should be styled.");
-    if (style->StyleDisplay()->IsScrollableOverflow()) {
-      break;
-    }
-    curr = curr->GetFlattenedTreeParentElement();
-  }
+
   
-  if (!curr) {
+  Element* root = subject->OwnerDoc()->GetScrollingElementNoFlush();
+  if (root == subject) {
+    
+    
     return {root, PseudoStyleRequest::NotPseudo()};
   }
-  return AnimationUtils::GetElementPseudoPair(curr);
+
+  nsIFrame* subjectFrame = subject->GetPrimaryFrame();
+  if (!subjectFrame) {
+    return {nullptr, PseudoStyleRequest{}};
+  }
+  
+  for (nsIFrame* curr = subjectFrame->GetParent(); curr;
+       curr = curr->GetParent()) {
+    nsIContent* content = curr->GetContent();
+    if (!content || !content->IsElement()) {
+      continue;
+    }
+    Element* element = content->AsElement();
+    if (element == root) {
+      break;
+    }
+    if (curr->IsScrollContainerFrame()) {
+      return AnimationUtils::GetElementPseudoPair(element);
+    }
+  }
+  return {root, PseudoStyleRequest::NotPseudo()};
 }
 
 
@@ -290,6 +316,8 @@ const ScrollContainerFrame* ScrollTimeline::State::GetScrollContainerFrame()
   }
 
   if (mIsRoot) {
+    
+    
     if (const PresShell* presShell = e->OwnerDoc()->GetPresShell()) {
       return presShell->GetRootScrollContainerFrame();
     }
@@ -457,7 +485,7 @@ NonOwningAnimationTarget ScrollTimeline::ScrollerInfo::Source() const {
   
   
   
-  return {mSourceOrTarget.mElement->OwnerDoc()->GetDocumentElement(),
+  return {mSourceOrTarget.mElement->OwnerDoc()->GetScrollingElementNoFlush(),
           PseudoStyleRequest{}};
 }
 
