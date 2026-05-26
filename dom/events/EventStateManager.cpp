@@ -1525,24 +1525,20 @@ void EventStateManager::LightDismissOpenPopovers(WidgetEvent* aEvent,
   MOZ_ASSERT(aEvent->mMessage == ePointerDown || aEvent->mMessage == ePointerUp,
              "Light dismiss must be called for pointer up/down only");
 
-  
   if (!aEvent->IsTrusted() || !aTargetContent) {
     return;
   }
 
-  
-
-  
   RefPtr<Document> targetDoc(aTargetContent->OwnerDoc());
 
-  
-  
   RefPtr<Element> topmostPopover =
       targetDoc->GetTopmostPopoverOf(PopoverAttributeState::Hint);
+
   if (!topmostPopover) {
     topmostPopover =
         targetDoc->GetTopmostPopoverOf(PopoverAttributeState::Auto);
   }
+
   if (!topmostPopover) {
     return;
   }
@@ -1553,45 +1549,20 @@ void EventStateManager::LightDismissOpenPopovers(WidgetEvent* aEvent,
     mPopoverPointerDownTarget = aTargetContent->GetTopmostClickedPopover();
     return;
   }
-  
 
   
-  
-  RefPtr<Element> ancestor = aTargetContent->GetTopmostClickedPopover();
-
-  
-  
-  bool sameTarget =
-      mPopoverPointerDownTarget == static_cast<nsINode*>(ancestor.get());
-
-  
+  RefPtr<nsINode> ancestor = aTargetContent->GetTopmostClickedPopover();
+  bool sameTarget = mPopoverPointerDownTarget == ancestor;
   mPopoverPointerDownTarget = nullptr;
-
-  
   if (!sameTarget) {
     return;
   }
 
-  
-  
-  bool endpointIsHint = targetDoc->PopoverListOf(PopoverAttributeState::Hint)
-                            .Contains(ancestor.get());
-
-  
-  
-  targetDoc->HidePopoverStackUntil(ancestor, PopoverAttributeState::Hint, false,
-                                   true);
-
-  
-  
-  
-  RefPtr<Element> autoEndpoint =
-      endpointIsHint ? targetDoc->PopoverHintStackParent() : ancestor.get();
-
-  
-  
-  targetDoc->HidePopoverStackUntil(autoEndpoint, PopoverAttributeState::Auto,
-                                   false, true);
+  if (!ancestor) {
+    ancestor = aTargetContent->OwnerDoc();
+  }
+  RefPtr<Document> doc(ancestor->OwnerDoc());
+  doc->HideAllPopoversUntil(*ancestor, false, true);
 }
 
 

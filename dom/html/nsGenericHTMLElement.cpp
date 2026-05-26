@@ -803,7 +803,7 @@ void nsGenericHTMLElement::AfterSetPopoverAttr() {
         
         
         
-        if (popoverData->IsPopoverHiding() || OwnerDoc()->IsShowingPopover()) {
+        if (popoverData->IsShowingOrHiding()) {
           popoverData->SetPopoverAttributeState(newState);
         } else {
           ClearPopoverData();
@@ -3653,26 +3653,13 @@ void nsGenericHTMLElement::ShowPopover(const ShowPopoverOptions& aOptions,
 void nsGenericHTMLElement::ShowPopoverInternal(Element* aSource,
                                                ErrorResult& aRv) {
   
-  RefPtr<Document> document = OwnerDoc();
-
-  
-  
-  if (document->IsShowingPopover() ||
-      document->HidingPopoverNestingCount() != 0) {
-    aRv.ThrowInvalidStateError(
-        "Cannot show a popover during the show or hide of another popover.");
-    return;
-  }
-
-  
-  
   
   if (!CheckPopoverValidity(PopoverVisibilityState::Hidden, nullptr, aRv)) {
     return;
   }
 
   
-  document->SetShowingPopover(true);
+  RefPtr<Document> document = OwnerDoc();
 
   
   MOZ_ASSERT(!GetPopoverData() || !GetPopoverData()->GetInvoker());
@@ -3681,8 +3668,22 @@ void nsGenericHTMLElement::ShowPopoverInternal(Element* aSource,
   MOZ_ASSERT(!OwnerDoc()->TopLayerContains(*this));
 
   
-  auto cleanupShowingSteps =
-      MakeScopeExit([&]() { document->SetShowingPopover(false); });
+  bool nestedShow = GetPopoverData()->IsShowingOrHiding();
+
+  
+  bool fireEvents = !nestedShow;
+
+  
+  GetPopoverData()->SetIsShowingOrHiding(true);
+
+  
+  auto cleanupShowingFlag = MakeScopeExit([&]() {
+    
+    
+    if (auto* popoverData = GetPopoverData()) {
+      popoverData->SetIsShowingOrHiding(nestedShow);
+    }
+  });
 
   
   
@@ -3707,75 +3708,125 @@ void nsGenericHTMLElement::ShowPopoverInternal(Element* aSource,
   auto originalType = GetPopoverAttributeState();
 
   
-  
-  RefPtr<Element> ancestor = GetTopmostPopoverAncestor(aSource, true);
-
-  
-  auto effectiveType = originalType;
+  PopoverAttributeState stackToAppendTo = PopoverAttributeState::None;
 
   
   
-  if (ancestor && effectiveType == PopoverAttributeState::Auto) {
-    auto* ancestorHTML = nsGenericHTMLElement::FromNode(ancestor);
-    if (ancestorHTML && ancestorHTML->GetPopoverData() &&
-        ancestorHTML->GetPopoverData()->GetOpenedInMode() ==
-            PopoverAttributeState::Hint) {
-      effectiveType = PopoverAttributeState::Hint;
+  
+  RefPtr<nsINode> autoAncestor =
+      GetTopmostPopoverAncestor(PopoverAttributeState::Auto, aSource, true);
+
+  
+  
+  
+  RefPtr<nsINode> hintAncestor =
+      GetTopmostPopoverAncestor(PopoverAttributeState::Hint, aSource, true);
+
+  nsWeakPtr originallyFocusedElement;
+
+  
+  if (originalType == PopoverAttributeState::Auto) {
+    
+    
+    document->CloseEntirePopoverList(PopoverAttributeState::Hint,
+                                     shouldRestoreFocus, fireEvents);
+
+    
+    
+    
+    RefPtr<nsINode> ancestor =
+        GetTopmostPopoverAncestor(PopoverAttributeState::Auto, aSource, true);
+
+    
+    if (!ancestor) {
+      ancestor = document;
+    }
+
+    
+    
+    document->HideAllPopoversUntil(*ancestor, false, fireEvents);
+
+    
+    stackToAppendTo = PopoverAttributeState::Auto;
+  }
+
+  
+  if (originalType == PopoverAttributeState::Hint) {
+    
+    if (hintAncestor) {
+      MOZ_ASSERT(StaticPrefs::dom_element_popoverhint_enabled());
+      
+      
+      document->HideAllPopoversUntil(*hintAncestor, shouldRestoreFocus,
+                                     fireEvents);
+      
+      stackToAppendTo = PopoverAttributeState::Hint;
+    } else {
+      
+      
+      
+      document->CloseEntirePopoverList(PopoverAttributeState::Hint,
+                                       shouldRestoreFocus, fireEvents);
+      
+      if (autoAncestor) {
+        
+        
+        document->HideAllPopoversUntil(*autoAncestor, shouldRestoreFocus,
+                                       fireEvents);
+        
+        stackToAppendTo = PopoverAttributeState::Auto;
+      } else {
+        
+        stackToAppendTo = PopoverAttributeState::Hint;
+      }
     }
   }
 
   
-  
-  if (effectiveType == PopoverAttributeState::Auto ||
-      effectiveType == PopoverAttributeState::Hint) {
-    document->HidePopoverStackUntil(ancestor, PopoverAttributeState::Hint,
-                                    shouldRestoreFocus, true);
-  }
+  if (originalType == PopoverAttributeState::Auto ||
+      originalType == PopoverAttributeState::Hint) {
+    
+    MOZ_ASSERT(stackToAppendTo != PopoverAttributeState::None);
 
-  
-  
-  if (effectiveType == PopoverAttributeState::Auto) {
-    document->HidePopoverStackUntil(ancestor, PopoverAttributeState::Auto,
-                                    shouldRestoreFocus, true);
-  }
-
-  
-  if (effectiveType == PopoverAttributeState::Auto ||
-      effectiveType == PopoverAttributeState::Hint) {
     
     
     if (originalType != GetPopoverAttributeState()) {
+      
+      
       aRv.ThrowInvalidStateError(
           "The value of the popover attribute was changed while hiding the "
           "popover.");
+      
       return;
     }
+
     
     
     
     if (!CheckPopoverValidity(PopoverVisibilityState::Hidden, document, aRv)) {
       return;
     }
+
     
-    ancestor = GetTopmostPopoverAncestor(aSource, true);
     
     
     shouldRestoreFocus =
-        !document->GetTopmostPopoverOf(PopoverAttributeState::Auto) &&
-        !document->GetTopmostPopoverOf(PopoverAttributeState::Hint);
+        !document->GetTopmostPopoverOf(PopoverAttributeState::Auto);
 
     
-    if (effectiveType == PopoverAttributeState::Auto) {
+    if (stackToAppendTo == PopoverAttributeState::Auto) {
       
       
       MOZ_ASSERT(
           !document->PopoverListOf(PopoverAttributeState::Auto).Contains(this));
+
       
       GetPopoverData()->SetOpenedInMode(PopoverAttributeState::Auto);
     } else {
+      MOZ_ASSERT(StaticPrefs::dom_element_popoverhint_enabled());
       
       
-      MOZ_ASSERT(effectiveType == PopoverAttributeState::Hint);
+      MOZ_ASSERT(stackToAppendTo == PopoverAttributeState::Hint);
       
       
       MOZ_ASSERT(
@@ -3784,6 +3835,11 @@ void nsGenericHTMLElement::ShowPopoverInternal(Element* aSource,
       GetPopoverData()->SetOpenedInMode(PopoverAttributeState::Hint);
     }
     
+    
+    
+    
+    
+    
     if (StaticPrefs::dom_closewatcher_enabled()) {
       GetPopoverData()->EnsureCloseWatcher(this);
     }
@@ -3791,12 +3847,6 @@ void nsGenericHTMLElement::ShowPopoverInternal(Element* aSource,
 
   
   
-  
-  if (auto* popoverData = GetPopoverData()) {
-    popoverData->SetPreviouslyFocusedElement(nullptr);
-  }
-
-  nsWeakPtr originallyFocusedElement;
   if (nsIContent* unretargetedFocus =
           document->GetUnretargetedFocusedContent()) {
     originallyFocusedElement =
@@ -3808,24 +3858,12 @@ void nsGenericHTMLElement::ShowPopoverInternal(Element* aSource,
 
   PopoverPseudoStateUpdate(true, true);
 
-  
-  
-  if (effectiveType == PopoverAttributeState::Hint && ancestor) {
-    auto* ancestorHTML = nsGenericHTMLElement::FromNode(ancestor);
-    if (ancestorHTML && ancestorHTML->GetPopoverData() &&
-        ancestorHTML->GetPopoverData()->GetOpenedInMode() ==
-            PopoverAttributeState::Auto) {
-      document->SetPopoverHintStackParent(ancestor);
-    }
-  }
-
   {
     auto* popoverData = GetPopoverData();
     
     popoverData->SetPopoverVisibilityState(PopoverVisibilityState::Showing);
     
     popoverData->SetInvoker(aSource);
-    
     if (aSource && aSource->IsHTMLElement()) {
       aSource->SetAssociatedPopover(*this);
     }
@@ -3843,12 +3881,11 @@ void nsGenericHTMLElement::ShowPopoverInternal(Element* aSource,
   }
 
   
-  cleanupShowingSteps.release();
-  document->SetShowingPopover(false);
+  
+  QueuePopoverEventTask(PopoverVisibilityState::Hidden, aSource);
 
   
   
-  QueuePopoverEventTask(PopoverVisibilityState::Hidden, aSource);
 }
 
 void nsGenericHTMLElement::HidePopoverWithoutRunningScript() {

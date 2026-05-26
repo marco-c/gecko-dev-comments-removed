@@ -3648,15 +3648,22 @@ class Document : public nsINode,
                                        Nullable<Wireframe>&);
 
   
-  MOZ_CAN_RUN_SCRIPT void HidePopoverStackUntil(
-      Element* aEndpoint, PopoverAttributeState aStackType,
-      bool aFocusPreviousElement, bool aFireEvents);
+  MOZ_CAN_RUN_SCRIPT void CloseEntirePopoverList(PopoverAttributeState aMode,
+                                                 bool aFocusPreviousElement,
+                                                 bool aFireEvents);
 
   
   
-  MOZ_CAN_RUN_SCRIPT void HidePopoversUntil(Element* aEndpoint,
-                                            bool aFocusPreviousElement,
-                                            bool aFireEvents);
+  MOZ_CAN_RUN_SCRIPT void HideAllPopoversUntil(nsINode& aEndpoint,
+                                               bool aFocusPreviousElement,
+                                               bool aFireEvents);
+
+  
+  
+  MOZ_CAN_RUN_SCRIPT void HidePopoverStackUntil(PopoverAttributeState aMode,
+                                                nsINode& aEndpoint,
+                                                bool aFocusPreviousElement,
+                                                bool aFireEvents);
 
   
   
@@ -3669,9 +3676,7 @@ class Document : public nsINode,
   
   
   
-  nsTArray<RefPtr<Element>> PopoverListOf(PopoverAttributeState aMode) const;
-  bool IsInPopoverListOf(const Element& aElement,
-                         PopoverAttributeState aMode) const;
+  nsTArray<Element*> PopoverListOf(PopoverAttributeState aMode) const;
 
   
   
@@ -3680,21 +3685,6 @@ class Document : public nsINode,
 
   void AddPopoverToTopLayer(Element&);
   void RemovePopoverFromTopLayer(Element&);
-
-  Element* PopoverHintStackParent() const;
-  void SetPopoverHintStackParent(Element* aParent);
-
-  bool IsShowingPopover() const { return mShowingPopover; }
-  void SetShowingPopover(bool aShowing) { mShowingPopover = aShowing; }
-
-  uint32_t HidingPopoverNestingCount() const {
-    return mHidingPopoverNestingCount;
-  }
-  void IncrementHidingPopoverNestingCount() { ++mHidingPopoverNestingCount; }
-  void DecrementHidingPopoverNestingCount() {
-    MOZ_ASSERT(mHidingPopoverNestingCount > 0);
-    --mHidingPopoverNestingCount;
-  }
 
   Element* GetTopLayerTop();
   
@@ -5642,15 +5632,6 @@ class Document : public nsINode,
 
   
   nsTArray<nsWeakPtr> mTopLayer;
-
-  
-  RefPtr<Element> mPopoverHintStackParent;
-
-  
-  bool mShowingPopover = false;
-
-  
-  uint32_t mHidingPopoverNestingCount = 0;
 
   
   

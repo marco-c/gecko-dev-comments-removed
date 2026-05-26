@@ -333,10 +333,24 @@ void HTMLDialogElement::Show(ErrorResult& aError) {
 
   
   
-  RefPtr<Element> hideUntil = GetTopmostPopoverAncestor(nullptr, false);
+  RefPtr<nsINode> hideUntil =
+      GetTopmostPopoverAncestor(PopoverAttributeState::Hint, nullptr, false);
 
   
-  OwnerDoc()->HidePopoversUntil(hideUntil, false, true);
+  
+  
+  if (!hideUntil) {
+    hideUntil =
+        GetTopmostPopoverAncestor(PopoverAttributeState::Auto, nullptr, false);
+  }
+
+  
+  if (!hideUntil) {
+    hideUntil = OwnerDoc();
+  }
+
+  
+  OwnerDoc()->HideAllPopoversUntil(*hideUntil, false, true);
 
   
   FocusDialog();
@@ -501,10 +515,24 @@ void HTMLDialogElement::ShowModal(Element* aSource, ErrorResult& aError) {
 
   
   
-  RefPtr<Element> hideUntil = GetTopmostPopoverAncestor(nullptr, false);
+  RefPtr<nsINode> hideUntil =
+      GetTopmostPopoverAncestor(PopoverAttributeState::Hint, nullptr, false);
 
   
-  OwnerDoc()->HidePopoversUntil(hideUntil, false, true);
+  
+  
+  if (!hideUntil) {
+    hideUntil =
+        GetTopmostPopoverAncestor(PopoverAttributeState::Auto, nullptr, false);
+  }
+
+  
+  if (!hideUntil) {
+    hideUntil = OwnerDoc();
+  }
+
+  
+  OwnerDoc()->HideAllPopoversUntil(*hideUntil, false, true);
 
   
   FocusDialog();
