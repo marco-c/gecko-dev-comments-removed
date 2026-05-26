@@ -68,6 +68,11 @@ HTMLEditor::InsertParagraphSeparatorAsSubAction(const Element& aEditingHost) {
     }
   }
 
+  if (GetEditContext()) {
+    
+    return EditActionResult::HandledResult();
+  }
+
   
   
   AutoPlaceholderBatch treatAsOneTransaction(*this, *nsGkAtoms::TypingTxnName,
