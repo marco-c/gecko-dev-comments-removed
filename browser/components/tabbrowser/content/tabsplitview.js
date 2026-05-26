@@ -170,7 +170,11 @@
             this.remove();
           }
 
-          if (mutations.length == 1 && mutations[0].removedNodes.length == 1) {
+          if (
+            this.tabs.length == 1 &&
+            mutations.length &&
+            mutations[0].removedNodes.length == 1
+          ) {
             
             
             this.unsplitTabs("tab_close");
@@ -408,20 +412,14 @@
 
     replaceTab(tabToReplace, newTab) {
       let indexOfReplacedTab = this.tabs.indexOf(tabToReplace);
-      this.addTabs([newTab], { isSessionRestore: false, indexOfReplacedTab });
-
-      
-      
-      
-      let adoptedTab = this.#tabs[indexOfReplacedTab];
 
       
       
       if (tabToReplace.selected) {
-        gBrowser.selectedTab = adoptedTab;
+        gBrowser.selectedTab = newTab;
       }
-
       gBrowser.removeTab(tabToReplace);
+      this.addTabs([newTab], { isSessionRestore: false, indexOfReplacedTab });
 
       
       this.#activate();
