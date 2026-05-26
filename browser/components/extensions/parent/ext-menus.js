@@ -1019,7 +1019,12 @@ const libraryTracker = {
 
 
 const menuTracker = {
-  menuIds: ["placesContext", "menu_ToolsPopup", "tabContextMenu"],
+  menuIds: [
+    "placesContext",
+    "menu_ToolsPopup",
+    "tabContextMenu",
+    "sidebar-bookmarks-context-menu",
+  ],
 
   register() {
     Services.obs.addObserver(this, "on-build-contextmenu");
@@ -1079,9 +1084,15 @@ const menuTracker = {
     if (window.SidebarController.currentID === "viewBookmarksSidebar") {
       let sidebarBrowser = window.SidebarController.browser;
       sidebarBrowser.removeEventListener("load", this.onSidebarShown);
-      const menu =
-        sidebarBrowser.contentDocument.getElementById("placesContext");
-      menu.removeEventListener("popupshowing", this.onBookmarksContextMenu);
+      if (
+        !Services.prefs.getBoolPref("sidebar.updatedBookmarks.enabled", false)
+      ) {
+        
+        
+        const menu =
+          sidebarBrowser.contentDocument.getElementById("placesContext");
+        menu.removeEventListener("popupshowing", this.onBookmarksContextMenu);
+      }
     }
   },
 
@@ -1100,9 +1111,18 @@ const menuTracker = {
         });
         return;
       }
-      const menu =
-        sidebarBrowser.contentDocument.getElementById("placesContext");
-      menu.addEventListener("popupshowing", menuTracker.onBookmarksContextMenu);
+      if (
+        !Services.prefs.getBoolPref("sidebar.updatedBookmarks.enabled", false)
+      ) {
+        
+        
+        const menu =
+          sidebarBrowser.contentDocument.getElementById("placesContext");
+        menu.addEventListener(
+          "popupshowing",
+          menuTracker.onBookmarksContextMenu
+        );
+      }
     }
   },
 
@@ -1131,6 +1151,18 @@ const menuTracker = {
       gMenuBuilder.build({
         menu,
         bookmarkId: trigger._placesNode.bookmarkGuid,
+        onBookmark: true,
+      });
+    }
+    if (menu.id === "sidebar-bookmarks-context-menu") {
+      const trigger = menu.triggerNode.triggerNode;
+      if (!trigger?.guid) {
+        return;
+      }
+
+      gMenuBuilder.build({
+        menu,
+        bookmarkId: trigger.guid,
         onBookmark: true,
       });
     }
