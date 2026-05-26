@@ -23105,6 +23105,9 @@ class BaseContent extends (external_React_default()).PureComponent {
     let filteredSections = props.Sections.filter(section => section.id !== "topstories");
     const topSitesEnabled = prefs["feeds.topsites"];
     const pocketEnabled = prefs["feeds.section.topstories"] && prefs["feeds.system.topstories"];
+    
+    
+    
     const noSectionsEnabled = !topSitesEnabled && !pocketEnabled && filteredSections.filter(section => section.enabled).length === 0;
     const enabledSections = {
       topSitesEnabled,
@@ -23195,9 +23198,16 @@ class BaseContent extends (external_React_default()).PureComponent {
       
       
       
+      
+      
       const weatherWidget = WIDGET_REGISTRY.find(w => w.id === "weather");
       const weatherGoesToSidebar = resolveWidgetHasSidebar(weatherWidget, prefs) && resolveWidgetSize(weatherWidget, prefs) === "small";
       const hasContentWidgets = mayHaveListsWidget && enabledWidgets.listsEnabled || mayHaveTimerWidget && enabledWidgets.timerEnabled || mayHaveClocksWidget && enabledWidgets.clocksEnabled || mayHaveWeatherWidget && enabledWidgets.weatherEnabled && !weatherGoesToSidebar || mayHaveSportsWidget && enabledWidgets.sportsWidgetEnabled;
+      const widgetsEnabled = prefs["widgets.enabled"];
+      const hasAnyEnabledWidget = WIDGET_REGISTRY.some(w => isWidgetEnabled(w, prefs, widgetsEnabled));
+      const highlightsEnabled = prefs["feeds.section.highlights"];
+      const noContentSectionsEnabled = !topSitesEnabled && !pocketEnabled && !highlightsEnabled;
+      const isPageEmpty = noContentSectionsEnabled && !prefs.showSearch && !hasAnyEnabledWidget;
       const logoShouldBeCentered = !pocketEnabled && !hasContentWidgets;
       return external_React_default().createElement(BaseContext.Provider, {
         value: baseContextValue
@@ -23207,13 +23217,13 @@ class BaseContent extends (external_React_default()).PureComponent {
         className: `container nova-enabled${logoShouldBeCentered ? " logo-in-content" : ""}`
       }, external_React_default().createElement("aside", {
         className: "sidebar-inline-start"
-      }, !logoShouldBeCentered && external_React_default().createElement(ErrorBoundary, null, external_React_default().createElement(Logo, null))), external_React_default().createElement("aside", {
+      }, !logoShouldBeCentered && !isPageEmpty && external_React_default().createElement(ErrorBoundary, null, external_React_default().createElement(Logo, null))), external_React_default().createElement("aside", {
         className: "sidebar-inline-end"
       }, novaEnabled && external_React_default().createElement(ErrorBoundary, null, external_React_default().createElement(WidgetsSidebar, {
         dispatch: props.dispatch
       }))), external_React_default().createElement("main", {
         className: "content"
-      }, logoShouldBeCentered && external_React_default().createElement(ErrorBoundary, null, external_React_default().createElement(Logo, null)), prefs.showSearch && external_React_default().createElement(ErrorBoundary, null, external_React_default().createElement(Search_Search, Base_extends({
+      }, logoShouldBeCentered && !isPageEmpty && external_React_default().createElement(ErrorBoundary, null, external_React_default().createElement(Logo, null)), prefs.showSearch && external_React_default().createElement(ErrorBoundary, null, external_React_default().createElement(Search_Search, Base_extends({
         showLogo: false
       }, props.Search))), shouldShowASRouterNewTabMessage(this.props.Messages, "ASRouterNewTabMessage", ASROUTER_NEWTAB_MESSAGE_POSITIONS.ABOVE_TOPSITES) && external_React_default().createElement(ErrorBoundary, null, external_React_default().createElement(MessageWrapper, {
         dispatch: this.props.dispatch
