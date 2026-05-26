@@ -16666,6 +16666,9 @@ function SportsWidget_SportsWidget({
     handleInteraction();
   }
   function handleViewUpcoming() {
+    
+    
+    hasUserSelectedTab.current = true;
     (0,external_ReactRedux_namespaceObject.batch)(() => {
       dispatch(actionCreators.OnlyToMain({
         type: actionTypes.WIDGETS_USER_EVENT,
@@ -16688,6 +16691,9 @@ function SportsWidget_SportsWidget({
     handleInteraction();
   }
   function handleViewResults() {
+    
+    
+    hasUserSelectedTab.current = true;
     (0,external_ReactRedux_namespaceObject.batch)(() => {
       dispatch(actionCreators.OnlyToMain({
         type: actionTypes.WIDGETS_USER_EVENT,
