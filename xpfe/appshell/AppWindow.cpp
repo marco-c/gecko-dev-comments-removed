@@ -1556,17 +1556,9 @@ void AppWindow::SyncAttributesToWidget() {
   NS_ENSURE_TRUE_VOID(mWindow);
 
   
-  
-  
-  
-  
-  
-  if (windowElement->HasAttribute(u"macnativefullscreen"_ns)) {
-    nsAutoString value;
-    windowElement->GetAttribute(u"macnativefullscreen"_ns, value);
-    mWindow->SetSupportsNativeFullscreen(!value.EqualsLiteral("false"));
-    NS_ENSURE_TRUE_VOID(mWindow);
-  }
+  mWindow->SetSupportsNativeFullscreen(
+      windowElement->HasAttribute(u"macnativefullscreen"_ns));
+  NS_ENSURE_TRUE_VOID(mWindow);
 
   
   windowElement->GetAttribute(u"macanimationtype"_ns, attr);
