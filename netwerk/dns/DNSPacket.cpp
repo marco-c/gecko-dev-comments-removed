@@ -15,12 +15,15 @@ namespace mozilla {
 namespace net {
 
 static uint16_t get16bit(const unsigned char* aData, unsigned int index) {
-  return ((aData[index] << 8) | aData[index + 1]);
+  return (static_cast<uint16_t>(aData[index]) << 8) |
+         static_cast<uint16_t>(aData[index + 1]);
 }
 
 static uint32_t get32bit(const unsigned char* aData, unsigned int index) {
-  return (aData[index] << 24) | (aData[index + 1] << 16) |
-         (aData[index + 2] << 8) | aData[index + 3];
+  return (static_cast<uint32_t>(aData[index]) << 24) |
+         (static_cast<uint32_t>(aData[index + 1]) << 16) |
+         (static_cast<uint32_t>(aData[index + 2]) << 8) |
+         static_cast<uint32_t>(aData[index + 3]);
 }
 
 
@@ -64,7 +67,8 @@ nsresult DNSPacket::FillBuffer(
 
 nsresult DNSPacket::ParseSvcParam(unsigned int svcbIndex, uint16_t key,
                                   SvcFieldValue& field, uint16_t length,
-                                  const unsigned char* aBuffer) {
+                                  const unsigned char* aBuffer,
+                                  bool aAllowRFC1918) {
   switch (key) {
     case SvcParamKeyMandatory: {
       if (length % 2 != 0) {
@@ -131,7 +135,9 @@ nsresult DNSPacket::ParseSvcParam(unsigned int svcbIndex, uint16_t key,
         addr.inet.family = AF_INET;
         addr.inet.port = 0;
         addr.inet.ip = ntohl(get32bit(aBuffer, svcbIndex));
-        ipv4array.AppendElement(addr);
+        if (aAllowRFC1918 || !addr.IsIPAddrLocal()) {
+          ipv4array.AppendElement(addr);
+        }
         length -= 4;
         svcbIndex += 4;
       }
@@ -159,7 +165,9 @@ nsresult DNSPacket::ParseSvcParam(unsigned int svcbIndex, uint16_t key,
         for (int i = 0; i < 16; i++, svcbIndex++) {
           addr.inet6.ip.u8[i] = aBuffer[svcbIndex];
         }
-        ipv6array.AppendElement(addr);
+        if (aAllowRFC1918 || !addr.IsIPAddrLocal()) {
+          ipv6array.AppendElement(addr);
+        }
         length -= 16;
         
       }
@@ -300,7 +308,11 @@ nsresult DOHresp::Add(uint32_t TTL, unsigned char const* dns,
   
   
   
-  if (mTtl < TTL) {
+  
+  
+  
+  
+  if (mAddresses.IsEmpty() || TTL < mTtl) {
     mTtl = TTL;
   }
 
@@ -314,7 +326,7 @@ nsresult DOHresp::Add(uint32_t TTL, unsigned char const* dns,
 nsresult DNSPacket::OnDataAvailable(nsIRequest* aRequest,
                                     nsIInputStream* aInputStream,
                                     uint64_t aOffset, const uint32_t aCount) {
-  if (aCount + mBodySize > MAX_SIZE) {
+  if (aCount > MAX_SIZE - mBodySize) {
     LOG(("DNSPacket::OnDataAvailable:%d fail\n", __LINE__));
     return NS_ERROR_FAILURE;
   }
@@ -324,8 +336,7 @@ nsresult DNSPacket::OnDataAvailable(nsIRequest* aRequest,
   if (NS_FAILED(rv)) {
     return rv;
   }
-  MOZ_ASSERT(count == aCount);
-  mBodySize += aCount;
+  mBodySize += count;
   return NS_OK;
 }
 
@@ -492,7 +503,8 @@ nsresult DNSPacket::ParseHTTPS(uint16_t aRDLen, struct SVCB& aParsed,
                                unsigned int aIndex,
                                const unsigned char* aBuffer,
                                unsigned int aBodySize,
-                               const nsACString& aOriginHost) {
+                               const nsACString& aOriginHost,
+                               bool aAllowRFC1918) {
   int32_t lastSvcParamKey = -1;
   nsresult rv = NS_OK;
   unsigned int svcbIndex = aIndex;
@@ -556,7 +568,7 @@ nsresult DNSPacket::ParseHTTPS(uint16_t aRDLen, struct SVCB& aParsed,
       return NS_ERROR_UNEXPECTED;
     }
 
-    rv = ParseSvcParam(svcbIndex, key, value, len, aBuffer);
+    rv = ParseSvcParam(svcbIndex, key, value, len, aBuffer, aAllowRFC1918);
     if (NS_FAILED(rv)) {
       return rv;
     }
@@ -568,8 +580,12 @@ nsresult DNSPacket::ParseHTTPS(uint16_t aRDLen, struct SVCB& aParsed,
       continue;
     }
 
-    if (value.mValue.is<SvcParamIpv4Hint>() ||
-        value.mValue.is<SvcParamIpv6Hint>()) {
+    if (value.mValue.is<SvcParamIpv4Hint>() &&
+        !value.mValue.as<SvcParamIpv4Hint>().mValue.IsEmpty()) {
+      aParsed.mHasIPHints = true;
+    }
+    if (value.mValue.is<SvcParamIpv6Hint>() &&
+        !value.mValue.as<SvcParamIpv6Hint>().mValue.IsEmpty()) {
       aParsed.mHasIPHints = true;
     }
     if (value.mValue.is<SvcParamEchConfig>()) {
@@ -622,7 +638,6 @@ nsresult DNSPacket::DecodeInternal(
   
 
   unsigned int index = 12;
-  uint8_t length;
   nsAutoCString host;
   nsresult rv;
   uint16_t extendedError = UINT16_MAX;
@@ -646,25 +661,22 @@ nsresult DNSPacket::DecodeInternal(
 
   uint16_t questionRecords = get16bit(aBuffer, 4);  
   
+  
+  
+  
+  
   while (questionRecords) {
-    do {
-      if (aLen < (index + 1)) {
-        LOG(("TRR Decode 1 index: %u size: %u", index, aLen));
-        return NS_ERROR_ILLEGAL_VALUE;
-      }
-      length = static_cast<uint8_t>(aBuffer[index]);
-      if (length) {
-        if (host.Length()) {
-          host.Append(".");
-        }
-        if (aLen < (index + 1 + length)) {
-          LOG(("TRR Decode 2 index: %u size: %u len: %u", index, aLen, length));
-          return NS_ERROR_ILLEGAL_VALUE;
-        }
-        host.Append(((char*)aBuffer) + index + 1, length);
-      }
-      index += 1 + length;  
-    } while (length);
+    nsAutoCString qname;
+    rv = GetQname(qname, index, aBuffer, mBodySize);
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+    if (host.IsEmpty()) {
+      host = qname;
+    } else if (!qname.IsEmpty()) {
+      host.Append(".");
+      host.Append(qname);
+    }
     if (aLen < (index + 4)) {
       LOG(("TRR Decode 3 index: %u size: %u", index, aLen));
       return NS_ERROR_ILLEGAL_VALUE;
@@ -845,7 +857,7 @@ nsresult DNSPacket::DecodeInternal(
           }
 
           rv = ParseHTTPS(RDLENGTH, parsed, index, aBuffer, mBodySize,
-                          mOriginHost ? *mOriginHost : qname);
+                          mOriginHost ? *mOriginHost : qname, aAllowRFC1918);
           if (NS_FAILED(rv)) {
             return rv;
           }
