@@ -413,7 +413,10 @@ public class GeckoSession {
     
     @WrapForJNI(calledFrom = "ui")
     private void notifyCompositorScrollUpdate(
-        final float scrollX, final float scrollY, final float zoom, final int source) {
+        final float scrollX,
+        final float scrollY,
+        final float zoom,
+        final @ScrollPositionUpdate.SourceType int source) {
       GeckoSession.this.onCompositorScrollUpdate(scrollX, scrollY, zoom, source);
     }
 
@@ -6892,6 +6895,11 @@ public class GeckoSession {
     @WrapForJNI public static final int SOURCE_OTHER = 1;
 
     
+    @Retention(RetentionPolicy.SOURCE)
+    @IntDef({SOURCE_USER_INTERACTION, SOURCE_OTHER})
+    public @interface SourceType {}
+
+    
     public float scrollX;
 
     
@@ -6904,7 +6912,10 @@ public class GeckoSession {
     public float zoom;
 
     
-    public int source;
+
+
+
+    public @SourceType int source;
   }
 
   
@@ -7982,7 +7993,10 @@ public class GeckoSession {
   }
 
    void onCompositorScrollUpdate(
-      final float scrollX, final float scrollY, final float zoom, final int source) {
+      final float scrollX,
+      final float scrollY,
+      final float zoom,
+      final @ScrollPositionUpdate.SourceType int source) {
     if (DEBUG) {
       ThreadUtils.assertOnUiThread();
     }
