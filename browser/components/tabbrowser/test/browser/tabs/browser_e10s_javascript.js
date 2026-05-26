@@ -1,19 +1,20 @@
-const CHROME_PROCESS = E10SUtils.NOT_REMOTE;
-const WEB_CONTENT_PROCESS = E10SUtils.WEB_REMOTE_TYPE;
-
 add_task(async function () {
   let url = "javascript:dosomething()";
 
-  ok(
-    E10SUtils.canLoadURIInRemoteType(url,  false, CHROME_PROCESS),
+  is(
+    ChromeUtils.predictRemoteTypeForURI(url, {
+      useRemoteSubframes: false,
+      preferredRemoteType: E10SUtils.NOT_REMOTE,
+    }),
+    E10SUtils.NOT_REMOTE,
     "Check URL in chrome process."
   );
-  ok(
-    E10SUtils.canLoadURIInRemoteType(
-      url,
-       false,
-      WEB_CONTENT_PROCESS
-    ),
+  is(
+    ChromeUtils.predictRemoteTypeForURI(url, {
+      useRemoteSubframes: false,
+      preferredRemoteType: E10SUtils.WEB_REMOTE_TYPE,
+    }),
+    E10SUtils.WEB_REMOTE_TYPE,
     "Check URL in web content process."
   );
 });
