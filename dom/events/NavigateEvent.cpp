@@ -415,8 +415,10 @@ void NavigateEvent::PotentiallyResetFocus() {
   
   FocusOptions options;
   options.mPreventScroll = true;
-  focusTarget = nsFocusManager::GetTheFocusableArea(
-      focusTarget, nsFocusManager::ProgrammaticFocusFlags(options));
+  if (focusTarget) {
+    focusTarget = nsFocusManager::GetTheFocusableArea(
+        focusTarget, nsFocusManager::ProgrammaticFocusFlags(options));
+  }
 
   if (focusTarget) {
     LOG_FMT("Reset focus to {}", *focusTarget->AsNode());
