@@ -4551,11 +4551,13 @@ void Element::GetLinkTargetImpl(nsAString& aTarget) { aTarget.Truncate(); }
 
 
 
-nsresult Element::CopyInnerTo(Element* aDst, ReparseAttributes aReparse) {
-  nsresult rv = aDst->mAttrs.EnsureCapacityToClone(mAttrs);
-  NS_ENSURE_SUCCESS(rv, rv);
+nsresult Element::CopyInnerTo(Element* aDst) {
+  MOZ_TRY(aDst->mAttrs.EnsureCapacityToClone(mAttrs));
 
-  const bool reparse = aReparse == ReparseAttributes::Yes;
+  
+  
+  
+  const bool isSVG = IsSVGElement();
 
   
   
@@ -4567,27 +4569,21 @@ nsresult Element::CopyInnerTo(Element* aDst, ReparseAttributes aReparse) {
     const nsAttrName* name = info.mName;
     const nsAttrValue* value = info.mValue;
     if (value->Type() == nsAttrValue::eCSSDeclaration) {
-      MOZ_ASSERT(name->Equals(nsGkAtoms::style, kNameSpaceID_None));
       
       
-      nsAttrValue valueCopy(*value);
-      rv = aDst->SetParsedAttr(name->NamespaceID(), name->LocalName(),
-                               name->GetPrefix(), valueCopy, false);
-      NS_ENSURE_SUCCESS(rv, rv);
-
+      
       value->GetCSSDeclarationValue()->SetImmutable();
-    } else if (reparse) {
+    } else if (isSVG) {
       nsAutoString valStr;
       value->ToString(valStr);
-      rv = aDst->SetAttr(name->NamespaceID(), name->LocalName(),
-                         name->GetPrefix(), valStr, false);
-      NS_ENSURE_SUCCESS(rv, rv);
-    } else {
-      nsAttrValue valueCopy(*value);
-      rv = aDst->SetParsedAttr(name->NamespaceID(), name->LocalName(),
-                               name->GetPrefix(), valueCopy, false);
-      NS_ENSURE_SUCCESS(rv, rv);
+      MOZ_TRY(aDst->SetAttr(name->NamespaceID(), name->LocalName(),
+                            name->GetPrefix(), valStr, false));
+      continue;
     }
+    MOZ_ASSERT(value->StoresOwnData());
+    nsAttrValue valueCopy(*info.mValue);
+    MOZ_TRY(aDst->SetParsedAttr(name->NamespaceID(), name->LocalName(),
+                                name->GetPrefix(), valueCopy, false));
   }
 
   
@@ -5706,101 +5702,29 @@ nsGenericHTMLElement* Element::GetAssociatedPopover() const {
 }
 
 
-Element* Element::GetTopmostPopoverAncestor(PopoverAttributeState aMode,
-                                            const Element* aInvoker,
+Element* Element::GetTopmostPopoverAncestor(const Element* aInvoker,
                                             bool isPopover) const {
-  const Element* newPopover = this;
-
-  
-  nsTHashMap<nsPtrHashKey<const Element>, size_t> popoverPositions;
-  size_t index = 0;
-
-  
-  for (Element* popover : OwnerDoc()->PopoverListOf(aMode)) {
-    
-    popoverPositions.LookupOrInsert(popover, index++);
-  }
+  AutoTArray<RefPtr<Element>, 16> combinedPopovers;
+  combinedPopovers.AppendElements(
+      OwnerDoc()->PopoverListOf(PopoverAttributeState::Auto));
+  combinedPopovers.AppendElements(
+      OwnerDoc()->PopoverListOf(PopoverAttributeState::Hint));
 
   
   
-  if (isPopover) {
-    popoverPositions.LookupOrInsert(newPopover, index);
-  }
-
-  const auto* newPopoverHTMLEl = nsGenericHTMLElement::FromNode(newPopover);
-  PopoverAttributeState newPopoverAttribute =
-      newPopoverHTMLEl ? newPopoverHTMLEl->GetPopoverAttributeState()
-                       : PopoverAttributeState::None;
-
-  
-  Element* topmostPopoverAncestor = nullptr;
-
-  
-  auto checkAncestor = [&](const Element* candidate) {
-    
-    
-    if (!candidate) {
-      return;
-    }
-
-    
-    bool okNesting = false;
-    
-    Element* candidateAncestor = nullptr;
-
-    
-    while (!okNesting) {
-      
-      
-      candidateAncestor = candidate->GetNearestInclusiveOpenPopover();
-      
-      
-      
-      if (!candidateAncestor || !popoverPositions.Contains(candidateAncestor)) {
-        return;
-      }
-
-      
-      
-
-      
-      
-      
-      auto* candidateHTMLEl = nsGenericHTMLElement::FromNode(candidateAncestor);
-      okNesting =
-          !isPopover || newPopoverAttribute == PopoverAttributeState::Hint ||
-          (candidateHTMLEl && candidateHTMLEl->GetPopoverAttributeState() ==
-                                  PopoverAttributeState::Auto);
-
-      
-      
-      if (!okNesting) {
-        candidate = candidateAncestor->GetFlattenedTreeParentElement();
+  auto lastAncestorIdx = [&](const nsINode* aNode) -> intptr_t {
+    for (intptr_t i = (intptr_t)combinedPopovers.Length() - 1; i >= 0; --i) {
+      if (aNode->IsInclusiveFlatTreeDescendantOf(combinedPopovers[i])) {
+        return i;
       }
     }
-
-    
-    
-    
-    
-    size_t candidatePosition;
-    if (popoverPositions.Get(candidateAncestor, &candidatePosition)) {
-      size_t topmostPosition;
-      if (!topmostPopoverAncestor ||
-          (popoverPositions.Get(topmostPopoverAncestor, &topmostPosition) &&
-           topmostPosition < candidatePosition)) {
-        topmostPopoverAncestor = candidateAncestor;
-      }
-    }
+    return -1;
   };
 
-  
-  checkAncestor(newPopover->GetFlattenedTreeParentElement());
-  
-  checkAncestor(aInvoker);
-
-  
-  return topmostPopoverAncestor;
+  intptr_t popoverAncestorIndex = lastAncestorIdx(this);
+  intptr_t sourceAncestorIndex = aInvoker ? lastAncestorIdx(aInvoker) : -1;
+  intptr_t ancestorIndex = std::max(popoverAncestorIndex, sourceAncestorIndex);
+  return ancestorIndex >= 0 ? combinedPopovers[ancestorIndex].get() : nullptr;
 }
 
 ElementAnimationData& Element::CreateAnimationData() {

@@ -32,13 +32,15 @@ enum class PopoverVisibilityState : uint8_t {
 class PopoverToggleEventTask : public Runnable {
  public:
   explicit PopoverToggleEventTask(nsWeakPtr aElement, nsWeakPtr aSource,
-                                  PopoverVisibilityState aOldState);
+                                  PopoverVisibilityState aOldState,
+                                  PopoverVisibilityState aNewState);
 
   
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHOD Run() override;
 
   PopoverVisibilityState GetOldState() const { return mOldState; }
+  PopoverVisibilityState GetNewState() const { return mNewState; }
 
   Element* GetSource() const;
 
@@ -46,6 +48,7 @@ class PopoverToggleEventTask : public Runnable {
   nsWeakPtr mElement;
   nsWeakPtr mSource;
   PopoverVisibilityState mOldState;
+  PopoverVisibilityState mNewState;
 };
 
 class PopoverData {
@@ -91,9 +94,9 @@ class PopoverData {
   void SetToggleEventTask(PopoverToggleEventTask* aTask) { mTask = aTask; }
   void ClearToggleEventTask() { mTask = nullptr; }
 
-  bool IsShowingOrHiding() const { return mIsShowingOrHiding; }
-  void SetIsShowingOrHiding(bool aIsShowingOrHiding) {
-    mIsShowingOrHiding = aIsShowingOrHiding;
+  bool IsPopoverHiding() const { return mIsPopoverHiding; }
+  void SetIsPopoverHiding(bool aIsPopoverHiding) {
+    mIsPopoverHiding = aIsPopoverHiding;
   }
 
  private:
@@ -111,7 +114,7 @@ class PopoverData {
   
   
   nsWeakPtr mInvokerElement;
-  bool mIsShowingOrHiding = false;
+  bool mIsPopoverHiding = false;
   RefPtr<PopoverToggleEventTask> mTask;
 
   

@@ -636,10 +636,7 @@ class Element : public FragmentOrElement {
   nsGenericHTMLElement* GetAssociatedPopover() const;
 
   
-
-
-  Element* GetTopmostPopoverAncestor(PopoverAttributeState aMode,
-                                     const Element* aInvoker,
+  Element* GetTopmostPopoverAncestor(const Element* aInvoker,
                                      bool isPopover) const;
 
   ElementAnimationData* GetAnimationData() const {
@@ -2535,13 +2532,11 @@ class Element : public FragmentOrElement {
 #endif
 
  protected:
-  enum class ReparseAttributes { No, Yes };
   
 
 
 
-  nsresult CopyInnerTo(Element* aDest,
-                       ReparseAttributes = ReparseAttributes::Yes);
+  nsresult CopyInnerTo(Element* aDest);
 
   
 

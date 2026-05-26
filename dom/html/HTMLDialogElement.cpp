@@ -2,10 +2,9 @@
 
 
 
-
-
 #include "mozilla/dom/HTMLDialogElement.h"
 
+#include "mozilla/dom/AncestorIterator.h"
 #include "mozilla/dom/BindContext.h"
 #include "mozilla/dom/CloseWatcher.h"
 #include "mozilla/dom/CloseWatcherManager.h"
@@ -171,6 +170,7 @@ void HTMLDialogElement::Close(Element* aSource,
   
   
   
+  bool wasModal = IsInTopLayer();
   
   RemoveFromTopLayerIfNeeded();
 
@@ -202,10 +202,29 @@ void HTMLDialogElement::Close(Element* aSource,
     
     
     
-    FocusOptions options;
-    options.mPreventScroll = true;
-    previouslyFocusedElement->Focus(options, CallerType::NonSystem,
-                                    IgnoredErrorResult());
+    bool resetFocus = true;
+    if (!wasModal) {
+      resetFocus = false;
+      if (auto* focusedContent = OwnerDoc()->GetUnretargetedFocusedContent()) {
+        
+        
+        
+        for (auto* dialog :
+             focusedContent
+                 ->InclusiveFlatTreeAncestorsOfType<HTMLDialogElement>()) {
+          if (dialog == this) {
+            resetFocus = true;
+            break;
+          }
+        }
+      }
+    }
+    if (resetFocus) {
+      FocusOptions options;
+      options.mPreventScroll = true;
+      previouslyFocusedElement->Focus(options, CallerType::NonSystem,
+                                      IgnoredErrorResult());
+    }
   }
 
   
@@ -314,24 +333,10 @@ void HTMLDialogElement::Show(ErrorResult& aError) {
 
   
   
-  RefPtr<nsINode> hideUntil =
-      GetTopmostPopoverAncestor(PopoverAttributeState::Hint, nullptr, false);
+  RefPtr<Element> hideUntil = GetTopmostPopoverAncestor(nullptr, false);
 
   
-  
-  
-  if (!hideUntil) {
-    hideUntil =
-        GetTopmostPopoverAncestor(PopoverAttributeState::Auto, nullptr, false);
-  }
-
-  
-  if (!hideUntil) {
-    hideUntil = OwnerDoc();
-  }
-
-  
-  OwnerDoc()->HideAllPopoversUntil(*hideUntil, false, true);
+  OwnerDoc()->HidePopoversUntil(hideUntil, false, true);
 
   
   FocusDialog();
@@ -496,24 +501,10 @@ void HTMLDialogElement::ShowModal(Element* aSource, ErrorResult& aError) {
 
   
   
-  RefPtr<nsINode> hideUntil =
-      GetTopmostPopoverAncestor(PopoverAttributeState::Hint, nullptr, false);
+  RefPtr<Element> hideUntil = GetTopmostPopoverAncestor(nullptr, false);
 
   
-  
-  
-  if (!hideUntil) {
-    hideUntil =
-        GetTopmostPopoverAncestor(PopoverAttributeState::Auto, nullptr, false);
-  }
-
-  
-  if (!hideUntil) {
-    hideUntil = OwnerDoc();
-  }
-
-  
-  OwnerDoc()->HideAllPopoversUntil(*hideUntil, false, true);
+  OwnerDoc()->HidePopoversUntil(hideUntil, false, true);
 
   
   FocusDialog();
