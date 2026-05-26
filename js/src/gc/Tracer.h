@@ -106,8 +106,7 @@ typename PtrBaseGCType<T>::type* ConvertToBase(T* thingp) {
   MOZ_ALWAYS_INLINE bool TraceEdgeInternal(JSTracer* trc, type** thingp, \
                                            const char* name) {           \
     CheckTracedThing(trc, *thingp);                                      \
-    trc->on##name##Edge(thingp, name);                                   \
-    return *thingp;                                                      \
+    return trc->on##name##Edge(thingp, name);                            \
   }
 JS_FOR_EACH_TRACEKIND(DEFINE_TRACE_FUNCTION)
 #undef DEFINE_TRACE_FUNCTION
@@ -147,14 +146,14 @@ void AssertShouldMarkInZone(GCMarker* marker, T* thing) {}
 template <typename T>
 inline void TraceEdge(JSTracer* trc, const BarrieredBase<T>* thingp,
                       const char* name) {
-  gc::TraceEdgeInternal(trc, gc::ConvertToBase(thingp->unbarrieredAddress()),
-                        name);
+  auto* basep = gc::ConvertToBase(thingp->unbarrieredAddress());
+  MOZ_ALWAYS_TRUE(gc::TraceEdgeInternal(trc, basep, name));
 }
 
 template <typename T>
 inline void TraceEdge(JSTracer* trc, WeakHeapPtr<T>* thingp, const char* name) {
-  gc::TraceEdgeInternal(trc, gc::ConvertToBase(thingp->unbarrieredAddress()),
-                        name);
+  auto* basep = gc::ConvertToBase(thingp->unbarrieredAddress());
+  MOZ_ALWAYS_TRUE(gc::TraceEdgeInternal(trc, basep, name));
 }
 
 template <class BC, class T>
@@ -162,7 +161,8 @@ inline void TraceCellHeaderEdge(JSTracer* trc,
                                 gc::CellWithTenuredGCPointer<BC, T>* thingp,
                                 const char* name) {
   T* thing = thingp->headerPtr();
-  gc::TraceEdgeInternal(trc, gc::ConvertToBase(&thing), name);
+  auto* basep = gc::ConvertToBase(&thing);
+  MOZ_ALWAYS_TRUE(gc::TraceEdgeInternal(trc, basep, name));
   if (thing != thingp->headerPtr()) {
     thingp->unbarrieredSetHeaderPtr(thing);
   }
@@ -172,7 +172,8 @@ template <class T>
 inline void TraceCellHeaderEdge(JSTracer* trc, gc::CellWithGCPointer<T>* thingp,
                                 const char* name) {
   T* thing = thingp->headerPtr();
-  gc::TraceEdgeInternal(trc, gc::ConvertToBase(&thing), name);
+  auto* basep = gc::ConvertToBase(&thing);
+  MOZ_ALWAYS_TRUE(gc::TraceEdgeInternal(trc, basep, name));
   if (thing != thingp->headerPtr()) {
     thingp->unbarrieredSetHeaderPtr(thing);
   }
@@ -185,7 +186,8 @@ inline void TraceCellHeaderEdge(JSTracer* trc, gc::CellWithGCPointer<T>* thingp,
 template <typename T>
 inline void TraceRoot(JSTracer* trc, T* thingp, const char* name) {
   gc::AssertRootMarkingPhase(trc);
-  gc::TraceEdgeInternal(trc, gc::ConvertToBase(thingp), name);
+  auto* basep = gc::ConvertToBase(thingp);
+  MOZ_ALWAYS_TRUE(gc::TraceEdgeInternal(trc, basep, name));
 }
 
 template <typename T>
@@ -218,7 +220,8 @@ void BufferHolder<T>::trace(JSTracer* trc) {
 template <typename T>
 inline void TraceManuallyBarrieredEdge(JSTracer* trc, T* thingp,
                                        const char* name) {
-  gc::TraceEdgeInternal(trc, gc::ConvertToBase(thingp), name);
+  auto* basep = gc::ConvertToBase(thingp);
+  MOZ_ALWAYS_TRUE(gc::TraceEdgeInternal(trc, basep, name));
 }
 
 
@@ -236,7 +239,7 @@ struct TraceWeakResult {
 
   bool isLive() const { return live_; }
   bool isDead() const { return !live_; }
-  bool wasMoved() const { return isLive() && final_ != initial_; }
+  bool wasMoved() const { return final_ != initial_; }
 
   MOZ_IMPLICIT operator bool() const { return isLive(); }
 
@@ -247,7 +250,6 @@ struct TraceWeakResult {
     return final_;
   }
 };
-
 
 
 
@@ -268,6 +270,22 @@ inline TraceWeakResult<T> TraceManuallyBarrieredWeakEdge(JSTracer* trc,
   bool live = !InternalBarrierMethods<T>::isMarkable(initial) ||
               gc::TraceEdgeInternal(trc, gc::ConvertToBase(thingp), name);
   return TraceWeakResult<T>{live, initial, *thingp};
+}
+
+
+
+template <typename T>
+inline bool TraceOrClearWeakEdge(JSTracer* trc, BarrieredBase<T>* thingp,
+                                 const char* name) {
+  T* addr = thingp->unbarrieredAddress();
+  T initial = *addr;
+  if (!InternalBarrierMethods<T>::isMarkable(initial) ||
+      gc::TraceEdgeInternal(trc, gc::ConvertToBase(addr), name)) {
+    return true;
+  }
+
+  *addr = JS::SafelyInitialized<T>::create();
+  return false;
 }
 
 
