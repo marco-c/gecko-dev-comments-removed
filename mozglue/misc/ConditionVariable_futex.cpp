@@ -1,0 +1,41 @@
+
+
+
+
+#include "mozilla/PlatformConditionVariable.h"
+#include "mozilla/PlatformMutex.h"
+#include "mozilla/Futex.h"
+
+
+
+
+mozilla::detail::ConditionVariableImpl::ConditionVariableImpl() = default;
+mozilla::detail::ConditionVariableImpl::~ConditionVariableImpl() = default;
+
+void mozilla::detail::ConditionVariableImpl::notify_one() {
+  mFutex.mValue.fetch_add(1, std::memory_order_relaxed);
+  mFutex.wake();
+}
+
+void mozilla::detail::ConditionVariableImpl::notify_all() {
+  mFutex.mValue.fetch_add(1, std::memory_order_relaxed);
+  mFutex.wakeAll();
+}
+
+void mozilla::detail::ConditionVariableImpl::wait(MutexImpl& lock) {
+  wait_for(lock, TimeDuration::Forever());
+}
+
+mozilla::CVStatus mozilla::detail::ConditionVariableImpl::wait_for(
+    MutexImpl& lock, const mozilla::TimeDuration& rel_time) {
+  
+  uint32_t value = mFutex.mValue.load(std::memory_order_relaxed);
+  
+  lock.unlock();
+  
+  
+  bool r = mFutex.wait(value, &rel_time);
+  
+  lock.lock();
+  return r ? CVStatus::NoTimeout : CVStatus::Timeout;
+}
