@@ -193,13 +193,21 @@ bool ViewTimeline::UpdateCachedCurrentTime() {
       ComputeInsets(scrollContainerFrame, orientation, mAxis, mInset);
 
   
+  const WritingMode wm = scrolledFrame->GetWritingMode();
   switch (orientation) {
-    case layers::ScrollDirection::eVertical:
+    case layers::ScrollDirection::eVertical: {
+      
+      
+      
+      const bool isBottomToTop = wm.IsVertical() && wm.IsInlineReversed();
       mCachedCurrentTime.emplace(CurrentTimeData{
           ScrollTimeline::CurrentTimeData{scrollPosition.y, scrollRange.height},
-          scrollPort.height, subjectRect.y, subjectRect.height,
-          sideInsets.first, sideInsets.second});
+          scrollPort.height,
+          isBottomToTop ? scrolledFrame->GetSize().height - subjectRect.YMost()
+                        : subjectRect.y,
+          subjectRect.height, sideInsets.first, sideInsets.second});
       break;
+    }
     case layers::ScrollDirection::eHorizontal:
       mCachedCurrentTime.emplace(CurrentTimeData{
           ScrollTimeline::CurrentTimeData{scrollPosition.x, scrollRange.width},
@@ -209,7 +217,7 @@ bool ViewTimeline::UpdateCachedCurrentTime() {
           
           
           
-          scrolledFrame->GetWritingMode().IsPhysicalRTL()
+          wm.IsPhysicalRTL()
               ? scrolledFrame->GetSize().width - subjectRect.XMost()
               : subjectRect.x,
           subjectRect.width, sideInsets.first, sideInsets.second});
