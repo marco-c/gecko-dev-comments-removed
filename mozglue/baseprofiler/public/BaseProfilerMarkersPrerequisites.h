@@ -700,6 +700,7 @@ class MarkerSchema {
   
   
   enum class InputType {
+    Undefined,
     Uint64,
     Uint32,
     Uint8,
@@ -873,11 +874,15 @@ class MarkerSchema {
   
   struct PayloadField {
     
-    const char* Key;
     
-    InputType InputTy;
+    const char* Key = nullptr;
+    
+    
+    InputType InputTy = InputType::Undefined;
+    
     
     const char* Label = nullptr;
+    
     
     Format Fmt = Format::String;
     
@@ -1227,7 +1232,13 @@ struct BaseMarkerType {
     if constexpr (T::ColorField) {
       schema.SetColorField(T::ColorField);
     }
-    for (const MS::PayloadField field : T::PayloadFields) {
+    if constexpr (std::extent_v<decltype(T::PayloadFields)>) {
+      static_assert(
+          CheckPayloadFields(T::PayloadFields),
+          "PayloadField requires a non-null Key and an InputTy other than "
+          "Undefined");
+    }
+    for (const MS::PayloadField& field : T::PayloadFields) {
       if (field.Label) {
         schema.AddKeyLabelFormat(field.Key, field.Label, field.Fmt,
                                  field.Flags);
@@ -1268,6 +1279,21 @@ struct BaseMarkerType {
     StreamJSONMarkerDataImplHelper(
         aWriter, std::index_sequence_for<PayloadArguments...>{},
         aPayloadArguments...);
+  }
+
+ private:
+  template <std::size_t N>
+  static constexpr bool CheckPayloadFields(
+      const MarkerSchema::PayloadField (&aPayloadFields)[N]) {
+    for (const auto& field : aPayloadFields) {
+      if (field.Key == nullptr) {
+        return false;
+      }
+      if (field.InputTy == MarkerSchema::InputType::Undefined) {
+        return false;
+      }
+    }
+    return true;
   }
 };
 }  
