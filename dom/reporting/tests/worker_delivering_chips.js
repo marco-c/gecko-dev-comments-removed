@@ -1,6 +1,4 @@
 
-
-
 new TestingDeprecatedInterface();
 
 postMessage("done");

@@ -21,9 +21,6 @@ let fakeBytes = null;
 
 add_setup(async () => {
   fakeBytes = new Uint8Array(FAKE_BYTES_AMOUNT);
-  
-  
-  
   let gen = seededRandomNumberGenerator();
   for (let i = 0; i < FAKE_BYTES_AMOUNT; ++i) {
     fakeBytes.set(gen.next().value, i);
