@@ -248,6 +248,7 @@ class ObjectFuse {
   
   
   
+  bool needsSweep(JSTracer* trc) const { return false; }
   bool traceWeak(JSTracer* trc) {
     dependencies_.traceWeak(trc);
     return true;

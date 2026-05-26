@@ -52,6 +52,18 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 #ifndef GCPolicyAPI_h
 #define GCPolicyAPI_h
 
@@ -96,6 +108,9 @@ struct StructGCPolicy : public GCPolicyBase<T> {
   static void trace(JSTracer* trc, T* tp, const char* name) { tp->trace(trc); }
 
   static bool traceWeak(JSTracer* trc, T* tp) { return tp->traceWeak(trc); }
+  static bool needsSweep(JSTracer* trc, const T* tp) {
+    return tp->needsSweep(trc);
+  }
 };
 
 
@@ -110,6 +125,7 @@ template <typename T>
 struct IgnoreGCPolicy : public GCPolicyBase<T> {
   static void trace(JSTracer* trc, T* t, const char* name) {}
   static bool traceWeak(JSTracer*, T* v) { return true; }
+  static bool needsSweep(JSTracer* trc, const T* v) { return false; }
 };
 template <>
 struct GCPolicy<uint8_t> : public IgnoreGCPolicy<uint8_t> {};
@@ -162,6 +178,10 @@ struct GCPolicy<JS::Heap<T>> : public GCPolicyBase<JS::Heap<T>> {
   static bool traceWeak(JSTracer* trc, JS::Heap<T>* thingp) {
     return !*thingp || js::gc::TraceWeakEdge(trc, thingp);
   }
+  static bool needsSweep(JSTracer* trc, const JS::Heap<T>* thingp) {
+    T* thing = const_cast<T*>(thingp->unsafeAddress());
+    return thing && js::gc::EdgeNeedsSweepUnbarrieredSlow(thing);
+  }
 };
 
 
@@ -176,6 +196,9 @@ struct GCPolicy<mozilla::UniquePtr<T, D>>
   }
   static bool traceWeak(JSTracer* trc, mozilla::UniquePtr<T, D>* tp) {
     return !tp->get() || GCPolicy<T>::traceWeak(trc, tp->get());
+  }
+  static bool needsSweep(JSTracer* trc, const mozilla::UniquePtr<T, D>* tp) {
+    return tp->get() && GCPolicy<T>::needsSweep(trc, tp->get());
   }
   static bool isValid(const mozilla::UniquePtr<T, D>& t) {
     return !t.get() || GCPolicy<T>::isValid(*t.get());
@@ -200,6 +223,9 @@ struct GCPolicy<mozilla::Maybe<T>> : public GCPolicyBase<mozilla::Maybe<T>> {
   static bool traceWeak(JSTracer* trc, mozilla::Maybe<T>* tp) {
     return tp->isNothing() || GCPolicy<T>::traceWeak(trc, tp->ptr());
   }
+  static bool needsSweep(JSTracer* trc, const mozilla::Maybe<T>* tp) {
+    return tp->isSome() && GCPolicy<T>::needsSweep(trc, tp->ptr());
+  }
   static bool isValid(const mozilla::Maybe<T>& t) {
     return t.isNothing() || GCPolicy<T>::isValid(t.ref());
   }
@@ -214,6 +240,10 @@ struct GCPolicy<std::pair<T1, T2>> : public GCPolicyBase<std::pair<T1, T2>> {
   static bool traceWeak(JSTracer* trc, std::pair<T1, T2>* tp) {
     return GCPolicy<T1>::traceWeak(trc, &tp->first) &&
            GCPolicy<T2>::traceWeak(trc, &tp->second);
+  }
+  static bool needsSweep(JSTracer* trc, const std::pair<T1, T2>* tp) {
+    return GCPolicy<T1>::needsSweep(trc, &tp->first) ||
+           GCPolicy<T2>::needsSweep(trc, &tp->second);
   }
   static bool isValid(const std::pair<T1, T2>& t) {
     return GCPolicy<T1>::isValid(t.first) && GCPolicy<T2>::isValid(t.second);
