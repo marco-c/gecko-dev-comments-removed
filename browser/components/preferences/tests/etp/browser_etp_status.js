@@ -7,8 +7,6 @@ add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
       
-      ["browser.settings-redesign.etpStatus.enabled", true],
-      
       ["browser.contentblocking.category", "standard"],
     ],
   });
@@ -93,6 +91,7 @@ add_task(async function test_protections_dashboard_link() {
     gBrowser,
     "about:protections"
   );
+  protectionsDashboardLink.scrollIntoView();
   await BrowserTestUtils.synthesizeMouseAtCenter(
     "#protectionsDashboardLink",
     {},

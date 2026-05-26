@@ -300,6 +300,11 @@ async function waitForAndAssertPrefState(pref, expectedValue, message) {
 
 
 async function selectHistoryMode(win, value) {
+  if (Services.prefs.getBoolPref("browser.settings-redesign.enabled", false)) {
+    await selectRedesignedHistoryMode(win, value);
+    return;
+  }
+
   let historyMode = win.document.getElementById("historyMode").inputEl;
 
   
