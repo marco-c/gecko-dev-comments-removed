@@ -8,7 +8,7 @@
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/TaskQueue.h"
 #include "mozilla/dom/CacheExpirationTime.h"
-#include "mozilla/net/UrlClassifierFeatureFactory.h"
+#include "mozilla/net/ChannelClassifierUtils.h"
 #include "nsContentUtils.h"
 #include "nsIAsyncVerifyRedirectCallback.h"
 #include "nsIChannel.h"
@@ -114,8 +114,7 @@ StreamLoader::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
   auto HandleErrorInMainThread = [&] {
     MOZ_ASSERT(mStatus != NS_OK_PARSE_SHEET);
     MOZ_ASSERT(NS_IsMainThread());
-    if (net::UrlClassifierFeatureFactory::IsClassifierBlockingErrorCode(
-            mStatus)) {
+    if (net::ChannelClassifierUtils::IsClassifierBlockingErrorCode(mStatus)) {
       
       
       

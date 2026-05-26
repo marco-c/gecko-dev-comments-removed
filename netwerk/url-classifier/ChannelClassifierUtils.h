@@ -35,6 +35,20 @@ class ChannelClassifierUtils final {
       const nsACString& aList, nsresult aErrorCode, uint32_t aReplacedEvent,
       uint32_t aAllowedEvent, bool* aShouldContinue);
 
+  
+  static bool IsClassifierBlockingErrorCode(nsresult aError);
+
+  
+  
+  static bool IsClassifierBlockingEventCode(uint32_t aEventCode);
+
+  static uint32_t GetClassifierBlockingEventCode(nsresult aErrorCode);
+
+  
+  
+  static const char* ClassifierBlockingErrorCodeToConsoleMessage(
+      nsresult aError, nsACString& aCategory);
+
   static bool IsPassiveContent(nsIChannel* aChannel);
 
   static bool IsTrackingClassificationFlag(uint32_t aFlag, bool aIsPrivate);
