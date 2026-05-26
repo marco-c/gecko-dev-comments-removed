@@ -9,6 +9,7 @@
 #include "AutoClose.h"
 #include "HttpBaseChannel.h"
 #include "HttpTransactionShell.h"
+#include "nsHttpResponseHead.h"
 #include "nsIReplacedHttpResponse.h"
 #include "TimingStruct.h"
 #include "mozilla/AtomicBitfields.h"
@@ -870,7 +871,7 @@ class nsHttpChannel final : public HttpBaseChannel,
 
   
   
-  int32_t mProxyConnectResponseCode{0};
+  Maybe<nsHttpResponseHead> mProxyConnectResponseHead;
 
   
   
