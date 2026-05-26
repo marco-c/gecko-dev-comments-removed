@@ -988,41 +988,46 @@ void RunJSMicroTask(JSContext* aCx, CycleCollectedJSContext* aCCJS,
       asyncStackSetter.emplace(aCx, allocStack, reason);
     }
 
-    bool propagate = ShouldPropagateUserInputEventHandlingState(aMicroTask);
-    AutoHandlingUserInputStatePusher userInputStateSwitcher(propagate);
+    {
+      
+      
+      bool propagate = ShouldPropagateUserInputEventHandlingState(aMicroTask);
+      AutoHandlingUserInputStatePusher userInputStateSwitcher(propagate);
 
-    
-    mozilla::Maybe<AutoProfilerTerminatingFlowMarkerFlowOnly> terminatingMarker;
-    MaybeGetFlowMarker(aMicroTask, terminatingMarker);
+      
+      mozilla::Maybe<AutoProfilerTerminatingFlowMarkerFlowOnly>
+          terminatingMarker;
+      MaybeGetFlowMarker(aMicroTask, terminatingMarker);
 
-    if (incumbentGlobal) {
+      if (incumbentGlobal) {
+        
+        
+        
+        incumbentGlobal->SetWebTaskSchedulingState(schedulingState);
+      }
+
       
       
       
-      incumbentGlobal->SetWebTaskSchedulingState(schedulingState);
-    }
+      bool ret = aMicroTask.get().RunAndConsumeJSMicroTask(aCx);
 
-    
-    
-    
-    bool ret = aMicroTask.get().RunAndConsumeJSMicroTask(aCx);
+      
+      
+      if (incumbentGlobal) {
+        incumbentGlobal->SetWebTaskSchedulingState(nullptr);
+      }
 
-    
-    
-    if (incumbentGlobal) {
-      incumbentGlobal->SetWebTaskSchedulingState(nullptr);
+      
+      
+      if (!ret) {
+        return;
+      }
     }
 
     
     
     
     if (!StaticPrefs::javascript_options_batch_microtask_execution()) {
-      return;
-    }
-
-    
-    
-    if (!ret) {
       return;
     }
 
@@ -1101,7 +1106,7 @@ void RunJSMicroTask(JSContext* aCx, CycleCollectedJSContext* aCCJS,
 
       
       
-      ret = aMicroTask.get().RunAndConsumeJSMicroTask(aCx);
+      bool ret = aMicroTask.get().RunAndConsumeJSMicroTask(aCx);
 
       
       
