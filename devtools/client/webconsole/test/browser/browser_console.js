@@ -95,14 +95,7 @@ async function testMessages() {
   
   const browserConsoleGlobal = Cu.getGlobalForObject(hud);
   const chromeWorker = new browserConsoleGlobal.ChromeWorker(
-    URL.createObjectURL(
-      new browserConsoleGlobal.Blob(
-        [`console.log("message in chrome worker")`],
-        {
-          type: "application/javascript",
-        }
-      )
-    )
+    getRootDirectory(gTestPath) + "test-chrome-worker.js"
   );
 
   const sandbox = new Cu.Sandbox(null, {
