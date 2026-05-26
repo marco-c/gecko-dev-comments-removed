@@ -3,11 +3,14 @@
 
 package org.mozilla.geckoview.test.util;
 
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.os.MessageQueue;
+import android.os.TestLooperManager;
 import androidx.annotation.NonNull;
+import androidx.test.InstrumentationRegistry;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -15,13 +18,16 @@ import org.mozilla.geckoview.GeckoResult;
 
 public class UiThreadUtils {
   private static Method sGetNextMessage = null;
+  private static TestLooperManager sTestLooperManager = null;
 
   static {
-    try {
-      sGetNextMessage = MessageQueue.class.getDeclaredMethod("next");
-      sGetNextMessage.setAccessible(true);
-    } catch (final NoSuchMethodException e) {
-      throw new IllegalStateException(e);
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.BAKLAVA) {
+      try {
+        sGetNextMessage = MessageQueue.class.getDeclaredMethod("next");
+        sGetNextMessage.setAccessible(true);
+      } catch (final NoSuchMethodException e) {
+        throw new IllegalStateException(e);
+      }
     }
   }
 
@@ -129,7 +135,62 @@ public class UiThreadUtils {
     }
   }
 
+  
+
+
+
+
+
   public static void waitForCondition(final Condition condition, final long timeout) {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.BAKLAVA) {
+      
+      
+      
+      legacyWaitForCondition(condition, timeout);
+      return;
+    }
+
+    
+    
+    final MessageQueue.IdleHandler handler; 
+    if (sTestLooperManager == null) {
+      sTestLooperManager =
+          InstrumentationRegistry.getInstrumentation().acquireLooperManager(HANDLER.getLooper());
+      handler =
+          () -> {
+            HANDLER.postDelayed(() -> {}, 100);
+            return true;
+          };
+      sTestLooperManager.getMessageQueue().addIdleHandler(handler);
+    } else {
+      handler = null;
+    }
+
+    TIMEOUT_RUNNABLE.set(timeout);
+
+    try {
+      while (!condition.test()) {
+        final Message msg = sTestLooperManager.next();
+        if (msg.getTarget() == null) {
+          HANDLER.getLooper().quit();
+          return;
+        }
+        sTestLooperManager.execute(msg);
+        sTestLooperManager.recycle(msg);
+      }
+    } finally {
+      TIMEOUT_RUNNABLE.cancel();
+
+      if (handler != null) {
+        
+        sTestLooperManager.getMessageQueue().removeIdleHandler(handler);
+        sTestLooperManager.release();
+        sTestLooperManager = null;
+      }
+    }
+  }
+
+  private static void legacyWaitForCondition(final Condition condition, final long timeout) {
     
     final MessageQueue queue = HANDLER.getLooper().getQueue();
 
