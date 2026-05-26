@@ -154,8 +154,6 @@ class PageStyleActor extends Actor {
         
         fontWeightLevel4:
           CSS.supports("font-weight: 1") && CSS.supports("font-stretch: 100%"),
-        
-        hasGetAnchorNames: true,
       },
     };
   }
@@ -1000,6 +998,8 @@ class PageStyleActor extends Actor {
 
     const doc = this.inspector.targetActor.window.document;
 
+    let hasClosestAppearanceBaseNode = null;
+
     
     
     for (let i = domRules.length - 1; i >= 0; i--) {
@@ -1036,6 +1036,49 @@ class PageStyleActor extends Actor {
 
         if (!hasInherited) {
           continue;
+        }
+      }
+
+      if (isSystem) {
+        
+        
+        
+        
+        
+        let currentRule = domRule;
+        let hasClosestAppearanceBaseRule = false;
+        while (currentRule) {
+          if (
+            ChromeUtils.getClassName(currentRule) === "CSSAppearanceBaseRule"
+          ) {
+            hasClosestAppearanceBaseRule = true;
+            break;
+          }
+          currentRule = currentRule.parentRule;
+        }
+
+        if (hasClosestAppearanceBaseRule) {
+          
+          if (hasClosestAppearanceBaseNode === null) {
+            hasClosestAppearanceBaseNode = false;
+            let currentNode = node;
+            while (currentNode) {
+              const computed = CssLogic.getComputedStyle(currentNode);
+              const appearance = computed
+                ? computed.getPropertyValue("appearance")
+                : null;
+              if (appearance === "base" || appearance === "base-select") {
+                hasClosestAppearanceBaseNode = true;
+                break;
+              }
+              currentNode = currentNode.parentElement;
+            }
+          }
+
+          if (!hasClosestAppearanceBaseNode) {
+            
+            continue;
+          }
         }
       }
 
@@ -1110,103 +1153,135 @@ class PageStyleActor extends Actor {
     }
 
     if (options.matchedSelectors) {
-      for (const entry of entries) {
-        if (entry.rule.type === ELEMENT_STYLE) {
-          continue;
-        }
-        entry.matchedSelectorIndexes = [];
-
-        const domRule = entry.rule.rawRule;
-        const element = entry.inherited
-          ? entry.inherited.rawNode
-          : node.rawNode;
-
-        const pseudos = [];
-        const { bindingElement, pseudo } =
-          CssLogic.getBindingElementAndPseudo(element);
-
-        
-        
-        if (!bindingElement) {
-          continue;
-        }
-
-        if (pseudo) {
-          pseudos.push(pseudo);
-        } else if (entry.rule.pseudoElements.size) {
-          
-          
-          pseudos.push(...entry.rule.pseudoElements);
-        } else {
-          
-          
-          pseudos.push(null);
-        }
-
-        const relevantLinkVisited = CssLogic.hasVisitedState(bindingElement);
-        const len = domRule.selectorCount;
-        for (let i = 0; i < len; i++) {
-          for (const pseudoElementName of pseudos) {
-            if (
-              domRule.selectorMatchesElement(
-                i,
-                bindingElement,
-                pseudoElementName,
-                relevantLinkVisited
-              )
-            ) {
-              entry.matchedSelectorIndexes.push(i);
-              
-              break;
-            }
-          }
-        }
-      }
+      this.#computeSelectorIndexes(entries, node);
     }
 
     const computedStyle = this.cssLogic.computedStyle;
     if (computedStyle) {
-      
-      let animationNames = computedStyle.animationName.split(",");
-      animationNames = animationNames.map(name => name.trim());
-
-      if (animationNames) {
-        
-        
-        for (const keyframesRule of this.cssLogic.keyframesRules) {
-          if (!animationNames.includes(keyframesRule.name)) {
-            continue;
-          }
-
-          for (const rule of keyframesRule.cssRules) {
-            entries.push(
-              this.#getRuleItem(this.styleRef(rule), null, {
-                keyframes: this.styleRef(keyframesRule),
-              })
-            );
-          }
-        }
-      }
-
-      
-      const positionTryIdents = new Set();
-      for (const part of computedStyle.positionTryFallbacks.split(",")) {
-        const name = part.trim();
-        if (name.startsWith("--")) {
-          positionTryIdents.add(name);
-        }
-      }
-
-      for (const positionTryRule of this.cssLogic.positionTryRules) {
-        if (!positionTryIdents.has(positionTryRule.name)) {
-          continue;
-        }
-
-        entries.push(this.#getRuleItem(this.styleRef(positionTryRule)));
-      }
+      this.#getKeyFrameRules(entries, computedStyle);
+      this.#getPositionTryRules(entries, computedStyle);
     }
 
     return entries;
+  }
+
+  
+
+
+
+
+
+
+  #computeSelectorIndexes(entries, node) {
+    for (const entry of entries) {
+      if (entry.rule.type === ELEMENT_STYLE) {
+        continue;
+      }
+      entry.matchedSelectorIndexes = [];
+
+      const domRule = entry.rule.rawRule;
+      const element = entry.inherited ? entry.inherited.rawNode : node.rawNode;
+
+      const pseudos = [];
+      const { bindingElement, pseudo } =
+        CssLogic.getBindingElementAndPseudo(element);
+
+      
+      
+      if (!bindingElement) {
+        continue;
+      }
+
+      if (pseudo) {
+        pseudos.push(pseudo);
+      } else if (entry.rule.pseudoElements.size) {
+        
+        
+        pseudos.push(...entry.rule.pseudoElements);
+      } else {
+        
+        
+        pseudos.push(null);
+      }
+
+      const relevantLinkVisited = CssLogic.hasVisitedState(bindingElement);
+      const len = domRule.selectorCount;
+      for (let i = 0; i < len; i++) {
+        for (const pseudoElementName of pseudos) {
+          if (
+            domRule.selectorMatchesElement(
+              i,
+              bindingElement,
+              pseudoElementName,
+              relevantLinkVisited
+            )
+          ) {
+            entry.matchedSelectorIndexes.push(i);
+            
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  
+
+
+
+
+
+
+  #getKeyFrameRules(entries, computedStyle) {
+    let animationNames = computedStyle.animationName.split(",");
+    if (!animationNames.length) {
+      return;
+    }
+    animationNames = animationNames.map(name => name.trim());
+
+    
+    
+    for (const keyframesRule of this.cssLogic.keyframesRules) {
+      if (!animationNames.includes(keyframesRule.name)) {
+        continue;
+      }
+
+      for (const rule of keyframesRule.cssRules) {
+        entries.push(
+          this.#getRuleItem(this.styleRef(rule), null, {
+            keyframes: this.styleRef(keyframesRule),
+          })
+        );
+      }
+    }
+  }
+
+  
+
+
+
+
+
+
+  #getPositionTryRules(entries, computedStyle) {
+    const positionTryIdents = new Set();
+    for (const part of computedStyle.positionTryFallbacks.split(",")) {
+      const name = part.trim();
+      if (name.startsWith("--")) {
+        positionTryIdents.add(name);
+      }
+    }
+
+    if (!positionTryIdents.size) {
+      return;
+    }
+
+    for (const positionTryRule of this.cssLogic.positionTryRules) {
+      if (!positionTryIdents.has(positionTryRule.name)) {
+        continue;
+      }
+      entries.push(this.#getRuleItem(this.styleRef(positionTryRule)));
+    }
   }
 
   
