@@ -9,6 +9,7 @@ pub mod convert;
 
 mod color_function;
 pub mod component;
+pub mod gamut;
 pub mod mix;
 pub mod parsing;
 mod to_css;
@@ -36,6 +37,28 @@ impl ColorComponents {
     #[must_use]
     pub fn map(self, f: impl Fn(f32) -> f32) -> Self {
         Self(f(self.0), f(self.1), f(self.2))
+    }
+
+    
+    #[inline]
+    pub fn to_array(&self) -> [f32; 3] {
+        [self.0, self.1, self.2]
+    }
+}
+
+impl std::ops::Add for ColorComponents {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        Self(self.0 + rhs.0, self.1 + rhs.1, self.2 + rhs.2)
+    }
+}
+
+impl std::ops::Sub for ColorComponents {
+    type Output = Self;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        Self(self.0 - rhs.0, self.1 - rhs.1, self.2 - rhs.2)
     }
 }
 
@@ -177,6 +200,24 @@ impl ColorSpace {
             },
         }
     }
+
+    
+    
+    
+    
+    #[inline]
+    pub fn get_linear_color_space(self) -> Option<Self> {
+        match self {
+            Self::Srgb | Self::Hsl | Self::Hwb => Some(Self::SrgbLinear),
+            Self::DisplayP3 => Some(Self::DisplayP3Linear),
+            Self::SrgbLinear | Self::DisplayP3Linear | Self::XyzD50 | Self::XyzD65 => Some(self),
+            
+            
+            
+            Self::A98Rgb | Self::ProphotoRgb | Self::Rec2020 => None,
+            Self::Lab | Self::Lch | Self::Oklab | Self::Oklch => None,
+        }
+    }
 }
 
 
@@ -205,6 +246,7 @@ bitflags! {
 #[derive(Copy, Clone, Debug, MallocSizeOf, ToShmem, ToTyped)]
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 #[repr(C)]
+#[typed(todo_derive_fields)]
 pub struct AbsoluteColor {
     
     pub components: ColorComponents,
