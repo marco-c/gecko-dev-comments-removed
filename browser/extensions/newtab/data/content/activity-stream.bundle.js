@@ -20914,10 +20914,8 @@ function WidgetsManagementPanel({
     ontoggle: onToggleWidget,
     onToggle: onToggleWidget,
     "data-preference": "widgets.sportsWidget.enabled",
-    "data-event-source": "WIDGET_SPORTS"
-    
-    ,
-    label: "Sports"
+    "data-event-source": "WIDGET_SPORTS",
+    "data-l10n-id": "newtab-custom-widget-sports-toggle2"
   })), mayHaveClocksWidget && external_React_default().createElement("div", {
     id: "clocks-widget-section",
     className: "section"
