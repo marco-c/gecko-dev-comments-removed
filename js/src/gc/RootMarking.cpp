@@ -296,8 +296,10 @@ void js::gc::GCRuntime::traceRuntimeCommon(JSTracer* trc,
     JSContext* cx = rt->mainContextFromOwnThread();
 
     
-    TraceInterpreterActivations(cx, trc);
-    jit::TraceJitActivations(cx, trc);
+    TraceActivations(cx, trc);
+#ifdef ENABLE_WASM_JSPI
+    jit::TraceWasmSuspendedContStacks(cx, trc);
+#endif
 
     
     cx->traceAllGCRooters(trc);

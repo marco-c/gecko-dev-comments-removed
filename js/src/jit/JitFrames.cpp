@@ -1416,7 +1416,7 @@ static void TraceTrampolineNativeFrame(JSTracer* trc,
   }
 }
 
-static void TraceJitActivation(JSTracer* trc, JitActivation* activation) {
+void TraceJitFrames(JSTracer* trc, JitActivation* activation) {
 #ifdef CHECK_OSIPOINT_REGISTERS
   if (JitOptions.checkOsiPointRegisters) {
     
@@ -1425,8 +1425,6 @@ static void TraceJitActivation(JSTracer* trc, JitActivation* activation) {
     activation->setCheckRegs(false);
   }
 #endif
-
-  activation->trace(trc);
 
   
   
@@ -1494,7 +1492,7 @@ static void TraceJitActivation(JSTracer* trc, JitActivation* activation) {
 }
 
 #ifdef ENABLE_WASM_JSPI
-static void TraceWasmSuspendedContStacks(JSContext* cx, JSTracer* trc) {
+void TraceWasmSuspendedContStacks(JSContext* cx, JSTracer* trc) {
   gc::AssertRootMarkingPhase(trc);
 
   
@@ -1514,17 +1512,6 @@ static void TraceWasmSuspendedContStacks(JSContext* cx, JSTracer* trc) {
   });
 }
 #endif
-
-void TraceJitActivations(JSContext* cx, JSTracer* trc) {
-  for (JitActivationIterator activations(cx); !activations.done();
-       ++activations) {
-    TraceJitActivation(trc, activations->asJit());
-  }
-
-#ifdef ENABLE_WASM_JSPI
-  TraceWasmSuspendedContStacks(cx, trc);
-#endif
-}
 
 void TraceWeakJitActivationsInSweepingZones(JSContext* cx, JSTracer* trc) {
   for (JitActivationIterator activation(cx); !activation.done(); ++activation) {

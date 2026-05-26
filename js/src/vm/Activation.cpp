@@ -6,6 +6,7 @@
 
 #include "mozilla/Assertions.h"  
 
+#include "vm/JitActivation.h"
 #include "vm/JSContext.h"  
 
 using namespace js;
@@ -30,4 +31,13 @@ ActivationIterator& ActivationIterator::operator++() {
   MOZ_ASSERT(activation_);
   activation_ = activation_->prev();
   return *this;
+}
+
+void Activation::trace(JSTracer* trc) {
+  if (isInterpreter()) {
+    asInterpreter()->trace(trc);
+    return;
+  }
+
+  asJit()->trace(trc);
 }
