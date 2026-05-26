@@ -1522,13 +1522,7 @@ DWORD nsWindow::WindowExStyle() {
 
 
 bool nsWindow::ShouldAssociateWithWinAppSDK() const {
-  
-  
-  
-  
-  
-  
-  return IsTopLevelWidget() && mPiPType == PiPType::NoPiP;
+  return IsTopLevelWidget();
 }
 
 bool nsWindow::AssociateWithNativeWindow() {
