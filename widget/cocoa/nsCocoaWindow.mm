@@ -5207,6 +5207,36 @@ nsresult nsCocoaWindow::CreateNativeWindow(const NSRect& aRect,
     mWindow.collectionBehavior =
         mWindow.collectionBehavior | NSWindowCollectionBehaviorCanJoinAllSpaces;
   }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if ((mWindowType == WindowType::TopLevel ||
+       mWindowType == WindowType::Dialog) &&
+      (features & NSWindowStyleMaskTitled)) {
+    NSWindowCollectionBehavior fsBehavior =
+        (features & NSWindowStyleMaskResizable)
+            ? (NSWindowCollectionBehaviorFullScreenPrimary |
+               NSWindowCollectionBehaviorFullScreenAllowsTiling)
+            : (NSWindowCollectionBehaviorFullScreenAuxiliary |
+               NSWindowCollectionBehaviorFullScreenDisallowsTiling);
+    mWindow.collectionBehavior |= fsBehavior;
+  }
+
   mWindow.contentMinSize = NSMakeSize(60, 60);
 
   
@@ -7257,11 +7287,24 @@ void nsCocoaWindow::SetSupportsNativeFullscreen(
     
     
     
+    
+    
+    
+    
+    
+    
+    
     NSWindowCollectionBehavior newBehavior = [mWindow collectionBehavior];
+    newBehavior &= ~(NSWindowCollectionBehaviorFullScreenPrimary |
+                     NSWindowCollectionBehaviorFullScreenAuxiliary |
+                     NSWindowCollectionBehaviorFullScreenAllowsTiling |
+                     NSWindowCollectionBehaviorFullScreenDisallowsTiling);
     if (aSupportsNativeFullscreen) {
-      newBehavior |= NSWindowCollectionBehaviorFullScreenPrimary;
+      newBehavior |= NSWindowCollectionBehaviorFullScreenPrimary |
+                     NSWindowCollectionBehaviorFullScreenAllowsTiling;
     } else {
-      newBehavior &= ~NSWindowCollectionBehaviorFullScreenPrimary;
+      newBehavior |= NSWindowCollectionBehaviorFullScreenAuxiliary |
+                     NSWindowCollectionBehaviorFullScreenDisallowsTiling;
     }
     [mWindow setCollectionBehavior:newBehavior];
   }
