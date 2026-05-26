@@ -3947,12 +3947,11 @@ void Selection::NotifySelectionListeners() {
   if (PresShell* presShell = GetPresShell()) {
     doc = presShell->GetDocument();
     presShell->ScheduleContentRelevancyUpdate(ContentRelevancyReason::Selected);
-  }
-
-  if (mSelectionType == SelectionType::eNormal && RangeCount()) {
-    
-    
-    doc->SetFocusNavigationStartingPoint(nullptr);
+    if (mSelectionType == SelectionType::eNormal && RangeCount() && doc) {
+      
+      
+      doc->SetFocusNavigationStartingPoint(nullptr);
+    }
   }
 
   RefPtr<nsFrameSelection> frameSelection = mFrameSelection;
