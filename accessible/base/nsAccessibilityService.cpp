@@ -1665,13 +1665,6 @@ bool nsAccessibilityService::Init(uint64_t aCacheDomains) {
 
   observerService->AddObserver(this, NS_XPCOM_SHUTDOWN_OBSERVER_ID, false);
 
-#if defined(XP_WIN)
-  
-  if (XRE_IsParentProcess()) {
-    Compatibility::Init();
-  }
-#endif  
-
   
   nsCOMPtr<nsIEventListenerService> eventListenerService =
       do_GetService("@mozilla.org/eventlistenerservice;1");
