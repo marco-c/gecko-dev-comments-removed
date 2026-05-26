@@ -3801,16 +3801,16 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   void wasmLoad(const wasm::MemoryAccessDesc& access, Register memoryBase,
                 Register ptr, Register ptrScratch, AnyRegister output)
-      DEFINED_ON(arm, loong64, riscv64, mips64);
+      DEFINED_ON(arm, loong64, mips64);
   void wasmLoadI64(const wasm::MemoryAccessDesc& access, Register memoryBase,
                    Register ptr, Register ptrScratch, Register64 output)
-      DEFINED_ON(arm, mips64, loong64, riscv64);
+      DEFINED_ON(arm, mips64, loong64);
   void wasmStore(const wasm::MemoryAccessDesc& access, AnyRegister value,
                  Register memoryBase, Register ptr, Register ptrScratch)
-      DEFINED_ON(arm, loong64, riscv64, mips64);
+      DEFINED_ON(arm, loong64, mips64);
   void wasmStoreI64(const wasm::MemoryAccessDesc& access, Register64 value,
                     Register memoryBase, Register ptr, Register ptrScratch)
-      DEFINED_ON(arm, mips64, loong64, riscv64);
+      DEFINED_ON(arm, mips64, loong64);
 
   
   
@@ -3818,13 +3818,14 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   
   void wasmLoad(const wasm::MemoryAccessDesc& access, Register memoryBase,
-                Register ptr, AnyRegister output) DEFINED_ON(arm64);
+                Register ptr, AnyRegister output) DEFINED_ON(arm64, riscv64);
   void wasmLoadI64(const wasm::MemoryAccessDesc& access, Register memoryBase,
-                   Register ptr, Register64 output) DEFINED_ON(arm64);
+                   Register ptr, Register64 output) DEFINED_ON(arm64, riscv64);
   void wasmStore(const wasm::MemoryAccessDesc& access, AnyRegister value,
-                 Register memoryBase, Register ptr) DEFINED_ON(arm64);
+                 Register memoryBase, Register ptr) DEFINED_ON(arm64, riscv64);
   void wasmStoreI64(const wasm::MemoryAccessDesc& access, Register64 value,
-                    Register memoryBase, Register ptr) DEFINED_ON(arm64);
+                    Register memoryBase, Register ptr)
+      DEFINED_ON(arm64, riscv64);
 
   
   void wasmUnalignedLoad(const wasm::MemoryAccessDesc& access,
