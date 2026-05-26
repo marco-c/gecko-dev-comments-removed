@@ -26,6 +26,31 @@ using namespace mozilla;
 using mozilla::dom::CallerType;
 using mozilla::dom::Event;
 
+
+
+
+
+static bool IsStandardEditMenuItem(nsIContent* aContent) {
+  if (!aContent || !aContent->IsElement()) {
+    return false;
+  }
+  dom::Element* element = aContent->AsElement();
+  return element->AttrValueIs(kNameSpaceID_None, nsGkAtoms::id, u"menu_undo"_ns,
+                              eCaseMatters) ||
+         element->AttrValueIs(kNameSpaceID_None, nsGkAtoms::id, u"menu_redo"_ns,
+                              eCaseMatters) ||
+         element->AttrValueIs(kNameSpaceID_None, nsGkAtoms::id, u"menu_cut"_ns,
+                              eCaseMatters) ||
+         element->AttrValueIs(kNameSpaceID_None, nsGkAtoms::id, u"menu_copy"_ns,
+                              eCaseMatters) ||
+         element->AttrValueIs(kNameSpaceID_None, nsGkAtoms::id,
+                              u"menu_paste"_ns, eCaseMatters) ||
+         element->AttrValueIs(kNameSpaceID_None, nsGkAtoms::id,
+                              u"menu_delete"_ns, eCaseMatters) ||
+         element->AttrValueIs(kNameSpaceID_None, nsGkAtoms::id,
+                              u"menu_selectAll"_ns, eCaseMatters);
+}
+
 nsMenuItemX::nsMenuItemX(nsMenuX* aParent, const nsString& aLabel,
                          EMenuItemType aItemType,
                          nsMenuGroupOwnerX* aMenuGroupOwner, nsIContent* aNode)
@@ -402,10 +427,18 @@ void nsMenuItemX::SetChecked() {
 void nsMenuItemX::SetEnabled() {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
-  
-  
   bool isEnabled;
-  if (mCommandElement) {
+  if (IsStandardEditMenuItem(mContent)) {
+    
+    
+    
+    
+    
+    
+    
+    
+    isEnabled = true;
+  } else if (mCommandElement) {
     isEnabled = !mCommandElement->GetBoolAttr(nsGkAtoms::disabled);
   } else if (mContent->IsXULElement(nsGkAtoms::menucaption)) {
     isEnabled = false;
