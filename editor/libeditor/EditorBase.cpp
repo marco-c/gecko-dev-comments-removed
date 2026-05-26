@@ -7044,11 +7044,7 @@ nsresult EditorBase::AutoEditActionDataSetter::MaybeDispatchBeforeInputEvent(
   }
   OwningNonNull<EditorBase> editorBase = mEditorBase;
   EditorInputType inputType = ToInputType(mEditAction);
-  if (targetElement->IsHTMLElement(nsGkAtoms::canvas) &&
-      targetElement->HasFlag(ELEMENT_HAS_EDIT_CONTEXT)) {
-    
-    mTargetRanges.Clear();
-  } else if (editorBase->IsHTMLEditor() && mTargetRanges.IsEmpty()) {
+  if (editorBase->IsHTMLEditor() && mTargetRanges.IsEmpty()) {
     
     
     if (MayEditActionDeleteAroundCollapsedSelection(mEditAction) ||

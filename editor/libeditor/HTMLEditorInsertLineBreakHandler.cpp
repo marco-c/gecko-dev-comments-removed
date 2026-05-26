@@ -67,11 +67,6 @@ nsresult HTMLEditor::InsertLineBreakAsSubAction() {
     }
   }
 
-  if (GetEditContext()) {
-    
-    return NS_OK;
-  }
-
   
   
   AutoPlaceholderBatch treatAsOneTransaction(*this, *nsGkAtoms::TypingTxnName,
