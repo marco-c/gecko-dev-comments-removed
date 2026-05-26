@@ -178,6 +178,7 @@ class OutputParser {
       name,
       "timing-function"
     );
+    this.parsedPropertyName = name;
     options.expectDisplay = name === "display";
     options.expectFilter =
       name === "filter" ||
@@ -853,6 +854,7 @@ class OutputParser {
     }
 
     let attrNameIndex = null;
+    let attrTypeIndex = null;
     let commaIndex = null;
     for (let i = 0; i < stackEntry.parts.length; i++) {
       const part = stackEntry.parts[i];
@@ -860,16 +862,24 @@ class OutputParser {
         continue;
       }
       const token = stackEntry.tokensByPart.get(part);
-      if (token.tokenType === AGGREGATED_TOKEN_TYPE) {
-        continue;
-      }
 
       
       if (token.tokenType === "Ident" && attrNameIndex === null) {
         attrNameIndex = i;
-      }
-
-      if (token.tokenType === "Comma") {
+      } else if (
+        
+        
+        attrNameIndex !== null &&
+        attrTypeIndex === null &&
+        
+        
+        
+        (token.tokenType === "Ident" ||
+          (token.tokenType === "Delim" && token.text === "%") ||
+          token.tokenType === AGGREGATED_TOKEN_TYPE)
+      ) {
+        attrTypeIndex = i;
+      } else if (token.tokenType === "Comma") {
         commaIndex = i;
         break;
       }
@@ -887,37 +897,115 @@ class OutputParser {
     const attrValue = options.getAttributeValue(attrName);
 
     
+    
+    const attrFirstParamNode = this.#createNode("span", {
+      class: "inspector-attr-param",
+    });
+
+    // > When an <attr-type> is set, attr() will try to parse the attribute into that
+    // > specified <attr-type> and return it.
+    // > If the attribute cannot be parsed into the given <attr-type>, the <fallback-value>
+    // > will be returned instead.
+    // > When no <attr-type> is set, the attribute will be parsed into a CSS string.
+    // > If no <fallback-value> is set, the return value will default to an empty string
+    // > when no <attr-type> is set or the guaranteed-invalid value when an <attr-type> is set.
+    let fallbackValueIsUsed = attrValue === null;
+    let attrTypeMismatchText;
+    if (attrTypeIndex !== null && attrValue !== null) {
+      const part = stackEntry.parts[attrTypeIndex];
+      const token = stackEntry.tokensByPart.get(part);
+      // First, we want to handle <attr-type> other than `type()`, i.e. Idents (`raw-string`,
+      // `number`, `px`, …) and `%`
+      if (
+        token.tokenType === "Ident" ||
+        (token.tokenType === "Delim" && token.text === "%")
+      ) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
+        
+        
+        
+
+        if (
+          token.text !== "raw-string" &&
+          !InspectorUtils.valueMatchesSyntax(this.#doc, attrValue, "<number>")
+        ) {
+          fallbackValueIsUsed = true;
+          attrTypeMismatchText = STYLE_INSPECTOR_L10N.getFormatStr(
+            "rule.attributeNotNumber",
+            `"${attrValue}"`
+          );
+        }
+      } else if (
+        token.tokenType === AGGREGATED_TOKEN_TYPE &&
+        token.data.lowerCaseFunctionName === "type"
+      ) {
+        
+        
+        
+        const syntax = token.data.text
+          .slice(
+            
+            5,
+            
+            -1
+          )
+          .trim();
+        if (!InspectorUtils.valueMatchesSyntax(this.#doc, attrValue, syntax)) {
+          fallbackValueIsUsed = true;
+          attrTypeMismatchText = STYLE_INSPECTOR_L10N.getFormatStr(
+            "rule.attributeUnmatchedType",
+            `"${attrValue}"`,
+            `"${syntax}"`
+          );
+        }
+      }
+    }
+
+    
     const attrNameNode = this.#createNode(
       "span",
       {
         class: "inspector-attr-name",
-        "data-attribute":
-          attrValue === null
-            ? STYLE_INSPECTOR_L10N.getFormatStr("rule.attributeUnset", attrName)
-            : `"${attrValue}"`,
       },
       attrName
     );
     stackEntry.parts[attrNameIndex] = attrNameNode;
 
-    // as well as the first attribute (might contain attribute name + typing information),
-    // with specific style if the attribute isn't set
-    const attrFirstParamNode = this.#createNode("span", {
-      class: "inspector-attr-param",
-    });
-    if (attrValue === null) {
+    if (fallbackValueIsUsed) {
       attrFirstParamNode.classList.add(options.unmatchedClass);
     }
 
-    // Let's put all the parts starting with the attribute name until the comma
+    if (attrValue === null) {
+      attrFirstParamNode.setAttribute(
+        "data-attribute",
+        STYLE_INSPECTOR_L10N.getFormatStr("rule.attributeUnset", attrName)
+      );
+    } else if (attrTypeMismatchText) {
+      attrFirstParamNode.setAttribute("data-attribute", attrTypeMismatchText);
+    } else {
+      
+      attrNameNode.setAttribute("data-attribute", `"${attrValue}"`);
+    }
+
+    
     let attrFirstParamChildCount = 0;
     let attrFirstParamEndIndex;
     if (commaIndex === null) {
-      // if we didn't found a comma, we want to get all the items until the closing
-      // parenthesis, which is the last item in parts
+      
+      
       attrFirstParamEndIndex = stackEntry.parts.length - 1;
     } else if (
-      // if the token before the comma is a whitespace, don't include it in the first param node
+      
       stackEntry.tokensByPart.get(stackEntry.parts[commaIndex - 1])
         ?.tokenType === "WhiteSpace"
     ) {
@@ -930,24 +1018,25 @@ class OutputParser {
       attrFirstParamNode.append(stackEntry.parts[i]);
       attrFirstParamChildCount++;
     }
+
     stackEntry.parts.splice(
       attrNameIndex,
       attrFirstParamChildCount,
       attrFirstParamNode
     );
 
-    // We don't have to do anything more when there's no fallback value, i.e. if we didn't
-    // found a comma
+    
+    
     if (commaIndex === null) {
       return stackEntry.parts;
     }
 
-    // we need to update the comma index, as we added attrFirstParamNode in parts and
-    // removed all the elements we put in it.
+    
+    
     commaIndex = commaIndex + 1 - attrFirstParamChildCount;
     let fallbackStartIndex = null;
-    // Then we want to find the part that correspond to the first non whitespace token,
-    // which will be the start of the fallback param
+    
+    
     for (let i = commaIndex + 1; i < stackEntry.parts.length; i++) {
       const part = stackEntry.parts[i];
       if (!stackEntry.tokensByPart.has(part)) {
@@ -955,8 +1044,8 @@ class OutputParser {
       }
       const token = stackEntry.tokensByPart.get(part);
       if (
-        // we might get into a part that was already handled, for example a nested function,
-        // and in such case, it should be part of the fallback element
+        
+        
         token.tokenType === AGGREGATED_TOKEN_TYPE ||
         token.tokenType !== "WhiteSpace"
       ) {
@@ -965,12 +1054,12 @@ class OutputParser {
       }
     }
 
-    // This shouldn't happen, but let's be safe an bail if we didn't find the fallback part
+    
     if (fallbackStartIndex === null) {
       return stackEntry.parts;
     }
 
-    // The last part is the closing bracket, so let's put the index before it.
+    
     let fallbackEndTokenIndex = stackEntry.parts.length - 2;
     for (let i = fallbackEndTokenIndex; i >= fallbackStartIndex; i--) {
       const part = stackEntry.parts[i];
@@ -979,8 +1068,8 @@ class OutputParser {
       }
       const token = stackEntry.tokensByPart.get(part);
       if (
-        // we might get into a part that was already handled, for example a nested function,
-        // and in such case, it should be part of the fallback element
+        
+        
         token.tokenType === AGGREGATED_TOKEN_TYPE ||
         token.tokenType !== "WhiteSpace"
       ) {
@@ -989,32 +1078,32 @@ class OutputParser {
       }
     }
 
-    // So, at this point, we have the fallback parts that we want to put in their own elements
+    
     const partsToWrap = stackEntry.parts.splice(
       fallbackStartIndex,
       fallbackEndTokenIndex - fallbackStartIndex + 1
     );
 
     const fallbackEl = this.#createNode("span", {
-      class: `inspector-attr-fallback${attrValue !== null ? " " + options.unmatchedClass : ""}`,
+      class: `inspector-attr-fallback${fallbackValueIsUsed ? "" : " " + options.unmatchedClass}`,
     });
     fallbackEl.append(...partsToWrap);
     stackEntry.parts.splice(fallbackStartIndex, 0, fallbackEl);
     return stackEntry.parts;
   }
 
-  /**
-   * Called when we got the closing bracket for any function in BASIC_SHAPE_FUNCTIONS.
-   * It will append a CSS shapes highlighter toggle next to the value, and parse the value
-   * into spans, each containing a point that can be hovered over.
-   *
-   * @param {object} stackEntry
-   *        The last item in this.#stack
-   * @param {object} options
-   *        options passed to the parse function. @see #mergeOptions for valid options
-   *        and default values
-   * @returns {Array<string|Element>} The updated parts for the stack entry that is being closed.
-   */
+  
+
+
+
+
+
+
+
+
+
+
+
   #onCloseParenthesisForBasicShape(stackEntry, options) {
     if (!options.expectShape) {
       return stackEntry.parts;
@@ -1025,14 +1114,14 @@ class OutputParser {
       class: options.shapeClass,
     });
 
-    // Let's retrieve the index in `parts` where the coordinates start
+    
     let coordStartIdx = null;
     let previousToken;
     for (let i = 0; i < stackEntry.parts.length; i++) {
       const part = stackEntry.parts[i];
       const token = stackEntry.tokensByPart.get(part);
-      // Multiple consecutive parts can reference the same token, so let's find the first
-      // part that refers to a token that is not the initial function.
+      
+      
       if (
         token.tokenType === "Function" &&
         (!previousToken || token === previousToken)
@@ -1041,13 +1130,13 @@ class OutputParser {
         previousToken = token;
         valContainer.append(part);
       } else if (coordStartIdx !== null) {
-        // we already found the coordinate, and the token does not represent the initial
-        // function, so we can stop looping
+        
+        
         break;
       }
     }
 
-    // That shouldn't happen, but let's be safe
+    
     if (coordStartIdx === null) {
       return stackEntry.parts;
     }
@@ -1081,18 +1170,18 @@ class OutputParser {
     return [container];
   }
 
-  /**
-   * Called when we got the closing bracket for the `polygon()` function.
-   * It will append a CSS shapes highlighter toggle next to the value, and parse the value
-   * into spans, each containing a point that can be hovered over.
-   *
-   * @param {object} stackEntry
-   *        The last item in this.#stack
-   * @param {number} coordsStartIdx
-   *        The index in stackEntry.parts at which the coordinates for the polygon start
-   * @returns {Array<Element|Text>} The parts that were handled
-   */
-  // eslint-disable-next-line complexity
+  
+
+
+
+
+
+
+
+
+
+
+  
   #onCloseParenthesisForPolygonShape(stackEntry, coordsStartIdx) {
     const points = [];
     let previousToken;
@@ -1104,7 +1193,7 @@ class OutputParser {
         token.tokenType !== "Number" &&
         token.tokenType !== "Dimension" &&
         token.tokenType !== "Percentage" &&
-        // a collapsed function call (e.g. `var(…)`) counts as a single argument
+        
         token.tokenType !== AGGREGATED_TOKEN_TYPE
       ) {
         continue;
@@ -1128,8 +1217,8 @@ class OutputParser {
       previousToken = token;
     }
 
-    // Let's iterate through points in reverse as we're going to mutate stackEntry.parts
-    // and the indexes in `points` refer to the original indexes
+    
+    
     for (let i = points.length - 1; i >= 0; i--) {
       const point = points[i];
       const xNode = this.#createNode("span", {
@@ -1194,40 +1283,40 @@ class OutputParser {
         continue;
       }
 
-      // circle() can take a radius which is before `at`, which can be a length, percentage,
-      // or a keyword (closest-corner, closest-side, farthest-corner, farthest-side)
+      
+      
       if (
         !seenAtKeyword &&
         (token.tokenType === "Number" ||
           token.tokenType === "Dimension" ||
           token.tokenType === "Percentage" ||
           token.tokenType === "Ident" ||
-          // a collapsed function call (e.g. `var(…)`) counts as a single argument
+          
           token.tokenType === AGGREGATED_TOKEN_TYPE)
       ) {
-        // we have a single radius, the array will contain all the indexes of parts that
-        // refer to it.
+        
+        
         radiusPartsIndexes.push(i);
       }
 
-      // after that `at` keyword, the position of the circle is defined. It can be represented
-      // by 1, 2 or 4 length, percentage or keyword (e.g. start, center, …)
-      // So let's collect all those here
+      
+      
+      
       if (
         seenAtKeyword &&
         (token.tokenType === "Number" ||
           token.tokenType === "Dimension" ||
           token.tokenType === "Percentage" ||
           token.tokenType === "Ident" ||
-          // a collapsed function call (e.g. `var(…)`) counts as a single argument
+          
           token.tokenType === AGGREGATED_TOKEN_TYPE)
       ) {
         if (token !== previousToken) {
           positionsPartsIndexes.push([i]);
         } else {
-          // if the token for the current part is the same one as the previous part, then
-          // it represent the same position, so we add the part index to the last position
-          // item we added.
+          
+          
+          
           positionsPartsIndexes.at(-1).push(i);
         }
       }
@@ -1235,9 +1324,9 @@ class OutputParser {
       previousToken = token;
     }
 
-    // We're going to mutate stackEntry.parts, so let's go through the parts in reverse
-    // as the indexes in radiusIndexes and positionIndexes refer to the original indexes
-    // So first, let's handle positions if there are some
+    
+    
+    
     if (positionsPartsIndexes.length) {
       const centerEl = this.#createNode("span", {
         class: "inspector-shape-point",
@@ -1325,45 +1414,45 @@ class OutputParser {
         continue;
       }
 
-      // ellipse() can take two radii before `at`, which can be a lengths, percentages,
-      // or a keywords (closest-corner, closest-side, farthest-corner, farthest-side)
+      
+      
       if (
         !seenAtKeyword &&
         (token.tokenType === "Number" ||
           token.tokenType === "Dimension" ||
           token.tokenType === "Percentage" ||
           token.tokenType === "Ident" ||
-          // a collapsed function call (e.g. `var(…)`) counts as a single argument
+          
           token.tokenType === AGGREGATED_TOKEN_TYPE)
       ) {
         if (token !== previousToken) {
           radiiPartsIndexes.push([i]);
         } else {
-          // if the token for the current part is the same one as the previous part, then
-          // it represent the same radius, so we add the part index to the last radius
-          // item we added.
+          
+          
+          
           radiiPartsIndexes.at(-1).push(i);
         }
       }
 
-      // after that `at` keyword, the position of the ellipse is defined. It can be represented
-      // by 1, 2 or 4 length, percentage or keyword (e.g. start, center, …)
-      // So let's collect all those here
+      
+      
+      
       if (
         seenAtKeyword &&
         (token.tokenType === "Number" ||
           token.tokenType === "Dimension" ||
           token.tokenType === "Percentage" ||
           token.tokenType === "Ident" ||
-          // a collapsed function call (e.g. `var(…)`) counts as a single argument
+          
           token.tokenType === AGGREGATED_TOKEN_TYPE)
       ) {
         if (token !== previousToken) {
           positionsPartsIndexes.push([i]);
         } else {
-          // if the token for the current part is the same one as the previous part, then
-          // it represent the same position, so we add the part index to the last position
-          // item we added.
+          
+          
+          
           positionsPartsIndexes.at(-1).push(i);
         }
       }
@@ -1371,9 +1460,9 @@ class OutputParser {
       previousToken = token;
     }
 
-    // We're going to mutate stackEntry.parts, so let's go through the parts in reverse
-    // as the indexes in radiusIndexes and positionIndexes refer to the original indexes
-    // So first, let's handle positions if there are some
+    
+    
+    
     if (positionsPartsIndexes.length) {
       const centerEl = this.#createNode("span", {
         class: "inspector-shape-point",
@@ -1462,8 +1551,8 @@ class OutputParser {
       const token = stackEntry.tokensByPart.get(part);
 
       if (token.tokenType === "Ident" && token.text === "round") {
-        // Once we see the `round` keyword, we can stop looping, we have all the coordinates
-        // we need
+        
+        
         break;
       }
 
@@ -1471,7 +1560,7 @@ class OutputParser {
         token.tokenType !== "Number" &&
         token.tokenType !== "Dimension" &&
         token.tokenType !== "Percentage" &&
-        // a collapsed function call (e.g. `var(…)`) counts as a single argument
+        
         token.tokenType !== AGGREGATED_TOKEN_TYPE
       ) {
         continue;
@@ -1489,8 +1578,8 @@ class OutputParser {
 
     const insetPoints = ["top", "right", "bottom", "left"];
 
-    // Let's iterate through points in reverse as we're going to mutate stackEntry.parts
-    // and the indexes in `points` refer to the original indexes
+    
+    
     for (let i = insetPointsPartsIndexes.length - 1; i >= 0; i--) {
       const pointPartsIndexes = insetPointsPartsIndexes[i];
       const shapePointNode = this.#createNode("span", {
@@ -1551,10 +1640,10 @@ class OutputParser {
     }
 
     // url() with quoted strings are not mapped as UnquotedUrl, instead, we get a "Function"
-    // token with "url" (the one we're closing here), and later, a "QuotedString" token
-    // which contains the actual URL.
-    // So here, we only need to loop through the parts to find the one which holds the
-    // QuotedString token and wrap it in an anchor.
+    
+    
+    
+    
     let url;
     for (let i = 0; i < stackEntry.parts.length; i++) {
       const part = stackEntry.parts[i];
@@ -1563,7 +1652,7 @@ class OutputParser {
         continue;
       }
 
-      // url() only takes a string, so we'll only have a single part refering to the url token
+      
       url = token.value;
       break;
     }
@@ -1575,17 +1664,17 @@ class OutputParser {
     return this.#createURLElements(stackEntry.text, url, options);
   }
 
-  /**
-   * Called when we got the closing parenthesis for `var()`.
-   *
-   * @param {object} stackEntry
-   *        The last item in this.#stack
-   * @param {object} options
-   *        options passed to the parse function. @see #mergeOptions for valid options
-   *        and default values
-   * @returns {Array<string|Element>} The updated parts for the stack entry that is being closed.
-   */
-  // eslint-disable-next-line complexity
+  
+
+
+
+
+
+
+
+
+
+  
   #onCloseParenthesisForVar(stackEntry, options) {
     if (!options.getVariableData) {
       return stackEntry.parts;
@@ -1598,19 +1687,19 @@ class OutputParser {
       const part = stackEntry.parts[i];
       const token = stackEntry.tokensByPart.get(part);
 
-      // The variable name is the first Ident we find
+      
       if (varNameIndex === null && token.tokenType === "Ident") {
         varNameIndex = i;
         varName = token.text;
       } else if (token.tokenType === "Comma") {
-        // Anything between the first comma and the end of the function is considered a
-        // fallback value.
+        
+        
         fallbackStartIndex = i + 1;
         break;
       }
     }
 
-    // Shouldn't happen, but let's be safe
+    
     if (varNameIndex === null) {
       return stackEntry.parts;
     }
@@ -1625,9 +1714,9 @@ class OutputParser {
       varStartingStyleValue =
         typeof varData.startingStyle === "string"
           ? varData.startingStyle
-          : // If the variable is not set in starting style, then it will default to either:
-            // - a declaration in a "regular" rule
-            // - or if there's no declaration in regular rule, to the registered property initial-value.
+          : 
+            
+            
             varValue;
     }
 
@@ -1635,21 +1724,21 @@ class OutputParser {
       ? varStartingStyleValue
       : varValue;
     const variableExists = typeof varSubstitutedValue === "string";
-    // TODO: we should also check if the variable is not guaranteed invalid (see Bug 1904013)
+    
     const shouldUseFallback = !variableExists;
     const varComputedValue = varData.computedValue;
     const varNameNodeOptions = {};
     const varFallbackNodeOptions = {};
 
     if (variableExists) {
-      // The variable value is valid, store the substituted value in a data attribute to
-      // be reused by the variable tooltip.
+      
+      
       varNameNodeOptions["data-variable"] = varSubstitutedValue;
       varNameNodeOptions.class = options.matchedVariableClass;
       varFallbackNodeOptions.class = options.unmatchedClass;
 
-      // Display computed value when it exists, is different from the substituted value
-      // we computed, and we're not inside a starting-style rule
+      
+      
       if (
         !options.inStartingStyleRule &&
         typeof varComputedValue === "string" &&
@@ -1658,7 +1747,7 @@ class OutputParser {
         varNameNodeOptions["data-variable-computed"] = varComputedValue;
       }
 
-      // Display starting-style value when not in a starting style rule
+      
       if (
         !options.inStartingStyleRule &&
         typeof varData.startingStyle === "string"
@@ -1672,11 +1761,11 @@ class OutputParser {
         varNameNodeOptions["data-registered-property-initial-value"] =
           initialValue;
         varNameNodeOptions["data-registered-property-syntax"] = syntax;
-        // createNode does not handle `false`, let's stringify the boolean.
+        
         varNameNodeOptions["data-registered-property-inherits"] = `${inherits}`;
       }
     } else {
-      // The variable is not set and does not have an initial value, mark it unmatched.
+      
       varNameNodeOptions.class = options.unmatchedClass;
       varNameNodeOptions["data-variable"] = STYLE_INSPECTOR_L10N.getFormatStr(
         "rule.variableUnset",
@@ -1698,20 +1787,20 @@ class OutputParser {
       );
     }
 
-    // From https://drafts.csswg.org/css-variables/#using-variables:
-    // > var(--a,) is a valid function, specifying that if the --a custom property is
-    // > invalid or missing, the var() should be replaced with nothing.
-    //
-    // So if we saw a comma, initialize the value with an empty string
+    
+    
+    
+    
+    
     let fallbackSubstitutedValue = fallbackStartIndex !== null ? "" : null;
 
     if (fallbackStartIndex !== null) {
-      // We want to wrap the fallback into a span, so let's find the last non whitespace
-      // token before the closing parenthesis now
+      
+      
       let fallbackEndIndex = null;
       for (
-        // we can start at the part before the last one, as the last one will always be
-        // the closing parenthesis
+        
+        
         let i = stackEntry.parts.length - 2;
         i >= fallbackStartIndex;
         i--
@@ -1748,13 +1837,13 @@ class OutputParser {
       );
     }
 
-    // Now that we went through the fallback, we can re-compute varSubstitutedValue
-    // to potentially include the fallback value.
+    
+    
     if (shouldUseFallback) {
-      // If the fallback should be used (i.e. the variable value is guaranteed invalid)
-      // but none was found, then the substituted value should be an empty string, as
-      // defined in https://drafts.csswg.org/css-variables/#guaranteed-invalid:
-      // > The guaranteed-invalid value serializes as the empty string
+      
+      
+      
+      
       if (fallbackSubstitutedValue === null) {
         varSubstitutedValue = "";
       } else {
@@ -1762,19 +1851,19 @@ class OutputParser {
       }
     }
 
-    // TODO: We should handle the following case (see Bug 2006565)
-    // From https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Values/var#invalid_values:
-    // > var() functions can resolve to invalid values if:
-    // > - […]
-    // > - The custom property is defined but its value is an invalid value for the
-    //     property it is used in.
-    // > When this happens, the property is treated as if it has value unset
+    
+    
+    
+    
+    
+    
+    
 
-    // TODO: When we're in a @starting-style rule, we shouldn't use the computed value (see Bug 2016778)
+    
     const varComputedOrSubstitutedValue =
       varComputedValue ?? varSubstitutedValue;
 
-    // Put the substitutedText in the entry so it can then be consumed in onCloseParenthesis
+    
     stackEntry.substitutedText = varComputedOrSubstitutedValue;
 
     if (
@@ -1783,8 +1872,8 @@ class OutputParser {
         this.#stack.length !== 0 &&
         this.#stack.at(-1).isColorTakingFunction)
     ) {
-      // InspectorUtils.isValidCSSColor returns true for `light-dark()` function,
-      // but `#isValidColor` returns false. As the latter is used in #appendColor,
+      
+      
       
       const colorObj =
         varSubstitutedValue &&
@@ -1995,7 +2084,7 @@ class OutputParser {
 
 
 
-  #cssPropertySupportsValue(name, value, options) {
+  #cssPropertySupportsValue(name, value, options = {}) {
     if (
       options.isValid ||
       
