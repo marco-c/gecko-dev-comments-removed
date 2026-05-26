@@ -20,6 +20,7 @@ pub mod crash_annotations {
 
 use bytes::Bytes;
 use messages::MessageError;
+use mozannotation_server::CAnnotation;
 
 
 pub type GeckoChildId = i32;
@@ -77,3 +78,11 @@ pub trait BreakpadString {
 }
 
 pub const IO_TIMEOUT: u16 = 2 * 1000;
+
+
+
+#[derive(Default)]
+pub struct ExtraCrashData {
+    pub error: Option<std::ffi::CString>,
+    pub annotations: Vec<CAnnotation>,
+}
