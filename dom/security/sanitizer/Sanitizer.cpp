@@ -1820,12 +1820,19 @@ void Sanitizer::SanitizeChildren(nsINode* aNode, bool aSafe) const {
       SanitizeChildren<IsDefaultConfig>(shadow, aSafe);
     }
 
-    if constexpr (IsDefaultConfig) {
-      if (CustomElementData* data = child->AsElement()->GetCustomElementData())
-          [[unlikely]] {
-        MOZ_ASSERT(data->GetIs(child->AsElement()),
-                   "Non is= custom elements should have already been removed");
-        (void)data;
+    
+    if (CustomElementData* data = child->AsElement()->GetCustomElementData();
+        data && data->GetIs(child->AsElement())) [[unlikely]] {
+      
+      
+      
+      
+      if (IsDefaultConfig ||
+          !IsAttributeAllowed(elementAttributes, nsGkAtoms::is,
+                              kNameSpaceID_None, aSafe)) {
+        
+        
+        
         child->AsElement()->ClearCustomElementData();
       }
     }
