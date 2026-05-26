@@ -225,7 +225,7 @@ impl NonTSPseudoClass {
             return static_prefs::pref!("dom.viewTransitions.enabled");
         }
         if matches!(*self, Self::Heading(..)) {
-            return static_prefs::pref!("layout.css.heading-selector.enabled");
+            return static_prefs::pref!("dom.headingoffset.enabled");
         }
         if matches!(
             *self,
@@ -594,9 +594,15 @@ impl<'a, 'i> ::selectors::Parser<'i> for SelectorParser<'a> {
         location: SourceLocation,
         name: CowRcStr<'i>,
     ) -> Result<PseudoElement, ParseError<'i>> {
-        let allow_unkown_webkit = !self.for_supports_rule;
-        if let Some(pseudo) = PseudoElement::from_slice(&name, allow_unkown_webkit) {
+        if let Some(pseudo) = PseudoElement::from_slice(&name) {
             if self.is_pseudo_element_enabled(&pseudo) {
+                return Ok(pseudo);
+            }
+        }
+
+        
+        if !self.for_supports_rule {
+            if let Some(pseudo) = PseudoElement::unknown_webkit_from_name(&name) {
                 return Ok(pseudo);
             }
         }

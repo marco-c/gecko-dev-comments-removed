@@ -2,10 +2,10 @@
 
 
 
-
-
 #ifndef mozilla_dom_HTMLHeadingElement_h
 #define mozilla_dom_HTMLHeadingElement_h
+
+#include <cstdint>
 
 #include "nsGenericHTMLElement.h"
 
@@ -18,6 +18,12 @@ class HTMLHeadingElement final : public nsGenericHTMLElement {
       : nsGenericHTMLElement(std::move(aNodeInfo)) {
     MOZ_ASSERT(IsHTMLHeadingElement());
     UpdateLevel(false);
+  }
+
+  nsresult BindToTree(BindContext& aContext, nsINode& aParent) override {
+    nsresult rv = nsGenericHTMLElement::BindToTree(aContext, aParent);
+    UpdateLevel(true);
+    return rv;
   }
 
   bool ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
@@ -35,26 +41,11 @@ class HTMLHeadingElement final : public nsGenericHTMLElement {
     return GetHTMLAttr(nsGkAtoms::align, aAlign);
   }
 
-  uint32_t ComputedLevel() const {
-    nsAtom* name = NodeInfo()->NameAtom();
-    if (name == nsGkAtoms::h1) {
-      return 1;
-    }
-    if (name == nsGkAtoms::h2) {
-      return 2;
-    }
-    if (name == nsGkAtoms::h3) {
-      return 3;
-    }
-    if (name == nsGkAtoms::h4) {
-      return 4;
-    }
-    if (name == nsGkAtoms::h5) {
-      return 5;
-    }
-    MOZ_ASSERT(name == nsGkAtoms::h6);
-    return 6;
-  }
+  
+  uint32_t ComputedLevel() const;
+
+  
+  uint32_t GetComputedHeadingOffset(uint32_t aMax) const;
 
   void UpdateLevel(bool aNotify);
 
