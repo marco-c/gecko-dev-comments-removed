@@ -346,12 +346,7 @@ class AnonymousDecoderImpl final : public AnonymousDecoder {
       }
     }
 
-    if (!mMetadataResult.mAnimated) {
-      mMetadataResult.mFrameCount = 1;
-      mMetadataResult.mFrameCountComplete = true;
-      mMetadataTask = nullptr;
-      mFrameCountTask = nullptr;
-    } else if (mFrameCountTask && !mFrameCountTaskRunning) {
+    if (mFrameCountTask && !mFrameCountTaskRunning) {
       MOZ_LOG(
           sLog, LogLevel::Debug,
           ("[%p] AnonymousDecoderImpl::OnMetadata -- start frame count task",
@@ -389,6 +384,17 @@ class AnonymousDecoderImpl final : public AnonymousDecoder {
     if (mFrameCount < aFrameCount) {
       mFrameCount = aFrameCount;
       resolve = true;
+    }
+
+    
+    
+    
+    if (mFrameCount > 1 && !mMetadataResult.mAnimated) {
+      MOZ_LOG(sLog, LogLevel::Debug,
+              ("[%p] AnonymousDecoderImpl::OnFrameCount -- discovered "
+               "animation, frameCount %u",
+               this, mFrameCount));
+      mMetadataResult.mAnimated = true;
     }
 
     
