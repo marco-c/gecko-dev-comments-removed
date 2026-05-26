@@ -14,6 +14,11 @@ const SCRIPT_TEMPLATE_RESOURCE_PATH =
 let window = self;
 window.requestAnimationFrame = () => {};
 window.cancelAnimationFrame = () => {};
+window.matchMedia = () => ({
+  matches: false,
+  addEventListener: () => {},
+  removeEventListener: () => {},
+});
 
 
 importScripts("resource://gre/modules/workers/require.js");
@@ -100,7 +105,10 @@ let Agent = {
 
 
 
-  construct(state) {
+
+
+
+  construct(state, direction) {
     
     
     
@@ -110,7 +118,7 @@ let Agent = {
     
     
     try {
-      return this._construct(state);
+      return this._construct(state, direction);
     } catch (e) {
       console.error("about:home startup cache construction failed:", e);
       return { page: null, script: null };
@@ -133,9 +141,21 @@ let Agent = {
 
 
 
-  _construct(state) {
+
+
+
+
+  _construct(state, direction) {
     for (const key of Object.keys(state.App.isForStartupCache)) {
       state.App.isForStartupCache[key] = true;
+    }
+
+    
+    
+    if (direction) {
+      self.document = { dir: direction };
+    } else {
+      self.document = { dir: "ltr" };
     }
 
     
