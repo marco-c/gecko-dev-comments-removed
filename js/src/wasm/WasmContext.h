@@ -21,6 +21,7 @@
 #  include "wasm/WasmStacks.h"
 #endif  
 
+#include "js/AllocPolicy.h"
 #include "js/NativeStackLimits.h"
 
 #ifdef _WIN32
