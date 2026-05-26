@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "SVGPathSegUtils.h"
 
 #include "SVGArcConverter.h"
@@ -251,8 +249,12 @@ Maybe<EdgeDir> GetDirection(Point v) {
     return Nothing();
   }
 
-  bool x = std::abs(v.x) > 0.001;
-  bool y = std::abs(v.y) > 0.001;
+  
+  
+  float threshold = std::fmin((std::abs(v.x) + std::abs(v.y)) * 0.00001, 0.001);
+
+  bool x = std::abs(v.x) > threshold;
+  bool y = std::abs(v.y) > threshold;
   if (x && y) {
     return Nothing();
   }
