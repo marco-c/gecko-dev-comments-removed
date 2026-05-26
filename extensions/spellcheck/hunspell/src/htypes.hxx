@@ -62,13 +62,18 @@
 #  define HUNSPELL_THREAD_LOCAL static
 #endif
 
+
+
+
+
+
 struct hentry {
+  unsigned short* astr;         
+  struct hentry* next;          
+  struct hentry* next_homonym;  
   unsigned short blen;   
   unsigned short clen;   
   short alen;            
-  unsigned short* astr;  
-  struct hentry* next;   
-  struct hentry* next_homonym;  
   char var;      
   char word[1];  
 };
