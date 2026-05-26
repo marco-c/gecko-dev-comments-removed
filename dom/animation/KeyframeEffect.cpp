@@ -241,20 +241,25 @@ void KeyframeEffect::SetKeyframes(JSContext* aContext,
     return;
   }
 
+  
+  
   RefPtr<const ComputedStyle> style = GetTargetComputedStyle(Flush::None);
-  SetKeyframes(std::move(keyframes), style, nullptr );
+  SetKeyframes(std::move(keyframes), style,
+               mAnimation ? mAnimation->GetTimeline() : nullptr,
+               mAnimation ? &mAnimation->GetTimelineRange() : nullptr);
 }
 
 void KeyframeEffect::SetKeyframes(nsTArray<Keyframe>&& aKeyframes,
                                   const ComputedStyle* aStyle,
-                                  const AnimationTimeline* aTimeline) {
+                                  const AnimationTimeline* aTimeline,
+                                  const AnimationRange* aRange) {
   if (KeyframesEqualIgnoringComputedOffsets(aKeyframes, mKeyframes)) {
     return;
   }
 
   mKeyframes = std::move(aKeyframes);
-  mKeyframesOffsetInfo =
-      KeyframeUtils::ComputeMissingKeyframeOffsets(mKeyframes, aTimeline);
+  mKeyframesOffsetInfo = KeyframeUtils::ComputeMissingKeyframeOffsets(
+      mKeyframes, aTimeline, aRange);
 
   if (mAnimation && mAnimation->IsRelevant()) {
     MutationObservers::NotifyAnimationChanged(mAnimation);
@@ -2021,7 +2026,11 @@ KeyframeEffect::MatchForCompositor KeyframeEffect::IsMatchForCompositor(
     
     
     
-    if (!state.APZIsActiveForSource() || !state.IsActive() ||
+    
+    
+    
+    if (!state.SourceElement() || !state.IsActive() ||
+        !state.APZIsActiveForSource() ||
         !state.ScrollingDirectionIsAvailable() ||
         state.SourceScrollStyle() == StyleOverflow::Hidden) {
       return KeyframeEffect::MatchForCompositor::No;
@@ -2086,7 +2095,7 @@ double KeyframeEffect::AnimationsPlayBackRateMultiplier() const {
 }
 
 void KeyframeEffect::MaybeUpdateKeyframeComputedOffsets(
-    const AnimationTimeline* aTimeline) {
+    const AnimationTimeline* aTimeline, const AnimationRange& aRange) {
   if (!mKeyframesOffsetInfo.mRangeOffset) {
     return;
   }
@@ -2100,7 +2109,7 @@ void KeyframeEffect::MaybeUpdateKeyframeComputedOffsets(
     const auto& offset = *keyframe.mOffset;
     const double oldComputedOffset = keyframe.mComputedOffset;
     keyframe.mComputedOffset =
-        KeyframeUtils::GetComputedOffset(offset, aTimeline);
+        KeyframeUtils::GetComputedOffset(offset, aTimeline, &aRange);
 
     if (Keyframe::ComputedOffsetsAreDifferent(oldComputedOffset,
                                               keyframe.mComputedOffset)) {
