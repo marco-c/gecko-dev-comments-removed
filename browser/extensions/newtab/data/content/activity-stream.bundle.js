@@ -16941,6 +16941,30 @@ const getSupportedTimeZones = () => {
   return FIXED_DEFAULT_ZONES;
 };
 
+
+
+
+const getLocalizedTimeZoneName = (timeZone, locale) => {
+  try {
+    const parts = new Intl.DateTimeFormat(locale, {
+      timeZone,
+      timeZoneName: "longGeneric",
+    }).formatToParts(new Date());
+    const part = parts.find(p => p.type === "timeZoneName");
+    return part?.value || timeZone;
+  } catch (e) {
+    return timeZone;
+  }
+};
+
+const buildLocalizedTimeZoneMap = (timeZones, locale) => {
+  const map = new Map();
+  for (const tz of timeZones) {
+    map.set(tz, getLocalizedTimeZoneName(tz, locale));
+  }
+  return map;
+};
+
 const normalizeClockZone = clock => {
   const normalizedClock =
     typeof clock === "string" ? { timeZone: clock } : clock;
@@ -17028,25 +17052,43 @@ const getClockFormDerivedState = ({
   clockSearchQuery,
   clockSelectedTimeZone,
   isEditingClock,
+  localizedTimeZoneMap,
   supportedTimeZones,
 }) => {
   let resolvedClockTimeZone = "";
   const query = clockSearchQuery.trim().toLowerCase();
+  const getLocalized = timeZone =>
+    (localizedTimeZoneMap?.get(timeZone) ?? "").toLowerCase();
+
   if (clockSelectedTimeZone && isValidTimeZone(clockSelectedTimeZone)) {
     resolvedClockTimeZone = clockSelectedTimeZone;
   } else if (query) {
-    resolvedClockTimeZone =
-      supportedTimeZones.find(timeZone => {
-        const city = getCityFromTimeZone(timeZone).toLowerCase();
-        return timeZone.toLowerCase() === query || city === query;
-      }) ?? "";
+    const idOrCityMatch = supportedTimeZones.find(timeZone => {
+      const city = getCityFromTimeZone(timeZone).toLowerCase();
+      return timeZone.toLowerCase() === query || city === query;
+    });
+    if (idOrCityMatch) {
+      resolvedClockTimeZone = idOrCityMatch;
+    } else {
+      
+      const localizedMatches = supportedTimeZones.filter(
+        timeZone => getLocalized(timeZone) === query
+      );
+      if (localizedMatches.length === 1) {
+        [resolvedClockTimeZone] = localizedMatches;
+      }
+    }
   }
 
   const filteredTimeZones = query
     ? supportedTimeZones
         .filter(timeZone => {
           const city = getCityFromTimeZone(timeZone).toLowerCase();
-          return timeZone.toLowerCase().includes(query) || city.includes(query);
+          return (
+            timeZone.toLowerCase().includes(query) ||
+            city.includes(query) ||
+            getLocalized(timeZone).includes(query)
+          );
         })
         .slice(0, 8)
     : [];
@@ -17181,14 +17223,17 @@ const MAX_NICKNAME_LENGTH = 11;
 
 
 
+
 function AddClockForm({
   isEditing,
   initialClock,
   canAddClock,
   supportedTimeZones,
+  locale,
   onSave,
   onCancel
 }) {
+  const localizedTimeZoneMap = (0,external_React_namespaceObject.useMemo)(() => buildLocalizedTimeZoneMap(supportedTimeZones, locale), [supportedTimeZones, locale]);
   const [searchQuery, setSearchQuery] = (0,external_React_namespaceObject.useState)(initialClock ? initialClock.city || getCityFromTimeZone(initialClock.timeZone) : "");
   const [selectedTimeZone, setSelectedTimeZone] = (0,external_React_namespaceObject.useState)(initialClock?.timeZone || "");
   const [nickname, setNickname] = (0,external_React_namespaceObject.useState)(initialClock?.label || "");
@@ -17203,8 +17248,9 @@ function AddClockForm({
     clockSearchQuery: searchQuery,
     clockSelectedTimeZone: selectedTimeZone,
     isEditingClock: isEditing,
+    localizedTimeZoneMap,
     supportedTimeZones
-  }), [canAddClock, searchQuery, selectedTimeZone, isEditing, supportedTimeZones]);
+  }), [canAddClock, searchQuery, selectedTimeZone, isEditing, localizedTimeZoneMap, supportedTimeZones]);
 
   
   
@@ -17307,7 +17353,7 @@ function AddClockForm({
     className: "clocks-search-result-city"
   }, getCityFromTimeZone(timeZone)), external_React_default().createElement("span", {
     className: "clocks-search-result-timezone"
-  }, timeZone))) : external_React_default().createElement("div", {
+  }, localizedTimeZoneMap?.get(timeZone) || timeZone))) : external_React_default().createElement("div", {
     className: "clocks-search-no-results",
     role: "option",
     "aria-disabled": "true",
@@ -17955,6 +18001,7 @@ function Clocks({
     initialClock: editingClockIndex !== null ? clockZones[editingClockIndex] : null,
     canAddClock: canAddClock,
     supportedTimeZones: supportedTimeZones,
+    locale: locale,
     onSave: handleSaveClock,
     onCancel: handleCloseClockForm
   }), isEditingClocks && external_React_default().createElement(EditClocksPanel, {
