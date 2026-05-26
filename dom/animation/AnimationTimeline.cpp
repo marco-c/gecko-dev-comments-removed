@@ -5,7 +5,6 @@
 #include "AnimationTimeline.h"
 
 #include "mozilla/dom/Animation.h"
-#include "mozilla/dom/CSSUnitValue.h"
 
 namespace mozilla::dom {
 
@@ -69,32 +68,6 @@ bool AnimationTimeline::Tick(TickState& aState) {
   }
 
   return needsTicks;
-}
-
-
-void AnimationTimeline::GetDuration(
-    Nullable<OwningDoubleOrCSSNumericValue>& aRetVal, ErrorResult& aRv) const {
-  
-  
-  if (IsMonotonicallyIncreasing()) {
-    aRetVal.SetNull();
-    return;
-  }
-
-  if (!StaticPrefs::layout_css_typed_om_enabled()) {
-    
-    
-    aRv.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
-    return;
-  }
-
-  
-  
-  
-  OwningDoubleOrCSSNumericValue value;
-  value.SetAsCSSNumericValue() =
-      MakeRefPtr<CSSUnitValue>(GetParentObject(), 100.0, "percent"_ns);
-  aRetVal.SetValue(std::move(value));
 }
 
 void AnimationTimeline::NotifyAnimationUpdated(Animation& aAnimation) {
