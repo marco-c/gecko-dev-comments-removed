@@ -468,6 +468,8 @@ nsresult nsHttpHandler::Init() {
   mProductSub.AssignLiteral(LEGACY_UA_GECKO_TRAIL);
 #endif
 
+  RebuildUserAgent();
+
 #if DEBUG
   
   LOG(("> legacy-app-name = %s\n", mLegacyAppName.get()));
@@ -726,9 +728,14 @@ nsresult nsHttpHandler::AddAcceptAndDictionaryHeaders(
                   return rv;
                 }
               }
+              nsAutoCStringN<64> dictEncodings;
+              {
+                MutexAutoLock lock(self->mAcceptEncodingLock);
+                dictEncodings = self->mDictionaryAcceptEncodings;
+              }
               return aRequest->SetHeader(
-                  nsHttp::Accept_Encoding, self->mDictionaryAcceptEncodings,
-                  false, nsHttpHeaderArray::eVarietyRequestOverride);
+                  nsHttp::Accept_Encoding, dictEncodings, false,
+                  nsHttpHeaderArray::eVarietyRequestOverride);
             }  
             return NS_OK;
           });
@@ -745,8 +752,10 @@ nsresult nsHttpHandler::AddStandardRequestHeaders(
   nsresult rv;
 
   
-  rv = request->SetHeader(nsHttp::User_Agent,
-                          UserAgent(aShouldResistFingerprinting), false,
+  
+  nsAutoCString userAgent;
+  GetUserAgent(aShouldResistFingerprinting, userAgent);
+  rv = request->SetHeader(nsHttp::User_Agent, userAgent, false,
                           nsHttpHeaderArray::eVarietyRequestDefault);
   if (NS_FAILED(rv)) return rv;
 
@@ -804,13 +813,17 @@ nsresult nsHttpHandler::AddStandardRequestHeaders(
     if (NS_FAILED(rv)) return rv;
   }
 
-  if (aIsHTTPS) {
-    rv = request->SetHeader(nsHttp::Accept_Encoding, mHttpsAcceptEncodings,
-                            false, nsHttpHeaderArray::eVarietyRequestDefault);
-  } else {
-    rv = request->SetHeader(nsHttp::Accept_Encoding, mHttpAcceptEncodings,
-                            false, nsHttpHeaderArray::eVarietyRequestDefault);
+  nsAutoCStringN<64> acceptEncodings;
+  {
+    MutexAutoLock lock(mAcceptEncodingLock);
+    if (aIsHTTPS) {
+      acceptEncodings = mHttpsAcceptEncodings;
+    } else {
+      acceptEncodings = mHttpAcceptEncodings;
+    }
   }
+  rv = request->SetHeader(nsHttp::Accept_Encoding, acceptEncodings, false,
+                          nsHttpHeaderArray::eVarietyRequestDefault);
   return NS_OK;
 }
 
@@ -838,14 +851,17 @@ bool nsHttpHandler::IsAcceptableEncoding(const char* enc, bool isSecure) {
   
   
   bool rv;
-  if (isSecure) {
-    
-    
-    rv = nsHttp::FindToken(mDictionaryAcceptEncodings.get(), enc,
-                           HTTP_LWS ",") != nullptr;
-  } else {
-    rv = nsHttp::FindToken(mHttpAcceptEncodings.get(), enc, HTTP_LWS ",") !=
-         nullptr;
+  {
+    MutexAutoLock lock(mAcceptEncodingLock);
+    if (isSecure) {
+      
+      
+      rv = nsHttp::FindToken(mDictionaryAcceptEncodings.get(), enc,
+                             HTTP_LWS ",") != nullptr;
+    } else {
+      rv = nsHttp::FindToken(mHttpAcceptEncodings.get(), enc, HTTP_LWS ",") !=
+           nullptr;
+    }
   }
   
   
@@ -999,17 +1015,34 @@ const nsCString& nsHttpHandler::UserAgent(bool aShouldResistFingerprinting) {
     return mSpoofedUserAgent;
   }
 
+  
+  
+  AssertIsOnMainThread();
+  mUserAgentCap.NoteOnMainThread();
   if (!mUserAgentOverride.IsVoid()) {
     LOG(("using general.useragent.override : %s\n", mUserAgentOverride.get()));
     return mUserAgentOverride;
   }
+  return mUserAgent;
+}
 
-  if (mUserAgentIsDirty) {
-    BuildUserAgent();
-    mUserAgentIsDirty = false;
+void nsHttpHandler::GetUserAgent(bool aShouldResistFingerprinting,
+                                 nsCString& aOut) {
+  if (aShouldResistFingerprinting && !mSpoofedUserAgent.IsEmpty()) {
+    aOut = mSpoofedUserAgent;
+    return;
   }
 
-  return mUserAgent;
+  MutexAutoLock lock(mUserAgentCap.Lock());
+  mUserAgentCap.NoteLockHeld();
+  aOut = mUserAgentOverride.IsVoid() ? mUserAgent : mUserAgentOverride;
+}
+
+void nsHttpHandler::RebuildUserAgent() {
+  AssertIsOnMainThread();
+  MutexAutoLock lock(mUserAgentCap.Lock());
+  mUserAgentCap.NoteExclusiveAccess();
+  BuildUserAgent();
 }
 
 void nsHttpHandler::BuildUserAgent() {
@@ -1090,10 +1123,7 @@ void nsHttpHandler::BuildUserAgent() {
 #endif
 
 void nsHttpHandler::InitUserAgentComponents() {
-  
-  
   if (XRE_IsSocketProcess()) {
-    mUserAgentIsDirty = true;
     return;
   }
 
@@ -1207,7 +1237,6 @@ void nsHttpHandler::InitUserAgentComponents() {
   mOscpu.AssignLiteral("Linux x86_64");
 #endif
 
-  mUserAgentIsDirty = true;
 }
 
 #ifdef XP_MACOSX
@@ -1256,6 +1285,7 @@ void nsHttpHandler::PrefsChanged(const char* pref, void* self) {
 }
 
 void nsHttpHandler::PrefsChanged(const char* pref) {
+  AssertIsOnMainThread();
   nsresult rv = NS_OK;
   int32_t val;
 
@@ -1299,13 +1329,15 @@ void nsHttpHandler::PrefsChanged(const char* pref) {
   if (PREF_CHANGED(UA_PREF("compatMode.firefox"))) {
     rv = Preferences::GetBool(UA_PREF("compatMode.firefox"), &cVar);
     mCompatFirefoxEnabled = (NS_SUCCEEDED(rv) && cVar);
-    mUserAgentIsDirty = true;
+    RebuildUserAgent();
   }
 
   
   if (PREF_CHANGED(UA_PREF("override"))) {
+    MutexAutoLock lock(mUserAgentCap.Lock());
+    mUserAgentCap.NoteExclusiveAccess();
     Preferences::GetCString(UA_PREF("override"), mUserAgentOverride);
-    mUserAgentIsDirty = true;
+    BuildUserAgent();
   }
 
 #ifdef ANDROID
@@ -1323,7 +1355,7 @@ void nsHttpHandler::PrefsChanged(const char* pref) {
     } else {
       mDeviceModelId.Truncate();
     }
-    mUserAgentIsDirty = true;
+    RebuildUserAgent();
   }
 #endif
 
@@ -2113,6 +2145,7 @@ nsresult nsHttpHandler::SetAcceptLanguages() {
 
 nsresult nsHttpHandler::SetAcceptEncodings(const char* aAcceptEncodings,
                                            bool isSecure, bool isDictionary) {
+  MutexAutoLock lock(mAcceptEncodingLock);
   if (isDictionary) {
     mDictionaryAcceptEncodings = aAcceptEncodings;
   } else if (isSecure) {
