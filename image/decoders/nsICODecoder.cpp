@@ -166,32 +166,9 @@ LexerTransition<ICOState> nsICODecoder::ReadDirEntry(const char* aData) {
   }
 
   if (mCurrIcon == mNumIcons) {
-    
-    
-    
-    
-    bool needsVerification = !mUnsizedDirEntries.IsEmpty();
-    for (size_t i = 0; !needsVerification && i + 1 < mDirEntries.Length();
-         ++i) {
-      for (size_t j = i + 1; j < mDirEntries.Length(); ++j) {
-        if (mDirEntries[i].mSize == mDirEntries[j].mSize) {
-          needsVerification = true;
-          break;
-        }
-      }
-    }
-
-    if (!needsVerification) {
+    if (mUnsizedDirEntries.IsEmpty()) {
       return Transition::To(ICOState::FINISHED_DIR_ENTRY, 0);
     }
-
-    
-    
-    
-    for (auto& e : mDirEntries) {
-      mUnsizedDirEntries.AppendElement(e);
-    }
-    mDirEntries.Clear();
     return Transition::To(ICOState::ITERATE_UNSIZED_DIR_ENTRY, 0);
   }
 
@@ -678,14 +655,9 @@ LexerTransition<ICOState> nsICODecoder::FinishResource() {
 
   
   
-  
-  
-  
   if (mContainedDecoder->IsMetadataDecode()) {
     if (mContainedDecoder->HasSize()) {
       mDirEntry->mSize = mContainedDecoder->Size();
-    } else {
-      mDirEntry->mSize = OrientedIntSize(0, 0);
     }
     return Transition::To(ICOState::ITERATE_UNSIZED_DIR_ENTRY, 0);
   }
