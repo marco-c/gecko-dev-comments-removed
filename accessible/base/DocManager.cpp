@@ -176,8 +176,19 @@ bool DocManager::IsProcessingRefreshDriverNotification() const {
 #endif
 
 #ifdef MOZ_ENABLE_SKIA_PDF
+
 void DocManager::NotifyOfPrintDocument(dom::Document* aDoc) {
   if (!StaticPrefs::accessibility_tagged_pdf_output_enabled()) {
+    return;
+  }
+  
+  
+  
+  
+  
+  nsAccessibilityService* serv =
+      GetOrCreateAccService(nsAccessibilityService::ePdfOutput);
+  if (!serv) {
     return;
   }
   if (GetExistingDocAccessible(aDoc)) {
@@ -187,7 +198,7 @@ void DocManager::NotifyOfPrintDocument(dom::Document* aDoc) {
   
   
   DocAccessible* topDocAcc =
-      CreateDocOrRootAccessible(aDoc,  true);
+      serv->CreateDocOrRootAccessible(aDoc,  true);
   if (!topDocAcc) {
     return;
   }
@@ -203,7 +214,7 @@ void DocManager::NotifyOfPrintDocument(dom::Document* aDoc) {
       [](const dom::Document* aDescDoc) { return true; });
   for (dom::Document* descDoc : descendants) {
     if (DocAccessible* descDocAcc =
-            CreateDocOrRootAccessible(descDoc,  true)) {
+            serv->CreateDocOrRootAccessible(descDoc,  true)) {
       descDocAcc->DoInitialUpdate();
     }
   }

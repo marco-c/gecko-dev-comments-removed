@@ -3311,25 +3311,21 @@ void BrowserChild::InitAPZState() {
 
   
   
-  PAPZCTreeManagerChild* baseProtocol =
-      cbc->SendPAPZCTreeManagerConstructor(mLayersId);
-  if (!baseProtocol) {
+  auto treeManager = MakeRefPtr<APZCTreeManagerChild>();
+  if (!cbc->SendPAPZCTreeManagerConstructor(treeManager, mLayersId)) {
     MOZ_ASSERT(false,
                "Allocating a TreeManager should not fail with APZ enabled");
     return;
   }
-  APZCTreeManagerChild* derivedProtocol =
-      static_cast<APZCTreeManagerChild*>(baseProtocol);
 
-  mApzcTreeManager = RefPtr<IAPZCTreeManager>(derivedProtocol);
+  mApzcTreeManager = treeManager;
 
   
   
   
   
-  RefPtr<GeckoContentController> contentController =
-      new ContentProcessController(this);
-  APZChild* apzChild = new APZChild(contentController);
+  auto contentController = MakeRefPtr<ContentProcessController>(this);
+  auto apzChild = MakeRefPtr<APZChild>(contentController);
   cbc->SendPAPZConstructor(apzChild, mLayersId);
 }
 
@@ -4251,9 +4247,7 @@ void BrowserChild::OnPointerRawUpdateEventListenerRemoved(
 #if defined(ACCESSIBILITY) && defined(MOZ_ENABLE_SKIA_PDF)
 mozilla::ipc::IPCResult BrowserChild::RecvRequestDocAccessibleForPrint() {
   if (RefPtr<Document> doc = GetTopLevelDocument()) {
-    if (nsAccessibilityService* serv = GetAccService()) {
-      serv->NotifyOfPrintDocument(doc);
-    }
+    a11y::DocManager::NotifyOfPrintDocument(doc);
   }
   return IPC_OK();
 }
