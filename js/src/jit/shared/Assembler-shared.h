@@ -255,7 +255,7 @@ class ImmGCPtr {
   explicit ImmGCPtr(const JSOffThreadAtom* atom) : ImmGCPtr(atom->raw()) {}
 
  private:
-  ImmGCPtr() : value(0) {}
+  ImmGCPtr() : value(nullptr) {}
 };
 
 

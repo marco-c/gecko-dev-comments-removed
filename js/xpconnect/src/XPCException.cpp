@@ -25,7 +25,7 @@ static const struct ResultMap {
 #include "xpc.msg"
 #include "extra_xpc_msg.h"
 #undef XPC_MSG_DEF
-    {NS_OK, 0, 0}  
+    {NS_OK, nullptr, nullptr}  
 };
 
 #define RESULT_COUNT (std::size(map) - 1)
