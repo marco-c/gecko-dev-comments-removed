@@ -16265,6 +16265,94 @@ function useLocalizedTeamNames(teams) {
 
 
 
+const GROUP_STAGE_LABEL = "Group Stage";
+
+
+
+
+
+const KNOCKOUT_STAGE_L10N_IDS = {
+  "Round of 32": "newtab-sports-widget-round-32",
+  "Round of 16": "newtab-sports-widget-round-16",
+  "Quarter-finals": "newtab-sports-widget-quarter-finals",
+  "Semi-finals": "newtab-sports-widget-semi-finals",
+  "Bronze Final": "newtab-sports-widget-bronze-finals",
+  Final: "newtab-sports-widget-final",
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+function getMatchSectionL10nId(match) {
+  if (match?.stage === GROUP_STAGE_LABEL) {
+    const groupString = match.home_team?.group || match.away_team?.group;
+    const lastChar = groupString?.trim().slice(-1).toLowerCase();
+    if (lastChar && lastChar >= "a" && lastChar <= "l") {
+      return `newtab-sports-widget-group-${lastChar}`;
+    }
+    console.warn(
+      `Sports widget: malformed team.group=${JSON.stringify(groupString)}; falling back to raw text.`
+    );
+    return null;
+  }
+  const id = KNOCKOUT_STAGE_L10N_IDS[match?.stage];
+  if (!id && match?.stage) {
+    console.warn(
+      `Sports widget: unmapped match.stage=${JSON.stringify(match.stage)}; falling back to raw text.`
+    );
+  }
+  return id ?? null;
+}
+
+
+
+
+
+
+function getMatchSectionKey(match) {
+  if (match?.stage === GROUP_STAGE_LABEL) {
+    return match.home_team?.group || match.away_team?.group || match.stage;
+  }
+  return match?.stage;
+}
+
+
+
+
+
+
+
+function groupMatchesBySection(matches) {
+  const sections = [];
+  for (const match of matches) {
+    const key = getMatchSectionKey(match);
+    const last = sections[sections.length - 1];
+    if (last && last.key === key) {
+      last.matches.push(match);
+    } else {
+      sections.push({ key, matches: [match] });
+    }
+  }
+  return sections;
+}
+
+;
+
+
+
+
+
+
+
 
 
 
@@ -16772,6 +16860,29 @@ function SportsWidgetFollowTeams({
     onClick: () => onSave(activeSelectedTeams)
   }));
 }
+function SportsSectionLabel({
+  match,
+  withLiveBadge = false
+}) {
+  const l10nId = getMatchSectionL10nId(match);
+  const stageContent = l10nId ? external_React_default().createElement("span", {
+    "data-l10n-id": l10nId
+  }) : external_React_default().createElement("span", null, match.stage);
+  if (!withLiveBadge) {
+    return external_React_default().createElement("span", {
+      className: "sports-section-label"
+    }, stageContent);
+  }
+  return external_React_default().createElement("span", {
+    className: "sports-section-label"
+  }, stageContent, " ", external_React_default().createElement("span", {
+    className: "sports-section-label-live"
+  }, external_React_default().createElement("span", {
+    "aria-hidden": "true"
+  }, "• "), external_React_default().createElement("span", {
+    "data-l10n-id": "newtab-sports-widget-live"
+  })));
+}
 function SportsMatchesView({
   matchesTab,
   hasLiveGames,
@@ -16810,23 +16921,30 @@ function SportsMatchesView({
     className: "sports-matches-tab-panel",
     hidden: matchesTab !== MATCHES_TABS.RESULTS,
     ref: resultsPanelRef
-  }, showResultsList ? external_React_default().createElement("ul", {
+  }, showResultsList ? external_React_default().createElement("div", {
     className: "sports-matches-list"
-  }, previous.map(match => external_React_default().createElement("li", {
+  }, groupMatchesBySection(previous).map((section, idx) => external_React_default().createElement("div", {
+    key: `${section.key}-${idx}`,
+    className: "sports-matches-list-section"
+  }, external_React_default().createElement(SportsSectionLabel, {
+    match: section.matches[0]
+  }), external_React_default().createElement("ul", null, section.matches.map(match => external_React_default().createElement("li", {
     key: `${match.home_team.key}-${match.away_team.key}-${match.date}`
   }, external_React_default().createElement(SportsMatchRow, {
     match: match,
     variant: "results",
     size: "list",
     handleInteraction: handleInteraction
-  })))) : previous[0] && external_React_default().createElement("div", {
+  }))))))) : previous[0] && external_React_default().createElement((external_React_default()).Fragment, null, size === "large" && external_React_default().createElement(SportsSectionLabel, {
+    match: previous[0]
+  }), external_React_default().createElement("div", {
     className: "match-highlight-view"
   }, external_React_default().createElement(SportsMatchRow, {
     match: previous[0],
     variant: "results",
     size: size,
     handleInteraction: handleInteraction
-  })), !!previous.length && external_React_default().createElement("moz-button", {
+  }))), !!previous.length && external_React_default().createElement("moz-button", {
     type: "secondary",
     size: size === "medium" ? "small" : undefined,
     "data-l10n-id": showResultsList ? "newtab-sports-widget-show-less" : "newtab-sports-widget-view-all",
@@ -16834,7 +16952,10 @@ function SportsMatchesView({
   })), hasLiveGames && external_React_default().createElement("div", {
     className: "sports-matches-tab-panel",
     hidden: matchesTab !== MATCHES_TABS.NOW
-  }, current[0] && external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("div", {
+  }, current[0] && external_React_default().createElement((external_React_default()).Fragment, null, size === "large" && external_React_default().createElement(SportsSectionLabel, {
+    match: current[0],
+    withLiveBadge: true
+  }), external_React_default().createElement("div", {
     className: "match-highlight-view"
   }, external_React_default().createElement(SportsMatchRow, {
     match: current[0],
@@ -16850,23 +16971,30 @@ function SportsMatchesView({
     className: "sports-matches-tab-panel",
     hidden: matchesTab !== MATCHES_TABS.UPCOMING,
     ref: upcomingPanelRef
-  }, showUpcomingList ? external_React_default().createElement("ul", {
+  }, showUpcomingList ? external_React_default().createElement("div", {
     className: "sports-matches-list"
-  }, next.map(match => external_React_default().createElement("li", {
+  }, groupMatchesBySection(next).map((section, idx) => external_React_default().createElement("div", {
+    key: `${section.key}-${idx}`,
+    className: "sports-matches-list-section"
+  }, external_React_default().createElement(SportsSectionLabel, {
+    match: section.matches[0]
+  }), external_React_default().createElement("ul", null, section.matches.map(match => external_React_default().createElement("li", {
     key: `${match.home_team.key}-${match.away_team.key}-${match.date}`
   }, external_React_default().createElement(SportsMatchRow, {
     match: match,
     variant: "upcoming",
     size: "list",
     handleInteraction: handleInteraction
-  })))) : next[0] && external_React_default().createElement("div", {
+  }))))))) : next[0] && external_React_default().createElement((external_React_default()).Fragment, null, size === "large" && external_React_default().createElement(SportsSectionLabel, {
+    match: next[0]
+  }), external_React_default().createElement("div", {
     className: "match-highlight-view"
   }, external_React_default().createElement(SportsMatchRow, {
     match: next[0],
     variant: "upcoming",
     size: size,
     handleInteraction: handleInteraction
-  })), !!next.length && external_React_default().createElement("moz-button", {
+  }))), !!next.length && external_React_default().createElement("moz-button", {
     type: "secondary",
     size: size === "medium" ? "small" : undefined,
     "data-l10n-id": showUpcomingList ? "newtab-sports-widget-show-less" : "newtab-sports-widget-view-all",
