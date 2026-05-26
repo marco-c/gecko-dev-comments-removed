@@ -325,11 +325,6 @@ var allowlist = [
   },
 
   
-  {
-    file: "moz-src:///browser/components/aiwindow/ui/modules/TabManagementService.sys.mjs",
-  },
-
-  
   
   {
     file: "chrome://global/content/autocomplete-row-item/autocomplete-row-item.mjs",
