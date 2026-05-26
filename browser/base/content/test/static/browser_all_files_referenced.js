@@ -233,7 +233,6 @@ var allowlist = [
 
   
   { file: "resource://builtin-addons/ipp-activator/breakages/tab.json" },
-  { file: "resource://builtin-addons/ipp-activator/breakages/tabWC.json" },
 
   
   
