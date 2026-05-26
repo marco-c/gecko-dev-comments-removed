@@ -54,7 +54,6 @@ static inline void HUNSPELL_WARNING(FILE*, const char*, ...) {}
 
 #include "w_char.hxx"
 #include <algorithm>
-#include <chrono>
 #include <string>
 #include <vector>
 
@@ -75,15 +74,13 @@ static inline void HUNSPELL_WARNING(FILE*, const char*, ...) {}
 #define IN_CPD_OTHER 3
 
 
-#define SPELL_COMPOUND (1 << 0)    // the result is a compound word
+#define SPELL_COMPOUND (1 << 0)
 #define SPELL_FORBIDDEN (1 << 1)
 #define SPELL_ALLCAP (1 << 2)
 #define SPELL_NOCAP (1 << 3)
 #define SPELL_INITCAP (1 << 4)
 #define SPELL_ORIGCAP (1 << 5)
 #define SPELL_WARN (1 << 6)
-#define SPELL_COMPOUND_2 (1 << 7)  // permit only 2 dictionary words in the compound
-#define SPELL_BEST_SUG (1 << 8)    // limit suggestions for the best ones, i.e. ph:
 
 #define MINCPDLEN 3
 #define MAXCOMPOUND 10
@@ -101,9 +98,10 @@ static inline void HUNSPELL_WARNING(FILE*, const char*, ...) {}
 
 
 
-#define TIMELIMIT_GLOBAL_MS std::chrono::milliseconds(250)
-#define TIMELIMIT_SUGGESTION_MS std::chrono::milliseconds(100)
-#define TIMELIMIT_MS std::chrono::milliseconds(50)
+
+#define TIMELIMIT_GLOBAL (CLOCKS_PER_SEC / 4)
+#define TIMELIMIT_SUGGESTION (CLOCKS_PER_SEC / 10)
+#define TIMELIMIT (CLOCKS_PER_SEC / 20)
 #define MINTIMER 100
 #define MAXPLUSTIMER 100
 
@@ -111,16 +109,10 @@ struct guessword {
   char* word;
   bool allow;
   char* orig;
-  guessword()
-    : word(nullptr)
-    , allow(false)
-    , orig(nullptr)
-  {
-  }
 };
 
-using mapentry = std::vector<std::string>;
-using flagentry = std::vector<FLAG>;
+typedef std::vector<std::string> mapentry;
+typedef std::vector<FLAG> flagentry;
 
 struct patentry {
   std::string pattern;

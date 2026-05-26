@@ -85,18 +85,6 @@ LIBHUNSPELL_DLL_EXPORTED int Hunspell_suggest(Hunhandle* pHunspell,
 
 
 
-
-
-
-
-LIBHUNSPELL_DLL_EXPORTED int Hunspell_suffix_suggest(Hunhandle* pHunspell,
-                                                     char*** slst,
-                                                     const char* word);
-
-
-
-
-
 LIBHUNSPELL_DLL_EXPORTED int Hunspell_analyze(Hunhandle* pHunspell,
                                               char*** slst,
                                               const char* word);
@@ -146,10 +134,6 @@ LIBHUNSPELL_DLL_EXPORTED int Hunspell_generate2(Hunhandle* pHunspell,
 
 LIBHUNSPELL_DLL_EXPORTED int Hunspell_add(Hunhandle* pHunspell,
                                           const char* word);
-
-
-LIBHUNSPELL_DLL_EXPORTED int Hunspell_add_with_flags(Hunhandle* pHunspell,
-                                          const char* word, const char* flags, const char* desc);
 
 
 

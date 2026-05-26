@@ -83,7 +83,6 @@
 #endif
 
 #define MAXSHARPS 5
-#define MAXBREAKDEPTH 10
 
 #ifndef MAXWORDLEN
 #define MAXWORDLEN 100
@@ -101,6 +100,10 @@ class HunspellImpl;
 
 class LIBHUNSPELL_DLL_EXPORTED Hunspell {
  private:
+  Hunspell(const Hunspell&);
+  Hunspell& operator=(const Hunspell&);
+
+ private:
   HunspellImpl* m_Impl;
 
  public:
@@ -112,13 +115,11 @@ class LIBHUNSPELL_DLL_EXPORTED Hunspell {
 
 
 
-  Hunspell(const char* affpath, const char* dpath, const char* key = nullptr);
-  Hunspell(const Hunspell&) = delete;
-  Hunspell& operator=(const Hunspell&) = delete;
+  Hunspell(const char* affpath, const char* dpath, const char* key = NULL);
   ~Hunspell();
 
   
-  int add_dic(const char* dpath, const char* key = nullptr);
+  int add_dic(const char* dpath, const char* key = NULL);
 
   
 
@@ -129,8 +130,8 @@ class LIBHUNSPELL_DLL_EXPORTED Hunspell {
 
 
 
-  bool spell(const std::string& word, int* info = nullptr, std::string* root = nullptr);
-  H_DEPRECATED int spell(const char* word, int* info = nullptr, char** root = nullptr);
+  bool spell(const std::string& word, int* info = NULL, std::string* root = NULL);
+  H_DEPRECATED int spell(const char* word, int* info = NULL, char** root = NULL);
 
   
 
@@ -198,8 +199,6 @@ class LIBHUNSPELL_DLL_EXPORTED Hunspell {
 
   int add(const std::string& word);
 
-  int add_with_flags(const std::string& word, const std::string& flags, const std::string& desc = "");
-
   
 
 
@@ -219,7 +218,7 @@ class LIBHUNSPELL_DLL_EXPORTED Hunspell {
   const std::vector<w_char>& get_wordchars_utf16() const;
 
   struct cs_info* get_csconv();
-
+  
   const char* get_version() const;
   const std::string& get_version_cpp() const;
 
