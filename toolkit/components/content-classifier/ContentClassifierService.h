@@ -6,14 +6,17 @@
 #define mozilla_ContentClassifierService_h
 
 #include "mozilla/Mutex.h"
+#include "mozilla/Span.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/ThreadSafety.h"
 #include "mozilla/UniquePtr.h"
 #include "nsIAsyncShutdown.h"
 #include "nsIChannel.h"
+#include "nsIClassifiedChannel.h"
 #include "nsIContentClassifierService.h"
 #include "nsIContentClassifierRemoteSettingsClient.h"
 #include "nsISupportsImpl.h"
+#include "nsLiteralString.h"
 #include "nsTArray.h"
 #include "nsTHashMap.h"
 
@@ -22,6 +25,38 @@
 namespace mozilla {
 
 enum class ClassifyMode { Annotate, Cancel };
+
+struct ContentClassifierFeature {
+  
+  nsLiteralCString mName;
+
+  
+  
+  Span<const nsLiteralCString> mListIds;
+
+  
+  
+  
+  nsIClassifiedChannel::ClassificationFlags mClassificationFlag;
+
+  
+  
+  
+  
+  
+  
+  
+  uint32_t mLoadedState;
+
+  
+  
+  
+  
+  
+  
+  
+  nsresult mBlockingErrorCode;
+};
 
 enum class InitPhase {
   NotInited,
@@ -42,6 +77,16 @@ class ContentClassifierService final : public nsIAsyncShutdownBlocker,
 
   static bool IsEnabled();
   static bool IsInitialized();
+
+  
+  
+  
+  static Span<const ContentClassifierFeature> GetFeatures();
+
+  
+  
+  static const ContentClassifierFeature* GetFeatureByName(
+      const nsACString& aName);
 
   ContentClassifierResult ClassifyForCancel(
       const ContentClassifierRequest& aRequest);
