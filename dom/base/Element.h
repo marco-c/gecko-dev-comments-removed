@@ -1646,9 +1646,8 @@ class Element : public FragmentOrElement {
 
   
   already_AddRefed<ShadowRoot> AttachShadowWithoutNameChecks(
-      const ShadowRootInit&,
-      const Maybe<CustomElementRegistry*>& aRegistry = Nothing(),
-      CustomSlotDispatch = CustomSlotDispatch::No, bool aNotify = true);
+      const ShadowRootInit&, bool aNotify = true,
+      CustomSlotDispatch = CustomSlotDispatch::No);
 
   
   enum class NotifyUAWidget : bool { No, Yes };

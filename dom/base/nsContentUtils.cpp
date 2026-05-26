@@ -13107,18 +13107,6 @@ nsIContent* nsContentUtils::AttachDeclarativeShadowRoot(
   init.mSlotAssignment = aSlotAssignment;
   init.mClonable = aIsClonable;
   init.mSerializable = aIsSerializable;
-  
-  
-  
-  
-  if (StaticPrefs::dom_scoped_custom_element_registries_enabled()) {
-    if (aCustomElementRegistry) {
-      init.mCustomElementRegistry.Construct(nullptr);
-    } else {
-      init.mCustomElementRegistry.Construct(
-          host->OwnerDoc()->GetCustomElementRegistry());
-    }
-  }
 
   RefPtr shadowRoot = host->AttachShadow(init, IgnoreErrors());
   if (shadowRoot) {
