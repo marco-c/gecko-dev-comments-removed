@@ -254,7 +254,8 @@ struct TraceWeakResult {
 
 
 template <typename T>
-inline TraceWeakResult<T> TraceWeakEdge(JSTracer* trc, BarrieredBase<T>* thingp,
+inline TraceWeakResult<T> TraceWeakEdge(JSTracer* trc,
+                                        const BarrieredBase<T>* thingp,
                                         const char* name) {
   T* addr = thingp->unbarrieredAddress();
   T initial = *addr;
