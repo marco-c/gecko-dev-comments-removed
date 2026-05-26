@@ -231,7 +231,6 @@ class DocumentOrShadowRoot {
 
   
   CustomElementRegistry* GetCustomElementRegistry();
-  void SetCustomElementRegistry(CustomElementRegistry&);
 
  protected:
   

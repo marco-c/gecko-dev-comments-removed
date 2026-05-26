@@ -563,6 +563,12 @@ class CustomElementRegistry final : public nsISupports, public nsWrapperCache {
                                   ErrorResult& aRv);
 
   void Upgrade(nsINode& aRoot);
+
+  
+
+
+
+  void Initialize(nsINode& aRoot, ErrorResult& aRv);
 };
 
 class MOZ_RAII AutoCEReaction final {
