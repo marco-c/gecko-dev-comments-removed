@@ -191,7 +191,6 @@ const getterAllowList = [
   getter(Intl.Locale.prototype, "language"),
   getter(Intl.Locale.prototype, "script"),
   getter(Intl.Locale.prototype, "region"),
-  getter(Iterator.prototype, "constructor"),
   getter(Map.prototype, "size"),
   getter(Map, Symbol.species),
   
@@ -237,5 +236,11 @@ const getterAllowList = [
   getter(TypedArray.prototype, Symbol.toStringTag),
   getter(TypedArray, Symbol.species),
 ];
+
+
+if (typeof Iterator === "function") {
+  
+  getterAllowList.push(getter(Iterator.prototype, "constructor"));
+}
 
 module.exports = { functions: functionAllowList, getters: getterAllowList };

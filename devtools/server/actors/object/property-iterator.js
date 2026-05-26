@@ -663,6 +663,7 @@ function enumCustomStateSetEntries(objectActor, depth) {
   
   
   const values = Array.from(
+    
     waiveXrays(CustomStateSet.prototype.values.call(waiveXrays(rawObj)))
   );
 
