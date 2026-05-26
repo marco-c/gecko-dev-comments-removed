@@ -10087,6 +10087,8 @@ class Topic extends (external_React_default()).PureComponent {
     }, topicName);
   }
 }
+
+
 class Navigation extends (external_React_default()).PureComponent {
   render() {
     let links = this.props.links || [];
@@ -15946,27 +15948,150 @@ function SportsMatchRow({
     "data-l10n-args": JSON.stringify(ariaLabelL10n.args),
     href: ""
   }, external_React_default().createElement("div", {
-    className: "sports-match-team",
-    title: home_team.name
+    className: "sports-match-team"
   }, external_React_default().createElement("img", {
     className: "sports-match-flag",
     src: home_team.icon_url,
-    alt: ""
+    alt: home_team.name,
+    title: home_team.name
   }), external_React_default().createElement("span", {
     className: "sports-match-code"
   }, home_team.key)), renderMiddle(), external_React_default().createElement("div", {
-    className: "sports-match-team",
-    title: away_team.name
+    className: "sports-match-team"
   }, external_React_default().createElement("img", {
     className: "sports-match-flag",
     src: away_team.icon_url,
-    alt: ""
+    alt: away_team.name,
+    title: away_team.name
   }), external_React_default().createElement("span", {
     className: "sports-match-code"
   }, away_team.key)));
 }
 
 ;
+
+
+
+
+
+
+
+
+const TEAM_REGION_CODES = {
+  ALG: "DZ",
+  ARG: "AR",
+  AUS: "AU",
+  AUT: "AT",
+  BEL: "BE",
+  BRA: "BR",
+  CAN: "CA",
+  COL: "CO",
+  CPV: "CV",
+  CRO: "HR",
+  CUW: "CW",
+  CZE: "CZ",
+  ECU: "EC",
+  EGY: "EG",
+  ESP: "ES",
+  FRA: "FR",
+  GER: "DE",
+  GHA: "GH",
+  HAI: "HT",
+  IRN: "IR",
+  IRQ: "IQ",
+  JOR: "JO",
+  JPN: "JP",
+  KOR: "KR",
+  KSA: "SA",
+  MAR: "MA",
+  MEX: "MX",
+  NED: "NL",
+  NOR: "NO",
+  NZL: "NZ",
+  PAN: "PA",
+  PAR: "PY",
+  POR: "PT",
+  QAT: "QA",
+  RSA: "ZA",
+  SEN: "SN",
+  SUI: "CH",
+  SWE: "SE",
+  TUN: "TN",
+  TUR: "TR",
+  URU: "UY",
+  USA: "US",
+  UZB: "UZ",
+};
+
+;
+
+
+
+
+
+
+
+
+
+
+
+const FLUENT_OVERRIDE_KEYS = new Set(["BIH", "CIV", "COD", "ENG", "SCO"]);
+
+
+
+
+
+
+
+function useLocalizedTeamNames(teams) {
+  const [resolved, setResolved] = (0,external_React_namespaceObject.useState)({
+    teams: null,
+    names: null
+  });
+  (0,external_React_namespaceObject.useEffect)(() => {
+    let cancelled = false;
+    async function resolveNames() {
+      const overrideKeys = teams.map(team => team.key).filter(key => FLUENT_OVERRIDE_KEYS.has(key));
+
+      
+      
+      
+      const messages = overrideKeys.length ? await document.l10n.formatMessages(overrideKeys.map(key => ({
+        id: `newtab-sports-widget-team-name-label-${key.toLowerCase()}`
+      }))) : [];
+      if (cancelled) {
+        return;
+      }
+      const overrideValues = new Map(overrideKeys.map((key, i) => [key, messages[i]?.attributes?.find(attr => attr.name === "label")?.value]));
+      const displayNames = new Intl.DisplayNames(undefined, {
+        type: "region"
+      });
+      const names = {};
+      for (const team of teams) {
+        if (FLUENT_OVERRIDE_KEYS.has(team.key)) {
+          names[team.key] = overrideValues.get(team.key) || team.name;
+        } else if (TEAM_REGION_CODES[team.key]) {
+          names[team.key] = displayNames.of(TEAM_REGION_CODES[team.key]) || team.name;
+        } else {
+          names[team.key] = team.name;
+        }
+      }
+      setResolved({
+        teams,
+        names
+      });
+    }
+    resolveNames();
+    return () => {
+      cancelled = true;
+    };
+  }, [teams]);
+
+  
+  return resolved.teams === teams ? resolved.names : null;
+}
+;
+
 
 
 
@@ -16407,12 +16532,13 @@ function SportsWidgetFollowTeams({
 }) {
   const [selectedTeams, setSelectedTeams] = (0,external_React_namespaceObject.useState)(initialSelectedTeams);
   const [searchQuery, setSearchQuery] = (0,external_React_namespaceObject.useState)("");
+  const localizedNames = useLocalizedTeamNames(teams);
   const isMaxSelected = selectedTeams.length >= 3;
-  const sortedTeams = [...teams].sort((a, b) => a.name.localeCompare(b.name));
-  const filteredTeams = searchQuery ? sortedTeams.filter(team => team.name.toLowerCase().includes(searchQuery.toLowerCase())) : sortedTeams;
   function handleTeamToggle(teamKey, isChecked) {
     setSelectedTeams(prev => isChecked ? [...prev, teamKey] : prev.filter(key => key !== teamKey));
   }
+  const sortedTeams = localizedNames ? [...teams].sort((a, b) => localizedNames[a.key].localeCompare(localizedNames[b.key])) : [];
+  const filteredTeams = searchQuery ? sortedTeams.filter(team => localizedNames[team.key].toLocaleLowerCase().includes(searchQuery.toLocaleLowerCase())) : sortedTeams;
   return external_React_default().createElement("div", {
     className: "sports-follow-teams"
   }, external_React_default().createElement("moz-input-search", {
@@ -16421,9 +16547,10 @@ function SportsWidgetFollowTeams({
     onInput: e => setSearchQuery(e.target.value)
   }), external_React_default().createElement("div", {
     className: "sports-follow-teams-list"
-  }, filteredTeams.map(team => {
+  }, localizedNames && filteredTeams.map(team => {
     const isSelected = selectedTeams.includes(team.key);
     const isRowDisabled = !isSelected && isMaxSelected;
+    const localizedName = localizedNames[team.key];
     return external_React_default().createElement("div", {
       key: team.key,
       className: `sports-follow-teams-row${isRowDisabled ? " is-disabled" : ""}`,
@@ -16441,15 +16568,15 @@ function SportsWidgetFollowTeams({
       checked: isSelected || undefined,
       disabled: isRowDisabled ? true : undefined,
       onChange: e => handleTeamToggle(team.key, e.target.checked),
-      "aria-label": team.name
+      "aria-label": localizedName
     }), external_React_default().createElement("img", {
       className: "sports-team-flag",
       src: team.icon_url,
       alt: "",
-      title: team.name
+      title: localizedName
     }), external_React_default().createElement("span", {
       className: "sports-team-name"
-    }, team.name));
+    }, localizedName));
   })), external_React_default().createElement("moz-button", {
     className: "sports-done-button",
     "data-l10n-id": "newtab-sports-widget-done-button",
@@ -16509,8 +16636,9 @@ function SportsMatchesView({
     match: previous[0],
     variant: "results",
     size: size
-  })), size === "large" && !!previous.length && external_React_default().createElement("moz-button", {
+  })), !!previous.length && external_React_default().createElement("moz-button", {
     type: "secondary",
+    size: size === "medium" ? "small" : undefined,
     "data-l10n-id": showResultsList ? "newtab-sports-widget-show-less" : "newtab-sports-widget-view-all",
     onClick: () => setShowResultsList(v => !v)
   })), hasLiveGames && external_React_default().createElement("div", {
@@ -18565,6 +18693,7 @@ function ExternalComponentWrapper({
 }
 
 ;
+
 
 
 
