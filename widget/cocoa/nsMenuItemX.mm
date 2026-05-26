@@ -102,6 +102,17 @@ nsMenuItemX::nsMenuItemX(nsMenuX* aParent, const nsString& aLabel,
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     SEL standardEditSelector = nil;
     if (mContent->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::id,
                                            u"menu_undo"_ns, eCaseMatters)) {

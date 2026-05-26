@@ -3078,6 +3078,31 @@ static gfx::IntPoint GetIntegerDeltaForEvent(NSEvent* aEvent) {
   NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+- (void)undo:(id)aSender {
+  [nsMenuBarX::sNativeEventTarget menuItemHit:aSender];
+}
+
+- (void)redo:(id)aSender {
+  [nsMenuBarX::sNativeEventTarget menuItemHit:aSender];
+}
+
 - (void)unmarkText {
   NS_ENSURE_TRUE_VOID(mTextInputHandler);
   mTextInputHandler->CommitIMEComposition();
