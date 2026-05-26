@@ -1629,10 +1629,6 @@ add_task(async function test_updateRecipesClearsOptIns() {
 
   await loader.updateRecipes();
 
-  
-  
-  expectedLabs.splice(2, 1);
-
   Assert.deepEqual(
     manager.optIns.toSorted(orderByRecipePublishedDate),
     expectedLabs
