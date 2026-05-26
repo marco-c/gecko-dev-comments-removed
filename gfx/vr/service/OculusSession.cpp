@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef XP_WIN
 #  error "Oculus support only available for Windows"
 #endif
@@ -744,7 +742,7 @@ bool OculusSession::StartSession() {
   
   
   
-  ovrHmdDesc desc = ovr_GetHmdDesc(NULL);
+  ovrHmdDesc desc = ovr_GetHmdDesc(nullptr);
   if (desc.Type == ovrHmd_None) {
     
     if (mSession) {

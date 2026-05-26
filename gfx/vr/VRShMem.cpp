@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "VRShMem.h"
 
 #ifdef MOZILLA_INTERNAL_API
@@ -169,11 +167,11 @@ void VRShMem::CreateShMem(bool aCreateOnSharedMemory) {
     return;
   }
 
-  mExternalShmem = (VRExternalShmem*)mmap(NULL, length, PROT_READ | PROT_WRITE,
-                                          MAP_SHARED, mShmemFD, 0);
+  mExternalShmem = (VRExternalShmem*)mmap(
+      nullptr, length, PROT_READ | PROT_WRITE, MAP_SHARED, mShmemFD, 0);
   if (mExternalShmem == MAP_FAILED) {
     
-    mExternalShmem = NULL;
+    mExternalShmem = nullptr;
     CloseShMem();
     return;
   }
@@ -271,7 +269,7 @@ void VRShMem::CloseShMem() {
 #if defined(XP_MACOSX)
   if (mExternalShmem) {
     munmap((void*)mExternalShmem, sizeof(VRExternalShmem));
-    mExternalShmem = NULL;
+    mExternalShmem = nullptr;
   }
   if (mShmemFD) {
     close(mShmemFD);

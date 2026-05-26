@@ -1561,7 +1561,7 @@ void gfxFontFamily::CheckForSimpleFamily() {
     return;  
   }
 
-  gfxFontEntry* faces[4] = {0};
+  gfxFontEntry* faces[4] = {nullptr};
   for (uint8_t i = 0; i < count; ++i) {
     gfxFontEntry* fe = mAvailableFonts[i];
     if (fe->Stretch() != firstStretch || fe->IsOblique()) {

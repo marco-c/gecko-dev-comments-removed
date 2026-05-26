@@ -110,12 +110,12 @@ already_AddRefed<NativeFontResourceMac> NativeFontResourceMac::Create(
 
   
   
-  CTFontRef ctFont = CTFontCreateWithFontDescriptor(ctFontDesc, 0, NULL);
+  CTFontRef ctFont = CTFontCreateWithFontDescriptor(ctFontDesc, 0, nullptr);
 
   
   
   
-  CGFontRef fontRef = CTFontCopyGraphicsFont(ctFont, NULL);
+  CGFontRef fontRef = CTFontCopyGraphicsFont(ctFont, nullptr);
   CFRelease(ctFont);
 
   if (!fontRef) {

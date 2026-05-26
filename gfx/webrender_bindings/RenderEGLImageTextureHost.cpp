@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "RenderEGLImageTextureHost.h"
 
 #include "mozilla/gfx/Logging.h"
@@ -169,7 +167,7 @@ bool RenderEGLImageTextureHost::WaitSync() {
     }
     
     
-    mSync = 0;
+    mSync = nullptr;
   }
 
   MOZ_ASSERT(
