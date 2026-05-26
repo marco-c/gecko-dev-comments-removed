@@ -147,20 +147,46 @@ TEST(TestTokensCache, Eviction)
 {
   mozilla::net::SSLTokensCache::Clear();
 
-  mozilla::Preferences::SetInt("network.ssl_tokens_cache_records_per_entry", 3);
-  mozilla::Preferences::SetInt("network.ssl_tokens_cache_capacity", 8);
+  
+  
+  
+  mozilla::Preferences::SetInt("network.ssl_tokens_cache_records_per_entry",
+                               10);
 
-  putToken("anon:www.example2.com:443"_ns, 300);
-  putToken("anon:www.example2.com:443"_ns, 400);
-  putToken("anon:www.example2.com:443"_ns, 500);
   
   
-  putToken("anon:www.example2.com:443"_ns, 600);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  putToken("anon:evict-old.com:443"_ns, 10000);
+  putToken("anon:evict-new.com:443"_ns, 20000);
 
-  putToken("anon:www.example3.com:443"_ns, 600);
-  putToken("anon:www.example3.com:443"_ns, 500);
+  mozilla::Preferences::SetInt("network.ssl_tokens_cache_capacity", 25);
+
   
-  getAndCheckResult("anon:www.example2.com:443"_ns, 500);
+  
+  
+  putToken("anon:evict-trigger.com:443"_ns, 10);
+
+  nsTArray<uint8_t> result;
+  mozilla::net::SessionCacheInfo unused;
+  ASSERT_EQ(mozilla::net::SSLTokensCache::Get("anon:evict-old.com:443"_ns,
+                                              result, unused),
+            NS_ERROR_NOT_AVAILABLE)
+      << "evict-old.com should have been evicted (second-oldest after trigger)";
+  ASSERT_EQ(mozilla::net::SSLTokensCache::Get("anon:evict-new.com:443"_ns,
+                                              result, unused),
+            NS_OK)
+      << "evict-new.com should survive: it fits within the 25 KB capacity";
 }
 
 static nsCString GetTempCachePath(const char* aName) {
@@ -379,7 +405,7 @@ TEST(TestTokensCache, PersistenceTruncated)
   
   FILE* f = fopen(path.get(), "wb");
   if (f) {
-    fwrite("STCF\x02", 1, 5, f);
+    fwrite("STCF\x03", 1, 5, f);
     fclose(f);
   }
 
@@ -610,4 +636,65 @@ TEST(TestTokensCache, PersistenceWriteAfterLoad)
                                               result, unused),
             NS_OK);
   ASSERT_EQ(result.Length(), (size_t)300);
+}
+
+TEST(TestTokensCache, CertBytesRoundTrip)
+{
+  
+  
+  mozilla::net::SSLTokensCache::Clear();
+
+  putToken("anon:roundtrip.example.com:443"_ns, 100);
+
+  nsTArray<uint8_t> token;
+  mozilla::net::SessionCacheInfo info;
+  ASSERT_EQ(mozilla::net::SSLTokensCache::Get(
+                "anon:roundtrip.example.com:443"_ns, token, info),
+            NS_OK);
+
+  ASSERT_FALSE(info.mServerCertBytes.IsEmpty())
+  << "Server cert bytes must survive Put/Get round-trip";
+  ASSERT_TRUE(info.mSucceededCertChainBytes.isSome())
+  << "Succeeded cert chain must survive Put/Get round-trip";
+  ASSERT_EQ(info.mSucceededCertChainBytes->Length(), (size_t)3)
+      << "Succeeded cert chain length must be preserved";
+
+  
+  
+  for (const auto& chainCert : *info.mSucceededCertChainBytes) {
+    ASSERT_EQ(chainCert, info.mServerCertBytes)
+        << "Each cert in the succeeded chain must equal mServerCertBytes";
+  }
+}
+
+TEST(TestTokensCache, WithinRecordCertDedup)
+{
+  
+  
+  
+  
+  
+  mozilla::net::SSLTokensCache::Clear();
+
+  putToken("anon:dedup.example.com:443"_ns, 10);
+
+  
+  nsTArray<uint8_t> token;
+  mozilla::net::SessionCacheInfo info;
+  ASSERT_EQ(mozilla::net::SSLTokensCache::Get("anon:dedup.example.com:443"_ns,
+                                              token, info),
+            NS_OK);
+  uint32_t rawCertSize = info.mServerCertBytes.Length();
+  ASSERT_GT(rawCertSize, (uint32_t)0);
+
+  
+  putToken("anon:dedup.example.com:443"_ns, 10);
+  uint32_t cacheSize = mozilla::net::SSLTokensCache::CacheSizeForTest();
+
+  
+  
+  ASSERT_LT(cacheSize, rawCertSize * 2)
+      << "Dedup+compression must reduce 4x identical cert blobs to ~1x; "
+         "rawCertSize="
+      << rawCertSize << " cacheSize=" << cacheSize;
 }

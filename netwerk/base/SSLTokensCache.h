@@ -7,6 +7,7 @@
 
 #include "CertVerifier.h"  
 #include "mozilla/Maybe.h"
+#include "mozilla/RefPtr.h"
 #include "mozilla/Span.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPrefs_network.h"
@@ -19,6 +20,7 @@
 #include "nsIAsyncShutdown.h"
 #include "nsIObserver.h"
 #include "nsISerialEventTarget.h"
+#include "nsISupportsImpl.h"
 #include "nsITransportSecurityInfo.h"
 #include "nsTArray.h"
 #include "nsTHashMap.h"
@@ -47,6 +49,36 @@ struct SessionCacheInfo {
   Maybe<bool> mIsBuiltCertChainRootBuiltInRoot;
   nsITransportSecurityInfo::OverridableErrorCategory mOverridableErrorCategory;
   Maybe<nsTArray<nsTArray<uint8_t>>> mHandshakeCertificatesBytes;
+};
+
+
+
+
+
+
+
+
+struct CompressedCert {
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(CompressedCert)
+  nsTArray<uint8_t> mCompressedDer;
+
+ private:
+  ~CompressedCert() = default;
+};
+
+
+
+
+struct CompressedSessionCacheInfo {
+  psm::EVStatus mEVStatus = psm::EVStatus::NotEV;
+  uint16_t mCertificateTransparencyStatus =
+      nsITransportSecurityInfo::CERTIFICATE_TRANSPARENCY_NOT_APPLICABLE;
+  RefPtr<CompressedCert> mServerCert;
+  Maybe<nsTArray<RefPtr<CompressedCert>>> mSucceededCertChain;
+  Maybe<bool> mIsBuiltCertChainRootBuiltInRoot;
+  nsITransportSecurityInfo::OverridableErrorCategory mOverridableErrorCategory =
+      nsITransportSecurityInfo::OverridableErrorCategory::ERROR_UNSET;
+  Maybe<nsTArray<RefPtr<CompressedCert>>> mHandshakeCertificates;
 };
 
 class SSLTokensCache : public nsIMemoryReporter,
@@ -94,17 +126,23 @@ class SSLTokensCache : public nsIMemoryReporter,
   static void LoadForTest(const nsACString& aPath);
   static uint32_t CountForTest();
   static void PutForTest(const nsACString& aKey);
+  static uint32_t CacheSizeForTest();
 #endif
 
  private:
+  class TokenCacheRecord;  
+
   SSLTokensCache();
   virtual ~SSLTokensCache();
 
   nsresult RemoveLocked(const nsACString& aKey, uint64_t aId)
       MOZ_REQUIRES(sLock);
   nsresult RemoveAllLocked(const nsACString& aKey) MOZ_REQUIRES(sLock);
-  nsresult GetLocked(const nsACString& aKey, nsTArray<uint8_t>& aToken,
-                     SessionCacheInfo& aResult, uint64_t* aTokenId)
+  
+  
+  
+  UniquePtr<TokenCacheRecord> GetRecordLocked(const nsACString& aKey,
+                                              uint64_t* aTokenId)
       MOZ_REQUIRES(sLock);
 
   void EvictIfNecessary() MOZ_REQUIRES(sLock);
@@ -183,15 +221,20 @@ class SSLTokensCache : public nsIMemoryReporter,
     ~TokenCacheRecord();
 
     uint32_t Size() const;
-    void Reset();
 
     nsCString mKey;
     PRTime mExpirationTime = 0;
     nsTArray<uint8_t> mToken;
-    SessionCacheInfo mSessionCacheInfo;
+    CompressedSessionCacheInfo mSessionCacheInfo;
     
     
     uint64_t mId = 0;
+    
+    
+    
+    
+    
+    bool mDetached = false;
   };
 
   class TokenCacheEntry {
