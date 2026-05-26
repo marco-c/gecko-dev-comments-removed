@@ -200,8 +200,11 @@ impl Parse for AngleOrPercentage {
 
 
 
+
+
+
 #[allow(missing_docs)]
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped)]
 pub enum NumberOrPercentage {
     Percentage(Percentage),
     Number(Number),
@@ -243,6 +246,23 @@ impl NumberOrPercentage {
         match self {
             Self::Percentage(p) => p.to_number(),
             Self::Number(n) => Some(n.clone()),
+        }
+    }
+
+    
+    pub fn as_percentage(&self) -> Option<&Percentage> {
+        match self {
+            NumberOrPercentage::Percentage(percentage) => Some(percentage),
+            _ => None,
+        }
+    }
+
+    
+    
+    pub fn into_simplified_number(self) -> NumberOrPercentage {
+        match self.as_percentage().and_then(|p| p.get()) {
+            Some(p) => NumberOrPercentage::Number(Number::new(p)),
+            None => self,
         }
     }
 

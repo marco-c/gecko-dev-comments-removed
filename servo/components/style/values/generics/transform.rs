@@ -458,7 +458,7 @@ impl ToRadians for SpecifiedAngle {
 }
 
 
-trait ToFloat {
+pub trait ToFloat {
     
     fn to_f32(&self) -> Result<f32, ()>;
 
