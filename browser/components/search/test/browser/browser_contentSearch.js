@@ -3,6 +3,7 @@
 
 
 ChromeUtils.defineESModuleGetters(this, {
+  ConfigSearchEngine: "resource://gre/modules/ConfigSearchEngine.sys.mjs",
   SearchTestUtils: "resource://testing-common/SearchTestUtils.sys.mjs",
 });
 
@@ -460,7 +461,16 @@ async function addTab() {
   );
   registerCleanupFunction(() => gBrowser.removeTab(tab));
 
-  return { browser: tab.linkedBrowser };
+  let { linkedBrowser } = tab;
+
+  
+  
+  
+  let statePromise = await waitForTestMsg(linkedBrowser, "State");
+  sendEventToContent(linkedBrowser, { type: "GetState" });
+  await statePromise.donePromise;
+
+  return { browser: linkedBrowser };
 }
 
 var currentStateObj = async function (hiddenEngine = "") {
@@ -477,7 +487,7 @@ var currentStateObj = async function (hiddenEngine = "") {
       name: engine.name,
       iconData: await iconDataFromURI(uri),
       hidden: engine.name == hiddenEngine,
-      isConfigEngine: engine.isConfigEngine,
+      isConfigEngine: engine instanceof ConfigSearchEngine,
     });
   }
   return state;
@@ -488,7 +498,7 @@ async function constructEngineObj(engine) {
   return {
     name: engine.name,
     iconData: await iconDataFromURI(uriFavicon),
-    isConfigEngine: engine.isConfigEngine,
+    isConfigEngine: engine instanceof ConfigSearchEngine,
   };
 }
 
