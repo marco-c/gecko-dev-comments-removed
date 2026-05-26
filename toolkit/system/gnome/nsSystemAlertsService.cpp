@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsComponentManagerUtils.h"
 #include "nsSystemAlertsService.h"
 #include "nsAlertsIconListener.h"
@@ -93,6 +92,11 @@ NS_IMETHODIMP nsSystemAlertsService::Teardown() {
 }
 
 NS_IMETHODIMP nsSystemAlertsService::PbmTeardown() {
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+NS_IMETHODIMP nsSystemAlertsService::IsFullscreen(bool* aRetVal) {
+  *aRetVal = false;
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
