@@ -810,9 +810,9 @@ class CheckPermitUnloadRequest final : public PromiseNativeHandler,
   
   
   
-  void RunTraversable(const SessionHistoryInfo& aInfo) {
+  void RunTraversable(nsDocShellLoadState* aDocShellLoadState) {
     MOZ_DIAGNOSTIC_ASSERT(mWGP->BrowsingContext()->IsTop());
-    Run(nullptr, 0, Some(aInfo));
+    Run(nullptr, 0, aDocShellLoadState);
   }
 
   
@@ -825,7 +825,7 @@ class CheckPermitUnloadRequest final : public PromiseNativeHandler,
   }
 
   void Run(ContentParent* aIgnoreProcess = nullptr, uint32_t aTimeout = 0,
-           const Maybe<SessionHistoryInfo>& aInfo = Nothing()) {
+           nsDocShellLoadState* aDocShellLoadState = nullptr) {
     MOZ_ASSERT(mState == State::UNINITIALIZED);
     mState = State::WAITING;
 
@@ -846,17 +846,20 @@ class CheckPermitUnloadRequest final : public PromiseNativeHandler,
     auto reject = [self](auto) { self->ResolveRequest(); };
     
     
-    if (aInfo) {
+    if (aDocShellLoadState) {
       MOZ_DIAGNOSTIC_ASSERT(Navigation::IsAPIEnabled());
       ContentParent* cp = mWGP->GetContentParent();
       mPendingRequests++;
       
       
+      mozilla::NotNull<RefPtr<nsDocShellLoadState>> loadState =
+          WrapNotNull(aDocShellLoadState);
       if (mAction ==
           nsIDocumentViewer::PermitUnloadAction::eDontPromptAndUnload) {
-        cp->SendDispatchNavigateToTraversable(bc, aInfo, resolve, reject);
+        cp->SendDispatchNavigateToTraversable(bc, loadState, resolve, reject);
       } else {
-        cp->SendDispatchBeforeUnloadToSubtree(bc, aInfo, resolve, reject);
+        cp->SendDispatchBeforeUnloadToSubtree(bc, Some(loadState), resolve,
+                                              reject);
       }
     } else {
       bc->PreOrderWalk([&](dom::BrowsingContext* aBC) {
@@ -1076,8 +1079,12 @@ void WindowGlobalParent::PermitUnload(
   request->Run();
 }
 
-void WindowGlobalParent::PermitUnloadTraversable(
-    const SessionHistoryInfo& aInfo,
+
+
+
+
+void WindowGlobalParent::CheckIfUnloadingIsCanceledForTraversable(
+    nsDocShellLoadState* aDocShellLoadState,
     nsIDocumentViewer::PermitUnloadAction aAction,
     std::function<void(nsIDocumentViewer::PermitUnloadResult)>&& aResolver) {
   MOZ_DIAGNOSTIC_ASSERT(BrowsingContext()->IsTop());
@@ -1085,7 +1092,7 @@ void WindowGlobalParent::PermitUnloadTraversable(
       MakeRefPtr<CheckPermitUnloadRequest>(this,
                                             false,
                                            aAction, std::move(aResolver));
-  request->RunTraversable(aInfo);
+  request->RunTraversable(aDocShellLoadState);
 }
 
 void WindowGlobalParent::PermitUnloadChildNavigables(

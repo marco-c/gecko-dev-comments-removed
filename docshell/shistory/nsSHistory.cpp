@@ -1515,8 +1515,7 @@ void nsSHistory::LoadURIOrBFCache(const LoadEntryResult& aLoadEntry) {
 
 
 
-MOZ_CAN_RUN_SCRIPT
-static bool MaybeCheckUnloadingIsCanceled(
+bool nsSHistory::MaybeCheckUnloadingIsCanceled(
     const nsTArray<nsSHistory::LoadEntryResult>& aLoadResults,
     BrowsingContext* aTraversable,
     std::function<void(nsTArray<nsSHistory::LoadEntryResult>&,
@@ -1601,14 +1600,32 @@ static bool MaybeCheckUnloadingIsCanceled(
       needsBeforeUnload
           ? nsIDocumentViewer::PermitUnloadAction::ePrompt
           : nsIDocumentViewer::PermitUnloadAction::eDontPromptAndUnload;
-  windowGlobalParent->PermitUnloadTraversable(
-      targetEntry->Info(), action,
-      [action, loadResults = CopyableTArray(std::move(aLoadResults)),
-       windowGlobalParent, aResolver = std::move(aResolver)](
+
+  RefPtr<nsDocShellLoadState> maybeInterceptedLoadState = found->mLoadState;
+
+  windowGlobalParent->CheckIfUnloadingIsCanceledForTraversable(
+      maybeInterceptedLoadState, action,
+      [action, loadResults = CopyableTArray(aLoadResults), windowGlobalParent,
+       aResolver = std::move(aResolver), id = traversable->Id(),
+       maybeInterceptedLoadState](
           nsIDocumentViewer::PermitUnloadResult aResult) mutable {
         if (aResult != nsIDocumentViewer::PermitUnloadResult::eContinue) {
+          loadResults.RemoveElementsBy([id](const auto& result) {
+            return result.mBrowsingContext->Id() == id;
+          });
+
           aResolver(loadResults, aResult);
           return;
+        }
+
+        
+        
+        if (ContentParent* cp = windowGlobalParent->GetContentParent()) {
+          RefPtr clearedPendingState = cp->TakePendingLoadStateForId(
+              maybeInterceptedLoadState->GetLoadIdentifier());
+          MOZ_DIAGNOSTIC_ASSERT(!clearedPendingState ||
+                                clearedPendingState ==
+                                    maybeInterceptedLoadState);
         }
 
         
@@ -1624,7 +1641,8 @@ static bool MaybeCheckUnloadingIsCanceled(
         
         
         windowGlobalParent->PermitUnloadChildNavigables(
-            action, [loadResults = std::move(loadResults), aResolver](
+            action, [loadResults = std::move(loadResults),
+                     aResolver = std::move(aResolver)](
                         nsIDocumentViewer::PermitUnloadResult aResult) mutable {
               aResolver(loadResults, aResult);
             });
@@ -1679,7 +1697,9 @@ void nsSHistory::LoadURIs(const nsTArray<LoadEntryResult>& aLoadResults,
                     return aResolver(nsresult::NS_ERROR_DOM_ABORT_ERR);
                   }
 
-                  return aResolver(NS_OK);
+                  aResolver(NS_OK);
+
+                  return;
                 }
 
                 for (LoadEntryResult& loadEntry : aLoadResults) {

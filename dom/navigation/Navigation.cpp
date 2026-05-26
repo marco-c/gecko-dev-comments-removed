@@ -500,39 +500,36 @@ static void LogEvent(Event* aEvent, NavigateEvent* aOngoingEvent,
   LOG_FMTD("{}", fmt::join(log.begin(), log.end(), std::string_view{" "}));
 }
 
-
-static void ResumeApplyTheHistoryStep(
-    SessionHistoryInfo* aTarget, BrowsingContext* aTraversable,
-    UserNavigationInvolvement aUserInvolvement) {
-  MOZ_DIAGNOSTIC_ASSERT(aTraversable->IsTop());
-  auto* childSHistory = aTraversable->GetChildSessionHistory();
-  
-  
-  childSHistory->AsyncGo(aTarget->NavigationKey(), aTraversable,
-                          false,
-                          false,
-                          false, [](auto) {});
-}
-
 struct NavigationWaitForAllScope final : public nsISupports,
                                          public SupportsWeakPtr {
   NavigationWaitForAllScope(Navigation* aNavigation,
                             NavigationAPIMethodTracker* aApiMethodTracker,
                             NavigateEvent* aEvent,
-                            NavigationDestination* aDestination)
+                            NavigationDestination* aDestination,
+                            nsDocShellLoadState* aLoadState)
       : mNavigation(aNavigation),
         mAPIMethodTracker(aApiMethodTracker),
         mEvent(aEvent),
-        mDestination(aDestination) {}
+        mDestination(aDestination),
+        mLoadState(aLoadState) {}
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_CLASS(NavigationWaitForAllScope)
   RefPtr<Navigation> mNavigation;
   RefPtr<NavigationAPIMethodTracker> mAPIMethodTracker;
   RefPtr<NavigateEvent> mEvent;
   RefPtr<NavigationDestination> mDestination;
+  RefPtr<nsDocShellLoadState> mLoadState;
 
  private:
   ~NavigationWaitForAllScope() = default;
+
+  BrowsingContext* GetBrowsingContext() const {
+    nsGlobalWindowInner* window = mNavigation->GetOwnerWindow();
+    if (!window) {
+      return nullptr;
+    }
+    return window->GetBrowsingContext();
+  }
 
  public:
   
@@ -572,6 +569,7 @@ struct NavigationWaitForAllScope final : public nsISupports,
       navigation->AbortNavigateEvent(jsapi.cx(), event, aRejectionReason);
     }
   }
+
   
   MOZ_CAN_RUN_SCRIPT void CommitNavigateEvent() {
     
@@ -585,10 +583,6 @@ struct NavigationWaitForAllScope final : public nsISupports,
     }
     
     RefPtr<nsDocShell> docShell = nsDocShell::Cast(document->GetDocShell());
-    Maybe<BrowsingContext&> navigable =
-        ToMaybeRef(mNavigation->GetOwnerWindow()).andThen([](auto& aWindow) {
-          return ToMaybeRef(aWindow.GetBrowsingContext());
-        });
     
     if (AbortSignal* signal = mEvent->Signal(); signal->Aborted()) {
       return;
@@ -602,8 +596,20 @@ struct NavigationWaitForAllScope final : public nsISupports,
 
     
     
+    
+    auto resumeApplyTheHistoryStep =
+        MakeScopeExit([browsingContext = RefPtr{GetBrowsingContext()},
+                       loadState = RefPtr{mLoadState}]() {
+          if (browsingContext && loadState) {
+            browsingContext->LoadURI(loadState,  false);
+          }
+        });
+
+    
+    
     nsAutoMicroTask mt;
 
+    bool traverseWasIntercepted = false;
     
     if (mEvent->InterceptionState() != NavigateEvent::InterceptionState::None) {
       
@@ -651,37 +657,38 @@ struct NavigationWaitForAllScope final : public nsISupports,
                 mEvent->NavigationType());
           }
           break;
-        case NavigationType::Traverse:
-          if (auto* entry = mDestination->GetEntry()) {
-            
-            
-            mNavigation
-                ->mSuppressNormalScrollRestorationDuringOngoingNavigation =
-                true;
-            
-            
-            
-            UserNavigationInvolvement userInvolvement =
-                mEvent->UserInitiated() ? UserNavigationInvolvement::Activation
-                                        : UserNavigationInvolvement::None;
-            
-            
-            
-            
-            
-            ResumeApplyTheHistoryStep(entry->SessionHistoryInfo(),
-                                      navigable->Top(), userInvolvement);
-
-            
-            
-            MOZ_ASSERT(entry->Index() >= 0);
-            mNavigation->SetCurrentEntryIndex(entry->SessionHistoryInfo());
+        case NavigationType::Traverse: {
+          
+          
+          mNavigation->mSuppressNormalScrollRestorationDuringOngoingNavigation =
+              true;
+          
+          
+          
+          UserNavigationInvolvement userInvolvement =
+              mEvent->UserInitiated() ? UserNavigationInvolvement::Activation
+                                      : UserNavigationInvolvement::None;
+          if (mLoadState) {
+            mLoadState->SetUserNavigationInvolvement(userInvolvement);
+            mLoadState->SetIsResumingInterceptedNavigation(true);
           }
+          
+          
+          
+          
+          
+          traverseWasIntercepted = true;
           break;
+        }
         default:
           break;
       }
     }
+
+    if (!traverseWasIntercepted) {
+      resumeApplyTheHistoryStep.release();
+    }
+
     
     
     
@@ -710,6 +717,8 @@ struct NavigationWaitForAllScope final : public nsISupports,
       
       mNavigation->mOngoingNavigateEvent = nullptr;
     }
+
+    return;
   }
 
   MOZ_CAN_RUN_SCRIPT void CommitNavigateEventSuccessSteps() {
@@ -800,8 +809,8 @@ void Navigation::RunNavigateEventHandlerSteps(
 
   
   RefPtr destination = event->Destination();
-  RefPtr scope =
-      MakeRefPtr<NavigationWaitForAllScope>(this, tracker, event, destination);
+  RefPtr scope = MakeRefPtr<NavigationWaitForAllScope>(this, tracker, event,
+                                                       destination, nullptr);
 
   
   
@@ -1413,9 +1422,11 @@ void LogEntry(NavigationHistoryEntry* aEntry, uint64_t aIndex, uint64_t aTotal,
 
 
 bool Navigation::FireTraverseNavigateEvent(
-    JSContext* aCx, const SessionHistoryInfo& aDestinationSessionHistoryInfo,
+    JSContext* aCx, nsDocShellLoadState* aLoadState,
     Maybe<UserNavigationInvolvement> aUserInvolvement) {
   
+  const SessionHistoryInfo& destinationSessionHistoryInfo =
+      aLoadState->GetLoadingSessionHistoryInfo()->mInfo;
   
 
   
@@ -1427,7 +1438,7 @@ bool Navigation::FireTraverseNavigateEvent(
 
   
   RefPtr<NavigationHistoryEntry> destinationNHE =
-      FindNavigationHistoryEntry(aDestinationSessionHistoryInfo);
+      FindNavigationHistoryEntry(destinationSessionHistoryInfo);
 
   
   RefPtr<nsIStructuredCloneContainer> state =
@@ -1440,8 +1451,8 @@ bool Navigation::FireTraverseNavigateEvent(
           .andThen([](auto& aDocShell) {
             return ToMaybeRef(aDocShell.GetActiveSessionHistoryInfo());
           })
-          .map([&aDestinationSessionHistoryInfo](auto& aSessionHistoryInfo) {
-            return aDestinationSessionHistoryInfo.SharesDocumentWith(
+          .map([&destinationSessionHistoryInfo](auto& aSessionHistoryInfo) {
+            return destinationSessionHistoryInfo.SharesDocumentWith(
                 aSessionHistoryInfo);
           })
           .valueOr(false);
@@ -1449,7 +1460,7 @@ bool Navigation::FireTraverseNavigateEvent(
   
   RefPtr<NavigationDestination> destination =
       MakeAndAddRef<NavigationDestination>(
-          GetRelevantGlobal(), aDestinationSessionHistoryInfo.GetURI(),
+          GetRelevantGlobal(), destinationSessionHistoryInfo.GetURI(),
           destinationNHE, state, isSameDocument);
 
   
@@ -1459,7 +1470,8 @@ bool Navigation::FireTraverseNavigateEvent(
        nullptr,
        nullptr,
        nullptr,
-       VoidString());
+       VoidString(),
+       nullptr, aLoadState);
 }
 
 
@@ -1646,7 +1658,8 @@ bool Navigation::InnerFireNavigateEvent(
     FormData* aFormDataEntryList,
     nsIStructuredCloneContainer* aClassicHistoryAPIState,
     const nsAString& aDownloadRequestFilename,
-    NavigationAPIMethodTracker* aNavigationAPIMethodTracker) {
+    NavigationAPIMethodTracker* aNavigationAPIMethodTracker,
+    nsDocShellLoadState* aLoadState) {
   nsCOMPtr<nsIGlobalObject> globalObject = GetRelevantGlobal();
   RefPtr apiMethodTracker = aNavigationAPIMethodTracker;
 
@@ -1822,8 +1835,8 @@ bool Navigation::InnerFireNavigateEvent(
     MOZ_ALWAYS_TRUE(finishedPromise->SetAnyPromiseIsHandled());
   }
 
-  RefPtr scope = MakeRefPtr<NavigationWaitForAllScope>(this, apiMethodTracker,
-                                                       event, aDestination);
+  RefPtr scope = MakeRefPtr<NavigationWaitForAllScope>(
+      this, apiMethodTracker, event, aDestination, aLoadState);
   
   if (event->NavigationPrecommitHandlerList().IsEmpty()) {
     LOG_FMTD("No precommit handlers, committing directly");

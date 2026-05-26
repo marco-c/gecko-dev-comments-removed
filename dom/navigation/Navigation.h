@@ -142,7 +142,8 @@ class Navigation final : public DOMEventTargetHelper {
 
   MOZ_CAN_RUN_SCRIPT
   void UpdateEntriesForSameDocumentNavigation(
-      SessionHistoryInfo* aDestinationSHE, NavigationType aNavigationType);
+      SessionHistoryInfo* aDestinationSHE, NavigationType aNavigationType,
+      bool aFiredNavigateEvent = true);
 
   MOZ_CAN_RUN_SCRIPT
   void RunNavigateEventHandlerSteps(
@@ -157,11 +158,12 @@ class Navigation final : public DOMEventTargetHelper {
   static bool IsAPIEnabled(JSContext*  = nullptr,
                            JSObject*  = nullptr);
 
-  
-  
+  enum class FinalStatus : uint8_t { Continue, Intercept, Prevent };
 
+  
+  
   MOZ_CAN_RUN_SCRIPT bool FireTraverseNavigateEvent(
-      JSContext* aCx, const SessionHistoryInfo& aDestinationSessionHistoryInfo,
+      JSContext* aCx, nsDocShellLoadState* aLoadState,
       Maybe<UserNavigationInvolvement> aUserInvolvement);
 
   MOZ_CAN_RUN_SCRIPT bool FirePushReplaceReloadNavigateEvent(
@@ -231,7 +233,8 @@ class Navigation final : public DOMEventTargetHelper {
       FormData* aFormDataEntryList,
       nsIStructuredCloneContainer* aClassicHistoryAPIState,
       const nsAString& aDownloadRequestFilename,
-      NavigationAPIMethodTracker* aNavigationAPIMethodTracker = nullptr);
+      NavigationAPIMethodTracker* aNavigationAPIMethodTracker = nullptr,
+      nsDocShellLoadState* aLoadState = nullptr);
 
   NavigationHistoryEntry* FindNavigationHistoryEntry(
       const SessionHistoryInfo& aSessionHistoryInfo) const;

@@ -200,6 +200,8 @@ class nsDocShellLoadState final {
   void SetSHEntry(SessionHistoryEntry* aSHEntry);
 
   void SetPreviousEntryForActivation(nsISHEntry* aSHEntry);
+  void SetPreviousEntryForActivation(
+      const mozilla::Maybe<mozilla::dom::PreviousSessionHistoryInfo>& aInfo);
 
   const mozilla::dom::LoadingSessionHistoryInfo* GetLoadingSessionHistoryInfo()
       const;
@@ -474,6 +476,15 @@ class nsDocShellLoadState final {
   }
   bool IsInitialAboutBlankHandlingProhibited() {
     return mIsInitialAboutBlankHandlingProhibited;
+  }
+
+  void SetIsResumingInterceptedNavigation(
+      bool aIsResumingInterceptedNavigation) {
+    mIsResumingInterceptedNavigation = aIsResumingInterceptedNavigation;
+  }
+
+  bool IsResumingInterceptedNavigation() const {
+    return mIsResumingInterceptedNavigation;
   }
 
  protected:
@@ -764,6 +775,14 @@ class nsDocShellLoadState final {
   
   
   bool mIsInitialAboutBlankHandlingProhibited;
+
+  
+  
+  
+  
+  
+  
+  bool mIsResumingInterceptedNavigation = false;
 };
 
 #endif 
