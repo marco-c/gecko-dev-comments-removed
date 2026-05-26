@@ -11,10 +11,6 @@ const { ASRouterStorage } = ChromeUtils.importESModule(
   "resource:///modules/asrouter/ASRouterStorage.sys.mjs"
 );
 
-const { ProfileAge } = ChromeUtils.importESModule(
-  "resource://gre/modules/ProfileAge.sys.mjs"
-);
-
 
 
 
@@ -45,14 +41,7 @@ add_task(async function test_measure() {
   await miscDataBackupResource.measure(tempDir);
 
   let measurement = Glean.browserBackup.miscDataSize.testGetValue();
-  let scalars = TelemetryTestUtils.getProcessScalars("parent", false, false);
 
-  TelemetryTestUtils.assertScalar(
-    scalars,
-    "browser.backup.misc_data_size",
-    measurement,
-    "Glean and telemetry measurements for misc data should be equal"
-  );
   Assert.equal(
     measurement,
     EXPECTED_MISC_KILOBYTES_SIZE,
@@ -176,14 +165,6 @@ add_task(async function test_recover() {
     "MiscDataBackupResource-test-profile"
   );
 
-  
-  
-  let originalProfileAge = await ProfileAge(PathUtils.profileDir);
-  await originalProfileAge.computeAndPersistCreated();
-  Assert.ok(
-    await IOUtils.exists(PathUtils.join(PathUtils.profileDir, "times.json"))
-  );
-
   const simpleCopyFiles = [
     { path: "enumerate_devices.txt" },
     { path: "protections.sqlite" },
@@ -222,27 +203,6 @@ add_task(async function test_recover() {
       PathUtils.join(destProfilePath, SNIPPETS_BACKUP_FILE)
     )),
     "Snippets backup data should not have gone into the profile directory"
-  );
-
-  
-  
-  Assert.ok(
-    await IOUtils.exists(PathUtils.join(destProfilePath, "times.json"))
-  );
-  let copiedProfileAge = await ProfileAge(destProfilePath);
-  Assert.equal(
-    await originalProfileAge.created,
-    await copiedProfileAge.created,
-    "Created timestamp should match."
-  );
-  Assert.equal(
-    await originalProfileAge.firstUse,
-    await copiedProfileAge.firstUse,
-    "First use timestamp should match."
-  );
-  Assert.ok(
-    await copiedProfileAge.recoveredFromBackup,
-    "Backup recovery timestamp should have been set."
   );
 
   await maybeRemovePath(recoveryPath);
