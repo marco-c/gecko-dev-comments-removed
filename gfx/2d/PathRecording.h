@@ -135,7 +135,12 @@ class PathOps {
   bool IsEmpty() const;
 
  private:
-  mozilla::Vector<uint8_t> mPathData;
+  
+  
+  
+  
+  static constexpr size_t kInlineStorage = 256 - 4 * 8;
+  mozilla::Vector<uint8_t, kInlineStorage> mPathData;
 };
 
 template <class S>
