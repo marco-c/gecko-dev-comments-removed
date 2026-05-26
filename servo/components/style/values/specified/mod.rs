@@ -317,12 +317,8 @@ impl Parse for NonNegativeNumberOrPercentage {
 }
 
 
-
-
-#[derive(
-    Clone, Debug, MallocSizeOf, PartialEq, PartialOrd, SpecifiedValueInfo, ToCss, ToShmem, ToTyped,
-)]
-pub struct Opacity(Number);
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped)]
+pub struct Opacity(NumberOrPercentage);
 
 impl Parse for Opacity {
     
@@ -332,12 +328,9 @@ impl Parse for Opacity {
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
-        
-        
-        let Some(number) = NumberOrPercentage::parse(context, input)?.to_number() else {
-            return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError));
-        };
-        Ok(Opacity(number))
+        Ok(Opacity(
+            NumberOrPercentage::parse(context, input)?.into_simplified_number(),
+        ))
     }
 }
 
@@ -346,7 +339,7 @@ impl ToComputedValue for Opacity {
 
     #[inline]
     fn to_computed_value(&self, context: &Context) -> CSSFloat {
-        let value = self.0.to_computed_value(context);
+        let value = self.0.to_computed_value(context).value();
         if context.for_animation {
             
             
@@ -358,7 +351,9 @@ impl ToComputedValue for Opacity {
 
     #[inline]
     fn from_computed_value(computed: &CSSFloat) -> Self {
-        Opacity(Number::from_computed_value(computed))
+        Opacity(NumberOrPercentage::Number(Number::from_computed_value(
+            computed,
+        )))
     }
 }
 
