@@ -24,6 +24,8 @@ add_setup(async () => {
 
 
 add_task(async function autopip_and_focus() {
+  Services.fog.testResetFOG();
+
   
   let win1 = await BrowserTestUtils.openNewBrowserWindow();
   let firstTab = win1.gBrowser.selectedTab;
@@ -68,12 +70,37 @@ add_task(async function autopip_and_focus() {
   is(Services.focus.activeWindow, win1, "First window is still focused");
   blurAborter.abort();
 
+  let ev = Glean.pictureinpicture.createPlayer.testGetValue();
+  Assert.equal(ev.length, 1);
+
+  Assert.equal(
+    ChromeUtils.nondeterministicGetWeakMapKeys(
+      PictureInPicture.weakAutoPipBrowserToParent
+    ).length,
+    1,
+    "weakAutoPipBrowserToParent has 1 key"
+  );
+
   
   let pipClosed = BrowserTestUtils.domWindowClosed(pipWin);
   await BrowserTestUtils.switchTab(win1.gBrowser, secondTab);
   ok(await pipClosed, "PiP window automatically closed.");
 
   await BrowserTestUtils.closeWindow(win1);
+
+  ev = Glean.pictureinpicture.closedMethodForegrounded.testGetValue();
+  Assert.equal(ev.length, 1);
+
+  Assert.equal(
+    ChromeUtils.nondeterministicGetWeakMapKeys(
+      PictureInPicture.weakAutoPipBrowserToParent
+    ).length,
+    0,
+    "weakAutoPipBrowserToParent is empty"
+  );
+
+  ev = Glean.pictureinpicture.closedMethodForegrounded.testGetValue();
+  Assert.equal(ev.length, 1);
 });
 
 
