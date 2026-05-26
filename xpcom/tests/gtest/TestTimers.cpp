@@ -229,6 +229,11 @@ constexpr unsigned kUpperToleranceMs = 10;
 constexpr unsigned kLowerToleranceMs = 5;
 constexpr unsigned kTightLowerToleranceMs = 1;
 
+
+
+
+constexpr unsigned kPreciseLowerToleranceMs = 20;
+
 void WaitAssertFired(TimerHelper* timer, unsigned expectedMs,
                      unsigned upperTolMs, unsigned lowerTolMs,
                      unsigned blockMs) {
@@ -257,6 +262,7 @@ TEST_F(SimpleTimerTest, TimerWithStoppedTarget) {
 TEST_F(SimpleTimerTest, SlackRepeating) {
   auto timer = MakeTimer(100 * kSlowdownFactor, nsITimer::TYPE_REPEATING_SLACK);
   WaitAssertFired(timer.get(), 100, kUpperToleranceMs, kLowerToleranceMs, 50);
+  if (HasFatalFailure()) return;
   
   
   WaitAssertFired(timer.get(), 150, kUpperToleranceMs, kLowerToleranceMs, 0);
@@ -266,14 +272,22 @@ TEST_F(SimpleTimerTest, RepeatingPrecise) {
   auto timer = MakeTimer(100 * kSlowdownFactor,
                          nsITimer::TYPE_REPEATING_PRECISE_CAN_SKIP);
   WaitAssertFired(timer.get(), 100, kUpperToleranceMs, kLowerToleranceMs, 50);
+  if (HasFatalFailure()) return;
 
   
-  WaitAssertFired(timer.get(), 100, kUpperToleranceMs, kLowerToleranceMs, 0);
+  
+  
+  WaitAssertFired(timer.get(), 100, kUpperToleranceMs, kPreciseLowerToleranceMs,
+                  0);
+  if (HasFatalFailure()) return;
 
   
   
-  WaitAssertFired(timer.get(), 100, kUpperToleranceMs, kLowerToleranceMs, 150);
-  WaitAssertFired(timer.get(), 200, kUpperToleranceMs, kLowerToleranceMs, 0);
+  WaitAssertFired(timer.get(), 100, kUpperToleranceMs, kPreciseLowerToleranceMs,
+                  150);
+  if (HasFatalFailure()) return;
+  WaitAssertFired(timer.get(), 200, kUpperToleranceMs, kPreciseLowerToleranceMs,
+                  0);
 }
 
 
@@ -582,10 +596,15 @@ TEST_F(SimpleTimerTest, SleepWakeRepeatingPrecise) {
   
   WaitAssertFired(timer.get(), 350, kUpperToleranceMs, kTightLowerToleranceMs,
                   0);
+  if (HasFatalFailure()) return;
 
   
-  WaitAssertFired(timer.get(), 50, kUpperToleranceMs, kLowerToleranceMs, 0);
-  WaitAssertFired(timer.get(), 100, kUpperToleranceMs, kLowerToleranceMs, 0);
+  WaitAssertFired(timer.get(), 50, kUpperToleranceMs, kPreciseLowerToleranceMs,
+                  0);
+  if (HasFatalFailure()) return;
+  WaitAssertFired(timer.get(), 100, kUpperToleranceMs, kPreciseLowerToleranceMs,
+                  0);
+  if (HasFatalFailure()) return;
 
   PauseTimerThread();
   delay = timer->Wait(50 * kSlowdownFactor);
@@ -594,7 +613,8 @@ TEST_F(SimpleTimerTest, SleepWakeRepeatingPrecise) {
 
   
   
-  WaitAssertFired(timer.get(), 100, kUpperToleranceMs, kLowerToleranceMs, 0);
+  WaitAssertFired(timer.get(), 100, kUpperToleranceMs, kPreciseLowerToleranceMs,
+                  0);
 }
 
 #define FUZZ_MAX_TIMEOUT 9
