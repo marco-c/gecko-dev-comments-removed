@@ -2250,14 +2250,10 @@ nsresult nsGlobalWindowOuter::SetNewDocument(Document* aDocument,
       newInnerGlobal = newInnerWindow->GetWrapper();
     } else {
       newInnerWindow = nsGlobalWindowInner::Create(this, thisChrome, aActor);
-      if (StaticPrefs::dom_timeout_defer_during_load() &&
-          !aDocument->NodePrincipal()->IsURIInPrefList(
-              "dom.timeout.defer_during_load.force-disable")) {
-        
-        newInnerWindow->SetActiveLoadingState(
-            aDocument->GetReadyStateEnum() ==
-            Document::ReadyState::READYSTATE_LOADING);
-      }
+      
+      newInnerWindow->SetActiveLoadingState(
+          aDocument->GetReadyStateEnum() ==
+          Document::ReadyState::READYSTATE_LOADING);
 
       
       
