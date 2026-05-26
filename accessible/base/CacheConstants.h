@@ -40,6 +40,19 @@ class CacheDomain {
   static constexpr uint64_t All = ~((uint64_t)0x0);
 };
 
+
+
+
+static constexpr uint64_t kPdfCacheDomains =
+    
+    CacheDomain::NameAndDescription | CacheDomain::Text |
+    CacheDomain::Relations |
+    
+    CacheDomain::ARIA | CacheDomain::GroupInfo | CacheDomain::State |
+    CacheDomain::Viewport |
+    
+    CacheDomain::Table;
+
 enum class CacheUpdateType {
   
 
