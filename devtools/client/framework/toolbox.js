@@ -1702,6 +1702,7 @@ class Toolbox extends EventEmitter {
       isToggle,
       onKeyDown,
       experimentalURL,
+      highlighterTypes,
     } = options;
     const toolbox = this;
     const button = {
@@ -1740,6 +1741,7 @@ class Toolbox extends EventEmitter {
       
       isInStartContainer: !!isInStartContainer,
       experimentalURL,
+      highlighterTypes,
       getContextMenu() {
         if (options.getContextMenu) {
           return options.getContextMenu(toolbox);
@@ -2458,8 +2460,18 @@ class Toolbox extends EventEmitter {
 
 
   updateToolboxButtonsVisibility() {
+    const inspectorFront = this.target.getCachedFront("inspector");
+
     this.toolbarButtons.forEach(button => {
       button.isVisible = this._commandIsVisible(button);
+
+      if (!button.isVisible && inspectorFront) {
+        
+        
+        button.highlighterTypes?.forEach(type => {
+          inspectorFront.destroyHighlighterByType(type);
+        });
+      }
     });
     this._renderToolboxButtons();
   }
@@ -3434,17 +3446,6 @@ class Toolbox extends EventEmitter {
       this._updateFrames({ destroyAll: true });
     }
 
-    
-    
-    
-    const inspectorFront = this.target.getCachedFront("inspector");
-    if (inspectorFront) {
-      this.toolbarButtons.forEach(toolboxButton => {
-        toolboxButton.highlighterTypes?.forEach(type => {
-          inspectorFront.destroyHighlighterByType(type);
-        });
-      });
-    }
     this.updateToolboxButtonsVisibility();
 
     const toolId = this.currentToolId;
