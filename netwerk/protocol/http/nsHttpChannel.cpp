@@ -657,8 +657,9 @@ nsresult nsHttpChannel::PrepareToConnect() {
         self->mUsingDictionary = true;
         
         
+        RefPtr<LoadContextInfo> lci = GetLoadContextInfo(self);
         if (NS_SUCCEEDED(aDict->Prefetch(
-                GetLoadContextInfo(self), self->mShouldSuspendForDictionary,
+                lci, self->mShouldSuspendForDictionary,
                 [self](nsresult aResult) {
                   
                   
