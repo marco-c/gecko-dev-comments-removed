@@ -411,9 +411,10 @@ class Assembler : public AssemblerShared,
 
   
   
-  bool isNear(Label* L);
-  bool isNear(Label* L, OffsetSize bits);
-  bool is_near_branch(Label* L);
+  bool isNear(Label* L, OffsetSize bits) {
+    MOZ_ASSERT(L->bound());
+    return is_intn(currentOffset() - L->offset(), bits);
+  }
 
   void nopAlign(int m) { m_buffer.align(m); }
 
