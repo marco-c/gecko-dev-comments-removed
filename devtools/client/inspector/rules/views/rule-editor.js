@@ -462,24 +462,6 @@ class RuleEditor extends EventEmitter {
 
 
   #createAncestorContainerQuerySelector(selectorContainer, containerQueryData) {
-    
-    
-    
-    
-    
-    if (!containerQueryData.conditions) {
-      containerQueryData.conditions = [
-        {
-          containerName: containerQueryData.containerName,
-          containerQuery: containerQueryData.containerQuery,
-          
-          
-          hasContainer: true,
-          matched: true,
-        },
-      ];
-    }
-
     const containerQueryEl = createChild(selectorContainer, "span", {
       class: "container-query",
     });

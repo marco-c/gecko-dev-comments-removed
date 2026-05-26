@@ -138,85 +138,45 @@ class CssQueryContainerTooltipHelper {
       );
       ul.appendChild(containerTypeEl);
 
-      
-      
-      
-      if (!res.queryFeatures) {
-        const inlineSizeEl = doc.createElementNS(XHTML_NS, "li");
+      let unsetEl;
+      for (const { name, value, type } of res.queryFeatures) {
+        const el = doc.createElementNS(XHTML_NS, "li");
 
-        const inlineSizeLabel = doc.createElementNS(XHTML_NS, "span");
-        inlineSizeLabel.classList.add("property-name");
-        inlineSizeLabel.appendChild(doc.createTextNode(`inline-size`));
-
-        const inlineSizeValue = doc.createElementNS(XHTML_NS, "span");
-        inlineSizeValue.classList.add("property-value");
-        inlineSizeValue.appendChild(doc.createTextNode(res.inlineSize));
-
-        inlineSizeEl.append(
-          inlineSizeLabel,
-          doc.createTextNode(": "),
-          inlineSizeValue
-        );
-        ul.appendChild(inlineSizeEl);
-
-        if (res.containerType != "inline-size") {
-          const blockSizeEl = doc.createElementNS(XHTML_NS, "li");
-          const blockSizeLabel = doc.createElementNS(XHTML_NS, "span");
-          blockSizeLabel.classList.add("property-name");
-          blockSizeLabel.appendChild(doc.createTextNode(`block-size`));
-
-          const blockSizeValue = doc.createElementNS(XHTML_NS, "span");
-          blockSizeValue.classList.add("property-value");
-          blockSizeValue.appendChild(doc.createTextNode(res.blockSize));
-
-          blockSizeEl.append(
-            blockSizeLabel,
-            doc.createTextNode(": "),
-            blockSizeValue
-          );
-          ul.appendChild(blockSizeEl);
-        }
-      } else {
-        let unsetEl;
-        for (const { name, value, type } of res.queryFeatures) {
-          const el = doc.createElementNS(XHTML_NS, "li");
-
-          
-          
-          if (value === null) {
-            if (!unsetEl) {
-              unsetEl = doc.createElementNS(XHTML_NS, "ul");
-              unsetEl.classList.add("unset-properties");
-              tooltipContainer.appendChild(unsetEl);
-            }
-            if (type === "var") {
-              el.append(
-                STYLE_INSPECTOR_L10N.getFormatStr("rule.variableUnset", name)
-              );
-            } else if (type === "attr") {
-              el.append(
-                STYLE_INSPECTOR_L10N.getFormatStr("rule.attributeUnset", name)
-              );
-            }
-            unsetEl.append(el);
-            continue;
+        
+        
+        if (value === null) {
+          if (!unsetEl) {
+            unsetEl = doc.createElementNS(XHTML_NS, "ul");
+            unsetEl.classList.add("unset-properties");
+            tooltipContainer.appendChild(unsetEl);
           }
-          const labelEl = doc.createElementNS(XHTML_NS, "span");
-          labelEl.classList.add("property-name");
-          labelEl.append(name);
-
-          const valueEl = doc.createElementNS(XHTML_NS, "span");
-          valueEl.classList.add("property-value");
-          
-          valueEl.append(value === "" ? `<${L10N_EMPTY}>` : value);
-          if (value === "") {
-            valueEl.classList.add("empty");
+          if (type === "var") {
+            el.append(
+              STYLE_INSPECTOR_L10N.getFormatStr("rule.variableUnset", name)
+            );
+          } else if (type === "attr") {
+            el.append(
+              STYLE_INSPECTOR_L10N.getFormatStr("rule.attributeUnset", name)
+            );
           }
-
-          el.append(labelEl, ": ", valueEl);
-
-          ul.appendChild(el);
+          unsetEl.append(el);
+          continue;
         }
+        const labelEl = doc.createElementNS(XHTML_NS, "span");
+        labelEl.classList.add("property-name");
+        labelEl.append(name);
+
+        const valueEl = doc.createElementNS(XHTML_NS, "span");
+        valueEl.classList.add("property-value");
+        
+        valueEl.append(value === "" ? `<${L10N_EMPTY}>` : value);
+        if (value === "") {
+          valueEl.classList.add("empty");
+        }
+
+        el.append(labelEl, ": ", valueEl);
+
+        ul.appendChild(el);
       }
     }
 
