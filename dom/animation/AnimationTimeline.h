@@ -6,7 +6,7 @@
 #define mozilla_dom_AnimationTimeline_h
 
 #include "mozilla/AnimationUtils.h"
-#include "mozilla/dom/CSSNumericValueBinding.h"
+#include "mozilla/dom/CSSNumericValueBindingFwd.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsHashKeys.h"
 #include "nsIGlobalObject.h"
@@ -46,16 +46,18 @@ class AnimationTimeline : public nsISupports, public nsWrapperCache {
   nsIGlobalObject* GetParentObject() const { return mWindow; }
 
   
+  
+  
+  virtual void GetCurrentTime(Nullable<OwningCSSNumberish>& aRetVal) const;
+  void GetDuration(Nullable<OwningDoubleOrCSSNumericValue>& aRetVal,
+                   ErrorResult& aRv) const;
+
   virtual Nullable<TimeDuration> GetCurrentTimeAsDuration() const = 0;
 
-  
-  
   Nullable<double> GetCurrentTimeAsDouble() const {
     return AnimationUtils::TimeDurationToDouble(GetCurrentTimeAsDuration(),
                                                 mRTPCallerType);
   }
-  void GetDuration(Nullable<OwningDoubleOrCSSNumericValue>& aRetVal,
-                   ErrorResult& aRv) const;
 
   TimeStamp GetCurrentTimeAsTimeStamp() const {
     Nullable<TimeDuration> currentTime = GetCurrentTimeAsDuration();
