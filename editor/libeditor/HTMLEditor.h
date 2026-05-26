@@ -725,6 +725,8 @@ class HTMLEditor final : public EditorBase,
 
   bool IsTabbable() const { return IsInteractionAllowed(); }
 
+  dom::EditContext* GetEditContext() const override final;
+
   
 
 

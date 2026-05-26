@@ -39,6 +39,7 @@
 #include "mozilla/TextComposition.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/AncestorIterator.h"
+#include "mozilla/dom/EditContext.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/ElementInlines.h"
 #include "mozilla/dom/HTMLBRElement.h"
@@ -643,12 +644,15 @@ nsresult HTMLEditor::OnEndHandlingTopLevelEditSubActionInternal() {
     }
   }
 
-  rv = HandleInlineSpellCheck(
-      TopLevelEditSubActionDataRef().mSelectedRange->StartPoint(),
-      TopLevelEditSubActionDataRef().mChangedRange);
-  if (NS_FAILED(rv)) {
-    NS_WARNING("EditorBase::HandleInlineSpellCheck() failed");
-    return rv;
+  
+  if (!GetEditContext()) {
+    rv = HandleInlineSpellCheck(
+        TopLevelEditSubActionDataRef().mSelectedRange->StartPoint(),
+        TopLevelEditSubActionDataRef().mChangedRange);
+    if (NS_FAILED(rv)) {
+      NS_WARNING("EditorBase::HandleInlineSpellCheck() failed");
+      return rv;
+    }
   }
 
   
@@ -875,6 +879,11 @@ nsresult HTMLEditor::MaybeCreatePaddingBRElementForEmptyEditor() {
   }
 
   
+  if (GetEditContext()) {
+    return NS_OK;
+  }
+
+  
   
   
   EditorType editorType = GetEditorType();
@@ -1020,6 +1029,13 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
   }
 
   UndefineCaretBidiLevel();
+
+  if (auto* editContext = GetEditContext()) {
+    uint32_t start = editContext->SelectionStart();
+    uint32_t end = editContext->SelectionEnd();
+    editContext->UpdateTextAndFireEvent(start, end, aInsertionString);
+    return EditActionResult::HandledResult();
+  }
 
   
   
