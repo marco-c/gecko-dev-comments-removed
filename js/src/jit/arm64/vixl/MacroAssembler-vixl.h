@@ -2467,7 +2467,17 @@ class MacroAssembler : public js::jit::Assembler {
       UseScratchRegisterScope* scratch_scope);
 
   bool LabelIsOutOfRange(Label* label, ImmBranchType branch_type) {
-    return !Instruction::IsValidImmPCOffset(branch_type, nextOffset().getOffset() - label->offset());
+    VIXL_ASSERT(label->bound());
+
+    
+    
+    
+    vixl::ImmBranchRangeType branchRange =
+        Instruction::ImmBranchTypeToRange(branch_type);
+    int32_t offset = nextInstrOffset(branchRange).getOffset() - label->offset();
+    VIXL_ASSERT(IsMultiple(offset, kInstructionSize));
+    return !Instruction::IsValidImmPCOffset(branch_type,
+                                            offset / kInstructionSize);
   }
 
   
