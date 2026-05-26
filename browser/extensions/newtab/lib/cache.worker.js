@@ -14,11 +14,6 @@ const SCRIPT_TEMPLATE_RESOURCE_PATH =
 let window = self;
 window.requestAnimationFrame = () => {};
 window.cancelAnimationFrame = () => {};
-window.matchMedia = () => ({
-  matches: false,
-  addEventListener: () => {},
-  removeEventListener: () => {},
-});
 
 
 importScripts("resource://gre/modules/workers/require.js");
@@ -144,7 +139,6 @@ let Agent = {
 
 
 
-
   _construct(state, direction) {
     for (const key of Object.keys(state.App.isForStartupCache)) {
       state.App.isForStartupCache[key] = true;
@@ -154,8 +148,6 @@ let Agent = {
     
     if (direction) {
       self.document = { dir: direction };
-    } else {
-      self.document = { dir: "ltr" };
     }
 
     
