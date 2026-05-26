@@ -2937,7 +2937,7 @@ pref("browser.toolbars.bookmarks.showOtherBookmarks", true);
 pref("browser.toolbars.share-button.enabled", true);
 
 
-pref("browser.privatebrowsing.felt-privacy-v1", false);
+pref("browser.privatebrowsing.felt-privacy-v1", true);
 pref("security.certerrors.felt-privacy-v1", true);
 
 
@@ -3518,7 +3518,7 @@ pref("browser.backup.scheduled.user-disabled", false);
 
 
 pref("browser.backup.tab-flush-timeout", 5000);
-pref("browser.backup.enabled_on.profiles", "{}");
+pref("browser.backup.enabled_on.profiles", "[]");
 
 
 pref("browser.profiles.enabled", true);
@@ -3603,7 +3603,7 @@ pref("toolkit.rust-components.logging.crates", "");
 pref("toolkit.rust-components.logging.internal-level", "Warn");
 
 
-pref("browser.settings-redesign.enabled", false);
+pref("browser.settings-redesign.enabled", true);
 
 
 
