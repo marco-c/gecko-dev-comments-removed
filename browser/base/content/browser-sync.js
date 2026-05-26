@@ -536,11 +536,7 @@ var gSync = {
   },
 
   shouldHideSendContextMenuItems(enabled) {
-    return (
-      !enabled ||
-      !this.FXA_ENABLED ||
-      UIState.get().status == UIState.STATUS_NOT_VERIFIED
-    );
+    return !enabled || !this.FXA_ENABLED;
   },
 
   getSendTabTargets() {
@@ -1249,6 +1245,14 @@ var gSync = {
       document,
       "PanelUI-fxa-menu-empty-profiles-button"
     );
+    const sendTabButton = PanelMultiView.getViewNode(
+      document,
+      "PanelUI-fxa-menu-sendtab-button"
+    );
+    const sendTabSeparator = PanelMultiView.getViewNode(
+      document,
+      "PanelUI-fxa-menu-sendtab-separator"
+    );
     const profilesButton = PanelMultiView.getViewNode(
       document,
       "PanelUI-fxa-menu-profiles-button"
@@ -1340,9 +1344,13 @@ var gSync = {
         emptyProfilesButton.remove();
         profilesButton.remove();
         profilesSeparator.remove();
+        sendTabButton.remove();
+        sendTabSeparator.remove();
 
         profilesSeparator.hidden = true;
 
+        signedInContainer.after(sendTabButton);
+        signedInContainer.after(sendTabSeparator);
         signedInContainer.after(profilesSeparator);
         signedInContainer.after(profilesButton);
         signedInContainer.after(emptyProfilesButton);
