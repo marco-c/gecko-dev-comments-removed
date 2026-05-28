@@ -1374,6 +1374,8 @@ Object.assign(WindowBase, { WINDOW_ID_NONE, WINDOW_ID_CURRENT });
 
 
 class TabTrackerBase extends EventEmitter {
+  #tabReadyBlockers = new WeakSet();
+
   on(...args) {
     if (!this.initialized) {
       this.init();
@@ -1434,6 +1436,19 @@ class TabTrackerBase extends EventEmitter {
 
 
 
+  getTabForBrowser(_browser) {
+    throw new Error("Not implemented");
+  }
+
+  
+
+
+
+
+
+
+
+
 
   getBrowserData(_browser) {
     throw new Error("Not implemented");
@@ -1448,6 +1463,124 @@ class TabTrackerBase extends EventEmitter {
 
   get activeTab() {
     throw new Error("Not implemented");
+  }
+
+  
+
+
+
+
+
+
+
+
+  addTabReadyBlocker(nativeTab) {
+    const bc = nativeTab.linkedBrowser.browsingContext;
+    if (!bc) {
+      return; 
+    }
+    const { currentURI } = bc;
+    if (currentURI && currentURI.spec !== "about:blank") {
+      
+      
+      
+      return;
+    }
+    
+    
+    const { webProgress } = bc;
+    this.#tabReadyBlockers.add(webProgress);
+    this.#waitUntilBrowsingContextReady(bc, () => {
+      this.#tabReadyBlockers.delete(webProgress);
+    });
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async awaitTabReady(nativeTab) {
+    const bc = nativeTab.linkedBrowser.browsingContext;
+    if (!bc) {
+      return; 
+    }
+    const wgp = bc.currentWindowGlobal;
+    if (wgp && !this.#tabReadyBlockers.has(bc.webProgress)) {
+      return; 
+    }
+    return new Promise(resolve => {
+      this.#waitUntilBrowsingContextReady(bc, resolve);
+    });
+  }
+
+  
+  #waitUntilBrowsingContextReady(bc, callback) {
+    
+    
+    const webProgress = bc.webProgress;
+    function cleanup() {
+      Services.obs.removeObserver(onDiscarded, "browsing-context-discarded");
+      webProgress.removeProgressListener(listener);
+      callback();
+    }
+
+    const listener = {
+      QueryInterface: ChromeUtils.generateQI([
+        "nsIWebProgressListener",
+        "nsISupportsWeakReference",
+      ]),
+      onLocationChange(progress, request) {
+        
+        
+        
+        if (progress.isTopLevel && request) {
+          
+          cleanup();
+        }
+      },
+      onStateChange(progress, request, flags) {
+        if (
+          progress.isTopLevel &&
+          flags & Ci.nsIWebProgressListener.STATE_STOP
+        ) {
+          
+          cleanup();
+        }
+      },
+    };
+
+    function onDiscarded(subject, topic, why) {
+      
+      if (subject === bc) {
+        if (why === "replace") {
+          
+          
+          bc = webProgress.browsingContext;
+          if (bc) {
+            
+            return;
+          }
+          
+        }
+        cleanup();
+      }
+    }
+
+    webProgress.addProgressListener(
+      listener,
+      Ci.nsIWebProgress.NOTIFY_STATE_NETWORK | Ci.nsIWebProgress.NOTIFY_LOCATION
+    );
+    Services.obs.addObserver(onDiscarded, "browsing-context-discarded");
   }
 }
 

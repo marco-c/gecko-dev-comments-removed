@@ -130,6 +130,7 @@ class WindowTracker extends WindowTrackerBase {
     
     
     if (context?.viewType === "popup") {
+      
       return this.topWindow;
     }
     return super.getCurrentWindow(context);
@@ -257,41 +258,38 @@ class TabTracker extends TabTrackerBase {
     throw new ExtensionError(`Invalid tab ID: ${id}`);
   }
 
+  getTabForBrowser(browser) {
+    const window = browser.documentGlobal;
+    
+    if (windowTracker.isBrowserWindow(window)) {
+      
+      return window.tab;
+    }
+    return null;
+  }
+
   getBrowserData(browser) {
     const window = browser.documentGlobal;
-    const tab = window?.tab;
-    if (!tab) {
-      return {
-        tabId: -1,
-        windowId: -1,
-      };
+    if (!window) {
+      return { tabId: -1, windowId: -1 };
     }
-
-    const windowId = windowTracker.getId(window);
-
-    if (!windowTracker.isBrowserWindow(window)) {
-      return {
-        windowId,
-        tabId: -1,
-      };
+    const nativeTab = this.getTabForBrowser(browser);
+    if (!nativeTab) {
+      let wintype = window.document.documentElement.getAttribute("windowtype");
+      if (wintype === "navigator:popup") {
+        
+        let currentWindow = windowTracker.topWindow;
+        if (currentWindow) {
+          return { tabId: -1, windowId: windowTracker.getId(currentWindow) };
+        }
+      }
+      return { tabId: -1, windowId: -1 };
     }
 
     return {
-      windowId,
-      tabId: this.getId(tab),
+      tabId: this.getId(nativeTab),
+      windowId: windowTracker.getId(window),
     };
-  }
-
-  getBrowserDataForContext(context) {
-    if (["tab", "background"].includes(context.viewType)) {
-      return this.getBrowserData(context.xulBrowser);
-    } else if (context.viewType === "popup") {
-      const chromeWindow = windowTracker.getCurrentWindow(context);
-      const windowId = chromeWindow ? windowTracker.getId(chromeWindow) : -1;
-      return { tabId: -1, windowId };
-    }
-
-    return { tabId: -1, windowId: -1 };
   }
 
   get activeTab() {
@@ -510,6 +508,7 @@ class Window extends WindowBase {
     
     
     if (context?.viewType === "popup") {
+      
       return mobileWindowTracker.topWindow == this.window;
     }
     return super.isCurrentFor(context);
