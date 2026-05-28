@@ -34,6 +34,12 @@ class APZCBasicTester : public APZCTesterBase {
         new TestAsyncPanZoomController(LayersId{0}, mcc, tm, mGestureBehavior);
     apzc->SetFrameMetrics(TestFrameMetrics());
     apzc->GetScrollMetadata().SetIsLayersIdRoot(true);
+
+    
+    
+    
+    apzc->GetScrollMetadata().SetPageScrollAmount({1000, 1000});
+
     
     
     

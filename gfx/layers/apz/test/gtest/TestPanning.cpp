@@ -560,3 +560,34 @@ TEST_F(APZCPanningTester, HoldGesture_DuringAutoscrollAnimation) {
   
   apzc->AssertStateIsAutoscroll();
 }
+TEST_F(APZCPanningTester, Autoscroll_ScrollWheelCooldown) {
+  auto cooldownMS = StaticPrefs::apz_autoscroll_scroll_wheel_cooldown();
+  
+  
+  tm->SetCurrentMousePosition(ScreenPoint(5, 5));
+
+  
+  apzc->StartAutoscroll(ScreenPoint(5, 5));
+  apzc->AssertStateIsAutoscroll();
+
+  
+  
+  Wheel(apzc, ScreenIntPoint(10, 10), ScreenPoint(0, 10), mcc->Time());
+  apzc->AssertStateIsAutoscroll();
+
+  
+  if (cooldownMS - 1 > 0) {
+    mcc->AdvanceByMillis(cooldownMS - 1);
+    
+    
+    Wheel(apzc, ScreenIntPoint(10, 10), ScreenPoint(0, 10), mcc->Time());
+    apzc->AssertStateIsAutoscroll();
+  }
+  
+  mcc->AdvanceByMillis(2);
+
+  
+  
+  Wheel(apzc, ScreenIntPoint(10, 10), ScreenPoint(0, 10), mcc->Time());
+  apzc->AssertStateIsReset();
+}
