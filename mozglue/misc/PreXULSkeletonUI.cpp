@@ -1624,7 +1624,6 @@ static Result<Ok, PreXULSkeletonUIError> ValidateCmdlineArguments(
     }
 
     bool approved = false;
-    int j = 0;
     for (const char* approvedArg : approvedArguments) {
       
       
@@ -1636,12 +1635,11 @@ static Result<Ok, PreXULSkeletonUIError> ValidateCmdlineArguments(
       if (!_stricmp(flag, approvedArg)) {
         approved = true;
 
-        if (j == profileArgIndex) {
+        if (i == profileArgIndex) {
           *explicitProfile = true;
         }
         break;
       }
-      ++j;
     }
 
     if (!approved) {
@@ -2056,7 +2054,6 @@ static Result<Ok, PreXULSkeletonUIError> CreateAndStorePreXULSkeletonUIImpl(
       "CreatePreXULSkeletonUI", OTHER,
       MarkerTiming::IntervalUntilNowFrom(skeletonStart));
 
-  sPreXULSkeletonUIShown = true;
   return Ok();
 }
 
