@@ -1002,8 +1002,13 @@ bool MozDocumentMatcher::MatchesURI(const URLInfo& aURL,
     return false;
   }
 
-  if (mCheckPermissions && !aIgnorePermissions &&
-      !mExtension->CanAccessURI(aURL, false, false, true)) {
+  if (mCheckPermissions && !aIgnorePermissions) {
+    
+    if (!mExtension->CanAccessURI(aURL, false, false, true)) {
+      return false;
+    }
+  } else if (mExtension && !mExtension->CheckGuarded(aURL).IsNull()) {
+    
     return false;
   }
 
