@@ -197,6 +197,16 @@ mem_test("data.drop 1",
          WebAssembly.RuntimeError, /index out of bounds/);
 
 
+mem_test("data.drop 1",
+         "(memory.init 1 (i32.const 99999) (i32.const 0) (i32.const 0))",
+         WebAssembly.RuntimeError, /index out of bounds/);
+
+
+mem_test_nofail(
+    "data.drop 1",
+    "(memory.init 1 (i32.const 0) (i32.const 0) (i32.const 0))");
+
+
 mem_test("",
          "(memory.init 1 (i32.const 1234) (i32.const 0) (i32.const 5))",
          WebAssembly.RuntimeError, /index out of bounds/);
