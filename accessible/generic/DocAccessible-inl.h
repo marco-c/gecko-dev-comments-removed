@@ -70,9 +70,35 @@ inline void DocAccessible::UpdateText(nsIContent* aTextNode) {
   MOZ_ASSERT(aTextNode->IsText());
 
   
-  if (mNotificationController && HasLoadState(eTreeConstructed)) {
-    mNotificationController->ScheduleTextUpdate(aTextNode);
+  if (!mNotificationController || !HasLoadState(eTreeConstructed)) {
+    return;
   }
+  nsINode* parent = aTextNode->GetParent();
+  if (parent && parent->IsGeneratedContentContainerForMarker()) {
+    
+    
+    
+    
+    
+    LocalAccessible* bullet = mDoc->GetAccessible(parent);
+    if (!bullet) {
+      return;
+    }
+    mDoc->QueueCacheUpdate(bullet, CacheDomain::Text);
+    HyperTextAccessible* container =
+        bullet->LocalParent() ? bullet->LocalParent()->AsHyperText() : nullptr;
+    if (container) {
+      int32_t offset =
+          container->GetChildOffset(bullet,  true);
+      nsAutoString text;
+      bullet->AppendTextTo(text);
+      auto event =
+          MakeRefPtr<AccTextChangeEvent>(container, offset, text, true);
+      mDoc->FireDelayedEvent(event);
+    }
+    return;
+  }
+  mNotificationController->ScheduleTextUpdate(aTextNode);
 }
 
 inline void DocAccessible::NotifyOfLoad(uint32_t aLoadEventType) {
