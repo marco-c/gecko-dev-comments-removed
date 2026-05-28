@@ -28,18 +28,15 @@
 #include <tuple>
 
 class SkData;
+class SkPathRef;
 class SkRRect;
 class SkWStream;
 enum class SkPathConvexity;
-enum class SkResolveConvexity;
 struct SkPathRaw;
-struct SkPathOvalInfo;
-struct SkPathRRectInfo;
+struct SkPathVerbAnalysis;
 
 
-#define SK_LEGACY_PATH_ACCESSORS
 
-class SkPathData;
 
 
 
@@ -85,12 +82,8 @@ public:
                       SkSpan<const SkScalar> conics,
                       SkPathFillType, bool isVolatile = false);
 
-    static SkPath Rect(const SkRect&, SkPathFillType, SkPathDirection = SkPathDirection::kDefault,
+    static SkPath Rect(const SkRect&, SkPathDirection = SkPathDirection::kDefault,
                        unsigned startIndex = 0);
-    static SkPath Rect(const SkRect& r, SkPathDirection direction = SkPathDirection::kDefault,
-                       unsigned startIndex = 0) {
-        return Rect(r, SkPathFillType::kDefault, direction, startIndex);
-    }
     static SkPath Oval(const SkRect&, SkPathDirection = SkPathDirection::kDefault);
     static SkPath Oval(const SkRect&, SkPathDirection, unsigned startIndex);
     static SkPath Circle(SkScalar center_x, SkScalar center_y, SkScalar radius,
@@ -104,8 +97,8 @@ public:
                           SkPathFillType fillType = SkPathFillType::kDefault,
                           bool isVolatile = false);
 
-    static SkPath Line(SkPoint a, SkPoint b) {
-        return Polygon({{a, b}}, false);
+    static SkPath Line(const SkPoint a, const SkPoint b) {
+        return Polygon({a, b}, false);
     }
 
     
@@ -124,9 +117,8 @@ public:
 
 
 
-    explicit SkPath(SkPathFillType);
 
-    SkPath() : SkPath(SkPathFillType::kDefault) {}
+    SkPath();
 
     
 
@@ -142,8 +134,7 @@ public:
 
 
 
-    SkPath(const SkPath&);
-    SkPath(SkPath&&);
+    SkPath(const SkPath& path);
 
     
 
@@ -170,8 +161,7 @@ public:
 
 
 
-    SkPath& operator=(const SkPath&);
-    SkPath& operator=(SkPath&&);
+    SkPath& operator=(const SkPath& path);
 
     
 
@@ -192,9 +182,6 @@ public:
     friend bool operator!=(const SkPath& a, const SkPath& b) {
         return !(a == b);
     }
-
-
-
 
     
 
@@ -231,29 +218,6 @@ public:
 
 
     SkPath makeInterpolate(const SkPath& ending, SkScalar weight) const;
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    bool interpolate(const SkPath& ending, SkScalar weight, SkPath* out) const;
 
     
 
@@ -426,31 +390,15 @@ public:
     
 
 
-    SkSpan<const SkPoint> points() const;
+
+
+
+
+    int countPoints() const;
 
     
 
 
-    SkSpan<const SkPathVerb> verbs() const;
-
-    
-
-
-    SkSpan<const float> conicWeights() const;
-
-    int countPoints() const { return SkToInt(this->points().size()); }
-    int countVerbs() const { return SkToInt(this->verbs().size()); }
-
-    
-
-
-
-
-
-    std::optional<SkPoint> getLastPt() const;
-
-#ifdef SK_LEGACY_PATH_ACCESSORS
-    
 
 
 
@@ -465,7 +413,18 @@ public:
 
 
 
+
+
     size_t getPoints(SkSpan<SkPoint> points) const;
+
+    
+
+
+
+
+
+
+    int countVerbs() const;
 
     
 
@@ -478,28 +437,12 @@ public:
     size_t getVerbs(SkSpan<uint8_t> verbs) const;
 
     
-    bool getLastPt(SkPoint* lastPt) const {
-        if (auto lp = this->getLastPt()) {
-            if (lastPt) {
-                *lastPt = *lp;
-            }
-            return true;
-        }
-        if (lastPt) {
-            *lastPt = {0, 0};
-        }
-        return false;
-    }
-#endif
-
-    
 
 
 
     size_t approximateBytesUsed() const;
 
     
-
 
 
 
@@ -556,6 +499,15 @@ public:
 
 
     bool conservativelyContainsRect(const SkRect& rect) const;
+
+    
+
+
+
+    enum ArcSize {
+        kSmall_ArcSize, 
+        kLarge_ArcSize, 
+    };
 
     
 
@@ -624,44 +576,61 @@ public:
 
 
 
-
-
-
-    std::optional<SkPath> tryMakeTransform(const SkMatrix& matrix) const;
-
-    std::optional<SkPath> tryMakeOffset(float dx, float dy) const {
-        return this->tryMakeTransform(SkMatrix::Translate(dx, dy));
-    }
-
-    std::optional<SkPath> tryMakeScale(float sx, float sy) const {
-        return this->tryMakeTransform(SkMatrix::Scale(sx, sy));
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-    SkPath makeTransform(const SkMatrix& matrix) const;
-
-    
-
-
-
-
     SkPath makeOffset(SkScalar dx, SkScalar dy) const {
-        return this->makeTransform(SkMatrix::Translate(dx, dy));
+        SkPath dst;
+        this->offset(dx, dy, &dst);
+        return dst;
+    }
+
+    
+
+
+
+
+
+
+    SkPath makeTransform(const SkMatrix& matrix) const {
+        SkPath dst;
+        this->transform(matrix, &dst);
+        return dst;
     }
 
     SkPath makeScale(SkScalar sx, SkScalar sy) const {
         return this->makeTransform(SkMatrix::Scale(sx, sy));
+    }
+
+#ifdef SK_SUPPORT_LEGACY_APPLYPERSPECTIVECLIP
+    void transform(const SkMatrix& matrix, SkPath* dst, SkApplyPerspectiveClip) const {
+        this->transform(matrix, dst);
+    }
+    void transform(const SkMatrix& matrix, SkApplyPerspectiveClip) {
+        this->transform(matrix);
+    }
+    SkPath makeTransform(const SkMatrix& m, SkApplyPerspectiveClip) const {
+        return this->makeTransform(m);
+    }
+#endif
+
+    
+
+
+
+
+
+    std::optional<SkPoint> getLastPt() const;
+
+    
+    bool getLastPt(SkPoint* lastPt) const {
+        if (auto lp = this->getLastPt()) {
+            if (lastPt) {
+                *lastPt = *lp;
+            }
+            return true;
+        }
+        if (lastPt) {
+            *lastPt = {0, 0};
+        }
+        return false;
     }
 
     
@@ -737,15 +706,48 @@ public:
     
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    bool interpolate(const SkPath& ending, SkScalar weight, SkPath* out) const;
+
+    
+
+
     void setFillType(SkPathFillType ft) {
-        fFillType = ft;
+        fFillType = SkToU8(ft);
     }
 
     
 
 
     void toggleInverseFillType() {
-        fFillType = SkPathFillType_ToggleInverse(fFillType);
+        fFillType ^= 2;
+    }
+
+#ifdef SK_HIDE_PATH_EDIT_METHODS
+private:
+#endif
+    
+    SkPath detach() {
+        SkPath result = *this;
+        this->reset();
+        return result;
     }
 
     
@@ -757,6 +759,789 @@ public:
 
 
     SkPath& reset();
+
+    
+
+
+
+
+
+
+
+
+
+
+    SkPath& rewind();
+
+    
+
+
+
+
+
+
+
+
+
+    void incReserve(int extraPtCount, int extraVerbCount = 0, int extraConicCount = 0);
+
+    
+
+
+
+
+
+    SkPath& moveTo(SkPoint p) {
+        return this->moveTo(p.fX, p.fY);
+    }
+    SkPath& moveTo(SkScalar x, SkScalar y);
+
+    
+
+
+
+
+
+
+
+
+
+
+    SkPath& rMoveTo(SkScalar dx, SkScalar dy);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    SkPath& lineTo(SkScalar x, SkScalar y);
+
+    
+
+
+
+
+
+
+
+
+    SkPath& lineTo(const SkPoint& p) {
+        return this->lineTo(p.fX, p.fY);
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    SkPath& rLineTo(SkScalar dx, SkScalar dy);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    SkPath& quadTo(SkScalar x1, SkScalar y1, SkScalar x2, SkScalar y2);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    SkPath& quadTo(const SkPoint& p1, const SkPoint& p2) {
+        return this->quadTo(p1.fX, p1.fY, p2.fX, p2.fY);
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    SkPath& rQuadTo(SkScalar dx1, SkScalar dy1, SkScalar dx2, SkScalar dy2);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    SkPath& conicTo(SkScalar x1, SkScalar y1, SkScalar x2, SkScalar y2,
+                    SkScalar w);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    SkPath& conicTo(const SkPoint& p1, const SkPoint& p2, SkScalar w) {
+        return this->conicTo(p1.fX, p1.fY, p2.fX, p2.fY, w);
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    SkPath& rConicTo(SkScalar dx1, SkScalar dy1, SkScalar dx2, SkScalar dy2,
+                     SkScalar w);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    SkPath& cubicTo(SkScalar x1, SkScalar y1, SkScalar x2, SkScalar y2,
+                    SkScalar x3, SkScalar y3);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    SkPath& cubicTo(const SkPoint& p1, const SkPoint& p2, const SkPoint& p3) {
+        return this->cubicTo(p1.fX, p1.fY, p2.fX, p2.fY, p3.fX, p3.fY);
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    SkPath& rCubicTo(SkScalar dx1, SkScalar dy1, SkScalar dx2, SkScalar dy2,
+                     SkScalar dx3, SkScalar dy3);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    SkPath& arcTo(const SkRect& oval, SkScalar startAngle, SkScalar sweepAngle, bool forceMoveTo);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    SkPath& arcTo(SkScalar x1, SkScalar y1, SkScalar x2, SkScalar y2, SkScalar radius);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    SkPath& arcTo(const SkPoint p1, const SkPoint p2, SkScalar radius) {
+        return this->arcTo(p1.fX, p1.fY, p2.fX, p2.fY, radius);
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    SkPath& arcTo(SkScalar rx, SkScalar ry, SkScalar xAxisRotate, ArcSize largeArc,
+                  SkPathDirection sweep, SkScalar x, SkScalar y);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    SkPath& arcTo(const SkPoint r, SkScalar xAxisRotate, ArcSize largeArc, SkPathDirection sweep,
+               const SkPoint xy) {
+        return this->arcTo(r.fX, r.fY, xAxisRotate, largeArc, sweep, xy.fX, xy.fY);
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    SkPath& rArcTo(SkScalar rx, SkScalar ry, SkScalar xAxisRotate, ArcSize largeArc,
+                   SkPathDirection sweep, SkScalar dx, SkScalar dy);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    SkPath& close();
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    SkPath& addRect(const SkRect& rect, SkPathDirection dir, unsigned start);
+
+    SkPath& addRect(const SkRect& rect, SkPathDirection dir = SkPathDirection::kCW) {
+        return this->addRect(rect, dir, 0);
+    }
+
+    SkPath& addRect(SkScalar left, SkScalar top, SkScalar right, SkScalar bottom,
+                    SkPathDirection dir = SkPathDirection::kCW) {
+        return this->addRect({left, top, right, bottom}, dir, 0);
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+    SkPath& addOval(const SkRect& oval, SkPathDirection dir = SkPathDirection::kCW);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    SkPath& addOval(const SkRect& oval, SkPathDirection dir, unsigned start);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    SkPath& addCircle(SkScalar x, SkScalar y, SkScalar radius,
+                      SkPathDirection dir = SkPathDirection::kCW);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    SkPath& addArc(const SkRect& oval, SkScalar startAngle, SkScalar sweepAngle);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    SkPath& addRoundRect(const SkRect& rect, SkScalar rx, SkScalar ry,
+                         SkPathDirection dir = SkPathDirection::kCW);
+
+    
+
+
+
+
+
+
+
+
+    SkPath& addRoundRect(const SkRect& rect, SkSpan<const SkScalar> radii,
+                         SkPathDirection dir = SkPathDirection::kCW);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    SkPath& addRRect(const SkRRect& rrect, SkPathDirection dir = SkPathDirection::kCW);
+
+    
+
+
+
+
+
+
+
+
+
+
+    SkPath& addRRect(const SkRRect& rrect, SkPathDirection dir, unsigned start);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    SkPath& addPoly(SkSpan<const SkPoint> pts, bool close);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    SkPath& addPath(const SkPath& src, SkScalar dx, SkScalar dy,
+                    AddPathMode mode = kAppend_AddPathMode);
+
+    
+
+
+
+
+
+
+
+
+
+    SkPath& addPath(const SkPath& src, AddPathMode mode = kAppend_AddPathMode) {
+        SkMatrix m;
+        m.reset();
+        return this->addPath(src, m, mode);
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    SkPath& addPath(const SkPath& src, const SkMatrix& matrix,
+                    AddPathMode mode = kAppend_AddPathMode);
+
+    
+
+
+
+
+
+
+
+    SkPath& reverseAddPath(const SkPath& src);
+
+    
+
+
+
+
+
+
+
+
+    void offset(SkScalar dx, SkScalar dy, SkPath* dst) const;
+
+    
+
+
+
+
+    SkPath& offset(SkScalar dx, SkScalar dy) {
+        this->offset(dx, dy, this);
+        return *this;
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+    void transform(const SkMatrix& matrix, SkPath* dst) const;
+
+    
+
+
+
+
+
+
+    SkPath& transform(const SkMatrix& matrix) {
+        this->transform(matrix, this);
+        return *this;
+    }
+
+    
+
+
+
+
+
+
+
+    void setLastPt(SkScalar x, SkScalar y);
+
+    
+
+
+
+
+    void setLastPt(const SkPoint& p) {
+        this->setLastPt(p.fX, p.fY);
+    }
+
+#ifdef SK_HIDE_PATH_EDIT_METHODS
+public:
+#endif
+#ifdef SK_SUPPORT_UNSPANNED_APIS
+    static SkPath Make(const SkPoint points[], int pointCount,
+                       const uint8_t verbs[], int verbCount,
+                       const SkScalar conics[], int conicWeightCount,
+                       SkPathFillType fillType, bool isVolatile = false) {
+        return Make({points, pointCount},
+                    {verbs, verbCount},
+                    {conics, conicWeightCount},
+                    fillType, isVolatile);
+    }
+    static SkPath Polygon(const SkPoint pts[], int count, bool isClosed,
+                          SkPathFillType fillType = SkPathFillType::kWinding,
+                          bool isVolatile = false) {
+        return Polygon({pts, count}, isClosed, fillType, isVolatile);
+    }
+    int getPoints(SkPoint points[], int max) const {
+        return (int)this->getPoints({points, max});
+    }
+    int getVerbs(uint8_t verbs[], int max) const {
+        return (int)this->getVerbs({verbs, max});
+    }
+    SkPath& addRoundRect(const SkRect& rect, const SkScalar radii[],
+                         SkPathDirection dir = SkPathDirection::kCW) {
+        return this->addRoundRect(rect, {radii, radii ? 8 : 0}, dir);
+    }
+    SkPath& addPoly(const SkPoint pts[], int count, bool close) {
+        return this->addPoly({pts, count}, close);
+    }
+#endif
 
     SkPathIter iter() const;
 
@@ -872,10 +1657,6 @@ public:
     };
 
 private:
-    std::optional<SkPathOvalInfo> getOvalInfo() const;
-    std::optional<SkPathRRectInfo> getRRectInfo() const;
-    std::optional<SkPathRaw> raw(SkResolveConvexity) const;
-
     
 
 
@@ -1023,12 +1804,10 @@ public:
 
 
 
-    bool contains(SkPoint point) const;
 
-    
-    bool contains(SkScalar x, SkScalar y) const {
-        return this->contains({x, y});
-    }
+
+
+    bool contains(SkScalar x, SkScalar y) const;
 
     
 
@@ -1043,6 +1822,10 @@ public:
 
     void dump() const { this->dump(nullptr, false); }
     void dumpHex() const { this->dump(nullptr, true); }
+
+    
+    void dumpArrays(SkWStream* stream, bool dumpAsHex) const;
+    void dumpArrays() const { this->dumpArrays(nullptr, false); }
 
     
 
@@ -1093,6 +1876,10 @@ public:
     static std::optional<SkPath> ReadFromMemory(const void* buffer, size_t length,
                                                 size_t* bytesRead = nullptr);
 
+#ifndef SK_HIDE_PATH_EDIT_METHODS
+    size_t readFromMemory(const void* buffer, size_t length);
+#endif
+
     
 
 
@@ -1119,20 +1906,49 @@ public:
     using sk_is_trivially_relocatable = std::true_type;
 
 private:
-    static SkPath MakeNullCheck(sk_sp<SkPathData>, SkPathFillType, bool isVolatile);
-    static SkPathData* PeekErrorSingleton();
+    SkPath(sk_sp<SkPathRef>, SkPathFillType, bool isVolatile, SkPathConvexity);
 
-    SkPath(sk_sp<SkPathData>, SkPathFillType, bool isVolatile);
+    sk_sp<SkPathRef>               fPathRef;
+    int                            fLastMoveToIndex;
+    mutable std::atomic<uint8_t>   fConvexity;      
+    uint8_t                        fFillType    : 2;
+    uint8_t                        fIsVolatile  : 1;
 
-    sk_sp<SkPathData> fPathData;
-    SkPathFillType    fFillType;
-    bool              fIsVolatile;
+    static_assert(::sk_is_trivially_relocatable<decltype(fPathRef)>::value);
+
+    
+
+
+    void resetFields();
+
+    
+
+
+
+    void copyFields(const SkPath& that);
 
     size_t writeToMemoryAsRRect(void* buffer) const;
+    size_t readAsRRect(const void*, size_t);
 
     friend class Iter;
     friend class SkPathPriv;
     friend class SkPathStroker;
+
+    
+
+
+
+    SkPath& reversePathTo(const SkPath&);
+
+    
+    
+    
+    
+    
+    
+    inline void injectMoveToIfNeeded();
+
+    inline bool hasOnlyMoveTos() const;
 
     SkPathConvexity computeConvexity() const;
 
@@ -1142,7 +1958,29 @@ private:
 
 #ifdef SK_DEBUG
     void validate() const;
+    void validateRef() const;
 #endif
+
+    
+    bool isZeroLengthSincePoint(int startPtIndex) const;
+
+    
+
+
+    bool hasComputedBounds() const;
+
+    
+    void setBounds(const SkRect& rect);
+
+    void setPt(int index, SkScalar x, SkScalar y);
+
+    SkPath& dirtyAfterEdit();
+
+    
+    
+    void setConvexity(SkPathConvexity) const;
+
+    void addRaw(const SkPathRaw&);
 
     
 
@@ -1152,12 +1990,43 @@ private:
     SkPathConvexity getConvexityOrUnknown() const;
 
     
+    bool isConvexityAccurate() const;
+
+    
 
 
 
-    void setConvexity(SkPathConvexity) const;
 
+
+    void setConvexity(SkPathConvexity convexity);
+
+    
+
+
+
+
+
+    void shrinkToFit();
+
+    
+    
+    static SkPath MakeInternal(const SkPathVerbAnalysis& analsis,
+                               const SkPoint points[],
+                               SkSpan<const SkPathVerb> verbs,
+                               const SkScalar conics[],
+                               SkPathFillType fillType,
+                               bool isVolatile);
+
+    friend class SkAutoAddSimpleShape;
+    friend class SkAutoDisableOvalCheck;
     friend class SkPathBuilder;
+    friend class SkPathEdgeIter;
+    friend class SkPathWriter;
+    friend class SkOpBuilder;
+    friend class SkBench_AddPathTest; 
+    friend class PathTest_Private; 
+    friend class ForceIsRRect_Private; 
+    friend class FuzzPath; 
 };
 
 #endif

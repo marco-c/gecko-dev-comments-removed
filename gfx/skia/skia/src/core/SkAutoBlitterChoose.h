@@ -27,7 +27,7 @@ class SkPixmap;
 
 using SkBlitterSizedArena = SkSTArenaAlloc<2736>;
 
-class [[nodiscard]] SkAutoBlitterChoose : SkNoncopyable {
+class SkAutoBlitterChoose : SkNoncopyable {
 public:
     SkAutoBlitterChoose() {}
     SkAutoBlitterChoose(const skcpu::Draw& draw,

@@ -81,7 +81,7 @@ public:
     
 
 
-    TArray(SkSpan<const T> data) : TArray(data.data(), static_cast<int>(data.size())) {}
+    TArray(SkSpan<const T> data) : TArray(data.begin(), static_cast<int>(data.size())) {}
 
     
 
@@ -154,11 +154,12 @@ public:
     
 
 
-    void reset(SkSpan<const T> src) {
+    void reset(const T* array, int count) {
+        SkASSERT(count >= 0);
         this->clear();
-        this->checkRealloc(src.size(), kExactFit);
-        this->changeSize(src.size());
-        this->copy(src.data());
+        this->checkRealloc(count, kExactFit);
+        this->changeSize(count);
+        this->copy(array);
     }
 
     
@@ -529,7 +530,7 @@ protected:
         if (size > InitialCapacity) {
             this->initData(size);
         } else {
-            this->setDataFromBytes({storage->data(), storage->size()});
+            this->setDataFromBytes(*storage);
             this->changeSize(size);
 
             
@@ -548,7 +549,7 @@ protected:
     template <int InitialCapacity>
     TArray(SkSpan<const T> data, SkAlignedSTStorage<InitialCapacity, T>* storage)
             : TArray{storage, static_cast<int>(data.size())} {
-        this->copy(data.data());
+        this->copy(data.begin());
     }
 
 private:
@@ -595,7 +596,7 @@ private:
 
     void poison() {
 #ifdef SK_SANITIZE_ADDRESS
-        if (fData && fCapacity > SkToUInt(fSize)) {
+        if (fData && fCapacity > fSize) {
             
             sk_asan_poison_memory_region(this->end(), Bytes(fCapacity - fSize));
             fPoisoned = true;

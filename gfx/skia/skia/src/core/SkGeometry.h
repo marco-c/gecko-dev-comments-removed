@@ -502,7 +502,7 @@ struct SkCubicCoeff {
 
 
 
-class [[nodiscard]] SkAutoConicToQuads {
+class SkAutoConicToQuads {
 public:
     SkAutoConicToQuads() : fQuadCount(0) {}
 

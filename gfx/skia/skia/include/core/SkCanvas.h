@@ -1328,6 +1328,11 @@ public:
 
 
     void drawPoints(PointMode mode, SkSpan<const SkPoint>, const SkPaint& paint);
+#ifdef SK_SUPPORT_UNSPANNED_APIS
+    void drawPoints(PointMode mode, size_t count, const SkPoint pts[], const SkPaint& paint) {
+        this->drawPoints(mode, {pts, count}, paint);
+    }
+#endif
 
     
 
@@ -1910,6 +1915,17 @@ public:
     void drawGlyphs(SkSpan<const SkGlyphID> glyphs, SkSpan<const SkPoint> positions,
                     SkSpan<const uint32_t> clusters, SkSpan<const char> utf8text,
                     SkPoint origin, const SkFont& font, const SkPaint& paint);
+#ifdef SK_SUPPORT_UNSPANNED_APIS
+    void drawGlyphs(int count, const SkGlyphID glyphs[], const SkPoint positions[],
+                    const uint32_t clusters[], int textByteCount, const char utf8text[],
+                    SkPoint origin, const SkFont& font, const SkPaint& paint) {
+        this->drawGlyphs({glyphs,    count},
+                         {positions, count},
+                         {clusters,  count},
+                         {utf8text,  textByteCount},
+                         origin, font, paint);
+    }
+#endif
 
     
 
@@ -1931,6 +1947,12 @@ public:
 
     void drawGlyphs(SkSpan<const SkGlyphID> glyphs, SkSpan<const SkPoint> positions,
                     SkPoint origin, const SkFont& font, const SkPaint& paint);
+#ifdef SK_SUPPORT_UNSPANNED_APIS
+    void drawGlyphs(int count, const SkGlyphID glyphs[], const SkPoint positions[],
+                    SkPoint origin, const SkFont& font, const SkPaint& paint) {
+        this->drawGlyphs({glyphs, count}, {positions, count}, origin, font, paint);
+    }
+#endif
 
     
 
@@ -1953,6 +1975,12 @@ public:
 
     void drawGlyphsRSXform(SkSpan<const SkGlyphID> glyphs, SkSpan<const SkRSXform> xforms,
                            SkPoint origin, const SkFont& font, const SkPaint& paint);
+#ifdef SK_SUPPORT_UNSPANNED_APIS
+    void drawGlyphs(int count, const SkGlyphID glyphs[], const SkRSXform xforms[],
+                    SkPoint origin, const SkFont& font, const SkPaint& paint) {
+        this->drawGlyphsRSXform({glyphs, count}, {xforms, count}, origin, font, paint);
+    }
+#endif
 
     
 
@@ -2181,6 +2209,17 @@ public:
     void drawAtlas(const SkImage* atlas, SkSpan<const SkRSXform> xform,
                    SkSpan<const SkRect> tex, SkSpan<const SkColor> colors, SkBlendMode mode,
                    const SkSamplingOptions& sampling, const SkRect* cullRect, const SkPaint* paint);
+#ifdef SK_SUPPORT_UNSPANNED_APIS
+    void drawAtlas(const SkImage* atlas, const SkRSXform xform[], const SkRect tex[],
+                   const SkColor colors[], int count, SkBlendMode mode,
+                   const SkSamplingOptions& samp, const SkRect* cullRect, const SkPaint* paint) {
+        this->drawAtlas(atlas,
+                        {xform, count},
+                        {tex, tex ? count : 0},
+                        {colors, colors ? count : 0},
+                        mode, samp, cullRect, paint);
+    }
+#endif
 
     
 
@@ -2562,8 +2601,7 @@ private:
 
 protected:
     
-    explicit SkCanvas(const SkIRect& bounds);
-
+    SkCanvas(const SkIRect& bounds);
 private:
     SkCanvas(const SkBitmap&, std::unique_ptr<SkRasterHandleAllocator>,
              SkRasterHandleAllocator::Handle, const SkSurfaceProps* props);
@@ -2608,8 +2646,6 @@ private:
     friend class SkCanvasStateUtils;
 
     void init(sk_sp<SkDevice>);
-
-    bool nothingToDraw(const SkPaint& paint) const;
 
     
     
@@ -2712,7 +2748,7 @@ private:
 
 
 
-class [[nodiscard]] SkAutoCanvasRestore {
+class SkAutoCanvasRestore {
 public:
 
     

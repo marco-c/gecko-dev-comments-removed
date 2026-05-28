@@ -42,6 +42,7 @@ class SkTraceMemoryDump;
 enum SkColorType : int;
 enum class SkTextureCompressionType;
 struct GrMockOptions;
+struct GrD3DBackendContext; 
 
 namespace skgpu {
     class MutableTextureState;
@@ -58,6 +59,14 @@ enum class BackendSurfaceAccess;
 
 class SK_API GrDirectContext : public GrRecordingContext {
 public:
+#ifdef SK_DIRECT3D
+    
+
+
+
+    static sk_sp<GrDirectContext> MakeDirect3D(const GrD3DBackendContext&, const GrContextOptions&);
+    static sk_sp<GrDirectContext> MakeDirect3D(const GrD3DBackendContext&);
+#endif
 
     static sk_sp<GrDirectContext> MakeMock(const GrMockOptions*, const GrContextOptions&);
     static sk_sp<GrDirectContext> MakeMock(const GrMockOptions*);

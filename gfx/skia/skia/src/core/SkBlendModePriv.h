@@ -12,7 +12,6 @@
 #include "include/core/SkColor.h"
 #include "src/core/SkColorData.h"
 
-class SkBlender;
 class SkRasterPipeline;
 class SkPaint;
 
@@ -45,7 +44,5 @@ enum class SkBlendFastPath {
 
 
 SkBlendFastPath CheckFastPath(const SkPaint&, bool dstIsOpaque);
-
-const SkBlender* GetBlendModeSingleton(SkBlendMode);
 
 #endif

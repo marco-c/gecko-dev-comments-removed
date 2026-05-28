@@ -193,27 +193,6 @@ public:
 
 
 
-
-
-
-
-
-
-
-
-
-    static SkRRect MakeRectRadii(const SkRect& rect, const SkVector radii[4]) {
-        SkRRect rr;
-        rr.setRectRadii(rect, radii);
-        return rr;
-    }
-
-    
-
-
-
-
-
     void setOval(const SkRect& oval);
 
     

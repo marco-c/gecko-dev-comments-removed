@@ -61,7 +61,7 @@ enum class LayoutFlag : int {
 
 }  
 
-SK_MAKE_BITMASK_OPS(SkSL::LayoutFlag)
+SK_MAKE_BITMASK_OPS(SkSL::LayoutFlag);
 
 namespace SkSL {
 

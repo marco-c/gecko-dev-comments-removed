@@ -76,17 +76,7 @@ public:
     }
 
 private:
-    
-    size_t bytes(int n) const { return SkToSizeT(n) * SkToSizeT(fSizeOfT); }
-
-    
-    size_t safe_bytes(int n) const {
-        size_t size = SkToSizeT(n);
-        size_t sizeOfT = SkToSizeT(fSizeOfT);
-        SkASSERT_RELEASE(size <= SIZE_MAX / sizeOfT);
-        return size * sizeOfT;
-    }
-
+    size_t bytes(int n) const { return SkToSizeT(n * fSizeOfT); }
     void* address(int n) { return fStorage + this->bytes(n); }
 
     
@@ -186,10 +176,10 @@ public:
         fStorage.clear();
     }
 
-    
-    
-    
-    
+     
+     
+     
+     
     void resize(int count) {
         fStorage.resize(count);
     }

@@ -19,7 +19,7 @@ public:
 
 
 
-    explicit SkFontConfigInterfaceDirect(FcConfig* fc);
+    SkFontConfigInterfaceDirect(FcConfig* fc);
     ~SkFontConfigInterfaceDirect() override;
 
     bool matchFamilyName(const char familyName[],

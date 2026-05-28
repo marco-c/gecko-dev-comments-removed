@@ -81,6 +81,17 @@ struct SK_API GrContextOptions {
 
 
 
+
+
+
+    std::optional<uint64_t> fVulkanVMALargeHeapBlockSize;
+
+    
+
+
+
+
+
     GrDirectContextDestroyedContext fContextDeleteContext = nullptr;
     GrDirectContextDestroyedProc fContextDeleteProc = nullptr;
 

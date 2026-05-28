@@ -252,7 +252,7 @@ public:
         SkPoint     fPoint[2];                 
         SkScalar    fRadius[2];                
         SkTileMode  fTileMode;
-        bool        fPremulInterp;
+        uint32_t    fGradientFlags = 0;        
     };
 
     virtual GradientType asGradient(GradientInfo* info    = nullptr,

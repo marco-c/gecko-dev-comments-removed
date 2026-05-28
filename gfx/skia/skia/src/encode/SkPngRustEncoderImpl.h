@@ -25,6 +25,9 @@ struct Options;
 
 
 
+
+
+
 class SkPngRustEncoderImpl final : public SkPngEncoderBase {
 public:
     enum ExtraRowTransform {

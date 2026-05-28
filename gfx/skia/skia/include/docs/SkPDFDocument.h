@@ -7,10 +7,8 @@
 #include "include/core/SkMilestone.h"
 #include "include/core/SkRefCnt.h"
 #include "include/core/SkScalar.h"
-#include "include/core/SkSpan.h"
 #include "include/core/SkString.h"
 #include "include/private/base/SkAPI.h"
-#include "include/private/base/SkMacros.h"
 #include "include/private/base/SkNoncopyable.h"
 
 #include <cstdint>
@@ -26,17 +24,10 @@ class SkPDFStructTree;
 class SkPixmap;
 class SkWStream;
 
+#define SKPDF_STRING(X) SKPDF_STRING_IMPL(X)
+#define SKPDF_STRING_IMPL(X) #X
+
 namespace SkPDF {
-
-
-
-
-
-
-
-
-
-
 
 
 class SK_API AttributeList : SkNoncopyable {
@@ -44,13 +35,18 @@ public:
     AttributeList();
     ~AttributeList();
 
+    
+    
+    
     void appendInt(const char* owner, const char* name, int value);
     void appendFloat(const char* owner, const char* name, float value);
-    void appendName(const char* owner, const char* name, const char* value);
-    void appendTextString(const char* owner, const char* name, const char* value);
-    void appendTextString(const char* owner, const char* name, SkString value);
-    void appendFloatArray(const char* owner, const char* name, SkSpan<const float> value);
-    void appendNodeIdArray(const char* owner, const char* name, SkSpan<const int> nodeIds);
+    void appendName(const char* owner, const char* attrName, const char* value);
+    void appendFloatArray(const char* owner,
+                          const char* name,
+                          const std::vector<float>& value);
+    void appendNodeIdArray(const char* owner,
+                           const char* attrName,
+                           const std::vector<int>& nodeIds);
 
 private:
     friend class ::SkPDFStructTree;
@@ -91,7 +87,7 @@ struct DateTime {
     void toISO8601(SkString* dst) const;
 };
 
-using DecodeJpegCallback = std::unique_ptr<SkCodec> (*)(sk_sp<const SkData>);
+using DecodeJpegCallback = std::unique_ptr<SkCodec> (*)(sk_sp<SkData>);
 using EncodeJpegCallback = bool (*)(SkWStream* dst, const SkPixmap& src, int quality);
 
 
@@ -122,7 +118,7 @@ struct Metadata {
 
     
 
-    SkString fProducer = SkString("Skia/PDF m" SK_MACRO_STRINGIFY(SK_MILESTONE));
+    SkString fProducer = SkString("Skia/PDF m" SKPDF_STRING(SK_MILESTONE));
 
     
 
@@ -272,4 +268,6 @@ static inline sk_sp<SkDocument> MakeDocument(SkWStream* stream) {
 
 }  
 
+#undef SKPDF_STRING
+#undef SKPDF_STRING_IMPL
 #endif  

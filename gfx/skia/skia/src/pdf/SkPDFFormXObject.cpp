@@ -9,14 +9,12 @@
 
 #include "include/core/SkMatrix.h"
 #include "include/core/SkStream.h"
-#include "src/pdf/SkPDFDocumentPriv.h"
 #include "src/pdf/SkPDFUtils.h"
 
 #include <utility>
 
 SkPDFIndirectReference SkPDFMakeFormXObject(SkPDFDocument* doc,
                                             std::unique_ptr<SkStreamAsset> content,
-                                            SkPDFParentTreeKey structParentsKey,
                                             std::unique_ptr<SkPDFArray> mediaBox,
                                             std::unique_ptr<SkPDFDict> resourceDict,
                                             const SkMatrix& inverseTransform,
@@ -30,11 +28,6 @@ SkPDFIndirectReference SkPDFMakeFormXObject(SkPDFDocument* doc,
     dict->insertObject("Resources", std::move(resourceDict));
     dict->insertObject("BBox", std::move(mediaBox));
 
-    if (structParentsKey) {
-        dict->insertInt("StructParents", structParentsKey.fValue);
-    }
-    
-
     
     
     
@@ -46,9 +39,5 @@ SkPDFIndirectReference SkPDFMakeFormXObject(SkPDFDocument* doc,
     }
     group->insertBool("I", true);  
     dict->insertObject("Group", std::move(group));
-    SkPDFIndirectReference xobject = SkPDFStreamOut(std::move(dict), std::move(content), doc);
-    if (structParentsKey) {
-        doc->setContentStreamRefForStructParentsKey(structParentsKey, xobject);
-    }
-    return xobject;
+    return SkPDFStreamOut(std::move(dict), std::move(content), doc);
 }

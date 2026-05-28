@@ -20,8 +20,6 @@
 #include <cstring>
 #include <memory>
 #include <utility>
-#include <vector>
-
 class SkStreamAsset;
 
 
@@ -143,7 +141,7 @@ public:
 
     
     virtual const void* getMemoryBase() { return nullptr; }
-    virtual sk_sp<const SkData> getData() const { return nullptr; }
+    virtual sk_sp<SkData> getData() const { return nullptr; }
 
 private:
     virtual SkStream* onDuplicate() const { return nullptr; }
@@ -365,19 +363,18 @@ private:
     using INHERITED = SkStreamAsset;
 };
 
-
 class SK_API SkMemoryStream : public SkStreamMemory {
 public:
     SkMemoryStream();
 
     
-    explicit SkMemoryStream(size_t length);
+    SkMemoryStream(size_t length);
 
     
     SkMemoryStream(const void* data, size_t length, bool copyData = false);
 
     
-    explicit SkMemoryStream(sk_sp<const SkData> data);
+    SkMemoryStream(sk_sp<SkData> data);
 
     
     static std::unique_ptr<SkMemoryStream> MakeCopy(const void* data, size_t length);
@@ -386,7 +383,7 @@ public:
     static std::unique_ptr<SkMemoryStream> MakeDirect(const void* data, size_t length);
 
     
-    static std::unique_ptr<SkMemoryStream> Make(sk_sp<const SkData> data);
+    static std::unique_ptr<SkMemoryStream> Make(sk_sp<SkData> data);
 
     
 
@@ -400,9 +397,8 @@ public:
 
     void setMemoryOwned(const void* data, size_t length);
 
-    sk_sp<const SkData> getData() const override { return fData; }
-
-    void setData(sk_sp<const SkData> data);
+    sk_sp<SkData> getData() const override { return fData; }
+    void setData(sk_sp<SkData> data);
 
     const void* getAtPos();
 
@@ -433,8 +429,8 @@ private:
     SkMemoryStream* onDuplicate() const override;
     SkMemoryStream* onFork() const override;
 
-    sk_sp<const SkData> fData;
-    size_t fOffset;
+    sk_sp<SkData>   fData;
+    size_t          fOffset;
 
     using INHERITED = SkStreamMemory;
 };
@@ -443,7 +439,7 @@ private:
 
 class SK_API SkFILEWStream : public SkWStream {
 public:
-    explicit SkFILEWStream(const char path[]);
+    SkFILEWStream(const char path[]);
     ~SkFILEWStream() override;
 
     
@@ -492,9 +488,6 @@ public:
 
     
     sk_sp<SkData> detachAsData();
-
-    
-    std::vector<uint8_t> detachAsVector();
 
     
     std::unique_ptr<SkStreamAsset> detachAsStream();

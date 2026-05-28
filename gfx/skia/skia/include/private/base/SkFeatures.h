@@ -19,10 +19,6 @@
         #define SK_BUILD_FOR_WIN
     #elif defined(ANDROID) || defined(__ANDROID__)
         #define SK_BUILD_FOR_ANDROID
-    #elif defined(__EMSCRIPTEN__)
-        
-        
-        #define SK_BUILD_FOR_WASM
     #elif defined(linux) || defined(__linux) || defined(__FreeBSD__) || \
           defined(__OpenBSD__) || defined(__sun) || defined(__NetBSD__) || \
           defined(__DragonFly__) || defined(__Fuchsia__) || \
@@ -83,15 +79,15 @@
 
 
 
-#define SK_CPU_X64_LEVEL_SSE1     10
-#define SK_CPU_X64_LEVEL_SSE2     20
-#define SK_CPU_X64_LEVEL_SSE3     30
-#define SK_CPU_X64_LEVEL_SSSE3    31
-#define SK_CPU_X64_LEVEL_SSE41    41
-#define SK_CPU_X64_LEVEL_SSE42    42
-#define SK_CPU_X64_LEVEL_AVX      51
-#define SK_CPU_X64_LEVEL_AVX2     52
-#define SK_CPU_X64_LEVEL_ML4      60
+#define SK_CPU_SSE_LEVEL_SSE1     10
+#define SK_CPU_SSE_LEVEL_SSE2     20
+#define SK_CPU_SSE_LEVEL_SSE3     30
+#define SK_CPU_SSE_LEVEL_SSSE3    31
+#define SK_CPU_SSE_LEVEL_SSE41    41
+#define SK_CPU_SSE_LEVEL_SSE42    42
+#define SK_CPU_SSE_LEVEL_AVX      51
+#define SK_CPU_SSE_LEVEL_AVX2     52
+#define SK_CPU_SSE_LEVEL_SKX      60
 
 
 
@@ -99,32 +95,32 @@
 
 
 
-#define SK_CPU_LSX_LEVEL_LSX      10
-#define SK_CPU_LSX_LEVEL_LASX     20
+#define SK_CPU_LSX_LEVEL_LSX      70
+#define SK_CPU_LSX_LEVEL_LASX     80
 
 
 
 
-#ifndef SK_CPU_X64_LEVEL
+#ifndef SK_CPU_SSE_LEVEL
     
     
     #if defined(__AVX512F__) && defined(__AVX512DQ__) && defined(__AVX512CD__) && \
         defined(__AVX512BW__) && defined(__AVX512VL__)
-        #define SK_CPU_X64_LEVEL    SK_CPU_X64_LEVEL_ML4
+        #define SK_CPU_SSE_LEVEL    SK_CPU_SSE_LEVEL_SKX
     #elif defined(__AVX2__)
-        #define SK_CPU_X64_LEVEL    SK_CPU_X64_LEVEL_AVX2
+        #define SK_CPU_SSE_LEVEL    SK_CPU_SSE_LEVEL_AVX2
     #elif defined(__AVX__)
-        #define SK_CPU_X64_LEVEL    SK_CPU_X64_LEVEL_AVX
+        #define SK_CPU_SSE_LEVEL    SK_CPU_SSE_LEVEL_AVX
     #elif defined(__SSE4_2__)
-        #define SK_CPU_X64_LEVEL    SK_CPU_X64_LEVEL_SSE42
+        #define SK_CPU_SSE_LEVEL    SK_CPU_SSE_LEVEL_SSE42
     #elif defined(__SSE4_1__)
-        #define SK_CPU_X64_LEVEL    SK_CPU_X64_LEVEL_SSE41
+        #define SK_CPU_SSE_LEVEL    SK_CPU_SSE_LEVEL_SSE41
     #elif defined(__SSSE3__)
-        #define SK_CPU_X64_LEVEL    SK_CPU_X64_LEVEL_SSSE3
+        #define SK_CPU_SSE_LEVEL    SK_CPU_SSE_LEVEL_SSSE3
     #elif defined(__SSE3__)
-        #define SK_CPU_X64_LEVEL    SK_CPU_X64_LEVEL_SSE3
+        #define SK_CPU_SSE_LEVEL    SK_CPU_SSE_LEVEL_SSE3
     #elif defined(__SSE2__)
-        #define SK_CPU_X64_LEVEL    SK_CPU_X64_LEVEL_SSE2
+        #define SK_CPU_SSE_LEVEL    SK_CPU_SSE_LEVEL_SSE2
     #endif
 #endif
 
@@ -137,23 +133,23 @@
 #endif
 
 
-#ifndef SK_CPU_X64_LEVEL
+#ifndef SK_CPU_SSE_LEVEL
     
     
     #if defined(__AVX512F__) && defined(__AVX512DQ__) && defined(__AVX512CD__) && \
         defined(__AVX512BW__) && defined(__AVX512VL__)
-        #define SK_CPU_X64_LEVEL        SK_CPU_X64_LEVEL_ML4
+        #define SK_CPU_SSE_LEVEL        SK_CPU_SSE_LEVEL_SKX
     #elif defined(__AVX2__)
-        #define SK_CPU_X64_LEVEL        SK_CPU_X64_LEVEL_AVX2
+        #define SK_CPU_SSE_LEVEL        SK_CPU_SSE_LEVEL_AVX2
     #elif defined(__AVX__)
-        #define SK_CPU_X64_LEVEL        SK_CPU_X64_LEVEL_AVX
+        #define SK_CPU_SSE_LEVEL        SK_CPU_SSE_LEVEL_AVX
     #elif defined(_M_X64) || defined(_M_AMD64)
-        #define SK_CPU_X64_LEVEL        SK_CPU_X64_LEVEL_SSE2
+        #define SK_CPU_SSE_LEVEL        SK_CPU_SSE_LEVEL_SSE2
     #elif defined(_M_IX86_FP)
         #if _M_IX86_FP >= 2
-            #define SK_CPU_X64_LEVEL    SK_CPU_X64_LEVEL_SSE2
+            #define SK_CPU_SSE_LEVEL    SK_CPU_SSE_LEVEL_SSE2
         #elif _M_IX86_FP == 1
-            #define SK_CPU_X64_LEVEL    SK_CPU_X64_LEVEL_SSE1
+            #define SK_CPU_SSE_LEVEL    SK_CPU_SSE_LEVEL_SSE1
         #endif
     #endif
 #endif

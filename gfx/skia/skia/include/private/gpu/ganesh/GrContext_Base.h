@@ -67,7 +67,7 @@ public:
 protected:
     friend class GrBaseContextPriv; 
 
-    explicit GrContext_Base(sk_sp<GrContextThreadSafeProxy>);
+    GrContext_Base(sk_sp<GrContextThreadSafeProxy>);
 
     virtual bool init();
 

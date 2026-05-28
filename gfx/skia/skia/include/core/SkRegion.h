@@ -8,12 +8,13 @@
 #ifndef SkRegion_DEFINED
 #define SkRegion_DEFINED
 
-#include "include/core/SkPath.h"
 #include "include/core/SkRect.h"
 #include "include/private/base/SkAPI.h"
 #include "include/private/base/SkAssert.h"
 #include "include/private/base/SkDebug.h"
 #include "include/private/base/SkTypeTraits.h"
+
+#include "include/core/SkPath.h"    
 
 #include <cstddef>
 #include <cstdint>
@@ -193,6 +194,10 @@ public:
 
 
     SkPath getBoundaryPath() const;
+
+#ifndef SK_HIDE_PATH_EDIT_METHODS
+    bool getBoundaryPath(SkPath* path) const;
+#endif
 
     
 

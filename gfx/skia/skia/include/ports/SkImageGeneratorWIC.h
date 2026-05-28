@@ -34,7 +34,7 @@
 
 
 namespace SkImageGeneratorWIC {
-SK_API std::unique_ptr<SkImageGenerator> MakeFromEncodedWIC(sk_sp<const SkData>);
+SK_API std::unique_ptr<SkImageGenerator> MakeFromEncodedWIC(sk_sp<SkData>);
 }
 
 #endif  

@@ -1641,7 +1641,7 @@ bool SkTriangulateSimplePolygon(const SkPoint* polygonVerts, uint16_t* indexMap,
 
     
     SkRect bounds;
-    if (!bounds.setBoundsCheck({polygonVerts, (size_t)polygonSize})) {
+    if (!bounds.setBoundsCheck({polygonVerts, polygonSize})) {
         return false;
     }
     

@@ -11,7 +11,6 @@
 #include "include/core/SkRect.h"
 #include "include/core/SkScalar.h"
 #include "include/core/SkTypes.h"
-#include "include/private/base/SkFloatingPoint.h"
 #include "include/private/base/SkTo.h"
 
 #include <cstring>
@@ -37,7 +36,7 @@ template <typename T> T pin_unsorted(T value, T limit0, T limit1) {
 static SkScalar sect_with_horizontal(const SkPoint src[2], SkScalar Y) {
     SkScalar dy = src[1].fY - src[0].fY;
     if (SkScalarNearlyZero(dy)) {
-        return sk_float_midpoint(src[0].fX, src[1].fX);
+        return SkScalarAve(src[0].fX, src[1].fX);
     } else {
         
         
@@ -58,7 +57,7 @@ static SkScalar sect_with_horizontal(const SkPoint src[2], SkScalar Y) {
 static SkScalar sect_with_vertical(const SkPoint src[2], SkScalar X) {
     SkScalar dx = src[1].fX - src[0].fX;
     if (SkScalarNearlyZero(dx)) {
-        return sk_float_midpoint(src[0].fY, src[1].fY);
+        return SkScalarAve(src[0].fY, src[1].fY);
     } else {
         
         

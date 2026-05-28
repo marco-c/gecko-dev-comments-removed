@@ -224,52 +224,34 @@ const SkSL::RP::Program* SkRuntimeEffect::getRPProgram(SkSL::DebugTracePriv* deb
         
         
         
-        
-        
-        
-        
-        const SkSL::Program* programToUse = fBaseProgram.get();
-        const SkSL::FunctionDefinition* mainToUse = &fMain;
-
-        std::unique_ptr<SkSL::Program> optimizedCopy;
-        bool shouldOptimize = !(fFlags & kDisableOptimization_Flag);
-        SkSL::ProgramSettings settings = fBaseProgram->fConfig->fSettings;
-        bool needsOptimization = !settings.fOptimize ||
-                                  settings.fInlineThreshold < SkSL::kDefaultInlineThreshold;
-        if (shouldOptimize && needsOptimization) {
+        if (!(fFlags & kDisableOptimization_Flag)) {
             SkSL::Compiler compiler;
-            settings.fOptimize = true;
-            settings.fInlineThreshold = SkSL::kDefaultInlineThreshold;
-            optimizedCopy = compiler.convertProgram(
-                    fBaseProgram->fConfig->fKind, *fBaseProgram->fSource, settings);
-            SkASSERT(optimizedCopy);
-            if (optimizedCopy) {
-                const auto* mainDecl = optimizedCopy->getFunction("main");
-                SkASSERT(mainDecl);
-                if (mainDecl) {
-                    programToUse = optimizedCopy.get();
-                    mainToUse = mainDecl->definition();
-                }
+            fBaseProgram->fConfig->fSettings.fInlineThreshold = SkSL::kDefaultInlineThreshold;
+            compiler.runInliner(*fBaseProgram);
+
+            
+            while (SkSL::Transform::EliminateDeadFunctions(*fBaseProgram)) {
+                
             }
         }
 
         SkSL::DebugTracePriv tempDebugTrace;
         if (debugTrace) {
             const_cast<SkRuntimeEffect*>(this)->fRPProgram = MakeRasterPipelineProgram(
-                    *programToUse, *mainToUse, debugTrace, true);
+                    *fBaseProgram, fMain, debugTrace, true);
         } else if (kRPEnableLiveTrace) {
             debugTrace = &tempDebugTrace;
             const_cast<SkRuntimeEffect*>(this)->fRPProgram = MakeRasterPipelineProgram(
-                    *programToUse, *mainToUse, debugTrace, false);
+                    *fBaseProgram, fMain, debugTrace, false);
         } else {
             const_cast<SkRuntimeEffect*>(this)->fRPProgram = MakeRasterPipelineProgram(
-                    *programToUse, *mainToUse, nullptr, false);
+                    *fBaseProgram, fMain, nullptr, false);
         }
 
         if (kRPEnableLiveTrace) {
             if (fRPProgram) {
                 SkDebugf("-----\n\n");
-                SkStreamPriv::DebugfStream stream;
+                SkDebugfStream stream;
                 fRPProgram->dump(&stream, true);
                 SkDebugf("\n-----\n\n");
             } else {
@@ -294,11 +276,11 @@ SkSpan<const float> SkRuntimeEffectPriv::UniformsAsSpan(
     if (alwaysCopyIntoAlloc || originalData != transformedData) {
         
         
-        size_t numBytes = transformedData->size();
-        size_t numFloats = numBytes / sizeof(float);
+        int numBytes = transformedData->size();
+        int numFloats = numBytes / sizeof(float);
         float* uniformsInAlloc = alloc->makeArrayDefault<float>(numFloats);
         memcpy(uniformsInAlloc, transformedData->data(), numBytes);
-        return {uniformsInAlloc, numFloats};
+        return SkSpan{uniformsInAlloc, numFloats};
     }
     
     return SkSpan{static_cast<const float*>(originalData->data()),
@@ -468,9 +450,8 @@ void SkRuntimeEffectPriv::WriteChildEffects(
 }
 
 SkSL::ProgramSettings SkRuntimeEffect::MakeSettings(const Options& options) {
-    constexpr int kDisableSKSLInlining = 0;
     SkSL::ProgramSettings settings;
-    settings.fInlineThreshold = kDisableSKSLInlining;
+    settings.fInlineThreshold = 0;
     settings.fForceNoInline = options.forceUnoptimized;
     settings.fOptimize = !options.forceUnoptimized;
     settings.fMaxVersionAllowed = options.maxVersionAllowed;

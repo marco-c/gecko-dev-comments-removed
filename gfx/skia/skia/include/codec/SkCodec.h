@@ -122,10 +122,6 @@ public:
 
 
         kUnimplemented,
-        
-
-
-        kOutOfMemory,
     };
 
     
@@ -216,11 +212,11 @@ public:
 
 
 
-    static std::unique_ptr<SkCodec> MakeFromData(sk_sp<const SkData>,
+    static std::unique_ptr<SkCodec> MakeFromData(sk_sp<SkData>,
                                                  SkSpan<const SkCodecs::Decoder> decoders,
                                                  SkPngChunkReader* = nullptr);
     
-    static std::unique_ptr<SkCodec> MakeFromData(sk_sp<const SkData>, SkPngChunkReader* = nullptr);
+    static std::unique_ptr<SkCodec> MakeFromData(sk_sp<SkData>, SkPngChunkReader* = nullptr);
 
     virtual ~SkCodec();
 
@@ -315,6 +311,12 @@ public:
     
 
 
+
+    virtual std::unique_ptr<SkStream> getEncodedData() const;
+
+    
+
+
     enum ZeroInitialized {
         
 
@@ -335,13 +337,13 @@ public:
 
     struct Options {
         Options()
-                : fZeroInitialized(kNo_ZeroInitialized)
-                , fSubset(nullptr)
-                , fFrameIndex(0)
-                , fPriorFrame(kNoFrame)
-                , fMaxDecodeMemory(0) {}
+            : fZeroInitialized(kNo_ZeroInitialized)
+            , fSubset(nullptr)
+            , fFrameIndex(0)
+            , fPriorFrame(kNoFrame)
+        {}
 
-        ZeroInitialized fZeroInitialized;
+        ZeroInitialized            fZeroInitialized;
         
 
 
@@ -359,14 +361,14 @@ public:
 
 
 
-        const SkIRect* fSubset;
+        const SkIRect*             fSubset;
 
         
 
 
 
 
-        int fFrameIndex;
+        int                        fFrameIndex;
 
         
 
@@ -381,12 +383,7 @@ public:
 
 
 
-        int fPriorFrame;
-
-        
-
-
-        size_t fMaxDecodeMemory;
+        int                        fPriorFrame;
     };
 
     
@@ -834,6 +831,14 @@ public:
     };
     IsAnimated isAnimated() { return this->onIsAnimated(); }
 
+    
+    
+    
+    
+    static void Register(
+            bool                     (*peek)(const void*, size_t),
+            std::unique_ptr<SkCodec> (*make)(std::unique_ptr<SkStream>, SkCodec::Result*));
+
 protected:
     const SkEncodedInfo& getEncodedInfo() const { return fEncodedInfo; }
 
@@ -843,6 +848,12 @@ protected:
             XformFormat srcFormat,
             std::unique_ptr<SkStream>,
             SkEncodedOrigin = kTopLeft_SkEncodedOrigin);
+
+    void setSrcXformFormat(XformFormat pixelFormat);
+
+    XformFormat getSrcXformFormat() const {
+        return fSrcXformFormat;
+    }
 
     virtual bool onGetGainmapCodec(SkGainmapInfo*, std::unique_ptr<SkCodec>*) { return false; }
     virtual bool onGetGainmapInfo(SkGainmapInfo*) { return false; }
@@ -980,9 +991,6 @@ protected:
         return IsAnimated::kNo;
     }
 
-    
-    bool allocateFromBudget(size_t numBytes);
-
 private:
     const SkEncodedInfo                fEncodedInfo;
     XformFormat                        fSrcXformFormat;
@@ -1011,9 +1019,6 @@ private:
     
     int fCurrScanline = -1;
 
-    
-    size_t fDecodeBudget = 0;
-
     bool fStartedIncrementalDecode = false;
 
     
@@ -1034,11 +1039,6 @@ private:
     bool dimensionsSupported(const SkISize& dim) {
         return dim == this->dimensions() || this->onDimensionsSupported(dim);
     }
-
-    Result getPixelsBudgeted(const SkImageInfo& info,
-                             void* pixels,
-                             size_t rowBytes,
-                             const Options*);
 
     
 
@@ -1070,13 +1070,6 @@ private:
             const Options& ) {
         return kUnimplemented;
     }
-
-    
-
-
-
-
-    virtual bool onSupportsIncrementalDecode(const SkImageInfo&) { return false; }
 
     virtual Result onStartIncrementalDecode(const SkImageInfo& , void*, size_t,
             const Options&) {
@@ -1118,12 +1111,6 @@ private:
 
 
     virtual SkSampler* getSampler(bool ) { return nullptr; }
-
-    
-
-
-
-    virtual sk_sp<const SkData> getEncodedData() const;
 
     friend class DM::CodecSrc;  
     friend class PNGCodecGM;    

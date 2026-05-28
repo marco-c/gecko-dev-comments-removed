@@ -103,17 +103,15 @@ enum SkColorType : int {
     
     
     kRGBA_F32_SkColorType,
+
+    
+
     
     
     kR8G8_unorm_SkColorType,
     
     
     kA16_float_SkColorType,
-
-    
-    
-    
-    kR16_float_SkColorType,
     
     
     
@@ -121,10 +119,6 @@ enum SkColorType : int {
     
     
     kA16_unorm_SkColorType,
-    
-    
-    
-    kR16_unorm_SkColorType,
     
     
     

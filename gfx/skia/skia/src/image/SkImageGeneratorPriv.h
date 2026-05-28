@@ -53,7 +53,7 @@ std::unique_ptr<SkImageGenerator> MakeFromPicture(const SkISize&,
 
 
 
-std::unique_ptr<SkImageGenerator> MakeFromEncoded(sk_sp<const SkData>,
+std::unique_ptr<SkImageGenerator> MakeFromEncoded(sk_sp<SkData>,
                                                   std::optional<SkAlphaType> = std::nullopt);
 }
 

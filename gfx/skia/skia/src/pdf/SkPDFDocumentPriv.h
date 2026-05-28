@@ -138,19 +138,12 @@ public:
     
     
     
-    
-    
-    
-    SkPDFStructTree::Mark createMarkForElemId(int elemId, SkPDFParentTreeKey& structParentsKey);
-
-    void setContentStreamRefForStructParentsKey(SkPDFParentTreeKey structParentsKey,
-                                                SkPDFIndirectReference contentStreamRef);
+    SkPDFStructTree::Mark createMarkForElemId(int elemId);
 
     
     
     
-    SkPDFParentTreeKey createStructParentKeyForElemId(int elemId,
-                                                      SkPDFIndirectReference contentItemRef);
+    int createStructParentKeyForElemId(int elemId, SkPDFIndirectReference contentItemRef);
 
     void addStructElemTitle(int elemId, SkSpan<const char>);
 

@@ -12,30 +12,8 @@
 #include "include/private/base/SkCPUTypes.h"
 #include "include/private/base/SkTemplates.h"
 
-#include <bit>
 #include <cstddef>
 #include <cstdint>
-
-
-
-
-static constexpr int SkCLZ(uint32_t x) {
-    return std::countl_zero<uint32_t>(x);
-}
-
-
-
-
-static constexpr int SkCTZ(uint32_t x) {
-    return std::countr_zero<uint32_t>(x);
-}
-
-
-
-
-static constexpr int SkPopCount(uint32_t x) {
-    return std::popcount<uint32_t>(x);
-}
 
 
 
@@ -148,17 +126,128 @@ static inline unsigned SkDiv255Round(unsigned prod) {
 
 
 
+int SkPopCount_portable(uint32_t n);
+
+#if defined(__GNUC__) || defined(__clang__)
+    static inline int SkPopCount(uint32_t n) {
+        return __builtin_popcount(n);
+    }
+#else
+    static inline int SkPopCount(uint32_t n) {
+        return SkPopCount_portable(n);
+    }
+#endif
+
+
+
+
+
+int SkNthSet(uint32_t target, int n);
+
+
+
+constexpr int SkCLZ_portable(uint32_t x) {
+    int n = 32;
+    uint32_t y = x >> 16; if (y != 0) {n -= 16; x = y;}
+             y = x >>  8; if (y != 0) {n -=  8; x = y;}
+             y = x >>  4; if (y != 0) {n -=  4; x = y;}
+             y = x >>  2; if (y != 0) {n -=  2; x = y;}
+             y = x >>  1; if (y != 0) {return n - 2;}
+    return n - static_cast<int>(x);
+}
+
+static_assert(32 == SkCLZ_portable(0));
+static_assert(31 == SkCLZ_portable(1));
+static_assert( 1 == SkCLZ_portable(1 << 30));
+static_assert( 1 == SkCLZ_portable((1 << 30) | (1 << 24) | 1));
+static_assert( 0 == SkCLZ_portable(~0U));
+
+#if defined(SK_BUILD_FOR_WIN)
+    #include <intrin.h>
+
+    static inline int SkCLZ(uint32_t mask) {
+        if (mask) {
+            unsigned long index = 0;
+            _BitScanReverse(&index, mask);
+            
+            
+            #pragma warning(push)
+            #pragma warning(suppress : 6102) // Using 'index' from failed function call
+            return static_cast<int>(index ^ 0x1F);
+            #pragma warning(pop)
+        } else {
+            return 32;
+        }
+    }
+#elif defined(SK_CPU_ARM32) || defined(__GNUC__) || defined(__clang__)
+    static inline int SkCLZ(uint32_t mask) {
+        
+        return mask ? __builtin_clz(mask) : 32;
+    }
+#else
+    static inline int SkCLZ(uint32_t mask) {
+        return SkCLZ_portable(mask);
+    }
+#endif
+
+
+
+constexpr int SkCTZ_portable(uint32_t x) {
+    return 32 - SkCLZ_portable(~x & (x - 1));
+}
+
+static_assert(32 == SkCTZ_portable(0));
+static_assert( 0 == SkCTZ_portable(1));
+static_assert(30 == SkCTZ_portable(1 << 30));
+static_assert( 2 == SkCTZ_portable((1 << 30) | (1 << 24) | (1 << 2)));
+static_assert( 0 == SkCTZ_portable(~0U));
+
+#if defined(SK_BUILD_FOR_WIN)
+    #include <intrin.h>
+
+    static inline int SkCTZ(uint32_t mask) {
+        if (mask) {
+            unsigned long index = 0;
+            _BitScanForward(&index, mask);
+            
+            
+            #pragma warning(push)
+            #pragma warning(suppress : 6102) // Using 'index' from failed function call
+            return static_cast<int>(index);
+            #pragma warning(pop)
+        } else {
+            return 32;
+        }
+    }
+#elif defined(SK_CPU_ARM32) || defined(__GNUC__) || defined(__clang__)
+    static inline int SkCTZ(uint32_t mask) {
+        
+        return mask ? __builtin_ctz(mask) : 32;
+    }
+#else
+    static inline int SkCTZ(uint32_t mask) {
+        return SkCTZ_portable(mask);
+    }
+#endif
 
 
 
 
 
 
-static constexpr int SkNextLog2(uint32_t value) {
+
+
+
+
+static inline int SkNextLog2(uint32_t value) {
     SkASSERT(value != 0);
     return 32 - SkCLZ(value - 1);
 }
 
+constexpr int SkNextLog2_portable(uint32_t value) {
+    SkASSERT(value != 0);
+    return 32 - SkCLZ_portable(value - 1);
+}
 
 
 
@@ -168,29 +257,30 @@ static constexpr int SkNextLog2(uint32_t value) {
 
 
 
-static constexpr int SkPrevLog2(uint32_t value) {
+
+static inline int SkPrevLog2(uint32_t value) {
     SkASSERT(value != 0);
     return 32 - SkCLZ(value >> 1);
 }
 
+constexpr int SkPrevLog2_portable(uint32_t value) {
+    SkASSERT(value != 0);
+    return 32 - SkCLZ_portable(value >> 1);
+}
 
 
 
 
 
-static constexpr int SkNextPow2(int value) {
+
+static inline int SkNextPow2(int value) {
     SkASSERT(value > 0);
     return 1 << SkNextLog2(static_cast<uint32_t>(value));
 }
 
-
-
-
-
-
-static constexpr int SkPrevPow2(int value) {
+constexpr int SkNextPow2_portable(int value) {
     SkASSERT(value > 0);
-    return 1 << SkPrevLog2(static_cast<uint32_t>(value));
+    return 1 << SkNextLog2_portable(static_cast<uint32_t>(value));
 }
 
 
@@ -198,7 +288,22 @@ static constexpr int SkPrevPow2(int value) {
 
 
 
-static constexpr size_t SkNextSizePow2(size_t n) {
+static inline int SkPrevPow2(int value) {
+    SkASSERT(value > 0);
+    return 1 << SkPrevLog2(static_cast<uint32_t>(value));
+}
+
+constexpr int SkPrevPow2_portable(int value) {
+    SkASSERT(value > 0);
+    return 1 << SkPrevLog2_portable(static_cast<uint32_t>(value));
+}
+
+
+
+
+
+
+constexpr size_t SkNextSizePow2(size_t n) {
     constexpr int kNumSizeTBits = 8 * sizeof(size_t);
     constexpr size_t kHighBitSet = size_t(1) << (kNumSizeTBits - 1);
 

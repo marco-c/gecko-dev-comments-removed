@@ -16,13 +16,21 @@
 #include "src/pdf/SkPDFDocumentPriv.h"
 
 #include <algorithm>
-#include <compare>
 #include <memory>
-#include <ranges>
 #include <utility>
 #include <vector>
 
 using namespace skia_private;
+
+
+
+
+
+
+
+
+
+const int kFirstContentItemStructParentKey = 100000;
 
 namespace {
 struct Location {
@@ -68,9 +76,8 @@ struct SkPDFStructElem {
     struct MarkedContentInfo {
         Location fLocation;
         int fMcid;
-        SkPDFParentTreeKey fStructParentsKey;
     };
-    std::vector<MarkedContentInfo> fMarkedContent;
+    TArray<MarkedContentInfo> fMarkedContent;
     int fElemId = 0;
     bool fWantTitle = false;
     bool fUsed = false;
@@ -84,7 +91,7 @@ struct SkPDFStructElem {
     std::vector<int> fAttributeElemIds;
     struct ContentItemInfo {
         unsigned fPageIndex;
-        SkPDFParentTreeKey fStructParentKey;
+        SkPDFIndirectReference fContentItemRef;
     };
     std::vector<ContentItemInfo> fContentItems;
 
@@ -111,61 +118,9 @@ struct SkPDFStructElem {
         }
     }
 
-    class ContentIndex {
-        SkPDFParentTreeKey fParentId;
-        int fMcid;
-    public:
-        ContentIndex() : fParentId(), fMcid(0) {}
-        ContentIndex(const MarkedContentInfo& mci)
-            : fParentId(mci.fStructParentsKey), fMcid(mci.fMcid) {}
-        ContentIndex(const ContentItemInfo& cii)
-            : fParentId(cii.fStructParentKey), fMcid(0) {}
-        bool valid() const { return static_cast<bool>(fParentId); }
-        std::strong_ordering operator<=>(const ContentIndex&) const = default;
-    };
-    class ContentSpan {
-        struct Data {
-            ContentIndex fFirst;
-            ContentIndex fLast;
-            bool operator==(const Data&) const = default;
-        };
-        std::optional<Data> fData;
-    public:
-        ContentSpan() = default;
-        ContentSpan(const ContentSpan&) = default;
-        ContentSpan& operator=(const ContentSpan&) = default;
-        bool operator==(const ContentSpan& that) const = default;
-        bool empty() const { return !fData.has_value(); }
-        const ContentIndex& first() const { return fData->fFirst; }
-        const ContentIndex& last() const { return fData->fLast; }
-        void accumulate(const ContentIndex& ci) {
-            if (!ci.valid()) {
-                return;
-            }
-            if (this->empty()) {
-                fData.emplace(ci, ci);
-                return;
-            }
-            if (ci < fData->fFirst) {
-                fData->fFirst = ci;
-            }
-            if (fData->fLast < ci) {
-                fData->fLast = ci;
-            }
-        }
-        void accumulate(const ContentSpan& cs) {
-            if (cs.empty()) {
-                return;
-            }
-            this->accumulate(cs.first());
-            this->accumulate(cs.last());
-        }
-    };
-    SkPDFIndirectReference emitStructElem(const SkPDFStructTree& structTree,
-                                          SkPDFIndirectReference parent,
+    SkPDFIndirectReference emitStructElem(SkPDFIndirectReference parent,
                                           std::vector<SkPDFStructTree::IDTreeEntry>* idTree,
-                                          SkPDFDocument* doc,
-                                          ContentSpan&);
+                                          SkPDFDocument* doc);
 };
 
 SkPDF::AttributeList::AttributeList() = default;
@@ -202,28 +157,8 @@ void SkPDF::AttributeList::appendName(const char* owner, const char* name, const
     fAttrs->appendObject(std::move(attrDict));
 }
 
-void SkPDF::AttributeList::appendTextString(const char* owner, const char* name, const char* value){
-    if (!fAttrs) {
-        fAttrs = SkPDFMakeArray();
-    }
-    std::unique_ptr<SkPDFDict> attrDict = SkPDFMakeDict();
-    attrDict->insertName("O", owner);
-    attrDict->insertTextString(name, value);
-    fAttrs->appendObject(std::move(attrDict));
-}
-
-void SkPDF::AttributeList::appendTextString(const char* owner, const char* name, SkString value) {
-    if (!fAttrs) {
-        fAttrs = SkPDFMakeArray();
-    }
-    std::unique_ptr<SkPDFDict> attrDict = SkPDFMakeDict();
-    attrDict->insertName("O", owner);
-    attrDict->insertTextString(name, std::move(value));
-    fAttrs->appendObject(std::move(attrDict));
-}
-
 void SkPDF::AttributeList::appendFloatArray(const char* owner, const char* name,
-                                            SkSpan<const float> value) {
+                                            const std::vector<float>& value) {
     if (!fAttrs) {
         fAttrs = SkPDFMakeArray();
     }
@@ -238,7 +173,7 @@ void SkPDF::AttributeList::appendFloatArray(const char* owner, const char* name,
 }
 
 void SkPDF::AttributeList::appendNodeIdArray(const char* owner, const char* name,
-                                             SkSpan<const int> elemIds) {
+                                             const std::vector<int>& elemIds) {
     if (!fAttrs) {
         fAttrs = SkPDFMakeArray();
     }
@@ -276,17 +211,7 @@ void SkPDFStructTree::move(SkPDF::StructureElementNode& node,
         for (SkPDFStructElem* parent = structElem->fParent; parent; parent = parent->fParent) {
             ++indent;
         }
-        SkString attrIds;
-        if (!node.fAttributes.fElemIds.empty()) {
-            attrIds.append(" [");
-            for (int attrId : node.fAttributes.fElemIds) {
-                attrIds.appendS32(attrId);
-                attrIds.append(",");
-            }
-            *(attrIds.end() - 1) = ']';
-        }
-        SkDebugf("%.*s %d %s%s\n",
-                 indent, "            ", node.fNodeId, node.fTypeString.c_str(), attrIds.c_str());
+        SkDebugf("%.*s %d %s\n", indent, "            ", node.fNodeId, node.fTypeString.c_str());
     }
 
     structElem->fElemId = node.fNodeId;
@@ -337,9 +262,7 @@ void SkPDFStructTree::Mark::accumulate(SkPoint point) {
     return location.accumulate({{point}, location.fPageIndex});
 }
 
-auto SkPDFStructTree::createMarkForElemId(int elemId, unsigned pageIndex,
-                                          SkPDFParentTreeKey& structParentsKey) -> Mark
-{
+auto SkPDFStructTree::createMarkForElemId(int elemId, unsigned pageIndex) -> Mark {
     if (!fRoot) {
         return Mark();
     }
@@ -350,97 +273,47 @@ auto SkPDFStructTree::createMarkForElemId(int elemId, unsigned pageIndex,
     SkPDFStructElem* structElem = *structElemPtr;
     SkASSERT(structElem);
 
-    if (fParentTree.size() <= structParentsKey.fValue) {
-        return Mark();
-    }
-    if (!structParentsKey) {
-        structParentsKey.fValue = fParentTree.size();
-        fParentTree.push_back(Stream());
-    }
-    ParentTreeEntry& entry = fParentTree[structParentsKey.fValue];
-    if (!std::holds_alternative<Stream>(entry)) {
-        return Mark();
-    }
-
     structElem->setUsed(fStructElemForElemId);
 
-    TArray<SkPDFStructElem*>& structElemForMcid = std::get<Stream>(entry).fChildren;
+    while (SkToUInt(fStructElemForMcidForPage.size()) < pageIndex + 1) {
+        fStructElemForMcidForPage.push_back();
+    }
+    TArray<SkPDFStructElem*>& structElemForMcid = fStructElemForMcidForPage[pageIndex];
     int mcid = structElemForMcid.size();
     SkASSERT(structElem->fMarkedContent.empty() ||
              structElem->fMarkedContent.back().fLocation.fPageIndex <= pageIndex);
-    structElem->fMarkedContent.push_back({{{SK_ScalarNaN, SK_ScalarNaN}, pageIndex},
-                                          mcid, structParentsKey});
+    structElem->fMarkedContent.push_back({{{SK_ScalarNaN, SK_ScalarNaN}, pageIndex}, mcid});
     structElemForMcid.push_back(structElem);
     return Mark(structElem, structElem->fMarkedContent.size() - 1);
 }
 
-void SkPDFStructTree::setContentStreamRefForStructParentsKey(
-        SkPDFParentTreeKey structParentsKey, SkPDFIndirectReference contentStreamRef)
-{
-    if (structParentsKey.fValue < 0 || fParentTree.size() <= structParentsKey.fValue) {
-        return;
-    }
-    ParentTreeEntry& entry = fParentTree[structParentsKey.fValue];
-    if (!std::holds_alternative<Stream>(entry)) {
-        return;
-    }
-    std::get<Stream>(entry).fContentStreamRef = contentStreamRef;
-}
-
-SkPDFIndirectReference SkPDFStructTree::getContentStreamRefForStructParentsKey(
-        SkPDFParentTreeKey structParentsKey) const
-{
-    if (structParentsKey.fValue < 0 || fParentTree.size() <= structParentsKey.fValue) {
-        return SkPDFIndirectReference();
-    }
-    const ParentTreeEntry& entry = fParentTree[structParentsKey.fValue];
-    if (!std::holds_alternative<Stream>(entry)) {
-        return SkPDFIndirectReference();
-    }
-    return std::get<Stream>(entry).fContentStreamRef;
-}
-
-SkPDFParentTreeKey SkPDFStructTree::createStructParentKeyForElemId(
-        int elemId, unsigned pageIndex, SkPDFIndirectReference contentItemRef)
-{
+int SkPDFStructTree::createStructParentKeyForElemId(int elemId,
+                                                    SkPDFIndirectReference contentItemRef,
+                                                    unsigned pageIndex) {
     if (!fRoot) {
-        return SkPDFParentTreeKey();
+        return -1;
     }
     SkPDFStructElem** structElemPtr = fStructElemForElemId.find(elemId);
     if (!structElemPtr) {
-        return SkPDFParentTreeKey();
+        return -1;
     }
     SkPDFStructElem* structElem = *structElemPtr;
     SkASSERT(structElem);
 
     structElem->setUsed(fStructElemForElemId);
 
-    SkPDFParentTreeKey structParentKey{fParentTree.size()};
-    SkPDFStructElem::ContentItemInfo contentItemInfo = {pageIndex, structParentKey};
+    SkPDFStructElem::ContentItemInfo contentItemInfo = {pageIndex, contentItemRef};
     structElem->fContentItems.push_back(contentItemInfo);
-    fParentTree.emplace_back(Item{structElem, contentItemRef});
+
+    int structParentKey = kFirstContentItemStructParentKey + fStructElemForContentItem.size();
+    fStructElemForContentItem.push_back(structElem);
     return structParentKey;
 }
 
-SkPDFIndirectReference SkPDFStructTree::getContentItemRefForStructParentKey(
-        SkPDFParentTreeKey structParentKey) const
-{
-    if (structParentKey.fValue < 0 || fParentTree.size() <= structParentKey.fValue) {
-        return SkPDFIndirectReference();
-    }
-    const ParentTreeEntry& entry = fParentTree[structParentKey.fValue];
-    if (!std::holds_alternative<Item>(entry)) {
-        return SkPDFIndirectReference();
-    }
-    return std::get<Item>(entry).fContentItemRef;
-}
-
 SkPDFIndirectReference SkPDFStructElem::emitStructElem(
-        const SkPDFStructTree& structTree,
         SkPDFIndirectReference parent,
         std::vector<SkPDFStructTree::IDTreeEntry>* idTree,
-        SkPDFDocument* doc,
-        ContentSpan& contentSpan)
+        SkPDFDocument* doc)
 {
     fRef = doc->reserveRef();
 
@@ -456,79 +329,18 @@ SkPDFIndirectReference SkPDFStructElem::emitStructElem(
     dict.insertRef("P", parent);
 
     { 
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-
-        
-        struct ChildSpan {
-            ContentSpan fContentSpan;
-            SkPDFIndirectReference fRef;
-        };
-        std::vector<ChildSpan> childSpans;
+        std::unique_ptr<SkPDFArray> kids(new SkPDFOptionalArray());
         for (auto&& child : fChildren) {
             if (child.fUsed) {
-                ChildSpan& childSpan = childSpans.emplace_back();
-                childSpan.fRef = child.emitStructElem(structTree, fRef, idTree, doc,
-                                                      childSpan.fContentSpan);
+                kids->appendRef(child.emitStructElem(fRef, idTree, doc));
             }
         }
-        if (childSpans.size() > 1) {
-            std::optional<ContentIndex> minFirstAfter;
-            for (auto&& childSpan : std::views::reverse(childSpans)) {
-                if (childSpan.fContentSpan.empty()) {
-                    
-                    continue;
-                }
-                if (!minFirstAfter.has_value() || childSpan.fContentSpan.first() <= minFirstAfter) {
-                    
-                    minFirstAfter = childSpan.fContentSpan.first();
-                    continue;
-                }
-                
-                childSpan.fContentSpan.accumulate(minFirstAfter.value());
-            }
-        }
-        SkDEBUGCODE(
-            
-            std::optional<ContentIndex> maxFirstSeenSoFar;
-            for (auto&& childSpan : childSpans) {
-                if (childSpan.fContentSpan.empty()) {
-                    continue;
-                }
-                if (!maxFirstSeenSoFar.has_value()) {
-                    maxFirstSeenSoFar = childSpan.fContentSpan.first();
-                }
-                SkASSERT(
-                    childSpan.fContentSpan.empty() ||
-                    maxFirstSeenSoFar <= childSpan.fContentSpan.first()
-                );
-                maxFirstSeenSoFar = std::max(maxFirstSeenSoFar.value(),
-                                             childSpan.fContentSpan.first());
-            }
-        )
-
-        
-        unsigned longestPage = 0;
         if (!fMarkedContent.empty()) {
             
             
             
             size_t longestRun = 0;
+            unsigned longestPage = 0;
             size_t currentRun = 0;
             unsigned currentPage = 0;
             for (const SkPDFStructElem::MarkedContentInfo& info : fMarkedContent) {
@@ -544,78 +356,23 @@ SkPDFIndirectReference SkPDFStructElem::emitStructElem(
                     longestPage = currentPage;
                 }
             }
-            dict.insertRef("Pg", doc->getPage(longestPage));
-        }
-
-        std::unique_ptr<SkPDFArray> kids(new SkPDFOptionalArray());
-        auto markedContent = fMarkedContent.begin();
-        auto contentItem = fContentItems.begin();
-        auto childSpan = childSpans.begin();
-        while (markedContent != fMarkedContent.end() ||
-               contentItem != fContentItems.end() ||
-               childSpan != childSpans.end())
-        {
-            ContentIndex mci = markedContent == fMarkedContent.end()
-                             ? ContentIndex()
-                             : ContentIndex(*markedContent);
-            ContentIndex cii = contentItem == fContentItems.end()
-                             ? ContentIndex()
-                             : ContentIndex(*contentItem);
-
-            if (childSpan != childSpans.end() && (
-                 childSpan->fContentSpan.empty() ||
-                 ((!mci.valid() || childSpan->fContentSpan.first() <= mci) &&
-                  (!cii.valid() || childSpan->fContentSpan.first() <= cii))))
-            {
-                kids->appendRef(childSpan->fRef);
-                contentSpan.accumulate(childSpan->fContentSpan);
-                ++childSpan;
-                continue;
-            }
-
-            if (mci.valid() && (!cii.valid() || mci <= cii)) {
-                const SkPDFStructElem::MarkedContentInfo& info = *markedContent;
-                SkPDFIndirectReference contentStreamRef =
-                        structTree.getContentStreamRefForStructParentsKey(info.fStructParentsKey);
-                if (info.fLocation.fPageIndex == longestPage &&
-                    contentStreamRef == SkPDFStructTree::kPageContentStreamRef)
-                {
+            for (const SkPDFStructElem::MarkedContentInfo& info : fMarkedContent) {
+                if (info.fLocation.fPageIndex == longestPage) {
                     kids->appendInt(info.fMcid);
-                    contentSpan.accumulate(info);
-                } else if (contentStreamRef ||
-                           contentStreamRef == SkPDFStructTree::kPageContentStreamRef)
-                {
+                } else {
                     std::unique_ptr<SkPDFDict> mcr = SkPDFMakeDict("MCR");
-                    if (info.fLocation.fPageIndex != longestPage) {
-                        mcr->insertRef("Pg", doc->getPage(info.fLocation.fPageIndex));
-                    }
-                    if (contentStreamRef) {
-                        mcr->insertRef("Stm", contentStreamRef);
-                    }
+                    mcr->insertRef("Pg", doc->getPage(info.fLocation.fPageIndex));
                     mcr->insertInt("MCID", info.fMcid);
                     kids->appendObject(std::move(mcr));
-                    contentSpan.accumulate(info);
                 }
-
-                ++markedContent;
-                continue;
             }
-
-            if (cii.valid() && (!mci.valid() || cii <= mci)) {
-                const SkPDFStructElem::ContentItemInfo& info = *contentItem;
-                SkPDFIndirectReference contentItemRef =
-                    structTree.getContentItemRefForStructParentKey(info.fStructParentKey);
-                std::unique_ptr<SkPDFDict> contentItemDict = SkPDFMakeDict("OBJR");
-                contentItemDict->insertRef("Obj", contentItemRef);
-                contentItemDict->insertRef("Pg", doc->getPage(info.fPageIndex));
-                kids->appendObject(std::move(contentItemDict));
-                contentSpan.accumulate(info);
-
-                ++contentItem;
-                continue;
-            }
-
-            SkASSERT(false);
+            dict.insertRef("Pg", doc->getPage(longestPage));
+        }
+        for (const SkPDFStructElem::ContentItemInfo& contentItemInfo : fContentItems) {
+            std::unique_ptr<SkPDFDict> contentItemDict = SkPDFMakeDict("OBJR");
+            contentItemDict->insertRef("Obj", contentItemInfo.fContentItemRef);
+            contentItemDict->insertRef("Pg", doc->getPage(contentItemInfo.fPageIndex));
+            kids->appendObject(std::move(contentItemDict));
         }
         dict.insertObject("K", std::move(kids));
     }
@@ -660,13 +417,13 @@ SkPDFIndirectReference SkPDFStructTree::emitStructTreeRoot(SkPDFDocument* doc) c
 
     SkPDFIndirectReference structTreeRootRef = doc->reserveRef();
 
+    unsigned pageCount = SkToUInt(doc->pageCount());
+
     
     SkPDFDict structTreeRoot("StructTreeRoot");
     std::vector<IDTreeEntry> idTree;
-    SkPDFStructElem::ContentSpan rootContentSpan;
-    structTreeRoot.insertRef("K", fRoot->emitStructElem(*this, structTreeRootRef, &idTree, doc,
-                                                        rootContentSpan));
-    structTreeRoot.insertInt("ParentTreeNextKey", fParentTree.size());
+    structTreeRoot.insertRef("K", fRoot->emitStructElem(structTreeRootRef, &idTree, doc));
+    structTreeRoot.insertInt("ParentTreeNextKey", SkToInt(pageCount));
 
     
     
@@ -678,23 +435,25 @@ SkPDFIndirectReference SkPDFStructTree::emitStructTreeRoot(SkPDFDocument* doc) c
     SkPDFDict parentTree("ParentTree");
     auto parentTreeNums = SkPDFMakeArray();
 
-    for (int structParentKey = 0; structParentKey < fParentTree.size(); ++structParentKey) {
-        const ParentTreeEntry& entry = fParentTree[structParentKey];
-        if (std::holds_alternative<Item>(entry)) {
-            parentTreeNums->appendInt(structParentKey); 
-            parentTreeNums->appendRef(std::get<Item>(entry).fStructElem->fRef);
-        } else {
-            const Stream& stream = std::get<Stream>(entry);
-            if (stream.fContentStreamRef || stream.fContentStreamRef == kPageContentStreamRef) {
-                SkPDFArray structElemForMcidArray;
-                for (const SkPDFStructElem* structElem : stream.fChildren) {
-                    SkASSERT(structElem->fRef);
-                    structElemForMcidArray.appendRef(structElem->fRef);
-                }
-                parentTreeNums->appendInt(structParentKey); 
-                parentTreeNums->appendRef(doc->emit(structElemForMcidArray));
-            }
+    
+    SkASSERT(SkToUInt(fStructElemForMcidForPage.size()) <= pageCount);
+    for (int j = 0; j < fStructElemForMcidForPage.size(); ++j) {
+        const TArray<SkPDFStructElem*>& structElemForMcid = fStructElemForMcidForPage[j];
+        SkPDFArray structElemForMcidArray;
+        for (SkPDFStructElem* structElem : structElemForMcid) {
+            SkASSERT(structElem->fRef);
+            structElemForMcidArray.appendRef(structElem->fRef);
         }
+        parentTreeNums->appendInt(j); 
+        parentTreeNums->appendRef(doc->emit(structElemForMcidArray));
+    }
+
+    
+    for (int j = 0; j < fStructElemForContentItem.size(); ++j) {
+        int structParentKey = kFirstContentItemStructParentKey + j;
+        SkPDFStructElem* structElem = fStructElemForContentItem[j];
+        parentTreeNums->appendInt(structParentKey); 
+        parentTreeNums->appendRef(structElem->fRef);
     }
 
     parentTree.insertObject("Nums", std::move(parentTreeNums));

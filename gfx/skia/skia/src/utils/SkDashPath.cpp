@@ -311,10 +311,6 @@ bool SkDashPath::InternalFilter(SkPathBuilder* dst, const SkPath& src, SkStrokeR
                                 SkScalar initialDashLength, int32_t initialDashIndex,
                                 SkScalar intervalLength, SkScalar startPhase,
                                 StrokeRecApplication strokeRecApplication) {
-    SkSpan<const SkPoint> srcPts = src.points();
-    if (srcPts.empty()) {
-        return true;
-    }
     const size_t count = aIntervals.size();
     
     SkASSERT(is_even(count));
@@ -352,26 +348,26 @@ bool SkDashPath::InternalFilter(SkPathBuilder* dst, const SkPath& src, SkStrokeR
             }
             
             if (is_even(index) == (endPhase > 0)) {
-                SkPoint midPoint = srcPts.front();
+                SkPoint midPoint = src.getPoint(0);
                 
                 int last = src.countPoints() - 1;
-                while (midPoint == srcPts[last]) {
+                while (midPoint == src.getPoint(last)) {
                     --last;
                     SkASSERT(last >= 0);
                 }
                 
                 int next = 1;
-                while (midPoint == srcPts[next]) {
+                while (midPoint == src.getPoint(next)) {
                     ++next;
                     SkASSERT(next < last);
                 }
-                SkVector v = midPoint - srcPts[last];
+                SkVector v = midPoint - src.getPoint(last);
                 const SkScalar kTinyOffset = SK_ScalarNearlyZero;
                 
                 v *= kTinyOffset;
                 builder.moveTo(midPoint - v);
                 builder.lineTo(midPoint);
-                v = midPoint - srcPts[next];
+                v = midPoint - src.getPoint(next);
                 
                 v *= kTinyOffset;
                 builder.lineTo(midPoint - v);

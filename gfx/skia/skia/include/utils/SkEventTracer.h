@@ -35,7 +35,8 @@ public:
 
 
 
-    static bool SetInstance(SkEventTracer*);
+
+    static bool SetInstance(SkEventTracer*, bool leakTracer = false);
 
     
 
@@ -84,10 +85,6 @@ protected:
     SkEventTracer() = default;
     SkEventTracer(const SkEventTracer&) = delete;
     SkEventTracer& operator=(const SkEventTracer&) = delete;
-
-    
-    
-    virtual void onExit() {}
 };
 
 #endif 

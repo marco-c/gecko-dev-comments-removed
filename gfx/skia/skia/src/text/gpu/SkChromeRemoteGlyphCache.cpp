@@ -628,16 +628,25 @@ SkStrikeClientImpl::SkStrikeClientImpl(
       fStrikeCache{strikeCache ? strikeCache : SkStrikeCache::GlobalStrikeCache()},
       fIsLogging{isLogging} {}
 
+
+
+#define READ_FAILURE                                                        \
+    {                                                                       \
+        SkDebugf("Bad font data serialization line: %d", __LINE__);         \
+        SkStrikeClient::DiscardableHandleManager::ReadFailureData data = {  \
+                memorySize,  deserializer.bytesRead(), typefaceSize,        \
+                strikeCount, glyphImagesCount, __LINE__};                   \
+        fDiscardableHandleManager->notifyReadFailure(data);                 \
+        return false;                                                       \
+    }
+
 bool SkStrikeClientImpl::readStrikeData(const volatile void* memory, size_t memorySize) {
     SkASSERT(memorySize != 0);
     SkASSERT(memory != nullptr);
 
     
-    sk_sp<SkData> safeMemory = SkData::MakeWithCopy(const_cast<const void*>(memory), memorySize);
-
     
-    
-    SkReadBuffer buffer{safeMemory->data(), safeMemory->size()};
+    SkReadBuffer buffer{const_cast<const void*>(memory), memorySize};
     
     buffer.setAllowSkSL(false);
 

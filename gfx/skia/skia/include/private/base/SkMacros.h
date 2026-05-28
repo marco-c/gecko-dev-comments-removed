@@ -31,15 +31,6 @@
 
 
 
-
-
-
-#define SK_MACRO_STRINGIFY(X) SK_MACRO_STRINGIFY_IMPL_PRIV(X)
-#define SK_MACRO_STRINGIFY_IMPL_PRIV(X) #X
-
-
-
-
 #if defined(__clang__)  
     #define SK_BEGIN_REQUIRE_DENSE _Pragma("GCC diagnostic push") \
                                    _Pragma("GCC diagnostic error \"-Wpadded\"")

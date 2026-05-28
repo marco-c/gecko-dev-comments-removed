@@ -60,8 +60,6 @@ public:
         
         
         kAlwaysDither_Flag = 1 << 2,
-        
-        kPreservesTransparentDraws_Flag = 1 << 3,
     };
 
     
@@ -94,10 +92,6 @@ public:
 
     bool isAlwaysDither() const {
         return SkToBool(fFlags & kAlwaysDither_Flag);
-    }
-
-    bool preservesTransparentDraws() const {
-        return SkToBool(fFlags & kPreservesTransparentDraws_Flag);
     }
 
     bool operator==(const SkSurfaceProps& that) const {

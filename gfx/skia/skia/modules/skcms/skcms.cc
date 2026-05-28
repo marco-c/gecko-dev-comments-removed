@@ -650,9 +650,6 @@ typedef struct {
     uint8_t variable      [1];  
 } curv_Layout;
 
-
-static const uint32_t kMaxTableEntries = 1 << 24; 
-
 static bool read_curve_curv(const uint8_t* buf, uint32_t size,
                             skcms_Curve* curve, uint32_t* curve_size) {
     if (size < SAFE_FIXED_SIZE(curv_Layout)) {
@@ -685,14 +682,12 @@ static bool read_curve_curv(const uint8_t* buf, uint32_t size,
             
             curve->parametric.g = read_big_u16(curvTag->variable) * (1.0f / 256.0f);
         }
-        return true;
+    } else {
+        curve->table_8       = nullptr;
+        curve->table_16      = curvTag->variable;
+        curve->table_entries = value_count;
     }
-    if (value_count > kMaxTableEntries) {
-        return false;
-    }
-    curve->table_8       = nullptr;
-    curve->table_16      = curvTag->variable;
-    curve->table_entries = value_count;
+
     return true;
 }
 
@@ -938,8 +933,7 @@ typedef struct {
     uint8_t variable             [1];
 } CLUT_Layout;
 
-static bool read_tag_mab(const skcms_ICCTag* tag, skcms_A2B* a2b, bool pcs_is_xyz,
-                         const uint8_t* endOfBuffer) {
+static bool read_tag_mab(const skcms_ICCTag* tag, skcms_A2B* a2b, bool pcs_is_xyz) {
     if (tag->size < SAFE_SIZEOF(mAB_or_mBA_Layout)) {
         return false;
     }
@@ -1044,18 +1038,7 @@ static bool read_tag_mab(const skcms_ICCTag* tag, skcms_A2B* a2b, bool pcs_is_xy
             }
             grid_size *= a2b->grid_points[i];
         }
-        const uint64_t table_size = clut_offset + SAFE_FIXED_SIZE(CLUT_Layout) + grid_size;
-        if (table_size > tag->size) {
-            return false;
-        }
-
-        
-        
-        uint32_t slack = 0;
-        if (a2b->output_channels == 3) {
-            slack = clut->grid_byte_width[0] == 1 ? 1 : 2;
-        }
-        if (tag->buf + table_size + slack > endOfBuffer) {
+        if (tag->size < clut_offset + SAFE_FIXED_SIZE(CLUT_Layout) + grid_size) {
             return false;
         }
     } else {
@@ -1077,8 +1060,7 @@ static bool read_tag_mab(const skcms_ICCTag* tag, skcms_A2B* a2b, bool pcs_is_xy
 
 
 
-static bool read_tag_mba(const skcms_ICCTag* tag, skcms_B2A* b2a, bool pcs_is_xyz,
-                         const uint8_t* endOfBuffer) {
+static bool read_tag_mba(const skcms_ICCTag* tag, skcms_B2A* b2a, bool pcs_is_xyz) {
     if (tag->size < SAFE_SIZEOF(mAB_or_mBA_Layout)) {
         return false;
     }
@@ -1185,16 +1167,6 @@ static bool read_tag_mba(const skcms_ICCTag* tag, skcms_B2A* b2a, bool pcs_is_xy
         if (tag->size < clut_offset + SAFE_FIXED_SIZE(CLUT_Layout) + grid_size) {
             return false;
         }
-
-        
-        
-        uint32_t slack = 0;
-        if (b2a->output_channels == 3) {
-            slack = clut->grid_byte_width[0] == 1 ? 1 : 2;
-        }
-        if (tag->buf + clut_offset + SAFE_FIXED_SIZE(CLUT_Layout) + grid_size + slack > endOfBuffer) {
-            return false;
-        }
     } else {
         if (0 != clut_offset) {
             return false;
@@ -1281,11 +1253,11 @@ static void canonicalize_identity(skcms_Curve* curve) {
     }
 }
 
-static bool read_a2b(const skcms_ICCTag* tag, skcms_A2B* a2b, bool pcs_is_xyz, const uint8_t* eob) {
+static bool read_a2b(const skcms_ICCTag* tag, skcms_A2B* a2b, bool pcs_is_xyz) {
     bool ok = false;
     if (tag->type == skcms_Signature_mft1) { ok = read_tag_mft1(tag, a2b); }
     if (tag->type == skcms_Signature_mft2) { ok = read_tag_mft2(tag, a2b); }
-    if (tag->type == skcms_Signature_mAB ) { ok = read_tag_mab(tag, a2b, pcs_is_xyz, eob); }
+    if (tag->type == skcms_Signature_mAB ) { ok = read_tag_mab(tag, a2b, pcs_is_xyz); }
     if (!ok) {
         return false;
     }
@@ -1306,11 +1278,11 @@ static bool read_a2b(const skcms_ICCTag* tag, skcms_A2B* a2b, bool pcs_is_xyz, c
     return true;
 }
 
-static bool read_b2a(const skcms_ICCTag* tag, skcms_B2A* b2a, bool pcs_is_xyz, const uint8_t* eob) {
+static bool read_b2a(const skcms_ICCTag* tag, skcms_B2A* b2a, bool pcs_is_xyz) {
     bool ok = false;
     if (tag->type == skcms_Signature_mft1) { ok = read_tag_mft1(tag, b2a); }
     if (tag->type == skcms_Signature_mft2) { ok = read_tag_mft2(tag, b2a); }
-    if (tag->type == skcms_Signature_mBA ) { ok = read_tag_mba(tag, b2a, pcs_is_xyz, eob); }
+    if (tag->type == skcms_Signature_mBA ) { ok = read_tag_mba(tag, b2a, pcs_is_xyz); }
     if (!ok) {
         return false;
     }
@@ -1489,7 +1461,6 @@ bool skcms_ParseWithA2BPriority(const void* buf, size_t len,
         }
     }
 
-    const uint8_t* endOfBuffer = (const uint8_t*)buf + len;
     for (int i = 0; i < priorities; i++) {
         
         if (priority[i] < 0 || priority[i] > 2) {
@@ -1498,7 +1469,7 @@ bool skcms_ParseWithA2BPriority(const void* buf, size_t len,
         uint32_t sig = skcms_Signature_A2B0 + static_cast<uint32_t>(priority[i]);
         skcms_ICCTag tag;
         if (skcms_GetTagBySignature(profile, sig, &tag)) {
-            if (!read_a2b(&tag, &profile->A2B, pcs_is_xyz, endOfBuffer)) {
+            if (!read_a2b(&tag, &profile->A2B, pcs_is_xyz)) {
                 
                 return false;
             }
@@ -1515,7 +1486,7 @@ bool skcms_ParseWithA2BPriority(const void* buf, size_t len,
         uint32_t sig = skcms_Signature_B2A0 + static_cast<uint32_t>(priority[i]);
         skcms_ICCTag tag;
         if (skcms_GetTagBySignature(profile, sig, &tag)) {
-            if (!read_b2a(&tag, &profile->B2A, pcs_is_xyz, endOfBuffer)) {
+            if (!read_b2a(&tag, &profile->B2A, pcs_is_xyz)) {
                 
                 return false;
             }
@@ -2359,7 +2330,7 @@ bool skcms_ApproximateCurve(const skcms_Curve* curve,
         return false;
     }
 
-    if (curve->table_entries == 1 || curve->table_entries > kMaxTableEntries) {
+    if (curve->table_entries == 1 || curve->table_entries > (uint32_t)INT_MAX) {
         
         return false;
     }
@@ -2555,20 +2526,14 @@ static OpAndArg select_curve_op(const skcms_Curve* curve, int channel) {
             case skcms_TFType_HLGinvish:  return OpAndArg{op.HLGinvish, &tf};
         }
     }
-    
-    assert(curve->table_entries <= kMaxTableEntries);
     return OpAndArg{op.table, curve};
 }
-
 
 static int select_curve_ops(const skcms_Curve* curves, int numChannels, OpAndArg* ops) {
     
     
     int cursor = 0;
     for (int index = numChannels; index-- > 0; ) {
-        if (curves[index].table_entries > kMaxTableEntries) {
-            return -1;
-        }
         ops[cursor] = select_curve_op(&curves[index], index);
         if (ops[cursor].arg) {
             ++cursor;
@@ -2775,19 +2740,15 @@ bool skcms_Transform(const void*             src,
         *contexts++ = c;
     };
 
-    auto add_curve_ops = [&](const skcms_Curve* curves, int numChannels) -> bool {
+    auto add_curve_ops = [&](const skcms_Curve* curves, int numChannels) {
         OpAndArg oa[4];
         assert(numChannels <= ARRAY_COUNT(oa));
 
         int numOps = select_curve_ops(curves, numChannels, oa);
-        if (numOps < 0) {
-            return false;
-        }
 
         for (int i = 0; i < numOps; ++i) {
             add_op_ctx(oa[i].op, oa[i].arg);
         }
-        return true;
     };
 
     
@@ -2898,18 +2859,14 @@ bool skcms_Transform(const void*             src,
         } else if (srcProfile->has_A2B) {
             src_using_A2B = true;
             if (srcProfile->A2B.input_channels) {
-                if (!add_curve_ops(srcProfile->A2B.input_curves,
-                              (int)srcProfile->A2B.input_channels)) {
-                    return false;
-                }
+                add_curve_ops(srcProfile->A2B.input_curves,
+                              (int)srcProfile->A2B.input_channels);
                 add_op(Op::clamp);
                 add_op_ctx(Op::clut_A2B, &srcProfile->A2B);
             }
 
             if (srcProfile->A2B.matrix_channels == 3) {
-                if (!add_curve_ops(srcProfile->A2B.matrix_curves, 3)) {
-                    return false;
-                }
+                add_curve_ops(srcProfile->A2B.matrix_curves, 3);
 
                 static const skcms_Matrix3x4 I = {{
                     {1,0,0,0},
@@ -2922,9 +2879,7 @@ bool skcms_Transform(const void*             src,
             }
 
             if (srcProfile->A2B.output_channels == 3) {
-                if (!add_curve_ops(srcProfile->A2B.output_curves, 3)) {
-                    return false;
-                }
+                add_curve_ops(srcProfile->A2B.output_curves, 3);
             }
 
             if (srcProfile->pcs == skcms_Signature_Lab) {
@@ -2932,9 +2887,7 @@ bool skcms_Transform(const void*             src,
             }
 
         } else if (srcProfile->has_trc && srcProfile->has_toXYZD50) {
-            if (!add_curve_ops(srcProfile->trc, 3)) {
-                return false;
-            }
+            add_curve_ops(srcProfile->trc, 3);
         } else {
             return false;
         }
@@ -2957,9 +2910,7 @@ bool skcms_Transform(const void*             src,
             }
 
             if (dstProfile->B2A.input_channels == 3) {
-                if (!add_curve_ops(dstProfile->B2A.input_curves, 3)) {
-                    return false;
-                }
+                add_curve_ops(dstProfile->B2A.input_curves, 3);
             }
 
             if (dstProfile->B2A.matrix_channels == 3) {
@@ -2972,19 +2923,15 @@ bool skcms_Transform(const void*             src,
                     add_op_ctx(Op::matrix_3x4, &dstProfile->B2A.matrix);
                 }
 
-                if (!add_curve_ops(dstProfile->B2A.matrix_curves, 3)) {
-                    return false;
-                }
+                add_curve_ops(dstProfile->B2A.matrix_curves, 3);
             }
 
             if (dstProfile->B2A.output_channels) {
                 add_op(Op::clamp);
                 add_op_ctx(Op::clut_B2A, &dstProfile->B2A);
 
-                if (!add_curve_ops(dstProfile->B2A.output_curves,
-                              (int)dstProfile->B2A.output_channels)) {
-                    return false;
-                }
+                add_curve_ops(dstProfile->B2A.output_curves,
+                              (int)dstProfile->B2A.output_channels);
             }
         } else {
             
@@ -3021,9 +2968,6 @@ bool skcms_Transform(const void*             src,
             
             OpAndArg oa[3];
             int numOps = select_curve_ops(dst_curves, 3, oa);
-            
-            
-            assert(numOps >= 0);
             for (int index = 0; index < numOps; ++index) {
                 assert(oa[index].op != Op::table_r &&
                        oa[index].op != Op::table_g &&

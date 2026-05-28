@@ -50,8 +50,6 @@ struct SkColorSpaceXformSteps {
     void apply(float rgba[4]) const;
     void apply(SkRasterPipeline*) const;
 
-    explicit operator bool() const { return fFlags.mask() != 0; }
-
     Flags fFlags;
 
     skcms_TransferFunction fSrcTF,     

@@ -32,14 +32,13 @@ public:
 
 
     struct SK_API Segment {
-        Segment(uint8_t marker, sk_sp<const SkData> data)
-                : fMarker(marker), fData(std::move(data)) {}
+        Segment(uint8_t marker, sk_sp<SkData> data) : fMarker(marker), fData(std::move(data)) {}
 
         
         uint8_t fMarker = 0;
 
         
-        sk_sp<const SkData> fData;
+        sk_sp<SkData> fData;
     };
 
     
@@ -51,28 +50,28 @@ public:
     
 
 
-    static std::unique_ptr<SkJpegMetadataDecoder> Make(sk_sp<const SkData> data);
+    static std::unique_ptr<SkJpegMetadataDecoder> Make(sk_sp<SkData> data);
 
     
 
 
 
 
-    virtual sk_sp<const SkData> getExifMetadata(bool copyData) const = 0;
+    virtual sk_sp<SkData> getExifMetadata(bool copyData) const = 0;
 
     
 
 
 
 
-    virtual sk_sp<const SkData> getICCProfileData(bool copyData) const = 0;
+    virtual sk_sp<SkData> getICCProfileData(bool copyData) const = 0;
 
     
 
 
 
 
-    virtual sk_sp<const SkData> getISOGainmapMetadata(bool copyData) const = 0;
+    virtual sk_sp<SkData> getISOGainmapMetadata(bool copyData) const = 0;
 
     
 
@@ -84,20 +83,16 @@ public:
 
 
 
-    virtual std::pair<sk_sp<const SkData>, SkGainmapInfo> findGainmapImage(
-            sk_sp<const SkData>) const = 0;
-
-    
-    virtual bool findGainmapImage(sk_sp<const SkData> baseImageData,
+    virtual bool findGainmapImage(sk_sp<SkData> baseImageData,
                                   sk_sp<SkData>& outGainmapImagedata,
                                   SkGainmapInfo& outGainmapInfo) = 0;
 
-    
+     
 
 
 
 
-    virtual sk_sp<const SkData> getJUMBFMetadata(bool copyData) const = 0;
+    virtual sk_sp<SkData> getJUMBFMetadata(bool copyData) const = 0;
 };
 
 #endif

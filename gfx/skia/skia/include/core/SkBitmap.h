@@ -27,11 +27,13 @@
 class SkColorSpace;
 class SkImage;
 class SkMatrix;
+class SkMipmap;
 class SkPaint;
 class SkPixelRef;
 class SkShader;
 enum SkColorType : int;
 enum class SkTileMode;
+struct SkMaskBuilder;
 
 
 
@@ -645,6 +647,10 @@ public:
 
     
 
+    bool installMaskPixels(SkMaskBuilder& mask);
+
+    
+
 
 
 
@@ -1240,8 +1246,13 @@ public:
     };
 
 private:
-    sk_sp<SkPixelRef> fPixelRef;
-    SkPixmap fPixmap;
+    sk_sp<SkPixelRef>   fPixelRef;
+    SkPixmap            fPixmap;
+    sk_sp<SkMipmap>     fMips;
+
+    friend class SkImage_Raster;
+    friend class SkReadBuffer;        
+    friend class GrProxyProvider;     
 };
 
 

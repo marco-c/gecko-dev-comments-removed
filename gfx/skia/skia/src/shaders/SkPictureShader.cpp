@@ -246,12 +246,10 @@ sk_sp<SkImage> SkPictureShader::CachedImageInfo::makeImage(sk_sp<SkSurface> surf
     if (!surf) {
         return nullptr;
     }
-
     auto canvas = surf->getCanvas();
     canvas->concat(matrixForDraw);
     canvas->drawPicture(pict);
-
-    return surf->makeTemporaryImage();
+    return surf->makeImageSnapshot();
 }
 
 
