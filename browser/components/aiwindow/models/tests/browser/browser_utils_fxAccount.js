@@ -10,12 +10,6 @@ const { getFxAccountsSingleton } = ChromeUtils.importESModule(
   "resource://gre/modules/FxAccounts.sys.mjs"
 );
 
-const { MODEL_FEATURES, SERVICE_TYPES, PURPOSES } = ChromeUtils.importESModule(
-  "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs"
-);
-
-const TEST_MODEL = "test-model";
-
 add_task(async function test_getFxAccountToken_passes_correct_scope() {
   const fakeToken = "fake-oauth-token";
   const fxAccounts = getFxAccountsSingleton();
@@ -80,13 +74,7 @@ add_task(async function test_getFxAccountToken_returns_null_on_error() {
 
 
 add_task(async function test_runWithAuth_success_no_errors() {
-  const engine = await openAIEngine.build({
-    model: TEST_MODEL,
-    serviceType: SERVICE_TYPES.AI,
-    purpose: PURPOSES.CHAT,
-    flowId: null,
-    feature: MODEL_FEATURES.CHAT,
-  });
+  const engine = await openAIEngine.build("chat");
   const testContent = { messages: [{ role: "user", content: "test" }] };
   const expectedResponse = { success: true, data: "response" };
 
@@ -115,13 +103,7 @@ add_task(async function test_runWithAuth_success_no_errors() {
 
 
 add_task(async function test_runWithAuth_retry_on_401_error() {
-  const engine = await openAIEngine.build({
-    model: TEST_MODEL,
-    serviceType: SERVICE_TYPES.AI,
-    purpose: PURPOSES.CHAT,
-    flowId: null,
-    feature: MODEL_FEATURES.CHAT,
-  });
+  const engine = await openAIEngine.build("chat");
   const oldToken = "old-token";
   const newToken = "new-token";
   const testContent = {
@@ -182,13 +164,7 @@ add_task(async function test_runWithAuth_retry_on_401_error() {
 
 
 add_task(async function test_runWithAuth_fails_after_retry_401() {
-  const engine = await openAIEngine.build({
-    model: TEST_MODEL,
-    serviceType: SERVICE_TYPES.AI,
-    purpose: PURPOSES.CHAT,
-    flowId: null,
-    feature: MODEL_FEATURES.CHAT,
-  });
+  const engine = await openAIEngine.build("chat");
   const oldToken = "old-token";
   const newToken = "new-token";
   const testContent = {
@@ -246,13 +222,7 @@ add_task(async function test_runWithAuth_throws_401_with_custom_endpoint() {
   });
 
   try {
-    const engine = await openAIEngine.build({
-      model: TEST_MODEL,
-      serviceType: SERVICE_TYPES.AI,
-      purpose: PURPOSES.CHAT,
-      flowId: null,
-      feature: MODEL_FEATURES.CHAT,
-    });
+    const engine = await openAIEngine.build("chat");
     const testContent = { messages: [{ role: "user", content: "test" }] };
     const expectedError = new Error("Request failed with 401 status code");
 
@@ -287,13 +257,7 @@ add_task(async function test_runWithAuth_throws_401_with_custom_endpoint() {
 
 
 add_task(async function test_runWithAuth_throws_non_401_error() {
-  const engine = await openAIEngine.build({
-    model: TEST_MODEL,
-    serviceType: SERVICE_TYPES.AI,
-    purpose: PURPOSES.CHAT,
-    flowId: null,
-    feature: MODEL_FEATURES.CHAT,
-  });
+  const engine = await openAIEngine.build("chat");
   const testContent = { messages: [{ role: "user", content: "test" }] };
   const expectedError = new Error("Network error");
 
@@ -325,13 +289,7 @@ add_task(async function test_runWithAuth_throws_non_401_error() {
 
 
 add_task(async function test_runWithGeneratorAuth_success_no_errors() {
-  const engine = await openAIEngine.build({
-    model: TEST_MODEL,
-    serviceType: SERVICE_TYPES.AI,
-    purpose: PURPOSES.CHAT,
-    flowId: null,
-    feature: MODEL_FEATURES.CHAT,
-  });
+  const engine = await openAIEngine.build("chat");
   const testOptions = { messages: [{ role: "user", content: "test" }] };
   const expectedChunks = [{ text: "Hello" }, { text: " world" }, { text: "!" }];
 
@@ -372,13 +330,7 @@ add_task(async function test_runWithGeneratorAuth_success_no_errors() {
 
 
 add_task(async function test_runWithGeneratorAuth_retry_on_401_error() {
-  const engine = await openAIEngine.build({
-    model: TEST_MODEL,
-    serviceType: SERVICE_TYPES.AI,
-    purpose: PURPOSES.CHAT,
-    flowId: null,
-    feature: MODEL_FEATURES.CHAT,
-  });
+  const engine = await openAIEngine.build("chat");
   const oldToken = "old-token";
   const newToken = "new-token";
   const testOptions = {
@@ -459,13 +411,7 @@ add_task(async function test_runWithGeneratorAuth_retry_on_401_error() {
 
 
 add_task(async function test_runWithGeneratorAuth_fails_after_retry_401() {
-  const engine = await openAIEngine.build({
-    model: TEST_MODEL,
-    serviceType: SERVICE_TYPES.AI,
-    purpose: PURPOSES.CHAT,
-    flowId: null,
-    feature: MODEL_FEATURES.CHAT,
-  });
+  const engine = await openAIEngine.build("chat");
   const oldToken = "old-token";
   const newToken = "new-token";
   const testOptions = {
@@ -543,13 +489,7 @@ add_task(async function test_runWithGeneratorAuth_fails_after_retry_401() {
 
 
 add_task(async function test_runWithGeneratorAuth_throws_non_401_error() {
-  const engine = await openAIEngine.build({
-    model: TEST_MODEL,
-    serviceType: SERVICE_TYPES.AI,
-    purpose: PURPOSES.CHAT,
-    flowId: null,
-    feature: MODEL_FEATURES.CHAT,
-  });
+  const engine = await openAIEngine.build("chat");
   const testOptions = { messages: [{ role: "user", content: "test" }] };
   const expectedError = new Error("Network error");
 

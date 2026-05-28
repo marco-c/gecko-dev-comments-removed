@@ -147,7 +147,9 @@ describe("AI Window session restore", () => {
       sb.stub(Chat, "fetchWithHistory").callsFake(async ({ conversation }) => {
         await ChatStore.updateConversation(conversation);
       });
-      sb.stub(openAIEngine, "build").resolves({});
+      sb.stub(openAIEngine, "build").resolves({
+        loadPrompt: () => Promise.resolve("Mock system prompt"),
+      });
 
       
       
