@@ -635,6 +635,8 @@ extensions.on("startup", (type, extension) => {
 
 
 extensions.on("page-shutdown", (type, context) => {
+  
+  
   if (context.viewType == "tab") {
     const window = context.xulBrowser.documentGlobal;
     if (!windowTracker.isBrowserWindow(window)) {

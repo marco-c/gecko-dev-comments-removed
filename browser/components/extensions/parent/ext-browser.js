@@ -30,8 +30,8 @@ function isPrivateTab(nativeTab) {
 
 extensions.on("uninstalling", (msg, extension) => {
   if (extension.uninstallURL) {
-    let browser = windowTracker.topWindow.gBrowser;
-    browser.addTab(extension.uninstallURL, {
+    let gBrowser = windowTracker.topWindow.gBrowser;
+    gBrowser.addTab(extension.uninstallURL, {
       relatedToCurrent: true,
       triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal(
         {}
@@ -41,19 +41,25 @@ extensions.on("uninstalling", (msg, extension) => {
 });
 
 extensions.on("page-shutdown", (type, context) => {
+  
+  
   if (context.viewType == "tab") {
+    
+    
     if (context.extension.id !== context.xulBrowser.contentPrincipal.addonId) {
+      
       
       
       
       return;
     }
     let { gBrowser } = context.xulBrowser.documentGlobal;
-    if (gBrowser && gBrowser.getTabForBrowser) {
-      let nativeTab = gBrowser.getTabForBrowser(context.xulBrowser);
-      if (nativeTab) {
-        gBrowser.removeTab(nativeTab);
-      }
+    
+    
+    
+    let nativeTab = gBrowser?.getTabForBrowser(context.xulBrowser);
+    if (nativeTab) {
+      gBrowser.removeTab(nativeTab);
     }
   }
 });
@@ -747,14 +753,11 @@ class TabTracker extends TabTrackerBase {
       };
     }
     let { gBrowser } = window;
-    
-    if (!gBrowser || !gBrowser.getTabForBrowser) {
+    if (!gBrowser) {
       if (window.top.document.documentURI === "about:addons") {
         
         
         browser = window.docShell.chromeEventHandler;
-
-        ({ gBrowser } = browser.documentGlobal);
       } else {
         return {
           tabId: -1,
