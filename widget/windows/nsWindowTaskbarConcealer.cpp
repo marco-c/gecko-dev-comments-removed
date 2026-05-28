@@ -103,8 +103,7 @@ static mozilla::LazyLogModule sTaskbarConcealerLog("TaskbarConcealer");
 
 
 
-MOZ_RUNINIT nsTHashMap<HWND, HMONITOR>
-    nsWindow::TaskbarConcealer::sKnownWindows;
+constinit nsTHashMap<HWND, HMONITOR> nsWindow::TaskbarConcealer::sKnownWindows;
 
 
 
@@ -128,7 +127,7 @@ nsWindow::TaskbarConcealer::GetWindowState(HWND aWnd) {
 
   
   
-  if (pWin->mWindowType != WindowType::TopLevel) {
+  if (!pWin->IsTopLevelWidget()) {
     return Nothing();
   }
 
