@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_SharedWorkerService_h
 #define mozilla_dom_SharedWorkerService_h
 
@@ -25,6 +23,7 @@ class MessagePortIdentifier;
 class RemoteWorkerData;
 class SharedWorkerManager;
 class SharedWorkerParent;
+class ThreadsafeContentParentHandle;
 class UniqueMessagePortId;
 
 
@@ -50,9 +49,10 @@ class SharedWorkerService final {
                                 const MessagePortIdentifier& aPortIdentifier);
 
   void GetOrCreateWorkerManagerOnMainThread(
-      nsIEventTarget* aBackgroundEventTarget, SharedWorkerParent* aActor,
-      const RemoteWorkerData& aData, uint64_t aWindowID,
-      UniqueMessagePortId& aPortIdentifier);
+      nsIEventTarget* aBackgroundEventTarget,
+      ThreadsafeContentParentHandle* aContentParentHandle,
+      SharedWorkerParent* aActor, const RemoteWorkerData& aData,
+      uint64_t aWindowID, UniqueMessagePortId& aPortIdentifier);
 
   void RemoveWorkerManagerOnMainThread(SharedWorkerManager* aManager);
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_RemoteWorkerManager_h
 #define mozilla_dom_RemoteWorkerManager_h
 
@@ -48,7 +46,8 @@ class RemoteWorkerManager final {
 
 
   static Result<nsCString, nsresult> GetRemoteType(
-      const nsCOMPtr<nsIPrincipal>& aPrincipal, WorkerKind aWorkerKind);
+      const nsCOMPtr<nsIPrincipal>& aPrincipal, WorkerKind aWorkerKind,
+      const nsACString& aCurrentRemoteType);
 
   static bool HasExtensionPrincipal(const RemoteWorkerData& aData);
 
