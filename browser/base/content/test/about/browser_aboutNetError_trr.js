@@ -17,33 +17,28 @@ add_task(async function exceptionButtonTRROnly() {
       "Should be showing error page"
     );
 
-    let titleEl;
-    let actualDataL10nID;
-
-    const netErrorCard = doc.querySelector("net-error-card");
-    if (netErrorCard) {
-      const card = netErrorCard.wrappedJSObject;
-      await card.getUpdateComplete();
-
-      titleEl = card.errorTitle;
-    } else {
-      titleEl = doc.querySelector(".title-text");
-
-      const trrExceptionButton = await ContentTaskUtils.waitForCondition(
-        () => doc.getElementById("trrExceptionButton"),
-        "Waiting for trrExceptionButton"
-      );
-      Assert.equal(
-        trrExceptionButton.hidden,
-        true,
-        "Exception button should be hidden for TRR service failures"
-      );
-    }
-
-    actualDataL10nID = titleEl.getAttribute("data-l10n-id");
+    
+    
     is(
-      actualDataL10nID,
-      "neterror-dns-not-found-title",
+      doc.querySelector("net-error-card"),
+      null,
+      "net-error-card must NOT be used for TRR-only DNS failures"
+    );
+
+    const trrExceptionButton = await ContentTaskUtils.waitForCondition(
+      () => doc.getElementById("trrExceptionButton"),
+      "Waiting for trrExceptionButton"
+    );
+    Assert.equal(
+      trrExceptionButton.hidden,
+      true,
+      "Exception button should be hidden for TRR service failures"
+    );
+
+    const titleEl = doc.querySelector(".title-text");
+    is(
+      titleEl.getAttribute("data-l10n-id"),
+      "dnsNotFound-title",
       "Correct error page title is set"
     );
   });
@@ -52,7 +47,11 @@ add_task(async function exceptionButtonTRROnly() {
   resetTRRPrefs();
 });
 
-add_task(async function trrSettingsButtonShownInFeltPrivacyPath() {
+
+
+
+
+add_task(async function feltPrivacyFallsBackToLegacyForTRRMode3() {
   await SpecialPowers.pushPrefEnv({
     set: [["security.certerrors.felt-privacy-v1", true]],
   });
@@ -61,15 +60,30 @@ add_task(async function trrSettingsButtonShownInFeltPrivacyPath() {
 
   await SpecialPowers.spawn(browser, [], async function () {
     const doc = content.document;
-    const netErrorCard = doc.querySelector("net-error-card");
-    ok(netErrorCard, "net-error-card element should be present");
-
-    const card = netErrorCard.wrappedJSObject;
-    await card.getUpdateComplete();
-
     ok(
-      card.shadowRoot.getElementById("trrSettingsButton"),
-      "TRR settings button should be visible for TRR-only failure"
+      doc.documentURI.startsWith("about:neterror"),
+      "Should be showing error page"
+    );
+
+    const trrSettingsButton = await ContentTaskUtils.waitForCondition(
+      () => doc.getElementById("trrSettingsButton"),
+      "Waiting for legacy trrSettingsButton"
+    );
+    Assert.equal(
+      trrSettingsButton.hidden,
+      false,
+      "Legacy trrSettingsButton should be visible for TRR-only failure"
+    );
+
+    
+    
+    
+    
+    
+    
+    ok(
+      doc.getElementById("trrExceptionButton"),
+      "Legacy trrExceptionButton element should exist on the page"
     );
   });
 
