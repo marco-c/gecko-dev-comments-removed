@@ -3103,9 +3103,11 @@ async function loadTestPage({
     
 
 
-    async cleanup() {
+
+
+    async cleanup({ browser = tab.linkedBrowser } = {}) {
       await closeAllOpenPanelsAndMenus();
-      await loadBlankPage();
+      await loadBlankPage(browser);
       await EngineProcess.destroyTranslationsEngine();
       await removeMocks();
       if (cleanupLocales) {
@@ -4372,8 +4374,10 @@ function promiseLoadSubDialog(aURL) {
 
 
 
-async function loadBlankPage() {
-  await loadNewPage(gBrowser.selectedBrowser, BLANK_PAGE);
+
+
+async function loadBlankPage(browser) {
+  await loadNewPage(browser ?? gBrowser.selectedBrowser, BLANK_PAGE);
 }
 
 
