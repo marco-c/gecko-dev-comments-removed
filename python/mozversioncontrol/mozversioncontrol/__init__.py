@@ -8,7 +8,7 @@ from mozversioncontrol.factory import (
     get_repository_from_env,
     get_repository_object,
 )
-from mozversioncontrol.repo.base import Repository  
+from mozversioncontrol.repo.base import HG_TRY_URL, Repository  
 from mozversioncontrol.repo.git import GitRepository  
 from mozversioncontrol.repo.jj import JujutsuRepository  
 from mozversioncontrol.repo.mercurial import HgRepository  
