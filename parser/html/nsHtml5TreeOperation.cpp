@@ -287,6 +287,15 @@ nsresult nsHtml5TreeOperation::Append(nsIContent* aNode, nsIContent* aParent,
       return NS_OK;
     }
   }
+
+  if (MOZ_UNLIKELY(aNode->HasChildren()) &&
+      aParent->IsInclusiveDescendantOf(aNode)) {
+    
+    
+    
+    return NS_OK;
+  }
+
   Maybe<nsHtml5AutoPauseUpdate> autoPause;
   Maybe<AutoCEReaction> autoCEReaction;
   DocGroup* docGroup = aParent->OwnerDoc()->GetDocGroup();
@@ -415,6 +424,14 @@ nsresult nsHtml5TreeOperation::FosterParent(nsIContent* aNode,
   nsIContent* foster = aTable->GetParent();
 
   if (IsElementOrTemplateContent(foster)) {
+    if (MOZ_UNLIKELY(aNode->HasChildren()) &&
+        aTable->IsInclusiveDescendantOf(aNode)) {
+      
+      
+      
+      return NS_OK;
+    }
+
     nsHtml5OtherDocUpdate update(foster->OwnerDoc(), aBuilder->GetDocument());
 
     ErrorResult rv;
@@ -425,6 +442,14 @@ nsresult nsHtml5TreeOperation::FosterParent(nsIContent* aNode,
 
     MutationObservers::NotifyContentInserted(
         foster, aNode, {MutationEffectOnScript::KeepTrustWorthiness});
+    return NS_OK;
+  }
+
+  if (MOZ_UNLIKELY(aNode->HasChildren()) &&
+      aParent->IsInclusiveDescendantOf(aNode)) {
+    
+    
+    
     return NS_OK;
   }
 
@@ -1032,6 +1057,14 @@ nsresult nsHtml5TreeOperation::Perform(nsHtml5TreeOpExecutor* aBuilder,
           
           return NS_OK;
         }
+      }
+
+      if (MOZ_UNLIKELY(node->HasChildren()) &&
+          host->IsInclusiveDescendantOf(node)) {
+        
+        
+        
+        return NS_OK;
       }
 
       
