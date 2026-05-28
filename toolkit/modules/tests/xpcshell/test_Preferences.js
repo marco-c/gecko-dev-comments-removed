@@ -12,7 +12,7 @@ add_test(function test_set_get_pref() {
   Assert.equal(Preferences.get("test_set_get_pref.boolean"), true);
 
   
-  Services.prefs.getBranch("test_set_get_pref.").deleteBranch("");
+  Preferences.resetBranch("test_set_get_pref.");
 
   run_next_test();
 });
@@ -22,6 +22,7 @@ add_test(function test_set_get_branch_pref() {
 
   prefs.set("something", 1);
   Assert.equal(prefs.get("something"), 1);
+  Assert.ok(!Preferences.has("something"));
 
   
   prefs.reset("something");
@@ -47,7 +48,7 @@ add_test(function test_set_get_multiple_prefs() {
   Assert.equal(b, true);
 
   
-  Services.prefs.getBranch("test_set_get_multiple_prefs.").deleteBranch("");
+  Preferences.resetBranch("test_set_get_multiple_prefs.");
 
   run_next_test();
 });
@@ -72,9 +73,7 @@ add_test(function test_get_multiple_prefs_with_default_value() {
   Assert.equal(c, 0);
 
   
-  Services.prefs
-    .getBranch("test_get_multiple_prefs_with_default_value.")
-    .deleteBranch("");
+  Preferences.resetBranch("test_get_multiple_prefs_with_default_value.");
 
   run_next_test();
 });
@@ -184,10 +183,28 @@ add_test(function test_reset_pref() {
   run_next_test();
 });
 
+add_test(function test_reset_pref_branch() {
+  Preferences.set("test_reset_pref_branch.foo", 1);
+  Preferences.set("test_reset_pref_branch.bar", 2);
+  Preferences.resetBranch("test_reset_pref_branch.");
+  Assert.equal(Preferences.get("test_reset_pref_branch.foo"), undefined);
+  Assert.equal(Preferences.get("test_reset_pref_branch.bar"), undefined);
+
+  run_next_test();
+});
+
 
 
 add_test(function test_reset_nonexistent_pref() {
   Preferences.reset("test_reset_nonexistent_pref");
+
+  run_next_test();
+});
+
+
+
+add_test(function test_reset_nonexistent_pref_branch() {
+  Preferences.resetBranch("test_reset_nonexistent_pref_branch.");
 
   run_next_test();
 });
@@ -322,6 +339,28 @@ add_test(function test_observe_value_of_reset_pref() {
   run_next_test();
 });
 
+add_test(function test_has_pref() {
+  Assert.ok(!Preferences.has("test_has_pref"));
+  Preferences.set("test_has_pref", "foo");
+  Assert.ok(Preferences.has("test_has_pref"));
+
+  Preferences.set("test_has_pref.foo", "foo");
+  Preferences.set("test_has_pref.bar", "bar");
+  let [hasFoo, hasBar, hasBaz] = Preferences.has([
+    "test_has_pref.foo",
+    "test_has_pref.bar",
+    "test_has_pref.baz",
+  ]);
+  Assert.ok(hasFoo);
+  Assert.ok(hasBar);
+  Assert.ok(!hasBaz);
+
+  
+  Preferences.resetBranch("test_has_pref");
+
+  run_next_test();
+});
+
 add_test(function test_isSet_pref() {
   
   
@@ -335,3 +374,29 @@ add_test(function test_isSet_pref() {
 
   run_next_test();
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
