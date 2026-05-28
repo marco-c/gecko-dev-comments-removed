@@ -901,7 +901,20 @@ bool TouchBlockState::NeedsContentResponseAfterLongTap(
   if (IsTargetOriginallyConfirmed()) {
     return false;
   }
-  return !ShouldDropEvents();
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (InputBlockState::ShouldDropEvents()) {
+    return false;
+  }
+  return !HasContentResponded() || !IsDefaultPrevented();
 }
 
 KeyboardBlockState::KeyboardBlockState(

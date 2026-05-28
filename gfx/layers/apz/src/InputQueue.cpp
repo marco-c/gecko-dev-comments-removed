@@ -177,6 +177,26 @@ APZEventResult InputQueue::ReceiveTouchInput(
 
     INPQ_LOG("received new touch event (type=%d) in block %p\n", aEvent.mType,
              block.get());
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (aInitialTouchMove == InitialTouchMove::Yes &&
+        aFlags.mDispatchToContent &&
+        (!block->HasContentResponded() || !block->IsDefaultPrevented())) {
+      block->ResetContentResponseTimerExpired();
+      ScheduleMainThreadTimeout(aTarget, block);
+      waitingForContentResponse = true;
+    }
   }
 
   result.mInputBlockId = block->GetBlockId();
