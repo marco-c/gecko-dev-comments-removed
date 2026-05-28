@@ -423,13 +423,13 @@ clang-trunk:
 # We build stable rust from source so the resulting compiler acts as a nightly
 # rust compiler, allowing to use unstable features like -Zbuild-std and
 # sanitizers.
-rust-1.90.0:
-    description: Rust 1.90.0 source code
+rust-1.91.0:
+    description: Rust 1.91.0 source code
     fetch:
         type: git
         include-dot-git: true
         repo: https://github.com/rust-lang/rust/
-        revision: 1159e78c4747b02ef996e55082b704c09b970588
+        revision: f8297e351a40c1439a467bbbb6879088047f50b3
 
 rust-nightly:
     description: Rust nightly source code
@@ -712,7 +712,7 @@ symbol-scrapers:
     fetch:
         type: git
         repo: https://github.com/mozilla/symbol-scrapers
-        revision: dc3ccf2e9a073948496cf5b1ce16a3d6efe7d855
+        revision: 9e15fa3253149a1755dbfdc21e5a92960e2027b8
 
 xz:
     description: xz 5.8.3 source code
