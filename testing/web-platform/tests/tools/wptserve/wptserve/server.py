@@ -611,7 +611,7 @@ class Http2WebTestRequestHandler(BaseWebTestRequestHandler):
             
             try:
                 h2response.write_status_headers()
-            except StreamClosedError:
+            except (StreamClosedError, ProtocolError):
                 
                 
                 return
@@ -741,9 +741,12 @@ class Http2WebTestRequestHandler(BaseWebTestRequestHandler):
             if getattr(frame, "stream_ended", False):
                 try:
                     self.finish_handling(request, response, req_handler)
-                except StreamClosedError:
-                    self.logger.debug('(%s - %s) Unable to write response; stream closed' %
-                                    (self.uid, stream_id))
+                except (StreamClosedError, ProtocolError):
+                    
+                    
+                    self.logger.debug(
+                        '(%s - %s) Unable to write response; stream or '
+                        'connection closed' % (self.uid, stream_id))
                 break
 
         cleanup()
