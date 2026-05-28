@@ -229,7 +229,8 @@ static void UpdateOldAnimationPropertiesWithNew(
   
   
   if (aOld.GetTimeline() != aTimeline) {
-    aOld.SetTimeline(aTimeline, aTimelineName);
+    
+    aOld.SetTimelineNoUpdate(aTimeline, aTimelineName);
     animationChanged = true;
   }
 
@@ -536,7 +537,10 @@ static void UpdateNamedTimelineAnimation(dom::Document* aDocument,
   if (oldTimeline == newTimeline) {
     return;
   }
-  aAnimation->SetTimeline(newTimeline, aTimelineName);
+  
+  
+  
+  aAnimation->SetTimelineNoUpdate(newTimeline, aTimelineName);
 }
 
 #ifdef DEBUG
