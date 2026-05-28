@@ -30,6 +30,11 @@ GLOBAL(size_t, gMaxLargeClass,
        kChunkSize - gRealPageSize - (gChunkHeaderNumPages << gPageSize2Pow))
 
 
+
+
+GLOBAL(size_t, gMinimumRunSize, std::max(gPageSize, 16_KiB))
+
+
 GLOBAL_ASSERT(1ULL << gPageSize2Pow == gPageSize,
               "Page size is not a power of two");
 GLOBAL_ASSERT(1ULL << gRealPageSize2Pow == gRealPageSize,

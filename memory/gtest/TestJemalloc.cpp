@@ -232,7 +232,25 @@ TEST(Jemalloc, PtrInfo)
 
   
   size_t page_sizeMask = stats.page_size - 1;
-  char* run = (char*)(uintptr_t(p.get()) & ~page_sizeMask);
+  char* run;
+  
+  
+  for (unsigned i = 0; i < 100; i++) {
+    run = (char*)((uintptr_t(p.get()) & ~page_sizeMask) - stats.page_size * i);
+
+    
+    ASSERT_NE(run, (char*)((uintptr_t)chunk + chunkHeaderSize -
+                           stats.real_page_size));
+
+    jemalloc_ptr_info(run, &info);
+    if (InfoEq(info, TagUnknown, nullptr, 0U, 0U)) {
+      break;
+    }
+
+    
+    
+  }
+
   for (size_t i = 0; i < 4 * sizeof(void*); i++) {
     jemalloc_ptr_info(&run[i], &info);
     ASSERT_TRUE(InfoEq(info, TagUnknown, nullptr, 0U, 0U));
