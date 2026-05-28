@@ -374,9 +374,12 @@ var gPermissionPanel = {
     
     
     
+    
+    
     if (
       !this._sharingState &&
-      gURLBar.getAttribute("pageproxystate") != "valid"
+      gURLBar.getAttribute("pageproxystate") != "valid" &&
+      !gURLBar.hasAttribute("persistsearchterms")
     ) {
       return;
     }
