@@ -709,7 +709,6 @@ static void JsepCodecDescToAudioCodecConfig(
   (*aConfig)->mMinFrameSizeMs = aCodec.mMinFrameSizeMs;
   (*aConfig)->mMaxFrameSizeMs = aCodec.mMaxFrameSizeMs;
   (*aConfig)->mCbrEnabled = aCodec.mCbrEnabled;
-  (*aConfig)->mTransportCCFbSet = aCodec.RtcpFbTransportCCIsSet();
 }
 
 
