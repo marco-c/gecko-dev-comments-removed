@@ -38,7 +38,6 @@ import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiObject
 import androidx.test.uiautomator.UiSelector
-import mozilla.components.support.android.test.espresso.matcher.isSelected
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.helpers.TestHelper.packageName
@@ -118,7 +117,10 @@ abstract class BasePage(
                     is NavigationStep.OpenNotificationsTray -> mozOpenNotificationsTray()
                     is NavigationStep.EnterText -> mozEnterText(url, step.selector)
                     is NavigationStep.PressEnter -> mozPressEnter(step.selector)
-                    is NavigationStep.PressBack -> mDevice.pressBack()
+                    is NavigationStep.PressBack -> {
+                        mDevice.pressBack()
+                        mDevice.waitForIdle()
+                    }
                 }
             }
 
@@ -678,6 +680,16 @@ abstract class BasePage(
 
             SelectorStrategy.UIAUTOMATOR_WITH_DESCRIPTION_CONTAINS -> {
                 val obj = mDevice.findObject(UiSelector().descriptionContains(selector.value))
+                if (!obj.exists()) null else obj
+            }
+
+            SelectorStrategy.UIAUTOMATOR_WITH_RES_ID_AND_TEXT -> {
+                val textToMatch = selector.secondaryValue ?: ""
+
+                val fullResId = packageName + ":id/" + selector.value
+
+                val obj = mDevice.findObject(UiSelector().resourceId(fullResId).text(textToMatch))
+
                 if (!obj.exists()) null else obj
             }
         }
