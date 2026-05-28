@@ -38,6 +38,7 @@ using mozilla::dom::Animation;
 using mozilla::dom::AnimationPlayState;
 using mozilla::dom::CSSAnimation;
 using mozilla::dom::Element;
+using mozilla::dom::InactiveTimeline;
 using mozilla::dom::KeyframeEffect;
 using mozilla::dom::MutationObservers;
 using mozilla::dom::ScrollTimeline;
@@ -304,10 +305,16 @@ static already_AddRefed<dom::AnimationTimeline> GetNamedProgressTimeline(
     }
 
     if (auto scopedTimeline = timelineManager->GetScopedTimeline(e, aName)) {
-      return already_AddRefed{scopedTimeline->take()};
+      auto* result = scopedTimeline->take();
+      if (!result) {
+        
+        return MakeAndAddRef<InactiveTimeline>(aDocument);
+      }
+      return already_AddRefed{result};
     }
   }
 
+  
   
   
   
@@ -321,10 +328,11 @@ static already_AddRefed<dom::AnimationTimeline> GetTimeline(
     case StyleAnimationTimeline::Tag::Timeline: {
       
       nsAtom* name = aStyleTimeline.AsTimeline().value.AsAtom();
-      return name != nsGkAtoms::_empty
-                 ? GetNamedProgressTimeline(aPresContext->Document(), aTarget,
-                                            name)
-                 : nullptr;
+      if (name == nsGkAtoms::_empty) {
+        
+        return nullptr;
+      }
+      return GetNamedProgressTimeline(aPresContext->Document(), aTarget, name);
     }
     case StyleAnimationTimeline::Tag::Scroll: {
       const auto& scroll = aStyleTimeline.AsScroll();

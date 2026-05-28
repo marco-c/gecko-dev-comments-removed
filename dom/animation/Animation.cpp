@@ -1129,6 +1129,14 @@ bool Animation::TryTriggerNow() {
   if (NS_WARN_IF(!mTimeline)) {
     return false;
   }
+
+  
+  
+  
+  if (mTimeline->IsInactiveTimeline()) {
+    return false;
+  }
+
   
   
   auto currentTime = (mPendingReadyTime.IsNull() || HasFiniteTimeline())
@@ -1616,6 +1624,15 @@ void Animation::PlayNoUpdate(ErrorResult& aRv, LimitBehavior aLimitBehavior) {
     mHoldTime = TimeDuration();
   }
 
+  const bool hasInactiveTimeline = mTimeline && mTimeline->IsInactiveTimeline();
+  if (hasInactiveTimeline && mHoldTime.IsNull()) {
+    
+    
+    
+    
+    mHoldTime = TimeDuration();
+  }
+
   
   
   
@@ -2006,7 +2023,8 @@ void Animation::MaybeUpdateKeyframeComputedOffsets() {
     return;
   }
 
-  mEffect->AsKeyframeEffect()->MaybeUpdateKeyframeComputedOffsets(mTimeline);
+  mEffect->AsKeyframeEffect()->MaybeUpdateKeyframeComputedOffsets(
+      mTimeline, mTimelineRange);
 }
 
 StickyTimeDuration Animation::EffectEnd() const {
