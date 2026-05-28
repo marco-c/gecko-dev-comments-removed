@@ -132,6 +132,8 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   struct TreeBuildingState;
 
  public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(APZCTreeManager, final);
+
   static mozilla::LazyLogModule sLog;
 
   static already_AddRefed<APZCTreeManager> Create(
@@ -427,6 +429,24 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
 
   void SetLongTapEnabled(bool aTapGestureEnabled) override;
+
+  
+
+
+
+
+
+
+
+  void NotifyApzAwareListenerAdded(const ScrollableLayerGuid& aGuid) override;
+
+  
+
+
+
+
+
+  bool ChainHasFastPathApzAwareListener(const ScrollableLayerGuid& aHitGuid);
 
   APZInputBridge* InputBridge() override { return this; }
 
@@ -933,6 +953,19 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
                      ScrollableLayerGuid::HashIgnoringPresShellFn,
                      ScrollableLayerGuid::EqualIgnoringPresShellFn>
       mApzcMap MOZ_GUARDED_BY(mMapLock);
+
+  
+
+
+
+
+
+
+
+  std::unordered_set<ScrollableLayerGuid,
+                     ScrollableLayerGuid::HashIgnoringPresShellFn,
+                     ScrollableLayerGuid::EqualIgnoringPresShellFn>
+      mFastPathApzAwareGuids MOZ_GUARDED_BY(mMapLock);
   
 
 
