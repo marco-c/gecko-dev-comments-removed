@@ -97,6 +97,7 @@ class MediaController final : public DOMEventTargetHelper,
   IMPL_EVENT_HANDLER(activated);
   IMPL_EVENT_HANDLER(deactivated);
   IMPL_EVENT_HANDLER(audiblechange);
+  IMPL_EVENT_HANDLER(effectiveaudiosessiontypechange);
   IMPL_EVENT_HANDLER(metadatachange);
   IMPL_EVENT_HANDLER(supportedkeyschange);
   IMPL_EVENT_HANDLER(playbackstatechange);
@@ -220,6 +221,9 @@ class MediaController final : public DOMEventTargetHelper,
   
   void UpdateAudibleForAudioSession(uint64_t aBrowsingContextId);
 
+  
+  void MaybeFireEffectiveAudioSessionTypeChanged();
+
   bool IsMainController() const;
   void ForceToBecomeMainControllerIfNeeded();
   bool ShouldRequestForMainController() const;
@@ -252,6 +256,10 @@ class MediaController final : public DOMEventTargetHelper,
 
   
   nsTHashMap<nsUint64HashKey, AudioSessionRecord> mAudioSessions;
+
+  
+  AudioSessionType mLastDispatchedEffectiveAudioSessionType =
+      AudioSessionType::Auto;
 };
 
 }  

@@ -481,3 +481,37 @@ function logPositionStateChangeEvents(tab) {
       )
   );
 }
+
+
+
+
+
+function waitForEffectiveAudioSessionType(controller, expected) {
+  return new Promise(resolve => {
+    if (controller.effectiveAudioSessionType === expected) {
+      resolve();
+      return;
+    }
+    controller.addEventListener(
+      "effectiveaudiosessiontypechange",
+      function listener() {
+        if (controller.effectiveAudioSessionType === expected) {
+          controller.removeEventListener(
+            "effectiveaudiosessiontypechange",
+            listener
+          );
+          resolve();
+        }
+      }
+    );
+  });
+}
+
+
+
+
+function setContentAudioSessionType(browser, type) {
+  return SpecialPowers.spawn(browser, [type], t => {
+    content.navigator.audioSession.type = t;
+  });
+}
