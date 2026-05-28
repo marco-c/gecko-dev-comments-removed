@@ -97,6 +97,12 @@ class MediaPlaybackStatus final {
 
   Maybe<uint64_t> GetActiveAudibleControllableContextId() const;
 
+  
+  
+  bool IsBcAudibleForTesting(uint64_t aBcId) const;
+  const nsTArray<AudibleSource>* GetAudibleSourcesForTesting(
+      uint64_t aBcId) const;
+
  private:
   
 
@@ -151,6 +157,12 @@ class MediaPlaybackStatus final {
     Maybe<PositionState> GuessedPositionState() const;
     void UpdateGuessedPositionState(const nsID& aElementId,
                                     const Maybe<PositionState>& aState);
+
+    
+    
+    const nsTArray<AudibleSource>& AudibleSourcesForTesting() const {
+      return mAudibleSources;
+    }
 
    private:
     
