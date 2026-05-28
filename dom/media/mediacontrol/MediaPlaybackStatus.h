@@ -95,7 +95,7 @@ class MediaPlaybackStatus final {
   Maybe<PositionState> GuessedMediaPositionState(
       Maybe<uint64_t> aPreferredContextId) const;
 
-  Maybe<uint64_t> GetAudioFocusOwnerContextId() const;
+  Maybe<uint64_t> GetActiveAudibleControllableContextId() const;
 
  private:
   
@@ -184,18 +184,18 @@ class MediaPlaybackStatus final {
   void MaybeDestroyContextInfo(uint64_t aContextId,
                                const ContextMediaInfo& aInfo);
 
-  void ChooseNewContextToOwnAudioFocus();
-  void SetOwningAudioFocusContextId(Maybe<uint64_t>&& aContextId);
-  bool IsContextOwningAudioFocus(uint64_t aContextId) const;
-  bool ShouldRequestAudioFocusForInfo(const ContextMediaInfo& aInfo,
-                                      ControlType aControlType) const;
-  bool ShouldAbandonAudioFocusForInfo(const ContextMediaInfo& aInfo,
-                                      ControlType aControlType) const;
+  void ChooseNewActiveAudibleControllableContext();
+  void SetActiveAudibleControllableContextId(Maybe<uint64_t>&& aContextId);
+  bool IsActiveAudibleControllableContext(uint64_t aContextId) const;
+  bool ShouldClaimActiveAudibleControllableContextForInfo(
+      const ContextMediaInfo& aInfo, ControlType aControlType) const;
+  bool ShouldHandOffActiveAudibleControllableContextForInfo(
+      const ContextMediaInfo& aInfo, ControlType aControlType) const;
   bool HasAnyControllableAudibleSource() const;
 
   
   nsTHashMap<uint64_t, UniquePtr<ContextMediaInfo>> mContextInfoMap;
-  Maybe<uint64_t> mOwningAudioFocusContextId;
+  Maybe<uint64_t> mActiveAudibleControllableContextId;
 };
 
 }  

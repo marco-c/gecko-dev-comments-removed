@@ -228,6 +228,7 @@ class MediaStatusManager : public IMediaInfoUpdater {
 
   
   
+  
   Maybe<uint64_t> mActiveMediaSessionContextId;
 
   void ClearActiveMediaSessionContextIdIfNeeded();
@@ -240,9 +241,9 @@ class MediaStatusManager : public IMediaInfoUpdater {
   bool IsInPrivateBrowsing() const;
   void FillMissingTitleAndArtworkIfNeeded(MediaMetadataBase& aMetadata) const;
 
-  bool IsSessionOwningAudioFocus(uint64_t aBrowsingContextId) const;
   void SetActiveMediaSessionContextId(uint64_t aBrowsingContextId);
-  void HandleAudioFocusOwnerChanged(Maybe<uint64_t>& aBrowsingContextId);
+  void HandleActiveAudibleControllableContextChanged(
+      Maybe<uint64_t>& aBrowsingContextId);
 
   void NotifySupportedKeysChangedIfNeeded(uint64_t aBrowsingContextId);
 

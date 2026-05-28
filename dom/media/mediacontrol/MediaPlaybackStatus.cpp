@@ -44,8 +44,8 @@ void MediaPlaybackStatus::DestroyContextInfo(uint64_t aContextId) {
   mContextInfoMap.Remove(aContextId);
   
   
-  if (IsContextOwningAudioFocus(aContextId)) {
-    ChooseNewContextToOwnAudioFocus();
+  if (IsActiveAudibleControllableContext(aContextId)) {
+    ChooseNewActiveAudibleControllableContext();
   }
 }
 
@@ -68,7 +68,8 @@ bool MediaPlaybackStatus::UpdateMediaAudibleState(
       EnumValueToString(aState), aContextId);
   MOZ_ASSERT(NS_IsMainThread());
   ContextMediaInfo& info = GetNotNullContextInfo(aContextId);
-  const Maybe<uint64_t> oldOwner = mOwningAudioFocusContextId;
+  const Maybe<uint64_t> oldActiveContextId =
+      mActiveAudibleControllableContextId;
 
   if (aState == MediaAudibleState::eAudible) {
     info.AddAudibleSource(aControlType, aSessionType);
@@ -77,14 +78,15 @@ bool MediaPlaybackStatus::UpdateMediaAudibleState(
     info.RemoveAudibleSource(aControlType, aSessionType);
   }
 
-  if (ShouldRequestAudioFocusForInfo(info, aControlType)) {
-    SetOwningAudioFocusContextId(Some(aContextId));
-  } else if (ShouldAbandonAudioFocusForInfo(info, aControlType)) {
-    ChooseNewContextToOwnAudioFocus();
+  if (ShouldClaimActiveAudibleControllableContextForInfo(info, aControlType)) {
+    SetActiveAudibleControllableContextId(Some(aContextId));
+  } else if (ShouldHandOffActiveAudibleControllableContextForInfo(
+                 info, aControlType)) {
+    ChooseNewActiveAudibleControllableContext();
   }
 
   MaybeDestroyContextInfo(aContextId, info);
-  return oldOwner != mOwningAudioFocusContextId;
+  return oldActiveContextId != mActiveAudibleControllableContextId;
 }
 
 void MediaPlaybackStatus::UpdateGuessedPositionState(
@@ -129,7 +131,7 @@ Maybe<PositionState> MediaPlaybackStatus::GuessedMediaPositionState(
     Maybe<uint64_t> aPreferredContextId) const {
   auto contextId = aPreferredContextId;
   if (!contextId) {
-    contextId = mOwningAudioFocusContextId;
+    contextId = mActiveAudibleControllableContextId;
   }
 
   
@@ -160,42 +162,45 @@ MediaPlaybackStatus::GetNotNullContextInfo(uint64_t aContextId) {
   return *mContextInfoMap.GetOrInsertNew(aContextId, aContextId);
 }
 
-Maybe<uint64_t> MediaPlaybackStatus::GetAudioFocusOwnerContextId() const {
-  return mOwningAudioFocusContextId;
+Maybe<uint64_t> MediaPlaybackStatus::GetActiveAudibleControllableContextId()
+    const {
+  return mActiveAudibleControllableContextId;
 }
 
-void MediaPlaybackStatus::ChooseNewContextToOwnAudioFocus() {
+void MediaPlaybackStatus::ChooseNewActiveAudibleControllableContext() {
   
   
   
   for (const auto& info : mContextInfoMap.Values()) {
     if (info->HasAudibleSourceOfControlType(ControlType::eControllable)) {
-      SetOwningAudioFocusContextId(Some(info->Id()));
+      SetActiveAudibleControllableContextId(Some(info->Id()));
       return;
     }
   }
-  SetOwningAudioFocusContextId(Nothing());
+  SetActiveAudibleControllableContextId(Nothing());
 }
 
-void MediaPlaybackStatus::SetOwningAudioFocusContextId(
+void MediaPlaybackStatus::SetActiveAudibleControllableContextId(
     Maybe<uint64_t>&& aContextId) {
-  if (mOwningAudioFocusContextId == aContextId) {
+  if (mActiveAudibleControllableContextId == aContextId) {
     return;
   }
-  mOwningAudioFocusContextId = std::move(aContextId);
+  mActiveAudibleControllableContextId = std::move(aContextId);
 }
 
-bool MediaPlaybackStatus::ShouldRequestAudioFocusForInfo(
+bool MediaPlaybackStatus::ShouldClaimActiveAudibleControllableContextForInfo(
     const ContextMediaInfo& aInfo, ControlType aControlType) const {
+  
   
   
   return aControlType == ControlType::eControllable &&
          aInfo.HasAudibleSourceOfControlType(ControlType::eControllable) &&
-         !IsContextOwningAudioFocus(aInfo.Id());
+         !IsActiveAudibleControllableContext(aInfo.Id());
 }
 
-bool MediaPlaybackStatus::ShouldAbandonAudioFocusForInfo(
+bool MediaPlaybackStatus::ShouldHandOffActiveAudibleControllableContextForInfo(
     const ContextMediaInfo& aInfo, ControlType aControlType) const {
+  
   
   
   
@@ -203,7 +208,7 @@ bool MediaPlaybackStatus::ShouldAbandonAudioFocusForInfo(
   
   return aControlType == ControlType::eControllable &&
          !aInfo.HasAudibleSourceOfControlType(ControlType::eControllable) &&
-         IsContextOwningAudioFocus(aInfo.Id()) &&
+         IsActiveAudibleControllableContext(aInfo.Id()) &&
          HasAnyControllableAudibleSource();
 }
 
@@ -215,9 +220,11 @@ bool MediaPlaybackStatus::HasAnyControllableAudibleSource() const {
       });
 }
 
-bool MediaPlaybackStatus::IsContextOwningAudioFocus(uint64_t aContextId) const {
-  return mOwningAudioFocusContextId ? *mOwningAudioFocusContextId == aContextId
-                                    : false;
+bool MediaPlaybackStatus::IsActiveAudibleControllableContext(
+    uint64_t aContextId) const {
+  return mActiveAudibleControllableContextId
+             ? *mActiveAudibleControllableContextId == aContextId
+             : false;
 }
 
 Maybe<PositionState>
