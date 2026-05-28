@@ -448,8 +448,8 @@ pref("browser.urlbar.deduplication.thresholdDays", 0);
 pref("browser.urlbar.scotchBonnet.enableOverride", true);
 
 pref("browser.urlbar.trustPanel.featureGate", true);
-pref("browser.urlbar.trustPanel.breachAlerts.featureGate", false);
-pref("browser.urlbar.trustPanel.breachAlerts", false);
+pref("browser.urlbar.trustPanel.breachAlerts.featureGate", true);
+pref("browser.urlbar.trustPanel.breachAlerts", true);
 
 
 pref("browser.urlbar.unifiedSearchButton.always", false);
@@ -1873,10 +1873,10 @@ pref("browser.newtabpage.activity-stream.images.smart", true);
 pref("browser.newtabpage.activity-stream.weather.locationSearchEnabled", true);
 
 
-pref("browser.newtabpage.activity-stream.discoverystream.region-weather-config", "US,CA");
+pref("browser.newtabpage.activity-stream.discoverystream.region-weather-config", "AT,BE,BG,CA,CH,CY,CZ,DE,DK,EE,ES,FI,FR,GB,GR,HR,HU,IE,IS,IT,LI,LT,LV,MT,NL,NO,PL,PT,RO,SE,SI,SK,US");
 
 
-pref("browser.newtabpage.activity-stream.discoverystream.locale-weather-config", "en-US,en-GB,en-CA");
+pref("browser.newtabpage.activity-stream.discoverystream.locale-weather-config", "bg,cs,da,de,el,en-CA,en-GB,en-US,es-ES,et,fi,fr,hr,hu,is,it,lv,nb-NO,nl,pl,pt-PT,ro,sk,sl,sv-SE,tr");
 
 
 pref("browser.newtabpage.activity-stream.discoverystream.promoCard.visible", true);
