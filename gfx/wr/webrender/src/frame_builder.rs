@@ -350,6 +350,29 @@ impl FrameBuilder {
             false,
         ));
 
+        
+        
+        
+        
+        scratch.primitive.frame.draws.clear();
+        scratch.primitive.frame.draws.resize_with(
+            scene.prim_instances.len(),
+            crate::visibility::PrimitiveDrawHeader::new,
+        );
+
+        
+        
+        
+        
+        
+        crate::frame_snap::snap_frame_rects(
+            &mut scene.prim_store,
+            &scene.prim_instances,
+            &mut scene.clip_tree,
+            &mut scratch.primitive.frame.draws,
+            spatial_tree,
+        );
+
         scene.picture_graph.propagate_bounding_rects(
             &mut scene.prim_store.pictures,
             &mut scene.surfaces,
@@ -369,15 +392,6 @@ impl FrameBuilder {
         for _ in 0..n_pics {
             visited_pictures.push(false);
         }
-
-        
-        
-        
-        scratch.primitive.frame.draws.clear();
-        scratch.primitive.frame.draws.resize_with(
-            scene.prim_instances.len(),
-            crate::visibility::PrimitiveDrawHeader::new,
-        );
 
         {
             profile_scope!("UpdateVisibility");

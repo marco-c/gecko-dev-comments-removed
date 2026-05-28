@@ -120,7 +120,13 @@ use std::{iter, ops, u32, mem};
 pub struct ClipTreeNode {
     pub handle: ClipDataHandle,
     pub spatial_node_index: SpatialNodeIndex,
-    pub clip_rect: LayoutRect,
+    
+    
+    pub unsnapped_clip_rect: LayoutRect,
+    
+    
+    
+    pub snapped_clip_rect: LayoutRect,
     pub parent: ClipNodeId,
 
     children: FastHashMap<ClipEntry, ClipNodeId>,
@@ -141,7 +147,15 @@ pub struct ClipTreeLeaf {
     
     
     
-    pub local_clip_rect: LayoutRect,
+    
+    
+    pub unsnapped_local_clip_rect: LayoutRect,
+    
+    
+    
+    
+    
+    pub snapped_local_clip_rect: LayoutRect,
 }
 
 
@@ -192,7 +206,8 @@ impl ClipTree {
                 ClipTreeNode {
                     handle: ClipDataHandle::INVALID,
                     spatial_node_index: SpatialNodeIndex::INVALID,
-                    clip_rect: LayoutRect::zero(),
+                    unsnapped_clip_rect: LayoutRect::zero(),
+                    snapped_clip_rect: LayoutRect::zero(),
                     children: FastHashMap::default(),
                     parent: ClipNodeId::NONE,
                 }
@@ -209,7 +224,8 @@ impl ClipTree {
         self.nodes.push(ClipTreeNode {
             handle: ClipDataHandle::INVALID,
             spatial_node_index: SpatialNodeIndex::INVALID,
-            clip_rect: LayoutRect::zero(),
+            unsnapped_clip_rect: LayoutRect::zero(),
+            snapped_clip_rect: LayoutRect::zero(),
             children: FastHashMap::default(),
             parent: ClipNodeId::NONE,
         });
@@ -247,7 +263,8 @@ impl ClipTree {
                     nodes.push(ClipTreeNode {
                         handle: key.handle,
                         spatial_node_index: key.spatial_node_index,
-                        clip_rect: key.clip_rect.into(),
+                        unsnapped_clip_rect: key.clip_rect.into(),
+                        snapped_clip_rect: LayoutRect::zero(),
                         children: FastHashMap::default(),
                         parent: id,
                     });
@@ -322,6 +339,19 @@ impl ClipTree {
     }
 
     
+    
+    pub fn nodes_mut(&mut self) -> &mut [ClipTreeNode] {
+        &mut self.nodes
+    }
+
+    
+    
+    
+    pub fn get_leaf_mut(&mut self, id: ClipLeafId) -> &mut ClipTreeLeaf {
+        &mut self.leaves[id.0 as usize]
+    }
+
+    
     #[allow(unused)]
     pub fn print(&self) {
         use crate::print_tree::PrintTree;
@@ -352,7 +382,7 @@ impl ClipTree {
 
             pt.new_level(format!("{:?}", id));
             pt.add_item(format!("node_id: {:?}", leaf.node_id));
-            pt.add_item(format!("local_clip_rect: {:?}", leaf.local_clip_rect));
+            pt.add_item(format!("unsnapped_local_clip_rect: {:?}", leaf.unsnapped_local_clip_rect));
             pt.end_level();
         }
 
@@ -862,7 +892,8 @@ impl ClipTreeBuilder {
 
         self.tree.leaves.push(ClipTreeLeaf {
             node_id,
-            local_clip_rect: LayoutRect::max_rect(),
+            unsnapped_local_clip_rect: LayoutRect::max_rect(),
+            snapped_local_clip_rect: LayoutRect::max_rect(),
         });
 
         clip_leaf_id
@@ -882,7 +913,8 @@ impl ClipTreeBuilder {
 
         self.tree.leaves.push(ClipTreeLeaf {
             node_id,
-            local_clip_rect: LayoutRect::max_rect(),
+            unsnapped_local_clip_rect: LayoutRect::max_rect(),
+            snapped_local_clip_rect: LayoutRect::max_rect(),
         });
 
         clip_leaf_id
@@ -930,7 +962,8 @@ impl ClipTreeBuilder {
 
         self.tree.leaves.push(ClipTreeLeaf {
             node_id,
-            local_clip_rect: info.clip_rect,
+            unsnapped_local_clip_rect: info.clip_rect,
+            snapped_local_clip_rect: LayoutRect::zero(),
         });
 
         clip_leaf_id
@@ -1398,7 +1431,10 @@ impl ClipStore {
         let clip_root = clip_tree.current_clip_root();
         let clip_leaf = clip_tree.get_leaf(clip_leaf_id);
 
-        let mut local_clip_rect = clip_leaf.local_clip_rect;
+        
+        
+        
+        let mut local_clip_rect = clip_leaf.snapped_local_clip_rect;
         let mut current = clip_leaf.node_id;
 
         while current != clip_root && current != ClipNodeId::NONE {
@@ -1407,7 +1443,7 @@ impl ClipStore {
             if !add_clip_node_to_current_chain(
                 node.handle,
                 node.spatial_node_index,
-                node.clip_rect,
+                node.snapped_clip_rect,
                 prim_spatial_node_index,
                 pic_spatial_node_index,
                 visibility_spatial_node_index,
