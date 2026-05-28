@@ -38,7 +38,6 @@ using mozilla::dom::Animation;
 using mozilla::dom::AnimationPlayState;
 using mozilla::dom::CSSAnimation;
 using mozilla::dom::Element;
-using mozilla::dom::InactiveTimeline;
 using mozilla::dom::KeyframeEffect;
 using mozilla::dom::MutationObservers;
 using mozilla::dom::ScrollTimeline;
@@ -230,8 +229,7 @@ static void UpdateOldAnimationPropertiesWithNew(
   
   
   if (aOld.GetTimeline() != aTimeline) {
-    
-    aOld.SetTimelineNoUpdate(aTimeline, aTimelineName);
+    aOld.SetTimeline(aTimeline, aTimelineName);
     animationChanged = true;
   }
 
@@ -305,16 +303,10 @@ static already_AddRefed<dom::AnimationTimeline> GetNamedProgressTimeline(
     }
 
     if (auto scopedTimeline = timelineManager->GetScopedTimeline(e, aName)) {
-      auto* result = scopedTimeline->take();
-      if (!result) {
-        
-        return MakeAndAddRef<InactiveTimeline>(aDocument);
-      }
-      return already_AddRefed{result};
+      return already_AddRefed{scopedTimeline->take()};
     }
   }
 
-  
   
   
   
@@ -328,11 +320,10 @@ static already_AddRefed<dom::AnimationTimeline> GetTimeline(
     case StyleAnimationTimeline::Tag::Timeline: {
       
       nsAtom* name = aStyleTimeline.AsTimeline().value.AsAtom();
-      if (name == nsGkAtoms::_empty) {
-        
-        return nullptr;
-      }
-      return GetNamedProgressTimeline(aPresContext->Document(), aTarget, name);
+      return name != nsGkAtoms::_empty
+                 ? GetNamedProgressTimeline(aPresContext->Document(), aTarget,
+                                            name)
+                 : nullptr;
     }
     case StyleAnimationTimeline::Tag::Scroll: {
       const auto& scroll = aStyleTimeline.AsScroll();
@@ -545,10 +536,7 @@ static void UpdateNamedTimelineAnimation(dom::Document* aDocument,
   if (oldTimeline == newTimeline) {
     return;
   }
-  
-  
-  
-  aAnimation->SetTimelineNoUpdate(newTimeline, aTimelineName);
+  aAnimation->SetTimeline(newTimeline, aTimelineName);
 }
 
 #ifdef DEBUG
