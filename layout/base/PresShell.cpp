@@ -5794,19 +5794,7 @@ void PresShell::SynthesizeMouseMove(bool aFromScroll) {
   }
 
   if (mLastMousePointerId.isNothing() && mPointerIds.IsEmpty()) {
-    
-    
-    
-    
-    
-    
-    
-    if (Maybe<uint32_t> claimedPointerId =
-            PointerEventHandler::TryClaimOrphanedLastMouseInfo(*this)) {
-      mLastMousePointerId = claimedPointerId;
-    } else {
-      return;
-    }
+    return;
   }
 
   if (!mSynthMouseMoveEvent.IsPending()) {

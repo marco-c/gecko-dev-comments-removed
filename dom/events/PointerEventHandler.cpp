@@ -47,8 +47,6 @@ using namespace dom;
 Maybe<int32_t> PointerEventHandler::sSpoofedPointerId;
 StaticAutoPtr<PointerInfo> PointerEventHandler::sLastMouseInfo;
 StaticRefPtr<nsIWeakReference> PointerEventHandler::sLastMousePresShell;
-StaticRefPtr<nsIWeakReference> PointerEventHandler::sLastMouseWidget;
-Maybe<uint32_t> PointerEventHandler::sLastMousePointerId;
 Maybe<uint32_t> PointerEventHandler::sLastPointerId;
 
 
@@ -258,8 +256,6 @@ void PointerEventHandler::RecordMouseState(
     sLastMouseInfo = new PointerInfo();
   }
   sLastMousePresShell = do_GetWeakReference(&aRootPresShell);
-  sLastMouseWidget = do_GetWeakReference(aMouseEvent.mWidget.get());
-  sLastMousePointerId = Some(aMouseEvent.pointerId);
   sLastMouseInfo->mLastRefPointInRootDoc =
       aRootPresShell.GetEventLocation(aMouseEvent);
   sLastMouseInfo->mLastTargetGuid =
@@ -313,7 +309,6 @@ void PointerEventHandler::ClearMouseState(PresShell& aRootPresShell,
   sLastMouseInfo->mInputSource = MouseEvent_Binding::MOZ_SOURCE_UNKNOWN;
   sLastMouseInfo->mIsSynthesizedForTests =
       aMouseEvent.mFlags.mIsSynthesizedForTests;
-  sLastMousePointerId.reset();
   MOZ_LOG_DEBUG_ONLY(gLogMouseLocation, LogLevel::Info,
                      ("[ps=%p]got %s on widget:%p, mouse location is cleared "
                       "(pointerId=%u, source=%s)\n",
@@ -615,41 +610,6 @@ const PointerInfo* PointerEventHandler::GetLastMouseInfo(
     }
   }
   return sLastMouseInfo;
-}
-
-
-Maybe<uint32_t> PointerEventHandler::TryClaimOrphanedLastMouseInfo(
-    PresShell& aRootPresShell) {
-  MOZ_ASSERT(aRootPresShell.IsRoot());
-  if (!sLastMouseInfo || !sLastMouseInfo->HasLastState() ||
-      !sLastMousePointerId) {
-    return Nothing();
-  }
-  
-  if (sLastMousePresShell) {
-    const RefPtr<PresShell> previousOwner =
-        do_QueryReferent(sLastMousePresShell);
-    if (previousOwner) {
-      return Nothing();
-    }
-  }
-  
-  
-  
-  
-  
-  
-  if (!sLastMouseWidget) {
-    return Nothing();
-  }
-  const nsCOMPtr<nsIWidget> previousWidget = do_QueryReferent(sLastMouseWidget);
-  if (!previousWidget || previousWidget != aRootPresShell.GetOwnWidget()) {
-    return Nothing();
-  }
-  
-  
-  sLastMousePresShell = do_GetWeakReference(&aRootPresShell);
-  return sLastMousePointerId;
 }
 
 
