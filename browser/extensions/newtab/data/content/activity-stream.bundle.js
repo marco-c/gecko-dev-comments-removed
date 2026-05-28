@@ -16024,6 +16024,17 @@ const HighlightImage = ({
 
 
 
+const SLOTS = Object.freeze({
+  WIDGETS_ROW: "widgets-row",
+});
+
+;
+
+
+
+
+
+
 const SHELLS = Object.freeze({
   POPOVER: "popover",
 });
@@ -16032,7 +16043,24 @@ const DISMISS_MODES = Object.freeze({
   BLOCK: "block",
 });
 
-const OMC_HIGHLIGHT_REGISTRY = Object.freeze({});
+const OMC_HIGHLIGHT_REGISTRY = Object.freeze({
+  WorldCupWidgetsCallout: {
+    slot: SLOTS.WIDGETS_ROW,
+    shell: SHELLS.POPOVER,
+    chrome: {
+      position: "inset-block-start inset-inline-center",
+      modalClassName: "widgets-callout",
+    },
+    body: {
+      image: {
+        src: "chrome://newtab/content/data/content/assets/highlights/widget-worldcup.png",
+      },
+      title: { l10nId: "newtab-sports-widget-message-day-in-play-title" },
+      subtitle: { l10nId: "newtab-sports-widget-message-day-in-play-body" },
+    },
+    dismiss: DISMISS_MODES.BLOCK,
+  },
+});
 
 const getRegistryEntry = messageType => {
   if (!messageType) {
@@ -16171,15 +16199,6 @@ const OMCHighlightSlot = ({
   }
   return null;
 };
-;
-
-
-
-
-const SLOTS = Object.freeze({
-  WIDGETS_ROW: "widgets-row",
-});
-
 ;
 function SportsMatchRow_extends() { return SportsMatchRow_extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, SportsMatchRow_extends.apply(null, arguments); }
 
