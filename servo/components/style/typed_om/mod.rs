@@ -6,7 +6,10 @@
 
 
 
+use crate::derives::*;
+use crate::values::computed::url::ComputedUrl;
 use crate::values::generics::transform::GenericMatrix3D;
+use crate::values::specified::url::SpecifiedUrl;
 use crate::values::CSSFloat;
 use crate::{One, Zero};
 use app_units::Au;
@@ -410,6 +413,28 @@ pub type TransformValue = ThinVec<TransformComponent>;
 
 
 
+
+#[derive(Clone, Debug, ToCss)]
+#[repr(C)]
+pub enum ImageValue {
+    
+    
+    
+    
+    Specified(SpecifiedUrl),
+
+    
+    
+    
+    
+    Computed(ComputedUrl),
+}
+
+
+
+
+
+
 #[derive(Clone, Debug)]
 #[repr(C)]
 pub enum TypedValue {
@@ -436,6 +461,11 @@ pub enum TypedValue {
     
     
     Transform(TransformValue),
+
+    
+    
+    
+    Image(ImageValue),
 }
 
 
