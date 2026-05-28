@@ -174,11 +174,12 @@ TEST_P(DerivedTest, DoesBlah) {
 
 #endif  
 
+#include <functional>
 #include <iterator>
 #include <utility>
 
 #include "gtest/internal/gtest-internal.h"
-#include "gtest/internal/gtest-param-util.h"
+#include "gtest/internal/gtest-param-util.h"  
 #include "gtest/internal/gtest-port.h"
 
 namespace testing {
@@ -407,9 +408,106 @@ internal::CartesianProductHolder<Generator...> Combine(const Generator&... g) {
   return internal::CartesianProductHolder<Generator...>(g...);
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename RequestedT>
+internal::ParamConverterGenerator<RequestedT> ConvertGenerator(
+    internal::ParamGenerator<RequestedT> gen) {
+  return internal::ParamConverterGenerator<RequestedT>(std::move(gen));
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename T, int&... ExplicitArgumentBarrier, typename Gen,
+          typename Func,
+          typename StdFunction = decltype(std::function(std::declval<Func>()))>
+internal::ParamConverterGenerator<T, StdFunction> ConvertGenerator(Gen&& gen,
+                                                                   Func&& f) {
+  return internal::ParamConverterGenerator<T, StdFunction>(
+      std::forward<Gen>(gen), std::forward<Func>(f));
+}
+
+
+
+template <int&... ExplicitArgumentBarrier, typename Gen, typename Func,
+          typename StdFunction = decltype(std::function(std::declval<Func>()))>
+auto ConvertGenerator(Gen&& gen, Func&& f) {
+  constexpr bool is_single_arg_std_function =
+      internal::IsSingleArgStdFunction<StdFunction>::value;
+  if constexpr (is_single_arg_std_function) {
+    return ConvertGenerator<
+        typename internal::FuncSingleParamType<StdFunction>::type>(
+        std::forward<Gen>(gen), std::forward<Func>(f));
+  } else {
+    static_assert(is_single_arg_std_function,
+                  "The call signature must contain a single argument.");
+  }
+}
+
 #define TEST_P(test_suite_name, test_name)                                     \
   class GTEST_TEST_CLASS_NAME_(test_suite_name, test_name)                     \
-      : public test_suite_name {                                               \
+      : public test_suite_name,                                                \
+        private ::testing::internal::GTestNonCopyable {                        \
    public:                                                                     \
     GTEST_TEST_CLASS_NAME_(test_suite_name, test_name)() {}                    \
     void TestBody() override;                                                  \
@@ -428,12 +526,7 @@ internal::CartesianProductHolder<Generator...> Combine(const Generator&... g) {
               ::testing::internal::CodeLocation(__FILE__, __LINE__));          \
       return 0;                                                                \
     }                                                                          \
-    static int gtest_registering_dummy_ GTEST_ATTRIBUTE_UNUSED_;               \
-    GTEST_TEST_CLASS_NAME_(test_suite_name, test_name)                         \
-    (const GTEST_TEST_CLASS_NAME_(test_suite_name, test_name) &) = delete;     \
-    GTEST_TEST_CLASS_NAME_(test_suite_name, test_name) & operator=(            \
-        const GTEST_TEST_CLASS_NAME_(test_suite_name,                          \
-                                     test_name) &) = delete; /* NOLINT */      \
+    [[maybe_unused]] static int gtest_registering_dummy_;                      \
   };                                                                           \
   int GTEST_TEST_CLASS_NAME_(test_suite_name,                                  \
                              test_name)::gtest_registering_dummy_ =            \
@@ -457,39 +550,38 @@ internal::CartesianProductHolder<Generator...> Combine(const Generator&... g) {
 #define GTEST_GET_FIRST_(first, ...) first
 #define GTEST_GET_SECOND_(first, second, ...) second
 
-#define INSTANTIATE_TEST_SUITE_P(prefix, test_suite_name, ...)               \
-  static ::testing::internal::ParamGenerator<test_suite_name::ParamType>     \
-      gtest_##prefix##test_suite_name##_EvalGenerator_() {                   \
-    return GTEST_EXPAND_(GTEST_GET_FIRST_(__VA_ARGS__, DUMMY_PARAM_));       \
-  }                                                                          \
-  static ::std::string gtest_##prefix##test_suite_name##_EvalGenerateName_(  \
-      const ::testing::TestParamInfo<test_suite_name::ParamType>& info) {    \
-    if (::testing::internal::AlwaysFalse()) {                                \
-      ::testing::internal::TestNotEmpty(GTEST_EXPAND_(GTEST_GET_SECOND_(     \
-          __VA_ARGS__,                                                       \
-          ::testing::internal::DefaultParamName<test_suite_name::ParamType>, \
-          DUMMY_PARAM_)));                                                   \
-      auto t = std::make_tuple(__VA_ARGS__);                                 \
-      static_assert(std::tuple_size<decltype(t)>::value <= 2,                \
-                    "Too Many Args!");                                       \
-    }                                                                        \
-    return ((GTEST_EXPAND_(GTEST_GET_SECOND_(                                \
-        __VA_ARGS__,                                                         \
-        ::testing::internal::DefaultParamName<test_suite_name::ParamType>,   \
-        DUMMY_PARAM_))))(info);                                              \
-  }                                                                          \
-  static int gtest_##prefix##test_suite_name##_dummy_                        \
-      GTEST_ATTRIBUTE_UNUSED_ =                                              \
-          ::testing::UnitTest::GetInstance()                                 \
-              ->parameterized_test_registry()                                \
-              .GetTestSuitePatternHolder<test_suite_name>(                   \
-                  GTEST_STRINGIFY_(test_suite_name),                         \
-                  ::testing::internal::CodeLocation(__FILE__, __LINE__))     \
-              ->AddTestSuiteInstantiation(                                   \
-                  GTEST_STRINGIFY_(prefix),                                  \
-                  &gtest_##prefix##test_suite_name##_EvalGenerator_,         \
-                  &gtest_##prefix##test_suite_name##_EvalGenerateName_,      \
-                  __FILE__, __LINE__)
+#define INSTANTIATE_TEST_SUITE_P(prefix, test_suite_name, ...)                \
+  static ::testing::internal::ParamGenerator<test_suite_name::ParamType>      \
+      gtest_##prefix##test_suite_name##_EvalGenerator_() {                    \
+    return GTEST_EXPAND_(GTEST_GET_FIRST_(__VA_ARGS__, DUMMY_PARAM_));        \
+  }                                                                           \
+  static ::std::string gtest_##prefix##test_suite_name##_EvalGenerateName_(   \
+      const ::testing::TestParamInfo<test_suite_name::ParamType>& info) {     \
+    if (::testing::internal::AlwaysFalse()) {                                 \
+      ::testing::internal::TestNotEmpty(GTEST_EXPAND_(GTEST_GET_SECOND_(      \
+          __VA_ARGS__,                                                        \
+          ::testing::internal::DefaultParamName<test_suite_name::ParamType>,  \
+          DUMMY_PARAM_)));                                                    \
+      auto t = std::make_tuple(__VA_ARGS__);                                  \
+      static_assert(std::tuple_size<decltype(t)>::value <= 2,                 \
+                    "Too Many Args!");                                        \
+    }                                                                         \
+    return ((GTEST_EXPAND_(GTEST_GET_SECOND_(                                 \
+        __VA_ARGS__,                                                          \
+        ::testing::internal::DefaultParamName<test_suite_name::ParamType>,    \
+        DUMMY_PARAM_))))(info);                                               \
+  }                                                                           \
+  [[maybe_unused]] static int gtest_##prefix##test_suite_name##_dummy_ =      \
+      ::testing::UnitTest::GetInstance()                                      \
+          ->parameterized_test_registry()                                     \
+          .GetTestSuitePatternHolder<test_suite_name>(                        \
+              GTEST_STRINGIFY_(test_suite_name),                              \
+              ::testing::internal::CodeLocation(__FILE__, __LINE__))          \
+          ->AddTestSuiteInstantiation(                                        \
+              GTEST_STRINGIFY_(prefix),                                       \
+              &gtest_##prefix##test_suite_name##_EvalGenerator_,              \
+              &gtest_##prefix##test_suite_name##_EvalGenerateName_, __FILE__, \
+              __LINE__)
 
 
 #define GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(T)                  \

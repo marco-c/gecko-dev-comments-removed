@@ -337,6 +337,10 @@ typedef struct vpx_codec_enc_cfg {
 
 
 
+
+
+
+
   unsigned int g_input_bit_depth;
 
   

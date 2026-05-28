@@ -31,12 +31,15 @@
 
 #include <stdlib.h>
 
+#include <iterator>
+#include <string>
+
 #include "gtest/gtest-message.h"
 #include "gtest/internal/gtest-port.h"
 
-#if GTEST_OS_WINDOWS_MOBILE
+#ifdef GTEST_OS_WINDOWS_MOBILE
 #include <windows.h>
-#elif GTEST_OS_WINDOWS
+#elif defined(GTEST_OS_WINDOWS)
 #include <direct.h>
 #include <io.h>
 #else
@@ -47,7 +50,7 @@
 
 #include "gtest/internal/gtest-string.h"
 
-#if GTEST_OS_WINDOWS
+#ifdef GTEST_OS_WINDOWS
 #define GTEST_PATH_MAX_ _MAX_PATH
 #elif defined(PATH_MAX)
 #define GTEST_PATH_MAX_ PATH_MAX
@@ -57,10 +60,12 @@
 #define GTEST_PATH_MAX_ _POSIX_PATH_MAX
 #endif  
 
+#if GTEST_HAS_FILE_SYSTEM
+
 namespace testing {
 namespace internal {
 
-#if GTEST_OS_WINDOWS
+#ifdef GTEST_OS_WINDOWS
 
 
 
@@ -68,7 +73,7 @@ namespace internal {
 const char kPathSeparator = '\\';
 const char kAlternatePathSeparator = '/';
 const char kAlternatePathSeparatorString[] = "/";
-#if GTEST_OS_WINDOWS_MOBILE
+#ifdef GTEST_OS_WINDOWS_MOBILE
 
 
 
@@ -94,19 +99,21 @@ static bool IsPathSeparator(char c) {
 
 
 FilePath FilePath::GetCurrentDir() {
-#if GTEST_OS_WINDOWS_MOBILE || GTEST_OS_WINDOWS_PHONE ||         \
-    GTEST_OS_WINDOWS_RT || GTEST_OS_ESP8266 || GTEST_OS_ESP32 || \
-    GTEST_OS_XTENSA
+#if defined(GTEST_OS_WINDOWS_MOBILE) || defined(GTEST_OS_WINDOWS_PHONE) || \
+    defined(GTEST_OS_WINDOWS_RT) || defined(GTEST_OS_ESP8266) ||           \
+    defined(GTEST_OS_ESP32) || defined(GTEST_OS_XTENSA) ||                 \
+    defined(GTEST_OS_QURT) || defined(GTEST_OS_NXP_QN9090) ||              \
+    defined(GTEST_OS_NRF52)
   
   
   return FilePath(kCurrentDirectoryString);
-#elif GTEST_OS_WINDOWS
+#elif defined(GTEST_OS_WINDOWS)
   char cwd[GTEST_PATH_MAX_ + 1] = {'\0'};
   return FilePath(_getcwd(cwd, sizeof(cwd)) == nullptr ? "" : cwd);
 #else
   char cwd[GTEST_PATH_MAX_ + 1] = {'\0'};
   char* result = getcwd(cwd, sizeof(cwd));
-#if GTEST_OS_NACL
+#ifdef GTEST_OS_NACL
   
   
   
@@ -143,6 +150,44 @@ const char* FilePath::FindLastPathSeparator() const {
   }
 #endif
   return last_sep;
+}
+
+size_t FilePath::CalculateRootLength() const {
+  const auto& path = pathname_;
+  auto s = path.begin();
+  auto end = path.end();
+#ifdef GTEST_OS_WINDOWS
+  if (end - s >= 2 && s[1] == ':' && (end - s == 2 || IsPathSeparator(s[2])) &&
+      (('A' <= s[0] && s[0] <= 'Z') || ('a' <= s[0] && s[0] <= 'z'))) {
+    
+    s += 2;
+    if (s != end) {
+      ++s;
+    }
+  } else if (end - s >= 3 && IsPathSeparator(*s) && IsPathSeparator(*(s + 1)) &&
+             !IsPathSeparator(*(s + 2))) {
+    
+    s += 2;
+    
+    for (int i = 0; i < 2; ++i) {
+      while (s != end) {
+        bool stop = IsPathSeparator(*s);
+        ++s;
+        if (stop) {
+          break;
+        }
+      }
+    }
+  } else if (s != end && IsPathSeparator(*s)) {
+    
+    ++s;
+  }
+#else
+  if (s != end && IsPathSeparator(*s)) {
+    ++s;
+  }
+#endif
+  return static_cast<size_t>(s - path.begin());
 }
 
 
@@ -204,7 +249,7 @@ FilePath FilePath::ConcatPaths(const FilePath& directory,
 
 
 bool FilePath::FileOrDirectoryExists() const {
-#if GTEST_OS_WINDOWS_MOBILE
+#ifdef GTEST_OS_WINDOWS_MOBILE
   LPCWSTR unicode = String::AnsiToUtf16(pathname_.c_str());
   const DWORD attributes = GetFileAttributes(unicode);
   delete[] unicode;
@@ -219,7 +264,7 @@ bool FilePath::FileOrDirectoryExists() const {
 
 bool FilePath::DirectoryExists() const {
   bool result = false;
-#if GTEST_OS_WINDOWS
+#ifdef GTEST_OS_WINDOWS
   
   
   const FilePath& path(IsRootDirectory() ? *this
@@ -228,7 +273,7 @@ bool FilePath::DirectoryExists() const {
   const FilePath& path(*this);
 #endif
 
-#if GTEST_OS_WINDOWS_MOBILE
+#ifdef GTEST_OS_WINDOWS_MOBILE
   LPCWSTR unicode = String::AnsiToUtf16(path.c_str());
   const DWORD attributes = GetFileAttributes(unicode);
   delete[] unicode;
@@ -248,25 +293,13 @@ bool FilePath::DirectoryExists() const {
 
 
 bool FilePath::IsRootDirectory() const {
-#if GTEST_OS_WINDOWS
-  return pathname_.length() == 3 && IsAbsolutePath();
-#else
-  return pathname_.length() == 1 && IsPathSeparator(pathname_.c_str()[0]);
-#endif
+  size_t root_length = CalculateRootLength();
+  return root_length > 0 && root_length == pathname_.size() &&
+         IsPathSeparator(pathname_[root_length - 1]);
 }
 
 
-bool FilePath::IsAbsolutePath() const {
-  const char* const name = pathname_.c_str();
-#if GTEST_OS_WINDOWS
-  return pathname_.length() >= 3 &&
-         ((name[0] >= 'a' && name[0] <= 'z') ||
-          (name[0] >= 'A' && name[0] <= 'Z')) &&
-         name[1] == ':' && IsPathSeparator(name[2]);
-#else
-  return IsPathSeparator(name[0]);
-#endif
-}
+bool FilePath::IsAbsolutePath() const { return CalculateRootLength() > 0; }
 
 
 
@@ -303,7 +336,7 @@ bool FilePath::CreateDirectoriesRecursively() const {
     return false;
   }
 
-  if (pathname_.length() == 0 || this->DirectoryExists()) {
+  if (pathname_.empty() || this->DirectoryExists()) {
     return true;
   }
 
@@ -316,14 +349,16 @@ bool FilePath::CreateDirectoriesRecursively() const {
 
 
 bool FilePath::CreateFolder() const {
-#if GTEST_OS_WINDOWS_MOBILE
+#ifdef GTEST_OS_WINDOWS_MOBILE
   FilePath removed_sep(this->RemoveTrailingPathSeparator());
   LPCWSTR unicode = String::AnsiToUtf16(removed_sep.c_str());
   int result = CreateDirectory(unicode, nullptr) ? 0 : -1;
   delete[] unicode;
-#elif GTEST_OS_WINDOWS
+#elif defined(GTEST_OS_WINDOWS)
   int result = _mkdir(pathname_.c_str());
-#elif GTEST_OS_ESP8266 || GTEST_OS_XTENSA
+#elif defined(GTEST_OS_ESP8266) || defined(GTEST_OS_XTENSA) || \
+    defined(GTEST_OS_QURT) || defined(GTEST_OS_NXP_QN9090) ||  \
+    defined(GTEST_OS_NRF52)
   
   int result = 0;
 #else
@@ -347,17 +382,27 @@ FilePath FilePath::RemoveTrailingPathSeparator() const {
 
 
 
+
 void FilePath::Normalize() {
   auto out = pathname_.begin();
 
-  for (const char character : pathname_) {
+  auto i = pathname_.cbegin();
+#ifdef GTEST_OS_WINDOWS
+  
+  if (pathname_.end() - i >= 3 && IsPathSeparator(*i) &&
+      IsPathSeparator(*(i + 1)) && !IsPathSeparator(*(i + 2))) {
+    *(out++) = kPathSeparator;
+    *(out++) = kPathSeparator;
+  }
+#endif
+  while (i != pathname_.end()) {
+    const char character = *i;
     if (!IsPathSeparator(character)) {
       *(out++) = character;
     } else if (out == pathname_.begin() || *std::prev(out) != kPathSeparator) {
       *(out++) = kPathSeparator;
-    } else {
-      continue;
     }
+    ++i;
   }
 
   pathname_.erase(out, pathname_.end());
@@ -365,3 +410,5 @@ void FilePath::Normalize() {
 
 }  
 }  
+
+#endif  

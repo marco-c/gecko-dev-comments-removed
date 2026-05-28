@@ -664,6 +664,8 @@ typedef struct VP9_COMP {
   int mb_wiener_var_rows;
   int mb_wiener_var_cols;
   double *mi_ssim_rdmult_scaling_factors;
+  int mi_ssim_rdmult_scaling_factors_rows;
+  int mi_ssim_rdmult_scaling_factors_cols;
 
   int64_t *sb_mul_scale;
 
@@ -1064,7 +1066,7 @@ static INLINE YV12_BUFFER_CONFIG *get_ref_frame_buffer(
                                 : NULL;
 }
 
-static INLINE int get_token_alloc(int mb_rows, int mb_cols) {
+static INLINE int64_t get_token_alloc(int mb_rows, int mb_cols) {
   
   
   
@@ -1076,12 +1078,12 @@ static INLINE int get_token_alloc(int mb_rows, int mb_cols) {
       ALIGN_POWER_OF_TWO(mb_rows, MI_BLOCK_SIZE_LOG2 - 1);
   const int aligned_mb_cols =
       ALIGN_POWER_OF_TWO(mb_cols, MI_BLOCK_SIZE_LOG2 - 1);
-  return aligned_mb_rows * aligned_mb_cols * (16 * 16 * 3 + 4);
+  return (int64_t)aligned_mb_rows * aligned_mb_cols * (16 * 16 * 3 + 4);
 }
 
 
 
-static INLINE int allocated_tokens(TileInfo tile) {
+static INLINE int64_t allocated_tokens(TileInfo tile) {
   int tile_mb_rows = (tile.mi_row_end - tile.mi_row_start + 1) >> 1;
   int tile_mb_cols = (tile.mi_col_end - tile.mi_col_start + 1) >> 1;
 

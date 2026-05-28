@@ -51,7 +51,7 @@ GTEST_DECLARE_string_(death_test_style);
 
 namespace testing {
 
-#if GTEST_HAS_DEATH_TEST
+#ifdef GTEST_HAS_DEATH_TEST
 
 namespace internal {
 
@@ -203,7 +203,7 @@ class GTEST_API_ ExitedWithCode {
   const int exit_code_;
 };
 
-#if !GTEST_OS_WINDOWS && !GTEST_OS_FUCHSIA
+#if !defined(GTEST_OS_WINDOWS) && !defined(GTEST_OS_FUCHSIA)
 
 
 class GTEST_API_ KilledBySignal {
@@ -311,13 +311,13 @@ class GTEST_API_ KilledBySignal {
 
 
 
-#define GTEST_UNSUPPORTED_DEATH_TEST(statement, regex, terminator)             \
+#define GTEST_UNSUPPORTED_DEATH_TEST(statement, regex_or_matcher, terminator)  \
   GTEST_AMBIGUOUS_ELSE_BLOCKER_                                                \
   if (::testing::internal::AlwaysTrue()) {                                     \
     GTEST_LOG_(WARNING) << "Death tests are not supported on this platform.\n" \
                         << "Statement '" #statement "' cannot be verified.";   \
   } else if (::testing::internal::AlwaysFalse()) {                             \
-    ::testing::internal::RE::PartialMatch(".*", (regex));                      \
+    ::testing::internal::MakeDeathTestMatcher(regex_or_matcher);               \
     GTEST_SUPPRESS_UNREACHABLE_CODE_WARNING_BELOW_(statement);                 \
     terminator;                                                                \
   } else                                                                       \
@@ -328,7 +328,7 @@ class GTEST_API_ KilledBySignal {
 
 
 
-#if GTEST_HAS_DEATH_TEST
+#ifdef GTEST_HAS_DEATH_TEST
 #define EXPECT_DEATH_IF_SUPPORTED(statement, regex) \
   EXPECT_DEATH(statement, regex)
 #define ASSERT_DEATH_IF_SUPPORTED(statement, regex) \

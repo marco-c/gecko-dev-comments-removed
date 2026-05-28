@@ -50,9 +50,18 @@
 
 #include <limits>
 #include <memory>
+#include <ostream>
 #include <sstream>
+#include <string>
 
 #include "gtest/internal/gtest-port.h"
+
+#ifdef GTEST_HAS_ABSL
+#include <type_traits>
+
+#include "absl/strings/has_absl_stringify.h"
+#include "absl/strings/str_cat.h"
+#endif  
 
 GTEST_DISABLE_MSC_WARNINGS_PUSH_(4251 \
 )
@@ -110,7 +119,16 @@ class GTEST_API_ Message {
   }
 
   
-  template <typename T>
+  
+  
+  template <
+      typename T
+#ifdef GTEST_HAS_ABSL
+      ,
+      typename std::enable_if<!absl::HasAbslStringify<T>::value,  
+                              int>::type = 0
+#endif  
+      >
   inline Message& operator<<(const T& val) {
         
     
@@ -130,6 +148,21 @@ class GTEST_API_ Message {
     *ss_ << val;
     return *this;
   }
+
+#ifdef GTEST_HAS_ABSL
+  
+  
+  template <typename T,
+            typename std::enable_if<absl::HasAbslStringify<T>::value,  
+                                    int>::type = 0>
+  inline Message& operator<<(const T& val) {
+    
+    
+    using ::operator<<;
+    *ss_ << absl::StrCat(val);
+    return *this;
+  }
+#endif  
 
   
   

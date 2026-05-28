@@ -41,7 +41,7 @@
 
 #include "gtest/internal/gtest-port.h"
 
-#if GTEST_OS_LINUX
+#ifdef GTEST_OS_LINUX
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -57,12 +57,13 @@
 #include <string.h>
 
 #include <cstdint>
-#include <iomanip>
+#include <functional>
 #include <limits>
 #include <map>
 #include <set>
 #include <string>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 #include "gtest/gtest-message.h"
@@ -289,38 +290,35 @@ class FloatingPoint {
   
   
   
-  explicit FloatingPoint(const RawType& x) { u_.value_ = x; }
+  explicit FloatingPoint(RawType x) { memcpy(&bits_, &x, sizeof(x)); }
 
   
 
   
   
   
-  static RawType ReinterpretBits(const Bits bits) {
-    FloatingPoint fp(0);
-    fp.u_.bits_ = bits;
-    return fp.u_.value_;
+  static RawType ReinterpretBits(Bits bits) {
+    RawType fp;
+    memcpy(&fp, &bits, sizeof(fp));
+    return fp;
   }
 
   
   static RawType Infinity() { return ReinterpretBits(kExponentBitMask); }
 
   
-  static RawType Max();
 
   
+  const Bits& bits() const { return bits_; }
 
   
-  const Bits& bits() const { return u_.bits_; }
+  Bits exponent_bits() const { return kExponentBitMask & bits_; }
 
   
-  Bits exponent_bits() const { return kExponentBitMask & u_.bits_; }
+  Bits fraction_bits() const { return kFractionBitMask & bits_; }
 
   
-  Bits fraction_bits() const { return kFractionBitMask & u_.bits_; }
-
-  
-  Bits sign_bit() const { return kSignBitMask & u_.bits_; }
+  Bits sign_bit() const { return kSignBitMask & bits_; }
 
   
   bool is_nan() const {
@@ -340,17 +338,11 @@ class FloatingPoint {
     
     if (is_nan() || rhs.is_nan()) return false;
 
-    return DistanceBetweenSignAndMagnitudeNumbers(u_.bits_, rhs.u_.bits_) <=
-           kMaxUlps;
+    return DistanceBetweenSignAndMagnitudeNumbers(bits_, rhs.bits_) <= kMaxUlps;
   }
 
  private:
   
-  union FloatingPointUnion {
-    RawType value_;  
-    Bits bits_;      
-  };
-
   
   
   
@@ -365,8 +357,7 @@ class FloatingPoint {
   
   
   
-  
-  static Bits SignAndMagnitudeToBiased(const Bits& sam) {
+  static Bits SignAndMagnitudeToBiased(Bits sam) {
     if (kSignBitMask & sam) {
       
       return ~sam + 1;
@@ -378,26 +369,14 @@ class FloatingPoint {
 
   
   
-  static Bits DistanceBetweenSignAndMagnitudeNumbers(const Bits& sam1,
-                                                     const Bits& sam2) {
+  static Bits DistanceBetweenSignAndMagnitudeNumbers(Bits sam1, Bits sam2) {
     const Bits biased1 = SignAndMagnitudeToBiased(sam1);
     const Bits biased2 = SignAndMagnitudeToBiased(sam2);
     return (biased1 >= biased2) ? (biased1 - biased2) : (biased2 - biased1);
   }
 
-  FloatingPointUnion u_;
+  Bits bits_;  
 };
-
-
-
-template <>
-inline float FloatingPoint<float>::Max() {
-  return FLT_MAX;
-}
-template <>
-inline double FloatingPoint<double>::Max() {
-  return DBL_MAX;
-}
 
 
 
@@ -447,7 +426,7 @@ GTEST_API_ TypeId GetTestTypeId();
 
 class TestFactoryBase {
  public:
-  virtual ~TestFactoryBase() {}
+  virtual ~TestFactoryBase() = default;
 
   
   
@@ -469,7 +448,7 @@ class TestFactoryImpl : public TestFactoryBase {
   Test* CreateTest() override { return new TestClass; }
 };
 
-#if GTEST_OS_WINDOWS
+#ifdef GTEST_OS_WINDOWS
 
 
 
@@ -487,8 +466,8 @@ using SetUpTestSuiteFunc = void (*)();
 using TearDownTestSuiteFunc = void (*)();
 
 struct CodeLocation {
-  CodeLocation(const std::string& a_file, int a_line)
-      : file(a_file), line(a_line) {}
+  CodeLocation(std::string a_file, int a_line)
+      : file(std::move(a_file)), line(a_line) {}
 
   std::string file;
   int line;
@@ -577,7 +556,7 @@ struct SuiteApiResolver : T {
 
 
 GTEST_API_ TestInfo* MakeAndRegisterTestInfo(
-    const char* test_suite_name, const char* name, const char* type_param,
+    std::string test_suite_name, const char* name, const char* type_param,
     const char* value_param, CodeLocation code_location,
     TypeId fixture_class_id, SetUpTestSuiteFunc set_up_tc,
     TearDownTestSuiteFunc tear_down_tc, TestFactoryBase* factory);
@@ -608,8 +587,7 @@ class GTEST_API_ TypedTestSuitePState {
       fflush(stderr);
       posix::Abort();
     }
-    registered_tests_.insert(
-        ::std::make_pair(test_name, CodeLocation(file, line)));
+    registered_tests_.emplace(test_name, CodeLocation(file, line));
     return true;
   }
 
@@ -631,7 +609,7 @@ class GTEST_API_ TypedTestSuitePState {
                                         const char* registered_tests);
 
  private:
-  typedef ::std::map<std::string, CodeLocation> RegisteredTestsMap;
+  typedef ::std::map<std::string, CodeLocation, std::less<>> RegisteredTestsMap;
 
   bool registered_;
   RegisteredTestsMap registered_tests_;
@@ -713,7 +691,7 @@ class TypeParameterizedTest {
   
   
   
-  static bool Register(const char* prefix, const CodeLocation& code_location,
+  static bool Register(const char* prefix, CodeLocation code_location,
                        const char* case_name, const char* test_names, int index,
                        const std::vector<std::string>& type_names =
                            GenerateNames<DefaultNameGenerator, Types>()) {
@@ -725,8 +703,7 @@ class TypeParameterizedTest {
     
     MakeAndRegisterTestInfo(
         (std::string(prefix) + (prefix[0] == '\0' ? "" : "/") + case_name +
-         "/" + type_names[static_cast<size_t>(index)])
-            .c_str(),
+         "/" + type_names[static_cast<size_t>(index)]),
         StripTrailingSpaces(GetPrefixUntilComma(test_names)).c_str(),
         GetTypeName<Type>().c_str(),
         nullptr,  
@@ -738,13 +715,9 @@ class TypeParameterizedTest {
         new TestFactoryImpl<TestClass>);
 
     
-    return TypeParameterizedTest<Fixture, TestSel,
-                                 typename Types::Tail>::Register(prefix,
-                                                                 code_location,
-                                                                 case_name,
-                                                                 test_names,
-                                                                 index + 1,
-                                                                 type_names);
+    return TypeParameterizedTest<Fixture, TestSel, typename Types::Tail>::
+        Register(prefix, std::move(code_location), case_name, test_names,
+                 index + 1, type_names);
   }
 };
 
@@ -752,7 +725,7 @@ class TypeParameterizedTest {
 template <GTEST_TEMPLATE_ Fixture, class TestSel>
 class TypeParameterizedTest<Fixture, TestSel, internal::None> {
  public:
-  static bool Register(const char* , const CodeLocation&,
+  static bool Register(const char* , CodeLocation,
                        const char* , const char* ,
                        int ,
                        const std::vector<std::string>& =
@@ -799,7 +772,8 @@ class TypeParameterizedTestSuite {
 
     
     return TypeParameterizedTestSuite<Fixture, typename Tests::Tail,
-                                      Types>::Register(prefix, code_location,
+                                      Types>::Register(prefix,
+                                                       std::move(code_location),
                                                        state, case_name,
                                                        SkipComma(test_names),
                                                        type_names);
@@ -829,8 +803,7 @@ class TypeParameterizedTestSuite<Fixture, internal::None, Types> {
 
 
 
-GTEST_API_ std::string GetCurrentOsStackTraceExceptTop(UnitTest* unit_test,
-                                                       int skip_count);
+GTEST_API_ std::string GetCurrentOsStackTraceExceptTop(int skip_count);
 
 
 
@@ -912,9 +885,6 @@ class HasDebugStringAndShortDebugString {
   static constexpr bool value =
       HasDebugStringType::value && HasShortDebugStringType::value;
 };
-
-template <typename T>
-constexpr bool HasDebugStringAndShortDebugString<T>::value;
 
 
 
@@ -1154,40 +1124,6 @@ class NativeArray {
   void (NativeArray::*clone_)(const Element*, size_t);
 };
 
-
-template <size_t... Is>
-struct IndexSequence {
-  using type = IndexSequence;
-};
-
-
-template <bool plus_one, typename T, size_t sizeofT>
-struct DoubleSequence;
-template <size_t... I, size_t sizeofT>
-struct DoubleSequence<true, IndexSequence<I...>, sizeofT> {
-  using type = IndexSequence<I..., (sizeofT + I)..., 2 * sizeofT>;
-};
-template <size_t... I, size_t sizeofT>
-struct DoubleSequence<false, IndexSequence<I...>, sizeofT> {
-  using type = IndexSequence<I..., (sizeofT + I)...>;
-};
-
-
-
-template <size_t N>
-struct MakeIndexSequenceImpl
-    : DoubleSequence<N % 2 == 1, typename MakeIndexSequenceImpl<N / 2>::type,
-                     N / 2>::type {};
-
-template <>
-struct MakeIndexSequenceImpl<0> : IndexSequence<> {};
-
-template <size_t N>
-using MakeIndexSequence = typename MakeIndexSequenceImpl<N>::type;
-
-template <typename... T>
-using IndexSequenceFor = typename MakeIndexSequence<sizeof...(T)>::type;
-
 template <size_t>
 struct Ignore {
   Ignore(...);  
@@ -1196,7 +1132,7 @@ struct Ignore {
 template <typename>
 struct ElemFromListImpl;
 template <size_t... I>
-struct ElemFromListImpl<IndexSequence<I...>> {
+struct ElemFromListImpl<std::index_sequence<I...>> {
   
   
   
@@ -1207,9 +1143,8 @@ struct ElemFromListImpl<IndexSequence<I...>> {
 
 template <size_t N, typename... T>
 struct ElemFromList {
-  using type =
-      decltype(ElemFromListImpl<typename MakeIndexSequence<N>::type>::Apply(
-          static_cast<T (*)()>(nullptr)...));
+  using type = decltype(ElemFromListImpl<std::make_index_sequence<N>>::Apply(
+      static_cast<T (*)()>(nullptr)...));
 };
 
 struct FlatTupleConstructTag {};
@@ -1234,9 +1169,9 @@ template <typename Derived, typename Idx>
 struct FlatTupleBase;
 
 template <size_t... Idx, typename... T>
-struct FlatTupleBase<FlatTuple<T...>, IndexSequence<Idx...>>
+struct FlatTupleBase<FlatTuple<T...>, std::index_sequence<Idx...>>
     : FlatTupleElemBase<FlatTuple<T...>, Idx>... {
-  using Indices = IndexSequence<Idx...>;
+  using Indices = std::index_sequence<Idx...>;
   FlatTupleBase() = default;
   template <typename... Args>
   explicit FlatTupleBase(FlatTupleConstructTag, Args&&... args)
@@ -1276,9 +1211,10 @@ struct FlatTupleBase<FlatTuple<T...>, IndexSequence<Idx...>>
 template <typename... T>
 class FlatTuple
     : private FlatTupleBase<FlatTuple<T...>,
-                            typename MakeIndexSequence<sizeof...(T)>::type> {
-  using Indices = typename FlatTupleBase<
-      FlatTuple<T...>, typename MakeIndexSequence<sizeof...(T)>::type>::Indices;
+                            std::make_index_sequence<sizeof...(T)>> {
+  using Indices =
+      typename FlatTupleBase<FlatTuple<T...>,
+                             std::make_index_sequence<sizeof...(T)>>::Indices;
 
  public:
   FlatTuple() = default;
@@ -1292,30 +1228,40 @@ class FlatTuple
 
 
 
-GTEST_INTERNAL_DEPRECATED(
+[[deprecated(
     "INSTANTIATE_TEST_CASE_P is deprecated, please use "
-    "INSTANTIATE_TEST_SUITE_P")
-constexpr bool InstantiateTestCase_P_IsDeprecated() { return true; }
+    "INSTANTIATE_TEST_SUITE_P")]]
+constexpr bool InstantiateTestCase_P_IsDeprecated() {
+  return true;
+}
 
-GTEST_INTERNAL_DEPRECATED(
+[[deprecated(
     "TYPED_TEST_CASE_P is deprecated, please use "
-    "TYPED_TEST_SUITE_P")
-constexpr bool TypedTestCase_P_IsDeprecated() { return true; }
+    "TYPED_TEST_SUITE_P")]]
+constexpr bool TypedTestCase_P_IsDeprecated() {
+  return true;
+}
 
-GTEST_INTERNAL_DEPRECATED(
+[[deprecated(
     "TYPED_TEST_CASE is deprecated, please use "
-    "TYPED_TEST_SUITE")
-constexpr bool TypedTestCaseIsDeprecated() { return true; }
+    "TYPED_TEST_SUITE")]]
+constexpr bool TypedTestCaseIsDeprecated() {
+  return true;
+}
 
-GTEST_INTERNAL_DEPRECATED(
+[[deprecated(
     "REGISTER_TYPED_TEST_CASE_P is deprecated, please use "
-    "REGISTER_TYPED_TEST_SUITE_P")
-constexpr bool RegisterTypedTestCase_P_IsDeprecated() { return true; }
+    "REGISTER_TYPED_TEST_SUITE_P")]]
+constexpr bool RegisterTypedTestCase_P_IsDeprecated() {
+  return true;
+}
 
-GTEST_INTERNAL_DEPRECATED(
+[[deprecated(
     "INSTANTIATE_TYPED_TEST_CASE_P is deprecated, please use "
-    "INSTANTIATE_TYPED_TEST_SUITE_P")
-constexpr bool InstantiateTypedTestCase_P_IsDeprecated() { return true; }
+    "INSTANTIATE_TYPED_TEST_SUITE_P")]]
+constexpr bool InstantiateTypedTestCase_P_IsDeprecated() {
+  return true;
+}
 
 }  
 }  
@@ -1508,19 +1454,20 @@ class NeverThrown {
              gtest_ar_, text, #actual, #expected)                     \
              .c_str())
 
-#define GTEST_TEST_NO_FATAL_FAILURE_(statement, fail)                          \
-  GTEST_AMBIGUOUS_ELSE_BLOCKER_                                                \
-  if (::testing::internal::AlwaysTrue()) {                                     \
-    ::testing::internal::HasNewFatalFailureHelper gtest_fatal_failure_checker; \
-    GTEST_SUPPRESS_UNREACHABLE_CODE_WARNING_BELOW_(statement);                 \
-    if (gtest_fatal_failure_checker.has_new_fatal_failure()) {                 \
-      goto GTEST_CONCAT_TOKEN_(gtest_label_testnofatal_, __LINE__);            \
-    }                                                                          \
-  } else                                                                       \
-    GTEST_CONCAT_TOKEN_(gtest_label_testnofatal_, __LINE__)                    \
-        : fail("Expected: " #statement                                         \
-               " doesn't generate new fatal "                                  \
-               "failures in the current thread.\n"                             \
+#define GTEST_TEST_NO_FATAL_FAILURE_(statement, fail)               \
+  GTEST_AMBIGUOUS_ELSE_BLOCKER_                                     \
+  if (::testing::internal::AlwaysTrue()) {                          \
+    const ::testing::internal::HasNewFatalFailureHelper             \
+        gtest_fatal_failure_checker;                                \
+    GTEST_SUPPRESS_UNREACHABLE_CODE_WARNING_BELOW_(statement);      \
+    if (gtest_fatal_failure_checker.has_new_fatal_failure()) {      \
+      goto GTEST_CONCAT_TOKEN_(gtest_label_testnofatal_, __LINE__); \
+    }                                                               \
+  } else /* NOLINT */                                               \
+    GTEST_CONCAT_TOKEN_(gtest_label_testnofatal_, __LINE__)         \
+        : fail("Expected: " #statement                              \
+               " doesn't generate new fatal "                       \
+               "failures in the current thread.\n"                  \
                "  Actual: it does.")
 
 
@@ -1551,7 +1498,7 @@ class NeverThrown {
                                                                                \
    private:                                                                    \
     void TestBody() override;                                                  \
-    static ::testing::TestInfo* const test_info_ GTEST_ATTRIBUTE_UNUSED_;      \
+    [[maybe_unused]] static ::testing::TestInfo* const test_info_;             \
   };                                                                           \
                                                                                \
   ::testing::TestInfo* const GTEST_TEST_CLASS_NAME_(test_suite_name,           \

@@ -44,7 +44,9 @@
 #include <algorithm>
 #include <cstdint>
 #include <memory>
+#include <set>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "gtest/internal/gtest-port.h"
@@ -54,7 +56,7 @@
 #include <netdb.h>      
 #endif
 
-#if GTEST_OS_WINDOWS
+#ifdef GTEST_OS_WINDOWS
 #include <windows.h>  
 #endif                
 
@@ -90,6 +92,7 @@ GTEST_API_ TimeInMillis GetTimeInMillis();
 
 
 GTEST_API_ bool ShouldUseColor(bool stdout_is_tty);
+
 
 
 GTEST_API_ std::string FormatTimeInMillisAsSeconds(TimeInMillis ms);
@@ -212,7 +215,7 @@ class GTestFlagSaver {
   int32_t stack_trace_depth_;
   std::string stream_result_to_;
   bool throw_on_failure_;
-} GTEST_ATTRIBUTE_UNUSED_;
+};
 
 
 
@@ -382,13 +385,13 @@ class GTEST_API_ UnitTestOptions {
   static bool FilterMatchesTest(const std::string& test_suite_name,
                                 const std::string& test_name);
 
-#if GTEST_OS_WINDOWS
+#ifdef GTEST_OS_WINDOWS
   
 
   
   
   
-  static int GTestShouldProcessSEH(DWORD exception_code);
+  static int GTestProcessSEH(DWORD seh_code, const char* location);
 #endif  
 
   
@@ -396,15 +399,17 @@ class GTEST_API_ UnitTestOptions {
   static bool MatchesFilter(const std::string& name, const char* filter);
 };
 
+#if GTEST_HAS_FILE_SYSTEM
 
 
 GTEST_API_ FilePath GetCurrentExecutableName();
+#endif  
 
 
 class OsStackTraceGetterInterface {
  public:
-  OsStackTraceGetterInterface() {}
-  virtual ~OsStackTraceGetterInterface() {}
+  OsStackTraceGetterInterface() = default;
+  virtual ~OsStackTraceGetterInterface() = default;
 
   
   
@@ -432,13 +437,13 @@ class OsStackTraceGetterInterface {
 
 class OsStackTraceGetter : public OsStackTraceGetterInterface {
  public:
-  OsStackTraceGetter() {}
+  OsStackTraceGetter() = default;
 
   std::string CurrentStackTrace(int max_depth, int skip_count) override;
   void UponLeavingGTest() override;
 
  private:
-#if GTEST_HAS_ABSL
+#ifdef GTEST_HAS_ABSL
   Mutex mutex_;  
 
   
@@ -645,13 +650,15 @@ class GTEST_API_ UnitTestImpl {
   
   
   
-  TestSuite* GetTestSuite(const char* test_suite_name, const char* type_param,
+  TestSuite* GetTestSuite(const std::string& test_suite_name,
+                          const char* type_param,
                           internal::SetUpTestSuiteFunc set_up_tc,
                           internal::TearDownTestSuiteFunc tear_down_tc);
 
 
 #ifndef GTEST_REMOVE_LEGACY_TEST_CASEAPI_
-  TestCase* GetTestCase(const char* test_case_name, const char* type_param,
+  TestCase* GetTestCase(const std::string& test_case_name,
+                        const char* type_param,
                         internal::SetUpTestSuiteFunc set_up_tc,
                         internal::TearDownTestSuiteFunc tear_down_tc) {
     return GetTestSuite(test_case_name, type_param, set_up_tc, tear_down_tc);
@@ -668,7 +675,7 @@ class GTEST_API_ UnitTestImpl {
   void AddTestInfo(internal::SetUpTestSuiteFunc set_up_tc,
                    internal::TearDownTestSuiteFunc tear_down_tc,
                    TestInfo* test_info) {
-#if GTEST_HAS_DEATH_TEST
+#if GTEST_HAS_FILE_SYSTEM
     
     
     
@@ -677,13 +684,13 @@ class GTEST_API_ UnitTestImpl {
     
     
     if (original_working_dir_.IsEmpty()) {
-      original_working_dir_.Set(FilePath::GetCurrentDir());
+      original_working_dir_ = FilePath::GetCurrentDir();
       GTEST_CHECK_(!original_working_dir_.IsEmpty())
           << "Failed to get the current working directory.";
     }
 #endif  
 
-    GetTestSuite(test_info->test_suite_name(), test_info->type_param(),
+    GetTestSuite(test_info->test_suite_name_, test_info->type_param(),
                  set_up_tc, tear_down_tc)
         ->AddTestInfo(test_info);
   }
@@ -703,18 +710,6 @@ class GTEST_API_ UnitTestImpl {
   internal::TypeParameterizedTestSuiteRegistry&
   type_parameterized_test_registry() {
     return type_parameterized_test_registry_;
-  }
-
-  
-  void set_current_test_suite(TestSuite* a_current_test_suite) {
-    current_test_suite_ = a_current_test_suite;
-  }
-
-  
-  
-  
-  void set_current_test_info(TestInfo* a_current_test_info) {
-    current_test_info_ = a_current_test_info;
   }
 
   
@@ -774,7 +769,7 @@ class GTEST_API_ UnitTestImpl {
     return gtest_trace_stack_.get();
   }
 
-#if GTEST_HAS_DEATH_TEST
+#ifdef GTEST_HAS_DEATH_TEST
   void InitDeathTestSubprocessControlInfo() {
     internal_run_death_test_flag_.reset(ParseInternalRunDeathTestFlag());
   }
@@ -831,6 +826,16 @@ class GTEST_API_ UnitTestImpl {
   bool catch_exceptions() const { return catch_exceptions_; }
 
  private:
+  
+  
+  bool ShouldWarnIfNoTestsMatchFilter() const;
+
+  struct CompareTestSuitesByPointer {
+    bool operator()(const TestSuite* lhs, const TestSuite* rhs) const {
+      return lhs->name_ < rhs->name_;
+    }
+  };
+
   friend class ::testing::UnitTest;
 
   
@@ -838,11 +843,25 @@ class GTEST_API_ UnitTestImpl {
   void set_catch_exceptions(bool value) { catch_exceptions_ = value; }
 
   
-  UnitTest* const parent_;
+  void set_current_test_suite(TestSuite* a_current_test_suite) {
+    current_test_suite_ = a_current_test_suite;
+  }
 
   
   
+  
+  void set_current_test_info(TestInfo* a_current_test_info) {
+    current_test_info_ = a_current_test_info;
+  }
+
+  
+  UnitTest* const parent_;
+
+#if GTEST_HAS_FILE_SYSTEM
+  
+  
   internal::FilePath original_working_dir_;
+#endif  
 
   
   DefaultGlobalTestPartResultReporter default_global_test_part_result_reporter_;
@@ -850,7 +869,7 @@ class GTEST_API_ UnitTestImpl {
       default_per_thread_test_part_result_reporter_;
 
   
-  TestPartResultReporterInterface* global_test_part_result_repoter_;
+  TestPartResultReporterInterface* global_test_part_result_reporter_;
 
   
   internal::Mutex global_test_part_result_reporter_mutex_;
@@ -866,6 +885,9 @@ class GTEST_API_ UnitTestImpl {
   
   
   std::vector<TestSuite*> test_suites_;
+
+  
+  std::unordered_map<std::string, TestSuite*> test_suites_by_name_;
 
   
   
@@ -937,7 +959,7 @@ class GTEST_API_ UnitTestImpl {
   
   TimeInMillis elapsed_time_;
 
-#if GTEST_HAS_DEATH_TEST
+#ifdef GTEST_HAS_DEATH_TEST
   
   
   std::unique_ptr<InternalRunDeathTestFlag> internal_run_death_test_flag_;
@@ -961,7 +983,7 @@ inline UnitTestImpl* GetUnitTestImpl() {
   return UnitTest::GetInstance()->impl();
 }
 
-#if GTEST_USES_SIMPLE_RE
+#ifdef GTEST_USES_SIMPLE_RE
 
 
 
@@ -987,7 +1009,7 @@ GTEST_API_ bool MatchRegexAnywhere(const char* regex, const char* str);
 GTEST_API_ void ParseGoogleTestFlagsOnly(int* argc, char** argv);
 GTEST_API_ void ParseGoogleTestFlagsOnly(int* argc, wchar_t** argv);
 
-#if GTEST_HAS_DEATH_TEST
+#ifdef GTEST_HAS_DEATH_TEST
 
 
 
@@ -1058,7 +1080,7 @@ class StreamingListener : public EmptyTestEventListener {
   
   class AbstractSocketWriter {
    public:
-    virtual ~AbstractSocketWriter() {}
+    virtual ~AbstractSocketWriter() = default;
 
     
     virtual void Send(const std::string& message) = 0;
