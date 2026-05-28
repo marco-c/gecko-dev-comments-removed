@@ -1190,8 +1190,14 @@ var gSync = {
     this.enableSendTabIfValidTab();
     let sendTabTargets = this.getSendTabTargets();
 
-    if (
-      fxaStatus == "unverified" ||
+    
+    
+    if (fxaStatus === "unverified") {
+      const appMenuPanel = document.getElementById("appMenu-popup");
+      const anchorIsInAppMenu = appMenuPanel.contains(anchor);
+      sendTabButton.hidden = anchorIsInAppMenu;
+      sendTabButton.setAttribute("data-l10n-id", "fxa-menu-send-to-mobile");
+    } else if (
       !sendTabTargets.length ||
       this.hasOnlyMobileSendTabTargets(sendTabTargets)
     ) {
