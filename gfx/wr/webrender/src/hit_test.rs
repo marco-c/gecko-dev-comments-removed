@@ -205,9 +205,14 @@ impl HitTestingScene {
             let src_clip_node = clip_tree_builder.get_node(clip_node_id);
             let clip_item = &interners.clip[src_clip_node.handle];
 
+            
+            
+            
+            
+            
             let clip_node = HitTestClipNode::new(
                 &clip_item.key,
-                src_clip_node.clip_rect,
+                src_clip_node.unsnapped_clip_rect,
                 interners,
                 src_clip_node.parent,
                 src_clip_node.spatial_node_index,

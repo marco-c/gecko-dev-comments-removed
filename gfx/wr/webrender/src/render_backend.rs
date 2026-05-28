@@ -142,9 +142,11 @@ impl DataStores {
     
     
     
+    
     pub fn get_local_prim_rect(
         &self,
         prim_instance: &PrimitiveInstance,
+        snapped_local_rect: LayoutRect,
         pictures: &[PictureInstance],
         surfaces: &[SurfaceInfo],
     ) -> LayoutRect {
@@ -163,16 +165,18 @@ impl DataStores {
                     }
                 }
             }
-            _ => prim_instance.prim_rect,
+            _ => snapped_local_rect,
         }
     }
 
     
     
     
+    
     pub fn get_local_prim_coverage_rect(
         &self,
         prim_instance: &PrimitiveInstance,
+        snapped_local_rect: LayoutRect,
         pictures: &[PictureInstance],
         surfaces: &[SurfaceInfo],
     ) -> LayoutRect {
@@ -191,7 +195,7 @@ impl DataStores {
                     }
                 }
             }
-            _ => prim_instance.prim_rect,
+            _ => snapped_local_rect,
         }
     }
 

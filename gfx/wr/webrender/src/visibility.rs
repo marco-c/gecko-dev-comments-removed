@@ -227,9 +227,18 @@ pub struct PrimitiveDrawHeader {
     
     
     pub compositor_surface_kind: CompositorSurfaceKind,
+
+    
+    
+    
+    
+    
+    pub snapped_local_rect: LayoutRect,
 }
 
 impl PrimitiveDrawHeader {
+    
+    
     pub fn new() -> Self {
         PrimitiveDrawHeader {
             prim_instance_index: PrimitiveInstanceIndex::INVALID,
@@ -239,6 +248,7 @@ impl PrimitiveDrawHeader {
             kind_scratch: KindScratchHandle::None,
             segment_instance_index: SegmentInstanceIndex::UNUSED,
             compositor_surface_kind: CompositorSurfaceKind::Blit,
+            snapped_local_rect: LayoutRect::zero(),
         }
     }
 
@@ -409,6 +419,7 @@ pub fn update_prim_visibility(
 
             let local_coverage_rect = frame_state.data_stores.get_local_prim_coverage_rect(
                 prim_instance,
+                frame_state.scratch.primitive.frame.draws[prim_instance_index].snapped_local_rect,
                 &store.pictures,
                 frame_state.surfaces,
             );
