@@ -165,6 +165,7 @@ typedef struct {
                           
                           
                           
+  size_t arena_run_header;
 } jemalloc_stats_t;
 
 typedef struct {
