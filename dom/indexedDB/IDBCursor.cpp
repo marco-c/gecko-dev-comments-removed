@@ -180,6 +180,11 @@ void IDBTypedCursor<CursorType>::Reset() {
   AssertIsOnOwningThread();
 
   if constexpr (!IsKeyOnlyCursor) {
+    
+    
+    
+    
+    
     IDBObjectStore::ClearCloneReadInfo(mData.mCloneInfo);
   }
 
@@ -316,9 +321,6 @@ void IDBTypedCursor<CursorType>::GetValue(JSContext* const aCx,
         aRv.Throw(NS_ERROR_DOM_DATA_CLONE_ERR);
         return;
       }
-
-      
-      IDBObjectStore::ClearCloneReadInfo(mData.mCloneInfo);
 
       mCachedValue = val;
       mHaveCachedValue = true;

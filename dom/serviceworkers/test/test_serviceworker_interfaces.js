@@ -407,6 +407,8 @@ let interfaceNamesInGlobalScope = [
   
   "IDBOpenDBRequest",
   
+  "IDBRecord",
+  
   "IDBRequest",
   
   "IDBTransaction",

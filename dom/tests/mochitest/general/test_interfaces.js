@@ -855,6 +855,8 @@ let interfaceNamesInGlobalScope = [
   
   { name: "IDBOpenDBRequest", insecureContext: true },
   
+  { name: "IDBRecord", insecureContext: true },
+  
   { name: "IDBRequest", insecureContext: true },
   
   { name: "IDBTransaction", insecureContext: true },

@@ -100,12 +100,30 @@ index_get_all_records_test(
     'Direction: prev');
 
 index_get_all_records_test(
-     'out-of-line-not-unique',
-     {direction: 'nextunique'}, 'Direction: nextunique');
+     'out-of-line',  {direction: 'nextunique'},
+    'Direction: nextunique');
+
+index_get_all_records_test(
+     'out-of-line',  {direction: 'prevunique'},
+    'Direction: prevunique');
 
 index_get_all_records_test(
      'out-of-line-not-unique',
-     {direction: 'prevunique'}, 'Direction: prevunique');
+     {direction: 'nextunique'},
+    'Direction: nextunique with duplicate index keys');
+
+index_get_all_records_test(
+     'out-of-line-not-unique',
+     {direction: 'prevunique'},
+    'Direction: prevunique with duplicate index keys');
+
+index_get_all_records_test(
+     'out-of-line-multi',  {direction: 'nextunique'},
+    'Direction: nextunique with multi-entry index');
+
+index_get_all_records_test(
+     'out-of-line-multi',  {direction: 'prevunique'},
+    'Direction: prevunique with multi-entry index');
 
 index_get_all_records_test(
      'out-of-line',

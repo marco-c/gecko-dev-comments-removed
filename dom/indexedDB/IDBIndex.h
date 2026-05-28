@@ -8,6 +8,7 @@
 #include "js/RootingAPI.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/IDBCursorBinding.h"
+#include "mozilla/dom/indexedDB/PBackgroundIDBSharedTypes.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsISupports.h"
 #include "nsTArrayForwardDeclare.h"
@@ -28,7 +29,6 @@ template <typename>
 class Sequence;
 
 namespace indexedDB {
-class IndexMetadata;
 class KeyPath;
 }  
 
@@ -115,7 +115,7 @@ class IDBIndex final : public nsISupports, public nsWrapperCache {
                                          ErrorResult& aRv);
 
   [[nodiscard]] RefPtr<IDBRequest> GetAll(JSContext* aCx,
-                                          JS::Handle<JS::Value> aKey,
+                                          JS::Handle<JS::Value> aQueryOrOptions,
                                           const Optional<uint32_t>& aLimit,
                                           ErrorResult& aRv);
 
@@ -159,9 +159,25 @@ class IDBIndex final : public nsISupports, public nsWrapperCache {
                                                JS::Handle<JS::Value> aKey,
                                                ErrorResult& aRv);
 
+  enum class GetRequestType : uint8_t {
+    Value,   
+    Key,     
+    Record,  
+  };
+
+  
+  
+  
+  
+  
+  template <typename ParseFn>
   [[nodiscard]] RefPtr<IDBRequest> GetAllInternal(
-      bool aKeysOnly, JSContext* aCx, JS::Handle<JS::Value> aKey,
-      const Optional<uint32_t>& aLimit, ErrorResult& aRv);
+      GetRequestType aType, JSContext* aCx, const ParseFn& aParseOptionsFn,
+      ErrorResult& aRv);
+
+  
+  indexedDB::RequestParams CreateRequestParams(
+      GetRequestType aType, const indexedDB::GetAllOptions& aOptions);
 
   [[nodiscard]] RefPtr<IDBRequest> OpenCursorInternal(
       bool aKeysOnly, JSContext* aCx, JS::Handle<JS::Value> aRange,
