@@ -16,11 +16,25 @@ ChromeUtils.defineESModuleGetters(this, {
 const kBaseUri = Services.io.newURI("https://example.com");
 const kInnerUri = Services.io.newURI("https://example.com/somewhere/else");
 
-let gFaviconUri;
-let gBigFaviconUri;
-let gFaviconHttpUri;
-let gBigFaviconHttpUri;
-let gFaviconImg;
+
+
+
+
+const kGoodFaviconLocalUri = Services.io.newURI(
+  "chrome://mochitests/content/browser/browser/components/taskbartabs/test/browser/blue-150.png"
+);
+const kBadFaviconLocalUri = Services.io.newURI(
+  "chrome://mochitests/content/browser/browser/components/taskbartabs/test/browser/red-50.png"
+);
+
+const kGoodFaviconHttpUri = Services.io.newURI(
+  "https://example.com/browser/browser/components/taskbartabs/test/browser/blue-150.png"
+);
+const kBadFaviconHttpUri = Services.io.newURI(
+  "https://example.com/browser/browser/components/taskbartabs/test/browser/red-50.png"
+);
+
+let gGoodFaviconImg;
 
 add_setup(async function setup() {
   
@@ -37,26 +51,70 @@ add_setup(async function setup() {
   sandbox.stub(ShellService, "requestDeleteSecondaryTile").resolves();
   registerCleanupFunction(() => sandbox.restore());
 
-  gFaviconUri = Services.io.newURI(
-    "chrome://mochitests/content/browser/browser/components/taskbartabs/test/browser/favicon-normal32.png"
+  gGoodFaviconImg = encodeImagePNG(
+    await TaskbarTabsUtils._imageFromLocalURI(kGoodFaviconLocalUri)
   );
-  gBigFaviconUri = Services.io.newURI(
-    "chrome://mochitests/content/browser/browser/components/taskbartabs/test/browser/favicon-big64.png"
-  );
-  gFaviconHttpUri = Services.io.newURI(
-    "https://example.com/browser/browser/components/taskbartabs/test/browser/favicon-normal32.png"
-  );
-  gBigFaviconHttpUri = Services.io.newURI(
-    "https://example.com/browser/browser/components/taskbartabs/test/browser/favicon-big64.png"
-  );
-  gFaviconImg = await TaskbarTabsUtils._imageFromLocalURI(gFaviconUri);
 });
+
+
+
+
+
+
+
+
+
+function encodeImagePNG(aImage, aFinalSize = 0) {
+  let stream = Cc["@mozilla.org/image/tools;1"]
+    .getService(Ci.imgITools)
+    .encodeScaledImage(aImage, "image/png", aFinalSize, aFinalSize);
+
+  let size = stream.available();
+  let bis = Cc["@mozilla.org/binaryinputstream;1"].createInstance(
+    Ci.nsIBinaryInputStream
+  );
+  bis.setInputStream(stream);
+
+  let arrayBuffer = new ArrayBuffer(size);
+  bis.readArrayBuffer(size, arrayBuffer);
+
+  return new Uint8Array(arrayBuffer);
+}
+
+
+
+
+
+
+
+function assertBytesEqual(aActual, aExpected) {
+  Assert.equal(
+    aActual.length,
+    aExpected.length,
+    "Byte arrays have the same length"
+  );
+  if (aActual.length !== aExpected.length) {
+    return;
+  }
+
+  for (let i = 0; i < aActual.length; i++) {
+    if (aActual[i] !== aExpected[i]) {
+      Assert.ok(
+        false,
+        `Position ${i}: got ${aActual[i]}, wanted ${aExpected[i]}`
+      );
+      return;
+    }
+  }
+
+  Assert.ok(true, "Byte arrays were equal");
+}
 
 add_task(async function test_noFavicon() {
   const sandbox = sinon.createSandbox();
 
   sandbox.stub(TaskbarTabsUtils, "getFaviconUri").resolves(null);
-  await checkTaskbarTabIcon(await TaskbarTabsUtils.getDefaultIcon());
+  await checkTaskbarTabIcon(null);
 
   sandbox.restore();
 });
@@ -65,14 +123,10 @@ add_task(async function test_typicalFavicon() {
   const sandbox = sinon.createSandbox();
 
   sandbox.stub(TaskbarTabsUtils, "getFaviconUri").callsFake(async aUri => {
-    if (aUri.equals(kBaseUri)) {
-      return gFaviconUri;
-    }
-
-    return null;
+    return aUri.equals(kBaseUri) ? kGoodFaviconLocalUri : null;
   });
 
-  await checkTaskbarTabIcon(gFaviconImg);
+  await checkTaskbarTabIcon(gGoodFaviconImg);
 
   sandbox.restore();
 });
@@ -92,13 +146,13 @@ add_task(async function test_faviconOnOtherPage() {
 
     if (aUri.equals(kInnerUri)) {
       checkedInnerLast = true;
-      return gFaviconUri;
+      return kGoodFaviconLocalUri;
     }
 
     return null;
   });
 
-  await checkTaskbarTabIcon(gFaviconImg, {
+  await checkTaskbarTabIcon(gGoodFaviconImg, {
     uri: kInnerUri,
     manifest: {
       start_url: "/",
@@ -113,7 +167,7 @@ add_task(async function test_manifestIcon_lone() {
   let sandbox = sinon.createSandbox();
   sandbox.stub(TaskbarTabsUtils, "getFaviconUri").resolves(null);
 
-  await checkTaskbarTabIcon(gFaviconImg, {
+  await checkTaskbarTabIcon(gGoodFaviconImg, {
     uri: kBaseUri,
     manifest: {
       icons: [
@@ -121,7 +175,7 @@ add_task(async function test_manifestIcon_lone() {
           
           
           
-          src: gFaviconHttpUri.spec,
+          src: kGoodFaviconHttpUri.spec,
         },
       ],
     },
@@ -134,7 +188,7 @@ add_task(async function test_manifestIcon_sized() {
   let sandbox = sinon.createSandbox();
   sandbox.stub(TaskbarTabsUtils, "getFaviconUri").resolves(null);
 
-  await checkTaskbarTabIcon(gFaviconImg, {
+  await checkTaskbarTabIcon(gGoodFaviconImg, {
     uri: kBaseUri,
     manifest: {
       icons: [
@@ -142,7 +196,7 @@ add_task(async function test_manifestIcon_sized() {
           
           
           
-          src: gFaviconHttpUri.spec,
+          src: kGoodFaviconHttpUri.spec,
           sizes: "1x1 2x2 3x3 250x250",
         },
       ],
@@ -156,16 +210,16 @@ add_task(async function test_manifestIcon_selectsBestSize() {
   let sandbox = sinon.createSandbox();
   sandbox.stub(TaskbarTabsUtils, "getFaviconUri").resolves(null);
 
-  await checkTaskbarTabIcon(gFaviconImg, {
+  await checkTaskbarTabIcon(gGoodFaviconImg, {
     uri: kBaseUri,
     manifest: {
       icons: [
         {
-          src: gBigFaviconHttpUri.spec,
+          src: kBadFaviconHttpUri.spec,
           sizes: "255x255 257x257",
         },
         {
-          src: gFaviconHttpUri.spec,
+          src: kGoodFaviconHttpUri.spec,
           sizes: "256x256",
         },
       ],
@@ -177,18 +231,18 @@ add_task(async function test_manifestIcon_selectsBestSize() {
 
 add_task(async function test_manifestIcon_overridesFavicon() {
   let sandbox = sinon.createSandbox();
-  sandbox.stub(TaskbarTabsUtils, "getFaviconUri").resolves(gBigFaviconUri);
+  sandbox.stub(TaskbarTabsUtils, "getFaviconUri").resolves(kBadFaviconLocalUri);
 
-  await checkTaskbarTabIcon(gFaviconImg, {
+  await checkTaskbarTabIcon(gGoodFaviconImg, {
     uri: kBaseUri,
     manifest: {
       icons: [
         {
-          src: gBigFaviconHttpUri.spec,
+          src: kBadFaviconHttpUri.spec,
           sizes: "255x255 257x257",
         },
         {
-          src: gFaviconHttpUri.spec,
+          src: kGoodFaviconHttpUri.spec,
           sizes: "256x256",
         },
       ],
@@ -254,6 +308,7 @@ add_task(async function test_replaceTabWithWindowLoadsSavedIcon() {
 
 
 
+
 async function checkTaskbarTabIcon(
   aImage,
   { uri = kBaseUri, manifest = null } = {}
@@ -284,32 +339,28 @@ async function checkTaskbarTabIcon(
   let priorId = tt.id;
 
   Assert.equal(pinStub.callCount, 1, "Tried to pin taskbar tab");
-  Assert.strictEqual(
-    pinStub.firstCall.args[2]?.width,
-    aImage.width,
-    "Correct image width was used when pinning"
-  );
-  Assert.strictEqual(
-    pinStub.firstCall.args[2]?.height,
-    aImage.height,
-    "Correct image height was used when pinning"
-  );
+  if (aImage) {
+    assertBytesEqual(encodeImagePNG(pinStub.firstCall.args[2]), aImage);
+  } else {
+    assertBytesEqual(
+      encodeImagePNG(pinStub.firstCall.args[2]),
+      encodeImagePNG(await TaskbarTabsUtils.getDefaultIcon())
+    );
+  }
 
   Assert.equal(
     replaceStub.callCount,
     1,
     "Tried to replace the tab with a window"
   );
-  Assert.strictEqual(
-    replaceStub.getCall(0).args[2]?.width,
-    aImage.width,
-    "Correct image width was used for the window"
-  );
-  Assert.strictEqual(
-    replaceStub.getCall(0).args[2]?.height,
-    aImage.height,
-    "Correct image height was used for the window"
-  );
+  if (aImage) {
+    assertBytesEqual(encodeImagePNG(replaceStub.firstCall.args[2]), aImage);
+  } else {
+    assertBytesEqual(
+      encodeImagePNG(replaceStub.firstCall.args[2]),
+      encodeImagePNG(await TaskbarTabsUtils.getDefaultIcon())
+    );
+  }
 
   
   
@@ -325,16 +376,22 @@ async function checkTaskbarTabIcon(
     2,
     "Tried to replace the tab with a window"
   );
-  Assert.strictEqual(
-    replaceStub.getCall(1).args[2]?.width,
-    256,
-    "Correct image width was used for the window"
-  );
-  Assert.strictEqual(
-    replaceStub.getCall(1).args[2]?.height,
-    256,
-    "Correct image height was used for the window"
-  );
+  if (aImage) {
+    
+    
+    let dataUri = `data:image/png;base64,${aImage.toBase64()}`;
+    let parsed = Services.io.newURI(dataUri);
+    assertBytesEqual(
+      encodeImagePNG(replaceStub.secondCall.args[2]),
+      encodeImagePNG(await TaskbarTabsUtils._imageFromLocalURI(parsed), 256)
+    );
+  } else {
+    
+    assertBytesEqual(
+      encodeImagePNG(replaceStub.secondCall.args[2]),
+      encodeImagePNG(await TaskbarTabsUtils.getDefaultIcon(), 256)
+    );
+  }
 
   await TaskbarTabs.removeTaskbarTab(priorId);
   sandbox.restore();
