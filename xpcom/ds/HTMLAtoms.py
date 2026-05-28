@@ -5,6 +5,10 @@ HTML_PARSER_ATOMS = [
     
     Atom("xlink", "xlink"),
     
+    Atom("data_id", "data-id"),
+    
+    Atom("data_priority", "data-priority"),
+    
     Atom("xml_space", "xml:space"),
     
     Atom("xml_lang", "xml:lang"),
@@ -45,13 +49,13 @@ HTML_PARSER_ATOMS = [
     
     Atom("shadowrootserializable", "shadowrootserializable"),
     
+    Atom("shadowrootslotassignment", "shadowrootslotassignment"),
+    
     Atom("stddeviation", "stddeviation"),
     
     Atom("shadowrootcustomelementregistry", "shadowrootcustomelementregistry"),
     
     Atom("shadowrootdelegatesfocus", "shadowrootdelegatesfocus"),
-    
-    Atom("shadowrootslotassignment", "shadowrootslotassignment"),
     
     Atom("basefrequency", "basefrequency"),
     
