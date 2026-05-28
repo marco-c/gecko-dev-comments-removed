@@ -39,6 +39,7 @@
 #include "mozilla/dom/FileListBinding.h"
 #include "mozilla/dom/IDBObjectStoreBinding.h"
 #include "mozilla/dom/MemoryBlobImpl.h"
+#include "mozilla/dom/RootedDictionary.h"
 #include "mozilla/dom/StreamBlobImpl.h"
 #include "mozilla/dom/StructuredCloneHolder.h"
 #include "mozilla/dom/StructuredCloneTags.h"
@@ -1088,7 +1089,7 @@ RefPtr<IDBRequest> IDBObjectStore::AddOrPut(JSContext* aCx,
 }
 
 RefPtr<IDBRequest> IDBObjectStore::GetAllInternal(
-    bool aKeysOnly, JSContext* aCx, JS::Handle<JS::Value> aKey,
+    bool aKeysOnly, JSContext* aCx, JS::Handle<JS::Value> aQueryOrOptions,
     const Optional<uint32_t>& aLimit, ErrorResult& aRv) {
   AssertIsOnOwningThread();
 
@@ -1102,11 +1103,47 @@ RefPtr<IDBRequest> IDBObjectStore::GetAllInternal(
     return nullptr;
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   RefPtr<IDBKeyRange> keyRange;
-  IDBKeyRange::FromJSVal(aCx, aKey, &keyRange, aRv,
-                         mTransaction.unsafeGetRawPtr());
-  if (NS_WARN_IF(aRv.Failed())) {
-    return nullptr;
+  uint32_t limit = aLimit.WasPassed() ? aLimit.Value() : 0;
+  auto keyRangeResult = IDBKeyRange::FromJSVal(aCx, aQueryOrOptions, &keyRange,
+                                               mTransaction.unsafeGetRawPtr());
+  if (keyRangeResult.isErr()) {
+    if (!keyRangeResult.inspectErr().Is(SpecialValues::InvalidType)) {
+      
+      
+      
+      
+      aRv = keyRangeResult.unwrapErr().ExtractErrorResult(
+          InvalidMapsTo<NS_ERROR_DOM_INDEXEDDB_DATA_ERR>);
+      return nullptr;
+    }
+    
+    
+    
+    
+    RootedDictionary<IDBGetAllOptions> options(aCx);
+    if (NS_WARN_IF(!options.Init(aCx, aQueryOrOptions))) {
+      aRv.Throw(NS_ERROR_DOM_INDEXEDDB_DATA_ERR);
+      return nullptr;
+    }
+    JS::Rooted<JS::Value> keyVal(aCx, options.mQuery);
+    IDBKeyRange::FromJSVal(aCx, keyVal, &keyRange, aRv,
+                           mTransaction.unsafeGetRawPtr());
+    if (NS_WARN_IF(aRv.Failed())) {
+      return nullptr;
+    }
+    
+    limit = options.mCount.WasPassed() ? options.mCount.Value() : 0;
   }
 
   const int64_t id = Id();
@@ -1117,8 +1154,6 @@ RefPtr<IDBRequest> IDBObjectStore::GetAllInternal(
     keyRange->ToSerialized(serializedKeyRange);
     optionalKeyRange.emplace(serializedKeyRange);
   }
-
-  const uint32_t limit = aLimit.WasPassed() ? aLimit.Value() : 0;
 
   RequestParams params;
   if (aKeysOnly) {
@@ -1242,21 +1277,29 @@ RefPtr<IDBRequest> IDBObjectStore::Clear(JSContext* aCx, ErrorResult& aRv) {
 }
 
 RefPtr<IDBRequest> IDBObjectStore::GetAll(JSContext* aCx,
-                                          JS::Handle<JS::Value> aKey,
+                                          JS::Handle<JS::Value> aQueryOrOptions,
                                           const Optional<uint32_t>& aLimit,
                                           ErrorResult& aRv) {
   AssertIsOnOwningThread();
 
-  return GetAllInternal( false, aCx, aKey, aLimit, aRv);
+  return GetAllInternal( false, aCx, aQueryOrOptions, aLimit,
+                        aRv);
 }
 
-RefPtr<IDBRequest> IDBObjectStore::GetAllKeys(JSContext* aCx,
-                                              JS::Handle<JS::Value> aKey,
-                                              const Optional<uint32_t>& aLimit,
-                                              ErrorResult& aRv) {
+RefPtr<IDBRequest> IDBObjectStore::GetAllKeys(
+    JSContext* aCx, JS::Handle<JS::Value> aQueryOrOptions,
+    const Optional<uint32_t>& aLimit, ErrorResult& aRv) {
   AssertIsOnOwningThread();
 
-  return GetAllInternal( true, aCx, aKey, aLimit, aRv);
+  return GetAllInternal( true, aCx, aQueryOrOptions, aLimit,
+                        aRv);
+}
+
+RefPtr<IDBRequest> IDBObjectStore::GetAllRecords(
+    JSContext* aCx, const IDBGetAllOptions& aOptions, ErrorResult& aRv) {
+  AssertIsOnOwningThread();
+  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
+  return nullptr;
 }
 
 RefPtr<IDBRequest> IDBObjectStore::OpenCursor(JSContext* aCx,

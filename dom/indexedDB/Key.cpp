@@ -43,9 +43,9 @@ namespace {
 
 
 template <typename ArrayConversionPolicy>
-IDBResult<Ok, IDBSpecialValue::Invalid> ConvertArrayValueToKey(
-    JSContext* const aCx, JS::Handle<JSObject*> aObject,
-    ArrayConversionPolicy&& aPolicy) {
+IDBResult<Ok, IDBSpecialValue::InvalidType, IDBSpecialValue::InvalidValue>
+ConvertArrayValueToKey(JSContext* const aCx, JS::Handle<JSObject*> aObject,
+                       ArrayConversionPolicy&& aPolicy) {
   
   uint32_t len;
   if (!JS::GetArrayLength(aCx, aObject, &len)) {
@@ -76,7 +76,7 @@ IDBResult<Ok, IDBSpecialValue::Invalid> ConvertArrayValueToKey(
 
     
     if (!hop) {
-      return Err(IDBError(SpecialValues::Invalid));
+      return Err(IDBError(SpecialValues::InvalidValue));
     }
 
     
@@ -90,8 +90,14 @@ IDBResult<Ok, IDBSpecialValue::Invalid> ConvertArrayValueToKey(
     
     
     
+    
     auto result = aPolicy.ConvertSubkey(aCx, entry, index);
     if (result.isErr()) {
+      
+      
+      if (result.inspectErr().Is((SpecialValues::InvalidType))) {
+        return Err(IDBError(SpecialValues::InvalidValue));
+      }
       return result;
     }
 
@@ -352,9 +358,9 @@ class MOZ_STACK_CLASS Key::ArrayValueEncoder final {
     MOZ_ASSERT(mTypeOffset < eMaxType * kMaxArrayCollapse);
   }
 
-  IDBResult<Ok, IDBSpecialValue::Invalid> ConvertSubkey(
-      JSContext* const aCx, JS::Handle<JS::Value> aEntry,
-      const uint32_t aIndex) {
+  IDBResult<Ok, IDBSpecialValue::InvalidType, IDBSpecialValue::InvalidValue>
+  ConvertSubkey(JSContext* const aCx, JS::Handle<JS::Value> aEntry,
+                const uint32_t aIndex) {
     auto result =
         mKey.EncodeJSValInternal(aCx, aEntry, mTypeOffset, mRecursionDepth);
     mTypeOffset = 0;
@@ -371,16 +377,16 @@ class MOZ_STACK_CLASS Key::ArrayValueEncoder final {
 
 
 
-IDBResult<Ok, IDBSpecialValue::Invalid> Key::EncodeJSValInternal(
-    JSContext* const aCx, JS::Handle<JS::Value> aVal, uint8_t aTypeOffset,
-    const uint16_t aRecursionDepth) {
+IDBResult<Ok, IDBSpecialValue::InvalidType, IDBSpecialValue::InvalidValue>
+Key::EncodeJSValInternal(JSContext* const aCx, JS::Handle<JS::Value> aVal,
+                         uint8_t aTypeOffset, const uint16_t aRecursionDepth) {
   static_assert(eMaxType * kMaxArrayCollapse < 256, "Unable to encode jsvals.");
 
   
   
   
   if (NS_WARN_IF(aRecursionDepth == kMaxRecursionDepth)) {
-    return Err(IDBError(SpecialValues::Invalid));
+    return Err(IDBError(SpecialValues::InvalidValue));
   }
 
   
@@ -393,7 +399,7 @@ IDBResult<Ok, IDBSpecialValue::Invalid> Key::EncodeJSValInternal(
 
     
     if (std::isnan(number)) {
-      return Err(IDBError(SpecialValues::Invalid));
+      return Err(IDBError(SpecialValues::InvalidValue));
     }
 
     
@@ -431,7 +437,7 @@ IDBResult<Ok, IDBSpecialValue::Invalid> Key::EncodeJSValInternal(
 
       
       if (std::isnan(ms)) {
-        return Err(IDBError(SpecialValues::Invalid));
+        return Err(IDBError(SpecialValues::InvalidValue));
       }
 
       
@@ -453,7 +459,7 @@ IDBResult<Ok, IDBSpecialValue::Invalid> Key::EncodeJSValInternal(
 
   
   
-  return Err(IDBError(SpecialValues::Invalid));
+  return Err(IDBError(SpecialValues::InvalidType));
 }
 
 
@@ -544,8 +550,9 @@ nsresult Key::DecodeJSValInternal(const EncodedDataType*& aPos,
 #define TWO_BYTE_ADJUST (-0x7F)
 #define THREE_BYTE_SHIFT 6
 
-IDBResult<Ok, IDBSpecialValue::Invalid> Key::EncodeJSVal(
-    JSContext* aCx, JS::Handle<JS::Value> aVal, uint8_t aTypeOffset) {
+IDBResult<Ok, IDBSpecialValue::InvalidType, IDBSpecialValue::InvalidValue>
+Key::EncodeJSVal(JSContext* aCx, JS::Handle<JS::Value> aVal,
+                 uint8_t aTypeOffset) {
   return EncodeJSValInternal(aCx, aVal, aTypeOffset, 0);
 }
 
@@ -997,9 +1004,9 @@ nsresult Key::SetFromValueArray(mozIStorageValueArray* aValues,
   return SetFromSource(aValues, aIndex);
 }
 
-IDBResult<Ok, IDBSpecialValue::Invalid> Key::SetFromJSVal(
-    JSContext* aCx, JS::Handle<JS::Value> aVal,
-    mozilla::dom::IDBTransaction* aTransaction) {
+IDBResult<Ok, IDBSpecialValue::InvalidType, IDBSpecialValue::InvalidValue>
+Key::SetFromJSVal(JSContext* aCx, JS::Handle<JS::Value> aVal,
+                  mozilla::dom::IDBTransaction* aTransaction) {
   mBuffer.Truncate();
 
   if (aVal.isNull() || aVal.isUndefined()) {
@@ -1057,8 +1064,9 @@ nsresult Key::ToJSVal(JSContext* aCx, JS::Heap<JS::Value>& aVal) const {
   return rv;
 }
 
-IDBResult<Ok, IDBSpecialValue::Invalid> Key::AppendItem(
-    JSContext* aCx, bool aFirstOfArray, JS::Handle<JS::Value> aVal) {
+IDBResult<Ok, IDBSpecialValue::InvalidType, IDBSpecialValue::InvalidValue>
+Key::AppendItem(JSContext* aCx, bool aFirstOfArray,
+                JS::Handle<JS::Value> aVal) {
   auto result = EncodeJSVal(aCx, aVal, aFirstOfArray ? eMaxType : 0);
   if (result.isErr()) {
     Unset();
