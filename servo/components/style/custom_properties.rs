@@ -1284,12 +1284,17 @@ fn parse_attr_type<'i, 't>(input: &mut Parser<'i, 't>) -> AttributeType {
 
 
 
-fn parse_attribute_value(
+fn get_attr_value_for_cycle_resolution(
     name: &Atom,
     attribute_data: &AttributeData,
     url_data: &UrlExtraData,
     attribute_tracker: &mut AttributeTracker,
 ) -> Result<ComputedRegisteredValue, ()> {
+    
+    
+    if !matches!(&attribute_data.kind, AttributeType::Type(_)) {
+        return Err(());
+    }
     #[cfg(feature = "gecko")]
     let local_name = LocalName::cast(name);
     #[cfg(feature = "servo")]
@@ -1729,7 +1734,7 @@ impl<'a, 'b: 'a> CustomPropertiesBuilder<'a, 'b> {
             {
                 continue;
             }
-            if let Ok(v) = parse_attribute_value(
+            if let Ok(v) = get_attr_value_for_cycle_resolution(
                 &next.name,
                 &next.attribute_data,
                 &value.url_data,
@@ -1895,6 +1900,15 @@ fn substitute_all(
         
         lowlink: usize,
     }
+
+    #[derive(Debug, Default)]
+    struct OrderIndexMap {
+        
+        var: PrecomputedHashMap<Name, usize>,
+        
+        attr: PrecomputedHashMap<Name, usize>,
+    }
+
     
     
     struct Context<'a, 'b: 'a> {
@@ -1902,7 +1916,7 @@ fn substitute_all(
         
         count: usize,
         
-        index_map: PrecomputedHashMap<Name, usize>,
+        index_map: OrderIndexMap,
         
         non_custom_index_map: NonCustomReferenceMap<usize>,
         
@@ -1973,14 +1987,13 @@ fn substitute_all(
                     },
                     SubstitutionFunctionKind::Attr => {
                         
-                        
                         registration = PropertyDescriptors::unregistered();
                         value = context.map.get_attr(name)?.as_universal()?;
                     },
                     _ => unreachable!("Substitution kind must be var or attr for VarType::Custom."),
                 }
-                let is_var = kind == SubstitutionFunctionKind::Var;
-                let is_attr = kind == SubstitutionFunctionKind::Attr;
+                let is_var = matches!(kind, SubstitutionFunctionKind::Var);
+                let is_attr = matches!(kind, SubstitutionFunctionKind::Attr);
                 let is_root = context.computed_context.is_root_element();
                 
                 
@@ -2029,10 +2042,12 @@ fn substitute_all(
                 }
 
                 
-                
-                
-                
-                match context.index_map.entry(name.clone()) {
+                let index_map = if is_var {
+                    &mut context.index_map.var
+                } else {
+                    &mut context.index_map.attr
+                };
+                match index_map.entry(name.clone()) {
                     Entry::Occupied(entry) => {
                         return Some(*entry.get());
                     },
@@ -2110,7 +2125,7 @@ fn substitute_all(
 
                 let next_var = if next.substitution_kind == SubstitutionFunctionKind::Attr {
                     if context.map.get_attr(&next.name).is_none() {
-                        let Ok(val) = parse_attribute_value(
+                        let Ok(val) = get_attr_value_for_cycle_resolution(
                             &next.name,
                             &next.attribute_data,
                             &v.url_data,
@@ -2247,7 +2262,11 @@ fn substitute_all(
         }
 
         if let Some(ref v) = value {
-            let registration = context.stylist.get_custom_property_registration(&name);
+            let registration = if kind == SubstitutionFunctionKind::Var {
+                context.stylist.get_custom_property_registration(&name)
+            } else {
+                PropertyDescriptors::unregistered()
+            };
 
             let mut defer = false;
             if let Some(ref mut deferred) = context.deferred_substitution_functions {
@@ -2302,7 +2321,7 @@ fn substitute_all(
         for name in seen {
             let mut context = Context {
                 count: 0,
-                index_map: PrecomputedHashMap::default(),
+                index_map: OrderIndexMap::default(),
                 non_custom_index_map: NonCustomReferenceMap::default(),
                 stack: SmallVec::new(),
                 var_info: SmallVec::new(),
@@ -2385,7 +2404,7 @@ fn substitute_references_if_needed_and_apply(
     attribute_tracker: &mut AttributeTracker,
 ) {
     debug_assert_ne!(kind, SubstitutionFunctionKind::Env);
-    let is_var = kind == SubstitutionFunctionKind::Var;
+    let is_var = matches!(kind, SubstitutionFunctionKind::Var);
     let registration = stylist.get_custom_property_registration(&name);
     if is_var && !value.has_references() && registration.is_universal() {
         
@@ -2417,8 +2436,7 @@ fn substitute_references_if_needed_and_apply(
     };
 
     
-    
-    {
+    if is_var {
         let css = &substitution.css;
         let css_wide_kw = {
             let mut input = ParserInput::new(&css);
