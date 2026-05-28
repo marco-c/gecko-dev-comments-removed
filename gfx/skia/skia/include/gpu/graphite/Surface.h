@@ -77,9 +77,40 @@ SK_API sk_sp<SkSurface> RenderTarget(skgpu::graphite::Recorder*,
 
 
 
+
+
 SK_API sk_sp<SkSurface> WrapBackendTexture(skgpu::graphite::Recorder*,
                                            const skgpu::graphite::BackendTexture&,
                                            SkColorType colorType,
+                                           sk_sp<SkColorSpace> colorSpace,
+                                           const SkSurfaceProps* props,
+                                           TextureReleaseProc = nullptr,
+                                           ReleaseContext = nullptr,
+                                           std::string_view label = {});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+SK_API sk_sp<SkSurface> WrapBackendTexture(skgpu::graphite::Recorder*,
+                                           const skgpu::graphite::BackendTexture&,
                                            sk_sp<SkColorSpace> colorSpace,
                                            const SkSurfaceProps* props,
                                            TextureReleaseProc = nullptr,

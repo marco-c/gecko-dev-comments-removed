@@ -72,9 +72,6 @@ public:
 
 
     bool getSegment(SkScalar startD, SkScalar stopD, SkPathBuilder* dst, bool startWithMoveTo);
-#ifdef SK_SUPPORT_MUTABLE_PATHEFFECT
-    bool getSegment(SkScalar startD, SkScalar stopD, SkPath* dst, bool startWithMoveTo);
-#endif
 
     
 

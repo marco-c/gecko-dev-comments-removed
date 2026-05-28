@@ -346,7 +346,7 @@ int SkEdgeBuilder::build(const SkPathRaw& raw, const SkIRect* iclip, bool canCul
 int SkEdgeBuilder::buildEdges(const SkPathRaw& raw,
                               const SkIRect* shiftedClip) {
     
-    const bool canCullToTheRight = !raw.isConvex();
+    const bool canCullToTheRight = !raw.isKnownToBeConvex();
 
     
     
@@ -364,5 +364,8 @@ int SkEdgeBuilder::buildEdges(const SkPathRaw& raw,
 }
 
 int SkEdgeBuilder::buildEdges(const SkPath& path, const SkIRect* shiftedClip) {
-    return buildEdges(SkPathPriv::Raw(path), shiftedClip);
+    if (auto raw = SkPathPriv::Raw(path, SkResolveConvexity::kYes)) {
+        return buildEdges(*raw, shiftedClip);
+    }
+    return 0;   
 }

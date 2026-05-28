@@ -13,13 +13,11 @@
 #include "include/gpu/graphite/TextureInfo.h"
 #include "include/gpu/vk/VulkanTypes.h"
 
-class SkStream;
-class SkWStream;
-
 namespace skgpu::graphite {
 
 class SK_API VulkanTextureInfo final : public TextureInfo::Data {
 public:
+    
     
     
     
@@ -40,7 +38,7 @@ public:
     VulkanYcbcrConversionInfo fYcbcrConversionInfo;
 
     VulkanTextureInfo() = default;
-    VulkanTextureInfo(uint32_t sampleCount,
+    VulkanTextureInfo(VkSampleCountFlagBits sampleCount,
                       Mipmapped mipmapped,
                       VkImageCreateFlags flags,
                       VkFormat format,
@@ -49,7 +47,8 @@ public:
                       VkSharingMode sharingMode,
                       VkImageAspectFlags aspectMask,
                       VulkanYcbcrConversionInfo ycbcrConversionInfo)
-            : Data(sampleCount, mipmapped)
+            
+            : Data(static_cast<SampleCount>(sampleCount), mipmapped)
             , fFlags(flags)
             , fFormat(format)
             , fImageTiling(imageTiling)
@@ -69,9 +68,6 @@ private:
         return fFlags & VK_IMAGE_CREATE_PROTECTED_BIT ? Protected::kYes : Protected::kNo;
     }
     TextureFormat viewFormat() const;
-
-    bool serialize(SkWStream*) const;
-    bool deserialize(SkStream*);
 
     
     SkString toBackendString() const override;

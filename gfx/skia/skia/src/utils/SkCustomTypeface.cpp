@@ -488,7 +488,7 @@ sk_sp<SkTypeface> SkCustomTypefaceBuilder::Deserialize(SkStream* stream) {
 
         
         
-        if (StreamRemainingLengthIsBelow(stream, sz)) {
+        if (SkStreamPriv::RemainingLengthIsBelow(stream, sz)) {
             return nullptr;
         }
 

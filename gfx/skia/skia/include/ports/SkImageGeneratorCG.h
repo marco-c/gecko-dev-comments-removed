@@ -21,7 +21,7 @@
 #include <memory>
 
 namespace SkImageGeneratorCG {
-SK_API std::unique_ptr<SkImageGenerator> MakeFromEncodedCG(sk_sp<SkData>);
+SK_API std::unique_ptr<SkImageGenerator> MakeFromEncodedCG(sk_sp<const SkData>);
 }  
 
 #endif  

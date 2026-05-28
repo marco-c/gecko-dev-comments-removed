@@ -50,7 +50,6 @@
 #include "src/core/SkDevice.h"
 #include "src/core/SkImageFilterTypes.h"
 #include "src/core/SkImageFilter_Base.h"
-#include "src/core/SkImagePriv.h"
 #include "src/core/SkLatticeIter.h"
 #include "src/core/SkMaskFilterBase.h"
 #include "src/core/SkMatrixPriv.h"
@@ -61,6 +60,7 @@
 #include "src/core/SkVerticesPriv.h"
 #include "src/effects/colorfilters/SkColorFilterBase.h"
 #include "src/image/SkSurface_Base.h"
+#include "src/shaders/SkImageShader.h"
 #include "src/text/GlyphRun.h"
 #include "src/utils/SkPatchUtils.h"
 
@@ -500,7 +500,7 @@ int SkCanvas::saveLayer(const SkRect* bounds, const SkPaint* paint) {
 
 int SkCanvas::saveLayer(const SaveLayerRec& rec) {
     TRACE_EVENT0("skia", TRACE_FUNC);
-    if (rec.fPaint && rec.fPaint->nothingToDraw()) {
+    if (rec.fPaint && this->nothingToDraw(*rec.fPaint)) {
         
         this->save();
         this->clipRect({0,0,0,0});
@@ -1589,9 +1589,13 @@ bool SkCanvas::quickReject(const SkPath& path) const {
     return path.isEmpty() || this->quickReject(path.getBounds());
 }
 
+bool SkCanvas::nothingToDraw(const SkPaint& paint) const {
+    return !this->topDevice()->surfaceProps().preservesTransparentDraws() && paint.nothingToDraw();
+}
+
 bool SkCanvas::internalQuickReject(const SkRect& bounds, const SkPaint& paint,
                                    const SkMatrix* matrix) {
-    if (!bounds.isFinite() || paint.nothingToDraw()) {
+    if (!bounds.isFinite() || this->nothingToDraw(paint)) {
         return true;
     }
 
@@ -1925,7 +1929,7 @@ void SkCanvas::onDrawPaint(const SkPaint& paint) {
 void SkCanvas::internalDrawPaint(const SkPaint& paint) {
     
     
-    if (paint.nothingToDraw() || this->isClipEmpty()) {
+    if (this->nothingToDraw(paint) || this->isClipEmpty()) {
         return;
     }
 
@@ -1937,7 +1941,7 @@ void SkCanvas::internalDrawPaint(const SkPaint& paint) {
 
 void SkCanvas::onDrawPoints(PointMode mode, size_t count, const SkPoint pts[],
                             const SkPaint& paint) {
-    if ((long)count <= 0 || paint.nothingToDraw()) {
+    if ((long)count <= 0 || this->nothingToDraw(paint)) {
         return;
     }
     SkASSERT(pts != nullptr);
@@ -2223,7 +2227,7 @@ void SkCanvas::onDrawPath(const SkPath& path, const SkPaint& paint) {
 
     auto layer = this->aboutToDraw(paint, path.isInverseFillType() ? nullptr : &pathBounds);
     if (layer) {
-        this->topDevice()->drawPath(path, layer->paint(), false);
+        this->topDevice()->drawPath(path, layer->paint());
     }
 }
 
@@ -2347,14 +2351,14 @@ void SkCanvas::onDrawImageRect2(const SkImage* image, const SkRect& src, const S
     if (realPaint.getMaskFilter() && this->topDevice()->useDrawCoverageMaskForMaskFilters()) {
         
         
-        SkRect drawDst = SkModifyPaintAndDstForDrawImageRect(
-                image, sampling, src, dst, constraint == kStrict_SrcRectConstraint, &realPaint);
-        if (drawDst.isEmpty()) {
-            return;
-        } else {
-            this->drawRect(drawDst, realPaint);
+        auto [drawDstRect, shader] = SkImageShader::MakeForDrawRect(
+                image, realPaint, sampling, src, dst, constraint == kStrict_SrcRectConstraint);
+        if (drawDstRect.isEmpty() || !shader) {
             return;
         }
+        realPaint.setShader(std::move(shader));
+        this->drawRect(drawDstRect, realPaint);
+        return;
     }
 
     auto layer = this->aboutToDraw(realPaint, &dst,
@@ -2443,7 +2447,7 @@ sk_sp<Slug> SkCanvas::convertBlobToSlug(
 sk_sp<Slug> SkCanvas::onConvertGlyphRunListToSlug(const sktext::GlyphRunList& glyphRunList,
                                                   const SkPaint& paint) {
     SkRect bounds = glyphRunList.sourceBoundsWithOrigin();
-    if (bounds.isEmpty() || !bounds.isFinite() || paint.nothingToDraw()) {
+    if (bounds.isEmpty() || !bounds.isFinite() || this->nothingToDraw(paint)) {
         return nullptr;
     }
     
@@ -2675,7 +2679,8 @@ void SkCanvas::onDrawAtlas2(const SkImage* atlas, const SkRSXform xform[], const
     SkASSERT(!realPaint.getMaskFilter());
     auto layer = this->aboutToDraw(realPaint);
     if (layer) {
-        this->topDevice()->drawAtlas({xform, count}, {tex, count}, {colors, colors ? count : 0},
+        size_t N = SkToSizeT(count);
+        this->topDevice()->drawAtlas({xform, N}, {tex, N}, {colors, colors ? N : 0},
                                      SkBlender::Mode(bmode), layer->paint());
     }
 }
@@ -2748,15 +2753,18 @@ void SkCanvas::onDrawEdgeAAImageSet2(const ImageSetEntry imageSet[], int count,
         int dstClipIndex = 0;
         for (int i = 0; i < count; ++i) {
             SkPaint imagePaint = realPaint;
-            SkRect drawDst = SkModifyPaintAndDstForDrawImageRect(
-                                imageSet[i].fImage.get(), sampling,
-                                imageSet[i].fSrcRect, imageSet[i].fDstRect,
-                                constraint == kStrict_SrcRectConstraint, &imagePaint);
-            if (drawDst.isEmpty()) {
+            auto [drawDstRect, shader] =
+                    SkImageShader::MakeForDrawRect(imageSet[i].fImage.get(),
+                                                   imagePaint,
+                                                   sampling,
+                                                   imageSet[i].fSrcRect,
+                                                   imageSet[i].fDstRect,
+                                                   constraint == kStrict_SrcRectConstraint);
+            if (drawDstRect.isEmpty() || !shader) {
                 return;
             }
-
-            auto layer = this->aboutToDraw(imagePaint, &drawDst);
+            imagePaint.setShader(std::move(shader));
+            auto layer = this->aboutToDraw(imagePaint, &drawDstRect);
             if (layer) {
                 
                 
@@ -2769,7 +2777,7 @@ void SkCanvas::onDrawEdgeAAImageSet2(const ImageSetEntry imageSet[], int count,
 
                 
                 
-                this->topDevice()->drawEdgeAAQuad(drawDst,
+                this->topDevice()->drawEdgeAAQuad(drawDstRect,
                                                   imageSet[i].fHasClip ? dstClips + dstClipIndex
                                                                         : nullptr,
                                                   (QuadAAFlags)imageSet[i].fAAFlags,

@@ -9,11 +9,13 @@
 #define skgpu_VulkanTypes_DEFINED
 
 #include "include/core/SkTypes.h"
+#include "include/private/base/SkTo.h"
 #include "include/private/gpu/vk/SkiaVulkan.h"
 
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -22,6 +24,10 @@
 #endif
 
 namespace skgpu {
+
+namespace graphite {
+class VulkanYcbcrConversion;
+}
 
 using VulkanGetProc = std::function<PFN_vkVoidFunction(
         const char*, 
@@ -60,7 +66,53 @@ private:
 
 
 
-struct VulkanYcbcrConversionInfo {
+struct SK_API VulkanYcbcrConversionInfo {
+public:
+    
+    VulkanYcbcrConversionInfo() = default;
+
+    
+    
+    VulkanYcbcrConversionInfo(uint64_t externalFormat,
+                              VkSamplerYcbcrModelConversion ycbcrModel,
+                              VkSamplerYcbcrRange ycbcrRange,
+                              VkChromaLocation xChromaOffset,
+                              VkChromaLocation yChromaOffset,
+                              VkFilter chromaFilter,
+                              VkBool32 forceExplicitReconstruction,
+                              VkComponentMapping components,
+                              VkFormatFeatureFlags formatFeatures)
+            : VulkanYcbcrConversionInfo(VK_FORMAT_UNDEFINED,
+                                        externalFormat,
+                                        ycbcrModel,
+                                        ycbcrRange,
+                                        xChromaOffset,
+                                        yChromaOffset,
+                                        chromaFilter,
+                                        forceExplicitReconstruction,
+                                        components,
+                                        formatFeatures) {}
+
+    VulkanYcbcrConversionInfo(VkFormat format,
+                              VkSamplerYcbcrModelConversion ycbcrModel,
+                              VkSamplerYcbcrRange ycbcrRange,
+                              VkChromaLocation xChromaOffset,
+                              VkChromaLocation yChromaOffset,
+                              VkFilter chromaFilter,
+                              VkBool32 forceExplicitReconstruction,
+                              VkComponentMapping components,
+                              VkFormatFeatureFlags formatFeatures)
+            : VulkanYcbcrConversionInfo(format,
+                                        0,
+                                        ycbcrModel,
+                                        ycbcrRange,
+                                        xChromaOffset,
+                                        yChromaOffset,
+                                        chromaFilter,
+                                        forceExplicitReconstruction,
+                                        components,
+                                        formatFeatures) {}
+
     bool operator==(const VulkanYcbcrConversionInfo& that) const {
         
         if (!this->isValid() && !that.isValid()) {
@@ -89,8 +141,69 @@ struct VulkanYcbcrConversionInfo {
 
     bool isValid() const {
         return fYcbcrModel != VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY ||
-               fExternalFormat != 0;
+               this->hasExternalFormat();
     }
+
+    VkFormat format() const { return fFormat; }
+
+    bool hasExternalFormat() const { return fExternalFormat != 0; }
+    uint64_t externalFormat() const { return fExternalFormat; }
+
+    VkSamplerYcbcrModelConversion model() const { return fYcbcrModel; }
+    VkSamplerYcbcrRange range() const { return fYcbcrRange; }
+    VkChromaLocation xChromaOffset() const { return fXChromaOffset; }
+    VkChromaLocation yChromaOffset() const { return fYChromaOffset; }
+    VkFilter chromaFilter() const { return fChromaFilter; }
+    VkBool32 forceExplicitReconstruction() const { return fForceExplicitReconstruction; }
+    VkComponentMapping components() const { return fComponents; }
+
+    bool samplerFilterMustMatchChromaFilter() const { return fSamplerFilterMustMatchChromaFilter; }
+    bool supportsLinearFilter() const { return fSupportsLinearFilter; }
+
+    
+    
+    void toVkSamplerYcbcrConversionCreateInfo(VkSamplerYcbcrConversionCreateInfo* outInfo,
+                                              std::optional<VkFilter>* requiredSamplerFilter) const;
+
+private:
+    VulkanYcbcrConversionInfo(VkFormat format,
+                              uint64_t externalFormat,
+                              VkSamplerYcbcrModelConversion ycbcrModel,
+                              VkSamplerYcbcrRange ycbcrRange,
+                              VkChromaLocation xChromaOffset,
+                              VkChromaLocation yChromaOffset,
+                              VkFilter chromaFilter,
+                              VkBool32 forceExplicitReconstruction,
+                              VkComponentMapping components,
+                              VkFormatFeatureFlags formatFeatures);
+
+
+    
+    
+    friend class graphite::VulkanYcbcrConversion;
+
+    VulkanYcbcrConversionInfo(VkFormat format,
+                              uint64_t externalFormat,
+                              VkSamplerYcbcrModelConversion ycbcrModel,
+                              VkSamplerYcbcrRange ycbcrRange,
+                              VkChromaLocation xChromaOffset,
+                              VkChromaLocation yChromaOffset,
+                              VkFilter chromaFilter,
+                              VkBool32 forceExplicitReconstruction,
+                              VkComponentMapping components,
+                              bool mustMatchChromaFilter,
+                              bool supportsLinearFilter)
+            : fFormat(format)
+            , fExternalFormat(externalFormat)
+            , fYcbcrModel(ycbcrModel)
+            , fYcbcrRange(ycbcrRange)
+            , fXChromaOffset(xChromaOffset)
+            , fYChromaOffset(yChromaOffset)
+            , fChromaFilter(chromaFilter)
+            , fForceExplicitReconstruction(forceExplicitReconstruction)
+            , fComponents(components)
+            , fSamplerFilterMustMatchChromaFilter(mustMatchChromaFilter)
+            , fSupportsLinearFilter(supportsLinearFilter) {}
 
     
     
@@ -108,14 +221,16 @@ struct VulkanYcbcrConversionInfo {
     VkBool32 fForceExplicitReconstruction     = false;
 
     
-    
-    VkFormatFeatureFlags fFormatFeatures = 0;
-
-    
     VkComponentMapping fComponents            = {VK_COMPONENT_SWIZZLE_IDENTITY,
                                                  VK_COMPONENT_SWIZZLE_IDENTITY,
                                                  VK_COMPONENT_SWIZZLE_IDENTITY,
                                                  VK_COMPONENT_SWIZZLE_IDENTITY};
+
+    
+    
+    
+    bool fSamplerFilterMustMatchChromaFilter = true;
+    bool fSupportsLinearFilter = false;
 };
 
 typedef void* VulkanDeviceLostContext;

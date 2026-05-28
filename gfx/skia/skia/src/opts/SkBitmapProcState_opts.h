@@ -21,7 +21,7 @@
 
 
 
-#if SK_CPU_SSE_LEVEL >= SK_CPU_SSE_LEVEL_SSE2
+#if SK_CPU_X64_LEVEL >= SK_CPU_X64_LEVEL_SSE2
     #include <immintrin.h>
 #elif defined(SK_ARM_HAS_NEON)
     #include <arm_neon.h>
@@ -41,7 +41,7 @@ static void decode_packed_coordinates_and_weight(U32 packed, Out* v0, Out* v1, O
     *w  = (packed >> 14) & 0xf; 
 }
 
-#if SK_CPU_SSE_LEVEL >= SK_CPU_SSE_LEVEL_SSSE3
+#if SK_CPU_X64_LEVEL >= SK_CPU_X64_LEVEL_SSSE3
 
      inline
     void S32_alpha_D32_filter_DX(const SkBitmapProcState& s,
@@ -180,7 +180,7 @@ static void decode_packed_coordinates_and_weight(U32 packed, Out* v0, Out* v1, O
     }
 
 
-#elif SK_CPU_SSE_LEVEL >= SK_CPU_SSE_LEVEL_SSE2
+#elif SK_CPU_X64_LEVEL >= SK_CPU_X64_LEVEL_SSE2
 
      inline
     void S32_alpha_D32_filter_DX(const SkBitmapProcState& s,

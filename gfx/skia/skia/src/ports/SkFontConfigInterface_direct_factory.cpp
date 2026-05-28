@@ -5,12 +5,9 @@
 
 
 
-#include "include/private/base/SkOnce.h"
 #include "src/ports/SkFontConfigInterface_direct.h"
 
 SkFontConfigInterface* SkFontConfigInterface::GetSingletonDirectInterface() {
-    static SkFontConfigInterface* singleton;
-    static SkOnce once;
-    once([]{ singleton = new SkFontConfigInterfaceDirect(nullptr); });
+    static SkFontConfigInterface* singleton = new SkFontConfigInterfaceDirect(nullptr);
     return singleton;
 }

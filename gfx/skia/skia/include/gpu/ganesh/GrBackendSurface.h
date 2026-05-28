@@ -12,13 +12,11 @@
 #include "include/core/SkSize.h"
 #include "include/gpu/GpuTypes.h"
 #include "include/gpu/ganesh/GrTypes.h"
-#include "include/gpu/ganesh/mock/GrMockTypes.h"
 #include "include/private/base/SkAPI.h"
 #include "include/private/base/SkAnySubclass.h"
 #include "include/private/base/SkDebug.h"
 #include "include/private/gpu/ganesh/GrTypesPriv.h"
 
-enum class SkTextureCompressionType;
 class GrBackendFormatData;
 class GrBackendTextureData;
 class GrBackendRenderTargetData;
@@ -26,11 +24,6 @@ class GrBackendRenderTargetData;
 namespace skgpu {
 class MutableTextureState;
 }
-
-#ifdef SK_DIRECT3D
-#include "include/private/gpu/ganesh/GrD3DTypesMinimal.h"
-class GrD3DResourceState;
-#endif
 
 #if defined(SK_DEBUG) || defined(GPU_TEST_UTILS)
 class SkString;
@@ -49,16 +42,6 @@ public:
     GrBackendFormat& operator=(const GrBackendFormat&);
     ~GrBackendFormat();
 
-#ifdef SK_DIRECT3D
-    static GrBackendFormat MakeDxgi(DXGI_FORMAT format) {
-        return GrBackendFormat(format);
-    }
-#endif
-
-    static GrBackendFormat MakeMock(GrColorType colorType,
-                                    SkTextureCompressionType compression,
-                                    bool isStencilFormat = false);
-
     bool operator==(const GrBackendFormat& that) const;
     bool operator!=(const GrBackendFormat& that) const { return !(*this == that); }
 
@@ -72,23 +55,6 @@ public:
     uint32_t channelMask() const;
 
     GrColorFormatDesc desc() const;
-
-#ifdef SK_DIRECT3D
-    
-
-
-
-    bool asDxgiFormat(DXGI_FORMAT*) const;
-#endif
-
-    
-
-
-
-
-    GrColorType asMockColorType() const;
-    SkTextureCompressionType asMockCompressionType() const;
-    bool isMockStencilFormat() const;
 
     
     
@@ -115,59 +81,22 @@ private:
     
     template <typename FormatData>
     GrBackendFormat(GrTextureType textureType, GrBackendApi api, const FormatData& formatData)
-            : fBackend(api), fValid(true), fTextureType(textureType) {
+            : fBackend(api), fTextureType(textureType), fValid(true) {
         fFormatData.emplace<FormatData>(formatData);
     }
 
-#ifdef SK_DIRECT3D
-    GrBackendFormat(DXGI_FORMAT dxgiFormat);
-#endif
-
-    GrBackendFormat(GrColorType, SkTextureCompressionType, bool isStencilFormat);
-
-#ifdef SK_DEBUG
-    bool validateMock() const;
-#endif
-
-    GrBackendApi fBackend = GrBackendApi::kMock;
-    bool fValid = false;
     AnyFormatData fFormatData;
-
-    union {
-#ifdef SK_DIRECT3D
-        DXGI_FORMAT fDxgiFormat;
-#endif
-        struct {
-            GrColorType fColorType;
-            SkTextureCompressionType fCompressionType;
-            bool fIsStencilFormat;
-        } fMock;
-    };
+    GrBackendApi fBackend = GrBackendApi::kUnsupported;
     GrTextureType fTextureType = GrTextureType::kNone;
+    bool fValid = false;
 };
 
 class SK_API GrBackendTexture {
 public:
     
     GrBackendTexture();
-
-#ifdef SK_DIRECT3D
-    GrBackendTexture(int width,
-                     int height,
-                     const GrD3DTextureResourceInfo& d3dInfo,
-                     std::string_view label = {});
-#endif
-
-    GrBackendTexture(int width,
-                     int height,
-                     skgpu::Mipmapped,
-                     const GrMockTextureInfo& mockInfo,
-                     std::string_view label = {});
-
     GrBackendTexture(const GrBackendTexture& that);
-
     ~GrBackendTexture();
-
     GrBackendTexture& operator=(const GrBackendTexture& that);
 
     SkISize dimensions() const { return {fWidth, fHeight}; }
@@ -179,23 +108,8 @@ public:
     GrBackendApi backend() const {return fBackend; }
     GrTextureType textureType() const { return fTextureType; }
 
-#ifdef SK_DIRECT3D
-    
-    
-    
-    bool getD3DTextureResourceInfo(GrD3DTextureResourceInfo*) const;
-
-    
-    
-    void setD3DResourceState(GrD3DResourceStateEnum);
-#endif
-
     
     GrBackendFormat getBackendFormat() const;
-
-    
-    
-    bool getMockTextureInfo(GrMockTextureInfo*) const;
 
     
     
@@ -249,56 +163,21 @@ private:
     friend class GrVkGpu;  
     sk_sp<skgpu::MutableTextureState> getMutableState() const;
 
-#ifdef SK_DIRECT3D
-    friend class GrD3DTexture;
-    friend class GrD3DGpu;     
-    GrBackendTexture(int width,
-                     int height,
-                     const GrD3DTextureResourceInfo& vkInfo,
-                     sk_sp<GrD3DResourceState> state,
-                     std::string_view label = {});
-    sk_sp<GrD3DResourceState> getGrD3DResourceState() const;
-#endif
-
-    
-    void cleanup();
-
     bool fIsValid;
     int fWidth;         
     int fHeight;        
     const std::string fLabel;
     skgpu::Mipmapped fMipmapped;
-    GrBackendApi fBackend;
+    GrBackendApi fBackend = GrBackendApi::kUnsupported;
     GrTextureType fTextureType;
     AnyTextureData fTextureData;
-
-    union {
-        GrMockTextureInfo fMockInfo;
-#ifdef SK_DIRECT3D
-        GrD3DBackendSurfaceInfo fD3DInfo;
-#endif
-    };
 };
 
 class SK_API GrBackendRenderTarget {
 public:
     
     GrBackendRenderTarget();
-
-#ifdef SK_DIRECT3D
-    GrBackendRenderTarget(int width,
-                          int height,
-                          const GrD3DTextureResourceInfo& d3dInfo);
-#endif
-
-    GrBackendRenderTarget(int width,
-                          int height,
-                          int sampleCnt,
-                          int stencilBits,
-                          const GrMockRenderTargetInfo& mockInfo);
-
     ~GrBackendRenderTarget();
-
     GrBackendRenderTarget(const GrBackendRenderTarget& that);
     GrBackendRenderTarget& operator=(const GrBackendRenderTarget&);
 
@@ -310,22 +189,8 @@ public:
     GrBackendApi backend() const {return fBackend; }
     bool isFramebufferOnly() const { return fFramebufferOnly; }
 
-#ifdef SK_DIRECT3D
-    
-    
-    bool getD3DTextureResourceInfo(GrD3DTextureResourceInfo*) const;
-
-    
-    
-    void setD3DResourceState(GrD3DResourceStateEnum);
-#endif
-
     
     GrBackendFormat getBackendFormat() const;
-
-    
-    
-    bool getMockRenderTargetInfo(GrMockRenderTargetInfo*) const;
 
     
     
@@ -377,19 +242,6 @@ private:
     friend class GrVkGpu; 
     sk_sp<skgpu::MutableTextureState> getMutableState() const;
 
-#ifdef SK_DIRECT3D
-    friend class GrD3DGpu;
-    friend class GrD3DRenderTarget;
-    GrBackendRenderTarget(int width,
-                          int height,
-                          const GrD3DTextureResourceInfo& d3dInfo,
-                          sk_sp<GrD3DResourceState> state);
-    sk_sp<GrD3DResourceState> getGrD3DResourceState() const;
-#endif
-
-    
-    void cleanup();
-
     bool fIsValid;
     bool fFramebufferOnly = false;
     int fWidth;         
@@ -398,15 +250,8 @@ private:
     int fSampleCnt;
     int fStencilBits;
 
-    GrBackendApi fBackend;
+    GrBackendApi fBackend = GrBackendApi::kUnsupported;
     AnyRenderTargetData fRTData;
-
-    union {
-        GrMockRenderTargetInfo fMockInfo;
-#ifdef SK_DIRECT3D
-        GrD3DBackendSurfaceInfo fD3DInfo;
-#endif
-    };
 };
 
 #endif

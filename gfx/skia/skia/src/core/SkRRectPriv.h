@@ -30,7 +30,7 @@ public:
 
     
     
-    static bool IsNearlySimpleCircular(const SkRRect& rr, SkScalar tolerance = SK_ScalarNearlyZero);
+    static bool IsNearlySimpleCircular(const SkRRect& rr, float tolerance = SK_ScalarNearlyZero);
 
     static bool EqualRadii(const SkRRect& rr) {
         return rr.isRect() || SkRRectPriv::IsCircle(rr)  || SkRRectPriv::IsSimpleCircular(rr);
@@ -38,7 +38,15 @@ public:
 
     static const SkVector* GetRadiiArray(const SkRRect& rr) { return rr.fRadii; }
 
-    static bool AllCornersCircular(const SkRRect& rr, SkScalar tolerance = SK_ScalarNearlyZero);
+    static bool AllCornersCircular(const SkRRect& rr, float tolerance = SK_ScalarNearlyZero);
+
+    
+    
+    static bool AllCornersRelativelyCircular(const SkRRect& rr,
+                                             float tolerance = SK_ScalarNearlyZero);
+
+    
+    static bool IsRelativelyCircular(float rx, float ry, float tolerance = SK_ScalarNearlyZero);
 
     static bool ReadFromBuffer(SkRBuffer* buffer, SkRRect* rr);
 

@@ -27,7 +27,7 @@ namespace PrecompileShaders {
 
 
 
-SK_API sk_sp<PrecompileShader> VulkanYCbCrImage(skgpu::VulkanYcbcrConversionInfo& YCbCrInfo,
+SK_API sk_sp<PrecompileShader> VulkanYCbCrImage(const skgpu::VulkanYcbcrConversionInfo& YCbCrInfo,
                                                 ImageShaderFlags = ImageShaderFlags::kAll,
                                                 SkSpan<const SkColorInfo> = {},
                                                 SkSpan<const SkTileMode> = { kAllTileModes });

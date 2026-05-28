@@ -33,7 +33,7 @@ namespace SkImageGeneratorNDK {
 
 
 
-SK_API std::unique_ptr<SkImageGenerator> MakeFromEncodedNDK(sk_sp<SkData>);
+SK_API std::unique_ptr<SkImageGenerator> MakeFromEncodedNDK(sk_sp<const SkData>);
 }
 
 #endif 

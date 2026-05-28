@@ -11,10 +11,12 @@
 #include "include/core/SkRefCnt.h"
 #include "include/core/SkSize.h"
 #include "include/core/SkSpan.h"
+#include "include/gpu/graphite/GraphiteTypes.h"
 #include "include/private/base/SkAPI.h"
 #include "include/private/base/SkMath.h"
 
 #include <optional>
+#include <string>
 
 class SkData;
 class SkExecutor;
@@ -24,6 +26,7 @@ namespace skgpu { class ShaderErrorHandler; }
 namespace skgpu::graphite {
 
 struct ContextOptionsPriv;
+class PersistentPipelineStorage;
 
 struct SK_API ContextOptions {
     ContextOptions() {}
@@ -47,7 +50,8 @@ struct SK_API ContextOptions {
 
 
 
-    uint8_t fInternalMultisampleCount = 4;
+
+    SampleCount fInternalMultisampleCount = SampleCount::k4;
 
     
 
@@ -65,13 +69,6 @@ struct SK_API ContextOptions {
 
 
     float fMinimumPathSizeForMSAA = 0;
-
-    
-
-
-
-
-    bool fClientWillExternallySynchronizeAllThreads = false;
 
     
 
@@ -142,27 +139,48 @@ struct SK_API ContextOptions {
 
 
 
-
-
-
-
-
-    std::optional<uint64_t> fVulkanVMALargeHeapBlockSize;
-
-    
     using PipelineCallbackContext = void*;
-    
-    using PipelineCallback = void (*)(PipelineCallbackContext context, sk_sp<SkData> pipelineData);
-
-    
-
-
-
-
-
-
 
     PipelineCallbackContext fPipelineCallbackContext = nullptr;
+
+    enum class PipelineCacheOp {
+        kAddingPipeline,
+        kPipelineFound,
+    };
+
+    using PipelineCachingCallback = void (*)(PipelineCallbackContext context,
+                                             PipelineCacheOp op,
+                                             const std::string& label,
+                                             uint32_t uniqueKeyHash,
+                                             bool fromPrecompile,
+                                             sk_sp<SkData> pipelineData);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    PipelineCachingCallback fPipelineCachingCallback = nullptr;
+
+    
+
+
+
+
+    using PipelineCallback = void (*)(PipelineCallbackContext context, sk_sp<SkData> pipelineData);
+
     PipelineCallback fPipelineCallback = nullptr;
 
     
@@ -188,6 +206,13 @@ struct SK_API ContextOptions {
 
 
     SkExecutor* fExecutor = nullptr;
+
+    
+
+
+
+
+    PersistentPipelineStorage* fPersistentPipelineStorage = nullptr;
 
     
 

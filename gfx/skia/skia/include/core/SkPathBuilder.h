@@ -25,10 +25,20 @@
 #include <optional>
 #include <tuple>
 
+class SkPathData;
 class SkRRect;
 struct SkPathRaw;
+class SkString;
+
+
+#ifndef SK_SUPPORT_LEGACY_PATHBUILDER_SETLASTPT
+#define SK_SUPPORT_LEGACY_PATHBUILDER_SETLASTPT
+#endif
 
 class SK_API SkPathBuilder {
+    using PointsArray = skia_private::STArray<4, SkPoint>;
+    using VerbsArray = skia_private::STArray<4, SkPathVerb>;
+    using ConicWeightsArray = skia_private::STArray<2, float>;
 public:
     
 
@@ -37,24 +47,27 @@ public:
 
     SkPathBuilder();
 
-    
-
-
-
-
-
-    SkPathBuilder(SkPathFillType fillType);
-
-    
-
-
-
-
-
-    SkPathBuilder(const SkPath& path);
-
-    SkPathBuilder(const SkPathBuilder&) = default;
+    SkPathBuilder(const SkPathBuilder&);
+    SkPathBuilder& operator=(const SkPathBuilder&);
+    SkPathBuilder(SkPathBuilder&&);
+    SkPathBuilder& operator=(SkPathBuilder&&);
     ~SkPathBuilder();
+
+    
+
+
+
+
+
+    explicit SkPathBuilder(SkPathFillType fillType);
+
+    
+
+
+
+
+
+    explicit SkPathBuilder(const SkPath& path);
 
     
 
@@ -64,7 +77,8 @@ public:
 
     SkPathBuilder& operator=(const SkPath&);
 
-    SkPathBuilder& operator=(const SkPathBuilder&) = default;
+    bool operator==(const SkPathBuilder&) const;
+    bool operator!=(const SkPathBuilder& o) const { return !(*this == o); }
 
     
 
@@ -81,7 +95,22 @@ public:
 
 
 
-    SkRect computeBounds() const;
+
+    std::optional<SkRect> computeFiniteBounds() const;
+
+    
+
+
+
+    std::optional<SkRect> computeTightBounds() const;
+
+    
+    SkRect computeBounds() const {
+        if (auto bounds = this->computeFiniteBounds()) {
+            return *bounds;
+        }
+        return SkRect::MakeEmpty();
+    }
 
     
 
@@ -98,6 +127,9 @@ public:
 
 
     SkPath detach(const SkMatrix* mx = nullptr);
+
+    sk_sp<SkPathData> snapshotData() const;
+    sk_sp<SkPathData> detachData();
 
     
 
@@ -367,7 +399,7 @@ public:
 
 
 
-    SkPathBuilder& rMoveTo(SkPoint pt);
+    SkPathBuilder& rMoveTo(SkVector pt);
 
     
 
@@ -380,7 +412,7 @@ public:
 
 
 
-    SkPathBuilder& rLineTo(SkPoint pt);
+    SkPathBuilder& rMoveTo(SkScalar dx, SkScalar dy) { return this->rMoveTo({dx, dy}); }
 
     
 
@@ -393,25 +425,7 @@ public:
 
 
 
-
-    SkPathBuilder& rLineTo(SkScalar x, SkScalar y) { return this->rLineTo({x, y}); }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    SkPathBuilder& rQuadTo(SkPoint pt1, SkPoint pt2);
+    SkPathBuilder& rLineTo(SkVector pt);
 
     
 
@@ -425,13 +439,44 @@ public:
 
 
 
+    SkPathBuilder& rLineTo(SkScalar dx, SkScalar dy) { return this->rLineTo({dx, dy}); }
+
+    
 
 
 
 
 
-    SkPathBuilder& rQuadTo(SkScalar x1, SkScalar y1, SkScalar x2, SkScalar y2) {
-        return this->rQuadTo({x1, y1}, {x2, y2});
+
+
+
+
+
+
+
+
+
+    SkPathBuilder& rQuadTo(SkVector pt1, SkVector pt2);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    SkPathBuilder& rQuadTo(SkScalar dx1, SkScalar dy1, SkScalar dx2, SkScalar dy2) {
+        return this->rQuadTo({dx1, dy1}, {dx2, dy2});
     }
 
     
@@ -457,7 +502,7 @@ public:
 
 
 
-    SkPathBuilder& rConicTo(SkPoint p1, SkPoint p2, SkScalar w);
+    SkPathBuilder& rConicTo(SkVector p1, SkVector p2, SkScalar w);
 
     
 
@@ -484,8 +529,8 @@ public:
 
 
 
-    SkPathBuilder& rConicTo(SkScalar x1, SkScalar y1, SkScalar x2, SkScalar y2, SkScalar w) {
-        return this->rConicTo({x1, y1}, {x2, y2}, w);
+    SkPathBuilder& rConicTo(SkScalar dx1, SkScalar dy1, SkScalar dx2, SkScalar dy2, SkScalar w) {
+        return this->rConicTo({dx1, dy1}, {dx2, dy2}, w);
     }
 
     
@@ -505,7 +550,7 @@ public:
 
 
 
-    SkPathBuilder& rCubicTo(SkPoint pt1, SkPoint pt2, SkPoint pt3);
+    SkPathBuilder& rCubicTo(SkVector pt1, SkVector pt2, SkVector pt3);
 
     
 
@@ -527,9 +572,13 @@ public:
 
 
 
-    SkPathBuilder& rCubicTo(SkScalar x1, SkScalar y1, SkScalar x2, SkScalar y2, SkScalar x3, SkScalar y3) {
-        return this->rCubicTo({x1, y1}, {x2, y2}, {x3, y3});
+    SkPathBuilder& rCubicTo(SkScalar dx1, SkScalar dy1,
+                            SkScalar dx2, SkScalar dy2,
+                            SkScalar dx3, SkScalar dy3) {
+        return this->rCubicTo({dx1, dy1}, {dx2, dy2}, {dx3, dy3});
     }
+
+    
 
     enum ArcSize {
         kSmall_ArcSize, 
@@ -560,12 +609,8 @@ public:
 
 
 
-
-
-    SkPathBuilder& rArcTo(SkScalar rx, SkScalar ry, SkScalar xAxisRotate, ArcSize largeArc,
-                          SkPathDirection sweep, SkScalar dx, SkScalar dy);
-
-    
+    SkPathBuilder& rArcTo(SkPoint r, SkScalar xAxisRotate, ArcSize largeArc,
+                          SkPathDirection sweep, SkVector dxdy);
 
     
 
@@ -762,10 +807,12 @@ public:
 
 
 
-
-
-    SkPathBuilder& addCircle(SkScalar x, SkScalar y, SkScalar radius,
+    SkPathBuilder& addCircle(SkPoint center, float radius,
                              SkPathDirection dir = SkPathDirection::kDefault);
+    SkPathBuilder& addCircle(float x, float y, float radius,
+                             SkPathDirection dir = SkPathDirection::kDefault) {
+        return this->addCircle({x, y}, radius, dir);
+    }
 
     
 
@@ -805,9 +852,7 @@ public:
 
     SkPathBuilder& addPath(const SkPath& src,
                            SkPath::AddPathMode mode = SkPath::kAppend_AddPathMode) {
-        SkMatrix m;
-        m.reset();
-        return this->addPath(src, m, mode);
+        return this->addPath(src, SkMatrix::I(), mode);
     }
 
     
@@ -834,7 +879,8 @@ public:
 
 
 
-    void incReserve(int extraPtCount, int extraVerbCount);
+
+    void incReserve(int extraPtCount, int extraVerbCount, int extraConicCount);
 
     
 
@@ -843,7 +889,7 @@ public:
 
 
     void incReserve(int extraPtCount) {
-        this->incReserve(extraPtCount, extraPtCount);
+        this->incReserve(extraPtCount, extraPtCount, 0);
     }
 
     
@@ -861,12 +907,6 @@ public:
 
     SkPathBuilder& transform(const SkMatrix& matrix);
 
-#ifdef SK_SUPPORT_LEGACY_APPLYPERSPECTIVECLIP
-    SkPathBuilder& transform(const SkMatrix& matrix, SkApplyPerspectiveClip) {
-        return this->transform(matrix);
-    }
-#endif
-
     
 
 
@@ -876,7 +916,7 @@ public:
 
 
     SkPathBuilder& toggleInverseFillType() {
-        fFillType = (SkPathFillType)((unsigned)fFillType ^ 2);
+        fFillType = SkPathFillType_ToggleInverse(fFillType);
         return *this;
     }
 
@@ -902,7 +942,26 @@ public:
 
 
 
-    void setLastPt(SkScalar x, SkScalar y);
+    void setPoint(size_t index, SkPoint p);
+
+    
+
+
+
+
+    void setLastPoint(SkPoint p) {
+        this->setPoint(this->points().size() - 1, p);
+    }
+
+#ifdef SK_SUPPORT_LEGACY_PATHBUILDER_SETLASTPT
+    
+
+
+
+
+    void setLastPt(SkPoint pt);
+    void setLastPt(float x, float y) { this->setLastPt({x, y}); }
+#endif
 
     
 
@@ -918,15 +977,6 @@ public:
 
     bool isInverseFillType() const { return SkPathFillType_IsInverse(fFillType); }
 
-#ifdef SK_SUPPORT_UNSPANNED_APIS
-    SkPathBuilder& addPolygon(const SkPoint pts[], int count, bool close) {
-        return this->addPolygon({pts, count}, close);
-    }
-    SkPathBuilder& polylineTo(const SkPoint pts[], int count) {
-        return this->polylineTo({pts, count});
-    }
-#endif
-
     SkSpan<const SkPoint> points() const {
         return fPts;
     }
@@ -937,23 +987,39 @@ public:
         return fConicWeights;
     }
 
-    SkPathBuilder& addRaw(const SkPathRaw&);
+    enum class Reserve {
+        
+        kExact,
+        
+        kGrow
+    };
+    SkPathBuilder& addRaw(const SkPathRaw&, Reserve);
 
     SkPathIter iter() const;
 
+    enum class DumpFormat {
+        kDecimal,
+        kHex,
+    };
+    SkString dumpToString(DumpFormat = DumpFormat::kDecimal) const;
+    void dump(DumpFormat) const;
+    
+    
+    void dump() const { this->dump(DumpFormat::kDecimal); }
+
+    bool contains(SkPoint) const;
+
 private:
-    SkPathRef::PointsArray fPts;
-    SkPathRef::VerbsArray fVerbs;
-    SkPathRef::ConicWeightsArray fConicWeights;
+    PointsArray fPts;
+    VerbsArray fVerbs;
+    ConicWeightsArray fConicWeights;
 
     SkPathFillType  fFillType;
     bool            fIsVolatile;
     SkPathConvexity fConvexity;
 
     unsigned    fSegmentMask;
-    SkPoint     fLastMovePoint;
     int         fLastMoveIndex; 
-    bool        fNeedsMoveVerb;
 
     SkPathIsAType fType = SkPathIsAType::kGeneral;
     SkPathIsAData fIsA {};
@@ -961,19 +1027,19 @@ private:
     
     void ensureMove() {
         fType = SkPathIsAType::kGeneral;
-        if (fNeedsMoveVerb) {
-            this->moveTo(fLastMovePoint);
+        if (fVerbs.empty()) {
+            this->moveTo({0, 0});
+        } else if (fVerbs.back() == SkPathVerb::kClose) {
+            this->moveTo(fPts[fLastMoveIndex]);
         }
     }
-
-    SkPath make(sk_sp<SkPathRef>) const;
 
     bool isZeroLengthSincePoint(int startPtIndex) const;
 
     SkPathBuilder& privateReverseAddPath(const SkPath&);
     SkPathBuilder& privateReversePathTo(const SkPath&);
 
-    std::tuple<SkPoint*, SkScalar*> growForVerbsInPath(const SkPathRef& path);
+    std::tuple<SkPoint*, SkScalar*> growForVerbsInPath(const SkPath& path);
 
     friend class SkPathPriv;
     friend class SkStroke;

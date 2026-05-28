@@ -8,56 +8,135 @@
 #ifndef sktext_gpu_GlyphVector_DEFINED
 #define sktext_gpu_GlyphVector_DEFINED
 
-#include "include/core/SkRefCnt.h"
 #include "include/core/SkSpan.h"
 #include "src/core/SkGlyph.h"
-#include "src/core/SkStrike.h"   
-#include "src/gpu/AtlasTypes.h"
-#include "src/text/StrikeForGPU.h"
+#include "src/core/SkStrike.h"  
+#include "src/gpu/MaskFormat.h"
 #include "src/text/gpu/StrikeCache.h"
 
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <optional>
-#include <tuple>
 
 class SkReadBuffer;
 class SkStrikeClient;
 class SkWriteBuffer;
 
-class GrMeshDrawTarget;
-namespace skgpu::ganesh { class AtlasTextOp; }
-namespace skgpu::graphite {
-class Device;
-class Recorder;
-}
-
 namespace sktext::gpu {
-class Glyph;
 class SubRunAllocator;
+class StrikeCache;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+namespace GlyphVector_Concepts {
+
+
+
+static constexpr size_t kMaxGlyphTypeSize = sizeof(void*);
+static constexpr size_t kMaxBackendDataSize = 88;
+
+template <typename T>
+concept GlyphType = requires(const T& t) {
+    requires sizeof(T)  <= kMaxGlyphTypeSize;
+    
+    
+    requires alignof(T) <= kMaxGlyphTypeSize;
+
+    std::is_trivially_destructible_v<T>;
+
+    { t.packedID() } -> std::convertible_to<SkPackedGlyphID>;
+};
+
+template <typename T, template <typename...> class Template>
+constexpr bool is_specialization_of_v = false;
+
+template <template <typename...> class Template, typename... Args>
+constexpr bool is_specialization_of_v<Template<Args...>, Template> = true;
+
+template <typename T>
+concept BackendData = requires(T& t,
+                               StrikeCache* cache,
+                               const SkStrikeSpec& spec,
+                               SkPackedGlyphID id,
+                               skgpu::MaskFormat maskFormat) {
+    requires alignof(T) <= alignof(max_align_t);
+    requires sizeof(T)  <= kMaxBackendDataSize;
+
+    T::FindStrike(cache, spec);
+    requires is_specialization_of_v<decltype(T::FindStrike(cache, spec)), sk_sp>;
+    requires std::derived_from<typename decltype(T::FindStrike(cache, spec))::element_type, TextStrikeBase>;
+
+    
+    { t.makeGlyphFromID(id, maskFormat) } -> GlyphType;
+};
+}  
+
+
+
 
 
 
 
 
 class GlyphVector {
-public:
-    union Variant {
-        
-        SkPackedGlyphID packedGlyphID;
-        Glyph* glyph;
-        
-        Variant() : glyph{nullptr} {}
-        Variant(SkPackedGlyphID id) : packedGlyphID{id} {}
-    };
+    using GlyphBytes = std::array<std::byte, GlyphVector_Concepts::kMaxGlyphTypeSize>;
+    using BackendDataBytes = std::array<std::byte, GlyphVector_Concepts::kMaxBackendDataSize>;
 
-    GlyphVector(SkStrikePromise&& strikePromise, SkSpan<Variant> glyphs);
+    
+    
+    template <GlyphVector_Concepts::BackendData B>
+    using Strike = std::invoke_result_t<decltype(B::FindStrike), StrikeCache*, const SkStrikeSpec&>;
+
+    template <GlyphVector_Concepts::BackendData B>
+    using Glyph = decltype(std::declval<B>().makeGlyphFromID(SkPackedGlyphID{},
+                                                             skgpu::MaskFormat::kARGB));
+
+public:
+    static size_t Size(int numGlyphs) {
+        SkASSERT(numGlyphs >= 0);
+        return SkAlignTo(sizeof(GlyphVector), alignof(max_align_t)) + sizeof(GlyphBytes) * numGlyphs;
+    }
+
+    GlyphVector(SkStrikePromise&& strikePromise, SkSpan<GlyphBytes> glyphs);
+
+    
+    GlyphVector(GlyphVector&&);
+
+    GlyphVector(const GlyphVector&&)           = delete;
+    GlyphVector& operator=(const GlyphVector&) = delete;
+    GlyphVector& operator=(GlyphVector&&)      = delete;
+
+    ~GlyphVector();
 
     static GlyphVector Make(SkStrikePromise&& promise,
                             SkSpan<const SkPackedGlyphID> glyphs,
                             SubRunAllocator* alloc);
 
-    SkSpan<const Glyph*> glyphs() const;
+    int glyphCount() const { return SkToInt(fGlyphs.size()); }
 
     static std::optional<GlyphVector> MakeFromBuffer(SkReadBuffer& buffer,
                                                      const SkStrikeClient* strikeClient,
@@ -66,40 +145,77 @@ public:
 
     
     
-    int unflattenSize() const { return GlyphVectorSize(fGlyphs.size()); }
+    int unflattenSize() const { return Size(fGlyphs.size()); }
 
-    void packedGlyphIDToGlyph(StrikeCache* cache);
+    bool hasBackendData() const {
+        SkASSERT(SkToBool(fBackendDataReleaser) == SkToBool(fGetGlyphID));
+        return SkToBool(fBackendDataReleaser);
+    }
 
-    static size_t GlyphVectorSize(size_t count) {
-        return sizeof(Variant) * count;
+    template <GlyphVector_Concepts::BackendData B> const B& accessBackendData() const {
+        SkASSERT(this->hasBackendData());
+        return *reinterpret_cast<const B*>(fBackendDataBytes.data());
+    }
+
+    template <GlyphVector_Concepts::BackendData B> B& accessBackendData() {
+        SkASSERT(this->hasBackendData());
+        return *reinterpret_cast<B*>(fBackendDataBytes.data());
+    }
+
+    template <GlyphVector_Concepts::GlyphType G> SkSpan<const G> accessBackendGlyphs() const {
+        SkASSERT(this->hasBackendData());
+        auto* first = reinterpret_cast<const G*>(fGlyphs.front().data());
+        return {first, fGlyphs.size()};
+    }
+
+    template <GlyphVector_Concepts::BackendData B>
+    void initBackendData(StrikeCache* cache, skgpu::MaskFormat maskFormat, auto&&... args)
+        requires std::is_constructible_v<B, Strike<B>, decltype(args)...> {
+        SkASSERT(!this->hasBackendData());
+        SkASSERT(cache);
+
+        SkStrike* strike = fStrikePromise.strike();
+        const SkStrikeSpec& spec = strike->strikeSpec();
+        auto backendStrike = B::FindStrike(cache, spec);
+
+        auto backendData = new (fBackendDataBytes.data()) B{
+            std::move(backendStrike),
+            std::forward<decltype(args)>(args)...
+        };
+
+        using G = Glyph<B>;
+
+        for (auto& g : fGlyphs) {
+            auto id = *reinterpret_cast<SkPackedGlyphID*>(g.data());
+            new (g.data()) G{backendData->makeGlyphFromID(id, maskFormat)};
+        }
+
+        fBackendDataReleaser = [](std::byte* p) { reinterpret_cast<B*>(p)->~B(); };
+
+        fGetGlyphID = [](const std::byte* b) {
+            auto* g = reinterpret_cast<const G*>(b);
+            return g->packedID();
+        };
+
+        strike->verifyPinnedStrike();
+        fStrikePromise.resetStrike();
     }
 
 private:
     friend class GlyphVectorTestingPeer;
-    friend class ::skgpu::graphite::Device;
-    friend class ::skgpu::ganesh::AtlasTextOp;
 
-    
-    
-    std::tuple<bool, int> regenerateAtlasForGanesh(
-            int begin, int end,
-            skgpu::MaskFormat maskFormat,
-            int srcPadding,
-            GrMeshDrawTarget*);
+    using Releaser = void(std::byte*);
 
-    
-    
-    std::tuple<bool, int> regenerateAtlasForGraphite(
-            int begin, int end,
-            skgpu::MaskFormat maskFormat,
-            int srcPadding,
-            skgpu::graphite::Recorder*);
+    using GetGlyphID = SkPackedGlyphID(const std::byte*);
+
+    alignas(max_align_t) BackendDataBytes fBackendDataBytes;
+
+    Releaser*   fBackendDataReleaser = nullptr;
+    GetGlyphID* fGetGlyphID          = nullptr;
 
     SkStrikePromise fStrikePromise;
-    SkSpan<Variant> fGlyphs;
-    sk_sp<TextStrike> fTextStrike{nullptr};
-    uint64_t fAtlasGeneration{skgpu::AtlasGenerationCounter::kInvalidGeneration};
-    skgpu::BulkUsePlotUpdater fBulkUseUpdater;
+
+    SkSpan<GlyphBytes> fGlyphs;
 };
 }  
-#endif  
+#endif

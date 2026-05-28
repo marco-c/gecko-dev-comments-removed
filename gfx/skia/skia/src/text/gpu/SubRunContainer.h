@@ -43,14 +43,8 @@ enum class MaskFormat : int;
 }
 
 namespace sktext::gpu {
-class Glyph;
+class GlyphVector;
 class StrikeCache;
-
-using RegenerateAtlasDelegate = std::function<std::tuple<bool, int>(GlyphVector*,
-                                                                    int begin,
-                                                                    int end,
-                                                                    skgpu::MaskFormat,
-                                                                    int padding)>;
 
 struct RendererData {
     bool isSDF = false;
@@ -120,14 +114,13 @@ private:
 
 class AtlasSubRun : public SubRun {
 public:
-    AtlasSubRun(VertexFiller&& vertexFiller, GlyphVector&& glyphs)
-            : fVertexFiller{std::move(vertexFiller)}
-            , fGlyphs{std::move(glyphs)} {}
+    AtlasSubRun(VertexFiller&& vertexFiller, GlyphVector&& glyphVector)
+            : fVertexFiller{std::move(vertexFiller)}, fGlyphVector{std::move(glyphVector)} {}
+
     ~AtlasSubRun() override = default;
 
-    SkSpan<const Glyph*> glyphs() const { return fGlyphs.glyphs(); }
-    int glyphCount() const { return SkCount(fGlyphs.glyphs()); }
-    skgpu::MaskFormat maskFormat() const { return fVertexFiller.grMaskType(); }
+    int glyphCount() const { return fGlyphVector.glyphCount(); }
+    skgpu::MaskFormat maskFormat() const { return fVertexFiller.maskFormat(); }
     virtual int glyphSrcPadding() const = 0;
     unsigned short instanceFlags() const { return (unsigned short)this->maskFormat(); }
 
@@ -141,40 +134,16 @@ public:
     };
     virtual GlyphParams glyphParams() const = 0;
 
-    size_t vertexStride(const SkMatrix& drawMatrix) const {
-        return fVertexFiller.vertexStride(drawMatrix);
-    }
-
-    void fillVertexData(
-            void* vertexDst, int offset, int count,
-            const SkPMColor4f& color,
-            const SkMatrix& drawMatrix,
-            SkPoint drawOrigin,
-            SkIRect clip) const {
-        SkMatrix positionMatrix = drawMatrix;
-        positionMatrix.preTranslate(drawOrigin.x(), drawOrigin.y());
-        fVertexFiller.fillVertexData(offset, count,
-                                     fGlyphs.glyphs(),
-                                     color,
-                                     positionMatrix,
-                                     clip,
-                                     vertexDst);
-    }
-
-    
-    virtual std::tuple<bool, int> regenerateAtlas(
-            int begin, int end, RegenerateAtlasDelegate) const = 0;
-
     const VertexFiller& vertexFiller() const { return fVertexFiller; }
 
-    virtual void testingOnly_packedGlyphIDToGlyph(StrikeCache* cache) const = 0;
+    GlyphVector& glyphVector() const { return fGlyphVector; }
 
 protected:
     const VertexFiller fVertexFiller;
 
     
     
-    mutable GlyphVector fGlyphs;
+    mutable GlyphVector fGlyphVector;
 };
 
 

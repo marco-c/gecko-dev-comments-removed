@@ -19,7 +19,7 @@
 
 
 
-class SkAutoCoInitialize : SkNoncopyable {
+class [[nodiscard]] SkAutoCoInitialize : SkNoncopyable {
 private:
     HRESULT fHR;
 public:

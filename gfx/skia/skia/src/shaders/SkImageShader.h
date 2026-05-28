@@ -50,6 +50,17 @@ public:
                                       const SkMatrix* localMatrix,
                                       bool clampAsIfUnpremul = false);
 
+    
+    
+    
+    
+    static std::pair<SkRect, sk_sp<SkShader>> MakeForDrawRect(const SkImage* image,
+                                                              const SkPaint& paint,
+                                                              const SkSamplingOptions&,
+                                                              SkRect src,
+                                                              SkRect dst,
+                                                              bool strictSrcSubset);
+
     SkImageShader(sk_sp<SkImage>,
                   const SkRect& subset,
                   SkTileMode tmx, SkTileMode tmy,

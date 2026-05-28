@@ -57,7 +57,7 @@ public:
 
 
 
-    SkPaintFilterCanvas(SkCanvas* canvas);
+    explicit SkPaintFilterCanvas(SkCanvas* canvas);
 
     enum Type {
         kPicture_Type,
