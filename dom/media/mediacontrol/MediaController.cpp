@@ -9,6 +9,7 @@
 #include "MediaControlUtils.h"
 #include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/StaticPrefs_media.h"
+#include "mozilla/Uptime.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/MediaSession.h"
@@ -363,12 +364,17 @@ void MediaController::NotifyMediaAudibleChanged(uint64_t aBrowsingContextId,
   const bool oldAudible = IsAudible();
   MediaStatusManager::NotifyMediaAudibleChanged(aBrowsingContextId, aState,
                                                 aType, aSessionType);
-  if (IsAudible() == oldAudible) {
+  const bool audibleChanged = (IsAudible() != oldAudible);
+  if (audibleChanged) {
+    UpdateActivatedStateIfNeeded();
+    DispatchAsyncEvent(u"audiblechange"_ns);
+  }
+
+  UpdateAudibleForAudioSession(aBrowsingContextId);
+
+  if (!audibleChanged) {
     return;
   }
-  UpdateActivatedStateIfNeeded();
-  DispatchAsyncEvent(u"audiblechange"_ns);
-
   
   
   RefPtr<MediaControlService> service = MediaControlService::GetService();
@@ -377,6 +383,25 @@ void MediaController::NotifyMediaAudibleChanged(uint64_t aBrowsingContextId,
     service->GetAudioFocusManager().RequestAudioFocus(this);
   } else {
     service->GetAudioFocusManager().RevokeAudioFocus(this);
+  }
+}
+
+void MediaController::UpdateAudibleForAudioSession(
+    uint64_t aBrowsingContextId) {
+  AudioSessionRecord& record =
+      mAudioSessions.LookupOrInsert(aBrowsingContextId);
+  const bool bcWasAudible = record.GetAudibleAtMs().isSome();
+  const bool bcIsAudibleNow = IsBcAudible(aBrowsingContextId);
+  if (!bcWasAudible && bcIsAudibleNow) {
+    record.SetAudibleAtMs(
+        aBrowsingContextId,
+        Some(static_cast<int64_t>(mozilla::ProcessUptimeMs().valueOr(0))));
+  } else if (bcWasAudible && !bcIsAudibleNow) {
+    record.SetAudibleAtMs(aBrowsingContextId, Nothing());
+  }
+  if (record.IsEmpty()) {
+    LOG("Removing empty AudioSessionRecord bc=%" PRIu64, aBrowsingContextId);
+    mAudioSessions.Remove(aBrowsingContextId);
   }
 }
 
@@ -577,14 +602,21 @@ void MediaController::DispatchAsyncEvent(already_AddRefed<Event> aEvent) {
   nsAutoString eventType;
   event->GetType(eventType);
   
-  
-  
-  if (!mIsActive && !eventType.EqualsLiteral("deactivated") &&
-      !eventType.EqualsLiteral("audiblechange")) {
-    LOG("Only 'deactivated' can be dispatched on a deactivated controller, not "
-        "'%s'",
-        NS_ConvertUTF16toUTF8(eventType).get());
-    return;
+  static constexpr nsLiteralString kAllowedWhileInactive[] = {
+      u"deactivated"_ns, u"audiblechange"_ns};
+  if (!mIsActive) {
+    bool allowed = false;
+    for (const auto& allowedType : kAllowedWhileInactive) {
+      if (eventType.Equals(allowedType)) {
+        allowed = true;
+        break;
+      }
+    }
+    if (!allowed) {
+      LOG("Dropping event '%s' on a deactivated controller",
+          NS_ConvertUTF16toUTF8(eventType).get());
+      return;
+    }
   }
   LOG("Dispatch event %s", NS_ConvertUTF16toUTF8(eventType).get());
   RefPtr<AsyncEventDispatcher> asyncDispatcher =
@@ -639,6 +671,78 @@ AudioSessionType MediaController::EffectiveTypeForBc(
     }
   }
   return MediaStatusManager::EffectiveTypeForBc(aBrowsingContextId);
+}
+
+Maybe<AudioSessionType> MediaController::GetSelectedAudioSessionType() const {
+  
+  
+  
+  
+  
+  
+  
+  AutoTArray<const AudioSessionRecord*, 4> activeAudioSessions;
+  AutoTArray<AudioSessionType, 4> activeEffectiveTypes;
+  for (const auto& entry : mAudioSessions) {
+    const AudioSessionRecord& record = entry.GetData();
+    if (record.GetAudibleAtMs().isNothing()) {
+      continue;
+    }
+    const AudioSessionType type = EffectiveTypeForBc(entry.GetKey());
+    if (!IsExclusiveAudioSessionType(type)) {
+      continue;
+    }
+    activeAudioSessions.AppendElement(&record);
+    activeEffectiveTypes.AppendElement(type);
+  }
+
+  
+  if (activeAudioSessions.IsEmpty()) {
+    return Nothing();
+  }
+
+  
+  
+  if (activeAudioSessions.Length() == 1) {
+    return Some(activeEffectiveTypes[0]);
+  }
+
+  
+  
+  
+  size_t winner = 0;
+  for (size_t i = 1; i < activeAudioSessions.Length(); ++i) {
+    if (*activeAudioSessions[i]->GetAudibleAtMs() >
+        *activeAudioSessions[winner]->GetAudibleAtMs()) {
+      winner = i;
+    }
+  }
+
+  
+  
+  return Some(activeEffectiveTypes[winner]);
+}
+
+AudioSessionType MediaController::GetEffectiveAudioSessionType() const {
+  if (Maybe<AudioSessionType> selected = GetSelectedAudioSessionType()) {
+    return *selected;
+  }
+  
+  
+  
+  
+  Maybe<AudioSessionType> fallback;
+  for (const auto& entry : mAudioSessions) {
+    if (entry.GetData().GetAudibleAtMs().isNothing()) {
+      continue;
+    }
+    const AudioSessionType type = EffectiveTypeForBc(entry.GetKey());
+    if (!fallback || AudioSessionTypePriorityRank(type) >
+                         AudioSessionTypePriorityRank(*fallback)) {
+      fallback = Some(type);
+    }
+  }
+  return fallback.valueOr(AudioSessionType::Auto);
 }
 
 const AudioSessionRecord* MediaController::GetAudioSessionRecordForTesting(

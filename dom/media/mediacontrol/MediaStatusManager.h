@@ -200,6 +200,10 @@ class MediaStatusManager : public IMediaInfoUpdater {
 
   
   
+  bool IsBcAudible(uint64_t aBrowsingContextId) const;
+
+  
+  
   MediaEventSource<MediaMetadataBase>& MetadataChangedEvent() {
     return mMetadataChangedEvent;
   }

@@ -176,6 +176,10 @@ class MediaController final : public DOMEventTargetHelper,
 
   
   
+  AudioSessionType GetEffectiveAudioSessionType() const;
+
+  
+  
   const AudioSessionRecord* GetAudioSessionRecordForTesting(
       uint64_t aBrowsingContextId) const;
 
@@ -205,6 +209,16 @@ class MediaController final : public DOMEventTargetHelper,
 
   void DispatchAsyncEvent(const nsAString& aName);
   void DispatchAsyncEvent(already_AddRefed<Event> aEvent);
+
+  
+  
+  
+  
+  Maybe<AudioSessionType> GetSelectedAudioSessionType() const;
+
+  
+  
+  void UpdateAudibleForAudioSession(uint64_t aBrowsingContextId);
 
   bool IsMainController() const;
   void ForceToBecomeMainControllerIfNeeded();

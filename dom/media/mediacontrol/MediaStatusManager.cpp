@@ -536,6 +536,10 @@ AudioSessionType MediaStatusManager::EffectiveTypeForBc(
   return mPlaybackStatusDelegate.EffectiveTypeForBc(aBrowsingContextId);
 }
 
+bool MediaStatusManager::IsBcAudible(uint64_t aBrowsingContextId) const {
+  return mPlaybackStatusDelegate.IsBcAudible(aBrowsingContextId);
+}
+
 void MediaStatusManager::NotifyPageTitleChanged() {
   
   

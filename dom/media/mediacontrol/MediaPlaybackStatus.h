@@ -99,11 +99,15 @@ class MediaPlaybackStatus final {
 
   
   
+  bool IsBcAudible(uint64_t aBcId) const;
+
+  
+  
   AudioSessionType EffectiveTypeForBc(uint64_t aBcId) const;
 
   
   
-  bool IsBcAudibleForTesting(uint64_t aBcId) const;
+  
   const nsTArray<AudibleSource>* GetAudibleSourcesForTesting(
       uint64_t aBcId) const;
 
