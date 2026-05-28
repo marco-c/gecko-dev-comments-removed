@@ -7,9 +7,19 @@
 
 "use strict";
 
+ChromeUtils.defineESModuleGetters(this, {
+  UrlbarView: "moz-src:///browser/components/urlbar/UrlbarView.sys.mjs",
+});
+
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [["browser.urlbar.scotchBonnet.enableOverride", false]],
+  });
+
+  
+  let originalRemoveStaleRowsTimeout = UrlbarView.removeStaleRowsTimeout;
+  registerCleanupFunction(() => {
+    UrlbarView.removeStaleRowsTimeout = originalRemoveStaleRowsTimeout;
   });
 });
 
@@ -18,9 +28,7 @@ add_setup(async function () {
 add_task(async function viewContainsStaleRows() {
   
   
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.removeStaleRowsTimeout", 10000]],
-  });
+  UrlbarView.removeStaleRowsTimeout = 10000;
 
   
   
@@ -166,9 +174,7 @@ add_task(async function staleReplacedWithFresh() {
   
   
   
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.removeStaleRowsTimeout", 1000]],
-  });
+  UrlbarView.removeStaleRowsTimeout = 1000;
 
   await PlacesUtils.history.clear();
   await PlacesUtils.bookmarks.eraseEverything();

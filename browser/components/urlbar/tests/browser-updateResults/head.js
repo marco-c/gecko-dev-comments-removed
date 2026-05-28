@@ -13,6 +13,7 @@ ChromeUtils.defineESModuleGetters(this, {
   SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   UrlbarResult: "moz-src:///browser/components/urlbar/UrlbarResult.sys.mjs",
   UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
+  UrlbarView: "moz-src:///browser/components/urlbar/UrlbarView.sys.mjs",
   sinon: "resource://testing-common/Sinon.sys.mjs",
 });
 
@@ -40,11 +41,15 @@ add_setup(async function headInit() {
 
       
       ["browser.urlbar.maxRichResults", MAX_RESULTS],
-
-      
-      
-      ["browser.urlbar.removeStaleRowsTimeout", 30000],
     ],
+  });
+
+  
+  
+  let originalRemoveStaleRowsTimeout = UrlbarView.removeStaleRowsTimeout;
+  UrlbarView.removeStaleRowsTimeout = 30000;
+  registerCleanupFunction(() => {
+    UrlbarView.removeStaleRowsTimeout = originalRemoveStaleRowsTimeout;
   });
 });
 
