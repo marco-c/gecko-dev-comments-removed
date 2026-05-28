@@ -450,6 +450,7 @@ class nsIWidget : public nsSupportsWeakReference {
   using PopupLevel = mozilla::widget::PopupLevel;
   using BorderStyle = mozilla::widget::BorderStyle;
   using TransparencyMode = mozilla::widget::TransparencyMode;
+  using Screen = mozilla::widget::Screen;
 
   
   struct ThemeGeometry {
@@ -1171,7 +1172,7 @@ class nsIWidget : public nsSupportsWeakReference {
   
 
 
-  virtual already_AddRefed<mozilla::widget::Screen> GetWidgetScreen();
+  virtual already_AddRefed<Screen> GetWidgetScreen();
 
   
 
