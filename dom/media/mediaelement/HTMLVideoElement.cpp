@@ -6,7 +6,6 @@
 
 #include "mozilla/AppShutdown.h"
 #include "mozilla/AsyncEventDispatcher.h"
-#include "mozilla/dom/BrowserChild.h"
 #include "mozilla/dom/HTMLVideoElementBinding.h"
 #ifdef MOZ_WEBRTC
 #  include "mozilla/dom/RTCStatsReport.h"
@@ -23,14 +22,7 @@
 #include "VideoOutput.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_media.h"
-#include "mozilla/dom/FeaturePolicyUtils.h"
 #include "mozilla/dom/Performance.h"
-#include "mozilla/dom/PictureInPictureEvent.h"
-#include "mozilla/dom/PictureInPictureEventBinding.h"
-#include "mozilla/dom/PictureInPictureService.h"
-#include "mozilla/dom/PictureInPictureWindow.h"
-#include "mozilla/dom/Promise.h"
-#include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/TimeRanges.h"
 #include "mozilla/dom/VideoPlaybackQuality.h"
 #include "mozilla/dom/VideoStreamTrack.h"
@@ -149,7 +141,6 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(HTMLVideoElement)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mVisualCloneTarget)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mVisualCloneTargetPromise)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mVisualCloneSource)
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mPictureInPictureWindow)
   tmp->mSecondaryVideoOutput = nullptr;
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END_INHERITED(HTMLMediaElement)
 
@@ -159,7 +150,6 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(HTMLVideoElement,
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mVisualCloneTarget)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mVisualCloneTargetPromise)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mVisualCloneSource)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPictureInPictureWindow)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 HTMLVideoElement::HTMLVideoElement(already_AddRefed<NodeInfo>&& aNodeInfo)
@@ -245,23 +235,6 @@ bool HTMLVideoElement::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
 
   return HTMLMediaElement::ParseAttribute(aNamespaceID, aAttribute, aValue,
                                           aMaybeScriptedPrincipal, aResult);
-}
-
-void HTMLVideoElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
-                                    const nsAttrValue* aValue,
-                                    const nsAttrValue* aOldValue,
-                                    nsIPrincipal* aMaybeScriptedPrincipal,
-                                    bool aNotify) {
-  if (aNameSpaceID == kNameSpaceID_None &&
-      aName == nsGkAtoms::disablepictureinpicture && aValue) {
-    if (OwnerDoc()->GetPictureInPictureElementInternal() == this) {
-      PictureInPictureService::DispatchExitPictureInPictureRunnable(
-           nullptr, this);
-    }
-  }
-
-  HTMLMediaElement::AfterSetAttr(aNameSpaceID, aName, aValue, aOldValue,
-                                 aMaybeScriptedPrincipal, aNotify);
 }
 
 void HTMLVideoElement::MapAttributesIntoRule(
@@ -544,9 +517,14 @@ void HTMLVideoElement::ReleaseVideoWakeLockIfExists() {
 bool HTMLVideoElement::SetVisualCloneTarget(
     RefPtr<HTMLVideoElement> aVisualCloneTarget,
     RefPtr<Promise> aVisualCloneTargetPromise) {
+  MOZ_DIAGNOSTIC_ASSERT(
+      !aVisualCloneTarget || aVisualCloneTarget->IsInComposedDoc(),
+      "Can't set the clone target to a disconnected video "
+      "element.");
   MOZ_DIAGNOSTIC_ASSERT(!mVisualCloneSource,
                         "Can't clone a video element that is already a clone.");
-  if (!aVisualCloneTarget || !mVisualCloneSource) {
+  if (!aVisualCloneTarget ||
+      (aVisualCloneTarget->IsInComposedDoc() && !mVisualCloneSource)) {
     mVisualCloneTarget = std::move(aVisualCloneTarget);
     mVisualCloneTargetPromise = std::move(aVisualCloneTargetPromise);
     return true;
@@ -556,10 +534,15 @@ bool HTMLVideoElement::SetVisualCloneTarget(
 
 bool HTMLVideoElement::SetVisualCloneSource(
     RefPtr<HTMLVideoElement> aVisualCloneSource) {
+  MOZ_DIAGNOSTIC_ASSERT(
+      !aVisualCloneSource || aVisualCloneSource->IsInComposedDoc(),
+      "Can't set the clone source to a disconnected video "
+      "element.");
   MOZ_DIAGNOSTIC_ASSERT(!mVisualCloneTarget,
                         "Can't clone a video element that is already a "
                         "clone.");
-  if (!aVisualCloneSource || !mVisualCloneTarget) {
+  if (!aVisualCloneSource ||
+      (aVisualCloneSource->IsInComposedDoc() && !mVisualCloneTarget)) {
     mVisualCloneSource = std::move(aVisualCloneSource);
     return true;
   }
@@ -622,9 +605,11 @@ double HTMLVideoElement::TotalPlayTime() const {
 
 already_AddRefed<Promise> HTMLVideoElement::CloneElementVisually(
     HTMLVideoElement& aTargetVideo, ErrorResult& aRv) {
+  MOZ_ASSERT(IsInComposedDoc(),
+             "Can't clone a video that's not bound to a DOM tree.");
   MOZ_ASSERT(aTargetVideo.IsInComposedDoc(),
              "Can't clone to a video that's not bound to a DOM tree.");
-  if (!aTargetVideo.IsInComposedDoc()) {
+  if (!IsInComposedDoc() || !aTargetVideo.IsInComposedDoc()) {
     aRv.Throw(NS_ERROR_UNEXPECTED);
     return nullptr;
   }
@@ -726,12 +711,9 @@ void HTMLVideoElement::EndCloningVisually() {
 
   UpdateMediaControlAfterPictureInPictureModeChanged();
 
-  if (IsInComposedDoc() && OwnerDoc()->IsCurrentActiveDocument() &&
-      !StaticPrefs::media_cloneElementVisually_testing()) {
+  if (IsInComposedDoc() && !StaticPrefs::media_cloneElementVisually_testing()) {
     NotifyUAWidgetSetupOrChange();
   }
-
-  ClosePictureInPictureWindowAndFireEvent();
 }
 
 void HTMLVideoElement::OnSecondaryVideoContainerInstalled(
@@ -991,135 +973,6 @@ void HTMLVideoElement::CancelVideoFrameCallback(uint32_t aHandle) {
   if (mVideoFrameRequestManager.Cancel(aHandle) && !HasPendingCallbacks()) {
     NotifyDecoderActivityChanges();
   }
-}
-
-void HTMLVideoElement::ClosePictureInPictureWindowAndFireEvent() {
-  
-  
-  if (OwnerDoc()->GetPictureInPictureElementInternal() != this) {
-    return;
-  }
-
-  
-  
-  
-  
-  OwnerDoc()->SetPictureInPictureElement(nullptr);
-  if (RefPtr<PictureInPictureWindow> pipWindow =
-          std::move(mPictureInPictureWindow)) {
-    pipWindow->Close();
-  }
-}
-
-
-already_AddRefed<Promise> HTMLVideoElement::RequestPictureInPicture(
-    ErrorResult& aRv) {
-  PictureInPictureService::EnsureInit();
-  
-  RefPtr<Promise> p = Promise::Create(GetRelevantGlobal(), aRv);
-  if (!p) {
-    return nullptr;
-  }
-
-  
-  
-  if (!PictureInPictureWindow::PictureInPictureEnabled()) {
-    p->MaybeRejectWithNotSupportedError("Picture-In-Picture is not enabled");
-    return p.forget();
-  }
-
-  
-  
-  
-  if (!FeaturePolicyUtils::IsFeatureAllowed(OwnerDoc(),
-                                            u"picture-in-picture"_ns)) {
-    p->MaybeRejectWithSecurityError(
-        "Permissions policy: picture-in-picture not allowed");
-    return p.forget();
-  }
-
-  
-  
-  if (ReadyState() == HTMLMediaElement_Binding::HAVE_NOTHING) {
-    p->MaybeRejectWithInvalidStateError("Video readyState is HAVE_NOTHING");
-    return p.forget();
-  }
-
-  
-  
-  if (!HasVideo()) {
-    p->MaybeRejectWithInvalidStateError("Video element has no video track");
-    return p.forget();
-  }
-
-  
-  
-  if (DisablePictureInPicture()) {
-    p->MaybeRejectWithInvalidStateError(
-        "Picture-in-Picture is disabled on this video");
-    return p.forget();
-  }
-
-  
-  
-  
-  
-  Document* doc = OwnerDoc();
-  const Element* pictureInPictureElement =
-      doc->GetPictureInPictureElementInternal();
-  if (!pictureInPictureElement &&
-      !doc->ConsumeTransientUserGestureActivation()) {
-    p->MaybeRejectWithNotAllowedError(
-        "Picture-in-Picture requires user activation");
-    return p.forget();
-  }
-
-  
-  if (this == pictureInPictureElement) {
-    
-    
-    auto pipWindow = mPictureInPictureWindow;
-    p->MaybeResolve(pipWindow);
-    return p.forget();
-  }
-
-  
-  
-  NS_DispatchToMainThread(NS_NewRunnableFunction(
-      __func__, [promise = RefPtr{p},
-                 video = RefPtr{this}]() MOZ_CAN_RUN_SCRIPT_BOUNDARY {
-        PictureInPictureService::OpenPictureInPictureWindow(promise, video);
-      }));
-  return p.forget();
-}
-
-
-EventHandlerNonNull* HTMLVideoElement::GetOnenterpictureinpicture() {
-  return EventTarget::GetEventHandler(nsGkAtoms::onenterpictureinpicture);
-}
-
-void HTMLVideoElement::SetOnenterpictureinpicture(
-    EventHandlerNonNull* aCallback) {
-  EventTarget::SetEventHandler(nsGkAtoms::onenterpictureinpicture, aCallback);
-}
-
-EventHandlerNonNull* HTMLVideoElement::GetOnleavepictureinpicture() {
-  return EventTarget::GetEventHandler(nsGkAtoms::onleavepictureinpicture);
-}
-
-void HTMLVideoElement::SetOnleavepictureinpicture(
-    EventHandlerNonNull* aCallback) {
-  EventTarget::SetEventHandler(nsGkAtoms::onleavepictureinpicture, aCallback);
-}
-
-void HTMLVideoElement::SetAssociatedPictureInPictureWindow(
-    PictureInPictureWindow* aWindow) {
-  mPictureInPictureWindow = aWindow;
-}
-
-PictureInPictureWindow* HTMLVideoElement::GetAssociatedPictureInPictureWindow()
-    const {
-  return mPictureInPictureWindow;
 }
 
 }  
