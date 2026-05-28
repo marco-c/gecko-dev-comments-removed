@@ -1459,7 +1459,7 @@ class RecursiveMakeBackend(MakeBackend):
             if isinstance(obj.manifest, ReftestManifest):
                 
                 
-                self.backend_input_files |= obj.manifest.manifests
+                self.backend_input_files |= obj.manifest.manifests.keys()
         except ImportError:
             
             
