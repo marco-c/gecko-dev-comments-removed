@@ -2272,9 +2272,6 @@ pref("browser.smartwindow.conversation.logLevel", "Error");
 pref("browser.smartwindow.smartbarMentions.loglevel", "Error");
 
 
-pref("browser.smartwindow.userFeedbackCollection", false);
-
-
 pref("security.mixed_content.block_active_content", true);
 
 
