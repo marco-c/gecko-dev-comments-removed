@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_workerinternals_JSSettings_h
 #define mozilla_dom_workerinternals_JSSettings_h
 
@@ -54,6 +52,12 @@ struct JSSettings {
       return true;
     }
     return false;
+  }
+
+  
+  void CopyOverrideStrings() {
+    chromeRealmOptions.behaviors().copyOverrideStrings();
+    contentRealmOptions.behaviors().copyOverrideStrings();
   }
 };
 
