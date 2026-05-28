@@ -2242,7 +2242,6 @@ var XULBrowserWindow = {
       });
     }
 
-    BookmarkingUI.onLocationChange();
     
     if (!isSameDocument) {
       updateBookmarkToolbarVisibility();
@@ -2266,28 +2265,6 @@ var XULBrowserWindow = {
     
     if (!isSameDocument) {
       closeOpenPanels(":is(panel, menupopup)[locationspecific='true']");
-    }
-
-    gPermissionPanel.onLocationChange();
-
-    gProtectionsHandler.onLocationChange();
-
-    BrowserPageActions.onLocationChange();
-
-    UrlbarProviderSearchTips.onLocationChange(
-      window,
-      aLocationURI,
-      aWebProgress,
-      aFlags
-    );
-
-    if (aLocationURI.scheme.startsWith("http")) {
-      ActionsProviderContextualSearch.onLocationChange(
-        window,
-        aLocationURI,
-        aWebProgress,
-        aFlags
-      );
     }
 
     this._updateElementsForContentType();
@@ -2317,12 +2294,13 @@ var XULBrowserWindow = {
       gCustomizeMode.exit();
     }
 
-    CFRPageActions.updatePageActions(gBrowser.selectedBrowser);
-
-    AboutReaderParent.updateReaderButton(gBrowser.selectedBrowser);
-    TranslationsParent.onLocationChange(gBrowser.selectedBrowser);
-
-    PictureInPicture.updateUrlbarToggle(gBrowser.selectedBrowser);
+    BrowserUtils.callModulesFromCategory(
+      { categoryName: "browser-window-location-change", jsGlobal: globalThis },
+      window,
+      aLocationURI,
+      aWebProgress,
+      aFlags
+    );
 
     if (!gMultiProcessBrowser) {
       
