@@ -322,13 +322,7 @@ pub struct PrimitiveCluster {
     
     
     
-    
-    pub unsnapped_bounding_rect: LayoutRect,
-    
-    
-    
-    
-    pub snapped_bounding_rect: LayoutRect,
+    bounding_rect: LayoutRect,
     
     pub prim_range: Range<usize>,
     
@@ -343,8 +337,7 @@ impl PrimitiveCluster {
         first_instance_index: usize,
     ) -> Self {
         PrimitiveCluster {
-            unsnapped_bounding_rect: LayoutRect::zero(),
-            snapped_bounding_rect: LayoutRect::zero(),
+            bounding_rect: LayoutRect::zero(),
             spatial_node_index,
             flags,
             prim_range: first_instance_index..first_instance_index
@@ -374,7 +367,7 @@ impl PrimitiveCluster {
         instance_index: usize,
     ) {
         debug_assert_eq!(instance_index, self.prim_range.end);
-        self.unsnapped_bounding_rect = self.unsnapped_bounding_rect.union(culling_rect);
+        self.bounding_rect = self.bounding_rect.union(culling_rect);
         self.prim_range.end += 1;
     }
 }
@@ -470,11 +463,7 @@ impl PrimitiveList {
         }
 
         let clip_leaf = clip_tree_builder.get_leaf(prim_instance.clip_leaf_id);
-        
-        
-        
-        
-        let culling_rect = clip_leaf.unsnapped_local_clip_rect
+        let culling_rect = clip_leaf.local_clip_rect
             .intersection(&prim_rect)
             .unwrap_or_else(LayoutRect::zero);
 
@@ -1332,12 +1321,6 @@ impl PictureInstance {
             cluster.flags.remove(ClusterFlags::IS_VISIBLE);
 
             
-            
-            
-            
-            
-
-            
             if !cluster.flags.contains(ClusterFlags::IS_BACKFACE_VISIBLE) {
                 
                 
@@ -1372,7 +1355,7 @@ impl PictureInstance {
             
             
             cluster.flags.insert(ClusterFlags::IS_VISIBLE);
-            if let Some(cluster_rect) = surface.map_local_to_picture.map(&cluster.snapped_bounding_rect) {
+            if let Some(cluster_rect) = surface.map_local_to_picture.map(&cluster.bounding_rect) {
                 surface.unclipped_local_rect = surface.unclipped_local_rect.union(&cluster_rect);
             }
         }

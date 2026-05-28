@@ -88,11 +88,6 @@ pub struct TextRunTemplate {
     
     
     
-    
-    
-    
-    
-    
     pub run_origin_offset: LayoutVector2D,
     
     pub glyphs: Vec<GlyphInstance>,

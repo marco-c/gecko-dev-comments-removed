@@ -819,20 +819,19 @@ pub struct PrimitiveInstance {
     
     
     
-    
-    pub unsnapped_prim_rect: LayoutRect,
+    pub prim_rect: LayoutRect,
 }
 
 impl PrimitiveInstance {
     pub fn new(
         kind: PrimitiveKind,
         clip_leaf_id: ClipLeafId,
-        unsnapped_prim_rect: LayoutRect,
+        prim_rect: LayoutRect,
     ) -> Self {
         PrimitiveInstance {
             kind,
             clip_leaf_id,
-            unsnapped_prim_rect,
+            prim_rect,
         }
     }
 
