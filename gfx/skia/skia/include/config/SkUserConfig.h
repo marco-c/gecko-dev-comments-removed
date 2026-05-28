@@ -130,14 +130,6 @@
 
 
 
-
-
-
-
-
-
-
-
 #define MOZ_SKIA
 
 

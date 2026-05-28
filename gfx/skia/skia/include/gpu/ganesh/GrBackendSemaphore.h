@@ -4,12 +4,17 @@
 
 
 
+
 #ifndef GrBackendSemaphore_DEFINED
 #define GrBackendSemaphore_DEFINED
 
-#include "include/gpu/ganesh/GrTypes.h"
+#include "include/gpu/ganesh/GrTypes.h"  
 #include "include/private/base/SkAPI.h"
 #include "include/private/base/SkAnySubclass.h"
+
+#ifdef SK_DIRECT3D
+#include "include/private/gpu/ganesh/GrD3DTypesMinimal.h"
+#endif
 
 #include <cstddef>
 
@@ -21,13 +26,26 @@ class GrBackendSemaphoreData;
 class SK_API GrBackendSemaphore {
 public:
     
+    
     GrBackendSemaphore();
     ~GrBackendSemaphore();
     GrBackendSemaphore(const GrBackendSemaphore&);
     GrBackendSemaphore& operator=(const GrBackendSemaphore&);
 
+#ifdef SK_DIRECT3D
+    void initDirect3D(const GrD3DFenceInfo& info) {
+        fBackend = GrBackendApi::kDirect3D;
+        this->assignD3DFenceInfo(info);
+        fIsInitialized = true;
+    }
+#endif
+
+    bool isInitialized() const { return fIsInitialized; }
     GrBackendApi backend() const { return fBackend; }
-    bool isInitialized() const { return fBackend != GrBackendApi::kUnsupported; }
+
+#ifdef SK_DIRECT3D
+    bool getD3DFenceInfo(GrD3DFenceInfo* outInfo) const;
+#endif
 
 private:
     friend class GrBackendSemaphorePriv;
@@ -39,12 +57,24 @@ private:
     using AnySemaphoreData = SkAnySubclass<GrBackendSemaphoreData, kMaxSubclassSize>;
 
     template <typename SemaphoreData>
-    GrBackendSemaphore(GrBackendApi api, SemaphoreData data) : fBackend(api) {
+    GrBackendSemaphore(GrBackendApi api, SemaphoreData data) : fBackend(api), fIsInitialized(true) {
         fSemaphoreData.emplace<SemaphoreData>(data);
     }
 
-    GrBackendApi fBackend = GrBackendApi::kUnsupported;
+#ifdef SK_DIRECT3D
+    void assignD3DFenceInfo(const GrD3DFenceInfo& info);
+#endif
+
+    GrBackendApi fBackend;
     AnySemaphoreData fSemaphoreData;
+
+    union {
+        void* fPlaceholder;  
+#ifdef SK_DIRECT3D
+        GrD3DFenceInfo* fD3DFenceInfo;
+#endif
+    };
+    bool fIsInitialized;
 };
 
 #endif

@@ -116,8 +116,7 @@ static void load_font_from_data(const SkFontScanner* scanner,
                 families->push_back().reset(addTo);
             }
             auto data = std::make_unique<SkFontData>(
-                    stream->duplicate(), (instanceIndex << 16) + faceIndex,
-                    0, nullptr, 0, nullptr, 0);
+                    stream->duplicate(), faceIndex, 0, nullptr, 0, nullptr, 0);
             addTo->appendTypeface(sk_make_sp<SkTypeface_FreeTypeStream>(
                     std::move(data), realname, style, isFixedPitch));
         }

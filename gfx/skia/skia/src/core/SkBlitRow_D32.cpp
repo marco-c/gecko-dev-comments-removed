@@ -30,7 +30,7 @@ static void blit_row_s32_opaque(SkPMColor* dst,
 
 
 
-#if SK_CPU_X64_LEVEL >= SK_CPU_X64_LEVEL_SSE2
+#if SK_CPU_SSE_LEVEL >= SK_CPU_SSE_LEVEL_SSE2
     #include <emmintrin.h>
     #include <xmmintrin.h>
 

@@ -22,8 +22,8 @@ struct SkIRect;
 class SkKeyedImage {
 public:
     SkKeyedImage() {}
-    explicit SkKeyedImage(sk_sp<SkImage>);
-    explicit SkKeyedImage(const SkBitmap&);
+    SkKeyedImage(sk_sp<SkImage>);
+    SkKeyedImage(const SkBitmap&);
     SkKeyedImage(SkKeyedImage&&) = default;
     SkKeyedImage(const SkKeyedImage&) = default;
 

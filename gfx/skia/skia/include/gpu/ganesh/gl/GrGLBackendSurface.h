@@ -20,13 +20,7 @@ class GrBackendRenderTarget;
 namespace skgpu { enum class Mipmapped : bool; }
 
 namespace GrBackendFormats {
-
-
-
 SK_API GrBackendFormat MakeGL(GrGLenum format, GrGLenum target);
-
-SK_API GrBackendFormat MakeGL(GrGLenum format); 
-SK_API GrBackendFormat MakeGLExternal();        
 
 SK_API GrGLFormat AsGLFormat(const GrBackendFormat&);
 SK_API GrGLenum AsGLFormatEnum(const GrBackendFormat&);

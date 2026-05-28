@@ -78,6 +78,15 @@ public:
 
     static sk_sp<SkPathEffect> Deserialize(const void* data, size_t size,
                                            const SkDeserialProcs* procs = nullptr);
+
+#ifdef SK_SUPPORT_MUTABLE_PATHEFFECT
+    bool filterPath(SkPath* dst, const SkPath& src, SkStrokeRec*, const SkRect* cullR) const;
+
+    
+    bool filterPath(SkPath* dst, const SkPath& src, SkStrokeRec*, const SkRect* cullR,
+                    const SkMatrix& ctm) const;
+#endif
+
 private:
     SkPathEffect() = default;
     friend class SkPathEffectBase;

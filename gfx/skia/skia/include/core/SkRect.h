@@ -951,6 +951,18 @@ struct SK_API SkRect {
 
     void setBoundsNoCheck(SkSpan<const SkPoint> pts);
 
+#ifdef SK_SUPPORT_UNSPANNED_APIS
+    void setBounds(const SkPoint pts[], int count) {
+        this->setBounds({pts, count});
+    }
+    void setBoundsNoCheck(const SkPoint pts[], int count) {
+        this->setBoundsNoCheck({pts, count});
+    }
+    bool setBoundsCheck(const SkPoint pts[], int count) {
+        return this->setBoundsCheck({pts, count});
+    }
+#endif
+
     
 
 

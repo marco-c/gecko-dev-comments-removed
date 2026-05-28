@@ -22,7 +22,7 @@
 
 
 
-class [[nodiscard]] SkAutoMalloc : SkNoncopyable {
+class SkAutoMalloc : SkNoncopyable {
 public:
     explicit SkAutoMalloc(size_t size = 0)
         : fPtr(size ? sk_malloc_throw(size) : nullptr), fSize(size) {}
@@ -87,7 +87,7 @@ private:
 
 
 
-template <size_t kSizeRequested> class [[nodiscard]] SkAutoSMalloc : SkNoncopyable {
+template <size_t kSizeRequested> class SkAutoSMalloc : SkNoncopyable {
 public:
     
 

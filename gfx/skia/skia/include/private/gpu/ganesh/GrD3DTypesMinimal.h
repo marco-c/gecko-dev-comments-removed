@@ -13,7 +13,6 @@
 #include "include/core/SkRefCnt.h"
 
 #include <dxgiformat.h>
-#include <memory>
 
 #include "include/gpu/ganesh/GrTypes.h"
 
@@ -32,18 +31,19 @@ struct GrD3DFenceInfo;
 
 
 struct GrD3DBackendSurfaceInfo {
-    GrD3DBackendSurfaceInfo(const GrD3DTextureResourceInfo& info, sk_sp<GrD3DResourceState> state);
-    ~GrD3DBackendSurfaceInfo();
+    GrD3DBackendSurfaceInfo(const GrD3DTextureResourceInfo& info, GrD3DResourceState* state);
 
-    GrD3DBackendSurfaceInfo(const GrD3DBackendSurfaceInfo&);
-    GrD3DBackendSurfaceInfo& operator=(const GrD3DBackendSurfaceInfo&);
+    void cleanup();
 
-    GrD3DBackendSurfaceInfo(GrD3DBackendSurfaceInfo&&);
-    GrD3DBackendSurfaceInfo& operator=(GrD3DBackendSurfaceInfo&&);
+    GrD3DBackendSurfaceInfo& operator=(const GrD3DBackendSurfaceInfo&) = delete;
+
+    
+    
+    void assign(const GrD3DBackendSurfaceInfo&, bool isValid);
 
     void setResourceState(GrD3DResourceStateEnum state);
 
-    sk_sp<GrD3DResourceState> getResourceState() const;
+    sk_sp<GrD3DResourceState> getGrD3DResourceState() const;
 
     GrD3DTextureResourceInfo snapTextureResourceInfo() const;
 
@@ -53,8 +53,22 @@ struct GrD3DBackendSurfaceInfo {
 #endif
 
 private:
-    std::unique_ptr<GrD3DTextureResourceInfo> fTextureResourceInfo;
-    sk_sp<GrD3DResourceState> fResourceState;
+    GrD3DTextureResourceInfo* fTextureResourceInfo;
+    GrD3DResourceState* fResourceState;
+};
+
+struct GrD3DTextureResourceSpecHolder {
+public:
+    GrD3DTextureResourceSpecHolder(const GrD3DSurfaceInfo&);
+
+    void cleanup();
+
+    GrD3DSurfaceInfo getSurfaceInfo(uint32_t sampleCount,
+                                    uint32_t levelCount,
+                                    skgpu::Protected isProtected) const;
+
+private:
+    GrD3DTextureResourceSpec* fSpec;
 };
 
 #endif

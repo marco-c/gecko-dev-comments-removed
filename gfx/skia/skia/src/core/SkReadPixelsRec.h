@@ -17,11 +17,6 @@
 
 
 struct SkReadPixelsRec {
-    
-
-
-
-
     SkReadPixelsRec(const SkImageInfo& info, void* pixels, size_t rowBytes, int x, int y)
         : fPixels(pixels)
         , fRowBytes(rowBytes)
@@ -45,7 +40,6 @@ struct SkReadPixelsRec {
     int         fY;
 
     
-
 
 
 

@@ -583,7 +583,7 @@ void SkScalerContext::GenerateImageFromPath(
     draw.fRC             = &clip;
     draw.fCTM            = &matrix;
     
-    draw.drawPath(*pathToUse, paint, nullptr);
+    draw.drawPath(*pathToUse, paint, nullptr, pathToUse == &strokePath);
 
     switch (dstMask.fFormat) {
         case SkMask::kBW_Format:
@@ -1144,8 +1144,6 @@ void SkScalerContext::MakeRecAndEffects(const SkFont& font, const SkPaint& paint
 
     rec->fMaskFormat = compute_mask_format(font);
 
-    
-    
     if (SkMask::kLCD16_Format == rec->fMaskFormat) {
         if (too_big_for_lcd(*rec, checkPost2x2)) {
             rec->fMaskFormat = SkMask::kA8_Format;

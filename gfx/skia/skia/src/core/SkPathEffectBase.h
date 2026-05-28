@@ -63,7 +63,7 @@ public:
         SkPath             fFirst;      
         SkPath             fLast;       
 
-        SkSpan<SkPoint> points() { return {fPoints, (size_t)fNumPoints}; }
+        SkSpan<SkPoint> points() { return {fPoints, fNumPoints}; }
     };
 
     

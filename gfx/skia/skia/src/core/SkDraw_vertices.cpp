@@ -313,8 +313,8 @@ void Draw::drawVertices(const SkVertices* vertices,
                         const SkPaint& paint,
                         bool skipColorXform) const {
     SkVerticesPriv info(vertices->priv());
-    const size_t vertexCount = info.vertexCount();
-    const size_t indexCount = info.indexCount();
+    const int vertexCount = info.vertexCount();
+    const int indexCount = info.indexCount();
 
     
     if (vertexCount < 3 || (indexCount > 0 && indexCount < 3) || fRC->isEmpty()) {

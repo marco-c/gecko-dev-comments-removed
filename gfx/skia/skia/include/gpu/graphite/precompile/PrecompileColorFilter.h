@@ -14,8 +14,6 @@ enum class SkBlendMode;
 
 namespace skgpu::graphite {
 
-class PrecompileColorFilterPriv;
-
 
 
 
@@ -38,17 +36,9 @@ public:
 
     sk_sp<PrecompileColorFilter> makeComposed(sk_sp<PrecompileColorFilter> inner) const;
 
-    
-    PrecompileColorFilterPriv priv();
-    const PrecompileColorFilterPriv priv() const;  
-
 protected:
-    friend class PrecompileColorFilterPriv;
-
     PrecompileColorFilter() : PrecompileBase(Type::kColorFilter) {}
     ~PrecompileColorFilter() override;
-
-    virtual bool isAlphaUnchanged(int ) const = 0;
 };
 
 
@@ -64,7 +54,7 @@ namespace PrecompileColorFilters {
     SK_API sk_sp<PrecompileColorFilter> Blend(); 
 
     
-    SK_API sk_sp<PrecompileColorFilter> Matrix(bool clamp=true);
+    SK_API sk_sp<PrecompileColorFilter> Matrix();
 
     
     SK_API sk_sp<PrecompileColorFilter> HSLAMatrix();

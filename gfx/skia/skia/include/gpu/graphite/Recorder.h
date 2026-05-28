@@ -11,7 +11,6 @@
 #include "include/core/SkCPURecorder.h"
 #include "include/core/SkRecorder.h"
 #include "include/core/SkRefCnt.h"
-#include "include/core/SkSurface.h"
 #include "include/gpu/graphite/GraphiteTypes.h"
 #include "include/gpu/graphite/Recording.h"
 #include "include/private/base/SingleOwner.h"
@@ -55,8 +54,6 @@ class Device;
 class DrawBufferManager;
 class FloatStorageManager;
 class ImageProvider;
-class PaintParamsKeyBuilder;
-class PipelineDataGatherer;
 class ProxyReadCountMap;
 class RecorderPriv;
 class ResourceProvider;
@@ -68,8 +65,6 @@ class UploadBufferManager;
 class UploadList;
 
 struct RecorderOptionsPriv;
-
-using KeyAndDataBuilder = std::pair<PipelineDataGatherer, PaintParamsKeyBuilder>;
 
 struct SK_API RecorderOptions final {
     RecorderOptions();
@@ -212,10 +207,7 @@ public:
 
 
 
-
-    void performDeferredCleanup(
-            std::chrono::milliseconds msNotUsed,
-            std::optional<std::chrono::microseconds> microsMaxPurgingDur = std::nullopt);
+    void performDeferredCleanup(std::chrono::milliseconds msNotUsed);
 
     
 
@@ -250,8 +242,6 @@ public:
     const RecorderPriv priv() const;  
 
 private:
-    static constexpr int kMaxKeyAndDataBuilders = 2;
-
     friend class Context; 
     friend class Device; 
     friend class RecorderPriv; 
@@ -284,7 +274,6 @@ private:
     void deregisterDevice(const Device*);
 
     SkCanvas* makeCaptureCanvas(SkCanvas*) override;
-    void createCaptureBreakpoint(SkSurface*) override;
 
     sk_sp<SharedContext> fSharedContext;
     ResourceProvider* fResourceProvider; 
@@ -301,9 +290,6 @@ private:
     std::unique_ptr<UploadBufferManager> fUploadBufferManager;
     sk_sp<FloatStorageManager> fFloatStorageManager;
     std::unique_ptr<ProxyReadCountMap> fProxyReadCounts;
-
-    skia_private::STArray<kMaxKeyAndDataBuilders, std::unique_ptr<KeyAndDataBuilder>>
-        fKeyAndDataBuilders;
 
     
     
@@ -332,9 +318,6 @@ private:
     std::unique_ptr<Recording::LazyProxyData> fTargetProxyData;
 
     skia_private::TArray<sk_sp<RefCntedCallback>> fFinishedProcs;
-
-    
-    SkDEBUGCODE(bool fIsFlushingTrackedDevices = false;)
 
 #if defined(GPU_TEST_UTILS)
     

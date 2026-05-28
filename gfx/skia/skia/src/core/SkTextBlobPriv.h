@@ -184,7 +184,7 @@ private:
 
 class SK_SPI SkTextBlobRunIterator {
 public:
-    explicit SkTextBlobRunIterator(const SkTextBlob* blob);
+    SkTextBlobRunIterator(const SkTextBlob* blob);
 
     enum GlyphPositioning : uint8_t {
         kDefault_Positioning      = 0, 

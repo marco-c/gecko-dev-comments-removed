@@ -157,10 +157,6 @@ sk_sp<SkFlattenable> SkRuntimeImageFilter::CreateProc(SkReadBuffer& buffer) {
     }
 
     
-    if (!buffer.validate(buffer.allowSkSL())) {
-        return nullptr;
-    }
-
     SkString sksl;
     buffer.readString(&sksl);
     auto effect = SkMakeCachedRuntimeEffect(SkRuntimeEffect::MakeForShader, std::move(sksl));

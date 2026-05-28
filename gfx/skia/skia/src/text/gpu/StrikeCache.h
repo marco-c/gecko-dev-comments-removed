@@ -31,42 +31,42 @@ struct SkPackedGlyphID;
 
 namespace sktext::gpu {
 
+class Glyph;
 class StrikeCache;
 
 
 
 
 
-class TextStrikeBase : public SkRefCnt {
+class TextStrike : public SkNVRefCnt<TextStrike> {
 public:
-    ~TextStrikeBase() override = default;
+    TextStrike(StrikeCache* strikeCache,
+               const SkStrikeSpec& strikeSpec);
 
+    Glyph* getGlyph(SkPackedGlyphID);
     const SkStrikeSpec& strikeSpec() const { return fStrikeSpec; }
     const SkDescriptor& getDescriptor() const { return fStrikeSpec.descriptor(); }
 
-    size_t memoryUsed() const { return fMemoryUsed; }
-
-protected:
-    TextStrikeBase(StrikeCache* strikeCache, const SkStrikeSpec& strikeSpec)
-            : fStrikeCache(strikeCache), fStrikeSpec(strikeSpec) {}
-
-    static sk_sp<TextStrikeBase> Find(const StrikeCache*, const SkDescriptor&);
-    static void Add(StrikeCache*, sk_sp<TextStrikeBase>);
+private:
+    StrikeCache* const fStrikeCache;
 
     
-    void addMemoryUsed(size_t bytes);
-
-    StrikeCache* const fStrikeCache;
     const SkStrikeSpec fStrikeSpec;
+
+    struct HashTraits {
+        static const SkPackedGlyphID& GetKey(const Glyph* glyph);
+        static uint32_t Hash(SkPackedGlyphID key);
+    };
+    
+    skia_private::THashTable<Glyph*, SkPackedGlyphID, HashTraits> fCache;
 
     
     SkArenaAlloc fAlloc{512};
 
-    
-    TextStrikeBase* fNext{nullptr};
-    TextStrikeBase* fPrev{nullptr};
-    size_t fMemoryUsed{sizeof(TextStrikeBase)};
-    bool fRemoved{false};
+    TextStrike*  fNext{nullptr};
+    TextStrike*  fPrev{nullptr};
+    size_t       fMemoryUsed{sizeof(TextStrike)};
+    bool         fRemoved{false};
 
     friend class StrikeCache;
 };
@@ -77,13 +77,18 @@ class StrikeCache {
 public:
     ~StrikeCache();
 
+    
+    sk_sp<TextStrike> findOrCreateStrike(const SkStrikeSpec& strikeSpec);
+
     void freeAll();
 
 private:
-    friend class TextStrikeBase;
+    friend class TextStrike;  
+    sk_sp<TextStrike> internalFindStrikeOrNull(const SkDescriptor& desc);
+    sk_sp<TextStrike> generateStrike(const SkStrikeSpec& strikeSpec);
 
-    void internalRemoveStrike(TextStrikeBase* strike);
-    void internalAttachToHead(sk_sp<TextStrikeBase> strike);
+    void internalRemoveStrike(TextStrike* strike);
+    void internalAttachToHead(sk_sp<TextStrike> strike);
 
     
     
@@ -93,15 +98,14 @@ private:
     
     void validate() const;
 
-    TextStrikeBase* fHead{nullptr};
-    TextStrikeBase* fTail{nullptr};
+    TextStrike* fHead{nullptr};
+    TextStrike* fTail{nullptr};
 
     struct HashTraits {
-        static const SkDescriptor& GetKey(const sk_sp<TextStrikeBase>& strike);
+        static const SkDescriptor& GetKey(const sk_sp<TextStrike>& strike);
         static uint32_t Hash(const SkDescriptor& strikeSpec);
     };
-    using StrikeHash =
-            skia_private::THashTable<sk_sp<TextStrikeBase>, const SkDescriptor&, HashTraits>;
+    using StrikeHash = skia_private::THashTable<sk_sp<TextStrike>, const SkDescriptor&, HashTraits>;
 
     StrikeHash fCache;
 
@@ -110,18 +114,6 @@ private:
     int32_t fCacheCountLimit{SK_DEFAULT_GPU_FONT_CACHE_COUNT_LIMIT};
     int32_t fCacheCount{0};
 };
-
-inline sk_sp<TextStrikeBase> TextStrikeBase::Find(const StrikeCache* cache,
-                                                  const SkDescriptor& desc) {
-    auto entry = cache->fCache.find(desc);
-    return entry ? *entry : nullptr;
-}
-
-inline void TextStrikeBase::Add(StrikeCache* cache, sk_sp<TextStrikeBase> strike) {
-    SkASSERT(!Find(cache, strike->getDescriptor()));
-    cache->internalAttachToHead(std::move(strike));
-    cache->internalPurge();
-}
 
 }  
 

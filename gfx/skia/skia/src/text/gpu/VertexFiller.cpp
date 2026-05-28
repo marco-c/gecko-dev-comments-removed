@@ -14,7 +14,7 @@
 #include "include/core/SkTypes.h"
 #include "src/core/SkReadBuffer.h"
 #include "src/core/SkWriteBuffer.h"
-#include "src/gpu/MaskFormat.h"
+#include "src/gpu/AtlasTypes.h"
 #include "src/text/gpu/SubRunAllocator.h"
 #include "src/text/gpu/SubRunContainer.h"
 
@@ -25,15 +25,13 @@ using MaskFormat = skgpu::MaskFormat;
 namespace sktext::gpu {
 
 VertexFiller::VertexFiller(MaskFormat maskFormat,
-                           const SkMatrix& creationMatrix,
+                           const SkMatrix &creationMatrix,
                            SkRect creationBounds,
                            SkSpan<const SkPoint> leftTop,
                            bool canDrawDirect)
-        : fMaskFormat{maskFormat}
-        , fCanDrawDirect{canDrawDirect}
-        , fCreationMatrix{creationMatrix}
-        , fCreationBounds{creationBounds}
-        , fLeftTop{leftTop} {}
+            : fMaskType{maskFormat}, fCanDrawDirect{canDrawDirect},
+              fCreationMatrix{creationMatrix}, fCreationBounds{creationBounds},
+              fLeftTop{leftTop} {}
 
 VertexFiller VertexFiller::Make(MaskFormat maskType,
                                 const SkMatrix &creationMatrix,
@@ -70,7 +68,7 @@ std::optional<VertexFiller> VertexFiller::MakeFromBuffer(SkReadBuffer &buffer,
 }
 
 void VertexFiller::flatten(SkWriteBuffer &buffer) const {
-    buffer.writeInt(static_cast<int>(fMaskFormat));
+    buffer.writeInt(static_cast<int>(fMaskType));
     buffer.writeBool(fCanDrawDirect);
     buffer.writeMatrix(fCreationMatrix);
     buffer.writeRect(fCreationBounds);
@@ -104,7 +102,7 @@ std::tuple<bool, SkVector> VertexFiller::CanUseDirect(
             translation};
 }
 
-bool VertexFiller::isLCD() const { return fMaskFormat == MaskFormat::kA565; }
+bool VertexFiller::isLCD() const { return fMaskType == MaskFormat::kA565; }
 
 
 
@@ -126,40 +124,6 @@ std::tuple<bool, SkRect> VertexFiller::deviceRectAndCheckTransform(
 
     
     return {false, SkRect::MakeEmpty()};
-}
-
-std::tuple<SkRect, SkMatrix> VertexFiller::boundsAndDeviceMatrix(const SkMatrix& localToDevice,
-                                                                 SkPoint drawOrigin) const {
-    
-    
-    
-    
-    const bool compatibleMatrix = localToDevice.rc(0, 0) == fCreationMatrix.rc(0, 0) &&
-                                  localToDevice.rc(0, 1) == fCreationMatrix.rc(0, 1) &&
-                                  localToDevice.rc(1, 0) == fCreationMatrix.rc(1, 0) &&
-                                  localToDevice.rc(1, 1) == fCreationMatrix.rc(1, 1) &&
-                                  !localToDevice.hasPerspective() &&
-                                  !fCreationMatrix.hasPerspective();
-
-    if (compatibleMatrix) {
-        SkPoint mappedOrigin = localToDevice.mapPoint(drawOrigin);
-        auto offset = mappedOrigin -
-                      SkPoint{fCreationMatrix.getTranslateX(), fCreationMatrix.getTranslateY()};
-        if (SkScalarIsInt(offset.fX) && SkScalarIsInt(offset.fY)) {
-            
-            
-            return {fCreationBounds, SkMatrix::Translate(offset)};
-        }
-    }
-
-    
-    
-    
-    
-    SkMatrix positionMatrix = localToDevice;
-    positionMatrix.preTranslate(drawOrigin.x(), drawOrigin.y());
-    const SkMatrix viewDifference = this->viewDifference(positionMatrix);
-    return {fCreationBounds, viewDifference};
 }
 
 }  

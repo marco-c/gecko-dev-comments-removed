@@ -44,7 +44,7 @@ struct SkRect;
 class SK_API SkOverdrawCanvas : public SkCanvasVirtualEnforcer<SkNWayCanvas> {
 public:
     
-    explicit SkOverdrawCanvas(SkCanvas*);
+    SkOverdrawCanvas(SkCanvas*);
 
     void onDrawTextBlob(const SkTextBlob*, SkScalar, SkScalar, const SkPaint&) override;
     void onDrawGlyphRunList(

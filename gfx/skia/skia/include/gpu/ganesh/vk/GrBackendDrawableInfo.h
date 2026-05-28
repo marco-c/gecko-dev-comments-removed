@@ -19,8 +19,10 @@ public:
     
     GrBackendDrawableInfo() : fIsValid(false) {}
 
-    explicit GrBackendDrawableInfo(const GrVkDrawableInfo& info)
-            : fIsValid(true), fBackend(GrBackendApi::kVulkan), fVkInfo(info) {}
+    GrBackendDrawableInfo(const GrVkDrawableInfo& info)
+            : fIsValid(true)
+            , fBackend(GrBackendApi::kVulkan)
+            , fVkInfo(info) {}
 
     
     bool isValid() const { return fIsValid; }

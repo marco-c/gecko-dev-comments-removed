@@ -17,7 +17,6 @@
 #include "src/pdf/SkPDFTypes.h"
 
 #include <cstddef>
-#include <variant>
 
 class SkPDFDocument;
 struct SkPDFStructElem;
@@ -56,27 +55,15 @@ public:
     
     
     
-    
-    
-    
-    SkPDFStructTree::Mark createMarkForElemId(int elemId, unsigned pageIndex,
-                                              SkPDFParentTreeKey& structParentsKey);
-
-    static constexpr SkPDFIndirectReference kPageContentStreamRef = SkPDFIndirectReference{-2};
-    void setContentStreamRefForStructParentsKey(SkPDFParentTreeKey structParentsKey,
-                                                SkPDFIndirectReference contentStreamRef);
-    SkPDFIndirectReference getContentStreamRefForStructParentsKey(
-            SkPDFParentTreeKey structParentsKey) const;
+    SkPDFStructTree::Mark createMarkForElemId(int elemId, unsigned pageIndex);
 
     
     
     
     
     
-    SkPDFParentTreeKey createStructParentKeyForElemId(int elemId, unsigned pageIndex,
-                                                      SkPDFIndirectReference contentItemRef);
-    SkPDFIndirectReference getContentItemRefForStructParentKey(
-            SkPDFParentTreeKey structParentKey) const;
+    int createStructParentKeyForElemId(int elemId, SkPDFIndirectReference contentItemRef,
+                                       unsigned pageIndex);
 
     void addStructElemTitle(int elemId, SkSpan<const char>);
     SkPDFIndirectReference emitStructTreeRoot(SkPDFDocument* doc) const;
@@ -96,19 +83,10 @@ private:
     skia_private::THashMap<int, SkPDFStructElem*> fStructElemForElemId;
     SkPDFStructElem* fRoot = nullptr;
     SkPDF::Metadata::Outline fOutline = SkPDF::Metadata::Outline::None;
-
-    struct Item {
-        SkPDFStructElem* fStructElem;
-        SkPDFIndirectReference fContentItemRef;
-    };
-    struct Stream {
-        skia_private::TArray<SkPDFStructElem*> fChildren; 
-        
-        SkPDFIndirectReference fContentStreamRef;
-    };
-    using ParentTreeEntry = std::variant<Item, Stream>;
     
-    skia_private::TArray<ParentTreeEntry> fParentTree;
+    skia_private::TArray<skia_private::TArray<SkPDFStructElem*>> fStructElemForMcidForPage;
+    
+    skia_private::TArray<SkPDFStructElem*> fStructElemForContentItem;
 };
 
 #endif

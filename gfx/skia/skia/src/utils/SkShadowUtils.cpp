@@ -358,10 +358,7 @@ public:
     const SkMatrix& viewMatrix() const { return *fViewMatrix; }
 #if defined(SK_GANESH)
     
-    int keyBytes() const {
-        return fShapeForKey.hasUnstyledKey() ? fShapeForKey.unstyledKeySize() * sizeof(uint32_t)
-                                             : -1;
-    }
+    int keyBytes() const { return fShapeForKey.unstyledKeySize() * sizeof(uint32_t); }
     void writeKey(void* key) const {
         fShapeForKey.writeUnstyledKey(reinterpret_cast<uint32_t*>(key));
     }

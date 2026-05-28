@@ -35,7 +35,7 @@ template <typename T> static constexpr bool SkIsAlignPtr(T x) {
 
 
 
-template <typename T> static constexpr T SkAlignTo(T x, T alignment) {
+static inline constexpr size_t SkAlignTo(size_t x, size_t alignment) {
     
     SkASSERT(alignment && (alignment & (alignment - 1)) == 0);
     return (x + alignment - 1) & ~(alignment - 1);
@@ -44,8 +44,12 @@ template <typename T> static constexpr T SkAlignTo(T x, T alignment) {
 
 
 
-template <typename T> static constexpr T SkAlignNonPow2(T x, T alignment) {
-    return ((x + alignment - 1) / alignment) * alignment;
+static inline constexpr size_t SkAlignNonPow2(size_t x, size_t alignment) {
+    const size_t misalignment = x % alignment;
+    if (misalignment) {
+        x += alignment - misalignment;
+    }
+    return x;
 }
 
 #endif

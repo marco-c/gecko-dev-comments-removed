@@ -31,7 +31,6 @@
 
 class SkColorInfo;
 class SkSurface;
-class SkCapture;
 enum SkYUVColorSpace : int;
 class SkColorSpace;
 class SkTraceMemoryDump;
@@ -55,13 +54,11 @@ class Buffer;
 class ClientMappedBufferManager;
 class ContextPriv;
 struct ContextOptions;
-class PersistentPipelineStorage;
 class PrecompileContext;
 class QueueManager;
 class ResourceProvider;
 class SharedContext;
 class TextureProxy;
-class TextureProxyView;
 
 class SK_API Context final {
 public:
@@ -87,9 +84,6 @@ public:
 
     
     bool hasUnfinishedGpuWork() const;
-
-    
-    bool hasPendingGPUWork() const;
 
     
 
@@ -232,10 +226,7 @@ public:
 
 
 
-
-    void performDeferredCleanup(
-            std::chrono::milliseconds msNotUsed,
-            std::optional<std::chrono::microseconds> microsMaxPurgingDur = std::nullopt);
+    void performDeferredCleanup(std::chrono::milliseconds msNotUsed);
 
     
 
@@ -292,22 +283,12 @@ public:
 
 
 
-
-
-    void syncPipelineData(size_t maxSize = SIZE_MAX);
-
-    
-
-
-
-
-
     void startCapture();
 
     
 
 
-    sk_sp<SkCapture> endCapture();
+    void endCapture();
 
     
     ContextPriv priv();
@@ -389,14 +370,14 @@ private:
     
     
     void asyncReadTexture(std::unique_ptr<Recorder>,
-                          const AsyncParams<TextureProxyView>&,
+                          const AsyncParams<TextureProxy>&,
                           const SkColorInfo& srcColorInfo);
 
     
     
     
     PixelTransferResult transferPixels(Recorder*,
-                                       const TextureProxyView& srcView,
+                                       const TextureProxy* srcProxy,
                                        const SkColorInfo& srcColorInfo,
                                        const SkColorInfo& dstColorInfo,
                                        const SkIRect& srcRect);
@@ -410,11 +391,9 @@ private:
 
     sk_sp<SharedContext> fSharedContext;
     std::unique_ptr<ResourceProvider> fResourceProvider;
-    std::unique_ptr<ClientMappedBufferManager> fMappedBufferManager;
     std::unique_ptr<QueueManager> fQueueManager;
+    std::unique_ptr<ClientMappedBufferManager> fMappedBufferManager;
     std::unique_ptr<const skcpu::ContextImpl> fCPUContext;
-
-    PersistentPipelineStorage* fPersistentPipelineStorage;
 
     
     

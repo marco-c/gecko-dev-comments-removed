@@ -359,10 +359,9 @@ std::unique_ptr<SkPDFArray> SkPDFDocument::getAnnotations() {
 
         SkPDFIndirectReference annotationRef = this->reserveRef();
         if (link->fElemId) {
-            SkPDFParentTreeKey structParentKey =
-                    this->createStructParentKeyForElemId(link->fElemId, annotationRef);
-            if (structParentKey) {
-                annotation.insertInt("StructParent", structParentKey.fValue);
+            int structParentKey = this->createStructParentKeyForElemId(link->fElemId, annotationRef);
+            if (structParentKey != -1) {
+                annotation.insertInt("StructParent", structParentKey);
             }
         }
 
@@ -393,11 +392,9 @@ void SkPDFDocument::onEndPage() {
     }
 
     page->insertRef("Contents", SkPDFStreamOut(nullptr, std::move(pageContent), this));
-    if (SkPDFParentTreeKey structParentsKey = fPageDevice->structParentsKey()) {
-        page->insertInt("StructParents", structParentsKey.fValue);
-        this->setContentStreamRefForStructParentsKey(structParentsKey,
-                                                     SkPDFStructTree::kPageContentStreamRef);
-    }
+    
+    
+    page->insertInt("StructParents", SkToInt(this->currentPageIndex()));
 
     
     page->insertName("Tabs", "S");
@@ -559,38 +556,26 @@ const SkMatrix& SkPDFDocument::currentPageTransform() const {
     return fPageDevice->initialTransform();
 }
 
-SkPDFStructTree::Mark SkPDFDocument::createMarkForElemId(int elemId,
-                                                         SkPDFParentTreeKey& structParentsKey)
-{
+SkPDFStructTree::Mark SkPDFDocument::createMarkForElemId(int elemId) {
     
     
     if (!this->hasCurrentPage()) {
         return SkPDFStructTree::Mark();
     }
-    return fStructTree.createMarkForElemId(elemId, SkToUInt(this->currentPageIndex()),
-                                           structParentsKey);
-}
-
-void SkPDFDocument::setContentStreamRefForStructParentsKey(SkPDFParentTreeKey structParentsKey,
-                                                           SkPDFIndirectReference contentStreamRef)
-{
-    fStructTree.setContentStreamRefForStructParentsKey(structParentsKey, contentStreamRef);
+    return fStructTree.createMarkForElemId(elemId, SkToUInt(this->currentPageIndex()));
 }
 
 void SkPDFDocument::addStructElemTitle(int elemId, SkSpan<const char> title) {
     fStructTree.addStructElemTitle(elemId, std::move(title));
 }
 
-SkPDFParentTreeKey SkPDFDocument::createStructParentKeyForElemId(
-        int elemId,
-        SkPDFIndirectReference contentItemRef)
-{
+int SkPDFDocument::createStructParentKeyForElemId(int elemId, SkPDFIndirectReference contentItem) {
     
     if (!this->hasCurrentPage()) {
-        return SkPDFParentTreeKey();
+        return -1;
     }
-    return fStructTree.createStructParentKeyForElemId(elemId, SkToUInt(this->currentPageIndex()),
-                                                      contentItemRef);
+    return fStructTree.createStructParentKeyForElemId(elemId, contentItem,
+                                                      SkToUInt(this->currentPageIndex()));
 }
 
 static std::vector<const SkPDFFont*> get_fonts(const SkPDFDocument& canon) {

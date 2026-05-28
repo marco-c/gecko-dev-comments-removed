@@ -245,8 +245,6 @@ protected:
 
     bool writeIntrinsicCall(const FunctionCall& c, IntrinsicKind kind);
 
-    void writeTextureTarget(const Expression& arg);
-
     void writeConstructorCompound(const ConstructorCompound& c, Precedence parentPrecedence);
 
     void writeConstructorCompoundVector(const ConstructorCompound& c, Precedence parentPrecedence);
@@ -914,7 +912,7 @@ bool MetalCodeGenerator::writeIntrinsicCall(const FunctionCall& c, IntrinsicKind
     const ExpressionArray& arguments = c.arguments();
     switch (kind) {
         case k_textureRead_IntrinsicKind: {
-            this->writeTextureTarget(*arguments[0]);
+            this->writeExpression(*arguments[0], Precedence::kExpression);
             this->write(".read(");
             this->writeExpression(*arguments[1], Precedence::kSequence);
             this->write(")");
@@ -929,21 +927,13 @@ bool MetalCodeGenerator::writeIntrinsicCall(const FunctionCall& c, IntrinsicKind
             this->write(")");
             return true;
         }
-        case k_textureSize_IntrinsicKind: {
-            this->write("uint2(");
-            this->writeTextureTarget(*arguments[0]);
-            this->write(".get_width(), ");
-            this->writeTextureTarget(*arguments[0]);
-            this->write(".get_height())");
-            return true;
-        }
         case k_textureWidth_IntrinsicKind: {
-            this->writeTextureTarget(*arguments[0]);
+            this->writeExpression(*arguments[0], Precedence::kExpression);
             this->write(".get_width()");
             return true;
         }
         case k_textureHeight_IntrinsicKind: {
-            this->writeTextureTarget(*arguments[0]);
+            this->writeExpression(*arguments[0], Precedence::kExpression);
             this->write(".get_height()");
             return true;
         }
@@ -1175,22 +1165,16 @@ bool MetalCodeGenerator::writeIntrinsicCall(const FunctionCall& c, IntrinsicKind
             return true;
         }
         case k_bitCount_IntrinsicKind: {
-            
-            if (!c.arguments()[0]->type().componentType().isSigned()) {
-                this->write(this->typeName(c.type()));
-            }
-            this->write("(popcount(");
+            this->write("popcount(");
             this->writeExpression(*arguments[0], Precedence::kSequence);
-            this->write("))");
+            this->write(")");
             return true;
         }
         case k_findLSB_IntrinsicKind: {
             
             std::string skTemp = this->getTempVariable(arguments[0]->type());
-            std::string signedType = this->typeName(c.type()); 
             std::string exprType = this->typeName(arguments[0]->type());
 
-            
             
             
 
@@ -1199,14 +1183,10 @@ bool MetalCodeGenerator::writeIntrinsicCall(const FunctionCall& c, IntrinsicKind
             this->write(skTemp);
             this->write(" = (");
             this->writeExpression(*arguments[0], Precedence::kSequence);
-            this->write("), select(");
-            if (!c.arguments()[0]->type().componentType().isSigned()) {
-                this->write(signedType);
-            }
-            this->write("(ctz(");
+            this->write("), select(ctz(");
             this->write(skTemp);
-            this->write(")), ");
-            this->write(signedType);
+            this->write("), ");
+            this->write(exprType);
             this->write("(-1), ");
             this->write(skTemp);
             this->write(" == ");
@@ -1217,11 +1197,8 @@ bool MetalCodeGenerator::writeIntrinsicCall(const FunctionCall& c, IntrinsicKind
         case k_findMSB_IntrinsicKind: {
             
             std::string skTemp1 = this->getTempVariable(arguments[0]->type());
-            std::string signedType = this->typeName(c.type()); 
             std::string exprType = this->typeName(arguments[0]->type());
 
-            
-            
             
             
             
@@ -1252,14 +1229,12 @@ bool MetalCodeGenerator::writeIntrinsicCall(const FunctionCall& c, IntrinsicKind
             }
 
             
-            this->write("select(31 - "); 
-            if (!c.arguments()[0]->type().componentType().isSigned()) {
-                this->write(signedType);
-            }
+            this->write("select(");
+            this->write(this->typeName(c.type()));
             this->write("(clz(");
             this->write(skTemp2);
             this->write(")), ");
-            this->write(signedType);
+            this->write(this->typeName(c.type()));
             this->write("(-1), ");
             this->write(skTemp2);
             this->write(" == ");
@@ -1395,16 +1370,6 @@ bool MetalCodeGenerator::writeIntrinsicCall(const FunctionCall& c, IntrinsicKind
         }
         default:
             return false;
-    }
-}
-
-void MetalCodeGenerator::writeTextureTarget(const Expression& arg) {
-    SkASSERT(arg.type().typeKind() == Type::TypeKind::kTexture ||
-             arg.type().typeKind() == Type::TypeKind::kSampler);
-
-    this->writeExpression(arg, Precedence::kExpression);
-    if (arg.type().typeKind() == Type::TypeKind::kSampler) {
-        this->write(".tex");
     }
 }
 

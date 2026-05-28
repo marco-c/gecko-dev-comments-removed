@@ -77,9 +77,7 @@ bool SkShaderMaskFilterImpl::filterMask(SkMaskBuilder* dst, const SkMask& src, c
 
     
     SkBitmap bitmap;
-    if (!bitmap.installPixels(SkImageInfo::MakeA8(dst->fBounds.width(), dst->fBounds.height()),
-                              dst->image(),
-                              dst->fRowBytes)) {
+    if (!bitmap.installMaskPixels(*dst)) {
         return false;
     }
 

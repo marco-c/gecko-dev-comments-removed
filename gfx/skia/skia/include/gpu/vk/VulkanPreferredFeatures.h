@@ -201,10 +201,6 @@ private:
     const char* fLoadStoreOpNoneExtension = nullptr;
     
     const char* fConservativeRasterizationExtension = nullptr;
-#if defined(SK_BUILD_FOR_ANDROID)
-    
-    const char* fExternalMemoryAHardwareBufferExtension = nullptr;
-#endif
 
     
     
@@ -214,10 +210,6 @@ private:
     const char* fFormatFeatureFlags2Extension = nullptr;
     
     const char* fDepthStencilResolveExtension = nullptr;
-#if defined(SK_BUILD_FOR_ANDROID)
-    
-    const char* fQueueFamilyForeignExtension = nullptr;
-#endif
 };
 
 }  

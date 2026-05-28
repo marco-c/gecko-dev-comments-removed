@@ -32,24 +32,6 @@ namespace sktext::gpu {
 
 
 class BagOfBytes {
-    
-    
-    inline static constexpr int kMaxAlignment = std::max(16, (int)alignof(std::max_align_t));
-    
-    
-    inline static constexpr int k4K = (1 << 12);
-    
-    inline static constexpr int kMaxByteSize = std::numeric_limits<int>::max() - k4K;
-    
-    
-    
-    
-#if !defined(SK_FORCE_8_BYTE_ALIGNMENT)
-    static constexpr int kAllocationAlignment = alignof(std::max_align_t);
-#else
-    static constexpr int kAllocationAlignment = 8;
-#endif
-
 public:
     BagOfBytes(char* block, size_t blockSize, size_t firstHeapAllocation);
     explicit BagOfBytes(size_t firstHeapAllocation = 0);
@@ -123,21 +105,36 @@ public:
     }
 
     
-    
-    template <size_t Size, size_t Alignment> char* allocateBytesFor(int n = 1)
-        requires (Alignment <= kMaxAlignment && Size < kMaxByteSize && Size % Alignment == 0) {
-        SkASSERT_RELEASE(0 <= n && static_cast<size_t>(n) <= kMaxByteSize / Size);
-        int size = n ? n * Size : 1;
-        return this->allocateBytes(size, Alignment);
-    }
-
     template <typename T> char* allocateBytesFor(int n = 1) {
-        return allocateBytesFor<sizeof(T), alignof(T)>(n);
+        static_assert(alignof(T) <= kMaxAlignment, "Alignment is too big for arena");
+        static_assert(sizeof(T) < kMaxByteSize, "Size is too big for arena");
+        SkASSERT_RELEASE(WillCountFit<T>(n));
+
+        int size = n ? n * sizeof(T) : 1;
+        return this->allocateBytes(size, alignof(T));
     }
 
     void* alignedBytes(int unsafeSize, int unsafeAlignment);
 
 private:
+    
+    
+    inline static constexpr int kMaxAlignment = std::max(16, (int)alignof(std::max_align_t));
+    
+    
+    inline static constexpr int k4K = (1 << 12);
+    
+    inline static constexpr int kMaxByteSize = std::numeric_limits<int>::max() - k4K;
+    
+    
+    
+    
+    #if !defined(SK_FORCE_8_BYTE_ALIGNMENT)
+        static constexpr int kAllocationAlignment = alignof(std::max_align_t);
+    #else
+        static constexpr int kAllocationAlignment = 8;
+    #endif
+
     static constexpr size_t AlignUp(int size, int alignment) {
         return (size + (alignment - 1)) & -alignment;
     }
@@ -262,10 +259,9 @@ public:
         return std::unique_ptr<T, Destroyer>{new (bytes) T(std::forward<Args>(args)...)};
     }
 
-    template<typename T, size_t Alignment = alignof(T)> T* makePODArray(int n)
-        requires (sizeof(T) % Alignment == 0) {
+    template<typename T> T* makePODArray(int n) {
         static_assert(HasNoDestructor<T>, "This is not POD. Use makeUniqueArray.");
-        return reinterpret_cast<T*>(fAlloc.template allocateBytesFor<sizeof(T), Alignment>(n));
+        return reinterpret_cast<T*>(fAlloc.template allocateBytesFor<T>(n));
     }
 
     template<typename T>

@@ -15,29 +15,13 @@
 #include "include/core/SkDocument.h"
 
 struct IXpsOMObjectFactory;
-class SKWStream;
-class SkPixmap;
 
 namespace SkXPS {
 
-using EncodePngCallback = bool (*)(SkWStream* dst, const SkPixmap& src);
-
-struct Options {
-    float dpi = SK_ScalarDefaultRasterDPI;
-
-    
-    EncodePngCallback pngEncoder = nullptr;
-
-    
-
-
-
-    bool allowNoPngs = false;
-};
-
 SK_API sk_sp<SkDocument> MakeDocument(SkWStream* stream,
                                       IXpsOMObjectFactory* xpsFactory,
-                                      Options opts);
+                                      SkScalar dpi = SK_ScalarDefaultRasterDPI);
+
 }  
 #endif  
 #endif  

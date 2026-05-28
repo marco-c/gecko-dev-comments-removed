@@ -13,12 +13,10 @@
 #include "include/core/SkImageInfo.h"
 #include "include/core/SkTypes.h"
 #include "include/private/SkEncodedInfo.h"
-#include "modules/skcms/skcms.h"
 #include "src/codec/SkColorPalette.h"
 #include "src/core/SkColorData.h"
 #include "src/base/SkEndian.h"
 
-#include <memory>
 #include <string_view>
 
 #ifdef SK_PRINT_CODEC_MESSAGES
@@ -28,80 +26,8 @@
 #endif
 
 namespace SkCodecs {
-
 bool HasDecoder(std::string_view id);
-
-
-
-class ColorProfile {
-public:
-    
-    
-    
-    
-    static std::unique_ptr<ColorProfile> MakeICCProfile(sk_sp<const SkData>);
-
-    
-    
-    static std::unique_ptr<ColorProfile> MakeICCProfileWithSkCMS(sk_sp<const SkData>);
-
-    
-    
-    static std::unique_ptr<ColorProfile> Make(sk_sp<SkColorSpace>);
-
-    
-    
-    static std::unique_ptr<ColorProfile> Make(const skcms_TransferFunction& trfn,
-                                              const skcms_Matrix3x3& toXYZD50);
-
-    
-    
-    static std::unique_ptr<ColorProfile> MakeCICP(uint8_t color_primaries,
-                                                  uint8_t transfer_characteristics,
-                                                  uint8_t matrix_coefficients,
-                                                  uint8_t full_range_flag);
-
-    
-    std::unique_ptr<ColorProfile> clone() const;
-
-    
-    enum class DataSpace {
-        kRGB,   
-        kCMYK,  
-        kGray,  
-        kOther, 
-    };
-    DataSpace dataSpace() const;
-
-    
-    
-    sk_sp<SkColorSpace> getExactColorSpace() const;
-
-    
-    
-    sk_sp<SkColorSpace> getAndroidOutputColorSpace() const;
-
-    
-    
-    const skcms_ICCProfile* profile() const { return &fProfile; }
-    sk_sp<const SkData> data() const { return fData; }
-
-private:
-    ColorProfile(const skcms_ICCProfile&, sk_sp<const SkData> = nullptr);
-
-#if defined(SK_CODEC_COLOR_PROFILE_PARSE_WITH_RUST)
-    friend std::unique_ptr<ColorProfile> MakeICCProfileWithRust(sk_sp<const SkData>);
-#endif
-
-    skcms_ICCProfile     fProfile;
-    sk_sp<const SkData>  fData;
-
-    
-    
-    std::shared_ptr<void> fRetainedData;
-};
-
-}  
+}
 
 class SkCodecPriv final {
 public:
@@ -128,9 +54,6 @@ public:
     static int GetSampledDimension(int srcDimension, int sampleSize) {
         if (sampleSize > srcDimension) {
             return 1;
-        }
-        if (sampleSize == 0) {
-            return 0;
         }
         return srcDimension / sampleSize;
     }
@@ -339,11 +262,6 @@ public:
                 return &SkPackARGB_as_BGRA;
             }
         }
-    }
-
-    static sk_sp<const SkData> GetEncodedData(const SkCodec* codec) {
-        SkASSERT(codec);
-        return codec->getEncodedData();
     }
 };
 
