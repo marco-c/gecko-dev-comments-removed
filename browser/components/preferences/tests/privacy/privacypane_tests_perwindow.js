@@ -164,13 +164,6 @@ async function test_dependent_elements_redesigned(win) {
   ok(customButton, "advanced settings button should exist");
 
   
-  await BrowserTestUtils.waitForMutationCondition(
-    customButton,
-    { attributes: true, subtree: true },
-    () => customButton.parentDisabled
-  );
-
-  
   ok(customButton.parentDisabled, "button is disabled in remember mode");
 
   
