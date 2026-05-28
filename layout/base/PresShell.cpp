@@ -3818,27 +3818,30 @@ void PresShell::ScrollFrameIntoVisualViewport(
     
     
     
-    const nsRect clampedPositionFixedRect =
-        aPositionFixedRect.MoveInsideAndClamp(layoutViewport);
-    
-    
-    if (clampedPositionFixedRect.y >= 0 &&
-        clampedPositionFixedRect.YMost() <= visualViewportSize.height &&
-        clampedPositionFixedRect.x >= 0 &&
-        clampedPositionFixedRect.XMost() <= visualViewportSize.width) {
-      return;
-    }
-
     
     
     if (!NeedToVisuallyScroll(layoutViewportSize, aPositionFixedRect)) {
       return;
     }
+
     
     
     
-    
+    nsRect clampedPositionFixedRect =
+        aPositionFixedRect.MoveInsideAndClamp(layoutViewport);
     nsPoint layoutOffset = rootScrollContainer->GetScrollPosition();
+    clampedPositionFixedRect.MoveBy(layoutOffset);
+    const nsRect visualViewport(GetVisualViewportOffset(), visualViewportSize);
+    
+    
+    if (visualViewport.Contains(clampedPositionFixedRect.TopLeft()) &&
+        visualViewport.Contains(clampedPositionFixedRect.BottomRight())) {
+      return;
+    }
+    
+    
+    
+    
     const auto scrollRange = rootScrollContainer->GetVisualScrollRange();
 
     const nsRect visibleRect(layoutOffset, visualViewportSize);
@@ -5791,7 +5794,19 @@ void PresShell::SynthesizeMouseMove(bool aFromScroll) {
   }
 
   if (mLastMousePointerId.isNothing() && mPointerIds.IsEmpty()) {
-    return;
+    
+    
+    
+    
+    
+    
+    
+    if (Maybe<uint32_t> claimedPointerId =
+            PointerEventHandler::TryClaimOrphanedLastMouseInfo(*this)) {
+      mLastMousePointerId = claimedPointerId;
+    } else {
+      return;
+    }
   }
 
   if (!mSynthMouseMoveEvent.IsPending()) {
@@ -12143,6 +12158,16 @@ void PresShell::SetNeedsWindowPropertiesSync() {
   }
   mNeedsWindowPropertiesSync = true;
   SchedulePaint();
+}
+
+nsSize PresShell::GetVisualViewportSize() const {
+  NS_ASSERTION(mVisualViewportSizeSet,
+               "asking for visual viewport size when its not set?");
+  DynamicToolbarState state = GetDynamicToolbarState();
+  return (state == DynamicToolbarState::InTransition ||
+          state == DynamicToolbarState::Collapsed)
+             ? GetVisualViewportSizeUpdatedByDynamicToolbar()
+             : mVisualViewportSize;
 }
 
 bool PresShell::SetVisualViewportOffset(const nsPoint& aScrollOffset,
