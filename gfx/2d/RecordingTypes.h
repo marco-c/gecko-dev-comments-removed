@@ -19,9 +19,12 @@ struct ElementStreamFormat {
     static_assert(std::is_trivially_copyable_v<T>);
     aStream.write(reinterpret_cast<const char*>(&aElement), sizeof(T));
   }
-  static void Read(S& aStream, T& aElement) {
+
+  
+  
+  [[nodiscard]] static bool Read(S& aStream, T& aElement) {
     static_assert(std::is_trivially_copyable_v<T>);
-    aStream.read(reinterpret_cast<char*>(&aElement), sizeof(T));
+    return aStream.read(reinterpret_cast<char*>(&aElement), sizeof(T));
   }
 };
 
@@ -31,20 +34,24 @@ struct ElementStreamFormat<S, bool> {
     char boolChar = aElement ? '\x01' : '\x00';
     aStream.write(&boolChar, sizeof(boolChar));
   }
-  static void Read(S& aStream, bool& aElement) {
+
+  
+  
+  [[nodiscard]] static bool Read(S& aStream, bool& aElement) {
     char boolChar;
-    aStream.read(&boolChar, sizeof(boolChar));
+    if (!aStream.read(&boolChar, sizeof(boolChar))) {
+      return false;
+    }
     switch (boolChar) {
       case '\x00':
         aElement = false;
-        break;
+        return true;
       case '\x01':
         aElement = true;
-        break;
+        return true;
       default:
         aStream.SetIsBad();
-        aElement = false;
-        break;
+        return false;
     }
   }
 };
@@ -64,15 +71,25 @@ void WriteVector(S& aStream, const mozilla::Vector<T, N>& aVector) {
 }
 
 
+
+
+
 template <class S, class T,
           typename = typename std::enable_if<!std::is_enum<T>::value>::type>
 void ReadElement(S& aStream, T& aElement) {
-  ElementStreamFormat<S, T>::Read(aStream, aElement);
+  if (!ElementStreamFormat<S, T>::Read(aStream, aElement)) {
+    aElement = T{};
+  }
 }
+
+
+
+
+
 template <class S, class T>
 void ReadElementConstrained(S& aStream, T& aElement, const T& aMinValue,
                             const T& aMaxValue) {
-  std::underlying_type_t<T> value = 0;
+  std::underlying_type_t<T> value;
   ReadElement(aStream, value);
 
   auto minInt = static_cast<std::underlying_type_t<T>>(aMinValue);
@@ -84,6 +101,11 @@ void ReadElementConstrained(S& aStream, T& aElement, const T& aMinValue,
     aElement = static_cast<T>(value);
   }
 }
+
+
+
+
+
 template <class S, class T, size_t N>
 void ReadVector(S& aStream, mozilla::Vector<T, N>& aVector) {
   size_t size;
@@ -93,7 +115,11 @@ void ReadVector(S& aStream, mozilla::Vector<T, N>& aVector) {
       aStream.SetIsBad();
       return;
     }
-    aStream.read(reinterpret_cast<char*>(aVector.begin()), sizeof(T) * size);
+    if (!aStream.read(reinterpret_cast<char*>(aVector.begin()),
+                      sizeof(T) * size)) {
+      aVector.clearAndFree();
+      return;
+    }
   } else {
     aVector.clearAndFree();
   }
