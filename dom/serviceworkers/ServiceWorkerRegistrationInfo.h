@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_serviceworkerregistrationinfo_h
 #define mozilla_dom_serviceworkerregistrationinfo_h
 
@@ -73,6 +71,7 @@ class ServiceWorkerRegistrationInfo final
   int64_t mNumberOfAttemptedActivations{0};
   bool mIsBroken{false};
   int64_t mCacheAPIId{-1};
+  uint16_t mIPAddressSpace = 0;
 
  public:
   NS_DECL_ISUPPORTS
@@ -247,6 +246,24 @@ class ServiceWorkerRegistrationInfo final
   void ClearWhenIdle();
 
   const nsID& AgentClusterId() const;
+
+  uint16_t GetIPAddressSpace() const { return mIPAddressSpace; }
+  void SetIPAddressSpace(uint16_t aIPAddressSpace) {
+    
+    
+    
+    
+    
+    
+    if (aIPAddressSpace != 0) {
+      
+      
+      MOZ_ASSERT(mIPAddressSpace == 0 || mIPAddressSpace == aIPAddressSpace,
+                 "Unexpected IP address space mismatch for same-origin "
+                 "service worker registration");
+      mIPAddressSpace = aIPAddressSpace;
+    }
+  }
 
   void SetNavigationPreloadEnabled(const bool& aEnabled);
 

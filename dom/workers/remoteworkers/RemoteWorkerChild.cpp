@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "RemoteWorkerChild.h"
 
 #include <utility>
@@ -312,6 +310,17 @@ nsresult RemoteWorkerChild::ExecWorkerOnMainThread(
         }
         info.mCSPContext = ctx.unwrap();
       }
+    }
+  }
+
+  
+  
+  if (clientInfo.isSome()) {
+    Maybe<mozilla::ipc::PolicyContainerArgs> policyContainerArgs =
+        clientInfo.ref().GetPolicyContainerArgs();
+    if (policyContainerArgs.isSome()) {
+      info.mIPAddressSpace = static_cast<uint16_t>(
+          policyContainerArgs->ipAddressSpace());
     }
   }
 

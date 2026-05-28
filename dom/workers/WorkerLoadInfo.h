@@ -13,6 +13,7 @@
 #include "mozilla/dom/OffThreadCSPContext.h"
 #include "mozilla/dom/ServiceWorkerRegistrationDescriptor.h"
 #include "mozilla/dom/WorkerCommon.h"
+#include "mozilla/ipc/PBackgroundSharedTypes.h"
 #include "mozilla/net/NeckoChannelParams.h"
 #include "nsIInterfaceRequestor.h"
 #include "nsILoadContext.h"
@@ -69,6 +70,11 @@ struct WorkerLoadInfoData {
   nsCOMPtr<nsPIDOMWindowInner> mWindow;
   nsCOMPtr<nsIContentSecurityPolicy> mCSP;
   UniquePtr<OffThreadCSPContext> mCSPContext;
+
+  
+  
+  
+  uint16_t mIPAddressSpace = 0;  
 
   nsCOMPtr<nsIChannel> mChannel;
   nsCOMPtr<nsILoadGroup> mLoadGroup;

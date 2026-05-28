@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "PolicyContainer.h"
 
 #include "mozilla/dom/IntegrityPolicy.h"
@@ -20,15 +18,14 @@ using namespace mozilla::dom;
 PolicyContainer::PolicyContainer() = default;
 PolicyContainer::~PolicyContainer() = default;
 
-constexpr static uint32_t kPolicyContainerSerializationVersion = 1;
+constexpr static uint32_t kPolicyContainerSerializationVersion = 2;
 
 NS_IMETHODIMP
 PolicyContainer::Read(nsIObjectInputStream* aStream) {
-  
   uint32_t version = 0;
   MOZ_TRY(aStream->Read32(&version));
 
-  if (version != kPolicyContainerSerializationVersion) {
+  if (version < 1 || version > kPolicyContainerSerializationVersion) {
     return NS_ERROR_FAILURE;
   }
 
@@ -63,6 +60,13 @@ PolicyContainer::Read(nsIObjectInputStream* aStream) {
   MOZ_TRY(
       NS_ReadOptionalObject(aStream, true, getter_AddRefs(integrityPolicy)));
   mIntegrityPolicy = do_QueryInterface(integrityPolicy);
+
+  if (version >= 2) {
+    uint16_t ipAS = 0;
+    MOZ_TRY(aStream->Read16(&ipAS));
+    mIPAddressSpace = static_cast<nsILoadInfo::IPAddressSpace>(ipAS);
+  }
+
   return NS_OK;
 }
 
@@ -78,6 +82,8 @@ PolicyContainer::Write(nsIObjectOutputStream* aStream) {
 
   
   
+
+  MOZ_TRY(aStream->Write16(static_cast<uint16_t>(mIPAddressSpace)));
 
   return NS_OK;
 }
@@ -100,6 +106,8 @@ void PolicyContainer::ToArgs(const PolicyContainer* aPolicy,
                             integrityPolicyArgs);
     aArgs.integrityPolicy() = Some(integrityPolicyArgs);
   }
+
+  aArgs.ipAddressSpace() = aPolicy->mIPAddressSpace;
 }
 
 void PolicyContainer::FromArgs(const mozilla::ipc::PolicyContainerArgs& aArgs,
@@ -119,6 +127,8 @@ void PolicyContainer::FromArgs(const mozilla::ipc::PolicyContainerArgs& aArgs,
                               getter_AddRefs(integrityPolicy));
     policy->SetIntegrityPolicy(integrityPolicy);
   }
+
+  policy->SetIPAddressSpace(aArgs.ipAddressSpace());
 
   policy.forget(aPolicy);
 }
@@ -141,6 +151,8 @@ void PolicyContainer::InitFromOther(PolicyContainer* aOther) {
         IntegrityPolicy::Cast(aOther->mIntegrityPolicy));
     mIntegrityPolicy = integrityPolicy;
   }
+
+  mIPAddressSpace = aOther->mIPAddressSpace;
 }
 
 NS_IMETHODIMP PolicyContainer::InitFromCSP(nsIContentSecurityPolicy* aCSP) {
@@ -168,6 +180,10 @@ bool PolicyContainer::Equals(const PolicyContainer* aContainer,
   if (!IntegrityPolicy::Equals(
           IntegrityPolicy::Cast(aContainer->mIntegrityPolicy),
           IntegrityPolicy::Cast(aOtherContainer->mIntegrityPolicy))) {
+    return false;
+  }
+
+  if (aContainer->mIPAddressSpace != aOtherContainer->mIPAddressSpace) {
     return false;
   }
 
@@ -223,6 +239,16 @@ IntegrityPolicyWAICT* PolicyContainer::GetIntegrityPolicyWAICT(
     return nullptr;
   }
   return PolicyContainer::Cast(aPolicyContainer)->GetIntegrityPolicyWAICT();
+}
+
+
+nsILoadInfo::IPAddressSpace PolicyContainer::GetIPAddressSpace() const {
+  return mIPAddressSpace;
+}
+
+void PolicyContainer::SetIPAddressSpace(
+    nsILoadInfo::IPAddressSpace aIPAddressSpace) {
+  mIPAddressSpace = aIPAddressSpace;
 }
 
 NS_IMETHODIMP PolicyContainer::GetCsp(nsIContentSecurityPolicy** aCsp) {
