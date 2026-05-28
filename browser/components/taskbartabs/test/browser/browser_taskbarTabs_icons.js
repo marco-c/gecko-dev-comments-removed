@@ -34,7 +34,13 @@ const kBadFaviconHttpUri = Services.io.newURI(
   "https://example.com/browser/browser/components/taskbartabs/test/browser/red-50.png"
 );
 
+
+const kGoodFaviconCrossOriginUri = Services.io.newURI(
+  "https://example.org/browser/browser/components/taskbartabs/test/browser/blue-150.png"
+);
+
 let gGoodFaviconImg;
+let gBadFaviconImg;
 
 add_setup(async function setup() {
   
@@ -53,6 +59,9 @@ add_setup(async function setup() {
 
   gGoodFaviconImg = encodeImagePNG(
     await TaskbarTabsUtils._imageFromLocalURI(kGoodFaviconLocalUri)
+  );
+  gBadFaviconImg = encodeImagePNG(
+    await TaskbarTabsUtils._imageFromLocalURI(kBadFaviconLocalUri)
   );
 });
 
@@ -163,93 +172,64 @@ add_task(async function test_faviconOnOtherPage() {
   sandbox.restore();
 });
 
-add_task(async function test_manifestIcon_lone() {
-  let sandbox = sinon.createSandbox();
-  sandbox.stub(TaskbarTabsUtils, "getFaviconUri").resolves(null);
-
-  await checkTaskbarTabIcon(gGoodFaviconImg, {
-    uri: kBaseUri,
-    manifest: {
-      icons: [
-        {
-          
-          
-          
-          src: kGoodFaviconHttpUri.spec,
-        },
-      ],
-    },
+add_task(async function test_manifestIcon_none() {
+  
+  await checkManifestIcon(gBadFaviconImg, gBadFaviconImg, {
+    icons: [],
   });
+});
 
-  sandbox.restore();
+add_task(async function test_manifestIcon_lone() {
+  await checkManifestIcon(gGoodFaviconImg, gGoodFaviconImg, {
+    icons: [
+      {
+        
+        
+        
+        src: kGoodFaviconHttpUri.spec,
+      },
+    ],
+  });
 });
 
 add_task(async function test_manifestIcon_sized() {
-  let sandbox = sinon.createSandbox();
-  sandbox.stub(TaskbarTabsUtils, "getFaviconUri").resolves(null);
-
-  await checkTaskbarTabIcon(gGoodFaviconImg, {
-    uri: kBaseUri,
-    manifest: {
-      icons: [
-        {
-          
-          
-          
-          src: kGoodFaviconHttpUri.spec,
-          sizes: "1x1 2x2 3x3 250x250",
-        },
-      ],
-    },
+  await checkManifestIcon(gGoodFaviconImg, gGoodFaviconImg, {
+    icons: [
+      {
+        src: kGoodFaviconHttpUri.spec,
+        sizes: "1x1 2x2 3x3 250x250",
+      },
+    ],
   });
-
-  sandbox.restore();
 });
 
 add_task(async function test_manifestIcon_selectsBestSize() {
-  let sandbox = sinon.createSandbox();
-  sandbox.stub(TaskbarTabsUtils, "getFaviconUri").resolves(null);
-
-  await checkTaskbarTabIcon(gGoodFaviconImg, {
-    uri: kBaseUri,
-    manifest: {
-      icons: [
-        {
-          src: kBadFaviconHttpUri.spec,
-          sizes: "255x255 257x257",
-        },
-        {
-          src: kGoodFaviconHttpUri.spec,
-          sizes: "256x256",
-        },
-      ],
-    },
+  await checkManifestIcon(gGoodFaviconImg, gGoodFaviconImg, {
+    icons: [
+      {
+        src: kBadFaviconHttpUri.spec,
+        sizes: "255x255 257x257",
+      },
+      {
+        src: kGoodFaviconHttpUri.spec,
+        sizes: "256x256",
+      },
+    ],
   });
-
-  sandbox.restore();
 });
 
-add_task(async function test_manifestIcon_overridesFavicon() {
-  let sandbox = sinon.createSandbox();
-  sandbox.stub(TaskbarTabsUtils, "getFaviconUri").resolves(kBadFaviconLocalUri);
-
-  await checkTaskbarTabIcon(gGoodFaviconImg, {
-    uri: kBaseUri,
-    manifest: {
-      icons: [
-        {
-          src: kBadFaviconHttpUri.spec,
-          sizes: "255x255 257x257",
-        },
-        {
-          src: kGoodFaviconHttpUri.spec,
-          sizes: "256x256",
-        },
-      ],
-    },
+add_task(async function test_manifestIcon_differentOrigin() {
+  await checkManifestIcon(gBadFaviconImg, gGoodFaviconImg, {
+    icons: [
+      {
+        
+        
+        
+        
+        src: kGoodFaviconCrossOriginUri.spec,
+      },
+    ],
   });
-
-  sandbox.restore();
 });
 
 add_task(async function test_findOrCreateTaskbarTab_noIcon() {
@@ -295,6 +275,42 @@ add_task(async function test_replaceTabWithWindowLoadsSavedIcon() {
     });
   });
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function checkManifestIcon(aImageWithTab, aImageWithoutTab, aManifest) {
+  let sandbox = sinon.createSandbox();
+  sandbox.stub(TaskbarTabsUtils, "getFaviconUri").resolves(kBadFaviconLocalUri);
+
+  
+  await checkTaskbarTabIcon(aImageWithTab, { manifest: aManifest });
+
+  let pinStub = sandbox.stub(TaskbarTabsPin, "pinTaskbarTab").resolves();
+
+  let { taskbarTab } = await TaskbarTabs.findOrCreateTaskbarTab(kBaseUri, 0, {
+    manifest: aManifest,
+  });
+
+  await TaskbarTabs.removeTaskbarTab(taskbarTab.id);
+  Assert.equal(pinStub.callCount, 1, "The taskbar tab was pinned once");
+  assertBytesEqual(
+    encodeImagePNG(pinStub.firstCall?.args[2]),
+    aImageWithoutTab
+  );
+
+  sandbox.restore();
+}
 
 
 
