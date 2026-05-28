@@ -311,8 +311,6 @@ class ProfileSymbolicator:
                 node_path = Path(moz_fetch, "node", "bin", "node")
 
             
-            
-            
 
             if not self._validate_symbolication_deps([
                 profiler_edit_path,
