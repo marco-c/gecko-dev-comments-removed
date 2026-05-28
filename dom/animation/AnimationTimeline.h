@@ -118,6 +118,7 @@ class AnimationTimeline : public nsISupports, public nsWrapperCache {
   virtual const ScrollTimeline* AsScrollTimeline() const { return nullptr; }
   virtual bool IsViewTimeline() const { return false; }
   virtual const ViewTimeline* AsViewTimeline() const { return nullptr; }
+  virtual bool IsInactiveTimeline() const { return false; }
 
   
   
