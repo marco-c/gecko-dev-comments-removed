@@ -231,6 +231,174 @@ const EXPECTED_NOT_SUGGESTIONS_FIRST_GROUPS = {
   ],
 };
 
+const EXPECTED_SMARTBAR_SUGGESTIONS_FIRST_GROUPS = {
+  children: [
+    
+    {
+      maxResultCount: 1,
+      children: [
+        { group: UrlbarUtils.RESULT_GROUP.HEURISTIC_TEST },
+        { group: UrlbarUtils.RESULT_GROUP.HEURISTIC_AUTOFILL },
+        { group: UrlbarUtils.RESULT_GROUP.HEURISTIC_HISTORY_URL },
+        { group: UrlbarUtils.RESULT_GROUP.HEURISTIC_AI_CHAT },
+        { group: UrlbarUtils.RESULT_GROUP.HEURISTIC_FALLBACK },
+      ],
+    },
+    
+    {
+      flexChildren: true,
+      children: [
+        
+        {
+          flex: 2,
+          children: [
+            {
+              availableSpan: 2,
+              group: UrlbarUtils.RESULT_GROUP.AI,
+            },
+            {
+              flexChildren: true,
+              children: [
+                {
+                  flex: 2,
+                  group: UrlbarUtils.RESULT_GROUP.FORM_HISTORY,
+                },
+                {
+                  flex: 99,
+                  group: UrlbarUtils.RESULT_GROUP.RECENT_SEARCH,
+                },
+                {
+                  flex: 4,
+                  group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
+                },
+              ],
+            },
+            {
+              group: UrlbarUtils.RESULT_GROUP.TAIL_SUGGESTION,
+            },
+          ],
+        },
+        
+        {
+          flex: 1,
+          group: UrlbarUtils.RESULT_GROUP.GENERAL_PARENT,
+          children: [
+            {
+              availableSpan: 3,
+              group: UrlbarUtils.RESULT_GROUP.INPUT_HISTORY,
+            },
+            {
+              flexChildren: true,
+              children: [
+                {
+                  flex: 2,
+                  group: UrlbarUtils.RESULT_GROUP.GENERAL,
+                  orderBy: "frecency",
+                },
+                {
+                  flex: 1,
+                  group: UrlbarUtils.RESULT_GROUP.REMOTE_TAB,
+                },
+                {
+                  flex: 2,
+                  group: UrlbarUtils.RESULT_GROUP.ABOUT_PAGES,
+                },
+              ],
+            },
+            {
+              group: UrlbarUtils.RESULT_GROUP.INPUT_HISTORY,
+            },
+          ],
+        },
+      ],
+    },
+  ],
+};
+
+const EXPECTED_SMARTBAR_NOT_SUGGESTIONS_FIRST_GROUPS = {
+  children: [
+    
+    {
+      maxResultCount: 1,
+      children: [
+        { group: UrlbarUtils.RESULT_GROUP.HEURISTIC_TEST },
+        { group: UrlbarUtils.RESULT_GROUP.HEURISTIC_AUTOFILL },
+        { group: UrlbarUtils.RESULT_GROUP.HEURISTIC_HISTORY_URL },
+        { group: UrlbarUtils.RESULT_GROUP.HEURISTIC_AI_CHAT },
+        { group: UrlbarUtils.RESULT_GROUP.HEURISTIC_FALLBACK },
+      ],
+    },
+    
+    {
+      flexChildren: true,
+      children: [
+        
+        {
+          flex: 2,
+          group: UrlbarUtils.RESULT_GROUP.GENERAL_PARENT,
+          children: [
+            {
+              availableSpan: 3,
+              group: UrlbarUtils.RESULT_GROUP.INPUT_HISTORY,
+            },
+            {
+              flexChildren: true,
+              children: [
+                {
+                  flex: 2,
+                  group: UrlbarUtils.RESULT_GROUP.GENERAL,
+                  orderBy: "frecency",
+                },
+                {
+                  flex: 1,
+                  group: UrlbarUtils.RESULT_GROUP.REMOTE_TAB,
+                },
+                {
+                  flex: 2,
+                  group: UrlbarUtils.RESULT_GROUP.ABOUT_PAGES,
+                },
+              ],
+            },
+            {
+              group: UrlbarUtils.RESULT_GROUP.INPUT_HISTORY,
+            },
+          ],
+        },
+        
+        {
+          flex: 1,
+          children: [
+            {
+              availableSpan: 2,
+              group: UrlbarUtils.RESULT_GROUP.AI,
+            },
+            {
+              flexChildren: true,
+              children: [
+                {
+                  flex: 2,
+                  group: UrlbarUtils.RESULT_GROUP.FORM_HISTORY,
+                },
+                {
+                  flex: 99,
+                  group: UrlbarUtils.RESULT_GROUP.RECENT_SEARCH,
+                },
+                {
+                  flex: 4,
+                  group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
+                },
+              ],
+            },
+            {
+              group: UrlbarUtils.RESULT_GROUP.TAIL_SUGGESTION,
+            },
+          ],
+        },
+      ],
+    },
+  ],
+};
+
 
 add_task(function showSearchSuggestionsFirst_resultGroups() {
   
@@ -292,11 +460,48 @@ add_task(function showSearchSuggestionsFirst_resultGroups() {
 });
 
 
-add_task(async function onNimbusChanged() {
-  Services.prefs.setBoolPref(
-    "browser.urlbar.autoFill.adaptiveHistory.enabled",
-    false
+add_task(function showSearchSuggestionsFirst_smartbar_resultGroups() {
+  Assert.equal(
+    UrlbarPrefs.get("showSearchSuggestionsFirst"),
+    true,
+    "showSearchSuggestionsFirst is true initially"
   );
+  Assert.deepEqual(
+    UrlbarPrefs.getResultGroups({
+      context: { sapName: "smartbar", searchString: "test" },
+    }),
+    EXPECTED_SMARTBAR_SUGGESTIONS_FIRST_GROUPS,
+    "smartbar resultGroups has suggestions first when showSearchSuggestionsFirst is true"
+  );
+
+  UrlbarPrefs.set("showSearchSuggestionsFirst", false);
+  Assert.deepEqual(
+    UrlbarPrefs.getResultGroups({
+      context: { sapName: "smartbar", searchString: "test" },
+    }),
+    EXPECTED_SMARTBAR_NOT_SUGGESTIONS_FIRST_GROUPS,
+    "smartbar resultGroups is updated after setting showSearchSuggestionsFirst = false"
+  );
+
+  
+  Services.prefs.clearUserPref("browser.urlbar.showSearchSuggestionsFirst");
+  Assert.deepEqual(
+    UrlbarPrefs.getResultGroups({
+      context: { sapName: "smartbar", searchString: "test" },
+    }),
+    EXPECTED_SMARTBAR_SUGGESTIONS_FIRST_GROUPS,
+    "smartbar resultGroups is updated immediately after clearing showSearchSuggestionsFirst"
+  );
+  Assert.equal(
+    UrlbarPrefs.get("showSearchSuggestionsFirst"),
+    true,
+    "showSearchSuggestionsFirst defaults to true after clearing it"
+  );
+});
+
+
+add_task(async function onNimbusChanged() {
+  Services.prefs.setBoolPref("browser.urlbar.addons.featureGate", false);
 
   
   
@@ -323,24 +528,19 @@ add_task(async function onNimbusChanged() {
   UrlbarPrefs.addObserver(observer);
 
   const doCleanup = await UrlbarTestUtils.initNimbusFeature({
-    autoFillAdaptiveHistoryEnabled: true,
+    addonsFeatureGate: true,
   });
   Assert.equal(observer.prefChangedList.length, 0);
-  Assert.ok(
-    observer.nimbusChangedList.includes("autoFillAdaptiveHistoryEnabled")
-  );
+  Assert.ok(observer.nimbusChangedList.includes("addonsFeatureGate"));
   await doCleanup();
 });
 
 
 add_task(async function onPrefChanged() {
   const doCleanup = await UrlbarTestUtils.initNimbusFeature({
-    autoFillAdaptiveHistoryEnabled: false,
+    addonsFeatureGate: false,
   });
-  Services.prefs.setBoolPref(
-    "browser.urlbar.autoFill.adaptiveHistory.enabled",
-    false
-  );
+  Services.prefs.setBoolPref("browser.urlbar.addons.featureGate", false);
 
   
   
@@ -369,18 +569,13 @@ add_task(async function onPrefChanged() {
   observer.nimbusChangedList = [];
   UrlbarPrefs.addObserver(observer);
 
-  Services.prefs.setBoolPref(
-    "browser.urlbar.autoFill.adaptiveHistory.enabled",
-    true
-  );
+  Services.prefs.setBoolPref("browser.urlbar.addons.featureGate", true);
   await deferred.promise;
   Assert.equal(observer.prefChangedList.length, 1);
-  Assert.equal(observer.prefChangedList[0], "autoFill.adaptiveHistory.enabled");
+  Assert.equal(observer.prefChangedList[0], "addons.featureGate");
   Assert.equal(observer.nimbusChangedList.length, 0);
 
-  Services.prefs.clearUserPref(
-    "browser.urlbar.autoFill.adaptiveHistory.enabled"
-  );
+  Services.prefs.clearUserPref("browser.urlbar.addons.featureGate");
   await doCleanup();
 });
 
