@@ -1165,6 +1165,10 @@ let interfaceNamesInGlobalScope = [
   
   { name: "Permissions", insecureContext: true },
   
+  { name: "PictureInPictureEvent", insecureContext: true },
+  
+  { name: "PictureInPictureWindow", insecureContext: true },
+  
   { name: "Plugin", insecureContext: true },
   
   { name: "PluginArray", insecureContext: true },
