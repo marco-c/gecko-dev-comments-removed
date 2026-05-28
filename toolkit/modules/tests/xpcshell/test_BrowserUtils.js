@@ -5,6 +5,10 @@ const { BrowserUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/BrowserUtils.sys.mjs"
 );
 
+const { sinon } = ChromeUtils.importESModule(
+  "resource://testing-common/Sinon.sys.mjs"
+);
+
 const { EnterprisePolicyTesting } = ChromeUtils.importESModule(
   "resource://testing-common/EnterprisePolicyTesting.sys.mjs"
 );
@@ -160,7 +164,7 @@ add_task(async function test_shouldShowFocusPromo() {
   Preferences.set("browser.promo.focus.enabled", false);
   Assert.ok(!BrowserUtils.shouldShowPromo(BrowserUtils.PromoType.FOCUS));
 
-  Preferences.resetBranch("browser.promo.focus");
+  Services.prefs.getBranch("browser.promo.focus").deleteBranch("");
 });
 
 add_task(async function test_shouldShowPinPromo() {
@@ -183,7 +187,7 @@ add_task(async function test_shouldShowPinPromo() {
   Preferences.set("browser.promo.pin.enabled", false);
   Assert.ok(!BrowserUtils.shouldShowPromo(BrowserUtils.PromoType.PIN));
 
-  Preferences.resetBranch("browser.promo.pin");
+  Services.prefs.getBranch("browser.promo.pin").deleteBranch("");
 });
 
 add_task(async function test_shouldShowRelayPromo() {
@@ -222,7 +226,7 @@ add_task(async function test_shouldShowCookieBannersPromo() {
     !BrowserUtils.shouldShowPromo(BrowserUtils.PromoType.COOKIE_BANNERS)
   );
 
-  Preferences.resetBranch("browser.promo.cookiebanners");
+  Services.prefs.getBranch("browser.promo.cookiebanners").deleteBranch("");
 });
 
 add_task(function test_getShareableURL() {
@@ -499,5 +503,104 @@ add_task(async function test_callModulesFromCategory_returns_promise() {
   Assert.equal(await moduleResult, "Hello", "Module should have been called");
 
   
+  Services.catMan.deleteCategory(CATEGORY);
+});
+
+
+
+add_task(async function test_callModulesFromCategory_multiple_window() {
+  const CATEGORY = "test-js-global-catman";
+  
+  
+  const MODULE_JS = "chrome://browser/content/fake-catman-test.js";
+  const MODULE_ESM = "resource://test/my_catman_1.sys.mjs";
+  const OBSTOPIC = "test-modules-from-catman-notification";
+
+  let catManUpdated = TestUtils.topicObserved("xpcom-category-entry-added");
+  Services.catMan.addCategoryEntry(
+    CATEGORY,
+    MODULE_JS,
+    "FakeObj.doThing",
+    false,
+    false
+  );
+  await catManUpdated;
+
+  catManUpdated = TestUtils.topicObserved("xpcom-category-entry-added");
+  Services.catMan.addCategoryEntry(
+    CATEGORY,
+    MODULE_ESM,
+    "Module1.test",
+    false,
+    false
+  );
+  await catManUpdated;
+
+  let sandbox = sinon.createSandbox();
+
+  
+  let fakeGlobal1 = { FakeObj: { doThing: sandbox.spy() } };
+
+  let esmResult = TestUtils.topicObserved(OBSTOPIC).then(([, data]) => data);
+  BrowserUtils.callModulesFromCategory(
+    { categoryName: CATEGORY, jsGlobal: fakeGlobal1 },
+    "window1"
+  );
+  sinon.assert.calledOnce(fakeGlobal1.FakeObj.doThing);
+  sinon.assert.calledWithExactly(fakeGlobal1.FakeObj.doThing, "window1");
+  Assert.equal(await esmResult, "window1", "ESM entry called for window 1.");
+
+  
+  
+  let fakeGlobal2 = { FakeObj: { doThing: sandbox.spy() } };
+
+  esmResult = TestUtils.topicObserved(OBSTOPIC).then(([, data]) => data);
+  BrowserUtils.callModulesFromCategory(
+    { categoryName: CATEGORY, jsGlobal: fakeGlobal2 },
+    "window2"
+  );
+  sinon.assert.calledOnce(fakeGlobal2.FakeObj.doThing);
+  sinon.assert.calledWithExactly(fakeGlobal2.FakeObj.doThing, "window2");
+  sinon.assert.calledOnce(fakeGlobal1.FakeObj.doThing); 
+  Assert.equal(await esmResult, "window2", "ESM entry called for window 2.");
+
+  sandbox.restore();
+  Services.catMan.deleteCategory(CATEGORY);
+});
+
+
+add_task(async function test_callModulesFromCategory_jsGlobal_errors() {
+  const CATEGORY = "test-js-global-catman-errors";
+  const MODULE = "chrome://browser/content/fake-catman-test.js";
+
+  let catManUpdated = TestUtils.topicObserved("xpcom-category-entry-added");
+  Services.catMan.addCategoryEntry(
+    CATEGORY,
+    MODULE,
+    "FakeObj.doThing",
+    false,
+    false
+  );
+  await catManUpdated;
+
+  
+  let consolePromise = TestUtils.consoleMessageObserved(m => {
+    let firstArg = m.wrappedJSObject.arguments?.[0];
+    return typeof firstArg == "string" && firstArg.includes(CATEGORY);
+  });
+  BrowserUtils.callModulesFromCategory({ categoryName: CATEGORY }, "hello");
+  await consolePromise;
+
+  
+  consolePromise = TestUtils.consoleMessageObserved(m => {
+    let firstArg = m.wrappedJSObject.arguments?.[0];
+    return typeof firstArg == "string" && firstArg.includes(CATEGORY);
+  });
+  BrowserUtils.callModulesFromCategory(
+    { categoryName: CATEGORY, jsGlobal: {} },
+    "hello"
+  );
+  await consolePromise;
+
   Services.catMan.deleteCategory(CATEGORY);
 });
