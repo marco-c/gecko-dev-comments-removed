@@ -660,7 +660,11 @@ class TestManifestLoader(TestLoader):
             
             if manifest_path == manifest.path:
                 continue
-            if manifest_path not in manifests_with_tests:
+            
+            
+            
+            
+            if manifest_path not in manifests_with_tests and info["has_test_lines"]:
                 relpath = manifest_path[len(self.topsrcdir) + 1 :]
                 placeholder = {
                     "path": manifest_path,
