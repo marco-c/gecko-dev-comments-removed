@@ -599,10 +599,24 @@ class EditorBase : public nsIEditor,
 
 
 
+
+
+
   MOZ_CAN_RUN_SCRIPT virtual nsresult OnFocus(
       const nsINode& aOriginalEventTargetNode);
 
   
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT virtual void PostHandleFocusEvent(
+      const nsINode& aFocusEventTargetNode);
+
+  
+
+
+
 
 
 
