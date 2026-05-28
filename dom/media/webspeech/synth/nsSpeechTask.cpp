@@ -41,6 +41,13 @@ class MediaSharedKeysListener final : public ContentMediaControlKeyReceiver {
  public:
   NS_INLINE_DECL_REFCOUNTING(MediaSharedKeysListener, override)
 
+  
+  
+  
+  
+  
+  static constexpr AudioSessionType kSessionType = AudioSessionType::Transient;
+
   explicit MediaSharedKeysListener(nsSpeechTask& aTask) : mTask(aTask) {
     MOZ_ASSERT(NS_IsMainThread());
   }
@@ -64,9 +71,9 @@ class MediaSharedKeysListener final : public ContentMediaControlKeyReceiver {
     mAgent->AddReceiver(this, ControlType::eUncontrollable);
     
     
-    mAgent->NotifyMediaAudibleChanged(mBrowsingContextId,
-                                      MediaAudibleState::eAudible,
-                                      ControlType::eUncontrollable);
+    mAgent->NotifyMediaAudibleChanged(
+        mBrowsingContextId, MediaAudibleState::eAudible,
+        ControlType::eUncontrollable, kSessionType);
     mIsAudible = true;
     MEDIA_CONTROL_LOG(
         "MediaSharedKeysListener %p Start: registered as uncontrollable "
@@ -85,9 +92,9 @@ class MediaSharedKeysListener final : public ContentMediaControlKeyReceiver {
       return;
     }
     if (mIsAudible) {
-      mAgent->NotifyMediaAudibleChanged(mBrowsingContextId,
-                                        MediaAudibleState::eInaudible,
-                                        ControlType::eUncontrollable);
+      mAgent->NotifyMediaAudibleChanged(
+          mBrowsingContextId, MediaAudibleState::eInaudible,
+          ControlType::eUncontrollable, kSessionType);
       mIsAudible = false;
     }
     mAgent->RemoveReceiver(this, ControlType::eUncontrollable);
