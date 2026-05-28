@@ -3024,7 +3024,31 @@ void AppWindow::OnChromeLoaded() {
   
   if (!gfxPlatform::IsHeadless()) {
     if (RefPtr<Document> menubarDoc = mDocShell->GetExtantDocument()) {
-      if (mIsHiddenWindow || !sWaitingForHiddenWindowToLoadNativeMenus) {
+      nsCOMPtr<nsIAppShellService> appShellService(
+          do_GetService(NS_APPSHELLSERVICE_CONTRACTID));
+      bool hasHiddenWindow = false;
+      if (appShellService) {
+        appShellService->GetHasHiddenWindow(&hasHiddenWindow);
+      }
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      bool shouldLoadNativeMenus = mIsHiddenWindow ||
+                                   !sWaitingForHiddenWindowToLoadNativeMenus ||
+                                   !hasHiddenWindow;
+      if (shouldLoadNativeMenus) {
         BeginLoadNativeMenus(menubarDoc, mWindow);
       } else {
         sLoadNativeMenusListeners.EmplaceBack(menubarDoc, mWindow);
