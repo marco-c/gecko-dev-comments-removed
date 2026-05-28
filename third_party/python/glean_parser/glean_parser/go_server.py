@@ -38,6 +38,7 @@ SUPPORTED_METRIC_TYPES = [
     "event",
     "datetime",
     "boolean",
+    "labeled_boolean",  
     "string_list",
 ]
 
@@ -87,6 +88,28 @@ def clean_string(s: str) -> str:
     return s.replace("\n", " ").rstrip()
 
 
+def validate_labeled_boolean(metric: metrics.Metric) -> bool:
+    """
+    Validate that a labeled_boolean metric has static labels defined.
+
+    The Go server outputter requires labels to be listed in metrics.yaml
+    because it generates a Go struct with a field per label at build time.
+    Dynamic labels are not supported.
+
+    Returns:
+        bool: True if valid, False otherwise
+    """
+    if not getattr(metric, "ordered_labels", None):
+        print(
+            "❌ Ignoring labeled_boolean metric without static labels: "
+            + f"{metric.name}."
+            + " Define labels in metrics.yaml to use this metric type."
+        )
+        return False
+
+    return True
+
+
 def output_go(
     objs: metrics.ObjectTree, output_dir: Path, options: Optional[Dict[str, Any]]
 ) -> None:
@@ -119,6 +142,9 @@ def output_go(
     event_metrics: List[metrics.Metric] = []
 
     
+    labeled_boolean_metrics: List[metrics.Metric] = []
+
+    
     
     
     ping_to_metrics: Dict[str, Dict[str, List[metrics.Metric]]] = defaultdict(dict)
@@ -134,9 +160,21 @@ def output_go(
                     )
                     continue
 
+                
+                if metric.type == "labeled_boolean" and not validate_labeled_boolean(
+                    metric
+                ):
+                    continue
+
                 for ping in metric.send_in_pings:
                     if metric.type == "event" and metric not in event_metrics:
                         event_metrics.append(metric)
+
+                    if (
+                        metric.type == "labeled_boolean"
+                        and metric not in labeled_boolean_metrics
+                    ):
+                        labeled_boolean_metrics.append(metric)
 
                     metrics_by_type = ping_to_metrics[ping]
                     metrics_list = metrics_by_type.setdefault(metric.type, [])
@@ -156,6 +194,9 @@ def output_go(
     with filepath.open("w", encoding="utf-8") as fd:
         fd.write(
             template.render(
-                parser_version=__version__, pings=ping_to_metrics, events=event_metrics
+                parser_version=__version__,
+                pings=ping_to_metrics,
+                events=event_metrics,
+                labeled_booleans=labeled_boolean_metrics,
             )
         )
