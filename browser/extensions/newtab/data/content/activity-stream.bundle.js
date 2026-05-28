@@ -8007,7 +8007,8 @@ function MessageWrapper({
   children,
   dispatch,
   hiddenOverride,
-  onDismiss
+  onDismiss,
+  wrapperClassName
 }) {
   const message = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Messages);
   const [isIntersecting, setIsIntersecting] = (0,external_React_namespaceObject.useState)(false);
@@ -8107,7 +8108,7 @@ function MessageWrapper({
     ref: el => {
       ref.current = [el];
     },
-    className: "message-wrapper"
+    className: wrapperClassName ? `message-wrapper ${wrapperClassName}` : "message-wrapper"
   }, external_React_default().cloneElement(children, {
     isIntersecting,
     handleDismiss,
@@ -15947,6 +15948,239 @@ function WidgetsRowFeatureHighlight({
 }
 
 ;
+
+
+
+
+
+const HighlightText = ({
+  as: Tag = "p",
+  className,
+  value,
+  id
+}) => {
+  if (!value) {
+    return null;
+  }
+  if (value.raw) {
+    return external_React_default().createElement(Tag, {
+      id: id,
+      className: className
+    }, value.raw);
+  }
+  if (value.l10nId) {
+    return external_React_default().createElement(Tag, {
+      id: id,
+      className: className,
+      "data-l10n-id": value.l10nId
+    });
+  }
+  return null;
+};
+;
+
+
+
+
+
+const HighlightImage = ({
+  source,
+  className,
+  alt = "",
+  width,
+  height
+}) => {
+  if (!source) {
+    return null;
+  }
+  if (source.srcLight && source.srcDark) {
+    return external_React_default().createElement("picture", null, external_React_default().createElement("source", {
+      srcSet: source.srcDark,
+      media: "(prefers-color-scheme: dark)"
+    }), external_React_default().createElement("source", {
+      srcSet: source.srcLight,
+      media: "(prefers-color-scheme: light)"
+    }), external_React_default().createElement("img", {
+      className: className,
+      src: source.srcLight,
+      alt: alt,
+      width: width,
+      height: height
+    }));
+  }
+  if (source.src) {
+    return external_React_default().createElement("img", {
+      className: className,
+      src: source.src,
+      alt: alt,
+      width: width,
+      height: height
+    });
+  }
+  return null;
+};
+;
+
+
+
+
+const SHELLS = Object.freeze({
+  POPOVER: "popover",
+});
+
+const DISMISS_MODES = Object.freeze({
+  BLOCK: "block",
+});
+
+const OMC_HIGHLIGHT_REGISTRY = Object.freeze({});
+
+const getRegistryEntry = messageType => {
+  if (!messageType) {
+    return null;
+  }
+  return OMC_HIGHLIGHT_REGISTRY[messageType] || null;
+};
+
+const resolveText = ({ content, rawKey, l10nKey, defaultL10nId }) => {
+  const raw = content?.[rawKey];
+  if (raw) {
+    return { raw };
+  }
+  const customL10nId = content?.[l10nKey];
+  if (customL10nId) {
+    return { l10nId: customL10nId };
+  }
+  if (defaultL10nId) {
+    return { l10nId: defaultL10nId };
+  }
+  return null;
+};
+
+const resolveImage = ({ content, defaults }) => {
+  if (content?.hideImage) {
+    return null;
+  }
+  const override = content?.imageURL;
+  if (override) {
+    return { src: override };
+  }
+  return defaults || null;
+};
+
+;
+
+
+
+
+
+
+
+
+const HighlightPopoverBody = ({
+  body,
+  content
+}) => {
+  const image = resolveImage({
+    content,
+    defaults: body?.image
+  });
+  const title = resolveText({
+    content,
+    rawKey: "cardTitle",
+    l10nKey: "title",
+    defaultL10nId: body?.title?.l10nId
+  });
+  const subtitle = resolveText({
+    content,
+    rawKey: "cardMessage",
+    l10nKey: "subtitle",
+    defaultL10nId: body?.subtitle?.l10nId
+  });
+  return external_React_default().createElement("div", {
+    className: "highlight-popover-body"
+  }, external_React_default().createElement(HighlightImage, {
+    source: image,
+    className: "highlight-popover-image"
+  }), external_React_default().createElement(HighlightText, {
+    as: "h3",
+    className: "title",
+    value: title
+  }), external_React_default().createElement(HighlightText, {
+    as: "p",
+    className: "subtitle",
+    value: subtitle
+  }));
+};
+;
+
+
+
+
+
+
+
+
+
+
+const PopoverShell = ({
+  entry,
+  content,
+  handleDismiss,
+  handleBlock
+}) => {
+  const dismissCallback = (0,external_React_namespaceObject.useCallback)(() => {
+    handleDismiss?.();
+    if (entry.dismiss === DISMISS_MODES.BLOCK) {
+      handleBlock?.();
+    }
+  }, [entry.dismiss, handleDismiss, handleBlock]);
+  return external_React_default().createElement(FeatureHighlight, {
+    position: entry.chrome.position,
+    arrowPosition: entry.chrome.arrowPosition,
+    modalClassName: entry.chrome.modalClassName,
+    openedOverride: true,
+    showButtonIcon: false,
+    message: external_React_default().createElement(HighlightPopoverBody, {
+      body: entry.body,
+      content: content
+    }),
+    dismissCallback: dismissCallback,
+    outsideClickCallback: handleDismiss
+  });
+};
+const OMCHighlightSlot = ({
+  slot,
+  dispatch
+}) => {
+  const {
+    messageData
+  } = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Messages);
+  const content = messageData?.content;
+  const entry = getRegistryEntry(content?.messageType);
+  if (!entry || entry.slot !== slot) {
+    return null;
+  }
+  if (entry.shell === SHELLS.POPOVER) {
+    return external_React_default().createElement(MessageWrapper, {
+      dispatch: dispatch,
+      wrapperClassName: "omc-highlight-slot"
+    }, external_React_default().createElement(PopoverShell, {
+      entry: entry,
+      content: content
+    }));
+  }
+  return null;
+};
+;
+
+
+
+
+const SLOTS = Object.freeze({
+  WIDGETS_ROW: "widgets-row",
+});
+
+;
 function SportsMatchRow_extends() { return SportsMatchRow_extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, SportsMatchRow_extends.apply(null, arguments); }
 
 
@@ -18795,7 +19029,8 @@ function WidgetWrapper({
   }), children);
 }
 ;
-function Widgets_extends() { return Widgets_extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, Widgets_extends.apply(null, arguments); }
+
+
 
 
 
@@ -18819,7 +19054,6 @@ function Widgets_extends() { return Widgets_extends = Object.assign ? Object.ass
 const CONTAINER_ACTION_TYPES = {
   HIDE_ALL: "hide_all",
   CHANGE_SIZE_ALL: "change_size_all",
-  CHANGE_ROW_VISIBILITY: "change_row_visibility",
   FEEDBACK: "feedback"
 };
 const PREF_WIDGETS_ENABLED = "widgets.enabled";
@@ -18827,7 +19061,6 @@ const Widgets_PREF_NOVA_ENABLED = "nova.enabled";
 const PREF_WIDGETS_SYSTEM_WEATHER_FORECAST_ENABLED = "widgets.system.weatherForecast.enabled";
 const PREF_WIDGETS_MAXIMIZED = "widgets.maximized";
 const PREF_WIDGETS_SYSTEM_MAXIMIZED = "widgets.system.maximized";
-const PREF_WIDGETS_ROW_EXPANDED = "widgets.row.expanded";
 const PREF_WIDGETS_FEEDBACK_ENABLED = "widgets.feedback.enabled";
 const PREF_WIDGETS_HIDE_ALL_TOAST_ENABLED = "widgets.hideAllToast.enabled";
 const WIDGETS_FEEDBACK_URL = "https://support.mozilla.org/kb/firefox-new-tab-widgets";
@@ -18899,7 +19132,6 @@ function Widgets() {
   } = (0,external_React_namespaceObject.useContext)(BaseContext);
   const novaEnabled = prefs[Widgets_PREF_NOVA_ENABLED];
   const isMaximized = prefs[PREF_WIDGETS_MAXIMIZED];
-  const rowExpanded = !!prefs[PREF_WIDGETS_ROW_EXPANDED];
   const nimbusMaximizedTrainhopEnabled = prefs.trainhopConfig?.widgets?.maximized;
   const feedbackEnabled = prefs.trainhopConfig?.widgets?.feedbackEnabled || prefs[PREF_WIDGETS_FEEDBACK_ENABLED];
   const hideAllToastEnabled = prefs.trainhopConfig?.widgets?.hideAllToastEnabled || prefs[PREF_WIDGETS_HIDE_ALL_TOAST_ENABLED];
@@ -19079,24 +19311,6 @@ function Widgets() {
       event: "SHOW_PERSONALIZE"
     }));
   }
-  function toggleRowExpanded() {
-    const next = !rowExpanded;
-    (0,external_ReactRedux_namespaceObject.batch)(() => {
-      dispatch(actionCreators.SetPref(PREF_WIDGETS_ROW_EXPANDED, next));
-      dispatch(actionCreators.OnlyToMain({
-        type: actionTypes.WIDGETS_CONTAINER_ACTION,
-        data: {
-          action_type: CONTAINER_ACTION_TYPES.CHANGE_ROW_VISIBILITY,
-          action_value: next ? "expand_row" : "collapse_row",
-          widget_size: widgetSize
-        }
-      }));
-    });
-  }
-  function handleToggleRowExpandedClick(e) {
-    e.preventDefault();
-    toggleRowExpanded();
-  }
   function handleFeedbackClick(e) {
     e.preventDefault();
     (0,external_ReactRedux_namespaceObject.batch)(() => {
@@ -19190,84 +19404,11 @@ function Widgets() {
   if (!anyWidgetInRow) {
     return null;
   }
-
-  
-  
-  
-  
-  
-  
-  
-  const sizes = [];
-  const enabledWidgetIds = [];
-  for (const id of widgetOrder) {
-    if (!WIDGET_ROW_COMPONENTS[id] || !widgetEnabledMap[id]) {
-      continue;
-    }
-    const entry = WIDGET_REGISTRY.find(w => w.id === id);
-    let size = entry ? resolveWidgetSize(entry, prefs) : null;
-    
-    
-    if (id === "sportsWidget" && sportsWidgetState === "sports-follow-state") {
-      size = "large";
-    }
-    sizes.push(size);
-    enabledWidgetIds.push(id);
-  }
-  const overflowsAt = cols => {
-    if (sizes.length <= cols) {
-      return false;
-    }
-    const rest = sizes.slice(cols);
-    if (rest.some(s => s === "large")) {
-      return true;
-    }
-    const partnersAvailable = sizes.slice(0, cols).filter(s => s !== "large").length;
-    return rest.length > partnersAvailable;
-  };
-  
-  
-  
-  
-  
-  
-  const hiddenIndicesAt = cols => {
-    const set = new Set();
-    if (sizes.length <= cols) {
-      return set;
-    }
-    const partnersCount = sizes.slice(0, cols).filter(s => s !== "large").length;
-    let mediumOverflowSeen = 0;
-    for (let i = cols; i < sizes.length; i++) {
-      if (sizes[i] === "large") {
-        set.add(i);
-      } else {
-        if (mediumOverflowSeen >= partnersCount) {
-          set.add(i);
-        }
-        mediumOverflowSeen++;
-      }
-    }
-    return set;
-  };
-  const hiddenAtCols = {
-    1: hiddenIndicesAt(1),
-    2: hiddenIndicesAt(2),
-    3: hiddenIndicesAt(3),
-    4: hiddenIndicesAt(4)
-  };
-  const overflowAttrs = {
-    "data-overflow-1": overflowsAt(1) ? "" : undefined,
-    "data-overflow-2": overflowsAt(2) ? "" : undefined,
-    "data-overflow-3": overflowsAt(3) ? "" : undefined,
-    "data-overflow-4": overflowsAt(4) ? "" : undefined
-  };
-  const isCollapsed = novaEnabled && !rowExpanded;
   return external_React_default().createElement("div", {
     className: "widgets-wrapper"
-  }, external_React_default().createElement("div", Widgets_extends({
+  }, external_React_default().createElement("div", {
     className: "widgets-section-container"
-  }, overflowAttrs), external_React_default().createElement("div", {
+  }, external_React_default().createElement("div", {
     className: "widgets-title-container"
   }, external_React_default().createElement("div", {
     className: "widgets-title-container-text"
@@ -19277,10 +19418,11 @@ function Widgets() {
     dispatch: dispatch
   }))), external_React_default().createElement("div", {
     className: "widgets-title-actions"
-  }, renderWidgetsActions())), external_React_default().createElement("div", {
-    id: "widgets-container",
-    className: `widgets-container${isMaximized ? " is-maximized" : ""}`,
-    "data-row-collapsed": isCollapsed ? "" : undefined
+  }, renderWidgetsActions())), novaEnabled && external_React_default().createElement(OMCHighlightSlot, {
+    slot: SLOTS.WIDGETS_ROW,
+    dispatch: dispatch
+  }), external_React_default().createElement("div", {
+    className: `widgets-container${isMaximized ? " is-maximized" : ""}`
   }, widgetOrder.map(id => {
     if (novaEnabled) {
       const Component = WIDGET_ROW_COMPONENTS[id];
@@ -19294,17 +19436,10 @@ function Widgets() {
       if (id === "sportsWidget" && sportsWidgetState === "sports-follow-state") {
         size = "large";
       }
-      const renderIdx = enabledWidgetIds.indexOf(id);
-      const hiddenAttrs = {
-        "data-hidden-1": hiddenAtCols[1].has(renderIdx) ? "" : undefined,
-        "data-hidden-2": hiddenAtCols[2].has(renderIdx) ? "" : undefined,
-        "data-hidden-3": hiddenAtCols[3].has(renderIdx) ? "" : undefined,
-        "data-hidden-4": hiddenAtCols[4].has(renderIdx) ? "" : undefined
-      };
-      return external_React_default().createElement(WidgetWrapper, Widgets_extends({
+      return external_React_default().createElement(WidgetWrapper, {
         key: id,
         className: size ? `${size}-widget` : ""
-      }, hiddenAttrs), external_React_default().createElement(Component, {
+      }, external_React_default().createElement(Component, {
         dispatch: dispatch,
         handleUserInteraction: handleUserInteraction,
         isMaximized: isMaximized,
@@ -19335,14 +19470,7 @@ function Widgets() {
       isMaximized,
       widgetsMayBeMaximized
     }));
-  })), novaEnabled && external_React_default().createElement("moz-button", {
-    className: "widgets-row-toggle",
-    type: "default",
-    "aria-expanded": rowExpanded,
-    "aria-controls": "widgets-container",
-    onClick: handleToggleRowExpandedClick,
-    "data-l10n-id": rowExpanded ? "newtab-widget-section-show-less" : "newtab-widget-section-show-more"
-  }), messageData?.content?.messageType === "NovaWidgetMessage" && external_React_default().createElement("div", {
+  })), messageData?.content?.messageType === "NovaWidgetMessage" && external_React_default().createElement("div", {
     className: "widgets-row-highlight-anchor"
   }, external_React_default().createElement(MessageWrapper, {
     dispatch: dispatch
