@@ -1,10 +1,10 @@
-/* Any copyright is dedicated to the Public Domain.
- * http://creativecommons.org/publicdomain/zero/1.0/ */
+
+
 
 "use strict";
 
-/* import-globals-from ../../mochitest/states.js */
-/* import-globals-from ../../mochitest/role.js */
+
+
 loadScripts(
   { name: "states.js", dir: MOCHITESTS_DIR },
   { name: "role.js", dir: MOCHITESTS_DIR }
@@ -16,13 +16,13 @@ ChromeUtils.defineESModuleGetters(this, {
   UrlbarProvider: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
   ProvidersManager:
     "moz-src:///browser/components/urlbar/UrlbarProvidersManager.sys.mjs",
-  UrlbarResult: "chrome://browser/content/urlbar/UrlbarResult.mjs",
+  UrlbarResult: "moz-src:///browser/components/urlbar/UrlbarResult.sys.mjs",
   UrlbarTestUtils: "resource://testing-common/UrlbarTestUtils.sys.mjs",
   UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
 });
 
 function isEventForAutocompleteItem(event) {
-  // XXX: See bug 2016839
+  
   return event.accessible.role == ROLE_OPTION;
 }
 
@@ -36,15 +36,15 @@ function isEventForMenuItem(event) {
 
 function isEventForResultButton(event) {
   let parent = event.accessible.parent;
-  // XXX: See bug 2016839
+  
   return (
     event.accessible.role == ROLE_PUSHBUTTON && parent?.role == ROLE_LISTBOX
   );
 }
 
-/**
- * A test provider.
- */
+
+
+
 class TipTestProvider extends UrlbarProvider {
   constructor(matches) {
     super();
@@ -70,7 +70,7 @@ class TipTestProvider extends UrlbarProvider {
   }
 }
 
-// Check that the URL bar manages accessibility focus appropriately.
+
 async function runTests() {
   registerCleanupFunction(async function () {
     await UrlbarTestUtils.promisePopupClose(window);
@@ -78,20 +78,20 @@ async function runTests() {
   });
 
   await PlacesTestUtils.addVisits([
-    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    
     "http://example1.com/blah",
-    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    
     "http://example2.com/blah",
-    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    
     "http://example1.com/",
-    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    
     "http://example2.com/",
   ]);
 
-  // Ensure initial state.
+  
   await UrlbarTestUtils.promisePopupClose(window);
 
-  // XXX: See bug 2016839
+  
   let focused = waitForEvent(
     EVENT_FOCUS,
     event => event.accessible.role == ROLE_EDITCOMBOBOX
@@ -99,10 +99,10 @@ async function runTests() {
   gURLBar.focus();
   let event = await focused;
   let textBox = event.accessible;
-  // Ensure the URL bar is ready for a new URL to be typed.
-  // Sometimes, when this test runs, the existing text isn't selected when the
-  // URL bar is focused. Pressing escape twice ensures that the popup is
-  // closed and that the existing text is selected.
+  
+  
+  
+  
   EventUtils.synthesizeKey("KEY_Escape");
   EventUtils.synthesizeKey("KEY_Escape");
 
@@ -113,14 +113,14 @@ async function runTests() {
     value: "example",
     fireInputEvent: true,
   });
-  // Wait a tick for a11y events to fire.
+  
   await TestUtils.waitForTick();
   testStates(textBox, STATE_FOCUSED);
 
   info("Ensuring no focus change on backspace");
   EventUtils.synthesizeKey("KEY_Backspace");
   await UrlbarTestUtils.promiseSearchComplete(window);
-  // Wait a tick for a11y events to fire.
+  
   await TestUtils.waitForTick();
   testStates(textBox, STATE_FOCUSED);
 
@@ -128,7 +128,7 @@ async function runTests() {
   EventUtils.synthesizeKey("KEY_ArrowLeft", { shiftKey: true });
   EventUtils.synthesizeKey("KEY_Delete");
   await UrlbarTestUtils.promiseSearchComplete(window);
-  // Wait a tick for a11y events to fire.
+  
   await TestUtils.waitForTick();
   testStates(textBox, STATE_FOCUSED);
 
@@ -185,8 +185,8 @@ async function runTests() {
   testStates(textBox, STATE_FOCUSED);
 
   gURLBar.view.close();
-  // On Mac, down arrow when not at the end of the field moves to the end.
-  // Move back to the end so the next press of down arrow opens the popup.
+  
+  
   EventUtils.synthesizeKey("KEY_ArrowRight");
 
   info("Ensuring autocomplete focus on down arrow (2)");
@@ -222,7 +222,7 @@ async function runTests() {
   event = await focused;
   testStates(event.accessible, STATE_FOCUSED);
 
-  // Arrow down to the last result.
+  
   const resultCount = UrlbarTestUtils.getResultCount(window);
   while (UrlbarTestUtils.getSelectedRowIndex(window) != resultCount - 1) {
     EventUtils.synthesizeKey("KEY_ArrowDown");
@@ -235,8 +235,8 @@ async function runTests() {
   testStates(textBox, STATE_FOCUSED);
 
   if (AppConstants.platform == "macosx") {
-    // On Mac, ctrl-n after arrow left/right does not re-open the popup.
-    // Type some text so the next press of ctrl-n opens the popup.
+    
+    
     EventUtils.sendString("ple");
 
     info("Ensuring autocomplete focus on ctrl-n");
@@ -250,8 +250,8 @@ async function runTests() {
     AppConstants.platform == "macosx" &&
     Services.prefs.getBoolPref("widget.macos.native-context-menus", false)
   ) {
-    // With native context menus, we do not observe accessibility events and we
-    // cannot send synthetic key events to the menu.
+    
+    
     info("Opening and closing context native context menu");
     let contextMenu = gURLBar.querySelector(".textbox-contextmenu");
     let popupshown = BrowserTestUtils.waitForEvent(contextMenu, "popupshown");
@@ -293,27 +293,27 @@ async function runTests() {
   testStates(textBox, STATE_FOCUSED);
 }
 
-// We test TIP results in their own test so the spoofed results don't interfere
-// with the main test.
+
+
 async function runTipTests() {
   let matches = [
     new UrlbarResult({
       type: UrlbarUtils.RESULT_TYPE.URL,
       source: UrlbarUtils.RESULT_SOURCE.HISTORY,
-      // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+      
       payload: { url: "http://mozilla.org/a" },
     }),
     new UrlbarResult({
       type: UrlbarUtils.RESULT_TYPE.TIP,
       source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
       payload: {
-        // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+        
         helpUrl: "http://example.com/",
         type: "test",
         titleL10n: { id: "urlbar-search-tips-confirm" },
         buttons: [
           {
-            // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+            
             url: "http://example.com/",
             l10n: { id: "urlbar-search-tips-confirm" },
           },
@@ -323,18 +323,18 @@ async function runTipTests() {
     new UrlbarResult({
       type: UrlbarUtils.RESULT_TYPE.URL,
       source: UrlbarUtils.RESULT_SOURCE.HISTORY,
-      // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+      
       payload: { url: "http://mozilla.org/b" },
     }),
     new UrlbarResult({
       type: UrlbarUtils.RESULT_TYPE.URL,
       source: UrlbarUtils.RESULT_SOURCE.HISTORY,
-      // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+      
       payload: { url: "http://mozilla.org/c" },
     }),
   ];
 
-  // Ensure the tip appears in the expected position.
+  
   matches[1].suggestedIndex = 2;
 
   let provider = new TipTestProvider(matches);
@@ -345,7 +345,7 @@ async function runTipTests() {
     providersManager.unregisterProvider(provider);
   });
 
-  // XXX: See bug 2016839
+  
   let focused = waitForEvent(
     EVENT_FOCUS,
     event => event.accessible.role == ROLE_EDITCOMBOBOX
@@ -364,7 +364,7 @@ async function runTipTests() {
     value: "example",
     fireInputEvent: true,
   });
-  // Wait a tick for a11y events to fire.
+  
   await TestUtils.waitForTick();
   testStates(textBox, STATE_FOCUSED);
 
