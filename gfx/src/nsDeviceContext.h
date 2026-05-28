@@ -159,12 +159,6 @@ class nsDeviceContext final {
   
 
 
-
-  bool GetScreenIsVideoHDR();
-
-  
-
-
   nsSize GetDeviceSurfaceDimensions();
 
   
