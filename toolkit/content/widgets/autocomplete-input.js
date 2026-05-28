@@ -283,7 +283,7 @@
     }
 
     get focused() {
-      return this === this.getRootNode().activeElement;
+      return this === document.activeElement;
     }
     
 
