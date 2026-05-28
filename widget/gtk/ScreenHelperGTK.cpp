@@ -104,7 +104,7 @@ static already_AddRefed<Screen> MakeScreenGtk(unsigned int aMonitor,
       
       nsWaylandDisplay::MonitorConfig* config =
           WaylandDisplayGet()->GetMonitorConfig(workarea.x, workarea.y);
-      (void)NS_WARN_IF(!config || !config->pendingChanges);
+      (void)NS_WARN_IF(!config || config->pendingChanges);
       if (config && !config->pendingChanges) {
         LOG_SCREEN("  MonitorConfig pixel size [%d, %d] -> [%d x %d]",
                    config->x, config->y, config->pixelWidth,
