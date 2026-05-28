@@ -59,7 +59,6 @@
 #include "mozilla/ipc/BackgroundUtils.h"
 #include "mozilla/ipc/IPCStreamUtils.h"
 #include "mozilla/ipc/PBackgroundChild.h"
-#include "mozilla/ipc/PBackgroundSharedTypes.h"
 #include "mozilla/ipc/URIUtils.h"
 #include "mozilla/net/CookieJarSettings.h"
 #include "mozilla/net/CookieService.h"
@@ -742,17 +741,6 @@ nsresult ServiceWorkerPrivate::Initialize() {
   workerOptions.mCredentials = RequestCredentials::Omit;
   workerOptions.mType = mInfo->Type();
 
-  
-  
-  
-  
-  
-  ClientInfo ipcClientInfo = mClientInfo.ref();
-  mozilla::ipc::PolicyContainerArgs policyContainerArgs;
-  policyContainerArgs.ipAddressSpace() =
-      static_cast<nsILoadInfo::IPAddressSpace>(regInfo->GetIPAddressSpace());
-  ipcClientInfo.SetPolicyContainerArgs(policyContainerArgs);
-
   mRemoteWorkerData = RemoteWorkerData(
       NS_ConvertUTF8toUTF16(mInfo->ScriptSpec()), baseScriptURL, baseScriptURL,
       workerOptions,
@@ -765,7 +753,7 @@ nsresult ServiceWorkerPrivate::Initialize() {
 
       cjsData, domain,
        true,
-       Some(ipcClientInfo.ToIPC()),
+       Some(mClientInfo.ref().ToIPC()),
 
       
       
@@ -791,30 +779,9 @@ void ServiceWorkerPrivate::RegenerateClientInfo() {
   
   MOZ_DIAGNOSTIC_ASSERT(mClientInfo.isSome());
 
-  
-  
-  
-  
-  nsILoadInfo::IPAddressSpace ipAddressSpace = nsILoadInfo::Unknown;
-  if (mRemoteWorkerData.clientInfo().isSome()) {
-    ClientInfo current(mRemoteWorkerData.clientInfo().ref());
-    if (auto args = current.GetPolicyContainerArgs()) {
-      ipAddressSpace = args->ipAddressSpace();
-    }
-  }
-
   mClientInfo = ClientManager::CreateInfo(
       ClientType::Serviceworker, mClientInfo->GetPrincipal().unwrap().get());
-
-  if (ipAddressSpace != nsILoadInfo::Unknown) {
-    ClientInfo ipcClientInfo = mClientInfo.ref();
-    mozilla::ipc::PolicyContainerArgs policyContainerArgs;
-    policyContainerArgs.ipAddressSpace() = ipAddressSpace;
-    ipcClientInfo.SetPolicyContainerArgs(policyContainerArgs);
-    mRemoteWorkerData.clientInfo().ref() = ipcClientInfo.ToIPC();
-  } else {
-    mRemoteWorkerData.clientInfo().ref() = mClientInfo.ref().ToIPC();
-  }
+  mRemoteWorkerData.clientInfo().ref() = mClientInfo.ref().ToIPC();
 }
 
 nsresult ServiceWorkerPrivate::CheckScriptEvaluation(
