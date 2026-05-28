@@ -9,12 +9,16 @@
 #define SkHdrMetadata_DEFINED
 
 #include "include/core/SkColorSpace.h"
-#include "include/core/SkRefCnt.h"
+#include "include/core/SkData.h"
 #include "include/private/base/SkAPI.h"
 
+#include <algorithm>
+#include <cmath>
+#include <memory>
 #include <optional>
+#include <vector>
 
-
+class SkColorFilter;
 class SkData;
 class SkString;
 
@@ -51,6 +55,20 @@ struct SK_API ContentLightLevelInformation {
 
 
     sk_sp<SkData> serialize() const;
+
+    
+
+
+
+    static ContentLightLevelInformation MakeUint16(uint16_t maxCLL, uint16_t maxFALL) {
+        return { .fMaxCLL = static_cast<float>(maxCLL), .fMaxFALL = static_cast<float>(maxFALL) };
+    }
+    uint16_t getUint16MaxCLL() const {
+        return static_cast<uint16_t>(std::clamp(std::round(fMaxCLL), 0.f, 65535.f));
+    }
+    uint16_t getUint16MaxFALL() const {
+        return static_cast<uint16_t>(std::clamp(std::round(fMaxFALL), 0.f, 65535.f));
+    }
 
     
 
@@ -124,6 +142,136 @@ struct SK_API MasteringDisplayColorVolume {
 
 
 
+
+
+
+
+
+struct SK_API AdaptiveGlobalToneMap {
+    
+    struct SK_API GainCurve {
+        
+        
+        struct ControlPoint {
+            float fX = 0.f;
+            float fY = 0.f;
+            float fM = 0.f;
+
+            bool operator==(const ControlPoint& other) const {
+                return fX == other.fX && fY == other.fY && fM == other.fM;
+            }
+        };
+
+        
+        static constexpr size_t kMinNumControlPoints = 1u;
+        static constexpr size_t kMaxNumControlPoints = 32u;
+        std::vector<ControlPoint> fControlPoints = {};
+
+        bool operator==(const GainCurve& other) const {
+            return fControlPoints == other.fControlPoints;
+        }
+    };
+
+    
+    struct SK_API ComponentMixingFunction {
+        
+        float fRed = 0.f;
+        float fGreen = 0.f;
+        float fBlue = 0.f;
+        float fMax = 0.f;
+        float fMin = 0.f;
+        float fComponent = 0.f;
+
+        bool operator==(const ComponentMixingFunction& other) const {
+            return fRed == other.fRed && fGreen == other.fGreen && fBlue == other.fBlue &&
+                   fMax == other.fMax && fMin == other.fMin && fComponent == other.fComponent;
+        }
+    };
+
+    
+    struct SK_API ColorGainFunction {
+        
+        ComponentMixingFunction fComponentMixing = {};
+
+        
+        GainCurve fGainCurve = {};
+
+        bool operator==(const ColorGainFunction& other) const {
+            return fComponentMixing == other.fComponentMixing && fGainCurve == other.fGainCurve;
+        }
+    };
+
+    
+    struct SK_API AlternateImage {
+        
+        float fHdrHeadroom = 0.f;
+
+        
+        ColorGainFunction fColorGainFunction = {};
+
+        bool operator==(const AlternateImage& other) const {
+            return fHdrHeadroom == other.fHdrHeadroom && fColorGainFunction == other.fColorGainFunction;
+        }
+    };
+
+    
+    struct SK_API HeadroomAdaptiveToneMap {
+        
+        float fBaselineHdrHeadroom = 0.f;
+
+        
+        SkColorSpacePrimaries fGainApplicationSpacePrimaries =
+            {0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f};
+
+        
+        static constexpr size_t kMaxNumAlternateImages = 4u;
+        std::vector<AlternateImage> fAlternateImages = {};
+
+        bool operator==(const HeadroomAdaptiveToneMap& other) const {
+            return fBaselineHdrHeadroom == other.fBaselineHdrHeadroom &&
+                   fGainApplicationSpacePrimaries == other.fGainApplicationSpacePrimaries &&
+                   fAlternateImages == other.fAlternateImages;
+        }
+    };
+
+    
+    static constexpr float kDefaultHdrReferenceWhite = 203.f;
+
+    
+    float fHdrReferenceWhite = kDefaultHdrReferenceWhite;
+
+    
+    std::optional<HeadroomAdaptiveToneMap> fHeadroomAdaptiveToneMap = std::nullopt;
+
+    
+
+
+    bool parse(const SkData* data);
+
+    
+
+
+    sk_sp<SkData> serialize() const;
+
+    
+
+
+    SkString toString() const;
+
+    
+
+
+    bool isValid() const;
+
+    bool operator==(const AdaptiveGlobalToneMap& other) const {
+        return fHdrReferenceWhite == other.fHdrReferenceWhite &&
+               fHeadroomAdaptiveToneMap == other.fHeadroomAdaptiveToneMap;
+    }
+};
+
+
+
+
 class SK_API Metadata {
   public:
     
@@ -156,7 +304,42 @@ class SK_API Metadata {
     
 
 
+
+    bool getAdaptiveGlobalToneMap(AdaptiveGlobalToneMap* agtm) const;
+
+    
+
+
+    void setAdaptiveGlobalToneMap(const AdaptiveGlobalToneMap& agtm);
+
+    
+
+
+    sk_sp<const SkData> getSerializedAgtm() const;
+
+    
+
+
+    void setSerializedAgtm(sk_sp<const SkData>);
+
+    
+
+
     SkString toString() const;
+
+    
+
+
+
+
+
+
+
+
+
+
+    sk_sp<SkColorFilter> makeToneMapColorFilter(
+        float targetedHdrHeadroom, const SkColorSpace* inputColorSpace = nullptr) const;
 
     bool operator==(const Metadata& other) const;
     bool operator!=(const Metadata& other) const {
@@ -166,6 +349,7 @@ class SK_API Metadata {
   private:
     std::optional<ContentLightLevelInformation> fContentLightLevelInformation;
     std::optional<MasteringDisplayColorVolume> fMasteringDisplayColorVolume;
+    std::optional<AdaptiveGlobalToneMap> fAdaptiveGlobalToneMap;
 };
 
 }  

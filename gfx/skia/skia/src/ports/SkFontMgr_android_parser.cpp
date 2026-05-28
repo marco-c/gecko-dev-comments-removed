@@ -32,15 +32,12 @@ using namespace skia_private;
 #define OLD_SYSTEM_FONTS_FILE "/system/etc/system_fonts.xml"
 #define FALLBACK_FONTS_FILE "/system/etc/fallback_fonts.xml"
 #define VENDOR_FONTS_FILE "/vendor/etc/fallback_fonts.xml"
+#define PRODUCT_CUSTOMIZATION_FILE "/product/etc/fonts_customization.xml"
 
 #define LOCALE_FALLBACK_FONTS_SYSTEM_DIR "/system/etc"
 #define LOCALE_FALLBACK_FONTS_VENDOR_DIR "/vendor/etc"
 #define LOCALE_FALLBACK_FONTS_PREFIX "fallback_fonts-"
 #define LOCALE_FALLBACK_FONTS_SUFFIX ".xml"
-
-#ifndef SK_FONT_FILE_PREFIX
-#    define SK_FONT_FILE_PREFIX "/fonts/"
-#endif
 
 
 
@@ -121,6 +118,8 @@ struct FamilyData {
     const SkString& fBasePath;                  
     const bool fIsFallback;                     
     const char* fFilename;                      
+
+    SkString fCurrentFamilyList;                
 
     int fDepth;                                 
     int fSkip;                                  
@@ -301,6 +300,12 @@ static const TagHandler familyHandler = {
         
         FontFamily* family = new FontFamily(self->fBasePath, true);
         self->fCurrentFamily.reset(family);
+
+        if (!self->fCurrentFamilyList.isEmpty()) {
+            family->fNames.push_back().set(self->fCurrentFamilyList);
+            family->fIsFallbackFont = false;
+        }
+
         for (size_t i = 0; ATTS_NON_NULL(attributes, i); i += 2) {
             const char* name = attributes[i];
             const char* value = attributes[i+1];
@@ -334,6 +339,30 @@ static const TagHandler familyHandler = {
     nullptr,
 };
 
+static const TagHandler familyListHandler = {
+         [](FamilyData* self, const char* tag, const char** attributes) {
+            for (size_t i = 0; ATTS_NON_NULL(attributes, i); i += 2) {
+                const char* name = attributes[i];
+                const char* value = attributes[i + 1];
+                size_t nameLen = strlen(name);
+                if (MEMEQ("name", name, nameLen)) {
+                    SkAutoAsciiToLC tolc(value);
+                    self->fCurrentFamilyList.set(tolc.lc());
+                }
+            }
+        },
+         [](FamilyData* self, const char* tag) { self->fCurrentFamilyList.reset(); },
+        
+        [](FamilyData* self, const char* tag, const char** attributes) -> const TagHandler* {
+            size_t len = strlen(tag);
+            if (MEMEQ("family", tag, len)) {
+                return &familyHandler;
+            }
+            return nullptr;
+        },
+         nullptr,
+};
+
 static FontFamily* find_family(FamilyData* self, const SkString& familyName) {
     for (std::unique_ptr<FontFamily>& candidate : self->fFamilies) {
         for (const SkString& candidateName : candidate->fNames) {
@@ -365,7 +394,8 @@ static const TagHandler aliasHandler = {
                 SkAutoAsciiToLC tolc(value);
                 aliasName.set(tolc.lc());
             } else if (MEMEQ("to", name, nameLen)) {
-                to.set(value);
+                SkAutoAsciiToLC tolc(value);
+                to.set(tolc.lc());
             } else if (MEMEQ("weight", name, nameLen)) {
                 if (!parse_non_negative_integer(value, &weight)) {
                     SK_FONTCONFIGPARSER_WARNING("'%s' is an invalid weight", value);
@@ -407,6 +437,8 @@ static const TagHandler familySetHandler = {
         size_t len = strlen(tag);
         if (MEMEQ("family", tag, len)) {
             return &familyHandler;
+        } else if (MEMEQ("family-list", tag, len)) {
+            return &familyListHandler;
         } else if (MEMEQ("alias", tag, len)) {
             return &aliasHandler;
         }
@@ -578,6 +610,34 @@ static const TagHandler topLevelHandler = {
                 }
             }
             return &jbParser::familySetHandler;
+        } else if (MEMEQ("fonts-modification", tag, len)) {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+
+            
+            self->fVersion = 21;
+            return &lmpParser::familySetHandler;
         }
         return nullptr;
     },
@@ -811,13 +871,19 @@ static void mixin_vendor_fallback_font_families(
 }
 
 void SkFontMgr_Android_Parser::GetSystemFontFamilies(
-        std::vector<std::unique_ptr<FontFamily>>& fontFamilies)
-{
+        std::vector<std::unique_ptr<FontFamily>>& fontFamilies) {
+    static constexpr char kFontFilePrefix[] = "/fonts/";
+
     
     SkString basePath(getenv("ANDROID_ROOT"));
-    basePath.append(SK_FONT_FILE_PREFIX, sizeof(SK_FONT_FILE_PREFIX) - 1);
+    basePath.append(kFontFilePrefix);
 
     if (append_system_font_families(fontFamilies, basePath) >= 21) {
+        
+        
+        
+        SkFontMgr_Android_Parser::GetCustomFontFamilies(
+                fontFamilies, basePath, PRODUCT_CUSTOMIZATION_FILE, nullptr, nullptr);
         return;
     }
 

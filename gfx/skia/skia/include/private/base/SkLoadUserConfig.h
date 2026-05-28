@@ -10,12 +10,13 @@
 
 #include "include/private/base/SkFeatures.h"
 
+#include "include/private/base/SkLogPriority.h" 
+
 
 
 #define SK_NOTHING_ARG1(arg1)
 #define SK_NOTHING_ARG2(arg1, arg2)
 #define SK_NOTHING_ARG3(arg1, arg2, arg3)
-
 
 
 

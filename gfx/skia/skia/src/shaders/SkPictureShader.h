@@ -45,6 +45,9 @@ public:
     SkPictureShader(sk_sp<SkPicture>, SkTileMode, SkTileMode, SkFilterMode, const SkRect*);
 
     ShaderType type() const override { return ShaderType::kPicture; }
+    
+    
+    bool isOpaque() const override { return false; }
 
     sk_sp<SkPicture> picture() const { return fPicture; }
     SkRect tile() const { return fTile; }
@@ -66,6 +69,7 @@ public:
                                     const int maxTextureSize,
                                     const SkSurfaceProps& propsIn);
 
+        
         sk_sp<SkImage> makeImage(sk_sp<SkSurface> surf, const SkPicture* pict) const;
     };
 

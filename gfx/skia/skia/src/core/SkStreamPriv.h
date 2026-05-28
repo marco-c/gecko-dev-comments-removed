@@ -16,6 +16,7 @@
 
 class SkData;
 
+namespace SkStreamPriv {
 
 
 
@@ -25,16 +26,17 @@ class SkData;
 
 
 
-sk_sp<SkData> SkCopyStreamToData(SkStream* stream);
+
+sk_sp<SkData> CopyStreamToData(SkStream* stream);
 
 
 
 
 
-bool SkStreamCopy(SkWStream* out, SkStream* input);
+bool Copy(SkWStream* out, SkStream* input);
 
 
-class SkDebugfStream final : public SkWStream {
+class DebugfStream final : public SkWStream {
 public:
     bool write(const void* buffer, size_t size) override;
     size_t bytesWritten() const override;
@@ -46,22 +48,22 @@ private:
 
 
 
-inline bool SkWStreamWriteU16BE(SkWStream* s, uint16_t value) {
+inline bool WriteU16BE(SkWStream* s, uint16_t value) {
     value = SkEndian_SwapBE16(value);
     return s->write(&value, sizeof(value));
 }
 
-inline bool SkWStreamWriteU32BE(SkWStream* s, uint32_t value) {
+inline bool WriteU32BE(SkWStream* s, uint32_t value) {
     value = SkEndian_SwapBE32(value);
     return s->write(&value, sizeof(value));
 }
 
-inline bool SkWStreamWriteS32BE(SkWStream* s, int32_t value) {
+inline bool WriteS32BE(SkWStream* s, int32_t value) {
     value = SkEndian_SwapBE32(value);
     return s->write(&value, sizeof(value));
 }
 
-inline bool SkStreamReadU16BE(SkStream* s, uint16_t* value) {
+inline bool ReadU16BE(SkStream* s, uint16_t* value) {
     if (!s->readU16(value)) {
         return false;
     }
@@ -69,7 +71,7 @@ inline bool SkStreamReadU16BE(SkStream* s, uint16_t* value) {
     return true;
 }
 
-inline bool SkStreamReadU32BE(SkStream* s, uint32_t* value) {
+inline bool ReadU32BE(SkStream* s, uint32_t* value) {
     if (!s->readU32(value)) {
         return false;
     }
@@ -77,7 +79,7 @@ inline bool SkStreamReadU32BE(SkStream* s, uint32_t* value) {
     return true;
 }
 
-inline bool SkStreamReadS32BE(SkStream* s, int32_t* value) {
+inline bool ReadS32BE(SkStream* s, int32_t* value) {
     if (!s->readS32(value)) {
         return false;
     }
@@ -90,6 +92,8 @@ inline bool SkStreamReadS32BE(SkStream* s, int32_t* value) {
 
 
 
-bool StreamRemainingLengthIsBelow(SkStream* stream, size_t len);
+bool RemainingLengthIsBelow(SkStream* stream, size_t len);
+
+}  
 
 #endif  

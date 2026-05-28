@@ -45,17 +45,21 @@ struct ShaderCaps {
     }
 
     
-    
-    
+
+
+
+
     const char* shaderDerivativeExtensionString() const {
         SkASSERT(this->fShaderDerivativeSupport);
         return fShaderDerivativeExtensionString;
     }
 
     
-    
-    
-    
+
+
+
+
+
     const char* externalTextureExtensionString() const {
         SkASSERT(this->fExternalTextureSupport);
         return fExternalTextureExtensionString;
@@ -79,7 +83,25 @@ struct ShaderCaps {
 
     bool supportsDistanceFieldText() const { return fShaderDerivativeSupport; }
 
+    
+
+
+
+
+
+
+
+
+
+    bool fFloatIs32Bits = true; 
+    
+
+
+
+
     SkSL::GLSLGeneration fGLSLGeneration = SkSL::GLSLGeneration::k330;
+    bool fFlatInterpolationSupport = false; 
+    bool fUsesPrecisionModifiers = false; 
 
     bool fDualSourceBlendingSupport = false;
     bool fShaderDerivativeSupport = false;
@@ -92,12 +114,9 @@ struct ShaderCaps {
     bool fInverseHyperbolicSupport = false;
     bool fFBFetchSupport = false;
     bool fFBFetchNeedsCustomOutput = false;
-    bool fUsesPrecisionModifiers = false;
-    bool fFlatInterpolationSupport = false;
     bool fNoPerspectiveInterpolationSupport = false;
     bool fSampleMaskSupport = false;
     bool fExternalTextureSupport = false;
-    bool fFloatIs32Bits = true;
 
     
     bool fInfinitySupport = false;
@@ -115,50 +134,71 @@ struct ShaderCaps {
     
     bool fAtan2ImplementedAsAtanYOverX = false;
     
-    
-    
+
+
+
+
     bool fMustDoOpBetweenFloorAndAbs = false;
     
-    
+
+
+
     bool fMustGuardDivisionEvenAfterExplicitZeroCheck = false;
     
     bool fCanUseFragCoord = true;
     
     bool fAddAndTrueToLoopCondition = false;
     
-    
+
+
+
     bool fUnfoldShortCircuitAsTernary = false;
     bool fEmulateAbsIntFunction = false;
     bool fRewriteDoWhileLoops = false;
     bool fRewriteSwitchStatements = false;
     bool fRemovePowWithConstantExponent = false;
     
-    
+
+
+
     bool fNoDefaultPrecisionForExternalSamplers = false;
     
-    
+
+
+
+
     bool fRewriteMatrixVectorMultiply = false;
     
     bool fRewriteMatrixComparisons = false;
     
     bool fRemoveConstFromFunctionParameters = false;
     
-    
+
+
+
     bool fPerlinNoiseRoundingFix = false;
     
-    
-    
+
+
+
+
     bool fMustDeclareFragmentFrontFacing = false;
     
-    
-    
+
+
+
+
     bool fForceStd430ArrayLayout = false;
     
-    
-    
+
+
+
+
     bool fCannotUseRelaxedPrecisionOnImageSample = false;
     
-    
+
+
+
     bool fVectorClampMinMaxSupport = true;
 
     const char* fVersionDeclString = "";

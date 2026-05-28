@@ -28,17 +28,6 @@ struct SkSize;
 
 #define SK_SUPPORT_LEGACY_MATRIX_RECTTORECT
 
-#ifndef SK_SUPPORT_LEGACY_APPLYPERSPECTIVECLIP
-    #define SK_SUPPORT_LEGACY_APPLYPERSPECTIVECLIP
-#endif
-
-#ifdef SK_SUPPORT_LEGACY_APPLYPERSPECTIVECLIP
-enum class SkApplyPerspectiveClip {
-    kNo,    
-    kYes,   
-};
-#endif
-
 
 
 
@@ -1506,18 +1495,6 @@ public:
 
     bool mapRect(SkRect* dst, const SkRect& src) const;
 
-#ifdef SK_SUPPORT_LEGACY_APPLYPERSPECTIVECLIP
-    bool mapRect(SkRect* dst, const SkRect& src, SkApplyPerspectiveClip) const {
-        return this->mapRect(dst, src);
-    }
-    bool mapRect(SkRect* rect, SkApplyPerspectiveClip) const {
-        return this->mapRect(rect, *rect);
-    }
-    SkRect mapRect(const SkRect& src, SkApplyPerspectiveClip) const {
-        return this->mapRect(src);
-    }
-#endif
-
     
 
 
@@ -1762,43 +1739,6 @@ public:
 
 
     bool isFinite() const { return SkIsFinite(fMat, 9); }
-
-#ifdef SK_SUPPORT_UNSPANNED_APIS
-    bool setPolyToPoly(const SkPoint src[], const SkPoint dst[], int count) {
-        return this->setPolyToPoly({src, count}, {dst, count});
-    }
-
-    void mapPoints(SkPoint dst[], const SkPoint src[], int count) const {
-        this->mapPoints({dst, count}, {src, count});
-    }
-    void mapPoints(SkPoint pts[], int count) const {
-        this->mapPoints(pts, pts, count);
-    }
-
-    void mapHomogeneousPoints(SkPoint3 dst[], const SkPoint3 src[], int count) const {
-        this->mapHomogeneousPoints({dst, count}, {src, count});
-    }
-    void mapHomogeneousPoints(SkPoint3 dst[], const SkPoint src[], int count) const {
-        this->mapPointsToHomogeneous({dst, count}, {src, count});
-    }
-
-    void mapVectors(SkVector dst[], const SkVector src[], int count) const {
-        this->mapVectors({dst, count}, {src, count});
-    }
-    void mapVectors(SkVector vecs[], int count) const {
-        this->mapVectors({vecs, count});
-    }
-    void mapXY(SkScalar x, SkScalar y, SkPoint* result) const {
-        *result = this->mapPoint({x, y});
-    }
-    SkPoint mapXY(SkScalar x, SkScalar y) const {
-        return this->mapPoint({x, y});
-    }
-    void mapVector(SkScalar dx, SkScalar dy, SkVector* result) const {
-        SkVector vec = { dx, dy };
-        this->mapVectors({result, 1}, {&vec, 1});
-    }
-#endif
 
 private:
     

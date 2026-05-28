@@ -14,7 +14,10 @@
 #include "include/core/SkRefCnt.h"
 #include "include/private/base/SkAPI.h"
 
+class GrDirectContext;
+class SkData;
 class SkEncoder;
+class SkImage;
 class SkPixmap;
 class SkWStream;
 
@@ -70,6 +73,21 @@ struct Options {
 
 
 SK_API bool Encode(SkWStream* dst, const SkPixmap& src, const Options& options);
+
+
+
+
+SK_API sk_sp<SkData> Encode(const SkPixmap& src, const Options& options);
+
+
+
+
+
+
+
+
+
+SK_API sk_sp<SkData> Encode(GrDirectContext* ctx, const SkImage* img, const Options& options);
 
 
 

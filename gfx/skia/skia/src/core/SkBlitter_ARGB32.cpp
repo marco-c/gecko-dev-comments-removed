@@ -126,7 +126,7 @@ static inline SkPMColor blend_lcd16_opaque(int srcR, int srcG, int srcB,
 
 
 
-#if SK_CPU_SSE_LEVEL >= SK_CPU_SSE_LEVEL_SSE2
+#if SK_CPU_X64_LEVEL >= SK_CPU_X64_LEVEL_SSE2
     #include <emmintrin.h>
 
     

@@ -1680,7 +1680,7 @@ static void aaa_fill_path(const SkPathRaw& path,
         rightBound = std::min(rightBound, SkIntToFixed(ir.fRight));
     }
 
-    if (!path.isInverseFillType() && path.isConvex() && count >= 2) {
+    if (!path.isInverseFillType() && path.isKnownToBeConvex() && count >= 2) {
         aaa_walk_convex_edges(
                 &headEdge, blitter, start_y, stop_y, leftBound, rightBound, isUsingMask);
     } else {
@@ -1750,7 +1750,7 @@ void SkScan::AAAFillPath(const SkPathRaw&  path,
                           true,
                           forceRLE);
         }
-    } else if (!isInverse && path.isConvex()) {
+    } else if (!isInverse && path.isKnownToBeConvex()) {
         
         
         

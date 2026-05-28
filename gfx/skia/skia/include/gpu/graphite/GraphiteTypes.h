@@ -14,6 +14,7 @@
 #include "include/gpu/GpuTypes.h"
 
 #include <memory>
+#include <string>
 
 class SkSurface;
 
@@ -52,15 +53,23 @@ public:
         kAddCommandsFailed,
         
         
-        kAsyncShaderCompilesFailed
+        kAsyncShaderCompilesFailed,
+        
+        
+        
+        
+        kOutOfOrderRecording,
     };
 
-    constexpr InsertStatus() : fValue(kSuccess) {}
-     constexpr InsertStatus(V v) : fValue(v) {}
+    InsertStatus() : fValue(kSuccess) {}
+     InsertStatus(V v) : fValue(v) {}
+    InsertStatus(V v, std::string message) : fValue(v), fMessage(std::move(message)) {}
 
     operator InsertStatus::V() const {
         return fValue;
     }
+
+    const std::string& message() const { return fMessage; }
 
     
     
@@ -73,6 +82,7 @@ public:
 
 private:
     V fValue;
+    std::string fMessage;
 };
 
 
@@ -180,6 +190,12 @@ struct SubmitInfo {
     MarkFrameBoundary fMarkBoundary = MarkFrameBoundary::kNo;
     uint64_t fFrameID = 0;
 
+    
+    
+    
+    GpuFinishedProc fFinishedProc = nullptr;
+    GpuFinishedContext fFinishedContext = nullptr;
+
     constexpr SubmitInfo() = default;
 
     constexpr SubmitInfo(SyncToCpu sync)
@@ -208,6 +224,26 @@ enum class DepthStencilFlags : int {
     kStencil      = 0b010,
     kDepthStencil = kDepth | kStencil,
 };
+
+enum class SampleCount : uint8_t {
+    k1  = 1,
+    k2  = 2,
+    k4  = 4,
+    k8  = 8,
+    k16 = 16
+};
+
+
+
+
+
+constexpr SampleCount ToSampleCount(uint32_t sampleCount) {
+    return sampleCount >= 16 ? SampleCount::k16 :
+           sampleCount >= 8  ? SampleCount::k8  :
+           sampleCount >= 4  ? SampleCount::k4  :
+           sampleCount >= 2  ? SampleCount::k2  :
+                               SampleCount::k1;
+}
 
 
 

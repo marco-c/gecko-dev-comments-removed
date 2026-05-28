@@ -103,7 +103,7 @@ SK_API sk_sp<SkImage> RasterFromCompressedTextureData(sk_sp<SkData> data,
 
 
 
-SK_API sk_sp<SkImage> DeferredFromEncodedData(sk_sp<SkData> encoded,
+SK_API sk_sp<SkImage> DeferredFromEncodedData(sk_sp<const SkData> encoded,
                                               std::optional<SkAlphaType> alphaType = std::nullopt);
 
 
@@ -739,7 +739,7 @@ public:
 
 
 
-    sk_sp<SkData> refEncodedData() const;
+    sk_sp<const SkData> refEncodedData() const;
 
     struct RequiredProperties {
         bool fMipmapped = false;

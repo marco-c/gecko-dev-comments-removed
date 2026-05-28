@@ -9,8 +9,33 @@
 
 
 
-#ifndef SKCMS_API
-    #define SKCMS_API
+
+#if !defined(SKCMS_API)
+    
+    #if defined(SKCMS_DLL)
+        
+        #if defined(_MSC_VER)
+            
+            
+            
+            #if defined(SKCMS_IMPLEMENTATION)
+                
+                
+                #define SKCMS_API __declspec(dllexport)
+            #else
+                
+                
+                
+                #define SKCMS_API __declspec(dllimport)
+            #endif
+        #else
+            
+            
+            #define SKCMS_API __attribute__((visibility("default")))
+        #endif
+    #else
+        #define SKCMS_API
+    #endif
 #endif
 
 #include <stdbool.h>
@@ -271,6 +296,8 @@ SKCMS_API bool skcms_TRCs_AreApproximateInverse(const skcms_ICCProfile* profile,
 
 
 
+
+
 SKCMS_API bool skcms_ParseWithA2BPriority(const void*, size_t,
                                           const int priority[], int priorities,
                                           skcms_ICCProfile*);
@@ -298,7 +325,7 @@ SKCMS_API bool skcms_GetWTPT(const skcms_ICCProfile*, float xyz[3]);
 SKCMS_API int skcms_GetInputChannelCount(const skcms_ICCProfile*);
 
 
-enum {
+typedef enum skcms_Signature {
     
     skcms_Signature_CMYK = 0x434D594B,
     skcms_Signature_Gray = 0x47524159,
@@ -329,7 +356,7 @@ enum {
     skcms_Signature_13CLR  = 0x44434C52,
     skcms_Signature_14CLR  = 0x45434C52,
     skcms_Signature_15CLR  = 0x46434C52,
-};
+} skcms_Signature;
 
 typedef enum skcms_PixelFormat {
     skcms_PixelFormat_A_8,

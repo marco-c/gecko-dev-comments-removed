@@ -39,9 +39,7 @@ public:
 
 
 
-
-
-    virtual bool isOpaque() const { return false; }
+    virtual bool isOpaque() const = 0;
 
     
 

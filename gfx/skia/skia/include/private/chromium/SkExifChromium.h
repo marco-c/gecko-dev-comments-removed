@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+#ifndef SkExifChromium_DEFINED
+#define SkExifChromium_DEFINED
+
+#include "include/private/base/SkAPI.h"
+
+namespace SkExif {
+
+
+
+
+
+
+
+
+SK_API void ForceSkExif(bool forceSkExif);
+
+}  
+
+#endif  

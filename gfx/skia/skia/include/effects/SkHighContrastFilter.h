@@ -45,8 +45,8 @@ struct SkHighContrastConfig {
     bool isValid() const {
         return fInvertStyle >= InvertStyle::kNoInvert &&
                fInvertStyle <= InvertStyle::kInvertLightness &&
-               fContrast >= -1.0 &&
-               fContrast <= 1.0;
+               fContrast >= -1.0f &&
+               fContrast <= 1.0f;
     }
 
     

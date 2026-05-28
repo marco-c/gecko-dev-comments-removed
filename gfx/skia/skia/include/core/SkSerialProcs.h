@@ -19,11 +19,13 @@ class SkImage;
 class SkPicture;
 class SkTypeface;
 class SkReadBuffer;
+class SkStream;
 enum SkAlphaType : int;
 namespace sktext::gpu {
     class Slug;
 }
 
+using SkSerialReturnType = sk_sp<const SkData>;
 
 
 
@@ -33,10 +35,9 @@ namespace sktext::gpu {
 
 
 
-
-using SkSerialPictureProc = sk_sp<SkData> (*)(SkPicture*, void* ctx);
-using SkSerialImageProc = sk_sp<SkData> (*)(SkImage*, void* ctx);
-using SkSerialTypefaceProc = sk_sp<SkData> (*)(SkTypeface*, void* ctx);
+using SkSerialPictureProc = SkSerialReturnType (*)(SkPicture*, void* ctx);
+using SkSerialImageProc = SkSerialReturnType (*)(SkImage*, void* ctx);
+using SkSerialTypefaceProc = SkSerialReturnType (*)(SkTypeface*, void* ctx);
 
 
 
@@ -81,6 +82,8 @@ using SkSlugProc = sk_sp<sktext::gpu::Slug> (*)(SkReadBuffer&, void* ctx);
 
 
 
+
+using SkDeserialTypefaceStreamProc = sk_sp<SkTypeface> (*)(SkStream&, void* ctx);
 using SkDeserialTypefaceProc = sk_sp<SkTypeface> (*)(const void* data, size_t length, void* ctx);
 
 struct SK_API SkSerialProcs {
@@ -105,7 +108,7 @@ struct SK_API SkDeserialProcs {
     SkSlugProc                   fSlugProc = nullptr;
     void*                        fSlugCtx = nullptr;
 
-    SkDeserialTypefaceProc       fTypefaceProc = nullptr;
+    SkDeserialTypefaceStreamProc fTypefaceStreamProc = nullptr;
     void*                        fTypefaceCtx = nullptr;
 
     

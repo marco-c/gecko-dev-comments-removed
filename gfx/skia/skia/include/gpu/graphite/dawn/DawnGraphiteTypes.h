@@ -46,9 +46,9 @@ public:
 
     DawnTextureInfo() = default;
 
-    DawnTextureInfo(WGPUTexture texture);
+    explicit DawnTextureInfo(WGPUTexture texture);
 
-    DawnTextureInfo(uint32_t sampleCount,
+    DawnTextureInfo(SampleCount sampleCount,
                     Mipmapped mipmapped,
                     wgpu::TextureFormat format,
                     wgpu::TextureUsage usage,
@@ -61,7 +61,7 @@ public:
                               aspect,
                               0) {}
 
-    DawnTextureInfo(uint32_t sampleCount,
+    DawnTextureInfo(SampleCount sampleCount,
                     Mipmapped mipmapped,
                     wgpu::TextureFormat format,
                     wgpu::TextureFormat viewFormat,
@@ -76,7 +76,7 @@ public:
             , fSlice(slice) {}
 
 #if !defined(__EMSCRIPTEN__)
-    DawnTextureInfo(uint32_t sampleCount,
+    DawnTextureInfo(SampleCount sampleCount,
                     Mipmapped mipmapped,
                     wgpu::TextureFormat format,
                     wgpu::TextureFormat viewFormat,
@@ -102,9 +102,6 @@ private:
 
     Protected isProtected() const { return Protected::kNo; }
     TextureFormat viewFormat() const;
-
-    bool serialize(SkWStream*) const;
-    bool deserialize(SkStream*);
 
     
     SkString toBackendString() const override;

@@ -46,7 +46,7 @@ enum class ModifierFlag : int {
 
 }  
 
-SK_MAKE_BITMASK_OPS(SkSL::ModifierFlag);
+SK_MAKE_BITMASK_OPS(SkSL::ModifierFlag)
 
 namespace SkSL {
 

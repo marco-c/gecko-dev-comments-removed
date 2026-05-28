@@ -29,6 +29,7 @@ class SkDevice;
 class SkGlyph;
 class SkMaskFilter;
 class SkMatrix;
+class SkMipmap;
 class SkPath;
 struct SkPathRaw;
 class SkRRect;
@@ -84,7 +85,8 @@ public:
                             const SkMatrix&,
                             const SkRect* dstOrNull,
                             const SkSamplingOptions&,
-                            const SkPaint&) const = 0;
+                            const SkPaint&,
+                            sk_sp<SkMipmap>) const = 0;
 };
 
 
@@ -124,14 +126,10 @@ public:
 
 
 
-
-
-
     void drawPath(const SkPath& path,
                   const SkPaint& paint,
-                  const SkMatrix* prePathMatrix,
-                  bool pathIsMutable) const {
-        this->drawPath(path, paint, prePathMatrix, pathIsMutable, SkDrawCoverage::kNo);
+                  const SkMatrix* prePathMatrix) const {
+        this->drawPath(path, paint, prePathMatrix, SkDrawCoverage::kNo);
     }
 
     
@@ -147,7 +145,6 @@ public:
         this->drawPath(src,
                        paint,
                        nullptr,
-                       false,
                        isHairline ? SkDrawCoverage::kNo : SkDrawCoverage::kYes,
                        customBlitter);
     }
@@ -187,8 +184,12 @@ public:
                                       const SkRect& devBounds);
 
     
-    void drawBitmap(const SkBitmap&, const SkMatrix&, const SkRect* dstOrNull,
-                    const SkSamplingOptions&, const SkPaint&) const override;
+    void drawBitmap(const SkBitmap&,
+                    const SkMatrix&,
+                    const SkRect* dstOrNull,
+                    const SkSamplingOptions&,
+                    const SkPaint&,
+                    sk_sp<SkMipmap>) const override;
     void drawSprite(const SkBitmap&, int x, int y, const SkPaint&) const;
     void drawGlyphRunList(SkCanvas* canvas,
                           GlyphRunListPainter* glyphPainter,
@@ -214,7 +215,6 @@ private:
     void drawPath(const SkPath&,
                   const SkPaint&,
                   const SkMatrix* preMatrix,
-                  bool pathIsMutable,
                   SkDrawCoverage drawCoverage,
                   SkBlitter* customBlitter = nullptr) const;
 

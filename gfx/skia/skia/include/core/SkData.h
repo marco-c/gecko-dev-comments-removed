@@ -42,6 +42,14 @@ public:
     
 
 
+
+    static bool Equals(const SkData* a, const SkData* b) {
+        return (a == nullptr) ? (b == nullptr) : a->equals(b);
+    }
+
+    
+
+
     size_t size() const { return fSpan.size(); }
 
     

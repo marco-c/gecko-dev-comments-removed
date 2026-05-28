@@ -30,7 +30,7 @@ public:
 protected:
     friend class GrImageContextPriv; 
 
-    GrImageContext(sk_sp<GrContextThreadSafeProxy>);
+    explicit GrImageContext(sk_sp<GrContextThreadSafeProxy>);
 
     SK_API virtual void abandonContext();
     SK_API virtual bool abandoned();

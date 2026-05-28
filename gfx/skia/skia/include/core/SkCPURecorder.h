@@ -57,6 +57,7 @@ public:
 private:
     
     SkCanvas* makeCaptureCanvas(SkCanvas*) final { return nullptr; }
+    void createCaptureBreakpoint(SkSurface*) final {}
 };
 
 inline Recorder* AsRecorder(SkRecorder* recorder) {
