@@ -57,21 +57,6 @@ pub struct SurfaceInfo {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     pub unclipped_local_rect: PictureRect,
     
     

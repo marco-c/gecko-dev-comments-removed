@@ -551,13 +551,6 @@ fn create_tile_cache(
     let mut accumulated_rounded_rect: Option<(LayoutRect, BorderRadius)> = None;
 
     
-    
-    
-    
-    
-    
-    
-    
     while current_node_id != ClipNodeId::NONE {
         let node = clip_tree_builder.get_node(current_node_id);
         let clip_node_data = &interners.clip[node.handle];
@@ -576,12 +569,12 @@ fn create_tile_cache(
                 ClipItemKeyKind::RoundedRectangle(radius, ClipMode::Clip) => {
                     
                     
-                    let br = clamped_radius(&BorderRadius::from(radius), node.unsnapped_clip_rect.size());
-                    if br.can_use_fast_path_in(&node.unsnapped_clip_rect) {
+                    let br = clamped_radius(&BorderRadius::from(radius), node.clip_rect.size());
+                    if br.can_use_fast_path_in(&node.clip_rect) {
                         rounded_rect_count += 1;
 
                         if accumulated_rounded_rect.is_none() {
-                            accumulated_rounded_rect = Some((node.unsnapped_clip_rect, br));
+                            accumulated_rounded_rect = Some((node.clip_rect, br));
                         }
 
                         true
@@ -613,10 +606,10 @@ fn create_tile_cache(
                         Some((acc_rect, acc_radius)),
                         ClipItemKeyKind::RoundedRectangle(radius, ClipMode::Clip),
                     ) => {
-                        let radius = clamped_radius(&BorderRadius::from(radius), node.unsnapped_clip_rect.size());
+                        let radius = clamped_radius(&BorderRadius::from(radius), node.clip_rect.size());
                         intersect_rounded_rects(
                             acc_rect, acc_radius,
-                            node.unsnapped_clip_rect, radius,
+                            node.clip_rect, radius,
                         )
                     }
                     _ => None,
@@ -633,8 +626,8 @@ fn create_tile_cache(
                     shared_clip_node_id = current_node_id;
                     rounded_rect_count = 1;
                     if let ClipItemKeyKind::RoundedRectangle(radius, ClipMode::Clip) = clip_node_data.key.kind {
-                        let radius = clamped_radius(&BorderRadius::from(radius), node.unsnapped_clip_rect.size());
-                        accumulated_rounded_rect = Some((node.unsnapped_clip_rect, radius));
+                        let radius = clamped_radius(&BorderRadius::from(radius), node.clip_rect.size());
+                        accumulated_rounded_rect = Some((node.clip_rect, radius));
                     }
                 }
             }
