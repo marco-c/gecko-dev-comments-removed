@@ -376,6 +376,21 @@ class PointerEventHandler final {
   [[nodiscard]] static Maybe<uint32_t> GetLastPointerId() {
     return sLastPointerId;
   }
+
+  
+
+
+
+
+
+
+
+
+
+
+  [[nodiscard]] static Maybe<uint32_t> TryClaimOrphanedLastMouseInfo(
+      PresShell& aRootPresShell);
+
   
 
 
@@ -659,6 +674,17 @@ class PointerEventHandler final {
 
   
   static StaticRefPtr<nsIWeakReference> sLastMousePresShell;
+
+  
+  
+  
+  
+  static StaticRefPtr<nsIWeakReference> sLastMouseWidget;
+
+  
+  
+  
+  static Maybe<uint32_t> sLastMousePointerId;
 
   
   
