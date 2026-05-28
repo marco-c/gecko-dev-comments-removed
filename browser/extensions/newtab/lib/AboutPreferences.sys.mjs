@@ -802,9 +802,11 @@ export class AboutPreferences {
       headingLevel: 2,
       iconSrc: "chrome://browser/skin/window-firefox.svg",
       l10nId: "home-homepage-title",
+      subcategory: "homepage",
       items: [
         {
           id: "homepageNewWindows",
+          subcategory: "homeOverride",
           control: "moz-select",
           l10nId: "home-homepage-new-windows",
           options: [
@@ -823,6 +825,7 @@ export class AboutPreferences {
         },
         {
           id: "homepageNewTabs",
+          subcategory: "newtabOverride",
           control: "moz-select",
           l10nId: "home-homepage-new-tabs",
           options: [
@@ -851,14 +854,17 @@ export class AboutPreferences {
     Preferences.addSetting(
       /** @type {{ _inputValue: string } & SettingConfig } */ ({
         id: "customHomepageAddUrlInput",
+        deps: ["homepageDisplayPref"],
         _inputValue: "",
         get() {
           return this._inputValue;
         },
-
         set(val, _, setting) {
           this._inputValue = val.trim();
           setting.onChange();
+        },
+        disabled({ homepageDisplayPref }) {
+          return homepageDisplayPref.locked;
         },
       })
     );
@@ -896,6 +902,9 @@ export class AboutPreferences {
 
         // Reset the field to empty string
         customHomepageAddUrlInput.value = "";
+      },
+      disabled({ homepageDisplayPref }) {
+        return homepageDisplayPref.locked;
       },
     });
 
@@ -945,11 +954,12 @@ export class AboutPreferences {
             .join("|");
         }
       },
-      disabled: ({ disableCurrentPagesButton }) =>
+      disabled: ({ disableCurrentPagesButton, homepageDisplayPref }) =>
         // Disable this button if the only open tab is `about:preferences`/`about:settings`
         // or when an enterprise policy sets a special pref to true
         lazy.HomePage.getTabsForCustomHomepage().length < 1 ||
-        disableCurrentPagesButton?.value === true,
+        disableCurrentPagesButton?.value === true ||
+        homepageDisplayPref.locked,
     });
 
     Preferences.addSetting({
@@ -977,9 +987,9 @@ export class AboutPreferences {
           rv
         );
       },
-      disabled: ({ disableBookmarkButton }) =>
+      disabled: ({ disableBookmarkButton, homepageDisplayPref }) =>
         // Disable this button if an enterprise policy sets a special pref to true
-        disableBookmarkButton?.value === true,
+        disableBookmarkButton?.value === true || homepageDisplayPref.locked,
     });
 
     Preferences.addSetting({
@@ -1019,7 +1029,7 @@ export class AboutPreferences {
         if (
           ![DEFAULT_HOMEPAGE_URL, BLANK_HOMEPAGE_URL].includes(currentPrefVal)
         ) {
-          type = "reorderable-list";
+          type = homepageDisplayPref.locked ? "list" : "reorderable-list";
           listItems = urls.map((url, index) => ({
             id: `customHomepageUrl-${index}`,
             key: `url-${index}-${url}`,
@@ -1028,18 +1038,20 @@ export class AboutPreferences {
               label: lazy.BrowserUtils.formatURIStringForDisplay(url),
               "data-url": url,
             },
-            options: [
-              {
-                control: "moz-button",
-                iconSrc: "chrome://global/skin/icons/delete.svg",
-                l10nId: "home-custom-homepage-delete-address-button",
-                slot: "actions-start",
-                controlAttrs: {
-                  "data-action": "delete",
-                  "data-index": index,
-                },
-              },
-            ],
+            options: homepageDisplayPref.locked
+              ? []
+              : [
+                  {
+                    control: "moz-button",
+                    iconSrc: "chrome://global/skin/icons/delete.svg",
+                    l10nId: "home-custom-homepage-delete-address-button",
+                    slot: "actions-start",
+                    controlAttrs: {
+                      "data-action": "delete",
+                      "data-index": index,
+                    },
+                  },
+                ],
           }));
         } else {
           // If no custom URLs have been set, show the "no results" string instead.
@@ -1417,6 +1429,7 @@ export class AboutPreferences {
       headingLevel: 2,
       l10nId: "home-prefs-content-header",
       iconSrc: "chrome://browser/skin/home.svg",
+      subcategory: "contents",
       items: [
         {
           id: "firefoxHomeDisabledNotice",
@@ -1428,11 +1441,13 @@ export class AboutPreferences {
         },
         {
           id: "webSearch",
+          subcategory: "web-search",
           l10nId: "home-prefs-search-header2",
           control: "moz-toggle",
         },
         {
           id: "weather",
+          subcategory: "weather",
           l10nId: "home-prefs-weather-header",
           control: "moz-toggle",
         },
@@ -1461,6 +1476,7 @@ export class AboutPreferences {
         },
         {
           id: "shortcuts",
+          subcategory: "topsites",
           l10nId: "home-prefs-shortcuts-header",
           control: "moz-toggle",
           items: [
@@ -1494,6 +1510,7 @@ export class AboutPreferences {
         },
         {
           id: "stories",
+          subcategory: "topstories",
           l10nId: "home-prefs-stories-header2",
           control: "moz-toggle",
           items: [
@@ -1509,6 +1526,7 @@ export class AboutPreferences {
         },
         {
           id: "supportFirefox",
+          subcategory: "support-firefox",
           l10nId: "home-prefs-support-firefox-header",
           control: "moz-toggle",
           items: [
@@ -1541,6 +1559,7 @@ export class AboutPreferences {
         },
         {
           id: "recentActivity",
+          subcategory: "highlights",
           l10nId: "home-prefs-recent-activity-header",
           control: "moz-toggle",
           items: [

@@ -839,7 +839,6 @@ SettingGroupManager.registerGroups({
     iconSrc: "chrome://devtools/skin/images/globe.svg",
     headingLevel: 1,
     supportPage: "prefs-connection-settings",
-    subcategory: "netsettings",
     items: [
       {
         id: "connectionSettings",
@@ -1300,7 +1299,7 @@ SettingGroupManager.registerGroups({
               },
               {
                 value:
-                  Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN.toString(),
+                  Ci.nsICookieService.BEHAVIOR_PARTITION_FOREIGN.toString(),
                 l10nId:
                   "preferences-etp-custom-cookie-behavior-isolate-cross-site-cookies",
               },
@@ -1385,6 +1384,7 @@ SettingGroupManager.registerGroups({
     ],
   },
   connectionLink: {
+    subcategory: "netsettings",
     l10nId: "preferences-connection-link-section",
     iconSrc: "chrome://devtools/skin/images/globe.svg",
     items: [
@@ -2636,12 +2636,16 @@ Preferences.addSetting(
   })
 );
 
-// Trigger site data calculation the first time the privacy pane is shown in
-// this prefs document. siteDataSize, clearSiteDataButton, and siteDataSettings
-// all consume the resulting "sitedatamanager:*" notifications.
+// Trigger site data calculation the first time the privacy pane or the
+// search-results pane is shown in this prefs document. siteDataSize,
+// clearSiteDataButton, and siteDataSettings all consume the resulting
+// "sitedatamanager:*" notifications.
 {
   let onPaneShown = event => {
-    if (event.detail.category === "panePrivacy") {
+    if (
+      event.detail.category === "panePrivacy" ||
+      event.detail.category === "paneSearchResults"
+    ) {
       lazy.SiteDataManager.updateSites();
       window.removeEventListener("paneshown", onPaneShown);
     }
