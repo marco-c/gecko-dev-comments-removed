@@ -5,7 +5,6 @@
 #include "ContentPrincipal.h"
 
 #include "mozIThirdPartyUtil.h"
-#include "nsAboutProtocolUtils.h"
 #include "nsContentUtils.h"
 #include "nscore.h"
 #include "nsScriptSecurityManager.h"
@@ -132,12 +131,14 @@ nsresult ContentPrincipal::GenerateOriginNoSuffixFromURI(
   
   
   
-  if (origin->SchemeIs("about")) {
-    MOZ_ASSERT(!NS_IsContentAccessibleAboutURI(origin),
-               "about:blank and about:srcdoc should appear as "
-               "moz-safe-about:{blank,srcdoc} in this method, "
-               "and should not get an origin");
-
+  if (origin->SchemeIs("about") ||
+      (origin->SchemeIs("moz-safe-about") &&
+       
+       
+       
+       
+       !StringBeginsWith(origin->GetSpecOrDefault(),
+                         "moz-safe-about:blank"_ns))) {
     rv = origin->GetAsciiSpec(aOriginNoSuffix);
     NS_ENSURE_SUCCESS(rv, rv);
 
