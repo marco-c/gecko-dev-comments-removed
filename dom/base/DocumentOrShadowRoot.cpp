@@ -333,6 +333,42 @@ Element* DocumentOrShadowRoot::GetFullscreenElement() const {
   return Element::FromNodeOrNull(Retarget(element));
 }
 
+
+
+Element* DocumentOrShadowRoot::GetPictureInPictureElement() const {
+  
+  if (const auto* shadow = ShadowRoot::FromNode(AsNode())) {
+    const Element* host = shadow->GetHost();
+    if (!host || !host->IsInComposedDoc()) {
+      return nullptr;
+    }
+  }
+
+  
+  
+  Element* candidate = Element::FromNodeOrNull(nsContentUtils::Retarget(
+      AsNode().OwnerDoc()->GetPictureInPictureElementInternal(), mAsNode));
+
+  
+  if (!candidate) {
+    return nullptr;
+  }
+
+  
+  if (candidate->SubtreeRoot() == &AsNode()) {
+    return candidate;
+  }
+
+  
+  
+  if (AsNode().IsDocument() && candidate->OwnerDoc() == AsNode().AsDocument()) {
+    return candidate;
+  }
+
+  
+  return nullptr;
+}
+
 namespace {
 
 using FrameForPointOption = nsLayoutUtils::FrameForPointOption;

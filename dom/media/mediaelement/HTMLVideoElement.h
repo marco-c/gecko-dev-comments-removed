@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_HTMLVideoElement_h
 #define mozilla_dom_HTMLVideoElement_h
 
@@ -26,6 +24,8 @@ namespace dom {
 
 class WakeLock;
 class VideoPlaybackQuality;
+class EventHandlerNonNull;
+class PictureInPictureWindow;
 
 class HTMLVideoElement final : public HTMLMediaElement {
   class SecondaryVideoOutput;
@@ -55,6 +55,11 @@ class HTMLVideoElement final : public HTMLMediaElement {
                       nsIPrincipal* aMaybeScriptedPrincipal,
                       nsAttrValue& aResult) override;
   NS_IMETHOD_(bool) IsAttributeMapped(const nsAtom* aAttribute) const override;
+
+  void AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
+                    const nsAttrValue* aValue, const nsAttrValue* aOldValue,
+                    nsIPrincipal* aMaybeScriptedPrincipal,
+                    bool aNotify) override;
 
   nsMapRuleToAttributesFunc GetAttributeMappingFunction() const override;
 
@@ -134,6 +139,16 @@ class HTMLVideoElement final : public HTMLMediaElement {
 
   void OnVisibilityChange(Visibility aNewVisibility) override;
 
+  void ClosePictureInPictureWindowAndFireEvent();
+
+  already_AddRefed<Promise> RequestPictureInPicture(ErrorResult& aRv);
+
+  
+  EventHandlerNonNull* GetOnenterpictureinpicture();
+  void SetOnenterpictureinpicture(EventHandlerNonNull* aCallback);
+  EventHandlerNonNull* GetOnleavepictureinpicture();
+  void SetOnleavepictureinpicture(EventHandlerNonNull* aCallback);
+
   bool DisablePictureInPicture() const {
     return GetBoolAttr(nsGkAtoms::disablepictureinpicture);
   }
@@ -141,6 +156,9 @@ class HTMLVideoElement final : public HTMLMediaElement {
   void SetDisablePictureInPicture(bool aValue, ErrorResult& aError) {
     SetHTMLBoolAttr(nsGkAtoms::disablepictureinpicture, aValue, aError);
   }
+
+  void SetAssociatedPictureInPictureWindow(PictureInPictureWindow* aWindow);
+  PictureInPictureWindow* GetAssociatedPictureInPictureWindow() const;
 
  protected:
   virtual ~HTMLVideoElement();
@@ -202,6 +220,9 @@ class HTMLVideoElement final : public HTMLMediaElement {
   
   
   RefPtr<HTMLVideoElement> mVisualCloneSource;
+
+  
+  RefPtr<PictureInPictureWindow> mPictureInPictureWindow;
 
  private:
   void ResetState() override;

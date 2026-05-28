@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_HTMLMediaElement_h
 #define mozilla_dom_HTMLMediaElement_h
 
@@ -666,14 +664,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
     SetHTMLBoolAttr(nsGkAtoms::muted, aMuted, aRv);
   }
 
-  bool MozAllowCasting() const { return mAllowCasting; }
-
-  void SetMozAllowCasting(bool aShow) { mAllowCasting = aShow; }
-
-  bool MozIsCasting() const { return mIsCasting; }
-
-  void SetMozIsCasting(bool aShow) { mIsCasting = aShow; }
-
   
   
   
@@ -807,6 +797,18 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   }
 
   void NotifyCueDisplayStatesChanged();
+
+  void SetCuesDirty() {
+    if (mTextTrackManager) {
+      mTextTrackManager->SetCuesDirty();
+    }
+  }
+
+  void UpdateCueDisplay() {
+    if (mTextTrackManager) {
+      mTextTrackManager->UpdateCueDisplay();
+    }
+  }
 
   bool IsBlessed() const { return mIsBlessed; }
 
@@ -1368,7 +1370,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
   bool CanBeCaptured(StreamCaptureType aCaptureType, ErrorResult& aRv);
 
-  using nsGenericHTMLElement::DispatchEvent;
   
   
   MOZ_CAN_RUN_SCRIPT nsresult FireEvent(const nsAString& aName);
