@@ -901,7 +901,7 @@ struct TypedQuad final {
 
 
 struct GetUniformData final {
-  alignas(alignof(float)) std::array<uint8_t, 4 * 4 * sizeof(float)> data = {};
+  alignas(alignof(float)) uint8_t data[4 * 4 * sizeof(float)] = {};
   GLenum type = 0;
 };
 
