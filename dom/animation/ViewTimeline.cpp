@@ -6,9 +6,14 @@
 
 #include "mozilla/Keyframe.h"
 #include "mozilla/ScrollContainerFrame.h"
+#include "mozilla/ServoCSSParser.h"
+#include "mozilla/ServoStyleSet.h"
 #include "mozilla/dom/Animation.h"
+#include "mozilla/dom/Document.h"
+#include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/ElementInlines.h"
 #include "mozilla/dom/ViewTimelineBinding.h"
+#include "nsComputedDOMStyle.h"
 #include "nsLayoutUtils.h"
 #include "nsPresContext.h"
 
@@ -54,6 +59,33 @@ JSObject* ViewTimeline::WrapObject(JSContext* aCx,
   return ViewTimeline_Binding::Wrap(aCx, this, aGivenProto);
 }
 
+static MOZ_CAN_RUN_SCRIPT Maybe<StyleViewTimelineInset>
+ParseAndComputeInsetString(const nsACString& aInsetString, Element* aSubject,
+                           const Document* aDocument) {
+  if (!aSubject) {
+    
+    return Some(StyleViewTimelineInset());
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  RefPtr<const ComputedStyle> style = nsComputedDOMStyle::GetComputedStyle(
+      aSubject, PseudoStyleRequest::NotPseudo());
+  const StylePerDocumentStyleData* rawData =
+      aDocument->EnsureStyleSet().RawData();
+  StyleViewTimelineInset inset;
+  if (!ServoCSSParser::ParseAndComputeViewTimelineInset(
+          aInsetString, aSubject, style, rawData, inset)) {
+    return Nothing();
+  }
+  return Some(std::move(inset));
+}
+
 
 already_AddRefed<ViewTimeline> ViewTimeline::Constructor(
     const GlobalObject& aGlobal, const ViewTimelineOptions& aOptions,
@@ -67,7 +99,7 @@ already_AddRefed<ViewTimeline> ViewTimeline::Constructor(
 
   
   
-  Element* subject =
+  RefPtr<Element> subject =
       aOptions.mSubject.WasPassed() ? &aOptions.mSubject.Value() : nullptr;
 
   StyleScrollAxis axis;
@@ -87,10 +119,18 @@ already_AddRefed<ViewTimeline> ViewTimeline::Constructor(
   }
 
   StyleViewTimelineInset inset;
-  if (aOptions.mInset.IsString()) {
+  if (aOptions.mInset.IsUTF8String()) {
     
     
-    
+    Maybe<StyleViewTimelineInset> value = ParseAndComputeInsetString(
+        aOptions.mInset.GetAsUTF8String(), subject, doc);
+    if (!value) {
+      
+      
+      aRv.ThrowTypeError("Invalid inset string");
+      return nullptr;
+    }
+    inset = std::move(*value);
   } else {
     if (!StaticPrefs::layout_css_typed_om_enabled()) {
       
@@ -104,6 +144,8 @@ already_AddRefed<ViewTimeline> ViewTimeline::Constructor(
     
     
     
+    aRv.ThrowTypeError("Unsupported");
+    return nullptr;
   }
 
   

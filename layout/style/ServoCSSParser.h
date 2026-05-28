@@ -40,6 +40,12 @@ struct StylePiecewiseLinearFunction;
 using StyleComputedTimingFunction =
     StyleTimingFunction<int32_t, float, StylePiecewiseLinearFunction>;
 
+template <typename LengthPercent>
+struct StyleGenericViewTimelineInset;
+struct StyleLengthPercentage;
+using StyleViewTimelineInset =
+    StyleGenericViewTimelineInset<StyleLengthPercentage>;
+
 namespace css {
 class Loader;
 }
@@ -144,6 +150,23 @@ class ServoCSSParser {
 
   static bool ParseEasing(const nsACString& aValue,
                           StyleComputedTimingFunction& aResult);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  static bool ParseAndComputeViewTimelineInset(
+      const nsACString& aValue, const dom::Element* aSubject,
+      const ComputedStyle* aStyle, const StylePerDocumentStyleData* aRawData,
+      StyleViewTimelineInset& aResult);
 
   
 
