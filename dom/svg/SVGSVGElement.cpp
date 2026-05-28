@@ -474,14 +474,42 @@ bool SVGSVGElement::WillBeOutermostSVG(nsINode& aParent) const {
   return true;
 }
 
-void SVGSVGElement::DidChangeSVGView() {
-  InvalidateTransformNotifyFrame();
+void SVGSVGElement::SetCurrentView(const nsAString& aCurrentViewID) {
+  if (mCurrentViewID == aCurrentViewID) {
+    return;
+  }
+
+  if (mSVGView) {
+    
+    
+    if (!IsPendingMappedAttributeEvaluation() &&
+        mAttrs.MarkAsPendingPresAttributeEvaluation()) {
+      OwnerDoc()->ScheduleForPresAttrEvaluation(this);
+    }
+
+    InvalidateTransformNotifyFrame();
+  }
+
+  mCurrentViewID = aCurrentViewID;
+  mSVGView = nullptr;
+}
+
+void SVGSVGElement::SetViewSpec(std::unique_ptr<SVGView> aSVGView) {
+  if (!mSVGView && !aSVGView) {
+    return;
+  }
+
   
   
   if (!IsPendingMappedAttributeEvaluation() &&
       mAttrs.MarkAsPendingPresAttributeEvaluation()) {
     OwnerDoc()->ScheduleForPresAttrEvaluation(this);
   }
+
+  mSVGView = std::move(aSVGView);
+  mCurrentViewID = VoidString();
+
+  InvalidateTransformNotifyFrame();
 }
 
 void SVGSVGElement::InvalidateTransformNotifyFrame() {

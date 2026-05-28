@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_SVG_SVGSVGELEMENT_H_
 #define DOM_SVG_SVGSVGELEMENT_H_
 
@@ -21,9 +19,8 @@ nsresult NS_NewSVGSVGElement(
   {0x4b83982c, 0xe5e9, 0x4ca1, {0xab, 0xd4, 0x14, 0xd2, 0x7e, 0x8b, 0x35, 0x31}}
 
 namespace mozilla {
-class AutoSVGViewHandler;
+class AutoFragmentHandler;
 class SMILTimeContainer;
-class SVGFragmentIdentifier;
 class EventChainPreVisitor;
 
 namespace dom {
@@ -50,10 +47,9 @@ class SVGView {
 using SVGSVGElementBase = SVGViewportElement;
 
 class SVGSVGElement final : public SVGSVGElementBase {
-  friend class mozilla::SVGFragmentIdentifier;
   friend class mozilla::SVGOuterSVGFrame;
-  friend class mozilla::AutoSVGViewHandler;
   friend class mozilla::AutoPreserveAspectRatioOverride;
+  friend class mozilla::AutoFragmentHandler;
   friend class mozilla::dom::SVGView;
 
  protected:
@@ -156,6 +152,9 @@ class SVGSVGElement final : public SVGSVGElementBase {
   
   virtual void FlushImageTransformInvalidation();
 
+  void SetCurrentView(const nsAString& aCurrentViewID);
+  void SetViewSpec(std::unique_ptr<SVGView> aSVGView);
+
  private:
   
 
@@ -182,7 +181,6 @@ class SVGSVGElement final : public SVGSVGElementBase {
 
   
   void InvalidateTransformNotifyFrame();
-  void DidChangeSVGView();
 
   
   
