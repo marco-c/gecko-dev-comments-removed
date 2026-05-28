@@ -6,14 +6,13 @@ use api::{ColorF, FontInstanceFlags, GlyphInstance, RasterSpace, Shadow, GlyphIn
 use api::units::{LayoutToWorldTransform, LayoutVector2D, RasterPixelScale, DevicePixelScale};
 use api::units::*;
 use crate::scene_building::{CreateShadow, IsVisible};
-use crate::frame_builder::FrameBuildingState;
 use glyph_rasterizer::{FontInstance, FontTransform, GlyphKey, FONT_SIZE_LIMIT};
 use crate::intern;
 use crate::internal_types::LayoutPrimitiveInfo;
 use crate::picture::SurfaceInfo;
-use crate::prim_store::{PrimitiveOpacity,  PrimitiveScratchBuffer};
+use crate::prim_store::{PrimitiveScratchBuffer, VectorKey};
 use crate::prim_store::{PrimitiveStore, PrimKeyCommonData, PrimTemplateCommonData};
-use crate::renderer::{GpuBufferBuilderF, MAX_VERTEX_TEXTURE_WIDTH};
+use crate::renderer::{GpuBufferAddress, GpuBufferBuilderF, MAX_VERTEX_TEXTURE_WIDTH};
 use crate::resource_cache::ResourceCache;
 use crate::util::MatrixHelpers;
 use crate::prim_store::{InternablePrimitive, PrimitiveKind, LayoutPointAu};
@@ -38,6 +37,13 @@ pub struct GlyphInstanceAu {
 pub struct TextRunKey {
     pub common: PrimKeyCommonData,
     pub font: FontInstance,
+    
+    
+    
+    pub run_origin: VectorKey,
+    
+    
+    
     pub glyphs: Vec<GlyphInstanceAu>,
     pub shadow: bool,
     pub requested_raster_space: RasterSpace,
@@ -62,6 +68,7 @@ impl TextRunKey {
         TextRunKey {
             common: info.into(),
             font: text_run.font,
+            run_origin: text_run.run_origin.into(),
             glyphs,
             shadow: text_run.shadow,
             requested_raster_space: text_run.requested_raster_space,
@@ -77,6 +84,17 @@ impl intern::InternDebug for TextRunKey {}
 pub struct TextRunTemplate {
     pub common: PrimTemplateCommonData,
     pub font: FontInstance,
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub run_origin_offset: LayoutVector2D,
+    
     pub glyphs: Vec<GlyphInstance>,
     pub shadow: bool,
     pub requested_raster_space: RasterSpace,
@@ -112,6 +130,7 @@ impl From<TextRunKey> for TextRunTemplate {
         TextRunTemplate {
             common,
             font: item.font,
+            run_origin_offset: item.run_origin.into(),
             glyphs,
             shadow: item.shadow,
             requested_raster_space: item.requested_raster_space,
@@ -120,26 +139,14 @@ impl From<TextRunKey> for TextRunTemplate {
 }
 
 impl TextRunTemplate {
-    
-    
-    
-    
-    pub fn update(
-        &mut self,
-        frame_state: &mut FrameBuildingState,
-    ) {
-        self.write_prim_gpu_blocks(frame_state);
-        self.opacity = PrimitiveOpacity::translucent();
-    }
-
     fn write_prim_gpu_blocks(
-        &mut self,
-        frame_state: &mut FrameBuildingState,
-    ) {
+        &self,
+        gpu_buffer: &mut GpuBufferBuilderF,
+    ) -> GpuBufferAddress {
         
         let num_blocks = (self.glyphs.len() + 1) / 2 + 1;
         assert!(num_blocks <= MAX_VERTEX_TEXTURE_WIDTH);
-        let mut writer = frame_state.frame_gpu_data.f32.write_blocks(num_blocks);
+        let mut writer = gpu_buffer.write_blocks(num_blocks);
         writer.push_one(ColorF::from(self.font.color).premultiplied());
 
         let mut gpu_block = [0.0; 4];
@@ -161,7 +168,7 @@ impl TextRunTemplate {
             writer.push_one(gpu_block);
         }
 
-        self.common.gpu_buffer_address = writer.finish();
+        writer.finish()
     }
 }
 
@@ -172,6 +179,10 @@ pub type TextRunDataHandle = intern::Handle<TextRun>;
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct TextRun {
     pub font: FontInstance,
+    
+    
+    pub run_origin: LayoutVector2D,
+    
     pub glyphs: Vec<GlyphInstance>,
     pub shadow: bool,
     pub requested_raster_space: RasterSpace,
@@ -229,6 +240,7 @@ impl CreateShadow for TextRun {
 
         TextRun {
             font,
+            run_origin: self.run_origin,
             glyphs: self.glyphs.clone(),
             shadow: true,
             requested_raster_space,
@@ -259,6 +271,12 @@ pub struct TextRunScratch {
     pub snapped_reference_frame_relative_offset: LayoutVector2D,
     
     pub raster_scale: f32,
+    
+    
+    
+    
+    
+    pub gpu_address: GpuBufferAddress,
 }
 
 impl TextRunTemplate {
@@ -492,11 +510,14 @@ impl TextRunTemplate {
             gpu_buffer,
         );
 
+        let gpu_address = self.write_prim_gpu_blocks(gpu_buffer);
+
         scratch.frame.text_runs.push(TextRunScratch {
             used_font,
             glyph_keys_range,
             snapped_reference_frame_relative_offset: snapped_offset,
             raster_scale,
+            gpu_address,
         })
     }
 }
@@ -512,7 +533,7 @@ fn test_struct_sizes() {
     
     
     
-    assert_eq!(mem::size_of::<TextRun>(), 80, "TextRun size changed");
-    assert_eq!(mem::size_of::<TextRunTemplate>(), 88, "TextRunTemplate size changed");
-    assert_eq!(mem::size_of::<TextRunKey>(), 80, "TextRunKey size changed");
+    assert_eq!(mem::size_of::<TextRun>(), 88, "TextRun size changed");
+    assert_eq!(mem::size_of::<TextRunTemplate>(), 96, "TextRunTemplate size changed");
+    assert_eq!(mem::size_of::<TextRunKey>(), 88, "TextRunKey size changed");
 }

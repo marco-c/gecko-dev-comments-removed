@@ -959,6 +959,7 @@ impl BatchBuilder {
 
         let prim_rect = ctx.data_stores.get_local_prim_rect(
             prim_instance,
+            prim_info.snapped_local_rect,
             &ctx.prim_store.pictures,
             ctx.surfaces,
         );
@@ -1808,9 +1809,12 @@ impl BatchBuilder {
                 
                 
                 
+                
+                
+                
                 let prim_header = PrimitiveHeader {
                     local_rect: LayoutRect {
-                        min: prim_rect.min + prim_data.run_origin_offset,
+                        min: prim_instance.unsnapped_prim_rect.min + prim_data.run_origin_offset,
                         max: run_scratch.snapped_reference_frame_relative_offset.to_point(),
                     },
                     specific_prim_address: prim_cache_address.as_int(),
