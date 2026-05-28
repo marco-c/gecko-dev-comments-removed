@@ -157,18 +157,38 @@ LexerTransition<ICOState> nsICODecoder::ReadDirEntry(const char* aData) {
     
     
     if (e.mBytesInRes > BITMAPINFOSIZE) {
-      if (e.mWidth == 0 || e.mHeight == 0) {
-        mUnsizedDirEntries.AppendElement(e);
-      } else {
-        mDirEntries.AppendElement(e);
-      }
+      mDirEntries.AppendElement(e);
     }
   }
 
   if (mCurrIcon == mNumIcons) {
-    if (mUnsizedDirEntries.IsEmpty()) {
+    
+    
+    
+    
+    bool needsVerification = false;
+    for (size_t i = 0; !needsVerification && i < mDirEntries.Length(); ++i) {
+      if (mDirEntries[i].mSize.width == 0 || mDirEntries[i].mSize.height == 0) {
+        needsVerification = true;
+        break;
+      }
+      for (size_t j = i + 1; j < mDirEntries.Length(); ++j) {
+        if (mDirEntries[i].mSize == mDirEntries[j].mSize) {
+          needsVerification = true;
+          break;
+        }
+      }
+    }
+
+    if (!needsVerification) {
       return Transition::To(ICOState::FINISHED_DIR_ENTRY, 0);
     }
+
+    
+    
+    
+    MOZ_ASSERT(mUnsizedDirEntries.IsEmpty());
+    mUnsizedDirEntries.SwapElements(mDirEntries);
     return Transition::To(ICOState::ITERATE_UNSIZED_DIR_ENTRY, 0);
   }
 
@@ -213,6 +233,11 @@ LexerTransition<ICOState> nsICODecoder::IterateUnsizedDirEntry() {
   
   if (mUnsizedDirEntries.IsEmpty()) {
     mReturnIterator.reset();
+    
+    
+    
+    
+    mContainedDecoder = nullptr;
     return Transition::To(ICOState::FINISHED_DIR_ENTRY, 0);
   }
 
@@ -343,7 +368,11 @@ LexerTransition<ICOState> nsICODecoder::SniffResource(const char* aData) {
       !memcmp(aData, nsPNGDecoder::pngSignatureBytes, PNGSIGNATURESIZE);
   if (isPNG) {
     if (mDirEntry->mBytesInRes <= BITMAPINFOSIZE) {
-      return Transition::TerminateFailure();
+      if (!IsVerifyingResourceSizes()) {
+        return Transition::TerminateFailure();
+      }
+      mDirEntry->mSize = OrientedIntSize(0, 0);
+      return Transition::To(ICOState::ITERATE_UNSIZED_DIR_ENTRY, 0);
     }
 
     
@@ -351,7 +380,11 @@ LexerTransition<ICOState> nsICODecoder::SniffResource(const char* aData) {
     Maybe<SourceBufferIterator> containedIterator =
         mLexer.Clone(*mIterator, mDirEntry->mBytesInRes);
     if (containedIterator.isNothing()) {
-      return Transition::TerminateFailure();
+      if (!IsVerifyingResourceSizes()) {
+        return Transition::TerminateFailure();
+      }
+      mDirEntry->mSize = OrientedIntSize(0, 0);
+      return Transition::To(ICOState::ITERATE_UNSIZED_DIR_ENTRY, 0);
     }
 
     
@@ -371,7 +404,11 @@ LexerTransition<ICOState> nsICODecoder::SniffResource(const char* aData) {
   
   int32_t bihSize = LittleEndian::readUint32(aData);
   if (bihSize != static_cast<int32_t>(BITMAPINFOSIZE)) {
-    return Transition::TerminateFailure();
+    if (!IsVerifyingResourceSizes()) {
+      return Transition::TerminateFailure();
+    }
+    mDirEntry->mSize = OrientedIntSize(0, 0);
+    return Transition::To(ICOState::ITERATE_UNSIZED_DIR_ENTRY, 0);
   }
 
   
@@ -380,7 +417,12 @@ LexerTransition<ICOState> nsICODecoder::SniffResource(const char* aData) {
 
 LexerTransition<ICOState> nsICODecoder::ReadResource() {
   if (!FlushContainedDecoder()) {
-    return Transition::TerminateFailure();
+    if (!IsVerifyingResourceSizes()) {
+      return Transition::TerminateFailure();
+    }
+    
+    
+    
   }
 
   return Transition::ContinueUnbuffered(ICOState::READ_RESOURCE);
@@ -396,7 +438,11 @@ LexerTransition<ICOState> nsICODecoder::ReadBIH(const char* aData) {
   
   uint16_t numColors = GetNumColors();
   if (numColors == uint16_t(-1)) {
-    return Transition::TerminateFailure();
+    if (!IsVerifyingResourceSizes()) {
+      return Transition::TerminateFailure();
+    }
+    mDirEntry->mSize = OrientedIntSize(0, 0);
+    return Transition::To(ICOState::ITERATE_UNSIZED_DIR_ENTRY, 0);
   }
 
   
@@ -414,7 +460,11 @@ LexerTransition<ICOState> nsICODecoder::ReadBIH(const char* aData) {
   Maybe<SourceBufferIterator> containedIterator =
       mLexer.Clone(*mIterator, mDirEntry->mBytesInRes);
   if (containedIterator.isNothing()) {
-    return Transition::TerminateFailure();
+    if (!IsVerifyingResourceSizes()) {
+      return Transition::TerminateFailure();
+    }
+    mDirEntry->mSize = OrientedIntSize(0, 0);
+    return Transition::To(ICOState::ITERATE_UNSIZED_DIR_ENTRY, 0);
   }
 
   
@@ -431,7 +481,11 @@ LexerTransition<ICOState> nsICODecoder::ReadBIH(const char* aData) {
 
   
   if (!FlushContainedDecoder()) {
-    return Transition::TerminateFailure();
+    if (!IsVerifyingResourceSizes()) {
+      return Transition::TerminateFailure();
+    }
+    mDirEntry->mSize = OrientedIntSize(0, 0);
+    return Transition::To(ICOState::ITERATE_UNSIZED_DIR_ENTRY, 0);
   }
 
   
@@ -644,20 +698,33 @@ LexerTransition<ICOState> nsICODecoder::FinishResource() {
   
   
   if (!FlushContainedDecoder()) {
-    return Transition::TerminateFailure();
+    if (!IsVerifyingResourceSizes()) {
+      return Transition::TerminateFailure();
+    }
+    mDirEntry->mSize = OrientedIntSize(0, 0);
+    return Transition::To(ICOState::ITERATE_UNSIZED_DIR_ENTRY, 0);
   }
 
   if (!mContainedDecoder->GetDecodeDone()) {
     
     
-    return Transition::TerminateFailure();
+    if (!IsVerifyingResourceSizes()) {
+      return Transition::TerminateFailure();
+    }
+    mDirEntry->mSize = OrientedIntSize(0, 0);
+    return Transition::To(ICOState::ITERATE_UNSIZED_DIR_ENTRY, 0);
   }
 
+  
+  
+  
   
   
   if (mContainedDecoder->IsMetadataDecode()) {
     if (mContainedDecoder->HasSize()) {
       mDirEntry->mSize = mContainedDecoder->Size();
+    } else {
+      mDirEntry->mSize = OrientedIntSize(0, 0);
     }
     return Transition::To(ICOState::ITERATE_UNSIZED_DIR_ENTRY, 0);
   }
@@ -732,12 +799,22 @@ bool nsICODecoder::FlushContainedDecoder() {
   MOZ_ASSERT(result != LexerResult(Yield::OUTPUT_AVAILABLE),
              "Unexpected yield");
 
-  
-  
-  mProgress |= mContainedDecoder->TakeProgress();
-  mInvalidRect.UnionRect(mInvalidRect, mContainedDecoder->TakeInvalidRect());
   if (mContainedDecoder->HasError()) {
     succeeded = false;
+  }
+
+  
+  
+  
+  
+  if (IsVerifyingResourceSizes()) {
+    mContainedDecoder->TakeProgress();
+    mContainedDecoder->TakeInvalidRect();
+  } else {
+    
+    
+    mProgress |= mContainedDecoder->TakeProgress();
+    mInvalidRect.UnionRect(mInvalidRect, mContainedDecoder->TakeInvalidRect());
   }
 
   return succeeded;

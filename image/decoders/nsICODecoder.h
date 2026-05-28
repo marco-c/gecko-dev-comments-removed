@@ -76,6 +76,12 @@ class nsICODecoder : public Decoder {
   LexerTransition<ICOState> FinishMask();
   LexerTransition<ICOState> FinishResource();
 
+  
+  
+  
+  
+  bool IsVerifyingResourceSizes() const { return mReturnIterator.isSome(); }
+
   struct IconDirEntryEx : public IconDirEntry {
     OrientedIntSize mSize;
   };

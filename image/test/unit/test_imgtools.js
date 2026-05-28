@@ -95,35 +95,11 @@ function compareArrays(aArray1, aArray2) {
   }
 }
 
-
-
-
-
-
-
-function checkExpectedError(aExpectedError, aActualError) {
-  if (aExpectedError) {
-    if (!aActualError) {
-      throw new Error("Didn't throw as expected (" + aExpectedError + ")");
-    }
-
-    if (!aExpectedError.test(aActualError)) {
-      throw new Error("Threw (" + aActualError + "), not (" + aExpectedError);
-    }
-
-    
-    dump("...that error was expected.\n\n");
-  } else if (aActualError) {
-    throw new Error("Threw unexpected error: " + aActualError);
-  }
-}
-
 function run_test() {
   try {
     
     var testnum = 0;
     var testdesc = "imgITools setup";
-    var err = null;
 
     var imgTools = Cc["@mozilla.org/image/tools;1"].getService(Ci.imgITools);
 
@@ -829,34 +805,26 @@ function run_test() {
 
     istream = getFileInputStream(imgFile);
     Assert.equal(istream.available(), 17759);
-    var errsrc = "none";
 
-    try {
-      buffer = NetUtil.readInputStreamToString(istream, istream.available());
-      container = imgTools.decodeImageFromBuffer(
-        buffer,
-        buffer.length,
-        inMimeType
-      );
+    
+    
+    
+    
+    buffer = NetUtil.readInputStreamToString(istream, istream.available());
+    container = imgTools.decodeImageFromBuffer(
+      buffer,
+      buffer.length,
+      inMimeType
+    );
+    Assert.equal(container.width, 16);
+    Assert.equal(container.height, 16);
 
-      
-      
-      
-      
-      
-      try {
-        istream = imgTools.encodeImage(container, "image/png");
-      } catch (e) {
-        err = e;
-        errsrc = "encode";
-      }
-    } catch (e) {
-      err = e;
-      errsrc = "decode";
-    }
-
-    Assert.equal(errsrc, "encode");
-    checkExpectedError(/NS_ERROR_FAILURE/, err);
+    istream = imgTools.encodeImage(container, "image/png");
+    Assert.greater(
+      istream.available(),
+      0,
+      "should be able to decode and encode bug413512.ico"
+    );
 
     
     testnum = 815359;
