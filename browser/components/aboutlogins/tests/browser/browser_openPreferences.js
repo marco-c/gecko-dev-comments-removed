@@ -37,7 +37,7 @@ add_task(async function test_open_preferences() {
       if (url == "about:preferences#privacy-logins") {
         seenFirstURL = true;
         return true;
-      } else if (url == "about:preferences#privacy") {
+      } else if (url == "about:preferences#passwordsAutofill") {
         Assert.ok(
           seenFirstURL,
           "Must have seen an onLocationChange notification for the privacy-logins hash"
