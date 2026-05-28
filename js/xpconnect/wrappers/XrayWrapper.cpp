@@ -28,6 +28,7 @@
 
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/dom/BindingUtils.h"
+#include "mozilla/dom/ObservableArrayProxyHandler.h"
 #include "mozilla/dom/ProxyHandlerUtils.h"
 #include "mozilla/dom/WindowProxyHolder.h"
 #include "mozilla/dom/XrayExpandoClass.h"
@@ -140,6 +141,10 @@ XrayType GetXrayType(JSObject* obj) {
   
   if (IsSandbox(obj)) {
     return NotXray;
+  }
+
+  if (mozilla::dom::IsObservableArrayProxy(obj)) {
+    return XrayForJSObject;
   }
 
   return XrayForOpaqueObject;
@@ -1148,6 +1153,18 @@ JSObject* JSXrayTraits::createHolder(JSContext* cx, JSObject* wrapper) {
   
   
   if (key == JSProto_Object && js::IsArgumentsObject(target)) {
+    key = JSProto_Array;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  if (key == JSProto_Proxy && mozilla::dom::IsObservableArrayProxy(target)) {
     key = JSProto_Array;
   }
 

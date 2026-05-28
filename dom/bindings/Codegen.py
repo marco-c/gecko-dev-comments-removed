@@ -23638,11 +23638,7 @@ class CGObservableArraySetterGenerator(CGGeneric):
             self,
             fill(
                 """
-                if (xpc::WrapperFactory::IsXrayWrapper(obj)) {
-                  JS_ReportErrorASCII(cx, "Accessing from Xray wrapper is not supported.");
-                  return false;
-                }
-
+                // Unwrap wrappers (including CCW and XrayWrapper) to get the actual Proxy object.
                 JS::Rooted<JSObject*> unwrappedObj(cx, js::UncheckedUnwrap(obj, /* stopAtWindowProxy = */ false));
                 MOZ_ASSERT(IsDOMObject(unwrappedObj));
                 {
