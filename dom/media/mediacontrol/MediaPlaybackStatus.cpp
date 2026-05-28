@@ -31,14 +31,11 @@ void MediaPlaybackStatus::UpdateMediaPlaybackState(uint64_t aContextId,
     info.DecreasePlayingMediaNum();
   }
 
+  LOG("UpdateMediaPlaybackState for context %" PRIu64
+      " (controlled %u audible %zu)",
+      aContextId, info.ControlledMediaNum(), info.AudibleSourceCount());
   
-  if (info.IsAnyMediaBeingControlled()) {
-    return;
-  }
-  MOZ_ASSERT(!info.IsPlaying());
-  MOZ_ASSERT(!info.IsAudible());
-  
-  DestroyContextInfo(aContextId);
+  MaybeDestroyContextInfo(aContextId, info);
 }
 
 void MediaPlaybackStatus::DestroyContextInfo(uint64_t aContextId) {
@@ -52,23 +49,42 @@ void MediaPlaybackStatus::DestroyContextInfo(uint64_t aContextId) {
   }
 }
 
-void MediaPlaybackStatus::UpdateMediaAudibleState(uint64_t aContextId,
-                                                  MediaAudibleState aState) {
+void MediaPlaybackStatus::MaybeDestroyContextInfo(
+    uint64_t aContextId, const ContextMediaInfo& aInfo) {
+  
+  
+  
+  if (aInfo.IsAnyMediaBeingControlled() || aInfo.IsPlaying() ||
+      aInfo.IsAudible()) {
+    return;
+  }
+  DestroyContextInfo(aContextId);
+}
+
+bool MediaPlaybackStatus::UpdateMediaAudibleState(
+    uint64_t aContextId, MediaAudibleState aState, ControlType aControlType,
+    AudioSessionType aSessionType) {
   LOG("Update audible state '%s' for context %" PRIu64,
       EnumValueToString(aState), aContextId);
   MOZ_ASSERT(NS_IsMainThread());
   ContextMediaInfo& info = GetNotNullContextInfo(aContextId);
+  const Maybe<uint64_t> oldOwner = mOwningAudioFocusContextId;
+
   if (aState == MediaAudibleState::eAudible) {
-    info.IncreaseAudibleMediaNum();
+    info.AddAudibleSource(aControlType, aSessionType);
   } else {
     MOZ_ASSERT(aState == MediaAudibleState::eInaudible);
-    info.DecreaseAudibleMediaNum();
+    info.RemoveAudibleSource(aControlType, aSessionType);
   }
-  if (ShouldRequestAudioFocusForInfo(info)) {
+
+  if (ShouldRequestAudioFocusForInfo(info, aControlType)) {
     SetOwningAudioFocusContextId(Some(aContextId));
-  } else if (ShouldAbandonAudioFocusForInfo(info)) {
+  } else if (ShouldAbandonAudioFocusForInfo(info, aControlType)) {
     ChooseNewContextToOwnAudioFocus();
   }
+
+  MaybeDestroyContextInfo(aContextId, info);
+  return oldOwner != mOwningAudioFocusContextId;
 }
 
 void MediaPlaybackStatus::UpdateGuessedPositionState(
@@ -149,13 +165,15 @@ Maybe<uint64_t> MediaPlaybackStatus::GetAudioFocusOwnerContextId() const {
 }
 
 void MediaPlaybackStatus::ChooseNewContextToOwnAudioFocus() {
+  
+  
+  
   for (const auto& info : mContextInfoMap.Values()) {
-    if (info->IsAudible()) {
+    if (info->HasAudibleSourceOfControlType(ControlType::eControllable)) {
       SetOwningAudioFocusContextId(Some(info->Id()));
       return;
     }
   }
-  
   SetOwningAudioFocusContextId(Nothing());
 }
 
@@ -168,16 +186,33 @@ void MediaPlaybackStatus::SetOwningAudioFocusContextId(
 }
 
 bool MediaPlaybackStatus::ShouldRequestAudioFocusForInfo(
-    const ContextMediaInfo& aInfo) const {
-  return aInfo.IsAudible() && !IsContextOwningAudioFocus(aInfo.Id());
+    const ContextMediaInfo& aInfo, ControlType aControlType) const {
+  
+  
+  return aControlType == ControlType::eControllable &&
+         aInfo.HasAudibleSourceOfControlType(ControlType::eControllable) &&
+         !IsContextOwningAudioFocus(aInfo.Id());
 }
 
 bool MediaPlaybackStatus::ShouldAbandonAudioFocusForInfo(
-    const ContextMediaInfo& aInfo) const {
+    const ContextMediaInfo& aInfo, ControlType aControlType) const {
   
   
-  return !aInfo.IsAudible() && IsContextOwningAudioFocus(aInfo.Id()) &&
-         IsAudible();
+  
+  
+  
+  return aControlType == ControlType::eControllable &&
+         !aInfo.HasAudibleSourceOfControlType(ControlType::eControllable) &&
+         IsContextOwningAudioFocus(aInfo.Id()) &&
+         HasAnyControllableAudibleSource();
+}
+
+bool MediaPlaybackStatus::HasAnyControllableAudibleSource() const {
+  return std::any_of(
+      mContextInfoMap.Values().cbegin(), mContextInfoMap.Values().cend(),
+      [](const auto& info) {
+        return info->HasAudibleSourceOfControlType(ControlType::eControllable);
+      });
 }
 
 bool MediaPlaybackStatus::IsContextOwningAudioFocus(uint64_t aContextId) const {
@@ -201,6 +236,32 @@ void MediaPlaybackStatus::ContextMediaInfo::UpdateGuessedPositionState(
   } else {
     mGuessedPositionStateMap.Remove(aElementId);
   }
+}
+
+void MediaPlaybackStatus::ContextMediaInfo::AddAudibleSource(
+    ControlType aControlType, AudioSessionType aSessionType) {
+  mAudibleSources.AppendElement(AudibleSource{aControlType, aSessionType});
+}
+
+void MediaPlaybackStatus::ContextMediaInfo::RemoveAudibleSource(
+    ControlType aControlType, AudioSessionType aSessionType) {
+  for (size_t i = 0; i < mAudibleSources.Length(); ++i) {
+    const AudibleSource& src = mAudibleSources[i];
+    if (src.mControlType == aControlType && src.mSessionType == aSessionType) {
+      mAudibleSources.RemoveElementAt(i);
+      return;
+    }
+  }
+}
+
+bool MediaPlaybackStatus::ContextMediaInfo::HasAudibleSourceOfControlType(
+    ControlType aControlType) const {
+  for (const AudibleSource& src : mAudibleSources) {
+    if (src.mControlType == aControlType) {
+      return true;
+    }
+  }
+  return false;
 }
 
 }  

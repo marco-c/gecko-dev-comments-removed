@@ -200,11 +200,6 @@ class MediaController final : public DOMEventTargetHelper,
 
   
   
-  
-  nsTHashMap<nsUint64HashKey, uint32_t> mUncontrollableAudibleMap;
-
-  
-  
   MediaEventListener mSupportedActionsChangedListener;
   MediaEventProducer<nsTArray<MediaControlKey>> mSupportedKeysChangedEvent;
 

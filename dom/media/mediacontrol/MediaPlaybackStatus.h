@@ -7,6 +7,7 @@
 
 #include "mozilla/DefineEnum.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/dom/AudioSessionBinding.h"
 #include "mozilla/dom/MediaSession.h"
 #include "nsID.h"
 #include "nsISupportsImpl.h"
@@ -51,6 +52,18 @@ MOZ_DEFINE_ENUM_CLASS_WITH_BASE_AND_TOSTRING(ControlType, bool,
 
 
 
+struct AudibleSource {
+  ControlType mControlType;
+  AudioSessionType mSessionType;
+};
+
+
+
+
+
+
+
+
 
 
 
@@ -67,7 +80,12 @@ MOZ_DEFINE_ENUM_CLASS_WITH_BASE_AND_TOSTRING(ControlType, bool,
 class MediaPlaybackStatus final {
  public:
   void UpdateMediaPlaybackState(uint64_t aContextId, MediaPlaybackState aState);
-  void UpdateMediaAudibleState(uint64_t aContextId, MediaAudibleState aState);
+
+  
+  bool UpdateMediaAudibleState(uint64_t aContextId, MediaAudibleState aState,
+                               ControlType aControlType,
+                               AudioSessionType aSessionType);
+
   void UpdateGuessedPositionState(uint64_t aContextId, const nsID& aElementId,
                                   const Maybe<PositionState>& aState);
 
@@ -81,6 +99,9 @@ class MediaPlaybackStatus final {
 
  private:
   
+
+
+
 
 
 
@@ -113,21 +134,18 @@ class MediaPlaybackStatus final {
 #endif
       mPlayingMediaNum--;
     }
-    void IncreaseAudibleMediaNum() {
-#ifndef FUZZING_SNAPSHOT
-      MOZ_DIAGNOSTIC_ASSERT(mAudibleMediaNum < mPlayingMediaNum);
-#endif
-      mAudibleMediaNum++;
-    }
-    void DecreaseAudibleMediaNum() {
-#ifndef FUZZING_SNAPSHOT
-      MOZ_DIAGNOSTIC_ASSERT(mAudibleMediaNum > 0);
-#endif
-      mAudibleMediaNum--;
-    }
+
+    void AddAudibleSource(ControlType aControlType,
+                          AudioSessionType aSessionType);
+    void RemoveAudibleSource(ControlType aControlType,
+                             AudioSessionType aSessionType);
+    bool IsAudible() const { return !mAudibleSources.IsEmpty(); }
+    bool HasAudibleSourceOfControlType(ControlType aControlType) const;
+
     bool IsPlaying() const { return mPlayingMediaNum > 0; }
-    bool IsAudible() const { return mAudibleMediaNum > 0; }
     bool IsAnyMediaBeingControlled() const { return mControlledMediaNum > 0; }
+    uint32_t ControlledMediaNum() const { return mControlledMediaNum; }
+    size_t AudibleSourceCount() const { return mAudibleSources.Length(); }
     uint64_t Id() const { return mContextId; }
 
     Maybe<PositionState> GuessedPositionState() const;
@@ -140,9 +158,19 @@ class MediaPlaybackStatus final {
 
 
     uint32_t mControlledMediaNum = 0;
-    uint32_t mAudibleMediaNum = 0;
     uint32_t mPlayingMediaNum = 0;
     uint64_t mContextId = 0;
+
+    
+
+
+
+
+
+
+
+
+    nsTArray<AudibleSource> mAudibleSources;
 
     
 
@@ -153,12 +181,17 @@ class MediaPlaybackStatus final {
 
   ContextMediaInfo& GetNotNullContextInfo(uint64_t aContextId);
   void DestroyContextInfo(uint64_t aContextId);
+  void MaybeDestroyContextInfo(uint64_t aContextId,
+                               const ContextMediaInfo& aInfo);
 
   void ChooseNewContextToOwnAudioFocus();
   void SetOwningAudioFocusContextId(Maybe<uint64_t>&& aContextId);
   bool IsContextOwningAudioFocus(uint64_t aContextId) const;
-  bool ShouldRequestAudioFocusForInfo(const ContextMediaInfo& aInfo) const;
-  bool ShouldAbandonAudioFocusForInfo(const ContextMediaInfo& aInfo) const;
+  bool ShouldRequestAudioFocusForInfo(const ContextMediaInfo& aInfo,
+                                      ControlType aControlType) const;
+  bool ShouldAbandonAudioFocusForInfo(const ContextMediaInfo& aInfo,
+                                      ControlType aControlType) const;
+  bool HasAnyControllableAudibleSource() const;
 
   
   nsTHashMap<uint64_t, UniquePtr<ContextMediaInfo>> mContextInfoMap;

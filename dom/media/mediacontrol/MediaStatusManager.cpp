@@ -52,16 +52,12 @@ MediaStatusManager::MediaStatusManager(uint64_t aBrowsingContextId)
 void MediaStatusManager::NotifyMediaAudibleChanged(
     uint64_t aBrowsingContextId, MediaAudibleState aState, ControlType aType,
     AudioSessionType aSessionType) {
-  
-  
-  MOZ_ASSERT(aType == ControlType::eControllable);
-  Maybe<uint64_t> oldAudioFocusOwnerId =
-      mPlaybackStatusDelegate.GetAudioFocusOwnerContextId();
-  mPlaybackStatusDelegate.UpdateMediaAudibleState(aBrowsingContextId, aState);
-  Maybe<uint64_t> newAudioFocusOwnerId =
-      mPlaybackStatusDelegate.GetAudioFocusOwnerContextId();
-  if (oldAudioFocusOwnerId != newAudioFocusOwnerId) {
-    HandleAudioFocusOwnerChanged(newAudioFocusOwnerId);
+  const bool ownerChanged = mPlaybackStatusDelegate.UpdateMediaAudibleState(
+      aBrowsingContextId, aState, aType, aSessionType);
+  if (ownerChanged) {
+    Maybe<uint64_t> newOwner =
+        mPlaybackStatusDelegate.GetAudioFocusOwnerContextId();
+    HandleAudioFocusOwnerChanged(newOwner);
   }
 }
 
