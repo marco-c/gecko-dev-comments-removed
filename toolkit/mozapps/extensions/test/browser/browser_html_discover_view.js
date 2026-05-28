@@ -98,10 +98,7 @@ class DiscoveryAPIHandler {
 
 function getVisibleActions(documentOrElement) {
   return Array.from(documentOrElement.querySelectorAll("[action]")).filter(
-    elem =>
-      elem.getAttribute("action") !== "page-options" &&
-      elem.offsetWidth &&
-      elem.offsetHeight
+    elem => elem.offsetWidth && elem.offsetHeight
   );
 }
 
