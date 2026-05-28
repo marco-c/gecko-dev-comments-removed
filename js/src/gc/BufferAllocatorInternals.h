@@ -395,6 +395,10 @@ struct BufferChunk
   MainThreadOrGCTaskData<BufferAllocator::FreeLists> freeLists;
   MainThreadOrGCTaskData<bool> ownsFreeLists;
 
+  
+  
+  MainThreadOrGCTaskData<size_t> freeBytesAfterSweep;
+
   using SmallRegionIter = BitmapToBlockIter<SmallRegionBitmap::Iter,
                                             SmallRegionSize, SmallBufferRegion>;
   SmallRegionIter smallRegionIter() { return {this, smallRegionBitmap.ref()}; }
