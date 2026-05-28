@@ -29,7 +29,7 @@ ChromeUtils.defineESModuleGetters(this, {
     "moz-src:///browser/components/urlbar/UrlbarProviderSearchSuggestions.sys.mjs",
   ProvidersManager:
     "moz-src:///browser/components/urlbar/UrlbarProvidersManager.sys.mjs",
-  UrlbarResult: "moz-src:///browser/components/urlbar/UrlbarResult.sys.mjs",
+  UrlbarResult: "chrome://browser/content/urlbar/UrlbarResult.mjs",
   UrlbarTokenizer:
     "moz-src:///browser/components/urlbar/UrlbarTokenizer.sys.mjs",
   sinon: "resource://testing-common/Sinon.sys.mjs",
@@ -849,6 +849,8 @@ function makeSearchResult(
 
 
 
+
+
 function makeVisitResult(
   queryContext,
   {
@@ -859,6 +861,7 @@ function makeVisitResult(
     tags = [],
     heuristic = false,
     source = UrlbarUtils.RESULT_SOURCE.HISTORY,
+    isAutofillFallback = false,
   }
 ) {
   let payload = {
@@ -892,6 +895,10 @@ function makeVisitResult(
 
   if (!heuristic && tags) {
     payload.tags = tags;
+  }
+
+  if (isAutofillFallback) {
+    payload.isAutofillFallback = true;
   }
 
   return new UrlbarResult({
@@ -1166,6 +1173,30 @@ async function check_results({
       }
     }
   }
+}
+
+
+
+
+
+
+
+
+
+async function getOriginColumn(url, column) {
+  let db = await PlacesUtils.promiseDBConnection();
+  let rows = await db.executeCached(
+    `SELECT o.${column}
+     FROM moz_origins o
+     JOIN moz_places h ON h.origin_id = o.id
+     WHERE h.url_hash = hash(:url) AND h.url = :url
+     LIMIT 1`,
+    { url }
+  );
+  if (!rows.length) {
+    return undefined;
+  }
+  return rows[0].getResultByIndex(0);
 }
 
 
