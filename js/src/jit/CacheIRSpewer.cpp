@@ -32,7 +32,6 @@ using namespace js::jit;
 
 
 
-
 class MOZ_RAII CacheIROpsJitSpewer {
   GenericPrinter& out_;
 
@@ -526,7 +525,6 @@ static const char* ArrayBufferViewKindName(ArrayBufferViewKind kind) {
   }
   MOZ_CRASH("Unknown ArrayBufferViewKind");
 }
-
 
 
 
