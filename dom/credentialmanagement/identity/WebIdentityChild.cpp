@@ -2,10 +2,9 @@
 
 
 
-
-
 #include "mozilla/dom/WebIdentityChild.h"
 
+#include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/WebIdentityHandler.h"
 #include "mozilla/dom/WindowContext.h"
 #include "nsGlobalWindowOuter.h"
@@ -42,7 +41,7 @@ mozilla::ipc::IPCResult WebIdentityChild::RecvOpenContinuationWindow(
   } else if (!newBC) {
     aResolver(NS_ERROR_UNEXPECTED);
   } else {
-    aResolver(newBC->Id());
+    aResolver(MaybeDiscardedBrowsingContext(newBC));
   }
   return IPC_OK();
 }

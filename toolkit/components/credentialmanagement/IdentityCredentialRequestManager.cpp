@@ -49,19 +49,22 @@ IdentityCredentialRequestManager::GetTokenFromPopup(
           return;
         }
         
-        if (response.type() == dom::OpenContinuationWindowResponse::Tuint64_t) {
-          RefPtr<dom::CanonicalBrowsingContext> bc =
-              dom::CanonicalBrowsingContext::Get(response.get_uint64_t());
-          if (!bc) {
+        if (response.type() == dom::OpenContinuationWindowResponse::
+                                   TMaybeDiscardedBrowsingContext) {
+          const dom::MaybeDiscardedBrowsingContext& bc =
+              response.get_MaybeDiscardedBrowsingContext();
+          if (bc.IsNullOrDiscarded()) {
             result->Reject(NS_ERROR_DOM_NETWORK_ERR, __func__);
+            return;
           }
           
           
           
           dom::CanonicalBrowsingContext* chromeBC =
-              bc->TopCrossChromeBoundary();
+              bc.get_canonical()->TopCrossChromeBoundary();
           if (!chromeBC) {
             result->Reject(NS_ERROR_DOM_NETWORK_ERR, __func__);
+            return;
           }
 
           
