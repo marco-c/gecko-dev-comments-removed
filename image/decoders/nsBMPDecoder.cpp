@@ -90,6 +90,16 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
 #include "ImageLogging.h"
 #include "nsBMPDecoder.h"
 
@@ -235,7 +245,8 @@ nsBMPDecoder::nsBMPDecoder(RasterImage* aImage, uint32_t aDataOffset)
 nsBMPDecoder::~nsBMPDecoder() = default;
 
 
-int32_t nsBMPDecoder::GetCompressedImageSize() const {
+uint32_t nsBMPDecoder::GetCompressedImageSize() const {
+  
   
   MOZ_ASSERT(mPixelRowSize != 0);
   return mH.mCompression == Compression::RGB ? mPixelRowSize * AbsoluteHeight()
@@ -497,6 +508,8 @@ LexerTransition<nsBMPDecoder::State> nsBMPDecoder::ReadInfoHeaderSize(
 
   bool bihSizeOk = mH.mBIHSize == InfoHeaderLength::WIN_V2 ||
                    mH.mBIHSize == InfoHeaderLength::WIN_V3 ||
+                   mH.mBIHSize == InfoHeaderLength::BITMAPV2INFOHEADER ||
+                   mH.mBIHSize == InfoHeaderLength::BITMAPV3INFOHEADER ||
                    mH.mBIHSize == InfoHeaderLength::WIN_V4 ||
                    mH.mBIHSize == InfoHeaderLength::WIN_V5 ||
                    (mH.mBIHSize >= InfoHeaderLength::OS2_V2_MIN &&
@@ -615,6 +628,8 @@ LexerTransition<nsBMPDecoder::State> nsBMPDecoder::ReadInfoHeaderRest(
        
        
        (mH.mBIHSize == InfoHeaderLength::WIN_V3 ||
+        mH.mBIHSize == InfoHeaderLength::BITMAPV2INFOHEADER ||
+        mH.mBIHSize == InfoHeaderLength::BITMAPV3INFOHEADER ||
         mH.mBIHSize == InfoHeaderLength::WIN_V4 ||
         mH.mBIHSize == InfoHeaderLength::WIN_V5) &&
        (mH.mBpp == 16 || mH.mBpp == 32));
@@ -634,13 +649,25 @@ LexerTransition<nsBMPDecoder::State> nsBMPDecoder::ReadInfoHeaderRest(
     mPixelRowSize += 4 - surplus;
   }
 
+  if (mIsWithinICO && mH.mCompression == Compression::RGB) {
+    
+    
+    
+    auto product = CheckedInt<uint32_t>(mPixelRowSize) * AbsoluteHeight();
+    if (!product.isValid()) {
+      return Transition::TerminateFailure();
+    }
+  }
+
   size_t bitFieldsLengthStillToRead = 0;
   if (mH.mCompression == Compression::BITFIELDS) {
     
-    if (mH.mBIHSize >= InfoHeaderLength::WIN_V4) {
+    if (mH.mBIHSize >= InfoHeaderLength::BITMAPV2INFOHEADER) {
       
       
-      mBitFields.ReadFromHeader(aData + 36,  true);
+      
+      bool hasAlpha = mH.mBIHSize >= InfoHeaderLength::BITMAPV3INFOHEADER;
+      mBitFields.ReadFromHeader(aData + 36, hasAlpha);
 
       
       
@@ -680,6 +707,11 @@ LexerTransition<nsBMPDecoder::State> nsBMPDecoder::ReadBitfields(
   
   
   if (aLength != 0) {
+    
+    
+    
+    
+    
     mBitFields.ReadFromHeader(aData,  false);
   }
 

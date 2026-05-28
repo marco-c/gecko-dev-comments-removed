@@ -20,6 +20,13 @@ struct InfoHeaderLength {
   enum {
     WIN_V2 = 12,
     WIN_V3 = 40,
+    
+    
+    
+    BITMAPV2INFOHEADER = 52,
+    
+    
+    BITMAPV3INFOHEADER = 56,
     WIN_V4 = 108,
     WIN_V5 = 124,
 
