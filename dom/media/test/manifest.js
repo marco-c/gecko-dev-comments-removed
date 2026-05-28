@@ -518,6 +518,12 @@ var gMKVtests = [
   },
   
   {
+    name: "output_opus_surround.mkv",
+    type: 'audio/matroska; codecs="opus"',
+    duration: 1.0,
+  },
+  
+  {
     name: "output_vp8.mkv",
     type: 'video/matroska; codecs="vp8"',
     duration: 1.0,
