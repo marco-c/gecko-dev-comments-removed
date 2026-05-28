@@ -4389,8 +4389,7 @@ int XREMain::XRE_mainInit(bool* aExitFlag,
     nsCOMPtr<nsIFile> userAppDataDir;
     if (NS_SUCCEEDED(mDirProvider.GetUserAppDataDirectory(
             getter_AddRefs(userAppDataDir)))) {
-      CrashReporter::SetupExtraData(userAppDataDir,
-                                    nsDependentCString(mAppData->buildID));
+      CrashReporter::SetupExtraData(userAppDataDir, mAppData->xreDirectory);
     }
   } else {
     
@@ -4429,18 +4428,8 @@ int XREMain::XRE_mainInit(bool* aExitFlag,
     
     
     
+    
     EnsureUseCocoaDockAPI();
-
-    
-    
-    
-    
-    
-    
-    const EventTypeSpec kFakeEventList[] = {{INT_MAX, INT_MAX}};
-    EventRef event;
-    ::ReceiveNextEvent(GetEventTypeCount(kFakeEventList), kFakeEventList,
-                       kEventDurationNoWait, false, &event);
   }
 
   if (CheckArg("foreground")) {
