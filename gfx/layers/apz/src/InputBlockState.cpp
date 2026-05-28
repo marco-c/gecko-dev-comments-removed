@@ -848,7 +848,9 @@ bool TouchBlockState::UpdateSlopState(const MultiTouchInput& aInput,
   return mInSlop;
 }
 
-bool TouchBlockState::IsInSlop() const { return mInSlop; }
+TouchBlockState::InSlop TouchBlockState::IsInSlop() const {
+  return mInSlop ? InSlop::Yes : InSlop::No;
+}
 
 Maybe<ScrollDirection> TouchBlockState::GetBestGuessPanDirection(
     const MultiTouchInput& aInput) const {
@@ -856,17 +858,22 @@ Maybe<ScrollDirection> TouchBlockState::GetBestGuessPanDirection(
       aInput.mTouches.Length() != 1) {
     return Nothing();
   }
-  ScreenPoint vector = aInput.mTouches[0].mScreenPoint - mSlopOrigin;
-  double angle = atan2(vector.y, vector.x);  
-  angle = fabs(angle);                       
+  RefPtr<AsyncPanZoomController> apzc = GetTargetApzc();
+  if (!apzc) {
+    return Nothing();
+  }
+  ScreenPoint screenVector =
+      ScreenPoint(aInput.mTouches[0].mScreenPoint - mSlopOrigin);
+  ParentLayerPoint vector =
+      apzc->ToParentLayerCoordinates(screenVector, ScreenPoint(mSlopOrigin));
 
   double angleThreshold = TouchActionAllowsPanningXY()
                               ? StaticPrefs::apz_axis_lock_lock_angle()
                               : StaticPrefs::apz_axis_lock_direct_pan_angle();
-  if (apz::IsCloseToHorizontal(angle, angleThreshold)) {
+  if (apz::IsCloseToHorizontal(vector, angleThreshold)) {
     return Some(ScrollDirection::eHorizontal);
   }
-  if (apz::IsCloseToVertical(angle, angleThreshold)) {
+  if (apz::IsCloseToVertical(vector, angleThreshold)) {
     return Some(ScrollDirection::eVertical);
   }
   return Nothing();
@@ -878,6 +885,23 @@ uint32_t TouchBlockState::GetActiveTouchCount() const {
 
 bool TouchBlockState::IsTargetOriginallyConfirmed() const {
   return mOriginalTargetConfirmedState != TargetConfirmationState::eUnconfirmed;
+}
+
+bool TouchBlockState::NeedsContentResponseAfterLongTap(
+    const MultiTouchInput& aEvent, InSlop aWasInSlop) const {
+  if (aWasInSlop != InSlop::Yes) {
+    return false;
+  }
+  if (aEvent.mType != MultiTouchInput::MULTITOUCH_MOVE) {
+    return false;
+  }
+  if (!WasLongTapProcessed() && !IsWaitingLongTapResult()) {
+    return false;
+  }
+  if (IsTargetOriginallyConfirmed()) {
+    return false;
+  }
+  return !ShouldDropEvents();
 }
 
 KeyboardBlockState::KeyboardBlockState(

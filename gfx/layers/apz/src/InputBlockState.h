@@ -531,7 +531,8 @@ class TouchBlockState : public CancelableBlockState {
 
   bool UpdateSlopState(const MultiTouchInput& aInput,
                        bool aApzcCanConsumeEvents);
-  bool IsInSlop() const;
+  enum class InSlop : bool { No, Yes };
+  InSlop IsInSlop() const;
   bool ForLongTap() const { return mForLongTap; }
   void SetForLongTap() { mForLongTap = true; }
   bool WasLongTapProcessed() const { return mLongTapWasProcessed; }
@@ -570,6 +571,27 @@ class TouchBlockState : public CancelableBlockState {
   const char* Type() override;
   TimeDuration GetTimeSinceBlockStart() const;
   bool IsTargetOriginallyConfirmed() const;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  bool NeedsContentResponseAfterLongTap(const MultiTouchInput& aEvent,
+                                        InSlop aWasInSlop) const;
 
  private:
   nsTArray<TouchBehaviorFlags> mAllowedTouchBehaviors;
