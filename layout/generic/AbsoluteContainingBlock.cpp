@@ -661,7 +661,6 @@ void AbsoluteContainingBlock::Reflow(nsContainerFrame* aDelegatingFrame,
     mCumulativeContainingBlockBSize = 0;
   }
 
-  nsReflowStatus reflowStatus;
   
   
   
@@ -788,7 +787,7 @@ void AbsoluteContainingBlock::Reflow(nsContainerFrame* aDelegatingFrame,
           
           mPushedAbsoluteFrames.AppendFrame(aDelegatingFrame, nextFrame);
         }
-        reflowStatus.MergeCompletionStatusFrom(kidStatus);
+        aReflowStatus.MergeCompletionStatusFrom(kidStatus);
       } else if (nextFrame) {
         
         FrameDestroyContext context(aPresContext->PresShell());
@@ -834,12 +833,10 @@ void AbsoluteContainingBlock::Reflow(nsContainerFrame* aDelegatingFrame,
 
   
   
-  if (reflowStatus.IsIncomplete() || mPushedAbsoluteFrames.NotEmpty()) {
-    reflowStatus.SetOverflowIncomplete();
-    reflowStatus.SetNextInFlowNeedsReflow();
+  if (aReflowStatus.IsIncomplete() || mPushedAbsoluteFrames.NotEmpty()) {
+    aReflowStatus.SetOverflowIncomplete();
+    aReflowStatus.SetNextInFlowNeedsReflow();
   }
-
-  aReflowStatus.MergeCompletionStatusFrom(reflowStatus);
 }
 
 static inline bool IsFixedPaddingSize(const LengthPercentage& aCoord) {
