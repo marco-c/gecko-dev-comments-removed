@@ -562,6 +562,13 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
+    "sports.worldCup.liveEndpoint",
+    {
+      title: "The Merino endpoint for fetching live World Cup match data",
+      value: "https://merino.services.mozilla.com/api/v1/wcs/live",
+    },
+  ],
+  [
     "images.smart",
     {
       title: "Smart crop images on newtab",
@@ -1217,6 +1224,14 @@ export const PREFS_CONFIG = new Map([
     "widgets.system.maximized",
     {
       title: "Enables the maximize widget feature experiment in Nimbus",
+      value: false,
+    },
+  ],
+  [
+    "widgets.row.expanded",
+    {
+      title:
+        "Whether the Nova widgets row is expanded beyond its first visual row. Persists the user's Show more / Show less choice across sessions.",
       value: false,
     },
   ],
