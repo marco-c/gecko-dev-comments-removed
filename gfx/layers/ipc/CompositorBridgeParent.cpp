@@ -151,6 +151,11 @@ bool CompositorBridgeParentBase::DeallocShmem(ipc::Shmem& aShmem) {
   return PCompositorBridgeParent::DeallocShmem(aShmem);
 }
 
+bool CompositorBridgeParentBase::OwnsExternalImageId(
+    const wr::ExternalImageId& aId) const {
+  return mCompositorManager && mCompositorManager->OwnsExternalImageId(aId);
+}
+
 CompositorBridgeParent::LayerTreeState::LayerTreeState()
     : mApzcTreeManagerParent(nullptr),
       mApzInputBridgeParent(nullptr),
@@ -574,8 +579,8 @@ void CompositorBridgeParent::ScheduleComposition(wr::RenderReasons aReasons) {
   }
 }
 
-PAPZCTreeManagerParent* CompositorBridgeParent::AllocPAPZCTreeManagerParent(
-    const LayersId& aLayersId) {
+already_AddRefed<PAPZCTreeManagerParent>
+CompositorBridgeParent::AllocPAPZCTreeManagerParent(const LayersId& aLayersId) {
   
   MOZ_ASSERT(XRE_IsGPUProcess());
   
@@ -592,30 +597,28 @@ PAPZCTreeManagerParent* CompositorBridgeParent::AllocPAPZCTreeManagerParent(
       sIndirectLayerTrees[mRootLayerTreeID];
   MOZ_ASSERT(state.mParent.get() == this);
   MOZ_ASSERT(!state.mApzcTreeManagerParent);
-  state.mApzcTreeManagerParent = new APZCTreeManagerParent(
+
+  auto treeManager = MakeRefPtr<APZCTreeManagerParent>(
       mRootLayerTreeID, mApzcTreeManager, mApzUpdater);
+  state.mApzcTreeManagerParent = treeManager;
 
-  return state.mApzcTreeManagerParent;
-}
-
-bool CompositorBridgeParent::DeallocPAPZCTreeManagerParent(
-    PAPZCTreeManagerParent* aActor) {
-  delete aActor;
-  return true;
+  return treeManager.forget();
 }
 
 void CompositorBridgeParent::SetAPZInputBridgeParent(
-    const LayersId& aLayersId, APZInputBridgeParent* aInputBridgeParent) {
+    const LayersId& aLayersId,
+    RefPtr<APZInputBridgeParent>&& aInputBridgeParent) {
   MOZ_RELEASE_ASSERT(XRE_IsGPUProcess());
   MOZ_ASSERT(NS_IsMainThread());
   StaticMonitorAutoLock lock(CompositorBridgeParent::sIndirectLayerTreesLock);
   CompositorBridgeParent::LayerTreeState& state =
       CompositorBridgeParent::sIndirectLayerTrees[aLayersId];
   MOZ_ASSERT(!state.mApzInputBridgeParent);
-  state.mApzInputBridgeParent = aInputBridgeParent;
+  state.mApzInputBridgeParent = std::move(aInputBridgeParent);
 }
 
-void CompositorBridgeParent::AllocateAPZCTreeManagerParent(
+already_AddRefed<APZCTreeManagerParent>
+CompositorBridgeParent::AllocateAPZCTreeManagerParent(
     const StaticMonitorAutoLock& aProofOfLayerTreeStateLock,
     const LayersId& aLayersId, LayerTreeState& aState) {
   MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
@@ -623,11 +626,15 @@ void CompositorBridgeParent::AllocateAPZCTreeManagerParent(
   MOZ_ASSERT(mApzcTreeManager);
   MOZ_ASSERT(mApzUpdater);
   MOZ_ASSERT(!aState.mApzcTreeManagerParent);
-  aState.mApzcTreeManagerParent =
-      new APZCTreeManagerParent(aLayersId, mApzcTreeManager, mApzUpdater);
+
+  auto treeManager = MakeRefPtr<APZCTreeManagerParent>(
+      aLayersId, mApzcTreeManager, mApzUpdater);
+  aState.mApzcTreeManagerParent = treeManager;
+  return treeManager.forget();
 }
 
-PAPZParent* CompositorBridgeParent::AllocPAPZParent(const LayersId& aLayersId) {
+already_AddRefed<PAPZParent> CompositorBridgeParent::AllocPAPZParent(
+    const LayersId& aLayersId) {
   
   
   
@@ -639,11 +646,7 @@ PAPZParent* CompositorBridgeParent::AllocPAPZParent(const LayersId& aLayersId) {
   
   MOZ_RELEASE_ASSERT(!aLayersId.IsValid());
 
-  RemoteContentController* controller = new RemoteContentController();
-
-  
-  
-  controller->AddRef();
+  auto controller = MakeRefPtr<RemoteContentController>();
 
   StaticMonitorAutoLock lock(sIndirectLayerTreesLock);
   CompositorBridgeParent::LayerTreeState& state =
@@ -651,14 +654,7 @@ PAPZParent* CompositorBridgeParent::AllocPAPZParent(const LayersId& aLayersId) {
   MOZ_RELEASE_ASSERT(!state.mController);
   state.mController = controller;
 
-  return controller;
-}
-
-bool CompositorBridgeParent::DeallocPAPZParent(PAPZParent* aActor) {
-  RemoteContentController* controller =
-      static_cast<RemoteContentController*>(aActor);
-  controller->Release();
-  return true;
+  return controller.forget();
 }
 
 RefPtr<APZSampler> CompositorBridgeParent::GetAPZSampler() const {
@@ -908,6 +904,20 @@ void CompositorBridgeParent::ScheduleForcedComposition(
   }
 }
 
+void CompositorBridgeParent::DisconnectApzcTreeManager(
+    APZCTreeManagerParent* aTreeManager) {
+  StaticMonitorAutoLock lock(CompositorBridgeParent::sIndirectLayerTreesLock);
+  auto iter = CompositorBridgeParent::sIndirectLayerTrees.find(
+      aTreeManager->GetLayersId());
+  if (iter == CompositorBridgeParent::sIndirectLayerTrees.end()) {
+    return;
+  }
+
+  CompositorBridgeParent::LayerTreeState& state = iter->second;
+  MOZ_ASSERT(state.mApzcTreeManagerParent == aTreeManager);
+  state.mApzcTreeManagerParent = nullptr;
+}
+
 mozilla::ipc::IPCResult CompositorBridgeParent::RecvNotifyChildCreated(
     const LayersId& child, CompositorOptions* aOptions) {
   StaticMonitorAutoLock lock(sIndirectLayerTreesLock);
@@ -970,7 +980,7 @@ static CompositorOptionsChangeKind ClassifyCompositorOptionsChange(
 mozilla::ipc::IPCResult CompositorBridgeParent::RecvAdoptChild(
     const LayersId& child) {
   RefPtr<APZUpdater> oldApzUpdater;
-  APZCTreeManagerParent* parent;
+  RefPtr<APZCTreeManagerParent> parent;
   bool apzEnablementChanged = false;
   RefPtr<WebRenderBridgeParent> childWrBridge;
 
@@ -1744,7 +1754,8 @@ static CompositorBridgeParent::LayerTreeState* GetStateForRoot(
 }
 
 
-APZCTreeManagerParent* CompositorBridgeParent::GetApzcTreeManagerParentForRoot(
+RefPtr<APZCTreeManagerParent>
+CompositorBridgeParent::GetApzcTreeManagerParentForRoot(
     LayersId aContentLayersId) {
   StaticMonitorAutoLock lock(sIndirectLayerTreesLock);
   CompositorBridgeParent::LayerTreeState* state =
@@ -1753,7 +1764,8 @@ APZCTreeManagerParent* CompositorBridgeParent::GetApzcTreeManagerParentForRoot(
 }
 
 
-APZInputBridgeParent* CompositorBridgeParent::GetApzInputBridgeParentForRoot(
+RefPtr<APZInputBridgeParent>
+CompositorBridgeParent::GetApzInputBridgeParentForRoot(
     LayersId aContentLayersId) {
   StaticMonitorAutoLock lock(sIndirectLayerTreesLock);
   CompositorBridgeParent::LayerTreeState* state =

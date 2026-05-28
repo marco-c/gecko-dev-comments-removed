@@ -150,16 +150,16 @@ class CompositorBridgeParentBase : public PCompositorBridgeParent,
   
   virtual void EnsureWebRenderBridgeParentInitialized() = 0;
 
+  bool OwnsExternalImageId(const wr::ExternalImageId& aId) const;
+
  protected:
   virtual ~CompositorBridgeParentBase();
 
-  virtual PAPZParent* AllocPAPZParent(const LayersId& layersId) = 0;
-  virtual bool DeallocPAPZParent(PAPZParent* aActor) = 0;
-
-  virtual PAPZCTreeManagerParent* AllocPAPZCTreeManagerParent(
+  virtual already_AddRefed<PAPZParent> AllocPAPZParent(
       const LayersId& layersId) = 0;
-  virtual bool DeallocPAPZCTreeManagerParent(
-      PAPZCTreeManagerParent* aActor) = 0;
+
+  virtual already_AddRefed<PAPZCTreeManagerParent> AllocPAPZCTreeManagerParent(
+      const LayersId& layersId) = 0;
 
   virtual already_AddRefed<PTextureParent> AllocPTextureParent(
       const SurfaceDescriptor& aSharedData, ReadLockDescriptor& aReadLock,
@@ -374,6 +374,8 @@ class CompositorBridgeParent final : public CompositorBridgeParentBase {
 
   static void DisconnectWrBridge(WebRenderBridgeParent* aWrBridge);
 
+  static void DisconnectApzcTreeManager(APZCTreeManagerParent* aTreeManager);
+
   
 
 
@@ -403,11 +405,11 @@ class CompositorBridgeParent final : public CompositorBridgeParentBase {
     LayerTreeState();
     ~LayerTreeState();
     RefPtr<GeckoContentController> mController;
-    APZCTreeManagerParent* mApzcTreeManagerParent;
+    RefPtr<APZCTreeManagerParent> mApzcTreeManagerParent;
     
     
     
-    APZInputBridgeParent* mApzInputBridgeParent;
+    RefPtr<APZInputBridgeParent> mApzInputBridgeParent;
     RefPtr<CompositorBridgeParent> mParent;
     RefPtr<WebRenderBridgeParent> mWrBridge;
     
@@ -451,7 +453,7 @@ class CompositorBridgeParent final : public CompositorBridgeParentBase {
 
 
 
-  static APZCTreeManagerParent* GetApzcTreeManagerParentForRoot(
+  static RefPtr<APZCTreeManagerParent> GetApzcTreeManagerParentForRoot(
       LayersId aContentLayersId);
   
 
@@ -464,7 +466,7 @@ class CompositorBridgeParent final : public CompositorBridgeParentBase {
 
 
 
-  static APZInputBridgeParent* GetApzInputBridgeParentForRoot(
+  static RefPtr<APZInputBridgeParent> GetApzInputBridgeParentForRoot(
       LayersId aContentLayersId);
 
   
@@ -474,21 +476,21 @@ class CompositorBridgeParent final : public CompositorBridgeParentBase {
 
   widget::CompositorWidget* GetWidget() { return mWidget; }
 
-  PAPZCTreeManagerParent* AllocPAPZCTreeManagerParent(
+  already_AddRefed<PAPZCTreeManagerParent> AllocPAPZCTreeManagerParent(
       const LayersId& aLayersId) override;
-  bool DeallocPAPZCTreeManagerParent(PAPZCTreeManagerParent* aActor) override;
 
   
   
-  void AllocateAPZCTreeManagerParent(
+  already_AddRefed<APZCTreeManagerParent> AllocateAPZCTreeManagerParent(
       const StaticMonitorAutoLock& aProofOfLayerTreeStateLock,
       const LayersId& aLayersId, LayerTreeState& aLayerTreeStateToUpdate);
 
-  static void SetAPZInputBridgeParent(const LayersId& aLayersId,
-                                      APZInputBridgeParent* aInputBridgeParent);
+  static void SetAPZInputBridgeParent(
+      const LayersId& aLayersId,
+      RefPtr<APZInputBridgeParent>&& aInputBridgeParent);
 
-  PAPZParent* AllocPAPZParent(const LayersId& aLayersId) override;
-  bool DeallocPAPZParent(PAPZParent* aActor) override;
+  already_AddRefed<PAPZParent> AllocPAPZParent(
+      const LayersId& aLayersId) override;
 
   RefPtr<APZSampler> GetAPZSampler() const;
   RefPtr<APZUpdater> GetAPZUpdater() const;
