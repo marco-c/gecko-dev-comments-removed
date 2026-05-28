@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 with Files("**"):
     BUG_COMPONENT = ("Core", "Storage: IndexedDB")
@@ -73,6 +71,7 @@ UNIFIED_SOURCES += [
     "IDBDatabase.cpp",
     "IDBEvents.cpp",
     "IDBFactory.cpp",
+    "IDBGetAllHelper.cpp",
     "IDBIndex.cpp",
     "IDBKeyRange.cpp",
     "IDBObjectStore.cpp",
@@ -90,8 +89,8 @@ UNIFIED_SOURCES += [
 ]
 
 SOURCES += [
-    "ActorsParent.cpp",  
-    "Key.cpp",  
+    "ActorsParent.cpp",  # This file is huge.
+    "Key.cpp",  # We disable a warning on this file only
 ]
 
 IPDL_SOURCES += [
@@ -112,8 +111,8 @@ include("/ipc/chromium/chromium-config.mozbuild")
 FINAL_LIBRARY = "xul"
 
 if CONFIG["CC_TYPE"] in ("clang", "gcc"):
-    
-    
+    # Suppress gcc warning about a comparison being always false due to the
+    # range of the data type
     SOURCES["Key.cpp"].flags += ["-Wno-error=type-limits"]
 
 LOCAL_INCLUDES += [

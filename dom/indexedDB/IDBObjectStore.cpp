@@ -11,6 +11,7 @@
 #include "IDBDatabase.h"
 #include "IDBEvents.h"
 #include "IDBFactory.h"
+#include "IDBGetAllHelper.h"
 #include "IDBIndex.h"
 #include "IDBKeyRange.h"
 #include "IDBRequest.h"
@@ -39,7 +40,6 @@
 #include "mozilla/dom/FileListBinding.h"
 #include "mozilla/dom/IDBObjectStoreBinding.h"
 #include "mozilla/dom/MemoryBlobImpl.h"
-#include "mozilla/dom/RootedDictionary.h"
 #include "mozilla/dom/StreamBlobImpl.h"
 #include "mozilla/dom/StructuredCloneHolder.h"
 #include "mozilla/dom/StructuredCloneTags.h"
@@ -1103,88 +1103,44 @@ RefPtr<IDBRequest> IDBObjectStore::GetAllInternal(
     return nullptr;
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  RefPtr<IDBKeyRange> keyRange;
-  uint32_t limit = aLimit.WasPassed() ? aLimit.Value() : 0;
-  IDBCursorDirection direction = IDBCursorDirection::Next;
-  auto keyRangeResult = IDBKeyRange::FromJSVal(aCx, aQueryOrOptions, &keyRange,
-                                               mTransaction.unsafeGetRawPtr());
-  if (keyRangeResult.isErr()) {
-    if (!keyRangeResult.inspectErr().Is(SpecialValues::InvalidType)) {
-      
-      
-      
-      
-      aRv = keyRangeResult.unwrapErr().ExtractErrorResult(
-          InvalidMapsTo<NS_ERROR_DOM_INDEXEDDB_DATA_ERR>);
-      return nullptr;
-    }
-    
-    
-    
-    
-    RootedDictionary<IDBGetAllOptions> options(aCx);
-    if (NS_WARN_IF(!options.Init(aCx, aQueryOrOptions))) {
-      aRv.Throw(NS_ERROR_DOM_INDEXEDDB_DATA_ERR);
-      return nullptr;
-    }
-    JS::Rooted<JS::Value> keyVal(aCx, options.mQuery);
-    IDBKeyRange::FromJSVal(aCx, keyVal, &keyRange, aRv,
-                           mTransaction.unsafeGetRawPtr());
-    if (NS_WARN_IF(aRv.Failed())) {
-      return nullptr;
-    }
-    
-    limit = options.mCount.WasPassed() ? options.mCount.Value() : 0;
-    direction = options.mDirection;
+  auto parsedOptionsResult = GetAllOptionsFromQueryOrOptions(
+      aCx, aQueryOrOptions, aLimit, mTransaction.unsafeGetRawPtr());
+  if (parsedOptionsResult.isErr()) {
+    aRv = parsedOptionsResult.unwrapErr();
+    return nullptr;
   }
+  const auto parsedOptions = parsedOptionsResult.unwrap();
 
   const int64_t id = Id();
 
-  Maybe<SerializedKeyRange> optionalKeyRange;
-  if (keyRange) {
-    SerializedKeyRange serializedKeyRange;
-    keyRange->ToSerialized(serializedKeyRange);
-    optionalKeyRange.emplace(serializedKeyRange);
-  }
-
-  RequestParams params;
-  if (aKeysOnly) {
-    params =
-        ObjectStoreGetAllKeysParams(id, optionalKeyRange, limit, direction);
-  } else {
-    params = ObjectStoreGetAllParams(id, optionalKeyRange, limit, direction);
-  }
+  const RequestParams params =
+      aKeysOnly ? RequestParams{ObjectStoreGetAllKeysParams(id, parsedOptions)}
+                : RequestParams{ObjectStoreGetAllParams(id, parsedOptions)};
 
   auto request = GenerateRequest(aCx, this).unwrap();
 
   if (aKeysOnly) {
     IDB_LOG_MARK_CHILD_TRANSACTION_REQUEST(
         "database(%s).transaction(%s).objectStore(%s)."
-        "getAllKeys(%s, %s)",
-        "IDBObjectStore.getAllKeys(%.0s%.0s%.0s%.0s%.0s)",
+        "getAllKeys(%s, %s, %s)",
+        "IDBObjectStore.getAllKeys(%.0s%.0s%.0s%.0s%.0s%.0s)",
         mTransaction->LoggingSerialNumber(), request->LoggingSerialNumber(),
         IDB_LOG_STRINGIFY(mTransaction->Database()),
         IDB_LOG_STRINGIFY(*mTransaction), IDB_LOG_STRINGIFY(this),
-        IDB_LOG_STRINGIFY(keyRange), IDB_LOG_STRINGIFY(aLimit));
+        IDB_LOG_STRINGIFY(parsedOptions.optionalKeyRange()),
+        IDB_LOG_STRINGIFY(parsedOptions.limit()),
+        IDB_LOG_STRINGIFY(parsedOptions.direction()));
   } else {
     IDB_LOG_MARK_CHILD_TRANSACTION_REQUEST(
         "database(%s).transaction(%s).objectStore(%s)."
-        "getAll(%s, %s)",
-        "IDBObjectStore.getAll(%.0s%.0s%.0s%.0s%.0s)",
+        "getAll(%s, %s, %s)",
+        "IDBObjectStore.getAll(%.0s%.0s%.0s%.0s%.0s%.0s)",
         mTransaction->LoggingSerialNumber(), request->LoggingSerialNumber(),
         IDB_LOG_STRINGIFY(mTransaction->Database()),
         IDB_LOG_STRINGIFY(*mTransaction), IDB_LOG_STRINGIFY(this),
-        IDB_LOG_STRINGIFY(keyRange), IDB_LOG_STRINGIFY(aLimit));
+        IDB_LOG_STRINGIFY(parsedOptions.optionalKeyRange()),
+        IDB_LOG_STRINGIFY(parsedOptions.limit()),
+        IDB_LOG_STRINGIFY(parsedOptions.direction()));
   }
 
   

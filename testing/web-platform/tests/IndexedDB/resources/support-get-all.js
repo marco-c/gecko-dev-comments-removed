@@ -159,6 +159,13 @@ function index_get_all_test_setup(storeName, callback, testDescription) {
                 expectedRecords.push({key: attr, primaryKey: letter, value});
               }
             });
+            
+            
+            
+            expectedRecords.sort((a, b) => {
+              const keyCmp = indexedDB.cmp(a.key, b.key);
+              return keyCmp !== 0 ? keyCmp : indexedDB.cmp(a.primaryKey, b.primaryKey);
+            });
             return;
           }
           case 'empty': {
