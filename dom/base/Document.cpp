@@ -16828,10 +16828,14 @@ static void SetKeyboardLockStatusAndMaybeDispatchEvent(
 void Document::RequestFullscreenInContentProcess(
     UniquePtr<FullscreenRequest> aRequest, bool aApplyFullscreenDirectly) {
   MOZ_ASSERT(XRE_IsContentProcess());
-  
-  
-  
+  if (!CheckFullscreenAllowedElementType(aRequest->Element())) {
+    aRequest->Reject("FullscreenDeniedNotHTMLSVGOrMathML");
+    return;
+  }
 
+  
+  
+  
   if (aApplyFullscreenDirectly ||
       nsContentUtils::GetInProcessSubtreeRootDocument(this)->Fullscreen()) {
     
@@ -16840,11 +16844,6 @@ void Document::RequestFullscreenInContentProcess(
     aRequest->SetShouldDispatchKeyboardLockEvent(aRequest->GetPromise() &&
                                                  aRequest->Document() == this);
     ApplyFullscreen(std::move(aRequest));
-    return;
-  }
-
-  if (!CheckFullscreenAllowedElementType(aRequest->Element())) {
-    aRequest->Reject("FullscreenDeniedNotHTMLSVGOrMathML");
     return;
   }
 
