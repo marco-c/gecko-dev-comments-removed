@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "WebAuthnArgs.h"
 
 #include "WebAuthnEnumStrings.h"
@@ -259,6 +257,20 @@ WebAuthnRegisterArgs::GetJson(nsAString& aJSON) {
 }
 
 NS_IMPL_ISUPPORTS(WebAuthnSignArgs, nsIWebAuthnSignArgs)
+
+NS_IMETHODIMP
+WebAuthnSignArgs::CloneWithSelectedCredential(
+    const nsTArray<uint8_t>& aCredentialId, nsIWebAuthnSignArgs** aResult) {
+  WebAuthnGetAssertionInfo info = mInfo;
+  info.AllowList().Clear();
+  WebAuthnScopedCredential cred;
+  cred.id().Assign(aCredentialId);
+  info.AllowList().AppendElement(std::move(cred));
+  RefPtr<WebAuthnSignArgs> result =
+      new WebAuthnSignArgs(mOrigin, mClientDataJSON, mPrivateBrowsing, info);
+  result.forget(aResult);
+  return NS_OK;
+}
 
 NS_IMETHODIMP
 WebAuthnSignArgs::GetOrigin(nsAString& aOrigin) {

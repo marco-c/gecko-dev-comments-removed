@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_AndroidWebAuthnService_h_
 #define mozilla_dom_AndroidWebAuthnService_h_
 
@@ -79,12 +77,6 @@ class AndroidWebAuthnService final : public nsIWebAuthnService {
 
  private:
   ~AndroidWebAuthnService() = default;
-
-  
-  
-  
-  
-  Maybe<bool> mRegisterCredPropsRk;
 };
 
 }  
