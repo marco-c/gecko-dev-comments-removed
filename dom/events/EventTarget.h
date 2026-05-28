@@ -299,6 +299,7 @@ class EventTarget : public nsISupports, public nsWrapperCache {
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   virtual nsresult PreHandleEvent(EventChainVisitor& aVisitor) { return NS_OK; }
 
   

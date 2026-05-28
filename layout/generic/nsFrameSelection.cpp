@@ -488,6 +488,51 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(nsFrameSelection)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 
+void nsFrameSelection::WillFocusDocument(PresShell& aPresShell,
+                                         Document& aDocument) {
+  const RefPtr<nsFrameSelection> selection =
+      aPresShell.GetLastFocusedFrameSelection();
+  if (!selection) [[unlikely]] {
+    return;
+  }
+  const int16_t selectionStatus = selection->GetDisplaySelection();
+  
+  if (selectionStatus == nsISelectionController::SELECTION_DISABLED ||
+      selectionStatus == nsISelectionController::SELECTION_HIDDEN) {
+    selection->SetDisplaySelection(nsISelectionController::SELECTION_ON);
+    selection->RepaintSelection(SelectionType::eNormal);
+  }
+  
+  
+  if (selection != aPresShell.ConstFrameSelection()) {
+    const bool selectionMatchesFocus =
+        selection->IsIndependentSelection() &&
+        selection->GetIndependentSelectionRootParentElement() ==
+            aDocument.GetUnretargetedFocusedContent();
+    if (NS_WARN_IF(!selectionMatchesFocus)) {
+      aPresShell.FrameSelectionWillLoseFocus(*selection);
+      aPresShell.SelectionWillTakeFocus();
+    }
+  }
+}
+
+
+void nsFrameSelection::WillBlurDocument(PresShell& aPresShell,
+                                        Document& aDocument) {
+  nsFrameSelection* const selection = aPresShell.GetLastFocusedFrameSelection();
+  if (!selection) [[unlikely]] {
+    return;
+  }
+  const int16_t selectionStatus = selection->GetDisplaySelection();
+  
+  if (selectionStatus == nsISelectionController::SELECTION_ON ||
+      selectionStatus == nsISelectionController::SELECTION_ATTENTION) {
+    selection->SetDisplaySelection(nsISelectionController::SELECTION_DISABLED);
+    selection->RepaintSelection(SelectionType::eNormal);
+  }
+}
+
+
 bool nsFrameSelection::Caret::IsVisualMovement(
     ExtendSelection aExtendSelection, CaretMovementStyle aMovementStyle) {
   int32_t movementFlag = StaticPrefs::bidi_edit_caret_movement_style();
@@ -1286,7 +1331,7 @@ void nsFrameSelection::HandleDrag(nsIFrame* aFrame, const nsPoint& aPoint) {
   }
 
   nsresult result;
-  nsIFrame* newFrame = 0;
+  nsIFrame* newFrame = nullptr;
   nsPoint newPoint;
 
   result = ConstrainFrameAndPointToAnchorSubtree(aFrame, aPoint, &newFrame,

@@ -214,6 +214,26 @@ class HTMLEditor final : public EditorBase,
 
 
 
+
+
+  MOZ_CAN_RUN_SCRIPT static void WillFocusNode(PresShell& aPresShell,
+                                               nsINode* aNode);
+
+  
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT static void WillBlurNode(PresShell& aPresShell,
+                                              nsINode* aNode);
+
+  
+
+
+
+
   MOZ_CAN_RUN_SCRIPT nsresult FocusedElementOrDocumentBecomesEditable(
       Document& aDocument, Element* aElement);
 

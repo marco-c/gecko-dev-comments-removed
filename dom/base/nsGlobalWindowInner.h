@@ -307,6 +307,8 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
 
   void GetEventTargetParent(mozilla::EventChainPreVisitor& aVisitor) override;
 
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult
+  PreHandleEvent(mozilla::EventChainVisitor&) override;
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult
   PostHandleEvent(mozilla::EventChainPostVisitor& aVisitor) override;

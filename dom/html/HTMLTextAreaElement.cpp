@@ -398,9 +398,10 @@ void HTMLTextAreaElement::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
       return;
     }
     mHandlingSelect = true;
-  }
-
-  if (aVisitor.mEvent->mMessage == eBlur) {
+  } else if (aVisitor.mEvent->mMessage == eFocus ||
+             aVisitor.mEvent->mMessage == eBlur) {
+    
+    
     
     
     aVisitor.mWantsPreHandleEvent = true;
@@ -410,7 +411,10 @@ void HTMLTextAreaElement::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
 }
 
 nsresult HTMLTextAreaElement::PreHandleEvent(EventChainVisitor& aVisitor) {
-  if (aVisitor.mEvent->mMessage == eBlur) {
+  if (aVisitor.mEvent->mMessage == eFocus) {
+    
+    GetValueInternal(mFocusedValue);
+  } else if (aVisitor.mEvent->mMessage == eBlur) {
     
     FireChangeEventIfNeeded();
   }
@@ -441,10 +445,6 @@ void HTMLTextAreaElement::FireChangeEventIfNeeded() {
 nsresult HTMLTextAreaElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
   if (aVisitor.mEvent->mMessage == eFormSelect) {
     mHandlingSelect = false;
-  }
-  if (aVisitor.mEvent->mMessage == eFocus) {
-    GetValueInternal(mFocusedValue);
-    TextControlElement::OnFocus(*aVisitor.mEvent);
   }
   return NS_OK;
 }

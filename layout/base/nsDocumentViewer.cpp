@@ -170,23 +170,6 @@ class nsDocViewerSelectionListener final : public nsISelectionListener {
   bool mSelectionWasCollapsed;
 };
 
-
-class nsDocViewerFocusListener final : public nsIDOMEventListener {
- public:
-  explicit nsDocViewerFocusListener(nsDocumentViewer* aDocViewer)
-      : mDocViewer(aDocViewer) {}
-
-  NS_DECL_ISUPPORTS
-  NS_DECL_NSIDOMEVENTLISTENER
-
-  void Disconnect() { mDocViewer = nullptr; }
-
- protected:
-  virtual ~nsDocViewerFocusListener() = default;
-
-  nsDocumentViewer* mDocViewer;
-};
-
 namespace viewer_detail {
 
 
@@ -360,9 +343,6 @@ class nsDocumentViewer final : public nsIDocumentViewer,
 
   nsresult SyncParentSubDocMap();
 
-  void RemoveFocusListener();
-  void ReinitializeFocusListener();
-
   mozilla::dom::Selection* GetDocumentSelection();
 
   void DestroyPresShell();
@@ -398,7 +378,6 @@ class nsDocumentViewer final : public nsIDocumentViewer,
   RefPtr<PresShell> mPresShell;
 
   RefPtr<nsDocViewerSelectionListener> mSelectionListener;
-  RefPtr<nsDocViewerFocusListener> mFocusListener;
 
   nsCOMPtr<nsIDocumentViewer> mPreviousViewer;
   
@@ -548,8 +527,6 @@ nsDocumentViewer::~nsDocumentViewer() {
     mSelectionListener->Disconnect();
   }
 
-  RemoveFocusListener();
-
   
 }
 
@@ -567,26 +544,6 @@ void nsDocumentViewer::LoadStart(Document* aDocument) {
 
   if (!mDocument) {
     mDocument = aDocument;
-  }
-}
-
-void nsDocumentViewer::RemoveFocusListener() {
-  if (RefPtr<nsDocViewerFocusListener> oldListener =
-          std::move(mFocusListener)) {
-    oldListener->Disconnect();
-    if (mDocument) {
-      mDocument->RemoveEventListener(u"focus"_ns, oldListener, false);
-      mDocument->RemoveEventListener(u"blur"_ns, oldListener, false);
-    }
-  }
-}
-
-void nsDocumentViewer::ReinitializeFocusListener() {
-  RemoveFocusListener();
-  mFocusListener = new nsDocViewerFocusListener(this);
-  if (mDocument) {
-    mDocument->AddEventListener(u"focus"_ns, mFocusListener, false, false);
-    mDocument->AddEventListener(u"blur"_ns, mFocusListener, false, false);
   }
 }
 
@@ -733,8 +690,6 @@ nsresult nsDocumentViewer::InitPresentationStuff(bool aDoInitialReflow) {
   if (RefPtr<mozilla::dom::Selection> selection = GetDocumentSelection()) {
     selection->AddSelectionListener(mSelectionListener);
   }
-
-  ReinitializeFocusListener();
 
   if (aDoInitialReflow && mDocument) {
     nsCOMPtr<Document> document = mDocument;
@@ -1372,8 +1327,6 @@ nsDocumentViewer::Open() {
 
   SyncParentSubDocMap();
 
-  ReinitializeFocusListener();
-
   
 
   PrepareToStartLoad();
@@ -1425,7 +1378,6 @@ nsDocumentViewer::Close() {
     }
   }
 
-  RemoveFocusListener();
   return NS_OK;
 }
 
@@ -2428,55 +2380,6 @@ NS_IMETHODIMP nsDocViewerSelectionListener::NotifySelectionChanged(
   if (mSelectionWasCollapsed != selectionCollapsed) {
     domWindow->UpdateCommands(u"select"_ns);
     mSelectionWasCollapsed = selectionCollapsed;
-  }
-
-  return NS_OK;
-}
-
-
-NS_IMPL_ISUPPORTS(nsDocViewerFocusListener, nsIDOMEventListener)
-
-nsresult nsDocViewerFocusListener::HandleEvent(Event* aEvent) {
-  NS_ENSURE_STATE(mDocViewer);
-
-  RefPtr<PresShell> presShell = mDocViewer->GetPresShell();
-  NS_ENSURE_TRUE(presShell, NS_ERROR_FAILURE);
-
-  RefPtr<nsFrameSelection> selection =
-      presShell->GetLastFocusedFrameSelection();
-  NS_ENSURE_TRUE(selection, NS_ERROR_FAILURE);
-  auto selectionStatus = selection->GetDisplaySelection();
-  nsAutoString eventType;
-  aEvent->GetType(eventType);
-  if (eventType.EqualsLiteral("focus")) {
-    
-    if (selectionStatus == nsISelectionController::SELECTION_DISABLED ||
-        selectionStatus == nsISelectionController::SELECTION_HIDDEN) {
-      selection->SetDisplaySelection(nsISelectionController::SELECTION_ON);
-      selection->RepaintSelection(SelectionType::eNormal);
-    }
-    
-    
-    if (selection != presShell->ConstFrameSelection()) {
-      RefPtr<Document> doc = presShell->GetDocument();
-      const bool selectionMatchesFocus =
-          selection->IsIndependentSelection() &&
-          selection->GetIndependentSelectionRootParentElement() ==
-              doc->GetUnretargetedFocusedContent();
-      if (NS_WARN_IF(!selectionMatchesFocus)) {
-        presShell->FrameSelectionWillLoseFocus(*selection);
-        presShell->SelectionWillTakeFocus();
-      }
-    }
-  } else {
-    MOZ_ASSERT(eventType.EqualsLiteral("blur"), "Unexpected event type");
-    
-    if (selectionStatus == nsISelectionController::SELECTION_ON ||
-        selectionStatus == nsISelectionController::SELECTION_ATTENTION) {
-      selection->SetDisplaySelection(
-          nsISelectionController::SELECTION_DISABLED);
-      selection->RepaintSelection(SelectionType::eNormal);
-    }
   }
 
   return NS_OK;

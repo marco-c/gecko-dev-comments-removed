@@ -59,6 +59,7 @@
 #include "mozilla/ExtensionPolicyService.h"
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/FlushType.h"
+#include "mozilla/HTMLEditor.h"
 #include "mozilla/Likely.h"
 #include "mozilla/Logging.h"
 #include "mozilla/LookAndFeel.h"
@@ -83,6 +84,7 @@
 #include "mozilla/StorageAccess.h"
 #include "mozilla/StoragePrincipalHelper.h"
 #include "mozilla/TelemetryHistogramEnums.h"
+#include "mozilla/TextControlElement.h"
 #include "mozilla/ThrottledEventQueue.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
@@ -224,6 +226,7 @@
 #include "nsDocShell.h"
 #include "nsFocusManager.h"
 #include "nsFrameMessageManager.h"
+#include "nsFrameSelection.h"
 #include "nsGkAtoms.h"
 #include "nsGlobalWindowOuter.h"
 #include "nsHashKeys.h"
@@ -2156,30 +2159,54 @@ EventTarget* nsGlobalWindowInner::GetTargetForDOMEvent() {
 }
 
 void nsGlobalWindowInner::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
-  EventMessage msg = aVisitor.mEvent->mMessage;
-
   aVisitor.mCanHandle = true;
   aVisitor.mForceContentDispatch = true;  
-  if (msg == eResize && aVisitor.mEvent->IsTrusted()) {
-    
-    
-    if (aVisitor.mEvent->mOriginalTarget &&
-        aVisitor.mEvent->mOriginalTarget->IsInnerWindow()) {
-      mIsHandlingResizeEvent = true;
-    }
-  } else if (msg == eMouseDown && aVisitor.mEvent->IsTrusted()) {
-    sMouseDown = true;
-  } else if ((msg == eMouseUp || msg == eDragEnd) &&
-             aVisitor.mEvent->IsTrusted()) {
-    sMouseDown = false;
-    if (sDragServiceDisabled) {
-      nsCOMPtr<nsIDragService> ds =
-          do_GetService("@mozilla.org/widget/dragservice;1");
-      if (ds) {
-        sDragServiceDisabled = false;
-        ds->Unsuppress();
+  switch (aVisitor.mEvent->mMessage) {
+    case eResize:
+      if (aVisitor.mEvent->IsTrusted()) {
+        
+        
+        
+        if (aVisitor.mEvent->mOriginalTarget &&
+            aVisitor.mEvent->mOriginalTarget->IsInnerWindow()) {
+          mIsHandlingResizeEvent = true;
+        }
       }
-    }
+      break;
+    case eMouseDown:
+      if (aVisitor.mEvent->IsTrusted()) {
+        sMouseDown = true;
+      }
+      break;
+    case eMouseUp:
+    case eDragEnd:
+      if (aVisitor.mEvent->IsTrusted()) {
+        sMouseDown = false;
+        if (sDragServiceDisabled) {
+          nsCOMPtr<nsIDragService> ds =
+              do_GetService("@mozilla.org/widget/dragservice;1");
+          if (ds) {
+            sDragServiceDisabled = false;
+            ds->Unsuppress();
+          }
+        }
+      }
+      break;
+    case eFocus:
+    case eBlur:
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      aVisitor.mWantsPreHandleEvent = aVisitor.mEvent->IsTrusted();
+      break;
+    default:
+      break;
   }
 
   aVisitor.SetParentTarget(GetParentTarget(), true);
@@ -2407,6 +2434,59 @@ void nsGlobalWindowInner::FireFrameLoadEvent() {
     (void)browserChild->SendMaybeFireEmbedderLoadEvents(
         EmbedderElementEventType::LoadEvent);
   }
+}
+
+nsresult nsGlobalWindowInner::PreHandleEvent(EventChainVisitor& aVisitor) {
+  MOZ_ASSERT(aVisitor.mEvent->mMessage == eFocus ||
+             aVisitor.mEvent->mMessage == eBlur);
+  MOZ_ASSERT(aVisitor.mEvent->IsTrusted());
+
+  if (!mDoc) [[unlikely]] {
+    return NS_OK;
+  }
+  const RefPtr<PresShell> presShell = mDoc->GetPresShell();
+  if (!presShell) [[unlikely]] {
+    return NS_OK;
+  }
+  
+  
+  const nsCOMPtr<nsINode> targetNode = nsINode::FromEventTargetOrNull(
+      aVisitor.mEvent->GetOriginalDOMEventTarget());
+  if (Document* const targetDocument = Document::FromNodeOrNull(targetNode)) {
+    if (aVisitor.mEvent->mMessage == eFocus) {
+      nsFrameSelection::WillFocusDocument(*presShell, *targetDocument);
+    } else {
+      nsFrameSelection::WillBlurDocument(*presShell, *targetDocument);
+    }
+  }
+  
+  
+  
+  
+  
+  if (aVisitor.mEvent->mMessage == eFocus) {
+    HTMLEditor::WillFocusNode(*presShell, targetNode);
+  }
+  
+  
+  
+  else {
+    HTMLEditor::WillBlurNode(*presShell, targetNode);
+  }
+
+  
+  
+  if (auto* const targetTextControlElement =
+          TextControlElement::FromNodeOrNull(targetNode)) {
+    if (targetTextControlElement->IsSingleLineTextControlOrTextArea()) {
+      if (aVisitor.mEvent->mMessage == eFocus) {
+        MOZ_KnownLive(targetTextControlElement)->WillFocus(*aVisitor.mEvent);
+      } else {
+        MOZ_KnownLive(targetTextControlElement)->WillBlur(*aVisitor.mEvent);
+      }
+    }
+  }
+  return NS_OK;
 }
 
 nsresult nsGlobalWindowInner::PostHandleEvent(EventChainPostVisitor& aVisitor) {
@@ -4874,6 +4954,7 @@ Storage* nsGlobalWindowInner::GetSessionStorage(ErrorResult& aError) {
     uint32_t rejectedReason = 0;
     StorageAccess access = StorageAllowedForWindow(this, &rejectedReason);
 
+    
     
     
     

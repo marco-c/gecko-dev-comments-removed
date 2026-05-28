@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_TextControlElement_h
 #define mozilla_TextControlElement_h
 
@@ -64,6 +62,18 @@ class TextControlElement : public nsGenericHTMLFormControlElementWithState {
 
 
   virtual void SetValueChanged(bool) = 0;
+
+  
+
+
+
+  MOZ_CAN_RUN_SCRIPT void WillFocus(const WidgetEvent&);
+
+  
+
+
+
+  MOZ_CAN_RUN_SCRIPT void WillBlur(const WidgetEvent&);
 
   
 
@@ -218,6 +228,9 @@ class TextControlElement : public nsGenericHTMLFormControlElementWithState {
   Element* GetTextEditorButton() const;
   
   
+  already_AddRefed<Element> CreateButton() const;
+  
+  
   static bool IsButtonPseudoElement(PseudoStyleType);
 
   
@@ -227,7 +240,6 @@ class TextControlElement : public nsGenericHTMLFormControlElementWithState {
   void ScrollSelectionIntoViewAsync(ScrollAncestors = ScrollAncestors::No);
 
  protected:
-  MOZ_CAN_RUN_SCRIPT void OnFocus(const WidgetEvent&);
   MOZ_CAN_RUN_SCRIPT void SelectAll();
   MOZ_CAN_RUN_SCRIPT void ShowSelection();
   bool NeedToInitializeEditorForEvent(EventChainPreVisitor&) const;

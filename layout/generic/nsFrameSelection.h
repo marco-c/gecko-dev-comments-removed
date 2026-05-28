@@ -284,7 +284,6 @@ class nsFrameSelection final {
                                           FocusMode aFocusMode,
                                           CaretAssociationHint aHint);
 
- public:
   [[nodiscard]] bool IsAvailable() const {
     
     
@@ -379,7 +378,6 @@ class nsFrameSelection final {
 
   nsresult SelectCellElement(nsIContent* aCell);
 
- public:
   
 
 
@@ -972,6 +970,18 @@ class nsFrameSelection final {
 
   
   static nsITableCellLayout* GetCellLayout(const nsIContent* aCellContent);
+
+  
+
+
+  static void WillFocusDocument(mozilla::PresShell& aPresShell,
+                                mozilla::dom::Document& aDocument);
+
+  
+
+
+  static void WillBlurDocument(mozilla::PresShell& aPresShell,
+                               mozilla::dom::Document& aDocument);
 
  private:
   ~nsFrameSelection();

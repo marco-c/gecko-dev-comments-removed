@@ -328,7 +328,7 @@ class EventTargetChainItem {
 
 
 
-  void PreHandleEvent(EventChainVisitor& aVisitor);
+  MOZ_CAN_RUN_SCRIPT void PreHandleEvent(EventChainVisitor& aVisitor);
 
   
 
@@ -1060,7 +1060,7 @@ nsresult EventDispatcher::Dispatch(EventTarget* aTarget,
 
   bool clearTargets = false;
 
-  nsCOMPtr<nsIContent> content =
+  nsIContent* content =
       nsIContent::FromEventTargetOrNull(aEvent->mOriginalTarget);
 
   const bool isInAnon = content && content->ChromeOnlyAccessForEvents();
@@ -1089,6 +1089,10 @@ nsresult EventDispatcher::Dispatch(EventTarget* aTarget,
     targetEtci = MayRetargetToChromeIfCanNotHandleEvent(
         chain, preVisitor, targetEtci, nullptr, content);
   }
+
+  
+  content = nullptr;
+
   if (!preVisitor.mCanHandle) {
     
     
