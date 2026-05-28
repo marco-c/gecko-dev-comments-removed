@@ -4,6 +4,7 @@
 
 #include "MediaPlaybackStatus.h"
 
+#include "AudioSessionRecord.h"
 #include "MediaControlUtils.h"
 
 namespace mozilla::dom {
@@ -281,6 +282,35 @@ bool MediaPlaybackStatus::ContextMediaInfo::HasAudibleSourceOfControlType(
     }
   }
   return false;
+}
+
+AudioSessionType
+MediaPlaybackStatus::ContextMediaInfo::PriorityTypeFromAudibleSources() const {
+  
+  
+  
+  
+  Maybe<AudioSessionType> winner;
+  for (const AudibleSource& src : mAudibleSources) {
+    if (!winner || AudioSessionTypePriorityRank(src.mSessionType) >
+                       AudioSessionTypePriorityRank(*winner)) {
+      winner = Some(src.mSessionType);
+    }
+  }
+  const AudioSessionType result = winner.valueOr(DefaultAudioSessionType());
+  LOG("PriorityTypeFromAudibleSources for context %" PRIu64 " -> %s",
+      mContextId, GetEnumString(result).get());
+  return result;
+}
+
+AudioSessionType MediaPlaybackStatus::EffectiveTypeForBc(uint64_t aBcId) const {
+  MOZ_ASSERT(NS_IsMainThread());
+  auto entry = mContextInfoMap.Lookup(aBcId);
+  if (!entry) {
+    LOG("[warning] EffectiveTypeForBc no entry for context %" PRIu64, aBcId);
+    return DefaultAudioSessionType();
+  }
+  return entry.Data()->PriorityTypeFromAudibleSources();
 }
 
 }  

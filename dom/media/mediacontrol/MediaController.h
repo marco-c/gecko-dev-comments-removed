@@ -171,6 +171,11 @@ class MediaController final : public DOMEventTargetHelper,
 
   
   
+  
+  AudioSessionType EffectiveTypeForBc(uint64_t aBrowsingContextId) const;
+
+  
+  
   const AudioSessionRecord* GetAudioSessionRecordForTesting(
       uint64_t aBrowsingContextId) const;
 

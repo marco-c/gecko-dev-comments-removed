@@ -99,6 +99,10 @@ class MediaPlaybackStatus final {
 
   
   
+  AudioSessionType EffectiveTypeForBc(uint64_t aBcId) const;
+
+  
+  
   bool IsBcAudibleForTesting(uint64_t aBcId) const;
   const nsTArray<AudibleSource>* GetAudibleSourcesForTesting(
       uint64_t aBcId) const;
@@ -163,6 +167,11 @@ class MediaPlaybackStatus final {
     const nsTArray<AudibleSource>& AudibleSourcesForTesting() const {
       return mAudibleSources;
     }
+
+    
+    
+    
+    AudioSessionType PriorityTypeFromAudibleSources() const;
 
    private:
     

@@ -531,6 +531,11 @@ bool MediaStatusManager::IsAnyMediaBeingControlled() const {
   return mPlaybackStatusDelegate.IsAnyMediaBeingControlled();
 }
 
+AudioSessionType MediaStatusManager::EffectiveTypeForBc(
+    uint64_t aBrowsingContextId) const {
+  return mPlaybackStatusDelegate.EffectiveTypeForBc(aBrowsingContextId);
+}
+
 void MediaStatusManager::NotifyPageTitleChanged() {
   
   
