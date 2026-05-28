@@ -634,6 +634,16 @@ customElements.setElementCreationCallback("webrtc-preview", () => {
   );
 });
 
+customElements.setElementCreationCallback(
+  "login-doorhanger-username-field",
+  () => {
+    ChromeUtils.importESModule(
+      "chrome://browser/content/passwordmgr/login-doorhanger-username-field.mjs",
+      { global: "current" }
+    );
+  }
+);
+
 var gBrowser;
 var gContextMenu = null; 
 var gMultiProcessBrowser = window.docShell.QueryInterface(
@@ -1115,12 +1125,12 @@ const gStoragePressureObserver = {
 };
 
 var gKeywordURIFixup = {
-  check(browser, { fixedURI, keywordProviderName, preferredURI }) {
+  check(browser, { fixedURI, keywordProviderId, preferredURI }) {
     
     
     
     if (
-      !keywordProviderName ||
+      !keywordProviderId ||
       !fixedURI ||
       !fixedURI.host ||
       UrlbarPrefs.get("browser.fixup.dns_first_for_single_words") ||
