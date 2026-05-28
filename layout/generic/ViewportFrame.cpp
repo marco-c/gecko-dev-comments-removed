@@ -470,9 +470,11 @@ void ViewportFrame::Reflow(nsPresContext* aPresContext,
     
     AbsPosReflowFlags flags{AbsPosReflowFlag::CBWidthChanged,
                             AbsPosReflowFlag::CBHeightChanged};
+    nsReflowStatus absposStatus;
     GetAbsoluteContainingBlock()->Reflow(this, aPresContext, reflowInput,
-                                         aStatus, cb, flags,
+                                         absposStatus, cb, flags,
                                           nullptr);
+    aStatus.MergeCompletionStatusFrom(absposStatus);
   }
 
   if (mFrames.NotEmpty()) {
