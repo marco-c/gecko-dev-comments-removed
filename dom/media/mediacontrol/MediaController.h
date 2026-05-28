@@ -5,6 +5,7 @@
 #ifndef DOM_MEDIA_MEDIACONTROL_MEDIACONTROLLER_H_
 #define DOM_MEDIA_MEDIACONTROL_MEDIACONTROLLER_H_
 
+#include "AudioSessionRecord.h"
 #include "MediaEventSource.h"
 #include "MediaPlaybackStatus.h"
 #include "MediaStatusManager.h"
@@ -15,6 +16,7 @@
 #include "mozilla/dom/MediaSession.h"
 #include "nsISupportsImpl.h"
 #include "nsITimer.h"
+#include "nsTHashMap.h"
 
 namespace mozilla::dom {
 
@@ -159,6 +161,19 @@ class MediaController final : public DOMEventTargetHelper,
   void Select() const;
   void Unselect() const;
 
+  
+  
+  void SetAudioSessionTypeOverride(uint64_t aBrowsingContextId,
+                                   AudioSessionType aType);
+
+  
+  void ClearAudioSessionFor(uint64_t aBrowsingContextId);
+
+  
+  
+  const AudioSessionRecord* GetAudioSessionRecordForTesting(
+      uint64_t aBrowsingContextId) const;
+
  private:
   ~MediaController();
   void HandleActualPlaybackStateChanged();
@@ -215,6 +230,9 @@ class MediaController final : public DOMEventTargetHelper,
   
   
   nsCOMPtr<nsITimer> mDeactivationTimer;
+
+  
+  nsTHashMap<nsUint64HashKey, AudioSessionRecord> mAudioSessions;
 };
 
 }  

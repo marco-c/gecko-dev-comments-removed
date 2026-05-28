@@ -218,6 +218,15 @@ void WindowGlobalParent::Init() {
     }
   }
 
+  
+  
+  
+  
+  if (auto* top = BrowsingContext()->Top();
+      top && top->HasCreatedMediaController()) {
+    top->GetMediaController()->ClearAudioSessionFor(BrowsingContext()->Id());
+  }
+
   nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
   if (obs) {
     obs->NotifyObservers(ToSupports(this), "window-global-created", nullptr);
@@ -1932,6 +1941,20 @@ IPCResult WindowGlobalParent::RecvRecordUserInteractionForPermissions() {
       do_GetService(NS_PERMISSIONMANAGER_CONTRACTID);
   if (permMgr) {
     (void)permMgr->UpdateLastInteractionForPrincipal(principal);
+  }
+  return IPC_OK();
+}
+
+IPCResult WindowGlobalParent::RecvNotifyAudioSessionTypeOverride(
+    const dom::AudioSessionType& aType) {
+  
+  
+  
+  
+  if (auto* top = BrowsingContext()->Top()) {
+    if (RefPtr<MediaController> controller = top->GetMediaController()) {
+      controller->SetAudioSessionTypeOverride(BrowsingContext()->Id(), aType);
+    }
   }
   return IPC_OK();
 }
