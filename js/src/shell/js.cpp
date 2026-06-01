@@ -9078,6 +9078,10 @@ class TransplantableProxyHandler final : public ForwardingProxyHandler {
 
   bool mayBeSwapped() const override { return true; }
 
+  
+  
+  bool canNurseryAllocate() const override { return true; }
+
   static JSObject* GetAndClearExpandoObject(
       JSObject* obj, JS::MutableHandle<JS::Value> restoreToken) {
     MOZ_ASSERT(TransplantableProxyHandler::is(obj));
