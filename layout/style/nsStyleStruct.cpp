@@ -471,8 +471,15 @@ static inline BorderRadius ZeroBorderRadius() {
   return {{{zero, zero}}, {{zero, zero}}, {{zero, zero}}, {{zero, zero}}};
 }
 
+static inline mozilla::StyleCornerShapeRect RoundCornerShapeRect() {
+  
+  mozilla::StyleCornerShape round{1.0f};
+  return {round, round, round, round};
+}
+
 nsStyleBorder::nsStyleBorder()
     : mBorderRadius(ZeroBorderRadius()),
+      mCornerShape(RoundCornerShapeRect()),
       mBorderImageSource(StyleImage::None()),
       mBorderImageWidth(
           StyleRectWithAllSides(StyleBorderImageSideWidth::Number(1.))),
@@ -496,6 +503,7 @@ nsStyleBorder::nsStyleBorder()
 
 nsStyleBorder::nsStyleBorder(const nsStyleBorder& aSrc)
     : mBorderRadius(aSrc.mBorderRadius),
+      mCornerShape(aSrc.mCornerShape),
       mBorderImageSource(aSrc.mBorderImageSource),
       mBorderImageWidth(aSrc.mBorderImageWidth),
       mBorderImageOutset(aSrc.mBorderImageOutset),
@@ -567,6 +575,10 @@ nsChangeHint nsStyleBorder::CalcDifference(
   
   
   if (mBorderRadius != aNewData.mBorderRadius) {
+    return nsChangeHint_RepaintFrame;
+  }
+
+  if (mCornerShape != aNewData.mCornerShape) {
     return nsChangeHint_RepaintFrame;
   }
 

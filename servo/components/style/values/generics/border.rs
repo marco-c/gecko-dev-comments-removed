@@ -4,6 +4,7 @@
 
 
 
+use crate::derives::*;
 use crate::values::generics::rect::Rect;
 use crate::values::generics::size::Size2D;
 use crate::Zero;
@@ -62,6 +63,7 @@ pub use self::GenericBorderImageSideWidth as BorderImageSideWidth;
     ToTyped,
 )]
 #[repr(C)]
+#[typed(todo_derive_fields)]
 pub struct GenericBorderImageSlice<NumberOrPercentage> {
     
     #[css(field_bound)]
@@ -95,6 +97,7 @@ pub use self::GenericBorderImageSlice as BorderImageSlice;
     ToTyped,
 )]
 #[repr(C)]
+#[typed(todo_derive_fields)]
 pub struct GenericBorderCornerRadius<L>(
     #[css(field_bound)]
     #[shmem(field_bound)]
@@ -139,6 +142,7 @@ impl<L: Zero> Zero for BorderCornerRadius<L> {
     ToTyped,
 )]
 #[repr(transparent)]
+#[typed(todo_derive_fields)]
 pub struct GenericBorderSpacing<L>(
     #[css(field_bound)]
     #[shmem(field_bound)]
@@ -261,5 +265,40 @@ where
         let heights = Rect::new(&tl.height, &tr.height, &br.height, &bl.height);
 
         Self::serialize_rects(widths, heights, dest)
+    }
+}
+
+
+
+
+
+
+
+
+#[derive(Clone)]
+#[repr(C)]
+pub struct GenericCornerShapeRect<S> {
+    
+    pub top_left: S,
+    
+    pub top_right: S,
+    
+    pub bottom_right: S,
+    
+    pub bottom_left: S,
+}
+
+pub use self::GenericCornerShapeRect as CornerShapeRect;
+
+impl<S: Clone> CornerShapeRect<S> {
+    
+    #[inline]
+    pub fn all(s: S) -> Self {
+        Self {
+            top_left: s.clone(),
+            top_right: s.clone(),
+            bottom_right: s.clone(),
+            bottom_left: s.clone(),
+        }
     }
 }
