@@ -47,7 +47,6 @@ import mozprocess
 import mozrunner
 from manifestparser import TestManifest
 from manifestparser.filters import (
-    chunk_by_slice,
     failures,
     pathprefix,
     subsuite,
@@ -1851,9 +1850,6 @@ toolbar#nav-bar {
                 path_filter = pathprefix(options.test_paths)
                 filters.append(path_filter)
 
-            if options.totalChunks:
-                filters.append(chunk_by_slice(options.thisChunk, options.totalChunks))
-
             noDefaultFilters = False
             if options.runFailures:
                 filters.append(failures(options.runFailures))
@@ -3142,13 +3138,12 @@ toolbar#nav-bar {
             )
 
             expected = None
-            if crashAsPass or crash_count > 0:
+            if crashAsPass:
                 
                 if self.message_logger.is_test_running:
                     
                     expected = "CRASH"
-                if crashAsPass:
-                    status = 0
+                status = 0
             elif crash_count or zombieProcesses:
                 if self.message_logger.is_test_running:
                     expected = "PASS"
