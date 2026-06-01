@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DEFAULT_BROWSER_TELEMETRY_H_
 #define DEFAULT_BROWSER_TELEMETRY_H_
 
@@ -18,7 +16,8 @@ namespace mozilla::default_agent {
 HRESULT SendDefaultAgentPing(const DefaultBrowserInfo& browserInfo,
                              const DefaultPdfInfo& pdfInfo,
                              const NotificationActivities& activitiesPerformed,
-                             uint32_t daysSinceLastAppLaunch);
+                             uint32_t daysSinceLastAppLaunch,
+                             const std::string& isTaskbarPinned);
 
 }  
 
