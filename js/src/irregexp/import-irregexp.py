@@ -60,7 +60,7 @@ def copy_and_update_includes(src_path, dst_path):
     regexp_include_new = '#include "irregexp/imported'
 
     
-    other_include = re.compile('#include "src/')
+    other_include = re.compile('#include "(src|include)/')
 
     
     
