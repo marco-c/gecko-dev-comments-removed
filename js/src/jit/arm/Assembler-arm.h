@@ -2266,7 +2266,6 @@ class DoubleEncoder {
 
 
 class AutoForbidNops {
- protected:
   Assembler* masm_;
 
  public:
@@ -2276,7 +2275,9 @@ class AutoForbidNops {
   ~AutoForbidNops() { masm_->leaveNoNops(); }
 };
 
-class AutoForbidPoolsAndNops : public AutoForbidNops {
+class AutoForbidPoolsAndNops {
+  Assembler* masm_;
+
  public:
   
   
@@ -2285,12 +2286,15 @@ class AutoForbidPoolsAndNops : public AutoForbidNops {
   
   
   
-  AutoForbidPoolsAndNops(Assembler* masm, size_t maxInst)
-      : AutoForbidNops(masm) {
+  AutoForbidPoolsAndNops(Assembler* masm, size_t maxInst) : masm_(masm) {
     masm_->enterNoPool(maxInst);
+    masm_->enterNoNops();
   }
 
-  ~AutoForbidPoolsAndNops() { masm_->leaveNoPool(); }
+  ~AutoForbidPoolsAndNops() {
+    masm_->leaveNoNops();
+    masm_->leaveNoPool();
+  }
 };
 
 }  

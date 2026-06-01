@@ -766,24 +766,31 @@ static inline bool GetTempRegForIntArg(uint32_t usedIntArgs,
 
 
 class AutoForbidNops {
- protected:
-  Assembler* asm_;
+  vixl::MozBaseAssembler* asm_;
 
  public:
-  explicit AutoForbidNops(Assembler* asm_) : asm_(asm_) { asm_->enterNoNops(); }
+  explicit AutoForbidNops(vixl::MozBaseAssembler* asm_) : asm_(asm_) {
+    asm_->enterNoNops();
+  }
   ~AutoForbidNops() { asm_->leaveNoNops(); }
 };
 
 
 
 
-class AutoForbidPoolsAndNops : public AutoForbidNops {
+class AutoForbidPoolsAndNops {
+  vixl::MozBaseAssembler* asm_;
+
  public:
-  AutoForbidPoolsAndNops(Assembler* asm_, size_t maxInst)
-      : AutoForbidNops(asm_) {
+  AutoForbidPoolsAndNops(vixl::MozBaseAssembler* asm_, size_t maxInst)
+      : asm_(asm_) {
     asm_->enterNoPool(maxInst);
+    asm_->enterNoNops();
   }
-  ~AutoForbidPoolsAndNops() { asm_->leaveNoPool(); }
+  ~AutoForbidPoolsAndNops() {
+    asm_->leaveNoNops();
+    asm_->leaveNoPool();
+  }
 };
 
 }  

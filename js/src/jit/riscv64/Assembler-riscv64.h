@@ -704,7 +704,6 @@ static inline bool GetTempRegForIntArg(uint32_t usedIntArgs,
 
 
 class AutoForbidNops {
- protected:
   Assembler* asm_;
 
  public:
@@ -718,14 +717,23 @@ class AutoForbidNops {
 
 
 
-class AutoForbidPoolsAndNops : public AutoForbidNops {
+class AutoForbidPoolsAndNops {
+  Assembler* asm_;
+
  public:
   explicit AutoForbidPoolsAndNops(Assembler* assem, size_t margin,
                                   size_t maxBranches = 0)
-      : AutoForbidNops(assem) {
+      : asm_(assem) {
     asm_->enterNoPool(margin, maxBranches);
+    asm_->enterNoNops();
   }
-  ~AutoForbidPoolsAndNops() { asm_->leaveNoPool(); }
+  ~AutoForbidPoolsAndNops() {
+    asm_->leaveNoNops();
+    asm_->leaveNoPool();
+  }
+
+  AutoForbidPoolsAndNops(const AutoForbidPoolsAndNops&) = delete;
+  AutoForbidPoolsAndNops& operator=(const AutoForbidPoolsAndNops&) = delete;
 };
 
 }  
