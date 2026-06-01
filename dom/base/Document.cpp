@@ -17771,8 +17771,13 @@ void Document::ReportLCP() {
     return;
   }
 
-  mozilla::glean::perf::largest_contentful_paint.AccumulateRawDuration(
-      lcpTime - timing->GetNavigationStartTimeStamp());
+  
+  
+  
+
+  const TimeStamp navStart = timing->GetNavigationStartTimeStamp();
+  const TimeDuration lcp = std::max(lcpTime - navStart, TimeDuration::Zero());
+  mozilla::glean::perf::largest_contentful_paint.AccumulateRawDuration(lcp);
 
   if (!GetChannel()) {
     return;
@@ -17786,20 +17791,20 @@ void Document::ReportLCP() {
   TimeStamp responseStart;
   timedChannel->GetResponseStart(&responseStart);
 
-  if (!responseStart) {
-    
-    mozilla::glean::perf::largest_contentful_paint_from_response_start
-        .AccumulateRawDuration(lcpTime - timing->GetNavigationStartTimeStamp());
-  } else {
-    mozilla::glean::perf::largest_contentful_paint_from_response_start
-        .AccumulateRawDuration(lcpTime - responseStart);
-  }
+  
+  
+  
+  
+  const TimeDuration lcpFromResponseStart =
+      responseStart ? std::max(lcpTime - responseStart, TimeDuration::Zero())
+                    : lcp;
+  mozilla::glean::perf::largest_contentful_paint_from_response_start
+      .AccumulateRawDuration(lcpFromResponseStart);
 
   if (profiler_thread_is_being_profiled_for_markers()) {
     MarkerInnerWindowId innerWindowID =
         MarkerInnerWindowIdFromDocShell(GetDocShell());
-    GetNavigationTiming()->GetSharedLcpMarkerState()->MaybeAddLCPProfilerMarker(
-        innerWindowID);
+    timing->GetSharedLcpMarkerState()->MaybeAddLCPProfilerMarker(innerWindowID);
   }
 }
 
