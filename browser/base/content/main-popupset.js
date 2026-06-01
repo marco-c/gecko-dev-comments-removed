@@ -18,6 +18,13 @@ document.addEventListener(
       switch (event.target.id) {
         
         case "context_openANewTab":
+          
+          
+          
+          
+          
+          
+          window.focus();
           gBrowser.addAdjacentNewTab(TabContextMenu.contextTab);
           break;
         case "context_moveTabToNewGroup":

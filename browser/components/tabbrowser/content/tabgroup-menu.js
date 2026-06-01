@@ -1058,6 +1058,12 @@
         window.removeEventListener("TabOpen", onTabOpened);
       };
       window.addEventListener("TabOpen", onTabOpened);
+      
+      
+      
+      
+      
+      window.focus();
       gBrowser.addAdjacentNewTab(lastTab);
     }
 
