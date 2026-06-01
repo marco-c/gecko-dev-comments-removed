@@ -20,6 +20,7 @@
 #include "mozilla/TimeStamp.h"             
 #include "mozilla/dom/AnimationBinding.h"  
 #include "mozilla/dom/AnimationTimeline.h"
+#include "mozilla/dom/CSSNumericValueBindingFwd.h"
 #include "nsCycleCollectionParticipant.h"
 
 struct JSContext;
@@ -152,15 +153,15 @@ class Animation : public DOMEventTargetHelper,
   virtual void SetStartTimeAsDouble(const Nullable<double>& aStartTime);
 
   
-  
+  void GetCurrentTime(Nullable<OwningCSSNumberish>& aRetVal) const;
+  void SetCurrentTime(const Nullable<CSSNumberish>& aCurrentTime,
+                      ErrorResult& aRv);
+
   Nullable<TimeDuration> GetCurrentTimeAsDuration() const {
     return GetCurrentTimeForHoldTime(mHoldTime);
   }
-  Nullable<double> GetCurrentTimeAsDouble() const;
   void SetCurrentTime(const TimeDuration& aSeekTime);
   void SetCurrentTimeNoUpdate(const TimeDuration& aSeekTime);
-  void SetCurrentTimeAsDouble(const Nullable<double>& aCurrentTime,
-                              ErrorResult& aRv);
 
   Nullable<double> GetOverallProgress() const;
 
@@ -462,6 +463,15 @@ class Animation : public DOMEventTargetHelper,
 
   const nsAtom* GetTimelineName() const { return mTimelineName; }
 
+  bool HasFiniteTimeline() const {
+    return mTimeline && !mTimeline->IsMonotonicallyIncreasing();
+  }
+
+  
+  
+  
+  bool AcceptsPercentageBasedTime() const;
+
  protected:
   void SilentlySetCurrentTime(const TimeDuration& aNewCurrentTime);
   void CancelNoUpdate();
@@ -553,10 +563,6 @@ class Animation : public DOMEventTargetHelper,
 
   Document* GetRenderedDocument() const;
   Document* GetTimelineDocument() const;
-
-  bool HasFiniteTimeline() const {
-    return mTimeline && !mTimeline->IsMonotonicallyIncreasing();
-  }
 
   bool HasFiniteActiveTimeline() const {
     return mTimeline && !mTimeline->IsMonotonicallyIncreasing() &&

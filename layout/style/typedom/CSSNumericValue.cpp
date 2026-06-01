@@ -126,7 +126,7 @@ bool CSSNumericValue::Equals(const Sequence<OwningCSSNumberish>& aValue) {
 
 
 already_AddRefed<CSSUnitValue> CSSNumericValue::To(const nsACString& aUnit,
-                                                   ErrorResult& aRv) {
+                                                   ErrorResult& aRv) const {
   
   
   
@@ -161,7 +161,7 @@ already_AddRefed<CSSUnitValue> CSSNumericValue::To(const nsACString& aUnit,
 }
 
 already_AddRefed<CSSMathSum> CSSNumericValue::ToSum(
-    const Sequence<nsCString>& aUnits, ErrorResult& aRv) {
+    const Sequence<nsCString>& aUnits, ErrorResult& aRv) const {
   aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
   return nullptr;
 }

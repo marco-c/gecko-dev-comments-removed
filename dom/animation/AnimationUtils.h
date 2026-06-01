@@ -7,17 +7,20 @@
 
 #include "mozilla/PseudoStyleRequest.h"
 #include "mozilla/TimeStamp.h"
+#include "mozilla/dom/CSSNumericValueBindingFwd.h"
 #include "mozilla/dom/Nullable.h"
 #include "nsRFPService.h"
 #include "nsStringFwd.h"
 
 class nsIContent;
 class nsIFrame;
+class nsIGlobalObject;
 struct JSContext;
 
 namespace mozilla {
 
 class EffectSet;
+class ErrorResult;
 
 namespace dom {
 class Document;
@@ -54,6 +57,30 @@ class AnimationUtils {
 
     return result;
   }
+
+  
+  
+  
+  
+  
+  static bool ValidateCSSNumberishTime(const dom::CSSNumberish& aValue,
+                                       bool aProgressBased, ErrorResult& aRv);
+
+  
+  
+  
+  
+  
+  static void DurationToCSSNumberish(
+      const dom::Nullable<TimeDuration>& aTime, bool aProgressBased,
+      RTPCallerType aRTPCallerType, nsIGlobalObject* aGlobal,
+      dom::Nullable<dom::OwningCSSNumberish>& aRetVal);
+
+  
+  
+  
+  static dom::Nullable<TimeDuration> CSSNumberishToDuration(
+      const dom::CSSNumberish& aValue, bool aProgressBased);
 
   static void LogAsyncAnimationFailure(nsCString& aMessage,
                                        const nsIContent* aContent = nullptr);

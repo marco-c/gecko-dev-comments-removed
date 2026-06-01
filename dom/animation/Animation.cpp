@@ -14,14 +14,17 @@
 #include "mozilla/Likely.h"
 #include "mozilla/Maybe.h"  
 #include "mozilla/StaticPrefs_dom.h"
+#include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/dom/AnimationBinding.h"
+#include "mozilla/dom/CSSNumericValueBinding.h"
 #include "mozilla/dom/CSSTransition.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/DocumentTimeline.h"
 #include "mozilla/dom/MutationObservers.h"
 #include "mozilla/dom/Promise.h"
-#include "nsAnimationManager.h"  
+#include "mozilla/dom/ScrollTimeline.h"  
+#include "nsAnimationManager.h"          
 #include "nsComputedDOMStyle.h"
 #include "nsDOMCSSAttrDeclaration.h"  
 #include "nsDOMMutationObserver.h"    
@@ -611,7 +614,7 @@ void Animation::SetPlaybackRate(double aPlaybackRate) {
 
   Nullable<TimeDuration> previousTime = GetCurrentTimeAsDuration();
   mPlaybackRate = aPlaybackRate;
-  if (!previousTime.IsNull()) {
+  if (!HasFiniteTimeline() && !previousTime.IsNull()) {
     SetCurrentTime(previousTime.Value());
   }
 
@@ -1060,13 +1063,21 @@ void Animation::SetStartTimeAsDouble(const Nullable<double>& aStartTime) {
   return SetStartTime(AnimationUtils::DoubleToTimeDuration(aStartTime));
 }
 
-Nullable<double> Animation::GetCurrentTimeAsDouble() const {
-  return AnimationUtils::TimeDurationToDouble(GetCurrentTimeAsDuration(),
-                                              mRTPCallerType);
+bool Animation::AcceptsPercentageBasedTime() const {
+  return StaticPrefs::layout_css_typed_om_enabled() && HasFiniteTimeline();
 }
 
-void Animation::SetCurrentTimeAsDouble(const Nullable<double>& aCurrentTime,
-                                       ErrorResult& aRv) {
+void Animation::GetCurrentTime(Nullable<OwningCSSNumberish>& aRetVal) const {
+  AnimationUtils::DurationToCSSNumberish(
+      GetCurrentTimeAsDuration(), AcceptsPercentageBasedTime(), mRTPCallerType,
+      GetParentObject(), aRetVal);
+}
+
+
+
+void Animation::SetCurrentTime(const Nullable<CSSNumberish>& aCurrentTime,
+                               ErrorResult& aRv) {
+  
   if (aCurrentTime.IsNull()) {
     if (!GetCurrentTimeAsDuration().IsNull()) {
       aRv.ThrowTypeError(
@@ -1076,7 +1087,18 @@ void Animation::SetCurrentTimeAsDouble(const Nullable<double>& aCurrentTime,
     return;
   }
 
-  return SetCurrentTime(TimeDuration::FromMilliseconds(aCurrentTime.Value()));
+  const bool progressBased = AcceptsPercentageBasedTime();
+
+  
+  if (!AnimationUtils::ValidateCSSNumberishTime(aCurrentTime.Value(),
+                                                progressBased, aRv)) {
+    return;
+  }
+
+  Nullable<TimeDuration> seekTime = AnimationUtils::CSSNumberishToDuration(
+      aCurrentTime.Value(), progressBased);
+  MOZ_ASSERT(!seekTime.IsNull());
+  SetCurrentTime(seekTime.Value());
 }
 
 
@@ -2126,7 +2148,8 @@ void Animation::QueuePlaybackEvent(nsAtom* aOnEvent,
 
   Nullable<double> currentTime;
   if (aOnEvent == nsGkAtoms::onfinish || aOnEvent == nsGkAtoms::onremove) {
-    currentTime = GetCurrentTimeAsDouble();
+    currentTime = AnimationUtils::TimeDurationToDouble(
+        GetCurrentTimeAsDuration(), mRTPCallerType);
   }
 
   Nullable<double> timelineTime;
