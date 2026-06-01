@@ -4,12 +4,12 @@
 
 #include "MediaController.h"
 
+#include "AudioSessionManager.h"
 #include "MediaControlKeySource.h"
 #include "MediaControlService.h"
 #include "MediaControlUtils.h"
 #include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/StaticPrefs_media.h"
-#include "mozilla/Uptime.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/MediaSession.h"
@@ -88,7 +88,7 @@ static void GetDefaultSupportedKeys(nsTArray<MediaControlKey>& aKeys) {
 }
 
 MediaController::MediaController(uint64_t aBrowsingContextId)
-    : MediaStatusManager(aBrowsingContextId) {
+    : MediaStatusManager(aBrowsingContextId), mAudioSessionManager(this) {
   MOZ_DIAGNOSTIC_ASSERT(XRE_IsParentProcess(),
                         "MediaController only runs on Chrome process!");
   LOG("Create controller %" PRId64, Id());
@@ -370,7 +370,7 @@ void MediaController::NotifyMediaAudibleChanged(uint64_t aBrowsingContextId,
     DispatchAsyncEvent(u"audiblechange"_ns);
   }
 
-  UpdateAudibleForAudioSession(aBrowsingContextId);
+  mAudioSessionManager.NotifyAudibilityChanged(aBrowsingContextId);
 
   if (!audibleChanged) {
     return;
@@ -384,26 +384,6 @@ void MediaController::NotifyMediaAudibleChanged(uint64_t aBrowsingContextId,
   } else {
     service->GetAudioFocusManager().RevokeAudioFocus(this);
   }
-}
-
-void MediaController::UpdateAudibleForAudioSession(
-    uint64_t aBrowsingContextId) {
-  AudioSessionRecord& record =
-      mAudioSessions.LookupOrInsert(aBrowsingContextId);
-  const bool bcWasAudible = record.GetAudibleAtMs().isSome();
-  const bool bcIsAudibleNow = IsBcAudible(aBrowsingContextId);
-  if (!bcWasAudible && bcIsAudibleNow) {
-    record.SetAudibleAtMs(
-        aBrowsingContextId,
-        Some(static_cast<int64_t>(mozilla::ProcessUptimeMs().valueOr(0))));
-  } else if (bcWasAudible && !bcIsAudibleNow) {
-    record.SetAudibleAtMs(aBrowsingContextId, Nothing());
-  }
-  if (record.IsEmpty()) {
-    LOG("Removing empty AudioSessionRecord bc=%" PRIu64, aBrowsingContextId);
-    mAudioSessions.Remove(aBrowsingContextId);
-  }
-  MaybeFireEffectiveAudioSessionTypeChanged();
 }
 
 bool MediaController::ShouldActivateController() const {
@@ -647,124 +627,28 @@ void MediaController::SetAudioSessionTypeOverride(uint64_t aBrowsingContextId,
   if (mShutdown) {
     return;
   }
-  
-  mAudioSessions.LookupOrInsert(aBrowsingContextId)
-      .SetTypeOverride(aBrowsingContextId, aType == AudioSessionType::Auto
-                                               ? Nothing()
-                                               : Some(aType));
-  MaybeFireEffectiveAudioSessionTypeChanged();
+  mAudioSessionManager.SetTypeOverride(aBrowsingContextId, aType);
 }
 
 void MediaController::ClearAudioSessionFor(uint64_t aBrowsingContextId) {
   if (mShutdown) {
     return;
   }
-  if (mAudioSessions.Remove(aBrowsingContextId)) {
-    LOG("ClearAudioSessionFor bc=%" PRIu64, aBrowsingContextId);
-    MaybeFireEffectiveAudioSessionTypeChanged();
-  }
-}
-
-AudioSessionType MediaController::EffectiveTypeForBc(
-    uint64_t aBrowsingContextId) const {
-  if (auto entry = mAudioSessions.Lookup(aBrowsingContextId)) {
-    if (Maybe<AudioSessionType> typeOverride = entry.Data().GetTypeOverride()) {
-      MOZ_ASSERT(*typeOverride != AudioSessionType::Auto,
-                 "auto must never be stored as a real override");
-      return *typeOverride;
-    }
-  }
-  return MediaStatusManager::EffectiveTypeForBc(aBrowsingContextId);
-}
-
-Maybe<AudioSessionType> MediaController::GetSelectedAudioSessionType() const {
-  
-  
-  
-  
-  
-  
-  
-  AutoTArray<const AudioSessionRecord*, 4> activeAudioSessions;
-  AutoTArray<AudioSessionType, 4> activeEffectiveTypes;
-  for (const auto& entry : mAudioSessions) {
-    const AudioSessionRecord& record = entry.GetData();
-    if (record.GetAudibleAtMs().isNothing()) {
-      continue;
-    }
-    const AudioSessionType type = EffectiveTypeForBc(entry.GetKey());
-    if (!IsExclusiveAudioSessionType(type)) {
-      continue;
-    }
-    activeAudioSessions.AppendElement(&record);
-    activeEffectiveTypes.AppendElement(type);
-  }
-
-  
-  if (activeAudioSessions.IsEmpty()) {
-    return Nothing();
-  }
-
-  
-  
-  if (activeAudioSessions.Length() == 1) {
-    return Some(activeEffectiveTypes[0]);
-  }
-
-  
-  
-  
-  size_t winner = 0;
-  for (size_t i = 1; i < activeAudioSessions.Length(); ++i) {
-    if (*activeAudioSessions[i]->GetAudibleAtMs() >
-        *activeAudioSessions[winner]->GetAudibleAtMs()) {
-      winner = i;
-    }
-  }
-
-  
-  
-  return Some(activeEffectiveTypes[winner]);
+  mAudioSessionManager.NotifyBcDiscarded(aBrowsingContextId);
 }
 
 AudioSessionType MediaController::GetEffectiveAudioSessionType() const {
-  if (Maybe<AudioSessionType> selected = GetSelectedAudioSessionType()) {
-    return *selected;
-  }
-  
-  
-  
-  
-  Maybe<AudioSessionType> fallback;
-  for (const auto& entry : mAudioSessions) {
-    if (entry.GetData().GetAudibleAtMs().isNothing()) {
-      continue;
-    }
-    const AudioSessionType type = EffectiveTypeForBc(entry.GetKey());
-    if (!fallback || AudioSessionTypePriorityRank(type) >
-                         AudioSessionTypePriorityRank(*fallback)) {
-      fallback = Some(type);
-    }
-  }
-  return fallback.valueOr(AudioSessionType::Auto);
-}
-
-void MediaController::MaybeFireEffectiveAudioSessionTypeChanged() {
-  AudioSessionType newType = GetEffectiveAudioSessionType();
-  if (newType == mLastDispatchedEffectiveAudioSessionType) {
-    return;
-  }
-  LOG("EffectiveAudioSessionType change %s -> %s",
-      GetEnumString(mLastDispatchedEffectiveAudioSessionType).get(),
-      GetEnumString(newType).get());
-  mLastDispatchedEffectiveAudioSessionType = newType;
-  DispatchAsyncEvent(u"effectiveaudiosessiontypechange"_ns);
+  return mAudioSessionManager.GetEffectiveType();
 }
 
 const AudioSessionRecord* MediaController::GetAudioSessionRecordForTesting(
     uint64_t aBrowsingContextId) const {
-  auto entry = mAudioSessions.Lookup(aBrowsingContextId);
-  return entry ? &entry.Data() : nullptr;
+  return mAudioSessionManager.GetRecordForTesting(aBrowsingContextId);
+}
+
+const AudioSessionManager* MediaController::GetAudioSessionManagerForTesting()
+    const {
+  return &mAudioSessionManager;
 }
 
 }  

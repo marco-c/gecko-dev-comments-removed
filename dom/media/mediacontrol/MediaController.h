@@ -5,6 +5,7 @@
 #ifndef DOM_MEDIA_MEDIACONTROL_MEDIACONTROLLER_H_
 #define DOM_MEDIA_MEDIACONTROL_MEDIACONTROLLER_H_
 
+#include "AudioSessionManager.h"
 #include "AudioSessionRecord.h"
 #include "MediaEventSource.h"
 #include "MediaPlaybackStatus.h"
@@ -16,7 +17,6 @@
 #include "mozilla/dom/MediaSession.h"
 #include "nsISupportsImpl.h"
 #include "nsITimer.h"
-#include "nsTHashMap.h"
 
 namespace mozilla::dom {
 
@@ -172,11 +172,6 @@ class MediaController final : public DOMEventTargetHelper,
 
   
   
-  
-  AudioSessionType EffectiveTypeForBc(uint64_t aBrowsingContextId) const;
-
-  
-  
   AudioSessionType GetEffectiveAudioSessionType() const;
 
   
@@ -184,7 +179,13 @@ class MediaController final : public DOMEventTargetHelper,
   const AudioSessionRecord* GetAudioSessionRecordForTesting(
       uint64_t aBrowsingContextId) const;
 
+  
+  
+  const AudioSessionManager* GetAudioSessionManagerForTesting() const;
+
  private:
+  friend class AudioSessionManager;
+
   ~MediaController();
   void HandleActualPlaybackStateChanged();
   void UpdateMediaControlActionToContentMediaIfNeeded(
@@ -210,19 +211,6 @@ class MediaController final : public DOMEventTargetHelper,
 
   void DispatchAsyncEvent(const nsAString& aName);
   void DispatchAsyncEvent(already_AddRefed<Event> aEvent);
-
-  
-  
-  
-  
-  Maybe<AudioSessionType> GetSelectedAudioSessionType() const;
-
-  
-  
-  void UpdateAudibleForAudioSession(uint64_t aBrowsingContextId);
-
-  
-  void MaybeFireEffectiveAudioSessionTypeChanged();
 
   bool IsMainController() const;
   void ForceToBecomeMainControllerIfNeeded();
@@ -255,11 +243,7 @@ class MediaController final : public DOMEventTargetHelper,
   nsCOMPtr<nsITimer> mDeactivationTimer;
 
   
-  nsTHashMap<nsUint64HashKey, AudioSessionRecord> mAudioSessions;
-
-  
-  AudioSessionType mLastDispatchedEffectiveAudioSessionType =
-      AudioSessionType::Auto;
+  AudioSessionManager mAudioSessionManager;
 };
 
 }  
