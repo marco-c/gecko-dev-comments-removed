@@ -678,8 +678,7 @@ STDMETHODIMP_(ULONG) nsDataObj::Release() {
   
   
   if (mCachedTempFile) {
-    RefPtr<RemoveTempFileHelper> helper =
-        new RemoveTempFileHelper(mCachedTempFile);
+    auto helper = MakeRefPtr<RemoveTempFileHelper>(mCachedTempFile);
     mCachedTempFile = nullptr;
     helper->Attach();
   }
@@ -1417,7 +1416,7 @@ nsDataObj ::GetFileContentsInternetShortcut(FORMATETC& aFE, STGMEDIUM& aSTG) {
       return E_FAIL;
     }
 
-    RefPtr<AutoSetEvent> e = new AutoSetEvent(WrapNotNull(event));
+    auto e = MakeRefPtr<AutoSetEvent>(WrapNotNull(event));
     mozilla::widget::FaviconHelper::ObtainCachedIconFile(
         aUri, aUriHash, mIOThread, true,
         NS_NewRunnableFunction(
@@ -1492,8 +1491,8 @@ nsDataObj ::GetFileContentsInternetShortcut(FORMATETC& aFE, STGMEDIUM& aSTG) {
       
       event = nullptr;
     }
-    RefPtr<IStream> stream =
-        new CMemStream(globalMem.disown(), totalLen, event.forget());
+    auto stream =
+        MakeRefPtr<CMemStream>(globalMem.disown(), totalLen, event.forget());
     stream.forget(&aSTG.pstm);
     aSTG.tymed = TYMED_ISTREAM;
   } else {

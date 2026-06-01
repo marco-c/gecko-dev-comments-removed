@@ -171,7 +171,7 @@ nsresult nsClipboard::CreateNativeDataObject(
   }
 
   
-  RefPtr<nsDataObj> dataObj = new nsDataObj(aUri);
+  auto dataObj = mozilla::MakeRefPtr<nsDataObj>(aUri);
 
   
   nsresult res =
