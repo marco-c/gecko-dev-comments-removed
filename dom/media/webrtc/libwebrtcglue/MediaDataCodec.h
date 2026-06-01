@@ -12,6 +12,7 @@
 
 namespace mozilla {
 
+class EncoderConfig;
 class WebrtcVideoDecoder;
 class WebrtcVideoEncoder;
 class MediaDataCodec {
@@ -26,10 +27,18 @@ class MediaDataCodec {
 
 
 
+  static media::EncodeSupportSet SupportsEncoderCodec(
+      const EncoderConfig& aConfig);
+
+  
+
+
+
   static WebrtcVideoEncoder* CreateEncoder(
       const webrtc::SdpVideoFormat& aFormat);
 
   
+
 
 
   static media::DecodeSupportSet SupportsDecoderCodec(

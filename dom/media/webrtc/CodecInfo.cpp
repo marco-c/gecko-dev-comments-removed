@@ -13,29 +13,16 @@
 namespace mozilla {
 
 #ifdef MOZ_WEBRTC
-static nsDependentCSubstring MimeTypeToPayloadString(
-    const MediaExtendedMIMEType& aMime) {
-  const nsCString& norm = aMime.Type().AsString();
-  const int32_t slash = norm.FindChar('/');
-  if (slash < 0) {
-    return {};
-  }
-  return Substring(norm, slash + 1);
+
+media::EncodeSupportSet SupportsVideoEncodeForWebrtc(
+    const EncoderConfig& aConfig) {
+  return WebrtcVideoEncoderFactory::SupportsCodec(aConfig);
 }
 
 
-media::EncodeSupportSet SupportsVideoMimeEncodeForWebrtc(
-    const MediaExtendedMIMEType& aMime) {
-  return WebrtcVideoEncoderFactory::SupportsCodec(webrtc::SdpVideoFormat(
-      std::string(MimeTypeToPayloadString(aMime).View())));
-}
-
-
-media::DecodeSupportSet SupportsVideoMimeDecodeForWebrtc(
-    const MediaExtendedMIMEType& aMime) {
-  return WebrtcVideoDecoderFactory::SupportsCodec(
-      webrtc::PayloadStringToCodecType(
-          std::string(MimeTypeToPayloadString(aMime).View())));
+media::DecodeSupportSet SupportsVideoDecodeForWebrtc(
+    const MediaExtendedMIMEType& aMime, const SupportDecoderParams& aParams) {
+  return WebrtcVideoDecoderFactory::SupportsCodec(aMime, aParams);
 }
 
 
@@ -79,7 +66,7 @@ class CodecInfoImpl final : public WebrtcCodecInfo {
       return {};
     }
 
-    auto payloadString = MimeTypeToPayloadString(aMime);
+    auto payloadString = aMime.Subtype();
 
     
     if (payloadString.EqualsIgnoreCase(webrtc::kRtxCodecName) ||
