@@ -767,20 +767,20 @@ void nsContentSecurityUtils::NotifyEvalUsage(bool aIsSystemPrincipal,
                                              uint32_t aColumnNumber) {
   FilenameTypeAndDetails fileNameTypeAndDetails =
       FilenameToFilenameType(aFileName, false);
-  auto fileinfo = fileNameTypeAndDetails.second;
-  auto value = Some(fileNameTypeAndDetails.first);
+  auto fileinfo = std::move(fileNameTypeAndDetails.second);
+  auto value = Some(std::move(fileNameTypeAndDetails.first));
   if (aIsSystemPrincipal) {
     glean::security::EvalUsageSystemContextExtra extra = {
-        .fileinfo = fileinfo,
-        .value = value,
+        .fileinfo = std::move(fileinfo),
+        .value = std::move(value),
     };
-    glean::security::eval_usage_system_context.Record(Some(extra));
+    glean::security::eval_usage_system_context.Record(Some(std::move(extra)));
   } else {
     glean::security::EvalUsageParentProcessExtra extra = {
-        .fileinfo = fileinfo,
-        .value = value,
+        .fileinfo = std::move(fileinfo),
+        .value = std::move(value),
     };
-    glean::security::eval_usage_parent_process.Record(Some(extra));
+    glean::security::eval_usage_parent_process.Record(Some(std::move(extra)));
   }
 
   
@@ -807,7 +807,7 @@ void nsContentSecurityUtils::NotifyEvalUsage(bool aIsSystemPrincipal,
   }
   nsAutoString message;
   NS_ConvertUTF8toUTF16 fileNameA(aFileName);
-  AutoTArray<nsString, 1> formatStrings = {fileNameA};
+  AutoTArray<nsString, 1> formatStrings = {std::move(fileNameA)};
   nsresult rv = bundle->FormatStringFromName("RestrictBrowserEvalUsage",
                                              formatStrings, message);
   if (NS_FAILED(rv)) {
@@ -1291,7 +1291,7 @@ static nsLiteralCString sStyleSrcUnsafeInlineAllowList[] = {
     "chrome://devtools/content/framework/toolbox-options.html"_ns,
     "chrome://devtools/content/framework/toolbox-window.xhtml"_ns,
     "chrome://devtools/content/inspector/index.xhtml"_ns,
-    "chrome://devtools/content/inspector/markup/markup.xhtml"_ns,
+    "chrome://devtools/content/inspector/markup/markup.html"_ns,
     "chrome://devtools/content/netmonitor/index.html"_ns,
     "chrome://devtools/content/memory/index.xhtml"_ns,
     "chrome://devtools/content/shared/sourceeditor/codemirror/cmiframe.html"_ns,
@@ -1371,6 +1371,7 @@ static nsLiteralCString sImgSrcDataBlobAllowList[] = {
     "chrome://browser/content/sidebar/sidebar-bookmarks.html"_ns,
     "chrome://browser/content/sidebar/sidebar-customize.html"_ns,
     "chrome://browser/content/sidebar/sidebar-history.html"_ns,
+    "chrome://browser/content/sidebar/sidebar-opentabs.html"_ns,
     "chrome://browser/content/sidebar/sidebar-syncedtabs.html"_ns,
     "chrome://browser/content/spotlight.html"_ns,
     "chrome://browser/content/syncedtabs/sidebar.xhtml"_ns,
@@ -1379,7 +1380,7 @@ static nsLiteralCString sImgSrcDataBlobAllowList[] = {
     "chrome://devtools/content/framework/browser-toolbox/window.html"_ns,
     "chrome://devtools/content/framework/toolbox-window.xhtml"_ns,
     "chrome://devtools/content/inspector/index.xhtml"_ns,
-    "chrome://devtools/content/inspector/markup/markup.xhtml"_ns,
+    "chrome://devtools/content/inspector/markup/markup.html"_ns,
     "chrome://devtools/content/netmonitor/index.html"_ns,
     "chrome://devtools/content/responsive/toolbar.xhtml"_ns,
     "chrome://devtools/content/shared/sourceeditor/codemirror/cmiframe.html"_ns,
