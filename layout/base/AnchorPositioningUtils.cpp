@@ -1324,14 +1324,15 @@ static nscoord BSizeFromPhysicalSize(const nsSize& aSize,
 
 nsRect AnchorPositioningUtils::ReassembleAnchorRect(
     const nsIFrame* aAnchor, const nsIFrame* aContainingBlock) {
-  aContainingBlock = GetMatchingContainingBlock(aAnchor, aContainingBlock);
-  if (!aContainingBlock) {
+  const nsIFrame* matchingCB =
+      GetMatchingContainingBlock(aAnchor, aContainingBlock);
+  if (!matchingCB) {
     MOZ_ASSERT_UNREACHABLE("No matching containing block?");
     return nsRect{};
   }
   
   const auto fragRect =
-      nsLayoutUtils::GetCombinedFragmentRects(aAnchor, aContainingBlock);
+      nsLayoutUtils::GetCombinedFragmentRects(aAnchor, matchingCB);
   
   
   
@@ -1340,19 +1341,22 @@ nsRect AnchorPositioningUtils::ReassembleAnchorRect(
   
   if ((!fragRect.mSkippedPrevContinuation &&
        !fragRect.mSkippedNextContinuation) ||
-      aContainingBlock->IsInlineOutside()) {
-    return fragRect.mRect;
+      matchingCB->IsInlineOutside()) {
+    
+    
+    return fragRect.mRect +
+           matchingCB->GetOffsetToIgnoringScrolling(aContainingBlock);
   }
   
   
-  const auto cbwm = aContainingBlock->GetWritingMode();
+  const auto cbwm = matchingCB->GetWritingMode();
   
-  const auto cbSize = InkOverflowSize(aContainingBlock);
+  const auto cbSize = InkOverflowSize(matchingCB);
   LogicalRect unfragmentedAnchorRect{cbwm, fragRect.mRect, cbSize};
   LogicalSize relevantCbSize{cbwm, cbSize};
 
   const auto* prev = fragRect.mSkippedPrevContinuation;
-  const auto* prevCb = aContainingBlock->GetPrevContinuation();
+  const auto* prevCb = matchingCB->GetPrevContinuation();
   while (prev) {
     MOZ_ASSERT(unfragmentedAnchorRect.BStart(cbwm) == 0,
                "Prev continuation exists but this continuation didn't hit "
@@ -1394,7 +1398,7 @@ nsRect AnchorPositioningUtils::ReassembleAnchorRect(
 
   
   const auto* next = fragRect.mSkippedNextContinuation;
-  const auto* nextCb = aContainingBlock->GetNextContinuation();
+  const auto* nextCb = matchingCB->GetNextContinuation();
   while (next) {
     MOZ_ASSERT(
         unfragmentedAnchorRect.BEnd(cbwm) == relevantCbSize.BSize(cbwm),
