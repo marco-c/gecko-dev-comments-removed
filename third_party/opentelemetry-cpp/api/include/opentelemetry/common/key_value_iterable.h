@@ -17,7 +17,12 @@ namespace common
 class KeyValueIterable
 {
 public:
-  virtual ~KeyValueIterable() = default;
+  KeyValueIterable()                                        = default;
+  KeyValueIterable(const KeyValueIterable &)                = default;
+  KeyValueIterable &operator=(const KeyValueIterable &)     = default;
+  KeyValueIterable(KeyValueIterable &&) noexcept            = default;
+  KeyValueIterable &operator=(KeyValueIterable &&) noexcept = default;
+  virtual ~KeyValueIterable()                               = default;
 
   
 
@@ -40,8 +45,6 @@ public:
 class NoopKeyValueIterable : public KeyValueIterable
 {
 public:
-  ~NoopKeyValueIterable() override = default;
-
   
 
 

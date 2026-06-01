@@ -22,6 +22,20 @@ namespace telemetry
 
 
 
+
+
+
+
+static constexpr const char *kTelemetryDistroName = "telemetry.distro.name";
+
+
+
+
+static constexpr const char *kTelemetryDistroVersion = "telemetry.distro.version";
+
+
+
+
 static constexpr const char *kTelemetrySdkLanguage = "telemetry.sdk.language";
 
 

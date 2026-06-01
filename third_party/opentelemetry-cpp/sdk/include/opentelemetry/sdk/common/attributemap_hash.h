@@ -55,7 +55,7 @@ struct GetHashForAttributeValueVisitor
   {
     GetHash(seed_, v);
   }
-  size_t &seed_;
+  std::reference_wrapper<size_t> seed_;
 };
 
 

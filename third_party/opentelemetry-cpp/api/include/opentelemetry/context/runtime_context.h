@@ -24,6 +24,11 @@ namespace context
 class Token
 {
 public:
+  Token(const Token &)            = delete;
+  Token &operator=(const Token &) = delete;
+  Token(Token &&)                 = delete;
+  Token &operator=(Token &&)      = delete;
+
   bool operator==(const Context &other) const noexcept { return context_ == other; }
 
   virtual ~Token() noexcept;
@@ -35,6 +40,8 @@ protected:
   
   Token(const Context &context) : context_(context) {}
 
+  
+  
   const Context context_;
 };
 
@@ -48,6 +55,13 @@ protected:
 class OPENTELEMETRY_EXPORT RuntimeContextStorage
 {
 public:
+  RuntimeContextStorage() = default;
+  
+  RuntimeContextStorage(const RuntimeContextStorage &)                = default;
+  RuntimeContextStorage &operator=(const RuntimeContextStorage &)     = default;
+  RuntimeContextStorage(RuntimeContextStorage &&) noexcept            = delete;
+  RuntimeContextStorage &operator=(RuntimeContextStorage &&) noexcept = delete;
+
   
 
 
@@ -68,7 +82,7 @@ public:
 
   virtual bool Detach(Token &token) noexcept = 0;
 
-  virtual ~RuntimeContextStorage() {}
+  virtual ~RuntimeContextStorage() = default;
 
 protected:
   nostd::unique_ptr<Token> CreateToken(const Context &context) noexcept
@@ -261,7 +275,11 @@ private:
 
     static constexpr size_t max_capacity_ = 1000000;
 
-    Stack() noexcept : size_(0), capacity_(0), base_(nullptr) {}
+    Stack() noexcept                = default;
+    Stack(const Stack &)            = delete;
+    Stack &operator=(const Stack &) = delete;
+    Stack(Stack &&)                 = delete;
+    Stack &operator=(Stack &&)      = delete;
 
     
     void Pop() noexcept
@@ -359,14 +377,14 @@ private:
 
     ~Stack() noexcept { delete[] base_; }
 
-    size_t size_;
-    size_t capacity_;
-    Context *base_;
+    size_t size_{};
+    size_t capacity_{};
+    Context *base_{nullptr};
   };
 
   OPENTELEMETRY_API_SINGLETON Stack &GetStack()
   {
-    static thread_local Stack stack_ = Stack();
+    static thread_local Stack stack_{};
     return stack_;
   }
 };

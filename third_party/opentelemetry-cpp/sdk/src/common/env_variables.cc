@@ -163,7 +163,7 @@ static bool GetTimeoutFromString(const char *input, std::chrono::system_clock::d
     
 
     value = std::chrono::duration_cast<std::chrono::system_clock::duration>(
-        std::chrono::seconds{result});
+        std::chrono::milliseconds{result});
     return true;
   }
 

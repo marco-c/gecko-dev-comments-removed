@@ -78,9 +78,9 @@ public:
           std::is_convertible<typename std::result_of<F &(Args...)>::type, R>::value,
 #endif
           int>::type = 0>
+  
   function_ref(F &&f)
   {
-    
     
     BindTo(f);  
   }
