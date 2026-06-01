@@ -105,10 +105,7 @@ figma.connect(
   {
     props: {
       iconSrc: "chrome://example.svg",
-      type: figma.boolean("Ghost", {
-        true: "icon ghost",
-        false: "icon",
-      }),
+      type: "ghost",
       attention: figma.boolean("Show attention dot"),
       disabled: figma.enum("State", {
         Disabled: true,
