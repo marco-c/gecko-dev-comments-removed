@@ -7,6 +7,9 @@
 const { ExperimentAPI } = ChromeUtils.importESModule(
   "resource://nimbus/ExperimentAPI.sys.mjs"
 );
+const { RemoteSettingsExperimentLoader } = ChromeUtils.importESModule(
+  "resource://nimbus/lib/RemoteSettingsExperimentLoader.sys.mjs"
+);
 const { TelemetryReportingPolicy } = ChromeUtils.importESModule(
   "resource://gre/modules/TelemetryReportingPolicy.sys.mjs"
 );
@@ -205,6 +208,74 @@ add_task(async function test_aboutwelcome_loads_after_nimbus_error() {
   await BrowserTestUtils.waitForCondition(
     () => tab.linkedBrowser.currentURI.spec === "about:welcome",
     "about:welcome should load after Nimbus error"
+  );
+
+  BrowserTestUtils.removeTab(tab);
+  sandbox.restore();
+  await SpecialPowers.popPrefEnv();
+});
+
+
+
+
+
+add_task(async function test_gate_awaits_in_flight_init() {
+  const sandbox = sinon.createSandbox();
+
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.aboutwelcome.enabled", true],
+      ["browser.aboutwelcome.experimentsGate.enabled", true],
+      ["trailhead.firstrun.didSeeAboutWelcome", false],
+    ],
+  });
+
+  
+  
+  resetNimbusReadyPromiseForTesting();
+  ExperimentAPI._resetForTests();
+
+  
+  
+  const enableGate = Promise.withResolvers();
+  sandbox.stub(ExperimentAPI._rsLoader, "enable").callsFake(async (...args) => {
+    await enableGate.promise;
+    return RemoteSettingsExperimentLoader.prototype.enable.call(
+      ExperimentAPI._rsLoader,
+      ...args
+    );
+  });
+
+  
+  
+  
+  let hasUpdatedOnceAtFirstCall = null;
+  sandbox.stub(ExperimentAPI._rsLoader, "finishedUpdating").callsFake(() => {
+    if (hasUpdatedOnceAtFirstCall === null) {
+      hasUpdatedOnceAtFirstCall = ExperimentAPI._rsLoader._hasUpdatedOnce;
+    }
+    return RemoteSettingsExperimentLoader.prototype.finishedUpdating.call(
+      ExperimentAPI._rsLoader
+    );
+  });
+
+  
+  const firstInit = ExperimentAPI.init();
+
+  
+  const { tab } = await openAboutWelcome();
+
+  enableGate.resolve();
+  await firstInit;
+  await BrowserTestUtils.waitForCondition(
+    () => hasUpdatedOnceAtFirstCall !== null,
+    "finishedUpdating() was called"
+  );
+
+  Assert.strictEqual(
+    hasUpdatedOnceAtFirstCall,
+    true,
+    "Gate did not call finishedUpdating() until init genuinely finished"
   );
 
   BrowserTestUtils.removeTab(tab);
