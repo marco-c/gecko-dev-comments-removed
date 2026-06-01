@@ -38,7 +38,7 @@
 use crate::crypto::{self, CipherSuite, DEFAULT_CIPHER_SUITE};
 use crate::pbkdf2;
 use crate::utils;
-use crate::{KekType, LockstoreError, KEK_REF_PREFIX, KEK_REF_PRP};
+use crate::{KekType, LockstoreError, KEK_REF_LOCAL, KEK_REF_PREFIX, KEK_REF_PRP};
 
 use kvstore::{Database, GetOptions, Key, Store, StorePath};
 use nss_rs::aead::Aead;
@@ -835,6 +835,52 @@ impl Keystore {
         }
 
         first_err.map_or(Ok(()), Err)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn create_kek(
+        &self,
+        kek_type: KekType,
+        secret: &[u8],
+        cache_timeout: Duration,
+    ) -> Result<String, LockstoreError> {
+        match kek_type {
+            KekType::LocalKey => Ok(KEK_REF_LOCAL.to_string()),
+            KekType::PrimaryPassword => {
+                if secret.is_empty() {
+                    return Err(LockstoreError::InvalidConfiguration(
+                        "PrimaryPassword secret must not be empty".into(),
+                    ));
+                }
+                self.set_prp(None, secret)?;
+                if !cache_timeout.is_zero() {
+                    self.unlock_kek(KEK_REF_PRP, secret, cache_timeout)?;
+                }
+                Ok(KEK_REF_PRP.to_string())
+            }
+            KekType::Pkcs11Token => Err(LockstoreError::InvalidConfiguration(
+                "PKCS#11 token KEKs are externally provisioned; createKek does not support them"
+                    .into(),
+            )),
+            #[cfg(test)]
+            KekType::Test => Ok("lockstore::kek::test".to_string()),
+        }
     }
 
     
