@@ -508,6 +508,16 @@ mozilla::ipc::IPCResult WebAuthnTransactionParent::RecvRequestSign(
     ContinueWithSign(origin, aTransactionInfo, std::move(aResolver));
     return IPC_OK();
   }
+
+  
+  
+  
+  if (aTransactionInfo.ConditionallyMediated()) {
+    mTransactionId.reset();
+    aResolver(NS_ERROR_DOM_SECURITY_ERR);
+    return IPC_OK();
+  }
+
   rv = BeginRelatedOriginCheck(aTransactionInfo.RpId(), WebAuthnOp::Assert);
   if (NS_FAILED(rv)) {
     aResolver(NS_ERROR_DOM_SECURITY_ERR);
