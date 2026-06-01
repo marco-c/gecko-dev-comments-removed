@@ -81,6 +81,17 @@ struct nsTArray_RelocationStrategy<mozilla::detail::InputImageData> {
 
 namespace mozilla {
 
+class EncoderConfig;
+class MediaExtendedMIMEType;
+struct SupportDecoderParams;
+
+
+
+[[nodiscard]] media::DecodeSupportSet WebrtcGmpDecoderSupports(
+    const MediaExtendedMIMEType& aMime, const SupportDecoderParams& aParams);
+[[nodiscard]] media::EncodeSupportSet WebrtcGmpEncoderSupports(
+    const EncoderConfig& aConfig);
+
 static void NotifyGmpInitDone(const std::string& aPCHandle, int32_t aResult,
                               const std::string& aError = "") {
   if (!NS_IsMainThread()) {
