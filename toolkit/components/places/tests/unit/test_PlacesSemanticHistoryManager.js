@@ -8,6 +8,8 @@ ChromeUtils.defineESModuleGetters(this, {
   sinon: "resource://testing-common/Sinon.sys.mjs",
   getPlacesSemanticHistoryManager:
     "resource://gre/modules/PlacesSemanticHistoryManager.sys.mjs",
+  PlacesSemanticHistoryDatabase:
+    "resource://gre/modules/PlacesSemanticHistoryDatabase.sys.mjs",
   Region: "resource://gre/modules/Region.sys.mjs",
 });
 
@@ -19,10 +21,6 @@ ChromeUtils.defineLazyGetter(this, "QuickSuggestTestUtils", () => {
   return module;
 });
 
-
-
-const EMBEDDING_SIZE = 32;
-
 function approxEqual(a, b, tolerance = 1e-6) {
   return Math.abs(a - b) < tolerance;
 }
@@ -31,7 +29,6 @@ function createPlacesSemanticHistoryManager(options = {}) {
   return getPlacesSemanticHistoryManager(
     Object.assign(
       {
-        embeddingSize: EMBEDDING_SIZE,
         rowLimit: 10,
       },
       options
@@ -44,11 +41,16 @@ function createPlacesSemanticHistoryManager(options = {}) {
 
 
 class MockMLEngine {
+  #embeddingSize;
   #entries;
   
 
 
-  constructor(entries = []) {
+
+
+
+  constructor(embeddingSize, entries = []) {
+    this.#embeddingSize = embeddingSize;
     this.#entries = entries;
   }
 
@@ -62,8 +64,7 @@ class MockMLEngine {
       if (entry) {
         return entry.vector;
       }
-      
-      return Array(EMBEDDING_SIZE).fill(0);
+      return Array(this.#embeddingSize).fill(0);
     });
   }
 }
@@ -357,6 +358,83 @@ add_task(async function test_removeDatabaseFilesOnStartup() {
   );
 });
 
+add_task(async function test_managerReconcilesModelOnConnect() {
+  
+  
+  
+  
+  const PRESEED_DIM = 64;
+
+  let seedDb = new PlacesSemanticHistoryDatabase({
+    embeddingSize: PRESEED_DIM,
+    fileName: "places_semantic.sqlite",
+  });
+  let conn = await seedDb.getConnection();
+  await seedDb.replaceEmbeddingTables(
+    {
+      featureId: "simple-text-embedder",
+      modelId: "test/legacy",
+      embeddingDimension: PRESEED_DIM,
+    },
+    conn
+  );
+  let preseeded = await seedDb.getActiveModelConfig(conn);
+  Assert.equal(preseeded.embeddingDimension, PRESEED_DIM, "Pre-seeded dim");
+  Assert.equal(preseeded.modelId, "test/legacy", "Pre-seeded modelId");
+  await seedDb.closeConnection();
+
+  Services.prefs.setBoolPref("browser.ml.enable", true);
+  Services.prefs.setBoolPref("places.semanticHistory.featureGate", true);
+  let semanticManager = createPlacesSemanticHistoryManager();
+  semanticManager.qualifiedForSemanticSearch = true;
+  semanticManager.enoughEntries = true;
+  Assert.ok(
+    semanticManager.canUseSemanticSearch,
+    "canUseSemanticSearch must be true for getConnection to run reconcile"
+  );
+
+  const desired = semanticManager.embedder.modelContext;
+  Assert.notEqual(
+    desired.embeddingDimension,
+    PRESEED_DIM,
+    "Desired must differ from pre-seeded to exercise reconcile"
+  );
+
+  conn = await semanticManager.getConnection();
+  Assert.ok(conn, "Connection should be returned");
+
+  const after = await semanticManager.semanticDB.getActiveModelConfig(conn);
+  Assert.equal(
+    after.embeddingDimension,
+    desired.embeddingDimension,
+    "Reconciliation should rewrite the row to the manager's dim"
+  );
+  Assert.equal(
+    after.modelId,
+    desired.modelId,
+    "Reconciliation should rewrite modelId to match the manager"
+  );
+  Assert.ok(
+    !!(
+      await conn.execute(
+        `SELECT INSTR(sql, :needle) > 0
+         FROM sqlite_master WHERE name = 'vec_history'`,
+        { needle: `FLOAT[${desired.embeddingDimension}]` }
+      )
+    )[0].getResultByIndex(0),
+    "vec_history should be at the manager's dim"
+  );
+  Assert.equal(
+    (
+      await conn.execute(`SELECT count(*) FROM vec_history`)
+    )[0].getResultByIndex(0),
+    0,
+    "Embeddings from the pre-seeded DB should have been dropped"
+  );
+
+  await semanticManager.shutdown();
+});
+
 add_task(async function test_empty_region() {
   
   
@@ -401,7 +479,9 @@ add_task(async function test_chunksTelemetry() {
     deferredTaskInterval: 100, 
   });
   await semanticManager.getConnection();
-  semanticManager.embedder.setEngine(new MockMLEngine());
+  semanticManager.embedder.setEngine(
+    new MockMLEngine(semanticManager.embedder.embeddingSize)
+  );
   await TestUtils.topicObserved(
     "places-semantichistorymanager-update-complete"
   );
@@ -449,7 +529,9 @@ add_task(async function test_duplicate_urlhash() {
     deferredTaskInterval: 100, 
   });
   let conn = await semanticManager.getConnection();
-  semanticManager.embedder.setEngine(new MockMLEngine());
+  semanticManager.embedder.setEngine(
+    new MockMLEngine(semanticManager.embedder.embeddingSize)
+  );
   await TestUtils.topicObserved(
     "places-semantichistorymanager-update-complete"
   );
@@ -472,26 +554,28 @@ add_task(async function test_duplicate_urlhash() {
 
 add_task(async function test_rowid_relations() {
   await PlacesUtils.history.clear();
+
+  let semanticManager = createPlacesSemanticHistoryManager({
+    changeThresholdCount: 1,
+    deferredTaskInterval: 100, 
+  });
+  const embeddingSize = semanticManager.embedder.embeddingSize;
   const entries = Array(6)
     .fill(0)
     .map((r, i) => ({
       url: `https://test${i}.moz.com/`,
       urlHash: PlacesUtils.history.hashURL(`https://test${i}.moz.com/`),
       title: `test ${i}`,
-      vector: Array(EMBEDDING_SIZE).fill(i / 10),
+      vector: Array(embeddingSize).fill(i / 10),
     }));
 
   
   await PlacesTestUtils.addVisits(entries.slice(0, 5));
 
-  let semanticManager = createPlacesSemanticHistoryManager({
-    changeThresholdCount: 1,
-    deferredTaskInterval: 100, 
-  });
   
   await semanticManager.semanticDB.removeDatabaseFiles();
   let conn = await semanticManager.getConnection();
-  semanticManager.embedder.setEngine(new MockMLEngine(entries));
+  semanticManager.embedder.setEngine(new MockMLEngine(embeddingSize, entries));
   await TestUtils.topicObserved(
     "places-semantichistorymanager-update-complete"
   );
@@ -546,21 +630,22 @@ add_task(async function test_rowid_conflict() {
   
   await PlacesUtils.history.clear();
 
-  let entry = {
-    url: `https://test.moz.com/`,
-    urlHash: PlacesUtils.history.hashURL(`https://test.moz.com/`),
-    title: `test page`, 
-    vector: Array(EMBEDDING_SIZE).fill(0.15),
-  };
-
   let semanticManager = createPlacesSemanticHistoryManager({
     changeThresholdCount: 1,
     deferredTaskInterval: 100, 
   });
+  const embeddingSize = semanticManager.embedder.embeddingSize;
+  let entry = {
+    url: `https://test.moz.com/`,
+    urlHash: PlacesUtils.history.hashURL(`https://test.moz.com/`),
+    title: `test page`, 
+    vector: Array(embeddingSize).fill(0.15),
+  };
+
   
   await semanticManager.semanticDB.removeDatabaseFiles();
   let conn = await semanticManager.getConnection();
-  semanticManager.embedder.setEngine(new MockMLEngine([entry]));
+  semanticManager.embedder.setEngine(new MockMLEngine(embeddingSize, [entry]));
   
   
   await conn.execute(
@@ -569,7 +654,7 @@ add_task(async function test_rowid_conflict() {
     VALUES (1, :vector)
     `,
     {
-      vector: PlacesUtils.tensorToSQLBindable(Array(EMBEDDING_SIZE).fill(0.1)),
+      vector: PlacesUtils.tensorToSQLBindable(Array(embeddingSize).fill(0.1)),
     }
   );
 

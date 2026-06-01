@@ -723,6 +723,14 @@ pref("places.semanticHistory.featureGate", false);
 pref("places.semanticHistory.supportedRegions", "[[\"AU\",[\"en-*\"]],[\"CA\",[\"en-*\"]],[\"GB\",[\"en-*\"]],[\"IE\",[\"en-*\"]],[\"NZ\",[\"en-*\"]],[\"PH\",[\"en-*\"]],[\"US\",[\"en-*\"]]]");
 
 
+
+pref("places.semanticHistory.embeddingType", "static");
+
+
+pref("browser.ml.embedGen.textEmbeddingSize", 384);
+pref("browser.ml.embedGen.textEmbeddingFeatureModel", "");
+
+
 pref("browser.urlbar.suggest.semanticHistory.minLength", 5);
 
 
