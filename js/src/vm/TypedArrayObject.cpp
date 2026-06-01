@@ -7366,7 +7366,8 @@ bool TypedArrayObject::sort(JSContext* cx, unsigned argc, Value* vp) {
   
   
   
-  if (args.hasDefined(0) && jit::IsBaselineInterpreterEnabled()) {
+  if (args.hasDefined(0) && jit::IsBaselineInterpreterEnabled() &&
+      !jit::TooManyActualArguments(args.length())) {
     return CallTrampolineNativeJitCode(
         cx, jit::TrampolineNative::TypedArraySort, args);
   }
