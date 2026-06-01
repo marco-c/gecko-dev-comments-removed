@@ -17,12 +17,19 @@ add_task(async function () {
     return;
   }
 
-  await Promise.all([
-    openPreferencesViaOpenPreferencesAPI("general", { leaveOpen: true }),
-    whenMainPaneLoadedFinished(),
-  ]);
-
-  let doc = gBrowser.contentDocument;
+  let doc;
+  if (SRD_PREF_VALUE) {
+    
+    
+    let tab = await openPrefsTab("");
+    doc = tab.linkedBrowser.contentDocument;
+  } else {
+    await Promise.all([
+      openPreferencesViaOpenPreferencesAPI("general", { leaveOpen: true }),
+      whenMainPaneLoadedFinished(),
+    ]);
+    doc = gBrowser.contentDocument;
+  }
   await doc.l10n.ready;
 
   let [msg] = await doc.l10n.formatMessages([{ id: "pane-general-title" }]);
