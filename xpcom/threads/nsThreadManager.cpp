@@ -324,9 +324,9 @@ nsresult nsThreadManager::Init() {
   TaskController::Initialize();
 
   
-  nsCOMPtr<nsIIdlePeriod> idlePeriod = new MainThreadIdlePeriod();
-  TaskController::Get()->SetIdleTaskManager(
-      new IdleTaskManager(idlePeriod.forget()));
+  RefPtr idlePeriod = MakeRefPtr<MainThreadIdlePeriod>();
+  RefPtr idleManager = MakeRefPtr<IdleTaskManager>(idlePeriod.forget());
+  TaskController::Get()->SetIdleTaskManager(idleManager.forget());
 
   
   
