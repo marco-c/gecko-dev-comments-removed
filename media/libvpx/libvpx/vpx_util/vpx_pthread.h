@@ -26,6 +26,7 @@ extern "C" {
 #define NOMINMAX
 #undef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
+#include <errno.h>    
 #include <process.h>  
 #include <stddef.h>   
 #include <windows.h>  
