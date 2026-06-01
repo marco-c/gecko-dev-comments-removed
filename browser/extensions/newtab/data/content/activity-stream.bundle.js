@@ -24821,6 +24821,9 @@ class BaseContent extends (external_React_default()).PureComponent {
     this.toggleSectionsMgmtPanel = this.toggleSectionsMgmtPanel.bind(this);
     this.toggleWidgetsManagementPanel = this.toggleWidgetsManagementPanel.bind(this);
     this.openWidgetsPanel = this.openWidgetsPanel.bind(this);
+    this.attachSearchSentinel = this.attachSearchSentinel.bind(this);
+    this.onSearchSentinelIntersect = this.onSearchSentinelIntersect.bind(this);
+    this.searchStickyObserver = null;
     this.state = {
       fixedSearch: false,
       colorMode: "",
@@ -24832,6 +24835,31 @@ class BaseContent extends (external_React_default()).PureComponent {
       showWidgetsManagementPanel: false
     };
     this.spocPlaceholderStartTime = null;
+  }
+  attachSearchSentinel(el) {
+    if (this.searchStickyObserver) {
+      this.searchStickyObserver.disconnect();
+      this.searchStickyObserver = null;
+    }
+    if (el) {
+      this.searchStickyObserver = new IntersectionObserver(this.onSearchSentinelIntersect, {
+        threshold: 0
+      });
+      this.searchStickyObserver.observe(el);
+    } else if (this.state.fixedSearch) {
+      this.setState({
+        fixedSearch: false
+      });
+    }
+  }
+  onSearchSentinelIntersect(entries) {
+    const entry = entries[entries.length - 1];
+    const stuck = !entry.isIntersecting && entry.boundingClientRect.top < 0;
+    if (stuck !== this.state.fixedSearch) {
+      this.setState({
+        fixedSearch: stuck
+      });
+    }
   }
   onVisible() {
     this.setState({
@@ -25060,8 +25088,18 @@ class BaseContent extends (external_React_default()).PureComponent {
     if (this._onHashChange) {
       globalThis.removeEventListener("hashchange", this._onHashChange);
     }
+    if (this.searchStickyObserver) {
+      this.searchStickyObserver.disconnect();
+      this.searchStickyObserver = null;
+    }
   }
   onWindowScroll() {
+    if (this.props.Prefs.values[Base_PREF_NOVA_ENABLED]) {
+      
+      
+      
+      return;
+    }
     if (window.innerHeight <= 700) {
       
       
@@ -25481,7 +25519,7 @@ class BaseContent extends (external_React_default()).PureComponent {
       return external_React_default().createElement(BaseContext.Provider, {
         value: baseContextValue
       }, external_React_default().createElement("div", {
-        className: "nova-outer-wrapper"
+        className: `nova-outer-wrapper${this.state.fixedSearch ? " stuck-search" : ""}`
       }, external_React_default().createElement("div", {
         className: `container nova-enabled${logoShouldBeCentered ? " logo-in-content" : ""}`
       }, external_React_default().createElement("aside", {
@@ -25492,9 +25530,13 @@ class BaseContent extends (external_React_default()).PureComponent {
         dispatch: props.dispatch
       }))), external_React_default().createElement("main", {
         className: "content"
-      }, !prefs.hideLogo && logoShouldBeCentered && !isPageEmpty && external_React_default().createElement(ErrorBoundary, null, external_React_default().createElement(Logo, null)), prefs.showSearch && external_React_default().createElement(ErrorBoundary, null, external_React_default().createElement(Search_Search, Base_extends({
+      }, !prefs.hideLogo && logoShouldBeCentered && !isPageEmpty && external_React_default().createElement(ErrorBoundary, null, external_React_default().createElement(Logo, null)), prefs.showSearch && external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("div", {
+        ref: this.attachSearchSentinel,
+        className: "sticky-search-sentinel",
+        "aria-hidden": "true"
+      }), external_React_default().createElement(ErrorBoundary, null, external_React_default().createElement(Search_Search, Base_extends({
         showLogo: false
-      }, props.Search))), shouldShowASRouterNewTabMessage(this.props.Messages, "ASRouterNewTabMessage", ASROUTER_NEWTAB_MESSAGE_POSITIONS.ABOVE_TOPSITES) && external_React_default().createElement(ErrorBoundary, null, external_React_default().createElement(MessageWrapper, {
+      }, props.Search)))), shouldShowASRouterNewTabMessage(this.props.Messages, "ASRouterNewTabMessage", ASROUTER_NEWTAB_MESSAGE_POSITIONS.ABOVE_TOPSITES) && external_React_default().createElement(ErrorBoundary, null, external_React_default().createElement(MessageWrapper, {
         dispatch: this.props.dispatch
       }, external_React_default().createElement(ExternalComponentWrapper, {
         type: "ASROUTER_NEWTAB_MESSAGE",
