@@ -1506,18 +1506,35 @@ def source_package(command_context, output, upload):
         with open(os.path.join(command_context.topobjdir, "buildid.h")) as fd:
             _, _, buildid = fd.read().split()
 
-        source_url = ""
-        if substs.get("MOZ_INCLUDE_SOURCE_INFO"):
-            repo = substs.get("MOZ_SOURCE_REPO")
-            changeset = substs.get("MOZ_SOURCE_CHANGESET")
-            if repo and changeset:
-                source_url = f"{repo}/rev/{changeset}"
-
         
-        with open(
-            os.path.join(command_context.topsrcdir, "sourcestamp.txt"), "w"
-        ) as fd:
-            fd.write(f"{buildid}\n{source_url}")
+        sourcestamp_path = os.path.join(command_context.topsrcdir, "sourcestamp.txt")
+        if conditions.is_thunderbird(command_context):
+            comm_repo = substs.get("MOZ_COMM_SOURCE_REPO")
+            comm_changeset = substs.get("MOZ_COMM_SOURCE_CHANGESET")
+            gecko_repo = substs.get("MOZ_GECKO_SOURCE_REPO")
+            gecko_changeset = substs.get("MOZ_GECKO_SOURCE_CHANGESET")
+
+            
+            
+            
+            
+            
+            with open(sourcestamp_path, "w") as fd:
+                fd.write(
+                    f"{buildid}\n"
+                    f"{comm_repo}/rev/{comm_changeset}\n"
+                    f"{gecko_repo}/rev/{gecko_changeset}\n"
+                )
+        else:
+            source_url = ""
+            if substs.get("MOZ_INCLUDE_SOURCE_INFO"):
+                repo = substs.get("MOZ_SOURCE_REPO")
+                changeset = substs.get("MOZ_SOURCE_CHANGESET")
+                if repo and changeset:
+                    source_url = f"{repo}/rev/{changeset}"
+
+            with open(sourcestamp_path, "w") as fd:
+                fd.write(f"{buildid}\n{source_url}")
 
         
         archive_prefix = f"{substs['MOZ_APP_NAME']}-{substs['MOZ_APP_VERSION']}"
