@@ -17,6 +17,7 @@
 #include "gc/GC.h"
 #include "gc/PublicIterators.h"
 #include "jit/IonCompileTask.h"
+#include "jit/JitOptions.h"  
 #include "jit/JitRuntime.h"
 #include "jit/Simulator.h"
 #include "js/AllocationLogging.h"  
@@ -232,6 +233,9 @@ void JSRuntime::destroyRuntime() {
     CancelOffThreadCompressions(this);
 
     
+    gc.waitForBackgroundTasks();
+
+    
 
 
 
@@ -422,7 +426,9 @@ static bool HandleInterrupt(JSContext* cx, bool invokeCallback,
   if (!InvokeInterruptCallbacks(cx)) {
     
     
-    if (cx->realm()->isDebuggee()) {
+    
+    
+    if (cx->realm()->isDebuggee() && !fuzzingSafe) {
       ScriptFrameIter iter(cx);
       if (!iter.done() && cx->compartment() == iter.compartment() &&
           DebugAPI::stepModeEnabled(iter.script())) {
