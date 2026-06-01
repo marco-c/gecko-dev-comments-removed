@@ -22228,8 +22228,13 @@ const CustomizeMenu = (0,external_ReactRedux_namespaceObject.connect)(state => (
 
 
 
-const SPRITE_URL = "chrome://newtab/content/data/content/assets/spin-smooth.webp";
-const TRANSFORM_VALUES = "0 0;-200 0;-400 0;-600 0;-800 0;-1000 0;0 -200;-200 -200;-400 -200;-600 -200;-800 -200;-1000 -200;0 -400;-200 -400;-400 -400;-600 -400;-800 -400;-1000 -400;0 -600;-200 -600;-400 -600;-600 -600;-800 -600;-1000 -600;0 -800;-200 -800;-400 -800;-600 -800;-800 -800;-1000 -800;0 -1000;-200 -1000;-400 -1000;-600 -1000;-800 -1000;-1000 -1000;0 -1200;-200 -1200;-400 -1200;-600 -1200;-800 -1200;-1000 -1200;0 -1400;-200 -1400;-400 -1400;-600 -1400;-800 -1400;-1000 -1400;0 -1600;-200 -1600;-400 -1600;-600 -1600;-800 -1600;-1000 -1600;0 -1800;-200 -1800;-400 -1800;-600 -1800;-800 -1800;-1000 -1800";
+const SPRITE_URL = "chrome://newtab/content/data/content/assets/football-bounce.webp";
+
+
+
+
+
+const TRANSFORM_VALUES = "0 0;-480 0;-960 0;-1440 0;-1920 0;-2400 0;-2880 0;-3360 0;0 -270;-480 -270;-960 -270;-1440 -270;-1920 -270;-2400 -270;-2880 -270;-3360 -270;0 -540;-480 -540;-960 -540;-1440 -540;-1920 -540;-2400 -540;-2880 -540;-3360 -540;0 -810;-480 -810;-960 -810;-1440 -810;-1920 -810;-2400 -810;-2880 -810;-3360 -810;0 -1080;-480 -1080;-960 -1080;-1440 -1080;-1920 -1080;-2400 -1080;-2880 -1080;-3360 -1080;0 -1350;-480 -1350;-960 -1350;-1440 -1350;-1920 -1350;-2400 -1350;-2880 -1350;-3360 -1350;0 -1620;-480 -1620;-960 -1620;-1440 -1620;-1920 -1620;-2400 -1620;-2880 -1620;-3360 -1620";
 
 
 
@@ -22260,7 +22265,18 @@ const TRANSFORM_VALUES = "0 0;-200 0;-400 0;-600 0;-800 0;-1000 0;0 -200;-200 -2
 
 
 
-function SpinSmooth() {
+
+
+
+
+
+
+
+
+
+
+
+function FootballBounce() {
   const animRef = (0,external_React_namespaceObject.useRef)(null);
   const isRunningRef = (0,external_React_namespaceObject.useRef)(false);
   const [isAnimating, setIsAnimating] = (0,external_React_namespaceObject.useState)(false);
@@ -22289,7 +22305,6 @@ function SpinSmooth() {
 
 
 
-
   const handleClick = () => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       return;
@@ -22299,34 +22314,33 @@ function SpinSmooth() {
     }
     animRef.current.beginElement();
   };
-  return external_React_default().createElement("svg", {
-    xmlns: "http://www.w3.org/2000/svg",
-    viewBox: "0 0 200 200",
-    className: `logo-variation-small spin-smooth${isAnimating ? " is-animating" : ""}`,
-    "aria-hidden": "true",
+  return external_React_default().createElement("div", {
+    className: `logo-variation-small football-bounce${isAnimating ? " is-animating" : ""}`,
     onClick: handleClick
-  }, external_React_default().createElement("defs", null, external_React_default().createElement("clipPath", {
-    id: "spin-smooth-clip"
-  }, external_React_default().createElement("rect", {
+  }, external_React_default().createElement("svg", {
+    xmlns: "http://www.w3.org/2000/svg",
+    viewBox: "0 0 480 270",
+    width: "480",
+    height: "270",
+    className: "football-bounce__sprite",
+    "aria-hidden": "true"
+  }, external_React_default().createElement("g", {
+    transform: "translate(-3360 -1620)"
+  }, external_React_default().createElement("image", {
+    width: "3840",
+    height: "1890",
     x: "0",
     y: "0",
-    width: "200",
-    height: "200"
-  }))), external_React_default().createElement("g", {
-    clipPath: "url(#spin-smooth-clip)"
-  }, external_React_default().createElement("g", null, external_React_default().createElement("image", {
-    width: "1200",
-    height: "2000",
-    x: "0",
-    y: "0",
+    imageRendering: "optimizeQuality",
     href: SPRITE_URL
   }), external_React_default().createElement("animateTransform", {
     ref: animRef,
     attributeName: "transform",
     type: "translate",
     calcMode: "discrete",
-    dur: "6.67s",
+    dur: "3.752s",
     begin: "indefinite",
+    fill: "freeze",
     values: TRANSFORM_VALUES
   }))));
 }
@@ -22905,6 +22919,125 @@ function SpinBallSmall() {
 
 
 
+const SpinSmooth_SPRITE_URL = "chrome://newtab/content/data/content/assets/spin-smooth.webp";
+const SpinSmooth_TRANSFORM_VALUES = "0 0;-200 0;-400 0;-600 0;-800 0;-1000 0;0 -200;-200 -200;-400 -200;-600 -200;-800 -200;-1000 -200;0 -400;-200 -400;-400 -400;-600 -400;-800 -400;-1000 -400;0 -600;-200 -600;-400 -600;-600 -600;-800 -600;-1000 -600;0 -800;-200 -800;-400 -800;-600 -800;-800 -800;-1000 -800;0 -1000;-200 -1000;-400 -1000;-600 -1000;-800 -1000;-1000 -1000;0 -1200;-200 -1200;-400 -1200;-600 -1200;-800 -1200;-1000 -1200;0 -1400;-200 -1400;-400 -1400;-600 -1400;-800 -1400;-1000 -1400;0 -1600;-200 -1600;-400 -1600;-600 -1600;-800 -1600;-1000 -1600;0 -1800;-200 -1800;-400 -1800;-600 -1800;-800 -1800;-1000 -1800";
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function SpinSmooth() {
+  const animRef = (0,external_React_namespaceObject.useRef)(null);
+  const isRunningRef = (0,external_React_namespaceObject.useRef)(false);
+  const [isAnimating, setIsAnimating] = (0,external_React_namespaceObject.useState)(false);
+  (0,external_React_namespaceObject.useEffect)(() => {
+    const anim = animRef.current;
+    if (!anim) {
+      return undefined;
+    }
+    const onBegin = () => {
+      isRunningRef.current = true;
+      setIsAnimating(true);
+    };
+    const onEnd = () => {
+      isRunningRef.current = false;
+      setIsAnimating(false);
+    };
+    anim.addEventListener("beginEvent", onBegin);
+    anim.addEventListener("endEvent", onEnd);
+    return () => {
+      anim.removeEventListener("beginEvent", onBegin);
+      anim.removeEventListener("endEvent", onEnd);
+    };
+  }, []);
+
+  
+
+
+
+
+  const handleClick = () => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      return;
+    }
+    if (!animRef.current || isRunningRef.current) {
+      return;
+    }
+    animRef.current.beginElement();
+  };
+  return external_React_default().createElement("svg", {
+    xmlns: "http://www.w3.org/2000/svg",
+    viewBox: "0 0 200 200",
+    className: `logo-variation-small spin-smooth${isAnimating ? " is-animating" : ""}`,
+    "aria-hidden": "true",
+    onClick: handleClick
+  }, external_React_default().createElement("defs", null, external_React_default().createElement("clipPath", {
+    id: "spin-smooth-clip"
+  }, external_React_default().createElement("rect", {
+    x: "0",
+    y: "0",
+    width: "200",
+    height: "200"
+  }))), external_React_default().createElement("g", {
+    clipPath: "url(#spin-smooth-clip)"
+  }, external_React_default().createElement("g", null, external_React_default().createElement("image", {
+    width: "1200",
+    height: "2000",
+    x: "0",
+    y: "0",
+    href: SpinSmooth_SPRITE_URL
+  }), external_React_default().createElement("animateTransform", {
+    ref: animRef,
+    attributeName: "transform",
+    type: "translate",
+    calcMode: "discrete",
+    dur: "6.67s",
+    begin: "indefinite",
+    values: SpinSmooth_TRANSFORM_VALUES
+  }))));
+}
+
+;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -22957,6 +23090,12 @@ const LOGO_VARIATIONS = {
     minViewportWidth: 0,
     requiresLTR: false,
     fallback: null
+  },
+  "football-bounce": {
+    component: FootballBounce,
+    minViewportWidth: 0,
+    requiresLTR: true,
+    fallback: "spin-smooth"
   }
 };
 const VARIANT_THRESHOLDS = Object.values(LOGO_VARIATIONS).map(v => v.minViewportWidth);
