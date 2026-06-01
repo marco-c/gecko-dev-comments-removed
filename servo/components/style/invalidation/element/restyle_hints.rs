@@ -58,6 +58,9 @@ bitflags! {
 
         /// Match self or descendants if dependent on a named style query.
         const RESTYLE_IF_AFFECTED_BY_NAMED_STYLE_CONTAINER = 1 << 12;
+
+        /// Do a selector match of the element if it depends on an ancestor's font.
+        const RESTYLE_IF_AFFECTED_BY_ANCESTOR_FONT = 1 << 13;
     }
 }
 
@@ -121,23 +124,25 @@ impl RestyleHint {
             return Self::restyle_subtree();
         }
         let mut result = Self::empty();
-        if self.contains(RestyleHint::RESTYLE_PSEUDOS) {
+        if self.contains(Self::RESTYLE_PSEUDOS) {
             result |= Self::RESTYLE_SELF_IF_PSEUDO;
         }
-        if self.contains(RestyleHint::RECASCADE_DESCENDANTS) {
+        if self.contains(Self::RECASCADE_DESCENDANTS) {
             result |= Self::recascade_subtree();
         }
-        if self.contains(RestyleHint::RESTYLE_IF_AFFECTED_BY_NAMED_STYLE_CONTAINER) {
-            
-            
-            
-            
-            
-            
-            
-            result |= RestyleHint::RESTYLE_IF_AFFECTED_BY_NAMED_STYLE_CONTAINER;
+        if self.contains(Self::RESTYLE_IF_AFFECTED_BY_ANCESTOR_FONT) {
+            result |= Self::RESTYLE_IF_AFFECTED_BY_ANCESTOR_FONT;
         }
-
+        if self.contains(Self::RESTYLE_IF_AFFECTED_BY_NAMED_STYLE_CONTAINER) {
+            
+            
+            
+            
+            
+            
+            
+            result |= Self::RESTYLE_IF_AFFECTED_BY_NAMED_STYLE_CONTAINER;
+        }
         result
     }
 
