@@ -53,6 +53,29 @@ function is_element_hidden(aElement, aMsg) {
   ok(BrowserTestUtils.isHidden(aElement), aMsg);
 }
 
+
+
+
+
+
+
+
+
+
+
+async function openPrefsTab(pane) {
+  let url = "about:preferences" + (pane ? "#" + pane : "");
+  let tab = BrowserTestUtils.addTab(gBrowser, url);
+  let initialized = BrowserTestUtils.waitForEvent(
+    tab.linkedBrowser,
+    "Initialized",
+    true
+  );
+  gBrowser.selectedTab = tab;
+  await initialized;
+  return tab;
+}
+
 function open_preferences(aCallback) {
   gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser, "about:preferences");
   let newTabBrowser = gBrowser.getBrowserForTab(gBrowser.selectedTab);
@@ -327,7 +350,7 @@ async function selectHistoryMode(win, value) {
 
   let popupShownPromise = BrowserTestUtils.waitForSelectPopupShown(window);
 
-  await EventUtils.synthesizeMouseAtCenter(
+  EventUtils.synthesizeMouseAtCenter(
     historyMode,
     {},
     historyMode.documentGlobal
@@ -404,11 +427,7 @@ async function updateCheckBoxElement(checkbox, value) {
   checkbox.scrollIntoView();
 
   
-  await EventUtils.synthesizeMouseAtCenter(
-    checkbox,
-    {},
-    checkbox.documentGlobal
-  );
+  EventUtils.synthesizeMouseAtCenter(checkbox, {}, checkbox.documentGlobal);
 }
 
 async function updateCheckBox(win, id, value) {
@@ -425,11 +444,7 @@ async function updateCheckBox(win, id, value) {
   checkbox.scrollIntoView();
 
   
-  await EventUtils.synthesizeMouseAtCenter(
-    checkbox,
-    {},
-    checkbox.documentGlobal
-  );
+  EventUtils.synthesizeMouseAtCenter(checkbox, {}, checkbox.documentGlobal);
 }
 
 
