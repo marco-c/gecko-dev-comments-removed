@@ -325,8 +325,9 @@ ValidationResult IsValidVideoConfiguration(const VideoConfiguration& aConfig,
   if constexpr (std::is_same_v<CodingType, MediaEncodingType>) {
     
     
+    
     if (aConfig.mScalabilityMode.WasPassed() &&
-        aType != MediaEncodingType::Webrtc && !aBehavior.mLegacy) {
+        (aType == MediaEncodingType::Webrtc || !aBehavior.mLegacy)) {
       ValidationResult err = Err(ValidationError::InapplicableMember);
       LOG(
           ("[Invalid VideoConfiguration (Scalability Mode, %s) #2] Rejecting "
