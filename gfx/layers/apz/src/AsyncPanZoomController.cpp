@@ -576,8 +576,8 @@ UniquePtr<VelocityTracker> PlatformSpecificStateBase::CreateVelocityTracker(
 
 
 
-class MOZ_STACK_CLASS AsyncPanZoomController::AutoRecordCompositorScrollUpdate
-    final {
+class MOZ_STACK_CLASS
+AsyncPanZoomController::AutoRecordCompositorScrollUpdate final {
  public:
   AutoRecordCompositorScrollUpdate(
       AsyncPanZoomController* aApzc, CompositorScrollUpdate::Source aSource,
@@ -5999,6 +5999,7 @@ void AsyncPanZoomController::NotifyMainThreadTransaction(
       relativeDelta = Some(Metrics().ApplyRelativeScrollUpdateFrom(
           scrollUpdate, FrameMetrics::IsDefaultApzc{isDefault}));
       Metrics().RecalculateLayoutViewportOffset();
+      needToReclampScroll = true;
     } else if (scrollUpdate.GetType() == ScrollUpdateType::PureRelative) {
       APZC_LOG("%p pure-relative updating scroll offset from %s by %s\n", this,
                ToString(Metrics().GetVisualScrollOffset()).c_str(),
