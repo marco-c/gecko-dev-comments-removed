@@ -638,9 +638,18 @@ async function testPermissionsView({ manifest_version, expectGranted }) {
   for (let ext of Object.values(extensions)) {
     await ext.unload();
   }
-
-  await SpecialPowers.popPrefEnv();
 }
+
+add_setup(async () => {
+  
+  
+  
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["extensions.webextensions.fileSchemeAccess.requireOptIn", false]],
+  });
+});
 
 add_task(async function testPermissionsView_MV2() {
   await testPermissionsView({ manifest_version: 2 });
