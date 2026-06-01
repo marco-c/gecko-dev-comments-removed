@@ -3765,15 +3765,6 @@ nsresult Document::InitPolicyContainer(nsIChannel* aChannel) {
     mPolicyContainer = new PolicyContainer();
   }
 
-  
-  
-  
-  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
-  nsILoadInfo::IPAddressSpace ipAddressSpace = loadInfo->GetIpAddressSpace();
-  if (ipAddressSpace != nsILoadInfo::Unknown) {
-    mPolicyContainer->SetIPAddressSpace(ipAddressSpace);
-  }
-
   return NS_OK;
 }
 

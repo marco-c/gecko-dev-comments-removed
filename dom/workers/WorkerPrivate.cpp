@@ -1514,23 +1514,15 @@ bool WorkerPrivate::IsFrozen() const {
   return mParentFrozen;
 }
 
-void WorkerPrivate::StorePolicyContainerArgsOnClient() {
+void WorkerPrivate::StoreCSPOnClient() {
   auto data = mWorkerThreadAccessible.Access();
   MOZ_ASSERT(data->mScope);
-  auto& clientSource = data->mScope->MutableClientSourceRef();
-
-  mozilla::ipc::PolicyContainerArgs policyContainerArgs;
-
   if (mLoadInfo.mCSPContext) {
+    mozilla::ipc::PolicyContainerArgs policyContainerArgs;
     policyContainerArgs.csp() = Some(mLoadInfo.mCSPContext->CSPInfo());
+    data->mScope->MutableClientSourceRef().SetPolicyContainerArgs(
+        policyContainerArgs);
   }
-
-  policyContainerArgs.ipAddressSpace() =
-      static_cast<nsILoadInfo::IPAddressSpace>(mLoadInfo.mIPAddressSpace);
-  
-  
-
-  clientSource.SetPolicyContainerArgs(policyContainerArgs);
 }
 
 void WorkerPrivate::UpdateReferrerInfoFromHeader(
@@ -3385,7 +3377,6 @@ nsresult WorkerPrivate::GetLoadInfo(
     loadInfo.mParentController = aParent->GlobalScope()->GetController();
     loadInfo.mWatchedByDevTools = aParent->IsWatchedByDevTools();
     loadInfo.mIsOn3PCBExceptionList = aParent->IsOn3PCBExceptionList();
-    loadInfo.mIPAddressSpace = aParent->mLoadInfo.mIPAddressSpace;
   } else {
     AssertIsOnMainThread();
 
@@ -3531,2210 +3522,1861 @@ nsresult WorkerPrivate::GetLoadInfo(
         loadInfo.mLanguageOverrideLocale = languageOverride;
         Navigator::GetAcceptLanguages(loadInfo.mLanguageOverride,
                                       &languageOverride);
+      }
+      loadInfo.mStorageAccess = StorageAllowedForWindow(globalWindow);
+      loadInfo.mUseRegularPrincipal = document->UseRegularPrincipal();
+      loadInfo.mUsingStorageAccess = document->UsingStorageAccess();
+      loadInfo.mSerialAllowed =
+          FeaturePolicyUtils::IsFeatureAllowed(document, u"serial"_ns);
+      loadInfo.mShouldResistFingerprinting =
+          document->ShouldResistFingerprinting(
+              RFPTarget::IsAlwaysEnabledForPrecompute);
+      loadInfo.mOverriddenFingerprintingSettings =
+          document->GetOverriddenFingerprintingSettings();
+      loadInfo.mIsOn3PCBExceptionList = document->IsOn3PCBExceptionList();
 
-        
-        
-        if (document->GetPolicyContainer()) {
-          loadInfo.mIPAddressSpace = static_cast<uint16_t>(
-              PolicyContainer::Cast(document->GetPolicyContainer())
-                  ->GetIPAddressSpace());
-        }
-        loadInfo.mStorageAccess = StorageAllowedForWindow(globalWindow);
-        loadInfo.mUseRegularPrincipal = document->UseRegularPrincipal();
-        loadInfo.mUsingStorageAccess = document->UsingStorageAccess();
-        loadInfo.mSerialAllowed =
-            FeaturePolicyUtils::IsFeatureAllowed(document, u"serial"_ns);
-        loadInfo.mShouldResistFingerprinting =
-            document->ShouldResistFingerprinting(
-                RFPTarget::IsAlwaysEnabledForPrecompute);
-        loadInfo.mOverriddenFingerprintingSettings =
-            document->GetOverriddenFingerprintingSettings();
-        loadInfo.mIsOn3PCBExceptionList = document->IsOn3PCBExceptionList();
-
-        
-        
-        if (loadInfo.mUsingStorageAccess &&
-            StorageAllowedForDocument(document) != StorageAccess::eAllow) {
-          loadInfo.mUsingStorageAccess = false;
-        }
-        loadInfo.mIsThirdPartyContext =
-            AntiTrackingUtils::IsThirdPartyWindow(globalWindow, nullptr);
-        loadInfo.mCookieJarSettings = document->CookieJarSettings();
-        if (loadInfo.mCookieJarSettings) {
-          auto* cookieJarSettings =
-              net::CookieJarSettings::Cast(loadInfo.mCookieJarSettings);
-          cookieJarSettings->Serialize(loadInfo.mCookieJarSettingsArgs);
-        }
-        StoragePrincipalHelper::GetRegularPrincipalOriginAttributes(
-            document, loadInfo.mOriginAttributes);
-        loadInfo.mParentController = globalWindow->GetController();
-        loadInfo.mSecureContext = loadInfo.mWindow->IsSecureContext()
-                                      ? WorkerLoadInfo::eSecureContext
-                                      : WorkerLoadInfo::eInsecureContext;
-      } else {
-        
-        MOZ_ASSERT(isChrome);
-
-        
-        
-        
-        JS::AutoFilename fileName;
-        if (JS::DescribeScriptedCaller(&fileName, aCx)) {
-          
-          
-          
-          
-          
-          
-          
-          
-          nsCOMPtr<nsIFile> scriptFile;
-          rv = NS_NewNativeLocalFile(nsDependentCString(fileName.get()),
-                                     getter_AddRefs(scriptFile));
-          if (NS_SUCCEEDED(rv)) {
-            rv = NS_NewFileURI(getter_AddRefs(loadInfo.mBaseURI), scriptFile);
-          }
-          if (NS_FAILED(rv)) {
-            
-            
-            rv = NS_NewURI(getter_AddRefs(loadInfo.mBaseURI), fileName.get());
-          }
-          if (NS_FAILED(rv)) {
-            return rv;
-          }
-        }
-        loadInfo.mXHRParamsAllowed = true;
-        loadInfo.mFromWindow = false;
-        loadInfo.mWindowID = UINT64_MAX;
-        loadInfo.mStorageAccess = StorageAccess::eAllow;
-        loadInfo.mUseRegularPrincipal = true;
+      
+      
+      if (loadInfo.mUsingStorageAccess &&
+          StorageAllowedForDocument(document) != StorageAccess::eAllow) {
         loadInfo.mUsingStorageAccess = false;
-        loadInfo.mCookieJarSettings =
-            mozilla::net::CookieJarSettings::Create(loadInfo.mLoadingPrincipal);
-        loadInfo.mShouldResistFingerprinting =
-            nsContentUtils::ShouldResistFingerprinting_dangerous(
-                loadInfo.mLoadingPrincipal,
-                "Unusual situation - we have no document or CookieJarSettings",
-                RFPTarget::IsAlwaysEnabledForPrecompute);
-        MOZ_ASSERT(loadInfo.mCookieJarSettings);
+      }
+      loadInfo.mIsThirdPartyContext =
+          AntiTrackingUtils::IsThirdPartyWindow(globalWindow, nullptr);
+      loadInfo.mCookieJarSettings = document->CookieJarSettings();
+      if (loadInfo.mCookieJarSettings) {
         auto* cookieJarSettings =
             net::CookieJarSettings::Cast(loadInfo.mCookieJarSettings);
         cookieJarSettings->Serialize(loadInfo.mCookieJarSettingsArgs);
-
-        loadInfo.mOriginAttributes = OriginAttributes();
-        loadInfo.mIsThirdPartyContext = false;
-        loadInfo.mIsOn3PCBExceptionList = false;
       }
+      StoragePrincipalHelper::GetRegularPrincipalOriginAttributes(
+          document, loadInfo.mOriginAttributes);
+      loadInfo.mParentController = globalWindow->GetController();
+      loadInfo.mSecureContext = loadInfo.mWindow->IsSecureContext()
+                                    ? WorkerLoadInfo::eSecureContext
+                                    : WorkerLoadInfo::eInsecureContext;
+    } else {
+      
+      MOZ_ASSERT(isChrome);
 
-      MOZ_ASSERT(loadInfo.mLoadingPrincipal);
-      MOZ_ASSERT(isChrome || !loadInfo.mDomain.IsEmpty());
-
-      if (!loadInfo.mLoadGroup || aLoadGroupBehavior == OverrideLoadGroup) {
-        OverrideLoadInfoLoadGroup(loadInfo, loadInfo.mLoadingPrincipal);
+      
+      
+      JS::AutoFilename fileName;
+      if (JS::DescribeScriptedCaller(&fileName, aCx)) {
+        
+        
+        
+        
+        
+        
+        
+        
+        nsCOMPtr<nsIFile> scriptFile;
+        rv = NS_NewNativeLocalFile(nsDependentCString(fileName.get()),
+                                   getter_AddRefs(scriptFile));
+        if (NS_SUCCEEDED(rv)) {
+          rv = NS_NewFileURI(getter_AddRefs(loadInfo.mBaseURI), scriptFile);
+        }
+        if (NS_FAILED(rv)) {
+          
+          
+          rv = NS_NewURI(getter_AddRefs(loadInfo.mBaseURI), fileName.get());
+        }
+        if (NS_FAILED(rv)) {
+          return rv;
+        }
       }
-      MOZ_ASSERT(NS_LoadGroupMatchesPrincipal(loadInfo.mLoadGroup,
-                                              loadInfo.mLoadingPrincipal));
+      loadInfo.mXHRParamsAllowed = true;
+      loadInfo.mFromWindow = false;
+      loadInfo.mWindowID = UINT64_MAX;
+      loadInfo.mStorageAccess = StorageAccess::eAllow;
+      loadInfo.mUseRegularPrincipal = true;
+      loadInfo.mUsingStorageAccess = false;
+      loadInfo.mCookieJarSettings =
+          mozilla::net::CookieJarSettings::Create(loadInfo.mLoadingPrincipal);
+      loadInfo.mShouldResistFingerprinting =
+          nsContentUtils::ShouldResistFingerprinting_dangerous(
+              loadInfo.mLoadingPrincipal,
+              "Unusual situation - we have no document or CookieJarSettings",
+              RFPTarget::IsAlwaysEnabledForPrecompute);
+      MOZ_ASSERT(loadInfo.mCookieJarSettings);
+      auto* cookieJarSettings =
+          net::CookieJarSettings::Cast(loadInfo.mCookieJarSettings);
+      cookieJarSettings->Serialize(loadInfo.mCookieJarSettingsArgs);
 
-      
-      
-      nsCOMPtr<nsIURI> url;
-      rv = nsContentUtils::NewURIWithDocumentCharset(
-          getter_AddRefs(url), aScriptURL, document, loadInfo.mBaseURI);
-      NS_ENSURE_SUCCESS(rv, NS_ERROR_DOM_SYNTAX_ERR);
-
-      rv = ChannelFromScriptURLMainThread(
-          loadInfo.mLoadingPrincipal, document, loadInfo.mLoadGroup, url,
-          aWorkerType, aCredentials, clientInfo, ContentPolicyType(aWorkerKind),
-          loadInfo.mCookieJarSettings, loadInfo.mReferrerInfo,
-          getter_AddRefs(loadInfo.mChannel));
-      NS_ENSURE_SUCCESS(rv, rv);
-
-      rv = NS_GetFinalChannelURI(loadInfo.mChannel,
-                                 getter_AddRefs(loadInfo.mResolvedScriptURI));
-      NS_ENSURE_SUCCESS(rv, rv);
-
-      
-      
-      
-      
-      
-      
-      
-      
-      nsCOMPtr<nsILoadInfo> channelLoadInfo = loadInfo.mChannel->LoadInfo();
-      rv = channelLoadInfo->SetStoragePermission(
-          loadInfo.mUsingStorageAccess ? nsILoadInfo::HasStoragePermission
-                                       : nsILoadInfo::NoStoragePermission);
-      NS_ENSURE_SUCCESS(rv, rv);
-
-      rv = loadInfo.SetPrincipalsAndCSPFromChannel(loadInfo.mChannel);
-      NS_ENSURE_SUCCESS(rv, rv);
+      loadInfo.mOriginAttributes = OriginAttributes();
+      loadInfo.mIsThirdPartyContext = false;
+      loadInfo.mIsOn3PCBExceptionList = false;
     }
 
-    MOZ_DIAGNOSTIC_ASSERT(loadInfo.mLoadingPrincipal);
-    MOZ_DIAGNOSTIC_ASSERT(loadInfo.PrincipalIsValid());
+    MOZ_ASSERT(loadInfo.mLoadingPrincipal);
+    MOZ_ASSERT(isChrome || !loadInfo.mDomain.IsEmpty());
 
-    *aLoadInfo = std::move(loadInfo);
-    return NS_OK;
+    if (!loadInfo.mLoadGroup || aLoadGroupBehavior == OverrideLoadGroup) {
+      OverrideLoadInfoLoadGroup(loadInfo, loadInfo.mLoadingPrincipal);
+    }
+    MOZ_ASSERT(NS_LoadGroupMatchesPrincipal(loadInfo.mLoadGroup,
+                                            loadInfo.mLoadingPrincipal));
+
+    
+    
+    nsCOMPtr<nsIURI> url;
+    rv = nsContentUtils::NewURIWithDocumentCharset(
+        getter_AddRefs(url), aScriptURL, document, loadInfo.mBaseURI);
+    NS_ENSURE_SUCCESS(rv, NS_ERROR_DOM_SYNTAX_ERR);
+
+    rv = ChannelFromScriptURLMainThread(
+        loadInfo.mLoadingPrincipal, document, loadInfo.mLoadGroup, url,
+        aWorkerType, aCredentials, clientInfo, ContentPolicyType(aWorkerKind),
+        loadInfo.mCookieJarSettings, loadInfo.mReferrerInfo,
+        getter_AddRefs(loadInfo.mChannel));
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    rv = NS_GetFinalChannelURI(loadInfo.mChannel,
+                               getter_AddRefs(loadInfo.mResolvedScriptURI));
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    nsCOMPtr<nsILoadInfo> channelLoadInfo = loadInfo.mChannel->LoadInfo();
+    rv = channelLoadInfo->SetStoragePermission(
+        loadInfo.mUsingStorageAccess ? nsILoadInfo::HasStoragePermission
+                                     : nsILoadInfo::NoStoragePermission);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    rv = loadInfo.SetPrincipalsAndCSPFromChannel(loadInfo.mChannel);
+    NS_ENSURE_SUCCESS(rv, rv);
   }
+
+  MOZ_DIAGNOSTIC_ASSERT(loadInfo.mLoadingPrincipal);
+  MOZ_DIAGNOSTIC_ASSERT(loadInfo.PrincipalIsValid());
+
+  *aLoadInfo = std::move(loadInfo);
+  return NS_OK;
+}
+
+
+void WorkerPrivate::OverrideLoadInfoLoadGroup(WorkerLoadInfo& aLoadInfo,
+                                              nsIPrincipal* aPrincipal) {
+  MOZ_ASSERT(!aLoadInfo.mInterfaceRequestor);
+  MOZ_ASSERT(aLoadInfo.mLoadingPrincipal == aPrincipal);
+
+  aLoadInfo.mInterfaceRequestor =
+      new WorkerLoadInfo::InterfaceRequestor(aPrincipal, aLoadInfo.mLoadGroup);
+  aLoadInfo.mInterfaceRequestor->MaybeAddBrowserChild(aLoadInfo.mLoadGroup);
 
   
-  void WorkerPrivate::OverrideLoadInfoLoadGroup(WorkerLoadInfo & aLoadInfo,
-                                                nsIPrincipal * aPrincipal) {
-    MOZ_ASSERT(!aLoadInfo.mInterfaceRequestor);
-    MOZ_ASSERT(aLoadInfo.mLoadingPrincipal == aPrincipal);
+  
+  
+  
+  nsCOMPtr<nsILoadGroup> loadGroup = do_CreateInstance(NS_LOADGROUP_CONTRACTID);
 
-    aLoadInfo.mInterfaceRequestor = new WorkerLoadInfo::InterfaceRequestor(
-        aPrincipal, aLoadInfo.mLoadGroup);
-    aLoadInfo.mInterfaceRequestor->MaybeAddBrowserChild(aLoadInfo.mLoadGroup);
+  nsresult rv =
+      loadGroup->SetNotificationCallbacks(aLoadInfo.mInterfaceRequestor);
+  MOZ_ALWAYS_SUCCEEDS(rv);
 
-    
-    
-    
-    
-    nsCOMPtr<nsILoadGroup> loadGroup =
-        do_CreateInstance(NS_LOADGROUP_CONTRACTID);
+  aLoadInfo.mLoadGroup = std::move(loadGroup);
 
-    nsresult rv =
-        loadGroup->SetNotificationCallbacks(aLoadInfo.mInterfaceRequestor);
-    MOZ_ALWAYS_SUCCEEDS(rv);
+  MOZ_ASSERT(NS_LoadGroupMatchesPrincipal(aLoadInfo.mLoadGroup, aPrincipal));
+}
 
-    aLoadInfo.mLoadGroup = std::move(loadGroup);
+void WorkerPrivate::RunLoopNeverRan() {
+  LOG(WorkerLog(), ("WorkerPrivate::RunLoopNeverRan [%p]", this));
+  
+  
+  
+  
+  
+  
+  
+  
 
-    MOZ_ASSERT(NS_LoadGroupMatchesPrincipal(aLoadInfo.mLoadGroup, aPrincipal));
-  }
+  auto data = mWorkerThreadAccessible.Access();
+  RefPtr<WorkerThread> thread;
+  {
+    MutexAutoLock lock(mMutex);
 
-  void WorkerPrivate::RunLoopNeverRan() {
-    LOG(WorkerLog(), ("WorkerPrivate::RunLoopNeverRan [%p]", this));
-    
-    
-    
-    
-    
-    
-    
-    
-
-    auto data = mWorkerThreadAccessible.Access();
-    RefPtr<WorkerThread> thread;
-    {
-      MutexAutoLock lock(mMutex);
-
-      if (!mPreStartRunnables.IsEmpty()) {
-        for (const RefPtr<WorkerThreadRunnable>& runnable :
-             mPreStartRunnables) {
-          runnable->mCleanPreStartDispatching = true;
-          PROFILER_MARKER("WorkerPrivate::RunLoopNeverRan", OTHER, {},
-                          TerminatingFlowMarker,
-                          Flow::FromPointer(runnable.get()));
-        }
-        mPreStartRunnables.Clear();
+    if (!mPreStartRunnables.IsEmpty()) {
+      for (const RefPtr<WorkerThreadRunnable>& runnable : mPreStartRunnables) {
+        runnable->mCleanPreStartDispatching = true;
+        PROFILER_MARKER("WorkerPrivate::RunLoopNeverRan", OTHER, {},
+                        TerminatingFlowMarker,
+                        Flow::FromPointer(runnable.get()));
       }
-
-      
-      mStatus = Dead;
-      thread = mThread;
-    }
-
-    
-    if (thread && NS_HasPendingEvents(thread)) {
-      NS_ProcessPendingEvents(nullptr);
-    }
-
-    
-    
-    if (!mControlQueue.IsEmpty()) {
-      WorkerRunnable* runnable = nullptr;
-      while (mControlQueue.Pop(runnable)) {
-        runnable->Release();
-      }
-    }
-
-    
-    
-    
-    
-    NotifyWorkerRefs(Dead);
-  }
-
-  void WorkerPrivate::UnrootGlobalScopes() {
-    LOG(WorkerLog(), ("WorkerPrivate::UnrootGlobalScopes [%p]", this));
-    auto data = mWorkerThreadAccessible.Access();
-
-    RefPtr<WorkerDebuggerGlobalScope> debugScope =
-        data->mDebuggerScope.forget();
-    if (debugScope) {
-      MOZ_ASSERT(debugScope->mWorkerPrivate == this);
-    }
-    RefPtr<WorkerGlobalScope> scope = data->mScope.forget();
-    if (scope) {
-      MOZ_ASSERT(scope->mWorkerPrivate == this);
-    }
-  }
-
-  void WorkerPrivate::DoRunLoop(JSContext * aCx) {
-    LOG(WorkerLog(), ("WorkerPrivate::DoRunLoop [%p]", this));
-    auto data = mWorkerThreadAccessible.Access();
-    MOZ_RELEASE_ASSERT(!GetExecutionManager());
-
-    RefPtr<WorkerThread> thread;
-    {
-      MutexAutoLock lock(mMutex);
-      mJSContext = aCx;
-      
-      
-      MOZ_ASSERT(mThread);
-      thread = mThread;
-
-      MOZ_ASSERT(mStatus == Pending);
-      mStatus = Running;
-
-      
-      
       mPreStartRunnables.Clear();
     }
 
     
-    
-    
-    if (mChildEp.IsValid()) {
-      mRemoteWorkerNonLifeCycleOpController =
-          RemoteWorkerNonLifeCycleOpControllerChild::Create();
-      MOZ_ASSERT_DEBUG_OR_FUZZING(mRemoteWorkerNonLifeCycleOpController);
-      mChildEp.Bind(mRemoteWorkerNonLifeCycleOpController);
+    mStatus = Dead;
+    thread = mThread;
+  }
+
+  
+  if (thread && NS_HasPendingEvents(thread)) {
+    NS_ProcessPendingEvents(nullptr);
+  }
+
+  
+  
+  if (!mControlQueue.IsEmpty()) {
+    WorkerRunnable* runnable = nullptr;
+    while (mControlQueue.Pop(runnable)) {
+      runnable->Release();
     }
+  }
+
+  
+  
+  
+  
+  NotifyWorkerRefs(Dead);
+}
+
+void WorkerPrivate::UnrootGlobalScopes() {
+  LOG(WorkerLog(), ("WorkerPrivate::UnrootGlobalScopes [%p]", this));
+  auto data = mWorkerThreadAccessible.Access();
+
+  RefPtr<WorkerDebuggerGlobalScope> debugScope = data->mDebuggerScope.forget();
+  if (debugScope) {
+    MOZ_ASSERT(debugScope->mWorkerPrivate == this);
+  }
+  RefPtr<WorkerGlobalScope> scope = data->mScope.forget();
+  if (scope) {
+    MOZ_ASSERT(scope->mWorkerPrivate == this);
+  }
+}
+
+void WorkerPrivate::DoRunLoop(JSContext* aCx) {
+  LOG(WorkerLog(), ("WorkerPrivate::DoRunLoop [%p]", this));
+  auto data = mWorkerThreadAccessible.Access();
+  MOZ_RELEASE_ASSERT(!GetExecutionManager());
+
+  RefPtr<WorkerThread> thread;
+  {
+    MutexAutoLock lock(mMutex);
+    mJSContext = aCx;
+    
+    
+    MOZ_ASSERT(mThread);
+    thread = mThread;
+
+    MOZ_ASSERT(mStatus == Pending);
+    mStatus = Running;
 
     
     
-    
-    AutoJSAPI jsapi;
-    jsapi.Init();
-    MOZ_ASSERT(jsapi.cx() == aCx);
+    mPreStartRunnables.Clear();
+  }
 
-    EnableMemoryReporter();
+  
+  
+  
+  if (mChildEp.IsValid()) {
+    mRemoteWorkerNonLifeCycleOpController =
+        RemoteWorkerNonLifeCycleOpControllerChild::Create();
+    MOZ_ASSERT_DEBUG_OR_FUZZING(mRemoteWorkerNonLifeCycleOpController);
+    mChildEp.Bind(mRemoteWorkerNonLifeCycleOpController);
+  }
 
-    InitializeGCTimers();
+  
+  
+  
+  AutoJSAPI jsapi;
+  jsapi.Init();
+  MOZ_ASSERT(jsapi.cx() == aCx);
 
-    bool checkFinalGCCC =
-        StaticPrefs::dom_workers_GCCC_on_potentially_last_event();
+  EnableMemoryReporter();
 
-    bool debuggerRunnablesPending = false;
-    bool normalRunnablesPending = false;
-    auto noRunnablesPendingAndKeepAlive = [&debuggerRunnablesPending,
-                                           &normalRunnablesPending, &thread,
-                                           this]() MOZ_REQUIRES(mMutex) {
+  InitializeGCTimers();
+
+  bool checkFinalGCCC =
+      StaticPrefs::dom_workers_GCCC_on_potentially_last_event();
+
+  bool debuggerRunnablesPending = false;
+  bool normalRunnablesPending = false;
+  auto noRunnablesPendingAndKeepAlive =
+      [&debuggerRunnablesPending, &normalRunnablesPending, &thread, this]()
+          MOZ_REQUIRES(mMutex) {
+            
+            debuggerRunnablesPending = !mDebuggerQueue.IsEmpty();
+            normalRunnablesPending = NS_HasPendingEvents(thread);
+
+            bool anyRunnablesPending = !mControlQueue.IsEmpty() ||
+                                       debuggerRunnablesPending ||
+                                       normalRunnablesPending;
+            bool keepWorkerAlive = mStatus == Running || HasActiveWorkerRefs();
+
+            return (!anyRunnablesPending && keepWorkerAlive);
+          };
+
+  for (;;) {
+    WorkerStatus currentStatus;
+
+    if (checkFinalGCCC) {
       
-      debuggerRunnablesPending = !mDebuggerQueue.IsEmpty();
-      normalRunnablesPending = NS_HasPendingEvents(thread);
-
-      bool anyRunnablesPending = !mControlQueue.IsEmpty() ||
-                                 debuggerRunnablesPending ||
-                                 normalRunnablesPending;
-      bool keepWorkerAlive = mStatus == Running || HasActiveWorkerRefs();
-
-      return (!anyRunnablesPending && keepWorkerAlive);
-    };
-
-    for (;;) {
-      WorkerStatus currentStatus;
-
-      if (checkFinalGCCC) {
-        
-        
-        
-        
-        
-        
-        
-        bool mayNeedFinalGCCC = false;
-        {
-          MutexAutoLock lock(mMutex);
-
-          currentStatus = mStatus;
-          mayNeedFinalGCCC =
-              (mStatus >= Canceling && HasActiveWorkerRefs() &&
-               !debuggerRunnablesPending && !normalRunnablesPending &&
-               data->mPerformedShutdownAfterLastContentTaskExecuted);
-        }
-        if (mayNeedFinalGCCC) {
-#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
-          
-          
-          data->mIsPotentiallyLastGCCCRunning = true;
-#endif
-          
-          GarbageCollectInternal(aCx, true ,
-                                 true );
-#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
-          data->mIsPotentiallyLastGCCCRunning = false;
-#endif
-        }
-      }
-
+      
+      
+      
+      
+      
+      
+      bool mayNeedFinalGCCC = false;
       {
         MutexAutoLock lock(mMutex);
-        if (checkFinalGCCC && currentStatus != mStatus) {
-          
-          
-          continue;
-        }
-
-        
-        
-        
-        
-        
-        while (noRunnablesPendingAndKeepAlive()) {
-          
-          
-          
-          
-          thread->SetRunningEventDelay(TimeDuration(), TimeStamp());
-
-          mWorkerLoopIsIdle = true;
-
-          WaitForWorkerEvents();
-
-          mWorkerLoopIsIdle = false;
-        }
-
-        auto result = ProcessAllControlRunnablesLocked();
-        if (result != ProcessAllControlRunnablesResult::Nothing) {
-          
-          
-          (void)noRunnablesPendingAndKeepAlive();
-        }
 
         currentStatus = mStatus;
+        mayNeedFinalGCCC =
+            (mStatus >= Canceling && HasActiveWorkerRefs() &&
+             !debuggerRunnablesPending && !normalRunnablesPending &&
+             data->mPerformedShutdownAfterLastContentTaskExecuted);
       }
-
-      
-      
-      
-      
-      
-      
-      
-      if (currentStatus >= Closing &&
-          !data->mPerformedShutdownAfterLastContentTaskExecuted) {
-        data->mPerformedShutdownAfterLastContentTaskExecuted.Flip();
-        if (data->mScope) {
-          data->mScope->NoteTerminating();
-          data->mScope->DisconnectGlobalTeardownObservers();
-          if (WebTaskScheduler* scheduler =
-                  data->mScope->GetExistingScheduler()) {
-            scheduler->Disconnect();
-          }
-        }
-      }
-
-      
-      
-      
-      
-      
-      
-      if (currentStatus != Running && !HasActiveWorkerRefs() &&
-          !normalRunnablesPending && !debuggerRunnablesPending) {
+      if (mayNeedFinalGCCC) {
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
         
-        if (currentStatus == Canceling) {
-          NotifyInternal(Killing);
-
-#ifdef DEBUG
-          {
-            MutexAutoLock lock(mMutex);
-            currentStatus = mStatus;
-          }
-          MOZ_ASSERT(currentStatus == Killing);
-#else
-          currentStatus = Killing;
+        
+        data->mIsPotentiallyLastGCCCRunning = true;
 #endif
-        }
-
         
-        if (currentStatus == Killing) {
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          {
-            MutexAutoLock lock(mMutex);
-            if (NS_HasPendingEvents(thread) || !mDebuggerQueue.IsEmpty()) {
-              continue;
-            }
-          }
-
-          
-          
-          if (data->mScope) {
-            data->mScope->NoteShuttingDown();
-          }
-          if (mRemoteWorkerNonLifeCycleOpController) {
-            mRemoteWorkerNonLifeCycleOpController->TransistionStateToKilled();
-            mRemoteWorkerNonLifeCycleOpController = nullptr;
-          }
-
-          
-          ReportUseCounters();
-
-          
-          
-          PromiseDebugging::FlushUncaughtRejections();
-
-          
-
-          ShutdownGCTimers();
-
-          DisableMemoryReporter();
-
-          
-          
-          nsCOMPtr<nsITimer> timer;
-          {
-            MutexAutoLock lock(mMutex);
-            mStatus = Dead;
-            
-            while (mDispatchingControlRunnables) {
-              mCondVar.Wait();
-            }
-            mJSContext = nullptr;
-            mDebuggerInterruptTimer.swap(timer);
-          }
-          timer = nullptr;
-
-          
-          
-          if (!mControlQueue.IsEmpty()) {
-            LOG(WorkerLog(),
-                ("WorkerPrivate::DoRunLoop [%p] dropping control runnables in "
-                 "Dead status",
-                 this));
-            WorkerRunnable* runnable = nullptr;
-            while (mControlQueue.Pop(runnable)) {
-              runnable->Cancel();
-              runnable->Release();
-            }
-          }
-
-          
-          
-          UnlinkTimeouts();
-
-          return;
-        }
-      }
-
-      if (debuggerRunnablesPending || normalRunnablesPending) {
-        
-        SetGCTimerMode(PeriodicTimer);
-      }
-
-      if (debuggerRunnablesPending) {
-        ProcessSingleDebuggerRunnable();
-
-        {
-          MutexAutoLock lock(mMutex);
-          debuggerRunnablesPending = !mDebuggerQueue.IsEmpty();
-        }
-
-        if (debuggerRunnablesPending) {
-          WorkerDebuggerGlobalScope* globalScope = DebuggerGlobalScope();
-          
-          
-          
-          
-          if (globalScope) {
-            
-            
-            JSAutoRealm ar(aCx, globalScope->GetGlobalJSObject());
-            JS_MaybeGC(aCx);
-          }
-        }
-      } else if (normalRunnablesPending) {
-        
-        NS_ProcessNextEvent(thread, false);
-
-        normalRunnablesPending = NS_HasPendingEvents(thread);
-        if (normalRunnablesPending && GlobalScope()) {
-          
-          
-          JSAutoRealm ar(aCx, GlobalScope()->GetGlobalJSObject());
-          JS_MaybeGC(aCx);
-        }
-      }
-
-      
-      
-      
-      if (currentStatus < Canceling) {
-        UpdateCCFlag(CCFlag::CheckBackgroundActors);
-      }
-
-      if (!debuggerRunnablesPending && !normalRunnablesPending) {
-        
-        
-        
-        SetGCTimerMode(IdleTimer);
-      }
-
-      
-      
-      
-      size_t queuedEvents = mMainThreadEventTargetForMessaging->Length() +
-                            mMainThreadDebuggeeEventTarget->Length();
-      if (queuedEvents > 5000) {
-        
-        mMainThreadDebuggeeEventTarget->AwaitIdle();
+        GarbageCollectInternal(aCx, true ,
+                               true );
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+        data->mIsPotentiallyLastGCCCRunning = false;
+#endif
       }
     }
 
-    MOZ_CRASH("Shouldn't get here!");
-  }
-
-  namespace {
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  uint32_t GetEffectiveEventLoopRecursionDepth() {
-    auto* ccjs = CycleCollectedJSContext::Get();
-    if (ccjs) {
-      return ccjs->RecursionDepth();
-    }
-
-    return 1;
-  }
-
-  }  
-
-  void WorkerPrivate::OnProcessNextEvent() {
-    AssertIsOnWorkerThread();
-
-    uint32_t recursionDepth = GetEffectiveEventLoopRecursionDepth();
-    MOZ_ASSERT(recursionDepth);
-
-    
-    
-    
-    
-    if (recursionDepth > 1 && mSyncLoopStack.Length() < recursionDepth - 1) {
-      (void)ProcessAllControlRunnables();
-      
-      
-    }
-  }
-
-  void WorkerPrivate::AfterProcessNextEvent() {
-    AssertIsOnWorkerThread();
-    MOZ_ASSERT(GetEffectiveEventLoopRecursionDepth());
-  }
-
-  nsISerialEventTarget* WorkerPrivate::MainThreadEventTargetForMessaging() {
-    return mMainThreadEventTargetForMessaging;
-  }
-
-  nsresult WorkerPrivate::DispatchToMainThreadForMessaging(
-      nsIRunnable * aRunnable, nsIEventTarget::DispatchFlags aFlags) {
-    nsCOMPtr<nsIRunnable> r = aRunnable;
-    return DispatchToMainThreadForMessaging(r.forget(), aFlags);
-  }
-
-  nsresult WorkerPrivate::DispatchToMainThreadForMessaging(
-      already_AddRefed<nsIRunnable> aRunnable,
-      nsIEventTarget::DispatchFlags aFlags) {
-    return mMainThreadEventTargetForMessaging->Dispatch(std::move(aRunnable),
-                                                        aFlags);
-  }
-
-  nsISerialEventTarget* WorkerPrivate::MainThreadEventTarget() {
-    return mMainThreadEventTarget;
-  }
-
-  nsresult WorkerPrivate::DispatchToMainThread(
-      nsIRunnable * aRunnable, nsIEventTarget::DispatchFlags aFlags) {
-    nsCOMPtr<nsIRunnable> r = aRunnable;
-    return DispatchToMainThread(r.forget(), aFlags);
-  }
-
-  nsresult WorkerPrivate::DispatchToMainThread(
-      already_AddRefed<nsIRunnable> aRunnable,
-      nsIEventTarget::DispatchFlags aFlags) {
-    return mMainThreadEventTarget->Dispatch(std::move(aRunnable), aFlags);
-  }
-
-  nsresult WorkerPrivate::DispatchDebuggeeToMainThread(
-      already_AddRefed<WorkerRunnable> aRunnable,
-      nsIEventTarget::DispatchFlags aFlags) {
-    RefPtr<WorkerRunnable> debuggeeRunnable = std::move(aRunnable);
-    MOZ_ASSERT_DEBUG_OR_FUZZING(debuggeeRunnable->IsDebuggeeRunnable());
-    return mMainThreadDebuggeeEventTarget->Dispatch(debuggeeRunnable.forget(),
-                                                    aFlags);
-  }
-
-  nsISerialEventTarget* WorkerPrivate::ControlEventTarget() {
-    return mWorkerControlEventTarget;
-  }
-
-  nsISerialEventTarget* WorkerPrivate::HybridEventTarget() {
-    return mWorkerHybridEventTarget;
-  }
-
-  ClientType WorkerPrivate::GetClientType() const {
-    switch (Kind()) {
-      case WorkerKindDedicated:
-        return ClientType::Worker;
-      case WorkerKindShared:
-        return ClientType::Sharedworker;
-      case WorkerKindService:
-        return ClientType::Serviceworker;
-      default:
-        MOZ_CRASH("unknown worker type!");
-    }
-  }
-
-  UniquePtr<ClientSource> WorkerPrivate::CreateClientSource() {
-    auto data = mWorkerThreadAccessible.Access();
-    MOZ_ASSERT(!data->mScope, "Client should be created before the global");
-
-    UniquePtr<ClientSource> clientSource;
-    if (IsServiceWorker()) {
-      clientSource = ClientManager::CreateSourceFromInfo(
-          GetSourceInfo(), mWorkerHybridEventTarget);
-    } else {
-      clientSource = ClientManager::CreateSource(
-          GetClientType(), mWorkerHybridEventTarget,
-          StoragePrincipalHelper::ShouldUsePartitionPrincipalForServiceWorker(
-              this)
-              ? GetPartitionedPrincipalInfo()
-              : GetPrincipalInfo());
-    }
-    MOZ_DIAGNOSTIC_ASSERT(clientSource);
-
-    clientSource->SetAgentClusterId(mAgentClusterId);
-
-    if (data->mFrozen) {
-      clientSource->Freeze();
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (Kind() != WorkerKindService && !IsChromeWorker()) {
-      clientSource->WorkerSyncPing(this);
-    }
-
-    return clientSource;
-  }
-
-  bool WorkerPrivate::EnsureCSPEventListener() {
-    if (!mCSPEventListener) {
-      mCSPEventListener = WorkerCSPEventListener::Create(this);
-      if (NS_WARN_IF(!mCSPEventListener)) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  nsICSPEventListener* WorkerPrivate::CSPEventListener() const {
-    MOZ_ASSERT(mCSPEventListener);
-    return mCSPEventListener;
-  }
-
-  void WorkerPrivate::EnsurePerformanceStorage() {
-    AssertIsOnWorkerThread();
-
-    if (!mPerformanceStorage) {
-      mPerformanceStorage = PerformanceStorageWorker::Create(this);
-    }
-  }
-
-  bool WorkerPrivate::GetExecutionGranted() const {
-    auto data = mWorkerThreadAccessible.Access();
-    return data->mJSThreadExecutionGranted;
-  }
-
-  void WorkerPrivate::SetExecutionGranted(bool aGranted) {
-    auto data = mWorkerThreadAccessible.Access();
-    data->mJSThreadExecutionGranted = aGranted;
-  }
-
-  void WorkerPrivate::ScheduleTimeSliceExpiration(uint32_t aDelay) {
-    auto data = mWorkerThreadAccessible.Access();
-
-    if (!data->mTSTimer) {
-      data->mTSTimer = NS_NewTimer();
-      MOZ_ALWAYS_SUCCEEDS(data->mTSTimer->SetTarget(mWorkerControlEventTarget));
-    }
-
-    
-    
-    
-    
-    
-    MOZ_ALWAYS_SUCCEEDS(data->mTSTimer->InitWithNamedFuncCallback(
-        [](nsITimer* Timer, void* aClosure) { return; }, nullptr, aDelay,
-        nsITimer::TYPE_ONE_SHOT, "TimeSliceExpirationTimer"_ns));
-  }
-
-  void WorkerPrivate::CancelTimeSliceExpiration() {
-    auto data = mWorkerThreadAccessible.Access();
-    MOZ_ALWAYS_SUCCEEDS(data->mTSTimer->Cancel());
-  }
-
-  JSExecutionManager* WorkerPrivate::GetExecutionManager() const {
-    auto data = mWorkerThreadAccessible.Access();
-    return data->mExecutionManager.get();
-  }
-
-  void WorkerPrivate::SetExecutionManager(JSExecutionManager * aManager) {
-    auto data = mWorkerThreadAccessible.Access();
-    data->mExecutionManager = aManager;
-  }
-
-  void WorkerPrivate::ExecutionReady() {
-    auto data = mWorkerThreadAccessible.Access();
     {
       MutexAutoLock lock(mMutex);
-      if (mStatus >= Canceling) {
-        return;
+      if (checkFinalGCCC && currentStatus != mStatus) {
+        
+        
+        continue;
       }
-    }
 
-    data->mScope->MutableClientSourceRef().WorkerExecutionReady(this);
-
-    if (ExtensionAPIAllowed()) {
-      extensions::CreateAndDispatchInitWorkerContextRunnable();
-    }
-  }
-
-  void WorkerPrivate::InitializeGCTimers() {
-    auto data = mWorkerThreadAccessible.Access();
-
-    
-    
-    
-    
-    data->mPeriodicGCTimer = NS_NewTimer();
-    data->mIdleGCTimer = NS_NewTimer();
-
-    data->mPeriodicGCTimerRunning = false;
-    data->mIdleGCTimerRunning = false;
-  }
-
-  void WorkerPrivate::SetGCTimerMode(GCTimerMode aMode) {
-    auto data = mWorkerThreadAccessible.Access();
-
-    if (!data->mPeriodicGCTimer || !data->mIdleGCTimer) {
       
-      return;
-    }
-
-    if (aMode == NoTimer) {
-      MOZ_ALWAYS_SUCCEEDS(data->mPeriodicGCTimer->Cancel());
-      data->mPeriodicGCTimerRunning = false;
-      MOZ_ALWAYS_SUCCEEDS(data->mIdleGCTimer->Cancel());
-      data->mIdleGCTimerRunning = false;
-      return;
-    }
-
-    WorkerStatus status;
-    {
-      MutexAutoLock lock(mMutex);
-      status = mStatus;
-    }
-
-    if (status >= Killing) {
-      ShutdownGCTimers();
-      return;
-    }
-
-    
-    
-    if (aMode == PeriodicTimer && data->mPeriodicGCTimerRunning) {
-      return;
-    }
-
-    if (aMode == IdleTimer) {
-      if (!data->mPeriodicGCTimerRunning) {
+      
+      
+      
+      
+      while (noRunnablesPendingAndKeepAlive()) {
         
         
         
         
-        return;
-      }
+        thread->SetRunningEventDelay(TimeDuration(), TimeStamp());
 
-      
-      
-      MOZ_ALWAYS_SUCCEEDS(data->mPeriodicGCTimer->Cancel());
-      data->mPeriodicGCTimerRunning = false;
-
-      if (data->mIdleGCTimerRunning) {
-        return;
-      }
-    }
-
-    MOZ_ASSERT(aMode == PeriodicTimer || aMode == IdleTimer);
-
-    uint32_t delay = 0;
-    int16_t type = nsITimer::TYPE_ONE_SHOT;
-    nsTimerCallbackFunc callback = nullptr;
-    nsCString name;
-    nsITimer* timer = nullptr;
-
-    if (aMode == PeriodicTimer) {
-      delay = PERIODIC_GC_TIMER_DELAY_SEC * 1000;
-      type = nsITimer::TYPE_REPEATING_SLACK;
-      callback = PeriodicGCTimerCallback;
-      name.AssignLiteral("dom::PeriodicGCTimerCallback");
-      timer = data->mPeriodicGCTimer;
-      data->mPeriodicGCTimerRunning = true;
-      LOG(WorkerLog(), ("Worker %p scheduled periodic GC timer\n", this));
-    } else {
-      delay = IDLE_GC_TIMER_DELAY_SEC * 1000;
-      type = nsITimer::TYPE_ONE_SHOT;
-      callback = IdleGCTimerCallback;
-      name.AssignLiteral("dom::IdleGCTimerCallback");
-      timer = data->mIdleGCTimer;
-      data->mIdleGCTimerRunning = true;
-      LOG(WorkerLog(), ("Worker %p scheduled idle GC timer\n", this));
-    }
-
-    MOZ_ALWAYS_SUCCEEDS(timer->SetTarget(mWorkerControlEventTarget));
-    MOZ_ALWAYS_SUCCEEDS(
-        timer->InitWithNamedFuncCallback(callback, this, delay, type, name));
-  }
-
-  void WorkerPrivate::InitializeGlobalReportingEndpoints() {
-    if (mLoadInfo.mReportingEndpointsHeader.IsEmpty() ||
-        mLoadInfo.mReportingEndpointsHeader.IsVoid()) {
-      return;
-    }
-
-    MOZ_ASSERT(GlobalScope());
-    
-    
-
-    ReportDeliver::WorkerInitializeReportingEndpoints(
-        reinterpret_cast<uintptr_t>(
-            static_cast<nsIGlobalObject*>(GlobalScope())),
-        mLoadInfo.mBaseURI, mLoadInfo.mReportingEndpointsHeader,
-        ShouldResistFingerprinting(RFPTarget::NavigatorUserAgent),
-        CookieJarSettings());
-  }
-
-  void WorkerPrivate::SetReportingEndpointsHeader(const nsACString& aHeader) {
-    MOZ_ASSERT(mLoadInfo.mReportingEndpointsHeader.IsEmpty(),
-               "Headers set multiple times.");
-    mLoadInfo.mReportingEndpointsHeader = aHeader;
-  }
-
-  void WorkerPrivate::ShutdownGCTimers() {
-    auto data = mWorkerThreadAccessible.Access();
-
-    MOZ_ASSERT(!data->mPeriodicGCTimer == !data->mIdleGCTimer);
-
-    if (!data->mPeriodicGCTimer && !data->mIdleGCTimer) {
-      return;
-    }
-
-    
-    MOZ_ALWAYS_SUCCEEDS(data->mPeriodicGCTimer->Cancel());
-    MOZ_ALWAYS_SUCCEEDS(data->mIdleGCTimer->Cancel());
-
-    LOG(WorkerLog(), ("Worker %p killed the GC timers\n", this));
-
-    data->mPeriodicGCTimer = nullptr;
-    data->mIdleGCTimer = nullptr;
-    data->mPeriodicGCTimerRunning = false;
-    data->mIdleGCTimerRunning = false;
-  }
-
-  bool WorkerPrivate::InterruptCallback(JSContext * aCx) {
-    auto data = mWorkerThreadAccessible.Access();
-
-    AutoYieldJSThreadExecution yield;
-
-    
-    
-    
-    
-    
-    
-
-    MOZ_ASSERT(!JS_IsExceptionPending(aCx));
-
-    bool mayContinue = true;
-    bool scheduledIdleGC = false;
-
-    for (;;) {
-      
-      auto result = ProcessAllControlRunnables();
-      if (result == ProcessAllControlRunnablesResult::Abort) {
-        mayContinue = false;
-      }
-
-      bool mayFreeze = data->mFrozen;
-
-      {
-        MutexAutoLock lock(mMutex);
-
-        if (mayFreeze) {
-          mayFreeze = mStatus <= Running;
-        }
-
-        if (mStatus >= Canceling) {
-          mayContinue = false;
-        }
-      }
-
-      if (!mayContinue || !mayFreeze) {
-        break;
-      }
-
-      
-      
-      if (!scheduledIdleGC) {
-        SetGCTimerMode(IdleTimer);
-        scheduledIdleGC = true;
-      }
-
-      while ((mayContinue = MayContinueRunning())) {
-        MutexAutoLock lock(mMutex);
-        if (!mControlQueue.IsEmpty()) {
-          break;
-        }
+        mWorkerLoopIsIdle = true;
 
         WaitForWorkerEvents();
-      }
-    }
 
-    if (!mayContinue) {
-      
-      NS_ASSERTION(!JS_IsExceptionPending(aCx),
-                   "Should not have an exception set here!");
-      return false;
+        mWorkerLoopIsIdle = false;
+      }
+
+      auto result = ProcessAllControlRunnablesLocked();
+      if (result != ProcessAllControlRunnablesResult::Nothing) {
+        
+        
+        (void)noRunnablesPendingAndKeepAlive();
+      }
+
+      currentStatus = mStatus;
     }
 
     
-    SetGCTimerMode(PeriodicTimer);
+    
+    
+    
+    
+    
+    
+    if (currentStatus >= Closing &&
+        !data->mPerformedShutdownAfterLastContentTaskExecuted) {
+      data->mPerformedShutdownAfterLastContentTaskExecuted.Flip();
+      if (data->mScope) {
+        data->mScope->NoteTerminating();
+        data->mScope->DisconnectGlobalTeardownObservers();
+        if (WebTaskScheduler* scheduler =
+                data->mScope->GetExistingScheduler()) {
+          scheduler->Disconnect();
+        }
+      }
+    }
 
-    if (data->mDebuggerInterruptRequested) {
-      bool debuggerRunnablesPending = false;
+    
+    
+    
+    
+    
+    
+    if (currentStatus != Running && !HasActiveWorkerRefs() &&
+        !normalRunnablesPending && !debuggerRunnablesPending) {
+      
+      if (currentStatus == Canceling) {
+        NotifyInternal(Killing);
+
+#ifdef DEBUG
+        {
+          MutexAutoLock lock(mMutex);
+          currentStatus = mStatus;
+        }
+        MOZ_ASSERT(currentStatus == Killing);
+#else
+        currentStatus = Killing;
+#endif
+      }
+
+      
+      if (currentStatus == Killing) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        {
+          MutexAutoLock lock(mMutex);
+          if (NS_HasPendingEvents(thread) || !mDebuggerQueue.IsEmpty()) {
+            continue;
+          }
+        }
+
+        
+        
+        if (data->mScope) {
+          data->mScope->NoteShuttingDown();
+        }
+        if (mRemoteWorkerNonLifeCycleOpController) {
+          mRemoteWorkerNonLifeCycleOpController->TransistionStateToKilled();
+          mRemoteWorkerNonLifeCycleOpController = nullptr;
+        }
+
+        
+        ReportUseCounters();
+
+        
+        
+        PromiseDebugging::FlushUncaughtRejections();
+
+        
+
+        ShutdownGCTimers();
+
+        DisableMemoryReporter();
+
+        
+        
+        nsCOMPtr<nsITimer> timer;
+        {
+          MutexAutoLock lock(mMutex);
+          mStatus = Dead;
+          
+          while (mDispatchingControlRunnables) {
+            mCondVar.Wait();
+          }
+          mJSContext = nullptr;
+          mDebuggerInterruptTimer.swap(timer);
+        }
+        timer = nullptr;
+
+        
+        
+        if (!mControlQueue.IsEmpty()) {
+          LOG(WorkerLog(),
+              ("WorkerPrivate::DoRunLoop [%p] dropping control runnables in "
+               "Dead status",
+               this));
+          WorkerRunnable* runnable = nullptr;
+          while (mControlQueue.Pop(runnable)) {
+            runnable->Cancel();
+            runnable->Release();
+          }
+        }
+
+        
+        
+        UnlinkTimeouts();
+
+        return;
+      }
+    }
+
+    if (debuggerRunnablesPending || normalRunnablesPending) {
+      
+      SetGCTimerMode(PeriodicTimer);
+    }
+
+    if (debuggerRunnablesPending) {
+      ProcessSingleDebuggerRunnable();
+
       {
         MutexAutoLock lock(mMutex);
         debuggerRunnablesPending = !mDebuggerQueue.IsEmpty();
       }
+
       if (debuggerRunnablesPending) {
+        WorkerDebuggerGlobalScope* globalScope = DebuggerGlobalScope();
         
         
-        WorkerGlobalScope* globalScope = GlobalScope();
+        
+        
         if (globalScope) {
-          JSObject* global = JS::CurrentGlobalOrNull(aCx);
-          if (global && global == globalScope->GetGlobalJSObject()) {
-            while (debuggerRunnablesPending) {
-              ProcessSingleDebuggerRunnable();
-              {
-                MutexAutoLock lock(mMutex);
-                debuggerRunnablesPending = !mDebuggerQueue.IsEmpty();
-              }
+          
+          
+          JSAutoRealm ar(aCx, globalScope->GetGlobalJSObject());
+          JS_MaybeGC(aCx);
+        }
+      }
+    } else if (normalRunnablesPending) {
+      
+      NS_ProcessNextEvent(thread, false);
+
+      normalRunnablesPending = NS_HasPendingEvents(thread);
+      if (normalRunnablesPending && GlobalScope()) {
+        
+        
+        JSAutoRealm ar(aCx, GlobalScope()->GetGlobalJSObject());
+        JS_MaybeGC(aCx);
+      }
+    }
+
+    
+    
+    
+    if (currentStatus < Canceling) {
+      UpdateCCFlag(CCFlag::CheckBackgroundActors);
+    }
+
+    if (!debuggerRunnablesPending && !normalRunnablesPending) {
+      
+      
+      SetGCTimerMode(IdleTimer);
+    }
+
+    
+    
+    
+    size_t queuedEvents = mMainThreadEventTargetForMessaging->Length() +
+                          mMainThreadDebuggeeEventTarget->Length();
+    if (queuedEvents > 5000) {
+      
+      mMainThreadDebuggeeEventTarget->AwaitIdle();
+    }
+  }
+
+  MOZ_CRASH("Shouldn't get here!");
+}
+
+namespace {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+uint32_t GetEffectiveEventLoopRecursionDepth() {
+  auto* ccjs = CycleCollectedJSContext::Get();
+  if (ccjs) {
+    return ccjs->RecursionDepth();
+  }
+
+  return 1;
+}
+
+}  
+
+void WorkerPrivate::OnProcessNextEvent() {
+  AssertIsOnWorkerThread();
+
+  uint32_t recursionDepth = GetEffectiveEventLoopRecursionDepth();
+  MOZ_ASSERT(recursionDepth);
+
+  
+  
+  
+  
+  if (recursionDepth > 1 && mSyncLoopStack.Length() < recursionDepth - 1) {
+    (void)ProcessAllControlRunnables();
+    
+    
+  }
+}
+
+void WorkerPrivate::AfterProcessNextEvent() {
+  AssertIsOnWorkerThread();
+  MOZ_ASSERT(GetEffectiveEventLoopRecursionDepth());
+}
+
+nsISerialEventTarget* WorkerPrivate::MainThreadEventTargetForMessaging() {
+  return mMainThreadEventTargetForMessaging;
+}
+
+nsresult WorkerPrivate::DispatchToMainThreadForMessaging(
+    nsIRunnable* aRunnable, nsIEventTarget::DispatchFlags aFlags) {
+  nsCOMPtr<nsIRunnable> r = aRunnable;
+  return DispatchToMainThreadForMessaging(r.forget(), aFlags);
+}
+
+nsresult WorkerPrivate::DispatchToMainThreadForMessaging(
+    already_AddRefed<nsIRunnable> aRunnable,
+    nsIEventTarget::DispatchFlags aFlags) {
+  return mMainThreadEventTargetForMessaging->Dispatch(std::move(aRunnable),
+                                                      aFlags);
+}
+
+nsISerialEventTarget* WorkerPrivate::MainThreadEventTarget() {
+  return mMainThreadEventTarget;
+}
+
+nsresult WorkerPrivate::DispatchToMainThread(
+    nsIRunnable* aRunnable, nsIEventTarget::DispatchFlags aFlags) {
+  nsCOMPtr<nsIRunnable> r = aRunnable;
+  return DispatchToMainThread(r.forget(), aFlags);
+}
+
+nsresult WorkerPrivate::DispatchToMainThread(
+    already_AddRefed<nsIRunnable> aRunnable,
+    nsIEventTarget::DispatchFlags aFlags) {
+  return mMainThreadEventTarget->Dispatch(std::move(aRunnable), aFlags);
+}
+
+nsresult WorkerPrivate::DispatchDebuggeeToMainThread(
+    already_AddRefed<WorkerRunnable> aRunnable,
+    nsIEventTarget::DispatchFlags aFlags) {
+  RefPtr<WorkerRunnable> debuggeeRunnable = std::move(aRunnable);
+  MOZ_ASSERT_DEBUG_OR_FUZZING(debuggeeRunnable->IsDebuggeeRunnable());
+  return mMainThreadDebuggeeEventTarget->Dispatch(debuggeeRunnable.forget(),
+                                                  aFlags);
+}
+
+nsISerialEventTarget* WorkerPrivate::ControlEventTarget() {
+  return mWorkerControlEventTarget;
+}
+
+nsISerialEventTarget* WorkerPrivate::HybridEventTarget() {
+  return mWorkerHybridEventTarget;
+}
+
+ClientType WorkerPrivate::GetClientType() const {
+  switch (Kind()) {
+    case WorkerKindDedicated:
+      return ClientType::Worker;
+    case WorkerKindShared:
+      return ClientType::Sharedworker;
+    case WorkerKindService:
+      return ClientType::Serviceworker;
+    default:
+      MOZ_CRASH("unknown worker type!");
+  }
+}
+
+UniquePtr<ClientSource> WorkerPrivate::CreateClientSource() {
+  auto data = mWorkerThreadAccessible.Access();
+  MOZ_ASSERT(!data->mScope, "Client should be created before the global");
+
+  UniquePtr<ClientSource> clientSource;
+  if (IsServiceWorker()) {
+    clientSource = ClientManager::CreateSourceFromInfo(
+        GetSourceInfo(), mWorkerHybridEventTarget);
+  } else {
+    clientSource = ClientManager::CreateSource(
+        GetClientType(), mWorkerHybridEventTarget,
+        StoragePrincipalHelper::ShouldUsePartitionPrincipalForServiceWorker(
+            this)
+            ? GetPartitionedPrincipalInfo()
+            : GetPrincipalInfo());
+  }
+  MOZ_DIAGNOSTIC_ASSERT(clientSource);
+
+  clientSource->SetAgentClusterId(mAgentClusterId);
+
+  if (data->mFrozen) {
+    clientSource->Freeze();
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (Kind() != WorkerKindService && !IsChromeWorker()) {
+    clientSource->WorkerSyncPing(this);
+  }
+
+  return clientSource;
+}
+
+bool WorkerPrivate::EnsureCSPEventListener() {
+  if (!mCSPEventListener) {
+    mCSPEventListener = WorkerCSPEventListener::Create(this);
+    if (NS_WARN_IF(!mCSPEventListener)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+nsICSPEventListener* WorkerPrivate::CSPEventListener() const {
+  MOZ_ASSERT(mCSPEventListener);
+  return mCSPEventListener;
+}
+
+void WorkerPrivate::EnsurePerformanceStorage() {
+  AssertIsOnWorkerThread();
+
+  if (!mPerformanceStorage) {
+    mPerformanceStorage = PerformanceStorageWorker::Create(this);
+  }
+}
+
+bool WorkerPrivate::GetExecutionGranted() const {
+  auto data = mWorkerThreadAccessible.Access();
+  return data->mJSThreadExecutionGranted;
+}
+
+void WorkerPrivate::SetExecutionGranted(bool aGranted) {
+  auto data = mWorkerThreadAccessible.Access();
+  data->mJSThreadExecutionGranted = aGranted;
+}
+
+void WorkerPrivate::ScheduleTimeSliceExpiration(uint32_t aDelay) {
+  auto data = mWorkerThreadAccessible.Access();
+
+  if (!data->mTSTimer) {
+    data->mTSTimer = NS_NewTimer();
+    MOZ_ALWAYS_SUCCEEDS(data->mTSTimer->SetTarget(mWorkerControlEventTarget));
+  }
+
+  
+  
+  
+  
+  
+  MOZ_ALWAYS_SUCCEEDS(data->mTSTimer->InitWithNamedFuncCallback(
+      [](nsITimer* Timer, void* aClosure) { return; }, nullptr, aDelay,
+      nsITimer::TYPE_ONE_SHOT, "TimeSliceExpirationTimer"_ns));
+}
+
+void WorkerPrivate::CancelTimeSliceExpiration() {
+  auto data = mWorkerThreadAccessible.Access();
+  MOZ_ALWAYS_SUCCEEDS(data->mTSTimer->Cancel());
+}
+
+JSExecutionManager* WorkerPrivate::GetExecutionManager() const {
+  auto data = mWorkerThreadAccessible.Access();
+  return data->mExecutionManager.get();
+}
+
+void WorkerPrivate::SetExecutionManager(JSExecutionManager* aManager) {
+  auto data = mWorkerThreadAccessible.Access();
+  data->mExecutionManager = aManager;
+}
+
+void WorkerPrivate::ExecutionReady() {
+  auto data = mWorkerThreadAccessible.Access();
+  {
+    MutexAutoLock lock(mMutex);
+    if (mStatus >= Canceling) {
+      return;
+    }
+  }
+
+  data->mScope->MutableClientSourceRef().WorkerExecutionReady(this);
+
+  if (ExtensionAPIAllowed()) {
+    extensions::CreateAndDispatchInitWorkerContextRunnable();
+  }
+}
+
+void WorkerPrivate::InitializeGCTimers() {
+  auto data = mWorkerThreadAccessible.Access();
+
+  
+  
+  
+  
+  data->mPeriodicGCTimer = NS_NewTimer();
+  data->mIdleGCTimer = NS_NewTimer();
+
+  data->mPeriodicGCTimerRunning = false;
+  data->mIdleGCTimerRunning = false;
+}
+
+void WorkerPrivate::SetGCTimerMode(GCTimerMode aMode) {
+  auto data = mWorkerThreadAccessible.Access();
+
+  if (!data->mPeriodicGCTimer || !data->mIdleGCTimer) {
+    
+    return;
+  }
+
+  if (aMode == NoTimer) {
+    MOZ_ALWAYS_SUCCEEDS(data->mPeriodicGCTimer->Cancel());
+    data->mPeriodicGCTimerRunning = false;
+    MOZ_ALWAYS_SUCCEEDS(data->mIdleGCTimer->Cancel());
+    data->mIdleGCTimerRunning = false;
+    return;
+  }
+
+  WorkerStatus status;
+  {
+    MutexAutoLock lock(mMutex);
+    status = mStatus;
+  }
+
+  if (status >= Killing) {
+    ShutdownGCTimers();
+    return;
+  }
+
+  
+  
+  if (aMode == PeriodicTimer && data->mPeriodicGCTimerRunning) {
+    return;
+  }
+
+  if (aMode == IdleTimer) {
+    if (!data->mPeriodicGCTimerRunning) {
+      
+      
+      
+      
+      return;
+    }
+
+    
+    
+    MOZ_ALWAYS_SUCCEEDS(data->mPeriodicGCTimer->Cancel());
+    data->mPeriodicGCTimerRunning = false;
+
+    if (data->mIdleGCTimerRunning) {
+      return;
+    }
+  }
+
+  MOZ_ASSERT(aMode == PeriodicTimer || aMode == IdleTimer);
+
+  uint32_t delay = 0;
+  int16_t type = nsITimer::TYPE_ONE_SHOT;
+  nsTimerCallbackFunc callback = nullptr;
+  nsCString name;
+  nsITimer* timer = nullptr;
+
+  if (aMode == PeriodicTimer) {
+    delay = PERIODIC_GC_TIMER_DELAY_SEC * 1000;
+    type = nsITimer::TYPE_REPEATING_SLACK;
+    callback = PeriodicGCTimerCallback;
+    name.AssignLiteral("dom::PeriodicGCTimerCallback");
+    timer = data->mPeriodicGCTimer;
+    data->mPeriodicGCTimerRunning = true;
+    LOG(WorkerLog(), ("Worker %p scheduled periodic GC timer\n", this));
+  } else {
+    delay = IDLE_GC_TIMER_DELAY_SEC * 1000;
+    type = nsITimer::TYPE_ONE_SHOT;
+    callback = IdleGCTimerCallback;
+    name.AssignLiteral("dom::IdleGCTimerCallback");
+    timer = data->mIdleGCTimer;
+    data->mIdleGCTimerRunning = true;
+    LOG(WorkerLog(), ("Worker %p scheduled idle GC timer\n", this));
+  }
+
+  MOZ_ALWAYS_SUCCEEDS(timer->SetTarget(mWorkerControlEventTarget));
+  MOZ_ALWAYS_SUCCEEDS(
+      timer->InitWithNamedFuncCallback(callback, this, delay, type, name));
+}
+
+void WorkerPrivate::InitializeGlobalReportingEndpoints() {
+  if (mLoadInfo.mReportingEndpointsHeader.IsEmpty() ||
+      mLoadInfo.mReportingEndpointsHeader.IsVoid()) {
+    return;
+  }
+
+  MOZ_ASSERT(GlobalScope());
+  
+  
+
+  ReportDeliver::WorkerInitializeReportingEndpoints(
+      reinterpret_cast<uintptr_t>(static_cast<nsIGlobalObject*>(GlobalScope())),
+      mLoadInfo.mBaseURI, mLoadInfo.mReportingEndpointsHeader,
+      ShouldResistFingerprinting(RFPTarget::NavigatorUserAgent),
+      CookieJarSettings());
+}
+
+void WorkerPrivate::SetReportingEndpointsHeader(const nsACString& aHeader) {
+  MOZ_ASSERT(mLoadInfo.mReportingEndpointsHeader.IsEmpty(),
+             "Headers set multiple times.");
+  mLoadInfo.mReportingEndpointsHeader = aHeader;
+}
+
+void WorkerPrivate::ShutdownGCTimers() {
+  auto data = mWorkerThreadAccessible.Access();
+
+  MOZ_ASSERT(!data->mPeriodicGCTimer == !data->mIdleGCTimer);
+
+  if (!data->mPeriodicGCTimer && !data->mIdleGCTimer) {
+    return;
+  }
+
+  
+  MOZ_ALWAYS_SUCCEEDS(data->mPeriodicGCTimer->Cancel());
+  MOZ_ALWAYS_SUCCEEDS(data->mIdleGCTimer->Cancel());
+
+  LOG(WorkerLog(), ("Worker %p killed the GC timers\n", this));
+
+  data->mPeriodicGCTimer = nullptr;
+  data->mIdleGCTimer = nullptr;
+  data->mPeriodicGCTimerRunning = false;
+  data->mIdleGCTimerRunning = false;
+}
+
+bool WorkerPrivate::InterruptCallback(JSContext* aCx) {
+  auto data = mWorkerThreadAccessible.Access();
+
+  AutoYieldJSThreadExecution yield;
+
+  
+  
+  
+  
+  
+  
+
+  MOZ_ASSERT(!JS_IsExceptionPending(aCx));
+
+  bool mayContinue = true;
+  bool scheduledIdleGC = false;
+
+  for (;;) {
+    
+    auto result = ProcessAllControlRunnables();
+    if (result == ProcessAllControlRunnablesResult::Abort) {
+      mayContinue = false;
+    }
+
+    bool mayFreeze = data->mFrozen;
+
+    {
+      MutexAutoLock lock(mMutex);
+
+      if (mayFreeze) {
+        mayFreeze = mStatus <= Running;
+      }
+
+      if (mStatus >= Canceling) {
+        mayContinue = false;
+      }
+    }
+
+    if (!mayContinue || !mayFreeze) {
+      break;
+    }
+
+    
+    
+    if (!scheduledIdleGC) {
+      SetGCTimerMode(IdleTimer);
+      scheduledIdleGC = true;
+    }
+
+    while ((mayContinue = MayContinueRunning())) {
+      MutexAutoLock lock(mMutex);
+      if (!mControlQueue.IsEmpty()) {
+        break;
+      }
+
+      WaitForWorkerEvents();
+    }
+  }
+
+  if (!mayContinue) {
+    
+    NS_ASSERTION(!JS_IsExceptionPending(aCx),
+                 "Should not have an exception set here!");
+    return false;
+  }
+
+  
+  SetGCTimerMode(PeriodicTimer);
+
+  if (data->mDebuggerInterruptRequested) {
+    bool debuggerRunnablesPending = false;
+    {
+      MutexAutoLock lock(mMutex);
+      debuggerRunnablesPending = !mDebuggerQueue.IsEmpty();
+    }
+    if (debuggerRunnablesPending) {
+      
+      
+      WorkerGlobalScope* globalScope = GlobalScope();
+      if (globalScope) {
+        JSObject* global = JS::CurrentGlobalOrNull(aCx);
+        if (global && global == globalScope->GetGlobalJSObject()) {
+          while (debuggerRunnablesPending) {
+            ProcessSingleDebuggerRunnable();
+            {
+              MutexAutoLock lock(mMutex);
+              debuggerRunnablesPending = !mDebuggerQueue.IsEmpty();
             }
           }
         }
       }
-      data->mDebuggerInterruptRequested = false;
     }
-
-    return true;
+    data->mDebuggerInterruptRequested = false;
   }
 
-  void WorkerPrivate::CloseInternal() {
-    AssertIsOnWorkerThread();
-    NotifyInternal(Closing);
+  return true;
+}
+
+void WorkerPrivate::CloseInternal() {
+  AssertIsOnWorkerThread();
+  NotifyInternal(Closing);
+}
+
+bool WorkerPrivate::IsOnCurrentThread() {
+  
+
+  MOZ_ASSERT(mPRThread);
+  return PR_GetCurrentThread() == mPRThread;
+}
+
+void WorkerPrivate::ScheduleDeletion(WorkerRanOrNot aRanOrNot) {
+  AssertIsOnWorkerThread();
+  {
+    
+    
+    auto data = mWorkerThreadAccessible.Access();
+    MOZ_ASSERT(data->mChildWorkers.IsEmpty());
+
+    MOZ_RELEASE_ASSERT(!data->mDeletionScheduled);
+    data->mDeletionScheduled.Flip();
   }
+  MOZ_ASSERT(mSyncLoopStack.IsEmpty());
+  MOZ_ASSERT(mPostSyncLoopOperations == 0);
 
-  bool WorkerPrivate::IsOnCurrentThread() {
-    
-
-    MOZ_ASSERT(mPRThread);
-    return PR_GetCurrentThread() == mPRThread;
+  
+  
+  if (WorkerNeverRan == aRanOrNot) {
+    ClearPreStartRunnables();
   }
-
-  void WorkerPrivate::ScheduleDeletion(WorkerRanOrNot aRanOrNot) {
-    AssertIsOnWorkerThread();
-    {
-      
-      
-      auto data = mWorkerThreadAccessible.Access();
-      MOZ_ASSERT(data->mChildWorkers.IsEmpty());
-
-      MOZ_RELEASE_ASSERT(!data->mDeletionScheduled);
-      data->mDeletionScheduled.Flip();
-    }
-    MOZ_ASSERT(mSyncLoopStack.IsEmpty());
-    MOZ_ASSERT(mPostSyncLoopOperations == 0);
-
-    
-    
-    if (WorkerNeverRan == aRanOrNot) {
-      ClearPreStartRunnables();
-    }
 
 #ifdef DEBUG
-    if (WorkerRan == aRanOrNot) {
-      nsIThread* currentThread = NS_GetCurrentThread();
-      MOZ_ASSERT(currentThread);
-      
-      
-      (void)NS_WARN_IF(NS_HasPendingEvents(currentThread));
-    }
+  if (WorkerRan == aRanOrNot) {
+    nsIThread* currentThread = NS_GetCurrentThread();
+    MOZ_ASSERT(currentThread);
+    
+    
+    (void)NS_WARN_IF(NS_HasPendingEvents(currentThread));
+  }
 #endif
 
-    
-    
-    SetIsRemoteDebuggerRegistered(false);
+  
+  
+  SetIsRemoteDebuggerRegistered(false);
 
-    if (WorkerPrivate* parent = GetParent()) {
-      RefPtr<WorkerFinishedRunnable> runnable =
-          new WorkerFinishedRunnable(parent, this);
-      if (!runnable->Dispatch(parent)) {
-        NS_WARNING("Failed to dispatch runnable!");
-      }
-    } else {
-      if (ExtensionAPIAllowed()) {
-        MOZ_ASSERT(IsServiceWorker());
-        RefPtr<Runnable> extWorkerRunnable =
-            extensions::CreateWorkerDestroyedRunnable(ServiceWorkerID(),
-                                                      GetBaseURI());
-        
-        if (NS_FAILED(
-                DispatchToMainThreadForMessaging(extWorkerRunnable.forget()))) {
-          NS_WARNING(
-              "Failed to dispatch runnable to notify extensions worker "
-              "destroyed");
-        }
-      }
-
-      
-      
-      
-      RefPtr<TopLevelWorkerFinishedRunnable> runnable =
-          new TopLevelWorkerFinishedRunnable(this);
-      if (NS_FAILED(DispatchToMainThreadForMessaging(runnable.forget()))) {
-        NS_WARNING("Failed to dispatch runnable!");
-      }
-
-      
-      
-      
-      
-      
+  if (WorkerPrivate* parent = GetParent()) {
+    RefPtr<WorkerFinishedRunnable> runnable =
+        new WorkerFinishedRunnable(parent, this);
+    if (!runnable->Dispatch(parent)) {
+      NS_WARNING("Failed to dispatch runnable!");
     }
-  }
-
-  bool WorkerPrivate::CollectRuntimeStats(JS::RuntimeStats * aRtStats,
-                                          bool aAnonymize)
-      MOZ_NO_THREAD_SAFETY_ANALYSIS {
-    
-    
-    AssertIsOnWorkerThread();
-    NS_ASSERTION(aRtStats, "Null RuntimeStats!");
-    
-    NS_ASSERTION(mJSContext, "This must never be null!");
-
-    return JS::CollectRuntimeStats(mJSContext, aRtStats, nullptr, aAnonymize);
-  }
-
-  void WorkerPrivate::EnableMemoryReporter() {
-    auto data = mWorkerThreadAccessible.Access();
-    MOZ_ASSERT(!data->mMemoryReporter);
-
-    
-    
-    data->mMemoryReporter = new MemoryReporter(this);
-
-    if (NS_FAILED(RegisterWeakAsyncMemoryReporter(data->mMemoryReporter))) {
-      NS_WARNING("Failed to register memory reporter!");
+  } else {
+    if (ExtensionAPIAllowed()) {
+      MOZ_ASSERT(IsServiceWorker());
+      RefPtr<Runnable> extWorkerRunnable =
+          extensions::CreateWorkerDestroyedRunnable(ServiceWorkerID(),
+                                                    GetBaseURI());
       
-      
-      data->mMemoryReporter = nullptr;
+      if (NS_FAILED(
+              DispatchToMainThreadForMessaging(extWorkerRunnable.forget()))) {
+        NS_WARNING(
+            "Failed to dispatch runnable to notify extensions worker "
+            "destroyed");
+      }
     }
+
+    
+    
+    
+    RefPtr<TopLevelWorkerFinishedRunnable> runnable =
+        new TopLevelWorkerFinishedRunnable(this);
+    if (NS_FAILED(DispatchToMainThreadForMessaging(runnable.forget()))) {
+      NS_WARNING("Failed to dispatch runnable!");
+    }
+
+    
+    
+    
+    
+    
+  }
+}
+
+bool WorkerPrivate::CollectRuntimeStats(
+    JS::RuntimeStats* aRtStats, bool aAnonymize) MOZ_NO_THREAD_SAFETY_ANALYSIS {
+  
+  
+  AssertIsOnWorkerThread();
+  NS_ASSERTION(aRtStats, "Null RuntimeStats!");
+  
+  NS_ASSERTION(mJSContext, "This must never be null!");
+
+  return JS::CollectRuntimeStats(mJSContext, aRtStats, nullptr, aAnonymize);
+}
+
+void WorkerPrivate::EnableMemoryReporter() {
+  auto data = mWorkerThreadAccessible.Access();
+  MOZ_ASSERT(!data->mMemoryReporter);
+
+  
+  
+  data->mMemoryReporter = new MemoryReporter(this);
+
+  if (NS_FAILED(RegisterWeakAsyncMemoryReporter(data->mMemoryReporter))) {
+    NS_WARNING("Failed to register memory reporter!");
+    
+    
+    data->mMemoryReporter = nullptr;
+  }
+}
+
+void WorkerPrivate::DisableMemoryReporter() {
+  auto data = mWorkerThreadAccessible.Access();
+
+  RefPtr<MemoryReporter> memoryReporter;
+  {
+    
+    
+    MutexAutoLock lock(mMutex);
+
+    
+    
+    if (!data->mMemoryReporter) {
+      return;
+    }
+
+    
+    
+    data->mMemoryReporter.swap(memoryReporter);
+
+    
+    
+    memoryReporter->Disable();
   }
 
-  void WorkerPrivate::DisableMemoryReporter() {
-    auto data = mWorkerThreadAccessible.Access();
+  
+  if (NS_FAILED(UnregisterWeakMemoryReporter(memoryReporter))) {
+    NS_WARNING("Failed to unregister memory reporter!");
+  }
+}
 
-    RefPtr<MemoryReporter> memoryReporter;
+void WorkerPrivate::WaitForWorkerEvents() {
+  AUTO_PROFILER_LABEL("WorkerPrivate::WaitForWorkerEvents", IDLE);
+
+  AssertIsOnWorkerThread();
+  mMutex.AssertCurrentThreadOwns();
+
+  
+  mCondVar.Wait();
+}
+
+WorkerPrivate::ProcessAllControlRunnablesResult
+WorkerPrivate::ProcessAllControlRunnablesLocked() {
+  AssertIsOnWorkerThread();
+  mMutex.AssertCurrentThreadOwns();
+
+  AutoYieldJSThreadExecution yield;
+
+  auto result = ProcessAllControlRunnablesResult::Nothing;
+
+  for (;;) {
+    WorkerRunnable* event;
+    if (!mControlQueue.Pop(event)) {
+      break;
+    }
+
+    MutexAutoUnlock unlock(mMutex);
+
     {
-      
-      
-      MutexAutoLock lock(mMutex);
-
-      
-      
-      if (!data->mMemoryReporter) {
-        return;
+      MOZ_ASSERT(event);
+      AUTO_PROFILE_FOLLOWING_RUNNABLE(event);
+      if (NS_FAILED(static_cast<nsIRunnable*>(event)->Run())) {
+        result = ProcessAllControlRunnablesResult::Abort;
       }
-
-      
-      
-      data->mMemoryReporter.swap(memoryReporter);
-
-      
-      
-      memoryReporter->Disable();
     }
 
-    
-    if (NS_FAILED(UnregisterWeakMemoryReporter(memoryReporter))) {
-      NS_WARNING("Failed to unregister memory reporter!");
+    if (result == ProcessAllControlRunnablesResult::Nothing) {
+      
+      result = ProcessAllControlRunnablesResult::MayContinue;
     }
+    event->Release();
   }
 
-  void WorkerPrivate::WaitForWorkerEvents() {
-    AUTO_PROFILER_LABEL("WorkerPrivate::WaitForWorkerEvents", IDLE);
+  return result;
+}
 
-    AssertIsOnWorkerThread();
-    mMutex.AssertCurrentThreadOwns();
+void WorkerPrivate::ShutdownModuleLoader() {
+  AssertIsOnWorkerThread();
 
-    
-    mCondVar.Wait();
-  }
-
-  WorkerPrivate::ProcessAllControlRunnablesResult
-  WorkerPrivate::ProcessAllControlRunnablesLocked() {
-    AssertIsOnWorkerThread();
-    mMutex.AssertCurrentThreadOwns();
-
-    AutoYieldJSThreadExecution yield;
-
-    auto result = ProcessAllControlRunnablesResult::Nothing;
-
-    for (;;) {
-      WorkerRunnable* event;
-      if (!mControlQueue.Pop(event)) {
-        break;
-      }
-
-      MutexAutoUnlock unlock(mMutex);
-
-      {
-        MOZ_ASSERT(event);
-        AUTO_PROFILE_FOLLOWING_RUNNABLE(event);
-        if (NS_FAILED(static_cast<nsIRunnable*>(event)->Run())) {
-          result = ProcessAllControlRunnablesResult::Abort;
-        }
-      }
-
-      if (result == ProcessAllControlRunnablesResult::Nothing) {
-        
-        result = ProcessAllControlRunnablesResult::MayContinue;
-      }
-      event->Release();
-    }
-
-    return result;
-  }
-
-  void WorkerPrivate::ShutdownModuleLoader() {
-    AssertIsOnWorkerThread();
-
-    WorkerGlobalScope* globalScope = GlobalScope();
-    if (globalScope) {
-      if (globalScope->GetModuleLoader(nullptr)) {
-        globalScope->GetModuleLoader(nullptr)->Shutdown();
-      }
-    }
-    WorkerDebuggerGlobalScope* debugGlobalScope = DebuggerGlobalScope();
-    if (debugGlobalScope) {
-      if (debugGlobalScope->GetModuleLoader(nullptr)) {
-        debugGlobalScope->GetModuleLoader(nullptr)->Shutdown();
-      }
+  WorkerGlobalScope* globalScope = GlobalScope();
+  if (globalScope) {
+    if (globalScope->GetModuleLoader(nullptr)) {
+      globalScope->GetModuleLoader(nullptr)->Shutdown();
     }
   }
-
-  void WorkerPrivate::ClearPreStartRunnables() {
-    nsTArray<RefPtr<WorkerThreadRunnable>> prestart;
-    {
-      MutexAutoLock lock(mMutex);
-      mPreStartRunnables.SwapElements(prestart);
-    }
-    for (uint32_t count = prestart.Length(), index = 0; index < count;
-         index++) {
-      LOG(WorkerLog(), ("WorkerPrivate::ClearPreStartRunnable [%p]", this));
-      RefPtr<WorkerRunnable> runnable = std::move(prestart[index]);
-      runnable->Cancel();
+  WorkerDebuggerGlobalScope* debugGlobalScope = DebuggerGlobalScope();
+  if (debugGlobalScope) {
+    if (debugGlobalScope->GetModuleLoader(nullptr)) {
+      debugGlobalScope->GetModuleLoader(nullptr)->Shutdown();
     }
   }
+}
 
-  void WorkerPrivate::ProcessSingleDebuggerRunnable() {
+void WorkerPrivate::ClearPreStartRunnables() {
+  nsTArray<RefPtr<WorkerThreadRunnable>> prestart;
+  {
+    MutexAutoLock lock(mMutex);
+    mPreStartRunnables.SwapElements(prestart);
+  }
+  for (uint32_t count = prestart.Length(), index = 0; index < count; index++) {
+    LOG(WorkerLog(), ("WorkerPrivate::ClearPreStartRunnable [%p]", this));
+    RefPtr<WorkerRunnable> runnable = std::move(prestart[index]);
+    runnable->Cancel();
+  }
+}
+
+void WorkerPrivate::ProcessSingleDebuggerRunnable() {
+  WorkerRunnable* runnable = nullptr;
+
+  
+  
+  nsCOMPtr<nsITimer> timer;
+  {
+    MutexAutoLock lock(mMutex);
+
+    mDebuggerQueue.Pop(runnable);
+
+    mDebuggerInterruptTimer.swap(timer);
+  }
+  timer = nullptr;
+
+  {
+    MOZ_ASSERT(runnable);
+    AUTO_PROFILE_FOLLOWING_RUNNABLE(runnable);
+    static_cast<nsIRunnable*>(runnable)->Run();
+  }
+  runnable->Release();
+
+  CycleCollectedJSContext* ccjs = CycleCollectedJSContext::Get();
+  ccjs->PerformDebuggerMicroTaskCheckpoint();
+}
+
+void WorkerPrivate::ClearDebuggerEventQueue() {
+  bool debuggerRunnablesPending = false;
+  {
+    MutexAutoLock lock(mMutex);
+    debuggerRunnablesPending = !mDebuggerQueue.IsEmpty();
+  }
+  while (debuggerRunnablesPending) {
     WorkerRunnable* runnable = nullptr;
+    {
+      MutexAutoLock lock(mMutex);
+      mDebuggerQueue.Pop(runnable);
+      debuggerRunnablesPending = !mDebuggerQueue.IsEmpty();
+    }
+    
+    runnable->Release();
 
     
     
     nsCOMPtr<nsITimer> timer;
     {
       MutexAutoLock lock(mMutex);
-
-      mDebuggerQueue.Pop(runnable);
-
       mDebuggerInterruptTimer.swap(timer);
     }
     timer = nullptr;
+  }
+}
 
-    {
-      MOZ_ASSERT(runnable);
-      AUTO_PROFILE_FOLLOWING_RUNNABLE(runnable);
-      static_cast<nsIRunnable*>(runnable)->Run();
-    }
-    runnable->Release();
+bool WorkerPrivate::FreezeInternal() {
+  auto data = mWorkerThreadAccessible.Access();
+  NS_ASSERTION(!data->mFrozen, "Already frozen!");
 
-    CycleCollectedJSContext* ccjs = CycleCollectedJSContext::Get();
-    ccjs->PerformDebuggerMicroTaskCheckpoint();
+  AutoYieldJSThreadExecution yield;
+
+  
+  if (data->mScope) {
+    data->mScope->MutableClientSourceRef().Freeze();
   }
 
-  void WorkerPrivate::ClearDebuggerEventQueue() {
-    bool debuggerRunnablesPending = false;
+  data->mFrozen = true;
+
+  for (uint32_t index = 0; index < data->mChildWorkers.Length(); index++) {
+    data->mChildWorkers[index]->Freeze(nullptr);
+  }
+  auto* timeoutManager =
+      data->mScope ? data->mScope->GetTimeoutManager() : nullptr;
+  if (timeoutManager) {
+    timeoutManager->Suspend();
+    timeoutManager->Freeze();
+  }
+
+  return true;
+}
+
+bool WorkerPrivate::HasActiveWorkerRefs() {
+  auto data = mWorkerThreadAccessible.Access();
+  auto* timeoutManager =
+      data->mScope ? data->mScope->GetTimeoutManager() : nullptr;
+  return !data->mChildWorkers.IsEmpty() ||
+         (timeoutManager && timeoutManager->HasTimeouts()) ||
+         !data->mWorkerRefs.IsEmpty();
+}
+
+bool WorkerPrivate::ThawInternal() {
+  auto data = mWorkerThreadAccessible.Access();
+  NS_ASSERTION(data->mFrozen, "Not yet frozen!");
+
+  
+
+  data->mFrozen = false;
+
+  auto* timeoutManager =
+      data->mScope ? data->mScope->GetTimeoutManager() : nullptr;
+  if (timeoutManager) {
+    timeoutManager->Thaw();
+    timeoutManager->Resume();
+  }
+
+  for (uint32_t index = 0; index < data->mChildWorkers.Length(); index++) {
+    data->mChildWorkers[index]->Thaw(nullptr);
+  }
+
+  
+  if (data->mScope) {
+    data->mScope->MutableClientSourceRef().Thaw();
+  }
+
+  return true;
+}
+
+bool WorkerPrivate::ChangeBackgroundStateInternal(bool aIsBackground) {
+  AssertIsOnWorkerThread();
+  mIsInBackground = aIsBackground;
+  auto data = mWorkerThreadAccessible.Access();
+  if (StaticPrefs::dom_workers_throttling_enabled_AtStartup()) {
+    auto* timeoutManager =
+        data->mScope ? data->mScope->GetTimeoutManager() : nullptr;
+    if (timeoutManager) {
+      timeoutManager->UpdateBackgroundState();
+    }
+  }
+
+  for (uint32_t index = 0; index < data->mChildWorkers.Length(); index++) {
+    if (aIsBackground) {
+      data->mChildWorkers[index]->SetIsRunningInBackground();
+    } else {
+      data->mChildWorkers[index]->SetIsRunningInForeground();
+    }
+  }
+  return true;
+}
+
+bool WorkerPrivate::ChangePlaybackStateInternal(bool aIsPlayingAudio) {
+  AssertIsOnWorkerThread();
+  mIsPlayingAudio = aIsPlayingAudio;
+  auto data = mWorkerThreadAccessible.Access();
+
+  for (uint32_t index = 0; index < data->mChildWorkers.Length(); index++) {
+    data->mChildWorkers[index]->SetIsPlayingAudio(aIsPlayingAudio);
+  }
+  return true;
+}
+
+bool WorkerPrivate::ChangePeerConnectionsInternal(bool aHasPeerConnections) {
+  AssertIsOnWorkerThread();
+  mHasActivePeerConnections = aHasPeerConnections;
+  auto data = mWorkerThreadAccessible.Access();
+
+  for (uint32_t index = 0; index < data->mChildWorkers.Length(); index++) {
+    data->mChildWorkers[index]->SetActivePeerConnections(aHasPeerConnections);
+  }
+  return true;
+}
+
+void WorkerPrivate::PropagateStorageAccessPermissionGrantedInternal() {
+  auto data = mWorkerThreadAccessible.Access();
+
+  mLoadInfo.mUseRegularPrincipal = true;
+  mLoadInfo.mUsingStorageAccess = true;
+
+  WorkerGlobalScope* globalScope = GlobalScope();
+  if (globalScope) {
+    globalScope->StorageAccessPermissionGranted();
+  }
+
+  for (uint32_t index = 0; index < data->mChildWorkers.Length(); index++) {
+    data->mChildWorkers[index]->PropagateStorageAccessPermissionGranted();
+  }
+}
+
+void WorkerPrivate::TraverseTimeouts(nsCycleCollectionTraversalCallback& cb) {
+  auto data = mWorkerThreadAccessible.Access();
+  auto* timeoutManager =
+      data->mScope ? data->mScope->GetTimeoutManager() : nullptr;
+  if (timeoutManager) {
+    timeoutManager->ForEachUnorderedTimeout([&cb](Timeout* timeout) {
+      cb.NoteNativeChild(timeout, NS_CYCLE_COLLECTION_PARTICIPANT(Timeout));
+    });
+  }
+}
+
+void WorkerPrivate::UnlinkTimeouts() {
+  auto data = mWorkerThreadAccessible.Access();
+  auto* timeoutManager =
+      data->mScope ? data->mScope->GetTimeoutManager() : nullptr;
+  if (timeoutManager) {
+    timeoutManager->ClearAllTimeouts();
+    if (!timeoutManager->HasTimeouts()) {
+      UpdateCCFlag(CCFlag::EligibleForTimeout);
+    }
+  }
+}
+
+bool WorkerPrivate::AddChildWorker(WorkerPrivate& aChildWorker) {
+  auto data = mWorkerThreadAccessible.Access();
+
+#ifdef DEBUG
+  {
+    WorkerStatus currentStatus;
     {
       MutexAutoLock lock(mMutex);
-      debuggerRunnablesPending = !mDebuggerQueue.IsEmpty();
+      currentStatus = mStatus;
     }
-    while (debuggerRunnablesPending) {
-      WorkerRunnable* runnable = nullptr;
-      {
-        MutexAutoLock lock(mMutex);
-        mDebuggerQueue.Pop(runnable);
-        debuggerRunnablesPending = !mDebuggerQueue.IsEmpty();
-      }
-      
-      runnable->Release();
 
-      
-      
-      nsCOMPtr<nsITimer> timer;
-      {
-        MutexAutoLock lock(mMutex);
-        mDebuggerInterruptTimer.swap(timer);
-      }
-      timer = nullptr;
-    }
+    MOZ_ASSERT(currentStatus == Running);
+  }
+#endif
+
+  NS_ASSERTION(!data->mChildWorkers.Contains(&aChildWorker),
+               "Already know about this one!");
+  data->mChildWorkers.AppendElement(&aChildWorker);
+
+  if (data->mChildWorkers.Length() == 1) {
+    UpdateCCFlag(CCFlag::IneligibleForChildWorker);
   }
 
-  bool WorkerPrivate::FreezeInternal() {
-    auto data = mWorkerThreadAccessible.Access();
-    NS_ASSERTION(!data->mFrozen, "Already frozen!");
+  return true;
+}
 
-    AutoYieldJSThreadExecution yield;
+void WorkerPrivate::RemoveChildWorker(WorkerPrivate& aChildWorker) {
+  auto data = mWorkerThreadAccessible.Access();
+
+  NS_ASSERTION(data->mChildWorkers.Contains(&aChildWorker),
+               "Didn't know about this one!");
+  data->mChildWorkers.RemoveElement(&aChildWorker);
+
+  if (data->mChildWorkers.IsEmpty()) {
+    UpdateCCFlag(CCFlag::EligibleForChildWorker);
+  }
+}
+
+bool WorkerPrivate::AddWorkerRef(WorkerRef* aWorkerRef,
+                                 WorkerStatus aFailStatus) {
+  MOZ_ASSERT(aWorkerRef);
+  auto data = mWorkerThreadAccessible.Access();
+
+  {
+    MutexAutoLock lock(mMutex);
+
+    LOG(WorkerLog(),
+        ("WorkerPrivate::AddWorkerRef [%p] mStatus: %u, aFailStatus: (%u)",
+         this, static_cast<uint8_t>(mStatus),
+         static_cast<uint8_t>(aFailStatus)));
+
+    if (mStatus >= aFailStatus) {
+      return false;
+    }
 
     
     
-    if (data->mScope) {
-      data->mScope->MutableClientSourceRef().Freeze();
-    }
-
-    data->mFrozen = true;
-
-    for (uint32_t index = 0; index < data->mChildWorkers.Length(); index++) {
-      data->mChildWorkers[index]->Freeze(nullptr);
-    }
-    auto* timeoutManager =
-        data->mScope ? data->mScope->GetTimeoutManager() : nullptr;
-    if (timeoutManager) {
-      timeoutManager->Suspend();
-      timeoutManager->Freeze();
-    }
-
-    return true;
-  }
-
-  bool WorkerPrivate::HasActiveWorkerRefs() {
-    auto data = mWorkerThreadAccessible.Access();
-    auto* timeoutManager =
-        data->mScope ? data->mScope->GetTimeoutManager() : nullptr;
-    return !data->mChildWorkers.IsEmpty() ||
-           (timeoutManager && timeoutManager->HasTimeouts()) ||
-           !data->mWorkerRefs.IsEmpty();
-  }
-
-  bool WorkerPrivate::ThawInternal() {
-    auto data = mWorkerThreadAccessible.Access();
-    NS_ASSERTION(data->mFrozen, "Not yet frozen!");
-
     
-
-    data->mFrozen = false;
-
-    auto* timeoutManager =
-        data->mScope ? data->mScope->GetTimeoutManager() : nullptr;
-    if (timeoutManager) {
-      timeoutManager->Thaw();
-      timeoutManager->Resume();
-    }
-
-    for (uint32_t index = 0; index < data->mChildWorkers.Length(); index++) {
-      data->mChildWorkers[index]->Thaw(nullptr);
-    }
-
     
-    if (data->mScope) {
-      data->mScope->MutableClientSourceRef().Thaw();
-    }
-
-    return true;
+    
+    
+    MOZ_DIAGNOSTIC_ASSERT_IF(aWorkerRef->IsPreventingShutdown(),
+                             mStatus >= WorkerStatus::Running);
   }
 
-  bool WorkerPrivate::ChangeBackgroundStateInternal(bool aIsBackground) {
-    AssertIsOnWorkerThread();
-    mIsInBackground = aIsBackground;
-    auto data = mWorkerThreadAccessible.Access();
-    if (StaticPrefs::dom_workers_throttling_enabled_AtStartup()) {
+  MOZ_ASSERT(!data->mWorkerRefs.Contains(aWorkerRef),
+             "Already know about this one!");
+
+  if (aWorkerRef->IsPreventingShutdown()) {
+    data->mNumWorkerRefsPreventingShutdownStart += 1;
+    if (data->mNumWorkerRefsPreventingShutdownStart == 1) {
+      UpdateCCFlag(CCFlag::IneligibleForWorkerRef);
+    }
+  }
+
+  data->mWorkerRefs.AppendElement(aWorkerRef);
+  return true;
+}
+
+void WorkerPrivate::RemoveWorkerRef(WorkerRef* aWorkerRef) {
+  MOZ_ASSERT(aWorkerRef);
+  LOG(WorkerLog(),
+      ("WorkerPrivate::RemoveWorkerRef [%p] aWorkerRef: %p", this, aWorkerRef));
+  auto data = mWorkerThreadAccessible.Access();
+
+  MOZ_ASSERT(data->mWorkerRefs.Contains(aWorkerRef),
+             "Didn't know about this one!");
+  data->mWorkerRefs.RemoveElement(aWorkerRef);
+
+  if (aWorkerRef->IsPreventingShutdown()) {
+    data->mNumWorkerRefsPreventingShutdownStart -= 1;
+    if (!data->mNumWorkerRefsPreventingShutdownStart) {
+      UpdateCCFlag(CCFlag::EligibleForWorkerRef);
+    }
+  }
+}
+
+void WorkerPrivate::NotifyWorkerRefs(WorkerStatus aStatus) {
+  auto data = mWorkerThreadAccessible.Access();
+
+  NS_ASSERTION(aStatus > Closing, "Bad status!");
+
+  LOG(WorkerLog(), ("WorkerPrivate::NotifyWorkerRefs [%p] aStatus: %u", this,
+                    static_cast<uint8_t>(aStatus)));
+
+  for (auto* workerRef : data->mWorkerRefs.ForwardRange()) {
+    LOG(WorkerLog(), ("WorkerPrivate::NotifyWorkerRefs [%p] WorkerRefs(%s %p)",
+                      this, workerRef->mName, workerRef));
+    workerRef->Notify();
+  }
+
+  AutoTArray<CheckedUnsafePtr<WorkerPrivate>, 10> children;
+  children.AppendElements(data->mChildWorkers);
+
+  for (uint32_t index = 0; index < children.Length(); index++) {
+    if (!children[index]->Notify(aStatus)) {
+      NS_WARNING("Failed to notify child worker!");
+    }
+  }
+}
+
+nsresult WorkerPrivate::RegisterShutdownTask(nsITargetShutdownTask* aTask) {
+  NS_ENSURE_ARG(aTask);
+
+  MutexAutoLock lock(mMutex);
+  
+  
+  if (mShutdownTasksRun) {
+    return NS_ERROR_UNEXPECTED;
+  }
+  return mShutdownTasks.AddTask(aTask);
+}
+
+nsresult WorkerPrivate::UnregisterShutdownTask(nsITargetShutdownTask* aTask) {
+  NS_ENSURE_ARG(aTask);
+
+  MutexAutoLock lock(mMutex);
+  return mShutdownTasks.RemoveTask(aTask);
+}
+
+void WorkerPrivate::JSAsyncTaskStarted(JS::Dispatchable* aDispatchable) {
+  RefPtr<StrongWorkerRef> ref = StrongWorkerRef::Create(this, "JSAsyncTask");
+  MOZ_ASSERT_DEBUG_OR_FUZZING(ref);
+  if (NS_WARN_IF(!ref)) {
+    return;
+  }
+  MOZ_ALWAYS_TRUE(mPendingJSAsyncTasks.putNew(aDispatchable, std::move(ref)));
+}
+
+void WorkerPrivate::JSAsyncTaskFinished(JS::Dispatchable* aDispatchable) {
+  mPendingJSAsyncTasks.remove(aDispatchable);
+}
+
+void WorkerPrivate::RunShutdownTasks() {
+  TargetShutdownTaskSet::TasksArray shutdownTasks;
+
+  {
+    MutexAutoLock lock(mMutex);
+    mShutdownTasksRun = true;
+    shutdownTasks = mShutdownTasks.Extract();
+  }
+
+  for (const auto& task : shutdownTasks) {
+    task->TargetShutdown();
+  }
+  mWorkerHybridEventTarget->ForgetWorkerPrivate(this);
+}
+
+RefPtr<WorkerParentRef> WorkerPrivate::GetWorkerParentRef() const {
+  RefPtr<WorkerParentRef> ref(mParentRef);
+  return ref;
+}
+
+void WorkerPrivate::AdjustNonblockingCCBackgroundActorCount(int32_t aCount) {
+  AssertIsOnWorkerThread();
+  auto data = mWorkerThreadAccessible.Access();
+  LOGV(("WorkerPrivate::AdjustNonblockingCCBackgroundActors [%p] (%d/%u)", this,
+        aCount, data->mNonblockingCCBackgroundActorCount));
+
+#ifdef DEBUG
+  if (aCount < 0) {
+    MOZ_ASSERT(data->mNonblockingCCBackgroundActorCount >=
+               (uint32_t)abs(aCount));
+  }
+#endif
+
+  data->mNonblockingCCBackgroundActorCount += aCount;
+}
+
+void WorkerPrivate::UpdateCCFlag(const CCFlag aFlag) {
+  AssertIsOnWorkerThread();
+
+  auto data = mWorkerThreadAccessible.Access();
+
+#ifdef DEBUG
+  switch (aFlag) {
+    case CCFlag::EligibleForWorkerRef: {
+      MOZ_ASSERT(!data->mNumWorkerRefsPreventingShutdownStart);
+      break;
+    }
+    case CCFlag::IneligibleForWorkerRef: {
+      MOZ_ASSERT(data->mNumWorkerRefsPreventingShutdownStart);
+      break;
+    }
+    case CCFlag::EligibleForChildWorker: {
+      MOZ_ASSERT(data->mChildWorkers.IsEmpty());
+      break;
+    }
+    case CCFlag::IneligibleForChildWorker: {
+      MOZ_ASSERT(!data->mChildWorkers.IsEmpty());
+      break;
+    }
+    case CCFlag::EligibleForTimeout: {
       auto* timeoutManager =
           data->mScope ? data->mScope->GetTimeoutManager() : nullptr;
-      if (timeoutManager) {
-        timeoutManager->UpdateBackgroundState();
-      }
+      MOZ_ASSERT(timeoutManager && !timeoutManager->HasTimeouts());
+      break;
     }
-
-    for (uint32_t index = 0; index < data->mChildWorkers.Length(); index++) {
-      if (aIsBackground) {
-        data->mChildWorkers[index]->SetIsRunningInBackground();
-      } else {
-        data->mChildWorkers[index]->SetIsRunningInForeground();
-      }
+    case CCFlag::IneligibleForTimeout: {
+      auto* timeoutManager =
+          data->mScope ? data->mScope->GetTimeoutManager() : nullptr;
+      MOZ_ASSERT(!timeoutManager || timeoutManager->HasTimeouts());
+      break;
     }
-    return true;
-  }
-
-  bool WorkerPrivate::ChangePlaybackStateInternal(bool aIsPlayingAudio) {
-    AssertIsOnWorkerThread();
-    mIsPlayingAudio = aIsPlayingAudio;
-    auto data = mWorkerThreadAccessible.Access();
-
-    for (uint32_t index = 0; index < data->mChildWorkers.Length(); index++) {
-      data->mChildWorkers[index]->SetIsPlayingAudio(aIsPlayingAudio);
-    }
-    return true;
-  }
-
-  bool WorkerPrivate::ChangePeerConnectionsInternal(bool aHasPeerConnections) {
-    AssertIsOnWorkerThread();
-    mHasActivePeerConnections = aHasPeerConnections;
-    auto data = mWorkerThreadAccessible.Access();
-
-    for (uint32_t index = 0; index < data->mChildWorkers.Length(); index++) {
-      data->mChildWorkers[index]->SetActivePeerConnections(aHasPeerConnections);
-    }
-    return true;
-  }
-
-  void WorkerPrivate::PropagateStorageAccessPermissionGrantedInternal() {
-    auto data = mWorkerThreadAccessible.Access();
-
-    mLoadInfo.mUseRegularPrincipal = true;
-    mLoadInfo.mUsingStorageAccess = true;
-
-    WorkerGlobalScope* globalScope = GlobalScope();
-    if (globalScope) {
-      globalScope->StorageAccessPermissionGranted();
-    }
-
-    for (uint32_t index = 0; index < data->mChildWorkers.Length(); index++) {
-      data->mChildWorkers[index]->PropagateStorageAccessPermissionGranted();
+    case CCFlag::CheckBackgroundActors: {
+      break;
     }
   }
-
-  void WorkerPrivate::TraverseTimeouts(nsCycleCollectionTraversalCallback &
-                                       cb) {
-    auto data = mWorkerThreadAccessible.Access();
-    auto* timeoutManager =
-        data->mScope ? data->mScope->GetTimeoutManager() : nullptr;
-    if (timeoutManager) {
-      timeoutManager->ForEachUnorderedTimeout([&cb](Timeout* timeout) {
-        cb.NoteNativeChild(timeout, NS_CYCLE_COLLECTION_PARTICIPANT(Timeout));
-      });
-    }
-  }
-
-  void WorkerPrivate::UnlinkTimeouts() {
-    auto data = mWorkerThreadAccessible.Access();
-    auto* timeoutManager =
-        data->mScope ? data->mScope->GetTimeoutManager() : nullptr;
-    if (timeoutManager) {
-      timeoutManager->ClearAllTimeouts();
-      if (!timeoutManager->HasTimeouts()) {
-        UpdateCCFlag(CCFlag::EligibleForTimeout);
-      }
-    }
-  }
-
-  bool WorkerPrivate::AddChildWorker(WorkerPrivate & aChildWorker) {
-    auto data = mWorkerThreadAccessible.Access();
-
-#ifdef DEBUG
-    {
-      WorkerStatus currentStatus;
-      {
-        MutexAutoLock lock(mMutex);
-        currentStatus = mStatus;
-      }
-
-      MOZ_ASSERT(currentStatus == Running);
-    }
 #endif
 
-    NS_ASSERTION(!data->mChildWorkers.Contains(&aChildWorker),
-                 "Already know about this one!");
-    data->mChildWorkers.AppendElement(&aChildWorker);
-
-    if (data->mChildWorkers.Length() == 1) {
-      UpdateCCFlag(CCFlag::IneligibleForChildWorker);
-    }
-
-    return true;
-  }
-
-  void WorkerPrivate::RemoveChildWorker(WorkerPrivate & aChildWorker) {
-    auto data = mWorkerThreadAccessible.Access();
-
-    NS_ASSERTION(data->mChildWorkers.Contains(&aChildWorker),
-                 "Didn't know about this one!");
-    data->mChildWorkers.RemoveElement(&aChildWorker);
-
-    if (data->mChildWorkers.IsEmpty()) {
-      UpdateCCFlag(CCFlag::EligibleForChildWorker);
-    }
-  }
-
-  bool WorkerPrivate::AddWorkerRef(WorkerRef * aWorkerRef,
-                                   WorkerStatus aFailStatus) {
-    MOZ_ASSERT(aWorkerRef);
-    auto data = mWorkerThreadAccessible.Access();
-
-    {
-      MutexAutoLock lock(mMutex);
-
-      LOG(WorkerLog(),
-          ("WorkerPrivate::AddWorkerRef [%p] mStatus: %u, aFailStatus: (%u)",
-           this, static_cast<uint8_t>(mStatus),
-           static_cast<uint8_t>(aFailStatus)));
-
-      if (mStatus >= aFailStatus) {
-        return false;
-      }
-
-      
-      
-      
-      
-      
-      
-      MOZ_DIAGNOSTIC_ASSERT_IF(aWorkerRef->IsPreventingShutdown(),
-                               mStatus >= WorkerStatus::Running);
-    }
-
-    MOZ_ASSERT(!data->mWorkerRefs.Contains(aWorkerRef),
-               "Already know about this one!");
-
-    if (aWorkerRef->IsPreventingShutdown()) {
-      data->mNumWorkerRefsPreventingShutdownStart += 1;
-      if (data->mNumWorkerRefsPreventingShutdownStart == 1) {
-        UpdateCCFlag(CCFlag::IneligibleForWorkerRef);
-      }
-    }
-
-    data->mWorkerRefs.AppendElement(aWorkerRef);
-    return true;
-  }
-
-  void WorkerPrivate::RemoveWorkerRef(WorkerRef * aWorkerRef) {
-    MOZ_ASSERT(aWorkerRef);
-    LOG(WorkerLog(), ("WorkerPrivate::RemoveWorkerRef [%p] aWorkerRef: %p",
-                      this, aWorkerRef));
-    auto data = mWorkerThreadAccessible.Access();
-
-    MOZ_ASSERT(data->mWorkerRefs.Contains(aWorkerRef),
-               "Didn't know about this one!");
-    data->mWorkerRefs.RemoveElement(aWorkerRef);
-
-    if (aWorkerRef->IsPreventingShutdown()) {
-      data->mNumWorkerRefsPreventingShutdownStart -= 1;
-      if (!data->mNumWorkerRefsPreventingShutdownStart) {
-        UpdateCCFlag(CCFlag::EligibleForWorkerRef);
-      }
-    }
-  }
-
-  void WorkerPrivate::NotifyWorkerRefs(WorkerStatus aStatus) {
-    auto data = mWorkerThreadAccessible.Access();
-
-    NS_ASSERTION(aStatus > Closing, "Bad status!");
-
-    LOG(WorkerLog(), ("WorkerPrivate::NotifyWorkerRefs [%p] aStatus: %u", this,
-                      static_cast<uint8_t>(aStatus)));
-
-    for (auto* workerRef : data->mWorkerRefs.ForwardRange()) {
-      LOG(WorkerLog(),
-          ("WorkerPrivate::NotifyWorkerRefs [%p] WorkerRefs(%s %p)", this,
-           workerRef->mName, workerRef));
-      workerRef->Notify();
-    }
-
-    AutoTArray<CheckedUnsafePtr<WorkerPrivate>, 10> children;
-    children.AppendElements(data->mChildWorkers);
-
-    for (uint32_t index = 0; index < children.Length(); index++) {
-      if (!children[index]->Notify(aStatus)) {
-        NS_WARNING("Failed to notify child worker!");
-      }
-    }
-  }
-
-  nsresult WorkerPrivate::RegisterShutdownTask(nsITargetShutdownTask * aTask) {
-    NS_ENSURE_ARG(aTask);
-
-    MutexAutoLock lock(mMutex);
-    
-    
-    if (mShutdownTasksRun) {
-      return NS_ERROR_UNEXPECTED;
-    }
-    return mShutdownTasks.AddTask(aTask);
-  }
-
-  nsresult WorkerPrivate::UnregisterShutdownTask(nsITargetShutdownTask *
-                                                 aTask) {
-    NS_ENSURE_ARG(aTask);
-
-    MutexAutoLock lock(mMutex);
-    return mShutdownTasks.RemoveTask(aTask);
-  }
-
-  void WorkerPrivate::JSAsyncTaskStarted(JS::Dispatchable * aDispatchable) {
-    RefPtr<StrongWorkerRef> ref = StrongWorkerRef::Create(this, "JSAsyncTask");
-    MOZ_ASSERT_DEBUG_OR_FUZZING(ref);
-    if (NS_WARN_IF(!ref)) {
-      return;
-    }
-    MOZ_ALWAYS_TRUE(mPendingJSAsyncTasks.putNew(aDispatchable, std::move(ref)));
-  }
-
-  void WorkerPrivate::JSAsyncTaskFinished(JS::Dispatchable * aDispatchable) {
-    mPendingJSAsyncTasks.remove(aDispatchable);
-  }
-
-  void WorkerPrivate::RunShutdownTasks() {
-    TargetShutdownTaskSet::TasksArray shutdownTasks;
-
-    {
-      MutexAutoLock lock(mMutex);
-      mShutdownTasksRun = true;
-      shutdownTasks = mShutdownTasks.Extract();
-    }
-
-    for (const auto& task : shutdownTasks) {
-      task->TargetShutdown();
-    }
-    mWorkerHybridEventTarget->ForgetWorkerPrivate(this);
-  }
-
-  RefPtr<WorkerParentRef> WorkerPrivate::GetWorkerParentRef() const {
-    RefPtr<WorkerParentRef> ref(mParentRef);
-    return ref;
-  }
-
-  void WorkerPrivate::AdjustNonblockingCCBackgroundActorCount(int32_t aCount) {
-    AssertIsOnWorkerThread();
-    auto data = mWorkerThreadAccessible.Access();
-    LOGV(("WorkerPrivate::AdjustNonblockingCCBackgroundActors [%p] (%d/%u)",
-          this, aCount, data->mNonblockingCCBackgroundActorCount));
-
-#ifdef DEBUG
-    if (aCount < 0) {
-      MOZ_ASSERT(data->mNonblockingCCBackgroundActorCount >=
-                 (uint32_t)abs(aCount));
-    }
-#endif
-
-    data->mNonblockingCCBackgroundActorCount += aCount;
-  }
-
-  void WorkerPrivate::UpdateCCFlag(const CCFlag aFlag) {
-    AssertIsOnWorkerThread();
-
-    auto data = mWorkerThreadAccessible.Access();
-
-#ifdef DEBUG
-    switch (aFlag) {
-      case CCFlag::EligibleForWorkerRef: {
-        MOZ_ASSERT(!data->mNumWorkerRefsPreventingShutdownStart);
-        break;
-      }
-      case CCFlag::IneligibleForWorkerRef: {
-        MOZ_ASSERT(data->mNumWorkerRefsPreventingShutdownStart);
-        break;
-      }
-      case CCFlag::EligibleForChildWorker: {
-        MOZ_ASSERT(data->mChildWorkers.IsEmpty());
-        break;
-      }
-      case CCFlag::IneligibleForChildWorker: {
-        MOZ_ASSERT(!data->mChildWorkers.IsEmpty());
-        break;
-      }
-      case CCFlag::EligibleForTimeout: {
-        auto* timeoutManager =
-            data->mScope ? data->mScope->GetTimeoutManager() : nullptr;
-        MOZ_ASSERT(timeoutManager && !timeoutManager->HasTimeouts());
-        break;
-      }
-      case CCFlag::IneligibleForTimeout: {
-        auto* timeoutManager =
-            data->mScope ? data->mScope->GetTimeoutManager() : nullptr;
-        MOZ_ASSERT(!timeoutManager || timeoutManager->HasTimeouts());
-        break;
-      }
-      case CCFlag::CheckBackgroundActors: {
-        break;
-      }
-    }
-#endif
-
-    {
-      MutexAutoLock lock(mMutex);
-      if (mStatus > Canceling) {
-        mCCFlagSaysEligible = true;
-        return;
-      }
-    }
-    auto HasBackgroundActors =
-        [nonblockingActorCount = data->mNonblockingCCBackgroundActorCount]() {
-          RefPtr<PBackgroundChild> backgroundChild =
-              BackgroundChild::GetForCurrentThread();
-          MOZ_ASSERT(backgroundChild);
-          auto totalCount = backgroundChild->AllManagedActorsCount();
-          LOGV(("WorkerPrivate::UpdateCCFlag HasBackgroundActors: %s(%u/%u)",
-                totalCount > nonblockingActorCount ? "true" : "false",
-                totalCount, nonblockingActorCount));
-
-          return totalCount > nonblockingActorCount;
-        };
-
-    auto* timeoutManager =
-        data->mScope ? data->mScope->GetTimeoutManager() : nullptr;
-
-    bool noTimeouts{true};
-    if (timeoutManager) {
-      noTimeouts = !timeoutManager->HasTimeouts();
-    }
-
-    bool eligibleForCC = data->mChildWorkers.IsEmpty() && noTimeouts &&
-                         !data->mNumWorkerRefsPreventingShutdownStart;
-
-    
-    
-    if (eligibleForCC) {
-      eligibleForCC = !HasBackgroundActors();
-    }
-
-    {
-      MutexAutoLock lock(mMutex);
-      mCCFlagSaysEligible = eligibleForCC;
-    }
-  }
-
-  bool WorkerPrivate::IsEligibleForCC() {
-    LOGV(("WorkerPrivate::IsEligibleForCC [%p]", this));
+  {
     MutexAutoLock lock(mMutex);
     if (mStatus > Canceling) {
-      return true;
+      mCCFlagSaysEligible = true;
+      return;
     }
+  }
+  auto HasBackgroundActors = [nonblockingActorCount =
+                                  data->mNonblockingCCBackgroundActorCount]() {
+    RefPtr<PBackgroundChild> backgroundChild =
+        BackgroundChild::GetForCurrentThread();
+    MOZ_ASSERT(backgroundChild);
+    auto totalCount = backgroundChild->AllManagedActorsCount();
+    LOGV(("WorkerPrivate::UpdateCCFlag HasBackgroundActors: %s(%u/%u)",
+          totalCount > nonblockingActorCount ? "true" : "false", totalCount,
+          nonblockingActorCount));
 
-    bool hasShutdownTasks = !mShutdownTasks.IsEmpty();
-    bool hasPendingEvents = false;
-    if (mThread) {
-      hasPendingEvents =
-          NS_SUCCEEDED(mThread->HasPendingEvents(&hasPendingEvents)) &&
-          hasPendingEvents;
-    }
+    return totalCount > nonblockingActorCount;
+  };
 
-    LOGV(("mMainThreadEventTarget: %s",
-          mMainThreadEventTarget->IsEmpty() ? "empty" : "non-empty"));
-    LOGV((
-        "mMainThreadEventTargetForMessaging: %s",
+  auto* timeoutManager =
+      data->mScope ? data->mScope->GetTimeoutManager() : nullptr;
+
+  bool noTimeouts{true};
+  if (timeoutManager) {
+    noTimeouts = !timeoutManager->HasTimeouts();
+  }
+
+  bool eligibleForCC = data->mChildWorkers.IsEmpty() && noTimeouts &&
+                       !data->mNumWorkerRefsPreventingShutdownStart;
+
+  
+  
+  if (eligibleForCC) {
+    eligibleForCC = !HasBackgroundActors();
+  }
+
+  {
+    MutexAutoLock lock(mMutex);
+    mCCFlagSaysEligible = eligibleForCC;
+  }
+}
+
+bool WorkerPrivate::IsEligibleForCC() {
+  LOGV(("WorkerPrivate::IsEligibleForCC [%p]", this));
+  MutexAutoLock lock(mMutex);
+  if (mStatus > Canceling) {
+    return true;
+  }
+
+  bool hasShutdownTasks = !mShutdownTasks.IsEmpty();
+  bool hasPendingEvents = false;
+  if (mThread) {
+    hasPendingEvents =
+        NS_SUCCEEDED(mThread->HasPendingEvents(&hasPendingEvents)) &&
+        hasPendingEvents;
+  }
+
+  LOGV(("mMainThreadEventTarget: %s",
+        mMainThreadEventTarget->IsEmpty() ? "empty" : "non-empty"));
+  LOGV(("mMainThreadEventTargetForMessaging: %s",
         mMainThreadEventTargetForMessaging->IsEmpty() ? "empty" : "non-empty"));
-    LOGV(("mMainThreadDebuggerEventTarget: %s",
-          mMainThreadDebuggeeEventTarget->IsEmpty() ? "empty" : "non-empty"));
-    LOGV(("mCCFlagSaysEligible: %s", mCCFlagSaysEligible ? "true" : "false"));
-    LOGV(("hasShutdownTasks: %s", hasShutdownTasks ? "true" : "false"));
-    LOGV(("hasPendingEvents: %s", hasPendingEvents ? "true" : "false"));
+  LOGV(("mMainThreadDebuggerEventTarget: %s",
+        mMainThreadDebuggeeEventTarget->IsEmpty() ? "empty" : "non-empty"));
+  LOGV(("mCCFlagSaysEligible: %s", mCCFlagSaysEligible ? "true" : "false"));
+  LOGV(("hasShutdownTasks: %s", hasShutdownTasks ? "true" : "false"));
+  LOGV(("hasPendingEvents: %s", hasPendingEvents ? "true" : "false"));
 
-    return mMainThreadEventTarget->IsEmpty() &&
-           mMainThreadEventTargetForMessaging->IsEmpty() &&
-           mMainThreadDebuggeeEventTarget->IsEmpty() && mCCFlagSaysEligible &&
-           !hasShutdownTasks && !hasPendingEvents && mWorkerLoopIsIdle;
+  return mMainThreadEventTarget->IsEmpty() &&
+         mMainThreadEventTargetForMessaging->IsEmpty() &&
+         mMainThreadDebuggeeEventTarget->IsEmpty() && mCCFlagSaysEligible &&
+         !hasShutdownTasks && !hasPendingEvents && mWorkerLoopIsIdle;
+}
+
+void WorkerPrivate::CancelAllTimeouts() {
+  auto data = mWorkerThreadAccessible.Access();
+
+  auto* timeoutManager =
+      data->mScope ? data->mScope->GetTimeoutManager() : nullptr;
+  if (timeoutManager) {
+    timeoutManager->ClearAllTimeouts();
+    if (!timeoutManager->HasTimeouts()) {
+      UpdateCCFlag(CCFlag::EligibleForTimeout);
+    }
   }
 
-  void WorkerPrivate::CancelAllTimeouts() {
-    auto data = mWorkerThreadAccessible.Access();
+  LOG(TimeoutsLog(), ("Worker %p CancelAllTimeouts.\n", this));
+}
 
-    auto* timeoutManager =
-        data->mScope ? data->mScope->GetTimeoutManager() : nullptr;
-    if (timeoutManager) {
-      timeoutManager->ClearAllTimeouts();
-      if (!timeoutManager->HasTimeouts()) {
-        UpdateCCFlag(CCFlag::EligibleForTimeout);
-      }
+already_AddRefed<nsISerialEventTarget> WorkerPrivate::CreateNewSyncLoop(
+    WorkerStatus aFailStatus) {
+  AssertIsOnWorkerThread();
+  MOZ_ASSERT(
+      aFailStatus >= Canceling,
+      "Sync loops can be created when the worker is in Running/Closing state!");
+
+  LOG(WorkerLog(), ("WorkerPrivate::CreateNewSyncLoop [%p] failstatus: %u",
+                    this, static_cast<uint8_t>(aFailStatus)));
+
+  ThreadEventQueue* queue = nullptr;
+  {
+    MutexAutoLock lock(mMutex);
+
+    if (mStatus >= aFailStatus) {
+      return nullptr;
     }
-
-    LOG(TimeoutsLog(), ("Worker %p CancelAllTimeouts.\n", this));
+    queue = static_cast<ThreadEventQueue*>(mThread->EventQueue());
   }
 
-  already_AddRefed<nsISerialEventTarget> WorkerPrivate::CreateNewSyncLoop(
-      WorkerStatus aFailStatus) {
-    AssertIsOnWorkerThread();
-    MOZ_ASSERT(aFailStatus >= Canceling,
-               "Sync loops can be created when the worker is in "
-               "Running/Closing state!");
+  nsCOMPtr<nsISerialEventTarget> nestedEventTarget = queue->PushEventQueue();
+  MOZ_ASSERT(nestedEventTarget);
 
-    LOG(WorkerLog(), ("WorkerPrivate::CreateNewSyncLoop [%p] failstatus: %u",
-                      this, static_cast<uint8_t>(aFailStatus)));
+  RefPtr<EventTarget> workerEventTarget =
+      new EventTarget(this, nestedEventTarget);
 
-    ThreadEventQueue* queue = nullptr;
-    {
-      MutexAutoLock lock(mMutex);
-
-      if (mStatus >= aFailStatus) {
-        return nullptr;
-      }
-      queue = static_cast<ThreadEventQueue*>(mThread->EventQueue());
-    }
-
-    nsCOMPtr<nsISerialEventTarget> nestedEventTarget = queue->PushEventQueue();
-    MOZ_ASSERT(nestedEventTarget);
-
-    RefPtr<EventTarget> workerEventTarget =
-        new EventTarget(this, nestedEventTarget);
-
-    {
-      
-      
+  {
+    
+    
 #ifdef DEBUG
-      MutexAutoLock lock(mMutex);
+    MutexAutoLock lock(mMutex);
 #endif
 
-      mSyncLoopStack.AppendElement(new SyncLoopInfo(workerEventTarget));
-    }
-
-    return workerEventTarget.forget();
+    mSyncLoopStack.AppendElement(new SyncLoopInfo(workerEventTarget));
   }
 
-  nsresult WorkerPrivate::RunCurrentSyncLoop() {
-    AssertIsOnWorkerThread();
-    LOG(WorkerLog(), ("WorkerPrivate::RunCurrentSyncLoop [%p]", this));
-    RefPtr<WorkerThread> thread;
-    JSContext* cx = GetJSContext();
-    MOZ_ASSERT(cx);
+  return workerEventTarget.forget();
+}
+
+nsresult WorkerPrivate::RunCurrentSyncLoop() {
+  AssertIsOnWorkerThread();
+  LOG(WorkerLog(), ("WorkerPrivate::RunCurrentSyncLoop [%p]", this));
+  RefPtr<WorkerThread> thread;
+  JSContext* cx = GetJSContext();
+  MOZ_ASSERT(cx);
+  
+  
+  {
+    MutexAutoLock lock(mMutex);
     
     
-    {
-      MutexAutoLock lock(mMutex);
-      
-      
-      
-      thread = mThread;
-    }
-
-    AutoPushEventLoopGlobal eventLoopGlobal(this, cx);
-
     
-    
-    uint32_t currentLoopIndex = mSyncLoopStack.Length() - 1;
+    thread = mThread;
+  }
 
-    SyncLoopInfo* loopInfo = mSyncLoopStack[currentLoopIndex].get();
+  AutoPushEventLoopGlobal eventLoopGlobal(this, cx);
 
-    AutoYieldJSThreadExecution yield;
+  
+  
+  uint32_t currentLoopIndex = mSyncLoopStack.Length() - 1;
 
-    MOZ_ASSERT(loopInfo);
-    MOZ_ASSERT(!loopInfo->mHasRun);
-    MOZ_ASSERT(!loopInfo->mCompleted);
+  SyncLoopInfo* loopInfo = mSyncLoopStack[currentLoopIndex].get();
+
+  AutoYieldJSThreadExecution yield;
+
+  MOZ_ASSERT(loopInfo);
+  MOZ_ASSERT(!loopInfo->mHasRun);
+  MOZ_ASSERT(!loopInfo->mCompleted);
 
 #ifdef DEBUG
-    loopInfo->mHasRun = true;
+  loopInfo->mHasRun = true;
 #endif
 
-    {
-      while (!loopInfo->mCompleted) {
-        bool normalRunnablesPending = false;
-
-        
-        if (!NS_HasPendingEvents(thread)) {
-          SetGCTimerMode(IdleTimer);
-        }
-
-        
-        {
-          MutexAutoLock lock(mMutex);
-
-          for (;;) {
-            while (mControlQueue.IsEmpty() && !normalRunnablesPending &&
-                   !(normalRunnablesPending = NS_HasPendingEvents(thread))) {
-              WaitForWorkerEvents();
-            }
-
-            auto result = ProcessAllControlRunnablesLocked();
-            if (result != ProcessAllControlRunnablesResult::Nothing) {
-              
-              
-              normalRunnablesPending =
-                  result == ProcessAllControlRunnablesResult::MayContinue &&
-                  NS_HasPendingEvents(thread);
-
-              
-              
-              
-              if (loopInfo->mCompleted) {
-                break;
-              }
-            }
-
-            
-            
-            MOZ_ASSERT(!loopInfo->mCompleted);
-
-            if (normalRunnablesPending) {
-              break;
-            }
-          }
-        }
-
-        if (normalRunnablesPending) {
-          
-          SetGCTimerMode(PeriodicTimer);
-
-          MOZ_ALWAYS_TRUE(NS_ProcessNextEvent(thread, false));
-
-          
-          
-          if (GetCurrentEventLoopGlobal()) {
-            
-            
-            MOZ_ASSERT(JS::CurrentGlobalOrNull(cx));
-            JS_MaybeGC(cx);
-          }
-        }
-      }
-    }
-
-    
-    MOZ_ASSERT(mSyncLoopStack[currentLoopIndex].get() == loopInfo);
-
-    return DestroySyncLoop(currentLoopIndex);
-  }
-
-  nsresult WorkerPrivate::DestroySyncLoop(uint32_t aLoopIndex) {
-    MOZ_ASSERT(!mSyncLoopStack.IsEmpty());
-    MOZ_ASSERT(mSyncLoopStack.Length() - 1 == aLoopIndex);
-
-    LOG(WorkerLog(), ("WorkerPrivate::DestroySyncLoop [%p] aLoopIndex: %u",
-                      this, aLoopIndex));
-
-    AutoYieldJSThreadExecution yield;
-
-    
-    const auto& loopInfo = mSyncLoopStack[aLoopIndex];
-
-    nsresult result = loopInfo->mResult;
-
-    {
-      RefPtr<nsIEventTarget> nestedEventTarget(
-          loopInfo->mEventTarget->GetNestedEventTarget());
-      MOZ_ASSERT(nestedEventTarget);
-
-      loopInfo->mEventTarget->Shutdown();
-
-      {
-        MutexAutoLock lock(mMutex);
-        static_cast<ThreadEventQueue*>(mThread->EventQueue())
-            ->PopEventQueue(nestedEventTarget);
-      }
-    }
-
-    
-    if (mSyncLoopStack.Length() == 1) {
-      if ((mPostSyncLoopOperations & eDispatchCancelingRunnable)) {
-        LOG(WorkerLog(), ("WorkerPrivate::DestroySyncLoop [%p] Dispatching "
-                          "CancelingRunnables",
-                          this));
-        DispatchCancelingRunnable();
-      }
-
-      mPostSyncLoopOperations = 0;
-    }
-
-    {
-      
-      
-#ifdef DEBUG
-      MutexAutoLock lock(mMutex);
-#endif
+  {
+    while (!loopInfo->mCompleted) {
+      bool normalRunnablesPending = false;
 
       
-      mSyncLoopStack.RemoveElementAt(aLoopIndex);
-    }
-
-    return result;
-  }
-
-  void WorkerPrivate::DispatchCancelingRunnable() {
-    
-    
-    
-    
-
-    LOG(WorkerLog(), ("WorkerPrivate::DispatchCancelingRunnable [%p]", this));
-    RefPtr<CancelingRunnable> r = new CancelingRunnable();
-    {
-      MutexAutoLock lock(mMutex);
-      mThread->nsThread::Dispatch(r.forget(), NS_DISPATCH_NORMAL);
-    }
-
-    
-    
-    
-    LOG(WorkerLog(), ("WorkerPrivate::DispatchCancelingRunnable [%p] Setup a "
-                      "timeout canceling",
-                      this));
-    RefPtr<CancelingWithTimeoutOnParentRunnable> rr =
-        new CancelingWithTimeoutOnParentRunnable(this);
-    rr->Dispatch(this);
-  }
-
-  void WorkerPrivate::ReportUseCounters() {
-    AssertIsOnWorkerThread();
-
-    if (mReportedUseCounters) {
-      return;
-    }
-    mReportedUseCounters = true;
-
-    if (IsChromeWorker()) {
-      return;
-    }
-
-    const size_t kind = Kind();
-    switch (kind) {
-      case WorkerKindDedicated:
-        glean::use_counter::dedicated_workers_destroyed.Add();
-        break;
-      case WorkerKindShared:
-        glean::use_counter::shared_workers_destroyed.Add();
-        break;
-      case WorkerKindService:
-        glean::use_counter::service_workers_destroyed.Add();
-        break;
-      default:
-        MOZ_ASSERT(false, "Unknown worker kind");
-        return;
-    }
-
-    Maybe<nsCString> workerPathForLogging;
-    const bool dumpCounters = StaticPrefs::dom_use_counters_dump_worker();
-    if (dumpCounters) {
-      nsAutoCString path(Domain());
-      path.AppendLiteral("(");
-      NS_ConvertUTF16toUTF8 script(ScriptURL());
-      path.Append(script);
-      path.AppendPrintf(", 0x%p)", this);
-      workerPathForLogging.emplace(std::move(path));
-    }
-
-    const size_t count = static_cast<size_t>(UseCounterWorker::Count);
-
-    const auto workerKind = Kind();
-    for (size_t c = 0; c < count; ++c) {
-      if (!GetUseCounter(static_cast<UseCounterWorker>(c))) {
-        continue;
-      }
-      const char* metricName = IncrementWorkerUseCounter(
-          static_cast<UseCounterWorker>(c), workerKind);
-      if (dumpCounters) {
-        printf_stderr("USE_COUNTER_WORKER: %s - %s\n", metricName,
-                      workerPathForLogging->get());
-      }
-    }
-  }
-
-  void WorkerPrivate::StopSyncLoop(nsIEventTarget * aSyncLoopTarget,
-                                   nsresult aResult) {
-    AssertValidSyncLoop(aSyncLoopTarget);
-
-    if (!MaybeStopSyncLoop(aSyncLoopTarget, aResult)) {
-      
-      MOZ_CRASH("Unknown sync loop!");
-    }
-  }
-
-  bool WorkerPrivate::MaybeStopSyncLoop(nsIEventTarget * aSyncLoopTarget,
-                                        nsresult aResult) {
-    AssertIsOnWorkerThread();
-
-    for (uint32_t index = mSyncLoopStack.Length(); index > 0; index--) {
-      const auto& loopInfo = mSyncLoopStack[index - 1];
-      MOZ_ASSERT(loopInfo);
-      MOZ_ASSERT(loopInfo->mEventTarget);
-
-      if (loopInfo->mEventTarget == aSyncLoopTarget) {
-        
-        
-        MOZ_ASSERT(!loopInfo->mCompleted);
-
-        loopInfo->mResult = aResult;
-        loopInfo->mCompleted = true;
-
-        loopInfo->mEventTarget->Disable();
-
-        return true;
-      }
-
-      MOZ_ASSERT(!SameCOMIdentity(loopInfo->mEventTarget, aSyncLoopTarget));
-    }
-
-    return false;
-  }
-
-#ifdef DEBUG
-  void WorkerPrivate::AssertValidSyncLoop(nsIEventTarget * aSyncLoopTarget) {
-    MOZ_ASSERT(aSyncLoopTarget);
-
-    EventTarget* workerTarget;
-    nsresult rv = aSyncLoopTarget->QueryInterface(
-        kDEBUGWorkerEventTargetIID, reinterpret_cast<void**>(&workerTarget));
-    MOZ_ASSERT(NS_SUCCEEDED(rv));
-    MOZ_ASSERT(workerTarget);
-
-    bool valid = false;
-
-    {
-      MutexAutoLock lock(mMutex);
-
-      for (uint32_t index = 0; index < mSyncLoopStack.Length(); index++) {
-        const auto& loopInfo = mSyncLoopStack[index];
-        MOZ_ASSERT(loopInfo);
-        MOZ_ASSERT(loopInfo->mEventTarget);
-
-        if (loopInfo->mEventTarget == aSyncLoopTarget) {
-          valid = true;
-          break;
-        }
-
-        MOZ_ASSERT(!SameCOMIdentity(loopInfo->mEventTarget, aSyncLoopTarget));
-      }
-    }
-
-    MOZ_ASSERT(valid);
-  }
-#endif
-
-  void WorkerPrivate::PostMessageToParent(
-      JSContext * aCx, JS::Handle<JS::Value> aMessage,
-      const Sequence<JSObject*>& aTransferable, ErrorResult& aRv) {
-    LOG(WorkerLog(), ("WorkerPrivate::PostMessageToParent [%p]", this));
-    AssertIsOnWorkerThread();
-    MOZ_DIAGNOSTIC_ASSERT(IsDedicatedWorker());
-
-    JS::Rooted<JS::Value> transferable(aCx, JS::UndefinedValue());
-
-    aRv = nsContentUtils::CreateJSValueFromSequenceOfObject(aCx, aTransferable,
-                                                            &transferable);
-    if (NS_WARN_IF(aRv.Failed())) {
-      return;
-    }
-
-    RefPtr<MessageEventToParentRunnable> runnable =
-        new MessageEventToParentRunnable(this);
-
-    JS::CloneDataPolicy clonePolicy;
-
-    
-    clonePolicy.allowIntraClusterClonableSharedObjects();
-
-    if (IsSharedMemoryAllowed()) {
-      clonePolicy.allowSharedMemoryObjects();
-    }
-
-    runnable->Write(aCx, aMessage, transferable, clonePolicy, aRv);
-
-    if (NS_WARN_IF(aRv.Failed())) {
-      return;
-    }
-
-    if (!runnable->Dispatch(this)) {
-      aRv = NS_ERROR_FAILURE;
-    }
-  }
-
-  void WorkerPrivate::EnterDebuggerEventLoop() {
-    auto data = mWorkerThreadAccessible.Access();
-
-    JSContext* cx = GetJSContext();
-    MOZ_ASSERT(cx);
-
-    AutoPushEventLoopGlobal eventLoopGlobal(this, cx);
-    AutoYieldJSThreadExecution yield;
-
-    CycleCollectedJSContext* ccjscx = CycleCollectedJSContext::Get();
-
-    uint32_t currentEventLoopLevel = ++data->mDebuggerEventLoopLevel;
-
-    while (currentEventLoopLevel <= data->mDebuggerEventLoopLevel) {
-      bool debuggerRunnablesPending = false;
-
-      {
-        MutexAutoLock lock(mMutex);
-
-        debuggerRunnablesPending = !mDebuggerQueue.IsEmpty();
-      }
-
-      
-      if (!debuggerRunnablesPending) {
+      if (!NS_HasPendingEvents(thread)) {
         SetGCTimerMode(IdleTimer);
       }
 
@@ -5742,22 +5384,42 @@ nsresult WorkerPrivate::GetLoadInfo(
       {
         MutexAutoLock lock(mMutex);
 
-        while (mControlQueue.IsEmpty() &&
-               !(debuggerRunnablesPending = !mDebuggerQueue.IsEmpty()) &&
-               !JS::HasDebuggerMicroTasks(cx)) {
-          WaitForWorkerEvents();
+        for (;;) {
+          while (mControlQueue.IsEmpty() && !normalRunnablesPending &&
+                 !(normalRunnablesPending = NS_HasPendingEvents(thread))) {
+            WaitForWorkerEvents();
+          }
+
+          auto result = ProcessAllControlRunnablesLocked();
+          if (result != ProcessAllControlRunnablesResult::Nothing) {
+            
+            
+            normalRunnablesPending =
+                result == ProcessAllControlRunnablesResult::MayContinue &&
+                NS_HasPendingEvents(thread);
+
+            
+            
+            
+            if (loopInfo->mCompleted) {
+              break;
+            }
+          }
+
+          
+          MOZ_ASSERT(!loopInfo->mCompleted);
+
+          if (normalRunnablesPending) {
+            break;
+          }
         }
-
-        ProcessAllControlRunnablesLocked();
-
-        
       }
-      ccjscx->PerformDebuggerMicroTaskCheckpoint();
-      if (debuggerRunnablesPending) {
+
+      if (normalRunnablesPending) {
         
         SetGCTimerMode(PeriodicTimer);
 
-        ProcessSingleDebuggerRunnable();
+        MOZ_ALWAYS_TRUE(NS_ProcessNextEvent(thread, false));
 
         
         
@@ -5771,1290 +5433,1585 @@ nsresult WorkerPrivate::GetLoadInfo(
     }
   }
 
-  void WorkerPrivate::LeaveDebuggerEventLoop() {
-    auto data = mWorkerThreadAccessible.Access();
+  
+  MOZ_ASSERT(mSyncLoopStack[currentLoopIndex].get() == loopInfo);
 
-    
-    
-    MutexAutoLock lock(mMutex);
+  return DestroySyncLoop(currentLoopIndex);
+}
 
-    if (data->mDebuggerEventLoopLevel > 0) {
-      --data->mDebuggerEventLoopLevel;
-    }
-  }
+nsresult WorkerPrivate::DestroySyncLoop(uint32_t aLoopIndex) {
+  MOZ_ASSERT(!mSyncLoopStack.IsEmpty());
+  MOZ_ASSERT(mSyncLoopStack.Length() - 1 == aLoopIndex);
 
-  void WorkerPrivate::PostMessageToDebugger(const nsAString& aMessage) {
-    AssertIsOnWorkerThread();
+  LOG(WorkerLog(),
+      ("WorkerPrivate::DestroySyncLoop [%p] aLoopIndex: %u", this, aLoopIndex));
 
-    mDebugger->PostMessageToDebugger(aMessage);
-    RefPtr<RemoteWorkerDebuggerChild> remoteDebugger;
+  AutoYieldJSThreadExecution yield;
+
+  
+  const auto& loopInfo = mSyncLoopStack[aLoopIndex];
+
+  nsresult result = loopInfo->mResult;
+
+  {
+    RefPtr<nsIEventTarget> nestedEventTarget(
+        loopInfo->mEventTarget->GetNestedEventTarget());
+    MOZ_ASSERT(nestedEventTarget);
+
+    loopInfo->mEventTarget->Shutdown();
+
     {
       MutexAutoLock lock(mMutex);
-      if (!mRemoteDebugger) {
-        return;
-      }
-      remoteDebugger = mRemoteDebugger;
-    }
-    MOZ_ASSERT_DEBUG_OR_FUZZING(remoteDebugger);
-    (void)remoteDebugger->SendPostMessageToDebugger(nsAutoString(aMessage));
-  }
-
-  void WorkerPrivate::SetDebuggerImmediate(dom::Function & aHandler,
-                                           ErrorResult & aRv) {
-    AssertIsOnWorkerThread();
-
-    RefPtr<DebuggerImmediateRunnable> runnable =
-        new DebuggerImmediateRunnable(this, aHandler);
-    if (!runnable->Dispatch(this)) {
-      aRv.Throw(NS_ERROR_FAILURE);
+      static_cast<ThreadEventQueue*>(mThread->EventQueue())
+          ->PopEventQueue(nestedEventTarget);
     }
   }
 
-  void WorkerPrivate::ReportErrorToDebugger(const nsACString& aFilename,
-                                            uint32_t aLineno,
-                                            const nsAString& aMessage) {
-    AssertIsOnWorkerThread();
-    mDebugger->ReportErrorToDebugger(aFilename, aLineno, aMessage);
-    RefPtr<RemoteWorkerDebuggerChild> remoteDebugger;
-    {
-      MutexAutoLock lock(mMutex);
-      if (!mRemoteDebugger) {
-        return;
-      }
-      remoteDebugger = mRemoteDebugger;
-    }
-    MOZ_ASSERT_DEBUG_OR_FUZZING(remoteDebugger);
-    (void)remoteDebugger->SendReportErrorToDebugger(
-        RemoteWorkerDebuggerErrorInfo(nsAutoCString(aFilename), aLineno,
-                                      nsAutoString(aMessage)));
-  }
-
-  void WorkerPrivate::UpdateWindowIDToDebugger(const uint64_t& aWindowID,
-                                               const bool& aIsAdd) {
-    AssertIsOnWorkerThread();
-    
-    
-
-    RefPtr<RemoteWorkerDebuggerChild> remoteDebugger;
-    {
-      MutexAutoLock lock(mMutex);
-      if (!mRemoteDebugger) {
-        return;
-      }
-      remoteDebugger = mRemoteDebugger;
-    }
-    MOZ_ASSERT_DEBUG_OR_FUZZING(remoteDebugger);
-    if (aIsAdd) {
-      (void)remoteDebugger->SendAddWindowID(aWindowID);
-    } else {
-      (void)remoteDebugger->SendRemoveWindowID(aWindowID);
-    }
-  }
-
-  bool WorkerPrivate::NotifyInternal(WorkerStatus aStatus) {
-    auto data = mWorkerThreadAccessible.Access();
-
-    
-    
-    AutoYieldJSThreadExecution yield;
-
-    NS_ASSERTION(aStatus > Running && aStatus < Dead, "Bad status!");
-
-    RefPtr<EventTarget> eventTarget;
-
-    
-    {
-      MutexAutoLock lock(mMutex);
-
+  
+  if (mSyncLoopStack.Length() == 1) {
+    if ((mPostSyncLoopOperations & eDispatchCancelingRunnable)) {
       LOG(WorkerLog(),
-          ("WorkerPrivate::NotifyInternal [%p] mStatus: %u, aStatus: %u", this,
-           static_cast<uint8_t>(mStatus), static_cast<uint8_t>(aStatus)));
-
-      if (mStatus >= aStatus) {
-        return true;
-      }
-
-      MOZ_ASSERT_IF(aStatus == Killing,
-                    mStatus == Canceling && mParentStatus == Canceling);
-
-      mStatus = aStatus;
-
-      
-      
-      if (aStatus == Closing) {
-        Close();
-      }
-
-      
-      
-      if (aStatus >= Killing) {
-        mParentStatus = aStatus;
-      }
+          ("WorkerPrivate::DestroySyncLoop [%p] Dispatching CancelingRunnables",
+           this));
+      DispatchCancelingRunnable();
     }
 
-    
-    if (aStatus == Canceling && data->mScope) {
-      data->mScope->NoteTerminating();
-    }
+    mPostSyncLoopOperations = 0;
+  }
 
-    if (aStatus >= Closing) {
-      CancelAllTimeouts();
-
-      JSContext* cx = GetJSContext();
-      if (cx) {
-        
-        
-        
-        
-        
-        
-        
-        
-        JS::CancelAsyncTasks(cx);
-      }
-    }
-
-    if (aStatus == Closing && data->mScope) {
-      data->mScope->SetIsNotEligibleForMessaging();
-    }
-
-    
-    if (aStatus == Canceling) {
-      NotifyWorkerRefs(aStatus);
-    }
-
-    if (aStatus == Canceling && mRemoteWorkerNonLifeCycleOpController) {
-      mRemoteWorkerNonLifeCycleOpController->TransistionStateToCanceled();
-    }
-
+  {
     
     
-    if (!data->mScope) {
-      if (aStatus == Canceling) {
-        MOZ_ASSERT(!data->mCancelBeforeWorkerScopeConstructed);
-        data->mCancelBeforeWorkerScopeConstructed.Flip();
-      }
+#ifdef DEBUG
+    MutexAutoLock lock(mMutex);
+#endif
+
+    
+    mSyncLoopStack.RemoveElementAt(aLoopIndex);
+  }
+
+  return result;
+}
+
+void WorkerPrivate::DispatchCancelingRunnable() {
+  
+  
+  
+  
+
+  LOG(WorkerLog(), ("WorkerPrivate::DispatchCancelingRunnable [%p]", this));
+  RefPtr<CancelingRunnable> r = new CancelingRunnable();
+  {
+    MutexAutoLock lock(mMutex);
+    mThread->nsThread::Dispatch(r.forget(), NS_DISPATCH_NORMAL);
+  }
+
+  
+  
+  
+  LOG(WorkerLog(), ("WorkerPrivate::DispatchCancelingRunnable [%p] Setup a "
+                    "timeout canceling",
+                    this));
+  RefPtr<CancelingWithTimeoutOnParentRunnable> rr =
+      new CancelingWithTimeoutOnParentRunnable(this);
+  rr->Dispatch(this);
+}
+
+void WorkerPrivate::ReportUseCounters() {
+  AssertIsOnWorkerThread();
+
+  if (mReportedUseCounters) {
+    return;
+  }
+  mReportedUseCounters = true;
+
+  if (IsChromeWorker()) {
+    return;
+  }
+
+  const size_t kind = Kind();
+  switch (kind) {
+    case WorkerKindDedicated:
+      glean::use_counter::dedicated_workers_destroyed.Add();
+      break;
+    case WorkerKindShared:
+      glean::use_counter::shared_workers_destroyed.Add();
+      break;
+    case WorkerKindService:
+      glean::use_counter::service_workers_destroyed.Add();
+      break;
+    default:
+      MOZ_ASSERT(false, "Unknown worker kind");
+      return;
+  }
+
+  Maybe<nsCString> workerPathForLogging;
+  const bool dumpCounters = StaticPrefs::dom_use_counters_dump_worker();
+  if (dumpCounters) {
+    nsAutoCString path(Domain());
+    path.AppendLiteral("(");
+    NS_ConvertUTF16toUTF8 script(ScriptURL());
+    path.Append(script);
+    path.AppendPrintf(", 0x%p)", this);
+    workerPathForLogging.emplace(std::move(path));
+  }
+
+  const size_t count = static_cast<size_t>(UseCounterWorker::Count);
+
+  const auto workerKind = Kind();
+  for (size_t c = 0; c < count; ++c) {
+    if (!GetUseCounter(static_cast<UseCounterWorker>(c))) {
+      continue;
+    }
+    const char* metricName =
+        IncrementWorkerUseCounter(static_cast<UseCounterWorker>(c), workerKind);
+    if (dumpCounters) {
+      printf_stderr("USE_COUNTER_WORKER: %s - %s\n", metricName,
+                    workerPathForLogging->get());
+    }
+  }
+}
+
+void WorkerPrivate::StopSyncLoop(nsIEventTarget* aSyncLoopTarget,
+                                 nsresult aResult) {
+  AssertValidSyncLoop(aSyncLoopTarget);
+
+  if (!MaybeStopSyncLoop(aSyncLoopTarget, aResult)) {
+    
+    MOZ_CRASH("Unknown sync loop!");
+  }
+}
+
+bool WorkerPrivate::MaybeStopSyncLoop(nsIEventTarget* aSyncLoopTarget,
+                                      nsresult aResult) {
+  AssertIsOnWorkerThread();
+
+  for (uint32_t index = mSyncLoopStack.Length(); index > 0; index--) {
+    const auto& loopInfo = mSyncLoopStack[index - 1];
+    MOZ_ASSERT(loopInfo);
+    MOZ_ASSERT(loopInfo->mEventTarget);
+
+    if (loopInfo->mEventTarget == aSyncLoopTarget) {
+      
+      
+      MOZ_ASSERT(!loopInfo->mCompleted);
+
+      loopInfo->mResult = aResult;
+      loopInfo->mCompleted = true;
+
+      loopInfo->mEventTarget->Disable();
+
       return true;
     }
+
+    MOZ_ASSERT(!SameCOMIdentity(loopInfo->mEventTarget, aSyncLoopTarget));
+  }
+
+  return false;
+}
+
+#ifdef DEBUG
+void WorkerPrivate::AssertValidSyncLoop(nsIEventTarget* aSyncLoopTarget) {
+  MOZ_ASSERT(aSyncLoopTarget);
+
+  EventTarget* workerTarget;
+  nsresult rv = aSyncLoopTarget->QueryInterface(
+      kDEBUGWorkerEventTargetIID, reinterpret_cast<void**>(&workerTarget));
+  MOZ_ASSERT(NS_SUCCEEDED(rv));
+  MOZ_ASSERT(workerTarget);
+
+  bool valid = false;
+
+  {
+    MutexAutoLock lock(mMutex);
+
+    for (uint32_t index = 0; index < mSyncLoopStack.Length(); index++) {
+      const auto& loopInfo = mSyncLoopStack[index];
+      MOZ_ASSERT(loopInfo);
+      MOZ_ASSERT(loopInfo->mEventTarget);
+
+      if (loopInfo->mEventTarget == aSyncLoopTarget) {
+        valid = true;
+        break;
+      }
+
+      MOZ_ASSERT(!SameCOMIdentity(loopInfo->mEventTarget, aSyncLoopTarget));
+    }
+  }
+
+  MOZ_ASSERT(valid);
+}
+#endif
+
+void WorkerPrivate::PostMessageToParent(
+    JSContext* aCx, JS::Handle<JS::Value> aMessage,
+    const Sequence<JSObject*>& aTransferable, ErrorResult& aRv) {
+  LOG(WorkerLog(), ("WorkerPrivate::PostMessageToParent [%p]", this));
+  AssertIsOnWorkerThread();
+  MOZ_DIAGNOSTIC_ASSERT(IsDedicatedWorker());
+
+  JS::Rooted<JS::Value> transferable(aCx, JS::UndefinedValue());
+
+  aRv = nsContentUtils::CreateJSValueFromSequenceOfObject(aCx, aTransferable,
+                                                          &transferable);
+  if (NS_WARN_IF(aRv.Failed())) {
+    return;
+  }
+
+  RefPtr<MessageEventToParentRunnable> runnable =
+      new MessageEventToParentRunnable(this);
+
+  JS::CloneDataPolicy clonePolicy;
+
+  
+  clonePolicy.allowIntraClusterClonableSharedObjects();
+
+  if (IsSharedMemoryAllowed()) {
+    clonePolicy.allowSharedMemoryObjects();
+  }
+
+  runnable->Write(aCx, aMessage, transferable, clonePolicy, aRv);
+
+  if (NS_WARN_IF(aRv.Failed())) {
+    return;
+  }
+
+  if (!runnable->Dispatch(this)) {
+    aRv = NS_ERROR_FAILURE;
+  }
+}
+
+void WorkerPrivate::EnterDebuggerEventLoop() {
+  auto data = mWorkerThreadAccessible.Access();
+
+  JSContext* cx = GetJSContext();
+  MOZ_ASSERT(cx);
+
+  AutoPushEventLoopGlobal eventLoopGlobal(this, cx);
+  AutoYieldJSThreadExecution yield;
+
+  CycleCollectedJSContext* ccjscx = CycleCollectedJSContext::Get();
+
+  uint32_t currentEventLoopLevel = ++data->mDebuggerEventLoopLevel;
+
+  while (currentEventLoopLevel <= data->mDebuggerEventLoopLevel) {
+    bool debuggerRunnablesPending = false;
+
+    {
+      MutexAutoLock lock(mMutex);
+
+      debuggerRunnablesPending = !mDebuggerQueue.IsEmpty();
+    }
+
+    
+    if (!debuggerRunnablesPending) {
+      SetGCTimerMode(IdleTimer);
+    }
+
+    
+    {
+      MutexAutoLock lock(mMutex);
+
+      while (mControlQueue.IsEmpty() &&
+             !(debuggerRunnablesPending = !mDebuggerQueue.IsEmpty()) &&
+             !JS::HasDebuggerMicroTasks(cx)) {
+        WaitForWorkerEvents();
+      }
+
+      ProcessAllControlRunnablesLocked();
+
+      
+    }
+    ccjscx->PerformDebuggerMicroTaskCheckpoint();
+    if (debuggerRunnablesPending) {
+      
+      SetGCTimerMode(PeriodicTimer);
+
+      ProcessSingleDebuggerRunnable();
+
+      
+      if (GetCurrentEventLoopGlobal()) {
+        
+        
+        MOZ_ASSERT(JS::CurrentGlobalOrNull(cx));
+        JS_MaybeGC(cx);
+      }
+    }
+  }
+}
+
+void WorkerPrivate::LeaveDebuggerEventLoop() {
+  auto data = mWorkerThreadAccessible.Access();
+
+  
+  
+  MutexAutoLock lock(mMutex);
+
+  if (data->mDebuggerEventLoopLevel > 0) {
+    --data->mDebuggerEventLoopLevel;
+  }
+}
+
+void WorkerPrivate::PostMessageToDebugger(const nsAString& aMessage) {
+  AssertIsOnWorkerThread();
+
+  mDebugger->PostMessageToDebugger(aMessage);
+  RefPtr<RemoteWorkerDebuggerChild> remoteDebugger;
+  {
+    MutexAutoLock lock(mMutex);
+    if (!mRemoteDebugger) {
+      return;
+    }
+    remoteDebugger = mRemoteDebugger;
+  }
+  MOZ_ASSERT_DEBUG_OR_FUZZING(remoteDebugger);
+  (void)remoteDebugger->SendPostMessageToDebugger(nsAutoString(aMessage));
+}
+
+void WorkerPrivate::SetDebuggerImmediate(dom::Function& aHandler,
+                                         ErrorResult& aRv) {
+  AssertIsOnWorkerThread();
+
+  RefPtr<DebuggerImmediateRunnable> runnable =
+      new DebuggerImmediateRunnable(this, aHandler);
+  if (!runnable->Dispatch(this)) {
+    aRv.Throw(NS_ERROR_FAILURE);
+  }
+}
+
+void WorkerPrivate::ReportErrorToDebugger(const nsACString& aFilename,
+                                          uint32_t aLineno,
+                                          const nsAString& aMessage) {
+  AssertIsOnWorkerThread();
+  mDebugger->ReportErrorToDebugger(aFilename, aLineno, aMessage);
+  RefPtr<RemoteWorkerDebuggerChild> remoteDebugger;
+  {
+    MutexAutoLock lock(mMutex);
+    if (!mRemoteDebugger) {
+      return;
+    }
+    remoteDebugger = mRemoteDebugger;
+  }
+  MOZ_ASSERT_DEBUG_OR_FUZZING(remoteDebugger);
+  (void)remoteDebugger->SendReportErrorToDebugger(RemoteWorkerDebuggerErrorInfo(
+      nsAutoCString(aFilename), aLineno, nsAutoString(aMessage)));
+}
+
+void WorkerPrivate::UpdateWindowIDToDebugger(const uint64_t& aWindowID,
+                                             const bool& aIsAdd) {
+  AssertIsOnWorkerThread();
+  
+  
+
+  RefPtr<RemoteWorkerDebuggerChild> remoteDebugger;
+  {
+    MutexAutoLock lock(mMutex);
+    if (!mRemoteDebugger) {
+      return;
+    }
+    remoteDebugger = mRemoteDebugger;
+  }
+  MOZ_ASSERT_DEBUG_OR_FUZZING(remoteDebugger);
+  if (aIsAdd) {
+    (void)remoteDebugger->SendAddWindowID(aWindowID);
+  } else {
+    (void)remoteDebugger->SendRemoveWindowID(aWindowID);
+  }
+}
+
+bool WorkerPrivate::NotifyInternal(WorkerStatus aStatus) {
+  auto data = mWorkerThreadAccessible.Access();
+
+  
+  
+  AutoYieldJSThreadExecution yield;
+
+  NS_ASSERTION(aStatus > Running && aStatus < Dead, "Bad status!");
+
+  RefPtr<EventTarget> eventTarget;
+
+  
+  {
+    MutexAutoLock lock(mMutex);
+
+    LOG(WorkerLog(),
+        ("WorkerPrivate::NotifyInternal [%p] mStatus: %u, aStatus: %u", this,
+         static_cast<uint8_t>(mStatus), static_cast<uint8_t>(aStatus)));
+
+    if (mStatus >= aStatus) {
+      return true;
+    }
+
+    MOZ_ASSERT_IF(aStatus == Killing,
+                  mStatus == Canceling && mParentStatus == Canceling);
+
+    mStatus = aStatus;
 
     
     
     if (aStatus == Closing) {
-      if (!mSyncLoopStack.IsEmpty()) {
-        LOG(WorkerLog(), ("WorkerPrivate::NotifyInternal [%p] request to "
-                          "dispatch canceling runnables...",
-                          this));
-        mPostSyncLoopOperations |= eDispatchCancelingRunnable;
-      } else {
-        DispatchCancelingRunnable();
-      }
-      return true;
+      Close();
     }
 
-    MOZ_ASSERT(aStatus == Canceling || aStatus == Killing);
-
-    LOG(WorkerLog(), ("WorkerPrivate::NotifyInternal [%p] abort script", this));
-
     
-    return false;
-  }
-
-  void WorkerPrivate::ReportError(JSContext * aCx,
-                                  JS::ConstUTF8CharsZ aToStringResult,
-                                  JSErrorReport * aReport) {
-    auto data = mWorkerThreadAccessible.Access();
-
-    if (!MayContinueRunning() || data->mErrorHandlerRecursionCount == 2) {
-      return;
+    
+    if (aStatus >= Killing) {
+      mParentStatus = aStatus;
     }
-
-    NS_ASSERTION(data->mErrorHandlerRecursionCount == 0 ||
-                     data->mErrorHandlerRecursionCount == 1,
-                 "Bad recursion logic!");
-
-    UniquePtr<WorkerErrorReport> report = MakeUnique<WorkerErrorReport>();
-    if (aReport) {
-      report->AssignErrorReport(aReport);
-    }
-
-    JS::ExceptionStack exnStack(aCx);
-    
-    
-    
-    if (!aReport || !aReport->isWarning()) {
-      MOZ_ASSERT(JS_IsExceptionPending(aCx));
-      if (!JS::StealPendingExceptionStack(aCx, &exnStack)) {
-        JS_ClearPendingException(aCx);
-        return;
-      }
-
-      JS::Rooted<JSObject*> stack(aCx), stackGlobal(aCx);
-      xpc::FindExceptionStackForConsoleReport(nullptr, exnStack.exception(),
-                                              exnStack.stack(), &stack,
-                                              &stackGlobal);
-
-      if (stack) {
-        JSAutoRealm ar(aCx, stackGlobal);
-        report->SerializeWorkerStack(aCx, this, stack);
-      }
-    }
-
-    if (report->mMessage.IsEmpty() && aToStringResult) {
-      nsDependentCString toStringResult(aToStringResult.c_str());
-      if (!AppendUTF8toUTF16(toStringResult, report->mMessage,
-                             mozilla::fallible)) {
-        
-        
-        size_t index = std::min<size_t>(1024, toStringResult.Length());
-
-        
-        index =
-            RewindToPriorUTF8Codepoint(toStringResult.BeginReading(), index);
-
-        nsDependentCString truncatedToStringResult(aToStringResult.c_str(),
-                                                   index);
-        AppendUTF8toUTF16(truncatedToStringResult, report->mMessage);
-      }
-    }
-
-    data->mErrorHandlerRecursionCount++;
-
-    
-    
-    bool fireAtScope = data->mErrorHandlerRecursionCount == 1 &&
-                       report->mErrorNumber != JSMSG_OUT_OF_MEMORY &&
-                       JS::CurrentGlobalOrNull(aCx);
-
-    WorkerErrorReport::ReportError(aCx, this, fireAtScope, nullptr,
-                                   std::move(report), 0, exnStack.exception());
-
-    data->mErrorHandlerRecursionCount--;
   }
 
   
-  void WorkerPrivate::ReportErrorToConsole(
-      uint32_t aErrorFlags, const nsCString& aCategory, PropertiesFile aFile,
-      const nsCString& aMessageName, const nsTArray<nsString>& aParams,
-      const mozilla::SourceLocation& aLocation) {
-    WorkerPrivate* wp = nullptr;
-    if (!NS_IsMainThread()) {
-      wp = GetCurrentThreadWorkerPrivate();
-    }
-
-    ReportErrorToConsoleRunnable::Report(wp, aErrorFlags, aCategory, aFile,
-                                         aMessageName, aParams, aLocation);
+  if (aStatus == Canceling && data->mScope) {
+    data->mScope->NoteTerminating();
   }
 
-  int32_t WorkerPrivate::SetTimeout(JSContext * aCx, TimeoutHandler * aHandler,
-                                    int32_t aTimeout, bool aIsInterval,
-                                    Timeout::Reason aReason, ErrorResult& aRv) {
-    auto data = mWorkerThreadAccessible.Access();
-    MOZ_ASSERT(aHandler);
+  if (aStatus >= Closing) {
+    CancelAllTimeouts();
 
-    WorkerGlobalScope* globalScope = GlobalScope();
-    MOZ_DIAGNOSTIC_ASSERT(globalScope);
-    auto* timeoutManager = globalScope->GetTimeoutManager();
-    MOZ_DIAGNOSTIC_ASSERT(timeoutManager);
-    int32_t timerId = -1;
-    WorkerStatus status;
-    {
-      MutexAutoLock lock(mMutex);
-      status = mStatus;
-    }
-    
-    
-    if (status >= Closing) {
-      return timeoutManager->GetTimeoutId(aReason);
-    }
-    bool hadTimeouts = timeoutManager->HasTimeouts();
-    nsresult rv = timeoutManager->SetTimeout(aHandler, aTimeout, aIsInterval,
-                                             aReason, &timerId);
-    if (NS_FAILED(rv)) {
-      aRv.Throw(NS_ERROR_FAILURE);
-      return timerId;
-    }
-    if (!hadTimeouts) {
-      UpdateCCFlag(CCFlag::IneligibleForTimeout);
-    }
-    return timerId;
-  }
-
-  void WorkerPrivate::ClearTimeout(int32_t aId, Timeout::Reason aReason) {
-    MOZ_ASSERT(aReason == Timeout::Reason::eTimeoutOrInterval,
-               "This timeout reason doesn't support cancellation.");
-    WorkerGlobalScope* globalScope = GlobalScope();
-    MOZ_DIAGNOSTIC_ASSERT(globalScope);
-    auto* timeoutManager = globalScope->GetTimeoutManager();
-    MOZ_DIAGNOSTIC_ASSERT(timeoutManager);
-    timeoutManager->ClearTimeout(aId, aReason);
-    if (!timeoutManager->HasTimeouts()) {
-      UpdateCCFlag(CCFlag::EligibleForTimeout);
-    }
-  }
-
-  void WorkerPrivate::StartCancelingTimer() {
-    AssertIsOnParentThread();
-
-    
-    if (mCancelingTimer) {
-      return;
-    }
-
-    auto errorCleanup = MakeScopeExit([&] { mCancelingTimer = nullptr; });
-
-    if (WorkerPrivate* parent = GetParent()) {
-      mCancelingTimer = NS_NewTimer(parent->ControlEventTarget());
-    } else {
-      mCancelingTimer = NS_NewTimer();
-    }
-
-    if (NS_WARN_IF(!mCancelingTimer)) {
-      return;
-    }
-
-    
-    {
-      MutexAutoLock lock(mMutex);
-      if (ParentStatus() >= Canceling) {
-        return;
-      }
-    }
-
-    uint32_t cancelingTimeoutMillis =
-        StaticPrefs::dom_worker_canceling_timeoutMilliseconds();
-
-    RefPtr<CancelingTimerCallback> callback = new CancelingTimerCallback(this);
-    nsresult rv = mCancelingTimer->InitWithCallback(
-        callback, cancelingTimeoutMillis, nsITimer::TYPE_ONE_SHOT);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return;
-    }
-
-    errorCleanup.release();
-  }
-
-  void WorkerPrivate::UpdateContextOptionsInternal(
-      JSContext * aCx, const JS::ContextOptions& aContextOptions) {
-    auto data = mWorkerThreadAccessible.Access();
-
-    JS::ContextOptionsRef(aCx) = aContextOptions;
-
-    for (uint32_t index = 0; index < data->mChildWorkers.Length(); index++) {
-      data->mChildWorkers[index]->UpdateContextOptions(aContextOptions);
-    }
-  }
-
-  void WorkerPrivate::UpdateLanguageOverrideInternal(
-      const nsCString& aLanguageOverride,
-      const nsTArray<nsString>& aResolvedLanguages) {
-    mLoadInfo.mLanguageOverrideLocale = aLanguageOverride;
-    if (aLanguageOverride.IsEmpty()) {
-      mLoadInfo.mLanguageOverride.Clear();
-    } else {
-      mLoadInfo.mLanguageOverride = aResolvedLanguages.Clone();
-    }
-
-    WorkerGlobalScope* globalScope = GlobalScope();
-    if (globalScope) {
-      JSObject* global = globalScope->GetGlobalJSObject();
-      if (global) {
-        JS::Realm* realm = JS::GetObjectRealmOrNull(global);
-        if (realm) {
-          if (aLanguageOverride.IsEmpty()) {
-            JS::SetRealmLocaleOverride(realm, nullptr);
-          } else {
-            JS::SetRealmLocaleOverride(realm, aLanguageOverride.get());
-          }
-        }
-      }
-
-      if (RefPtr<WorkerNavigator> nav = globalScope->GetExistingNavigator()) {
-        nav->SetLanguages(aResolvedLanguages);
-      }
-    }
-
-    auto data = mWorkerThreadAccessible.Access();
-    for (uint32_t index = 0; index < data->mChildWorkers.Length(); index++) {
-      data->mChildWorkers[index]->UpdateLanguageOverride(aLanguageOverride,
-                                                         aResolvedLanguages);
-    }
-  }
-
-  void WorkerPrivate::UpdateLanguagesInternal(
-      const nsTArray<nsString>& aLanguages) {
-    WorkerGlobalScope* globalScope = GlobalScope();
-    RefPtr<WorkerNavigator> nav = globalScope->GetExistingNavigator();
-    if (nav) {
-      nav->SetLanguages(aLanguages);
-    }
-
-    auto data = mWorkerThreadAccessible.Access();
-    for (uint32_t index = 0; index < data->mChildWorkers.Length(); index++) {
-      data->mChildWorkers[index]->UpdateLanguages(aLanguages);
-    }
-
-    RefPtr<Event> event = NS_NewDOMEvent(globalScope, nullptr, nullptr);
-
-    event->InitEvent(u"languagechange"_ns, false, false);
-    event->SetTrusted(true);
-
-    globalScope->DispatchEvent(*event);
-  }
-
-  void WorkerPrivate::UpdateJSWorkerMemoryParameterInternal(
-      JSContext * aCx, JSGCParamKey aKey, Maybe<uint32_t> aValue) {
-    auto data = mWorkerThreadAccessible.Access();
-
-    if (aValue) {
-      JS_SetGCParameter(aCx, aKey, *aValue);
-    } else {
-      JS_ResetGCParameter(aCx, aKey);
-    }
-
-    for (uint32_t index = 0; index < data->mChildWorkers.Length(); index++) {
-      data->mChildWorkers[index]->UpdateJSWorkerMemoryParameter(aKey, aValue);
-    }
-  }
-
-#ifdef JS_GC_ZEAL
-  void WorkerPrivate::UpdateGCZealInternal(JSContext * aCx, uint8_t aGCZeal,
-                                           uint32_t aFrequency) {
-    auto data = mWorkerThreadAccessible.Access();
-
-    JS::SetGCZeal(aCx, aGCZeal, aFrequency);
-
-    for (uint32_t index = 0; index < data->mChildWorkers.Length(); index++) {
-      data->mChildWorkers[index]->UpdateGCZeal(aGCZeal, aFrequency);
-    }
-  }
-#endif
-
-  void WorkerPrivate::SetLowMemoryStateInternal(JSContext * aCx, bool aState) {
-    auto data = mWorkerThreadAccessible.Access();
-
-    JS::SetLowMemoryState(aCx, aState);
-
-    for (uint32_t index = 0; index < data->mChildWorkers.Length(); index++) {
-      data->mChildWorkers[index]->SetLowMemoryState(aState);
-    }
-  }
-
-  void WorkerPrivate::SetCCCollectedAnything(bool collectedAnything) {
-    mWorkerThreadAccessible.Access()->mCCCollectedAnything = collectedAnything;
-  }
-
-  uint32_t WorkerPrivate::GetCurrentTimerNestingLevel() const {
-    auto data = mWorkerThreadAccessible.Access();
-    return data->mScope
-               ? data->mScope->GetTimeoutManager()->GetNestingLevelForWorker()
-               : 0;
-  }
-
-  bool WorkerPrivate::isLastCCCollectedAnything() {
-    return mWorkerThreadAccessible.Access()->mCCCollectedAnything;
-  }
-
-  void WorkerPrivate::GarbageCollectInternal(JSContext * aCx, bool aShrinking,
-                                             bool aCollectChildren) {
-    
-    
-
-    auto data = mWorkerThreadAccessible.Access();
-
-    if (!GlobalScope()) {
-      
-      return;
-    }
-
-    if (aShrinking || aCollectChildren) {
-      JS::PrepareForFullGC(aCx);
-
-      if (aShrinking && mSyncLoopStack.IsEmpty()) {
-        JS::NonIncrementalGC(aCx, JS::GCOptions::Shrink,
-                             JS::GCReason::DOM_WORKER);
-
-        
-        
-        if (data->mCCCollectedAnything) {
-          JS::NonIncrementalGC(aCx, JS::GCOptions::Normal,
-                               JS::GCReason::DOM_WORKER);
-        }
-
-        if (!aCollectChildren) {
-          LOG(WorkerLog(), ("Worker %p collected idle garbage\n", this));
-        }
-      } else {
-        JS::NonIncrementalGC(aCx, JS::GCOptions::Normal,
-                             JS::GCReason::DOM_WORKER);
-        LOG(WorkerLog(), ("Worker %p collected garbage\n", this));
-      }
-    } else {
-      JS_MaybeGC(aCx);
-      LOG(WorkerLog(), ("Worker %p collected periodic garbage\n", this));
-    }
-
-    if (aCollectChildren) {
-      for (uint32_t index = 0; index < data->mChildWorkers.Length(); index++) {
-        data->mChildWorkers[index]->GarbageCollect(aShrinking);
-      }
-    }
-  }
-
-  void WorkerPrivate::CycleCollectInternal(bool aCollectChildren) {
-    auto data = mWorkerThreadAccessible.Access();
-
-    nsCycleCollector_collect(CCReason::WORKER, nullptr);
-
-    if (aCollectChildren) {
-      for (uint32_t index = 0; index < data->mChildWorkers.Length(); index++) {
-        data->mChildWorkers[index]->CycleCollect();
-      }
-    }
-  }
-
-  void WorkerPrivate::MemoryPressureInternal() {
-    auto data = mWorkerThreadAccessible.Access();
-
-    if (data->mScope) {
-      RefPtr<Console> console = data->mScope->GetConsoleIfExists();
-      if (console) {
-        console->ClearStorage();
-      }
-
-      RefPtr<Performance> performance = data->mScope->GetPerformanceIfExists();
-      if (performance) {
-        performance->MemoryPressure();
-      }
-
-      data->mScope->RemoveReportRecords();
-    }
-
-    if (data->mDebuggerScope) {
-      RefPtr<Console> console = data->mDebuggerScope->GetConsoleIfExists();
-      if (console) {
-        console->ClearStorage();
-      }
-    }
-
-    for (uint32_t index = 0; index < data->mChildWorkers.Length(); index++) {
-      data->mChildWorkers[index]->MemoryPressure();
-    }
-  }
-
-  void WorkerPrivate::SetThread(WorkerThread * aThread) {
-    if (aThread) {
-#ifdef DEBUG
-      {
-        bool isOnCurrentThread;
-        MOZ_ASSERT(
-            NS_SUCCEEDED(aThread->IsOnCurrentThread(&isOnCurrentThread)));
-        MOZ_ASSERT(!isOnCurrentThread);
-      }
-#endif
-
-      MOZ_ASSERT(!mPRThread);
-      mPRThread = PRThreadFromThread(aThread);
-      MOZ_ASSERT(mPRThread);
-
-      mWorkerThreadAccessible.Transfer(mPRThread);
-    } else {
-      MOZ_ASSERT(mPRThread);
-    }
-  }
-
-  void WorkerPrivate::SetWorkerPrivateInWorkerThread(
-      WorkerThread* const aThread) {
-    LOG(WorkerLog(),
-        ("WorkerPrivate::SetWorkerPrivateInWorkerThread [%p]", this));
-    MutexAutoLock lock(mMutex);
-
-    MOZ_ASSERT(!mThread);
-    MOZ_ASSERT(mStatus == Pending);
-
-    mThread = aThread;
-    mThread->SetWorker(WorkerThreadFriendKey{}, this);
-
-    if (!mPreStartRunnables.IsEmpty()) {
-      for (uint32_t index = 0; index < mPreStartRunnables.Length(); index++) {
-        MOZ_ALWAYS_SUCCEEDS(mThread->DispatchAnyThread(
-            WorkerThreadFriendKey{}, mPreStartRunnables[index]));
-      }
+    JSContext* cx = GetJSContext();
+    if (cx) {
       
       
       
+      
+      
+      
+      
+      
+      JS::CancelAsyncTasks(cx);
     }
   }
 
-  void WorkerPrivate::ResetWorkerPrivateInWorkerThread() {
-    LOG(WorkerLog(),
-        ("WorkerPrivate::ResetWorkerPrivateInWorkerThread [%p]", this));
-    RefPtr<WorkerThread> doomedThread;
-
-    
-    MutexAutoLock lock(mMutex);
-    MOZ_ASSERT(mStatus == Dead);
-
-    MOZ_ASSERT(mThread);
-
-    mThread->ClearEventQueueAndWorker(WorkerThreadFriendKey{});
-    mThread.swap(doomedThread);
+  if (aStatus == Closing && data->mScope) {
+    data->mScope->SetIsNotEligibleForMessaging();
   }
 
-  void WorkerPrivate::BeginCTypesCall() {
-    AssertIsOnWorkerThread();
-    auto data = mWorkerThreadAccessible.Access();
-
-    
-    SetGCTimerMode(NoTimer);
-
-    data->mYieldJSThreadExecution.EmplaceBack();
+  
+  if (aStatus == Canceling) {
+    NotifyWorkerRefs(aStatus);
   }
 
-  void WorkerPrivate::EndCTypesCall() {
-    AssertIsOnWorkerThread();
-    auto data = mWorkerThreadAccessible.Access();
-
-    data->mYieldJSThreadExecution.RemoveLastElement();
-
-    
-    SetGCTimerMode(PeriodicTimer);
+  if (aStatus == Canceling && mRemoteWorkerNonLifeCycleOpController) {
+    mRemoteWorkerNonLifeCycleOpController->TransistionStateToCanceled();
   }
 
-  void WorkerPrivate::BeginCTypesCallback() {
-    AssertIsOnWorkerThread();
-
-    
-    SetGCTimerMode(PeriodicTimer);
-
-    
-    
-  }
-
-  void WorkerPrivate::EndCTypesCallback() {
-    AssertIsOnWorkerThread();
-
-    
-    SetGCTimerMode(NoTimer);
-  }
-
-  bool WorkerPrivate::ConnectMessagePort(JSContext * aCx,
-                                         UniqueMessagePortId & aIdentifier) {
-    AssertIsOnWorkerThread();
-
-    WorkerGlobalScope* globalScope = GlobalScope();
-
-    JS::Rooted<JSObject*> jsGlobal(aCx, globalScope->GetWrapper());
-    MOZ_ASSERT(jsGlobal);
-
-    
-    
-    ErrorResult rv;
-    RefPtr<MessagePort> port =
-        MessagePort::Create(globalScope, aIdentifier, rv);
-    if (NS_WARN_IF(rv.Failed())) {
-      rv.SuppressException();
-      return false;
+  
+  
+  if (!data->mScope) {
+    if (aStatus == Canceling) {
+      MOZ_ASSERT(!data->mCancelBeforeWorkerScopeConstructed);
+      data->mCancelBeforeWorkerScopeConstructed.Flip();
     }
-
-    GlobalObject globalObject(aCx, jsGlobal);
-    if (globalObject.Failed()) {
-      return false;
-    }
-
-    RootedDictionary<MessageEventInit> init(aCx);
-    init.mData = JS_GetEmptyStringValue(aCx);
-    init.mBubbles = false;
-    init.mCancelable = false;
-    init.mSource.SetValue().SetAsMessagePort() = port;
-    if (!init.mPorts.AppendElement(port.forget(), fallible)) {
-      return false;
-    }
-
-    RefPtr<MessageEvent> event =
-        MessageEvent::Constructor(globalObject, u"connect"_ns, init);
-
-    event->SetTrusted(true);
-
-    globalScope->DispatchEvent(*event);
-
     return true;
   }
 
-  WorkerGlobalScope* WorkerPrivate::GetOrCreateGlobalScope(JSContext * aCx) {
-    auto data = mWorkerThreadAccessible.Access();
-
-    if (data->mScope) {
-      return data->mScope;
-    }
-
-    if (IsSharedWorker()) {
-      data->mScope =
-          new SharedWorkerGlobalScope(this, CreateClientSource(), WorkerName());
-    } else if (IsServiceWorker()) {
-      data->mScope = new ServiceWorkerGlobalScope(
-          this, CreateClientSource(), GetServiceWorkerRegistrationDescriptor());
+  
+  
+  if (aStatus == Closing) {
+    if (!mSyncLoopStack.IsEmpty()) {
+      LOG(WorkerLog(), ("WorkerPrivate::NotifyInternal [%p] request to "
+                        "dispatch canceling runnables...",
+                        this));
+      mPostSyncLoopOperations |= eDispatchCancelingRunnable;
     } else {
-      data->mScope = new DedicatedWorkerGlobalScope(this, CreateClientSource(),
-                                                    WorkerName());
+      DispatchCancelingRunnable();
     }
-
-    JS::Rooted<JSObject*> global(aCx);
-    NS_ENSURE_TRUE(data->mScope->WrapGlobalObject(aCx, &global), nullptr);
-
-    JSAutoRealm ar(aCx, global);
-
-    if (!RegisterBindings(aCx, global)) {
-      data->mScope = nullptr;
-      return nullptr;
-    }
-
-    
-    if (data->mCancelBeforeWorkerScopeConstructed) {
-      data->mScope->NoteTerminating();
-      data->mScope->DisconnectGlobalTeardownObservers();
-    }
-
-    JS_FireOnNewGlobalObject(aCx, global);
-
-    return data->mScope;
+    return true;
   }
 
-  WorkerDebuggerGlobalScope* WorkerPrivate::CreateDebuggerGlobalScope(
-      JSContext * aCx) {
-    auto data = mWorkerThreadAccessible.Access();
-    MOZ_ASSERT(!data->mDebuggerScope);
+  MOZ_ASSERT(aStatus == Canceling || aStatus == Killing);
 
-    
-    
-    auto clientSource = ClientManager::CreateSource(
-        GetClientType(), HybridEventTarget(), NullPrincipalInfo());
+  LOG(WorkerLog(), ("WorkerPrivate::NotifyInternal [%p] abort script", this));
 
-    data->mDebuggerScope =
-        new WorkerDebuggerGlobalScope(this, std::move(clientSource));
+  
+  return false;
+}
 
-    JS::Rooted<JSObject*> global(aCx);
-    NS_ENSURE_TRUE(data->mDebuggerScope->WrapGlobalObject(aCx, &global),
-                   nullptr);
+void WorkerPrivate::ReportError(JSContext* aCx,
+                                JS::ConstUTF8CharsZ aToStringResult,
+                                JSErrorReport* aReport) {
+  auto data = mWorkerThreadAccessible.Access();
 
-    JSAutoRealm ar(aCx, global);
+  if (!MayContinueRunning() || data->mErrorHandlerRecursionCount == 2) {
+    return;
+  }
 
-    if (!RegisterDebuggerBindings(aCx, global)) {
-      data->mDebuggerScope = nullptr;
-      return nullptr;
+  NS_ASSERTION(data->mErrorHandlerRecursionCount == 0 ||
+                   data->mErrorHandlerRecursionCount == 1,
+               "Bad recursion logic!");
+
+  UniquePtr<WorkerErrorReport> report = MakeUnique<WorkerErrorReport>();
+  if (aReport) {
+    report->AssignErrorReport(aReport);
+  }
+
+  JS::ExceptionStack exnStack(aCx);
+  
+  
+  
+  if (!aReport || !aReport->isWarning()) {
+    MOZ_ASSERT(JS_IsExceptionPending(aCx));
+    if (!JS::StealPendingExceptionStack(aCx, &exnStack)) {
+      JS_ClearPendingException(aCx);
+      return;
     }
 
-    JS_FireOnNewGlobalObject(aCx, global);
+    JS::Rooted<JSObject*> stack(aCx), stackGlobal(aCx);
+    xpc::FindExceptionStackForConsoleReport(
+        nullptr, exnStack.exception(), exnStack.stack(), &stack, &stackGlobal);
 
-    return data->mDebuggerScope;
-  }
-
-  bool WorkerPrivate::IsOnWorkerThread() const {
-    
-    
-    
-    MOZ_ASSERT(mPRThread,
-               "AssertIsOnWorkerThread() called before a thread was assigned!");
-
-    return mPRThread == PR_GetCurrentThread();
-  }
-
-#ifdef DEBUG
-  void WorkerPrivate::AssertIsOnWorkerThread() const {
-    MOZ_ASSERT(IsOnWorkerThread());
-  }
-#endif  
-
-  void WorkerPrivate::DumpCrashInformation(nsACString & aString) {
-    auto data = mWorkerThreadAccessible.Access();
-
-    aString.Append("IsChromeWorker(");
-    if (IsChromeWorker()) {
-      aString.Append(NS_ConvertUTF16toUTF8(ScriptURL()));
-    } else {
-      aString.Append("false");
+    if (stack) {
+      JSAutoRealm ar(aCx, stackGlobal);
+      report->SerializeWorkerStack(aCx, this, stack);
     }
-    aString.Append(")");
-    for (const auto* workerRef : data->mWorkerRefs.NonObservingRange()) {
-      if (workerRef->IsPreventingShutdown()) {
-        aString.Append("|");
-        aString.Append(workerRef->Name());
-        const nsCString status = GET_WORKERREF_DEBUG_STATUS(workerRef);
-        if (!status.IsEmpty()) {
-          aString.Append("[");
-          aString.Append(status);
-          aString.Append("]");
+  }
+
+  if (report->mMessage.IsEmpty() && aToStringResult) {
+    nsDependentCString toStringResult(aToStringResult.c_str());
+    if (!AppendUTF8toUTF16(toStringResult, report->mMessage,
+                           mozilla::fallible)) {
+      
+      
+      size_t index = std::min<size_t>(1024, toStringResult.Length());
+
+      
+      index = RewindToPriorUTF8Codepoint(toStringResult.BeginReading(), index);
+
+      nsDependentCString truncatedToStringResult(aToStringResult.c_str(),
+                                                 index);
+      AppendUTF8toUTF16(truncatedToStringResult, report->mMessage);
+    }
+  }
+
+  data->mErrorHandlerRecursionCount++;
+
+  
+  
+  bool fireAtScope = data->mErrorHandlerRecursionCount == 1 &&
+                     report->mErrorNumber != JSMSG_OUT_OF_MEMORY &&
+                     JS::CurrentGlobalOrNull(aCx);
+
+  WorkerErrorReport::ReportError(aCx, this, fireAtScope, nullptr,
+                                 std::move(report), 0, exnStack.exception());
+
+  data->mErrorHandlerRecursionCount--;
+}
+
+
+void WorkerPrivate::ReportErrorToConsole(
+    uint32_t aErrorFlags, const nsCString& aCategory, PropertiesFile aFile,
+    const nsCString& aMessageName, const nsTArray<nsString>& aParams,
+    const mozilla::SourceLocation& aLocation) {
+  WorkerPrivate* wp = nullptr;
+  if (!NS_IsMainThread()) {
+    wp = GetCurrentThreadWorkerPrivate();
+  }
+
+  ReportErrorToConsoleRunnable::Report(wp, aErrorFlags, aCategory, aFile,
+                                       aMessageName, aParams, aLocation);
+}
+
+int32_t WorkerPrivate::SetTimeout(JSContext* aCx, TimeoutHandler* aHandler,
+                                  int32_t aTimeout, bool aIsInterval,
+                                  Timeout::Reason aReason, ErrorResult& aRv) {
+  auto data = mWorkerThreadAccessible.Access();
+  MOZ_ASSERT(aHandler);
+
+  WorkerGlobalScope* globalScope = GlobalScope();
+  MOZ_DIAGNOSTIC_ASSERT(globalScope);
+  auto* timeoutManager = globalScope->GetTimeoutManager();
+  MOZ_DIAGNOSTIC_ASSERT(timeoutManager);
+  int32_t timerId = -1;
+  WorkerStatus status;
+  {
+    MutexAutoLock lock(mMutex);
+    status = mStatus;
+  }
+  
+  
+  if (status >= Closing) {
+    return timeoutManager->GetTimeoutId(aReason);
+  }
+  bool hadTimeouts = timeoutManager->HasTimeouts();
+  nsresult rv = timeoutManager->SetTimeout(aHandler, aTimeout, aIsInterval,
+                                           aReason, &timerId);
+  if (NS_FAILED(rv)) {
+    aRv.Throw(NS_ERROR_FAILURE);
+    return timerId;
+  }
+  if (!hadTimeouts) {
+    UpdateCCFlag(CCFlag::IneligibleForTimeout);
+  }
+  return timerId;
+}
+
+void WorkerPrivate::ClearTimeout(int32_t aId, Timeout::Reason aReason) {
+  MOZ_ASSERT(aReason == Timeout::Reason::eTimeoutOrInterval,
+             "This timeout reason doesn't support cancellation.");
+  WorkerGlobalScope* globalScope = GlobalScope();
+  MOZ_DIAGNOSTIC_ASSERT(globalScope);
+  auto* timeoutManager = globalScope->GetTimeoutManager();
+  MOZ_DIAGNOSTIC_ASSERT(timeoutManager);
+  timeoutManager->ClearTimeout(aId, aReason);
+  if (!timeoutManager->HasTimeouts()) {
+    UpdateCCFlag(CCFlag::EligibleForTimeout);
+  }
+}
+
+void WorkerPrivate::StartCancelingTimer() {
+  AssertIsOnParentThread();
+
+  
+  if (mCancelingTimer) {
+    return;
+  }
+
+  auto errorCleanup = MakeScopeExit([&] { mCancelingTimer = nullptr; });
+
+  if (WorkerPrivate* parent = GetParent()) {
+    mCancelingTimer = NS_NewTimer(parent->ControlEventTarget());
+  } else {
+    mCancelingTimer = NS_NewTimer();
+  }
+
+  if (NS_WARN_IF(!mCancelingTimer)) {
+    return;
+  }
+
+  
+  {
+    MutexAutoLock lock(mMutex);
+    if (ParentStatus() >= Canceling) {
+      return;
+    }
+  }
+
+  uint32_t cancelingTimeoutMillis =
+      StaticPrefs::dom_worker_canceling_timeoutMilliseconds();
+
+  RefPtr<CancelingTimerCallback> callback = new CancelingTimerCallback(this);
+  nsresult rv = mCancelingTimer->InitWithCallback(
+      callback, cancelingTimeoutMillis, nsITimer::TYPE_ONE_SHOT);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return;
+  }
+
+  errorCleanup.release();
+}
+
+void WorkerPrivate::UpdateContextOptionsInternal(
+    JSContext* aCx, const JS::ContextOptions& aContextOptions) {
+  auto data = mWorkerThreadAccessible.Access();
+
+  JS::ContextOptionsRef(aCx) = aContextOptions;
+
+  for (uint32_t index = 0; index < data->mChildWorkers.Length(); index++) {
+    data->mChildWorkers[index]->UpdateContextOptions(aContextOptions);
+  }
+}
+
+void WorkerPrivate::UpdateLanguageOverrideInternal(
+    const nsCString& aLanguageOverride,
+    const nsTArray<nsString>& aResolvedLanguages) {
+  mLoadInfo.mLanguageOverrideLocale = aLanguageOverride;
+  if (aLanguageOverride.IsEmpty()) {
+    mLoadInfo.mLanguageOverride.Clear();
+  } else {
+    mLoadInfo.mLanguageOverride = aResolvedLanguages.Clone();
+  }
+
+  WorkerGlobalScope* globalScope = GlobalScope();
+  if (globalScope) {
+    JSObject* global = globalScope->GetGlobalJSObject();
+    if (global) {
+      JS::Realm* realm = JS::GetObjectRealmOrNull(global);
+      if (realm) {
+        if (aLanguageOverride.IsEmpty()) {
+          JS::SetRealmLocaleOverride(realm, nullptr);
+        } else {
+          JS::SetRealmLocaleOverride(realm, aLanguageOverride.get());
         }
       }
     }
-  }
 
-  PerformanceStorage* WorkerPrivate::GetPerformanceStorage() {
-    MOZ_ASSERT(mPerformanceStorage);
-    return mPerformanceStorage;
-  }
-
-  bool WorkerPrivate::ShouldResistFingerprinting(RFPTarget aTarget) const {
-    return mLoadInfo.mShouldResistFingerprinting &&
-           nsRFPService::IsRFPEnabledFor(
-               mLoadInfo.mOriginAttributes.IsPrivateBrowsing(), aTarget,
-               mLoadInfo.mOverriddenFingerprintingSettings);
-  }
-
-  void WorkerPrivate::SetRemoteWorkerController(RemoteWorkerChild *
-                                                aController) {
-    AssertIsOnMainThread();
-    MOZ_ASSERT(aController);
-    MOZ_ASSERT(!mRemoteWorkerController);
-
-    mRemoteWorkerController = aController;
-  }
-
-  RemoteWorkerChild* WorkerPrivate::GetRemoteWorkerController() {
-    AssertIsOnMainThread();
-    MOZ_ASSERT(mRemoteWorkerController);
-    return mRemoteWorkerController;
-  }
-
-  RefPtr<GenericPromise> WorkerPrivate::SetServiceWorkerSkipWaitingFlag() {
-    AssertIsOnWorkerThread();
-    MOZ_ASSERT(IsServiceWorker());
-
-    RefPtr<RemoteWorkerChild> rwc = mRemoteWorkerController;
-
-    if (!rwc) {
-      return GenericPromise::CreateAndReject(NS_ERROR_DOM_ABORT_ERR, __func__);
+    if (RefPtr<WorkerNavigator> nav = globalScope->GetExistingNavigator()) {
+      nav->SetLanguages(aResolvedLanguages);
     }
-
-    RefPtr<GenericPromise> promise =
-        rwc->MaybeSendSetServiceWorkerSkipWaitingFlag();
-
-    return promise;
   }
 
-  const nsString& WorkerPrivate::Id() {
-    if (mId.IsEmpty()) {
-      mId = ComputeWorkerPrivateId();
-    }
+  auto data = mWorkerThreadAccessible.Access();
+  for (uint32_t index = 0; index < data->mChildWorkers.Length(); index++) {
+    data->mChildWorkers[index]->UpdateLanguageOverride(aLanguageOverride,
+                                                       aResolvedLanguages);
+  }
+}
 
-    MOZ_ASSERT(!mId.IsEmpty());
-
-    return mId;
+void WorkerPrivate::UpdateLanguagesInternal(
+    const nsTArray<nsString>& aLanguages) {
+  WorkerGlobalScope* globalScope = GlobalScope();
+  RefPtr<WorkerNavigator> nav = globalScope->GetExistingNavigator();
+  if (nav) {
+    nav->SetLanguages(aLanguages);
   }
 
-  bool WorkerPrivate::IsSharedMemoryAllowed() const {
-    if (StaticPrefs::
-            dom_postMessage_sharedArrayBuffer_bypassCOOP_COEP_insecure_enabled()) {
-      return true;
-    }
+  auto data = mWorkerThreadAccessible.Access();
+  for (uint32_t index = 0; index < data->mChildWorkers.Length(); index++) {
+    data->mChildWorkers[index]->UpdateLanguages(aLanguages);
+  }
 
+  RefPtr<Event> event = NS_NewDOMEvent(globalScope, nullptr, nullptr);
+
+  event->InitEvent(u"languagechange"_ns, false, false);
+  event->SetTrusted(true);
+
+  globalScope->DispatchEvent(*event);
+}
+
+void WorkerPrivate::UpdateJSWorkerMemoryParameterInternal(
+    JSContext* aCx, JSGCParamKey aKey, Maybe<uint32_t> aValue) {
+  auto data = mWorkerThreadAccessible.Access();
+
+  if (aValue) {
+    JS_SetGCParameter(aCx, aKey, *aValue);
+  } else {
+    JS_ResetGCParameter(aCx, aKey);
+  }
+
+  for (uint32_t index = 0; index < data->mChildWorkers.Length(); index++) {
+    data->mChildWorkers[index]->UpdateJSWorkerMemoryParameter(aKey, aValue);
+  }
+}
+
+#ifdef JS_GC_ZEAL
+void WorkerPrivate::UpdateGCZealInternal(JSContext* aCx, uint8_t aGCZeal,
+                                         uint32_t aFrequency) {
+  auto data = mWorkerThreadAccessible.Access();
+
+  JS::SetGCZeal(aCx, aGCZeal, aFrequency);
+
+  for (uint32_t index = 0; index < data->mChildWorkers.Length(); index++) {
+    data->mChildWorkers[index]->UpdateGCZeal(aGCZeal, aFrequency);
+  }
+}
+#endif
+
+void WorkerPrivate::SetLowMemoryStateInternal(JSContext* aCx, bool aState) {
+  auto data = mWorkerThreadAccessible.Access();
+
+  JS::SetLowMemoryState(aCx, aState);
+
+  for (uint32_t index = 0; index < data->mChildWorkers.Length(); index++) {
+    data->mChildWorkers[index]->SetLowMemoryState(aState);
+  }
+}
+
+void WorkerPrivate::SetCCCollectedAnything(bool collectedAnything) {
+  mWorkerThreadAccessible.Access()->mCCCollectedAnything = collectedAnything;
+}
+
+uint32_t WorkerPrivate::GetCurrentTimerNestingLevel() const {
+  auto data = mWorkerThreadAccessible.Access();
+  return data->mScope
+             ? data->mScope->GetTimeoutManager()->GetNestingLevelForWorker()
+             : 0;
+}
+
+bool WorkerPrivate::isLastCCCollectedAnything() {
+  return mWorkerThreadAccessible.Access()->mCCCollectedAnything;
+}
+
+void WorkerPrivate::GarbageCollectInternal(JSContext* aCx, bool aShrinking,
+                                           bool aCollectChildren) {
+  
+  
+
+  auto data = mWorkerThreadAccessible.Access();
+
+  if (!GlobalScope()) {
     
-    if (mIsPrivilegedAddonGlobal) {
-      return true;
-    }
-
-    return CrossOriginIsolated();
+    return;
   }
 
-  bool WorkerPrivate::CrossOriginIsolated() const {
-    if (!StaticPrefs::
-            dom_postMessage_sharedArrayBuffer_withCOOP_COEP_AtStartup()) {
-      return false;
-    }
+  if (aShrinking || aCollectChildren) {
+    JS::PrepareForFullGC(aCx);
 
-    return mAgentClusterOpenerPolicy ==
-           nsILoadInfo::OPENER_POLICY_SAME_ORIGIN_EMBEDDER_POLICY_REQUIRE_CORP;
+    if (aShrinking && mSyncLoopStack.IsEmpty()) {
+      JS::NonIncrementalGC(aCx, JS::GCOptions::Shrink,
+                           JS::GCReason::DOM_WORKER);
+
+      
+      
+      if (data->mCCCollectedAnything) {
+        JS::NonIncrementalGC(aCx, JS::GCOptions::Normal,
+                             JS::GCReason::DOM_WORKER);
+      }
+
+      if (!aCollectChildren) {
+        LOG(WorkerLog(), ("Worker %p collected idle garbage\n", this));
+      }
+    } else {
+      JS::NonIncrementalGC(aCx, JS::GCOptions::Normal,
+                           JS::GCReason::DOM_WORKER);
+      LOG(WorkerLog(), ("Worker %p collected garbage\n", this));
+    }
+  } else {
+    JS_MaybeGC(aCx);
+    LOG(WorkerLog(), ("Worker %p collected periodic garbage\n", this));
   }
 
-  nsILoadInfo::CrossOriginEmbedderPolicy WorkerPrivate::GetEmbedderPolicy()
-      const {
-    if (!StaticPrefs::browser_tabs_remote_useCrossOriginEmbedderPolicy()) {
-      return nsILoadInfo::EMBEDDER_POLICY_NULL;
+  if (aCollectChildren) {
+    for (uint32_t index = 0; index < data->mChildWorkers.Length(); index++) {
+      data->mChildWorkers[index]->GarbageCollect(aShrinking);
+    }
+  }
+}
+
+void WorkerPrivate::CycleCollectInternal(bool aCollectChildren) {
+  auto data = mWorkerThreadAccessible.Access();
+
+  nsCycleCollector_collect(CCReason::WORKER, nullptr);
+
+  if (aCollectChildren) {
+    for (uint32_t index = 0; index < data->mChildWorkers.Length(); index++) {
+      data->mChildWorkers[index]->CycleCollect();
+    }
+  }
+}
+
+void WorkerPrivate::MemoryPressureInternal() {
+  auto data = mWorkerThreadAccessible.Access();
+
+  if (data->mScope) {
+    RefPtr<Console> console = data->mScope->GetConsoleIfExists();
+    if (console) {
+      console->ClearStorage();
     }
 
-    return mEmbedderPolicy.valueOr(nsILoadInfo::EMBEDDER_POLICY_NULL);
+    RefPtr<Performance> performance = data->mScope->GetPerformanceIfExists();
+    if (performance) {
+      performance->MemoryPressure();
+    }
+
+    data->mScope->RemoveReportRecords();
   }
 
-  Result<Ok, nsresult> WorkerPrivate::SetEmbedderPolicy(
-      nsILoadInfo::CrossOriginEmbedderPolicy aPolicy) {
-    MOZ_ASSERT(NS_IsMainThread());
-    MOZ_ASSERT(mEmbedderPolicy.isNothing());
-
-    if (!StaticPrefs::browser_tabs_remote_useCrossOriginEmbedderPolicy()) {
-      return Ok();
+  if (data->mDebuggerScope) {
+    RefPtr<Console> console = data->mDebuggerScope->GetConsoleIfExists();
+    if (console) {
+      console->ClearStorage();
     }
+  }
 
-    
-    
-    
-    
-    EnsureOwnerEmbedderPolicy();
-    nsILoadInfo::CrossOriginEmbedderPolicy ownerPolicy =
-        mOwnerEmbedderPolicy.valueOr(nsILoadInfo::EMBEDDER_POLICY_NULL);
-    if (nsContentSecurityManager::IsCompatibleWithCrossOriginIsolation(
-            ownerPolicy) &&
-        !nsContentSecurityManager::IsCompatibleWithCrossOriginIsolation(
-            aPolicy)) {
-      return Err(NS_ERROR_BLOCKED_BY_POLICY);
+  for (uint32_t index = 0; index < data->mChildWorkers.Length(); index++) {
+    data->mChildWorkers[index]->MemoryPressure();
+  }
+}
+
+void WorkerPrivate::SetThread(WorkerThread* aThread) {
+  if (aThread) {
+#ifdef DEBUG
+    {
+      bool isOnCurrentThread;
+      MOZ_ASSERT(NS_SUCCEEDED(aThread->IsOnCurrentThread(&isOnCurrentThread)));
+      MOZ_ASSERT(!isOnCurrentThread);
     }
+#endif
 
-    mEmbedderPolicy.emplace(aPolicy);
+    MOZ_ASSERT(!mPRThread);
+    mPRThread = PRThreadFromThread(aThread);
+    MOZ_ASSERT(mPRThread);
 
+    mWorkerThreadAccessible.Transfer(mPRThread);
+  } else {
+    MOZ_ASSERT(mPRThread);
+  }
+}
+
+void WorkerPrivate::SetWorkerPrivateInWorkerThread(
+    WorkerThread* const aThread) {
+  LOG(WorkerLog(),
+      ("WorkerPrivate::SetWorkerPrivateInWorkerThread [%p]", this));
+  MutexAutoLock lock(mMutex);
+
+  MOZ_ASSERT(!mThread);
+  MOZ_ASSERT(mStatus == Pending);
+
+  mThread = aThread;
+  mThread->SetWorker(WorkerThreadFriendKey{}, this);
+
+  if (!mPreStartRunnables.IsEmpty()) {
+    for (uint32_t index = 0; index < mPreStartRunnables.Length(); index++) {
+      MOZ_ALWAYS_SUCCEEDS(mThread->DispatchAnyThread(
+          WorkerThreadFriendKey{}, mPreStartRunnables[index]));
+    }
+    
+    
+  }
+}
+
+void WorkerPrivate::ResetWorkerPrivateInWorkerThread() {
+  LOG(WorkerLog(),
+      ("WorkerPrivate::ResetWorkerPrivateInWorkerThread [%p]", this));
+  RefPtr<WorkerThread> doomedThread;
+
+  
+  MutexAutoLock lock(mMutex);
+  MOZ_ASSERT(mStatus == Dead);
+
+  MOZ_ASSERT(mThread);
+
+  mThread->ClearEventQueueAndWorker(WorkerThreadFriendKey{});
+  mThread.swap(doomedThread);
+}
+
+void WorkerPrivate::BeginCTypesCall() {
+  AssertIsOnWorkerThread();
+  auto data = mWorkerThreadAccessible.Access();
+
+  
+  SetGCTimerMode(NoTimer);
+
+  data->mYieldJSThreadExecution.EmplaceBack();
+}
+
+void WorkerPrivate::EndCTypesCall() {
+  AssertIsOnWorkerThread();
+  auto data = mWorkerThreadAccessible.Access();
+
+  data->mYieldJSThreadExecution.RemoveLastElement();
+
+  
+  SetGCTimerMode(PeriodicTimer);
+}
+
+void WorkerPrivate::BeginCTypesCallback() {
+  AssertIsOnWorkerThread();
+
+  
+  SetGCTimerMode(PeriodicTimer);
+
+  
+  
+}
+
+void WorkerPrivate::EndCTypesCallback() {
+  AssertIsOnWorkerThread();
+
+  
+  SetGCTimerMode(NoTimer);
+}
+
+bool WorkerPrivate::ConnectMessagePort(JSContext* aCx,
+                                       UniqueMessagePortId& aIdentifier) {
+  AssertIsOnWorkerThread();
+
+  WorkerGlobalScope* globalScope = GlobalScope();
+
+  JS::Rooted<JSObject*> jsGlobal(aCx, globalScope->GetWrapper());
+  MOZ_ASSERT(jsGlobal);
+
+  
+  
+  ErrorResult rv;
+  RefPtr<MessagePort> port = MessagePort::Create(globalScope, aIdentifier, rv);
+  if (NS_WARN_IF(rv.Failed())) {
+    rv.SuppressException();
+    return false;
+  }
+
+  GlobalObject globalObject(aCx, jsGlobal);
+  if (globalObject.Failed()) {
+    return false;
+  }
+
+  RootedDictionary<MessageEventInit> init(aCx);
+  init.mData = JS_GetEmptyStringValue(aCx);
+  init.mBubbles = false;
+  init.mCancelable = false;
+  init.mSource.SetValue().SetAsMessagePort() = port;
+  if (!init.mPorts.AppendElement(port.forget(), fallible)) {
+    return false;
+  }
+
+  RefPtr<MessageEvent> event =
+      MessageEvent::Constructor(globalObject, u"connect"_ns, init);
+
+  event->SetTrusted(true);
+
+  globalScope->DispatchEvent(*event);
+
+  return true;
+}
+
+WorkerGlobalScope* WorkerPrivate::GetOrCreateGlobalScope(JSContext* aCx) {
+  auto data = mWorkerThreadAccessible.Access();
+
+  if (data->mScope) {
+    return data->mScope;
+  }
+
+  if (IsSharedWorker()) {
+    data->mScope =
+        new SharedWorkerGlobalScope(this, CreateClientSource(), WorkerName());
+  } else if (IsServiceWorker()) {
+    data->mScope = new ServiceWorkerGlobalScope(
+        this, CreateClientSource(), GetServiceWorkerRegistrationDescriptor());
+  } else {
+    data->mScope = new DedicatedWorkerGlobalScope(this, CreateClientSource(),
+                                                  WorkerName());
+  }
+
+  JS::Rooted<JSObject*> global(aCx);
+  NS_ENSURE_TRUE(data->mScope->WrapGlobalObject(aCx, &global), nullptr);
+
+  JSAutoRealm ar(aCx, global);
+
+  if (!RegisterBindings(aCx, global)) {
+    data->mScope = nullptr;
+    return nullptr;
+  }
+
+  
+  if (data->mCancelBeforeWorkerScopeConstructed) {
+    data->mScope->NoteTerminating();
+    data->mScope->DisconnectGlobalTeardownObservers();
+  }
+
+  JS_FireOnNewGlobalObject(aCx, global);
+
+  return data->mScope;
+}
+
+WorkerDebuggerGlobalScope* WorkerPrivate::CreateDebuggerGlobalScope(
+    JSContext* aCx) {
+  auto data = mWorkerThreadAccessible.Access();
+  MOZ_ASSERT(!data->mDebuggerScope);
+
+  
+  
+  auto clientSource = ClientManager::CreateSource(
+      GetClientType(), HybridEventTarget(), NullPrincipalInfo());
+
+  data->mDebuggerScope =
+      new WorkerDebuggerGlobalScope(this, std::move(clientSource));
+
+  JS::Rooted<JSObject*> global(aCx);
+  NS_ENSURE_TRUE(data->mDebuggerScope->WrapGlobalObject(aCx, &global), nullptr);
+
+  JSAutoRealm ar(aCx, global);
+
+  if (!RegisterDebuggerBindings(aCx, global)) {
+    data->mDebuggerScope = nullptr;
+    return nullptr;
+  }
+
+  JS_FireOnNewGlobalObject(aCx, global);
+
+  return data->mDebuggerScope;
+}
+
+bool WorkerPrivate::IsOnWorkerThread() const {
+  
+  
+  
+  MOZ_ASSERT(mPRThread,
+             "AssertIsOnWorkerThread() called before a thread was assigned!");
+
+  return mPRThread == PR_GetCurrentThread();
+}
+
+#ifdef DEBUG
+void WorkerPrivate::AssertIsOnWorkerThread() const {
+  MOZ_ASSERT(IsOnWorkerThread());
+}
+#endif  
+
+void WorkerPrivate::DumpCrashInformation(nsACString& aString) {
+  auto data = mWorkerThreadAccessible.Access();
+
+  aString.Append("IsChromeWorker(");
+  if (IsChromeWorker()) {
+    aString.Append(NS_ConvertUTF16toUTF8(ScriptURL()));
+  } else {
+    aString.Append("false");
+  }
+  aString.Append(")");
+  for (const auto* workerRef : data->mWorkerRefs.NonObservingRange()) {
+    if (workerRef->IsPreventingShutdown()) {
+      aString.Append("|");
+      aString.Append(workerRef->Name());
+      const nsCString status = GET_WORKERREF_DEBUG_STATUS(workerRef);
+      if (!status.IsEmpty()) {
+        aString.Append("[");
+        aString.Append(status);
+        aString.Append("]");
+      }
+    }
+  }
+}
+
+PerformanceStorage* WorkerPrivate::GetPerformanceStorage() {
+  MOZ_ASSERT(mPerformanceStorage);
+  return mPerformanceStorage;
+}
+
+bool WorkerPrivate::ShouldResistFingerprinting(RFPTarget aTarget) const {
+  return mLoadInfo.mShouldResistFingerprinting &&
+         nsRFPService::IsRFPEnabledFor(
+             mLoadInfo.mOriginAttributes.IsPrivateBrowsing(), aTarget,
+             mLoadInfo.mOverriddenFingerprintingSettings);
+}
+
+void WorkerPrivate::SetRemoteWorkerController(RemoteWorkerChild* aController) {
+  AssertIsOnMainThread();
+  MOZ_ASSERT(aController);
+  MOZ_ASSERT(!mRemoteWorkerController);
+
+  mRemoteWorkerController = aController;
+}
+
+RemoteWorkerChild* WorkerPrivate::GetRemoteWorkerController() {
+  AssertIsOnMainThread();
+  MOZ_ASSERT(mRemoteWorkerController);
+  return mRemoteWorkerController;
+}
+
+RefPtr<GenericPromise> WorkerPrivate::SetServiceWorkerSkipWaitingFlag() {
+  AssertIsOnWorkerThread();
+  MOZ_ASSERT(IsServiceWorker());
+
+  RefPtr<RemoteWorkerChild> rwc = mRemoteWorkerController;
+
+  if (!rwc) {
+    return GenericPromise::CreateAndReject(NS_ERROR_DOM_ABORT_ERR, __func__);
+  }
+
+  RefPtr<GenericPromise> promise =
+      rwc->MaybeSendSetServiceWorkerSkipWaitingFlag();
+
+  return promise;
+}
+
+const nsString& WorkerPrivate::Id() {
+  if (mId.IsEmpty()) {
+    mId = ComputeWorkerPrivateId();
+  }
+
+  MOZ_ASSERT(!mId.IsEmpty());
+
+  return mId;
+}
+
+bool WorkerPrivate::IsSharedMemoryAllowed() const {
+  if (StaticPrefs::
+          dom_postMessage_sharedArrayBuffer_bypassCOOP_COEP_insecure_enabled()) {
+    return true;
+  }
+
+  
+  if (mIsPrivilegedAddonGlobal) {
+    return true;
+  }
+
+  return CrossOriginIsolated();
+}
+
+bool WorkerPrivate::CrossOriginIsolated() const {
+  if (!StaticPrefs::
+          dom_postMessage_sharedArrayBuffer_withCOOP_COEP_AtStartup()) {
+    return false;
+  }
+
+  return mAgentClusterOpenerPolicy ==
+         nsILoadInfo::OPENER_POLICY_SAME_ORIGIN_EMBEDDER_POLICY_REQUIRE_CORP;
+}
+
+nsILoadInfo::CrossOriginEmbedderPolicy WorkerPrivate::GetEmbedderPolicy()
+    const {
+  if (!StaticPrefs::browser_tabs_remote_useCrossOriginEmbedderPolicy()) {
+    return nsILoadInfo::EMBEDDER_POLICY_NULL;
+  }
+
+  return mEmbedderPolicy.valueOr(nsILoadInfo::EMBEDDER_POLICY_NULL);
+}
+
+Result<Ok, nsresult> WorkerPrivate::SetEmbedderPolicy(
+    nsILoadInfo::CrossOriginEmbedderPolicy aPolicy) {
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(mEmbedderPolicy.isNothing());
+
+  if (!StaticPrefs::browser_tabs_remote_useCrossOriginEmbedderPolicy()) {
     return Ok();
   }
 
-  void WorkerPrivate::InheritOwnerEmbedderPolicyOrNull(nsIRequest * aRequest) {
-    MOZ_ASSERT(NS_IsMainThread());
-    MOZ_ASSERT(aRequest);
-
-    EnsureOwnerEmbedderPolicy();
-
-    if (mOwnerEmbedderPolicy.isSome()) {
-      nsCOMPtr<nsIChannel> channel = do_QueryInterface(aRequest);
-      MOZ_ASSERT(channel);
-
-      nsCOMPtr<nsIURI> scriptURI;
-      MOZ_ALWAYS_SUCCEEDS(channel->GetURI(getter_AddRefs(scriptURI)));
-
-      bool isLocalScriptURI = false;
-      MOZ_ALWAYS_SUCCEEDS(NS_URIChainHasFlags(
-          scriptURI, nsIProtocolHandler::URI_IS_LOCAL_RESOURCE,
-          &isLocalScriptURI));
-
-      MOZ_RELEASE_ASSERT(isLocalScriptURI);
-    }
-
-    mEmbedderPolicy.emplace(
-        mOwnerEmbedderPolicy.valueOr(nsILoadInfo::EMBEDDER_POLICY_NULL));
+  
+  
+  
+  EnsureOwnerEmbedderPolicy();
+  nsILoadInfo::CrossOriginEmbedderPolicy ownerPolicy =
+      mOwnerEmbedderPolicy.valueOr(nsILoadInfo::EMBEDDER_POLICY_NULL);
+  if (nsContentSecurityManager::IsCompatibleWithCrossOriginIsolation(
+          ownerPolicy) &&
+      !nsContentSecurityManager::IsCompatibleWithCrossOriginIsolation(
+          aPolicy)) {
+    return Err(NS_ERROR_BLOCKED_BY_POLICY);
   }
 
-  bool WorkerPrivate::MatchEmbedderPolicy(
-      nsILoadInfo::CrossOriginEmbedderPolicy aPolicy) const {
-    MOZ_ASSERT(NS_IsMainThread());
+  mEmbedderPolicy.emplace(aPolicy);
 
-    if (!StaticPrefs::browser_tabs_remote_useCrossOriginEmbedderPolicy()) {
-      return true;
-    }
+  return Ok();
+}
 
-    return mEmbedderPolicy.value() == aPolicy;
+void WorkerPrivate::InheritOwnerEmbedderPolicyOrNull(nsIRequest* aRequest) {
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(aRequest);
+
+  EnsureOwnerEmbedderPolicy();
+
+  if (mOwnerEmbedderPolicy.isSome()) {
+    nsCOMPtr<nsIChannel> channel = do_QueryInterface(aRequest);
+    MOZ_ASSERT(channel);
+
+    nsCOMPtr<nsIURI> scriptURI;
+    MOZ_ALWAYS_SUCCEEDS(channel->GetURI(getter_AddRefs(scriptURI)));
+
+    bool isLocalScriptURI = false;
+    MOZ_ALWAYS_SUCCEEDS(NS_URIChainHasFlags(
+        scriptURI, nsIProtocolHandler::URI_IS_LOCAL_RESOURCE,
+        &isLocalScriptURI));
+
+    MOZ_RELEASE_ASSERT(isLocalScriptURI);
   }
 
-  nsILoadInfo::CrossOriginEmbedderPolicy WorkerPrivate::GetOwnerEmbedderPolicy()
-      const {
-    if (!StaticPrefs::browser_tabs_remote_useCrossOriginEmbedderPolicy()) {
-      return nsILoadInfo::EMBEDDER_POLICY_NULL;
-    }
+  mEmbedderPolicy.emplace(
+      mOwnerEmbedderPolicy.valueOr(nsILoadInfo::EMBEDDER_POLICY_NULL));
+}
 
-    return mOwnerEmbedderPolicy.valueOr(nsILoadInfo::EMBEDDER_POLICY_NULL);
+bool WorkerPrivate::MatchEmbedderPolicy(
+    nsILoadInfo::CrossOriginEmbedderPolicy aPolicy) const {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (!StaticPrefs::browser_tabs_remote_useCrossOriginEmbedderPolicy()) {
+    return true;
   }
 
-  void WorkerPrivate::EnsureOwnerEmbedderPolicy() {
-    MOZ_ASSERT(NS_IsMainThread());
-    MOZ_ASSERT(mOwnerEmbedderPolicy.isNothing());
+  return mEmbedderPolicy.value() == aPolicy;
+}
 
-    if (GetParent()) {
-      mOwnerEmbedderPolicy.emplace(GetParent()->GetEmbedderPolicy());
-    } else if (GetWindow() && GetWindow()->GetWindowContext()) {
-      mOwnerEmbedderPolicy.emplace(
-          GetWindow()->GetWindowContext()->GetEmbedderPolicy());
-    }
+nsILoadInfo::CrossOriginEmbedderPolicy WorkerPrivate::GetOwnerEmbedderPolicy()
+    const {
+  if (!StaticPrefs::browser_tabs_remote_useCrossOriginEmbedderPolicy()) {
+    return nsILoadInfo::EMBEDDER_POLICY_NULL;
   }
 
-  nsIPrincipal* WorkerPrivate::GetEffectiveStoragePrincipal() const {
-    if (mLoadInfo.mUseRegularPrincipal) {
-      return mLoadInfo.mPrincipal;
-    }
+  return mOwnerEmbedderPolicy.valueOr(nsILoadInfo::EMBEDDER_POLICY_NULL);
+}
 
-    return mLoadInfo.mPartitionedPrincipal;
+void WorkerPrivate::EnsureOwnerEmbedderPolicy() {
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(mOwnerEmbedderPolicy.isNothing());
+
+  if (GetParent()) {
+    mOwnerEmbedderPolicy.emplace(GetParent()->GetEmbedderPolicy());
+  } else if (GetWindow() && GetWindow()->GetWindowContext()) {
+    mOwnerEmbedderPolicy.emplace(
+        GetWindow()->GetWindowContext()->GetEmbedderPolicy());
+  }
+}
+
+nsIPrincipal* WorkerPrivate::GetEffectiveStoragePrincipal() const {
+  if (mLoadInfo.mUseRegularPrincipal) {
+    return mLoadInfo.mPrincipal;
   }
 
-  const mozilla::ipc::PrincipalInfo&
-  WorkerPrivate::GetEffectiveStoragePrincipalInfo() const {
-    AssertIsOnWorkerThread();
+  return mLoadInfo.mPartitionedPrincipal;
+}
 
-    if (mLoadInfo.mUseRegularPrincipal) {
-      return *mLoadInfo.mPrincipalInfo;
-    }
+const mozilla::ipc::PrincipalInfo&
+WorkerPrivate::GetEffectiveStoragePrincipalInfo() const {
+  AssertIsOnWorkerThread();
 
-    return *mLoadInfo.mPartitionedPrincipalInfo;
+  if (mLoadInfo.mUseRegularPrincipal) {
+    return *mLoadInfo.mPrincipalInfo;
   }
 
-  NS_IMPL_ADDREF(WorkerPrivate::EventTarget)
-  NS_IMPL_RELEASE(WorkerPrivate::EventTarget)
+  return *mLoadInfo.mPartitionedPrincipalInfo;
+}
 
-  NS_INTERFACE_MAP_BEGIN(WorkerPrivate::EventTarget)
-    NS_INTERFACE_MAP_ENTRY(nsISerialEventTarget)
-    NS_INTERFACE_MAP_ENTRY(nsIEventTarget)
-    NS_INTERFACE_MAP_ENTRY(nsISupports)
+NS_IMPL_ADDREF(WorkerPrivate::EventTarget)
+NS_IMPL_RELEASE(WorkerPrivate::EventTarget)
+
+NS_INTERFACE_MAP_BEGIN(WorkerPrivate::EventTarget)
+  NS_INTERFACE_MAP_ENTRY(nsISerialEventTarget)
+  NS_INTERFACE_MAP_ENTRY(nsIEventTarget)
+  NS_INTERFACE_MAP_ENTRY(nsISupports)
 #ifdef DEBUG
-    
-    
-    if (aIID.Equals(kDEBUGWorkerEventTargetIID)) {
-      *aInstancePtr = this;
-      return NS_OK;
-    } else
-#endif
-  NS_INTERFACE_MAP_END
-
-  NS_IMETHODIMP
-  WorkerPrivate::EventTarget::DispatchFromScript(nsIRunnable * aRunnable,
-                                                 DispatchFlags aFlags) {
-    return Dispatch(do_AddRef(aRunnable), aFlags);
-  }
-
-  NS_IMETHODIMP
-  WorkerPrivate::EventTarget::Dispatch(already_AddRefed<nsIRunnable> aRunnable,
-                                       DispatchFlags aFlags) {
-    
-
-    
-    
-    nsCOMPtr<nsIRunnable> event(aRunnable);
-
-    RefPtr<WorkerRunnable> workerRunnable;
-
-    MutexAutoLock lock(mMutex);
-
-    if (mDisabled) {
-      NS_WARNING(
-          "A runnable was posted to a worker that is already shutting "
-          "down!");
-      return NS_ERROR_UNEXPECTED;
-    }
-
-    MOZ_ASSERT(mWorkerPrivate);
-    MOZ_ASSERT(mNestedEventTarget);
-
-    if (event) {
-      workerRunnable =
-          mWorkerPrivate->MaybeWrapAsWorkerRunnable(event.forget());
-    }
-
-    nsresult rv =
-        mWorkerPrivate->Dispatch(workerRunnable.forget(), mNestedEventTarget);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
-
+  
+  
+  if (aIID.Equals(kDEBUGWorkerEventTargetIID)) {
+    *aInstancePtr = this;
     return NS_OK;
-  }
-
-  NS_IMETHODIMP
-  WorkerPrivate::EventTarget::DelayedDispatch(already_AddRefed<nsIRunnable>,
-                                              uint32_t)
-
-  {
-    return NS_ERROR_NOT_IMPLEMENTED;
-  }
-
-  NS_IMETHODIMP
-  WorkerPrivate::EventTarget::RegisterShutdownTask(nsITargetShutdownTask *
-                                                   aTask) {
-    return NS_ERROR_NOT_IMPLEMENTED;
-  }
-
-  NS_IMETHODIMP
-  WorkerPrivate::EventTarget::UnregisterShutdownTask(nsITargetShutdownTask *
-                                                     aTask) {
-    return NS_ERROR_NOT_IMPLEMENTED;
-  }
-
-  nsIEventTarget::FeatureFlags WorkerPrivate::EventTarget::GetFeatures() {
-    return SUPPORTS_BASE;
-  }
-
-  NS_IMETHODIMP
-  WorkerPrivate::EventTarget::IsOnCurrentThread(bool* aIsOnCurrentThread) {
-    
-
-    MOZ_ASSERT(aIsOnCurrentThread);
-
-    MutexAutoLock lock(mMutex);
-
-    if (mShutdown) {
-      NS_WARNING(
-          "A worker's event target was used after the worker has shutdown!");
-      return NS_ERROR_UNEXPECTED;
-    }
-
-    MOZ_ASSERT(mNestedEventTarget);
-
-    *aIsOnCurrentThread = mNestedEventTarget->IsOnCurrentThread();
-    return NS_OK;
-  }
-
-  NS_IMETHODIMP_(bool)
-  WorkerPrivate::EventTarget::IsOnCurrentThreadInfallible() {
-    
-
-    MutexAutoLock lock(mMutex);
-
-    if (mShutdown) {
-      NS_WARNING(
-          "A worker's event target was used after the worker has shutdown!");
-      return false;
-    }
-
-    MOZ_ASSERT(mNestedEventTarget);
-
-    return mNestedEventTarget->IsOnCurrentThread();
-  }
-
-  WorkerPrivate::AutoPushEventLoopGlobal::AutoPushEventLoopGlobal(
-      WorkerPrivate * aWorkerPrivate, JSContext * aCx) {
-    auto data = aWorkerPrivate->mWorkerThreadAccessible.Access();
-    mOldEventLoopGlobal = std::move(data->mCurrentEventLoopGlobal);
-    if (JSObject* global = JS::CurrentGlobalOrNull(aCx)) {
-      data->mCurrentEventLoopGlobal = xpc::NativeGlobal(global);
-    }
-#ifdef DEBUG
-    mNewEventLoopGlobal = data->mCurrentEventLoopGlobal;
+  } else
 #endif
-  }
+NS_INTERFACE_MAP_END
 
-  WorkerPrivate::AutoPushEventLoopGlobal::~AutoPushEventLoopGlobal() {
-    WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate();
-    
-    
-    MOZ_ASSERT(workerPrivate);
-    auto data = workerPrivate->mWorkerThreadAccessible.Access();
-#ifdef DEBUG
-    
-    MOZ_ASSERT(data->mCurrentEventLoopGlobal == mNewEventLoopGlobal);
-    mNewEventLoopGlobal = nullptr;
-#endif
-    data->mCurrentEventLoopGlobal = std::move(mOldEventLoopGlobal);
-  }
+NS_IMETHODIMP
+WorkerPrivate::EventTarget::DispatchFromScript(nsIRunnable* aRunnable,
+                                               DispatchFlags aFlags) {
+  return Dispatch(do_AddRef(aRunnable), aFlags);
+}
+
+NS_IMETHODIMP
+WorkerPrivate::EventTarget::Dispatch(already_AddRefed<nsIRunnable> aRunnable,
+                                     DispatchFlags aFlags) {
+  
 
   
-  FontVisibility WorkerPrivate::GetFontVisibility() const {
-    return mFontVisibility;
+  
+  nsCOMPtr<nsIRunnable> event(aRunnable);
+
+  RefPtr<WorkerRunnable> workerRunnable;
+
+  MutexAutoLock lock(mMutex);
+
+  if (mDisabled) {
+    NS_WARNING(
+        "A runnable was posted to a worker that is already shutting "
+        "down!");
+    return NS_ERROR_UNEXPECTED;
   }
 
-  void WorkerPrivate::ReportBlockedFontFamily(const nsCString& aMsg) const {
-    MOZ_LOG(gFingerprinterDetection, mozilla::LogLevel::Info,
-            ("%s", aMsg.get()));
-    nsContentUtils::ReportToConsoleByWindowID(NS_ConvertUTF8toUTF16(aMsg),
-                                              nsIScriptError::warningFlag,
-                                              "Security"_ns, WindowID());
+  MOZ_ASSERT(mWorkerPrivate);
+  MOZ_ASSERT(mNestedEventTarget);
+
+  if (event) {
+    workerRunnable = mWorkerPrivate->MaybeWrapAsWorkerRunnable(event.forget());
   }
 
-  bool WorkerPrivate::IsChrome() const { return IsChromeWorker(); }
-
-  bool WorkerPrivate::IsPrivateBrowsing() const {
-    return mLoadInfo.mOriginAttributes.IsPrivateBrowsing();
+  nsresult rv =
+      mWorkerPrivate->Dispatch(workerRunnable.forget(), mNestedEventTarget);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
   }
 
-  nsICookieJarSettings* WorkerPrivate::GetCookieJarSettings() const {
-    return CookieJarSettings();
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+WorkerPrivate::EventTarget::DelayedDispatch(already_AddRefed<nsIRunnable>,
+                                            uint32_t)
+
+{
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+NS_IMETHODIMP
+WorkerPrivate::EventTarget::RegisterShutdownTask(nsITargetShutdownTask* aTask) {
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+NS_IMETHODIMP
+WorkerPrivate::EventTarget::UnregisterShutdownTask(
+    nsITargetShutdownTask* aTask) {
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+nsIEventTarget::FeatureFlags WorkerPrivate::EventTarget::GetFeatures() {
+  return SUPPORTS_BASE;
+}
+
+NS_IMETHODIMP
+WorkerPrivate::EventTarget::IsOnCurrentThread(bool* aIsOnCurrentThread) {
+  
+
+  MOZ_ASSERT(aIsOnCurrentThread);
+
+  MutexAutoLock lock(mMutex);
+
+  if (mShutdown) {
+    NS_WARNING(
+        "A worker's event target was used after the worker has shutdown!");
+    return NS_ERROR_UNEXPECTED;
   }
 
-  Maybe<FontVisibility> WorkerPrivate::MaybeInheritFontVisibility() const {
-    if (mParent) {
+  MOZ_ASSERT(mNestedEventTarget);
+
+  *aIsOnCurrentThread = mNestedEventTarget->IsOnCurrentThread();
+  return NS_OK;
+}
+
+NS_IMETHODIMP_(bool)
+WorkerPrivate::EventTarget::IsOnCurrentThreadInfallible() {
+  
+
+  MutexAutoLock lock(mMutex);
+
+  if (mShutdown) {
+    NS_WARNING(
+        "A worker's event target was used after the worker has shutdown!");
+    return false;
+  }
+
+  MOZ_ASSERT(mNestedEventTarget);
+
+  return mNestedEventTarget->IsOnCurrentThread();
+}
+
+WorkerPrivate::AutoPushEventLoopGlobal::AutoPushEventLoopGlobal(
+    WorkerPrivate* aWorkerPrivate, JSContext* aCx) {
+  auto data = aWorkerPrivate->mWorkerThreadAccessible.Access();
+  mOldEventLoopGlobal = std::move(data->mCurrentEventLoopGlobal);
+  if (JSObject* global = JS::CurrentGlobalOrNull(aCx)) {
+    data->mCurrentEventLoopGlobal = xpc::NativeGlobal(global);
+  }
+#ifdef DEBUG
+  mNewEventLoopGlobal = data->mCurrentEventLoopGlobal;
+#endif
+}
+
+WorkerPrivate::AutoPushEventLoopGlobal::~AutoPushEventLoopGlobal() {
+  WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate();
+  
+  
+  MOZ_ASSERT(workerPrivate);
+  auto data = workerPrivate->mWorkerThreadAccessible.Access();
+#ifdef DEBUG
+  
+  MOZ_ASSERT(data->mCurrentEventLoopGlobal == mNewEventLoopGlobal);
+  mNewEventLoopGlobal = nullptr;
+#endif
+  data->mCurrentEventLoopGlobal = std::move(mOldEventLoopGlobal);
+}
+
+
+FontVisibility WorkerPrivate::GetFontVisibility() const {
+  return mFontVisibility;
+}
+
+void WorkerPrivate::ReportBlockedFontFamily(const nsCString& aMsg) const {
+  MOZ_LOG(gFingerprinterDetection, mozilla::LogLevel::Info, ("%s", aMsg.get()));
+  nsContentUtils::ReportToConsoleByWindowID(NS_ConvertUTF8toUTF16(aMsg),
+                                            nsIScriptError::warningFlag,
+                                            "Security"_ns, WindowID());
+}
+
+bool WorkerPrivate::IsChrome() const { return IsChromeWorker(); }
+
+bool WorkerPrivate::IsPrivateBrowsing() const {
+  return mLoadInfo.mOriginAttributes.IsPrivateBrowsing();
+}
+
+nsICookieJarSettings* WorkerPrivate::GetCookieJarSettings() const {
+  return CookieJarSettings();
+}
+
+Maybe<FontVisibility> WorkerPrivate::MaybeInheritFontVisibility() const {
+  if (mParent) {
+    
+    return Some(mParent->GetFontVisibility());
+  }
+
+  dom::Document* doc = GetDocument();
+  if (!doc) {
+    return Nothing();
+  }
+
+  nsPresContext* presContext = doc->GetPresContext();
+  NS_ENSURE_TRUE(presContext, Nothing());
+
+  return Some(presContext->GetFontVisibility());
+}
+
+void WorkerPrivate::UserFontSetUpdated(gfxUserFontEntry*) {}
+
+
+
+
+AutoSyncLoopHolder::AutoSyncLoopHolder(WorkerPrivate* aWorkerPrivate,
+                                       WorkerStatus aFailStatus,
+                                       const char* const aName)
+    : mTarget(aWorkerPrivate->CreateNewSyncLoop(aFailStatus)),
+      mIndex(aWorkerPrivate->mSyncLoopStack.Length() - 1) {
+  aWorkerPrivate->AssertIsOnWorkerThread();
+  LOGV(
+      ("AutoSyncLoopHolder::AutoSyncLoopHolder [%p] creator: %s", this, aName));
+  if (aFailStatus < Canceling) {
+    mWorkerRef = StrongWorkerRef::Create(aWorkerPrivate, aName, [aName]() {
       
-      return Some(mParent->GetFontVisibility());
-    }
-
-    dom::Document* doc = GetDocument();
-    if (!doc) {
-      return Nothing();
-    }
-
-    nsPresContext* presContext = doc->GetPresContext();
-    NS_ENSURE_TRUE(presContext, Nothing());
-
-    return Some(presContext->GetFontVisibility());
-  }
-
-  void WorkerPrivate::UserFontSetUpdated(gfxUserFontEntry*) {}
-
-  
-  
-
-  AutoSyncLoopHolder::AutoSyncLoopHolder(WorkerPrivate * aWorkerPrivate,
-                                         WorkerStatus aFailStatus,
-                                         const char* const aName)
-      : mTarget(aWorkerPrivate->CreateNewSyncLoop(aFailStatus)),
-        mIndex(aWorkerPrivate->mSyncLoopStack.Length() - 1) {
-    aWorkerPrivate->AssertIsOnWorkerThread();
-    LOGV(("AutoSyncLoopHolder::AutoSyncLoopHolder [%p] creator: %s", this,
-          aName));
-    if (aFailStatus < Canceling) {
-      mWorkerRef = StrongWorkerRef::Create(aWorkerPrivate, aName, [aName]() {
-        
-        
-        LOGV(
-            ("AutoSyncLoopHolder::AutoSyncLoopHolder Worker starts to shutdown "
-             "with a AutoSyncLoopHolder(%s).",
-             aName));
-      });
-    } else {
+      
       LOGV(
-          ("AutoSyncLoopHolder::AutoSyncLoopHolder [%p] Create "
-           "AutoSyncLoopHolder(%s) while Worker is shutting down",
-           this, aName));
-      mWorkerRef = StrongWorkerRef::CreateForcibly(aWorkerPrivate, aName);
-    }
-    
+          ("AutoSyncLoopHolder::AutoSyncLoopHolder Worker starts to shutdown "
+           "with a AutoSyncLoopHolder(%s).",
+           aName));
+    });
+  } else {
+    LOGV(
+        ("AutoSyncLoopHolder::AutoSyncLoopHolder [%p] Create "
+         "AutoSyncLoopHolder(%s) while Worker is shutting down",
+         this, aName));
+    mWorkerRef = StrongWorkerRef::CreateForcibly(aWorkerPrivate, aName);
   }
-
-  AutoSyncLoopHolder::~AutoSyncLoopHolder() {
-    if (mWorkerRef && mTarget) {
-      mWorkerRef->Private()->AssertIsOnWorkerThread();
-      mWorkerRef->Private()->StopSyncLoop(mTarget, NS_ERROR_FAILURE);
-      mWorkerRef->Private()->DestroySyncLoop(mIndex);
-    }
-  }
-
-  nsresult AutoSyncLoopHolder::Run() {
-    if (mWorkerRef) {
-      WorkerPrivate* workerPrivate = mWorkerRef->Private();
-      MOZ_ASSERT(workerPrivate);
-
-      workerPrivate->AssertIsOnWorkerThread();
-
-      nsresult rv = workerPrivate->RunCurrentSyncLoop();
-
-      
-      
-      
-      mWorkerRef = nullptr;
-
-      return rv;
-    }
-    return NS_OK;
-  }
-
-  nsISerialEventTarget* AutoSyncLoopHolder::GetSerialEventTarget() const {
-    
-    return mTarget;
-  }
-
   
+}
+
+AutoSyncLoopHolder::~AutoSyncLoopHolder() {
+  if (mWorkerRef && mTarget) {
+    mWorkerRef->Private()->AssertIsOnWorkerThread();
+    mWorkerRef->Private()->StopSyncLoop(mTarget, NS_ERROR_FAILURE);
+    mWorkerRef->Private()->DestroySyncLoop(mIndex);
+  }
+}
+
+nsresult AutoSyncLoopHolder::Run() {
+  if (mWorkerRef) {
+    WorkerPrivate* workerPrivate = mWorkerRef->Private();
+    MOZ_ASSERT(workerPrivate);
+
+    workerPrivate->AssertIsOnWorkerThread();
+
+    nsresult rv = workerPrivate->RunCurrentSyncLoop();
+
+    
+    
+    
+    mWorkerRef = nullptr;
+
+    return rv;
+  }
+  return NS_OK;
+}
+
+nsISerialEventTarget* AutoSyncLoopHolder::GetSerialEventTarget() const {
   
-  WorkerParentRef::WorkerParentRef(RefPtr<WorkerPrivate> & aWorkerPrivate)
-      : mWorkerPrivate(aWorkerPrivate) {
-    LOGV(("WorkerParentRef::WorkerParentRef [%p] aWorkerPrivate %p", this,
-          aWorkerPrivate.get()));
-    MOZ_ASSERT(mWorkerPrivate);
+  return mTarget;
+}
+
+
+
+WorkerParentRef::WorkerParentRef(RefPtr<WorkerPrivate>& aWorkerPrivate)
+    : mWorkerPrivate(aWorkerPrivate) {
+  LOGV(("WorkerParentRef::WorkerParentRef [%p] aWorkerPrivate %p", this,
+        aWorkerPrivate.get()));
+  MOZ_ASSERT(mWorkerPrivate);
+  mWorkerPrivate->AssertIsOnParentThread();
+}
+
+const RefPtr<WorkerPrivate>& WorkerParentRef::Private() const {
+  if (mWorkerPrivate) {
     mWorkerPrivate->AssertIsOnParentThread();
   }
+  return mWorkerPrivate;
+}
 
-  const RefPtr<WorkerPrivate>& WorkerParentRef::Private() const {
-    if (mWorkerPrivate) {
-      mWorkerPrivate->AssertIsOnParentThread();
-    }
-    return mWorkerPrivate;
+void WorkerParentRef::DropWorkerPrivate() {
+  LOGV(("WorkerParentRef::DropWorkerPrivate [%p]", this));
+  if (mWorkerPrivate) {
+    mWorkerPrivate->AssertIsOnParentThread();
+    mWorkerPrivate = nullptr;
   }
+}
 
-  void WorkerParentRef::DropWorkerPrivate() {
-    LOGV(("WorkerParentRef::DropWorkerPrivate [%p]", this));
-    if (mWorkerPrivate) {
-      mWorkerPrivate->AssertIsOnParentThread();
-      mWorkerPrivate = nullptr;
-    }
-  }
-
-  WorkerParentRef::~WorkerParentRef() = default;
+WorkerParentRef::~WorkerParentRef() = default;
 
 }  
 }  
