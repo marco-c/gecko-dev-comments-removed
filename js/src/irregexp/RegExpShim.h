@@ -409,6 +409,30 @@ constexpr uint32_t CountPopulation(uint32_t value) {
 }
 
 }  
+
+namespace internal {
+
+template <typename T>
+class CheckedNumeric : public mozilla::CheckedInt<T> {
+ public:
+  template <typename U>
+  MOZ_IMPLICIT constexpr CheckedNumeric(U val) : mozilla::CheckedInt<T>(val) {}
+
+  
+  
+  
+  template <typename Dst>
+  bool AssignIfValid(Dst* result) const {
+    if (MOZ_LIKELY(this->isValid() && std::in_range<Dst>(this->value()))) {
+      *result = this->value();
+      return true;
+    }
+    return false;
+  }
+};
+
+}  
+
 }  
 
 namespace unibrow {
