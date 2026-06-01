@@ -144,7 +144,7 @@ void js::BaseScript::swapData(MutableHandleBuffer<PrivateScriptData> other) {
   
   if (data_ && zone()->needsMarkingBarrier()) {
     JSTracer* trc = zone()->barrierTracer();
-    TraceBufferEdge(trc, this, &data_, "BaseScript::swapData barrier");
+    TraceBufferEdge(trc, &data_, "BaseScript::swapData barrier");
   }
 
   
