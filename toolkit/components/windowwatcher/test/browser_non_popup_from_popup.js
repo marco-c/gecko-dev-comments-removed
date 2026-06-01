@@ -1,23 +1,14 @@
 "use strict";
 
+const TEST_PATH = getRootDirectory(gTestPath).replace(
+  "chrome://mochitests/content",
+  "https://example.com"
+);
+
 
 
 add_task(async function test_non_popup_from_popup() {
-  const BLANK_PAGE = "data:text/html,";
-
-  
-  const OPEN_PAGE = "data:text/plain,hello";
-
-  
-  
-  
-  const NON_POPUP_OPENER = btoa(
-    `data:text/html,<script>window.open('${OPEN_PAGE}', '', '')</script>`
-  );
-
-  
-  
-  const POPUP_OPENER = `data:text/html,<script>window.open(atob("${NON_POPUP_OPENER}"), "", "width=500");</script>`;
+  const OPEN_PAGE = TEST_PATH + "file_open_page.html";
 
   await SpecialPowers.pushPrefEnv({
     set: [["browser.link.open_newwindow", 3]],
@@ -26,7 +17,7 @@ add_task(async function test_non_popup_from_popup() {
   await BrowserTestUtils.withNewTab(
     {
       gBrowser,
-      url: BLANK_PAGE,
+      url: "about:blank",
     },
     async function () {
       
@@ -36,7 +27,10 @@ add_task(async function test_non_popup_from_popup() {
       const newTabPromise = BrowserTestUtils.waitForNewTab(gBrowser, OPEN_PAGE);
 
       
-      BrowserTestUtils.startLoadingURIString(gBrowser, POPUP_OPENER);
+      BrowserTestUtils.startLoadingURIString(
+        gBrowser,
+        TEST_PATH + "file_popup_opener.html"
+      );
 
       let win = await newPopupPromise;
       Assert.ok(true, "popup is opened");
