@@ -5147,7 +5147,7 @@ nsresult nsIFrame::MoveCaretToEventPoint(nsPresContext* aPresContext,
     }
   }
 
-  fc->SetDelayedCaretData(0);
+  fc->SetDelayedCaretData(nullptr);
 
   if (isPrimaryButtonDown) {
     
@@ -5622,7 +5622,7 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY static nsresult HandleFrameSelection(
         return rv;
       }
     }
-    aFrameSelection->SetDelayedCaretData(0);
+    aFrameSelection->SetDelayedCaretData(nullptr);
   }
 
   aFrameSelection->SetDragState(false);
@@ -9685,6 +9685,26 @@ static nsContentAndOffset FindLineBreakingFrame(nsIFrame* aFrame,
   return result;
 }
 
+enum class OffsetIsAtLineEdge : bool { No, Yes };
+
+static void SetPeekResultFromFrame(PeekOffsetStruct& aPos, nsIFrame* aFrame,
+                                   int32_t aOffset,
+                                   OffsetIsAtLineEdge aAtLineEdge) {
+  FrameContentRange range = GetRangeForFrame(aFrame);
+  aPos.mResultFrame = aFrame;
+  aPos.mResultContent = range.content;
+  
+  aPos.mContentOffset =
+      aOffset < 0 ? range.end + aOffset + 1 : range.start + aOffset;
+  
+  aPos.mContentOffset = std::clamp(aPos.mContentOffset, range.start, range.end);
+  if (aAtLineEdge == OffsetIsAtLineEdge::Yes) {
+    aPos.mAttach = aPos.mContentOffset == range.start
+                       ? CaretAssociationHint::After
+                       : CaretAssociationHint::Before;
+  }
+}
+
 nsresult nsIFrame::PeekOffsetForParagraph(PeekOffsetStruct* aPos) {
   nsIFrame* frame = this;
   nsContentAndOffset blockFrameOrBR;
@@ -9730,21 +9750,16 @@ nsresult nsIFrame::PeekOffsetForParagraph(PeekOffsetStruct* aPos) {
   }
 
   if (reachedLimit) {  
-    aPos->mResultContent = frame->GetContent();
-    if (aPos->mResultContent) {
-      if (ShadowRoot* shadowRoot =
-              aPos->mResultContent->GetShadowRootForSelection()) {
-        
-        
-        
-        aPos->mResultContent = shadowRoot;
-      }
-    }
-    if (aPos->mDirection == eDirPrevious) {
-      aPos->mContentOffset = 0;
-    } else if (aPos->mResultContent) {
-      aPos->mContentOffset = aPos->mResultContent->GetChildCount();
-    }
+    
+    
+    
+    
+    
+    const bool atEnd = aPos->mDirection == eDirNext;
+    FrameTarget targetFrame = DrillDownToSelectionFrame(
+        frame, atEnd, nsIFrame::IGNORE_NATIVE_ANONYMOUS_SUBTREE);
+    SetPeekResultFromFrame(*aPos, targetFrame.frame, atEnd ? -1 : 0,
+                           OffsetIsAtLineEdge::Yes);
   }
   return NS_OK;
 }
@@ -9776,26 +9791,6 @@ static bool ShouldWordSelectionEatSpace(const PeekOffsetStruct& aPos) {
   
   return aPos.mDirection == eDirNext &&
          StaticPrefs::layout_word_select_eat_space_to_next_word();
-}
-
-enum class OffsetIsAtLineEdge : bool { No, Yes };
-
-static void SetPeekResultFromFrame(PeekOffsetStruct& aPos, nsIFrame* aFrame,
-                                   int32_t aOffset,
-                                   OffsetIsAtLineEdge aAtLineEdge) {
-  FrameContentRange range = GetRangeForFrame(aFrame);
-  aPos.mResultFrame = aFrame;
-  aPos.mResultContent = range.content;
-  
-  aPos.mContentOffset =
-      aOffset < 0 ? range.end + aOffset + 1 : range.start + aOffset;
-  
-  aPos.mContentOffset = std::clamp(aPos.mContentOffset, range.start, range.end);
-  if (aAtLineEdge == OffsetIsAtLineEdge::Yes) {
-    aPos.mAttach = aPos.mContentOffset == range.start
-                       ? CaretAssociationHint::After
-                       : CaretAssociationHint::Before;
-  }
 }
 
 void nsIFrame::SelectablePeekReport::TransferTo(PeekOffsetStruct& aPos) const {
