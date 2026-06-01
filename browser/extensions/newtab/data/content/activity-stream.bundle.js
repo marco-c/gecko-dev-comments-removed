@@ -306,6 +306,7 @@ for (const type of [
   "WIDGETS_LISTS_UPDATE",
   "WIDGETS_LISTS_USER_EVENT",
   "WIDGETS_LISTS_USER_IMPRESSION",
+  "WIDGETS_OPT_IN",
   "WIDGETS_SPORTS_CHANGE_FOLLOWED_ONLY",
   "WIDGETS_SPORTS_CHANGE_MATCHES_TAB",
   "WIDGETS_SPORTS_CHANGE_SELECTED_TEAMS",
@@ -8130,7 +8131,8 @@ function MessageWrapper({
     handleDismiss,
     handleClick,
     handleBlock,
-    handleClose
+    handleClose,
+    dispatch
   }));
 }
 
@@ -25631,6 +25633,35 @@ const messageMiddleware = () => next => action => {
   }
 };
 
+
+
+
+
+
+
+
+
+
+
+
+const widgetsOptInMiddleware =
+  ({ dispatch }) =>
+  next =>
+  action => {
+    if (action.type === actionTypes.WIDGETS_OPT_IN) {
+      dispatch(actionCreators.SetPref("widgets.system.enabled", true));
+      for (const { id, size } of action.data?.widgets ?? []) {
+        dispatch(actionCreators.SetPref(`widgets.system.${id}.enabled`, true));
+        dispatch(actionCreators.SetPref(`widgets.${id}.enabled`, true));
+        if (size) {
+          dispatch(actionCreators.SetPref(`widgets.${id}.size`, size));
+        }
+      }
+      return null;
+    }
+    return next(action);
+  };
+
 const rehydrationMiddleware = ({ getState }) => {
   
   
@@ -25695,7 +25726,11 @@ function initStore(reducers, initialState) {
     mergeStateReducer((0,external_Redux_namespaceObject.combineReducers)(reducers)),
     initialState,
     globalThis.RPMAddMessageListener &&
-      (0,external_Redux_namespaceObject.applyMiddleware)(rehydrationMiddleware, messageMiddleware)
+      (0,external_Redux_namespaceObject.applyMiddleware)(
+        rehydrationMiddleware,
+        widgetsOptInMiddleware,
+        messageMiddleware
+      )
   );
 
   if (globalThis.RPMAddMessageListener) {
