@@ -124,7 +124,7 @@ class ChannelEventQueue final {
   
   
   
-  inline void RunOrEnqueue(ChannelEvent* aCallback,
+  inline void RunOrEnqueue(UniquePtr<ChannelEvent> aCallback,
                            bool aAssertionWhenNotQueued = false);
 
   
@@ -207,7 +207,7 @@ class ChannelEventQueue final {
   friend class AutoEventEnqueuer;
 };
 
-inline void ChannelEventQueue::RunOrEnqueue(ChannelEvent* aCallback,
+inline void ChannelEventQueue::RunOrEnqueue(UniquePtr<ChannelEvent> aCallback,
                                             bool aAssertionWhenNotQueued) {
   MOZ_ASSERT(aCallback);
   
@@ -216,7 +216,9 @@ inline void ChannelEventQueue::RunOrEnqueue(ChannelEvent* aCallback,
   nsCOMPtr<nsISupports> kungFuDeathGrip;
 
   
-  UniquePtr<ChannelEvent> event(aCallback);
+  UniquePtr<ChannelEvent> event = std::move(aCallback);
+  
+  
 
   
   
