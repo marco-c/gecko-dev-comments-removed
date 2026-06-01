@@ -4316,11 +4316,6 @@ TypedArrayObject* js::TypedArraySubarrayRecover(JSContext* cx,
   return TypedArraySubarrayWithLength(cx, obj, start, length);
 }
 
-
-
-using ByteVector =
-    js::Vector<uint8_t, FixedLengthTypedArrayObject::INLINE_BUFFER_LIMIT>;
-
 static UniqueChars QuoteString(JSContext* cx, char16_t ch) {
   Sprinter sprinter(cx);
   if (!sprinter.init()) {
@@ -5055,10 +5050,140 @@ static auto FromBase64(JSLinearString* string, Alphabet alphabet,
 
 
 
+class MOZ_NON_PARAM Uint8Buffer {
+  static constexpr size_t InlineLength =
+      FixedLengthTypedArrayObject::INLINE_BUFFER_LIMIT;
+
+  uint8_t inlineBuf_[InlineLength];
+  UniquePtr<uint8_t[], JS::FreePolicy> ownedBuf_;
+
+  size_t length_ = 0;
+
+ public:
+  size_t length() { return length_; };
+
+  uint8_t* data() { return ownedBuf_ ? ownedBuf_.get() : inlineBuf_; };
+
+  
+
+
+
+  bool maybeAlloc(JSContext* cx, size_t length);
+
+  
+
+
+
+  bool maybeRealloc(JSContext* cx, size_t newLength);
+
+  
+
+
+
+
+  TypedArrayObject* toTypedArrayObject(JSContext* cx);
+};
+
+bool Uint8Buffer::maybeAlloc(JSContext* cx, size_t length) {
+  length_ = length;
+  if (length <= InlineLength) {
+    return true;
+  }
+
+  ownedBuf_ =
+      cx->make_pod_arena_array<uint8_t>(js::ArrayBufferContentsArena, length);
+  return !!ownedBuf_;
+}
+
+bool Uint8Buffer::maybeRealloc(JSContext* cx, size_t newLength) {
+  MOZ_ASSERT(newLength <= length_);
+  if (length_ <= InlineLength) {
+    length_ = newLength;
+    return true;
+  }
+  MOZ_ASSERT(ownedBuf_);
+
+  if (newLength <= InlineLength) {
+    std::copy_n(ownedBuf_.get(), newLength, inlineBuf_);
+    ownedBuf_ = nullptr;
+    length_ = newLength;
+    return true;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  constexpr size_t minBytesToReclaim = 80;
+
+  size_t overAllocation = length_ - newLength;
+
+  if (overAllocation < minBytesToReclaim || overAllocation <= length_ / 16) {
+    length_ = newLength;
+    return true;
+  }
+
+  uint8_t* oldOwnedBuf = ownedBuf_.release();
+  uint8_t* newOwnedBuf = cx->pod_arena_realloc<uint8_t>(
+      js::ArrayBufferContentsArena, oldOwnedBuf, length_, newLength);
+
+  if (!newOwnedBuf) {
+    js_free(oldOwnedBuf);
+    return false;
+  }
+
+  ownedBuf_ = UniquePtr<uint8_t[], JS::FreePolicy>(newOwnedBuf);
+  length_ = newLength;
+  return true;
+}
+
+TypedArrayObject* Uint8Buffer::toTypedArrayObject(JSContext* cx) {
+  if (!ownedBuf_) {
+    TypedArrayObject* tarray =
+        TypedArrayObjectTemplate<uint8_t>::fromLength(cx, length_);
+    if (!tarray) {
+      return nullptr;
+    }
+
+    auto target = SharedMem<uint8_t*>::unshared(tarray->dataPointerUnshared());
+    auto source = SharedMem<uint8_t*>::unshared(inlineBuf_);
+    UnsharedOps::podCopy(target, source, length_);
+
+    return tarray;
+  }
+
+  auto bufferContents =
+      ArrayBufferObject::BufferContents::createMallocedArrayBufferContentsArena(
+          ownedBuf_.get());
+
+  Rooted<ArrayBufferObject*> buffer(
+      cx, ArrayBufferObject::createForContents(cx, length_, bufferContents));
+  if (!buffer) {
+    return nullptr;
+  }
+
+  
+  
+  (void)ownedBuf_.release();
+
+  return TypedArrayObjectTemplate<uint8_t>::fromBuffer(cx, buffer, 0, length_);
+}
+
+
+
+
+
 
 static auto FromBase64(JSLinearString* string, Alphabet alphabet,
-                       LastChunkHandling lastChunkHandling, ByteVector& bytes) {
-  auto data = SharedMem<uint8_t*>::unshared(bytes.begin());
+                       LastChunkHandling lastChunkHandling,
+                       Uint8Buffer& bytes) {
+  auto data = SharedMem<uint8_t*>::unshared(bytes.data());
   size_t maxLength = bytes.length();
   return FromBase64<UnsharedOps>(string, alphabet, lastChunkHandling, data,
                                  maxLength);
@@ -5224,8 +5349,8 @@ static bool uint8array_fromBase64(JSContext* cx, unsigned argc, Value* vp) {
                 "string length doesn't exceed maximum typed array length");
 
   
-  ByteVector bytes(cx);
-  if (!bytes.resizeUninitialized(outLength.value())) {
+  Uint8Buffer bytes;
+  if (!bytes.maybeAlloc(cx, outLength.value())) {
     return false;
   }
 
@@ -5246,16 +5371,14 @@ static bool uint8array_fromBase64(JSContext* cx, unsigned argc, Value* vp) {
   size_t resultLength = result.written;
 
   
-  auto* tarray =
-      TypedArrayObjectTemplate<uint8_t>::fromLength(cx, resultLength);
-  if (!tarray) {
+  if (!bytes.maybeRealloc(cx, resultLength)) {
     return false;
   }
 
-  
-  auto target = SharedMem<uint8_t*>::unshared(tarray->dataPointerUnshared());
-  auto source = SharedMem<uint8_t*>::unshared(bytes.begin());
-  UnsharedOps::podCopy(target, source, resultLength);
+  TypedArrayObject* tarray = bytes.toTypedArrayObject(cx);
+  if (!tarray) {
+    return false;
+  }
 
   
   args.rval().setObject(*tarray);
