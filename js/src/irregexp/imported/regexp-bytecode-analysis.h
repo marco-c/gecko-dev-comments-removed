@@ -26,20 +26,24 @@ class BytecodeAnalysis : public ZoneObject {
 
   
   bool IsLoopHeader(uint32_t block_id) const;
-  bool IsBackEdge(uint32_t bytecode_offset) const;
 
   bool UsesCurrentChar(uint32_t block_id) const;
   bool LoadsCurrentChar(uint32_t block_id) const;
 
   uint32_t GetBlockId(uint32_t bytecode_offset) const;
-  int GetEbbId(uint32_t bytecode_offset) const;
+  
+  
+  
+  int GetEbbId(uint32_t block_id) const;
   uint32_t BlockStart(uint32_t block_id) const;
   uint32_t BlockEnd(uint32_t block_id) const;
 
  private:
+  
   struct LoopInfo {
     uint32_t header_block_id;
     BitVector members;
+    
     
     ZoneVector<std::pair<uint32_t, uint32_t>> exits;
 
@@ -47,36 +51,42 @@ class BytecodeAnalysis : public ZoneObject {
         : header_block_id(header_id), members(num_blocks, zone), exits(zone) {}
   };
 
-  void FindBasicBlocks();
-  void AnalyzeControlFlow();
-  void ComputeLoops(
-      const ZoneVector<std::pair<uint32_t, uint32_t>>& back_edges);
-  void AnalyzeDataFlow();
+  
+  
+  
+  
+  void BuildBlocks();
 
   
-  template <typename Callback>
-  void ForEachSuccessor(uint32_t block_id, Callback callback,
-                        bool include_backtrack);
+  
+  void AnalyzeControlFlow();
 
+  
   uint32_t block_count() const {
-    DCHECK_GE(block_starts_.size(), kSlotAtLength);
-    return static_cast<uint32_t>(block_starts_.size()) - kSlotAtLength;
+    DCHECK_GE(block_starts_.size(), 1 + kBlockStartsSentinelCount);
+    return static_cast<uint32_t>(block_starts_.size()) -
+           kBlockStartsSentinelCount;
+  }
+
+  
+  
+  
+  
+  uint32_t backtrack_dispatch_id() const { return block_count(); }
+
+  
+  uint32_t total_block_count() const {
+    return block_count() + kDispatchBlockCount;
   }
 
   Zone* zone_;
   Handle<TrustedByteArray> bytecode_;
   uint32_t length_;
 
+  static constexpr uint32_t kDispatchBlockCount = 1;
   
   
-  static constexpr int kSlotAtLength = 1;
-
-  
-  
-  
-
-  
-  ZoneVector<uint8_t> offset_to_prev_bytecode_;
+  static constexpr uint32_t kBlockStartsSentinelCount = 1;
 
   
   
@@ -89,23 +99,27 @@ class BytecodeAnalysis : public ZoneObject {
   ZoneVector<uint32_t> block_starts_;
 
   
-  ZoneVector<int32_t> offset_to_block_id_;
+  
+  ZoneVector<int32_t> block_to_ebb_id_;
 
   
   
-  ZoneVector<int32_t> offset_to_ebb_id_;
-
+  ZoneVector<ZoneVector<uint32_t>> successors_;
   
-  ZoneVector<ZoneSet<int>> predecessors_;
+  
+  ZoneVector<ZoneVector<uint32_t>> predecessors_;
 
   
   ZoneVector<LoopInfo> loops_;
 
   
   BitVector is_loop_header_;      
-  BitVector is_back_edge_;        
   BitVector uses_current_char_;   
   BitVector loads_current_char_;  
+  
+  BitVector terminates_with_backtrack_;  
+  
+  ZoneVector<std::pair<uint32_t, uint32_t>> back_edges_;
 
   DisallowGarbageCollection no_gc_;
 };

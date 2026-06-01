@@ -39,8 +39,6 @@ class V8_EXPORT_PRIVATE BytecodeWriter {
 
   
   inline void ResetPc(int new_pc);
-  
-  void Reset();
 
   
   template <Bytecode bytecode, typename... Args>
@@ -228,6 +226,13 @@ class V8_EXPORT_PRIVATE BytecodeGenerator : public RegExpMacroAssembler,
   void EmitSkipTable(DirectHandle<ByteArray> table);
 
   Label backtrack_;
+
+  
+  
+  static const int kInvalidPC = -1;
+  int advance_current_start_ = 0;
+  int advance_current_offset_ = 0;
+  int advance_current_end_ = kInvalidPC;
 
   Isolate* isolate_;
 

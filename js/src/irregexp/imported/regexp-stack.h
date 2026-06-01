@@ -80,7 +80,7 @@ class Stack final {
 
   
   
-  Address EnsureCapacity(size_t size);
+  V8_EXPORT_PRIVATE Address EnsureCapacity(size_t size);
 
   
   static constexpr int ArchiveSpacePerThread() {
@@ -93,10 +93,12 @@ class Stack final {
   
   static constexpr size_t kMaximumStackSize = 64 * MB;
 
+ private:
+  
+  
   Stack();
   ~Stack();
 
- private:
   
   static const Address kMemoryTop =
       static_cast<Address>(static_cast<uintptr_t>(-1));

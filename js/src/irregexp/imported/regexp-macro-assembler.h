@@ -292,10 +292,6 @@ class RegExpMacroAssembler {
                                           Address raw_byte_array);
 
   
-  virtual void set_slow_safe(bool ssc) { slow_safe_compiler_ = ssc; }
-  bool slow_safe() const { return slow_safe_compiler_; }
-
-  
   
   
   
@@ -357,7 +353,6 @@ class RegExpMacroAssembler {
   static const uint8_t word_character_map_[kWordCharacterMapSize];
 
  private:
-  bool slow_safe_compiler_;
   uint32_t backtrack_limit_;
   bool can_fallback_ = false;
   GlobalMode global_mode_;
