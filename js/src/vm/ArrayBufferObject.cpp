@@ -3477,9 +3477,19 @@ bool InnerViewTable::Views::traceWeak(JSTracer* trc, size_t startIndex) {
           return true;
         }
 
-        if (!sawNurseryView && gc::IsInsideNursery(view)) {
-          sawNurseryView = true;
-          firstNurseryView = index;
+        if (!sawNurseryView) {
+          if (gc::IsInsideNursery(view)) {
+            
+            sawNurseryView = true;
+            firstNurseryView = index;
+          }
+        } else {
+          if (!gc::IsInsideNursery(view)) {
+            
+            MOZ_ASSERT(firstNurseryView < index);
+            std::swap(views[firstNurseryView], view);
+            firstNurseryView++;
+          }
         }
 
         index++;
