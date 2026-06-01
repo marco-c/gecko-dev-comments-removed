@@ -576,28 +576,6 @@
       this.splitViewSplitter.hidden = !splitViewTabSelected;
       const selectedPanel = this.selectedPanel;
 
-      
-
-
-
-
-
-
-
-
-      const isBetween = (node, a, b = null) => {
-        const isAfterA = Boolean(
-          node.compareDocumentPosition(a) & Node.DOCUMENT_POSITION_PRECEDING
-        );
-        if (!b) {
-          return isAfterA;
-        }
-        const isBeforeB = Boolean(
-          node.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING
-        );
-        return isAfterA && isBeforeB;
-      };
-
       if (splitViewTabSelected) {
         
         
@@ -617,7 +595,7 @@
         
         if (
           firstPanel &&
-          !isBetween(this.#splitViewSplitter, firstPanel, secondPanel)
+          firstPanel.nextElementSibling !== this.#splitViewSplitter
         ) {
           firstPanel.after(this.#splitViewSplitter);
         }
