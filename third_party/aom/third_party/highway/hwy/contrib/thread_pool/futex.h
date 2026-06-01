@@ -31,6 +31,26 @@
 
 #include "third_party/highway/hwy/base.h"
 
+#if HWY_OS_APPLE
+#include <AvailabilityMacros.h>
+
+#if MAC_OS_X_VERSION_MAX_ALLOWED < 101200 && !defined(HWY_DISABLE_FUTEX)
+#define HWY_DISABLE_FUTEX
+#endif
+#endif  
+
+#if HWY_OS_WIN
+
+
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif  
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif  
+#include <windows.h>
+#endif
+
 #if HWY_ARCH_WASM
 #include <emscripten/threading.h>
 #include <math.h>  
@@ -56,6 +76,16 @@
 #define FUTEX_WAKE_PRIVATE (FUTEX_WAKE | 128)
 #endif
 
+#elif HWY_OS_FREEBSD && !defined(HWY_DISABLE_FUTEX)
+#include <sys/param.h>  
+#if __FreeBSD_version >= 600000
+#include <errno.h>
+#include <sys/types.h>
+#include <sys/umtx.h>
+#else
+#define HWY_DISABLE_FUTEX
+#endif
+
 #elif HWY_OS_APPLE && !defined(HWY_DISABLE_FUTEX)
 
 extern "C" {
@@ -67,13 +97,6 @@ int __ulock_wake(uint32_t op, void* address, uint64_t zero);
 
 #elif HWY_OS_WIN && !defined(HWY_DISABLE_FUTEX)
 
-#ifndef NOMINMAX
-#define NOMINMAX
-#endif  
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif  
-#include <windows.h>
 #if HWY_COMPILER_MSVC || HWY_COMPILER_CLANGCL
 #pragma comment(lib, "synchronization.lib")
 #endif
@@ -159,6 +182,19 @@ static inline uint32_t BlockUntilDifferent(
     }
   }
 
+#elif HWY_OS_FREEBSD && !defined(HWY_DISABLE_FUTEX)  
+  
+  void* address = const_cast<void*>(static_cast<const void*>(&current));
+  for (;;) {
+    const uint32_t next = current.load(acq);
+    if (next != prev) return next;
+    const int ret = _umtx_op(address, UMTX_OP_WAIT_UINT_PRIVATE,
+                             static_cast<u_long>(prev), nullptr, nullptr);
+    if (ret == -1) {
+      HWY_DASSERT(errno == EAGAIN || errno == EINTR);
+    }
+  }
+
 #elif HWY_OS_WIN && !defined(HWY_DISABLE_FUTEX)
   
   volatile void* address =
@@ -219,6 +255,13 @@ static inline void WakeAll(std::atomic<uint32_t>& current) {
   const auto ret = syscall(SYS_futex, address, FUTEX_WAKE_PRIVATE, max_to_wake,
                            nullptr, nullptr, 0);
   HWY_DASSERT(ret >= 0);  
+  (void)ret;
+
+#elif HWY_OS_FREEBSD && !defined(HWY_DISABLE_FUTEX)  
+  void* address = static_cast<void*>(&current);
+  const int ret = _umtx_op(address, UMTX_OP_WAKE_PRIVATE, INT_MAX, nullptr,
+                           nullptr);
+  HWY_DASSERT(ret >= 0);
   (void)ret;
 
 #elif HWY_OS_WIN && !defined(HWY_DISABLE_FUTEX)

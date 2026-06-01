@@ -200,6 +200,8 @@ enum aome_enc_control_id {
   
 
 
+
+
   AOME_SET_SPATIAL_LAYER_ID = 12,
 
   
@@ -1291,6 +1293,8 @@ enum aome_enc_control_id {
   
 
 
+
+
   AV1E_SET_SVC_LAYER_ID = 131,
 
   
@@ -1623,13 +1627,17 @@ enum aome_enc_control_id {
 
 
 
+
+
   AV1E_SET_EXTERNAL_RATE_CONTROL = 173,
 
   
 
 
 
-  AV1E_GET_GOP_INFO,
+
+
+  AV1E_GET_GOP_INFO = 174,
 
   
 
@@ -1637,7 +1645,7 @@ enum aome_enc_control_id {
 
 
 
-  AOME_SET_VALIDATE_INPUT_HBD,
+  AOME_SET_VALIDATE_HBD_INPUT = 175,
 
   
   
@@ -1843,10 +1851,14 @@ typedef struct aom_svc_params {
 
 
   int number_temporal_layers;
-  int max_quantizers[AOM_MAX_LAYERS];        
-  int min_quantizers[AOM_MAX_LAYERS];        
-  int scaling_factor_num[AOM_MAX_SS_LAYERS]; 
-  int scaling_factor_den[AOM_MAX_SS_LAYERS]; 
+  int max_quantizers[AOM_MAX_LAYERS]; 
+  int min_quantizers[AOM_MAX_LAYERS]; 
+  
+  int scaling_factor_num[AOM_MAX_SS_LAYERS];
+  
+
+
+  int scaling_factor_den[AOM_MAX_SS_LAYERS];
   
   int layer_target_bitrate[AOM_MAX_LAYERS];
   
@@ -1888,6 +1900,8 @@ typedef enum {
   AOM_LAYER_DROP,           
   AOM_FULL_SUPERFRAME_DROP, 
 } AOM_SVC_FRAME_DROP_MODE;
+
+
 
 
 
@@ -2343,8 +2357,8 @@ AOM_CTRL_USE_TYPE(AV1E_SET_LOOPFILTER_CONTROL, int)
 AOM_CTRL_USE_TYPE(AOME_GET_LOOPFILTER_LEVEL, int *)
 #define AOM_CTRL_AOME_GET_LOOPFILTER_LEVEL
 
-AOM_CTRL_USE_TYPE(AOME_SET_VALIDATE_INPUT_HBD, int)
-#define AOM_CTRL_AOME_SET_VALIDATE_INPUT_HBD
+AOM_CTRL_USE_TYPE(AOME_SET_VALIDATE_HBD_INPUT, int)
+#define AOM_CTRL_AOME_SET_VALIDATE_HBD_INPUT
 
 AOM_CTRL_USE_TYPE(AV1E_SET_AUTO_INTRA_TOOLS_OFF, unsigned int)
 #define AOM_CTRL_AV1E_SET_AUTO_INTRA_TOOLS_OFF

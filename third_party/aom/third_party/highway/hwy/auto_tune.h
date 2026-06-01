@@ -25,7 +25,18 @@
 
 #include "third_party/highway/hwy/aligned_allocator.h"  
 #include "third_party/highway/hwy/base.h"               
-#include "third_party/highway/hwy/contrib/sort/vqsort.h"
+
+
+
+#if defined(HWY_HEADER_ONLY)
+#define HWY_AUTOTUNE_STDSORT
+#endif
+
+#ifdef HWY_AUTOTUNE_STDSORT
+#include <algorithm>  
+#else
+#include "third_party/highway/hwy/contrib/sort/vqsort.h"  
+#endif
 
 
 
@@ -105,6 +116,10 @@ class CostDistribution {
   static double Median(double* to_sort, size_t n) {
     HWY_DASSERT(n >= 2);
 
+#ifdef HWY_AUTOTUNE_STDSORT
+    std::sort(to_sort, to_sort + n);
+#else
+
 #if !HWY_ARCH_ARM_V7
     VQSort(to_sort, n, SortAscending());
 #else
@@ -112,6 +127,8 @@ class CostDistribution {
     
     VQSort(reinterpret_cast<uint64_t*>(to_sort), n, SortAscending());
 #endif
+#endif
+
     if (n & 1) return to_sort[n / 2];
     
     return (to_sort[n / 2] + to_sort[n / 2 - 1]) * 0.5;
@@ -405,10 +422,9 @@ class AutoTune {
   const Config* Best() const { return best_; }
 
   
-  bool HasCandidates() const {
-    HWY_DASSERT(!Best());
-    return !candidates_.empty();
-  }
+  
+  bool HasCandidates() const { return !candidates_.empty(); }
+
   
   void SetCandidates(std::vector<Config> candidates) {
     HWY_DASSERT(!Best() && !HasCandidates());
@@ -429,7 +445,7 @@ class AutoTune {
 
   
   const Config& NextConfig() const {
-    HWY_DASSERT(!Best() && HasCandidates());
+    HWY_DASSERT(HasCandidates());
     return candidates_[config_idx_];
   }
 

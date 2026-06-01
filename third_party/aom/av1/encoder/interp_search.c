@@ -188,7 +188,6 @@ static inline int64_t interpolation_filter_rd(
 
   (void)tile_data;
 
-  assert(skip_pred != 2);
   assert((rd_stats_luma->rate >= 0) && (rd_stats->rate >= 0));
   assert((rd_stats_luma->dist >= 0) && (rd_stats->dist >= 0));
   assert((rd_stats_luma->sse >= 0) && (rd_stats->sse >= 0));
@@ -208,11 +207,16 @@ static inline int64_t interpolation_filter_rd(
       (skip_pred == interp_search_flags->default_interp_skip_flags)
           ? INTERP_SKIP_LUMA_SKIP_CHROMA
           : skip_pred;
+  assert(IMPLIES(tmp_skip_pred == INTERP_EVAL_LUMA_SKIP_CHROMA,
+                 cpi->sf.interp_sf.skip_model_rd_uv));
 
-  switch (tmp_skip_pred) {
-    case INTERP_EVAL_LUMA_EVAL_CHROMA:
-      
-      
+  if (tmp_skip_pred == INTERP_SKIP_LUMA_SKIP_CHROMA) {
+    
+    this_rd_stats = *rd_stats;
+  } else {
+    
+    if (tmp_skip_pred == INTERP_EVAL_LUMA_EVAL_CHROMA ||
+        tmp_skip_pred == INTERP_EVAL_LUMA_SKIP_CHROMA) {
       interp_model_rd_eval(x, cpi, bsize, orig_dst, AOM_PLANE_Y, AOM_PLANE_Y,
                            &this_rd_stats_luma, 0);
       this_rd_stats = this_rd_stats_luma;
@@ -222,10 +226,11 @@ static inline int64_t interpolation_filter_rd(
                                           INT64_MAX);
       PrintPredictionUnitStats(cpi, tile_data, x, &rd_stats_y, bsize);
 #endif  
-      AOM_FALLTHROUGH_INTENDED;
-    case INTERP_SKIP_LUMA_EVAL_CHROMA:
-      
-      
+    }
+
+    
+    if (tmp_skip_pred == INTERP_EVAL_LUMA_EVAL_CHROMA ||
+        tmp_skip_pred == INTERP_SKIP_LUMA_EVAL_CHROMA) {
       for (int plane = 1; plane < num_planes; ++plane) {
         int64_t tmp_rd =
             RDCOST(x->rdmult, tmp_rs + this_rd_stats.rate, this_rd_stats.dist);
@@ -236,14 +241,9 @@ static inline int64_t interpolation_filter_rd(
         interp_model_rd_eval(x, cpi, bsize, orig_dst, plane, plane,
                              &this_rd_stats, 0);
       }
-      break;
-    case INTERP_SKIP_LUMA_SKIP_CHROMA:
-      
-      this_rd_stats = *rd_stats;
-      break;
-    case INTERP_EVAL_INVALID:
-    default: assert(0); return 0;
+    }
   }
+
   int64_t tmp_rd =
       RDCOST(x->rdmult, tmp_rs + this_rd_stats.rate, this_rd_stats.dist);
 
@@ -625,6 +625,13 @@ static inline void calc_interp_skip_pred_flag(MACROBLOCK *const x,
     assert(mbmi->comp_group_idx == 1);
     if (*skip_hor == 0 && *skip_ver == 1) *skip_ver = 0;
   }
+
+  
+  
+  if (cpi->sf.interp_sf.skip_model_rd_uv) {
+    *skip_hor |= INTERP_EVAL_LUMA_SKIP_CHROMA;
+    *skip_ver |= INTERP_EVAL_LUMA_SKIP_CHROMA;
+  }
 }
 
 
@@ -677,6 +684,7 @@ int64_t av1_interpolation_filter_search(
   MB_MODE_INFO *const mbmi = xd->mi[0];
   const int need_search = av1_is_interp_needed(xd);
   const int ref_frame = xd->mi[0]->ref_frame[0];
+  const int skip_model_rd_uv = cpi->sf.interp_sf.skip_model_rd_uv;
   RD_STATS rd_stats_luma, rd_stats;
 
   
@@ -694,7 +702,7 @@ int64_t av1_interpolation_filter_search(
     *rd = args->interp_filter_stats[match_found_idx].rd;
     x->pred_sse[ref_frame] =
         args->interp_filter_stats[match_found_idx].pred_sse;
-    *skip_build_pred = 0;
+    *skip_build_pred = INTERP_EVAL_LUMA_EVAL_CHROMA;
     return 0;
   }
 
@@ -716,11 +724,13 @@ int64_t av1_interpolation_filter_search(
   PrintPredictionUnitStats(cpi, tile_data, x, &rd_stats_y, bsize);
 #endif  
   
-  if (num_planes > 1) {
+  if (num_planes > 1 && !skip_model_rd_uv) {
     interp_model_rd_eval(x, cpi, bsize, orig_dst, AOM_PLANE_U, AOM_PLANE_V,
                          &rd_stats, *skip_build_pred);
   }
-  *skip_build_pred = 1;
+  *skip_build_pred = num_planes > 1 && skip_model_rd_uv
+                         ? INTERP_SKIP_LUMA_EVAL_CHROMA
+                         : INTERP_SKIP_LUMA_SKIP_CHROMA;
 
   av1_merge_rd_stats(&rd_stats, &rd_stats_luma);
 
@@ -753,6 +763,7 @@ int64_t av1_interpolation_filter_search(
   }
 
   x->recalc_luma_mc_data = 0;
+  
   
   
   

@@ -25,6 +25,11 @@ typedef int64_t (*pick_interinter_mask_type)(
     uint64_t *best_sse);
 
 
+
+
+static const int num_comp_mode_skip_cand[3] = { 5, 4, 2 };
+
+
 static inline int is_comp_rd_match(const AV1_COMP *const cpi,
                                    const MACROBLOCK *const x,
                                    const COMP_RD_STATS *st,
@@ -733,13 +738,18 @@ static int handle_wedge_inter_intra_mode(
 
 static inline void push_comp_avg_est_rd(
     int64_t *top_comp_avg_est_rd, int64_t tmp_rd,
-    bool skip_comp_eval_using_top_comp_avg_est_rd) {
-  if (!skip_comp_eval_using_top_comp_avg_est_rd) return;
+    int skip_cmp_using_top_cmp_avg_est_rd_lvl) {
+  if (!skip_cmp_using_top_cmp_avg_est_rd_lvl) return;
+  assert(skip_cmp_using_top_cmp_avg_est_rd_lvl <= 3);
+
+  const int num_top_cand =
+      num_comp_mode_skip_cand[skip_cmp_using_top_cmp_avg_est_rd_lvl - 1];
+  assert(num_top_cand <= TOP_COMP_AVG_EST_RD_COUNT);
 
   
-  for (int i = 0; i < TOP_COMP_AVG_EST_RD_COUNT; i++) {
+  for (int i = 0; i < num_top_cand; i++) {
     if (tmp_rd < top_comp_avg_est_rd[i]) {
-      for (int j = TOP_COMP_AVG_EST_RD_COUNT - 1; j > i; j--) {
+      for (int j = num_top_cand - 1; j > i; j--) {
         top_comp_avg_est_rd[j] = top_comp_avg_est_rd[j - 1];
       }
       top_comp_avg_est_rd[i] = tmp_rd;
@@ -752,15 +762,20 @@ static inline void push_comp_avg_est_rd(
 
 static inline bool prune_comp_eval_using_comp_avg_est_rd(
     const int64_t *top_comp_avg_est_rd, int64_t tmp_rd, int64_t ref_best_rd,
-    bool skip_comp_eval_using_top_comp_avg_est_rd) {
-  if (!skip_comp_eval_using_top_comp_avg_est_rd) return false;
+    int skip_cmp_using_top_cmp_avg_est_rd_lvl) {
+  if (!skip_cmp_using_top_cmp_avg_est_rd_lvl) return false;
+  assert(skip_cmp_using_top_cmp_avg_est_rd_lvl <= 3);
+
+  const int num_top_cand =
+      num_comp_mode_skip_cand[skip_cmp_using_top_cmp_avg_est_rd_lvl - 1];
+  assert(num_top_cand <= TOP_COMP_AVG_EST_RD_COUNT);
 
   
-  if (top_comp_avg_est_rd[TOP_COMP_AVG_EST_RD_COUNT - 1] == INT64_MAX ||
+  if (top_comp_avg_est_rd[num_top_cand - 1] == INT64_MAX ||
       ref_best_rd == INT64_MAX)
     return false;
 
-  if (tmp_rd > top_comp_avg_est_rd[TOP_COMP_AVG_EST_RD_COUNT - 1]) return true;
+  if (tmp_rd > top_comp_avg_est_rd[num_top_cand - 1]) return true;
 
   return false;
 }
@@ -1096,23 +1111,6 @@ static int64_t masked_compound_type_rd(
                                          diff10, strides);
     *calc_pred_masked_compound = 0;
   }
-  if (compound_type == COMPOUND_WEDGE) {
-    unsigned int sse;
-    if (is_cur_buf_hbd(xd))
-      (void)cpi->ppi->fn_ptr[bsize].vf(CONVERT_TO_BYTEPTR(*preds0), *strides,
-                                       CONVERT_TO_BYTEPTR(*preds1), *strides,
-                                       &sse);
-    else
-      (void)cpi->ppi->fn_ptr[bsize].vf(*preds0, *strides, *preds1, *strides,
-                                       &sse);
-    const unsigned int mse =
-        ROUND_POWER_OF_TWO(sse, num_pels_log2_lookup[bsize]);
-    
-    if (mse < 8 || (!have_newmv_in_inter_mode(this_mode) && mse < 64)) {
-      *comp_model_rd_cur = INT64_MAX;
-      return INT64_MAX;
-    }
-  }
   
   
   
@@ -1446,12 +1444,29 @@ int av1_compound_type_rd(const AV1_COMP *const cpi, MACROBLOCK *x,
           have_newmv_in_inter_mode(this_mode) &&
           !cpi->sf.inter_sf.disable_interinter_wedge_newmv_search;
 
-      if (need_mask_search && !wedge_newmv_search) {
+      if ((need_mask_search && !wedge_newmv_search) ||
+          cpi->sf.inter_sf.skip_interinter_wedge_search_based_on_mse) {
         
         av1_build_inter_predictors_for_planes_single_buf(xd, bsize, 0, 0, 0,
                                                          preds0, strides);
         av1_build_inter_predictors_for_planes_single_buf(xd, bsize, 0, 0, 1,
                                                          preds1, strides);
+
+        if (cpi->sf.inter_sf.skip_interinter_wedge_search_based_on_mse) {
+          unsigned int sse;
+          if (is_cur_buf_hbd(xd))
+            (void)cpi->ppi->fn_ptr[bsize].vf(
+                CONVERT_TO_BYTEPTR(*preds0), *strides,
+                CONVERT_TO_BYTEPTR(*preds1), *strides, &sse);
+          else
+            (void)cpi->ppi->fn_ptr[bsize].vf(*preds0, *strides, *preds1,
+                                             *strides, &sse);
+          const unsigned int mse =
+              ROUND_POWER_OF_TWO(sse, num_pels_log2_lookup[bsize]);
+          
+          
+          if (mse < 512) continue;
+        }
       }
 
       for (int wedge_mask = 0; wedge_mask < wedge_mask_size && need_mask_search;
@@ -1691,13 +1706,13 @@ int av1_compound_type_rd(const AV1_COMP *const cpi, MACROBLOCK *x,
         update_mask_best_mv(mbmi, best_mv, &best_tmp_rate_mv, tmp_rate_mv);
     }
     if (cur_type == COMPOUND_AVERAGE) {
-      const bool skip_comp_eval_using_top_comp_avg_est_rd =
-          cpi->sf.inter_sf.skip_comp_eval_using_top_comp_avg_est_rd;
+      const int skip_cmp_using_top_cmp_avg_est_rd_lvl =
+          cpi->sf.inter_sf.skip_cmp_using_top_cmp_avg_est_rd_lvl;
       push_comp_avg_est_rd(x->top_comp_avg_est_rd, best_rd_cur,
-                           skip_comp_eval_using_top_comp_avg_est_rd);
+                           skip_cmp_using_top_cmp_avg_est_rd_lvl);
       if (prune_comp_eval_using_comp_avg_est_rd(
               x->top_comp_avg_est_rd, best_rd_cur, ref_best_rd,
-              skip_comp_eval_using_top_comp_avg_est_rd)) {
+              skip_cmp_using_top_cmp_avg_est_rd_lvl)) {
         *rd = INT64_MAX;
         restore_dst_buf(xd, *orig_dst, 1);
         return 0;

@@ -3007,6 +3007,11 @@ typedef struct AV1_COMP {
   
 
 
+  int cb_delta_rdmult_enabled;
+
+  
+
+
 
 
 
@@ -4194,7 +4199,10 @@ static inline int allow_postencode_drop_rtc(const AV1_COMP *cpi) {
 
 static inline int get_stats_buf_size(int num_lap_buffer, int num_lag_buffer) {
   
-  return (num_lap_buffer > 0 ? num_lap_buffer + 1 : num_lag_buffer);
+  if (num_lap_buffer > 0) {
+    return AOMMAX(num_lap_buffer + 1, MAX_GF_LENGTH_LAP + 1);
+  }
+  return num_lag_buffer;
 }
 
 

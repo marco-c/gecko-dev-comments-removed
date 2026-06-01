@@ -50,6 +50,7 @@
 
 #include "third_party/highway/hwy/highway_export.h"
 #include "third_party/highway/hwy/timer.h"  
+#include "third_party/highway/hwy/base.h"
 
 namespace hwy {
 
@@ -116,6 +117,14 @@ struct Result {
 
 
 
+static inline Params DefaultBenchmarkParams() {
+  Params p;
+  p.max_evals = HWY_IS_DEBUG_BUILD ? 3 : 4;
+  return p;
+}
+
+
+
 
 
 
@@ -132,8 +141,8 @@ HWY_DLLEXPORT size_t Measure(Func func, const uint8_t* arg,
 
 
 template <class Closure>
-static FuncOutput CallClosure(const Closure* f, const FuncInput input) {
-  return (*f)(input);
+static FuncOutput CallClosure(const void* f, const FuncInput input) {
+  return (*reinterpret_cast<const Closure*>(f))(input);
 }
 
 
@@ -143,7 +152,7 @@ static inline size_t MeasureClosure(const Closure& closure,
                                     const FuncInput* inputs,
                                     const size_t num_inputs, Result* results,
                                     const Params& p = Params()) {
-  return Measure(reinterpret_cast<Func>(&CallClosure<Closure>),
+  return Measure(static_cast<Func>(&CallClosure<Closure>),
                  reinterpret_cast<const uint8_t*>(&closure), inputs, num_inputs,
                  results, p);
 }

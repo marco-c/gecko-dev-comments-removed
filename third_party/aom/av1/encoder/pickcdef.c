@@ -513,9 +513,11 @@ static inline uint64_t get_filt_error(
 
 
 
+
 void av1_cdef_mse_calc_block(CdefSearchCtx *cdef_search_ctx,
                              struct aom_internal_error_info *error_info,
-                             int fbr, int fbc, int sb_count) {
+                             int fbr, int fbc, int sb_count,
+                             int adaptive_cdef_mode) {
   
   
   (void)error_info;
@@ -574,6 +576,17 @@ void av1_cdef_mse_calc_block(CdefSearchCtx *cdef_search_ctx,
   int dirinit = 0;
   for (int pli = 0; pli < cdef_search_ctx->num_planes; pli++) {
     
+    
+    
+    
+    if (adaptive_cdef_mode > 0 && pli > 0) {
+      cdef_search_ctx->mse[pli][sb_count][0] = 0;
+      for (int gi = 1; gi < cdef_search_ctx->total_strengths; gi++)
+        cdef_search_ctx->mse[pli][sb_count][gi] = 1;
+      break;
+    }
+
+    
 
 
     const int hfilt_size = (nhb << mi_wide_l2[pli]);
@@ -616,8 +629,10 @@ void av1_cdef_mse_calc_block(CdefSearchCtx *cdef_search_ctx,
 
 
 
+
 static void cdef_mse_calc_frame(CdefSearchCtx *cdef_search_ctx,
-                                struct aom_internal_error_info *error_info) {
+                                struct aom_internal_error_info *error_info,
+                                int adaptive_cdef_mode) {
   
   for (int fbr = 0; fbr < cdef_search_ctx->nvfb; ++fbr) {
     for (int fbc = 0; fbc < cdef_search_ctx->nhfb; ++fbc) {
@@ -625,7 +640,7 @@ static void cdef_mse_calc_frame(CdefSearchCtx *cdef_search_ctx,
       if (cdef_sb_skip(cdef_search_ctx->mi_params, fbr, fbc)) continue;
       
       av1_cdef_mse_calc_block(cdef_search_ctx, error_info, fbr, fbc,
-                              cdef_search_ctx->sb_count);
+                              cdef_search_ctx->sb_count, adaptive_cdef_mode);
       cdef_search_ctx->sb_count++;
     }
   }
@@ -869,12 +884,13 @@ void av1_cdef_search(AV1_COMP *cpi) {
   const int damping = 3 + (cm->quant_params.base_qindex >> 6);
   const int fast = (pick_method >= CDEF_FAST_SEARCH_LVL1 &&
                     pick_method <= CDEF_FAST_SEARCH_LVL5);
+  const int adaptive_cdef_mode = cpi->sf.lpf_sf.adaptive_cdef_mode;
   const int num_planes = av1_num_planes(cm);
   MACROBLOCKD *xd = &cpi->td.mb.e_mbd;
 
   if (!cpi->cdef_search_ctx)
     CHECK_MEM_ERROR(cm, cpi->cdef_search_ctx,
-                    aom_malloc(sizeof(*cpi->cdef_search_ctx)));
+                    aom_calloc(1, sizeof(*cpi->cdef_search_ctx)));
   CdefSearchCtx *cdef_search_ctx = cpi->cdef_search_ctx;
 
   
@@ -886,7 +902,7 @@ void av1_cdef_search(AV1_COMP *cpi) {
   if (cpi->mt_info.num_workers > 1) {
     av1_cdef_mse_calc_frame_mt(cpi);
   } else {
-    cdef_mse_calc_frame(cdef_search_ctx, cm->error);
+    cdef_mse_calc_frame(cdef_search_ctx, cm->error, adaptive_cdef_mode);
   }
 
   
@@ -956,9 +972,11 @@ void av1_cdef_search(AV1_COMP *cpi) {
 
   cdef_info->cdef_bits = nb_strength_bits;
   cdef_info->nb_cdef_strengths = 1 << nb_strength_bits;
+  uint64_t tot_best_mse_y = 0, tot_zero_mse_y = 0;
   for (int i = 0; i < sb_count; i++) {
     uint64_t best_mse = UINT64_MAX;
     int best_gi = 0;
+    tot_zero_mse_y += mse[0][i][0];
     for (int gi = 0; gi < cdef_info->nb_cdef_strengths; gi++) {
       uint64_t curr = mse[0][i][cdef_info->cdef_strengths[gi]];
       if (num_planes > 1) curr += mse[1][i][cdef_info->cdef_uv_strengths[gi]];
@@ -967,9 +985,36 @@ void av1_cdef_search(AV1_COMP *cpi) {
         best_mse = curr;
       }
     }
+    
+    
+    
+    tot_best_mse_y += best_mse;
     mi_params->mi_grid_base[cdef_search_ctx->sb_index[i]]->cdef_strength =
         best_gi;
   }
+
+  
+  
+  if (cm->current_frame.pyramid_level > 1 &&
+      cpi->sf.lpf_sf.adaptive_cdef_mode > 0 && sb_count > 0) {
+    const double cdef_mse_pct_imp_thresh = 4.0;
+    double luma_mse_gain_pct = 0.0;
+    
+    
+    luma_mse_gain_pct =
+        (tot_zero_mse_y - tot_best_mse_y) * 100.0 / tot_zero_mse_y;
+    if (luma_mse_gain_pct < cdef_mse_pct_imp_thresh) {
+      cdef_info->nb_cdef_strengths = 1;
+      cdef_info->cdef_bits = 0;
+      cdef_info->cdef_strengths[0] = 0;
+      cdef_info->cdef_uv_strengths[0] = 0;
+      for (int i = 0; i < sb_count; i++) {
+        mi_params->mi_grid_base[cdef_search_ctx->sb_index[i]]->cdef_strength =
+            0;
+      }
+    }
+  }
+
   if (fast) {
     for (int j = 0; j < cdef_info->nb_cdef_strengths; j++) {
       const int luma_strength = cdef_info->cdef_strengths[j];

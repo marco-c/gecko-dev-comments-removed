@@ -16,6 +16,7 @@
 #ifndef HIGHWAY_HWY_CACHE_CONTROL_H_
 #define HIGHWAY_HWY_CACHE_CONTROL_H_
 
+#include "third_party/highway/hwy/aligned_allocator.h"  
 #include "third_party/highway/hwy/base.h"
 
 
@@ -68,6 +69,21 @@ HWY_INLINE HWY_ATTR_CACHE void LoadFence() {
 
 
 
+static HWY_INLINE void StreamCacheLine(const uint64_t* HWY_RESTRICT from,
+                                       uint64_t* HWY_RESTRICT to) {
+  HWY_DASSERT(IsAligned(from));
+  HWY_DASSERT(IsAligned(to));
+#if HWY_COMPILER_CLANG && !defined(HWY_DISABLE_CACHE_CONTROL)
+  for (size_t i = 0; i < HWY_ALIGNMENT / sizeof(uint64_t); ++i) {
+    __builtin_nontemporal_store(from[i], to + i);
+  }
+#else
+  hwy::CopyBytes(from, to, HWY_ALIGNMENT);
+#endif
+}
+
+
+
 
 
 HWY_INLINE HWY_ATTR_CACHE void FlushStream() {
@@ -82,9 +98,10 @@ template <typename T>
 HWY_INLINE HWY_ATTR_CACHE void Prefetch(const T* p) {
   (void)p;
 #ifndef HWY_DISABLE_CACHE_CONTROL
-#if HWY_ARCH_X86
+
+#if HWY_ARCH_X86 && !(HWY_COMPILER_CLANGCL && !defined(__MMX__))
   _mm_prefetch(reinterpret_cast<const char*>(p), _MM_HINT_T0);
-#elif HWY_COMPILER_GCC  
+#elif HWY_COMPILER_GCC || HWY_COMPILER_CLANGCL  
   
   
   __builtin_prefetch(p, 0, 3);

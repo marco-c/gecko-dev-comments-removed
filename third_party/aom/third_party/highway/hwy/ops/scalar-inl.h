@@ -256,13 +256,6 @@ HWY_API Vec1<T> operator^(const Vec1<T> a, const Vec1<T> b) {
 
 
 template <typename T>
-HWY_API Vec1<T> Xor3(Vec1<T> x1, Vec1<T> x2, Vec1<T> x3) {
-  return Xor(x1, Xor(x2, x3));
-}
-
-
-
-template <typename T>
 HWY_API Vec1<T> Or3(Vec1<T> o1, Vec1<T> o2, Vec1<T> o3) {
   return Or(o1, Or(o2, o3));
 }
@@ -308,6 +301,17 @@ uint64_t BitsFromMask(D, MFromD<D> mask) {
 template <class D, HWY_IF_LANES_D(D, 1), typename T = TFromD<D>>
 HWY_API Mask1<T> FirstN(D , size_t n) {
   return Mask1<T>::FromBool(n != 0);
+}
+
+#ifdef HWY_NATIVE_SET_MASK
+#undef HWY_NATIVE_SET_MASK
+#else
+#define HWY_NATIVE_SET_MASK
+#endif
+
+template <class D>
+HWY_API MFromD<D> SetMask(D , bool val) {
+  return MFromD<D>::FromBool(val);
 }
 
 
@@ -1670,6 +1674,17 @@ HWY_API V InterleaveEvenBlocks(D, V a, V ) {
 
 template <class D, class V = VFromD<D>>
 HWY_API V InterleaveOddBlocks(D, V a, V ) {
+  return a;
+}
+
+
+template <class D, class V = VFromD<D>>
+HWY_API V InterleaveLowerBlocks(D, V a, V ) {
+  return a;
+}
+
+template <class D, class V = VFromD<D>>
+HWY_API V InterleaveUpperBlocks(D, V a, V ) {
   return a;
 }
 

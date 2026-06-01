@@ -477,6 +477,10 @@ typedef struct aom_codec_enc_cfg {
 
 
 
+
+
+
+
   unsigned int g_input_bit_depth;
 
   

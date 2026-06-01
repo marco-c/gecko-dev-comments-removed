@@ -15,15 +15,9 @@
 
 
 
-#if HWY_TARGET == HWY_AVX10_2
-
-
-#include "third_party/highway/hwy/ops/x86_256-inl.h"
-#else
 
 
 #include "third_party/highway/hwy/ops/x86_512-inl.h"
-#endif
 
 
 

@@ -21,12 +21,16 @@
 #define HIGHWAY_HWY_CONTRIB_RANDOM_RANDOM_H_
 #endif
 
+#include <stddef.h>
+
 #include <array>
 #include <cstdint>
 #include <limits>
 
 #include "third_party/highway/hwy/aligned_allocator.h"
+#include "third_party/highway/hwy/contrib/sort/vqsort.h"  
 #include "third_party/highway/hwy/highway.h"
+#include "third_party/highway/hwy/timer.h"
 
 HWY_BEFORE_NAMESPACE();  
 
@@ -35,7 +39,6 @@ namespace hwy {
 namespace HWY_NAMESPACE {  
 namespace internal {
 
-namespace {
 #if HWY_HAVE_FLOAT64
 
 #if __cpp_hex_float > 201603L
@@ -52,7 +55,6 @@ constexpr std::uint64_t kJump[] = {0x180ec6d33cfd0aba, 0xd5a61266f0c9392c,
 
 constexpr std::uint64_t kLongJump[] = {0x76e15d3efefdcbbf, 0xc5004e441c522fb3,
                                        0x77710069854ee241, 0x39109bb02acbe635};
-}  
 
 class SplitMix64 {
  public:
@@ -177,6 +179,7 @@ class VectorXoshiro {
 #if HWY_HAVE_FLOAT64
   using VF64 = Vec<ScalableTag<double>>;
 #endif
+
  public:
   explicit VectorXoshiro(const std::uint64_t seed,
                          const std::uint64_t threadNumber = 0)
@@ -200,7 +203,7 @@ class VectorXoshiro {
 
   HWY_INLINE VU64 operator()() noexcept { return Next(); }
 
-  AlignedVector<std::uint64_t> operator()(const std::size_t n) {
+  AlignedVector<std::uint64_t> operator()(const size_t n) {
     AlignedVector<std::uint64_t> result(n);
     const ScalableTag<std::uint64_t> tag{};
     auto s0 = Load(tag, state_[{0}].data());
@@ -253,7 +256,7 @@ class VectorXoshiro {
     return Mul(real, MUL_VALUE);
   }
 
-  AlignedVector<double> Uniform(const std::size_t n) {
+  AlignedVector<double> Uniform(const size_t n) {
     AlignedVector<double> result(n);
     const ScalableTag<std::uint64_t> tag{};
     const ScalableTag<double> real_tag{};
@@ -370,11 +373,129 @@ class CachedXoshiro {
  private:
   VectorXoshiro generator_;
   alignas(HWY_ALIGNMENT) std::array<result_type, size> cache_;
-  std::size_t index_;
+  size_t index_;
 
   static_assert((size & (size - 1)) == 0 && size != 0,
                 "only power of 2 are supported");
 };
+
+
+
+
+
+
+
+class alignas(16) AesCtrEngine {
+  
+  
+  
+  static constexpr size_t kRounds = 5;
+
+ public:
+  
+  
+  explicit AesCtrEngine(bool deterministic) {
+    
+    key_[0] = 0x243F6A8885A308D3ull;
+    key_[1] = 0x13198A2E03707344ull;
+
+    if (!deterministic) {  
+      if (!hwy::Fill16BytesSecure(key_)) {
+        HWY_WARN("Failed to fill RNG key with secure random bits");
+        
+        
+        key_[0] ^= reinterpret_cast<uint64_t>(this);
+        key_[1] ^= hwy::timer::Start();
+      }
+    }
+
+    
+    for (size_t i = 0; i < kRounds; ++i) {
+      key_[2 + 2 * i + 0] = key_[2 * i + 1] + 0xA4093822299F31D0ull;
+      key_[2 + 2 * i + 1] = key_[2 * i + 0] + 0x082EFA98EC4E6C89ull;
+    }
+  }
+
+  
+  
+  
+  
+  
+  uint64_t operator()(uint64_t stream, uint64_t counter) const {
+#if HWY_TARGET != HWY_SCALAR
+    using D = Full128<uint8_t>;  
+    using V = Vec<D>;
+    const Repartition<uint64_t, D> d64;
+
+    auto LoadKey = [](const uint64_t* ptr) HWY_ATTR -> V {
+      return Load(D(), reinterpret_cast<const uint8_t*>(ptr));
+    };
+
+    V state = BitCast(D(), Dup128VecFromValues(d64, counter, stream));
+    state = Xor(state, LoadKey(key_));  
+
+    static_assert(kRounds == 5 && sizeof(key_) == 12 * sizeof(uint64_t), "");
+    state = AESRound(state, LoadKey(key_ + 2));
+    state = AESRound(state, LoadKey(key_ + 4));
+    state = AESRound(state, LoadKey(key_ + 6));
+    state = AESRound(state, LoadKey(key_ + 8));
+    
+    state = AESRound(state, LoadKey(key_ + 10));
+
+    
+    return GetLane(BitCast(d64, state));
+#else
+    HWY_DASSERT(0);  
+    (void)stream;
+    (void)counter;
+    return 0;
+#endif  
+  }
+
+ private:
+  uint64_t key_[2 * (1 + kRounds)];
+};
+
+
+
+class RngStream {
+ public:
+  RngStream() = default;  
+
+  
+  
+  
+  
+  RngStream(const AesCtrEngine& counter_rng, uint64_t stream)
+      : engine_(&counter_rng), stream_(stream), counter_(0) {}
+
+  using result_type = uint64_t;
+  static constexpr result_type min() { return 0; }
+  static constexpr result_type max() { return ~result_type{0}; }
+  result_type operator()() { return (*engine_)(stream_, counter_++); }
+
+ private:
+  const AesCtrEngine* engine_ = nullptr;
+  uint64_t stream_ = 0;  
+  uint64_t counter_ = 0;
+  
+  HWY_MEMBER_VAR_MAYBE_UNUSED uint8_t
+      padding_[HWY_ALIGNMENT - 16 - sizeof(engine_)];
+};
+
+
+HWY_INLINE float RandomNormalizedFloat(RngStream& rng) {
+  const uint32_t exp = hwy::BitCastScalar<uint32_t>(1.0f);
+  const uint32_t mantissa_mask = hwy::MantissaMask<float>();
+  const uint32_t mantissa =
+      static_cast<uint32_t>(rng() & static_cast<uint64_t>(mantissa_mask));
+  const uint32_t representation = exp | mantissa;
+  const float f12 = hwy::BitCastScalar<float>(representation);
+  HWY_DASSERT(1.0f <= f12 && f12 < 2.0f);  
+  const float f = (2.0f * (f12 - 1.0f)) - 1.0f;
+  HWY_DASSERT(-1.0f <= f && f < 1.0f);
+  return f;
+}
 
 }  
 }  

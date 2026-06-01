@@ -198,6 +198,7 @@ HWY_INLINE void Sort16(D d, Traits st, V& v0, V& v1, V& v2, V& v3, V& v4, V& v5,
 
 
 
+
 template <size_t kKeysPerVector, class D, class Traits, class V,
           HWY_IF_LANES_LE(kKeysPerVector, 1)>
 HWY_INLINE void Merge8x2(D, Traits, V, V, V, V, V, V, V, V) {}
@@ -891,6 +892,16 @@ HWY_NOINLINE void SortingNetwork(Traits st, T* HWY_RESTRICT buf, size_t cols) {
 #else
 template <class Base>
 struct SharedTraits : public Base {};
+
+namespace detail {
+
+
+
+static HWY_INLINE HWY_MAYBE_UNUSED void HWY_CONCAT(UnusedSortingNetworksFunc,
+                                                   __LINE__)() {}
+
+}  
+
 #endif  
 
 }  

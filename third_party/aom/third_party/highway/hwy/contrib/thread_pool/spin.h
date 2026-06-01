@@ -82,25 +82,32 @@ struct SpinResult {
 
 
 enum class SpinType : uint8_t {
+#if HWY_ENABLE_MONITORX
   kMonitorX = 1,  
-  kUMonitor,      
-  kPause,
+#endif
+#if HWY_ENABLE_UMONITOR
+  kUMonitor = 2,  
+#endif
+  kPause = 3,
   kSentinel  
 };
 
 
 static inline const char* ToString(SpinType type) {
   switch (type) {
+#if HWY_ENABLE_MONITORX
     case SpinType::kMonitorX:
       return "MonitorX_C1";
+#endif
+#if HWY_ENABLE_UMONITOR
     case SpinType::kUMonitor:
       return "UMonitor_C0.2";
+#endif
     case SpinType::kPause:
       return "Pause";
     case SpinType::kSentinel:
-      return nullptr;
     default:
-      HWY_UNREACHABLE;
+      return nullptr;
   }
 }
 
@@ -276,9 +283,10 @@ HWY_POP_ATTRIBUTES
 
 
 static inline SpinType DetectSpin(int disabled = 0) {
-  const auto HWY_MAYBE_UNUSED enabled = [disabled](SpinType type) {
+  const auto enabled = [disabled](SpinType type) {
     return (disabled & (1 << static_cast<int>(type))) == 0;
   };
+  (void)enabled;
 
 #if HWY_ENABLE_MONITORX
   if (enabled(SpinType::kMonitorX) && x86::IsAMD()) {
@@ -303,22 +311,22 @@ static inline SpinType DetectSpin(int disabled = 0) {
 }
 
 
-template <class Func>
-HWY_INLINE void CallWithSpin(SpinType spin_type, Func&& func) {
+template <class Func, typename... Args>
+HWY_INLINE void CallWithSpin(SpinType spin_type, Func&& func, Args&&... args) {
   switch (spin_type) {
 #if HWY_ENABLE_MONITORX
     case SpinType::kMonitorX:
-      func(SpinMonitorX());
+      func(SpinMonitorX(), std::forward<Args>(args)...);
       break;
 #endif
 #if HWY_ENABLE_UMONITOR
     case SpinType::kUMonitor:
-      func(SpinUMonitor());
+      func(SpinUMonitor(), std::forward<Args>(args)...);
       break;
 #endif
     case SpinType::kPause:
     default:
-      func(SpinPause());
+      func(SpinPause(), std::forward<Args>(args)...);
       break;
   }
 }

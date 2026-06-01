@@ -73,19 +73,15 @@ enum {
   
   BIGDIA = 5,
   
-  SQUARE = 6,
+  FAST_DIAMOND = 6,
   
-  FAST_HEX = 7,
+  FAST_BIGDIA = 7,
   
-  FAST_DIAMOND = 8,
-  
-  FAST_BIGDIA = 9,
-  
-  VFAST_DIAMOND = 10,
+  VFAST_DIAMOND = 8,
   
   NUM_SEARCH_METHODS,
   
-  NUM_DISTINCT_SEARCH_METHODS = SQUARE + 1,
+  NUM_DISTINCT_SEARCH_METHODS = BIGDIA + 1,
 } UENUM1BYTE(SEARCH_METHODS);
 
 typedef struct warp_search_config {

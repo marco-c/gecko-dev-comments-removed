@@ -25,7 +25,6 @@
 
 
 
-
 #if defined(_WIN64) && AOM_ARCH_X86_64
 
 #undef NOMINMAX

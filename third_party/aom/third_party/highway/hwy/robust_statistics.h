@@ -124,7 +124,9 @@ T Median(T* values, const size_t num_values) {
     return values[half];
   }
   
-  return (values[half] + values[half - 1] + 1) / 2;
+  const T bias = hwy::IsInteger<T>() ? T{1} : T{0};
+  
+  return (values[half] + values[half - 1] + bias) / 2;
 }
 
 

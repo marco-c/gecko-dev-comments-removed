@@ -13,6 +13,7 @@
 
 
 
+
 #ifndef HIGHWAY_HWY_DETECT_TARGETS_H_
 #define HIGHWAY_HWY_DETECT_TARGETS_H_
 
@@ -60,9 +61,9 @@
 
 
 
-#define HWY_AVX10_2_512 (1LL << 3)  // AVX10.2 with 512-bit vectors
+#define HWY_AVX10_2 (1LL << 3)  // AVX10.2 with 512-bit vectors
 #define HWY_AVX3_SPR (1LL << 4)
-#define HWY_AVX10_2 (1LL << 5)  // AVX10.2 with 256-bit vectors
+
 
 
 
@@ -71,8 +72,8 @@
 
 
 #define HWY_AVX3_DL (1LL << 7)
-#define HWY_AVX3 (1LL << 8)     // HWY_AVX2 plus AVX-512F/BW/CD/DQ/VL
-#define HWY_AVX2 (1LL << 9)     // HWY_SSE4 plus BMI2 + F16 + FMA
+#define HWY_AVX3 (1LL << 8)  // HWY_AVX2 plus AVX-512F/BW/CD/DQ/VL
+#define HWY_AVX2 (1LL << 9)  // HWY_SSE4 plus BMI2 + F16 + FMA
 
 #define HWY_SSE4 (1LL << 11)   // SSE4.2 plus AES + CLMUL
 #define HWY_SSSE3 (1LL << 12)  // S-SSE3
@@ -92,7 +93,7 @@
 #define HWY_SVE2 (1LL << 23)
 #define HWY_SVE (1LL << 24)
 
-#define HWY_NEON_BF16 (1LL << 26)  // fp16/dot/bf16 (e.g. Neoverse V2/N2/N3)
+#define HWY_NEON_BF16 (1LL << 26)  // fp16/dot/bf16 (e.g. Neoverse V2/N2)
 
 #define HWY_NEON (1LL << 28)  // Implies support for AES
 #define HWY_NEON_WITHOUT_AES (1LL << 29)
@@ -194,10 +195,21 @@
 #endif
 #endif  
 
+#ifndef HWY_BROKEN_AVX10_2  
+
+
+
+#if (HWY_COMPILER_CLANG < 2300) && (HWY_COMPILER_GCC_ACTUAL < 1502)
+#define HWY_BROKEN_AVX10_2 HWY_AVX10_2
+#else
+#define HWY_BROKEN_AVX10_2 0
+#endif
+#endif  
+
 #ifndef HWY_BROKEN_AVX3_DL_ZEN4  
 
 
-#if (HWY_COMPILER_GCC_ACTUAL && HWY_COMPILER_GCC_ACTUAL < 801) || \
+#if (HWY_COMPILER_GCC_ACTUAL && HWY_COMPILER_GCC_ACTUAL < 1001) || \
     (HWY_COMPILER_ICC && HWY_COMPILER_ICC < 2021)
 #define HWY_BROKEN_AVX3_DL_ZEN4 (HWY_AVX3_DL | HWY_AVX3_ZEN4)
 #else
@@ -247,7 +259,8 @@
 #ifndef HWY_BROKEN_NEON_BF16  
 
 #if (HWY_COMPILER_CLANG != 0 && HWY_COMPILER_CLANG < 1700) || \
-    (HWY_COMPILER_GCC_ACTUAL != 0 && HWY_COMPILER_GCC_ACTUAL < 1302)
+    (HWY_COMPILER_GCC_ACTUAL != 0 && HWY_COMPILER_GCC_ACTUAL < 1302) || \
+    (defined(__apple_build_version__) && __apple_build_version__ <= 17000000)
 #define HWY_BROKEN_NEON_BF16 (HWY_NEON_BF16)
 #else
 #define HWY_BROKEN_NEON_BF16 0
@@ -259,9 +272,9 @@
 #ifndef HWY_BROKEN_SVE  
 
 
-#if (HWY_COMPILER_CLANG && HWY_COMPILER_CLANG < 2000) ||           \
+#if (HWY_COMPILER_CLANG && HWY_COMPILER_CLANG < 2200) ||           \
     (HWY_COMPILER_GCC_ACTUAL && HWY_COMPILER_GCC_ACTUAL < 1000) || \
-    HWY_OS_APPLE
+    HWY_OS_APPLE || HWY_IS_MSAN
 #define HWY_BROKEN_SVE (HWY_SVE | HWY_SVE_256)
 #else
 #define HWY_BROKEN_SVE 0
@@ -270,12 +283,24 @@
 
 #ifndef HWY_BROKEN_SVE2  
 
-#if (HWY_COMPILER_CLANG && HWY_COMPILER_CLANG < 2000) ||           \
+
+#if (HWY_COMPILER_CLANG && HWY_COMPILER_CLANG < 2200) ||           \
     (HWY_COMPILER_GCC_ACTUAL && HWY_COMPILER_GCC_ACTUAL < 1000) || \
-    HWY_OS_APPLE
-#define HWY_BROKEN_SVE2 (HWY_SVE2 | HWY_SVE2_128)
+    HWY_OS_APPLE || HWY_IS_MSAN
+#define HWY_BROKEN_SVE2 (HWY_SVE2)
 #else
 #define HWY_BROKEN_SVE2 0
+#endif
+#endif  
+
+#ifndef HWY_BROKEN_SVE2_128  
+
+#if (HWY_COMPILER_CLANG && HWY_COMPILER_CLANG < 2100) ||           \
+    (HWY_COMPILER_GCC_ACTUAL && HWY_COMPILER_GCC_ACTUAL < 1000) || \
+    HWY_OS_APPLE || HWY_IS_MSAN
+#define HWY_BROKEN_SVE2_128 (HWY_SVE2_128)
+#else
+#define HWY_BROKEN_SVE2_128 0
 #endif
 #endif  
 
@@ -331,10 +356,14 @@
 
 #ifndef HWY_BROKEN_LOONGARCH  
 
-#if HWY_ARCH_LOONGARCH &&                                 \
-    ((HWY_COMPILER_CLANG && HWY_COMPILER_CLANG < 1800) || \
-     (HWY_COMPILER_GCC_ACTUAL && HWY_COMPILER_GCC_ACTUAL < 1400))
+
+
+#if !defined(__loongarch_sx) && \
+    !(HWY_COMPILER_CLANG && HWY_COMPILER_CLANG >= 1800)
 #define HWY_BROKEN_LOONGARCH (HWY_LSX | HWY_LASX)
+#elif !defined(__loongarch_asx) && \
+      !(HWY_COMPILER_CLANG && HWY_COMPILER_CLANG >= 1800)
+#define HWY_BROKEN_LOONGARCH (HWY_LASX)
 #else
 #define HWY_BROKEN_LOONGARCH 0
 #endif
@@ -359,13 +388,13 @@
 
 #ifndef HWY_BROKEN_TARGETS
 
-#define HWY_BROKEN_TARGETS                                     \
-  (HWY_BROKEN_CLANG6 | HWY_BROKEN_32BIT | HWY_BROKEN_MSVC |    \
-   HWY_BROKEN_AVX3_DL_ZEN4 | HWY_BROKEN_AVX3_SPR |             \
-   HWY_BROKEN_ARM7_BIG_ENDIAN | HWY_BROKEN_ARM7_WITHOUT_VFP4 | \
-   HWY_BROKEN_NEON_BF16 | HWY_BROKEN_SVE | HWY_BROKEN_SVE2 |   \
-   HWY_BROKEN_PPC10 | HWY_BROKEN_PPC_32BIT | HWY_BROKEN_RVV |  \
-   HWY_BROKEN_LOONGARCH | HWY_BROKEN_Z14)
+#define HWY_BROKEN_TARGETS                                                 \
+  (HWY_BROKEN_CLANG6 | HWY_BROKEN_32BIT | HWY_BROKEN_MSVC |                \
+   HWY_BROKEN_AVX10_2 | HWY_BROKEN_AVX3_DL_ZEN4 | HWY_BROKEN_AVX3_SPR |    \
+   HWY_BROKEN_ARM7_BIG_ENDIAN | HWY_BROKEN_ARM7_WITHOUT_VFP4 |             \
+   HWY_BROKEN_NEON_BF16 | HWY_BROKEN_SVE | HWY_BROKEN_SVE2 |               \
+   HWY_BROKEN_SVE2_128 | HWY_BROKEN_PPC10 | HWY_BROKEN_PPC_32BIT |         \
+   HWY_BROKEN_RVV | HWY_BROKEN_LOONGARCH | HWY_BROKEN_Z14)
 
 #endif  
 
@@ -379,7 +408,7 @@
 
 
 #if !defined(HWY_BROKEN_EMU128)  
-#if (HWY_COMPILER_GCC_ACTUAL && HWY_COMPILER_GCC_ACTUAL < 1400) || \
+#if (HWY_COMPILER_GCC_ACTUAL && HWY_COMPILER_GCC_ACTUAL < 1600) || \
     defined(HWY_NO_LIBCXX)
 #define HWY_BROKEN_EMU128 1
 #else
@@ -488,7 +517,8 @@
 #if defined(__ARM_FEATURE_AES) &&                    \
     defined(__ARM_FEATURE_FP16_VECTOR_ARITHMETIC) && \
     defined(__ARM_FEATURE_DOTPROD) &&                \
-    defined(__ARM_FEATURE_BF16_VECTOR_ARITHMETIC)
+    defined(__ARM_FEATURE_BF16_VECTOR_ARITHMETIC) && \
+    defined(__ARM_FEATURE_MATMUL_INT8)
 #define HWY_BASELINE_NEON HWY_ALL_NEON
 #elif defined(__ARM_FEATURE_AES)
 #define HWY_BASELINE_NEON (HWY_NEON_WITHOUT_AES | HWY_NEON)
@@ -600,10 +630,12 @@
 #endif
 
 
-#if HWY_BASELINE_AVX2 != 0 && defined(__AVX512F__) && defined(__AVX512BW__) && \
-    defined(__AVX512DQ__) && defined(__AVX512VL__) &&                          \
-    ((!HWY_COMPILER_GCC_ACTUAL && !HWY_COMPILER_CLANG) ||                      \
-     HWY_COMPILER_GCC_ACTUAL < 1400 || HWY_COMPILER_CLANG < 1800 ||            \
+#if HWY_BASELINE_AVX2 != 0 &&                                       \
+    ((defined(__AVX512F__) && defined(__AVX512BW__) &&              \
+      defined(__AVX512DQ__) && defined(__AVX512VL__)) ||            \
+     defined(__AVX10_2__)) &&                                       \
+    ((!HWY_COMPILER_GCC_ACTUAL && !HWY_COMPILER_CLANG) ||           \
+     HWY_COMPILER_GCC_ACTUAL < 1400 || HWY_COMPILER_CLANG < 1800 || \
      defined(__EVEX512__))
 #define HWY_BASELINE_AVX3 HWY_AVX3
 #else
@@ -611,10 +643,12 @@
 #endif
 
 
-#if HWY_BASELINE_AVX3 != 0 && defined(__AVX512VNNI__) && defined(__VAES__) && \
-    defined(__VPCLMULQDQ__) && defined(__AVX512VBMI__) &&                     \
-    defined(__AVX512VBMI2__) && defined(__AVX512VPOPCNTDQ__) &&               \
-    defined(__AVX512BITALG__)
+#if HWY_BASELINE_AVX3 != 0 &&                                     \
+    ((defined(__AVX512VNNI__) && defined(__VAES__) &&             \
+      defined(__VPCLMULQDQ__) && defined(__AVX512VBMI__) &&       \
+      defined(__AVX512VBMI2__) && defined(__AVX512VPOPCNTDQ__) && \
+      defined(__AVX512BITALG__)) ||                               \
+     defined(__AVX10_2__))
 #define HWY_BASELINE_AVX3_DL HWY_AVX3_DL
 #else
 #define HWY_BASELINE_AVX3_DL 0
@@ -629,27 +663,26 @@
 #define HWY_BASELINE_AVX3_ZEN4 0
 #endif
 
-#if HWY_BASELINE_AVX2 != 0 && defined(__AVX10_2__)
-#define HWY_BASELINE_AVX10_2 HWY_AVX10_2
-#else
-#define HWY_BASELINE_AVX10_2 0
-#endif
-
-#if HWY_BASELINE_AVX3_DL != 0 && defined(__AVX512BF16__) && \
-    defined(__AVX512FP16__)
+#if HWY_BASELINE_AVX3_DL != 0 &&                             \
+    ((defined(__AVX512BF16__) && defined(__AVX512FP16__)) || \
+     defined(__AVX10_2__))
 #define HWY_BASELINE_AVX3_SPR HWY_AVX3_SPR
 #else
 #define HWY_BASELINE_AVX3_SPR 0
 #endif
 
-#if HWY_BASELINE_AVX3_SPR != 0 && defined(__AVX10_2_512__)
-#define HWY_BASELINE_AVX10_2_512 HWY_AVX10_2_512
+#if HWY_BASELINE_AVX3_SPR != 0 && defined(__AVX10_2__)
+#define HWY_BASELINE_AVX10_2 HWY_AVX10_2
 #else
-#define HWY_BASELINE_AVX10_2_512 0
+#define HWY_BASELINE_AVX10_2 0
 #endif
 
 
-#if HWY_ARCH_RISCV && defined(__riscv_v_intrinsic) && \
+
+
+
+
+#if HWY_ARCH_RISCV && defined(__riscv_v) && defined(__riscv_v_intrinsic) && \
     __riscv_v_intrinsic >= 11000
 #define HWY_BASELINE_RVV HWY_RVV
 #else
@@ -665,16 +698,28 @@
 #endif
 
 
+
+#if defined(HWY_BASELINE_TARGETS)
+#if HWY_BASELINE_TARGETS == HWY_AVX3_DL && \
+    ((HWY_BROKEN_TARGETS | HWY_DISABLED_TARGETS) & HWY_AVX3_DL)
+#undef HWY_BASELINE_TARGETS
+#define HWY_BASELINE_TARGETS HWY_AVX2
+#endif
+#endif  
+
+
+
+
+
 #ifndef HWY_BASELINE_TARGETS
-#define HWY_BASELINE_TARGETS                                              \
-  (HWY_BASELINE_SCALAR | HWY_BASELINE_WASM | HWY_BASELINE_PPC8 |          \
-   HWY_BASELINE_PPC9 | HWY_BASELINE_PPC10 | HWY_BASELINE_Z14 |            \
-   HWY_BASELINE_Z15 | HWY_BASELINE_SVE2 | HWY_BASELINE_SVE |              \
-   HWY_BASELINE_NEON | HWY_BASELINE_SSE2 | HWY_BASELINE_SSSE3 |           \
-   HWY_BASELINE_SSE4 | HWY_BASELINE_AVX2 | HWY_BASELINE_AVX3 |            \
-   HWY_BASELINE_AVX3_DL | HWY_BASELINE_AVX3_ZEN4 | HWY_BASELINE_AVX10_2 | \
-   HWY_BASELINE_AVX3_SPR | HWY_BASELINE_AVX10_2_512 | HWY_BASELINE_RVV |  \
-   HWY_BASELINE_LOONGARCH)
+#define HWY_BASELINE_TARGETS                                               \
+  (HWY_BASELINE_SCALAR | HWY_BASELINE_WASM | HWY_BASELINE_PPC8 |           \
+   HWY_BASELINE_PPC9 | HWY_BASELINE_PPC10 | HWY_BASELINE_Z14 |             \
+   HWY_BASELINE_Z15 | HWY_BASELINE_SVE2 | HWY_BASELINE_SVE |               \
+   HWY_BASELINE_NEON | HWY_BASELINE_SSE2 | HWY_BASELINE_SSSE3 |            \
+   HWY_BASELINE_SSE4 | HWY_BASELINE_AVX2 | HWY_BASELINE_AVX3 |             \
+   HWY_BASELINE_AVX3_DL | HWY_BASELINE_AVX3_ZEN4 | HWY_BASELINE_AVX3_SPR | \
+   HWY_BASELINE_AVX10_2 | HWY_BASELINE_RVV | HWY_BASELINE_LOONGARCH)
 #endif  
 
 
@@ -682,7 +727,11 @@
 
 #define HWY_ENABLED_BASELINE HWY_ENABLED(HWY_BASELINE_TARGETS)
 #if HWY_ENABLED_BASELINE == 0
-#error "At least one baseline target must be defined and enabled"
+#pragma message                                                            \
+    "All baseline targets are disabled or considered broken."              \
+    "This is typically due to very restrictive HWY_BASELINE_TARGETS, or "  \
+    "too expansive HWY_BROKEN_TARGETS or HWY_DISABLED_TAREGTS. User code " \
+    "must also check for this and skip any usage of SIMD."
 #endif
 
 
@@ -697,13 +746,6 @@
 
 
 
-
-
-#if HWY_ARCH_LOONGARCH && !defined(HWY_COMPILE_ONLY_SCALAR) && \
-    !defined(HWY_COMPILE_ONLY_EMU128)
-#undef HWY_COMPILE_ONLY_STATIC
-#define HWY_COMPILE_ONLY_EMU128
-#endif
 
 #if 1 < (defined(HWY_COMPILE_ONLY_SCALAR) + defined(HWY_COMPILE_ONLY_EMU128) + \
          defined(HWY_COMPILE_ONLY_STATIC))
@@ -750,9 +792,7 @@
 
 
 
-
-
-#if HWY_ARCH_RISCV && HWY_COMPILER_CLANG >= 1900 && 0
+#if HWY_ARCH_RISCV && HWY_COMPILER_CLANG >= 1900
 #define HWY_HAVE_RUNTIME_DISPATCH_RVV 1
 #else
 #define HWY_HAVE_RUNTIME_DISPATCH_RVV 0
@@ -768,6 +808,15 @@
 #endif
 #endif  
 
+#ifndef HWY_HAVE_RUNTIME_DISPATCH_LOONGARCH  
+#if HWY_ARCH_LOONGARCH && HWY_HAVE_AUXV && !defined(__loongarch_asx) && \
+    HWY_COMPILER_CLANG && HWY_COMPILER_CLANG >= 1800
+#define HWY_HAVE_RUNTIME_DISPATCH_LOONGARCH 1
+#else
+#define HWY_HAVE_RUNTIME_DISPATCH_LOONGARCH 0
+#endif
+#endif  
+
 #ifndef HWY_HAVE_RUNTIME_DISPATCH_LINUX  
 #if (HWY_ARCH_ARM || HWY_ARCH_PPC || HWY_ARCH_S390X) && HWY_OS_LINUX && \
     (HWY_COMPILER_GCC_ACTUAL || HWY_COMPILER_CLANG >= 1700) && HWY_HAVE_AUXV
@@ -780,8 +829,12 @@
 
 #ifndef HWY_HAVE_RUNTIME_DISPATCH
 
-#if HWY_ARCH_X86 || HWY_HAVE_RUNTIME_DISPATCH_RVV || \
-    HWY_HAVE_RUNTIME_DISPATCH_APPLE || HWY_HAVE_RUNTIME_DISPATCH_LINUX
+
+
+
+#if HWY_ARCH_X86 || HWY_HAVE_RUNTIME_DISPATCH_RVV ||                          \
+    HWY_HAVE_RUNTIME_DISPATCH_APPLE || HWY_HAVE_RUNTIME_DISPATCH_LOONGARCH || \
+    HWY_HAVE_RUNTIME_DISPATCH_LINUX
 #define HWY_HAVE_RUNTIME_DISPATCH 1
 #else
 #define HWY_HAVE_RUNTIME_DISPATCH 0
@@ -859,7 +912,7 @@
 #define HWY_ATTAINABLE_TARGETS_X86                                    \
   HWY_ENABLED(HWY_BASELINE_SCALAR | HWY_SSE2 | HWY_SSSE3 | HWY_SSE4 | \
               HWY_AVX2 | HWY_AVX3 | HWY_AVX3_DL | HWY_AVX3_ZEN4 |     \
-              HWY_AVX3_SPR)
+              HWY_AVX3_SPR | HWY_AVX10_2)
 #endif  
 #endif  
 
@@ -923,7 +976,7 @@
 
 
 
-#if (HWY_TARGETS & HWY_STATIC_TARGET) == 0
+#if (HWY_TARGETS & HWY_STATIC_TARGET) == 0 && HWY_ENABLED_BASELINE != 0
 #error "Logic error: best baseline should be included in dynamic targets"
 #endif
 

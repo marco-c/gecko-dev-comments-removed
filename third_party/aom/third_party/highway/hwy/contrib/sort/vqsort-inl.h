@@ -691,9 +691,11 @@ HWY_INLINE size_t PartitionRightmost(D d, Traits st, T* const keys,
   }
 
   const size_t numWrittenR = bufR - max_buf;
-  
+
+#if HWY_COMPILER_CLANG && HWY_COMPILER_CLANG < 1600
   detail::MaybeUnpoison(buf, bufL);
   detail::MaybeUnpoison(buf + max_buf, numWrittenR);
+#endif
 
   
   writeR = num - numWrittenR;

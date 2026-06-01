@@ -89,7 +89,6 @@ Vec<D> LargerSortValue(D d, Vec<D> v) {
   using T = TFromD<decltype(d)>;
   const RebindToUnsigned<D> du;
   using VU = Vec<decltype(du)>;
-  using TU = TFromD<decltype(du)>;
 
   const VU vu = BitCast(du, Abs(v));
 
@@ -97,7 +96,14 @@ Vec<D> LargerSortValue(D d, Vec<D> v) {
   
   const Mask<decltype(du)> was_pos = Le(BitCast(du, v), SignBit(du));
   
+#if HWY_ARCH_ARM_V7
+  
+  const VU was_pos_u = VecFromMask(du, was_pos);
+  const VU add = Not(was_pos_u) - was_pos_u;
+#else
+  using TU = TFromD<decltype(du)>;
   const VU add = IfThenElse(was_pos, Set(du, 1u), Set(du, LimitsMax<TU>()));
+#endif
   
   v = BitCast(d, Add(vu, add));
   

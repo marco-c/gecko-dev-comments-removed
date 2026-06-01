@@ -1060,6 +1060,10 @@ static inline int detect_gf_cut(AV1_COMP *cpi, int frame_index, int cur_start,
 
 static int is_shorter_gf_interval_better(
     AV1_COMP *cpi, const EncodeFrameParams *frame_params) {
+  if (av1_use_tpl_for_extrc(&cpi->ext_ratectrl) ||
+      av1_encode_for_extrc(&cpi->ext_ratectrl)) {
+    return 0;
+  }
   const RATE_CONTROL *const rc = &cpi->rc;
   PRIMARY_RATE_CONTROL *const p_rc = &cpi->ppi->p_rc;
   int gop_length_decision_method = cpi->sf.tpl_sf.gop_length_decision_method;
@@ -2049,11 +2053,20 @@ static void calculate_gf_length(AV1_COMP *cpi, int max_gop_length,
             const int last_frame = regions[num_regions - 1].last - offset;
             
             double base_score = 0.0;
+            int count_base = 0;
+            bool static_frames = false;
+
             
             for (int j = cur_start + 1; j < cur_start + min_shrink_int; j++) {
               if (stats + j >= twopass->stats_buf_ctx->stats_in_end) break;
               base_score = (base_score + 1.0) * stats[j].cor_coeff;
+              count_base++;
             }
+
+            if (count_base && base_score / count_base > 0.992) {
+              static_frames = true;
+            }
+
             int met_blending = 0;   
             int last_blending = 0;  
             for (int j = cur_start + min_shrink_int; j <= cur_last; j++) {
@@ -2104,7 +2117,9 @@ static void calculate_gf_length(AV1_COMP *cpi, int max_gop_length,
                                         AOMMAX(stats[n].intra_error, 0.001)));
               }
 
-              if (this_score > best_score) {
+              
+              
+              if (this_score + (static_frames ? 0.5 : 0) > best_score) {
                 best_score = this_score;
                 best_j = j;
               }
@@ -4085,10 +4100,12 @@ void av1_get_second_pass_params(AV1_COMP *cpi,
       
       int rest_frames =
           AOMMIN(rc->frames_to_key, MAX_FIRSTPASS_ANALYSIS_FRAMES);
-      rest_frames =
-          AOMMIN(rest_frames, (int)(twopass->stats_buf_ctx->stats_in_end -
-                                    cpi->twopass_frame.stats_in +
-                                    (rc->frames_since_key == 0)));
+      int available_frames = (int)(twopass->stats_buf_ctx->stats_in_end -
+                                   cpi->twopass_frame.stats_in);
+      if (!cpi->ppi->lap_enabled) {
+        available_frames += (rc->frames_since_key == 0);
+      }
+      rest_frames = AOMMIN(rest_frames, available_frames);
       p_rc->frames_till_regions_update = rest_frames;
 
       int ret;
@@ -4099,9 +4116,8 @@ void av1_get_second_pass_params(AV1_COMP *cpi,
                        twopass->stats_buf_ctx->stats_in_end, cpi->common.error);
         estimate_coeff(twopass->stats_buf_ctx->stats_in_start,
                        twopass->stats_buf_ctx->stats_in_end);
-        ret = identify_regions(cpi->twopass_frame.stats_in, rest_frames,
-                               (rc->frames_since_key == 0), p_rc->regions,
-                               &p_rc->num_regions);
+        ret = identify_regions(cpi->twopass_frame.stats_in, rest_frames, 0,
+                               p_rc->regions, &p_rc->num_regions);
       } else {
         ret = identify_regions(
             cpi->twopass_frame.stats_in - (rc->frames_since_key == 0),

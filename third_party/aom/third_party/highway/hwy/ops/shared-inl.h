@@ -162,9 +162,10 @@ HWY_INLINE void MaybePoison(T* HWY_RESTRICT unaligned, size_t count) {
 #endif
 }
 
+
+
 template <typename T>
 HWY_INLINE void MaybeUnpoison(T* HWY_RESTRICT unaligned, size_t count) {
-  
 #if HWY_IS_MSAN
   __msan_unpoison(unaligned, count * sizeof(T));
 #else
@@ -557,6 +558,29 @@ template <class D, typename T>
 HWY_API bool IsAligned(D d, T* ptr) {
   const size_t N = Lanes(d);
   return reinterpret_cast<uintptr_t>(ptr) % (N * sizeof(T)) == 0;
+}
+
+
+
+template <class D, typename T = TFromD<D>>
+HWY_API constexpr bool CanLookup8(D d) {
+  
+  
+  
+  
+  
+  
+  return (!HWY_HAVE_SCALABLE && MaxLanes(d) >= 4) ||
+         (HWY_HAVE_SCALABLE && detail::IsFull(d) &&
+          (sizeof(T) == 2 || sizeof(T) == 4));
+}
+
+
+
+template <class D, typename T = TFromD<D>>
+HWY_API constexpr bool CanLookup16(D d) {
+  return (!HWY_HAVE_SCALABLE && MaxLanes(d) >= 8) ||
+         (HWY_HAVE_SCALABLE && detail::IsFull(d) && (sizeof(T) == 2));
 }
 
 

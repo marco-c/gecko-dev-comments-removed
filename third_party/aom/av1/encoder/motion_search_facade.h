@@ -107,9 +107,7 @@ static inline SEARCH_METHODS av1_get_faster_search_method(
     case DIAMOND: return BIGDIA;
     case CLAMPED_DIAMOND: return BIGDIA;
     case BIGDIA: return HEX;
-    case SQUARE: return HEX;
-    case HEX: return FAST_HEX;
-    case FAST_HEX: return FAST_HEX;
+    case HEX: return FAST_DIAMOND;
     case FAST_DIAMOND: return VFAST_DIAMOND;
     case FAST_BIGDIA: return FAST_BIGDIA;
     case VFAST_DIAMOND: return VFAST_DIAMOND;

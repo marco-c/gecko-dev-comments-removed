@@ -16,7 +16,20 @@
 
 
 
+#pragma push_macro("__riscv_v_elen")
+
+
+
+
+#if HWY_COMPILER_CLANG >= 2000 && HWY_COMPILER_CLANG < 2100 && \
+    (!defined(__riscv_v_elen) || __riscv_v_elen < 64)
+#undef __riscv_v_elen
+#define __riscv_v_elen 64
+#endif
+
 #include <riscv_vector.h>
+
+#pragma pop_macro("__riscv_v_elen")
 
 #include "third_party/highway/hwy/ops/shared-inl.h"
 
@@ -1047,12 +1060,6 @@ HWY_API V AndNot(const V not_a, const V b) {
 
 
 template <class V>
-HWY_API V Xor3(V x1, V x2, V x3) {
-  return Xor(x1, Xor(x2, x3));
-}
-
-
-template <class V>
 HWY_API V Or3(V o1, V o2, V o3) {
   return Or(o1, Or(o2, o3));
 }
@@ -1190,7 +1197,7 @@ HWY_RVV_FOREACH_I(HWY_RVV_RETV_ARGVV, SaturatedSub, ssub, _ALL)
 
 
 #elif HWY_COMPILER_CLANG && \
-    (HWY_COMPILER_CLANG < 1600 || __riscv_v_intrinsic < 11000)
+    (HWY_COMPILER_CLANG < 1700 || __riscv_v_intrinsic < 11000)
 #define HWY_RVV_AVOID_VXRM
 #endif
 
@@ -1677,9 +1684,16 @@ HWY_API MFromD<D> MaskedIsNaN(const M m, const V v) {
 
 #undef HWY_RVV_RETM_ARGMVV
 #undef HWY_RVV_RETM_ARGVV
+
+
+
+namespace detail {
+HWY_RVV_FOREACH_I(HWY_RVV_RETM_ARGVS, GtS, msgt_vx, _ALL)
+HWY_RVV_FOREACH_U(HWY_RVV_RETM_ARGVS, GtS, msgtu_vx, _ALL)
+HWY_RVV_FOREACH_F(HWY_RVV_RETM_ARGVS, GtS, mfgt_vf, _ALL)
+}  
+
 #undef HWY_RVV_RETM_ARGVS
-
-
 
 
 template <class V>
@@ -2422,6 +2436,8 @@ HWY_API VFromD<D> PromoteTo(D d, VFromD<Rebind<hwy::bfloat16_t, D>> v) {
 
 
 
+HWY_INLINE_VAR constexpr size_t kClipShift = 0;
+
 
 #define HWY_RVV_DEMOTE(BASE, CHAR, SEW, SEWD, SEWH, LMUL, LMULD, LMULH, SHIFT, \
                        MLEN, NAME, OP)                                         \
@@ -2429,7 +2445,7 @@ HWY_API VFromD<D> PromoteTo(D d, VFromD<Rebind<hwy::bfloat16_t, D>> v) {
   HWY_API HWY_RVV_V(BASE, SEWH, LMULH) NAME(                                   \
       HWY_RVV_D(BASE, SEWH, N, SHIFT - 1) d, HWY_RVV_V(BASE, SEW, LMUL) v) {   \
     return __riscv_v##OP##CHAR##SEWH##LMULH(                                   \
-        v, 0, HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, Lanes(d)));                \
+        v, kClipShift, HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, Lanes(d)));       \
   }
 
 
@@ -2455,62 +2471,62 @@ HWY_RVV_FOREACH_I16(HWY_RVV_DEMOTE_I_TO_U, DemoteTo, _, _DEMOTE_VIRT)
 template <size_t N>
 HWY_API vuint8mf8_t DemoteTo(Simd<uint8_t, N, -3> d, const vint32mf2_t v) {
   return __riscv_vnclipu_wx_u8mf8(
-      DemoteTo(Simd<uint16_t, N, -2>(), v), 0,
+      DemoteTo(Simd<uint16_t, N, -2>(), v), kClipShift,
       HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, Lanes(d)));
 }
 template <size_t N>
 HWY_API vuint8mf4_t DemoteTo(Simd<uint8_t, N, -2> d, const vint32m1_t v) {
   return __riscv_vnclipu_wx_u8mf4(
-      DemoteTo(Simd<uint16_t, N, -1>(), v), 0,
+      DemoteTo(Simd<uint16_t, N, -1>(), v), kClipShift,
       HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, Lanes(d)));
 }
 template <size_t N>
 HWY_API vuint8mf2_t DemoteTo(Simd<uint8_t, N, -1> d, const vint32m2_t v) {
   return __riscv_vnclipu_wx_u8mf2(
-      DemoteTo(Simd<uint16_t, N, 0>(), v), 0,
+      DemoteTo(Simd<uint16_t, N, 0>(), v), kClipShift,
       HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, Lanes(d)));
 }
 template <size_t N>
 HWY_API vuint8m1_t DemoteTo(Simd<uint8_t, N, 0> d, const vint32m4_t v) {
   return __riscv_vnclipu_wx_u8m1(
-      DemoteTo(Simd<uint16_t, N, 1>(), v), 0,
+      DemoteTo(Simd<uint16_t, N, 1>(), v), kClipShift,
       HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, Lanes(d)));
 }
 template <size_t N>
 HWY_API vuint8m2_t DemoteTo(Simd<uint8_t, N, 1> d, const vint32m8_t v) {
   return __riscv_vnclipu_wx_u8m2(
-      DemoteTo(Simd<uint16_t, N, 2>(), v), 0,
+      DemoteTo(Simd<uint16_t, N, 2>(), v), kClipShift,
       HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, Lanes(d)));
 }
 
 template <size_t N>
 HWY_API vuint8mf8_t DemoteTo(Simd<uint8_t, N, -3> d, const vuint32mf2_t v) {
   return __riscv_vnclipu_wx_u8mf8(
-      DemoteTo(Simd<uint16_t, N, -2>(), v), 0,
+      DemoteTo(Simd<uint16_t, N, -2>(), v), kClipShift,
       HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, Lanes(d)));
 }
 template <size_t N>
 HWY_API vuint8mf4_t DemoteTo(Simd<uint8_t, N, -2> d, const vuint32m1_t v) {
   return __riscv_vnclipu_wx_u8mf4(
-      DemoteTo(Simd<uint16_t, N, -1>(), v), 0,
+      DemoteTo(Simd<uint16_t, N, -1>(), v), kClipShift,
       HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, Lanes(d)));
 }
 template <size_t N>
 HWY_API vuint8mf2_t DemoteTo(Simd<uint8_t, N, -1> d, const vuint32m2_t v) {
   return __riscv_vnclipu_wx_u8mf2(
-      DemoteTo(Simd<uint16_t, N, 0>(), v), 0,
+      DemoteTo(Simd<uint16_t, N, 0>(), v), kClipShift,
       HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, Lanes(d)));
 }
 template <size_t N>
 HWY_API vuint8m1_t DemoteTo(Simd<uint8_t, N, 0> d, const vuint32m4_t v) {
   return __riscv_vnclipu_wx_u8m1(
-      DemoteTo(Simd<uint16_t, N, 1>(), v), 0,
+      DemoteTo(Simd<uint16_t, N, 1>(), v), kClipShift,
       HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, Lanes(d)));
 }
 template <size_t N>
 HWY_API vuint8m2_t DemoteTo(Simd<uint8_t, N, 1> d, const vuint32m8_t v) {
   return __riscv_vnclipu_wx_u8m2(
-      DemoteTo(Simd<uint16_t, N, 2>(), v), 0,
+      DemoteTo(Simd<uint16_t, N, 2>(), v), kClipShift,
       HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, Lanes(d)));
 }
 
@@ -2537,37 +2553,37 @@ HWY_API VFromD<D> DemoteTo(D d, VFromD<Rebind<uint64_t, D>> v) {
 HWY_API vuint8mf8_t U8FromU32(const vuint32mf2_t v) {
   const size_t avl = Lanes(ScalableTag<uint8_t, -3>());
   return __riscv_vnclipu_wx_u8mf8(
-      __riscv_vnclipu_wx_u16mf4(v, 0,
+      __riscv_vnclipu_wx_u16mf4(v, kClipShift,
                                 HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl)),
-      0, HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
+      kClipShift, HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
 }
 HWY_API vuint8mf4_t U8FromU32(const vuint32m1_t v) {
   const size_t avl = Lanes(ScalableTag<uint8_t, -2>());
   return __riscv_vnclipu_wx_u8mf4(
-      __riscv_vnclipu_wx_u16mf2(v, 0,
+      __riscv_vnclipu_wx_u16mf2(v, kClipShift,
                                 HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl)),
-      0, HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
+      kClipShift, HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
 }
 HWY_API vuint8mf2_t U8FromU32(const vuint32m2_t v) {
   const size_t avl = Lanes(ScalableTag<uint8_t, -1>());
   return __riscv_vnclipu_wx_u8mf2(
-      __riscv_vnclipu_wx_u16m1(v, 0,
+      __riscv_vnclipu_wx_u16m1(v, kClipShift,
                                HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl)),
-      0, HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
+      kClipShift, HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
 }
 HWY_API vuint8m1_t U8FromU32(const vuint32m4_t v) {
   const size_t avl = Lanes(ScalableTag<uint8_t, 0>());
   return __riscv_vnclipu_wx_u8m1(
-      __riscv_vnclipu_wx_u16m2(v, 0,
+      __riscv_vnclipu_wx_u16m2(v, kClipShift,
                                HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl)),
-      0, HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
+      kClipShift, HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
 }
 HWY_API vuint8m2_t U8FromU32(const vuint32m8_t v) {
   const size_t avl = Lanes(ScalableTag<uint8_t, 1>());
   return __riscv_vnclipu_wx_u8m2(
-      __riscv_vnclipu_wx_u16m4(v, 0,
+      __riscv_vnclipu_wx_u16m4(v, kClipShift,
                                HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl)),
-      0, HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
+      kClipShift, HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
 }
 
 
@@ -2578,10 +2594,10 @@ HWY_API vuint8mf8_t TruncateTo(Simd<uint8_t, N, -3> d,
   const size_t avl = Lanes(d);
   const vuint64m1_t v1 = __riscv_vand(v, 0xFF, avl);
   const vuint32mf2_t v2 = __riscv_vnclipu_wx_u32mf2(
-      v1, 0, HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
+      v1, kClipShift, HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
   const vuint16mf4_t v3 = __riscv_vnclipu_wx_u16mf4(
-      v2, 0, HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
-  return __riscv_vnclipu_wx_u8mf8(v3, 0,
+      v2, kClipShift, HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
+  return __riscv_vnclipu_wx_u8mf8(v3, kClipShift,
                                   HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
 }
 
@@ -2591,10 +2607,10 @@ HWY_API vuint8mf4_t TruncateTo(Simd<uint8_t, N, -2> d,
   const size_t avl = Lanes(d);
   const vuint64m2_t v1 = __riscv_vand(v, 0xFF, avl);
   const vuint32m1_t v2 = __riscv_vnclipu_wx_u32m1(
-      v1, 0, HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
+      v1, kClipShift, HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
   const vuint16mf2_t v3 = __riscv_vnclipu_wx_u16mf2(
-      v2, 0, HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
-  return __riscv_vnclipu_wx_u8mf4(v3, 0,
+      v2, kClipShift, HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
+  return __riscv_vnclipu_wx_u8mf4(v3, kClipShift,
                                   HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
 }
 
@@ -2604,10 +2620,10 @@ HWY_API vuint8mf2_t TruncateTo(Simd<uint8_t, N, -1> d,
   const size_t avl = Lanes(d);
   const vuint64m4_t v1 = __riscv_vand(v, 0xFF, avl);
   const vuint32m2_t v2 = __riscv_vnclipu_wx_u32m2(
-      v1, 0, HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
+      v1, kClipShift, HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
   const vuint16m1_t v3 = __riscv_vnclipu_wx_u16m1(
-      v2, 0, HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
-  return __riscv_vnclipu_wx_u8mf2(v3, 0,
+      v2, kClipShift, HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
+  return __riscv_vnclipu_wx_u8mf2(v3, kClipShift,
                                   HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
 }
 
@@ -2617,10 +2633,10 @@ HWY_API vuint8m1_t TruncateTo(Simd<uint8_t, N, 0> d,
   const size_t avl = Lanes(d);
   const vuint64m8_t v1 = __riscv_vand(v, 0xFF, avl);
   const vuint32m4_t v2 = __riscv_vnclipu_wx_u32m4(
-      v1, 0, HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
+      v1, kClipShift, HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
   const vuint16m2_t v3 = __riscv_vnclipu_wx_u16m2(
-      v2, 0, HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
-  return __riscv_vnclipu_wx_u8m1(v3, 0,
+      v2, kClipShift, HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
+  return __riscv_vnclipu_wx_u8m1(v3, kClipShift,
                                  HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
 }
 
@@ -2630,8 +2646,8 @@ HWY_API vuint16mf4_t TruncateTo(Simd<uint16_t, N, -3> d,
   const size_t avl = Lanes(d);
   const vuint64m1_t v1 = __riscv_vand(v, 0xFFFF, avl);
   const vuint32mf2_t v2 = __riscv_vnclipu_wx_u32mf2(
-      v1, 0, HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
-  return __riscv_vnclipu_wx_u16mf4(v2, 0,
+      v1, kClipShift, HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
+  return __riscv_vnclipu_wx_u16mf4(v2, kClipShift,
                                    HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
 }
 
@@ -2641,8 +2657,8 @@ HWY_API vuint16mf4_t TruncateTo(Simd<uint16_t, N, -2> d,
   const size_t avl = Lanes(d);
   const vuint64m1_t v1 = __riscv_vand(v, 0xFFFF, avl);
   const vuint32mf2_t v2 = __riscv_vnclipu_wx_u32mf2(
-      v1, 0, HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
-  return __riscv_vnclipu_wx_u16mf4(v2, 0,
+      v1, kClipShift, HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
+  return __riscv_vnclipu_wx_u16mf4(v2, kClipShift,
                                    HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
 }
 
@@ -2652,8 +2668,8 @@ HWY_API vuint16mf2_t TruncateTo(Simd<uint16_t, N, -1> d,
   const size_t avl = Lanes(d);
   const vuint64m2_t v1 = __riscv_vand(v, 0xFFFF, avl);
   const vuint32m1_t v2 = __riscv_vnclipu_wx_u32m1(
-      v1, 0, HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
-  return __riscv_vnclipu_wx_u16mf2(v2, 0,
+      v1, kClipShift, HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
+  return __riscv_vnclipu_wx_u16mf2(v2, kClipShift,
                                    HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
 }
 
@@ -2663,8 +2679,8 @@ HWY_API vuint16m1_t TruncateTo(Simd<uint16_t, N, 0> d,
   const size_t avl = Lanes(d);
   const vuint64m4_t v1 = __riscv_vand(v, 0xFFFF, avl);
   const vuint32m2_t v2 = __riscv_vnclipu_wx_u32m2(
-      v1, 0, HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
-  return __riscv_vnclipu_wx_u16m1(v2, 0,
+      v1, kClipShift, HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
+  return __riscv_vnclipu_wx_u16m1(v2, kClipShift,
                                   HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
 }
 
@@ -2674,8 +2690,8 @@ HWY_API vuint16m2_t TruncateTo(Simd<uint16_t, N, 1> d,
   const size_t avl = Lanes(d);
   const vuint64m8_t v1 = __riscv_vand(v, 0xFFFF, avl);
   const vuint32m4_t v2 = __riscv_vnclipu_wx_u32m4(
-      v1, 0, HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
-  return __riscv_vnclipu_wx_u16m2(v2, 0,
+      v1, kClipShift, HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
+  return __riscv_vnclipu_wx_u16m2(v2, kClipShift,
                                   HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
 }
 
@@ -2684,7 +2700,7 @@ HWY_API vuint32mf2_t TruncateTo(Simd<uint32_t, N, -2> d,
                                 const VFromD<Simd<uint64_t, N, -1>> v) {
   const size_t avl = Lanes(d);
   const vuint64m1_t v1 = __riscv_vand(v, 0xFFFFFFFFu, avl);
-  return __riscv_vnclipu_wx_u32mf2(v1, 0,
+  return __riscv_vnclipu_wx_u32mf2(v1, kClipShift,
                                    HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
 }
 
@@ -2693,7 +2709,7 @@ HWY_API vuint32mf2_t TruncateTo(Simd<uint32_t, N, -1> d,
                                 const VFromD<Simd<uint64_t, N, 0>> v) {
   const size_t avl = Lanes(d);
   const vuint64m1_t v1 = __riscv_vand(v, 0xFFFFFFFFu, avl);
-  return __riscv_vnclipu_wx_u32mf2(v1, 0,
+  return __riscv_vnclipu_wx_u32mf2(v1, kClipShift,
                                    HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
 }
 
@@ -2702,7 +2718,7 @@ HWY_API vuint32m1_t TruncateTo(Simd<uint32_t, N, 0> d,
                                const VFromD<Simd<uint64_t, N, 1>> v) {
   const size_t avl = Lanes(d);
   const vuint64m2_t v1 = __riscv_vand(v, 0xFFFFFFFFu, avl);
-  return __riscv_vnclipu_wx_u32m1(v1, 0,
+  return __riscv_vnclipu_wx_u32m1(v1, kClipShift,
                                   HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
 }
 
@@ -2711,7 +2727,7 @@ HWY_API vuint32m2_t TruncateTo(Simd<uint32_t, N, 1> d,
                                const VFromD<Simd<uint64_t, N, 2>> v) {
   const size_t avl = Lanes(d);
   const vuint64m4_t v1 = __riscv_vand(v, 0xFFFFFFFFu, avl);
-  return __riscv_vnclipu_wx_u32m2(v1, 0,
+  return __riscv_vnclipu_wx_u32m2(v1, kClipShift,
                                   HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
 }
 
@@ -2720,7 +2736,7 @@ HWY_API vuint32m4_t TruncateTo(Simd<uint32_t, N, 2> d,
                                const VFromD<Simd<uint64_t, N, 3>> v) {
   const size_t avl = Lanes(d);
   const vuint64m8_t v1 = __riscv_vand(v, 0xFFFFFFFFu, avl);
-  return __riscv_vnclipu_wx_u32m4(v1, 0,
+  return __riscv_vnclipu_wx_u32m4(v1, kClipShift,
                                   HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
 }
 
@@ -2730,8 +2746,8 @@ HWY_API vuint8mf8_t TruncateTo(Simd<uint8_t, N, -3> d,
   const size_t avl = Lanes(d);
   const vuint32mf2_t v1 = __riscv_vand(v, 0xFF, avl);
   const vuint16mf4_t v2 = __riscv_vnclipu_wx_u16mf4(
-      v1, 0, HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
-  return __riscv_vnclipu_wx_u8mf8(v2, 0,
+      v1, kClipShift, HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
+  return __riscv_vnclipu_wx_u8mf8(v2, kClipShift,
                                   HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
 }
 
@@ -2741,8 +2757,8 @@ HWY_API vuint8mf4_t TruncateTo(Simd<uint8_t, N, -2> d,
   const size_t avl = Lanes(d);
   const vuint32m1_t v1 = __riscv_vand(v, 0xFF, avl);
   const vuint16mf2_t v2 = __riscv_vnclipu_wx_u16mf2(
-      v1, 0, HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
-  return __riscv_vnclipu_wx_u8mf4(v2, 0,
+      v1, kClipShift, HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
+  return __riscv_vnclipu_wx_u8mf4(v2, kClipShift,
                                   HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
 }
 
@@ -2752,8 +2768,8 @@ HWY_API vuint8mf2_t TruncateTo(Simd<uint8_t, N, -1> d,
   const size_t avl = Lanes(d);
   const vuint32m2_t v1 = __riscv_vand(v, 0xFF, avl);
   const vuint16m1_t v2 = __riscv_vnclipu_wx_u16m1(
-      v1, 0, HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
-  return __riscv_vnclipu_wx_u8mf2(v2, 0,
+      v1, kClipShift, HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
+  return __riscv_vnclipu_wx_u8mf2(v2, kClipShift,
                                   HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
 }
 
@@ -2763,8 +2779,8 @@ HWY_API vuint8m1_t TruncateTo(Simd<uint8_t, N, 0> d,
   const size_t avl = Lanes(d);
   const vuint32m4_t v1 = __riscv_vand(v, 0xFF, avl);
   const vuint16m2_t v2 = __riscv_vnclipu_wx_u16m2(
-      v1, 0, HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
-  return __riscv_vnclipu_wx_u8m1(v2, 0,
+      v1, kClipShift, HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
+  return __riscv_vnclipu_wx_u8m1(v2, kClipShift,
                                  HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
 }
 
@@ -2774,8 +2790,8 @@ HWY_API vuint8m2_t TruncateTo(Simd<uint8_t, N, 1> d,
   const size_t avl = Lanes(d);
   const vuint32m8_t v1 = __riscv_vand(v, 0xFF, avl);
   const vuint16m4_t v2 = __riscv_vnclipu_wx_u16m4(
-      v1, 0, HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
-  return __riscv_vnclipu_wx_u8m2(v2, 0,
+      v1, kClipShift, HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
+  return __riscv_vnclipu_wx_u8m2(v2, kClipShift,
                                  HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
 }
 
@@ -2784,7 +2800,7 @@ HWY_API vuint16mf4_t TruncateTo(Simd<uint16_t, N, -3> d,
                                 const VFromD<Simd<uint32_t, N, -2>> v) {
   const size_t avl = Lanes(d);
   const vuint32mf2_t v1 = __riscv_vand(v, 0xFFFF, avl);
-  return __riscv_vnclipu_wx_u16mf4(v1, 0,
+  return __riscv_vnclipu_wx_u16mf4(v1, kClipShift,
                                    HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
 }
 
@@ -2793,7 +2809,7 @@ HWY_API vuint16mf4_t TruncateTo(Simd<uint16_t, N, -2> d,
                                 const VFromD<Simd<uint32_t, N, -1>> v) {
   const size_t avl = Lanes(d);
   const vuint32mf2_t v1 = __riscv_vand(v, 0xFFFF, avl);
-  return __riscv_vnclipu_wx_u16mf4(v1, 0,
+  return __riscv_vnclipu_wx_u16mf4(v1, kClipShift,
                                    HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
 }
 
@@ -2802,7 +2818,7 @@ HWY_API vuint16mf2_t TruncateTo(Simd<uint16_t, N, -1> d,
                                 const VFromD<Simd<uint32_t, N, 0>> v) {
   const size_t avl = Lanes(d);
   const vuint32m1_t v1 = __riscv_vand(v, 0xFFFF, avl);
-  return __riscv_vnclipu_wx_u16mf2(v1, 0,
+  return __riscv_vnclipu_wx_u16mf2(v1, kClipShift,
                                    HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
 }
 
@@ -2811,7 +2827,7 @@ HWY_API vuint16m1_t TruncateTo(Simd<uint16_t, N, 0> d,
                                const VFromD<Simd<uint32_t, N, 1>> v) {
   const size_t avl = Lanes(d);
   const vuint32m2_t v1 = __riscv_vand(v, 0xFFFF, avl);
-  return __riscv_vnclipu_wx_u16m1(v1, 0,
+  return __riscv_vnclipu_wx_u16m1(v1, kClipShift,
                                   HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
 }
 
@@ -2820,7 +2836,7 @@ HWY_API vuint16m2_t TruncateTo(Simd<uint16_t, N, 1> d,
                                const VFromD<Simd<uint32_t, N, 2>> v) {
   const size_t avl = Lanes(d);
   const vuint32m4_t v1 = __riscv_vand(v, 0xFFFF, avl);
-  return __riscv_vnclipu_wx_u16m2(v1, 0,
+  return __riscv_vnclipu_wx_u16m2(v1, kClipShift,
                                   HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
 }
 
@@ -2829,7 +2845,7 @@ HWY_API vuint16m4_t TruncateTo(Simd<uint16_t, N, 2> d,
                                const VFromD<Simd<uint32_t, N, 3>> v) {
   const size_t avl = Lanes(d);
   const vuint32m8_t v1 = __riscv_vand(v, 0xFFFF, avl);
-  return __riscv_vnclipu_wx_u16m4(v1, 0,
+  return __riscv_vnclipu_wx_u16m4(v1, kClipShift,
                                   HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
 }
 
@@ -2838,7 +2854,7 @@ HWY_API vuint8mf8_t TruncateTo(Simd<uint8_t, N, -3> d,
                                const VFromD<Simd<uint16_t, N, -2>> v) {
   const size_t avl = Lanes(d);
   const vuint16mf4_t v1 = __riscv_vand(v, 0xFF, avl);
-  return __riscv_vnclipu_wx_u8mf8(v1, 0,
+  return __riscv_vnclipu_wx_u8mf8(v1, kClipShift,
                                   HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
 }
 
@@ -2847,7 +2863,7 @@ HWY_API vuint8mf4_t TruncateTo(Simd<uint8_t, N, -2> d,
                                const VFromD<Simd<uint16_t, N, -1>> v) {
   const size_t avl = Lanes(d);
   const vuint16mf2_t v1 = __riscv_vand(v, 0xFF, avl);
-  return __riscv_vnclipu_wx_u8mf4(v1, 0,
+  return __riscv_vnclipu_wx_u8mf4(v1, kClipShift,
                                   HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
 }
 
@@ -2856,7 +2872,7 @@ HWY_API vuint8mf2_t TruncateTo(Simd<uint8_t, N, -1> d,
                                const VFromD<Simd<uint16_t, N, 0>> v) {
   const size_t avl = Lanes(d);
   const vuint16m1_t v1 = __riscv_vand(v, 0xFF, avl);
-  return __riscv_vnclipu_wx_u8mf2(v1, 0,
+  return __riscv_vnclipu_wx_u8mf2(v1, kClipShift,
                                   HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
 }
 
@@ -2865,7 +2881,7 @@ HWY_API vuint8m1_t TruncateTo(Simd<uint8_t, N, 0> d,
                               const VFromD<Simd<uint16_t, N, 1>> v) {
   const size_t avl = Lanes(d);
   const vuint16m2_t v1 = __riscv_vand(v, 0xFF, avl);
-  return __riscv_vnclipu_wx_u8m1(v1, 0,
+  return __riscv_vnclipu_wx_u8m1(v1, kClipShift,
                                  HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
 }
 
@@ -2874,7 +2890,7 @@ HWY_API vuint8m2_t TruncateTo(Simd<uint8_t, N, 1> d,
                               const VFromD<Simd<uint16_t, N, 2>> v) {
   const size_t avl = Lanes(d);
   const vuint16m4_t v1 = __riscv_vand(v, 0xFF, avl);
-  return __riscv_vnclipu_wx_u8m2(v1, 0,
+  return __riscv_vnclipu_wx_u8m2(v1, kClipShift,
                                  HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
 }
 
@@ -2883,7 +2899,7 @@ HWY_API vuint8m4_t TruncateTo(Simd<uint8_t, N, 2> d,
                               const VFromD<Simd<uint16_t, N, 3>> v) {
   const size_t avl = Lanes(d);
   const vuint16m8_t v1 = __riscv_vand(v, 0xFF, avl);
-  return __riscv_vnclipu_wx_u8m4(v1, 0,
+  return __riscv_vnclipu_wx_u8m4(v1, kClipShift,
                                  HWY_RVV_INSERT_VXRM(__RISCV_VXRM_RDN, avl));
 }
 
@@ -3173,7 +3189,7 @@ namespace detail {
 
 
 template <typename T, size_t N, int kPow2>
-HWY_INLINE size_t LanesPerBlock(Simd<T, N, kPow2> d) {
+HWY_LANES_CONSTEXPR HWY_INLINE size_t LanesPerBlock(Simd<T, N, kPow2> d) {
   
   constexpr size_t kMinVecBytes =
       ScaleByPower(16, HWY_MAX(HWY_MIN(kPow2, 3), -3));
@@ -3660,7 +3676,7 @@ HWY_API V SwapAdjacentBlocks(const V v) {
 
 template <class D, class V = VFromD<D>>
 HWY_API V InterleaveEvenBlocks(D d, V a, V b) {
-  const size_t lpb = detail::LanesPerBlock(d);
+  HWY_LANES_CONSTEXPR size_t lpb = detail::LanesPerBlock(d);
   return OddEvenBlocks(SlideUpLanes(d, b, lpb), a);
 }
 
@@ -3669,7 +3685,7 @@ HWY_API V InterleaveEvenBlocks(D d, V a, V b) {
 
 template <class D, class V = VFromD<D>>
 HWY_API V InterleaveOddBlocks(D d, V a, V b) {
-  const size_t lpb = detail::LanesPerBlock(d);
+  HWY_LANES_CONSTEXPR size_t lpb = detail::LanesPerBlock(d);
   return OddEvenBlocks(b, SlideDownLanes(d, a, lpb));
 }
 
@@ -3750,6 +3766,83 @@ HWY_RVV_FOREACH_UI08(HWY_RVV_MASKED_TABLE16, MaskedTableLookupLanes16,
 #undef HWY_RVV_MASKED_TABLE16
 
 }  
+
+
+
+
+namespace detail {
+
+
+
+template <class D, class V = VFromD<D>, HWY_IF_NOT_T_SIZE_D(D, 1)>
+HWY_INLINE V InterleaveBlocks(D d, const V ba) {
+  const RebindToUnsigned<decltype(d)> du;
+  using VU = VFromD<decltype(du)>;
+  using TU = TFromD<decltype(du)>;
+  HWY_LANES_CONSTEXPR size_t lpb = detail::LanesPerBlock(d);
+  const VU iota = detail::Iota0(du);
+  
+  const VU idx_blocks =
+      detail::AndS(ShiftRight<1>(iota), static_cast<TU>(~(lpb - 1)));
+  VU idx = Or(idx_blocks, detail::AndS(iota, static_cast<TU>(lpb - 1)));
+  
+  idx = OddEvenBlocks(Add(idx, Set(du, static_cast<TU>(Lanes(d) / 2))), idx);
+
+  return TableLookupLanes(ba, IndicesFromVec(d, idx));
+}
+
+
+
+template <class D, class V = VFromD<D>, HWY_IF_T_SIZE_D(D, 1)>
+HWY_INLINE V InterleaveBlocks(D d, const V ba) {
+  const Rebind<uint16_t, decltype(d)> du;  
+  using VU = VFromD<decltype(du)>;
+  using TU = TFromD<decltype(du)>;
+  HWY_LANES_CONSTEXPR size_t lpb = detail::LanesPerBlock(d);
+  const VU iota = detail::Iota0(du);
+  
+  const VU idx_blocks =
+      detail::AndS(ShiftRight<1>(iota), static_cast<TU>(~(lpb - 1)));
+  VU idx = Or(idx_blocks, detail::AndS(iota, static_cast<TU>(lpb - 1)));
+  
+  idx = OddEvenBlocks(Add(idx, Set(du, static_cast<TU>(Lanes(d) / 2))), idx);
+
+  return detail::TableLookupLanes16(ba, idx);
+}
+
+}  
+
+template <class D, class V = VFromD<D>, HWY_IF_POW2_GT_D(DFromV<V>, -3)>
+HWY_INLINE V InterleaveLowerBlocks(D d, const V a, const V b) {
+  
+  
+  const Repartition<uint16_t, decltype(d)> du;
+  return BitCast(
+      d, detail::InterleaveBlocks(du, BitCast(du, ConcatLowerLower(d, b, a))));
+}
+
+template <class D, class V = VFromD<D>, HWY_IF_POW2_LE_D(DFromV<V>, -3)>
+HWY_INLINE V InterleaveLowerBlocks(D d, const V a, const V b) {
+  
+  return detail::InterleaveBlocks(d, ConcatLowerLower(d, b, a));
+}
+
+
+
+template <class D, class V = VFromD<D>, HWY_IF_POW2_GT_D(DFromV<V>, -3)>
+HWY_INLINE V InterleaveUpperBlocks(D d, const V a, const V b) {
+  
+  
+  const Repartition<uint16_t, decltype(d)> du;
+  return BitCast(
+      d, detail::InterleaveBlocks(du, BitCast(du, ConcatUpperUpper(d, b, a))));
+}
+
+template <class D, class V = VFromD<D>, HWY_IF_POW2_LE_D(DFromV<V>, -3)>
+HWY_INLINE V InterleaveUpperBlocks(D d, const V a, const V b) {
+  
+  return detail::InterleaveBlocks(d, ConcatUpperUpper(d, b, a));
+}
 
 
 template <class D, HWY_IF_T_SIZE_D(D, 1), HWY_IF_POW2_LE_D(D, 2)>
@@ -4406,11 +4499,14 @@ HWY_API V BroadcastBlock(V v) {
   return BitCast(d, detail::TableLookupLanes16(BitCast(du8, v), idx));
 }
 
-template <int kBlockIdx, class V, HWY_IF_POW2_GT_D(DFromV<V>, -3)>
+namespace detail {
+
+
+template <int kBlockIdx, class V>
 HWY_API V BroadcastBlock(V v) {
   const DFromV<decltype(v)> d;
-  using TU = If<sizeof(TFromV<V>) == 1, uint16_t, MakeUnsigned<TFromV<V>>>;
-  const Repartition<TU, decltype(d)> du;
+  const RebindToUnsigned<decltype(d)> du;
+  using TU = TFromD<decltype(du)>;
 
   static_assert(0 <= kBlockIdx && kBlockIdx < d.MaxBlocks(),
                 "Invalid block index");
@@ -4420,6 +4516,17 @@ HWY_API V BroadcastBlock(V v) {
       detail::AndS(detail::Iota0(du), static_cast<TU>(kMaxLanesPerBlock - 1)),
       static_cast<TU>(static_cast<size_t>(kBlockIdx) * kMaxLanesPerBlock));
   return BitCast(d, TableLookupLanes(BitCast(du, v), idx));
+}
+
+}  
+
+template <int kBlockIdx, class V, HWY_IF_POW2_GT_D(DFromV<V>, -3)>
+HWY_API V BroadcastBlock(V v) {
+  
+  
+  const DFromV<decltype(v)> d;
+  const Repartition<uint16_t, decltype(d)> du16;
+  return BitCast(d, detail::BroadcastBlock<kBlockIdx>(BitCast(du16, v)));
 }
 
 
@@ -4485,7 +4592,7 @@ HWY_API V ShiftRightLanes(const Simd<T, N, kPow2> d, V v) {
 
   const auto shifted = detail::SlideDown(v, kLanes);
   
-  const size_t lpb = detail::LanesPerBlock(di);
+  HWY_LANES_CONSTEXPR size_t lpb = detail::LanesPerBlock(di);
   const auto idx_mod =
       detail::AndS(BitCast(di, detail::Iota0(du)), static_cast<TI>(lpb - 1));
   const auto keep = detail::LtS(idx_mod, static_cast<TI>(lpb - kLanes));
@@ -4500,10 +4607,10 @@ HWY_API V ShiftRightBytes(const D d, const V v) {
 }
 
 
-#ifdef HWY_NATIVE_INTERLEAVE_WHOLE
-#undef HWY_NATIVE_INTERLEAVE_WHOLE
+#ifdef HWY_TOGGLE_INTERLEAVE_WHOLE
+#undef HWY_TOGGLE_INTERLEAVE_WHOLE
 #else
-#define HWY_NATIVE_INTERLEAVE_WHOLE
+#define HWY_TOGGLE_INTERLEAVE_WHOLE
 #endif
 
 namespace detail {
@@ -4594,7 +4701,7 @@ namespace detail {
 
 
 template <class D, class V, HWY_IF_POW2_LE_D(D, 2)>
-HWY_INLINE V InterleaveLowerBlocks(D d, const V a, const V b) {
+HWY_INLINE V InterleaveLowerImpl(D d, const V a, const V b) {
   static_assert(IsSame<TFromD<D>, TFromV<V>>(), "D/V mismatch");
   const Twice<D> dt;
   const RebindToUnsigned<decltype(dt)> dt_u;
@@ -4609,18 +4716,18 @@ HWY_INLINE V InterleaveLowerBlocks(D d, const V a, const V b) {
   return BitCast(d, LowerHalf(Compress(BitCast(dt_u, interleaved), is_even)));
 }
 template <class D, class V, HWY_IF_POW2_GT_D(D, 2)>
-HWY_INLINE V InterleaveLowerBlocks(D d, const V a, const V b) {
+HWY_INLINE V InterleaveLowerImpl(D d, const V a, const V b) {
   const Half<D> dh;
   const VFromD<decltype(dh)> i0 =
-      InterleaveLowerBlocks(dh, LowerHalf(dh, a), LowerHalf(dh, b));
+      InterleaveLowerImpl(dh, LowerHalf(dh, a), LowerHalf(dh, b));
   const VFromD<decltype(dh)> i1 =
-      InterleaveLowerBlocks(dh, UpperHalf(dh, a), UpperHalf(dh, b));
+      InterleaveLowerImpl(dh, UpperHalf(dh, a), UpperHalf(dh, b));
   return Combine(d, i1, i0);
 }
 
 
 template <class D, class V, HWY_IF_POW2_LE_D(D, 2)>
-HWY_INLINE V InterleaveUpperBlocks(D d, const V a, const V b) {
+HWY_INLINE V InterleaveUpperImpl(D d, const V a, const V b) {
   static_assert(IsSame<TFromD<D>, TFromV<V>>(), "D/V mismatch");
   const Twice<D> dt;
   const RebindToUnsigned<decltype(dt)> dt_u;
@@ -4635,12 +4742,12 @@ HWY_INLINE V InterleaveUpperBlocks(D d, const V a, const V b) {
   return BitCast(d, LowerHalf(Compress(BitCast(dt_u, interleaved), is_odd)));
 }
 template <class D, class V, HWY_IF_POW2_GT_D(D, 2)>
-HWY_INLINE V InterleaveUpperBlocks(D d, const V a, const V b) {
+HWY_INLINE V InterleaveUpperImpl(D d, const V a, const V b) {
   const Half<D> dh;
   const VFromD<decltype(dh)> i0 =
-      InterleaveUpperBlocks(dh, LowerHalf(dh, a), LowerHalf(dh, b));
+      InterleaveUpperImpl(dh, LowerHalf(dh, a), LowerHalf(dh, b));
   const VFromD<decltype(dh)> i1 =
-      InterleaveUpperBlocks(dh, UpperHalf(dh, a), UpperHalf(dh, b));
+      InterleaveUpperImpl(dh, UpperHalf(dh, a), UpperHalf(dh, b));
   return Combine(d, i1, i0);
 }
 
@@ -4667,7 +4774,7 @@ constexpr bool IsLT128(Simd<T, N, kPow2> ) {
 
 template <class D, class V, HWY_RVV_IF_GE128_D(D)>
 HWY_API V InterleaveLower(D d, const V a, const V b) {
-  return detail::InterleaveLowerBlocks(d, a, b);
+  return detail::InterleaveLowerImpl(d, a, b);
 }
 
 
@@ -4685,8 +4792,8 @@ HWY_API V InterleaveLower(D d, const V a, const V b) {
   }
   
   const ScalableTag<TFromD<D>, HWY_MAX(d.Pow2(), 0)> d1;
-  return ResizeBitCast(d, detail::InterleaveLowerBlocks(
-                              d1, ResizeBitCast(d1, a), ResizeBitCast(d1, b)));
+  return ResizeBitCast(d, detail::InterleaveLowerImpl(d1, ResizeBitCast(d1, a),
+                                                      ResizeBitCast(d1, b)));
 }
 
 template <class V>
@@ -4698,7 +4805,7 @@ HWY_API V InterleaveLower(const V a, const V b) {
 
 template <class D, class V, HWY_RVV_IF_GE128_D(D)>
 HWY_API V InterleaveUpper(D d, const V a, const V b) {
-  return detail::InterleaveUpperBlocks(d, a, b);
+  return detail::InterleaveUpperImpl(d, a, b);
 }
 
 
@@ -4716,8 +4823,8 @@ HWY_API V InterleaveUpper(D d, const V a, const V b) {
   }
   
   const ScalableTag<TFromD<D>, HWY_MAX(d.Pow2(), 0)> d1;
-  return ResizeBitCast(d, detail::InterleaveUpperBlocks(
-                              d1, ResizeBitCast(d1, a), ResizeBitCast(d1, b)));
+  return ResizeBitCast(d, detail::InterleaveUpperImpl(d1, ResizeBitCast(d1, a),
+                                                      ResizeBitCast(d1, b)));
 }
 
 
@@ -5255,18 +5362,6 @@ HWY_API VFromD<D> Dup128VecFromValues(D d, TFromD<D> t0, TFromD<D> t1,
 
 
 
-
-template <typename V, class D = DFromV<V>, HWY_IF_U8_D(D),
-          hwy::EnableIf<D().Pow2() < 1 || D().MaxLanes() < 16>* = nullptr>
-HWY_API V PopulationCount(V v) {
-  
-  v = Sub(v, detail::AndS(ShiftRight<1>(v), 0x55));
-  v = Add(detail::AndS(ShiftRight<2>(v), 0x33), detail::AndS(v, 0x33));
-  return detail::AndS(Add(v, ShiftRight<4>(v)), 0x0F);
-}
-
-
-
 template <class D>
 HWY_API VFromD<D> LoadDup128(D d, const TFromD<D>* const HWY_RESTRICT p) {
   const RebindToUnsigned<decltype(d)> du;
@@ -5291,7 +5386,7 @@ HWY_API VFromD<D> LoadDup128(D d, const TFromD<D>* const HWY_RESTRICT p) {
 
   
   using TU = TFromD<decltype(du)>;
-  const TU mask = static_cast<TU>(detail::LanesPerBlock(d) - 1);
+  HWY_LANES_CONSTEXPR TU mask = static_cast<TU>(detail::LanesPerBlock(d) - 1);
   
   const VFromD<RebindToUnsigned<D>> idx = detail::AndS(detail::Iota0(du), mask);
   
@@ -5552,6 +5647,15 @@ constexpr int SufficientPow2ForMask() {
   return HWY_MAX(
       D().Pow2() - 3 - static_cast<int>(FloorLog2(sizeof(TFromD<D>))), -3);
 }
+
+template <class M>
+static HWY_INLINE HWY_MAYBE_UNUSED M RvvVmmv(M mask) {
+  
+  
+  
+  return And(mask, mask);
+}
+
 }  
 
 template <class D, HWY_IF_T_SIZE_D(D, 1), HWY_IF_LANES_LE_D(D, 8)>
@@ -5560,8 +5664,10 @@ HWY_API MFromD<D> Dup128MaskFromMaskBits(D d, unsigned mask_bits) {
   if (kN < 8) mask_bits &= detail::MaxMaskBits<kN>();
 
 #if HWY_COMPILER_CLANG >= 1700 || HWY_COMPILER_GCC_ACTUAL >= 1400
-  return detail::U8MaskBitsVecToMask(
-      d, Set(ScalableTag<uint8_t>(), static_cast<uint8_t>(mask_bits)));
+  const ScalableTag<uint8_t, detail::SufficientPow2ForMask<D>()> du8;
+  return detail::RvvVmmv(detail::U8MaskBitsVecToMask(
+      d, detail::ChangeLMUL(ScalableTag<uint8_t>(),
+                            Set(du8, static_cast<uint8_t>(mask_bits)))));
 #else
   const RebindToUnsigned<decltype(d)> du8;
   const detail::AdjustSimdTagToMinVecPow2<Repartition<uint64_t, decltype(du8)>>
@@ -5581,10 +5687,10 @@ HWY_API MFromD<D> Dup128MaskFromMaskBits(D d, unsigned mask_bits) {
   const ScalableTag<uint8_t, detail::SufficientPow2ForMask<D>()> du8;
   const ScalableTag<uint16_t, detail::SufficientPow2ForMask<D>()> du16;
   
-  return detail::U8MaskBitsVecToMask(
+  return detail::RvvVmmv(detail::U8MaskBitsVecToMask(
       d, detail::ChangeLMUL(
              ScalableTag<uint8_t>(),
-             BitCast(du8, Set(du16, static_cast<uint16_t>(mask_bits)))));
+             BitCast(du8, Set(du16, static_cast<uint16_t>(mask_bits))))));
 #else
   
   const RebindToUnsigned<decltype(d)> du8;
@@ -5613,9 +5719,9 @@ HWY_API MFromD<D> Dup128MaskFromMaskBits(D d, unsigned mask_bits) {
 #if HWY_COMPILER_CLANG >= 1700 || HWY_COMPILER_GCC_ACTUAL >= 1400
   const ScalableTag<uint8_t, detail::SufficientPow2ForMask<D>()> du8;
   
-  return detail::U8MaskBitsVecToMask(
+  return detail::RvvVmmv(detail::U8MaskBitsVecToMask(
       d, detail::ChangeLMUL(ScalableTag<uint8_t>(),
-                            Set(du8, static_cast<uint8_t>(mask_bits))));
+                            Set(du8, static_cast<uint8_t>(mask_bits)))));
 #else
   
   const RebindToUnsigned<D> du;
@@ -5632,9 +5738,9 @@ HWY_API MFromD<D> Dup128MaskFromMaskBits(D d, unsigned mask_bits) {
 
 #if HWY_COMPILER_CLANG >= 1700 || HWY_COMPILER_GCC_ACTUAL >= 1400
   const ScalableTag<uint8_t, detail::SufficientPow2ForMask<D>()> du8;
-  return detail::U8MaskBitsVecToMask(
+  return detail::RvvVmmv(detail::U8MaskBitsVecToMask(
       d, detail::ChangeLMUL(ScalableTag<uint8_t>(),
-                            Set(du8, static_cast<uint8_t>(mask_bits * 0x11))));
+                            Set(du8, static_cast<uint8_t>(mask_bits * 0x11)))));
 #else
   
   const RebindToUnsigned<D> du;
@@ -5650,14 +5756,35 @@ HWY_API MFromD<D> Dup128MaskFromMaskBits(D d, unsigned mask_bits) {
 
 #if HWY_COMPILER_CLANG >= 1700 || HWY_COMPILER_GCC_ACTUAL >= 1400
   const ScalableTag<uint8_t, detail::SufficientPow2ForMask<D>()> du8;
-  return detail::U8MaskBitsVecToMask(
+  return detail::RvvVmmv(detail::U8MaskBitsVecToMask(
       d, detail::ChangeLMUL(ScalableTag<uint8_t>(),
-                            Set(du8, static_cast<uint8_t>(mask_bits * 0x55))));
+                            Set(du8, static_cast<uint8_t>(mask_bits * 0x55)))));
 #else
   
   const RebindToUnsigned<D> du;
   const VFromD<decltype(du)> bits = Dup128VecFromValues(du, 1, 2);
   return TestBit(Set(du, static_cast<uint64_t>(mask_bits)), bits);
+#endif
+}
+
+
+
+#ifdef HWY_NATIVE_SET_MASK
+#undef HWY_NATIVE_SET_MASK
+#else
+#define HWY_NATIVE_SET_MASK
+#endif
+
+template <class D>
+HWY_API MFromD<D> SetMask(D d, bool val) {
+  const uint8_t u8_mask_val = static_cast<uint8_t>(-static_cast<int>(val));
+#if HWY_COMPILER_CLANG >= 1700 || HWY_COMPILER_GCC_ACTUAL >= 1400
+  const ScalableTag<uint8_t, detail::SufficientPow2ForMask<D>()> du8;
+  return detail::RvvVmmv(detail::U8MaskBitsVecToMask(
+      d, detail::ChangeLMUL(ScalableTag<uint8_t>(), Set(du8, u8_mask_val))));
+#else
+  const Rebind<uint8_t, DFromV<VFromD<decltype(d)>>> du8;
+  return MaskFromVec(Set(du8, u8_mask_val));
 #endif
 }
 
@@ -5934,9 +6061,13 @@ HWY_API V64 BitShuffle(V64 values, VI idx) {
 template <class V, HWY_IF_T_SIZE_ONE_OF_V(V, (1 << 1) | (1 << 2) | (1 << 4)),
           class D = DFromV<V>, class DW = RepartitionToWide<D>>
 HWY_API VFromD<DW> MulEven(const V a, const V b) {
-  const auto lo = Mul(a, b);
-  const auto hi = MulHigh(a, b);
-  return BitCast(DW(), OddEven(detail::Slide1Up(hi), lo));
+  constexpr int maskVal = sizeof(TFromD<D>) == 4   ? 5
+                          : sizeof(TFromD<D>) == 2 ? 0x55
+                                                   : 0x5555;
+  const auto mask = Dup128MaskFromMaskBits(D(), maskVal);
+  const auto hi = Slide1Up(D(), MulHigh(a, b));
+  const auto res = MaskedMulOr(hi, mask, a, b);
+  return BitCast(DW(), res);
 }
 
 template <class V, HWY_IF_T_SIZE_ONE_OF_V(V, (1 << 1) | (1 << 2) | (1 << 4)),
@@ -5950,9 +6081,9 @@ HWY_API VFromD<DW> MulOdd(const V a, const V b) {
 
 template <class V, HWY_IF_T_SIZE_V(V, 8)>
 HWY_INLINE V MulEven(const V a, const V b) {
-  const auto lo = Mul(a, b);
-  const auto hi = MulHigh(a, b);
-  return OddEven(detail::Slide1Up(hi), lo);
+  const auto mask = Dup128MaskFromMaskBits(DFromV<V>(), 1);
+  const auto hi = Slide1Up(DFromV<V>(), MulHigh(a, b));
+  return MaskedMulOr(hi, mask, a, b);
 }
 
 template <class V, HWY_IF_T_SIZE_V(V, 8)>
@@ -6226,11 +6357,6 @@ HWY_API vuint32m8_t RearrangeToOddPlusEven(vuint32m8_t sum0, vuint32m8_t sum1) {
   const vuint32m4_t hi =
       RearrangeToOddPlusEven(LowerHalf(sum1), UpperHalf(dh, sum1));
   return Combine(d, hi, lo);
-}
-
-template <class VW, HWY_IF_FLOAT_V(VW)>  
-HWY_API VW RearrangeToOddPlusEven(const VW sum0, const VW sum1) {
-  return Add(sum0, sum1);  
 }
 
 

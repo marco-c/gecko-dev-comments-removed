@@ -13,6 +13,7 @@
 
 
 
+
 #ifndef AOM_AOM_AOM_EXT_RATECTRL_H_
 #define AOM_AOM_AOM_EXT_RATECTRL_H_
 
@@ -20,8 +21,8 @@
 extern "C" {
 #endif
 
-#include "./aom_integer.h"
-#include "./aom_tpl.h"
+#include "aom/aom_integer.h"
+#include "aom/aom_tpl.h"
 
 
 

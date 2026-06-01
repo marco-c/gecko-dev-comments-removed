@@ -9,10 +9,16 @@
 
 
 
+
+
+
+
+
+
 #ifndef AOM_AOM_AOM_TPL_H_
 #define AOM_AOM_AOM_TPL_H_
 
-#include "./aom_integer.h"
+#include "aom/aom_integer.h"
 
 #ifdef __cplusplus
 extern "C" {

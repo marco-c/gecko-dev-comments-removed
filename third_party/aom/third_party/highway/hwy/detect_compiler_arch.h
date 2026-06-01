@@ -20,9 +20,14 @@
 
 
 
+
+
+
+
+
 #if (defined __CDT_PARSER__) || (defined __INTELLISENSE__) || \
     (defined Q_CREATOR_RUN) || (defined __CLANGD__) ||        \
-    (defined GROK_ELLIPSIS_BUILD)
+    (defined GROK_ELLIPSIS_BUILD) || (defined __JETBRAINS_IDE__)
 #define HWY_IDE 1
 #else
 #define HWY_IDE 0
@@ -65,15 +70,23 @@
 #define HWY_COMPILER_GCC 0
 #endif
 
-
-#ifdef __clang__
+#ifndef HWY_COMPILER_CLANG  
+#ifdef __clang__            
 
 
 
 
 
 #if defined(__apple_build_version__) || __clang_major__ >= 999
-#if __has_warning("-Woverriding-option")
+#if __has_builtin(__builtin_elementwise_fshl)
+#define HWY_COMPILER_CLANG 2201
+#elif __has_builtin(__builtin_structured_binding_size)
+#define HWY_COMPILER_CLANG 2101
+#elif __has_builtin(__builtin_common_type)
+#define HWY_COMPILER_CLANG 2001
+#elif __has_warning("-Wreturn-mismatch")
+#define HWY_COMPILER_CLANG 1901
+#elif __has_warning("-Woverriding-option")
 #define HWY_COMPILER_CLANG 1801
 
 
@@ -108,7 +121,6 @@
 #else  
 #define HWY_COMPILER_CLANG 600
 #endif  
-#define HWY_COMPILER3_CLANG (HWY_COMPILER_CLANG * 100)
 #else  
 #define HWY_COMPILER_CLANG (__clang_major__ * 100 + __clang_minor__)
 #define HWY_COMPILER3_CLANG \
@@ -117,6 +129,12 @@
 #else  
 #define HWY_COMPILER_CLANG 0
 #define HWY_COMPILER3_CLANG 0
+#endif  
+#endif  
+
+
+#ifndef HWY_COMPILER3_CLANG
+#define HWY_COMPILER3_CLANG (HWY_COMPILER_CLANG * 100)
 #endif
 
 #if HWY_COMPILER_GCC && !HWY_COMPILER_CLANG && !HWY_COMPILER_ICC && \
@@ -174,11 +192,9 @@
 #define HWY_CXX_LANG __cplusplus
 #endif
 
-#if defined(__cpp_constexpr) && __cpp_constexpr >= 201603L
-#define HWY_CXX17_CONSTEXPR constexpr
-#else
-#define HWY_CXX17_CONSTEXPR
-#endif
+
+
+
 
 #if defined(__cpp_constexpr) && __cpp_constexpr >= 201304L
 #define HWY_CXX14_CONSTEXPR constexpr
@@ -186,10 +202,87 @@
 #define HWY_CXX14_CONSTEXPR
 #endif
 
-#if HWY_CXX_LANG >= 201703L
+
+
+
+
+#if defined(__cpp_constexpr) && __cpp_constexpr >= 201603L
+#define HWY_CXX17_CONSTEXPR constexpr
+#else
+#define HWY_CXX17_CONSTEXPR
+#endif
+
+
+
+#if HWY_CXX_LANG >= 201703L || \
+    (defined(__cpp_if_constexpr) && __cpp_if_constexpr >= 201606L)
 #define HWY_IF_CONSTEXPR if constexpr
 #else
 #define HWY_IF_CONSTEXPR if
+#endif
+
+
+
+#ifndef HWY_INLINE_VAR
+#if __cplusplus > 201402L
+
+
+#define HWY_INLINE_VAR inline
+#else
+#define HWY_INLINE_VAR
+#endif
+#endif
+
+
+
+
+#if HWY_HAS_FEATURE(memory_sanitizer) || defined(MEMORY_SANITIZER) || \
+    defined(__SANITIZE_MEMORY__)
+#define HWY_IS_MSAN 1
+#else
+#define HWY_IS_MSAN 0
+#endif
+
+#if HWY_HAS_FEATURE(address_sanitizer) || defined(ADDRESS_SANITIZER) || \
+    defined(__SANITIZE_ADDRESS__)
+#define HWY_IS_ASAN 1
+#else
+#define HWY_IS_ASAN 0
+#endif
+
+#if HWY_HAS_FEATURE(hwaddress_sanitizer) || defined(HWADDRESS_SANITIZER) || \
+    defined(__SANITIZE_HWADDRESS__)
+#define HWY_IS_HWASAN 1
+#else
+#define HWY_IS_HWASAN 0
+#endif
+
+#if HWY_HAS_FEATURE(thread_sanitizer) || defined(THREAD_SANITIZER) || \
+    defined(__SANITIZE_THREAD__)
+#define HWY_IS_TSAN 1
+#else
+#define HWY_IS_TSAN 0
+#endif
+
+#if HWY_HAS_FEATURE(undefined_behavior_sanitizer) || \
+    defined(UNDEFINED_BEHAVIOR_SANITIZER)
+#define HWY_IS_UBSAN 1
+#else
+#define HWY_IS_UBSAN 0
+#endif
+
+
+
+#if HWY_IS_MSAN
+#define HWY_ATTR_NO_MSAN __attribute__((no_sanitize_memory))
+#else
+#define HWY_ATTR_NO_MSAN
+#endif
+
+#if HWY_IS_ASAN || HWY_IS_HWASAN || HWY_IS_MSAN || HWY_IS_TSAN || HWY_IS_UBSAN
+#define HWY_IS_SANITIZER 1
+#else
+#define HWY_IS_SANITIZER 0
 #endif
 
 
@@ -217,13 +310,16 @@
 #define HWY_ARCH_X86 0
 #endif
 
-#if defined(__powerpc64__) || defined(_M_PPC) || defined(__powerpc__)
+
+#if defined(__powerpc64__) || defined(_M_PPC) || defined(__powerpc__) || \
+    defined(__PPC__) || defined(__ppc__) || defined(__POWERPC__)
 #define HWY_ARCH_PPC 1
 #else
 #define HWY_ARCH_PPC 0
 #endif
 
-#if defined(__powerpc64__) || (HWY_ARCH_PPC && defined(__64BIT__))
+#if defined(__powerpc64__) || defined(__PPC64__) || defined(__ppc64__) || \
+    (HWY_ARCH_PPC && defined(__64BIT__))
 #define HWY_ARCH_PPC_64 1
 #else
 #define HWY_ARCH_PPC_64 0
@@ -322,11 +418,34 @@
 #define HWY_ARCH_LOONGARCH 0
 #endif
 
+#if defined(__hexagon__) || defined(__HEXAGON_ARCH__)
+#define HWY_ARCH_HEXAGON 1
+#else
+#define HWY_ARCH_HEXAGON 0
+#endif
 
 
-#if (HWY_ARCH_X86 + HWY_ARCH_PPC + HWY_ARCH_ARM + HWY_ARCH_ARM_OLD + \
-     HWY_ARCH_WASM + HWY_ARCH_RISCV + HWY_ARCH_S390X + HWY_ARCH_LOONGARCH) > 1
+
+#if (HWY_ARCH_X86 + HWY_ARCH_PPC + HWY_ARCH_ARM + HWY_ARCH_ARM_OLD +        \
+     HWY_ARCH_WASM + HWY_ARCH_RISCV + HWY_ARCH_S390X + HWY_ARCH_LOONGARCH + \
+     HWY_ARCH_HEXAGON) > 1
 #error "Must not detect more than one architecture"
+#endif
+
+#if HWY_ARCH_RISCV
+#define HWY_ARCH_MAX_BYTES 65536
+#elif HWY_ARCH_ARM_A64
+#define HWY_ARCH_MAX_BYTES 256
+#elif HWY_ARCH_HEXAGON
+#define HWY_ARCH_MAX_BYTES 128
+#elif HWY_ARCH_X86
+#define HWY_ARCH_MAX_BYTES 64
+#elif HWY_ARCH_WASM || HWY_ARCH_LOONGARCH
+#define HWY_ARCH_MAX_BYTES 32
+#elif HWY_ARCH_PPC || HWY_ARCH_S390X || HWY_ARCH_ARM_V7 || HWY_ARCH_ARM_OLD
+#define HWY_ARCH_MAX_BYTES 16
+#else
+#error "Missing case for HWY_ARCH_*"
 #endif
 
 
@@ -390,6 +509,22 @@
 
 #if (HWY_IS_LITTLE_ENDIAN + HWY_IS_BIG_ENDIAN) != 1
 #error "Must only detect one byte order"
+#endif
+
+
+
+
+
+
+
+
+
+
+#if HWY_ARCH_ARM_A64 && \
+    (HWY_COMPILER_CLANG >= 1700 || HWY_COMPILER_GCC_ACTUAL >= 1400)
+#define HWY_ARM_HAVE_SCALAR_BF16_TYPE 1
+#else
+#define HWY_ARM_HAVE_SCALAR_BF16_TYPE 0
 #endif
 
 #endif  
