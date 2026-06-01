@@ -56,17 +56,6 @@ CG_EXTERN void CGContextSetBaseCTM(CGContextRef, CGAffineTransform);
 
 
 
-
-
-@implementation NSCell (ControlTintWorkaround)
-- (int)_realControlTint {
-  return [self controlTint];
-}
-@end
-
-
-
-
 @interface MOZCellDrawWindow : NSWindow
 @property BOOL cellsShouldLookActive;
 @end
@@ -718,9 +707,6 @@ void nsNativeThemeCocoa::DrawCheckboxOrRadio(
   ApplyControlParamsToNSCell(aParams.controlParams, cell);
 
   [cell setState:CellStateForCheckboxOrRadioState(aParams.state)];
-  [cell setControlTint:(aParams.controlParams.insideActiveWindow
-                            ? [NSColor currentControlTint]
-                            : NSClearControlTint)];
 
   
   float length = std::min(inBoxRect.size.width, inBoxRect.size.height);
@@ -1127,12 +1113,6 @@ void nsNativeThemeCocoa::DrawDropdown(CGContextRef cgContext,
       aParams.editable ? (NSCell*)mComboBoxCell : (NSCell*)mDropdownCell;
 
   ApplyControlParamsToNSCell(aParams.controlParams, cell);
-
-  if (aParams.controlParams.insideActiveWindow) {
-    [cell setControlTint:[NSColor currentControlTint]];
-  } else {
-    [cell setControlTint:NSClearControlTint];
-  }
 
   const CellRenderSettings& settings =
       aParams.editable ? editableMenulistSettings : dropdownSettings;
