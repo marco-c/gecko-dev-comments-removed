@@ -545,6 +545,11 @@ class nsCocoaWindow final : public nsIWidget {
   void DoResize(double aX, double aY, double aWidth, double aHeight,
                 bool aRepaint, bool aConstrainToCurrentScreen);
 
+  
+  
+  
+  void EnsureFrameIsOnScreen();
+
   void UpdateFullscreenState(bool aFullScreen, bool aNativeMode);
   nsresult DoMakeFullScreen(bool aFullScreen, bool aUseSystemTransition);
 

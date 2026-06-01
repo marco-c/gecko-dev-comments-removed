@@ -5582,6 +5582,7 @@ void nsCocoaWindow::Show(bool aState) {
       }
     } else {
       NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
+      EnsureFrameIsOnScreen();
       if (mWindowType == WindowType::TopLevel &&
           [mWindow respondsToSelector:@selector(setAnimationBehavior:)]) {
         NSWindowAnimationBehavior behavior;
@@ -5774,6 +5775,40 @@ void nsCocoaWindow::ConstrainPosition(DesktopIntPoint& aPoint) {
   aPoint = ConstrainPositionToBounds(aPoint, {width, height}, screenRect);
 
   NS_OBJC_END_TRY_IGNORE_BLOCK;
+}
+
+void nsCocoaWindow::EnsureFrameIsOnScreen() {
+  if (!mWindow || mWindowType != WindowType::TopLevel || mInFullScreenMode) {
+    return;
+  }
+
+  
+  
+  
+  
+  
+  
+  if (mWindow.screen) {
+    return;
+  }
+
+  NSScreen* mainScreen = NSScreen.mainScreen;
+  if (!mainScreen) {
+    return;
+  }
+
+  NSRect screenFrame = mainScreen.visibleFrame;
+  NSRect frame = mWindow.frame;
+
+  frame.size.width = std::min(frame.size.width, screenFrame.size.width);
+  frame.size.height = std::min(frame.size.height, screenFrame.size.height);
+  frame.origin.x =
+      screenFrame.origin.x + (screenFrame.size.width - frame.size.width) / 2;
+  frame.origin.y =
+      screenFrame.origin.y + (screenFrame.size.height - frame.size.height) / 2;
+
+  [mWindow setFrame:frame display:NO];
+  UpdateBounds();
 }
 
 void nsCocoaWindow::SetSizeConstraints(const SizeConstraints& aConstraints) {
