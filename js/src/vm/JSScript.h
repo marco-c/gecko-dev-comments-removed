@@ -1594,7 +1594,7 @@ class BaseScript : public gc::TenuredCellWithNonGCPointer<uint8_t> {
   
   
   
-  GCStructPtr<PrivateScriptData*> data_;
+  GCBuffer<PrivateScriptData*> data_;
 
   
   
