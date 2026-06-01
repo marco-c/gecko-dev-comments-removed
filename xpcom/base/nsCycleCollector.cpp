@@ -1734,7 +1734,7 @@ class nsCycleCollectorLogSinkToFile final : public nsICycleCollectorLogSink {
     
     
     
-    RefPtr<LogStringMessageAsync> log = new LogStringMessageAsync(msg);
+    RefPtr log = MakeRefPtr<LogStringMessageAsync>(msg);
     NS_DispatchToCurrentThread(log);
     return NS_OK;
   }

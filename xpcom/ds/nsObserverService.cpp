@@ -149,7 +149,7 @@ void nsObserverService::Shutdown() {
 nsresult nsObserverService::Create(const nsIID& aIID, void** aInstancePtr) {
   LOG(("nsObserverService::Create()"));
 
-  RefPtr<nsObserverService> os = new nsObserverService();
+  RefPtr os = MakeRefPtr<nsObserverService>();
 
   
   

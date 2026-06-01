@@ -423,8 +423,8 @@ void CycleCollectedJSContext::PromiseRejectionTrackerCallback(
             PromiseRejectionEvent::Constructor(owner, u"rejectionhandled"_ns,
                                                init);
 
-        RefPtr<AsyncEventDispatcher> asyncDispatcher =
-            new AsyncEventDispatcher(owner, event.forget());
+        RefPtr asyncDispatcher =
+            MakeRefPtr<AsyncEventDispatcher>(owner, event.forget());
         asyncDispatcher->PostDOMEvent();
       }
     }
@@ -537,7 +537,7 @@ void CycleCollectedJSContext::AfterProcessMicrotasks() {
   
   
   if (mAboutToBeNotifiedRejectedPromises.Length()) {
-    RefPtr<NotifyUnhandledRejections> runnable = new NotifyUnhandledRejections(
+    RefPtr runnable = MakeRefPtr<NotifyUnhandledRejections>(
         std::move(mAboutToBeNotifiedRejectedPromises));
     NS_DispatchToCurrentThread(runnable);
   }
