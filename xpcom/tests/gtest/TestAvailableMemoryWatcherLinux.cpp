@@ -68,7 +68,7 @@ AvailableMemoryChecker::AvailableMemoryChecker() : mResolved(false) {}
 NS_IMPL_ISUPPORTS(AvailableMemoryChecker, nsITimerCallback, nsINamed);
 
 void AvailableMemoryChecker::Init() {
-  mTabUnloader = new MockTabUnloader;
+  mTabUnloader = MakeRefPtr<MockTabUnloader>();
 
   mWatcher = nsAvailableMemoryWatcherBase::GetSingleton();
   mWatcher->RegisterTabUnloader(mTabUnloader);
@@ -126,7 +126,7 @@ class Spinner final : public nsIObserver {
       mObserverSvc->RemoveObserver(this, aTopic);
 
       
-      nsCOMPtr<nsIRunnable> dummyEvent = new Runnable(__func__);
+      RefPtr dummyEvent = MakeRefPtr<Runnable>(__func__);
       NS_DispatchToMainThread(dummyEvent);
     }
     return NS_OK;
@@ -171,13 +171,13 @@ void StartUserInteraction(const nsCOMPtr<nsIObserverService>& aObserverSvc) {
 TEST(AvailableMemoryWatcher, BasicTest)
 {
   nsCOMPtr<nsIObserverService> observerSvc = services::GetObserverService();
-  RefPtr<Spinner> aSpinner = new Spinner(observerSvc, "memory-pressure");
+  RefPtr aSpinner = MakeRefPtr<Spinner>(observerSvc, "memory-pressure");
   aSpinner->StartListening();
 
   
   StartUserInteraction(observerSvc);
 
-  RefPtr<AvailableMemoryChecker> checker = new AvailableMemoryChecker();
+  RefPtr checker = MakeRefPtr<AvailableMemoryChecker>();
   checker->Init();
 
   aSpinner->WaitForNotification();
@@ -194,23 +194,22 @@ TEST(AvailableMemoryWatcher, MemoryLowToHigh)
   Preferences::SetUint("browser.low_commit_space_threshold_percent", 100);
 
   nsCOMPtr<nsIObserverService> observerSvc = services::GetObserverService();
-  RefPtr<Spinner> lowMemorySpinner =
-      new Spinner(observerSvc, "memory-pressure");
+  RefPtr lowMemorySpinner = MakeRefPtr<Spinner>(observerSvc, "memory-pressure");
   lowMemorySpinner->StartListening();
 
   StartUserInteraction(observerSvc);
 
   
   
-  RefPtr<AvailableMemoryChecker> checker = new AvailableMemoryChecker();
+  RefPtr checker = MakeRefPtr<AvailableMemoryChecker>();
   checker->Init();
 
   lowMemorySpinner->WaitForNotification();
 
   EXPECT_TRUE(lowMemorySpinner->TopicObserved());
 
-  RefPtr<Spinner> highMemorySpinner =
-      new Spinner(observerSvc, "memory-pressure-stop");
+  RefPtr highMemorySpinner =
+      MakeRefPtr<Spinner>(observerSvc, "memory-pressure-stop");
   highMemorySpinner->StartListening();
 
   
