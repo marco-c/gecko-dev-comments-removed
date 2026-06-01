@@ -64,7 +64,7 @@ MozExternalRefCountType nsTestCom::Release() {
 TEST(TestCOM, WindowsInterop)
 {
   
-  RefPtr t = mozilla::MakeRefPtr<nsTestCom>();
+  RefPtr<nsTestCom> t = new nsTestCom();
   IUnknown* iUnknown = nullptr;
   nsresult rv = t->QueryInterface(NS_GET_IID(nsISupports), (void**)&iUnknown);
   ASSERT_NS_SUCCEEDED(rv);

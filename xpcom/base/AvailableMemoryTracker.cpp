@@ -158,7 +158,7 @@ namespace AvailableMemoryTracker {
 
 void Init() {
   
-  RefPtr watcher = MakeRefPtr<nsMemoryPressureWatcher>();
+  RefPtr<nsMemoryPressureWatcher> watcher = new nsMemoryPressureWatcher();
   watcher->Init();
 
 #if defined(XP_WIN)

@@ -506,13 +506,13 @@ static void TestNewRunnableMethod(bool aNamed) {
   
   
   {
-    RefPtr foo = MakeRefPtr<nsFoo>();
-    RefPtr bar = MakeRefPtr<nsBar>();
+    RefPtr<nsFoo> foo = new nsFoo();
+    RefPtr<nsBar> bar = new nsBar();
     RefPtr<const nsBar> constBar = bar;
 
     
     
-    RefPtr rawFoo = MakeRefPtr<nsFoo>();
+    RefPtr<nsFoo> rawFoo = new nsFoo();
 
     
     char* message = (char*)"Test message";
@@ -611,7 +611,7 @@ TEST(ThreadUtils, NamedRunnableMethod)
 
   
   {
-    RefPtr foo = MakeRefPtr<nsFoo>();
+    RefPtr<nsFoo> foo = new nsFoo();
     const char* expectedName = "NamedRunnable";
     bool unused;
     RefPtr<Runnable> NamedRunnable =
@@ -755,8 +755,9 @@ class IdleObject final {
 TEST(ThreadUtils, IdleRunnableMethod)
 {
   {
-    RefPtr idle = MakeRefPtr<IdleObject>();
-    RefPtr idleNoSetDeadline = MakeRefPtr<IdleObjectWithoutSetDeadline>();
+    RefPtr<IdleObject> idle = new IdleObject();
+    RefPtr<IdleObjectWithoutSetDeadline> idleNoSetDeadline =
+        new IdleObjectWithoutSetDeadline();
     RefPtr<IdleObjectInheritedSetDeadline> idleInheritedSetDeadline =
         new IdleObjectInheritedSetDeadline();
 
