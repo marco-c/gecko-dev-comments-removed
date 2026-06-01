@@ -1296,7 +1296,7 @@ SettingGroupManager.registerGroups({
             l10nId: "preferences-ai-controls-block-ai",
             control: "moz-toggle",
             controlAttrs: {
-              headinglevel: 2,
+              headinglevel: 3,
               inputlayout: "inline-end",
             },
             options: [
@@ -1452,6 +1452,7 @@ SettingGroupManager.registerGroups({
               },
               {
                 id: "personalizeSmartWindowButton",
+                loadPane: "personalizeSmartWindow",
                 l10nId: "ai-window-personalize-button",
                 control: "moz-box-button",
               },
@@ -1660,6 +1661,7 @@ SettingGroupManager.registerGroups({
           },
           {
             id: "manageMemoriesButton",
+            loadPane: "manageMemories",
             l10nId: "ai-window-manage-memories-button",
             control: "moz-box-button",
           },
