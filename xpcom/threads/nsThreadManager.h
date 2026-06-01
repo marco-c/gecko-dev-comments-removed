@@ -68,7 +68,7 @@ class nsThreadManager : public nsIThreadManager {
   
   
   
-  nsThread* CreateCurrentThread(mozilla::SynchronizedEventQueue* aQueue);
+  RefPtr<nsThread> CreateCurrentThread(mozilla::SynchronizedEventQueue* aQueue);
 
   nsresult DispatchToBackgroundThread(
       nsIRunnable* aEvent, nsIEventTarget::DispatchFlags aDispatchFlags);

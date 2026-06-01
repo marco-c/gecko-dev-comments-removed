@@ -505,7 +505,8 @@ void nsThreadManager::UnregisterCurrentThread(nsThread& aThread) {
 }
 
 
-nsThread* nsThreadManager::CreateCurrentThread(SynchronizedEventQueue* aQueue) {
+RefPtr<nsThread>
+nsThreadManager::CreateCurrentThread(SynchronizedEventQueue* aQueue) {
   
   MOZ_ASSERT(!PR_GetThreadPrivate(mCurThreadIndex));
 
@@ -519,7 +520,10 @@ nsThread* nsThreadManager::CreateCurrentThread(SynchronizedEventQueue* aQueue) {
     return nullptr;
   }
 
-  return thread.get();  
+  
+  
+  
+  return thread;
 }
 
 nsresult nsThreadManager::DispatchToBackgroundThread(
@@ -576,7 +580,10 @@ nsThread* nsThreadManager::GetCurrentThread() {
     return nullptr;
   }
 
-  return thread.get();  
+  
+  
+  
+  return thread.get();
 }
 
 bool nsThreadManager::IsNSThread() const {
