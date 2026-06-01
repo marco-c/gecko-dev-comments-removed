@@ -2598,6 +2598,11 @@ nsresult ScriptLoader::ProcessOffThreadRequest(ScriptLoadRequest* aRequest) {
           "request should not run synchronously but added to some queue.");
       return ProcessRequest(aRequest);
     }
+  } else if (aRequest->GetScriptLoadContext()->mInAsyncList) {
+    
+    
+    
+    MaybeMoveToLoadedList(aRequest);
   }
 
   
@@ -3214,7 +3219,9 @@ nsresult ScriptLoader::EvaluateScriptElement(ScriptLoadRequest* aRequest) {
       !aRequest->GetScriptLoadContext()->mIsInline ||
       aRequest->IsModuleRequest();
   if (ignoreDestructiveWrites) {
-    ownerDoc->IncrementIgnoreDestructiveWritesCounter();
+    if (mDocument) {
+      mDocument->IncrementIgnoreDestructiveWritesCounter();
+    }
   }
 
   auto afterScript = MakeScopeExit([&] {
@@ -3235,7 +3242,9 @@ nsresult ScriptLoader::EvaluateScriptElement(ScriptLoadRequest* aRequest) {
     
     
     if (ignoreDestructiveWrites) {
-      ownerDoc->DecrementIgnoreDestructiveWritesCounter();
+      if (mDocument) {
+        mDocument->DecrementIgnoreDestructiveWritesCounter();
+      }
     }
   });
 
