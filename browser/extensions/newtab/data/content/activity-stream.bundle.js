@@ -12220,13 +12220,28 @@ function resolveWidgetOrder(prefs) {
 
 
 
+function isWidgetAddable(widget, prefs) {
+  return Boolean(
+    prefs.trainhopConfig?.widgets?.[widget.trainhopEnabledKey] ||
+    prefs[widget.systemEnabledPref]
+  );
+}
+
+
+
+
+
+
+
+
+
+
 function isWidgetEnabled(widget, prefs, widgetsEnabled) {
-  if (!widgetsEnabled) {
-    return false;
-  }
-  const trainhop = prefs.trainhopConfig?.widgets?.[widget.trainhopEnabledKey];
-  const system = prefs[widget.systemEnabledPref];
-  return Boolean((trainhop || system) && prefs[widget.enabledPref]);
+  return Boolean(
+    widgetsEnabled &&
+    isWidgetAddable(widget, prefs) &&
+    prefs[widget.enabledPref]
+  );
 }
 
 
@@ -19444,6 +19459,9 @@ function Widgets() {
   };
   const widgetOrder = resolveWidgetOrder(prefs);
   const anyWidgetInRow = WIDGET_REGISTRY.some(w => widgetEnabledMap[w.id]) || !novaEnabled && weatherForecastEnabled;
+  const allWidgetsAdded = WIDGET_REGISTRY.filter(w => isWidgetAddable(w, prefs)).every(w => prefs[w.enabledPref]);
+  const renderedWidgetSizes = WIDGET_REGISTRY.filter(w => widgetEnabledMap[w.id]).map(w => resolveWidgetSize(w, prefs));
+  const addButtonSize = renderedWidgetSizes.includes("large") ? "large" : "medium";
 
   
   
@@ -19828,7 +19846,18 @@ function Widgets() {
       isMaximized,
       widgetsMayBeMaximized
     }));
-  })), novaEnabled && external_React_default().createElement("moz-button", {
+  }), novaEnabled && !allWidgetsAdded && external_React_default().createElement("button", {
+    type: "button",
+    className: `widgets-add-button col-4 ${addButtonSize}-widget`,
+    style: {
+      order: WIDGET_REGISTRY.length + 1
+    },
+    "data-l10n-id": "newtab-widget-add-widgets-button",
+    onClick: handleManageWidgetsClick,
+    tabIndex: -1
+  }, external_React_default().createElement("span", {
+    className: "widgets-add-button-icon"
+  }))), novaEnabled && external_React_default().createElement("moz-button", {
     className: "widgets-row-toggle",
     type: "default",
     "aria-expanded": rowExpanded,
