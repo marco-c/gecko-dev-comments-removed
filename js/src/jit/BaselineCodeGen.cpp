@@ -970,6 +970,23 @@ bool BaselineCompilerCodeGen::emitIsDebuggeeCheck() {
   return true;
 }
 
+
+
+
+class AutoForbidNopsForToggledJump {
+#if defined(JS_CODEGEN_RISCV64)
+  AutoForbidNops afn_;
+#endif
+
+ public:
+  explicit AutoForbidNopsForToggledJump(MacroAssembler* masm)
+#if defined(JS_CODEGEN_RISCV64)
+      : afn_(masm)
+#endif
+  {
+  }
+};
+
 template <>
 bool BaselineInterpreterCodeGen::emitIsDebuggeeCheck() {
   
@@ -977,6 +994,8 @@ bool BaselineInterpreterCodeGen::emitIsDebuggeeCheck() {
   
   
   
+
+  AutoForbidNopsForToggledJump afn(&masm);
 
   Label skipCheck;
   CodeOffset toggleOffset = masm.toggledJump(&skipCheck);
@@ -1023,6 +1042,8 @@ bool BaselineCompilerCodeGen::emitHandleCodeCoverageAtPrologue() {
 
 template <>
 bool BaselineInterpreterCodeGen::emitHandleCodeCoverageAtPrologue() {
+  AutoForbidNopsForToggledJump afn(&masm);
+
   Label skipCoverage;
   CodeOffset toggleOffset = masm.toggledJump(&skipCoverage);
   masm.call(handler.codeCoverageAtPrologueLabel());
@@ -1997,6 +2018,8 @@ bool BaselineCompiler::emitDebugTrap() {
 
 template <typename Handler>
 void BaselineCodeGen<Handler>::emitProfilerEnterFrame() {
+  AutoForbidNopsForToggledJump afn(&masm);
+
   
   
   Label noInstrument;
@@ -2011,6 +2034,8 @@ void BaselineCodeGen<Handler>::emitProfilerEnterFrame() {
 
 template <typename Handler>
 void BaselineCodeGen<Handler>::emitProfilerExitFrame() {
+  AutoForbidNopsForToggledJump afn(&masm);
+
   
   
   Label noInstrument;
@@ -5123,6 +5148,8 @@ template <typename F1, typename F2>
   
   
 
+  AutoForbidNopsForToggledJump afn(&masm);
+
   Label isNotDebuggee, done;
 
   CodeOffset toggleOffset = masm.toggledJump(&isNotDebuggee);
@@ -6276,6 +6303,8 @@ bool BaselineInterpreterCodeGen::emitAfterYieldDebugInstrumentation(
   
   
 
+  AutoForbidNopsForToggledJump afn(&masm);
+
   
   Label done;
   CodeOffset toggleOffset = masm.toggledJump(&done);
@@ -6723,6 +6752,8 @@ bool BaselineCompilerCodeGen::emit_JumpTarget() {
 
 template <>
 bool BaselineInterpreterCodeGen::emit_JumpTarget() {
+  AutoForbidNopsForToggledJump afn(&masm);
+
   Register scratch1 = R0.scratchReg();
   Register scratch2 = R1.scratchReg();
 
