@@ -116,6 +116,13 @@ inline bool IsDefaultIgnorable(uint32_t aCh) {
       aCh, intl::UnicodeProperties::BinaryProperty::DefaultIgnorableCodePoint);
 }
 
+namespace detail {
+static inline bool Is8BitPotentialEmojiCodepoint(uint32_t aCh) {
+  return aCh - '0' <= '9' - '0' || aCh == '#' || aCh == '*' || aCh == 0x00A9 ||
+         aCh == 0x00AE;
+}
+}  
+
 inline EmojiPresentation GetEmojiPresentation(uint32_t aCh) {
   
   
@@ -123,13 +130,16 @@ inline EmojiPresentation GetEmojiPresentation(uint32_t aCh) {
   
   
   
-  if ((aCh & ~0x1fff) == 0) {
-    if (!((aCh - '0' <= '9' - '0') || aCh == '#' || aCh == '*' ||
-          aCh == 0x00A9 || aCh == 0x00AE)) {
-      MOZ_ASSERT(!intl::UnicodeProperties::HasBinaryProperty(
-          aCh, intl::UnicodeProperties::BinaryProperty::Emoji));
-      return TextOnly;
-    }
+  if (detail::Is8BitPotentialEmojiCodepoint(aCh)) {
+    MOZ_ASSERT(intl::UnicodeProperties::HasBinaryProperty(
+        aCh, intl::UnicodeProperties::BinaryProperty::Emoji));
+    MOZ_ASSERT(!intl::UnicodeProperties::HasBinaryProperty(
+        aCh, intl::UnicodeProperties::BinaryProperty::EmojiPresentation));
+    return TextDefault;
+  }
+
+  if (aCh < 0x2000) {
+    return TextOnly;
   }
 
   
@@ -150,6 +160,17 @@ inline EmojiPresentation GetEmojiPresentation(uint32_t aCh) {
     return EmojiDefault;
   }
   return TextDefault;
+}
+
+
+inline EmojiPresentation GetEmojiPresentation(char16_t aCh) {
+  return IS_SURROGATE(aCh) ? TextOnly : GetEmojiPresentation((uint32_t)aCh);
+}
+
+
+
+inline EmojiPresentation GetEmojiPresentation(uint8_t aCh) {
+  return detail::Is8BitPotentialEmojiCodepoint(aCh) ? TextDefault : TextOnly;
 }
 
 

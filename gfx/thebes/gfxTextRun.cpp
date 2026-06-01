@@ -3556,8 +3556,10 @@ template <typename T>
 void gfxFontGroup::ComputeRanges(nsTArray<TextRange>& aRanges, const T* aString,
                                  uint32_t aLength, Script aRunScript,
                                  gfx::ShapedTextFlags aOrientation) {
-  NS_ASSERTION(aRanges.Length() == 0, "aRanges must be initially empty");
-  NS_ASSERTION(aLength > 0, "don't call ComputeRanges for zero-length text");
+  MOZ_ASSERT(aRanges.IsEmpty(), "aRanges must be initially empty");
+  MOZ_ASSERT(aLength > 0, "don't call ComputeRanges for zero-length text");
+
+  const uint32_t maxIndex = aLength - 1;  
 
   uint32_t prevCh = 0;
   uint32_t nextCh = aString[0];
@@ -3566,7 +3568,6 @@ void gfxFontGroup::ComputeRanges(nsTArray<TextRange>& aRanges, const T* aString,
       nextCh = SURROGATE_TO_UCS4(nextCh, aString[1]);
     }
   }
-  int32_t lastRangeIndex = -1;
 
   
   
@@ -3576,9 +3577,18 @@ void gfxFontGroup::ComputeRanges(nsTArray<TextRange>& aRanges, const T* aString,
 
   
   
+  
+  RefPtr<gfxFont> firstFont = GetFontAt(0);
+
+  
+  
   FontMatchType matchType = {FontMatchType::Kind::kFontGroup, generic};
+  TextRange* currRange = nullptr;
 
   for (uint32_t i = 0; i < aLength; i++) {
+    
+    
+
     const uint32_t origI = i;  
 
     
@@ -3586,15 +3596,16 @@ void gfxFontGroup::ComputeRanges(nsTArray<TextRange>& aRanges, const T* aString,
 
     
     
-
     if constexpr (sizeof(T) == sizeof(char16_t)) {
       
       if (ch > 0xffffu) {
-        i++;
+        i++;  
+              
       }
-      if (i < aLength - 1) {
+      
+      if (i < maxIndex) {
         nextCh = aString[i + 1];
-        if (i + 2 < aLength && NS_IS_SURROGATE_PAIR(nextCh, aString[i + 2])) {
+        if (i + 2 <= maxIndex && NS_IS_SURROGATE_PAIR(nextCh, aString[i + 2])) {
           nextCh = SURROGATE_TO_UCS4(nextCh, aString[i + 2]);
         }
       } else {
@@ -3602,7 +3613,7 @@ void gfxFontGroup::ComputeRanges(nsTArray<TextRange>& aRanges, const T* aString,
       }
     } else {
       
-      nextCh = i < aLength - 1 ? aString[i + 1] : 0;
+      nextCh = i < maxIndex ? aString[i + 1] : 0;
     }
 
     RefPtr<gfxFont> font;
@@ -3621,7 +3632,7 @@ void gfxFontGroup::ComputeRanges(nsTArray<TextRange>& aRanges, const T* aString,
             
             (sizeof(T) == sizeof(uint8_t) &&
              (mFontVariantEmoji == StyleFontVariantEmoji::Normal ||
-              GetEmojiPresentation(ch) == TextOnly)) ||
+              GetEmojiPresentation(uint8_t(ch)) == TextOnly)) ||
             
             (sizeof(T) == sizeof(char16_t) &&
              (!IsClusterExtender(ch) && ch != NARROW_NO_BREAK_SPACE &&
@@ -3649,6 +3660,108 @@ void gfxFontGroup::ComputeRanges(nsTArray<TextRange>& aRanges, const T* aString,
       }
     }
 #endif
+
+    
+    
+    
+    if (font && font == firstFont && font->HasCharacter(ch) &&
+        mFontVariantEmoji == StyleFontVariantEmoji::Normal &&
+        (sizeof(T) == sizeof(uint8_t) || !(gfxFontUtils::IsJoinControl(ch) ||
+                                           gfxFontUtils::IsVarSelector(ch))) &&
+        GetEmojiPresentation(ch) == TextOnly &&
+        aOrientation != ShapedTextFlags::TEXT_ORIENT_VERTICAL_MIXED) {
+      uint32_t safeI = i;
+      while (i < maxIndex) {
+        
+        uint32_t c = aString[i + 1];
+        uint32_t charLen = 1;
+        if constexpr (sizeof(T) == sizeof(char16_t)) {
+          
+          if (i + 2 <= maxIndex && NS_IS_SURROGATE_PAIR(c, aString[i + 2])) {
+            c = SURROGATE_TO_UCS4(c, aString[i + 2]);
+            charLen = 2;
+          }
+          
+          
+          
+          if (gfxFontUtils::IsJoinControl(c) ||
+              gfxFontUtils::IsVarSelector(c)) {
+            i = safeI;
+            break;
+          }
+        }
+        
+        if (!font->HasCharacter(c)) {
+          break;
+        }
+        
+        if constexpr (sizeof(T) == sizeof(char16_t)) {
+          if (GetEmojiPresentation(c) != TextOnly) {
+            break;
+          }
+          
+          
+          safeI = i;
+          i += charLen;
+        } else {
+          
+          
+          if (mFontVariantEmoji == StyleFontVariantEmoji::Emoji &&
+              GetEmojiPresentation(uint8_t(c)) != TextOnly) {
+            break;
+          }
+          i++;
+        }
+      }
+
+      
+      if (!currRange) {
+        
+        currRange = aRanges.AppendElement(
+            TextRange(origI, i + 1, font, matchType, aOrientation));
+        prevFont = std::move(font);
+      } else {
+        
+        
+        
+        if (currRange->font != font) {
+          
+          currRange->end = origI;
+          currRange = aRanges.AppendElement(
+              TextRange(origI, i + 1, font, matchType, aOrientation));
+          prevFont = std::move(font);
+        } else {
+          currRange->matchType |= matchType;
+        }
+      }
+
+      if (i > origI) {
+        
+        prevCh = aString[i];
+        if constexpr (sizeof(T) == sizeof(char16_t)) {
+          if (i > 0 && NS_IS_SURROGATE_PAIR(aString[i - 1], prevCh)) {
+            prevCh = SURROGATE_TO_UCS4(aString[i - 1], prevCh);
+          }
+          if (i < maxIndex) {
+            nextCh = aString[i + 1];
+            if (i + 2 <= maxIndex &&
+                NS_IS_SURROGATE_PAIR(nextCh, aString[i + 2])) {
+              nextCh = SURROGATE_TO_UCS4(nextCh, aString[i + 2]);
+            }
+          } else {
+            nextCh = 0;
+          }
+        } else {
+          nextCh = i < maxIndex ? aString[i + 1] : 0;
+        }
+      } else {
+        
+        prevCh = ch;
+      }
+
+      
+      continue;
+    }
 
     prevCh = ch;
 
@@ -3693,21 +3806,20 @@ void gfxFontGroup::ComputeRanges(nsTArray<TextRange>& aRanges, const T* aString,
       }
     }
 
-    if (lastRangeIndex == -1) {
+    if (!currRange) {
       
-      aRanges.AppendElement(TextRange(0, 1, font, matchType, orient));
-      lastRangeIndex++;
+      currRange = aRanges.AppendElement(
+          TextRange(origI, i + 1, font, matchType, orient));
       prevFont = std::move(font);
     } else {
       
       
-      TextRange& prevRange = aRanges[lastRangeIndex];
-      if (prevRange.font != font ||
-          (prevRange.orientation != orient && !IsClusterExtender(ch))) {
+      if (currRange->font != font ||
+          (currRange->orientation != orient && !IsClusterExtender(ch))) {
         
-        prevRange.end = origI;
-        aRanges.AppendElement(TextRange(origI, i + 1, font, matchType, orient));
-        lastRangeIndex++;
+        currRange->end = origI;
+        currRange = aRanges.AppendElement(
+            TextRange(origI, i + 1, font, matchType, orient));
 
         
         
@@ -3716,12 +3828,13 @@ void gfxFontGroup::ComputeRanges(nsTArray<TextRange>& aRanges, const T* aString,
           prevFont = std::move(font);
         }
       } else {
-        prevRange.matchType |= matchType;
+        currRange->matchType |= matchType;
       }
     }
   }
 
-  aRanges[lastRangeIndex].end = aLength;
+  MOZ_ASSERT(currRange, "no range created?");
+  currRange->end = aLength;
 
 #ifndef RELEASE_OR_BETA
   LogModule* log = mStyle.systemFont ? gfxPlatform::GetLog(eGfxLog_textrunui)
