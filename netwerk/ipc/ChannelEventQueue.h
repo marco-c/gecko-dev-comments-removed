@@ -124,7 +124,7 @@ class ChannelEventQueue final {
   
   
   
-  inline void RunOrEnqueue(UniquePtr<ChannelEvent> aCallback,
+  inline void RunOrEnqueue(UniquePtr<ChannelEvent> aChannelEvent,
                            bool aAssertionWhenNotQueued = false);
 
   
@@ -207,18 +207,13 @@ class ChannelEventQueue final {
   friend class AutoEventEnqueuer;
 };
 
-inline void ChannelEventQueue::RunOrEnqueue(UniquePtr<ChannelEvent> aCallback,
-                                            bool aAssertionWhenNotQueued) {
-  MOZ_ASSERT(aCallback);
+inline void ChannelEventQueue::RunOrEnqueue(
+    UniquePtr<ChannelEvent> aChannelEvent, bool aAssertionWhenNotQueued) {
+  MOZ_ASSERT(aChannelEvent);
   
   
   
   nsCOMPtr<nsISupports> kungFuDeathGrip;
-
-  
-  UniquePtr<ChannelEvent> event = std::move(aCallback);
-  
-  
 
   
   
@@ -238,12 +233,12 @@ inline void ChannelEventQueue::RunOrEnqueue(UniquePtr<ChannelEvent> aCallback,
     
     if (enqueue) {
       PROFILER_MARKER("ChannelEventQueue::Enqueue", NETWORK, {}, FlowMarker,
-                      Flow::FromPointer(event.get()));
-      mEventQueue.AppendElement(std::move(event));
+                      Flow::FromPointer(aChannelEvent.get()));
+      mEventQueue.AppendElement(std::move(aChannelEvent));
       return;
     }
 
-    nsCOMPtr<nsIEventTarget> target = event->GetEventTarget();
+    nsCOMPtr<nsIEventTarget> target = aChannelEvent->GetEventTarget();
     MOZ_ASSERT(target);
 
     bool isCurrentThread = false;
@@ -264,9 +259,9 @@ inline void ChannelEventQueue::RunOrEnqueue(UniquePtr<ChannelEvent> aCallback,
       SuspendInternal();
 
       PROFILER_MARKER("ChannelEventQueue::Enqueue", NETWORK, {}, FlowMarker,
-                      Flow::FromPointer(event.get()));
+                      Flow::FromPointer(aChannelEvent.get()));
 
-      mEventQueue.AppendElement(std::move(event));
+      mEventQueue.AppendElement(std::move(aChannelEvent));
       ResumeInternal();
       return;
     }
@@ -274,10 +269,10 @@ inline void ChannelEventQueue::RunOrEnqueue(UniquePtr<ChannelEvent> aCallback,
 
   MOZ_RELEASE_ASSERT(!aAssertionWhenNotQueued);
   AUTO_PROFILER_TERMINATING_FLOW_MARKER("ChannelEvent", OTHER,
-                                        Flow::FromPointer(event.get()));
+                                        Flow::FromPointer(aChannelEvent.get()));
   
   
-  event->Run();
+  aChannelEvent->Run();
 }
 
 inline void ChannelEventQueue::StartForcedQueueing() {
