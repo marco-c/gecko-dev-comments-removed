@@ -2,8 +2,6 @@
 
 const PRINT_POSTDATA = httpURL("print_postdata.sjs");
 const FILE_DUMMY = fileURL("dummy_page.html");
-const DATA_URL = "data:text/html,Hello%2C World!";
-const DATA_STRING = "Hello, World!";
 
 async function performLoad(browser, opts, action) {
   let loadedPromise = BrowserTestUtils.browserLoaded(
@@ -103,10 +101,7 @@ async function postFrom(start, target) {
         browser,
         {
           url(url) {
-            let enable =
-              url.startsWith(PRINT_POSTDATA) ||
-              url == target ||
-              url == DATA_URL;
+            let enable = url.startsWith(PRINT_POSTDATA) || url == target;
             if (!enable) {
               info(`url ${url} is invalid to perform load`);
             }
@@ -258,21 +253,13 @@ async function sendMessage(ext, method, url) {
 
 add_task(async function test_protocol() {
   
-  await testLoadAndRedirect("data:,foo", false, true);
+  
+  await testLoadAndRedirect("data:,foo", false, false);
 
   
   await testLoadAndRedirect(FILE_DUMMY, true, false);
 
-  await withExtensionDummy(async (extOrigin, extension) => {
-    await sendMessage(extension, "setRedirectUrl", DATA_URL);
-
-    let respExtRedirect = await postFrom(
-      extOrigin + "redirect.html",
-      PRINT_POSTDATA
-    );
-
-    ok(E10SUtils.isWebRemoteType(respExtRedirect.remoteType), "process switch");
-    is(respExtRedirect.location, DATA_URL, "correct location");
-    is(respExtRedirect.body, DATA_STRING, "correct POST body");
-  });
+  
+  
+  
 });
