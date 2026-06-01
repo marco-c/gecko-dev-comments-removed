@@ -115,7 +115,6 @@ pub use self::wgl::{Instance, Surface};
 
 use alloc::{boxed::Box, string::String, string::ToString as _, sync::Arc, vec::Vec};
 use core::{
-    cell::Cell,
     fmt,
     ops::Range,
     sync::atomic::{AtomicU32, AtomicU8},
@@ -347,15 +346,21 @@ pub struct Buffer {
     map_flags: u32,
     
     
-    mapped: Cell<bool>,
-    data: Option<Arc<MaybeMutex<Vec<u8>>>>,
-    offset_of_current_mapping: Arc<MaybeMutex<wgt::BufferAddress>>,
+    
+    map_state: Arc<MaybeMutex<BufferMapState>>,
+}
+
+#[derive(Clone, Debug)]
+struct BufferMapState {
+    
+    
+    mapped: bool,
+    data: Option<Vec<u8>>,
+    offset_of_current_mapping: wgt::BufferAddress,
 }
 
 #[cfg(send_sync)]
-unsafe impl Sync for Buffer {}
-#[cfg(send_sync)]
-unsafe impl Send for Buffer {}
+static_assertions::assert_impl_all!(Buffer: Send, Sync);
 
 impl crate::DynBuffer for Buffer {}
 

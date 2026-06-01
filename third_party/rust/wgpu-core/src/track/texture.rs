@@ -160,6 +160,12 @@ impl TextureViewBindGroupState {
     pub fn insert_single(&mut self, view: Arc<TextureView>, usage: TextureUses) {
         self.views.push((view, usage));
     }
+
+    
+    
+    pub fn used_textures(&self) -> impl Iterator<Item = &Arc<Texture>> {
+        self.views.iter().map(|(v, _)| &v.parent)
+    }
 }
 
 

@@ -58,12 +58,8 @@ impl BufferBindGroupState {
     }
 
     
-    pub fn used_tracker_indices(&self) -> impl Iterator<Item = TrackerIndex> + '_ {
-        self.buffers
-            .iter()
-            .map(|(b, _)| b.tracker_index())
-            .collect::<Vec<_>>()
-            .into_iter()
+    pub fn used_resources(&self) -> impl Iterator<Item = &Arc<Buffer>> {
+        self.buffers.iter().map(|(b, _)| b)
     }
 
     

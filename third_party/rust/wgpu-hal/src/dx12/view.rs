@@ -41,12 +41,33 @@ fn aspects_to_plane(aspects: crate::FormatAspects) -> u32 {
     }
 }
 
+
+
+
+
+
+
+
+const STENCIL_COMPONENT_MAPPING: Direct3D12::D3D12_SHADER_COMPONENT_MAPPING =
+    super::conv::make_shader_component_mapping(
+        Direct3D12::D3D12_SHADER_COMPONENT_MAPPING_FROM_MEMORY_COMPONENT_1,
+        Direct3D12::D3D12_SHADER_COMPONENT_MAPPING_FORCE_VALUE_0,
+        Direct3D12::D3D12_SHADER_COMPONENT_MAPPING_FORCE_VALUE_0,
+        Direct3D12::D3D12_SHADER_COMPONENT_MAPPING_FORCE_VALUE_1,
+    );
+
 impl ViewDescriptor {
     pub(crate) unsafe fn to_srv(&self) -> Option<Direct3D12::D3D12_SHADER_RESOURCE_VIEW_DESC> {
+        let swizzle = if self.aspects == crate::FormatAspects::STENCIL {
+            STENCIL_COMPONENT_MAPPING.0 as u32
+        } else {
+            Direct3D12::D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING
+        };
+
         let mut desc = Direct3D12::D3D12_SHADER_RESOURCE_VIEW_DESC {
             Format: self.srv_uav_format?,
             ViewDimension: Direct3D12::D3D12_SRV_DIMENSION_UNKNOWN,
-            Shader4ComponentMapping: Direct3D12::D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING,
+            Shader4ComponentMapping: swizzle,
             Anonymous: Default::default(),
         };
 

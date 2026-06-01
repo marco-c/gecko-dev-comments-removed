@@ -446,11 +446,18 @@ pub struct ImmediateItem {
     
     pub access_path: String,
     
-    pub ty: Handle<crate::Type>,
     
     
+    
+    
+    
+    
+    
+    pub ty: TypeInner,
     
     pub offset: u32,
+    
+    pub size_bytes: u32,
 }
 
 
