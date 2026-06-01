@@ -10,14 +10,18 @@
 #include "MediaCodecsSupport.h"
 
 namespace mozilla {
+class EncoderConfig;
 class MediaExtendedMIMEType;
+struct SupportDecoderParams;
 
 
-[[nodiscard]] media::EncodeSupportSet SupportsVideoMimeEncodeForWebrtc(
-    const MediaExtendedMIMEType& aMime);
 
-[[nodiscard]] media::DecodeSupportSet SupportsVideoMimeDecodeForWebrtc(
-    const MediaExtendedMIMEType& aMime);
+[[nodiscard]] media::DecodeSupportSet SupportsVideoDecodeForWebrtc(
+    const MediaExtendedMIMEType& aMime, const SupportDecoderParams& aParams);
+
+
+[[nodiscard]] media::EncodeSupportSet SupportsVideoEncodeForWebrtc(
+    const EncoderConfig& aConfig);
 
 
 
