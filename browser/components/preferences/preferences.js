@@ -206,6 +206,16 @@ let resolveLegacyCategory = ChromeUtils.importESModule(
   }
 ).resolveLegacyCategory;
 
+var { ScrollOffsets } = ChromeUtils.importESModule(
+  "chrome://global/content/ScrollOffsets.mjs",
+  {
+    global: "current",
+  }
+);
+
+
+var scrollOffsets;
+
 
 
 
@@ -497,6 +507,10 @@ function init_all() {
   
   Preferences.queueUpdateOfAllElements();
 
+  scrollOffsets = new ScrollOffsets(
+     (document.querySelector(".main-content"))
+  );
+
   let redesignEnabled = srdSectionPrefs.all;
 
   if (!redesignEnabled) {
@@ -724,6 +738,25 @@ async function gotoPref(
   }
   
   
+  
+  
+  let historyEntryId =
+    (aShowReason == "Hash" && history.state?.historyEntryId) ||
+    scrollOffsets.newHistoryEntryId();
+
+  
+
+
+
+  let prevCategory = gLastCategory.category;
+
+  
+  
+  scrollOffsets.save();
+  scrollOffsets.setView(historyEntryId);
+
+  
+  
   gLastCategory.category = category;
   gLastCategory.subcategory = subcategory;
 
@@ -744,7 +777,28 @@ async function gotoPref(
   }
 
   categories.currentView = currentView;
-  window.history.replaceState(category, document.title);
+
+  
+
+
+
+
+
+
+  let previousCategory = null;
+  if (aShowReason == "Hash") {
+    previousCategory = history.state?.previousCategory ?? null;
+  } else if (aShowReason == "Click" && prevCategory) {
+    previousCategory = internalPrefCategoryNameToFriendlyName(prevCategory);
+  }
+  window.history.replaceState(
+    {
+      historyEntryId,
+      category: internalPrefCategoryNameToFriendlyName(category),
+      previousCategory,
+    },
+    document.title
+  );
 
   let categoryInfo = gCategoryInits.get(category);
   if (!categoryInfo) {
@@ -773,7 +827,7 @@ async function gotoPref(
   search(category, "data-category");
 
   if (aShowReason != "Initial") {
-    document.querySelector(".main-content").scrollTop = 0;
+    scrollOffsets.restore();
   }
 
   

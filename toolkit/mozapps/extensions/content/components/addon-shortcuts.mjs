@@ -498,7 +498,7 @@ function onShortcutChange(e) {
   switch (validation) {
     case lazy.ShortcutUtils.IS_VALID: {
       // Show an error if this is already a system shortcut.
-      let chromeWindow = window.windowRoot.ownerGlobal;
+      let chromeWindow = window.windowRoot.window;
       if (lazy.ShortcutUtils.isSystem(chromeWindow, shortcutString)) {
         setError(input, "shortcuts-system");
         break;
@@ -712,7 +712,7 @@ async function renderAddons(addons, focusedExtensionId) {
 }
 
 // focusExtension() is called from the view-loaded listener so that it doesn't
-// interfere with ScrollOffsets.restore() in view-controller.js.
+// interfere with gViewController.scrollOffsets.restore() in view-controller.mjs.
 function focusExtension() {
   document
     .querySelector(".shortcut.card.focused-extension")

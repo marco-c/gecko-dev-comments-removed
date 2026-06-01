@@ -9,6 +9,8 @@
 
 
 
+
+
 function getNavButton(doc, viewName) {
   return doc.querySelector(`moz-page-nav-button[view="${viewName}"]`);
 }
@@ -129,7 +131,40 @@ add_task(async function test_arrow_key_navigation_from_subpane() {
 
   
   ok(searchButton.selected, "Search button selected after arrow up");
-  is(win.history.state, "paneSearch", "Navigated to Search pane");
+  is(win.gLastCategory?.category, "paneSearch", "Navigated to Search pane");
+
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+});
+
+
+
+
+add_task(async function test_nav_button_click_resets_scroll() {
+  await openPreferencesViaOpenPreferencesAPI("etp", { leaveOpen: true });
+  let doc = gBrowser.contentDocument;
+  let win = gBrowser.contentWindow;
+  let mainContent = doc.querySelector(".main-content");
+
+  
+  let padding = doc.createElement("div");
+  padding.style.marginBlock = "100vh";
+  padding.textContent = "Make sure it scrolls";
+  mainContent.append(padding);
+
+  mainContent.scrollTop = 50;
+  Assert.greater(mainContent.scrollTop, 0, "Sub-pane scrolled before click");
+
+  
+  let syncButton = getNavButton(doc, "paneSync");
+  let paneChangePromise = waitForPaneChange("sync");
+  EventUtils.synthesizeMouseAtCenter(syncButton.buttonEl, {}, win);
+  await paneChangePromise;
+
+  is(
+    mainContent.scrollTop,
+    0,
+    "Scroll resets to 0 after nav-button forward navigation"
+  );
 
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
@@ -184,7 +219,11 @@ add_task(async function test_back_button_from_subpane() {
     "panePrivacy",
     "Privacy still selected after clicking back button"
   );
-  is(win.history.state, "panePrivacy", "Navigated back to privacy pane");
+  is(
+    win.gLastCategory?.category,
+    "panePrivacy",
+    "Navigated back to privacy pane"
+  );
 
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
