@@ -128,9 +128,7 @@ nsClientAuthRememberService::GetDecisions(
       if (NS_FAILED(rv)) {
         return rv;
       }
-      RefPtr<nsIClientAuthRememberRecord> tmp =
-          new nsClientAuthRemember(key, value);
-
+      RefPtr tmp = MakeRefPtr<nsClientAuthRemember>(key, value);
       results.AppendElement(tmp);
     }
   }
@@ -185,8 +183,7 @@ nsClientAuthRememberService::DeleteDecisionsByHost(
       if (NS_FAILED(rv)) {
         return rv;
       }
-      RefPtr<nsIClientAuthRememberRecord> tmp =
-          new nsClientAuthRemember(key, value);
+      RefPtr tmp = MakeRefPtr<nsClientAuthRemember>(key, value);
       nsAutoCString asciiHost;
       tmp->GetAsciiHost(asciiHost);
       if (asciiHost.Equals(aHostName)) {
@@ -268,17 +265,17 @@ nsresult CheckForPreferredCertificate(const nsACString& aHostName,
     return NS_ERROR_UNEXPECTED;
   }
   ScopedCFType<SecIdentityRef> identity(
-      ::SecIdentityCopyPreferred(host.get(), NULL, NULL));
+      ::SecIdentityCopyPreferred(host.get(), nullptr, nullptr));
   if (!identity) {
     
     
     return NS_OK;
   }
-  SecCertificateRef certRefRaw = NULL;
+  SecCertificateRef certRefRaw = nullptr;
   OSStatus copyResult =
       ::SecIdentityCopyCertificate(identity.get(), &certRefRaw);
   ScopedCFType<SecCertificateRef> certRef(certRefRaw);
-  if (copyResult != errSecSuccess || certRef.get() == NULL) {
+  if (copyResult != errSecSuccess || certRef.get() == nullptr) {
     return NS_ERROR_UNEXPECTED;
   }
   ScopedCFType<CFDataRef> der(::SecCertificateCopyData(certRef.get()));
