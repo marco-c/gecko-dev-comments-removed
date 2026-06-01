@@ -650,6 +650,9 @@ function createStartupConfig(hidden = false) {
       {
         id: "windowsLaunchOnLoginDisabledBox",
         control: "moz-message-bar",
+        controlAttrs: {
+          role: "status",
+        },
         options: [
           {
             control: "span",
@@ -672,6 +675,9 @@ function createStartupConfig(hidden = false) {
         id: "windowsLaunchOnLoginDisabledProfileBox",
         control: "moz-message-bar",
         l10nId: "startup-windows-launch-on-login-profile-disabled",
+        controlAttrs: {
+          role: "status",
+        },
       },
       {
         id: "alwaysCheckDefault",
@@ -803,12 +809,6 @@ var gMainPane = {
     });
 
     setEventListener("chooseLanguage", "command", gMainPane.showLanguages);
-
-    document
-      .getElementById("migrationWizardDialog")
-      .addEventListener("MigrationWizard:Close", function (e) {
-        e.currentTarget.close();
-      });
 
     
 
@@ -1691,11 +1691,16 @@ var gMainPane = {
     await customElements.whenDefined("migration-wizard");
 
     
-    
     if (!migrationWizardDialog.firstElementChild) {
       let wizard = document.createElement("migration-wizard");
       wizard.toggleAttribute("dialog-mode", true);
       migrationWizardDialog.appendChild(wizard);
+      migrationWizardDialog.addEventListener(
+        "MigrationWizard:Close",
+        function (e) {
+          e.currentTarget.close();
+        }
+      );
     }
     migrationWizardDialog.firstElementChild.requestState();
 
