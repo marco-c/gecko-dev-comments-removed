@@ -1026,8 +1026,8 @@ void nsIWidget::PauseOrResumeCompositor(bool aPause) {
 
 already_AddRefed<GeckoContentController>
 nsIWidget::CreateRootContentController() {
-  RefPtr<GeckoContentController> controller =
-      new ChromeProcessController(this, mAPZEventState, mAPZC);
+  auto controller =
+      MakeRefPtr<ChromeProcessController>(this, mAPZEventState, mAPZC);
   return controller.forget();
 }
 
@@ -2339,7 +2339,8 @@ WidgetWheelEvent nsIWidget::MayStartSwipeForAPZ(
     return event;
   }
 
-  if (aPanInput.mHandledByAPZ && aPanInput.AllowsSwipe()) {
+  if (aPanInput.mHandledByAPZ && aPanInput.AllowsSwipe() &&
+      !aApzResult.mTargetCanScrollHorizontally) {
     SwipeInfo swipeInfo = SendMayStartSwipe(aPanInput);
     event.mCanTriggerSwipe = swipeInfo.wantsSwipe;
     if (swipeInfo.wantsSwipe) {
