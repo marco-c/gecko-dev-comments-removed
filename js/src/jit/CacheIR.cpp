@@ -1075,7 +1075,7 @@ void IRGenerator::emitCallAccessorGuards(NativeObject* obj,
   if (mode_ == ICState::Mode::Specialized || IsWindow(obj)) {
     
     ObjectFuse* objFuse = nullptr;
-    if (canOptimizeConstantAccessorProperty(holder, prop, &objFuse)) {
+    if (canOptimizeConstantAccessorProperty(holder, id, prop, &objFuse)) {
       ObjOperandId holderId =
           EmitGuardObjectFuseHolder(writer, obj, holder, objId);
       emitGuardConstantAccessorProperty(holder, holderId, id, prop, objFuse);
@@ -2219,6 +2219,7 @@ void IRGenerator::emitOptimisticClassGuard(ObjOperandId objId, JSObject* obj,
 }
 
 bool IRGenerator::canOptimizeConstantDataProperty(NativeObject* holder,
+                                                  PropertyKey key,
                                                   PropertyInfo prop,
                                                   ObjectFuse** objFuse) {
   MOZ_ASSERT(prop.isDataProperty());
@@ -2238,7 +2239,7 @@ bool IRGenerator::canOptimizeConstantDataProperty(NativeObject* holder,
     return false;
   }
 
-  if (!(*objFuse)->tryOptimizeConstantProperty(prop)) {
+  if (!(*objFuse)->tryOptimizeConstantProperty(key, prop)) {
     return false;
   }
 
@@ -2343,7 +2344,7 @@ void IRGenerator::emitLoadDataPropertyResult(NativeObject* obj,
                                              PropertyKey key, PropertyInfo prop,
                                              ObjOperandId objId) {
   ObjectFuse* objFuse = nullptr;
-  if (canOptimizeConstantDataProperty(holder, prop, &objFuse)) {
+  if (canOptimizeConstantDataProperty(holder, key, prop, &objFuse)) {
     ObjOperandId holderId =
         EmitGuardObjectFuseHolder(writer, obj, holder, objId);
     emitConstantDataPropertyResult(holder, holderId, key, prop, objFuse);
@@ -2354,6 +2355,7 @@ void IRGenerator::emitLoadDataPropertyResult(NativeObject* obj,
 }
 
 bool IRGenerator::canOptimizeConstantAccessorProperty(NativeObject* holder,
+                                                      PropertyKey key,
                                                       PropertyInfo prop,
                                                       ObjectFuse** objFuse) {
   MOZ_ASSERT(prop.isAccessorProperty());
@@ -2369,7 +2371,7 @@ bool IRGenerator::canOptimizeConstantAccessorProperty(NativeObject* holder,
     return false;
   }
 
-  return (*objFuse)->tryOptimizeConstantProperty(prop);
+  return (*objFuse)->tryOptimizeConstantProperty(key, prop);
 }
 
 void IRGenerator::emitGuardConstantAccessorProperty(NativeObject* holder,
@@ -3385,7 +3387,7 @@ AttachDecision GetNameIRGenerator::tryAttachGlobalNameValue(ObjOperandId objId,
     
     
     ObjectFuse* objFuse = nullptr;
-    if (canOptimizeConstantDataProperty(holder, *prop, &objFuse)) {
+    if (canOptimizeConstantDataProperty(holder, id, *prop, &objFuse)) {
       emitConstantDataPropertyResult(holder, objId, id, *prop, objFuse);
     } else {
       size_t dynamicSlotOffset =
@@ -3395,7 +3397,7 @@ AttachDecision GetNameIRGenerator::tryAttachGlobalNameValue(ObjOperandId objId,
   } else if (holder == &globalLexical->global()) {
     MOZ_ASSERT(globalLexical->global().isGenerationCountedGlobal());
     ObjectFuse* objFuse = nullptr;
-    if (canOptimizeConstantDataProperty(holder, *prop, &objFuse)) {
+    if (canOptimizeConstantDataProperty(holder, id, *prop, &objFuse)) {
       ObjOperandId holderId = writer.loadObject(holder);
       emitConstantDataPropertyResult(holder, holderId, id, *prop, objFuse);
     } else {
@@ -3470,7 +3472,7 @@ AttachDecision GetNameIRGenerator::tryAttachGlobalNameGetter(ObjOperandId objId,
   ObjOperandId globalId;
   ObjectFuse* objFuse = nullptr;
   if (holder == global &&
-      canOptimizeConstantAccessorProperty(global, *prop, &objFuse)) {
+      canOptimizeConstantAccessorProperty(global, id, *prop, &objFuse)) {
     globalId = writer.loadObject(global);
     emitGuardConstantAccessorProperty(global, globalId, id, *prop, objFuse);
   } else {
@@ -4436,7 +4438,8 @@ SetSlotOptimizable SetPropIRGenerator::canAttachNativeSetSlot(
     return SetSlotOptimizable::No;
   }
 
-  return Watchtower::canOptimizeSetSlot(cx_, &obj->as<NativeObject>(), **prop);
+  return Watchtower::canOptimizeSetSlot(cx_, &obj->as<NativeObject>(), id,
+                                        **prop);
 }
 
 
@@ -5685,34 +5688,23 @@ AttachDecision InstanceOfIRGenerator::tryAttachFunction() {
   MOZ_ASSERT(IsCacheableProtoChain(fun, hasInstanceHolder));
 
   
-  Maybe<PropertyInfo> prototypeProp = fun->lookupPure(cx_->names().prototype);
-  if (prototypeProp.isNothing()) {
-    if (!fun->needsPrototypeProperty()) {
-      return AttachDecision::NoAction;
-    }
-    
-    
-    
-    
-    bool hasProp;
-    if (!HasProperty(cx_, fun, cx_->names().prototype, &hasProp)) {
-      cx_->clearPendingException();
-      return AttachDecision::NoAction;
-    }
-    MOZ_ASSERT(hasProp);
-    prototypeProp = fun->lookupPure(cx_->names().prototype);
-    MOZ_ASSERT(prototypeProp);
-  }
-  if (!prototypeProp->isDataProperty()) {
-    return AttachDecision::NoAction;
-  }
-
   
-  uint32_t prototypeSlot = prototypeProp->slot();
-  MOZ_ASSERT(prototypeSlot >= fun->numFixedSlots(),
-             "LoadDynamicSlot expects a dynamic slot");
-  if (!fun->getSlot(prototypeSlot).isObject()) {
-    return AttachDecision::NoAction;
+  
+  
+  
+  bool lhsIsObject = lhsVal_.isObject();
+  Maybe<PropertyInfo> prototypeProp;
+  if (lhsIsObject) {
+    prototypeProp = fun->lookupPure(cx_->names().prototype);
+    if (prototypeProp.isNothing()) {
+      return AttachDecision::NoAction;
+    }
+    if (!prototypeProp->isDataProperty()) {
+      return AttachDecision::NoAction;
+    }
+    if (!fun->getSlot(prototypeProp->slot()).isObject()) {
+      return AttachDecision::NoAction;
+    }
   }
 
   
@@ -5731,15 +5723,25 @@ AttachDecision InstanceOfIRGenerator::tryAttachFunction() {
     TestMatchingHolder(writer, hasInstanceHolder, holderId);
   }
 
-  
-  ValOperandId protoValId =
-      writer.loadDynamicSlot(rhsId, prototypeSlot - fun->numFixedSlots());
-  ObjOperandId protoId = writer.guardToObject(protoValId);
+  if (lhsIsObject) {
+    
+    uint32_t prototypeSlot = prototypeProp->slot();
+    MOZ_RELEASE_ASSERT(prototypeSlot >= fun->numFixedSlots(),
+                       "LoadDynamicSlot expects a dynamic slot");
+    ValOperandId protoValId =
+        writer.loadDynamicSlot(rhsId, prototypeSlot - fun->numFixedSlots());
+    ObjOperandId protoId = writer.guardToObject(protoValId);
 
-  
-  
-  writer.loadInstanceOfObjectResult(lhs, protoId);
-  trackAttached("InstanceOf");
+    
+    
+    writer.loadInstanceOfObjectResult(lhs, protoId);
+    trackAttached("InstanceOf");
+  } else {
+    writer.guardIsNotObject(lhs);
+    writer.loadBooleanResult(false);
+    trackAttached("InstanceOfPrimitive");
+  }
+
   return AttachDecision::Attach;
 }
 
@@ -16369,7 +16371,7 @@ bool IRGenerator::canOptimizeConstantNativeFunctionProperty(
     return false;
   }
 
-  return canOptimizeConstantDataProperty(*holder, **prop, holderFuse);
+  return canOptimizeConstantDataProperty(*holder, propKey, **prop, holderFuse);
 }
 
 
