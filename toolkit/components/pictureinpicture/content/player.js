@@ -77,8 +77,12 @@ const BOTTOM_RIGHT_QUADRANT = 4;
 
 
 
-function setupPlayer(id, wgp, videoRef, autoFocus) {
-  return Player.init(id, wgp, videoRef, autoFocus);
+
+
+
+
+function setupPlayer(id, wgp, videoRef, isPipApiRequest, autoFocus) {
+  return Player.init(id, wgp, videoRef, isPipApiRequest, autoFocus);
 }
 
 
@@ -222,7 +226,13 @@ let Player = {
 
 
 
-  init(id, wgp, videoRef, autoFocus) {
+
+
+
+
+
+
+  init(id, wgp, videoRef, isPipApiRequest, autoFocus) {
     this.id = id;
 
     
@@ -251,10 +261,19 @@ let Player = {
     );
     holder.appendChild(browser);
 
+    
+    
+    const initDimension = {
+      width: window.innerWidth,
+      height: window.innerHeight,
+    };
+
     this.actor =
       browser.browsingContext.currentWindowGlobal.getActor("PictureInPicture");
-    this.actor.sendAsyncMessage("PictureInPicture:SetupPlayer", {
+    const setupPromise = this.actor.sendQuery("PictureInPicture:SetupPlayer", {
       videoRef,
+      isPipApiRequest,
+      initDimension,
     });
 
     PictureInPicture.weakPipToWin.set(this.actor, window);
@@ -381,7 +400,7 @@ let Player = {
 
     this._isInitialized = true;
 
-    return this.actor;
+    return { actor: this.actor, setupPromise };
   },
 
   uninit() {
