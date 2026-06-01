@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef COMPONENTS_REFLECT_H
 #define COMPONENTS_REFLECT_H
 
@@ -20,7 +19,7 @@ class Module final : public nsIXPCScriptable {
   Module();
 
  private:
-  ~Module();
+  ~Module() = default;
 };
 
 }  

@@ -107,7 +107,7 @@ namespace mozilla::widget {
 
 
 class WidgetShutdownObserver final : public nsIObserver {
-  ~WidgetShutdownObserver();
+  ~WidgetShutdownObserver() = default;
 
  public:
   explicit WidgetShutdownObserver(nsIWidget* aWidget);
@@ -132,7 +132,6 @@ WidgetShutdownObserver::WidgetShutdownObserver(nsIWidget* aWidget)
 
 
 
-WidgetShutdownObserver::~WidgetShutdownObserver() = default;
 
 NS_IMETHODIMP
 WidgetShutdownObserver::Observe(nsISupports* aSubject, const char* aTopic,
@@ -192,7 +191,10 @@ void WidgetShutdownObserver::Unregister() {
 
 
 class LocalesChangedObserver final : public nsIObserver {
-  ~LocalesChangedObserver();
+  
+  
+  
+  ~LocalesChangedObserver() = default;
 
  public:
   explicit LocalesChangedObserver(nsIWidget* aWidget);
@@ -213,11 +215,6 @@ LocalesChangedObserver::LocalesChangedObserver(nsIWidget* aWidget)
     : mWidget(aWidget), mRegistered(false) {
   Register();
 }
-
-
-
-
-LocalesChangedObserver::~LocalesChangedObserver() = default;
 
 NS_IMETHODIMP
 LocalesChangedObserver::Observe(nsISupports* aSubject, const char* aTopic,
