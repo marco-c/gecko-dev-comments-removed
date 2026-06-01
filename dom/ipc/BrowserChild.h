@@ -583,12 +583,6 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
   void SetTargetAPZC(
       uint64_t aInputBlockId,
       const nsTArray<layers::ScrollableLayerGuid>& aTargets) const;
-  
-  
-  
-  
-  void NotifyApzAwareListenerAdded(
-      layers::ScrollableLayerGuid::ViewID aScrollId) const;
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   mozilla::ipc::IPCResult RecvHandleTap(
       const layers::GeckoContentController_TapType& aType,
