@@ -226,7 +226,7 @@ class JsepSessionImpl : public JsepSession, public JsepSessionCopyableStuff {
       const std::string& transportId) const;
   
   
-  Maybe<JsepTransceiver> FindUnassociatedTransceiver(
+  Maybe<JsepTransceiver> FindUnassociatedRtpTransceiver(
       SdpMediaSection::MediaType type, bool magic);
   
   void RollbackLocalOffer();

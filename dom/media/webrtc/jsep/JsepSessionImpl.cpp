@@ -1615,7 +1615,7 @@ Maybe<JsepTransceiver> JsepSessionImpl::GetTransceiverForLocal(size_t level) {
       
       transceiver->Disassociate();
       Maybe<JsepTransceiver> newTransceiver =
-          FindUnassociatedTransceiver(transceiver->GetMediaType(), false);
+          FindUnassociatedRtpTransceiver(transceiver->GetMediaType(), false);
       if (newTransceiver) {
         newTransceiver->SetLevel(level);
         transceiver->ClearLevel();
@@ -1666,16 +1666,30 @@ Maybe<JsepTransceiver> JsepSessionImpl::GetTransceiverForRemote(
     transceiver->ClearLevel();
     transceiver->mSendTrack.ClearRids();
     SetTransceiver(*transceiver);
+    
+    transceiver = Nothing();
   }
 
   
-  if (msection.IsReceiving()) {
-    transceiver = FindUnassociatedTransceiver(msection.GetMediaType(), true);
-    if (transceiver) {
-      transceiver->SetLevel(level);
-      SetTransceiver(*transceiver);
-      return transceiver;
+  if (msection.GetMediaType() == SdpMediaSection::kApplication) {
+    
+    
+    for (auto& tx : mTransceivers) {
+      if (tx.GetMediaType() == SdpMediaSection::kApplication) {
+        tx.RestartDatachannelTransceiver();
+        transceiver = Some(tx);
+        break;
+      }
     }
+  } else if (msection.IsReceiving()) {
+    transceiver = FindUnassociatedRtpTransceiver(msection.GetMediaType(), true);
+  }
+
+  
+  if (transceiver) {
+    transceiver->SetLevel(level);
+    SetTransceiver(*transceiver);
+    return transceiver;
   }
 
   
@@ -1754,15 +1768,15 @@ nsresult JsepSessionImpl::UpdateTransceiversFromRemoteDescription(
   return NS_OK;
 }
 
-Maybe<JsepTransceiver> JsepSessionImpl::FindUnassociatedTransceiver(
+Maybe<JsepTransceiver> JsepSessionImpl::FindUnassociatedRtpTransceiver(
     SdpMediaSection::MediaType type, bool magic) {
+  if (type == SdpMediaSection::kApplication) {
+    MOZ_ASSERT(false);
+    return Nothing();
+  }
+
   
   for (auto& transceiver : mTransceivers) {
-    if (type == SdpMediaSection::kApplication &&
-        type == transceiver.GetMediaType()) {
-      transceiver.RestartDatachannelTransceiver();
-      return Some(transceiver);
-    }
     if (transceiver.IsFreeToUse() &&
         (!magic || transceiver.HasAddTrackMagic()) &&
         (transceiver.GetMediaType() == type)) {
