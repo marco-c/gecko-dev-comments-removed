@@ -143,3 +143,14 @@ function compression_dictionary_promise_test(func, name, properties) {
     await func(test);
   }, name, properties);
 }
+
+
+
+
+async function registerAltDictionaryAndWait(t) {
+  const pattern = "%2Ffetch%2Fcompression-dictionary%2Fresources%2Fecho-headers2.py";
+  await fetch(`${kRegisterDictionaryPath}?id=id2&match=${pattern}`);
+  assert_equals(
+      await waitUntilAvailableDictionaryHeader(t, {use_alt_path: true}),
+      kDefaultDictionaryHashBase64);
+}
