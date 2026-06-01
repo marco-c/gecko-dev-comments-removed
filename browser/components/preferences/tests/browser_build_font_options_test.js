@@ -1,13 +1,4 @@
 add_task(async function () {
-  
-  
-  
-  
-  
-  
-  if (SRD_PREF_VALUE) {
-    return;
-  }
   await openPreferencesViaOpenPreferencesAPI("general", { leaveOpen: true });
   await gBrowser.contentWindow.gMainPane._selectDefaultLanguageGroupPromise;
   await TestUtils.waitForCondition(
@@ -260,7 +251,12 @@ add_task(async function () {
 });
 
 add_task(async function test_font_options_redesign_accessibility_pane() {
-  await openPrefsTab("accessibility");
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.settings-redesign.enabled", true]],
+  });
+  await openPreferencesViaOpenPreferencesAPI("accessibility", {
+    leaveOpen: true,
+  });
   let doc = gBrowser.selectedBrowser.contentDocument;
   let contentWindow = gBrowser.selectedBrowser.contentWindow;
   let langGroup = Services.locale.fontLanguageGroup;
