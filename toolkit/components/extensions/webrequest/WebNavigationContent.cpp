@@ -211,20 +211,8 @@ WebNavigationContent::OnStateChange(nsIWebProgress* aWebProgress,
   RefPtr<dom::BrowsingContext> bc(GetBrowsingContext(aWebProgress));
   NS_ENSURE_ARG_POINTER(bc);
 
+  
   ExtensionsChild::Get().SendStateChange(bc, uri, aStatus, aStateFlags);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  if (!bc->IsTop() && aStateFlags & nsIWebProgressListener::STATE_IS_DOCUMENT) {
-    ExtensionsChild::Get().SendDocumentChange(
-        bc, GetFrameTransitionData(aWebProgress, aRequest), uri);
-  }
   return NS_OK;
 }
 
@@ -277,7 +265,7 @@ WebNavigationContent::OnLocationChange(nsIWebProgress* aWebProgress,
           bc, GetFrameTransitionData(aWebProgress, aRequest), aLocation,
           isHistoryStateUpdated, isReferenceFragmentUpdated);
     }
-  } else if (bc->IsTop()) {
+  } else {
     MOZ_ASSERT(bc->IsInProcess());
     if (RefPtr browserChild = dom::BrowserChild::GetFrom(bc->GetDocShell())) {
       
