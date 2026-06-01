@@ -1,144 +1,14 @@
 "use strict";
 
-const { RemoteSettings } = ChromeUtils.importESModule(
-  "resource://services-settings/remote-settings.sys.mjs"
-);
-
-const COLLECTION_NAME = "content-classifier-lists";
-
-
-async function makeListRecordFromContent(id, name, content) {
-  let encoder = new TextEncoder();
-  let bytes = encoder.encode(content);
-  let blob = new Blob([bytes]);
-  let buffer = await blob.arrayBuffer();
-  let hashBuffer = await crypto.subtle.digest("SHA-256", buffer);
-  let hashArray = Array.from(new Uint8Array(hashBuffer));
-  let hash = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
-  return {
-    record: {
-      id,
-      Name: name,
-      last_modified: Date.now(),
-      attachment: {
-        hash,
-        size: bytes.length,
-        filename: name + ".txt",
-        location: "main-workspace/content-classifier-lists/" + id + ".txt",
-        mimetype: "text/plain",
-      },
-    },
-    blob,
-  };
-}
-
-async function makeListRecord(id, name, rules) {
-  return makeListRecordFromContent(id, name, rules.join("\n") + "\n");
-}
-
-
-
-
-async function populateMultipleRS(db, lists) {
-  let records = [];
-  let attachments = [];
-  for (let entry of lists) {
-    let { id, name } = entry;
-    let made = entry.content
-      ? await makeListRecordFromContent(id, name, entry.content)
-      : await makeListRecord(id, name, entry.rules);
-    records.push(made.record);
-    attachments.push({
-      id: made.record.id,
-      record: made.record,
-      blob: made.blob,
-    });
-  }
-  await db.importChanges({}, Date.now(), records, { clear: true });
-  for (let { id, record, blob } of attachments) {
-    await db.saveAttachment(id, { record, blob });
-  }
-  return records;
-}
-
-async function populateRS(db, id, name, rules) {
-  let [record] = await populateMultipleRS(db, [{ id, name, rules }]);
-  return record;
-}
-
-
-async function loadThirdPartyImage(browser, domain) {
-  let imageURL =
-    domain +
-    "browser/toolkit/components/antitracking/test/browser/raptor.jpg?" +
-    Math.random();
-  return SpecialPowers.spawn(browser, [imageURL], async url => {
-    let img = new content.Image();
-    img.src = url;
-    return new content.Promise(resolve => {
-      img.onload = () => resolve(true);
-      img.onerror = () => resolve(false);
-    });
-  });
-}
-
-
-
-async function syncAndWaitForLists(client, records) {
-  let listsLoaded = TestUtils.topicObserved(LISTS_LOADED_TOPIC);
-  await client.emit("sync", {
-    data: { created: records, updated: [], deleted: [] },
-  });
-  await listsLoaded;
-}
-
-
-
-
-
-
-
-
-function getRSClient() {
-  let client = RemoteSettings(COLLECTION_NAME);
-  registerCleanupFunction(async () => {
-    await SpecialPowers.pushPrefEnv({
-      set: [
-        ["privacy.trackingprotection.content.protection.enabled", false],
-        ["privacy.trackingprotection.content.annotation.enabled", false],
-        ["privacy.trackingprotection.content.protection.list_names", ""],
-        ["privacy.trackingprotection.content.annotation.list_names", ""],
-      ],
-    });
-    await client.db.clear();
-  });
-  return client;
-}
-
-
-
-async function openTestTab() {
-  let tab = await BrowserTestUtils.openNewForegroundTab(
-    gBrowser,
-    TEST_TOP_PAGE
-  );
-  registerCleanupFunction(() => {
-    if (tab && tab.parentNode) {
-      BrowserTestUtils.removeTab(tab);
-    }
-  });
-  return tab;
-}
-
-
-
 
 
 add_task(async function test_rs_not_initialized_when_disabled() {
   let client = getRSClient();
   let db = client.db;
 
-  await populateRS(db, "disabled-1", "should-not-load", ["||example.org^"]);
+  await populateRS(db, "trackers", "disconnect-tracker-base", [
+    "||example.org^",
+  ]);
 
   
   
@@ -153,31 +23,20 @@ add_task(async function test_rs_not_initialized_when_disabled() {
   });
 
   
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["privacy.trackingprotection.content.testing", true],
-      ["privacy.trackingprotection.content.protection.enabled", false],
-      [
-        "privacy.trackingprotection.content.protection.list_names",
-        "should-not-load",
-      ],
-      ["privacy.trackingprotection.content.protection.test_list_urls", ""],
-      ["privacy.trackingprotection.content.annotation.enabled", false],
-      ["privacy.trackingprotection.content.annotation.list_names", ""],
-      ["privacy.trackingprotection.content.annotation.test_list_urls", ""],
-    ],
+  await pushEnginePrefs({
+    protection: "trackers",
+    protectionEnabled: false,
   });
 
   
   let tab = await openTestTab();
   let browser = tab.linkedBrowser;
 
-  
-  let loaded = await loadThirdPartyImage(
+  await assertImageLoaded(
     browser,
-    TEST_BLOCKED_3RD_PARTY_DOMAIN
+    TEST_BLOCKED_3RD_PARTY_DOMAIN,
+    "example.org should load when feature is disabled"
   );
-  ok(loaded, "example.org should load when feature is disabled");
 
   
   
@@ -191,50 +50,35 @@ add_task(async function test_rs_not_initialized_when_disabled() {
 
 
 
+
 add_task(async function test_rs_blocking() {
   let client = getRSClient();
   let db = client.db;
 
-  let record = await populateRS(db, "test-block-1", "test-block", [
+  let record = await populateRS(db, "trackers", "disconnect-tracker-base", [
     "||example.org^",
   ]);
 
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["privacy.trackingprotection.content.testing", true],
-      ["privacy.trackingprotection.content.protection.enabled", true],
-      [
-        "privacy.trackingprotection.content.protection.list_names",
-        "test-block",
-      ],
-      ["privacy.trackingprotection.content.protection.test_list_urls", ""],
-      ["privacy.trackingprotection.content.annotation.enabled", false],
-      ["privacy.trackingprotection.content.annotation.list_names", ""],
-      ["privacy.trackingprotection.content.annotation.test_list_urls", ""],
-    ],
-  });
+  await pushEnginePrefs({ protection: "trackers" });
 
   let tab = await openTestTab();
   let browser = tab.linkedBrowser;
   await syncAndWaitForLists(client, [record]);
 
-  let loaded = await loadThirdPartyImage(
+  await assertImageBlocked(
     browser,
-    TEST_BLOCKED_3RD_PARTY_DOMAIN
+    TEST_BLOCKED_3RD_PARTY_DOMAIN,
+    "Third-party image from example.org should be blocked via RS"
   );
-  ok(!loaded, "Third-party image from example.org should be blocked via RS");
 
-  let log = JSON.parse(await browser.getContentBlockingLog());
-  let origin = TEST_BLOCKED_3RD_PARTY_DOMAIN.replace(/\/$/, "");
-  ok(log[origin], "Content blocking log has entry for " + origin);
-  if (log[origin]) {
-    is(
-      log[origin][0][0],
-      Ci.nsIWebProgressListener.STATE_BLOCKED_TRACKING_CONTENT,
-      "Entry has the STATE_BLOCKED_TRACKING_CONTENT flag"
-    );
-  }
+  await assertHasBlockingState(
+    browser,
+    TEST_BLOCKED_3RD_PARTY_DOMAIN,
+    Ci.nsIWebProgressListener.STATE_BLOCKED_TRACKING_CONTENT,
+    "Entry has the STATE_BLOCKED_TRACKING_CONTENT flag"
+  );
 });
+
 
 
 
@@ -242,24 +86,11 @@ add_task(async function test_rs_annotation() {
   let client = getRSClient();
   let db = client.db;
 
-  let record = await populateRS(db, "test-annotate-1", "test-annotate", [
+  let record = await populateRS(db, "trackers", "disconnect-tracker-base", [
     "||example.com^",
   ]);
 
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["privacy.trackingprotection.content.testing", true],
-      ["privacy.trackingprotection.content.protection.enabled", false],
-      ["privacy.trackingprotection.content.protection.list_names", ""],
-      ["privacy.trackingprotection.content.protection.test_list_urls", ""],
-      ["privacy.trackingprotection.content.annotation.enabled", true],
-      [
-        "privacy.trackingprotection.content.annotation.list_names",
-        "test-annotate",
-      ],
-      ["privacy.trackingprotection.content.annotation.test_list_urls", ""],
-    ],
-  });
+  await pushEnginePrefs({ annotation: "trackers" });
 
   let tab = await openTestTab();
   let browser = tab.linkedBrowser;
@@ -268,22 +99,18 @@ add_task(async function test_rs_annotation() {
   BrowserTestUtils.startLoadingURIString(browser, TEST_TOP_PAGE);
   await BrowserTestUtils.browserLoaded(browser);
 
-  let loaded = await loadThirdPartyImage(
+  await assertImageLoaded(
     browser,
-    TEST_ANNOTATED_3RD_PARTY_DOMAIN
+    TEST_ANNOTATED_3RD_PARTY_DOMAIN,
+    "Third-party image from example.com should NOT be blocked"
   );
-  ok(loaded, "Third-party image from example.com should NOT be blocked");
 
-  let log = JSON.parse(await browser.getContentBlockingLog());
-  let origin = TEST_ANNOTATED_3RD_PARTY_DOMAIN.replace(/\/$/, "");
-  ok(log[origin], "Content blocking log has annotation entry for " + origin);
-  if (log[origin]) {
-    is(
-      log[origin][0][0],
-      Ci.nsIWebProgressListener.STATE_LOADED_LEVEL_2_TRACKING_CONTENT,
-      "Entry has the STATE_LOADED_LEVEL_2_TRACKING_CONTENT flag"
-    );
-  }
+  await assertHasBlockingState(
+    browser,
+    TEST_ANNOTATED_3RD_PARTY_DOMAIN,
+    Ci.nsIWebProgressListener.STATE_LOADED_LEVEL_1_TRACKING_CONTENT,
+    "Entry has the STATE_LOADED_LEVEL_1_TRACKING_CONTENT flag"
+  );
 });
 
 
@@ -294,41 +121,36 @@ add_task(async function test_rs_nonselected_list_not_active() {
   let db = client.db;
 
   let records = await populateMultipleRS(db, [
-    { id: "active-1", name: "active-list", rules: ["||example.org^"] },
-    { id: "inactive-1", name: "inactive-list", rules: ["||example.com^"] },
+    {
+      id: "trackers",
+      name: "disconnect-tracker-base",
+      rules: ["||example.org^"],
+    },
+    {
+      id: "fingerprinters",
+      name: "disconnect-fingerprinters-base",
+      rules: ["||example.com^"],
+    },
   ]);
 
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["privacy.trackingprotection.content.testing", true],
-      ["privacy.trackingprotection.content.protection.enabled", true],
-      [
-        "privacy.trackingprotection.content.protection.list_names",
-        "active-list",
-      ],
-      ["privacy.trackingprotection.content.protection.test_list_urls", ""],
-      ["privacy.trackingprotection.content.annotation.enabled", false],
-      ["privacy.trackingprotection.content.annotation.list_names", ""],
-      ["privacy.trackingprotection.content.annotation.test_list_urls", ""],
-    ],
-  });
+  await pushEnginePrefs({ protection: "trackers" });
 
   let tab = await openTestTab();
   let browser = tab.linkedBrowser;
   await syncAndWaitForLists(client, records);
 
-  let blockedLoaded = await loadThirdPartyImage(
+  await assertImageBlocked(
     browser,
-    TEST_BLOCKED_3RD_PARTY_DOMAIN
+    TEST_BLOCKED_3RD_PARTY_DOMAIN,
+    "example.org should be blocked (active list)"
   );
-  ok(!blockedLoaded, "example.org should be blocked (active list)");
-
-  let allowedLoaded = await loadThirdPartyImage(
+  await assertImageLoaded(
     browser,
-    TEST_ANNOTATED_3RD_PARTY_DOMAIN
+    TEST_ANNOTATED_3RD_PARTY_DOMAIN,
+    "example.com should NOT be blocked (inactive list)"
   );
-  ok(allowedLoaded, "example.com should NOT be blocked (inactive list)");
 });
+
 
 
 
@@ -337,40 +159,34 @@ add_task(async function test_rs_multiple_active_lists() {
   let db = client.db;
 
   let records = await populateMultipleRS(db, [
-    { id: "multi-1", name: "list-a", rules: ["||example.org^"] },
-    { id: "multi-2", name: "list-b", rules: ["||example.com^"] },
+    {
+      id: "trackers",
+      name: "disconnect-tracker-base",
+      rules: ["||example.org^"],
+    },
+    {
+      id: "fingerprinters",
+      name: "disconnect-fingerprinters-base",
+      rules: ["||example.com^"],
+    },
   ]);
 
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["privacy.trackingprotection.content.testing", true],
-      ["privacy.trackingprotection.content.protection.enabled", true],
-      [
-        "privacy.trackingprotection.content.protection.list_names",
-        "list-a,list-b",
-      ],
-      ["privacy.trackingprotection.content.protection.test_list_urls", ""],
-      ["privacy.trackingprotection.content.annotation.enabled", false],
-      ["privacy.trackingprotection.content.annotation.list_names", ""],
-      ["privacy.trackingprotection.content.annotation.test_list_urls", ""],
-    ],
-  });
+  await pushEnginePrefs({ protection: "trackers,fingerprinters" });
 
   let tab = await openTestTab();
   let browser = tab.linkedBrowser;
   await syncAndWaitForLists(client, records);
 
-  let loadedOrg = await loadThirdPartyImage(
+  await assertImageBlocked(
     browser,
-    TEST_BLOCKED_3RD_PARTY_DOMAIN
+    TEST_BLOCKED_3RD_PARTY_DOMAIN,
+    "example.org should be blocked (list-a active)"
   );
-  ok(!loadedOrg, "example.org should be blocked (list-a active)");
-
-  let loadedCom = await loadThirdPartyImage(
+  await assertImageBlocked(
     browser,
-    TEST_ANNOTATED_3RD_PARTY_DOMAIN
+    TEST_ANNOTATED_3RD_PARTY_DOMAIN,
+    "example.com should be blocked (list-b active)"
   );
-  ok(!loadedCom, "example.com should be blocked (list-b active)");
 });
 
 
@@ -382,30 +198,21 @@ add_task(async function test_rs_block_and_annotate_separation() {
   let db = client.db;
 
   let records = await populateMultipleRS(db, [
-    { id: "sep-block-1", name: "block-list", rules: ["||example.org^"] },
     {
-      id: "sep-annotate-1",
-      name: "annotate-list",
+      id: "trackers",
+      name: "disconnect-tracker-base",
+      rules: ["||example.org^"],
+    },
+    {
+      id: "fingerprinters",
+      name: "disconnect-fingerprinters-base",
       rules: ["||example.com^"],
     },
   ]);
 
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["privacy.trackingprotection.content.testing", true],
-      ["privacy.trackingprotection.content.protection.enabled", true],
-      [
-        "privacy.trackingprotection.content.protection.list_names",
-        "block-list",
-      ],
-      ["privacy.trackingprotection.content.protection.test_list_urls", ""],
-      ["privacy.trackingprotection.content.annotation.enabled", true],
-      [
-        "privacy.trackingprotection.content.annotation.list_names",
-        "annotate-list",
-      ],
-      ["privacy.trackingprotection.content.annotation.test_list_urls", ""],
-    ],
+  await pushEnginePrefs({
+    protection: "trackers",
+    annotation: "fingerprinters",
   });
 
   let tab = await openTestTab();
@@ -415,29 +222,25 @@ add_task(async function test_rs_block_and_annotate_separation() {
   BrowserTestUtils.startLoadingURIString(browser, TEST_TOP_PAGE);
   await BrowserTestUtils.browserLoaded(browser);
 
-  let loadedOrg = await loadThirdPartyImage(
+  await assertImageBlocked(
     browser,
-    TEST_BLOCKED_3RD_PARTY_DOMAIN
+    TEST_BLOCKED_3RD_PARTY_DOMAIN,
+    "example.org should be blocked (on block list)"
   );
-  ok(!loadedOrg, "example.org should be blocked (on block list)");
-
-  let loadedCom = await loadThirdPartyImage(
+  await assertImageLoaded(
     browser,
-    TEST_ANNOTATED_3RD_PARTY_DOMAIN
+    TEST_ANNOTATED_3RD_PARTY_DOMAIN,
+    "example.com should NOT be blocked (on annotate list only)"
   );
-  ok(loadedCom, "example.com should NOT be blocked (on annotate list only)");
 
-  let log = JSON.parse(await browser.getContentBlockingLog());
-  let comOrigin = TEST_ANNOTATED_3RD_PARTY_DOMAIN.replace(/\/$/, "");
-  ok(log[comOrigin], "Content blocking log has annotation for example.com");
-  if (log[comOrigin]) {
-    is(
-      log[comOrigin][0][0],
-      Ci.nsIWebProgressListener.STATE_LOADED_LEVEL_2_TRACKING_CONTENT,
-      "example.com is annotated, not blocked"
-    );
-  }
+  await assertHasBlockingState(
+    browser,
+    TEST_ANNOTATED_3RD_PARTY_DOMAIN,
+    Ci.nsIWebProgressListener.STATE_LOADED_FINGERPRINTING_CONTENT,
+    "example.com is annotated as fingerprinting, not blocked"
+  );
 });
+
 
 
 
@@ -447,44 +250,44 @@ add_task(async function test_rs_pref_switch_active_lists() {
   let db = client.db;
 
   let records = await populateMultipleRS(db, [
-    { id: "switch-1", name: "list-x", rules: ["||example.org^"] },
-    { id: "switch-2", name: "list-y", rules: ["||example.com^"] },
+    {
+      id: "trackers",
+      name: "disconnect-tracker-base",
+      rules: ["||example.org^"],
+    },
+    {
+      id: "fingerprinters",
+      name: "disconnect-fingerprinters-base",
+      rules: ["||example.com^"],
+    },
   ]);
 
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["privacy.trackingprotection.content.testing", true],
-      ["privacy.trackingprotection.content.protection.enabled", true],
-      ["privacy.trackingprotection.content.protection.list_names", "list-x"],
-      ["privacy.trackingprotection.content.protection.test_list_urls", ""],
-      ["privacy.trackingprotection.content.annotation.enabled", false],
-      ["privacy.trackingprotection.content.annotation.list_names", ""],
-      ["privacy.trackingprotection.content.annotation.test_list_urls", ""],
-    ],
-  });
+  await pushEnginePrefs({ protection: "trackers" });
 
   let tab = await openTestTab();
   let browser = tab.linkedBrowser;
   await syncAndWaitForLists(client, records);
 
-  let loadedOrg = await loadThirdPartyImage(
+  await assertImageBlocked(
     browser,
-    TEST_BLOCKED_3RD_PARTY_DOMAIN
+    TEST_BLOCKED_3RD_PARTY_DOMAIN,
+    "example.org blocked with trackers active"
   );
-  ok(!loadedOrg, "example.org blocked with list-x active");
-
-  let loadedCom = await loadThirdPartyImage(
+  await assertImageLoaded(
     browser,
-    TEST_ANNOTATED_3RD_PARTY_DOMAIN
+    TEST_ANNOTATED_3RD_PARTY_DOMAIN,
+    "example.com not blocked with only trackers active"
   );
-  ok(loadedCom, "example.com not blocked with only list-x active");
 
   
   
   let listsLoaded = TestUtils.topicObserved(LISTS_LOADED_TOPIC);
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["privacy.trackingprotection.content.protection.list_names", "list-y"],
+      [
+        "privacy.trackingprotection.content.protection.engines",
+        "fingerprinters",
+      ],
     ],
   });
   await listsLoaded;
@@ -492,17 +295,16 @@ add_task(async function test_rs_pref_switch_active_lists() {
   BrowserTestUtils.startLoadingURIString(browser, TEST_TOP_PAGE);
   await BrowserTestUtils.browserLoaded(browser);
 
-  let loadedOrgAfter = await loadThirdPartyImage(
+  await assertImageLoaded(
     browser,
-    TEST_BLOCKED_3RD_PARTY_DOMAIN
+    TEST_BLOCKED_3RD_PARTY_DOMAIN,
+    "example.org no longer blocked after switching to fingerprinters"
   );
-  ok(loadedOrgAfter, "example.org no longer blocked after switching to list-y");
-
-  let loadedComAfter = await loadThirdPartyImage(
+  await assertImageBlocked(
     browser,
-    TEST_ANNOTATED_3RD_PARTY_DOMAIN
+    TEST_ANNOTATED_3RD_PARTY_DOMAIN,
+    "example.com now blocked after switching to fingerprinters"
   );
-  ok(!loadedComAfter, "example.com now blocked after switching to list-y");
 });
 
 
@@ -511,29 +313,21 @@ add_task(async function test_rs_sync_deletion() {
   let client = getRSClient();
   let db = client.db;
 
-  let record = await populateRS(db, "del-1", "del-list", ["||example.org^"]);
+  let record = await populateRS(db, "trackers", "disconnect-tracker-base", [
+    "||example.org^",
+  ]);
 
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["privacy.trackingprotection.content.testing", true],
-      ["privacy.trackingprotection.content.protection.enabled", true],
-      ["privacy.trackingprotection.content.protection.list_names", "del-list"],
-      ["privacy.trackingprotection.content.protection.test_list_urls", ""],
-      ["privacy.trackingprotection.content.annotation.enabled", false],
-      ["privacy.trackingprotection.content.annotation.list_names", ""],
-      ["privacy.trackingprotection.content.annotation.test_list_urls", ""],
-    ],
-  });
+  await pushEnginePrefs({ protection: "trackers" });
 
   let tab = await openTestTab();
   let browser = tab.linkedBrowser;
   await syncAndWaitForLists(client, [record]);
 
-  let loadedBefore = await loadThirdPartyImage(
+  await assertImageBlocked(
     browser,
-    TEST_BLOCKED_3RD_PARTY_DOMAIN
+    TEST_BLOCKED_3RD_PARTY_DOMAIN,
+    "example.org blocked before deletion"
   );
-  ok(!loadedBefore, "example.org blocked before deletion");
 
   let listsLoaded = TestUtils.topicObserved(LISTS_LOADED_TOPIC);
   await client.emit("sync", {
@@ -544,11 +338,11 @@ add_task(async function test_rs_sync_deletion() {
   BrowserTestUtils.startLoadingURIString(browser, TEST_TOP_PAGE);
   await BrowserTestUtils.browserLoaded(browser);
 
-  let loadedAfter = await loadThirdPartyImage(
+  await assertImageLoaded(
     browser,
-    TEST_BLOCKED_3RD_PARTY_DOMAIN
+    TEST_BLOCKED_3RD_PARTY_DOMAIN,
+    "example.org no longer blocked after sync deletion"
   );
-  ok(loadedAfter, "example.org no longer blocked after sync deletion");
 });
 
 
@@ -558,41 +352,32 @@ add_task(async function test_rs_sync_update() {
   let client = getRSClient();
   let db = client.db;
 
-  let origRecord = await populateRS(db, "upd-1", "upd-list", [
+  let origRecord = await populateRS(db, "trackers", "disconnect-tracker-base", [
     "||example.org^",
   ]);
 
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["privacy.trackingprotection.content.testing", true],
-      ["privacy.trackingprotection.content.protection.enabled", true],
-      ["privacy.trackingprotection.content.protection.list_names", "upd-list"],
-      ["privacy.trackingprotection.content.protection.test_list_urls", ""],
-      ["privacy.trackingprotection.content.annotation.enabled", false],
-      ["privacy.trackingprotection.content.annotation.list_names", ""],
-      ["privacy.trackingprotection.content.annotation.test_list_urls", ""],
-    ],
-  });
+  await pushEnginePrefs({ protection: "trackers" });
 
   let tab = await openTestTab();
   let browser = tab.linkedBrowser;
   await syncAndWaitForLists(client, [origRecord]);
 
   
-  let loadedOrgBefore = await loadThirdPartyImage(
+  await assertImageBlocked(
     browser,
-    TEST_BLOCKED_3RD_PARTY_DOMAIN
+    TEST_BLOCKED_3RD_PARTY_DOMAIN,
+    "example.org should be blocked before update"
   );
-  ok(!loadedOrgBefore, "example.org should be blocked before update");
-
-  let loadedComBefore = await loadThirdPartyImage(
+  await assertImageLoaded(
     browser,
-    TEST_ANNOTATED_3RD_PARTY_DOMAIN
+    TEST_ANNOTATED_3RD_PARTY_DOMAIN,
+    "example.com should not be blocked before update"
   );
-  ok(loadedComBefore, "example.com should not be blocked before update");
 
   
-  let newRecord = await populateRS(db, "upd-1", "upd-list", ["||example.com^"]);
+  let newRecord = await populateRS(db, "trackers", "disconnect-tracker-base", [
+    "||example.com^",
+  ]);
 
   let listsLoaded = TestUtils.topicObserved(LISTS_LOADED_TOPIC);
   await client.emit("sync", {
@@ -607,18 +392,19 @@ add_task(async function test_rs_sync_update() {
   BrowserTestUtils.startLoadingURIString(browser, TEST_TOP_PAGE);
   await BrowserTestUtils.browserLoaded(browser);
 
-  let loadedOrg = await loadThirdPartyImage(
+  await assertImageLoaded(
     browser,
-    TEST_BLOCKED_3RD_PARTY_DOMAIN
+    TEST_BLOCKED_3RD_PARTY_DOMAIN,
+    "example.org no longer blocked after update"
   );
-  ok(loadedOrg, "example.org no longer blocked after update");
-
-  let loadedCom = await loadThirdPartyImage(
+  await assertImageBlocked(
     browser,
-    TEST_ANNOTATED_3RD_PARTY_DOMAIN
+    TEST_ANNOTATED_3RD_PARTY_DOMAIN,
+    "example.com now blocked after update"
   );
-  ok(!loadedCom, "example.com now blocked after update");
 });
+
+
 
 
 
@@ -627,36 +413,30 @@ add_task(async function test_rs_crlf_line_endings() {
   let client = getRSClient();
   let db = client.db;
 
-  
   let [record] = await populateMultipleRS(db, [
     {
-      id: "crlf-1",
-      name: "crlf-list",
-      content: "||example.org^\r\n\r\n||ignored-blank^\r\n",
+      id: "trackers",
+      name: "disconnect-tracker-base",
+      content: "||example.org^\r\n\r\n||example.com^\r\n",
     },
   ]);
 
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["privacy.trackingprotection.content.testing", true],
-      ["privacy.trackingprotection.content.protection.enabled", true],
-      ["privacy.trackingprotection.content.protection.list_names", "crlf-list"],
-      ["privacy.trackingprotection.content.protection.test_list_urls", ""],
-      ["privacy.trackingprotection.content.annotation.enabled", false],
-      ["privacy.trackingprotection.content.annotation.list_names", ""],
-      ["privacy.trackingprotection.content.annotation.test_list_urls", ""],
-    ],
-  });
+  await pushEnginePrefs({ protection: "trackers" });
 
   let tab = await openTestTab();
   let browser = tab.linkedBrowser;
   await syncAndWaitForLists(client, [record]);
 
-  let loaded = await loadThirdPartyImage(
+  await assertImageBlocked(
     browser,
-    TEST_BLOCKED_3RD_PARTY_DOMAIN
+    TEST_BLOCKED_3RD_PARTY_DOMAIN,
+    "example.org blocked from CRLF-formatted list (rule before blank line)"
   );
-  ok(!loaded, "example.org should be blocked from CRLF-formatted list");
+  await assertImageBlocked(
+    browser,
+    TEST_ANNOTATED_3RD_PARTY_DOMAIN,
+    "example.com blocked from CRLF-formatted list (rule after blank line)"
+  );
 });
 
 
@@ -666,34 +446,21 @@ add_task(async function test_rs_enable_disable_reenable() {
   let client = getRSClient();
   let db = client.db;
 
-  let record = await populateRS(db, "toggle-1", "toggle-list", [
+  let record = await populateRS(db, "trackers", "disconnect-tracker-base", [
     "||example.org^",
   ]);
 
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["privacy.trackingprotection.content.testing", true],
-      ["privacy.trackingprotection.content.protection.enabled", true],
-      [
-        "privacy.trackingprotection.content.protection.list_names",
-        "toggle-list",
-      ],
-      ["privacy.trackingprotection.content.protection.test_list_urls", ""],
-      ["privacy.trackingprotection.content.annotation.enabled", false],
-      ["privacy.trackingprotection.content.annotation.list_names", ""],
-      ["privacy.trackingprotection.content.annotation.test_list_urls", ""],
-    ],
-  });
+  await pushEnginePrefs({ protection: "trackers" });
 
   let tab = await openTestTab();
   let browser = tab.linkedBrowser;
   await syncAndWaitForLists(client, [record]);
 
-  let loadedOn = await loadThirdPartyImage(
+  await assertImageBlocked(
     browser,
-    TEST_BLOCKED_3RD_PARTY_DOMAIN
+    TEST_BLOCKED_3RD_PARTY_DOMAIN,
+    "example.org blocked while feature enabled"
   );
-  ok(!loadedOn, "example.org blocked while feature enabled");
 
   
   
@@ -704,11 +471,11 @@ add_task(async function test_rs_enable_disable_reenable() {
   BrowserTestUtils.startLoadingURIString(browser, TEST_TOP_PAGE);
   await BrowserTestUtils.browserLoaded(browser);
 
-  let loadedOff = await loadThirdPartyImage(
+  await assertImageLoaded(
     browser,
-    TEST_BLOCKED_3RD_PARTY_DOMAIN
+    TEST_BLOCKED_3RD_PARTY_DOMAIN,
+    "example.org NOT blocked after disabling feature"
   );
-  ok(loadedOff, "example.org NOT blocked after disabling feature");
 
   
   let listsLoaded = TestUtils.topicObserved(LISTS_LOADED_TOPIC);
@@ -720,11 +487,11 @@ add_task(async function test_rs_enable_disable_reenable() {
   BrowserTestUtils.startLoadingURIString(browser, TEST_TOP_PAGE);
   await BrowserTestUtils.browserLoaded(browser);
 
-  let loadedReenabled = await loadThirdPartyImage(
+  await assertImageBlocked(
     browser,
-    TEST_BLOCKED_3RD_PARTY_DOMAIN
+    TEST_BLOCKED_3RD_PARTY_DOMAIN,
+    "example.org blocked again after re-enabling"
   );
-  ok(!loadedReenabled, "example.org blocked again after re-enabling");
 });
 
 
@@ -737,27 +504,19 @@ add_task(async function test_rs_empty_collection() {
   
   await db.importChanges({}, Date.now(), [], { clear: true });
 
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["privacy.trackingprotection.content.testing", true],
-      ["privacy.trackingprotection.content.protection.enabled", true],
-      [
-        "privacy.trackingprotection.content.protection.list_names",
-        "nothing-here",
-      ],
-      ["privacy.trackingprotection.content.protection.test_list_urls", ""],
-      ["privacy.trackingprotection.content.annotation.enabled", false],
-      ["privacy.trackingprotection.content.annotation.list_names", ""],
-      ["privacy.trackingprotection.content.annotation.test_list_urls", ""],
-    ],
-  });
+  
+  
+  await pushEnginePrefs({ protection: "cryptominers" });
 
   let tab = await openTestTab();
   let browser = tab.linkedBrowser;
 
-  let loaded = await loadThirdPartyImage(
+  
+  await syncAndWaitForLists(client, []);
+
+  await assertImageLoaded(
     browser,
-    TEST_BLOCKED_3RD_PARTY_DOMAIN
+    TEST_BLOCKED_3RD_PARTY_DOMAIN,
+    "example.org should load when collection is empty"
   );
-  ok(loaded, "example.org should load when collection is empty");
 });
