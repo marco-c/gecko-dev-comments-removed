@@ -281,6 +281,10 @@ def new_label(label, tasks):
             return begining_label + "-1"
         raise Exception(f"New label ({label}) was not found in the task-graph")
     else:
+        
+        
+        if label + "-1" in tasks:
+            return label + "-1"
         raise Exception(f"{label} was not found in the task-graph")
 
 
