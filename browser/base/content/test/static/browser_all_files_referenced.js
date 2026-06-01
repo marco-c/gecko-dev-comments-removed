@@ -106,6 +106,9 @@ var gExceptionPaths = [
   "chrome://browser/content/profiles/assets/",
 
   
+  "chrome://browser/content/aiwindow/assets/model-choice-0.svg",
+
+  
   "resource://builtin-addons/pictureinpicture/",
 
   
@@ -177,7 +180,7 @@ var allowlist = [
 
   
   {
-    file: "chrome://devtools/content/inspector/markup/markup.xhtml",
+    file: "chrome://devtools/content/inspector/markup/markup.html",
     isFromDevTools: true,
   },
 
@@ -328,6 +331,12 @@ var allowlist = [
   
   {
     file: "chrome://global/content/autocomplete-row-item/autocomplete-row-item.mjs",
+  },
+
+  
+  
+  {
+    file: "moz-src:///browser/components/aiwindow/models/memories/MemoriesSessions.sys.mjs",
   },
 
   
