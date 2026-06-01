@@ -626,6 +626,46 @@ export class ChatConversation extends EventEmitter {
   }
 
   /**
+   * Loads and renders the system prompt for the given engine instance.
+   *
+   * @param {object} engineInstance - The engine instance for the model
+   * @returns {Promise<string>} The rendered system prompt
+   */
+  async #loadSystemPrompt(engineInstance) {
+    const _systemPrompt = await engineInstance.loadPrompt(MODEL_FEATURES.CHAT);
+    let tableInstructions;
+    if (Services.prefs.getBoolPref(TABLES_PREF, false)) {
+      tableInstructions = await engineInstance.loadPrompt(
+        MODEL_FEATURES.ENABLE_TABLE_INSTRUCTIONS
+      );
+    } else {
+      tableInstructions = await engineInstance.loadPrompt(
+        MODEL_FEATURES.DISABLE_TABLE_INSTRUCTIONS
+      );
+    }
+    return renderPrompt(_systemPrompt, { tableInstructions });
+  }
+
+  /**
+   * Updates the main system prompt for a new model.
+   * Used when the model changes mid-conversation.
+   *
+   * @param {object} engineInstance - The engine instance for the model
+   */
+  async updateSystemPromptForModel(engineInstance) {
+    const systemMessage = this.messages.find(
+      message =>
+        message.role === MESSAGE_ROLE.SYSTEM &&
+        message.content?.type === SYSTEM_PROMPT_TYPE.TEXT
+    );
+    if (!systemMessage) {
+      return;
+    }
+
+    systemMessage.content.body = await this.#loadSystemPrompt(engineInstance);
+  }
+
+  /**
    * Takes a new prompt and generates LLM context messages before
    * adding new user prompt to messages.
    *
@@ -648,20 +688,7 @@ export class ChatConversation extends EventEmitter {
     this.removeSystemTimeMemoriesMessages();
 
     if (!this.messages.length) {
-      const _systemPrompt = await engineInstance.loadPrompt(
-        MODEL_FEATURES.CHAT
-      );
-      let tableInstructions;
-      if (Services.prefs.getBoolPref(TABLES_PREF, false)) {
-        tableInstructions = await engineInstance.loadPrompt(
-          MODEL_FEATURES.ENABLE_TABLE_INSTRUCTIONS
-        );
-      } else {
-        tableInstructions = await engineInstance.loadPrompt(
-          MODEL_FEATURES.DISABLE_TABLE_INSTRUCTIONS
-        );
-      }
-      const systemPrompt = renderPrompt(_systemPrompt, { tableInstructions });
+      const systemPrompt = await this.#loadSystemPrompt(engineInstance);
       this.addSystemMessage(SYSTEM_PROMPT_TYPE.TEXT, systemPrompt);
     }
 
@@ -725,7 +752,9 @@ export class ChatConversation extends EventEmitter {
    */
   async retryMessage(message) {
     if (message.role !== MESSAGE_ROLE.USER) {
-      throw new Error("Not a user message");
+      const err = new Error("Not a user message");
+      err.clientReason = "retryInvalidMessage";
+      throw err;
     }
 
     // Capture ephemeral system messages before removal so we can return them.
@@ -750,7 +779,9 @@ export class ChatConversation extends EventEmitter {
     );
 
     if (retryMessageIndex === -1) {
-      throw new Error("Unrelated message");
+      const err = new Error("Unrelated message");
+      err.clientReason = "retryInvalidMessage";
+      throw err;
     }
 
     const toDeleteMessages = this.#messages.splice(retryMessageIndex);
