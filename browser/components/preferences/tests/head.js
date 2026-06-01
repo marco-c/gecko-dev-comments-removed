@@ -53,29 +53,6 @@ function is_element_hidden(aElement, aMsg) {
   ok(BrowserTestUtils.isHidden(aElement), aMsg);
 }
 
-
-
-
-
-
-
-
-
-
-
-async function openPrefsTab(pane) {
-  let url = "about:preferences" + (pane ? "#" + pane : "");
-  let tab = BrowserTestUtils.addTab(gBrowser, url);
-  let initialized = BrowserTestUtils.waitForEvent(
-    tab.linkedBrowser,
-    "Initialized",
-    true
-  );
-  gBrowser.selectedTab = tab;
-  await initialized;
-  return tab;
-}
-
 function open_preferences(aCallback) {
   gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser, "about:preferences");
   let newTabBrowser = gBrowser.getBrowserForTab(gBrowser.selectedTab);
