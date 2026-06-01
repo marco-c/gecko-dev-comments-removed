@@ -111,6 +111,10 @@ class BlobURLProtocolHandler final : public nsIProtocolHandler,
 
   
   static nsresult GenerateURIString(nsIPrincipal* aPrincipal, nsACString& aUri);
+  static nsresult GetURIPrefix(nsIPrincipal* aPrincipal,
+                               nsACString& aUriPrefix);
+
+  static bool IsBlobURLValid(nsIPrincipal* aPrincipal, const nsACString& aSpec);
 
  private:
   ~BlobURLProtocolHandler();
