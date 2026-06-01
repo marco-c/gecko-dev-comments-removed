@@ -77,12 +77,6 @@ class AndroidWebAuthnService final : public nsIWebAuthnService {
 
  private:
   ~AndroidWebAuthnService() = default;
-
-  
-  
-  
-  
-  Maybe<bool> mRegisterCredPropsRk;
 };
 
 }  

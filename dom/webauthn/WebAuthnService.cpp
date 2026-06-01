@@ -64,14 +64,15 @@ WebAuthnService::MakeCredential(uint64_t aTransactionId,
                                 uint64_t aBrowsingContextId,
                                 nsIWebAuthnRegisterArgs* aArgs,
                                 nsIWebAuthnRegisterPromise* aPromise) {
+  MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aArgs);
   MOZ_ASSERT(aPromise);
 
-  auto guard = mTransactionState.Lock();
-  ResetLocked(guard);
-  *guard = Some(TransactionState{.service = DefaultService(),
-                                 .transactionId = aTransactionId,
-                                 .parentRegisterPromise = Some(aPromise)});
+  ResetActiveTransaction();
+  mActiveTransaction =
+      Some(TransactionState{.service = DefaultService(),
+                            .transactionId = aTransactionId,
+                            .parentRegisterPromise = Some(aPromise)});
 
   
   
@@ -91,57 +92,65 @@ WebAuthnService::MakeCredential(uint64_t aTransactionId,
   RefPtr<WebAuthnService> self = this;
   RefPtr<WebAuthnRegisterPromise> promise = promiseHolder->Ensure();
   promise
-      ->Then(GetCurrentSerialEventTarget(), __func__,
-             [self, origin, aTransactionId, aBrowsingContextId,
-              attestationRequested](
-                 const WebAuthnRegisterPromise::ResolveOrRejectValue& aValue) {
-               auto guard = self->mTransactionState.Lock();
-               if (guard->isNothing()) {
-                 return;
-               }
-               MOZ_ASSERT(guard->ref().parentRegisterPromise.isSome());
-               MOZ_ASSERT(guard->ref().registerResult.isNothing());
-               MOZ_ASSERT(guard->ref().childRegisterRequest.Exists());
+      ->Then(
+          GetCurrentSerialEventTarget(), __func__,
+          [self, origin, aTransactionId, aBrowsingContextId,
+           attestationRequested](
+              const WebAuthnRegisterPromise::ResolveOrRejectValue& aValue) {
+            MOZ_ASSERT(NS_IsMainThread());
+            if (self->mActiveTransaction.isNothing()) {
+              return;
+            }
+            MOZ_ASSERT(
+                self->mActiveTransaction.ref().parentRegisterPromise.isSome());
+            MOZ_ASSERT(
+                self->mActiveTransaction.ref().registerResult.isNothing());
+            MOZ_ASSERT(
+                self->mActiveTransaction.ref().childRegisterRequest.Exists());
 
-               guard->ref().childRegisterRequest.Complete();
+            self->mActiveTransaction.ref().childRegisterRequest.Complete();
 
-               if (aValue.IsReject()) {
-                 guard->ref().parentRegisterPromise.ref()->Reject(
-                     aValue.RejectValue());
-                 guard->reset();
-                 return;
-               }
+            if (aValue.IsReject()) {
+              self->mActiveTransaction.ref()
+                  .parentRegisterPromise.ref()
+                  ->Reject(aValue.RejectValue());
+              self->mActiveTransaction.reset();
+              return;
+            }
 
-               nsIWebAuthnRegisterResult* result = aValue.ResolveValue();
-               
-               
-               bool attestationConsentPromptShown = false;
-               (void)result->GetAttestationConsentPromptShown(
-                   &attestationConsentPromptShown);
-               if (attestationConsentPromptShown) {
-                 guard->ref().parentRegisterPromise.ref()->Resolve(result);
-                 guard->reset();
-                 return;
-               }
-               
-               
-               
-               bool resultIsIdentifying = true;
-               (void)result->HasIdentifyingAttestation(&resultIsIdentifying);
-               if (attestationRequested && resultIsIdentifying) {
-                 guard->ref().registerResult = Some(result);
-                 self->ShowAttestationConsentPrompt(origin, aTransactionId,
-                                                    aBrowsingContextId);
-                 return;
-               }
-               
-               result->Anonymize();
-               guard->ref().parentRegisterPromise.ref()->Resolve(result);
-               guard->reset();
-             })
-      ->Track(guard->ref().childRegisterRequest);
+            nsIWebAuthnRegisterResult* result = aValue.ResolveValue();
+            
+            
+            bool attestationConsentPromptShown = false;
+            (void)result->GetAttestationConsentPromptShown(
+                &attestationConsentPromptShown);
+            if (attestationConsentPromptShown) {
+              self->mActiveTransaction.ref()
+                  .parentRegisterPromise.ref()
+                  ->Resolve(result);
+              self->mActiveTransaction.reset();
+              return;
+            }
+            
+            
+            
+            bool resultIsIdentifying = true;
+            (void)result->HasIdentifyingAttestation(&resultIsIdentifying);
+            if (attestationRequested && resultIsIdentifying) {
+              self->mActiveTransaction.ref().registerResult = Some(result);
+              self->ShowAttestationConsentPrompt(origin, aTransactionId,
+                                                 aBrowsingContextId);
+              return;
+            }
+            
+            result->Anonymize();
+            self->mActiveTransaction.ref().parentRegisterPromise.ref()->Resolve(
+                result);
+            self->mActiveTransaction.reset();
+          })
+      ->Track(mActiveTransaction.ref().childRegisterRequest);
 
-  nsresult rv = guard->ref().service->MakeCredential(
+  nsresult rv = ActiveService()->MakeCredential(
       aTransactionId, aBrowsingContextId, aArgs, promiseHolder);
   if (NS_FAILED(rv)) {
     promiseHolder->Reject(NS_ERROR_DOM_NOT_ALLOWED_ERR);
@@ -154,14 +163,48 @@ WebAuthnService::GetAssertion(uint64_t aTransactionId,
                               uint64_t aBrowsingContextId,
                               nsIWebAuthnSignArgs* aArgs,
                               nsIWebAuthnSignPromise* aPromise) {
+  MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aArgs);
   MOZ_ASSERT(aPromise);
 
-  auto guard = mTransactionState.Lock();
-  ResetLocked(guard);
-  *guard = Some(TransactionState{.service = DefaultService(),
-                                 .transactionId = aTransactionId});
-  nsresult rv;
+  bool conditionallyMediated;
+  (void)aArgs->GetConditionallyMediated(&conditionallyMediated);
+
+  if (conditionallyMediated) {
+    
+    
+    
+    mConditionalGets.RemoveElementsBy(
+        [aBrowsingContextId](ConditionalGet& aEntry) {
+          if (aEntry.browsingContextId != aBrowsingContextId) {
+            return false;
+          }
+          aEntry.signPromise->Reject(NS_ERROR_DOM_NOT_ALLOWED_ERR);
+          return true;
+        });
+    mConditionalGets.AppendElement(ConditionalGet{
+        .transactionId = aTransactionId,
+        .browsingContextId = aBrowsingContextId,
+        .signArgs = aArgs,
+        .signPromise = aPromise,
+    });
+
+    
+    
+    nsCOMPtr<nsIRunnable> runnable(NS_NewRunnableFunction(__func__, []() {
+      nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
+      if (os) {
+        os->NotifyObservers(nullptr, "webauthn:conditional-get-pending",
+                            nullptr);
+      }
+    }));
+    NS_DispatchToMainThread(runnable.forget());
+    return NS_OK;
+  }
+
+  ResetActiveTransaction();
+  mActiveTransaction = Some(TransactionState{.service = DefaultService(),
+                                             .transactionId = aTransactionId});
 
 #if defined(XP_MACOSX)
   if (__builtin_available(macos 14.5, *)) {
@@ -174,7 +217,7 @@ WebAuthnService::GetAssertion(uint64_t aTransactionId,
     
     
     nsString appId;
-    rv = aArgs->GetAppId(appId);
+    nsresult rv = aArgs->GetAppId(appId);
     if (rv == NS_OK) {  
       uint8_t transportSet = 0;
       nsTArray<uint8_t> allowListTransports;
@@ -187,33 +230,18 @@ WebAuthnService::GetAssertion(uint64_t aTransactionId,
           MOZ_WEBAUTHN_AUTHENTICATOR_TRANSPORT_ID_HYBRID;
       if (allowListTransports.Length() > 0 &&
           (transportSet & passkeyTransportMask) == 0) {
-        guard->ref().service = AuthrsService();
+        mActiveTransaction.ref().service = AuthrsService();
       }
     }
   }
 #endif
 
-  rv = guard->ref().service->GetAssertion(aTransactionId, aBrowsingContextId,
-                                          aArgs, aPromise);
+  nsresult rv = ActiveService()->GetAssertion(
+      aTransactionId, aBrowsingContextId, aArgs, aPromise);
   if (NS_FAILED(rv)) {
+    mActiveTransaction.reset();
     return rv;
   }
-
-  
-  
-  bool conditionallyMediated;
-  (void)aArgs->GetConditionallyMediated(&conditionallyMediated);
-  if (conditionallyMediated) {
-    nsCOMPtr<nsIRunnable> runnable(NS_NewRunnableFunction(__func__, []() {
-      nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
-      if (os) {
-        os->NotifyObservers(nullptr, "webauthn:conditional-get-pending",
-                            nullptr);
-      }
-    }));
-    NS_DispatchToMainThread(runnable.forget());
-  }
-
   return NS_OK;
 }
 
@@ -226,83 +254,210 @@ NS_IMETHODIMP
 WebAuthnService::HasPendingConditionalGet(uint64_t aBrowsingContextId,
                                           const nsAString& aOrigin,
                                           uint64_t* aRv) {
-  return SelectedService()->HasPendingConditionalGet(aBrowsingContextId,
-                                                     aOrigin, aRv);
+  MOZ_ASSERT(NS_IsMainThread());
+  for (const auto& entry : mConditionalGets) {
+    if (entry.browsingContextId != aBrowsingContextId) {
+      continue;
+    }
+    nsString entryOrigin;
+    (void)entry.signArgs->GetOrigin(entryOrigin);
+    if (entryOrigin == aOrigin) {
+      *aRv = entry.transactionId;
+      return NS_OK;
+    }
+  }
+  *aRv = 0;
+  return NS_OK;
 }
 
 NS_IMETHODIMP
 WebAuthnService::GetAutoFillEntries(
-    uint64_t aTransactionId, nsTArray<RefPtr<nsIWebAuthnAutoFillEntry>>& aRv) {
-  return SelectedService()->GetAutoFillEntries(aTransactionId, aRv);
+    uint64_t aTransactionId, nsIWebAuthnAutoFillEntriesCallback* aCallback) {
+  MOZ_ASSERT(NS_IsMainThread());
+  nsCOMPtr<nsIWebAuthnSignArgs> signArgs;
+  for (const auto& entry : mConditionalGets) {
+    if (entry.transactionId == aTransactionId) {
+      signArgs = entry.signArgs;
+      break;
+    }
+  }
+  if (!signArgs) {
+    aCallback->Reject(NS_ERROR_NOT_AVAILABLE);
+    return NS_OK;
+  }
+  nsString rpId;
+  nsTArray<nsTArray<uint8_t>> allowList;
+  (void)signArgs->GetRpId(rpId);
+  (void)signArgs->GetAllowList(allowList);
+  return DefaultService()->GetAutoFillEntriesForRpId(rpId, allowList,
+                                                     aCallback);
+}
+
+NS_IMETHODIMP
+WebAuthnService::GetAutoFillEntriesForRpId(
+    const nsAString& aRpId, const nsTArray<nsTArray<uint8_t>>& aAllowList,
+    nsIWebAuthnAutoFillEntriesCallback* aCallback) {
+  MOZ_ASSERT(NS_IsMainThread());
+  return DefaultService()->GetAutoFillEntriesForRpId(aRpId, aAllowList,
+                                                     aCallback);
+}
+
+Maybe<WebAuthnService::ConditionalGet> WebAuthnService::TakeConditionalByTid(
+    uint64_t aTransactionId) {
+  MOZ_ASSERT(NS_IsMainThread());
+  Maybe<ConditionalGet> found;
+  mConditionalGets.RemoveElementsBy([&](ConditionalGet& aEntry) {
+    if (aEntry.transactionId != aTransactionId) {
+      return false;
+    }
+    found = Some(std::move(aEntry));
+    return true;
+  });
+  return found;
+}
+
+nsresult WebAuthnService::DispatchConditionalGetAssertion(
+    const ConditionalGet& aPending, nsIWebAuthnSignArgs* aArgs) {
+  MOZ_ASSERT(NS_IsMainThread());
+  ResetActiveTransaction();
+  mActiveTransaction = Some(TransactionState{
+      .service = DefaultService(), .transactionId = aPending.transactionId});
+  nsresult rv = ActiveService()->GetAssertion(aPending.transactionId,
+                                              aPending.browsingContextId, aArgs,
+                                              aPending.signPromise);
+  if (NS_FAILED(rv)) {
+    aPending.signPromise->Reject(NS_ERROR_DOM_NOT_ALLOWED_ERR);
+    mActiveTransaction.reset();
+    return rv;
+  }
+  return NS_OK;
 }
 
 NS_IMETHODIMP
 WebAuthnService::SelectAutoFillEntry(uint64_t aTransactionId,
                                      const nsTArray<uint8_t>& aCredentialId) {
-  return SelectedService()->SelectAutoFillEntry(aTransactionId, aCredentialId);
+  MOZ_ASSERT(NS_IsMainThread());
+  Maybe<ConditionalGet> found = TakeConditionalByTid(aTransactionId);
+  if (found.isNothing()) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
+  
+  
+  nsTArray<nsTArray<uint8_t>> allowList;
+  (void)found.ref().signArgs->GetAllowList(allowList);
+  if (!allowList.IsEmpty() && !allowList.Contains(aCredentialId)) {
+    found.ref().signPromise->Reject(NS_ERROR_DOM_NOT_ALLOWED_ERR);
+    return NS_ERROR_FAILURE;
+  }
+
+  nsCOMPtr<nsIWebAuthnSignArgs> args;
+  nsresult rv = found.ref().signArgs->CloneWithSelectedCredential(
+      aCredentialId, getter_AddRefs(args));
+  if (NS_FAILED(rv)) {
+    found.ref().signPromise->Reject(NS_ERROR_DOM_NOT_ALLOWED_ERR);
+    return rv;
+  }
+  return DispatchConditionalGetAssertion(found.ref(), args);
 }
 
 NS_IMETHODIMP
 WebAuthnService::ResumeConditionalGet(uint64_t aTransactionId) {
-  return SelectedService()->ResumeConditionalGet(aTransactionId);
+  MOZ_ASSERT(NS_IsMainThread());
+  Maybe<ConditionalGet> found = TakeConditionalByTid(aTransactionId);
+  if (found.isNothing()) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+  return DispatchConditionalGetAssertion(found.ref(), found.ref().signArgs);
 }
 
-void WebAuthnService::ResetLocked(
-    const TransactionStateMutex::AutoLock& aGuard) {
-  if (aGuard->isSome()) {
-    aGuard->ref().childRegisterRequest.DisconnectIfExists();
-    if (aGuard->ref().parentRegisterPromise.isSome()) {
-      aGuard->ref().parentRegisterPromise.ref()->Reject(NS_ERROR_DOM_ABORT_ERR);
-    }
-    aGuard->ref().service->Reset();
+void WebAuthnService::RejectActiveRegisterPromise() {
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(mActiveTransaction.isSome());
+  mActiveTransaction.ref().childRegisterRequest.DisconnectIfExists();
+  if (mActiveTransaction.ref().parentRegisterPromise.isSome()) {
+    mActiveTransaction.ref().parentRegisterPromise.ref()->Reject(
+        NS_ERROR_DOM_NOT_ALLOWED_ERR);
   }
-  aGuard->reset();
+}
+
+void WebAuthnService::ResetActiveTransaction() {
+  MOZ_ASSERT(NS_IsMainThread());
+  if (mActiveTransaction.isSome()) {
+    RejectActiveRegisterPromise();
+    ActiveService()->Reset();
+    mActiveTransaction.reset();
+  }
 }
 
 NS_IMETHODIMP
 WebAuthnService::Reset() {
-  auto guard = mTransactionState.Lock();
-  ResetLocked(guard);
+  MOZ_ASSERT(NS_IsMainThread());
+  ResetActiveTransaction();
   return NS_OK;
 }
 
 NS_IMETHODIMP
 WebAuthnService::Cancel(uint64_t aTransactionId) {
-  return SelectedService()->Cancel(aTransactionId);
-}
+  MOZ_ASSERT(NS_IsMainThread());
+  if (Maybe<ConditionalGet> found = TakeConditionalByTid(aTransactionId);
+      found.isSome()) {
+    found.ref().signPromise->Reject(NS_ERROR_DOM_NOT_ALLOWED_ERR);
+    return NS_OK;
+  }
 
-NS_IMETHODIMP
-WebAuthnService::PinCallback(uint64_t aTransactionId, const nsACString& aPin) {
-  return SelectedService()->PinCallback(aTransactionId, aPin);
+  if (mActiveTransaction.isSome() &&
+      mActiveTransaction.ref().transactionId == aTransactionId) {
+    RejectActiveRegisterPromise();
+    ActiveService()->Cancel(aTransactionId);
+    mActiveTransaction.reset();
+  }
+  return NS_OK;
 }
 
 NS_IMETHODIMP
 WebAuthnService::SetHasAttestationConsent(uint64_t aTransactionId,
                                           bool aHasConsent) {
-  auto guard = this->mTransactionState.Lock();
-  if (guard->isNothing() || guard->ref().transactionId != aTransactionId) {
+  MOZ_ASSERT(NS_IsMainThread());
+  if (mActiveTransaction.isNothing() ||
+      mActiveTransaction.ref().transactionId != aTransactionId) {
     
     
     return NS_OK;
   }
 
-  MOZ_ASSERT(guard->ref().parentRegisterPromise.isSome());
-  MOZ_ASSERT(guard->ref().registerResult.isSome());
-  MOZ_ASSERT(!guard->ref().childRegisterRequest.Exists());
+  MOZ_ASSERT(mActiveTransaction.ref().parentRegisterPromise.isSome());
+  MOZ_ASSERT(mActiveTransaction.ref().registerResult.isSome());
+  MOZ_ASSERT(!mActiveTransaction.ref().childRegisterRequest.Exists());
 
   if (!aHasConsent) {
-    guard->ref().registerResult.ref()->Anonymize();
+    mActiveTransaction.ref().registerResult.ref()->Anonymize();
   }
-  guard->ref().parentRegisterPromise.ref()->Resolve(
-      guard->ref().registerResult.ref());
+  mActiveTransaction.ref().parentRegisterPromise.ref()->Resolve(
+      mActiveTransaction.ref().registerResult.ref());
 
-  guard->reset();
+  mActiveTransaction.reset();
   return NS_OK;
 }
 
 NS_IMETHODIMP
+WebAuthnService::PinCallback(uint64_t aTransactionId, const nsACString& aPin) {
+  MOZ_ASSERT(NS_IsMainThread());
+  if (mActiveTransaction.isNothing() ||
+      mActiveTransaction.ref().transactionId != aTransactionId) {
+    return NS_OK;
+  }
+  return ActiveService()->PinCallback(aTransactionId, aPin);
+}
+
+NS_IMETHODIMP
 WebAuthnService::SelectionCallback(uint64_t aTransactionId, uint64_t aIndex) {
-  return SelectedService()->SelectionCallback(aTransactionId, aIndex);
+  MOZ_ASSERT(NS_IsMainThread());
+  if (mActiveTransaction.isNothing() ||
+      mActiveTransaction.ref().transactionId != aTransactionId) {
+    return NS_OK;
+  }
+  return ActiveService()->SelectionCallback(aTransactionId, aIndex);
 }
 
 NS_IMETHODIMP
@@ -310,7 +465,8 @@ WebAuthnService::AddVirtualAuthenticator(
     const nsACString& aProtocol, const nsACString& aTransport,
     bool aHasResidentKey, bool aHasUserVerification, bool aIsUserConsenting,
     bool aIsUserVerified, nsACString& aRetval) {
-  return SelectedService()->AddVirtualAuthenticator(
+  MOZ_ASSERT(NS_IsMainThread());
+  return AuthrsService()->AddVirtualAuthenticator(
       aProtocol, aTransport, aHasResidentKey, aHasUserVerification,
       aIsUserConsenting, aIsUserVerified, aRetval);
 }
@@ -318,7 +474,8 @@ WebAuthnService::AddVirtualAuthenticator(
 NS_IMETHODIMP
 WebAuthnService::RemoveVirtualAuthenticator(
     const nsACString& aAuthenticatorId) {
-  return SelectedService()->RemoveVirtualAuthenticator(aAuthenticatorId);
+  MOZ_ASSERT(NS_IsMainThread());
+  return AuthrsService()->RemoveVirtualAuthenticator(aAuthenticatorId);
 }
 
 NS_IMETHODIMP
@@ -329,41 +486,50 @@ WebAuthnService::AddCredential(const nsACString& aAuthenticatorId,
                                const nsACString& aPrivateKey,
                                const nsACString& aUserHandle,
                                uint32_t aSignCount) {
-  return SelectedService()->AddCredential(aAuthenticatorId, aCredentialId,
-                                          aIsResidentCredential, aRpId,
-                                          aPrivateKey, aUserHandle, aSignCount);
+  MOZ_ASSERT(NS_IsMainThread());
+  return AuthrsService()->AddCredential(aAuthenticatorId, aCredentialId,
+                                        aIsResidentCredential, aRpId,
+                                        aPrivateKey, aUserHandle, aSignCount);
 }
 
 NS_IMETHODIMP
 WebAuthnService::GetCredentials(
     const nsACString& aAuthenticatorId,
     nsTArray<RefPtr<nsICredentialParameters>>& aRetval) {
-  return SelectedService()->GetCredentials(aAuthenticatorId, aRetval);
+  MOZ_ASSERT(NS_IsMainThread());
+  return AuthrsService()->GetCredentials(aAuthenticatorId, aRetval);
 }
 
 NS_IMETHODIMP
 WebAuthnService::RemoveCredential(const nsACString& aAuthenticatorId,
                                   const nsACString& aCredentialId) {
-  return SelectedService()->RemoveCredential(aAuthenticatorId, aCredentialId);
+  MOZ_ASSERT(NS_IsMainThread());
+  return AuthrsService()->RemoveCredential(aAuthenticatorId, aCredentialId);
 }
 
 NS_IMETHODIMP
 WebAuthnService::RemoveAllCredentials(const nsACString& aAuthenticatorId) {
-  return SelectedService()->RemoveAllCredentials(aAuthenticatorId);
+  MOZ_ASSERT(NS_IsMainThread());
+  return AuthrsService()->RemoveAllCredentials(aAuthenticatorId);
 }
 
 NS_IMETHODIMP
 WebAuthnService::SetUserVerified(const nsACString& aAuthenticatorId,
                                  bool aIsUserVerified) {
-  return SelectedService()->SetUserVerified(aAuthenticatorId, aIsUserVerified);
+  MOZ_ASSERT(NS_IsMainThread());
+  return AuthrsService()->SetUserVerified(aAuthenticatorId, aIsUserVerified);
 }
 
 NS_IMETHODIMP
-WebAuthnService::Listen() { return SelectedService()->Listen(); }
+WebAuthnService::Listen() {
+  MOZ_ASSERT(NS_IsMainThread());
+  return AuthrsService()->Listen();
+}
 
 NS_IMETHODIMP
 WebAuthnService::RunCommand(const nsACString& aCmd) {
-  return SelectedService()->RunCommand(aCmd);
+  MOZ_ASSERT(NS_IsMainThread());
+  return AuthrsService()->RunCommand(aCmd);
 }
 
 }  
