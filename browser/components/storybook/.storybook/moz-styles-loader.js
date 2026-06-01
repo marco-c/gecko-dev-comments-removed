@@ -165,7 +165,9 @@ async function rewriteCssUris(source) {
 
     
     if (
-      path.basename(this.resourcePath) == "moz-label.mjs" ||
+      ["moz-label.mjs", "panel-list.mjs"].includes(
+        path.basename(this.resourcePath)
+      ) ||
       this.resourcePath.endsWith(".js")
     ) {
       rewrittenSource = rewrittenSource.replaceAll(`"${cssUri}"`, cssImport);
