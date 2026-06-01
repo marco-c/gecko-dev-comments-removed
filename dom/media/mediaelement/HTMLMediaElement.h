@@ -1370,7 +1370,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
   bool CanBeCaptured(StreamCaptureType aCaptureType, ErrorResult& aRv);
 
-  using nsGenericHTMLElement::DispatchEvent;
   
   
   MOZ_CAN_RUN_SCRIPT nsresult FireEvent(const nsAString& aName);
