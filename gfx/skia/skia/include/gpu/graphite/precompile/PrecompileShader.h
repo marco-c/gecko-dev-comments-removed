@@ -12,7 +12,7 @@
 
 #include "include/core/SkBlendMode.h"
 #include "include/core/SkImageInfo.h"
-#include "include/effects/SkGradientShader.h"
+#include "include/effects/SkGradient.h"
 
 class SkColorSpace;
 
@@ -205,16 +205,16 @@ namespace PrecompileShaders {
     
     SK_API sk_sp<PrecompileShader> LinearGradient(
             GradientShaderFlags = GradientShaderFlags::kAll,
-            SkGradientShader::Interpolation = SkGradientShader::Interpolation());
+            SkGradient::Interpolation = SkGradient::Interpolation());
     SK_API sk_sp<PrecompileShader> RadialGradient(
             GradientShaderFlags = GradientShaderFlags::kAll,
-            SkGradientShader::Interpolation = SkGradientShader::Interpolation());
+            SkGradient::Interpolation = SkGradient::Interpolation());
     SK_API sk_sp<PrecompileShader> TwoPointConicalGradient(
             GradientShaderFlags = GradientShaderFlags::kAll,
-            SkGradientShader::Interpolation = SkGradientShader::Interpolation());
+            SkGradient::Interpolation = SkGradient::Interpolation());
     SK_API sk_sp<PrecompileShader> SweepGradient(
             GradientShaderFlags = GradientShaderFlags::kAll,
-            SkGradientShader::Interpolation = SkGradientShader::Interpolation());
+            SkGradient::Interpolation = SkGradient::Interpolation());
 
     
     

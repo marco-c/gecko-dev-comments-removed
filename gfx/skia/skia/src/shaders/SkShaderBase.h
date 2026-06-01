@@ -186,8 +186,6 @@ class SkShaderBase : public SkShader {
 public:
     ~SkShaderBase() override;
 
-    uint32_t uniqueID() const { return fUniqueID; }
-
     sk_sp<SkShader> makeInvertAlpha() const;
     sk_sp<SkShader> makeWithCTM(const SkMatrix&) const;  
 
@@ -252,7 +250,7 @@ public:
         SkPoint     fPoint[2];                 
         SkScalar    fRadius[2];                
         SkTileMode  fTileMode;
-        uint32_t    fGradientFlags = 0;        
+        bool        fPremulInterp;
     };
 
     virtual GradientType asGradient(GradientInfo* info    = nullptr,
@@ -409,8 +407,6 @@ protected:
     }
 
 private:
-    const uint32_t fUniqueID;
-
     friend class SkShaders::MatrixRec;
 };
 inline SkShaderBase* as_SB(SkShader* shader) {

@@ -20,22 +20,6 @@
 
 class SkWriteBuffer;
 
-namespace {
-
-
-
-
-uint32_t next_unique_id() {
-    static std::atomic<uint32_t> gNextUniqueID{SK_InvalidUniqueID + 1};
-    uint32_t id = SK_InvalidUniqueID;
-    do {
-        id = gNextUniqueID.fetch_add(1, std::memory_order_relaxed);
-    } while (id == SK_InvalidUniqueID);
-    return id;
-}
-
-} 
-
 namespace SkShaders {
 MatrixRec::MatrixRec(const SkMatrix& ctm) : fCTM(ctm) {}
 
@@ -92,7 +76,7 @@ MatrixRec MatrixRec::concat(const SkMatrix& m) const {
 
 
 
-SkShaderBase::SkShaderBase() : fUniqueID(next_unique_id()) {}
+SkShaderBase::SkShaderBase() {}
 
 SkShaderBase::~SkShaderBase() = default;
 

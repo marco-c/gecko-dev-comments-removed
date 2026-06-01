@@ -76,7 +76,9 @@ public:
             const SkFont& font, const SkPaint* paint = nullptr);
 
     
-    static SkStrikeSpec MakeWithNoDevice(const SkFont& font, const SkPaint* paint = nullptr);
+    static SkStrikeSpec MakeWithNoDevice(
+        const SkFont& font, const SkPaint* paint = nullptr,
+        SkScalerContextFlags flags = SkScalerContextFlags::kFakeGammaAndBoostContrast);
 
     sk_sp<sktext::StrikeForGPU> findOrCreateScopedStrike(
             sktext::StrikeForGPUCacheInterface* cache) const;

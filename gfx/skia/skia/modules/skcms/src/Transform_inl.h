@@ -494,10 +494,6 @@ SI U32 gather_32(const uint8_t* p, I32 ix) {
 
 SI U32 gather_24(const uint8_t* p, I32 ix) {
     
-    
-    p -= 1;
-
-    
     auto load_24_32 = [p](int i) {
         return load<uint32_t>(p + 3*i);
     };
@@ -531,14 +527,11 @@ SI U32 gather_24(const uint8_t* p, I32 ix) {
 #endif
 
     
-    return v >> 8;
+    return v & 0x00FFFFFF;
 }
 
 #if !defined(__arm__)
     SI void gather_48(const uint8_t* p, I32 ix, U64* v) {
-        
-        p -= 2;
-
         
         auto load_48_64 = [p](int i) {
             return load<uint64_t>(p + 6*i);
@@ -589,7 +582,7 @@ SI U32 gather_24(const uint8_t* p, I32 ix) {
         store((char*)v + 64, hi);
     #endif
 
-        *v >>= 16;
+        *v &= 0x0000FFFFFFFFFFFFULL;
     }
 #endif
 

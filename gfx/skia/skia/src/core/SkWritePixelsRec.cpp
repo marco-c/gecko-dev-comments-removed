@@ -8,12 +8,19 @@
 #include "src/core/SkWritePixelsRec.h"
 
 #include "include/core/SkRect.h"
+#include "src/base/SkSafeMath.h"
 
 bool SkWritePixelsRec::trim(int dstWidth, int dstHeight) {
-    if (nullptr == fPixels || fRowBytes < fInfo.minRowBytes()) {
+    
+    const size_t minRowBytes = fInfo.minRowBytes();
+    if (nullptr == fPixels || fRowBytes < minRowBytes || minRowBytes == 0) {
         return false;
     }
     if (0 >= fInfo.width() || 0 >= fInfo.height()) {
+        return false;
+    }
+    
+    if (fX == INT_MIN || fY == INT_MIN) {
         return false;
     }
 
@@ -33,7 +40,15 @@ bool SkWritePixelsRec::trim(int dstWidth, int dstHeight) {
     }
     
     
-    fPixels = ((const char*)fPixels + -y*fRowBytes + -x*fInfo.bytesPerPixel());
+    SkSafeMath safeMath;
+    const size_t y_offset = safeMath.mul(-y, fRowBytes);
+    const size_t x_offset = safeMath.mul(-x, fInfo.bytesPerPixel());
+    const size_t total = safeMath.add(y_offset, x_offset);
+    if (!safeMath.ok()) {
+        return false;
+    }
+
+    fPixels = ((const char*)fPixels + total);
     
     fInfo = fInfo.makeDimensions(dstR.size());
     fX = dstR.x();

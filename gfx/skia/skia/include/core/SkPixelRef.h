@@ -11,6 +11,7 @@
 #include "include/core/SkRefCnt.h"
 #include "include/core/SkSize.h"
 #include "include/private/SkIDChangeListener.h"
+#include "include/private/SkPixelStorage.h"
 #include "include/private/base/SkAPI.h"
 #include "include/private/base/SkTo.h"
 
@@ -25,10 +26,12 @@ class SkDiscardableMemory;
 
 
 
-class SK_API SkPixelRef : public SkRefCnt {
+class SK_API SkPixelRef : public SkPixelStorage, public SkRefCnt {
 public:
     SkPixelRef(int width, int height, void* addr, size_t rowBytes);
     ~SkPixelRef() override;
+
+    Type type() const override;
 
     SkISize dimensions() const { return {fWidth, fHeight}; }
     int width() const { return fWidth; }

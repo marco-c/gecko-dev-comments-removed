@@ -50,7 +50,7 @@ public:
 private:
     friend class SkTableColorFilter; 
 
-    SkColorTable(const SkBitmap& table) : fTable(table) {}
+    explicit SkColorTable(const SkBitmap& table) : fTable(table) {}
 
     
     

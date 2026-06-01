@@ -24,7 +24,7 @@ struct SkIRect;
 class SK_API SkNoDrawCanvas : public SkCanvasVirtualEnforcer<SkCanvas> {
 public:
     SkNoDrawCanvas(int width, int height);
-    SkNoDrawCanvas(const SkIRect&);
+    explicit SkNoDrawCanvas(const SkIRect&);
 
     
     void resetCanvas(int w, int h)        { this->resetForNextPicture(SkIRect::MakeWH(w, h)); }

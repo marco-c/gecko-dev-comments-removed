@@ -64,6 +64,14 @@ static inline bool is_almost_linear(const skcms_TransferFunction& coeffs) {
     return linearExp || linearFn;
 }
 
+namespace SkNamedPrimaries {
+bool GetCicp(CicpId primaries, skcms_Matrix3x3& toXYZD50);
+}  
+
+namespace SkNamedTransferFn {
+bool GetCicp(SkNamedTransferFn::CicpId transfer_characteristics, skcms_TransferFunction& trfn);
+}  
+
 
 
 SkColorSpace* sk_srgb_singleton();

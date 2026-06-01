@@ -68,7 +68,12 @@ public:
 
 
 
-    std::string getPipelineLabel(sk_sp<SkData> serializedPipelineKey);
+
+
+
+
+    std::string getPipelineLabel(sk_sp<SkData> serializedPipelineKey,
+                                 uint32_t* uniqueHash = nullptr);
 
     
     PrecompileContextPriv priv();
@@ -78,7 +83,7 @@ private:
     friend class PrecompileContextPriv;
     friend class Context; 
 
-    PrecompileContext(sk_sp<SharedContext>);
+    explicit PrecompileContext(sk_sp<SharedContext>);
 
     mutable SingleOwner fSingleOwner;
     sk_sp<SharedContext> fSharedContext;

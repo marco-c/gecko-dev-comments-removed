@@ -109,7 +109,7 @@ int SkStrLCSearch(const char*const* base, int count, const char target[],
 
 
 
-class SkAutoAsciiToLC {
+class [[nodiscard]] SkAutoAsciiToLC {
 public:
     SkAutoAsciiToLC(const char str[], size_t len = (size_t)-1);
     ~SkAutoAsciiToLC();

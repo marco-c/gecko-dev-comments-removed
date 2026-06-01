@@ -62,7 +62,7 @@ public:
     void abort();
 
 protected:
-    SkDocument(SkWStream*);
+    explicit SkDocument(SkWStream*);
 
     
     
