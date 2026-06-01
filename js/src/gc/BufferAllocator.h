@@ -38,11 +38,29 @@ class Nursery;
 
 namespace gc {
 
+class BufferAllocator;
 struct BufferChunk;
 class Cell;
 class GCRuntime;
 struct LargeBuffer;
 struct SmallBufferRegion;
+
+
+class AutoLockBufferAllocator : public LockGuard<Mutex> {
+ public:
+  explicit AutoLockBufferAllocator(GCRuntime* gc);
+  explicit AutoLockBufferAllocator(BufferAllocator* allocator);
+  friend class UnlockGuard<AutoLockBufferAllocator>;
+};
+
+
+
+class MaybeLockBufferAllocator
+    : public mozilla::Maybe<AutoLockBufferAllocator> {
+ public:
+  using Base = mozilla::Maybe<AutoLockBufferAllocator>;
+  using Base::Base;
+};
 
 
 
@@ -226,16 +244,8 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
 
   struct Stats;
 
-  
-  class AutoLock : public LockGuard<Mutex> {
-   public:
-    explicit AutoLock(GCRuntime* gc);
-    explicit AutoLock(BufferAllocator* allocator);
-    friend class UnlockGuard<AutoLock>;
-  };
-
-  
-  using MaybeLock = mozilla::Maybe<AutoLock>;
+  using AutoLock = AutoLockBufferAllocator;
+  using MaybeLock = MaybeLockBufferAllocator;
 
  private:
   template <typename Derived, size_t SizeBytes, size_t GranularityBytes>
