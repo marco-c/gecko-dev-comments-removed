@@ -849,8 +849,8 @@ nsThread::BeginShutdown(nsIThreadShutdown** aShutdown) {
 
   
   
-  RefPtr<nsIRunnable> event =
-      new nsThreadShutdownEvent(WrapNotNull(this), WrapNotNull(context));
+  RefPtr<nsIRunnable> event = MakeRefPtr<nsThreadShutdownEvent>(
+      WrapNotNull(this), WrapNotNull(context));
   if (!mEvents->PutEvent(event, EventQueuePriority::Normal)) {
     
     nsAutoCString threadName;

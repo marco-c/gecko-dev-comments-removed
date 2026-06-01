@@ -19,7 +19,6 @@
 #include "mozilla/glean/XpcomMetrics.h"
 
 #include <bit>
-#include <math.h>
 
 using namespace mozilla;
 
@@ -483,7 +482,7 @@ nsresult TimerThread::Init() {
     if (NS_FAILED(rv)) {
       mThread = nullptr;
     } else {
-      RefPtr<TimerObserverRunnable> r = new TimerObserverRunnable(this);
+      RefPtr r = MakeRefPtr<TimerObserverRunnable>(this);
       if (NS_IsMainThread()) {
         r->Run();
       } else {
