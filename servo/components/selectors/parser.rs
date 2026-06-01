@@ -747,14 +747,43 @@ where
 }
 
 fn collect_ancestor_hashes<Impl: SelectorImpl>(
-    iter: SelectorIter<Impl>,
+    mut iter: SelectorIter<Impl>,
     quirks_mode: QuirksMode,
     hashes: &mut [u32; 4],
     len: &mut usize,
-) {
-    collect_selector_hashes(AncestorIter::new(iter), quirks_mode, hashes, len, |s| {
+) -> bool {
+    loop {
+        while let Some(item) = iter.next() {
+            if let Component::Is(ref list) | Component::Where(ref list) = item {
+                let slice = list.slice();
+                if slice.len() == 1
+                    && !collect_ancestor_hashes(slice[0].iter(), quirks_mode, hashes, len)
+                {
+                    return false;
+                }
+            }
+        }
+        let Some(c) = iter.next_sequence() else {
+            return true;
+        };
+        match c {
+            
+            Combinator::Child | Combinator::Descendant => break,
+            Combinator::LaterSibling | Combinator::NextSibling => {
+                iter.skip_until_ancestor();
+                break;
+            },
+            
+            
+            
+            
+            Combinator::Part | Combinator::SlotAssignment | Combinator::PseudoElement => {},
+        }
+    }
+
+    collect_selector_hashes(AncestorIter(iter), quirks_mode, hashes, len, |s| {
         AncestorIter(s.iter())
-    });
+    })
 }
 
 impl AncestorHashes {
@@ -1492,6 +1521,17 @@ impl<'a, Impl: 'a + SelectorImpl> SelectorIter<'a, Impl> {
         self.next_combinator.take()
     }
 
+    
+    
+    fn skip_until_ancestor(&mut self) {
+        loop {
+            while self.next().is_some() {}
+            if self.next_sequence().is_none_or(|c| c.is_ancestor()) {
+                break;
+            }
+        }
+    }
+
     #[inline]
     pub(crate) fn matches_for_stateless_pseudo_element(&mut self) -> bool {
         let first = match self.next() {
@@ -1580,32 +1620,6 @@ impl<'a, Impl: SelectorImpl> Iterator for CombinatorIter<'a, Impl> {
 
 
 struct AncestorIter<'a, Impl: 'a + SelectorImpl>(SelectorIter<'a, Impl>);
-impl<'a, Impl: 'a + SelectorImpl> AncestorIter<'a, Impl> {
-    
-    
-    fn new(inner: SelectorIter<'a, Impl>) -> Self {
-        let mut result = AncestorIter(inner);
-        result.skip_until_ancestor();
-        result
-    }
-
-    
-    
-    fn skip_until_ancestor(&mut self) {
-        loop {
-            while self.0.next().is_some() {}
-            
-            
-            
-            if self.0.next_sequence().map_or(true, |x| {
-                matches!(x, Combinator::Child | Combinator::Descendant)
-            }) {
-                break;
-            }
-        }
-    }
-}
-
 impl<'a, Impl: SelectorImpl> Iterator for AncestorIter<'a, Impl> {
     type Item = &'a Component<Impl>;
     fn next(&mut self) -> Option<Self::Item> {
@@ -1614,14 +1628,10 @@ impl<'a, Impl: SelectorImpl> Iterator for AncestorIter<'a, Impl> {
         if next.is_some() {
             return next;
         }
-
         
-        if let Some(combinator) = self.0.next_sequence() {
-            if !matches!(combinator, Combinator::Child | Combinator::Descendant) {
-                self.skip_until_ancestor();
-            }
+        if !self.0.next_sequence()?.is_ancestor() {
+            self.0.skip_until_ancestor();
         }
-
         self.0.next()
     }
 }
@@ -1651,18 +1661,6 @@ pub enum Combinator {
 impl Combinator {
     
     #[inline]
-    pub fn is_ancestor(&self) -> bool {
-        matches!(
-            *self,
-            Combinator::Child
-                | Combinator::Descendant
-                | Combinator::PseudoElement
-                | Combinator::SlotAssignment
-        )
-    }
-
-    
-    #[inline]
     pub fn is_pseudo_element(&self) -> bool {
         matches!(*self, Combinator::PseudoElement)
     }
@@ -1671,6 +1669,13 @@ impl Combinator {
     #[inline]
     pub fn is_sibling(&self) -> bool {
         matches!(*self, Combinator::NextSibling | Combinator::LaterSibling)
+    }
+
+    
+    
+    #[inline]
+    pub fn is_ancestor(&self) -> bool {
+        !self.is_sibling()
     }
 }
 
@@ -4035,7 +4040,7 @@ pub mod tests {
             name: CowRcStr<'i>,
             parser: &mut CssParser<'i, 't>,
         ) -> Result<PseudoElement, SelectorParseError<'i>> {
-            match_ignore_ascii_case! {&name,
+            match_ignore_ascii_case! { &name,
                 "highlight" => return Ok(PseudoElement::Highlight(parser.expect_ident()?.as_ref().to_owned())),
                 _ => {}
             }
@@ -4135,6 +4140,67 @@ pub mod tests {
 
     fn specificity(a: u32, b: u32, c: u32) -> u32 {
         a << 20 | b << 10 | c
+    }
+
+    #[test]
+    fn test_ancestor_hashes_in_subject_position() {
+        fn ancestor_hash_count(selector: &str) -> usize {
+            let list = parse(selector).unwrap();
+            assert_eq!(list.slice().len(), 1);
+            let mut hashes = [0u32; 4];
+            let mut len = 0;
+            collect_ancestor_hashes(
+                list.slice()[0].iter(),
+                QuirksMode::NoQuirks,
+                &mut hashes,
+                &mut len,
+            );
+            len
+        }
+
+        
+        assert_eq!(ancestor_hash_count(".subject"), 0);
+        assert_eq!(ancestor_hash_count(":where(.subject)"), 0);
+
+        
+        
+        assert_eq!(ancestor_hash_count(":where(.ancestor > .subject)"), 1);
+        assert_eq!(ancestor_hash_count(":is(.ancestor .subject)"), 1);
+        assert_eq!(
+            ancestor_hash_count(":where(.ancestor > :not(:last-child))"),
+            1
+        );
+
+        
+        
+        assert_eq!(
+            ancestor_hash_count(".real-ancestor :where(.inner-ancestor > .subject)"),
+            2
+        );
+
+        
+        
+        
+        assert_eq!(ancestor_hash_count(":is(.a, .b) .subject"), 0);
+        assert_eq!(
+            ancestor_hash_count(":where(.ancestor > .subject, .other)"),
+            0
+        );
+        
+        
+        assert_eq!(ancestor_hash_count(".real-ancestor :where(.a > .b, .c)"), 1);
+
+        
+        
+        
+        assert_eq!(ancestor_hash_count(".subject::before"), 0);
+        assert_eq!(ancestor_hash_count(".real-ancestor .subject::before"), 1);
+        
+        
+        assert_eq!(
+            ancestor_hash_count(":where(.ancestor > .subject)::before"),
+            1
+        );
     }
 
     #[test]
