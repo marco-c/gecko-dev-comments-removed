@@ -2,6 +2,7 @@
 
 
 
+#include "ChannelClassifierService.h"
 #include "Classifier.h"
 #include "ContentClassifierService.h"
 #include "HttpBaseChannel.h"
@@ -1026,27 +1027,22 @@ nsresult AntiTrackingChannelClassifierUtils::CheckChannelHelper(
             Flow::FromPointer(channel.get()));
         TimeStamp workerStartTime = TimeStamp::Now();
 
-        bool shouldCancel = false;
-        bool shouldAnnotate = false;
+        ContentClassifierResult cancelResult;
+        ContentClassifierResult annotateResult;
 
         if (contentClassifier && contentClassifier->IsInitialized() &&
             contentClassifierRequest.isSome()) {
           if (aPerformBlocking) {
-            ContentClassifierResult cancelResult =
+            cancelResult =
                 contentClassifier->ClassifyForCancel(*contentClassifierRequest);
-            shouldCancel = cancelResult.Hit();
           }
           if (aPerformAnnotations) {
-            ContentClassifierResult annotateResult =
-                contentClassifier->ClassifyForAnnotate(
-                    *contentClassifierRequest);
-            shouldAnnotate = annotateResult.Hit();
+            annotateResult = contentClassifier->ClassifyForAnnotate(
+                *contentClassifierRequest);
           }
         }
 
-        
-        
-        if (task && !shouldCancel) {
+        if (task) {
           task->DoLookup(workerClassifier);
         }
 
@@ -1061,18 +1057,25 @@ nsresult AntiTrackingChannelClassifierUtils::CheckChannelHelper(
             NS_NewRunnableFunction(
                 "AntiTrackingChannelClassifierUtils::CheckChannelHelper - "
                 "return",
-                [task, channel, shouldCancel, shouldAnnotate, outerStartTime,
+                [task, channel, outerStartTime,
+                 cancelResult = std::move(cancelResult),
+                 annotateResult = std::move(annotateResult),
                  callbackFromFeature = std::move(callbackFromFeature),
                  contentClassifier]() -> void {
-                  if (shouldAnnotate) {
-                    contentClassifier->AnnotateChannel(channel);
-                  }
-                  if (shouldCancel) {
-                    (void)contentClassifier->MaybeCancelChannel(channel);
-                    callbackFromFeature();
-                  } else if (task) {
-                    task->CompleteClassification();
+                  if (contentClassifier) {
+                    ChannelBlockDecision cancelAction =
+                        contentClassifier->MaybeCancelChannel(channel,
+                                                              cancelResult);
                     
+                    if (cancelAction != ChannelBlockDecision::Blocked) {
+                      contentClassifier->MaybeAnnotateChannel(channel,
+                                                              annotateResult);
+                    }
+                  }
+                  
+                  
+                  if (task) {
+                    task->CompleteClassification();
                   } else {
                     callbackFromFeature();
                   }

@@ -108,7 +108,11 @@ pub unsafe extern "C" fn content_classifier_engine_check_network_request_prepars
         third_party,
     );
 
-    let result = engine.check_network_request(&request);
+    
+    
+    
+    
+    let result = engine.check_network_request_subset(&request, false, true);
 
     *out_matched = result.matched;
     *out_important = result.important;
