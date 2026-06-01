@@ -521,15 +521,22 @@ add_task(async function test_unknown_kek_ref_rejected() {
   const ls = getService();
   const BOGUS = "lockstore::kek::bogus";
   
-  Assert.ok(!ls.isKekUnlocked(BOGUS), "unknown kek_ref reported as locked");
   
+  Assert.throws(
+    () => ls.isKekUnlocked(BOGUS),
+    INVALID_ARG_RE,
+    "isKekUnlocked rejects an unknown kek_ref"
+  );
   await Assert.rejects(
     ls.unlockKek(BOGUS, "whatever", 60000),
     INVALID_ARG_RE,
-    "unknown kek_ref rejected by unlockKek"
+    "unlockKek rejects an unknown kek_ref"
   );
-  
-  await ls.lockKek(BOGUS);
+  await Assert.rejects(
+    ls.lockKek(BOGUS),
+    INVALID_ARG_RE,
+    "lockKek rejects an unknown kek_ref"
+  );
 });
 
 add_task(async function test_empty_kek_ref_rejected() {
