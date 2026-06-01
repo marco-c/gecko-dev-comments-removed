@@ -123,6 +123,11 @@ function extensionAllowedToInspectPrincipal(
   principal,
   location
 ) {
+  
+  
+  
+  
+  
   if (principal.isNullPrincipal) {
     if (location.protocol === "view-source:") {
       
@@ -165,7 +170,7 @@ function extensionAllowedToInspectPrincipal(
   }
 
   if (principalURI.schemeIs("file")) {
-    return true;
+    return extensionPolicy.fileSchemeAllowed;
   }
 
   return false;

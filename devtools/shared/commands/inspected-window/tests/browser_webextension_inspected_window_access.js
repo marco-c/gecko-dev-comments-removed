@@ -295,6 +295,8 @@ add_task(async function test_eval_at_about() {
 add_task(async function test_eval_at_file() {
   
   
+  
+  
 
   const extension = ExtensionTestUtils.loadExtension({});
   await extension.startup();
@@ -304,20 +306,21 @@ add_task(async function test_eval_at_file() {
     "file://" +
     getTestFilePath("browser_webextension_inspected_window_access.js");
 
-  
-  
   const tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, fileUrl);
-  const result = await run_inspectedWindow_eval({
-    tab,
-    codeToEval: "'code executed at ' + location.protocol",
+  const finalFileUrl = tab.linkedBrowser.currentURI.spec;
+  ok(finalFileUrl.startsWith("file:"), `Got file:-URL: ${finalFileUrl}`);
+
+  
+  
+  
+  await checkEvalDenied({
     extension,
+    description: "file access denied by default",
+    url: finalFileUrl,
+    createTab: () => tab,
   });
-  BrowserTestUtils.removeTab(tab);
-  SimpleTest.isDeeply(
-    result,
-    { value: "code executed at file:" },
-    `eval result for devtools.inspectedWindow.eval at ${fileUrl}`
-  );
+
+  
 
   await extension.unload();
 });
