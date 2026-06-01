@@ -1837,7 +1837,21 @@ bool ModuleBuilder::buildTables(frontend::StencilModuleMetadata& metadata) {
         }
       } else {
         
-        if (!importEntry->importName) {
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+        bool isSourcePhase =
+            metadata.moduleRequests[importEntry->moduleRequest.value()].phase ==
+            ImportPhase::Source;
+#else
+        bool isSourcePhase = false;
+#endif
+        if (isSourcePhase) {
+          
+          
+          if (!metadata.localExportEntries.append(exp)) {
+            js::ReportOutOfMemory(fc_);
+            return false;
+          }
+        } else if (!importEntry->importName) {
           
           auto entry = frontend::StencilModuleEntry::exportNamespaceFromEntry(
               importEntry->moduleRequest, exp.exportName, exp.lineno,

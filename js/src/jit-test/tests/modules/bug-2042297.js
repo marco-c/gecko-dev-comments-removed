@@ -1,0 +1,4 @@
+
+
+import {s} from "reexport-source-phase-wasm.js";
+assertEq(s instanceof WebAssembly.Module, true);
