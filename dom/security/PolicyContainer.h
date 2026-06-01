@@ -8,6 +8,7 @@
 #include "nsCOMPtr.h"
 #include "nsIContentSecurityPolicy.h"
 #include "nsIIntegrityPolicy.h"
+#include "nsILoadInfo.h"
 #include "nsIPolicyContainer.h"
 
 namespace mozilla::ipc {
@@ -77,10 +78,18 @@ class PolicyContainer : public nsIPolicyContainer {
   static mozilla::dom::IntegrityPolicyWAICT* GetIntegrityPolicyWAICT(
       const nsIPolicyContainer* aPolicyContainer);
 
+  
+  
+  
+  
+  nsILoadInfo::IPAddressSpace GetIPAddressSpace() const;
+  void SetIPAddressSpace(nsILoadInfo::IPAddressSpace aIPAddressSpace);
+
  private:
   nsCOMPtr<nsIContentSecurityPolicy> mCSP;
   nsCOMPtr<nsIIntegrityPolicy> mIntegrityPolicy;
   RefPtr<mozilla::dom::IntegrityPolicyWAICT> mIntegrityPolicyWAICT;
+  nsILoadInfo::IPAddressSpace mIPAddressSpace = nsILoadInfo::Unknown;
 
  protected:
   virtual ~PolicyContainer();
