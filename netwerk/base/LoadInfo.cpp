@@ -2083,16 +2083,6 @@ void LoadInfo::UpdateParentAddressSpaceInfo() {
   RefPtr<mozilla::dom::BrowsingContext> bc;
   GetBrowsingContext(getter_AddRefs(bc));
   if (!bc) {
-    
-    
-    if (mClientInfo.isSome() && mClientInfo->Type() != ClientType::Window) {
-      nsCOMPtr<nsIPolicyContainer> policyContainer = GetPolicyContainer();
-      if (policyContainer) {
-        mParentIpAddressSpace =
-            PolicyContainer::Cast(policyContainer)->GetIPAddressSpace();
-        return;
-      }
-    }
     mParentIpAddressSpace = nsILoadInfo::Local;
     return;
   }

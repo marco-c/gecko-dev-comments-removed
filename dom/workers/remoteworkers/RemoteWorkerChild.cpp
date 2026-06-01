@@ -315,17 +315,6 @@ nsresult RemoteWorkerChild::ExecWorkerOnMainThread(
     }
   }
 
-  
-  
-  if (clientInfo.isSome()) {
-    Maybe<mozilla::ipc::PolicyContainerArgs> policyContainerArgs =
-        clientInfo.ref().GetPolicyContainerArgs();
-    if (policyContainerArgs.isSome()) {
-      info.mIPAddressSpace =
-          static_cast<uint16_t>(policyContainerArgs->ipAddressSpace());
-    }
-  }
-
   nsresult rv = info.SetPrincipalsAndCSPOnMainThread(
       info.mPrincipal, info.mPartitionedPrincipal, info.mLoadGroup, info.mCSP);
   if (NS_WARN_IF(NS_FAILED(rv))) {
