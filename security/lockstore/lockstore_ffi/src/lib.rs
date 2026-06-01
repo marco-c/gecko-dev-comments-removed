@@ -59,7 +59,7 @@ fn result_to_nsresult(r: Result<(), LockstoreError>) -> nsresult {
 
 
 #[no_mangle]
-pub unsafe extern "C" fn lockstore_keystore_open(
+pub unsafe extern "C" fn keystore_open(
     profile_path: &nsACString,
     ret_handle: &mut *mut KeystoreHandle,
 ) -> nsresult {
@@ -91,7 +91,7 @@ pub unsafe extern "C" fn lockstore_keystore_open(
 }
 
 #[no_mangle]
-pub extern "C" fn lockstore_keystore_create_dek(
+pub extern "C" fn keystore_create_dek(
     handle: &KeystoreHandle,
     collection: &nsACString,
     kek_ref: &nsACString,
@@ -127,7 +127,7 @@ pub extern "C" fn lockstore_keystore_create_dek(
 
 
 #[no_mangle]
-pub unsafe extern "C" fn lockstore_keystore_import_dek(
+pub unsafe extern "C" fn keystore_import_dek(
     handle: &KeystoreHandle,
     collection: &nsACString,
     kek_ref: &nsACString,
@@ -166,7 +166,7 @@ pub unsafe extern "C" fn lockstore_keystore_import_dek(
 }
 
 #[no_mangle]
-pub extern "C" fn lockstore_keystore_is_dek_extractable(
+pub extern "C" fn keystore_is_dek_extractable(
     handle: &KeystoreHandle,
     collection: &nsACString,
     out_extractable: &mut bool,
@@ -187,7 +187,7 @@ pub extern "C" fn lockstore_keystore_is_dek_extractable(
 }
 
 #[no_mangle]
-pub extern "C" fn lockstore_keystore_get_dek(
+pub extern "C" fn keystore_get_dek(
     handle: &KeystoreHandle,
     collection: &nsACString,
     kek_ref: &nsACString,
@@ -215,7 +215,7 @@ pub extern "C" fn lockstore_keystore_get_dek(
 
 
 #[no_mangle]
-pub extern "C" fn lockstore_keystore_delete_dek(
+pub extern "C" fn keystore_delete_dek(
     handle: &KeystoreHandle,
     collection: &nsACString,
 ) -> nsresult {
@@ -233,7 +233,7 @@ pub extern "C" fn lockstore_keystore_delete_dek(
 }
 
 #[no_mangle]
-pub extern "C" fn lockstore_keystore_list_deks(
+pub extern "C" fn keystore_list_deks(
     handle: &KeystoreHandle,
     ret_collections: &mut ThinVec<nsCString>,
 ) -> nsresult {
@@ -253,7 +253,7 @@ pub extern "C" fn lockstore_keystore_list_deks(
 
 
 #[no_mangle]
-pub extern "C" fn lockstore_keystore_list_keks(
+pub extern "C" fn keystore_list_keks(
     handle: &KeystoreHandle,
     dek_name: &nsACString,
     ret_kek_refs: &mut ThinVec<nsCString>,
@@ -269,7 +269,7 @@ pub extern "C" fn lockstore_keystore_list_keks(
 }
 
 #[no_mangle]
-pub extern "C" fn lockstore_keystore_add_kek(
+pub extern "C" fn keystore_add_kek(
     handle: &KeystoreHandle,
     collection: &nsACString,
     from_kek_ref: &nsACString,
@@ -289,7 +289,7 @@ pub extern "C" fn lockstore_keystore_add_kek(
 }
 
 #[no_mangle]
-pub extern "C" fn lockstore_keystore_remove_kek(
+pub extern "C" fn keystore_remove_kek(
     handle: &KeystoreHandle,
     collection: &nsACString,
     kek_ref: &nsACString,
@@ -311,7 +311,7 @@ pub extern "C" fn lockstore_keystore_remove_kek(
 
 
 #[no_mangle]
-pub extern "C" fn lockstore_keystore_switch_kek(
+pub extern "C" fn keystore_switch_kek(
     handle: &KeystoreHandle,
     collection: &nsACString,
     old_kek_ref: &nsACString,
@@ -338,7 +338,7 @@ pub extern "C" fn lockstore_keystore_switch_kek(
 
 
 #[no_mangle]
-pub unsafe extern "C" fn lockstore_keystore_encrypt(
+pub unsafe extern "C" fn keystore_encrypt(
     handle: &KeystoreHandle,
     collection: &nsACString,
     kek_ref: &nsACString,
@@ -379,7 +379,7 @@ pub unsafe extern "C" fn lockstore_keystore_encrypt(
 
 
 #[no_mangle]
-pub unsafe extern "C" fn lockstore_keystore_decrypt(
+pub unsafe extern "C" fn keystore_decrypt(
     handle: &KeystoreHandle,
     collection: &nsACString,
     kek_ref: &nsACString,
@@ -416,7 +416,7 @@ pub unsafe extern "C" fn lockstore_keystore_decrypt(
 
 
 #[no_mangle]
-pub unsafe extern "C" fn lockstore_keystore_close(handle: *mut KeystoreHandle) -> nsresult {
+pub unsafe extern "C" fn keystore_close(handle: *mut KeystoreHandle) -> nsresult {
     
     
     
@@ -450,7 +450,7 @@ pub unsafe extern "C" fn lockstore_keystore_close(handle: *mut KeystoreHandle) -
 
 
 #[no_mangle]
-pub extern "C" fn lockstore_keystore_unlock_kek(
+pub extern "C" fn keystore_unlock_kek(
     handle: &KeystoreHandle,
     kek_ref: &nsACString,
     secret: &nsACString,
@@ -475,10 +475,7 @@ pub extern "C" fn lockstore_keystore_unlock_kek(
 }
 
 #[no_mangle]
-pub extern "C" fn lockstore_keystore_lock_kek(
-    handle: &KeystoreHandle,
-    kek_ref: &nsACString,
-) -> nsresult {
+pub extern "C" fn keystore_lock_kek(handle: &KeystoreHandle, kek_ref: &nsACString) -> nsresult {
     if kek_ref.is_empty() {
         return NS_ERROR_INVALID_ARG;
     }
@@ -487,7 +484,7 @@ pub extern "C" fn lockstore_keystore_lock_kek(
 }
 
 #[no_mangle]
-pub extern "C" fn lockstore_keystore_is_kek_unlocked(
+pub extern "C" fn keystore_is_kek_unlocked(
     handle: &KeystoreHandle,
     kek_ref: &nsACString,
     out_unlocked: &mut bool,
@@ -509,7 +506,7 @@ pub extern "C" fn lockstore_keystore_is_kek_unlocked(
 
 
 #[no_mangle]
-pub extern "C" fn lockstore_keystore_lock(handle: &KeystoreHandle) -> nsresult {
+pub extern "C" fn keystore_lock(handle: &KeystoreHandle) -> nsresult {
     result_to_nsresult(handle.keystore.lock())
 }
 
@@ -529,7 +526,7 @@ pub extern "C" fn lockstore_keystore_lock(handle: &KeystoreHandle) -> nsresult {
 
 
 #[no_mangle]
-pub extern "C" fn lockstore_keystore_create_kek(
+pub extern "C" fn keystore_create_kek(
     handle: &KeystoreHandle,
     kek_type: &nsACString,
     secret: &nsACString,
@@ -564,10 +561,7 @@ pub extern "C" fn lockstore_keystore_create_kek(
 
 
 #[no_mangle]
-pub extern "C" fn lockstore_keystore_delete_kek(
-    handle: &KeystoreHandle,
-    kek_ref: &nsACString,
-) -> nsresult {
+pub extern "C" fn keystore_delete_kek(handle: &KeystoreHandle, kek_ref: &nsACString) -> nsresult {
     if kek_ref.is_empty() {
         return NS_ERROR_INVALID_ARG;
     }
