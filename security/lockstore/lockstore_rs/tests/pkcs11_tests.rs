@@ -11,24 +11,17 @@ use lockstore_rs::{Keystore, LockstoreError};
 use std::time::Duration;
 
 #[test]
-fn pkcs11_malformed_uri_rejected() {
+fn pkcs11_unknown_kek_ref_rejected() {
     
     
     
     let ks = Keystore::new_in_memory().expect("new");
     let err = ks
         .unlock_kek(
-            "lockstore::kek::pkcs11:not-a-valid-uri",
+            "lockstore::kek::pkcs11:not-a-real-record",
             b"pin",
             Duration::from_secs(1),
         )
         .unwrap_err();
-    assert!(
-        matches!(
-            err,
-            LockstoreError::InvalidKekRef(_) | LockstoreError::TokenError(_)
-        ),
-        "got: {:?}",
-        err
-    );
+    assert!(matches!(err, LockstoreError::NotFound(_)), "got: {:?}", err);
 }

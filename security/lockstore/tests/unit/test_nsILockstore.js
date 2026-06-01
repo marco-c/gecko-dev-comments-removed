@@ -3,11 +3,16 @@
 
 "use strict";
 
-const KEK_LOCAL = "lockstore::kek::local";
-const KEK_PP = "lockstore::kek::primary_password";
 const PW = "correct horse battery staple";
 const PW2 = "rotated_password_42";
 const PW_WRONG = "Tr0ub4dor&3";
+
+
+
+
+
+let KEK_LOCAL = null;
+let KEK_PASSWORD = null;
 
 function getService() {
   return Cc["@mozilla.org/security/lockstore;1"].getService(Ci.nsILockstore);
@@ -21,19 +26,47 @@ function str(arr) {
   return new TextDecoder().decode(new Uint8Array(arr));
 }
 
+async function mintLocalKek() {
+  return getService().createKek("local", "",  0);
+}
+
+async function mintPasswordKek(password) {
+  return getService().createKek("password", password,  0);
+}
+
 
 
 const INVALID_ARG_RE = /NS_ERROR_(INVALID_ARG|ILLEGAL_VALUE)/;
 
 add_setup(async function () {
   do_get_profile();
+  KEK_LOCAL = await mintLocalKek();
+  
+  
+  
+  KEK_PASSWORD = await mintPasswordKek(PW);
+
+  
+  
+  
+  
+  
+  const ls = getService();
+  await ls.unlockKek(KEK_PASSWORD, PW,  60_000);
+  await ls.createDek("_keepalive", KEK_LOCAL, false);
+  await ls.addKek("_keepalive", KEK_LOCAL, KEK_PASSWORD);
+  await ls.lockKek(KEK_PASSWORD);
 });
 
 add_task(function test_service_accessible() {
   const ls = getService();
   Assert.ok(ls, "nsILockstore service must be obtainable");
-  Assert.ok(!ls.hasPrimaryPassword, "fresh profile has no primary password");
-  Assert.ok(!ls.isKekUnlocked(KEK_PP), "fresh profile has no unlocked cache");
+  
+  
+  Assert.ok(
+    !ls.isKekUnlocked(KEK_PASSWORD),
+    "fresh Password kek starts locked"
+  );
 });
 
 add_task(async function test_local_key_encrypt_decrypt_roundtrip() {
@@ -188,7 +221,7 @@ add_task(async function test_decrypt_with_wrong_kek_rejects() {
   
   
   await Assert.rejects(
-    ls.decrypt("local-only", KEK_PP, ct),
+    ls.decrypt("local-only", KEK_PASSWORD, ct),
     /NS_ERROR_NOT_AVAILABLE/,
     "decrypt under a KEK that does not wrap the collection rejects"
   );
@@ -300,116 +333,90 @@ add_task(async function test_delete_dek_empty_arg_rejected() {
   );
 });
 
-add_task(async function test_primary_password_lifecycle() {
+add_task(async function test_password_lifecycle() {
   const ls = getService();
 
   
   
-  
-  await ls.setPrimaryPassword("", PW);
-  Assert.ok(ls.hasPrimaryPassword, "primary password now set");
-  Assert.ok(!ls.isKekUnlocked(KEK_PP), "still locked after set");
+  Assert.ok(!ls.isKekUnlocked(KEK_PASSWORD), "freshly minted, starts locked");
 
   
   await Assert.rejects(
-    ls.unlockKek(KEK_PP, PW_WRONG, 60000),
+    ls.unlockKek(KEK_PASSWORD, PW_WRONG, 60000),
     /NS_ERROR_ABORT/,
     "wrong password rejected"
   );
   Assert.ok(
-    !ls.isKekUnlocked(KEK_PP),
+    !ls.isKekUnlocked(KEK_PASSWORD),
     "wrong password does not populate cache"
   );
 
-  await ls.unlockKek(KEK_PP, PW, 60000);
-  Assert.ok(ls.isKekUnlocked(KEK_PP), "correct password unlocks");
+  await ls.unlockKek(KEK_PASSWORD, PW, 60000);
+  Assert.ok(ls.isKekUnlocked(KEK_PASSWORD), "correct password unlocks");
 
   
-  await ls.createDek("pp-col", KEK_PP, false);
-  const ct = await ls.encrypt("pp-col", KEK_PP, bytes("secret"));
-  const round = await ls.decrypt("pp-col", KEK_PP, ct);
-  Assert.equal(str(round), "secret", "PP roundtrip while unlocked");
+  await ls.createDek("pw-col", KEK_PASSWORD, false);
+  const ct = await ls.encrypt("pw-col", KEK_PASSWORD, bytes("secret"));
+  const round = await ls.decrypt("pw-col", KEK_PASSWORD, ct);
+  Assert.equal(str(round), "secret", "Password roundtrip while unlocked");
 
   
-  await ls.lockKek(KEK_PP);
-  Assert.ok(!ls.isKekUnlocked(KEK_PP));
+  await ls.lockKek(KEK_PASSWORD);
+  Assert.ok(!ls.isKekUnlocked(KEK_PASSWORD));
   await Assert.rejects(
-    ls.encrypt("pp-col", KEK_PP, bytes("nope")),
+    ls.encrypt("pw-col", KEK_PASSWORD, bytes("nope")),
     /NS_ERROR_NOT_AVAILABLE/,
-    "encrypt under locked PP rejects with Locked"
+    "encrypt under locked Password kek rejects with Locked"
   );
+
+  await ls.deleteDek("pw-col");
 });
 
-add_task(
-  async function test_set_primary_password_when_set_with_empty_old_rejected() {
-    const ls = getService();
-    Assert.ok(ls.hasPrimaryPassword, "PP set from previous task");
-    
-    
-    
-    await Assert.rejects(
-      ls.setPrimaryPassword("", "different"),
-      /NS_ERROR_FAILURE/,
-      "setPrimaryPassword('', ...) when PP is set rejects as init-on-initialised"
-    );
-    Assert.ok(ls.hasPrimaryPassword, "PP unchanged after rejected set");
-  }
-);
-
-add_task(
-  async function test_set_primary_password_change_with_wrong_old_rejected() {
-    const ls = getService();
-    await Assert.rejects(
-      ls.setPrimaryPassword(PW_WRONG, PW2),
-      /NS_ERROR_ABORT/,
-      "setPrimaryPassword with wrong oldPassword rejects"
-    );
-    Assert.ok(ls.hasPrimaryPassword, "PP unchanged after rejected change");
-  }
-);
-
-add_task(async function test_change_primary_password_lifecycle() {
+add_task(async function test_multiple_password_keks_unlock_independently() {
   const ls = getService();
   
-  await ls.setPrimaryPassword(PW, PW2);
-  Assert.ok(ls.hasPrimaryPassword, "PP still set after change");
-  Assert.ok(!ls.isKekUnlocked(KEK_PP), "change clears any cached KEK");
+  const kekA = await mintPasswordKek(PW);
+  const kekB = await mintPasswordKek(PW2);
+  Assert.notEqual(kekA, kekB, "createKek mints distinct kek_refs each call");
+
+  await ls.unlockKek(kekA, PW, 60000);
+  Assert.ok(ls.isKekUnlocked(kekA));
+  Assert.ok(!ls.isKekUnlocked(kekB), "kek B is unaffected by kek A's unlock");
 
   
   await Assert.rejects(
-    ls.unlockKek(KEK_PP, PW, 60000),
+    ls.unlockKek(kekA, PW2, 60000),
     /NS_ERROR_ABORT/,
-    "old password no longer unlocks after change"
+    "PW2 is wrong for kekA"
   );
+  await ls.unlockKek(kekB, PW2, 60000);
+  Assert.ok(ls.isKekUnlocked(kekB));
 
   
-  await ls.unlockKek(KEK_PP, PW2, 60000);
-  Assert.ok(ls.isKekUnlocked(KEK_PP), "new password unlocks");
+  await ls.lockKek(kekA);
+  Assert.ok(!ls.isKekUnlocked(kekA));
+  Assert.ok(ls.isKekUnlocked(kekB), "kek B still unlocked after kek A locked");
 
-  
-  await ls.lockKek(KEK_PP);
-  await ls.setPrimaryPassword(PW2, PW);
-  await ls.unlockKek(KEK_PP, PW, 60000);
-  Assert.ok(ls.isKekUnlocked(KEK_PP), "PP restored to PW");
+  await ls.lockKek(kekB);
 });
 
 add_task(async function test_add_remove_kek() {
   const ls = getService();
   
-  if (!ls.isKekUnlocked(KEK_PP)) {
-    await ls.unlockKek(KEK_PP, PW, 60000);
+  if (!ls.isKekUnlocked(KEK_PASSWORD)) {
+    await ls.unlockKek(KEK_PASSWORD, PW, 60000);
   }
 
   await ls.createDek("multi", KEK_LOCAL, true);
-  await ls.addKek("multi", KEK_LOCAL, KEK_PP);
+  await ls.addKek("multi", KEK_LOCAL, KEK_PASSWORD);
 
   const ct = await ls.encrypt("multi", KEK_LOCAL, bytes("shared DEK"));
-  const round = await ls.decrypt("multi", KEK_PP, ct);
+  const round = await ls.decrypt("multi", KEK_PASSWORD, ct);
   Assert.equal(str(round), "shared DEK", "same DEK decrypts via either KEK");
 
-  await ls.removeKek("multi", KEK_PP);
+  await ls.removeKek("multi", KEK_PASSWORD);
   await Assert.rejects(
-    ls.encrypt("multi", KEK_PP, bytes("nope")),
+    ls.encrypt("multi", KEK_PASSWORD, bytes("nope")),
     /NS_ERROR_NOT_AVAILABLE/,
     "removed KEK is gone"
   );
@@ -439,7 +446,7 @@ add_task(async function test_remove_kek_not_present_rejects() {
   
   
   await Assert.rejects(
-    ls.removeKek("multi", KEK_PP),
+    ls.removeKek("multi", KEK_PASSWORD),
     /NS_ERROR_/,
     "removeKek of a kekRef that is not currently wrapping rejects"
   );
@@ -447,11 +454,11 @@ add_task(async function test_remove_kek_not_present_rejects() {
 
 add_task(async function test_add_kek_missing_collection_rejects() {
   const ls = getService();
-  if (!ls.isKekUnlocked(KEK_PP)) {
-    await ls.unlockKek(KEK_PP, PW, 60000);
+  if (!ls.isKekUnlocked(KEK_PASSWORD)) {
+    await ls.unlockKek(KEK_PASSWORD, PW, 60000);
   }
   await Assert.rejects(
-    ls.addKek("never-created-coll", KEK_LOCAL, KEK_PP),
+    ls.addKek("never-created-coll", KEK_LOCAL, KEK_PASSWORD),
     /NS_ERROR_NOT_AVAILABLE/,
     "addKek against a collection without a DEK rejects"
   );
@@ -460,12 +467,12 @@ add_task(async function test_add_kek_missing_collection_rejects() {
 add_task(async function test_add_kek_empty_args_rejected() {
   const ls = getService();
   await Assert.rejects(
-    ls.addKek("", KEK_LOCAL, KEK_PP),
+    ls.addKek("", KEK_LOCAL, KEK_PASSWORD),
     INVALID_ARG_RE,
     "addKek with empty collection rejects"
   );
   await Assert.rejects(
-    ls.addKek("multi", "", KEK_PP),
+    ls.addKek("multi", "", KEK_PASSWORD),
     INVALID_ARG_RE,
     "addKek with empty fromKekRef rejects"
   );
@@ -501,12 +508,12 @@ add_task(async function test_local_key_is_always_unlocked() {
 
 add_task(async function test_lock_all() {
   const ls = getService();
-  if (!ls.isKekUnlocked(KEK_PP)) {
-    await ls.unlockKek(KEK_PP, PW, 60000);
+  if (!ls.isKekUnlocked(KEK_PASSWORD)) {
+    await ls.unlockKek(KEK_PASSWORD, PW, 60000);
   }
-  Assert.ok(ls.isKekUnlocked(KEK_PP), "PP unlocked before lock()");
+  Assert.ok(ls.isKekUnlocked(KEK_PASSWORD), "PP unlocked before lock()");
   await ls.lock();
-  Assert.ok(!ls.isKekUnlocked(KEK_PP), "PP locked after lock()");
+  Assert.ok(!ls.isKekUnlocked(KEK_PASSWORD), "PP locked after lock()");
   Assert.ok(ls.isKekUnlocked(KEK_LOCAL), "LocalKey unaffected by lock()");
 });
 
@@ -544,16 +551,17 @@ add_task(async function test_empty_kek_ref_rejected() {
   );
 });
 
-add_task(async function test_pkcs11_malformed_uri_rejected() {
+add_task(async function test_pkcs11_unknown_kek_ref_rejected() {
+  
   
   
   
   const ls = getService();
-  const bogusPkcs11 = "lockstore::kek::pkcs11:not-a-valid-uri";
+  const bogusPkcs11 = "lockstore::kek::pkcs11:not-a-real-record";
   await Assert.rejects(
     ls.unlockKek(bogusPkcs11, "pin-bytes", 60000),
-    /NS_ERROR_(INVALID_ARG|ILLEGAL_VALUE|FAILURE)/,
-    "malformed PKCS#11 URI rejected"
+    /NS_ERROR_(NOT_AVAILABLE|INVALID_ARG|ILLEGAL_VALUE|FAILURE)/,
+    "unknown PKCS#11 kek_ref rejected"
   );
 });
 
@@ -722,8 +730,8 @@ add_task(async function test_is_dek_extractable_missing_rejected() {
 
 add_task(async function test_switch_kek_round_trip() {
   const ls = getService();
-  if (!ls.isKekUnlocked(KEK_PP)) {
-    await ls.unlockKek(KEK_PP, PW, 60000);
+  if (!ls.isKekUnlocked(KEK_PASSWORD)) {
+    await ls.unlockKek(KEK_PASSWORD, PW, 60000);
   }
 
   await ls.createDek("switch-rt", KEK_LOCAL, false);
@@ -732,17 +740,17 @@ add_task(async function test_switch_kek_round_trip() {
   
   const ct = await ls.encrypt("switch-rt", KEK_LOCAL, bytes("preserved"));
 
-  await ls.switchKek("switch-rt", KEK_LOCAL, KEK_PP);
+  await ls.switchKek("switch-rt", KEK_LOCAL, KEK_PASSWORD);
 
   const refs = await ls.listKeks("switch-rt");
   Assert.deepEqual(
     refs,
-    [KEK_PP],
+    [KEK_PASSWORD],
     "only the new kekRef wraps the collection after switch"
   );
 
   Assert.equal(
-    str(await ls.decrypt("switch-rt", KEK_PP, ct)),
+    str(await ls.decrypt("switch-rt", KEK_PASSWORD, ct)),
     "preserved",
     "ciphertext decrypts under the new kekRef (DEK bytes preserved)"
   );
@@ -770,12 +778,12 @@ add_task(async function test_switch_kek_same_ref_rejected() {
 add_task(async function test_switch_kek_empty_args_rejected() {
   const ls = getService();
   await Assert.rejects(
-    ls.switchKek("", KEK_LOCAL, KEK_PP),
+    ls.switchKek("", KEK_LOCAL, KEK_PASSWORD),
     INVALID_ARG_RE,
     "switchKek with empty collection rejects"
   );
   await Assert.rejects(
-    ls.switchKek("c", "", KEK_PP),
+    ls.switchKek("c", "", KEK_PASSWORD),
     INVALID_ARG_RE,
     "switchKek with empty oldKekRef rejects"
   );
@@ -789,7 +797,7 @@ add_task(async function test_switch_kek_empty_args_rejected() {
 add_task(async function test_switch_kek_missing_collection_rejected() {
   const ls = getService();
   await Assert.rejects(
-    ls.switchKek("never-existed", KEK_LOCAL, KEK_PP),
+    ls.switchKek("never-existed", KEK_LOCAL, KEK_PASSWORD),
     /NS_ERROR_NOT_AVAILABLE/,
     "switchKek on a missing collection rejects"
   );
