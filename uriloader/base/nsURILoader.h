@@ -137,8 +137,9 @@ class nsDocumentOpenInfo : public nsIThreadRetargetableStreamListener {
 
 
 
-  virtual nsDocumentOpenInfo* Clone() {
-    return new nsDocumentOpenInfo(m_originalContext, mFlags, mURILoader);
+  virtual already_AddRefed<nsDocumentOpenInfo> Clone() {
+    return mozilla::MakeAndAddRef<nsDocumentOpenInfo>(m_originalContext, mFlags,
+                                                      mURILoader);
   }
 
   
