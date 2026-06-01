@@ -3,9 +3,7 @@
 
 
 use api::{
-    AlphaType, ColorDepth, ColorF, ColorU, ExternalImageType,
-    ImageKey as ApiImageKey, ImageBufferKind, ImageRendering, PremultipliedColorF,
-    RasterSpace, Shadow, YuvColorSpace, ColorRange, YuvFormat,
+    AlphaType, ColorDepth, ColorF, ColorRange, ColorU, ExternalImageData, ExternalImageType, ImageBufferKind, ImageKey as ApiImageKey, ImageRendering, PremultipliedColorF, RasterSpace, Shadow, YuvColorSpace, YuvFormat
 };
 use api::units::*;
 use euclid::point2;
@@ -513,14 +511,15 @@ pub fn can_use_quad_shaders(
 ) -> bool {
     let image_properties = resource_cache.get_image_properties(image_data.key);
     match &image_properties {
-        Some(ImageProperties { external_image: None, .. }) => {
+        Some(_) => {
             
             
-            return image_data.color == ColorF::WHITE;
+            if image_data.color != ColorF::WHITE {
+                return false;
+            }
+            true
         }
-        _ => {
-            return false;
-        }
+        None => false,
     }
 }
 
@@ -569,6 +568,12 @@ pub fn prepare_image_quads(
         tile: None,
     };
 
+    let mut sampler_kind = ImageBufferKind::Texture2D;
+    if let Some(ExternalImageData { image_type: ExternalImageType::TextureHandle(kind), .. }) = image_properties.external_image {
+        sampler_kind = kind;
+    }
+
+
     match image_properties.tiling {
         
         None => {
@@ -581,14 +586,45 @@ pub fn prepare_image_quads(
             let prim_rect = image_properties.adjustment.map_local_rect(&prim_rect);
             let stretch_size = image_properties.adjustment.map_stretch_size(effective_stretch_size);
 
-            let src_task_id = frame_state.rg_builder.add().init(
+            let mut src_task_id = frame_state.rg_builder.add().init(
                 RenderTask::new_image(size, request, false)
             );
+
+            if let Some(external_image) = image_properties.external_image {
+                
+                
+                let requires_copy = frame_context.fb_config.external_images_require_copy
+                    && external_image.image_type
+                        == ExternalImageType::TextureHandle(ImageBufferKind::TextureExternal);
+
+                if requires_copy {
+                    let target_kind = if image_properties.descriptor.format.bytes_per_pixel() == 1 {
+                        RenderTargetKind::Alpha
+                    } else {
+                        RenderTargetKind::Color
+                    };
+
+                    src_task_id = RenderTask::new_scaling(
+                        src_task_id,
+                        frame_state.rg_builder,
+                        target_kind,
+                        size,
+                    );
+
+                    frame_state.surface_builder.add_child_render_task(
+                        src_task_id,
+                        frame_state.rg_builder,
+                    );
+
+                    sampler_kind = ImageBufferKind::Texture2D;
+                }
+            }
 
             let image_pattern = ImagePattern {
                 src_task_id,
                 src_is_opaque,
                 premultiplied,
+                sampler_kind,
             };
 
             quad::prepare_repeatable_quad(
@@ -669,6 +705,7 @@ pub fn prepare_image_quads(
                         src_task_id,
                         src_is_opaque,
                         premultiplied,
+                        sampler_kind,
                     };
 
                     quad::prepare_quad(
