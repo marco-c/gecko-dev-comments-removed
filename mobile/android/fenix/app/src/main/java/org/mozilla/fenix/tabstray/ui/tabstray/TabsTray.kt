@@ -251,6 +251,7 @@ fun TabsTray(
                         inactiveTabsExpanded = tabsTrayState.inactiveTabs.isExpanded,
                         displayTabsInGrid = tabsTrayState.config.displayTabsInGrid,
                         dragAndDropEnabled = tabsTrayState.config.tabGroupsDragAndDropEnabled,
+                        displayTabGroupOnboarding = tabsTrayState.shouldShowTabGroupOnboarding,
                         onTabClose = onTabClose,
                         shouldShowInactiveTabsAutoCloseDialog = tabsTrayState.inactiveTabs.showAutoCloseDialog,
                         onItemClick = onItemClick,
@@ -267,9 +268,6 @@ fun TabsTray(
                         onInactiveTabsCFRShown = onInactiveTabsCFRShown,
                         onInactiveTabsCFRClick = onInactiveTabsCFRClick,
                         onInactiveTabsCFRDismiss = onInactiveTabsCFRDismiss,
-                        onTabDragStart = {
-                            tabsTrayStore.dispatch(TabsTrayAction.ExitSelectMode)
-                        },
                         onDeleteTabGroupClick = { group ->
                             tabsTrayStore.dispatch(TabGroupAction.DeleteClicked(group))
                         },
@@ -280,6 +278,7 @@ fun TabsTray(
                             tabsTrayStore.dispatch(TabGroupAction.CloseTabGroupClicked(group = group))
                         },
                         trackersBlockedCount = trackersBlockedCount,
+                        focusEnabled = tabsTrayState.normalTabsState.itemFocusIndicatorEnabled,
                     )
                 }
 
