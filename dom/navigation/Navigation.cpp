@@ -321,6 +321,11 @@ bool SupportsInterface(nsISupports* aSupports) {
   return ptr;
 }
 
+static bool IsNonBlankAboutPage(Document* aDocument) {
+  return aDocument->IsAboutPage() &&
+         !NS_IsAboutBlankAllowQueryAndFragment(aDocument->GetDocumentURI());
+}
+
 
 bool Navigation::HasEntriesAndEventsDisabled() const {
   Document* doc = GetAssociatedDocument();
@@ -335,7 +340,10 @@ bool Navigation::HasEntriesAndEventsDisabled() const {
          
          
          !doc->GetBrowsingContext() ||
-         doc->GetBrowsingContext()->IsEmbedderTypeObjectOrEmbed();
+         doc->GetBrowsingContext()->IsEmbedderTypeObjectOrEmbed() ||
+         
+         
+         IsNonBlankAboutPage(doc);
 }
 
 

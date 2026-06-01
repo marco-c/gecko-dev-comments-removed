@@ -4555,6 +4555,9 @@ class Document : public nsINode,
   static void GetAllInProcessDocuments(
       nsTArray<RefPtr<Document>>& aAllDocuments);
 
+  
+  bool IsAboutPage() const;
+
  protected:
   
   
@@ -4568,9 +4571,6 @@ class Document : public nsINode,
   void EnsureOnloadBlocker();
 
   void SendToConsole(nsCOMArray<nsISecurityConsoleMessage>& aMessages);
-
-  
-  bool IsAboutPage() const;
 
   bool ContainsEMEContent();
   bool ContainsMSEContent();
