@@ -448,59 +448,6 @@ pub unsafe extern "C" fn lockstore_keystore_close(handle: *mut KeystoreHandle) -
 
 
 
-#[no_mangle]
-pub extern "C" fn lockstore_keystore_set_prp(
-    handle: &KeystoreHandle,
-    old: &nsACString,
-    new: &nsACString,
-) -> nsresult {
-    if new.is_empty() {
-        return NS_ERROR_INVALID_ARG;
-    }
-    
-    
-    let mut new_buf: Vec<u8> = new[..].to_vec();
-    let mut old_buf: Option<Vec<u8>> = if old.is_empty() {
-        None
-    } else {
-        Some(old[..].to_vec())
-    };
-
-    let result = handle.keystore.set_prp(old_buf.as_deref(), &new_buf);
-
-    new_buf.zeroize();
-    if let Some(ref mut o) = old_buf {
-        o.zeroize();
-    }
-
-    match result {
-        Ok(()) => NS_OK,
-        Err(e) => error_to_nsresult(e),
-    }
-}
-
-#[no_mangle]
-pub extern "C" fn lockstore_keystore_has_prp(
-    handle: &KeystoreHandle,
-    out_has: &mut bool,
-) -> nsresult {
-    *out_has = handle.keystore.has_prp();
-    NS_OK
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 #[no_mangle]
 pub extern "C" fn lockstore_keystore_unlock_kek(
@@ -565,6 +512,7 @@ pub extern "C" fn lockstore_keystore_is_kek_unlocked(
 pub extern "C" fn lockstore_keystore_lock(handle: &KeystoreHandle) -> nsresult {
     result_to_nsresult(handle.keystore.lock())
 }
+
 
 
 
