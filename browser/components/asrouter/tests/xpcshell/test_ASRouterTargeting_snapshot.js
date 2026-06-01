@@ -139,34 +139,66 @@ add_task(async function target_order() {
 
 
 
-add_task(async function should_ignore_rejections() {
-  
-  
-  
-  
-  let target = {
-    get foo() {
-      return new Promise(resolve => resolve(1));
-    },
 
-    get bar() {
-      return new Promise(resolve => {
-        
-        Services.startup.advanceShutdownPhase(
-          Services.startup.SHUTDOWN_PHASE_APPSHUTDOWN
-        );
-        resolve(2);
-      });
-    },
+add_task(async function quit_application_unsticks_hung_properties() {
+  
+  
+  
+  
+  
+  
+  let raceTarget = {
+    fast: Promise.resolve(1),
+    stuck: new Promise(() => {}),
+  };
 
-    get baz() {
-      return new Promise(resolve => resolve(3));
+  let snapshotPromise = ASRouterTargeting.getEnvironmentSnapshot({
+    targets: [raceTarget],
+  });
+
+  
+  
+  
+  for (let i = 0; i < 5; i++) {
+    await Promise.resolve();
+  }
+
+  
+  
+  
+  
+  
+  
+  Services.startup.advanceShutdownPhase(
+    Services.startup.SHUTDOWN_PHASE_APPSHUTDOWNCONFIRMED
+  );
+
+  Assert.deepEqual(
+    await snapshotPromise,
+    { environment: { fast: 1 }, version: 1 },
+    "stuck property is dropped after quit-application fires; fast is kept"
+  );
+
+  
+  
+  
+  let postQuitGetterRan = false;
+  let postQuitTarget = {
+    get prop() {
+      postQuitGetterRan = true;
+      return Promise.resolve(42);
     },
   };
 
-  let snapshot = await ASRouterTargeting.getEnvironmentSnapshot({
-    targets: [target],
-  });
-  
-  Assert.deepEqual(snapshot, { environment: { foo: 1, bar: 2 }, version: 1 });
+  Assert.deepEqual(
+    await ASRouterTargeting.getEnvironmentSnapshot({
+      targets: [postQuitTarget],
+    }),
+    { environment: {}, version: 1 },
+    "property is dropped synchronously once shuttingDown is true"
+  );
+  Assert.ok(
+    !postQuitGetterRan,
+    "property getter is not invoked once shuttingDown is true"
+  );
 });
