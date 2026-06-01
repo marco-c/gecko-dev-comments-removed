@@ -349,6 +349,11 @@ InterpreterFrame* RunState::pushInterpreterFrame(JSContext* cx) {
 
 static MOZ_ALWAYS_INLINE bool MaybeEnterInterpreterTrampoline(JSContext* cx,
                                                               RunState& state) {
+  AutoCheckRecursionLimit recursion(cx);
+  if (!recursion.check(cx)) {
+    return false;
+  }
+
 #ifdef NIGHTLY_BUILD
   if (jit::JitOptions.emitInterpreterEntryTrampoline &&
       cx->runtime()->hasJitRuntime()) {
@@ -4273,6 +4278,7 @@ bool MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER js::Interpret(JSContext* cx,
       
       
       MOZ_ASSERT_IF(REGS.fp()->script()->isDebuggee(), REGS.fp()->isDebuggee());
+      INIT_COVERAGE();
       COUNT_COVERAGE();
     }
     END_CASE(AfterYield)
