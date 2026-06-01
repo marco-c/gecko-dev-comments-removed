@@ -40,7 +40,6 @@
 #include "nsEmbedCID.h"
 #include "nsIWebBrowser.h"
 #include "nsIDocShell.h"
-#include "gfxPlatform.h"
 
 #include "nsWebBrowser.h"
 #include "nsDocShell.h"
@@ -396,12 +395,7 @@ nsAppShellService::CreateWindowlessBrowser(bool aIsChrome, uint32_t aChromeMask,
 
 
 
-  nsCOMPtr<nsIWidget> widget;
-  if (gfxPlatform::IsHeadless()) {
-    widget = nsIWidget::CreateHeadlessWidget();
-  } else {
-    widget = nsIWidget::CreatePuppetWidget(nullptr);
-  }
+  nsCOMPtr<nsIWidget> widget = nsIWidget::CreatePuppetWidget(nullptr);
   if (!widget) {
     NS_ERROR("Couldn't create instance of stub widget");
     return NS_ERROR_FAILURE;
