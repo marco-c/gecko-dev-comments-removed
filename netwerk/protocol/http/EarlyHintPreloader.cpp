@@ -439,11 +439,6 @@ nsresult EarlyHintPreloader::OpenChannel(
 
   PriorizeAsPreload();
 
-  if (nsCOMPtr<nsIRaceCacheWithNetwork> rcwn = do_QueryInterface(httpChannel)) {
-    
-    rcwn->SetAllowRacing(false);
-  }
-
   rv = mChannel->AsyncOpen(mParentListener);
   if (NS_FAILED(rv)) {
     mParentListener = nullptr;
@@ -645,9 +640,9 @@ EarlyHintPreloader::OnStartRequest(nsIRequest* aRequest) {
   nsresult status = NS_OK;
   (void)aRequest->GetStatus(&status);
 
-  if (mParent) {
+  if (nsCOMPtr<nsIParentChannel> parent = mParent) {
     SetParentChannel();
-    mParent->OnStartRequest(aRequest);
+    parent->OnStartRequest(aRequest);
     InvokeStreamListenerFunctions();
   } else {
     

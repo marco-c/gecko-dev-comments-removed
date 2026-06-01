@@ -1757,9 +1757,10 @@ nsresult XMLHttpRequestMainThread::StreamReaderFunc(
 
     if (NS_SUCCEEDED(rv) && xmlHttpRequest->mXMLParserStreamListener) {
       NS_ASSERTION(copyStream, "NS_NewByteInputStream lied");
-      nsresult parsingResult =
-          xmlHttpRequest->mXMLParserStreamListener->OnDataAvailable(
-              xmlHttpRequest->mChannel, copyStream, toOffset, count);
+      nsCOMPtr<nsIStreamListener> listener =
+          xmlHttpRequest->mXMLParserStreamListener;
+      nsresult parsingResult = listener->OnDataAvailable(
+          xmlHttpRequest->mChannel, copyStream, toOffset, count);
 
       
       
@@ -2195,7 +2196,8 @@ XMLHttpRequestMainThread::OnStartRequest(nsIRequest* request) {
     mResponseXML->SetReferrerInfo(referrerInfo);
 
     mXMLParserStreamListener = listener;
-    rv = mXMLParserStreamListener->OnStartRequest(request);
+    nsCOMPtr<nsIStreamListener> parserListener = mXMLParserStreamListener;
+    rv = parserListener->OnStartRequest(request);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
@@ -2240,14 +2242,17 @@ XMLHttpRequestMainThread::OnStopRequest(nsIRequest* request, nsresult status) {
   
   
   if (mState == XMLHttpRequest_Binding::UNSENT || mFlagTimedOut) {
-    if (mXMLParserStreamListener)
-      (void)mXMLParserStreamListener->OnStopRequest(request, status);
+    if (mXMLParserStreamListener) {
+      nsCOMPtr<nsIStreamListener> parserListener = mXMLParserStreamListener;
+      (void)parserListener->OnStopRequest(request, status);
+    }
     return NS_OK;
   }
 
   
   if (mXMLParserStreamListener && mFlagParseBody) {
-    mXMLParserStreamListener->OnStopRequest(request, status);
+    nsCOMPtr<nsIStreamListener> parserListener = mXMLParserStreamListener;
+    parserListener->OnStopRequest(request, status);
   }
 
   mXMLParserStreamListener = nullptr;
