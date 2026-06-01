@@ -519,6 +519,7 @@ enum class AssembleResult {
   Maybe<jit::JitContext> jctx;
   Maybe<js::jit::StackMacroAssembler> stack_masm;
   UniquePtr<RegExpMacroAssembler> masm;
+  SMRegExpMacroAssembler* native_masm = nullptr;
   NativeRegExpMacroAssembler::Mode mode =
       isLatin1 ? NativeRegExpMacroAssembler::LATIN1
                : NativeRegExpMacroAssembler::UC16;
@@ -536,6 +537,7 @@ enum class AssembleResult {
     uint32_t num_capture_registers = re->pairCount() * 2;
     masm = MakeUnique<SMRegExpMacroAssembler>(cx, stack_masm.ref(), zone, mode,
                                               num_capture_registers);
+    native_masm = static_cast<SMRegExpMacroAssembler*>(masm.get());
   } else {
     masm = MakeUnique<RegExpBytecodeGenerator>(cx->isolate, zone, mode);
   }
@@ -545,8 +547,7 @@ enum class AssembleResult {
   }
 
   bool isLargePattern =
-      pattern->length() > v8::internal::RegExp::kRegExpTooLargeToOptimize;
-  masm->set_slow_safe(isLargePattern);
+      pattern->length() > v8::internal::RegExp::kMaxOptimizedPatternLength;
   if (compiler->optimize()) {
     compiler->set_optimize(!isLargePattern);
   }
@@ -610,8 +611,7 @@ enum class AssembleResult {
   if (useNativeCode) {
     
     
-    SMRegExpMacroAssembler::TableVector& tables =
-        static_cast<SMRegExpMacroAssembler*>(masm.get())->tables();
+    SMRegExpMacroAssembler::TableVector& tables = native_masm->tables();
     for (uint32_t i = 0; i < tables.length(); i++) {
       if (!re->addTable(std::move(tables[i]))) {
         ReportOutOfMemory(cx);
