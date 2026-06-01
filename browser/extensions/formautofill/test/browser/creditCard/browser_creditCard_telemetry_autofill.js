@@ -5,6 +5,16 @@ Services.scriptloader.loadSubScript(
   this
 );
 
+add_setup(async function () {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      
+      
+      ["extensions.formautofill.heuristics.fillOnDynamicFormChanges", false],
+    ],
+  });
+});
+
 add_task(async function test_submit_creditCard_autofill() {
   if (!OSKeyStoreTestUtils.canTestOSKeyStoreLogin()) {
     todo(
