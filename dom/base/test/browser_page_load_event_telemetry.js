@@ -45,11 +45,10 @@ add_task(async function () {
         BrowserTestUtils.startLoadingURIString(browser, "https://example.com");
         await BrowserTestUtils.browserLoaded(browser);
       }
+      BrowserTestUtils.removeTab(tab);
     },
     
     
     1000
   );
-
-  BrowserTestUtils.removeTab(tab);
 });

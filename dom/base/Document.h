@@ -3648,6 +3648,12 @@ class Document : public nsINode,
     return !GetFullscreenError(aCallerType);
   }
 
+  
+  bool PictureInPictureEnabled();
+  Element* GetPictureInPictureElementInternal() const;
+  void SetPictureInPictureElement(Element* aElement);
+  already_AddRefed<Promise> ExitPictureInPicture(ErrorResult& aRv);
+
   void GetWireframeWithoutFlushing(bool aIncludeNodes, Nullable<Wireframe>&);
 
   MOZ_CAN_RUN_SCRIPT void GetWireframe(bool aIncludeNodes,
@@ -5525,6 +5531,9 @@ class Document : public nsINode,
   
   RefPtr<Element> mCustomContentContainer;
 
+  
+  RefPtr<Element> mPictureInPictureElement;
+
   uint32_t mBlockDOMContentLoaded;
 
   
@@ -5857,7 +5866,7 @@ class Document : public nsINode,
   PageloadEventData mPageloadEventData;
 
   
-  void RecordPageLoadEventTelemetry();
+  void ReportPageLoadEvent();
 
   
   void AccumulateJSTelemetry();
