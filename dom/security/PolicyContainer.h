@@ -82,6 +82,7 @@ class PolicyContainer : public nsIPolicyContainer {
   
   
   
+  
   nsILoadInfo::IPAddressSpace GetIPAddressSpace() const;
   void SetIPAddressSpace(nsILoadInfo::IPAddressSpace aIPAddressSpace);
 
