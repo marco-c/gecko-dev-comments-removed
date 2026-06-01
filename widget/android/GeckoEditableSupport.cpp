@@ -1641,8 +1641,8 @@ void GeckoEditableSupport::SetOnBrowserChild(dom::BrowserChild* aBrowserChild) {
   
   
   
-  const RefPtr<widget::GeckoEditableSupport> dummy =
-      new widget::GeckoEditableSupport( nullptr);
+  const auto dummy =
+      MakeRefPtr<widget::GeckoEditableSupport>( nullptr);
   NS_ENSURE_TRUE_VOID(*reinterpret_cast<const uintptr_t*>(listener.get()) ==
                       *reinterpret_cast<const uintptr_t*>(dummy.get()));
 
