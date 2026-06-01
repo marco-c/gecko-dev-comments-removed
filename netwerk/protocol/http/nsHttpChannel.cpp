@@ -111,7 +111,9 @@
 #include "AlternateServices.h"
 #include "NetworkMarker.h"
 #include "nsIDNSRecord.h"
+#include "mozilla/dom/ClientInfo.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/dom/PolicyContainer.h"
 #include "nsICompressConvStats.h"
 #include "nsCORSListenerProxy.h"
 #include "nsISocketProvider.h"
@@ -125,7 +127,6 @@
 #include "HttpTransactionParent.h"
 #include "ThirdPartyUtil.h"
 #include "InterceptedHttpChannel.h"
-#include "../../cache2/CacheFileUtils.h"
 #include "nsINetworkLinkService.h"
 #include "mozilla/ContentBlockingAllowList.h"
 #include "mozilla/dom/ServiceWorkerUtils.h"
@@ -2180,7 +2181,17 @@ nsresult nsHttpChannel::InitTransaction() {
 
   nsILoadInfo::IPAddressSpace parentAddressSpace =
       nsILoadInfo::IPAddressSpace::Unknown;
-  if (!bc) {
+  
+  
+  Maybe<dom::ClientInfo> clientInfo = mLoadInfo->GetClientInfo();
+  if (clientInfo.isSome() && clientInfo->Type() != dom::ClientType::Window) {
+    nsCOMPtr<nsIPolicyContainer> policyContainer =
+        mLoadInfo->GetPolicyContainer();
+    if (policyContainer) {
+      parentAddressSpace =
+          PolicyContainer::Cast(policyContainer)->GetIPAddressSpace();
+    }
+  } else if (!bc) {
     parentAddressSpace = mLoadInfo->GetParentIpAddressSpace();
   } else {
     parentAddressSpace = bc->GetCurrentIPAddressSpace();
@@ -6208,6 +6219,25 @@ nsresult nsHttpChannel::UpdateCacheEntryHeaders(nsICacheEntry* entry,
 
   
   
+  nsAutoCString noVarySearch;
+  if (StaticPrefs::network_cache_no_vary_search() &&
+      NS_SUCCEEDED(
+          mResponseHead->GetHeader(nsHttp::No_Vary_Search, noVarySearch)) &&
+      !noVarySearch.IsEmpty()) {
+    rv = entry->SetMetaDataElement("no-vary-search", noVarySearch.get());
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+
+    if (mCacheEntryURI) {
+      if (auto* svc = CacheStorageService::Self()) {
+        svc->NoteNoVarySearchEntry(entry, mCacheEntryURI);
+      }
+    }
+  }
+
+  
+  
   return entry->MetaDataReady();
 }
 
@@ -8880,7 +8910,9 @@ nsHttpChannel::GetEssentialDomainCategory(nsCString& domain) {
   if (domain == "aus5.mozilla.org"_ns) {
     return EssentialDomainCategory::Aus5MozillaOrg;
   }
-  if (domain == "firefox.settings.services.mozilla.com"_ns) {
+  if (domain == "firefox.settings.services.mozilla.com"_ns ||
+      domain == "firefox-settings-attachments.cdn.mozilla.net"_ns ||
+      domain == "content-signature-2.cdn.mozilla.net"_ns) {
     return EssentialDomainCategory::RemoteSettings;
   }
   if (domain == "incoming.telemetry.mozilla.com"_ns) {
@@ -8942,8 +8974,8 @@ nsresult nsHttpChannel::ProcessLNAActions() {
   UpdateCurrentIpAddressSpace();
   mWaitingForLNAPermission = true;
   Suspend();
-  auto permissionKey = mTransaction->GetTargetIPAddressSpace() ==
-                               nsILoadInfo::IPAddressSpace::Local
+  auto targetAddressSpace = mTransaction->GetTargetIPAddressSpace();
+  auto permissionKey = targetAddressSpace == nsILoadInfo::IPAddressSpace::Local
                            ? LOOPBACK_NETWORK_PERMISSION_KEY
                            : LOCAL_NETWORK_PERMISSION_KEY;
   LNAPermission permissionUpdateResult =
@@ -9283,6 +9315,7 @@ void nsHttpChannel::MaybeUpdateDocumentIPAddressSpaceFromCache() {
     NetAddr ipAddr;
     rv = ipAddr.InitFromString(ipAddrStr, port);
     NS_ENSURE_SUCCESS_VOID(rv);
+    mLoadInfo->SetIpAddressSpace(ipAddr.GetIpAddressSpace());
     bc->SetCurrentIPAddressSpace(ipAddr.GetIpAddressSpace());
   }
 }
@@ -9733,7 +9766,15 @@ static void RecordLNATelemetry(nsHttpChannel* aChannel, bool aLoadSuccess) {
 
   nsILoadInfo::IPAddressSpace parentAddressSpace =
       nsILoadInfo::IPAddressSpace::Unknown;
-  if (!bc) {
+  Maybe<dom::ClientInfo> clientInfo = loadInfo->GetClientInfo();
+  if (clientInfo.isSome() && clientInfo->Type() != dom::ClientType::Window) {
+    nsCOMPtr<nsIPolicyContainer> policyContainer =
+        loadInfo->GetPolicyContainer();
+    if (policyContainer) {
+      parentAddressSpace =
+          PolicyContainer::Cast(policyContainer)->GetIPAddressSpace();
+    }
+  } else if (!bc) {
     parentAddressSpace = loadInfo->GetParentIpAddressSpace();
   } else {
     parentAddressSpace = bc->GetCurrentIPAddressSpace();

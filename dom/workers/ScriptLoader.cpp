@@ -837,7 +837,7 @@ void WorkerScriptLoader::MaybeMoveToLoadedList(ScriptLoadRequest* aRequest) {
   }
 }
 
-bool WorkerScriptLoader::StoreCSP() {
+bool WorkerScriptLoader::StorePolicyContainerArgs() {
   
   mWorkerRef->Private()->AssertIsOnWorkerThread();
 
@@ -849,7 +849,7 @@ bool WorkerScriptLoader::StoreCSP() {
 
   
   
-  mWorkerRef->Private()->StoreCSPOnClient();
+  mWorkerRef->Private()->StorePolicyContainerArgsOnClient();
   return true;
 }
 
@@ -1704,7 +1704,7 @@ bool ScriptExecutorRunnable::PreRun(WorkerPrivate* aWorkerPrivate) {
     }
   }
 
-  return mScriptLoader->StoreCSP();
+  return mScriptLoader->StorePolicyContainerArgs();
 }
 
 bool ScriptExecutorRunnable::ProcessModuleScript(
