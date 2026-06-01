@@ -34,7 +34,6 @@
 #include "mozilla/layers/KnowsCompositor.h"
 #include "mozilla/media/MediaUtils.h"
 #include "mozilla/media/webrtc/CodecInfo.h"
-#include "mozilla/media/webrtc/H264FmtpParser.h"
 #include "nsContentUtils.h"
 #include "nsIPrincipal.h"
 
@@ -232,65 +231,6 @@ mozilla::LazyLogModule sMediaCapabilitiesLog("MediaCapabilities");
 namespace mozilla::dom {
 using mediacaps::IsValidMediaDecodingConfiguration;
 using mediacaps::IsValidMediaEncodingConfiguration;
-
-static gfx::IntSize ClampedIntSize(uint32_t aWidth, uint32_t aHeight) {
-  return gfx::IntSize(
-      static_cast<int32_t>(std::min<uint32_t>(aWidth, INT32_MAX)),
-      static_cast<int32_t>(std::min<uint32_t>(aHeight, INT32_MAX)));
-}
-
-static CodecType WebrtcMimeToCodecType(const MediaExtendedMIMEType& aMime) {
-  const nsCString& mime = aMime.Type().AsString();
-  if (mime.EqualsLiteral("video/h264")) {
-    return CodecType::H264;
-  }
-  if (mime.EqualsLiteral("video/vp8")) {
-    return CodecType::VP8;
-  }
-  if (mime.EqualsLiteral("video/vp9")) {
-    return CodecType::VP9;
-  }
-  if (mime.EqualsLiteral("video/av1")) {
-    return CodecType::AV1;
-  }
-  return CodecType::Unknown;
-}
-
-
-static EncoderConfig BuildEncoderConfig(const MediaExtendedMIMEType& aMime,
-                                        const VideoConfiguration& aConfig) {
-  const auto codec = WebrtcMimeToCodecType(aMime);
-  MOZ_ASSERT(codec != CodecType::Unknown);
-  const gfx::IntSize size = ClampedIntSize(aConfig.mWidth, aConfig.mHeight);
-  MOZ_ASSERT(size.width > 0 && size.height > 0);
-
-  EncoderConfig::CodecSpecific specific(void_t{});
-  if (codec == CodecType::H264) {
-    
-    
-
-    const auto fmtp = ParseH264Fmtp(aMime.OriginalString());
-    const H264ProfileLevel pl =
-        fmtp.mProfileLevel.isOk()
-            ? fmtp.mProfileLevel.inspect()
-            : H264ProfileLevel{H264_PROFILE::H264_PROFILE_BASE,
-                               H264_LEVEL::H264_LEVEL_3_1};
-    specific = AsVariant(
-        H264Specific(pl.mProfile, pl.mLevel, H264BitStreamFormat::ANNEXB));
-  }
-  const float framerate = static_cast<float>(aConfig.mFramerate);
-  const uint32_t fr =
-      framerate > 1.0f ? SaturatingCast<uint32_t>(std::ceil(framerate)) : 1;
-  const uint32_t bitrate = SaturatingCast<uint32_t>(aConfig.mBitrate);
-  
-  
-  return EncoderConfig(
-      codec, size, Usage::Realtime,
-      EncoderConfig::SampleFormat(dom::ImageBitmapFormat::YUV420P), fr,
-       0, bitrate,  0,  0,
-      mozilla::BitrateMode::Variable, HardwarePreference::None,
-      ScalabilityMode::None, specific);
-}
 
 
 
@@ -680,62 +620,14 @@ void MediaCapabilities::CreateWebRTCDecodingInfo(
         info.mPowerEfficient = true;
 
         if (videoContainer) {
+          auto videoSupport =
+              
+              SupportsVideoMimeDecodeForWebrtc(videoContainer->ExtendedType());
           const auto& v = aConfiguration.mVideo.Value();
-          const auto& mime = videoContainer->ExtendedType();
-          if (WebrtcMimeToCodecType(mime) == CodecType::H264) {
-            const auto fmtp = ParseH264Fmtp(mime.OriginalString());
-            const bool invalidFmtp =
-                fmtp.mProfileLevel.isErr() &&
-                fmtp.mProfileLevel.inspectErr() == H264FmtpParseError::Invalid;
-            const bool levelTooLow =
-                fmtp.mProfileLevel.isOk() &&
-                !H264LevelFits(fmtp.mProfileLevel.inspect().mLevel, v.mWidth,
-                               v.mHeight, static_cast<double>(v.mFramerate));
-            if (invalidFmtp || levelTooLow) {
-              MediaCapabilitiesDecodingInfo unsupported;
-              unsupported.mSupported = false;
-              unsupported.mSmooth = false;
-              unsupported.mPowerEfficient = false;
-              LOG("{} -> {}", aConfiguration, unsupported);
-              return PromiseType::CreateAndResolve(
-                  std::move(unsupported), "MediaCapabilities::DecodingInfo");
-            }
-          }
           const CheckedInt<uint32_t> pixels =
               CheckedInt<uint32_t>(v.mWidth) * CheckedInt<uint32_t>(v.mHeight);
           const bool lowResolution =
               pixels.isValid() && pixels.value() <= kLowResolutionPixelCount;
-          
-          nsCString trackMime(videoContainer->Type().AsString());
-          if (trackMime.LowerCaseEqualsLiteral("video/h264")) {
-            trackMime.AssignLiteral("video/avc");
-          }
-          auto trackInfo =
-              CreateTrackInfoWithMIMETypeAndContainerTypeExtraParameters(
-                  trackMime, *videoContainer);
-          if (!trackInfo) {
-            MediaCapabilitiesDecodingInfo unsupported;
-            unsupported.mSupported = false;
-            unsupported.mSmooth = false;
-            unsupported.mPowerEfficient = false;
-            LOG("{} -> {}", aConfiguration, unsupported);
-            return PromiseType::CreateAndResolve(
-                std::move(unsupported), "MediaCapabilities::DecodingInfo");
-          }
-          SupportDecoderParams videoParameters(
-              *trackInfo,
-              media::VideoFrameRate(static_cast<float>(v.mFramerate)));
-          auto videoSupport = SupportsVideoDecodeForWebrtc(
-              videoContainer->ExtendedType(), videoParameters);
-          if (videoSupport.isEmpty()) {
-            MediaCapabilitiesDecodingInfo unsupported;
-            unsupported.mSupported = false;
-            unsupported.mSmooth = false;
-            unsupported.mPowerEfficient = false;
-            LOG("{} -> {}", aConfiguration, unsupported);
-            return PromiseType::CreateAndResolve(
-                std::move(unsupported), "MediaCapabilities::DecodingInfo");
-          }
           const bool hwSupported =
               videoSupport.contains(media::DecodeSupport::HardwareDecode);
           info.mPowerEfficient = hwSupported || lowResolution;
@@ -1391,98 +1283,72 @@ already_AddRefed<Promise> MediaCapabilities::EncodingInfo(
   RefPtr<TaskQueue> taskQueue =
       TaskQueue::Create(GetMediaThreadPool(MediaThreadType::PLATFORM_ENCODER),
                         "MediaCapabilities::TaskQueue");
-  InvokeAsync(
-      taskQueue, __func__,
-      [aConfiguration, videoMime, videoSupported, audioMime, audioSupported,
-       info = std::move(info)]() mutable {
-        
-        
-        
-        
-        MOZ_ASSERT(audioSupported == CodecSupport::Supported ||
-                   videoSupported == CodecSupport::Supported);
-        (void)audioSupported;
-        info.mSmooth = true;
-        info.mPowerEfficient = true;
+  InvokeAsync(taskQueue, __func__,
+              [aConfiguration, videoMime, videoSupported, audioMime,
+               audioSupported, info = std::move(info)]() mutable {
+                
+                
+                
+                
+                MOZ_ASSERT(audioSupported == CodecSupport::Supported ||
+                           videoSupported == CodecSupport::Supported);
+                (void)audioSupported;
+                info.mSmooth = true;
+                info.mPowerEfficient = true;
 
-        bool lowResolution = false;
-        if (videoSupported == CodecSupport::Supported) {
-          MOZ_ASSERT(aConfiguration.mVideo.WasPassed());
-          const auto& v = aConfiguration.mVideo.Value();
-          if (WebrtcMimeToCodecType(*videoMime) == CodecType::H264) {
-            const auto fmtp = ParseH264Fmtp(videoMime->OriginalString());
-            const bool invalidFmtp =
-                fmtp.mProfileLevel.isErr() &&
-                fmtp.mProfileLevel.inspectErr() == H264FmtpParseError::Invalid;
-            const bool levelTooLow =
-                fmtp.mProfileLevel.isOk() &&
-                !H264LevelFits(fmtp.mProfileLevel.inspect().mLevel, v.mWidth,
-                               v.mHeight, static_cast<double>(v.mFramerate));
-            if (invalidFmtp || levelTooLow) {
-              MediaCapabilitiesInfo unsupported;
-              unsupported.mSupported = false;
-              unsupported.mSmooth = false;
-              unsupported.mPowerEfficient = false;
-              LOG("{} -> {}", aConfiguration, unsupported);
-              return PromiseType::CreateAndResolve(
-                  std::move(unsupported), "MediaCapabilities::EncodingInfo");
-            }
-          }
-          auto encoderConfig = BuildEncoderConfig(*videoMime, v);
-          const auto videoSupport = SupportsVideoEncodeForWebrtc(encoderConfig);
-          if (videoSupport.isEmpty()) {
-            MediaCapabilitiesInfo unsupported;
-            unsupported.mSupported = false;
-            unsupported.mSmooth = false;
-            unsupported.mPowerEfficient = false;
-            LOG("{} -> {}", aConfiguration, unsupported);
-            return PromiseType::CreateAndResolve(
-                std::move(unsupported), "MediaCapabilities::EncodingInfo");
-          }
-          const bool hwSupported =
-              videoSupport.contains(media::EncodeSupport::HardwareEncode);
-          const CheckedInt<uint32_t> pixels =
-              CheckedInt<uint32_t>(v.mWidth) * CheckedInt<uint32_t>(v.mHeight);
-          lowResolution =
-              pixels.isValid() && pixels.value() <= kLowResolutionPixelCount;
+                bool lowResolution = false;
+                if (videoSupported == CodecSupport::Supported) {
+                  
+                  const media::EncodeSupportSet videoEncoderSupport =
+                      SupportsVideoMimeEncodeForWebrtc(*videoMime);
+                  MOZ_ASSERT(!videoEncoderSupport.isEmpty());
+                  const bool hwSupported = videoEncoderSupport.contains(
+                      media::EncodeSupport::HardwareEncode);
+                  MOZ_ASSERT(aConfiguration.mVideo.WasPassed());
+                  const auto& v = aConfiguration.mVideo.Value();
+                  const CheckedInt<uint32_t> pixels =
+                      CheckedInt<uint32_t>(v.mWidth) *
+                      CheckedInt<uint32_t>(v.mHeight);
+                  lowResolution = pixels.isValid() &&
+                                  pixels.value() <= kLowResolutionPixelCount;
 
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          info.mSmooth &= hwSupported || IsWebRTCSWEncodeSmooth(v);
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  info.mSmooth &= hwSupported || IsWebRTCSWEncodeSmooth(v);
 
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          info.mPowerEfficient &= (hwSupported || lowResolution);
-        }
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  info.mPowerEfficient &= (hwSupported || lowResolution);
+                }
 
-        LOG("{} -> {}", aConfiguration, info);
+                LOG("{} -> {}", aConfiguration, info);
 
-        return PromiseType::CreateAndResolve(std::move(info),
-                                             "MediaCapabilities::EncodingInfo");
-      })
+                return PromiseType::CreateAndResolve(
+                    std::move(info), "MediaCapabilities::EncodingInfo");
+              })
       ->Then(
           targetThread, __func__,
           [encodePromise, workerRef, holder,

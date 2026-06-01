@@ -152,10 +152,6 @@ class MediaExtendedMIMEType {
   const MediaMIMEType& Type() const { return mMIMEType; }
 
   
-  
-  nsDependentCSubstring Subtype() const;
-
-  
   bool HaveCodecs() const { return mHaveCodecs; }
   
   const MediaCodecs& Codecs() const { return mCodecs; }
