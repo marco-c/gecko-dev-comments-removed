@@ -938,8 +938,8 @@ void nsCocoaWindow::GetCompositorWidgetInitData(
   MOZ_RELEASE_ASSERT(childEndpoint.IsValid());
 
   
-  RefPtr<NativeLayerRootRemoteMacParent> nativeLayerRemoteParent =
-      new NativeLayerRootRemoteMacParent(mNativeLayerRoot);
+  auto nativeLayerRemoteParent =
+      MakeRefPtr<NativeLayerRootRemoteMacParent>(mNativeLayerRoot);
 
   
   MOZ_ASSERT(CompositorThread());
@@ -6242,13 +6242,6 @@ void nsCocoaWindow::CocoaWindowDidEnterFullscreen(bool aFullscreen) {
   EndOurNativeTransition();
   mHasStartedNativeFullscreen = false;
   DispatchOcclusionEvent();
-
-  
-  
-  
-  
-  
-  [MOZDynamicCursor.sharedInstance reassertCurrentCursor];
 
   
   
