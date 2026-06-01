@@ -655,7 +655,9 @@ bool ChannelWrapper::Matches(
 
     
     
-    if (!aExtension->CanAccessURI(urlInfo, false, false, true)) {
+    
+    
+    if (!aExtension->CanAccessURI(urlInfo, false, false)) {
       return false;
     }
 
@@ -668,6 +670,7 @@ bool ChannelWrapper::Matches(
       }
 
       auto origin = DocumentURLInfo();
+      
       
       
       
@@ -824,7 +827,9 @@ already_AddRefed<nsITraceableChannel> ChannelWrapper::GetTraceableChannel(
     
     
     if (!HaveChannel() ||
-        !aAddon.CanAccessURI(FinalURLInfo(), false, true, true)) {
+        
+        
+        !aAddon.CanAccessURI(FinalURLInfo())) {
       return nullptr;
     }
 

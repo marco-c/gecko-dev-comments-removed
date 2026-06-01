@@ -291,6 +291,17 @@ bool WebExtensionPolicyCore::SourceMayAccessPath(
   return false;
 }
 
+bool WebExtensionPolicyCore::FileSchemeAllowed() const {
+  if (!StaticPrefs::extensions_webextensions_fileSchemeAccess_requireOptIn()) {
+    
+    
+    return true;
+  }
+  
+  
+  return HasPermission(nsGkAtoms::fileSchemeAllowedPermission);
+}
+
 bool WebExtensionPolicyCore::CanAccessURI(const URLInfo& aURI, bool aExplicit,
                                           bool aCheckRestricted,
                                           bool aAllowFilePermission) const {
@@ -301,6 +312,8 @@ bool WebExtensionPolicyCore::CanAccessURI(const URLInfo& aURI, bool aExplicit,
     return false;
   }
   if (!aAllowFilePermission && aURI.Scheme() == nsGkAtoms::file) {
+    
+    
     return false;
   }
   if (CheckGuarded(aURI).isSome()) {
@@ -715,6 +728,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(WebExtensionPolicy)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mHostPermissions)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mGuardSets)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mContentScripts)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mReadyPromise)
   NS_IMPL_CYCLE_COLLECTION_UNLINK_PRESERVED_WRAPPER
   AssertIsOnMainThread();
   tmp->mCore->ClearPolicyWeakRef();
@@ -726,6 +740,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(WebExtensionPolicy)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mHostPermissions)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mGuardSets)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mContentScripts)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mReadyPromise)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(WebExtensionPolicy)
@@ -1008,6 +1023,14 @@ bool MozDocumentMatcher::MatchesURI(const URLInfo& aURL,
       return false;
     }
   } else if (mExtension && !mExtension->CheckGuarded(aURL).IsNull()) {
+    
+    return false;
+  }
+
+  if (aURL.Scheme() == nsGkAtoms::file && mExtension &&
+      !mExtension->FileSchemeAllowed()) {
+    
+    
     
     return false;
   }

@@ -17,7 +17,18 @@ this.extension = class extends ExtensionAPI {
         },
 
         isAllowedFileSchemeAccess() {
-          return false;
+          if (
+            !Services.prefs.getBoolPref(
+              "extensions.webextensions.fileSchemeAccess.requireOptIn"
+            )
+          ) {
+            
+            
+            
+            
+            return false;
+          }
+          return context.extension.policy.fileSchemeAllowed;
         },
       },
     };

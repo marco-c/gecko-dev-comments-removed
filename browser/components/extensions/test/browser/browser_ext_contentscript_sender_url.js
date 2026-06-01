@@ -1,10 +1,14 @@
-
-
 "use strict";
 
 const FILE_URL = Services.io.newFileURI(
   new FileUtils.File(getTestFilePath("file_dummy.html"))
 ).spec;
+
+add_setup(async () => {
+  await SpecialPowers.pushPrefEnv({
+    set: [["extensions.webextensions.fileSchemeAccess.requireOptIn", false]],
+  });
+});
 
 add_task(async function test_sender_url() {
   let extension = ExtensionTestUtils.loadExtension({

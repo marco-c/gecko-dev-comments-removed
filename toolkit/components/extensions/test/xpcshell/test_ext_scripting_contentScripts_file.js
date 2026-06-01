@@ -4,6 +4,11 @@ const FILE_DUMMY_URL = Services.io.newFileURI(
   do_get_file("data/dummy_page.html")
 ).spec;
 
+Services.prefs.setBoolPref(
+  "extensions.webextensions.fileSchemeAccess.requireOptIn",
+  false
+);
+
 
 
 ExtensionTestUtils.mockAppInfo();

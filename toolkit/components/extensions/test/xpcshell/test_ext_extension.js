@@ -1,5 +1,14 @@
 "use strict";
 
+ChromeUtils.defineESModuleGetters(this, {
+  ExtensionPermissions: "resource://gre/modules/ExtensionPermissions.sys.mjs",
+});
+
+const FILE_ACCESS_OPT_IN_PREF =
+  "extensions.webextensions.fileSchemeAccess.requireOptIn";
+
+Services.prefs.setBoolPref(FILE_ACCESS_OPT_IN_PREF, true);
+
 add_task(async function test_is_allowed_incognito_access() {
   async function background() {
     let allowed = await browser.extension.isAllowedIncognitoAccess();
@@ -54,7 +63,7 @@ add_task(async function test_in_incognito_context_false() {
   await extension.unload();
 });
 
-add_task(async function test_is_allowed_file_scheme_access() {
+async function do_test_isAllowedFileSchemeAccess_default_false() {
   async function background() {
     let allowed = await browser.extension.isAllowedFileSchemeAccess();
 
@@ -63,10 +72,97 @@ add_task(async function test_is_allowed_file_scheme_access() {
   }
 
   let extension = ExtensionTestUtils.loadExtension({
+    
+    
+    
+    
+    
+    manifest: { host_permissions: ["<all_urls>", "file://*/*"] },
     background,
   });
 
   await extension.startup();
   await extension.awaitFinish("isAllowedFileSchemeAccess");
+  await extension.unload();
+}
+
+add_task(
+  { pref_set: [[FILE_ACCESS_OPT_IN_PREF, false]] },
+  async function test_is_allowed_file_scheme_access_requireOptIn_false() {
+    
+    await do_test_isAllowedFileSchemeAccess_default_false();
+  }
+);
+
+add_task(
+  { pref_set: [[FILE_ACCESS_OPT_IN_PREF, true]] },
+  async function test_is_allowed_file_scheme_access_requireOptIn_true() {
+    
+    await do_test_isAllowedFileSchemeAccess_default_false();
+  }
+);
+
+add_task(async function test_is_allowed_file_scheme_access_change_optin() {
+  const extensionId = "@file_access_opt_in_test";
+
+  await ExtensionPermissions.add(extensionId, {
+    permissions: ["internal:fileSchemeAllowed"],
+    origins: [],
+  });
+
+  let extension = ExtensionTestUtils.loadExtension({
+    manifest: {
+      browser_specific_settings: { gecko: { id: extensionId } },
+      
+      
+      permissions: [],
+    },
+    background() {
+      browser.test.onMessage.addListener(async (msg, expectedValue) => {
+        browser.test.assertEq(
+          expectedValue,
+          await browser.extension.isAllowedFileSchemeAccess(),
+          `isAllowedFileSchemeAccess is ${expectedValue} (${msg})`
+        );
+        browser.test.sendMessage("check_done");
+      });
+    },
+  });
+
+  await extension.startup();
+
+  extension.sendMessage("with internal permission granted", true);
+  await extension.awaitMessage("check_done");
+
+  await ExtensionPermissions.remove(
+    extensionId,
+    { permissions: ["internal:fileSchemeAllowed"], origins: [] },
+    
+    
+    extension.extension
+  );
+
+  extension.sendMessage("after internal permission revoked", false);
+  await extension.awaitMessage("check_done");
+
+  
+  
+  await runWithPrefs([[FILE_ACCESS_OPT_IN_PREF, false]], async () => {
+    extension.sendMessage("with pref off", false);
+    await extension.awaitMessage("check_done");
+
+    await ExtensionPermissions.add(
+      extensionId,
+      { permissions: ["internal:fileSchemeAllowed"], origins: [] },
+      extension.extension
+    );
+
+    extension.sendMessage("with pref on, internal permission added", false);
+    await extension.awaitMessage("check_done");
+  });
+
+  extension.sendMessage("with pref off again, permission still there", true);
+  await extension.awaitMessage("check_done");
+
   await extension.unload();
 });

@@ -1,5 +1,9 @@
 "use strict";
 
+ChromeUtils.defineESModuleGetters(this, {
+  ExtensionPermissions: "resource://gre/modules/ExtensionPermissions.sys.mjs",
+});
+
 const FILE_DUMMY_URL = Services.io.newFileURI(
   do_get_file("data/dummy_page.html")
 ).spec;
@@ -7,6 +11,48 @@ const FILE_DUMMY_URL = Services.io.newFileURI(
 
 
 ExtensionTestUtils.mockAppInfo();
+
+
+Services.prefs.setBoolPref(
+  "extensions.webextensions.fileSchemeAccess.requireOptIn",
+  true
+);
+
+async function grantInternalFileSchemePermission(extension) {
+  await ExtensionPermissions.add(
+    extension.id,
+    { permissions: ["internal:fileSchemeAllowed"], origins: [] },
+    
+    
+    extension.extension
+  );
+}
+
+add_task(async function test_no_content_scripts_without_internal_permission() {
+  let extensionWithoutPermission = ExtensionTestUtils.loadExtension({
+    manifest: {
+      content_scripts: [
+        {
+          matches: ["file:///*"],
+          js: ["content_script_without_access.js"],
+        },
+      ],
+    },
+    files: {
+      "content_script_without_access.js": () => {
+        browser.test.fail("Should not run without internal file permission");
+      },
+    },
+  });
+  await extensionWithoutPermission.startup();
+
+  
+  
+  
+  
+  
+  registerCleanupFunction(() => extensionWithoutPermission.unload());
+});
 
 
 add_task(async function content_script_xhr_to_self() {
@@ -39,6 +85,7 @@ add_task(async function content_script_xhr_to_self() {
   });
 
   await extension.startup();
+  await grantInternalFileSchemePermission(extension);
 
   let contentPage = await ExtensionTestUtils.loadContentPage(FILE_DUMMY_URL);
   await extension.awaitMessage("done");
@@ -87,6 +134,7 @@ add_task(async function content_script_xhr_to_other_file_not_allowed() {
   });
 
   await extension.startup();
+  await grantInternalFileSchemePermission(extension);
 
   let contentPage = await ExtensionTestUtils.loadContentPage(FILE_DUMMY_URL);
   await extension.awaitMessage("done");
@@ -108,6 +156,17 @@ add_task(async function file_access_from_extension_page_not_allowed() {
       await browser.test.assertRejects(
         fetch(FILE_DUMMY_URL),
         /NetworkError when attempting to fetch resource/,
+        "block request to file from background page without internal permission"
+      );
+
+      await new Promise(resolve => {
+        browser.test.onMessage.addListener(resolve);
+        browser.test.sendMessage("wait_for_internal_permission_granted");
+      });
+
+      await browser.test.assertRejects(
+        fetch(FILE_DUMMY_URL),
+        /NetworkError when attempting to fetch resource/,
         "block request to file from background page despite file permission"
       );
 
@@ -123,6 +182,10 @@ add_task(async function file_access_from_extension_page_not_allowed() {
   });
 
   await extension.startup();
+
+  await extension.awaitMessage("wait_for_internal_permission_granted");
+  await grantInternalFileSchemePermission(extension);
+  extension.sendMessage("wait_for_internal_permission_granted:done");
 
   await extension.awaitMessage("done");
 
@@ -178,7 +241,14 @@ add_task(async function webRequest_script_request_from_file_principals() {
   });
 
   await extensionWithoutFilePermission.startup();
+  
+  
+  
+  await grantInternalFileSchemePermission(extensionWithoutFilePermission);
   await extension.startup();
+  
+  
+  
 
   let contentPage = await ExtensionTestUtils.loadContentPage(
     Services.io.newFileURI(
