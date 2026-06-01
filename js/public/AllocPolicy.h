@@ -53,8 +53,7 @@ class AllocPolicyBase {
   
   
   template <typename T>
-  void traceOwnedAlloc(JSTracer* trc, gc::Cell* maybeOwner, T** ptrp,
-                       const char* name) {}
+  void traceOwnedAlloc(JSTracer* trc, T** ptrp, const char* name) {}
 
   
   
@@ -75,9 +74,8 @@ void TraceOwnedAllocs(JSTracer* trc, gc::Cell* maybeOwner, Container& container,
                       const char* name) {
   auto& allocPolicy = container.allocPolicy();
   allocPolicy.updateOwningGCThing(maybeOwner);
-  container.traceOwnedAllocs([&](auto** ptrp) {
-    allocPolicy.traceOwnedAlloc(trc, maybeOwner, ptrp, name);
-  });
+  container.traceOwnedAllocs(
+      [&](auto** ptrp) { allocPolicy.traceOwnedAlloc(trc, ptrp, name); });
 }
 
 

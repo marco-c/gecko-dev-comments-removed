@@ -64,6 +64,12 @@ class TenuringTracer final : public JSTracer {
   
   mozilla::Maybe<StringDeDupSet> stringDeDupSet;
 
+  
+  
+  
+  mozilla::Maybe<bool> sourceIsInNursery;
+  friend class BufferAllocator;
+
   bool tenureEverything;
 
   
@@ -76,6 +82,8 @@ class TenuringTracer final : public JSTracer {
 #endif
 
  public:
+  static TenuringTracer* From(JSTracer* trc);
+
   TenuringTracer(JSRuntime* rt, Nursery* nursery, bool tenureEverything);
   ~TenuringTracer();
 
@@ -119,6 +127,7 @@ class TenuringTracer final : public JSTracer {
   void traceBufferedCells(Arena* arena, ArenaCellSet* cells);
 
   class AutoPromotedAnyToNursery;
+  class AutoSetSourceHeap;
 
  private:
 #define DEFINE_ON_EDGE_METHOD(name, type, _1, _2) \
