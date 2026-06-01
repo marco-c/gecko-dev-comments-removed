@@ -5467,7 +5467,22 @@ class CompileStreamTask : public PromiseHelperTask, public JS::StreamConsumer {
         setClosedAndDestroyBeforeHelperThreadStarted();
         return;
       }
-      case Code:
+      case Code: {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        streamFailed_ = true;
+        exclusiveCodeBytesEnd_.lock().notify_one();
+        exclusiveStreamEnd_.lock().notify_one();
+        setClosedAndDestroyAfterHelperThreadStarted();
+        return;
+      }
       case Tail:
         
         {
