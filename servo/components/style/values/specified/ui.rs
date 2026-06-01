@@ -4,6 +4,7 @@
 
 
 
+use crate::derives::*;
 use crate::parser::{Parse, ParserContext};
 use crate::values::generics::ui as generics;
 use crate::values::specified::color::Color;
@@ -90,6 +91,7 @@ impl SpecifiedValueInfo for CursorImage {
     ToTyped,
 )]
 #[repr(transparent)]
+#[typed(todo_derive_fields)]
 pub struct BoolInteger(pub bool);
 
 impl BoolInteger {
@@ -188,6 +190,7 @@ pub enum UserSelect {
     ToCss,
     ToResolvedValue,
     ToShmem,
+    ToTyped,
 )]
 #[repr(u8)]
 pub enum CursorKind {
