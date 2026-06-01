@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "MediaMIMETypes.h"
 #include "gtest/gtest.h"
 
@@ -300,4 +298,21 @@ TEST(MediaMIMETypes, MediaExtendedMIMEType)
   type = MakeMediaExtendedMIMEType(
       "video/mp4; codecs=\"a,b\"; width=1024; Height=768; FrameRate=60");
   EXPECT_EQ(4ul, type->GetParameterCount());
+
+  
+  type = MakeMediaExtendedMIMEType("audio/mp3"_ns);
+  EXPECT_EQ("mp3"_ns, type->Subtype());
+  type = MakeMediaExtendedMIMEType("ViDeO/Mp4;codecs=\"a,b\""_ns);
+  EXPECT_EQ("mp4"_ns, type->Subtype());
+  type = MakeMediaExtendedMIMEType("video/av1    "_ns);
+  EXPECT_EQ("av1"_ns, type->Subtype());
+  type = MakeMediaExtendedMIMEType("video/vp8       ;codecs=\"a,b\""_ns);
+  EXPECT_EQ("vp8"_ns, type->Subtype());
+  
+  type = MakeMediaExtendedMIMEType("video/        av1    "_ns);
+  EXPECT_EQ(Nothing(), type);
+  type = MakeMediaExtendedMIMEType("/Something"_ns);
+  EXPECT_EQ(Nothing(), type);
+  type = MakeMediaExtendedMIMEType("ViDeO/h2字64;codecs=\"a,b\""_ns);
+  EXPECT_EQ(Nothing(), type);
 }

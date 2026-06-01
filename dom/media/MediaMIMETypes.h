@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef MediaMIMETypes_h_
 #define MediaMIMETypes_h_
 
@@ -152,6 +150,10 @@ class MediaExtendedMIMEType {
 
   
   const MediaMIMEType& Type() const { return mMIMEType; }
+
+  
+  
+  nsDependentCSubstring Subtype() const;
 
   
   bool HaveCodecs() const { return mHaveCodecs; }
