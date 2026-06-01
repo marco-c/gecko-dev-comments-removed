@@ -2774,7 +2774,7 @@ bool GCRuntime::shouldPreserveJITCode(Realm* realm,
 
 #ifdef DEBUG
 class CompartmentCheckTracer final : public JS::CallbackTracer {
-  void onChild(JS::GCCellPtr thing, const char* name) override;
+  bool onChild(JS::GCCellPtr thing, const char* name) override;
   bool edgeIsInCrossCompartmentMap(JS::GCCellPtr dst);
 
  public:
@@ -2810,7 +2810,7 @@ static bool InCrossCompartmentMap(JSRuntime* rt, JSObject* src,
   return false;
 }
 
-void CompartmentCheckTracer::onChild(JS::GCCellPtr thing, const char* name) {
+bool CompartmentCheckTracer::onChild(JS::GCCellPtr thing, const char* name) {
   Compartment* comp =
       MapGCThingTyped(thing, [](auto t) { return t->maybeCompartment(); });
   if (comp && compartment) {
@@ -2820,6 +2820,7 @@ void CompartmentCheckTracer::onChild(JS::GCCellPtr thing, const char* name) {
     Zone* thingZone = tenured->zoneFromAnyThread();
     MOZ_ASSERT(thingZone == zone || thingZone->isAtomsZone());
   }
+  return true;
 }
 
 bool CompartmentCheckTracer::edgeIsInCrossCompartmentMap(JS::GCCellPtr dst) {
@@ -5011,7 +5012,7 @@ MOZ_NEVER_INLINE GCRuntime::IncrementalResult GCRuntime::gcCycle(
   TimeStamp now = TimeStamp::Now();
   if (firstSlice) {
     schedulingState.updateHighFrequencyModeOnGCStart(
-        gcOptions(), lastGCStartTime_, now, tunables);
+        gcOptions(), reason, lastGCStartTime_, now, tunables);
     lastGCStartTime_ = now;
   }
   schedulingState.updateHighFrequencyModeOnSliceStart(gcOptions(), reason);
