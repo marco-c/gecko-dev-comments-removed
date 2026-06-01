@@ -247,7 +247,10 @@ bool ViewTimeline::UpdateCachedCurrentTime() {
   }
 
   
-  if (scrollContainerFrame->HasAnyStateBits(NS_FRAME_FIRST_REFLOW)) {
+  
+  const auto orientation = state.Axis();
+  if (!scrollContainerFrame->GetAvailableScrollingDirections().contains(
+          orientation)) {
     return prevCachedCurrentTime.isSome();
   }
 
@@ -291,7 +294,6 @@ bool ViewTimeline::UpdateCachedCurrentTime() {
   
   
   
-  const auto orientation = state.Axis();
   const auto sideInsets =
       ComputeInsets(scrollContainerFrame, orientation, mAxis, mInset);
 
