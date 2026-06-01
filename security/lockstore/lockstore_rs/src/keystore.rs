@@ -108,7 +108,7 @@ pub struct ConnectionHandle<'a> {
 impl<'a> ConnectionHandle<'a> {
     
     
-    pub fn list_collections(&self) -> Result<Vec<String>, LockstoreError> {
+    pub fn list_deks(&self) -> Result<Vec<String>, LockstoreError> {
         use kvstore::DatabaseError;
 
         let reader = self.keystore.store.reader()?;
@@ -678,8 +678,8 @@ impl Keystore {
     
     
     
-    pub fn list_collections(&self) -> Result<Vec<String>, LockstoreError> {
-        self.acquire_connection()?.list_collections()
+    pub fn list_deks(&self) -> Result<Vec<String>, LockstoreError> {
+        self.acquire_connection()?.list_deks()
     }
 
     
@@ -689,13 +689,9 @@ impl Keystore {
     
     
     
-    
-    pub fn list_collection_keks(
-        &self,
-        collection_name: &str,
-    ) -> Result<Vec<String>, LockstoreError> {
+    pub fn list_keks(&self, dek_name: &str) -> Result<Vec<String>, LockstoreError> {
         let conn = self.acquire_connection()?;
-        let metadata = conn.load_metadata(collection_name)?;
+        let metadata = conn.load_metadata(dek_name)?;
         Ok(metadata
             .wrapped_deks
             .iter()
@@ -1023,7 +1019,7 @@ impl Keystore {
         new_kek: &[u8],
         cipher_suite: CipherSuite,
     ) -> Result<(), LockstoreError> {
-        let collections = conn.list_collections()?;
+        let collections = conn.list_deks()?;
         for collection_name in collections {
             let mut metadata = match conn.load_metadata(&collection_name) {
                 Ok(m) => m,
