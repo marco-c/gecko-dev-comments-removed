@@ -2,12 +2,13 @@
 
 
 
-
-
 #ifndef mozilla_dom_DateTimeInputTypes_h_
 #define mozilla_dom_DateTimeInputTypes_h_
 
 #include "mozilla/dom/InputType.h"
+#include "mozilla/intl/DateTimeFormat.h"
+
+struct PRExplodedTime;
 
 namespace mozilla::dom {
 
@@ -42,6 +43,19 @@ class DateTimeInputTypeBase : public InputType {
                      uint16_t* aSeconds, uint16_t* aMilliseconds) const;
 
   
+
+
+  bool FormatDateTime(const PRExplodedTime& aTime,
+                      const intl::DateTimeFormat::ComponentsBag& aComponents,
+                      nsAString& aFormatted) const;
+  
+
+
+  bool FormatDateTime(double aValue,
+                      const intl::DateTimeFormat::ComponentsBag& aComponents,
+                      nsAString& aFormatted) const;
+
+  
   static const double kMinimumYear;
   
   static const double kMaximumYear;
@@ -62,7 +76,8 @@ class DateInputType : public DateTimeInputTypeBase {
 
   nsresult GetBadInputMessage(nsAString& aMessage) override;
 
-  StringToNumberResult ConvertStringToNumber(const nsAString&) const override;
+  StringToNumberResult ConvertStringToNumber(const nsAString&,
+                                             Localized) const override;
   bool ConvertNumberToString(Decimal, Localized,
                              nsAString& aResultString) const override;
 
@@ -80,7 +95,8 @@ class TimeInputType : public DateTimeInputTypeBase {
 
   nsresult GetBadInputMessage(nsAString& aMessage) override;
 
-  StringToNumberResult ConvertStringToNumber(const nsAString&) const override;
+  StringToNumberResult ConvertStringToNumber(const nsAString&,
+                                             Localized) const override;
   bool ConvertNumberToString(Decimal, Localized, nsAString&) const override;
   bool IsRangeOverflow() const override;
   bool IsRangeUnderflow() const override;
@@ -105,7 +121,8 @@ class WeekInputType : public DateTimeInputTypeBase {
   }
 
   nsresult GetBadInputMessage(nsAString& aMessage) override;
-  StringToNumberResult ConvertStringToNumber(const nsAString&) const override;
+  StringToNumberResult ConvertStringToNumber(const nsAString&,
+                                             Localized) const override;
   bool ConvertNumberToString(Decimal, Localized, nsAString&) const override;
 
  private:
@@ -121,7 +138,8 @@ class MonthInputType : public DateTimeInputTypeBase {
   }
 
   nsresult GetBadInputMessage(nsAString& aMessage) override;
-  StringToNumberResult ConvertStringToNumber(const nsAString&) const override;
+  StringToNumberResult ConvertStringToNumber(const nsAString&,
+                                             Localized) const override;
   bool ConvertNumberToString(Decimal, Localized, nsAString&) const override;
 
  private:
@@ -137,7 +155,8 @@ class DateTimeLocalInputType : public DateTimeInputTypeBase {
   }
 
   nsresult GetBadInputMessage(nsAString& aMessage) override;
-  StringToNumberResult ConvertStringToNumber(const nsAString&) const override;
+  StringToNumberResult ConvertStringToNumber(const nsAString&,
+                                             Localized) const override;
   bool ConvertNumberToString(Decimal, Localized, nsAString&) const override;
 
  private:
