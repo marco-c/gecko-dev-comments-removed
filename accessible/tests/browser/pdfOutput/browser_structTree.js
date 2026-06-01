@@ -155,6 +155,9 @@ addPdfStructTreeTest(
             {
               role: "NonStruct", 
               children: [
+                
+                
+                { content: [] },
                 {
                   role: "Document",
                   children: [
@@ -169,9 +172,6 @@ addPdfStructTreeTest(
                     },
                   ],
                 },
-                
-                
-                { content: [] },
               ],
             },
           ],
@@ -205,6 +205,7 @@ addPdfStructTreeTest(
             {
               role: "NonStruct", 
               children: [
+                { content: [] },
                 {
                   role: "Document",
                   children: [
@@ -219,7 +220,6 @@ addPdfStructTreeTest(
                     },
                   ],
                 },
-                { content: [] },
               ],
             },
             {
