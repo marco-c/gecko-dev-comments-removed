@@ -22,16 +22,16 @@ add_task(async function test_addToEnabledListPref() {
 
   BackupService.addToEnabledListPref("profile-1");
   let value = JSON.parse(
-    Services.prefs.getStringPref(ENABLED_ON_PROFILES_PREF, "{}")
+    Services.prefs.getStringPref(ENABLED_ON_PROFILES_PREF, "[]")
   );
-  Assert.ok(value["profile-1"], "profile-1 should be in the pref");
+  Assert.ok(value.includes("profile-1"), "profile-1 should be in the pref");
 
   BackupService.addToEnabledListPref("profile-2");
   value = JSON.parse(
-    Services.prefs.getStringPref(ENABLED_ON_PROFILES_PREF, "{}")
+    Services.prefs.getStringPref(ENABLED_ON_PROFILES_PREF, "[]")
   );
-  Assert.ok(value["profile-1"], "profile-1 should still be present");
-  Assert.ok(value["profile-2"], "profile-2 should also be present");
+  Assert.ok(value.includes("profile-1"), "profile-1 should still be present");
+  Assert.ok(value.includes("profile-2"), "profile-2 should also be present");
 
   Services.prefs.clearUserPref(ENABLED_ON_PROFILES_PREF);
 });
@@ -44,16 +44,16 @@ add_task(async function test_removeFromEnabledListPref() {
 
   BackupService.removeFromEnabledListPref("profile-1");
   let value = JSON.parse(
-    Services.prefs.getStringPref(ENABLED_ON_PROFILES_PREF, "{}")
+    Services.prefs.getStringPref(ENABLED_ON_PROFILES_PREF, "[]")
   );
-  Assert.ok(!value["profile-1"], "profile-1 should have been removed");
-  Assert.ok(value["profile-2"], "profile-2 should still be present");
+  Assert.ok(!value.includes("profile-1"), "profile-1 should have been removed");
+  Assert.ok(value.includes("profile-2"), "profile-2 should still be present");
 
   BackupService.removeFromEnabledListPref("profile-2");
   value = JSON.parse(
-    Services.prefs.getStringPref(ENABLED_ON_PROFILES_PREF, "{}")
+    Services.prefs.getStringPref(ENABLED_ON_PROFILES_PREF, "[]")
   );
-  Assert.deepEqual(value, {}, "Pref should be an empty object");
+  Assert.deepEqual(value, [], "Pref should be an empty array");
 
   Services.prefs.clearUserPref(ENABLED_ON_PROFILES_PREF);
 });
@@ -67,23 +67,57 @@ add_task(async function test_no_op_without_selectable_profiles() {
   sandbox.stub(SelectableProfileService, "currentProfile").get(() => null);
 
   BackupService.addToEnabledListPref("profile-1");
-  let value = Services.prefs.getStringPref(ENABLED_ON_PROFILES_PREF, "{}");
-  Assert.equal(value, "{}", "Pref should be unchanged when no current profile");
+  let value = Services.prefs.getStringPref(ENABLED_ON_PROFILES_PREF, "[]");
+  Assert.equal(value, "[]", "Pref should be unchanged when no current profile");
 
   Services.prefs.setStringPref(
     ENABLED_ON_PROFILES_PREF,
-    JSON.stringify({ "profile-1": true })
+    JSON.stringify(["profile-1"])
   );
   BackupService.removeFromEnabledListPref("profile-1");
   value = JSON.parse(
-    Services.prefs.getStringPref(ENABLED_ON_PROFILES_PREF, "{}")
+    Services.prefs.getStringPref(ENABLED_ON_PROFILES_PREF, "[]")
   );
   Assert.ok(
-    value["profile-1"],
+    value.includes("profile-1"),
     "profile-1 should still be present after no-op remove"
   );
 
   sandbox.restore();
+  Services.prefs.clearUserPref(ENABLED_ON_PROFILES_PREF);
+});
+
+add_task(async function test_addToEnabledListPref_migrates_object() {
+  Services.prefs.setStringPref(
+    ENABLED_ON_PROFILES_PREF,
+    JSON.stringify({ "profile-1": true })
+  );
+
+  BackupService.addToEnabledListPref("profile-2");
+  let value = JSON.parse(
+    Services.prefs.getStringPref(ENABLED_ON_PROFILES_PREF, "[]")
+  );
+  Assert.ok(Array.isArray(value), "Pref should be an array after add");
+  Assert.ok(value.includes("profile-1"), "profile-1 should be migrated");
+  Assert.ok(value.includes("profile-2"), "profile-2 should be added");
+
+  Services.prefs.clearUserPref(ENABLED_ON_PROFILES_PREF);
+});
+
+add_task(async function test_removeFromEnabledListPref_migrates_object() {
+  Services.prefs.setStringPref(
+    ENABLED_ON_PROFILES_PREF,
+    JSON.stringify({ "profile-1": true, "profile-2": true })
+  );
+
+  await BackupService.removeFromEnabledListPref("profile-1");
+  let value = JSON.parse(
+    Services.prefs.getStringPref(ENABLED_ON_PROFILES_PREF, "[]")
+  );
+  Assert.ok(Array.isArray(value), "Pref should be an array after remove");
+  Assert.ok(!value.includes("profile-1"), "profile-1 should be removed");
+  Assert.ok(value.includes("profile-2"), "profile-2 should remain");
+
   Services.prefs.clearUserPref(ENABLED_ON_PROFILES_PREF);
 });
 
@@ -101,7 +135,7 @@ add_task(async function test_enabledListPref_shared_across_profiles() {
   );
   let dbParsed = JSON.parse(dbValue);
   Assert.ok(
-    dbParsed[currentProfile.id],
+    dbParsed.includes(currentProfile.id),
     "DB should contain the current profile ID"
   );
 
@@ -109,7 +143,7 @@ add_task(async function test_enabledListPref_shared_across_profiles() {
 
   let db = await openDatabase();
   let simulatedValue = JSON.parse(dbValue);
-  simulatedValue["other-profile-id"] = true;
+  simulatedValue.push("other-profile-id");
   await db.execute("UPDATE SharedPrefs SET value=:value WHERE name=:name;", {
     value: JSON.stringify(simulatedValue),
     name: ENABLED_ON_PROFILES_PREF,
@@ -119,14 +153,14 @@ add_task(async function test_enabledListPref_shared_across_profiles() {
   await SelectableProfileService.init();
 
   let localValue = JSON.parse(
-    Services.prefs.getStringPref(ENABLED_ON_PROFILES_PREF, "{}")
+    Services.prefs.getStringPref(ENABLED_ON_PROFILES_PREF, "[]")
   );
   Assert.ok(
-    localValue[currentProfile.id],
+    localValue.includes(currentProfile.id),
     "Local pref should still contain the original profile ID"
   );
   Assert.ok(
-    localValue["other-profile-id"],
+    localValue.includes("other-profile-id"),
     "Local pref should now also contain the simulated other profile ID"
   );
 
