@@ -45,6 +45,8 @@ const lazy = XPCOMUtils.declareLazy({
     "moz-src:///browser/components/search/BrowserSearchTelemetry.sys.mjs",
   BrowserUIUtils: "resource:///modules/BrowserUIUtils.sys.mjs",
   BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
+  ConfigSearchEngine:
+    "moz-src:///toolkit/components/search/ConfigSearchEngine.sys.mjs",
   ExtensionSearchHandler:
     "resource://gre/modules/ExtensionSearchHandler.sys.mjs",
   ExtensionUtils: "resource://gre/modules/ExtensionUtils.sys.mjs",
@@ -479,11 +481,7 @@ ${
       return;
     }
 
-    if (this.view.isOpen) {
-      this.startLayoutExtend();
-    } else {
-      this.endLayoutExtend();
-    }
+    this.updateLayoutExtend();
   }
 
   connectedCallback() {
@@ -3516,6 +3514,14 @@ ${
     this.#updateTextboxPosition();
   }
 
+  updateLayoutExtend() {
+    if (this.view.isOpen) {
+      this.startLayoutExtend();
+    } else {
+      this.endLayoutExtend();
+    }
+  }
+
   /**
    * Updates the user interface to indicate whether the URI in the address bar
    * is different than the loaded page, because it's being edited or because a
@@ -5573,7 +5579,7 @@ ${
     }
 
     let engine = lazy.SearchService.getEngineByName(engineName);
-    if (engine.isConfigEngine) {
+    if (engine instanceof lazy.ConfigSearchEngine) {
       this._setPlaceholder(engineName);
     } else {
       // Display the default placeholder string.

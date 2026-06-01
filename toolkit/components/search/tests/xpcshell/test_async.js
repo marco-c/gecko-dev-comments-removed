@@ -22,11 +22,17 @@ add_task(async function test_async() {
   
   let engine = SearchService.getEngineByName("engine-1");
   Assert.notEqual(engine, null);
-  Assert.ok(engine.isAppProvided, "Should be shown as an app-provided engine");
+  Assert.ok(
+    engine instanceof AppProvidedConfigEngine,
+    "Should be shown as an app-provided engine"
+  );
 
   engine = SearchService.getEngineByName("engine-2");
   Assert.notEqual(engine, null);
-  Assert.ok(engine.isAppProvided, "Should be shown as an app-provided engine");
+  Assert.ok(
+    engine instanceof AppProvidedConfigEngine,
+    "Should be shown as an app-provided engine"
+  );
 
   
   Assert.notEqual(
