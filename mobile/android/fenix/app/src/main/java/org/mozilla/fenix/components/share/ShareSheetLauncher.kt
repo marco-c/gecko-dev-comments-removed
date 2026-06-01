@@ -12,13 +12,16 @@ import android.graphics.drawable.Icon
 import android.os.Build
 import android.service.chooser.ChooserAction
 import androidx.annotation.RequiresApi
-import androidx.navigation.NavController
+import com.google.zxing.WriterException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import mozilla.components.concept.base.crash.Breadcrumb
+import mozilla.components.concept.base.crash.CrashReporting
 import mozilla.components.concept.engine.prompt.ShareData
+import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.ktx.android.content.share
 import mozilla.components.support.ktx.android.content.shareWithChooserActions
 import mozilla.components.support.ktx.kotlin.trimmed
@@ -85,7 +88,7 @@ interface ShareSheetLauncher {
      * Show the system share sheet for sharing resources outside the app.
      *
      * @param id The session id of the tab to share from.
-     * @param longUrl The url to share.
+     * @param url The url to share.
      * @param title The title of the page to share.
      * @param isPrivate Whether the tab is in private browsing mode.
      * @param isCustomTab Whether the share is being initiated from a custom tab,
@@ -93,7 +96,7 @@ interface ShareSheetLauncher {
      */
     fun showSystemShareSheet(
         id: String?,
-        longUrl: String,
+        url: String,
         title: String?,
         isPrivate: Boolean = false,
         isCustomTab: Boolean = false,
@@ -104,33 +107,40 @@ interface ShareSheetLauncher {
      *
      * @param items The list of [ShareData] items to share.
      * @param isPrivate Whether the tabs are in private browsing mode.
+     * @param subject Optional explicit subject for the share. When `null`, defaults
+     * to the first item's title.
      */
     fun showSystemShareSheet(
         items: List<ShareData>,
         isPrivate: Boolean = false,
+        subject: String? = null,
     )
 }
 
 /**
  * Default implementation for launching the system share sheet.
  *
- * @param navController [NavController] used for navigation.
+ * @param applicationContext The application [Context] used to build share intents and chooser actions.
  * @param homeActivityClass The [Class] of the activity used to handle send-to-devices and display QR codes.
  * @param qrCodeGenerator [QRCodeGenerator] used to generate QR codes for URLs.
  * @param cacheHelper [CacheHelper] used to store image in cache.
  * @param shareDelegate [ShareDelegate] used to invoke share actions.
  * @param scope [CoroutineScope] used to dispatch QR code generation off the main thread.
  * @param ioDispatcher [CoroutineDispatcher] used for IO-bound QR code generation work.
+ * @param crashReporter [CrashReporting] instance used to record caught exceptions.
  */
 class DefaultShareSheetLauncher(
-    private val navController: NavController,
+    private val applicationContext: Context,
     private val homeActivityClass: Class<out Activity>,
     private val qrCodeGenerator: QRCodeGenerator = QRCodeGenerator(),
     private val cacheHelper: CacheHelper = CacheHelper(),
-    private val shareDelegate: ShareDelegate = ContextShareDelegate { navController.context },
+    private val shareDelegate: ShareDelegate = ContextShareDelegate { applicationContext },
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.Main),
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+    private val crashReporter: CrashReporting? = null,
 ) : ShareSheetLauncher {
+
+    private val logger = Logger("DefaultShareSheetLauncher")
 
     companion object {
         private const val PRINT_REQUEST_CODE_OFFSET = 1
@@ -142,34 +152,33 @@ class DefaultShareSheetLauncher(
      * Show the system share sheet for sharing resources outside the app.
      *
      * @param id The session id of the tab to share from.
-     * @param longUrl The url to share.
+     * @param url The url to share.
      * @param title The title of the page to share.
      * @param isPrivate Whether the tab is in private browsing mode.
      * @param isCustomTab Whether the share is being initiated from a custom tab.
      */
     override fun showSystemShareSheet(
         id: String?,
-        longUrl: String,
+        url: String,
         title: String?,
         isPrivate: Boolean,
         isCustomTab: Boolean,
     ) {
-        val displayUrl = longUrl.trimmed()
-        val context = navController.context
+        val displayUrl = url.trimmed()
         if (id != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             scope.launch {
                 val qrCodeAction = withContext(ioDispatcher) {
-                    sendQRCodeChooserAction(context, id, displayUrl)
+                    sendQRCodeChooserAction(applicationContext, id, displayUrl)
                 }
                 shareDelegate.shareWithChooserActions(
                     text = displayUrl,
                     subject = title ?: "",
-                    actions = arrayOf(
-                        savePDFChooserAction(context, id),
-                        printAction(context, id),
-                        sendToDevicesAction(context, id, longUrl, title, isPrivate),
+                    actions = listOfNotNull(
+                        savePDFChooserAction(applicationContext, id),
+                        printAction(applicationContext, id),
+                        sendToDevicesAction(applicationContext, id, url, title, isPrivate),
                         qrCodeAction,
-                    ),
+                    ).toTypedArray(),
                 )
             }
         } else {
@@ -180,10 +189,13 @@ class DefaultShareSheetLauncher(
     override fun showSystemShareSheet(
         items: List<ShareData>,
         isPrivate: Boolean,
+        subject: String?,
     ) {
         val text = items.mapNotNull { it.url }.joinToString("\n")
-        val subject = items.firstOrNull()?.title ?: ""
-        shareDelegate.share(text = text, subject = subject)
+        shareDelegate.share(
+            text = text,
+            subject = subject ?: items.firstOrNull()?.title ?: "",
+        )
     }
 
     /**
@@ -301,11 +313,22 @@ class DefaultShareSheetLauncher(
      * @param context The context used to create intents and notifications.
      * @param id The session ID of the tab, used to compute the unique request code.
      * @param url The URL to generate a QR code for.
-     * @return A [ChooserAction] that can be added to the share intent chooser.
+     * @return A [ChooserAction] that can be added to the share intent chooser or `null` if the URL
+     * could not be encoded into a QR code (e.g. it exceeds the QR code data capacity).
      */
     @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
-    private fun sendQRCodeChooserAction(context: Context, id: String, url: String): ChooserAction {
-        val qrCodeBitmap = qrCodeGenerator.generateQRCodeImage(url, 300, 300, context)
+    private fun sendQRCodeChooserAction(context: Context, id: String, url: String): ChooserAction? {
+        val qrCodeBitmap = try {
+            qrCodeGenerator.generateQRCodeImage(url, 300, 300, context)
+        } catch (e: WriterException) {
+            val message = "DefaultShareSheetLauncher - Failed to generate QR code for share sheet"
+            logger.error(message = message, throwable = e)
+            crashReporter?.recordCrashBreadcrumb(Breadcrumb(message = message))
+            crashReporter?.submitCaughtException(e)
+
+            return null
+        }
+
         val qrCodeUri = cacheHelper.saveBitmapToCache(context, qrCodeBitmap, url.hashCode().toString())
         val icon = Icon.createWithResource(context, iconsR.drawable.mozac_ic_qr_code_24)
 

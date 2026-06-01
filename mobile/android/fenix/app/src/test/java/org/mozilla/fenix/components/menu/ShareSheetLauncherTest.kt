@@ -9,9 +9,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
 import android.service.chooser.ChooserAction
-import androidx.navigation.NavController
-import androidx.navigation.NavDirections
-import androidx.navigation.NavOptions
+import com.google.zxing.WriterException
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -20,6 +18,8 @@ import io.mockk.slot
 import io.mockk.verify
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import mozilla.components.concept.base.crash.Breadcrumb
+import mozilla.components.concept.base.crash.CrashReporting
 import mozilla.components.concept.engine.prompt.ShareData
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -35,10 +35,6 @@ import org.robolectric.annotation.Config
 class ShareSheetLauncherTest {
 
     private val mockContext = mockk<Context>(relaxed = true)
-    private val mockNavController: NavController = mockk(relaxed = true) {
-        every { navigate(any<NavDirections>(), any<NavOptions>()) } just runs
-        every { context } returns mockContext
-    }
     private val mockShareDelegate: ShareDelegate = mockk(relaxed = true) {
         every { share(any(), any()) } just runs
         every { shareWithChooserActions(any(), any(), any()) } just runs
@@ -50,18 +46,20 @@ class ShareSheetLauncherTest {
     private val mockQRCodeGenerator = mockk<QRCodeGenerator> {
         every { generateQRCodeImage(any(), any(), any(), any()) } returns mockk<Bitmap>()
     }
+    private val mockCrashReporter = mockk<CrashReporting>(relaxed = true)
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     private val testDispatcher = UnconfinedTestDispatcher()
 
     private val launcher = DefaultShareSheetLauncher(
-        navController = mockNavController,
+        applicationContext = mockContext,
         qrCodeGenerator = mockQRCodeGenerator,
         cacheHelper = mockCacheHelper,
         scope = CoroutineScope(testDispatcher),
         ioDispatcher = testDispatcher,
         homeActivityClass = Activity::class.java,
         shareDelegate = mockShareDelegate,
+        crashReporter = mockCrashReporter,
     )
 
     @Config(sdk = [33])
@@ -69,7 +67,7 @@ class ShareSheetLauncherTest {
     fun `WHEN native share sheet triggered on older API THEN share is invoked`() {
         launcher.showSystemShareSheet(
             id = "123",
-            longUrl = "https://www.mozilla.org",
+            url = "https://www.mozilla.org",
             title = "Mozilla",
             isCustomTab = false,
         )
@@ -82,7 +80,7 @@ class ShareSheetLauncherTest {
     fun `GIVEN API level below 34 WHEN native share sheet triggered THEN basic share is used`() {
         launcher.showSystemShareSheet(
             id = "123",
-            longUrl = "https://www.mozilla.org",
+            url = "https://www.mozilla.org",
             title = "Mozilla",
         )
 
@@ -95,7 +93,7 @@ class ShareSheetLauncherTest {
     fun `GIVEN API level 34 and valid tab id WHEN native share sheet triggered THEN chooser actions share is used`() {
         launcher.showSystemShareSheet(
             id = "123",
-            longUrl = "https://www.mozilla.org",
+            url = "https://www.mozilla.org",
             title = "Mozilla",
         )
 
@@ -108,7 +106,7 @@ class ShareSheetLauncherTest {
     fun `GIVEN API level 34 and null tab id WHEN native share sheet triggered THEN basic share is used`() {
         launcher.showSystemShareSheet(
             id = null,
-            longUrl = "https://www.mozilla.org",
+            url = "https://www.mozilla.org",
             title = "Mozilla",
         )
 
@@ -121,7 +119,7 @@ class ShareSheetLauncherTest {
     fun `GIVEN a private tab WHEN native share sheet triggered THEN chooser actions share is still used`() {
         launcher.showSystemShareSheet(
             id = "123",
-            longUrl = "https://www.mozilla.org",
+            url = "https://www.mozilla.org",
             title = "Mozilla",
             isPrivate = true,
         )
@@ -138,11 +136,45 @@ class ShareSheetLauncherTest {
 
         launcher.showSystemShareSheet(
             id = "123",
-            longUrl = "https://www.mozilla.org",
+            url = "https://www.mozilla.org",
             title = "Mozilla",
         )
 
         assertEquals(4, actionsSlot.captured.size)
+    }
+
+    @Config(sdk = [34])
+    @Test
+    fun `GIVEN QR code generation fails WHEN native share sheet triggered THEN remaining 3 chooser actions are still passed`() {
+        every { mockQRCodeGenerator.generateQRCodeImage(any(), any(), any(), any()) } throws
+            WriterException("Data too big")
+        val actionsSlot = slot<Array<ChooserAction>>()
+        every { mockShareDelegate.shareWithChooserActions(any(), any(), capture(actionsSlot)) } just runs
+
+        launcher.showSystemShareSheet(
+            id = "123",
+            url = "https://www.mozilla.org",
+            title = "Mozilla",
+        )
+
+        verify { mockShareDelegate.shareWithChooserActions(any(), any(), any()) }
+        assertEquals(3, actionsSlot.captured.size)
+    }
+
+    @Config(sdk = [34])
+    @Test
+    fun `GIVEN QR code generation fails WHEN native share sheet triggered THEN the exception is reported`() {
+        val exception = WriterException("Data too big")
+        every { mockQRCodeGenerator.generateQRCodeImage(any(), any(), any(), any()) } throws exception
+
+        launcher.showSystemShareSheet(
+            id = "123",
+            url = "https://www.mozilla.org",
+            title = "Mozilla",
+        )
+
+        verify { mockCrashReporter.recordCrashBreadcrumb(any<Breadcrumb>()) }
+        verify { mockCrashReporter.submitCaughtException(exception) }
     }
 
     @Test
@@ -188,5 +220,22 @@ class ShareSheetLauncherTest {
         launcher.showSystemShareSheet(items = emptyList())
 
         verify { mockShareDelegate.share(text = "", subject = "") }
+    }
+
+    @Test
+    fun `WHEN showSystemShareSheet is called with multiple items and a subject THEN share is invoked with urls and subject`() {
+        val items = listOf(
+            ShareData(url = "https://mozilla.org", title = "Mozilla"),
+            ShareData(url = "https://firefox.com", title = "Firefox"),
+        )
+
+        launcher.showSystemShareSheet(items = items, subject = "My collection")
+
+        verify {
+            mockShareDelegate.share(
+                text = "https://mozilla.org\nhttps://firefox.com",
+                subject = "My collection",
+            )
+        }
     }
 }
