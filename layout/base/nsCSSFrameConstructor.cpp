@@ -5399,7 +5399,9 @@ nsContainerFrame* nsCSSFrameConstructor::GetAbsoluteContainingBlock(
       type = absPosCBCandidate->Type();
     }
     
-    absPosCBCandidate = absPosCBCandidate->FirstContinuation();
+    
+    absPosCBCandidate =
+        nsLayoutUtils::FirstContinuationOrIBSplitSibling(absPosCBCandidate);
     
     if (!absPosCBCandidate->IsAbsoluteContainer()) {
       continue;
