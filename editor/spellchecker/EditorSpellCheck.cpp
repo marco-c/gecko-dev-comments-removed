@@ -241,7 +241,7 @@ static nsresult StoreCurrentDictionaries(
   rv = docUri->GetSpec(docUriSpec);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  RefPtr<nsVariant> prefValue = new nsVariant();
+  RefPtr prefValue = MakeRefPtr<nsVariant>();
 
   nsCString asString = DictionariesToString(aDictionaries);
   prefValue->SetAsAString(NS_ConvertUTF8toUTF16(asString));
@@ -363,8 +363,7 @@ EditorSpellCheck::InitSpellChecker(nsIEditor* aEditor,
   nsresult rv;
 
   
-  RefPtr<TextServicesDocument> textServicesDocument =
-      new TextServicesDocument();
+  RefPtr textServicesDocument = MakeRefPtr<TextServicesDocument>();
   textServicesDocument->SetFilterType(mTxtSrvFilterType);
 
   
@@ -427,7 +426,7 @@ EditorSpellCheck::InitSpellChecker(nsIEditor* aEditor,
     
     
     
-    RefPtr<CallbackCaller> caller = new CallbackCaller(aCallback);
+    RefPtr caller = MakeRefPtr<CallbackCaller>(aCallback);
     rv = doc->Dispatch(caller.forget());
     NS_ENSURE_SUCCESS(rv, rv);
   }
@@ -734,8 +733,8 @@ EditorSpellCheck::UpdateCurrentDictionary(
     return NS_ERROR_FAILURE;
   }
 
-  RefPtr<DictionaryFetcher> fetcher =
-      new DictionaryFetcher(this, aCallback, mDictionaryFetcherGroup);
+  RefPtr fetcher =
+      MakeRefPtr<DictionaryFetcher>(this, aCallback, mDictionaryFetcherGroup);
   fetcher->mRootContentLang = [&] {
     if (rootEditableElement->IsInNativeAnonymousSubtree()) {
       if (auto* host =

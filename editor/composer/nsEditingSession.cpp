@@ -304,8 +304,7 @@ nsresult nsEditingSession::SetupEditorOnWindow(nsPIDOMWindowOuter& aWindow) {
   }
 
   
-  RefPtr<ComposerCommandsUpdater> commandsUpdater =
-      new ComposerCommandsUpdater();
+  RefPtr commandsUpdater = MakeRefPtr<ComposerCommandsUpdater>();
   mComposerCommandsUpdater = commandsUpdater;
 
   
