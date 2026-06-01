@@ -10,7 +10,6 @@ ChromeUtils.defineESModuleGetters(this, {
     "moz-src:///browser/components/urlbar/UrlbarProvidersManager.sys.mjs",
   UrlbarResult: "moz-src:///browser/components/urlbar/UrlbarResult.sys.mjs",
   UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
-  UrlbarView: "moz-src:///browser/components/urlbar/UrlbarView.sys.mjs",
 });
 
 const MAX_RESULT_COUNT = 10;
@@ -46,11 +45,11 @@ add_setup(async function () {
   
   
   
-  let originalRemoveStaleRowsTimeout = UrlbarView.removeStaleRowsTimeout;
-  UrlbarView.removeStaleRowsTimeout = 30000;
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.removeStaleRowsTimeout", 30000]],
+  });
 
   registerCleanupFunction(() => {
-    UrlbarView.removeStaleRowsTimeout = originalRemoveStaleRowsTimeout;
     providersManager.unregisterProvider(gProvider);
   });
 });
