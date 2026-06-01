@@ -12,6 +12,7 @@
 #include "mozilla/FlushType.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/MozPromise.h"
+#include "mozilla/StaticPtr.h"
 #include "mozilla/StorageAccess.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
@@ -685,6 +686,8 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   void StoreSharedWorker(mozilla::dom::SharedWorker* aSharedWorker);
 
   void ForgetSharedWorker(mozilla::dom::SharedWorker* aSharedWorker);
+
+  void UpdateSharedWorkersLanguageOverride(const nsCString& aLanguageOverride);
 
  public:
   void Alert(nsIPrincipal& aSubjectPrincipal, mozilla::ErrorResult& aError);
@@ -1505,7 +1508,7 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
 
   nsTArray<mozilla::WeakPtr<Document>> mDataDocumentsForMemoryReporting;
 
-  static InnerWindowByIdTable* sInnerWindowsById;
+  static mozilla::StaticAutoPtr<InnerWindowByIdTable> sInnerWindowsById;
 
   
   
