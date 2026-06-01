@@ -25,13 +25,17 @@ void CSSAnimation::SetEffect(AnimationEffect* aEffect) {
   AddOverriddenProperties(CSSAnimationProperties::Effect);
 }
 
-void CSSAnimation::SetStartTimeAsDouble(const Nullable<double>& aStartTime) {
+void CSSAnimation::SetStartTime(const Nullable<CSSNumberish>& aStartTime,
+                                ErrorResult& aRv) {
   
   
   
   bool wasPaused = PlayState() == AnimationPlayState::Paused;
 
-  Animation::SetStartTimeAsDouble(aStartTime);
+  Animation::SetStartTime(aStartTime, aRv);
+  if (aRv.Failed()) {
+    return;
+  }
 
   bool isPaused = PlayState() == AnimationPlayState::Paused;
 
