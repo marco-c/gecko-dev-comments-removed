@@ -1,7 +1,11 @@
 mod common;
 use common::*;
 
-use happy_eyeballs::{FailureReason, Id, Output};
+use std::net::{IpAddr, Ipv4Addr, SocketAddr};
+
+use happy_eyeballs::{
+    ConnectionAttemptHttpVersions, Endpoint, FailureReason, HappyEyeballs, Id, Output,
+};
 
 
 #[test]
@@ -89,6 +93,37 @@ fn all_connections_failed() {
             ),
             (
                 Some(in_connection_result_negative(Id::from(4))),
+                Some(Output::Failed(FailureReason::Connection)),
+            ),
+        ],
+        now,
+    );
+}
+
+
+
+
+#[test]
+fn ip_host_connection_failure() {
+    let now = std::time::Instant::now();
+    let mut he = HappyEyeballs::new("127.0.0.1", PORT).unwrap();
+
+    he.expect(
+        vec![
+            (
+                None,
+                Some(Output::AttemptConnection {
+                    id: Id::from(0),
+                    endpoint: Endpoint {
+                        address: SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), PORT),
+                        http_version: ConnectionAttemptHttpVersions::H2OrH1,
+                        ech_config: None,
+                    },
+                    is_ech_retry: false,
+                }),
+            ),
+            (
+                Some(in_connection_result_negative(Id::from(0))),
                 Some(Output::Failed(FailureReason::Connection)),
             ),
         ],
