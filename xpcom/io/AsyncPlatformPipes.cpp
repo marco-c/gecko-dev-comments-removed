@@ -8,6 +8,7 @@
 
 #include "base/eintr_wrapper.h"
 #include "base/message_loop.h"
+#include "mozilla/CondVar.h"
 #include "mozilla/EventTargetCapability.h"
 #include "mozilla/UniquePtr.h"
 #include "nsStreamUtils.h"
@@ -39,12 +40,17 @@ class PlatformPipeLink
 
   
   
+  
+  already_AddRefed<PlatformPipeLink> TakePending() MOZ_REQUIRES(mMutex);
+
+  
+  
   void Close(nsresult aStatus, bool aInternal) MOZ_EXCLUDES(mMutex)
       MOZ_EXCLUDES(mIOThread);
 
   
   
-  void DispatchClose(nsresult aStatus);
+  void DispatchPipeError(nsresult aStatus) MOZ_REQUIRES(mMutex, mIOThread);
 
   
   
@@ -73,6 +79,7 @@ class PlatformPipeLink
   const uint32_t mBufferSize;
 
   bool mProcessingSegment MOZ_GUARDED_BY(mMutex) = false;
+  bool mClosing MOZ_GUARDED_BY(mMutex) = false;
 
   nsresult mStatus MOZ_GUARDED_BY(mMutex) = NS_OK;
 
@@ -89,6 +96,10 @@ class PlatformPipeLink
   
   
   RefPtr<PlatformPipeLink> mPending MOZ_GUARDED_BY(mMutex);
+
+  
+  
+  CondVar mPendingCV{mMutex, "PlatformPipeReader::mPendingCV"};
 
 #ifdef XP_WIN
   MessageLoopForIO::IOContext mIOContext MOZ_GUARDED_BY(mMutex) = {};
@@ -118,7 +129,18 @@ PlatformPipeLink::PlatformPipeLink(UniqueFileHandle aHandle,
 #endif
 }
 
+already_AddRefed<PlatformPipeLink> PlatformPipeLink::TakePending() {
+  RefPtr<PlatformPipeLink> pending = mPending.forget();
+  if (pending) {
+    mPendingCV.NotifyAll();
+  }
+  return pending.forget();
+}
+
 void PlatformPipeLink::Close(nsresult aStatus, bool aInternal) {
+  MOZ_RELEASE_ASSERT(!mIOThread.IsOnCurrentThread(),
+                     "Close may deadlock if called on the IO thread");
+
   MutexAutoLock lock(mMutex);
   MOZ_RELEASE_ASSERT(aInternal || !mProcessingSegment,
                      "Cannot close pipe during ReadSegments callback");
@@ -126,8 +148,9 @@ void PlatformPipeLink::Close(nsresult aStatus, bool aInternal) {
     return;
   }
 
-  mStatus = NS_SUCCEEDED(aStatus) ? NS_BASE_STREAM_CLOSED : aStatus;
-  DispatchNotify();
+  
+  
+  mClosing = true;
 
   if (mPending) {
 #ifdef XP_WIN
@@ -135,35 +158,49 @@ void PlatformPipeLink::Close(nsresult aStatus, bool aInternal) {
     
     
     CancelIoEx(mHandle.get(), &mIOContext.overlapped);
-    
-    
-    
-    
-    
-    
 #else
     
     
-    
-    
-    
-    
-    mIOThread.Dispatch(NewRunnableMethod("PlatformPipeLink::AdvanceIO", this,
-                                         &PlatformPipeLink::AdvanceIO));
-    return;
+    MOZ_ALWAYS_SUCCEEDS(mIOThread.Dispatch(NS_NewRunnableFunction(
+        "PlatformPipeLink::CancelIO", [self = RefPtr{this}] {
+          self->mIOThread.AssertOnCurrentThread();
+          MutexAutoLock lock(self->mMutex);
+          if (self->mPending) {
+            self->mWatcher.StopWatchingFileDescriptor();
+            RefPtr<PlatformPipeLink> pending = self->TakePending();
+          }
+        })));
 #endif
+
+    
+    
+    while (mPending) {
+      mPendingCV.Wait();
+    }
   }
+  MOZ_DIAGNOSTIC_ASSERT(!mPending, "How do we still have pending I/O?");
 
   
-  
+  if (NS_FAILED(mStatus)) {
+    return;
+  }
+
+  mStatus = NS_SUCCEEDED(aStatus) ? NS_BASE_STREAM_CLOSED : aStatus;
+  DispatchNotify();
+
   
   
   mHandle = nullptr;
 }
 
-void PlatformPipeLink::DispatchClose(nsresult aStatus) {
+void PlatformPipeLink::DispatchPipeError(nsresult aStatus) {
+  MOZ_ASSERT(!mPending,
+             "Shouldn't be pending when closing due to a pipe error");
+
   
   
+  mClosing = true;
+
   
   
   
@@ -193,33 +230,10 @@ void PlatformPipeLink::AdvanceIO() {
 }
 
 void PlatformPipeLink::AdvanceIOLocked() {
-  if (!mHandle) {
+  
+  
+  if (mClosing || !mHandle || NS_FAILED(mStatus)) {
     return;
-  }
-
-  if (NS_FAILED(mStatus)) {
-#ifdef XP_WIN
-    
-    return;
-#else
-    
-    
-    
-    if (mPending) {
-      mWatcher.StopWatchingFileDescriptor();
-      mPending = nullptr;
-    }
-
-    
-    
-    
-    NS_DispatchBackgroundTask(
-        NS_NewRunnableFunction(
-            "PlatformPipeLink::CloseHandle",
-            [handle = std::move(mHandle)]() mutable { handle = nullptr; }),
-        NS_DISPATCH_EVENT_MAY_BLOCK);
-    return;
-#endif
   }
 
   
@@ -244,9 +258,9 @@ void PlatformPipeLink::AdvanceIOLocked() {
       return;
     }
     if (error == ERROR_BROKEN_PIPE || error == ERROR_HANDLE_EOF) {
-      DispatchClose(NS_BASE_STREAM_CLOSED);
+      DispatchPipeError(NS_BASE_STREAM_CLOSED);
     } else {
-      DispatchClose(NS_ERROR_FAILURE);
+      DispatchPipeError(NS_ERROR_FAILURE);
     }
     return;
   }
@@ -264,7 +278,7 @@ void PlatformPipeLink::AdvanceIOLocked() {
   }
 
   if (rv == 0) {
-    DispatchClose(NS_BASE_STREAM_CLOSED);
+    DispatchPipeError(NS_BASE_STREAM_CLOSED);
     return;
   }
 
@@ -281,7 +295,7 @@ void PlatformPipeLink::AdvanceIOLocked() {
     }
   }
 
-  DispatchClose(NS_ERROR_FAILURE);
+  DispatchPipeError(NS_ERROR_FAILURE);
 #endif
 }
 
@@ -294,27 +308,27 @@ void PlatformPipeLink::OnIOCompleted(MessageLoopForIO::IOContext* aContext,
     return;
   }
 
-  RefPtr<PlatformPipeLink> pending = mPending.forget();
+  RefPtr<PlatformPipeLink> pending = TakePending();
   if (!pending) {
     return;
   }
 
-  if (NS_FAILED(mStatus)) {
+  if (mClosing || NS_FAILED(mStatus)) {
     return;
   }
 
   if (aError != ERROR_SUCCESS) {
     if (aError == ERROR_BROKEN_PIPE || aError == ERROR_HANDLE_EOF ||
         aError == ERROR_OPERATION_ABORTED) {
-      DispatchClose(NS_BASE_STREAM_CLOSED);
+      DispatchPipeError(NS_BASE_STREAM_CLOSED);
     } else {
-      DispatchClose(NS_ERROR_FAILURE);
+      DispatchPipeError(NS_ERROR_FAILURE);
     }
     return;
   }
 
   if (aBytesTransferred == 0) {
-    DispatchClose(NS_BASE_STREAM_CLOSED);
+    DispatchPipeError(NS_BASE_STREAM_CLOSED);
     return;
   }
 
@@ -328,7 +342,7 @@ void PlatformPipeLink::OnIOCompleted(MessageLoopForIO::IOContext* aContext,
 void PlatformPipeLink::OnFileCanReadWithoutBlocking(int fd) {
   mIOThread.AssertOnCurrentThread();
   MutexAutoLock lock(mMutex);
-  RefPtr<PlatformPipeLink> pending = mPending.forget();
+  RefPtr<PlatformPipeLink> pending = TakePending();
   AdvanceIOLocked();
 }
 
