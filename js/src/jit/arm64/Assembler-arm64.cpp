@@ -116,6 +116,9 @@ BufferOffset Assembler::emitExtendedJumpTable() {
     return BufferOffset();
   }
 
+  
+  AutoForbidNops afn(this);
+
   armbuffer_.flushPool();
   armbuffer_.align(SizeOfJumpTableEntry);
 

@@ -2470,6 +2470,9 @@ class MacroAssembler : public js::jit::Assembler {
     VIXL_ASSERT(label->bound());
 
     
+    js::jit::AutoForbidNops afn(this);
+
+    
     
     
     vixl::ImmBranchRangeType branchRange =

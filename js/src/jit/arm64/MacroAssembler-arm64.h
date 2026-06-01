@@ -658,6 +658,9 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
   void jump(JitCode* code) { branch(code); }
   void jump(ImmPtr ptr) {
     
+    AutoForbidNops afn(this);
+
+    
     
     
     
@@ -1309,6 +1312,9 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
 
   void branch(Condition cond, Label* label) { B(label, cond); }
   void branch(JitCode* target) {
+    
+    AutoForbidNops afn(this);
+
     
     
     
@@ -2016,6 +2022,9 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
   
   
   CodeOffset toggledCall(JitCode* target, bool enabled) {
+    
+    AutoForbidNops afn(this);
+
     
     
     BufferOffset offset = nextOffset();

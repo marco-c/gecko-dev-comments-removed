@@ -24,6 +24,7 @@
 
 
 
+#include "jit/arm64/Assembler-arm64.h"
 #include "jit/arm64/vixl/Assembler-vixl.h"
 #include "jit/Label.h"
 
@@ -218,6 +219,9 @@ void Assembler::b(Instruction* at, int imm19, Condition cond) {
 
 BufferOffset Assembler::b(Label* label) {
   
+  js::jit::AutoForbidNops afn(this);
+
+  
   LabelDoc doc = refLabel(label);
   BufferOffset next = nextInstrOffset(UncondBranchRangeType);
   BufferOffset actual = b(LinkAndGetInstructionOffsetTo(next, UncondBranchRangeType, label), doc);
@@ -227,6 +231,9 @@ BufferOffset Assembler::b(Label* label) {
 
 
 BufferOffset Assembler::b(Label* label, Condition cond) {
+  
+  js::jit::AutoForbidNops afn(this);
+
   
   LabelDoc doc = refLabel(label);
   BufferOffset next = nextInstrOffset(CondBranchRangeType);
@@ -261,6 +268,9 @@ void Assembler::bl(Instruction* at, int imm26) {
 
 void Assembler::bl(Label* label) {
   
+  js::jit::AutoForbidNops afn(this);
+
+  
   LabelDoc doc = refLabel(label);
   BufferOffset next = nextInstrOffset(UncondBranchRangeType);
   BufferOffset actual = bl(LinkAndGetInstructionOffsetTo(next, UncondBranchRangeType, label), doc);
@@ -281,6 +291,9 @@ void Assembler::cbz(Instruction* at, const Register& rt, int imm19) {
 
 void Assembler::cbz(const Register& rt, Label* label) {
   
+  js::jit::AutoForbidNops afn(this);
+
+  
   LabelDoc doc = refLabel(label);
   BufferOffset next = nextInstrOffset(CondBranchRangeType);
   BufferOffset actual = cbz(rt, LinkAndGetInstructionOffsetTo(next, CondBranchRangeType, label), doc);
@@ -300,6 +313,9 @@ void Assembler::cbnz(Instruction* at, const Register& rt, int imm19) {
 
 
 void Assembler::cbnz(const Register& rt, Label* label) {
+  
+  js::jit::AutoForbidNops afn(this);
+
   
   LabelDoc doc = refLabel(label);
   BufferOffset next = nextInstrOffset(CondBranchRangeType);
@@ -323,6 +339,9 @@ void Assembler::tbz(Instruction* at, const Register& rt, unsigned bit_pos, int i
 
 void Assembler::tbz(const Register& rt, unsigned bit_pos, Label* label) {
   
+  js::jit::AutoForbidNops afn(this);
+
+  
   LabelDoc doc = refLabel(label);
   BufferOffset next = nextInstrOffset(TestBranchRangeType);
   BufferOffset actual = tbz(rt, bit_pos, LinkAndGetInstructionOffsetTo(next, TestBranchRangeType, label), doc);
@@ -344,6 +363,9 @@ void Assembler::tbnz(Instruction* at, const Register& rt, unsigned bit_pos, int 
 
 
 void Assembler::tbnz(const Register& rt, unsigned bit_pos, Label* label) {
+  
+  js::jit::AutoForbidNops afn(this);
+
   
   LabelDoc doc = refLabel(label);
   BufferOffset next = nextInstrOffset(TestBranchRangeType);
@@ -367,6 +389,9 @@ void Assembler::adr(Instruction* at, const Register& rd, int imm21) {
 
 void Assembler::adr(const Register& rd, Label* label) {
   
+  js::jit::AutoForbidNops afn(this);
+
+  
   LabelDoc doc = refLabel(label);
   BufferOffset next = nextInstrOffset();
   BufferOffset actual = adr(rd, LinkAndGetByteOffsetTo(next, label), doc);
@@ -388,6 +413,9 @@ void Assembler::adrp(Instruction* at, const Register& rd, int imm21) {
 
 
 void Assembler::adrp(const Register& rd, Label* label) {
+  
+  js::jit::AutoForbidNops afn(this);
+
   VIXL_ASSERT(AllowPageOffsetDependentCode());
   
   LabelDoc doc = refLabel(label);
