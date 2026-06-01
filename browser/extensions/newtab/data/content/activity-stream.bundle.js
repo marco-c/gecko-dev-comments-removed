@@ -23048,7 +23048,9 @@ function SpinSmooth() {
 
 
 
+
 const PREF_LOGO_VARIATION = "logo.variation";
+const Logo_PREF_WIDGETS_ENABLED = "widgets.enabled";
 
 
 
@@ -23232,7 +23234,15 @@ function Logo() {
   const trainhopVariant = prefs.trainhopConfig?.logo?.variation;
   const prefVariant = prefs[PREF_LOGO_VARIATION];
   const variantId = trainhopVariant || prefVariant || null;
-  const variant = variantId ? pickVariant(variantId, {
+
+  
+  
+  
+  
+  const widgetsEnabled = prefs[Logo_PREF_WIDGETS_ENABLED];
+  const sportsWidget = WIDGET_REGISTRY.find(w => w.id === "sportsWidget");
+  const sportsWidgetEnabled = isWidgetEnabled(sportsWidget, prefs, widgetsEnabled);
+  const variant = sportsWidgetEnabled && variantId ? pickVariant(variantId, {
     viewportWidth,
     isLTR
   }) : null;
