@@ -2,8 +2,7 @@
 
 
 
-
-const URL = "about:blank";
+const URL = `data:text/html,<html><body> <span id="change_me">Original</span> <script> document.getElementById("change_me").textContent = "Modified"; </script></body></html>`;
 
 const CSP_JSON = `{"csp-policies":[{"default-src":["'self'"],"report-only":false}]}`;
 
@@ -28,6 +27,11 @@ add_task(async function () {
   );
 
   
+  await checkScriptRunsWithoutCSP({
+    url: URL,
+  });
+
+  
   await checkCSPWithSessionHistoryEntry({ url: URL, csp: CSP_SERIALIZED });
   
   await checkCSPWithSessionHistoryEntry({
@@ -37,7 +41,11 @@ add_task(async function () {
 });
 
 async function checkCSPWithSessionHistoryEntry(entry) {
+  
   const tab = await createTabWithSessionHistoryEntry(entry);
+
+  
+  is(await didScriptRun(tab.linkedBrowser), false);
 
   is(
     tab.linkedBrowser.policyContainer.csp.toJSON(),
@@ -45,6 +53,24 @@ async function checkCSPWithSessionHistoryEntry(entry) {
     "CSP should be restored correctly from session history entry"
   );
 
+  
+  BrowserTestUtils.removeTab(tab);
+}
+
+async function checkScriptRunsWithoutCSP(entry) {
+  
+  const tab = await createTabWithSessionHistoryEntry(entry);
+
+  
+  is(await didScriptRun(tab.linkedBrowser), true);
+
+  is(
+    tab.linkedBrowser.policyContainer.csp.toJSON(),
+    `{"csp-policies":[]}`,
+    "CSP should not be restored when not present in session history entry"
+  );
+
+  
   BrowserTestUtils.removeTab(tab);
 }
 
@@ -54,15 +80,21 @@ async function createTabWithSessionHistoryEntry(entry) {
   };
 
   
-  
-  
-  
-  const tab = BrowserTestUtils.addTab(gBrowser, "about:robots");
-  await promiseBrowserLoaded(tab.linkedBrowser, true, "about:robots");
+  const tab = BrowserTestUtils.addTab(gBrowser);
 
-  const restored = promiseTabRestored(tab);
+  
   ss.setTabState(tab, JSON.stringify(state));
-  await restored;
+
+  
+  await promiseBrowserLoaded(tab.linkedBrowser);
 
   return tab;
+}
+
+function didScriptRun(browser) {
+  return SpecialPowers.spawn(browser, [], function () {
+    return (
+      content.document.getElementById("change_me").innerText === "Modified"
+    );
+  });
 }

@@ -8,6 +8,11 @@ add_task(async function () {
   SimpleTest.requestCompleteLog();
 
   
+  await SpecialPowers.pushPrefEnv({
+    set: [["security.data_uri.block_toplevel_data_uri_navigations", false]],
+  });
+
+  
   
   await testLink(0, true, false);
   
@@ -33,6 +38,10 @@ add_task(async function () {
   
   
   await testLink(4, true, false);
+
+  
+  
+  await testLink(5, true, false);
 
   
   
