@@ -19275,7 +19275,232 @@ function WidgetWrapper({
   }), children);
 }
 ;
+
+
+
+
+
+
+
+
+
+const INTERACTIVE_DESCENDANT_SELECTOR = ["button", "moz-button", "moz-checkbox", "moz-toggle", "moz-radio", "moz-select", "moz-input-text", "moz-input-password", "moz-input-search", "input", "textarea", "select", "[contenteditable='true']", "[role='button']", "[role='checkbox']", "[role='switch']", "[role='textbox']"].join(", ");
+
+
+
+
+
+
+function setupDragImage(e, el) {
+  const rect = el.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  const cssWidth = Math.round(rect.width);
+  const cssHeight = Math.round(rect.height);
+  const clone = el.cloneNode(true);
+  
+  
+  clone.style.cssText = `position:fixed;top:-9999px;left:-9999px;width:${cssWidth}px;height:${cssHeight}px;transform:scale(${1 / dpr});transform-origin:top left;pointer-events:none;margin:0`;
+  const mountPoint = el.parentElement || document.body;
+  mountPoint.appendChild(clone);
+  const offsetX = e.clientX - rect.left;
+  const offsetY = e.clientY - rect.top;
+  e.dataTransfer.setDragImage(clone, Math.round(offsetX * (1 / dpr)), Math.round(offsetY * (1 / dpr)));
+  requestAnimationFrame(() => clone.remove());
+}
+
+
+
+
+
+
+function captureSlotRects(sourceEl, effectiveOrder) {
+  const container = sourceEl.parentElement;
+  if (!container) {
+    return null;
+  }
+  
+  const slots = [...container.querySelectorAll("[data-widget-id]")];
+  const rectsById = Object.fromEntries(slots.map(el => [el.dataset.widgetId, el.getBoundingClientRect()]));
+  return effectiveOrder.map(id => rectsById[id] || null);
+}
+
+
+
+
+
+
+function cursorToSlot(slotRects, clientX, clientY) {
+  if (!slotRects) {
+    return null;
+  }
+  for (let i = 0; i < slotRects.length; i++) {
+    const rect = slotRects[i];
+    if (rect && clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom) {
+      return i;
+    }
+  }
+  return null;
+}
+
+
+
+
+
+function useMouseDnD({
+  effectiveOrder,
+  commitOrder
+}) {
+  const [draggedId, setDraggedId] = (0,external_React_namespaceObject.useState)(null);
+  
+  
+  const [targetSlot, setTargetSlot] = (0,external_React_namespaceObject.useState)(null);
+  
+  
+  
+  const mouseDownTargetRef = (0,external_React_namespaceObject.useRef)(null);
+  const slotRectsRef = (0,external_React_namespaceObject.useRef)(null);
+  let previewOrder = null;
+  if (draggedId !== null && targetSlot !== null) {
+    const next = effectiveOrder.filter(id => id !== draggedId);
+    next.splice(targetSlot, 0, draggedId);
+    previewOrder = next;
+  }
+  function handleMouseDown(e) {
+    mouseDownTargetRef.current = e.target;
+  }
+  function handleDragStart(e, id) {
+    
+    const closestDraggable = e.target.closest("[draggable='true']");
+    if (closestDraggable && closestDraggable !== e.currentTarget) {
+      mouseDownTargetRef.current = null;
+      return;
+    }
+
+    
+    
+    const mouseDownTarget = mouseDownTargetRef.current;
+    mouseDownTargetRef.current = null;
+    if (mouseDownTarget && mouseDownTarget.closest(INTERACTIVE_DESCENDANT_SELECTOR)) {
+      e.preventDefault();
+      return;
+    }
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/widget-id", id);
+
+    
+    
+    slotRectsRef.current = captureSlotRects(e.currentTarget, effectiveOrder);
+    setupDragImage(e, e.currentTarget);
+    setDraggedId(id);
+    setTargetSlot(effectiveOrder.indexOf(id));
+  }
+  function handleDragOver(e) {
+    
+    if (!e.dataTransfer.types.includes("text/widget-id")) {
+      return;
+    }
+    e.preventDefault();
+    
+    
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = "move";
+    if (!draggedId) {
+      return;
+    }
+    const slot = cursorToSlot(slotRectsRef.current, e.clientX, e.clientY);
+    if (slot !== null && slot !== targetSlot) {
+      setTargetSlot(slot);
+    }
+  }
+  function cleanup() {
+    setDraggedId(null);
+    setTargetSlot(null);
+    slotRectsRef.current = null;
+  }
+
+  
+  
+  
+  
+  function handleDrop(e) {
+    if (!e.dataTransfer.types.includes("text/widget-id")) {
+      return;
+    }
+    e.preventDefault();
+    e.stopPropagation();
+    if (draggedId !== null && targetSlot !== null) {
+      const sourceIdx = effectiveOrder.indexOf(draggedId);
+      if (sourceIdx !== -1 && targetSlot !== sourceIdx) {
+        const next = effectiveOrder.filter(id => id !== draggedId);
+        next.splice(targetSlot, 0, draggedId);
+        commitOrder(next);
+      }
+    }
+  }
+  function handleDragEnd() {
+    cleanup();
+  }
+  return {
+    draggedId,
+    previewOrder,
+    handleMouseDown,
+    handleDragStart,
+    handleDragOver,
+    handleDrop,
+    handleDragEnd
+  };
+}
+;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function useWidgetDnD({
+  widgetOrder,
+  prefs,
+  dispatch
+}) {
+  const [optimisticOrder, setOptimisticOrder] = (0,external_React_namespaceObject.useState)(null);
+  (0,external_React_namespaceObject.useEffect)(() => {
+    if (optimisticOrder && prefs[PREF_WIDGETS_ORDER] === optimisticOrder.join(",")) {
+      setOptimisticOrder(null);
+    }
+  }, [prefs, optimisticOrder]);
+  const effectiveOrder = optimisticOrder || widgetOrder;
+  function commitOrder(newOrder) {
+    setOptimisticOrder(newOrder);
+    dispatch(actionCreators.SetPref(PREF_WIDGETS_ORDER, newOrder.join(",")));
+  }
+  const mouse = useMouseDnD({
+    effectiveOrder,
+    commitOrder
+  });
+  const previewOrderMap = mouse.previewOrder ? Object.fromEntries(mouse.previewOrder.map((id, i) => [id, i])) : null;
+  return {
+    effectiveOrder,
+    draggedId: mouse.draggedId,
+    previewOrderMap,
+    handleDragStart: mouse.handleDragStart,
+    handleDragOver: mouse.handleDragOver,
+    handleDrop: mouse.handleDrop,
+    handleDragEnd: mouse.handleDragEnd,
+    handleMouseDown: mouse.handleMouseDown
+  };
+}
+;
 function Widgets_extends() { return Widgets_extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, Widgets_extends.apply(null, arguments); }
+
 
 
 
@@ -19435,6 +19660,20 @@ function Widgets() {
     clocks: isWidgetEnabled(WIDGET_REGISTRY.find(w => w.id === "clocks"), prefs, widgetsEnabled)
   };
   const widgetOrder = resolveWidgetOrder(prefs);
+  const {
+    effectiveOrder,
+    draggedId,
+    previewOrderMap,
+    handleDragStart,
+    handleDragOver,
+    handleDrop,
+    handleDragEnd,
+    handleMouseDown
+  } = useWidgetDnD({
+    widgetOrder,
+    prefs,
+    dispatch
+  });
   const anyWidgetInRow = WIDGET_REGISTRY.some(w => widgetEnabledMap[w.id]) || !novaEnabled && weatherForecastEnabled;
   const allWidgetsAdded = WIDGET_REGISTRY.filter(w => isWidgetAddable(w, prefs)).every(w => prefs[w.enabledPref]);
   const renderedWidgetSizes = WIDGET_REGISTRY.filter(w => widgetEnabledMap[w.id]).map(w => resolveWidgetSize(w, prefs));
@@ -19685,7 +19924,8 @@ function Widgets() {
   
   const sizes = [];
   const enabledWidgetIds = [];
-  for (const id of widgetOrder) {
+  
+  for (const id of effectiveOrder) {
     if (!WIDGET_ROW_COMPONENTS[id] || !widgetEnabledMap[id]) {
       continue;
     }
@@ -19769,7 +20009,7 @@ function Widgets() {
     id: "widgets-container",
     className: `widgets-container${isMaximized ? " is-maximized" : ""}`,
     "data-row-collapsed": isCollapsed ? "" : undefined
-  }, widgetOrder.map(id => {
+  }, effectiveOrder.map(id => {
     if (novaEnabled) {
       const Component = WIDGET_ROW_COMPONENTS[id];
       if (!Component || !widgetEnabledMap[id]) {
@@ -19789,10 +20029,23 @@ function Widgets() {
         "data-hidden-3": hiddenAtCols[3].has(renderIdx) ? "" : undefined,
         "data-hidden-4": hiddenAtCols[4].has(renderIdx) ? "" : undefined
       };
+      const wrapperClassName = [size && `${size}-widget`, "widget-draggable", draggedId === id && "is-dragging"].filter(Boolean).join(" ");
+      const dragProps = {
+        style: previewOrderMap ? {
+          order: previewOrderMap[id]
+        } : undefined,
+        draggable: true,
+        onDragStart: e => handleDragStart(e, id),
+        onDragOverCapture: handleDragOver,
+        onDrop: handleDrop,
+        onDragEnd: handleDragEnd,
+        onMouseDown: handleMouseDown
+      };
       return external_React_default().createElement(WidgetWrapper, Widgets_extends({
         key: id,
-        className: size ? `${size}-widget` : ""
-      }, hiddenAttrs), external_React_default().createElement(Component, {
+        className: wrapperClassName,
+        "data-widget-id": id
+      }, hiddenAttrs, dragProps), external_React_default().createElement(Component, {
         dispatch: dispatch,
         handleUserInteraction: handleUserInteraction,
         isMaximized: isMaximized,
