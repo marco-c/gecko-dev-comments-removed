@@ -261,6 +261,7 @@ class BufferAllocatorRuntime {
   bool needLockToAccessBufferMap() const;
 
   
+  LargeBuffer* lookupLargeBuffer(void* alloc);
   LargeBuffer* lookupLargeBuffer(void* alloc, MaybeLock& lock);
 };
 
