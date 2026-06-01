@@ -2085,8 +2085,7 @@ void LoadInfo::UpdateParentAddressSpaceInfo() {
   if (!bc) {
     
     
-    if (mClientInfo.isSome() &&
-        mClientInfo->Type() != ClientType::Window) {
+    if (mClientInfo.isSome() && mClientInfo->Type() != ClientType::Window) {
       nsCOMPtr<nsIPolicyContainer> policyContainer = GetPolicyContainer();
       if (policyContainer) {
         mParentIpAddressSpace =
