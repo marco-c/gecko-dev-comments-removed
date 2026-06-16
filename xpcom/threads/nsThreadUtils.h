@@ -105,7 +105,7 @@ extern nsresult NS_GetCurrentThread(nsIThread** aResult);
 
 extern nsresult NS_DispatchToCurrentThread(nsIRunnable* aEvent);
 extern nsresult NS_DispatchToCurrentThread(
-    already_AddRefed<nsIRunnable>&& aEvent);
+    already_AddRefed<nsIRunnable> aEvent);
 
 
 
@@ -122,11 +122,11 @@ extern nsresult NS_DispatchToMainThread(
     nsIRunnable* aEvent,
     nsIEventTarget::DispatchFlags aDispatchFlags = NS_DISPATCH_NORMAL);
 extern nsresult NS_DispatchToMainThread(
-    already_AddRefed<nsIRunnable>&& aEvent,
+    already_AddRefed<nsIRunnable> aEvent,
     nsIEventTarget::DispatchFlags aDispatchFlags = NS_DISPATCH_NORMAL);
 
 extern nsresult NS_DelayedDispatchToCurrentThread(
-    already_AddRefed<nsIRunnable>&& aEvent, uint32_t aDelayMs);
+    already_AddRefed<nsIRunnable> aEvent, uint32_t aDelayMs);
 
 
 
@@ -140,7 +140,7 @@ extern nsresult NS_DelayedDispatchToCurrentThread(
 
 
 extern nsresult NS_DispatchToCurrentThreadQueue(
-    already_AddRefed<nsIRunnable>&& aEvent, mozilla::EventQueuePriority aQueue);
+    already_AddRefed<nsIRunnable> aEvent, mozilla::EventQueuePriority aQueue);
 
 
 
@@ -154,7 +154,7 @@ extern nsresult NS_DispatchToCurrentThreadQueue(
 
 
 extern nsresult NS_DispatchToMainThreadQueue(
-    already_AddRefed<nsIRunnable>&& aEvent, mozilla::EventQueuePriority aQueue);
+    already_AddRefed<nsIRunnable> aEvent, mozilla::EventQueuePriority aQueue);
 
 
 
@@ -180,7 +180,7 @@ extern nsresult NS_DispatchToMainThreadQueue(
 
 
 extern nsresult NS_DispatchToCurrentThreadQueue(
-    already_AddRefed<nsIRunnable>&& aEvent, uint32_t aTimeout,
+    already_AddRefed<nsIRunnable> aEvent, uint32_t aTimeout,
     mozilla::EventQueuePriority aQueue);
 
 
@@ -195,7 +195,7 @@ extern nsresult NS_DispatchToCurrentThreadQueue(
 
 
 
-extern nsresult NS_DispatchToThreadQueue(already_AddRefed<nsIRunnable>&& aEvent,
+extern nsresult NS_DispatchToThreadQueue(already_AddRefed<nsIRunnable> aEvent,
                                          nsIThread* aThread,
                                          mozilla::EventQueuePriority aQueue);
 
@@ -224,7 +224,7 @@ extern nsresult NS_DispatchToThreadQueue(already_AddRefed<nsIRunnable>&& aEvent,
 
 
 
-extern nsresult NS_DispatchToThreadQueue(already_AddRefed<nsIRunnable>&& aEvent,
+extern nsresult NS_DispatchToThreadQueue(already_AddRefed<nsIRunnable> aEvent,
                                          uint32_t aTimeout, nsIThread* aThread,
                                          mozilla::EventQueuePriority aQueue);
 
@@ -482,7 +482,7 @@ class CancelableIdleRunnable : public CancelableRunnable,
 
 class PrioritizableRunnable : public Runnable, public nsIRunnablePriority {
  public:
-  PrioritizableRunnable(already_AddRefed<nsIRunnable>&& aRunnable,
+  PrioritizableRunnable(already_AddRefed<nsIRunnable> aRunnable,
                         uint32_t aPriority);
 
 #  ifdef MOZ_COLLECTING_RUNNABLE_TELEMETRY
@@ -516,7 +516,7 @@ class PrioritizableCancelableRunnable : public CancelableRunnable,
 };
 
 extern already_AddRefed<nsIRunnable> CreateRenderBlockingRunnable(
-    already_AddRefed<nsIRunnable>&& aRunnable);
+    already_AddRefed<nsIRunnable> aRunnable);
 
 namespace detail {
 

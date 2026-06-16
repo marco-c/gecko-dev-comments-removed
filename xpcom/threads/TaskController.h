@@ -257,7 +257,7 @@ class Task {
 
 class IdleTaskManager : public TaskManager {
  public:
-  explicit IdleTaskManager(already_AddRefed<nsIIdlePeriod>&& aIdlePeriod)
+  explicit IdleTaskManager(already_AddRefed<nsIIdlePeriod> aIdlePeriod)
       : mIdlePeriodState(std::move(aIdlePeriod)), mProcessedTaskCount(0) {}
 
   IdlePeriodState& State() { return mIdlePeriodState; }
@@ -305,8 +305,7 @@ class TaskController {
     mExternalCondVar = aExternalCondVar;
   }
 
-  void SetIdleTaskManager(
-      already_AddRefed<IdleTaskManager>&& aIdleTaskManager) {
+  void SetIdleTaskManager(already_AddRefed<IdleTaskManager> aIdleTaskManager) {
     mIdleTaskManager = aIdleTaskManager;
   }
   IdleTaskManager* GetIdleTaskManager() { return mIdleTaskManager.get(); }
@@ -323,7 +322,7 @@ class TaskController {
 
   
   
-  void AddTask(already_AddRefed<Task>&& aTask);
+  void AddTask(already_AddRefed<Task> aTask);
 
   
   
@@ -340,7 +339,7 @@ class TaskController {
   
   void ReprioritizeTask(Task* aTask, uint32_t aPriority);
 
-  void DispatchRunnable(already_AddRefed<nsIRunnable>&& aRunnable,
+  void DispatchRunnable(already_AddRefed<nsIRunnable> aRunnable,
                         uint32_t aPriority, TaskManager* aManager = nullptr);
 
   nsIRunnable* GetRunnableForMTTask(bool aReallyWait);

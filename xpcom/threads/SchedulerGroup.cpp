@@ -8,7 +8,7 @@
 namespace mozilla {
 
 
-nsresult SchedulerGroup::Dispatch(already_AddRefed<nsIRunnable>&& aRunnable,
+nsresult SchedulerGroup::Dispatch(already_AddRefed<nsIRunnable> aRunnable,
                                   nsIEventTarget::DispatchFlags aFlags) {
   if (NS_IsMainThread()) {
     
