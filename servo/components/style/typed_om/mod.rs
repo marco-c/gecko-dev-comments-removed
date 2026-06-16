@@ -137,6 +137,15 @@ pub type MathMax = ThinVec<NumericValue>;
 
 
 
+
+
+
+pub type MathClamp = crate::OwnedArray<NumericValue, 3>;
+
+
+
+
+
 #[derive(Clone, Debug)]
 #[repr(C)]
 pub enum MathValue {
@@ -154,6 +163,11 @@ pub enum MathValue {
     
     
     Max(MathMax),
+
+    
+    
+    
+    Clamp(MathClamp),
 }
 
 

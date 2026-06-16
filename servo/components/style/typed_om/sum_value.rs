@@ -135,6 +135,12 @@ impl SumValue {
                 
                 Err(())
             },
+
+            
+            NumericValue::Math(MathValue::Clamp(_math_clamp)) => {
+                
+                Err(())
+            },
         }
     }
 

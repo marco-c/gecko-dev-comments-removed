@@ -2497,6 +2497,29 @@ impl<L: CalcNodeLeaf> CalcNode<L> {
                 dest.push(TypedValue::Numeric(NumericValue::Math(math_value)));
                 Ok(())
             },
+            Self::Clamp {
+                ref min,
+                ref center,
+                ref max,
+            } => {
+                let Some(lower) = CalcNodeWithLevel::argument_root(min).to_numeric_value() else {
+                    return Err(());
+                };
+
+                let Some(value) = CalcNodeWithLevel::argument_root(center).to_numeric_value()
+                else {
+                    return Err(());
+                };
+
+                let Some(upper) = CalcNodeWithLevel::argument_root(max).to_numeric_value() else {
+                    return Err(());
+                };
+
+                dest.push(TypedValue::Numeric(NumericValue::Math(MathValue::Clamp(
+                    [lower, value, upper].into(),
+                ))));
+                Ok(())
+            },
             _ => Err(()),
         }
     }
