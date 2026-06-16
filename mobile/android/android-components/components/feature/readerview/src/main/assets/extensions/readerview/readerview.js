@@ -2,7 +2,6 @@
 
 
 
- 
 
 
 
@@ -60,7 +59,36 @@ class ReaderView {
       { title: this.getTitle(result) }
     );
 
-    document.body.outerHTML = this.createHtmlBody(article);
+    const sanitizer = new Sanitizer({
+      allowAttributes: {
+        class: ["*"],
+        id: ["*"],
+        src: ["img", "audio", "video", "source"],
+        srcset: ["img", "source"],
+        sizes: ["img", "source"],
+        alt: ["img"],
+        href: ["a"],
+        rel: ["a"],
+        dir: ["*"],
+        lang: ["*"],
+        title: ["*"],
+        width: ["img", "video", "table", "td", "th", "col", "colgroup"],
+        height: ["img", "video"],
+        colspan: ["td", "th"],
+        rowspan: ["td", "th"],
+        scope: ["th"],
+        datetime: ["del", "ins", "time"],
+        cite: ["blockquote", "del", "ins", "q"],
+        start: ["ol"],
+        reversed: ["ol"],
+        value: ["li"],
+        open: ["details"],
+        type: ["a", "ol", "li", "source"],
+        target: ["a"],
+      },
+    });
+
+    document.body.setHTML(this.createHtmlBody(article), { sanitizer });
 
     this.setFontSize(options.fontSize);
     this.setFontType(options.fontType);
