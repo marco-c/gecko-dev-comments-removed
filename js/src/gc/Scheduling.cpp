@@ -293,58 +293,14 @@ void GCSchedulingTunables::checkInvariants() {
   MOZ_ASSERT(smallHeapIncrementalLimit_ >= largeHeapIncrementalLimit_);
 }
 
-static bool StartReasonCanTriggerHFMode(JS::GCReason reason) {
-  
-  
-  if (reason == JS::GCReason::API || reason == JS::GCReason::ABORT_GC ||
-      reason == JS::GCReason::DISABLE_GENERATIONAL_GC ||
-      reason == JS::GCReason::FINISH_GC ||
-      reason == JS::GCReason::PREPARE_FOR_TRACING ||
-      reason == JS::GCReason::COMPONENT_UTILS ||
-      reason == JS::GCReason::DOM_UTILS || reason == JS::GCReason::DOM_IPC ||
-      reason == JS::GCReason::DOM_TESTUTILS) {
-    return false;
-  }
-
-  
-  
-  if (reason == JS::GCReason::RESET ||
-      reason == JS::GCReason::COMPARTMENT_REVIVED) {
-    return false;
-  }
-
-  
-  if (reason == JS::GCReason::DESTROY_RUNTIME ||
-      reason == JS::GCReason::NSJSCONTEXT_DESTROY ||
-      reason == JS::GCReason::WORKER_SHUTDOWN ||
-      reason == JS::GCReason::SHUTDOWN_CC ||
-      reason == JS::GCReason::XPCONNECT_SHUTDOWN) {
-    return false;
-  }
-
-  return true;
-}
-
-static bool SliceReasonCanTriggerHFMode(JS::GCReason reason) {
-  
-  
-  if (reason == JS::GCReason::ALLOC_TRIGGER ||
-      reason == JS::GCReason::TOO_MUCH_MALLOC) {
-    return true;
-  }
-
-  return false;
-}
-
 void GCSchedulingState::updateHighFrequencyModeOnGCStart(
-    JS::GCOptions options, JS::GCReason reason,
-    const mozilla::TimeStamp& lastGCTime, const mozilla::TimeStamp& currentTime,
+    JS::GCOptions options, const mozilla::TimeStamp& lastGCTime,
+    const mozilla::TimeStamp& currentTime,
     const GCSchedulingTunables& tunables) {
   
   TimeDuration timeSinceLastGC = currentTime - lastGCTime;
   inHighFrequencyGCMode_ = !js::SupportDifferentialTesting() &&
                            options == JS::GCOptions::Normal &&
-                           StartReasonCanTriggerHFMode(reason) &&
                            timeSinceLastGC < tunables.highFrequencyThreshold();
 }
 
@@ -352,7 +308,11 @@ void GCSchedulingState::updateHighFrequencyModeOnSliceStart(
     JS::GCOptions options, JS::GCReason reason) {
   MOZ_ASSERT_IF(options != JS::GCOptions::Normal, !inHighFrequencyGCMode_);
 
-  if (options == JS::GCOptions::Normal && SliceReasonCanTriggerHFMode(reason)) {
+  
+  
+  if (options == JS::GCOptions::Normal &&
+      (reason == JS::GCReason::ALLOC_TRIGGER ||
+       reason == JS::GCReason::TOO_MUCH_MALLOC)) {
     inHighFrequencyGCMode_ = true;
   }
 }
