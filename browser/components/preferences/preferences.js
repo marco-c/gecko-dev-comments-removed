@@ -31,7 +31,6 @@
 
 
 
-
 "use strict";
 
 var { AppConstants } = ChromeUtils.importESModule(
@@ -459,6 +458,12 @@ const CONFIG_PANES = Object.freeze({
     module: "chrome://browser/content/preferences/config/translations.mjs",
     visible: () => srdSectionEnabled("translations"),
   },
+  containers: {
+    parent: srdSectionEnabled("tabsBrowsing") ? "tabsBrowsing" : "general",
+    l10nId: "containers-section-header2",
+    groupIds: ["containers"],
+    module: "chrome://browser/content/preferences/config/containers.mjs",
+  },
 });
 
 var gLastCategory = { category: undefined, subcategory: undefined };
@@ -521,7 +526,6 @@ function init_all() {
   register_module("paneHome", gHomePane);
   register_module("paneSearch", gSearchPane);
   register_module("panePrivacy", gPrivacyPane);
-  register_module("paneContainers", gContainersPane);
 
   
   
