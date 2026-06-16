@@ -1900,20 +1900,28 @@ bool ScriptLoader::ProcessInlineScript(nsIScriptElement* aElement,
     aElement->GetScriptText(source);
     auto speculationRulesResult = SpeculationRules::Parse(
         NS_ConvertUTF16toUTF8(source), request->BaseURL(), request->BaseURL());
+
+    
+    
+
+    
+    
+    
+    
+    
+    
     if (speculationRulesResult.isErr()) {
       
+      
+      nsCOMPtr<nsIScriptGlobalObject> global = GetScriptGlobalObject();
+      if (!global) {
+        return false;
+      }
+      SpeculationRules::ReportParseError(global,
+                                         speculationRulesResult.unwrapErr());
       return false;
     }
 
-    
-    
-
-    
-    
-    
-    
-    
-    
     mDocument->RegisterSpeculationRulesFromScript(
         aElement, speculationRulesResult.unwrap());
     return false;
