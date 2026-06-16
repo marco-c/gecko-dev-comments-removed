@@ -50,6 +50,12 @@ class nsDNSPrefetch final : public nsIDNSListener {
   nsresult PrefetchLow(
       nsIDNSService::DNSFlags = nsIDNSService::RESOLVE_DEFAULT_FLAGS);
 
+  
+  
+  
+  nsresult PrefetchHighPerFamily(nsIDNSService::DNSFlags aFlags, bool aSkipIPv4,
+                                 bool aSkipIPv6);
+
   nsresult FetchHTTPSSVC(
       bool aRefreshDNS, bool aPrefetch,
       std::function<void(nsIDNSHTTPSSVCRecord*)>&& aCallback);
@@ -63,6 +69,9 @@ class nsDNSPrefetch final : public nsIDNSListener {
   mozilla::TimeStamp mStartTimestamp;
   mozilla::TimeStamp mEndTimestamp;
   nsWeakPtr mListener;
+  
+  
+  bool mLookupCompleted{false};
 
   nsresult Prefetch(nsIDNSService::DNSFlags flags);
 };
