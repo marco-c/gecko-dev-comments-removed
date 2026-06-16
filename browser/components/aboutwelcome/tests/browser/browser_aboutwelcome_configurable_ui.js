@@ -319,6 +319,11 @@ add_task(async function test_aboutwelcome_dismiss_button() {
 
 
 add_task(async function test_aboutwelcome_split_position() {
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["ui.systemUsesDarkTheme", 0]],
+  });
+
   const TEST_SPLIT_STEP = makeTestContent("TEST_SPLIT_STEP", {
     position: "split",
     hero_text: "hero test",
@@ -356,6 +361,7 @@ add_task(async function test_aboutwelcome_split_position() {
       color: "rgb(21, 20, 26)",
     }
   );
+  await SpecialPowers.popPrefEnv();
   browser.closeBrowser();
 });
 
@@ -489,6 +495,7 @@ add_task(async function test_aboutwelcome_with_progress_bar() {
     set: [
       ["ui.systemUsesDarkTheme", 0],
       ["ui.prefersReducedMotion", 0],
+      ["ui.useAccessibilityTheme", 0],
     ],
   });
   let screens = [];
