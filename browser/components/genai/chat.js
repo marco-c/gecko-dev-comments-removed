@@ -410,6 +410,7 @@ function showOnboarding(length) {
         })),
         
         selected: " ",
+        subtitle: { string_id: "genai-onboarding-choose-header" },
         type: "single-select",
       };
       

@@ -3340,7 +3340,7 @@ const SingleSelect = ({
   }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", null, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("fieldset", {
     className: `tiles-single-select-section ${category}`
   }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
-    text: content.subtitle
+    text: content.tiles?.subtitle || content.subtitle
   }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("legend", {
     className: "sr-only"
   })), content.tiles.data.map(({
