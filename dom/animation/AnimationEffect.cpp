@@ -56,6 +56,9 @@ bool AnimationEffect::IsCurrent() const {
   
   
   const AnimationTimeline* timeline = mAnimation->GetTimeline();
+  if (timeline && timeline->IsInactiveTimeline()) {
+    return false;
+  }
   if (timeline && !timeline->IsMonotonicallyIncreasing() &&
       mAnimation->PlayState() != AnimationPlayState::Idle) {
     return true;
@@ -78,6 +81,10 @@ bool AnimationEffect::IsCurrent() const {
 
 
 bool AnimationEffect::IsInEffect() const {
+  const auto* timeline = mAnimation ? mAnimation->GetTimeline() : nullptr;
+  if (timeline && timeline->IsInactiveTimeline()) {
+    return false;
+  }
   ComputedTiming computedTiming = GetComputedTiming();
   return !computedTiming.mProgress.IsNull();
 }
