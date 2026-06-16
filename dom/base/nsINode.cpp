@@ -77,7 +77,6 @@
 #include "nsCCUncollectableMarker.h"
 #include "nsCOMArray.h"
 #include "nsChildContentList.h"
-#include "nsClassHashtable.h"
 #include "nsContentCreatorFunctions.h"
 #include "nsContentUtils.h"
 #include "nsCycleCollectionParticipant.h"
@@ -292,54 +291,94 @@ class ChildIndexCache {
   static nsIContent* GetChildAt(const nsINode* aParent, uint32_t aIndex) {
     MOZ_ASSERT(aParent->GetChildCount() > aIndex,
                "Caller should have checked bounds");
-    Entry* entry = GetOrCreateEntry(aParent);
-    return entry->GetChildAt(aParent, aIndex);
+    if (aParent == sLastInvalidatedParent) {
+      sLastInvalidatedParent = nullptr;
+    }
+    auto& entry =
+        sCache.LookupOrInsertWith(aParent, [&] { return MakeEntry(aParent); });
+    if (aIndex < entry.mChildren.Length()) {
+      return entry.mChildren[aIndex];
+    }
+    PopulateTo(entry, aParent, aIndex);
+    return entry.mChildren[aIndex];
   }
 
   static uint32_t ComputeIndexOf(const nsINode* aParent,
                                  const nsIContent* aChild) {
     MOZ_ASSERT(aChild->GetParentNode() == aParent,
                "Child is not actually a child of parent");
-    Entry* entry = GetOrCreateEntry(aParent);
-    return entry->ComputeIndexOf(aParent, aChild);
+    if (aParent == sLastInvalidatedParent) {
+      sLastInvalidatedParent = nullptr;
+    }
+    auto& entry =
+        sCache.LookupOrInsertWith(aParent, [&] { return MakeEntry(aParent); });
+
+    
+    
+    
+    const bool useHashMap = aParent->GetChildCount() >= kHashMapThreshold;
+
+    if (useHashMap) {
+      
+      if (auto result = entry.mIndexMap.MaybeGet(aChild)) {
+        return *result;
+      }
+    }
+
+    
+    
+    
+    
+    for (auto index :
+         IntegerRange(entry.mIndexMap.Count(), entry.mChildren.Length())) {
+      if (useHashMap) {
+        entry.mIndexMap.InsertOrUpdate(entry.mChildren[index], index);
+      }
+      if (entry.mChildren[index] == aChild) {
+        return index;
+      }
+    }
+
+    
+    nsIContent* current = entry.mChildren.IsEmpty()
+                              ? aParent->GetFirstChild()
+                              : entry.mChildren.LastElement()->GetNextSibling();
+    while (current) {
+      const uint32_t index = entry.mChildren.Length();
+      entry.mChildren.AppendElement(current);
+      if (useHashMap) {
+        entry.mIndexMap.InsertOrUpdate(current, index);
+      }
+      if (current == aChild) {
+        return index;
+      }
+      current = current->GetNextSibling();
+    }
+    MOZ_ASSERT_UNREACHABLE("Child is not actually a child of parent");
+    return 0;
   }
 
-  
-  
-  
-  
-  
-  
-  static void Invalidate(const nsINode* aParent, const nsIContent* aPivot) {
+  static void Invalidate(const nsINode* aParent) {
     MOZ_ASSERT(aParent);
     if (aParent->GetChildCount() < kThreshold) {
       return;
     }
     if (aParent->GetChildCount() == kThreshold) {
-      if (aParent == sLastAccessedParent) {
-        ForgetMemoizedEntry();
-      }
       sCache.Remove(aParent);
+      sLastInvalidatedParent = nullptr;
+      return;
+    }
+    if (aParent == sLastInvalidatedParent) {
       return;
     }
 
-    
-    
-    
-    if (aParent != sLastAccessedParent) {
-      sLastAccessedParent = aParent;
-      sLastAccessedEntry = sCache.Get(aParent);
+    auto entry = sCache.Lookup(aParent);
+    if (entry) {
+      entry.Data().mChildren.ClearAndRetainStorage();
+      entry.Data().mIndexMap.Clear();
     }
 
-    if (!sLastAccessedEntry) {
-      
-      
-      
-      
-      return;
-    }
-
-    sLastAccessedEntry->Invalidate(aPivot);
+    sLastInvalidatedParent = aParent;
   }
 
 #ifdef DEBUG
@@ -347,178 +386,53 @@ class ChildIndexCache {
     return sCache.Contains(aParent);
   }
 
-  static const nsINode* LastAccessedParent() { return sLastAccessedParent; }
+  static const nsINode* LastInvalidatedParent() {
+    return sLastInvalidatedParent;
+  }
 #endif
 
  private:
   struct Entry {
-    explicit Entry(uint32_t aChildCount) { mChildren.SetCapacity(aChildCount); }
-
-    void Invalidate(const nsIContent* aPivot) {
-      if (!aPivot) {
-        mValidLength = 0;
-        return;
-      }
-      if (auto index = mIndexMap.MaybeGet(aPivot)) {
-        mValidLength = std::min(mValidLength, *index);
-      } else {
-        
-        
-        
-        mValidLength = std::min(mValidLength, mIndexMap.Count());
-      }
-    }
-
-    nsIContent* GetChildAt(const nsINode* aParent, uint32_t aIndex) {
-      TruncateStaleElements();
-      PopulateTo(aParent, aIndex);
-      return mChildren[aIndex];
-    }
-
-    uint32_t ComputeIndexOf(const nsINode* aParent, const nsIContent* aChild) {
-      TruncateStaleElements();
-
-      
-      
-      
-      const bool useHashMap = aParent->GetChildCount() >= kHashMapThreshold;
-
-      if (useHashMap) {
-        
-        if (auto result = mIndexMap.MaybeGet(aChild)) {
-          return *result;
-        }
-      }
-
-      
-      
-      
-      
-      for (auto index : IntegerRange(mIndexMap.Count(), mChildren.Length())) {
-        if (useHashMap) {
-          mIndexMap.InsertOrUpdate(mChildren[index], index);
-        }
-        if (mChildren[index] == aChild) {
-          return index;
-        }
-      }
-
-      
-      nsIContent* current = mChildren.IsEmpty()
-                                ? aParent->GetFirstChild()
-                                : mChildren.LastElement()->GetNextSibling();
-      while (current) {
-        const uint32_t index = mChildren.Length();
-        mChildren.AppendElement(current);
-        mValidLength = mChildren.Length();
-        if (useHashMap) {
-          mIndexMap.InsertOrUpdate(current, index);
-        }
-        if (current == aChild) {
-          return index;
-        }
-        current = current->GetNextSibling();
-      }
-      MOZ_ASSERT_UNREACHABLE("Child is not actually a child of parent");
-      return 0;
-    }
-
-   private:
-    
-    void TruncateStaleElements() {
-      if (mValidLength == mChildren.Length()) {
-        return;
-      }
-      if (mValidLength == 0) {
-        mChildren.ClearAndRetainStorage();
-        mIndexMap.ClearAndRetainStorage();
-        return;
-      }
-      for (auto* invalidChild :
-           Span(mChildren).Last(mChildren.Length() - mValidLength)) {
-        mIndexMap.Remove(invalidChild);
-      }
-      mChildren.TruncateLength(mValidLength);
-    }
-
-    
-    
-    
-    void PopulateTo(const nsINode* aParent, uint32_t aIndex) {
-      if (aIndex < mChildren.Length()) {
-        return;
-      }
-      if (mChildren.Capacity() < aParent->GetChildCount()) {
-        mChildren.SetCapacity(aParent->GetChildCount());
-      }
-      nsIContent* current = mChildren.IsEmpty()
-                                ? aParent->GetFirstChild()
-                                : mChildren.LastElement()->GetNextSibling();
-      while (current) {
-        mChildren.AppendElement(current);
-        if (mChildren.Length() - 1 == aIndex) {
-          break;
-        }
-        current = current->GetNextSibling();
-      }
-      mValidLength = mChildren.Length();
-    }
-    
-    
-    
-    
-    
     nsTArray<nsIContent*> mChildren;
     nsTHashMap<const nsIContent*, uint32_t> mIndexMap;
-    
-    
-    
-    
-    
-    uint32_t mValidLength = 0;
   };
 
-  
-  
-  
-  static Entry* GetOrCreateEntry(const nsINode* aParent) {
-    if (aParent == sLastAccessedParent && sLastAccessedEntry) {
-      return sLastAccessedEntry;
+  static void PopulateTo(Entry& aEntry, const nsINode* aParent,
+                         uint32_t aIndex) {
+    if (aEntry.mChildren.Capacity() < aParent->GetChildCount()) {
+      aEntry.mChildren.SetCapacity(aParent->GetChildCount());
     }
-    Entry* entry = sCache.GetOrInsertNew(aParent, aParent->GetChildCount());
-    sLastAccessedParent = aParent;
-    sLastAccessedEntry = entry;
+    nsIContent* current =
+        aEntry.mChildren.IsEmpty()
+            ? aParent->GetFirstChild()
+            : aEntry.mChildren.LastElement()->GetNextSibling();
+    while (current) {
+      aEntry.mChildren.AppendElement(current);
+      if (aEntry.mChildren.Length() - 1 == aIndex) {
+        return;
+      }
+      current = current->GetNextSibling();
+    }
+  }
+
+  static Entry MakeEntry(const nsINode* aParent) {
+    Entry entry;
+    entry.mChildren.SetCapacity(aParent->GetChildCount());
     return entry;
   }
 
-  
-  
-  static void ForgetMemoizedEntry() {
-    sLastAccessedParent = nullptr;
-    sLastAccessedEntry = nullptr;
-  }
-
-  static nsClassHashtable<nsPtrHashKey<const nsINode>, Entry> sCache;
-  
-  
-  
-  
-  
-  
-  static const nsINode* sLastAccessedParent;
-  static Entry* sLastAccessedEntry;
+  static nsTHashMap<const nsINode*, Entry> sCache;
+  static const nsINode* sLastInvalidatedParent;
 };
 
-nsClassHashtable<nsPtrHashKey<const nsINode>, ChildIndexCache::Entry>
-    ChildIndexCache::sCache;
-const nsINode* ChildIndexCache::sLastAccessedParent = nullptr;
-ChildIndexCache::Entry* ChildIndexCache::sLastAccessedEntry = nullptr;
+nsTHashMap<const nsINode*, ChildIndexCache::Entry> ChildIndexCache::sCache;
+const nsINode* ChildIndexCache::sLastInvalidatedParent = nullptr;
 
 nsINode::~nsINode() {
   MOZ_ASSERT(!ChildIndexCache::Contains(this),
              "Node still in ChildIndexCache at destruction?");
-  MOZ_ASSERT(ChildIndexCache::LastAccessedParent() != this,
-             "ChildIndexCache still memoizing a node being destroyed?");
+  MOZ_ASSERT(ChildIndexCache::LastInvalidatedParent() != this,
+             "ChildIndexCache should have cleaned last invalidated parent");
   MOZ_ASSERT(!HasSlots(), "LastRelease was not called?");
   MOZ_ASSERT(mSubtreeRoot == this, "Didn't restore state properly?");
 }
@@ -2142,7 +2056,7 @@ void nsINode::InsertChildToChildList(nsIContent* aKid,
   MOZ_ASSERT(aNextSibling);
 
   RemoveFromCache(this);
-  ChildIndexCache::Invalidate(this, aNextSibling);
+  ChildIndexCache::Invalidate(this);
 
   nsIContent* previousSibling = aNextSibling->mPreviousOrLastSibling;
   aNextSibling->mPreviousOrLastSibling = aKid;
@@ -2164,7 +2078,7 @@ void nsINode::DisconnectChild(nsIContent* aKid) {
   MOZ_ASSERT(GetChildCount() > 0);
 
   RemoveFromCache(this);
-  ChildIndexCache::Invalidate(this, aKid);
+  ChildIndexCache::Invalidate(this);
 
   nsIContent* previousSibling = aKid->GetPreviousSibling();
   nsCOMPtr<nsIContent> ref = aKid;
