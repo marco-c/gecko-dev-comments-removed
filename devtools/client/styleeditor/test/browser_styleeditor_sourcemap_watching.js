@@ -26,7 +26,10 @@ add_task(async function () {
     "sourcemap-css",
     "sourcemaps.css",
   ]);
-  await copy(TESTCASE_URI_SCSS, ["sourcemap-sass", "sourcemaps.scss"]);
+  const SCSSFile = await copy(TESTCASE_URI_SCSS, [
+    "sourcemap-sass",
+    "sourcemaps.scss",
+  ]);
   await copy(TESTCASE_URI_MAP, ["sourcemap-css", "sourcemaps.css.map"]);
   await copy(TESTCASE_URI_REG_CSS, ["simple.css"]);
 
@@ -59,7 +62,7 @@ add_task(async function () {
 
   
   
-  await editSCSS(editor);
+  await editSCSS(SCSSFile, editor);
 
   
   
@@ -76,11 +79,11 @@ add_task(async function () {
   is(editor.sourceEditor.getText(), CSS_TEXT, "edits remain applied");
 });
 
-function editSCSS(editor) {
+function editSCSS(SCSSFile, editor) {
   return new Promise(resolve => {
     editor.sourceEditor.setText(CSS_TEXT);
 
-    editor.saveToFile(null, function (file) {
+    editor.saveToFile(SCSSFile, function (file) {
       ok(file, "Scss file should be saved");
       resolve();
     });
