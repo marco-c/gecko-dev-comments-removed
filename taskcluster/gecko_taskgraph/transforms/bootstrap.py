@@ -43,7 +43,17 @@ def bootstrap_tasks(config, tasks):
 
         head_repo = config.params["head_repository"]
         head_rev = config.params["head_rev"]
-
+        bootstrap_url = config.params.file_url(
+            "python/mozboot/bin/bootstrap.py", pretty=False
+        )
+        
+        
+        if config.params["repository_type"] == "git":
+            vcs = "git"
+            checkout_dir = "firefox"
+        else:
+            vcs = "git-cinnabar"
+            checkout_dir = "mozilla-unified"
         
         
         
@@ -61,11 +71,9 @@ def bootstrap_tasks(config, tasks):
                 
                 
                 "unset MOZ_AUTOMATION",
-                f"curl --retry 5 -L -f -O {head_repo}/raw-file/{head_rev}/python/mozboot/bin/bootstrap.py",
-                
-                
-                f"python3 bootstrap.py --vcs=git-cinnabar --no-interactive --application-choice {app}",
-                "cd mozilla-unified",
+                f"curl --retry 5 -L -f -O {bootstrap_url}",
+                f"python3 bootstrap.py --vcs={vcs} --no-interactive --application-choice {app}",
+                f"cd {checkout_dir}",
                 
                 "./mach configure --enable-bootstrap=no-update",
                 
