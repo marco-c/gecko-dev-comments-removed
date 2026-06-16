@@ -136,189 +136,188 @@ int32_t VideoCaptureModuleV4L2::StartCapture(
     }
   }
 
+  
+  
+  
+  
+  
   {
-  
-  
-  
-  
-  
-  RTC_CHECK_RUNS_SERIALIZED(&capture_checker_);
+    RTC_CHECK_RUNS_SERIALIZED(&capture_checker_);
 
-  
-  
-  configured_capability_ = capability;
-
-  MutexLock lock(&capture_lock_);
-  
-  char device[20];
-  snprintf(device, sizeof(device), "/dev/video%d", _deviceId);
-
-  if ((_deviceFd = open(device, O_RDWR | O_NONBLOCK, 0)) < 0) {
-    RTC_LOG(LS_INFO) << "error in opening " << device << " errono = " << errno;
-    return -1;
-  }
-
-  
-  
-  
-  unsigned int hdFmts[] = {
-      V4L2_PIX_FMT_MJPEG,  V4L2_PIX_FMT_YUV420, V4L2_PIX_FMT_YVU420,
-      V4L2_PIX_FMT_YUYV,   V4L2_PIX_FMT_UYVY,   V4L2_PIX_FMT_NV12,
-      V4L2_PIX_FMT_ABGR32, V4L2_PIX_FMT_ARGB32, V4L2_PIX_FMT_RGBA32,
-      V4L2_PIX_FMT_BGR32,  V4L2_PIX_FMT_RGB32,  V4L2_PIX_FMT_BGR24,
-      V4L2_PIX_FMT_RGB24,  V4L2_PIX_FMT_RGB565, V4L2_PIX_FMT_JPEG,
-  };
-  unsigned int sdFmts[] = {
-      V4L2_PIX_FMT_YUV420, V4L2_PIX_FMT_YVU420, V4L2_PIX_FMT_YUYV,
-      V4L2_PIX_FMT_UYVY,   V4L2_PIX_FMT_NV12,   V4L2_PIX_FMT_ABGR32,
-      V4L2_PIX_FMT_ARGB32, V4L2_PIX_FMT_RGBA32, V4L2_PIX_FMT_BGR32,
-      V4L2_PIX_FMT_RGB32,  V4L2_PIX_FMT_BGR24,  V4L2_PIX_FMT_RGB24,
-      V4L2_PIX_FMT_RGB565, V4L2_PIX_FMT_MJPEG,  V4L2_PIX_FMT_JPEG,
-  };
-  const bool isHd = capability.width > 640 || capability.height > 480;
-  unsigned int* fmts = isHd ? hdFmts : sdFmts;
-  static_assert(sizeof(hdFmts) == sizeof(sdFmts));
-  constexpr int nFormats = sizeof(hdFmts) / sizeof(unsigned int);
-
-  
-  struct v4l2_fmtdesc fmt;
-  int fmtsIdx = nFormats;
-  memset(&fmt, 0, sizeof(fmt));
-  fmt.index = 0;
-  fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-  RTC_LOG(LS_INFO) << "Video Capture enumerats supported image formats:";
-  while (ioctl(_deviceFd, VIDIOC_ENUM_FMT, &fmt) == 0) {
-    RTC_LOG(LS_INFO) << "  { pixelformat = " << GetFourccName(fmt.pixelformat)
-                     << ", description = '" << fmt.description << "' }";
     
-    for (int i = 0; i < nFormats; i++) {
-      if (fmt.pixelformat == fmts[i] && i < fmtsIdx)
-        fmtsIdx = i;
+    
+    configured_capability_ = capability;
+
+    MutexLock lock(&capture_lock_);
+    
+    char device[20];
+    snprintf(device, sizeof(device), "/dev/video%d", _deviceId);
+
+    if ((_deviceFd = open(device, O_RDWR | O_NONBLOCK, 0)) < 0) {
+      RTC_LOG(LS_INFO) << "error in opening " << device
+                       << " errono = " << errno;
+      return -1;
     }
+
     
-    fmt.index++;
-  }
-
-  if (fmtsIdx == nFormats) {
-    RTC_LOG(LS_INFO) << "no supporting video formats found";
-    return -1;
-  } else {
-    RTC_LOG(LS_INFO) << "We prefer format " << GetFourccName(fmts[fmtsIdx]);
-  }
-
-  struct v4l2_format video_fmt;
-  memset(&video_fmt, 0, sizeof(struct v4l2_format));
-  video_fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-  video_fmt.fmt.pix.sizeimage = 0;
-  video_fmt.fmt.pix.width = capability.width;
-  video_fmt.fmt.pix.height = capability.height;
-  video_fmt.fmt.pix.pixelformat = fmts[fmtsIdx];
-
-  if (video_fmt.fmt.pix.pixelformat == V4L2_PIX_FMT_YUYV)
-    configured_capability_.videoType = VideoType::kYUY2;
-  else if (video_fmt.fmt.pix.pixelformat == V4L2_PIX_FMT_YUV420)
-    configured_capability_.videoType = VideoType::kI420;
-  else if (video_fmt.fmt.pix.pixelformat == V4L2_PIX_FMT_YVU420)
-    configured_capability_.videoType = VideoType::kYV12;
-  else if (video_fmt.fmt.pix.pixelformat == V4L2_PIX_FMT_UYVY)
-    configured_capability_.videoType = VideoType::kUYVY;
-  else if (video_fmt.fmt.pix.pixelformat == V4L2_PIX_FMT_NV12)
-    configured_capability_.videoType = VideoType::kNV12;
-  else if (video_fmt.fmt.pix.pixelformat == V4L2_PIX_FMT_BGR24)
-    configured_capability_.videoType = VideoType::kRGB24;
-  else if (video_fmt.fmt.pix.pixelformat == V4L2_PIX_FMT_RGB24)
-    configured_capability_.videoType = VideoType::kBGR24;
-  else if (video_fmt.fmt.pix.pixelformat == V4L2_PIX_FMT_RGB565)
-    configured_capability_.videoType = VideoType::kRGB565;
-  else if (video_fmt.fmt.pix.pixelformat == V4L2_PIX_FMT_ABGR32 ||
-           video_fmt.fmt.pix.pixelformat == V4L2_PIX_FMT_BGR32)
-    configured_capability_.videoType = VideoType::kARGB;
-  else if (video_fmt.fmt.pix.pixelformat == V4L2_PIX_FMT_ARGB32 ||
-           video_fmt.fmt.pix.pixelformat == V4L2_PIX_FMT_RGB32)
-    configured_capability_.videoType = VideoType::kBGRA;
-  else if (video_fmt.fmt.pix.pixelformat == V4L2_PIX_FMT_RGBA32)
-    configured_capability_.videoType = VideoType::kABGR;
-  else if (video_fmt.fmt.pix.pixelformat == V4L2_PIX_FMT_MJPEG ||
-           video_fmt.fmt.pix.pixelformat == V4L2_PIX_FMT_JPEG)
-    configured_capability_.videoType = VideoType::kMJPEG;
-  else
-    RTC_DCHECK_NOTREACHED();
-
-  
-  if (ioctl(_deviceFd, VIDIOC_S_FMT, &video_fmt) < 0) {
-    RTC_LOG(LS_INFO) << "error in VIDIOC_S_FMT, errno = " << errno;
-    return -1;
-  }
-
-  
-  configured_capability_.width = video_fmt.fmt.pix.width;
-  configured_capability_.height = video_fmt.fmt.pix.height;
-
-  
-  bool driver_framerate_support = true;
-  struct v4l2_streamparm streamparms;
-  memset(&streamparms, 0, sizeof(streamparms));
-  streamparms.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-  if (ioctl(_deviceFd, VIDIOC_G_PARM, &streamparms) < 0) {
-    RTC_LOG(LS_INFO) << "error in VIDIOC_G_PARM errno = " << errno;
-    driver_framerate_support = false;
     
-  } else {
     
-    if (streamparms.parm.capture.capability & V4L2_CAP_TIMEPERFRAME) {
+    unsigned int hdFmts[] = {
+        V4L2_PIX_FMT_MJPEG,  V4L2_PIX_FMT_YUV420, V4L2_PIX_FMT_YVU420,
+        V4L2_PIX_FMT_YUYV,   V4L2_PIX_FMT_UYVY,   V4L2_PIX_FMT_NV12,
+        V4L2_PIX_FMT_ABGR32, V4L2_PIX_FMT_ARGB32, V4L2_PIX_FMT_RGBA32,
+        V4L2_PIX_FMT_BGR32,  V4L2_PIX_FMT_RGB32,  V4L2_PIX_FMT_BGR24,
+        V4L2_PIX_FMT_RGB24,  V4L2_PIX_FMT_RGB565, V4L2_PIX_FMT_JPEG,
+    };
+    unsigned int sdFmts[] = {
+        V4L2_PIX_FMT_YUV420, V4L2_PIX_FMT_YVU420, V4L2_PIX_FMT_YUYV,
+        V4L2_PIX_FMT_UYVY,   V4L2_PIX_FMT_NV12,   V4L2_PIX_FMT_ABGR32,
+        V4L2_PIX_FMT_ARGB32, V4L2_PIX_FMT_RGBA32, V4L2_PIX_FMT_BGR32,
+        V4L2_PIX_FMT_RGB32,  V4L2_PIX_FMT_BGR24,  V4L2_PIX_FMT_RGB24,
+        V4L2_PIX_FMT_RGB565, V4L2_PIX_FMT_MJPEG,  V4L2_PIX_FMT_JPEG,
+    };
+    const bool isHd = capability.width > 640 || capability.height > 480;
+    unsigned int* fmts = isHd ? hdFmts : sdFmts;
+    static_assert(sizeof(hdFmts) == sizeof(sdFmts));
+    constexpr int nFormats = sizeof(hdFmts) / sizeof(unsigned int);
+
+    
+    struct v4l2_fmtdesc fmt;
+    int fmtsIdx = nFormats;
+    memset(&fmt, 0, sizeof(fmt));
+    fmt.index = 0;
+    fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    RTC_LOG(LS_INFO) << "Video Capture enumerats supported image formats:";
+    while (ioctl(_deviceFd, VIDIOC_ENUM_FMT, &fmt) == 0) {
+      RTC_LOG(LS_INFO) << "  { pixelformat = " << GetFourccName(fmt.pixelformat)
+                       << ", description = '" << fmt.description << "' }";
       
-      memset(&streamparms, 0, sizeof(streamparms));
-      streamparms.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-      streamparms.parm.capture.timeperframe.numerator = 1;
-      streamparms.parm.capture.timeperframe.denominator = capability.maxFPS;
-      if (ioctl(_deviceFd, VIDIOC_S_PARM, &streamparms) < 0) {
-        RTC_LOG(LS_INFO) << "Failed to set the framerate. errno=" << errno;
-        driver_framerate_support = false;
+      for (int i = 0; i < nFormats; i++) {
+        if (fmt.pixelformat == fmts[i] && i < fmtsIdx)
+          fmtsIdx = i;
+      }
+      
+      fmt.index++;
+    }
+
+    if (fmtsIdx == nFormats) {
+      RTC_LOG(LS_INFO) << "no supporting video formats found";
+      return -1;
+    } else {
+      RTC_LOG(LS_INFO) << "We prefer format " << GetFourccName(fmts[fmtsIdx]);
+    }
+
+    struct v4l2_format video_fmt;
+    memset(&video_fmt, 0, sizeof(struct v4l2_format));
+    video_fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    video_fmt.fmt.pix.sizeimage = 0;
+    video_fmt.fmt.pix.width = capability.width;
+    video_fmt.fmt.pix.height = capability.height;
+    video_fmt.fmt.pix.pixelformat = fmts[fmtsIdx];
+
+    if (video_fmt.fmt.pix.pixelformat == V4L2_PIX_FMT_YUYV)
+      configured_capability_.videoType = VideoType::kYUY2;
+    else if (video_fmt.fmt.pix.pixelformat == V4L2_PIX_FMT_YUV420)
+      configured_capability_.videoType = VideoType::kI420;
+    else if (video_fmt.fmt.pix.pixelformat == V4L2_PIX_FMT_YVU420)
+      configured_capability_.videoType = VideoType::kYV12;
+    else if (video_fmt.fmt.pix.pixelformat == V4L2_PIX_FMT_UYVY)
+      configured_capability_.videoType = VideoType::kUYVY;
+    else if (video_fmt.fmt.pix.pixelformat == V4L2_PIX_FMT_NV12)
+      configured_capability_.videoType = VideoType::kNV12;
+    else if (video_fmt.fmt.pix.pixelformat == V4L2_PIX_FMT_BGR24)
+      configured_capability_.videoType = VideoType::kRGB24;
+    else if (video_fmt.fmt.pix.pixelformat == V4L2_PIX_FMT_RGB24)
+      configured_capability_.videoType = VideoType::kBGR24;
+    else if (video_fmt.fmt.pix.pixelformat == V4L2_PIX_FMT_RGB565)
+      configured_capability_.videoType = VideoType::kRGB565;
+    else if (video_fmt.fmt.pix.pixelformat == V4L2_PIX_FMT_ABGR32 ||
+             video_fmt.fmt.pix.pixelformat == V4L2_PIX_FMT_BGR32)
+      configured_capability_.videoType = VideoType::kARGB;
+    else if (video_fmt.fmt.pix.pixelformat == V4L2_PIX_FMT_ARGB32 ||
+             video_fmt.fmt.pix.pixelformat == V4L2_PIX_FMT_RGB32)
+      configured_capability_.videoType = VideoType::kBGRA;
+    else if (video_fmt.fmt.pix.pixelformat == V4L2_PIX_FMT_RGBA32)
+      configured_capability_.videoType = VideoType::kABGR;
+    else if (video_fmt.fmt.pix.pixelformat == V4L2_PIX_FMT_MJPEG ||
+             video_fmt.fmt.pix.pixelformat == V4L2_PIX_FMT_JPEG)
+      configured_capability_.videoType = VideoType::kMJPEG;
+    else
+      RTC_DCHECK_NOTREACHED();
+
+    
+    if (ioctl(_deviceFd, VIDIOC_S_FMT, &video_fmt) < 0) {
+      RTC_LOG(LS_INFO) << "error in VIDIOC_S_FMT, errno = " << errno;
+      return -1;
+    }
+
+    
+    configured_capability_.width = video_fmt.fmt.pix.width;
+    configured_capability_.height = video_fmt.fmt.pix.height;
+
+    
+    bool driver_framerate_support = true;
+    struct v4l2_streamparm streamparms;
+    memset(&streamparms, 0, sizeof(streamparms));
+    streamparms.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    if (ioctl(_deviceFd, VIDIOC_G_PARM, &streamparms) < 0) {
+      RTC_LOG(LS_INFO) << "error in VIDIOC_G_PARM errno = " << errno;
+      driver_framerate_support = false;
+      
+    } else {
+      
+      if (streamparms.parm.capture.capability & V4L2_CAP_TIMEPERFRAME) {
+        
+        memset(&streamparms, 0, sizeof(streamparms));
+        streamparms.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+        streamparms.parm.capture.timeperframe.numerator = 1;
+        streamparms.parm.capture.timeperframe.denominator = capability.maxFPS;
+        if (ioctl(_deviceFd, VIDIOC_S_PARM, &streamparms) < 0) {
+          RTC_LOG(LS_INFO) << "Failed to set the framerate. errno=" << errno;
+          driver_framerate_support = false;
+        }
       }
     }
-  }
-  
-  
-  if (!driver_framerate_support) {
-    if (configured_capability_.width >= 800 &&
-        configured_capability_.videoType != VideoType::kMJPEG) {
-      configured_capability_.maxFPS = 15;
-    } else {
-      configured_capability_.maxFPS = 30;
+    
+    
+    if (!driver_framerate_support) {
+      if (configured_capability_.width >= 800 &&
+          configured_capability_.videoType != VideoType::kMJPEG) {
+        configured_capability_.maxFPS = 15;
+      } else {
+        configured_capability_.maxFPS = 30;
+      }
     }
-  }
 
-  if (!AllocateVideoBuffers()) {
-    RTC_LOG(LS_INFO) << "failed to allocate video capture buffers";
-    return -1;
+    if (!AllocateVideoBuffers()) {
+      RTC_LOG(LS_INFO) << "failed to allocate video capture buffers";
+      return -1;
+    }
+
+    
+    enum v4l2_buf_type type;
+    type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    if (ioctl(_deviceFd, VIDIOC_STREAMON, &type) == -1) {
+      RTC_LOG(LS_INFO) << "Failed to turn on stream";
+      return -1;
+    }
+
+    _requestedCapability = capability;
+    _captureStarted = true;
+    _streaming = true;
+    quit_ = false;
   }
+  
 
   
-  enum v4l2_buf_type type;
-  type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-  if (ioctl(_deviceFd, VIDIOC_STREAMON, &type) == -1) {
-    RTC_LOG(LS_INFO) << "Failed to turn on stream";
-    return -1;
-  }
-
-  _requestedCapability = capability;
-  _captureStarted = true;
-  _streaming = true;
-
-  
-  if (!_captureThread.empty()) {
-    return 0;
-  }
-
-  quit_ = false;
-  }
-
+  RTC_DCHECK(_captureThread.empty());
   _captureThread = PlatformThread::SpawnJoinable(
       [self = scoped_refptr(this)] {
         while (self->CaptureProcess()) {
         }
       },
       "CaptureThread", ThreadAttributes().SetPriority(ThreadPriority::kHigh));
+
   return 0;
 }
 
