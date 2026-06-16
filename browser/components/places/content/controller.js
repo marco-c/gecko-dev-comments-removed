@@ -1428,13 +1428,21 @@ PlacesController.prototype = {
     let documentUrl = document.documentURI.toLowerCase();
     if (documentUrl.endsWith("browser.xhtml")) {
       
+      
       window.SidebarController._show("viewBookmarksSidebar").then(() => {
-        let theSidebar = document.getElementById("sidebar");
-        theSidebar.contentDocument
-          .getElementById("bookmarks-view")
-          .selectItems([aBookmarkGuid]);
-      });
+        let sidebar = document.getElementById("sidebar");
+        let updatedPanel =
+          sidebar.contentDocument.querySelector("sidebar-bookmarks");
+        if (updatedPanel) {
+          updatedPanel.showInFolder(aBookmarkGuid).catch(console.error);
+        } else {
+          sidebar.contentDocument
+            .getElementById("bookmarks-view")
+            .selectItems([aBookmarkGuid]);
+        }
+      }, console.error);
     } else if (documentUrl.includes("sidebar")) {
+      
       
       let searchBox = document.getElementById("search-box");
       searchBox.clear();
