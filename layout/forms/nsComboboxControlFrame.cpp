@@ -126,6 +126,7 @@ nscoord nsComboboxControlFrame::GetLongestOptionISize(
       nsCaseTransformTextRunFactory::TransformString(
           label, transformedLabel, textTransform,
           textStyle->TextSecurityMaskChar(),
+           false,
            false, language, charsToMergeArray,
           deletedCharsArray);
       stringToUse = &transformedLabel;

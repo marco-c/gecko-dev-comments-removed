@@ -3968,10 +3968,14 @@ bool gfxFont::InitFakeSmallCapsRun(
           const auto globalTransform = StyleTextTransform::UPPERCASE;
           
           const char16_t maskChar = 0;
+          bool useCapitalEsZet =
+              StaticPrefs::
+                  layout_css_text_transform_uppercase_eszett_enabled() &&
+              HasCharacter(0x1e9e);
           bool mergeNeeded = nsCaseTransformTextRunFactory::TransformString(
               origString, convertedString, Some(globalTransform), maskChar,
-               false, aLanguage, charsToMergeArray,
-              deletedCharsArray);
+               false, useCapitalEsZet, aLanguage,
+              charsToMergeArray, deletedCharsArray);
 
           
           
