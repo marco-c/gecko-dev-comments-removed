@@ -881,7 +881,8 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
   
   
   
-  virtual void SetInitialPrincipal(nsIPrincipal* aNewWindowPrincipal) = 0;
+  MOZ_CAN_RUN_SCRIPT virtual void SetInitialPrincipal(
+      nsIPrincipal* aNewWindowPrincipal) = 0;
 
   
   
