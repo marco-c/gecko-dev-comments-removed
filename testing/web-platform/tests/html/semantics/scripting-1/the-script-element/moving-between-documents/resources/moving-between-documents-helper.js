@@ -10,13 +10,13 @@ function createDocument(documentType, result, inlineOrExternal, type, hasBlockin
       "&type=" + type +
       "&hasBlockingStylesheet=" + hasBlockingStylesheet +
       "&cache=" + Math.random();
-    
-    
-    
-    
-    document.body.appendChild(iframe);
 
-    window.addEventListener('message', (event) => {
+    const onMessage = (event) => {
+      
+      if (event.source !== iframe.contentWindow || event.data !== "fox") {
+        return;
+      }
+      window.removeEventListener("message", onMessage);
       if (documentType === "iframe") {
         resolve([iframe.contentWindow, iframe.contentDocument]);
       } else if (documentType === "createHTMLDocument") {
@@ -26,7 +26,14 @@ function createDocument(documentType, result, inlineOrExternal, type, hasBlockin
       } else {
         reject(new Error("Invalid document type: " + documentType));
       }
-    }, {once: true});
+    };
+    window.addEventListener("message", onMessage);
+
+    
+    
+    
+    
+    document.body.appendChild(iframe);
   });
 }
 
@@ -104,13 +111,15 @@ async function runTest(timing, destType, result, inlineOrExternal, type) {
   const hasBlockingStylesheet =
       timing === "after-prepare" || timing === "move-back";
 
-  const [sourceWindow, sourceDocument] = await createDocument(
-      "iframe", result, inlineOrExternal, type, hasBlockingStylesheet);
-
+  
+  
   
   
   const [destWindow, destDocument] = await createDocument(
       destType, null, null, null, hasBlockingStylesheet);
+
+  const [sourceWindow, sourceDocument] = await createDocument(
+      "iframe", result, inlineOrExternal, type, hasBlockingStylesheet);
 
   const scriptOnLoad =
     tScriptLoadEvent.unreached_func("Script load event fired unexpectedly");
@@ -119,7 +128,7 @@ async function runTest(timing, destType, result, inlineOrExternal, type) {
     
     event.stopPropagation();
 
-    tScriptErrorEvent.unreached_func("Script error evennt fired unexpectedly")();
+    tScriptErrorEvent.unreached_func("Script error event fired unexpectedly")();
   };
 
   sourceWindow.didExecute = false;
