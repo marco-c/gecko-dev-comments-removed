@@ -12,9 +12,11 @@
 #define API_VIDEO_CODECS_VIDEO_DECODER_FACTORY_H_
 
 #include <memory>
+#include <optional>
 #include <vector>
 
 #include "api/environment/environment.h"
+#include "api/video/resolution.h"
 #include "api/video_codecs/sdp_video_format.h"
 #include "api/video_codecs/video_decoder.h"
 #include "rtc_base/system/rtc_export.h"
@@ -38,16 +40,29 @@ class RTC_EXPORT VideoDecoderFactory {
 
   
   
-  
-  
-  
-  
-  
-  
-  
-  
   virtual CodecSupport QueryCodecSupport(const SdpVideoFormat& format,
-                                         bool reference_scaling) const;
+                                         bool reference_scaling) const {
+    return QueryCodecSupport(format, reference_scaling, std::nullopt);
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  virtual CodecSupport QueryCodecSupport(
+      const SdpVideoFormat& format,
+      bool reference_scaling,
+      std::optional<Resolution> resolution) const;
 
   
   virtual std::unique_ptr<VideoDecoder> Create(

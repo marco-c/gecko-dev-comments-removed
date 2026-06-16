@@ -204,6 +204,7 @@ std::unique_ptr<VideoCodecStats> RunEncodeDecodeTest(
       CreateEncoderFactory(encoder_impl);
   if (!encoder_factory
            ->QueryCodecSupport(sdp_video_format,
+                               std::nullopt,
                                std::nullopt)
            .is_supported) {
     RTC_LOG(LS_WARNING) << "No " << encoder_impl << " encoder for video format "
@@ -215,7 +216,8 @@ std::unique_ptr<VideoCodecStats> RunEncodeDecodeTest(
       CreateDecoderFactory(decoder_impl);
   if (!decoder_factory
            ->QueryCodecSupport(sdp_video_format,
-                               false)
+                               false,
+                               std::nullopt)
            .is_supported) {
     RTC_LOG(LS_WARNING) << "No " << decoder_impl << " decoder for video format "
                         << sdp_video_format.ToString()
@@ -225,7 +227,8 @@ std::unique_ptr<VideoCodecStats> RunEncodeDecodeTest(
     decoder_factory = CreateDecoderFactory("builtin");
     if (!decoder_factory
              ->QueryCodecSupport(sdp_video_format,
-                                 false)
+                                 false,
+                                 std::nullopt)
              .is_supported) {
       RTC_LOG(LS_WARNING) << "No " << decoder_impl
                           << " decoder for video format "
@@ -275,6 +278,7 @@ std::unique_ptr<VideoCodecStats> RunEncodeTest(
       CreateEncoderFactory(encoder_impl);
   if (!encoder_factory
            ->QueryCodecSupport(sdp_video_format,
+                               std::nullopt,
                                std::nullopt)
            .is_supported) {
     RTC_LOG(LS_WARNING) << "No encoder for video format "

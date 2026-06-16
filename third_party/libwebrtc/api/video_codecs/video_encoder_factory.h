@@ -20,6 +20,7 @@
 #include "api/ref_counted_base.h"
 #include "api/units/data_rate.h"
 #include "api/video/render_resolution.h"
+#include "api/video/resolution.h"
 #include "api/video_codecs/sdp_video_format.h"
 #include "api/video_codecs/video_encoder.h"
 #include "rtc_base/system/rtc_export.h"
@@ -83,6 +84,17 @@ class RTC_EXPORT VideoEncoderFactory {
 
   
   
+  virtual CodecSupport QueryCodecSupport(
+      const SdpVideoFormat& format,
+      std::optional<std::string> scalability_mode) const {
+    return QueryCodecSupport(format, scalability_mode, std::nullopt);
+  }
+
+  
+  
+  
+  
+  
   
   
   
@@ -90,7 +102,8 @@ class RTC_EXPORT VideoEncoderFactory {
   
   virtual CodecSupport QueryCodecSupport(
       const SdpVideoFormat& format,
-      std::optional<std::string> scalability_mode) const;
+      std::optional<std::string> scalability_mode,
+      std::optional<Resolution> resolution) const;
 
   
   virtual std::unique_ptr<VideoEncoder> Create(

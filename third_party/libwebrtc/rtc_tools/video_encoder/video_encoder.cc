@@ -392,7 +392,8 @@ class TestVideoEncoderFactoryWrapper final {
     
     VideoEncoderFactory::CodecSupport support =
         builtin_video_encoder_factory_->QueryCodecSupport(
-            SdpVideoFormat(video_codec_string), scalability_mode_string);
+            SdpVideoFormat(video_codec_string), scalability_mode_string,
+            std::nullopt);
     return support.is_supported;
   }
 
