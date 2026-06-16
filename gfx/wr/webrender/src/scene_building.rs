@@ -86,6 +86,7 @@ use crate::render_backend::SceneView;
 use crate::resource_cache::ImageRequest;
 use crate::scene::{BuiltScene, Scene, ScenePipeline, SceneStats, StackingContextHelpers};
 use crate::scene_builder_thread::Interners;
+use crate::space::SpaceSnapper;
 use crate::spatial_node::{
     ReferenceFrameInfo, StickyFrameInfo, ScrollFrameKind, SpatialNodeType
 };
@@ -1126,11 +1127,20 @@ impl<'a> SceneBuilder<'a> {
             },
         };
 
-        
-        
-        
-        
-        let origin = info.origin;
+        let snap_origin = match info.reference_frame.kind {
+            ReferenceFrameKind::Transform { should_snap, .. } => should_snap,
+            ReferenceFrameKind::Perspective { .. } => false,
+        };
+
+        let origin = if snap_origin {
+            
+            
+            
+            
+            self.snap_point_to_device(info.origin, parent_space)
+        } else {
+            info.origin
+        };
 
         self.push_reference_frame(
             info.reference_frame.id,
@@ -1204,7 +1214,13 @@ impl<'a> SceneBuilder<'a> {
         
         
         
-        let origin = bounds.min;
+        
+        
+        
+        
+        
+        
+        let snapped_origin = self.snap_point_to_device(bounds.min, spatial_node_index);
         let iframe_size = bounds.size();
 
         let spatial_node_index = self.push_reference_frame(
@@ -1218,7 +1234,7 @@ impl<'a> SceneBuilder<'a> {
                 should_snap: true,
                 paired_with_perspective: false,
             },
-            origin.to_vector(),
+            snapped_origin.to_vector(),
             true,
         );
 
@@ -1284,7 +1300,6 @@ impl<'a> SceneBuilder<'a> {
         
         
         
-        
         let clip_rect = common.clip_rect;
         let prim_rect = bounds.unwrap_or(clip_rect);
         let unsnapped_rect = prim_rect;
@@ -1319,6 +1334,27 @@ impl<'a> SceneBuilder<'a> {
             Some(bounds),
         )
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn snap_point_to_device(
+        &self,
+        point: LayoutPoint,
+        target_spatial_node: SpatialNodeIndex,
+    ) -> LayoutPoint {
+        let root = self.spatial_tree.root_reference_frame_index();
+        let mut snapper = SpaceSnapper::new(root, RasterPixelScale::new(1.0));
+        snapper.set_target_spatial_node(target_spatial_node, self.spatial_tree);
+        snapper.snap_point(&point)
+    }
+
 
     fn build_item<'b>(
         &'b mut self,

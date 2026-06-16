@@ -12,7 +12,7 @@ use crate::spatial_tree::CoordinateSystemId;
 use euclid::{Vector2D, SideOffsets2D};
 use crate::scene::SceneProperties;
 use crate::util::{LayoutFastTransform, MatrixHelpers, ScaleOffset, TransformedRectKind};
-use crate::util::VectorHelpers;
+use crate::util::{PointHelpers, VectorHelpers};
 
 
 
@@ -54,6 +54,10 @@ pub struct SpatialNodeInfo<'a> {
 
     
     pub parent: Option<SpatialNodeIndex>,
+
+    
+    
+    pub snapping_transform: Option<ScaleOffset>,
 }
 
 
@@ -62,6 +66,10 @@ pub struct SpatialNodeInfo<'a> {
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 #[derive(PartialEq)]
 pub struct SceneSpatialNode {
+    
+    
+    pub snapping_transform: Option<ScaleOffset>,
+
     
     pub parent: Option<SpatialNodeIndex>,
 
@@ -159,6 +167,7 @@ impl SceneSpatialNode {
                 pipeline_id,
                 node_type,
             },
+            snapping_transform: None,
             is_root_coord_system,
         }
     }
@@ -175,6 +184,10 @@ pub struct SpatialNode {
 
     
     pub content_transform: ScaleOffset,
+
+    
+    
+    pub snapping_transform: Option<ScaleOffset>,
 
     
     pub coordinate_system_id: CoordinateSystemId,
@@ -219,17 +232,11 @@ fn snap_offset<OffsetUnits, ScaleUnits>(
     offset: Vector2D<f32, OffsetUnits>,
     scale: Vector2D<f32, ScaleUnits>,
 ) -> Vector2D<f32, OffsetUnits> {
-    
-    
-    
-    
-    
-    
-    let snapped_x = (offset.x * scale.x).round();
-    let snapped_y = (offset.y * scale.y).round();
+    let world_offset = WorldPoint::new(offset.x * scale.x, offset.y * scale.y);
+    let snapped_world_offset = world_offset.snap();
     Vector2D::new(
-        if scale.x != 0.0 { snapped_x / scale.x } else { offset.x },
-        if scale.y != 0.0 { snapped_y / scale.y } else { offset.y },
+        if scale.x != 0.0 { snapped_world_offset.x / scale.x } else { offset.x },
+        if scale.y != 0.0 { snapped_world_offset.y / scale.y } else { offset.y },
     )
 }
 
@@ -367,16 +374,21 @@ impl SpatialNode {
                 
                 
                 
-                let parent_origin = match info.source_transform {
-                    PropertyBinding::Value(ref value)
-                        if ScaleOffset::from_transform(value).is_none() =>
-                    {
+                
+                
+                
+                
+                
+                let parent_origin = match self.snapping_transform {
+                    Some(..) => {
+                        info.origin_in_parent_reference_frame
+                    }
+                    None => {
                         snap_offset(
                             info.origin_in_parent_reference_frame,
                             state.coordinate_system_relative_scale_offset.scale,
                         )
                     }
-                    _ => info.origin_in_parent_reference_frame,
                 };
 
                 let resolved_transform =
@@ -407,19 +419,14 @@ impl SpatialNode {
                             
                             
                             
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            cs_scale_offset = scale_offset.then(&state.coordinate_system_relative_scale_offset);
+                            let mut maybe_snapped = scale_offset.clone();
                             if let ReferenceFrameKind::Transform { should_snap: true, .. } = info.kind {
-                                cs_scale_offset.offset = cs_scale_offset.offset.round();
+                                maybe_snapped.offset = snap_offset(
+                                    scale_offset.offset,
+                                    state.coordinate_system_relative_scale_offset.scale,
+                                );
                             }
+                            cs_scale_offset = maybe_snapped.then(&state.coordinate_system_relative_scale_offset);
                         }
                         None => reset_cs_id = true,
                     }

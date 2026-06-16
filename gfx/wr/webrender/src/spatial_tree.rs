@@ -133,6 +133,21 @@ impl ops::Not for VisibleFace {
 pub trait SpatialNodeContainer {
     
     fn get_node_info(&self, index: SpatialNodeIndex) -> SpatialNodeInfo;
+
+    fn get_snapping_info(
+        &self,
+        parent_index: Option<SpatialNodeIndex>
+    ) -> Option<ScaleOffset> {
+        match parent_index {
+            Some(parent_index) => {
+                let node_info = self.get_node_info(parent_index);
+                node_info.snapping_transform
+            }
+            None => {
+                Some(ScaleOffset::identity())
+            }
+        }
+    }
 }
 
 
@@ -161,6 +176,7 @@ impl SpatialNodeContainer for SceneSpatialTree {
         SpatialNodeInfo {
             parent: node.parent,
             node_type: &node.descriptor.node_type,
+            snapping_transform: node.snapping_transform,
         }
     }
 }
@@ -347,8 +363,15 @@ impl SceneSpatialTree {
 
     fn add_spatial_node(
         &mut self,
-        node: SceneSpatialNode,
+        mut node: SceneSpatialNode,
     ) -> SpatialNodeIndex {
+        let parent_info = self.get_snapping_info(node.parent);
+
+        node.snapping_transform = calculate_snapping_transform(
+            parent_info,
+            &node.descriptor.node_type,
+        );
+
         let descriptor = node.descriptor.clone();
         let parent = node.parent;
 
@@ -639,6 +662,7 @@ impl SpatialNodeContainer for SpatialTree {
         SpatialNodeInfo {
             parent: node.parent,
             node_type: &node.node_type,
+            snapping_transform: node.snapping_transform,
         }
     }
 }
@@ -719,6 +743,7 @@ impl SpatialTree {
             self.spatial_nodes.push(SpatialNode {
                 viewport_transform: ScaleOffset::identity(),
                 content_transform: ScaleOffset::identity(),
+                snapping_transform: None,
                 coordinate_system_id: CoordinateSystemId(0),
                 transform_kind: TransformedRectKind::AxisAligned,
                 parent,
@@ -1010,7 +1035,15 @@ impl SpatialTree {
         node_index: SpatialNodeIndex,
         scene_properties: &SceneProperties,
     ) {
+        let parent_index = self.get_spatial_node(node_index).parent;
+        let parent_info = self.get_snapping_info(parent_index);
+
         let node = &mut self.spatial_nodes[node_index.0 as usize];
+
+        node.snapping_transform = calculate_snapping_transform(
+            parent_info,
+            &node.node_type,
+        );
 
         node.update(
             &self.update_state_stack,
@@ -1077,6 +1110,7 @@ impl SpatialTree {
         pt.add_item(format!("index: {:?}", index));
         pt.add_item(format!("content_transform: {:?}", node.content_transform));
         pt.add_item(format!("viewport_transform: {:?}", node.viewport_transform));
+        pt.add_item(format!("snapping_transform: {:?}", node.snapping_transform));
         pt.add_item(format!("coordinate_system_id: {:?}", node.coordinate_system_id));
 
         for child_index in &node.children {
@@ -1151,6 +1185,49 @@ impl PrintableTree for SpatialTree {
             self.print_node(self.root_reference_frame_index(), pt);
         }
     }
+}
+
+fn calculate_snapping_transform(
+    parent_scale_offset: Option<ScaleOffset>,
+    node_type: &SpatialNodeType,
+) -> Option<ScaleOffset> {
+    
+    
+    
+    
+    let parent_scale_offset = match parent_scale_offset {
+        Some(transform) => transform,
+        None => return None,
+    };
+
+    let scale_offset = match node_type {
+        SpatialNodeType::ReferenceFrame(ref info) => {
+            let origin_offset = info.origin_in_parent_reference_frame;
+
+            match info.source_transform {
+                PropertyBinding::Value(ref value) => {
+                    
+                    
+                    match ScaleOffset::from_transform(value) {
+                        Some(scale_offset) => {
+                            scale_offset.then(&ScaleOffset::from_offset(origin_offset.to_untyped()))
+                        }
+                        None => return None,
+                    }
+                }
+
+                
+                
+                
+                PropertyBinding::Binding(..) => {
+                    ScaleOffset::from_offset(origin_offset.to_untyped())
+                }
+            }
+        }
+        _ => ScaleOffset::identity(),
+    };
+
+    Some(scale_offset.then(&parent_scale_offset))
 }
 
 #[cfg(test)]

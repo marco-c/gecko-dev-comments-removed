@@ -442,11 +442,9 @@ fn prepare_interned_prim_for_render(
                 BoxShadowClipMode::Inset => prim_instance.unsnapped_prim_rect,
             };
             let element_rect = {
-                
-                
                 let mut snapper = SpaceSnapper::new(
-                    &frame_state.surfaces[pic_context.surface_index.0],
-                    frame_context.spatial_tree,
+                    frame_context.spatial_tree.root_reference_frame_index(),
+                    RasterPixelScale::new(1.0),
                 );
                 snapper.set_target_spatial_node(prim_spatial_node_index, frame_context.spatial_tree);
                 snapper.snap_rect(&unsnapped_element_rect)

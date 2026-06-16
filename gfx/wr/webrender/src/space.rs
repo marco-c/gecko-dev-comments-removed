@@ -9,11 +9,10 @@ use std::fmt;
 
 use euclid::{Transform3D, Box2D, Point2D, Vector2D};
 
-use api::units::DeviceRect;
-use crate::spatial_tree::{CoordinateSystemId, SpatialTree, CoordinateSpaceMapping, SpatialNodeIndex, VisibleFace};
-use crate::surface::SurfaceInfo;
+use api::units::*;
+use crate::spatial_tree::{SpatialTree, CoordinateSpaceMapping, SpatialNodeIndex, VisibleFace, SpatialNodeContainer};
 use crate::util::project_rect;
-use crate::util::{MatrixHelpers, RectHelpers, ScaleOffset};
+use crate::util::{MatrixHelpers, ScaleOffset, RectHelpers, PointHelpers};
 
 
 #[derive(Debug, Clone)]
@@ -187,121 +186,53 @@ impl<F, T> SpaceMapper<F, T> where F: fmt::Debug {
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #[derive(Clone, Debug)]
 pub struct SpaceSnapper {
-    
-    enabled: bool,
-    
-    raster_content_inverse: ScaleOffset,
-    
-    
-    
-    raster_coord_system_id: CoordinateSystemId,
-    
+    ref_spatial_node_index: SpatialNodeIndex,
     current_target_spatial_node_index: SpatialNodeIndex,
-    
-    
     snapping_transform: Option<ScaleOffset>,
+    raster_pixel_scale: RasterPixelScale,
 }
 
 impl SpaceSnapper {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     pub fn new(
-        surface: &SurfaceInfo,
-        spatial_tree: &SpatialTree,
+        ref_spatial_node_index: SpatialNodeIndex,
+        raster_pixel_scale: RasterPixelScale,
     ) -> Self {
-        let raster_spatial_node_index = surface.raster_spatial_node_index;
-        debug_assert!(raster_spatial_node_index != SpatialNodeIndex::INVALID);
-        let raster_node = spatial_tree.get_spatial_node(raster_spatial_node_index);
-        let raster_in_root = raster_node.coordinate_system_id == CoordinateSystemId::root();
-
-        let (enabled, snap_node_index) = if surface.allow_snapping {
-            (true, raster_spatial_node_index)
-        } else if raster_in_root {
-            (true, spatial_tree.root_reference_frame_index())
-        } else {
-            (false, raster_spatial_node_index)
-        };
-
-        let snap_node = spatial_tree.get_spatial_node(snap_node_index);
-
         SpaceSnapper {
-            enabled,
-            raster_content_inverse: snap_node.content_transform.inverse(),
-            raster_coord_system_id: snap_node.coordinate_system_id,
+            ref_spatial_node_index,
             current_target_spatial_node_index: SpatialNodeIndex::INVALID,
             snapping_transform: None,
+            raster_pixel_scale,
         }
     }
 
-    
-    
-    pub fn set_target_spatial_node(
+    pub fn set_target_spatial_node<S: SpatialNodeContainer>(
         &mut self,
         target_node_index: SpatialNodeIndex,
-        spatial_tree: &SpatialTree,
+        spatial_tree: &S,
     ) {
-        if !self.enabled || target_node_index == self.current_target_spatial_node_index {
-            return;
+        if target_node_index == self.current_target_spatial_node_index {
+            return
         }
 
-        let target_node = spatial_tree.get_spatial_node(target_node_index);
+        let ref_snap = spatial_tree.get_node_info(self.ref_spatial_node_index).snapping_transform;
+        let target_snap = spatial_tree.get_node_info(target_node_index).snapping_transform;
 
         self.current_target_spatial_node_index = target_node_index;
-        
-        
-        self.snapping_transform = if target_node.coordinate_system_id != self.raster_coord_system_id {
-            None
-        } else {
-            
-            Some(target_node.content_transform.then(&self.raster_content_inverse))
+        self.snapping_transform = match (ref_snap, target_snap) {
+            (Some(ref ref_scale_offset), Some(ref target_scale_offset)) => {
+                Some(target_scale_offset
+                    .pre_scale(self.raster_pixel_scale.0)
+                    .then(&ref_scale_offset.inverse())
+                )
+            }
+            _ => None,
         };
     }
 
-    
-    
-    
-    
     pub fn snap_rect<F>(&self, rect: &Box2D<f32, F>) -> Box2D<f32, F> where F: fmt::Debug {
-        debug_assert!(!self.enabled || self.current_target_spatial_node_index != SpatialNodeIndex::INVALID);
+        debug_assert!(self.current_target_spatial_node_index != SpatialNodeIndex::INVALID);
         match self.snapping_transform {
             Some(ref scale_offset) => {
                 let snapped_device_rect: DeviceRect = scale_offset.map_rect(rect).snap();
@@ -310,6 +241,15 @@ impl SpaceSnapper {
             None => *rect,
         }
     }
+
+    pub fn snap_point<F>(&self, point: &Point2D<f32, F>) -> Point2D<f32, F> where F: fmt::Debug {
+        debug_assert!(self.current_target_spatial_node_index != SpatialNodeIndex::INVALID);
+        match self.snapping_transform {
+            Some(ref scale_offset) => {
+                let snapped_device_vector: DevicePoint = scale_offset.map_point(point).snap();
+                scale_offset.unmap_point(&snapped_device_vector)
+            }
+            None => *point,
+        }
+    }
 }
-
-
