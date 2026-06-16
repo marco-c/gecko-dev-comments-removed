@@ -89,6 +89,8 @@ export interface WasmRecord {
   filter_expression: string;
 }
 
+export type TranslationsRecord = TranslationModelRecord | WasmRecord;
+
 
 
 
@@ -201,11 +203,29 @@ export namespace Bergamot {
 
 
 
-interface RemoteSettingsClient {
+export interface RemoteSettingsClient {
   on: Function;
   get: Function;
-  attachments: any;
   sync: Function;
+  attachments: Attachments;
+}
+
+export interface AttachmentDownloadResult {
+  buffer: ArrayBuffer;
+  blob?: Blob;
+  record?: TranslationsRecord;
+  _source?: string;
+}
+
+
+
+
+
+export interface Attachments {
+  download(record: TranslationsRecord): Promise<AttachmentDownloadResult>;
+  isDownloaded(record: TranslationsRecord): Promise<boolean>;
+  deleteAll(): Promise<void>;
+  deleteDownloaded(record: TranslationsRecord): Promise<void>;
 }
 
 
