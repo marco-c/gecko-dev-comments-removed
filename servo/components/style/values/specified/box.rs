@@ -746,18 +746,23 @@ pub enum AlignmentBaseline {
     
     TextBottom,
     
+    #[cfg(feature = "gecko")]
     Alphabetic,
     
+    #[cfg(feature = "gecko")]
     Ideographic,
     
     
     
     Middle,
     
+    #[cfg(feature = "gecko")]
     Central,
     
+    #[cfg(feature = "gecko")]
     Mathematical,
     
+    #[cfg(feature = "gecko")]
     Hanging,
     
     TextTop,
