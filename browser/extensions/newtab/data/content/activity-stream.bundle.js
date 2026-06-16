@@ -17353,7 +17353,6 @@ const SportsWidget_PREF_NOVA_ENABLED = "nova.enabled";
 const SportsWidget_PREF_SPORTS_WIDGET_SIZE = "widgets.sportsWidget.size";
 const PREF_SPORTS_WIDGET_LIVE_ENABLED = "widgets.sportsWidget.live.enabled";
 const PREF_FORCE_LIVE_DATA_TRUSTABLE = "widgets.sports.forceLiveDataTrustable";
-
 const PREF_SPORTS_CELEBRATIONS_ENABLED = "widgets.sportsWidget.celebrations.enabled";
 const PREF_SPORTS_CELEBRATIONS_WINDOW_MS = "widgets.sportsWidget.celebrations.windowMs";
 const DEFAULT_CELEBRATION_WINDOW_MS = 86400000; 
@@ -17382,6 +17381,49 @@ function sortFollowedFirst(matches, selectedTeamsSet) {
     }
     return a.index - b.index;
   }).map(entry => entry.match);
+}
+
+
+
+
+
+
+
+function findCelebrationMatch(matches, celebrations, windowMs) {
+  const endedAt = celebrations?.endedAt;
+  if (!endedAt) {
+    return null;
+  }
+  const celebrated = new Set(celebrations?.celebrated ?? []);
+  const now = Date.now();
+  let best = null;
+  for (const match of matches) {
+    const id = match?.global_event_id;
+    const ts = id === null || id === undefined ? undefined : endedAt[id];
+    if (!ts || now - ts >= windowMs || celebrated.has(id)) {
+      continue;
+    }
+    if (!best || ts > endedAt[best.global_event_id]) {
+      best = match;
+    }
+  }
+  return best;
+}
+
+
+
+function bubbleMatchToFront(matches, id) {
+  if (id === null || id === undefined) {
+    return matches;
+  }
+  const index = matches.findIndex(match => match.global_event_id === id);
+  if (index <= 0) {
+    return matches;
+  }
+  const next = [...matches];
+  const [match] = next.splice(index, 1);
+  next.unshift(match);
+  return next;
 }
 
 
@@ -17524,6 +17566,19 @@ function SportsWidget_SportsWidget({
 
   
   
+  
+  
+  
+  const {
+    celebrations
+  } = sportsWidgetData;
+  const celebrationWindowMs = prefs.trainhopConfig?.widgets?.sportsWidgetCelebrationsWindowMs ?? prefs.trainhopConfig?.sports?.celebrationsWindowMs ?? prefs[PREF_SPORTS_CELEBRATIONS_WINDOW_MS] ?? DEFAULT_CELEBRATION_WINDOW_MS;
+  const celebrationMatch = (0,external_React_namespaceObject.useMemo)(() => findCelebrationMatch([...(rawMatches?.previous ?? []), ...(rawMatches?.current ?? [])], celebrations, celebrationWindowMs), [rawMatches, celebrations, celebrationWindowMs]);
+
+  
+  
+  
+  
   const resultsFollowedOnly = sportsWidgetData.followedOnly?.results ?? true;
   const upcomingFollowedOnly = sportsWidgetData.followedOnly?.upcoming ?? true;
   const {
@@ -17534,11 +17589,11 @@ function SportsWidget_SportsWidget({
     const previous = rawMatches?.previous ?? [];
     const next = rawMatches?.next ?? [];
     return {
-      sortedPrevious: resultsFollowedOnly ? sortFollowedFirst(previous, selectedTeamsSet) : previous,
+      sortedPrevious: bubbleMatchToFront(resultsFollowedOnly ? sortFollowedFirst(previous, selectedTeamsSet) : previous, celebrationMatch?.global_event_id),
       sortedCurrent: sortFollowedFirst(rawLive ?? [], selectedTeamsSet),
       sortedNext: upcomingFollowedOnly ? sortFollowedFirst(next, selectedTeamsSet) : next
     };
-  }, [rawMatches, rawLive, selectedTeamsSet, resultsFollowedOnly, upcomingFollowedOnly]);
+  }, [rawMatches, rawLive, selectedTeamsSet, resultsFollowedOnly, upcomingFollowedOnly, celebrationMatch]);
 
   
   
@@ -17630,7 +17685,13 @@ function SportsWidget_SportsWidget({
   
   
   
-  
+
+
+
+
+
+
+
   const celebrationsEnabled = prefs[PREF_SPORTS_CELEBRATIONS_ENABLED] || prefs.trainhopConfig?.widgets?.sportsWidgetCelebrationsEnabled || prefs.trainhopConfig?.sports?.celebrationsEnabled;
   const celebrate = (0,external_React_namespaceObject.useCallback)((kind, colors = null) => {
     if (!celebrationsEnabled) {
@@ -17645,13 +17706,7 @@ function SportsWidget_SportsWidget({
   
   
   
-  const {
-    celebrations
-  } = sportsWidgetData;
   
-  
-  
-  const celebrationWindowMs = prefs.trainhopConfig?.widgets?.sportsWidgetCelebrationsWindowMs ?? prefs.trainhopConfig?.sports?.celebrationsWindowMs ?? prefs[PREF_SPORTS_CELEBRATIONS_WINDOW_MS] ?? DEFAULT_CELEBRATION_WINDOW_MS;
   const celebratedRef = (0,external_React_namespaceObject.useRef)(new Set());
   const [isPageVisible, setIsPageVisible] = (0,external_React_namespaceObject.useState)(typeof document === "undefined" || document.visibilityState === "visible");
   (0,external_React_namespaceObject.useEffect)(() => {
@@ -17659,19 +17714,34 @@ function SportsWidget_SportsWidget({
     document.addEventListener("visibilitychange", onVisibility);
     return () => document.removeEventListener("visibilitychange", onVisibility);
   }, []);
+  
+  
+  
+  
+  
+  
+  const [isWidgetVisible, setIsWidgetVisible] = (0,external_React_namespaceObject.useState)(false);
   (0,external_React_namespaceObject.useEffect)(() => {
-    if (!celebrationsEnabled || !isPageVisible || widgetState !== WIDGET_STATES.MATCHES || activeTab !== MATCHES_TABS.RESULTS || showResultsList) {
+    
+    
+    if (!celebrationsEnabled || !liveEl) {
+      return undefined;
+    }
+    const observer = new IntersectionObserver(([entry]) => setIsWidgetVisible(entry.isIntersecting), {
+      threshold: 0.3
+    });
+    observer.observe(liveEl);
+    return () => observer.disconnect();
+  }, [celebrationsEnabled, liveEl]);
+  (0,external_React_namespaceObject.useEffect)(() => {
+    if (!celebrationsEnabled || !isPageVisible || !isWidgetVisible || widgetState !== WIDGET_STATES.MATCHES || activeTab !== MATCHES_TABS.RESULTS || showResultsList) {
       return;
     }
-    const [match] = sortedPrevious;
-    const id = match?.global_event_id;
-    if (id === null || id === undefined) {
+    const match = celebrationMatch;
+    if (!match || celebratedRef.current.has(match.global_event_id)) {
       return;
     }
-    const endedAt = celebrations?.endedAt?.[id];
-    if (!endedAt || Date.now() - endedAt >= celebrationWindowMs || celebrations?.celebrated?.includes(id) || celebratedRef.current.has(id)) {
-      return;
-    }
+    const id = match.global_event_id;
     const winnerKey = getMatchWinnerKey(match);
     const homeKey = match.home_team.key;
     const awayKey = match.away_team.key;
@@ -17706,7 +17776,7 @@ function SportsWidget_SportsWidget({
     } else {
       celebrate("generic");
     }
-  }, [celebrationsEnabled, isPageVisible, widgetState, activeTab, showResultsList, sortedPrevious, celebrations, celebrationWindowMs, selectedTeams, teamColorsByKey, celebrate, dispatch]);
+  }, [celebrationsEnabled, isPageVisible, isWidgetVisible, widgetState, activeTab, showResultsList, celebrationMatch, selectedTeams, teamColorsByKey, celebrate, dispatch]);
 
   
   
