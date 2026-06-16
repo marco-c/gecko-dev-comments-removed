@@ -528,6 +528,29 @@ add_task(async function test_createBackup_signed_in() {
 
 
 
+add_task(async function test_createBackup_calls_maybeAddToEnabledListPref() {
+  let sandbox = sinon.createSandbox();
+
+  sandbox
+    .stub(UIState, "get")
+    .returns({ status: UIState.STATUS_NOT_CONFIGURED });
+
+  let spy = sandbox.spy(BackupService, "maybeAddToEnabledListPref");
+
+  await testCreateBackupHelper(sandbox, () => {
+    Assert.ok(
+      spy.calledOnce,
+      "maybeAddToEnabledListPref should be called once during createBackup"
+    );
+  });
+
+  sandbox.restore();
+});
+
+
+
+
+
 
 
 
