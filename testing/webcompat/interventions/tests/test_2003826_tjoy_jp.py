@@ -1,6 +1,5 @@
-import asyncio
-
 import pytest
+from webdriver.error import NoSuchElementException
 
 URL = "https://tjoy.jp/shinjuku_wald9#schedule-content"
 
@@ -32,10 +31,11 @@ async def does_correct_zoom(client):
     client.execute_script("arguments[0].click()", reserve)
 
     
-    await asyncio.sleep(4)
-
-    
-    seat_map_zoom_wrapper = client.await_css(ZOOM_WRAPPER_CSS)
+    try:
+        
+        seat_map_zoom_wrapper = client.await_css(ZOOM_WRAPPER_CSS, timeout=10)
+    except NoSuchElementException:
+        return False
     client.execute_script("arguments[0].click()", seat_map_zoom_wrapper)
     seat_map = client.await_css(MAP_CSS)
     moz_transform = client.execute_script(
