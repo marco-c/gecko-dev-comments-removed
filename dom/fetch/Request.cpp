@@ -382,6 +382,18 @@ SafeRefPtr<Request> Request::Constructor(
 
   RefPtr<InternalHeaders> requestHeaders = request->Headers();
 
+  RefPtr<InternalHeaders> headers;
+  if (aInit.mHeaders.WasPassed()) {
+    RefPtr<Headers> h = Headers::Create(aGlobal, aInit.mHeaders.Value(), aRv);
+    if (aRv.Failed()) {
+      return nullptr;
+    }
+    headers = h->GetInternalHeaders();
+  } else {
+    headers = new InternalHeaders(*requestHeaders);
+  }
+
+  requestHeaders->Clear();
   
   
   requestHeaders->SetGuard(HeadersGuardEnum::Request, aRv);
@@ -401,24 +413,9 @@ SafeRefPtr<Request> Request::Constructor(
     }
   }
 
-  
-  
-  if (aInit.IsAnyMemberPresent()) {
-    RefPtr<InternalHeaders> headers;
-    if (aInit.mHeaders.WasPassed()) {
-      RefPtr<Headers> h = Headers::Create(aGlobal, aInit.mHeaders.Value(), aRv);
-      if (aRv.Failed()) {
-        return nullptr;
-      }
-      headers = h->GetInternalHeaders();
-    } else {
-      headers = new InternalHeaders(*requestHeaders);
-    }
-    requestHeaders->Clear();
-    requestHeaders->Fill(*headers, aRv);
-    if (aRv.Failed()) {
-      return nullptr;
-    }
+  requestHeaders->Fill(*headers, aRv);
+  if (aRv.Failed()) {
+    return nullptr;
   }
 
   if ((aInit.mBody.WasPassed() && !aInit.mBody.Value().IsNull()) ||
