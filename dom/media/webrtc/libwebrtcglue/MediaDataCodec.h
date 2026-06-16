@@ -50,8 +50,8 @@ class MediaDataCodec {
 
 
 
-  static WebrtcVideoDecoder* CreateDecoder(webrtc::VideoCodecType aCodecType,
-                                           TrackingId aTrackingId);
+  static std::unique_ptr<WebrtcVideoDecoder> CreateDecoder(
+      webrtc::VideoCodecType aCodecType, TrackingId aTrackingId);
 };
 }  
 
