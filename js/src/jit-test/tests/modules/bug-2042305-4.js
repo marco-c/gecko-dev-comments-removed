@@ -1,3 +1,4 @@
+
 var N = 15000;
 var leaf = parseModule("export var x = 1;", "m" + (N - 1) + ".js");
 registerModule("m" + (N - 1), leaf);
