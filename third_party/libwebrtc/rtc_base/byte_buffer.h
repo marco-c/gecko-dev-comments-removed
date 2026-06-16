@@ -21,6 +21,7 @@
 #include "absl/strings/string_view.h"
 #include "rtc_base/buffer.h"
 #include "rtc_base/byte_order.h"
+#include "rtc_base/span_helpers.h"
 
 
 namespace webrtc {
@@ -49,7 +50,7 @@ class ByteBufferWriterT {
   
   
   absl::string_view DataAsStringView() const {
-    return absl::string_view(reinterpret_cast<const char*>(Data()), Length());
+    return AsStringView(DataView());
   }
   const char* DataAsCharPointer() const {
     return reinterpret_cast<const char*>(Data());
@@ -206,6 +207,5 @@ class ByteBufferReader {
 };
 
 }  
-
 
 #endif  
