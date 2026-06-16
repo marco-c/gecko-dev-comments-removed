@@ -122,6 +122,9 @@ struct MightBeInNursery<JS::Value> {
 using WeakMapColors = HashMap<WeakMapBase*, js::gc::CellColor,
                               DefaultHasher<WeakMapBase*>, SystemAllocPolicy>;
 
+class WeakMapBase;
+using WeakMapList = SlimLinkedList<WeakMapBase>;
+
 
 
 class WeakMapBase : public SlimLinkedListElement<WeakMapBase> {

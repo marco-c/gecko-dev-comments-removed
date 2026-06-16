@@ -514,7 +514,11 @@ function grayKeyMap() {
   
   enqueueMark("set-color-gray");
   enqueueMark(vals.m);
+  enqueueMark("yield");
+
+  
   enqueueMark("unset-color");
+  enqueueMark("trace-deferred");
   enqueueMark("yield");
 
   enqueueMark("set-color-black");
@@ -531,7 +535,8 @@ function grayKeyMap() {
   
   schedulezone(vals);
 
-  startGCMarking();
+  startGCMarking(2);
+
   
   reportMarks("1: ");
   assertEq(getMarks().join("/"), "unmarked/black/unmarked",
@@ -546,11 +551,16 @@ function grayKeyMap() {
 
   gcslice(100000);
   reportMarks("3: ");
+  assertEq(getMarks().join("/"), "gray/black/unmarked",
+           "marked the map object gray, deferred the map tracing");
+
+  gcslice(100000);
+  reportMarks("4: ");
   assertEq(getMarks().join("/"), "gray/black/gray",
-           "marked the map gray, which marked the value when map scanned");
+           "deferred gray marking of map marked the value");
 
   finishgc(); 
-  reportMarks("4: ");
+  reportMarks("5: ");
   assertEq(getMarks().join("/"), "black/black/black",
            "further marked the map black, so value should also be blackened");
 
@@ -697,5 +707,115 @@ function blackDuringGrayImplicit() {
   g.eval("grayRoot().length = 0");
 }
 
-if (this.enqueueMark)
+if (this.enqueueMark) {
   runtest(blackDuringGrayImplicit);
+}
+
+
+
+
+function grayDeferredUpgradeToBlack() {
+  const vals = {
+    m: new WeakMap(),
+    key: Object.create(null),
+    val: Object.create(null),
+  };
+  vals.m.set(vals.key, vals.val);
+
+  addMarkObservers([vals.m, vals.key, vals.val]);
+
+  enqueueMark(vals.key);
+  enqueueMark("yield");
+
+  
+  enqueueMark("set-color-gray");
+  enqueueMark(vals.m);
+
+  
+  
+  
+  enqueueMark("set-color-black");
+  enqueueMark(vals.m);
+  enqueueMark("unset-color");
+
+  vals.m = null;
+  vals.key = vals.val = null;
+  schedulezone(vals);
+  startGCMarking(2);
+
+  reportMarks("1: ");
+  assertEq(getMarks().join("/"), "unmarked/black/unmarked", "marked key black");
+
+  gcslice(100000);
+  reportMarks("2: ");
+
+  finishgc();
+  reportMarks("3: ");
+  assertEq(getMarks().join("/"), "black/black/black",
+           "map and val both black: map was black-deferred so entries traced black");
+
+  clearMarkQueue();
+  clearMarkObservers();
+}
+
+if (this.enqueueMark) {
+  runtest(grayDeferredUpgradeToBlack);
+}
+
+
+
+function grayDeferredFirstElementUpgrade() {
+  const vals = {
+    m1: new WeakMap(),
+    m2: new WeakMap(),
+    key1: Object.create(null),
+    val1: Object.create(null),
+    key2: Object.create(null),
+    val2: Object.create(null),
+  };
+  vals.m1.set(vals.key1, vals.val1);
+  vals.m2.set(vals.key2, vals.val2);
+
+  addMarkObservers([vals.m1, vals.val1, vals.m2, vals.val2]);
+
+  enqueueMark(vals.key1);
+  enqueueMark(vals.key2);
+  enqueueMark("yield");
+
+  
+  enqueueMark("set-color-gray");
+  enqueueMark(vals.m1);
+  enqueueMark(vals.m2);
+
+  
+  
+  
+  enqueueMark("set-color-black");
+  enqueueMark(vals.m1);
+  enqueueMark("unset-color");
+
+  vals.m1 = vals.m2 = null;
+  vals.key1 = vals.val1 = null;
+  vals.key2 = vals.val2 = null;
+  schedulezone(vals);
+  startGCMarking(2);
+
+  reportMarks("1: ");
+  assertEq(getMarks().join("/"), "unmarked/unmarked/unmarked/unmarked",
+           "nothing marked yet");
+
+  gcslice(100000);
+  reportMarks("2: ");
+
+  finishgc();
+  reportMarks("3: ");
+  assertEq(getMarks().join("/"), "black/black/gray/gray",
+           "m1+val1 black (black-deferred), m2+val2 gray (gray-deferred)");
+
+  clearMarkQueue();
+  clearMarkObservers();
+}
+
+if (this.enqueueMark) {
+  runtest(grayDeferredFirstElementUpgrade);
+}

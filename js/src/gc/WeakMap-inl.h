@@ -309,22 +309,41 @@ void WeakMap<K, V, AP>::trace(JSTracer* trc) {
     MOZ_ASSERT(trc->weakMapAction() == JS::WeakMapTraceAction::Expand);
     GCMarker* marker = GCMarker::fromTracer(trc);
     mozilla::Maybe<gc::CellColor> markResult = markMap(marker->markColor());
-    if (markResult.isSome()) {
-      
-      
-      mozilla::Maybe<AutoLockGC> lock;
-      if (marker->isParallelMarking()) {
-        lock.emplace(marker->runtime());
-      }
-
-      
-      if (markResult.value() == gc::CellColor::White && !isSystem()) {
-        zone()->gcUserWeakMaps().remove(this);
-        zone()->gcMarkedUserWeakMaps().pushFront(this);
-      }
-
-      (void)markEntries(marker);
+    if (markResult.isNothing()) {
+      return;
     }
+
+    
+    
+    mozilla::Maybe<AutoLockGC> lock;
+    if (marker->isParallelMarking()) {
+      lock.emplace(marker->runtime());
+    }
+
+    if (!memberOf) {
+      (void)markEntries(marker);
+      return;
+    }
+
+    
+    
+    gc::GCRuntime& gcrt = marker->runtime()->gc;
+    if (markResult.value() == gc::CellColor::White) {
+      
+      zone()->gcUserWeakMaps().remove(this);
+      gcrt.deferredMapsList(marker->markColor()).pushBack(this);
+    } else {
+      MOZ_ASSERT(markResult.value() == gc::CellColor::Gray);
+      MOZ_ASSERT(mapColor() == gc::CellColor::Black);
+
+      
+      
+      
+      WeakMapList& grayDeferred = gcrt.deferredMapsList(gc::MarkColor::Gray);
+      removeFromOneOf(grayDeferred, zone()->gcMarkedUserWeakMaps());
+      gcrt.deferredMapsList(marker->markColor()).pushBack(this);
+    }
+
     return;
   }
 

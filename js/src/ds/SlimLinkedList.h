@@ -112,6 +112,37 @@ class SlimLinkedListElement {
     return isFirst() ? nullptr : getPrevUnchecked();
   }
 
+  
+  
+  
+  
+  template <typename... Lists>
+  void removeFromOneOf(Lists&... lists) {
+#ifdef DEBUG
+    bool found = (... || lists.contains(thisElement()));
+    MOZ_ASSERT(found, "element not found in any of the lists");
+#endif
+    auto removeFrom = [this](SlimLinkedList<T>& list) {
+      if (this == list.getFirst()) {
+        list.remove(thisElement());
+        return true;
+      }
+      return false;
+    };
+    
+    
+    
+    
+    
+    
+    
+    
+    bool removed = (... || removeFrom(lists));
+    if (!removed) {
+      remove();
+    }
+  }
+
  private:
   ElementPtr getNextUnchecked() { return GetPtr(next_); }
   ConstElementPtr getNextUnchecked() const { return GetConstPtr(next_); };
