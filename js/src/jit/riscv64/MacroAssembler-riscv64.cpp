@@ -1959,12 +1959,16 @@ void MacroAssemblerRiscv64Compat::boxValue(JSValueType type, Register src,
       
       ma_li(dest, ImmShiftedTag(type));
 
-      UseScratchRegisterScope temps(this);
-      Register scratch = temps.Acquire();
-
       
-      ZeroExtendWord(scratch, src);
-      or_(dest, dest, scratch);
+      if (HasZbaExtension()) {
+        add_uw(dest, src, dest);
+      } else {
+        UseScratchRegisterScope temps(this);
+        Register scratch = temps.Acquire();
+
+        ZeroExtendWord(scratch, src);
+        or_(dest, dest, scratch);
+      }
       return;
     }
     case JSVAL_TYPE_BOOLEAN:
@@ -2049,11 +2053,15 @@ void MacroAssemblerRiscv64Compat::boxValue(Register type, Register src,
   slli(dest, dest, JSVAL_TAG_SHIFT);
 
   
-  UseScratchRegisterScope temps(this);
-  Register scratch = temps.Acquire();
-  ZeroExtendWord(scratch, src);
+  if (HasZbaExtension()) {
+    add_uw(dest, src, dest);
+  } else {
+    UseScratchRegisterScope temps(this);
+    Register scratch = temps.Acquire();
+    ZeroExtendWord(scratch, src);
 
-  or_(dest, dest, scratch);
+    or_(dest, dest, scratch);
+  }
 }
 
 void MacroAssemblerRiscv64Compat::loadConstantFloat32(float f,
@@ -2241,8 +2249,12 @@ void MacroAssemblerRiscv64Compat::tagValue(JSValueType type, Register payload,
         ma_li(scratch, ImmShiftedTag(type));
 
         
-        ZeroExtendWord(payload, payload);
-        or_(dest.valueReg(), payload, scratch);
+        if (HasZbaExtension()) {
+          add_uw(dest.valueReg(), payload, scratch);
+        } else {
+          ZeroExtendWord(payload, payload);
+          or_(dest.valueReg(), payload, scratch);
+        }
         break;
       }
       case JSVAL_TYPE_BOOLEAN:
