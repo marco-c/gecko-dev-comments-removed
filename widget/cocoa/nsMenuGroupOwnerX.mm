@@ -145,12 +145,6 @@ void nsMenuGroupOwnerX::ContentInserted(nsIContent* aChild,
 
 void nsMenuGroupOwnerX::ParentChainChanged(nsIContent* aContent) {}
 
-void nsMenuGroupOwnerX::ARIAAttributeDefaultWillChange(mozilla::dom::Element*,
-                                                       nsAtom*, AttrModType) {}
-
-void nsMenuGroupOwnerX::ARIAAttributeDefaultChanged(mozilla::dom::Element*,
-                                                    nsAtom*, AttrModType) {}
-
 
 
 

@@ -43,7 +43,6 @@ class TNotification;
 
 
 class DocAccessible : public HyperTextAccessible,
-                      public nsIDocumentObserver,
                       public nsSupportsWeakReference {
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(DocAccessible, LocalAccessible)
@@ -55,13 +54,10 @@ class DocAccessible : public HyperTextAccessible,
   DocAccessible(Document* aDocument, PresShell* aPresShell);
 
   
-  NS_DECL_NSIDOCUMENTOBSERVER
-
-  
   virtual void Init();
-  virtual void Shutdown() override;
-  virtual nsIFrame* GetFrame() const override;
-  virtual nsINode* GetNode() const override;
+  void Shutdown() override;
+  nsIFrame* GetFrame() const override;
+  nsINode* GetNode() const override;
   Document* DocumentNode() const { return mDocumentNode; }
 
   virtual mozilla::a11y::ENameValueFlag DirectName(
@@ -441,6 +437,26 @@ class DocAccessible : public HyperTextAccessible,
 
 
   uint64_t EffectiveCacheDomains() const;
+
+  
+
+
+
+
+
+  void MaybeHandleChangeToHiddenNameOrDescription(nsIContent* aChild);
+  void AttributeWillChange(dom::Element* aElement, int32_t aNameSpaceID,
+                           nsAtom* aAttribute, AttrModType aModType);
+  virtual void AttributeChanged(dom::Element* aElement, int32_t aNameSpaceID,
+                                nsAtom* aAttribute, AttrModType aModType,
+                                const nsAttrValue* aOldValue);
+  void ElementStateChanged(dom::Document* aDocument, dom::Element* aElement,
+                           dom::ElementState aStateMask);
+  void ARIAAttributeDefaultWillChange(dom::Element* aElement,
+                                      nsAtom* aAttribute, AttrModType aModType);
+
+  void ARIAAttributeDefaultChanged(dom::Element* aElement, nsAtom* aAttribute,
+                                   AttrModType aModType);
 
  protected:
   virtual ~DocAccessible();
@@ -859,14 +875,6 @@ class DocAccessible : public HyperTextAccessible,
 
 
   void TrackMovedAccessible(LocalAccessible* aAcc);
-
-  
-
-
-
-
-
-  void MaybeHandleChangeToHiddenNameOrDescription(nsIContent* aChild);
 
   void MaybeHandleChangeToAriaActions(LocalAccessible* aAcc,
                                       const nsAtom* aAttribute);
