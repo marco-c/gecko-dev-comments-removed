@@ -4,6 +4,8 @@
 
 #include "nsPrinterListCUPS.h"
 
+#include <cstdlib>
+
 #include "mozilla/IntegerRange.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/StaticPrefs_print.h"
@@ -20,6 +22,20 @@ static nsCUPSShim& CupsShim() {
 }
 
 using PrinterInfo = nsPrinterListBase::PrinterInfo;
+
+static bool IsAutoDiscoveredDest(const cups_dest_t& aDest) {
+  const char* const printerType = CupsShim().cupsGetOption(
+      "printer-type", aDest.num_options, aDest.options);
+  if (!printerType) {
+    return false;
+  }
+  char* end = nullptr;
+  const long type = std::strtol(printerType, &end, 10);
+  if (end == printerType) {
+    return false;
+  }
+  return (type & CUPS_PRINTER_DISCOVERED) != 0;
+}
 
 
 
@@ -80,7 +96,8 @@ static int CupsDestCallback(void* user_data, unsigned aFlags,
   nsString name;
   GetDisplayNameForPrinter(*aDest, name);
 
-  printerInfoList->AppendElement(PrinterInfo{std::move(name), ownedDest});
+  printerInfoList->AppendElement(
+      PrinterInfo{std::move(name), ownedDest, IsAutoDiscoveredDest(*aDest)});
 
   return aFlags == CUPS_DEST_FLAGS_MORE ? 1 : 0;
 }
@@ -110,13 +127,19 @@ nsTArray<PrinterInfo> nsPrinterListCUPS::Printers() const {
       MOZ_ASSERT(numCopied == 1);
 
       nsString name;
-      GetDisplayNameForPrinter(*(printers + i), name);
-      printerInfoList.AppendElement(PrinterInfo{std::move(name), ownedDest});
+      GetDisplayNameForPrinter(printers[i], name);
+      printerInfoList.AppendElement(PrinterInfo{
+          std::move(name), ownedDest, IsAutoDiscoveredDest(printers[i])});
     }
     CupsShim().cupsFreeDests(numPrinters, printers);
     return printerInfoList;
   }
 
+  
+  
+  
+  
+  
   
   
   if (CupsShim().cupsEnumDests(
@@ -140,7 +163,7 @@ nsTArray<PrinterInfo> nsPrinterListCUPS::Printers() const {
 RefPtr<nsIPrinter> nsPrinterListCUPS::CreatePrinter(PrinterInfo aInfo) const {
   return mozilla::MakeRefPtr<nsPrinterCUPS>(
       mCommonPaperInfo, CupsShim(), std::move(aInfo.mName),
-      static_cast<cups_dest_t*>(aInfo.mCupsHandle));
+      static_cast<cups_dest_t*>(aInfo.mCupsHandle), aInfo.mSortAfterLocal);
 }
 
 mozilla::Maybe<PrinterInfo> nsPrinterListCUPS::PrinterByName(
@@ -188,7 +211,8 @@ mozilla::Maybe<PrinterInfo> nsPrinterListCUPS::PrinterByName(
   if (printer) {
     
     
-    rv.emplace(PrinterInfo{std::move(aPrinterName), printer});
+    rv.emplace(PrinterInfo{std::move(aPrinterName), printer,
+                           IsAutoDiscoveredDest(*printer)});
   }
   return rv;
 }
@@ -203,7 +227,8 @@ mozilla::Maybe<PrinterInfo> nsPrinterListCUPS::PrinterBySystemName(
   const auto printerName = NS_ConvertUTF16toUTF8(aPrinterName);
   if (cups_dest_t* const printer = CupsShim().cupsGetNamedDest(
           CUPS_HTTP_DEFAULT, printerName.get(), nullptr)) {
-    rv.emplace(PrinterInfo{std::move(aPrinterName), printer});
+    rv.emplace(PrinterInfo{std::move(aPrinterName), printer,
+                           IsAutoDiscoveredDest(*printer)});
   }
   return rv;
 }

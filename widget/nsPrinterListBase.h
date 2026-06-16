@@ -35,6 +35,9 @@ class nsPrinterListBase : public nsIPrinterList {
     nsString mName;
     
     void* mCupsHandle = nullptr;
+    
+    
+    bool mSortAfterLocal = false;
   };
 
   
