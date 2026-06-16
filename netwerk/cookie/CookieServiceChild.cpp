@@ -306,8 +306,7 @@ IPCResult CookieServiceChild::RecvTrackCookiesLoad(
   return cookieBehavior == nsICookieService::BEHAVIOR_REJECT_FOREIGN ||
          cookieBehavior == nsICookieService::BEHAVIOR_LIMIT_FOREIGN ||
          cookieBehavior == nsICookieService::BEHAVIOR_REJECT_TRACKER ||
-         cookieBehavior ==
-             nsICookieService::BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN;
+         cookieBehavior == nsICookieService::BEHAVIOR_PARTITION_FOREIGN;
 }
 
 CookieServiceChild::CookieNotificationAction
@@ -464,6 +463,31 @@ void CookieServiceChild::AddCookieFromDocument(
         
         
         if (existingCookie->IsSecure() && !isPotentiallyTrustworthy) {
+          return;
+        }
+      }
+    }
+  }
+
+  
+  
+  
+  if (!aOriginAttributes.mPartitionKey.IsEmpty() &&
+      aDocument->EffectiveCookiePrincipal()
+          ->OriginAttributesRef()
+          .mPartitionKey.IsEmpty()) {
+    OriginAttributes unpartitionedAttrs = aOriginAttributes;
+    unpartitionedAttrs.mPartitionKey.Truncate();
+    CookieKey unpartitionedKey(aBaseDomain, unpartitionedAttrs);
+    CookiesList* unpartitionedCookies = mCookiesMap.Get(unpartitionedKey);
+    if (unpartitionedCookies) {
+      for (uint32_t i = 0; i < unpartitionedCookies->Length(); ++i) {
+        RefPtr<Cookie> existingCookie = unpartitionedCookies->ElementAt(i);
+        if (existingCookie->KeyHash() == aCookie.KeyHash() &&
+            existingCookie->Name().Equals(aCookie.Name()) &&
+            existingCookie->Host().Equals(aCookie.Host()) &&
+            existingCookie->Path().Equals(aCookie.Path()) &&
+            existingCookie->IsHttpOnly()) {
           return;
         }
       }

@@ -74,6 +74,9 @@ class CookieStorage : public nsIObserver, public nsSupportsWeakReference {
   uint32_t CountCookiesFromHost(const nsACString& aBaseDomain,
                                 uint32_t aPrivateBrowsingId);
 
+  bool HasCookiesForSite(const nsACString& aBaseDomain,
+                         const OriginAttributesPattern& aPattern);
+
   uint32_t CountCookieBytesNotMatchingCookie(const Cookie& cookie,
                                              const nsACString& baseDomain);
 
@@ -116,6 +119,10 @@ class CookieStorage : public nsIObserver, public nsSupportsWeakReference {
                  const nsACString& aCookieHeader, bool aFromHttp,
                  bool aIsThirdParty, dom::BrowsingContext* aBrowsingContext,
                  const nsID* aOperationID = nullptr);
+
+  void EvictPartitionedCookiesShadowingHttpOnly(
+      const nsACString& aBaseDomain,
+      const OriginAttributes& aUnpartitionedAttrs);
 
   uint32_t RemoveOldestCookies(CookieEntry* aEntry, bool aSecure,
                                uint32_t aBytesToRemove,
@@ -235,6 +242,12 @@ class CookieStorage : public nsIObserver, public nsSupportsWeakReference {
                                bool aIsSecure,
                                nsTArray<CookieListIter>& aOutput,
                                uint32_t aLimit);
+
+  void FindPartitionedShadowingCookies(const nsACString& aBaseDomain,
+                                       const nsACString& aName,
+                                       const nsACString& aHost,
+                                       const nsACString& aPath,
+                                       nsTArray<CookieListIter>& aOutput);
 
   void UpdateCookieOldestTime(Cookie* aCookie);
 

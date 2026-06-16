@@ -23,6 +23,8 @@
 #include "nsComponentManagerUtils.h"
 #include "prprf.h"
 #include "nsIPrefService.h"
+#include "mozilla/dom/BrowsingContext.h"
+#include "mozilla/dom/WindowContext.h"
 
 #undef ADD_TEN_PERCENT
 #define ADD_TEN_PERCENT(i) static_cast<uint32_t>((i) + (i) / 10)
@@ -262,6 +264,27 @@ uint32_t CookieStorage::CountCookiesFromHost(const nsACString& aBaseDomain,
   
   CookieEntry* entry = mHostTable.GetEntry(CookieKey(aBaseDomain, attrs));
   return entry ? entry->GetCookies().Length() : 0;
+}
+
+bool CookieStorage::HasCookiesForSite(const nsACString& aBaseDomain,
+                                      const OriginAttributesPattern& aPattern) {
+  for (auto iter = mHostTable.Iter(); !iter.Done(); iter.Next()) {
+    CookieEntry* entry = iter.Get();
+
+    if (!aBaseDomain.Equals(entry->mBaseDomain)) {
+      continue;
+    }
+
+    if (!aPattern.Matches(entry->mOriginAttributes)) {
+      continue;
+    }
+
+    if (!entry->GetCookies().IsEmpty()) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 uint32_t CookieStorage::CountCookieBytesNotMatchingCookie(
@@ -707,6 +730,37 @@ void CookieStorage::AddCookie(CookieParser* aCookieParser,
     return;
   }
 
+  
+  
+  
+  
+  if (!aFromHttp && !aOriginAttributes.mPartitionKey.IsEmpty()) {
+    bool hasUnpartitionedAccess = !aIsThirdParty;
+    if (!hasUnpartitionedAccess && aBrowsingContext) {
+      dom::WindowContext* wc = aBrowsingContext->GetCurrentWindowContext();
+      if (wc && wc->GetUsingStorageAccess()) {
+        hasUnpartitionedAccess = true;
+      }
+    }
+    if (hasUnpartitionedAccess) {
+      OriginAttributes unpartitionedAttrs = aOriginAttributes;
+      unpartitionedAttrs.mPartitionKey.Truncate();
+      RefPtr<Cookie> unpartitionedCookie =
+          FindCookie(aBaseDomain, unpartitionedAttrs, aCookie->Host(),
+                     aCookie->Name(), aCookie->Path());
+      if (unpartitionedCookie && unpartitionedCookie->IsHttpOnly()) {
+        COOKIE_LOGFAILURE(SET_COOKIE, aHostURI, aCookieHeader,
+                          "previously stored cookie is httponly; coming from "
+                          "script");
+        if (aCookieParser) {
+          aCookieParser->RejectCookie(
+              CookieParser::RejectedHttpOnlyButFromScript);
+        }
+        return;
+      }
+    }
+  }
+
   RefPtr<Cookie> oldCookie;
   nsCOMPtr<nsIArray> purgedList;
   if (foundCookie) {
@@ -911,6 +965,25 @@ void CookieStorage::AddCookie(CookieParser* aCookieParser,
 
   
   
+  
+  if (aFromHttp && aCookie->IsHttpOnly() &&
+      aOriginAttributes.mPartitionKey.IsEmpty()) {
+    nsTArray<CookieListIter> toEvict;
+    FindPartitionedShadowingCookies(aBaseDomain, aCookie->Name(),
+                                    aCookie->Host(), aCookie->Path(), toEvict);
+    if (!toEvict.IsEmpty()) {
+      toEvict.Sort(CompareCookiesByIndex());
+      for (auto it = toEvict.rbegin(); it != toEvict.rend(); ++it) {
+        COOKIE_LOGFAILURE(SET_COOKIE, aHostURI, aCookieHeader,
+                          "evicting partitioned cookie shadowing httponly");
+        RemoveCookieFromList(*it);
+        CreateOrUpdatePurgeList(purgedList, it->Cookie());
+      }
+    }
+  }
+
+  
+  
   AddCookieToList(aBaseDomain, aOriginAttributes, aCookie);
   StoreCookie(aBaseDomain, aOriginAttributes, aCookie);
 
@@ -929,6 +1002,63 @@ void CookieStorage::AddCookie(CookieParser* aCookieParser,
                             : nsICookieNotification::COOKIE_ADDED,
                 aBaseDomain, aIsThirdParty, aBrowsingContext,
                 oldCookieIsSession, aOperationID);
+}
+
+void CookieStorage::FindPartitionedShadowingCookies(
+    const nsACString& aBaseDomain, const nsACString& aName,
+    const nsACString& aHost, const nsACString& aPath,
+    nsTArray<CookieListIter>& aOutput) {
+  for (auto iter = mHostTable.Iter(); !iter.Done(); iter.Next()) {
+    CookieEntry* entry = iter.Get();
+    if (!entry->mBaseDomain.Equals(aBaseDomain) ||
+        entry->mOriginAttributes.mPartitionKey.IsEmpty()) {
+      continue;
+    }
+    const CookieEntry::ArrayType& cookies = entry->GetCookies();
+    for (CookieEntry::IndexType i = 0; i < cookies.Length(); ++i) {
+      Cookie* c = cookies[i];
+      if (c->Name().Equals(aName) && c->Host().Equals(aHost) &&
+          c->Path().Equals(aPath)) {
+        aOutput.AppendElement(CookieListIter(entry, i));
+        break;
+      }
+    }
+  }
+}
+
+void CookieStorage::EvictPartitionedCookiesShadowingHttpOnly(
+    const nsACString& aBaseDomain,
+    const OriginAttributes& aUnpartitionedAttrs) {
+  MOZ_ASSERT(aUnpartitionedAttrs.mPartitionKey.IsEmpty());
+
+  CookieEntry* unpartitionedEntry =
+      mHostTable.GetEntry(CookieKey(aBaseDomain, aUnpartitionedAttrs));
+  if (!unpartitionedEntry) {
+    return;
+  }
+
+  nsTArray<CookieListIter> toEvict;
+  for (const auto& cookie : unpartitionedEntry->GetCookies()) {
+    if (cookie->IsHttpOnly()) {
+      FindPartitionedShadowingCookies(aBaseDomain, cookie->Name(),
+                                      cookie->Host(), cookie->Path(), toEvict);
+    }
+  }
+
+  if (toEvict.IsEmpty()) {
+    return;
+  }
+
+  toEvict.Sort(CompareCookiesByIndex());
+  nsCOMPtr<nsIArray> purgedList;
+  for (auto it = toEvict.rbegin(); it != toEvict.rend(); ++it) {
+    RemoveCookieFromList(*it);
+    CreateOrUpdatePurgeList(purgedList, it->Cookie());
+  }
+  if (purgedList) {
+    NotifyChanged(purgedList, nsICookieNotification::COOKIES_BATCH_DELETED,
+                  ""_ns);
+  }
 }
 
 void CookieStorage::UpdateCookieOldestTime(Cookie* aCookie) {
