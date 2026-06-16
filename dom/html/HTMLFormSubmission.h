@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_HTMLFormSubmission_h
 #define mozilla_dom_HTMLFormSubmission_h
 
@@ -112,6 +110,8 @@ class HTMLFormSubmission {
   virtual DialogFormSubmission* GetAsDialogSubmission() { return nullptr; }
 
   FormData* GetFormData() const { return mFormData; }
+
+  virtual Element* GetSubmitterElement() const;
 
  protected:
   
