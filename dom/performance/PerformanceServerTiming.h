@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_PerformanceServerTiming_h
 #define mozilla_dom_PerformanceServerTiming_h
 
@@ -25,7 +23,7 @@ class PerformanceServerTiming final : public nsISupports,
     MOZ_ASSERT(mServerTiming);
   }
 
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(PerformanceServerTiming)
 
   JSObject* WrapObject(JSContext* aCx,
