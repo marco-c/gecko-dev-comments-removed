@@ -33,6 +33,10 @@ add_setup(async function () {
   ]);
   await SearchTestUtils.initXPCShellAddonManager();
   await SearchService.init();
+
+  
+  
+  Services.prefs.setBoolPref("browser.settings-redesign.enabled", false);
 });
 
 add_task(async function test_migration_from_pre_ids() {

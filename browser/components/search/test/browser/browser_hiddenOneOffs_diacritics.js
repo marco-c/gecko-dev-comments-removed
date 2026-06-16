@@ -11,6 +11,14 @@ let searchIcon;
 let engine;
 
 add_setup(async function () {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      
+      
+      ["browser.settings-redesign.enabled", false],
+    ],
+  });
+
   let searchbar = await gCUITestUtils.addSearchBar();
   registerCleanupFunction(() => {
     gCUITestUtils.removeSearchBar();
