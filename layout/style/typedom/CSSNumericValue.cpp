@@ -168,8 +168,13 @@ already_AddRefed<CSSUnitValue> CSSNumericValue::To(const nsACString& aUnit,
 already_AddRefed<CSSMathSum> CSSNumericValue::ToSum(
     const Sequence<nsCString>& aUnits, ErrorResult& aRv) const {
   
-  
-  
+  for (const auto& unit : aUnits) {
+    StyleNumericType numericType;
+    if (!Servo_NumericType_Create(&unit, &numericType)) {
+      aRv.ThrowSyntaxError("Invalid unit: "_ns + unit);
+      return nullptr;
+    }
+  }
 
   
   
