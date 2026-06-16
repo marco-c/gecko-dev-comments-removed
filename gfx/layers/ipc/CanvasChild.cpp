@@ -645,12 +645,19 @@ already_AddRefed<gfx::DataSourceSurface> CanvasChild::GetDataSurface(
     return nullptr;
   }
 
+  size_t sizeRequired = SizeOfDataSurfaceShmem(ssSize, ssFormat);
+  if (!sizeRequired) {
+    return nullptr;
+  }
+
   
   if (!aDetached) {
     
     
+    
     auto it = mTextureInfo.find(aTextureOwnerId);
-    if (it != mTextureInfo.end() && it->second.mSnapshotShmem) {
+    if (it != mTextureInfo.end() && it->second.mSnapshotShmem &&
+        !NS_WARN_IF(sizeRequired > it->second.mSnapshotShmem->Size())) {
       const auto* shmemPtr = it->second.mSnapshotShmem->DataAs<uint8_t>();
       MOZ_ASSERT(shmemPtr);
       mRecorder->RecordEvent(RecordedPrepareShmem(aTextureOwnerId));
@@ -673,11 +680,6 @@ already_AddRefed<gfx::DataSourceSurface> CanvasChild::GetDataSurface(
       aMayInvalidate = true;
       return dataSurface.forget();
     }
-  }
-
-  size_t sizeRequired = SizeOfDataSurfaceShmem(ssSize, ssFormat);
-  if (!sizeRequired) {
-    return nullptr;
   }
 
   RecordEvent(RecordedCacheDataSurface(aSurface));
