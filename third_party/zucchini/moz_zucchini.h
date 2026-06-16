@@ -38,11 +38,27 @@ enum Code {
   kStatusDiskFull = 8,
   kStatusIoError = 9,
   kStatusFatal = 10,
+  
+  
+  kStatusOutOfMemory = 100,
 };
 
 }  
 
 namespace mozilla {
+
+#ifdef ENABLE_TESTS
+
+
+
+
+struct TestOptions {
+  bool logDestructorMarker = false;
+  bool triggerBadAlloc = false;
+  bool triggerCheckFailure = false;
+};
+void SetTestOptions(const TestOptions& aOptions);
+#endif  
 
 using LogFunctionPtr = void (*)(const char* aMessage);
 void SetLogFunction(LogFunctionPtr aLogFunction);
