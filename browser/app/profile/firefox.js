@@ -3391,6 +3391,9 @@ pref("browser.shareqrcode.enabled", false);
 #endif
 
 
+pref("browser.shareqrcode.embed_logo", true);
+
+
 
 
 
