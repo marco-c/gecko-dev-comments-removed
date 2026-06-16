@@ -12,27 +12,27 @@
 #define RTC_BASE_IP_ADDRESS_H_
 
 #include <cstdint>
+#include <cstring>
+#include <string>
+
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+#include "rtc_base/byte_order.h"
+#include "rtc_base/net_helpers.h"
+#include "rtc_base/system/rtc_export.h"
+
 #if defined(WEBRTC_POSIX)
 #include <arpa/inet.h>  
 #include <netdb.h>
 #include <netinet/in.h>  
-
-#include "absl/strings/string_view.h"
 #endif
+
 #if defined(WEBRTC_WIN)
 #include <ws2tcpip.h>
-#endif
-#include <string.h>
 
-#include <string>
-
-#include "rtc_base/byte_order.h"
-#if defined(WEBRTC_WIN)
 #include "rtc_base/win32.h"
 #endif
-#include "absl/strings/string_view.h"
-#include "rtc_base/net_helpers.h"
-#include "rtc_base/system/rtc_export.h"
+
 namespace webrtc {
 
 enum IPv6AddressFlag {
@@ -129,6 +129,29 @@ class RTC_EXPORT IPAddress {
   
   bool IsNil() const;
 
+  template <typename Sink>
+  friend void AbslStringify(Sink& sink, const IPAddress& ip) {
+    switch (ip.family_) {
+      case AF_INET:
+        sink.Append("ipv4:");
+        sink.Append(ip.ToString());
+        break;
+      case AF_INET6:
+        sink.Append("ipv6:");
+        sink.Append(ip.ToString());
+        break;
+      case AF_UNSPEC:
+        sink.Append("unspecified");
+        break;
+      default:
+        sink.Append("unknown:");
+        sink.Append(absl::StrCat(ip.family_));
+        sink.Append(":");
+        sink.Append(ip.ToString());
+        break;
+    }
+  }
+
  private:
   int family_;
   union {
@@ -213,40 +236,5 @@ int CountIPMaskBits(const IPAddress& mask);
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace rtc {
-using ::webrtc::CountIPMaskBits;
-using ::webrtc::GetAnyIP;
-using ::webrtc::GetLoopbackIP;
-using ::webrtc::HashIP;
-using ::webrtc::InterfaceAddress;
-using ::webrtc::IPAddress;
-using ::webrtc::IPAddressPrecedence;
-using ::webrtc::IPFromAddrInfo;
-using ::webrtc::IPFromString;
-using ::webrtc::IPIs6Bone;
-using ::webrtc::IPIs6To4;
-using ::webrtc::IPIsAny;
-using ::webrtc::IPIsLinkLocal;
-using ::webrtc::IPIsLoopback;
-using ::webrtc::IPIsMacBased;
-using ::webrtc::IPIsPrivate;
-using ::webrtc::IPIsPrivateNetwork;
-using ::webrtc::IPIsSharedNetwork;
-using ::webrtc::IPIsSiteLocal;
-using ::webrtc::IPIsTeredo;
-using ::webrtc::IPIsULA;
-using ::webrtc::IPIsUnspec;
-using ::webrtc::IPIsV4Compatibility;
-using ::webrtc::IPIsV4Mapped;
-using ::webrtc::IPV6_ADDRESS_FLAG_DEPRECATED;
-using ::webrtc::IPV6_ADDRESS_FLAG_NONE;
-using ::webrtc::IPV6_ADDRESS_FLAG_TEMPORARY;
-using ::webrtc::IPv6AddressFlag;
-using ::webrtc::TruncateIP;
-}  
-#endif  
 
 #endif  
