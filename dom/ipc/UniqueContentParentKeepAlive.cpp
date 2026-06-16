@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/UniqueContentParentKeepAlive.h"
 
 #include "mozilla/dom/ContentParent.h"
@@ -71,7 +69,7 @@ namespace {
 
 class XpcomContentParentKeepAlive final : public nsIContentParentKeepAlive {
  public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_CLASS(XpcomContentParentKeepAlive)
 
   explicit XpcomContentParentKeepAlive(
