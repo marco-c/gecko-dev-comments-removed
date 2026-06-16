@@ -156,6 +156,7 @@ already_AddRefed<ViewTimeline> ViewTimeline::Constructor(
       doc, scroller, axis, subject, PseudoStyleType::NotPseudo, inset);
   if (subject) {
     
+    
     result->UpdateCachedCurrentTime();
   }
 
