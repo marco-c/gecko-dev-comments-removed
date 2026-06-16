@@ -2,17 +2,23 @@
 
 
 
+import ntpath
 import os
+
+HG_SHARE_BASE_DIR = ntpath.join(
+    ntpath.dirname(ntpath.normpath(os.environ["HG_CACHE"])),
+    "hg-shared",
+)
 
 config = {
     "default_actions": [
         "get-secrets",
         "build",
     ],
-    "vcs_share_base": os.path.join("y:", os.sep, "hg-shared"),
+    "vcs_share_base": HG_SHARE_BASE_DIR,
     "max_build_output_timeout": 60 * 80,
     "env": {
-        "HG_SHARE_BASE_DIR": os.path.join("y:", os.sep, "hg-shared"),
+        "HG_SHARE_BASE_DIR": HG_SHARE_BASE_DIR,
         "MOZBUILD_STATE_PATH": os.path.join(os.getcwd(), ".mozbuild"),
         "MOZ_CRASHREPORTER_NO_REPORT": "1",
         "MOZ_OBJDIR": "%(abs_obj_dir)s",
