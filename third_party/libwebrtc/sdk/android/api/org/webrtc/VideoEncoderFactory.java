@@ -16,20 +16,20 @@ import androidx.annotation.Nullable;
 public interface VideoEncoderFactory {
   public interface VideoEncoderSelector {
     
-    @CalledByNative("VideoEncoderSelector") void onCurrentEncoder(VideoCodecInfo info);
+    @CalledByNative void onCurrentEncoder(VideoCodecInfo info);
 
     
 
 
 
-    @Nullable @CalledByNative("VideoEncoderSelector") VideoCodecInfo onAvailableBitrate(int kbps);
+    @Nullable @CalledByNative VideoCodecInfo onAvailableBitrate(int kbps);
 
     
 
 
 
     @Nullable
-    @CalledByNative("VideoEncoderSelector")
+    @CalledByNative
     default VideoCodecInfo onResolutionChange(int widht, int height) {
       return null;
     }
@@ -39,7 +39,7 @@ public interface VideoEncoderFactory {
 
 
 
-    @Nullable @CalledByNative("VideoEncoderSelector") VideoCodecInfo onEncoderBroken();
+    @Nullable @CalledByNative VideoCodecInfo onEncoderBroken();
   }
 
   

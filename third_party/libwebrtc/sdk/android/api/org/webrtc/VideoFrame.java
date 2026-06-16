@@ -38,7 +38,7 @@ public class VideoFrame implements RefCounted {
     
 
 
-    @CalledByNative("Buffer")
+    @CalledByNative
     @VideoFrameBufferType
     default int getBufferType() {
       return VideoFrameBufferType.NATIVE;
@@ -47,8 +47,8 @@ public class VideoFrame implements RefCounted {
     
 
 
-    @CalledByNative("Buffer") int getWidth();
-    @CalledByNative("Buffer") int getHeight();
+    @CalledByNative int getWidth();
+    @CalledByNative int getHeight();
 
     
 
@@ -58,16 +58,16 @@ public class VideoFrame implements RefCounted {
 
 
 
-    @Nullable @CalledByNative("Buffer") I420Buffer toI420();
+    @Nullable @CalledByNative I420Buffer toI420();
 
-    @Override @CalledByNative("Buffer") void retain();
-    @Override @CalledByNative("Buffer") void release();
+    @Override @CalledByNative void retain();
+    @Override @CalledByNative void release();
 
     
 
 
 
-    @CalledByNative("Buffer")
+    @CalledByNative
     Buffer cropAndScale(
         int cropX, int cropY, int cropWidth, int cropHeight, int scaleWidth, int scaleHeight);
   }
@@ -87,25 +87,25 @@ public class VideoFrame implements RefCounted {
 
 
 
-    @CalledByNative("I420Buffer") ByteBuffer getDataY();
+    @CalledByNative ByteBuffer getDataY();
     
 
 
 
 
 
-    @CalledByNative("I420Buffer") ByteBuffer getDataU();
+    @CalledByNative ByteBuffer getDataU();
     
 
 
 
 
 
-    @CalledByNative("I420Buffer") ByteBuffer getDataV();
+    @CalledByNative ByteBuffer getDataV();
 
-    @CalledByNative("I420Buffer") int getStrideY();
-    @CalledByNative("I420Buffer") int getStrideU();
-    @CalledByNative("I420Buffer") int getStrideV();
+    @CalledByNative int getStrideY();
+    @CalledByNative int getStrideU();
+    @CalledByNative int getStrideV();
   }
 
   

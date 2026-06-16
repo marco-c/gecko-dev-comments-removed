@@ -26,32 +26,32 @@ public class DataChannel {
     
     public int id = -1;
 
-    @CalledByNative("Init")
+    @CalledByNative
     boolean getOrdered() {
       return ordered;
     }
 
-    @CalledByNative("Init")
+    @CalledByNative
     int getMaxRetransmitTimeMs() {
       return maxRetransmitTimeMs;
     }
 
-    @CalledByNative("Init")
+    @CalledByNative
     int getMaxRetransmits() {
       return maxRetransmits;
     }
 
-    @CalledByNative("Init")
+    @CalledByNative
     String getProtocol() {
       return protocol;
     }
 
-    @CalledByNative("Init")
+    @CalledByNative
     boolean getNegotiated() {
       return negotiated;
     }
 
-    @CalledByNative("Init")
+    @CalledByNative
     int getId() {
       return id;
     }
@@ -68,7 +68,7 @@ public class DataChannel {
 
     public final boolean binary;
 
-    @CalledByNative("Buffer")
+    @CalledByNative
     public Buffer(ByteBuffer data, boolean binary) {
       this.data = data;
       this.binary = binary;
@@ -78,15 +78,15 @@ public class DataChannel {
   
   public interface Observer {
     
-    @CalledByNative("Observer") public void onBufferedAmountChange(long previousAmount);
+    @CalledByNative public void onBufferedAmountChange(long previousAmount);
     
-    @CalledByNative("Observer") public void onStateChange();
+    @CalledByNative public void onStateChange();
     
 
 
 
 
-    @CalledByNative("Observer") public void onMessage(Buffer buffer);
+    @CalledByNative public void onMessage(Buffer buffer);
   }
 
   
@@ -96,7 +96,7 @@ public class DataChannel {
     CLOSING,
     CLOSED;
 
-    @CalledByNative("State")
+    @CalledByNative
     static State fromNativeIndex(int nativeIndex) {
       return values()[nativeIndex];
     }
