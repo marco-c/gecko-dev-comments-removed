@@ -70,8 +70,9 @@ add_task(async function test_ai_chat_message_rendering() {
 
       function setRoleAndMessage(el, role, message) {
         
-        el.role = role;
-        el.setAttribute("role", role);
+        
+        
+        el.setAttribute("data-message-role", role);
 
         el.message = message;
         el.setAttribute("message", message);
@@ -205,8 +206,9 @@ add_task(async function test_user_message_website_mentions_render_as_chips() {
       
       const elJS = el.wrappedJSObject || el;
 
-      elJS.role = "user";
-      el.setAttribute("role", "user");
+      
+      
+      el.setAttribute("data-message-role", "user");
 
       elJS.message = markdown;
       el.setAttribute("message", markdown);
@@ -321,8 +323,7 @@ add_task(
         doc.body.appendChild(el);
 
         const elJS = el.wrappedJSObject || el;
-        elJS.role = "user";
-        el.setAttribute("role", "user");
+        el.setAttribute("data-message-role", "user");
         elJS.message = emptyMarkdown;
         el.setAttribute("message", emptyMarkdown);
 
