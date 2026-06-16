@@ -427,7 +427,8 @@ class WinUtils {
 
 
   static void SetupKeyModifiersSequence(nsTArray<KeyPair>* aArray,
-                                        uint32_t aModifiers, UINT aMessage);
+                                        nsIWidget::NativeModifiers aModifiers,
+                                        UINT aMessage);
 
   
 
