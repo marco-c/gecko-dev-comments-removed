@@ -161,4 +161,23 @@ class SoftNavigationTestHelper {
 
     return {softNav: softNavs[0], icp: validIcp};
   }
+
+  
+
+
+
+
+
+
+  async waitForIcp(condition = entry => true) {
+    let allIcps = [];
+    while (!allIcps.some(condition)) {
+      const icpPromise =
+          SoftNavigationTestHelper.getPerformanceEntries('interaction-contentful-paint');
+      const newIcps = await this.withTimeoutMessage(
+          icpPromise, 'ICP not detected.',  3000);
+      allIcps = allIcps.concat(newIcps);
+    }
+    return allIcps;
+  }
 }
