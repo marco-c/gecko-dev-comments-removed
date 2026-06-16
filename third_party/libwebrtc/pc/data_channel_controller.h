@@ -75,6 +75,7 @@ class DataChannelController : public SctpDataChannelControllerInterface,
   void OnReadyToSend() override;
   void OnTransportClosed(RTCError error) override;
   void OnBufferedAmountLow(int channel_id) override;
+  void OnMaxMessageSize(int max_message_size) override;
 
   
   void PrepareForShutdown();
@@ -175,6 +176,9 @@ class DataChannelController : public SctpDataChannelControllerInterface,
       DataChannelUsage::kNeverUsed;
 
   std::unique_ptr<DataChannelEventObserverInterface> event_observer_;
+
+  
+  std::optional<int> max_message_size_ RTC_GUARDED_BY(network_thread());
 
   
   PeerConnectionInternal* const pc_;

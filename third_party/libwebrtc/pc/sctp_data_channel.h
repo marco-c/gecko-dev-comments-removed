@@ -219,6 +219,9 @@ class SctpDataChannel : public DataChannelInterface {
   
   
   void OnBufferedAmountLow();
+  
+  
+  void OnMaxMessageSize(int max_message_size);
 
   DataChannelStats GetStats() const;
 
@@ -296,6 +299,7 @@ class SctpDataChannel : public DataChannelInterface {
   uint64_t bytes_sent_ RTC_GUARDED_BY(network_thread_) = 0;
   uint32_t messages_received_ RTC_GUARDED_BY(network_thread_) = 0;
   uint64_t bytes_received_ RTC_GUARDED_BY(network_thread_) = 0;
+  std::optional<int> max_message_size_ RTC_GUARDED_BY(network_thread_);
   WeakPtr<SctpDataChannelControllerInterface> controller_
       RTC_GUARDED_BY(network_thread_);
   HandshakeState handshake_state_ RTC_GUARDED_BY(network_thread_) =

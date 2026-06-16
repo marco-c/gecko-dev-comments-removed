@@ -107,6 +107,7 @@ class DataChannelObserver {
   virtual void OnMessage(const DataBuffer& buffer) = 0;
   
   virtual void OnBufferedAmountChange(uint64_t ) {}
+  virtual void OnMaxMessageSize(int ) {}
 
   
   

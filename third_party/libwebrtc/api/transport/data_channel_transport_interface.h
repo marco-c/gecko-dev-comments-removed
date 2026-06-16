@@ -95,6 +95,10 @@ class DataChannelSink {
   
   
   virtual void OnBufferedAmountLow(int channel_id) = 0;
+
+  
+  
+  virtual void OnMaxMessageSize(int max_message_size) = 0;
 };
 
 
