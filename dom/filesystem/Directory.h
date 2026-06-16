@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_Directory_h
 #define mozilla_dom_Directory_h
 
@@ -23,7 +21,7 @@ class StringOrFileOrDirectory;
 
 class Directory final : public nsISupports, public nsWrapperCache {
  public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(Directory)
 
   static already_AddRefed<Directory> Constructor(const GlobalObject& aGlobal,
