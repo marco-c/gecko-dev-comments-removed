@@ -17222,17 +17222,21 @@ function SportsWidget_SportsWidget({
 
   
   
+  const resultsFollowedOnly = sportsWidgetData.followedOnly?.results ?? true;
+  const upcomingFollowedOnly = sportsWidgetData.followedOnly?.upcoming ?? true;
   const {
     sortedPrevious,
     sortedCurrent,
     sortedNext
   } = (0,external_React_namespaceObject.useMemo)(() => {
+    const previous = rawMatches?.previous ?? [];
+    const next = rawMatches?.next ?? [];
     return {
-      sortedPrevious: sortFollowedFirst(rawMatches?.previous ?? [], selectedTeamsSet),
+      sortedPrevious: resultsFollowedOnly ? sortFollowedFirst(previous, selectedTeamsSet) : previous,
       sortedCurrent: sortFollowedFirst(rawLive ?? [], selectedTeamsSet),
-      sortedNext: sortFollowedFirst(rawMatches?.next ?? [], selectedTeamsSet)
+      sortedNext: upcomingFollowedOnly ? sortFollowedFirst(next, selectedTeamsSet) : next
     };
-  }, [rawMatches, rawLive, selectedTeamsSet]);
+  }, [rawMatches, rawLive, selectedTeamsSet, resultsFollowedOnly, upcomingFollowedOnly]);
 
   
   
