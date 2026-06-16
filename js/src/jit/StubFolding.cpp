@@ -422,6 +422,17 @@ static bool TryFoldingGuardShapes(JSContext* cx, ICFallbackStub* fallback,
     return true;
   }
 
+  if (writer.tooLarge()) {
+    JitSpew(JitSpew_StubFolding,
+            "Folded stub at offset %u too large (icScript: %p) with %zu shapes "
+            "(%s:%u:%u)",
+            fallback->pcOffset(), icScript, shapeList.length(),
+            script->filename(), script->lineno(),
+            script->column().oneOriginValue());
+    cx->runtime()->setUseCounter(cx->global(), JSUseCounter::IC_STUB_TOO_LARGE);
+    return true;
+  }
+
   
   fallback->discardStubs(cx->zone(), icEntry);
 
@@ -431,7 +442,7 @@ static bool TryFoldingGuardShapes(JSContext* cx, ICFallbackStub* fallback,
     ReportOutOfMemory(cx);
     return false;
   }
-  MOZ_ASSERT(result == ICAttachResult::Attached);
+  MOZ_RELEASE_ASSERT(result == ICAttachResult::Attached);
 
   
   
