@@ -17784,7 +17784,12 @@ function SportsWidget_SportsWidget({
     matchesTab
   } = sportsWidgetData;
   const hasUserSelectedTab = (0,external_React_namespaceObject.useRef)(false);
-  const activeTab = hasLiveGames && !hasUserSelectedTab.current ? MATCHES_TABS.NOW : matchesTab;
+  
+  
+  
+  
+  const resolvedMatchesTab = matchesTab === MATCHES_TABS.NOW && !hasLiveGames ? MATCHES_TABS.UPCOMING : matchesTab;
+  const activeTab = hasLiveGames && !hasUserSelectedTab.current ? MATCHES_TABS.NOW : resolvedMatchesTab;
 
   
   
