@@ -139,8 +139,6 @@ void HTMLSelectElement::SetupShadowTree() {
     sr->AppendChildTo(slot, false, IgnoreErrors());
   }
 
-  
-  
   {
     RefPtr label = doc->CreateHTMLElement(nsGkAtoms::label);
     label->SetPseudoElementType(PseudoStyleType::MozSelectContent);
@@ -151,10 +149,16 @@ void HTMLSelectElement::SetupShadowTree() {
     sr->AppendChildTo(label, false, IgnoreErrors());
   }
 
-  
-  
-  
-  
+  {
+    RefPtr icon = doc->CreateHTMLElement(nsGkAtoms::span);
+    icon->SetPseudoElementType(PseudoStyleType::PickerIcon);
+    {
+      RefPtr text = doc->CreateTextNode(u"\ufeff"_ns);
+      icon->AppendChildTo(text, false, IgnoreErrors());
+    }
+    sr->AppendChildTo(icon, false, IgnoreErrors());
+  }
+
   RefPtr picker = doc->CreateHTMLElement(nsGkAtoms::div);
   picker->SetPseudoElementType(PseudoStyleType::Picker);
   picker->SetAttr(nsGkAtoms::name, u"select"_ns, IgnoreErrors());
@@ -162,10 +166,6 @@ void HTMLSelectElement::SetupShadowTree() {
     nsAutoString popoverstate;
     picker->SetAttr(kNameSpaceID_None, nsGkAtoms::popover, popoverstate, false);
 
-    
-    
-    
-    
     RefPtr pickerSlot = doc->CreateHTMLElement(nsGkAtoms::slot);
     picker->AppendChildTo(pickerSlot, false, IgnoreErrors());
   }
