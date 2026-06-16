@@ -4296,20 +4296,25 @@ void Document::SetDocumentURI(nsIURI* aURI) {
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  nsTArray<TextDirective> textDirectives;
-  FragmentDirective::ParseAndRemoveFragmentDirectiveFromFragment(
-      mDocumentURI, &textDirectives);
-  if (!textDirectives.IsEmpty()) {
-    SetUseCounter(eUseCounter_custom_TextDirectivePages);
+  if (!IsLoadedAsData()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    nsTArray<TextDirective> textDirectives;
+    FragmentDirective::ParseAndRemoveFragmentDirectiveFromFragment(
+        mDocumentURI, &textDirectives);
+    if (!textDirectives.IsEmpty()) {
+      SetUseCounter(eUseCounter_custom_TextDirectivePages);
+    }
+    FragmentDirective()->SetTextDirectives(std::move(textDirectives));
   }
-  FragmentDirective()->SetTextDirectives(std::move(textDirectives));
 
   nsIURI* newBase = GetDocBaseURI();
 
