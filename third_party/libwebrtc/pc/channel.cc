@@ -664,6 +664,7 @@ void BaseChannel::ChannelNotWritable_n() {
 RTCError BaseChannel::UpdateLocalStreams_w(
     const std::vector<StreamParams>& streams,
     SdpType type) {
+  RTC_DCHECK_DISALLOW_THREAD_BLOCKING_CALLS();
   
   
   
@@ -807,6 +808,8 @@ RTCError BaseChannel::UpdateRemoteStreams_w(
            << "Failed to set up audio demuxing for mid='" << mid() << "'.";
   }
 
+  RTC_DCHECK_BLOCK_COUNT_NO_MORE_THAN(1);
+
   remote_streams_ = streams;
 
   set_remote_content_direction(content->direction());
@@ -821,26 +824,6 @@ RtpHeaderExtensions BaseChannel::GetDeduplicatedRtpHeaderExtensions(
     const RtpHeaderExtensions& extensions) {
   return RtpExtension::DeduplicateHeaderExtensions(extensions,
                                                    extensions_filter_);
-}
-
-
-
-
-
-
-
-RTCError BaseChannel::CheckRtpExtensionValidity(
-    const RtpHeaderExtensions& extensions) const {
-  return network_thread()->BlockingCall([&]() -> RTCError {
-    RTC_DCHECK_RUN_ON(network_thread());
-    RTCError error =
-        rtp_transport_ ? rtp_transport_->VerifyRtpHeaderExtensionMap(extensions)
-                       : (RTCError::InvalidState() << "No transport assigned.");
-    if (!error.ok()) {
-      error.string_builder() << " (mid=" << mid() << ")";
-    }
-    return error;
-  });
 }
 
 void BaseChannel::SignalSentPacket_n(const SentPacketInfo& sent_packet) {
@@ -878,6 +861,7 @@ VoiceChannel::~VoiceChannel() {
 }
 
 void VoiceChannel::UpdateMediaSendRecvState_w() {
+  RTC_DCHECK_DISALLOW_THREAD_BLOCKING_CALLS();
   
   
   bool receive =
@@ -898,15 +882,25 @@ RTCError VoiceChannel::SetLocalContent_w(const MediaContentDescription* content,
   TRACE_EVENT0("webrtc", "VoiceChannel::SetLocalContent_w");
   RTC_DLOG(LS_INFO) << "Setting local voice description for " << ToString();
 
-  RTC_LOG_THREAD_BLOCK_COUNT();
-
   RtpHeaderExtensions header_extensions =
       GetDeduplicatedRtpHeaderExtensions(content->rtp_header_extensions());
 
-  RTCError error = CheckRtpExtensionValidity(header_extensions);
+  std::optional<flat_set<uint8_t>> payload_types;
+  if (RtpTransceiverDirectionHasRecv(content->direction())) {
+    payload_types.emplace();
+    for (const Codec& codec : content->codecs()) {
+      payload_types->insert(codec.id);
+    }
+  }
+
+  RTCError error = MaybeUpdateDemuxerAndRtpExtensions_w(
+      false, std::move(payload_types), header_extensions,
+      std::nullopt);
   if (!error.ok()) {
     return error;
   }
+
+  RTC_LOG_THREAD_BLOCK_COUNT();
 
   
   media_send_channel()->SetExtmapAllowMixed(content->extmap_allow_mixed());
@@ -922,14 +916,6 @@ RTCError VoiceChannel::SetLocalContent_w(const MediaContentDescription* content,
            << "Failed to set local audio description recv parameters for "
               "m-section with mid='"
            << mid() << "'.";
-  }
-
-  std::optional<flat_set<uint8_t>> payload_types;
-  if (RtpTransceiverDirectionHasRecv(content->direction())) {
-    payload_types.emplace();
-    for (const Codec& codec : content->codecs()) {
-      payload_types->insert(codec.id);
-    }
   }
 
   last_recv_params_ = recv_params;
@@ -955,14 +941,9 @@ RTCError VoiceChannel::SetLocalContent_w(const MediaContentDescription* content,
   set_local_content_direction(content->direction());
   UpdateMediaSendRecvState_w();
 
-  
-  
-  
+  RTC_DCHECK_BLOCK_COUNT_NO_MORE_THAN(0);
 
-  return MaybeUpdateDemuxerAndRtpExtensions_w(
-      false, std::move(payload_types),
-      recv_params.extensions,
-      std::nullopt);
+  return RTCError::OK();
 }
 
 RTCError VoiceChannel::SetRemoteContent_w(
@@ -976,10 +957,14 @@ RTCError VoiceChannel::SetRemoteContent_w(
                                         &send_params);
   send_params.mid = mid();
 
-  RTCError error = CheckRtpExtensionValidity(send_params.extensions);
+  RTCError error = MaybeUpdateDemuxerAndRtpExtensions_w(
+      false, std::nullopt,
+      send_params.extensions, std::nullopt);
   if (!error.ok()) {
     return error;
   }
+
+  RTC_LOG_THREAD_BLOCK_COUNT();
 
   if (!media_send_channel()->SetSenderParameters(send_params)) {
     return RTCError::InvalidParameter()
@@ -1012,12 +997,11 @@ RTCError VoiceChannel::SetRemoteContent_w(
       media_send_channel()->SenderNonSenderRttEnabled());
   last_send_params_ = send_params;
 
+  RTC_DCHECK_BLOCK_COUNT_NO_MORE_THAN(0);
+
   error = UpdateRemoteStreams_w(content, type);
-  if (error.ok() && (type == SdpType::kAnswer || type == SdpType::kPrAnswer)) {
-    error = MaybeUpdateDemuxerAndRtpExtensions_w(
-        false, std::nullopt,
-        last_recv_params_.extensions, std::nullopt);
-  }
+
+  RTC_DCHECK_BLOCK_COUNT_NO_MORE_THAN(1);
 
   return error;
 }
@@ -1051,6 +1035,7 @@ VideoChannel::~VideoChannel() {
 }
 
 void VideoChannel::UpdateMediaSendRecvState_w() {
+  RTC_DCHECK_DISALLOW_THREAD_BLOCKING_CALLS();
   
   
   bool receive =
@@ -1070,7 +1055,17 @@ RTCError VideoChannel::SetLocalContent_w(const MediaContentDescription* content,
   RtpHeaderExtensions header_extensions =
       GetDeduplicatedRtpHeaderExtensions(content->rtp_header_extensions());
 
-  RTCError error = CheckRtpExtensionValidity(header_extensions);
+  std::optional<flat_set<uint8_t>> payload_types;
+  if (RtpTransceiverDirectionHasRecv(content->direction())) {
+    payload_types.emplace();
+    for (const Codec& codec : content->codecs()) {
+      payload_types->insert(codec.id);
+    }
+  }
+
+  RTCError error = MaybeUpdateDemuxerAndRtpExtensions_w(
+      false, std::move(payload_types), header_extensions,
+      std::nullopt);
   if (!error.ok()) {
     return error;
   }
@@ -1108,14 +1103,6 @@ RTCError VideoChannel::SetLocalContent_w(const MediaContentDescription* content,
            << mid() << "'.";
   }
 
-  std::optional<flat_set<uint8_t>> payload_types;
-  if (RtpTransceiverDirectionHasRecv(content->direction())) {
-    payload_types.emplace();
-    for (const Codec& codec : content->codecs()) {
-      payload_types->insert(codec.id);
-    }
-  }
-
   last_recv_params_ = recv_params;
 
   if (type == SdpType::kAnswer || type == SdpType::kPrAnswer) {
@@ -1137,13 +1124,7 @@ RTCError VideoChannel::SetLocalContent_w(const MediaContentDescription* content,
 
   RTC_DCHECK_BLOCK_COUNT_NO_MORE_THAN(0);
 
-  error = MaybeUpdateDemuxerAndRtpExtensions_w(
-      false, std::move(payload_types),
-      recv_params.extensions, std::nullopt);
-
-  RTC_DCHECK_BLOCK_COUNT_NO_MORE_THAN(1);
-
-  return error;
+  return RTCError::OK();
 }
 
 RTCError VideoChannel::SetRemoteContent_w(
@@ -1158,10 +1139,14 @@ RTCError VideoChannel::SetRemoteContent_w(
   send_params.mid = mid();
   send_params.conference_mode = content->conference_mode();
 
-  RTCError error = CheckRtpExtensionValidity(send_params.extensions);
+  RTCError error = MaybeUpdateDemuxerAndRtpExtensions_w(
+      false, std::nullopt,
+      send_params.extensions, std::nullopt);
   if (!error.ok()) {
     return error;
   }
+
+  RTC_LOG_THREAD_BLOCK_COUNT();
 
   VideoReceiverParameters recv_params = last_recv_params_;
 
@@ -1193,14 +1178,13 @@ RTCError VideoChannel::SetRemoteContent_w(
     }
     last_recv_params_ = recv_params;
   }
-  last_send_params_ = send_params;
 
+  RTC_DCHECK_BLOCK_COUNT_NO_MORE_THAN(0);
+
+  last_send_params_ = send_params;
   error = UpdateRemoteStreams_w(content, type);
-  if (error.ok() && (type == SdpType::kAnswer || type == SdpType::kPrAnswer)) {
-    error = MaybeUpdateDemuxerAndRtpExtensions_w(
-        false, std::nullopt,
-        last_recv_params_.extensions, std::nullopt);
-  }
+
+  RTC_DCHECK_BLOCK_COUNT_NO_MORE_THAN(1);
 
   return error;
 }

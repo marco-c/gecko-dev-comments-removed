@@ -255,13 +255,6 @@ class BaseChannel : public ChannelInterface,
   
   
   
-  
-  RTCError CheckRtpExtensionValidity(
-      const RtpHeaderExtensions& extensions) const RTC_RUN_ON(worker_thread());
-
-  
-  
-  
   RTCError MaybeUpdateDemuxerAndRtpExtensions_w(
       bool update_demuxer,
       std::optional<flat_set<uint8_t>> payload_types,
