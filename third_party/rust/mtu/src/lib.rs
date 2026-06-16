@@ -110,12 +110,7 @@ const fn aligned_by(size: usize, align: usize) -> usize {
 
 
 
-#[cfg(any(
-    target_os = "ios",
-    target_os = "tvos",
-    target_os = "visionos",
-    target_os = "redox"
-))]
+#[cfg(any(target_os = "ios", target_os = "tvos", target_os = "visionos"))]
 pub fn interface_and_mtu_impl(remote: IpAddr) -> Result<(String, usize)> {
     return Err(default_err());
 }

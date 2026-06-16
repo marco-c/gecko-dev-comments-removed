@@ -19,8 +19,8 @@ use super::{
     super::{Connection, ConnectionParameters, Output, State},
     AT_LEAST_PTO, DEFAULT_ADDR, DEFAULT_RTT, DEFAULT_STREAM_DATA, POST_HANDSHAKE_CWND,
     assert_full_cwnd, connect, connect_force_idle, connect_rtt_idle, connect_with_rtt, cwnd,
-    default_client, default_server, fill_cwnd, maybe_authenticate, new_client,
-    new_client_with_qlog, new_server, send_and_receive, send_something,
+    default_client, default_server, fill_cwnd, maybe_authenticate, new_client, new_server,
+    send_and_receive, send_something,
 };
 use crate::{
     CloseReason, Error, Pmtud, Stats, StreamType,
@@ -1145,47 +1145,4 @@ fn server_resends_1rtt_on_undecryptable_handshake() {
     let s_response = server.process_output(receive_time).dgram();
     assert!(s_response.is_some());
     assert_eq!(server.stats().frame_tx.handshake_done, 2);
-}
-
-#[test]
-fn split_api_loss_timer_type() {
-    let (mut client, qlog_contents) =
-        new_client_with_qlog(ConnectionParameters::default().pacing(false));
-    let mut server = new_server(ConnectionParameters::default().pacing(false));
-    let mut now = connect_rtt_idle(&mut client, &mut server, DEFAULT_RTT);
-
-    
-    let d0 = send_something(&mut client, now);
-    let d1 = send_something(&mut client, now);
-
-    
-    now += DEFAULT_RTT / 2;
-    server.process_input(d1, now);
-    let ack1 = server.process_output(now).dgram().unwrap();
-
-    
-    now += DEFAULT_RTT / 2;
-    client.process_input(ack1, now);
-    _ = client.process_output(now);
-
-    
-    let loss_time = now + DEFAULT_RTT / 8;
-
-    
-    let server_rx_time = loss_time.checked_sub(DEFAULT_RTT / 2).unwrap();
-    server.process_input(d0, server_rx_time);
-    let ack_all = server.process_output(server_rx_time).dgram().unwrap();
-
-    
-    
-    
-    client.process_input(ack_all, loss_time);
-    _ = client.process_output(loss_time);
-
-    drop(client);
-    let log = qlog_contents.to_string();
-    assert!(
-        log.contains(r#""timer_type":"ack""#),
-        "Expected loss_timer_expired with timer_type ack in qlog: {log}"
-    );
 }

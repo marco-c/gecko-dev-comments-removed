@@ -266,7 +266,7 @@ impl LiteralReader {
     
     
     
-    pub(crate) const MAX_LEN: usize = 384 * 1024;
+    const MAX_LEN: usize = 384 * 1024;
 
     
     

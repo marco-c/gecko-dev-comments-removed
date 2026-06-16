@@ -22,8 +22,8 @@ use crate::{
         NO_PREFIX,
     },
     qpack_send_buf::Encoder as _,
-    reader::{LiteralReader, ReceiverBufferWrapper, parse_utf8},
-    table::{ADDITIONAL_TABLE_ENTRY_SIZE, HeaderTable},
+    reader::{ReceiverBufferWrapper, parse_utf8},
+    table::HeaderTable,
 };
 
 #[derive(Default, Debug, PartialEq, Eq)]
@@ -210,42 +210,47 @@ impl<'a> HeaderDecoder<'a> {
             return Ok(HeaderDecoderResult::Blocked(self.req_insert_cnt));
         }
         let mut h: Vec<Header> = Vec::new();
-        let mut remaining = LiteralReader::MAX_LEN;
 
         while !self.buf.done() {
             let b = Error::map_error(self.buf.peek(), Error::Decompression)?;
-            let header = if HEADER_FIELD_INDEX_STATIC.cmp_prefix(b) {
-                Error::map_error(self.read_indexed_static(), Error::Decompression)?
+            if HEADER_FIELD_INDEX_STATIC.cmp_prefix(b) {
+                h.push(Error::map_error(
+                    self.read_indexed_static(),
+                    Error::Decompression,
+                )?);
             } else if HEADER_FIELD_INDEX_DYNAMIC.cmp_prefix(b) {
-                Error::map_error(self.read_indexed_dynamic(table), Error::Decompression)?
+                h.push(Error::map_error(
+                    self.read_indexed_dynamic(table),
+                    Error::Decompression,
+                )?);
             } else if HEADER_FIELD_INDEX_DYNAMIC_POST.cmp_prefix(b) {
-                Error::map_error(self.read_indexed_dynamic_post(table), Error::Decompression)?
+                h.push(Error::map_error(
+                    self.read_indexed_dynamic_post(table),
+                    Error::Decompression,
+                )?);
             } else if HEADER_FIELD_LITERAL_NAME_REF_STATIC.cmp_prefix(b) {
-                Error::map_error(
+                h.push(Error::map_error(
                     self.read_literal_with_name_ref_static(),
                     Error::Decompression,
-                )?
+                )?);
             } else if HEADER_FIELD_LITERAL_NAME_REF_DYNAMIC.cmp_prefix(b) {
-                Error::map_error(
+                h.push(Error::map_error(
                     self.read_literal_with_name_ref_dynamic(table),
                     Error::Decompression,
-                )?
+                )?);
             } else if HEADER_FIELD_LITERAL_NAME_LITERAL.cmp_prefix(b) {
-                Error::map_error(self.read_literal_with_name_literal(), Error::Decompression)?
+                h.push(Error::map_error(
+                    self.read_literal_with_name_literal(),
+                    Error::Decompression,
+                )?);
             } else if HEADER_FIELD_LITERAL_NAME_REF_DYNAMIC_POST.cmp_prefix(b) {
-                Error::map_error(
+                h.push(Error::map_error(
                     self.read_literal_with_name_ref_dynamic_post(table),
                     Error::Decompression,
-                )?
+                )?);
             } else {
                 unreachable!("All prefixes are covered");
-            };
-            remaining = remaining
-                .checked_sub(
-                    header.name().len() + header.value().len() + ADDITIONAL_TABLE_ENTRY_SIZE,
-                )
-                .ok_or(Error::Decompression)?;
-            h.push(header);
+            }
         }
 
         qtrace!("[{self}] done decoding header block");
@@ -388,10 +393,7 @@ impl<'a> HeaderDecoder<'a> {
 #[cfg_attr(coverage_nightly, coverage(off))]
 mod tests {
 
-    use super::{
-        ADDITIONAL_TABLE_ENTRY_SIZE, HeaderDecoder, HeaderDecoderResult, HeaderEncoder,
-        HeaderTable, LiteralReader,
-    };
+    use super::{HeaderDecoder, HeaderDecoderResult, HeaderEncoder, HeaderTable};
     use crate::Error;
 
     const INDEX_STATIC_TEST: &[(u64, &[u8], &str, &str)] = &[
@@ -924,50 +926,5 @@ mod tests {
             Error::Decompression,
             decoder_h.decode_header_block(&table, 1000, 0).unwrap_err()
         );
-    }
-
-    
-    
-    #[test]
-    fn header_list_size_limit() {
-        let table = HeaderTable::new(false);
-        
-        let entry_size = ":authority".len() + ADDITIONAL_TABLE_ENTRY_SIZE;
-        let reps = LiteralReader::MAX_LEN / entry_size + 1;
-        
-        let mut buf = vec![0x00u8, 0x00];
-        buf.resize(buf.len() + reps, 0xC0);
-        let mut decoder_h = HeaderDecoder::new(&buf);
-        assert_eq!(
-            Error::Decompression,
-            decoder_h.decode_header_block(&table, 1000, 0).unwrap_err()
-        );
-    }
-
-    
-    
-    
-    #[test]
-    fn decode_truncated_for_each_prefix() {
-        const TRUNCATED_PREFIXES: &[u8] = &[
-            0xFF, 
-            0xBF, 
-            0x1F, 
-            0x5F, 
-            0x4F, 
-            0x3F, 
-            0x07, 
-        ];
-        let mut table = HeaderTable::new(false);
-        fill_table(&mut table);
-        for &prefix in TRUNCATED_PREFIXES {
-            let buf = [0x00, 0x00, prefix];
-            let mut decoder_h = HeaderDecoder::new(&buf);
-            assert_eq!(
-                Error::Decompression,
-                decoder_h.decode_header_block(&table, 1000, 0).unwrap_err(),
-                "prefix {prefix:#04x}"
-            );
-        }
     }
 }
