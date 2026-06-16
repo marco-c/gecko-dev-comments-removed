@@ -62,10 +62,10 @@ class CacheEntry final : public nsIRunnable,
   void ClearCallbacks();
 #endif
 
-  CacheEntryHandle* NewHandle();
+  already_AddRefed<CacheEntryHandle> NewHandle();
   
   
-  CacheEntryHandle* NewWriteHandle();
+  already_AddRefed<CacheEntryHandle> NewWriteHandle();
 
   
   nsresult GetKey(nsACString& aKey);
@@ -156,6 +156,8 @@ class CacheEntry final : public nsIRunnable,
 
   nsresult HashingKeyWithStorage(nsACString& aResult) const;
   nsresult HashingKey(nsACString& aResult) const;
+
+  void NoteNoVarySearchEntry(nsIURI* aURI);
 
   static nsresult HashingKey(const nsACString& aStorageID,
                              const nsACString& aEnhanceID, nsIURI* aURI,

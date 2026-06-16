@@ -641,8 +641,7 @@ already_AddRefed<CacheEntryHandle> CacheEntry::ReopenTruncated(
   
   
   
-  RefPtr<CacheEntryHandle> writeHandle = newEntry->NewWriteHandle();
-  return writeHandle.forget();
+  return newEntry->NewWriteHandle();
 }
 
 void CacheEntry::TransferCallbacks(CacheEntry& aFromEntry) {
@@ -1006,16 +1005,21 @@ void CacheEntry::OnFetched(Callback const& aCallback) {
   }
 }
 
-CacheEntryHandle* CacheEntry::NewHandle() { return new CacheEntryHandle(this); }
+already_AddRefed<CacheEntryHandle> CacheEntry::NewHandle() {
+  return MakeAndAddRef<CacheEntryHandle>(this);
+}
 
-CacheEntryHandle* CacheEntry::NewWriteHandle() {
+already_AddRefed<CacheEntryHandle> CacheEntry::NewWriteHandle() {
   mozilla::MutexAutoLock lock(mLock);
 
   
   
   BackgroundOp(Ops::FRECENCYUPDATE);
 
-  return (mWriter = NewHandle());
+  RefPtr<CacheEntryHandle> handle = NewHandle();
+  
+  mWriter = handle;
+  return handle.forget();
 }
 
 void CacheEntry::OnHandleClosed(CacheEntryHandle const* aHandle) {
