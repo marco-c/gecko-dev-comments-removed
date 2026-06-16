@@ -31,6 +31,27 @@ pub enum TimeUnit {
     Millisecond,
 }
 
+impl TimeUnit {
+    
+    #[inline]
+    pub fn from_str(unit: &str) -> Result<Self, ()> {
+        Ok(match_ignore_ascii_case! { unit,
+            "s" => Self::Second,
+            "ms" => Self::Millisecond,
+            _ => return Err(())
+        })
+    }
+
+    
+    #[inline]
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Second => "s",
+            Self::Millisecond => "ms",
+        }
+    }
+}
+
 
 #[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToShmem)]
 #[repr(C)]
@@ -70,10 +91,7 @@ impl NoCalcTime {
     
     #[inline]
     pub fn unit(&self) -> &'static str {
-        match self.unit {
-            TimeUnit::Second => "s",
-            TimeUnit::Millisecond => "ms",
-        }
+        self.unit.as_str()
     }
 
     
@@ -89,11 +107,7 @@ impl NoCalcTime {
 
     
     pub fn to(&self, unit: &str) -> Result<Self, ()> {
-        let target = match_ignore_ascii_case! { unit,
-            "s" => TimeUnit::Second,
-            "ms" => TimeUnit::Millisecond,
-             _ => return Err(()),
-        };
+        let target = TimeUnit::from_str(unit)?;
         let value = match target {
             TimeUnit::Second => self.seconds(),
             TimeUnit::Millisecond => self.seconds() * 1000.0,
@@ -103,11 +117,7 @@ impl NoCalcTime {
 
     
     pub fn parse_dimension(value: CSSFloat, unit: &str) -> Result<Self, ()> {
-        let unit = match_ignore_ascii_case! { unit,
-            "s" => TimeUnit::Second,
-            "ms" => TimeUnit::Millisecond,
-            _ => return Err(())
-        };
+        let unit = TimeUnit::from_str(unit)?;
         Ok(Self::new(unit, value))
     }
 }
