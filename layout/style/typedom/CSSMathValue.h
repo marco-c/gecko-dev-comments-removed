@@ -114,8 +114,9 @@ class CSSMathValue : public CSSNumericValue {
   
   CSSMathClamp& GetAsCSSMathClamp();
 
-  void ToCssTextWithProperty(const CSSPropertyId& aPropertyId, bool aNested,
-                             bool aParenLess, nsACString& aDest) const;
+  void ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
+                             const SerializationContext& aContext,
+                             nsACString& aDest) const;
 
   
   

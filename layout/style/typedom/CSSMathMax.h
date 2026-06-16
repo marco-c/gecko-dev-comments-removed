@@ -52,7 +52,8 @@ class CSSMathMax final : public CSSMathValue {
 
   
 
-  void ToCssTextWithProperty(const CSSPropertyId& aPropertyId, bool aNested,
+  void ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
+                             const SerializationContext& aContext,
                              nsACString& aDest) const;
 
  private:

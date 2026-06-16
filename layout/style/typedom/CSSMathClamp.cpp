@@ -65,22 +65,22 @@ CSSNumericValue* CSSMathClamp::Upper() const { return mUpper; }
 
 
 void CSSMathClamp::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
-                                         bool aNested,
+                                         const SerializationContext& aContext,
                                          nsACString& aDest) const {
   
 
   aDest.Append("clamp("_ns);
 
-  mLower->ToCssTextWithProperty(aPropertyId,  true,
-                                 true, aDest);
+  mLower->ToCssTextWithProperty(
+      aPropertyId, SerializationContext(Nested{}, ParenLess{}), aDest);
   aDest.Append(", "_ns);
 
-  mValue->ToCssTextWithProperty(aPropertyId,  true,
-                                 true, aDest);
+  mValue->ToCssTextWithProperty(
+      aPropertyId, SerializationContext(Nested{}, ParenLess{}), aDest);
   aDest.Append(", "_ns);
 
-  mUpper->ToCssTextWithProperty(aPropertyId,  true,
-                                 true, aDest);
+  mUpper->ToCssTextWithProperty(
+      aPropertyId, SerializationContext(Nested{}, ParenLess{}), aDest);
 
   aDest.Append(")"_ns);
 }
