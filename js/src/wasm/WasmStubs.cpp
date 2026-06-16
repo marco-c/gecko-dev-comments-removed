@@ -2866,6 +2866,13 @@ bool wasm::GenerateContBaseFrameStub(jit::MacroAssembler& masm,
   int32_t offsetFromFPToStack = -ContStack::offsetOfBaseFrameFP();
 
   
+  
+  masm.storePtr(InstanceReg,
+                Address(FramePointer,
+                        static_cast<int32_t>(
+                            wasm::FrameWithInstances::calleeInstanceOffset())));
+
+  
   masm.computeEffectiveAddress(
       Address(FramePointer,
               offsetFromFPToStack + ContStack::offsetOfInitialResumeTarget()),

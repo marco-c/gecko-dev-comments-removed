@@ -1444,12 +1444,8 @@ void EmitSuspend(jit::MacroAssembler& masm, jit::Register instance,
               wasm::ContStack::offsetOfBaseFrame() +
                   static_cast<int32_t>(
                       wasm::FrameWithInstances::callerInstanceOffset())));
-  masm.storePtr(
-      ImmWord(0),
-      Address(scratch3,
-              wasm::ContStack::offsetOfBaseFrame() +
-                  static_cast<int32_t>(
-                      wasm::FrameWithInstances::calleeInstanceOffset())));
+  
+  
   masm.storePtr(ImmWord(0),
                 Address(scratch3, wasm::ContStack::offsetOfHandlers()));
 
@@ -1712,12 +1708,6 @@ static void EmitActivateResumeBase(MacroAssembler& masm, Register instance,
               wasm::ContStack::offsetOfBaseFrame() +
                   static_cast<int32_t>(
                       wasm::FrameWithInstances::callerInstanceOffset())));
-  masm.storePtr(
-      instance,
-      Address(resumeBase,
-              wasm::ContStack::offsetOfBaseFrame() +
-                  static_cast<int32_t>(
-                      wasm::FrameWithInstances::calleeInstanceOffset())));
 
   
   masm.loadPtr(Address(resumeBase, wasm::ContStack::offsetOfResumeTarget()),
