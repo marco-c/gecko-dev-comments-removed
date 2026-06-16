@@ -1035,6 +1035,12 @@ void HttpConnectionUDP::CloseTransaction(nsAHttpTransaction* trans,
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
 
   if (NS_SUCCEEDED(reason) || (reason == NS_BASE_STREAM_CLOSED)) {
+    if (aIsShutdown && mHttp3Session) {
+      
+      
+      mHttp3Session->SetCleanShutdown(true);
+      mHttp3Session->Close(reason);
+    }
     return;
   }
 
