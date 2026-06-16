@@ -67,7 +67,10 @@ class RTC_EXPORT Clock {
   }
 
   
-  static Clock* absl_nonnull GetRealTimeClockRaw();
+  
+  
+  
+  static Clock* absl_nonnull GetRealTimeClockOnlyUseForRelativeTime();
 };
 
 class SimulatedClock : public Clock {
