@@ -177,9 +177,7 @@ class BaseProcessLauncher {
     SprintfLiteral(mChildIDString, "%d", aHost->mChildID);
 
     
-    nsCOMPtr<nsIEventTarget> threadOrPool = GetIPCLauncher();
-    mLaunchThread =
-        TaskQueue::Create(threadOrPool.forget(), "BaseProcessLauncher");
+    mLaunchThread = GetIPCLauncher();
 
     if (ShouldHaveDirectoryService()) {
       
@@ -1086,8 +1084,13 @@ RefPtr<ProcessLaunchPromise> BaseProcessLauncher::PerformAsyncLaunch() {
   if (aError.isErr()) {
     return ProcessLaunchPromise::CreateAndReject(aError.unwrapErr(), __func__);
   }
+
+  
+  
+  
+  
   return DoLaunch()->Then(
-      mLaunchThread, __func__,
+      XRE_GetAsyncIOEventTarget(), __func__,
       [self =
            RefPtr{this}](ProcessLaunchPromise::ResolveOrRejectValue&& aResult) {
         
