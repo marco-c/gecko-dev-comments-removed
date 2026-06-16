@@ -10,7 +10,6 @@
 
 #include "gc/Barrier.h"
 #include "gc/Cell.h"
-#include "gc/WeakMap.h"
 #include "js/HashTable.h"
 #include "js/TracingAPI.h"
 #include "js/TypeDecls.h"
@@ -465,10 +464,6 @@ class GCMarker {
     ParallelMarking,
 
     
-    
-    ParallelMarkingSingleThread,
-
-    
     ConcurrentMarking,
 
     
@@ -517,12 +512,7 @@ class GCMarker {
 
   bool isActive() const { return state != NotActive; }
   bool isRegularMarking() const { return state == RegularMarking; }
-  bool isParallelMarking() const {
-    return state == ParallelMarking || state == ParallelMarkingSingleThread;
-  }
-  bool isParallelMarkingMultipleThreads() const {
-    return state == ParallelMarking;
-  }
+  bool isParallelMarking() const { return state == ParallelMarking; }
   bool isWeakMarking() const { return state == WeakMarking; }
   bool isConcurrentMarking() const { return state == ConcurrentMarking; }
 
@@ -562,11 +552,6 @@ class GCMarker {
 
   
   
-  void enterSingleThreadedMode();
-  void leaveSingleThreadedMode();
-
-  
-  
   
   void abortLinearWeakMarking();
 
@@ -577,17 +562,13 @@ class GCMarker {
 
   bool shouldCheckCompartments() { return strictCompartmentChecking; }
 
-  void markOneObjectForTest(JSObject* obj);
+  bool markOneObjectForTest(JSObject* obj);
 
   bool isRootMarking() const { return state == RootMarking; }
 #endif
 
   bool markCurrentColorInParallel(gc::ParallelMarkTask* task,
                                   JS::SliceBudget& budget);
-
-  
-  
-  void markDeferredWeakMapChildren(WeakMapList& deferred);
 
   static void moveAllWork(GCMarker* dst, GCMarker* src);
   static size_t moveSomeWork(GCMarker* dst, GCMarker* src,
