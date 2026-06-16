@@ -6,7 +6,6 @@
 
 use crate::typed_om::numeric_values::NoCalcNumeric;
 use crate::typed_om::{MathValue, NumericValue, UnitValue};
-use itertools::Itertools;
 use std::collections::HashMap;
 use style_traits::CssString;
 
@@ -182,144 +181,33 @@ impl SumValue {
             },
 
             
-            NumericValue::Math(MathValue::Negate(math_negate)) => {
+            NumericValue::Math(MathValue::Negate(_math_negate)) => {
                 
-                let mut values = SumValue::try_from_numeric_value(math_negate)?.0;
-
-                
-                for item in &mut values {
-                    item.value = -item.value;
-                }
-
-                
-                Ok(Self(values))
+                Err(())
             },
 
             
-            NumericValue::Math(MathValue::Invert(math_invert)) => {
+            NumericValue::Math(MathValue::Invert(_math_invert)) => {
                 
-                let mut values = SumValue::try_from_numeric_value(math_invert)?.0;
-
-                
-                if values.len() != 1 {
-                    return Err(());
-                }
-
-                let item = &mut values[0];
-
-                
-                item.value = 1.0 / item.value;
-                for power in item.unit_map.values_mut() {
-                    *power = -*power;
-                }
-
-                
-                Ok(Self(values))
+                Err(())
             },
 
             
-            NumericValue::Math(MathValue::Min(math_min)) => {
+            NumericValue::Math(MathValue::Min(_math_min)) => {
                 
-                let mut args = Vec::new();
-
-                for item in math_min {
-                    let values = SumValue::try_from_numeric_value(item)?;
-
-                    if values.0.len() > 1 {
-                        return Err(());
-                    }
-
-                    args.push(values);
-                }
-
-                debug_assert!(!args.is_empty());
-
-                
-                if !args.iter().map(|arg| &arg.0[0].unit_map).all_equal() {
-                    return Err(());
-                }
-
-                
-                let min = args
-                    .into_iter()
-                    .map(|arg| arg.0.into_iter().next().unwrap())
-                    .min_by(|a, b| a.value.total_cmp(&b.value))
-                    .ok_or(())?;
-
-                Ok(Self(vec![min]))
+                Err(())
             },
 
             
-            NumericValue::Math(MathValue::Max(math_max)) => {
+            NumericValue::Math(MathValue::Max(_math_max)) => {
                 
-                let mut args = Vec::new();
-
-                for item in math_max {
-                    let values = SumValue::try_from_numeric_value(item)?;
-
-                    if values.0.len() > 1 {
-                        return Err(());
-                    }
-
-                    args.push(values);
-                }
-                debug_assert!(!args.is_empty());
-
-                
-                if !args.iter().map(|arg| &arg.0[0].unit_map).all_equal() {
-                    return Err(());
-                }
-
-                
-                let max = args
-                    .into_iter()
-                    .map(|arg| arg.0.into_iter().next().unwrap())
-                    .max_by(|a, b| a.value.total_cmp(&b.value))
-                    .ok_or(())?;
-
-                Ok(Self(vec![max]))
+                Err(())
             },
 
             
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            NumericValue::Math(MathValue::Clamp(math_clamp)) => {
+            NumericValue::Math(MathValue::Clamp(_math_clamp)) => {
                 
-                let lower = SumValue::try_from_numeric_value(&math_clamp[0])?;
-                let value = SumValue::try_from_numeric_value(&math_clamp[1])?;
-                let upper = SumValue::try_from_numeric_value(&math_clamp[2])?;
-
-                if lower.0.len() > 1 || value.0.len() > 1 || upper.0.len() > 1 {
-                    return Err(());
-                }
-
-                
-                if lower.0[0].unit_map != value.0[0].unit_map
-                    || lower.0[0].unit_map != upper.0[0].unit_map
-                {
-                    return Err(());
-                }
-
-                
-                let mut value = value.0.into_iter().next().unwrap();
-                value.value = value.value.max(lower.0[0].value).min(upper.0[0].value);
-
-                Ok(Self(vec![value]))
+                Err(())
             },
         }
     }
