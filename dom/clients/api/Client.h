@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef _mozilla_dom_Client_h
 #define _mozilla_dom_Client_h
 
@@ -79,7 +77,7 @@ class Client final : public nsISupports, public nsWrapperCache {
                    const StructuredSerializeOptions& aOptions,
                    ErrorResult& aRv);
 
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(mozilla::dom::Client)
 };
 
