@@ -655,7 +655,10 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   void SetVolume(double aVolume, ErrorResult& aRv);
 
-  bool Muted() const { return mMuted & MUTED_BY_CONTENT; }
+  bool Muted() const {
+    
+    return !!(mMuted & (MUTED_BY_CONTENT | MUTED_BY_INVALID_PLAYBACK_RATE));
+  }
   void SetMuted(bool aMuted);
 
   bool DefaultMuted() const { return GetBoolAttr(nsGkAtoms::muted); }
@@ -1606,6 +1609,14 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   };
 
   uint32_t mMuted = 0;
+
+  
+  
+  
+  
+  
+  enum class MutedState : uint8_t { Default, True, False };
+  MutedState mMutedState = MutedState::Default;
 
   UniquePtr<const MetadataTags> mTags;
 

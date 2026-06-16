@@ -3757,12 +3757,20 @@ void HTMLMediaElement::SetMutedInternal(uint32_t aMuted) {
   uint32_t oldMuted = mMuted;
   mMuted = aMuted;
 
+  
+  
+  
+  constexpr uint32_t kReflectedByGetter =
+      MUTED_BY_CONTENT | MUTED_BY_INVALID_PLAYBACK_RATE;
+  if ((oldMuted & kReflectedByGetter) != (aMuted & kReflectedByGetter)) {
+    
+    SetStates(ElementState::MUTED, Muted());
+  }
+
   if (!!aMuted == !!oldMuted) {
     return;
   }
 
-  
-  SetStates(ElementState::MUTED, mMuted & MUTED_BY_CONTENT);
   SetVolumeInternal();
 }
 
@@ -3793,14 +3801,26 @@ void HTMLMediaElement::SetVolumeInternal() {
 
 void HTMLMediaElement::SetMuted(bool aMuted) {
   LOG(LogLevel::Debug, ("%p SetMuted(%d) called by JS", this, aMuted));
-  if (aMuted == Muted()) {
-    return;
-  }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  mMutedState = aMuted ? MutedState::True : MutedState::False;
+
+  bool wasMuted = Muted();
   if (aMuted) {
     SetMutedInternal(mMuted | MUTED_BY_CONTENT);
   } else {
     SetMutedInternal(mMuted & ~MUTED_BY_CONTENT);
+  }
+
+  if (Muted() == wasMuted) {
+    return;
   }
 
   QueueEvent(u"volumechange"_ns);
@@ -5377,8 +5397,11 @@ bool HTMLMediaElement::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
 }
 
 void HTMLMediaElement::DoneCreatingElement() {
+  
+  
   if (HasAttr(nsGkAtoms::muted)) {
     mMuted |= MUTED_BY_CONTENT;
+    SetStates(ElementState::MUTED, Muted());
   }
 }
 
@@ -5436,6 +5459,15 @@ void HTMLMediaElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
     } else if (aName == nsGkAtoms::controls && IsInComposedDoc()) {
       NotifyUAWidgetSetupOrChange();
       SetCuesDirty();
+    } else if (aName == nsGkAtoms::muted) {
+      
+      
+      
+      
+      if (mMutedState == MutedState::Default) {
+        SetMutedInternal(aValue ? (mMuted | MUTED_BY_CONTENT)
+                                : (mMuted & ~MUTED_BY_CONTENT));
+      }
     }
   }
 
@@ -7367,8 +7399,11 @@ nsresult HTMLMediaElement::CopyInnerTo(Element* aDest) {
   NS_ENSURE_SUCCESS(rv, rv);
 
   HTMLMediaElement* dest = static_cast<HTMLMediaElement*>(aDest);
+  
+  
   if (HasAttr(nsGkAtoms::muted)) {
     dest->mMuted |= MUTED_BY_CONTENT;
+    dest->SetStates(ElementState::MUTED, dest->Muted());
   }
 
   if (aDest->OwnerDoc()->IsStaticDocument()) {
