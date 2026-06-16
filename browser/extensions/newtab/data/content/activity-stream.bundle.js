@@ -314,6 +314,7 @@ for (const type of [
   "WIDGETS_SPORTS_CHANGE_SELECTED_TEAMS",
   "WIDGETS_SPORTS_CHANGE_WIDGET_STATE",
   "WIDGETS_SPORTS_LIVE_HIDDEN",
+  "WIDGETS_SPORTS_LIVE_REFRESH",
   "WIDGETS_SPORTS_LIVE_UPDATE",
   "WIDGETS_SPORTS_LIVE_VISIBLE",
   "WIDGETS_SPORTS_MARK_CELEBRATED",
@@ -17457,8 +17458,15 @@ const SportsWidget_USER_ACTION_TYPES = {
   CHANGE_SIZE: "change_size",
   CHANGE_TAB: "change_tab",
   LEARN_MORE: "learn_more",
-  TOGGLE_FOLLOWED_ONLY: "toggle_followed_only"
+  TOGGLE_FOLLOWED_ONLY: "toggle_followed_only",
+  REFRESH_LIVE: "refresh_live"
 };
+
+
+
+
+
+const LIVE_REFRESH_COOLDOWN_MS = 15000;
 const SportsWidget_PREF_NOVA_ENABLED = "nova.enabled";
 const SportsWidget_PREF_SPORTS_WIDGET_SIZE = "widgets.sportsWidget.size";
 const PREF_SPORTS_WIDGET_LIVE_ENABLED = "widgets.sportsWidget.live.enabled";
@@ -18436,6 +18444,23 @@ function SportsWidgetFollowTeams({
     onClick: () => onSave(activeSelectedTeams)
   }));
 }
+
+
+
+function LiveRefreshButton({
+  isCoolingDown,
+  onClick
+}) {
+  return external_React_default().createElement("moz-button", {
+    className: "sports-live-refresh-button",
+    type: "icon ghost",
+    size: "small",
+    iconSrc: "chrome://browser/skin/sync.svg",
+    "data-l10n-id": "newtab-custom-widget-live-refresh",
+    disabled: isCoolingDown || undefined,
+    onClick: onClick
+  });
+}
 function SportsSectionLabel({
   match,
   withLiveBadge = false
@@ -18538,6 +18563,43 @@ function SportsMatchesView({
       upcomingPanelRef.current?.querySelector(".sports-match-row")?.focus();
     }
   }, [showUpcomingList]);
+
+  
+  
+  
+  
+  const [liveRefreshCoolingDown, setLiveRefreshCoolingDown] = (0,external_React_namespaceObject.useState)(false);
+  const liveRefreshTimerRef = (0,external_React_namespaceObject.useRef)(null);
+  (0,external_React_namespaceObject.useEffect)(() => () => {
+    if (liveRefreshTimerRef.current) {
+      clearTimeout(liveRefreshTimerRef.current);
+    }
+  }, []);
+  const handleLiveRefreshClick = (0,external_React_namespaceObject.useCallback)(() => {
+    if (liveRefreshCoolingDown) {
+      return;
+    }
+    setLiveRefreshCoolingDown(true);
+    liveRefreshTimerRef.current = setTimeout(() => {
+      liveRefreshTimerRef.current = null;
+      setLiveRefreshCoolingDown(false);
+    }, LIVE_REFRESH_COOLDOWN_MS);
+    (0,external_ReactRedux_namespaceObject.batch)(() => {
+      dispatch(actionCreators.OnlyToMain({
+        type: actionTypes.WIDGETS_USER_EVENT,
+        data: {
+          widget_name: "sports",
+          widget_source: "now",
+          user_action: SportsWidget_USER_ACTION_TYPES.REFRESH_LIVE,
+          widget_size: widgetSize
+        }
+      }));
+      dispatch(actionCreators.OnlyToMain({
+        type: actionTypes.WIDGETS_SPORTS_LIVE_REFRESH
+      }));
+    });
+    handleInteraction?.();
+  }, [dispatch, handleInteraction, liveRefreshCoolingDown, widgetSize]);
   return external_React_default().createElement("div", {
     className: "sports-matches-view"
   }, external_React_default().createElement("div", {
@@ -18585,10 +18647,15 @@ function SportsMatchesView({
   })), hasLiveGames && external_React_default().createElement("div", {
     className: "sports-matches-tab-panel",
     hidden: matchesTab !== MATCHES_TABS.NOW
-  }, current[liveIndex] && external_React_default().createElement((external_React_default()).Fragment, null, size === "large" && external_React_default().createElement(SportsSectionLabel, {
+  }, current[liveIndex] && external_React_default().createElement((external_React_default()).Fragment, null, size === "large" && external_React_default().createElement("div", {
+    className: "sports-now-header"
+  }, external_React_default().createElement(SportsSectionLabel, {
     match: current[liveIndex],
     withLiveBadge: true
-  }), external_React_default().createElement("div", SportsWidget_extends({
+  }), external_React_default().createElement(LiveRefreshButton, {
+    isCoolingDown: liveRefreshCoolingDown,
+    onClick: handleLiveRefreshClick
+  })), external_React_default().createElement("div", SportsWidget_extends({
     className: "match-highlight-view"
   }, hasLivePagination && {
     "aria-live": "polite",
@@ -18607,6 +18674,9 @@ function SportsMatchesView({
     iconSrc: "chrome://browser/skin/device-tv.svg",
     "data-l10n-id": size === "medium" ? "newtab-sports-widget-watch-icon" : "newtab-sports-widget-watch",
     onClick: onWatchClick
+  }), size === "medium" && external_React_default().createElement(LiveRefreshButton, {
+    isCoolingDown: liveRefreshCoolingDown,
+    onClick: handleLiveRefreshClick
   }), current.length >= 2 && external_React_default().createElement(LivePagination, {
     dispatch: dispatch,
     liveIndex: liveIndex,
