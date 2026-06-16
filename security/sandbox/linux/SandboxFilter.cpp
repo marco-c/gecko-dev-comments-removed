@@ -2014,6 +2014,15 @@ class RDDSandboxPolicy final : public SandboxPolicyCommon {
       case SYS_SHUTDOWN:
         return Some(Allow());
 
+#ifdef MOZ_ENABLE_VULKAN_VIDEO
+      
+      
+      
+      
+      case SYS_BIND:
+        return Some(Error(EPERM));
+#endif
+
       case SYS_SOCKET:
         
         
@@ -2048,6 +2057,10 @@ class RDDSandboxPolicy final : public SandboxPolicyCommon {
         static constexpr unsigned long kVideoType =
             static_cast<unsigned long>('V') << _IOC_TYPESHIFT;
 #endif
+#ifdef MOZ_ENABLE_VULKAN_VIDEO
+        static constexpr unsigned long kNvidiaRmType =
+            static_cast<unsigned long>('m') << _IOC_TYPESHIFT;
+#endif
         
         
         
@@ -2066,6 +2079,9 @@ class RDDSandboxPolicy final : public SandboxPolicyCommon {
         
         return If(shifted_type == kDrmType, Allow())
             .ElseIf(shifted_type == kDmaBufType, Allow())
+#ifdef MOZ_ENABLE_VULKAN_VIDEO
+            .ElseIf(shifted_type == kNvidiaRmType, Allow())
+#endif
 #ifdef MOZ_ENABLE_V4L2
             .ElseIf(shifted_type == kVideoType, Allow())
 #endif
@@ -2075,7 +2091,11 @@ class RDDSandboxPolicy final : public SandboxPolicyCommon {
             .ElseIf(shifted_type == kNvidiaNvhostType, Allow())
 #endif  
         
+#ifdef MOZ_ENABLE_VULKAN_VIDEO
+            .ElseIf(shifted_type == kFbDevType, Allow())
+#else
             .ElseIf(shifted_type == kFbDevType, Error(ENOTTY))
+#endif
             .Else(SandboxPolicyCommon::EvaluateSyscall(sysno));
       }
 
@@ -2130,7 +2150,17 @@ class RDDSandboxPolicy final : public SandboxPolicyCommon {
       case __NR_fork:
         return Error(ENOSYS);
 #endif
-
+#ifdef MOZ_ENABLE_VULKAN_VIDEO
+      CASES_FOR_getresuid:
+      CASES_FOR_getresgid:
+        return Allow();
+      CASES_FOR_fcntl: {
+        Arg<int> cmd(1);
+        return Switch(cmd)
+            .Case(F_ADD_SEALS, Allow())
+            .Default(SandboxPolicyCommon::EvaluateSyscall(sysno));
+      }
+#endif
         
       default:
         return SandboxPolicyCommon::EvaluateSyscall(sysno);

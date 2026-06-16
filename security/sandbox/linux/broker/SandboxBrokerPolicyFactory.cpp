@@ -356,9 +356,6 @@ static void AddX11Dependencies(SandboxBroker::Policy* policy) {
   
   
   
-  
-  
-  
   static const bool kIsX11 =
       !mozilla::widget::GdkIsWaylandDisplay() && PR_GetEnv("DISPLAY");
   if (kIsX11) {
@@ -915,6 +912,58 @@ static void AddV4l2Dependencies(SandboxBroker::Policy* policy) {
 }
 #endif  
 
+#ifdef MOZ_ENABLE_VULKAN_VIDEO
+
+static void AddVulkanDependencies(SandboxBroker::Policy* policy) {
+  
+  
+  
+  policy->AddTree(rdonly, "/usr/share/vulkan/icd.d");
+  policy->AddTree(rdonly, "/usr/local/share/vulkan/icd.d");
+  policy->AddTree(rdonly, "/etc/vulkan/icd.d");
+
+  
+  
+  const char* vkDriverFiles = PR_GetEnv("VK_DRIVER_FILES");
+  if (vkDriverFiles && vkDriverFiles[0] != '\0') {
+    nsAutoCString paths(vkDriverFiles);
+    for (const nsACString& path : paths.Split(':')) {
+      if (!path.IsEmpty()) {
+        char* resolvedPath = realpath(PromiseFlatCString(path).get(), nullptr);
+        if (resolvedPath) {
+          policy->AddTree(rdonly, resolvedPath);
+          free(resolvedPath);
+        }
+      }
+    }
+  }
+
+  
+  
+  const char* mesaBuildDir = PR_GetEnv("MESA_BUILD_DIR");
+  if (mesaBuildDir && mesaBuildDir[0] != '\0') {
+    policy->AddTree(rdonly, nsPrintfCString("%s", mesaBuildDir).get());
+  }
+
+  
+  
+  const char* vulkanSdkDir = PR_GetEnv("VULKAN_SDK");
+  if (vulkanSdkDir && vulkanSdkDir[0] != '\0') {
+    policy->AddTree(rdonly, nsPrintfCString("%s", vulkanSdkDir).get());
+  }
+
+  policy->AddPath(rdwr, "/dev/nvidiactl", SandboxBroker::Policy::AddAlways);
+  policy->AddPath(rdwr, "/dev/nvidia-uvm", SandboxBroker::Policy::AddAlways);
+  policy->AddPath(rdwr, "/dev/nvidia-modeset",
+                  SandboxBroker::Policy::AddAlways);
+  policy->AddTree(rdonly, "/dev/nvidia-caps");
+  for (int i = 0; i < 8; i++) {
+    policy->AddPath(rdwr, nsPrintfCString("/dev/nvidia%d", i).get(),
+                    SandboxBroker::Policy::AddIfExistsNow);
+  }
+}
+#endif  
+
  UniquePtr<SandboxBroker::Policy>
 SandboxBrokerPolicyFactory::GetRDDPolicy(int aPid) {
   auto policy = MakeUnique<SandboxBroker::Policy>();
@@ -976,6 +1025,10 @@ SandboxBrokerPolicyFactory::GetRDDPolicy(int aPid) {
   
   AddLdconfigPaths(policy.get());
   AddLdLibraryEnvPaths(policy.get());
+
+#ifdef MOZ_ENABLE_VULKAN_VIDEO
+  AddVulkanDependencies(policy.get());
+#endif  
 
 #ifdef MOZ_ENABLE_V4L2
   AddV4l2Dependencies(policy.get());
