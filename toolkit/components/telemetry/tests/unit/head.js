@@ -56,15 +56,6 @@ const PingServer = {
     return this._httpServer.identity.primaryHost;
   },
 
-  
-  
-  
-  
-  
-  get ipv4URL() {
-    return "http://127.0.0.1:" + this.port;
-  },
-
   get started() {
     return this._started;
   },
